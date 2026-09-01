@@ -1,0 +1,4 @@
+[submodule "third_party/device-management"]
+	path = third_party/device-management
+	url = https://github.com/apple/device-management
+	branch = release
