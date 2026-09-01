@@ -50,7 +50,7 @@ func auth(serial string) *checkin.Authenticate {
 }
 
 func push(n int) mdm.Push {
-	return mdm.Push{Topic: "com.apple.mgmt.test", Token: []byte{byte(n), 2, 3}, Magic: fmt.Sprintf("magic-%d", n)}
+	return mdm.Push{Topic: "com.apple.mgmt.test", Token: []byte{byte(n % 256), 2, 3}, Magic: fmt.Sprintf("magic-%d", n)} // #nosec G115 -- bounded by the modulo
 }
 
 // enroll performs Authenticate and TokenUpdate for id.

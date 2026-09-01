@@ -164,12 +164,21 @@ func CheckinHandler(cfg Config) http.Handler {
 		if res.Status != 0 {
 			status = res.Status
 		}
-		if res.ContentType != "" {
-			w.Header().Set("Content-Type", res.ContentType)
-		}
-		w.WriteHeader(status)
-		_, _ = w.Write(res.Body)
+		writeBody(w, status, res.ContentType, res.Body)
 	})
+}
+
+// writeBody sends a response body the device parses as a plist or JSON
+// document. Bodies are never HTML: the content type is always explicit and
+// sniffing is disabled, so a browser cannot be made to render them.
+func writeBody(w http.ResponseWriter, status int, contentType string, body []byte) {
+	if contentType == "" {
+		contentType = contentTypePlist
+	}
+	w.Header().Set("Content-Type", contentType)
+	w.Header().Set("X-Content-Type-Options", "nosniff")
+	w.WriteHeader(status)
+	_, _ = w.Write(body) // #nosec G705 -- machine-readable plist/JSON with an explicit non-HTML content type
 }
 
 // ConnectHandler serves the server URL (command channel).
@@ -197,9 +206,7 @@ func ConnectHandler(cfg Config) http.Handler {
 			w.WriteHeader(http.StatusOK)
 			return
 		}
-		w.Header().Set("Content-Type", contentTypePlist)
-		w.WriteHeader(http.StatusOK)
-		_, _ = w.Write(cmd.Raw)
+		writeBody(w, http.StatusOK, contentTypePlist, cmd.Raw)
 	})
 }
 
@@ -259,9 +266,7 @@ func (c Config) serviceError(w http.ResponseWriter, r *http.Request, err error) 
 			c.fail(w, r, http.StatusInternalServerError, merr)
 			return
 		}
-		w.Header().Set("Content-Type", contentTypePlist)
-		w.WriteHeader(http.StatusForbidden)
-		_, _ = w.Write(body)
+		writeBody(w, http.StatusForbidden, contentTypePlist, body)
 	case service.CodeInternal:
 		c.logger().ErrorContext(r.Context(), "mdm request failed", "err", err, "remote", r.RemoteAddr)
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
