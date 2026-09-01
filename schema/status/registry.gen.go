@@ -93,9 +93,9 @@ const (
 	// StatusItemTypePackageList: Status Package List
 	StatusItemTypePackageList = "package.list"
 	// StatusItemTypePasscodeCompliance: Status Passcode Compliance
-	StatusItemTypePasscodeCompliance = "passcode.is-compliant"
+	StatusItemTypePasscodeCompliance = "passcode.is-compliant" // #nosec G101 -- Apple wire identifier, not a credential
 	// StatusItemTypePasscodeIsPresent: Status Passcode Is Present
-	StatusItemTypePasscodeIsPresent = "passcode.is-present"
+	StatusItemTypePasscodeIsPresent = "passcode.is-present" // #nosec G101 -- Apple wire identifier, not a credential
 	// StatusItemTypeScreenSharingConnectionGroupUnresolvedConnections: Status Screen Sharing Connection Group Unresolved Connections
 	StatusItemTypeScreenSharingConnectionGroupUnresolvedConnections = "screensharing.connection.group.unresolved-connection"
 	// StatusItemTypeSecurityCertificateList: Status Security Certificate List

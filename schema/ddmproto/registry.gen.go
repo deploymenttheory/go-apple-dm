@@ -39,7 +39,7 @@ const (
 	// TypeStatusReport: Status Report
 	TypeStatusReport = "StatusReport"
 	// TypeTokensResponse: Tokens Response
-	TypeTokensResponse = "TokensResponse"
+	TypeTokensResponse = "TokensResponse" // #nosec G101 -- Apple wire identifier, not a credential
 )
 
 // Registry maps Go type names to constructors, one entry per schema file.

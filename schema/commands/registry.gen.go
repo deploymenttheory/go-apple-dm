@@ -68,9 +68,9 @@ const (
 	// RequestTypeDeclarativeManagement: Declarative Management Command
 	RequestTypeDeclarativeManagement = "DeclarativeManagement"
 	// RequestTypeActivationLockBypassCode: Activation Lock Bypass Code Command
-	RequestTypeActivationLockBypassCode = "ActivationLockBypassCode"
+	RequestTypeActivationLockBypassCode = "ActivationLockBypassCode" // #nosec G101 -- Apple wire identifier, not a credential
 	// RequestTypeClearActivationLockBypassCode: Clear Activation Lock Bypass Code Command
-	RequestTypeClearActivationLockBypassCode = "ClearActivationLockBypassCode"
+	RequestTypeClearActivationLockBypassCode = "ClearActivationLockBypassCode" // #nosec G101 -- Apple wire identifier, not a credential
 	// RequestTypeDeviceConfigured: Device Configured Command
 	RequestTypeDeviceConfigured = "DeviceConfigured"
 	// RequestTypeEraseDevice: Erase Device Command
@@ -90,7 +90,7 @@ const (
 	// RequestTypeRestartDevice: Restart Device Command
 	RequestTypeRestartDevice = "RestartDevice"
 	// RequestTypeClearRestrictionsPassword: Clear Restrictions Password Command
-	RequestTypeClearRestrictionsPassword = "ClearRestrictionsPassword"
+	RequestTypeClearRestrictionsPassword = "ClearRestrictionsPassword" // #nosec G101 -- Apple wire identifier, not a credential
 	// RequestTypeRestrictions: Restrictions Command
 	RequestTypeRestrictions = "Restrictions"
 	// RequestTypeShutDownDevice: Shut Down Device Command
@@ -122,11 +122,11 @@ const (
 	// RequestTypeStopMirroring: Stop Mirroring Command
 	RequestTypeStopMirroring = "StopMirroring"
 	// RequestTypeClearPasscode: Clear Passcode Command
-	RequestTypeClearPasscode = "ClearPasscode"
+	RequestTypeClearPasscode = "ClearPasscode" // #nosec G101 -- Apple wire identifier, not a credential
 	// RequestTypeSetFirmwarePassword: Set Firmware Password Command
-	RequestTypeSetFirmwarePassword = "SetFirmwarePassword"
+	RequestTypeSetFirmwarePassword = "SetFirmwarePassword" // #nosec G101 -- Apple wire identifier, not a credential
 	// RequestTypeVerifyFirmwarePassword: Verify Firmware Password Command
-	RequestTypeVerifyFirmwarePassword = "VerifyFirmwarePassword"
+	RequestTypeVerifyFirmwarePassword = "VerifyFirmwarePassword" // #nosec G101 -- Apple wire identifier, not a credential
 	// RequestTypeSetRecoveryLock: Set Recovery Lock Command
 	RequestTypeSetRecoveryLock = "SetRecoveryLock"
 	// RequestTypeVerifyRecoveryLock: Verify Recovery Lock Command
@@ -150,7 +150,7 @@ const (
 	// RequestTypeRotateFileVaultKey: Rotate FileVault Key Command
 	RequestTypeRotateFileVaultKey = "RotateFileVaultKey"
 	// RequestTypeSetAutoAdminPassword: Set Auto Admin Password Command
-	RequestTypeSetAutoAdminPassword = "SetAutoAdminPassword"
+	RequestTypeSetAutoAdminPassword = "SetAutoAdminPassword" // #nosec G101 -- Apple wire identifier, not a credential
 	// RequestTypeSettings: Settings Command
 	RequestTypeSettings = "Settings"
 	// RequestTypeAvailableOSUpdates: Available OS Updates Command

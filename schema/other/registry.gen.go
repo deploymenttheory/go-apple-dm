@@ -41,7 +41,7 @@ const (
 	// TypeManifestURL: ManifestURL
 	TypeManifestURL = "ManifestURL"
 	// TypePasswordHash: passwordHash
-	TypePasswordHash = "PasswordHash"
+	TypePasswordHash = "PasswordHash" // #nosec G101 -- Apple wire identifier, not a credential
 	// TypeSkipKeys: SkipKeys
 	TypeSkipKeys = "SkipKeys"
 )

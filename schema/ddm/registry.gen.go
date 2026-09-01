@@ -51,23 +51,23 @@ const (
 	// DeclarationTypeActivationSimple: Activation:Simple
 	DeclarationTypeActivationSimple = "com.apple.activation.simple"
 	// DeclarationTypeAssetCredentialACME: Asset:Credential ACME
-	DeclarationTypeAssetCredentialACME = "com.apple.asset.credential.acme"
+	DeclarationTypeAssetCredentialACME = "com.apple.asset.credential.acme" // #nosec G101 -- Apple wire identifier, not a credential
 	// DeclarationTypeAssetCredentialCertificate: Asset:Credential Certificate
-	DeclarationTypeAssetCredentialCertificate = "com.apple.asset.credential.certificate"
+	DeclarationTypeAssetCredentialCertificate = "com.apple.asset.credential.certificate" // #nosec G101 -- Apple wire identifier, not a credential
 	// DeclarationTypeAssetCredentialIdentity: Asset:Credential Identity
-	DeclarationTypeAssetCredentialIdentity = "com.apple.asset.credential.identity"
+	DeclarationTypeAssetCredentialIdentity = "com.apple.asset.credential.identity" // #nosec G101 -- Apple wire identifier, not a credential
 	// DeclarationTypeAssetCredentialSCEP: Asset:Credential SCEP
-	DeclarationTypeAssetCredentialSCEP = "com.apple.asset.credential.scep"
+	DeclarationTypeAssetCredentialSCEP = "com.apple.asset.credential.scep" // #nosec G101 -- Apple wire identifier, not a credential
 	// DeclarationTypeAssetCredentialUserNameAndPassword: Asset:Credential User Name and Password
-	DeclarationTypeAssetCredentialUserNameAndPassword = "com.apple.asset.credential.userpassword"
+	DeclarationTypeAssetCredentialUserNameAndPassword = "com.apple.asset.credential.userpassword" // #nosec G101 -- Apple wire identifier, not a credential
 	// CredentialTypeACMECredential: ACME Credential
-	CredentialTypeACMECredential = "com.apple.credential.acme"
+	CredentialTypeACMECredential = "com.apple.credential.acme" // #nosec G101 -- Apple wire identifier, not a credential
 	// CredentialTypeIdentityCredential: Identity Credential
-	CredentialTypeIdentityCredential = "com.apple.credential.identity"
+	CredentialTypeIdentityCredential = "com.apple.credential.identity" // #nosec G101 -- Apple wire identifier, not a credential
 	// CredentialTypeSCEPCredential: SCEP Credential
-	CredentialTypeSCEPCredential = "com.apple.credential.scep"
+	CredentialTypeSCEPCredential = "com.apple.credential.scep" // #nosec G101 -- Apple wire identifier, not a credential
 	// CredentialTypeUserNameAndPasswordCredential: User Name and Password Credential
-	CredentialTypeUserNameAndPasswordCredential = "com.apple.credential.usernameandpassword"
+	CredentialTypeUserNameAndPasswordCredential = "com.apple.credential.usernameandpassword" // #nosec G101 -- Apple wire identifier, not a credential
 	// DeclarationTypeAssetData: Asset:Data
 	DeclarationTypeAssetData = "com.apple.asset.data"
 	// DeclarationTypeAssetUserIdentity: Asset:User Identity
@@ -113,7 +113,7 @@ const (
 	// DeclarationTypePackage: Package
 	DeclarationTypePackage = "com.apple.configuration.package"
 	// DeclarationTypePasscodeSettings: Passcode:Settings
-	DeclarationTypePasscodeSettings = "com.apple.configuration.passcode.settings"
+	DeclarationTypePasscodeSettings = "com.apple.configuration.passcode.settings" // #nosec G101 -- Apple wire identifier, not a credential
 	// DeclarationTypeSafariBookmarks: Safari:Bookmarks
 	DeclarationTypeSafariBookmarks = "com.apple.configuration.safari.bookmarks"
 	// DeclarationTypeSafariExtensionSettings: Safari:Extension Settings
@@ -131,7 +131,7 @@ const (
 	// DeclarationTypeSecurityIdentity: Security:Identity
 	DeclarationTypeSecurityIdentity = "com.apple.configuration.security.identity"
 	// DeclarationTypeSecurityPasskeyAttestation: Security:Passkey:Attestation
-	DeclarationTypeSecurityPasskeyAttestation = "com.apple.configuration.security.passkey.attestation"
+	DeclarationTypeSecurityPasskeyAttestation = "com.apple.configuration.security.passkey.attestation" // #nosec G101 -- Apple wire identifier, not a credential
 	// DeclarationTypeServicesBackgroundTasks: Services Background Tasks
 	DeclarationTypeServicesBackgroundTasks = "com.apple.configuration.services.background-tasks"
 	// DeclarationTypeServicesConfigurationFiles: Services Configuration Files

@@ -41,7 +41,7 @@ const (
 	// ErrorCodeUnrecognizedDevice: Error Unrecognized Device
 	ErrorCodeUnrecognizedDevice = "com.apple.unrecognized.device"
 	// ErrorCodeCodePairingTokenMissing: Error Code Pairing Token Missing
-	ErrorCodeCodePairingTokenMissing = "com.apple.watch.pairing.token.missing"
+	ErrorCodeCodePairingTokenMissing = "com.apple.watch.pairing.token.missing" // #nosec G101 -- Apple wire identifier, not a credential
 	// ErrorCodeWellKnownFailed: Error Well-known Failed
 	ErrorCodeWellKnownFailed = "com.apple.well-known.failed"
 )

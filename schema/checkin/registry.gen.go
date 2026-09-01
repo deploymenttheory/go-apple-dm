@@ -41,15 +41,15 @@ const (
 	// MessageTypeDeclarativeManagement: Declarative Management
 	MessageTypeDeclarativeManagement = "DeclarativeManagement"
 	// MessageTypeGetBootstrapToken: Get Bootstrap Token
-	MessageTypeGetBootstrapToken = "GetBootstrapToken"
+	MessageTypeGetBootstrapToken = "GetBootstrapToken" // #nosec G101 -- Apple wire identifier, not a credential
 	// MessageTypeGetToken: Get Token
-	MessageTypeGetToken = "GetToken"
+	MessageTypeGetToken = "GetToken" // #nosec G101 -- Apple wire identifier, not a credential
 	// MessageTypeReturnToService: Return To Service
 	MessageTypeReturnToService = "ReturnToService"
 	// MessageTypeSetBootstrapToken: Set Bootstrap Token
-	MessageTypeSetBootstrapToken = "SetBootstrapToken"
+	MessageTypeSetBootstrapToken = "SetBootstrapToken" // #nosec G101 -- Apple wire identifier, not a credential
 	// MessageTypeTokenUpdate: Token Update
-	MessageTypeTokenUpdate = "TokenUpdate"
+	MessageTypeTokenUpdate = "TokenUpdate" // #nosec G101 -- Apple wire identifier, not a credential
 	// MessageTypeUserAuthenticate: User Authenticate
 	MessageTypeUserAuthenticate = "UserAuthenticate"
 )

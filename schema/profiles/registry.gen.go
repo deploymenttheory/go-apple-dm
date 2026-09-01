@@ -73,7 +73,7 @@ const (
 	// PayloadTypeNSExtensionManagement: NSExtension Management
 	PayloadTypeNSExtensionManagement = "com.apple.NSExtension"
 	// PayloadTypeSetupAssistant: Setup Assistant
-	PayloadTypeSetupAssistant = "com.apple.SetupAssistant.managed"
+	PayloadTypeSetupAssistant = "com.apple.SetupAssistant.managed" // #nosec G101 -- Apple wire identifier, not a credential
 	// PayloadTypeShareKit: ShareKit
 	PayloadTypeShareKit = "com.apple.ShareKitHelper"
 	// PayloadTypeSoftwareUpdate: Software Update
@@ -109,7 +109,7 @@ const (
 	// PayloadTypeCellular: Cellular
 	PayloadTypeCellular = "com.apple.cellular"
 	// PayloadTypeCellularPrivateNetwork: Cellular Private Network
-	PayloadTypeCellularPrivateNetwork = "com.apple.cellularprivatenetwork.managed"
+	PayloadTypeCellularPrivateNetwork = "com.apple.cellularprivatenetwork.managed" // #nosec G101 -- Apple wire identifier, not a credential
 	// PayloadTypeConferenceRoomDisplay: Conference Room Display
 	PayloadTypeConferenceRoomDisplay = "com.apple.conferenceroomdisplay"
 	// PayloadTypeIdentification: Identification
@@ -183,7 +183,7 @@ const (
 	// PayloadTypeMDM: MDM
 	PayloadTypeMDM = "com.apple.mdm"
 	// PayloadTypePasscode: Passcode
-	PayloadTypePasscode = "com.apple.mobiledevice.passwordpolicy"
+	PayloadTypePasscode = "com.apple.mobiledevice.passwordpolicy" // #nosec G101 -- Apple wire identifier, not a credential
 	// PayloadTypeNetworkUsageRules: Network Usage Rules
 	PayloadTypeNetworkUsageRules = "com.apple.networkusagerules"
 	// PayloadTypeNotifications: Notifications
@@ -195,7 +195,7 @@ const (
 	// PayloadTypeUserPreferences: User Preferences
 	PayloadTypeUserPreferences = "com.apple.preference.users"
 	// PayloadTypeProfileRemovalPassword: Profile Removal Password
-	PayloadTypeProfileRemovalPassword = "com.apple.profileRemovalPassword"
+	PayloadTypeProfileRemovalPassword = "com.apple.profileRemovalPassword" // #nosec G101 -- Apple wire identifier, not a credential
 	// PayloadTypeGlobalHTTPProxy: Global HTTP Proxy
 	PayloadTypeGlobalHTTPProxy = "com.apple.proxy.http.global"
 	// PayloadTypeRelay: Relay

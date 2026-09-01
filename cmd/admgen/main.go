@@ -68,7 +68,7 @@ func commitOf(schemaRoot, outDir string) string {
 	if p, err := schemagen.ReadProvenance(outDir + "/PROVENANCE.json"); err == nil && p.Commit != "" {
 		return p.Commit
 	}
-	cmd := exec.Command("git", "-C", schemaRoot, "rev-parse", "HEAD")
+	cmd := exec.Command("git", "-C", schemaRoot, "rev-parse", "HEAD") // #nosec G204 -- operator-supplied checkout path
 	if b, err := cmd.Output(); err == nil {
 		return strings.TrimSpace(string(b))
 	}

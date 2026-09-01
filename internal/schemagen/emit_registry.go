@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"sort"
 	"strconv"
+	"strings"
 )
 
 func (e *emitter) registryFile() []byte {
@@ -78,14 +79,13 @@ func (e *emitter) registryFile() []byte {
 	if len(consts) > 0 {
 		b.WriteString("// Wire identifiers.\nconst (\n")
 		for _, c := range consts {
-			fmt.Fprintf(
-				b,
-				"\t// %s: %s\n\t%s = %s\n",
-				c.name,
-				c.doc,
-				c.name,
-				strconv.Quote(c.value),
-			)
+			nosec := ""
+			if looksLikeSecretName(c.name) {
+				// gosec G101 matches identifier names such as *Credential*; these
+				// are Apple wire identifiers, not secrets.
+				nosec = " // #nosec G101 -- Apple wire identifier, not a credential"
+			}
+			fmt.Fprintf(b, "\t// %s: %s\n\t%s = %s%s\n", c.name, c.doc, c.name, strconv.Quote(c.value), nosec)
 		}
 		b.WriteString(")\n\n")
 	}
@@ -157,6 +157,18 @@ func (e *emitter) registryFile() []byte {
 		}
 	}
 	return b.Bytes()
+}
+
+// looksLikeSecretName mirrors the identifier patterns gosec's G101 rule
+// flags, so generated constants can carry an explicit annotation.
+func looksLikeSecretName(name string) bool {
+	lower := strings.ToLower(name)
+	for _, p := range []string{"passwd", "pass", "pwd", "secret", "token", "cred", "apikey", "bearer", "private"} {
+		if strings.Contains(lower, p) {
+			return true
+		}
+	}
+	return false
 }
 
 type registryEntry struct {

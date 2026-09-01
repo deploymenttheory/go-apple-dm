@@ -311,36 +311,41 @@ func Classify(rel string) (Family, Kind, error) {
 }
 
 // Load reads every schema YAML under root (skipping docs/ and dotfiles),
-// decoding strictly. It returns the first error encountered together with
-// the offending path.
+// decoding strictly. Files are read through os.Root so the walk cannot
+// escape the schema directory. It returns the first error encountered
+// together with the offending path.
 func Load(root string) (*Tree, error) {
+	r, err := os.OpenRoot(root)
+	if err != nil {
+		return nil, fmt.Errorf("schemagen: load %s: %w", root, err)
+	}
+	defer r.Close()
 	tree := &Tree{Root: root}
-	err := filepath.WalkDir(root, func(p string, d fs.DirEntry, walkErr error) error {
+	err = fs.WalkDir(r.FS(), ".", func(rel string, d fs.DirEntry, walkErr error) error {
 		if walkErr != nil {
 			return walkErr
 		}
-		rel, relErr := filepath.Rel(root, p)
-		if relErr != nil {
-			return fmt.Errorf("schemagen: %w", relErr)
-		}
-		rel = filepath.ToSlash(rel)
 		if d.IsDir() {
-			if rel == "docs" || strings.HasPrefix(d.Name(), ".") && rel != "." {
-				return filepath.SkipDir
+			if rel == "docs" || (strings.HasPrefix(d.Name(), ".") && rel != ".") {
+				return fs.SkipDir
 			}
 			return nil
 		}
 		if !strings.HasSuffix(d.Name(), ".yaml") {
 			return nil
 		}
-		s, loadErr := LoadFile(p)
-		if loadErr != nil {
-			return fmt.Errorf("%s: %w", rel, loadErr)
+		data, readErr := r.ReadFile(filepath.FromSlash(rel))
+		if readErr != nil {
+			return readErr
+		}
+		s, parseErr := Parse(data)
+		if parseErr != nil {
+			return fmt.Errorf("%s: %w", rel, parseErr)
 		}
 		s.Path = rel
-		s.Family, s.Kind, loadErr = Classify(rel)
-		if loadErr != nil {
-			return loadErr
+		s.Family, s.Kind, parseErr = Classify(rel)
+		if parseErr != nil {
+			return parseErr
 		}
 		tree.Schemas = append(tree.Schemas, s)
 		return nil
@@ -348,16 +353,23 @@ func Load(root string) (*Tree, error) {
 	if err != nil {
 		return nil, fmt.Errorf("schemagen: load %s: %w", root, err)
 	}
-	sort.Slice(
-		tree.Schemas,
-		func(i, j int) bool { return tree.Schemas[i].Path < tree.Schemas[j].Path },
-	)
+	sort.Slice(tree.Schemas, func(i, j int) bool { return tree.Schemas[i].Path < tree.Schemas[j].Path })
 	return tree, nil
 }
 
-// LoadFile decodes one schema file strictly.
+// LoadFile decodes one schema file strictly, reading it through an os.Root
+// scoped to its directory.
 func LoadFile(path string) (*Schema, error) {
-	data, err := os.ReadFile(path) //nolint:gosec // path comes from the vendored schema tree
+	dir, base := filepath.Split(filepath.Clean(path))
+	if dir == "" {
+		dir = "."
+	}
+	r, err := os.OpenRoot(dir)
+	if err != nil {
+		return nil, fmt.Errorf("schemagen: %w", err)
+	}
+	defer r.Close()
+	data, err := r.ReadFile(base)
 	if err != nil {
 		return nil, fmt.Errorf("schemagen: %w", err)
 	}
