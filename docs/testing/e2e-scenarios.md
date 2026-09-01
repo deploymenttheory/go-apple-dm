@@ -4,6 +4,8 @@ Each scenario is a named test under `e2e/` that wires the reference server, the 
 simulator, the fake APNs server, and a storage backend. Every scenario maps to at least one
 Apple documentation page. Scenarios are added by the phase that delivers the capability.
 
+Run with `make test-e2e` (build tag `e2e`). Status: E2E-001 to E2E-005 implemented in `e2e/mdm_test.go`.
+
 | ID | Scenario | Apple source | Phase | Test |
 |---|---|---|---|---|
 | E2E-001 | Pre-issued identity enrols: Authenticate, TokenUpdate, Idle, no commands | Check-in | 2 | `TestE2E_EnrollIdle` |

@@ -10,3 +10,4 @@
 ^github.com/deploymenttheory/go-apple-mdm/push/pushtest$
 ^github.com/deploymenttheory/go-apple-mdm/simulator$
 ^github.com/deploymenttheory/go-apple-mdm/schema/internal/conformance$
+^github.com/deploymenttheory/go-apple-mdm/internal/testpki$

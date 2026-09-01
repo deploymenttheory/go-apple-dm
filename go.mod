@@ -7,3 +7,5 @@ require (
 	gopkg.in/yaml.v3 v3.0.1
 	howett.net/plist v1.0.1
 )
+
+require github.com/smallstep/pkcs7 v0.2.3
