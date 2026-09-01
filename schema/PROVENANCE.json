@@ -1,0 +1,9 @@
+{
+  "source": "https://github.com/apple/device-management",
+  "ref": "release",
+  "commit": "67045e2fa06f528b196c01edee6a8bf88b844beb",
+  "yaml_sha256": "201845dee35ac5acbde25a578630e4ade080f02d33e2a3ae6444301d307a8dfa",
+  "os_versions": "26.4",
+  "fetched": "2026-09-01",
+  "generator": "admgen (not yet run)"
+}

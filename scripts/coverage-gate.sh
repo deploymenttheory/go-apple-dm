@@ -1,0 +1,96 @@
+#!/usr/bin/env bash
+# coverage-gate.sh: merge Go coverage data directories and enforce a minimum.
+#
+# Usage: COVERAGE_MIN=95 scripts/coverage-gate.sh cover
+#
+# Expects cover/<layer>/ directories produced with -test.gocoverdir (unit is
+# required; storage and e2e are merged when present). Fails when overall
+# statement coverage or any non-exempt package is below COVERAGE_MIN.
+# Exemptions are regular expressions in scripts/coverage-exempt.txt, one per
+# line, matched against the package import path.
+set -euo pipefail
+
+COVER_DIR="${1:-cover}"
+MIN="${COVERAGE_MIN:-95}"
+EXEMPT_FILE="$(dirname "$0")/coverage-exempt.txt"
+MODULE="$(go list -m)"
+
+inputs=()
+for layer in unit storage e2e; do
+  if [ -d "$COVER_DIR/$layer" ] && ls "$COVER_DIR/$layer"/covmeta.* >/dev/null 2>&1; then
+    inputs+=("$COVER_DIR/$layer")
+  fi
+done
+if [ ${#inputs[@]} -eq 0 ]; then
+  echo "coverage-gate: no coverage data under $COVER_DIR (run make test first)" >&2
+  exit 1
+fi
+
+merged="$COVER_DIR/merged.out"
+go tool covdata textfmt -i="$(IFS=,; echo "${inputs[*]}")" -o "$merged"
+go tool cover -html="$merged" -o "$COVER_DIR/merged.html"
+
+# Per-package statement coverage from the text profile.
+# Lines: file:startLine.startCol,endLine.endCol numStatements count
+pkg_report="$COVER_DIR/packages.txt"
+awk -v module="$MODULE" '
+  NR == 1 { next }
+  {
+    split($1, a, ":"); file = a[1]
+    n = split(file, parts, "/"); pkg = ""
+    for (i = 1; i < n; i++) pkg = pkg (i > 1 ? "/" : "") parts[i]
+    stmts = $2; count = $3
+    total[pkg] += stmts
+    if (count > 0) covered[pkg] += stmts
+    gtotal += stmts
+    if (count > 0) gcovered += stmts
+  }
+  END {
+    for (p in total) printf "%s %.2f\n", p, (total[p] ? 100 * covered[p] / total[p] : 100)
+    printf "TOTAL %.2f\n", (gtotal ? 100 * gcovered / gtotal : 0)
+  }' "$merged" | sort > "$pkg_report"
+
+exempt_patterns=()
+if [ -f "$EXEMPT_FILE" ]; then
+  while IFS= read -r line; do
+    line="${line%%#*}"; line="$(echo "$line" | xargs || true)"
+    [ -n "$line" ] && exempt_patterns+=("$line")
+  done < "$EXEMPT_FILE"
+fi
+
+is_exempt() {
+  local pkg="$1"
+  for pat in "${exempt_patterns[@]:-}"; do
+    [ -z "$pat" ] && continue
+    if [[ "$pkg" =~ $pat ]]; then return 0; fi
+  done
+  return 1
+}
+
+fail=0
+printf "%-70s %8s\n" "package" "cover%"
+while read -r pkg pct; do
+  if [ "$pkg" = "TOTAL" ]; then continue; fi
+  mark=""
+  if is_exempt "$pkg"; then
+    mark=" (exempt)"
+  elif (( $(echo "$pct < $MIN" | bc -l) )); then
+    mark=" FAIL"; fail=1
+  fi
+  printf "%-70s %8s%s\n" "$pkg" "$pct" "$mark"
+done < "$pkg_report"
+
+total="$(awk '$1 == "TOTAL" {print $2}' "$pkg_report")"
+echo "overall: ${total}% (minimum ${MIN}%)"
+if (( $(echo "$total < $MIN" | bc -l) )); then
+  echo "coverage-gate: overall coverage below ${MIN}%" >&2; fail=1
+fi
+
+echo "least covered functions:"
+go tool cover -func="$merged" | grep -v '^total:' | sort -k3 -n | head -10
+
+if [ "$fail" -ne 0 ]; then
+  echo "coverage-gate: FAILED" >&2
+  exit 1
+fi
+echo "coverage-gate: OK"

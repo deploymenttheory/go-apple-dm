@@ -48,3 +48,7 @@ __pycache__/
 *.exe
 *.dylib
 *.so
+# go-apple-mdm
+cover/
+third_party/refs/
+*.sarif

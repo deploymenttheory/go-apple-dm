@@ -1,0 +1,11 @@
+# Packages exempt from the per-package coverage gate. One regular expression per
+# line, matched against the package import path. Each entry needs a reason.
+# Exempt packages are still measured and reported, just not gated.
+
+# Wiring-only binaries; logic lives in internal/app which is gated.
+^github.com/deploymenttheory/go-apple-mdm/cmd/
+
+# Test helpers are exercised by the suites they serve.
+^github.com/deploymenttheory/go-apple-mdm/storage/storagetest$
+^github.com/deploymenttheory/go-apple-mdm/push/pushtest$
+^github.com/deploymenttheory/go-apple-mdm/simulator$
