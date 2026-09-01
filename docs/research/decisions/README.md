@@ -31,3 +31,11 @@ With the code:
 | [0001](0001-architecture.md) | Library-first architecture with a generated schema core | accepted | 0 |
 | [0002](0002-plist-library.md) | plist encoding and decoding | accepted | 0 |
 | [0003](0003-schema-generator.md) | In-repo schema generator over apple/device-management | accepted | 1 |
+| [0004](0004-checkin-and-command-core.md) | Check-in and command protocol core | accepted | 2 |
+| [0005](0005-storage-interfaces.md) | Storage interfaces, in-memory backend, contract suite | accepted | 2 |
+| [0006](0006-mdm-signature-verification.md) | Mdm-Signature verification and identity pinning | accepted | 2 |
+| [0007](0007-apns-push.md) | APNs push client, notifier, and coalescing | accepted | 3 |
+| [0008](0008-scep-and-ca.md) | Certificate authority abstraction and SCEP endpoint | accepted | 3 |
+| [0009](0009-enrollment-profiles.md) | Configuration profiles and the enrollment profile builder | accepted | 3 |
+| [0010](0010-ota-profile-service.md) | Over-the-air profile service (two-phase enrollment) | accepted | 3 |
+| [0011](0011-secrets-provider.md) | Secrets provider and redaction | accepted | 3 |

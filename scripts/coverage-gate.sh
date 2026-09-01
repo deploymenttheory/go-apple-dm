@@ -87,7 +87,7 @@ if (( $(echo "$total < $MIN" | bc -l) )); then
 fi
 
 echo "least covered functions:"
-go tool cover -func="$merged" | grep -v '^total:' | sort -k3 -n | head -10
+go tool cover -func="$merged" | grep -v '^total:' | sort -k3 -n | awk 'NR <= 10' # awk drains stdin: no SIGPIPE under pipefail
 
 if [ "$fail" -ne 0 ]; then
   echo "coverage-gate: FAILED" >&2
