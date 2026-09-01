@@ -8,22 +8,42 @@ package e2e
 
 import (
 	"context"
+	"crypto/rsa"
+	"crypto/tls"
+	"crypto/x509"
+	"crypto/x509/pkix"
+	"errors"
+	"io"
+	"log/slog"
 	"net/http"
 	"net/http/httptest"
 	"sync"
 	"testing"
 	"time"
 
+	"github.com/deploymenttheory/go-apple-mdm/ca"
 	"github.com/deploymenttheory/go-apple-mdm/cms"
+	"github.com/deploymenttheory/go-apple-mdm/enroll"
 	"github.com/deploymenttheory/go-apple-mdm/event"
 	"github.com/deploymenttheory/go-apple-mdm/httpapi"
 	"github.com/deploymenttheory/go-apple-mdm/internal/clock"
 	"github.com/deploymenttheory/go-apple-mdm/internal/testpki"
 	"github.com/deploymenttheory/go-apple-mdm/mdm"
+	"github.com/deploymenttheory/go-apple-mdm/push"
+	"github.com/deploymenttheory/go-apple-mdm/push/apns"
+	"github.com/deploymenttheory/go-apple-mdm/push/pushtest"
+	"github.com/deploymenttheory/go-apple-mdm/scep"
 	"github.com/deploymenttheory/go-apple-mdm/service"
 	"github.com/deploymenttheory/go-apple-mdm/simulator"
 	"github.com/deploymenttheory/go-apple-mdm/storage/inmem"
 )
+
+// otaChallenge is the Profile Service challenge the harness expects in
+// phase 1.
+const otaChallenge = "ota-challenge-e2e"
+
+// pushTopic matches the simulator's default topic.
+const pushTopic = "com.apple.mgmt.External.simulator"
 
 var t0 = time.Date(2026, 9, 1, 12, 0, 0, 0, time.UTC)
 
@@ -36,17 +56,25 @@ type harness struct {
 	clock  *clock.Fake
 	server *httptest.Server
 
+	// Enrollment identity issuance and push, added with the SCEP, OTA, and
+	// APNs scenarios.
+	scepCA     *x509.Certificate
+	scepSigner *ca.Local
+	challenges *scep.OneTimeChallenges
+	apns       *pushtest.Server
+	notifier   *push.Notifier
+
 	mu     sync.Mutex
 	events []event.Event
 }
 
 func newHarness(t *testing.T, cfg service.Config) *harness {
 	t.Helper()
-	ca, err := testpki.NewCA("go-apple-mdm test CA")
+	testCA, err := testpki.NewCA("go-apple-mdm test CA")
 	if err != nil {
 		t.Fatal(err)
 	}
-	h := &harness{t: t, ca: ca, store: inmem.New(), clock: clock.NewFake(t0)}
+	h := &harness{t: t, ca: testCA, store: inmem.New(), clock: clock.NewFake(t0)}
 	bus := event.New()
 	bus.Subscribe(event.All, func(_ context.Context, e event.Event) error {
 		h.mu.Lock()
@@ -59,14 +87,116 @@ func newHarness(t *testing.T, cfg service.Config) *harness {
 	if err != nil {
 		t.Fatal(err)
 	}
+	quiet := slog.New(slog.NewTextHandler(io.Discard, nil))
+
+	// SCEP CA: identities it issues are trusted for Mdm-Signature alongside
+	// the pre-issued test CA.
+	scepCert, scepKey, err := ca.NewSelfSigned(ca.SelfSignedOptions{Subject: pkix.Name{CommonName: "go-apple-mdm SCEP CA"}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	h.scepCA = scepCert
+	h.scepSigner, err = ca.NewLocal(scepCert, scepKey, ca.WithDepot(ca.NewMemoryDepot()))
+	if err != nil {
+		t.Fatal(err)
+	}
+	h.challenges = scep.NewOneTimeChallenges(time.Hour, h.clock)
+	scepServer, err := scep.NewServer(h.scepSigner, scepCert, scepKey, scep.WithChallenge(h.challenges), scep.WithLogger(quiet))
+	if err != nil {
+		t.Fatal(err)
+	}
+	roots := testCA.Pool()
+	roots.AddCert(scepCert)
+
 	api := httpapi.Handler(httpapi.Config{Checkin: h.core, Connect: h.core, Now: h.clock.Now})
-	verify := cms.VerifyOptions{Roots: ca.Pool(), ClockSkew: 5 * time.Minute, Now: time.Now}
+	verify := cms.VerifyOptions{Roots: roots, ClockSkew: 5 * time.Minute, Now: time.Now}
 	mux := http.NewServeMux()
 	mux.Handle("/mdm", httpapi.CertFromMdmSignature(verify, 0)(api))
-	h.server = httptest.NewServer(mux)
+	mux.Handle("/scep", scepServer.Handler())
+	mux.Handle("/ota", h.otaService(quiet).Handler())
+	// Apple requires https in enrollment profiles, so the harness serves TLS.
+	h.server = httptest.NewTLSServer(mux)
 	t.Cleanup(h.server.Close)
+
+	// Fake APNs behind the real client.
+	h.apns = pushtest.NewServer()
+	t.Cleanup(h.apns.Close)
+	pushID, err := testCA.Issue(pushTopic, time.Now().Add(-time.Minute))
+	if err != nil {
+		t.Fatal(err)
+	}
+	store := push.StaticCertStore{pushTopic: tls.Certificate{Certificate: [][]byte{pushID.Cert.Raw}, PrivateKey: pushID.Key, Leaf: pushID.Cert}}
+	client := apns.New(store, apns.WithHost(h.apns.URL), apns.WithTransport(func(tls.Certificate) *http.Client { return h.apns.Client() }))
+	h.notifier = &push.Notifier{Store: h.store, Pusher: client, Bus: bus, Clock: h.clock}
 	return h
 }
+
+// enrollmentProfile builds the unsigned MDM enrollment profile a device
+// would receive, with a one-time SCEP challenge.
+func (h *harness) enrollmentProfile(udid string) []byte {
+	h.t.Helper()
+	challenge, err := h.challenges.Issue(context.Background())
+	if err != nil {
+		h.t.Fatal(err)
+	}
+	data, err := enroll.Profile{
+		Identifier: "com.example.e2e", DisplayName: "go-apple-mdm e2e", Organization: "go-apple-mdm",
+		Topic: pushTopic, ServerURL: h.server.URL + "/mdm", CheckInURL: h.server.URL + "/mdm",
+		SCEP:               &enroll.SCEP{URL: h.server.URL + "/scep", Challenge: challenge, Subject: pkix.Name{CommonName: udid, Organization: []string{"go-apple-mdm"}}},
+		Roots:              []*x509.Certificate{h.scepCA},
+		ServerCapabilities: []string{enroll.CapabilityBootstrapToken, enroll.CapabilityToken},
+	}.Marshal()
+	if err != nil {
+		h.t.Fatal(err)
+	}
+	return data
+}
+
+// otaService wires the Profile Service endpoint: the test CA plays the
+// Apple iPhone Device CA for phase 1; phase 2 must be signed by the SCEP
+// identity issued for the same UDID.
+func (h *harness) otaService(logger *slog.Logger) *enroll.OTAService {
+	identityRoots := x509.NewCertPool()
+	identityRoots.AddCert(h.scepCA)
+	return &enroll.OTAService{
+		DeviceRoots: h.ca.Pool(), IdentityRoots: identityRoots, Logger: logger,
+		Authorize: func(_ context.Context, r *enroll.OTARequest) error {
+			switch r.Phase {
+			case enroll.PhaseDevice:
+				if r.Attributes.Challenge != otaChallenge {
+					return errors.New("bad OTA challenge")
+				}
+			case enroll.PhaseIdentity:
+				if r.Signer.Subject.CommonName != r.Attributes.UDID {
+					return errors.New("phase 2 identity does not match the UDID")
+				}
+			}
+			return nil
+		},
+		Profile: func(ctx context.Context, r *enroll.OTARequest) ([]byte, error) {
+			if r.Phase == enroll.PhaseIdentity {
+				return h.enrollmentProfile(r.Attributes.UDID), nil
+			}
+			challenge, err := h.challenges.Issue(ctx)
+			if err != nil {
+				return nil, err
+			}
+			p := &enroll.Profile{
+				Identifier: "com.example.e2e.ota", Topic: pushTopic, ServerURL: h.server.URL + "/mdm",
+				SCEP: &enroll.SCEP{URL: h.server.URL + "/scep", Challenge: challenge, Subject: pkix.Name{CommonName: r.Attributes.UDID}},
+			}
+			built, err := p.Build()
+			if err != nil {
+				return nil, err
+			}
+			// Phase 1 delivers only the identity payload.
+			built.Payloads = built.Payloads[:1]
+			return built.Marshal()
+		},
+	}
+}
+
+var _ = rsa.GenerateKey
 
 // device creates a simulated device with a freshly issued identity.
 func (h *harness) device(udid string) *simulator.Device {

@@ -34,3 +34,8 @@ With the code:
 | [0004](0004-checkin-and-command-core.md) | Check-in and command protocol core | accepted | 2 |
 | [0005](0005-storage-interfaces.md) | Storage interfaces, in-memory backend, contract suite | accepted | 2 |
 | [0006](0006-mdm-signature-verification.md) | Mdm-Signature verification and identity pinning | accepted | 2 |
+| [0007](0007-apns-push.md) | APNs push client, notifier, and coalescing | accepted | 3 |
+| [0008](0008-scep-and-ca.md) | Certificate authority abstraction and SCEP endpoint | accepted | 3 |
+| [0009](0009-enrollment-profiles.md) | Configuration profiles and the enrollment profile builder | accepted | 3 |
+| [0010](0010-ota-profile-service.md) | Over-the-air profile service (two-phase enrollment) | accepted | 3 |
+| [0011](0011-secrets-provider.md) | Secrets provider and redaction | accepted | 3 |

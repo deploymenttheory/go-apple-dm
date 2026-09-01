@@ -4,7 +4,7 @@ Each scenario is a named test under `e2e/` that wires the reference server, the 
 simulator, the fake APNs server, and a storage backend. Every scenario maps to at least one
 Apple documentation page. Scenarios are added by the phase that delivers the capability.
 
-Run with `make test-e2e` (build tag `e2e`). Status: E2E-001 to E2E-005 implemented in `e2e/mdm_test.go`.
+Run with `make test-e2e` (build tag `e2e`). Status: E2E-001 to E2E-005 implemented in `e2e/mdm_test.go`; E2E-006, E2E-007, and E2E-016 in `e2e/enroll_test.go`.
 
 | ID | Scenario | Apple source | Phase | Test |
 |---|---|---|---|---|
@@ -23,3 +23,4 @@ Run with `make test-e2e` (build tag `e2e`). Status: E2E-001 to E2E-005 implement
 | E2E-013 | User channel command on a macOS user enrollment | Check-in (UserAuthenticate) | 6 | `TestE2E_UserChannel` |
 | E2E-014 | ACME enrollment with simulated attestation; bad chain rejected | Validating a Managed Device Attestation | 7 | `TestE2E_ACMEAttest` |
 | E2E-015 | Reference server readiness fails when storage is down, recovers | Deployment guide | 8 | `TestE2E_Readiness` |
+| E2E-016 | OTA profile service: phase 1 signed by the device certificate with the challenge, SCEP, phase 2 signed by the new identity, final profile enrolls | Over-the-Air Profile Delivery and Configuration | 3 | `TestE2E_OTAProfileService` |

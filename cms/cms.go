@@ -68,6 +68,11 @@ func (o VerifyOptions) now() time.Time {
 // Sign produces a detached, DER-encoded CMS SignedData over content with
 // SHA-256, signed by key and carrying cert.
 func Sign(content []byte, cert *x509.Certificate, key crypto.Signer) ([]byte, error) {
+	return signedData(content, cert, key, true)
+}
+
+// signedData builds the SignedData for Sign (detached) and SignAttached.
+func signedData(content []byte, cert *x509.Certificate, key crypto.Signer, detached bool) ([]byte, error) {
 	if cert == nil || key == nil {
 		return nil, fmt.Errorf("%w: nil certificate or key", ErrSign)
 	}
@@ -87,7 +92,9 @@ func Sign(content []byte, cert *x509.Certificate, key crypto.Signer) ([]byte, er
 	if err := sd.AddSigner(cert, key, pkcs7.SignerInfoConfig{}); err != nil {
 		return nil, fmt.Errorf("%w: %w", ErrSign, err)
 	}
-	sd.Detach()
+	if detached {
+		sd.Detach()
+	}
 	der, err := sd.Finish()
 	if err != nil {
 		return nil, fmt.Errorf("%w: %w", ErrSign, err)
