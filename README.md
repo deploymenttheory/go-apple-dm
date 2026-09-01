@@ -3,7 +3,7 @@
 A pure Go library for the Apple Mobile Device Management (MDM) protocol and Declarative Device
 Management (DDM), with a thin reference server.
 
-Status: pre-release, phase 0 of the [implementation plan](docs/research/implementation_plan.md).
+Status: pre-release, following the [implementation plan](docs/research/implementation_plan.md).
 No API stability promise until v1.0.0.
 
 ## What it will provide
@@ -20,6 +20,13 @@ No API stability promise until v1.0.0.
 |---|---|
 | `schema/` | Generated types from `third_party/device-management` (never hand-edited) |
 | `internal/schemagen`, `cmd/admgen` | The generator |
+| `mdm/` | Protocol core: enrollment identity, check-in decoding, command and response envelopes |
+| `cms/` | Detached CMS signing and `Mdm-Signature` verification with signing-time tolerance |
+| `service/` | Enrollment lifecycle, identity pinning, command delivery, hooks, events |
+| `storage/` | Storage interfaces, in-memory backend, and the contract suite every backend runs |
+| `httpapi/` | Check-in and server URL handlers plus certificate extraction middlewares |
+| `simulator/` | Device simulator for testing servers without hardware |
+| `e2e/` | End-to-end scenarios (`make test-e2e`) |
 | `docs/research/` | Reference research, the plan of record, and per-feature decision records |
 | `docs/security/threat-model.md` | STRIDE threat model, updated every phase |
 | `docs/testing/e2e-scenarios.md` | Named end-to-end scenarios mapped to Apple documentation |

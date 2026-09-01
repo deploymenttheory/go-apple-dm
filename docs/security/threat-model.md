@@ -24,10 +24,10 @@ Method: STRIDE per endpoint. Each row names the control and the test or review t
 
 | Endpoint | Threat | Control | Proof |
 |---|---|---|---|
-| `/checkin`, `/connect` | Spoofing an enrollment | `Mdm-Signature` CMS verification chained to the enrollment CA, or mTLS; identity hash pinned per enrollment; rotation only on `Authenticate` for the same UDID with a chained cert | `TestMdmSignatureRejectsUnpinned`, `TestCertRotationPolicy` (phase 2) |
-| `/checkin`, `/connect` | Tampering with message bodies | Signature covers the body; size and depth limits before decode | `TestBodyLimits`, fuzz targets (phase 2) |
-| `/checkin` | Replay of `Authenticate` to reset state | Re-enrollment policy hook; transactional cleanup with audit event | `TestReenrollPolicy` (phase 2) |
-| `/checkin` | Signing time skew rejected or accepted too loosely | Configurable clock skew, default 5 minutes | `TestVerifyClockSkew` (phase 2) |
+| `/checkin`, `/connect` | Spoofing an enrollment | `Mdm-Signature` CMS verification chained to the enrollment CA (`httpapi.CertFromMdmSignature`), or mTLS/proxy header; identity fingerprint pinned per enrollment; rotation only on `Authenticate` with a chained cert, published as `CertRotated` | `service.TestPinningAndReenroll`, `service.TestAuthorizeGuardsEveryMessage`, `e2e.TestE2E_Reenroll` |
+| `/checkin`, `/connect` | Tampering with message bodies | Signature covers the body; size and depth limits before decode | `httpapi.TestCertMiddlewares` (tampered body), `httpapi.TestCheckinAndConnectHandlers` (oversized), `plist.FuzzUnmarshal`, `mdm.FuzzDecodeCheckin`, `mdm.FuzzDecodeResponse`, `cms.FuzzVerify` |
+| `/checkin` | Replay of `Authenticate` to reset state | Re-enrollment policy (`AllowReenroll`/`DenyReenroll`/custom); transactional cleanup of queue, tokens, and pin | `service.TestDenyReenrollAndPinModes`, `storagetest.RunEnrollmentSuite/ReenrollClearsState` |
+| `/checkin` | Signing time skew rejected or accepted too loosely | Configurable clock skew in `cms.VerifyOptions`, tolerant path re-verifies digest and signature | `cms.TestVerifySigningTimeSkew`, `cms.TestTolerantErrorBranches` |
 | DDM `/declaration/*` | Information disclosure of another enrollment's declarations | Enrollment resolved from the verified identity, never from a body field | `TestDeclarationScopedToEnrollment` (phase 5) |
 | DDM proxy | Spoofed proxy calls | HMAC-SHA256 over body and timestamp, constant-time compare, replay window with nonce store | `TestProxyHMACReplay` (phase 5) |
 | `/status` (DDM) | Denial of service via oversized or deeply nested reports | Body limits, depth limits, streaming parse | `FuzzStatusReportDecode` (phase 5) |
@@ -38,10 +38,11 @@ Method: STRIDE per endpoint. Each row names the control and the test or review t
 | Push | Credential exposure | Push key held via `secrets.Provider`, never logged, redacted `String()` | `TestSecretsRedacted` (phase 3), gosec G101 |
 | Admin API | Elevation of privilege | Reference server requires API token; library exposes hooks for authz | `TestAdminAuth` (phase 8) |
 | Storage | Tampering, disclosure | Parameterised SQL only; secrets encrypted at rest through the provider; migrations owned by one package | `sqlcommon` review, gosec G201/G202 |
+| `/checkin`, `/connect` | Unenrolling devices by mistake | Handlers never return 401; Apple's unrecognized-device body only with `httpapi.Config.UnenrollUnknown` | `httpapi.TestServiceErrorMapping` |
 
 ## Repudiation
 
-Every state change emits a typed event with enrollment id, actor (device or admin), and timestamp; the audit hook persists them. Proof: `TestAuditHookRecordsAllEvents` (phase 2).
+Every state change emits a typed event with enrollment id, actor (device or admin), and timestamp on the `event.Bus`; subscribers persist them. Proof: `service.TestEnrollAndCommandFlow` asserts the full event sequence.
 
 ## Out of scope
 
@@ -54,3 +55,4 @@ Every state change emits a typed event with enrollment id, actor (device or admi
 | Date | Phase | Reviewer | Notes |
 |---|---|---|---|
 | 2026-09-01 | 0 | initial | Model created from the plan; controls and proofs are targets until the named tests exist. |
+| 2026-09-01 | 2 | protocol core | Check-in, connect, signature verification, pinning, and re-enrollment controls implemented; proofs point at real tests. |

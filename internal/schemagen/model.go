@@ -336,7 +336,7 @@ func Load(root string) (*Tree, error) {
 		}
 		data, readErr := r.ReadFile(filepath.FromSlash(rel))
 		if readErr != nil {
-			return readErr
+			return fmt.Errorf("%s: %w", rel, readErr)
 		}
 		s, parseErr := Parse(data)
 		if parseErr != nil {
@@ -353,7 +353,10 @@ func Load(root string) (*Tree, error) {
 	if err != nil {
 		return nil, fmt.Errorf("schemagen: load %s: %w", root, err)
 	}
-	sort.Slice(tree.Schemas, func(i, j int) bool { return tree.Schemas[i].Path < tree.Schemas[j].Path })
+	sort.Slice(
+		tree.Schemas,
+		func(i, j int) bool { return tree.Schemas[i].Path < tree.Schemas[j].Path },
+	)
 	return tree, nil
 }
 

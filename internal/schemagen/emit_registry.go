@@ -85,7 +85,15 @@ func (e *emitter) registryFile() []byte {
 				// are Apple wire identifiers, not secrets.
 				nosec = " // #nosec G101 -- Apple wire identifier, not a credential"
 			}
-			fmt.Fprintf(b, "\t// %s: %s\n\t%s = %s%s\n", c.name, c.doc, c.name, strconv.Quote(c.value), nosec)
+			fmt.Fprintf(
+				b,
+				"\t// %s: %s\n\t%s = %s%s\n",
+				c.name,
+				c.doc,
+				c.name,
+				strconv.Quote(c.value),
+				nosec,
+			)
 		}
 		b.WriteString(")\n\n")
 	}
