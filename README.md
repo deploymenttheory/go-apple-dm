@@ -25,6 +25,10 @@ No API stability promise until v1.0.0.
 | `service/` | Enrollment lifecycle, identity pinning, command delivery, hooks, events |
 | `storage/` | Storage interfaces, in-memory backend, and the contract suite every backend runs |
 | `httpapi/` | Check-in and server URL handlers plus certificate extraction middlewares |
+| `push/`, `push/apns` | Pusher interface, notifier with invalid-token events, coalescing, HTTP/2 APNs client, fake APNs server |
+| `ca/`, `scep/` | Certificate authority abstraction and a SCEP endpoint with one-time and HMAC challenges, plus a client |
+| `profile/`, `enroll/` | Configuration profile composition, signing, and parsing; MDM enrollment profile builder; OTA profile service |
+| `secrets/` | Redacting secret type and providers (static, environment, directory, chain) |
 | `simulator/` | Device simulator for testing servers without hardware |
 | `e2e/` | End-to-end scenarios (`make test-e2e`) |
 | `docs/research/` | Reference research, the plan of record, and per-feature decision records |

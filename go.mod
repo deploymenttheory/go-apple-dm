@@ -9,3 +9,5 @@ require (
 )
 
 require github.com/smallstep/pkcs7 v0.2.3
+
+require github.com/smallstep/scep v0.0.0-20260331191114-261f960a40d1
