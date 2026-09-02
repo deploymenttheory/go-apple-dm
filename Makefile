@@ -16,11 +16,13 @@ SCHEMA_DIR := third_party/device-management
 help:
 	@grep -E '^## ' $(MAKEFILE_LIST) | sed 's/^## //' | column -t -s ':'
 
-## tools: install developer tools pinned by go.mod tool directives or @latest
+## tools: install developer tools, built with the Go version go.mod declares so they can load this module
+GO_VERSION := $(shell sed -n 's/^go \(.*\)$$/\1/p' go.mod)
 tools:
-	$(GO) install gotest.tools/gotestsum@latest
-	$(GO) install mvdan.cc/gofumpt@latest
-	$(GO) install golang.org/x/vuln/cmd/govulncheck@latest
+	GOTOOLCHAIN=go$(GO_VERSION) $(GO) install gotest.tools/gotestsum@latest
+	GOTOOLCHAIN=go$(GO_VERSION) $(GO) install mvdan.cc/gofumpt@latest
+	GOTOOLCHAIN=go$(GO_VERSION) $(GO) install golang.org/x/vuln/cmd/govulncheck@latest
+	GOTOOLCHAIN=go$(GO_VERSION) $(GO) install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@latest
 
 ## submodule: initialise the pinned Apple schema submodule
 submodule:

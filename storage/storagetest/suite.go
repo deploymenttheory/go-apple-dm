@@ -747,9 +747,7 @@ func RunConcurrencySuite(t *testing.T, newStore Factory) {
 		enroll(t, s, id, 1)
 		var wg sync.WaitGroup
 		for i := range 20 {
-			wg.Add(1)
-			go func() {
-				defer wg.Done()
+			wg.Go(func() {
 				c := cmd(t, fmt.Sprintf("P%02d", i))
 				if _, err := s.Enqueue(ctx, []mdm.EnrollmentID{id}, c, storage.EnqueueOptions{Now: t0}); err != nil {
 					t.Error(err)
@@ -760,7 +758,7 @@ func RunConcurrencySuite(t *testing.T, newStore Factory) {
 				if err := s.TouchLastSeen(ctx, id, t0); err != nil {
 					t.Error(err)
 				}
-			}()
+			})
 		}
 		wg.Wait()
 		acked := 0
@@ -794,11 +792,9 @@ func RunConcurrencySuite(t *testing.T, newStore Factory) {
 		errs := make([]error, n+1)
 		var wg sync.WaitGroup
 		for i := 1; i <= n; i++ {
-			wg.Add(1)
-			go func() {
-				defer wg.Done()
+			wg.Go(func() {
 				errs[i] = s.AssociateCert(ctx, device(i), "shared-hash", t0)
-			}()
+			})
 		}
 		wg.Wait()
 		winners := 0

@@ -15,9 +15,9 @@ import (
 	"fmt"
 	"maps"
 	"strings"
+	"uuid"
 
 	"github.com/deploymenttheory/go-apple-mdm/cms"
-	"github.com/deploymenttheory/go-apple-mdm/internal/uuid"
 	"github.com/deploymenttheory/go-apple-mdm/plist"
 	"github.com/deploymenttheory/go-apple-mdm/schema/profiles"
 	"github.com/deploymenttheory/go-apple-mdm/schema/support"

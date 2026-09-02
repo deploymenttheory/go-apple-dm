@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"io/fs"
+	"maps"
 	"os"
 	"path/filepath"
 	"sort"
@@ -120,9 +121,7 @@ var ErrVerify = errors.New("schemagen: verify failed")
 
 func cloneFiles(f Files) Files {
 	out := make(Files, len(f))
-	for k, v := range f {
-		out[k] = v
-	}
+	maps.Copy(out, f)
 	return out
 }
 
@@ -135,7 +134,7 @@ func mergeLock(
 	allowed map[string]bool,
 ) (merged []byte, stale []string) {
 	gen := map[string]bool{}
-	for _, n := range strings.Split(strings.TrimSpace(string(generated)), "\n") {
+	for n := range strings.SplitSeq(strings.TrimSpace(string(generated)), "\n") {
 		if n != "" {
 			gen[n] = true
 		}
@@ -144,7 +143,7 @@ func mergeLock(
 	for n := range gen {
 		all[n] = true
 	}
-	for _, n := range strings.Split(strings.TrimSpace(string(existing)), "\n") {
+	for n := range strings.SplitSeq(strings.TrimSpace(string(existing)), "\n") {
 		if n == "" || gen[n] {
 			continue
 		}
@@ -212,7 +211,7 @@ func renames(outDir string) map[string]bool {
 	if err != nil {
 		return out
 	}
-	for _, line := range strings.Split(string(data), "\n") {
+	for line := range strings.SplitSeq(string(data), "\n") {
 		line = strings.TrimSpace(line)
 		if !strings.HasPrefix(line, "- `") {
 			continue

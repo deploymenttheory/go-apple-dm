@@ -138,8 +138,8 @@ func (c *Client) Enroll(ctx context.Context, key crypto.Signer, o EnrollOptions)
 		}
 	}
 	csrDER, err := x509util.CreateCertificateRequest(rand.Reader, &x509util.CertificateRequest{
-		CertificateRequest: x509.CertificateRequest{Subject: o.Subject, SignatureAlgorithm: signatureAlgorithm(key)},
-		ChallengePassword:  o.Challenge,
+		Subject: o.Subject, SignatureAlgorithm: signatureAlgorithm(key),
+		ChallengePassword: o.Challenge,
 	}, key)
 	if err != nil {
 		return nil, fmt.Errorf("%w: create CSR: %w", ErrClient, err)

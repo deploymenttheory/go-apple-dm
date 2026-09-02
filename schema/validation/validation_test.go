@@ -10,7 +10,8 @@ import (
 	"github.com/deploymenttheory/go-apple-mdm/schema/validation"
 )
 
-func f(v float64) *float64 { return &v }
+//go:fix inline
+func f(v float64) *float64 { return new(v) }
 
 func TestCollectorRules(t *testing.T) {
 	t.Parallel()

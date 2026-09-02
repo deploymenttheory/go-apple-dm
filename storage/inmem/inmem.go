@@ -6,6 +6,7 @@ package inmem
 import (
 	"context"
 	"fmt"
+	"slices"
 	"sort"
 	"strconv"
 	"sync"
@@ -343,8 +344,8 @@ func (s *Store) Commands(_ context.Context, id mdm.EnrollmentID, q storage.Comma
 		return storage.Result[storage.QueuedCommand]{}, err
 	}
 	var matches []storage.QueuedCommand
-	for i := len(r.queue) - 1; i >= 0; i-- {
-		c := r.queue[i]
+	for _, c := range slices.Backward(r.queue) {
+
 		if q.RequestType != "" && c.Command.RequestType != q.RequestType {
 			continue
 		}
@@ -378,12 +379,7 @@ func (s *Store) Commands(_ context.Context, id mdm.EnrollmentID, q storage.Comma
 }
 
 func containsState(states []storage.State, s storage.State) bool {
-	for _, x := range states {
-		if x == s {
-			return true
-		}
-	}
-	return false
+	return slices.Contains(states, s)
 }
 
 // Clear implements storage.CommandQueue.

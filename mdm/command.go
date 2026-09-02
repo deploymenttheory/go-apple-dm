@@ -2,8 +2,9 @@ package mdm
 
 import (
 	"fmt"
+	"strings"
+	"uuid"
 
-	"github.com/deploymenttheory/go-apple-mdm/internal/uuid"
 	"github.com/deploymenttheory/go-apple-mdm/plist"
 	"github.com/deploymenttheory/go-apple-mdm/schema/commands"
 )
@@ -45,7 +46,8 @@ func NewCommand(payload commands.Command, opts ...CommandOption) (*Command, erro
 		o(c)
 	}
 	if c.UUID == "" {
-		c.UUID = uuid.NewV7().String()
+		// Apple renders CommandUUID values in upper case in its documentation.
+		c.UUID = strings.ToUpper(uuid.NewV7().String())
 	}
 	body, err := plist.Marshal(payload)
 	if err != nil {

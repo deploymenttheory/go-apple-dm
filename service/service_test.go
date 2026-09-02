@@ -5,6 +5,7 @@ import (
 	"crypto/x509"
 	"errors"
 	"fmt"
+	"maps"
 	"strings"
 	"testing"
 	"time"
@@ -87,18 +88,14 @@ func authenticate(t *testing.T, udid string) *mdm.Checkin {
 func tokenUpdate(t *testing.T, udid string, extra map[string]any) *mdm.Checkin {
 	t.Helper()
 	f := map[string]any{"MessageType": "TokenUpdate", "Topic": "com.apple.mgmt.t", "UDID": udid, "PushMagic": "magic", "Token": []byte{1, 2, 3}, "UserLongName": ""}
-	for k, v := range extra {
-		f[k] = v
-	}
+	maps.Copy(f, extra)
 	return checkinPlist(t, f)
 }
 
 func simple(t *testing.T, msgType, udid string, extra map[string]any) *mdm.Checkin {
 	t.Helper()
 	f := map[string]any{"MessageType": msgType, "UDID": udid}
-	for k, v := range extra {
-		f[k] = v
-	}
+	maps.Copy(f, extra)
 	return checkinPlist(t, f)
 }
 

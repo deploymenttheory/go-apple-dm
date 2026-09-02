@@ -90,7 +90,7 @@ dep/                    Legacy DEP web service client (OAuth 1.0a, session, curs
 axm/                    ABM/ASM OAuth 2 API client (ES256 JWT), interfaces + fake
 simulator/              Public device simulator: MDM v1 + DDM client, fault injection
 secrets/                Provider interface (env, file, test); redacting String()
-internal/clock, internal/canonjson (RFC 8785), internal/uuid (v7), internal/app (server wiring, testable)
+internal/clock, internal/canonjson (RFC 8785), internal/app (server wiring, testable); UUIDv7 from the standard `uuid` package (Go 1.27)
 cmd/mdmserver           Reference server, wiring only (<100 lines)
 cmd/mdmctl              Admin CLI over the reference server API
 third_party/device-management   Git submodule pinned by commit; PROVENANCE.json records commit, sha256, date

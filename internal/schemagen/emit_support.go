@@ -2,6 +2,7 @@ package schemagen
 
 import (
 	"fmt"
+	"maps"
 	"sort"
 	"strconv"
 	"strings"
@@ -187,9 +188,7 @@ func (e *emitter) supportFile() []byte {
 			fmt.Fprintf(b, "\t// ERROR: %v\n\t%q: nil,\n", err, st.Name)
 			continue
 		}
-		for k, v := range table {
-			all[k] = v
-		}
+		maps.Copy(all, table)
 	}
 	keys := make([]string, 0, len(all))
 	for k := range all {
@@ -205,7 +204,7 @@ func (e *emitter) supportFile() []byte {
 		"// supportTable is the effective supportedOS data for every schema and key.\nvar supportTable = map[string]*support.Entry{}\n\n",
 	)
 	b.WriteString("func init() {\n\tfor _, part := range []func(map[string]*support.Entry){\n")
-	for i := 0; i < parts; i++ {
+	for i := range parts {
 		fmt.Fprintf(b, "\t\tsupportPart%d,\n", i)
 	}
 	fmt.Fprintf(
@@ -213,12 +212,9 @@ func (e *emitter) supportFile() []byte {
 		"\t} {\n\t\tpart(supportTable)\n\t}\n\tsupport.Register(%q, supportTable)\n}\n\n",
 		e.pkg.Name,
 	)
-	for i := 0; i < parts; i++ {
+	for i := range parts {
 		fmt.Fprintf(b, "func supportPart%d(t map[string]*support.Entry) {\n", i)
-		end := (i + 1) * chunk
-		if end > len(keys) {
-			end = len(keys)
-		}
+		end := min((i+1)*chunk, len(keys))
 		for _, k := range keys[i*chunk : end] {
 			fmt.Fprintf(b, "\tt[%s] = &support.Entry%s\n", strconv.Quote(k), entryLiteral(all[k]))
 		}

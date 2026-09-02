@@ -45,3 +45,4 @@ With the code:
 | [0015](0015-push-cert-store.md) | Push certificate store | accepted | 4 |
 | [0016](0016-user-authenticate-state.md) | UserAuthenticate challenge and token state | accepted (HA1 verifier unverified against a real macOS client) | 4 |
 | [0017](0017-enrollment-export-import.md) | Enrollment export and import | accepted | 4 |
+| [0018](0018-go-1.27-baseline.md) | Go 1.27 baseline and JSON policy | accepted | 5 |
