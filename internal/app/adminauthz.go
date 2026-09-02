@@ -1,7 +1,6 @@
 package app
 
 import (
-	"context"
 	"crypto/subtle"
 	"errors"
 	"fmt"
@@ -124,15 +123,6 @@ func (r adminRoute) RoutePattern() string { return r.Pattern }
 func (r adminRoute) RouteAction() string  { return r.Action }
 func (r adminRoute) RouteFamily() string  { return r.Family }
 
-// principalKey carries the authenticated principal to a handler.
-type principalKey struct{}
-
-// principalFrom returns the principal a handler is running for.
-func principalFrom(ctx context.Context) adminauth.Principal {
-	p, _ := ctx.Value(principalKey{}).(adminauth.Principal)
-	return p
-}
-
 // staticPrincipal is who the configured single token authenticates as. It
 // bypasses policy by design: MDM_ADMIN_TOKEN is the documented development
 // opt-out, and a deployment that wants least privilege configures principals.
@@ -157,9 +147,8 @@ func (a *App) authorized(rt adminRoute) http.Handler {
 				return
 			}
 		}
-		ctx := context.WithValue(r.Context(), principalKey{}, p)
 		a.auditAction(r, p, rt)
-		rt.Handler.ServeHTTP(w, r.WithContext(ctx))
+		rt.Handler.ServeHTTP(w, r)
 	})
 }
 
@@ -186,10 +175,11 @@ func (a *App) principal(r *http.Request) (adminauth.Principal, bool, error) {
 
 // checkPolicy evaluates one route's action for the principal.
 func (a *App) checkPolicy(r *http.Request, p adminauth.Principal, rt adminRoute) error {
-	// Principal and policy administration is gated by Root in Go, outside the
-	// policy system, because a policy that can edit policies can grant itself
-	// anything (decision record 0034).
-	if rt.Action == ActionManagePrincipals || rt.Action == ActionManagePolicies {
+	// Policy administration is gated by Root in Go, outside the policy system,
+	// because a policy that can edit policies can grant itself anything.
+	// Credential administration is an ordinary action a policy may grant; the
+	// escalation guard in adminauth bounds what it can hand out (record 0034).
+	if rt.Action == ActionManagePolicies {
 		if !p.Root {
 			return fmt.Errorf("%w: %s is not a root principal", adminauth.ErrDenied, p.Name)
 		}

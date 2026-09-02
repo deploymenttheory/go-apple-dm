@@ -15,11 +15,12 @@ import (
 // Manager authenticates admin callers, answers authorization decisions from
 // the stored Cedar policies, and administers principals and policies.
 //
-// Two capabilities sit outside Cedar on purpose. Principal and policy
-// administration is gated by Principal.Root, because a policy that can edit
-// policies can grant itself anything, so it cannot be the thing that bounds
-// itself. And the last root principal cannot be removed, demoted, or revoked,
-// so an operator cannot lock themselves out.
+// Two things sit outside Cedar on purpose. Policy administration is gated by
+// Principal.Root, because a policy that can edit policies can grant itself
+// anything, so it cannot be the thing that bounds itself. And the last root
+// principal cannot be removed, demoted, or revoked, so an operator cannot
+// lock themselves out. Credential administration is an ordinary action a
+// policy may grant, bounded by Covers.
 type Manager struct {
 	store Store
 	reg   *Registry
@@ -125,12 +126,11 @@ func (m *Manager) policySet(ctx context.Context) (*PolicySet, error) {
 
 // CreatePrincipal adds a principal and mints its first token.
 //
-// actor must be root and must already hold every role it grants, so a
-// credential can never mint one more privileged than itself.
+// actor must already hold every role it grants, so a credential can never
+// mint one more privileged than itself. Whether the caller may administer
+// principals at all is the ActionManagePrincipals decision, made by the
+// caller before it gets here.
 func (m *Manager) CreatePrincipal(ctx context.Context, actor Principal, p Principal, expires time.Time) (Principal, Token, error) {
-	if err := m.canAdminister(actor); err != nil {
-		return Principal{}, "", err
-	}
 	if !ValidName(p.Name) {
 		return Principal{}, "", fmt.Errorf("%w: principal name %q", ErrInvalid, p.Name)
 	}
@@ -268,9 +268,14 @@ func (m *Manager) DeletePolicy(ctx context.Context, actor Principal, name string
 	return m.store.DeletePolicy(ctx, name)
 }
 
-// canAdminister gates principal and policy administration on Root rather than
-// on a policy, because a principal that can edit policies can grant itself
-// anything.
+// canAdminister gates *policy* administration on Root rather than on a
+// policy, because a principal that can edit policies can grant itself
+// anything, so the capability cannot be the thing the policies bound.
+//
+// Credential administration is deliberately not gated here: it is a normal
+// action a policy may grant, bounded by Covers so a caller can never issue a
+// credential more privileged than its own. Zentral draws the line in the same
+// place.
 func (m *Manager) canAdminister(actor Principal) error {
 	if !actor.Root {
 		return fmt.Errorf("%w: %s is not a root principal", ErrDenied, actor.Name)
@@ -285,9 +290,6 @@ func (m *Manager) canAdminister(actor Principal) error {
 // directly by a policy. A principal a policy names by name no longer derives
 // its authority from its roles, so the role subset test would not bound it.
 func (m *Manager) mayIssueFor(ctx context.Context, actor Principal, name string) (Principal, error) {
-	if err := m.canAdminister(actor); err != nil {
-		return Principal{}, err
-	}
 	target, err := m.store.Principal(ctx, name)
 	if err != nil {
 		return Principal{}, err

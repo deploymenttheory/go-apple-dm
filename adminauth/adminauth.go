@@ -119,11 +119,20 @@ func (p Principal) Entity() types.Entity {
 	return types.Entity{UID: p.UID(), Parents: types.NewEntityUIDSet(parents...)}
 }
 
-// Covers reports whether p holds every role other does, and is root if other
-// is. It is the subset test that stops a principal issuing a credential more
-// privileged than its own, ported from Zentral's can_issue_credentials_for.
+// Covers reports whether p may issue a credential for other: it must hold
+// every role other does, and be root if other is. This is the subset test
+// that stops a principal issuing a credential more privileged than its own,
+// ported from Zentral's can_issue_credentials_for.
+//
+// A root principal covers everything, as Zentral's superuser does. Requiring
+// root to hold every role it grants would make the first grant of a new role
+// impossible, since a role exists only by being named on a principal or in a
+// policy.
 func (p Principal) Covers(other Principal) bool {
-	if other.Root && !p.Root {
+	if p.Root {
+		return true
+	}
+	if other.Root {
 		return false
 	}
 	for _, r := range other.Roles {
