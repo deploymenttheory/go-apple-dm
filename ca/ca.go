@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto"
 	"crypto/ecdsa"
+	"crypto/elliptic"
 	"crypto/rand"
 	"crypto/rsa"
 	"crypto/x509"
@@ -14,6 +15,7 @@ import (
 	"math/big"
 	"net"
 	"net/url"
+	"slices"
 	"sync"
 	"time"
 
@@ -42,6 +44,63 @@ type Policy struct {
 	AllowSANs bool
 	// MinRSABits rejects small RSA keys; default 2048.
 	MinRSABits int
+	// Subject replaces the certificate request's subject when set. An ACME
+	// server uses this because Apple's documentation says the server may
+	// override the Subject the profile asked for: the subject is the server's
+	// statement about the device, not the device's claim about itself.
+	Subject *pkix.Name
+	// OtherNames are subjectAltName otherName entries added to the issued
+	// certificate. They come from the server, not from the request, so they
+	// are not subject to AllowSANs.
+	OtherNames []OtherName
+	// AllowedKeys restricts the key types the CA will certify. Empty means
+	// the existing behaviour: any RSA key of at least MinRSABits, and any
+	// ECDSA key.
+	AllowedKeys []KeyKind
+}
+
+// KeyKind names a public key type and size that the CA can be told to
+// accept.
+type KeyKind string
+
+// The key kinds this package can name. A deployment lists the ones it
+// approves in Policy.AllowedKeys so that a device cannot pick a key the
+// deployment has not sanctioned.
+const (
+	KeyRSA2048 KeyKind = "rsa-2048"
+	KeyRSA3072 KeyKind = "rsa-3072"
+	KeyRSA4096 KeyKind = "rsa-4096"
+	KeyECP256  KeyKind = "ec-p256"
+	KeyECP384  KeyKind = "ec-p384"
+	KeyECP521  KeyKind = "ec-p521"
+)
+
+// KindOf reports the KeyKind of a public key, and false for a key this
+// package cannot describe. An RSA key of an unusual size gets no kind
+// rather than an approximate one, so that AllowedKeys admits exactly the
+// sizes it lists.
+func KindOf(pub crypto.PublicKey) (KeyKind, bool) {
+	switch key := pub.(type) {
+	case *rsa.PublicKey:
+		switch key.N.BitLen() {
+		case 2048:
+			return KeyRSA2048, true
+		case 3072:
+			return KeyRSA3072, true
+		case 4096:
+			return KeyRSA4096, true
+		}
+	case *ecdsa.PublicKey:
+		switch key.Curve {
+		case elliptic.P256():
+			return KeyECP256, true
+		case elliptic.P384():
+			return KeyECP384, true
+		case elliptic.P521():
+			return KeyECP521, true
+		}
+	}
+	return "", false
 }
 
 func (p Policy) withDefaults() Policy {
@@ -152,6 +211,12 @@ func (l *Local) Sign(ctx context.Context, csr *x509.CertificateRequest, p Policy
 	default:
 		return nil, fmt.Errorf("%w: unsupported key type %T", ErrPolicy, csr.PublicKey)
 	}
+	if len(p.AllowedKeys) > 0 {
+		kind, known := KindOf(csr.PublicKey)
+		if !known || !slices.Contains(p.AllowedKeys, kind) {
+			return nil, fmt.Errorf("%w: key %q is not among the allowed kinds %v", ErrPolicy, kind, p.AllowedKeys)
+		}
+	}
 	if !p.AllowSANs && (len(csr.DNSNames) > 0 || len(csr.EmailAddresses) > 0 || len(csr.IPAddresses) > 0 || len(csr.URIs) > 0) {
 		return nil, fmt.Errorf("%w: subject alternative names not allowed", ErrPolicy)
 	}
@@ -160,16 +225,40 @@ func (l *Local) Sign(ctx context.Context, csr *x509.CertificateRequest, p Policy
 		return nil, err
 	}
 	now := l.clock.Now()
+	subject := csr.Subject
+	if p.Subject != nil {
+		subject = *p.Subject
+	}
 	tmpl := &x509.Certificate{
 		SerialNumber:          serial,
-		Subject:               csr.Subject,
+		Subject:               subject,
 		NotBefore:             now.Add(-p.Backdate),
 		NotAfter:              now.Add(p.Validity),
 		KeyUsage:              keyUsage,
 		ExtKeyUsage:           p.ExtKeyUsage,
 		BasicConstraintsValid: true,
 	}
-	if p.AllowSANs {
+	switch {
+	case len(p.OtherNames) > 0:
+		// A certificate holds at most one subjectAltName extension and
+		// x509.CreateCertificate cannot encode the otherName form, so every
+		// name has to go into an extension this package builds. The template
+		// fields stay empty or CreateCertificate would refuse the duplicate.
+		names := SANs{OtherNames: p.OtherNames}
+		if p.AllowSANs {
+			names.DNSNames = csr.DNSNames
+			names.EmailAddresses = csr.EmailAddresses
+			names.IPAddresses = csr.IPAddresses
+			names.URIs = csr.URIs
+		}
+		ext, ok, err := SANExtension(names, len(subject.ToRDNSequence()) == 0)
+		if err != nil {
+			return nil, fmt.Errorf("%w: %w", ErrPolicy, err)
+		}
+		if ok {
+			tmpl.ExtraExtensions = append(tmpl.ExtraExtensions, ext)
+		}
+	case p.AllowSANs:
 		tmpl.DNSNames = csr.DNSNames
 		tmpl.EmailAddresses = csr.EmailAddresses
 		tmpl.IPAddresses = append([]net.IP(nil), csr.IPAddresses...)
