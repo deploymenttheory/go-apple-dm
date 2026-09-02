@@ -207,3 +207,80 @@ func TestMoreFailurePaths(t *testing.T) {
 		}
 	})
 }
+
+// TestCancelledTransaction: a context cancelled inside Update fails the
+// statements that follow and the commit, and every failure is reported.
+func TestCancelledTransaction(t *testing.T) {
+	ctx := context.Background()
+	db := openDB(t)
+	s, err := sqlstore.Open(ctx, db, sqlite.Dialect, sqlstore.Options{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	seed(t, s)
+	cctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+	var inside []error
+	err = s.Update(cctx, func(tx dep.Tx) error {
+		cancel()
+		inside = append(inside,
+			tx.DeleteAccount(cctx, "a"),
+			tx.PutDevices(cctx, "a", []dep.Device{{SerialNumber: "S"}}, time.Now()),
+			tx.UpstageKeypair(cctx, "a"),
+			tx.SetAccountState(cctx, "a", dep.AccountState{TokenInvalid: true}),
+			tx.DeleteProfile(cctx, "a", "p"),
+		)
+		return nil
+	})
+	if err == nil {
+		t.Fatal("commit after cancellation succeeded")
+	}
+	for i, e := range inside {
+		if e == nil {
+			t.Errorf("statement %d after cancellation succeeded", i)
+		}
+	}
+	// The raw view fails the same way once the database is gone.
+	if _, err := s.RawSecrets(ctx, "a"); err != nil {
+		t.Fatal(err)
+	}
+	_ = db.Close()
+	if _, err := s.RawSecrets(ctx, "a"); err == nil {
+		t.Fatal("raw view on a closed database succeeded")
+	}
+}
+
+// TestEmptySecretsWithKeyring: empty secrets are stored as NULL, never
+// sealed, and read back empty.
+func TestEmptySecretsWithKeyring(t *testing.T) {
+	ctx := context.Background()
+	key := make([]byte, 32)
+	k, err := crypt.NewKeyring(ctx, crypt.Options{Keys: crypt.Keys{Active: "k1", Strict: true}, Provider: secrets.Static{"k1": key}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	s, err := sqlstore.Open(ctx, openDB(t), sqlite.Dialect, sqlstore.Options{Keyring: k})
+	if err != nil {
+		t.Fatal(err)
+	}
+	now := time.Now()
+	if err := s.PutAccount(ctx, &dep.Account{Name: "e", ConsumerKey: "ck", CreatedAt: now, UpdatedAt: now}); err != nil {
+		t.Fatal(err)
+	}
+	got, err := s.GetAccount(ctx, "e")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got.ConsumerSecret != "" || got.AccessToken != "" || got.AccessSecret != "" || got.HasTokens() {
+		t.Fatalf("empty secrets round-tripped as %+v", got)
+	}
+	raw, err := s.RawSecrets(ctx, "e")
+	if err != nil {
+		t.Fatal(err)
+	}
+	for k, v := range raw {
+		if len(v) != 0 {
+			t.Fatalf("%s stored as %x", k, v)
+		}
+	}
+}

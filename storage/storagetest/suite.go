@@ -233,7 +233,7 @@ func RunEnrollmentSuite(t *testing.T, newStore Factory) {
 	t.Run("ReusedUserIDOnOtherDevice", func(t *testing.T) {
 		s := newStore(t)
 		for _, n := range []int{8, 9} {
-			if err := s.UpsertAuthenticate(ctx, device(n), auth("S"+string(rune('0'+n))), nil, t0); err != nil {
+			if err := s.UpsertAuthenticate(ctx, device(n), auth(fmt.Sprintf("S%d", n)), nil, t0); err != nil {
 				t.Fatal(err)
 			}
 			if err := s.UpsertAuthenticate(ctx, user(n, "shared-uid"), nil, nil, t0); err != nil {
