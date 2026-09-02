@@ -34,7 +34,7 @@ type adeFixture struct {
 	served []ade.Identity
 }
 
-func newADEFixture(t *testing.T) *adeFixture {
+func newADEFixture(t *testing.T, mutate ...func(*ade.Config)) *adeFixture {
 	t.Helper()
 	f := &adeFixture{idp: webauthtest.New(t)}
 	f.harness = newHarnessMounted(t, service.Config{}, newStore(t), newBus(), func(h *harness, mux *http.ServeMux) {
@@ -66,7 +66,7 @@ func newADEFixture(t *testing.T) *adeFixture {
 				},
 			})
 		})
-		f.handler = ade.New(ade.Config{
+		cfg := ade.Config{
 			Parse:  ade.ParseOptions{Anchors: []*x509.Certificate{h.ca.Cert}},
 			Signer: ade.Signer{Cert: signer.Cert, Key: signer.Key},
 			Profile: func(_ context.Context, p *ade.Parsed, id ade.Identity) (*enroll.Profile, error) {
@@ -96,7 +96,11 @@ func newADEFixture(t *testing.T) *adeFixture {
 					http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 				}
 			}),
-		})
+		}
+		for _, m := range mutate {
+			m(&cfg)
+		}
+		f.handler = ade.New(cfg)
 		mux.Handle("/ade", f.handler)
 		mux.HandleFunc("/ade/callback", func(w http.ResponseWriter, r *http.Request) {
 			fl, err := flow()
