@@ -77,6 +77,13 @@ func newBus() *event.Bus { return event.New() }
 // engine) can be wired into cfg.
 func newHarnessWith(t *testing.T, cfg service.Config, store storage.Store, bus *event.Bus) *harness {
 	t.Helper()
+	return newHarnessMounted(t, cfg, store, bus, nil)
+}
+
+// newHarnessMounted also lets a scenario mount extra routes; mount runs
+// before the server starts, so handlers must read h.server.URL lazily.
+func newHarnessMounted(t *testing.T, cfg service.Config, store storage.Store, bus *event.Bus, mount func(h *harness, mux *http.ServeMux)) *harness {
+	t.Helper()
 	testCA, err := testpki.NewCA("go-apple-mdm test CA")
 	if err != nil {
 		t.Fatal(err)
@@ -120,6 +127,9 @@ func newHarnessWith(t *testing.T, cfg service.Config, store storage.Store, bus *
 	mux.Handle("/mdm", httpapi.CertFromMdmSignature(verify, 0)(api))
 	mux.Handle("/scep", scepServer.Handler())
 	mux.Handle("/ota", h.otaService(quiet).Handler())
+	if mount != nil {
+		mount(h, mux)
+	}
 	// Apple requires https in enrollment profiles, so the harness serves TLS.
 	h.server = httptest.NewTLSServer(mux)
 	t.Cleanup(h.server.Close)

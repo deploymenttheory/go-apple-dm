@@ -309,3 +309,24 @@ func Paths(family string) []string {
 	sort.Strings(out)
 	return out
 }
+
+// OSFromProduct maps a device product type (Authenticate's ProductName or
+// MachineInfo's PRODUCT, for example "iPhone17,2", "Mac16,1", "iPad14,1",
+// "AppleTV14,1", "RealityDevice14,1", "Watch7,1") to the OS family Apple's
+// schema keys support on. iPadOS is keyed as iOS in the schema. Unknown
+// prefixes return "".
+func OSFromProduct(product string) OS {
+	switch {
+	case strings.HasPrefix(product, "iPhone"), strings.HasPrefix(product, "iPad"), strings.HasPrefix(product, "iPod"):
+		return IOS
+	case strings.HasPrefix(product, "Mac"), strings.HasPrefix(product, "iMac"), strings.HasPrefix(product, "VirtualMac"):
+		return MacOS
+	case strings.HasPrefix(product, "AppleTV"):
+		return TvOS
+	case strings.HasPrefix(product, "RealityDevice"):
+		return VisionOS
+	case strings.HasPrefix(product, "Watch"):
+		return WatchOS
+	}
+	return ""
+}

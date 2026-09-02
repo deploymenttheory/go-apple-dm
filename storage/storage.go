@@ -39,9 +39,13 @@ type Enrollment struct {
 	Enabled bool
 	Push    mdm.Push
 	Device  DeviceInfo
-	// User names are set on user channels.
-	UserShortName string
-	UserLongName  string
+	// User channel fields from TokenUpdate: names, whether the user is
+	// logged in without console access, and the EnrollmentUserID of a
+	// User Enrollment's user channel (decision record 0029).
+	UserShortName    string
+	UserLongName     string
+	NotOnConsole     bool
+	EnrollmentUserID string
 	// UnlockToken from TokenUpdate (macOS), if the device sent one.
 	UnlockToken []byte
 	// AuthenticateRaw is the last Authenticate plist as received.

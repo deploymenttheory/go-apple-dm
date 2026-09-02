@@ -25,6 +25,10 @@ var (
 	// ErrUserNotManaged is returned by DigestUserAuth.Manage to answer 410
 	// for the current login session.
 	ErrUserNotManaged = errors.New("service: user not managed")
+	// ErrUserAuthRequired is returned (CodeForbidden) for a user channel
+	// TokenUpdate without a completed UserAuthenticate when
+	// Config.RequireUserAuth is set.
+	ErrUserAuthRequired = errors.New("service: UserAuthenticate required before TokenUpdate")
 	// ErrNoChallenge is used internally when the second message arrives
 	// without an outstanding challenge; it surfaces as an empty AuthToken.
 	ErrNoChallenge = errors.New("service: no outstanding challenge")

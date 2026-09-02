@@ -80,9 +80,13 @@ type Device struct {
 
 	CheckinURL string
 	ServerURL  string
-	Client     *http.Client
-	Identity   *Identity
-	Responder  Responder
+	// EnrollmentID, when set, makes this a User Enrollment: check-ins carry
+	// EnrollmentID (and EnrollmentUserID on the user channel) instead of
+	// the UDID (decision record 0028).
+	EnrollmentID string
+	Client       *http.Client
+	Identity     *Identity
+	Responder    Responder
 	// MaxCommandsPerConnect bounds one Connect loop (default 100).
 	MaxCommandsPerConnect int
 
@@ -146,7 +150,20 @@ func (d *Device) Replies() []Reply {
 	return append([]Reply(nil), d.replies...)
 }
 
+// connectIdentity is the identity block of a Connect body.
+func (d *Device) connectIdentity() map[string]any {
+	if d.EnrollmentID != "" {
+		return map[string]any{"EnrollmentID": d.EnrollmentID}
+	}
+	return map[string]any{"UDID": d.UDID}
+}
+
 func (d *Device) checkinFields(messageType string) map[string]any {
+	if d.EnrollmentID != "" {
+		// User Enrollment: the device identifies itself by EnrollmentID and
+		// never sends its UDID.
+		return map[string]any{"MessageType": messageType, "EnrollmentID": d.EnrollmentID}
+	}
 	return map[string]any{"MessageType": messageType, "UDID": d.UDID}
 }
 
@@ -278,7 +295,7 @@ func (d *Device) checkin(ctx context.Context, fields map[string]any) ([]byte, er
 // handed until the server returns an empty body. It returns the commands
 // processed in this connection.
 func (d *Device) Connect(ctx context.Context) ([]*mdm.Command, error) {
-	return d.connectAs(ctx, map[string]any{"UDID": d.UDID}, d.ddmChannel())
+	return d.connectAs(ctx, d.connectIdentity(), d.ddmChannel())
 }
 
 // connectAs runs the command loop for one channel. A DeclarativeManagement
@@ -393,8 +410,23 @@ func (d *Device) User(userID, shortName, longName string) *User {
 	return &User{Device: d, UserID: userID, ShortName: shortName, LongName: longName}
 }
 
+// SharedIPadUser is the user channel of the person logged in to a Shared
+// iPad: Apple sends the sentinel UserID and identifies the user by
+// UserShortName (decision record 0029).
+func (d *Device) SharedIPadUser(shortName, longName string) *User {
+	return d.User(mdm.SharedIPadUserID, shortName, longName)
+}
+
 func (u *User) identity() map[string]any {
-	return map[string]any{"UDID": u.Device.UDID, "UserID": u.UserID}
+	if u.Device.EnrollmentID != "" {
+		return map[string]any{"EnrollmentID": u.Device.EnrollmentID, "EnrollmentUserID": u.UserID}
+	}
+	f := map[string]any{"UDID": u.Device.UDID, "UserID": u.UserID}
+	if u.UserID == mdm.SharedIPadUserID {
+		// Apple identifies the logged-in Shared iPad user by short name.
+		f["UserShortName"] = u.ShortName
+	}
+	return f
 }
 
 // Authenticate sends UserAuthenticate and returns the response body.
@@ -406,6 +438,16 @@ func (u *User) Authenticate(ctx context.Context, digestResponse string) ([]byte,
 }
 
 // TokenUpdate sends the user channel TokenUpdate.
+// CheckOut sends CheckOut on the user channel: the server disables this
+// user only (decision record 0029).
+func (u *User) CheckOut(ctx context.Context) error {
+	f := u.identity()
+	f["MessageType"] = "CheckOut"
+	f["Topic"] = u.Device.Topic
+	_, err := u.Device.checkin(ctx, f)
+	return err
+}
+
 func (u *User) TokenUpdate(ctx context.Context) error {
 	if u.PushMagic == "" {
 		u.PushMagic = "magic-" + u.Device.UDID + "-" + u.UserID

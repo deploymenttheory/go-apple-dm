@@ -212,6 +212,16 @@ func (c *Core) tokenUpdate(ctx context.Context, r *mdm.Request, ck *mdm.Checkin,
 		if err := c.authorize(ctx, r); err != nil {
 			return err
 		}
+		if c.requireUserAuth && r.ID.Channel == mdm.ChannelUser {
+			// The user must have completed UserAuthenticate (0016) first.
+			state, err := c.store.UserAuth(ctx, r.ID)
+			switch {
+			case errors.Is(err, storage.ErrNotFound), err == nil && state.AuthToken == "":
+				return wrapCode(CodeForbidden, fmt.Errorf("%w: %s", ErrUserAuthRequired, r.ID.ID))
+			case err != nil:
+				return wrapCode(CodeInternal, err)
+			}
+		}
 		if _, err := c.store.Get(ctx, r.ID); errors.Is(err, storage.ErrNotFound) {
 			if err := c.store.UpsertAuthenticate(ctx, r.ID, nil, ck.Raw, now); err != nil {
 				return wrapCode(codeForStorage(err), err)
@@ -286,6 +296,10 @@ func (c *Core) handleUserAuthenticate(ctx context.Context, r *mdm.Request, m *ch
 	}
 	resp, err := c.userAuth(ctx, r, m)
 	if err != nil {
+		if errors.Is(err, ErrUserNotManaged) {
+			// The policy declines this user: Apple's 410 (decision record 0029).
+			return nil, wrapCode(CodeGone, err)
+		}
 		return nil, wrapCode(CodeOf(err), err)
 	}
 	return plistResult(resp)

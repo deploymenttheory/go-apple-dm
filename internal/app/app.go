@@ -11,6 +11,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/deploymenttheory/go-apple-mdm/axm"
 	"github.com/deploymenttheory/go-apple-mdm/cms"
 	"github.com/deploymenttheory/go-apple-mdm/ddm"
 	"github.com/deploymenttheory/go-apple-mdm/ddm/adapter/inproc"
@@ -18,6 +19,7 @@ import (
 	"github.com/deploymenttheory/go-apple-mdm/ddm/adapter/proxyserver"
 	ddminmem "github.com/deploymenttheory/go-apple-mdm/ddm/inmem"
 	"github.com/deploymenttheory/go-apple-mdm/ddm/sqlstore"
+	"github.com/deploymenttheory/go-apple-mdm/dep"
 	"github.com/deploymenttheory/go-apple-mdm/event"
 	"github.com/deploymenttheory/go-apple-mdm/httpapi"
 	"github.com/deploymenttheory/go-apple-mdm/internal/clock"
@@ -76,9 +78,18 @@ type Config struct {
 	// Subscriptions enables the synthesised status-subscriptions
 	// declaration (decision record 0021).
 	Subscriptions bool
-	Logger        *slog.Logger
-	Clock         clock.Clock
-	Bus           *event.Bus
+	// Enroll turns the enrollment routes on (SCEP, discovery,
+	// account-driven, ADE).
+	Enroll EnrollConfig
+	// AxM connects Apple Business Manager or Apple School Manager; its
+	// admin routes live under the admin API on the ddm and all roles.
+	AxM AxMConfig
+	// DEP configures the device enrollment service client and worker;
+	// its admin routes live under the admin API too.
+	DEP    DEPConfig
+	Logger *slog.Logger
+	Clock  clock.Clock
+	Bus    *event.Bus
 }
 
 // ErrConfig reports an invalid configuration.
@@ -91,10 +102,16 @@ type App struct {
 	Engine   *ddm.Engine
 	Notifier *ddm.Notifier
 	Store    storage.Store
-	cfg      Config
-	db       *sql.DB
-	dialect  sqlcommon.Dialect
-	closers  []func() error
+	// AxM is the Business Manager client when configured.
+	AxM *axm.Client
+	// DEP is the device enrollment service; nil on the mdm role.
+	DEP     *dep.Client
+	dep     *depService
+	cfg     Config
+	enroll  *enrollment
+	db      *sql.DB
+	dialect sqlcommon.Dialect
+	closers []func() error
 }
 
 // Build validates cfg, opens storage, and wires the role.
@@ -144,7 +161,10 @@ func (c Config) validate() error {
 	if c.DDMURL != "" && c.Role != RoleMDM {
 		return fmt.Errorf("%w: DDM URL is only for the mdm role", ErrConfig)
 	}
-	return nil
+	if err := c.Enroll.validate(); err != nil {
+		return err
+	}
+	return c.AxM.validate()
 }
 
 // roots loads CAFile into CARoots when set.
@@ -283,10 +303,20 @@ func (a *App) wire(ctx context.Context) error {
 				return fmt.Errorf("app: proxyclient: %w", err)
 			}
 		}
+		enrollHooks, err := a.wireEnrollment(mux)
+		if err != nil {
+			return err
+		}
 		core, err := service.New(service.Config{
-			Store: a.Store, Bus: cfg.Bus, Clock: cfg.Clock, Logger: cfg.Logger,
-			Hooks:                 []service.Hook{ddm.NewServiceHook(engine, a.Store, cfg.Logger)},
+			Store:  a.Store,
+			Bus:    cfg.Bus,
+			Clock:  cfg.Clock,
+			Logger: cfg.Logger,
+			Hooks: append(
+				[]service.Hook{ddm.NewServiceHook(engine, a.Store, cfg.Logger)},
+				enrollHooks...),
 			DeclarativeManagement: dm,
+			RequireUserAuth:       cfg.Enroll.RequireUserAuth,
 		})
 		if err != nil {
 			return fmt.Errorf("app: core: %w", err)
@@ -315,7 +345,23 @@ func (a *App) wire(ctx context.Context) error {
 		mux.Handle(PathDDM+"/", http.StripPrefix(PathDDM, ps))
 	}
 	if cfg.Role != RoleMDM && cfg.AdminToken != "" {
-		mux.Handle(PathAdmin, http.StripPrefix(PathAdmin[:len(PathAdmin)-1], a.adminHandler()))
+		admin := http.NewServeMux()
+		admin.Handle("/", a.adminHandler())
+		if cfg.AxM.Enabled() {
+			client, err := a.newAxM(ctx)
+			if err != nil {
+				return err
+			}
+			a.AxM = client
+			admin.Handle("/axm/", a.requireToken(a.axmHandler(client)))
+		}
+		svc, err := a.newDEP(ctx)
+		if err != nil {
+			return err
+		}
+		a.dep, a.DEP = svc, svc.client
+		admin.Handle("/dep/", a.requireToken(svc.handler()))
+		mux.Handle(PathAdmin, http.StripPrefix(PathAdmin[:len(PathAdmin)-1], admin))
 	}
 	a.Handler = mux
 	return nil
@@ -324,11 +370,23 @@ func (a *App) wire(ctx context.Context) error {
 // Run drives the notifier until ctx is cancelled. The HTTP listener is the
 // caller's (cmd/mdmserver, or httptest in tests).
 func (a *App) Run(ctx context.Context) error {
-	err := a.Notifier.Run(ctx)
-	if errors.Is(err, context.Canceled) {
-		return nil
+	errc := make(chan error, 2)
+	go func() { errc <- a.Notifier.Run(ctx) }()
+	if a.dep != nil {
+		go func() { errc <- a.dep.Run(ctx) }()
+	} else {
+		errc <- nil
 	}
-	return fmt.Errorf("app: notifier: %w", err)
+	var first error
+	for range 2 {
+		if err := <-errc; err != nil && !errors.Is(err, context.Canceled) && first == nil {
+			first = err
+		}
+	}
+	if first != nil {
+		return fmt.Errorf("app: worker: %w", first)
+	}
+	return nil
 }
 
 // Close releases storage.
