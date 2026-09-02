@@ -99,6 +99,7 @@ type Device struct {
 	replies  []Reply
 
 	// Declarative management: options and the device channel's client state.
+	acme  ACMEOptions
 	ddm   ddmConfig
 	ddmCh *ddmChannel
 }
@@ -134,6 +135,12 @@ func New(udid string, opts ...Option) *Device {
 		o(d)
 	}
 	return d
+}
+
+// WithACME sets how the device answers an ACME device-attest-01 challenge
+// when it applies a profile whose identity comes from ACME.
+func WithACME(o ACMEOptions) Option {
+	return func(d *Device) { d.acme = o }
 }
 
 // Commands returns every command received so far.
