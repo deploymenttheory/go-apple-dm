@@ -64,6 +64,131 @@ type SCEP struct {
 }
 
 // PKCS12 describes a pre-issued identity.
+// Key types Apple's ACME payload accepts.
+const (
+	// KeyTypeEC is Apple's name for an elliptic curve key on a NIST prime
+	// curve. It is the only type a hardware bound key may have.
+	KeyTypeEC = "ECSECPrimeRandom"
+	// KeyTypeRSA can only be used for a key that is not hardware bound, and
+	// so cannot be attested.
+	KeyTypeRSA = "RSA"
+)
+
+// ACME describes the com.apple.security.acme payload: the device generates
+// a key, obtains a certificate for it from an ACME server, and uses the
+// result as its identity.
+//
+// This is the alternative to SCEP, and the better one where the hardware
+// allows it. A SCEP identity is authenticated by a challenge password that
+// has to be carried in the profile; an attested ACME identity is a key the
+// Secure Enclave generated and that Apple's servers vouch for, so the
+// profile carries a client identifier rather than a secret that issues
+// certificates to whoever holds it.
+type ACME struct {
+	// DirectoryURL is the ACME directory, which must use https.
+	DirectoryURL string
+	// ClientIdentifier is what the device orders with, as the
+	// permanent-identifier. Apple treats it as an anti-replay code, so it
+	// should be unguessable and issued for one device.
+	ClientIdentifier string
+	// KeyType is KeyTypeEC or KeyTypeRSA, and KeySize is the curve size or
+	// the modulus size. Apple requires both.
+	KeyType string
+	KeySize int64
+	// HardwareBound generates the key in the Secure Enclave, where it
+	// cannot be exported. Required for Attest.
+	HardwareBound bool
+	// Attest asks the device for an attestation of the key and of the
+	// hardware, which the ACME server verifies. Requires HardwareBound.
+	Attest bool
+	// Subject, SubjectAltName, UsageFlags, and ExtendedKeyUsage are what
+	// the device asks for. Apple states the server may override or ignore
+	// them, and ours sets the subject itself.
+	Subject          pkix.Name
+	SubjectAltName   *profiles.ACMECertificateSubjectAltName
+	UsageFlags       *int64
+	ExtendedKeyUsage []string
+	// KeyIsExtractable and AllowAllAppsAccess are macOS only.
+	KeyIsExtractable   *bool
+	AllowAllAppsAccess *bool
+}
+
+// validate applies Apple's rules about which combinations of key type, key
+// size, hardware binding, and attestation are usable. A profile that breaks
+// them installs and then fails on the device, where the reason is far
+// harder to see than it is here.
+func (a *ACME) validate() error {
+	if a.DirectoryURL == "" {
+		return fmt.Errorf("%w: ACME DirectoryURL is required", ErrProfile)
+	}
+	if !strings.HasPrefix(a.DirectoryURL, "https://") {
+		return fmt.Errorf("%w: ACME DirectoryURL %q must use https", ErrProfile, a.DirectoryURL)
+	}
+	if a.ClientIdentifier == "" {
+		return fmt.Errorf("%w: ACME ClientIdentifier is required", ErrProfile)
+	}
+	switch a.KeyType {
+	case KeyTypeRSA:
+		if a.HardwareBound {
+			return fmt.Errorf("%w: an RSA key cannot be hardware bound", ErrProfile)
+		}
+		if a.KeySize < 1024 || a.KeySize > 4096 || a.KeySize%8 != 0 {
+			return fmt.Errorf(
+				"%w: an RSA KeySize must be a multiple of 8 between 1024 and 4096, got %d",
+				ErrProfile, a.KeySize,
+			)
+		}
+	case KeyTypeEC:
+		switch a.KeySize {
+		case 192, 256, 384, 521:
+		default:
+			return fmt.Errorf(
+				"%w: an %s KeySize must be 192, 256, 384, or 521, got %d",
+				ErrProfile, KeyTypeEC, a.KeySize,
+			)
+		}
+		if a.HardwareBound && a.KeySize != 256 && a.KeySize != 384 {
+			return fmt.Errorf(
+				"%w: a hardware bound key must be 256 or 384 bits, got %d", ErrProfile, a.KeySize,
+			)
+		}
+	default:
+		return fmt.Errorf(
+			"%w: ACME KeyType must be %s or %s, got %q",
+			ErrProfile, KeyTypeEC, KeyTypeRSA, a.KeyType,
+		)
+	}
+	if a.Attest && !a.HardwareBound {
+		// Apple attests that a key lives in the Secure Enclave, so there is
+		// nothing to attest about a key that lives anywhere else.
+		return fmt.Errorf("%w: Attest requires HardwareBound", ErrProfile)
+	}
+	return nil
+}
+
+func (a *ACME) payload() *profiles.ACMECertificate {
+	out := &profiles.ACMECertificate{
+		DirectoryURL:       a.DirectoryURL,
+		ClientIdentifier:   a.ClientIdentifier,
+		KeyType:            a.KeyType,
+		KeySize:            a.KeySize,
+		HardwareBound:      a.HardwareBound,
+		SubjectAltName:     a.SubjectAltName,
+		UsageFlags:         a.UsageFlags,
+		ExtendedKeyUsage:   a.ExtendedKeyUsage,
+		KeyIsExtractable:   a.KeyIsExtractable,
+		AllowAllAppsAccess: a.AllowAllAppsAccess,
+	}
+	if a.Attest {
+		attest := true
+		out.Attest = &attest
+	}
+	if subject := SubjectFromName(a.Subject); len(subject) > 0 {
+		out.Subject = subject
+	}
+	return out
+}
+
 type PKCS12 struct {
 	Data     []byte
 	Password string
@@ -83,6 +208,7 @@ type Profile struct {
 
 	// Exactly one identity source.
 	SCEP   *SCEP
+	ACME   *ACME
 	PKCS12 *PKCS12
 
 	// Roots are installed as com.apple.security.root payloads so the device
@@ -122,8 +248,14 @@ func (p Profile) Build() (*profile.Profile, error) {
 	if !strings.HasPrefix(p.Topic, "com.apple.mgmt.") {
 		return nil, fmt.Errorf("%w: Topic must begin with com.apple.mgmt.", ErrProfile)
 	}
-	if (p.SCEP == nil) == (p.PKCS12 == nil) {
-		return nil, fmt.Errorf("%w: exactly one of SCEP or PKCS12 is required", ErrProfile)
+	identities := 0
+	for _, present := range []bool{p.SCEP != nil, p.ACME != nil, p.PKCS12 != nil} {
+		if present {
+			identities++
+		}
+	}
+	if identities != 1 {
+		return nil, fmt.Errorf("%w: exactly one of SCEP, ACME, or PKCS12 is required", ErrProfile)
 	}
 	for _, u := range []string{p.ServerURL, p.CheckInURL} {
 		if u != "" && !strings.HasPrefix(u, "https://") {
@@ -159,6 +291,14 @@ func (p Profile) Build() (*profile.Profile, error) {
 		out.Payloads = append(out.Payloads, profile.Payload{
 			Identifier: p.Identifier + ".scep", UUID: identityUUID, DisplayName: "MDM identity (SCEP)",
 			Content: p.SCEP.payload(),
+		})
+	case p.ACME != nil:
+		if err := p.ACME.validate(); err != nil {
+			return nil, err
+		}
+		out.Payloads = append(out.Payloads, profile.Payload{
+			Identifier: p.Identifier + ".acme", UUID: identityUUID, DisplayName: "MDM identity (ACME)",
+			Content: p.ACME.payload(),
 		})
 	default:
 		if len(p.PKCS12.Data) == 0 {
@@ -348,6 +488,17 @@ func Parse(data []byte, o profile.ParseOptions) (*Profile, error) {
 		}
 		if c.PayloadContent.RetryDelay != nil {
 			out.SCEP.RetryDelay = *c.PayloadContent.RetryDelay
+		}
+	case *profiles.ACMECertificate:
+		out.ACME = &ACME{
+			DirectoryURL: c.DirectoryURL, ClientIdentifier: c.ClientIdentifier,
+			KeyType: c.KeyType, KeySize: c.KeySize, HardwareBound: c.HardwareBound,
+			Subject: NameFromSubject(c.Subject), SubjectAltName: c.SubjectAltName,
+			UsageFlags: c.UsageFlags, ExtendedKeyUsage: c.ExtendedKeyUsage,
+			KeyIsExtractable: c.KeyIsExtractable, AllowAllAppsAccess: c.AllowAllAppsAccess,
+		}
+		if c.Attest != nil {
+			out.ACME.Attest = *c.Attest
 		}
 	case *profiles.CertificatePKCS12:
 		out.PKCS12 = &PKCS12{Data: c.PayloadContent, Password: deref(c.Password), FileName: deref(c.PayloadCertificateFileName)}
