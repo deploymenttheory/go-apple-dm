@@ -13,3 +13,6 @@
 ^github.com/deploymenttheory/go-apple-mdm/internal/testpki$
 ^github.com/deploymenttheory/go-apple-mdm/storage/sqlcommon/sqltest$  # benchmark seed helper, exercised by integration benchmarks
 ^github.com/deploymenttheory/go-apple-mdm/ddm/ddmtest$
+^github.com/deploymenttheory/go-apple-mdm/enroll/webauth/webauthtest$  # fake OIDC provider, exercised by the webauth, ADE, and simulator suites
+^github.com/deploymenttheory/go-apple-mdm/enroll/adetest$  # MachineInfo signing helper, exercised by the enroll/ade, simulator, and e2e suites
+^github.com/deploymenttheory/go-apple-mdm/gdmf/gdmftest$  # software lookup fake, exercised by the gdmf and enroll/ade suites
