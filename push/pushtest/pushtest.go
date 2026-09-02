@@ -1,5 +1,3 @@
-// Package pushtest provides a scripted Pusher and an in-process APNs server
-// so push behaviour is testable without Apple.
 package pushtest
 
 import (

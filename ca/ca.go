@@ -1,10 +1,3 @@
-// Package ca is the small certificate authority abstraction the SCEP and
-// ACME endpoints sign device identities with (decision record 0008). Local
-// signs with an in-memory key; deployments with an external CA implement
-// Signer.
-//
-// Apple documentation:
-// https://developer.apple.com/documentation/devicemanagement/managing-certificates-for-device-management-services-and-devices
 package ca
 
 import (

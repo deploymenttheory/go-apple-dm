@@ -1,12 +1,3 @@
-// Package service implements the MDM server behaviour behind the check-in
-// and command endpoints: enrollment lifecycle, identity pinning, command
-// delivery, and the events and hooks that let integrators observe or veto
-// every step (decision records 0004 to 0006).
-//
-// Apple documentation:
-//   - https://developer.apple.com/documentation/devicemanagement/check-in
-//   - https://developer.apple.com/documentation/devicemanagement/sending-mdm-commands-to-a-device
-//   - https://developer.apple.com/documentation/devicemanagement/handling-notnow-status-responses
 package service
 
 import (
@@ -102,8 +93,11 @@ type DMResponse struct {
 	Status int
 }
 
-// DMHandler serves declarative management check-in messages.
-type DMHandler func(ctx context.Context, r *mdm.Request, m *checkin.DeclarativeManagement) (DMResponse, error)
+// DMHandler serves declarative management check-in messages. ck is the
+// check-in as received, including the raw plist bytes, so an adapter that
+// forwards the message to another process can send it unchanged
+// (decision record 0023); m is the typed message inside ck.
+type DMHandler func(ctx context.Context, r *mdm.Request, ck *mdm.Checkin, m *checkin.DeclarativeManagement) (DMResponse, error)
 
 // GetTokenHandler serves GetToken requests.
 type GetTokenHandler func(ctx context.Context, r *mdm.Request, m *checkin.GetToken) (*checkin.GetTokenResponse, error)

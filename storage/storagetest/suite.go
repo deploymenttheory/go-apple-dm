@@ -1,8 +1,3 @@
-// Package storagetest is the contract every storage backend must satisfy.
-// A backend's own test calls RunAll with a constructor returning a fresh,
-// empty store; the suites exercise the behaviour the service layer relies
-// on, including re-enrollment cleanup, NotNow backoff, pagination, and
-// concurrent access.
 package storagetest
 
 import (

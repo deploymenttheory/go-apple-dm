@@ -1,11 +1,3 @@
-// Package schemagen turns Apple's device management YAML schema
-// (https://github.com/apple/device-management, vendored under
-// third_party/device-management) into Go packages under schema/.
-//
-// The meta-schema is docs/schema.yaml in that repository and is documented at
-// https://github.com/apple/device-management/blob/release/docs/schema.md.
-// The loader is strict: any key not modelled here fails, so Apple additions
-// surface as explicit work rather than silent data loss.
 package schemagen
 
 import (

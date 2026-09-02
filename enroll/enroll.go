@@ -1,11 +1,3 @@
-// Package enroll builds the MDM enrollment profile: the MDM payload, the
-// identity it points at (SCEP or a pre-issued PKCS #12), and optional
-// trust anchors, validated against Apple's schema (decision record 0009).
-//
-// Apple documentation:
-// https://developer.apple.com/documentation/devicemanagement/mdm
-// https://developer.apple.com/documentation/devicemanagement/scep
-// https://developer.apple.com/documentation/devicemanagement/deploying-device-management-enrollment-profiles
 package enroll
 
 import (

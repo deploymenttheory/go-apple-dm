@@ -1,9 +1,3 @@
-// Package validation collects schema validation results for generated types.
-// Generated Validate methods call the Collector for every key with the
-// constraints Apple's schema declares (presence, rangelist, range, format,
-// repetition) and the key's support entry, so a caller learns everything
-// wrong with a value in one pass and, given a Target, whether the target OS
-// version and enrollment context accept each key.
 package validation
 
 import (

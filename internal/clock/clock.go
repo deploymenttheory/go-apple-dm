@@ -1,6 +1,3 @@
-// Package clock abstracts time so that protocol code (signature time-skew
-// checks, NotNow backoff, token freshness, push retry timers) can be tested
-// deterministically. Production code uses Real; tests use Fake.
 package clock
 
 import (

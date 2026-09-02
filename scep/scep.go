@@ -1,10 +1,3 @@
-// Package scep is a minimal SCEP (RFC 8894) endpoint for issuing the device
-// enrollment identity, plus a client the simulator enrolls with. It signs
-// through the ca.Signer abstraction and gates issuance with pluggable
-// challenges and a CSR verifier (decision record 0008).
-//
-// Apple documentation:
-// https://developer.apple.com/documentation/devicemanagement/scep
 package scep
 
 import (

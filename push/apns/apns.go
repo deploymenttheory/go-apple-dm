@@ -1,11 +1,3 @@
-// Package apns is the APNs HTTP/2 client for MDM pushes. An MDM push is a
-// POST to /3/device/<token> with the JSON body {"mdm": "<PushMagic>"} and
-// the apns-topic header set to the enrollment's topic, authenticated with
-// the push certificate as the TLS client certificate.
-//
-// Apple documentation:
-//   - https://developer.apple.com/documentation/devicemanagement/setting-up-push-notifications-for-your-device-management-customers
-//   - https://developer.apple.com/documentation/usernotifications/sending-notification-requests-to-apns
 package apns
 
 import (

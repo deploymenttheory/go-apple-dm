@@ -1,9 +1,3 @@
-// Package storage defines the persistence interfaces the service layer uses,
-// split by concern (decision record 0005). Backends live in sub-packages
-// (inmem, sqlite, postgres, mysql) and must pass the storagetest suites.
-//
-// Apple documentation on what an enrollment must retain:
-// https://developer.apple.com/documentation/devicemanagement/check-in
 package storage
 
 import (

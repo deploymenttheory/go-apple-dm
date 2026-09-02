@@ -5,7 +5,7 @@ GO ?= go
 COVERAGE_MIN ?= 95
 COVER_DIR := cover
 PKGS := ./...
-INTEGRATION_PKGS := ./storage/...
+INTEGRATION_PKGS := ./storage/... ./ddm/sqlstore/... ./internal/app/...
 E2E_PKGS := ./e2e/...
 E2E_STORE ?= sqlite
 FUZZ_SMOKE_TIME ?= 20s
@@ -42,12 +42,12 @@ lint:
 
 ## test: unit tests with race detector, coverage written to cover/unit
 test:
-	@mkdir -p $(COVER_DIR)/unit
+	@rm -rf $(COVER_DIR)/unit && mkdir -p $(COVER_DIR)/unit
 	$(GO) test -race -shuffle=on -count=1 -cover -coverpkg=$(PKGS) $(PKGS) -args -test.gocoverdir=$(PWD)/$(COVER_DIR)/unit
 
 ## test-storage: storage contract suites against SQL backends (needs TEST_POSTGRES_DSN / TEST_MYSQL_DSN; `make testdb-up` starts both in Docker and prints the exports)
 test-storage:
-	@mkdir -p $(COVER_DIR)/storage
+	@rm -rf $(COVER_DIR)/storage && mkdir -p $(COVER_DIR)/storage
 	@if $(GO) list $(INTEGRATION_PKGS) >/dev/null 2>&1; then \
 		$(GO) test -race -count=1 -tags integration -cover -coverpkg=$(PKGS) $(INTEGRATION_PKGS) -args -test.gocoverdir=$(PWD)/$(COVER_DIR)/storage; \
 	else echo "no storage packages yet"; fi
@@ -65,10 +65,22 @@ test-conformance:
 ## test-e2e: reference server plus simulator scenarios on E2E_STORE (sqlite, postgres, inmem)
 test-e2e: export E2E_STORE := $(E2E_STORE)
 test-e2e:
-	@mkdir -p $(COVER_DIR)/e2e-$(E2E_STORE)
+	@rm -rf $(COVER_DIR)/e2e-$(E2E_STORE) && mkdir -p $(COVER_DIR)/e2e-$(E2E_STORE)
 	@if $(GO) list $(E2E_PKGS) >/dev/null 2>&1; then \
 		$(GO) test -race -count=1 -tags e2e -cover -coverpkg=$(PKGS) $(E2E_PKGS) -args -test.gocoverdir=$(PWD)/$(COVER_DIR)/e2e-$(E2E_STORE); \
 	else echo "no e2e packages yet"; fi
+
+## docker-build: build the reference server image from this repository (never pulled from a third party)
+docker-build:
+	docker build -t go-apple-mdm:test .
+
+## testdb-ddm-up: build the image and run our ddm role in Docker for TestE2E_DDMSplitDeployment; prints the exports
+testdb-ddm-up:
+	scripts/testdb.sh ddm-up
+
+## testdb-ddm-down: stop the ddm role container
+testdb-ddm-down:
+	scripts/testdb.sh ddm-down
 
 ## testdb-up: start PostgreSQL and MySQL in Docker for test-storage and E2E_STORE=postgres test-e2e; prints the exports
 testdb-up:
@@ -109,4 +121,4 @@ ci: lint verify test test-storage test-storage-perf test-e2e fuzz-smoke coverage
 clean:
 	rm -rf $(COVER_DIR)
 
-.PHONY: help tools submodule generate verify lint test test-storage test-storage-perf test-conformance test-e2e testdb-up testdb-down fuzz-smoke fuzz coverage vuln refs refs-activity ci clean
+.PHONY: help tools submodule generate verify lint test test-storage test-storage-perf test-conformance test-e2e testdb-up testdb-down docker-build testdb-ddm-up testdb-ddm-down fuzz-smoke fuzz coverage vuln refs refs-activity ci clean

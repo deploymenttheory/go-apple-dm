@@ -1,13 +1,3 @@
-// Package crypt seals the per-device secrets a storage backend must retain
-// on Apple's behalf, such as the UnlockToken and the bootstrap token that
-// the check-in protocol hands to the server
-// (https://developer.apple.com/documentation/devicemanagement/check-in),
-// so a copy of the database alone does not expose them (decision record
-// 0013). Values are sealed with AES-256-GCM under a named key derived from
-// a secrets.Provider. The key name travels in the ciphertext header, which
-// lets an operator rotate by naming a new active key while keeping the
-// retired key in the accepted list until every stored value has been
-// rewrapped.
 package crypt
 
 import (

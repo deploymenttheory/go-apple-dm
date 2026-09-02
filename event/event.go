@@ -1,7 +1,3 @@
-// Package event is the in-process event bus every state change in the
-// service layer publishes to. Webhooks, audit logs, metrics, and DDM
-// reconcilers are subscribers rather than special cases (decision record
-// 0001).
 package event
 
 import (

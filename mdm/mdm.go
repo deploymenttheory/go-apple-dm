@@ -1,13 +1,3 @@
-// Package mdm is the protocol core of the Apple MDM check-in and command
-// channels: enrollment identity, request context, check-in message
-// decoding, command envelopes, and command response decoding.
-//
-// Apple documentation:
-//   - https://developer.apple.com/documentation/devicemanagement/check-in
-//   - https://developer.apple.com/documentation/devicemanagement/commands-and-queries
-//
-// Wire types come from the generated schema packages; this package adds the
-// envelope structure Apple documents in prose rather than YAML.
 package mdm
 
 import (
