@@ -33,7 +33,7 @@ with a 95% coverage floor and a research-guided build loop.
 
 Existing repo tooling to keep and extend: `.golangci.yml` (v2, gosec, wrapcheck, err113, gci
 prefix `github.com/deploymenttheory`), `.github/workflows/go-lint.yml`, `release-please.yml`,
-`dependabot.yml`, `linter.yml`, `pr-title-validation.yml`, harden-runner with pinned SHAs.
+`dependabot.yml`, `pr-title-validation.yml` (super-linter was removed in phase 4; golangci-lint in `go-lint.yml` is the only linter), harden-runner with pinned SHAs.
 
 ---
 

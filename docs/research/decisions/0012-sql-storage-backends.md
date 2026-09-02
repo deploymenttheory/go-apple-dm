@@ -49,7 +49,7 @@ Schema note: the `enrollments` table in `0001_init.sql` also carries `device_top
 ## Verified by
 
 1. `sqlite.TestContract`, `postgres.TestContract`, `mysql.TestContract` (all run `storagetest.RunAll`); the e2e scenarios on `E2E_STORE=sqlite` and `E2E_STORE=postgres`.
-2. `sqlite.TestClearBatches`, `storagetest.RunCommandQueueSuite/OrderAndResults` (NotNow backoff), `storagetest.RunCommandQueueSuite/ClearFilter`, `postgres.TestClear100kUnderOneSecond` (measured 0.86s on PostgreSQL 17 in Docker without the race detector, run by `make test-storage-perf`; the timing assertion is skipped under the race detector and downgraded to a log line with `STORAGE_TIMING=off`), `postgres.BenchmarkClear100k`, `sqlite.BenchmarkClear100k` (0.50s on SQLite).
+2. `sqlite.TestClearBatches`, `storagetest.RunCommandQueueSuite/OrderAndResults` (NotNow backoff), `storagetest.RunCommandQueueSuite/ClearFilter`, `postgres.TestClear100kUnderOneSecond` (measured 0.86s on PostgreSQL 17 in Docker without the race detector, run by `make test-storage-perf`; the timing assertion is skipped under the race detector and downgraded to a log line with `STORAGE_TIMING=off`; shared GitHub-hosted runners measure about 2.2s against a service container, so CI logs the figure and `make ci` on a developer machine enforces it), `postgres.BenchmarkClear100k`, `sqlite.BenchmarkClear100k` (0.50s on SQLite).
 3. `storagetest.RunEnrollmentSuite/ReenrollClearsState`, `storagetest.RunEnrollmentSuite/DisableCascadesToUserChannels`, `storagetest.RunEnrollmentSuite/IdempotentTokenUpdateSameInstant` on every backend.
 4. `sqlcommon.TestMigrateAndRollback`, `sqlcommon.TestMigrationParsing`.
 5. `storagetest.RunEnrollmentSuite/Lifecycle` (`Equal` on times after a round trip) on every backend.
