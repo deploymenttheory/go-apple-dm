@@ -155,7 +155,9 @@ func (s *Server) applyOne(a *activity, dev *resource, visible, now time.Time) st
 	}
 	switch a.typ {
 	case ActivityAssign, ActivityAssignDeadline:
-		s.store.assignments[dev.id] = assignment{serverID: a.serverID, visibleAt: visible}
+		s.store.assignments[dev.id] = assignment{
+			serverID: a.serverID, visibleAt: visible, readsLeft: s.lagReads,
+		}
 		if a.typ == ActivityAssignDeadline {
 			dev.attrs["mdmMigrationStatus"] = "REQUESTED"
 			dev.attrs["mdmMigrationDeadlineDateTime"] = a.deadline.UTC().Format(time.RFC3339)
@@ -167,7 +169,9 @@ func (s *Server) applyOne(a *activity, dev *resource, visible, now time.Time) st
 			"eventDataDeviceAssignedToServer": map[string]any{"serialNumber": dev.id, "targetServerName": serverName},
 		})
 	case ActivityUnassign:
-		s.store.assignments[dev.id] = assignment{serverID: "", visibleAt: visible}
+		s.store.assignments[dev.id] = assignment{
+			serverID: "", visibleAt: visible, readsLeft: s.lagReads,
+		}
 		s.addAuditLocked(uuid.New().String(), map[string]any{
 			"eventDateTime": now, "type": "DEVICE_UNASSIGNED_FROM_SERVER", "category": "DEVICE_MANAGEMENT",
 			"actorType": "API_USER", "actorId": "api", "subjectType": "DEVICE", "subjectId": dev.id,

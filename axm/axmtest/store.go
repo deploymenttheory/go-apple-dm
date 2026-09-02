@@ -130,11 +130,22 @@ func (c *collection) all() []*resource {
 	return out
 }
 
-// assignment is a device's assignment to a server with the time it
-// becomes visible.
+// assignment is a device's assignment to a server with when it becomes
+// visible.
+//
+// Apple's assignment endpoints are eventually consistent, so a fake that
+// answers immediately would let a client pass without ever polling. Two
+// ways of expressing the delay are offered because they answer different
+// questions. A wall-clock lag says how long convergence takes. A read
+// count says how many reads see the old answer, and only that one is
+// deterministic: a machine slow enough to spend the whole lag between the
+// assignment and the first read would otherwise observe no delay at all.
 type assignment struct {
 	serverID  string
 	visibleAt time.Time
+	// readsLeft is how many more reads must see the assignment as not yet
+	// visible, whatever the clock says.
+	readsLeft int
 }
 
 // store is the organization's state.
@@ -295,7 +306,7 @@ func linkages(typ string, ids []string) []any {
 func (s *Server) serverDevices(serverID string, now time.Time) []string {
 	var out []string
 	for _, id := range s.store.devices.order {
-		if a, ok := s.store.assignments[id]; ok && a.serverID == serverID && !now.Before(a.visibleAt) {
+		if a, ok := s.store.assignments[id]; ok && a.serverID == serverID && a.visible(now) {
 			out = append(out, id)
 		}
 	}
@@ -305,10 +316,25 @@ func (s *Server) serverDevices(serverID string, now time.Time) []string {
 // assignedServer returns the visible assignment of serial.
 func (s *Server) assignedServer(serial string, now time.Time) string {
 	a, ok := s.store.assignments[serial]
-	if !ok || now.Before(a.visibleAt) {
+	if !ok || !a.visible(now) {
 		return ""
 	}
 	return a.serverID
+}
+
+// visible reports whether an assignment has converged.
+func (a assignment) visible(now time.Time) bool {
+	return a.readsLeft == 0 && !now.Before(a.visibleAt)
+}
+
+// takeLinkageRead consumes one of an assignment's inconsistent reads. Only
+// the linkage endpoints call it, so the server's own bookkeeping does not
+// spend a budget that exists to be observed by a client.
+func (s *Server) takeLinkageRead(serial string) {
+	if a, ok := s.store.assignments[serial]; ok && a.readsLeft > 0 {
+		a.readsLeft--
+		s.store.assignments[serial] = a
+	}
 }
 
 // refreshDeviceCounts recomputes deviceCount on every server.

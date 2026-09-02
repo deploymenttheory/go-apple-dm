@@ -325,7 +325,9 @@ func TestAssignment(t *testing.T) {
 			f.srv.UnassignedLinkage404(mode == "404")
 			id := f.srv.AddMDMServer("m", nil)
 			f.srv.AddOrgDevice("S1", nil)
-			f.srv.SetConsistencyLag(15 * time.Millisecond)
+			// A read count rather than a wall-clock lag, so the client is
+			// observed to poll however fast or slow the machine is.
+			f.srv.SetConsistencyReads(2)
 			c := f.client(t, nil)
 			act, err := c.AssignDevices(context.Background(), id, []string{"S1"})
 			if err != nil {
