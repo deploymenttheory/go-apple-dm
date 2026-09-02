@@ -76,9 +76,12 @@ type Config struct {
 	// Subscriptions enables the synthesised status-subscriptions
 	// declaration (decision record 0021).
 	Subscriptions bool
-	Logger        *slog.Logger
-	Clock         clock.Clock
-	Bus           *event.Bus
+	// Enroll turns the enrollment routes on (SCEP, discovery,
+	// account-driven, ADE).
+	Enroll EnrollConfig
+	Logger *slog.Logger
+	Clock  clock.Clock
+	Bus    *event.Bus
 }
 
 // ErrConfig reports an invalid configuration.
@@ -92,6 +95,7 @@ type App struct {
 	Notifier *ddm.Notifier
 	Store    storage.Store
 	cfg      Config
+	enroll   *enrollment
 	db       *sql.DB
 	dialect  sqlcommon.Dialect
 	closers  []func() error
@@ -144,7 +148,7 @@ func (c Config) validate() error {
 	if c.DDMURL != "" && c.Role != RoleMDM {
 		return fmt.Errorf("%w: DDM URL is only for the mdm role", ErrConfig)
 	}
-	return nil
+	return c.Enroll.validate()
 }
 
 // roots loads CAFile into CARoots when set.
@@ -283,10 +287,20 @@ func (a *App) wire(ctx context.Context) error {
 				return fmt.Errorf("app: proxyclient: %w", err)
 			}
 		}
+		enrollHooks, err := a.wireEnrollment(mux)
+		if err != nil {
+			return err
+		}
 		core, err := service.New(service.Config{
-			Store: a.Store, Bus: cfg.Bus, Clock: cfg.Clock, Logger: cfg.Logger,
-			Hooks:                 []service.Hook{ddm.NewServiceHook(engine, a.Store, cfg.Logger)},
+			Store:  a.Store,
+			Bus:    cfg.Bus,
+			Clock:  cfg.Clock,
+			Logger: cfg.Logger,
+			Hooks: append(
+				[]service.Hook{ddm.NewServiceHook(engine, a.Store, cfg.Logger)},
+				enrollHooks...),
 			DeclarativeManagement: dm,
+			RequireUserAuth:       cfg.Enroll.RequireUserAuth,
 		})
 		if err != nil {
 			return fmt.Errorf("app: core: %w", err)
