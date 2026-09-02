@@ -210,3 +210,6 @@ func axmStatus(err error) int {
 		return http.StatusBadGateway
 	}
 }
+
+// AxMStatusForTests exposes the error mapping to tests of the wiring.
+func AxMStatusForTests(err error) int { return axmStatus(err) }

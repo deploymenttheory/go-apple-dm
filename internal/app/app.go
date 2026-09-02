@@ -19,6 +19,7 @@ import (
 	"github.com/deploymenttheory/go-apple-mdm/ddm/adapter/proxyserver"
 	ddminmem "github.com/deploymenttheory/go-apple-mdm/ddm/inmem"
 	"github.com/deploymenttheory/go-apple-mdm/ddm/sqlstore"
+	"github.com/deploymenttheory/go-apple-mdm/dep"
 	"github.com/deploymenttheory/go-apple-mdm/event"
 	"github.com/deploymenttheory/go-apple-mdm/httpapi"
 	"github.com/deploymenttheory/go-apple-mdm/internal/clock"
@@ -82,7 +83,10 @@ type Config struct {
 	Enroll EnrollConfig
 	// AxM connects Apple Business Manager or Apple School Manager; its
 	// admin routes live under the admin API on the ddm and all roles.
-	AxM    AxMConfig
+	AxM AxMConfig
+	// DEP configures the device enrollment service client and worker;
+	// its admin routes live under the admin API too.
+	DEP    DEPConfig
 	Logger *slog.Logger
 	Clock  clock.Clock
 	Bus    *event.Bus
@@ -99,7 +103,10 @@ type App struct {
 	Notifier *ddm.Notifier
 	Store    storage.Store
 	// AxM is the Business Manager client when configured.
-	AxM     *axm.Client
+	AxM *axm.Client
+	// DEP is the device enrollment service; nil on the mdm role.
+	DEP     *dep.Client
+	dep     *depService
 	cfg     Config
 	enroll  *enrollment
 	db      *sql.DB
@@ -348,6 +355,12 @@ func (a *App) wire(ctx context.Context) error {
 			a.AxM = client
 			admin.Handle("/axm/", a.requireToken(a.axmHandler(client)))
 		}
+		svc, err := a.newDEP(ctx)
+		if err != nil {
+			return err
+		}
+		a.dep, a.DEP = svc, svc.client
+		admin.Handle("/dep/", a.requireToken(svc.handler()))
 		mux.Handle(PathAdmin, http.StripPrefix(PathAdmin[:len(PathAdmin)-1], admin))
 	}
 	a.Handler = mux
@@ -357,11 +370,23 @@ func (a *App) wire(ctx context.Context) error {
 // Run drives the notifier until ctx is cancelled. The HTTP listener is the
 // caller's (cmd/mdmserver, or httptest in tests).
 func (a *App) Run(ctx context.Context) error {
-	err := a.Notifier.Run(ctx)
-	if errors.Is(err, context.Canceled) {
-		return nil
+	errc := make(chan error, 2)
+	go func() { errc <- a.Notifier.Run(ctx) }()
+	if a.dep != nil {
+		go func() { errc <- a.dep.Run(ctx) }()
+	} else {
+		errc <- nil
 	}
-	return fmt.Errorf("app: notifier: %w", err)
+	var first error
+	for range 2 {
+		if err := <-errc; err != nil && !errors.Is(err, context.Canceled) && first == nil {
+			first = err
+		}
+	}
+	if first != nil {
+		return fmt.Errorf("app: worker: %w", first)
+	}
+	return nil
 }
 
 // Close releases storage.

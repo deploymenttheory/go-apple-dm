@@ -3,6 +3,7 @@ package app
 import (
 	"fmt"
 	"strconv"
+	"time"
 )
 
 // Environment variables read by ParseEnv.
@@ -35,13 +36,19 @@ const (
 	EnvADEAudit            = "MDM_ADE_AUDIT"
 	EnvRequireUserAuth     = "MDM_REQUIRE_USER_AUTH"
 	// Apple Business Manager (AxMConfig).
-	EnvAxMClientID   = "MDM_AXM_CLIENT_ID"
-	EnvAxMKeyID      = "MDM_AXM_KEY_ID"
-	EnvAxMKeyFile    = "MDM_AXM_KEY_FILE"
-	EnvAxMScope      = "MDM_AXM_SCOPE"
-	EnvAxMBaseURL    = "MDM_AXM_BASE_URL"
-	EnvAxMTokenURL   = "MDM_AXM_TOKEN_URL" // #nosec G101 -- the variable name, not a credential
-	EnvSubscriptions = "MDM_DDM_SUBSCRIPTIONS"
+	EnvAxMClientID = "MDM_AXM_CLIENT_ID"
+	EnvAxMKeyID    = "MDM_AXM_KEY_ID"
+	EnvAxMKeyFile  = "MDM_AXM_KEY_FILE"
+	EnvAxMScope    = "MDM_AXM_SCOPE"
+	EnvAxMBaseURL  = "MDM_AXM_BASE_URL"
+	EnvAxMTokenURL = "MDM_AXM_TOKEN_URL" // #nosec G101 -- the variable name, not a credential
+	// Device enrollment service (DEPConfig).
+	EnvDEPBaseURL        = "MDM_DEP_BASE_URL"
+	EnvDEPSyncInterval   = "MDM_DEP_SYNC_INTERVAL"
+	EnvDEPAssignInterval = "MDM_DEP_ASSIGN_INTERVAL" // #nosec G101 -- the variable name, not a credential
+	EnvDEPProfileURL     = "MDM_DEP_PROFILE_URL"
+	EnvDEPUsePUT         = "MDM_DEP_USE_PUT"
+	EnvSubscriptions     = "MDM_DDM_SUBSCRIPTIONS"
 )
 
 // Defaults applied by ParseEnv when a variable is unset.
@@ -117,6 +124,23 @@ func ParseEnv(get func(string) string) (Config, error) {
 			return Config{}, err
 		}
 		cfg.Enroll.Discovery = d
+	}
+	cfg.DEP = DEPConfig{BaseURL: get(EnvDEPBaseURL), ProfileURL: get(EnvDEPProfileURL)}
+	for key, dst := range map[string]*time.Duration{EnvDEPSyncInterval: &cfg.DEP.SyncInterval, EnvDEPAssignInterval: &cfg.DEP.AssignInterval} {
+		if v := get(key); v != "" {
+			d, err := time.ParseDuration(v)
+			if err != nil {
+				return Config{}, fmt.Errorf("%w: %s=%q: %w", ErrConfig, key, v, err)
+			}
+			*dst = d
+		}
+	}
+	if v := get(EnvDEPUsePUT); v != "" {
+		b, err := strconv.ParseBool(v)
+		if err != nil {
+			return Config{}, fmt.Errorf("%w: %s=%q: %w", ErrConfig, EnvDEPUsePUT, v, err)
+		}
+		cfg.DEP.UsePUT = b
 	}
 	cfg.AxM = AxMConfig{
 		ClientID: get(EnvAxMClientID),

@@ -515,7 +515,9 @@ func (e *enrollment) loadCA(a *App) error {
 var errPEM = errors.New("no usable PEM block")
 
 func readCertsPEM(path string) ([]*x509.Certificate, error) {
-	data, err := os.ReadFile(path)
+	data, err := os.ReadFile(
+		path,
+	) // #nosec G304 -- an operator-supplied path from the configuration
 	if err != nil {
 		return nil, fmt.Errorf("read %s: %w", path, err)
 	}
