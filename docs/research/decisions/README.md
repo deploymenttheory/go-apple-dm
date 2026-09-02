@@ -53,3 +53,8 @@ With the code:
 | [0023](0023-ddm-adapters-and-wire-contract.md) | DDM adapters and the internal wire contract | accepted | 5 |
 | [0024](0024-simulator-ddm-client-and-predicates.md) | Simulator DDM client and predicate subset | accepted | 5 |
 | [0025](0025-reference-server-roles-and-container.md) | Reference server roles and container | accepted | 5 |
+| [0026](0026-dep-client-sync-and-assignment.md) | DEP client, device sync, and profile assignment | proposed | 6 |
+| [0027](0027-ade-enrollment-machineinfo-and-web-view-auth.md) | ADE enrollment: MachineInfo, the enrollment endpoint, and web view authentication | proposed | 6 |
+| [0028](0028-account-driven-enrollment-and-service-discovery.md) | Account-driven enrollment and service discovery | proposed | 6 |
+| [0029](0029-user-channel-and-shared-ipad.md) | User channel, multiple users, and Shared iPad | proposed | 6 |
+| [0030](0030-apple-business-manager-api-client.md) | Apple Business Manager and Apple School Manager API client | proposed | 6 |

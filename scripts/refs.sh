@@ -12,6 +12,7 @@ REPOS=(
   micromdm/micromdm
   micromdm/nanodep
   micromdm/nanoaxm
+  deploymenttheory/go-sdk-appleservices
   micromdm/nanocmd
   micromdm/scep
   micromdm/plist

@@ -390,7 +390,9 @@ The DDM space is small. Every real implementation found is listed, including exp
 - Implements: DDM codegen (typed, spec-validated MDM command plists, profiles, and DDM JSON), ABM/ASM API client, notarization, update CDN
 - Notes: Same organisation as this repository, so treat as a sibling rather than an external
   reference. `device_management/` has `mdm/`, `ddm/`, `validate/`, `metadata/`, and `cmd/`.
-  Early stage, no external importers yet.
+  Early stage, no external importers yet. Cloned by `make refs` since 2026-09-02; its `axm/`
+  package and acceptance tests are the behavioural reference for the live Apple Business
+  Manager API (record 0030). Study only: the repo rules forbid depending on it.
 
 ### Contour
 - Repo: <https://github.com/macadmins/contour> · Rust · Apache-2.0 · Active (2026-06) · 85 stars
