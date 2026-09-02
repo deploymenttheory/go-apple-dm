@@ -196,6 +196,9 @@ func (s *Store) List(_ context.Context, q storage.EnrollmentQuery, p storage.Pag
 		if q.ParentID != "" && r.ID.ParentID != q.ParentID {
 			continue
 		}
+		if q.Serial != "" && r.Device.SerialNumber != q.Serial {
+			continue
+		}
 		if p.Cursor != "" && id <= p.Cursor {
 			continue
 		}

@@ -315,6 +315,10 @@ func (s *Store) List(ctx context.Context, q storage.EnrollmentQuery, p storage.P
 		where = append(where, "parent_id = ?")
 		args = append(args, q.ParentID)
 	}
+	if q.Serial != "" {
+		where = append(where, "serial_number = ?")
+		args = append(args, q.Serial)
+	}
 	if p.Cursor != "" {
 		where = append(where, "id > ?")
 		args = append(args, p.Cursor)

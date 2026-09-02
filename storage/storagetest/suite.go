@@ -427,6 +427,34 @@ func RunEnrollmentSuite(t *testing.T, newStore Factory) {
 			t.Fatalf("all = %d next=%q", len(res.Items), res.NextCursor)
 		}
 	})
+
+	// FilterBySerial backs the admin API's enrollment lookup (record 0034).
+	// enroll gives device(n) the serial "S<n>".
+	t.Run("FilterBySerial", func(t *testing.T) {
+		s := newStore(t)
+		for i := 1; i <= 3; i++ {
+			enroll(t, s, device(i), i)
+		}
+		res, err := s.List(ctx, storage.EnrollmentQuery{Serial: "S2"}, storage.Page{})
+		if err != nil {
+			t.Fatalf("List by serial: %v", err)
+		}
+		if len(res.Items) != 1 || res.Items[0].ID != device(2) {
+			t.Fatalf("serial S2 = %+v", res.Items)
+		}
+		if res.Items[0].Device.SerialNumber != "S2" {
+			t.Fatalf("serial round trip = %q", res.Items[0].Device.SerialNumber)
+		}
+		res, err = s.List(ctx, storage.EnrollmentQuery{Serial: "nope"}, storage.Page{})
+		if err != nil || len(res.Items) != 0 {
+			t.Fatalf("unknown serial = %+v err=%v", res.Items, err)
+		}
+		// Serial composes with the other filters rather than replacing them.
+		res, _ = s.List(ctx, storage.EnrollmentQuery{Serial: "S2", Channel: mdm.ChannelUser}, storage.Page{})
+		if len(res.Items) != 0 {
+			t.Fatalf("serial S2 on the user channel = %+v", res.Items)
+		}
+	})
 }
 
 // RunCommandQueueSuite covers CommandQueue.
