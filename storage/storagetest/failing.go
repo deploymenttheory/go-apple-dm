@@ -32,11 +32,11 @@ func (f *Failing) UpsertAuthenticate(ctx context.Context, id mdm.EnrollmentID, m
 }
 
 // StoreTokenUpdate implements storage.EnrollmentStore.
-func (f *Failing) StoreTokenUpdate(ctx context.Context, id mdm.EnrollmentID, push mdm.Push, msg *checkin.TokenUpdate, at time.Time) error {
+func (f *Failing) StoreTokenUpdate(ctx context.Context, id mdm.EnrollmentID, push mdm.Push, msg *checkin.TokenUpdate, raw []byte, at time.Time) error {
 	if err := f.fail("StoreTokenUpdate"); err != nil {
 		return err
 	}
-	return f.Store.StoreTokenUpdate(ctx, id, push, msg, at)
+	return f.Store.StoreTokenUpdate(ctx, id, push, msg, raw, at)
 }
 
 // Disable implements storage.EnrollmentStore.
@@ -143,6 +143,22 @@ func (f *Failing) EnrollmentByCertHash(ctx context.Context, hash string) (mdm.En
 	return f.Store.EnrollmentByCertHash(ctx, hash)
 }
 
+// CertHistory implements storage.CertAuthStore.
+func (f *Failing) CertHistory(ctx context.Context, id mdm.EnrollmentID) ([]storage.CertAssociation, error) {
+	if err := f.fail("CertHistory"); err != nil {
+		return nil, err
+	}
+	return f.Store.CertHistory(ctx, id)
+}
+
+// CertHashHistory implements storage.CertAuthStore.
+func (f *Failing) CertHashHistory(ctx context.Context, hash string) ([]storage.CertAssociation, error) {
+	if err := f.fail("CertHashHistory"); err != nil {
+		return nil, err
+	}
+	return f.Store.CertHashHistory(ctx, hash)
+}
+
 // StoreBootstrapToken implements storage.BootstrapTokenStore.
 func (f *Failing) StoreBootstrapToken(ctx context.Context, id mdm.EnrollmentID, token []byte, at time.Time) error {
 	if err := f.fail("StoreBootstrapToken"); err != nil {
@@ -157,4 +173,84 @@ func (f *Failing) BootstrapToken(ctx context.Context, id mdm.EnrollmentID) ([]by
 		return nil, err
 	}
 	return f.Store.BootstrapToken(ctx, id)
+}
+
+// StorePushCert implements storage.PushCertStore.
+func (f *Failing) StorePushCert(ctx context.Context, topic string, certPEM, keyPEM []byte, at time.Time) (storage.PushCert, error) {
+	if err := f.fail("StorePushCert"); err != nil {
+		return storage.PushCert{}, err
+	}
+	return f.Store.StorePushCert(ctx, topic, certPEM, keyPEM, at)
+}
+
+// PushCert implements storage.PushCertStore.
+func (f *Failing) PushCert(ctx context.Context, topic string) (*storage.PushCert, error) {
+	if err := f.fail("PushCert"); err != nil {
+		return nil, err
+	}
+	return f.Store.PushCert(ctx, topic)
+}
+
+// PushCerts implements storage.PushCertStore.
+func (f *Failing) PushCerts(ctx context.Context) ([]storage.PushCert, error) {
+	if err := f.fail("PushCerts"); err != nil {
+		return nil, err
+	}
+	return f.Store.PushCerts(ctx)
+}
+
+// PushCertVersion implements storage.PushCertStore.
+func (f *Failing) PushCertVersion(ctx context.Context, topic string) (int64, error) {
+	if err := f.fail("PushCertVersion"); err != nil {
+		return 0, err
+	}
+	return f.Store.PushCertVersion(ctx, topic)
+}
+
+// StoreUserAuthChallenge implements storage.UserAuthStore.
+func (f *Failing) StoreUserAuthChallenge(ctx context.Context, id mdm.EnrollmentID, challenge string, raw []byte, at time.Time) error {
+	if err := f.fail("StoreUserAuthChallenge"); err != nil {
+		return err
+	}
+	return f.Store.StoreUserAuthChallenge(ctx, id, challenge, raw, at)
+}
+
+// StoreUserAuthToken implements storage.UserAuthStore.
+func (f *Failing) StoreUserAuthToken(ctx context.Context, id mdm.EnrollmentID, token string, raw []byte, at time.Time) error {
+	if err := f.fail("StoreUserAuthToken"); err != nil {
+		return err
+	}
+	return f.Store.StoreUserAuthToken(ctx, id, token, raw, at)
+}
+
+// UserAuth implements storage.UserAuthStore.
+func (f *Failing) UserAuth(ctx context.Context, id mdm.EnrollmentID) (*storage.UserAuthState, error) {
+	if err := f.fail("UserAuth"); err != nil {
+		return nil, err
+	}
+	return f.Store.UserAuth(ctx, id)
+}
+
+// ClearUserAuth implements storage.UserAuthStore.
+func (f *Failing) ClearUserAuth(ctx context.Context, id mdm.EnrollmentID) error {
+	if err := f.fail("ClearUserAuth"); err != nil {
+		return err
+	}
+	return f.Store.ClearUserAuth(ctx, id)
+}
+
+// Export implements storage.MigrationStore.
+func (f *Failing) Export(ctx context.Context, p storage.Page) (storage.Result[storage.EnrollmentExport], error) {
+	if err := f.fail("Export"); err != nil {
+		return storage.Result[storage.EnrollmentExport]{}, err
+	}
+	return f.Store.Export(ctx, p)
+}
+
+// Import implements storage.MigrationStore.
+func (f *Failing) Import(ctx context.Context, rec storage.EnrollmentExport) error {
+	if err := f.fail("Import"); err != nil {
+		return err
+	}
+	return f.Store.Import(ctx, rec)
 }

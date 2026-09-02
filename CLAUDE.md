@@ -26,6 +26,8 @@ reference server. Module `github.com/deploymenttheory/go-apple-mdm`, Go 1.26.
 ```bash
 make ci            # lint, verify, test, test-storage, test-e2e, fuzz-smoke, coverage
 make test          # unit tests with race detector and coverage
+make testdb-up     # PostgreSQL and MySQL in Docker; prints the TEST_*_DSN exports for test-storage
+make test-storage-perf  # 100k-row Clear timing gate on PostgreSQL, no race detector
 make generate      # regenerate schema packages
 make verify        # deterministic regeneration + rename guard
 make coverage      # enforce the 95% gate on collected profiles

@@ -37,7 +37,7 @@ Phase: 0
 ## What we do better
 
 1. Context-first service interfaces with typed errors and a hook chain; every state change is a typed event on an in-process bus, so webhooks, audit, metrics, and reconcilers are subscribers rather than special cases.
-2. Storage interfaces split by concern with pagination, last-seen, transactional re-enrollment cleanup, an indexed command queue, and a migration store that carries bootstrap and unlock tokens.
+2. Storage interfaces split by concern with pagination, last-seen, transactional re-enrollment cleanup, an indexed command queue, and a migration store that carries bootstrap and unlock tokens (0017).
 3. All protocol types (commands with responses, check-in, profiles, declarations, status, protocol, errors) generated in-repo from Apple's YAML with a naming lock so regeneration never silently renames, and runtime OS and channel support metadata.
 4. DDM engine embedded in-process with content-addressed tokens, dynamic membership, retained status values, and a NanoMDM `-dm` compatible proxy adapter for drop-in use.
 5. Four storage backends behind one contract suite from the start.
@@ -45,7 +45,7 @@ Phase: 0
 ## Verified by
 
 1. `TestServiceHooksAndEvents` (phase 2), `TestWebhookIsASubscriber` (phase 2).
-2. `storagetest.RunCommandQueueSuite/ClearIndexed` and `BenchmarkClear100k` (phase 4), `RunEnrollmentSuite/ReenrollClearsTokens` (phase 2).
+2. `storagetest.RunCommandQueueSuite/ClearFilter`, `postgres.TestClear100kUnderOneSecond` and `BenchmarkClear100k` (phase 4), `RunEnrollmentSuite/ReenrollClearsState` (phase 2), `storagetest.RunMigrationSuite/RoundTripAllFields` (phase 4, 0017).
 3. `TestRegistryCoversEveryYAML`, `TestRenameGuard` (phase 1).
 4. `TestTokenStableUnderKeyReorder`, `TestProxyServerInteropNanoMDM` (phase 5).
 5. `storagetest` suites green on inmem, sqlite, postgres, mysql (phase 4).

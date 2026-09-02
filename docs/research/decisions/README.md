@@ -39,3 +39,9 @@ With the code:
 | [0009](0009-enrollment-profiles.md) | Configuration profiles and the enrollment profile builder | accepted | 3 |
 | [0010](0010-ota-profile-service.md) | Over-the-air profile service (two-phase enrollment) | accepted | 3 |
 | [0011](0011-secrets-provider.md) | Secrets provider and redaction | accepted | 3 |
+| [0012](0012-sql-storage-backends.md) | SQL storage backends (SQLite, PostgreSQL, MySQL) | accepted | 4 |
+| [0013](0013-secrets-at-rest.md) | Secrets at rest | accepted | 4 |
+| [0014](0014-cert-association-history.md) | Certificate association history and reuse policy | accepted | 4 |
+| [0015](0015-push-cert-store.md) | Push certificate store | accepted | 4 |
+| [0016](0016-user-authenticate-state.md) | UserAuthenticate challenge and token state | accepted (HA1 verifier unverified against a real macOS client) | 4 |
+| [0017](0017-enrollment-export-import.md) | Enrollment export and import | accepted | 4 |

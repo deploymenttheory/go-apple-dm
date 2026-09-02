@@ -10,6 +10,8 @@ import (
 	"crypto/rsa"
 	"crypto/x509"
 	"crypto/x509/pkix"
+	"encoding/asn1"
+	"encoding/pem"
 	"errors"
 	"fmt"
 	"math/big"
@@ -20,10 +22,29 @@ import (
 // ErrNilKey is returned when no key is supplied.
 var ErrNilKey = errors.New("testpki: nil key")
 
+// oidUserID is the subject UID attribute (0.9.2342.19200300.100.1.1) that
+// carries the topic in an APNs push certificate.
+var oidUserID = asn1.ObjectIdentifier{0, 9, 2342, 19200300, 100, 1, 1}
+
 // Identity is a certificate with its private key.
 type Identity struct {
 	Cert *x509.Certificate
 	Key  crypto.Signer
+}
+
+// PEM encodes the certificate as a CERTIFICATE block and the key as a
+// PKCS#8 PRIVATE KEY block.
+func (i *Identity) PEM() (certPEM, keyPEM []byte, err error) {
+	if i == nil || i.Cert == nil || i.Key == nil {
+		return nil, nil, ErrNilKey
+	}
+	der, err := x509.MarshalPKCS8PrivateKey(i.Key)
+	if err != nil {
+		return nil, nil, fmt.Errorf("testpki: %w", err)
+	}
+	certPEM = pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: i.Cert.Raw})
+	keyPEM = pem.EncodeToMemory(&pem.Block{Type: "PRIVATE KEY", Bytes: der})
+	return certPEM, keyPEM, nil
 }
 
 // CA is a test certificate authority.
@@ -84,12 +105,40 @@ func (ca *CA) IssueWithKey(
 	notBefore time.Time,
 	key crypto.Signer,
 ) (*Identity, error) {
+	return ca.issue(pkix.Name{CommonName: commonName}, notBefore, key)
+}
+
+// IssuePush signs an APNs push certificate (RSA 2048, like the ones Apple
+// issues) whose subject UID carries topic, valid from notBefore for one day.
+func (ca *CA) IssuePush(topic string, notBefore time.Time) (*Identity, error) {
+	key, err := rsa.GenerateKey(rand.Reader, 2048)
+	if err != nil {
+		return nil, fmt.Errorf("testpki: %w", err)
+	}
+	return ca.IssuePushWithKey(topic, notBefore, key)
+}
+
+// IssuePushWithKey signs an APNs push certificate for an existing key with
+// the subject UID set to topic.
+func (ca *CA) IssuePushWithKey(
+	topic string,
+	notBefore time.Time,
+	key crypto.Signer,
+) (*Identity, error) {
+	subject := pkix.Name{
+		CommonName: topic,
+		ExtraNames: []pkix.AttributeTypeAndValue{{Type: oidUserID, Value: topic}},
+	}
+	return ca.issue(subject, notBefore, key)
+}
+
+func (ca *CA) issue(subject pkix.Name, notBefore time.Time, key crypto.Signer) (*Identity, error) {
 	if key == nil {
 		return nil, ErrNilKey
 	}
 	tmpl := &x509.Certificate{
 		SerialNumber: big.NewInt(ca.serial.Add(1)),
-		Subject:      pkix.Name{CommonName: commonName},
+		Subject:      subject,
 		NotBefore:    notBefore,
 		NotAfter:     notBefore.Add(24 * time.Hour),
 		KeyUsage:     x509.KeyUsageDigitalSignature,

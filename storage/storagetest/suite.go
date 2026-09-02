@@ -30,6 +30,9 @@ func RunAll(t *testing.T, newStore Factory) {
 	t.Run("Push", func(t *testing.T) { RunPushSuite(t, newStore) })
 	t.Run("CertAuth", func(t *testing.T) { RunCertAuthSuite(t, newStore) })
 	t.Run("BootstrapToken", func(t *testing.T) { RunBootstrapTokenSuite(t, newStore) })
+	t.Run("PushCert", func(t *testing.T) { RunPushCertSuite(t, newStore) })
+	t.Run("UserAuth", func(t *testing.T) { RunUserAuthSuite(t, newStore) })
+	t.Run("Migration", func(t *testing.T) { RunMigrationSuite(t, newStore) })
 	t.Run("Concurrency", func(t *testing.T) { RunConcurrencySuite(t, newStore) })
 }
 
@@ -61,7 +64,7 @@ func enroll(t *testing.T, s storage.Store, id mdm.EnrollmentID, n int) {
 		t.Fatalf("UpsertAuthenticate: %v", err)
 	}
 	short := "alice"
-	if err := s.StoreTokenUpdate(ctx, id, push(n), &checkin.TokenUpdate{Topic: "com.apple.mgmt.test", UnlockToken: []byte{9}, UserShortName: &short, UserLongName: "Alice"}, t0.Add(time.Second)); err != nil {
+	if err := s.StoreTokenUpdate(ctx, id, push(n), &checkin.TokenUpdate{Topic: "com.apple.mgmt.test", UnlockToken: []byte{9}, UserShortName: &short, UserLongName: "Alice"}, nil, t0.Add(time.Second)); err != nil {
 		t.Fatalf("StoreTokenUpdate: %v", err)
 	}
 }
@@ -90,7 +93,7 @@ func RunEnrollmentSuite(t *testing.T, newStore Factory) {
 		if _, err := s.Get(ctx, id); !errors.Is(err, storage.ErrNotFound) {
 			t.Fatalf("Get unknown: %v", err)
 		}
-		if err := s.StoreTokenUpdate(ctx, id, push(1), nil, t0); !errors.Is(err, storage.ErrNotFound) {
+		if err := s.StoreTokenUpdate(ctx, id, push(1), nil, nil, t0); !errors.Is(err, storage.ErrNotFound) {
 			t.Fatalf("TokenUpdate before Authenticate: %v", err)
 		}
 		if err := s.Disable(ctx, id, t0); !errors.Is(err, storage.ErrNotFound) {
@@ -106,11 +109,11 @@ func RunEnrollmentSuite(t *testing.T, newStore Factory) {
 		if err != nil || e.Enabled || e.Device.SerialNumber != "S1" || string(e.AuthenticateRaw) != "<a/>" || !e.EnrolledAt.Equal(t0) {
 			t.Fatalf("after Authenticate: %+v %v", e, err)
 		}
-		if err := s.StoreTokenUpdate(ctx, id, mdm.Push{}, nil, t0); !errors.Is(err, storage.ErrInvalid) {
+		if err := s.StoreTokenUpdate(ctx, id, mdm.Push{}, nil, nil, t0); !errors.Is(err, storage.ErrInvalid) {
 			t.Fatalf("incomplete push: %v", err)
 		}
 		short := "bob"
-		if err := s.StoreTokenUpdate(ctx, id, push(1), &checkin.TokenUpdate{UnlockToken: []byte{7}, UserShortName: &short, UserLongName: "Bob"}, t0.Add(time.Minute)); err != nil {
+		if err := s.StoreTokenUpdate(ctx, id, push(1), &checkin.TokenUpdate{UnlockToken: []byte{7}, UserShortName: &short, UserLongName: "Bob"}, nil, t0.Add(time.Minute)); err != nil {
 			t.Fatal(err)
 		}
 		e, _ = s.Get(ctx, id)
@@ -124,7 +127,7 @@ func RunEnrollmentSuite(t *testing.T, newStore Factory) {
 			t.Fatal("Get returned aliased push token")
 		}
 		// Idempotent TokenUpdate.
-		if err := s.StoreTokenUpdate(ctx, id, push(1), nil, t0.Add(2*time.Minute)); err != nil {
+		if err := s.StoreTokenUpdate(ctx, id, push(1), nil, nil, t0.Add(2*time.Minute)); err != nil {
 			t.Fatal(err)
 		}
 		if err := s.TouchLastSeen(ctx, id, t0.Add(3*time.Minute)); err != nil {
@@ -145,7 +148,7 @@ func RunEnrollmentSuite(t *testing.T, newStore Factory) {
 			t.Fatalf("after Disable: %+v", e)
 		}
 		// Re-enable by TokenUpdate.
-		if err := s.StoreTokenUpdate(ctx, id, push(1), nil, t0.Add(5*time.Minute)); err != nil {
+		if err := s.StoreTokenUpdate(ctx, id, push(1), nil, nil, t0.Add(5*time.Minute)); err != nil {
 			t.Fatal(err)
 		}
 		if e, _ = s.Get(ctx, id); !e.Enabled || !e.DisabledAt.IsZero() {
@@ -181,7 +184,8 @@ func RunEnrollmentSuite(t *testing.T, newStore Factory) {
 			t.Fatal(err)
 		}
 		e, _ := s.Get(ctx, id)
-		if e.Enabled || e.Push.Valid() || e.CertHash != "" || len(e.UnlockToken) != 0 || string(e.AuthenticateRaw) != "<b/>" {
+		if e.Enabled || e.Push.Valid() || e.CertHash != "" || len(e.UnlockToken) != 0 || string(e.AuthenticateRaw) != "<b/>" ||
+			!e.CertHashAt.IsZero() || !e.BootstrapTokenAt.IsZero() {
 			t.Fatalf("re-enrolled record keeps state: %+v", e)
 		}
 		if _, err := s.EnrollmentByCertHash(ctx, "hash-1"); !errors.Is(err, storage.ErrNotFound) {
@@ -190,7 +194,7 @@ func RunEnrollmentSuite(t *testing.T, newStore Factory) {
 		if _, err := s.BootstrapToken(ctx, id); !errors.Is(err, storage.ErrNotFound) {
 			t.Fatalf("bootstrap token survived re-enrollment: %v", err)
 		}
-		if err := s.StoreTokenUpdate(ctx, id, push(1), nil, t0.Add(time.Hour)); err != nil {
+		if err := s.StoreTokenUpdate(ctx, id, push(1), nil, nil, t0.Add(time.Hour)); err != nil {
 			t.Fatal(err)
 		}
 		if next, err := s.Next(ctx, id, false, t0.Add(time.Hour)); err != nil || next != nil {
@@ -202,6 +206,87 @@ func RunEnrollmentSuite(t *testing.T, newStore Factory) {
 		cleared, _ := s.Commands(ctx, id, storage.CommandQuery{States: []storage.State{storage.StateCleared}}, storage.Page{})
 		if len(cleared.Items) != 1 {
 			t.Fatalf("expected the old command to be cleared, got %d", len(cleared.Items))
+		}
+	})
+
+	t.Run("DisableCascadesToUserChannels", func(t *testing.T) {
+		s := newStore(t)
+		enroll(t, s, device(1), 1)
+		enroll(t, s, user(1, "alice"), 2)
+		enroll(t, s, user(1, "bob"), 3)
+		enroll(t, s, device(2), 4)
+		enroll(t, s, user(2, "carol"), 5)
+		at := t0.Add(time.Minute)
+		// Disabling a user channel touches only that channel.
+		if err := s.Disable(ctx, user(1, "bob"), at); err != nil {
+			t.Fatal(err)
+		}
+		if d, _ := s.Get(ctx, device(1)); !d.Enabled {
+			t.Fatal("device disabled by a user channel checkout")
+		}
+		if a, _ := s.Get(ctx, user(1, "alice")); !a.Enabled {
+			t.Fatal("sibling user channel disabled")
+		}
+		// Disabling the device disables its user channels and nobody else's.
+		if err := s.Disable(ctx, device(1), at); err != nil {
+			t.Fatal(err)
+		}
+		if a, _ := s.Get(ctx, user(1, "alice")); a.Enabled || !a.DisabledAt.Equal(at) {
+			t.Fatalf("user channel after device checkout: %+v", a)
+		}
+		if d, _ := s.Get(ctx, device(2)); !d.Enabled {
+			t.Fatal("other device disabled")
+		}
+		if c, _ := s.Get(ctx, user(2, "carol")); !c.Enabled {
+			t.Fatal("other device's user channel disabled")
+		}
+		// TokenUpdate on the user channel re-enables it independently.
+		if err := s.StoreTokenUpdate(ctx, user(1, "alice"), push(2), nil, nil, at.Add(time.Second)); err != nil {
+			t.Fatal(err)
+		}
+		if a, _ := s.Get(ctx, user(1, "alice")); !a.Enabled {
+			t.Fatal("user channel did not re-enable")
+		}
+		if d, _ := s.Get(ctx, device(1)); d.Enabled {
+			t.Fatal("device re-enabled by its user channel")
+		}
+	})
+
+	t.Run("IdempotentTokenUpdateSameInstant", func(t *testing.T) {
+		s := newStore(t)
+		id := device(1)
+		enroll(t, s, id, 1)
+		short := "alice"
+		msg := &checkin.TokenUpdate{Topic: "com.apple.mgmt.test", UnlockToken: []byte{9}, UserShortName: &short, UserLongName: "Alice"}
+		// A byte-identical re-send at the same instant changes no column;
+		// backends that count changed rows instead of matched rows would
+		// report the enrollment as missing.
+		if err := s.StoreTokenUpdate(ctx, id, push(1), msg, nil, t0.Add(time.Second)); err != nil {
+			t.Fatalf("identical TokenUpdate: %v", err)
+		}
+		if err := s.TouchLastSeen(ctx, id, t0.Add(time.Second)); err != nil {
+			t.Fatalf("no-op TouchLastSeen: %v", err)
+		}
+		if err := s.AssociateCert(ctx, id, "h", t0); err != nil {
+			t.Fatal(err)
+		}
+		if err := s.AssociateCert(ctx, id, "h", t0); err != nil {
+			t.Fatalf("same pin at the same instant: %v", err)
+		}
+		if err := s.StoreBootstrapToken(ctx, id, []byte("tok"), t0); err != nil {
+			t.Fatal(err)
+		}
+		if err := s.StoreBootstrapToken(ctx, id, []byte("tok"), t0); err != nil {
+			t.Fatalf("same bootstrap token at the same instant: %v", err)
+		}
+		if err := s.Disable(ctx, id, t0.Add(time.Minute)); err != nil {
+			t.Fatal(err)
+		}
+		if err := s.Disable(ctx, id, t0.Add(time.Minute)); err != nil {
+			t.Fatalf("repeated Disable: %v", err)
+		}
+		if e, _ := s.Get(ctx, id); e.Enabled || !e.LastSeenAt.Equal(t0.Add(time.Second)) {
+			t.Fatalf("state after idempotent writes: %+v", e)
 		}
 	})
 
@@ -493,8 +578,14 @@ func RunCertAuthSuite(t *testing.T, newStore Factory) {
 	if err := s.AssociateCert(ctx, device(1), "h1", t0); err != nil {
 		t.Fatal(err)
 	}
-	if err := s.AssociateCert(ctx, device(1), "h1", t0); err != nil {
+	if e, _ := s.Get(ctx, device(1)); !e.CertHashAt.Equal(t0) {
+		t.Fatalf("CertHashAt = %v, want %v", e.CertHashAt, t0)
+	}
+	if err := s.AssociateCert(ctx, device(1), "h1", t0.Add(time.Minute)); err != nil {
 		t.Fatalf("re-associating the same hash: %v", err)
+	}
+	if e, _ := s.Get(ctx, device(1)); !e.CertHashAt.Equal(t0.Add(time.Minute)) {
+		t.Fatalf("CertHashAt after re-pin = %v", e.CertHashAt)
 	}
 	if err := s.AssociateCert(ctx, device(2), "h1", t0); !errors.Is(err, storage.ErrConflict) {
 		t.Fatalf("conflict: %v", err)
@@ -512,12 +603,94 @@ func RunCertAuthSuite(t *testing.T, newStore Factory) {
 	if _, err := s.EnrollmentByCertHash(ctx, "h1"); !errors.Is(err, storage.ErrNotFound) {
 		t.Fatalf("old hash still resolves: %v", err)
 	}
-	if e, _ := s.Get(ctx, device(1)); e.CertHash != "h2" {
-		t.Fatalf("record hash = %q", e.CertHash)
+	if e, _ := s.Get(ctx, device(1)); e.CertHash != "h2" || !e.CertHashAt.Equal(t0) {
+		t.Fatalf("record hash = %q at %v", e.CertHash, e.CertHashAt)
 	}
 	if _, err := s.EnrollmentByCertHash(ctx, "nope"); !errors.Is(err, storage.ErrNotFound) {
 		t.Fatalf("unknown hash: %v", err)
 	}
+
+	t.Run("HistoryAppendOnly", func(t *testing.T) {
+		s := newStore(t)
+		enroll(t, s, device(1), 1)
+		if err := s.AssociateCert(ctx, device(1), "h1", t0); err != nil {
+			t.Fatal(err)
+		}
+		if err := s.AssociateCert(ctx, device(1), "h2", t0.Add(time.Minute)); err != nil {
+			t.Fatal(err)
+		}
+		// Re-pinning a hash keeps its first-seen time.
+		if err := s.AssociateCert(ctx, device(1), "h1", t0.Add(time.Hour)); err != nil {
+			t.Fatal(err)
+		}
+		h, err := s.CertHistory(ctx, device(1))
+		if err != nil || len(h) != 2 || h[0].Hash != "h1" || !h[0].At.Equal(t0) || h[1].Hash != "h2" || !h[1].At.Equal(t0.Add(time.Minute)) || h[0].ID != device(1) {
+			t.Fatalf("history = %+v %v", h, err)
+		}
+		// Re-enrollment clears the pin but keeps the history.
+		if err := s.UpsertAuthenticate(ctx, device(1), auth("S1"), nil, t0.Add(2*time.Hour)); err != nil {
+			t.Fatal(err)
+		}
+		if hash, _ := s.CertHash(ctx, device(1)); hash != "" {
+			t.Fatalf("pin survived re-enrollment: %q", hash)
+		}
+		if again, _ := s.CertHistory(ctx, device(1)); len(again) != 2 {
+			t.Fatalf("history after re-enrollment = %+v", again)
+		}
+	})
+
+	t.Run("HashHistoryAcrossEnrollments", func(t *testing.T) {
+		s := newStore(t)
+		enroll(t, s, device(1), 1)
+		enroll(t, s, device(2), 2)
+		if err := s.AssociateCert(ctx, device(1), "h1", t0); err != nil {
+			t.Fatal(err)
+		}
+		if err := s.AssociateCert(ctx, device(1), "h2", t0.Add(time.Minute)); err != nil {
+			t.Fatal(err)
+		}
+		// h1 is no longer pinned, so the store lets another enrollment take
+		// it; the service decides whether that reuse is allowed.
+		if err := s.AssociateCert(ctx, device(2), "h1", t0.Add(2*time.Minute)); err != nil {
+			t.Fatalf("reuse of an unpinned hash: %v", err)
+		}
+		h, err := s.CertHashHistory(ctx, "h1")
+		if err != nil || len(h) != 2 || h[0].ID != device(1) || h[1].ID != device(2) || !h[1].At.Equal(t0.Add(2*time.Minute)) {
+			t.Fatalf("hash history = %+v %v", h, err)
+		}
+	})
+
+	t.Run("HistoryUnknownAndEmpty", func(t *testing.T) {
+		s := newStore(t)
+		enroll(t, s, device(1), 1)
+		if _, err := s.CertHistory(ctx, device(9)); !errors.Is(err, storage.ErrNotFound) {
+			t.Fatalf("unknown enrollment: %v", err)
+		}
+		if h, err := s.CertHistory(ctx, device(1)); err != nil || len(h) != 0 {
+			t.Fatalf("never pinned = %+v %v", h, err)
+		}
+		if h, err := s.CertHashHistory(ctx, "nope"); err != nil || len(h) != 0 {
+			t.Fatalf("unseen hash = %+v %v", h, err)
+		}
+		if _, err := s.CertHashHistory(ctx, ""); !errors.Is(err, storage.ErrInvalid) {
+			t.Fatalf("empty hash: %v", err)
+		}
+		if _, err := s.CertHistory(ctx, mdm.EnrollmentID{}); !errors.Is(err, storage.ErrInvalid) {
+			t.Fatalf("invalid id: %v", err)
+		}
+	})
+
+	t.Run("HistoryViaUserChannel", func(t *testing.T) {
+		s := newStore(t)
+		enroll(t, s, device(1), 1)
+		if err := s.AssociateCert(ctx, user(1, "u"), "h1", t0); err != nil {
+			t.Fatal(err)
+		}
+		h, err := s.CertHistory(ctx, user(1, "u"))
+		if err != nil || len(h) != 1 || h[0].ID != device(1) {
+			t.Fatalf("history through the user channel = %+v %v", h, err)
+		}
+	})
 }
 
 // RunBootstrapTokenSuite covers BootstrapTokenStore.
@@ -549,48 +722,104 @@ func RunBootstrapTokenSuite(t *testing.T, newStore Factory) {
 	if again, _ := s.BootstrapToken(ctx, device(1)); string(again) != "tok" {
 		t.Fatal("aliased bootstrap token")
 	}
+	if e, _ := s.Get(ctx, device(1)); !e.BootstrapTokenAt.Equal(t0) {
+		t.Fatalf("BootstrapTokenAt = %v, want %v", e.BootstrapTokenAt, t0)
+	}
+	if err := s.StoreBootstrapToken(ctx, device(1), []byte("tok2"), t0.Add(time.Hour)); err != nil {
+		t.Fatal(err)
+	}
+	if e, _ := s.Get(ctx, device(1)); !e.BootstrapTokenAt.Equal(t0.Add(time.Hour)) {
+		t.Fatalf("BootstrapTokenAt after overwrite = %v", e.BootstrapTokenAt)
+	}
+	if tok, _ := s.BootstrapToken(ctx, device(1)); string(tok) != "tok2" {
+		t.Fatalf("overwritten token = %q", tok)
+	}
 }
 
-// RunConcurrencySuite hammers the queue from many goroutines; run with -race.
+// RunConcurrencySuite hammers the store from many goroutines; run with -race.
 func RunConcurrencySuite(t *testing.T, newStore Factory) {
 	t.Helper()
 	ctx := context.Background()
-	s := newStore(t)
-	id := device(1)
-	enroll(t, s, id, 1)
-	var wg sync.WaitGroup
-	for i := range 20 {
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
-			c := cmd(t, fmt.Sprintf("P%02d", i))
-			if _, err := s.Enqueue(ctx, []mdm.EnrollmentID{id}, c, storage.EnqueueOptions{Now: t0}); err != nil {
-				t.Error(err)
+
+	t.Run("QueueHammer", func(t *testing.T) {
+		s := newStore(t)
+		id := device(1)
+		enroll(t, s, id, 1)
+		var wg sync.WaitGroup
+		for i := range 20 {
+			wg.Add(1)
+			go func() {
+				defer wg.Done()
+				c := cmd(t, fmt.Sprintf("P%02d", i))
+				if _, err := s.Enqueue(ctx, []mdm.EnrollmentID{id}, c, storage.EnqueueOptions{Now: t0}); err != nil {
+					t.Error(err)
+				}
+				if _, err := s.Next(ctx, id, false, t0); err != nil {
+					t.Error(err)
+				}
+				if err := s.TouchLastSeen(ctx, id, t0); err != nil {
+					t.Error(err)
+				}
+			}()
+		}
+		wg.Wait()
+		acked := 0
+		for {
+			n, err := s.Next(ctx, id, false, t0)
+			if err != nil {
+				t.Fatal(err)
 			}
-			if _, err := s.Next(ctx, id, false, t0); err != nil {
-				t.Error(err)
+			if n == nil {
+				break
 			}
-			if err := s.TouchLastSeen(ctx, id, t0); err != nil {
-				t.Error(err)
+			if err := s.StoreResult(ctx, id, result(n.UUID, mdm.StatusAcknowledged), t0); err != nil {
+				t.Fatal(err)
 			}
-		}()
-	}
-	wg.Wait()
-	acked := 0
-	for {
-		n, err := s.Next(ctx, id, false, t0)
+			acked++
+		}
+		if acked != 20 {
+			t.Fatalf("acknowledged %d of 20", acked)
+		}
+	})
+
+	// CertPinRace has several enrollments race to pin one certificate hash:
+	// exactly one wins and every loser sees ErrConflict, never a raw driver
+	// error from the unique index.
+	t.Run("CertPinRace", func(t *testing.T) {
+		s := newStore(t)
+		const n = 8
+		for i := 1; i <= n; i++ {
+			enroll(t, s, device(i), i)
+		}
+		errs := make([]error, n+1)
+		var wg sync.WaitGroup
+		for i := 1; i <= n; i++ {
+			wg.Add(1)
+			go func() {
+				defer wg.Done()
+				errs[i] = s.AssociateCert(ctx, device(i), "shared-hash", t0)
+			}()
+		}
+		wg.Wait()
+		winners := 0
+		for i := 1; i <= n; i++ {
+			switch {
+			case errs[i] == nil:
+				winners++
+			case errors.Is(errs[i], storage.ErrConflict):
+			default:
+				t.Fatalf("device %d: raw error %v", i, errs[i])
+			}
+		}
+		if winners != 1 {
+			t.Fatalf("winners = %d, want 1 (%v)", winners, errs[1:])
+		}
+		owner, err := s.EnrollmentByCertHash(ctx, "shared-hash")
 		if err != nil {
 			t.Fatal(err)
 		}
-		if n == nil {
-			break
+		if h, _ := s.CertHash(ctx, owner); h != "shared-hash" {
+			t.Fatalf("owner %s has hash %q", owner.ID, h)
 		}
-		if err := s.StoreResult(ctx, id, result(n.UUID, mdm.StatusAcknowledged), t0); err != nil {
-			t.Fatal(err)
-		}
-		acked++
-	}
-	if acked != 20 {
-		t.Fatalf("acknowledged %d of 20", acked)
-	}
+	})
 }

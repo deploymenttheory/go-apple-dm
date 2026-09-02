@@ -22,6 +22,9 @@ type Store struct {
 	enrollments map[string]*record          // by id
 	certs       map[string]mdm.EnrollmentID // cert hash -> device channel id
 	bootstrap   map[string][]byte           // device channel id -> token
+	history     []storage.CertAssociation   // append-only pin history, oldest first
+	pushCerts   map[string]*storage.PushCert
+	userAuth    map[string]*storage.UserAuthState // by user channel id
 }
 
 type record struct {
@@ -31,10 +34,18 @@ type record struct {
 
 // New returns an empty store.
 func New() *Store {
-	return &Store{enrollments: map[string]*record{}, certs: map[string]mdm.EnrollmentID{}, bootstrap: map[string][]byte{}}
+	return &Store{
+		enrollments: map[string]*record{}, certs: map[string]mdm.EnrollmentID{}, bootstrap: map[string][]byte{},
+		pushCerts: map[string]*storage.PushCert{}, userAuth: map[string]*storage.UserAuthState{},
+	}
 }
 
-var _ storage.Store = (*Store)(nil)
+var (
+	_ storage.Store          = (*Store)(nil)
+	_ storage.PushCertStore  = (*Store)(nil)
+	_ storage.UserAuthStore  = (*Store)(nil)
+	_ storage.MigrationStore = (*Store)(nil)
+)
 
 func (s *Store) get(id mdm.EnrollmentID) (*record, error) {
 	if err := id.Validate(); err != nil {
@@ -69,13 +80,10 @@ func (s *Store) UpsertAuthenticate(_ context.Context, id mdm.EnrollmentID, msg *
 	if !id.Channel.IsUser() {
 		s.dropCertLocked(id.ID)
 		delete(s.bootstrap, id.ID)
-		// User channels of this device are stale once it re-enrolls.
-		for _, child := range s.enrollments {
-			if child.ID.ParentID == id.ID && child.Enabled {
-				child.Enabled = false
-				child.DisabledAt = at
-			}
-		}
+		// User channels of this device are stale once it re-enrolls, and
+		// so are their UserAuthenticate sessions.
+		s.disableChildrenLocked(id.ID, at)
+		s.clearUserAuthOfDeviceLocked(id.ID)
 	}
 	r.Enrollment = storage.Enrollment{
 		ID:              id,
@@ -87,6 +95,16 @@ func (s *Store) UpsertAuthenticate(_ context.Context, id mdm.EnrollmentID, msg *
 	return nil
 }
 
+// disableChildrenLocked disables every enabled user channel of a device.
+func (s *Store) disableChildrenLocked(deviceID string, at time.Time) {
+	for _, child := range s.enrollments {
+		if child.ID.ParentID == deviceID && child.Enabled {
+			child.Enabled = false
+			child.DisabledAt = at
+		}
+	}
+}
+
 func (s *Store) dropCertLocked(deviceID string) {
 	for h, owner := range s.certs {
 		if owner.ID == deviceID {
@@ -96,7 +114,7 @@ func (s *Store) dropCertLocked(deviceID string) {
 }
 
 // StoreTokenUpdate implements storage.EnrollmentStore.
-func (s *Store) StoreTokenUpdate(_ context.Context, id mdm.EnrollmentID, push mdm.Push, msg *checkin.TokenUpdate, at time.Time) error {
+func (s *Store) StoreTokenUpdate(_ context.Context, id mdm.EnrollmentID, push mdm.Push, msg *checkin.TokenUpdate, raw []byte, at time.Time) error {
 	if !push.Valid() {
 		return fmt.Errorf("%w: incomplete push info", storage.ErrInvalid)
 	}
@@ -107,6 +125,9 @@ func (s *Store) StoreTokenUpdate(_ context.Context, id mdm.EnrollmentID, push md
 		return err
 	}
 	r.Push = mdm.Push{Topic: push.Topic, Token: append([]byte(nil), push.Token...), Magic: push.Magic}
+	if len(raw) > 0 {
+		r.TokenUpdateRaw = append([]byte(nil), raw...)
+	}
 	r.Enabled = true
 	r.TokenUpdatedAt = at
 	r.LastSeenAt = at
@@ -135,6 +156,9 @@ func (s *Store) Disable(_ context.Context, id mdm.EnrollmentID, at time.Time) er
 	}
 	r.Enabled = false
 	r.DisabledAt = at
+	if !id.Channel.IsUser() {
+		s.disableChildrenLocked(id.ID, at)
+	}
 	return nil
 }
 
@@ -150,6 +174,7 @@ func (s *Store) Get(_ context.Context, id mdm.EnrollmentID) (*storage.Enrollment
 	e.Push.Token = append([]byte(nil), e.Push.Token...)
 	e.UnlockToken = append([]byte(nil), e.UnlockToken...)
 	e.AuthenticateRaw = append([]byte(nil), e.AuthenticateRaw...)
+	e.TokenUpdateRaw = append([]byte(nil), e.TokenUpdateRaw...)
 	return &e, nil
 }
 
@@ -299,7 +324,8 @@ func (s *Store) StoreResult(_ context.Context, id mdm.EnrollmentID, resp *mdm.Re
 			q.NotNowCount++
 			q.State = storage.StateNotNow
 			q.NotNowUntil = now.Add(storage.NotNowBackoff(q.NotNowCount))
-		case mdm.StatusError, mdm.StatusCommandFormatError, mdm.StatusIdle:
+		default:
+			// Error and CommandFormatError are terminal; the result is kept.
 			q.State = storage.StateError
 			q.CompletedAt = now
 		}
@@ -406,7 +432,7 @@ func (s *Store) PushInfo(_ context.Context, ids []mdm.EnrollmentID) (map[mdm.Enr
 }
 
 // AssociateCert implements storage.CertAuthStore.
-func (s *Store) AssociateCert(_ context.Context, id mdm.EnrollmentID, hash string, _ time.Time) error {
+func (s *Store) AssociateCert(_ context.Context, id mdm.EnrollmentID, hash string, at time.Time) error {
 	if hash == "" {
 		return fmt.Errorf("%w: empty certificate hash", storage.ErrInvalid)
 	}
@@ -423,7 +449,60 @@ func (s *Store) AssociateCert(_ context.Context, id mdm.EnrollmentID, hash strin
 	s.dropCertLocked(dev.ID)
 	s.certs[hash] = dev
 	r.CertHash = hash
+	r.CertHashAt = at
+	s.recordAssociationLocked(dev, hash, at)
 	return nil
+}
+
+// recordAssociationLocked appends to the history unless the pair is
+// already there, keeping the first-seen time.
+func (s *Store) recordAssociationLocked(dev mdm.EnrollmentID, hash string, at time.Time) {
+	for _, a := range s.history {
+		if a.ID.ID == dev.ID && a.Hash == hash {
+			return
+		}
+	}
+	s.history = append(s.history, storage.CertAssociation{ID: dev, Hash: hash, At: at})
+}
+
+func (s *Store) historyLocked(match func(storage.CertAssociation) bool) []storage.CertAssociation {
+	out := []storage.CertAssociation{}
+	for _, a := range s.history {
+		if match(a) {
+			out = append(out, a)
+		}
+	}
+	sort.SliceStable(out, func(i, j int) bool {
+		if !out[i].At.Equal(out[j].At) {
+			return out[i].At.Before(out[j].At)
+		}
+		if out[i].Hash != out[j].Hash {
+			return out[i].Hash < out[j].Hash
+		}
+		return out[i].ID.ID < out[j].ID.ID
+	})
+	return out
+}
+
+// CertHistory implements storage.CertAuthStore.
+func (s *Store) CertHistory(_ context.Context, id mdm.EnrollmentID) ([]storage.CertAssociation, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	dev := id.Device()
+	if _, err := s.get(dev); err != nil {
+		return nil, err
+	}
+	return s.historyLocked(func(a storage.CertAssociation) bool { return a.ID.ID == dev.ID }), nil
+}
+
+// CertHashHistory implements storage.CertAuthStore.
+func (s *Store) CertHashHistory(_ context.Context, hash string) ([]storage.CertAssociation, error) {
+	if hash == "" {
+		return nil, fmt.Errorf("%w: empty certificate hash", storage.ErrInvalid)
+	}
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return s.historyLocked(func(a storage.CertAssociation) bool { return a.Hash == hash }), nil
 }
 
 // CertHash implements storage.CertAuthStore.
@@ -449,17 +528,19 @@ func (s *Store) EnrollmentByCertHash(_ context.Context, hash string) (mdm.Enroll
 }
 
 // StoreBootstrapToken implements storage.BootstrapTokenStore.
-func (s *Store) StoreBootstrapToken(_ context.Context, id mdm.EnrollmentID, token []byte, _ time.Time) error {
+func (s *Store) StoreBootstrapToken(_ context.Context, id mdm.EnrollmentID, token []byte, at time.Time) error {
 	if len(token) == 0 {
 		return fmt.Errorf("%w: empty bootstrap token", storage.ErrInvalid)
 	}
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	dev := id.Device()
-	if _, err := s.get(dev); err != nil {
+	r, err := s.get(dev)
+	if err != nil {
 		return err
 	}
 	s.bootstrap[dev.ID] = append([]byte(nil), token...)
+	r.BootstrapTokenAt = at
 	return nil
 }
 

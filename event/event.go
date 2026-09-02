@@ -18,18 +18,22 @@ type Type string
 
 // Event types published by the service layer.
 const (
-	Enrolled          Type = "enrolled"       // Authenticate accepted for a new enrollment
-	Reenrolled        Type = "reenrolled"     // Authenticate accepted for an existing enrollment
-	TokenUpdated      Type = "token-updated"  // TokenUpdate stored
-	CheckedOut        Type = "checked-out"    // CheckOut received
-	CertRotated       Type = "cert-rotated"   // enrollment identity certificate changed
-	CommandQueued     Type = "command-queued" // command enqueued for an enrollment
-	CommandSent       Type = "command-sent"   // command delivered to the device
-	CommandResult     Type = "command-result" // Acknowledged, Error, CommandFormatError, or NotNow
-	BootstrapTokenSet Type = "bootstrap-token-set"
-	PushTokenInvalid  Type = "push-token-invalid"
-	DDMChanged        Type = "ddm-changed"
-	DDMStatusReceived Type = "ddm-status-received"
+	Enrolled           Type = "enrolled"       // Authenticate accepted for a new enrollment
+	Reenrolled         Type = "reenrolled"     // Authenticate accepted for an existing enrollment
+	TokenUpdated       Type = "token-updated"  // TokenUpdate stored
+	CheckedOut         Type = "checked-out"    // CheckOut received
+	CertRotated        Type = "cert-rotated"   // enrollment identity certificate changed
+	CommandQueued      Type = "command-queued" // command enqueued for an enrollment
+	CommandSent        Type = "command-sent"   // command delivered to the device
+	CommandResult      Type = "command-result" // Acknowledged, Error, CommandFormatError, or NotNow
+	BootstrapTokenSet  Type = "bootstrap-token-set"
+	PushTokenInvalid   Type = "push-token-invalid"
+	DDMChanged         Type = "ddm-changed"
+	DDMStatusReceived  Type = "ddm-status-received"
+	CertReuseDenied    Type = "cert-reuse-denied"   // Authenticate presented a certificate another enrollment pinned before
+	EnrollmentImported Type = "enrollment-imported" // record written by MigrationStore.Import
+	UserAuthenticated  Type = "user-authenticated"  // UserAuthenticate digest accepted, AuthToken issued
+	UserAuthFailed     Type = "user-auth-failed"    // UserAuthenticate digest rejected or challenge expired
 	// All subscribes to every type.
 	All Type = "*"
 )
