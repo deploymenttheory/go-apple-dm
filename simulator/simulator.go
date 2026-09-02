@@ -401,7 +401,12 @@ func (d *Device) SharedIPadUser(shortName, longName string) *User {
 }
 
 func (u *User) identity() map[string]any {
-	return map[string]any{"UDID": u.Device.UDID, "UserID": u.UserID}
+	f := map[string]any{"UDID": u.Device.UDID, "UserID": u.UserID}
+	if u.UserID == mdm.SharedIPadUserID {
+		// Apple identifies the logged-in Shared iPad user by short name.
+		f["UserShortName"] = u.ShortName
+	}
+	return f
 }
 
 // Authenticate sends UserAuthenticate and returns the response body.
@@ -413,6 +418,16 @@ func (u *User) Authenticate(ctx context.Context, digestResponse string) ([]byte,
 }
 
 // TokenUpdate sends the user channel TokenUpdate.
+// CheckOut sends CheckOut on the user channel: the server disables this
+// user only (decision record 0029).
+func (u *User) CheckOut(ctx context.Context) error {
+	f := u.identity()
+	f["MessageType"] = "CheckOut"
+	f["Topic"] = u.Device.Topic
+	_, err := u.Device.checkin(ctx, f)
+	return err
+}
+
 func (u *User) TokenUpdate(ctx context.Context) error {
 	if u.PushMagic == "" {
 		u.PushMagic = "magic-" + u.Device.UDID + "-" + u.UserID
