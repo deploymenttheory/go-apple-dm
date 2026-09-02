@@ -18,3 +18,5 @@
 ^github.com/deploymenttheory/go-apple-mdm/gdmf/gdmftest$  # software lookup fake, exercised by the gdmf and enroll/ade suites
 ^github.com/deploymenttheory/go-apple-mdm/axm/axmtest$  # fake Apple Business Manager API, exercised by the axm suite and e2e
 ^github.com/deploymenttheory/go-apple-mdm/dep/deptest$  # fake device enrollment service and failing store, exercised by the dep, internal/app, and e2e suites
+^github.com/deploymenttheory/go-apple-mdm/acme/acmetest$  # ACME store contract suite and failing store, exercised by the acme/inmem and acme/sqlstore suites
+^github.com/deploymenttheory/go-apple-mdm/acme/attest/attesttest$  # fake Apple attestation authority, exercised by the acme/attest, acme, simulator, and e2e suites

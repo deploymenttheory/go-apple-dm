@@ -30,6 +30,19 @@ const (
 	EnrollmentImported Type = "enrollment-imported" // record written by MigrationStore.Import
 	UserAuthenticated  Type = "user-authenticated"  // UserAuthenticate digest accepted, AuthToken issued
 	UserAuthFailed     Type = "user-auth-failed"    // UserAuthenticate digest rejected or challenge expired
+
+	// ACME and attestation (phase 7).
+
+	// ACMEChallengeValid is a device-attest-01 challenge that passed
+	// verification and policy.
+	ACMEChallengeValid Type = "acme-challenge-valid"
+	// ACMEIssued is a device identity certificate issued through ACME.
+	ACMEIssued Type = "acme-issued"
+	// AttestationRejected is an attestation that failed verification, named
+	// the wrong device, or was refused by policy. It is the event to alert
+	// on: a device that fails here is either faulty or not what it claims.
+	AttestationRejected Type = "attestation-rejected"
+
 	// All subscribes to every type.
 	All Type = "*"
 )

@@ -1,6 +1,7 @@
 package app_test
 
 import (
+	"bytes"
 	"context"
 	"crypto/ecdsa"
 	"crypto/elliptic"
@@ -92,6 +93,14 @@ func TestAxM(t *testing.T) {
 		if len(devices.Items) != 2 || devices.Meta.Paging.NextCursor == "" {
 			t.Fatalf("devices page = %+v", devices)
 		}
+		// An oversized body is refused before it is parsed.
+		big := bytes.Repeat([]byte("x"), app.MaxAdminBody+1)
+		for _, route := range []string{"assign", "unassign"} {
+			res := do(t, srv, "POST", "/admin/v1/axm/"+route, "t", big)
+			if res.StatusCode != http.StatusRequestEntityTooLarge {
+				t.Fatalf("%s oversized = %d", route, res.StatusCode)
+			}
+		}
 		var act axm.OrgDeviceActivity
 		decode(t, do(t, srv, "POST", "/admin/v1/axm/assign", "t", []byte(`{"server":"`+server+`","serials":["SER1","SER2"],"wait":true}`)), http.StatusAccepted, &act)
 		if act.Attributes.Status != axm.ActivityCompleted {
@@ -103,6 +112,13 @@ func TestAxM(t *testing.T) {
 			}
 		}
 		decode(t, do(t, srv, "GET", "/admin/v1/axm/activities/"+act.ID, "t", nil), http.StatusOK, &act)
+		// A fault at Apple is relayed as a gateway error rather than
+		// reported as an empty inventory.
+		fake.ExpireTokens()
+		fake.RejectNextTokenRequests(1)
+		if res := do(t, srv, "GET", "/admin/v1/axm/devices", "t", nil); res.StatusCode < 400 {
+			t.Fatalf("devices during an outage = %d", res.StatusCode)
+		}
 		decode(t, do(t, srv, "POST", "/admin/v1/axm/unassign", "t", []byte(`{"serials":["SER1"]}`)), http.StatusAccepted, &act)
 		if act.Attributes.Status != axm.ActivityInProgress && act.Attributes.Status != axm.ActivityCompleted {
 			t.Fatalf("unassign = %+v", act.Attributes)

@@ -37,6 +37,9 @@ func (d *Device) ApplyProfile(ctx context.Context, data []byte, o profile.ParseO
 	if d.CheckinURL == "" {
 		d.CheckinURL = d.ServerURL
 	}
+	if p.ACME != nil {
+		return d.ACMEEnroll(ctx, p.ACME, d.acme)
+	}
 	bits := int(p.SCEP.KeySize)
 	if bits == 0 {
 		bits = 2048

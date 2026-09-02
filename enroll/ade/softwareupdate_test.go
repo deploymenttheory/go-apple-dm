@@ -61,7 +61,10 @@ func TestSoftwareUpdate(t *testing.T) {
 		p := parsedInfo("s")
 		p.MDMCANREQUESTSOFTWAREUPDATE = nil
 		asked := false
-		policy := ade.PolicyFunc(func(context.Context, *ade.Parsed) (ade.Target, bool, error) { asked = true; return ade.Target{OSVersion: "99"}, true, nil })
+		policy := ade.PolicyFunc(func(context.Context, *ade.Parsed) (ade.Target, bool, error) {
+			asked = true
+			return ade.Target{OSVersion: "99"}, true, nil
+		})
 		d, err = ade.Gate(ctx, p, policy, nil, quiet)
 		if err != nil || d.Action != ade.Proceed || asked {
 			t.Fatalf("%+v %v asked=%v", d, err, asked)

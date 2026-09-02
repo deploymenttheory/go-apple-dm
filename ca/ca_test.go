@@ -207,3 +207,57 @@ func TestRandomFailures(t *testing.T) {
 		t.Log("self-signed with limited entropy succeeded (key generation used fewer reads)")
 	}
 }
+
+// TestPolicyNotAfterIsAbsolute: a deadline is a moment, not a duration.
+// Expressing it as a duration would let the certificate outlive it by
+// however long issuing took, which is a margin nobody notices until it
+// matters.
+func TestPolicyNotAfterIsAbsolute(t *testing.T) {
+	t.Parallel()
+	ctx := context.Background()
+	cert, key, err := ca.NewSelfSigned(ca.SelfSignedOptions{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	now := time.Date(2026, 9, 1, 0, 0, 0, 0, time.UTC)
+	fake := clock.NewFake(now)
+	signer, err := ca.NewLocal(cert, key, ca.WithClock(fake))
+	if err != nil {
+		t.Fatal(err)
+	}
+	leafKey, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
+	if err != nil {
+		t.Fatal(err)
+	}
+	req := csr(t, leafKey, "capped", false)
+
+	deadline := now.Add(2 * time.Hour)
+	issued, err := signer.Sign(ctx, req, ca.Policy{Validity: 365 * 24 * time.Hour, NotAfter: deadline})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !issued.NotAfter.Equal(deadline) {
+		t.Fatalf("NotAfter = %s, want exactly the deadline %s", issued.NotAfter, deadline)
+	}
+
+	// A deadline beyond the validity does not extend the certificate.
+	issued, err = signer.Sign(ctx, req, ca.Policy{
+		Validity: time.Hour,
+		NotAfter: now.Add(10 * 365 * 24 * time.Hour),
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !issued.NotAfter.Equal(now.Add(time.Hour)) {
+		t.Fatalf("NotAfter = %s, want the validity to win", issued.NotAfter)
+	}
+
+	// A deadline that has already passed would produce a certificate that
+	// is expired the moment it is issued, so it is refused instead.
+	for _, past := range []time.Time{now.Add(-time.Hour), now} {
+		_, err := signer.Sign(ctx, req, ca.Policy{NotAfter: past})
+		if !errors.Is(err, ca.ErrPolicy) {
+			t.Fatalf("NotAfter %s = %v, want ErrPolicy", past, err)
+		}
+	}
+}

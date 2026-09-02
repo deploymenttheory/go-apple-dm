@@ -343,10 +343,10 @@ func TestPlatformFromProduct(t *testing.T) {
 			"iPad13,16": ade.PlatformIPad, "iPad14,1": ade.PlatformIPad,
 			"iPod9,1": ade.PlatformIPod,
 			"Mac14,7": ade.PlatformMac, "MacBookPro18,1": ade.PlatformMac, "MacBookAir10,1": ade.PlatformMac, "Macmini9,1": ade.PlatformMac, "MacPro7,1": ade.PlatformMac, "iMac21,1": ade.PlatformMac, "VirtualMac2,1": ade.PlatformMac,
-			"AppleTV14,1": ade.PlatformAppleTV,
+			"AppleTV14,1":       ade.PlatformAppleTV,
 			"RealityDevice14,1": ade.PlatformRealityDevice,
-			"Watch7,1": ade.PlatformWatch,
-			"": ade.PlatformUnknown, "Vision1,1": ade.PlatformUnknown, "xiPhone1,1": ade.PlatformUnknown, "TV1,1": ade.PlatformUnknown, "J413AP": ade.PlatformUnknown,
+			"Watch7,1":          ade.PlatformWatch,
+			"":                  ade.PlatformUnknown, "Vision1,1": ade.PlatformUnknown, "xiPhone1,1": ade.PlatformUnknown, "TV1,1": ade.PlatformUnknown, "J413AP": ade.PlatformUnknown,
 		}
 		for product, want := range cases {
 			if got := ade.PlatformFromProduct(product); got != want {

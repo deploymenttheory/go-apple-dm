@@ -78,6 +78,7 @@ type Server struct {
 	serverErrors int
 	outcomes     map[string]string
 	lag          time.Duration
+	lagReads     int
 
 	store         *store
 	acts          map[string]*activity
@@ -195,9 +196,22 @@ func (s *Server) SetOutcome(serial, reason string) {
 
 // SetConsistencyLag delays, by d of wall-clock time, when a completed
 // activity's assignment shows in the linkage endpoints.
+//
+// Prefer SetConsistencyReads for a test that asserts a client polled: a
+// wall-clock lag can elapse before the client's first read on a slow
+// machine, and then there is nothing to observe.
 func (s *Server) SetConsistencyLag(d time.Duration) {
 	s.mu.Lock()
 	s.lag = d
+	s.mu.Unlock()
+}
+
+// SetConsistencyReads makes the next n reads of a completed activity's
+// assignment report it as not yet visible, whatever the clock says. It is
+// the deterministic way to make a client wait.
+func (s *Server) SetConsistencyReads(n int) {
+	s.mu.Lock()
+	s.lagReads = n
 	s.mu.Unlock()
 }
 

@@ -156,6 +156,7 @@ func (s *Server) handleAssignedServerLinkage(w http.ResponseWriter, r *http.Requ
 	s.mu.Lock()
 	_, found := s.store.devices.get(id)
 	serverID := s.assignedServer(id, s.now())
+	s.takeLinkageRead(id)
 	answer404 := s.unassigned404
 	s.mu.Unlock()
 	if !found || (serverID == "" && answer404) {
@@ -179,6 +180,7 @@ func (s *Server) handleAssignedServer(w http.ResponseWriter, r *http.Request) {
 	s.mu.Lock()
 	_, found := s.store.devices.get(id)
 	srv, assigned := s.store.servers.get(s.assignedServer(id, s.now()))
+	s.takeLinkageRead(id)
 	var doc map[string]any
 	if found && assigned {
 		s.refreshDeviceCounts(s.now())

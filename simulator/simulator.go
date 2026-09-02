@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"crypto"
+	"crypto/ecdsa"
 	"crypto/rand"
 	"crypto/x509"
 	"errors"
@@ -99,8 +100,11 @@ type Device struct {
 	replies  []Reply
 
 	// Declarative management: options and the device channel's client state.
-	ddm   ddmConfig
-	ddmCh *ddmChannel
+	acme        ACMEOptions
+	attestation [][]byte
+	attestKey   *ecdsa.PrivateKey
+	ddm         ddmConfig
+	ddmCh       *ddmChannel
 }
 
 // Option configures a Device.
@@ -134,6 +138,12 @@ func New(udid string, opts ...Option) *Device {
 		o(d)
 	}
 	return d
+}
+
+// WithACME sets how the device answers an ACME device-attest-01 challenge
+// when it applies a profile whose identity comes from ACME.
+func WithACME(o ACMEOptions) Option {
+	return func(d *Device) { d.acme = o }
 }
 
 // Commands returns every command received so far.

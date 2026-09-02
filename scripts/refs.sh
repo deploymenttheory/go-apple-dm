@@ -28,6 +28,7 @@ REPOS=(
   zentralopensource/zentral
   brandonweeks/nanoca
   smallstep/scep
+  smallstep/certificates
   smallstep/pkcs7
   hslatman/ios-acme-simulator
   vbnin/Apple-JSON-discovery-server
