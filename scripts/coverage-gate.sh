@@ -4,7 +4,8 @@
 # Usage: COVERAGE_MIN=95 scripts/coverage-gate.sh cover
 #
 # Expects cover/<layer>/ directories produced with -test.gocoverdir (unit is
-# required; storage and e2e are merged when present). Fails when overall
+# required; every other layer directory, e.g. storage, e2e-sqlite, and
+# e2e-postgres, is merged when present). Fails when overall
 # statement coverage or any non-exempt package is below COVERAGE_MIN.
 # Exemptions are regular expressions in scripts/coverage-exempt.txt, one per
 # line, matched against the package import path.
@@ -16,12 +17,13 @@ EXEMPT_FILE="$(dirname "$0")/coverage-exempt.txt"
 MODULE="$(go list -m)"
 
 inputs=()
-for layer in unit storage e2e; do
-  if [ -d "$COVER_DIR/$layer" ] && ls "$COVER_DIR/$layer"/covmeta.* >/dev/null 2>&1; then
-    inputs+=("$COVER_DIR/$layer")
+for dir in "$COVER_DIR"/*/; do
+  dir="${dir%/}"
+  if ls "$dir"/covmeta.* >/dev/null 2>&1; then
+    inputs+=("$dir")
   fi
 done
-if [ ${#inputs[@]} -eq 0 ]; then
+if [ ${#inputs[@]} -eq 0 ] || ! ls "$COVER_DIR/unit"/covmeta.* >/dev/null 2>&1; then
   echo "coverage-gate: no coverage data under $COVER_DIR (run make test first)" >&2
   exit 1
 fi
@@ -50,7 +52,12 @@ awk -v module="$MODULE" '
     printf "TOTAL %.2f\n", (gtotal ? 100 * gcovered / gtotal : 0)
   }' "$merged" | sort > "$pkg_report"
 
+# COVERAGE_EXEMPT_EXTRA adds patterns for one run, e.g. the database-backed
+# packages when no server is available locally. CI never sets it.
 exempt_patterns=()
+for pat in ${COVERAGE_EXEMPT_EXTRA:-}; do
+  exempt_patterns+=("$pat")
+done
 if [ -f "$EXEMPT_FILE" ]; then
   while IFS= read -r line; do
     line="${line%%#*}"; line="$(echo "$line" | xargs || true)"

@@ -30,7 +30,7 @@ func enrolledStore(t *testing.T, ids ...string) *inmem.Store {
 		if err := s.UpsertAuthenticate(ctx, dev(id), &checkin.Authenticate{Topic: "t"}, nil, t0); err != nil {
 			t.Fatal(err)
 		}
-		if err := s.StoreTokenUpdate(ctx, dev(id), mdm.Push{Topic: "t", Token: []byte{byte(i + 1)}, Magic: "m-" + id}, nil, t0); err != nil {
+		if err := s.StoreTokenUpdate(ctx, dev(id), mdm.Push{Topic: "t", Token: []byte{byte(i + 1)}, Magic: "m-" + id}, nil, nil, t0); err != nil {
 			t.Fatal(err)
 		}
 	}

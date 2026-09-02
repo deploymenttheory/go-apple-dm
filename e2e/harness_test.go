@@ -1,9 +1,10 @@
 //go:build e2e
 
 // Package e2e runs the named scenarios in docs/testing/e2e-scenarios.md
-// against a real HTTP server built from the library: service core,
-// in-memory storage, HTTP handlers with Mdm-Signature verification, and
-// the device simulator as the client.
+// against a real HTTP server built from the library: service core, a
+// storage backend selected by E2E_STORE (sqlite by default; postgres or
+// inmem), HTTP handlers with Mdm-Signature verification, and the device
+// simulator as the client.
 package e2e
 
 import (
@@ -35,7 +36,7 @@ import (
 	"github.com/deploymenttheory/go-apple-mdm/scep"
 	"github.com/deploymenttheory/go-apple-mdm/service"
 	"github.com/deploymenttheory/go-apple-mdm/simulator"
-	"github.com/deploymenttheory/go-apple-mdm/storage/inmem"
+	"github.com/deploymenttheory/go-apple-mdm/storage"
 )
 
 // otaChallenge is the Profile Service challenge the harness expects in
@@ -51,7 +52,7 @@ var t0 = time.Date(2026, 9, 1, 12, 0, 0, 0, time.UTC)
 type harness struct {
 	t      *testing.T
 	ca     *testpki.CA
-	store  *inmem.Store
+	store  storage.Store
 	core   *service.Core
 	clock  *clock.Fake
 	server *httptest.Server
@@ -74,7 +75,7 @@ func newHarness(t *testing.T, cfg service.Config) *harness {
 	if err != nil {
 		t.Fatal(err)
 	}
-	h := &harness{t: t, ca: testCA, store: inmem.New(), clock: clock.NewFake(t0)}
+	h := &harness{t: t, ca: testCA, store: newStore(t), clock: clock.NewFake(t0)}
 	bus := event.New()
 	bus.Subscribe(event.All, func(_ context.Context, e event.Event) error {
 		h.mu.Lock()

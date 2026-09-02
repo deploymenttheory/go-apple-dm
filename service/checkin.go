@@ -94,7 +94,19 @@ func (c *Core) authorize(ctx context.Context, r *mdm.Request) error {
 	switch {
 	case pinned == "":
 		// Enrollment created without a certificate (migration or a
-		// transport that could not extract one): pin retroactively.
+		// transport that could not extract one): pin retroactively, but
+		// only a hash no other enrollment has ever presented.
+		others, err := c.otherHolders(ctx, r.ID, hash)
+		if err != nil {
+			return wrapCode(CodeInternal, err)
+		}
+		if len(others) > 0 {
+			if c.pinning == PinWarn {
+				c.log.WarnContext(ctx, "identity certificate seen on another enrollment; not pinning", "enrollment", r.ID.ID, "previous", others[0].ID.ID)
+				return nil
+			}
+			return wrapCode(CodeForbidden, fmt.Errorf("%w: previously pinned by %s", ErrCertReused, others[0].ID.ID))
+		}
 		if err := c.store.AssociateCert(ctx, r.ID, hash, c.clock.Now()); err != nil {
 			if errors.Is(err, storage.ErrConflict) {
 				return wrapCode(CodeForbidden, fmt.Errorf("%w: %w", ErrCertMismatch, err))
@@ -109,6 +121,23 @@ func (c *Core) authorize(ctx context.Context, r *mdm.Request) error {
 		return wrapCode(CodeForbidden, ErrCertMismatch)
 	}
 	return nil
+}
+
+// otherHolders returns the history rows of every enrollment other than the
+// device channel of id that ever pinned hash.
+func (c *Core) otherHolders(ctx context.Context, id mdm.EnrollmentID, hash string) ([]storage.CertAssociation, error) {
+	history, err := c.store.CertHashHistory(ctx, hash)
+	if err != nil {
+		return nil, fmt.Errorf("certificate history: %w", err)
+	}
+	self := id.Device().ID
+	others := make([]storage.CertAssociation, 0, len(history))
+	for _, a := range history {
+		if a.ID.ID != self {
+			others = append(others, a)
+		}
+	}
+	return others, nil
 }
 
 func (c *Core) authenticate(ctx context.Context, r *mdm.Request, ck *mdm.Checkin, m *checkin.Authenticate) error {
@@ -133,6 +162,21 @@ func (c *Core) authenticate(ctx context.Context, r *mdm.Request, ck *mdm.Checkin
 			return wrapCode(CodeForbidden, fmt.Errorf("%w: %w", ErrReenrollDenied, perr))
 		}
 		rotated = true
+	}
+	if hash != "" && c.pinning != PinOff {
+		others, err := c.otherHolders(ctx, r.ID, hash)
+		if err != nil {
+			return wrapCode(CodeInternal, err)
+		}
+		if len(others) > 0 {
+			if perr := c.reuse(ctx, r, others); perr != nil {
+				c.publish(ctx, event.CertReuseDenied, r.ID, "device", others)
+				if !errors.Is(perr, ErrCertReused) {
+					perr = fmt.Errorf("%w: %w", ErrCertReused, perr)
+				}
+				return wrapCode(CodeForbidden, perr)
+			}
+		}
 	}
 	if err := c.store.UpsertAuthenticate(ctx, r.ID, m, ck.Raw, now); err != nil {
 		return wrapCode(codeForStorage(err), err)
@@ -178,7 +222,7 @@ func (c *Core) tokenUpdate(ctx context.Context, r *mdm.Request, ck *mdm.Checkin,
 	} else if err := c.authorize(ctx, r); err != nil {
 		return err
 	}
-	if err := c.store.StoreTokenUpdate(ctx, r.ID, push, m, now); err != nil {
+	if err := c.store.StoreTokenUpdate(ctx, r.ID, push, m, ck.Raw, now); err != nil {
 		return wrapCode(codeForStorage(err), err)
 	}
 	c.publish(ctx, event.TokenUpdated, r.ID, "device", m)

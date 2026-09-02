@@ -41,8 +41,8 @@ Phase: 2
 1. `storagetest.RunEnrollmentSuite`, `RunCommandQueueSuite`, `RunPushSuite`, `RunCertAuthSuite`, `RunBootstrapTokenSuite` on `inmem`.
 2. `RunEnrollmentSuite/ReenrollClearsState`.
 3. `RunEnrollmentSuite/ListPagination`, `RunCommandQueueSuite/ClearFilter`.
-4. `RunCommandQueueSuite/NotNowBackoff`.
-5. Same suites run by the SQL backends in the storage backends PR.
+4. `RunCommandQueueSuite/OrderAndResults` (the NotNow backoff steps live inside it).
+5. `sqlite.TestContract`, `postgres.TestContract`, `mysql.TestContract`.
 
 ## Rejected alternatives
 

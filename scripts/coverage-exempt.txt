@@ -11,3 +11,4 @@
 ^github.com/deploymenttheory/go-apple-mdm/simulator$
 ^github.com/deploymenttheory/go-apple-mdm/schema/internal/conformance$
 ^github.com/deploymenttheory/go-apple-mdm/internal/testpki$
+^github.com/deploymenttheory/go-apple-mdm/storage/sqlcommon/sqltest$  # benchmark seed helper, exercised by integration benchmarks

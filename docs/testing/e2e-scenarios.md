@@ -4,7 +4,7 @@ Each scenario is a named test under `e2e/` that wires the reference server, the 
 simulator, the fake APNs server, and a storage backend. Every scenario maps to at least one
 Apple documentation page. Scenarios are added by the phase that delivers the capability.
 
-Run with `make test-e2e` (build tag `e2e`). Status: E2E-001 to E2E-005 implemented in `e2e/mdm_test.go`; E2E-006, E2E-007, and E2E-016 in `e2e/enroll_test.go`.
+Run with `make test-e2e` (build tag `e2e`). The storage backend is chosen by `E2E_STORE`: `sqlite` (the default, one database file per test); `postgres` (needs `TEST_POSTGRES_DSN`, which `make testdb-up` prints, and creates one schema per test); or `inmem`. CI runs the scenarios on SQLite and PostgreSQL. Status: E2E-001 to E2E-005 implemented in `e2e/mdm_test.go`; E2E-006, E2E-007, and E2E-016 in `e2e/enroll_test.go`.
 
 | ID | Scenario | Apple source | Phase | Test |
 |---|---|---|---|---|

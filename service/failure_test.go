@@ -53,6 +53,7 @@ func TestStorageFailuresAreInternal(t *testing.T) {
 		{"Get", func() error { _, err := core.Checkin(ctx, req(id.Cert), authenticate(t, "D1")); return err }},
 		{"UpsertAuthenticate", func() error { _, err := core.Checkin(ctx, req(id.Cert), authenticate(t, "D1")); return err }},
 		{"AssociateCert", func() error { _, err := core.Checkin(ctx, req(id.Cert), authenticate(t, "D1")); return err }},
+		{"CertHashHistory", func() error { _, err := core.Checkin(ctx, req(id.Cert), authenticate(t, "D1")); return err }},
 		{"CertHash", func() error {
 			_, err := core.Connect(ctx, req(id.Cert), response("D1", "", mdm.StatusIdle))
 			return err
@@ -83,6 +84,10 @@ func TestStorageFailuresAreInternal(t *testing.T) {
 			_, err := core.Enqueue(ctx, []mdm.EnrollmentID{dev}, lock, storage.EnqueueOptions{})
 			return err
 		}},
+		{"Export", func() error { _, err := core.ExportEnrollments(ctx, storage.Page{}); return err }},
+		{"Import", func() error {
+			return core.ImportEnrollment(ctx, storage.EnrollmentExport{Enrollment: storage.Enrollment{ID: dev}})
+		}},
 	}
 	for _, c := range cases {
 		failing.Fail = map[string]error{c.method: errDB}
@@ -109,9 +114,18 @@ func TestStorageFailuresAreInternal(t *testing.T) {
 	if _, err := core2.Checkin(ctx, req(nil), authenticate(t, "D1")); err != nil {
 		t.Fatal(err)
 	}
+	retro.Fail = map[string]error{"CertHashHistory": errDB}
+	if _, err := core2.Checkin(ctx, req(id.Cert), tokenUpdate(t, "D1", nil)); service.CodeOf(err) != service.CodeInternal || !errors.Is(err, errDB) {
+		t.Errorf("retroactive CertHashHistory failure: %v", err)
+	}
 	retro.Fail = map[string]error{"AssociateCert": errDB}
 	if _, err := core2.Checkin(ctx, req(id.Cert), tokenUpdate(t, "D1", nil)); service.CodeOf(err) != service.CodeInternal {
 		t.Errorf("retroactive AssociateCert failure: %v", err)
+	}
+	// A pin race lost after the history check surfaces as a mismatch.
+	retro.Fail = map[string]error{"AssociateCert": storage.ErrConflict}
+	if _, err := core2.Checkin(ctx, req(id.Cert), tokenUpdate(t, "D1", nil)); service.CodeOf(err) != service.CodeForbidden || !errors.Is(err, service.ErrCertMismatch) {
+		t.Errorf("retroactive AssociateCert conflict: %v", err)
 	}
 	// A storage.ErrInvalid from the store maps to CodeBadRequest.
 	retro.Fail = map[string]error{"UpsertAuthenticate": storage.ErrInvalid}

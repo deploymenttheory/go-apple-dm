@@ -273,16 +273,21 @@ func TestDenyReenrollAndPinModes(t *testing.T) {
 	if e, _ := retro.store.Get(ctx, mdm.EnrollmentID{Channel: mdm.ChannelDevice, ID: "D1"}); e.CertHash == "" {
 		t.Fatal("retroactive pin not recorded")
 	}
-	// A certificate already pinned to another device cannot enrol a second one.
-	if _, err := retro.core.Checkin(ctx, req(retro.cert), authenticate(t, "D2")); !errors.Is(err, service.ErrCertMismatch) {
+	// A certificate another device already presented cannot enrol a second
+	// one under the default reuse policy.
+	if _, err := retro.core.Checkin(ctx, req(retro.cert), authenticate(t, "D2")); !errors.Is(err, service.ErrCertReused) {
 		t.Fatalf("cert reuse across devices: %v", err)
 	}
-	// Nor can it be presented retroactively by another enrollment.
+	// Presented retroactively by another enrollment under PinWarn, the
+	// request is allowed but nothing is pinned.
 	if _, err := retro.core.Checkin(ctx, req(nil), authenticate(t, "D3")); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := retro.core.Checkin(ctx, req(retro.cert), tokenUpdate(t, "D3", nil)); !errors.Is(err, service.ErrCertMismatch) {
-		t.Fatalf("retroactive reuse: %v", err)
+	if _, err := retro.core.Checkin(ctx, req(retro.cert), tokenUpdate(t, "D3", nil)); err != nil {
+		t.Fatalf("retroactive reuse under PinWarn: %v", err)
+	}
+	if e, _ := retro.store.Get(ctx, mdm.EnrollmentID{Channel: mdm.ChannelDevice, ID: "D3"}); e.CertHash != "" {
+		t.Fatalf("retroactive pin written for a seen certificate: %q", e.CertHash)
 	}
 }
 

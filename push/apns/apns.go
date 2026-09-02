@@ -15,7 +15,6 @@ import (
 	"crypto/x509"
 	"encoding/hex"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -26,6 +25,7 @@ import (
 	"github.com/deploymenttheory/go-apple-mdm/internal/clock"
 	"github.com/deploymenttheory/go-apple-mdm/mdm"
 	"github.com/deploymenttheory/go-apple-mdm/push"
+	"github.com/deploymenttheory/go-apple-mdm/push/pushcert"
 )
 
 // Hosts.
@@ -199,14 +199,8 @@ func retryAfter(v string) time.Duration {
 }
 
 // TopicFromCert returns the push topic embedded in an APNs push
-// certificate's subject UID (OID 0.9.2342.19200300.100.1.1).
+// certificate's subject UID (OID 0.9.2342.19200300.100.1.1). It forwards to
+// pushcert.TopicFromCert and is kept for compatibility.
 func TopicFromCert(cert *x509.Certificate) (string, error) {
-	for _, n := range cert.Subject.Names {
-		if n.Type.Equal([]int{0, 9, 2342, 19200300, 100, 1, 1}) {
-			if s, ok := n.Value.(string); ok && s != "" {
-				return s, nil
-			}
-		}
-	}
-	return "", errors.New("push: certificate has no topic (UID) in its subject")
+	return pushcert.TopicFromCert(cert)
 }

@@ -38,4 +38,4 @@ Phase: 3
 ## Rejected alternatives
 
 - Vault or cloud KMS clients in the library: deployments implement `Provider`.
-- Encrypting secrets at rest inside storage backends in this phase: deferred to the SQL backends work, which will use the provider for the key.
+- Encrypting secrets at rest inside storage backends in this phase: delivered by 0013, which takes the keyring material from the provider.

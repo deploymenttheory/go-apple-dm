@@ -24,8 +24,10 @@ No API stability promise until v1.0.0.
 | `cms/` | Detached CMS signing and `Mdm-Signature` verification with signing-time tolerance |
 | `service/` | Enrollment lifecycle, identity pinning, command delivery, hooks, events |
 | `storage/` | Storage interfaces, in-memory backend, and the contract suite every backend runs |
+| `storage/sqlcommon`, `storage/sqlite`, `storage/postgres`, `storage/mysql` | One SQL implementation with embedded migrations; SQLite (pure Go), PostgreSQL (pgx), and MySQL drivers; unlock tokens, bootstrap tokens, push keys, and user auth tokens are sealed columns when a keyring is configured |
+| `storage/crypt` | AES-256-GCM sealing of secret columns under named keys from `secrets.Provider`, with row-bound AAD and in-place key rotation (`Rewrap`) |
 | `httpapi/` | Check-in and server URL handlers plus certificate extraction middlewares |
-| `push/`, `push/apns` | Pusher interface, notifier with invalid-token events, coalescing, HTTP/2 APNs client, fake APNs server |
+| `push/`, `push/apns`, `push/pushcert` | Pusher interface, notifier with invalid-token events, coalescing, HTTP/2 APNs client, fake APNs server; push certificate parsing and topic derivation; a store-backed certificate cache that picks up renewals |
 | `ca/`, `scep/` | Certificate authority abstraction and a SCEP endpoint with one-time and HMAC challenges, plus a client |
 | `profile/`, `enroll/` | Configuration profile composition, signing, and parsing; MDM enrollment profile builder; OTA profile service |
 | `secrets/` | Redacting secret type and providers (static, environment, directory, chain) |
@@ -40,6 +42,9 @@ No API stability promise until v1.0.0.
 ```bash
 git submodule update --init   # pinned Apple schema
 make ci                       # lint, verify, test, storage, e2e, fuzz smoke, coverage gate
+make testdb-up                # PostgreSQL and MySQL in Docker for `make test-storage` and `E2E_STORE=postgres make test-e2e`
+make test-storage-perf        # the 100k-row Clear timing gate on PostgreSQL, without the race detector
+make testdb-down              # remove the Docker test databases
 ```
 
 Coverage floor is 95% overall and per package. See `Makefile` targets with `make help`.

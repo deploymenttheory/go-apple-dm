@@ -73,6 +73,10 @@ var (
 	ErrNoHandler         = errors.New("service: no handler configured")
 	ErrInvalidMessage    = errors.New("service: invalid message")
 	ErrHookVeto          = errors.New("service: rejected by hook")
+	// ErrCertReused is returned when an identity certificate presented on
+	// Authenticate, or on a retroactive pin, appears in another
+	// enrollment's certificate history (decision record 0014).
+	ErrCertReused = errors.New("service: identity certificate already used by another enrollment")
 )
 
 // PinMode controls identity certificate pinning.
@@ -113,9 +117,26 @@ type UserAuthenticateHandler func(ctx context.Context, r *mdm.Request, m *checki
 // pinned certificate differs from the one presented is accepted.
 type ReenrollPolicy func(ctx context.Context, r *mdm.Request, existing *storage.Enrollment) error
 
+// CertReusePolicy decides whether an Authenticate may use an identity
+// certificate that another enrollment has pinned before. previous lists
+// the other enrollments' history rows (never the requesting device).
+type CertReusePolicy func(ctx context.Context, r *mdm.Request, previous []storage.CertAssociation) error
+
+// DenyCertReuse rejects every certificate that another enrollment pinned
+// before, with ErrCertReused.
+func DenyCertReuse(context.Context, *mdm.Request, []storage.CertAssociation) error {
+	return ErrCertReused
+}
+
+// AllowCertReuse accepts a certificate that appears only in other
+// enrollments' history. It never overrides a live pin: a hash that another
+// enrollment currently pins still fails with ErrCertMismatch.
+func AllowCertReuse(context.Context, *mdm.Request, []storage.CertAssociation) error { return nil }
+
 // Call describes one service operation for hooks.
 type Call struct {
-	// Op is "checkin:<MessageType>", "connect", or "enqueue".
+	// Op is "checkin:<MessageType>", "connect", "enqueue", "export", or
+	// "import".
 	Op       string
 	Request  *mdm.Request
 	Checkin  *mdm.Checkin
@@ -145,6 +166,14 @@ type Config struct {
 	Pinning PinMode
 	// Reenroll defaults to AllowReenroll.
 	Reenroll ReenrollPolicy
+	// CertReuse defaults to DenyCertReuse. It is consulted when an
+	// Authenticate presents a certificate whose hash appears in another
+	// enrollment's history and is ignored under PinOff. AllowCertReuse only
+	// permits certificates that are in history but not currently pinned: a
+	// live pin held by another enrollment still yields ErrCertMismatch with
+	// CodeForbidden, because the pin exists to stop a second device using
+	// the identity.
+	CertReuse CertReusePolicy
 	// Optional message handlers.
 	DeclarativeManagement DMHandler
 	GetToken              GetTokenHandler
@@ -166,6 +195,7 @@ type Core struct {
 	log      *slog.Logger
 	pinning  PinMode
 	reenroll ReenrollPolicy
+	reuse    CertReusePolicy
 	dm       DMHandler
 	getToken GetTokenHandler
 	userAuth UserAuthenticateHandler
@@ -178,7 +208,8 @@ func New(cfg Config) (*Core, error) {
 	}
 	c := &Core{
 		store: cfg.Store, bus: cfg.Bus, clock: cfg.Clock, hooks: cfg.Hooks, log: cfg.Logger,
-		pinning: cfg.Pinning, reenroll: cfg.Reenroll, dm: cfg.DeclarativeManagement, getToken: cfg.GetToken, userAuth: cfg.UserAuthenticate,
+		pinning: cfg.Pinning, reenroll: cfg.Reenroll, reuse: cfg.CertReuse,
+		dm: cfg.DeclarativeManagement, getToken: cfg.GetToken, userAuth: cfg.UserAuthenticate,
 	}
 	if c.clock == nil {
 		c.clock = clock.Real{}
@@ -188,6 +219,9 @@ func New(cfg Config) (*Core, error) {
 	}
 	if c.reenroll == nil {
 		c.reenroll = AllowReenroll
+	}
+	if c.reuse == nil {
+		c.reuse = DenyCertReuse
 	}
 	if c.userAuth == nil {
 		c.userAuth = acceptAllUsers
@@ -257,6 +291,8 @@ func codeForStorage(err error) Code {
 		return CodeUnknownEnrollment
 	case errors.Is(err, storage.ErrInvalid):
 		return CodeBadRequest
+	case errors.Is(err, storage.ErrConflict):
+		return CodeForbidden
 	}
 	return CodeInternal
 }
