@@ -64,8 +64,14 @@ type Config struct {
 	// DDMSendKey signs what this role sends across the hop; DDMRecvKey
 	// verifies what it receives.
 	DDMSendKey, DDMRecvKey []byte
-	// AdminToken enables the admin API on the ddm and all roles.
+	// AdminToken enables the admin API on the ddm and all roles with a single
+	// static credential that bypasses policy. It is the development opt-out;
+	// AdminStore is what a deployment uses.
 	AdminToken string
+	// AdminStore holds admin principals and Cedar policies. When set, every
+	// admin request is authenticated against it and authorized by policy
+	// (decision record 0034). It takes precedence over AdminToken.
+	AdminStore adminauth.Store
 	// CAFile is a PEM bundle of roots that device identities chain to;
 	// the mdm role then verifies Mdm-Signature on every check-in and
 	// connect. CARoots is the parsed form (tests set it directly).
@@ -363,6 +369,13 @@ func (a *App) wire(ctx context.Context) error {
 		mux.Handle(PathDDM+"/", http.StripPrefix(PathDDM, ps))
 	}
 	if cfg.Role != RoleMDM && a.adminEnabled() {
+		if cfg.AdminStore != nil {
+			m, err := adminauth.New(cfg.AdminStore, mustAdminRegistry(), adminauth.WithClock(cfg.Clock))
+			if err != nil {
+				return fmt.Errorf("app: admin authorization: %w", err)
+			}
+			a.admin = m
+		}
 		var routes []adminRoute
 		routes = append(routes, a.ddmAdminRoutes()...)
 		if cfg.AxM.Enabled() {

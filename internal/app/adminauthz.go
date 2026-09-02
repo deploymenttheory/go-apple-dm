@@ -84,9 +84,21 @@ var (
 )
 
 // adminEnabled reports whether the admin API has a way to authenticate a
-// caller. Build refuses to mount it otherwise rather than serving 404s.
+// caller. With neither a principal store nor a static token the API is not
+// mounted at all, rather than mounted and unguarded.
 func (a *App) adminEnabled() bool {
-	return a.admin != nil || a.cfg.AdminToken != ""
+	return a.cfg.AdminStore != nil || a.cfg.AdminToken != ""
+}
+
+// mustAdminRegistry builds the action registry from the action table. The
+// table is a compile-time constant, so a failure here is a programming error
+// in this package rather than a configuration one.
+func mustAdminRegistry() *adminauth.Registry {
+	reg, err := adminauth.NewRegistry(AdminActions()...)
+	if err != nil {
+		panic("app: admin action registry: " + err.Error())
+	}
+	return reg
 }
 
 // buildAdminMux registers every route through authorized, so authentication,
@@ -94,10 +106,7 @@ func (a *App) adminEnabled() bool {
 // be forgotten on a new route. It also records the table for GET /routes and
 // for the test that asserts the table and the mux agree.
 func (a *App) buildAdminMux(routes []adminRoute) (http.Handler, error) {
-	reg, err := adminauth.NewRegistry(AdminActions()...)
-	if err != nil {
-		return nil, fmt.Errorf("app: admin actions: %w", err)
-	}
+	reg := mustAdminRegistry()
 	mux := http.NewServeMux()
 	for _, rt := range routes {
 		if rt.Action == "" {
