@@ -1,11 +1,3 @@
-// Package sqlite is the SQLite storage backend on modernc.org/sqlite (pure
-// Go, no cgo): WAL journal, foreign keys, a busy timeout, and immediate
-// write transactions so concurrent writers queue instead of failing
-// (decision record 0012).
-//
-// Apple documentation on what an enrollment must retain and on NotNow:
-// https://developer.apple.com/documentation/devicemanagement/check-in
-// https://developer.apple.com/documentation/devicemanagement/handling-notnow-status-responses
 package sqlite
 
 import (

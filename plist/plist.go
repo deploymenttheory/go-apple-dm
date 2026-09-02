@@ -1,10 +1,3 @@
-// Package plist is the library's single point of contact with property
-// list encoding. It wraps github.com/micromdm/plist (decision record 0002)
-// and adds what protocol code needs when the input is untrusted: format
-// detection, a byte limit, and an XML nesting-depth limit.
-//
-// Apple sends MDM check-in and command responses as XML or binary plists
-// (https://developer.apple.com/documentation/devicemanagement/check-in).
 package plist
 
 import (

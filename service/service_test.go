@@ -341,7 +341,10 @@ func TestHandlersAndHooks(t *testing.T) {
 		GetToken: func(_ context.Context, _ *mdm.Request, m *checkin.GetToken) (*checkin.GetTokenResponse, error) {
 			return &checkin.GetTokenResponse{TokenData: []byte("tok-" + m.TokenServiceType)}, nil
 		},
-		DeclarativeManagement: func(_ context.Context, _ *mdm.Request, m *checkin.DeclarativeManagement) (service.DMResponse, error) {
+		DeclarativeManagement: func(_ context.Context, _ *mdm.Request, ck *mdm.Checkin, m *checkin.DeclarativeManagement) (service.DMResponse, error) {
+			if ck == nil || len(ck.Raw) == 0 || ck.Message != m {
+				return service.DMResponse{}, &service.Error{Code: service.CodeInternal, Err: errors.New("handler did not receive the raw check-in")}
+			}
 			if m.Endpoint == "boom" {
 				return service.DMResponse{}, &service.Error{Code: service.CodeBadRequest, Err: errors.New("bad endpoint")}
 			}

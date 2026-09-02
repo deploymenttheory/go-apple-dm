@@ -1,6 +1,3 @@
-// Package inmem is the reference storage backend: a mutex-protected map
-// store that every unit test uses and that the contract suite in
-// storage/storagetest defines the behaviour of. It is not durable.
 package inmem
 
 import (

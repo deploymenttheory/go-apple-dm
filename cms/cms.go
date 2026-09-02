@@ -1,15 +1,3 @@
-// Package cms signs and verifies the detached CMS (PKCS #7) signatures Apple
-// MDM uses: devices send one in the Mdm-Signature header when the MDM payload
-// sets SignMessage, and servers sign configuration profiles.
-//
-// Apple documentation:
-//   - https://developer.apple.com/documentation/devicemanagement/check-in
-//   - https://developer.apple.com/documentation/devicemanagement/managing-certificates-for-device-management-services-and-devices
-//
-// Verification wraps github.com/smallstep/pkcs7 and adds a trust store, an
-// injectable clock, and a signing-time tolerance (decision record 0006): a
-// device whose clock lags can sign with a certificate whose NotBefore is a
-// few seconds in the future, which the library rejects unconditionally.
 package cms
 
 import (

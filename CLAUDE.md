@@ -19,7 +19,13 @@ reference server. Module `github.com/deploymenttheory/go-apple-mdm`, Go 1.27.
 - Coverage floor is 95% overall and per non-exempt package (`scripts/coverage-exempt.txt`).
   Every exported function has a failing-path test.
 - Do not add a dependency on `deploymenttheory/go-sdk-appleservices`.
+- Do not add code dependencies on NanoMDM, MicroMDM, or their libraries; `github.com/micromdm/plist` is the only accepted exception. Their repositories are read-only references.
 - Conventional commits; release-please manages versions and `CHANGELOG.md`.
+- Every package has a `doc.go` holding its only package comment, laid out like `ddm/doc.go`: a
+  one-sentence "what", a `# Why` section (the need it meets, where it sits in the plan, what it
+  deliberately leaves out), and a `# References` section listing the decision records, plan
+  phase, internal docs, Apple documentation, schema files, and RFCs it rests on. Generated
+  `schema/*` packages get the same layout from `doc.gen.go` through the generator.
 
 ## Commands
 

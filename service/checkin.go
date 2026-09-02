@@ -65,7 +65,7 @@ func (c *Core) dispatchCheckin(ctx context.Context, r *mdm.Request, ck *mdm.Chec
 	case *checkin.UserAuthenticate:
 		return c.handleUserAuthenticate(ctx, r, m)
 	case *checkin.DeclarativeManagement:
-		return c.handleDeclarativeManagement(ctx, r, m)
+		return c.handleDeclarativeManagement(ctx, r, ck, m)
 	}
 	return nil, wrapCode(CodeBadRequest, fmt.Errorf("%w: unsupported message %s", ErrInvalidMessage, ck.Type))
 }
@@ -291,14 +291,14 @@ func (c *Core) handleUserAuthenticate(ctx context.Context, r *mdm.Request, m *ch
 	return plistResult(resp)
 }
 
-func (c *Core) handleDeclarativeManagement(ctx context.Context, r *mdm.Request, m *checkin.DeclarativeManagement) (*CheckinResult, error) {
+func (c *Core) handleDeclarativeManagement(ctx context.Context, r *mdm.Request, ck *mdm.Checkin, m *checkin.DeclarativeManagement) (*CheckinResult, error) {
 	if err := c.authorize(ctx, r); err != nil {
 		return nil, err
 	}
 	if c.dm == nil {
 		return nil, wrapCode(CodeNotImplemented, fmt.Errorf("%w: DeclarativeManagement", ErrNoHandler))
 	}
-	resp, err := c.dm(ctx, r, m)
+	resp, err := c.dm(ctx, r, ck, m)
 	if err != nil {
 		return nil, wrapCode(CodeOf(err), err)
 	}

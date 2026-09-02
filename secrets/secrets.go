@@ -1,8 +1,3 @@
-// Package secrets supplies credentials (push keys, DEP tokens, challenge
-// keys) to the library without letting them leak into logs, errors, or
-// JSON. A Secret redacts itself wherever it is formatted; Providers read
-// from a static map, the environment, or a directory of files (decision
-// record 0011).
 package secrets
 
 import (

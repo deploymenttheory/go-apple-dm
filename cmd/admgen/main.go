@@ -1,9 +1,3 @@
-// Command admgen generates the schema/ packages from the vendored Apple
-// device management YAML.
-//
-//	admgen generate   regenerate schema/ from third_party/device-management
-//	admgen verify     fail if regeneration would change anything or drop a name
-//	admgen names      print the exported identifiers that would be generated
 package main
 
 import (

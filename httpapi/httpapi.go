@@ -1,16 +1,3 @@
-// Package httpapi exposes the service layer over HTTP the way Apple devices
-// expect: a check-in URL and a server URL that accept PUT requests carrying
-// plists, identified by content type. It also provides the middlewares that
-// extract the device identity certificate from TLS, a proxy header, or the
-// Mdm-Signature header.
-//
-// Apple documentation:
-//   - https://developer.apple.com/documentation/devicemanagement/check-in
-//   - https://developer.apple.com/documentation/devicemanagement/managing-connections
-//
-// The handlers never return 401: some Apple clients treat it as a reason to
-// unenroll (decision record 0006). Unknown enrollments get 403, with Apple's
-// ErrorUnrecognizedDevice body only when the deployment opts in.
 package httpapi
 
 import (

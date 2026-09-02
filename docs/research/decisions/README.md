@@ -46,3 +46,10 @@ With the code:
 | [0016](0016-user-authenticate-state.md) | UserAuthenticate challenge and token state | accepted (HA1 verifier unverified against a real macOS client) | 4 |
 | [0017](0017-enrollment-export-import.md) | Enrollment export and import | accepted | 4 |
 | [0018](0018-go-1.27-baseline.md) | Go 1.27 baseline and JSON policy | accepted | 5 |
+| [0019](0019-canonical-json-and-ddm-tokens.md) | Canonical JSON and DDM tokens | accepted | 5 |
+| [0020](0020-ddm-engine-membership-and-storage.md) | DDM engine, membership, and storage | accepted | 5 |
+| [0021](0021-status-reports-and-subscriptions.md) | Status reports and status subscriptions | accepted | 5 |
+| [0022](0022-change-notifier.md) | Change notifier | accepted | 5 |
+| [0023](0023-ddm-adapters-and-wire-contract.md) | DDM adapters and the internal wire contract | accepted | 5 |
+| [0024](0024-simulator-ddm-client-and-predicates.md) | Simulator DDM client and predicate subset | accepted | 5 |
+| [0025](0025-reference-server-roles-and-container.md) | Reference server roles and container | accepted | 5 |

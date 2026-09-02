@@ -162,7 +162,7 @@ func TestAuthorizeGuardsEveryMessage(t *testing.T) {
 		GetToken: func(context.Context, *mdm.Request, *checkin.GetToken) (*checkin.GetTokenResponse, error) {
 			return nil, getTokenErr
 		},
-		DeclarativeManagement: func(context.Context, *mdm.Request, *checkin.DeclarativeManagement) (service.DMResponse, error) {
+		DeclarativeManagement: func(context.Context, *mdm.Request, *mdm.Checkin, *checkin.DeclarativeManagement) (service.DMResponse, error) {
 			return service.DMResponse{}, nil
 		},
 	})

@@ -161,8 +161,16 @@ jobs:
         with:
           go-version-file: 'go.mod'
           cache: true
+      - name: Build and start our ddm role container
+        run: |
+          scripts/testdb.sh ddm-up > ddm.env
+          cat ddm.env
+          sed -e 's/^export //' -e "s/'//g" ddm.env >> "$GITHUB_ENV"
       - name: E2E scenarios
         run: make test-e2e
+      - name: ddm container logs
+        if: always()
+        run: docker logs mdm-test-ddm 2>&1 | tail -n 200 || true
       - name: Upload e2e coverage
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
