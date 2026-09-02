@@ -489,8 +489,17 @@ func TestSyncer(t *testing.T) {
 		waitFor(t, "failure parked", func() bool {
 			return f.srv.Count(http.MethodPost, dep.PathSyncDevices) > before && f.clock.Pending() > pending
 		})
-		f.clock.Advance(2 * time.Second)
-		waitFor(t, "after backoff retry", func() bool { return len(serials(t, f.store, dep.DeviceQuery{})) == 3 })
+		// The kick channel may still hold an earlier SyncNow, so the loop
+		// can park once more before the failing run; advance in small steps
+		// until the retry lands and check it took the backoff, not the hour.
+		start := f.clock.Now()
+		waitFor(t, "after backoff retry", func() bool {
+			f.clock.Advance(2 * time.Second)
+			return len(serials(t, f.store, dep.DeviceQuery{})) == 3
+		})
+		if f.clock.Now().Sub(start) >= time.Hour {
+			t.Fatal("retry waited for the interval, not the backoff")
+		}
 		// The interval tick syncs as well.
 		f.srv.AddDevices(device("D"))
 		// The fired backoff waiter is gone; the loop parks on a new interval.
