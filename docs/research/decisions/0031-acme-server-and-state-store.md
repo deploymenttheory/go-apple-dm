@@ -1,6 +1,6 @@
 # 0031: ACME server, client identifiers, and the ACME state store
 
-Status: proposed
+Status: accepted
 Date: 2026-09-02
 Phase: 7
 

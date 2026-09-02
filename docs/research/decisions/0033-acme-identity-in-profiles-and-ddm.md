@@ -1,6 +1,6 @@
 # 0033: ACME identity in enrollment profiles, declarative credentials, and the reference server
 
-Status: proposed
+Status: accepted
 Date: 2026-09-02
 Phase: 7
 

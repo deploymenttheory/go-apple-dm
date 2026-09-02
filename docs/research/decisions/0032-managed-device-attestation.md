@@ -1,6 +1,6 @@
 # 0032: Managed Device Attestation: parsing, verification, and policy
 
-Status: proposed
+Status: accepted
 Date: 2026-09-02
 Phase: 7
 
