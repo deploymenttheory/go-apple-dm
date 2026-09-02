@@ -4,20 +4,30 @@ import (
 	"bytes"
 	"context"
 	json "encoding/json/v2"
+	"encoding/pem"
 	"errors"
 	"io"
 	"net/http"
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 	"time"
 
+	"github.com/deploymenttheory/go-apple-mdm/acme"
+	"github.com/deploymenttheory/go-apple-mdm/acme/acmetest"
 	"github.com/deploymenttheory/go-apple-mdm/acme/attest/attesttest"
+	acmeinmem "github.com/deploymenttheory/go-apple-mdm/acme/inmem"
 	"github.com/deploymenttheory/go-apple-mdm/cms"
+	"github.com/deploymenttheory/go-apple-mdm/dep"
+	"github.com/deploymenttheory/go-apple-mdm/dep/deptest"
+	depinmem "github.com/deploymenttheory/go-apple-mdm/dep/inmem"
 	"github.com/deploymenttheory/go-apple-mdm/enroll"
 	"github.com/deploymenttheory/go-apple-mdm/internal/app"
 	"github.com/deploymenttheory/go-apple-mdm/profile"
 	"github.com/deploymenttheory/go-apple-mdm/schema/ddm"
 	"github.com/deploymenttheory/go-apple-mdm/simulator"
+	"github.com/deploymenttheory/go-apple-mdm/storage"
 )
 
 // acmeFixture is an enrollment fixture whose profiles carry an ACME
@@ -29,6 +39,20 @@ type acmeAppFixture struct {
 
 func newACMEAppFixture(t *testing.T, mutate func(*app.Config)) *acmeAppFixture {
 	t.Helper()
+	return newACMEAppFixtureWith(t, func(cfg *app.Config, _ *attesttest.CA) {
+		if mutate != nil {
+			mutate(cfg)
+		}
+	})
+}
+
+// newACMEAppFixtureWith gives the caller the attestation authority as well,
+// for the settings that have to name it.
+func newACMEAppFixtureWith(
+	t *testing.T,
+	mutate func(*app.Config, *attesttest.CA),
+) *acmeAppFixture {
+	t.Helper()
 	attestCA, err := attesttest.NewCA()
 	if err != nil {
 		t.Fatal(err)
@@ -39,7 +63,7 @@ func newACMEAppFixture(t *testing.T, mutate func(*app.Config)) *acmeAppFixture {
 		cfg.Enroll.ACME.Anchors = attestCA.Anchors()
 		cfg.Enroll.ACME.HMACKey = []byte("an app identifier key of ample length")
 		if mutate != nil {
-			mutate(cfg)
+			mutate(cfg, attestCA)
 		}
 	})
 	return f
@@ -394,4 +418,391 @@ func getJSON(t *testing.T, f *acmeAppFixture, url string, v any) error {
 		t.Fatalf("%s = %d %s", url, res.StatusCode, data)
 	}
 	return json.Unmarshal(data, v)
+}
+
+func TestACMEWiring(t *testing.T) {
+	ctx := context.Background()
+
+	t.Run("Status", func(t *testing.T) {
+		for err, want := range map[error]int{
+			acme.ErrNotFound:   http.StatusNotFound,
+			acme.ErrConflict:   http.StatusConflict,
+			acme.ErrInvalid:    http.StatusBadRequest,
+			errors.New("boom"): http.StatusInternalServerError,
+		} {
+			if got := app.ACMEStatusForTests(err); got != want {
+				t.Errorf("acmeStatus(%v) = %d, want %d", err, got, want)
+			}
+		}
+	})
+
+	t.Run("KeyFromFile", func(t *testing.T) {
+		// An operator keeps a key in a file rather than in the process
+		// environment, exactly as the SCEP HMAC key allows.
+		path := filepath.Join(t.TempDir(), "key")
+		if err := os.WriteFile(path, []byte("a key of quite sufficient length"), 0o600); err != nil {
+			t.Fatal(err)
+		}
+		got, err := app.ACMEKeyFromEnvForTests("@" + path)
+		if err != nil || string(got) != "a key of quite sufficient length" {
+			t.Fatalf("key = %q %v", got, err)
+		}
+		if _, err := app.ACMEKeyFromEnvForTests("@" + path + ".missing"); !errors.Is(err, app.ErrConfig) {
+			t.Fatalf("missing file = %v", err)
+		}
+		if got, err := app.ACMEKeyFromEnvForTests(""); err != nil || got != nil {
+			t.Fatalf("empty = %q %v", got, err)
+		}
+	})
+
+	t.Run("AnchorFile", func(t *testing.T) {
+		// The anchors come from a file rather than from the configuration
+		// struct, which is how a lab trusts a stand-in authority.
+		var f *acmeAppFixture
+		f = newACMEAppFixtureWith(t, func(cfg *app.Config, ca *attesttest.CA) {
+			cfg.Enroll.ACME.Anchors = nil
+			cfg.Enroll.ACME.AnchorFile = writeAnchors(t, ca)
+		})
+		_ = f
+		// A device attesting under the authority in the file enrols.
+		d := f.acmeDevice(t, "ACME-ANCHOR-1", "Mac16,1")
+		if err := d.ADEEnroll(ctx, f.publicURL+app.PathADE, simulator.ADEOptions{}); err != nil {
+			t.Fatal(err)
+		}
+	})
+
+	t.Run("BadAnchorFile", func(t *testing.T) {
+		_, err := app.Build(ctx, app.Config{
+			Role: app.RoleAll, Storage: "inmem", Logger: quiet,
+			Enroll: app.EnrollConfig{
+				PublicURL: "https://mdm.example", Topic: "com.apple.mgmt.External.x",
+				Identity: app.IdentityACME,
+				ACME:     app.ACMEConfig{AnchorFile: filepath.Join(t.TempDir(), "nope.pem")},
+			},
+		})
+		if !errors.Is(err, app.ErrConfig) {
+			t.Fatalf("Build = %v", err)
+		}
+	})
+
+	t.Run("SQLiteStoreAndGeneratedKey", func(t *testing.T) {
+		// With no identifier key configured the server generates one and
+		// says so, because a generated key works for one process and fails
+		// the moment a second has to verify what the first minted.
+		a := build(t, app.Config{
+			Role: app.RoleAll, Storage: "sqlite", DSN: t.TempDir() + "/acme.db", Logger: quiet,
+			Enroll: app.EnrollConfig{
+				PublicURL: "https://mdm.example", Topic: "com.apple.mgmt.External.x",
+				Identity: app.IdentityACME,
+			},
+		})
+		store := a.ACMEStoreForTests()
+		if store == nil {
+			t.Fatal("no ACME store")
+		}
+		identifier, err := a.ACMEIdentifierForTests(acme.Binding{Serial: "SER"})
+		if err != nil || identifier == "" {
+			t.Fatalf("identifier = %q %v", identifier, err)
+		}
+	})
+
+	t.Run("DEPPolicy", func(t *testing.T) {
+		// Ownership according to Apple: the attested serial has to be
+		// assigned to this organisation in the device enrollment service.
+		f := newACMEAppFixture(t, func(cfg *app.Config) {
+			cfg.Enroll.ACME.Policy = app.ACMEPolicyDEP
+		})
+		unknown := f.acmeDevice(t, "ACME-DEP-1", "Mac16,1")
+		err := unknown.ADEEnroll(ctx, f.publicURL+app.PathADE, simulator.ADEOptions{})
+		if err == nil || !strings.Contains(err.Error(), "unauthorized") {
+			t.Fatalf("an unassigned device enrolled: %v", err)
+		}
+		// Once the device is in the store it enrols.
+		assigned := f.acmeDevice(t, "ACME-DEP-2", "Mac16,1")
+		depStore := f.app.DEPStoreForTests()
+		if err := depStore.PutAccount(ctx, &dep.Account{Name: "abm"}); err != nil {
+			t.Fatal(err)
+		}
+		err = depStore.PutDevices(
+			ctx, "abm", []dep.Device{{SerialNumber: assigned.SerialNumber}}, time.Now(),
+		)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if err := assigned.ADEEnroll(ctx, f.publicURL+app.PathADE, simulator.ADEOptions{}); err != nil {
+			t.Fatal(err)
+		}
+	})
+
+	t.Run("SIPPolicy", func(t *testing.T) {
+		f := newACMEAppFixture(t, func(cfg *app.Config) {
+			cfg.Enroll.ACME.Policy = app.ACMEPolicySIP
+		})
+		d := f.acmeDevice(t, "ACME-SIP-1", "Mac16,1")
+		depStore := f.app.DEPStoreForTests()
+		if err := depStore.PutAccount(ctx, &dep.Account{Name: "abm"}); err != nil {
+			t.Fatal(err)
+		}
+		if err := depStore.PutDevices(ctx, "abm", []dep.Device{{SerialNumber: d.SerialNumber}}, time.Now()); err != nil {
+			t.Fatal(err)
+		}
+		// The device is assigned but reports no System Integrity Protection
+		// status, and the absence of the extension is not evidence that it
+		// is on.
+		err := d.ADEEnroll(ctx, f.publicURL+app.PathADE, simulator.ADEOptions{})
+		if err == nil || !strings.Contains(err.Error(), "unauthorized") {
+			t.Fatalf("a device with no SIP status enrolled: %v", err)
+		}
+	})
+
+	t.Run("ConfiguredKeyType", func(t *testing.T) {
+		f := newACMEAppFixture(t, func(cfg *app.Config) {
+			cfg.Enroll.ACME.KeyType, cfg.Enroll.ACME.KeySize = enroll.KeyTypeRSA, 2048
+		})
+		d := f.acmeDevice(t, "ACME-KEY-1", "Mac16,1")
+		p, err := enroll.Parse(adeProfile(t, f, d), profile.ParseOptions{})
+		if err != nil {
+			t.Fatal(err)
+		}
+		// An RSA key cannot be hardware bound, so it cannot be attested
+		// either, and the payload says so rather than asking for something
+		// the device would refuse.
+		if p.ACME.KeyType != enroll.KeyTypeRSA || p.ACME.HardwareBound || p.ACME.Attest {
+			t.Fatalf("payload = %+v", p.ACME)
+		}
+	})
+
+	t.Run("CredentialForAnUnknownCertificate", func(t *testing.T) {
+		f := newACMEAppFixture(t, nil)
+		// A certificate this server issued, held by a device that never
+		// completed check-in, is not yet an enrollment we know.
+		d := f.acmeDevice(t, "ACME-UNKNOWN", "Mac16,1")
+		if err := applyACME(ctx, d, adeProfile(t, f, d), f.attestation); err != nil {
+			t.Fatal(err)
+		}
+		req, err := http.NewRequestWithContext(
+			ctx, http.MethodGet, f.publicURL+app.PathACMECredential, nil,
+		)
+		if err != nil {
+			t.Fatal(err)
+		}
+		signature, err := cms.Sign(nil, d.Identity.Cert, d.Identity.Key)
+		if err != nil {
+			t.Fatal(err)
+		}
+		req.Header.Set(cms.HeaderName, cms.EncodeHeader(signature))
+		res, err := f.client().Do(req)
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer res.Body.Close()
+		if res.StatusCode != http.StatusUnauthorized {
+			t.Fatalf("an unenrolled certificate = %d", res.StatusCode)
+		}
+	})
+}
+
+// writeAnchors writes an attestation root to a PEM file.
+func writeAnchors(t *testing.T, ca *attesttest.CA) string {
+	t.Helper()
+	path := filepath.Join(t.TempDir(), "anchors.pem")
+	data := pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: ca.Root.Raw})
+	if err := os.WriteFile(path, data, 0o600); err != nil {
+		t.Fatal(err)
+	}
+	return path
+}
+
+func TestACMEAdminFailures(t *testing.T) {
+	ctx := context.Background()
+	boom := errors.New("boom")
+	failing := &acmetest.Failing{Store: acmeinmem.New()}
+	f := newACMEAppFixture(t, func(cfg *app.Config) {
+		cfg.AdminToken = "t"
+		cfg.Enroll.ACME.Store = failing
+	})
+	d := f.acmeDevice(t, "ACME-ADMIN-1", "Mac16,1")
+	if err := d.ADEEnroll(ctx, f.publicURL+app.PathADE, simulator.ADEOptions{}); err != nil {
+		t.Fatal(err)
+	}
+	// The listing pages, so a limit is honoured.
+	var listed struct {
+		Items      []struct{ Serial string }
+		NextCursor string
+	}
+	if err := getJSON(t, f, f.publicURL+"/admin/v1/acme/certificates?limit=1", &listed); err != nil {
+		t.Fatal(err)
+	}
+	if len(listed.Items) != 1 {
+		t.Fatalf("listed %d certificates", len(listed.Items))
+	}
+	// Orders for the account that enrolled.
+	var orders struct{ Items []struct{ ID string } }
+	res, err := f.acmeStore(t).ListCertificates(ctx, acme.CertificateQuery{}, storage.Page{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	account := res.Items[0].AccountID
+	if err := getJSON(t, f, f.publicURL+"/admin/v1/acme/orders?account="+account, &orders); err != nil {
+		t.Fatal(err)
+	}
+	if len(orders.Items) != 1 {
+		t.Fatalf("listed %d orders", len(orders.Items))
+	}
+	// A store that will not answer is a server error, not an empty list.
+	for _, c := range []struct{ method, path string }{
+		{"ListCertificates", "/admin/v1/acme/certificates"},
+		{"ListOrders", "/admin/v1/acme/orders?account=" + account},
+	} {
+		failing.Fail = map[string]error{c.method: boom}
+		req, _ := http.NewRequestWithContext(ctx, http.MethodGet, f.publicURL+c.path, nil)
+		req.Header.Set("Authorization", "Bearer t")
+		res, err := f.client().Do(req)
+		if err != nil {
+			t.Fatal(err)
+		}
+		_ = res.Body.Close()
+		if res.StatusCode != http.StatusInternalServerError {
+			t.Fatalf("%s failing = %d", c.method, res.StatusCode)
+		}
+	}
+}
+
+// acmeStore reads the ACME store behind the app.
+func (f *acmeAppFixture) acmeStore(t *testing.T) acme.Store {
+	t.Helper()
+	s := f.app.ACMEStoreForTests()
+	if s == nil {
+		t.Fatal("no ACME store")
+	}
+	return s
+}
+
+func TestACMEPolicyFaultIsNotARefusal(t *testing.T) {
+	// A lookup that fails is a fault on our side, not a device that was
+	// turned away, so the challenge stays pending and the device can try
+	// again once the store is well. Settling it invalid would lock a
+	// legitimate device out until someone reissued its profile.
+	ctx := context.Background()
+	failing := &deptest.Failing{Store: depinmem.New()}
+	f := newACMEAppFixture(t, func(cfg *app.Config) {
+		cfg.Enroll.ACME.Policy = app.ACMEPolicyDEP
+		cfg.DEP.Store = failing
+	})
+	d := f.acmeDevice(t, "ACME-FAULT-1", "Mac16,1")
+	if err := failing.PutAccount(ctx, &dep.Account{Name: "abm"}); err != nil {
+		t.Fatal(err)
+	}
+	err := failing.PutDevices(ctx, "abm", []dep.Device{{SerialNumber: d.SerialNumber}}, time.Now())
+	if err != nil {
+		t.Fatal(err)
+	}
+	failing.Fail = map[string]error{"ListAccounts": errors.New("the directory is down")}
+	// The client retries a server error, so the attempt is bounded here
+	// rather than left to give up on its own.
+	attempt, cancel := context.WithTimeout(ctx, 2*time.Second)
+	defer cancel()
+	if err := d.ADEEnroll(attempt, f.publicURL+app.PathADE, simulator.ADEOptions{}); err == nil {
+		t.Fatal("the device enrolled while the lookup was failing")
+	}
+	// Nothing was issued, and nothing was settled against the device.
+	res, err := f.acmeStore(t).ListCertificates(ctx, acme.CertificateQuery{}, storage.Page{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(res.Items) != 0 {
+		t.Fatalf("issued %d certificates during an outage", len(res.Items))
+	}
+	// Once the store answers again the same device enrols, which is the
+	// point: the refusal was never recorded.
+	failing.Fail = nil
+	if err := d.ADEEnroll(ctx, f.publicURL+app.PathADE, simulator.ADEOptions{}); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestACMEIdentifierKeyFallsBackToSCEP(t *testing.T) {
+	// Both are the same kind of secret held by the same server, so a
+	// deployment that configured one has said what it means to.
+	a := build(t, app.Config{
+		Role: app.RoleAll, Storage: "inmem", Logger: quiet,
+		Enroll: app.EnrollConfig{
+			PublicURL: "https://mdm.example", Topic: "com.apple.mgmt.External.x",
+			Identity:    app.IdentityACME,
+			SCEPHMACKey: []byte("a SCEP key of quite sufficient length"),
+		},
+	})
+	identifier, err := a.ACMEIdentifierForTests(acme.Binding{Serial: "SER"})
+	if err != nil || identifier == "" {
+		t.Fatalf("identifier = %q %v", identifier, err)
+	}
+}
+
+func TestACMEEnvKeys(t *testing.T) {
+	env := func(m map[string]string) func(string) string {
+		return func(k string) string { return m[k] }
+	}
+	base := map[string]string{
+		app.EnvPublicURL:   "https://mdm.example",
+		app.EnvPushTopic:   "com.apple.mgmt.External.x",
+		app.EnvIdentity:    app.IdentityACME,
+		app.EnvSCEPHMACKey: "a SCEP key of quite sufficient length",
+	}
+	for name, want := range map[string]struct {
+		Type string
+		Size int64
+	}{
+		"ec256":   {enroll.KeyTypeEC, 256},
+		"ec384":   {enroll.KeyTypeEC, 384},
+		"rsa2048": {enroll.KeyTypeRSA, 2048},
+		"rsa4096": {enroll.KeyTypeRSA, 4096},
+	} {
+		m := map[string]string{}
+		for k, v := range base {
+			m[k] = v
+		}
+		m[app.EnvACMEKey] = name
+		cfg, err := app.ParseEnv(env(m))
+		if err != nil {
+			t.Fatalf("%s = %v", name, err)
+		}
+		if cfg.Enroll.ACME.KeyType != want.Type || cfg.Enroll.ACME.KeySize != want.Size {
+			t.Fatalf("%s = %s/%d", name, cfg.Enroll.ACME.KeyType, cfg.Enroll.ACME.KeySize)
+		}
+		// The SCEP key is read from the same environment.
+		if string(cfg.Enroll.SCEPHMACKey) != base[app.EnvSCEPHMACKey] {
+			t.Fatalf("SCEP key = %q", cfg.Enroll.SCEPHMACKey)
+		}
+	}
+	// A key file that is not there is a configuration error, not a silent
+	// fall back to a generated key.
+	m := map[string]string{}
+	for k, v := range base {
+		m[k] = v
+	}
+	m[app.EnvACMEHMACKey] = "@" + filepath.Join(t.TempDir(), "absent")
+	if _, err := app.ParseEnv(env(m)); !errors.Is(err, app.ErrConfig) {
+		t.Fatalf("missing key file = %v", err)
+	}
+}
+
+func TestACMEDEPPolicyNeedsTheDEPStore(t *testing.T) {
+	// The mdm role runs no device enrollment service, so a policy that asks
+	// it about every device could never say yes. Saying so at startup is
+	// better than answering every enrolment with a server error, which is
+	// what the client would then retry until it gave up.
+	_, err := app.Build(context.Background(), app.Config{
+		Role: app.RoleMDM, Storage: "inmem", Logger: quiet,
+		Enroll: app.EnrollConfig{
+			PublicURL: "https://mdm.example", Topic: "com.apple.mgmt.External.x",
+			Identity: app.IdentityACME,
+			ACME:     app.ACMEConfig{Policy: app.ACMEPolicyDEP},
+		},
+	})
+	if !errors.Is(err, app.ErrConfig) {
+		t.Fatalf("Build = %v", err)
+	}
+	if err == nil || !strings.Contains(err.Error(), "device enrollment service") {
+		t.Fatalf("error does not say why: %v", err)
+	}
 }

@@ -304,7 +304,17 @@ func (a *App) wire(ctx context.Context) error {
 				return fmt.Errorf("app: proxyclient: %w", err)
 			}
 		}
-		enrollHooks, err := a.wireEnrollment(mux)
+		// The device enrollment service is built before enrollment,
+		// because an ACME policy can make an assignment in it a condition
+		// of issuing an identity, and a policy that cannot reach its store
+		// should fail here rather than answer every device with a server
+		// error.
+		if cfg.Role != RoleMDM {
+			if err := a.wireDEP(ctx); err != nil {
+				return err
+			}
+		}
+		enrollHooks, err := a.wireEnrollment(ctx, mux)
 		if err != nil {
 			return err
 		}
@@ -356,12 +366,12 @@ func (a *App) wire(ctx context.Context) error {
 			a.AxM = client
 			admin.Handle("/axm/", a.requireToken(a.axmHandler(client)))
 		}
-		svc, err := a.newDEP(ctx)
-		if err != nil {
-			return err
+		if a.dep == nil {
+			if err := a.wireDEP(ctx); err != nil {
+				return err
+			}
 		}
-		a.dep, a.DEP = svc, svc.client
-		admin.Handle("/dep/", a.requireToken(svc.handler()))
+		admin.Handle("/dep/", a.requireToken(a.dep.handler()))
 		if a.acme != nil {
 			admin.Handle("/acme/", a.requireToken(a.acme.handler()))
 		}
@@ -416,4 +426,17 @@ func (a *App) healthz(w http.ResponseWriter, r *http.Request) {
 	}
 	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
 	_, _ = w.Write([]byte("ok\n"))
+}
+
+// wireDEP builds the device enrollment service once.
+func (a *App) wireDEP(ctx context.Context) error {
+	if a.dep != nil {
+		return nil
+	}
+	svc, err := a.newDEP(ctx)
+	if err != nil {
+		return err
+	}
+	a.dep, a.DEP = svc, svc.client
+	return nil
 }

@@ -184,11 +184,20 @@ func (s *acmeService) policy() (acme.Policy, error) {
 	switch s.cfg.Policy {
 	case "", ACMEPolicyAny:
 		return acme.AllowAll(), nil
-	case ACMEPolicyDEP:
+	case ACMEPolicyDEP, ACMEPolicySIP:
 		// Ownership according to Apple: the device has to be assigned to
-		// this organisation in the device enrollment service.
-		return acme.DeviceLookup(s.depLookup), nil
-	case ACMEPolicySIP:
+		// this organisation in the device enrollment service. Without that
+		// store the policy could never say yes, so it is a configuration
+		// error now rather than a server error on every enrollment.
+		if s.app.dep == nil {
+			return nil, fmt.Errorf(
+				"%w: %s=%s needs the device enrollment service, which the %s role does not run",
+				ErrConfig, EnvACMEPolicy, s.cfg.Policy, s.app.cfg.Role,
+			)
+		}
+		if s.cfg.Policy == ACMEPolicyDEP {
+			return acme.DeviceLookup(s.depLookup), nil
+		}
 		return acme.Chain(acme.DeviceLookup(s.depLookup), acme.RequireSIP()), nil
 	default:
 		return nil, fmt.Errorf(
@@ -201,9 +210,6 @@ func (s *acmeService) policy() (acme.Policy, error) {
 // depLookup asks the device enrollment service store whether a serial
 // number belongs to this organisation.
 func (s *acmeService) depLookup(ctx context.Context, serial string) (bool, error) {
-	if s.app.dep == nil {
-		return false, fmt.Errorf("%w: the device enrollment service is not configured", ErrConfig)
-	}
 	res, err := s.app.dep.store.ListAccounts(ctx, storage.Page{Limit: 1000})
 	if err != nil {
 		return false, fmt.Errorf("app: DEP accounts: %w", err)
@@ -235,6 +241,13 @@ func (s *acmeService) acmePayload(b acme.Binding, directoryURL string) (*enroll.
 	subject := pkix.Name{CommonName: b.CommonName, Organization: b.Organization}
 	if subject.CommonName == "" {
 		subject.CommonName = b.Serial
+	}
+	if subject.CommonName == "" {
+		// A user channel has no hardware of its own, so the enrollment it
+		// belongs to is the most specific name there is. Apple requires a
+		// Subject, so leaving it empty would produce a payload the device
+		// refuses.
+		subject.CommonName = b.EnrollmentID
 	}
 	return &enroll.ACME{
 		DirectoryURL:     directoryURL,
@@ -284,7 +297,6 @@ func (s *acmeService) credentialHandler() http.Handler {
 		binding := acme.Binding{
 			Serial:       enrollment.Device.SerialNumber,
 			EnrollmentID: string(id.ID),
-			CommonName:   enrollment.Device.SerialNumber,
 			// A user channel has no hardware of its own to attest.
 			AllowUnidentified: enrollment.Device.SerialNumber == "",
 		}
@@ -390,7 +402,9 @@ func readACMEKey(v string) ([]byte, error) {
 		return nil, nil
 	}
 	if strings.HasPrefix(v, "@") {
-		data, err := os.ReadFile(v[1:]) // #nosec G304 -- an operator-supplied path from the configuration
+		data, err := os.ReadFile(
+			v[1:],
+		) // #nosec G304 -- an operator-supplied path from the configuration
 		if err != nil {
 			return nil, fmt.Errorf("%w: %s: %w", ErrConfig, EnvACMEHMACKey, err)
 		}
@@ -405,5 +419,15 @@ func (a *App) ACMEStoreForTests() acme.Store { return a.acme.store }
 // ACMEIdentifierForTests mints a client identifier, so a test can order
 // without composing a whole enrollment profile.
 func (a *App) ACMEIdentifierForTests(b acme.Binding) (string, error) {
-	return a.acme.identifiers.Issue(b)
+	id, err := a.acme.identifiers.Issue(b)
+	if err != nil {
+		return "", fmt.Errorf("app: ACME identifier: %w", err)
+	}
+	return id, nil
 }
+
+// ACMEStatusForTests exposes the error mapping to tests of the wiring.
+func ACMEStatusForTests(err error) int { return acmeStatus(err) }
+
+// ACMEKeyFromEnvForTests exposes the key reader to tests of the wiring.
+func ACMEKeyFromEnvForTests(v string) ([]byte, error) { return readACMEKey(v) }

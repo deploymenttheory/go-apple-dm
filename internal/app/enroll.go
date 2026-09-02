@@ -30,7 +30,7 @@ import (
 const (
 	PathSCEP            = "/scep"
 	PathACME            = "/acme"
-	PathACMECredential  = "/enroll/acme-credential"
+	PathACMECredential  = "/enroll/acme-credential" // #nosec G101 -- a route, not a credential
 	PathWellKnown       = discovery.WellKnownPath
 	PathEnroll          = "/enroll/"             // + discovery version (mdm-byod, mdm-adde)
 	PathADE             = "/enroll/ade"          // DEP profile url and configuration_web_url
@@ -171,7 +171,7 @@ type enrollment struct {
 }
 
 // wireEnrollment mounts the routes; it returns the hooks the core needs.
-func (a *App) wireEnrollment(mux *http.ServeMux) ([]service.Hook, error) {
+func (a *App) wireEnrollment(ctx context.Context, mux *http.ServeMux) ([]service.Hook, error) {
 	cfg := a.cfg.Enroll
 	if !cfg.Enabled() {
 		return nil, nil
@@ -214,7 +214,7 @@ func (a *App) wireEnrollment(mux *http.ServeMux) ([]service.Hook, error) {
 	// ACME is mounted whether or not enrollment profiles use it, because a
 	// declarative credential can ask an enrolled device to obtain a second
 	// identity through it.
-	if e.acme, err = a.newACME(context.Background(), e); err != nil {
+	if e.acme, err = a.newACME(ctx, e); err != nil {
 		return nil, err
 	}
 	a.acme = e.acme

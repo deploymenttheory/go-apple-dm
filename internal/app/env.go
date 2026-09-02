@@ -2,9 +2,10 @@ package app
 
 import (
 	"fmt"
-	"github.com/deploymenttheory/go-apple-mdm/enroll"
 	"strconv"
 	"time"
+
+	"github.com/deploymenttheory/go-apple-mdm/enroll"
 )
 
 // Environment variables read by ParseEnv.
