@@ -377,6 +377,7 @@ func (a *App) wire(ctx context.Context) error {
 			a.admin = m
 		}
 		var routes []adminRoute
+		routes = append(routes, a.introspectionRoutes()...)
 		routes = append(routes, a.ddmAdminRoutes()...)
 		if a.admin != nil {
 			routes = append(routes, a.principalRoutes()...)

@@ -50,6 +50,7 @@ func AdminActions() []adminauth.Action {
 		{ID: ActionReadACME, Help: "Read issued ACME identities and the hardware Apple attested for each.", Resource: adminauth.EntitySystem},
 		{ID: ActionManagePrincipals, Help: "Create, rotate, and revoke admin credentials.", Resource: adminauth.EntitySystem},
 		{ID: ActionManagePolicies, Help: "Edit the policies that decide what every other principal may do.", Resource: adminauth.EntitySystem},
+		{ID: ActionReadConfig, Help: "Read the server's role and route table. Authenticated callers always may; a policy does not gate it.", Resource: adminauth.EntitySystem},
 	}
 }
 
@@ -68,8 +69,15 @@ type adminRoute struct {
 	Action string
 	// Family names the group a role must be able to back, so a role that did
 	// not build the dependency does not register the route.
-	Family  string
-	Handler http.Handler
+	Family string
+	// Introspection marks a route that answers what the server is rather than
+	// what it holds: the role it runs, and the route table itself. Those are
+	// authenticated but not policy-gated, because a caller needs them to
+	// interpret a 404 that is really a role split, and a policy that had to
+	// grant them first would make the explanation unreachable exactly when it
+	// is needed. They return no fleet data.
+	Introspection bool
+	Handler       http.Handler
 }
 
 // Admin authorization errors.
@@ -149,7 +157,7 @@ func (a *App) authorized(rt adminRoute) http.Handler {
 			writeError(w, http.StatusUnauthorized, ErrUnauthorized)
 			return
 		}
-		if !bypass {
+		if !bypass && !rt.Introspection {
 			if err := a.checkPolicy(r, p, rt); err != nil {
 				a.auditDenied(r, p, rt, err)
 				writeError(w, http.StatusForbidden, fmt.Errorf("%w: %s requires %q", ErrForbidden, p.Name, rt.Action))
