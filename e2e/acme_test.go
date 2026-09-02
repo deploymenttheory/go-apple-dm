@@ -52,8 +52,12 @@ func newACMEFixture(t *testing.T, mutate ...func(*acme.Config)) *acmeFixture {
 	// The server needs the base URL, which does not exist until the test
 	// server is listening, so it is built on the first request.
 	build := func() {
+		// The ACME server runs on real time here, not the harness's fake
+		// clock: an attestation certificate has a real validity window, and
+		// a server verifying it a year in the simulated past would reject a
+		// perfectly good chain.
 		f.identifiers, err = acme.NewHMACIdentifiers(
-			[]byte("an e2e identifier key of ample length"), time.Hour, f.clock,
+			[]byte("an e2e identifier key of ample length"), time.Hour, nil,
 		)
 		if err != nil {
 			t.Fatal(err)
@@ -65,7 +69,6 @@ func newACMEFixture(t *testing.T, mutate ...func(*acme.Config)) *acmeFixture {
 			CAPolicy:    ca.Policy{ExtKeyUsage: []x509.ExtKeyUsage{x509.ExtKeyUsageClientAuth}},
 			Identifiers: f.identifiers,
 			Anchors:     attestCA.Anchors(),
-			Clock:       f.clock,
 			Bus:         f.bus,
 			Logger:      slog.New(slog.NewTextHandler(io.Discard, nil)),
 		}
@@ -386,7 +389,6 @@ func TestE2E_DeviceAttestation(t *testing.T) {
 	if err := a.Verify(attest.VerifyOptions{
 		Anchors:   f.attestation.Anchors(),
 		Freshness: nonce,
-		Now:       f.clock.Now,
 	}); err != nil {
 		t.Fatal(err)
 	}
@@ -412,7 +414,6 @@ func TestE2E_DeviceAttestation(t *testing.T) {
 	if err := stale.Verify(attest.VerifyOptions{
 		Anchors:   f.attestation.Anchors(),
 		Freshness: other,
-		Now:       f.clock.Now,
 	}); !errors.Is(err, attest.ErrFreshness) {
 		t.Fatalf("Verify = %v, want ErrFreshness", err)
 	}
@@ -430,15 +431,22 @@ func TestE2E_DeviceAttestation(t *testing.T) {
 	if err := renewed.Verify(attest.VerifyOptions{
 		Anchors:   f.attestation.Anchors(),
 		Freshness: other,
-		Now:       f.clock.Now,
 	}); err != nil {
 		t.Fatal(err)
 	}
 
-	// A tampered chain is refused.
+	// A tampered chain still parses, because a signature is not checked
+	// until the path is built, and then it fails.
 	tampered := [][]byte{append([]byte(nil), fresh[0]...), fresh[1]}
 	tampered[0][len(tampered[0])-1] ^= 0xff
-	if _, err := attest.ParseChain(tampered); err == nil {
-		t.Fatal("a tampered certificate parsed")
+	bad, err := attest.ParseChain(tampered)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := bad.Verify(attest.VerifyOptions{
+		Anchors:   f.attestation.Anchors(),
+		Freshness: other,
+	}); !errors.Is(err, attest.ErrChain) {
+		t.Fatalf("Verify = %v, want ErrChain", err)
 	}
 }
