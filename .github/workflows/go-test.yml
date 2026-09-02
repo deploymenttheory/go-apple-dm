@@ -39,7 +39,7 @@ jobs:
         run: make test
       - name: Upload unit coverage
         if: matrix.os == 'ubuntu-latest'
-        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: cover-unit
           path: cover/unit
@@ -120,7 +120,7 @@ jobs:
           STORAGE_TIMING: "off"
         run: make test-storage-perf
       - name: Upload storage coverage
-        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: cover-storage
           path: cover/storage
@@ -164,7 +164,7 @@ jobs:
       - name: E2E scenarios
         run: make test-e2e
       - name: Upload e2e coverage
-        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: cover-e2e-${{ matrix.store }}
           path: cover/e2e-${{ matrix.store }}
@@ -203,7 +203,7 @@ jobs:
         run: make coverage
       - name: Upload report
         if: always()
-        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: coverage-report
           path: |
