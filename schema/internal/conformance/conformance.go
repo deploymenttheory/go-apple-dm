@@ -1,5 +1,3 @@
-// Package conformance holds the helpers the generated conformance tests call.
-// It is internal to schema/ so generated packages can import it.
 package conformance
 
 import (

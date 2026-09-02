@@ -1,0 +1,7 @@
+.git
+third_party/refs
+cover
+*.db
+*.md
+docs
+.github

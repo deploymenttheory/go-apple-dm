@@ -1,10 +1,3 @@
-// Package scep is a minimal SCEP (RFC 8894) endpoint for issuing the device
-// enrollment identity, plus a client the simulator enrolls with. It signs
-// through the ca.Signer abstraction and gates issuance with pluggable
-// challenges and a CSR verifier (decision record 0008).
-//
-// Apple documentation:
-// https://developer.apple.com/documentation/devicemanagement/scep
 package scep
 
 import (
@@ -242,7 +235,10 @@ func (s *Server) servePKIOperation(w http.ResponseWriter, r *http.Request) {
 	// A signed failure CertRep is still delivered with 200: the device
 	// reads the failInfo attribute, not the HTTP status.
 	w.Header().Set("Content-Type", ContentTypePKIMessage)
-	_, _ = w.Write(rep)
+	w.Header().Set("X-Content-Type-Options", "nosniff")
+	// rep is a DER CertRep produced and signed by this server, never bytes
+	// echoed from the request, and the content type is binary.
+	_, _ = w.Write(rep) // #nosec G705 -- server-built PKI message, not reflected input
 }
 
 func readMessage(r *http.Request) ([]byte, error) {

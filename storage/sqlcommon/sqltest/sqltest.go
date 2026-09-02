@@ -1,6 +1,3 @@
-// Package sqltest holds helpers for SQL backend tests and benchmarks that
-// need large fixtures written faster than the storage API allows. It is
-// not part of the storage contract.
 package sqltest
 
 import (

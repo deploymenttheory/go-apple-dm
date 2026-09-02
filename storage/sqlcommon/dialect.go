@@ -1,7 +1,3 @@
-// Package sqlcommon implements storage.Store over database/sql once, for
-// every SQL backend. A backend supplies a Dialect (placeholder style, row
-// locking, upsert syntax, and its migration files) and an opened *sql.DB
-// (decision record 0012).
 package sqlcommon
 
 import (

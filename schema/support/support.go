@@ -1,10 +1,3 @@
-// Package support answers "is this key supported on this OS, version, and
-// enrollment context?" at runtime, from tables generated out of the
-// supportedOS blocks in Apple's device management schema
-// (https://github.com/apple/device-management/blob/release/docs/schema.md).
-//
-// Generated packages register their tables in init; callers query them
-// through Lookup or through the generated Validate methods.
 package support
 
 import (

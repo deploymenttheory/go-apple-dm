@@ -1,12 +1,3 @@
-// Package simulator drives an MDM server the way an Apple device does: it
-// performs check-in (Authenticate, TokenUpdate, CheckOut, bootstrap tokens,
-// GetToken, DeclarativeManagement), polls the server URL with Idle, answers
-// commands with typed responses, and can inject NotNow and Error replies.
-// It exists so servers can be tested end to end without hardware.
-//
-// Apple documentation:
-//   - https://developer.apple.com/documentation/devicemanagement/check-in
-//   - https://developer.apple.com/documentation/devicemanagement/commands-and-queries
 package simulator
 
 import (
@@ -102,6 +93,10 @@ type Device struct {
 	mu       sync.Mutex
 	commands []*mdm.Command
 	replies  []Reply
+
+	// Declarative management: options and the device channel's client state.
+	ddm   ddmConfig
+	ddmCh *ddmChannel
 }
 
 // Option configures a Device.
@@ -283,10 +278,13 @@ func (d *Device) checkin(ctx context.Context, fields map[string]any) ([]byte, er
 // handed until the server returns an empty body. It returns the commands
 // processed in this connection.
 func (d *Device) Connect(ctx context.Context) ([]*mdm.Command, error) {
-	return d.connectAs(ctx, map[string]any{"UDID": d.UDID})
+	return d.connectAs(ctx, map[string]any{"UDID": d.UDID}, d.ddmChannel())
 }
 
-func (d *Device) connectAs(ctx context.Context, identity map[string]any) ([]*mdm.Command, error) {
+// connectAs runs the command loop for one channel. A DeclarativeManagement
+// command the Responder acknowledges triggers the channel's DDM client
+// (sync then status report) before the reply is sent.
+func (d *Device) connectAs(ctx context.Context, identity map[string]any, ddm *ddmChannel) ([]*mdm.Command, error) {
 	msg := map[string]any{"Status": string(mdm.StatusIdle)}
 	maps.Copy(msg, identity)
 	var processed []*mdm.Command
@@ -311,6 +309,9 @@ func (d *Device) connectAs(ctx context.Context, identity map[string]any) ([]*mdm
 			return processed, fmt.Errorf("simulator: %w", err)
 		}
 		reply := d.Responder(cmd)
+		if cmd.RequestType == "DeclarativeManagement" && reply.Status == mdm.StatusAcknowledged {
+			reply = ddm.handleCommand(ctx, cmd, reply)
+		}
 		d.mu.Lock()
 		d.commands = append(d.commands, cmd)
 		d.replies = append(d.replies, reply)
@@ -383,6 +384,8 @@ type User struct {
 	LongName  string
 	PushMagic string
 	PushToken []byte
+
+	ddmCh *ddmChannel
 }
 
 // User returns a user channel for the device.
@@ -426,5 +429,5 @@ func (u *User) TokenUpdate(ctx context.Context) error {
 
 // Connect polls the server URL on the user channel.
 func (u *User) Connect(ctx context.Context) ([]*mdm.Command, error) {
-	return u.Device.connectAs(ctx, u.identity())
+	return u.Device.connectAs(ctx, u.identity(), u.ddmChannel())
 }

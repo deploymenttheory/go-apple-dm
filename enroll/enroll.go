@@ -1,11 +1,3 @@
-// Package enroll builds the MDM enrollment profile: the MDM payload, the
-// identity it points at (SCEP or a pre-issued PKCS #12), and optional
-// trust anchors, validated against Apple's schema (decision record 0009).
-//
-// Apple documentation:
-// https://developer.apple.com/documentation/devicemanagement/mdm
-// https://developer.apple.com/documentation/devicemanagement/scep
-// https://developer.apple.com/documentation/devicemanagement/deploying-device-management-enrollment-profiles
 package enroll
 
 import (
@@ -48,11 +40,12 @@ const (
 // Has reports whether every bit in r is set.
 func (a AccessRights) Has(r AccessRights) bool { return a&r == r }
 
-// ServerCapabilities values.
+// ServerCapabilities values: Apple's capability identifiers for the
+// enrollment profile, not credentials.
 const (
 	CapabilityPerUserConnections = "com.apple.mdm.per-user-connections"
-	CapabilityBootstrapToken     = "com.apple.mdm.bootstraptoken"
-	CapabilityToken              = "com.apple.mdm.token"
+	CapabilityBootstrapToken     = "com.apple.mdm.bootstraptoken" // #nosec G101 -- capability identifier
+	CapabilityToken              = "com.apple.mdm.token"          // #nosec G101 -- capability identifier
 )
 
 // SCEP describes the SCEP identity payload.

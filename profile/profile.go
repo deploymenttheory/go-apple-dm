@@ -1,11 +1,3 @@
-// Package profile composes, signs, and parses Apple configuration
-// profiles (.mobileconfig). Payload bodies are the generated types in
-// schema/profiles; this package supplies the top-level envelope, the
-// common payload keys, stable identifiers, and CMS signing (decision
-// record 0009).
-//
-// Apple documentation:
-// https://developer.apple.com/documentation/devicemanagement/profile-specific-payload-keys
 package profile
 
 import (

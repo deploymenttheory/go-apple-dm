@@ -1,5 +1,3 @@
-// Package testpki generates throwaway certificate authorities and device
-// identities for tests and the device simulator.
 package testpki
 
 import (

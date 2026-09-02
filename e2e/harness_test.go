@@ -1,10 +1,5 @@
 //go:build e2e
 
-// Package e2e runs the named scenarios in docs/testing/e2e-scenarios.md
-// against a real HTTP server built from the library: service core, a
-// storage backend selected by E2E_STORE (sqlite by default; postgres or
-// inmem), HTTP handlers with Mdm-Signature verification, and the device
-// simulator as the client.
 package e2e
 
 import (
@@ -71,12 +66,22 @@ type harness struct {
 
 func newHarness(t *testing.T, cfg service.Config) *harness {
 	t.Helper()
+	return newHarnessWith(t, cfg, newStore(t), newBus())
+}
+
+// newBus is the event bus every harness records from.
+func newBus() *event.Bus { return event.New() }
+
+// newHarnessWith builds the server around a store and bus the caller made
+// first, so components that need them before the core exists (the DDM
+// engine) can be wired into cfg.
+func newHarnessWith(t *testing.T, cfg service.Config, store storage.Store, bus *event.Bus) *harness {
+	t.Helper()
 	testCA, err := testpki.NewCA("go-apple-mdm test CA")
 	if err != nil {
 		t.Fatal(err)
 	}
-	h := &harness{t: t, ca: testCA, store: newStore(t), clock: clock.NewFake(t0)}
-	bus := event.New()
+	h := &harness{t: t, ca: testCA, store: store, clock: clock.NewFake(t0)}
 	bus.Subscribe(event.All, func(_ context.Context, e event.Event) error {
 		h.mu.Lock()
 		defer h.mu.Unlock()
@@ -126,8 +131,8 @@ func newHarness(t *testing.T, cfg service.Config) *harness {
 	if err != nil {
 		t.Fatal(err)
 	}
-	store := push.StaticCertStore{pushTopic: tls.Certificate{Certificate: [][]byte{pushID.Cert.Raw}, PrivateKey: pushID.Key, Leaf: pushID.Cert}}
-	client := apns.New(store, apns.WithHost(h.apns.URL), apns.WithTransport(func(tls.Certificate) *http.Client { return h.apns.Client() }))
+	certs := push.StaticCertStore{pushTopic: tls.Certificate{Certificate: [][]byte{pushID.Cert.Raw}, PrivateKey: pushID.Key, Leaf: pushID.Cert}}
+	client := apns.New(certs, apns.WithHost(h.apns.URL), apns.WithTransport(func(tls.Certificate) *http.Client { return h.apns.Client() }))
 	h.notifier = &push.Notifier{Store: h.store, Pusher: client, Bus: bus, Clock: h.clock}
 	return h
 }

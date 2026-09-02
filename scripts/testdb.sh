@@ -1,14 +1,32 @@
 #!/usr/bin/env bash
-# testdb.sh: PostgreSQL and MySQL in Docker for the storage and e2e suites.
+# testdb.sh: PostgreSQL and MySQL in Docker for the storage and e2e suites,
+# and our own reference server in the ddm role for the split-deployment e2e.
 #
-# Usage: scripts/testdb.sh up|down|env
-#   up    start (or reuse) both containers, wait for readiness, print exports
-#   down  remove both containers
-#   env   print the export lines matching .github/workflows/go-test.yml
+# Usage: scripts/testdb.sh up|down|env|ddm-up|ddm-down|ddm-env
+#   up        start (or reuse) both database containers, wait for readiness, print exports
+#   down      remove both database containers
+#   env       print the database export lines matching .github/workflows/go-test.yml
+#   ddm-up    build go-apple-mdm:test from this repository, run it as the ddm role, print exports
+#   ddm-down  remove the ddm container
+#   ddm-env   print the ddm export lines (TEST_DDM_URL and the shared keys)
 set -euo pipefail
 
 PG=mdm-test-postgres
 MY=mdm-test-mysql
+DDM=mdm-test-ddm
+DDM_IMAGE=go-apple-mdm:test
+DDM_PORT="${TEST_DDM_PORT:-8090}"
+# Shared secrets for the test hop between the roles; CI sets the same values.
+DDM_SEND_KEY="${TEST_DDM_SEND_KEY:-mdm-to-ddm-test-key}"
+DDM_RECV_KEY="${TEST_DDM_RECV_KEY:-ddm-to-mdm-test-key}"
+DDM_ADMIN_TOKEN="${TEST_DDM_ADMIN_TOKEN:-admin-test-token}"
+
+print_ddm_env() {
+  echo "export TEST_DDM_URL='http://127.0.0.1:${DDM_PORT}'"
+  echo "export TEST_DDM_SEND_KEY='${DDM_SEND_KEY}'"
+  echo "export TEST_DDM_RECV_KEY='${DDM_RECV_KEY}'"
+  echo "export TEST_DDM_ADMIN_TOKEN='${DDM_ADMIN_TOKEN}'"
+}
 
 print_env() {
   echo "export TEST_POSTGRES_DSN='postgres://mdm:mdm@127.0.0.1:5432/mdm?sslmode=disable'"
@@ -27,14 +45,21 @@ ensure() {
   esac
 }
 
-# wait_for LABEL CMD...: poll CMD until it succeeds or 90s elapse.
+# wait_for LABEL CMD...: poll CMD until it succeeds or 90s elapse. LABEL is
+# the container name; when it stops running the wait ends early with its logs.
 wait_for() {
   local label="$1"; shift
   for _ in $(seq 1 90); do
     if "$@" >/dev/null 2>&1; then echo "$label: ready" >&2; return 0; fi
+    if [ "$(docker inspect -f '{{.State.Running}}' "$label" 2>/dev/null)" != "true" ]; then
+      echo "$label: exited" >&2
+      docker logs "$label" 2>&1 | tail -n 20 >&2
+      return 1
+    fi
     sleep 1
   done
   echo "$label: not ready after 90s" >&2
+  docker logs "$label" 2>&1 | tail -n 20 >&2
   return 1
 }
 
@@ -54,8 +79,26 @@ case "${1:-}" in
   env)
     print_env
     ;;
+  ddm-up)
+    docker build -t "$DDM_IMAGE" "$(cd "$(dirname "$0")/.." && pwd)" >&2
+    docker rm -f "$DDM" >/dev/null 2>&1 || true
+    # The mdm role signs with SEND and verifies with RECV, so the ddm role receives
+    # with the mdm role's SEND key and signs with its RECV key.
+    docker run -d --name "$DDM" -p "${DDM_PORT}:8080" \
+      -e MDM_ROLE=ddm -e MDM_LISTEN=:8080 -e MDM_STORAGE=sqlite -e MDM_DSN=/data/ddm.db \
+      -e MDM_DDM_RECV_KEY="$DDM_SEND_KEY" -e MDM_DDM_SEND_KEY="$DDM_RECV_KEY" \
+      -e MDM_ADMIN_TOKEN="$DDM_ADMIN_TOKEN" "$DDM_IMAGE" >/dev/null
+    wait_for "$DDM" curl -fsS "http://127.0.0.1:${DDM_PORT}/healthz"
+    print_ddm_env
+    ;;
+  ddm-down)
+    docker rm -f "$DDM" >/dev/null 2>&1 || true
+    ;;
+  ddm-env)
+    print_ddm_env
+    ;;
   *)
-    echo "usage: $0 up|down|env" >&2
+    echo "usage: $0 up|down|env|ddm-up|ddm-down|ddm-env" >&2
     exit 2
     ;;
 esac

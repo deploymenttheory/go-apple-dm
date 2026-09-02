@@ -1,10 +1,3 @@
-// Package postgres is the PostgreSQL storage backend on pgx (database/sql
-// mode): $n placeholders, FOR UPDATE row locks, ON CONFLICT upserts, and
-// TIMESTAMPTZ columns (decision record 0012).
-//
-// Apple documentation on what an enrollment must retain and on NotNow:
-// https://developer.apple.com/documentation/devicemanagement/check-in
-// https://developer.apple.com/documentation/devicemanagement/handling-notnow-status-responses
 package postgres
 
 import (

@@ -1,11 +1,3 @@
-// Package mysql is the MySQL storage backend on go-sql-driver/mysql: the
-// connection is forced to parse times in UTC, DATETIME(6) columns keep
-// microseconds, and upserts use INSERT ... AS new ON DUPLICATE KEY UPDATE
-// (MySQL 8.0.19 or later; decision record 0012).
-//
-// Apple documentation on what an enrollment must retain and on NotNow:
-// https://developer.apple.com/documentation/devicemanagement/check-in
-// https://developer.apple.com/documentation/devicemanagement/handling-notnow-status-responses
 package mysql
 
 import (

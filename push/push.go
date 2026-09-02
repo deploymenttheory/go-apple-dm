@@ -1,10 +1,3 @@
-// Package push wakes managed devices through APNs (decision record 0007).
-// A Pusher sends one MDM push per target; Notifier looks targets up in
-// storage, sends, and publishes events; Coalesce collapses bursts.
-//
-// Apple documentation:
-//   - https://developer.apple.com/documentation/devicemanagement/setting-up-push-notifications-for-your-device-management-customers
-//   - https://developer.apple.com/documentation/devicemanagement/dealing-with-inactive-managed-devices-and-invalid-push-tokens
 package push
 
 import (
