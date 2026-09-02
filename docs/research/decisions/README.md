@@ -61,3 +61,6 @@ With the code:
 | [0031](0031-acme-server-and-state-store.md) | ACME server, client identifiers, and the ACME state store | accepted | 7 |
 | [0032](0032-managed-device-attestation.md) | Managed Device Attestation: parsing, verification, and policy | accepted | 7 |
 | [0033](0033-acme-identity-in-profiles-and-ddm.md) | ACME identity in enrollment profiles, declarative credentials, and the reference server | accepted | 7 |
+| [0034](0034-admin-api-and-authorization.md) | Admin API surface and authorization | proposed | 8 |
+| [0035](0035-mdmctl-structure-and-credentials.md) | `mdmctl` structure, output, and credential handling | proposed | 8 |
+| [0036](0036-mdmctl-explain-over-schema-support.md) | `mdmctl explain` over `schema/support` | proposed | 8 |

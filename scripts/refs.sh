@@ -9,6 +9,7 @@ mkdir -p "$DEST"
 REPOS=(
   micromdm/nanomdm
   micromdm/nanohub
+  macadmins/nanohubctl
   micromdm/micromdm
   micromdm/nanodep
   micromdm/nanoaxm
