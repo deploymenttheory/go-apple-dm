@@ -43,6 +43,17 @@ const (
 	// on: a device that fails here is either faulty or not what it claims.
 	AttestationRejected Type = "attestation-rejected"
 
+	// Admin API (phase 8).
+
+	// AdminAction is a mutating admin request that was allowed. Actor is the
+	// principal name and Data names the action, method, path, and the
+	// credential that acted, never the token and never the body.
+	AdminAction Type = "admin-action"
+	// AdminDenied is an admin request refused by authorization. Neither Fleet
+	// nor Zentral records a denial as an event, so neither can answer who
+	// probed what and was refused; this is that record (decision 0034).
+	AdminDenied Type = "admin-denied"
+
 	// All subscribes to every type.
 	All Type = "*"
 )

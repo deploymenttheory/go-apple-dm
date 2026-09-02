@@ -11,6 +11,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/deploymenttheory/go-apple-mdm/adminauth"
 	"github.com/deploymenttheory/go-apple-mdm/axm"
 	"github.com/deploymenttheory/go-apple-mdm/cms"
 	"github.com/deploymenttheory/go-apple-mdm/ddm"
@@ -105,14 +106,20 @@ type App struct {
 	// AxM is the Business Manager client when configured.
 	AxM *axm.Client
 	// DEP is the device enrollment service; nil on the mdm role.
-	DEP     *dep.Client
-	acme    *acmeService
-	dep     *depService
-	cfg     Config
-	enroll  *enrollment
-	db      *sql.DB
-	dialect sqlcommon.Dialect
-	closers []func() error
+	DEP *dep.Client
+	// admin authorizes admin callers against the stored Cedar policies. It
+	// is nil when the deployment configured the static MDM_ADMIN_TOKEN
+	// instead, which bypasses policy by design (decision record 0034).
+	admin *adminauth.Manager
+	// adminTable is the mounted admin route table, served by GET /routes.
+	adminTable []adminRoute
+	acme       *acmeService
+	dep        *depService
+	cfg        Config
+	enroll     *enrollment
+	db         *sql.DB
+	dialect    sqlcommon.Dialect
+	closers    []func() error
 }
 
 // Build validates cfg, opens storage, and wires the role.
@@ -355,25 +362,29 @@ func (a *App) wire(ctx context.Context) error {
 		}
 		mux.Handle(PathDDM+"/", http.StripPrefix(PathDDM, ps))
 	}
-	if cfg.Role != RoleMDM && cfg.AdminToken != "" {
-		admin := http.NewServeMux()
-		admin.Handle("/", a.adminHandler())
+	if cfg.Role != RoleMDM && a.adminEnabled() {
+		var routes []adminRoute
+		routes = append(routes, a.ddmAdminRoutes()...)
 		if cfg.AxM.Enabled() {
 			client, err := a.newAxM(ctx)
 			if err != nil {
 				return err
 			}
 			a.AxM = client
-			admin.Handle("/axm/", a.requireToken(a.axmHandler(client)))
+			routes = append(routes, adminRoute{Pattern: "/axm/", Action: ActionManageBusinessMgr, Family: "axm", Handler: a.axmHandler(client)})
 		}
 		if a.dep == nil {
 			if err := a.wireDEP(ctx); err != nil {
 				return err
 			}
 		}
-		admin.Handle("/dep/", a.requireToken(a.dep.handler()))
+		routes = append(routes, adminRoute{Pattern: "/dep/", Action: ActionManageDEP, Family: "dep", Handler: a.dep.handler()})
 		if a.acme != nil {
-			admin.Handle("/acme/", a.requireToken(a.acme.handler()))
+			routes = append(routes, adminRoute{Pattern: "/acme/", Action: ActionReadACME, Family: "acme", Handler: a.acme.handler()})
+		}
+		admin, err := a.buildAdminMux(routes)
+		if err != nil {
+			return err
 		}
 		mux.Handle(PathAdmin, http.StripPrefix(PathAdmin[:len(PathAdmin)-1], admin))
 	}
