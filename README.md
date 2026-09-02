@@ -2,10 +2,11 @@
 
 A pure Go library for Apple device management: the MDM check-in and command protocol,
 Declarative Device Management (DDM), every enrollment path Apple documents (profile, automated,
-account-driven, user channel and Shared iPad), and clients for the device enrollment service and
-the Apple Business Manager API. A thin reference server, `cmd/mdmserver`, wires it all together.
+account-driven, user channel and Shared iPad), an ACME server with Managed Device Attestation,
+and clients for the device enrollment service and the Apple Business Manager API. A thin
+reference server, `cmd/mdmserver`, wires it all together.
 
-Status: pre-release, phases 1 to 6 of the [implementation plan](docs/research/implementation_plan.md)
+Status: pre-release, phases 1 to 7 of the [implementation plan](docs/research/implementation_plan.md)
 are delivered. No API stability promise until v1.0.0.
 
 ## What it provides
@@ -21,7 +22,10 @@ are delivered. No API stability promise until v1.0.0.
 - **Push.** APNs HTTP/2 client, notifier with invalid-token events, coalescing, push certificate
   parsing and topic derivation, and a fake APNs server for tests.
 - **Enrollment identities.** A certificate authority abstraction and a SCEP service with
-  one-time and HMAC challenges, plus a client.
+  one-time and HMAC challenges, plus a client. Or ACME with Managed Device Attestation: the
+  device generates a key in its Secure Enclave, Apple attests to the key and the hardware, and
+  the server issues only after checking that attestation against the device it expected and
+  against a policy of your choosing.
 - **Enrollment paths.** Profile enrollment with an OTA profile service; automated device
   enrollment with typed `MachineInfo` parsing, CMS signature verification against Apple's
   device CAs, the software update gate, and an OIDC web view; service discovery for
@@ -37,8 +41,12 @@ are delivered. No API stability promise until v1.0.0.
   always fetches what its manifest advertised, status reports stored per item, synthesised
   status subscriptions, an NSPredicate subset validated at upload, and a coalescing change
   notifier. The engine runs in-process or split across our own `mdm` and `ddm` roles.
-- **Device simulator.** MDM, DDM, ADE, account-driven, user channel, and Shared iPad clients so
-  a server can be tested without hardware.
+- **Managed Device Attestation.** Chain verification to the Apple Enterprise Attestation Root,
+  a required freshness code, the attested key bound to the key being certified, and all ten of
+  Apple's device property extensions parsed by their documented types. The same verifier reads
+  an ACME challenge response and a `DevicePropertiesAttestation` query response.
+- **Device simulator.** MDM, DDM, ADE, account-driven, user channel, Shared iPad, and ACME
+  clients so a server can be tested without hardware.
 - **Reference server.** Roles `mdm`, `ddm`, and `all`, a bearer-protected admin API, `MDM_*`
   environment configuration, `/healthz`, and a distroless container image built by CI.
 
@@ -61,6 +69,11 @@ are delivered. No API stability promise until v1.0.0.
 | `enroll/ade`, `enroll/adetest` | Automated device enrollment: `MachineInfo` parsing and CMS verification, the software update gate, web view resume and finish, DEP lookup and policy hooks; fixtures and a fake device CA |
 | `enroll/webauth`, `enroll/webauthtest` | OpenID Connect relying party for the ADE web view and account-driven pages; a fake identity provider |
 | `enroll/discovery` | The `/.well-known/com.apple.remotemanagement` service discovery document, per user type |
+| `acme/` | ACME server for Apple's ACME payload: directory, nonces, accounts, orders, the `device-attest-01` challenge, finalize, and certificate download; one-time client identifiers bound to a device; policy hooks that decide which devices may enroll |
+| `acme/jose` | JWS and JWK for RFC 8555, including the interop fix for Apple clients that omit leading zero bytes from an ECDSA signature |
+| `acme/attest`, `acme/attest/attesttest` | Managed Device Attestation verification, and a stand-in attestation authority for tests and the simulator |
+| `acme/inmem`, `acme/sqlstore`, `acme/acmetest` | ACME state on its own migration set, with the contract suite every backend runs |
+| `internal/cbor` | The strict CBOR subset an attestation object uses, fuzzed |
 | `enroll/accountdriven` | Account-driven enrollment: the `Bearer` challenge, `apple-as-web` and `apple-oauth2` flows, token issuance, and the check-in hook that ties the enrollment to the authenticated account |
 | `dep/`, `dep/inmem`, `dep/sqlstore`, `dep/deptest` | Device enrollment service client (OAuth 1.0a, sessions, cursors, token PKI), device syncer, profile assigner, stores, contract suite, and the fake service |
 | `axm/`, `axm/axmtest` | Apple Business Manager API client (ES256 client assertion, JSON:API paging, activities) and its fake server |
@@ -91,6 +104,8 @@ environment:
 | `MDM_CA_FILE`, `MDM_CERT_HEADER` | Client certificate verification, direct or behind a proxy |
 | `MDM_PUBLIC_URL`, `MDM_PUSH_TOPIC` | Turn on the enrollment routes; the server URL devices are given and the push topic |
 | `MDM_ENROLL_CA_CERT_FILE`, `MDM_ENROLL_CA_KEY_FILE`, `MDM_SCEP_CHALLENGE`, `MDM_SCEP_HMAC_KEY` | The enrollment identity CA and its SCEP challenge; a self-signed CA is generated for development |
+| `MDM_IDENTITY` | Where an enrolled device's identity comes from: `scep` (the default) or `acme` |
+| `MDM_ACME_POLICY`, `MDM_ACME_KEY`, `MDM_ACME_HMAC_KEY`, `MDM_ACME_ANCHOR_FILE`, `MDM_ACME_ALLOW_UNATTESTED`, `MDM_ACME_IDENTIFIER_TTL` | Which devices may enroll (`any`, `dep`, `sip`), the key the device generates (`ec256`, `ec384`, `rsa2048`, `rsa4096`), the key that mints client identifiers, extra attestation anchors for a lab, whether a device that cannot attest may enroll, and how long a client identifier stays usable |
 | `MDM_PROFILE_IDENTIFIER`, `MDM_ORGANIZATION` | Enrollment profile identity |
 | `MDM_DISCOVERY`, `MDM_ACCOUNT_DRIVEN_METHOD` | Service discovery per user type (`Mac=mdm-adde,iPhone=mdm-byod`) and the account-driven flow (`apple-as-web` or `apple-oauth2`) |
 | `MDM_OIDC_ISSUER`, `MDM_OIDC_CLIENT_ID`, `MDM_OIDC_CLIENT_SECRET` | The identity provider behind the ADE web view and account-driven pages |
@@ -99,9 +114,10 @@ environment:
 | `MDM_DEP_BASE_URL`, `MDM_DEP_SYNC_INTERVAL`, `MDM_DEP_ASSIGN_INTERVAL`, `MDM_DEP_PROFILE_URL`, `MDM_DEP_USE_PUT` | Device enrollment service endpoint, the background sync worker, and the DEP profile url (defaults to this server) |
 
 The admin API manages declarations, sets, and assignments (`/admin/v1/declarations`, `/sets`,
-`/enrollments`), Business Manager servers, devices, and activities (`/admin/v1/axm/`), and DEP
+`/enrollments`), Business Manager servers, devices, and activities (`/admin/v1/axm/`), DEP
 accounts: token PKI generation, `.p7m` import, device listing, profile definition, and sync
-(`/admin/v1/dep/accounts/`). The exact routes and constants are in `internal/app`.
+(`/admin/v1/dep/accounts/`), and issued ACME identities with the hardware Apple attested for
+each (`/admin/v1/acme/certificates`). The exact routes and constants are in `internal/app`.
 
 ## Development
 
@@ -119,8 +135,11 @@ make refs                     # clone the reference projects for research (never
 Coverage floor is 95% overall and per package. See `Makefile` targets with `make help`.
 
 Dependencies stay minimal on purpose: the plist codec, the smallstep CMS and SCEP libraries,
-and the SQL drivers. OAuth 1.0a, the ES256 client assertion, the OIDC relying party, and the
-OAuth 2 authorization server are implemented in this module. Nothing from NanoMDM or MicroMDM is imported beyond the plist
+the SQL drivers, and `golang.org/x/crypto`. OAuth 1.0a, the ES256 client assertion, the OIDC
+relying party, the OAuth 2 authorization server, the ACME server, its JWS layer, and the CBOR
+subset an attestation object needs are all implemented in this module. The simulator drives the
+ACME server with `golang.org/x/crypto/acme`, because testing a server against its own client
+shows only that the two agree. Nothing from NanoMDM or MicroMDM is imported beyond the plist
 package.
 
 ## Sources
