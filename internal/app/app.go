@@ -378,6 +378,9 @@ func (a *App) wire(ctx context.Context) error {
 		}
 		var routes []adminRoute
 		routes = append(routes, a.ddmAdminRoutes()...)
+		if a.admin != nil {
+			routes = append(routes, a.principalRoutes()...)
+		}
 		if cfg.AxM.Enabled() {
 			client, err := a.newAxM(ctx)
 			if err != nil {
