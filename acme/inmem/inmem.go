@@ -335,7 +335,7 @@ func (t *tx) ListCertificates(
 // of the query.
 func matches(c acme.Certificate, q acme.CertificateQuery) bool {
 	switch {
-	case q.Serial != "" && c.Serial != q.Serial:
+	case q.DeviceSerial != "" && c.Device.SerialNumber != q.DeviceSerial:
 		return false
 	case q.UDID != "" && c.Device.UDID != q.UDID:
 		return false

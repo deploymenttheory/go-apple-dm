@@ -29,7 +29,7 @@ func (t *txStore) PutCertificate(ctx context.Context, c *acme.Certificate) error
 		return err
 	}
 	return t.put(ctx, "put certificate", "acme_certificates", certificateCols,
-		[]any{c.ID, c.AccountID, c.OrderID, c.Serial, c.Device.UDID, nullTime(c.NotAfter), nullTime(c.IssuedAt), raw})
+		[]any{c.ID, c.AccountID, c.OrderID, c.Device.SerialNumber, c.Device.UDID, nullTime(c.NotAfter), nullTime(c.IssuedAt), raw})
 }
 
 // GetCertificate implements acme.Reader.
@@ -54,7 +54,7 @@ func (t *txStore) ListCertificates(
 	for _, f := range []struct {
 		column string
 		value  string
-	}{{"serial", q.Serial}, {"udid", q.UDID}, {"account_id", q.AccountID}} {
+	}{{"serial", q.DeviceSerial}, {"udid", q.UDID}, {"account_id", q.AccountID}} {
 		if f.value != "" {
 			where = append(where, f.column+" = ?")
 			args = append(args, f.value)

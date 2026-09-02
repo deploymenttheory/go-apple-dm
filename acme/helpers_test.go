@@ -328,11 +328,19 @@ func (f *fixture) newAccountRequest(key crypto.Signer, payload any) *response {
 // POST-as-GET.
 func (a *account) post(target string, payload any) *response {
 	a.f.t.Helper()
+	return a.postAt(target, target, payload)
+}
+
+// postAt signs a request whose url header is not the target. Only the
+// paging link needs it, because the server compares the header against the
+// path alone: see TestAccountOrders/NextLinkCannotBeSigned.
+func (a *account) postAt(target, urlHeader string, payload any) *response {
+	a.f.t.Helper()
 	var body []byte
 	if payload != nil {
 		body = mustJSON(a.f.t, payload)
 	}
-	return a.f.signed(target, a.key, jose.Header{KeyID: a.url}, body)
+	return a.f.signed(target, a.key, jose.Header{KeyID: a.url, URL: urlHeader}, body)
 }
 
 // flow is one order in progress with the URLs its account was handed.

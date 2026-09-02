@@ -3,6 +3,7 @@ package acme
 import (
 	"context"
 	"crypto/hmac"
+	"crypto/rand"
 	"crypto/sha256"
 	"encoding/base64"
 	json "encoding/json/v2"
@@ -83,12 +84,23 @@ func NewHMACIdentifiers(key []byte, ttl time.Duration, c clock.Clock) (*HMACIden
 type sealed struct {
 	Binding Binding `json:"b"`
 	Expires int64   `json:"e"`
+	// Unique makes every minted identifier different even for the same
+	// device and the same expiry second. Without it two identifiers issued
+	// in quick succession would be the same string, and since an identifier
+	// may be claimed only once, the second would be dead on arrival.
+	Unique []byte `json:"u"`
 }
 
 // Issue mints an identifier for a device. The result goes into the ACME
 // payload's ClientIdentifier.
 func (h *HMACIdentifiers) Issue(b Binding) (string, error) {
-	payload, err := json.Marshal(sealed{Binding: b, Expires: h.clock.Now().Add(h.ttl).Unix()})
+	unique := make([]byte, 12)
+	if _, err := rand.Read(unique); err != nil {
+		return "", fmt.Errorf("acme: seal identifier: %w", err)
+	}
+	payload, err := json.Marshal(sealed{
+		Binding: b, Expires: h.clock.Now().Add(h.ttl).Unix(), Unique: unique,
+	})
 	if err != nil {
 		return "", fmt.Errorf("acme: seal identifier: %w", err)
 	}

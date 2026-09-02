@@ -14,6 +14,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/deploymenttheory/go-apple-mdm/acme"
 	"github.com/deploymenttheory/go-apple-mdm/ca"
 	"github.com/deploymenttheory/go-apple-mdm/enroll"
 	"github.com/deploymenttheory/go-apple-mdm/enroll/accountdriven"
@@ -28,6 +29,8 @@ import (
 // Enrollment routes on the mdm and all roles (decision records 0027 to 0029).
 const (
 	PathSCEP            = "/scep"
+	PathACME            = "/acme"
+	PathACMECredential  = "/enroll/acme-credential"
 	PathWellKnown       = discovery.WellKnownPath
 	PathEnroll          = "/enroll/"             // + discovery version (mdm-byod, mdm-adde)
 	PathADE             = "/enroll/ade"          // DEP profile url and configuration_web_url
@@ -73,6 +76,13 @@ type EnrollConfig struct {
 	ADEAudit      bool
 	// RequireUserAuth gates user channels on UserAuthenticate (0029).
 	RequireUserAuth bool
+	// Identity is where an enrolled device's identity certificate comes
+	// from: IdentitySCEP (the default) or IdentityACME. The ACME endpoints
+	// are mounted either way, so a declarative credential can use them even
+	// when enrollment profiles still carry SCEP.
+	Identity string
+	// ACME configures the ACME server and the identities it issues.
+	ACME ACMEConfig
 	// Anchors is the parsed ADEAnchorFile (tests set it directly).
 	Anchors []*x509.Certificate
 }
@@ -97,8 +107,19 @@ func (e EnrollConfig) validate() error {
 	if (e.CACertFile == "") != (e.CAKeyFile == "") {
 		return fmt.Errorf("%w: CA certificate and key files go together", ErrConfig)
 	}
-	if e.SCEPChallenge == "" && len(e.SCEPHMACKey) == 0 {
-		return fmt.Errorf("%w: a SCEP challenge or HMAC key is required", ErrConfig)
+	switch e.Identity {
+	case "", IdentitySCEP:
+		// A SCEP identity is only as good as its challenge, so there has to
+		// be one.
+		if e.SCEPChallenge == "" && len(e.SCEPHMACKey) == 0 {
+			return fmt.Errorf("%w: a SCEP challenge or HMAC key is required", ErrConfig)
+		}
+	case IdentityACME:
+	default:
+		return fmt.Errorf(
+			"%w: %s must be %s or %s, got %q",
+			ErrConfig, EnvIdentity, IdentitySCEP, IdentityACME, e.Identity,
+		)
 	}
 	switch e.AccountDrivenMethod {
 	case "", accountdriven.MethodAppleAsWeb, accountdriven.MethodAppleOAuth2:
@@ -143,6 +164,7 @@ type enrollment struct {
 	tokens    *accountdriven.Tokens
 	asweb     *accountdriven.AppleAsWeb
 	oauth     *accountdriven.OAuth2
+	acme      *acmeService
 	ade       *ade.Handler
 	flow      *webauth.Flow
 	challenge scep.Challenge
@@ -189,6 +211,19 @@ func (a *App) wireEnrollment(mux *http.ServeMux) ([]service.Hook, error) {
 	}
 	mux.Handle(PathSCEP, scepServer.Handler())
 
+	// ACME is mounted whether or not enrollment profiles use it, because a
+	// declarative credential can ask an enrolled device to obtain a second
+	// identity through it.
+	if e.acme, err = a.newACME(context.Background(), e); err != nil {
+		return nil, err
+	}
+	a.acme = e.acme
+	mux.Handle(PathACME+"/", e.acme.server.Handler())
+	// The credential document identifies the device by the certificate it
+	// presents, so it goes behind the same certificate source as the MDM
+	// endpoints rather than being readable by anyone with the URL.
+	mux.Handle(PathACMECredential, a.certSource()(e.acme.credentialHandler()))
+
 	e.tokens = &accountdriven.Tokens{Store: accountdriven.NewMemStore(), Now: a.cfg.Clock.Now}
 	e.asweb = &accountdriven.AppleAsWeb{URL: e.base + PathAuthenticate, Tokens: e.tokens}
 	e.oauth = &accountdriven.OAuth2{
@@ -228,7 +263,11 @@ func (a *App) wireEnrollment(mux *http.ServeMux) ([]service.Hook, error) {
 			if email, _ := id.Claims["email"].(string); email != "" {
 				cn = email + "/" + p.SERIAL
 			}
-			return e.profile(cn)
+			return e.profile(acme.Binding{
+				Serial:     p.SERIAL,
+				UDID:       p.UDID,
+				CommonName: cn,
+			})
 		},
 		WebAuth: ade.WebAuthFunc(func(w http.ResponseWriter, r *http.Request, b ade.Bound) {
 			if e.flow == nil {
@@ -273,7 +312,13 @@ func (a *App) wireEnrollment(mux *http.ServeMux) ([]service.Hook, error) {
 			Auth:    auth,
 			Tokens:  e.tokens,
 			Profile: func(_ context.Context, id accountdriven.Identity, info *accountdriven.DeviceInfo) (*enroll.Profile, error) {
-				return e.profile(id.ManagedAppleID + "/" + info.Product)
+				// An account-driven enrollment knows the person, not the
+				// hardware, and a user enrollment attests to no hardware at
+				// all, so the binding names no device.
+				return e.profile(acme.Binding{
+					CommonName:        id.ManagedAppleID + "/" + info.Product,
+					AllowUnidentified: true,
+				})
 			},
 			SignCert: e.caCert,
 			SignKey:  e.caKey,
@@ -411,7 +456,12 @@ func (e *enrollment) complete(
 
 // profile is the enrollment profile every flow serves: SCEP identity from
 // the app CA with a challenge, this CA as the trusted root.
-func (e *enrollment) profile(subjectCN string) (*enroll.Profile, error) {
+// profile builds the enrollment profile for one device. The binding says
+// what the server knows about that device, which becomes the certificate
+// subject and, for an ACME identity, the device the client identifier is
+// issued for.
+func (e *enrollment) profile(b acme.Binding) (*enroll.Profile, error) {
+	subjectCN := b.CommonName
 	challenge := e.cfg.SCEPChallenge
 	if h, ok := e.challenge.(*scep.HMACChallenge); ok {
 		challenge = h.Issue(subjectCN)
@@ -424,20 +474,30 @@ func (e *enrollment) profile(subjectCN string) (*enroll.Profile, error) {
 	if org == "" {
 		org = "go-apple-mdm"
 	}
-	return &enroll.Profile{
+	out := &enroll.Profile{
 		Identifier:   id,
 		DisplayName:  org + " MDM enrollment",
 		Organization: org,
 		Topic:        e.cfg.Topic,
 		ServerURL:    e.base + PathMDM,
 		CheckInURL:   e.base + PathMDM,
-		SCEP: &enroll.SCEP{
-			URL:       e.base + PathSCEP,
-			Challenge: challenge,
-			Subject:   pkix.Name{CommonName: subjectCN, Organization: []string{org}},
-		},
-		Roots: []*x509.Certificate{e.caCert},
-	}, nil
+		Roots:        []*x509.Certificate{e.caCert},
+	}
+	if e.cfg.Identity == IdentityACME {
+		b.CommonName, b.Organization = subjectCN, []string{org}
+		payload, err := e.acme.acmePayload(b, e.acme.server.DirectoryURL())
+		if err != nil {
+			return nil, err
+		}
+		out.ACME = payload
+		return out, nil
+	}
+	out.SCEP = &enroll.SCEP{
+		URL:       e.base + PathSCEP,
+		Challenge: challenge,
+		Subject:   pkix.Name{CommonName: subjectCN, Organization: []string{org}},
+	}
+	return out, nil
 }
 
 // parseDeviceInfo adapts the ADE parser to the account-driven body: the

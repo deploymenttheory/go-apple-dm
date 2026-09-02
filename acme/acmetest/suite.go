@@ -540,16 +540,16 @@ func runCertificateList(t *testing.T, newStore Factory) {
 		query acme.CertificateQuery
 		want  []string
 	}{
-		"everything":     {acme.CertificateQuery{}, []string{"cert-01", "cert-02", "cert-03", "cert-04"}},
-		"by serial":      {acme.CertificateQuery{Serial: "S2"}, []string{"cert-02"}},
-		"by udid":        {acme.CertificateQuery{UDID: "U1"}, []string{"cert-01", "cert-04"}},
-		"by account":     {acme.CertificateQuery{AccountID: "acct-1"}, []string{"cert-01", "cert-02"}},
+		"everything": {acme.CertificateQuery{}, []string{"cert-01", "cert-02", "cert-03", "cert-04"}},
+		"by serial":  {acme.CertificateQuery{DeviceSerial: "S2"}, []string{"cert-02"}},
+		"by udid":    {acme.CertificateQuery{UDID: "U1"}, []string{"cert-01", "cert-04"}},
+		"by account": {acme.CertificateQuery{AccountID: "acct-1"}, []string{"cert-01", "cert-02"}},
 		"serial in account": {
-			acme.CertificateQuery{Serial: "S1", AccountID: "acct-1"},
+			acme.CertificateQuery{DeviceSerial: "S1", AccountID: "acct-1"},
 			[]string{"cert-01"},
 		},
-		"serial in the wrong account": {acme.CertificateQuery{Serial: "S1", AccountID: "acct-2"}, nil},
-		"unknown udid":               {acme.CertificateQuery{UDID: "nobody"}, nil},
+		"serial in the wrong account": {acme.CertificateQuery{DeviceSerial: "S1", AccountID: "acct-2"}, nil},
+		"unknown udid":                {acme.CertificateQuery{UDID: "nobody"}, nil},
 	} {
 		r, err := s.ListCertificates(ctx, tc.query, storage.Page{})
 		must(t, name, err)
@@ -847,24 +847,24 @@ func runInvalid(t *testing.T, newStore Factory) {
 	s := newStore(t)
 	write := func(fn func(acme.Tx) error) error { return s.Update(ctx, fn) }
 	checks := map[string]func() error{
-		"Update nil callback":     func() error { return s.Update(ctx, nil) },
-		"GetAccount":              func() error { _, err := s.GetAccount(ctx, ""); return err },
-		"AccountByThumbprint":     func() error { _, err := s.AccountByThumbprint(ctx, ""); return err },
-		"GetOrder":                func() error { _, err := s.GetOrder(ctx, ""); return err },
-		"GetAuthorization":        func() error { _, err := s.GetAuthorization(ctx, ""); return err },
-		"GetChallenge":            func() error { _, err := s.GetChallenge(ctx, ""); return err },
-		"GetCertificate":          func() error { _, err := s.GetCertificate(ctx, ""); return err },
-		"ListOrders":              func() error { _, err := s.ListOrders(ctx, "", storage.Page{}); return err },
-		"PutAccount nil":          func() error { return write(func(tx acme.Tx) error { return tx.PutAccount(ctx, nil) }) },
-		"PutOrder nil":            func() error { return write(func(tx acme.Tx) error { return tx.PutOrder(ctx, nil) }) },
-		"PutAuthorization nil":    func() error { return write(func(tx acme.Tx) error { return tx.PutAuthorization(ctx, nil) }) },
-		"PutChallenge nil":        func() error { return write(func(tx acme.Tx) error { return tx.PutChallenge(ctx, nil) }) },
-		"PutCertificate nil":      func() error { return write(func(tx acme.Tx) error { return tx.PutCertificate(ctx, nil) }) },
-		"PutAccount without id":   func() error { return write(putAccount(ctx, &acme.Account{Thumbprint: "t"})) },
+		"Update nil callback":   func() error { return s.Update(ctx, nil) },
+		"GetAccount":            func() error { _, err := s.GetAccount(ctx, ""); return err },
+		"AccountByThumbprint":   func() error { _, err := s.AccountByThumbprint(ctx, ""); return err },
+		"GetOrder":              func() error { _, err := s.GetOrder(ctx, ""); return err },
+		"GetAuthorization":      func() error { _, err := s.GetAuthorization(ctx, ""); return err },
+		"GetChallenge":          func() error { _, err := s.GetChallenge(ctx, ""); return err },
+		"GetCertificate":        func() error { _, err := s.GetCertificate(ctx, ""); return err },
+		"ListOrders":            func() error { _, err := s.ListOrders(ctx, "", storage.Page{}); return err },
+		"PutAccount nil":        func() error { return write(func(tx acme.Tx) error { return tx.PutAccount(ctx, nil) }) },
+		"PutOrder nil":          func() error { return write(func(tx acme.Tx) error { return tx.PutOrder(ctx, nil) }) },
+		"PutAuthorization nil":  func() error { return write(func(tx acme.Tx) error { return tx.PutAuthorization(ctx, nil) }) },
+		"PutChallenge nil":      func() error { return write(func(tx acme.Tx) error { return tx.PutChallenge(ctx, nil) }) },
+		"PutCertificate nil":    func() error { return write(func(tx acme.Tx) error { return tx.PutCertificate(ctx, nil) }) },
+		"PutAccount without id": func() error { return write(putAccount(ctx, &acme.Account{Thumbprint: "t"})) },
 		"PutAccount without a thumbprint": func() error {
 			return write(putAccount(ctx, &acme.Account{ID: "a"}))
 		},
-		"PutOrder without id":     func() error { return write(putOrder(ctx, &acme.Order{AccountID: "a"})) },
+		"PutOrder without id": func() error { return write(putOrder(ctx, &acme.Order{AccountID: "a"})) },
 		"PutOrder without account": func() error {
 			return write(putOrder(ctx, &acme.Order{ID: "o"}))
 		},

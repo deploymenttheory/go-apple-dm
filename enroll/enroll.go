@@ -127,6 +127,12 @@ func (a *ACME) validate() error {
 	if a.ClientIdentifier == "" {
 		return fmt.Errorf("%w: ACME ClientIdentifier is required", ErrProfile)
 	}
+	// Apple marks Subject required even though the server may override it,
+	// so an empty one is caught here with a name rather than by the schema
+	// validator with a payload index.
+	if len(SubjectFromName(a.Subject)) == 0 {
+		return fmt.Errorf("%w: ACME Subject is required", ErrProfile)
+	}
 	switch a.KeyType {
 	case KeyTypeRSA:
 		if a.HardwareBound {

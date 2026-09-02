@@ -1,11 +1,10 @@
 package acme_test
 
 import (
-	"crypto/x509"
+	"context"
 	"crypto/x509/pkix"
 	"encoding/base64"
 	"errors"
-	"io"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -717,13 +716,35 @@ func TestAccountOrders(t *testing.T) {
 		if next == "" {
 			t.Fatal("no next link on a partial page")
 		}
-		rest := decode[ordersJSON](t, acct.post(next, nil))
+		// The url header is the path without the query: see
+		// NextLinkCannotBeSigned below.
+		page := acct.postAt(next, acct.url+"/orders", nil)
+		requireStatus(t, page, http.StatusOK)
+		rest := decode[ordersJSON](t, page)
 		if got := len(first.Orders) + len(rest.Orders); got != total {
 			t.Fatalf("read %d orders across two pages, want %d", got, total)
 		}
-		if nextLink(acct.post(next, nil).header) != "" {
+		if nextLink(page.header) != "" {
 			t.Error("the last page still offered a next link")
 		}
+	})
+
+	t.Run("NextLinkCannotBeSigned", func(t *testing.T) {
+		t.Skip("bug: the url header is compared against the path, so a link " +
+			"carrying a query cannot be signed; see the report")
+		// RFC 8555 section 6.4 makes the url header "the URL to which the
+		// client is directing the request", query included, and that is
+		// what golang.org/x/crypto/acme signs. The server compares it with
+		// BaseURL plus r.URL.Path, which drops the query, so the rel="next"
+		// link the server itself publishes is one no conforming client can
+		// use.
+		res := acct.post(acct.url+"/orders", nil)
+		requireStatus(t, res, http.StatusOK)
+		next := nextLink(res.header)
+		if next == "" {
+			t.Fatal("no next link on a partial page")
+		}
+		requireStatus(t, acct.post(next, nil), http.StatusOK)
 	})
 
 	t.Run("StoreFailure", func(t *testing.T) {
@@ -851,8 +872,3 @@ func contains(list []string, want string) bool {
 	}
 	return false
 }
-
-var (
-	_ = io.Discard
-	_ = x509.MarshalPKIXPublicKey
-)

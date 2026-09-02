@@ -87,7 +87,10 @@ func TestHandler(t *testing.T) {
 	chain := adetest.NewChain(t)
 	info := adetest.Info("C02HANDLER")
 	blob := adetest.Sign(t, chain, info, adetest.SignOptions{SignedAttributes: true})
-	post := func(t *testing.T) *http.Request { t.Helper(); return adetest.Request(t, target, blob, adetest.LaneBody) }
+	post := func(t *testing.T) *http.Request {
+		t.Helper()
+		return adetest.Request(t, target, blob, adetest.LaneBody)
+	}
 
 	t.Run("ProfileHookPersonalises", func(t *testing.T) {
 		t.Parallel()

@@ -590,16 +590,19 @@ func TestPaging(t *testing.T) {
 }
 
 // TestCertificateQuery: every non-empty field of the query narrows the
-// listing, and the UDID is the attested device's.
+// listing, and the serial number and UDID are the attested device's rather
+// than the certificate's own serial. The two are deliberately different
+// here, because making them the same would hide which one is filtered.
 func TestCertificateQuery(t *testing.T) {
 	ctx := context.Background()
 	s := openStore(t)
 	dev := attestedDevice()
+	other := attest.Properties{SerialNumber: "BB", UDID: "another-udid"}
 	err := s.Update(ctx, func(tx acme.Tx) error {
 		for _, c := range []*acme.Certificate{
-			{ID: "c1", AccountID: "a1", OrderID: "o1", Serial: "AA", Device: dev, IssuedAt: t0, NotAfter: t0.Add(time.Hour)},
-			{ID: "c2", AccountID: "a1", OrderID: "o2", Serial: "BB", IssuedAt: t0, NotAfter: t0.Add(time.Hour)},
-			{ID: "c3", AccountID: "a2", OrderID: "o3", Serial: "AA", IssuedAt: t0, NotAfter: t0.Add(time.Hour)},
+			{ID: "c1", AccountID: "a1", OrderID: "o1", Serial: "cert-serial-1", Device: dev, IssuedAt: t0, NotAfter: t0.Add(time.Hour)},
+			{ID: "c2", AccountID: "a1", OrderID: "o2", Serial: "cert-serial-2", Device: other, IssuedAt: t0, NotAfter: t0.Add(time.Hour)},
+			{ID: "c3", AccountID: "a2", OrderID: "o3", Serial: "cert-serial-3", Device: attest.Properties{SerialNumber: dev.SerialNumber}, IssuedAt: t0, NotAfter: t0.Add(time.Hour)},
 		} {
 			if err := tx.PutCertificate(ctx, c); err != nil {
 				return err
@@ -616,11 +619,11 @@ func TestCertificateQuery(t *testing.T) {
 		want string
 	}{
 		{"all", acme.CertificateQuery{}, "c1,c2,c3"},
-		{"serial", acme.CertificateQuery{Serial: "AA"}, "c1,c3"},
+		{"serial", acme.CertificateQuery{DeviceSerial: dev.SerialNumber}, "c1,c3"},
 		{"udid", acme.CertificateQuery{UDID: dev.UDID}, "c1"},
 		{"account", acme.CertificateQuery{AccountID: "a1"}, "c1,c2"},
-		{"serial and account", acme.CertificateQuery{Serial: "AA", AccountID: "a2"}, "c3"},
-		{"no match", acme.CertificateQuery{Serial: "ZZ"}, ""},
+		{"serial and account", acme.CertificateQuery{DeviceSerial: dev.SerialNumber, AccountID: "a2"}, "c3"},
+		{"no match", acme.CertificateQuery{DeviceSerial: "ZZ"}, ""},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {

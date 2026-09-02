@@ -149,8 +149,13 @@ type Nonce struct {
 }
 
 // CertificateQuery filters a certificate listing for the admin API.
+//
+// DeviceSerial and UDID match what Apple attested about the device, not
+// anything written into the certificate, which is the point: the question
+// an operator asks is which identity a given Mac holds, and the answer
+// should not depend on a subject name somebody chose.
 type CertificateQuery struct {
-	Serial    string
-	UDID      string
-	AccountID string
+	DeviceSerial string
+	UDID         string
+	AccountID    string
 }

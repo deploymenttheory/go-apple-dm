@@ -106,6 +106,7 @@ type App struct {
 	AxM *axm.Client
 	// DEP is the device enrollment service; nil on the mdm role.
 	DEP     *dep.Client
+	acme    *acmeService
 	dep     *depService
 	cfg     Config
 	enroll  *enrollment
@@ -361,6 +362,9 @@ func (a *App) wire(ctx context.Context) error {
 		}
 		a.dep, a.DEP = svc, svc.client
 		admin.Handle("/dep/", a.requireToken(svc.handler()))
+		if a.acme != nil {
+			admin.Handle("/acme/", a.requireToken(a.acme.handler()))
+		}
 		mux.Handle(PathAdmin, http.StripPrefix(PathAdmin[:len(PathAdmin)-1], admin))
 	}
 	a.Handler = mux

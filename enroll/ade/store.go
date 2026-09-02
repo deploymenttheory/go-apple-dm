@@ -16,7 +16,7 @@ var ErrStore = errors.New("ade: store")
 type Record struct {
 	Parsed *Parsed
 	// DEP is what DEPLookup returned for the serial; nil when none.
-	DEP any
+	DEP        any
 	ReceivedAt time.Time
 }
 
