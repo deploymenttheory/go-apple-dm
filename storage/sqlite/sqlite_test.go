@@ -301,7 +301,7 @@ func TestQueriesFailWithoutSchema(t *testing.T) {
 		"BootstrapToken":  func() error { _, err := s.BootstrapToken(ctx, id); return err },
 		"Export":          func() error { _, err := s.Export(ctx, storage.Page{}); return err },
 		"Import": func() error {
-			return s.Import(ctx, storage.EnrollmentExport{Enrollment: storage.Enrollment{ID: id}})
+			return s.Import(ctx, storage.EnrollmentExport{ID: id})
 		},
 		"UserAuthChallenge": func() error { return s.StoreUserAuthChallenge(ctx, uid, "c", nil, t0) },
 		"UserAuthToken":     func() error { return s.StoreUserAuthToken(ctx, uid, "t", nil, t0) },
@@ -413,7 +413,7 @@ func TestWriteFailuresSurface(t *testing.T) {
 			return err
 		},
 		"Import": func() error {
-			return s.Import(ctx, storage.EnrollmentExport{Enrollment: storage.Enrollment{ID: id, EnrolledAt: t0, LastSeenAt: t0}})
+			return s.Import(ctx, storage.EnrollmentExport{ID: id, EnrolledAt: t0, LastSeenAt: t0})
 		},
 		"StoreTokenUpdate": func() error {
 			return s.StoreTokenUpdate(ctx, id, mdm.Push{Topic: "t", Token: []byte{1}, Magic: "m"}, nil, nil, t0)

@@ -137,7 +137,7 @@ func wrap(prefix, text string, width int) string {
 	text = strings.Join(strings.Fields(text), " ")
 	var sb strings.Builder
 	line := ""
-	for _, w := range strings.Fields(text) {
+	for w := range strings.FieldsSeq(text) {
 		if line != "" && len(line)+1+len(w) > width {
 			sb.WriteString(prefix + line + "\n")
 			line = w
@@ -180,8 +180,8 @@ func goLiteral(v any) string {
 // supportPath is the key used in support tables.
 func supportPath(top string, f *Field) string {
 	p := f.Path
-	if strings.HasPrefix(p, "response:") {
-		p = "response." + strings.TrimPrefix(p, "response:")
+	if after, ok := strings.CutPrefix(p, "response:"); ok {
+		p = "response." + after
 	}
 	return top + "." + p
 }

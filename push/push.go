@@ -12,6 +12,7 @@ import (
 	"crypto/tls"
 	"errors"
 	"fmt"
+	"maps"
 	"sync"
 	"time"
 
@@ -176,8 +177,6 @@ func (c *Coalescer) Push(ctx context.Context, targets []Target) (map[mdm.Enrollm
 		return out, nil
 	}
 	results, err := c.next.Push(ctx, send)
-	for id, r := range results {
-		out[id] = r
-	}
+	maps.Copy(out, results)
 	return out, err
 }

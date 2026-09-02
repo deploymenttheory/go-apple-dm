@@ -86,7 +86,7 @@ func TestStorageFailuresAreInternal(t *testing.T) {
 		}},
 		{"Export", func() error { _, err := core.ExportEnrollments(ctx, storage.Page{}); return err }},
 		{"Import", func() error {
-			return core.ImportEnrollment(ctx, storage.EnrollmentExport{Enrollment: storage.Enrollment{ID: dev}})
+			return core.ImportEnrollment(ctx, storage.EnrollmentExport{ID: dev})
 		}},
 	}
 	for _, c := range cases {

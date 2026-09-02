@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io/fs"
 	"regexp"
+	"slices"
 	"sort"
 	"strconv"
 	"strings"
@@ -103,7 +104,7 @@ func parseMigration(fsys fs.FS, name string) (Migration, error) {
 		}
 		current = current[:0]
 	}
-	for _, line := range strings.Split(string(data), "\n") {
+	for line := range strings.SplitSeq(string(data), "\n") {
 		switch strings.TrimSpace(line) {
 		case "-- +up":
 			flush()
@@ -130,7 +131,7 @@ func parseMigration(fsys fs.FS, name string) (Migration, error) {
 func splitStatements(sqlText string) []string {
 	var out []string
 	var sb strings.Builder
-	for _, line := range strings.Split(sqlText, "\n") {
+	for line := range strings.SplitSeq(sqlText, "\n") {
 		trimmed := strings.TrimSpace(line)
 		if trimmed == "" || strings.HasPrefix(trimmed, "--") {
 			continue
@@ -217,8 +218,8 @@ func RollbackSet(ctx context.Context, db *sql.DB, d Dialect, set MigrationSet, t
 		return nil, err
 	}
 	var done []int
-	for i := len(ms) - 1; i >= 0; i-- {
-		m := ms[i]
+	for _, m := range slices.Backward(ms) {
+
 		if m.Version <= target || !applied[m.Version] {
 			continue
 		}

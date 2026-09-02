@@ -451,7 +451,7 @@ func TestCorruptRowsSurface(t *testing.T) {
 	if _, err := s.Export(ctx, storage.Page{}); err == nil {
 		t.Fatal("export without the history table")
 	}
-	if err := s.Import(ctx, storage.EnrollmentExport{Enrollment: storage.Enrollment{ID: id, EnrolledAt: t0, LastSeenAt: t0}, CertHistory: []storage.CertAssociation{{ID: id, Hash: "h", At: t0}}}); err == nil {
+	if err := s.Import(ctx, storage.EnrollmentExport{ID: id, EnrolledAt: t0, LastSeenAt: t0, CertHistory: []storage.CertAssociation{{ID: id, Hash: "h", At: t0}}}); err == nil {
 		t.Fatal("import history without the table")
 	}
 }

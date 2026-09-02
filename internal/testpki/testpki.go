@@ -77,7 +77,7 @@ func NewCA(name string) (*CA, error) {
 	if err != nil {
 		return nil, fmt.Errorf("testpki: %w", err)
 	}
-	ca := &CA{Identity: Identity{Cert: cert, Key: key}}
+	ca := &CA{Cert: cert, Key: key}
 	ca.serial.Store(1)
 	return ca, nil
 }

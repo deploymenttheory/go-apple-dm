@@ -14,6 +14,7 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"slices"
 
 	"github.com/deploymenttheory/go-apple-mdm/event"
 	"github.com/deploymenttheory/go-apple-mdm/internal/clock"
@@ -50,8 +51,7 @@ func (e *Error) Unwrap() error { return e.Err }
 
 // CodeOf returns the Code of err, or CodeInternal for other errors.
 func CodeOf(err error) Code {
-	var se *Error
-	if errors.As(err, &se) {
+	if se, ok := errors.AsType[*Error](err); ok {
 		return se.Code
 	}
 	return CodeInternal
@@ -255,8 +255,8 @@ func (c *Core) runHooks(ctx context.Context, call *Call) (context.Context, func(
 		}
 	}
 	return ctx, func(err error) {
-		for i := len(c.hooks) - 1; i >= 0; i-- {
-			c.hooks[i].After(ctx, call, err)
+		for _, v := range slices.Backward(c.hooks) {
+			v.After(ctx, call, err)
 		}
 	}, nil
 }
