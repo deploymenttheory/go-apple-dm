@@ -259,6 +259,18 @@ func TestEnrollment(t *testing.T) {
 			t.Fatalf("ADE with anchors from a file: %v", err)
 		}
 	})
+	t.Run("OAuth2AuthorizeRejectsBadRequest", func(t *testing.T) {
+		f := newEnrollFixture(t, accountdriven.MethodAppleOAuth2, nil)
+		req, _ := http.NewRequestWithContext(ctx, http.MethodGet, f.publicURL+app.PathOAuth2Authorize+"?response_type=token", nil)
+		res, err := f.client().Do(req)
+		if err != nil {
+			t.Fatal(err)
+		}
+		res.Body.Close()
+		if res.StatusCode != http.StatusBadRequest {
+			t.Fatalf("bad authorization request = %d", res.StatusCode)
+		}
+	})
 	t.Run("SelfSignedCAAndHMAC", func(t *testing.T) {
 		f := newEnrollFixture(t, "", func(c *app.Config) {
 			c.Enroll.CACertFile, c.Enroll.CAKeyFile, c.Enroll.SCEPChallenge, c.Enroll.SCEPHMACKey = "", "", "", []byte("hmac-key-of-at-least-sixteen-bytes")

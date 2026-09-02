@@ -118,6 +118,12 @@ func TestAxM(t *testing.T) {
 		if res := do(t, srv, "GET", "/admin/v1/axm/activities/nope", "t", nil); res.StatusCode != http.StatusNotFound {
 			t.Fatalf("unknown activity = %d", res.StatusCode)
 		}
+		app.AxMWaitTimeout = 50 * time.Millisecond
+		fake.SetConsistencyLag(time.Hour)
+		if res := do(t, srv, "POST", "/admin/v1/axm/assign", "t", []byte(`{"server":"`+server+`","serials":["SER3"],"wait":true}`)); res.StatusCode != http.StatusAccepted && res.StatusCode != http.StatusGatewayTimeout {
+			t.Fatalf("waited assign = %d", res.StatusCode)
+		}
+		app.AxMWaitTimeout = 5 * time.Minute
 		fake.RateLimit(5, "1")
 		if res := do(t, srv, "GET", "/admin/v1/axm/servers?limit=1", "t", nil); res.StatusCode != http.StatusOK && res.StatusCode != http.StatusTooManyRequests {
 			t.Fatalf("rate limited = %d", res.StatusCode)

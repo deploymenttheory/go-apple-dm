@@ -340,9 +340,11 @@ func (a *App) wire(ctx context.Context) error {
 	if cfg.Role != RoleMDM && cfg.AdminToken != "" {
 		admin := http.NewServeMux()
 		admin.Handle("/", a.adminHandler())
-		if client, err := a.newAxM(ctx); err != nil {
-			return err
-		} else if client != nil {
+		if cfg.AxM.Enabled() {
+			client, err := a.newAxM(ctx)
+			if err != nil {
+				return err
+			}
 			a.AxM = client
 			admin.Handle("/axm/", a.requireToken(a.axmHandler(client)))
 		}

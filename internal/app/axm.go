@@ -45,9 +45,6 @@ func (c AxMConfig) validate() error {
 // newAxM builds the client from the configuration.
 func (a *App) newAxM(ctx context.Context) (*axm.Client, error) {
 	c := a.cfg.AxM
-	if !c.Enabled() {
-		return nil, nil
-	}
 	pemBytes := c.KeyPEM
 	if len(pemBytes) == 0 {
 		var err error
