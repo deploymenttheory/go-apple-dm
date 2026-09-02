@@ -263,3 +263,70 @@ func isEmptyName(n pkix.Name) bool {
 	return n.CommonName == "" && len(n.Organization) == 0 && len(n.OrganizationalUnit) == 0 &&
 		len(n.Country) == 0 && len(n.Locality) == 0 && len(n.Province) == 0
 }
+
+// DevicePropertiesAttestation answers the DevicePropertiesAttestation query
+// of a DeviceInformation command with a chain describing this device.
+//
+// Apple's device caches the attestation it generated and returns that one
+// for up to seven days, whatever freshness code the server asked for, so a
+// server cannot treat a mismatched freshness code on this path as evidence
+// of a replay the way it can on the ACME path. The simulator reproduces
+// that: once an attestation has been minted it is returned again until
+// ExpireAttestationCache is called.
+func (d *Device) DevicePropertiesAttestation(nonce []byte) ([][]byte, error) {
+	d.mu.Lock()
+	defer d.mu.Unlock()
+	if d.acme.Attestation == nil {
+		// Hardware that cannot attest ignores the keys entirely.
+		return nil, nil
+	}
+	if d.attestation != nil {
+		return d.attestation, nil
+	}
+	props := d.acme.Properties
+	if props.SerialNumber == "" {
+		props.SerialNumber = d.SerialNumber
+	}
+	if props.UDID == "" {
+		props.UDID = d.UDID
+	}
+	if props.OSVersion == "" {
+		props.OSVersion = d.OSVersion
+	}
+	props.Freshness = append([]byte(nil), nonce...)
+	chain, err := d.acme.Attestation.Chain(attesttest.LeafOptions{
+		Properties: props,
+		PublicKey:  d.attestationKey(),
+	})
+	if err != nil {
+		return nil, fmt.Errorf("%w: %w", ErrACME, err)
+	}
+	d.attestation = chain
+	return chain, nil
+}
+
+// ExpireAttestationCache makes the next DevicePropertiesAttestation mint a
+// fresh attestation, as if Apple's seven day window had passed.
+func (d *Device) ExpireAttestationCache() {
+	d.mu.Lock()
+	defer d.mu.Unlock()
+	d.attestation = nil
+}
+
+// attestationKey is the key the device attests on the DeviceInformation
+// path, where there is no certificate request to bind to. It is the
+// enrollment identity's key when there is one, so the attestation still
+// speaks for something the server knows.
+func (d *Device) attestationKey() crypto.PublicKey {
+	if d.Identity != nil {
+		return d.Identity.Key.Public()
+	}
+	if d.attestKey == nil {
+		key, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
+		if err != nil {
+			panic("simulator: attestation key: " + err.Error())
+		}
+		d.attestKey = key
+	}
+	return d.attestKey.Public()
+}

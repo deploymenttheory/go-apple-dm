@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"crypto"
+	"crypto/ecdsa"
 	"crypto/rand"
 	"crypto/x509"
 	"errors"
@@ -99,9 +100,11 @@ type Device struct {
 	replies  []Reply
 
 	// Declarative management: options and the device channel's client state.
-	acme  ACMEOptions
-	ddm   ddmConfig
-	ddmCh *ddmChannel
+	acme        ACMEOptions
+	attestation [][]byte
+	attestKey   *ecdsa.PrivateKey
+	ddm         ddmConfig
+	ddmCh       *ddmChannel
 }
 
 // Option configures a Device.
