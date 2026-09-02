@@ -223,3 +223,18 @@ func pemChain(t *testing.T, chain [][]byte) []byte {
 	}
 	return out
 }
+
+// TestBindingDeadlineInThePast: a binding whose certificate deadline has
+// already passed would produce a certificate that is expired the moment it
+// is issued, so the order is refused rather than satisfied uselessly.
+func TestBindingDeadlineInThePast(t *testing.T) {
+	const identifier = "an-identifier-whose-deadline-passed"
+	f := newFixture(t)
+	f.ids[identifier] = acme.Binding{
+		Serial: testSerial, UDID: testUDID,
+		NotAfter: f.clock.Now().Add(-time.Minute),
+	}
+	fl := f.begin(identifier)
+	requireStatus(t, fl.answer(fl.attestation(deviceProperties())), http.StatusOK)
+	requireProblem(t, fl.finalizeWith(fl.key, pkix.Name{}), acme.ProblemRejectedIdentifier)
+}

@@ -725,10 +725,17 @@ func (s *Server) issue(e *exchange, o *Order, csr *x509.CertificateRequest) (*is
 		subject.CommonName = o.Identifier.Value
 	}
 	policy.Subject = &subject
+	// The binding's deadline is absolute, so it is handed to the authority
+	// as one. Turning it into a duration here would let the certificate
+	// outlive it by however long signing took.
 	if !o.Binding.NotAfter.IsZero() {
-		if d := o.Binding.NotAfter.Sub(s.cfg.Clock.Now()); d > 0 && (policy.Validity == 0 || d < policy.Validity) {
-			policy.Validity = d
+		if !o.Binding.NotAfter.After(s.cfg.Clock.Now()) {
+			return nil, NewProblem(
+				ProblemRejectedIdentifier,
+				"the identifier's certificate deadline has already passed",
+			)
 		}
+		policy.NotAfter = o.Binding.NotAfter
 	}
 	cert, err := s.cfg.Signer.Sign(e.ctx(), csr, policy)
 	if err != nil {

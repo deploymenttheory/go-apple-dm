@@ -33,6 +33,12 @@ var (
 type Policy struct {
 	// Validity of issued certificates; default one year.
 	Validity time.Duration
+	// NotAfter caps the expiry absolutely, whatever Validity says. A
+	// deadline is a moment, not a duration: a caller that turned one into a
+	// duration would have the certificate outlive it by however long
+	// issuing took, which is the kind of margin that goes unnoticed until
+	// it matters. Zero means Validity alone decides.
+	NotAfter time.Time
 	// Backdate NotBefore by this much to absorb clock skew; default 5 minutes.
 	Backdate time.Duration
 	// KeyUsage default: digital signature (plus key encipherment for RSA).
@@ -229,11 +235,18 @@ func (l *Local) Sign(ctx context.Context, csr *x509.CertificateRequest, p Policy
 	if p.Subject != nil {
 		subject = *p.Subject
 	}
+	notAfter := now.Add(p.Validity)
+	if !p.NotAfter.IsZero() && p.NotAfter.Before(notAfter) {
+		notAfter = p.NotAfter
+	}
+	if !notAfter.After(now) {
+		return nil, fmt.Errorf("%w: NotAfter %s has already passed", ErrPolicy, p.NotAfter.UTC())
+	}
 	tmpl := &x509.Certificate{
 		SerialNumber:          serial,
 		Subject:               subject,
 		NotBefore:             now.Add(-p.Backdate),
-		NotAfter:              now.Add(p.Validity),
+		NotAfter:              notAfter,
 		KeyUsage:              keyUsage,
 		ExtKeyUsage:           p.ExtKeyUsage,
 		BasicConstraintsValid: true,
