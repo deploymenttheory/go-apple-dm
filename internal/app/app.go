@@ -11,6 +11,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/deploymenttheory/go-apple-mdm/axm"
 	"github.com/deploymenttheory/go-apple-mdm/cms"
 	"github.com/deploymenttheory/go-apple-mdm/ddm"
 	"github.com/deploymenttheory/go-apple-mdm/ddm/adapter/inproc"
@@ -79,6 +80,9 @@ type Config struct {
 	// Enroll turns the enrollment routes on (SCEP, discovery,
 	// account-driven, ADE).
 	Enroll EnrollConfig
+	// AxM connects Apple Business Manager or Apple School Manager; its
+	// admin routes live under the admin API on the ddm and all roles.
+	AxM    AxMConfig
 	Logger *slog.Logger
 	Clock  clock.Clock
 	Bus    *event.Bus
@@ -94,11 +98,13 @@ type App struct {
 	Engine   *ddm.Engine
 	Notifier *ddm.Notifier
 	Store    storage.Store
-	cfg      Config
-	enroll   *enrollment
-	db       *sql.DB
-	dialect  sqlcommon.Dialect
-	closers  []func() error
+	// AxM is the Business Manager client when configured.
+	AxM     *axm.Client
+	cfg     Config
+	enroll  *enrollment
+	db      *sql.DB
+	dialect sqlcommon.Dialect
+	closers []func() error
 }
 
 // Build validates cfg, opens storage, and wires the role.
@@ -148,7 +154,10 @@ func (c Config) validate() error {
 	if c.DDMURL != "" && c.Role != RoleMDM {
 		return fmt.Errorf("%w: DDM URL is only for the mdm role", ErrConfig)
 	}
-	return c.Enroll.validate()
+	if err := c.Enroll.validate(); err != nil {
+		return err
+	}
+	return c.AxM.validate()
 }
 
 // roots loads CAFile into CARoots when set.
@@ -329,7 +338,15 @@ func (a *App) wire(ctx context.Context) error {
 		mux.Handle(PathDDM+"/", http.StripPrefix(PathDDM, ps))
 	}
 	if cfg.Role != RoleMDM && cfg.AdminToken != "" {
-		mux.Handle(PathAdmin, http.StripPrefix(PathAdmin[:len(PathAdmin)-1], a.adminHandler()))
+		admin := http.NewServeMux()
+		admin.Handle("/", a.adminHandler())
+		if client, err := a.newAxM(ctx); err != nil {
+			return err
+		} else if client != nil {
+			a.AxM = client
+			admin.Handle("/axm/", a.requireToken(a.axmHandler(client)))
+		}
+		mux.Handle(PathAdmin, http.StripPrefix(PathAdmin[:len(PathAdmin)-1], admin))
 	}
 	a.Handler = mux
 	return nil

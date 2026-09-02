@@ -34,7 +34,14 @@ const (
 	EnvADEAnchorFile       = "MDM_ADE_ANCHOR_FILE"
 	EnvADEAudit            = "MDM_ADE_AUDIT"
 	EnvRequireUserAuth     = "MDM_REQUIRE_USER_AUTH"
-	EnvSubscriptions       = "MDM_DDM_SUBSCRIPTIONS"
+	// Apple Business Manager (AxMConfig).
+	EnvAxMClientID   = "MDM_AXM_CLIENT_ID"
+	EnvAxMKeyID      = "MDM_AXM_KEY_ID"
+	EnvAxMKeyFile    = "MDM_AXM_KEY_FILE"
+	EnvAxMScope      = "MDM_AXM_SCOPE"
+	EnvAxMBaseURL    = "MDM_AXM_BASE_URL"
+	EnvAxMTokenURL   = "MDM_AXM_TOKEN_URL" // #nosec G101 -- the variable name, not a credential
+	EnvSubscriptions = "MDM_DDM_SUBSCRIPTIONS"
 )
 
 // Defaults applied by ParseEnv when a variable is unset.
@@ -110,6 +117,14 @@ func ParseEnv(get func(string) string) (Config, error) {
 			return Config{}, err
 		}
 		cfg.Enroll.Discovery = d
+	}
+	cfg.AxM = AxMConfig{
+		ClientID: get(EnvAxMClientID),
+		KeyID:    get(EnvAxMKeyID),
+		KeyFile:  get(EnvAxMKeyFile),
+		Scope:    get(EnvAxMScope),
+		BaseURL:  get(EnvAxMBaseURL),
+		TokenURL: get(EnvAxMTokenURL),
 	}
 	for key, dst := range map[string]*bool{EnvADEAudit: &cfg.Enroll.ADEAudit, EnvRequireUserAuth: &cfg.Enroll.RequireUserAuth} {
 		if v := get(key); v != "" {
