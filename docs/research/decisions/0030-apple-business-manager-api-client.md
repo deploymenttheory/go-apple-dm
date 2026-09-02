@@ -1,6 +1,6 @@
 # 0030: Apple Business Manager and Apple School Manager API client (`axm`)
 
-Status: proposed
+Status: accepted
 Date: 2026-09-02
 Phase: 6
 

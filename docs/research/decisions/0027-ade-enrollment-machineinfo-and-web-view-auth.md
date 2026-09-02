@@ -1,6 +1,6 @@
 # 0027: Automated Device Enrollment: MachineInfo, the enrollment endpoint, and web view authentication
 
-Status: proposed
+Status: accepted
 Date: 2026-09-02
 Phase: 6
 

@@ -1,6 +1,6 @@
 # 0026: DEP client, device sync, and profile assignment
 
-Status: proposed
+Status: accepted
 Date: 2026-09-02
 Phase: 6
 

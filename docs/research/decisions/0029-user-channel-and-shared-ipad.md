@@ -1,6 +1,6 @@
 # 0029: User channel, multiple users, and Shared iPad
 
-Status: proposed
+Status: accepted
 Date: 2026-09-02
 Phase: 6
 

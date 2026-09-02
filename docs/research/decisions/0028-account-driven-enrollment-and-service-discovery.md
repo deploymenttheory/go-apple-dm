@@ -1,6 +1,6 @@
 # 0028: Account-driven enrollment and service discovery
 
-Status: proposed
+Status: accepted
 Date: 2026-09-02
 Phase: 6
 
