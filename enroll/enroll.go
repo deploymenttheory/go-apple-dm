@@ -40,11 +40,12 @@ const (
 // Has reports whether every bit in r is set.
 func (a AccessRights) Has(r AccessRights) bool { return a&r == r }
 
-// ServerCapabilities values.
+// ServerCapabilities values: Apple's capability identifiers for the
+// enrollment profile, not credentials.
 const (
 	CapabilityPerUserConnections = "com.apple.mdm.per-user-connections"
-	CapabilityBootstrapToken     = "com.apple.mdm.bootstraptoken"
-	CapabilityToken              = "com.apple.mdm.token"
+	CapabilityBootstrapToken     = "com.apple.mdm.bootstraptoken" // #nosec G101 -- capability identifier
+	CapabilityToken              = "com.apple.mdm.token"          // #nosec G101 -- capability identifier
 )
 
 // SCEP describes the SCEP identity payload.

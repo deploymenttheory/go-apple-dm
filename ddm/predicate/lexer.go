@@ -437,8 +437,8 @@ func (l *lexer) hex4() (rune, bool) {
 	if l.pos+4 > len(l.src) {
 		return 0, false
 	}
-	v, err := strconv.ParseUint(l.src[l.pos:l.pos+4], 16, 32)
-	if err != nil {
+	v, err := strconv.ParseUint(l.src[l.pos:l.pos+4], 16, 16)
+	if err != nil || v > 0xFFFF {
 		return 0, false
 	}
 	l.pos += 4
