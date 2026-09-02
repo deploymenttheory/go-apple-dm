@@ -197,7 +197,7 @@ func (k *Keyring) Seal(plaintext, aad []byte) ([]byte, error) {
 	name := k.active
 	out := make([]byte, 0, headerLen+len(name)+nonceLen+len(plaintext)+tagLen)
 	out = append(out, magic[:]...)
-	out = append(out, byte(len(name)))
+	out = append(out, byte(len(name))) // #nosec G115 -- NewKeyring rejects names longer than 255 bytes
 	out = append(out, name...)
 	nonceStart := len(out)
 	out = out[:nonceStart+nonceLen]

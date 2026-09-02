@@ -10,10 +10,10 @@ import (
 // Purposes name the sealed columns; each becomes the AAD prefix that binds
 // a ciphertext to its column (decision record 0013).
 const (
-	purposeUnlockToken    = "enrollments.unlock_token"
-	purposeBootstrapToken = "enrollments.bootstrap_token"
-	purposePushKey        = "push_certs.key_pem"
-	purposeUserAuthToken  = "user_auth.auth_token"
+	purposeUnlockToken    = "enrollments.unlock_token"    // #nosec G101 -- a column name, not a credential
+	purposeBootstrapToken = "enrollments.bootstrap_token" // #nosec G101 -- a column name, not a credential
+	purposePushKey        = "push_certs.key_pem"          // #nosec G101 -- a column name, not a credential
+	purposeUserAuthToken  = "user_auth.auth_token"        // #nosec G101 -- a column name, not a credential
 )
 
 // Option configures New.
