@@ -80,9 +80,13 @@ type Device struct {
 
 	CheckinURL string
 	ServerURL  string
-	Client     *http.Client
-	Identity   *Identity
-	Responder  Responder
+	// EnrollmentID, when set, makes this a User Enrollment: check-ins carry
+	// EnrollmentID (and EnrollmentUserID on the user channel) instead of
+	// the UDID (decision record 0028).
+	EnrollmentID string
+	Client       *http.Client
+	Identity     *Identity
+	Responder    Responder
 	// MaxCommandsPerConnect bounds one Connect loop (default 100).
 	MaxCommandsPerConnect int
 
@@ -146,7 +150,20 @@ func (d *Device) Replies() []Reply {
 	return append([]Reply(nil), d.replies...)
 }
 
+// connectIdentity is the identity block of a Connect body.
+func (d *Device) connectIdentity() map[string]any {
+	if d.EnrollmentID != "" {
+		return map[string]any{"EnrollmentID": d.EnrollmentID}
+	}
+	return map[string]any{"UDID": d.UDID}
+}
+
 func (d *Device) checkinFields(messageType string) map[string]any {
+	if d.EnrollmentID != "" {
+		// User Enrollment: the device identifies itself by EnrollmentID and
+		// never sends its UDID.
+		return map[string]any{"MessageType": messageType, "EnrollmentID": d.EnrollmentID}
+	}
 	return map[string]any{"MessageType": messageType, "UDID": d.UDID}
 }
 
@@ -278,7 +295,7 @@ func (d *Device) checkin(ctx context.Context, fields map[string]any) ([]byte, er
 // handed until the server returns an empty body. It returns the commands
 // processed in this connection.
 func (d *Device) Connect(ctx context.Context) ([]*mdm.Command, error) {
-	return d.connectAs(ctx, map[string]any{"UDID": d.UDID}, d.ddmChannel())
+	return d.connectAs(ctx, d.connectIdentity(), d.ddmChannel())
 }
 
 // connectAs runs the command loop for one channel. A DeclarativeManagement
@@ -401,6 +418,9 @@ func (d *Device) SharedIPadUser(shortName, longName string) *User {
 }
 
 func (u *User) identity() map[string]any {
+	if u.Device.EnrollmentID != "" {
+		return map[string]any{"EnrollmentID": u.Device.EnrollmentID, "EnrollmentUserID": u.UserID}
+	}
 	f := map[string]any{"UDID": u.Device.UDID, "UserID": u.UserID}
 	if u.UserID == mdm.SharedIPadUserID {
 		// Apple identifies the logged-in Shared iPad user by short name.
