@@ -138,15 +138,17 @@ Phase: 7
 
 1. `attest.TestVerifyFreshness/MissingExtensionFails` and `/AnotherChallengeFails` (prove claim
    1; step-ca's guard would accept the first because the extension is absent).
-2. `attest.TestVerifyBindsTheAttestedKey` (proves claim 2; nanoca and Fleet issue for the
-   unrelated key because neither compares it, and step-ca skips the comparison when the
-   authorization carries no fingerprint).
+2. `attest.TestVerifyBindsTheAttestedKey` and `acme.TestFinalize/KeyMustMatchAttestation`
+   (prove claim 2; nanoca and Fleet issue for the unrelated key because neither compares it, and
+   step-ca skips the comparison when the authorization carries no fingerprint).
 3. `attest.TestParseObjectReadsEveryDocumentedProperty` (proves claim 3; reading
    `1.2.840.113635.100.8.13.1` as a string yields `"\x02\x01\x00"` rather than a boolean, so the
    reference behaviour cannot report SIP at all).
 4. `attest.TestMalformedExtensions/truncated_integer`,
    `/trailing_bytes_after_integer`, and `/BlankIsAbsent` (prove claim 4).
-5. `attest.TestUserEnrollmentHasNoIdentity` (proves claim 5).
+5. `attest.TestUserEnrollmentHasNoIdentity`, `acme.TestChallenge/UnidentifiedAttestationNeedsOptIn`,
+   and `acme.TestChallenge/NoAttestationRequiresOptIn` (prove claim 5: an attestation that names
+   no device is a policy question, and so is one that does not exist).
 6. `attest.TestVerifyChain/ForeignAuthority`, `/Expired`, `/MissingIntermediate`, and
    `/DefaultAnchorsAreApple` (prove claims 6 and 7; the last shows the shipped default trusts
    Apple alone).
@@ -157,6 +159,9 @@ Phase: 7
    re-verified at finalize).
 9. `attest.TestParseObjectWithoutAttestation` (a statement with no `x5c` is a policy question,
    reported as `ErrNoAttestation`, not a parse failure).
+10. `acme.TestChallenge/BindingMismatchRejected/Serial` and `/UDID`, and
+    `e2e.TestE2E_ACMEAttest/AttestationNamesAnotherDevice` (the attested device must be the
+    device the client identifier was issued for).
 
 ## Rejected alternatives
 

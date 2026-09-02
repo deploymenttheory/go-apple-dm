@@ -716,9 +716,9 @@ func TestAccountOrders(t *testing.T) {
 		if next == "" {
 			t.Fatal("no next link on a partial page")
 		}
-		// The url header is the path without the query: see
-		// NextLinkCannotBeSigned below.
-		page := acct.postAt(next, acct.url+"/orders", nil)
+		// The link the server published is signed exactly as it was given,
+		// query included.
+		page := acct.post(next, nil)
 		requireStatus(t, page, http.StatusOK)
 		rest := decode[ordersJSON](t, page)
 		if got := len(first.Orders) + len(rest.Orders); got != total {
@@ -729,15 +729,12 @@ func TestAccountOrders(t *testing.T) {
 		}
 	})
 
-	t.Run("NextLinkCannotBeSigned", func(t *testing.T) {
-		t.Skip("bug: the url header is compared against the path, so a link " +
-			"carrying a query cannot be signed; see the report")
+	t.Run("NextLinkCanBeSigned", func(t *testing.T) {
 		// RFC 8555 section 6.4 makes the url header "the URL to which the
 		// client is directing the request", query included, and that is
-		// what golang.org/x/crypto/acme signs. The server compares it with
-		// BaseURL plus r.URL.Path, which drops the query, so the rel="next"
-		// link the server itself publishes is one no conforming client can
-		// use.
+		// what golang.org/x/crypto/acme signs. Comparing it with the path
+		// alone would make the rel="next" link the server itself publishes
+		// one no conforming client could follow.
 		res := acct.post(acct.url+"/orders", nil)
 		requireStatus(t, res, http.StatusOK)
 		next := nextLink(res.header)
@@ -836,11 +833,20 @@ func rawJWS(t *testing.T, protected map[string]any, payload, signature []byte) [
 	})
 }
 
-// newFixtureSharing builds a second server over the first one's store, so a
-// backend fault can be injected into an exchange the first server set up.
+// newFixtureSharing builds a second server over the first one's store,
+// clock and trust anchors, so a backend fault can be injected into an
+// exchange the first server set up. The records are addressed by opaque
+// identifier, so the two servers differ only in the port they listen on.
 func newFixtureSharing(t *testing.T, f *fixture, fail map[string]error) *fixture {
 	t.Helper()
-	return newFixtureWithStore(t, &acmetest.Failing{Store: f.store, Fail: fail})
+	g := newFixture(t, func(c *acme.Config) {
+		c.Store = &acmetest.Failing{Store: f.store, Fail: fail}
+		c.Anchors = f.attest.Anchors()
+		c.Clock = f.clock
+	})
+	g.attest = f.attest
+	g.clock = f.clock
+	return g
 }
 
 func newFixtureWithStore(t *testing.T, store acme.Store) *fixture {

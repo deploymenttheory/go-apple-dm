@@ -1,6 +1,8 @@
 package acme_test
 
 import (
+	"context"
+	"crypto/x509"
 	"crypto/x509/pkix"
 	"encoding/base64"
 	"io"
@@ -12,6 +14,8 @@ import (
 
 	"github.com/deploymenttheory/go-apple-mdm/acme"
 	"github.com/deploymenttheory/go-apple-mdm/acme/acmetest"
+	"github.com/deploymenttheory/go-apple-mdm/acme/attest"
+	"github.com/deploymenttheory/go-apple-mdm/acme/attest/attesttest"
 	"github.com/deploymenttheory/go-apple-mdm/acme/jose"
 	"github.com/deploymenttheory/go-apple-mdm/ca"
 	"github.com/deploymenttheory/go-apple-mdm/event"
@@ -253,21 +257,24 @@ func TestOrderEndpoint(t *testing.T) {
 	})
 
 	t.Run("StoreFailures", func(t *testing.T) {
-		for name, fail := range map[string]struct {
-			target string
-			fail   map[string]error
+		cases := map[string]struct {
+			path string
+			fail map[string]error
 		}{
-			"Order":         {fl.orderURL, map[string]error{"GetOrder": errStore}},
-			"Authorization": {fl.authzURL, map[string]error{"GetAuthorization": errStore}},
-			"Challenge":     {fl.chalURL, map[string]error{"GetChallenge": errStore}},
-			// The authorization exists but its challenge cannot be read,
-			// which is our fault and not a missing record.
-			"ChallengeOfAuthorization": {fl.authzURL, map[string]error{"GetChallenge": errStore}},
-		} {
+			"Order":         {"/order/" + idOf(fl.orderURL), map[string]error{"GetOrder": errStore}},
+			"Authorization": {"/authz/" + idOf(fl.authzURL), map[string]error{"GetAuthorization": errStore}},
+			"Challenge":     {"/challenge/" + idOf(fl.chalURL), map[string]error{"GetChallenge": errStore}},
+			// The authorization is found but the challenge it names cannot
+			// be read, which is our fault and not a missing record.
+			"ChallengeOfAuthorization": {
+				"/authz/" + idOf(fl.authzURL), map[string]error{"GetChallenge": errStore},
+			},
+		}
+		for name, c := range cases {
 			t.Run(name, func(t *testing.T) {
-				broken := newFixtureSharing(t, f, fail.fail)
-				res := f.signed(
-					broken.base+strings.TrimPrefix(fail.target, f.base), fl.acct.key,
+				broken := newFixtureSharing(t, f, c.fail)
+				res := broken.signed(
+					broken.url(c.path), fl.acct.key,
 					jose.Header{KeyID: broken.url("/account/" + fl.acct.id)}, nil,
 				)
 				requireProblem(t, res, acme.ProblemServerInternal)
@@ -454,8 +461,13 @@ func TestFinalize(t *testing.T) {
 		f := newFixture(t, func(c *acme.Config) { c.OrderTTL = 30 * 24 * time.Hour })
 		fl := f.begin(testIdentifier)
 		props := deviceProperties()
-		props.Freshness = freshnessFor(fl.token)
-		object, err := f.attest.Object(attesttest.leafOptions(props, fl.key.Public()))
+		props.Freshness = attest.FreshnessForToken(fl.token)
+		object, err := f.attest.Object(attesttest.LeafOptions{
+			Properties: props,
+			PublicKey:  fl.key.Public(),
+			NotBefore:  time.Now().Add(-time.Minute),
+			NotAfter:   time.Now().Add(time.Hour),
+		})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -465,6 +477,37 @@ func TestFinalize(t *testing.T) {
 		if got := fl.order().Status; got != acme.StatusInvalid {
 			t.Fatalf("order status = %q, want invalid", got)
 		}
+	})
+
+	t.Run("SettlingTheOrderFails", func(t *testing.T) {
+		// A terminal fault settles the order invalid, and a store that
+		// cannot record that is our fault rather than the attestation's, so
+		// the client is told to retry rather than that its device is wrong.
+		f := newFixture(t, func(c *acme.Config) { c.OrderTTL = 30 * 24 * time.Hour })
+		fl := f.begin(testIdentifier)
+		props := deviceProperties()
+		props.Freshness = attest.FreshnessForToken(fl.token)
+		object, err := f.attest.Object(attesttest.LeafOptions{
+			Properties: props,
+			PublicKey:  fl.key.Public(),
+			NotBefore:  time.Now().Add(-time.Minute),
+			NotAfter:   time.Now().Add(time.Hour),
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+		requireStatus(t, fl.answer(object), http.StatusOK)
+		f.clock.Advance(2 * time.Hour)
+
+		broken := newFixtureSharing(t, f, map[string]error{"PutOrder": errStore})
+		res := broken.signed(
+			broken.url("/order/"+idOf(fl.orderURL)+"/finalize"), fl.acct.key,
+			jose.Header{KeyID: broken.url("/account/" + fl.acct.id)},
+			mustJSON(t, map[string]string{
+				"csr": base64.RawURLEncoding.EncodeToString(csrDER(t, fl.key, pkix.Name{})),
+			}),
+		)
+		requireProblem(t, res, acme.ProblemServerInternal)
 	})
 
 	t.Run("StoredAttestationIsUnreadable", func(t *testing.T) {
@@ -520,4 +563,49 @@ func tamper(der []byte) []byte {
 	out := append([]byte(nil), der...)
 	out[len(out)-1] ^= 0xff
 	return out
+}
+
+// brokenSigner is a certificate authority that fails for a reason that is
+// neither a policy refusal nor a bad certificate request.
+type brokenSigner struct{ ca.Signer }
+
+func (brokenSigner) Sign(
+	context.Context,
+	*x509.CertificateRequest,
+	ca.Policy,
+) (*x509.Certificate, error) {
+	return nil, errStore
+}
+
+// setOrderStatus writes a status the protocol would not reach on its own.
+func setOrderStatus(t *testing.T, f *fixture, fl *flow, status string) {
+	t.Helper()
+	order, err := f.store.GetOrder(t.Context(), idOf(fl.orderURL))
+	if err != nil {
+		t.Fatal(err)
+	}
+	order.Status = status
+	if err := f.store.Update(t.Context(), func(tx acme.Tx) error {
+		return tx.PutOrder(t.Context(), order)
+	}); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func challengeRecord(t *testing.T, f *fixture, fl *flow) *acme.Challenge {
+	t.Helper()
+	record, err := f.store.GetChallenge(t.Context(), idOf(fl.chalURL))
+	if err != nil {
+		t.Fatal(err)
+	}
+	return record
+}
+
+func putChallenge(t *testing.T, f *fixture, c *acme.Challenge) {
+	t.Helper()
+	if err := f.store.Update(t.Context(), func(tx acme.Tx) error {
+		return tx.PutChallenge(t.Context(), c)
+	}); err != nil {
+		t.Fatal(err)
+	}
 }

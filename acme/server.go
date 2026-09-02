@@ -268,7 +268,13 @@ func (s *Server) authenticate(e *exchange, mode keyMode) error {
 	// that resolves here. Comparing against the configured base means a
 	// deployment behind a proxy that terminates TLS needs no forwarded
 	// header to be believed.
-	if want := s.cfg.BaseURL + e.r.URL.Path; jws.Header.URL != want {
+	//
+	// RequestURI keeps the query string, because RFC 8555 section 6.4 makes
+	// url "the URL to which the client is directing the request" and a
+	// client signs what it sends. Comparing the path alone would make the
+	// paging link this server publishes on an order listing impossible to
+	// follow.
+	if want := s.cfg.BaseURL + e.r.URL.RequestURI(); jws.Header.URL != want {
 		return NewProblem(
 			ProblemMalformed, "the url header is %q, expected %q", jws.Header.URL, want,
 		)
