@@ -58,3 +58,6 @@ With the code:
 | [0028](0028-account-driven-enrollment-and-service-discovery.md) | Account-driven enrollment and service discovery | accepted | 6 |
 | [0029](0029-user-channel-and-shared-ipad.md) | User channel, multiple users, and Shared iPad | accepted | 6 |
 | [0030](0030-apple-business-manager-api-client.md) | Apple Business Manager and Apple School Manager API client | accepted | 6 |
+| [0031](0031-acme-server-and-state-store.md) | ACME server, client identifiers, and the ACME state store | proposed | 7 |
+| [0032](0032-managed-device-attestation.md) | Managed Device Attestation: parsing, verification, and policy | proposed | 7 |
+| [0033](0033-acme-identity-in-profiles-and-ddm.md) | ACME identity in enrollment profiles, declarative credentials, and the reference server | proposed | 7 |
