@@ -16,3 +16,4 @@
 ^github.com/deploymenttheory/go-apple-mdm/enroll/webauth/webauthtest$  # fake OIDC provider, exercised by the webauth, ADE, and simulator suites
 ^github.com/deploymenttheory/go-apple-mdm/enroll/adetest$  # MachineInfo signing helper, exercised by the enroll/ade, simulator, and e2e suites
 ^github.com/deploymenttheory/go-apple-mdm/gdmf/gdmftest$  # software lookup fake, exercised by the gdmf and enroll/ade suites
+^github.com/deploymenttheory/go-apple-mdm/axm/axmtest$  # fake Apple Business Manager API, exercised by the axm suite and e2e
