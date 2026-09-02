@@ -393,6 +393,13 @@ func (d *Device) User(userID, shortName, longName string) *User {
 	return &User{Device: d, UserID: userID, ShortName: shortName, LongName: longName}
 }
 
+// SharedIPadUser is the user channel of the person logged in to a Shared
+// iPad: Apple sends the sentinel UserID and identifies the user by
+// UserShortName (decision record 0029).
+func (d *Device) SharedIPadUser(shortName, longName string) *User {
+	return d.User(mdm.SharedIPadUserID, shortName, longName)
+}
+
 func (u *User) identity() map[string]any {
 	return map[string]any{"UDID": u.Device.UDID, "UserID": u.UserID}
 }

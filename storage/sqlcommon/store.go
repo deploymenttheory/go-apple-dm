@@ -117,13 +117,13 @@ func nullBytes(b []byte) []byte {
 var enrollmentCols = []string{
 	"id", "channel", "parent_id", "enabled", "topic", "push_magic", "push_token",
 	"serial_number", "model", "model_name", "device_name", "product_name", "os_version", "build_version", "imei", "meid", "device_topic",
-	"user_short_name", "user_long_name", "unlock_token", "authenticate_raw", "token_update_raw", "cert_hash", "cert_hash_at", "bootstrap_token", "bootstrap_token_at",
+	"user_short_name", "user_long_name", "not_on_console", "enrollment_user_id", "unlock_token", "authenticate_raw", "token_update_raw", "cert_hash", "cert_hash_at", "bootstrap_token", "bootstrap_token_at",
 	"enrolled_at", "token_updated_at", "last_seen_at", "disabled_at",
 }
 
 const selectEnrollment = "SELECT id, channel, parent_id, enabled, topic, push_magic, push_token, " +
 	"serial_number, model, model_name, device_name, product_name, os_version, build_version, imei, meid, device_topic, " +
-	"user_short_name, user_long_name, unlock_token, authenticate_raw, token_update_raw, cert_hash, cert_hash_at, bootstrap_token_at, " +
+	"user_short_name, user_long_name, not_on_console, enrollment_user_id, unlock_token, authenticate_raw, token_update_raw, cert_hash, cert_hash_at, bootstrap_token_at, " +
 	"enrolled_at, token_updated_at, last_seen_at, disabled_at FROM enrollments"
 
 type scanner interface{ Scan(dest ...any) error }
@@ -140,7 +140,7 @@ func scanEnrollment(row scanner) (*storage.Enrollment, error) {
 	err := row.Scan(&e.ID.ID, &channel, &e.ID.ParentID, &e.Enabled, &e.Push.Topic, &e.Push.Magic, &pushToken,
 		&e.Device.SerialNumber, &e.Device.Model, &e.Device.ModelName, &e.Device.DeviceName, &e.Device.ProductName,
 		&e.Device.OSVersion, &e.Device.BuildVersion, &e.Device.IMEI, &e.Device.MEID, &e.Device.Topic,
-		&e.UserShortName, &e.UserLongName, &unlockToken, &authenticate, &tokenUpdate, &certHash, &certHashAt, &bootstrapAt,
+		&e.UserShortName, &e.UserLongName, &e.NotOnConsole, &e.EnrollmentUserID, &unlockToken, &authenticate, &tokenUpdate, &certHash, &certHashAt, &bootstrapAt,
 		&enrolledAt, &tokenUpdatedAt, &lastSeenAt, &disabledAt)
 	if err != nil {
 		return nil, err
@@ -169,7 +169,7 @@ func (s *Store) UpsertAuthenticate(ctx context.Context, id mdm.EnrollmentID, msg
 		_, err := q.ExecContext(ctx, s.q(s.d.Upsert("enrollments", enrollmentCols, []string{"id"})),
 			id.ID, int(id.Channel), id.ParentID, false, "", "", nil,
 			d.SerialNumber, d.Model, d.ModelName, d.DeviceName, d.ProductName, d.OSVersion, d.BuildVersion, d.IMEI, d.MEID, d.Topic,
-			"", "", nil, nullBytes(raw), nil, nil, nil, nil, nil,
+			"", "", false, "", nil, nullBytes(raw), nil, nil, nil, nil, nil,
 			at, nil, at, nil)
 		if err != nil {
 			return wrap("upsert enrollment", err)
@@ -208,7 +208,8 @@ func (s *Store) StoreTokenUpdate(ctx context.Context, id mdm.EnrollmentID, push 
 		return err
 	}
 	var unlock []byte
-	var short, long sql.NullString
+	var short, long, enrollmentUser sql.NullString
+	var notOnConsole sql.NullBool
 	if msg != nil {
 		var err error
 		if unlock, err = s.seal(purposeUnlockToken, id.ID, msg.UnlockToken); err != nil {
@@ -218,12 +219,15 @@ func (s *Store) StoreTokenUpdate(ctx context.Context, id mdm.EnrollmentID, push 
 			short = sql.NullString{String: *msg.UserShortName, Valid: true}
 		}
 		long = nullString(msg.UserLongName)
+		enrollmentUser = nullString(msg.EnrollmentUserID)
+		notOnConsole = sql.NullBool{Bool: msg.NotOnConsole, Valid: true}
 	}
 	res, err := s.db.ExecContext(ctx, s.q("UPDATE enrollments SET topic = ?, push_magic = ?, push_token = ?, enabled = ?, "+
 		"token_updated_at = ?, last_seen_at = ?, disabled_at = NULL, token_update_raw = COALESCE(?, token_update_raw), "+
-		"unlock_token = COALESCE(?, unlock_token), user_short_name = COALESCE(?, user_short_name), user_long_name = COALESCE(?, user_long_name) "+
+		"unlock_token = COALESCE(?, unlock_token), user_short_name = COALESCE(?, user_short_name), user_long_name = COALESCE(?, user_long_name), "+
+		"not_on_console = COALESCE(?, not_on_console), enrollment_user_id = COALESCE(?, enrollment_user_id) "+
 		"WHERE id = ?"),
-		push.Topic, push.Magic, push.Token, true, at.UTC(), at.UTC(), nullBytes(raw), unlock, short, long, id.ID)
+		push.Topic, push.Magic, push.Token, true, at.UTC(), at.UTC(), nullBytes(raw), unlock, short, long, notOnConsole, enrollmentUser, id.ID)
 	if err != nil {
 		return wrap("token update", err)
 	}

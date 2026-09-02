@@ -140,6 +140,10 @@ func (s *Store) StoreTokenUpdate(_ context.Context, id mdm.EnrollmentID, push md
 		if msg.UserLongName != "" {
 			r.UserLongName = msg.UserLongName
 		}
+		if msg.EnrollmentUserID != "" {
+			r.EnrollmentUserID = msg.EnrollmentUserID
+		}
+		r.NotOnConsole = msg.NotOnConsole
 	}
 	return nil
 }

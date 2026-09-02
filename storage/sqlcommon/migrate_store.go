@@ -106,7 +106,7 @@ func (s *Store) Import(ctx context.Context, rec storage.EnrollmentExport) error 
 		_, err := q.ExecContext(ctx, s.q(s.d.Upsert("enrollments", enrollmentCols, []string{"id"})),
 			id.ID, int(id.Channel), id.ParentID, rec.Enabled, rec.Push.Topic, rec.Push.Magic, nullBytes(rec.Push.Token),
 			d.SerialNumber, d.Model, d.ModelName, d.DeviceName, d.ProductName, d.OSVersion, d.BuildVersion, d.IMEI, d.MEID, d.Topic,
-			rec.UserShortName, rec.UserLongName, unlock, nullBytes(rec.AuthenticateRaw), nullBytes(rec.TokenUpdateRaw),
+			rec.UserShortName, rec.UserLongName, rec.NotOnConsole, rec.EnrollmentUserID, unlock, nullBytes(rec.AuthenticateRaw), nullBytes(rec.TokenUpdateRaw),
 			nullString(rec.CertHash), nullTime(rec.CertHashAt), bootstrap, nullTime(rec.BootstrapTokenAt),
 			rec.EnrolledAt.UTC(), nullTime(rec.TokenUpdatedAt), rec.LastSeenAt.UTC(), nullTime(rec.DisabledAt))
 		if s.d.uniqueViolation(err) {

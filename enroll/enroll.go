@@ -5,6 +5,7 @@ import (
 	"crypto/x509/pkix"
 	"errors"
 	"fmt"
+	"slices"
 	"strings"
 
 	"github.com/deploymenttheory/go-apple-mdm/profile"
@@ -88,8 +89,12 @@ type Profile struct {
 	// trusts the MDM server and SCEP CA.
 	Roots []*x509.Certificate
 
-	AccessRights        AccessRights // default AccessRightsAll
-	ServerCapabilities  []string
+	AccessRights       AccessRights // default AccessRightsAll
+	ServerCapabilities []string
+	// SharedIPad marks a profile for Shared iPad (DEP is_multi_user):
+	// Apple requires com.apple.mdm.per-user-connections in
+	// ServerCapabilities, which Build adds when absent (decision record 0029).
+	SharedIPad          bool
 	SignMessage         *bool // default true
 	CheckOutWhenRemoved bool
 	UseDevelopmentAPNS  bool
@@ -188,6 +193,9 @@ func (p Profile) Build() (*profile.Profile, error) {
 		ServerCapabilities:      p.ServerCapabilities,
 		AssignedManagedAppleID:  nonEmpty(p.AssignedManagedAppleID),
 		EnrollmentMode:          nonEmpty(p.EnrollmentMode),
+	}
+	if p.SharedIPad && !slices.Contains(mdmPayload.ServerCapabilities, CapabilityPerUserConnections) {
+		mdmPayload.ServerCapabilities = append(slices.Clone(mdmPayload.ServerCapabilities), CapabilityPerUserConnections)
 	}
 	if p.CheckOutWhenRemoved {
 		mdmPayload.CheckOutWhenRemoved = new(true)

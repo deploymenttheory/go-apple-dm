@@ -5,12 +5,15 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"maps"
 	"slices"
 
 	"github.com/deploymenttheory/go-apple-mdm/event"
 	"github.com/deploymenttheory/go-apple-mdm/internal/clock"
 	"github.com/deploymenttheory/go-apple-mdm/mdm"
 	"github.com/deploymenttheory/go-apple-mdm/schema/checkin"
+	"github.com/deploymenttheory/go-apple-mdm/schema/commands"
+	"github.com/deploymenttheory/go-apple-mdm/schema/support"
 	"github.com/deploymenttheory/go-apple-mdm/storage"
 )
 
@@ -168,6 +171,17 @@ type Config struct {
 	// CodeForbidden, because the pin exists to stop a second device using
 	// the identity.
 	CertReuse CertReusePolicy
+	// RequireUserAuth makes a user channel's TokenUpdate depend on a
+	// completed UserAuthenticate session (a token issued by DigestUserAuth):
+	// without one the TokenUpdate is CodeForbidden (decision record 0029).
+	// Shared iPad and User Enrollment user channels are exempt because
+	// Apple never sends UserAuthenticate for them.
+	RequireUserAuth bool
+	// ValidateTargets checks every Enqueue target against the request
+	// type's support metadata (channel, Shared iPad, User Enrollment) from
+	// schema/commands and reports unsupported targets in
+	// EnqueueResult.Skipped instead of queuing them. Default true.
+	ValidateTargets *bool
 	// Optional message handlers.
 	DeclarativeManagement DMHandler
 	GetToken              GetTokenHandler
@@ -182,17 +196,19 @@ func DenyReenroll(context.Context, *mdm.Request, *storage.Enrollment) error { re
 
 // Core is the service implementation.
 type Core struct {
-	store    storage.Store
-	bus      *event.Bus
-	clock    clock.Clock
-	hooks    []Hook
-	log      *slog.Logger
-	pinning  PinMode
-	reenroll ReenrollPolicy
-	reuse    CertReusePolicy
-	dm       DMHandler
-	getToken GetTokenHandler
-	userAuth UserAuthenticateHandler
+	store           storage.Store
+	bus             *event.Bus
+	clock           clock.Clock
+	hooks           []Hook
+	log             *slog.Logger
+	pinning         PinMode
+	reenroll        ReenrollPolicy
+	reuse           CertReusePolicy
+	dm              DMHandler
+	getToken        GetTokenHandler
+	userAuth        UserAuthenticateHandler
+	requireUserAuth bool
+	validateTargets bool
 }
 
 // New validates the configuration and builds a Core.
@@ -204,6 +220,7 @@ func New(cfg Config) (*Core, error) {
 		store: cfg.Store, bus: cfg.Bus, clock: cfg.Clock, hooks: cfg.Hooks, log: cfg.Logger,
 		pinning: cfg.Pinning, reenroll: cfg.Reenroll, reuse: cfg.CertReuse,
 		dm: cfg.DeclarativeManagement, getToken: cfg.GetToken, userAuth: cfg.UserAuthenticate,
+		requireUserAuth: cfg.RequireUserAuth, validateTargets: cfg.ValidateTargets == nil || *cfg.ValidateTargets,
 	}
 	if c.clock == nil {
 		c.clock = clock.Real{}
@@ -266,12 +283,27 @@ func (c *Core) Enqueue(ctx context.Context, ids []mdm.EnrollmentID, cmd *mdm.Com
 	if o.Now.IsZero() {
 		o.Now = c.clock.Now()
 	}
-	res, err := c.store.Enqueue(ctx, ids, cmd, o)
+	ids, unsupported, err := c.checkTargets(ctx, ids, cmd)
 	if err != nil {
-		err = wrapCode(codeForStorage(err), err)
+		err = wrapCode(CodeInternal, err)
 		after(err)
-		return res, err
+		return storage.EnqueueResult{}, err
 	}
+	var res storage.EnqueueResult
+	if len(ids) > 0 || len(unsupported) == 0 {
+		// The store validates the command itself; skip it only when every
+		// target was filtered out above.
+		res, err = c.store.Enqueue(ctx, ids, cmd, o)
+		if err != nil {
+			err = wrapCode(codeForStorage(err), err)
+			after(err)
+			return res, err
+		}
+	}
+	if res.Skipped == nil {
+		res.Skipped = map[mdm.EnrollmentID]error{}
+	}
+	maps.Copy(res.Skipped, unsupported)
 	for _, id := range res.Queued {
 		c.publish(ctx, event.CommandQueued, id, "admin", cmd)
 	}
@@ -289,4 +321,84 @@ func codeForStorage(err error) Code {
 		return CodeForbidden
 	}
 	return CodeInternal
+}
+
+// ErrUnsupportedTarget marks an Enqueue target the request type does not
+// support per Apple's schema metadata.
+var ErrUnsupportedTarget = errors.New("service: request type not supported on this enrollment")
+
+// checkTargets splits ids into supported targets and unsupported ones with
+// the reason (decision record 0029). Unknown enrollments pass through so
+// the store reports them as it always has.
+func (c *Core) checkTargets(ctx context.Context, ids []mdm.EnrollmentID, cmd *mdm.Command) ([]mdm.EnrollmentID, map[mdm.EnrollmentID]error, error) {
+	if !c.validateTargets || cmd == nil {
+		return ids, nil, nil
+	}
+	entry := commands.Support(cmd.RequestType)
+	if entry == nil {
+		return ids, nil, nil
+	}
+	var keep []mdm.EnrollmentID
+	unsupported := map[mdm.EnrollmentID]error{}
+	for _, id := range ids {
+		e, err := c.store.Get(ctx, id)
+		if errors.Is(err, storage.ErrNotFound) {
+			keep = append(keep, id)
+			continue
+		}
+		if err != nil {
+			return nil, nil, err
+		}
+		target := targetFor(ctx, c.store, e)
+		if r := entry.Check(target); !r.Supported {
+			unsupported[id] = fmt.Errorf("%w: %s", ErrUnsupportedTarget, r.Reason)
+			continue
+		}
+		keep = append(keep, id)
+	}
+	return keep, unsupported, nil
+}
+
+// targetFor derives the support target of an enrollment: the OS family
+// from the product, the version, the channel, and the Shared iPad and User
+// Enrollment modes from the channel kind. A user channel's OS comes from
+// its device.
+func targetFor(ctx context.Context, st storage.EnrollmentStore, e *storage.Enrollment) support.Target {
+	device := e
+	if e.ID.Channel.IsUser() {
+		if parent, err := st.Get(ctx, mdm.EnrollmentID{Channel: deviceChannelOf(e.ID.Channel), ID: e.ID.ParentID}); err == nil {
+			device = parent
+		}
+	}
+	// Supervision, DEP, and user-approved MDM are not tracked on the
+	// enrollment record, so they are assumed rather than enforced; only the
+	// channel and mode rules bite here.
+	t := support.Target{OS: support.OSFromProduct(device.Device.ProductName), Channel: support.ChannelDevice, Supervised: true, DEP: true, UserApproved: true}
+	if v, err := support.ParseVersion(device.Device.OSVersion); err == nil {
+		t.Version = v
+	}
+	switch e.ID.Channel {
+	case mdm.ChannelDevice:
+		if t.OS == support.IOS {
+			// A Shared iPad is recognised by its logged-in user channel.
+			res, err := st.List(ctx, storage.EnrollmentQuery{ParentID: e.ID.ID, Channel: mdm.ChannelSharedIPadUser}, storage.Page{Limit: 1})
+			t.SharedIPad = err == nil && len(res.Items) > 0
+		}
+	case mdm.ChannelUser:
+		t.Channel = support.ChannelUser
+	case mdm.ChannelSharedIPadUser:
+		t.Channel, t.SharedIPad = support.ChannelUser, true
+	case mdm.ChannelUserEnrollmentDevice:
+		t.UserEnrollment = true
+	case mdm.ChannelUserEnrollmentUser:
+		t.Channel, t.UserEnrollment = support.ChannelUser, true
+	}
+	return t
+}
+
+func deviceChannelOf(c mdm.Channel) mdm.Channel {
+	if c == mdm.ChannelUserEnrollmentUser {
+		return mdm.ChannelUserEnrollmentDevice
+	}
+	return mdm.ChannelDevice
 }

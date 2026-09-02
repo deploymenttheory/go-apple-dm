@@ -204,6 +204,105 @@ func RunEnrollmentSuite(t *testing.T, newStore Factory) {
 		}
 	})
 
+	t.Run("ManyUsersPerDevice", func(t *testing.T) {
+		s := newStore(t)
+		d := device(7)
+		if err := s.UpsertAuthenticate(ctx, d, auth("S7"), nil, t0); err != nil {
+			t.Fatal(err)
+		}
+		for i, u := range []string{"alice", "bob", "carol"} {
+			id := user(7, u)
+			if err := s.UpsertAuthenticate(ctx, id, nil, nil, t0); err != nil {
+				t.Fatal(err)
+			}
+			short := u
+			if err := s.StoreTokenUpdate(ctx, id, push(10+i), &checkin.TokenUpdate{Topic: "t", UserShortName: &short, UserLongName: u}, nil, t0); err != nil {
+				t.Fatal(err)
+			}
+		}
+		res, err := s.List(ctx, storage.EnrollmentQuery{ParentID: d.ID}, storage.Page{})
+		if err != nil || len(res.Items) != 3 {
+			t.Fatalf("users = %d, %v (a new UserID must never remove another)", len(res.Items), err)
+		}
+		for _, e := range res.Items {
+			if !e.Enabled {
+				t.Fatalf("user %s disabled", e.ID.ID)
+			}
+		}
+	})
+	t.Run("ReusedUserIDOnOtherDevice", func(t *testing.T) {
+		s := newStore(t)
+		for _, n := range []int{8, 9} {
+			if err := s.UpsertAuthenticate(ctx, device(n), auth("S"+string(rune('0'+n))), nil, t0); err != nil {
+				t.Fatal(err)
+			}
+			if err := s.UpsertAuthenticate(ctx, user(n, "shared-uid"), nil, nil, t0); err != nil {
+				t.Fatal(err)
+			}
+		}
+		a, err := s.Get(ctx, user(8, "shared-uid"))
+		if err != nil || a.ID.ParentID != device(8).ID {
+			t.Fatalf("user on device 8: %+v %v", a, err)
+		}
+		b, err := s.Get(ctx, user(9, "shared-uid"))
+		if err != nil || b.ID.ParentID != device(9).ID {
+			t.Fatalf("user on device 9: %+v %v (a reused UserID must be a distinct row)", b, err)
+		}
+	})
+	t.Run("UserCheckOutDisablesOnlyUser", func(t *testing.T) {
+		s := newStore(t)
+		d := device(10)
+		if err := s.UpsertAuthenticate(ctx, d, auth("S10"), nil, t0); err != nil {
+			t.Fatal(err)
+		}
+		if err := s.StoreTokenUpdate(ctx, d, push(10), nil, nil, t0); err != nil {
+			t.Fatal(err)
+		}
+		for i, u := range []string{"u1", "u2"} {
+			if err := s.UpsertAuthenticate(ctx, user(10, u), nil, nil, t0); err != nil {
+				t.Fatal(err)
+			}
+			if err := s.StoreTokenUpdate(ctx, user(10, u), push(20+i), nil, nil, t0); err != nil {
+				t.Fatal(err)
+			}
+		}
+		if err := s.Disable(ctx, user(10, "u1"), t0.Add(time.Minute)); err != nil {
+			t.Fatal(err)
+		}
+		for id, want := range map[mdm.EnrollmentID]bool{d: true, user(10, "u1"): false, user(10, "u2"): true} {
+			e, err := s.Get(ctx, id)
+			if err != nil || e.Enabled != want {
+				t.Fatalf("%s enabled = %v, want %v (%v)", id.ID, e.Enabled, want, err)
+			}
+		}
+	})
+	t.Run("UserFieldsRoundTrip", func(t *testing.T) {
+		s := newStore(t)
+		if err := s.UpsertAuthenticate(ctx, device(11), auth("S11"), nil, t0); err != nil {
+			t.Fatal(err)
+		}
+		id := user(11, "dana")
+		if err := s.UpsertAuthenticate(ctx, id, nil, nil, t0); err != nil {
+			t.Fatal(err)
+		}
+		short := "dana"
+		msg := &checkin.TokenUpdate{Topic: "t", UserShortName: &short, UserLongName: "Dana D", NotOnConsole: true, EnrollmentUserID: "EU-1"}
+		if err := s.StoreTokenUpdate(ctx, id, push(30), msg, nil, t0); err != nil {
+			t.Fatal(err)
+		}
+		e, err := s.Get(ctx, id)
+		if err != nil || e.UserShortName != "dana" || e.UserLongName != "Dana D" || !e.NotOnConsole || e.EnrollmentUserID != "EU-1" {
+			t.Fatalf("user fields = %+v %v", e, err)
+		}
+		// A later TokenUpdate that omits the names keeps them and updates the console flag.
+		if err := s.StoreTokenUpdate(ctx, id, push(30), &checkin.TokenUpdate{Topic: "t"}, nil, t0.Add(time.Second)); err != nil {
+			t.Fatal(err)
+		}
+		e, err = s.Get(ctx, id)
+		if err != nil || e.UserShortName != "dana" || e.NotOnConsole || e.EnrollmentUserID != "EU-1" {
+			t.Fatalf("after second TokenUpdate = %+v %v", e, err)
+		}
+	})
 	t.Run("DisableCascadesToUserChannels", func(t *testing.T) {
 		s := newStore(t)
 		enroll(t, s, device(1), 1)

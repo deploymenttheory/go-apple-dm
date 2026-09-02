@@ -19,6 +19,8 @@ CREATE TABLE enrollments (
     device_topic     VARCHAR(255) NOT NULL DEFAULT '',
     user_short_name  VARCHAR(255) NOT NULL DEFAULT '',
     user_long_name   VARCHAR(255) NOT NULL DEFAULT '',
+    not_on_console   BOOLEAN NOT NULL DEFAULT FALSE,
+    enrollment_user_id VARCHAR(255) NOT NULL DEFAULT '',
     unlock_token     MEDIUMBLOB   NULL,
     authenticate_raw MEDIUMBLOB   NULL,
     token_update_raw MEDIUMBLOB   NULL,
