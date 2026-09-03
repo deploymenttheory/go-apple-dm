@@ -1,0 +1,324 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "Package Layering and Import Direction",
+    "quality_profile": "showcase",
+    "views": [
+      {
+        "id": "spine",
+        "label": "Composition to leaf",
+        "focus": [
+          "apppkg",
+          "servicepkg",
+          "storagepkg",
+          "mdmpkg",
+          "plistpkg"
+        ],
+        "note": "The deepest import chain: the composition root down to the plist codec."
+      },
+      {
+        "id": "guards",
+        "label": "Acyclicity guards",
+        "focus": [
+          "ddmpkg",
+          "servicepkg",
+          "pushcertpkg",
+          "storagepkg"
+        ],
+        "note": "The two deliberate non-dependencies that keep the graph acyclic."
+      }
+    ],
+    "viewBox": [
+      1380,
+      540
+    ],
+    "repository": {
+      "url": "https://github.com/deploymenttheory/go-apple-mdm",
+      "revision": "2c9c336d25bf83f7e6660ff3cf668e46e0ce9425"
+    }
+  },
+  "components": [
+    {
+      "id": "apppkg",
+      "type": "backend",
+      "label": "internal/app",
+      "sublabel": "composition root",
+      "pos": [
+        40,
+        260.0
+      ],
+      "size": [
+        160,
+        70
+      ],
+      "tag": "45 internal imports",
+      "sources": [
+        {
+          "path": "internal/app/app.go",
+          "label": "wire"
+        }
+      ]
+    },
+    {
+      "id": "httpapipkg",
+      "type": "backend",
+      "label": "httpapi",
+      "sublabel": "device HTTP surface",
+      "pos": [
+        320,
+        110.0
+      ],
+      "size": [
+        160,
+        70
+      ]
+    },
+    {
+      "id": "servicepkg",
+      "type": "backend",
+      "label": "service",
+      "sublabel": "Core behaviour",
+      "pos": [
+        320,
+        260.0
+      ],
+      "size": [
+        160,
+        70
+      ],
+      "sources": [
+        {
+          "path": "service/service.go",
+          "label": "Core"
+        }
+      ]
+    },
+    {
+      "id": "ddmpkg",
+      "type": "backend",
+      "label": "ddm",
+      "sublabel": "declarative engine",
+      "pos": [
+        320,
+        410.0
+      ],
+      "size": [
+        160,
+        70
+      ],
+      "sources": [
+        {
+          "path": "ddm/engine.go",
+          "label": "Engine"
+        }
+      ]
+    },
+    {
+      "id": "storagepkg",
+      "type": "database",
+      "label": "storage",
+      "sublabel": "persistence contract",
+      "pos": [
+        600,
+        260.0
+      ],
+      "size": [
+        160,
+        70
+      ]
+    },
+    {
+      "id": "eventpkg",
+      "type": "messagebus",
+      "label": "event",
+      "sublabel": "in-process bus",
+      "pos": [
+        600,
+        110.0
+      ],
+      "size": [
+        160,
+        70
+      ]
+    },
+    {
+      "id": "pushpkg",
+      "type": "backend",
+      "label": "push",
+      "sublabel": "notifier",
+      "pos": [
+        600,
+        410.0
+      ],
+      "size": [
+        160,
+        70
+      ]
+    },
+    {
+      "id": "schemapkg",
+      "type": "backend",
+      "label": "schema/*",
+      "sublabel": "generated types",
+      "pos": [
+        880,
+        110.0
+      ],
+      "size": [
+        160,
+        70
+      ]
+    },
+    {
+      "id": "mdmpkg",
+      "type": "backend",
+      "label": "mdm",
+      "sublabel": "protocol core",
+      "pos": [
+        880,
+        260.0
+      ],
+      "size": [
+        160,
+        70
+      ]
+    },
+    {
+      "id": "pushcertpkg",
+      "type": "backend",
+      "label": "push/pushcert",
+      "sublabel": "stdlib only",
+      "pos": [
+        880,
+        410.0
+      ],
+      "size": [
+        160,
+        70
+      ],
+      "tag": "cycle guard",
+      "sources": [
+        {
+          "path": "push/pushcert/pushcert.go",
+          "label": "stdlib only"
+        }
+      ]
+    },
+    {
+      "id": "plistpkg",
+      "type": "backend",
+      "label": "plist",
+      "sublabel": "property list codec",
+      "pos": [
+        1160,
+        260.0
+      ],
+      "size": [
+        160,
+        70
+      ]
+    }
+  ],
+  "connections": [
+    {
+      "id": "app-httpapi",
+      "from": "apppkg",
+      "to": "httpapipkg"
+    },
+    {
+      "id": "app-service",
+      "from": "apppkg",
+      "to": "servicepkg"
+    },
+    {
+      "id": "app-ddm",
+      "from": "apppkg",
+      "to": "ddmpkg"
+    },
+    {
+      "id": "httpapi-service",
+      "from": "httpapipkg",
+      "to": "servicepkg",
+      "label": "Checkiner \u00b7 Connecter",
+      "labelAt": [
+        400.0,
+        194.0
+      ]
+    },
+    {
+      "id": "ddm-service",
+      "from": "ddmpkg",
+      "to": "servicepkg",
+      "label": "DMHandler seam",
+      "variant": "security"
+    },
+    {
+      "id": "service-storage",
+      "from": "servicepkg",
+      "to": "storagepkg"
+    },
+    {
+      "id": "service-event",
+      "from": "servicepkg",
+      "to": "eventpkg"
+    },
+    {
+      "id": "ddm-push",
+      "from": "ddmpkg",
+      "to": "pushpkg"
+    },
+    {
+      "id": "storage-mdm",
+      "from": "storagepkg",
+      "to": "mdmpkg"
+    },
+    {
+      "id": "storage-pushcert",
+      "from": "storagepkg",
+      "to": "pushcertpkg",
+      "label": "topic types",
+      "variant": "security"
+    },
+    {
+      "id": "event-mdm",
+      "from": "eventpkg",
+      "to": "mdmpkg"
+    },
+    {
+      "id": "push-pushcert",
+      "from": "pushpkg",
+      "to": "pushcertpkg"
+    },
+    {
+      "id": "mdm-schema",
+      "from": "mdmpkg",
+      "to": "schemapkg"
+    },
+    {
+      "id": "mdm-plist",
+      "from": "mdmpkg",
+      "to": "plistpkg"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "Reading the arrows",
+      "items": [
+        "Every arrow means \"imports\": the tail depends on the head",
+        "Unlabelled arrows carry no meaning beyond that dependency",
+        "Left is the composition root, right is the leaf codec"
+      ]
+    },
+    {
+      "dot": "rose",
+      "title": "Deliberate non-dependencies",
+      "items": [
+        "push/pushcert is stdlib-only so storage can import it without a cycle",
+        "service never imports ddm; the engine arrives as a DMHandler",
+        "adapter/proxyclient imports service but not ddm, so the split-deployment boundary is a code boundary"
+      ]
+    }
+  ]
+}

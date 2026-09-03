@@ -1,0 +1,229 @@
+{
+  "schema_version": 1,
+  "diagram_type": "sequence",
+  "meta": {
+    "title": "MDM Command Delivery",
+    "quality_profile": "showcase",
+    "viewBox": [
+      1080,
+      566
+    ],
+    "column_fit": "spread",
+    "views": [
+      {
+        "id": "enqueue",
+        "label": "Enqueue",
+        "focus": [
+          "admin",
+          "core",
+          "store"
+        ],
+        "note": "Target validation asks the schema whether this command applies to the enrolled OS and channel."
+      },
+      {
+        "id": "wake",
+        "label": "Wake",
+        "focus": [
+          "push",
+          "apns",
+          "device"
+        ],
+        "note": "The server cannot reach the device; it asks APNs to wake it."
+      },
+      {
+        "id": "collect",
+        "label": "Collect and report",
+        "focus": [
+          "device",
+          "core",
+          "store"
+        ],
+        "note": "One connect stores the previous result and takes the next command."
+      }
+    ]
+  },
+  "participants": [
+    {
+      "id": "admin",
+      "type": "external",
+      "label": "Admin API",
+      "sublabel": "enqueue, then push"
+    },
+    {
+      "id": "core",
+      "type": "backend",
+      "label": "service.Core",
+      "sublabel": "Enqueue \u00b7 Connect"
+    },
+    {
+      "id": "store",
+      "type": "database",
+      "label": "storage.Store",
+      "sublabel": "queue \u00b7 pins \u00b7 tokens"
+    },
+    {
+      "id": "push",
+      "type": "backend",
+      "label": "push.Notifier",
+      "sublabel": "coalesced"
+    },
+    {
+      "id": "apns",
+      "type": "cloud",
+      "label": "APNs",
+      "sublabel": "HTTP/2"
+    },
+    {
+      "id": "device",
+      "type": "external",
+      "label": "Device",
+      "sublabel": "enrolled"
+    }
+  ],
+  "segments": [
+    {
+      "from": 161.0,
+      "to": 250.0,
+      "label": "Enqueue"
+    },
+    {
+      "from": 252.5,
+      "to": 341.5,
+      "label": "Wake"
+    },
+    {
+      "from": 344.0,
+      "to": 494.0,
+      "label": "Connect"
+    }
+  ],
+  "messages": [
+    {
+      "id": "enqueue",
+      "from": "admin",
+      "to": "core",
+      "y": 175.0,
+      "label": "Enqueue(ids, cmd)",
+      "variant": "emphasis"
+    },
+    {
+      "id": "target-read",
+      "from": "core",
+      "to": "store",
+      "y": 205.5,
+      "label": "Get(id) for each target",
+      "variant": "default"
+    },
+    {
+      "id": "queue",
+      "from": "core",
+      "to": "store",
+      "y": 236.0,
+      "label": "CommandQueue.Enqueue",
+      "variant": "default"
+    },
+    {
+      "id": "notify",
+      "from": "admin",
+      "to": "push",
+      "y": 266.5,
+      "label": "Notify(ids)",
+      "variant": "default",
+      "note": "service never imports push; the caller pushes"
+    },
+    {
+      "id": "apns-post",
+      "from": "push",
+      "to": "apns",
+      "y": 297.0,
+      "label": "apns-push-type mdm",
+      "variant": "security"
+    },
+    {
+      "id": "wake",
+      "from": "apns",
+      "to": "device",
+      "y": 327.5,
+      "label": "wake",
+      "variant": "emphasis"
+    },
+    {
+      "id": "connect",
+      "from": "device",
+      "to": "core",
+      "y": 358.0,
+      "label": "PUT /mdm",
+      "variant": "emphasis"
+    },
+    {
+      "id": "store-result",
+      "from": "core",
+      "to": "store",
+      "y": 388.5,
+      "label": "StoreResult(previous)",
+      "variant": "default"
+    },
+    {
+      "id": "next",
+      "from": "core",
+      "to": "store",
+      "y": 419.0,
+      "label": "Next(id, skipNotNow)",
+      "variant": "default"
+    },
+    {
+      "id": "deliver",
+      "from": "core",
+      "to": "device",
+      "y": 449.5,
+      "label": "200 application/xml",
+      "variant": "return"
+    },
+    {
+      "id": "ack",
+      "from": "device",
+      "to": "core",
+      "y": 480.0,
+      "label": "Acknowledged + CommandUUID",
+      "variant": "default"
+    }
+  ],
+  "activations": [
+    {
+      "participant": "core",
+      "from": 169.0,
+      "to": 488.0,
+      "type": "backend"
+    },
+    {
+      "participant": "push",
+      "from": 260.5,
+      "to": 305.0,
+      "type": "backend"
+    },
+    {
+      "participant": "device",
+      "from": 321.5,
+      "to": 488.0,
+      "type": "external"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "Target validation",
+      "items": [
+        "service.Core asks schema/commands whether the command applies to that OS, version and channel",
+        "An unsupported target is skipped with ErrUnsupportedTarget, not failed"
+      ]
+    },
+    {
+      "dot": "emerald",
+      "title": "One connect does three things",
+      "items": [
+        "Stores the result of the previous command",
+        "Takes the next pending command and marks it sent"
+      ]
+    }
+  ]
+}

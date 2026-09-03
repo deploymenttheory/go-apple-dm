@@ -1,0 +1,392 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "Service Core: Seams and Refusal",
+    "quality_profile": "showcase",
+    "viewBox": [
+      1300,
+      690
+    ],
+    "repository": {
+      "url": "https://github.com/deploymenttheory/go-apple-mdm",
+      "revision": "2c9c336d25bf83f7e6660ff3cf668e46e0ce9425"
+    },
+    "views": [
+      {
+        "id": "request",
+        "label": "Request path",
+        "focus": [
+          "device",
+          "certmw",
+          "httpapi",
+          "core"
+        ],
+        "note": "One /mdm URL, forked on Content-Type, with the certificate already in context."
+      },
+      {
+        "id": "refusal",
+        "label": "Refusal",
+        "focus": [
+          "httpapi",
+          "errors",
+          "core"
+        ],
+        "note": "An unknown enrollment is a 403; httpapi never returns 401."
+      },
+      {
+        "id": "seams",
+        "label": "Seams",
+        "focus": [
+          "core",
+          "hooks",
+          "dmhandler",
+          "verifier",
+          "ddmengine"
+        ],
+        "note": "Every feature attaches through an interface, so service imports none of them."
+      },
+      {
+        "id": "events",
+        "label": "Events",
+        "focus": [
+          "core",
+          "bus",
+          "sinks"
+        ],
+        "note": "Webhook and slog sinks ship in event/sink; the server adds its own audit sink."
+      }
+    ]
+  },
+  "components": [
+    {
+      "id": "certmw",
+      "type": "security",
+      "label": "Cert middlewares",
+      "sublabel": "TLS \u00b7 header \u00b7 signature",
+      "pos": [
+        40,
+        110
+      ],
+      "size": [
+        170,
+        70
+      ],
+      "sources": [
+        {
+          "path": "httpapi/httpapi.go",
+          "label": "cert middlewares"
+        }
+      ]
+    },
+    {
+      "id": "device",
+      "type": "external",
+      "label": "Enrolled device",
+      "sublabel": "PUT plist",
+      "pos": [
+        40,
+        260
+      ],
+      "size": [
+        170,
+        70
+      ]
+    },
+    {
+      "id": "errors",
+      "type": "backend",
+      "label": "service.Code",
+      "sublabel": "403 \u00b7 400 \u00b7 410 \u00b7 501",
+      "pos": [
+        40,
+        410
+      ],
+      "size": [
+        170,
+        70
+      ],
+      "sources": [
+        {
+          "path": "service/service.go",
+          "label": "error codes"
+        }
+      ]
+    },
+    {
+      "id": "httpapi",
+      "type": "backend",
+      "label": "httpapi",
+      "sublabel": "/mdm Content-Type fork",
+      "pos": [
+        380,
+        260
+      ],
+      "size": [
+        170,
+        70
+      ],
+      "sources": [
+        {
+          "path": "httpapi/httpapi.go",
+          "label": "handlers"
+        }
+      ]
+    },
+    {
+      "id": "bus",
+      "type": "messagebus",
+      "label": "event.Bus",
+      "sublabel": "synchronous by default",
+      "pos": [
+        380,
+        410
+      ],
+      "size": [
+        170,
+        70
+      ],
+      "sources": [
+        {
+          "path": "event/event.go",
+          "label": "Publish"
+        }
+      ]
+    },
+    {
+      "id": "sinks",
+      "type": "backend",
+      "label": "event/sink",
+      "sublabel": "webhook \u00b7 slog",
+      "pos": [
+        380,
+        560
+      ],
+      "size": [
+        170,
+        70
+      ],
+      "sources": [
+        {
+          "path": "event/sink/webhook.go",
+          "label": "webhook"
+        },
+        {
+          "path": "event/sink/slog.go",
+          "label": "slog"
+        }
+      ],
+      "tag": "plus internal/app audit"
+    },
+    {
+      "id": "hooks",
+      "type": "backend",
+      "label": "Hook chain",
+      "sublabel": "Before \u00b7 After \u00b7 veto",
+      "pos": [
+        700,
+        110
+      ],
+      "size": [
+        170,
+        70
+      ],
+      "sources": [
+        {
+          "path": "service/service.go",
+          "label": "Hook and Call"
+        }
+      ]
+    },
+    {
+      "id": "core",
+      "type": "backend",
+      "label": "service.Core",
+      "sublabel": "Checkin \u00b7 Connect \u00b7 Enqueue",
+      "pos": [
+        700,
+        260
+      ],
+      "size": [
+        170,
+        70
+      ],
+      "sources": [
+        {
+          "path": "service/service.go",
+          "label": "Core"
+        },
+        {
+          "path": "service/connect.go",
+          "label": "Connect"
+        }
+      ]
+    },
+    {
+      "id": "dmhandler",
+      "type": "backend",
+      "label": "DMHandler",
+      "sublabel": "inproc or proxyclient",
+      "pos": [
+        700,
+        410
+      ],
+      "size": [
+        170,
+        70
+      ]
+    },
+    {
+      "id": "verifier",
+      "type": "security",
+      "label": "UserVerifier",
+      "sublabel": "digest, or your own",
+      "pos": [
+        1020,
+        110
+      ],
+      "size": [
+        170,
+        70
+      ]
+    },
+    {
+      "id": "storepkg",
+      "type": "database",
+      "label": "storage.Store",
+      "sublabel": "pins \u00b7 queue \u00b7 tokens",
+      "pos": [
+        1020,
+        260
+      ],
+      "size": [
+        170,
+        70
+      ]
+    },
+    {
+      "id": "ddmengine",
+      "type": "backend",
+      "label": "ddm.Engine",
+      "sublabel": "service never imports ddm",
+      "pos": [
+        1020,
+        410
+      ],
+      "size": [
+        170,
+        70
+      ]
+    }
+  ],
+  "connections": [
+    {
+      "id": "e1",
+      "from": "device",
+      "to": "httpapi",
+      "label": "check-in or connect",
+      "variant": "emphasis"
+    },
+    {
+      "id": "e2",
+      "from": "certmw",
+      "to": "httpapi",
+      "label": "identity certificate",
+      "variant": "security",
+      "fromSide": "right",
+      "toSide": "top",
+      "via": [
+        [
+          465,
+          145
+        ]
+      ]
+    },
+    {
+      "id": "e3",
+      "from": "httpapi",
+      "to": "core",
+      "label": "decoded message"
+    },
+    {
+      "id": "e4",
+      "from": "httpapi",
+      "to": "errors",
+      "label": "refusal body",
+      "variant": "security"
+    },
+    {
+      "id": "e5",
+      "from": "core",
+      "to": "hooks",
+      "label": "every operation"
+    },
+    {
+      "id": "e6",
+      "from": "core",
+      "to": "storepkg",
+      "label": "read and write",
+      "labelAt": [
+        945,
+        312
+      ]
+    },
+    {
+      "id": "e7",
+      "from": "core",
+      "to": "dmhandler",
+      "label": "DeclarativeManagement",
+      "labelAt": [
+        785.0,
+        344.0
+      ]
+    },
+    {
+      "id": "e8",
+      "from": "core",
+      "to": "verifier",
+      "label": "UserAuthenticate",
+      "variant": "security"
+    },
+    {
+      "id": "e9",
+      "from": "core",
+      "to": "bus",
+      "label": "state change"
+    },
+    {
+      "id": "e10",
+      "from": "bus",
+      "to": "sinks",
+      "label": "dispatch by type",
+      "labelAt": [
+        465.0,
+        494.0
+      ]
+    },
+    {
+      "id": "e11",
+      "from": "dmhandler",
+      "to": "ddmengine",
+      "label": "Handle(endpoint)"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "One URL, two protocols",
+      "items": [
+        "aspen-mdm-checkin routes to check-in, aspen-mdm to the command handler",
+        "Anything else is a 415; another method is a 405; an unknown enrollment is a 403, never a 401"
+      ]
+    },
+    {
+      "dot": "emerald",
+      "title": "Extension without coupling",
+      "items": [
+        "A hook can veto an operation before it runs, and the veto becomes a 403",
+        "The DDM engine attaches as a DMHandler, which is why service never imports ddm"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,260 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "Split Deployment: mdm and ddm Roles",
+    "quality_profile": "showcase",
+    "viewBox": [
+      1170,
+      540
+    ],
+    "views": [
+      {
+        "id": "split",
+        "label": "Split",
+        "focus": [
+          "mdmrole",
+          "proxyclient",
+          "hop",
+          "proxyserver"
+        ],
+        "note": "The check-in body crosses the hop unchanged, signed both ways."
+      },
+      {
+        "id": "single",
+        "label": "Single process",
+        "focus": [
+          "mdmrole",
+          "inproc",
+          "engine"
+        ],
+        "note": "Role all keeps the same seam but calls the engine directly."
+      }
+    ],
+    "repository": {
+      "url": "https://github.com/deploymenttheory/go-apple-mdm",
+      "revision": "2c9c336d25bf83f7e6660ff3cf668e46e0ce9425"
+    }
+  },
+  "components": [
+    {
+      "id": "device",
+      "type": "external",
+      "label": "Device",
+      "sublabel": "check-in to /mdm",
+      "pos": [
+        40,
+        260.0
+      ],
+      "size": [
+        170,
+        70
+      ]
+    },
+    {
+      "id": "proxyclient",
+      "type": "backend",
+      "label": "proxyclient",
+      "sublabel": "does not import ddm",
+      "pos": [
+        340,
+        110.0
+      ],
+      "size": [
+        170,
+        70
+      ],
+      "sources": [
+        {
+          "path": "ddm/adapter/proxyclient/proxyclient.go",
+          "label": "egress"
+        }
+      ]
+    },
+    {
+      "id": "mdmrole",
+      "type": "backend",
+      "label": "mdm role",
+      "sublabel": "service.Core",
+      "pos": [
+        340,
+        260.0
+      ],
+      "size": [
+        170,
+        70
+      ]
+    },
+    {
+      "id": "hop",
+      "type": "security",
+      "label": "X-MDM-Signature",
+      "sublabel": "HMAC-SHA256, optional mTLS",
+      "pos": [
+        640,
+        110.0
+      ],
+      "size": [
+        170,
+        70
+      ],
+      "sources": [
+        {
+          "path": "ddm/adapter/internal/proxywire/proxywire.go",
+          "label": "Sign \u00b7 Verify"
+        }
+      ]
+    },
+    {
+      "id": "inproc",
+      "type": "backend",
+      "label": "inproc adapter",
+      "sublabel": "role all",
+      "pos": [
+        640,
+        260.0
+      ],
+      "size": [
+        170,
+        70
+      ],
+      "sources": [
+        {
+          "path": "ddm/adapter/inproc/inproc.go",
+          "label": "in process"
+        }
+      ]
+    },
+    {
+      "id": "proxyserver",
+      "type": "backend",
+      "label": "proxyserver",
+      "sublabel": "/ddm/v1/declarative-management",
+      "pos": [
+        940,
+        110.0
+      ],
+      "size": [
+        170,
+        70
+      ],
+      "sources": [
+        {
+          "path": "ddm/adapter/proxyserver/proxyserver.go",
+          "label": "ingress"
+        }
+      ]
+    },
+    {
+      "id": "engine",
+      "type": "backend",
+      "label": "ddm.Engine",
+      "sublabel": "ddm role",
+      "pos": [
+        940,
+        260.0
+      ],
+      "size": [
+        170,
+        70
+      ]
+    },
+    {
+      "id": "ddmstore",
+      "type": "database",
+      "label": "ddm.Store",
+      "sublabel": "own migration set",
+      "pos": [
+        940,
+        410.0
+      ],
+      "size": [
+        170,
+        70
+      ]
+    }
+  ],
+  "connections": [
+    {
+      "id": "device-mdm",
+      "from": "device",
+      "to": "mdmrole",
+      "label": "DeclarativeManagement"
+    },
+    {
+      "id": "mdm-proxyclient",
+      "from": "mdmrole",
+      "to": "proxyclient",
+      "label": "MDM_DDM_URL set"
+    },
+    {
+      "id": "mdm-inproc",
+      "from": "mdmrole",
+      "to": "inproc",
+      "label": "otherwise"
+    },
+    {
+      "id": "client-hop",
+      "from": "proxyclient",
+      "to": "hop",
+      "label": "body unchanged",
+      "variant": "security"
+    },
+    {
+      "id": "hop-server",
+      "from": "hop",
+      "to": "proxyserver",
+      "label": "verify, then decode",
+      "variant": "security"
+    },
+    {
+      "id": "server-engine",
+      "from": "proxyserver",
+      "to": "engine",
+      "label": "Handle(endpoint)",
+      "labelAt": [
+        1025.0,
+        194.0
+      ]
+    },
+    {
+      "id": "inproc-engine",
+      "from": "inproc",
+      "to": "engine",
+      "label": "Handle(endpoint)"
+    },
+    {
+      "id": "engine-store",
+      "from": "engine",
+      "to": "ddmstore"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "A real code boundary",
+      "items": [
+        "proxyclient imports proxywire and service, but never ddm",
+        "So when MDM_DDM_URL is set the mdm role can only reach the engine over the hop; unset, it calls inproc in-process"
+      ]
+    },
+    {
+      "dot": "emerald",
+      "title": "The hop",
+      "items": [
+        "The raw check-in body is POSTed unchanged, with its own Content-Type",
+        "X-MDM-Signature carries base64(HMAC-SHA256(key, body)), both directions",
+        "Separate send and receive keys; mTLS and bearer auth are optional extras"
+      ]
+    },
+    {
+      "dot": "rose",
+      "title": "Relayed faithfully",
+      "items": [
+        "200 returns the body, 404 stays 404, 400 becomes a bad-request error",
+        "Anything else becomes an internal error rather than leaking a status",
+        "Wrong keys and oversized bodies are rejected at the boundary"
+      ]
+    }
+  ]
+}

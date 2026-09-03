@@ -1,0 +1,351 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "DDM Engine, Notifier and Store",
+    "quality_profile": "showcase",
+    "viewBox": [
+      1300,
+      560
+    ],
+    "repository": {
+      "url": "https://github.com/deploymenttheory/go-apple-mdm",
+      "revision": "2c9c336d25bf83f7e6660ff3cf668e46e0ce9425"
+    },
+    "views": [
+      {
+        "id": "serveloop",
+        "label": "Serve loop",
+        "focus": [
+          "device",
+          "adapters",
+          "engine",
+          "ddmstore"
+        ],
+        "note": "The device reaches the engine only as service.Core's DMHandler."
+      },
+      {
+        "id": "notifyloop",
+        "label": "Notify loop",
+        "focus": [
+          "notifier",
+          "ddmstore",
+          "core",
+          "pushn"
+        ],
+        "note": "The notifier polls change rows; the engine never calls back into it."
+      },
+      {
+        "id": "content",
+        "label": "Content addressing",
+        "focus": [
+          "engine",
+          "canonjson",
+          "predicate"
+        ],
+        "note": "A ServerToken is the hash of the RFC 8785 canonical declaration."
+      }
+    ]
+  },
+  "components": [
+    {
+      "id": "adapters",
+      "type": "backend",
+      "label": "ddm/adapter",
+      "sublabel": "inproc \u00b7 proxyclient",
+      "pos": [
+        40,
+        110
+      ],
+      "size": [
+        170,
+        70
+      ],
+      "sources": [
+        {
+          "path": "ddm/adapter/inproc/inproc.go",
+          "label": "in process"
+        },
+        {
+          "path": "ddm/adapter/proxyclient/proxyclient.go",
+          "label": "over the hop"
+        }
+      ]
+    },
+    {
+      "id": "device",
+      "type": "external",
+      "label": "Device",
+      "sublabel": "DeclarativeManagement",
+      "pos": [
+        40,
+        260
+      ],
+      "size": [
+        170,
+        70
+      ]
+    },
+    {
+      "id": "servicehook",
+      "type": "backend",
+      "label": "ddm.ServiceHook",
+      "sublabel": "a service.Hook",
+      "pos": [
+        40,
+        410
+      ],
+      "size": [
+        170,
+        70
+      ],
+      "sources": [
+        {
+          "path": "ddm/clear.go",
+          "label": "clear on check-in"
+        }
+      ]
+    },
+    {
+      "id": "engine",
+      "type": "backend",
+      "label": "ddm.Engine",
+      "sublabel": "Handle \u00b7 Tokens",
+      "pos": [
+        380,
+        260
+      ],
+      "size": [
+        170,
+        70
+      ],
+      "sources": [
+        {
+          "path": "ddm/engine.go",
+          "label": "Config and New"
+        },
+        {
+          "path": "ddm/serve.go",
+          "label": "Handle"
+        }
+      ]
+    },
+    {
+      "id": "canonjson",
+      "type": "backend",
+      "label": "internal/canonjson",
+      "sublabel": "RFC 8785",
+      "pos": [
+        380,
+        410
+      ],
+      "size": [
+        170,
+        70
+      ],
+      "sources": [
+        {
+          "path": "internal/canonjson/canonjson.go",
+          "label": "canonical JSON"
+        }
+      ]
+    },
+    {
+      "id": "notifier",
+      "type": "backend",
+      "label": "ddm.Notifier",
+      "sublabel": "2s coalescing window",
+      "pos": [
+        700,
+        110
+      ],
+      "size": [
+        170,
+        70
+      ],
+      "sources": [
+        {
+          "path": "ddm/notifier.go",
+          "label": "DrainOnce"
+        }
+      ]
+    },
+    {
+      "id": "ddmstore",
+      "type": "database",
+      "label": "ddm.Store",
+      "sublabel": "Update(fn func(Tx))",
+      "pos": [
+        700,
+        260
+      ],
+      "size": [
+        170,
+        70
+      ],
+      "sources": [
+        {
+          "path": "ddm/store.go",
+          "label": "store contract"
+        }
+      ]
+    },
+    {
+      "id": "predicate",
+      "type": "backend",
+      "label": "ddm/predicate",
+      "sublabel": "NSPredicate subset",
+      "pos": [
+        700,
+        410
+      ],
+      "size": [
+        170,
+        70
+      ],
+      "sources": [
+        {
+          "path": "ddm/predicate/predicate.go",
+          "label": "activation"
+        }
+      ]
+    },
+    {
+      "id": "core",
+      "type": "backend",
+      "label": "service.Core",
+      "sublabel": "Enqueue runs the hooks",
+      "pos": [
+        1020,
+        110
+      ],
+      "size": [
+        170,
+        70
+      ],
+      "sources": [
+        {
+          "path": "service/service.go",
+          "label": "Enqueue"
+        }
+      ]
+    },
+    {
+      "id": "pushn",
+      "type": "backend",
+      "label": "push.Notifier",
+      "sublabel": "wake the device",
+      "pos": [
+        1020,
+        260
+      ],
+      "size": [
+        170,
+        70
+      ]
+    },
+    {
+      "id": "sqlstore",
+      "type": "database",
+      "label": "ddm/sqlstore \u00b7 inmem",
+      "sublabel": "own migration set",
+      "pos": [
+        1020,
+        410
+      ],
+      "size": [
+        170,
+        70
+      ]
+    }
+  ],
+  "connections": [
+    {
+      "id": "e1",
+      "from": "device",
+      "to": "adapters",
+      "label": "check-in message"
+    },
+    {
+      "id": "e2",
+      "from": "adapters",
+      "to": "engine",
+      "label": "Handle(endpoint)"
+    },
+    {
+      "id": "e3",
+      "from": "servicehook",
+      "to": "engine",
+      "label": "clear on CheckOut or Authenticate",
+      "variant": "security"
+    },
+    {
+      "id": "e4",
+      "from": "engine",
+      "to": "ddmstore",
+      "label": "change rows, in one Tx"
+    },
+    {
+      "id": "e5",
+      "from": "engine",
+      "to": "canonjson",
+      "label": "ServerToken",
+      "labelAt": [
+        465.0,
+        344.0
+      ]
+    },
+    {
+      "id": "e6",
+      "from": "engine",
+      "to": "predicate",
+      "label": "activation predicate"
+    },
+    {
+      "id": "e7",
+      "from": "notifier",
+      "to": "ddmstore",
+      "label": "PendingChanges",
+      "labelAt": [
+        785.0,
+        194.0
+      ]
+    },
+    {
+      "id": "e8",
+      "from": "notifier",
+      "to": "core",
+      "label": "Enqueue, dedupe ddm"
+    },
+    {
+      "id": "e9",
+      "from": "notifier",
+      "to": "pushn",
+      "label": "Notify"
+    },
+    {
+      "id": "e10",
+      "from": "ddmstore",
+      "to": "sqlstore",
+      "label": "sqlstore or inmem"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "Deliberately decoupled",
+      "items": [
+        "The engine writes change rows inside its transaction and never calls back into the notifier",
+        "The notifier drains them on a 1s poll; the admin route wrapper Kicks it so the poll is not the only trigger"
+      ]
+    },
+    {
+      "dot": "emerald",
+      "title": "Through the command path",
+      "items": [
+        "The notifier's Enqueuer is service.Core, so a DDM kick runs the hooks, the target screen and the audit trail",
+        "One DeclarativeManagement command per enrollment, under the dedupe key ddm"
+      ]
+    }
+  ]
+}

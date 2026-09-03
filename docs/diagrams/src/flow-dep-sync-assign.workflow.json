@@ -1,0 +1,229 @@
+{
+  "schema_version": 2,
+  "diagram_type": "workflow",
+  "meta": {
+    "title": "DEP Token Exchange, Sync and Assignment",
+    "quality_profile": "showcase",
+    "views": [
+      {
+        "id": "onboard",
+        "label": "Onboarding",
+        "focus": [
+          "keypair",
+          "portal",
+          "importtoken"
+        ],
+        "note": "The token PKI exchange is the only step that needs a human at the portal."
+      },
+      {
+        "id": "steady",
+        "label": "Steady state",
+        "focus": [
+          "sync",
+          "assign",
+          "depapi",
+          "assignapi"
+        ],
+        "note": "One background worker: each pass syncs devices, then converges assignments."
+      }
+    ],
+    "legend": {
+      "mode": "auto",
+      "entries": {
+        "backend": {
+          "label": "worker"
+        },
+        "security": {
+          "label": "credential step or retry"
+        },
+        "external": {
+          "label": "Apple service"
+        }
+      }
+    }
+  },
+  "lanes": [
+    {
+      "id": "operator",
+      "label": "Operator"
+    },
+    {
+      "id": "server",
+      "label": "Reference server"
+    },
+    {
+      "id": "apple",
+      "label": "Apple DEP service"
+    },
+    {
+      "id": "retry",
+      "label": "Retry",
+      "variant": "exception"
+    }
+  ],
+  "phases": [
+    {
+      "id": "onboarding",
+      "label": "Token exchange",
+      "fromCol": 0,
+      "toCol": 2
+    },
+    {
+      "id": "background",
+      "label": "Background workers",
+      "fromCol": 3,
+      "toCol": 4
+    }
+  ],
+  "mainPath": [
+    "keypair",
+    "portal",
+    "importtoken",
+    "sync",
+    "assign"
+  ],
+  "nodes": [
+    {
+      "id": "keypair",
+      "lane": "operator",
+      "col": 0,
+      "type": "security",
+      "label": "Token PKI",
+      "sublabel": "keypair generated",
+      "width": 150
+    },
+    {
+      "id": "portal",
+      "lane": "operator",
+      "col": 1,
+      "type": "external",
+      "label": "Portal upload",
+      "sublabel": "returns a .p7m",
+      "width": 150
+    },
+    {
+      "id": "importtoken",
+      "lane": "server",
+      "col": 2,
+      "type": "security",
+      "label": "Import token",
+      "sublabel": "sealed at rest",
+      "width": 150
+    },
+    {
+      "id": "sync",
+      "lane": "server",
+      "col": 3,
+      "type": "backend",
+      "label": "dep.Syncer",
+      "sublabel": "RunOnce",
+      "width": 150
+    },
+    {
+      "id": "assign",
+      "lane": "server",
+      "col": 4,
+      "type": "backend",
+      "label": "dep.Assigner",
+      "sublabel": "RunOnce",
+      "width": 150
+    },
+    {
+      "id": "depapi",
+      "lane": "apple",
+      "col": 3,
+      "type": "external",
+      "label": "Device sync",
+      "sublabel": "cursor paging",
+      "width": 150,
+      "tag": "EXPIRED_CURSOR refetches"
+    },
+    {
+      "id": "assignapi",
+      "lane": "apple",
+      "col": 4,
+      "type": "external",
+      "label": "Assign profile",
+      "sublabel": "POST or PUT",
+      "width": 150
+    },
+    {
+      "id": "backoff",
+      "lane": "retry",
+      "col": 4,
+      "type": "security",
+      "label": "429 ErrBackoff",
+      "sublabel": "the account waits",
+      "width": 150
+    }
+  ],
+  "edges": [
+    {
+      "id": "e1",
+      "from": "keypair",
+      "to": "portal",
+      "label": "public certificate",
+      "role": "main"
+    },
+    {
+      "id": "e2",
+      "from": "portal",
+      "to": "importtoken",
+      "label": "encrypted token",
+      "role": "main"
+    },
+    {
+      "id": "e3",
+      "from": "importtoken",
+      "to": "sync",
+      "label": "OAuth 1.0a session",
+      "role": "main"
+    },
+    {
+      "id": "e4",
+      "from": "sync",
+      "to": "assign",
+      "label": "devices in the store",
+      "role": "main"
+    },
+    {
+      "id": "e6",
+      "from": "sync",
+      "to": "depapi",
+      "label": "fetch, then cursor",
+      "role": "branch"
+    },
+    {
+      "id": "e7",
+      "from": "assign",
+      "to": "assignapi",
+      "label": "AssignProfile",
+      "role": "branch"
+    },
+    {
+      "id": "e10",
+      "from": "assignapi",
+      "to": "backoff",
+      "label": "rate limited",
+      "role": "error"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "Token exchange",
+      "items": [
+        "The server generates a keypair and hands out a certificate",
+        "The operator uploads it at the portal and downloads an encrypted .p7m"
+      ]
+    },
+    {
+      "dot": "emerald",
+      "title": "Syncing",
+      "items": [
+        "The first pass fetches; later passes sync by cursor",
+        "An EXPIRED_CURSOR is handled by refetching rather than failing"
+      ]
+    }
+  ]
+}

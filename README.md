@@ -156,8 +156,9 @@ end-to-end scenarios, and [`simulator/`](simulator/) to drive a server without h
   <img alt="go-apple-mdm high-level design" src="docs/diagrams/system-architecture.light.png">
 </picture>
 
-Twenty-three interactive diagrams cover each component and each protocol flow, from package
-layering to the ACME attestation exchange. See [docs/diagrams](docs/diagrams/README.md).
+Twenty-seven interactive diagrams cover each component and each protocol flow, from package
+layering to the ACME attestation exchange. Architecture diagrams carry git-verified source pins.
+See [docs/diagrams](docs/diagrams/README.md).
 
 ## What it provides
 

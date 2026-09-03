@@ -1,0 +1,222 @@
+{
+  "schema_version": 1,
+  "diagram_type": "sequence",
+  "meta": {
+    "title": "Declarative Management Sync",
+    "quality_profile": "showcase",
+    "viewBox": [
+      1080,
+      566
+    ],
+    "column_fit": "spread",
+    "views": [
+      {
+        "id": "change",
+        "label": "Change to command",
+        "focus": [
+          "admin",
+          "engine",
+          "ddmstore",
+          "notifier"
+        ],
+        "note": "The engine writes change rows in its transaction; the notifier drains them."
+      },
+      {
+        "id": "fetch",
+        "label": "Device fetch",
+        "focus": [
+          "device",
+          "engine",
+          "ddmstore"
+        ],
+        "note": "Tokens, then the manifest, then only what the device does not have."
+      }
+    ]
+  },
+  "participants": [
+    {
+      "id": "admin",
+      "type": "external",
+      "label": "Admin API",
+      "sublabel": "/admin/v1"
+    },
+    {
+      "id": "engine",
+      "type": "backend",
+      "label": "ddm.Engine",
+      "sublabel": "Handle \u00b7 Tokens"
+    },
+    {
+      "id": "ddmstore",
+      "type": "database",
+      "label": "ddm.Store",
+      "sublabel": "snapshots \u00b7 changes"
+    },
+    {
+      "id": "notifier",
+      "type": "backend",
+      "label": "ddm.Notifier",
+      "sublabel": "2s window"
+    },
+    {
+      "id": "core",
+      "type": "backend",
+      "label": "service.Core",
+      "sublabel": "Enqueue"
+    },
+    {
+      "id": "device",
+      "type": "external",
+      "label": "Device",
+      "sublabel": "check-in to /mdm"
+    }
+  ],
+  "segments": [
+    {
+      "from": 161.0,
+      "to": 250.0,
+      "label": "Publish"
+    },
+    {
+      "from": 252.5,
+      "to": 341.5,
+      "label": "Notify"
+    },
+    {
+      "from": 344.0,
+      "to": 494.0,
+      "label": "Device pulls"
+    }
+  ],
+  "messages": [
+    {
+      "id": "put",
+      "from": "admin",
+      "to": "engine",
+      "y": 175.0,
+      "label": "PUT /declarations",
+      "variant": "emphasis"
+    },
+    {
+      "id": "changerows",
+      "from": "engine",
+      "to": "ddmstore",
+      "y": 205.5,
+      "label": "declaration + change rows",
+      "variant": "default",
+      "note": "written in the same transaction; the change rows are the durable signal"
+    },
+    {
+      "id": "kick",
+      "from": "admin",
+      "to": "notifier",
+      "y": 236.0,
+      "label": "Kick",
+      "variant": "dashed",
+      "note": "the admin route wrapper kicks, so the 1s poll is not the only trigger"
+    },
+    {
+      "id": "pending",
+      "from": "notifier",
+      "to": "ddmstore",
+      "y": 266.5,
+      "label": "PendingChanges",
+      "variant": "default"
+    },
+    {
+      "id": "tokensread",
+      "from": "notifier",
+      "to": "engine",
+      "y": 297.0,
+      "label": "Tokens(id)",
+      "variant": "default"
+    },
+    {
+      "id": "enqueue",
+      "from": "notifier",
+      "to": "core",
+      "y": 327.5,
+      "label": "Enqueue, dedupe key ddm",
+      "variant": "default",
+      "note": "through service.Core, so hooks, the target screen and the audit trail all run"
+    },
+    {
+      "id": "deliver",
+      "from": "core",
+      "to": "device",
+      "y": 358.0,
+      "label": "delivered on next connect",
+      "variant": "emphasis"
+    },
+    {
+      "id": "tokens",
+      "from": "device",
+      "to": "engine",
+      "y": 388.5,
+      "label": "tokens",
+      "variant": "default"
+    },
+    {
+      "id": "items",
+      "from": "device",
+      "to": "engine",
+      "y": 419.0,
+      "label": "declaration-items",
+      "variant": "default"
+    },
+    {
+      "id": "fetch",
+      "from": "device",
+      "to": "engine",
+      "y": 449.5,
+      "label": "declaration/{kind}/{id}",
+      "variant": "default"
+    },
+    {
+      "id": "status",
+      "from": "device",
+      "to": "engine",
+      "y": 480.0,
+      "label": "status report",
+      "variant": "default"
+    }
+  ],
+  "activations": [
+    {
+      "participant": "engine",
+      "from": 169.0,
+      "to": 488.0,
+      "type": "backend"
+    },
+    {
+      "participant": "notifier",
+      "from": 230.0,
+      "to": 335.5,
+      "type": "backend"
+    },
+    {
+      "participant": "device",
+      "from": 352.0,
+      "to": 488.0,
+      "type": "external"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "Four endpoints, one URL",
+      "items": [
+        "The device never gets a DDM URL: every call is a check-in message to /mdm",
+        "tokens, declaration-items, declaration/{kind}/{identifier}, status"
+      ]
+    },
+    {
+      "dot": "rose",
+      "title": "Change to command",
+      "items": [
+        "The engine no longer calls back into the notifier: the change rows are the durable signal",
+        "Its Enqueuer is service.Core, so a DDM kick runs the hooks and the target screen like any command"
+      ]
+    }
+  ]
+}

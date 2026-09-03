@@ -1,0 +1,202 @@
+{
+  "schema_version": 1,
+  "diagram_type": "sequence",
+  "meta": {
+    "title": "SCEP Identity Issuance",
+    "quality_profile": "showcase",
+    "viewBox": [
+      1080,
+      566
+    ],
+    "column_fit": "spread",
+    "views": [
+      {
+        "id": "discover",
+        "label": "Capabilities",
+        "focus": [
+          "device",
+          "scep"
+        ],
+        "note": "The device learns what the endpoint supports before enrolling."
+      },
+      {
+        "id": "issue",
+        "label": "Issue",
+        "focus": [
+          "scep",
+          "challenge",
+          "ca",
+          "device"
+        ],
+        "note": "The challenge gates issuance; the CA signs, and a refusal is still a signed 200."
+      }
+    ]
+  },
+  "participants": [
+    {
+      "id": "device",
+      "type": "external",
+      "label": "Device",
+      "sublabel": "from the profile payload"
+    },
+    {
+      "id": "scep",
+      "type": "backend",
+      "label": "scep.Server",
+      "sublabel": "/scep"
+    },
+    {
+      "id": "challenge",
+      "type": "security",
+      "label": "Challenge",
+      "sublabel": "static \u00b7 HMAC \u00b7 one-time"
+    },
+    {
+      "id": "ca",
+      "type": "security",
+      "label": "ca.Local",
+      "sublabel": "enrollment CA"
+    }
+  ],
+  "segments": [
+    {
+      "from": 161.0,
+      "to": 280.5,
+      "label": "Capabilities"
+    },
+    {
+      "from": 283.0,
+      "to": 494.0,
+      "label": "PKIOperation"
+    }
+  ],
+  "messages": [
+    {
+      "id": "caps",
+      "from": "device",
+      "to": "scep",
+      "y": 175.0,
+      "label": "operation=GetCACaps",
+      "variant": "default"
+    },
+    {
+      "id": "caps-back",
+      "from": "scep",
+      "to": "device",
+      "y": 205.5,
+      "label": "POSTPKIOperation, SHA-256, Renewal",
+      "variant": "return"
+    },
+    {
+      "id": "cacert",
+      "from": "device",
+      "to": "scep",
+      "y": 236.0,
+      "label": "operation=GetCACert",
+      "variant": "default"
+    },
+    {
+      "id": "cacert-back",
+      "from": "scep",
+      "to": "device",
+      "y": 266.5,
+      "label": "the CA certificate",
+      "variant": "return"
+    },
+    {
+      "id": "pki",
+      "from": "device",
+      "to": "scep",
+      "y": 297.0,
+      "label": "PKIOperation, PKCSReq",
+      "variant": "emphasis"
+    },
+    {
+      "id": "verify",
+      "from": "scep",
+      "to": "challenge",
+      "y": 327.5,
+      "label": "challengePassword from the CSR",
+      "variant": "security"
+    },
+    {
+      "id": "verify-back",
+      "from": "challenge",
+      "to": "scep",
+      "y": 358.0,
+      "label": "derived from the common name",
+      "variant": "return"
+    },
+    {
+      "id": "sign",
+      "from": "scep",
+      "to": "ca",
+      "y": 388.5,
+      "label": "Sign(CSR, policy)",
+      "variant": "default"
+    },
+    {
+      "id": "cert",
+      "from": "ca",
+      "to": "scep",
+      "y": 419.0,
+      "label": "client certificate",
+      "variant": "return"
+    },
+    {
+      "id": "certrep",
+      "from": "scep",
+      "to": "device",
+      "y": 449.5,
+      "label": "CertRep, always 200",
+      "variant": "emphasis"
+    },
+    {
+      "id": "refused",
+      "from": "scep",
+      "to": "device",
+      "y": 480.0,
+      "label": "or a signed CertRep with failInfo",
+      "variant": "security",
+      "note": "a refusal is still delivered with 200; the device reads failInfo"
+    }
+  ],
+  "activations": [
+    {
+      "participant": "scep",
+      "from": 169.0,
+      "to": 488.0,
+      "type": "backend"
+    },
+    {
+      "participant": "challenge",
+      "from": 321.5,
+      "to": 366.0,
+      "type": "security"
+    },
+    {
+      "participant": "ca",
+      "from": 382.5,
+      "to": 427.0,
+      "type": "security"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "Challenge strategies",
+      "items": [
+        "A static shared password from MDM_SCEP_CHALLENGE",
+        "An HMAC password minted per device when MDM_SCEP_HMAC_KEY is set, and re-derived from the CSR common name"
+      ]
+    },
+    {
+      "dot": "rose",
+      "title": "Failure is still a 200",
+      "items": [
+        "A refusal is a signed CertRep with a failInfo, not an HTTP error",
+        "The device reads failInfo to learn why"
+      ]
+    }
+  ]
+}

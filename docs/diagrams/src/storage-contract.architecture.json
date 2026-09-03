@@ -1,0 +1,438 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "storage.Store: the Eight Interfaces",
+    "quality_profile": "showcase",
+    "viewBox": [
+      1300,
+      690
+    ],
+    "repository": {
+      "url": "https://github.com/deploymenttheory/go-apple-mdm",
+      "revision": "2c9c336d25bf83f7e6660ff3cf668e46e0ce9425"
+    },
+    "views": [
+      {
+        "id": "enrollment",
+        "label": "Enrollment",
+        "focus": [
+          "authn",
+          "enrollmentstore",
+          "certauthstore",
+          "authorize"
+        ],
+        "note": "Authenticate upserts the record; every later message is checked against the pinned certificate."
+      },
+      {
+        "id": "delivery",
+        "label": "Delivery",
+        "focus": [
+          "enqueue",
+          "commandqueue",
+          "pushstore",
+          "pushsvc"
+        ],
+        "note": "One queue row per target, and the push info needed to wake it."
+      },
+      {
+        "id": "secrets",
+        "label": "Escrow",
+        "focus": [
+          "setbst",
+          "bootstraptokenstore",
+          "userauthstore",
+          "userauth"
+        ],
+        "note": "Bootstrap tokens and digest state are sealed at rest."
+      },
+      {
+        "id": "migration",
+        "label": "Migration",
+        "focus": [
+          "export",
+          "migrationstore",
+          "pushcertstore",
+          "pushcertmgr"
+        ],
+        "note": "Export and import move an enrollment between backends with its tokens intact."
+      }
+    ]
+  },
+  "components": [
+    {
+      "id": "authn",
+      "type": "backend",
+      "label": "Authenticate",
+      "sublabel": "first check-in",
+      "pos": [
+        40,
+        110
+      ],
+      "size": [
+        170,
+        70
+      ]
+    },
+    {
+      "id": "enqueue",
+      "type": "backend",
+      "label": "Core.Enqueue",
+      "sublabel": "one row per target",
+      "pos": [
+        40,
+        260
+      ],
+      "size": [
+        170,
+        70
+      ]
+    },
+    {
+      "id": "setbst",
+      "type": "backend",
+      "label": "SetBootstrapToken",
+      "sublabel": "escrow after FileVault",
+      "pos": [
+        40,
+        410
+      ],
+      "size": [
+        170,
+        70
+      ]
+    },
+    {
+      "id": "export",
+      "type": "backend",
+      "label": "ExportEnrollments",
+      "sublabel": "backend to backend",
+      "pos": [
+        40,
+        560
+      ],
+      "size": [
+        170,
+        70
+      ]
+    },
+    {
+      "id": "enrollmentstore",
+      "type": "database",
+      "label": "EnrollmentStore",
+      "sublabel": "the enrollment record",
+      "pos": [
+        380,
+        110
+      ],
+      "size": [
+        170,
+        70
+      ],
+      "sources": [
+        {
+          "path": "storage/storage.go",
+          "line": 97,
+          "end_line": 118,
+          "label": "EnrollmentStore"
+        }
+      ]
+    },
+    {
+      "id": "commandqueue",
+      "type": "database",
+      "label": "CommandQueue",
+      "sublabel": "queue per enrollment",
+      "pos": [
+        380,
+        260
+      ],
+      "size": [
+        170,
+        70
+      ],
+      "sources": [
+        {
+          "path": "storage/storage.go",
+          "line": 199,
+          "end_line": 218,
+          "label": "CommandQueue"
+        }
+      ]
+    },
+    {
+      "id": "bootstraptokenstore",
+      "type": "database",
+      "label": "BootstrapTokenStore",
+      "sublabel": "sealed at rest",
+      "pos": [
+        380,
+        410
+      ],
+      "size": [
+        170,
+        70
+      ],
+      "sources": [
+        {
+          "path": "storage/storage.go",
+          "line": 258,
+          "end_line": 264,
+          "label": "BootstrapTokenStore"
+        }
+      ]
+    },
+    {
+      "id": "migrationstore",
+      "type": "database",
+      "label": "MigrationStore",
+      "sublabel": "Export \u00b7 Import",
+      "pos": [
+        380,
+        560
+      ],
+      "size": [
+        170,
+        70
+      ],
+      "sources": [
+        {
+          "path": "storage/storage.go",
+          "line": 338,
+          "end_line": 348,
+          "label": "MigrationStore"
+        }
+      ]
+    },
+    {
+      "id": "certauthstore",
+      "type": "security",
+      "label": "CertAuthStore",
+      "sublabel": "pin and history",
+      "pos": [
+        700,
+        110
+      ],
+      "size": [
+        170,
+        70
+      ],
+      "sources": [
+        {
+          "path": "storage/storage.go",
+          "line": 236,
+          "end_line": 255,
+          "label": "CertAuthStore"
+        }
+      ]
+    },
+    {
+      "id": "pushstore",
+      "type": "database",
+      "label": "PushStore",
+      "sublabel": "token \u00b7 push magic",
+      "pos": [
+        700,
+        260
+      ],
+      "size": [
+        170,
+        70
+      ],
+      "sources": [
+        {
+          "path": "storage/storage.go",
+          "line": 221,
+          "end_line": 224,
+          "label": "PushStore"
+        }
+      ]
+    },
+    {
+      "id": "userauthstore",
+      "type": "database",
+      "label": "UserAuthStore",
+      "sublabel": "digest challenge state",
+      "pos": [
+        700,
+        410
+      ],
+      "size": [
+        170,
+        70
+      ],
+      "sources": [
+        {
+          "path": "storage/storage.go",
+          "line": 317,
+          "end_line": 327,
+          "label": "UserAuthStore"
+        }
+      ]
+    },
+    {
+      "id": "pushcertstore",
+      "type": "security",
+      "label": "PushCertStore",
+      "sublabel": "APNs cert and key",
+      "pos": [
+        700,
+        560
+      ],
+      "size": [
+        170,
+        70
+      ],
+      "sources": [
+        {
+          "path": "storage/storage.go",
+          "line": 280,
+          "end_line": 293,
+          "label": "PushCertStore"
+        }
+      ]
+    },
+    {
+      "id": "authorize",
+      "type": "security",
+      "label": "Core.authorize",
+      "sublabel": "pin on every message",
+      "pos": [
+        1020,
+        110
+      ],
+      "size": [
+        170,
+        70
+      ]
+    },
+    {
+      "id": "pushsvc",
+      "type": "backend",
+      "label": "push.Notifier",
+      "sublabel": "wake the device",
+      "pos": [
+        1020,
+        260
+      ],
+      "size": [
+        170,
+        70
+      ]
+    },
+    {
+      "id": "userauth",
+      "type": "backend",
+      "label": "UserAuthenticate",
+      "sublabel": "challenge, then token",
+      "pos": [
+        1020,
+        410
+      ],
+      "size": [
+        170,
+        70
+      ]
+    },
+    {
+      "id": "pushcertmgr",
+      "type": "backend",
+      "label": "admin /pushcerts",
+      "sublabel": "upload or renew",
+      "pos": [
+        1020,
+        560
+      ],
+      "size": [
+        170,
+        70
+      ]
+    }
+  ],
+  "boundaries": [
+    {
+      "kind": "region",
+      "label": "storage.Store",
+      "wraps": [
+        "enrollmentstore",
+        "commandqueue",
+        "bootstraptokenstore",
+        "migrationstore",
+        "certauthstore",
+        "pushstore",
+        "userauthstore",
+        "pushcertstore"
+      ]
+    }
+  ],
+  "connections": [
+    {
+      "id": "s1",
+      "from": "authn",
+      "to": "enrollmentstore",
+      "label": "upserts it"
+    },
+    {
+      "id": "s2",
+      "from": "enqueue",
+      "to": "commandqueue",
+      "label": "enqueues"
+    },
+    {
+      "id": "s3",
+      "from": "setbst",
+      "to": "bootstraptokenstore",
+      "label": "escrows"
+    },
+    {
+      "id": "s4",
+      "from": "export",
+      "to": "migrationstore",
+      "label": "pages exports"
+    },
+    {
+      "id": "s5",
+      "from": "authorize",
+      "to": "certauthstore",
+      "label": "reads the pin",
+      "variant": "security"
+    },
+    {
+      "id": "s6",
+      "from": "pushsvc",
+      "to": "pushstore",
+      "label": "reads PushInfo"
+    },
+    {
+      "id": "s7",
+      "from": "userauth",
+      "to": "userauthstore",
+      "label": "stores the state"
+    },
+    {
+      "id": "s8",
+      "from": "pushcertmgr",
+      "to": "pushcertstore",
+      "label": "seals the key",
+      "variant": "security"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "Composed, not monolithic",
+      "items": [
+        "One backend satisfies all eight; a caller depends only on the part it needs",
+        "Every backend runs the same contract suite, so the split is enforced not merely documented"
+      ]
+    },
+    {
+      "dot": "rose",
+      "title": "Sentinels",
+      "items": [
+        "ErrNotFound, ErrDisabled, ErrConflict and ErrInvalid are the whole error vocabulary",
+        "Re-enrollment clears push info, tokens, the pin and the pending queue in one transaction"
+      ]
+    }
+  ]
+}

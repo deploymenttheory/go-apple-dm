@@ -1,0 +1,300 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "Admin Plane and Authorization",
+    "quality_profile": "showcase",
+    "viewBox": [
+      1170,
+      540
+    ],
+    "views": [
+      {
+        "id": "request",
+        "label": "One admin request",
+        "focus": [
+          "mdmctl",
+          "adminclient",
+          "authorized",
+          "manager",
+          "cedar"
+        ],
+        "note": "Bearer token, then a principal, then a Cedar decision, then the handler."
+      },
+      {
+        "id": "credentials",
+        "label": "Credentials",
+        "focus": [
+          "config",
+          "mdmctl",
+          "statictoken"
+        ],
+        "note": "mdmctl references a credential; it never stores one in argv."
+      }
+    ],
+    "repository": {
+      "url": "https://github.com/deploymenttheory/go-apple-mdm",
+      "revision": "2c9c336d25bf83f7e6660ff3cf668e46e0ce9425"
+    }
+  },
+  "components": [
+    {
+      "id": "mdmctl",
+      "type": "frontend",
+      "label": "mdmctl",
+      "sublabel": "explain runs offline",
+      "pos": [
+        40,
+        260.0
+      ],
+      "size": [
+        170,
+        70
+      ]
+    },
+    {
+      "id": "adminclient",
+      "type": "backend",
+      "label": "adminclient",
+      "sublabel": "no redirects \u00b7 32 MiB cap",
+      "pos": [
+        340,
+        110.0
+      ],
+      "size": [
+        170,
+        70
+      ],
+      "sources": [
+        {
+          "path": "internal/mdmctl/adminclient/adminclient.go",
+          "label": "client"
+        }
+      ]
+    },
+    {
+      "id": "authorized",
+      "type": "security",
+      "label": "App.authorized",
+      "sublabel": "every admin route",
+      "pos": [
+        340,
+        260.0
+      ],
+      "size": [
+        170,
+        70
+      ],
+      "sources": [
+        {
+          "path": "internal/app/adminauthz.go",
+          "label": "authorized"
+        }
+      ]
+    },
+    {
+      "id": "config",
+      "type": "database",
+      "label": "mdmctl.json",
+      "sublabel": "0600 or refused",
+      "pos": [
+        340,
+        410.0
+      ],
+      "size": [
+        170,
+        70
+      ],
+      "sources": [
+        {
+          "path": "internal/mdmctl/config.go",
+          "label": "0600 check"
+        }
+      ]
+    },
+    {
+      "id": "statictoken",
+      "type": "security",
+      "label": "MDM_ADMIN_TOKEN",
+      "sublabel": "root, bypasses Cedar",
+      "pos": [
+        640,
+        110.0
+      ],
+      "size": [
+        170,
+        70
+      ]
+    },
+    {
+      "id": "manager",
+      "type": "security",
+      "label": "adminauth.Manager",
+      "sublabel": "Authenticate \u00b7 Authorize",
+      "pos": [
+        640,
+        260.0
+      ],
+      "size": [
+        170,
+        70
+      ],
+      "sources": [
+        {
+          "path": "adminauth/adminauth.go",
+          "label": "Manager"
+        }
+      ]
+    },
+    {
+      "id": "routes",
+      "type": "backend",
+      "label": "Admin route table",
+      "sublabel": "eight families",
+      "pos": [
+        640,
+        410.0
+      ],
+      "size": [
+        190,
+        70
+      ],
+      "tag": "every route declares an action",
+      "sources": [
+        {
+          "path": "internal/app/adminmdm.go",
+          "label": "mdm family"
+        },
+        {
+          "path": "internal/app/admin.go",
+          "label": "ddm family"
+        }
+      ]
+    },
+    {
+      "id": "cedar",
+      "type": "security",
+      "label": "Cedar policy",
+      "sublabel": "cedar-policy/cedar-go",
+      "pos": [
+        940,
+        260.0
+      ],
+      "size": [
+        170,
+        70
+      ]
+    },
+    {
+      "id": "adminstore",
+      "type": "database",
+      "label": "adminauth.Store",
+      "sublabel": "principals \u00b7 tokens \u00b7 policies",
+      "pos": [
+        940,
+        410.0
+      ],
+      "size": [
+        170,
+        70
+      ]
+    }
+  ],
+  "connections": [
+    {
+      "id": "cli-client",
+      "from": "mdmctl",
+      "to": "adminclient",
+      "label": "typed calls"
+    },
+    {
+      "id": "config-cli",
+      "from": "config",
+      "to": "mdmctl",
+      "label": "token by reference",
+      "variant": "security"
+    },
+    {
+      "id": "client-authorized",
+      "from": "adminclient",
+      "to": "authorized",
+      "label": "Bearer token",
+      "variant": "security",
+      "labelAt": [
+        425.0,
+        194.0
+      ]
+    },
+    {
+      "id": "authorized-manager",
+      "from": "authorized",
+      "to": "manager",
+      "label": "Authenticate"
+    },
+    {
+      "id": "authorized-static",
+      "from": "authorized",
+      "to": "statictoken",
+      "label": "constant-time compare",
+      "fromSide": "top",
+      "toSide": "bottom",
+      "via": [
+        [
+          425,
+          218
+        ],
+        [
+          725,
+          218
+        ]
+      ]
+    },
+    {
+      "id": "authorized-routes",
+      "from": "authorized",
+      "to": "routes",
+      "label": "then the handler"
+    },
+    {
+      "id": "manager-cedar",
+      "from": "manager",
+      "to": "cedar",
+      "label": "action + resource"
+    },
+    {
+      "id": "manager-store",
+      "from": "manager",
+      "to": "adminstore",
+      "label": "principals \u00b7 policies"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "Every admin request",
+      "items": [
+        "Bearer, then a principal, then a policy decision, then the handler",
+        "Families: mdm, ddm, dep, axm, acme, principals, audit, introspection",
+        "A route with no action is a build error, not a runtime one"
+      ]
+    },
+    {
+      "dot": "rose",
+      "title": "Deliberate gaps",
+      "items": [
+        "The static token is compared first, in constant time, so it works when the principal store is empty or unreachable",
+        "It authenticates as root and bypasses Cedar entirely",
+        "Policy editing is gated on root in Go, outside Cedar, because a policy that can edit policies could grant itself anything"
+      ]
+    },
+    {
+      "dot": "emerald",
+      "title": "Credentials by reference",
+      "items": [
+        "A bare value, @file, or env:NAME; never a positional argument, because argv is world-readable",
+        "A config file with any group or other permission bits is refused",
+        "The only place a token is printed is stdout alone, with the explanation on stderr"
+      ]
+    }
+  ]
+}

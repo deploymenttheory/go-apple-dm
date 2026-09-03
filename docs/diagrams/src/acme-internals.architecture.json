@@ -1,0 +1,439 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "ACME Server Internals",
+    "quality_profile": "showcase",
+    "viewBox": [
+      1300,
+      690
+    ],
+    "repository": {
+      "url": "https://github.com/deploymenttheory/go-apple-mdm",
+      "revision": "2c9c336d25bf83f7e6660ff3cf668e46e0ce9425"
+    },
+    "views": [
+      {
+        "id": "signed",
+        "label": "Every request is signed",
+        "focus": [
+          "device",
+          "server",
+          "jose",
+          "nonces"
+        ],
+        "note": "A JWS with an embedded JWK for new-account, a key id after that; each nonce is one-shot."
+      },
+      {
+        "id": "order",
+        "label": "Order",
+        "focus": [
+          "server",
+          "orders",
+          "identifiers",
+          "store"
+        ],
+        "note": "One permanent-identifier, claimed once and bound to a specific device."
+      },
+      {
+        "id": "attestation",
+        "label": "Attestation",
+        "focus": [
+          "server",
+          "attest",
+          "policy",
+          "capkg"
+        ],
+        "note": "Chain, freshness, attested key and device binding, then a policy decision."
+      },
+      {
+        "id": "refused",
+        "label": "Refusal",
+        "focus": [
+          "attest",
+          "policy",
+          "problem"
+        ],
+        "note": "Every refusal leaves as an RFC 7807 problem document."
+      }
+    ]
+  },
+  "components": [
+    {
+      "id": "directory",
+      "type": "external",
+      "label": "GET /acme/directory",
+      "sublabel": "then HEAD new-nonce",
+      "pos": [
+        40,
+        110
+      ],
+      "size": [
+        170,
+        70
+      ]
+    },
+    {
+      "id": "device",
+      "type": "external",
+      "label": "Device",
+      "sublabel": "Secure Enclave key",
+      "pos": [
+        40,
+        260
+      ],
+      "size": [
+        170,
+        70
+      ]
+    },
+    {
+      "id": "jose",
+      "type": "security",
+      "label": "acme/jose",
+      "sublabel": "JWS \u00b7 JWK \u00b7 thumbprint",
+      "pos": [
+        380,
+        110
+      ],
+      "size": [
+        170,
+        70
+      ],
+      "sources": [
+        {
+          "path": "acme/jose/jws.go",
+          "label": "JWS"
+        },
+        {
+          "path": "acme/jose/jwk.go",
+          "label": "JWK"
+        }
+      ]
+    },
+    {
+      "id": "server",
+      "type": "backend",
+      "label": "acme.Server",
+      "sublabel": "signed(fn, keyMode)",
+      "pos": [
+        380,
+        260
+      ],
+      "size": [
+        170,
+        70
+      ],
+      "sources": [
+        {
+          "path": "acme/server.go",
+          "label": "routes"
+        },
+        {
+          "path": "acme/handlers.go",
+          "label": "handlers"
+        }
+      ]
+    },
+    {
+      "id": "attest",
+      "type": "security",
+      "label": "acme/attest",
+      "sublabel": "Apple root \u00b7 properties",
+      "pos": [
+        380,
+        410
+      ],
+      "size": [
+        170,
+        70
+      ],
+      "sources": [
+        {
+          "path": "acme/attest/attest.go",
+          "label": "verify"
+        },
+        {
+          "path": "acme/attest/anchors.go",
+          "label": "anchors"
+        }
+      ]
+    },
+    {
+      "id": "problem",
+      "type": "backend",
+      "label": "acme.Problem",
+      "sublabel": "RFC 7807 problem+json",
+      "pos": [
+        380,
+        560
+      ],
+      "size": [
+        170,
+        70
+      ],
+      "sources": [
+        {
+          "path": "acme/problem.go",
+          "label": "problem"
+        }
+      ]
+    },
+    {
+      "id": "nonces",
+      "type": "database",
+      "label": "Nonce",
+      "sublabel": "one-shot",
+      "pos": [
+        700,
+        110
+      ],
+      "size": [
+        170,
+        70
+      ]
+    },
+    {
+      "id": "orders",
+      "type": "backend",
+      "label": "Order \u00b7 Authorization",
+      "sublabel": "one device-attest-01",
+      "pos": [
+        700,
+        260
+      ],
+      "size": [
+        170,
+        70
+      ],
+      "sources": [
+        {
+          "path": "acme/acme.go",
+          "label": "order model"
+        }
+      ]
+    },
+    {
+      "id": "store",
+      "type": "database",
+      "label": "acme.Store",
+      "sublabel": "Update(fn func(Tx))",
+      "pos": [
+        700,
+        410
+      ],
+      "size": [
+        170,
+        70
+      ],
+      "sources": [
+        {
+          "path": "acme/store.go",
+          "label": "store contract"
+        }
+      ]
+    },
+    {
+      "id": "policy",
+      "type": "security",
+      "label": "acme.Policy",
+      "sublabel": "any \u00b7 dep \u00b7 sip",
+      "pos": [
+        700,
+        560
+      ],
+      "size": [
+        170,
+        70
+      ],
+      "sources": [
+        {
+          "path": "acme/policy.go",
+          "label": "decisions"
+        }
+      ]
+    },
+    {
+      "id": "identifiers",
+      "type": "security",
+      "label": "Identifiers",
+      "sublabel": "HMAC \u00b7 static \u00b7 one-time",
+      "pos": [
+        1020,
+        260
+      ],
+      "size": [
+        170,
+        70
+      ],
+      "sources": [
+        {
+          "path": "acme/identifier.go",
+          "label": "claim once"
+        }
+      ]
+    },
+    {
+      "id": "sqlstore",
+      "type": "database",
+      "label": "acme/sqlstore \u00b7 inmem",
+      "sublabel": "own migration set",
+      "pos": [
+        1020,
+        410
+      ],
+      "size": [
+        170,
+        70
+      ]
+    },
+    {
+      "id": "capkg",
+      "type": "security",
+      "label": "ca.Local",
+      "sublabel": "signs the CSR",
+      "pos": [
+        1020,
+        560
+      ],
+      "size": [
+        170,
+        70
+      ],
+      "sources": [
+        {
+          "path": "ca/ca.go",
+          "label": "signer"
+        },
+        {
+          "path": "ca/othername.go",
+          "label": "PermanentIdentifier"
+        }
+      ]
+    }
+  ],
+  "connections": [
+    {
+      "id": "e1",
+      "from": "device",
+      "to": "server",
+      "label": "JOSE POST",
+      "variant": "emphasis",
+      "labelAt": [
+        245,
+        288
+      ]
+    },
+    {
+      "id": "e2",
+      "from": "directory",
+      "to": "server",
+      "label": "then a nonce"
+    },
+    {
+      "id": "e3",
+      "from": "server",
+      "to": "jose",
+      "label": "verify the JWS",
+      "variant": "security"
+    },
+    {
+      "id": "e4",
+      "from": "jose",
+      "to": "nonces",
+      "label": "take the nonce"
+    },
+    {
+      "id": "e5",
+      "from": "server",
+      "to": "orders",
+      "label": "new-order"
+    },
+    {
+      "id": "e6",
+      "from": "orders",
+      "to": "identifiers",
+      "label": "ClaimIdentifier",
+      "variant": "security"
+    },
+    {
+      "id": "e7",
+      "from": "server",
+      "to": "attest",
+      "label": "device-attest-01",
+      "variant": "security",
+      "labelAt": [
+        465.0,
+        344.0
+      ]
+    },
+    {
+      "id": "e8",
+      "from": "orders",
+      "to": "store",
+      "label": "Update(fn)",
+      "labelAt": [
+        785.0,
+        344.0
+      ]
+    },
+    {
+      "id": "e9",
+      "from": "store",
+      "to": "sqlstore",
+      "label": "sqlstore or inmem"
+    },
+    {
+      "id": "e10",
+      "from": "attest",
+      "to": "policy",
+      "label": "attested facts"
+    },
+    {
+      "id": "e11",
+      "from": "policy",
+      "to": "capkg",
+      "label": "then sign"
+    },
+    {
+      "id": "e12",
+      "from": "attest",
+      "to": "problem",
+      "label": "bad chain",
+      "variant": "security",
+      "labelAt": [
+        465.0,
+        494.0
+      ]
+    },
+    {
+      "id": "e13",
+      "from": "policy",
+      "to": "problem",
+      "label": "refused",
+      "variant": "security",
+      "labelAt": [
+        585,
+        588
+      ]
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "Four checks before a certificate",
+      "items": [
+        "The chain verifies to the Apple Enterprise Attestation Root",
+        "Freshness comes from the challenge token, the attested key must be the CSR key, and the attestation must name the bound device"
+      ]
+    },
+    {
+      "dot": "rose",
+      "title": "Refusal is a document",
+      "items": [
+        "Every failure leaves as an RFC 7807 problem, never a bare status",
+        "The subject comes from the binding, never from the CSR"
+      ]
+    }
+  ]
+}

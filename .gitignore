@@ -52,3 +52,8 @@ __pycache__/
 cover/
 third_party/refs/
 *.sarif
+
+# archify visual-check evidence (regenerable)
+docs/diagrams/*.visual-check.json
+docs/diagrams/*.visual-check.html
+docs/diagrams/*.visual-check.*.png

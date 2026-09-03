@@ -1,0 +1,180 @@
+{
+  "schema_version": 1,
+  "diagram_type": "lifecycle",
+  "meta": {
+    "title": "Command Queue Lifecycle",
+    "quality_profile": "showcase",
+    "viewBox": [
+      1080,
+      630
+    ],
+    "views": [
+      {
+        "id": "happy",
+        "label": "Delivered",
+        "focus": [
+          "pending",
+          "sent",
+          "acknowledged"
+        ],
+        "note": "Enqueued, handed to the device on its next connect, then acknowledged."
+      },
+      {
+        "id": "notnow",
+        "label": "NotNow",
+        "focus": [
+          "sent",
+          "notnow"
+        ],
+        "note": "A NotNow leaves the command queued behind a doubling backoff."
+      }
+    ]
+  },
+  "lanes": [
+    {
+      "id": "main",
+      "label": "Queue states"
+    },
+    {
+      "id": "retry",
+      "label": "Retry"
+    },
+    {
+      "id": "terminal",
+      "label": "Terminal outcomes"
+    }
+  ],
+  "states": [
+    {
+      "id": "pending",
+      "type": "start",
+      "label": "Pending",
+      "sublabel": "enqueued",
+      "lane": "main",
+      "col": 0,
+      "step": "01"
+    },
+    {
+      "id": "sent",
+      "type": "active",
+      "label": "Sent",
+      "sublabel": "handed to the device",
+      "lane": "main",
+      "col": 2,
+      "step": "02"
+    },
+    {
+      "id": "acknowledged",
+      "type": "success",
+      "label": "Acknowledged",
+      "sublabel": "typed response stored",
+      "lane": "main",
+      "col": 4,
+      "step": "03"
+    },
+    {
+      "id": "notnow",
+      "type": "failure",
+      "label": "NotNow",
+      "sublabel": "declined for now",
+      "lane": "retry",
+      "col": 0,
+      "tag": "retryable"
+    },
+    {
+      "id": "cleared",
+      "type": "failure",
+      "label": "Cleared",
+      "sublabel": "Clear or re-enrollment",
+      "lane": "terminal",
+      "col": 1,
+      "tag": "terminal"
+    },
+    {
+      "id": "errored",
+      "type": "failure",
+      "label": "Error",
+      "sublabel": "ErrorChain stored",
+      "lane": "terminal",
+      "col": 2,
+      "tag": "terminal"
+    }
+  ],
+  "transitions": [
+    {
+      "id": "take",
+      "from": "pending",
+      "to": "sent",
+      "label": "Next() marks it sent",
+      "variant": "emphasis",
+      "route": "straight"
+    },
+    {
+      "id": "ack",
+      "from": "sent",
+      "to": "acknowledged",
+      "label": "Acknowledged",
+      "variant": "emphasis",
+      "route": "straight"
+    },
+    {
+      "id": "decline",
+      "from": "sent",
+      "to": "notnow",
+      "label": "NotNow",
+      "variant": "default",
+      "fromSide": "bottom",
+      "toSide": "top",
+      "route": "straight",
+      "labelAt": [
+        402,
+        228
+      ]
+    },
+    {
+      "id": "retry",
+      "from": "notnow",
+      "to": "sent",
+      "label": "backoff elapsed",
+      "variant": "emphasis",
+      "route": "left-channel"
+    },
+    {
+      "id": "fail",
+      "from": "sent",
+      "to": "errored",
+      "label": "Error",
+      "variant": "security",
+      "channelX": 635
+    },
+    {
+      "id": "clear",
+      "from": "sent",
+      "to": "cleared",
+      "label": "while non-terminal",
+      "variant": "security",
+      "labelAt": [
+        479.0,
+        350.0
+      ]
+    }
+  ],
+  "cards": [
+    {
+      "dot": "amber",
+      "title": "NotNow is not failure",
+      "items": [
+        "The command stays queued behind a backoff that starts at 30s and doubles to a one hour cap",
+        "A connect carrying NotNow skips not-now commands whose backoff has not elapsed"
+      ]
+    },
+    {
+      "dot": "rose",
+      "title": "Terminal",
+      "items": [
+        "Acknowledged is terminal, so an acknowledged command is never cleared",
+        "Clear and re-enrollment sweep the non-terminal states only"
+      ]
+    }
+  ]
+}

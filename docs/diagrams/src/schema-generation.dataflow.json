@@ -1,0 +1,168 @@
+{
+  "schema_version": 1,
+  "diagram_type": "dataflow",
+  "meta": {
+    "title": "Schema Generation Pipeline",
+    "quality_profile": "showcase",
+    "viewBox": [
+      1080,
+      560
+    ],
+    "views": [
+      {
+        "id": "emit",
+        "label": "Emit",
+        "focus": [
+          "yaml",
+          "loader",
+          "types",
+          "registry"
+        ],
+        "note": "Apple's YAML becomes typed Go, one package per message family."
+      },
+      {
+        "id": "guard",
+        "label": "Guards",
+        "focus": [
+          "registry",
+          "nameslock",
+          "types",
+          "conformance"
+        ],
+        "note": "make verify fails when regeneration would rename a type."
+      }
+    ]
+  },
+  "stages": [
+    {
+      "label": "Source"
+    },
+    {
+      "label": "Load"
+    },
+    {
+      "label": "Emit"
+    },
+    {
+      "label": "Guard"
+    }
+  ],
+  "nodes": [
+    {
+      "id": "yaml",
+      "type": "external",
+      "label": "device-management",
+      "sublabel": "pinned submodule",
+      "stage": 0,
+      "row": 0,
+      "tag": "third_party",
+      "width": 150
+    },
+    {
+      "id": "loader",
+      "type": "backend",
+      "label": "internal/schemagen",
+      "sublabel": "strict loader and model",
+      "stage": 1,
+      "row": 0,
+      "width": 150
+    },
+    {
+      "id": "types",
+      "type": "backend",
+      "label": "types.gen.go",
+      "sublabel": "typed messages",
+      "stage": 2,
+      "row": 0,
+      "width": 150
+    },
+    {
+      "id": "registry",
+      "type": "backend",
+      "label": "registry.gen.go",
+      "sublabel": "identifier to type",
+      "stage": 2,
+      "row": 1,
+      "width": 150
+    },
+    {
+      "id": "nameslock",
+      "type": "database",
+      "label": "NAMES.lock",
+      "sublabel": "rename guard",
+      "stage": 3,
+      "row": 1,
+      "width": 150
+    },
+    {
+      "id": "conformance",
+      "type": "backend",
+      "label": "conformance tests",
+      "sublabel": "round-trip every type",
+      "stage": 3,
+      "row": 0,
+      "width": 150
+    }
+  ],
+  "flows": [
+    {
+      "from": "yaml",
+      "to": "loader",
+      "label": "YAML in",
+      "classification": "read-only",
+      "variant": "emphasis",
+      "route": "straight"
+    },
+    {
+      "from": "loader",
+      "to": "types",
+      "label": "structs",
+      "variant": "emphasis",
+      "route": "straight"
+    },
+    {
+      "from": "loader",
+      "to": "registry",
+      "label": "registry",
+      "variant": "default"
+    },
+    {
+      "from": "types",
+      "to": "conformance",
+      "label": "round-trip",
+      "classification": "generated tests",
+      "variant": "dashed",
+      "route": "straight",
+      "labelAt": [
+        638.0,
+        200.0
+      ]
+    },
+    {
+      "from": "registry",
+      "to": "nameslock",
+      "label": "names",
+      "classification": "make verify",
+      "variant": "security",
+      "route": "straight"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "Never hand-edited",
+      "items": [
+        "Every file under schema/ is emitted by make generate from the pinned submodule",
+        "make verify regenerates and fails if the checked-in output differs"
+      ]
+    },
+    {
+      "dot": "rose",
+      "title": "The rename guard",
+      "items": [
+        "NAMES.lock records every exported name",
+        "A regeneration that would rename a type fails the build instead of breaking callers silently"
+      ]
+    }
+  ]
+}
