@@ -41,3 +41,44 @@ func TestRunSurfacesNonCancelErrors(t *testing.T) {
 	}
 	var _ ddm.TokenSource = a.Engine
 }
+
+// buildAdminMux is what makes an action mandatory. Both refusals are
+// programming errors in this package rather than configuration ones, so they
+// are asserted here rather than left to a reviewer.
+func TestBuildAdminMuxRefusesUnguardedRoutes(t *testing.T) {
+	a := &App{}
+	if _, err := a.buildAdminMux([]adminRoute{{Pattern: "GET /x", Family: "f"}}); err == nil {
+		t.Fatal("a route with no action was mounted")
+	}
+	if _, err := a.buildAdminMux([]adminRoute{{Pattern: "GET /x", Action: "noSuchAction", Family: "f"}}); err == nil {
+		t.Fatal("a route naming an unregistered action was mounted")
+	}
+	// The happy path still builds.
+	if _, err := a.buildAdminMux([]adminRoute{{Pattern: "GET /x", Action: ActionNotify, Family: "f"}}); err != nil {
+		t.Fatalf("a well-formed route was refused: %v", err)
+	}
+}
+
+// Every action the route table names is in the registry, and every registered
+// action carries operator-facing prose, so `mdmctl policy actions` can say
+// what granting one means.
+func TestAdminActionsAreComplete(t *testing.T) {
+	reg := mustAdminRegistry()
+	for _, act := range AdminActions() {
+		if act.Help == "" {
+			t.Errorf("action %q has no help text", act.ID)
+		}
+		if act.Resource == "" {
+			t.Errorf("action %q names no resource type", act.ID)
+		}
+		if _, ok := reg.Lookup(act.ID); !ok {
+			t.Errorf("action %q is not in the registry", act.ID)
+		}
+	}
+}
+
+func TestBuildVersion(t *testing.T) {
+	if buildVersion() == "" {
+		t.Fatal("buildVersion returned nothing")
+	}
+}

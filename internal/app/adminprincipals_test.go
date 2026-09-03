@@ -8,7 +8,11 @@ import (
 	"strings"
 	"testing"
 
+	"time"
+
 	"github.com/deploymenttheory/go-apple-mdm/adminauth"
+	"github.com/deploymenttheory/go-apple-mdm/adminauth/adminauthtest"
+	"github.com/deploymenttheory/go-apple-mdm/adminauth/inmem"
 	"github.com/deploymenttheory/go-apple-mdm/internal/app"
 )
 
@@ -305,4 +309,69 @@ func TestPrincipalRoutesNeedAStore(t *testing.T) {
 			t.Fatalf("principal route %q was registered without a store", rt.RoutePattern())
 		}
 	}
+}
+
+// An oversized body is refused before it is parsed, on every route that
+// takes one.
+func TestAdminBodyLimit(t *testing.T) {
+	a, m, _ := policyApp(t, nil)
+	srv := serve(t, a).URL
+	rootTok := mintPrincipal(t, m, adminauth.Principal{Name: "root", Root: true})
+	if _, err := m.PutPolicy(context.Background(), adminauth.Root, adminauth.Policy{
+		Name:   "admins",
+		Source: `permit (principal == MDM::Principal::"root", action, resource);`,
+	}); err != nil {
+		t.Fatal(err)
+	}
+	huge := `{"Name":"` + strings.Repeat("a", app.MaxAdminBody) + `"}`
+	for _, tc := range []struct{ method, path string }{
+		{http.MethodPost, "/admin/v1/principals"},
+		{http.MethodPatch, "/admin/v1/principals/root"},
+		{http.MethodPut, "/admin/v1/policies/x"},
+	} {
+		resp := adminReq(t, srv, tc.method, tc.path, rootTok, huge)
+		_ = resp.Body.Close()
+		if resp.StatusCode != http.StatusRequestEntityTooLarge {
+			t.Errorf("%s %s = %d, want 413", tc.method, tc.path, resp.StatusCode)
+		}
+	}
+}
+
+// A storage failure is an internal error, never a denial: reporting a
+// database outage as "forbidden" would send an operator hunting a policy bug.
+func TestAdminStoreFailureIsInternal(t *testing.T) {
+	st := &adminauthtest.Failing{Store: inmem.New(), Fail: "Principals"}
+	base := inmem.New()
+	seed, err := adminauth.New(base, mustRegistry(t))
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, tok, err := seed.CreatePrincipal(context.Background(), adminauth.Root,
+		adminauth.Principal{Name: "root", Root: true}, time.Time{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := seed.PutPolicy(context.Background(), adminauth.Root, adminauth.Policy{
+		Name:   "admins",
+		Source: `permit (principal == MDM::Principal::"root", action, resource);`,
+	}); err != nil {
+		t.Fatal(err)
+	}
+	st.Store = base
+	a := build(t, app.Config{Role: app.RoleAll, Storage: "inmem", Listen: ":0", AdminStore: st})
+	srv := serve(t, a).URL
+	resp := adminReq(t, srv, http.MethodGet, "/admin/v1/principals", string(tok), "")
+	_ = resp.Body.Close()
+	if resp.StatusCode != http.StatusInternalServerError {
+		t.Fatalf("a failing store returned %d, want 500", resp.StatusCode)
+	}
+}
+
+func mustRegistry(t *testing.T) *adminauth.Registry {
+	t.Helper()
+	reg, err := adminauth.NewRegistry(app.AdminActions()...)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return reg
 }
