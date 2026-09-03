@@ -4,9 +4,10 @@ Twenty-seven interactive diagrams of this library and the reference server, gene
 [archify](https://github.com/tt-a1i/archify) skill from the JSON sources in [`src/`](src/).
 
 Each `.html` file is self-contained: no build step, no network, no dependencies. Open one from a
-`git clone` and it works. GitHub does not render HTML from a repository, so clone the repo or
-download the file to view a diagram; the root [README](../../README.md) carries a rendered image
-of the high-level design.
+`git clone` and it works. GitHub serves HTML from a repository as source rather than rendering it,
+so the links below go through [htmlpreview](https://htmlpreview.github.io), which fetches the raw
+file from `main` and renders it in place; the first load of a diagram takes a moment. The root
+[README](../../README.md) carries a rendered image of the high-level design.
 
 Every diagram supports search, focus, relationship tracing, guided views, a light and dark theme,
 and PNG, SVG and WebM export from the viewer itself.
@@ -15,38 +16,38 @@ and PNG, SVG and WebM export from the viewer itself.
 
 | Diagram | What it shows |
 |---|---|
-| [system-architecture](system-architecture.html) | The high-level design: Apple's services, the reference server's roles, storage, and the admin plane |
-| [package-layering](package-layering.html) | Import direction across the package graph, and the deliberate non-dependencies that keep it acyclic |
-| [storage-contract](storage-contract.html) | All eight interfaces `storage.Store` composes, and which caller depends on each |
-| [storage-backends](storage-backends.html) | The one SQL implementation, the Dialect each backend supplies, and sealed columns |
-| [service-layer](service-layer.html) | The seams: certificate middlewares, the hook chain, `DMHandler`, `UserVerifier`, and the event bus |
-| [checkin-dispatch](checkin-dispatch.html) | All eight check-in messages, split into state changes and answers, and how each is refused |
-| [ddm-engine](ddm-engine.html) | The engine, the notifier, and the change rows that decouple them |
-| [ddm-serve](ddm-serve.html) | The four endpoint operations and the two refusals `ParseEndpoint` can produce |
-| [acme-internals](acme-internals.html) | `jose`, identifiers, orders, attestation, policy, and the RFC 7807 problem every refusal becomes |
-| [push](push.html) | `push.Notifier` through coalescing to APNs, and where the push certificate comes from |
-| [apple-service-clients](apple-service-clients.html) | The DEP, Business Manager and software-lookup clients, and their three auth schemes |
-| [admin-plane](admin-plane.html) | `mdmctl` to the admin API to Cedar, and how credentials are referenced |
-| [split-deployment](split-deployment.html) | The `mdm` and `ddm` roles either side of an HMAC-signed hop |
+| [system-architecture](https://htmlpreview.github.io/?https://raw.githubusercontent.com/deploymenttheory/go-apple-mdm/main/docs/diagrams/system-architecture.html) | The high-level design: Apple's services, the reference server's roles, storage, and the admin plane |
+| [package-layering](https://htmlpreview.github.io/?https://raw.githubusercontent.com/deploymenttheory/go-apple-mdm/main/docs/diagrams/package-layering.html) | Import direction across the package graph, and the deliberate non-dependencies that keep it acyclic |
+| [storage-contract](https://htmlpreview.github.io/?https://raw.githubusercontent.com/deploymenttheory/go-apple-mdm/main/docs/diagrams/storage-contract.html) | All eight interfaces `storage.Store` composes, and which caller depends on each |
+| [storage-backends](https://htmlpreview.github.io/?https://raw.githubusercontent.com/deploymenttheory/go-apple-mdm/main/docs/diagrams/storage-backends.html) | The one SQL implementation, the Dialect each backend supplies, and sealed columns |
+| [service-layer](https://htmlpreview.github.io/?https://raw.githubusercontent.com/deploymenttheory/go-apple-mdm/main/docs/diagrams/service-layer.html) | The seams: certificate middlewares, the hook chain, `DMHandler`, `UserVerifier`, and the event bus |
+| [checkin-dispatch](https://htmlpreview.github.io/?https://raw.githubusercontent.com/deploymenttheory/go-apple-mdm/main/docs/diagrams/checkin-dispatch.html) | All eight check-in messages, split into state changes and answers, and how each is refused |
+| [ddm-engine](https://htmlpreview.github.io/?https://raw.githubusercontent.com/deploymenttheory/go-apple-mdm/main/docs/diagrams/ddm-engine.html) | The engine, the notifier, and the change rows that decouple them |
+| [ddm-serve](https://htmlpreview.github.io/?https://raw.githubusercontent.com/deploymenttheory/go-apple-mdm/main/docs/diagrams/ddm-serve.html) | The four endpoint operations and the two refusals `ParseEndpoint` can produce |
+| [acme-internals](https://htmlpreview.github.io/?https://raw.githubusercontent.com/deploymenttheory/go-apple-mdm/main/docs/diagrams/acme-internals.html) | `jose`, identifiers, orders, attestation, policy, and the RFC 7807 problem every refusal becomes |
+| [push](https://htmlpreview.github.io/?https://raw.githubusercontent.com/deploymenttheory/go-apple-mdm/main/docs/diagrams/push.html) | `push.Notifier` through coalescing to APNs, and where the push certificate comes from |
+| [apple-service-clients](https://htmlpreview.github.io/?https://raw.githubusercontent.com/deploymenttheory/go-apple-mdm/main/docs/diagrams/apple-service-clients.html) | The DEP, Business Manager and software-lookup clients, and their three auth schemes |
+| [admin-plane](https://htmlpreview.github.io/?https://raw.githubusercontent.com/deploymenttheory/go-apple-mdm/main/docs/diagrams/admin-plane.html) | `mdmctl` to the admin API to Cedar, and how credentials are referenced |
+| [split-deployment](https://htmlpreview.github.io/?https://raw.githubusercontent.com/deploymenttheory/go-apple-mdm/main/docs/diagrams/split-deployment.html) | The `mdm` and `ddm` roles either side of an HMAC-signed hop |
 
 ## Flows
 
 | Diagram | Type | What it shows |
 |---|---|---|
-| [schema-generation](schema-generation.html) | data flow | Apple's YAML becoming typed Go, and the rename guard that protects callers |
-| [request-decode](request-decode.html) | data flow | A device request becoming a typed message, and where the identity certificate comes from |
-| [reference-server](reference-server.html) | workflow | How `internal/app` builds and serves, and what fails at build rather than at runtime |
-| [enrollment-paths](enrollment-paths.html) | workflow | Automated and account-driven enrollment, and the gates that refuse before a profile is built |
-| [test-harness](test-harness.html) | workflow | The test pipeline from unit tests to the coverage gate |
-| [flow-dep-sync-assign](flow-dep-sync-assign.html) | workflow | The token PKI exchange, then the sync and assignment workers |
-| [flow-ade-enrollment](flow-ade-enrollment.html) | sequence | Signed `MachineInfo`, the update gate, the OIDC web view, then check-in |
-| [flow-account-driven-enrollment](flow-account-driven-enrollment.html) | sequence | Discovery, the `401` Bearer challenge, web authentication, then a token-gated check-in |
-| [flow-command-delivery](flow-command-delivery.html) | sequence | Enqueue with target validation, the APNs wake, and what one connect actually does |
-| [flow-ddm-sync](flow-ddm-sync.html) | sequence | A declaration change becoming one command, and the four endpoints the device then pulls |
-| [flow-acme-attestation](flow-acme-attestation.html) | sequence | The ACME order, `device-attest-01`, and the four checks before a certificate is issued |
-| [flow-scep-issuance](flow-scep-issuance.html) | sequence | `GetCACaps`, `GetCACert`, and a `PKIOperation` gated by a challenge |
-| [lifecycle-command](lifecycle-command.html) | lifecycle | `pending` to `sent` to a terminal outcome, with the `NotNow` retry |
-| [lifecycle-enrollment](lifecycle-enrollment.html) | lifecycle | Authenticate, TokenUpdate, re-enrollment, and CheckOut |
+| [schema-generation](https://htmlpreview.github.io/?https://raw.githubusercontent.com/deploymenttheory/go-apple-mdm/main/docs/diagrams/schema-generation.html) | data flow | Apple's YAML becoming typed Go, and the rename guard that protects callers |
+| [request-decode](https://htmlpreview.github.io/?https://raw.githubusercontent.com/deploymenttheory/go-apple-mdm/main/docs/diagrams/request-decode.html) | data flow | A device request becoming a typed message, and where the identity certificate comes from |
+| [reference-server](https://htmlpreview.github.io/?https://raw.githubusercontent.com/deploymenttheory/go-apple-mdm/main/docs/diagrams/reference-server.html) | workflow | How `internal/app` builds and serves, and what fails at build rather than at runtime |
+| [enrollment-paths](https://htmlpreview.github.io/?https://raw.githubusercontent.com/deploymenttheory/go-apple-mdm/main/docs/diagrams/enrollment-paths.html) | workflow | Automated and account-driven enrollment, and the gates that refuse before a profile is built |
+| [test-harness](https://htmlpreview.github.io/?https://raw.githubusercontent.com/deploymenttheory/go-apple-mdm/main/docs/diagrams/test-harness.html) | workflow | The test pipeline from unit tests to the coverage gate |
+| [flow-dep-sync-assign](https://htmlpreview.github.io/?https://raw.githubusercontent.com/deploymenttheory/go-apple-mdm/main/docs/diagrams/flow-dep-sync-assign.html) | workflow | The token PKI exchange, then the sync and assignment workers |
+| [flow-ade-enrollment](https://htmlpreview.github.io/?https://raw.githubusercontent.com/deploymenttheory/go-apple-mdm/main/docs/diagrams/flow-ade-enrollment.html) | sequence | Signed `MachineInfo`, the update gate, the OIDC web view, then check-in |
+| [flow-account-driven-enrollment](https://htmlpreview.github.io/?https://raw.githubusercontent.com/deploymenttheory/go-apple-mdm/main/docs/diagrams/flow-account-driven-enrollment.html) | sequence | Discovery, the `401` Bearer challenge, web authentication, then a token-gated check-in |
+| [flow-command-delivery](https://htmlpreview.github.io/?https://raw.githubusercontent.com/deploymenttheory/go-apple-mdm/main/docs/diagrams/flow-command-delivery.html) | sequence | Enqueue with target validation, the APNs wake, and what one connect actually does |
+| [flow-ddm-sync](https://htmlpreview.github.io/?https://raw.githubusercontent.com/deploymenttheory/go-apple-mdm/main/docs/diagrams/flow-ddm-sync.html) | sequence | A declaration change becoming one command, and the four endpoints the device then pulls |
+| [flow-acme-attestation](https://htmlpreview.github.io/?https://raw.githubusercontent.com/deploymenttheory/go-apple-mdm/main/docs/diagrams/flow-acme-attestation.html) | sequence | The ACME order, `device-attest-01`, and the four checks before a certificate is issued |
+| [flow-scep-issuance](https://htmlpreview.github.io/?https://raw.githubusercontent.com/deploymenttheory/go-apple-mdm/main/docs/diagrams/flow-scep-issuance.html) | sequence | `GetCACaps`, `GetCACert`, and a `PKIOperation` gated by a challenge |
+| [lifecycle-command](https://htmlpreview.github.io/?https://raw.githubusercontent.com/deploymenttheory/go-apple-mdm/main/docs/diagrams/lifecycle-command.html) | lifecycle | `pending` to `sent` to a terminal outcome, with the `NotNow` retry |
+| [lifecycle-enrollment](https://htmlpreview.github.io/?https://raw.githubusercontent.com/deploymenttheory/go-apple-mdm/main/docs/diagrams/lifecycle-enrollment.html) | lifecycle | Authenticate, TokenUpdate, re-enrollment, and CheckOut |
 
 ## Regenerating
 
