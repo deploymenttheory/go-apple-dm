@@ -2,6 +2,7 @@ package app_test
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"testing"
 	"time"
@@ -159,5 +160,42 @@ func TestAdminReadDoesNotKick(t *testing.T) {
 	time.Sleep(50 * time.Millisecond)
 	if fake.Pending() != before {
 		t.Fatal("a read woke the notifier")
+	}
+}
+
+// Suppression applies only where a caller asks for it. An operator sending
+// the same command twice in quick succession gets two commands, because
+// nothing on the admin path sets a dedupe key -- a rerun is a legitimate
+// thing to want, and the library must not decide otherwise.
+func TestOperatorCommandsAreNeverSuppressed(t *testing.T) {
+	a, srv, _ := mdmAdminApp(t)
+	id := seed(t, a, "UDID-RERUN")
+
+	cmd := `<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0"><dict>
+<key>Command</key><dict><key>RequestType</key><string>DeviceInformation</string></dict>
+<key>CommandUUID</key><string>%s</string>
+</dict></plist>`
+
+	for _, uuid := range []string{"RERUN-1", "RERUN-2"} {
+		resp := adminReq(t, srv, http.MethodPost,
+			"/admin/v1/enrollments/device/UDID-RERUN/commands", "t", fmt.Sprintf(cmd, uuid))
+		body := jsonBody(t, resp)
+		_ = resp.Body.Close()
+		if got := body["Queued"]; got != float64(1) {
+			t.Fatalf("%s: Queued = %v, want 1", uuid, got)
+		}
+		if _, suppressed := body["Skipped"]; suppressed {
+			t.Fatalf("%s was suppressed: %v", uuid, body)
+		}
+	}
+
+	res, err := a.Store.Commands(context.Background(), id, storage.CommandQuery{}, storage.Page{Limit: 10})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(res.Items) != 2 {
+		t.Fatalf("queue holds %d commands, want both reruns", len(res.Items))
 	}
 }

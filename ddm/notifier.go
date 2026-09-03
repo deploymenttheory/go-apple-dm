@@ -15,9 +15,17 @@ import (
 	"github.com/deploymenttheory/go-apple-mdm/storage"
 )
 
-// DedupeKey marks the DeclarativeManagement command the notifier enqueues;
-// one pending kick per enrollment is enough.
-const DedupeKey = "ddm"
+// DefaultDedupeKey is the dedupe key NotifierConfig.DedupeKey uses when it is
+// not set. It suppresses a second DeclarativeManagement while one is still
+// pending for the same enrollment.
+//
+// Suppression is safe for this command specifically, and only for it: the
+// command is a doorbell, not a payload. A device that receives it fetches the
+// current tokens and declaration items, so a pending command already carries
+// every change made since it was queued. It would not be safe for a command
+// whose payload is the instruction, which is why the key is opt-in per caller
+// rather than a property of the queue.
+const DefaultDedupeKey = "ddm"
 
 // Defaults for NotifierConfig.
 const (
@@ -61,6 +69,19 @@ type NotifierConfig struct {
 	// Backoff maps the attempt count to the retry delay. Default
 	// storage.NotNowBackoff.
 	Backoff func(attempt int) time.Duration
+	// DedupeKey suppresses a new DeclarativeManagement while one is still
+	// pending for the same enrollment. Nil uses DefaultDedupeKey; an empty
+	// string turns suppression off, so every drain queues a command.
+	//
+	// It is a pointer for the same reason service.Config.ValidateTargets is:
+	// the zero value has to mean "not set" so that "" can mean "off".
+	// Whether to suppress is the consumer's decision, not this package's.
+	DedupeKey *string
+	// OnDrain, when set, is called with the outcome of every drain. A
+	// suppressed command is counted in DrainResult.Deduped and is otherwise
+	// invisible, which is the whole problem with suppression: it has to be
+	// observable to be defensible.
+	OnDrain func(ctx context.Context, res DrainResult)
 }
 
 // Notifier turns committed change rows into DeclarativeManagement commands
@@ -96,6 +117,10 @@ func NewNotifier(cfg NotifierConfig) (*Notifier, error) {
 	if cfg.Backoff == nil {
 		cfg.Backoff = storage.NotNowBackoff
 	}
+	if cfg.DedupeKey == nil {
+		k := DefaultDedupeKey
+		cfg.DedupeKey = &k
+	}
 	return &Notifier{cfg: cfg, kick: make(chan struct{}, 1)}, nil
 }
 
@@ -112,9 +137,11 @@ func (n *Notifier) Kick() {
 // are logged and retried at the next tick.
 func (n *Notifier) Run(ctx context.Context) error {
 	for {
-		if _, err := n.DrainOnce(ctx); err != nil && ctx.Err() == nil {
+		res, err := n.DrainOnce(ctx)
+		if err != nil && ctx.Err() == nil {
 			n.cfg.Logger.WarnContext(ctx, "ddm: notifier drain", "error", err)
 		}
+		n.report(ctx, res)
 		select {
 		case <-ctx.Done():
 			return ctx.Err()
@@ -124,7 +151,22 @@ func (n *Notifier) Run(ctx context.Context) error {
 	}
 }
 
-// DrainResult counts what one drain did.
+// report makes a drain's outcome visible. Run used to discard the result, so
+// a suppressed or skipped command left no trace anywhere and an operator
+// asking why a device was never woken had nothing to read.
+func (n *Notifier) report(ctx context.Context, res DrainResult) {
+	if n.cfg.OnDrain != nil {
+		n.cfg.OnDrain(ctx, res)
+	}
+	if res.Empty() {
+		return
+	}
+	n.cfg.Logger.DebugContext(ctx, "ddm: notifier drain",
+		"queued", res.Queued, "deduped", res.Deduped, "skipped", res.Skipped,
+		"deferred", res.Deferred, "failed", res.Failed, "pushed", res.Pushed)
+}
+
+// DrainResult counts what one drain did.// DrainResult counts what one drain did.
 type DrainResult struct {
 	// Deferred enrollments were left for a later drain because a change
 	// arrived within Window.
@@ -137,6 +179,11 @@ type DrainResult struct {
 	Failed int
 	// Pushed counts enrollments handed to the Pusher.
 	Pushed int
+}
+
+// Empty reports a drain that did nothing, so a caller can skip reporting it.
+func (r DrainResult) Empty() bool {
+	return r == DrainResult{}
 }
 
 type changeGroup struct {
@@ -225,7 +272,8 @@ func (n *Notifier) command(ctx context.Context, g *changeGroup, now time.Time) (
 	if err != nil {
 		return 0, fmt.Errorf("command: %w", err)
 	}
-	r, err := n.cfg.Enqueuer.Enqueue(ctx, []mdm.EnrollmentID{g.id}, cmd, storage.EnqueueOptions{DedupeKey: DedupeKey, Now: now})
+	r, err := n.cfg.Enqueuer.Enqueue(ctx, []mdm.EnrollmentID{g.id}, cmd,
+		storage.EnqueueOptions{DedupeKey: *n.cfg.DedupeKey, Now: now})
 	if err != nil {
 		return 0, fmt.Errorf("enqueue: %w", err)
 	}
