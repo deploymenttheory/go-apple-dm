@@ -654,7 +654,7 @@ func TestACMEAdminFailures(t *testing.T) {
 		{"ListCertificates", "/admin/v1/acme/certificates"},
 		{"ListOrders", "/admin/v1/acme/orders?account=" + account},
 	} {
-		failing.Fail = map[string]error{c.method: boom}
+		failing.SetFail(map[string]error{c.method: boom})
 		req, _ := http.NewRequestWithContext(ctx, http.MethodGet, f.publicURL+c.path, nil)
 		req.Header.Set("Authorization", "Bearer t")
 		res, err := f.client().Do(req)
@@ -697,7 +697,7 @@ func TestACMEPolicyFaultIsNotARefusal(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	failing.Fail = map[string]error{"ListAccounts": errors.New("the directory is down")}
+	failing.SetFail(map[string]error{"ListAccounts": errors.New("the directory is down")})
 	// The client retries a server error, so the attempt is bounded here
 	// rather than left to give up on its own.
 	attempt, cancel := context.WithTimeout(ctx, 2*time.Second)
@@ -715,7 +715,7 @@ func TestACMEPolicyFaultIsNotARefusal(t *testing.T) {
 	}
 	// Once the store answers again the same device enrols, which is the
 	// point: the refusal was never recorded.
-	failing.Fail = nil
+	failing.SetFail(nil)
 	if err := d.ADEEnroll(ctx, f.publicURL+app.PathADE, simulator.ADEOptions{}); err != nil {
 		t.Fatal(err)
 	}
