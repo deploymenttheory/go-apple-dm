@@ -3,6 +3,7 @@ package deptest
 import (
 	"context"
 	"fmt"
+	"sync"
 	"time"
 
 	"github.com/deploymenttheory/go-apple-mdm/dep"
@@ -15,17 +16,32 @@ import (
 type Failing struct {
 	Store dep.Store
 	// Fail maps a method name (PutDevices, SetCursor, ...) to the error it
-	// returns.
+	// returns. Assign it before the store is in use; a test that turns a
+	// fault on or off while a server is serving must call SetFail, or the
+	// write races the handler goroutine reading it.
 	Fail map[string]error
 	// After lets a method fail only from the Nth call on (1 fails at
 	// once); calls are counted per method.
 	After map[string]int
+
+	// mu guards Fail and calls against a handler goroutine reading them
+	// while a test changes them.
+	mu    sync.Mutex
 	calls map[string]int
 }
 
 var _ dep.Store = (*Failing)(nil)
 
+// SetFail replaces the failure map while the store may be in use.
+func (f *Failing) SetFail(fail map[string]error) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	f.Fail = fail
+}
+
 func (f *Failing) fail(method string) error {
+	f.mu.Lock()
+	defer f.mu.Unlock()
 	err, ok := f.Fail[method]
 	if !ok {
 		return nil

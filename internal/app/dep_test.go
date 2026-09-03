@@ -162,14 +162,14 @@ func TestDEP(t *testing.T) {
 			{"PUT", "/admin/v1/dep/accounts/abm/profile", "PutProfile", profile},
 			{"PUT", "/admin/v1/dep/accounts/abm/profile", "PutAccount", profile},
 		} {
-			failing.Fail = map[string]error{c.fails: boom}
+			failing.SetFail(map[string]error{c.fails: boom})
 			if res := do(t, srv, c.method, c.path, "t", c.body); res.StatusCode != http.StatusInternalServerError {
 				t.Fatalf("%s %s with %s failing = %d", c.method, c.path, c.fails, res.StatusCode)
 			}
 		}
 		// The worker logs store and service failures and keeps running.
 		for _, fails := range []string{"ListAccounts", "GetAccount"} {
-			failing.Fail = map[string]error{fails: boom}
+			failing.SetFail(map[string]error{fails: boom})
 			ctx, cancel := context.WithCancel(ctx)
 			done := make(chan error, 1)
 			go func() { done <- a.Run(ctx) }()

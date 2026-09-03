@@ -1,5 +1,12 @@
 # go-apple-mdm
 
+[![Release](https://img.shields.io/github/v/release/deploymenttheory/go-apple-mdm)](https://github.com/deploymenttheory/go-apple-mdm/releases)
+[![CI](https://github.com/deploymenttheory/go-apple-mdm/actions/workflows/ci.yml/badge.svg)](https://github.com/deploymenttheory/go-apple-mdm/actions/workflows/ci.yml)
+[![Go Reference](https://pkg.go.dev/badge/github.com/deploymenttheory/go-apple-mdm.svg)](https://pkg.go.dev/github.com/deploymenttheory/go-apple-mdm)
+[![Go Version](https://img.shields.io/github/go-mod/go-version/deploymenttheory/go-apple-mdm)](https://go.dev/)
+[![License](https://img.shields.io/github/license/deploymenttheory/go-apple-mdm)](LICENSE)
+![Status: Preview](https://img.shields.io/badge/status-preview-58A6FF)
+
 A pure Go library for Apple device management: the MDM check-in and command protocol,
 Declarative Device Management (DDM), every enrollment path Apple documents (profile, automated,
 account-driven, user channel and Shared iPad), an ACME server with Managed Device Attestation,
@@ -135,12 +142,15 @@ make refs                     # clone the reference projects for research (never
 Coverage floor is 95% overall and per package. See `Makefile` targets with `make help`.
 
 Dependencies stay minimal on purpose: the plist codec, the smallstep CMS and SCEP libraries,
-the SQL drivers, and `golang.org/x/crypto`. OAuth 1.0a, the ES256 client assertion, the OIDC
-relying party, the OAuth 2 authorization server, the ACME server, its JWS layer, and the CBOR
-subset an attestation object needs are all implemented in this module. The simulator drives the
-ACME server with `golang.org/x/crypto/acme`, because testing a server against its own client
-shows only that the two agree. Nothing from NanoMDM or MicroMDM is imported beyond the plist
-package.
+the SQL drivers, `golang.org/x/crypto`, and `cedar-policy/cedar-go` for admin authorization.
+OAuth 1.0a, the ES256 client assertion, the OIDC relying party, the OAuth 2 authorization server,
+the ACME server, its JWS layer, and the CBOR subset an attestation object needs are all
+implemented in this module. Cedar is the one deliberate exception, and decision record 0034 gives
+the reasoning: an authorization policy language is not a few hundred lines of parsing the way a
+JWS serialisation or a CBOR subset is, and hand-rolling one is how the reference CAs ended up
+matching URL prefixes. The simulator drives the ACME server with `golang.org/x/crypto/acme`,
+because testing a server against its own client shows only that the two agree. Nothing from
+NanoMDM or MicroMDM is imported beyond the plist package.
 
 ## Sources
 

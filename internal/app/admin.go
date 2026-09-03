@@ -2,13 +2,11 @@ package app
 
 import (
 	"context"
-	"crypto/subtle"
 	json "encoding/json/v2"
 	"errors"
 	"fmt"
 	"io"
 	"net/http"
-	"strings"
 
 	"github.com/deploymenttheory/go-apple-mdm/ddm"
 	"github.com/deploymenttheory/go-apple-mdm/mdm"
@@ -25,9 +23,10 @@ var (
 	ErrBadChannel   = errors.New("app: channel must be device or user")
 )
 
-// adminHandler is the minimal JSON admin API of the ddm role (decision
-// record 0025): bearer token, declarations, sets, assignments, status,
-// and a manual notifier drain. Phase 8 replaces it.
+// ddmAdminRoutes are the declarative-management admin routes, each declaring
+// the action a policy grants (decision record 0034). The mux is built from
+// this table by buildAdminMux, so a route cannot reach the server without an
+// action, and adminRouteTable is what a test compares against the mounted mux.
 //
 //	PUT    /declarations                                   body: declaration JSON
 //	GET    /declarations/{id}
@@ -41,10 +40,13 @@ var (
 //	GET    /enrollments/{channel}/{id}/status/values
 //	GET    /enrollments/{channel}/{id}/tokens
 //	POST   /notify
-func (a *App) adminHandler() http.Handler {
-	mux := http.NewServeMux()
+func (a *App) ddmAdminRoutes() []adminRoute {
+	var routes []adminRoute
+	add := func(action, pattern string, fn http.HandlerFunc) {
+		routes = append(routes, adminRoute{Pattern: pattern, Action: action, Family: "ddm", Handler: fn})
+	}
 	e := a.Engine
-	mux.HandleFunc("PUT /declarations", func(w http.ResponseWriter, r *http.Request) {
+	add(ActionPutDeclaration, "PUT /declarations", func(w http.ResponseWriter, r *http.Request) {
 		body, err := io.ReadAll(io.LimitReader(r.Body, MaxAdminBody+1))
 		if err != nil || len(body) > MaxAdminBody {
 			writeError(w, http.StatusRequestEntityTooLarge, ErrBodyTooLarge)
@@ -66,7 +68,7 @@ func (a *App) adminHandler() http.Handler {
 			},
 		)
 	})
-	mux.HandleFunc("GET /declarations/{id}", func(w http.ResponseWriter, r *http.Request) {
+	add(ActionGetDeclaration, "GET /declarations/{id}", func(w http.ResponseWriter, r *http.Request) {
 		d, err := e.GetDeclaration(r.Context(), r.PathValue("id"))
 		if err != nil {
 			writeError(w, statusFor(err), err)
@@ -78,10 +80,10 @@ func (a *App) adminHandler() http.Handler {
 			d.Canonical,
 		) // #nosec G705 -- canonical JSON produced by the engine, served as JSON with nosniff
 	})
-	mux.HandleFunc("DELETE /declarations/{id}", func(w http.ResponseWriter, r *http.Request) {
+	add(ActionDeleteDeclaration, "DELETE /declarations/{id}", func(w http.ResponseWriter, r *http.Request) {
 		respond(w, e.DeleteDeclaration(r.Context(), r.PathValue("id")))
 	})
-	mux.HandleFunc(
+	add(ActionAssignSet,
 		"PUT /sets/{set}/declarations/{id}",
 		func(w http.ResponseWriter, r *http.Request) {
 			set := r.PathValue("set")
@@ -93,14 +95,14 @@ func (a *App) adminHandler() http.Handler {
 			respondChanged(w, changed, err)
 		},
 	)
-	mux.HandleFunc(
+	add(ActionAssignSet,
 		"DELETE /sets/{set}/declarations/{id}",
 		func(w http.ResponseWriter, r *http.Request) {
 			changed, err := e.RemoveFromSet(r.Context(), r.PathValue("set"), r.PathValue("id"))
 			respondChanged(w, changed, err)
 		},
 	)
-	mux.HandleFunc(
+	add(ActionAssignSet,
 		"PUT /enrollments/{channel}/{id}/sets/{set}",
 		func(w http.ResponseWriter, r *http.Request) {
 			id, err := enrollmentFromPath(r)
@@ -112,7 +114,7 @@ func (a *App) adminHandler() http.Handler {
 			respondChanged(w, changed, err)
 		},
 	)
-	mux.HandleFunc(
+	add(ActionAssignSet,
 		"DELETE /enrollments/{channel}/{id}/sets/{set}",
 		func(w http.ResponseWriter, r *http.Request) {
 			id, err := enrollmentFromPath(r)
@@ -124,8 +126,8 @@ func (a *App) adminHandler() http.Handler {
 			respondChanged(w, changed, err)
 		},
 	)
-	enrollmentGet := func(pattern string, fn func(context.Context, mdm.EnrollmentID) (any, error)) {
-		mux.HandleFunc(
+	enrollmentGet := func(action, pattern string, fn func(context.Context, mdm.EnrollmentID) (any, error)) {
+		add(action,
 			"GET /enrollments/{channel}/{id}/"+pattern,
 			func(w http.ResponseWriter, r *http.Request) {
 				id, err := enrollmentFromPath(r)
@@ -142,7 +144,7 @@ func (a *App) adminHandler() http.Handler {
 			},
 		)
 	}
-	enrollmentGet(
+	enrollmentGet(ActionReadEnrollment,
 		"declarations",
 		func(ctx context.Context, id mdm.EnrollmentID) (any, error) {
 			// The effective static list: direct assignments and set members.
@@ -157,14 +159,14 @@ func (a *App) adminHandler() http.Handler {
 			return ids, nil
 		},
 	)
-	enrollmentGet(
+	enrollmentGet(ActionReadEnrollmentStatus,
 		"status",
 		func(ctx context.Context, id mdm.EnrollmentID) (any, error) { return e.DeclarationStatus(ctx, id) },
 	)
-	enrollmentGet("status/values", func(ctx context.Context, id mdm.EnrollmentID) (any, error) {
+	enrollmentGet(ActionReadEnrollmentStatus, "status/values", func(ctx context.Context, id mdm.EnrollmentID) (any, error) {
 		return e.StatusValues(ctx, id, ddm.StatusValueQuery{}, storage.Page{Limit: 1000})
 	})
-	enrollmentGet("tokens", func(ctx context.Context, id mdm.EnrollmentID) (any, error) {
+	enrollmentGet(ActionReadEnrollment, "tokens", func(ctx context.Context, id mdm.EnrollmentID) (any, error) {
 		body, err := e.Tokens(ctx, id)
 		if err != nil {
 			return nil, fmt.Errorf("app: tokens: %w", err)
@@ -175,7 +177,7 @@ func (a *App) adminHandler() http.Handler {
 		}
 		return v, nil
 	})
-	mux.HandleFunc("POST /notify", func(w http.ResponseWriter, r *http.Request) {
+	add(ActionNotify, "POST /notify", func(w http.ResponseWriter, r *http.Request) {
 		res, err := a.Notifier.DrainOnce(r.Context())
 		if err != nil {
 			writeError(w, http.StatusInternalServerError, err)
@@ -183,21 +185,7 @@ func (a *App) adminHandler() http.Handler {
 		}
 		writeJSON(w, http.StatusOK, res)
 	})
-	return a.requireToken(mux)
-}
-
-// requireToken checks "Authorization: Bearer <AdminToken>" in constant time.
-func (a *App) requireToken(next http.Handler) http.Handler {
-	want := []byte(a.cfg.AdminToken)
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		got, ok := strings.CutPrefix(r.Header.Get("Authorization"), "Bearer ")
-		if !ok || subtle.ConstantTimeCompare([]byte(got), want) != 1 {
-			w.Header().Set("WWW-Authenticate", `Bearer realm="mdm-admin"`)
-			writeError(w, http.StatusUnauthorized, ErrUnauthorized)
-			return
-		}
-		next.ServeHTTP(w, r)
-	})
+	return routes
 }
 
 func enrollmentFromPath(r *http.Request) (mdm.EnrollmentID, error) {

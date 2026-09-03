@@ -11,6 +11,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/deploymenttheory/go-apple-mdm/adminauth"
 	"github.com/deploymenttheory/go-apple-mdm/axm"
 	"github.com/deploymenttheory/go-apple-mdm/cms"
 	"github.com/deploymenttheory/go-apple-mdm/ddm"
@@ -23,6 +24,7 @@ import (
 	"github.com/deploymenttheory/go-apple-mdm/event"
 	"github.com/deploymenttheory/go-apple-mdm/httpapi"
 	"github.com/deploymenttheory/go-apple-mdm/internal/clock"
+	"github.com/deploymenttheory/go-apple-mdm/push"
 	"github.com/deploymenttheory/go-apple-mdm/service"
 	"github.com/deploymenttheory/go-apple-mdm/storage"
 	"github.com/deploymenttheory/go-apple-mdm/storage/inmem"
@@ -63,8 +65,14 @@ type Config struct {
 	// DDMSendKey signs what this role sends across the hop; DDMRecvKey
 	// verifies what it receives.
 	DDMSendKey, DDMRecvKey []byte
-	// AdminToken enables the admin API on the ddm and all roles.
+	// AdminToken enables the admin API on the ddm and all roles with a single
+	// static credential that bypasses policy. It is the development opt-out;
+	// AdminStore is what a deployment uses.
 	AdminToken string
+	// AdminStore holds admin principals and Cedar policies. When set, every
+	// admin request is authenticated against it and authorized by policy
+	// (decision record 0034). It takes precedence over AdminToken.
+	AdminStore adminauth.Store
 	// CAFile is a PEM bundle of roots that device identities chain to;
 	// the mdm role then verifies Mdm-Signature on every check-in and
 	// connect. CARoots is the parsed form (tests set it directly).
@@ -86,7 +94,11 @@ type Config struct {
 	AxM AxMConfig
 	// DEP configures the device enrollment service client and worker;
 	// its admin routes live under the admin API too.
-	DEP    DEPConfig
+	DEP DEPConfig
+	// Push selects where APNs credentials come from. With no source the
+	// server queues commands and never wakes a device, which is what it did
+	// before phase 8.
+	Push   PushConfig
 	Logger *slog.Logger
 	Clock  clock.Clock
 	Bus    *event.Bus
@@ -105,14 +117,22 @@ type App struct {
 	// AxM is the Business Manager client when configured.
 	AxM *axm.Client
 	// DEP is the device enrollment service; nil on the mdm role.
-	DEP     *dep.Client
-	acme    *acmeService
-	dep     *depService
-	cfg     Config
-	enroll  *enrollment
-	db      *sql.DB
-	dialect sqlcommon.Dialect
-	closers []func() error
+	DEP *dep.Client
+	// Push wakes devices; nil when no push source is configured.
+	Push *push.Notifier
+	// admin authorizes admin callers against the stored Cedar policies. It
+	// is nil when the deployment configured the static MDM_ADMIN_TOKEN
+	// instead, which bypasses policy by design (decision record 0034).
+	admin *adminauth.Manager
+	// adminTable is the mounted admin route table, served by GET /routes.
+	adminTable []adminRoute
+	acme       *acmeService
+	dep        *depService
+	cfg        Config
+	enroll     *enrollment
+	db         *sql.DB
+	dialect    sqlcommon.Dialect
+	closers    []func() error
 }
 
 // Build validates cfg, opens storage, and wires the role.
@@ -163,6 +183,9 @@ func (c Config) validate() error {
 		return fmt.Errorf("%w: DDM URL is only for the mdm role", ErrConfig)
 	}
 	if err := c.Enroll.validate(); err != nil {
+		return err
+	}
+	if err := c.Push.validate(); err != nil {
 		return err
 	}
 	return c.AxM.validate()
@@ -274,11 +297,23 @@ func (a *App) wire(ctx context.Context) error {
 		return fmt.Errorf("app: engine: %w", err)
 	}
 	a.Engine = engine
+	// Without a Pusher the notifier treats every group as delivered, so a
+	// declaration change queues a command and never wakes the device. That
+	// was the reference server's behaviour before phase 8.
+	a.Push, err = a.wirePush()
+	if err != nil {
+		return err
+	}
+	var pusher ddm.Pusher
+	if a.Push != nil {
+		pusher = a.Push
+	}
 	a.Notifier, err = ddm.NewNotifier(
 		ddm.NotifierConfig{
 			Store:    st,
 			Tokens:   engine,
 			Enqueuer: a.Store,
+			Pusher:   pusher,
 			Bus:      cfg.Bus,
 			Clock:    cfg.Clock,
 			Logger:   cfg.Logger,
@@ -355,25 +390,40 @@ func (a *App) wire(ctx context.Context) error {
 		}
 		mux.Handle(PathDDM+"/", http.StripPrefix(PathDDM, ps))
 	}
-	if cfg.Role != RoleMDM && cfg.AdminToken != "" {
-		admin := http.NewServeMux()
-		admin.Handle("/", a.adminHandler())
+	if cfg.Role != RoleMDM && a.adminEnabled() {
+		if cfg.AdminStore != nil {
+			m, err := adminauth.New(cfg.AdminStore, mustAdminRegistry(), adminauth.WithClock(cfg.Clock))
+			if err != nil {
+				return fmt.Errorf("app: admin authorization: %w", err)
+			}
+			a.admin = m
+		}
+		var routes []adminRoute
+		routes = append(routes, a.introspectionRoutes()...)
+		routes = append(routes, a.ddmAdminRoutes()...)
+		if a.admin != nil {
+			routes = append(routes, a.principalRoutes()...)
+		}
 		if cfg.AxM.Enabled() {
 			client, err := a.newAxM(ctx)
 			if err != nil {
 				return err
 			}
 			a.AxM = client
-			admin.Handle("/axm/", a.requireToken(a.axmHandler(client)))
+			routes = append(routes, adminRoute{Pattern: "/axm/", Action: ActionManageBusinessMgr, Family: "axm", Handler: a.axmHandler(client)})
 		}
 		if a.dep == nil {
 			if err := a.wireDEP(ctx); err != nil {
 				return err
 			}
 		}
-		admin.Handle("/dep/", a.requireToken(a.dep.handler()))
+		routes = append(routes, adminRoute{Pattern: "/dep/", Action: ActionManageDEP, Family: "dep", Handler: a.dep.handler()})
 		if a.acme != nil {
-			admin.Handle("/acme/", a.requireToken(a.acme.handler()))
+			routes = append(routes, adminRoute{Pattern: "/acme/", Action: ActionReadACME, Family: "acme", Handler: a.acme.handler()})
+		}
+		admin, err := a.buildAdminMux(routes)
+		if err != nil {
+			return err
 		}
 		mux.Handle(PathAdmin, http.StripPrefix(PathAdmin[:len(PathAdmin)-1], admin))
 	}

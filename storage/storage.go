@@ -71,6 +71,9 @@ type EnrollmentQuery struct {
 	Channel  mdm.Channel
 	Enabled  *bool
 	ParentID string
+	// Serial matches Device.SerialNumber exactly. The SQL backends index
+	// this column, so it is a lookup rather than a scan.
+	Serial string
 }
 
 // Page requests one page of results. An empty Cursor starts from the

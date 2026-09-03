@@ -49,7 +49,9 @@ schema/ddm              Declarations: configurations, activations, assets, manag
 schema/ddmproto         DeclarationItems, TokensResponse / SynchronizationTokens, StatusReport envelope
 schema/status           48 status item structs + dotted-path registry (".StatusItems.device.model.family" -> type)
 schema/other            MachineInfo, ManifestURL, PasswordHash, SkipKeys, ESSO
-schema/support          Runtime metadata: Supports(key, os, version, channel, ctx), Removed(key), Deprecated(key)
+schema/support          Runtime metadata: Lookup(family, path) and (*Entry).Check(Target) answering
+                        availability, introduction, deprecation, removal, channel, supervision, DEP,
+                        Shared iPad and User Enrollment; Families()/Paths() enumerate it (0036)
 schema/PROVENANCE.json  Upstream repo, ref, commit, sha256 of YAML tree, fetch date, generator version
 schema/NAMES.lock       Every exported identifier; regeneration may add, never silently remove (see section 2)
 internal/schemagen/     The generator: YAML loader -> intermediate model -> Go, metadata, and conformance-test emitters
@@ -66,8 +68,13 @@ ddm/adapter/proxyserver ingress for check-ins forwarded by our mdm role (Apple c
 ddm/adapter/proxyclient the inverse: our mdm role forwards check-ins to a remote ddm role
 cms/                    PKCS7 sign/verify with clock-skew tolerance and chain policy (wraps smallstep/pkcs7)
 service/                Service interfaces, Core implementation, typed errors, Hook chain
-service/hooks/          Built-in hooks: audit, rate limit, cert pinning, metrics adapters
-event/                  Typed in-process event bus; sinks: webhook (MicroMDM-compatible), slog, OpenTelemetry
+service/hooks/          Built-in hooks: audit, rate limit, metrics (phase 9). Certificate pinning is
+                        deliberately not a hook: it ships as service.Config.Pinning on Core (0014)
+event/                  Typed in-process event bus; sinks: webhook (MicroMDM-compatible), slog, OpenTelemetry (phase 9)
+adminauth/              Admin authorization: Cedar policies over per-route actions, principals and
+                        roles, and hashed, checksummed API tokens; adminauth/inmem,
+                        adminauth/sqlstore (own migration set), adminauth/adminauthtest contract
+                        suite (0034)
 storage/                Interfaces split by concern, Page/Cursor, sentinel errors
 storage/inmem           Always compiled; used by every unit test
 storage/sqlite          modernc.org/sqlite, WAL
@@ -106,7 +113,10 @@ simulator/              Public device simulator: MDM v1 + DDM client, fault inje
 secrets/                Provider interface (env, file, test); redacting String()
 internal/clock, internal/canonjson (RFC 8785), internal/app (server wiring, testable); UUIDv7 from the standard `uuid` package (Go 1.27)
 cmd/mdmserver           Reference server, wiring only (<100 lines)
-cmd/mdmctl              Admin CLI over the reference server API
+cmd/mdmctl              Admin CLI, wiring only; the logic lives in internal/mdmctl (dispatch,
+                        rendering, config), internal/mdmctl/adminclient, and internal/mdmctl/explain,
+                        which are gated at 95% because cmd/ statements still count toward the overall
+                        coverage figure even though the package is exempt per package (0035)
 third_party/device-management   Git submodule pinned by commit; PROVENANCE.json records commit, sha256, date
 third_party/refs/       Git-ignored read-only clones of reference repos (make refs)
 docs/research/decisions/        ADR-lite decision records (one per feature)
@@ -145,9 +155,13 @@ This is the foundation everything else builds on, so it is Phase 1.
     nested; errors collected into `[]*schema.ValidationError{Path, Key, Rule}`, not first-fail;
     passing a target OS version also flags keys unsupported on that version, channel, or
     supervision state. No reference does version-aware validation.
-  - `schema/support`: `Supports(key Path, os OS, v Version, ch Channel, c Context) Support` and
-    `Removed(key Path) []Removal` from a compact table. Used by validation, the simulator (a fake
-    iOS 17 device rejects keys it would not accept), and `mdmctl explain`.
+  - `schema/support`: `Register(family, table)` and `Lookup(family, path) *Entry` over a compact
+    generated table, with `(*Entry).Check(Target) Result` answering availability, introduction,
+    deprecation, removal, channel, supervision, DEP, user approval, Shared iPad and User Enrollment
+    for a given OS and version, and `Families()`/`Paths(family)` enumerating it. Used by validation,
+    the simulator (a fake iOS 17 device rejects keys it would not accept), and `mdmctl explain`.
+    (This paragraph described `Supports(...)` and `Removed(...)` until phase 8; those signatures
+    were never built and the shipped API is the one above. Corrected by record 0036.)
   - Generated conformance tests per package (see section 6).
 - **Naming contract**: Go identifier = Apple key with dots and hyphens removed, segments
   title-cased, Apple's capitalisation preserved (`UDID`, `OSUpdate`), reserved words suffixed.
@@ -322,7 +336,9 @@ Layers, each with a Makefile target and CI job:
 **Gate** (`scripts/coverage-gate.sh`, `COVERAGE_MIN=95`): unit with `-race -coverpkg=./...`,
 storage integration, e2e profiles merged with `go tool covdata`; fail if overall or any non-exempt
 package is under 95%; print the ten least-covered functions; upload HTML. Exemptions in
-`scripts/coverage-exempt.txt` with reasons: `cmd/...` (wiring under 100 lines), `*.gen.go`,
+`scripts/coverage-exempt.txt` with reasons: `cmd/...` (wiring only; note the exemption suppresses
+the per-package line but not the overall figure, since `-coverpkg=./...` still counts those
+statements, so a fat `main` fails the gate anyway), `*.gen.go`,
 `storage/storagetest`, `push/pushtest`, `simulator` (measured, not gated). Injectable fakes for
 every I/O boundary: `clock.Clock`, `push.Transport`, `ca.Signer`, per-method error-injecting
 storage wrapper, recorded round-trippers for DEP and ABM.
@@ -335,7 +351,7 @@ storage wrapper, recorded round-trippers for DEP and ABM.
 | `go-test.yml` | `unit` | `gotestsum -- -race -shuffle=on ./...`, ubuntu and macos |
 | `go-test.yml` | `generate-check` | `go generate ./...` then `git diff --exit-code`; rename-guard test |
 | `go-test.yml` | `storage-integration` | services `postgres:17`, `mysql:8.4`; `-tags integration ./storage/...` |
-| `go-test.yml` | `e2e` | reference server plus simulator on SQLite; NanoMDM container interop for proxyserver |
+| `go-test.yml` | `e2e` | reference server plus simulator on SQLite and PostgreSQL; our own `ddm`-role container for the split-deployment hop (record 0025 superseded the NanoMDM interop container: both sides of the wire are ours) |
 | `go-test.yml` | `coverage-gate` | needs the above; merges profiles; runs the gate |
 | `go-test.yml` | `fuzz-smoke` | `make fuzz-smoke` |
 | `security.yml` | `govulncheck`, `gosec-sarif` | vulnerability scan; SARIF to code scanning |
@@ -380,7 +396,10 @@ No code until step 3 is committed.
 
 ## 9. Phases
 
-Order gives a working MDM v1 early, DDM next, then enrollment breadth, ACME, and hardening.
+Order gives a working MDM v1 early, DDM next, then enrollment breadth, ACME, the admin surface,
+operations, and hardening. Phase 8 was one row covering the reference server and ops until
+2026-09-02; it was split into phase 8 (admin API, authorization, `mdmctl`) and phase 9
+(observability and operations), moving hardening and v1 to phase 10.
 Sizes are relative (S/M/L).
 
 | # | Goal | Delivers | Read first | Apple sources | Better-than targets | Exit criteria | Size |
@@ -393,14 +412,15 @@ Sizes are relative (S/M/L).
 | 5 | DDM engine | `ddm`, `ddm/adapter/*`, notifier, simulator DDM client | kmfddm `ddm/*`, `storage/*`, `http/api`; Fleet `server/service/apple_mdm.go` DDM handlers and `docs/Contributing/architecture/mdm/apple-declarative-device-management.md`; Zentral `zentral/contrib/mdm/declarations/protocol.py` | Declarations, Status items, DeclarativeManagementRequest, Integrating DDM; `declarative/**` | Canonical tokens (RFC 8785); dynamic membership; per-enrollment snapshots; status values retained; synthesised status subscriptions; unenroll cleanup (#41); coalesced notifier (#11); Apple's check-in forwarded verbatim between our own roles (no NanoMDM code); predicates validated at upload; delivered with records 0019 to 0025, `internal/app`, `cmd/mdmserver`, and the Dockerfile in minimal form | e2e: change, push, tokens, items, fetch, status verified; predicate scenario; split-deployment interop: our own image in the ddm role driven by our proxyclient (E2E-010) | L |
 | 6 | Enrollment breadth | user and Shared iPad channels (0029), account-driven discovery and both auth flows (0028), `dep` with syncer, assigner, stores, and fake (0026), ADE MachineInfo, web view OIDC auth, software update gate (0027), `axm` batteries included with fake (0030), `gdmf` | nanodep `godep`, `client`; Zentral `dep.py`, `public_views/user.py`; Fleet `server/mdm/apple/apple_bm.go`; `vbnin/Apple-JSON-discovery-server`; `korylprince/dep-webview-oidc` | Device enrollment, Device assignment, account-driven pages; `other/machineinfo.yaml` | Cursor expiry handling; per-user-type discovery; typed MachineInfo | e2e: DEP profile assign and ADE enrol (fake DEP), ADE web view auth (fake IdP), account-driven discovery and both flows, user channel commands, Shared iPad, ABM assignment through the fake AxM (E2E-011 to E2E-013, E2E-018 to E2E-021) | L |
 | 7 | ACME and attestation | `acme` server with `device-attest-01`, `acme/jose`, `acme/attest` and `attesttest`, `internal/cbor`, `acme/inmem` and `acme/sqlstore`, `ca` otherName SANs, ACME payload in `enroll`, simulator client, reference server wiring (0031-0033) | `brandonweeks/nanoca` handlers and verifier; step-ca `acme/challenge.go`, `acme/order.go`; `hslatman/ios-acme-simulator`; Fleet `server/mdm/acme` | Identity management: Validating a Managed Device Attestation; `mdm/profiles/com.apple.security.acme.yaml`, `declarative/declarations/assets/credential.acme.yaml` and `assets/credentials/acme.yaml`, `mdm/commands/information.device.yaml` | One-time client identifiers bound to a device; attested key bound to the CSR; freshness required, not optional; all ten OIDs parsed by their documented type; policy hooks; nonce expiry and body limits | e2e: ACME enrol with simulated attestation, rejected chain, wrong key, replayed identifier (E2E-014); declarative ACME identity (E2E-022); DeviceInformation attestation (E2E-023) | M |
-| 8 | Reference server and ops | `cmd/mdmserver`, `cmd/mdmctl` (including `explain <RequestType|declaration>` backed by `schema/support`), `internal/app`, metrics, health and readiness, compose lab, docs | nanohub `cmd/nanohub`, `macadmins/nanohubctl`; Fleet health and metrics | Deployment guide | Single binary with all backends; readiness semantics | Lab enrols a real device via SCEP and receives a DDM declaration | M |
-| 9 | Hardening and v1 | Fuzz corpus, 10k-device load test, OS 27 seed schema conformance, security review, API freeze, `v1.0.0` | Reference issue tracker sweep | `seed_OS_27_0` branch; WWDC26 updates page | No regressions across schema versions | All DoD items; two minor releases with a frozen API | M |
+| 8 | Admin API, authorization, and `mdmctl` | Cedar policies over per-route actions with an `AdminAuthorizer` seam; persisted admin principals with hashed, checksummed tokens on their own migration set (`adminauth`); the extended admin API (enrollment inventory, command enqueue and queue reads, push certificates, export and import, DDM and DEP parity, principals) mounted per role; `cmd/mdmctl` over it with an offline `explain <RequestType\|declaration>` backed by `schema/support`; APNs push wired into `internal/app`; `http.Server` hardening and a shutdown that waits for workers (records 0034 to 0036) | Fleet `server/authz` (Rego policy, `authzcheck`, `AuthorizeOrNotFound`); Zentral `server/pbac`, `utils/token.py`, `accounts/models.py`; step-ca `authority/authorize.go`, `authority/admin/api`; `macadmins/nanohubctl`; micromdm `cmd/mdmctl`; nanomdm and kmfddm `http/api` | Commands and queries; Check-in; Device assignment | Per-request least privilege (a policy can let a CI credential enqueue an inventory command but not an erase) where every reference has one shared secret; tokens hashed and revocable where Fleet stores them in plaintext and never expires them; actions declared as route data and proven by a test, where step-ca matches a URL prefix; a policy naming an action nobody serves refused at write time, where Cedar alone would accept it and never grant; authorization *denials* audited, which neither Fleet nor Zentral does | `mdmctl` drives every admin route; a read-only principal is refused and the refusal is audited; a rotated token is rejected; the reference server wakes a device; 95% | L |
+| 9 | Observability and operations | OpenTelemetry metrics with bounded cardinality, the event sinks `event/doc.go` promises (slog audit, MicroMDM-compatible webhook), `service/hooks` (metrics, audit, rate limit), liveness and readiness split from `/healthz`, the compose lab, the deployment guide | Fleet health, metrics and activity feed; micromdm `workflow/webhook`; nanomdm `service/webhook`; nanomdm and kmfddm operations guides | Deployment guide | Readiness semantics rather than a bound port; no device-supplied string ever becomes a metric label | E2E-015 readiness fails and recovers; the lab enrols a real device via SCEP and receives a DDM declaration | M |
+| 10 | Hardening and v1 | Fuzz corpus, 10k-device load test, OS 27 seed schema conformance, security review, API freeze, `v1.0.0` | Reference issue tracker sweep | `seed_OS_27_0` branch; WWDC26 updates page | No regressions across schema versions | All DoD items; two minor releases with a frozen API | M |
 
 **Definition of done per phase**: all phase packages at 95% or exempt; conformance generated for
 every YAML the phase claims; e2e scenarios pass on SQLite and PostgreSQL; a decision record per
 feature; package docs cite Apple sources; `make ci` green; conventional-commit CHANGELOG entry.
 
-**Versioning**: `v0.x` until phase 9. Cut `v1.0.0` when MDM v1, DDM, SCEP, APNs, and four
+**Versioning**: `v0.x` until phase 10. Cut `v1.0.0` when MDM v1, DDM, SCEP, APNs, and four
 backends are done, an external consumer has run the simulator suite, the threat model review is
 closed, and the public API has been frozen for two minor releases.
 
@@ -440,4 +460,6 @@ closed, and the public API has been frozen for two minor releases.
 - From phase 2 on, every phase ends with named e2e scenarios in `docs/testing/e2e-scenarios.md`
   passing via `make test-e2e`, storage suites via `make test-storage`, and the gate via
   `scripts/coverage-gate.sh` reporting at least 95%.
-- Phase 8 ends with a real device enrolling in the compose lab and receiving a DDM declaration.
+- Phase 8 ends with `mdmctl` driving every admin route, a read-only principal refused and the
+  refusal audited, a rotated token rejected, and the reference server waking a device.
+- Phase 9 ends with a real device enrolling in the compose lab and receiving a DDM declaration.
