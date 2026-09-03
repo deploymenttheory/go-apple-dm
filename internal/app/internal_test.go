@@ -4,6 +4,10 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"fmt"
+	"io"
+	"log/slog"
+	"net/http"
 	"net/http/httptest"
 	"path/filepath"
 	"strings"
@@ -14,6 +18,7 @@ import (
 
 	"github.com/deploymenttheory/go-apple-mdm/ddm"
 	"github.com/deploymenttheory/go-apple-mdm/internal/testpki"
+	"github.com/deploymenttheory/go-apple-mdm/storage"
 	"github.com/deploymenttheory/go-apple-mdm/storage/sqlite"
 )
 
@@ -280,5 +285,40 @@ func TestAuditStoreOpenFailureIsReported(t *testing.T) {
 	a := &App{cfg: Config{Sinks: SinkConfig{Persist: true}}, db: db, dialect: sqlite.Dialect}
 	if _, err := a.auditStore(context.Background()); err == nil {
 		t.Fatal("auditStore = nil error on a closed database")
+	}
+}
+
+// The admin MDM routes all funnel their storage errors through one mapper, so
+// the mapping is pinned here rather than inferred from a handful of route
+// tests. Getting it wrong turns "this device checked out" into "internal
+// error", which sends an operator looking in the wrong place.
+func TestStorageStatusMapping(t *testing.T) {
+	a := &App{cfg: Config{Logger: slog.New(slog.NewTextHandler(io.Discard, nil))}}
+	cases := map[string]struct {
+		err  error
+		want int
+	}{
+		"NotFound": {storage.ErrNotFound, http.StatusNotFound},
+		"Invalid":  {storage.ErrInvalid, http.StatusBadRequest},
+		"Channel":  {ErrBadChannel, http.StatusBadRequest},
+		"Conflict": {storage.ErrConflict, http.StatusConflict},
+		"Disabled": {storage.ErrDisabled, http.StatusGone},
+		"Unknown":  {errors.New("the database fell over"), http.StatusInternalServerError},
+	}
+	for name, tc := range cases {
+		t.Run(name, func(t *testing.T) {
+			rec := httptest.NewRecorder()
+			r := httptest.NewRequest(http.MethodGet, "/admin/v1/enrollments", nil)
+			a.storageStatus(rec, r, fmt.Errorf("wrapped: %w", tc.err))
+			if rec.Code != tc.want {
+				t.Fatalf("code = %d, want %d", rec.Code, tc.want)
+			}
+			// An unmapped cause is the operator's to read in the log, not
+			// the caller's to read in the body.
+			if tc.want == http.StatusInternalServerError &&
+				strings.Contains(rec.Body.String(), "fell over") {
+				t.Fatalf("the cause leaked: %s", rec.Body.String())
+			}
+		})
 	}
 }
