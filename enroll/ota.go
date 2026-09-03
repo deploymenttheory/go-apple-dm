@@ -45,6 +45,11 @@ const (
 	AttrICCID   = "ICCID"
 )
 
+// AttrChallenge is the key the device echoes the profile's Challenge back
+// under. It is not a device attribute a profile requests, so it is not part
+// of DefaultDeviceAttributes, but it is read from the same dictionary.
+const AttrChallenge = "CHALLENGE"
+
 // DefaultDeviceAttributes is a sensible request list.
 var DefaultDeviceAttributes = []string{AttrUDID, AttrVersion, AttrProduct, AttrSerial}
 
@@ -169,7 +174,7 @@ func (s *OTAService) Verify(body []byte) (*OTARequest, error) {
 	}
 	a := DeviceAttributes{Raw: raw}
 	a.UDID, a.Version, a.Product, a.Serial = str(raw, AttrUDID), str(raw, AttrVersion), str(raw, AttrProduct), str(raw, AttrSerial)
-	a.IMEI, a.MEID, a.ICCID, a.Challenge = str(raw, AttrIMEI), str(raw, AttrMEID), str(raw, AttrICCID), str(raw, "CHALLENGE")
+	a.IMEI, a.MEID, a.ICCID, a.Challenge = str(raw, AttrIMEI), str(raw, AttrMEID), str(raw, AttrICCID), str(raw, AttrChallenge)
 	if a.UDID == "" {
 		return nil, fmt.Errorf("%w: UDID missing from attributes", ErrOTA)
 	}

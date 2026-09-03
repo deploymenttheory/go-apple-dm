@@ -1372,3 +1372,58 @@ func TestConformanceRegistry(t *testing.T) {
 		t.Error("missing support entry for TestStringValue")
 	}
 }
+
+func TestConformanceReasons(t *testing.T) {
+	t.Parallel()
+	consts := []string{
+		status.ReasonErrorAppStoreDisabled,
+		status.ReasonErrorDownloadFailed,
+		status.ReasonErrorDuplicateConfiguredApp,
+		status.ReasonErrorInstallFailed,
+		status.ReasonErrorInvalidAppID,
+		status.ReasonErrorInvalidCodeSignature,
+		status.ReasonErrorIsSystemApp,
+		status.ReasonErrorLicenseNotFound,
+		status.ReasonErrorNotAnApp,
+		status.ReasonErrorNotSupported,
+		status.ReasonErrorUnmanagedAppAlreadyInstalled,
+		status.ReasonErrorUpdateFailed,
+		status.ReasonErrorUserRejected,
+		status.ReasonInfoUpdateAvailable,
+	}
+	if len(status.Reasons) != 14 {
+		t.Fatalf("Reasons has %d codes, want 14", len(status.Reasons))
+	}
+	for _, code := range consts {
+		if _, ok := status.Reasons[code]; !ok {
+			t.Errorf("constant %q is not in Reasons", code)
+		}
+	}
+	for code, entries := range status.Reasons {
+		if len(entries) == 0 {
+			t.Errorf("%q has no entries", code)
+		}
+		for _, en := range entries {
+			if en.Code != code || en.Schema == "" || en.Description == "" {
+				t.Errorf("entry for %q is incomplete: %+v", code, en)
+			}
+			for _, d := range en.Details {
+				if d.Key == "" || d.Type == "" {
+					t.Errorf("detail of %q is incomplete: %+v", code, d)
+				}
+			}
+		}
+	}
+	got := status.ReasonCodes()
+	if len(got) != len(consts) {
+		t.Fatalf("ReasonCodes() = %d, want %d", len(got), len(consts))
+	}
+	for i, code := range got {
+		if code != consts[i] {
+			t.Errorf("ReasonCodes()[%d] = %q, want %q", i, code, consts[i])
+		}
+	}
+	if _, ok := status.Reasons["Error.NoSuchReason"]; ok {
+		t.Error("Reasons contains a code Apple does not declare")
+	}
+}

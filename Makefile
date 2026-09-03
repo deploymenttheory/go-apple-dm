@@ -31,6 +31,7 @@ submodule:
 ## generate: regenerate schema packages from the vendored Apple YAML
 generate: submodule
 	$(GO) generate ./...
+	$(GO) run ./cmd/admgen generate
 
 ## verify: fail if regeneration changes anything or removes an exported identifier
 verify: submodule

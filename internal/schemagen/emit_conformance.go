@@ -134,7 +134,35 @@ func (e *emitter) conformanceFile() []byte {
 		)
 	}
 	b.WriteString("}\n")
+	e.reasonsConformance(b)
 	return b.Bytes()
+}
+
+// reasonsConformance emits the test that pins the reason vocabulary: the
+// constants and the map are one set, so a caller may treat the map as the
+// bound on what a device can report.
+func (e *emitter) reasonsConformance(b *bytes.Buffer) {
+	decls := e.reasons()
+	if len(decls) == 0 {
+		return
+	}
+	codes := reasonCodes(decls)
+	pkg := e.pkg.Name
+	fmt.Fprintf(b, "\nfunc TestConformanceReasons(t *testing.T) {\n\tt.Parallel()\n")
+	fmt.Fprintf(b, "\tconsts := []string{\n")
+	for _, code := range codes {
+		fmt.Fprintf(b, "\t\t%s.%s,\n", pkg, reasonConstName(code))
+	}
+	b.WriteString("\t}\n")
+	fmt.Fprintf(b, "\tif len(%s.Reasons) != %d {\n\t\tt.Fatalf(\"Reasons has %%d codes, want %d\", len(%s.Reasons))\n\t}\n",
+		pkg, len(codes), len(codes), pkg)
+	fmt.Fprintf(b, "\tfor _, code := range consts {\n\t\tif _, ok := %s.Reasons[code]; !ok {\n\t\t\tt.Errorf(\"constant %%q is not in Reasons\", code)\n\t\t}\n\t}\n", pkg)
+	fmt.Fprintf(b, "\tfor code, entries := range %s.Reasons {\n\t\tif len(entries) == 0 {\n\t\t\tt.Errorf(\"%%q has no entries\", code)\n\t\t}\n", pkg)
+	b.WriteString("\t\tfor _, en := range entries {\n\t\t\tif en.Code != code || en.Schema == \"\" || en.Description == \"\" {\n\t\t\t\tt.Errorf(\"entry for %q is incomplete: %+v\", code, en)\n\t\t\t}\n")
+	b.WriteString("\t\t\tfor _, d := range en.Details {\n\t\t\t\tif d.Key == \"\" || d.Type == \"\" {\n\t\t\t\t\tt.Errorf(\"detail of %q is incomplete: %+v\", code, d)\n\t\t\t\t}\n\t\t\t}\n\t\t}\n\t}\n")
+	fmt.Fprintf(b, "\tgot := %s.ReasonCodes()\n\tif len(got) != len(consts) {\n\t\tt.Fatalf(\"ReasonCodes() = %%d, want %%d\", len(got), len(consts))\n\t}\n", pkg)
+	b.WriteString("\tfor i, code := range got {\n\t\tif code != consts[i] {\n\t\t\tt.Errorf(\"ReasonCodes()[%d] = %q, want %q\", i, code, consts[i])\n\t\t}\n\t}\n")
+	fmt.Fprintf(b, "\tif _, ok := %s.Reasons[\"Error.NoSuchReason\"]; ok {\n\t\tt.Error(\"Reasons contains a code Apple does not declare\")\n\t}\n}\n", pkg)
 }
 
 // sampleDepth bounds sample nesting. Apple's deepest non-recursive

@@ -16,9 +16,21 @@ func TestGenerateWholeTree(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Run: %v", err)
 	}
-	// 8 packages x 6 files + NAMES.lock
-	if len(files) != 8*6+1 {
+	// 8 packages x 6 files + NAMES.lock, plus reasons.gen.go for the two
+	// packages whose schemas declare a reason vocabulary.
+	if len(files) != 8*6+1+2 {
 		t.Fatalf("got %d files", len(files))
+	}
+	for _, name := range []string{"ddm/reasons.gen.go", "status/reasons.gen.go"} {
+		if _, ok := files[name]; !ok {
+			t.Errorf("missing %s", name)
+		}
+	}
+	// A package whose schemas declare no reasons must not carry an empty
+	// vocabulary, which would read as "Apple defines none" rather than
+	// "Apple defines none here".
+	if _, ok := files["commands/reasons.gen.go"]; ok {
+		t.Error("commands has no reasons but a reasons.gen.go was emitted")
 	}
 	for name, data := range files {
 		if name == "NAMES.lock" {
@@ -35,7 +47,7 @@ func TestGenerateWholeTree(t *testing.T) {
 	if !sort.StringsAreSorted(names) || len(names) < 1000 {
 		t.Errorf("NAMES.lock has %d entries, sorted=%v", len(names), sort.StringsAreSorted(names))
 	}
-	for _, want := range []string{"commands/DeviceLock", "commands/DeviceLock.Message", "commands/Registry", "status/DeviceModelFamily.Value", "ddm/Declaration"} {
+	for _, want := range []string{"commands/DeviceLock", "commands/DeviceLock.Message", "commands/Registry", "status/DeviceModelFamily.Value", "ddm/Declaration", "ddm/ReasonErrorActivationFailed", "ddm/ReasonCodes", "status/ReasonInfoUpdateAvailable"} {
 		if sort.SearchStrings(names, want) >= len(names) || names[sort.SearchStrings(names, want)] != want {
 			t.Errorf("NAMES.lock missing %s", want)
 		}
