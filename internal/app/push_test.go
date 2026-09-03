@@ -40,9 +40,9 @@ func (p *recordingPusher) count() int {
 	return len(p.woke)
 }
 
-// Before phase 8 the reference server built no pusher, so a declaration
-// change queued a command and never woke the device: it would be collected on
-// the next check-in, which for an idle Mac can be hours.
+// Without a pusher a declaration change queues a command and never wakes the
+// device: it is collected on the next check-in, which for an idle Mac can be
+// hours. These assert the wiring that prevents that.
 func TestPushWiring(t *testing.T) {
 	t.Run("NotifierGetsThePusher", func(t *testing.T) {
 		p := &recordingPusher{}

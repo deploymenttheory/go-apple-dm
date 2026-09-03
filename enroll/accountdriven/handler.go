@@ -31,9 +31,9 @@ const (
 
 // Handler errors.
 var (
-	ErrConfig         = errors.New("accountdriven: invalid configuration")
-	ErrManagedAppleID = errors.New("accountdriven: identity has no managed Apple ID")
-	ErrMode           = errors.New("accountdriven: enrollment mode does not match the discovery version")
+	ErrConfig              = errors.New("accountdriven: invalid configuration")
+	ErrManagedAppleAccount = errors.New("accountdriven: identity has no Managed Apple Account")
+	ErrMode                = errors.New("accountdriven: enrollment mode does not match the discovery version")
 )
 
 // DeviceInfo is the verified first-POST body: Apple documents LANGUAGE,
@@ -205,17 +205,17 @@ func Finalize(p *enroll.Profile, version string, id Identity, enrollmentToken st
 	if err != nil {
 		return err
 	}
-	if id.ManagedAppleID == "" {
-		return ErrManagedAppleID
+	if id.ManagedAppleAccount == "" {
+		return ErrManagedAppleAccount
 	}
 	if p.EnrollmentMode != "" && p.EnrollmentMode != mode {
 		return fmt.Errorf("%w: profile says %s, version %s", ErrMode, p.EnrollmentMode, version)
 	}
-	if p.AssignedManagedAppleID != "" && p.AssignedManagedAppleID != id.ManagedAppleID {
-		return fmt.Errorf("%w: profile already assigned to another account", ErrManagedAppleID)
+	if p.AssignedManagedAppleID != "" && p.AssignedManagedAppleID != id.ManagedAppleAccount {
+		return fmt.Errorf("%w: profile already assigned to another account", ErrManagedAppleAccount)
 	}
 	p.EnrollmentMode = mode
-	p.AssignedManagedAppleID = id.ManagedAppleID
+	p.AssignedManagedAppleID = id.ManagedAppleAccount
 	if enrollmentToken != "" {
 		p.ServerURL, err = withParam(p.ServerURL, ParamEnrollmentToken, enrollmentToken)
 		if err != nil {

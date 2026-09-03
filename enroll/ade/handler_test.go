@@ -35,13 +35,13 @@ func okHook(_ context.Context, p *ade.Parsed, id ade.Identity) (*enroll.Profile,
 		prof.AssignedManagedAppleID = id.Subject
 	}
 	if rec, ok := id.DEP.(depRecord); ok {
-		prof.AssignedManagedAppleID = rec.ManagedAppleID
+		prof.AssignedManagedAppleID = rec.ManagedAppleAccount
 	}
 	return prof, nil
 }
 
 type depRecord struct {
-	Serial, ManagedAppleID string
+	Serial, ManagedAppleAccount string
 }
 
 func serve(t *testing.T, h http.Handler, req *http.Request) *httptest.ResponseRecorder {
@@ -147,7 +147,7 @@ func TestHandler(t *testing.T) {
 		store := ade.NewMemStore()
 		dep := ade.DEPLookupFunc(func(_ context.Context, serial string) (any, bool, error) {
 			if serial == "C02HANDLER" {
-				return depRecord{Serial: serial, ManagedAppleID: "user@example.com"}, true, nil
+				return depRecord{Serial: serial, ManagedAppleAccount: "user@example.com"}, true, nil
 			}
 			return nil, false, nil
 		})
@@ -157,7 +157,7 @@ func TestHandler(t *testing.T) {
 			t.Fatalf("%+v", prof)
 		}
 		rec, _, _ := store.Get(context.Background(), "C02HANDLER")
-		if r, ok := rec.DEP.(depRecord); !ok || r.ManagedAppleID != "user@example.com" {
+		if r, ok := rec.DEP.(depRecord); !ok || r.ManagedAppleAccount != "user@example.com" {
 			t.Fatalf("%+v", rec)
 		}
 		// Not in DEP: still served, not joined.

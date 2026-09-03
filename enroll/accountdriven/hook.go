@@ -17,7 +17,7 @@ var ErrEnrollmentToken = errors.New("accountdriven: enrollment token required")
 // Authenticate and TokenUpdate of user enrollments (the token travels in
 // ServerURL as a query parameter, which the HTTP layer exposes as
 // Request.Params). Unlike the access token it is not consumed, so a retried
-// check-in succeeds. Managed Apple ID and identity claims are attached to
+// check-in succeeds. Managed Apple Account and identity claims are attached to
 // the context for later hooks through IdentityFromContext.
 type CheckinHook struct {
 	Tokens *Tokens

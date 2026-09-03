@@ -104,8 +104,8 @@ var (
 	ErrForbidden = errors.New("app: forbidden")
 	// ErrAdminUnconfigured is an admin API with neither a principal store nor
 	// a static token. It is a Build error rather than a silently disabled
-	// API: KMFDDM logs a line and keeps serving, and NanoCMD does not even
-	// log (decision record 0034).
+	// API, so a deployment cannot believe it is serving one when it is not
+	// (decision record 0034).
 	ErrAdminUnconfigured = errors.New("app: admin API needs MDM_ADMIN_TOKEN or an admin principal store")
 )
 
@@ -227,8 +227,8 @@ func (w *statusRecorder) Write(b []byte) (int, error) {
 // The durable signal is the change rows the engine writes inside its
 // transaction, which the notifier drains on its poll; this only saves the
 // poll interval. It lives here, in the one wrapper every admin route passes
-// through, rather than in each handler: KMFDDM repeats the equivalent call in
-// nine places, and a tenth route added later would silently not notify.
+// through, rather than in each handler, so a route added later cannot forget
+// it (decision record 0039).
 //
 // Kick never blocks and a drain with no rows does nothing, so a successful
 // mutating request on the ddm family is a good enough trigger without asking
@@ -337,9 +337,9 @@ func (a *App) auditAction(r *http.Request, p adminauth.Principal, rt adminRoute)
 	a.publishAdmin(r, event.AdminAction, p, rt, nil)
 }
 
-// auditDenied records a refusal. This is the record neither Fleet nor Zentral
-// keeps: Fleet logs role denials at debug and never writes them to its
-// activity feed, and Zentral emits no event at all.
+// auditDenied records a refusal. A denial is evidence: it is what shows an
+// operator that a credential is reaching for something it should not have
+// (decision record 0034).
 func (a *App) auditDenied(r *http.Request, p adminauth.Principal, rt adminRoute, cause error) {
 	if a.cfg.Bus == nil {
 		return

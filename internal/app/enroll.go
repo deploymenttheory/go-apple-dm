@@ -316,7 +316,7 @@ func (a *App) wireEnrollment(ctx context.Context, mux *http.ServeMux) ([]service
 				// hardware, and a user enrollment attests to no hardware at
 				// all, so the binding names no device.
 				return e.profile(acme.Binding{
-					CommonName:        id.ManagedAppleID + "/" + info.Product,
+					CommonName:        id.ManagedAppleAccount + "/" + info.Product,
 					AllowUnidentified: true,
 				})
 			},
@@ -410,10 +410,10 @@ func (e *enrollment) complete(
 	r *http.Request,
 ) {
 	identity := accountdriven.Identity{
-		UserIdentifier: bound.LoginHint,
-		ManagedAppleID: claims.Email,
-		Subject:        claims.Subject,
-		Claims:         claims.Raw,
+		UserIdentifier:      bound.LoginHint,
+		ManagedAppleAccount: claims.Email,
+		Subject:             claims.Subject,
+		Claims:              claims.Raw,
 	}
 	switch bound.Extra["flow"] {
 	case "ade":

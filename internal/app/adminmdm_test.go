@@ -62,8 +62,9 @@ func seed(t *testing.T, a *app.App, udid string) mdm.EnrollmentID {
 	return id
 }
 
-// The admin API had eleven DDM routes and no MDM routes, over a storage API
-// that already supported every one of these. This is that surface.
+// The MDM half of the admin surface: the enrollments the server manages, the
+// commands queued for them, the certificates that wake them, and the export
+// that moves them between deployments.
 func TestMDMAdminRoutes(t *testing.T) {
 	a, srv, pusher := mdmAdminApp(t)
 	seed(t, a, "UDID-A")

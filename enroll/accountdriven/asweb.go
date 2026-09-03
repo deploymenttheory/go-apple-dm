@@ -25,8 +25,8 @@ func (a *AppleAsWeb) Challenge(context.Context, *http.Request, *DeviceInfo) (Cha
 // single-use access token and redirects (308) to
 // apple-remotemanagement-user-login://authentication-results.
 func (a *AppleAsWeb) Finish(w http.ResponseWriter, r *http.Request, id Identity) error {
-	if id.ManagedAppleID == "" {
-		return ErrManagedAppleID
+	if id.ManagedAppleAccount == "" {
+		return ErrManagedAppleAccount
 	}
 	tok, err := a.Tokens.Issue(r.Context(), KindAccess, id, nil)
 	if err != nil {
