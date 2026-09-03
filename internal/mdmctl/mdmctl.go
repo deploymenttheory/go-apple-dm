@@ -59,6 +59,10 @@ type options struct {
 	verbose  bool
 }
 
+// DefaultServer is used when neither -server, MDMCTL_SERVER, nor the selected
+// config context names one.
+const DefaultServer = "http://127.0.0.1:8080"
+
 // Output modes.
 const (
 	outputHuman  = "human"
@@ -158,7 +162,10 @@ func commands() map[string]command {
 // defaultsFromEnv is the starting point before any flag is seen.
 func defaultsFromEnv(getenv func(string) string) options {
 	return options{
-		server:  firstNonEmpty(getenv("MDMCTL_SERVER"), "http://127.0.0.1:8080"),
+		// Left empty when unset so a config context's Server can apply.
+		// Defaulting here made e.opts.server never empty, which is what made
+		// the context field below unreachable.
+		server:  getenv("MDMCTL_SERVER"),
 		token:   getenv("MDMCTL_TOKEN"),
 		context: getenv("MDMCTL_CONTEXT"),
 		config:  getenv("MDMCTL_CONFIG"),
@@ -342,8 +349,15 @@ func (e *env) client() (*adminclient.Client, error) {
 	if err != nil {
 		return nil, err
 	}
-	if cfg, cerr := e.loadConfig(); cerr == nil && cfg != nil && e.opts.server == "" {
-		server = cfg.Server
+	// Precedence: the -server flag or MDMCTL_SERVER, then the selected config
+	// context, then the built-in default.
+	if server == "" {
+		if cfg, cerr := e.loadConfig(); cerr == nil && cfg != nil {
+			server = cfg.Server
+		}
+	}
+	if server == "" {
+		server = DefaultServer
 	}
 	var trace func(string)
 	if e.opts.verbose {

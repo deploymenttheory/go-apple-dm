@@ -587,3 +587,88 @@ func TestAuditVerb(t *testing.T) {
 		}
 	})
 }
+
+// A config context names a server, which is most of the point of having
+// contexts. The fallback that read it was guarded by `e.opts.server == ""`,
+// which defaultsFromEnv made impossible, so the field was dead: every
+// invocation went to the built-in default unless -server or MDMCTL_SERVER
+// said otherwise.
+func TestServerPrecedence(t *testing.T) {
+	newServer := func(t *testing.T, name string, hit *string) *httptest.Server {
+		t.Helper()
+		srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			*hit = name
+			w.Header().Set("Content-Type", "application/json")
+			_, _ = w.Write([]byte(`{"Role":"all","Version":"devel"}`))
+		}))
+		t.Cleanup(srv.Close)
+		return srv
+	}
+
+	t.Run("ContextServerIsUsed", func(t *testing.T) {
+		var hit string
+		srv := newServer(t, "context", &hit)
+		dir := t.TempDir()
+		path := filepath.Join(dir, "mdmctl.json")
+		body := `{"current":"lab","contexts":{"lab":{"server":"` + srv.URL + `","token":"t"}}}`
+		if err := os.WriteFile(path, []byte(body), 0o600); err != nil {
+			t.Fatal(err)
+		}
+		if _, _, err := run(t, map[string]string{"MDMCTL_CONFIG": path}, "status"); err != nil {
+			t.Fatalf("status: %v", err)
+		}
+		if hit != "context" {
+			t.Fatal("the context's server was ignored")
+		}
+	})
+
+	t.Run("FlagBeatsContext", func(t *testing.T) {
+		var ctxHit, flagHit string
+		ctxSrv := newServer(t, "context", &ctxHit)
+		flagSrv := newServer(t, "flag", &flagHit)
+		dir := t.TempDir()
+		path := filepath.Join(dir, "mdmctl.json")
+		body := `{"current":"lab","contexts":{"lab":{"server":"` + ctxSrv.URL + `","token":"t"}}}`
+		if err := os.WriteFile(path, []byte(body), 0o600); err != nil {
+			t.Fatal(err)
+		}
+		env := map[string]string{"MDMCTL_CONFIG": path}
+		if _, _, err := run(t, env, "-server", flagSrv.URL, "status"); err != nil {
+			t.Fatalf("status: %v", err)
+		}
+		if flagHit != "flag" || ctxHit != "" {
+			t.Fatalf("flag=%q context=%q; the flag must win", flagHit, ctxHit)
+		}
+	})
+
+	t.Run("EnvBeatsContext", func(t *testing.T) {
+		var ctxHit, envHit string
+		ctxSrv := newServer(t, "context", &ctxHit)
+		envSrv := newServer(t, "env", &envHit)
+		dir := t.TempDir()
+		path := filepath.Join(dir, "mdmctl.json")
+		body := `{"current":"lab","contexts":{"lab":{"server":"` + ctxSrv.URL + `","token":"t"}}}`
+		if err := os.WriteFile(path, []byte(body), 0o600); err != nil {
+			t.Fatal(err)
+		}
+		env := map[string]string{"MDMCTL_CONFIG": path, "MDMCTL_SERVER": envSrv.URL, "MDMCTL_TOKEN": "t"}
+		if _, _, err := run(t, env, "status"); err != nil {
+			t.Fatalf("status: %v", err)
+		}
+		if envHit != "env" || ctxHit != "" {
+			t.Fatalf("env=%q context=%q; the environment must win", envHit, ctxHit)
+		}
+	})
+
+	// With nothing configured the built-in default still applies, so the
+	// common local case needs no flags.
+	t.Run("FallsBackToTheDefault", func(t *testing.T) {
+		_, _, err := run(t, noConfig(t), "status")
+		// Nothing is listening there in a test, so this is a transport
+		// failure rather than a usage error: the point is that a server was
+		// chosen at all.
+		if errors.Is(err, mdmctl.ErrUsage) {
+			t.Fatalf("no default server was applied: %v", err)
+		}
+	})
+}
