@@ -9,6 +9,7 @@ import (
 	"log/slog"
 	"net/http"
 	"os"
+	"sync"
 	"time"
 
 	"github.com/deploymenttheory/go-apple-mdm/adminauth"
@@ -133,6 +134,57 @@ type App struct {
 	db         *sql.DB
 	dialect    sqlcommon.Dialect
 	closers    []func() error
+	// workers are the supervised background loops, in registration order.
+	// Run starts every one of them; nothing here is started by Build.
+	workers []worker
+	// mu guards running.
+	mu sync.Mutex
+	// running records which workers are currently in their Run func, so
+	// readiness can report a loop that has stopped or never started.
+	running map[string]bool
+}
+
+// worker is one supervised background loop. The name is a fixed identifier
+// chosen here, never derived from configuration, so it is safe to report and
+// to use as a metric label.
+type worker struct {
+	name string
+	run  func(context.Context) error
+}
+
+// WorkerState reports one supervised loop and whether it is running.
+type WorkerState struct {
+	Name    string
+	Running bool
+}
+
+// addWorker registers a background loop for Run to supervise. Callers are
+// the wire functions, so the set is fixed by the time Build returns.
+func (a *App) addWorker(name string, run func(context.Context) error) {
+	a.workers = append(a.workers, worker{name: name, run: run})
+}
+
+// setRunning records a worker entering or leaving its loop.
+func (a *App) setRunning(name string, up bool) {
+	a.mu.Lock()
+	defer a.mu.Unlock()
+	if a.running == nil {
+		a.running = make(map[string]bool, len(a.workers))
+	}
+	a.running[name] = up
+}
+
+// Workers reports every supervised loop and whether it is running, in
+// registration order. Readiness reads this; a worker that has stopped while
+// the process keeps serving is exactly the state /healthz could not see.
+func (a *App) Workers() []WorkerState {
+	a.mu.Lock()
+	defer a.mu.Unlock()
+	out := make([]WorkerState, 0, len(a.workers))
+	for _, w := range a.workers {
+		out = append(out, WorkerState{Name: w.name, Running: a.running[w.name]})
+	}
+	return out
 }
 
 // Build validates cfg, opens storage, and wires the role.
@@ -322,6 +374,7 @@ func (a *App) wire(ctx context.Context) error {
 	if err != nil {
 		return fmt.Errorf("app: notifier: %w", err)
 	}
+	a.addWorker("ddm-notifier", a.Notifier.Run)
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET "+PathHealthz, a.healthz)
@@ -431,26 +484,41 @@ func (a *App) wire(ctx context.Context) error {
 	return nil
 }
 
-// Run drives the notifier until ctx is cancelled. The HTTP listener is the
+// Run supervises every registered background loop until ctx is cancelled or
+// one of them fails, whichever comes first. The HTTP listener is the
 // caller's (cmd/mdmserver, or httptest in tests).
+//
+// The first failure cancels its siblings so Run returns promptly rather than
+// waiting for loops that only stop on cancellation. A loop that stops because
+// the context ended is not a failure, and the two existing loops disagree on
+// how they say so -- ddm.Notifier.Run returns ctx.Err(), depService.Run
+// returns nil -- so cancellation is normalised here rather than in each loop.
 func (a *App) Run(ctx context.Context) error {
-	errc := make(chan error, 2)
-	go func() { errc <- a.Notifier.Run(ctx) }()
-	if a.dep != nil {
-		go func() { errc <- a.dep.Run(ctx) }()
-	} else {
-		errc <- nil
+	if len(a.workers) == 0 {
+		<-ctx.Done()
+		return nil
 	}
-	var first error
-	for range 2 {
-		if err := <-errc; err != nil && !errors.Is(err, context.Canceled) && first == nil {
-			first = err
-		}
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+	errc := make(chan error, len(a.workers))
+	var wg sync.WaitGroup
+	for _, w := range a.workers {
+		// Marked running before the goroutine is scheduled so readiness
+		// never observes a registered worker as down before it starts.
+		a.setRunning(w.name, true)
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			defer a.setRunning(w.name, false)
+			if err := w.run(ctx); err != nil && !errors.Is(err, context.Canceled) {
+				errc <- fmt.Errorf("app: worker %s: %w", w.name, err)
+				cancel()
+			}
+		}()
 	}
-	if first != nil {
-		return fmt.Errorf("app: worker: %w", first)
-	}
-	return nil
+	wg.Wait()
+	close(errc)
+	return <-errc
 }
 
 // Close releases storage.
@@ -488,5 +556,6 @@ func (a *App) wireDEP(ctx context.Context) error {
 		return err
 	}
 	a.dep, a.DEP = svc, svc.client
+	a.addWorker("dep-syncer", svc.Run)
 	return nil
 }

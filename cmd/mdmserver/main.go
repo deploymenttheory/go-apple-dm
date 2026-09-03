@@ -79,6 +79,24 @@ func probe(ctx context.Context, url string) error {
 	return nil
 }
 
+// Server timeouts. A device on a slow mobile network may take a while over
+// a large profile or declaration, so the body deadlines are generous; what
+// they exist to stop is a connection held open indefinitely.
+const (
+	readHeaderTimeout = 10 * time.Second
+	readTimeout       = 60 * time.Second
+	writeTimeout      = 60 * time.Second
+	idleTimeout       = 120 * time.Second
+	maxHeaderBytes    = 1 << 20
+	// shutdownTimeout bounds the whole drain: in-flight requests first,
+	// then the background workers.
+	shutdownTimeout = 10 * time.Second
+)
+
+// errWorkersStuck reports workers that outlived the shutdown deadline. It is
+// a static error so callers can match it.
+var errWorkersStuck = errors.New("mdmserver: workers did not stop before the shutdown deadline")
+
 func serve(ctx context.Context, cfg app.Config) error {
 	ctx, stop := signal.NotifyContext(ctx, os.Interrupt, syscall.SIGTERM)
 	defer stop()
@@ -87,23 +105,64 @@ func serve(ctx context.Context, cfg app.Config) error {
 		return err
 	}
 	defer a.Close()
-	srv := &http.Server{Addr: cfg.Listen, Handler: a.Handler, ReadHeaderTimeout: 10 * time.Second}
-	errc := make(chan error, 2)
-	go func() { errc <- a.Run(ctx) }()
+
+	// The workers get their own context so shutdown can stop accepting new
+	// requests before the loops are told to finish. Sharing ctx with the
+	// signal handler would tear both down at once and let the process exit
+	// with a drain half done.
+	workerCtx, stopWorkers := context.WithCancel(context.Background())
+	defer stopWorkers()
+
+	srv := &http.Server{
+		Addr:              cfg.Listen,
+		Handler:           a.Handler,
+		ReadHeaderTimeout: readHeaderTimeout,
+		ReadTimeout:       readTimeout,
+		WriteTimeout:      writeTimeout,
+		IdleTimeout:       idleTimeout,
+		MaxHeaderBytes:    maxHeaderBytes,
+	}
+	workers := make(chan error, 1)
+	go func() { workers <- a.Run(workerCtx) }()
+	serving := make(chan error, 1)
 	go func() {
 		cfg.Logger.Info("mdmserver: listening", "role", string(cfg.Role), "addr", cfg.Listen, "storage", cfg.Storage)
 		if err := srv.ListenAndServe(); !errors.Is(err, http.ErrServerClosed) {
-			errc <- err
+			serving <- err
 		}
 	}()
+
+	var first error
+	workersDone := false
 	select {
 	case <-ctx.Done():
-	case err := <-errc:
-		if err != nil {
-			return err
+	case err := <-serving:
+		first = err
+	case err := <-workers:
+		workersDone, first = true, err
+	}
+
+	// Ordered shutdown: stop accepting and drain in-flight requests, then
+	// tell the workers to finish, then wait for them. Reporting success
+	// before the notifier and the DEP syncer have stopped is what let the
+	// old path exit mid-drain.
+	shutdownCtx, cancel := context.WithTimeout(context.Background(), shutdownTimeout)
+	defer cancel()
+	if err := srv.Shutdown(shutdownCtx); err != nil && first == nil {
+		first = fmt.Errorf("mdmserver: shutdown: %w", err)
+	}
+	stopWorkers()
+	if !workersDone {
+		select {
+		case err := <-workers:
+			if err != nil && first == nil {
+				first = err
+			}
+		case <-shutdownCtx.Done():
+			if first == nil {
+				first = errWorkersStuck
+			}
 		}
 	}
-	shutdown, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
-	return srv.Shutdown(shutdown)
+	return first
 }
