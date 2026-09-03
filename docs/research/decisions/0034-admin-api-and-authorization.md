@@ -257,7 +257,8 @@ three dialects since phase 4, finally has a query); `e2e.TestE2E_AdminCLI` (E2E-
   FileVault escrow.
 - Tokens defined in configuration rather than storage: simpler, but revocation means editing
   configuration and restarting the process, which is the operational failure this phase exists to
-  fix. The configured single token remains as the explicit opt-out for development.
+  fix. The configured single token remains, as the development opt-out and as the break-glass
+  bootstrap credential described in amendment 1.
 - A runtime "did you authorize?" tripwire (Fleet's `authzcheck`): a table that builds the mux cannot
   disagree with itself at runtime, and the test proves it before the binary ships. Fleet needs the
   tripwire because its authorization is a call inside each handler rather than data.
@@ -265,3 +266,62 @@ three dialects since phase 4, finally has a query); `e2e.TestE2E_AdminCLI` (E2E-
   would be a full scan. Deferred until an index justifies it.
 - OpenAPI: `GET /routes` is generated from the table that builds the mux, so it cannot drift, and it
   costs no dependency. A real document is a phase 10 question once the routes are frozen.
+
+## Amendments
+
+### 1. The static token is break-glass, not superseded (2026-09-03, phase 9)
+
+**What changed.** This record originally said `AdminStore` "takes precedence over `AdminToken`",
+and the code implemented that literally: configuring a principal store made `MDM_ADMIN_TOKEN` stop
+being accepted. It is now accepted *alongside* a store. A request presenting it authenticates as
+root and bypasses policy evaluation; any other bearer token is resolved against the principal store
+and authorized by policy as before. The static token is checked first, in constant time, so it
+still works when the store is empty or unreachable.
+
+Two supporting changes come with it. Requests authenticated this way are audited under the fixed
+actor `break-glass` rather than a principal name, and log a warning naming the method and path
+whenever a principal store is also configured. `GET /config` reports whether the credential is
+accepted, so `mdmctl status` can say it out loud.
+
+**Why.** The original rule made the feature unreachable. An empty principal store authenticates
+nobody, and `POST /principals` -- the route that creates the first one -- is itself an authorized
+admin route, so a deployment that enabled the store locked itself out. Two alternatives were
+rejected. Minting a root principal at first start and printing its token puts a live root
+credential into container start-up logs, where it is captured by every log shipper in the path. An
+offline `mdmctl bootstrap` writing straight to the database needs DSN access and bypasses the very
+authorization path it is bootstrapping, so the first credential would be the one credential never
+checked by the system that issues it. Reusing the token that already exists, is already documented,
+and is already understood as the development opt-out adds no new mechanism; making its use visible
+in the audit trail is what makes keeping it defensible.
+
+**So what.** It is a standing root credential with no expiry that cannot be revoked without
+restarting the process. While it is set, every least-privilege property claimed above is void for
+whoever holds it, which makes leaving it configured the most likely way a deployment of this server
+gets owned. The operator sequence is: set it for first start, create principals with `mdmctl
+principals create`, confirm `mdmctl status` reports break-glass active, unset it, restart, and
+confirm status reports it gone. **An audit record carrying the actor `break-glass` after that point
+is an incident**, and it is a fixed string so that it can be alerted on. The runbook is in
+`docs/operations/deployment.md`.
+
+Verified by: `app.TestBreakGlassAlongsideThePrincipalStore` (bootstraps an empty store, is audited
+under its own actor, bypasses policy while a stored principal is refused, and is reported by
+`GET /config`), `app.TestAdminStoreOnTheProcessDatabase` (a principal from the server's own store
+authenticates, which is what made the store reachable at all), and
+`mdmctl.TestStatusReportsBreakGlass`.
+
+### 2. The principal store is opened by the server (2026-09-03, phase 9)
+
+**What changed.** `adminauth/sqlstore` was imported only by its own tests: `cmd/mdmserver` never
+set `Config.AdminStore`, so every claim in this record was true only of a store an in-process
+caller injected. `internal/app` now opens it on the process's own database, behind
+`MDM_ADMIN_STORE`, following the same three-way selection as the other satellite stores -- an
+injected store wins, then the process database, then memory when there is none.
+
+**Why.** Off by default, because turning it on mounts the admin API, and a flag that silently
+exposes an administrative surface whenever someone picks a SQL backend is a security change wearing
+the clothes of a convenience.
+
+**So what.** Principals, Cedar policies and revocable tokens are now reachable from the shipped
+binary rather than only from tests. The store shares the process's pool and dialect and keeps its
+own migration set (`adminauth_schema_migrations`), so its schema version moves independently of
+`storage`.

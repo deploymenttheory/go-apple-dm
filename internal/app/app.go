@@ -13,6 +13,8 @@ import (
 	"time"
 
 	"github.com/deploymenttheory/go-apple-mdm/adminauth"
+	admininmem "github.com/deploymenttheory/go-apple-mdm/adminauth/inmem"
+	adminsql "github.com/deploymenttheory/go-apple-mdm/adminauth/sqlstore"
 	"github.com/deploymenttheory/go-apple-mdm/axm"
 	"github.com/deploymenttheory/go-apple-mdm/cms"
 	"github.com/deploymenttheory/go-apple-mdm/ddm"
@@ -67,13 +69,31 @@ type Config struct {
 	// verifies what it receives.
 	DDMSendKey, DDMRecvKey []byte
 	// AdminToken enables the admin API on the ddm and all roles with a single
-	// static credential that bypasses policy. It is the development opt-out;
-	// AdminStore is what a deployment uses.
+	// static credential that authenticates as root and bypasses policy.
+	//
+	// Alongside a principal store it is the break-glass credential, and it
+	// keeps working rather than being superseded: an empty principal store
+	// authenticates nobody, and the route that creates the first principal is
+	// itself authorized, so without it there is no way in. Its use is audited
+	// under the actor "break-glass" and logged at warn on every request.
+	//
+	// It has no expiry and cannot be revoked without restarting the process.
+	// While it is set, every least-privilege property record 0034 claims is
+	// void for whoever holds it, so a deployment sets it to create real
+	// principals and then unsets it. An audit record with the actor
+	// "break-glass" after that point is an incident. See
+	// docs/operations/deployment.md.
 	AdminToken string
-	// AdminStore holds admin principals and Cedar policies. When set, every
-	// admin request is authenticated against it and authorized by policy
-	// (decision record 0034). It takes precedence over AdminToken.
+	// AdminStore holds admin principals and Cedar policies. When set, an admin
+	// request that does not present AdminToken is authenticated against it and
+	// authorized by policy (decision record 0034). Injecting a store here
+	// overrides AdminStoreEnabled, which is how tests supply a fake.
 	AdminStore adminauth.Store
+	// AdminStoreEnabled opens the principal and policy store on the process's
+	// own database, so principals work in the shipped binary rather than only
+	// where a caller injects AdminStore. Off by default: turning it on mounts
+	// the admin API, which is a security change rather than a convenience.
+	AdminStoreEnabled bool
 	// CAFile is a PEM bundle of roots that device identities chain to;
 	// the mdm role then verifies Mdm-Signature on every check-in and
 	// connect. CARoots is the parsed form (tests set it directly).
@@ -444,8 +464,12 @@ func (a *App) wire(ctx context.Context) error {
 		mux.Handle(PathDDM+"/", http.StripPrefix(PathDDM, ps))
 	}
 	if cfg.Role != RoleMDM && a.adminEnabled() {
-		if cfg.AdminStore != nil {
-			m, err := adminauth.New(cfg.AdminStore, mustAdminRegistry(), adminauth.WithClock(cfg.Clock))
+		store, err := a.adminStore(ctx)
+		if err != nil {
+			return err
+		}
+		if store != nil {
+			m, err := adminauth.New(store, mustAdminRegistry(), adminauth.WithClock(cfg.Clock))
 			if err != nil {
 				return fmt.Errorf("app: admin authorization: %w", err)
 			}
@@ -544,6 +568,36 @@ func (a *App) healthz(w http.ResponseWriter, r *http.Request) {
 	}
 	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
 	_, _ = w.Write([]byte("ok\n"))
+}
+
+// adminStore resolves the admin principal and policy store, following the
+// same three-way choice as the other satellite stores: an injected store
+// wins, then the process's own database, then memory when there is no
+// database to share. It returns a nil store when neither an injection nor
+// AdminStoreEnabled asked for one, which leaves the static token as the only
+// credential.
+//
+// Before this existed, adminauth/sqlstore was imported only by its own tests:
+// cmd/mdmserver never set AdminStore, so the principals, policies and
+// revocable tokens of record 0034 were unreachable from the shipped binary.
+func (a *App) adminStore(ctx context.Context) (adminauth.Store, error) {
+	switch {
+	case a.cfg.AdminStore != nil:
+		return a.cfg.AdminStore, nil
+	case !a.cfg.AdminStoreEnabled:
+		return nil, nil
+	case a.db == nil:
+		// An in-memory deployment has nowhere durable to put principals; the
+		// store still works so the admin API behaves the same way in tests
+		// and in a throwaway run.
+		return admininmem.New(), nil
+	default:
+		s, err := adminsql.Open(ctx, a.db, a.dialect, adminsql.Options{})
+		if err != nil {
+			return nil, fmt.Errorf("app: admin store: %w", err)
+		}
+		return s, nil
+	}
 }
 
 // wireDEP builds the device enrollment service once.

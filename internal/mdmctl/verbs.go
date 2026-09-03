@@ -112,6 +112,7 @@ func runStatus(ctx context.Context, e *env, args []string) error {
 			Role, Version string
 			Families      []string
 			Policy        bool
+			BreakGlass    bool
 		}
 		if err := json.Unmarshal(resp.Body, &cfg); err != nil {
 			fmt.Fprintln(w, string(resp.Body))
@@ -121,6 +122,7 @@ func runStatus(ctx context.Context, e *env, args []string) error {
 		fmt.Fprintf(w, "Version:\t%s\n", cfg.Version)
 		fmt.Fprintf(w, "Families:\t%s\n", strings.Join(cfg.Families, ", "))
 		fmt.Fprintf(w, "Authorization:\t%s\n", policyMode(cfg.Policy))
+		fmt.Fprintf(w, "Break-glass:\t%s\n", breakGlassMode(cfg.Policy, cfg.BreakGlass))
 	})
 }
 
@@ -129,6 +131,22 @@ func policyMode(policy bool) string {
 		return "policy (principals and Cedar policies)"
 	}
 	return "static token (development)"
+}
+
+// breakGlassMode says whether the server still accepts the static token. It
+// is worth a line of its own because the credential is root, bypasses policy,
+// has no expiry, and cannot be revoked without a restart. Once principals
+// exist it should be gone, so the wording tells the operator what to do
+// rather than only reporting a flag.
+func breakGlassMode(policy, breakGlass bool) string {
+	switch {
+	case !breakGlass:
+		return "not configured"
+	case policy:
+		return "ACTIVE, bypasses policy: unset MDM_ADMIN_TOKEN once principals exist"
+	default:
+		return "active (the only credential; no principal store configured)"
+	}
 }
 
 func runRoutes(ctx context.Context, e *env, args []string) error {

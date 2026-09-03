@@ -32,6 +32,10 @@ func (a *App) introspectionRoutes() []adminRoute {
 					"Version":  buildVersion(),
 					"Families": a.adminFamilies(),
 					"Policy":   a.admin != nil,
+					// Reported so an operator can see the standing root
+					// credential without reading logs, and so mdmctl can say
+					// it out loud after bootstrap.
+					"BreakGlass": a.cfg.AdminToken != "",
 				})
 			}),
 		},

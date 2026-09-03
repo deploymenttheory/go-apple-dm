@@ -250,13 +250,19 @@ func (c *Client) Page(ctx context.Context, path string, query url.Values) ([]jso
 	return p.Items, p.NextCursor, nil
 }
 
-// Config describes the server: its role, the route families it serves, and
-// the version. The CLI reads it to explain a 404 that is really a role split.
+// ServerConfig describes the server: its role, the route families it serves,
+// the version, and which admin credentials it accepts. The CLI reads it to
+// explain a 404 that is really a role split, and to report a break-glass
+// token that outlived its bootstrap.
 type ServerConfig struct {
 	Role     string
 	Version  string
 	Families []string
 	Routes   []Route
+	// Policy reports a principal and Cedar policy store.
+	Policy bool
+	// BreakGlass reports that the static MDM_ADMIN_TOKEN is still accepted.
+	BreakGlass bool
 }
 
 // Route is one entry of the server's route table.

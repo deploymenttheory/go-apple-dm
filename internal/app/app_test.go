@@ -72,6 +72,19 @@ func TestParseEnv(t *testing.T) {
 			t.Fatalf("cfg = %+v", cfg)
 		}
 	})
+	t.Run("AdminStore", func(t *testing.T) {
+		cfg, err := app.ParseEnv(env(nil))
+		if err != nil || cfg.AdminStoreEnabled {
+			t.Fatalf("the principal store must be off unless asked for: %+v, %v", cfg, err)
+		}
+		cfg, err = app.ParseEnv(env(map[string]string{app.EnvAdminStore: "true"}))
+		if err != nil || !cfg.AdminStoreEnabled {
+			t.Fatalf("cfg = %+v, err = %v", cfg, err)
+		}
+		if _, err := app.ParseEnv(env(map[string]string{app.EnvAdminStore: "maybe"})); !errors.Is(err, app.ErrConfig) {
+			t.Fatalf("err = %v", err)
+		}
+	})
 	t.Run("Inmem", func(t *testing.T) {
 		cfg, err := app.ParseEnv(env(map[string]string{app.EnvStorage: "inmem"}))
 		if err != nil || cfg.DSN != "" {

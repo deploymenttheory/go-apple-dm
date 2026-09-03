@@ -95,7 +95,7 @@ var (
 // caller. With neither a principal store nor a static token the API is not
 // mounted at all, rather than mounted and unguarded.
 func (a *App) adminEnabled() bool {
-	return a.cfg.AdminStore != nil || a.cfg.AdminToken != ""
+	return a.cfg.AdminStore != nil || a.cfg.AdminStoreEnabled || a.cfg.AdminToken != ""
 }
 
 // mustAdminRegistry builds the action registry from the action table. The
@@ -140,10 +140,18 @@ func (r adminRoute) RoutePattern() string { return r.Pattern }
 func (r adminRoute) RouteAction() string  { return r.Action }
 func (r adminRoute) RouteFamily() string  { return r.Family }
 
-// staticPrincipal is who the configured single token authenticates as. It
-// bypasses policy by design: MDM_ADMIN_TOKEN is the documented development
-// opt-out, and a deployment that wants least privilege configures principals.
-var staticPrincipal = adminauth.Principal{Name: "static-token", Root: true, TokenID: "static"}
+// BreakGlassActor is the audit actor for a request authenticated by the
+// static MDM_ADMIN_TOKEN rather than by a stored principal. It is a fixed
+// string, so an operator can alert on it: after the first principals exist,
+// a record carrying this actor means someone used the standing root
+// credential that should have been removed.
+const BreakGlassActor = "break-glass"
+
+// breakGlassPrincipal is who the static token authenticates as. It is root
+// and bypasses policy by design. Alongside a principal store it is the
+// bootstrap credential, because an empty store authenticates nobody and the
+// route that creates the first principal is itself authorized.
+var breakGlassPrincipal = adminauth.Principal{Name: BreakGlassActor, Root: true, TokenID: "static"}
 
 // authorized wraps a route with authentication, the policy check, and the
 // audit record. It is applied once, where the mux is built, so no route can
@@ -175,17 +183,24 @@ func (a *App) principal(r *http.Request) (adminauth.Principal, bool, error) {
 	if !ok || tok == "" {
 		return adminauth.Principal{}, false, ErrUnauthorized
 	}
+	// The break-glass token is tried first, and in constant time, so it still
+	// works when the principal store is empty or unreachable -- which is
+	// exactly when it is needed. It never short-circuits on a prefix match.
+	if a.cfg.AdminToken != "" && constantTimeEqual(tok, a.cfg.AdminToken) {
+		if a.admin != nil {
+			// Only worth saying when principals exist: until they do, the
+			// static token is the intended and only way in.
+			a.cfg.Logger.WarnContext(r.Context(), "app: admin request used the break-glass token, which bypasses policy; create principals and unset MDM_ADMIN_TOKEN",
+				"actor", BreakGlassActor, "method", r.Method, "path", r.URL.Path)
+		}
+		return breakGlassPrincipal, true, nil
+	}
 	if a.admin != nil {
 		p, err := a.admin.Authenticate(r.Context(), adminauth.Token(tok))
 		if err != nil {
 			return adminauth.Principal{}, false, err
 		}
 		return p, false, nil
-	}
-	// The static token is compared in constant time and never short-circuits
-	// on a prefix match.
-	if a.cfg.AdminToken != "" && constantTimeEqual(tok, a.cfg.AdminToken) {
-		return staticPrincipal, true, nil
 	}
 	return adminauth.Principal{}, false, ErrUnauthorized
 }

@@ -106,7 +106,8 @@ environment:
 | Variables | Purpose |
 |---|---|
 | `MDM_ROLE`, `MDM_LISTEN`, `MDM_STORAGE`, `MDM_DSN` | Role, listen address, backend (`sqlite`, `postgres`, `mysql`, `inmem`), and DSN |
-| `MDM_ADMIN_TOKEN` | Bearer token for `/admin/v1/` |
+| `MDM_ADMIN_STORE` | Open the admin principal and Cedar policy store on this process's database, so `mdmctl principals` and `mdmctl policies` work. Off by default: it mounts the admin API |
+| `MDM_ADMIN_TOKEN` | Break-glass bearer token for `/admin/v1/`. Authenticates as root and **bypasses policy**, has no expiry, and cannot be revoked without a restart. It exists because an empty principal store authenticates nobody: set it to create the first principals, then unset it and restart. Its use is audited under the actor `break-glass`, and `mdmctl status` reports whether it is still accepted |
 | `MDM_DDM_URL`, `MDM_DDM_SEND_KEY`, `MDM_DDM_RECV_KEY`, `MDM_DDM_SUBSCRIPTIONS` | The split-deployment hop and synthesised status subscriptions |
 | `MDM_CA_FILE`, `MDM_CERT_HEADER` | Client certificate verification, direct or behind a proxy |
 | `MDM_PUBLIC_URL`, `MDM_PUSH_TOPIC` | Turn on the enrollment routes; the server URL devices are given and the push topic |
