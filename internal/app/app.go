@@ -546,7 +546,10 @@ func (a *App) wire(ctx context.Context) error {
 	}
 	a.addWorker("ddm-notifier", a.Notifier.Run)
 	a.addWorker("audit-retention", a.runAuditRetention)
-	if cfg.Role != RoleMDM && a.adminEnabled() {
+	// Every role that has a credential serves the admin API. It used to be
+	// withheld from the mdm role, which left the half owning enrollments,
+	// commands and push with no administrative surface at all.
+	if a.adminEnabled() {
 		store, err := a.adminStore(ctx)
 		if err != nil {
 			return err
@@ -561,6 +564,7 @@ func (a *App) wire(ctx context.Context) error {
 		var routes []adminRoute
 		routes = append(routes, a.introspectionRoutes()...)
 		routes = append(routes, a.ddmAdminRoutes()...)
+		routes = append(routes, a.mdmAdminRoutes()...)
 		if a.admin != nil {
 			routes = append(routes, a.principalRoutes()...)
 		}

@@ -31,6 +31,14 @@ const (
 	ActionReadACME             = "readACME"
 	ActionManagePrincipals     = "managePrincipals"
 	ActionReadAudit            = "readAudit"
+	ActionDisableEnrollment    = "disableEnrollment"
+	ActionEnqueueCommand       = "enqueueCommand"
+	ActionReadCommands         = "readCommands"
+	ActionClearCommands        = "clearCommands"
+	ActionPushEnrollment       = "pushEnrollment"
+	ActionManagePushCerts      = "managePushCertificates"
+	ActionExportEnrollments    = "exportEnrollments"
+	ActionImportEnrollments    = "importEnrollments"
 	ActionManagePolicies       = "managePolicies"
 )
 
@@ -51,6 +59,14 @@ func AdminActions() []adminauth.Action {
 		{ID: ActionReadACME, Help: "Read issued ACME identities and the hardware Apple attested for each.", Resource: adminauth.EntitySystem},
 		{ID: ActionManagePrincipals, Help: "Create, rotate, and revoke admin credentials.", Resource: adminauth.EntitySystem},
 		{ID: ActionManagePolicies, Help: "Edit the policies that decide what every other principal may do.", Resource: adminauth.EntitySystem},
+		{ID: ActionDisableEnrollment, Help: "Stop an enrollment receiving commands and pushes, as a check-out would.", Resource: adminauth.EntityEnrollment},
+		{ID: ActionEnqueueCommand, Help: "Send any MDM command to a device, including erase and lock.", Resource: adminauth.EntityEnrollment},
+		{ID: ActionReadCommands, Help: "Read an enrollment's command queue and the results devices returned.", Resource: adminauth.EntityEnrollment},
+		{ID: ActionClearCommands, Help: "Discard an enrollment's pending commands.", Resource: adminauth.EntityEnrollment},
+		{ID: ActionPushEnrollment, Help: "Wake a device now with an APNs push, without queueing anything.", Resource: adminauth.EntityEnrollment},
+		{ID: ActionManagePushCerts, Help: "Read push certificate topics and expiry, and upload or renew one.", Resource: adminauth.EntitySystem},
+		{ID: ActionExportEnrollments, Help: "Export enrollments, including bootstrap and unlock tokens, for migration.", Resource: adminauth.EntitySystem},
+		{ID: ActionImportEnrollments, Help: "Write an exported enrollment record, tokens and pins included.", Resource: adminauth.EntitySystem},
 		{ID: ActionReadAudit, Help: "Read the audit trail: who did what, when, and to which enrollment.", Resource: adminauth.EntitySystem},
 		{ID: ActionReadConfig, Help: "Read the server's role and route table. Authenticated callers always may; a policy does not gate it.", Resource: adminauth.EntitySystem},
 	}
