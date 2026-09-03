@@ -187,43 +187,82 @@ func match(family string, r entry, path string, key bool) Match {
 	}
 }
 
-// Suggest returns up to limit identifiers and key paths that contain arg,
-// case-insensitively, for the message printed when nothing resolved.
+// minPrefix is the shortest shared prefix that counts as a near miss.
+const minPrefix = 4
+
+// Suggest returns up to limit identifiers and key paths close to arg, for the
+// message printed when nothing resolved.
+//
+// It tries a case-insensitive substring first, then falls back to a shared
+// prefix. The fallback is what catches a dropped or transposed letter:
+// "DeviceLok" is not a substring of "DeviceLock", so substring matching alone
+// would answer a typo with silence.
 func Suggest(arg, family string, limit int) []string {
 	needle := strings.ToLower(strings.TrimSpace(arg))
-	if needle == "" {
+	if needle == "" || limit <= 0 {
 		return nil
 	}
 	search := families
 	if family != "" {
 		search = []string{family}
 	}
-	var out []string
-	seen := make(map[string]bool)
-	add := func(s string) bool {
-		if !strings.Contains(strings.ToLower(s), needle) || seen[s] {
-			return false
+	candidates := func() []string {
+		var all []string
+		for _, f := range search {
+			for _, r := range index[f] {
+				all = append(all, r.typeName)
+				if r.id != "" {
+					all = append(all, r.id)
+				}
+			}
+			all = append(all, support.Paths(f)...)
 		}
-		seen[s] = true
-		out = append(out, s)
-		return len(out) >= limit
+		return all
+	}()
+
+	for _, match := range []func(string) bool{
+		func(s string) bool { return strings.Contains(strings.ToLower(s), needle) },
+		func(s string) bool { return sharedPrefix(strings.ToLower(s), needle) >= minPrefix },
+	} {
+		var out []string
+		seen := make(map[string]bool)
+		for _, c := range candidates {
+			if seen[c] || !match(c) {
+				continue
+			}
+			seen[c] = true
+			out = append(out, c)
+		}
+		if len(out) == 0 {
+			continue
+		}
+		// Closest first: a longer shared prefix is a better guess than an
+		// earlier alphabet, so the name the operator meant leads the list
+		// rather than being buried under its siblings.
+		sort.Slice(out, func(i, j int) bool {
+			pi, pj := sharedPrefix(strings.ToLower(out[i]), needle), sharedPrefix(strings.ToLower(out[j]), needle)
+			if pi != pj {
+				return pi > pj
+			}
+			if len(out[i]) != len(out[j]) {
+				return len(out[i]) < len(out[j])
+			}
+			return out[i] < out[j]
+		})
+		return out[:min(limit, len(out))]
 	}
-	for _, f := range search {
-		for _, r := range index[f] {
-			if add(r.typeName) {
-				return out
-			}
-			if r.id != "" && add(r.id) {
-				return out
-			}
-		}
-		for _, p := range support.Paths(f) {
-			if add(p) {
-				return out
-			}
+	return nil
+}
+
+// sharedPrefix returns how many leading characters a and b have in common.
+func sharedPrefix(a, b string) int {
+	n := min(len(a), len(b))
+	for i := range n {
+		if a[i] != b[i] {
+			return i
 		}
 	}
-	return out
+	return n
 }
 
 // Keys returns the support key paths under a match, sorted.

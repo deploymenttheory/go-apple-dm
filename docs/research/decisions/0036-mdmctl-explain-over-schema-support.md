@@ -75,26 +75,30 @@ Phase: 8
    `Supports`/`Removed` were never built and amends `implementation_plan.md` to describe the shipped
    `Check`/`Lookup`/`Families`/`Paths` API, so the plan and the code agree for the first time since
    phase 1.
-2. An ambiguous identifier produces every answer, never a guess. `explain com.apple.MCX` prints all
+2. A near miss is answered with the name the operator meant. Suggestions try a case-insensitive
+   substring and fall back to a shared prefix, ranked closest first: a dropped letter makes
+   `DeviceLok` no substring of `DeviceLock`, so substring matching alone answers a typo with
+   silence, and alphabetical ordering buries the intended name under its siblings.
+3. An ambiguous identifier produces every answer, never a guess. `explain com.apple.MCX` prints all
    six blocks, each headed by its Go type name, `Title` and schema path, sorted by registry key, and
    exits 0 — a complete answer to an ambiguous question is a success, not an error. Resolution scans
    the registry map rather than calling `ByID`, because the map key is the type name that roots the
    support path and `Entry` does not carry it.
-3. "Apple did not say" is rendered as itself. A nil tri-state prints `-`, never `no`; an empty
+4. "Apple did not say" is rendered as itself. A nil tri-state prints `-`, never `no`; an empty
    `Mode` prints `-`; `NotAvailable` collapses the row to `n/a`. The distinction between "forbidden"
    and "unstated" is preserved end to end, which is the whole reason the generator kept `*bool`.
-4. The two "we don't know" answers are not "OK". `Check`'s `"no support data"` and `"no target OS"`
+5. The two "we don't know" answers are not "OK". `Check`'s `"no support data"` and `"no target OS"`
    print as `unknown`, so the command never reports a key as supported on the strength of missing
    metadata.
-5. Nothing is invented. Output is derivable from `Title`, `Schema`, the support path and
+6. Nothing is invented. Output is derivable from `Title`, `Schema`, the support path and
    `Result.Reason` alone; there is no per-key prose in the generated code, so the command cites
    `third_party/device-management/<Schema>` instead of paraphrasing Apple. It does not parse the
    YAML: a second schema reader outside `internal/schemagen` would drift from the generator.
-6. `Result.Reason` is printed verbatim, so `explain` and the server agree byte for byte — the same
+7. `Result.Reason` is printed verbatim, so `explain` and the server agree byte for byte — the same
    string appears in the `ErrUnsupportedTarget` that `Core.Enqueue` returns and that `POST /commands`
    reports in `Skipped`. An operator who asks why a command was refused and an operator who asks in
    advance get the same sentence.
-7. It is offline. `explain` builds no client and reads neither `-server` nor `-token`, so it works
+8. It is offline. `explain` builds no client and reads neither `-server` nor `-token`, so it works
    against a laptop with no deployment, and it imports all eight families so no question is silently
    unanswerable.
 
@@ -103,22 +107,23 @@ Phase: 8
 1. `explain.TestShippedAPIMatchesThePlan` (asserts the families and entry-point functions this
    record names exist), and the amended `docs/research/implementation_plan.md` (proves claim 1; the
    previous text named two functions that no package exported).
-2. `explain.TestResolve/AmbiguousProfilePayloadTypeListsSixBlocks`, `/ResolvesByGoTypeName`,
-   `/ResolvesByWireID`, `/ResolvesByDottedPath`, `/UnknownSuggestsCandidates` (prove claim 2; would
-   fail on any implementation using `ByID` alone, which loses the type name and cannot build the
-   support path).
-3. `explain.TestTriStateNilPrintsDash`, `/NotAvailableCollapsesTheRow` (prove claim 3; would fail on
-   a renderer that treats `*bool` nil as false, which is what a flat non-pointer support struct — the
-   shape the plan originally described — would have forced).
-4. `explain.TestNoSupportDataIsNotOK`, `/NoTargetOSIsNotOK` (prove claim 4; both would report `OK`
-   if the renderer trusted `Result.Supported` alone).
-5. `explain.TestNoDescriptionsAreInvented` (every output line is derivable from `Title`, `Schema`,
-   `Path` or a `Reason`), `explain.TestSchemaPathCitedNotParsed` (prove claim 5).
-6. `explain.TestTargetReasonIsVerbatim` (asserts byte equality with `entry.Check(target).Reason`),
-   `explain.TestReasonMatchesEnqueueRejection` (the same string the admin API returns in `Skipped`)
-   (prove claim 6).
-7. `mdmctl.TestExplainNeedsNoServer` (runs with `-server http://127.0.0.1:1` and succeeds),
-   `explain.TestAllEightFamiliesRegistered` (prove claim 7).
+2. `explain.TestSuggest/ClosestFirst`, `/PrefixFallbackCatchesADroppedLetter`, `/NoNonsenseMatches`
+   (prove claim 2; a substring-only search returns nothing for `DeviceLok`, and an alphabetical
+   ordering puts `DeviceConfigured` above `DeviceLock`).
+3. `explain.TestResolve/AmbiguousProfilePayloadTypeListsSixBlocks`, `/ByGoTypeName`, `/ByWireID`,
+   `/ByDottedPath` (prove claim 3; would fail on any implementation using `ByID` alone, which loses
+   the type name and cannot build the support path).
+4. `explain.TestTriStateNilPrintsDash` (proves claim 4; would fail on a renderer that treats `*bool`
+   nil as false, which is what a flat non-pointer support struct — the shape the plan originally
+   described — would have forced).
+5. `explain.TestNoSupportDataIsNotOK` (proves claim 5; it would report `OK` if the renderer trusted
+   `Result.Supported` alone).
+6. `explain.TestNoDescriptionsAreInvented` (every output line is derivable from `Title`, `Schema`,
+   `Path` or a `Reason`) (proves claim 6).
+7. `explain.TestTargetReasonIsVerbatim` (asserts the rendered output contains `Check`'s reason
+   unchanged) (proves claim 7).
+8. `mdmctl.TestExplainNeedsNoServer` (runs with an unreachable `-server` and succeeds),
+   `explain.TestFamiliesAndListings` (all eight families registered) (prove claim 8).
 
 Failing paths: `explain.TestParseTarget/BadOS`, `/BadVersion`, `/UnknownWord`,
 `explain.TestResolve/EmptyArgument`.
