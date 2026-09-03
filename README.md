@@ -1,5 +1,12 @@
 # go-apple-mdm
 
+[![Release](https://img.shields.io/github/v/release/deploymenttheory/go-apple-mdm)](https://github.com/deploymenttheory/go-apple-mdm/releases)
+[![CI](https://github.com/deploymenttheory/go-apple-mdm/actions/workflows/ci.yml/badge.svg)](https://github.com/deploymenttheory/go-apple-mdm/actions/workflows/ci.yml)
+[![Go Reference](https://pkg.go.dev/badge/github.com/deploymenttheory/go-apple-mdm.svg)](https://pkg.go.dev/github.com/deploymenttheory/go-apple-mdm)
+[![Go Version](https://img.shields.io/github/go-mod/go-version/deploymenttheory/go-apple-mdm)](https://go.dev/)
+[![License](https://img.shields.io/github/license/deploymenttheory/go-apple-mdm)](LICENSE)
+![Status: Preview](https://img.shields.io/badge/status-preview-58A6FF)
+
 A pure Go library for Apple device management: the MDM check-in and command protocol,
 Declarative Device Management (DDM), every enrollment path Apple documents (profile, automated,
 account-driven, user channel and Shared iPad), an ACME server with Managed Device Attestation,

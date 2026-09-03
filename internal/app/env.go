@@ -50,6 +50,14 @@ const (
 	EnvDEPAssignInterval = "MDM_DEP_ASSIGN_INTERVAL" // #nosec G101 -- the variable name, not a credential
 	EnvDEPProfileURL     = "MDM_DEP_PROFILE_URL"
 	EnvDEPUsePUT         = "MDM_DEP_USE_PUT"
+
+	// Push: where APNs credentials come from, and how pushes are shaped.
+	EnvPushSource   = "MDM_PUSH_SOURCE"
+	EnvPushCertFile = "MDM_PUSH_CERT_FILE"
+	EnvPushKeyFile  = "MDM_PUSH_KEY_FILE"
+	EnvPushHost     = "MDM_PUSH_HOST"
+	EnvPushCoalesce = "MDM_PUSH_COALESCE"
+	EnvPushCertTTL  = "MDM_PUSH_CERT_TTL"
 	// ACME and Managed Device Attestation (ACMEConfig).
 	EnvIdentity       = "MDM_IDENTITY"
 	EnvACMEPolicy     = "MDM_ACME_POLICY"
@@ -105,6 +113,35 @@ func ParseEnv(get func(string) string) (Config, error) {
 	}
 	if cfg.Storage == "inmem" {
 		cfg.DSN = ""
+	}
+	cfg.Push = PushConfig{
+		Source:   get(EnvPushSource),
+		CertFile: get(EnvPushCertFile),
+		KeyFile:  get(EnvPushKeyFile),
+		Host:     get(EnvPushHost),
+		// The topic comes from the certificate; there is deliberately no
+		// variable for it.
+		Topic: get(EnvPushTopic),
+	}
+	// A file pair with no explicit source is the source: an operator who
+	// pointed at a certificate meant to send pushes.
+	if cfg.Push.Source == "" && cfg.Push.CertFile != "" {
+		cfg.Push.Source = PushSourceFile
+	}
+	for _, d := range []struct {
+		name string
+		dst  *time.Duration
+	}{
+		{EnvPushCoalesce, &cfg.Push.Coalesce},
+		{EnvPushCertTTL, &cfg.Push.CertTTL},
+	} {
+		if v := get(d.name); v != "" {
+			parsed, err := time.ParseDuration(v)
+			if err != nil {
+				return Config{}, fmt.Errorf("%w: %s=%q: %w", ErrConfig, d.name, v, err)
+			}
+			*d.dst = parsed
+		}
 	}
 	cfg.Enroll = EnrollConfig{
 		PublicURL: get(
