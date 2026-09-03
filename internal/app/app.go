@@ -25,6 +25,7 @@ import (
 	"github.com/deploymenttheory/go-apple-mdm/ddm/sqlstore"
 	"github.com/deploymenttheory/go-apple-mdm/dep"
 	"github.com/deploymenttheory/go-apple-mdm/event"
+	"github.com/deploymenttheory/go-apple-mdm/event/sink"
 	"github.com/deploymenttheory/go-apple-mdm/httpapi"
 	"github.com/deploymenttheory/go-apple-mdm/internal/clock"
 	"github.com/deploymenttheory/go-apple-mdm/push"
@@ -122,8 +123,31 @@ type Config struct {
 	Push   PushConfig
 	Logger *slog.Logger
 	Clock  clock.Clock
-	Bus    *event.Bus
+	// Bus carries the typed events every state change publishes. When nil,
+	// Build creates one so the sinks below have something to subscribe to;
+	// pass one to observe events from outside the process.
+	Bus *event.Bus
+	// Sinks configures what subscribes to the bus.
+	Sinks SinkConfig
 }
+
+// SinkConfig turns on the event sinks. Both are off by default: an audit log
+// and a webhook are deployment choices, and a library consumer supplies its
+// own subscribers.
+type SinkConfig struct {
+	// Audit writes a projected slog record for every event. It is the
+	// cheapest form of the threat model's repudiation control: attributable,
+	// but only as durable as the log stream it is shipped to.
+	Audit bool
+	// WebhookURL receives a POST per event in the MicroMDM envelope, minus
+	// the raw payload those servers include (event/sink explains why).
+	WebhookURL string
+	// WebhookHMACKey signs the webhook body when set.
+	WebhookHMACKey []byte
+}
+
+// Enabled reports whether anything subscribes.
+func (s SinkConfig) Enabled() bool { return s.Audit || s.WebhookURL != "" }
 
 // ErrConfig reports an invalid configuration.
 var ErrConfig = errors.New("app: invalid configuration")
@@ -162,6 +186,9 @@ type App struct {
 	// running records which workers are currently in their Run func, so
 	// readiness can report a loop that has stopped or never started.
 	running map[string]bool
+	// ownBus is set when Build created the event bus, and so has to drain it
+	// on Close. A bus passed in belongs to the caller.
+	ownBus bool
 }
 
 // worker is one supervised background loop. The name is a fixed identifier
@@ -221,8 +248,27 @@ func Build(ctx context.Context, cfg Config) (*App, error) {
 	if cfg.Clock == nil {
 		cfg.Clock = clock.Real{}
 	}
-	a := &App{cfg: cfg}
+	// A bus with no subscribers is what the server had until now, so one is
+	// only created when something is configured to listen. It is asynchronous
+	// because a webhook receiver must never be on the check-in path: NanoMDM
+	// sends inside the check-in handler, so a slow receiver delays every
+	// device.
+	ownBus := false
+	if cfg.Bus == nil && cfg.Sinks.Enabled() {
+		log := cfg.Logger
+		cfg.Bus = event.New(
+			event.WithAsync(),
+			event.WithErrorHandler(func(e event.Event, err error) {
+				log.Warn("app: event sink failed", "event", string(e.Type), "error", err)
+			}),
+		)
+		ownBus = true
+	}
+	a := &App{cfg: cfg, ownBus: ownBus}
 	if err := a.openStorage(ctx); err != nil {
+		return nil, err
+	}
+	if err := a.wireSinks(); err != nil {
 		return nil, err
 	}
 	if err := a.wire(ctx); err != nil {
@@ -545,9 +591,17 @@ func (a *App) Run(ctx context.Context) error {
 	return <-errc
 }
 
-// Close releases storage.
+// Close releases storage, draining the event bus first when Build created
+// it, so an asynchronous sink finishes delivering before the process exits.
 func (a *App) Close() error {
 	var errs []error
+	if a.ownBus && a.cfg.Bus != nil {
+		ctx, cancel := context.WithTimeout(context.Background(), busDrainTimeout)
+		defer cancel()
+		if err := a.cfg.Bus.Close(ctx); err != nil {
+			errs = append(errs, fmt.Errorf("app: drain events: %w", err))
+		}
+	}
 	for _, c := range a.closers {
 		if err := c(); err != nil {
 			errs = append(errs, err)
@@ -568,6 +622,36 @@ func (a *App) healthz(w http.ResponseWriter, r *http.Request) {
 	}
 	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
 	_, _ = w.Write([]byte("ok\n"))
+}
+
+// busDrainTimeout bounds how long Close waits for asynchronous sinks.
+const busDrainTimeout = 5 * time.Second
+
+// wireSinks subscribes the configured sinks to the bus. Both are off unless
+// asked for: an audit log and a webhook are deployment choices, and a library
+// consumer subscribes its own handlers instead.
+func (a *App) wireSinks() error {
+	if !a.cfg.Sinks.Enabled() || a.cfg.Bus == nil {
+		return nil
+	}
+	reg := sink.Default()
+	if a.cfg.Sinks.Audit {
+		a.cfg.Bus.Subscribe(event.All, sink.Slog(a.cfg.Logger, reg))
+	}
+	if a.cfg.Sinks.WebhookURL != "" {
+		h, err := sink.Webhook(sink.WebhookConfig{
+			URL:      a.cfg.Sinks.WebhookURL,
+			Registry: reg,
+			HMACKey:  a.cfg.Sinks.WebhookHMACKey,
+			Clock:    a.cfg.Clock,
+			Logger:   a.cfg.Logger,
+		})
+		if err != nil {
+			return fmt.Errorf("app: webhook sink: %w", err)
+		}
+		a.cfg.Bus.Subscribe(event.All, h)
+	}
+	return nil
 }
 
 // adminStore resolves the admin principal and policy store, following the

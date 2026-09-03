@@ -21,8 +21,14 @@ const (
 	// EnvAdminStore opens the admin principal and policy store on the
 	// process's own database. Off by default: it mounts the admin API.
 	EnvAdminStore = "MDM_ADMIN_STORE"
-	EnvCAFile     = "MDM_CA_FILE"
-	EnvCertHeader = "MDM_CERT_HEADER"
+	// EnvAudit writes a projected slog record for every event.
+	EnvAudit = "MDM_AUDIT_LOG"
+	// EnvWebhookURL receives an event per POST in the MicroMDM envelope.
+	EnvWebhookURL = "MDM_WEBHOOK_URL"
+	// EnvWebhookHMACKey signs the webhook body.
+	EnvWebhookHMACKey = "MDM_WEBHOOK_HMAC_KEY" // #nosec G101 -- the variable name, not a credential
+	EnvCAFile         = "MDM_CA_FILE"
+	EnvCertHeader     = "MDM_CERT_HEADER"
 	// Enrollment routes (EnrollConfig).
 	EnvPublicURL           = "MDM_PUBLIC_URL"
 	EnvPushTopic           = "MDM_PUSH_TOPIC"
@@ -91,12 +97,16 @@ func ParseEnv(get func(string) string) (Config, error) {
 		return def
 	}
 	cfg := Config{
-		Role:          Role(pick(EnvRole, string(DefaultRole))),
-		Listen:        pick(EnvListen, DefaultListen),
-		Storage:       pick(EnvStorage, DefaultStorage),
-		DSN:           pick(EnvDSN, DefaultDSN),
-		DDMURL:        get(EnvDDMURL),
-		AdminToken:    get(EnvAdminToken),
+		Role:       Role(pick(EnvRole, string(DefaultRole))),
+		Listen:     pick(EnvListen, DefaultListen),
+		Storage:    pick(EnvStorage, DefaultStorage),
+		DSN:        pick(EnvDSN, DefaultDSN),
+		DDMURL:     get(EnvDDMURL),
+		AdminToken: get(EnvAdminToken),
+		Sinks: SinkConfig{
+			WebhookURL:     get(EnvWebhookURL),
+			WebhookHMACKey: []byte(get(EnvWebhookHMACKey)),
+		},
 		CAFile:        get(EnvCAFile),
 		CertHeader:    get(EnvCertHeader),
 		Subscriptions: true,
@@ -228,6 +238,7 @@ func ParseEnv(get func(string) string) (Config, error) {
 		EnvRequireUserAuth: &cfg.Enroll.RequireUserAuth,
 		EnvACMEUnattested:  &cfg.Enroll.ACME.AllowUnattested,
 		EnvAdminStore:      &cfg.AdminStoreEnabled,
+		EnvAudit:           &cfg.Sinks.Audit,
 	} {
 		if v := get(key); v != "" {
 			b, err := strconv.ParseBool(v)
