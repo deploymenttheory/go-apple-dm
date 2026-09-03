@@ -1867,3 +1867,68 @@ func TestConformanceRegistry(t *testing.T) {
 		t.Error("missing support entry for ManagementServerCapabilities")
 	}
 }
+
+func TestConformanceReasons(t *testing.T) {
+	t.Parallel()
+	consts := []string{
+		ddm.ReasonErrorActivationFailed,
+		ddm.ReasonErrorAssetCannotBeDeserialized,
+		ddm.ReasonErrorAssetCannotBeDownloaded,
+		ddm.ReasonErrorAssetCannotBeVerified,
+		ddm.ReasonErrorConfigurationCannotBeApplied,
+		ddm.ReasonErrorConfigurationCannotBeDeserialized,
+		ddm.ReasonErrorConfigurationFailed,
+		ddm.ReasonErrorConfigurationIsInvalid,
+		ddm.ReasonErrorConfigurationNotSupported,
+		ddm.ReasonErrorInvalidPayload,
+		ddm.ReasonErrorMissingAssets,
+		ddm.ReasonErrorMissingConfigurations,
+		ddm.ReasonErrorMissingState,
+		ddm.ReasonErrorPredicateFailed,
+		ddm.ReasonErrorUnableToEvaluatePredicate,
+		ddm.ReasonErrorUnableToParsePredicate,
+		ddm.ReasonErrorUnableToParsePredicateWithCustomOperator,
+		ddm.ReasonErrorUnknown,
+		ddm.ReasonErrorUnknownDeclarationType,
+		ddm.ReasonErrorUnknownPayloadKeys,
+		ddm.ReasonInfoNotReferencedByActivation,
+		ddm.ReasonInfoNotReferencedByConfiguration,
+		ddm.ReasonInfoPredicate,
+		ddm.ReasonInfoUnsupportedSettings,
+	}
+	if len(ddm.Reasons) != 24 {
+		t.Fatalf("Reasons has %d codes, want 24", len(ddm.Reasons))
+	}
+	for _, code := range consts {
+		if _, ok := ddm.Reasons[code]; !ok {
+			t.Errorf("constant %q is not in Reasons", code)
+		}
+	}
+	for code, entries := range ddm.Reasons {
+		if len(entries) == 0 {
+			t.Errorf("%q has no entries", code)
+		}
+		for _, en := range entries {
+			if en.Code != code || en.Schema == "" || en.Description == "" {
+				t.Errorf("entry for %q is incomplete: %+v", code, en)
+			}
+			for _, d := range en.Details {
+				if d.Key == "" || d.Type == "" {
+					t.Errorf("detail of %q is incomplete: %+v", code, d)
+				}
+			}
+		}
+	}
+	got := ddm.ReasonCodes()
+	if len(got) != len(consts) {
+		t.Fatalf("ReasonCodes() = %d, want %d", len(got), len(consts))
+	}
+	for i, code := range got {
+		if code != consts[i] {
+			t.Errorf("ReasonCodes()[%d] = %q, want %q", i, code, consts[i])
+		}
+	}
+	if _, ok := ddm.Reasons["Error.NoSuchReason"]; ok {
+		t.Error("Reasons contains a code Apple does not declare")
+	}
+}

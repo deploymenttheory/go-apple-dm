@@ -169,7 +169,10 @@ func (c *Client) pushOne(ctx context.Context, t push.Target) push.Result {
 		r.Reason = ae.Reason
 	}
 	switch {
-	case resp.StatusCode == http.StatusGone, ae.Reason == "BadDeviceToken", ae.Reason == "DeviceTokenNotForTopic", ae.Reason == "Unregistered":
+	case resp.StatusCode == http.StatusGone,
+		ae.Reason == ReasonBadDeviceToken,
+		ae.Reason == ReasonDeviceTokenNotForTopic,
+		ae.Reason == ReasonUnregistered:
 		r.Invalid = true
 		r.Err = fmt.Errorf("%w: %d %s", push.ErrInvalidToken, resp.StatusCode, ae.Reason)
 	case resp.StatusCode == http.StatusTooManyRequests, resp.StatusCode == http.StatusServiceUnavailable:

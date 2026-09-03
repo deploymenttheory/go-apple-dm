@@ -316,3 +316,89 @@ func TestHeaderExtra(t *testing.T) {
 		t.Errorf("header = %q", h)
 	}
 }
+
+// A reason code is scoped to the schema that declares it: Apple's
+// statusreason.yaml says "each status item defines its own set of code,
+// description, and details values", and app.managed.list and package.list do
+// declare Error.DownloadFailed with different prose. The emitted vocabulary
+// must keep both meanings rather than let one schema's win, and the constant
+// must say so instead of asserting a meaning it cannot have.
+func TestGenerateReasonsScopedToSchema(t *testing.T) {
+	t.Parallel()
+	docs := map[string]string{
+		"declarative/status/one.yaml": `title: Status One
+payload:
+  statusitemtype: one
+payloadkeys:
+- key: one
+  type: <string>
+reasons:
+- value: Error.Shared
+  description: One failed.
+  details:
+  - key: Timestamp
+    type: <string>
+    description: When it failed.
+- value: Error.OnlyHere
+  description: Only one declares this.
+`,
+		"declarative/status/two.yaml": `title: Status Two
+payload:
+  statusitemtype: two
+payloadkeys:
+- key: two
+  type: <string>
+reasons:
+- value: Error.Shared
+  description: Two failed.
+`,
+	}
+	var schemas []*Schema
+	for _, path := range []string{"declarative/status/one.yaml", "declarative/status/two.yaml"} {
+		s, err := Parse([]byte(docs[path]))
+		if err != nil {
+			t.Fatalf("%s: %v", path, err)
+		}
+		s.Path = path
+		if s.Family, s.Kind, err = Classify(path); err != nil {
+			t.Fatal(err)
+		}
+		schemas = append(schemas, s)
+	}
+	pkgs, err := Build(&Tree{Schemas: schemas})
+	if err != nil {
+		t.Fatalf("Build: %v", err)
+	}
+	files, err := Generate(pkgs, Options{Commit: "synthetic"})
+	if err != nil {
+		t.Fatalf("Generate: %v", err)
+	}
+	src, ok := files["status/reasons.gen.go"]
+	if !ok {
+		t.Fatal("missing status/reasons.gen.go")
+	}
+	// Strip comment markers before collapsing whitespace, so a doc line that
+	// wraps still reads as one sentence.
+	got := regexp.MustCompile(`\s+`).ReplaceAllString(
+		strings.ReplaceAll(string(src), "//", ""), " ")
+	for _, want := range []string{
+		// Both declarations survive, each carrying its own schema.
+		`{Code: ReasonErrorShared, Description: "One failed.", Schema: "declarative/status/one.yaml"`,
+		`{Code: ReasonErrorShared, Description: "Two failed.", Schema: "declarative/status/two.yaml"}`,
+		// A code only one schema declares takes that schema's prose.
+		`ReasonErrorOnlyHere is Apple's "Error.OnlyHere": Only one declares this.`,
+		// A code two schemas declare cannot claim one meaning.
+		`ReasonErrorShared is Apple's "Error.Shared". Its meaning depends on the status item reporting it`,
+		`Details: []ReasonDetail{ {Key: "Timestamp", Type: "<string>", Description: "When it failed."}, }`,
+	} {
+		if !strings.Contains(got, want) {
+			t.Errorf("reasons.gen.go missing %q", want)
+		}
+	}
+	// The constants and the map are one set, which is what makes the map a
+	// bound on the vocabulary rather than a sample of it.
+	conformance := string(files["status/conformance_gen_test.go"])
+	if !strings.Contains(conformance, "if len(status.Reasons) != 2 {") {
+		t.Error("the conformance test does not pin the vocabulary size")
+	}
+}

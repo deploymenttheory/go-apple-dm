@@ -26,4 +26,5 @@
 //   - Apple: https://developer.apple.com/documentation/devicemanagement/setting-up-push-notifications-for-your-device-management-customers
 //   - Apple: https://developer.apple.com/documentation/usernotifications/sending-notification-requests-to-apns
 //   - Apple: https://developer.apple.com/documentation/devicemanagement/dealing-with-inactive-managed-devices-and-invalid-push-tokens
+//   - Apple: https://developer.apple.com/documentation/usernotifications/handling-notification-responses-from-apns
 package apns

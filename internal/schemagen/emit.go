@@ -68,7 +68,7 @@ func (e *emitter) header(extra ...string) string {
 }
 
 func (e *emitter) files() map[string][]byte {
-	return map[string][]byte{
+	out := map[string][]byte{
 		"doc.gen.go":              e.docFile(),
 		"types.gen.go":            e.typesFile(),
 		"registry.gen.go":         e.registryFile(),
@@ -76,6 +76,12 @@ func (e *emitter) files() map[string][]byte {
 		"support.gen.go":          e.supportFile(),
 		"conformance_gen_test.go": e.conformanceFile(),
 	}
+	// Only some families declare reason vocabularies, and a package with no
+	// reasons must not carry an empty one: Write removes the stale file.
+	if src := e.reasonsFile(); src != nil {
+		out["reasons.gen.go"] = src
+	}
+	return out
 }
 
 // familyDoc gives the Apple documentation page and YAML directory per family.
@@ -229,6 +235,15 @@ func (e *emitter) exportedNames() []string {
 	}
 	for _, c := range e.constants() {
 		add(c.name)
+	}
+	if decls := e.reasons(); len(decls) > 0 {
+		add("ReasonDetail")
+		add("ReasonEntry")
+		add("Reasons")
+		add("ReasonCodes")
+		for _, code := range reasonCodes(decls) {
+			add(reasonConstName(code))
+		}
 	}
 	add("Registry")
 	add("Entry")
