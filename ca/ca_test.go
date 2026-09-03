@@ -50,7 +50,15 @@ func TestSelfSignedAndLocalSignsWithPolicy(t *testing.T) {
 		t.Fatalf("self-signed CA %+v", cert.Subject)
 	}
 	depot := ca.NewMemoryDepot()
-	fake := clock.NewFake(time.Date(2026, 9, 1, 0, 0, 0, 0, time.UTC))
+	// The fake instant is anchored to now rather than a fixed date. The
+	// self-signed CA above is issued against the wall clock, so a leaf signed
+	// at a hardcoded past instant falls outside the root's validity, and one
+	// signed in the past expires in real time: the previous fixed date made
+	// this test start failing 48 hours after it. Signing stays deterministic
+	// because every assertion below is relative to fake.Now(). It is truncated
+	// to a second because x509 stores whole seconds, so an instant carrying
+	// nanoseconds would never compare equal to the certificate it produced.
+	fake := clock.NewFake(time.Now().UTC().Truncate(time.Second))
 	signer, err := ca.NewLocal(cert, key, ca.WithDepot(depot), ca.WithClock(fake), ca.WithChain(cert))
 	if err != nil {
 		t.Fatal(err)
@@ -77,7 +85,15 @@ func TestSelfSignedAndLocalSignsWithPolicy(t *testing.T) {
 		if name == "rsa" && issued.KeyUsage&x509.KeyUsageKeyEncipherment == 0 {
 			t.Error("rsa should get key encipherment")
 		}
-		if _, err := issued.Verify(x509.VerifyOptions{Roots: pool(cert), KeyUsages: []x509.ExtKeyUsage{x509.ExtKeyUsageAny}}); err != nil {
+		// Verify at the clock the certificate was issued against. Without
+		// CurrentTime this checks a fake-clock certificate against the wall
+		// clock, so the test passes only until the fake instant plus the
+		// validity has gone by in real time.
+		if _, err := issued.Verify(x509.VerifyOptions{
+			Roots:       pool(cert),
+			KeyUsages:   []x509.ExtKeyUsage{x509.ExtKeyUsageAny},
+			CurrentTime: fake.Now(),
+		}); err != nil {
 			t.Errorf("%s: chain %v", name, err)
 		}
 		if got, err := depot.Get(ctx, issued.SerialNumber); err != nil || !got.Equal(issued) {
