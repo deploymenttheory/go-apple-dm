@@ -248,7 +248,7 @@ func TestNotifier(t *testing.T) {
 			}
 			id := c.ids[0]
 			seen[id] = true
-			if c.opts.DedupeKey != ddm.DedupeKey {
+			if c.opts.DedupeKey != ddm.DefaultDedupeKey {
 				t.Fatalf("dedupe key = %q", c.opts.DedupeKey)
 			}
 			dm, ok := c.cmd.Payload.(*commands.DeclarativeManagement)
@@ -568,4 +568,102 @@ type tokensFunc func(context.Context, mdm.EnrollmentID) ([]byte, error)
 
 func (fn tokensFunc) Tokens(ctx context.Context, id mdm.EnrollmentID) ([]byte, error) {
 	return fn(ctx, id)
+}
+
+// Suppression is the consumer's decision, not this package's. The default
+// keeps a second DeclarativeManagement from queueing while one is pending,
+// but a deployment that would rather see every change produce a command can
+// say so.
+func TestNotifierDedupeIsConfigurable(t *testing.T) {
+	t.Parallel()
+
+	t.Run("DefaultKeyIsSent", func(t *testing.T) {
+		t.Parallel()
+		f := newNotifierFixture(t, nil)
+		f.assignFresh(t, ddmtest.Device(1), "com.example.a")
+		f.clock.Advance(ddm.DefaultNotifyWindow)
+		f.drain(t)
+		if len(f.enq.calls) == 0 || f.enq.calls[0].opts.DedupeKey != ddm.DefaultDedupeKey {
+			t.Fatalf("calls = %+v", f.enq.calls)
+		}
+	})
+
+	t.Run("EmptyKeyTurnsSuppressionOff", func(t *testing.T) {
+		t.Parallel()
+		off := ""
+		f := newNotifierFixture(t, func(c *ddm.NotifierConfig) { c.DedupeKey = &off })
+		f.assignFresh(t, ddmtest.Device(1), "com.example.a")
+		f.clock.Advance(ddm.DefaultNotifyWindow)
+		if res := f.drain(t); res.Queued != 1 {
+			t.Fatalf("first drain = %+v", res)
+		}
+		for _, c := range f.enq.calls {
+			if c.opts.DedupeKey != "" {
+				t.Fatalf("dedupe key = %q, want none", c.opts.DedupeKey)
+			}
+		}
+	})
+
+	t.Run("ACustomKeyIsUsedVerbatim", func(t *testing.T) {
+		t.Parallel()
+		key := "declarative-sync"
+		f := newNotifierFixture(t, func(c *ddm.NotifierConfig) { c.DedupeKey = &key })
+		f.assignFresh(t, ddmtest.Device(1), "com.example.a")
+		f.clock.Advance(ddm.DefaultNotifyWindow)
+		f.drain(t)
+		if len(f.enq.calls) == 0 || f.enq.calls[0].opts.DedupeKey != key {
+			t.Fatalf("calls = %+v", f.enq.calls)
+		}
+	})
+}
+
+// A suppressed command used to leave no trace: Run discarded the result, so
+// nothing anywhere recorded that a device had not been woken.
+func TestNotifierReportsEveryDrain(t *testing.T) {
+	t.Parallel()
+	var got []ddm.DrainResult
+	var mu sync.Mutex
+	f := newNotifierFixture(t, func(c *ddm.NotifierConfig) {
+		c.OnDrain = func(_ context.Context, res ddm.DrainResult) {
+			mu.Lock()
+			defer mu.Unlock()
+			got = append(got, res)
+		}
+	})
+	f.assignFresh(t, ddmtest.Device(1), "com.example.a")
+	f.clock.Advance(ddm.DefaultNotifyWindow)
+
+	ctx, cancel := context.WithCancel(context.Background())
+	done := make(chan error, 1)
+	go func() { done <- f.notifier.Run(ctx) }()
+	waitForDrain(t, &mu, &got)
+	cancel()
+	<-done
+
+	mu.Lock()
+	defer mu.Unlock()
+	var queued int
+	for _, r := range got {
+		queued += r.Queued
+	}
+	if queued != 1 {
+		t.Fatalf("reported drains = %+v, want one queued command", got)
+	}
+}
+
+func waitForDrain(t *testing.T, mu *sync.Mutex, got *[]ddm.DrainResult) {
+	t.Helper()
+	deadline := time.Now().Add(5 * time.Second)
+	for time.Now().Before(deadline) {
+		mu.Lock()
+		for _, r := range *got {
+			if r.Queued > 0 {
+				mu.Unlock()
+				return
+			}
+		}
+		mu.Unlock()
+		time.Sleep(time.Millisecond)
+	}
+	t.Fatal("no drain was reported")
 }

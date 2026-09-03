@@ -527,15 +527,21 @@ func (a *App) wire(ctx context.Context) error {
 	// into the notifier. The durable signal is the change rows recordAffected
 	// writes inside the transaction; the admin route wrapper kicks the
 	// notifier after a change so the 1s poll is not the only trigger.
+	// The reference server suppresses a second DeclarativeManagement while
+	// one is pending, and says so here rather than inheriting it: whether to
+	// suppress is a deployment's decision, and ddm defaults to this only
+	// because a nil key means "not set".
+	dedupe := ddm.DefaultDedupeKey
 	a.Notifier, err = ddm.NewNotifier(
 		ddm.NotifierConfig{
-			Store:    st,
-			Tokens:   engine,
-			Enqueuer: a.Core,
-			Pusher:   pusher,
-			Bus:      cfg.Bus,
-			Clock:    cfg.Clock,
-			Logger:   cfg.Logger,
+			Store:     st,
+			Tokens:    engine,
+			Enqueuer:  a.Core,
+			Pusher:    pusher,
+			Bus:       cfg.Bus,
+			Clock:     cfg.Clock,
+			Logger:    cfg.Logger,
+			DedupeKey: &dedupe,
 		},
 	)
 	if err != nil {
