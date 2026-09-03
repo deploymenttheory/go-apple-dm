@@ -1,6 +1,6 @@
 # 0035: `mdmctl` structure, output, and credential handling
 
-Status: proposed
+Status: accepted
 Date: 2026-09-02
 Phase: 8
 

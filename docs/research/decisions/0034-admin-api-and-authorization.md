@@ -1,6 +1,6 @@
 # 0034: Admin API surface and authorization
 
-Status: proposed
+Status: accepted
 Date: 2026-09-02
 Phase: 8
 
