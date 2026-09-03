@@ -5,6 +5,7 @@ import (
 	json "encoding/json/v2"
 	"errors"
 	"fmt"
+	"strings"
 	"sync"
 	"testing"
 	"testing/synctest"
@@ -83,7 +84,7 @@ func (f *fakePusher) Notify(_ context.Context, ids []mdm.EnrollmentID) (map[mdm.
 			out[id] = r
 			continue
 		}
-		out[id] = push.Result{Sent: true}
+		out[id] = push.Result{Outcome: push.OutcomeSent}
 	}
 	return out, nil
 }
@@ -375,13 +376,37 @@ func TestNotifier(t *testing.T) {
 		if rows := f.pending(t); len(rows) != 1 || rows[0].Attempts != 2 {
 			t.Fatalf("rows = %+v, want attempts 2", rows)
 		}
-		f.pusher.results = map[mdm.EnrollmentID]push.Result{dev: {Invalid: true, Err: errors.New("BadDeviceToken")}}
+		f.pusher.results = map[mdm.EnrollmentID]push.Result{dev: {Outcome: push.OutcomeInvalidToken, Status: 410, Err: errors.New("Unregistered")}}
 		f.clock.Advance(storage.NotNowBackoff(2))
 		if res := f.drain(t); res.Pushed != 1 || res.Failed != 0 {
 			t.Fatalf("invalid-token drain = %+v", res)
 		}
 		if len(f.pending(t)) != 0 {
 			t.Fatal("change still pending after invalid token")
+		}
+	})
+	// A rejected push is APNs refusing the request, not reporting a dead
+	// device, and the cause is usually shared by every device on the topic.
+	// Completing the change would mark a fleet's worth of work delivered
+	// that nothing was ever woken for, and leave no trace of why.
+	t.Run("RejectedPushIsNotTreatedAsDelivered", func(t *testing.T) {
+		f := newNotifierFixture(t, nil)
+		dev := ddmtest.Device(1)
+		f.assignFresh(t, dev, "com.example.rejected")
+		f.clock.Advance(ddm.DefaultNotifyWindow)
+		f.pusher.results = map[mdm.EnrollmentID]push.Result{dev: {
+			Outcome: push.OutcomeRejected, Status: 400,
+			Err: fmt.Errorf("%w: 400 DeviceTokenNotForTopic", push.ErrRejected),
+		}}
+		if res := f.drain(t); res.Failed != 1 || res.Pushed != 0 {
+			t.Fatalf("drain = %+v, want 1 failed", res)
+		}
+		rows := f.pending(t)
+		if len(rows) != 1 || rows[0].Attempts != 1 {
+			t.Fatalf("rows = %+v, want the change still pending", rows)
+		}
+		if !strings.Contains(rows[0].LastError, "DeviceTokenNotForTopic") {
+			t.Fatalf("LastError = %q, want the APNs reason kept", rows[0].LastError)
 		}
 	})
 	t.Run("NoPusherStillCompletes", func(t *testing.T) {

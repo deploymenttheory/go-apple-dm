@@ -15,6 +15,12 @@
 // reloads from storage.PushCertStore on version change; StaticCertStore is
 // for tests and single-tenant deployments.
 //
+// Result.Outcome is what a caller acts on. It separates a token APNs says
+// is dead (410, and only 410) from a request APNs refused — a wrong topic,
+// a mismatched or expired certificate, the sandbox environment — because
+// the second is normally true of every device at once and must not be read
+// as a fleet that has gone quiet (decision record 0042).
+//
 // The HTTP/2 client that actually talks to Apple is push/apns, certificate
 // parsing is push/pushcert (standard library only, to avoid an import
 // cycle with storage), and fakes are push/pushtest.
@@ -23,6 +29,7 @@
 //
 //   - Decision record 0007: docs/research/decisions/0007-apns-push.md
 //   - Decision record 0015: docs/research/decisions/0015-push-cert-store.md
+//   - Decision record 0042: docs/research/decisions/0042-push-failure-classification.md
 //   - Plan of record: docs/research/implementation_plan.md (phase 3)
 //   - Threat model: docs/security/threat-model.md (Push rows)
 //   - End-to-end scenarios: docs/testing/e2e-scenarios.md (E2E-006, E2E-007)

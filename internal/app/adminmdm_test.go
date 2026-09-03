@@ -17,6 +17,7 @@ import (
 	"github.com/deploymenttheory/go-apple-mdm/internal/testpki"
 	"github.com/deploymenttheory/go-apple-mdm/mdm"
 	"github.com/deploymenttheory/go-apple-mdm/push"
+	"github.com/deploymenttheory/go-apple-mdm/push/apns"
 	"github.com/deploymenttheory/go-apple-mdm/schema/commands"
 	"github.com/deploymenttheory/go-apple-mdm/storage"
 )
@@ -592,10 +593,31 @@ func TestPushRouteReportsAnInvalidToken(t *testing.T) {
 	resp := adminReq(t, srv, http.MethodPost, "/admin/v1/enrollments/device/UDID-DEAD/push", "t", "")
 	defer resp.Body.Close()
 	body := jsonBody(t, resp)
-	if body["Invalid"] != true {
-		t.Fatalf("Invalid = %v", body["Invalid"])
+	if body["Outcome"] != string(push.OutcomeInvalidToken) || body["Sent"] != false {
+		t.Fatalf("body = %v", body)
 	}
 	if body["Status"] != float64(410) || body["Reason"] != "Unregistered" {
+		t.Fatalf("body = %v", body)
+	}
+}
+
+// The route must not answer a refused request the same way it answers a dead
+// device. An operator reading "invalid-token" retires an enrollment; an
+// operator reading "rejected" goes and looks at their push certificate.
+func TestPushRouteSeparatesRejectionFromADeadToken(t *testing.T) {
+	a := build(t, app.Config{
+		Role: app.RoleAll, Storage: "inmem", AdminToken: "t",
+		Push: app.PushConfig{Pusher: &rejectingPusher{}, Coalesce: -1},
+	})
+	srv := serve(t, a).URL
+	seed(t, a, "UDID-REJECT")
+	resp := adminReq(t, srv, http.MethodPost, "/admin/v1/enrollments/device/UDID-REJECT/push", "t", "")
+	defer resp.Body.Close()
+	body := jsonBody(t, resp)
+	if body["Outcome"] != string(push.OutcomeRejected) {
+		t.Fatalf("body = %v", body)
+	}
+	if body["Status"] != float64(400) || body["Reason"] != apns.ReasonDeviceTokenNotForTopic {
 		t.Fatalf("body = %v", body)
 	}
 }
@@ -606,7 +628,19 @@ type deadTokenPusher struct{}
 func (deadTokenPusher) Push(_ context.Context, targets []push.Target) (map[mdm.EnrollmentID]push.Result, error) {
 	out := make(map[mdm.EnrollmentID]push.Result, len(targets))
 	for _, tgt := range targets {
-		out[tgt.ID] = push.Result{Invalid: true, Status: 410, Reason: "Unregistered"}
+		out[tgt.ID] = push.Result{Outcome: push.OutcomeInvalidToken, Status: 410, Reason: "Unregistered"}
+	}
+	return out, nil
+}
+
+// rejectingPusher is APNs refusing the request itself: the topic in the
+// certificate does not match the token. Every device answers this way.
+type rejectingPusher struct{}
+
+func (rejectingPusher) Push(_ context.Context, targets []push.Target) (map[mdm.EnrollmentID]push.Result, error) {
+	out := make(map[mdm.EnrollmentID]push.Result, len(targets))
+	for _, tgt := range targets {
+		out[tgt.ID] = push.Result{Outcome: push.OutcomeRejected, Status: 400, Reason: apns.ReasonDeviceTokenNotForTopic}
 	}
 	return out, nil
 }

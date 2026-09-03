@@ -21,7 +21,7 @@ Phase: 3
 ## Known pitfalls found
 
 - `buford` is archived yet still a direct dependency of every reference; nanomdm added `nanopush` to stop depending on it.
-- Invalid tokens (410 `Unregistered`, 400 `BadDeviceToken`, `DeviceTokenNotForTopic`) must be recorded so the server stops pushing and can surface inactive devices; NanoMDM leaves this to the caller.
+- Invalid tokens must be recorded so the server stops pushing and can surface inactive devices; NanoMDM leaves this to the caller. **Corrected by record 0042**: this originally read "410 `Unregistered`, 400 `BadDeviceToken`, `DeviceTokenNotForTopic`", but the Apple page cited above says nothing about any reason string, and the two 400 reasons describe a request the sender must fix rather than a device that is gone. Only 410 retires an enrollment.
 - A push storm on a busy device (many commands enqueued) sends one APNs request per command; Fleet coalesces in its cron.
 - Push certificates expire yearly; NanoMDM's `IsPushCertStale` token forces a reload but nothing tracks expiry.
 
@@ -32,14 +32,14 @@ Phase: 3
 
 ## What we do better
 
-1. `push.Pusher` is an interface with a `Result` per enrollment that says whether the token is invalid and how long to back off (`Retry-After`), so the service can publish `PushTokenInvalid` and skip dead tokens instead of retrying forever.
+1. `push.Pusher` is an interface with a `Result` per enrollment that says whether the token is invalid and how long to back off (`Retry-After`), so the service can publish `PushTokenInvalid` and skip dead tokens instead of retrying forever. Record 0042 replaces the two booleans with a closed `Result.Outcome` that also distinguishes a refused request from a dead token.
 2. `push/apns` uses only `net/http` (HTTP/2 negotiated by TLS) with one client per topic, certificates fetched from a `CertStore` that can rotate, and certificate expiry surfaced as an error before the request.
 3. `push.Coalesce` collapses repeated pushes to the same enrollment inside a window; `push.Notifier` looks up push info from storage, sends, and publishes events, so callers push by enrollment id.
 4. `pushtest` provides a scripted fake `Pusher` and an in-process APNs server so every path (410, 429 with Retry-After, 400 reasons, 5xx) is testable offline.
 
 ## Verified by
 
-1. `push/apns.TestStatusMapping`, `push.TestNotifierPublishesInvalidToken`.
+1. `push/apns.TestStatusMapping`, `push.TestNotifierPublishesInvalidToken`, and from record 0042 `push/apns.TestClassifyEveryDocumentedReason`.
 2. `push/apns.TestPerTopicClientsAndExpiry`.
 3. `push.TestCoalesce`.
 4. `pushtest.TestServerScripting`.

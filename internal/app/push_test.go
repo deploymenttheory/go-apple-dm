@@ -29,7 +29,7 @@ func (p *recordingPusher) Push(_ context.Context, targets []push.Target) (map[md
 	out := make(map[mdm.EnrollmentID]push.Result, len(targets))
 	for _, tgt := range targets {
 		p.woke = append(p.woke, tgt.ID)
-		out[tgt.ID] = push.Result{Sent: true}
+		out[tgt.ID] = push.Result{Outcome: push.OutcomeSent}
 	}
 	return out, nil
 }

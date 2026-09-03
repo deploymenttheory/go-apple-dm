@@ -41,7 +41,7 @@ func TestNotifierPublishesInvalidToken(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
 	store := enrolledStore(t, "A", "B")
-	fake := &pushtest.Fake{Results: map[mdm.EnrollmentID]push.Result{dev("B"): {Invalid: true, Status: 410, Err: push.ErrInvalidToken}}}
+	fake := &pushtest.Fake{Results: map[mdm.EnrollmentID]push.Result{dev("B"): {Outcome: push.OutcomeInvalidToken, Status: 410, Err: push.ErrInvalidToken}}}
 	bus := event.New()
 	var got []event.Event
 	bus.Subscribe(event.PushTokenInvalid, func(_ context.Context, e event.Event) error { got = append(got, e); return nil })
@@ -50,7 +50,7 @@ func TestNotifierPublishesInvalidToken(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !res[dev("A")].Sent || !res[dev("B")].Invalid || !errors.Is(res[dev("missing")].Err, storage.ErrNotFound) {
+	if !res[dev("A")].Sent() || !res[dev("B")].TokenInvalid() || !errors.Is(res[dev("missing")].Err, storage.ErrNotFound) {
 		t.Fatalf("results %+v", res)
 	}
 	if len(got) != 1 || got[0].Enrollment != dev("B") || got[0].Actor != "apns" || !got[0].At.Equal(t0) {
@@ -79,7 +79,7 @@ func TestNotifierPublishesInvalidToken(t *testing.T) {
 	// Without a bus and clock, invalid tokens are still reported.
 	fake.Err = nil
 	res, _ = (&push.Notifier{Store: store, Pusher: fake}).Notify(ctx, []mdm.EnrollmentID{dev("B")})
-	if !res[dev("B")].Invalid {
+	if !res[dev("B")].TokenInvalid() {
 		t.Fatal("invalid without bus")
 	}
 }
@@ -91,7 +91,7 @@ func TestCoalesce(t *testing.T) {
 	fc := clock.NewFake(t0)
 	c := push.Coalesce(fake, time.Minute, fc)
 	targets := []push.Target{{ID: dev("A"), Push: mdm.Push{Topic: "t", Token: []byte{1}, Magic: "m"}}}
-	if res, err := c.Push(ctx, targets); err != nil || !res[dev("A")].Sent {
+	if res, err := c.Push(ctx, targets); err != nil || !res[dev("A")].Sent() {
 		t.Fatalf("first push %+v %v", res, err)
 	}
 	fc.Advance(30 * time.Second)
@@ -99,7 +99,7 @@ func TestCoalesce(t *testing.T) {
 		t.Fatalf("second push inside window %+v calls=%d", res, len(fake.Calls))
 	}
 	fc.Advance(31 * time.Second)
-	if res, _ := c.Push(ctx, targets); !res[dev("A")].Sent || len(fake.Calls) != 2 {
+	if res, _ := c.Push(ctx, targets); !res[dev("A")].Sent() || len(fake.Calls) != 2 {
 		t.Fatalf("push after window %+v", res)
 	}
 	// Errors from the inner pusher pass through; default clock works.
@@ -109,7 +109,7 @@ func TestCoalesce(t *testing.T) {
 		t.Fatalf("inner error: %v", err)
 	}
 	real := push.Coalesce(&pushtest.Fake{}, time.Minute, nil)
-	if res, err := real.Push(ctx, targets); err != nil || !res[dev("A")].Sent {
+	if res, err := real.Push(ctx, targets); err != nil || !res[dev("A")].Sent() {
 		t.Fatal("real clock")
 	}
 }
@@ -124,4 +124,67 @@ func TestStaticCertStore(t *testing.T) {
 		t.Fatal("missing topic")
 	}
 	_ = tls.Certificate{}
+}
+
+// A refused request and a dead token are different operational facts and so
+// are different events. One says retire this enrollment; the other says go
+// and look at the push certificate, because every device on the topic is
+// about to answer the same way.
+func TestNotifierPublishesRejectionSeparately(t *testing.T) {
+	t.Parallel()
+	store := enrolledStore(t, "A", "B")
+	fake := &pushtest.Fake{Results: map[mdm.EnrollmentID]push.Result{
+		dev("A"): {Outcome: push.OutcomeRejected, Status: 400, Reason: "DeviceTokenNotForTopic", Err: push.ErrRejected},
+		dev("B"): {Outcome: push.OutcomeInvalidToken, Status: 410, Reason: "Unregistered", Err: push.ErrInvalidToken},
+	}}
+	bus := event.New()
+	seen := map[event.Type][]mdm.EnrollmentID{}
+	for _, tp := range []event.Type{event.PushRejected, event.PushTokenInvalid} {
+		bus.Subscribe(tp, func(_ context.Context, e event.Event) error {
+			seen[e.Type] = append(seen[e.Type], e.Enrollment)
+			return nil
+		})
+	}
+	n := &push.Notifier{Store: store, Pusher: fake, Bus: bus, Clock: clock.NewFake(t0)}
+	res, err := n.Notify(context.Background(), []mdm.EnrollmentID{dev("A"), dev("B")})
+	if err != nil {
+		t.Fatal(err)
+	}
+	// The rejected enrollment is emphatically not reported as a dead token.
+	if res[dev("A")].TokenInvalid() || res[dev("A")].Outcome != push.OutcomeRejected {
+		t.Fatalf("rejected result = %+v", res[dev("A")])
+	}
+	if got := seen[event.PushRejected]; len(got) != 1 || got[0] != dev("A") {
+		t.Fatalf("push-rejected events = %+v", got)
+	}
+	if got := seen[event.PushTokenInvalid]; len(got) != 1 || got[0] != dev("B") {
+		t.Fatalf("push-token-invalid events = %+v", got)
+	}
+}
+
+// Every outcome a Pusher can report is one the projection registry knows
+// how to render, and the list is closed.
+func TestOutcomesAreClosed(t *testing.T) {
+	t.Parallel()
+	seen := map[push.Outcome]bool{}
+	for _, o := range push.Outcomes {
+		if o == "" {
+			t.Error("the zero value is not a valid outcome")
+		}
+		if seen[o] {
+			t.Errorf("duplicate outcome %q", o)
+		}
+		seen[o] = true
+	}
+	if len(push.Outcomes) != 6 {
+		t.Fatalf("Outcomes = %d entries", len(push.Outcomes))
+	}
+	// Sent and TokenInvalid are derived from Outcome, so they cannot drift
+	// from it the way two independent booleans could.
+	for _, o := range push.Outcomes {
+		r := push.Result{Outcome: o}
+		if r.Sent() != (o == push.OutcomeSent) || r.TokenInvalid() != (o == push.OutcomeInvalidToken) {
+			t.Errorf("%q: Sent=%v TokenInvalid=%v", o, r.Sent(), r.TokenInvalid())
+		}
+	}
 }

@@ -187,3 +187,4 @@ Failing paths: `schemagen.TestGenerateReasonsScopedToSchema` covers the two-decl
   means a production/sandbox mix-up presents as a fleet-wide invalid-token event, and our DDM
   notifier treats an `Invalid` result as delivered rather than retrying (`ddm/notifier.go:310`). That
   is worth revisiting on its own evidence, not inside a change that only renames literals.
+  **Done in record 0042**, which found the citation behind 0007's claim does not support it.
