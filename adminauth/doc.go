@@ -8,8 +8,22 @@
 // gives that API enrollment inventory, command enqueue, push certificate
 // upload, and enrollment export, at which point a single credential both
 // erases fleets and exfiltrates FileVault escrow. This package is the
-// least-privilege answer: named principals, coarse scopes, and tokens that are
-// checksummed, stored only as a digest, and revocable without a restart.
+// least-privilege answer: named principals, Cedar policies over the per-route
+// actions the server declares, and tokens that are checksummed, stored only as
+// a digest, and revocable without a restart.
+//
+// It has one deliberate exception, and it is worth stating plainly because it
+// suspends everything above. An empty principal store authenticates nobody,
+// and the route that creates the first principal is itself authorized, so
+// there has to be a way in. That way is the reference server's static
+// MDM_ADMIN_TOKEN, which authenticates as root and bypasses policy, and which
+// keeps working beside a configured store rather than being superseded by it.
+// It has no expiry and cannot be revoked without restarting the process, so
+// while it is set none of this package's guarantees hold for whoever holds it.
+// A deployment sets it to create real principals and then unsets it; requests
+// that used it are audited under the actor "break-glass" precisely so that
+// using it afterwards is something an operator can alert on. The bootstrap and
+// removal sequence is in docs/operations/deployment.md.
 //
 // It is deliberately not an identity system. There are no users, sessions,
 // passwords, or federation here, and there is no policy language. Those are

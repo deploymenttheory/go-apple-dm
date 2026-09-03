@@ -18,6 +18,9 @@ const (
 	EnvDDMSendKey = "MDM_DDM_SEND_KEY"
 	EnvDDMRecvKey = "MDM_DDM_RECV_KEY"
 	EnvAdminToken = "MDM_ADMIN_TOKEN" // #nosec G101 -- the variable name, not a credential
+	// EnvAdminStore opens the admin principal and policy store on the
+	// process's own database. Off by default: it mounts the admin API.
+	EnvAdminStore = "MDM_ADMIN_STORE"
 	EnvCAFile     = "MDM_CA_FILE"
 	EnvCertHeader = "MDM_CERT_HEADER"
 	// Enrollment routes (EnrollConfig).
@@ -224,6 +227,7 @@ func ParseEnv(get func(string) string) (Config, error) {
 		EnvADEAudit:        &cfg.Enroll.ADEAudit,
 		EnvRequireUserAuth: &cfg.Enroll.RequireUserAuth,
 		EnvACMEUnattested:  &cfg.Enroll.ACME.AllowUnattested,
+		EnvAdminStore:      &cfg.AdminStoreEnabled,
 	} {
 		if v := get(key); v != "" {
 			b, err := strconv.ParseBool(v)

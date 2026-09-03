@@ -446,3 +446,51 @@ func TestTokenSpecs(t *testing.T) {
 		t.Fatal("an empty environment variable was accepted")
 	}
 }
+
+// The break-glass token is root, bypasses policy, has no expiry and cannot be
+// revoked without a restart, so status says so plainly and says what to do
+// about it. Reading logs should not be the only way to find out it is still
+// set.
+func TestStatusReportsBreakGlass(t *testing.T) {
+	cases := map[string]struct {
+		body string
+		want string
+		gone string
+	}{
+		"ActiveBesideAStore": {
+			body: `{"Role":"all","Version":"devel","Families":["ddm"],"Policy":true,"BreakGlass":true}`,
+			want: "unset MDM_ADMIN_TOKEN",
+		},
+		"TheOnlyCredential": {
+			body: `{"Role":"all","Version":"devel","Families":["ddm"],"Policy":false,"BreakGlass":true}`,
+			want: "the only credential",
+		},
+		"Removed": {
+			body: `{"Role":"all","Version":"devel","Families":["ddm"],"Policy":true,"BreakGlass":false}`,
+			want: "not configured",
+			gone: "unset MDM_ADMIN_TOKEN",
+		},
+	}
+	for name, tc := range cases {
+		t.Run(name, func(t *testing.T) {
+			srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				w.Header().Set("Content-Type", "application/json")
+				_, _ = w.Write([]byte(tc.body))
+			}))
+			defer srv.Close()
+			env := noConfig(t)
+			env["MDMCTL_SERVER"] = srv.URL
+			env["MDMCTL_TOKEN"] = "tok"
+			out, _, err := run(t, env, "status")
+			if err != nil {
+				t.Fatal(err)
+			}
+			if !strings.Contains(out, tc.want) {
+				t.Fatalf("status output missing %q:\n%s", tc.want, out)
+			}
+			if tc.gone != "" && strings.Contains(out, tc.gone) {
+				t.Fatalf("status output should not contain %q:\n%s", tc.gone, out)
+			}
+		})
+	}
+}

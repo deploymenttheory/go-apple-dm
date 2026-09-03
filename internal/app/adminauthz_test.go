@@ -126,6 +126,14 @@ func (r *recorder) handle(_ context.Context, e event.Event) error {
 	return nil
 }
 
+// reset drops what has been collected so a subtest can assert on its own
+// requests rather than everything the server did before it.
+func (r *recorder) reset() {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	r.events = nil
+}
+
 func (r *recorder) ofType(t event.Type) []event.Event {
 	r.mu.Lock()
 	defer r.mu.Unlock()

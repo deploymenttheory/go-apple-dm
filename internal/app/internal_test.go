@@ -2,8 +2,10 @@ package app
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	"net/http/httptest"
+	"path/filepath"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -12,6 +14,7 @@ import (
 
 	"github.com/deploymenttheory/go-apple-mdm/ddm"
 	"github.com/deploymenttheory/go-apple-mdm/internal/testpki"
+	"github.com/deploymenttheory/go-apple-mdm/storage/sqlite"
 )
 
 func TestWriteJSONMarshalError(t *testing.T) {
@@ -244,5 +247,21 @@ func TestRunWaitsForWorkersToFinishDraining(t *testing.T) {
 		}
 	case <-time.After(5 * time.Second):
 		t.Fatal("Run did not stop")
+	}
+}
+
+// A satellite store that cannot open must fail the build rather than leave
+// the admin API mounted with no way to authenticate against it.
+func TestAdminStoreOpenFailureIsReported(t *testing.T) {
+	db, err := sql.Open("sqlite", filepath.Join(t.TempDir(), "closed.db"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := db.Close(); err != nil {
+		t.Fatal(err)
+	}
+	a := &App{cfg: Config{AdminStoreEnabled: true}, db: db, dialect: sqlite.Dialect}
+	if _, err := a.adminStore(context.Background()); err == nil {
+		t.Fatal("adminStore = nil error on a closed database")
 	}
 }
