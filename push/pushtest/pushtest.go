@@ -40,7 +40,7 @@ func (f *Fake) Push(_ context.Context, targets []push.Target) (map[mdm.Enrollmen
 			out[t.ID] = r
 			continue
 		}
-		out[t.ID] = push.Result{Sent: true, Status: 200, APNSID: "fake-" + t.ID.ID}
+		out[t.ID] = push.Result{Outcome: push.OutcomeSent, Status: 200, APNSID: "fake-" + t.ID.ID}
 	}
 	return out, nil
 }

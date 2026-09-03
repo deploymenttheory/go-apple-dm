@@ -239,7 +239,7 @@ func (a *App) pushEnrollment(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	res := results[id]
-	out := map[string]any{"Sent": res.Sent, "Invalid": res.Invalid}
+	out := map[string]any{"Sent": res.Sent(), "Outcome": string(res.Outcome)}
 	if res.Status != 0 {
 		out["Status"] = res.Status
 	}

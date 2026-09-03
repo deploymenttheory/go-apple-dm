@@ -46,6 +46,7 @@ func Default() *Registry {
 	r.Register(event.CommandResult, response)
 
 	r.Register(event.PushTokenInvalid, pushResult)
+	r.Register(event.PushRejected, pushResult)
 
 	r.Register(event.DDMChanged, ddmChanges)
 	r.Register(event.DDMStatusReceived, nil)
@@ -137,7 +138,7 @@ func pushResult(data any) map[string]any {
 	if !ok {
 		return nil
 	}
-	out := map[string]any{"status": r.Status, "invalid": r.Invalid}
+	out := map[string]any{"status": r.Status, "outcome": string(r.Outcome)}
 	putNonEmpty(out, "reason", r.Reason)
 	return out
 }

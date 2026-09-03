@@ -133,7 +133,7 @@ type apnsError struct {
 
 func (c *Client) pushOne(ctx context.Context, t push.Target) push.Result {
 	if !t.Push.Valid() {
-		return push.Result{Err: fmt.Errorf("%w: incomplete push info", push.ErrInvalidToken), Invalid: true}
+		return push.Result{Outcome: push.OutcomeSkipped, Err: fmt.Errorf("%w: incomplete push info", push.ErrInvalidToken)}
 	}
 	client, err := c.clientFor(ctx, t.Push.Topic)
 	if err != nil {
@@ -155,12 +155,12 @@ func (c *Client) pushOne(ctx context.Context, t push.Target) push.Result {
 	req.Header.Set("apns-expiration", "0")
 	resp, err := client.Do(req)
 	if err != nil {
-		return push.Result{Err: fmt.Errorf("%w: %w", push.ErrUpstream, err)}
+		return push.Result{Outcome: push.OutcomeUnavailable, Err: fmt.Errorf("%w: %w", push.ErrUpstream, err)}
 	}
 	defer resp.Body.Close()
 	r := push.Result{Status: resp.StatusCode, APNSID: resp.Header.Get("apns-id")}
 	if resp.StatusCode == http.StatusOK {
-		r.Sent = true
+		r.Outcome = push.OutcomeSent
 		return r
 	}
 	data, _ := io.ReadAll(io.LimitReader(resp.Body, 4096))
@@ -168,29 +168,68 @@ func (c *Client) pushOne(ctx context.Context, t push.Target) push.Result {
 	if json.Unmarshal(data, &ae) == nil {
 		r.Reason = ae.Reason
 	}
-	switch {
-	case resp.StatusCode == http.StatusGone,
-		ae.Reason == ReasonBadDeviceToken,
-		ae.Reason == ReasonDeviceTokenNotForTopic,
-		ae.Reason == ReasonUnregistered:
-		r.Invalid = true
+	r.Outcome = Classify(resp.StatusCode, ae.Reason)
+	switch r.Outcome {
+	case push.OutcomeInvalidToken:
 		r.Err = fmt.Errorf("%w: %d %s", push.ErrInvalidToken, resp.StatusCode, ae.Reason)
-	case resp.StatusCode == http.StatusTooManyRequests, resp.StatusCode == http.StatusServiceUnavailable:
+	case push.OutcomeRejected:
+		r.Err = fmt.Errorf("%w: %d %s", push.ErrRejected, resp.StatusCode, ae.Reason)
+	case push.OutcomeRateLimited:
 		r.RetryAfter = retryAfter(resp.Header.Get("Retry-After"))
 		r.Err = fmt.Errorf("%w: %d %s", push.ErrRateLimited, resp.StatusCode, ae.Reason)
-	default:
+	case push.OutcomeUnavailable, push.OutcomeSent, push.OutcomeSkipped:
 		r.Err = fmt.Errorf("%w: %d %s", push.ErrUpstream, resp.StatusCode, ae.Reason)
 	}
 	return r
 }
 
-// retryAfter parses a Retry-After header (seconds); default 30s when absent
-// or unparsable.
+// Classify turns an APNs status and reason into an outcome. It is exported
+// because Result records Status and Reason, so a caller holding a stored
+// result — or implementing its own Pusher — can reach the same verdict
+// without restating the table.
+//
+// The status decides, because it is always present and Apple pairs each
+// reason with exactly one status. Apple states that a push should not be
+// repeated only for 410: "there is no need to send further pushes to the
+// same device token". The 400 and 403 families are the sender's problem —
+// BadDeviceToken is documented as "verify that the request contains a valid
+// token *and that the token matches the environment*", so a sandbox
+// certificate against production tokens rejects every device in the fleet
+// with a reason that says nothing about any of them.
+//
+// IdleTimeout is the one 400 that is not permanent: it is the HTTP/2
+// connection going idle, not a fault in the request.
+func Classify(status int, reason string) push.Outcome {
+	switch {
+	case status == http.StatusGone:
+		return push.OutcomeInvalidToken
+	case status == http.StatusTooManyRequests, status == http.StatusServiceUnavailable:
+		return push.OutcomeRateLimited
+	case reason == ReasonIdleTimeout:
+		return push.OutcomeUnavailable
+	case status == http.StatusBadRequest,
+		status == http.StatusForbidden,
+		status == http.StatusNotFound,
+		status == http.StatusMethodNotAllowed,
+		status == http.StatusRequestEntityTooLarge:
+		return push.OutcomeRejected
+	}
+	return push.OutcomeUnavailable
+}
+
+// DefaultRetryAfter is a back-off for a caller that wants one when APNs
+// asked for nothing. It is not applied here: Result.RetryAfter reports what
+// Apple said, and zero means Apple said nothing, so a caller can tell the
+// difference between a stated pause and an assumed one.
+const DefaultRetryAfter = 30 * time.Second
+
+// retryAfter parses a Retry-After header in seconds, returning zero when the
+// header is absent or unparsable.
 func retryAfter(v string) time.Duration {
 	if s, err := strconv.Atoi(v); err == nil && s > 0 {
 		return time.Duration(s) * time.Second
 	}
-	return 30 * time.Second
+	return 0
 }
 
 // TopicFromCert returns the push topic embedded in an APNs push

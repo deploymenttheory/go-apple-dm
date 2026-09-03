@@ -23,7 +23,15 @@ const (
 	CommandSent        Type = "command-sent"   // command delivered to the device
 	CommandResult      Type = "command-result" // Acknowledged, Error, CommandFormatError, or NotNow
 	BootstrapTokenSet  Type = "bootstrap-token-set"
-	PushTokenInvalid   Type = "push-token-invalid"
+	// PushTokenInvalid is a token APNs says will never work again (410).
+	// The enrollment is gone until it re-registers.
+	PushTokenInvalid Type = "push-token-invalid"
+	// PushRejected is a push APNs refused for a reason that is not the
+	// device's: a wrong topic, a mismatched or expired push certificate, the
+	// wrong environment, or a malformed request. It is the event to alert
+	// on, because the cause is usually shared by every device on the topic
+	// and no retry will clear it.
+	PushRejected Type = "push-rejected"
 	DDMChanged         Type = "ddm-changed"
 	DDMStatusReceived  Type = "ddm-status-received"
 	CertReuseDenied    Type = "cert-reuse-denied"   // Authenticate presented a certificate another enrollment pinned before

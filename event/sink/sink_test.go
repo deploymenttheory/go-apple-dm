@@ -70,7 +70,7 @@ func events() []event.Event {
 			UUID: "cmd-1", RequestType: "DeviceInformation", Raw: []byte(secretUnlock),
 		}},
 		{Type: event.PushTokenInvalid, At: t0, Actor: "apns", Enrollment: id, Data: push.Result{
-			Invalid: true, Status: 410, Reason: "Unregistered",
+			Outcome: push.OutcomeInvalidToken, Status: 410, Reason: "Unregistered",
 		}},
 		{Type: event.DDMChanged, At: t0, Actor: "ddm", Enrollment: id, Data: []ddm.Change{
 			{Seq: 1, Reason: "declaration"},
@@ -185,7 +185,7 @@ func TestEveryEventTypeIsProjected(t *testing.T) {
 	declared := []event.Type{
 		event.Enrolled, event.Reenrolled, event.TokenUpdated, event.CheckedOut,
 		event.CertRotated, event.CommandQueued, event.CommandSent, event.CommandResult,
-		event.BootstrapTokenSet, event.PushTokenInvalid, event.DDMChanged,
+		event.BootstrapTokenSet, event.PushTokenInvalid, event.PushRejected, event.DDMChanged,
 		event.DDMStatusReceived, event.CertReuseDenied, event.EnrollmentImported,
 		event.UserAuthenticated, event.UserAuthFailed,
 		event.ACMEChallengeValid, event.ACMEIssued, event.AttestationRejected,

@@ -62,7 +62,7 @@ func TestPushWithStoreCertStore(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if r := res[target("a", nil).ID]; !r.Sent {
+	if r := res[target("a", nil).ID]; !r.Sent() {
 		t.Fatalf("first push: %+v", r)
 	}
 	if len(leaves) != 1 || !leaves[0].Equal(first) {
@@ -71,7 +71,7 @@ func TestPushWithStoreCertStore(t *testing.T) {
 
 	// A renewal stored for the same topic is not seen inside the TTL.
 	renewed := storePush(fake.Now().Add(-time.Minute))
-	if res, _ := c.Push(ctx, []push.Target{target("a", []byte{2})}); !res[target("a", nil).ID].Sent {
+	if res, _ := c.Push(ctx, []push.Target{target("a", []byte{2})}); !res[target("a", nil).ID].Sent() {
 		t.Fatal("push inside TTL failed")
 	}
 	if len(leaves) != 1 {
@@ -85,7 +85,7 @@ func TestPushWithStoreCertStore(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if r := res[target("a", nil).ID]; !r.Sent {
+	if r := res[target("a", nil).ID]; !r.Sent() {
 		t.Fatalf("push after renewal: %+v", r)
 	}
 	if len(leaves) != 2 || !leaves[1].Equal(renewed) || leaves[1].Equal(first) {

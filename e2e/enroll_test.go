@@ -56,7 +56,7 @@ func TestE2E_SCEPEnrollPush(t *testing.T) {
 		t.Fatal(err)
 	}
 	res, err := h.notifier.Notify(ctx, []mdm.EnrollmentID{id})
-	if err != nil || !res[id].Sent || res[id].Invalid {
+	if err != nil || !res[id].Sent() || res[id].TokenInvalid() {
 		t.Fatalf("push: %+v %v", res[id], err)
 	}
 	reqs := h.apns.Requests()
@@ -88,7 +88,7 @@ func TestE2E_PushInvalidToken(t *testing.T) {
 	h.apns.ScriptToken(d.PushToken, pushtest.Script{Status: 410, Reason: "Unregistered"})
 	id := deviceID("E2E-007")
 	res, err := h.notifier.Notify(ctx, []mdm.EnrollmentID{id})
-	if err != nil || res[id].Sent || !res[id].Invalid || res[id].Status != 410 || res[id].Reason != "Unregistered" {
+	if err != nil || res[id].Sent() || !res[id].TokenInvalid() || res[id].Status != 410 || res[id].Reason != "Unregistered" {
 		t.Fatalf("410: %+v %v", res[id], err)
 	}
 	if !hasEvent(h.eventTypes(), event.PushTokenInvalid) {

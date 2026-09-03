@@ -288,8 +288,14 @@ func (n *Notifier) command(ctx context.Context, g *changeGroup, now time.Time) (
 }
 
 // push wakes every commanded enrollment once. A whole-batch push error
-// fails every group; a per-target error fails that group; an invalid
-// token completes the group (the command waits for the next connect).
+// fails every group; a per-target error fails that group; a token APNs
+// says is dead completes the group, because retrying it can only fail the
+// same way and the command waits for the next connect anyway.
+//
+// A rejected push is not that: APNs refused the request, usually for a
+// reason shared by the whole topic, so it retries with back-off and leaves
+// the cause on the change. Treating it as delivered would mark a fleet's
+// worth of changes done that no device was ever woken for.
 func (n *Notifier) push(ctx context.Context, groups []*changeGroup, now time.Time) (pushed []*changeGroup, failed int, err error) {
 	if len(groups) == 0 {
 		return nil, 0, nil
@@ -307,7 +313,7 @@ func (n *Notifier) push(ctx context.Context, groups []*changeGroup, now time.Tim
 		switch r := results[g.id]; {
 		case perr != nil:
 			cause = perr
-		case r.Err != nil && !r.Invalid:
+		case r.Err != nil && !r.TokenInvalid():
 			cause = r.Err
 		}
 		if cause == nil {
