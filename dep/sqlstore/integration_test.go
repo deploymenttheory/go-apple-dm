@@ -12,13 +12,13 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/stdlib"
 
-	"github.com/deploymenttheory/go-apple-mdm/dep"
-	"github.com/deploymenttheory/go-apple-mdm/dep/deptest"
-	"github.com/deploymenttheory/go-apple-mdm/dep/sqlstore"
-	"github.com/deploymenttheory/go-apple-mdm/storage/crypt"
-	"github.com/deploymenttheory/go-apple-mdm/storage/mysql"
-	"github.com/deploymenttheory/go-apple-mdm/storage/postgres"
-	"github.com/deploymenttheory/go-apple-mdm/storage/sqlcommon"
+	"github.com/deploymenttheory/go-apple-dm/dep"
+	"github.com/deploymenttheory/go-apple-dm/dep/deptest"
+	"github.com/deploymenttheory/go-apple-dm/dep/sqlstore"
+	"github.com/deploymenttheory/go-apple-dm/storage/crypt"
+	"github.com/deploymenttheory/go-apple-dm/storage/mysql"
+	"github.com/deploymenttheory/go-apple-dm/storage/postgres"
+	"github.com/deploymenttheory/go-apple-dm/storage/sqlcommon"
 )
 
 // depTables in dependency order for DELETE and DROP.

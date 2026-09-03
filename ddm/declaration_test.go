@@ -6,9 +6,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/deploymenttheory/go-apple-mdm/ddm"
-	schemaddm "github.com/deploymenttheory/go-apple-mdm/schema/ddm"
-	"github.com/deploymenttheory/go-apple-mdm/schema/support"
+	"github.com/deploymenttheory/go-apple-dm/ddm"
+	schemaddm "github.com/deploymenttheory/go-apple-dm/schema/ddm"
+	"github.com/deploymenttheory/go-apple-dm/schema/support"
 )
 
 func TestParseDeclaration(t *testing.T) {

@@ -9,7 +9,7 @@ import (
 	"testing"
 	"testing/iotest"
 
-	"github.com/deploymenttheory/go-apple-mdm/simulator"
+	"github.com/deploymenttheory/go-apple-dm/simulator"
 )
 
 func md5s(s string) string {

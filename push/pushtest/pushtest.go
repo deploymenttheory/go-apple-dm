@@ -12,8 +12,8 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/deploymenttheory/go-apple-mdm/mdm"
-	"github.com/deploymenttheory/go-apple-mdm/push"
+	"github.com/deploymenttheory/go-apple-dm/mdm"
+	"github.com/deploymenttheory/go-apple-dm/push"
 )
 
 // Fake records pushes and returns scripted results.

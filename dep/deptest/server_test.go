@@ -8,10 +8,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/deploymenttheory/go-apple-mdm/dep"
-	"github.com/deploymenttheory/go-apple-mdm/dep/deptest"
-	"github.com/deploymenttheory/go-apple-mdm/dep/inmem"
-	"github.com/deploymenttheory/go-apple-mdm/internal/clock"
+	"github.com/deploymenttheory/go-apple-dm/dep"
+	"github.com/deploymenttheory/go-apple-dm/dep/deptest"
+	"github.com/deploymenttheory/go-apple-dm/dep/inmem"
+	"github.com/deploymenttheory/go-apple-dm/internal/clock"
 )
 
 var t0 = time.Date(2026, 9, 1, 12, 0, 0, 0, time.UTC)
@@ -120,7 +120,7 @@ func TestServer(t *testing.T) {
 		}
 		found := false
 		for _, r := range srv.Requests() {
-			if r.Path == dep.PathAccount && strings.Contains(r.Header.Get("User-Agent"), "go-apple-mdm") {
+			if r.Path == dep.PathAccount && strings.Contains(r.Header.Get("User-Agent"), "go-apple-dm") {
 				found = true
 			}
 		}

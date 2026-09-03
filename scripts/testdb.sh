@@ -6,7 +6,7 @@
 #   up        start (or reuse) both database containers, wait for readiness, print exports
 #   down      remove both database containers
 #   env       print the database export lines matching .github/workflows/go-test.yml
-#   ddm-up    build go-apple-mdm:test from this repository, run it as the ddm role, print exports
+#   ddm-up    build go-apple-dm:test from this repository, run it as the ddm role, print exports
 #   ddm-down  remove the ddm container
 #   ddm-env   print the ddm export lines (TEST_DDM_URL and the shared keys)
 set -euo pipefail
@@ -14,7 +14,7 @@ set -euo pipefail
 PG=mdm-test-postgres
 MY=mdm-test-mysql
 DDM=mdm-test-ddm
-DDM_IMAGE=go-apple-mdm:test
+DDM_IMAGE=go-apple-dm:test
 DDM_PORT="${TEST_DDM_PORT:-8090}"
 # Shared secrets for the test hop between the roles; CI sets the same values.
 DDM_SEND_KEY="${TEST_DDM_SEND_KEY:-mdm-to-ddm-test-key}"

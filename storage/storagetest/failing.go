@@ -4,9 +4,9 @@ import (
 	"context"
 	"time"
 
-	"github.com/deploymenttheory/go-apple-mdm/mdm"
-	"github.com/deploymenttheory/go-apple-mdm/schema/checkin"
-	"github.com/deploymenttheory/go-apple-mdm/storage"
+	"github.com/deploymenttheory/go-apple-dm/mdm"
+	"github.com/deploymenttheory/go-apple-dm/schema/checkin"
+	"github.com/deploymenttheory/go-apple-dm/storage"
 )
 
 // Failing wraps a Store and returns the configured error from any method

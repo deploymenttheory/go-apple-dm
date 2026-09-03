@@ -10,16 +10,16 @@ import (
 	"testing"
 	"time"
 
-	"github.com/deploymenttheory/go-apple-mdm/ddm"
-	"github.com/deploymenttheory/go-apple-mdm/ddm/ddmtest"
-	"github.com/deploymenttheory/go-apple-mdm/ddm/sqlstore"
-	"github.com/deploymenttheory/go-apple-mdm/mdm"
-	schemaddm "github.com/deploymenttheory/go-apple-mdm/schema/ddm"
-	"github.com/deploymenttheory/go-apple-mdm/storage"
-	"github.com/deploymenttheory/go-apple-mdm/storage/mysql"
-	"github.com/deploymenttheory/go-apple-mdm/storage/postgres"
-	"github.com/deploymenttheory/go-apple-mdm/storage/sqlcommon"
-	"github.com/deploymenttheory/go-apple-mdm/storage/sqlite"
+	"github.com/deploymenttheory/go-apple-dm/ddm"
+	"github.com/deploymenttheory/go-apple-dm/ddm/ddmtest"
+	"github.com/deploymenttheory/go-apple-dm/ddm/sqlstore"
+	"github.com/deploymenttheory/go-apple-dm/mdm"
+	schemaddm "github.com/deploymenttheory/go-apple-dm/schema/ddm"
+	"github.com/deploymenttheory/go-apple-dm/storage"
+	"github.com/deploymenttheory/go-apple-dm/storage/mysql"
+	"github.com/deploymenttheory/go-apple-dm/storage/postgres"
+	"github.com/deploymenttheory/go-apple-dm/storage/sqlcommon"
+	"github.com/deploymenttheory/go-apple-dm/storage/sqlite"
 )
 
 var (

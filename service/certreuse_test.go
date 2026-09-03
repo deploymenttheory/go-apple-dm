@@ -6,10 +6,10 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/deploymenttheory/go-apple-mdm/mdm"
-	"github.com/deploymenttheory/go-apple-mdm/schema/checkin"
-	"github.com/deploymenttheory/go-apple-mdm/service"
-	"github.com/deploymenttheory/go-apple-mdm/storage"
+	"github.com/deploymenttheory/go-apple-dm/mdm"
+	"github.com/deploymenttheory/go-apple-dm/schema/checkin"
+	"github.com/deploymenttheory/go-apple-dm/service"
+	"github.com/deploymenttheory/go-apple-dm/storage"
 )
 
 func deviceID(udid string) mdm.EnrollmentID {

@@ -13,9 +13,9 @@ import (
 
 	json "encoding/json/v2"
 
-	"github.com/deploymenttheory/go-apple-mdm/cms"
-	"github.com/deploymenttheory/go-apple-mdm/plist"
-	"github.com/deploymenttheory/go-apple-mdm/profile"
+	"github.com/deploymenttheory/go-apple-dm/cms"
+	"github.com/deploymenttheory/go-apple-dm/plist"
+	"github.com/deploymenttheory/go-apple-dm/profile"
 )
 
 // Account-driven enrollment constants from Apple's flow description.
@@ -188,7 +188,7 @@ func (d *Device) discover(ctx context.Context, opts AccountDrivenOptions, domain
 	if err != nil {
 		return nil, fmt.Errorf("%w: %w", ErrAccountDriven, err)
 	}
-	req.Header.Set("User-Agent", "MDM/1.0 go-apple-mdm-simulator")
+	req.Header.Set("User-Agent", "MDM/1.0 go-apple-dm-simulator")
 	resp, err := d.Client.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("%w: discovery: %w", ErrAccountDriven, err)
@@ -257,7 +257,7 @@ func (d *Device) attempt(ctx context.Context, baseURL string, body []byte, beare
 		return 0, "", nil, fmt.Errorf("%w: %w", ErrAccountDriven, err)
 	}
 	req.Header.Set("Content-Type", ContentTypeDeviceInfo)
-	req.Header.Set("User-Agent", "MDM/1.0 go-apple-mdm-simulator")
+	req.Header.Set("User-Agent", "MDM/1.0 go-apple-dm-simulator")
 	if bearer != "" {
 		req.Header.Set("Authorization", "Bearer "+bearer)
 	}

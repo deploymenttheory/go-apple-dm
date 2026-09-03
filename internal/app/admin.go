@@ -8,9 +8,9 @@ import (
 	"io"
 	"net/http"
 
-	"github.com/deploymenttheory/go-apple-mdm/ddm"
-	"github.com/deploymenttheory/go-apple-mdm/mdm"
-	"github.com/deploymenttheory/go-apple-mdm/storage"
+	"github.com/deploymenttheory/go-apple-dm/ddm"
+	"github.com/deploymenttheory/go-apple-dm/mdm"
+	"github.com/deploymenttheory/go-apple-dm/storage"
 )
 
 // MaxAdminBody bounds admin request bodies.

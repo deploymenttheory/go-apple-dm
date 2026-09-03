@@ -13,13 +13,13 @@ import (
 	"testing"
 	"time"
 
-	"github.com/deploymenttheory/go-apple-mdm/cms"
-	"github.com/deploymenttheory/go-apple-mdm/enroll"
-	"github.com/deploymenttheory/go-apple-mdm/enroll/ade"
-	"github.com/deploymenttheory/go-apple-mdm/enroll/adetest"
-	"github.com/deploymenttheory/go-apple-mdm/internal/testpki"
-	"github.com/deploymenttheory/go-apple-mdm/profile"
-	schemaerrors "github.com/deploymenttheory/go-apple-mdm/schema/errors"
+	"github.com/deploymenttheory/go-apple-dm/cms"
+	"github.com/deploymenttheory/go-apple-dm/enroll"
+	"github.com/deploymenttheory/go-apple-dm/enroll/ade"
+	"github.com/deploymenttheory/go-apple-dm/enroll/adetest"
+	"github.com/deploymenttheory/go-apple-dm/internal/testpki"
+	"github.com/deploymenttheory/go-apple-dm/profile"
+	schemaerrors "github.com/deploymenttheory/go-apple-dm/schema/errors"
 )
 
 const target = "https://mdm.example.com/enroll/ade"

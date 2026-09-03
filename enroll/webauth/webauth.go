@@ -15,7 +15,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/deploymenttheory/go-apple-mdm/internal/clock"
+	"github.com/deploymenttheory/go-apple-dm/internal/clock"
 )
 
 // State lifetime bounds.

@@ -10,12 +10,12 @@ import (
 	"testing"
 	"time"
 
-	"github.com/deploymenttheory/go-apple-mdm/audit"
-	"github.com/deploymenttheory/go-apple-mdm/audit/audittest"
-	auditinmem "github.com/deploymenttheory/go-apple-mdm/audit/inmem"
-	"github.com/deploymenttheory/go-apple-mdm/internal/app"
-	"github.com/deploymenttheory/go-apple-mdm/internal/clock"
-	"github.com/deploymenttheory/go-apple-mdm/mdm"
+	"github.com/deploymenttheory/go-apple-dm/audit"
+	"github.com/deploymenttheory/go-apple-dm/audit/audittest"
+	auditinmem "github.com/deploymenttheory/go-apple-dm/audit/inmem"
+	"github.com/deploymenttheory/go-apple-dm/internal/app"
+	"github.com/deploymenttheory/go-apple-dm/internal/clock"
+	"github.com/deploymenttheory/go-apple-dm/mdm"
 )
 
 // auditApp builds a server whose trail is a store the test can also read.

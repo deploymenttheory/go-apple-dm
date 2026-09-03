@@ -9,8 +9,8 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/deploymenttheory/go-apple-mdm/mdm"
-	"github.com/deploymenttheory/go-apple-mdm/storage"
+	"github.com/deploymenttheory/go-apple-dm/mdm"
+	"github.com/deploymenttheory/go-apple-dm/storage"
 )
 
 // mdmAdminRoutes are the classic-MDM admin routes: the enrollments the

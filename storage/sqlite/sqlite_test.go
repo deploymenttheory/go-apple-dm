@@ -11,13 +11,13 @@ import (
 	"testing"
 	"time"
 
-	"github.com/deploymenttheory/go-apple-mdm/mdm"
-	"github.com/deploymenttheory/go-apple-mdm/schema/checkin"
-	"github.com/deploymenttheory/go-apple-mdm/storage"
-	"github.com/deploymenttheory/go-apple-mdm/storage/sqlcommon"
-	"github.com/deploymenttheory/go-apple-mdm/storage/sqlcommon/sqltest"
-	"github.com/deploymenttheory/go-apple-mdm/storage/sqlite"
-	"github.com/deploymenttheory/go-apple-mdm/storage/storagetest"
+	"github.com/deploymenttheory/go-apple-dm/mdm"
+	"github.com/deploymenttheory/go-apple-dm/schema/checkin"
+	"github.com/deploymenttheory/go-apple-dm/storage"
+	"github.com/deploymenttheory/go-apple-dm/storage/sqlcommon"
+	"github.com/deploymenttheory/go-apple-dm/storage/sqlcommon/sqltest"
+	"github.com/deploymenttheory/go-apple-dm/storage/sqlite"
+	"github.com/deploymenttheory/go-apple-dm/storage/storagetest"
 )
 
 func open(t *testing.T) *sqlite.Store {

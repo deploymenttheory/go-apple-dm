@@ -12,7 +12,7 @@ import (
 	"math/big"
 	"testing"
 
-	"github.com/deploymenttheory/go-apple-mdm/acme/jose"
+	"github.com/deploymenttheory/go-apple-dm/acme/jose"
 )
 
 func TestJWKRoundTrip(t *testing.T) {

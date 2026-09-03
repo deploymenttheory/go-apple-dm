@@ -14,8 +14,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/deploymenttheory/go-apple-mdm/axm/axmtest"
-	"github.com/deploymenttheory/go-apple-mdm/internal/clock"
+	"github.com/deploymenttheory/go-apple-dm/axm/axmtest"
+	"github.com/deploymenttheory/go-apple-dm/internal/clock"
 )
 
 const (

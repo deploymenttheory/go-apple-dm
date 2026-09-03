@@ -7,8 +7,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/deploymenttheory/go-apple-mdm/mdm"
-	"github.com/deploymenttheory/go-apple-mdm/storage"
+	"github.com/deploymenttheory/go-apple-dm/mdm"
+	"github.com/deploymenttheory/go-apple-dm/storage"
 )
 
 var certAssociationCols = []string{"enrollment_id", "cert_hash", "associated_at"}

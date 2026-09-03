@@ -12,12 +12,12 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/stdlib"
 
-	"github.com/deploymenttheory/go-apple-mdm/ddm"
-	"github.com/deploymenttheory/go-apple-mdm/ddm/ddmtest"
-	"github.com/deploymenttheory/go-apple-mdm/ddm/sqlstore"
-	"github.com/deploymenttheory/go-apple-mdm/storage/mysql"
-	"github.com/deploymenttheory/go-apple-mdm/storage/postgres"
-	"github.com/deploymenttheory/go-apple-mdm/storage/sqlcommon"
+	"github.com/deploymenttheory/go-apple-dm/ddm"
+	"github.com/deploymenttheory/go-apple-dm/ddm/ddmtest"
+	"github.com/deploymenttheory/go-apple-dm/ddm/sqlstore"
+	"github.com/deploymenttheory/go-apple-dm/storage/mysql"
+	"github.com/deploymenttheory/go-apple-dm/storage/postgres"
+	"github.com/deploymenttheory/go-apple-dm/storage/sqlcommon"
 )
 
 // ddmTables lists every table of the schema, dependants first, so the

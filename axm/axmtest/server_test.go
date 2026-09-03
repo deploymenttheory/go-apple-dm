@@ -16,8 +16,8 @@ import (
 	"time"
 	"uuid"
 
-	"github.com/deploymenttheory/go-apple-mdm/axm"
-	"github.com/deploymenttheory/go-apple-mdm/axm/axmtest"
+	"github.com/deploymenttheory/go-apple-dm/axm"
+	"github.com/deploymenttheory/go-apple-dm/axm/axmtest"
 )
 
 const clientID = "BUSINESSAPI.11111111-2222-3333-4444-555555555555"

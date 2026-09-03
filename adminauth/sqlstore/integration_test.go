@@ -12,12 +12,12 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/stdlib"
 
-	"github.com/deploymenttheory/go-apple-mdm/adminauth"
-	"github.com/deploymenttheory/go-apple-mdm/adminauth/adminauthtest"
-	"github.com/deploymenttheory/go-apple-mdm/adminauth/sqlstore"
-	"github.com/deploymenttheory/go-apple-mdm/storage/mysql"
-	"github.com/deploymenttheory/go-apple-mdm/storage/postgres"
-	"github.com/deploymenttheory/go-apple-mdm/storage/sqlcommon"
+	"github.com/deploymenttheory/go-apple-dm/adminauth"
+	"github.com/deploymenttheory/go-apple-dm/adminauth/adminauthtest"
+	"github.com/deploymenttheory/go-apple-dm/adminauth/sqlstore"
+	"github.com/deploymenttheory/go-apple-dm/storage/mysql"
+	"github.com/deploymenttheory/go-apple-dm/storage/postgres"
+	"github.com/deploymenttheory/go-apple-dm/storage/sqlcommon"
 )
 
 // adminTables in dependency order for DELETE and DROP.

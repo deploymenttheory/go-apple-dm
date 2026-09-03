@@ -12,13 +12,13 @@ import (
 
 	json "encoding/json/v2"
 
-	"github.com/deploymenttheory/go-apple-mdm/enroll/ade"
-	"github.com/deploymenttheory/go-apple-mdm/enroll/adetest"
-	"github.com/deploymenttheory/go-apple-mdm/gdmf"
-	"github.com/deploymenttheory/go-apple-mdm/gdmf/gdmftest"
-	"github.com/deploymenttheory/go-apple-mdm/plist"
-	schemaerrors "github.com/deploymenttheory/go-apple-mdm/schema/errors"
-	"github.com/deploymenttheory/go-apple-mdm/schema/support"
+	"github.com/deploymenttheory/go-apple-dm/enroll/ade"
+	"github.com/deploymenttheory/go-apple-dm/enroll/adetest"
+	"github.com/deploymenttheory/go-apple-dm/gdmf"
+	"github.com/deploymenttheory/go-apple-dm/gdmf/gdmftest"
+	"github.com/deploymenttheory/go-apple-dm/plist"
+	schemaerrors "github.com/deploymenttheory/go-apple-dm/schema/errors"
+	"github.com/deploymenttheory/go-apple-dm/schema/support"
 )
 
 func parsedInfo(serial string) *ade.Parsed {

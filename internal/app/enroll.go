@@ -14,16 +14,16 @@ import (
 	"strings"
 	"time"
 
-	"github.com/deploymenttheory/go-apple-mdm/acme"
-	"github.com/deploymenttheory/go-apple-mdm/ca"
-	"github.com/deploymenttheory/go-apple-mdm/enroll"
-	"github.com/deploymenttheory/go-apple-mdm/enroll/accountdriven"
-	"github.com/deploymenttheory/go-apple-mdm/enroll/ade"
-	"github.com/deploymenttheory/go-apple-mdm/enroll/discovery"
-	"github.com/deploymenttheory/go-apple-mdm/enroll/webauth"
-	"github.com/deploymenttheory/go-apple-mdm/plist"
-	"github.com/deploymenttheory/go-apple-mdm/scep"
-	"github.com/deploymenttheory/go-apple-mdm/service"
+	"github.com/deploymenttheory/go-apple-dm/acme"
+	"github.com/deploymenttheory/go-apple-dm/ca"
+	"github.com/deploymenttheory/go-apple-dm/enroll"
+	"github.com/deploymenttheory/go-apple-dm/enroll/accountdriven"
+	"github.com/deploymenttheory/go-apple-dm/enroll/ade"
+	"github.com/deploymenttheory/go-apple-dm/enroll/discovery"
+	"github.com/deploymenttheory/go-apple-dm/enroll/webauth"
+	"github.com/deploymenttheory/go-apple-dm/plist"
+	"github.com/deploymenttheory/go-apple-dm/scep"
+	"github.com/deploymenttheory/go-apple-dm/service"
 )
 
 // Enrollment routes on the mdm and all roles (decision records 0027 to 0029).
@@ -472,7 +472,7 @@ func (e *enrollment) profile(b acme.Binding) (*enroll.Profile, error) {
 	}
 	org := e.cfg.Organization
 	if org == "" {
-		org = "go-apple-mdm"
+		org = "go-apple-dm"
 	}
 	out := &enroll.Profile{
 		Identifier:   id,
@@ -540,8 +540,8 @@ func (e *enrollment) loadCA(a *App) error {
 		cert, key, err := ca.NewSelfSigned(
 			ca.SelfSignedOptions{
 				Subject: pkix.Name{
-					CommonName:   "go-apple-mdm enrollment CA",
-					Organization: []string{"go-apple-mdm"},
+					CommonName:   "go-apple-dm enrollment CA",
+					Organization: []string{"go-apple-dm"},
 				},
 			},
 		)

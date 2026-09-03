@@ -19,7 +19,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/deploymenttheory/go-apple-mdm/ca"
+	"github.com/deploymenttheory/go-apple-dm/ca"
 )
 
 // sanOID is the subjectAltName extension identifier, repeated here because

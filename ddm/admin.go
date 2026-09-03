@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/deploymenttheory/go-apple-mdm/mdm"
-	"github.com/deploymenttheory/go-apple-mdm/storage"
+	"github.com/deploymenttheory/go-apple-dm/mdm"
+	"github.com/deploymenttheory/go-apple-dm/storage"
 )
 
 // Change reasons recorded on ddm_changes rows.

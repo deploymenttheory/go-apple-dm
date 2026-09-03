@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/deploymenttheory/go-apple-mdm/schema/support"
+	"github.com/deploymenttheory/go-apple-dm/schema/support"
 )
 
 // ErrTarget is a malformed -target value.

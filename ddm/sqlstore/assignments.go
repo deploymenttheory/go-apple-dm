@@ -6,9 +6,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/deploymenttheory/go-apple-mdm/ddm"
-	"github.com/deploymenttheory/go-apple-mdm/mdm"
-	"github.com/deploymenttheory/go-apple-mdm/storage"
+	"github.com/deploymenttheory/go-apple-dm/ddm"
+	"github.com/deploymenttheory/go-apple-dm/mdm"
+	"github.com/deploymenttheory/go-apple-dm/storage"
 )
 
 // enrollmentIDCols is the identity triple every enrollment-keyed table

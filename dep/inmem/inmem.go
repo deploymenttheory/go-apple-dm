@@ -9,9 +9,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/deploymenttheory/go-apple-mdm/dep"
-	"github.com/deploymenttheory/go-apple-mdm/storage"
-	"github.com/deploymenttheory/go-apple-mdm/storage/crypt"
+	"github.com/deploymenttheory/go-apple-dm/dep"
+	"github.com/deploymenttheory/go-apple-dm/storage"
+	"github.com/deploymenttheory/go-apple-dm/storage/crypt"
 )
 
 // Purposes name the sealed values; each is the AAD prefix binding a

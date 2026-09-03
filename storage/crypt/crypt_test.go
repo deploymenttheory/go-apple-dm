@@ -8,7 +8,7 @@ import (
 	"testing"
 	"testing/iotest"
 
-	"github.com/deploymenttheory/go-apple-mdm/secrets"
+	"github.com/deploymenttheory/go-apple-dm/secrets"
 )
 
 // material returns a deterministic key value of the given length.

@@ -72,7 +72,7 @@ func DefaultConfigPath(getenv func(string) string) string {
 		}
 		base = filepath.Join(home, ".config")
 	}
-	return filepath.Join(base, "go-apple-mdm", "mdmctl.json")
+	return filepath.Join(base, "go-apple-dm", "mdmctl.json")
 }
 
 // loadConfig reads the active context, or nil when there is no config file.

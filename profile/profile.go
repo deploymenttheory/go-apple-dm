@@ -9,10 +9,10 @@ import (
 	"strings"
 	"uuid"
 
-	"github.com/deploymenttheory/go-apple-mdm/cms"
-	"github.com/deploymenttheory/go-apple-mdm/plist"
-	"github.com/deploymenttheory/go-apple-mdm/schema/profiles"
-	"github.com/deploymenttheory/go-apple-mdm/schema/support"
+	"github.com/deploymenttheory/go-apple-dm/cms"
+	"github.com/deploymenttheory/go-apple-dm/plist"
+	"github.com/deploymenttheory/go-apple-dm/schema/profiles"
+	"github.com/deploymenttheory/go-apple-dm/schema/support"
 )
 
 // Errors returned by this package.

@@ -13,15 +13,15 @@ import (
 	"testing"
 	"time"
 
-	"github.com/deploymenttheory/go-apple-mdm/acme"
-	"github.com/deploymenttheory/go-apple-mdm/acme/acmetest"
-	"github.com/deploymenttheory/go-apple-mdm/acme/attest"
-	"github.com/deploymenttheory/go-apple-mdm/acme/sqlstore"
-	"github.com/deploymenttheory/go-apple-mdm/storage"
-	"github.com/deploymenttheory/go-apple-mdm/storage/mysql"
-	"github.com/deploymenttheory/go-apple-mdm/storage/postgres"
-	"github.com/deploymenttheory/go-apple-mdm/storage/sqlcommon"
-	"github.com/deploymenttheory/go-apple-mdm/storage/sqlite"
+	"github.com/deploymenttheory/go-apple-dm/acme"
+	"github.com/deploymenttheory/go-apple-dm/acme/acmetest"
+	"github.com/deploymenttheory/go-apple-dm/acme/attest"
+	"github.com/deploymenttheory/go-apple-dm/acme/sqlstore"
+	"github.com/deploymenttheory/go-apple-dm/storage"
+	"github.com/deploymenttheory/go-apple-dm/storage/mysql"
+	"github.com/deploymenttheory/go-apple-dm/storage/postgres"
+	"github.com/deploymenttheory/go-apple-dm/storage/sqlcommon"
+	"github.com/deploymenttheory/go-apple-dm/storage/sqlite"
 )
 
 func openDB(t *testing.T) *sql.DB {

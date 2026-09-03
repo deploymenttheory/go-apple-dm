@@ -9,7 +9,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/deploymenttheory/go-apple-mdm/internal/mdmctl"
+	"github.com/deploymenttheory/go-apple-dm/internal/mdmctl"
 )
 
 // Everything after "--" is positional, so an argument that looks like a flag
@@ -130,7 +130,7 @@ func TestDefaultConfigPathHomeFallback(t *testing.T) {
 		}
 		return ""
 	})
-	want := filepath.Join("/home/op", ".config", "go-apple-mdm", "mdmctl.json")
+	want := filepath.Join("/home/op", ".config", "go-apple-dm", "mdmctl.json")
 	if got != want {
 		t.Fatalf("DefaultConfigPath = %q, want %q", got, want)
 	}

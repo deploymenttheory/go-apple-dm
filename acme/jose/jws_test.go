@@ -16,7 +16,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/deploymenttheory/go-apple-mdm/acme/jose"
+	"github.com/deploymenttheory/go-apple-dm/acme/jose"
 )
 
 func TestAlgorithms(t *testing.T) {

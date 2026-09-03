@@ -14,7 +14,7 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/deploymenttheory/go-apple-mdm/acme/jose"
+	"github.com/deploymenttheory/go-apple-dm/acme/jose"
 )
 
 // Shared keys. RSA generation is slow enough that the tests share one key

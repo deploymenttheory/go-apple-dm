@@ -5,8 +5,8 @@ import (
 	"strings"
 	"uuid"
 
-	"github.com/deploymenttheory/go-apple-mdm/plist"
-	"github.com/deploymenttheory/go-apple-mdm/schema/commands"
+	"github.com/deploymenttheory/go-apple-dm/plist"
+	"github.com/deploymenttheory/go-apple-dm/schema/commands"
 )
 
 // Command is a queued MDM command: the envelope Apple documents as

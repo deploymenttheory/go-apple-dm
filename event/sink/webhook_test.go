@@ -16,10 +16,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/deploymenttheory/go-apple-mdm/event"
-	"github.com/deploymenttheory/go-apple-mdm/event/sink"
-	"github.com/deploymenttheory/go-apple-mdm/internal/clock"
-	"github.com/deploymenttheory/go-apple-mdm/mdm"
+	"github.com/deploymenttheory/go-apple-dm/event"
+	"github.com/deploymenttheory/go-apple-dm/event/sink"
+	"github.com/deploymenttheory/go-apple-dm/internal/clock"
+	"github.com/deploymenttheory/go-apple-dm/mdm"
 )
 
 func quiet() *slog.Logger { return slog.New(slog.NewTextHandler(io.Discard, nil)) }

@@ -7,7 +7,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/deploymenttheory/go-apple-mdm/internal/clock"
+	"github.com/deploymenttheory/go-apple-dm/internal/clock"
 )
 
 // Bound is what the caller ties to the state: the device that opened the

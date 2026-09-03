@@ -23,7 +23,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/deploymenttheory/go-apple-mdm/enroll/webauth"
+	"github.com/deploymenttheory/go-apple-dm/enroll/webauth"
 )
 
 // Signing algorithms the provider can use.

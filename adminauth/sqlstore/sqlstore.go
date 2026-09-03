@@ -11,8 +11,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/deploymenttheory/go-apple-mdm/adminauth"
-	"github.com/deploymenttheory/go-apple-mdm/storage/sqlcommon"
+	"github.com/deploymenttheory/go-apple-dm/adminauth"
+	"github.com/deploymenttheory/go-apple-dm/storage/sqlcommon"
 )
 
 //go:embed migrations/*/*.sql

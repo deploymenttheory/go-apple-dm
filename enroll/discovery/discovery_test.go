@@ -12,10 +12,10 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/deploymenttheory/go-apple-mdm/enroll/discovery"
-	"github.com/deploymenttheory/go-apple-mdm/plist"
-	schemaerrors "github.com/deploymenttheory/go-apple-mdm/schema/errors"
-	"github.com/deploymenttheory/go-apple-mdm/schema/support"
+	"github.com/deploymenttheory/go-apple-dm/enroll/discovery"
+	"github.com/deploymenttheory/go-apple-dm/plist"
+	schemaerrors "github.com/deploymenttheory/go-apple-dm/schema/errors"
+	"github.com/deploymenttheory/go-apple-dm/schema/support"
 )
 
 var errBoom = errors.New("boom")

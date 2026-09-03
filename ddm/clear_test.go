@@ -8,15 +8,15 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/deploymenttheory/go-apple-mdm/ddm"
-	"github.com/deploymenttheory/go-apple-mdm/ddm/ddmtest"
-	ddminmem "github.com/deploymenttheory/go-apple-mdm/ddm/inmem"
-	"github.com/deploymenttheory/go-apple-mdm/mdm"
-	"github.com/deploymenttheory/go-apple-mdm/schema/checkin"
-	"github.com/deploymenttheory/go-apple-mdm/service"
-	"github.com/deploymenttheory/go-apple-mdm/storage"
-	storeinmem "github.com/deploymenttheory/go-apple-mdm/storage/inmem"
-	"github.com/deploymenttheory/go-apple-mdm/storage/storagetest"
+	"github.com/deploymenttheory/go-apple-dm/ddm"
+	"github.com/deploymenttheory/go-apple-dm/ddm/ddmtest"
+	ddminmem "github.com/deploymenttheory/go-apple-dm/ddm/inmem"
+	"github.com/deploymenttheory/go-apple-dm/mdm"
+	"github.com/deploymenttheory/go-apple-dm/schema/checkin"
+	"github.com/deploymenttheory/go-apple-dm/service"
+	"github.com/deploymenttheory/go-apple-dm/storage"
+	storeinmem "github.com/deploymenttheory/go-apple-dm/storage/inmem"
+	"github.com/deploymenttheory/go-apple-dm/storage/storagetest"
 )
 
 // seed gives id a set, a direct assignment, a snapshot, status, and a

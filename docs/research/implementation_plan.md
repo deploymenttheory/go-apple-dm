@@ -1,4 +1,4 @@
-# go-apple-mdm: phased implementation plan
+# go-apple-dm: phased implementation plan
 
 Status: approved 2026-09-01. Companion to [reference_projects.md](reference_projects.md), which is the
 source research this plan is founded on. Plan file of record for the build loop in section 8.
@@ -10,7 +10,7 @@ we do better, prove it with a test.
 
 ## Context
 
-`go-apple-mdm` is an empty template repository. The goal is a pure Go, enterprise-grade library
+`go-apple-dm` is an empty template repository. The goal is a pure Go, enterprise-grade library
 for the Apple MDM protocol (check-in, commands, push, enrollment) and Declarative Device
 Management (DDM), with a thin reference server. No existing Go project offers an importable,
 context-first, typed, multi-backend MDM plus DDM core: NanoMDM is minimal and untyped, KMFDDM is a
@@ -27,7 +27,7 @@ with a 95% coverage floor and a research-guided build loop.
 | Typed protocol types | **Generated in this repo** from the vendored `apple/device-management` YAML. No dependency on `deploymenttheory/go-sdk-appleservices` (user reversed the earlier choice: "move everything into this project directly") |
 | Adjacent surfaces in scope | Own APNs push client; SCEP server on `smallstep/scep`; ACME `device-attest-01` CA; legacy DEP web service client and new ABM/ASM API client |
 | Coverage | 95% overall and per non-exempt package, gated in CI |
-| Module path | `github.com/deploymenttheory/go-apple-mdm`, Go 1.26 |
+| Module path | `github.com/deploymenttheory/go-apple-dm`, Go 1.26 |
 | plist library | `github.com/micromdm/plist` for encode and decode (XML and binary, streaming, `Unmarshaler` hook for single-pass dispatch on `MessageType`/`RequestType`, used by NanoMDM, MicroMDM, NanoCMD, Fleet so fixtures interoperate), wrapped in our `plist/` package so a swap touches one place |
 | PKCS7 | `github.com/smallstep/pkcs7` (the maintained fork every reference uses) |
 

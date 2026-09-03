@@ -11,12 +11,12 @@ import (
 
 	json "encoding/json/v2"
 
-	"github.com/deploymenttheory/go-apple-mdm/ddm"
-	"github.com/deploymenttheory/go-apple-mdm/ddm/ddmtest"
-	"github.com/deploymenttheory/go-apple-mdm/mdm"
-	schemaddm "github.com/deploymenttheory/go-apple-mdm/schema/ddm"
-	"github.com/deploymenttheory/go-apple-mdm/schema/support"
-	"github.com/deploymenttheory/go-apple-mdm/storage"
+	"github.com/deploymenttheory/go-apple-dm/ddm"
+	"github.com/deploymenttheory/go-apple-dm/ddm/ddmtest"
+	"github.com/deploymenttheory/go-apple-dm/mdm"
+	schemaddm "github.com/deploymenttheory/go-apple-dm/schema/ddm"
+	"github.com/deploymenttheory/go-apple-dm/schema/support"
+	"github.com/deploymenttheory/go-apple-dm/storage"
 )
 
 // tokensResponse is the SyncTokens body as decoded from the wire.

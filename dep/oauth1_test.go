@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/deploymenttheory/go-apple-mdm/dep"
+	"github.com/deploymenttheory/go-apple-dm/dep"
 )
 
 func TestOAuth1(t *testing.T) {

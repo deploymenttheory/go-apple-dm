@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/deploymenttheory/go-apple-mdm/plist"
+	"github.com/deploymenttheory/go-apple-dm/plist"
 )
 
 type sample struct {

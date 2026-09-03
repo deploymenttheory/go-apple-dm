@@ -3,9 +3,9 @@ package inmem_test
 import (
 	"testing"
 
-	"github.com/deploymenttheory/go-apple-mdm/storage"
-	"github.com/deploymenttheory/go-apple-mdm/storage/inmem"
-	"github.com/deploymenttheory/go-apple-mdm/storage/storagetest"
+	"github.com/deploymenttheory/go-apple-dm/storage"
+	"github.com/deploymenttheory/go-apple-dm/storage/inmem"
+	"github.com/deploymenttheory/go-apple-dm/storage/storagetest"
 )
 
 func TestContract(t *testing.T) {

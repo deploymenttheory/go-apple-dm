@@ -9,12 +9,12 @@ import (
 	"testing"
 	"time"
 
-	"github.com/deploymenttheory/go-apple-mdm/adminauth"
-	"github.com/deploymenttheory/go-apple-mdm/adminauth/inmem"
-	adminsql "github.com/deploymenttheory/go-apple-mdm/adminauth/sqlstore"
-	"github.com/deploymenttheory/go-apple-mdm/event"
-	"github.com/deploymenttheory/go-apple-mdm/internal/app"
-	"github.com/deploymenttheory/go-apple-mdm/storage/sqlite"
+	"github.com/deploymenttheory/go-apple-dm/adminauth"
+	"github.com/deploymenttheory/go-apple-dm/adminauth/inmem"
+	adminsql "github.com/deploymenttheory/go-apple-dm/adminauth/sqlstore"
+	"github.com/deploymenttheory/go-apple-dm/event"
+	"github.com/deploymenttheory/go-apple-dm/internal/app"
+	"github.com/deploymenttheory/go-apple-dm/storage/sqlite"
 )
 
 // The debt this closes: adminauth/sqlstore was imported only by its own

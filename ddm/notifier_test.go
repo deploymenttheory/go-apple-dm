@@ -11,16 +11,16 @@ import (
 	"testing/synctest"
 	"time"
 
-	"github.com/deploymenttheory/go-apple-mdm/ddm"
-	"github.com/deploymenttheory/go-apple-mdm/ddm/ddmtest"
-	ddminmem "github.com/deploymenttheory/go-apple-mdm/ddm/inmem"
-	"github.com/deploymenttheory/go-apple-mdm/event"
-	"github.com/deploymenttheory/go-apple-mdm/internal/clock"
-	"github.com/deploymenttheory/go-apple-mdm/mdm"
-	"github.com/deploymenttheory/go-apple-mdm/push"
-	"github.com/deploymenttheory/go-apple-mdm/schema/commands"
-	"github.com/deploymenttheory/go-apple-mdm/schema/ddmproto"
-	"github.com/deploymenttheory/go-apple-mdm/storage"
+	"github.com/deploymenttheory/go-apple-dm/ddm"
+	"github.com/deploymenttheory/go-apple-dm/ddm/ddmtest"
+	ddminmem "github.com/deploymenttheory/go-apple-dm/ddm/inmem"
+	"github.com/deploymenttheory/go-apple-dm/event"
+	"github.com/deploymenttheory/go-apple-dm/internal/clock"
+	"github.com/deploymenttheory/go-apple-dm/mdm"
+	"github.com/deploymenttheory/go-apple-dm/push"
+	"github.com/deploymenttheory/go-apple-dm/schema/commands"
+	"github.com/deploymenttheory/go-apple-dm/schema/ddmproto"
+	"github.com/deploymenttheory/go-apple-dm/storage"
 )
 
 var notifierT0 = time.Date(2026, 9, 1, 12, 0, 0, 0, time.UTC)

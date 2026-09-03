@@ -10,7 +10,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/deploymenttheory/go-apple-mdm/axm"
+	"github.com/deploymenttheory/go-apple-dm/axm"
 )
 
 // AxMConfig connects the reference server to Apple Business Manager or

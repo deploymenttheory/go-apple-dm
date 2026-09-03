@@ -14,13 +14,13 @@ import (
 	"testing"
 	"time"
 
-	"github.com/deploymenttheory/go-apple-mdm/enroll"
-	"github.com/deploymenttheory/go-apple-mdm/enroll/ade"
-	"github.com/deploymenttheory/go-apple-mdm/enroll/webauth"
-	"github.com/deploymenttheory/go-apple-mdm/enroll/webauth/webauthtest"
-	"github.com/deploymenttheory/go-apple-mdm/mdm"
-	"github.com/deploymenttheory/go-apple-mdm/service"
-	"github.com/deploymenttheory/go-apple-mdm/simulator"
+	"github.com/deploymenttheory/go-apple-dm/enroll"
+	"github.com/deploymenttheory/go-apple-dm/enroll/ade"
+	"github.com/deploymenttheory/go-apple-dm/enroll/webauth"
+	"github.com/deploymenttheory/go-apple-dm/enroll/webauth/webauthtest"
+	"github.com/deploymenttheory/go-apple-dm/mdm"
+	"github.com/deploymenttheory/go-apple-dm/service"
+	"github.com/deploymenttheory/go-apple-dm/simulator"
 )
 
 // adeFixture mounts the ADE endpoint with the web view flow bound to a
@@ -80,9 +80,9 @@ func newADEFixture(t *testing.T, mutate ...func(*ade.Config)) *adeFixture {
 					cn = email + "/" + p.SERIAL
 				}
 				return &enroll.Profile{
-					Identifier: "com.example.e2e.ade", DisplayName: "go-apple-mdm e2e", Organization: "go-apple-mdm",
+					Identifier: "com.example.e2e.ade", DisplayName: "go-apple-dm e2e", Organization: "go-apple-dm",
 					Topic: pushTopic, ServerURL: h.server.URL + "/mdm", CheckInURL: h.server.URL + "/mdm",
-					SCEP:  &enroll.SCEP{URL: h.server.URL + "/scep", Challenge: challenge, Subject: pkix.Name{CommonName: cn, Organization: []string{"go-apple-mdm"}}},
+					SCEP:  &enroll.SCEP{URL: h.server.URL + "/scep", Challenge: challenge, Subject: pkix.Name{CommonName: cn, Organization: []string{"go-apple-dm"}}},
 					Roots: []*x509.Certificate{h.scepCA},
 				}, nil
 			},

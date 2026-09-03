@@ -15,9 +15,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/deploymenttheory/go-apple-mdm/axm"
-	"github.com/deploymenttheory/go-apple-mdm/axm/axmtest"
-	"github.com/deploymenttheory/go-apple-mdm/internal/app"
+	"github.com/deploymenttheory/go-apple-dm/axm"
+	"github.com/deploymenttheory/go-apple-dm/axm/axmtest"
+	"github.com/deploymenttheory/go-apple-dm/internal/app"
 )
 
 func axmKey(t *testing.T) (*ecdsa.PrivateKey, []byte) {
@@ -72,7 +72,7 @@ func TestAxM(t *testing.T) {
 		fake := axmtest.NewServer()
 		t.Cleanup(fake.Close)
 		fake.RegisterKey("BUSINESSAPI.abc", "kid-1", &key.PublicKey)
-		server := fake.AddMDMServer("go-apple-mdm", nil)
+		server := fake.AddMDMServer("go-apple-dm", nil)
 		for _, s := range []string{"SER1", "SER2", "SER3"} {
 			fake.AddOrgDevice(s, nil)
 		}

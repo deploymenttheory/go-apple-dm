@@ -7,12 +7,12 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/deploymenttheory/go-apple-mdm/ddm"
-	"github.com/deploymenttheory/go-apple-mdm/ddm/ddmtest"
-	ddminmem "github.com/deploymenttheory/go-apple-mdm/ddm/inmem"
-	"github.com/deploymenttheory/go-apple-mdm/mdm"
-	schemaddm "github.com/deploymenttheory/go-apple-mdm/schema/ddm"
-	"github.com/deploymenttheory/go-apple-mdm/schema/support"
+	"github.com/deploymenttheory/go-apple-dm/ddm"
+	"github.com/deploymenttheory/go-apple-dm/ddm/ddmtest"
+	ddminmem "github.com/deploymenttheory/go-apple-dm/ddm/inmem"
+	"github.com/deploymenttheory/go-apple-dm/mdm"
+	schemaddm "github.com/deploymenttheory/go-apple-dm/schema/ddm"
+	"github.com/deploymenttheory/go-apple-dm/schema/support"
 )
 
 // subscriptionNames lists the StatusItems names of a served

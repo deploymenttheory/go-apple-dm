@@ -12,7 +12,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/deploymenttheory/go-apple-mdm/internal/clock"
+	"github.com/deploymenttheory/go-apple-dm/internal/clock"
 )
 
 // MinIdentifierKey is the shortest HMAC key accepted for minting client

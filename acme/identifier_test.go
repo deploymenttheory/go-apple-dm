@@ -12,8 +12,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/deploymenttheory/go-apple-mdm/acme"
-	"github.com/deploymenttheory/go-apple-mdm/internal/clock"
+	"github.com/deploymenttheory/go-apple-dm/acme"
+	"github.com/deploymenttheory/go-apple-dm/internal/clock"
 )
 
 // identifierSeed is the message authentication key the tests mint with. It

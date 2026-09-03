@@ -3,7 +3,7 @@ package predicate_test
 import (
 	"fmt"
 
-	"github.com/deploymenttheory/go-apple-mdm/ddm/predicate"
+	"github.com/deploymenttheory/go-apple-dm/ddm/predicate"
 )
 
 func ExampleParse() {

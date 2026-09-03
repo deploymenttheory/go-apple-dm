@@ -9,15 +9,15 @@ import (
 	"testing"
 	"time"
 
-	"github.com/deploymenttheory/go-apple-mdm/internal/testpki"
-	"github.com/deploymenttheory/go-apple-mdm/mdm"
-	"github.com/deploymenttheory/go-apple-mdm/schema/checkin"
-	"github.com/deploymenttheory/go-apple-mdm/secrets"
-	"github.com/deploymenttheory/go-apple-mdm/storage"
-	"github.com/deploymenttheory/go-apple-mdm/storage/crypt"
-	"github.com/deploymenttheory/go-apple-mdm/storage/inmem"
-	"github.com/deploymenttheory/go-apple-mdm/storage/sqlite"
-	"github.com/deploymenttheory/go-apple-mdm/storage/storagetest"
+	"github.com/deploymenttheory/go-apple-dm/internal/testpki"
+	"github.com/deploymenttheory/go-apple-dm/mdm"
+	"github.com/deploymenttheory/go-apple-dm/schema/checkin"
+	"github.com/deploymenttheory/go-apple-dm/secrets"
+	"github.com/deploymenttheory/go-apple-dm/storage"
+	"github.com/deploymenttheory/go-apple-dm/storage/crypt"
+	"github.com/deploymenttheory/go-apple-dm/storage/inmem"
+	"github.com/deploymenttheory/go-apple-dm/storage/sqlite"
+	"github.com/deploymenttheory/go-apple-dm/storage/storagetest"
 )
 
 var keyProvider = secrets.Static{

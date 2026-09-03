@@ -6,10 +6,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/deploymenttheory/go-apple-mdm/dep"
-	"github.com/deploymenttheory/go-apple-mdm/dep/sqlstore"
-	"github.com/deploymenttheory/go-apple-mdm/storage"
-	"github.com/deploymenttheory/go-apple-mdm/storage/sqlite"
+	"github.com/deploymenttheory/go-apple-dm/dep"
+	"github.com/deploymenttheory/go-apple-dm/dep/sqlstore"
+	"github.com/deploymenttheory/go-apple-dm/storage"
+	"github.com/deploymenttheory/go-apple-dm/storage/sqlite"
 )
 
 // TestClosedDatabaseSurfaces proves every method reports a driver

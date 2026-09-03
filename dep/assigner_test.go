@@ -8,9 +8,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/deploymenttheory/go-apple-mdm/dep"
-	"github.com/deploymenttheory/go-apple-mdm/dep/deptest"
-	"github.com/deploymenttheory/go-apple-mdm/storage"
+	"github.com/deploymenttheory/go-apple-dm/dep"
+	"github.com/deploymenttheory/go-apple-dm/dep/deptest"
+	"github.com/deploymenttheory/go-apple-dm/storage"
 )
 
 // assignFixture is a fixture with a defined profile the account targets.

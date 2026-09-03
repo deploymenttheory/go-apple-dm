@@ -6,9 +6,9 @@ import (
 	json "encoding/json/v2"
 	"fmt"
 
-	"github.com/deploymenttheory/go-apple-mdm/mdm"
-	"github.com/deploymenttheory/go-apple-mdm/schema/status"
-	"github.com/deploymenttheory/go-apple-mdm/storage"
+	"github.com/deploymenttheory/go-apple-dm/mdm"
+	"github.com/deploymenttheory/go-apple-dm/schema/status"
+	"github.com/deploymenttheory/go-apple-dm/storage"
 )
 
 // DeclarationStatus lists what an enrollment last reported per declaration.

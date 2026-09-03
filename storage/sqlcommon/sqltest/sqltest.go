@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/deploymenttheory/go-apple-mdm/storage/sqlcommon"
+	"github.com/deploymenttheory/go-apple-dm/storage/sqlcommon"
 )
 
 // seedBatch rows per INSERT keeps the parameter count well under

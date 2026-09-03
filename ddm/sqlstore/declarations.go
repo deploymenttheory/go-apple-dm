@@ -7,8 +7,8 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/deploymenttheory/go-apple-mdm/ddm"
-	"github.com/deploymenttheory/go-apple-mdm/storage"
+	"github.com/deploymenttheory/go-apple-dm/ddm"
+	"github.com/deploymenttheory/go-apple-dm/storage"
 )
 
 // declarationCols is the column list scanDeclaration reads, positionally.

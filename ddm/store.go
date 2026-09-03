@@ -4,9 +4,9 @@ import (
 	"context"
 	"time"
 
-	"github.com/deploymenttheory/go-apple-mdm/mdm"
-	schemaddm "github.com/deploymenttheory/go-apple-mdm/schema/ddm"
-	"github.com/deploymenttheory/go-apple-mdm/storage"
+	"github.com/deploymenttheory/go-apple-dm/mdm"
+	schemaddm "github.com/deploymenttheory/go-apple-dm/schema/ddm"
+	"github.com/deploymenttheory/go-apple-dm/storage"
 )
 
 // Declaration is a stored declaration: the canonical JSON of

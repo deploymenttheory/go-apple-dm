@@ -15,17 +15,17 @@ import (
 	"testing"
 	"time"
 
-	"github.com/deploymenttheory/go-apple-mdm/acme"
-	"github.com/deploymenttheory/go-apple-mdm/acme/attest"
-	"github.com/deploymenttheory/go-apple-mdm/acme/attest/attesttest"
-	acmeinmem "github.com/deploymenttheory/go-apple-mdm/acme/inmem"
-	"github.com/deploymenttheory/go-apple-mdm/ca"
-	"github.com/deploymenttheory/go-apple-mdm/enroll"
-	"github.com/deploymenttheory/go-apple-mdm/event"
-	"github.com/deploymenttheory/go-apple-mdm/profile"
-	"github.com/deploymenttheory/go-apple-mdm/service"
-	"github.com/deploymenttheory/go-apple-mdm/simulator"
-	"github.com/deploymenttheory/go-apple-mdm/storage"
+	"github.com/deploymenttheory/go-apple-dm/acme"
+	"github.com/deploymenttheory/go-apple-dm/acme/attest"
+	"github.com/deploymenttheory/go-apple-dm/acme/attest/attesttest"
+	acmeinmem "github.com/deploymenttheory/go-apple-dm/acme/inmem"
+	"github.com/deploymenttheory/go-apple-dm/ca"
+	"github.com/deploymenttheory/go-apple-dm/enroll"
+	"github.com/deploymenttheory/go-apple-dm/event"
+	"github.com/deploymenttheory/go-apple-dm/profile"
+	"github.com/deploymenttheory/go-apple-dm/service"
+	"github.com/deploymenttheory/go-apple-dm/simulator"
+	"github.com/deploymenttheory/go-apple-dm/storage"
 )
 
 // acmeFixture is a harness with an ACME server mounted on the enrollment
@@ -109,7 +109,7 @@ func (f *acmeFixture) profile(t *testing.T, udid string, b acme.Binding) []byte 
 		t.Fatal(err)
 	}
 	data, err := enroll.Profile{
-		Identifier: "com.example.e2e", DisplayName: "go-apple-mdm e2e", Organization: "go-apple-mdm",
+		Identifier: "com.example.e2e", DisplayName: "go-apple-dm e2e", Organization: "go-apple-dm",
 		Topic: pushTopic, ServerURL: f.harness.server.URL + "/mdm",
 		CheckInURL: f.harness.server.URL + "/mdm",
 		ACME: &enroll.ACME{

@@ -12,7 +12,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/deploymenttheory/go-apple-mdm/internal/mdmctl/adminclient"
+	"github.com/deploymenttheory/go-apple-dm/internal/mdmctl/adminclient"
 )
 
 func newClient(t *testing.T, h http.Handler) (*adminclient.Client, *httptest.Server) {

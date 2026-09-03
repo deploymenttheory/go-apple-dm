@@ -14,10 +14,10 @@ import (
 	"net/http"
 	"sync"
 
-	"github.com/deploymenttheory/go-apple-mdm/cms"
-	"github.com/deploymenttheory/go-apple-mdm/mdm"
-	"github.com/deploymenttheory/go-apple-mdm/plist"
-	"github.com/deploymenttheory/go-apple-mdm/schema/commands"
+	"github.com/deploymenttheory/go-apple-dm/cms"
+	"github.com/deploymenttheory/go-apple-dm/mdm"
+	"github.com/deploymenttheory/go-apple-dm/plist"
+	"github.com/deploymenttheory/go-apple-dm/schema/commands"
 )
 
 // Content types Apple devices send.
@@ -380,7 +380,7 @@ func (d *Device) put(ctx context.Context, url, contentType string, body []byte) 
 		return nil, fmt.Errorf("simulator: %w", err)
 	}
 	req.Header.Set("Content-Type", contentType)
-	req.Header.Set("User-Agent", "MDM/1.0 go-apple-mdm-simulator")
+	req.Header.Set("User-Agent", "MDM/1.0 go-apple-dm-simulator")
 	if d.Identity != nil {
 		sig, err := cms.Sign(body, d.Identity.Cert, d.Identity.Key)
 		if err != nil {

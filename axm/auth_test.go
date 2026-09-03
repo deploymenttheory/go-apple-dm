@@ -20,10 +20,10 @@ import (
 	"time"
 	"uuid"
 
-	"github.com/deploymenttheory/go-apple-mdm/axm/axmtest"
-	"github.com/deploymenttheory/go-apple-mdm/internal/clock"
-	"github.com/deploymenttheory/go-apple-mdm/secrets"
-	"github.com/deploymenttheory/go-apple-mdm/storage/crypt"
+	"github.com/deploymenttheory/go-apple-dm/axm/axmtest"
+	"github.com/deploymenttheory/go-apple-dm/internal/clock"
+	"github.com/deploymenttheory/go-apple-dm/secrets"
+	"github.com/deploymenttheory/go-apple-dm/storage/crypt"
 )
 
 func TestScope(t *testing.T) {

@@ -7,8 +7,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/deploymenttheory/go-apple-mdm/event"
-	"github.com/deploymenttheory/go-apple-mdm/mdm"
+	"github.com/deploymenttheory/go-apple-dm/event"
+	"github.com/deploymenttheory/go-apple-dm/mdm"
 )
 
 func TestSyncDelivery(t *testing.T) {

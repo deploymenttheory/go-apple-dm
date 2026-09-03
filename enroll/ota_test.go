@@ -13,11 +13,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/deploymenttheory/go-apple-mdm/cms"
-	"github.com/deploymenttheory/go-apple-mdm/enroll"
-	"github.com/deploymenttheory/go-apple-mdm/internal/testpki"
-	"github.com/deploymenttheory/go-apple-mdm/plist"
-	"github.com/deploymenttheory/go-apple-mdm/profile"
+	"github.com/deploymenttheory/go-apple-dm/cms"
+	"github.com/deploymenttheory/go-apple-dm/enroll"
+	"github.com/deploymenttheory/go-apple-dm/internal/testpki"
+	"github.com/deploymenttheory/go-apple-dm/plist"
+	"github.com/deploymenttheory/go-apple-dm/profile"
 )
 
 func signedAttrs(t *testing.T, ca *testpki.CA, cn string, attrs map[string]any) []byte {

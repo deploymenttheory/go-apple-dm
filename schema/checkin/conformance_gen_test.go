@@ -6,8 +6,8 @@ package checkin_test
 import (
 	"testing"
 
-	"github.com/deploymenttheory/go-apple-mdm/schema/checkin"
-	"github.com/deploymenttheory/go-apple-mdm/schema/internal/conformance"
+	"github.com/deploymenttheory/go-apple-dm/schema/checkin"
+	"github.com/deploymenttheory/go-apple-dm/schema/internal/conformance"
 )
 
 func sampleAuthenticate(d int) *checkin.Authenticate {

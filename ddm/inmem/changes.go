@@ -6,8 +6,8 @@ import (
 	"slices"
 	"time"
 
-	"github.com/deploymenttheory/go-apple-mdm/ddm"
-	"github.com/deploymenttheory/go-apple-mdm/mdm"
+	"github.com/deploymenttheory/go-apple-dm/ddm"
+	"github.com/deploymenttheory/go-apple-dm/mdm"
 )
 
 // defaultPendingLimit applies when PendingChanges gets a non-positive

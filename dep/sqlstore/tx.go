@@ -7,8 +7,8 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/deploymenttheory/go-apple-mdm/dep"
-	"github.com/deploymenttheory/go-apple-mdm/storage"
+	"github.com/deploymenttheory/go-apple-dm/dep"
+	"github.com/deploymenttheory/go-apple-dm/storage"
 )
 
 // querier is *sql.DB or *sql.Tx.

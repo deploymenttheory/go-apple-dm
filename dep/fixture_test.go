@@ -7,11 +7,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/deploymenttheory/go-apple-mdm/dep"
-	"github.com/deploymenttheory/go-apple-mdm/dep/deptest"
-	"github.com/deploymenttheory/go-apple-mdm/dep/inmem"
-	"github.com/deploymenttheory/go-apple-mdm/event"
-	"github.com/deploymenttheory/go-apple-mdm/internal/clock"
+	"github.com/deploymenttheory/go-apple-dm/dep"
+	"github.com/deploymenttheory/go-apple-dm/dep/deptest"
+	"github.com/deploymenttheory/go-apple-dm/dep/inmem"
+	"github.com/deploymenttheory/go-apple-dm/event"
+	"github.com/deploymenttheory/go-apple-dm/internal/clock"
 )
 
 var t0 = time.Date(2026, 9, 2, 12, 0, 0, 0, time.UTC)

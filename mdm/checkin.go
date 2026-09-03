@@ -3,8 +3,8 @@ package mdm
 import (
 	"fmt"
 
-	"github.com/deploymenttheory/go-apple-mdm/plist"
-	"github.com/deploymenttheory/go-apple-mdm/schema/checkin"
+	"github.com/deploymenttheory/go-apple-dm/plist"
+	"github.com/deploymenttheory/go-apple-dm/schema/checkin"
 )
 
 // Checkin is a decoded check-in message: the typed message from the

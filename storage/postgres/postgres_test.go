@@ -10,15 +10,15 @@ import (
 	"testing"
 	"time"
 
-	"github.com/deploymenttheory/go-apple-mdm/mdm"
-	"github.com/deploymenttheory/go-apple-mdm/schema/checkin"
-	"github.com/deploymenttheory/go-apple-mdm/secrets"
-	"github.com/deploymenttheory/go-apple-mdm/storage"
-	"github.com/deploymenttheory/go-apple-mdm/storage/crypt"
-	"github.com/deploymenttheory/go-apple-mdm/storage/postgres"
-	"github.com/deploymenttheory/go-apple-mdm/storage/sqlcommon"
-	"github.com/deploymenttheory/go-apple-mdm/storage/sqlcommon/sqltest"
-	"github.com/deploymenttheory/go-apple-mdm/storage/storagetest"
+	"github.com/deploymenttheory/go-apple-dm/mdm"
+	"github.com/deploymenttheory/go-apple-dm/schema/checkin"
+	"github.com/deploymenttheory/go-apple-dm/secrets"
+	"github.com/deploymenttheory/go-apple-dm/storage"
+	"github.com/deploymenttheory/go-apple-dm/storage/crypt"
+	"github.com/deploymenttheory/go-apple-dm/storage/postgres"
+	"github.com/deploymenttheory/go-apple-dm/storage/sqlcommon"
+	"github.com/deploymenttheory/go-apple-dm/storage/sqlcommon/sqltest"
+	"github.com/deploymenttheory/go-apple-dm/storage/storagetest"
 )
 
 // openFresh connects to TEST_POSTGRES_DSN and resets the schema.

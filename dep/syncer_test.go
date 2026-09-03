@@ -10,11 +10,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/deploymenttheory/go-apple-mdm/dep"
-	"github.com/deploymenttheory/go-apple-mdm/dep/deptest"
-	"github.com/deploymenttheory/go-apple-mdm/dep/inmem"
-	"github.com/deploymenttheory/go-apple-mdm/internal/clock"
-	"github.com/deploymenttheory/go-apple-mdm/storage"
+	"github.com/deploymenttheory/go-apple-dm/dep"
+	"github.com/deploymenttheory/go-apple-dm/dep/deptest"
+	"github.com/deploymenttheory/go-apple-dm/dep/inmem"
+	"github.com/deploymenttheory/go-apple-dm/internal/clock"
+	"github.com/deploymenttheory/go-apple-dm/storage"
 )
 
 // newSyncer builds a syncer on the fixture with jitter off.

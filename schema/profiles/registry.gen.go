@@ -4,7 +4,7 @@
 package profiles
 
 import (
-	"github.com/deploymenttheory/go-apple-mdm/schema/support"
+	"github.com/deploymenttheory/go-apple-dm/schema/support"
 )
 
 // Payload is implemented by every top-level type in this package.

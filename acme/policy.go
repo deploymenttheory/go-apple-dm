@@ -4,7 +4,7 @@ import (
 	"context"
 	"slices"
 
-	"github.com/deploymenttheory/go-apple-mdm/acme/attest"
+	"github.com/deploymenttheory/go-apple-dm/acme/attest"
 )
 
 // Decision is everything known when the server is about to accept a

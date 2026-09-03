@@ -8,9 +8,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/deploymenttheory/go-apple-mdm/adminauth"
-	"github.com/deploymenttheory/go-apple-mdm/adminauth/sqlstore"
-	"github.com/deploymenttheory/go-apple-mdm/storage/sqlite"
+	"github.com/deploymenttheory/go-apple-dm/adminauth"
+	"github.com/deploymenttheory/go-apple-dm/adminauth/sqlstore"
+	"github.com/deploymenttheory/go-apple-dm/storage/sqlite"
 )
 
 // Every method surfaces a database failure rather than reporting empty state.

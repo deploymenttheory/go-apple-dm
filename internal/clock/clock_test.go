@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/deploymenttheory/go-apple-mdm/internal/clock"
+	"github.com/deploymenttheory/go-apple-dm/internal/clock"
 )
 
 func TestRealClock(t *testing.T) {

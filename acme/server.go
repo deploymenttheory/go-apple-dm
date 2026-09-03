@@ -14,10 +14,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/deploymenttheory/go-apple-mdm/acme/jose"
-	"github.com/deploymenttheory/go-apple-mdm/ca"
-	"github.com/deploymenttheory/go-apple-mdm/event"
-	"github.com/deploymenttheory/go-apple-mdm/internal/clock"
+	"github.com/deploymenttheory/go-apple-dm/acme/jose"
+	"github.com/deploymenttheory/go-apple-dm/ca"
+	"github.com/deploymenttheory/go-apple-dm/event"
+	"github.com/deploymenttheory/go-apple-dm/internal/clock"
 )
 
 // Defaults applied by New.

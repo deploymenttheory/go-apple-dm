@@ -4,8 +4,8 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/deploymenttheory/go-apple-mdm/event"
-	"github.com/deploymenttheory/go-apple-mdm/storage"
+	"github.com/deploymenttheory/go-apple-dm/event"
+	"github.com/deploymenttheory/go-apple-dm/storage"
 )
 
 // ExportEnrollments pages through enrollment records for migration. Device

@@ -12,7 +12,7 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/deploymenttheory/go-apple-mdm/secrets"
+	"github.com/deploymenttheory/go-apple-dm/secrets"
 )
 
 // Sentinel errors returned by this package. Callers should test them with
@@ -50,7 +50,7 @@ const (
 	// maxNameLen is the longest key name that fits in the one byte length field.
 	maxNameLen = 255
 	// hkdfInfo binds derived keys to this package and layout version.
-	hkdfInfo = "go-apple-mdm/storage/crypt/v1"
+	hkdfInfo = "go-apple-dm/storage/crypt/v1"
 	// headerLen is the fixed part of the header, before the key name.
 	headerLen = magicLen + 1
 )

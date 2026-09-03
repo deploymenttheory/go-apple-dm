@@ -6,7 +6,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/deploymenttheory/go-apple-mdm/mdm"
+	"github.com/deploymenttheory/go-apple-dm/mdm"
 )
 
 // Type names an event.
@@ -14,15 +14,15 @@ type Type string
 
 // Event types published by the service layer.
 const (
-	Enrolled           Type = "enrolled"       // Authenticate accepted for a new enrollment
-	Reenrolled         Type = "reenrolled"     // Authenticate accepted for an existing enrollment
-	TokenUpdated       Type = "token-updated"  // TokenUpdate stored
-	CheckedOut         Type = "checked-out"    // CheckOut received
-	CertRotated        Type = "cert-rotated"   // enrollment identity certificate changed
-	CommandQueued      Type = "command-queued" // command enqueued for an enrollment
-	CommandSent        Type = "command-sent"   // command delivered to the device
-	CommandResult      Type = "command-result" // Acknowledged, Error, CommandFormatError, or NotNow
-	BootstrapTokenSet  Type = "bootstrap-token-set"
+	Enrolled          Type = "enrolled"       // Authenticate accepted for a new enrollment
+	Reenrolled        Type = "reenrolled"     // Authenticate accepted for an existing enrollment
+	TokenUpdated      Type = "token-updated"  // TokenUpdate stored
+	CheckedOut        Type = "checked-out"    // CheckOut received
+	CertRotated       Type = "cert-rotated"   // enrollment identity certificate changed
+	CommandQueued     Type = "command-queued" // command enqueued for an enrollment
+	CommandSent       Type = "command-sent"   // command delivered to the device
+	CommandResult     Type = "command-result" // Acknowledged, Error, CommandFormatError, or NotNow
+	BootstrapTokenSet Type = "bootstrap-token-set"
 	// PushTokenInvalid is a token APNs says will never work again (410).
 	// The enrollment is gone until it re-registers.
 	PushTokenInvalid Type = "push-token-invalid"
@@ -31,7 +31,7 @@ const (
 	// wrong environment, or a malformed request. It is the event to alert
 	// on, because the cause is usually shared by every device on the topic
 	// and no retry will clear it.
-	PushRejected Type = "push-rejected"
+	PushRejected       Type = "push-rejected"
 	DDMChanged         Type = "ddm-changed"
 	DDMStatusReceived  Type = "ddm-status-received"
 	CertReuseDenied    Type = "cert-reuse-denied"   // Authenticate presented a certificate another enrollment pinned before

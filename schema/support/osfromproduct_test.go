@@ -3,7 +3,7 @@ package support_test
 import (
 	"testing"
 
-	"github.com/deploymenttheory/go-apple-mdm/schema/support"
+	"github.com/deploymenttheory/go-apple-dm/schema/support"
 )
 
 func TestOSFromProduct(t *testing.T) {

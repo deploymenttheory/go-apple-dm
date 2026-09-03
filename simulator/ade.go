@@ -12,9 +12,9 @@ import (
 
 	json "encoding/json/v2"
 
-	"github.com/deploymenttheory/go-apple-mdm/cms"
-	"github.com/deploymenttheory/go-apple-mdm/plist"
-	"github.com/deploymenttheory/go-apple-mdm/profile"
+	"github.com/deploymenttheory/go-apple-dm/cms"
+	"github.com/deploymenttheory/go-apple-dm/plist"
+	"github.com/deploymenttheory/go-apple-dm/profile"
 )
 
 // Automated Device Enrollment constants from Apple's documentation.
@@ -119,7 +119,7 @@ func (d *Device) ADEEnroll(ctx context.Context, profileURL string, opts ADEOptio
 			return fmt.Errorf("%w: %w", ErrADE, err)
 		}
 		req.Header.Set(HeaderDeviceInfo, base64.StdEncoding.EncodeToString(signed))
-		req.Header.Set("User-Agent", "MDM/1.0 go-apple-mdm-simulator")
+		req.Header.Set("User-Agent", "MDM/1.0 go-apple-dm-simulator")
 		first, err := d.Client.Do(req)
 		if err != nil {
 			return fmt.Errorf("%w: web view: %w", ErrADE, err)
@@ -133,7 +133,7 @@ func (d *Device) ADEEnroll(ctx context.Context, profileURL string, opts ADEOptio
 			return fmt.Errorf("%w: %w", ErrADE, err)
 		}
 		req.Header.Set("Content-Type", ContentTypeDeviceInfo)
-		req.Header.Set("User-Agent", "MDM/1.0 go-apple-mdm-simulator")
+		req.Header.Set("User-Agent", "MDM/1.0 go-apple-dm-simulator")
 		if resp, err = d.Client.Do(req); err != nil {
 			return fmt.Errorf("%w: enroll: %w", ErrADE, err)
 		}

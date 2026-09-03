@@ -7,12 +7,12 @@ import (
 	"sort"
 	"time"
 
-	"github.com/deploymenttheory/go-apple-mdm/event"
-	"github.com/deploymenttheory/go-apple-mdm/internal/canonjson"
-	"github.com/deploymenttheory/go-apple-mdm/mdm"
-	schemaddm "github.com/deploymenttheory/go-apple-mdm/schema/ddm"
-	"github.com/deploymenttheory/go-apple-mdm/schema/ddmproto"
-	"github.com/deploymenttheory/go-apple-mdm/schema/status"
+	"github.com/deploymenttheory/go-apple-dm/event"
+	"github.com/deploymenttheory/go-apple-dm/internal/canonjson"
+	"github.com/deploymenttheory/go-apple-dm/mdm"
+	schemaddm "github.com/deploymenttheory/go-apple-dm/schema/ddm"
+	"github.com/deploymenttheory/go-apple-dm/schema/ddmproto"
+	"github.com/deploymenttheory/go-apple-dm/schema/status"
 )
 
 // StatusItemDeclarations is the status item carrying per-declaration state.

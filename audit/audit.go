@@ -5,7 +5,7 @@ import (
 	"errors"
 	"time"
 
-	"github.com/deploymenttheory/go-apple-mdm/mdm"
+	"github.com/deploymenttheory/go-apple-dm/mdm"
 )
 
 // Sentinel errors. They mirror the shapes storage and adminauth use so a

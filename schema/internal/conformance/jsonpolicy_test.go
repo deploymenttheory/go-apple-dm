@@ -6,7 +6,7 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/deploymenttheory/go-apple-mdm/schema/ddm"
+	"github.com/deploymenttheory/go-apple-dm/schema/ddm"
 )
 
 // TestJSONPolicy pins decision record 0018: encoding/json/v2 rejects

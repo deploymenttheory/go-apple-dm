@@ -1,4 +1,4 @@
-// Command mdmctl administers a go-apple-mdm reference server.
+// Command mdmctl administers a go-apple-dm reference server.
 package main
 
 import (
@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/deploymenttheory/go-apple-mdm/internal/mdmctl"
+	"github.com/deploymenttheory/go-apple-dm/internal/mdmctl"
 )
 
 func main() {

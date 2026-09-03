@@ -13,7 +13,7 @@ import (
 
 	"github.com/smallstep/pkcs7"
 
-	"github.com/deploymenttheory/go-apple-mdm/cms"
+	"github.com/deploymenttheory/go-apple-dm/cms"
 )
 
 // The structures below mirror RFC 5652 SignedData so tests can build

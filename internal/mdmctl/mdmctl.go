@@ -12,7 +12,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/deploymenttheory/go-apple-mdm/internal/mdmctl/adminclient"
+	"github.com/deploymenttheory/go-apple-dm/internal/mdmctl/adminclient"
 )
 
 // Exit codes. They are documented and distinct so a script can tell a usage
@@ -293,7 +293,7 @@ func (e *env) parseVerb(fs *flag.FlagSet, args []string) ([]string, error) {
 
 // usage prints the verb list and the global flags.
 func usage(w io.Writer, fs *flag.FlagSet) {
-	fmt.Fprintln(w, "mdmctl administers a go-apple-mdm reference server.")
+	fmt.Fprintln(w, "mdmctl administers a go-apple-dm reference server.")
 	fmt.Fprintln(w, "\nUsage:\n  mdmctl [flags] <command> [flags] [arguments]")
 	fmt.Fprintln(w, "\nCommands:")
 	cmds := commands()

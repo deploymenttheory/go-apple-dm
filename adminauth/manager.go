@@ -9,7 +9,7 @@ import (
 
 	"github.com/cedar-policy/cedar-go/types"
 
-	"github.com/deploymenttheory/go-apple-mdm/internal/clock"
+	"github.com/deploymenttheory/go-apple-dm/internal/clock"
 )
 
 // Manager authenticates admin callers, answers authorization decisions from

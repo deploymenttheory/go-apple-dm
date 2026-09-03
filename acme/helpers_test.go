@@ -22,14 +22,14 @@ import (
 	"testing"
 	"time"
 
-	"github.com/deploymenttheory/go-apple-mdm/acme"
-	"github.com/deploymenttheory/go-apple-mdm/acme/attest"
-	"github.com/deploymenttheory/go-apple-mdm/acme/attest/attesttest"
-	"github.com/deploymenttheory/go-apple-mdm/acme/inmem"
-	"github.com/deploymenttheory/go-apple-mdm/acme/jose"
-	"github.com/deploymenttheory/go-apple-mdm/ca"
-	"github.com/deploymenttheory/go-apple-mdm/event"
-	"github.com/deploymenttheory/go-apple-mdm/internal/clock"
+	"github.com/deploymenttheory/go-apple-dm/acme"
+	"github.com/deploymenttheory/go-apple-dm/acme/attest"
+	"github.com/deploymenttheory/go-apple-dm/acme/attest/attesttest"
+	"github.com/deploymenttheory/go-apple-dm/acme/inmem"
+	"github.com/deploymenttheory/go-apple-dm/acme/jose"
+	"github.com/deploymenttheory/go-apple-dm/ca"
+	"github.com/deploymenttheory/go-apple-dm/event"
+	"github.com/deploymenttheory/go-apple-dm/internal/clock"
 )
 
 // The device every fixture is about: the serial number and UDID the default
@@ -54,7 +54,7 @@ type authority struct {
 // safe and keeps the suite quick.
 var sharedCA = sync.OnceValues(func() (*authority, error) {
 	cert, key, err := ca.NewSelfSigned(ca.SelfSignedOptions{
-		Subject: pkix.Name{CommonName: "go-apple-mdm ACME test CA"},
+		Subject: pkix.Name{CommonName: "go-apple-dm ACME test CA"},
 	})
 	if err != nil {
 		return nil, err

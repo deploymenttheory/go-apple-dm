@@ -3,8 +3,8 @@ package simulator_test
 import (
 	"testing"
 
-	"github.com/deploymenttheory/go-apple-mdm/mdm"
-	"github.com/deploymenttheory/go-apple-mdm/simulator"
+	"github.com/deploymenttheory/go-apple-dm/mdm"
+	"github.com/deploymenttheory/go-apple-dm/simulator"
 )
 
 func TestSharedIPadUser(t *testing.T) {

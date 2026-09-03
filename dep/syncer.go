@@ -8,8 +8,8 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/deploymenttheory/go-apple-mdm/event"
-	"github.com/deploymenttheory/go-apple-mdm/internal/clock"
+	"github.com/deploymenttheory/go-apple-dm/event"
+	"github.com/deploymenttheory/go-apple-dm/internal/clock"
 )
 
 // Defaults for SyncerConfig.

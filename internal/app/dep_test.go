@@ -13,12 +13,12 @@ import (
 	"testing"
 	"time"
 
-	"github.com/deploymenttheory/go-apple-mdm/axm"
-	"github.com/deploymenttheory/go-apple-mdm/dep"
-	"github.com/deploymenttheory/go-apple-mdm/dep/deptest"
-	depinmem "github.com/deploymenttheory/go-apple-mdm/dep/inmem"
-	"github.com/deploymenttheory/go-apple-mdm/internal/app"
-	"github.com/deploymenttheory/go-apple-mdm/internal/clock"
+	"github.com/deploymenttheory/go-apple-dm/axm"
+	"github.com/deploymenttheory/go-apple-dm/dep"
+	"github.com/deploymenttheory/go-apple-dm/dep/deptest"
+	depinmem "github.com/deploymenttheory/go-apple-dm/dep/inmem"
+	"github.com/deploymenttheory/go-apple-dm/internal/app"
+	"github.com/deploymenttheory/go-apple-dm/internal/clock"
 )
 
 func TestDEP(t *testing.T) {

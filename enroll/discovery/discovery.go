@@ -12,8 +12,8 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/deploymenttheory/go-apple-mdm/plist"
-	schemaerrors "github.com/deploymenttheory/go-apple-mdm/schema/errors"
+	"github.com/deploymenttheory/go-apple-dm/plist"
+	schemaerrors "github.com/deploymenttheory/go-apple-dm/schema/errors"
 )
 
 // WellKnownPath is the path Apple devices fetch on the organisation domain.

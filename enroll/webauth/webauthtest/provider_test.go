@@ -13,7 +13,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/deploymenttheory/go-apple-mdm/enroll/webauth/webauthtest"
+	"github.com/deploymenttheory/go-apple-dm/enroll/webauth/webauthtest"
 )
 
 func getJSON(t *testing.T, client *http.Client, rawURL string) map[string]any {

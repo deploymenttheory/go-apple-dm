@@ -11,11 +11,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/deploymenttheory/go-apple-mdm/acme"
-	"github.com/deploymenttheory/go-apple-mdm/acme/attest"
-	"github.com/deploymenttheory/go-apple-mdm/acme/attest/attesttest"
-	"github.com/deploymenttheory/go-apple-mdm/acme/jose"
-	"github.com/deploymenttheory/go-apple-mdm/event"
+	"github.com/deploymenttheory/go-apple-dm/acme"
+	"github.com/deploymenttheory/go-apple-dm/acme/attest"
+	"github.com/deploymenttheory/go-apple-dm/acme/attest/attesttest"
+	"github.com/deploymenttheory/go-apple-dm/acme/jose"
+	"github.com/deploymenttheory/go-apple-dm/event"
 )
 
 // TestChallenge covers the device-attest-01 challenge: the whole of the

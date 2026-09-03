@@ -8,12 +8,12 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/deploymenttheory/go-apple-mdm/audit"
-	auditinmem "github.com/deploymenttheory/go-apple-mdm/audit/inmem"
-	auditsql "github.com/deploymenttheory/go-apple-mdm/audit/sqlstore"
-	"github.com/deploymenttheory/go-apple-mdm/event"
-	"github.com/deploymenttheory/go-apple-mdm/event/sink"
-	"github.com/deploymenttheory/go-apple-mdm/mdm"
+	"github.com/deploymenttheory/go-apple-dm/audit"
+	auditinmem "github.com/deploymenttheory/go-apple-dm/audit/inmem"
+	auditsql "github.com/deploymenttheory/go-apple-dm/audit/sqlstore"
+	"github.com/deploymenttheory/go-apple-dm/event"
+	"github.com/deploymenttheory/go-apple-dm/event/sink"
+	"github.com/deploymenttheory/go-apple-dm/mdm"
 )
 
 // DefaultAuditRetention is how long records are kept when a retention is

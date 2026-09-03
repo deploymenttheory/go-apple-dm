@@ -3,10 +3,10 @@ package inmem_test
 import (
 	"testing"
 
-	"github.com/deploymenttheory/go-apple-mdm/dep"
-	"github.com/deploymenttheory/go-apple-mdm/dep/deptest"
-	"github.com/deploymenttheory/go-apple-mdm/dep/inmem"
-	"github.com/deploymenttheory/go-apple-mdm/storage/crypt"
+	"github.com/deploymenttheory/go-apple-dm/dep"
+	"github.com/deploymenttheory/go-apple-dm/dep/deptest"
+	"github.com/deploymenttheory/go-apple-dm/dep/inmem"
+	"github.com/deploymenttheory/go-apple-dm/storage/crypt"
 )
 
 func TestContract(t *testing.T) {

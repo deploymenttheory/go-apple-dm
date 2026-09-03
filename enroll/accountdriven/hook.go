@@ -5,8 +5,8 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/deploymenttheory/go-apple-mdm/mdm"
-	"github.com/deploymenttheory/go-apple-mdm/service"
+	"github.com/deploymenttheory/go-apple-dm/mdm"
+	"github.com/deploymenttheory/go-apple-dm/service"
 )
 
 // ErrEnrollmentToken is the hook's veto: the check-in carried no valid

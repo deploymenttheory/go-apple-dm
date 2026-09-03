@@ -7,8 +7,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/deploymenttheory/go-apple-mdm/gdmf"
-	"github.com/deploymenttheory/go-apple-mdm/gdmf/gdmftest"
+	"github.com/deploymenttheory/go-apple-dm/gdmf"
+	"github.com/deploymenttheory/go-apple-dm/gdmf/gdmftest"
 )
 
 func TestCatalogLatest(t *testing.T) {
@@ -79,7 +79,7 @@ func TestClient(t *testing.T) {
 		srv := gdmftest.NewServer(nil)
 		defer srv.Close()
 		now := time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC)
-		c := &gdmf.Client{URL: srv.URL, TTL: time.Minute, Now: func() time.Time { return now }, UserAgent: "go-apple-mdm-test"}
+		c := &gdmf.Client{URL: srv.URL, TTL: time.Minute, Now: func() time.Time { return now }, UserAgent: "go-apple-dm-test"}
 		a, err := c.Latest(ctx, "iPhone15,2")
 		if err != nil || a.ProductVersion != "18.0" || a.Build != "22A3354" {
 			t.Fatalf("%+v %v", a, err)

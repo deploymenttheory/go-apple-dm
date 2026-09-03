@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/deploymenttheory/go-apple-mdm/push/pushcert"
+	"github.com/deploymenttheory/go-apple-dm/push/pushcert"
 )
 
 // ValidatePushCert checks a PEM certificate and key pair the way every

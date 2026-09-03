@@ -5,7 +5,7 @@ import (
 	"slices"
 	"testing"
 
-	"github.com/deploymenttheory/go-apple-mdm/acme/jose"
+	"github.com/deploymenttheory/go-apple-dm/acme/jose"
 )
 
 // FuzzParse feeds arbitrary bytes to Parse. Parse is the first thing an ACME

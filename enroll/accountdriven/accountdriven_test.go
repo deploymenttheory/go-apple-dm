@@ -13,13 +13,13 @@ import (
 	"testing"
 	"time"
 
-	"github.com/deploymenttheory/go-apple-mdm/enroll"
-	"github.com/deploymenttheory/go-apple-mdm/enroll/accountdriven"
-	"github.com/deploymenttheory/go-apple-mdm/internal/testpki"
-	"github.com/deploymenttheory/go-apple-mdm/mdm"
-	"github.com/deploymenttheory/go-apple-mdm/profile"
-	"github.com/deploymenttheory/go-apple-mdm/schema/profiles"
-	"github.com/deploymenttheory/go-apple-mdm/service"
+	"github.com/deploymenttheory/go-apple-dm/enroll"
+	"github.com/deploymenttheory/go-apple-dm/enroll/accountdriven"
+	"github.com/deploymenttheory/go-apple-dm/internal/testpki"
+	"github.com/deploymenttheory/go-apple-dm/mdm"
+	"github.com/deploymenttheory/go-apple-dm/profile"
+	"github.com/deploymenttheory/go-apple-dm/schema/profiles"
+	"github.com/deploymenttheory/go-apple-dm/service"
 )
 
 var t0 = time.Date(2026, 9, 1, 12, 0, 0, 0, time.UTC)

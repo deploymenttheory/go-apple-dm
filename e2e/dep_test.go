@@ -10,14 +10,14 @@ import (
 	"testing"
 	"time"
 
-	"github.com/deploymenttheory/go-apple-mdm/dep"
-	"github.com/deploymenttheory/go-apple-mdm/dep/deptest"
-	depinmem "github.com/deploymenttheory/go-apple-mdm/dep/inmem"
-	"github.com/deploymenttheory/go-apple-mdm/enroll/ade"
-	"github.com/deploymenttheory/go-apple-mdm/gdmf/gdmftest"
-	"github.com/deploymenttheory/go-apple-mdm/internal/clock"
-	"github.com/deploymenttheory/go-apple-mdm/mdm"
-	"github.com/deploymenttheory/go-apple-mdm/simulator"
+	"github.com/deploymenttheory/go-apple-dm/dep"
+	"github.com/deploymenttheory/go-apple-dm/dep/deptest"
+	depinmem "github.com/deploymenttheory/go-apple-dm/dep/inmem"
+	"github.com/deploymenttheory/go-apple-dm/enroll/ade"
+	"github.com/deploymenttheory/go-apple-dm/gdmf/gdmftest"
+	"github.com/deploymenttheory/go-apple-dm/internal/clock"
+	"github.com/deploymenttheory/go-apple-dm/mdm"
+	"github.com/deploymenttheory/go-apple-dm/simulator"
 )
 
 // TestE2E_DEPAssign is E2E-011: the token PKI exchange with our fake DEP
@@ -60,7 +60,7 @@ func TestE2E_DEPAssign(t *testing.T) {
 
 	// Token PKI: generate the keypair, let the portal (the fake) encrypt the
 	// token to it, import the .p7m.
-	kp, err := dep.GenerateTokenPKI("go-apple-mdm", 24*time.Hour, t0)
+	kp, err := dep.GenerateTokenPKI("go-apple-dm", 24*time.Hour, t0)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -110,7 +110,7 @@ func TestE2E_DEPAssign(t *testing.T) {
 	}
 
 	// Define the profile pointing at our ADE endpoint and assign.
-	profile := &dep.Profile{ProfileName: "go-apple-mdm e2e", URL: f.server.URL + "/ade", OrgMagic: "e2e", AwaitDeviceConfigured: new(true), IsSupervised: new(true), IsMDMRemovable: new(false)}
+	profile := &dep.Profile{ProfileName: "go-apple-dm e2e", URL: f.server.URL + "/ade", OrgMagic: "e2e", AwaitDeviceConfigured: new(true), IsSupervised: new(true), IsMDMRemovable: new(false)}
 	resp, err := client.DefineProfile(ctx, account, profile)
 	if err != nil {
 		t.Fatalf("define profile: %v", err)

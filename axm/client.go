@@ -15,8 +15,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/deploymenttheory/go-apple-mdm/internal/clock"
-	"github.com/deploymenttheory/go-apple-mdm/secrets"
+	"github.com/deploymenttheory/go-apple-dm/internal/clock"
+	"github.com/deploymenttheory/go-apple-dm/secrets"
 )
 
 // API hosts and defaults.
@@ -32,7 +32,7 @@ const (
 	// MaxLimit is the largest page size Apple accepts.
 	MaxLimit = 1000
 	// DefaultUserAgent is sent when Config.UserAgent is empty.
-	DefaultUserAgent = "go-apple-mdm/axm"
+	DefaultUserAgent = "go-apple-dm/axm"
 	// maxBody bounds a JSON response body.
 	maxBody = 32 << 20
 )

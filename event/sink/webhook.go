@@ -15,8 +15,8 @@ import (
 	"net/url"
 	"time"
 
-	"github.com/deploymenttheory/go-apple-mdm/event"
-	"github.com/deploymenttheory/go-apple-mdm/internal/clock"
+	"github.com/deploymenttheory/go-apple-dm/event"
+	"github.com/deploymenttheory/go-apple-dm/internal/clock"
 )
 
 // Webhook wire constants, chosen to match what MicroMDM and NanoMDM receivers

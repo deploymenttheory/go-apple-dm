@@ -4,7 +4,7 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/deploymenttheory/go-apple-mdm/schema/support"
+	"github.com/deploymenttheory/go-apple-dm/schema/support"
 )
 
 func TestParseVersion(t *testing.T) {

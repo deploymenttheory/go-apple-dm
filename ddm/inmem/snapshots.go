@@ -5,8 +5,8 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/deploymenttheory/go-apple-mdm/ddm"
-	"github.com/deploymenttheory/go-apple-mdm/mdm"
+	"github.com/deploymenttheory/go-apple-dm/ddm"
+	"github.com/deploymenttheory/go-apple-dm/mdm"
 )
 
 func copySnapshot(s ddm.Snapshot) ddm.Snapshot {

@@ -13,8 +13,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/deploymenttheory/go-apple-mdm/axm"
-	"github.com/deploymenttheory/go-apple-mdm/axm/axmtest"
+	"github.com/deploymenttheory/go-apple-dm/axm"
+	"github.com/deploymenttheory/go-apple-dm/axm/axmtest"
 )
 
 // TestE2E_ABMAssignDevices is E2E-021: against our fake Business Manager,
@@ -30,7 +30,7 @@ func TestE2E_ABMAssignDevices(t *testing.T) {
 	fake := axmtest.NewServer()
 	t.Cleanup(fake.Close)
 	fake.RegisterKey("BUSINESSAPI.e2e", "kid-e2e", &key.PublicKey)
-	server := fake.AddMDMServer("go-apple-mdm", nil)
+	server := fake.AddMDMServer("go-apple-dm", nil)
 	serials := []string{"C02E2E0001", "C02E2E0002", "C02E2E0003"}
 	for _, s := range serials {
 		fake.AddOrgDevice(s, nil)

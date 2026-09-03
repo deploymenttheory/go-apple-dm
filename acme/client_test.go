@@ -10,10 +10,10 @@ import (
 
 	xacme "golang.org/x/crypto/acme"
 
-	"github.com/deploymenttheory/go-apple-mdm/acme"
-	"github.com/deploymenttheory/go-apple-mdm/ca"
-	"github.com/deploymenttheory/go-apple-mdm/event"
-	"github.com/deploymenttheory/go-apple-mdm/storage"
+	"github.com/deploymenttheory/go-apple-dm/acme"
+	"github.com/deploymenttheory/go-apple-dm/ca"
+	"github.com/deploymenttheory/go-apple-dm/event"
+	"github.com/deploymenttheory/go-apple-dm/storage"
 )
 
 // TestEnrollmentWithAnIndependentClient drives the whole exchange with
@@ -30,7 +30,7 @@ func TestEnrollmentWithAnIndependentClient(t *testing.T) {
 		Key:          newKey(t),
 		DirectoryURL: f.server.DirectoryURL(),
 		HTTPClient:   f.ts.Client(),
-		UserAgent:    "go-apple-mdm acme tests",
+		UserAgent:    "go-apple-dm acme tests",
 	}
 	if _, err := client.Register(ctx, &xacme.Account{}, xacme.AcceptTOS); err != nil {
 		t.Fatalf("register: %v", err)

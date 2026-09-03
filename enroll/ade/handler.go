@@ -11,9 +11,9 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/deploymenttheory/go-apple-mdm/enroll"
-	"github.com/deploymenttheory/go-apple-mdm/gdmf"
-	schemaerrors "github.com/deploymenttheory/go-apple-mdm/schema/errors"
+	"github.com/deploymenttheory/go-apple-dm/enroll"
+	"github.com/deploymenttheory/go-apple-dm/gdmf"
+	schemaerrors "github.com/deploymenttheory/go-apple-dm/schema/errors"
 )
 
 // ErrRejected may be returned by a ProfileHook to refuse enrollment with

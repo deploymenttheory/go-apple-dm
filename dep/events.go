@@ -3,7 +3,7 @@ package dep
 import (
 	"time"
 
-	"github.com/deploymenttheory/go-apple-mdm/event"
+	"github.com/deploymenttheory/go-apple-dm/event"
 )
 
 // Event types this package publishes on the event bus. They live here

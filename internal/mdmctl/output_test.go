@@ -8,7 +8,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/deploymenttheory/go-apple-mdm/internal/mdmctl"
+	"github.com/deploymenttheory/go-apple-dm/internal/mdmctl"
 )
 
 // failWriter fails after n successful writes, so a write error partway

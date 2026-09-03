@@ -6,7 +6,7 @@ resolve. Anything that could not be verified was left out or is explicitly flagg
 
 ## Purpose
 
-`go-apple-mdm` is a Go library for the Apple Mobile Device Management (MDM) protocol and
+`go-apple-dm` is a Go library for the Apple Mobile Device Management (MDM) protocol and
 Declarative Device Management (DDM). This document is the prior-art map: where Apple's primary
 sources are, which open source projects implement which parts of the protocol, which building
 blocks (plist, PKCS7, SCEP, APNs, DEP) the Go ecosystem has already settled on, and where the gaps
@@ -761,7 +761,7 @@ proxied to a separate service, blank means absent.
 
 ---
 
-## 9. Observations for go-apple-mdm
+## 9. Observations for go-apple-dm
 
 Brief pointers, not a design. Each item names the best code reference for a protocol area.
 

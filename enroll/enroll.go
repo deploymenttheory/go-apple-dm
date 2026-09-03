@@ -8,9 +8,9 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/deploymenttheory/go-apple-mdm/profile"
-	"github.com/deploymenttheory/go-apple-mdm/schema/profiles"
-	"github.com/deploymenttheory/go-apple-mdm/schema/support"
+	"github.com/deploymenttheory/go-apple-dm/profile"
+	"github.com/deploymenttheory/go-apple-dm/schema/profiles"
+	"github.com/deploymenttheory/go-apple-dm/schema/support"
 )
 
 // ErrProfile is returned for an enrollment profile that cannot be built or

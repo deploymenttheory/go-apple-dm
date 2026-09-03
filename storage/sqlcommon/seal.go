@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/deploymenttheory/go-apple-mdm/storage/crypt"
+	"github.com/deploymenttheory/go-apple-dm/storage/crypt"
 )
 
 // Purposes name the sealed columns; each becomes the AAD prefix that binds

@@ -18,11 +18,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/deploymenttheory/go-apple-mdm/cms"
-	"github.com/deploymenttheory/go-apple-mdm/enroll/accountdriven"
-	"github.com/deploymenttheory/go-apple-mdm/enroll/ade"
-	"github.com/deploymenttheory/go-apple-mdm/enroll/webauth"
-	"github.com/deploymenttheory/go-apple-mdm/internal/testpki"
+	"github.com/deploymenttheory/go-apple-dm/cms"
+	"github.com/deploymenttheory/go-apple-dm/enroll/accountdriven"
+	"github.com/deploymenttheory/go-apple-dm/enroll/ade"
+	"github.com/deploymenttheory/go-apple-dm/enroll/webauth"
+	"github.com/deploymenttheory/go-apple-dm/internal/testpki"
 )
 
 func TestParseSignerPEM(t *testing.T) {

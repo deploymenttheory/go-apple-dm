@@ -19,7 +19,7 @@ import (
 	"time"
 	"uuid"
 
-	"github.com/deploymenttheory/go-apple-mdm/secrets"
+	"github.com/deploymenttheory/go-apple-dm/secrets"
 )
 
 // OAuth constants from Apple's "Implementing OAuth" page.

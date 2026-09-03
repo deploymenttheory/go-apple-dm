@@ -12,9 +12,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/deploymenttheory/go-apple-mdm/acme/attest"
-	"github.com/deploymenttheory/go-apple-mdm/acme/attest/attesttest"
-	"github.com/deploymenttheory/go-apple-mdm/internal/cbor"
+	"github.com/deploymenttheory/go-apple-dm/acme/attest"
+	"github.com/deploymenttheory/go-apple-dm/acme/attest/attesttest"
+	"github.com/deploymenttheory/go-apple-dm/internal/cbor"
 )
 
 const token = "9tXmyH1t3fFQ0zPzr3aUqKq0Q7RmAcXvIcQ5cdKZ3wA"

@@ -15,8 +15,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/deploymenttheory/go-apple-mdm/ca"
-	"github.com/deploymenttheory/go-apple-mdm/internal/clock"
+	"github.com/deploymenttheory/go-apple-dm/ca"
+	"github.com/deploymenttheory/go-apple-dm/internal/clock"
 )
 
 func csr(t *testing.T, key any, cn string, sans bool) *x509.CertificateRequest {
@@ -46,7 +46,7 @@ func TestSelfSignedAndLocalSignsWithPolicy(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !cert.IsCA || cert.Subject.CommonName != "go-apple-mdm CA" || cert.NotAfter.Before(time.Now().Add(9*365*24*time.Hour)) {
+	if !cert.IsCA || cert.Subject.CommonName != "go-apple-dm CA" || cert.NotAfter.Before(time.Now().Add(9*365*24*time.Hour)) {
 		t.Fatalf("self-signed CA %+v", cert.Subject)
 	}
 	depot := ca.NewMemoryDepot()

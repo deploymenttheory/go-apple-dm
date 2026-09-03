@@ -6,8 +6,8 @@ package ddmproto_test
 import (
 	"testing"
 
-	"github.com/deploymenttheory/go-apple-mdm/schema/ddmproto"
-	"github.com/deploymenttheory/go-apple-mdm/schema/internal/conformance"
+	"github.com/deploymenttheory/go-apple-dm/schema/ddmproto"
+	"github.com/deploymenttheory/go-apple-dm/schema/internal/conformance"
 )
 
 func sampleDeclarationItemsResponse(d int) *ddmproto.DeclarationItemsResponse {

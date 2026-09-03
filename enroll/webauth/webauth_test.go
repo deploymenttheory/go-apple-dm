@@ -16,9 +16,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/deploymenttheory/go-apple-mdm/enroll/webauth"
-	"github.com/deploymenttheory/go-apple-mdm/enroll/webauth/webauthtest"
-	"github.com/deploymenttheory/go-apple-mdm/internal/clock"
+	"github.com/deploymenttheory/go-apple-dm/enroll/webauth"
+	"github.com/deploymenttheory/go-apple-dm/enroll/webauth/webauthtest"
+	"github.com/deploymenttheory/go-apple-dm/internal/clock"
 )
 
 var errBoom = errors.New("boom")

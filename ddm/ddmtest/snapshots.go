@@ -6,8 +6,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/deploymenttheory/go-apple-mdm/ddm"
-	schemaddm "github.com/deploymenttheory/go-apple-mdm/schema/ddm"
+	"github.com/deploymenttheory/go-apple-dm/ddm"
+	schemaddm "github.com/deploymenttheory/go-apple-dm/schema/ddm"
 )
 
 func item(kind schemaddm.Kind, identifier, token string) ddm.SnapshotItem {

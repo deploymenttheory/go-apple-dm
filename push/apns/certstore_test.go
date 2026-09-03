@@ -8,12 +8,12 @@ import (
 	"testing"
 	"time"
 
-	"github.com/deploymenttheory/go-apple-mdm/internal/clock"
-	"github.com/deploymenttheory/go-apple-mdm/internal/testpki"
-	"github.com/deploymenttheory/go-apple-mdm/push"
-	"github.com/deploymenttheory/go-apple-mdm/push/apns"
-	"github.com/deploymenttheory/go-apple-mdm/push/pushtest"
-	"github.com/deploymenttheory/go-apple-mdm/storage/inmem"
+	"github.com/deploymenttheory/go-apple-dm/internal/clock"
+	"github.com/deploymenttheory/go-apple-dm/internal/testpki"
+	"github.com/deploymenttheory/go-apple-dm/push"
+	"github.com/deploymenttheory/go-apple-dm/push/apns"
+	"github.com/deploymenttheory/go-apple-dm/push/pushtest"
+	"github.com/deploymenttheory/go-apple-dm/storage/inmem"
 )
 
 // TestPushWithStoreCertStore pushes through a StoreCertStore backed by the

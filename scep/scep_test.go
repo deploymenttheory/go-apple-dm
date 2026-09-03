@@ -18,9 +18,9 @@ import (
 
 	smallscep "github.com/smallstep/scep"
 
-	"github.com/deploymenttheory/go-apple-mdm/ca"
-	"github.com/deploymenttheory/go-apple-mdm/internal/clock"
-	"github.com/deploymenttheory/go-apple-mdm/scep"
+	"github.com/deploymenttheory/go-apple-dm/ca"
+	"github.com/deploymenttheory/go-apple-dm/internal/clock"
+	"github.com/deploymenttheory/go-apple-dm/scep"
 )
 
 type fixture struct {
@@ -83,7 +83,7 @@ func TestClientEnrolls(t *testing.T) {
 	}
 
 	key := rsaKey(t)
-	subject := pkix.Name{CommonName: "UDID-1", Organization: []string{"go-apple-mdm"}}
+	subject := pkix.Name{CommonName: "UDID-1", Organization: []string{"go-apple-dm"}}
 	cert, err := c.Enroll(ctx, key, scep.EnrollOptions{Subject: subject, Challenge: "secret"})
 	if err != nil {
 		t.Fatal(err)

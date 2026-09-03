@@ -11,7 +11,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/deploymenttheory/go-apple-mdm/secrets"
+	"github.com/deploymenttheory/go-apple-dm/secrets"
 )
 
 func TestSecretsRedacted(t *testing.T) {

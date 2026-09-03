@@ -14,9 +14,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/deploymenttheory/go-apple-mdm/enroll/ade"
-	"github.com/deploymenttheory/go-apple-mdm/enroll/adetest"
-	"github.com/deploymenttheory/go-apple-mdm/schema/support"
+	"github.com/deploymenttheory/go-apple-dm/enroll/ade"
+	"github.com/deploymenttheory/go-apple-dm/enroll/adetest"
+	"github.com/deploymenttheory/go-apple-dm/schema/support"
 )
 
 func parse(t *testing.T, req *http.Request, o ade.ParseOptions) (*ade.Parsed, error) {

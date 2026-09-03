@@ -6,8 +6,8 @@ package ddm_test
 import (
 	"testing"
 
-	"github.com/deploymenttheory/go-apple-mdm/schema/ddm"
-	"github.com/deploymenttheory/go-apple-mdm/schema/internal/conformance"
+	"github.com/deploymenttheory/go-apple-dm/schema/ddm"
+	"github.com/deploymenttheory/go-apple-dm/schema/internal/conformance"
 )
 
 func sampleActivationSimple(d int) *ddm.ActivationSimple {

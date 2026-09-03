@@ -3,7 +3,7 @@ package mdm
 import (
 	"fmt"
 
-	"github.com/deploymenttheory/go-apple-mdm/schema/commands"
+	"github.com/deploymenttheory/go-apple-dm/schema/commands"
 )
 
 // Status is the Status key of a command response.

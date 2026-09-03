@@ -5,7 +5,7 @@ import (
 	"database/sql"
 	"time"
 
-	"github.com/deploymenttheory/go-apple-mdm/acme"
+	"github.com/deploymenttheory/go-apple-dm/acme"
 )
 
 var nonceCols = []string{"value", "issued_at"}

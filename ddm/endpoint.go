@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	schemaddm "github.com/deploymenttheory/go-apple-mdm/schema/ddm"
+	schemaddm "github.com/deploymenttheory/go-apple-dm/schema/ddm"
 )
 
 // Op is the operation a DeclarativeManagement check-in requests.

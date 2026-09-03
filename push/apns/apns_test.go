@@ -11,12 +11,12 @@ import (
 	"testing"
 	"time"
 
-	"github.com/deploymenttheory/go-apple-mdm/internal/clock"
-	"github.com/deploymenttheory/go-apple-mdm/internal/testpki"
-	"github.com/deploymenttheory/go-apple-mdm/mdm"
-	"github.com/deploymenttheory/go-apple-mdm/push"
-	"github.com/deploymenttheory/go-apple-mdm/push/apns"
-	"github.com/deploymenttheory/go-apple-mdm/push/pushtest"
+	"github.com/deploymenttheory/go-apple-dm/internal/clock"
+	"github.com/deploymenttheory/go-apple-dm/internal/testpki"
+	"github.com/deploymenttheory/go-apple-dm/mdm"
+	"github.com/deploymenttheory/go-apple-dm/push"
+	"github.com/deploymenttheory/go-apple-dm/push/apns"
+	"github.com/deploymenttheory/go-apple-dm/push/pushtest"
 )
 
 func pushCert(t *testing.T, ca *testpki.CA, notBefore time.Time) tls.Certificate {

@@ -1,10 +1,10 @@
-# go-apple-mdm
+# go-apple-dm
 
-[![Release](https://img.shields.io/github/v/release/deploymenttheory/go-apple-mdm)](https://github.com/deploymenttheory/go-apple-mdm/releases)
-[![CI](https://github.com/deploymenttheory/go-apple-mdm/actions/workflows/ci.yml/badge.svg)](https://github.com/deploymenttheory/go-apple-mdm/actions/workflows/ci.yml)
-[![Go Reference](https://pkg.go.dev/badge/github.com/deploymenttheory/go-apple-mdm.svg)](https://pkg.go.dev/github.com/deploymenttheory/go-apple-mdm)
-[![Go Version](https://img.shields.io/github/go-mod/go-version/deploymenttheory/go-apple-mdm)](https://go.dev/)
-[![License](https://img.shields.io/github/license/deploymenttheory/go-apple-mdm)](LICENSE)
+[![Release](https://img.shields.io/github/v/release/deploymenttheory/go-apple-dm)](https://github.com/deploymenttheory/go-apple-dm/releases)
+[![CI](https://github.com/deploymenttheory/go-apple-dm/actions/workflows/ci.yml/badge.svg)](https://github.com/deploymenttheory/go-apple-dm/actions/workflows/ci.yml)
+[![Go Reference](https://pkg.go.dev/badge/github.com/deploymenttheory/go-apple-dm.svg)](https://pkg.go.dev/github.com/deploymenttheory/go-apple-dm)
+[![Go Version](https://img.shields.io/github/go-mod/go-version/deploymenttheory/go-apple-dm)](https://go.dev/)
+[![License](https://img.shields.io/github/license/deploymenttheory/go-apple-dm)](LICENSE)
 ![Status: Preview](https://img.shields.io/badge/status-preview-58A6FF)
 
 A pure Go library for Apple device management: the MDM check-in and command protocol,
@@ -58,7 +58,7 @@ interoperate. The reasoning behind all of this is decision record
 ## Quick start
 
 ```bash
-go get github.com/deploymenttheory/go-apple-mdm
+go get github.com/deploymenttheory/go-apple-dm
 ```
 
 A check-in and command endpoint over an in-memory store, and a typed command queued for a device:
@@ -71,12 +71,12 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/deploymenttheory/go-apple-mdm/httpapi"
-	"github.com/deploymenttheory/go-apple-mdm/mdm"
-	"github.com/deploymenttheory/go-apple-mdm/schema/commands"
-	"github.com/deploymenttheory/go-apple-mdm/service"
-	"github.com/deploymenttheory/go-apple-mdm/storage"
-	"github.com/deploymenttheory/go-apple-mdm/storage/inmem"
+	"github.com/deploymenttheory/go-apple-dm/httpapi"
+	"github.com/deploymenttheory/go-apple-dm/mdm"
+	"github.com/deploymenttheory/go-apple-dm/schema/commands"
+	"github.com/deploymenttheory/go-apple-dm/service"
+	"github.com/deploymenttheory/go-apple-dm/storage"
+	"github.com/deploymenttheory/go-apple-dm/storage/inmem"
 )
 
 func main() {
@@ -153,7 +153,7 @@ end-to-end scenarios, and [`simulator/`](simulator/) to drive a server without h
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/diagrams/system-architecture.dark.png">
-  <img alt="go-apple-mdm high-level design" src="docs/diagrams/system-architecture.light.png">
+  <img alt="go-apple-dm high-level design" src="docs/diagrams/system-architecture.light.png">
 </picture>
 
 Twenty-seven interactive diagrams cover each component and each protocol flow, from package

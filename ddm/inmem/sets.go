@@ -4,8 +4,8 @@ import (
 	"context"
 	"time"
 
-	"github.com/deploymenttheory/go-apple-mdm/ddm"
-	"github.com/deploymenttheory/go-apple-mdm/storage"
+	"github.com/deploymenttheory/go-apple-dm/ddm"
+	"github.com/deploymenttheory/go-apple-dm/storage"
 )
 
 // PutSet implements ddm.SetStore. An existing set is left untouched.

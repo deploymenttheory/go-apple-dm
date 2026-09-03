@@ -8,11 +8,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/deploymenttheory/go-apple-mdm/audit"
-	"github.com/deploymenttheory/go-apple-mdm/audit/audittest"
-	"github.com/deploymenttheory/go-apple-mdm/audit/sqlstore"
-	"github.com/deploymenttheory/go-apple-mdm/storage/sqlcommon"
-	"github.com/deploymenttheory/go-apple-mdm/storage/sqlite"
+	"github.com/deploymenttheory/go-apple-dm/audit"
+	"github.com/deploymenttheory/go-apple-dm/audit/audittest"
+	"github.com/deploymenttheory/go-apple-dm/audit/sqlstore"
+	"github.com/deploymenttheory/go-apple-dm/storage/sqlcommon"
+	"github.com/deploymenttheory/go-apple-dm/storage/sqlite"
 )
 
 func openDB(t *testing.T) *sql.DB {

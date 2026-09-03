@@ -1,7 +1,7 @@
-# go-apple-mdm
+# go-apple-dm
 
 Pure Go library for the Apple MDM protocol and Declarative Device Management, plus a thin
-reference server. Module `github.com/deploymenttheory/go-apple-mdm`, Go 1.27.
+reference server. Module `github.com/deploymenttheory/go-apple-dm`, Go 1.27.
 
 ## Plan of record
 

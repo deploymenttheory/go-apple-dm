@@ -4,7 +4,7 @@
 package ddm
 
 import (
-	"github.com/deploymenttheory/go-apple-mdm/schema/support"
+	"github.com/deploymenttheory/go-apple-dm/schema/support"
 )
 
 // Declaration is implemented by every top-level type in this package.

@@ -13,15 +13,15 @@ import (
 	"testing"
 	"time"
 
-	"github.com/deploymenttheory/go-apple-mdm/cms"
-	"github.com/deploymenttheory/go-apple-mdm/enroll"
-	"github.com/deploymenttheory/go-apple-mdm/enroll/accountdriven"
-	"github.com/deploymenttheory/go-apple-mdm/enroll/discovery"
-	"github.com/deploymenttheory/go-apple-mdm/mdm"
-	"github.com/deploymenttheory/go-apple-mdm/plist"
-	"github.com/deploymenttheory/go-apple-mdm/profile"
-	"github.com/deploymenttheory/go-apple-mdm/service"
-	"github.com/deploymenttheory/go-apple-mdm/simulator"
+	"github.com/deploymenttheory/go-apple-dm/cms"
+	"github.com/deploymenttheory/go-apple-dm/enroll"
+	"github.com/deploymenttheory/go-apple-dm/enroll/accountdriven"
+	"github.com/deploymenttheory/go-apple-dm/enroll/discovery"
+	"github.com/deploymenttheory/go-apple-dm/mdm"
+	"github.com/deploymenttheory/go-apple-dm/plist"
+	"github.com/deploymenttheory/go-apple-dm/profile"
+	"github.com/deploymenttheory/go-apple-dm/service"
+	"github.com/deploymenttheory/go-apple-dm/simulator"
 )
 
 // adFixture is the account-driven side of a harness: discovery, one
@@ -74,9 +74,9 @@ func newADFixture(t *testing.T, oauth bool) *adFixture {
 				return nil, err
 			}
 			return &enroll.Profile{
-				Identifier: "com.example.e2e.account-driven", DisplayName: "go-apple-mdm e2e", Organization: "go-apple-mdm",
+				Identifier: "com.example.e2e.account-driven", DisplayName: "go-apple-dm e2e", Organization: "go-apple-dm",
 				Topic: pushTopic, ServerURL: h.server.URL + "/mdm", CheckInURL: h.server.URL + "/mdm",
-				SCEP:  &enroll.SCEP{URL: h.server.URL + "/scep", Challenge: challenge, Subject: pkix.Name{CommonName: id.ManagedAppleAccount + "/" + info.Product, Organization: []string{"go-apple-mdm"}}},
+				SCEP:  &enroll.SCEP{URL: h.server.URL + "/scep", Challenge: challenge, Subject: pkix.Name{CommonName: id.ManagedAppleAccount + "/" + info.Product, Organization: []string{"go-apple-dm"}}},
 				Roots: []*x509.Certificate{h.scepCA},
 			}, nil
 		}

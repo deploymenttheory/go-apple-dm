@@ -7,7 +7,7 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/deploymenttheory/go-apple-mdm/schema/support"
+	"github.com/deploymenttheory/go-apple-dm/schema/support"
 )
 
 // Rule names used in Error.Rule.

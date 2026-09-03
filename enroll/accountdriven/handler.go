@@ -11,7 +11,7 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/deploymenttheory/go-apple-mdm/enroll"
+	"github.com/deploymenttheory/go-apple-dm/enroll"
 )
 
 // Versions from service discovery and the EnrollmentMode they imply.

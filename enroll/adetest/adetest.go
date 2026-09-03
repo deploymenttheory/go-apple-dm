@@ -17,8 +17,8 @@ import (
 
 	"github.com/smallstep/pkcs7"
 
-	"github.com/deploymenttheory/go-apple-mdm/enroll/ade"
-	"github.com/deploymenttheory/go-apple-mdm/plist"
+	"github.com/deploymenttheory/go-apple-dm/enroll/ade"
+	"github.com/deploymenttheory/go-apple-dm/plist"
 )
 
 // Identity is a certificate with its key.

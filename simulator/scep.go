@@ -10,12 +10,12 @@ import (
 	"io"
 	"net/http"
 
-	"github.com/deploymenttheory/go-apple-mdm/cms"
-	"github.com/deploymenttheory/go-apple-mdm/enroll"
-	"github.com/deploymenttheory/go-apple-mdm/plist"
-	"github.com/deploymenttheory/go-apple-mdm/profile"
-	"github.com/deploymenttheory/go-apple-mdm/scep"
-	"github.com/deploymenttheory/go-apple-mdm/schema/profiles"
+	"github.com/deploymenttheory/go-apple-dm/cms"
+	"github.com/deploymenttheory/go-apple-dm/enroll"
+	"github.com/deploymenttheory/go-apple-dm/plist"
+	"github.com/deploymenttheory/go-apple-dm/profile"
+	"github.com/deploymenttheory/go-apple-dm/scep"
+	"github.com/deploymenttheory/go-apple-dm/schema/profiles"
 )
 
 // ErrProfile is returned when an enrollment profile cannot be followed.

@@ -4,8 +4,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/deploymenttheory/go-apple-mdm/audit"
-	"github.com/deploymenttheory/go-apple-mdm/mdm"
+	"github.com/deploymenttheory/go-apple-dm/audit"
+	"github.com/deploymenttheory/go-apple-dm/mdm"
 )
 
 var t0 = time.Date(2026, 9, 3, 12, 0, 0, 0, time.UTC)

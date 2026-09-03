@@ -4,7 +4,7 @@
 package profiles
 
 import (
-	"github.com/deploymenttheory/go-apple-mdm/schema/support"
+	"github.com/deploymenttheory/go-apple-dm/schema/support"
 )
 
 // Support returns the support entry for a key path such as "DeviceLock.Message"

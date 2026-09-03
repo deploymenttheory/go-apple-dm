@@ -5,7 +5,7 @@ import (
 	"maps"
 	"time"
 
-	"github.com/deploymenttheory/go-apple-mdm/storage"
+	"github.com/deploymenttheory/go-apple-dm/storage"
 )
 
 // AccountState records why an account cannot be used until an

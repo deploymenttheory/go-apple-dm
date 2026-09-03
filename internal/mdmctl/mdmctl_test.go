@@ -10,8 +10,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/deploymenttheory/go-apple-mdm/internal/mdmctl"
-	"github.com/deploymenttheory/go-apple-mdm/internal/mdmctl/adminclient"
+	"github.com/deploymenttheory/go-apple-dm/internal/mdmctl"
+	"github.com/deploymenttheory/go-apple-dm/internal/mdmctl/adminclient"
 )
 
 // run executes the CLI and returns stdout, stderr, and the error.
@@ -405,7 +405,7 @@ func TestConfig(t *testing.T) {
 			}
 			return ""
 		})
-		if got != filepath.Join("/tmp/cfg", "go-apple-mdm", "mdmctl.json") {
+		if got != filepath.Join("/tmp/cfg", "go-apple-dm", "mdmctl.json") {
 			t.Fatalf("DefaultConfigPath = %q", got)
 		}
 		if mdmctl.DefaultConfigPath(func(string) string { return "" }) != "" {

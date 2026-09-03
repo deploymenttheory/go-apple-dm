@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/deploymenttheory/go-apple-mdm/storage"
+	"github.com/deploymenttheory/go-apple-dm/storage"
 )
 
 func exportCursor(parentID, id string) string { return parentID + "\x00" + id }

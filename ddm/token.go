@@ -7,7 +7,7 @@ import (
 	"encoding/hex"
 	"slices"
 
-	schemaddm "github.com/deploymenttheory/go-apple-mdm/schema/ddm"
+	schemaddm "github.com/deploymenttheory/go-apple-dm/schema/ddm"
 )
 
 // DeclarationRef names one declaration in a manifest.

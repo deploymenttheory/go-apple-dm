@@ -9,10 +9,10 @@ import (
 	"net/url"
 	"time"
 
-	"github.com/deploymenttheory/go-apple-mdm/ddm/adapter/internal/proxywire"
-	"github.com/deploymenttheory/go-apple-mdm/mdm"
-	"github.com/deploymenttheory/go-apple-mdm/schema/checkin"
-	"github.com/deploymenttheory/go-apple-mdm/service"
+	"github.com/deploymenttheory/go-apple-dm/ddm/adapter/internal/proxywire"
+	"github.com/deploymenttheory/go-apple-dm/mdm"
+	"github.com/deploymenttheory/go-apple-dm/schema/checkin"
+	"github.com/deploymenttheory/go-apple-dm/service"
 )
 
 // DefaultTimeout bounds one forwarded check-in.

@@ -19,7 +19,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/deploymenttheory/go-apple-mdm/internal/clock"
+	"github.com/deploymenttheory/go-apple-dm/internal/clock"
 )
 
 // Errors returned by this package.
@@ -366,7 +366,7 @@ func NewSelfSigned(o SelfSignedOptions) (*x509.Certificate, *rsa.PrivateKey, err
 		o.RSABits = 2048
 	}
 	if o.Subject.CommonName == "" {
-		o.Subject.CommonName = "go-apple-mdm CA"
+		o.Subject.CommonName = "go-apple-dm CA"
 	}
 	if o.Random == nil {
 		o.Random = rand.Reader

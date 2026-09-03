@@ -6,8 +6,8 @@ package errors_test
 import (
 	"testing"
 
-	"github.com/deploymenttheory/go-apple-mdm/schema/errors"
-	"github.com/deploymenttheory/go-apple-mdm/schema/internal/conformance"
+	"github.com/deploymenttheory/go-apple-dm/schema/errors"
+	"github.com/deploymenttheory/go-apple-dm/schema/internal/conformance"
 )
 
 func sampleCodePlatformSSORequired(d int) *errors.CodePlatformSSORequired {

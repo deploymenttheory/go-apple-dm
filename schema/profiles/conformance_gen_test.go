@@ -7,8 +7,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/deploymenttheory/go-apple-mdm/schema/internal/conformance"
-	"github.com/deploymenttheory/go-apple-mdm/schema/profiles"
+	"github.com/deploymenttheory/go-apple-dm/schema/internal/conformance"
+	"github.com/deploymenttheory/go-apple-dm/schema/profiles"
 )
 
 var sampleTime = time.Date(2026, 1, 2, 3, 4, 5, 0, time.UTC)

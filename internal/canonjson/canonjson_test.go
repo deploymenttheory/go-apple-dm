@@ -13,7 +13,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/deploymenttheory/go-apple-mdm/internal/canonjson"
+	"github.com/deploymenttheory/go-apple-dm/internal/canonjson"
 )
 
 // The JSON escapes and non-ASCII characters below are built from code points

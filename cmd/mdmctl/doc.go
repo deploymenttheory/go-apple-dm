@@ -1,4 +1,4 @@
-// Command mdmctl administers a go-apple-mdm reference server: declarations,
+// Command mdmctl administers a go-apple-dm reference server: declarations,
 // admin credentials, the policies that bound them, and an offline explain
 // over Apple's schema metadata.
 //

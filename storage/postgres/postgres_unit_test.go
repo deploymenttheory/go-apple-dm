@@ -7,7 +7,7 @@ import (
 
 	"github.com/jackc/pgx/v5/pgconn"
 
-	"github.com/deploymenttheory/go-apple-mdm/storage/postgres"
+	"github.com/deploymenttheory/go-apple-dm/storage/postgres"
 )
 
 func TestOpenArgumentErrors(t *testing.T) {

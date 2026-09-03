@@ -8,8 +8,8 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/deploymenttheory/go-apple-mdm/mdm"
-	schemaddm "github.com/deploymenttheory/go-apple-mdm/schema/ddm"
+	"github.com/deploymenttheory/go-apple-dm/mdm"
+	schemaddm "github.com/deploymenttheory/go-apple-dm/schema/ddm"
 )
 
 // SubscriptionIdentifier names the synthesised status-subscriptions

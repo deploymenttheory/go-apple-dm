@@ -11,7 +11,7 @@ import (
 )
 
 // ScopeRoot is the module path every instrumentation scope is rooted at.
-const ScopeRoot = "github.com/deploymenttheory/go-apple-mdm"
+const ScopeRoot = "github.com/deploymenttheory/go-apple-dm"
 
 // Scope returns the instrumentation scope name for a package, which
 // OpenTelemetry defines as the fully qualified name of the instrumenting

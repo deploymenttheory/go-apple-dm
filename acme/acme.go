@@ -3,8 +3,8 @@ package acme
 import (
 	"time"
 
-	"github.com/deploymenttheory/go-apple-mdm/acme/attest"
-	"github.com/deploymenttheory/go-apple-mdm/acme/jose"
+	"github.com/deploymenttheory/go-apple-dm/acme/attest"
+	"github.com/deploymenttheory/go-apple-dm/acme/jose"
 )
 
 // IdentifierPermanent is the only identifier type this server issues for.

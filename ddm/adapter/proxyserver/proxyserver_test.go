@@ -15,16 +15,16 @@ import (
 	"testing"
 	"time"
 
-	"github.com/deploymenttheory/go-apple-mdm/ddm"
-	"github.com/deploymenttheory/go-apple-mdm/ddm/adapter/inproc"
-	"github.com/deploymenttheory/go-apple-mdm/ddm/adapter/internal/proxywire"
-	"github.com/deploymenttheory/go-apple-mdm/ddm/adapter/proxyserver"
-	"github.com/deploymenttheory/go-apple-mdm/ddm/inmem"
-	"github.com/deploymenttheory/go-apple-mdm/internal/testpki"
-	"github.com/deploymenttheory/go-apple-mdm/mdm"
-	"github.com/deploymenttheory/go-apple-mdm/plist"
-	"github.com/deploymenttheory/go-apple-mdm/schema/checkin"
-	"github.com/deploymenttheory/go-apple-mdm/service"
+	"github.com/deploymenttheory/go-apple-dm/ddm"
+	"github.com/deploymenttheory/go-apple-dm/ddm/adapter/inproc"
+	"github.com/deploymenttheory/go-apple-dm/ddm/adapter/internal/proxywire"
+	"github.com/deploymenttheory/go-apple-dm/ddm/adapter/proxyserver"
+	"github.com/deploymenttheory/go-apple-dm/ddm/inmem"
+	"github.com/deploymenttheory/go-apple-dm/internal/testpki"
+	"github.com/deploymenttheory/go-apple-dm/mdm"
+	"github.com/deploymenttheory/go-apple-dm/plist"
+	"github.com/deploymenttheory/go-apple-dm/schema/checkin"
+	"github.com/deploymenttheory/go-apple-dm/service"
 )
 
 var quiet = slog.New(slog.NewTextHandler(io.Discard, nil))

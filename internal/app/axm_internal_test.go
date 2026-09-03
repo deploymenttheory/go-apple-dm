@@ -7,7 +7,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/deploymenttheory/go-apple-mdm/axm"
+	"github.com/deploymenttheory/go-apple-dm/axm"
 )
 
 func TestAxMStatus(t *testing.T) {

@@ -7,8 +7,8 @@ import (
 	"fmt"
 	"slices"
 
-	"github.com/deploymenttheory/go-apple-mdm/internal/canonjson"
-	"github.com/deploymenttheory/go-apple-mdm/mdm"
+	"github.com/deploymenttheory/go-apple-dm/internal/canonjson"
+	"github.com/deploymenttheory/go-apple-dm/mdm"
 )
 
 // manifestFor computes the manifest an enrollment should see right now:

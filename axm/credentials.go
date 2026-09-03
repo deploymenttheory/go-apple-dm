@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/deploymenttheory/go-apple-mdm/secrets"
-	"github.com/deploymenttheory/go-apple-mdm/storage/crypt"
+	"github.com/deploymenttheory/go-apple-dm/secrets"
+	"github.com/deploymenttheory/go-apple-dm/storage/crypt"
 )
 
 // Credentials are one API account's secrets. PrivateKeyPEM is a Secret so

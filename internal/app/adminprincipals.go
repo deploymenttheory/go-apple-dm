@@ -7,7 +7,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/deploymenttheory/go-apple-mdm/adminauth"
+	"github.com/deploymenttheory/go-apple-dm/adminauth"
 )
 
 // principalRoutes administer admin credentials and the Cedar policies that

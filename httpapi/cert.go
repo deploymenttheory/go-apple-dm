@@ -9,8 +9,8 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/deploymenttheory/go-apple-mdm/cms"
-	"github.com/deploymenttheory/go-apple-mdm/plist"
+	"github.com/deploymenttheory/go-apple-dm/cms"
+	"github.com/deploymenttheory/go-apple-dm/plist"
 )
 
 // CertFromTLS takes the device certificate from the TLS peer certificates

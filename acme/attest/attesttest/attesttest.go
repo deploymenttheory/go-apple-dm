@@ -13,8 +13,8 @@ import (
 	"math/big"
 	"time"
 
-	"github.com/deploymenttheory/go-apple-mdm/acme/attest"
-	"github.com/deploymenttheory/go-apple-mdm/internal/cbor"
+	"github.com/deploymenttheory/go-apple-dm/acme/attest"
+	"github.com/deploymenttheory/go-apple-dm/internal/cbor"
 )
 
 // ErrCA reports a fault building a chain.

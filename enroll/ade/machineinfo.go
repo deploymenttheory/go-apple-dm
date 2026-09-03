@@ -13,10 +13,10 @@ import (
 
 	"github.com/smallstep/pkcs7"
 
-	"github.com/deploymenttheory/go-apple-mdm/cms"
-	"github.com/deploymenttheory/go-apple-mdm/plist"
-	"github.com/deploymenttheory/go-apple-mdm/schema/other"
-	"github.com/deploymenttheory/go-apple-mdm/schema/support"
+	"github.com/deploymenttheory/go-apple-dm/cms"
+	"github.com/deploymenttheory/go-apple-dm/plist"
+	"github.com/deploymenttheory/go-apple-dm/schema/other"
+	"github.com/deploymenttheory/go-apple-dm/schema/support"
 )
 
 // MachineInfo is the plist a device signs to identify itself; the wire

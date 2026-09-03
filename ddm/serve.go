@@ -7,9 +7,9 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/deploymenttheory/go-apple-mdm/internal/canonjson"
-	"github.com/deploymenttheory/go-apple-mdm/mdm"
-	schemaddm "github.com/deploymenttheory/go-apple-mdm/schema/ddm"
+	"github.com/deploymenttheory/go-apple-dm/internal/canonjson"
+	"github.com/deploymenttheory/go-apple-dm/mdm"
+	schemaddm "github.com/deploymenttheory/go-apple-dm/schema/ddm"
 )
 
 // TimestampLayout is the SyncTokens Timestamp format: whole seconds, UTC.

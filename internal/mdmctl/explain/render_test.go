@@ -4,8 +4,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/deploymenttheory/go-apple-mdm/internal/mdmctl/explain"
-	"github.com/deploymenttheory/go-apple-mdm/schema/support"
+	"github.com/deploymenttheory/go-apple-dm/internal/mdmctl/explain"
+	"github.com/deploymenttheory/go-apple-dm/schema/support"
 )
 
 // A key match renders the key as its heading rather than the type, and grades

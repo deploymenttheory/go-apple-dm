@@ -16,14 +16,14 @@ import (
 
 	"github.com/smallstep/pkcs7"
 
-	"github.com/deploymenttheory/go-apple-mdm/dep"
-	"github.com/deploymenttheory/go-apple-mdm/dep/deptest"
+	"github.com/deploymenttheory/go-apple-dm/dep"
+	"github.com/deploymenttheory/go-apple-dm/dep/deptest"
 )
 
 // keypair generates a token PKI keypair for tests.
 func keypair(t *testing.T) *dep.Keypair {
 	t.Helper()
-	kp, err := dep.GenerateTokenPKI("go-apple-mdm test", 24*time.Hour, t0)
+	kp, err := dep.GenerateTokenPKI("go-apple-dm test", 24*time.Hour, t0)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -42,7 +42,7 @@ func TestTokenPKI(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		if cert.Subject.CommonName != "go-apple-mdm test" || cert.PublicKeyAlgorithm != x509.RSA || !cert.NotAfter.Equal(t0.Add(24*time.Hour)) {
+		if cert.Subject.CommonName != "go-apple-dm test" || cert.PublicKeyAlgorithm != x509.RSA || !cert.NotAfter.Equal(t0.Add(24*time.Hour)) {
 			t.Fatalf("certificate: %+v", cert.Subject)
 		}
 		key, err := kp.PrivateKey()

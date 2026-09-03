@@ -10,7 +10,7 @@ import (
 
 	json "encoding/json/v2"
 
-	"github.com/deploymenttheory/go-apple-mdm/gdmf"
+	"github.com/deploymenttheory/go-apple-dm/gdmf"
 )
 
 // Catalog is a fixture shaped like the pmv document: two iOS releases,

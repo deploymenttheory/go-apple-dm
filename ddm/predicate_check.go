@@ -4,8 +4,8 @@ import (
 	json "encoding/json/v2"
 	"fmt"
 
-	"github.com/deploymenttheory/go-apple-mdm/ddm/predicate"
-	schemaddm "github.com/deploymenttheory/go-apple-mdm/schema/ddm"
+	"github.com/deploymenttheory/go-apple-dm/ddm/predicate"
+	schemaddm "github.com/deploymenttheory/go-apple-dm/schema/ddm"
 )
 
 // validatePredicate rejects an activation whose Predicate would not parse,

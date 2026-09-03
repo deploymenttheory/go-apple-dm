@@ -7,8 +7,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/deploymenttheory/go-apple-mdm/mdm"
-	"github.com/deploymenttheory/go-apple-mdm/storage"
+	"github.com/deploymenttheory/go-apple-dm/mdm"
+	"github.com/deploymenttheory/go-apple-dm/storage"
 )
 
 var userAuthCols = []string{"enrollment_id", "parent_id", "challenge", "challenge_at", "auth_token", "token_at", "authenticate_raw", "digest_raw", "updated_at"}

@@ -16,7 +16,7 @@ import (
 	"github.com/smallstep/pkcs7"
 	smallscep "github.com/smallstep/scep"
 
-	"github.com/deploymenttheory/go-apple-mdm/ca"
+	"github.com/deploymenttheory/go-apple-dm/ca"
 )
 
 // Errors returned by this package.

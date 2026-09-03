@@ -7,7 +7,7 @@ import (
 	"strings"
 	"unicode/utf8"
 
-	"github.com/deploymenttheory/go-apple-mdm/schema/other"
+	"github.com/deploymenttheory/go-apple-dm/schema/other"
 )
 
 // Length limits from the Define a Profile page, in UTF-8 characters (the

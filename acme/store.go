@@ -5,7 +5,7 @@ import (
 	"errors"
 	"time"
 
-	"github.com/deploymenttheory/go-apple-mdm/storage"
+	"github.com/deploymenttheory/go-apple-dm/storage"
 )
 
 // Storage errors. A backend reports these; the server turns them into

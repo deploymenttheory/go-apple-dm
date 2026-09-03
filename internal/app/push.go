@@ -7,9 +7,9 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/deploymenttheory/go-apple-mdm/push"
-	"github.com/deploymenttheory/go-apple-mdm/push/apns"
-	"github.com/deploymenttheory/go-apple-mdm/push/pushcert"
+	"github.com/deploymenttheory/go-apple-dm/push"
+	"github.com/deploymenttheory/go-apple-dm/push/apns"
+	"github.com/deploymenttheory/go-apple-dm/push/pushcert"
 )
 
 // Push certificate sources.

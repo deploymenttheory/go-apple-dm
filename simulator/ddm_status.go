@@ -5,11 +5,11 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/deploymenttheory/go-apple-mdm/ddm/predicate"
-	"github.com/deploymenttheory/go-apple-mdm/internal/canonjson"
-	schemaddm "github.com/deploymenttheory/go-apple-mdm/schema/ddm"
-	"github.com/deploymenttheory/go-apple-mdm/schema/ddmproto"
-	"github.com/deploymenttheory/go-apple-mdm/schema/status"
+	"github.com/deploymenttheory/go-apple-dm/ddm/predicate"
+	"github.com/deploymenttheory/go-apple-dm/internal/canonjson"
+	schemaddm "github.com/deploymenttheory/go-apple-dm/schema/ddm"
+	"github.com/deploymenttheory/go-apple-dm/schema/ddmproto"
+	"github.com/deploymenttheory/go-apple-dm/schema/status"
 )
 
 // Reason codes from declarative/declarations/declarationbase.yaml.

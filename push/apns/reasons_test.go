@@ -4,7 +4,7 @@ import (
 	"sort"
 	"testing"
 
-	"github.com/deploymenttheory/go-apple-mdm/push/apns"
+	"github.com/deploymenttheory/go-apple-dm/push/apns"
 )
 
 // The constants and the table are one set. A constant missing from the table

@@ -5,7 +5,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/deploymenttheory/go-apple-mdm/enroll"
+	"github.com/deploymenttheory/go-apple-dm/enroll"
 )
 
 // Environment variables read by ParseEnv.

@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/deploymenttheory/go-apple-mdm/internal/cbor"
+	"github.com/deploymenttheory/go-apple-dm/internal/cbor"
 )
 
 // attestation is the shape Apple sends: a format name and a statement whose

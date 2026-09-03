@@ -1,4 +1,4 @@
-module github.com/deploymenttheory/go-apple-mdm
+module github.com/deploymenttheory/go-apple-dm
 
 go 1.27.0
 

@@ -15,7 +15,7 @@ import (
 
 	"github.com/smallstep/pkcs7"
 
-	"github.com/deploymenttheory/go-apple-mdm/cms"
+	"github.com/deploymenttheory/go-apple-dm/cms"
 )
 
 type identity struct {

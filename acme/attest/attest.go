@@ -10,7 +10,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/deploymenttheory/go-apple-mdm/internal/cbor"
+	"github.com/deploymenttheory/go-apple-dm/internal/cbor"
 )
 
 // FormatApple is the WebAuthn attestation statement format Apple uses for

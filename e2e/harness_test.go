@@ -17,21 +17,21 @@ import (
 	"testing"
 	"time"
 
-	"github.com/deploymenttheory/go-apple-mdm/ca"
-	"github.com/deploymenttheory/go-apple-mdm/cms"
-	"github.com/deploymenttheory/go-apple-mdm/enroll"
-	"github.com/deploymenttheory/go-apple-mdm/event"
-	"github.com/deploymenttheory/go-apple-mdm/httpapi"
-	"github.com/deploymenttheory/go-apple-mdm/internal/clock"
-	"github.com/deploymenttheory/go-apple-mdm/internal/testpki"
-	"github.com/deploymenttheory/go-apple-mdm/mdm"
-	"github.com/deploymenttheory/go-apple-mdm/push"
-	"github.com/deploymenttheory/go-apple-mdm/push/apns"
-	"github.com/deploymenttheory/go-apple-mdm/push/pushtest"
-	"github.com/deploymenttheory/go-apple-mdm/scep"
-	"github.com/deploymenttheory/go-apple-mdm/service"
-	"github.com/deploymenttheory/go-apple-mdm/simulator"
-	"github.com/deploymenttheory/go-apple-mdm/storage"
+	"github.com/deploymenttheory/go-apple-dm/ca"
+	"github.com/deploymenttheory/go-apple-dm/cms"
+	"github.com/deploymenttheory/go-apple-dm/enroll"
+	"github.com/deploymenttheory/go-apple-dm/event"
+	"github.com/deploymenttheory/go-apple-dm/httpapi"
+	"github.com/deploymenttheory/go-apple-dm/internal/clock"
+	"github.com/deploymenttheory/go-apple-dm/internal/testpki"
+	"github.com/deploymenttheory/go-apple-dm/mdm"
+	"github.com/deploymenttheory/go-apple-dm/push"
+	"github.com/deploymenttheory/go-apple-dm/push/apns"
+	"github.com/deploymenttheory/go-apple-dm/push/pushtest"
+	"github.com/deploymenttheory/go-apple-dm/scep"
+	"github.com/deploymenttheory/go-apple-dm/service"
+	"github.com/deploymenttheory/go-apple-dm/simulator"
+	"github.com/deploymenttheory/go-apple-dm/storage"
 )
 
 // otaChallenge is the Profile Service challenge the harness expects in
@@ -84,7 +84,7 @@ func newHarnessWith(t *testing.T, cfg service.Config, store storage.Store, bus *
 // before the server starts, so handlers must read h.server.URL lazily.
 func newHarnessMounted(t *testing.T, cfg service.Config, store storage.Store, bus *event.Bus, mount func(h *harness, mux *http.ServeMux)) *harness {
 	t.Helper()
-	testCA, err := testpki.NewCA("go-apple-mdm test CA")
+	testCA, err := testpki.NewCA("go-apple-dm test CA")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -104,7 +104,7 @@ func newHarnessMounted(t *testing.T, cfg service.Config, store storage.Store, bu
 
 	// SCEP CA: identities it issues are trusted for Mdm-Signature alongside
 	// the pre-issued test CA.
-	scepCert, scepKey, err := ca.NewSelfSigned(ca.SelfSignedOptions{Subject: pkix.Name{CommonName: "go-apple-mdm SCEP CA"}})
+	scepCert, scepKey, err := ca.NewSelfSigned(ca.SelfSignedOptions{Subject: pkix.Name{CommonName: "go-apple-dm SCEP CA"}})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -156,9 +156,9 @@ func (h *harness) enrollmentProfile(udid string) []byte {
 		h.t.Fatal(err)
 	}
 	data, err := enroll.Profile{
-		Identifier: "com.example.e2e", DisplayName: "go-apple-mdm e2e", Organization: "go-apple-mdm",
+		Identifier: "com.example.e2e", DisplayName: "go-apple-dm e2e", Organization: "go-apple-dm",
 		Topic: pushTopic, ServerURL: h.server.URL + "/mdm", CheckInURL: h.server.URL + "/mdm",
-		SCEP:               &enroll.SCEP{URL: h.server.URL + "/scep", Challenge: challenge, Subject: pkix.Name{CommonName: udid, Organization: []string{"go-apple-mdm"}}},
+		SCEP:               &enroll.SCEP{URL: h.server.URL + "/scep", Challenge: challenge, Subject: pkix.Name{CommonName: udid, Organization: []string{"go-apple-dm"}}},
 		Roots:              []*x509.Certificate{h.scepCA},
 		ServerCapabilities: []string{enroll.CapabilityBootstrapToken, enroll.CapabilityToken},
 	}.Marshal()

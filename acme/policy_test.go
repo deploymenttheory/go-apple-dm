@@ -7,8 +7,8 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/deploymenttheory/go-apple-mdm/acme"
-	"github.com/deploymenttheory/go-apple-mdm/acme/attest"
+	"github.com/deploymenttheory/go-apple-dm/acme"
+	"github.com/deploymenttheory/go-apple-dm/acme/attest"
 )
 
 // decisionFor is what a policy sees once the attestation has been verified

@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/deploymenttheory/go-apple-mdm/acme"
+	"github.com/deploymenttheory/go-apple-dm/acme"
 )
 
 // accountCols are the indexed copies beside the record: the thumbprint is

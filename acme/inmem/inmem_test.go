@@ -6,10 +6,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/deploymenttheory/go-apple-mdm/acme"
-	"github.com/deploymenttheory/go-apple-mdm/acme/acmetest"
-	"github.com/deploymenttheory/go-apple-mdm/acme/inmem"
-	"github.com/deploymenttheory/go-apple-mdm/storage"
+	"github.com/deploymenttheory/go-apple-dm/acme"
+	"github.com/deploymenttheory/go-apple-dm/acme/acmetest"
+	"github.com/deploymenttheory/go-apple-dm/acme/inmem"
+	"github.com/deploymenttheory/go-apple-dm/storage"
 )
 
 func TestContract(t *testing.T) {

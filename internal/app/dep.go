@@ -11,10 +11,10 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/deploymenttheory/go-apple-mdm/dep"
-	depinmem "github.com/deploymenttheory/go-apple-mdm/dep/inmem"
-	depsql "github.com/deploymenttheory/go-apple-mdm/dep/sqlstore"
-	"github.com/deploymenttheory/go-apple-mdm/storage"
+	"github.com/deploymenttheory/go-apple-dm/dep"
+	depinmem "github.com/deploymenttheory/go-apple-dm/dep/inmem"
+	depsql "github.com/deploymenttheory/go-apple-dm/dep/sqlstore"
+	"github.com/deploymenttheory/go-apple-dm/storage"
 )
 
 // DEPConfig connects the reference server to Apple's device enrollment
@@ -326,7 +326,7 @@ func (d *depService) handler() http.Handler {
 				p.URL = d.profileURL()
 			}
 			if p.ProfileName == "" {
-				p.ProfileName = "go-apple-mdm"
+				p.ProfileName = "go-apple-dm"
 			}
 			resp, err := d.client.DefineProfile(r.Context(), name, &p)
 			if err != nil {

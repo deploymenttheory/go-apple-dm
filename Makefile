@@ -73,7 +73,7 @@ test-e2e:
 
 ## docker-build: build the reference server image from this repository (never pulled from a third party)
 docker-build:
-	docker build -t go-apple-mdm:test .
+	docker build -t go-apple-dm:test .
 
 ## testdb-ddm-up: build the image and run our ddm role in Docker for TestE2E_DDMSplitDeployment; prints the exports
 testdb-ddm-up:

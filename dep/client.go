@@ -13,14 +13,14 @@ import (
 	"sync"
 	"time"
 
-	"github.com/deploymenttheory/go-apple-mdm/event"
-	"github.com/deploymenttheory/go-apple-mdm/internal/clock"
+	"github.com/deploymenttheory/go-apple-dm/event"
+	"github.com/deploymenttheory/go-apple-dm/internal/clock"
 )
 
 // Defaults for ClientConfig.
 const (
 	DefaultBaseURL               = "https://mdmenrollment.apple.com"
-	DefaultUserAgent             = "go-apple-mdm-dep/1"
+	DefaultUserAgent             = "go-apple-dm-dep/1"
 	DefaultExpiryWarning         = 30 * 24 * time.Hour
 	DefaultExpiryWarningInterval = time.Hour
 	DefaultMaxBodyBytes          = 8 << 20

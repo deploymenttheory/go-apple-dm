@@ -16,10 +16,10 @@ import (
 
 	xacme "golang.org/x/crypto/acme"
 
-	"github.com/deploymenttheory/go-apple-mdm/acme/attest"
-	"github.com/deploymenttheory/go-apple-mdm/acme/attest/attesttest"
-	"github.com/deploymenttheory/go-apple-mdm/ca"
-	"github.com/deploymenttheory/go-apple-mdm/enroll"
+	"github.com/deploymenttheory/go-apple-dm/acme/attest"
+	"github.com/deploymenttheory/go-apple-dm/acme/attest/attesttest"
+	"github.com/deploymenttheory/go-apple-dm/ca"
+	"github.com/deploymenttheory/go-apple-dm/enroll"
 )
 
 // ErrACME is an ACME enrollment that did not complete.
@@ -78,7 +78,7 @@ func (d *Device) ACMEEnroll(ctx context.Context, p *enroll.ACME, o ACMEOptions) 
 		Key:          accountKey,
 		DirectoryURL: p.DirectoryURL,
 		HTTPClient:   d.Client,
-		UserAgent:    "go-apple-mdm-simulator",
+		UserAgent:    "go-apple-dm-simulator",
 	}
 	if _, err := client.Register(ctx, &xacme.Account{}, xacme.AcceptTOS); err != nil {
 		return fmt.Errorf("%w: register: %w", ErrACME, err)

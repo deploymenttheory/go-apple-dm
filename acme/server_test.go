@@ -11,11 +11,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/deploymenttheory/go-apple-mdm/acme"
-	"github.com/deploymenttheory/go-apple-mdm/acme/acmetest"
-	"github.com/deploymenttheory/go-apple-mdm/acme/inmem"
-	"github.com/deploymenttheory/go-apple-mdm/acme/jose"
-	"github.com/deploymenttheory/go-apple-mdm/ca"
+	"github.com/deploymenttheory/go-apple-dm/acme"
+	"github.com/deploymenttheory/go-apple-dm/acme/acmetest"
+	"github.com/deploymenttheory/go-apple-dm/acme/inmem"
+	"github.com/deploymenttheory/go-apple-dm/acme/jose"
+	"github.com/deploymenttheory/go-apple-dm/ca"
 )
 
 // TestDirectory proves the directory names exactly the endpoints that
