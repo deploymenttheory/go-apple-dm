@@ -5,11 +5,11 @@
 //
 // # Why
 //
-// Until phase 7 the only way to give a device its MDM identity was SCEP,
-// where the whole of the device's authentication is a shared challenge
-// password. Apple's ACME payload replaces that with a key generated in the
-// Secure Enclave and an attestation from Apple's servers describing the
-// hardware it lives on. This package is the server side of that exchange.
+// SCEP issues a device its MDM identity against a shared challenge password,
+// which is the whole of the device's authentication. Apple's ACME payload
+// replaces that with a key generated in the Secure Enclave and an attestation
+// from Apple's servers describing the hardware it lives on. This package is
+// the server side of that exchange.
 //
 // It implements what Apple's client actually uses and nothing else: a
 // directory, nonces, accounts, orders for a single permanent-identifier,

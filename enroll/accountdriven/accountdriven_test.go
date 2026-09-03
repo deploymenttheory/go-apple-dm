@@ -32,7 +32,7 @@ func newTokens(c *fakeClock) *accountdriven.Tokens {
 	return &accountdriven.Tokens{Store: accountdriven.NewMemStore(), Now: c.Now}
 }
 
-var alice = accountdriven.Identity{UserIdentifier: "alice@example.com", ManagedAppleID: "alice@example.com", Subject: "sub-1"}
+var alice = accountdriven.Identity{UserIdentifier: "alice@example.com", ManagedAppleAccount: "alice@example.com", Subject: "sub-1"}
 
 // parseBody is a stand-in for enroll/ade's verified parser.
 func parseBody(r *http.Request) (*accountdriven.DeviceInfo, error) {
@@ -115,7 +115,7 @@ func TestTokens(t *testing.T) {
 		if err != nil || tok == "" {
 			t.Fatal(err)
 		}
-		if rec, err := tk.Consume(ctx, accountdriven.KindAccess, tok); err != nil || rec.Identity.ManagedAppleID != alice.ManagedAppleID {
+		if rec, err := tk.Consume(ctx, accountdriven.KindAccess, tok); err != nil || rec.Identity.ManagedAppleAccount != alice.ManagedAppleAccount {
 			t.Fatalf("first use: %+v %v", rec, err)
 		}
 		if _, err := tk.Consume(ctx, accountdriven.KindAccess, tok); !errors.Is(err, accountdriven.ErrTokenUsed) {
@@ -146,7 +146,7 @@ func TestTokens(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		if id, ok := accountdriven.IdentityFromContext(ctx2); !ok || id.ManagedAppleID != alice.ManagedAppleID {
+		if id, ok := accountdriven.IdentityFromContext(ctx2); !ok || id.ManagedAppleAccount != alice.ManagedAppleAccount {
 			t.Fatalf("identity = %+v %v", id, ok)
 		}
 		bad := &mdm.Request{ID: req.ID, Params: map[string]string{accountdriven.ParamEnrollmentToken: "nope"}}
@@ -347,7 +347,7 @@ func TestFlow(t *testing.T) {
 			}
 			u, _ := url.Parse(loc)
 			access = u.Query().Get("access-token")
-			if err := f.asweb.Finish(httptest.NewRecorder(), httptest.NewRequest(http.MethodPost, "/x", nil), accountdriven.Identity{}); !errors.Is(err, accountdriven.ErrManagedAppleID) {
+			if err := f.asweb.Finish(httptest.NewRecorder(), httptest.NewRequest(http.MethodPost, "/x", nil), accountdriven.Identity{}); !errors.Is(err, accountdriven.ErrManagedAppleAccount) {
 				t.Fatalf("no managed id = %v", err)
 			}
 		})
@@ -361,7 +361,7 @@ func TestFlow(t *testing.T) {
 			if err != nil {
 				t.Fatalf("parse profile: %v", err)
 			}
-			if p.EnrollmentMode != accountdriven.ModeBYOD || p.AssignedManagedAppleID != alice.ManagedAppleID {
+			if p.EnrollmentMode != accountdriven.ModeBYOD || p.AssignedManagedAppleID != alice.ManagedAppleAccount {
 				t.Fatalf("profile keys = %q %q", p.EnrollmentMode, p.AssignedManagedAppleID)
 			}
 			u, _ := url.Parse(p.ServerURL)
@@ -432,7 +432,7 @@ func TestFlow(t *testing.T) {
 					t.Fatalf("%v: %v", bad, err)
 				}
 			}
-			if err := f.oauth.Grant(httptest.NewRecorder(), r, req, accountdriven.Identity{}); !errors.Is(err, accountdriven.ErrManagedAppleID) {
+			if err := f.oauth.Grant(httptest.NewRecorder(), r, req, accountdriven.Identity{}); !errors.Is(err, accountdriven.ErrManagedAppleAccount) {
 				t.Fatal(err)
 			}
 		})
@@ -487,7 +487,7 @@ func TestProfile(t *testing.T) {
 		if err := accountdriven.Finalize(p, accountdriven.VersionBYOD, alice, "tok"); err != nil {
 			t.Fatal(err)
 		}
-		if p.EnrollmentMode != accountdriven.ModeBYOD || p.AssignedManagedAppleID != alice.ManagedAppleID {
+		if p.EnrollmentMode != accountdriven.ModeBYOD || p.AssignedManagedAppleID != alice.ManagedAppleAccount {
 			t.Fatalf("%+v", p)
 		}
 		for _, u := range []string{p.ServerURL, p.CheckInURL} {
@@ -524,14 +524,14 @@ func TestProfile(t *testing.T) {
 		}
 	})
 	t.Run("ManagedAppleIDRequired", func(t *testing.T) {
-		if err := accountdriven.Finalize(base(), accountdriven.VersionBYOD, accountdriven.Identity{}, ""); !errors.Is(err, accountdriven.ErrManagedAppleID) {
+		if err := accountdriven.Finalize(base(), accountdriven.VersionBYOD, accountdriven.Identity{}, ""); !errors.Is(err, accountdriven.ErrManagedAppleAccount) {
 			t.Fatalf("empty id = %v", err)
 		}
 	})
 	t.Run("ImmutableOnUpdate", func(t *testing.T) {
 		p := base()
 		p.AssignedManagedAppleID = "bob@example.com"
-		if err := accountdriven.Finalize(p, accountdriven.VersionBYOD, alice, ""); !errors.Is(err, accountdriven.ErrManagedAppleID) {
+		if err := accountdriven.Finalize(p, accountdriven.VersionBYOD, alice, ""); !errors.Is(err, accountdriven.ErrManagedAppleAccount) {
 			t.Fatalf("reassign = %v", err)
 		}
 	})

@@ -119,8 +119,7 @@ type Config struct {
 	// its admin routes live under the admin API too.
 	DEP DEPConfig
 	// Push selects where APNs credentials come from. With no source the
-	// server queues commands and never wakes a device, which is what it did
-	// before phase 8.
+	// server queues commands and never wakes a device.
 	Push   PushConfig
 	Logger *slog.Logger
 	Clock  clock.Clock
@@ -267,11 +266,10 @@ func Build(ctx context.Context, cfg Config) (*App, error) {
 	if cfg.Clock == nil {
 		cfg.Clock = clock.Real{}
 	}
-	// A bus with no subscribers is what the server had until now, so one is
-	// only created when something is configured to listen. It is asynchronous
-	// because a webhook receiver must never be on the check-in path: NanoMDM
-	// sends inside the check-in handler, so a slow receiver delays every
-	// device.
+	// The bus is only created when something is configured to listen, so a
+	// server with no sinks pays nothing per state change. It is asynchronous
+	// because a webhook receiver must never sit on the check-in path: a slow
+	// receiver would delay every device.
 	ownBus := false
 	if cfg.Bus == nil && cfg.Sinks.Enabled() {
 		log := cfg.Logger
@@ -430,8 +428,7 @@ func (a *App) wire(ctx context.Context) error {
 	}
 	a.Engine = engine
 	// Without a Pusher the notifier treats every group as delivered, so a
-	// declaration change queues a command and never wakes the device. That
-	// was the reference server's behaviour before phase 8.
+	// declaration change queues a command and never wakes the device.
 	a.Push, err = a.wirePush()
 	if err != nil {
 		return err
@@ -546,9 +543,9 @@ func (a *App) wire(ctx context.Context) error {
 	}
 	a.addWorker("ddm-notifier", a.Notifier.Run)
 	a.addWorker("audit-retention", a.runAuditRetention)
-	// Every role that has a credential serves the admin API. It used to be
-	// withheld from the mdm role, which left the half owning enrollments,
-	// commands and push with no administrative surface at all.
+	// Every role that has a credential serves the admin API. Withholding it
+	// from the mdm role would leave the half that owns enrollments, commands
+	// and push with no administrative surface.
 	if a.adminEnabled() {
 		store, err := a.adminStore(ctx)
 		if err != nil {

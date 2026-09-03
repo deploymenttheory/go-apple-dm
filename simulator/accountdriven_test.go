@@ -41,7 +41,7 @@ type adHarness struct {
 
 func newADHarness(t *testing.T, version string, oauth bool) *adHarness {
 	t.Helper()
-	h := &adHarness{store: inmem.New(), identity: accountdriven.Identity{UserIdentifier: "alice@example.com", ManagedAppleID: "alice@example.com"}}
+	h := &adHarness{store: inmem.New(), identity: accountdriven.Identity{UserIdentifier: "alice@example.com", ManagedAppleAccount: "alice@example.com"}}
 	var err error
 	if h.ca, err = testpki.NewCA("account-driven test CA"); err != nil {
 		t.Fatal(err)

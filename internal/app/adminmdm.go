@@ -29,10 +29,9 @@ import (
 //	GET    /export                                      paged enrollment export
 //	POST   /import                                      import one record
 //
-// Until now the admin API had eleven DDM routes and none of these, over a
-// storage API that already supported every one of them. DDM rides on MDM in
-// the protocol, so the enrollment is the root object and DDM's
-// /enrollments/{channel}/{id}/sets and /declarations are sub-resources of it.
+// DDM rides on MDM in the protocol, so the enrollment is the root object and
+// DDM's /enrollments/{channel}/{id}/sets and /declarations are sub-resources
+// of it (decision record 0039).
 func (a *App) mdmAdminRoutes() []adminRoute {
 	var routes []adminRoute
 	add := func(action, pattern string, fn http.HandlerFunc) {

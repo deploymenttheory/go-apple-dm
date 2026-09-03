@@ -30,11 +30,9 @@ const DefaultPushCoalesce = 5 * time.Second
 
 // PushConfig selects where APNs credentials come from.
 //
-// Until phase 8 the reference server built no pusher at all: ddm.Notifier was
-// constructed without one, so a declaration change queued a command and never
-// woke the device, and internal/app did not import push. A device would
-// collect the command on its next check-in, which for an idle Mac can be
-// hours.
+// With no source the notifier is built without a pusher, so a declaration
+// change queues a command and never wakes the device. The device collects it
+// on its next check-in, which for an idle Mac can be hours.
 type PushConfig struct {
 	// Source is off, file, or store.
 	Source string

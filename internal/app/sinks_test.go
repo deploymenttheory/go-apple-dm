@@ -70,9 +70,8 @@ func publishSomething(t *testing.T, a *app.App) {
 	}
 }
 
-// Nothing subscribed to the bus outside tests until now, so the wiring is
-// worth asserting end to end: an enrollment through the real server reaches a
-// real webhook receiver.
+// The wiring is asserted end to end rather than by inspection: a state change
+// through the real server has to reach a real webhook receiver.
 func TestWebhookSinkReceivesEnrollmentEvents(t *testing.T) {
 	c := newCollector()
 	srv := c.server(t)

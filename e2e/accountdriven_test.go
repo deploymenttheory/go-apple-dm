@@ -76,7 +76,7 @@ func newADFixture(t *testing.T, oauth bool) *adFixture {
 			return &enroll.Profile{
 				Identifier: "com.example.e2e.account-driven", DisplayName: "go-apple-mdm e2e", Organization: "go-apple-mdm",
 				Topic: pushTopic, ServerURL: h.server.URL + "/mdm", CheckInURL: h.server.URL + "/mdm",
-				SCEP:  &enroll.SCEP{URL: h.server.URL + "/scep", Challenge: challenge, Subject: pkix.Name{CommonName: id.ManagedAppleID + "/" + info.Product, Organization: []string{"go-apple-mdm"}}},
+				SCEP:  &enroll.SCEP{URL: h.server.URL + "/scep", Challenge: challenge, Subject: pkix.Name{CommonName: id.ManagedAppleAccount + "/" + info.Product, Organization: []string{"go-apple-mdm"}}},
 				Roots: []*x509.Certificate{h.scepCA},
 			}, nil
 		}
@@ -108,7 +108,7 @@ func newADFixture(t *testing.T, oauth bool) *adFixture {
 }
 
 func (f *adFixture) identity(user string) accountdriven.Identity {
-	return accountdriven.Identity{UserIdentifier: user, ManagedAppleID: user, Subject: "sub-" + user}
+	return accountdriven.Identity{UserIdentifier: user, ManagedAppleAccount: user, Subject: "sub-" + user}
 }
 
 // asWebAuthenticate plays the sign-in page of the apple-as-web flow.

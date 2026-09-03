@@ -69,8 +69,8 @@ func (o *OAuth2) ParseAuthorization(r *http.Request) (*AuthorizationRequest, err
 // to the request and redirects (308) to the redirect URL with code and
 // the echoed state.
 func (o *OAuth2) Grant(w http.ResponseWriter, r *http.Request, req *AuthorizationRequest, id Identity) error {
-	if id.ManagedAppleID == "" {
-		return ErrManagedAppleID
+	if id.ManagedAppleAccount == "" {
+		return ErrManagedAppleAccount
 	}
 	code, err := o.Tokens.Issue(r.Context(), KindCode, id, map[string]string{"redirect_uri": o.RedirectURL, "client_id": o.ClientID, "state": req.State})
 	if err != nil {
