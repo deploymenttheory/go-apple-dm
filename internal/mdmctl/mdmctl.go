@@ -145,6 +145,7 @@ func commands() map[string]command {
 		{"policies", "administer authorization policies", runPolicies},
 		{"actions", "list the actions a policy can grant", runActions},
 		{"declarations", "manage declarations", runDeclarations},
+		{"audit", "read the audit trail", runAudit},
 		{"version", "print the mdmctl version", runVersion},
 	}
 	out := make(map[string]command, len(cmds))

@@ -265,3 +265,20 @@ func TestAdminStoreOpenFailureIsReported(t *testing.T) {
 		t.Fatal("adminStore = nil error on a closed database")
 	}
 }
+
+// The audit trail is opened on the process's own pool, so a pool that cannot
+// answer must fail the build rather than leave the admin route mounted over
+// a store that errors on every request.
+func TestAuditStoreOpenFailureIsReported(t *testing.T) {
+	db, err := sql.Open("sqlite", filepath.Join(t.TempDir(), "audit-closed.db"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := db.Close(); err != nil {
+		t.Fatal(err)
+	}
+	a := &App{cfg: Config{Sinks: SinkConfig{Persist: true}}, db: db, dialect: sqlite.Dialect}
+	if _, err := a.auditStore(context.Background()); err == nil {
+		t.Fatal("auditStore = nil error on a closed database")
+	}
+}

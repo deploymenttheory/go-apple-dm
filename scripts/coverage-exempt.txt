@@ -21,3 +21,4 @@
 ^github.com/deploymenttheory/go-apple-mdm/acme/acmetest$  # ACME store contract suite and failing store, exercised by the acme/inmem and acme/sqlstore suites
 ^github.com/deploymenttheory/go-apple-mdm/acme/attest/attesttest$  # fake Apple attestation authority, exercised by the acme/attest, acme, simulator, and e2e suites
 ^github.com/deploymenttheory/go-apple-mdm/adminauth/adminauthtest$  # admin principal and policy store contract suite, exercised by adminauth/inmem and adminauth/sqlstore
+^github.com/deploymenttheory/go-apple-mdm/audit/audittest$  # audit trail contract suite and failing store, exercised by audit/inmem and audit/sqlstore

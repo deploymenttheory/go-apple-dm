@@ -65,3 +65,4 @@ With the code:
 | [0035](0035-mdmctl-structure-and-credentials.md) | `mdmctl` structure, output, and credential handling | proposed | 8 |
 | [0036](0036-mdmctl-explain-over-schema-support.md) | `mdmctl explain` over `schema/support` | proposed | 8 |
 | [0037](0037-event-sinks-and-redaction.md) | Event sinks and default-deny redaction | accepted | 9 |
+| [0038](0038-persisted-audit-trail.md) | The persisted audit trail | accepted | 9 |
