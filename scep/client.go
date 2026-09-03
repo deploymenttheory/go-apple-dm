@@ -138,7 +138,9 @@ func (c *Client) Enroll(ctx context.Context, key crypto.Signer, o EnrollOptions)
 		}
 	}
 	csrDER, err := x509util.CreateCertificateRequest(rand.Reader, &x509util.CertificateRequest{
-		Subject: o.Subject, SignatureAlgorithm: signatureAlgorithm(key),
+		CertificateRequest: x509.CertificateRequest{
+			Subject: o.Subject, SignatureAlgorithm: signatureAlgorithm(key),
+		},
 		ChallengePassword: o.Challenge,
 	}, key)
 	if err != nil {
