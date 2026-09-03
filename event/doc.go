@@ -15,8 +15,10 @@
 //
 // The bus is deliberately small: synchronous dispatch, a handler error
 // reported through the bus error handler without stopping other handlers,
-// and no persistence. Sinks such as webhooks and OpenTelemetry adapters
-// arrive with the reference server in phase 8.
+// and no persistence. The sinks live in event/sink, which projects an event
+// down to what may leave the process before an slog record or a webhook
+// carries it; the durable trail the threat model's repudiation control needs
+// is package audit.
 //
 // # References
 //
