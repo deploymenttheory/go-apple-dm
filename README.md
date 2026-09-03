@@ -13,8 +13,141 @@ account-driven, user channel and Shared iPad), an ACME server with Managed Devic
 and clients for the device enrollment service and the Apple Business Manager API. A thin
 reference server, `cmd/mdmserver`, wires it all together.
 
-Status: pre-release, phases 1 to 7 of the [implementation plan](docs/research/implementation_plan.md)
-are delivered. No API stability promise until v1.0.0.
+## Why
+
+Apple documents its device management protocol thoroughly, and in Go it has never been available
+as something you can simply import. The implementations that exist are servers first. NanoMDM is
+deliberately minimal: it hides `context.Context` inside a request struct, hands DDM check-ins back
+as raw `[]byte`, and offers a single webhook as its one integration point. KMFDDM runs declarative
+management as a separate experimental process. Fleet's MDM is a product, and vendors NanoMDM and
+NanoDEP as forks rather than depending on them. Each is a sound answer to the question it was
+built to answer, and this library learns from all three. None of them is a library you can build
+your own product on.
+
+That is what this is. The protocol, the declarative engine, every enrollment path, and the Apple
+service clients, as ordinary Go packages you import into your own program and wire the way your
+program needs.
+
+- **Typed from Apple's own schema, not by hand.** All 65 commands with their responses, check-in
+  messages, profiles, declarations, status and protocol types are generated in this repository from
+  the pinned `apple/device-management` YAML, along with the metadata that answers whether a key
+  applies to a supervised Mac on 15.0. A naming lock makes regeneration fail loudly rather than
+  rename a type out from under you, so Apple's schema drift becomes `make generate` and a diff to
+  review instead of a manual audit every autumn.
+- **A library shape, held to deliberately.** `context.Context` first, typed errors, and a hook
+  chain; every state change is a typed event on an in-process bus, so audit trails, webhooks,
+  metrics, and reconcilers are ordinary subscribers rather than special cases wired into the core.
+- **Storage you choose.** Interfaces split by concern, with in-memory, SQLite, PostgreSQL, and
+  MySQL backends that all pass one contract suite. Secrets at rest are sealed under named keys with
+  in-place rotation.
+- **The whole surface, not the core alone.** The parts most projects leave you to write — ACME
+  with Managed Device Attestation, account-driven enrollment, Shared iPad, the device enrollment
+  service, the Business Manager API — are here, each with a fake for your tests.
+- **Testable without hardware.** A device simulator speaks MDM, DDM, ADE, account-driven, user
+  channel, Shared iPad, and ACME, so your server can be exercised end to end before a real device
+  ever touches it. The coverage floor is 95%, gated in CI.
+
+What it is not: a product. There is no UI, no inventory, and no fleet management. `cmd/mdmserver`
+is a thin wiring of these packages, there to prove the library works and to be read as an example
+of using it, not to be deployed as a device management platform. Nothing is copied from the
+projects above; `github.com/micromdm/plist` is the single dependency shared with them, so fixtures
+interoperate. The reasoning behind all of this is decision record
+[0001](docs/research/decisions/0001-architecture.md), and the projects studied are credited in
+[reference_projects.md](docs/research/reference_projects.md).
+
+## Quick start
+
+```bash
+go get github.com/deploymenttheory/go-apple-mdm
+```
+
+A check-in and command endpoint over an in-memory store, and a typed command queued for a device:
+
+```go
+package main
+
+import (
+	"context"
+	"log"
+	"net/http"
+
+	"github.com/deploymenttheory/go-apple-mdm/httpapi"
+	"github.com/deploymenttheory/go-apple-mdm/mdm"
+	"github.com/deploymenttheory/go-apple-mdm/schema/commands"
+	"github.com/deploymenttheory/go-apple-mdm/service"
+	"github.com/deploymenttheory/go-apple-mdm/storage"
+	"github.com/deploymenttheory/go-apple-mdm/storage/inmem"
+)
+
+func main() {
+	core, err := service.New(service.Config{Store: inmem.New()})
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	// One path serves check-in and connect; the handler routes on content type,
+	// and the middleware takes the device identity from the TLS peer certificate.
+	http.Handle("/mdm", httpapi.CertFromTLS(httpapi.Handler(httpapi.Config{
+		Checkin: core,
+		Connect: core,
+	})))
+
+	// The payload carries its own RequestType; the envelope gets a time-ordered
+	// CommandUUID. Targets are checked against the schema before they are queued.
+	cmd, err := mdm.NewCommand(&commands.DeviceInformation{})
+	if err != nil {
+		log.Fatal(err)
+	}
+	id := mdm.EnrollmentID{Channel: mdm.ChannelDevice, ID: "00008030-000000000000001E"}
+	if _, err := core.Enqueue(context.Background(), []mdm.EnrollmentID{id}, cmd, storage.EnqueueOptions{}); err != nil {
+		log.Fatal(err)
+	}
+
+	log.Fatal(http.ListenAndServe(":8080", nil))
+}
+```
+
+Swap `inmem.New()` for `sqlite.Open`, `postgres.Open`, or `mysql.Open` and nothing above changes.
+For a real deployment add a push certificate, an enrollment identity (SCEP or ACME), and TLS; the
+reference server shows each of those wired together.
+
+### Or run the reference server
+
+```bash
+# One terminal: an all-in-one process on :8080, nothing to install.
+MDM_ROLE=all MDM_STORAGE=inmem MDM_ADMIN_TOKEN=dev-token go run ./cmd/mdmserver
+
+# Another: ask it what it is.
+curl -s localhost:8080/healthz
+go run ./cmd/mdmctl -server http://localhost:8080 -token dev-token status
+```
+
+```
+Role:           all
+Version:        v0.0.0-20260903102158-a26bcbb63052
+Families:       ddm, dep, introspection, mdm
+Authorization:  static token (development)
+Break-glass:    active (the only credential; no principal store configured)
+```
+
+`MDM_ADMIN_TOKEN` is a break-glass credential for getting started: it bypasses policy and cannot be
+revoked without a restart. Create real principals with it, then unset it. Every variable is in
+[Reference server](#reference-server) below, and `make docker-build` produces the container image.
+
+### Explore the protocol without a server
+
+`mdmctl explain` reads the generated schema tables offline, so it needs neither a server nor a
+device:
+
+```bash
+go run ./cmd/mdmctl explain DeviceInformation
+go run ./cmd/mdmctl explain DeviceInformation -target macos:15.0,supervised
+go run ./cmd/mdmctl explain com.apple.configuration.softwareupdate.enforcement.specific
+```
+
+From there: [docs/diagrams](docs/diagrams/README.md) for how the pieces fit together,
+[e2e/](e2e/) and [docs/testing/e2e-scenarios.md](docs/testing/e2e-scenarios.md) for worked
+end-to-end scenarios, and [`simulator/`](simulator/) to drive a server without hardware.
 
 ## Architecture
 
