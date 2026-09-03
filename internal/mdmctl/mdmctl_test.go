@@ -23,6 +23,15 @@ func run(t *testing.T, env map[string]string, args ...string) (string, string, e
 	return out.String(), errBuf.String(), err
 }
 
+// runWithStdin is run with a body on stdin, for the verbs that read one.
+func runWithStdin(t *testing.T, env map[string]string, stdin string, args ...string) (string, string, error) {
+	t.Helper()
+	var out, errBuf strings.Builder
+	getenv := func(k string) string { return env[k] }
+	err := mdmctl.Run(context.Background(), args, getenv, strings.NewReader(stdin), &out, &errBuf)
+	return out.String(), errBuf.String(), err
+}
+
 // noConfig points the CLI at an empty directory so a developer's real config
 // never influences a test.
 func noConfig(t *testing.T) map[string]string {
@@ -59,7 +68,7 @@ func TestUsage(t *testing.T) {
 	// being discoverable.
 	t.Run("EveryVerbIsListed", func(t *testing.T) {
 		_, errOut, _ := run(t, noConfig(t))
-		for _, verb := range []string{"explain", "status", "routes", "principals", "policies", "actions", "declarations", "audit", "version"} {
+		for _, verb := range mdmctl.Verbs() {
 			if !strings.Contains(errOut, verb) {
 				t.Errorf("verb %q is missing from the help", verb)
 			}

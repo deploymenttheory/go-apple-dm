@@ -137,6 +137,18 @@ type command struct {
 	run     func(ctx context.Context, e *env, args []string) error
 }
 
+// Verbs lists every registered verb, sorted. It exists so a test can assert
+// the help and the dispatch table agree without repeating the list, which is
+// what let new verbs ship undiscoverable.
+func Verbs() []string {
+	out := make([]string, 0, len(commands()))
+	for name := range commands() {
+		out = append(out, name)
+	}
+	sort.Strings(out)
+	return out
+}
+
 // commands is the dispatch table. A map rather than a switch so a test can
 // assert every verb has help, and so gocyclo does not see one enormous
 // function.
@@ -150,6 +162,15 @@ func commands() map[string]command {
 		{"actions", "list the actions a policy can grant", runActions},
 		{"declarations", "manage declarations", runDeclarations},
 		{"audit", "read the audit trail", runAudit},
+		{"enrollments", "list, read, and disable enrollments", runEnrollments},
+		{"commands", "send, read, and clear queued MDM commands", runCommands},
+		{"push", "wake a device now without queueing anything", runPush},
+		{"pushcerts", "read push certificates and upload a renewal", runPushCerts},
+		{"sets", "manage declaration sets and their assignment", runSets},
+		{"notify", "drain declaration changes and wake the affected devices", runNotify},
+		{"export", "export enrollments for migration", runExport},
+		{"import", "import an exported enrollment record", runImport},
+		{"api", "call any admin route by method and path", runAPI},
 		{"version", "print the mdmctl version", runVersion},
 	}
 	out := make(map[string]command, len(cmds))

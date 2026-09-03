@@ -1,6 +1,6 @@
 # 0036: `mdmctl explain` over `schema/support`
 
-Status: proposed
+Status: accepted
 Date: 2026-09-02
 Phase: 8
 

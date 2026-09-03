@@ -135,6 +135,13 @@ environment:
 | `MDM_AUDIT_LOG`, `MDM_WEBHOOK_URL`, `MDM_WEBHOOK_HMAC_KEY` | Event sinks: a projected slog record per state change, and a MicroMDM-compatible webhook with an optional SHA-256 body signature. Both off by default. The webhook envelope matches MicroMDM and NanoMDM except that it carries no `raw_payload`, because theirs is the raw check-in body and a `TokenUpdate` body contains the device unlock token |
 | `MDM_DEP_BASE_URL`, `MDM_DEP_SYNC_INTERVAL`, `MDM_DEP_ASSIGN_INTERVAL`, `MDM_DEP_PROFILE_URL`, `MDM_DEP_USE_PUT` | Device enrollment service endpoint, the background sync worker, and the DEP profile url (defaults to this server) |
 
+`cmd/mdmctl` drives every one of those routes. Typed verbs cover the surfaces this project models
+-- `enrollments`, `commands`, `push`, `pushcerts`, `export`/`import`, `declarations`, `sets`,
+`notify`, `principals`, `policies`, `audit`, plus `status`, `routes` and `actions` -- and
+`mdmctl api <METHOD> <path>` reaches the rest, including the Business Manager, DEP and ACME
+families that proxy Apple-shaped APIs. `mdmctl explain` answers offline from the compiled-in
+schema. E2E-024 walks the server's own route table and fails if any route cannot be driven.
+
 The admin API manages declarations, sets, and assignments (`/admin/v1/declarations`, `/sets`,
 `/enrollments`), Business Manager servers, devices, and activities (`/admin/v1/axm/`), DEP
 accounts: token PKI generation, `.p7m` import, device listing, profile definition, and sync

@@ -60,3 +60,21 @@ Framing: Apple defines the device-facing protocol (the check-in message with `En
 - Forwarding a re-encoded JSON check-in: re-encoding could change the bytes a signature covers; the plist is forwarded as received.
 - Signature on the response only (NanoMDM): the request is the one that mutates state.
 - Custom URL per endpoint (`/tokens`, `/declaration/...`): the `Endpoint` string is already in the message and Apple owns its grammar; one route keeps the parser in one place.
+
+## Amendment 1: the hop is deployment topology, not a protocol boundary (2026-09-03, phase 9)
+
+This record already says "Apple defines nothing about splitting an MDM server into processes", and
+record 0039 establishes why that matters: declarative management is an extension of the MDM
+protocol, sharing its transport, identity and enrollment. The hop between our roles is therefore an
+operational choice about where the declaration engine runs, not a seam the protocol implies. The
+adapters and the wire stay; what changes is that they are described as a deployment option rather
+than as structure.
+
+The shape they were modelled on is historical. NanoMDM shipped first, KMFDDM was written as a
+separate DDM server it proxies to with `-dm`, and NanoHUB then had to re-unify them in one process
+through `ddmadapter`; Fleet vendored NanoMDM and wrote its own proxy shim. Every reference has this
+split because none could start over. We could, and the protocol does not ask for it.
+
+One consequence was corrected in phase 9: `ddm.Config.Wake` let the engine call back into the
+notifier, a cycle no reference has, which in turn made DDM's own command bypass the MDM command
+path. See record 0039.

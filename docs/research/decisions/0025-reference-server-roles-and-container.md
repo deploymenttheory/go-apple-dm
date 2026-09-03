@@ -55,3 +55,16 @@ Phase: 5
 - A full admin API now: phase 8 owns it; the three `PUT` routes and a status read are what E2E-010 needs.
 - Alpine or scratch runtime: distroless static carries CA certificates and a non-root user with no shell.
 - Serving admin and device ingress on the same route tree with one key (KMFDDM): a leaked device-side key must not grant admin access.
+
+## Amendment 1: roles are a deployment choice (2026-09-03, phase 9)
+
+Claim 2 describes the `mdm`, `ddm` and `all` roles as though the split were structural. Record 0039
+establishes that declarative management is an extension of the MDM protocol, so the split is an
+operational choice about where the declaration engine runs. The roles stay; the framing is
+corrected.
+
+Two things this record implied are no longer true. The `ddm` role no longer holds the admin API
+alone: every role that has a credential serves it, because withholding it from the `mdm` role left
+the half owning enrollments, commands and push with no administrative surface. And claim 3's
+"minimal authenticated JSON admin API" has been superseded twice over, by record 0034's
+authorization and by the `mdm` route family added in phase 9.
