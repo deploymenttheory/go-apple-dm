@@ -1,0 +1,213 @@
+{
+  "schema_version": 2,
+  "diagram_type": "workflow",
+  "meta": {
+    "title": "Reference Server: Build and Serve",
+    "quality_profile": "showcase",
+    "views": [
+      {
+        "id": "build",
+        "label": "Build",
+        "focus": [
+          "env",
+          "role",
+          "openstorage",
+          "wire"
+        ],
+        "note": "Validate the configuration, open one database, then wire the graph."
+      },
+      {
+        "id": "serve",
+        "label": "Serve",
+        "focus": [
+          "wire",
+          "mux",
+          "workers"
+        ],
+        "note": "One mux; ddm-notifier and audit-retention always, dep-syncer when DEP is built."
+      }
+    ],
+    "legend": {
+      "mode": "auto",
+      "entries": {
+        "backend": {
+          "label": "build step"
+        },
+        "security": {
+          "label": "role or refusal"
+        },
+        "database": {
+          "label": "storage"
+        }
+      }
+    }
+  },
+  "lanes": [
+    {
+      "id": "config",
+      "label": "Configuration"
+    },
+    {
+      "id": "build",
+      "label": "Build"
+    },
+    {
+      "id": "run",
+      "label": "Run"
+    },
+    {
+      "id": "gate",
+      "label": "Refused",
+      "variant": "exception"
+    }
+  ],
+  "phases": [
+    {
+      "id": "p1",
+      "label": "Build",
+      "fromCol": 0,
+      "toCol": 3
+    },
+    {
+      "id": "p2",
+      "label": "Serve",
+      "fromCol": 4,
+      "toCol": 4
+    }
+  ],
+  "mainPath": [
+    "env",
+    "role",
+    "openstorage",
+    "wire",
+    "mux"
+  ],
+  "nodes": [
+    {
+      "id": "env",
+      "lane": "config",
+      "col": 0,
+      "type": "backend",
+      "label": "ParseEnv",
+      "sublabel": "then flags override",
+      "width": 150
+    },
+    {
+      "id": "role",
+      "lane": "config",
+      "col": 1,
+      "type": "security",
+      "label": "Role",
+      "sublabel": "mdm \u00b7 ddm \u00b7 all",
+      "width": 140
+    },
+    {
+      "id": "openstorage",
+      "lane": "build",
+      "col": 2,
+      "type": "database",
+      "label": "openStorage",
+      "sublabel": "one *sql.DB",
+      "width": 150
+    },
+    {
+      "id": "wire",
+      "lane": "build",
+      "col": 3,
+      "type": "backend",
+      "label": "App.wire",
+      "sublabel": "engine, push, service",
+      "width": 160
+    },
+    {
+      "id": "mux",
+      "lane": "build",
+      "col": 4,
+      "type": "backend",
+      "label": "http.ServeMux",
+      "sublabel": "routes for this role",
+      "width": 160
+    },
+    {
+      "id": "workers",
+      "lane": "run",
+      "col": 4,
+      "type": "backend",
+      "label": "App.Run",
+      "sublabel": "two, plus dep-syncer",
+      "width": 150
+    },
+    {
+      "id": "configerr",
+      "lane": "gate",
+      "col": 2,
+      "type": "security",
+      "label": "ErrConfig",
+      "sublabel": "fails at build",
+      "width": 140
+    }
+  ],
+  "edges": [
+    {
+      "id": "r1",
+      "from": "env",
+      "to": "role",
+      "label": "one Config",
+      "role": "main"
+    },
+    {
+      "id": "r2",
+      "from": "role",
+      "to": "openstorage",
+      "label": "backend",
+      "role": "main"
+    },
+    {
+      "id": "r3",
+      "from": "openstorage",
+      "to": "wire",
+      "label": "shared pool",
+      "role": "main"
+    },
+    {
+      "id": "r4",
+      "from": "wire",
+      "to": "mux",
+      "label": "register",
+      "role": "main"
+    },
+    {
+      "id": "r5",
+      "from": "wire",
+      "to": "workers",
+      "label": "start",
+      "role": "branch"
+    },
+    {
+      "id": "r6",
+      "from": "role",
+      "to": "configerr",
+      "label": "bad combination",
+      "role": "error"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "Roles decide what mounts",
+      "items": [
+        "mdm serves devices and forwards DDM check-ins when MDM_DDM_URL is set",
+        "ddm mounts no /mdm; all runs everything in one process",
+        "Every role builds the engine and runs the notifier"
+      ]
+    },
+    {
+      "dot": "rose",
+      "title": "Fail at build, not at runtime",
+      "items": [
+        "An ACME dep or sip policy without a DEP store is a build error",
+        "buildAdminMux refuses a route with no action, so a typo cannot ship"
+      ]
+    }
+  ]
+}

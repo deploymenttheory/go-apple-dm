@@ -1,0 +1,308 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "Apple Service Clients",
+    "quality_profile": "showcase",
+    "viewBox": [
+      1170,
+      540
+    ],
+    "views": [
+      {
+        "id": "dep",
+        "label": "Device assignment",
+        "focus": [
+          "depsvc",
+          "depclient",
+          "syncer",
+          "assigner",
+          "depstore"
+        ],
+        "note": "Sync devices by cursor, then drive assignments from stored state."
+      },
+      {
+        "id": "auth",
+        "label": "Three auth schemes",
+        "focus": [
+          "depclient",
+          "axmclient",
+          "gdmfclient"
+        ],
+        "note": "Each Apple service authenticates differently; none of it is shared."
+      }
+    ],
+    "repository": {
+      "url": "https://github.com/deploymenttheory/go-apple-mdm",
+      "revision": "2c9c336d25bf83f7e6660ff3cf668e46e0ce9425"
+    }
+  },
+  "components": [
+    {
+      "id": "depsvc",
+      "type": "external",
+      "label": "DEP service",
+      "sublabel": "Device assignment API",
+      "pos": [
+        40,
+        110.0
+      ],
+      "size": [
+        170,
+        70
+      ]
+    },
+    {
+      "id": "abm",
+      "type": "external",
+      "label": "Business Manager API",
+      "sublabel": "JSON:API",
+      "pos": [
+        40,
+        260.0
+      ],
+      "size": [
+        170,
+        70
+      ]
+    },
+    {
+      "id": "gdmfsvc",
+      "type": "external",
+      "label": "gdmf.apple.com",
+      "sublabel": "software lookup",
+      "pos": [
+        40,
+        410.0
+      ],
+      "size": [
+        170,
+        70
+      ]
+    },
+    {
+      "id": "depclient",
+      "type": "backend",
+      "label": "dep.Client",
+      "sublabel": "sessions \u00b7 cursors \u00b7 token PKI",
+      "pos": [
+        340,
+        110.0
+      ],
+      "size": [
+        170,
+        70
+      ],
+      "sources": [
+        {
+          "path": "dep/client.go",
+          "label": "client"
+        },
+        {
+          "path": "dep/oauth1.go",
+          "label": "OAuth 1.0a"
+        }
+      ]
+    },
+    {
+      "id": "axmclient",
+      "type": "backend",
+      "label": "axm.Client",
+      "sublabel": "paging \u00b7 activities",
+      "pos": [
+        340,
+        260.0
+      ],
+      "size": [
+        170,
+        70
+      ],
+      "tag": "sealed credentials",
+      "sources": [
+        {
+          "path": "axm/auth.go",
+          "label": "ES256 assertion"
+        }
+      ]
+    },
+    {
+      "id": "gdmfclient",
+      "type": "backend",
+      "label": "gdmf.Client",
+      "sublabel": "TTL cache, last-good",
+      "pos": [
+        340,
+        410.0
+      ],
+      "size": [
+        170,
+        70
+      ],
+      "sources": [
+        {
+          "path": "gdmf/gdmf.go",
+          "label": "catalogue"
+        }
+      ]
+    },
+    {
+      "id": "syncer",
+      "type": "backend",
+      "label": "dep.Syncer",
+      "sublabel": "cursor expiry \u00b7 dedupe",
+      "pos": [
+        640,
+        110.0
+      ],
+      "size": [
+        170,
+        70
+      ],
+      "sources": [
+        {
+          "path": "dep/syncer.go",
+          "label": "cursor sync"
+        }
+      ]
+    },
+    {
+      "id": "assigner",
+      "type": "backend",
+      "label": "dep.Assigner",
+      "sublabel": "state-driven",
+      "pos": [
+        640,
+        260.0
+      ],
+      "size": [
+        170,
+        70
+      ],
+      "sources": [
+        {
+          "path": "dep/assigner.go",
+          "label": "assignment"
+        }
+      ]
+    },
+    {
+      "id": "adegate",
+      "type": "backend",
+      "label": "ADE update gate",
+      "sublabel": "enroll/ade",
+      "pos": [
+        640,
+        410.0
+      ],
+      "size": [
+        170,
+        70
+      ]
+    },
+    {
+      "id": "depstore",
+      "type": "database",
+      "label": "dep.Store",
+      "sublabel": "accounts \u00b7 devices \u00b7 assignments",
+      "pos": [
+        940,
+        110.0
+      ],
+      "size": [
+        170,
+        70
+      ]
+    }
+  ],
+  "boundaries": [
+    {
+      "kind": "region",
+      "label": "Apple",
+      "wraps": [
+        "depsvc",
+        "abm",
+        "gdmfsvc"
+      ]
+    }
+  ],
+  "connections": [
+    {
+      "id": "dep-auth",
+      "from": "depclient",
+      "to": "depsvc",
+      "label": "OAuth 1.0a",
+      "variant": "security"
+    },
+    {
+      "id": "axm-auth",
+      "from": "axmclient",
+      "to": "abm",
+      "label": "ES256 assertion",
+      "variant": "security"
+    },
+    {
+      "id": "gdmf-auth",
+      "from": "gdmfclient",
+      "to": "gdmfsvc",
+      "label": "public GET"
+    },
+    {
+      "id": "syncer-client",
+      "from": "syncer",
+      "to": "depclient",
+      "label": "FetchDevices"
+    },
+    {
+      "id": "assigner-client",
+      "from": "assigner",
+      "to": "depclient",
+      "label": "AssignProfile"
+    },
+    {
+      "id": "syncer-store",
+      "from": "syncer",
+      "to": "depstore",
+      "label": "commit in a Tx"
+    },
+    {
+      "id": "assigner-store",
+      "from": "assigner",
+      "to": "depstore",
+      "label": "read back"
+    },
+    {
+      "id": "gdmf-gate",
+      "from": "gdmfclient",
+      "to": "adegate",
+      "label": "latest version"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "Three services, three auth schemes",
+      "items": [
+        "DEP uses OAuth 1.0a with a server token from the portal exchange",
+        "Business Manager uses an ES256 client assertion",
+        "The software lookup service needs no credentials at all"
+      ]
+    },
+    {
+      "dot": "emerald",
+      "title": "Assignment",
+      "items": [
+        "The syncer pages by cursor and handles cursor expiry by refetching",
+        "The assigner is state-driven and reads back what Apple recorded",
+        "A 429 backs the account off rather than hammering the endpoint"
+      ]
+    },
+    {
+      "dot": "rose",
+      "title": "Software update gate",
+      "items": [
+        "An old OS is refused with ErrorCodeCodeSoftwareUpdateRequired (com.apple.softwareupdate.required)",
+        "gdmf answers what the latest version is for that device"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,276 @@
+{
+  "schema_version": 2,
+  "diagram_type": "workflow",
+  "meta": {
+    "title": "Enrollment Paths and Their Gates",
+    "quality_profile": "showcase",
+    "views": [
+      {
+        "id": "ade",
+        "label": "Automated",
+        "focus": [
+          "adedevice",
+          "machineinfo",
+          "updategate",
+          "adeprofile"
+        ],
+        "note": "Signed MachineInfo, then a software update gate, then a personalised profile."
+      },
+      {
+        "id": "account",
+        "label": "Account-driven",
+        "focus": [
+          "byoddevice",
+          "discovery",
+          "challenge",
+          "adprofile"
+        ],
+        "note": "Discovery routes the device; the first POST earns a 401 that names the method."
+      },
+      {
+        "id": "refused",
+        "label": "Refused",
+        "focus": [
+          "updategate",
+          "discovery",
+          "refused"
+        ],
+        "note": "An old OS and an unrouted model family are both refused before any profile is built."
+      }
+    ],
+    "legend": {
+      "mode": "auto",
+      "entries": {
+        "backend": {
+          "label": "enrollment step"
+        },
+        "security": {
+          "label": "gate"
+        },
+        "external": {
+          "label": "device"
+        }
+      }
+    }
+  },
+  "lanes": [
+    {
+      "id": "ade",
+      "label": "Automated"
+    },
+    {
+      "id": "account",
+      "label": "Account-driven"
+    },
+    {
+      "id": "out",
+      "label": "Profile"
+    },
+    {
+      "id": "gate",
+      "label": "Refused",
+      "variant": "exception"
+    }
+  ],
+  "phases": [
+    {
+      "id": "p1",
+      "label": "Identify",
+      "fromCol": 0,
+      "toCol": 1
+    },
+    {
+      "id": "p2",
+      "label": "Gate",
+      "fromCol": 2,
+      "toCol": 2
+    },
+    {
+      "id": "p3",
+      "label": "Issue",
+      "fromCol": 3,
+      "toCol": 4
+    }
+  ],
+  "mainPath": [
+    "adedevice",
+    "machineinfo",
+    "updategate",
+    "adeprofile",
+    "profile"
+  ],
+  "nodes": [
+    {
+      "id": "adedevice",
+      "lane": "ade",
+      "col": 0,
+      "type": "external",
+      "label": "ADE device",
+      "sublabel": "assigned by DEP",
+      "width": 140
+    },
+    {
+      "id": "machineinfo",
+      "lane": "ade",
+      "col": 1,
+      "type": "security",
+      "label": "MachineInfo",
+      "sublabel": "CMS verified",
+      "width": 140
+    },
+    {
+      "id": "updategate",
+      "lane": "ade",
+      "col": 2,
+      "type": "security",
+      "label": "Update gate",
+      "sublabel": "is the OS new enough?",
+      "width": 160
+    },
+    {
+      "id": "adeprofile",
+      "lane": "ade",
+      "col": 3,
+      "type": "backend",
+      "label": "web view or token",
+      "sublabel": "OIDC, then finish",
+      "width": 160
+    },
+    {
+      "id": "byoddevice",
+      "lane": "account",
+      "col": 0,
+      "type": "external",
+      "label": "BYOD device",
+      "sublabel": "user's Apple Account",
+      "width": 150
+    },
+    {
+      "id": "discovery",
+      "lane": "account",
+      "col": 1,
+      "type": "backend",
+      "label": "discovery",
+      "sublabel": "which enrollment?",
+      "width": 140
+    },
+    {
+      "id": "challenge",
+      "lane": "account",
+      "col": 2,
+      "type": "security",
+      "label": "401 challenge",
+      "sublabel": "as-web or oauth2",
+      "width": 150
+    },
+    {
+      "id": "adprofile",
+      "lane": "account",
+      "col": 3,
+      "type": "backend",
+      "label": "bearer accepted",
+      "sublabel": "single use",
+      "width": 150
+    },
+    {
+      "id": "profile",
+      "lane": "out",
+      "col": 4,
+      "type": "backend",
+      "label": "enroll.Profile",
+      "sublabel": "signed by the CA",
+      "width": 150
+    },
+    {
+      "id": "refused",
+      "lane": "gate",
+      "col": 2,
+      "type": "security",
+      "label": "Refused",
+      "sublabel": "403, before any profile",
+      "width": 160
+    }
+  ],
+  "edges": [
+    {
+      "id": "p1",
+      "from": "adedevice",
+      "to": "machineinfo",
+      "label": "POST",
+      "role": "main"
+    },
+    {
+      "id": "p2",
+      "from": "machineinfo",
+      "to": "updategate",
+      "label": "verified",
+      "role": "main"
+    },
+    {
+      "id": "p3",
+      "from": "updategate",
+      "to": "adeprofile",
+      "label": "proceed",
+      "role": "main"
+    },
+    {
+      "id": "p4",
+      "from": "adeprofile",
+      "to": "profile",
+      "label": "personalised",
+      "role": "main"
+    },
+    {
+      "id": "p5",
+      "from": "byoddevice",
+      "to": "discovery",
+      "label": "well-known",
+      "role": "branch"
+    },
+    {
+      "id": "p6",
+      "from": "discovery",
+      "to": "challenge",
+      "label": "routed",
+      "role": "branch"
+    },
+    {
+      "id": "p7",
+      "from": "challenge",
+      "to": "adprofile",
+      "label": "authenticated",
+      "role": "branch"
+    },
+    {
+      "id": "p8",
+      "from": "adprofile",
+      "to": "profile",
+      "label": "finalized",
+      "role": "branch"
+    },
+    {
+      "id": "p9",
+      "from": "updategate",
+      "to": "refused",
+      "label": "OS too old",
+      "role": "error"
+    },
+    {
+      "id": "p10",
+      "from": "discovery",
+      "to": "refused",
+      "label": "no route",
+      "role": "error"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "Two paths, one builder",
+      "items": [
+        "Both end at the same enroll.Profile, signed by the enrollment CA",
+        "An old OS and an unrouted model family are refused before any profile is built"
+      ]
+    }
+  ]
+}

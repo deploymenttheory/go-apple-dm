@@ -1,0 +1,296 @@
+{
+  "schema_version": 2,
+  "diagram_type": "workflow",
+  "meta": {
+    "title": "Check-in Dispatch and Refusal",
+    "quality_profile": "showcase",
+    "views": [
+      {
+        "id": "writes",
+        "label": "State changes",
+        "focus": [
+          "dispatch",
+          "authenticate",
+          "tokenupdate",
+          "setbootstrap",
+          "checkout"
+        ],
+        "note": "One enrollment's life, in the order it happens; each returns an empty body."
+      },
+      {
+        "id": "answers",
+        "label": "Answers",
+        "focus": [
+          "dispatch",
+          "getbootstrap",
+          "gettoken",
+          "userauthenticate",
+          "declarative"
+        ],
+        "note": "Any of these, whenever the device asks; three marshal a plist, DeclarativeManagement returns JSON."
+      },
+      {
+        "id": "gate",
+        "label": "Refusal",
+        "focus": [
+          "dispatch",
+          "authorize",
+          "refusal"
+        ],
+        "note": "authorize runs on the other seven messages; Authenticate does its own rotation and reuse checks."
+      }
+    ],
+    "legend": {
+      "mode": "auto",
+      "entries": {
+        "backend": {
+          "label": "check-in handler"
+        },
+        "security": {
+          "label": "policy and refusal"
+        }
+      }
+    }
+  },
+  "lanes": [
+    {
+      "id": "entry",
+      "label": "Transport"
+    },
+    {
+      "id": "write",
+      "label": "State change"
+    },
+    {
+      "id": "read",
+      "label": "Answers"
+    },
+    {
+      "id": "gate",
+      "label": "Refusal",
+      "variant": "exception"
+    }
+  ],
+  "groups": [
+    {
+      "id": "life",
+      "label": "one enrollment's life, in order",
+      "lane": "write",
+      "fromCol": 1,
+      "toCol": 4
+    },
+    {
+      "id": "pulls",
+      "label": "answered whenever asked",
+      "lane": "read",
+      "fromCol": 1,
+      "toCol": 4
+    }
+  ],
+  "mainPath": [
+    "dispatch",
+    "authenticate",
+    "tokenupdate",
+    "setbootstrap",
+    "checkout"
+  ],
+  "nodes": [
+    {
+      "id": "dispatch",
+      "lane": "entry",
+      "col": 0,
+      "type": "backend",
+      "label": "dispatchCheckin",
+      "sublabel": "switch on the message",
+      "width": 150
+    },
+    {
+      "id": "authenticate",
+      "lane": "write",
+      "col": 1,
+      "type": "backend",
+      "label": "Authenticate",
+      "sublabel": "creates it",
+      "width": 130
+    },
+    {
+      "id": "tokenupdate",
+      "lane": "write",
+      "col": 2,
+      "type": "backend",
+      "label": "TokenUpdate",
+      "sublabel": "enables it",
+      "width": 130
+    },
+    {
+      "id": "setbootstrap",
+      "lane": "write",
+      "col": 3,
+      "type": "backend",
+      "label": "SetBootstrapToken",
+      "sublabel": "escrow",
+      "width": 150
+    },
+    {
+      "id": "checkout",
+      "lane": "write",
+      "col": 4,
+      "type": "backend",
+      "label": "CheckOut",
+      "sublabel": "disable, keep the row",
+      "width": 130
+    },
+    {
+      "id": "getbootstrap",
+      "lane": "read",
+      "col": 1,
+      "type": "backend",
+      "label": "GetBootstrapToken",
+      "sublabel": "reads escrow",
+      "width": 150
+    },
+    {
+      "id": "gettoken",
+      "lane": "read",
+      "col": 2,
+      "type": "backend",
+      "label": "GetToken",
+      "sublabel": "GetTokenHandler",
+      "width": 130
+    },
+    {
+      "id": "userauthenticate",
+      "lane": "read",
+      "col": 3,
+      "type": "backend",
+      "label": "UserAuthenticate",
+      "sublabel": "digest challenge",
+      "width": 150
+    },
+    {
+      "id": "declarative",
+      "lane": "read",
+      "col": 4,
+      "type": "backend",
+      "label": "DeclarativeManagement",
+      "sublabel": "DMHandler seam",
+      "width": 170
+    },
+    {
+      "id": "authorize",
+      "lane": "gate",
+      "col": 1,
+      "type": "security",
+      "label": "Identity checks",
+      "sublabel": "pin \u00b7 rotation \u00b7 reuse",
+      "width": 160,
+      "tag": "Core.authorize, or Authenticate's own"
+    },
+    {
+      "id": "refusal",
+      "lane": "gate",
+      "col": 4,
+      "type": "security",
+      "label": "403, never 401",
+      "sublabel": "400 \u00b7 410 \u00b7 501 too",
+      "width": 130
+    }
+  ],
+  "edges": [
+    {
+      "id": "c1",
+      "from": "dispatch",
+      "to": "authenticate",
+      "label": "Authenticate",
+      "role": "main"
+    },
+    {
+      "id": "c5",
+      "from": "dispatch",
+      "to": "getbootstrap",
+      "label": "GetBootstrapToken",
+      "role": "branch"
+    },
+    {
+      "id": "c6",
+      "from": "dispatch",
+      "to": "gettoken",
+      "label": "GetToken",
+      "role": "branch"
+    },
+    {
+      "id": "c7",
+      "from": "dispatch",
+      "to": "userauthenticate",
+      "label": "UserAuthenticate",
+      "role": "branch"
+    },
+    {
+      "id": "c8",
+      "from": "dispatch",
+      "to": "declarative",
+      "label": "DeclarativeManagement",
+      "role": "branch"
+    },
+    {
+      "id": "c9",
+      "from": "dispatch",
+      "to": "authorize",
+      "label": "every message",
+      "role": "branch"
+    },
+    {
+      "id": "c10",
+      "from": "authorize",
+      "to": "refusal",
+      "label": "pin, re-enroll or reuse",
+      "role": "error"
+    },
+    {
+      "id": "c11",
+      "from": "declarative",
+      "to": "refusal",
+      "label": "no handler",
+      "role": "error"
+    },
+    {
+      "id": "c2",
+      "from": "authenticate",
+      "to": "tokenupdate",
+      "label": "then",
+      "role": "main"
+    },
+    {
+      "id": "c3",
+      "from": "tokenupdate",
+      "to": "setbootstrap",
+      "label": "later, if FileVault",
+      "role": "main"
+    },
+    {
+      "id": "c4",
+      "from": "setbootstrap",
+      "to": "checkout",
+      "label": "at removal",
+      "role": "main"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "Two shapes",
+      "items": [
+        "Four state changes return an empty body",
+        "Three answers return a plist; DDM returns JSON"
+      ]
+    },
+    {
+      "dot": "rose",
+      "title": "Refusal",
+      "items": [
+        "An unknown enrollment is a 403, never a 401",
+        "A declined user is a 410"
+      ]
+    }
+  ]
+}

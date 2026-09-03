@@ -1,0 +1,290 @@
+{
+  "schema_version": 2,
+  "diagram_type": "workflow",
+  "meta": {
+    "title": "DDM Endpoint Dispatch and Refusal",
+    "quality_profile": "showcase",
+    "views": [
+      {
+        "id": "serve",
+        "label": "Tokens",
+        "focus": [
+          "checkin",
+          "parse",
+          "tokens",
+          "canonjson",
+          "response"
+        ],
+        "note": "The main path: parse the endpoint, render the token, answer 200."
+      },
+      {
+        "id": "manifest",
+        "label": "Declarations",
+        "focus": [
+          "parse",
+          "declitems",
+          "declaration",
+          "notfound"
+        ],
+        "note": "declaration-items is served from the enrollment's snapshot; a declaration outside it is a 404."
+      },
+      {
+        "id": "refused",
+        "label": "Refused",
+        "focus": [
+          "parse",
+          "badendpoint",
+          "declaration",
+          "notfound",
+          "statusbad"
+        ],
+        "note": "A bad endpoint is a 400; a declaration outside the manifest is a 404, which tells the device to remove it."
+      }
+    ],
+    "legend": {
+      "mode": "auto",
+      "entries": {
+        "backend": {
+          "label": "endpoint"
+        },
+        "security": {
+          "label": "refusal"
+        },
+        "external": {
+          "label": "device"
+        }
+      }
+    }
+  },
+  "lanes": [
+    {
+      "id": "endpoint",
+      "label": "Endpoint"
+    },
+    {
+      "id": "manifest",
+      "label": "Declarations"
+    },
+    {
+      "id": "single",
+      "label": "Status"
+    },
+    {
+      "id": "gate",
+      "label": "Refused",
+      "variant": "exception"
+    }
+  ],
+  "phases": [
+    {
+      "id": "parse",
+      "label": "Parse",
+      "fromCol": 0,
+      "toCol": 1
+    },
+    {
+      "id": "serve",
+      "label": "Serve",
+      "fromCol": 2,
+      "toCol": 4
+    }
+  ],
+  "mainPath": [
+    "checkin",
+    "parse",
+    "tokens",
+    "canonjson",
+    "response"
+  ],
+  "nodes": [
+    {
+      "id": "checkin",
+      "lane": "endpoint",
+      "col": 0,
+      "type": "external",
+      "label": "DeclarativeManagement",
+      "sublabel": "one Endpoint string",
+      "width": 150
+    },
+    {
+      "id": "parse",
+      "lane": "endpoint",
+      "col": 1,
+      "type": "backend",
+      "label": "ParseEndpoint",
+      "sublabel": "four operations",
+      "width": 140
+    },
+    {
+      "id": "tokens",
+      "lane": "endpoint",
+      "col": 2,
+      "type": "backend",
+      "label": "tokens",
+      "sublabel": "DeclarationsToken",
+      "width": 140
+    },
+    {
+      "id": "canonjson",
+      "lane": "endpoint",
+      "col": 3,
+      "type": "backend",
+      "label": "canonjson",
+      "sublabel": "RFC 8785",
+      "width": 140
+    },
+    {
+      "id": "response",
+      "lane": "endpoint",
+      "col": 4,
+      "type": "backend",
+      "label": "200 JSON",
+      "sublabel": "empty for status",
+      "width": 140
+    },
+    {
+      "id": "declitems",
+      "lane": "manifest",
+      "col": 2,
+      "type": "backend",
+      "label": "declaration-items",
+      "sublabel": "from the snapshot",
+      "width": 140
+    },
+    {
+      "id": "declaration",
+      "lane": "manifest",
+      "col": 3,
+      "type": "backend",
+      "label": "declaration/{kind}",
+      "sublabel": "four standalone kinds",
+      "width": 150
+    },
+    {
+      "id": "status",
+      "lane": "single",
+      "col": 2,
+      "type": "backend",
+      "label": "status",
+      "sublabel": "StatusReport in",
+      "width": 140
+    },
+    {
+      "id": "badendpoint",
+      "lane": "gate",
+      "col": 1,
+      "type": "security",
+      "label": "ErrBadEndpoint",
+      "sublabel": "bad kind, too long, no data",
+      "width": 150
+    },
+    {
+      "id": "notfound",
+      "lane": "gate",
+      "col": 3,
+      "type": "security",
+      "label": "404",
+      "sublabel": "device removes it",
+      "width": 140
+    },
+    {
+      "id": "statusbad",
+      "lane": "gate",
+      "col": 2,
+      "type": "security",
+      "label": "400",
+      "sublabel": "empty, too big, malformed",
+      "width": 150
+    }
+  ],
+  "edges": [
+    {
+      "id": "w1",
+      "from": "checkin",
+      "to": "parse",
+      "label": "one string",
+      "role": "main"
+    },
+    {
+      "id": "w2",
+      "from": "parse",
+      "to": "tokens",
+      "label": "tokens",
+      "role": "main"
+    },
+    {
+      "id": "w3",
+      "from": "tokens",
+      "to": "canonjson",
+      "label": "hash it",
+      "role": "main"
+    },
+    {
+      "id": "w4",
+      "from": "canonjson",
+      "to": "response",
+      "label": "answer",
+      "role": "main"
+    },
+    {
+      "id": "w5",
+      "from": "parse",
+      "to": "declitems",
+      "label": "declaration-items",
+      "role": "branch"
+    },
+    {
+      "id": "w7",
+      "from": "parse",
+      "to": "declaration",
+      "label": "declaration",
+      "role": "branch"
+    },
+    {
+      "id": "w8",
+      "from": "parse",
+      "to": "status",
+      "label": "status",
+      "role": "branch"
+    },
+    {
+      "id": "w9",
+      "from": "parse",
+      "to": "badendpoint",
+      "label": "unparseable",
+      "role": "error"
+    },
+    {
+      "id": "w11",
+      "from": "declaration",
+      "to": "notfound",
+      "label": "not in manifest",
+      "role": "error"
+    },
+    {
+      "id": "w12",
+      "from": "status",
+      "to": "statusbad",
+      "label": "refused",
+      "role": "error"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "Four operations, one string",
+      "items": [
+        "tokens, declaration-items, status, and declaration/{kind}/{identifier}",
+        "The kind is activation, asset, configuration or management; anything else is ErrBadEndpoint"
+      ]
+    },
+    {
+      "dot": "rose",
+      "title": "404 means remove",
+      "items": [
+        "Each enrollment gets a snapshot, so it fetches exactly what its manifest advertised",
+        "A declaration absent from the enrollment's manifest returns 404, and the device removes it"
+      ]
+    }
+  ]
+}

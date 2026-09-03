@@ -1,0 +1,301 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "Push: Waking a Managed Device",
+    "quality_profile": "showcase",
+    "viewBox": [
+      1170,
+      690
+    ],
+    "views": [
+      {
+        "id": "send",
+        "label": "Send path",
+        "focus": [
+          "caller",
+          "notifier",
+          "coalescer",
+          "apnsclient",
+          "apns"
+        ],
+        "note": "One MDM push per target, with a burst collapsed into a single send."
+      },
+      {
+        "id": "certs",
+        "label": "Certificate supply",
+        "focus": [
+          "certstoredb",
+          "certstore",
+          "pushcert",
+          "apnsclient"
+        ],
+        "note": "The client picks a certificate by topic; a rotated certificate is reloaded without a restart."
+      }
+    ],
+    "repository": {
+      "url": "https://github.com/deploymenttheory/go-apple-mdm",
+      "revision": "2c9c336d25bf83f7e6660ff3cf668e46e0ce9425"
+    }
+  },
+  "components": [
+    {
+      "id": "caller",
+      "type": "backend",
+      "label": "Callers",
+      "sublabel": "ddm.Notifier \u00b7 admin API",
+      "pos": [
+        40,
+        260.0
+      ],
+      "size": [
+        170,
+        70
+      ]
+    },
+    {
+      "id": "pushstore",
+      "type": "database",
+      "label": "storage.PushStore",
+      "sublabel": "token \u00b7 topic \u00b7 magic",
+      "pos": [
+        340,
+        110.0
+      ],
+      "size": [
+        170,
+        70
+      ]
+    },
+    {
+      "id": "notifier",
+      "type": "backend",
+      "label": "push.Notifier",
+      "sublabel": "Notify(ids)",
+      "pos": [
+        340,
+        260.0
+      ],
+      "size": [
+        170,
+        70
+      ],
+      "sources": [
+        {
+          "path": "push/push.go",
+          "label": "Notify"
+        }
+      ]
+    },
+    {
+      "id": "bus",
+      "type": "messagebus",
+      "label": "event.Bus",
+      "sublabel": "PushTokenInvalid",
+      "pos": [
+        340,
+        410.0
+      ],
+      "size": [
+        170,
+        70
+      ]
+    },
+    {
+      "id": "coalescer",
+      "type": "backend",
+      "label": "push.Coalescer",
+      "sublabel": "5s window",
+      "pos": [
+        640,
+        260.0
+      ],
+      "size": [
+        170,
+        70
+      ]
+    },
+    {
+      "id": "certstoredb",
+      "type": "database",
+      "label": "storage.PushCertStore",
+      "sublabel": "versioned rows",
+      "pos": [
+        640,
+        410.0
+      ],
+      "size": [
+        170,
+        70
+      ]
+    },
+    {
+      "id": "apnsclient",
+      "type": "backend",
+      "label": "push/apns.Client",
+      "sublabel": "HTTP/2",
+      "pos": [
+        940,
+        260.0
+      ],
+      "size": [
+        170,
+        70
+      ],
+      "sources": [
+        {
+          "path": "push/apns/apns.go",
+          "label": "HTTP/2"
+        }
+      ]
+    },
+    {
+      "id": "certstore",
+      "type": "backend",
+      "label": "push.CertStore",
+      "sublabel": "static or store-backed",
+      "pos": [
+        940,
+        410.0
+      ],
+      "size": [
+        170,
+        70
+      ],
+      "sources": [
+        {
+          "path": "push/certstore.go",
+          "label": "StoreCertStore"
+        }
+      ]
+    },
+    {
+      "id": "apns",
+      "type": "cloud",
+      "label": "APNs",
+      "sublabel": "api.push.apple.com",
+      "pos": [
+        940,
+        110.0
+      ],
+      "size": [
+        170,
+        70
+      ]
+    },
+    {
+      "id": "pushcert",
+      "type": "backend",
+      "label": "push/pushcert",
+      "sublabel": "topic from certificate",
+      "pos": [
+        640,
+        560.0
+      ],
+      "size": [
+        170,
+        70
+      ],
+      "sources": [
+        {
+          "path": "push/pushcert/pushcert.go",
+          "label": "topic"
+        }
+      ]
+    }
+  ],
+  "boundaries": [
+    {
+      "kind": "security-group",
+      "label": "Push certificate supply",
+      "wraps": [
+        "certstoredb",
+        "certstore",
+        "pushcert"
+      ]
+    }
+  ],
+  "connections": [
+    {
+      "id": "caller-notifier",
+      "from": "caller",
+      "to": "notifier",
+      "label": "Notify(ids)"
+    },
+    {
+      "id": "store-notifier",
+      "from": "pushstore",
+      "to": "notifier",
+      "label": "PushInfo",
+      "labelAt": [
+        425.0,
+        194.0
+      ]
+    },
+    {
+      "id": "notifier-bus",
+      "from": "notifier",
+      "to": "bus",
+      "label": "410 marks invalid",
+      "labelAt": [
+        425.0,
+        344.0
+      ]
+    },
+    {
+      "id": "notifier-coalescer",
+      "from": "notifier",
+      "to": "coalescer",
+      "label": "one per target"
+    },
+    {
+      "id": "coalescer-client",
+      "from": "coalescer",
+      "to": "apnsclient",
+      "label": "burst collapsed"
+    },
+    {
+      "id": "client-apns",
+      "from": "apnsclient",
+      "to": "apns",
+      "label": "apns-push-type mdm"
+    },
+    {
+      "id": "certstore-client",
+      "from": "certstore",
+      "to": "apnsclient",
+      "label": "cert for topic",
+      "variant": "security"
+    },
+    {
+      "id": "db-certstore",
+      "from": "certstoredb",
+      "to": "certstore",
+      "label": "reload on change"
+    },
+    {
+      "id": "certstore-pushcert",
+      "from": "certstore",
+      "to": "pushcert",
+      "label": "derive topic"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "Send path",
+      "items": [
+        "Notifier reads push info from storage, then sends one push per Target",
+        "A burst for one enrollment collapses into a single push"
+      ]
+    },
+    {
+      "dot": "rose",
+      "title": "Honest failure",
+      "items": [
+        "A 410 marks the token invalid and publishes PushTokenInvalid",
+        "Nothing retries a dead token forever"
+      ]
+    }
+  ]
+}

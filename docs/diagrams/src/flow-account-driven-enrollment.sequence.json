@@ -1,0 +1,220 @@
+{
+  "schema_version": 1,
+  "diagram_type": "sequence",
+  "meta": {
+    "title": "Account-Driven Enrollment",
+    "quality_profile": "showcase",
+    "viewBox": [
+      1080,
+      566
+    ],
+    "column_fit": "spread",
+    "views": [
+      {
+        "id": "discovery",
+        "label": "Discovery",
+        "focus": [
+          "device",
+          "discovery"
+        ],
+        "note": "The organisation domain routes the device to a BYOD or ADDE enrollment URL."
+      },
+      {
+        "id": "challenge",
+        "label": "Challenge and auth",
+        "focus": [
+          "device",
+          "account",
+          "idp"
+        ],
+        "note": "An unauthenticated POST earns a 401 that names the authentication method."
+      }
+    ]
+  },
+  "participants": [
+    {
+      "id": "device",
+      "type": "external",
+      "label": "Device",
+      "sublabel": "user's Apple Account"
+    },
+    {
+      "id": "discovery",
+      "type": "backend",
+      "label": "enroll/discovery",
+      "sublabel": "/.well-known"
+    },
+    {
+      "id": "account",
+      "type": "backend",
+      "label": "accountdriven",
+      "sublabel": "/enroll/mdm-byod"
+    },
+    {
+      "id": "idp",
+      "type": "security",
+      "label": "Identity provider",
+      "sublabel": "OIDC"
+    },
+    {
+      "id": "profile",
+      "type": "backend",
+      "label": "enroll.Profile",
+      "sublabel": "Finalize"
+    },
+    {
+      "id": "core",
+      "type": "backend",
+      "label": "service.Core",
+      "sublabel": "check-in"
+    }
+  ],
+  "segments": [
+    {
+      "from": 161.0,
+      "to": 219.5,
+      "label": "Discovery"
+    },
+    {
+      "from": 222.0,
+      "to": 341.5,
+      "label": "Challenge and auth"
+    },
+    {
+      "from": 344.0,
+      "to": 494.0,
+      "label": "Profile and check-in"
+    }
+  ],
+  "messages": [
+    {
+      "id": "wellknown",
+      "from": "device",
+      "to": "discovery",
+      "y": 175.0,
+      "label": "GET .well-known",
+      "variant": "emphasis",
+      "note": "routed by model-family and user-identifier"
+    },
+    {
+      "id": "servers",
+      "from": "discovery",
+      "to": "device",
+      "y": 205.5,
+      "label": "Version + BaseURL",
+      "variant": "return"
+    },
+    {
+      "id": "post1",
+      "from": "device",
+      "to": "account",
+      "y": 236.0,
+      "label": "POST, no Authorization",
+      "variant": "default",
+      "note": "body is a CMS-signed plist, capped at 64 KiB"
+    },
+    {
+      "id": "challenge",
+      "from": "account",
+      "to": "device",
+      "y": 266.5,
+      "label": "401 with a Bearer challenge",
+      "variant": "security"
+    },
+    {
+      "id": "webauth",
+      "from": "device",
+      "to": "idp",
+      "y": 297.0,
+      "label": "apple-as-web or apple-oauth2",
+      "variant": "security"
+    },
+    {
+      "id": "token",
+      "from": "idp",
+      "to": "account",
+      "y": 327.5,
+      "label": "identity, then an access token",
+      "variant": "return"
+    },
+    {
+      "id": "post2",
+      "from": "device",
+      "to": "account",
+      "y": 358.0,
+      "label": "POST with Bearer",
+      "variant": "emphasis",
+      "note": "the access token is single-use; a failure returns a fresh challenge, never a 500"
+    },
+    {
+      "id": "build",
+      "from": "account",
+      "to": "profile",
+      "y": 388.5,
+      "label": "ManagedAppleID/Product",
+      "variant": "default"
+    },
+    {
+      "id": "finalize",
+      "from": "profile",
+      "to": "device",
+      "y": 419.0,
+      "label": "EnrollmentMode + enrollment-token",
+      "variant": "emphasis"
+    },
+    {
+      "id": "checkin",
+      "from": "device",
+      "to": "core",
+      "y": 449.5,
+      "label": "Authenticate with enrollment-token",
+      "variant": "emphasis"
+    },
+    {
+      "id": "hook",
+      "from": "core",
+      "to": "device",
+      "y": 480.0,
+      "label": "hook validates, or 403",
+      "variant": "return"
+    }
+  ],
+  "activations": [
+    {
+      "participant": "account",
+      "from": 230.0,
+      "to": 396.5,
+      "type": "backend"
+    },
+    {
+      "participant": "device",
+      "from": 169.0,
+      "to": 488.0,
+      "type": "external"
+    },
+    {
+      "participant": "core",
+      "from": 443.5,
+      "to": 488.0,
+      "type": "backend"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "Discovery",
+      "items": [
+        "MDM_DISCOVERY maps a model family to mdm-byod or mdm-adde",
+        "An unrouted family is refused with com.apple.well-known.failed"
+      ]
+    },
+    {
+      "dot": "emerald",
+      "title": "Two documented flows",
+      "items": [
+        "apple-as-web opens an ASWebAuthenticationSession and ends in a 308 redirect",
+        "apple-oauth2 uses an authorization code and a token endpoint, both implemented here"
+      ]
+    }
+  ]
+}

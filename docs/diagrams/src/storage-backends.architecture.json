@@ -1,0 +1,435 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "Storage Backends, Dialects and Sealed Columns",
+    "quality_profile": "showcase",
+    "viewBox": [
+      1300,
+      690
+    ],
+    "repository": {
+      "url": "https://github.com/deploymenttheory/go-apple-mdm",
+      "revision": "2c9c336d25bf83f7e6660ff3cf668e46e0ce9425"
+    },
+    "views": [
+      {
+        "id": "sqlpath",
+        "label": "SQL path",
+        "focus": [
+          "contract",
+          "sqlcommon",
+          "dialect",
+          "sqlbackends"
+        ],
+        "note": "One SQL implementation; each backend supplies a Dialect."
+      },
+      {
+        "id": "sealed",
+        "label": "Secrets at rest",
+        "focus": [
+          "secretspkg",
+          "crypt",
+          "sealedcols",
+          "sqlcommon"
+        ],
+        "note": "Secret columns are sealed before they reach the driver."
+      },
+      {
+        "id": "features",
+        "label": "Feature stores",
+        "focus": [
+          "featurestores",
+          "dialect",
+          "pool",
+          "featuremig"
+        ],
+        "note": "Five feature stores share one *sql.DB and version their schema independently."
+      },
+      {
+        "id": "proof",
+        "label": "Proof",
+        "focus": [
+          "inmem",
+          "suite",
+          "sqlbackends"
+        ],
+        "note": "One contract suite runs against every backend."
+      }
+    ]
+  },
+  "components": [
+    {
+      "id": "contract",
+      "type": "backend",
+      "label": "storage.Store",
+      "sublabel": "eight interfaces",
+      "pos": [
+        40,
+        260
+      ],
+      "size": [
+        170,
+        70
+      ],
+      "sources": [
+        {
+          "path": "storage/storage.go",
+          "line": 351,
+          "end_line": 360,
+          "label": "composed Store"
+        }
+      ]
+    },
+    {
+      "id": "secretspkg",
+      "type": "security",
+      "label": "secrets.Provider",
+      "sublabel": "where keys come from",
+      "tag": "static \u00b7 env \u00b7 dir \u00b7 chain",
+      "pos": [
+        40,
+        410
+      ],
+      "size": [
+        170,
+        70
+      ],
+      "sources": [
+        {
+          "path": "secrets/secrets.go",
+          "label": "providers"
+        }
+      ]
+    },
+    {
+      "id": "inmem",
+      "type": "database",
+      "label": "storage/inmem",
+      "sublabel": "reference backend",
+      "pos": [
+        380,
+        110
+      ],
+      "size": [
+        170,
+        70
+      ],
+      "sources": [
+        {
+          "path": "storage/inmem/inmem.go",
+          "label": "map store"
+        }
+      ]
+    },
+    {
+      "id": "sqlcommon",
+      "type": "backend",
+      "label": "storage/sqlcommon",
+      "sublabel": "one SQL implementation",
+      "pos": [
+        380,
+        260
+      ],
+      "size": [
+        170,
+        70
+      ],
+      "sources": [
+        {
+          "path": "storage/sqlcommon/dialect.go",
+          "label": "Dialect contract"
+        }
+      ]
+    },
+    {
+      "id": "crypt",
+      "type": "security",
+      "label": "storage/crypt",
+      "sublabel": "AES-256-GCM keyring",
+      "pos": [
+        380,
+        410
+      ],
+      "size": [
+        170,
+        70
+      ],
+      "sources": [
+        {
+          "path": "storage/crypt/crypt.go",
+          "label": "seal and open"
+        }
+      ]
+    },
+    {
+      "id": "sealedcols",
+      "type": "database",
+      "label": "Sealed columns",
+      "sublabel": "row-bound AAD",
+      "tag": "push key \u00b7 DEP token",
+      "pos": [
+        380,
+        560
+      ],
+      "size": [
+        170,
+        70
+      ]
+    },
+    {
+      "id": "suite",
+      "type": "backend",
+      "label": "storage/storagetest",
+      "sublabel": "one suite, every backend",
+      "pos": [
+        700,
+        110
+      ],
+      "size": [
+        170,
+        70
+      ],
+      "sources": [
+        {
+          "path": "storage/storagetest/suite.go",
+          "label": "contract suite"
+        },
+        {
+          "path": "storage/storagetest/failing.go",
+          "label": "error injection"
+        }
+      ]
+    },
+    {
+      "id": "dialect",
+      "type": "backend",
+      "label": "Dialect",
+      "sublabel": "placeholders \u00b7 locking",
+      "pos": [
+        700,
+        260
+      ],
+      "size": [
+        170,
+        70
+      ],
+      "sources": [
+        {
+          "path": "storage/sqlcommon/dialect.go",
+          "line": 9,
+          "end_line": 31,
+          "label": "Dialect"
+        }
+      ]
+    },
+    {
+      "id": "featurestores",
+      "type": "database",
+      "label": "Feature stores",
+      "sublabel": "own migration set each",
+      "tag": "acme \u00b7 adminauth \u00b7 audit \u00b7 ddm \u00b7 dep",
+      "pos": [
+        700,
+        410
+      ],
+      "size": [
+        170,
+        70
+      ]
+    },
+    {
+      "id": "pool",
+      "type": "backend",
+      "label": "one *sql.DB",
+      "sublabel": "shared by every store",
+      "pos": [
+        700,
+        560
+      ],
+      "size": [
+        170,
+        70
+      ],
+      "sources": [
+        {
+          "path": "internal/app/app.go",
+          "label": "openStorage"
+        }
+      ]
+    },
+    {
+      "id": "sqlbackends",
+      "type": "database",
+      "label": "sqlite \u00b7 postgres \u00b7 mysql",
+      "sublabel": "each supplies a Dialect",
+      "pos": [
+        1020,
+        260
+      ],
+      "size": [
+        170,
+        70
+      ],
+      "sources": [
+        {
+          "path": "storage/sqlite/sqlite.go",
+          "label": "pure Go"
+        },
+        {
+          "path": "storage/postgres/postgres.go",
+          "label": "pgx"
+        },
+        {
+          "path": "storage/mysql/mysql.go",
+          "label": "go-sql-driver"
+        }
+      ]
+    },
+    {
+      "id": "featuremig",
+      "type": "database",
+      "label": "Own migration set",
+      "sublabel": "per feature, per driver",
+      "pos": [
+        1020,
+        410
+      ],
+      "size": [
+        170,
+        70
+      ]
+    }
+  ],
+  "connections": [
+    {
+      "id": "e1",
+      "from": "contract",
+      "to": "sqlcommon",
+      "label": "one SQL path"
+    },
+    {
+      "id": "e2",
+      "from": "contract",
+      "to": "inmem",
+      "label": "reference backend",
+      "fromSide": "top",
+      "toSide": "left",
+      "via": [
+        [
+          125,
+          145
+        ]
+      ],
+      "labelAt": [
+        252,
+        145
+      ]
+    },
+    {
+      "id": "e3",
+      "from": "inmem",
+      "to": "suite",
+      "label": "runs the suite"
+    },
+    {
+      "id": "e4",
+      "from": "sqlbackends",
+      "to": "suite",
+      "label": "and so does each",
+      "fromSide": "top",
+      "toSide": "right",
+      "via": [
+        [
+          1105,
+          145
+        ]
+      ],
+      "labelAt": [
+        988,
+        145
+      ]
+    },
+    {
+      "id": "e5",
+      "from": "sqlcommon",
+      "to": "dialect",
+      "label": "asks the dialect"
+    },
+    {
+      "id": "e6",
+      "from": "sqlbackends",
+      "to": "dialect",
+      "label": "each supplies one"
+    },
+    {
+      "id": "e7",
+      "from": "sqlcommon",
+      "to": "crypt",
+      "label": "seals before write",
+      "variant": "security",
+      "labelAt": [
+        465.0,
+        344.0
+      ]
+    },
+    {
+      "id": "e8",
+      "from": "secretspkg",
+      "to": "crypt",
+      "label": "named keys",
+      "variant": "security"
+    },
+    {
+      "id": "e9",
+      "from": "crypt",
+      "to": "sealedcols",
+      "label": "AES-256-GCM",
+      "variant": "security",
+      "labelAt": [
+        465.0,
+        494.0
+      ]
+    },
+    {
+      "id": "e10",
+      "from": "featurestores",
+      "to": "dialect",
+      "label": "reuse the dialect"
+    },
+    {
+      "id": "e11",
+      "from": "featurestores",
+      "to": "featuremig",
+      "label": "own migration set"
+    },
+    {
+      "id": "e12",
+      "from": "featurestores",
+      "to": "pool",
+      "label": "one *sql.DB",
+      "labelAt": [
+        785.0,
+        494.0
+      ]
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "One contract, five backends",
+      "items": [
+        "In-memory, SQLite (pure Go), PostgreSQL and MySQL all run the same suite",
+        "A Failing wrapper injects an error by method name for failing-path tests"
+      ]
+    },
+    {
+      "dot": "rose",
+      "title": "Errors are sentinels",
+      "items": [
+        "ErrNotFound, ErrDisabled, ErrConflict and ErrInvalid are the whole vocabulary",
+        "A driver's unique-violation is mapped to ErrConflict by the Dialect"
+      ]
+    }
+  ]
+}

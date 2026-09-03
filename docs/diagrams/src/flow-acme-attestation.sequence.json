@@ -1,0 +1,209 @@
+{
+  "schema_version": 1,
+  "diagram_type": "sequence",
+  "meta": {
+    "title": "ACME with Managed Device Attestation",
+    "quality_profile": "showcase",
+    "viewBox": [
+      1080,
+      566
+    ],
+    "column_fit": "spread",
+    "views": [
+      {
+        "id": "order",
+        "label": "Order",
+        "focus": [
+          "device",
+          "acme",
+          "store"
+        ],
+        "note": "The client identifier is single-use and bound to a specific device."
+      },
+      {
+        "id": "attest",
+        "label": "Attestation",
+        "focus": [
+          "acme",
+          "attest",
+          "policy"
+        ],
+        "note": "Four separate checks stand between an attestation and a certificate."
+      }
+    ]
+  },
+  "participants": [
+    {
+      "id": "device",
+      "type": "external",
+      "label": "Device",
+      "sublabel": "Secure Enclave key"
+    },
+    {
+      "id": "acme",
+      "type": "backend",
+      "label": "acme.Server",
+      "sublabel": "/acme"
+    },
+    {
+      "id": "store",
+      "type": "database",
+      "label": "acme.Store",
+      "sublabel": "nonces \u00b7 orders"
+    },
+    {
+      "id": "attest",
+      "type": "security",
+      "label": "acme/attest",
+      "sublabel": "chain + properties"
+    },
+    {
+      "id": "policy",
+      "type": "security",
+      "label": "Policy",
+      "sublabel": "any \u00b7 dep \u00b7 sip"
+    },
+    {
+      "id": "ca",
+      "type": "security",
+      "label": "ca.Local",
+      "sublabel": "enrollment CA"
+    }
+  ],
+  "segments": [
+    {
+      "from": 161.0,
+      "to": 280.5,
+      "label": "Order"
+    },
+    {
+      "from": 283.0,
+      "to": 402.5,
+      "label": "device-attest-01"
+    },
+    {
+      "from": 405.0,
+      "to": 494.0,
+      "label": "Finalize"
+    }
+  ],
+  "messages": [
+    {
+      "id": "directory",
+      "from": "device",
+      "to": "acme",
+      "y": 175.0,
+      "label": "GET /acme/directory",
+      "variant": "default"
+    },
+    {
+      "id": "account",
+      "from": "device",
+      "to": "acme",
+      "y": 205.5,
+      "label": "POST /acme/new-account",
+      "variant": "default",
+      "note": "JWS with an embedded JWK; later requests use the key id"
+    },
+    {
+      "id": "order",
+      "from": "device",
+      "to": "acme",
+      "y": 236.0,
+      "label": "POST /acme/new-order",
+      "variant": "emphasis",
+      "note": "one permanent-identifier, no notBefore or notAfter"
+    },
+    {
+      "id": "claim",
+      "from": "acme",
+      "to": "store",
+      "y": 266.5,
+      "label": "ClaimIdentifier, single use",
+      "variant": "security"
+    },
+    {
+      "id": "challenge",
+      "from": "device",
+      "to": "acme",
+      "y": 297.0,
+      "label": "POST the attestation object",
+      "variant": "emphasis"
+    },
+    {
+      "id": "chain",
+      "from": "acme",
+      "to": "attest",
+      "y": 327.5,
+      "label": "verify to the Apple root",
+      "variant": "security"
+    },
+    {
+      "id": "binding",
+      "from": "acme",
+      "to": "store",
+      "y": 358.0,
+      "label": "serial and UDID match the binding",
+      "variant": "security"
+    },
+    {
+      "id": "authorize",
+      "from": "acme",
+      "to": "policy",
+      "y": 388.5,
+      "label": "may this device enroll?",
+      "variant": "security"
+    },
+    {
+      "id": "finalize",
+      "from": "device",
+      "to": "acme",
+      "y": 419.0,
+      "label": "POST finalize with the CSR",
+      "variant": "emphasis",
+      "note": "the CSR key must be the key the attestation covered"
+    },
+    {
+      "id": "sign",
+      "from": "acme",
+      "to": "ca",
+      "y": 449.5,
+      "label": "Sign with a PermanentIdentifier",
+      "variant": "default"
+    },
+    {
+      "id": "download",
+      "from": "acme",
+      "to": "device",
+      "y": 480.0,
+      "label": "PEM chain",
+      "variant": "return"
+    }
+  ],
+  "activations": [
+    {
+      "participant": "acme",
+      "from": 169.0,
+      "to": 488.0,
+      "type": "backend"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "What is checked",
+      "items": [
+        "The chain verifies to the Apple Enterprise Attestation Root",
+        "The freshness code is derived from the challenge token"
+      ]
+    },
+    {
+      "dot": "rose",
+      "title": "What is refused",
+      "items": [
+        "A chain from another authority, and a stale freshness code",
+        "A CSR for a key the attestation did not cover"
+      ]
+    }
+  ]
+}

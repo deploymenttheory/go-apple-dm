@@ -1,0 +1,403 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "go-apple-mdm High-Level Design",
+    "quality_profile": "showcase",
+    "viewBox": [
+      1300,
+      690
+    ],
+    "views": [
+      {
+        "id": "device-protocol",
+        "label": "Device protocol",
+        "focus": [
+          "devices",
+          "httpsurface",
+          "core",
+          "store"
+        ],
+        "note": "The path an enrolled device takes: one /mdm URL forked on Content-Type into check-in and connect."
+      },
+      {
+        "id": "wake-path",
+        "label": "Wake path",
+        "focus": [
+          "engine",
+          "push",
+          "apns",
+          "devices"
+        ],
+        "note": "A declaration change queues a command, then wakes the device through APNs."
+      },
+      {
+        "id": "admin-plane",
+        "label": "Admin plane",
+        "focus": [
+          "mdmctl",
+          "adminapi",
+          "depaxm",
+          "appleapis"
+        ],
+        "note": "mdmctl authenticates with a bearer token; Cedar authorizes each admin action."
+      }
+    ],
+    "repository": {
+      "url": "https://github.com/deploymenttheory/go-apple-mdm",
+      "revision": "2c9c336d25bf83f7e6660ff3cf668e46e0ce9425"
+    }
+  },
+  "components": [
+    {
+      "id": "appleapis",
+      "type": "external",
+      "label": "Apple services",
+      "sublabel": "DEP \u00b7 Business Manager",
+      "pos": [
+        40,
+        110
+      ],
+      "size": [
+        170,
+        70
+      ]
+    },
+    {
+      "id": "devices",
+      "type": "external",
+      "label": "Apple devices",
+      "sublabel": "Mac \u00b7 iPhone \u00b7 iPad",
+      "pos": [
+        40,
+        260
+      ],
+      "size": [
+        170,
+        70
+      ]
+    },
+    {
+      "id": "apns",
+      "type": "cloud",
+      "label": "APNs",
+      "sublabel": "HTTP/2",
+      "pos": [
+        40,
+        410
+      ],
+      "size": [
+        170,
+        70
+      ]
+    },
+    {
+      "id": "mdmctl",
+      "type": "frontend",
+      "label": "mdmctl",
+      "sublabel": "admin CLI",
+      "pos": [
+        40,
+        560
+      ],
+      "size": [
+        170,
+        70
+      ]
+    },
+    {
+      "id": "depaxm",
+      "type": "backend",
+      "label": "Service clients",
+      "sublabel": "dep \u00b7 axm \u00b7 gdmf",
+      "pos": [
+        380,
+        110
+      ],
+      "size": [
+        170,
+        70
+      ]
+    },
+    {
+      "id": "httpsurface",
+      "type": "backend",
+      "label": "Device HTTP surface",
+      "sublabel": "/mdm \u00b7 /scep \u00b7 /acme",
+      "pos": [
+        380,
+        260
+      ],
+      "size": [
+        170,
+        70
+      ],
+      "sources": [
+        {
+          "path": "httpapi/httpapi.go",
+          "label": "/mdm"
+        }
+      ]
+    },
+    {
+      "id": "push",
+      "type": "backend",
+      "label": "push.Notifier",
+      "sublabel": "coalesced",
+      "pos": [
+        380,
+        410
+      ],
+      "size": [
+        170,
+        70
+      ]
+    },
+    {
+      "id": "adminapi",
+      "type": "security",
+      "label": "Admin API",
+      "sublabel": "/admin/v1",
+      "pos": [
+        380,
+        560
+      ],
+      "size": [
+        170,
+        70
+      ],
+      "tag": "Cedar policy",
+      "sources": [
+        {
+          "path": "internal/app/adminauthz.go",
+          "label": "authorized"
+        }
+      ]
+    },
+    {
+      "id": "core",
+      "type": "backend",
+      "label": "MDM service",
+      "sublabel": "service.Core",
+      "pos": [
+        700,
+        260
+      ],
+      "size": [
+        170,
+        70
+      ],
+      "sources": [
+        {
+          "path": "service/service.go",
+          "label": "Core"
+        }
+      ]
+    },
+    {
+      "id": "engine",
+      "type": "backend",
+      "label": "DDM engine",
+      "sublabel": "ddm.Engine + Notifier",
+      "pos": [
+        700,
+        410
+      ],
+      "size": [
+        170,
+        70
+      ],
+      "sources": [
+        {
+          "path": "ddm/engine.go",
+          "label": "Engine"
+        },
+        {
+          "path": "ddm/notifier.go",
+          "label": "Notifier"
+        }
+      ]
+    },
+    {
+      "id": "store",
+      "type": "database",
+      "label": "Storage",
+      "sublabel": "storage.Store \u00b7 feature stores",
+      "pos": [
+        1020,
+        260
+      ],
+      "size": [
+        170,
+        70
+      ],
+      "sources": [
+        {
+          "path": "storage/storage.go",
+          "label": "Store"
+        }
+      ]
+    }
+  ],
+  "boundaries": [
+    {
+      "kind": "region",
+      "label": "Apple",
+      "wraps": [
+        "appleapis",
+        "devices",
+        "apns"
+      ]
+    },
+    {
+      "kind": "region",
+      "label": "Reference server \u2014 roles mdm \u00b7 ddm \u00b7 all",
+      "wraps": [
+        "depaxm",
+        "httpsurface",
+        "push",
+        "adminapi",
+        "core",
+        "engine",
+        "store"
+      ]
+    },
+    {
+      "kind": "security-group",
+      "label": "Admin plane",
+      "wraps": [
+        "adminapi"
+      ]
+    }
+  ],
+  "connections": [
+    {
+      "id": "clients-apple",
+      "from": "depaxm",
+      "to": "appleapis",
+      "label": "OAuth 1.0a \u00b7 ES256",
+      "variant": "emphasis"
+    },
+    {
+      "id": "device-checkin",
+      "from": "devices",
+      "to": "httpsurface",
+      "label": "check-in + connect",
+      "variant": "emphasis"
+    },
+    {
+      "id": "device-enroll",
+      "from": "devices",
+      "to": "httpsurface",
+      "label": "enroll: SCEP / ACME",
+      "labelDy": -18
+    },
+    {
+      "id": "http-core",
+      "from": "httpsurface",
+      "to": "core",
+      "label": "decoded message"
+    },
+    {
+      "id": "core-store",
+      "from": "core",
+      "to": "store",
+      "label": "enrollments \u00b7 queue"
+    },
+    {
+      "id": "apns-device",
+      "from": "apns",
+      "to": "devices",
+      "label": "wake",
+      "variant": "dashed"
+    },
+    {
+      "id": "push-apns",
+      "from": "push",
+      "to": "apns",
+      "label": "one push per target"
+    },
+    {
+      "id": "engine-push",
+      "from": "engine",
+      "to": "push",
+      "label": "Notify"
+    },
+    {
+      "id": "core-engine",
+      "from": "core",
+      "to": "engine",
+      "label": "DMHandler",
+      "labelAt": [
+        785.0,
+        344.0
+      ]
+    },
+    {
+      "id": "engine-store",
+      "from": "engine",
+      "to": "store",
+      "label": "declarations \u00b7 snapshots"
+    },
+    {
+      "id": "cli-admin",
+      "from": "mdmctl",
+      "to": "adminapi",
+      "label": "Bearer token",
+      "variant": "security"
+    },
+    {
+      "id": "admin-engine",
+      "from": "adminapi",
+      "to": "engine",
+      "label": "declarations \u00b7 sets"
+    },
+    {
+      "id": "admin-clients",
+      "from": "adminapi",
+      "to": "depaxm",
+      "label": "assign \u00b7 sync",
+      "fromSide": "right",
+      "toSide": "right",
+      "via": [
+        [
+          1240,
+          595
+        ],
+        [
+          1240,
+          145
+        ]
+      ]
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "Device protocol",
+      "items": [
+        "One /mdm URL serves check-in and connect, forked on Content-Type",
+        "DDM has no device URL of its own: it arrives as a check-in message",
+        "Identity comes from SCEP or ACME with Managed Device Attestation"
+      ]
+    },
+    {
+      "dot": "emerald",
+      "title": "Server",
+      "items": [
+        "Roles mdm, ddm, or all from one binary",
+        "service.Core never imports ddm; the engine plugs in as a DMHandler",
+        "ddm.Notifier enqueues the command and calls push; the Engine only writes change rows in its transaction"
+      ]
+    },
+    {
+      "dot": "rose",
+      "title": "Admin plane",
+      "items": [
+        "Bearer token, then Cedar authorizes every admin action",
+        "/admin/v1/dep and /admin/v1/axm drive the service clients",
+        "dep authenticates with OAuth 1.0a, axm with an ES256 client assertion, gdmf is unauthenticated"
+      ]
+    }
+  ]
+}

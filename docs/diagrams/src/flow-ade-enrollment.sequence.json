@@ -1,0 +1,222 @@
+{
+  "schema_version": 1,
+  "diagram_type": "sequence",
+  "meta": {
+    "title": "Automated Device Enrollment",
+    "quality_profile": "showcase",
+    "viewBox": [
+      1080,
+      566
+    ],
+    "column_fit": "spread",
+    "views": [
+      {
+        "id": "verify",
+        "label": "Verify the device",
+        "focus": [
+          "device",
+          "ade",
+          "gdmf"
+        ],
+        "note": "MachineInfo is CMS-signed by Apple; the update gate refuses an old OS."
+      },
+      {
+        "id": "authenticate",
+        "label": "Authenticate the user",
+        "focus": [
+          "ade",
+          "idp",
+          "profile"
+        ],
+        "note": "The web view resumes the enrollment and personalises the profile."
+      }
+    ]
+  },
+  "participants": [
+    {
+      "id": "device",
+      "type": "external",
+      "label": "Device",
+      "sublabel": "assigned by DEP"
+    },
+    {
+      "id": "ade",
+      "type": "backend",
+      "label": "enroll/ade",
+      "sublabel": "/enroll/ade"
+    },
+    {
+      "id": "gdmf",
+      "type": "external",
+      "label": "gdmf",
+      "sublabel": "software lookup"
+    },
+    {
+      "id": "idp",
+      "type": "security",
+      "label": "Identity provider",
+      "sublabel": "OIDC"
+    },
+    {
+      "id": "profile",
+      "type": "backend",
+      "label": "enroll.Profile",
+      "sublabel": "built and signed"
+    },
+    {
+      "id": "core",
+      "type": "backend",
+      "label": "service.Core",
+      "sublabel": "check-in"
+    }
+  ],
+  "segments": [
+    {
+      "from": 161.0,
+      "to": 250.0,
+      "label": "MachineInfo"
+    },
+    {
+      "from": 252.5,
+      "to": 372.0,
+      "label": "Web view"
+    },
+    {
+      "from": 374.5,
+      "to": 494.0,
+      "label": "Profile and check-in"
+    }
+  ],
+  "messages": [
+    {
+      "id": "post",
+      "from": "device",
+      "to": "ade",
+      "y": 175.0,
+      "label": "signed MachineInfo",
+      "variant": "emphasis",
+      "note": "CMS-verified against Apple's device CAs before anything else runs"
+    },
+    {
+      "id": "gate",
+      "from": "ade",
+      "to": "gdmf",
+      "y": 205.5,
+      "label": "latest version for this model",
+      "variant": "default"
+    },
+    {
+      "id": "gate-back",
+      "from": "gdmf",
+      "to": "ade",
+      "y": 236.0,
+      "label": "proceed, or 403 update required",
+      "variant": "return",
+      "note": "refused with ErrorCodeCodeSoftwareUpdateRequired (com.apple.softwareupdate.required)"
+    },
+    {
+      "id": "begin",
+      "from": "ade",
+      "to": "device",
+      "y": 266.5,
+      "label": "302 to the web view",
+      "variant": "default"
+    },
+    {
+      "id": "auth",
+      "from": "device",
+      "to": "idp",
+      "y": 297.0,
+      "label": "authorization code, PKCE, nonce",
+      "variant": "security"
+    },
+    {
+      "id": "callback",
+      "from": "idp",
+      "to": "ade",
+      "y": 327.5,
+      "label": "/enroll/oidc/callback",
+      "variant": "default",
+      "note": "id_token verified, then Resume(serial) picks the enrollment back up"
+    },
+    {
+      "id": "build",
+      "from": "ade",
+      "to": "profile",
+      "y": 358.0,
+      "label": "email/SERIAL as the subject",
+      "variant": "default"
+    },
+    {
+      "id": "signed",
+      "from": "profile",
+      "to": "device",
+      "y": 388.5,
+      "label": "x-apple-aspen-config",
+      "variant": "emphasis",
+      "note": "carries a SCEP or ACME payload; the device obtains its identity before check-in"
+    },
+    {
+      "id": "authenticate",
+      "from": "device",
+      "to": "core",
+      "y": 419.0,
+      "label": "Authenticate",
+      "variant": "emphasis"
+    },
+    {
+      "id": "pinned",
+      "from": "core",
+      "to": "device",
+      "y": 449.5,
+      "label": "certificate pinned",
+      "variant": "return"
+    },
+    {
+      "id": "tokenupdate",
+      "from": "device",
+      "to": "core",
+      "y": 480.0,
+      "label": "TokenUpdate enables the enrollment",
+      "variant": "emphasis"
+    }
+  ],
+  "activations": [
+    {
+      "participant": "ade",
+      "from": 169.0,
+      "to": 366.0,
+      "type": "backend"
+    },
+    {
+      "participant": "device",
+      "from": 169.0,
+      "to": 488.0,
+      "type": "external"
+    },
+    {
+      "participant": "core",
+      "from": 413.0,
+      "to": 488.0,
+      "type": "backend"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "Two lanes, one handler",
+      "items": [
+        "POST is the token lane and finishes immediately",
+        "GET is the configuration_web_url lane and resumes after OIDC"
+      ]
+    },
+    {
+      "dot": "emerald",
+      "title": "The update gate",
+      "items": [
+        "An old OS is refused with ErrorCodeCodeSoftwareUpdateRequired",
+        "The catalogue is cached with a TTL and serves last-good on a refresh failure"
+      ]
+    }
+  ]
+}
