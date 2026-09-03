@@ -175,8 +175,60 @@ func (a *App) authorized(rt adminRoute) http.Handler {
 			}
 		}
 		a.auditAction(r, p, rt)
-		rt.Handler.ServeHTTP(w, r)
+		rec := &statusRecorder{ResponseWriter: w}
+		rt.Handler.ServeHTTP(rec, r)
+		a.kickNotifier(rt, r, rec.status)
 	})
+}
+
+// statusRecorder remembers the status a handler wrote. A handler that writes
+// a body without calling WriteHeader has implicitly sent 200.
+type statusRecorder struct {
+	http.ResponseWriter
+	status int
+}
+
+func (w *statusRecorder) WriteHeader(status int) {
+	if w.status == 0 {
+		w.status = status
+	}
+	w.ResponseWriter.WriteHeader(status)
+}
+
+func (w *statusRecorder) Write(b []byte) (int, error) {
+	if w.status == 0 {
+		w.status = http.StatusOK
+	}
+	n, err := w.ResponseWriter.Write(b)
+	if err != nil {
+		return n, fmt.Errorf("app: write response: %w", err)
+	}
+	return n, nil
+}
+
+// kickNotifier shortens the wait after a declarative change.
+//
+// The durable signal is the change rows the engine writes inside its
+// transaction, which the notifier drains on its poll; this only saves the
+// poll interval. It lives here, in the one wrapper every admin route passes
+// through, rather than in each handler: KMFDDM repeats the equivalent call in
+// nine places, and a tenth route added later would silently not notify.
+//
+// Kick never blocks and a drain with no rows does nothing, so a successful
+// mutating request on the ddm family is a good enough trigger without asking
+// the engine whether anything actually changed.
+func (a *App) kickNotifier(rt adminRoute, r *http.Request, status int) {
+	if a.Notifier == nil || rt.Family != "ddm" {
+		return
+	}
+	switch r.Method {
+	case http.MethodGet, http.MethodHead, http.MethodOptions:
+		return
+	}
+	if status != 0 && status >= 300 {
+		return
+	}
+	a.Notifier.Kick()
 }
 
 // principal authenticates the caller, reporting whether policy is bypassed.

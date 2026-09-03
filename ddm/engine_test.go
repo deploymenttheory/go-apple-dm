@@ -8,7 +8,6 @@ import (
 	"log/slog"
 	"strings"
 	"sync"
-	"sync/atomic"
 	"testing"
 	"time"
 
@@ -66,7 +65,7 @@ func declJSON(typ, id string, payload map[string]any) []byte {
 }
 
 // harness wires an Engine to an in-memory store, a fake clock, a bus that
-// records every event, and a wake counter.
+// records every event.
 type harness struct {
 	t      *testing.T
 	engine *ddm.Engine
@@ -74,7 +73,6 @@ type harness struct {
 	clock  *clock.Fake
 	bus    *event.Bus
 	logs   *bytes.Buffer
-	wakes  atomic.Int32
 
 	mu     sync.Mutex
 	events []event.Event
@@ -92,7 +90,6 @@ func newHarness(t *testing.T, opts ...func(*ddm.Config)) *harness {
 	cfg := ddm.Config{
 		Store: h.store, Bus: h.bus, Clock: h.clock,
 		Logger: slog.New(slog.NewTextHandler(h.logs, nil)),
-		Wake:   func() { h.wakes.Add(1) },
 	}
 	for _, o := range opts {
 		o(&cfg)
@@ -268,9 +265,6 @@ func TestPutDeclaration(t *testing.T) {
 		if err != nil || got.ServerToken != d.ServerToken || !bytes.Equal(got.Canonical, d.Canonical) {
 			t.Fatalf("GetDeclaration = %+v, %v", got, err)
 		}
-		if h.wakes.Load() != 1 {
-			t.Fatalf("wakes = %d", h.wakes.Load())
-		}
 		res, err := h.engine.ListDeclarations(ctx, ddm.DeclarationQuery{Kind: schemaddm.KindConfiguration}, storage.Page{})
 		if err != nil || len(res.Items) != 1 {
 			t.Fatalf("ListDeclarations = %+v, %v", res, err)
@@ -283,7 +277,6 @@ func TestPutDeclaration(t *testing.T) {
 		h.assign(ddmtest.Device(1), "com.example.cfg")
 		h.drain()
 		h.clock.Advance(time.Hour)
-		wakes := h.wakes.Load()
 		d, changed, err := h.engine.PutDeclaration(ctx, []byte("{ \"Payload\" : { \"Echo\" : \"hi\" },\n\"Identifier\":\"com.example.cfg\", \"Type\":\"com.apple.configuration.management.test\" }"))
 		if err != nil || changed {
 			t.Fatalf("second put = %v, %v", changed, err)
@@ -293,9 +286,6 @@ func TestPutDeclaration(t *testing.T) {
 		}
 		if rows := h.pending(); len(rows) != 0 {
 			t.Fatalf("change rows recorded for a no-op: %v", pendingIDs(rows))
-		}
-		if h.wakes.Load() != wakes {
-			t.Fatal("notifier woken for a no-op")
 		}
 		got, err := h.engine.GetDeclaration(ctx, "com.example.cfg")
 		if err != nil || got.UpdatedAt != t0 {
@@ -395,8 +385,11 @@ func TestPutDeclaration(t *testing.T) {
 		if _, _, err := h.engine.PutDeclaration(ctx, configTest("com.example.cfg", "hi")); !errors.Is(err, errBoom) {
 			t.Fatalf("PutDeclaration: %v", err)
 		}
-		if h.wakes.Load() != 0 {
-			t.Fatal("notifier woken after a failed write")
+		// A failed write must leave no change rows behind: the rows are the
+		// durable signal the notifier drains, so a row here would wake a
+		// device for a declaration that was never stored.
+		if rows := h.pending(); len(rows) != 0 {
+			t.Fatalf("change rows recorded after a failed write: %v", pendingIDs(rows))
 		}
 	})
 }
@@ -419,7 +412,6 @@ func TestDeleteDeclaration(t *testing.T) {
 		}
 		h.assign(ddmtest.Device(2), "com.example.cfg")
 		h.drain()
-		wakes := h.wakes.Load()
 		if err := h.engine.DeleteDeclaration(ctx, "com.example.cfg"); err != nil {
 			t.Fatal(err)
 		}
@@ -434,9 +426,6 @@ func TestDeleteDeclaration(t *testing.T) {
 		if members, err := h.engine.SetDeclarations(ctx, "lab"); err != nil || len(members) != 0 {
 			t.Fatalf("set members = %v, %v", members, err)
 		}
-		if h.wakes.Load() != wakes+1 {
-			t.Fatalf("wakes = %d", h.wakes.Load())
-		}
 	})
 	t.Run("NotFound", func(t *testing.T) {
 		t.Parallel()
@@ -446,9 +435,6 @@ func TestDeleteDeclaration(t *testing.T) {
 		}
 		if rows := h.pending(); len(rows) != 0 {
 			t.Fatalf("change rows written: %v", pendingIDs(rows))
-		}
-		if h.wakes.Load() != 0 {
-			t.Fatal("notifier woken")
 		}
 	})
 	t.Run("StoreFailure", func(t *testing.T) {
@@ -502,7 +488,6 @@ func TestSets(t *testing.T) {
 			t.Fatal(err)
 		}
 		h.drain()
-		wakes := h.wakes.Load()
 		if err := h.engine.DeleteSet(ctx, "lab"); err != nil {
 			t.Fatal(err)
 		}
@@ -515,9 +500,6 @@ func TestSets(t *testing.T) {
 		}
 		if sets, err := h.engine.EnrollmentSets(ctx, ddmtest.Device(1)); err != nil || len(sets) != 0 {
 			t.Fatalf("EnrollmentSets = %v, %v", sets, err)
-		}
-		if h.wakes.Load() != wakes+1 {
-			t.Fatalf("wakes = %d", h.wakes.Load())
 		}
 		if err := h.engine.DeleteSet(ctx, "lab"); !errors.Is(err, ddm.ErrNotFound) {
 			t.Fatalf("delete unknown set: %v", err)
@@ -581,7 +563,6 @@ func TestSets(t *testing.T) {
 			t.Fatal(err)
 		}
 		h.drain()
-		wakes := h.wakes.Load()
 		if changed, err := h.engine.AddToSet(ctx, "lab", "com.example.cfg"); err != nil || changed {
 			t.Fatalf("repeat add = %v, %v", changed, err)
 		}
@@ -590,9 +571,6 @@ func TestSets(t *testing.T) {
 		}
 		if rows := h.pending(); len(rows) != 0 {
 			t.Fatalf("change rows for no-ops: %v", pendingIDs(rows))
-		}
-		if h.wakes.Load() != wakes {
-			t.Fatal("notifier woken for a no-op")
 		}
 	})
 }
@@ -658,7 +636,6 @@ func TestAssign(t *testing.T) {
 		dev := ddmtest.Device(1)
 		h.assign(dev, "com.example.cfg")
 		h.drain()
-		wakes := h.wakes.Load()
 		if changed, err := h.engine.AssignDeclaration(ctx, dev, "com.example.cfg"); err != nil || changed {
 			t.Fatalf("repeat assign = %v, %v", changed, err)
 		}
@@ -667,9 +644,6 @@ func TestAssign(t *testing.T) {
 		}
 		if rows := h.pending(); len(rows) != 0 {
 			t.Fatalf("change rows for no-ops: %v", pendingIDs(rows))
-		}
-		if h.wakes.Load() != wakes {
-			t.Fatal("notifier woken for a no-op")
 		}
 	})
 	t.Run("Notifies", func(t *testing.T) {
@@ -680,7 +654,6 @@ func TestAssign(t *testing.T) {
 			t.Fatal(err)
 		}
 		dev, user := ddmtest.Device(1), ddmtest.User(1, "u")
-		wakes := h.wakes.Load()
 		if _, err := h.engine.AssignSet(ctx, dev, "lab"); err != nil {
 			t.Fatal(err)
 		}
@@ -690,9 +663,6 @@ func TestAssign(t *testing.T) {
 		got := pendingIDs(h.pending())
 		if strings.Join(got, ",") != "DEVICE-01/assignment,DEVICE-01:u/assignment" {
 			t.Fatalf("pending = %v", got)
-		}
-		if h.wakes.Load() != wakes+2 {
-			t.Fatalf("wakes = %d", h.wakes.Load())
 		}
 		h.drain()
 		if _, err := h.engine.UnassignSet(ctx, dev, "lab"); err != nil {
@@ -720,9 +690,6 @@ func TestTouch(t *testing.T) {
 		if strings.Join(got, ",") != "DEVICE-01/touch,DEVICE-02/touch,DEVICE-03/resolver" {
 			t.Fatalf("pending = %v", got)
 		}
-		if h.wakes.Load() != 2 {
-			t.Fatalf("wakes = %d", h.wakes.Load())
-		}
 	})
 	t.Run("Empty", func(t *testing.T) {
 		t.Parallel()
@@ -731,8 +698,10 @@ func TestTouch(t *testing.T) {
 		if err := h.engine.Touch(ctx, nil, ""); err != nil {
 			t.Fatalf("Touch(nil): %v", err)
 		}
-		if h.wakes.Load() != 0 {
-			t.Fatal("notifier woken for an empty touch")
+		// Nothing to touch means nothing recorded: the store is set to fail
+		// RecordChanges, so a row here would also have surfaced as an error.
+		if rows := h.pending(); len(rows) != 0 {
+			t.Fatalf("change rows for an empty touch: %v", pendingIDs(rows))
 		}
 	})
 	t.Run("InvalidID", func(t *testing.T) {

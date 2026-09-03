@@ -346,3 +346,53 @@ func TestServerConfig(t *testing.T) {
 		t.Fatal("malformed config decoded")
 	}
 }
+
+// -insecure was declared on Config and never acted on, so an operator
+// testing against a self-signed lab certificate got the verification failure
+// they had already opted out of.
+func TestInsecureSkipsVerification(t *testing.T) {
+	srv := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`{"ok":true}`))
+	}))
+	defer srv.Close()
+
+	t.Run("RefusedWithoutIt", func(t *testing.T) {
+		c, err := adminclient.New(adminclient.Config{BaseURL: srv.URL, Token: "t"})
+		if err != nil {
+			t.Fatal(err)
+		}
+		if _, err := c.Do(context.Background(), http.MethodGet, "/config", nil, nil); err == nil {
+			t.Fatal("an untrusted certificate was accepted without -insecure")
+		}
+	})
+
+	t.Run("AcceptedWithIt", func(t *testing.T) {
+		c, err := adminclient.New(adminclient.Config{BaseURL: srv.URL, Token: "t", Insecure: true})
+		if err != nil {
+			t.Fatal(err)
+		}
+		resp, err := c.Do(context.Background(), http.MethodGet, "/config", nil, nil)
+		if err != nil {
+			t.Fatalf("-insecure did not skip verification: %v", err)
+		}
+		if resp.Status != http.StatusOK {
+			t.Fatalf("status = %d", resp.Status)
+		}
+	})
+
+	// A caller that supplied its own client keeps its own transport: taking
+	// it over would be surprising, and the tests that inject srv.Client()
+	// rely on it.
+	t.Run("DoesNotOverrideACallersClient", func(t *testing.T) {
+		c, err := adminclient.New(adminclient.Config{
+			BaseURL: srv.URL, Token: "t", Insecure: true, HTTPClient: srv.Client(),
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+		if _, err := c.Do(context.Background(), http.MethodGet, "/config", nil, nil); err != nil {
+			t.Fatal(err)
+		}
+	})
+}

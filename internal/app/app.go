@@ -423,11 +423,6 @@ func (a *App) wire(ctx context.Context) error {
 	}
 	engine, err := ddm.New(ddm.Config{
 		Store: st, Bus: cfg.Bus, Clock: cfg.Clock, Logger: cfg.Logger,
-		Wake: func() {
-			if a.Notifier != nil {
-				a.Notifier.Kick()
-			}
-		},
 		Subscriptions: ddm.Subscriptions{Enabled: cfg.Subscriptions},
 	})
 	if err != nil {
@@ -445,23 +440,6 @@ func (a *App) wire(ctx context.Context) error {
 	if a.Push != nil {
 		pusher = a.Push
 	}
-	a.Notifier, err = ddm.NewNotifier(
-		ddm.NotifierConfig{
-			Store:    st,
-			Tokens:   engine,
-			Enqueuer: a.Store,
-			Pusher:   pusher,
-			Bus:      cfg.Bus,
-			Clock:    cfg.Clock,
-			Logger:   cfg.Logger,
-		},
-	)
-	if err != nil {
-		return fmt.Errorf("app: notifier: %w", err)
-	}
-	a.addWorker("ddm-notifier", a.Notifier.Run)
-	a.addWorker("audit-retention", a.runAuditRetention)
-
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET "+PathHealthz, a.healthz)
 	if cfg.Role == RoleMDM || cfg.Role == RoleAll {
@@ -528,7 +506,46 @@ func (a *App) wire(ctx context.Context) error {
 			return fmt.Errorf("app: proxyserver: %w", err)
 		}
 		mux.Handle(PathDDM+"/", http.StripPrefix(PathDDM, ps))
+		// The ddm role serves no device channel, but its notifier still
+		// enqueues DeclarativeManagement into the shared command queue that
+		// the mdm role delivers from. Building a core here means those
+		// commands are screened, hooked and audited on this role too.
+		core, err := service.New(service.Config{
+			Store: a.Store, Bus: cfg.Bus, Clock: cfg.Clock, Logger: cfg.Logger,
+		})
+		if err != nil {
+			return fmt.Errorf("app: core: %w", err)
+		}
+		a.Core = core
 	}
+
+	// The notifier is built after the core because DeclarativeManagement is
+	// an MDM command and travels the MDM command path: Core.Enqueue runs the
+	// hook chain, screens the target against schema/support, and publishes
+	// CommandQueued. Enqueueing straight into storage skipped all three,
+	// which kept every DDM-driven command out of the event bus and so out of
+	// the audit trail.
+	//
+	// This ordering is only possible because the engine no longer calls back
+	// into the notifier. The durable signal is the change rows recordAffected
+	// writes inside the transaction; the admin route wrapper kicks the
+	// notifier after a change so the 1s poll is not the only trigger.
+	a.Notifier, err = ddm.NewNotifier(
+		ddm.NotifierConfig{
+			Store:    st,
+			Tokens:   engine,
+			Enqueuer: a.Core,
+			Pusher:   pusher,
+			Bus:      cfg.Bus,
+			Clock:    cfg.Clock,
+			Logger:   cfg.Logger,
+		},
+	)
+	if err != nil {
+		return fmt.Errorf("app: notifier: %w", err)
+	}
+	a.addWorker("ddm-notifier", a.Notifier.Run)
+	a.addWorker("audit-retention", a.runAuditRetention)
 	if cfg.Role != RoleMDM && a.adminEnabled() {
 		store, err := a.adminStore(ctx)
 		if err != nil {

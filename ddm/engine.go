@@ -53,10 +53,7 @@ type Config struct {
 	// MaxStatusBytes bounds a status report; default 1 MiB.
 	MaxStatusBytes int
 	// KeepReports bounds raw status reports kept per enrollment; default 10.
-	KeepReports int
-	// Wake is called after every committed change; nil means the notifier
-	// polls.
-	Wake          func()
+	KeepReports   int
 	Subscriptions Subscriptions
 }
 
@@ -80,7 +77,6 @@ type Engine struct {
 	target    func(ctx context.Context) support.Target
 	maxStatus int
 	keep      int
-	wake      func()
 	subs      Subscriptions
 }
 
@@ -92,7 +88,7 @@ func New(cfg Config) (*Engine, error) {
 	e := &Engine{
 		store: cfg.Store, resolvers: cfg.Resolvers, expander: cfg.Expander, bus: cfg.Bus,
 		clock: cfg.Clock, log: cfg.Logger, target: cfg.Target,
-		maxStatus: cfg.MaxStatusBytes, keep: cfg.KeepReports, wake: cfg.Wake, subs: cfg.Subscriptions,
+		maxStatus: cfg.MaxStatusBytes, keep: cfg.KeepReports, subs: cfg.Subscriptions,
 	}
 	if e.clock == nil {
 		e.clock = clock.Real{}
@@ -127,11 +123,5 @@ func (e *Engine) publish(ctx context.Context, t event.Type, id mdm.EnrollmentID,
 	}
 	if err := e.bus.Publish(ctx, event.Event{Type: t, At: e.clock.Now(), Enrollment: id, Actor: "ddm", Data: data}); err != nil {
 		e.log.WarnContext(ctx, "ddm: publish", "type", string(t), "error", err)
-	}
-}
-
-func (e *Engine) wakeNotifier() {
-	if e.wake != nil {
-		e.wake()
 	}
 }

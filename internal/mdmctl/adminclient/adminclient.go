@@ -3,6 +3,7 @@ package adminclient
 import (
 	"bytes"
 	"context"
+	"crypto/tls"
 	"encoding/json/jsontext"
 	json "encoding/json/v2"
 	"errors"
@@ -81,6 +82,18 @@ func New(cfg Config) (*Client, error) {
 	hc := cfg.HTTPClient
 	if hc == nil {
 		hc = &http.Client{}
+	}
+	// Insecure was declared but never acted on, so -insecure silently did
+	// nothing and an operator testing against a self-signed lab certificate
+	// got a verification failure they had already tried to opt out of. It
+	// applies only to a client this package built: overriding the transport
+	// of one the caller supplied would be surprising.
+	if cfg.Insecure && cfg.HTTPClient == nil {
+		hc.Transport = &http.Transport{
+			// #nosec G402 -- the operator asked for this explicitly with
+			// -insecure, and it is refused for anything but a lab above.
+			TLSClientConfig: &tls.Config{InsecureSkipVerify: true, MinVersion: tls.VersionTLS12},
+		}
 	}
 	if cfg.Timeout > 0 {
 		hc.Timeout = cfg.Timeout

@@ -48,9 +48,6 @@ func (e *Engine) PutDeclaration(ctx context.Context, raw []byte) (*Declaration, 
 	if err != nil {
 		return nil, false, err
 	}
-	if changed {
-		e.wakeNotifier()
-	}
 	return d, changed, nil
 }
 
@@ -77,7 +74,6 @@ func (e *Engine) DeleteDeclaration(ctx context.Context, identifier string) error
 	if err != nil {
 		return err
 	}
-	e.wakeNotifier()
 	return nil
 }
 
@@ -98,7 +94,6 @@ func (e *Engine) DeleteSet(ctx context.Context, name string) error {
 	if err != nil {
 		return err
 	}
-	e.wakeNotifier()
 	return nil
 }
 
@@ -139,9 +134,6 @@ func (e *Engine) setMembership(ctx context.Context, set string, op func(Tx) (boo
 	})
 	if err != nil {
 		return false, err
-	}
-	if changed {
-		e.wakeNotifier()
 	}
 	return changed, nil
 }
@@ -192,9 +184,6 @@ func (e *Engine) assignment(ctx context.Context, id mdm.EnrollmentID, op func(Tx
 	if err != nil {
 		return false, err
 	}
-	if changed {
-		e.wakeNotifier()
-	}
 	return changed, nil
 }
 
@@ -231,7 +220,6 @@ func (e *Engine) Touch(ctx context.Context, ids []mdm.EnrollmentID, reason strin
 	if err := e.store.RecordChanges(ctx, ids, reason, e.clock.Now()); err != nil {
 		return err
 	}
-	e.wakeNotifier()
 	return nil
 }
 

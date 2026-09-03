@@ -77,11 +77,6 @@ func newDDMHarness(t *testing.T, subs bool) *ddmHarness {
 	d := &ddmHarness{ddmStore: ds}
 	engine, err := ddm.New(ddm.Config{
 		Store: ds, Bus: bus, Clock: fake, Logger: quiet,
-		Wake: func() {
-			if d.changes != nil {
-				d.changes.Kick()
-			}
-		},
 		Subscriptions: ddm.Subscriptions{Enabled: subs},
 	})
 	if err != nil {

@@ -121,8 +121,12 @@ func TestBuild(t *testing.T) {
 	})
 	t.Run("DDMRole", func(t *testing.T) {
 		a := build(t, app.Config{Role: app.RoleDDM, Storage: "inmem", AdminToken: "t"})
-		if a.Core != nil {
-			t.Fatal("ddm role must not serve check-in")
+		// The ddm role builds a core so its notifier can enqueue
+		// DeclarativeManagement through the MDM command path, but it mounts
+		// no device route: the /mdm 404 below is what "does not serve
+		// check-in" actually means.
+		if a.Core == nil {
+			t.Fatal("ddm role needs a core to enqueue through")
 		}
 		srv := serve(t, a)
 		if got := post(t, srv.URL+"/mdm", "application/x-apple-aspen-mdm-checkin", nil); got != http.StatusNotFound {
