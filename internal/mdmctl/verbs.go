@@ -11,6 +11,7 @@ import (
 	"os"
 	"strings"
 	"text/tabwriter"
+	"time"
 
 	"github.com/deploymenttheory/go-apple-mdm/internal/mdmctl/explain"
 )
@@ -508,4 +509,74 @@ func needName(e *env, name string, args []string) (string, []string, error) {
 		return "", nil, fmt.Errorf("%w: %s needs a name", ErrUsage, name)
 	}
 	return rest[0], rest[1:], nil
+}
+
+// runAudit reads the audit trail: who did what, when, and to which
+// enrollment. It is the question the trail exists to answer, so the filters
+// are the ones an investigation starts from rather than a generic query
+// language.
+func runAudit(ctx context.Context, e *env, args []string) error {
+	if len(args) == 0 {
+		return fmt.Errorf("%w: audit needs a subcommand: list, get", ErrUsage)
+	}
+	sub, rest := args[0], args[1:]
+	c, err := e.client()
+	if err != nil {
+		return err
+	}
+	switch sub {
+	case "list":
+		fs := e.verbFlags("audit list")
+		var (
+			since      = fs.String("since", "", "only records newer than this age, e.g. 1h or 30m")
+			until      = fs.String("until", "", "only records older than this age")
+			typ        = fs.String("type", "", "only this event type, e.g. command-queued")
+			actor      = fs.String("actor", "", "only this actor, e.g. break-glass")
+			enrollment = fs.String("enrollment", "", "only this enrollment id")
+		)
+		if _, err := e.parseVerb(fs, rest); err != nil {
+			return err
+		}
+		q := url.Values{}
+		for key, val := range map[string]string{"type": *typ, "actor": *actor, "enrollment": *enrollment} {
+			if val != "" {
+				q.Set(key, val)
+			}
+		}
+		// -since takes an age because that is how the question is asked;
+		// the wire format is an absolute RFC 3339 instant so the server
+		// never has to guess whose clock a relative window belongs to.
+		for key, val := range map[string]string{"since": *since, "until": *until} {
+			if val == "" {
+				continue
+			}
+			d, err := time.ParseDuration(val)
+			if err != nil {
+				return fmt.Errorf("%w: -%s %q: %w", ErrUsage, key, val, err)
+			}
+			q.Set(key, time.Now().Add(-d).UTC().Format(time.RFC3339))
+		}
+		err := e.list(ctx, c, "/audit", q,
+			[]string{"ID", "AT", "TYPE", "ACTOR", "ENROLLMENT", "FIELDS"},
+			func(item jsontext.Value) []string {
+				return []string{
+					field(item, "ID"), field(item, "At"), field(item, "Type"),
+					dash(field(item, "Actor")), dash(field(item, "Enrollment")),
+					dash(field(item, "Fields")),
+				}
+			})
+		return e.explainNotFound(ctx, c, "audit", err)
+	case "get":
+		id, _, err := needName(e, "audit get", rest)
+		if err != nil {
+			return err
+		}
+		resp, err := c.Do(ctx, http.MethodGet, "/audit/"+url.PathEscape(id), nil, nil)
+		if err != nil {
+			return e.explainNotFound(ctx, c, "audit", err)
+		}
+		return e.emit(resp, nil)
+	default:
+		return fmt.Errorf("%w: unknown audit subcommand %q", ErrUsage, sub)
+	}
 }

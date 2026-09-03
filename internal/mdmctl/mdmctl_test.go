@@ -59,7 +59,7 @@ func TestUsage(t *testing.T) {
 	// being discoverable.
 	t.Run("EveryVerbIsListed", func(t *testing.T) {
 		_, errOut, _ := run(t, noConfig(t))
-		for _, verb := range []string{"explain", "status", "routes", "principals", "policies", "actions", "declarations", "version"} {
+		for _, verb := range []string{"explain", "status", "routes", "principals", "policies", "actions", "declarations", "audit", "version"} {
 			if !strings.Contains(errOut, verb) {
 				t.Errorf("verb %q is missing from the help", verb)
 			}
@@ -493,4 +493,97 @@ func TestStatusReportsBreakGlass(t *testing.T) {
 			}
 		})
 	}
+}
+
+// The trail is only useful if the questions an investigation starts from are
+// the ones the CLI can ask: what happened, by whom, to which device, and
+// when.
+func TestAuditVerb(t *testing.T) {
+	var seen []string
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		seen = append(seen, r.URL.RequestURI())
+		w.Header().Set("Content-Type", "application/json")
+		switch {
+		case strings.HasSuffix(r.URL.Path, "/audit/7"):
+			_, _ = w.Write([]byte(`{"ID":7,"Type":"command-queued","Actor":"ops"}`))
+		case strings.HasSuffix(r.URL.Path, "/audit"):
+			_, _ = w.Write([]byte(`{"Items":[{"ID":2,"At":"2026-09-03T12:00:00Z","Type":"admin-action","Actor":"break-glass","Enrollment":"","Fields":{"Action":"erase"}}],"NextCursor":""}`))
+		default:
+			w.WriteHeader(http.StatusNotFound)
+			_, _ = w.Write([]byte(`{"Error":"not found"}`))
+		}
+	}))
+	defer srv.Close()
+	env := noConfig(t)
+	env["MDMCTL_SERVER"] = srv.URL
+	env["MDMCTL_TOKEN"] = "tok"
+
+	t.Run("List", func(t *testing.T) {
+		out, _, err := run(t, env, "audit", "list")
+		if err != nil {
+			t.Fatal(err)
+		}
+		for _, want := range []string{"ID", "ACTOR", "admin-action", "break-glass"} {
+			if !strings.Contains(out, want) {
+				t.Fatalf("output missing %q:\n%s", want, out)
+			}
+		}
+	})
+
+	// -since takes an age because that is how the question is asked; the
+	// wire carries an absolute instant so the server never guesses whose
+	// clock a relative window belongs to.
+	t.Run("SinceBecomesAnInstant", func(t *testing.T) {
+		seen = nil
+		if _, _, err := run(t, env, "audit", "list", "-since", "1h"); err != nil {
+			t.Fatal(err)
+		}
+		if len(seen) == 0 || !strings.Contains(seen[0], "since=") {
+			t.Fatalf("request = %v", seen)
+		}
+		if strings.Contains(seen[0], "since=1h") {
+			t.Fatalf("the age was sent verbatim: %s", seen[0])
+		}
+	})
+
+	t.Run("Filters", func(t *testing.T) {
+		seen = nil
+		_, _, err := run(t, env, "audit", "list", "-type", "admin-action", "-actor", "ops", "-enrollment", "UDID-1")
+		if err != nil {
+			t.Fatal(err)
+		}
+		for _, want := range []string{"type=admin-action", "actor=ops", "enrollment=UDID-1"} {
+			if !strings.Contains(seen[0], want) {
+				t.Fatalf("request %q missing %q", seen[0], want)
+			}
+		}
+	})
+
+	t.Run("Get", func(t *testing.T) {
+		out, _, err := run(t, env, "audit", "get", "7")
+		if err != nil {
+			t.Fatal(err)
+		}
+		if !strings.Contains(out, "command-queued") {
+			t.Fatalf("output = %s", out)
+		}
+	})
+
+	t.Run("BadAge", func(t *testing.T) {
+		if _, _, err := run(t, env, "audit", "list", "-since", "yesterday"); !errors.Is(err, mdmctl.ErrUsage) {
+			t.Fatalf("err = %v, want ErrUsage", err)
+		}
+	})
+
+	t.Run("NoSubcommand", func(t *testing.T) {
+		if _, _, err := run(t, env, "audit"); !errors.Is(err, mdmctl.ErrUsage) {
+			t.Fatalf("err = %v, want ErrUsage", err)
+		}
+	})
+
+	t.Run("UnknownSubcommand", func(t *testing.T) {
+		if _, _, err := run(t, env, "audit", "purge"); !errors.Is(err, mdmctl.ErrUsage) {
+			t.Fatalf("err = %v, want ErrUsage", err)
+		}
+	})
 }

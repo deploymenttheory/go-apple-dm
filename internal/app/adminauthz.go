@@ -30,6 +30,7 @@ const (
 	ActionManageBusinessMgr    = "manageBusinessManager"
 	ActionReadACME             = "readACME"
 	ActionManagePrincipals     = "managePrincipals"
+	ActionReadAudit            = "readAudit"
 	ActionManagePolicies       = "managePolicies"
 )
 
@@ -50,6 +51,7 @@ func AdminActions() []adminauth.Action {
 		{ID: ActionReadACME, Help: "Read issued ACME identities and the hardware Apple attested for each.", Resource: adminauth.EntitySystem},
 		{ID: ActionManagePrincipals, Help: "Create, rotate, and revoke admin credentials.", Resource: adminauth.EntitySystem},
 		{ID: ActionManagePolicies, Help: "Edit the policies that decide what every other principal may do.", Resource: adminauth.EntitySystem},
+		{ID: ActionReadAudit, Help: "Read the audit trail: who did what, when, and to which enrollment.", Resource: adminauth.EntitySystem},
 		{ID: ActionReadConfig, Help: "Read the server's role and route table. Authenticated callers always may; a policy does not gate it.", Resource: adminauth.EntitySystem},
 	}
 }

@@ -15,6 +15,7 @@ import (
 	"github.com/deploymenttheory/go-apple-mdm/adminauth"
 	admininmem "github.com/deploymenttheory/go-apple-mdm/adminauth/inmem"
 	adminsql "github.com/deploymenttheory/go-apple-mdm/adminauth/sqlstore"
+	"github.com/deploymenttheory/go-apple-mdm/audit"
 	"github.com/deploymenttheory/go-apple-mdm/axm"
 	"github.com/deploymenttheory/go-apple-mdm/cms"
 	"github.com/deploymenttheory/go-apple-mdm/ddm"
@@ -144,10 +145,26 @@ type SinkConfig struct {
 	WebhookURL string
 	// WebhookHMACKey signs the webhook body when set.
 	WebhookHMACKey []byte
+	// Persist writes every event to the audit trail on the process's own
+	// database. This is what makes the threat model's repudiation control
+	// real: an slog record is only as durable as the log stream someone
+	// remembered to ship, and proving who erased a device three weeks ago
+	// needs a table.
+	Persist bool
+	// AuditStore overrides Persist with a caller's own trail.
+	AuditStore audit.Store
+	// Retention is how long records are kept. Zero keeps them forever, which
+	// is a choice a deployment should make deliberately rather than inherit.
+	Retention time.Duration
+	// PruneInterval is how often retention runs; DefaultAuditPruneInterval
+	// when unset.
+	PruneInterval time.Duration
 }
 
 // Enabled reports whether anything subscribes.
-func (s SinkConfig) Enabled() bool { return s.Audit || s.WebhookURL != "" }
+func (s SinkConfig) Enabled() bool {
+	return s.Audit || s.WebhookURL != "" || s.Persist || s.AuditStore != nil
+}
 
 // ErrConfig reports an invalid configuration.
 var ErrConfig = errors.New("app: invalid configuration")
@@ -189,6 +206,8 @@ type App struct {
 	// ownBus is set when Build created the event bus, and so has to drain it
 	// on Close. A bus passed in belongs to the caller.
 	ownBus bool
+	// audit is the persisted trail, nil when none is configured.
+	audit audit.Store
 }
 
 // worker is one supervised background loop. The name is a fixed identifier
@@ -268,7 +287,7 @@ func Build(ctx context.Context, cfg Config) (*App, error) {
 	if err := a.openStorage(ctx); err != nil {
 		return nil, err
 	}
-	if err := a.wireSinks(); err != nil {
+	if err := a.wireSinks(ctx); err != nil {
 		return nil, err
 	}
 	if err := a.wire(ctx); err != nil {
@@ -441,6 +460,7 @@ func (a *App) wire(ctx context.Context) error {
 		return fmt.Errorf("app: notifier: %w", err)
 	}
 	a.addWorker("ddm-notifier", a.Notifier.Run)
+	a.addWorker("audit-retention", a.runAuditRetention)
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET "+PathHealthz, a.healthz)
@@ -526,6 +546,9 @@ func (a *App) wire(ctx context.Context) error {
 		routes = append(routes, a.ddmAdminRoutes()...)
 		if a.admin != nil {
 			routes = append(routes, a.principalRoutes()...)
+		}
+		if a.audit != nil {
+			routes = append(routes, a.auditRoutes()...)
 		}
 		if cfg.AxM.Enabled() {
 			client, err := a.newAxM(ctx)
@@ -630,13 +653,21 @@ const busDrainTimeout = 5 * time.Second
 // wireSinks subscribes the configured sinks to the bus. Both are off unless
 // asked for: an audit log and a webhook are deployment choices, and a library
 // consumer subscribes its own handlers instead.
-func (a *App) wireSinks() error {
+func (a *App) wireSinks(ctx context.Context) error {
 	if !a.cfg.Sinks.Enabled() || a.cfg.Bus == nil {
 		return nil
 	}
 	reg := sink.Default()
 	if a.cfg.Sinks.Audit {
 		a.cfg.Bus.Subscribe(event.All, sink.Slog(a.cfg.Logger, reg))
+	}
+	store, err := a.auditStore(ctx)
+	if err != nil {
+		return err
+	}
+	if store != nil {
+		a.audit = store
+		a.cfg.Bus.Subscribe(event.All, auditSink(store, reg))
 	}
 	if a.cfg.Sinks.WebhookURL != "" {
 		h, err := sink.Webhook(sink.WebhookConfig{

@@ -25,6 +25,10 @@ const (
 	EnvAudit = "MDM_AUDIT_LOG"
 	// EnvWebhookURL receives an event per POST in the MicroMDM envelope.
 	EnvWebhookURL = "MDM_WEBHOOK_URL"
+	// EnvAuditStore persists every event to the audit trail.
+	EnvAuditStore = "MDM_AUDIT_STORE"
+	// EnvAuditRetention is how long audit records are kept.
+	EnvAuditRetention = "MDM_AUDIT_RETENTION"
 	// EnvWebhookHMACKey signs the webhook body.
 	EnvWebhookHMACKey = "MDM_WEBHOOK_HMAC_KEY" // #nosec G101 -- the variable name, not a credential
 	EnvCAFile         = "MDM_CA_FILE"
@@ -226,6 +230,13 @@ func ParseEnv(get func(string) string) (Config, error) {
 		}
 		cfg.Enroll.ACME.KeyType, cfg.Enroll.ACME.KeySize = keyType, keySize
 	}
+	if v := get(EnvAuditRetention); v != "" {
+		d, err := time.ParseDuration(v)
+		if err != nil {
+			return Config{}, fmt.Errorf("%w: %s=%q: %w", ErrConfig, EnvAuditRetention, v, err)
+		}
+		cfg.Sinks.Retention = d
+	}
 	if v := get(EnvACMEIdentTTL); v != "" {
 		d, err := time.ParseDuration(v)
 		if err != nil {
@@ -239,6 +250,7 @@ func ParseEnv(get func(string) string) (Config, error) {
 		EnvACMEUnattested:  &cfg.Enroll.ACME.AllowUnattested,
 		EnvAdminStore:      &cfg.AdminStoreEnabled,
 		EnvAudit:           &cfg.Sinks.Audit,
+		EnvAuditStore:      &cfg.Sinks.Persist,
 	} {
 		if v := get(key); v != "" {
 			b, err := strconv.ParseBool(v)

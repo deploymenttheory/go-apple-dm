@@ -16,6 +16,16 @@ reference server, `cmd/mdmserver`, wires it all together.
 Status: pre-release, phases 1 to 7 of the [implementation plan](docs/research/implementation_plan.md)
 are delivered. No API stability promise until v1.0.0.
 
+## Architecture
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/diagrams/system-architecture.dark.png">
+  <img alt="go-apple-mdm high-level design" src="docs/diagrams/system-architecture.light.png">
+</picture>
+
+Twenty-three interactive diagrams cover each component and each protocol flow, from package
+layering to the ACME attestation exchange. See [docs/diagrams](docs/diagrams/README.md).
+
 ## What it provides
 
 - **Protocol core.** Typed check-in, command, and response messages generated from Apple's
@@ -87,6 +97,7 @@ are delivered. No API stability promise until v1.0.0.
 | `gdmf/`, `gdmf/gdmftest` | Apple's software update catalogue client for the ADE software update gate, with a fake |
 | `secrets/` | Redacting secret type and providers (static, environment, directory, chain) |
 | `ddm/` | Declarative Device Management engine: content-addressed declarations, sets and membership, snapshots, status reports, status subscriptions, cleanup on CheckOut, change notifier |
+| `audit`, `audit/inmem`, `audit/sqlstore`, `audit/audittest` | The durable audit trail on its own migration set, append-and-prune, with the contract suite all four backends pass |
 | `event`, `event/sink` | The typed event bus, and the sinks that project an event down to what may leave the process before an slog record or a webhook carries it |
 | `ddm/predicate`, `internal/canonjson` | The NSPredicate subset activations use; RFC 8785 canonicalisation over `encoding/json/jsontext` |
 | `ddm/inmem`, `ddm/sqlstore`, `ddm/ddmtest` | Engine stores on their own migration set and the contract suite both run |
@@ -120,6 +131,7 @@ environment:
 | `MDM_OIDC_ISSUER`, `MDM_OIDC_CLIENT_ID`, `MDM_OIDC_CLIENT_SECRET` | The identity provider behind the ADE web view and account-driven pages |
 | `MDM_ADE_ANCHOR_FILE`, `MDM_ADE_AUDIT`, `MDM_REQUIRE_USER_AUTH` | Extra `MachineInfo` signing anchors, audit-only signature policy, and the user authentication gate |
 | `MDM_AXM_CLIENT_ID`, `MDM_AXM_KEY_ID`, `MDM_AXM_KEY_FILE`, `MDM_AXM_SCOPE`, `MDM_AXM_BASE_URL`, `MDM_AXM_TOKEN_URL` | Apple Business Manager API credentials; enables `/admin/v1/axm/` |
+| `MDM_AUDIT_STORE`, `MDM_AUDIT_RETENTION` | Persist every event to the durable audit trail on this process's database, and how long to keep records (unset keeps them forever). Read it at `GET /admin/v1/audit` or with `mdmctl audit list --since 1h` |
 | `MDM_AUDIT_LOG`, `MDM_WEBHOOK_URL`, `MDM_WEBHOOK_HMAC_KEY` | Event sinks: a projected slog record per state change, and a MicroMDM-compatible webhook with an optional SHA-256 body signature. Both off by default. The webhook envelope matches MicroMDM and NanoMDM except that it carries no `raw_payload`, because theirs is the raw check-in body and a `TokenUpdate` body contains the device unlock token |
 | `MDM_DEP_BASE_URL`, `MDM_DEP_SYNC_INTERVAL`, `MDM_DEP_ASSIGN_INTERVAL`, `MDM_DEP_PROFILE_URL`, `MDM_DEP_USE_PUT` | Device enrollment service endpoint, the background sync worker, and the DEP profile url (defaults to this server) |
 
