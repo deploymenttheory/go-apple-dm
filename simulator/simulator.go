@@ -17,6 +17,7 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/v3/mdmprotocol/cms"
 	"github.com/deploymenttheory/go-apple-dm/v3/mdmprotocol/mdm"
 	"github.com/deploymenttheory/go-apple-dm/v3/mdmprotocol/plist"
+	"github.com/deploymenttheory/go-apple-dm/v3/schema/checkin"
 	"github.com/deploymenttheory/go-apple-dm/v3/schema/commands"
 )
 
@@ -263,6 +264,29 @@ func (d *Device) GetBootstrapToken(ctx context.Context) ([]byte, error) {
 		return nil, fmt.Errorf("simulator: %w", err)
 	}
 	return resp.BootstrapToken, nil
+}
+
+// ReturnToService asks the server for its return-to-service configuration, as
+// a supervised Automated Device Enrollment device does when a user triggers
+// return to service or its idle timeout expires. A real device only sends this
+// when its enrollment profile has put it in return-to-service mode; the
+// simulator sends it on demand so a server can be exercised without one.
+//
+// The response says whether to erase and re-enrol, and carries the bootstrap
+// token the device needs to preserve apps across the erasure.
+func (d *Device) ReturnToService(ctx context.Context) (*checkin.ReturnToServiceResponse, error) {
+	body, err := d.checkin(ctx, d.checkinFields("ReturnToService"))
+	if err != nil {
+		return nil, err
+	}
+	if len(bytes.TrimSpace(body)) == 0 {
+		return nil, errors.New("simulator: server returned an empty ReturnToService response")
+	}
+	var resp checkin.ReturnToServiceResponse
+	if err := plist.Unmarshal(body, &resp); err != nil {
+		return nil, fmt.Errorf("simulator: %w", err)
+	}
+	return &resp, nil
 }
 
 // GetToken requests a token for a service type.
