@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/deploymenttheory/go-apple-dm/mdm"
-	"github.com/deploymenttheory/go-apple-dm/storage"
+	"github.com/deploymenttheory/go-apple-dm/paging"
 )
 
 // Change reasons recorded on ddm_changes rows.
@@ -57,7 +57,7 @@ func (e *Engine) GetDeclaration(ctx context.Context, identifier string) (*Declar
 }
 
 // ListDeclarations pages through declarations.
-func (e *Engine) ListDeclarations(ctx context.Context, q DeclarationQuery, p storage.Page) (storage.Result[Declaration], error) {
+func (e *Engine) ListDeclarations(ctx context.Context, q DeclarationQuery, p paging.Page) (paging.Result[Declaration], error) {
 	return e.store.ListDeclarations(ctx, q, p)
 }
 
@@ -103,7 +103,7 @@ func (e *Engine) GetSet(ctx context.Context, name string) (*Set, error) {
 }
 
 // ListSets pages through sets.
-func (e *Engine) ListSets(ctx context.Context, p storage.Page) (storage.Result[Set], error) {
+func (e *Engine) ListSets(ctx context.Context, p paging.Page) (paging.Result[Set], error) {
 	return e.store.ListSets(ctx, p)
 }
 
@@ -193,7 +193,7 @@ func (e *Engine) EnrollmentSets(ctx context.Context, id mdm.EnrollmentID) ([]str
 }
 
 // SetEnrollments pages through a set's enrollments.
-func (e *Engine) SetEnrollments(ctx context.Context, set string, p storage.Page) (storage.Result[mdm.EnrollmentID], error) {
+func (e *Engine) SetEnrollments(ctx context.Context, set string, p paging.Page) (paging.Result[mdm.EnrollmentID], error) {
 	return e.store.SetEnrollments(ctx, set, p)
 }
 

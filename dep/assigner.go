@@ -11,7 +11,7 @@ import (
 
 	"github.com/deploymenttheory/go-apple-dm/event"
 	"github.com/deploymenttheory/go-apple-dm/internal/clock"
-	"github.com/deploymenttheory/go-apple-dm/storage"
+	"github.com/deploymenttheory/go-apple-dm/paging"
 )
 
 // Defaults for AssignerConfig.
@@ -208,7 +208,7 @@ func (a *Assigner) RunOnce(ctx context.Context) (AssignResult, error) {
 // candidates scans the account's live devices for the ones to assign.
 func (a *Assigner) candidates(ctx context.Context, profileUUID string, now time.Time, res *AssignResult) ([]string, error) {
 	var serials []string
-	page := storage.Page{Limit: a.cfg.PageSize}
+	page := paging.Page{Limit: a.cfg.PageSize}
 	for {
 		r, err := a.cfg.Store.ListDevices(ctx, a.cfg.Account, DeviceQuery{}, page)
 		if err != nil {

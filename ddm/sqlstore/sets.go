@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/deploymenttheory/go-apple-dm/ddm"
-	"github.com/deploymenttheory/go-apple-dm/storage"
+	"github.com/deploymenttheory/go-apple-dm/paging"
 )
 
 // PutSet implements ddm.SetStore. An existing set is left untouched.
@@ -70,7 +70,7 @@ func (t *txStore) GetSet(ctx context.Context, name string) (*ddm.Set, error) {
 
 // ListSets implements ddm.SetStore. The cursor is the last name of the
 // previous page.
-func (t *txStore) ListSets(ctx context.Context, p storage.Page) (storage.Result[ddm.Set], error) {
+func (t *txStore) ListSets(ctx context.Context, p paging.Page) (paging.Result[ddm.Set], error) {
 	where, args := after([]string{"1 = 1"}, []any{}, "name", p)
 	return keyset(ctx, t, "list sets", "SELECT name, created_at, updated_at FROM ddm_sets WHERE "+strings.Join(where, " AND ")+" ORDER BY name", args, p,
 		func(rows *sql.Rows) (ddm.Set, string, error) {
@@ -195,7 +195,7 @@ func (s *Store) GetSet(ctx context.Context, name string) (*ddm.Set, error) {
 }
 
 // ListSets implements ddm.SetStore.
-func (s *Store) ListSets(ctx context.Context, p storage.Page) (storage.Result[ddm.Set], error) {
+func (s *Store) ListSets(ctx context.Context, p paging.Page) (paging.Result[ddm.Set], error) {
 	return s.view().ListSets(ctx, p)
 }
 

@@ -8,7 +8,7 @@ import (
 	"strings"
 
 	"github.com/deploymenttheory/go-apple-dm/acme"
-	"github.com/deploymenttheory/go-apple-dm/storage"
+	"github.com/deploymenttheory/go-apple-dm/paging"
 )
 
 // querier is *sql.DB or *sql.Tx.
@@ -117,9 +117,9 @@ func (t *txStore) each(ctx context.Context, op, query string, args []any, scan f
 
 // keyset runs a query ordered by its cursor key, asking for one row more
 // than the page so the cursor is set only when more rows exist.
-func keyset[T any](ctx context.Context, t *txStore, op, query string, args []any, p storage.Page, scan func(*sql.Rows) (T, string, error)) (storage.Result[T], error) {
+func keyset[T any](ctx context.Context, t *txStore, op, query string, args []any, p paging.Page, scan func(*sql.Rows) (T, string, error)) (paging.Result[T], error) {
 	limit := pageLimit(p)
-	var out storage.Result[T]
+	var out paging.Result[T]
 	keys := make([]string, 0, limit+1)
 	err := t.each(ctx, op, query+" LIMIT ?", append(args, limit+1), func(rows *sql.Rows) error {
 		item, key, err := scan(rows)
@@ -131,7 +131,7 @@ func keyset[T any](ctx context.Context, t *txStore, op, query string, args []any
 		return nil
 	})
 	if err != nil {
-		return storage.Result[T]{}, err
+		return paging.Result[T]{}, err
 	}
 	if len(out.Items) > limit {
 		out.Items = out.Items[:limit]
@@ -141,7 +141,7 @@ func keyset[T any](ctx context.Context, t *txStore, op, query string, args []any
 }
 
 // after appends the keyset condition for a string cursor.
-func after(where []string, args []any, key string, p storage.Page) ([]string, []any) {
+func after(where []string, args []any, key string, p paging.Page) ([]string, []any) {
 	if p.Cursor == "" {
 		return where, args
 	}

@@ -9,8 +9,8 @@ import (
 
 	"github.com/deploymenttheory/go-apple-dm/ddm"
 	"github.com/deploymenttheory/go-apple-dm/mdm"
+	"github.com/deploymenttheory/go-apple-dm/paging"
 	schemaddm "github.com/deploymenttheory/go-apple-dm/schema/ddm"
-	"github.com/deploymenttheory/go-apple-dm/storage"
 )
 
 // status builds one reported declaration row.
@@ -55,7 +55,7 @@ func declStatus(t *testing.T, s ddm.Tx, id mdm.EnrollmentID) []ddm.DeclarationSt
 // valuePaths lists the enrollment's value paths under prefix.
 func valuePaths(t *testing.T, s ddm.Tx, id mdm.EnrollmentID, prefix string) []string {
 	t.Helper()
-	r, err := s.StatusValues(context.Background(), id, ddm.StatusValueQuery{PathPrefix: prefix}, storage.Page{})
+	r, err := s.StatusValues(context.Background(), id, ddm.StatusValueQuery{PathPrefix: prefix}, paging.Page{})
 	if err != nil {
 		t.Fatalf("StatusValues %s: %v", id.ID, err)
 	}
@@ -104,7 +104,7 @@ func RunStatusSuite(t *testing.T, newStore Factory) {
 		if declStatus(t, s, dev)[0].Reasons[0] == '!' {
 			t.Fatal("DeclarationStatus returned aliased reasons")
 		}
-		vals, err := s.StatusValues(ctx, dev, ddm.StatusValueQuery{}, storage.Page{})
+		vals, err := s.StatusValues(ctx, dev, ddm.StatusValueQuery{}, paging.Page{})
 		if err != nil || len(vals.Items) != 2 {
 			t.Fatalf("values: %+v %v", vals, err)
 		}
@@ -198,7 +198,7 @@ func RunStatusSuite(t *testing.T, newStore Factory) {
 			values = append(values, value(path, json))
 		}
 		putStatus(t, s, dev, report(true, t0, nil, values))
-		r, err := s.StatusValues(ctx, dev, ddm.StatusValueQuery{}, storage.Page{})
+		r, err := s.StatusValues(ctx, dev, ddm.StatusValueQuery{}, paging.Page{})
 		if err != nil || len(r.Items) != len(want) {
 			t.Fatalf("values: %+v %v", r, err)
 		}
@@ -208,7 +208,7 @@ func RunStatusSuite(t *testing.T, newStore Factory) {
 			}
 		}
 		r.Items[0].Value[0] = '!'
-		again, _ := s.StatusValues(ctx, dev, ddm.StatusValueQuery{}, storage.Page{})
+		again, _ := s.StatusValues(ctx, dev, ddm.StatusValueQuery{}, paging.Page{})
 		if again.Items[0].Value[0] == '!' {
 			t.Fatal("StatusValues returned aliased bytes")
 		}
@@ -223,7 +223,7 @@ func RunStatusSuite(t *testing.T, newStore Factory) {
 		u = report(false, t0.Add(time.Minute), nil, nil)
 		u.Errors = []ddm.StatusError{{StatusItem: "three", Reasons: []byte(`[3]`)}}
 		putStatus(t, s, dev, u)
-		r, err := s.StatusErrors(ctx, dev, storage.Page{Limit: 2})
+		r, err := s.StatusErrors(ctx, dev, paging.Page{Limit: 2})
 		if err != nil || len(r.Items) != 2 || r.NextCursor != strconv.FormatInt(r.Items[1].Seq, 10) {
 			t.Fatalf("first page: %+v %v", r, err)
 		}
@@ -232,7 +232,7 @@ func RunStatusSuite(t *testing.T, newStore Factory) {
 		}
 		wantTime(t, "three ReceivedAt", r.Items[0].ReceivedAt, t0.Add(time.Minute))
 		wantTime(t, "two ReceivedAt", r.Items[1].ReceivedAt, t0)
-		rest, err := s.StatusErrors(ctx, dev, storage.Page{Limit: 2, Cursor: r.NextCursor})
+		rest, err := s.StatusErrors(ctx, dev, paging.Page{Limit: 2, Cursor: r.NextCursor})
 		if err != nil || len(rest.Items) != 1 || rest.Items[0].StatusItem != "one" || rest.NextCursor != "" {
 			t.Fatalf("second page: %+v %v", rest, err)
 		}
@@ -240,7 +240,7 @@ func RunStatusSuite(t *testing.T, newStore Factory) {
 			t.Fatalf("reasons: %s", rest.Items[0].Reasons)
 		}
 		rest.Items[0].Reasons[0] = '!'
-		again, _ := s.StatusErrors(ctx, dev, storage.Page{Cursor: r.NextCursor})
+		again, _ := s.StatusErrors(ctx, dev, paging.Page{Cursor: r.NextCursor})
 		if again.Items[0].Reasons[0] == '!' {
 			t.Fatal("StatusErrors returned aliased bytes")
 		}
@@ -263,7 +263,7 @@ func RunStatusSuite(t *testing.T, newStore Factory) {
 		if out.PrunedReports != 2 {
 			t.Fatalf("pruned %d, want 2", out.PrunedReports)
 		}
-		r, err := s.StatusReports(ctx, dev, storage.Page{Limit: 2})
+		r, err := s.StatusReports(ctx, dev, paging.Page{Limit: 2})
 		if err != nil || len(r.Items) != 2 || r.Items[0].Seq != out.Seq || r.Items[1].Seq != seqs[3] || r.NextCursor != strconv.FormatInt(seqs[3], 10) {
 			t.Fatalf("first page: %+v %v", r, err)
 		}
@@ -271,12 +271,12 @@ func RunStatusSuite(t *testing.T, newStore Factory) {
 			t.Fatalf("newest report: %+v", r.Items[0])
 		}
 		wantTime(t, "newest ReceivedAt", r.Items[0].ReceivedAt, t0.Add(4*time.Minute))
-		rest, err := s.StatusReports(ctx, dev, storage.Page{Cursor: r.NextCursor})
+		rest, err := s.StatusReports(ctx, dev, paging.Page{Cursor: r.NextCursor})
 		if err != nil || len(rest.Items) != 1 || rest.Items[0].Seq != seqs[2] || rest.NextCursor != "" {
 			t.Fatalf("second page: %+v %v", rest, err)
 		}
 		rest.Items[0].Raw[0] = '!'
-		again, _ := s.StatusReports(ctx, dev, storage.Page{Cursor: r.NextCursor})
+		again, _ := s.StatusReports(ctx, dev, paging.Page{Cursor: r.NextCursor})
 		if again.Items[0].Raw[0] == '!' {
 			t.Fatal("StatusReports returned aliased bytes")
 		}
@@ -285,7 +285,7 @@ func RunStatusSuite(t *testing.T, newStore Factory) {
 		u = report(false, t0.Add(5*time.Minute), nil, nil)
 		u.KeepReports = 1
 		out = putStatus(t, s, dev, u)
-		all, _ := s.StatusReports(ctx, dev, storage.Page{})
+		all, _ := s.StatusReports(ctx, dev, paging.Page{})
 		if out.PrunedReports != 3 || len(all.Items) != 1 || all.Items[0].Seq != out.Seq {
 			t.Fatalf("keep one: %+v %+v", out, all)
 		}
@@ -297,18 +297,18 @@ func RunStatusSuite(t *testing.T, newStore Factory) {
 		for _, id := range []mdm.EnrollmentID{dev2, usr, dev1} {
 			putStatus(t, s, id, report(true, t0, []ddm.DeclarationStatus{status(conf, "a", "t-"+id.ID, true, "valid"), status(conf, "b", "tb", true, "valid")}, nil))
 		}
-		r, err := s.DeclarationStatusByIdentifier(ctx, "a", storage.Page{Limit: 2})
+		r, err := s.DeclarationStatusByIdentifier(ctx, "a", paging.Page{Limit: 2})
 		if err != nil || len(r.Items) != 2 || r.NextCursor != usr.ID {
 			t.Fatalf("first page: %+v %v", r, err)
 		}
 		if r.Items[0].ID != dev1 || r.Items[1].ID != usr || r.Items[0].ServerToken != "t-"+dev1.ID || r.Items[1].Identifier != "a" {
 			t.Fatalf("first page rows: %+v", r.Items)
 		}
-		rest, err := s.DeclarationStatusByIdentifier(ctx, "a", storage.Page{Limit: 2, Cursor: r.NextCursor})
+		rest, err := s.DeclarationStatusByIdentifier(ctx, "a", paging.Page{Limit: 2, Cursor: r.NextCursor})
 		if err != nil || len(rest.Items) != 1 || rest.Items[0].ID != dev2 || rest.NextCursor != "" {
 			t.Fatalf("second page: %+v %v", rest, err)
 		}
-		none, err := s.DeclarationStatusByIdentifier(ctx, "nope", storage.Page{})
+		none, err := s.DeclarationStatusByIdentifier(ctx, "nope", paging.Page{})
 		if err != nil || len(none.Items) != 0 {
 			t.Fatalf("unknown identifier: %+v %v", none, err)
 		}
@@ -320,11 +320,11 @@ func RunStatusSuite(t *testing.T, newStore Factory) {
 		putStatus(t, s, dev, report(true, t0, nil, []ddm.StatusValue{
 			value("device.c", "3"), value("device.a", "1"), value("management.x", "0"), value("device.b", "2"), value("devices.z", "9"),
 		}))
-		r, err := s.StatusValues(ctx, dev, ddm.StatusValueQuery{PathPrefix: "device."}, storage.Page{Limit: 2})
+		r, err := s.StatusValues(ctx, dev, ddm.StatusValueQuery{PathPrefix: "device."}, paging.Page{Limit: 2})
 		if err != nil || len(r.Items) != 2 || r.Items[0].Path != "device.a" || r.Items[1].Path != "device.b" || r.NextCursor != "device.b" {
 			t.Fatalf("first page: %+v %v", r, err)
 		}
-		rest, err := s.StatusValues(ctx, dev, ddm.StatusValueQuery{PathPrefix: "device."}, storage.Page{Limit: 2, Cursor: r.NextCursor})
+		rest, err := s.StatusValues(ctx, dev, ddm.StatusValueQuery{PathPrefix: "device."}, paging.Page{Limit: 2, Cursor: r.NextCursor})
 		if err != nil || len(rest.Items) != 1 || rest.Items[0].Path != "device.c" || rest.NextCursor != "" {
 			t.Fatalf("second page: %+v %v", rest, err)
 		}
@@ -338,9 +338,9 @@ func RunStatusSuite(t *testing.T, newStore Factory) {
 		s := newStore(t)
 		dev := Device(1)
 		putStatus(t, s, dev, report(true, t0, nil, nil))
-		_, err := s.StatusErrors(ctx, dev, storage.Page{Cursor: "x"})
+		_, err := s.StatusErrors(ctx, dev, paging.Page{Cursor: "x"})
 		wantErr(t, "StatusErrors bad cursor", err, ddm.ErrInvalid)
-		_, err = s.StatusReports(ctx, dev, storage.Page{Cursor: "1.5"})
+		_, err = s.StatusReports(ctx, dev, paging.Page{Cursor: "1.5"})
 		wantErr(t, "StatusReports bad cursor", err, ddm.ErrInvalid)
 	})
 }

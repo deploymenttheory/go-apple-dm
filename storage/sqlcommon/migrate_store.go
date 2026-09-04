@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/deploymenttheory/go-apple-dm/paging"
 	"github.com/deploymenttheory/go-apple-dm/storage"
 )
 
@@ -17,8 +18,8 @@ func exportCursor(parentID, id string) string { return parentID + "\x00" + id }
 // order is (parent_id, id) and device rows have an empty parent. Each
 // device row costs two extra reads (bootstrap token and history); this is
 // an administrative operation, not a hot path.
-func (s *Store) Export(ctx context.Context, p storage.Page) (storage.Result[storage.EnrollmentExport], error) {
-	var out storage.Result[storage.EnrollmentExport]
+func (s *Store) Export(ctx context.Context, p paging.Page) (paging.Result[storage.EnrollmentExport], error) {
+	var out paging.Result[storage.EnrollmentExport]
 	parent, id, hasCursor := strings.Cut(p.Cursor, "\x00")
 	if p.Cursor != "" && !hasCursor {
 		return out, fmt.Errorf("%w: bad cursor %q", storage.ErrInvalid, p.Cursor)

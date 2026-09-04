@@ -8,7 +8,7 @@ import (
 	"strings"
 
 	"github.com/deploymenttheory/go-apple-dm/ddm"
-	"github.com/deploymenttheory/go-apple-dm/storage"
+	"github.com/deploymenttheory/go-apple-dm/paging"
 )
 
 // declarationCols is the column list scanDeclaration reads, positionally.
@@ -130,7 +130,7 @@ func (t *txStore) DeleteDeclaration(ctx context.Context, identifier string) erro
 
 // ListDeclarations implements ddm.DeclarationStore. The cursor is the last
 // identifier of the previous page. An unknown InSet yields an empty page.
-func (t *txStore) ListDeclarations(ctx context.Context, q ddm.DeclarationQuery, p storage.Page) (storage.Result[ddm.Declaration], error) {
+func (t *txStore) ListDeclarations(ctx context.Context, q ddm.DeclarationQuery, p paging.Page) (paging.Result[ddm.Declaration], error) {
 	where, args := []string{"1 = 1"}, []any{}
 	if q.Kind != "" {
 		where, args = append(where, "kind = ?"), append(args, string(q.Kind))
@@ -185,7 +185,7 @@ func (s *Store) DeleteDeclaration(ctx context.Context, identifier string) error 
 }
 
 // ListDeclarations implements ddm.DeclarationStore.
-func (s *Store) ListDeclarations(ctx context.Context, q ddm.DeclarationQuery, p storage.Page) (storage.Result[ddm.Declaration], error) {
+func (s *Store) ListDeclarations(ctx context.Context, q ddm.DeclarationQuery, p paging.Page) (paging.Result[ddm.Declaration], error) {
 	return s.view().ListDeclarations(ctx, q, p)
 }
 

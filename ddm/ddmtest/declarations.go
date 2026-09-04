@@ -9,8 +9,8 @@ import (
 
 	"github.com/deploymenttheory/go-apple-dm/ddm"
 	"github.com/deploymenttheory/go-apple-dm/mdm"
+	"github.com/deploymenttheory/go-apple-dm/paging"
 	schemaddm "github.com/deploymenttheory/go-apple-dm/schema/ddm"
-	"github.com/deploymenttheory/go-apple-dm/storage"
 )
 
 // RunDeclarationSuite covers DeclarationStore.
@@ -161,7 +161,7 @@ func RunDeclarationSuite(t *testing.T, newStore Factory) {
 			put(t, s, Decl(fmt.Sprintf("d-%02d", i), schemaddm.KindConfiguration, `{}`))
 		}
 		var got []string
-		p := storage.Page{Limit: 2}
+		p := paging.Page{Limit: 2}
 		for pages := 0; ; pages++ {
 			r, err := s.ListDeclarations(ctx, ddm.DeclarationQuery{}, p)
 			if err != nil {
@@ -180,12 +180,12 @@ func RunDeclarationSuite(t *testing.T, newStore Factory) {
 			p.Cursor = r.NextCursor
 		}
 		wantStrings(t, "paged", got, []string{"d-01", "d-02", "d-03", "d-04", "d-05"})
-		all, err := s.ListDeclarations(ctx, ddm.DeclarationQuery{}, storage.Page{})
+		all, err := s.ListDeclarations(ctx, ddm.DeclarationQuery{}, paging.Page{})
 		if err != nil || len(all.Items) != 5 || all.NextCursor != "" {
 			t.Fatalf("default page: %+v %v", all, err)
 		}
 		all.Items[0].Canonical[0] = '!'
-		again, _ := s.ListDeclarations(ctx, ddm.DeclarationQuery{}, storage.Page{})
+		again, _ := s.ListDeclarations(ctx, ddm.DeclarationQuery{}, paging.Page{})
 		if again.Items[0].Canonical[0] == '!' {
 			t.Fatal("List returned aliased bytes")
 		}
@@ -201,7 +201,7 @@ func RunDeclarationSuite(t *testing.T, newStore Factory) {
 		addMember(t, s, "s", "b")
 		list := func(q ddm.DeclarationQuery) []string {
 			t.Helper()
-			r, err := s.ListDeclarations(ctx, q, storage.Page{})
+			r, err := s.ListDeclarations(ctx, q, paging.Page{})
 			if err != nil {
 				t.Fatalf("list %+v: %v", q, err)
 			}
@@ -296,7 +296,7 @@ func RunDeclarationSuite(t *testing.T, newStore Factory) {
 			"UnassignSet id":              func() error { _, err := s.UnassignSet(ctx, bad, "s"); return err },
 			"UnassignSet set":             func() error { _, err := s.UnassignSet(ctx, good, ""); return err },
 			"EnrollmentSets":              func() error { _, err := s.EnrollmentSets(ctx, bad); return err },
-			"SetEnrollments":              func() error { _, err := s.SetEnrollments(ctx, "", storage.Page{}); return err },
+			"SetEnrollments":              func() error { _, err := s.SetEnrollments(ctx, "", paging.Page{}); return err },
 			"AssignDeclaration id":        func() error { _, err := s.AssignDeclaration(ctx, bad, "a", t0); return err },
 			"AssignDeclaration decl":      func() error { _, err := s.AssignDeclaration(ctx, good, "", t0); return err },
 			"UnassignDeclaration id":      func() error { _, err := s.UnassignDeclaration(ctx, bad, "a"); return err },
@@ -322,12 +322,12 @@ func RunDeclarationSuite(t *testing.T, newStore Factory) {
 			},
 			"DeclarationStatus": func() error { _, err := s.DeclarationStatus(ctx, bad); return err },
 			"DeclarationStatusByIdentifier": func() error {
-				_, err := s.DeclarationStatusByIdentifier(ctx, "", storage.Page{})
+				_, err := s.DeclarationStatusByIdentifier(ctx, "", paging.Page{})
 				return err
 			},
-			"StatusValues":    func() error { _, err := s.StatusValues(ctx, bad, ddm.StatusValueQuery{}, storage.Page{}); return err },
-			"StatusErrors":    func() error { _, err := s.StatusErrors(ctx, bad, storage.Page{}); return err },
-			"StatusReports":   func() error { _, err := s.StatusReports(ctx, bad, storage.Page{}); return err },
+			"StatusValues":    func() error { _, err := s.StatusValues(ctx, bad, ddm.StatusValueQuery{}, paging.Page{}); return err },
+			"StatusErrors":    func() error { _, err := s.StatusErrors(ctx, bad, paging.Page{}); return err },
+			"StatusReports":   func() error { _, err := s.StatusReports(ctx, bad, paging.Page{}); return err },
 			"RecordChanges":   func() error { return s.RecordChanges(ctx, []mdm.EnrollmentID{good, bad}, "r", t0) },
 			"ClearEnrollment": func() error { return s.ClearEnrollment(ctx, bad) },
 		}
@@ -340,7 +340,7 @@ func RunDeclarationSuite(t *testing.T, newStore Factory) {
 			t.Fatalf("pending after rejected record: %v %v", pending, err)
 		}
 		// A rejected PutStatus wrote nothing.
-		reports, err := s.StatusReports(ctx, good, storage.Page{})
+		reports, err := s.StatusReports(ctx, good, paging.Page{})
 		if err != nil || len(reports.Items) != 0 {
 			t.Fatalf("reports after rejected status: %v %v", reports, err)
 		}

@@ -5,7 +5,7 @@ import (
 	"maps"
 	"time"
 
-	"github.com/deploymenttheory/go-apple-dm/storage"
+	"github.com/deploymenttheory/go-apple-dm/paging"
 )
 
 // AccountState records why an account cannot be used until an
@@ -197,7 +197,7 @@ type AccountStore interface {
 	// keypairs, devices, profiles, and assignments. ErrNotFound when absent.
 	DeleteAccount(ctx context.Context, name string) error
 	// ListAccounts pages by name.
-	ListAccounts(ctx context.Context, p storage.Page) (storage.Result[Account], error)
+	ListAccounts(ctx context.Context, p paging.Page) (paging.Result[Account], error)
 	// SetAccountState replaces the state flags. ErrNotFound when absent.
 	SetAccountState(ctx context.Context, name string, s AccountState) error
 	// PutKeypair stores the keypair in the stage, replacing any there. The
@@ -237,7 +237,7 @@ type DeviceStore interface {
 	// GetDevice returns the row, tombstoned or not, or ErrNotFound.
 	GetDevice(ctx context.Context, account, serial string) (*StoredDevice, error)
 	// ListDevices pages by serial, excluding tombstones unless asked.
-	ListDevices(ctx context.Context, account string, q DeviceQuery, p storage.Page) (storage.Result[StoredDevice], error)
+	ListDevices(ctx context.Context, account string, q DeviceQuery, p paging.Page) (paging.Result[StoredDevice], error)
 }
 
 // ProfileStore keeps the profiles defined through an account.
@@ -247,7 +247,7 @@ type ProfileStore interface {
 	GetProfile(ctx context.Context, account, uuid string) (*Profile, error)
 	DeleteProfile(ctx context.Context, account, uuid string) error
 	// ListProfiles pages by UUID.
-	ListProfiles(ctx context.Context, account string, p storage.Page) (storage.Result[Profile], error)
+	ListProfiles(ctx context.Context, account string, p paging.Page) (paging.Result[Profile], error)
 }
 
 // AssignmentStore records assignment outcomes per serial.
@@ -256,7 +256,7 @@ type AssignmentStore interface {
 	PutAssignment(ctx context.Context, a *Assignment) error
 	GetAssignment(ctx context.Context, account, serial string) (*Assignment, error)
 	// ListAssignments pages by serial.
-	ListAssignments(ctx context.Context, account string, q AssignmentQuery, p storage.Page) (storage.Result[Assignment], error)
+	ListAssignments(ctx context.Context, account string, q AssignmentQuery, p paging.Page) (paging.Result[Assignment], error)
 }
 
 // Tx is the view every store exposes inside Update.

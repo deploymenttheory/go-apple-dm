@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/deploymenttheory/go-apple-dm/mdm"
+	"github.com/deploymenttheory/go-apple-dm/paging"
 	"github.com/deploymenttheory/go-apple-dm/storage"
 )
 
@@ -165,11 +166,11 @@ func (s *Store) clearUserAuthOfDeviceLocked(deviceID string) {
 func exportCursor(e storage.Enrollment) string { return e.ID.ParentID + "\x00" + e.ID.ID }
 
 // Export implements storage.MigrationStore.
-func (s *Store) Export(_ context.Context, p storage.Page) (storage.Result[storage.EnrollmentExport], error) {
+func (s *Store) Export(_ context.Context, p paging.Page) (paging.Result[storage.EnrollmentExport], error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	if p.Cursor != "" && !strings.Contains(p.Cursor, "\x00") {
-		return storage.Result[storage.EnrollmentExport]{}, fmt.Errorf("%w: bad cursor %q", storage.ErrInvalid, p.Cursor)
+		return paging.Result[storage.EnrollmentExport]{}, fmt.Errorf("%w: bad cursor %q", storage.ErrInvalid, p.Cursor)
 	}
 	recs := make([]*record, 0, len(s.enrollments))
 	for _, r := range s.enrollments {
@@ -180,9 +181,9 @@ func (s *Store) Export(_ context.Context, p storage.Page) (storage.Result[storag
 	sort.Slice(recs, func(i, j int) bool { return exportCursor(recs[i].Enrollment) < exportCursor(recs[j].Enrollment) })
 	limit := p.Limit
 	if limit <= 0 {
-		limit = storage.DefaultPageSize
+		limit = paging.DefaultPageSize
 	}
-	var out storage.Result[storage.EnrollmentExport]
+	var out paging.Result[storage.EnrollmentExport]
 	for i, r := range recs {
 		if i == limit {
 			out.NextCursor = exportCursor(recs[i-1].Enrollment)

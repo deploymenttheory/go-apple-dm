@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/deploymenttheory/go-apple-dm/mdm"
+	"github.com/deploymenttheory/go-apple-dm/paging"
 	"github.com/deploymenttheory/go-apple-dm/schema/checkin"
 )
 
@@ -76,41 +77,6 @@ type EnrollmentQuery struct {
 	Serial string
 }
 
-// Page requests one page of results. An empty Cursor starts from the
-// beginning; Limit <= 0 uses the backend default.
-type Page struct {
-	Cursor string
-	Limit  int
-}
-
-// Result is one page of items with the cursor for the next page ("" at
-// the end).
-type Result[T any] struct {
-	Items      []T
-	NextCursor string
-}
-
-// DefaultPageSize applies when Page.Limit is not positive.
-const DefaultPageSize = 100
-
-// MaxPageSize bounds Page.Limit. A limit reaches a slice allocation before a
-// single row is read, so an unbounded one turns one request into an
-// out-of-memory kill of the process.
-const MaxPageSize = 1000
-
-// Size returns the page size to use: the requested limit, defaulted and
-// bounded, so every backend agrees without repeating the rule.
-func (p Page) Size() int {
-	switch {
-	case p.Limit <= 0:
-		return DefaultPageSize
-	case p.Limit > MaxPageSize:
-		return MaxPageSize
-	default:
-		return p.Limit
-	}
-}
-
 // EnrollmentStore persists enrollment records.
 type EnrollmentStore interface {
 	// UpsertAuthenticate records an Authenticate message. It creates the
@@ -130,7 +96,7 @@ type EnrollmentStore interface {
 	// Get returns the record or ErrNotFound.
 	Get(ctx context.Context, id mdm.EnrollmentID) (*Enrollment, error)
 	// List pages through enrollments ordered by id.
-	List(ctx context.Context, q EnrollmentQuery, p Page) (Result[Enrollment], error)
+	List(ctx context.Context, q EnrollmentQuery, p paging.Page) (paging.Result[Enrollment], error)
 	// TouchLastSeen records device activity.
 	TouchLastSeen(ctx context.Context, id mdm.EnrollmentID, at time.Time) error
 }
@@ -227,7 +193,7 @@ type CommandQueue interface {
 	// Unknown CommandUUIDs return ErrNotFound.
 	StoreResult(ctx context.Context, id mdm.EnrollmentID, resp *mdm.Response, now time.Time) error
 	// Commands pages through an enrollment's commands, newest first.
-	Commands(ctx context.Context, id mdm.EnrollmentID, q CommandQuery, p Page) (Result[QueuedCommand], error)
+	Commands(ctx context.Context, id mdm.EnrollmentID, q CommandQuery, p paging.Page) (paging.Result[QueuedCommand], error)
 	// Clear marks matching non-terminal commands cleared and returns how
 	// many. Backends may apply it in batches without one enclosing
 	// transaction: on error the count is what was applied so far and the
@@ -356,7 +322,7 @@ type EnrollmentExport struct {
 type MigrationStore interface {
 	// Export pages through every enrollment with device channels before the
 	// user channels that belong to them.
-	Export(ctx context.Context, p Page) (Result[EnrollmentExport], error)
+	Export(ctx context.Context, p paging.Page) (paging.Result[EnrollmentExport], error)
 	// Import writes rec exactly as given (Enabled, timestamps, pin, tokens,
 	// history) in one transaction, upserting by id. ErrInvalid for a user
 	// channel whose parent is absent or for history rows naming another

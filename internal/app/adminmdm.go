@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/deploymenttheory/go-apple-dm/mdm"
+	"github.com/deploymenttheory/go-apple-dm/paging"
 	"github.com/deploymenttheory/go-apple-dm/storage"
 )
 
@@ -53,12 +54,12 @@ func (a *App) mdmAdminRoutes() []adminRoute {
 }
 
 // page reads the shared cursor and limit parameters every listing accepts.
-func page(r *http.Request) (storage.Page, error) {
-	p := storage.Page{Cursor: r.URL.Query().Get("cursor")}
+func page(r *http.Request) (paging.Page, error) {
+	p := paging.Page{Cursor: r.URL.Query().Get("cursor")}
 	if v := r.URL.Query().Get("limit"); v != "" {
 		n, err := strconv.Atoi(v)
 		if err != nil {
-			return storage.Page{}, fmt.Errorf("%w: limit %q", storage.ErrInvalid, v)
+			return paging.Page{}, fmt.Errorf("%w: limit %q", storage.ErrInvalid, v)
 		}
 		p.Limit = n
 	}

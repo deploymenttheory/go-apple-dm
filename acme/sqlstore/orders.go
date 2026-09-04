@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/deploymenttheory/go-apple-dm/acme"
-	"github.com/deploymenttheory/go-apple-dm/storage"
+	"github.com/deploymenttheory/go-apple-dm/paging"
 )
 
 // orderCols carry the account the order belongs to, the authorization it
@@ -53,10 +53,10 @@ func (t *txStore) GetOrder(ctx context.Context, id string) (*acme.Order, error) 
 func (t *txStore) ListOrders(
 	ctx context.Context,
 	accountID string,
-	p storage.Page,
-) (storage.Result[acme.Order], error) {
+	p paging.Page,
+) (paging.Result[acme.Order], error) {
 	if err := validID("account id", accountID); err != nil {
-		return storage.Result[acme.Order]{}, err
+		return paging.Result[acme.Order]{}, err
 	}
 	where, args := after([]string{"account_id = ?"}, []any{accountID}, "id", p)
 	query := "SELECT id, record FROM acme_orders WHERE " + strings.Join(where, " AND ") + " ORDER BY id"
@@ -160,8 +160,8 @@ func (s *Store) GetOrder(ctx context.Context, id string) (*acme.Order, error) {
 func (s *Store) ListOrders(
 	ctx context.Context,
 	accountID string,
-	p storage.Page,
-) (storage.Result[acme.Order], error) {
+	p paging.Page,
+) (paging.Result[acme.Order], error) {
 	return s.view().ListOrders(ctx, accountID, p)
 }
 

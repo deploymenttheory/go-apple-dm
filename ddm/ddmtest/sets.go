@@ -7,8 +7,8 @@ import (
 	"time"
 
 	"github.com/deploymenttheory/go-apple-dm/ddm"
+	"github.com/deploymenttheory/go-apple-dm/paging"
 	schemaddm "github.com/deploymenttheory/go-apple-dm/schema/ddm"
-	"github.com/deploymenttheory/go-apple-dm/storage"
 )
 
 // RunSetSuite covers SetStore.
@@ -50,7 +50,7 @@ func RunSetSuite(t *testing.T, newStore Factory) {
 		wantErr(t, "Get after delete", err, ddm.ErrNotFound)
 		_, err = s.SetDeclarations(ctx, "s")
 		wantErr(t, "SetDeclarations after delete", err, ddm.ErrNotFound)
-		_, err = s.SetEnrollments(ctx, "s", storage.Page{})
+		_, err = s.SetEnrollments(ctx, "s", paging.Page{})
 		wantErr(t, "SetEnrollments after delete", err, ddm.ErrNotFound)
 		sets, _ := s.DeclarationSets(ctx, "a")
 		wantStrings(t, "declaration sets", sets, nil)
@@ -119,7 +119,7 @@ func RunSetSuite(t *testing.T, newStore Factory) {
 			putSet(t, s, fmt.Sprintf("s-%02d", i))
 		}
 		var got []string
-		p := storage.Page{Limit: 2}
+		p := paging.Page{Limit: 2}
 		for {
 			r, err := s.ListSets(ctx, p)
 			if err != nil {
@@ -137,7 +137,7 @@ func RunSetSuite(t *testing.T, newStore Factory) {
 			p.Cursor = r.NextCursor
 		}
 		wantStrings(t, "paged", got, []string{"s-01", "s-02", "s-03", "s-04", "s-05"})
-		all, err := s.ListSets(ctx, storage.Page{})
+		all, err := s.ListSets(ctx, paging.Page{})
 		if err != nil || len(all.Items) != 5 || all.NextCursor != "" {
 			t.Fatalf("default page: %+v %v", all, err)
 		}

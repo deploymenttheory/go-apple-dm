@@ -9,8 +9,8 @@ import (
 
 	"github.com/deploymenttheory/go-apple-dm/ddm"
 	"github.com/deploymenttheory/go-apple-dm/mdm"
+	"github.com/deploymenttheory/go-apple-dm/paging"
 	schemaddm "github.com/deploymenttheory/go-apple-dm/schema/ddm"
-	"github.com/deploymenttheory/go-apple-dm/storage"
 )
 
 // errRollback is the sentinel a failing Update callback returns.
@@ -57,12 +57,12 @@ func footprint(t *testing.T, s ddm.Tx, id mdm.EnrollmentID) int {
 	}
 	n += len(declStatus(t, s, id))
 	n += len(valuePaths(t, s, id, ""))
-	errs, err := s.StatusErrors(ctx, id, storage.Page{})
+	errs, err := s.StatusErrors(ctx, id, paging.Page{})
 	if err != nil {
 		t.Fatal(err)
 	}
 	n += len(errs.Items)
-	reports, err := s.StatusReports(ctx, id, storage.Page{})
+	reports, err := s.StatusReports(ctx, id, paging.Page{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -116,7 +116,7 @@ func RunClearSuite(t *testing.T, newStore Factory) {
 		wantStrings(t, "members", members, []string{"a"})
 		affected, _ := s.AffectedEnrollments(ctx, nil, []string{"s"})
 		wantStrings(t, "affected", ids(affected), []string{dev2.ID, usr.ID})
-		byID, _ := s.DeclarationStatusByIdentifier(ctx, "a", storage.Page{})
+		byID, _ := s.DeclarationStatusByIdentifier(ctx, "a", paging.Page{})
 		if len(byID.Items) != 2 {
 			t.Fatalf("status by identifier: %+v", byID.Items)
 		}
@@ -298,7 +298,7 @@ func RunConcurrencySuite(t *testing.T, newStore Factory) {
 			})
 		}
 		wg.Wait()
-		r, err := s.SetEnrollments(ctx, "s", storage.Page{})
+		r, err := s.SetEnrollments(ctx, "s", paging.Page{})
 		if err != nil || len(r.Items) != n {
 			t.Fatalf("set enrollments: %d %v", len(r.Items), err)
 		}

@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/deploymenttheory/go-apple-dm/dep"
-	"github.com/deploymenttheory/go-apple-dm/storage"
+	"github.com/deploymenttheory/go-apple-dm/paging"
 )
 
 // Failing wraps a dep.Store and returns the error in Fail for any method
@@ -96,9 +96,9 @@ func (f *Failing) DeleteAccount(ctx context.Context, name string) error {
 }
 
 // ListAccounts implements dep.AccountStore.
-func (f *Failing) ListAccounts(ctx context.Context, p storage.Page) (storage.Result[dep.Account], error) {
+func (f *Failing) ListAccounts(ctx context.Context, p paging.Page) (paging.Result[dep.Account], error) {
 	if err := f.fail("ListAccounts"); err != nil {
-		return storage.Result[dep.Account]{}, err
+		return paging.Result[dep.Account]{}, err
 	}
 	return f.Store.ListAccounts(ctx, p)
 }
@@ -184,9 +184,9 @@ func (f *Failing) GetDevice(ctx context.Context, account, serial string) (*dep.S
 }
 
 // ListDevices implements dep.DeviceStore.
-func (f *Failing) ListDevices(ctx context.Context, account string, q dep.DeviceQuery, p storage.Page) (storage.Result[dep.StoredDevice], error) {
+func (f *Failing) ListDevices(ctx context.Context, account string, q dep.DeviceQuery, p paging.Page) (paging.Result[dep.StoredDevice], error) {
 	if err := f.fail("ListDevices"); err != nil {
-		return storage.Result[dep.StoredDevice]{}, err
+		return paging.Result[dep.StoredDevice]{}, err
 	}
 	return f.Store.ListDevices(ctx, account, q, p)
 }
@@ -216,9 +216,9 @@ func (f *Failing) DeleteProfile(ctx context.Context, account, uuid string) error
 }
 
 // ListProfiles implements dep.ProfileStore.
-func (f *Failing) ListProfiles(ctx context.Context, account string, p storage.Page) (storage.Result[dep.Profile], error) {
+func (f *Failing) ListProfiles(ctx context.Context, account string, p paging.Page) (paging.Result[dep.Profile], error) {
 	if err := f.fail("ListProfiles"); err != nil {
-		return storage.Result[dep.Profile]{}, err
+		return paging.Result[dep.Profile]{}, err
 	}
 	return f.Store.ListProfiles(ctx, account, p)
 }
@@ -240,9 +240,9 @@ func (f *Failing) GetAssignment(ctx context.Context, account, serial string) (*d
 }
 
 // ListAssignments implements dep.AssignmentStore.
-func (f *Failing) ListAssignments(ctx context.Context, account string, q dep.AssignmentQuery, p storage.Page) (storage.Result[dep.Assignment], error) {
+func (f *Failing) ListAssignments(ctx context.Context, account string, q dep.AssignmentQuery, p paging.Page) (paging.Result[dep.Assignment], error) {
 	if err := f.fail("ListAssignments"); err != nil {
-		return storage.Result[dep.Assignment]{}, err
+		return paging.Result[dep.Assignment]{}, err
 	}
 	return f.Store.ListAssignments(ctx, account, q, p)
 }
@@ -270,9 +270,9 @@ func (t *txView) DeleteAccount(ctx context.Context, name string) error {
 	return t.tx.DeleteAccount(ctx, name)
 }
 
-func (t *txView) ListAccounts(ctx context.Context, p storage.Page) (storage.Result[dep.Account], error) {
+func (t *txView) ListAccounts(ctx context.Context, p paging.Page) (paging.Result[dep.Account], error) {
 	if err := t.f.fail("ListAccounts"); err != nil {
-		return storage.Result[dep.Account]{}, err
+		return paging.Result[dep.Account]{}, err
 	}
 	return t.tx.ListAccounts(ctx, p)
 }
@@ -347,9 +347,9 @@ func (t *txView) GetDevice(ctx context.Context, account, serial string) (*dep.St
 	return t.tx.GetDevice(ctx, account, serial)
 }
 
-func (t *txView) ListDevices(ctx context.Context, account string, q dep.DeviceQuery, p storage.Page) (storage.Result[dep.StoredDevice], error) {
+func (t *txView) ListDevices(ctx context.Context, account string, q dep.DeviceQuery, p paging.Page) (paging.Result[dep.StoredDevice], error) {
 	if err := t.f.fail("ListDevices"); err != nil {
-		return storage.Result[dep.StoredDevice]{}, err
+		return paging.Result[dep.StoredDevice]{}, err
 	}
 	return t.tx.ListDevices(ctx, account, q, p)
 }
@@ -375,9 +375,9 @@ func (t *txView) DeleteProfile(ctx context.Context, account, uuid string) error 
 	return t.tx.DeleteProfile(ctx, account, uuid)
 }
 
-func (t *txView) ListProfiles(ctx context.Context, account string, p storage.Page) (storage.Result[dep.Profile], error) {
+func (t *txView) ListProfiles(ctx context.Context, account string, p paging.Page) (paging.Result[dep.Profile], error) {
 	if err := t.f.fail("ListProfiles"); err != nil {
-		return storage.Result[dep.Profile]{}, err
+		return paging.Result[dep.Profile]{}, err
 	}
 	return t.tx.ListProfiles(ctx, account, p)
 }
@@ -396,9 +396,9 @@ func (t *txView) GetAssignment(ctx context.Context, account, serial string) (*de
 	return t.tx.GetAssignment(ctx, account, serial)
 }
 
-func (t *txView) ListAssignments(ctx context.Context, account string, q dep.AssignmentQuery, p storage.Page) (storage.Result[dep.Assignment], error) {
+func (t *txView) ListAssignments(ctx context.Context, account string, q dep.AssignmentQuery, p paging.Page) (paging.Result[dep.Assignment], error) {
 	if err := t.f.fail("ListAssignments"); err != nil {
-		return storage.Result[dep.Assignment]{}, err
+		return paging.Result[dep.Assignment]{}, err
 	}
 	return t.tx.ListAssignments(ctx, account, q, p)
 }

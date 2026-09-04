@@ -11,8 +11,8 @@ import (
 	"time"
 
 	"github.com/deploymenttheory/go-apple-dm/dep"
+	"github.com/deploymenttheory/go-apple-dm/paging"
 	"github.com/deploymenttheory/go-apple-dm/secrets"
-	"github.com/deploymenttheory/go-apple-dm/storage"
 	"github.com/deploymenttheory/go-apple-dm/storage/crypt"
 )
 
@@ -145,12 +145,12 @@ func runAccounts(t *testing.T, newStore Factory) {
 	}
 	must(t, "put b", s.PutAccount(ctx, SampleAccount("b")))
 	must(t, "put c", s.PutAccount(ctx, SampleAccount("c")))
-	r, err := s.ListAccounts(ctx, storage.Page{Limit: 2})
+	r, err := s.ListAccounts(ctx, paging.Page{Limit: 2})
 	must(t, "list", err)
 	if len(r.Items) != 2 || r.Items[0].Name != "a" || r.Items[1].Name != "b" || r.NextCursor != "b" {
 		t.Fatalf("list page 1: %+v", r)
 	}
-	r, err = s.ListAccounts(ctx, storage.Page{Limit: 2, Cursor: r.NextCursor})
+	r, err = s.ListAccounts(ctx, paging.Page{Limit: 2, Cursor: r.NextCursor})
 	must(t, "list 2", err)
 	if len(r.Items) != 1 || r.Items[0].Name != "c" || r.NextCursor != "" {
 		t.Fatalf("list page 2: %+v", r)
@@ -184,7 +184,7 @@ func runAccounts(t *testing.T, newStore Factory) {
 	if _, err := s.Keypair(ctx, "a", dep.StageCurrent); !errors.Is(err, dep.ErrNotFound) {
 		t.Fatal("keypair survived delete")
 	}
-	if r, _ := s.ListAccounts(ctx, storage.Page{}); len(r.Items) != 2 {
+	if r, _ := s.ListAccounts(ctx, paging.Page{}); len(r.Items) != 2 {
 		t.Fatalf("accounts after delete: %d", len(r.Items))
 	}
 }
@@ -418,22 +418,22 @@ func runDevices(t *testing.T, newStore Factory) {
 	// Listing pages by serial and filters by profile.
 	must(t, "put more", s.PutDevices(ctx, "d", []dep.Device{SampleDevice("S3"), {SerialNumber: "S0"}}, t0))
 	must(t, "put other account", s.PutDevices(ctx, "other", []dep.Device{SampleDevice("S1")}, t0))
-	r, err := s.ListDevices(ctx, "d", dep.DeviceQuery{}, storage.Page{Limit: 3})
+	r, err := s.ListDevices(ctx, "d", dep.DeviceQuery{}, paging.Page{Limit: 3})
 	must(t, "list", err)
 	if len(r.Items) != 3 || r.Items[0].SerialNumber != "S0" || r.Items[2].SerialNumber != "S2" || r.NextCursor != "S2" {
 		t.Fatalf("page 1: %d %q", len(r.Items), r.NextCursor)
 	}
-	r, err = s.ListDevices(ctx, "d", dep.DeviceQuery{}, storage.Page{Limit: 3, Cursor: r.NextCursor})
+	r, err = s.ListDevices(ctx, "d", dep.DeviceQuery{}, paging.Page{Limit: 3, Cursor: r.NextCursor})
 	must(t, "list 2", err)
 	if len(r.Items) != 1 || r.Items[0].SerialNumber != "S3" || r.NextCursor != "" {
 		t.Fatalf("page 2: %+v", r)
 	}
-	r, err = s.ListDevices(ctx, "d", dep.DeviceQuery{ProfileUUID: "PROFILE-1"}, storage.Page{})
+	r, err = s.ListDevices(ctx, "d", dep.DeviceQuery{ProfileUUID: "PROFILE-1"}, paging.Page{})
 	must(t, "list by profile", err)
 	if len(r.Items) != 2 {
 		t.Fatalf("by profile: %d", len(r.Items))
 	}
-	if r, _ := s.ListDevices(ctx, "nobody", dep.DeviceQuery{}, storage.Page{}); len(r.Items) != 0 {
+	if r, _ := s.ListDevices(ctx, "nobody", dep.DeviceQuery{}, paging.Page{}); len(r.Items) != 0 {
 		t.Fatal("unknown account listed devices")
 	}
 	// An empty batch is fine; a device without a serial is not.
@@ -454,10 +454,10 @@ func runTombstones(t *testing.T, newStore Factory) {
 	if !got.Deleted || got.OpType != dep.OpDeleted || !got.ReleasedByReplacement || got.Model != d.Model || !got.FirstSeen.Equal(t0) {
 		t.Fatalf("tombstone: %+v", got)
 	}
-	if r, _ := s.ListDevices(ctx, "t", dep.DeviceQuery{}, storage.Page{}); len(r.Items) != 0 {
+	if r, _ := s.ListDevices(ctx, "t", dep.DeviceQuery{}, paging.Page{}); len(r.Items) != 0 {
 		t.Fatal("tombstone listed as live")
 	}
-	r, err := s.ListDevices(ctx, "t", dep.DeviceQuery{IncludeDeleted: true}, storage.Page{})
+	r, err := s.ListDevices(ctx, "t", dep.DeviceQuery{IncludeDeleted: true}, paging.Page{})
 	must(t, "list deleted", err)
 	if len(r.Items) != 1 || !r.Items[0].Deleted {
 		t.Fatalf("include deleted: %+v", r.Items)
@@ -470,7 +470,7 @@ func runTombstones(t *testing.T, newStore Factory) {
 	if got.Deleted || got.OpType != "" || !got.FirstSeen.Equal(t0) || !got.UpdatedAt.Equal(t0.Add(2*time.Hour)) {
 		t.Fatalf("revived: %+v", got)
 	}
-	if r, _ := s.ListDevices(ctx, "t", dep.DeviceQuery{}, storage.Page{}); len(r.Items) != 1 {
+	if r, _ := s.ListDevices(ctx, "t", dep.DeviceQuery{}, paging.Page{}); len(r.Items) != 1 {
 		t.Fatal("revived device not listed")
 	}
 }
@@ -504,12 +504,12 @@ func runProfiles(t *testing.T, newStore Factory) {
 	must(t, "put P0", s.PutProfile(ctx, "p", SampleProfile("P0")))
 	must(t, "put P2", s.PutProfile(ctx, "p", SampleProfile("P2")))
 	must(t, "put other", s.PutProfile(ctx, "other", SampleProfile("P1")))
-	r, err := s.ListProfiles(ctx, "p", storage.Page{Limit: 2})
+	r, err := s.ListProfiles(ctx, "p", paging.Page{Limit: 2})
 	must(t, "list", err)
 	if len(r.Items) != 2 || r.Items[0].ProfileUUID != "P0" || r.Items[1].ProfileUUID != "P1" || r.NextCursor != "P1" {
 		t.Fatalf("page 1: %+v", r)
 	}
-	r, err = s.ListProfiles(ctx, "p", storage.Page{Limit: 2, Cursor: "P1"})
+	r, err = s.ListProfiles(ctx, "p", paging.Page{Limit: 2, Cursor: "P1"})
 	must(t, "list 2", err)
 	if len(r.Items) != 1 || r.Items[0].ProfileUUID != "P2" || r.NextCursor != "" {
 		t.Fatalf("page 2: %+v", r)
@@ -550,17 +550,17 @@ func runAssignments(t *testing.T, newStore Factory) {
 	must(t, "put S2", s.PutAssignment(ctx, &dep.Assignment{Account: "a", SerialNumber: "S2", Status: dep.StatusFailed, NextAttemptAt: t0}))
 	must(t, "put S3", s.PutAssignment(ctx, &dep.Assignment{Account: "a", SerialNumber: "S3", Status: dep.StatusThrottled, NextAttemptAt: t0}))
 	must(t, "put other", s.PutAssignment(ctx, &dep.Assignment{Account: "other", SerialNumber: "S1", Status: dep.StatusFailed}))
-	r, err := s.ListAssignments(ctx, "a", dep.AssignmentQuery{}, storage.Page{Limit: 2})
+	r, err := s.ListAssignments(ctx, "a", dep.AssignmentQuery{}, paging.Page{Limit: 2})
 	must(t, "list", err)
 	if len(r.Items) != 2 || r.Items[0].SerialNumber != "S1" || r.NextCursor != "S2" {
 		t.Fatalf("page 1: %+v", r)
 	}
-	r, err = s.ListAssignments(ctx, "a", dep.AssignmentQuery{}, storage.Page{Limit: 2, Cursor: "S2"})
+	r, err = s.ListAssignments(ctx, "a", dep.AssignmentQuery{}, paging.Page{Limit: 2, Cursor: "S2"})
 	must(t, "list 2", err)
 	if len(r.Items) != 1 || r.Items[0].SerialNumber != "S3" {
 		t.Fatalf("page 2: %+v", r)
 	}
-	r, err = s.ListAssignments(ctx, "a", dep.AssignmentQuery{Status: dep.StatusFailed}, storage.Page{})
+	r, err = s.ListAssignments(ctx, "a", dep.AssignmentQuery{Status: dep.StatusFailed}, paging.Page{})
 	must(t, "list failed", err)
 	if len(r.Items) != 1 || r.Items[0].SerialNumber != "S2" {
 		t.Fatalf("failed: %+v", r.Items)
@@ -620,16 +620,16 @@ func runUpdate(t *testing.T, newStore Factory) {
 		if err := tx.SetAccountState(ctx, "u", dep.AccountState{}); err != nil {
 			return err
 		}
-		if _, err := tx.ListAccounts(ctx, storage.Page{}); err != nil {
+		if _, err := tx.ListAccounts(ctx, paging.Page{}); err != nil {
 			return err
 		}
-		if _, err := tx.ListDevices(ctx, "u", dep.DeviceQuery{}, storage.Page{}); err != nil {
+		if _, err := tx.ListDevices(ctx, "u", dep.DeviceQuery{}, paging.Page{}); err != nil {
 			return err
 		}
-		if _, err := tx.ListProfiles(ctx, "u", storage.Page{}); err != nil {
+		if _, err := tx.ListProfiles(ctx, "u", paging.Page{}); err != nil {
 			return err
 		}
-		if _, err := tx.ListAssignments(ctx, "u", dep.AssignmentQuery{}, storage.Page{}); err != nil {
+		if _, err := tx.ListAssignments(ctx, "u", dep.AssignmentQuery{}, paging.Page{}); err != nil {
 			return err
 		}
 		if _, err := tx.GetProfile(ctx, "u", "P1"); err != nil {
@@ -686,17 +686,17 @@ func runInvalid(t *testing.T, newStore Factory) {
 		"PutDevices":           func() error { return s.PutDevices(ctx, "", nil, t0) },
 		"GetDevice account":    func() error { _, err := s.GetDevice(ctx, "", "S"); return err },
 		"GetDevice serial":     func() error { _, err := s.GetDevice(ctx, "a", ""); return err },
-		"ListDevices":          func() error { _, err := s.ListDevices(ctx, "", dep.DeviceQuery{}, storage.Page{}); return err },
+		"ListDevices":          func() error { _, err := s.ListDevices(ctx, "", dep.DeviceQuery{}, paging.Page{}); return err },
 		"PutProfile":           func() error { return s.PutProfile(ctx, "", SampleProfile("P")) },
 		"GetProfile account":   func() error { _, err := s.GetProfile(ctx, "", "P"); return err },
 		"GetProfile uuid":      func() error { _, err := s.GetProfile(ctx, "a", ""); return err },
 		"DeleteProfile":        func() error { return s.DeleteProfile(ctx, "", "P") },
 		"DeleteProfile uuid":   func() error { return s.DeleteProfile(ctx, "a", "") },
-		"ListProfiles":         func() error { _, err := s.ListProfiles(ctx, "", storage.Page{}); return err },
+		"ListProfiles":         func() error { _, err := s.ListProfiles(ctx, "", paging.Page{}); return err },
 		"PutAssignment":        func() error { return s.PutAssignment(ctx, &dep.Assignment{SerialNumber: "S"}) },
 		"GetAssignment":        func() error { _, err := s.GetAssignment(ctx, "", "S"); return err },
 		"GetAssignment serial": func() error { _, err := s.GetAssignment(ctx, "a", ""); return err },
-		"ListAssignments":      func() error { _, err := s.ListAssignments(ctx, "", dep.AssignmentQuery{}, storage.Page{}); return err },
+		"ListAssignments":      func() error { _, err := s.ListAssignments(ctx, "", dep.AssignmentQuery{}, paging.Page{}); return err },
 	}
 	for name, fn := range checks {
 		if err := fn(); !errors.Is(err, dep.ErrInvalid) {
@@ -735,11 +735,11 @@ func runConcurrency(t *testing.T, newStore Factory) {
 		})
 	}
 	wg.Wait()
-	r, err := s.ListDevices(ctx, "c", dep.DeviceQuery{}, storage.Page{})
+	r, err := s.ListDevices(ctx, "c", dep.DeviceQuery{}, paging.Page{})
 	if err != nil || len(r.Items) != n {
 		t.Fatalf("devices: %d %v", len(r.Items), err)
 	}
-	a, err := s.ListAssignments(ctx, "c", dep.AssignmentQuery{}, storage.Page{})
+	a, err := s.ListAssignments(ctx, "c", dep.AssignmentQuery{}, paging.Page{})
 	if err != nil || len(a.Items) != n {
 		t.Fatalf("assignments: %d %v", len(a.Items), err)
 	}

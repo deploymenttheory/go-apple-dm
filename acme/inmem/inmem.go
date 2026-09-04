@@ -11,7 +11,7 @@ import (
 
 	"github.com/deploymenttheory/go-apple-dm/acme"
 	"github.com/deploymenttheory/go-apple-dm/acme/attest"
-	"github.com/deploymenttheory/go-apple-dm/storage"
+	"github.com/deploymenttheory/go-apple-dm/paging"
 )
 
 // Store implements acme.Store in memory.
@@ -300,10 +300,10 @@ func (t *tx) GetCertificate(_ context.Context, id string) (*acme.Certificate, er
 func (t *tx) ListOrders(
 	_ context.Context,
 	accountID string,
-	p storage.Page,
-) (storage.Result[acme.Order], error) {
+	p paging.Page,
+) (paging.Result[acme.Order], error) {
 	if err := validID("account id", accountID); err != nil {
-		return storage.Result[acme.Order]{}, err
+		return paging.Result[acme.Order]{}, err
 	}
 	var ids []string
 	for id, o := range t.st.orders {
@@ -319,8 +319,8 @@ func (t *tx) ListOrders(
 func (t *tx) ListCertificates(
 	_ context.Context,
 	q acme.CertificateQuery,
-	p storage.Page,
-) (storage.Result[acme.Certificate], error) {
+	p paging.Page,
+) (paging.Result[acme.Certificate], error) {
 	var ids []string
 	for id, c := range t.st.certs {
 		if matches(c, q) {
@@ -462,16 +462,16 @@ func decodeCursor(c string) (string, error) {
 
 // page applies keyset pagination over sorted ids. NextCursor is empty on
 // the last page, so a caller stops without a trailing empty read.
-func page[T any](ids []string, p storage.Page, load func(string) T) (storage.Result[T], error) {
+func page[T any](ids []string, p paging.Page, load func(string) T) (paging.Result[T], error) {
 	after, err := decodeCursor(p.Cursor)
 	if err != nil {
-		return storage.Result[T]{}, err
+		return paging.Result[T]{}, err
 	}
 	limit := p.Limit
 	if limit <= 0 {
-		limit = storage.DefaultPageSize
+		limit = paging.DefaultPageSize
 	}
-	var out storage.Result[T]
+	var out paging.Result[T]
 	last := ""
 	for _, id := range ids {
 		if p.Cursor != "" && id <= after {
@@ -620,8 +620,8 @@ func (s *Store) GetCertificate(ctx context.Context, id string) (*acme.Certificat
 func (s *Store) ListOrders(
 	ctx context.Context,
 	accountID string,
-	p storage.Page,
-) (storage.Result[acme.Order], error) {
+	p paging.Page,
+) (paging.Result[acme.Order], error) {
 	t, done := s.view()
 	defer done()
 	return t.ListOrders(ctx, accountID, p)
@@ -631,8 +631,8 @@ func (s *Store) ListOrders(
 func (s *Store) ListCertificates(
 	ctx context.Context,
 	q acme.CertificateQuery,
-	p storage.Page,
-) (storage.Result[acme.Certificate], error) {
+	p paging.Page,
+) (paging.Result[acme.Certificate], error) {
 	t, done := s.view()
 	defer done()
 	return t.ListCertificates(ctx, q, p)

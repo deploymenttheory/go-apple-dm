@@ -20,8 +20,8 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/event"
 	"github.com/deploymenttheory/go-apple-dm/internal/clock"
 	"github.com/deploymenttheory/go-apple-dm/mdm"
+	"github.com/deploymenttheory/go-apple-dm/paging"
 	schemaddm "github.com/deploymenttheory/go-apple-dm/schema/ddm"
-	"github.com/deploymenttheory/go-apple-dm/storage"
 )
 
 // t0 is the fixed clock every engine test starts from.
@@ -225,7 +225,7 @@ func TestNew(t *testing.T) {
 				t.Fatal(err)
 			}
 		}
-		res, err := e.StatusReports(ctx, dev, storage.Page{Limit: 100})
+		res, err := e.StatusReports(ctx, dev, paging.Page{Limit: 100})
 		if err != nil || len(res.Items) != ddm.DefaultKeepReports {
 			t.Fatalf("retained %d reports (%v), want %d", len(res.Items), err, ddm.DefaultKeepReports)
 		}
@@ -265,7 +265,7 @@ func TestPutDeclaration(t *testing.T) {
 		if err != nil || got.ServerToken != d.ServerToken || !bytes.Equal(got.Canonical, d.Canonical) {
 			t.Fatalf("GetDeclaration = %+v, %v", got, err)
 		}
-		res, err := h.engine.ListDeclarations(ctx, ddm.DeclarationQuery{Kind: schemaddm.KindConfiguration}, storage.Page{})
+		res, err := h.engine.ListDeclarations(ctx, ddm.DeclarationQuery{Kind: schemaddm.KindConfiguration}, paging.Page{})
 		if err != nil || len(res.Items) != 1 {
 			t.Fatalf("ListDeclarations = %+v, %v", res, err)
 		}
@@ -477,7 +477,7 @@ func TestSets(t *testing.T) {
 		if err != nil || s.Name != "lab" || s.CreatedAt != t0 {
 			t.Fatalf("GetSet = %+v, %v", s, err)
 		}
-		list, err := h.engine.ListSets(ctx, storage.Page{})
+		list, err := h.engine.ListSets(ctx, paging.Page{})
 		if err != nil || len(list.Items) != 1 {
 			t.Fatalf("ListSets = %+v, %v", list, err)
 		}
@@ -531,7 +531,7 @@ func TestSets(t *testing.T) {
 		if err != nil || strings.Join(sets, ",") != "lab" {
 			t.Fatalf("DeclarationSets = %v, %v", sets, err)
 		}
-		res, err := h.engine.SetEnrollments(ctx, "lab", storage.Page{})
+		res, err := h.engine.SetEnrollments(ctx, "lab", paging.Page{})
 		if err != nil || len(res.Items) != 1 || res.Items[0] != ddmtest.Device(1) {
 			t.Fatalf("SetEnrollments = %+v, %v", res, err)
 		}
@@ -1041,14 +1041,14 @@ func TestEngineStoreFailures(t *testing.T) {
 		}}},
 		"DeleteDeclaration": {{"DeleteDeclaration", func(e *ddm.Engine) error { return e.DeleteDeclaration(ctx, a) }}},
 		"ListDeclarations": {{"ListDeclarations", func(e *ddm.Engine) error {
-			_, err := e.ListDeclarations(ctx, ddm.DeclarationQuery{}, storage.Page{})
+			_, err := e.ListDeclarations(ctx, ddm.DeclarationQuery{}, paging.Page{})
 			return err
 		}}},
 		"PruneVersions":          {{"PruneVersions", func(e *ddm.Engine) error { _, err := e.PruneVersions(ctx); return err }}},
 		"PutSet":                 {{"PutSet", func(e *ddm.Engine) error { _, err := e.PutSet(ctx, "new"); return err }}},
 		"DeleteSet":              {{"DeleteSet", func(e *ddm.Engine) error { return e.DeleteSet(ctx, set) }}},
 		"GetSet":                 {{"GetSet", func(e *ddm.Engine) error { _, err := e.GetSet(ctx, set); return err }}},
-		"ListSets":               {{"ListSets", func(e *ddm.Engine) error { _, err := e.ListSets(ctx, storage.Page{}); return err }}},
+		"ListSets":               {{"ListSets", func(e *ddm.Engine) error { _, err := e.ListSets(ctx, paging.Page{}); return err }}},
 		"AddSetDeclaration":      {{"AddToSet", func(e *ddm.Engine) error { _, err := e.AddToSet(ctx, set, b); return err }}},
 		"RemoveSetDeclaration":   {{"RemoveFromSet", func(e *ddm.Engine) error { _, err := e.RemoveFromSet(ctx, set, a); return err }}},
 		"SetDeclarations":        {{"SetDeclarations", func(e *ddm.Engine) error { _, err := e.SetDeclarations(ctx, set); return err }}},
@@ -1056,7 +1056,7 @@ func TestEngineStoreFailures(t *testing.T) {
 		"AssignSet":              {{"AssignSet", func(e *ddm.Engine) error { _, err := e.AssignSet(ctx, dev3, set); return err }}},
 		"UnassignSet":            {{"UnassignSet", func(e *ddm.Engine) error { _, err := e.UnassignSet(ctx, dev, set); return err }}},
 		"EnrollmentSets":         {{"EnrollmentSets", func(e *ddm.Engine) error { _, err := e.EnrollmentSets(ctx, dev); return err }}},
-		"SetEnrollments":         {{"SetEnrollments", func(e *ddm.Engine) error { _, err := e.SetEnrollments(ctx, set, storage.Page{}); return err }}},
+		"SetEnrollments":         {{"SetEnrollments", func(e *ddm.Engine) error { _, err := e.SetEnrollments(ctx, set, paging.Page{}); return err }}},
 		"AssignDeclaration":      {{"AssignDeclaration", func(e *ddm.Engine) error { _, err := e.AssignDeclaration(ctx, dev3, a); return err }}},
 		"UnassignDeclaration":    {{"UnassignDeclaration", func(e *ddm.Engine) error { _, err := e.UnassignDeclaration(ctx, dev2, a); return err }}},
 		"EnrollmentDeclarations": {{"EnrollmentDeclarations", func(e *ddm.Engine) error { _, err := e.EnrollmentDeclarations(ctx, dev2); return err }}},
@@ -1086,18 +1086,18 @@ func TestEngineStoreFailures(t *testing.T) {
 		"PutStatus":         {{"Status", func(e *ddm.Engine) error { _, err := e.Status(ctx, dev, []byte(`{"StatusItems":{}}`)); return err }}},
 		"DeclarationStatus": {{"DeclarationStatus", func(e *ddm.Engine) error { _, err := e.DeclarationStatus(ctx, dev); return err }}},
 		"DeclarationStatusByIdentifier": {{"DeclarationStatusByIdentifier", func(e *ddm.Engine) error {
-			_, err := e.DeclarationStatusByIdentifier(ctx, a, storage.Page{})
+			_, err := e.DeclarationStatusByIdentifier(ctx, a, paging.Page{})
 			return err
 		}}},
 		"StatusValues": {
 			{"StatusValues", func(e *ddm.Engine) error {
-				_, err := e.StatusValues(ctx, dev, ddm.StatusValueQuery{}, storage.Page{})
+				_, err := e.StatusValues(ctx, dev, ddm.StatusValueQuery{}, paging.Page{})
 				return err
 			}},
 			{"ClientCapabilities", func(e *ddm.Engine) error { _, err := e.ClientCapabilities(ctx, dev); return err }},
 		},
-		"StatusErrors":  {{"StatusErrors", func(e *ddm.Engine) error { _, err := e.StatusErrors(ctx, dev, storage.Page{}); return err }}},
-		"StatusReports": {{"StatusReports", func(e *ddm.Engine) error { _, err := e.StatusReports(ctx, dev, storage.Page{}); return err }}},
+		"StatusErrors":  {{"StatusErrors", func(e *ddm.Engine) error { _, err := e.StatusErrors(ctx, dev, paging.Page{}); return err }}},
+		"StatusReports": {{"StatusReports", func(e *ddm.Engine) error { _, err := e.StatusReports(ctx, dev, paging.Page{}); return err }}},
 		"RecordChanges": {
 			{"Touch", func(e *ddm.Engine) error { return e.Touch(ctx, []mdm.EnrollmentID{dev}, "") }},
 			{"PutDeclaration", func(e *ddm.Engine) error { _, _, err := e.PutDeclaration(ctx, configTest(a, "new")); return err }},

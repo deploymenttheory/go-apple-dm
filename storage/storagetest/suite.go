@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/deploymenttheory/go-apple-dm/mdm"
+	"github.com/deploymenttheory/go-apple-dm/paging"
 	"github.com/deploymenttheory/go-apple-dm/schema/checkin"
 	"github.com/deploymenttheory/go-apple-dm/schema/commands"
 	"github.com/deploymenttheory/go-apple-dm/storage"
@@ -198,7 +199,7 @@ func RunEnrollmentSuite(t *testing.T, newStore Factory) {
 		if u, _ := s.Get(ctx, uid); u.Enabled {
 			t.Fatal("user channel stayed enabled after device re-enrollment")
 		}
-		cleared, _ := s.Commands(ctx, id, storage.CommandQuery{States: []storage.State{storage.StateCleared}}, storage.Page{})
+		cleared, _ := s.Commands(ctx, id, storage.CommandQuery{States: []storage.State{storage.StateCleared}}, paging.Page{})
 		if len(cleared.Items) != 1 {
 			t.Fatalf("expected the old command to be cleared, got %d", len(cleared.Items))
 		}
@@ -220,7 +221,7 @@ func RunEnrollmentSuite(t *testing.T, newStore Factory) {
 				t.Fatal(err)
 			}
 		}
-		res, err := s.List(ctx, storage.EnrollmentQuery{ParentID: d.ID}, storage.Page{})
+		res, err := s.List(ctx, storage.EnrollmentQuery{ParentID: d.ID}, paging.Page{})
 		if err != nil || len(res.Items) != 3 {
 			t.Fatalf("users = %d, %v (a new UserID must never remove another)", len(res.Items), err)
 		}
@@ -397,7 +398,7 @@ func RunEnrollmentSuite(t *testing.T, newStore Factory) {
 		cursor := ""
 		pages := 0
 		for {
-			res, err := s.List(ctx, storage.EnrollmentQuery{Channel: mdm.ChannelDevice}, storage.Page{Cursor: cursor, Limit: 2})
+			res, err := s.List(ctx, storage.EnrollmentQuery{Channel: mdm.ChannelDevice}, paging.Page{Cursor: cursor, Limit: 2})
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -414,15 +415,15 @@ func RunEnrollmentSuite(t *testing.T, newStore Factory) {
 			t.Fatalf("pages=%d ids=%v", pages, all)
 		}
 		enabled := true
-		res, _ := s.List(ctx, storage.EnrollmentQuery{Channel: mdm.ChannelDevice, Enabled: &enabled}, storage.Page{})
+		res, _ := s.List(ctx, storage.EnrollmentQuery{Channel: mdm.ChannelDevice, Enabled: &enabled}, paging.Page{})
 		if len(res.Items) != 4 {
 			t.Fatalf("enabled devices = %d", len(res.Items))
 		}
-		res, _ = s.List(ctx, storage.EnrollmentQuery{ParentID: "DEVICE-01"}, storage.Page{})
+		res, _ = s.List(ctx, storage.EnrollmentQuery{ParentID: "DEVICE-01"}, paging.Page{})
 		if len(res.Items) != 1 || res.Items[0].ID.Channel != mdm.ChannelUser {
 			t.Fatalf("children = %+v", res.Items)
 		}
-		res, _ = s.List(ctx, storage.EnrollmentQuery{}, storage.Page{})
+		res, _ = s.List(ctx, storage.EnrollmentQuery{}, paging.Page{})
 		if len(res.Items) != 6 || res.NextCursor != "" {
 			t.Fatalf("all = %d next=%q", len(res.Items), res.NextCursor)
 		}
@@ -435,7 +436,7 @@ func RunEnrollmentSuite(t *testing.T, newStore Factory) {
 		for i := 1; i <= 3; i++ {
 			enroll(t, s, device(i), i)
 		}
-		res, err := s.List(ctx, storage.EnrollmentQuery{Serial: "S2"}, storage.Page{})
+		res, err := s.List(ctx, storage.EnrollmentQuery{Serial: "S2"}, paging.Page{})
 		if err != nil {
 			t.Fatalf("List by serial: %v", err)
 		}
@@ -445,12 +446,12 @@ func RunEnrollmentSuite(t *testing.T, newStore Factory) {
 		if res.Items[0].Device.SerialNumber != "S2" {
 			t.Fatalf("serial round trip = %q", res.Items[0].Device.SerialNumber)
 		}
-		res, err = s.List(ctx, storage.EnrollmentQuery{Serial: "nope"}, storage.Page{})
+		res, err = s.List(ctx, storage.EnrollmentQuery{Serial: "nope"}, paging.Page{})
 		if err != nil || len(res.Items) != 0 {
 			t.Fatalf("unknown serial = %+v err=%v", res.Items, err)
 		}
 		// Serial composes with the other filters rather than replacing them.
-		res, _ = s.List(ctx, storage.EnrollmentQuery{Serial: "S2", Channel: mdm.ChannelUser}, storage.Page{})
+		res, _ = s.List(ctx, storage.EnrollmentQuery{Serial: "S2", Channel: mdm.ChannelUser}, paging.Page{})
 		if len(res.Items) != 0 {
 			t.Fatalf("serial S2 on the user channel = %+v", res.Items)
 		}
@@ -534,7 +535,7 @@ func RunCommandQueueSuite(t *testing.T, newStore Factory) {
 		if n, _ := s.Next(ctx, id, false, t0.Add(time.Hour)); n != nil {
 			t.Fatalf("queue should be drained, got %+v", n)
 		}
-		res, err := s.Commands(ctx, id, storage.CommandQuery{}, storage.Page{})
+		res, err := s.Commands(ctx, id, storage.CommandQuery{}, paging.Page{})
 		if err != nil || len(res.Items) != 3 || res.Items[0].Command.UUID != "C3" {
 			t.Fatalf("Commands = %+v %v", res, err)
 		}
@@ -547,27 +548,27 @@ func RunCommandQueueSuite(t *testing.T, newStore Factory) {
 		if c2.State != storage.StateError || c2.NotNowCount != 2 || c2.Attempts != 3 || c2.Result == nil || len(c2.Result.ErrorChain) != 1 || c2.CompletedAt.IsZero() {
 			t.Fatalf("C2 = %+v", c2)
 		}
-		res, _ = s.Commands(ctx, id, storage.CommandQuery{States: []storage.State{storage.StateAcknowledged}}, storage.Page{})
+		res, _ = s.Commands(ctx, id, storage.CommandQuery{States: []storage.State{storage.StateAcknowledged}}, paging.Page{})
 		if len(res.Items) != 1 || res.Items[0].Command.UUID != "C1" {
 			t.Fatalf("filtered = %+v", res.Items)
 		}
-		res, _ = s.Commands(ctx, id, storage.CommandQuery{RequestType: "Nope"}, storage.Page{})
+		res, _ = s.Commands(ctx, id, storage.CommandQuery{RequestType: "Nope"}, paging.Page{})
 		if len(res.Items) != 0 {
 			t.Fatal("RequestType filter")
 		}
 		// Pagination of results.
-		first, _ := s.Commands(ctx, id, storage.CommandQuery{}, storage.Page{Limit: 2})
+		first, _ := s.Commands(ctx, id, storage.CommandQuery{}, paging.Page{Limit: 2})
 		if len(first.Items) != 2 || first.NextCursor == "" {
 			t.Fatalf("page 1 = %+v", first)
 		}
-		second, _ := s.Commands(ctx, id, storage.CommandQuery{}, storage.Page{Limit: 2, Cursor: first.NextCursor})
+		second, _ := s.Commands(ctx, id, storage.CommandQuery{}, paging.Page{Limit: 2, Cursor: first.NextCursor})
 		if len(second.Items) != 1 || second.NextCursor != "" {
 			t.Fatalf("page 2 = %+v", second)
 		}
-		if _, err := s.Commands(ctx, id, storage.CommandQuery{}, storage.Page{Cursor: "bogus"}); !errors.Is(err, storage.ErrInvalid) {
+		if _, err := s.Commands(ctx, id, storage.CommandQuery{}, paging.Page{Cursor: "bogus"}); !errors.Is(err, storage.ErrInvalid) {
 			t.Fatalf("bad cursor: %v", err)
 		}
-		if _, err := s.Commands(ctx, device(9), storage.CommandQuery{}, storage.Page{}); !errors.Is(err, storage.ErrNotFound) {
+		if _, err := s.Commands(ctx, device(9), storage.CommandQuery{}, paging.Page{}); !errors.Is(err, storage.ErrNotFound) {
 			t.Fatalf("unknown enrollment: %v", err)
 		}
 	})

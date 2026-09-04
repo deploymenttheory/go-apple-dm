@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/deploymenttheory/go-apple-dm/dep"
-	"github.com/deploymenttheory/go-apple-dm/storage"
+	"github.com/deploymenttheory/go-apple-dm/paging"
 )
 
 var accountCols = []string{
@@ -131,7 +131,7 @@ func (t *txStore) DeleteAccount(ctx context.Context, name string) error {
 }
 
 // ListAccounts implements dep.AccountStore.
-func (t *txStore) ListAccounts(ctx context.Context, p storage.Page) (storage.Result[dep.Account], error) {
+func (t *txStore) ListAccounts(ctx context.Context, p paging.Page) (paging.Result[dep.Account], error) {
 	where, args := after(nil, nil, "name", p)
 	query := selectAccount
 	if len(where) > 0 {
@@ -324,7 +324,7 @@ func (s *Store) DeleteAccount(ctx context.Context, name string) error {
 }
 
 // ListAccounts implements dep.AccountStore.
-func (s *Store) ListAccounts(ctx context.Context, p storage.Page) (storage.Result[dep.Account], error) {
+func (s *Store) ListAccounts(ctx context.Context, p paging.Page) (paging.Result[dep.Account], error) {
 	return s.view().ListAccounts(ctx, p)
 }
 

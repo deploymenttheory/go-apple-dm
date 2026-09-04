@@ -8,7 +8,7 @@ import (
 
 	"github.com/deploymenttheory/go-apple-dm/ddm"
 	"github.com/deploymenttheory/go-apple-dm/mdm"
-	"github.com/deploymenttheory/go-apple-dm/storage"
+	"github.com/deploymenttheory/go-apple-dm/paging"
 )
 
 // enrollmentIDCols is the identity triple every enrollment-keyed table
@@ -76,12 +76,12 @@ func (t *txStore) EnrollmentSets(ctx context.Context, id mdm.EnrollmentID) ([]st
 
 // SetEnrollments implements ddm.AssignmentStore. The cursor is the last
 // enrollment id of the previous page.
-func (t *txStore) SetEnrollments(ctx context.Context, set string, p storage.Page) (storage.Result[mdm.EnrollmentID], error) {
+func (t *txStore) SetEnrollments(ctx context.Context, set string, p paging.Page) (paging.Result[mdm.EnrollmentID], error) {
 	if err := validName("set name", set); err != nil {
-		return storage.Result[mdm.EnrollmentID]{}, err
+		return paging.Result[mdm.EnrollmentID]{}, err
 	}
 	if err := t.requireSet(ctx, set); err != nil {
-		return storage.Result[mdm.EnrollmentID]{}, err
+		return paging.Result[mdm.EnrollmentID]{}, err
 	}
 	where, args := after([]string{"set_name = ?"}, []any{set}, "enrollment_id", p)
 	return keyset(ctx, t, "set enrollments", "SELECT "+enrollmentIDCols+" FROM ddm_enrollment_sets WHERE "+strings.Join(where, " AND ")+" ORDER BY enrollment_id", args, p,
@@ -216,7 +216,7 @@ func (s *Store) EnrollmentSets(ctx context.Context, id mdm.EnrollmentID) ([]stri
 }
 
 // SetEnrollments implements ddm.AssignmentStore.
-func (s *Store) SetEnrollments(ctx context.Context, set string, p storage.Page) (storage.Result[mdm.EnrollmentID], error) {
+func (s *Store) SetEnrollments(ctx context.Context, set string, p paging.Page) (paging.Result[mdm.EnrollmentID], error) {
 	return s.view().SetEnrollments(ctx, set, p)
 }
 

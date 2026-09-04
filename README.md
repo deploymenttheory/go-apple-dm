@@ -210,6 +210,7 @@ See [docs/diagrams](docs/diagrams/README.md).
 | `mdm/` | Protocol core: enrollment identity, check-in decoding, command and response envelopes |
 | `cms/` | Detached and attached CMS signing and verification, `Mdm-Signature` with signing-time tolerance |
 | `service/` | Enrollment lifecycle, identity pinning, command delivery, hooks, events, user channels, target validation |
+| `paging/` | Cursor pagination shared by every store contract: `Page`, `Result[T]`, and the size bounds, so a contract can be paginated without depending on `storage` |
 | `storage/` | Storage interfaces, in-memory backend, and the contract suite every backend runs |
 | `storage/sqlcommon`, `storage/sqlite`, `storage/postgres`, `storage/mysql` | One SQL implementation with embedded migrations for SQLite (pure Go), PostgreSQL (pgx), and MySQL; secret columns sealed when a keyring is configured |
 | `storage/crypt` | AES-256-GCM sealing of secret columns under named keys from `secrets.Provider`, with row-bound AAD and in-place key rotation |

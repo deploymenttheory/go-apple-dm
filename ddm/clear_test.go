@@ -12,6 +12,7 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/ddm/ddmtest"
 	ddminmem "github.com/deploymenttheory/go-apple-dm/ddm/inmem"
 	"github.com/deploymenttheory/go-apple-dm/mdm"
+	"github.com/deploymenttheory/go-apple-dm/paging"
 	"github.com/deploymenttheory/go-apple-dm/schema/checkin"
 	"github.com/deploymenttheory/go-apple-dm/service"
 	"github.com/deploymenttheory/go-apple-dm/storage"
@@ -58,7 +59,7 @@ func state(t *testing.T, h *harness, id mdm.EnrollmentID) string {
 	if err != nil {
 		t.Fatal(err)
 	}
-	vals, err := h.engine.StatusValues(ctx, id, ddm.StatusValueQuery{}, storage.Page{})
+	vals, err := h.engine.StatusValues(ctx, id, ddm.StatusValueQuery{}, paging.Page{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -271,8 +272,8 @@ func TestServiceHook(t *testing.T) {
 		// listing; every page is cleared.
 		st := storeinmem.New()
 		h := clearHarness(t)
-		users := make([]mdm.EnrollmentID, 0, storage.DefaultPageSize+3)
-		for i := range storage.DefaultPageSize + 3 {
+		users := make([]mdm.EnrollmentID, 0, paging.DefaultPageSize+3)
+		for i := range paging.DefaultPageSize + 3 {
 			users = append(users, ddmtest.User(3, "u"+itoa3(i)))
 		}
 		for _, id := range append(users, ddmtest.Device(3)) {

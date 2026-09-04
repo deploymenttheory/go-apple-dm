@@ -10,7 +10,7 @@ import (
 
 	"github.com/deploymenttheory/go-apple-dm/dep"
 	"github.com/deploymenttheory/go-apple-dm/dep/deptest"
-	"github.com/deploymenttheory/go-apple-dm/storage"
+	"github.com/deploymenttheory/go-apple-dm/paging"
 )
 
 // assignFixture is a fixture with a defined profile the account targets.
@@ -487,7 +487,7 @@ func TestAssigner(t *testing.T) {
 		if res, err := quiet.RunOnce(ctx); err != nil || res.Assigned != 1 {
 			t.Fatalf("newer device %+v %v", res, err)
 		}
-		r, _ := f.store.ListAssignments(ctx, acct, dep.AssignmentQuery{Status: dep.StatusSuccess}, storage.Page{})
+		r, _ := f.store.ListAssignments(ctx, acct, dep.AssignmentQuery{Status: dep.StatusSuccess}, paging.Page{})
 		if len(r.Items) != 1 {
 			t.Fatalf("assignments %d", len(r.Items))
 		}

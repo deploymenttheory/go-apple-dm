@@ -13,7 +13,7 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/acme"
 	"github.com/deploymenttheory/go-apple-dm/ca"
 	"github.com/deploymenttheory/go-apple-dm/event"
-	"github.com/deploymenttheory/go-apple-dm/storage"
+	"github.com/deploymenttheory/go-apple-dm/paging"
 )
 
 // TestEnrollmentWithAnIndependentClient drives the whole exchange with
@@ -118,7 +118,7 @@ func TestEnrollmentWithAnIndependentClient(t *testing.T) {
 
 	// Keeping the attested facts alongside the certificate is what lets an
 	// operator ask later which hardware holds a given identity.
-	certs, err := f.store.ListCertificates(ctx, acme.CertificateQuery{}, storage.Page{})
+	certs, err := f.store.ListCertificates(ctx, acme.CertificateQuery{}, paging.Page{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -167,7 +167,7 @@ func TestBindingCapsTheCertificateLifetime(t *testing.T) {
 	res := fl.finalizeWith(fl.key, pkix.Name{})
 	requireStatus(t, res, http.StatusOK)
 
-	certs, err := f.store.ListCertificates(t.Context(), acme.CertificateQuery{}, storage.Page{})
+	certs, err := f.store.ListCertificates(t.Context(), acme.CertificateQuery{}, paging.Page{})
 	if err != nil {
 		t.Fatal(err)
 	}

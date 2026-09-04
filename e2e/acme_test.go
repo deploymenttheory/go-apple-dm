@@ -22,10 +22,10 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/ca"
 	"github.com/deploymenttheory/go-apple-dm/enroll"
 	"github.com/deploymenttheory/go-apple-dm/event"
+	"github.com/deploymenttheory/go-apple-dm/paging"
 	"github.com/deploymenttheory/go-apple-dm/profile"
 	"github.com/deploymenttheory/go-apple-dm/service"
 	"github.com/deploymenttheory/go-apple-dm/simulator"
-	"github.com/deploymenttheory/go-apple-dm/storage"
 )
 
 // acmeFixture is a harness with an ACME server mounted on the enrollment
@@ -197,7 +197,7 @@ func TestE2E_ACMEAttest(t *testing.T) {
 		}
 		// What Apple attested is kept with the certificate, so an operator
 		// can ask which hardware holds an identity.
-		res, err := f.acme.ListCertificates(ctx, acme.CertificateQuery{}, storage.Page{})
+		res, err := f.acme.ListCertificates(ctx, acme.CertificateQuery{}, paging.Page{})
 		if err != nil {
 			t.Fatal(err)
 		}

@@ -7,8 +7,8 @@ import (
 
 	"github.com/deploymenttheory/go-apple-dm/dep"
 	"github.com/deploymenttheory/go-apple-dm/dep/sqlstore"
+	"github.com/deploymenttheory/go-apple-dm/paging"
 	"github.com/deploymenttheory/go-apple-dm/secrets"
-	"github.com/deploymenttheory/go-apple-dm/storage"
 	"github.com/deploymenttheory/go-apple-dm/storage/crypt"
 	"github.com/deploymenttheory/go-apple-dm/storage/sqlite"
 )
@@ -52,17 +52,17 @@ func TestCorruptRowsSurface(t *testing.T) {
 	}{
 		{"account timestamp", "UPDATE dep_accounts SET created_at = 'garbage'", func(s *sqlstore.Store) error { _, err := s.GetAccount(ctx, "a"); return err }},
 		{"account limits", "UPDATE dep_accounts SET limits = X'00'", func(s *sqlstore.Store) error { _, err := s.GetAccount(ctx, "a"); return err }},
-		{"account list", "UPDATE dep_accounts SET updated_at = 'garbage'", func(s *sqlstore.Store) error { _, err := s.ListAccounts(ctx, storage.Page{}); return err }},
+		{"account list", "UPDATE dep_accounts SET updated_at = 'garbage'", func(s *sqlstore.Store) error { _, err := s.ListAccounts(ctx, paging.Page{}); return err }},
 		{"device record", "UPDATE dep_devices SET record = X'00'", func(s *sqlstore.Store) error { _, err := s.GetDevice(ctx, "a", "S"); return err }},
 		{"device list", "UPDATE dep_devices SET updated_at = 'garbage'", func(s *sqlstore.Store) error {
-			_, err := s.ListDevices(ctx, "a", dep.DeviceQuery{}, storage.Page{})
+			_, err := s.ListDevices(ctx, "a", dep.DeviceQuery{}, paging.Page{})
 			return err
 		}},
 		{"profile record", "UPDATE dep_profiles SET record = X'00'", func(s *sqlstore.Store) error { _, err := s.GetProfile(ctx, "a", "p"); return err }},
-		{"profile list", "UPDATE dep_profiles SET record = X'00'", func(s *sqlstore.Store) error { _, err := s.ListProfiles(ctx, "a", storage.Page{}); return err }},
+		{"profile list", "UPDATE dep_profiles SET record = X'00'", func(s *sqlstore.Store) error { _, err := s.ListProfiles(ctx, "a", paging.Page{}); return err }},
 		{"assignment", "UPDATE dep_assignments SET attempted_at = 'garbage'", func(s *sqlstore.Store) error { _, err := s.GetAssignment(ctx, "a", "S"); return err }},
 		{"assignment list", "UPDATE dep_assignments SET attempted_at = 'garbage'", func(s *sqlstore.Store) error {
-			_, err := s.ListAssignments(ctx, "a", dep.AssignmentQuery{}, storage.Page{})
+			_, err := s.ListAssignments(ctx, "a", dep.AssignmentQuery{}, paging.Page{})
 			return err
 		}},
 		{"cursor", "UPDATE dep_cursors SET updated_at = 'garbage'", func(s *sqlstore.Store) error { _, err := s.Cursor(ctx, "a"); return err }},
@@ -117,7 +117,7 @@ func TestStrictKeyringRefusesPlaintext(t *testing.T) {
 	if _, err := s.Keypair(ctx, "a", dep.StageCurrent); err == nil {
 		t.Error("plaintext key accepted by a strict keyring")
 	}
-	if _, err := s.ListAccounts(ctx, storage.Page{}); err == nil {
+	if _, err := s.ListAccounts(ctx, paging.Page{}); err == nil {
 		t.Error("plaintext account list accepted by a strict keyring")
 	}
 	// Sealed rows work through the same keyring; a moved blob does not.

@@ -17,7 +17,7 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/acme/acmetest"
 	"github.com/deploymenttheory/go-apple-dm/acme/attest"
 	"github.com/deploymenttheory/go-apple-dm/acme/sqlstore"
-	"github.com/deploymenttheory/go-apple-dm/storage"
+	"github.com/deploymenttheory/go-apple-dm/paging"
 	"github.com/deploymenttheory/go-apple-dm/storage/mysql"
 	"github.com/deploymenttheory/go-apple-dm/storage/postgres"
 	"github.com/deploymenttheory/go-apple-dm/storage/sqlcommon"
@@ -311,7 +311,7 @@ func TestMissingRecords(t *testing.T) {
 			t.Errorf("%s: empty id err = %v, want ErrInvalid", name, err)
 		}
 	}
-	if _, err := s.ListOrders(ctx, "", storage.Page{}); !errors.Is(err, acme.ErrInvalid) {
+	if _, err := s.ListOrders(ctx, "", paging.Page{}); !errors.Is(err, acme.ErrInvalid) {
 		t.Errorf("ListOrders with no account = %v", err)
 	}
 }
@@ -560,7 +560,7 @@ func TestPaging(t *testing.T) {
 	}
 	seedOrder(t, s, "other", "z9")
 	var seen []string
-	page := storage.Page{Limit: 2}
+	page := paging.Page{Limit: 2}
 	for {
 		res, err := s.ListOrders(ctx, "acct", page)
 		if err != nil {
@@ -581,10 +581,10 @@ func TestPaging(t *testing.T) {
 		t.Fatalf("orders = %v", seen)
 	}
 	// The default page size applies when the caller asks for none.
-	if res, err := s.ListOrders(ctx, "acct", storage.Page{}); err != nil || len(res.Items) != 5 || res.NextCursor != "" {
+	if res, err := s.ListOrders(ctx, "acct", paging.Page{}); err != nil || len(res.Items) != 5 || res.NextCursor != "" {
 		t.Fatalf("unpaged orders = %d %q %v", len(res.Items), res.NextCursor, err)
 	}
-	if res, err := s.ListOrders(ctx, "nobody", storage.Page{}); err != nil || len(res.Items) != 0 {
+	if res, err := s.ListOrders(ctx, "nobody", paging.Page{}); err != nil || len(res.Items) != 0 {
 		t.Fatalf("orders of an unknown account = %d %v", len(res.Items), err)
 	}
 }
@@ -628,7 +628,7 @@ func TestCertificateQuery(t *testing.T) {
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
 			var ids []string
-			page := storage.Page{Limit: 1}
+			page := paging.Page{Limit: 1}
 			for {
 				res, err := s.ListCertificates(ctx, tc.q, page)
 				if err != nil {

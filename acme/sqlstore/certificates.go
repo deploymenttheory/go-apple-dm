@@ -7,7 +7,7 @@ import (
 	"strings"
 
 	"github.com/deploymenttheory/go-apple-dm/acme"
-	"github.com/deploymenttheory/go-apple-dm/storage"
+	"github.com/deploymenttheory/go-apple-dm/paging"
 )
 
 // certificateCols index what CertificateQuery filters on plus the two
@@ -47,8 +47,8 @@ func (t *txStore) GetCertificate(ctx context.Context, id string) (*acme.Certific
 func (t *txStore) ListCertificates(
 	ctx context.Context,
 	q acme.CertificateQuery,
-	p storage.Page,
-) (storage.Result[acme.Certificate], error) {
+	p paging.Page,
+) (paging.Result[acme.Certificate], error) {
 	var where []string
 	var args []any
 	for _, f := range []struct {
@@ -83,7 +83,7 @@ func (s *Store) GetCertificate(ctx context.Context, id string) (*acme.Certificat
 func (s *Store) ListCertificates(
 	ctx context.Context,
 	q acme.CertificateQuery,
-	p storage.Page,
-) (storage.Result[acme.Certificate], error) {
+	p paging.Page,
+) (paging.Result[acme.Certificate], error) {
 	return s.view().ListCertificates(ctx, q, p)
 }

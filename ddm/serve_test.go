@@ -14,9 +14,9 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/ddm"
 	"github.com/deploymenttheory/go-apple-dm/ddm/ddmtest"
 	"github.com/deploymenttheory/go-apple-dm/mdm"
+	"github.com/deploymenttheory/go-apple-dm/paging"
 	schemaddm "github.com/deploymenttheory/go-apple-dm/schema/ddm"
 	"github.com/deploymenttheory/go-apple-dm/schema/support"
-	"github.com/deploymenttheory/go-apple-dm/storage"
 )
 
 // tokensResponse is the SyncTokens body as decoded from the wire.
@@ -491,7 +491,7 @@ func TestHandle(t *testing.T) {
 		if err != nil || res.Status != http.StatusOK || len(res.Body) != 0 {
 			t.Fatalf("status = %+v, %v", res, err)
 		}
-		reports, err := h.engine.StatusReports(ctx, dev, storage.Page{})
+		reports, err := h.engine.StatusReports(ctx, dev, paging.Page{})
 		if err != nil || len(reports.Items) != 1 || string(reports.Items[0].Raw) != string(body) || !reports.Items[0].FullReport {
 			t.Fatalf("StatusReports = %+v, %v", reports, err)
 		}

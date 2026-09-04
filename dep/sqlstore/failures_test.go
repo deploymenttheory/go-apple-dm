@@ -8,7 +8,7 @@ import (
 
 	"github.com/deploymenttheory/go-apple-dm/dep"
 	"github.com/deploymenttheory/go-apple-dm/dep/sqlstore"
-	"github.com/deploymenttheory/go-apple-dm/storage"
+	"github.com/deploymenttheory/go-apple-dm/paging"
 	"github.com/deploymenttheory/go-apple-dm/storage/sqlite"
 )
 
@@ -32,7 +32,7 @@ func TestClosedDatabaseSurfaces(t *testing.T) {
 		"PutAccount":      func() error { return s.PutAccount(ctx, acct) },
 		"GetAccount":      func() error { _, err := s.GetAccount(ctx, "a"); return err },
 		"DeleteAccount":   func() error { return s.DeleteAccount(ctx, "a") },
-		"ListAccounts":    func() error { _, err := s.ListAccounts(ctx, storage.Page{}); return err },
+		"ListAccounts":    func() error { _, err := s.ListAccounts(ctx, paging.Page{}); return err },
 		"SetAccountState": func() error { return s.SetAccountState(ctx, "a", dep.AccountState{TokenInvalid: true}) },
 		"PutKeypair": func() error {
 			return s.PutKeypair(ctx, "a", dep.StageStaged, &dep.Keypair{CertPEM: []byte("c"), KeyPEM: []byte("k")})
@@ -47,18 +47,18 @@ func TestClosedDatabaseSurfaces(t *testing.T) {
 		},
 		"PutDevices":  func() error { return s.PutDevices(ctx, "a", []dep.Device{{SerialNumber: "S"}}, time.Now()) },
 		"GetDevice":   func() error { _, err := s.GetDevice(ctx, "a", "S"); return err },
-		"ListDevices": func() error { _, err := s.ListDevices(ctx, "a", dep.DeviceQuery{}, storage.Page{}); return err },
+		"ListDevices": func() error { _, err := s.ListDevices(ctx, "a", dep.DeviceQuery{}, paging.Page{}); return err },
 		"PutProfile": func() error {
 			return s.PutProfile(ctx, "a", &dep.Profile{ProfileUUID: "p", ProfileName: "n", URL: "https://x"})
 		},
 		"GetProfile":    func() error { _, err := s.GetProfile(ctx, "a", "p"); return err },
 		"DeleteProfile": func() error { return s.DeleteProfile(ctx, "a", "p") },
-		"ListProfiles":  func() error { _, err := s.ListProfiles(ctx, "a", storage.Page{}); return err },
+		"ListProfiles":  func() error { _, err := s.ListProfiles(ctx, "a", paging.Page{}); return err },
 		"PutAssignment": func() error {
 			return s.PutAssignment(ctx, &dep.Assignment{Account: "a", SerialNumber: "S", ProfileUUID: "p", Status: dep.StatusSuccess})
 		},
 		"GetAssignment":   func() error { _, err := s.GetAssignment(ctx, "a", "S"); return err },
-		"ListAssignments": func() error { _, err := s.ListAssignments(ctx, "a", dep.AssignmentQuery{}, storage.Page{}); return err },
+		"ListAssignments": func() error { _, err := s.ListAssignments(ctx, "a", dep.AssignmentQuery{}, paging.Page{}); return err },
 		"Update":          func() error { return s.Update(ctx, func(dep.Tx) error { return nil }) },
 	}
 	for name, call := range calls {

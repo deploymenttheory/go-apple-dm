@@ -5,16 +5,17 @@ import (
 	"fmt"
 
 	"github.com/deploymenttheory/go-apple-dm/event"
+	"github.com/deploymenttheory/go-apple-dm/paging"
 	"github.com/deploymenttheory/go-apple-dm/storage"
 )
 
 // ExportEnrollments pages through enrollment records for migration. Device
 // channels precede the user channels that belong to them, so a page can be
 // replayed into ImportEnrollment in order (decision record 0017).
-func (c *Core) ExportEnrollments(ctx context.Context, p storage.Page) (storage.Result[storage.EnrollmentExport], error) {
+func (c *Core) ExportEnrollments(ctx context.Context, p paging.Page) (paging.Result[storage.EnrollmentExport], error) {
 	ctx, after, err := c.runHooks(ctx, &Call{Op: "export"})
 	if err != nil {
-		return storage.Result[storage.EnrollmentExport]{}, err
+		return paging.Result[storage.EnrollmentExport]{}, err
 	}
 	res, err := c.store.Export(ctx, p)
 	if err != nil {

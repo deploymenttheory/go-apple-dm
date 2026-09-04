@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/deploymenttheory/go-apple-dm/acme"
-	"github.com/deploymenttheory/go-apple-dm/storage"
+	"github.com/deploymenttheory/go-apple-dm/paging"
 )
 
 // Failing wraps an acme.Store and returns the error in Fail for any method
@@ -124,10 +124,10 @@ func (f *Failing) GetCertificate(ctx context.Context, id string) (*acme.Certific
 func (f *Failing) ListOrders(
 	ctx context.Context,
 	accountID string,
-	p storage.Page,
-) (storage.Result[acme.Order], error) {
+	p paging.Page,
+) (paging.Result[acme.Order], error) {
 	if err := f.fail("ListOrders"); err != nil {
-		return storage.Result[acme.Order]{}, err
+		return paging.Result[acme.Order]{}, err
 	}
 	return f.Store.ListOrders(ctx, accountID, p)
 }
@@ -136,10 +136,10 @@ func (f *Failing) ListOrders(
 func (f *Failing) ListCertificates(
 	ctx context.Context,
 	q acme.CertificateQuery,
-	p storage.Page,
-) (storage.Result[acme.Certificate], error) {
+	p paging.Page,
+) (paging.Result[acme.Certificate], error) {
 	if err := f.fail("ListCertificates"); err != nil {
-		return storage.Result[acme.Certificate]{}, err
+		return paging.Result[acme.Certificate]{}, err
 	}
 	return f.Store.ListCertificates(ctx, q, p)
 }
@@ -215,10 +215,10 @@ func (t *txView) GetCertificate(ctx context.Context, id string) (*acme.Certifica
 func (t *txView) ListOrders(
 	ctx context.Context,
 	accountID string,
-	p storage.Page,
-) (storage.Result[acme.Order], error) {
+	p paging.Page,
+) (paging.Result[acme.Order], error) {
 	if err := t.f.fail("ListOrders"); err != nil {
-		return storage.Result[acme.Order]{}, err
+		return paging.Result[acme.Order]{}, err
 	}
 	return t.tx.ListOrders(ctx, accountID, p)
 }
@@ -226,10 +226,10 @@ func (t *txView) ListOrders(
 func (t *txView) ListCertificates(
 	ctx context.Context,
 	q acme.CertificateQuery,
-	p storage.Page,
-) (storage.Result[acme.Certificate], error) {
+	p paging.Page,
+) (paging.Result[acme.Certificate], error) {
 	if err := t.f.fail("ListCertificates"); err != nil {
-		return storage.Result[acme.Certificate]{}, err
+		return paging.Result[acme.Certificate]{}, err
 	}
 	return t.tx.ListCertificates(ctx, q, p)
 }

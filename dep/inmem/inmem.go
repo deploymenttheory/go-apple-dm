@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"github.com/deploymenttheory/go-apple-dm/dep"
-	"github.com/deploymenttheory/go-apple-dm/storage"
+	"github.com/deploymenttheory/go-apple-dm/paging"
 	"github.com/deploymenttheory/go-apple-dm/storage/crypt"
 )
 
@@ -298,7 +298,7 @@ func (t *tx) DeleteAccount(_ context.Context, name string) error {
 }
 
 // ListAccounts implements dep.AccountStore.
-func (t *tx) ListAccounts(ctx context.Context, p storage.Page) (storage.Result[dep.Account], error) {
+func (t *tx) ListAccounts(ctx context.Context, p paging.Page) (paging.Result[dep.Account], error) {
 	names := slices.Sorted(maps.Keys(t.st.accounts))
 	return page(names, p, func(name string) (dep.Account, error) {
 		a, err := t.GetAccount(ctx, name)
@@ -482,9 +482,9 @@ func (t *tx) GetDevice(_ context.Context, account, serial string) (*dep.StoredDe
 }
 
 // ListDevices implements dep.DeviceStore.
-func (t *tx) ListDevices(_ context.Context, account string, q dep.DeviceQuery, p storage.Page) (storage.Result[dep.StoredDevice], error) {
+func (t *tx) ListDevices(_ context.Context, account string, q dep.DeviceQuery, p paging.Page) (paging.Result[dep.StoredDevice], error) {
 	if err := validName("account name", account); err != nil {
-		return storage.Result[dep.StoredDevice]{}, err
+		return paging.Result[dep.StoredDevice]{}, err
 	}
 	var serials []string
 	for k, sd := range t.st.devices {
@@ -545,9 +545,9 @@ func (t *tx) DeleteProfile(_ context.Context, account, uuid string) error {
 }
 
 // ListProfiles implements dep.ProfileStore.
-func (t *tx) ListProfiles(_ context.Context, account string, p storage.Page) (storage.Result[dep.Profile], error) {
+func (t *tx) ListProfiles(_ context.Context, account string, p paging.Page) (paging.Result[dep.Profile], error) {
 	if err := validName("account name", account); err != nil {
-		return storage.Result[dep.Profile]{}, err
+		return paging.Result[dep.Profile]{}, err
 	}
 	var uuids []string
 	for k := range t.st.profiles {
@@ -597,9 +597,9 @@ func (t *tx) GetAssignment(_ context.Context, account, serial string) (*dep.Assi
 }
 
 // ListAssignments implements dep.AssignmentStore.
-func (t *tx) ListAssignments(_ context.Context, account string, q dep.AssignmentQuery, p storage.Page) (storage.Result[dep.Assignment], error) {
+func (t *tx) ListAssignments(_ context.Context, account string, q dep.AssignmentQuery, p paging.Page) (paging.Result[dep.Assignment], error) {
 	if err := validName("account name", account); err != nil {
-		return storage.Result[dep.Assignment]{}, err
+		return paging.Result[dep.Assignment]{}, err
 	}
 	var serials []string
 	for k, a := range t.st.assigns {
@@ -614,12 +614,12 @@ func (t *tx) ListAssignments(_ context.Context, account string, q dep.Assignment
 }
 
 // page applies keyset pagination over sorted keys.
-func page[T any](keys []string, p storage.Page, load func(string) (T, error)) (storage.Result[T], error) {
+func page[T any](keys []string, p paging.Page, load func(string) (T, error)) (paging.Result[T], error) {
 	limit := p.Limit
 	if limit <= 0 {
-		limit = storage.DefaultPageSize
+		limit = paging.DefaultPageSize
 	}
-	var out storage.Result[T]
+	var out paging.Result[T]
 	last := ""
 	for _, k := range keys {
 		if p.Cursor != "" && strings.Compare(k, p.Cursor) <= 0 {
@@ -631,7 +631,7 @@ func page[T any](keys []string, p storage.Page, load func(string) (T, error)) (s
 		}
 		item, err := load(k)
 		if err != nil {
-			return storage.Result[T]{}, err
+			return paging.Result[T]{}, err
 		}
 		out.Items = append(out.Items, item)
 		last = k
@@ -663,7 +663,7 @@ func (s *Store) DeleteAccount(ctx context.Context, name string) error {
 }
 
 // ListAccounts implements dep.AccountStore.
-func (s *Store) ListAccounts(ctx context.Context, p storage.Page) (storage.Result[dep.Account], error) {
+func (s *Store) ListAccounts(ctx context.Context, p paging.Page) (paging.Result[dep.Account], error) {
 	t, done := s.view()
 	defer done()
 	return t.ListAccounts(ctx, p)
@@ -739,7 +739,7 @@ func (s *Store) GetDevice(ctx context.Context, account, serial string) (*dep.Sto
 }
 
 // ListDevices implements dep.DeviceStore.
-func (s *Store) ListDevices(ctx context.Context, account string, q dep.DeviceQuery, p storage.Page) (storage.Result[dep.StoredDevice], error) {
+func (s *Store) ListDevices(ctx context.Context, account string, q dep.DeviceQuery, p paging.Page) (paging.Result[dep.StoredDevice], error) {
 	t, done := s.view()
 	defer done()
 	return t.ListDevices(ctx, account, q, p)
@@ -767,7 +767,7 @@ func (s *Store) DeleteProfile(ctx context.Context, account, uuid string) error {
 }
 
 // ListProfiles implements dep.ProfileStore.
-func (s *Store) ListProfiles(ctx context.Context, account string, p storage.Page) (storage.Result[dep.Profile], error) {
+func (s *Store) ListProfiles(ctx context.Context, account string, p paging.Page) (paging.Result[dep.Profile], error) {
 	t, done := s.view()
 	defer done()
 	return t.ListProfiles(ctx, account, p)
@@ -788,7 +788,7 @@ func (s *Store) GetAssignment(ctx context.Context, account, serial string) (*dep
 }
 
 // ListAssignments implements dep.AssignmentStore.
-func (s *Store) ListAssignments(ctx context.Context, account string, q dep.AssignmentQuery, p storage.Page) (storage.Result[dep.Assignment], error) {
+func (s *Store) ListAssignments(ctx context.Context, account string, q dep.AssignmentQuery, p paging.Page) (paging.Result[dep.Assignment], error) {
 	t, done := s.view()
 	defer done()
 	return t.ListAssignments(ctx, account, q, p)

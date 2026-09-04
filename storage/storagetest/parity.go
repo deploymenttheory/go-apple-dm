@@ -9,6 +9,7 @@ import (
 
 	"github.com/deploymenttheory/go-apple-dm/internal/testpki"
 	"github.com/deploymenttheory/go-apple-dm/mdm"
+	"github.com/deploymenttheory/go-apple-dm/paging"
 	"github.com/deploymenttheory/go-apple-dm/storage"
 )
 
@@ -361,7 +362,7 @@ func RunMigrationSuite(t *testing.T, newStore Factory) {
 				t.Fatalf("limit %d: exported %d records", limit, len(seen))
 			}
 		}
-		if _, err := s.Export(ctx, storage.Page{Cursor: "bogus"}); !errors.Is(err, storage.ErrInvalid) {
+		if _, err := s.Export(ctx, paging.Page{Cursor: "bogus"}); !errors.Is(err, storage.ErrInvalid) {
 			t.Fatalf("bad cursor: %v", err)
 		}
 	})
@@ -426,7 +427,7 @@ func exportAll(t *testing.T, s storage.Store, limit int) []storage.EnrollmentExp
 	var out []storage.EnrollmentExport
 	cursor := ""
 	for {
-		res, err := s.Export(ctx, storage.Page{Cursor: cursor, Limit: limit})
+		res, err := s.Export(ctx, paging.Page{Cursor: cursor, Limit: limit})
 		if err != nil {
 			t.Fatalf("Export: %v", err)
 		}

@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/deploymenttheory/go-apple-dm/dep"
-	"github.com/deploymenttheory/go-apple-dm/storage"
+	"github.com/deploymenttheory/go-apple-dm/paging"
 )
 
 var deviceCols = []string{"account", "serial_number", "record", "profile_uuid", "profile_status", "op_type", "op_date", "deleted", "first_seen", "updated_at"}
@@ -81,9 +81,9 @@ func (t *txStore) GetDevice(ctx context.Context, account, serial string) (*dep.S
 }
 
 // ListDevices implements dep.DeviceStore.
-func (t *txStore) ListDevices(ctx context.Context, account string, q dep.DeviceQuery, p storage.Page) (storage.Result[dep.StoredDevice], error) {
+func (t *txStore) ListDevices(ctx context.Context, account string, q dep.DeviceQuery, p paging.Page) (paging.Result[dep.StoredDevice], error) {
 	if err := validName("account name", account); err != nil {
-		return storage.Result[dep.StoredDevice]{}, err
+		return paging.Result[dep.StoredDevice]{}, err
 	}
 	where, args := []string{"account = ?"}, []any{account}
 	if !q.IncludeDeleted {
@@ -163,9 +163,9 @@ func (t *txStore) DeleteProfile(ctx context.Context, account, uuid string) error
 }
 
 // ListProfiles implements dep.ProfileStore.
-func (t *txStore) ListProfiles(ctx context.Context, account string, p storage.Page) (storage.Result[dep.Profile], error) {
+func (t *txStore) ListProfiles(ctx context.Context, account string, p paging.Page) (paging.Result[dep.Profile], error) {
 	if err := validName("account name", account); err != nil {
-		return storage.Result[dep.Profile]{}, err
+		return paging.Result[dep.Profile]{}, err
 	}
 	where, args := after([]string{"account = ?"}, []any{account}, "profile_uuid", p)
 	query := "SELECT profile_uuid, record FROM dep_profiles WHERE " + strings.Join(where, " AND ") + " ORDER BY profile_uuid"
@@ -240,9 +240,9 @@ func (t *txStore) GetAssignment(ctx context.Context, account, serial string) (*d
 }
 
 // ListAssignments implements dep.AssignmentStore.
-func (t *txStore) ListAssignments(ctx context.Context, account string, q dep.AssignmentQuery, p storage.Page) (storage.Result[dep.Assignment], error) {
+func (t *txStore) ListAssignments(ctx context.Context, account string, q dep.AssignmentQuery, p paging.Page) (paging.Result[dep.Assignment], error) {
 	if err := validName("account name", account); err != nil {
-		return storage.Result[dep.Assignment]{}, err
+		return paging.Result[dep.Assignment]{}, err
 	}
 	where, args := []string{"account = ?"}, []any{account}
 	if q.Status != "" {
@@ -267,7 +267,7 @@ func (s *Store) GetDevice(ctx context.Context, account, serial string) (*dep.Sto
 }
 
 // ListDevices implements dep.DeviceStore.
-func (s *Store) ListDevices(ctx context.Context, account string, q dep.DeviceQuery, p storage.Page) (storage.Result[dep.StoredDevice], error) {
+func (s *Store) ListDevices(ctx context.Context, account string, q dep.DeviceQuery, p paging.Page) (paging.Result[dep.StoredDevice], error) {
 	return s.view().ListDevices(ctx, account, q, p)
 }
 
@@ -287,7 +287,7 @@ func (s *Store) DeleteProfile(ctx context.Context, account, uuid string) error {
 }
 
 // ListProfiles implements dep.ProfileStore.
-func (s *Store) ListProfiles(ctx context.Context, account string, p storage.Page) (storage.Result[dep.Profile], error) {
+func (s *Store) ListProfiles(ctx context.Context, account string, p paging.Page) (paging.Result[dep.Profile], error) {
 	return s.view().ListProfiles(ctx, account, p)
 }
 
@@ -302,6 +302,6 @@ func (s *Store) GetAssignment(ctx context.Context, account, serial string) (*dep
 }
 
 // ListAssignments implements dep.AssignmentStore.
-func (s *Store) ListAssignments(ctx context.Context, account string, q dep.AssignmentQuery, p storage.Page) (storage.Result[dep.Assignment], error) {
+func (s *Store) ListAssignments(ctx context.Context, account string, q dep.AssignmentQuery, p paging.Page) (paging.Result[dep.Assignment], error) {
 	return s.view().ListAssignments(ctx, account, q, p)
 }

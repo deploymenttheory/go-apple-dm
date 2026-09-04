@@ -24,10 +24,10 @@ import (
 	depinmem "github.com/deploymenttheory/go-apple-dm/dep/inmem"
 	"github.com/deploymenttheory/go-apple-dm/enroll"
 	"github.com/deploymenttheory/go-apple-dm/internal/app"
+	"github.com/deploymenttheory/go-apple-dm/paging"
 	"github.com/deploymenttheory/go-apple-dm/profile"
 	"github.com/deploymenttheory/go-apple-dm/schema/ddm"
 	"github.com/deploymenttheory/go-apple-dm/simulator"
-	"github.com/deploymenttheory/go-apple-dm/storage"
 )
 
 // acmeFixture is an enrollment fixture whose profiles carry an ACME
@@ -643,7 +643,7 @@ func TestACMEAdminFailures(t *testing.T) {
 	}
 	// Orders for the account that enrolled.
 	var orders struct{ Items []struct{ ID string } }
-	res, err := f.acmeStore(t).ListCertificates(ctx, acme.CertificateQuery{}, storage.Page{})
+	res, err := f.acmeStore(t).ListCertificates(ctx, acme.CertificateQuery{}, paging.Page{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -711,7 +711,7 @@ func TestACMEPolicyFaultIsNotARefusal(t *testing.T) {
 		t.Fatal("the device enrolled while the lookup was failing")
 	}
 	// Nothing was issued, and nothing was settled against the device.
-	res, err := f.acmeStore(t).ListCertificates(ctx, acme.CertificateQuery{}, storage.Page{})
+	res, err := f.acmeStore(t).ListCertificates(ctx, acme.CertificateQuery{}, paging.Page{})
 	if err != nil {
 		t.Fatal(err)
 	}

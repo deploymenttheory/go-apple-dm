@@ -5,7 +5,7 @@ import (
 	"errors"
 	"time"
 
-	"github.com/deploymenttheory/go-apple-dm/storage"
+	"github.com/deploymenttheory/go-apple-dm/paging"
 )
 
 // Storage errors. A backend reports these; the server turns them into
@@ -38,13 +38,13 @@ type Reader interface {
 	ListOrders(
 		ctx context.Context,
 		accountID string,
-		page storage.Page,
-	) (storage.Result[Order], error)
+		page paging.Page,
+	) (paging.Result[Order], error)
 	ListCertificates(
 		ctx context.Context,
 		q CertificateQuery,
-		page storage.Page,
-	) (storage.Result[Certificate], error)
+		page paging.Page,
+	) (paging.Result[Certificate], error)
 }
 
 // Writer is the write half, available only inside a transaction. Every put

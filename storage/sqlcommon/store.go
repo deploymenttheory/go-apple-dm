@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/deploymenttheory/go-apple-dm/mdm"
+	"github.com/deploymenttheory/go-apple-dm/paging"
 	"github.com/deploymenttheory/go-apple-dm/schema/checkin"
 	"github.com/deploymenttheory/go-apple-dm/storage"
 	"github.com/deploymenttheory/go-apple-dm/storage/crypt"
@@ -299,8 +300,8 @@ func (s *Store) openEnrollment(e *storage.Enrollment) error {
 }
 
 // List implements storage.EnrollmentStore with a keyset cursor on id.
-func (s *Store) List(ctx context.Context, q storage.EnrollmentQuery, p storage.Page) (storage.Result[storage.Enrollment], error) {
-	var out storage.Result[storage.Enrollment]
+func (s *Store) List(ctx context.Context, q storage.EnrollmentQuery, p paging.Page) (paging.Result[storage.Enrollment], error) {
+	var out paging.Result[storage.Enrollment]
 	where := []string{"1 = 1"}
 	var args []any
 	if q.Channel != mdm.ChannelUnknown {
@@ -350,7 +351,7 @@ func (s *Store) List(ctx context.Context, q storage.EnrollmentQuery, p storage.P
 	return out, nil
 }
 
-func pageLimit(p storage.Page) int {
+func pageLimit(p paging.Page) int {
 	return p.Size()
 }
 
@@ -563,8 +564,8 @@ func scanCommand(row scanner, id mdm.EnrollmentID) (int64, storage.QueuedCommand
 
 // Commands implements storage.CommandQueue with a keyset cursor on the
 // sequence number, newest first.
-func (s *Store) Commands(ctx context.Context, id mdm.EnrollmentID, q storage.CommandQuery, p storage.Page) (storage.Result[storage.QueuedCommand], error) {
-	var out storage.Result[storage.QueuedCommand]
+func (s *Store) Commands(ctx context.Context, id mdm.EnrollmentID, q storage.CommandQuery, p paging.Page) (paging.Result[storage.QueuedCommand], error) {
+	var out paging.Result[storage.QueuedCommand]
 	if err := validID(id); err != nil {
 		return out, err
 	}

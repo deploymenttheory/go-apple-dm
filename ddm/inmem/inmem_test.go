@@ -9,8 +9,8 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/ddm"
 	"github.com/deploymenttheory/go-apple-dm/ddm/ddmtest"
 	"github.com/deploymenttheory/go-apple-dm/ddm/inmem"
+	"github.com/deploymenttheory/go-apple-dm/paging"
 	schemaddm "github.com/deploymenttheory/go-apple-dm/schema/ddm"
-	"github.com/deploymenttheory/go-apple-dm/storage"
 )
 
 func TestContract(t *testing.T) {
@@ -107,11 +107,11 @@ func TestFailingWrapperPassesThrough(t *testing.T) {
 
 	ctx := context.Background()
 	s := &ddmtest.Failing{Store: inmem.New(), Fail: map[string]error{"ListSets": errInjected, "Update": nil}}
-	if _, err := s.ListSets(ctx, storage.Page{}); !errors.Is(err, errInjected) {
+	if _, err := s.ListSets(ctx, paging.Page{}); !errors.Is(err, errInjected) {
 		t.Fatalf("outside Update: %v", err)
 	}
 	err := s.Update(ctx, func(tx ddm.Tx) error {
-		_, err := tx.ListSets(ctx, storage.Page{})
+		_, err := tx.ListSets(ctx, paging.Page{})
 		return err
 	})
 	if !errors.Is(err, errInjected) {

@@ -20,8 +20,8 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/cms"
 	"github.com/deploymenttheory/go-apple-dm/enroll"
 	"github.com/deploymenttheory/go-apple-dm/httpapi"
+	"github.com/deploymenttheory/go-apple-dm/paging"
 	"github.com/deploymenttheory/go-apple-dm/schema/ddm"
-	"github.com/deploymenttheory/go-apple-dm/storage"
 )
 
 // Identity methods for the enrollment profile.
@@ -210,7 +210,7 @@ func (s *acmeService) policy() (acme.Policy, error) {
 // depLookup asks the device enrollment service store whether a serial
 // number belongs to this organisation.
 func (s *acmeService) depLookup(ctx context.Context, serial string) (bool, error) {
-	res, err := s.app.dep.store.ListAccounts(ctx, storage.Page{Limit: 1000})
+	res, err := s.app.dep.store.ListAccounts(ctx, paging.Page{Limit: 1000})
 	if err != nil {
 		return false, fmt.Errorf("app: DEP accounts: %w", err)
 	}
@@ -336,7 +336,7 @@ func (s *acmeService) handler() http.Handler {
 			UDID:         r.URL.Query().Get("udid"),
 			AccountID:    r.URL.Query().Get("account"),
 		}
-		page := storage.Page{Cursor: r.URL.Query().Get("cursor")}
+		page := paging.Page{Cursor: r.URL.Query().Get("cursor")}
 		if v := r.URL.Query().Get("limit"); v != "" {
 			_, _ = fmt.Sscanf(v, "%d", &page.Limit)
 		}
@@ -370,7 +370,7 @@ func (s *acmeService) handler() http.Handler {
 			return
 		}
 		res, err := s.store.ListOrders(
-			r.Context(), account, storage.Page{Cursor: r.URL.Query().Get("cursor")},
+			r.Context(), account, paging.Page{Cursor: r.URL.Query().Get("cursor")},
 		)
 		if err != nil {
 			writeError(w, acmeStatus(err), err)

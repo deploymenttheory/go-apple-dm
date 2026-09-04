@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/deploymenttheory/go-apple-dm/mdm"
+	"github.com/deploymenttheory/go-apple-dm/paging"
 	"github.com/deploymenttheory/go-apple-dm/service"
 	"github.com/deploymenttheory/go-apple-dm/storage"
 )
@@ -26,7 +27,7 @@ func TestImportExportPublishes(t *testing.T) {
 	if _, err := src.core.Checkin(ctx, req(src.cert), tokenUpdate(t, "D1", map[string]any{"UserID": "U1", "UserShortName": "alice"})); err != nil {
 		t.Fatal(err)
 	}
-	exported, err := src.core.ExportEnrollments(ctx, storage.Page{})
+	exported, err := src.core.ExportEnrollments(ctx, paging.Page{})
 	if err != nil || len(exported.Items) != 2 || exported.NextCursor != "" {
 		t.Fatalf("export: %+v %v", exported, err)
 	}
@@ -67,7 +68,7 @@ func TestImportExportPublishes(t *testing.T) {
 	if _, err := dst.core.Connect(ctx, req(src.cert), response("D1", "", mdm.StatusIdle)); err != nil {
 		t.Fatalf("connect after import: %v", err)
 	}
-	if _, err := dst.core.ExportEnrollments(ctx, storage.Page{}); !errors.Is(err, service.ErrHookVeto) || service.CodeOf(err) != service.CodeForbidden {
+	if _, err := dst.core.ExportEnrollments(ctx, paging.Page{}); !errors.Is(err, service.ErrHookVeto) || service.CodeOf(err) != service.CodeForbidden {
 		t.Fatalf("export veto: %v", err)
 	}
 	if hook.before != hook.after+1 {
@@ -78,7 +79,7 @@ func TestImportExportPublishes(t *testing.T) {
 	if err := dst.core.ImportEnrollment(ctx, storage.EnrollmentExport{}); service.CodeOf(err) != service.CodeBadRequest || !errors.Is(err, storage.ErrInvalid) {
 		t.Fatalf("invalid record: %v", err)
 	}
-	if _, err := src.core.ExportEnrollments(ctx, storage.Page{Cursor: "garbage"}); service.CodeOf(err) != service.CodeBadRequest {
+	if _, err := src.core.ExportEnrollments(ctx, paging.Page{Cursor: "garbage"}); service.CodeOf(err) != service.CodeBadRequest {
 		t.Fatalf("bad cursor: %v", err)
 	}
 	clash := dev
