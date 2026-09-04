@@ -34,13 +34,17 @@ func load(t *testing.T) *layout.Graph {
 // who wants a declaration type should not acquire a database driver with it.
 var serverTier = []string{
 	"storage", "service", "httpapi", "eventsink", "internal/app", "internal/dmctl",
+	// Implementations split out of a client or protocol package because they
+	// need persistence or a keyring; decision record 0044 moves them under
+	// server/ and their interface stays with its consumer.
+	"axmstore",
 }
 
 // pureTier is every package proven not to reach serverTier. The list is a
 // ratchet: it may only grow. A package that appears here and later reaches the
 // server tier fails TestPureTierCannotReachServerTier.
 var pureTier = []string{
-	"acme", "acme/attest", "acme/jose", "adminauth", "audit", "ca", "cms",
+	"acme", "acme/attest", "acme/jose", "adminauth", "audit", "axm", "ca", "cms",
 	"ddm/predicate", "dep", "enroll", "enroll/ade", "enroll/discovery",
 	"enroll/webauth", "event", "gdmf", "mdm", "paging", "plist", "profile",
 	"pushcert", "scep", "secrets", "simulator", "telemetry",
@@ -52,7 +56,6 @@ var pureTier = []string{
 // deletes an entry here. The test asserts the set exactly, so a fix that does
 // not shrink this list fails as loudly as a regression that grows it.
 var knownServerTierReach = map[string][]string{
-	"axm":                  {"storage/crypt"},
 	"ddm":                  {"service", "storage"},
 	"enroll/accountdriven": {"service", "storage"},
 	"push":                 {"storage"},
