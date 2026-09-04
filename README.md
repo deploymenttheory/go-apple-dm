@@ -115,7 +115,7 @@ reference server shows each of those wired together.
 
 ```bash
 # One terminal: an all-in-one process on :8080, nothing to install.
-MDM_ROLE=all MDM_STORAGE=inmem MDM_ADMIN_TOKEN=dev-token go run ./cmd/mdmserver
+DM_ROLE=all DM_STORAGE=inmem DM_ADMIN_TOKEN=dev-token go run ./cmd/mdmserver
 
 # Another: ask it what it is.
 curl -s localhost:8080/healthz
@@ -130,7 +130,7 @@ Authorization:  static token (development)
 Break-glass:    active (the only credential; no principal store configured)
 ```
 
-`MDM_ADMIN_TOKEN` is a break-glass credential for getting started: it bypasses policy and cannot be
+`DM_ADMIN_TOKEN` is a break-glass credential for getting started: it bypasses policy and cannot be
 revoked without a restart. Create real principals with it, then unset it. Every variable is in
 [Reference server](#reference-server) below, and `make docker-build` produces the container image.
 
@@ -198,7 +198,7 @@ See [docs/diagrams](docs/diagrams/README.md).
   an ACME challenge response and a `DevicePropertiesAttestation` query response.
 - **Device simulator.** MDM, DDM, ADE, account-driven, user channel, Shared iPad, and ACME
   clients so a server can be tested without hardware.
-- **Reference server.** Roles `mdm`, `ddm`, and `all`, a bearer-protected admin API, `MDM_*`
+- **Reference server.** Roles `mdm`, `ddm`, and `all`, a bearer-protected admin API, `DM_*`
   environment configuration, `/healthz`, and a distroless container image built by CI.
 
 ## Layout
@@ -245,31 +245,32 @@ See [docs/diagrams](docs/diagrams/README.md).
 ## Reference server
 
 `cmd/mdmserver` runs one of three roles. `mdm` serves devices (`/mdm`, `/scep`, the
-enrollment routes) and forwards DDM check-ins to a `ddm` role when `MDM_DDM_URL` is set; `ddm`
+enrollment routes) and forwards DDM check-ins to a `ddm` role when `DM_DDM_URL` is set; `ddm`
 runs the engine and the admin API; `all` runs everything in one process. Configuration is by
 environment:
 
 | Variables | Purpose |
 |---|---|
-| `MDM_ROLE`, `MDM_LISTEN`, `MDM_STORAGE`, `MDM_DSN` | Role, listen address, backend (`sqlite`, `postgres`, `mysql`, `inmem`), and DSN |
-| `MDM_ADMIN_STORE` | Open the admin principal and Cedar policy store on this process's database, so `mdmctl principals` and `mdmctl policies` work. Off by default: it mounts the admin API |
-| `MDM_ADMIN_TOKEN` | Break-glass bearer token for `/admin/v1/`. Authenticates as root and **bypasses policy**, has no expiry, and cannot be revoked without a restart. It exists because an empty principal store authenticates nobody: set it to create the first principals, then unset it and restart. Its use is audited under the actor `break-glass`, and `mdmctl status` reports whether it is still accepted |
-| `MDM_STORAGE_KEYS`, `MDM_STORAGE_KEY_<NAME>`, `MDM_SECRETS_DIR`, `MDM_STORAGE_KEYS_STRICT` | Keys sealing the secret columns of a persistent store: unlock and bootstrap tokens, APNs push keys, user auth tokens. `MDM_STORAGE_KEYS` lists key names active-first, and the material comes from `MDM_STORAGE_KEY_<NAME>` or from files in `MDM_SECRETS_DIR`. A rotation prepends a name and runs `Rewrap`; `MDM_STORAGE_KEYS_STRICT` then refuses any row still in clear. A persistent backend will not start without this |
-| `MDM_ALLOW_REENROLL` | Accept an `Authenticate` whose certificate differs from the enrollment's pin, replacing it. Off by default: a certificate carries no binding to an enrollment id, so allowing this makes every certificate the CA issues a key to every enrollment. Turn it on only where devices re-enrol themselves after a wipe |
-| `MDM_DDM_URL`, `MDM_DDM_SEND_KEY`, `MDM_DDM_RECV_KEY`, `MDM_DDM_SUBSCRIPTIONS` | The split-deployment hop and synthesised status subscriptions. Both keys are required on either side: the hop carries a check-in verbatim and the receiving role trusts the enrollment id in that body |
-| `MDM_CA_FILE`, `MDM_CERT_HEADER` | Client certificate verification, direct or behind a proxy |
-| `MDM_PUBLIC_URL`, `MDM_PUSH_TOPIC` | Turn on the enrollment routes; the server URL devices are given and the push topic |
-| `MDM_ENROLL_CA_CERT_FILE`, `MDM_ENROLL_CA_KEY_FILE`, `MDM_SCEP_CHALLENGE`, `MDM_SCEP_HMAC_KEY` | The enrollment identity CA and its SCEP challenge; a self-signed CA is generated for development |
-| `MDM_IDENTITY` | Where an enrolled device's identity comes from: `scep` (the default) or `acme` |
-| `MDM_ACME_POLICY`, `MDM_ACME_KEY`, `MDM_ACME_HMAC_KEY`, `MDM_ACME_ANCHOR_FILE`, `MDM_ACME_ALLOW_UNATTESTED`, `MDM_ACME_IDENTIFIER_TTL` | Which devices may enroll (`any`, `dep`, `sip`), the key the device generates (`ec256`, `ec384`, `rsa2048`, `rsa4096`), the key that mints client identifiers, extra attestation anchors for a lab, whether a device that cannot attest may enroll, and how long a client identifier stays usable |
-| `MDM_PROFILE_IDENTIFIER`, `MDM_ORGANIZATION` | Enrollment profile identity |
-| `MDM_DISCOVERY`, `MDM_ACCOUNT_DRIVEN_METHOD` | Service discovery per user type (`Mac=mdm-adde,iPhone=mdm-byod`) and the account-driven flow (`apple-as-web` or `apple-oauth2`) |
-| `MDM_OIDC_ISSUER`, `MDM_OIDC_CLIENT_ID`, `MDM_OIDC_CLIENT_SECRET` | The identity provider behind the ADE web view and account-driven pages |
-| `MDM_ADE_ANCHOR_FILE`, `MDM_ADE_AUDIT`, `MDM_REQUIRE_USER_AUTH` | Extra `MachineInfo` signing anchors, audit-only signature policy, and the user authentication gate |
-| `MDM_AXM_CLIENT_ID`, `MDM_AXM_KEY_ID`, `MDM_AXM_KEY_FILE`, `MDM_AXM_SCOPE`, `MDM_AXM_BASE_URL`, `MDM_AXM_TOKEN_URL` | Apple Business Manager API credentials; enables `/admin/v1/axm/` |
-| `MDM_AUDIT_STORE`, `MDM_AUDIT_RETENTION` | Persist every event to the persistent audit trail on this process's database, and how long to keep records (unset keeps them forever). Read it at `GET /admin/v1/audit` or with `mdmctl audit list --since 1h` |
-| `MDM_AUDIT_LOG`, `MDM_WEBHOOK_URL`, `MDM_WEBHOOK_HMAC_KEY` | Event sinks: a projected slog record per state change, and a MicroMDM-compatible webhook with an optional SHA-256 body signature. Both off by default. The webhook envelope matches MicroMDM and NanoMDM except that it carries no `raw_payload`, because theirs is the raw check-in body and a `TokenUpdate` body contains the device unlock token |
-| `MDM_DEP_BASE_URL`, `MDM_DEP_SYNC_INTERVAL`, `MDM_DEP_ASSIGN_INTERVAL`, `MDM_DEP_PROFILE_URL`, `MDM_DEP_USE_PUT` | Device enrollment service endpoint, the background sync worker, and the DEP profile url (defaults to this server) |
+| `DM_ROLE`, `DM_LISTEN`, `DM_STORAGE`, `DM_DSN` | Role, listen address, backend (`sqlite`, `postgres`, `mysql`, `inmem`), and DSN |
+| `DM_ADMIN_STORE` | Open the admin principal and Cedar policy store on this process's database, so `mdmctl principals` and `mdmctl policies` work. Off by default: it mounts the admin API |
+| `DM_ADMIN_TOKEN` | Break-glass bearer token for `/admin/v1/`. Authenticates as root and **bypasses policy**, has no expiry, and cannot be revoked without a restart. It exists because an empty principal store authenticates nobody: set it to create the first principals, then unset it and restart. Its use is audited under the actor `break-glass`, and `mdmctl status` reports whether it is still accepted |
+| `DM_STORAGE_KEYS`, `DM_STORAGE_KEY_<NAME>`, `DM_SECRETS_DIR`, `DM_STORAGE_KEYS_STRICT` | Keys sealing the secret columns of a persistent store: unlock and bootstrap tokens, APNs push keys, user auth tokens. `DM_STORAGE_KEYS` lists key names active-first, and the material comes from `DM_STORAGE_KEY_<NAME>` or from files in `DM_SECRETS_DIR`. A rotation prepends a name and runs `Rewrap`; `DM_STORAGE_KEYS_STRICT` then refuses any row still in clear. A persistent backend will not start without this |
+| `DM_ALLOW_REENROLL` | Accept an `Authenticate` whose certificate differs from the enrollment's pin, replacing it. Off by default: a certificate carries no binding to an enrollment id, so allowing this makes every certificate the CA issues a key to every enrollment. Turn it on only where devices re-enrol themselves after a wipe |
+| `DM_DDM_URL`, `DM_DDM_SEND_KEY`, `DM_DDM_RECV_KEY`, `DM_DDM_SUBSCRIPTIONS` | The split-deployment hop and synthesised status subscriptions. Both keys are required on either side: the hop carries a check-in verbatim and the receiving role trusts the enrollment id in that body |
+| `DM_CA_FILE`, `DM_CERT_HEADER` | Client certificate verification, direct or behind a proxy |
+| `DM_PUBLIC_URL`, `DM_PUSH_TOPIC` | Turn on the enrollment routes; the server URL devices are given and the push topic |
+| `DM_ENROLL_CA_CERT_FILE`, `DM_ENROLL_CA_KEY_FILE`, `DM_SCEP_CHALLENGE`, `DM_SCEP_HMAC_KEY` | The enrollment identity CA and its SCEP challenge; a self-signed CA is generated for development |
+| `DM_IDENTITY` | Where an enrolled device's identity comes from: `scep` (the default) or `acme` |
+| `DM_ACME_POLICY`, `DM_ACME_KEY`, `DM_ACME_HMAC_KEY`, `DM_ACME_ANCHOR_FILE`, `DM_ACME_ALLOW_UNATTESTED`, `DM_ACME_IDENTIFIER_TTL` | Which devices may enroll (`any`, `dep`, `sip`), the key the device generates (`ec256`, `ec384`, `rsa2048`, `rsa4096`), the key that mints client identifiers, extra attestation anchors for a lab, whether a device that cannot attest may enroll, and how long a client identifier stays usable |
+| `DM_PROFILE_IDENTIFIER`, `DM_ORGANIZATION` | Enrollment profile identity |
+| `DM_DISCOVERY`, `DM_ACCOUNT_DRIVEN_METHOD` | Service discovery per user type (`Mac=mdm-adde,iPhone=mdm-byod`) and the account-driven flow (`apple-as-web` or `apple-oauth2`) |
+| `DM_OIDC_ISSUER`, `DM_OIDC_CLIENT_ID`, `DM_OIDC_CLIENT_SECRET` | The identity provider behind the ADE web view and account-driven pages |
+| `DM_ADE_ANCHOR_FILE`, `DM_ADE_AUDIT`, `DM_REQUIRE_USER_AUTH` | Extra `MachineInfo` signing anchors, audit-only signature policy, and the user authentication gate |
+| `DM_AXM_CLIENT_ID`, `DM_AXM_KEY_ID`, `DM_AXM_KEY_FILE`, `DM_AXM_SCOPE`, `DM_AXM_BASE_URL`, `DM_AXM_TOKEN_URL` | Apple Business Manager API credentials; enables `/admin/v1/axm/` |
+| `DM_AUDIT_STORE`, `DM_AUDIT_RETENTION` | Persist every event to the persistent audit trail on this process's database, and how long to keep records (unset keeps them forever). Read it at `GET /admin/v1/audit` or with `mdmctl audit list --since 1h` |
+| `DM_AUDIT_LOG`, `DM_WEBHOOK_URL`, `DM_WEBHOOK_HMAC_KEY` | Event sinks: a projected slog record per state change, and a MicroMDM-compatible webhook with an optional SHA-256 body signature. Both off by default. The webhook envelope matches MicroMDM and NanoMDM except that it carries no `raw_payload`, because theirs is the raw check-in body and a `TokenUpdate` body contains the device unlock token |
+| `DM_DEP_BASE_URL`, `DM_DEP_SYNC_INTERVAL`, `DM_DEP_ASSIGN_INTERVAL`, `DM_DEP_PROFILE_URL`, `DM_DEP_USE_PUT` | Device enrollment service endpoint, the background sync worker, and the DEP profile url (defaults to this server) |
+| `DM_PUSH_SOURCE`, `DM_PUSH_CERT_FILE`, `DM_PUSH_KEY_FILE`, `DM_PUSH_HOST`, `DM_PUSH_COALESCE`, `DM_PUSH_CERT_TTL` | Where APNs credentials come from and how pushes are shaped: `off`, `file` (the PEM pair, which a certificate path alone implies) or `store` (the push certificate store). The topic is read from the certificate rather than typed, so it has no variable of its own; `DM_PUSH_HOST` overrides the APNs endpoint for a lab, `DM_PUSH_COALESCE` is the window repeated pushes collapse into (negative disables it), and `DM_PUSH_CERT_TTL` how long a store-backed certificate is cached before its version is rechecked |
 
 `cmd/mdmctl` drives every one of those routes. Typed verbs cover the surfaces this project models
 -- `enrollments`, `commands`, `push`, `pushcerts`, `export`/`import`, `declarations`, `sets`,

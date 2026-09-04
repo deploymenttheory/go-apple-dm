@@ -186,8 +186,8 @@
       "dot": "cyan",
       "title": "Challenge strategies",
       "items": [
-        "A static shared password from MDM_SCEP_CHALLENGE",
-        "An HMAC password minted per device when MDM_SCEP_HMAC_KEY is set, and re-derived from the CSR common name"
+        "A static shared password from DM_SCEP_CHALLENGE",
+        "An HMAC password minted per device when DM_SCEP_HMAC_KEY is set, and re-derived from the CSR common name"
       ]
     },
     {

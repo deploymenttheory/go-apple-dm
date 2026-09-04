@@ -23,7 +23,7 @@ import (
 // phase 8 claim rested on a store an in-process caller injected.
 //
 // This builds the server the way the binary does -- a database DSN and
-// MDM_ADMIN_STORE, nothing injected -- then authenticates with a principal
+// DM_ADMIN_STORE, nothing injected -- then authenticates with a principal
 // created through the store the server opened for itself.
 func TestAdminStoreOnTheProcessDatabase(t *testing.T) {
 	dsn := filepath.Join(t.TempDir(), "admin.db")
@@ -68,7 +68,7 @@ func TestAdminStoreOnTheProcessDatabase(t *testing.T) {
 	}
 }
 
-// Without MDM_ADMIN_STORE and without a token the admin API is not mounted,
+// Without DM_ADMIN_STORE and without a token the admin API is not mounted,
 // so turning the store on is an explicit act rather than a side effect of
 // choosing a SQL backend.
 func TestAdminStoreOffByDefault(t *testing.T) {
@@ -97,7 +97,7 @@ func TestAdminStoreWithoutADatabase(t *testing.T) {
 	}
 }
 
-// An injected store wins over MDM_ADMIN_STORE, which is how the other tests
+// An injected store wins over DM_ADMIN_STORE, which is how the other tests
 // and an integrator supply their own.
 func TestAdminStoreInjectionWins(t *testing.T) {
 	st := inmem.New()
@@ -125,7 +125,7 @@ func TestAdminStoreInjectionWins(t *testing.T) {
 // Break-glass: the static token keeps working beside a principal store,
 // because an empty store authenticates nobody and the route that creates the
 // first principal is itself authorized. Before this, configuring a store made
-// MDM_ADMIN_TOKEN silently stop working.
+// DM_ADMIN_TOKEN silently stop working.
 func TestBreakGlassAlongsideThePrincipalStore(t *testing.T) {
 	bus := event.New()
 	rec := &recorder{}

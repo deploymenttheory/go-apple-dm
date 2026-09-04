@@ -5034,7 +5034,7 @@
 
         <!-- Connection paths (before components for correct z-order) -->
         <path data-edge-from="device" data-edge-to="mdmrole" data-edge-label="DeclarativeManagement" data-edge-key="0" data-edge-id="device-mdm" data-composition-points="210,295;340,295" d="M 210 295 L 340 295" class="a-default" stroke-width="1.5" marker-end="url(#arrowhead)"/>
-        <path data-edge-from="mdmrole" data-edge-to="proxyclient" data-edge-label="MDM_DDM_URL set" data-edge-key="1" data-edge-id="mdm-proxyclient" data-composition-points="425,260;425,180" d="M 425 260 L 425 180" class="a-default" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+        <path data-edge-from="mdmrole" data-edge-to="proxyclient" data-edge-label="DM_DDM_URL set" data-edge-key="1" data-edge-id="mdm-proxyclient" data-composition-points="425,260;425,180" d="M 425 260 L 425 180" class="a-default" stroke-width="1.5" marker-end="url(#arrowhead)"/>
         <path data-edge-from="mdmrole" data-edge-to="inproc" data-edge-label="otherwise" data-edge-key="2" data-edge-id="mdm-inproc" data-composition-points="510,295;640,295" d="M 510 295 L 640 295" class="a-default" stroke-width="1.5" marker-end="url(#arrowhead)"/>
         <path data-edge-from="proxyclient" data-edge-to="hop" data-edge-label="body unchanged" data-edge-key="3" data-edge-id="client-hop" data-composition-points="510,145;640,145" d="M 510 145 L 640 145" class="a-security" stroke-width="1.5" marker-end="url(#arrowhead-security)"/>
         <path data-edge-from="hop" data-edge-to="proxyserver" data-edge-label="verify, then decode" data-edge-key="4" data-edge-id="hop-server" data-composition-points="810,145;940,145" d="M 810 145 L 940 145" class="a-security" stroke-width="1.5" marker-end="url(#arrowhead-security)"/>
@@ -5139,9 +5139,9 @@
           <rect x="219.6" y="275" width="110.8" height="14" rx="3" class="c-mask"/>
           <text x="275" y="285" class="t-muted" font-size="8" text-anchor="middle">DeclarativeManagement</text>
         </g>
-        <g data-detail="context" data-edge-from="mdmrole" data-edge-to="proxyclient" data-edge-label="MDM_DDM_URL set" data-edge-key="1" data-edge-id="mdm-proxyclient">
+        <g data-detail="context" data-edge-from="mdmrole" data-edge-to="proxyclient" data-edge-label="DM_DDM_URL set" data-edge-key="1" data-edge-id="mdm-proxyclient">
           <rect x="384" y="240" width="82" height="14" rx="3" class="c-mask"/>
-          <text x="425" y="250" class="t-muted" font-size="8" text-anchor="middle">MDM_DDM_URL set</text>
+          <text x="425" y="250" class="t-muted" font-size="8" text-anchor="middle">DM_DDM_URL set</text>
         </g>
         <g data-detail="context" data-edge-from="mdmrole" data-edge-to="inproc" data-edge-label="otherwise" data-edge-key="2" data-edge-id="mdm-inproc">
           <rect x="548.4" y="275" width="53.199999999999996" height="14" rx="3" class="c-mask"/>
@@ -5381,7 +5381,7 @@
         </div>
         <ul>
           <li>&bull; proxyclient imports proxywire and service, but never ddm</li>
-          <li>&bull; So when MDM_DDM_URL is set the mdm role can only reach the engine over the hop; unset, it calls inproc in-process</li>
+          <li>&bull; So when DM_DDM_URL is set the mdm role can only reach the engine over the hop; unset, it calls inproc in-process</li>
         </ul>
       </div>
 

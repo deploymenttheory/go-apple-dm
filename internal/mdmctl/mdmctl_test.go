@@ -468,7 +468,7 @@ func TestStatusReportsBreakGlass(t *testing.T) {
 	}{
 		"ActiveBesideAStore": {
 			body: `{"Role":"all","Version":"devel","Families":["ddm"],"Policy":true,"BreakGlass":true}`,
-			want: "unset MDM_ADMIN_TOKEN",
+			want: "unset DM_ADMIN_TOKEN",
 		},
 		"TheOnlyCredential": {
 			body: `{"Role":"all","Version":"devel","Families":["ddm"],"Policy":false,"BreakGlass":true}`,
@@ -477,7 +477,7 @@ func TestStatusReportsBreakGlass(t *testing.T) {
 		"Removed": {
 			body: `{"Role":"all","Version":"devel","Families":["ddm"],"Policy":true,"BreakGlass":false}`,
 			want: "not configured",
-			gone: "unset MDM_ADMIN_TOKEN",
+			gone: "unset DM_ADMIN_TOKEN",
 		},
 	}
 	for name, tc := range cases {

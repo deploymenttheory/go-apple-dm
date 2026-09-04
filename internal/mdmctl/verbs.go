@@ -144,7 +144,7 @@ func breakGlassMode(policy, breakGlass bool) string {
 	case !breakGlass:
 		return "not configured"
 	case policy:
-		return "ACTIVE, bypasses policy: unset MDM_ADMIN_TOKEN once principals exist"
+		return "ACTIVE, bypasses policy: unset DM_ADMIN_TOKEN once principals exist"
 	default:
 		return "active (the only credential; no principal store configured)"
 	}

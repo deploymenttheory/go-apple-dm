@@ -65,10 +65,10 @@ func TestProviders(t *testing.T) {
 		t.Fatal("static missing")
 	}
 
-	env := secrets.Env{Prefix: "MDM_", Lookup: func(k string) (string, bool) {
-		return map[string]string{"MDM_APNS_KEY": "e", "MDM_EMPTY": ""}[k], k == "MDM_APNS_KEY" || k == "MDM_EMPTY"
+	env := secrets.Env{Prefix: "DM_", Lookup: func(k string) (string, bool) {
+		return map[string]string{"DM_APNS_KEY": "e", "DM_EMPTY": ""}[k], k == "DM_APNS_KEY" || k == "DM_EMPTY"
 	}}
-	if env.Key("apns.key") != "MDM_APNS_KEY" || env.Key("dep-token/x") != "MDM_DEP_TOKEN_X" {
+	if env.Key("apns.key") != "DM_APNS_KEY" || env.Key("dep-token/x") != "DM_DEP_TOKEN_X" {
 		t.Fatal(env.Key("apns.key"))
 	}
 	if v, err := env.Get(ctx, "apns.key"); err != nil || string(v.Bytes()) != "e" {
@@ -79,7 +79,7 @@ func TestProviders(t *testing.T) {
 			t.Fatalf("env %s: %v", name, err)
 		}
 	}
-	if _, err := (secrets.Env{Prefix: "GO_APPLE_MDM_TEST_"}).Get(ctx, "definitely.unset"); !errors.Is(err, secrets.ErrNotFound) {
+	if _, err := (secrets.Env{Prefix: "GO_APPLE_DM_TEST_"}).Get(ctx, "definitely.unset"); !errors.Is(err, secrets.ErrNotFound) {
 		t.Fatalf("os env default lookup: %v", err)
 	}
 

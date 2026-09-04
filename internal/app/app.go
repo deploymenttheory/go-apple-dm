@@ -59,7 +59,7 @@ const (
 	PathAdmin   = "/admin/v1/"
 )
 
-// Config is the process configuration; see ParseEnv for the MDM_*
+// Config is the process configuration; see ParseEnv for the DM_*
 // variables and cmd/mdmserver for the flags.
 type Config struct {
 	Role    Role
@@ -81,7 +81,7 @@ type Config struct {
 	// CA establishes only that the certificate is one we issued, so a
 	// permissive policy makes every certificate the CA issues a key to every
 	// enrollment. Deployments that need devices to re-enrol themselves after
-	// a wipe set MDM_ALLOW_REENROLL=true.
+	// a wipe set DM_ALLOW_REENROLL=true.
 	AllowReenroll bool
 	// StorageKeys names the keys that seal the secret columns of a persistent
 	// store: unlock tokens, bootstrap tokens, APNs push keys and user auth
@@ -99,7 +99,7 @@ type Config struct {
 	StorageKeysStrict bool
 	// SecretsDir resolves StorageKeys from files in one directory, the shape
 	// Docker and Kubernetes secret mounts take. Empty reads them from the
-	// environment as MDM_STORAGE_KEY_<NAME>.
+	// environment as DM_STORAGE_KEY_<NAME>.
 	SecretsDir string
 	// Secrets overrides both, for tests and embedding.
 	Secrets secrets.Provider
@@ -216,7 +216,7 @@ type App struct {
 	// Push wakes devices; nil when no push source is configured.
 	Push *push.Notifier
 	// admin authorizes admin callers against the stored Cedar policies. It
-	// is nil when the deployment configured the static MDM_ADMIN_TOKEN
+	// is nil when the deployment configured the static DM_ADMIN_TOKEN
 	// instead, which bypasses policy by design (decision record 0034).
 	admin *adminauth.Manager
 	// adminTable is the mounted admin route table, served by GET /routes.
@@ -419,7 +419,7 @@ func (a *App) certSource() func(http.Handler) http.Handler {
 		if a.cfg.CARoots == nil {
 			a.cfg.Logger.Warn(
 				"app: certificate header trusted without a CA to verify it; "+
-					"set MDM_CA_FILE, and keep this listener reachable only through the proxy",
+					"set DM_CA_FILE, and keep this listener reachable only through the proxy",
 				"header", a.cfg.CertHeader,
 			)
 			return httpapi.CertFromHeader(a.cfg.CertHeader)
@@ -459,7 +459,7 @@ func (a *App) openKeyring(ctx context.Context) error {
 		a.closers = append(a.closers, d.Close)
 		provider = d
 	default:
-		provider = secrets.Env{Prefix: "MDM_STORAGE_KEY_"}
+		provider = secrets.Env{Prefix: "DM_STORAGE_KEY_"}
 	}
 	k, err := crypt.NewKeyring(ctx, crypt.Options{
 		Keys: crypt.Keys{

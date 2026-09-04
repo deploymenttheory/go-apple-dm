@@ -106,7 +106,7 @@ var (
 	// a static token. It is a Build error rather than a silently disabled
 	// API, so a deployment cannot believe it is serving one when it is not
 	// (decision record 0034).
-	ErrAdminUnconfigured = errors.New("app: admin API needs MDM_ADMIN_TOKEN or an admin principal store")
+	ErrAdminUnconfigured = errors.New("app: admin API needs DM_ADMIN_TOKEN or an admin principal store")
 )
 
 // adminEnabled reports whether the admin API has a way to authenticate a
@@ -159,7 +159,7 @@ func (r adminRoute) RouteAction() string  { return r.Action }
 func (r adminRoute) RouteFamily() string  { return r.Family }
 
 // BreakGlassActor is the audit actor for a request authenticated by the
-// static MDM_ADMIN_TOKEN rather than by a stored principal. It is a fixed
+// static DM_ADMIN_TOKEN rather than by a stored principal. It is a fixed
 // string, so an operator can alert on it: after the first principals exist,
 // a record carrying this actor means someone used the standing root
 // credential that should have been removed.
@@ -260,7 +260,7 @@ func (a *App) principal(r *http.Request) (adminauth.Principal, bool, error) {
 		if a.admin != nil {
 			// Only worth saying when principals exist: until they do, the
 			// static token is the intended and only way in.
-			a.cfg.Logger.WarnContext(r.Context(), "app: admin request used the break-glass token, which bypasses policy; create principals and unset MDM_ADMIN_TOKEN",
+			a.cfg.Logger.WarnContext(r.Context(), "app: admin request used the break-glass token, which bypasses policy; create principals and unset DM_ADMIN_TOKEN",
 				"actor", BreakGlassActor, "method", r.Method, "path", r.URL.Path)
 		}
 		return breakGlassPrincipal, true, nil

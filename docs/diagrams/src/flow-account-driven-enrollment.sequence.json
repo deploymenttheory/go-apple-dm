@@ -204,7 +204,7 @@
       "dot": "cyan",
       "title": "Discovery",
       "items": [
-        "MDM_DISCOVERY maps a model family to mdm-byod or mdm-adde",
+        "DM_DISCOVERY maps a model family to mdm-byod or mdm-adde",
         "An unrouted family is refused with com.apple.well-known.failed"
       ]
     },

@@ -274,7 +274,7 @@ type ServerConfig struct {
 	Routes   []Route
 	// Policy reports a principal and Cedar policy store.
 	Policy bool
-	// BreakGlass reports that the static MDM_ADMIN_TOKEN is still accepted.
+	// BreakGlass reports that the static DM_ADMIN_TOKEN is still accepted.
 	BreakGlass bool
 }
 
