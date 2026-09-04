@@ -32,6 +32,16 @@ func build(t *testing.T, cfg app.Config) *app.App {
 	if cfg.Logger == nil {
 		cfg.Logger = quiet
 	}
+	// The hop refuses to run unauthenticated, so a role that serves or calls
+	// it needs a credential even when the test is about something else.
+	if cfg.Role == app.RoleDDM || cfg.DDMURL != "" {
+		if len(cfg.DDMSendKey) == 0 {
+			cfg.DDMSendKey = []byte("hop-send-key")
+		}
+		if len(cfg.DDMRecvKey) == 0 {
+			cfg.DDMRecvKey = []byte("hop-recv-key")
+		}
+	}
 	a, err := app.Build(context.Background(), cfg)
 	if err != nil {
 		t.Fatalf("Build: %v", err)

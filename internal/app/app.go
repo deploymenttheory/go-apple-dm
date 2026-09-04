@@ -339,6 +339,20 @@ func (c Config) validate() error {
 	if c.DDMURL != "" && c.Role != RoleMDM {
 		return fmt.Errorf("%w: DDM URL is only for the mdm role", ErrConfig)
 	}
+	// The hop forwards a check-in verbatim and the ddm role resolves the
+	// enrollment from that body, so an unauthenticated hop hands any caller
+	// every enrollment's declarations and its status reports. proxyserver
+	// treats each of its caller checks as optional, which makes requiring one
+	// this package's job: the ddm role exists to serve the hop, and an mdm
+	// role forwarding to it is the other end of the same trust boundary.
+	if c.Role == RoleDDM || c.DDMURL != "" {
+		if len(c.DDMSendKey) == 0 || len(c.DDMRecvKey) == 0 {
+			return fmt.Errorf(
+				"%w: the declarative management hop needs %s and %s on both roles",
+				ErrConfig, EnvDDMSendKey, EnvDDMRecvKey,
+			)
+		}
+	}
 	if err := c.Enroll.validate(); err != nil {
 		return err
 	}

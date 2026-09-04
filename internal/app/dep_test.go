@@ -189,7 +189,11 @@ func TestDEP(t *testing.T) {
 		}
 	})
 	t.Run("BadBaseURL", func(t *testing.T) {
-		_, err := app.Build(ctx, app.Config{Role: app.RoleDDM, Storage: "inmem", AdminToken: "t", DEP: app.DEPConfig{BaseURL: "not a url"}})
+		_, err := app.Build(ctx, app.Config{
+			Role: app.RoleDDM, Storage: "inmem", AdminToken: "t",
+			DDMSendKey: []byte("hop-send-key"), DDMRecvKey: []byte("hop-recv-key"),
+			DEP: app.DEPConfig{BaseURL: "not a url"},
+		})
 		if err == nil || !strings.Contains(err.Error(), "DEP client") {
 			t.Fatalf("Build = %v", err)
 		}
