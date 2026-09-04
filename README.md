@@ -227,7 +227,8 @@ build. Decision record [0044](docs/research/decisions/0044-repository-layout.md)
 | | `secrets/` | Redacting secret type and providers (static, environment, directory, chain) |
 | | `telemetry/` | OpenTelemetry seam: `Config`, a cardinality-bounding `Vocabulary`, a measuring `RoundTripper` |
 | schema | `schema/` | Generated from `third_party/device-management`, never hand-edited; `schema/support` answers whether a command or key applies to an OS and version |
-| | `internal/schemagen`, `cmd/admgen` | The generator |
+| | `internal/schemagen`, `cmd/admgen` | The generator. `admgen versions` reports the newest OS version per family; `admgen identifiers` prints the exported API the lock protects |
+| `.github/workflows/device-management-schema-update.yml` | Weekly, and on demand: regenerates against Apple's `release` branch and opens the update as a pull request, titled with the OS version it moves to |
 | mdmprotocol | `mdmprotocol/plist` | The one point of contact with plist encoding, including a bounded decoder for untrusted input |
 | | `mdmprotocol/mdm` | Protocol core: enrollment identity, check-in decoding, command and response envelopes |
 | | `mdmprotocol/cms` | Detached and attached CMS signing and verification, `Mdm-Signature` with signing-time tolerance |
