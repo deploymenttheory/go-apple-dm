@@ -591,6 +591,7 @@ func (a *App) wire(ctx context.Context) error {
 				[]service.Hook{ddmsync.NewServiceHook(engine, a.Store, cfg.Logger)},
 				enrollHooks...),
 			DeclarativeManagement: dm,
+			ReturnToService:       returnToService(cfg.Enroll.ReturnToService),
 			RequireUserAuth:       cfg.Enroll.RequireUserAuth,
 			Reenroll:              reenrollPolicy(cfg.AllowReenroll),
 		})

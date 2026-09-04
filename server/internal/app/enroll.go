@@ -20,10 +20,12 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/v3/mdmprotocol/enroll/ade"
 	"github.com/deploymenttheory/go-apple-dm/v3/mdmprotocol/enroll/discovery"
 	"github.com/deploymenttheory/go-apple-dm/v3/mdmprotocol/enroll/webauth"
+	"github.com/deploymenttheory/go-apple-dm/v3/mdmprotocol/mdm"
 	"github.com/deploymenttheory/go-apple-dm/v3/mdmprotocol/plist"
 	"github.com/deploymenttheory/go-apple-dm/v3/pki/acme"
 	"github.com/deploymenttheory/go-apple-dm/v3/pki/ca"
 	"github.com/deploymenttheory/go-apple-dm/v3/pki/scep"
+	"github.com/deploymenttheory/go-apple-dm/v3/schema/checkin"
 )
 
 // Enrollment routes on the mdm and all roles (decision records 0027 to 0029).
@@ -76,6 +78,11 @@ type EnrollConfig struct {
 	ADEAudit      bool
 	// RequireUserAuth gates user channels on UserAuthenticate (0029).
 	RequireUserAuth bool
+	// ReturnToService allows a supervised Automated Device Enrollment device
+	// that asks to erase itself and re-enrol. Off by default: the answer to a
+	// return-to-service request erases a device, so it is not something a
+	// server should agree to because nobody said otherwise (0045).
+	ReturnToService bool
 	// Identity is where an enrolled device's identity certificate comes
 	// from: IdentitySCEP (the default) or IdentityACME. The ACME endpoints
 	// are mounted either way, so a declarative credential can use them even
@@ -634,5 +641,26 @@ func parseSignerPEM(data []byte) (crypto.Signer, error) {
 			}
 			return s, nil
 		}
+	}
+}
+
+// returnToService is the reference server's return-to-service policy: allow it
+// when the operator turned it on, refuse it otherwise. It answers the whole
+// question a real policy has to answer -- may this device erase itself now --
+// and nothing else, because everything else is deployment-specific: which
+// Wi-Fi profile to install after the erasure, and whether to hand the device
+// an MDM profile directly rather than let it fetch one.
+//
+// The bootstrap token is deliberately absent here. service attaches the one it
+// already holds for the enrollment, so a policy cannot forget it and silently
+// turn every return to service into a full erasure (decision record 0045).
+func returnToService(enabled bool) service.ReturnToServiceHandler {
+	if !enabled {
+		return nil
+	}
+	return func(context.Context, *mdm.Request, *checkin.ReturnToService) (*checkin.ReturnToServiceResponse, error) {
+		return &checkin.ReturnToServiceResponse{
+			ReturnToService: checkin.ReturnToServiceResponseReturnToService{Enabled: true},
+		}, nil
 	}
 }

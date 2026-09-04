@@ -66,6 +66,8 @@ func (c *Core) dispatchCheckin(ctx context.Context, r *mdm.Request, ck *mdm.Chec
 		return c.handleUserAuthenticate(ctx, r, m)
 	case *checkin.DeclarativeManagement:
 		return c.handleDeclarativeManagement(ctx, r, ck, m)
+	case *checkin.ReturnToService:
+		return c.handleReturnToService(ctx, r, m)
 	}
 	return nil, wrapCode(CodeBadRequest, fmt.Errorf("%w: unsupported message %s", ErrInvalidMessage, ck.Type))
 }
@@ -272,6 +274,50 @@ func (c *Core) getBootstrapToken(ctx context.Context, r *mdm.Request) (*CheckinR
 	resp := checkin.GetBootstrapTokenResponse{}
 	if len(tok) > 0 {
 		resp.BootstrapToken = tok
+	}
+	return plistResult(resp)
+}
+
+// handleReturnToService answers the device's request for its return-to-service
+// configuration. Apple sends this only from a device whose Automated Device
+// Enrollment profile put it in return-to-service mode, so the question is not
+// whether the device may ask but whether the server agrees now.
+//
+// With no handler configured the answer is Enabled false. That is a valid
+// response meaning "do not erase", and it is the reading an unconfigured
+// server should give: a missing handler must not be the difference between a
+// device staying as it is and a device wiping itself.
+func (c *Core) handleReturnToService(ctx context.Context, r *mdm.Request, m *checkin.ReturnToService) (*CheckinResult, error) {
+	if err := c.authorize(ctx, r); err != nil {
+		return nil, err
+	}
+	if c.returnToService == nil {
+		c.log.WarnContext(ctx, "return to service requested but no handler is configured; answering disabled",
+			"enrollment", r.ID.ID)
+		return plistResult(checkin.ReturnToServiceResponse{})
+	}
+	resp, err := c.returnToService(ctx, r, m)
+	if err != nil {
+		return nil, wrapCode(CodeOf(err), err)
+	}
+	if resp == nil {
+		return plistResult(checkin.ReturnToServiceResponse{})
+	}
+	// App preservation needs the bootstrap token this enrollment already sent
+	// in SetBootstrapToken. A handler that does not attach it would silently
+	// turn every return to service into a full erasure, so the service
+	// attaches the stored token when the handler left it empty.
+	if resp.ReturnToService.Enabled && len(resp.ReturnToService.BootstrapToken) == 0 {
+		tok, tokErr := c.store.BootstrapToken(ctx, r.ID)
+		switch {
+		case tokErr != nil && !errors.Is(tokErr, storage.ErrNotFound):
+			return nil, wrapCode(codeForStorage(tokErr), tokErr)
+		case len(tok) > 0:
+			resp.ReturnToService.BootstrapToken = tok
+		default:
+			c.log.WarnContext(ctx, "return to service enabled with no bootstrap token; the device will erase fully and cannot preserve apps",
+				"enrollment", r.ID.ID)
+		}
 	}
 	return plistResult(resp)
 }

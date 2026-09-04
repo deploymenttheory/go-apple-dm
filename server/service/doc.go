@@ -13,6 +13,15 @@
 // backend, and the DDM engine plugs in through the handler and hook seams
 // rather than being imported.
 //
+// Return to service is a seam rather than a policy. A supervised Automated
+// Enrollment device asks whether it may erase itself and re-enrol; whether the
+// answer is yes belongs to the deployment, so Config.ReturnToService decides
+// it and an unconfigured server answers no. What the service does own is the
+// bootstrap token: it attaches the one it already holds for the enrollment
+// when the policy left it empty, because without it the device erases fully
+// and cannot preserve apps, and that is not a mistake a deployment should be
+// able to make by omission (decision record 0045).
+//
 // # References
 //
 //   - Decision record 0004: docs/research/decisions/0004-checkin-and-command-core.md

@@ -294,6 +294,7 @@ environment:
 | `DM_DISCOVERY`, `DM_ACCOUNT_DRIVEN_METHOD` | Service discovery per user type (`Mac=mdm-adde,iPhone=mdm-byod`) and the account-driven flow (`apple-as-web` or `apple-oauth2`) |
 | `DM_OIDC_ISSUER`, `DM_OIDC_CLIENT_ID`, `DM_OIDC_CLIENT_SECRET` | The identity provider behind the ADE web view and account-driven pages |
 | `DM_ADE_ANCHOR_FILE`, `DM_ADE_AUDIT`, `DM_REQUIRE_USER_AUTH` | Extra `MachineInfo` signing anchors, audit-only signature policy, and the user authentication gate |
+| `DM_RETURN_TO_SERVICE` | Allow a supervised Automated Device Enrollment device to erase itself and re-enrol when it asks. Off by default: the answer to this request wipes a device |
 | `DM_AXM_CLIENT_ID`, `DM_AXM_KEY_ID`, `DM_AXM_KEY_FILE`, `DM_AXM_SCOPE`, `DM_AXM_BASE_URL`, `DM_AXM_TOKEN_URL` | Apple Business Manager API credentials; enables `/admin/v1/axm/` |
 | `DM_AUDIT_STORE`, `DM_AUDIT_RETENTION` | Persist every event to the persistent audit trail on this process's database, and how long to keep records (unset keeps them forever). Read it at `GET /admin/v1/audit` or with `dmctl audit list --since 1h` |
 | `DM_AUDIT_LOG`, `DM_WEBHOOK_URL`, `DM_WEBHOOK_HMAC_KEY` | Event sinks: a projected slog record per state change, and a MicroMDM-compatible webhook with an optional SHA-256 body signature. Both off by default. The webhook envelope matches MicroMDM and NanoMDM except that it carries no `raw_payload`, because theirs is the raw check-in body and a `TokenUpdate` body contains the device unlock token |

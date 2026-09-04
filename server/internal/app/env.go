@@ -59,6 +59,7 @@ const (
 	EnvADEAnchorFile       = "DM_ADE_ANCHOR_FILE"
 	EnvADEAudit            = "DM_ADE_AUDIT"
 	EnvRequireUserAuth     = "DM_REQUIRE_USER_AUTH"
+	EnvReturnToService     = "DM_RETURN_TO_SERVICE"
 	// Apple Business Manager (AxMConfig).
 	EnvAxMClientID = "DM_AXM_CLIENT_ID"
 	EnvAxMKeyID    = "DM_AXM_KEY_ID"
@@ -270,6 +271,7 @@ func ParseEnv(get func(string) string) (Config, error) {
 	for key, dst := range map[string]*bool{
 		EnvADEAudit:          &cfg.Enroll.ADEAudit,
 		EnvRequireUserAuth:   &cfg.Enroll.RequireUserAuth,
+		EnvReturnToService:   &cfg.Enroll.ReturnToService,
 		EnvACMEUnattested:    &cfg.Enroll.ACME.AllowUnattested,
 		EnvAllowReenroll:     &cfg.AllowReenroll,
 		EnvStorageKeysStrict: &cfg.StorageKeysStrict,

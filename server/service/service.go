@@ -112,6 +112,20 @@ type GetTokenHandler func(ctx context.Context, r *mdm.Request, m *checkin.GetTok
 // which is the default behaviour.
 type UserAuthenticateHandler func(ctx context.Context, r *mdm.Request, m *checkin.UserAuthenticate) (*mdm.UserAuthenticateResponse, error)
 
+// ReturnToServiceHandler answers a ReturnToService check-in with the
+// configuration the device should apply. The device sends this message only
+// when its Automated Device Enrollment profile has put it in return-to-service
+// mode, either because a user triggered it or because the idle timeout
+// expired, so the handler decides one thing: whether this device may erase
+// itself and re-enrol now.
+//
+// The service fills BootstrapToken from storage when the handler leaves it
+// empty. Apple's rule is that without the token the device performs a full
+// erasure and cannot preserve apps, and the server is already holding the
+// token this enrollment sent in SetBootstrapToken, so forgetting to attach it
+// would silently downgrade every return to service (decision record 0045).
+type ReturnToServiceHandler func(ctx context.Context, r *mdm.Request, m *checkin.ReturnToService) (*checkin.ReturnToServiceResponse, error)
+
 // ReenrollPolicy decides whether an Authenticate from an enrollment whose
 // pinned certificate differs from the one presented is accepted.
 type ReenrollPolicy func(ctx context.Context, r *mdm.Request, existing *storage.Enrollment) error
@@ -178,6 +192,10 @@ type Config struct {
 	DeclarativeManagement DMHandler
 	GetToken              GetTokenHandler
 	UserAuthenticate      UserAuthenticateHandler
+	// ReturnToService is optional. With no handler the service answers
+	// Enabled false, which is a valid answer meaning "do not erase": the
+	// safe reading of an unconfigured server.
+	ReturnToService ReturnToServiceHandler
 }
 
 // AllowReenroll accepts every re-enrollment with a new identity.
@@ -199,6 +217,7 @@ type Core struct {
 	dm              DMHandler
 	getToken        GetTokenHandler
 	userAuth        UserAuthenticateHandler
+	returnToService ReturnToServiceHandler
 	requireUserAuth bool
 	validateTargets bool
 }
@@ -212,6 +231,7 @@ func New(cfg Config) (*Core, error) {
 		store: cfg.Store, bus: cfg.Bus, clock: cfg.Clock, hooks: cfg.Hooks, log: cfg.Logger,
 		pinning: cfg.Pinning, reenroll: cfg.Reenroll, reuse: cfg.CertReuse,
 		dm: cfg.DeclarativeManagement, getToken: cfg.GetToken, userAuth: cfg.UserAuthenticate,
+		returnToService: cfg.ReturnToService,
 		requireUserAuth: cfg.RequireUserAuth, validateTargets: cfg.ValidateTargets == nil || *cfg.ValidateTargets,
 	}
 	if c.clock == nil {
