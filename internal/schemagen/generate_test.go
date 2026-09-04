@@ -143,23 +143,23 @@ func TestWriteAndVerify(t *testing.T) {
 	}
 }
 
-func TestReadProvenance(t *testing.T) {
+func TestReadGeneratedFrom(t *testing.T) {
 	t.Parallel()
-	p, err := ReadProvenance(filepath.Join("..", "..", "schema", "PROVENANCE.json"))
+	p, err := ReadGeneratedFrom(filepath.Join("..", "..", "schema", "GENERATED_FROM.json"))
 	if err != nil {
 		t.Skipf("provenance not available: %v", err)
 	}
 	if p.Commit == "" || p.Source == "" {
 		t.Errorf("incomplete provenance: %+v", p)
 	}
-	if _, err := ReadProvenance(filepath.Join(t.TempDir(), "missing.json")); err == nil {
+	if _, err := ReadGeneratedFrom(filepath.Join(t.TempDir(), "missing.json")); err == nil {
 		t.Error("expected error for missing file")
 	}
 	bad := filepath.Join(t.TempDir(), "bad.json")
 	if err := os.WriteFile(bad, []byte("{"), 0o600); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := ReadProvenance(bad); err == nil {
+	if _, err := ReadGeneratedFrom(bad); err == nil {
 		t.Error("expected error for malformed json")
 	}
 }

@@ -17,7 +17,7 @@
 // The Makefile runs it as `make verify` (go run ./cmd/admgen verify) after
 // initialising the submodule, and the generate-check CI job runs `make
 // generate`, `git diff --exit-code`, and `make verify`. The commit stamped
-// into every generated file comes from schema/PROVENANCE.json, falling back
+// into every generated file comes from schema/GENERATED_FROM.json, falling back
 // to the submodule's git HEAD.
 //
 // # References
@@ -28,5 +28,5 @@
 //   - Apple: https://github.com/apple/device-management/blob/release/docs/schema.md
 //   - Apple: https://github.com/apple/device-management
 //   - Schema: third_party/device-management/docs/schema.yaml (meta-schema)
-//   - Provenance: schema/PROVENANCE.json, schema/NAMES.lock, schema/RENAMES.md
+//   - GeneratedFrom: schema/GENERATED_FROM.json, schema/NAMES.lock, schema/RENAMES.md
 package main

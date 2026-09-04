@@ -56,10 +56,10 @@ func run(args []string, out *os.File) error {
 	return fmt.Errorf("unknown command %q", fs.Arg(0))
 }
 
-// commitOf returns the pinned commit from PROVENANCE.json, falling back to
+// commitOf returns the pinned commit from GENERATED_FROM.json, falling back to
 // the checkout's git HEAD.
 func commitOf(schemaRoot, outDir string) string {
-	if p, err := schemagen.ReadProvenance(outDir + "/PROVENANCE.json"); err == nil && p.Commit != "" {
+	if p, err := schemagen.ReadGeneratedFrom(outDir + "/GENERATED_FROM.json"); err == nil && p.Commit != "" {
 		return p.Commit
 	}
 	cmd := exec.Command("git", "-C", schemaRoot, "rev-parse", "HEAD") // #nosec G204 -- operator-supplied checkout path

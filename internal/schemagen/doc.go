@@ -31,5 +31,5 @@
 //   - Apple: https://github.com/apple/device-management
 //   - Schema: third_party/device-management/docs/schema.yaml (meta-schema)
 //   - Schema: third_party/device-management/mdm/**, declarative/**, other/**
-//   - Provenance: schema/PROVENANCE.json, schema/NAMES.lock, schema/RENAMES.md
+//   - GeneratedFrom: schema/GENERATED_FROM.json, schema/NAMES.lock, schema/RENAMES.md
 package schemagen

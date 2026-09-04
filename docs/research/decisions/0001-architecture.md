@@ -8,7 +8,7 @@ Phase: 0
 
 - Doc: <https://developer.apple.com/documentation/devicemanagement>
 - Doc: <https://developer.apple.com/documentation/devicemanagement/integrating-declarative-management>
-- YAML: `third_party/device-management/**` at commit `67045e2f` (see `schema/PROVENANCE.json`)
+- YAML: `third_party/device-management/**` at commit `67045e2f` (see `schema/GENERATED_FROM.json`)
 
 ## References read
 
