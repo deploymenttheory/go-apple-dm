@@ -13,10 +13,11 @@ import (
 	"strings"
 )
 
-// Provenance mirrors schema/PROVENANCE.json.
+// GeneratedFrom mirrors schema/GENERATED_FROM.json: the Apple source this
+// tree was generated from.
 //
-//nolint:tagliatelle // keys match the PROVENANCE.json file format
-type Provenance struct {
+//nolint:tagliatelle // keys match the GENERATED_FROM.json file format
+type GeneratedFrom struct {
 	Source     string `json:"source"`
 	Ref        string `json:"ref"`
 	Commit     string `json:"commit"`
@@ -26,13 +27,13 @@ type Provenance struct {
 	Generator  string `json:"generator"`
 }
 
-// ReadProvenance loads schema/PROVENANCE.json.
-func ReadProvenance(path string) (*Provenance, error) {
+// ReadGeneratedFrom loads schema/GENERATED_FROM.json.
+func ReadGeneratedFrom(path string) (*GeneratedFrom, error) {
 	data, err := os.ReadFile(filepath.Clean(path))
 	if err != nil {
 		return nil, fmt.Errorf("provenance: %w", err)
 	}
-	var p Provenance
+	var p GeneratedFrom
 	if err := json.Unmarshal(data, &p); err != nil {
 		return nil, fmt.Errorf("provenance: %w", err)
 	}

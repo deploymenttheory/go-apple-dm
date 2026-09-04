@@ -28,5 +28,5 @@
 //   - Apple: https://developer.apple.com/documentation/devicemanagement/managing-connections
 //   - Apple: https://github.com/apple/device-management/blob/release/docs/schema.md
 //   - Schema: third_party/device-management/mdm/errors/**
-//   - Upstream: https://github.com/apple/device-management at commit 67045e2fa06f528b196c01edee6a8bf88b844beb (schema/PROVENANCE.json)
+//   - Upstream: https://github.com/apple/device-management at commit 67045e2fa06f528b196c01edee6a8bf88b844beb (schema/GENERATED_FROM.json)
 package errors

@@ -33,8 +33,8 @@ func TestLoadAllYAMLNoUnknownKeys(t *testing.T) {
 			t.Errorf("schema without path or title: %+v", s)
 		}
 	}
-	// Counts from the pinned commit in schema/PROVENANCE.json. A change here
-	// means Apple added or removed files: update PROVENANCE and this table.
+	// Counts from the pinned commit in schema/GENERATED_FROM.json. A change here
+	// means Apple added or removed files: update GENERATED_FROM and this table.
 	want := map[Family]int{
 		FamilyCommands: 65, FamilyCheckin: 9, FamilyErrors: 5, FamilyProfiles: 127,
 		FamilyDDM: 52, FamilyDDMProto: 3, FamilyStatus: 48, FamilyOther: 5,

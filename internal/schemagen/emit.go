@@ -148,7 +148,7 @@ func (e *emitter) docFile() []byte {
 	fmt.Fprintf(&sb, "//   - Schema: third_party/device-management/%s/**\n", dir)
 	fmt.Fprintf(
 		&sb,
-		"//   - Upstream: https://github.com/apple/device-management at commit %s (schema/PROVENANCE.json)\n",
+		"//   - Upstream: https://github.com/apple/device-management at commit %s (schema/GENERATED_FROM.json)\n",
 		e.opts.Commit,
 	)
 	fmt.Fprintf(&sb, "package %s\n", e.pkg.Name)

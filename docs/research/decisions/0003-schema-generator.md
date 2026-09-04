@@ -13,7 +13,7 @@ Phase: 1
 
 - `jessepeterson/admgen` (`admgencmd`), `jessepeterson/mdmcommands` (generated output, `generate.go`)
 - `korylprince/go-adm` (`yamlschema`, `cmdgen`, `profilegen`, `declgen`, `GENERATE_SHA`)
-- `deploymenttheory/go-sdk-appleservices` `device_management/internal/{spec,codegen}`, `cmd/fetchspec`, `PROVENANCE.json`
+- `deploymenttheory/go-sdk-appleservices` `device_management/internal/{spec,codegen}`, `cmd/fetchspec`, `GENERATED_FROM.json`
 - `macadmins/contour` `crates/mdm-schema` (Rust validator)
 
 ## Known pitfalls found

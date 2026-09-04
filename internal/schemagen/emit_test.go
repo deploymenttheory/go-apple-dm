@@ -286,7 +286,7 @@ func TestGenerateSynthetic(t *testing.T) {
 		"//   - Apple: https://developer.apple.com/documentation/devicemanagement/commands-and-queries\n",
 		"//   - Apple: https://github.com/apple/device-management/blob/release/docs/schema.md\n",
 		"//   - Schema: third_party/device-management/mdm/commands/**\n",
-		"//   - Upstream: https://github.com/apple/device-management at commit synthetic (schema/PROVENANCE.json)\n",
+		"//   - Upstream: https://github.com/apple/device-management at commit synthetic (schema/GENERATED_FROM.json)\n",
 		"\npackage commands\n",
 	} {
 		if !strings.Contains(doc, want) {
