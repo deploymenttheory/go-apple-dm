@@ -240,6 +240,7 @@ See [docs/diagrams](docs/diagrams/README.md).
 | `ddm/adapter/inproc`, `ddm/adapter/proxyclient`, `ddm/adapter/proxyserver` | DDM in-process, or split across our own `mdm` and `ddm` roles over an HMAC-signed or mTLS hop |
 | `internal/app`, `cmd/dmserver`, `Dockerfile` | The reference server: roles, enrollment routes, admin API, background workers, and the container image |
 | `simulator/` | Device simulator: MDM, DDM, ADE, account-driven, user channel, and Shared iPad clients |
+| `internal/layout` | The import graph behind the tier boundary tests: what may import what, asserted as tests because the lint workflow cannot fail a build |
 | `e2e/` | End-to-end scenarios (`make test-e2e`), listed in `docs/testing/e2e-scenarios.md` |
 | `docs/research/` | Reference research, the plan of record, and per-feature decision records |
 | `docs/security/threat-model.md` | STRIDE threat model, updated every phase |
