@@ -185,7 +185,7 @@
       "id": "mdm-proxyclient",
       "from": "mdmrole",
       "to": "proxyclient",
-      "label": "MDM_DDM_URL set"
+      "label": "DM_DDM_URL set"
     },
     {
       "id": "mdm-inproc",
@@ -235,7 +235,7 @@
       "title": "A real code boundary",
       "items": [
         "proxyclient imports proxywire and service, but never ddm",
-        "So when MDM_DDM_URL is set the mdm role can only reach the engine over the hop; unset, it calls inproc in-process"
+        "So when DM_DDM_URL is set the mdm role can only reach the engine over the hop; unset, it calls inproc in-process"
       ]
     },
     {

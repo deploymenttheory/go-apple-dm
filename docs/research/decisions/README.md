@@ -67,3 +67,7 @@ With the code:
 | [0037](0037-event-sinks-and-redaction.md) | Event sinks and default-deny redaction | accepted | 9 |
 | [0038](0038-persisted-audit-trail.md) | The persisted audit trail | accepted | 9 |
 | [0039](0039-ddm-is-an-extension-of-mdm.md) | Declarative management is an extension of MDM, not a peer | accepted | 9 |
+| [0040](0040-opentelemetry-seam.md) | An OpenTelemetry seam the consumer owns | accepted | 9 |
+| [0041](0041-closed-apple-vocabularies-as-constants.md) | Apple's closed vocabularies as Go constants | accepted | 9 |
+| [0042](0042-push-failure-classification.md) | A push failure is not a dead device | accepted | 9 |
+| [0043](0043-configuration-naming.md) | `DM_` names the configuration, `MDM` names the protocol | accepted | 9 |

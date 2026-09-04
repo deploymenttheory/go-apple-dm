@@ -79,7 +79,7 @@ func TestReenrollDeniedByDefault(t *testing.T) {
 			t.Fatalf("initial enrollment: %v", err)
 		}
 		if err := authenticateAs(t, a, "UDID-1", intruder.Cert); err != nil {
-			t.Fatalf("MDM_ALLOW_REENROLL did not restore rotation: %v", err)
+			t.Fatalf("DM_ALLOW_REENROLL did not restore rotation: %v", err)
 		}
 	})
 }

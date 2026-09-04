@@ -196,7 +196,7 @@
       "dot": "cyan",
       "title": "Roles decide what mounts",
       "items": [
-        "mdm serves devices and forwards DDM check-ins when MDM_DDM_URL is set",
+        "mdm serves devices and forwards DDM check-ins when DM_DDM_URL is set",
         "ddm mounts no /mdm; all runs everything in one process",
         "Every role builds the engine and runs the notifier"
       ]

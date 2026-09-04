@@ -7,7 +7,7 @@
 // CI and the split-deployment scenario (E2E-010) need our own binary in a
 // container, built from this repository, so both ends of the internal
 // wire contract are ours. The command is a thin shell over internal/app:
-// it reads MDM_* variables, lets flags override them, serves HTTP, and
+// it reads DM_* variables, lets flags override them, serves HTTP, and
 // offers -check for container health probes without a shell. Everything
 // else lives in the library packages so it stays testable.
 //

@@ -17,11 +17,11 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/storage/crypt"
 )
 
-// TestpersistentStorageNeedsAKeyring holds a persistent deployment to a keyring. The
+// TestPersistentStorageNeedsAKeyring holds a persistent deployment to a keyring. The
 // secret columns hold the APNs push key, the escrowed bootstrap and unlock
 // tokens and the user auth token, so without one a stolen backup, replica or
 // volume is a fleet compromise rather than a data loss.
-func TestpersistentStorageNeedsAKeyring(t *testing.T) {
+func TestPersistentStorageNeedsAKeyring(t *testing.T) {
 	t.Parallel()
 	_, err := app.Build(context.Background(), app.Config{
 		Role: app.RoleAll, Storage: "sqlite",
@@ -137,7 +137,7 @@ func TestStorageKeySources(t *testing.T) {
 
 	t.Run("Environment", func(t *testing.T) {
 		// t.Setenv forbids a parallel test.
-		t.Setenv("MDM_STORAGE_KEY_FROM_ENV", material)
+		t.Setenv("DM_STORAGE_KEY_FROM_ENV", material)
 		a, err := app.Build(context.Background(), app.Config{
 			Role: app.RoleAll, Storage: "sqlite", DSN: sqliteAt(t), Logger: quiet,
 			StorageKeys: []string{"from-env"},

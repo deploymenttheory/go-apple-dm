@@ -252,7 +252,7 @@ three dialects since phase 4, finally has a query); `e2e.TestE2E_AdminCLI` (E2E-
   0011 and 0027 already refused Vault, KMS and SAML on the same grounds. Cedar supplies the
   authorization vocabulary; who a caller *is* stays a token lookup, and `AdminAuthorizer` remains
   the seam for a deployment that authenticates differently.
-- Keeping one static `MDM_ADMIN_TOKEN`: it cannot be revoked without a restart, cannot be
+- Keeping one static `DM_ADMIN_TOKEN`: it cannot be revoked without a restart, cannot be
   attributed in an audit line, and with this phase's routes it both erases fleets and exports
   FileVault escrow.
 - Tokens defined in configuration rather than storage: simpler, but revocation means editing
@@ -272,7 +272,7 @@ three dialects since phase 4, finally has a query); `e2e.TestE2E_AdminCLI` (E2E-
 ### 1. The static token is break-glass, not superseded (2026-09-03, phase 9)
 
 **What changed.** This record originally said `AdminStore` "takes precedence over `AdminToken`",
-and the code implemented that literally: configuring a principal store made `MDM_ADMIN_TOKEN` stop
+and the code implemented that literally: configuring a principal store made `DM_ADMIN_TOKEN` stop
 being accepted. It is now accepted *alongside* a store. A request presenting it authenticates as
 root and bypasses policy evaluation; any other bearer token is resolved against the principal store
 and authorized by policy as before. The static token is checked first, in constant time, so it
@@ -314,7 +314,7 @@ authenticates, which is what made the store reachable at all), and
 **What changed.** `adminauth/sqlstore` was imported only by its own tests: `cmd/mdmserver` never
 set `Config.AdminStore`, so every claim in this record was true only of a store an in-process
 caller injected. `internal/app` now opens it on the process's own database, behind
-`MDM_ADMIN_STORE`, following the same three-way selection as the other satellite stores -- an
+`DM_ADMIN_STORE`, following the same three-way selection as the other satellite stores -- an
 injected store wins, then the process database, then memory when there is none.
 
 **Why.** Off by default, because turning it on mounts the admin API, and a flag that silently

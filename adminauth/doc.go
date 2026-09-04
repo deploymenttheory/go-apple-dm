@@ -16,7 +16,7 @@
 // suspends everything above. An empty principal store authenticates nobody,
 // and the route that creates the first principal is itself authorized, so
 // there has to be a way in. That way is the reference server's static
-// MDM_ADMIN_TOKEN, which authenticates as root and bypasses policy, and which
+// DM_ADMIN_TOKEN, which authenticates as root and bypasses policy, and which
 // keeps working beside a configured store rather than being superseded by it.
 // It has no expiry and cannot be revoked without restarting the process, so
 // while it is set none of this package's guarantees hold for whoever holds it.

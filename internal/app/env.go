@@ -11,85 +11,85 @@ import (
 
 // Environment variables read by ParseEnv.
 const (
-	EnvRole       = "MDM_ROLE"
-	EnvListen     = "MDM_LISTEN"
-	EnvStorage    = "MDM_STORAGE"
-	EnvDSN        = "MDM_DSN"
-	EnvDDMURL     = "MDM_DDM_URL"
-	EnvDDMSendKey = "MDM_DDM_SEND_KEY"
-	EnvDDMRecvKey = "MDM_DDM_RECV_KEY"
+	EnvRole       = "DM_ROLE"
+	EnvListen     = "DM_LISTEN"
+	EnvStorage    = "DM_STORAGE"
+	EnvDSN        = "DM_DSN"
+	EnvDDMURL     = "DM_DDM_URL"
+	EnvDDMSendKey = "DM_DDM_SEND_KEY"
+	EnvDDMRecvKey = "DM_DDM_RECV_KEY"
 	// EnvStorageKeys names the keys sealing the secret columns, active
-	// first; material comes from MDM_STORAGE_KEY_<NAME> or EnvSecretsDir.
-	EnvStorageKeys       = "MDM_STORAGE_KEYS" // #nosec G101 -- the variable name, not a credential
-	EnvStorageKeysStrict = "MDM_STORAGE_KEYS_STRICT"
-	EnvSecretsDir        = "MDM_SECRETS_DIR" // #nosec G101 -- the variable name, not a credential
+	// first; material comes from DM_STORAGE_KEY_<NAME> or EnvSecretsDir.
+	EnvStorageKeys       = "DM_STORAGE_KEYS" // #nosec G101 -- the variable name, not a credential
+	EnvStorageKeysStrict = "DM_STORAGE_KEYS_STRICT"
+	EnvSecretsDir        = "DM_SECRETS_DIR" // #nosec G101 -- the variable name, not a credential
 	// EnvAllowReenroll opts back in to the library's permissive
 	// re-enrollment behaviour; see Config.AllowReenroll.
-	EnvAllowReenroll = "MDM_ALLOW_REENROLL"
-	EnvAdminToken    = "MDM_ADMIN_TOKEN" // #nosec G101 -- the variable name, not a credential
+	EnvAllowReenroll = "DM_ALLOW_REENROLL"
+	EnvAdminToken    = "DM_ADMIN_TOKEN" // #nosec G101 -- the variable name, not a credential
 	// EnvAdminStore opens the admin principal and policy store on the
 	// process's own database. Off by default: it mounts the admin API.
-	EnvAdminStore = "MDM_ADMIN_STORE"
+	EnvAdminStore = "DM_ADMIN_STORE"
 	// EnvAudit writes a projected slog record for every event.
-	EnvAudit = "MDM_AUDIT_LOG"
+	EnvAudit = "DM_AUDIT_LOG"
 	// EnvWebhookURL receives an event per POST in the MicroMDM envelope.
-	EnvWebhookURL = "MDM_WEBHOOK_URL"
+	EnvWebhookURL = "DM_WEBHOOK_URL"
 	// EnvAuditStore persists every event to the audit trail.
-	EnvAuditStore = "MDM_AUDIT_STORE"
+	EnvAuditStore = "DM_AUDIT_STORE"
 	// EnvAuditRetention is how long audit records are kept.
-	EnvAuditRetention = "MDM_AUDIT_RETENTION"
+	EnvAuditRetention = "DM_AUDIT_RETENTION"
 	// EnvWebhookHMACKey signs the webhook body.
-	EnvWebhookHMACKey = "MDM_WEBHOOK_HMAC_KEY" // #nosec G101 -- the variable name, not a credential
-	EnvCAFile         = "MDM_CA_FILE"
-	EnvCertHeader     = "MDM_CERT_HEADER"
+	EnvWebhookHMACKey = "DM_WEBHOOK_HMAC_KEY" // #nosec G101 -- the variable name, not a credential
+	EnvCAFile         = "DM_CA_FILE"
+	EnvCertHeader     = "DM_CERT_HEADER"
 	// Enrollment routes (EnrollConfig).
-	EnvPublicURL           = "MDM_PUBLIC_URL"
-	EnvPushTopic           = "MDM_PUSH_TOPIC"
-	EnvEnrollCACertFile    = "MDM_ENROLL_CA_CERT_FILE"
-	EnvEnrollCAKeyFile     = "MDM_ENROLL_CA_KEY_FILE"
-	EnvSCEPChallenge       = "MDM_SCEP_CHALLENGE" // #nosec G101 -- the variable name, not a credential
-	EnvSCEPHMACKey         = "MDM_SCEP_HMAC_KEY"  // #nosec G101 -- the variable name, not a credential
-	EnvProfileIdentifier   = "MDM_PROFILE_IDENTIFIER"
-	EnvOrganization        = "MDM_ORGANIZATION"
-	EnvDiscovery           = "MDM_DISCOVERY"
-	EnvAccountDrivenMethod = "MDM_ACCOUNT_DRIVEN_METHOD"
-	EnvOIDCIssuer          = "MDM_OIDC_ISSUER"
-	EnvOIDCClientID        = "MDM_OIDC_CLIENT_ID"
-	EnvOIDCClientSecret    = "MDM_OIDC_CLIENT_SECRET" // #nosec G101 -- the variable name, not a credential
-	EnvADEAnchorFile       = "MDM_ADE_ANCHOR_FILE"
-	EnvADEAudit            = "MDM_ADE_AUDIT"
-	EnvRequireUserAuth     = "MDM_REQUIRE_USER_AUTH"
+	EnvPublicURL           = "DM_PUBLIC_URL"
+	EnvPushTopic           = "DM_PUSH_TOPIC"
+	EnvEnrollCACertFile    = "DM_ENROLL_CA_CERT_FILE"
+	EnvEnrollCAKeyFile     = "DM_ENROLL_CA_KEY_FILE"
+	EnvSCEPChallenge       = "DM_SCEP_CHALLENGE" // #nosec G101 -- the variable name, not a credential
+	EnvSCEPHMACKey         = "DM_SCEP_HMAC_KEY"  // #nosec G101 -- the variable name, not a credential
+	EnvProfileIdentifier   = "DM_PROFILE_IDENTIFIER"
+	EnvOrganization        = "DM_ORGANIZATION"
+	EnvDiscovery           = "DM_DISCOVERY"
+	EnvAccountDrivenMethod = "DM_ACCOUNT_DRIVEN_METHOD"
+	EnvOIDCIssuer          = "DM_OIDC_ISSUER"
+	EnvOIDCClientID        = "DM_OIDC_CLIENT_ID"
+	EnvOIDCClientSecret    = "DM_OIDC_CLIENT_SECRET" // #nosec G101 -- the variable name, not a credential
+	EnvADEAnchorFile       = "DM_ADE_ANCHOR_FILE"
+	EnvADEAudit            = "DM_ADE_AUDIT"
+	EnvRequireUserAuth     = "DM_REQUIRE_USER_AUTH"
 	// Apple Business Manager (AxMConfig).
-	EnvAxMClientID = "MDM_AXM_CLIENT_ID"
-	EnvAxMKeyID    = "MDM_AXM_KEY_ID"
-	EnvAxMKeyFile  = "MDM_AXM_KEY_FILE"
-	EnvAxMScope    = "MDM_AXM_SCOPE"
-	EnvAxMBaseURL  = "MDM_AXM_BASE_URL"
-	EnvAxMTokenURL = "MDM_AXM_TOKEN_URL" // #nosec G101 -- the variable name, not a credential
+	EnvAxMClientID = "DM_AXM_CLIENT_ID"
+	EnvAxMKeyID    = "DM_AXM_KEY_ID"
+	EnvAxMKeyFile  = "DM_AXM_KEY_FILE"
+	EnvAxMScope    = "DM_AXM_SCOPE"
+	EnvAxMBaseURL  = "DM_AXM_BASE_URL"
+	EnvAxMTokenURL = "DM_AXM_TOKEN_URL" // #nosec G101 -- the variable name, not a credential
 	// Device enrollment service (DEPConfig).
-	EnvDEPBaseURL        = "MDM_DEP_BASE_URL"
-	EnvDEPSyncInterval   = "MDM_DEP_SYNC_INTERVAL"
-	EnvDEPAssignInterval = "MDM_DEP_ASSIGN_INTERVAL" // #nosec G101 -- the variable name, not a credential
-	EnvDEPProfileURL     = "MDM_DEP_PROFILE_URL"
-	EnvDEPUsePUT         = "MDM_DEP_USE_PUT"
+	EnvDEPBaseURL        = "DM_DEP_BASE_URL"
+	EnvDEPSyncInterval   = "DM_DEP_SYNC_INTERVAL"
+	EnvDEPAssignInterval = "DM_DEP_ASSIGN_INTERVAL" // #nosec G101 -- the variable name, not a credential
+	EnvDEPProfileURL     = "DM_DEP_PROFILE_URL"
+	EnvDEPUsePUT         = "DM_DEP_USE_PUT"
 
 	// Push: where APNs credentials come from, and how pushes are shaped.
-	EnvPushSource   = "MDM_PUSH_SOURCE"
-	EnvPushCertFile = "MDM_PUSH_CERT_FILE"
-	EnvPushKeyFile  = "MDM_PUSH_KEY_FILE"
-	EnvPushHost     = "MDM_PUSH_HOST"
-	EnvPushCoalesce = "MDM_PUSH_COALESCE"
-	EnvPushCertTTL  = "MDM_PUSH_CERT_TTL"
+	EnvPushSource   = "DM_PUSH_SOURCE"
+	EnvPushCertFile = "DM_PUSH_CERT_FILE"
+	EnvPushKeyFile  = "DM_PUSH_KEY_FILE"
+	EnvPushHost     = "DM_PUSH_HOST"
+	EnvPushCoalesce = "DM_PUSH_COALESCE"
+	EnvPushCertTTL  = "DM_PUSH_CERT_TTL"
 	// ACME and Managed Device Attestation (ACMEConfig).
-	EnvIdentity       = "MDM_IDENTITY"
-	EnvACMEPolicy     = "MDM_ACME_POLICY"
-	EnvACMEKey        = "MDM_ACME_KEY"
-	EnvACMEHMACKey    = "MDM_ACME_HMAC_KEY" // #nosec G101 -- the variable name, not a credential
-	EnvACMEAnchorFile = "MDM_ACME_ANCHOR_FILE"
-	EnvACMEUnattested = "MDM_ACME_ALLOW_UNATTESTED"
-	EnvACMEIdentTTL   = "MDM_ACME_IDENTIFIER_TTL"
+	EnvIdentity       = "DM_IDENTITY"
+	EnvACMEPolicy     = "DM_ACME_POLICY"
+	EnvACMEKey        = "DM_ACME_KEY"
+	EnvACMEHMACKey    = "DM_ACME_HMAC_KEY" // #nosec G101 -- the variable name, not a credential
+	EnvACMEAnchorFile = "DM_ACME_ANCHOR_FILE"
+	EnvACMEUnattested = "DM_ACME_ALLOW_UNATTESTED"
+	EnvACMEIdentTTL   = "DM_ACME_IDENTIFIER_TTL"
 
-	EnvSubscriptions = "MDM_DDM_SUBSCRIPTIONS"
+	EnvSubscriptions = "DM_DDM_SUBSCRIPTIONS"
 )
 
 // Defaults applied by ParseEnv when a variable is unset.
@@ -100,7 +100,7 @@ const (
 	DefaultDSN     = "mdm.db"
 )
 
-// ParseEnv builds a Config from MDM_* variables through get (os.Getenv in
+// ParseEnv builds a Config from DM_* variables through get (os.Getenv in
 // the binary). Booleans accept strconv.ParseBool forms.
 // keyNames splits a comma separated key list, active first, dropping blanks so
 // a trailing comma or a padded list is not a key named "".

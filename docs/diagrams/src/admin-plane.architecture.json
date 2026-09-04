@@ -115,7 +115,7 @@
     {
       "id": "statictoken",
       "type": "security",
-      "label": "MDM_ADMIN_TOKEN",
+      "label": "DM_ADMIN_TOKEN",
       "sublabel": "root, bypasses Cedar",
       "pos": [
         640,

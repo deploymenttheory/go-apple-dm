@@ -15,7 +15,7 @@ COPY --from=build /out/mdmserver /mdmserver
 COPY --from=build --chown=nonroot:nonroot /out/data /data
 VOLUME ["/data"]
 EXPOSE 8080
-ENV MDM_LISTEN=:8080 MDM_STORAGE=sqlite MDM_DSN=/data/mdm.db
+ENV DM_LISTEN=:8080 DM_STORAGE=sqlite DM_DSN=/data/mdm.db
 HEALTHCHECK --interval=5s --timeout=3s --retries=10 CMD ["/mdmserver", "-check", "http://127.0.0.1:8080/healthz"]
 USER nonroot:nonroot
 ENTRYPOINT ["/mdmserver"]

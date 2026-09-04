@@ -89,11 +89,11 @@ case "${1:-}" in
     # The mdm role signs with SEND and verifies with RECV, so the ddm role receives
     # with the mdm role's SEND key and signs with its RECV key.
     docker run -d --name "$DDM" -p "${DDM_PORT}:8080" \
-      -e MDM_ROLE=ddm -e MDM_LISTEN=:8080 -e MDM_STORAGE=sqlite -e MDM_DSN=/data/ddm.db \
-      -e MDM_DDM_RECV_KEY="$DDM_SEND_KEY" -e MDM_DDM_SEND_KEY="$DDM_RECV_KEY" \
-      -e MDM_STORAGE_KEYS="$DDM_STORAGE_KEY_NAME" \
-      -e "MDM_STORAGE_KEY_$(printf '%s' "$DDM_STORAGE_KEY_NAME" | tr '[:lower:].-' '[:upper:]__')=$DDM_STORAGE_KEY" \
-      -e MDM_ADMIN_TOKEN="$DDM_ADMIN_TOKEN" "$DDM_IMAGE" >/dev/null
+      -e DM_ROLE=ddm -e DM_LISTEN=:8080 -e DM_STORAGE=sqlite -e DM_DSN=/data/ddm.db \
+      -e DM_DDM_RECV_KEY="$DDM_SEND_KEY" -e DM_DDM_SEND_KEY="$DDM_RECV_KEY" \
+      -e DM_STORAGE_KEYS="$DDM_STORAGE_KEY_NAME" \
+      -e "DM_STORAGE_KEY_$(printf '%s' "$DDM_STORAGE_KEY_NAME" | tr '[:lower:].-' '[:upper:]__')=$DDM_STORAGE_KEY" \
+      -e DM_ADMIN_TOKEN="$DDM_ADMIN_TOKEN" "$DDM_IMAGE" >/dev/null
     wait_for "$DDM" curl -fsS "http://127.0.0.1:${DDM_PORT}/healthz"
     print_ddm_env
     ;;
