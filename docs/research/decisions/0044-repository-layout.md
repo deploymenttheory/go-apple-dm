@@ -44,9 +44,12 @@ they are allowed to import; it changes no wire format and no Apple-facing behavi
 1. Tiers named for the role they play — `protocol/`, `pki/`, `appleservices/`, `server/` — so an
    import path states which layer a package belongs to, and `schema/` stays at the root as the
    generated tree it is.
-2. The layering is enforced, not asserted: `depguard` forbids `protocol/* -> server/*`,
-   `protocol/* -> appleservices/*` and `pki/* -> server/*`. None of the four references can make
-   that claim. To be precise about what this fixes: there is no Go import cycle here and never was
+2. The layering is enforced, not asserted: the tier rules are tests in `internal/layout`, which
+   fail the build. `depguard` was the obvious home for them and cannot be, because
+   `.github/workflows/go-lint.yml` runs golangci-lint with `--issues-exit-code=0` and
+   `only-new-issues`, so a lint rule reports a violation without failing anything. Tests are the
+   only gate this repository actually has. None of the four references makes an enforced claim of
+   any kind. To be precise about what this fixes: there is no Go import cycle here and never was
    — the module compiles, so package-level cycles are impossible. The tangle is at *directory*
    granularity, where `{ddm, dep, event, push, service, storage}` form a strongly connected
    component once subpackages are collapsed into their parent. That is what blocks tier
@@ -66,10 +69,13 @@ they are allowed to import; it changes no wire format and no Apple-facing behavi
 ## Verified by
 
 1. `make verify` stays green across every step, proving `schema/` was not disturbed.
-2. The `depguard` tier rules in `.golangci.yml`, plus a directory-granularity SCC check over
-   `go list` output; both fail on a re-introduced back edge, which is how the boundary stops being
-   aspirational. `pushcert` staying standard-library-only is what keeps
-   `storage -> pushcert -> push -> storage` from becoming a genuine import cycle.
+2. `layout.TestPureTierCannotReachServerTier` holds twenty-four packages to the boundary and
+   `layout.TestKnownServerTierReachIsExact` asserts the remaining five violations *exactly*, so a
+   split that does not shrink the debt register fails as loudly as a regression that grows it.
+   `layout.TestNoUnitCycles` proves every directory is still assignable to one tier, and
+   `layout.TestPushcertImportsOnlyTheStandardLibrary` keeps
+   `storage -> pushcert -> push -> storage` from becoming a genuine import cycle. The suite was
+   verified to fail: one added import in `cms` failed five packages transitively.
 3. `go list -f '{{join .Imports "\n"}}' ./acme ./dep` contains no `go-apple-dm/storage` entry; the
    coverage gate stays above 95% overall and per package throughout.
 4. In a scratch module, `go get` of the library followed by importing only `protocol/mdm` yields a
