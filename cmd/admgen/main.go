@@ -7,7 +7,7 @@ import (
 	"os/exec"
 	"strings"
 
-	"github.com/deploymenttheory/go-apple-dm/internal/schemagen"
+	"github.com/deploymenttheory/go-apple-dm/v3/internal/schemagen"
 )
 
 func main() {

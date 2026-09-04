@@ -4,8 +4,8 @@
 package ddm
 
 import (
-	"github.com/deploymenttheory/go-apple-dm/schema/support"
-	"github.com/deploymenttheory/go-apple-dm/schema/validation"
+	"github.com/deploymenttheory/go-apple-dm/v3/schema/support"
+	"github.com/deploymenttheory/go-apple-dm/v3/schema/validation"
 )
 
 // Validate checks x against the schema. With a non-zero target it also checks

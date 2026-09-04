@@ -4,7 +4,7 @@
 package status
 
 import (
-	"github.com/deploymenttheory/go-apple-dm/schema/support"
+	"github.com/deploymenttheory/go-apple-dm/v3/schema/support"
 )
 
 // Item is implemented by every top-level type in this package.

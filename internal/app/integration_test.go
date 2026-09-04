@@ -8,7 +8,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/deploymenttheory/go-apple-dm/internal/app"
+	"github.com/deploymenttheory/go-apple-dm/v3/internal/app"
 )
 
 // TestBuildSQLRoles opens the all role on the CI databases so the

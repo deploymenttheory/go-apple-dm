@@ -39,90 +39,31 @@ prefix `github.com/deploymenttheory`), `.github/workflows/go-lint.yml`, `release
 
 ## 1. Package layout
 
+> **Superseded for structure by decision record 0044** (`docs/research/decisions/0044-repository-layout.md`).
+> The package *inventory* below still describes what exists and why; the *paths* were rearranged
+> into tiers, and the module moved to `github.com/deploymenttheory/go-apple-dm/v3`. Where this
+> section says `mdm/`, read `mdmprotocol/mdm`; `storage/`, read `server/storage`; and so on.
+
+Packages sit in tiers. A package may import its own tier and every tier below it, never above,
+and `internal/layout` asserts it in tests because the lint workflow cannot fail a build.
+
 ```
-schema/                 GENERATED root. Only internal/schemagen writes here; no hand-written code inside.
-schema/commands         65 command request structs + a response struct for every command, RequestType registry
-schema/checkin          9 check-in message structs, MessageType registry
-schema/errors           Enrollment error codes as typed constants + lookup
-schema/profiles         127 configuration profile payload structs, PayloadType registry
-schema/ddm              Declarations: configurations, activations, assets, management, credentials, DeclarationBase, registry
-schema/ddmproto         DeclarationItems, TokensResponse / SynchronizationTokens, StatusReport envelope
-schema/status           48 status item structs + dotted-path registry (".StatusItems.device.model.family" -> type)
-schema/other            MachineInfo, ManifestURL, PasswordHash, SkipKeys, ESSO
-schema/support          Runtime metadata: Lookup(family, path) and (*Entry).Check(Target) answering
-                        availability, introduction, deprecation, removal, channel, supervision, DEP,
-                        Shared iPad and User Enrollment; Families()/Paths() enumerate it (0036)
-schema/PROVENANCE.json  Upstream repo, ref, commit, sha256 of YAML tree, fetch date, generator version
-schema/NAMES.lock       Every exported identifier; regeneration may add, never silently remove (see section 2)
-internal/schemagen/     The generator: YAML loader -> intermediate model -> Go, metadata, and conformance-test emitters
-cmd/admgen/             Generator CLI: fetch --ref, generate, verify (deterministic re-gen diff + rename-guard)
-plist/                  Thin wrapper over micromdm/plist: Marshal/Unmarshal, XML+binary DetectFormat, MaxDepth, MaxBytes,
-                        Unmarshaler dispatch helpers, fuzz targets. The one place a library swap would touch.
-mdm/                    Protocol core (hand-written): EnrollmentID, Channel, Request, CommandEnvelope, Response, Status,
-                        ErrorChain, DecodeCheckin/DecodeResponse (dispatch via schema/checkin and schema/commands registries)
-profile/                Hand-written: mobileconfig envelope, builder over schema/profiles, CMS sign/verify, parser
-ddm/                    Engine: declarations, sets, membership resolvers, tokens, declaration-items, status persistence,
-                        change notifier; Report walker over schema/status with json.RawMessage for unknown paths
-ddm/adapter/inproc      service.DeclarativeManagement implemented over the engine
-ddm/adapter/proxyserver ingress for check-ins forwarded by our mdm role (Apple check-in plist, our signature); no third-party wire scheme
-ddm/adapter/proxyclient the inverse: our mdm role forwards check-ins to a remote ddm role
-cms/                    PKCS7 sign/verify with clock-skew tolerance and chain policy (wraps smallstep/pkcs7)
-service/                Service interfaces, Core implementation, typed errors, Hook chain
-service/hooks/          Built-in hooks: audit, rate limit, metrics (phase 9). Certificate pinning is
-                        deliberately not a hook: it ships as service.Config.Pinning on Core (0014)
-event/                  Typed in-process event bus; sinks: webhook (MicroMDM-compatible), slog, OpenTelemetry (phase 9)
-adminauth/              Admin authorization: Cedar policies over per-route actions, principals and
-                        roles, and hashed, checksummed API tokens; adminauth/inmem,
-                        adminauth/sqlstore (own migration set), adminauth/adminauthtest contract
-                        suite (0034)
-storage/                Interfaces split by concern, Page/Cursor, sentinel errors
-storage/inmem           Always compiled; used by every unit test
-storage/sqlite          modernc.org/sqlite, WAL
-storage/postgres        pgx v5
-storage/mysql           go-sql-driver/mysql
-storage/sqlcommon       Shared statements + embedded per-dialect migrations (pressly/goose as a library)
-storage/storagetest     Contract suites every backend must pass
-httpapi/                net/http handlers: /checkin, /connect, enrollment profile, OTA profile-service,
-                        /.well-known/com.apple.remotemanagement, DDM proxy; middlewares: cert extraction (header or mTLS),
-                        Mdm-Signature verify, body limits, HMAC
-push/                   Pusher interface, Target/Result, PushCertStore, Coalescer
-push/apns               HTTP/2 APNs client, per-topic pools, 410/429 handling
-push/pushtest           Fake Pusher and fake APNs server
-enroll/                 Enrollment profile builder, OTA two-phase flow, MachineInfo, DEP profile JSON,
-                        account-driven service discovery documents and auth flows, re-enrollment policy
-ca/                     Signer, Depot, Policy interfaces; memory and storage-backed depots; Apple root bundle
-scep/                   SCEP endpoint on smallstep/scep with challenge providers
-acme/                   ACME server: directory, nonce, account, order, device-attest-01 challenge, finalize; one-time client identifiers; policy hooks
-acme/jose/              JWS and JWK for RFC 8555, with the interop fix for Apple's short ECDSA signatures
-acme/attest/            Managed Device Attestation: object and chain parsing, Apple's OIDs, freshness, key binding
-acme/inmem/, acme/sqlstore/  ACME state, contract-tested; sqlstore has its own migration set
-internal/cbor/          the strict CBOR subset an attestation object uses
-dep/                    DEP web service client (own OAuth 1.0a, session singleflight, token PKI, typed errors),
-                        syncer (fetch/sync cursor state machine), state-driven assigner, stores
-                        (dep/inmem, dep/sqlstore on its own migration set), dep/deptest fake service (0026)
-axm/                    ABM/ASM API client, batteries included: own ES256 assertion, every documented
-                        endpoint, pagination, Retry-After, activities and convergence waits; axm/axmtest fake (0030)
-gdmf/                   Apple software lookup service client (pmv) behind an interface, with a fake
-enroll/ade              ADE enrollment: typed MachineInfo, CMS verification against the device CA,
-                        software update gate, profile hook; enroll/adetest signs MachineInfo for tests (0027)
-enroll/webauth          Own OIDC relying party for configuration_web_url (PKCE, nonce, state store);
-                        enroll/webauth/webauthtest fake provider (0027)
-enroll/discovery        /.well-known/com.apple.remotemanagement router (0028)
-enroll/accountdriven    Account-driven enrollment: apple-as-web and apple-oauth2 flows, two-tier tokens (0028)
-simulator/              Public device simulator: MDM v1 + DDM client, fault injection
-secrets/                Provider interface (env, file, test); redacting String()
-internal/clock, internal/canonjson (RFC 8785), internal/app (server wiring, testable); UUIDv7 from the standard `uuid` package (Go 1.27)
-cmd/dmserver           Reference server, wiring only (<100 lines)
-cmd/dmctl              Admin CLI, wiring only; the logic lives in internal/dmctl (dispatch,
-                        rendering, config), internal/dmctl/adminclient, and internal/dmctl/explain,
-                        which are gated at 95% because cmd/ statements still count toward the overall
-                        coverage figure even though the package is exempt per package (0035)
-third_party/device-management   Git submodule pinned by commit; PROVENANCE.json records commit, sha256, date
-third_party/refs/       Git-ignored read-only clones of reference repos (make refs)
-docs/research/decisions/        ADR-lite decision records (one per feature)
-docs/security/threat-model.md   STRIDE per endpoint
-docs/testing/e2e-scenarios.md   Named scenarios mapped to Apple doc pages
+paging/ clock/ testpki/ secrets/ telemetry/   foundation: no domain knowledge
+schema/                                       generated, never hand-edited
+mdmprotocol/    plist mdm cms profile event dmhook ddm enroll
+                                              wire formats and the declarative model; no I/O
+pki/            ca scep acme pushcert         identity issuance
+appleplatformservices/  dep axm gdmf push     outbound clients to Apple's services
+simulator/                                    a device in software
+server/         storage service httpapi ddmsync ddmstore acmestore depstore
+                ddmadapter pushnotify axmcreds eventsink audit adminauth
+                                              persistence, service layer, transport
+cmd/ internal/app internal/dmctl e2e/         composition
+third_party/device-management                 git submodule pinned by commit
 ```
+
+The inventory each package holds, and the decision record behind it, is the Layout table in
+[README.md](../../README.md#layout).
 
 ## 2. The generator (internal/schemagen)
 

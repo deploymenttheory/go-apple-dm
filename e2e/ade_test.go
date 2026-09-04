@@ -14,13 +14,13 @@ import (
 	"testing"
 	"time"
 
-	"github.com/deploymenttheory/go-apple-dm/enroll"
-	"github.com/deploymenttheory/go-apple-dm/enroll/ade"
-	"github.com/deploymenttheory/go-apple-dm/enroll/webauth"
-	"github.com/deploymenttheory/go-apple-dm/enroll/webauth/webauthtest"
-	"github.com/deploymenttheory/go-apple-dm/mdm"
-	"github.com/deploymenttheory/go-apple-dm/service"
-	"github.com/deploymenttheory/go-apple-dm/simulator"
+	"github.com/deploymenttheory/go-apple-dm/v3/mdmprotocol/enroll"
+	"github.com/deploymenttheory/go-apple-dm/v3/mdmprotocol/enroll/ade"
+	"github.com/deploymenttheory/go-apple-dm/v3/mdmprotocol/enroll/webauth"
+	"github.com/deploymenttheory/go-apple-dm/v3/mdmprotocol/enroll/webauth/webauthtest"
+	"github.com/deploymenttheory/go-apple-dm/v3/mdmprotocol/mdm"
+	"github.com/deploymenttheory/go-apple-dm/v3/server/service"
+	"github.com/deploymenttheory/go-apple-dm/v3/simulator"
 )
 
 // adeFixture mounts the ADE endpoint with the web view flow bound to a

@@ -10,14 +10,14 @@ import (
 	"testing"
 	"time"
 
-	"github.com/deploymenttheory/go-apple-dm/dep"
-	"github.com/deploymenttheory/go-apple-dm/dep/deptest"
-	depinmem "github.com/deploymenttheory/go-apple-dm/dep/inmem"
-	"github.com/deploymenttheory/go-apple-dm/enroll/ade"
-	"github.com/deploymenttheory/go-apple-dm/gdmf/gdmftest"
-	"github.com/deploymenttheory/go-apple-dm/internal/clock"
-	"github.com/deploymenttheory/go-apple-dm/mdm"
-	"github.com/deploymenttheory/go-apple-dm/simulator"
+	"github.com/deploymenttheory/go-apple-dm/v3/appleplatformservices/dep"
+	"github.com/deploymenttheory/go-apple-dm/v3/appleplatformservices/dep/deptest"
+	"github.com/deploymenttheory/go-apple-dm/v3/appleplatformservices/gdmf/gdmftest"
+	"github.com/deploymenttheory/go-apple-dm/v3/clock"
+	"github.com/deploymenttheory/go-apple-dm/v3/mdmprotocol/enroll/ade"
+	"github.com/deploymenttheory/go-apple-dm/v3/mdmprotocol/mdm"
+	depinmem "github.com/deploymenttheory/go-apple-dm/v3/server/depstore/inmem"
+	"github.com/deploymenttheory/go-apple-dm/v3/simulator"
 )
 
 // TestE2E_DEPAssign is E2E-011: the token PKI exchange with our fake DEP

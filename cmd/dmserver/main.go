@@ -13,7 +13,7 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/deploymenttheory/go-apple-dm/internal/app"
+	"github.com/deploymenttheory/go-apple-dm/v3/internal/app"
 )
 
 func main() {

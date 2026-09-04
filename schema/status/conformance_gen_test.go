@@ -6,8 +6,8 @@ package status_test
 import (
 	"testing"
 
-	"github.com/deploymenttheory/go-apple-dm/schema/internal/conformance"
-	"github.com/deploymenttheory/go-apple-dm/schema/status"
+	"github.com/deploymenttheory/go-apple-dm/v3/schema/internal/conformance"
+	"github.com/deploymenttheory/go-apple-dm/v3/schema/status"
 )
 
 func sampleAccountListCalDAV(d int) *status.AccountListCalDAV {

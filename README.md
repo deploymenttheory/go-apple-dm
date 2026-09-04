@@ -58,7 +58,7 @@ interoperate. The reasoning behind all of this is decision record
 ## Quick start
 
 ```bash
-go get github.com/deploymenttheory/go-apple-dm
+go get github.com/deploymenttheory/go-apple-dm/v3
 ```
 
 A check-in and command endpoint over an in-memory store, and a typed command queued for a device:
@@ -71,12 +71,12 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/deploymenttheory/go-apple-dm/httpapi"
-	"github.com/deploymenttheory/go-apple-dm/mdm"
-	"github.com/deploymenttheory/go-apple-dm/schema/commands"
-	"github.com/deploymenttheory/go-apple-dm/service"
-	"github.com/deploymenttheory/go-apple-dm/storage"
-	"github.com/deploymenttheory/go-apple-dm/storage/inmem"
+	"github.com/deploymenttheory/go-apple-dm/v3/mdmprotocol/mdm"
+	"github.com/deploymenttheory/go-apple-dm/v3/schema/commands"
+	"github.com/deploymenttheory/go-apple-dm/v3/server/httpapi"
+	"github.com/deploymenttheory/go-apple-dm/v3/server/service"
+	"github.com/deploymenttheory/go-apple-dm/v3/server/storage"
+	"github.com/deploymenttheory/go-apple-dm/v3/server/storage/inmem"
 )
 
 func main() {
@@ -203,51 +203,58 @@ See [docs/diagrams](docs/diagrams/README.md).
 
 ## Layout
 
-| Path | Purpose |
-|---|---|
-| `schema/` | Generated types from `third_party/device-management` (never hand-edited); `schema/support` answers whether a command or key applies to an OS and version |
-| `internal/schemagen`, `cmd/admgen` | The generator |
-| `mdm/` | Protocol core: enrollment identity, check-in decoding, command and response envelopes |
-| `cms/` | Detached and attached CMS signing and verification, `Mdm-Signature` with signing-time tolerance |
-| `service/` | Enrollment lifecycle, identity pinning, command delivery, hooks, events, user channels, target validation |
-| `paging/` | Cursor pagination shared by every store contract: `Page`, `Result[T]`, and the size bounds, so a contract can be paginated without depending on `storage` |
-| `storage/` | Storage interfaces, in-memory backend, and the contract suite every backend runs |
-| `storage/sqlcommon`, `storage/sqlite`, `storage/postgres`, `storage/mysql` | One SQL implementation with embedded migrations for SQLite (pure Go), PostgreSQL (pgx), and MySQL; secret columns sealed when a keyring is configured |
-| `storage/crypt` | AES-256-GCM sealing of secret columns under named keys from `secrets.Provider`, with row-bound AAD and in-place key rotation |
-| `httpapi/` | Check-in and server URL handlers plus certificate extraction middlewares |
-| `push/`, `push/apns` | The vocabulary of a push -- `Pusher`, `Target`, `Result`, `CertStore`, coalescing -- and the HTTP/2 APNs client and fake server that implement it |
-| `pushnotify/` | The storage-backed half: resolves an enrollment to a device token and a topic to a stored certificate, and publishes push events |
-| `pushcert/` | Push certificate parsing and topic derivation; standard library only, so `storage` can validate an uploaded certificate without depending on `push` |
-| `ca/`, `scep/` | Certificate authority abstraction and a SCEP endpoint with one-time and HMAC challenges, plus a client |
-| `profile/`, `enroll/` | Configuration profile composition, signing, and parsing; MDM enrollment profile builder (device, user, Shared iPad); OTA profile service |
-| `enroll/ade`, `enroll/adetest` | Automated device enrollment: `MachineInfo` parsing and CMS verification, the software update gate, web view resume and finish, DEP lookup and policy hooks; fixtures and a fake device CA |
-| `enroll/webauth`, `enroll/webauthtest` | OpenID Connect relying party for the ADE web view and account-driven pages; a fake identity provider |
-| `enroll/discovery` | The `/.well-known/com.apple.remotemanagement` service discovery document, per user type |
-| `acme/` | ACME server for Apple's ACME payload: directory, nonces, accounts, orders, the `device-attest-01` challenge, finalize, and certificate download; one-time client identifiers bound to a device; policy hooks that decide which devices may enroll |
-| `acme/jose` | JWS and JWK for RFC 8555, including the interop fix for Apple clients that omit leading zero bytes from an ECDSA signature |
-| `acme/attest`, `acme/attest/attesttest` | Managed Device Attestation verification, and a stand-in attestation authority for tests and the simulator |
-| `acme/inmem`, `acme/sqlstore`, `acme/acmetest` | ACME state on its own migration set, with the contract suite every backend runs |
-| `internal/cbor` | The strict CBOR subset an attestation object uses, fuzzed |
-| `enroll/accountdriven` | Account-driven enrollment: the `Bearer` challenge, `apple-as-web` and `apple-oauth2` flows, token issuance, and the check-in hook that ties the enrollment to the authenticated account |
-| `dep/`, `dep/inmem`, `dep/sqlstore`, `dep/deptest` | Device enrollment service client (OAuth 1.0a, sessions, cursors, token PKI), device syncer, profile assigner, stores, contract suite, and the fake service |
-| `axm/`, `axm/axmtest` | Apple Business Manager API client (ES256 client assertion, JSON:API paging, activities) and its fake server |
-| `axmstore/` | Business Manager credentials sealed under a keyring, so the client itself needs no `storage/crypt` |
-| `gdmf/`, `gdmf/gdmftest` | Apple's software update catalogue client for the ADE software update gate, with a fake |
-| `secrets/` | Redacting secret type and providers (static, environment, directory, chain) |
-| `hook/` | `Call` and `Hook`: the vocabulary a service hook is written against, so a feature can join the check-in path without importing the service layer |
-| `ddm/` | Declarative Device Management: content-addressed declarations, sets and membership, snapshots, status reports, status subscriptions, and the engine over its own store |
-| `ddmengine/` | What a server does with it: the change notifier that turns pending changes into commands and pushes, and the check-out hook that clears declarative state |
-| `audit`, `audit/inmem`, `audit/sqlstore`, `audit/audittest` | The persistent audit trail on its own migration set, append-and-prune, with the contract suite all four backends pass |
-| `event`, `eventsink` | The typed event bus, and the sinks that project an event down to what may leave the process before an slog record or a webhook carries it |
-| `ddm/predicate`, `internal/canonjson` | The NSPredicate subset activations use; RFC 8785 canonicalisation over `encoding/json/jsontext` |
-| `ddm/inmem`, `ddm/sqlstore`, `ddm/ddmtest` | Engine stores on their own migration set and the contract suite both run |
-| `ddm/adapter/inproc`, `ddm/adapter/proxyclient`, `ddm/adapter/proxyserver` | DDM in-process, or split across our own `mdm` and `ddm` roles over an HMAC-signed or mTLS hop |
-| `internal/app`, `cmd/dmserver`, `Dockerfile` | The reference server: roles, enrollment routes, admin API, background workers, and the container image |
-| `simulator/` | Device simulator: MDM, DDM, ADE, account-driven, user channel, and Shared iPad clients |
-| `internal/layout` | The import graph behind the tier boundary tests: what may import what, asserted as tests because the lint workflow cannot fail a build |
-| `e2e/` | End-to-end scenarios (`make test-e2e`), listed in `docs/testing/e2e-scenarios.md` |
-| `docs/research/` | Reference research, the plan of record, and per-feature decision records |
-| `docs/security/threat-model.md` | STRIDE threat model, updated every phase |
+Packages are arranged in tiers, and a package may import its own tier and every tier below it,
+never above. `internal/layout` asserts this in tests, because the lint workflow cannot fail a
+build. Decision record [0044](docs/research/decisions/0044-repository-layout.md) has the reasoning.
+
+| Tier | Path | Purpose |
+|---|---|---|
+| foundation | `paging/` | Cursor pagination every store contract shares: `Page`, `Result[T]`, and the size bounds |
+| | `clock/` | The injectable clock, and the fake every time-dependent test uses |
+| | `testpki/` | Certificate authorities and leaves for tests, yours as well as ours |
+| | `secrets/` | Redacting secret type and providers (static, environment, directory, chain) |
+| | `telemetry/` | OpenTelemetry seam: `Config`, a cardinality-bounding `Vocabulary`, a measuring `RoundTripper` |
+| schema | `schema/` | Generated from `third_party/device-management`, never hand-edited; `schema/support` answers whether a command or key applies to an OS and version |
+| | `internal/schemagen`, `cmd/admgen` | The generator |
+| mdmprotocol | `mdmprotocol/plist` | The one point of contact with plist encoding, including a bounded decoder for untrusted input |
+| | `mdmprotocol/mdm` | Protocol core: enrollment identity, check-in decoding, command and response envelopes |
+| | `mdmprotocol/cms` | Detached and attached CMS signing and verification, `Mdm-Signature` with signing-time tolerance |
+| | `mdmprotocol/profile` | Configuration profile composition, signing, and parsing |
+| | `mdmprotocol/event` | The typed event bus every state change publishes to |
+| | `mdmprotocol/dmhook` | `Call` and `Hook`: what a service hook is written against, without importing the service layer |
+| | `mdmprotocol/ddm`, `mdmprotocol/ddm/predicate` | Declarative management: content-addressed declarations, sets and membership, snapshots, status reports and subscriptions, and the NSPredicate subset activations use |
+| | `mdmprotocol/enroll` | Enrollment profile builder (device, user, Shared iPad) and the OTA profile service |
+| | `mdmprotocol/enroll/ade`, `.../adetest` | Automated device enrollment: `MachineInfo` parsing and CMS verification, the software update gate, web view resume and finish |
+| | `mdmprotocol/enroll/accountdriven` | Account-driven enrollment: the `Bearer` challenge, `apple-as-web` and `apple-oauth2`, token issuance |
+| | `mdmprotocol/enroll/discovery` | The `/.well-known/com.apple.remotemanagement` document, per user type |
+| | `mdmprotocol/enroll/webauth`, `.../webauthtest` | OpenID Connect relying party for the enrollment web view, and a fake identity provider |
+| pki | `pki/ca`, `pki/scep` | Certificate authority abstraction, and a SCEP endpoint with one-time and HMAC challenges plus a client |
+| | `pki/acme`, `pki/acme/jose` | ACME for Apple's ACME payload: directory, nonces, accounts, orders, `device-attest-01`, finalize, download; JWS and JWK including the interop fix for Apple clients that omit leading zero bytes |
+| | `pki/acme/attest`, `.../attesttest` | Managed Device Attestation verification, and a stand-in attestation authority |
+| | `pki/pushcert` | Push certificate parsing and topic derivation; standard library only, so storage can validate an uploaded certificate without depending on push |
+| appleplatformservices | `appleplatformservices/dep`, `.../deptest` | Device enrollment service client (OAuth 1.0a, sessions, cursors, token PKI) and the fake service |
+| | `appleplatformservices/axm`, `.../axmtest` | Apple School Manager and Apple Business API client (ES256 client assertion, JSON:API paging) and its fake |
+| | `appleplatformservices/gdmf`, `.../gdmftest` | Apple's software lookup service, for the ADE software update gate |
+| | `appleplatformservices/push`, `.../apns`, `.../pushtest` | The vocabulary of a push and the HTTP/2 APNs client that implements it |
+| simulator | `simulator/` | A device in software: MDM, DDM, ADE, account-driven, user channel, Shared iPad, and ACME |
+| server | `server/storage` | Persistence interfaces split by concern, in-memory backend, and the contract suite every backend runs |
+| | `server/storage/sqlcommon`, `.../sqlite`, `.../postgres`, `.../mysql` | One SQL implementation with embedded migrations for SQLite (pure Go), PostgreSQL (pgx), and MySQL |
+| | `server/storage/crypt` | AES-256-GCM sealing of secret columns under named keys, with row-bound AAD and in-place rotation |
+| | `server/service` | Enrollment lifecycle, identity pinning, command delivery, hooks, events, user channels |
+| | `server/httpapi` | Check-in and server URL handlers plus certificate extraction middlewares |
+| | `server/ddmsync` | Apple's synchronization flow: the notifier that turns pending changes into `DeclarativeManagement` commands and pushes, and the hook that clears declarative state on check-out |
+| | `server/ddmstore`, `server/acmestore`, `server/depstore` | Per-domain persistence on its own migration set, each with the contract suite all four backends pass |
+| | `server/ddmadapter` | DDM in-process, or split across `mdm` and `ddm` roles over an HMAC-signed or mTLS hop |
+| | `server/pushnotify` | Resolves an enrollment to a device token and a topic to a stored certificate, and publishes push events |
+| | `server/axmcreds` | Business Manager credentials sealed under a keyring, so the client itself needs no `server/storage/crypt` |
+| | `server/eventsink` | The sinks that project an event down to what may leave the process |
+| | `server/audit` | The persistent audit trail on its own migration set, append-and-prune |
+| | `server/adminauth` | Admin principals and scoped API tokens, authorised by Cedar policies |
+| app | `internal/app`, `cmd/dmserver`, `Dockerfile` | The reference server: roles, enrollment routes, admin API, background workers, container image |
+| | `internal/dmctl`, `cmd/dmctl` | The admin CLI |
+| | `internal/layout` | The import graph behind the tier tests |
+| | `e2e/` | End-to-end scenarios (`make test-e2e`), listed in `docs/testing/e2e-scenarios.md` |
+| | `docs/research/` | Reference research, the plan of record, and per-feature decision records |
 
 ## Reference server
 

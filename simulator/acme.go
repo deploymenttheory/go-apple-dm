@@ -16,10 +16,10 @@ import (
 
 	xacme "golang.org/x/crypto/acme"
 
-	"github.com/deploymenttheory/go-apple-dm/acme/attest"
-	"github.com/deploymenttheory/go-apple-dm/acme/attest/attesttest"
-	"github.com/deploymenttheory/go-apple-dm/ca"
-	"github.com/deploymenttheory/go-apple-dm/enroll"
+	"github.com/deploymenttheory/go-apple-dm/v3/mdmprotocol/enroll"
+	"github.com/deploymenttheory/go-apple-dm/v3/pki/acme/attest"
+	"github.com/deploymenttheory/go-apple-dm/v3/pki/acme/attest/attesttest"
+	"github.com/deploymenttheory/go-apple-dm/v3/pki/ca"
 )
 
 // ErrACME is an ACME enrollment that did not complete.

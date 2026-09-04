@@ -7,10 +7,10 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/deploymenttheory/go-apple-dm/push"
-	"github.com/deploymenttheory/go-apple-dm/push/apns"
-	"github.com/deploymenttheory/go-apple-dm/pushcert"
-	"github.com/deploymenttheory/go-apple-dm/pushnotify"
+	"github.com/deploymenttheory/go-apple-dm/v3/appleplatformservices/push"
+	"github.com/deploymenttheory/go-apple-dm/v3/appleplatformservices/push/apns"
+	"github.com/deploymenttheory/go-apple-dm/v3/pki/pushcert"
+	"github.com/deploymenttheory/go-apple-dm/v3/server/pushnotify"
 )
 
 // Push certificate sources.
@@ -79,7 +79,7 @@ func (p PushConfig) validate() error {
 }
 
 // wirePush builds the push notifier. It returns nil when pushes are off, and
-// ddmengine.Notifier treats a nil pusher as "consider it delivered", so the change
+// ddmsync.Notifier treats a nil pusher as "consider it delivered", so the change
 // rows still drain.
 func (a *App) wirePush() (*pushnotify.Notifier, error) {
 	cfg := a.cfg.Push

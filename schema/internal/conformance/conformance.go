@@ -7,8 +7,8 @@ import (
 
 	howett "howett.net/plist"
 
-	"github.com/deploymenttheory/go-apple-dm/plist"
-	"github.com/deploymenttheory/go-apple-dm/schema/support"
+	"github.com/deploymenttheory/go-apple-dm/v3/mdmprotocol/plist"
+	"github.com/deploymenttheory/go-apple-dm/v3/schema/support"
 )
 
 // RoundTrip encodes v, decodes into a fresh value from newT, re-encodes, and

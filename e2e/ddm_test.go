@@ -9,10 +9,10 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/deploymenttheory/go-apple-dm/ddm"
-	"github.com/deploymenttheory/go-apple-dm/ddm/predicate"
-	"github.com/deploymenttheory/go-apple-dm/event"
-	"github.com/deploymenttheory/go-apple-dm/simulator"
+	"github.com/deploymenttheory/go-apple-dm/v3/mdmprotocol/ddm"
+	"github.com/deploymenttheory/go-apple-dm/v3/mdmprotocol/ddm/predicate"
+	"github.com/deploymenttheory/go-apple-dm/v3/mdmprotocol/event"
+	"github.com/deploymenttheory/go-apple-dm/v3/simulator"
 )
 
 const (

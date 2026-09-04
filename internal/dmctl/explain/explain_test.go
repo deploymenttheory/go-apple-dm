@@ -6,10 +6,10 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/deploymenttheory/go-apple-dm/internal/dmctl/explain"
-	"github.com/deploymenttheory/go-apple-dm/schema/commands"
-	"github.com/deploymenttheory/go-apple-dm/schema/profiles"
-	"github.com/deploymenttheory/go-apple-dm/schema/support"
+	"github.com/deploymenttheory/go-apple-dm/v3/internal/dmctl/explain"
+	"github.com/deploymenttheory/go-apple-dm/v3/schema/commands"
+	"github.com/deploymenttheory/go-apple-dm/v3/schema/profiles"
+	"github.com/deploymenttheory/go-apple-dm/v3/schema/support"
 )
 
 func render(t *testing.T, m explain.Match, target support.Target) string {

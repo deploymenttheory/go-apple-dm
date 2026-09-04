@@ -12,7 +12,7 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/deploymenttheory/go-apple-dm/internal/dmctl"
+	"github.com/deploymenttheory/go-apple-dm/v3/internal/dmctl"
 )
 
 // fakeAdmin records what the CLI sent and answers like the real admin API.

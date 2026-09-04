@@ -18,14 +18,14 @@ import (
 	"testing"
 	"time"
 
-	"github.com/deploymenttheory/go-apple-dm/ca"
-	"github.com/deploymenttheory/go-apple-dm/enroll/accountdriven"
-	"github.com/deploymenttheory/go-apple-dm/enroll/discovery"
-	"github.com/deploymenttheory/go-apple-dm/enroll/webauth/webauthtest"
-	"github.com/deploymenttheory/go-apple-dm/internal/app"
-	"github.com/deploymenttheory/go-apple-dm/internal/testpki"
-	"github.com/deploymenttheory/go-apple-dm/mdm"
-	"github.com/deploymenttheory/go-apple-dm/simulator"
+	"github.com/deploymenttheory/go-apple-dm/v3/internal/app"
+	"github.com/deploymenttheory/go-apple-dm/v3/mdmprotocol/enroll/accountdriven"
+	"github.com/deploymenttheory/go-apple-dm/v3/mdmprotocol/enroll/discovery"
+	"github.com/deploymenttheory/go-apple-dm/v3/mdmprotocol/enroll/webauth/webauthtest"
+	"github.com/deploymenttheory/go-apple-dm/v3/mdmprotocol/mdm"
+	"github.com/deploymenttheory/go-apple-dm/v3/pki/ca"
+	"github.com/deploymenttheory/go-apple-dm/v3/simulator"
+	"github.com/deploymenttheory/go-apple-dm/v3/testpki"
 )
 
 // enrollFixture is an app with the enrollment routes on, served over TLS

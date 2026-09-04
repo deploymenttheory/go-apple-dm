@@ -10,8 +10,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/deploymenttheory/go-apple-dm/internal/dmctl"
-	"github.com/deploymenttheory/go-apple-dm/internal/dmctl/adminclient"
+	"github.com/deploymenttheory/go-apple-dm/v3/internal/dmctl"
+	"github.com/deploymenttheory/go-apple-dm/v3/internal/dmctl/adminclient"
 )
 
 // run executes the CLI and returns stdout, stderr, and the error.

@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/deploymenttheory/go-apple-dm/internal/dmctl"
+	"github.com/deploymenttheory/go-apple-dm/v3/internal/dmctl"
 )
 
 func main() {

@@ -10,7 +10,7 @@ import (
 func (e *emitter) registryFile() []byte {
 	b := buf()
 	b.WriteString(e.header())
-	b.WriteString("import (\n\t\"github.com/deploymenttheory/go-apple-dm/schema/support\"\n)\n\n")
+	b.WriteString("import (\n\t\"github.com/deploymenttheory/go-apple-dm/v3/schema/support\"\n)\n\n")
 
 	iface, method := e.familyInterface(), e.identifierMethod()
 	fmt.Fprintf(b, "// %s is implemented by every top-level type in this package.\n", iface)

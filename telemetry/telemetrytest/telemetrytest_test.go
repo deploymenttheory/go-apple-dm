@@ -8,8 +8,8 @@ import (
 	"go.opentelemetry.io/otel/codes"
 	"go.opentelemetry.io/otel/metric"
 
-	"github.com/deploymenttheory/go-apple-dm/telemetry"
-	"github.com/deploymenttheory/go-apple-dm/telemetry/telemetrytest"
+	"github.com/deploymenttheory/go-apple-dm/v3/telemetry"
+	"github.com/deploymenttheory/go-apple-dm/v3/telemetry/telemetrytest"
 )
 
 // A fake that silently records nothing would make every assertion built on

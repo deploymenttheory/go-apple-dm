@@ -11,8 +11,8 @@
 // deployment) exercises our own binary on both sides of the wire; phase 8
 // grows it into the documented reference server. Three roles exist: "mdm"
 // serves check-in and connect and reaches DDM either in-process or through
-// ddm/adapter/proxyclient, "ddm" serves the engine behind
-// ddm/adapter/proxyserver plus the admin API, and "all" runs both in one
+// server/ddmadapter/proxyclient, "ddm" serves the engine behind
+// server/ddmadapter/proxyserver plus the admin API, and "all" runs both in one
 // process. Roles that split across processes share one storage DSN. Push
 // delivery and TLS termination are left to the deployment (phase 8).
 //

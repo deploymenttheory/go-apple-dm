@@ -14,10 +14,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/deploymenttheory/go-apple-dm/ddm"
-	"github.com/deploymenttheory/go-apple-dm/ddm/adapter/proxyclient"
-	"github.com/deploymenttheory/go-apple-dm/service"
-	"github.com/deploymenttheory/go-apple-dm/simulator"
+	"github.com/deploymenttheory/go-apple-dm/v3/mdmprotocol/ddm"
+	"github.com/deploymenttheory/go-apple-dm/v3/server/ddmadapter/proxyclient"
+	"github.com/deploymenttheory/go-apple-dm/v3/server/service"
+	"github.com/deploymenttheory/go-apple-dm/v3/simulator"
 )
 
 // splitEnv is the container started by scripts/testdb.sh ddm-up.

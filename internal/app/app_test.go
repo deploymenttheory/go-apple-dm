@@ -17,14 +17,14 @@ import (
 	"testing"
 	"time"
 
-	"github.com/deploymenttheory/go-apple-dm/ddm"
-	"github.com/deploymenttheory/go-apple-dm/ddmengine"
-	"github.com/deploymenttheory/go-apple-dm/internal/app"
-	"github.com/deploymenttheory/go-apple-dm/internal/clock"
-	"github.com/deploymenttheory/go-apple-dm/internal/testpki"
-	"github.com/deploymenttheory/go-apple-dm/mdm"
-	"github.com/deploymenttheory/go-apple-dm/secrets"
-	"github.com/deploymenttheory/go-apple-dm/simulator"
+	"github.com/deploymenttheory/go-apple-dm/v3/clock"
+	"github.com/deploymenttheory/go-apple-dm/v3/internal/app"
+	"github.com/deploymenttheory/go-apple-dm/v3/mdmprotocol/ddm"
+	"github.com/deploymenttheory/go-apple-dm/v3/mdmprotocol/mdm"
+	"github.com/deploymenttheory/go-apple-dm/v3/secrets"
+	"github.com/deploymenttheory/go-apple-dm/v3/server/ddmsync"
+	"github.com/deploymenttheory/go-apple-dm/v3/simulator"
+	"github.com/deploymenttheory/go-apple-dm/v3/testpki"
 )
 
 var quiet = slog.New(slog.NewTextHandler(io.Discard, nil))
@@ -446,8 +446,8 @@ func TestAdminAPI(t *testing.T) {
 		}
 	})
 	t.Run("Notify", func(t *testing.T) {
-		fake.Advance(ddmengine.DefaultNotifyWindow)
-		var res ddmengine.DrainResult
+		fake.Advance(ddmsync.DefaultNotifyWindow)
+		var res ddmsync.DrainResult
 		decode(t, do(t, srv, "POST", "/admin/v1/notify", "secret", nil), http.StatusOK, &res)
 		// DEV-1 and U-1 are unknown to the enrollment store, so their changes are dropped.
 		if res.Skipped != 2 || res.Queued != 0 {

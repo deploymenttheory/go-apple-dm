@@ -15,9 +15,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/deploymenttheory/go-apple-dm/axm"
-	"github.com/deploymenttheory/go-apple-dm/axm/axmtest"
-	"github.com/deploymenttheory/go-apple-dm/internal/app"
+	"github.com/deploymenttheory/go-apple-dm/v3/appleplatformservices/axm"
+	"github.com/deploymenttheory/go-apple-dm/v3/appleplatformservices/axm/axmtest"
+	"github.com/deploymenttheory/go-apple-dm/v3/internal/app"
 )
 
 func axmKey(t *testing.T) (*ecdsa.PrivateKey, []byte) {

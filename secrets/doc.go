@@ -17,7 +17,7 @@
 // directory.
 //
 // The package supplies secrets; it does not seal them. Encryption of
-// stored per-device secrets under a key from a Provider is storage/crypt.
+// stored per-device secrets under a key from a Provider is server/storage/crypt.
 //
 // # References
 //

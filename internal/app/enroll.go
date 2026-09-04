@@ -14,16 +14,16 @@ import (
 	"strings"
 	"time"
 
-	"github.com/deploymenttheory/go-apple-dm/acme"
-	"github.com/deploymenttheory/go-apple-dm/ca"
-	"github.com/deploymenttheory/go-apple-dm/enroll"
-	"github.com/deploymenttheory/go-apple-dm/enroll/accountdriven"
-	"github.com/deploymenttheory/go-apple-dm/enroll/ade"
-	"github.com/deploymenttheory/go-apple-dm/enroll/discovery"
-	"github.com/deploymenttheory/go-apple-dm/enroll/webauth"
-	"github.com/deploymenttheory/go-apple-dm/plist"
-	"github.com/deploymenttheory/go-apple-dm/scep"
-	"github.com/deploymenttheory/go-apple-dm/service"
+	"github.com/deploymenttheory/go-apple-dm/v3/mdmprotocol/enroll"
+	"github.com/deploymenttheory/go-apple-dm/v3/mdmprotocol/enroll/accountdriven"
+	"github.com/deploymenttheory/go-apple-dm/v3/mdmprotocol/enroll/ade"
+	"github.com/deploymenttheory/go-apple-dm/v3/mdmprotocol/enroll/discovery"
+	"github.com/deploymenttheory/go-apple-dm/v3/mdmprotocol/enroll/webauth"
+	"github.com/deploymenttheory/go-apple-dm/v3/mdmprotocol/plist"
+	"github.com/deploymenttheory/go-apple-dm/v3/pki/acme"
+	"github.com/deploymenttheory/go-apple-dm/v3/pki/ca"
+	"github.com/deploymenttheory/go-apple-dm/v3/pki/scep"
+	"github.com/deploymenttheory/go-apple-dm/v3/server/service"
 )
 
 // Enrollment routes on the mdm and all roles (decision records 0027 to 0029).

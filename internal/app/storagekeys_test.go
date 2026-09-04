@@ -10,11 +10,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/deploymenttheory/go-apple-dm/internal/app"
-	"github.com/deploymenttheory/go-apple-dm/internal/testpki"
-	"github.com/deploymenttheory/go-apple-dm/mdm"
-	"github.com/deploymenttheory/go-apple-dm/secrets"
-	"github.com/deploymenttheory/go-apple-dm/storage/crypt"
+	"github.com/deploymenttheory/go-apple-dm/v3/internal/app"
+	"github.com/deploymenttheory/go-apple-dm/v3/mdmprotocol/mdm"
+	"github.com/deploymenttheory/go-apple-dm/v3/secrets"
+	"github.com/deploymenttheory/go-apple-dm/v3/server/storage/crypt"
+	"github.com/deploymenttheory/go-apple-dm/v3/testpki"
 )
 
 // TestPersistentStorageNeedsAKeyring holds a persistent deployment to a keyring. The
