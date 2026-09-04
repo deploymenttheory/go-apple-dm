@@ -296,7 +296,7 @@ storage wrapper, recorded round-trippers for DEP and ABM.
 | `go-test.yml` | `coverage-gate` | needs the above; merges profiles; runs the gate |
 | `go-test.yml` | `fuzz-smoke` | `make fuzz-smoke` |
 | `security.yml` | `govulncheck`, `gosec-sarif` | vulnerability scan; SARIF to code scanning |
-| `schema-drift.yml` (nightly) | `schema-drift` | compares submodule commit to upstream `release` and `seed_*`; regenerates; runs conformance; opens or updates an issue with the diff |
+| `schema-drift.yml` (weekly, and `workflow_dispatch`) | `schema-drift` | compares submodule commit to upstream `release` and `seed_*`; regenerates; runs conformance; opens or updates an issue with the diff |
 | `release-please.yml` (exists) | unchanged | add `release-please-config.json` with `release-type: go` and manifest |
 
 `make ci` runs everything locally so green local predicts green CI.
@@ -380,8 +380,8 @@ closed, and the public API has been frozen for two minor releases.
 
 ## 11. Risks and mitigations
 
-- **Apple schema drift**: submodule pinned; nightly drift job; rename-guard; seed branch
-  conformance before each Apple release.
+- **Apple schema drift**: submodule pinned; weekly drift job, runnable on demand; rename-guard;
+  seed branch conformance before each Apple release.
 - **OS 27 removes legacy software update commands**: DDM software update declarations ship in
   phase 5; legacy commands carry runtime deprecation warnings from the metadata API.
 - **Binary plist edge cases**: fuzz decoders; fixtures from real devices; size and depth limits.

@@ -1,13 +1,25 @@
 name: Schema Drift
 
-# Nightly: compare the pinned apple/device-management submodule against the
-# upstream release and seed branches, regenerate, run conformance tests, and
-# open or update a tracking issue when anything changed.
+# Weekly, and on demand: compare the pinned apple/device-management submodule
+# against the upstream release and seed branches, regenerate, run conformance
+# tests, and open or update a tracking issue when anything changed.
+#
+# Apple publishes schema changes in bursts around OS releases rather than
+# daily, and the tracking issue is updated in place rather than reopened, so a
+# nightly run mostly rewrote the same issue with the same body. Weekly keeps
+# the signal and drops the noise; workflow_dispatch covers the days when
+# something has actually shipped and you do not want to wait.
 
 on:
   schedule:
-    - cron: '23 3 * * *'
+    # 03:23 UTC on Mondays.
+    - cron: '23 3 * * 1'
   workflow_dispatch:
+
+# A manual run during the scheduled one would race to update the same issue.
+concurrency:
+  group: schema-drift
+  cancel-in-progress: false
 
 permissions:
   contents: read
