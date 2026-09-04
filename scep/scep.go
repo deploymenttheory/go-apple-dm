@@ -1,6 +1,7 @@
 package scep
 
 import (
+	"bytes"
 	"context"
 	"crypto"
 	"crypto/rsa"
@@ -143,9 +144,10 @@ func (s *Server) PKIOperation(ctx context.Context, body []byte) ([]byte, error) 
 	if req == nil || req.CSR == nil {
 		return nil, fmt.Errorf("%w: no CSR in envelope", ErrCSR)
 	}
-	// A renewal is signed with a certificate we issued; the challenge is
-	// skipped because the existing identity already proves possession.
-	if !s.isRenewal(msg, p7.GetOnlySigner()) {
+	// A renewal is signed by the enrollment's current certificate for the
+	// same subject, so the challenge is skipped: that identity already proves
+	// possession. Every other request needs the challenge.
+	if !s.isRenewal(msg, p7.GetOnlySigner(), req.CSR) {
 		if err := s.challenge.Verify(ctx, req.ChallengePassword, req.CSR); err != nil {
 			return s.fail(msg, smallscep.BadRequest, err)
 		}
@@ -167,9 +169,17 @@ func (s *Server) PKIOperation(ctx context.Context, body []byte) ([]byte, error) 
 }
 
 // isRenewal reports whether the request is a RenewalReq signed by a
-// certificate that chains to our CA.
-func (s *Server) isRenewal(msg *smallscep.PKIMessage, signer *x509.Certificate) bool {
-	if msg.MessageType != smallscep.RenewalReq || signer == nil {
+// certificate that chains to our CA and carries the same subject as the CSR.
+//
+// Both halves are required. Chaining establishes that the signer is a device
+// we issued to; the subject establishes which one. A request that changes the
+// subject asks for a different identity, so it needs the challenge that binds
+// a subject to its enrollment.
+func (s *Server) isRenewal(msg *smallscep.PKIMessage, signer *x509.Certificate, csr *x509.CertificateRequest) bool {
+	if msg.MessageType != smallscep.RenewalReq || signer == nil || csr == nil {
+		return false
+	}
+	if !bytes.Equal(signer.RawSubject, csr.RawSubject) {
 		return false
 	}
 	roots := x509.NewCertPool()

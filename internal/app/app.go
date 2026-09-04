@@ -70,6 +70,17 @@ type Config struct {
 	// DDMSendKey signs what this role sends across the hop; DDMRecvKey
 	// verifies what it receives.
 	DDMSendKey, DDMRecvKey []byte
+	// AllowReenroll accepts an Authenticate whose identity certificate
+	// differs from the one the enrollment pins, and replaces the pin with it.
+	// It is service.AllowReenroll, the library default.
+	//
+	// The reference server defaults to service.DenyReenroll. A certificate
+	// carries no binding to an enrollment id, and chaining to the enrollment
+	// CA establishes only that the certificate is one we issued, so a
+	// permissive policy makes every certificate the CA issues a key to every
+	// enrollment. Deployments that need devices to re-enrol themselves after
+	// a wipe set MDM_ALLOW_REENROLL=true.
+	AllowReenroll bool
 	// AdminToken enables the admin API on the ddm and all roles with a single
 	// static credential that authenticates as root and bypasses policy.
 	//
@@ -289,10 +300,21 @@ func Build(ctx context.Context, cfg Config) (*App, error) {
 		return nil, err
 	}
 	if err := a.wire(ctx); err != nil {
+		//nolint:contextcheck // teardown of a half-built App; Close releases
+		// resources already opened and takes no context.
 		_ = a.Close()
 		return nil, err
 	}
 	return a, nil
+}
+
+// reenrollPolicy maps the configuration flag to the service policy. The
+// secure default is deny; see Config.AllowReenroll for why.
+func reenrollPolicy(allow bool) service.ReenrollPolicy {
+	if allow {
+		return service.AllowReenroll
+	}
+	return service.DenyReenroll
 }
 
 func (c Config) validate() error {
@@ -477,6 +499,7 @@ func (a *App) wire(ctx context.Context) error {
 				enrollHooks...),
 			DeclarativeManagement: dm,
 			RequireUserAuth:       cfg.Enroll.RequireUserAuth,
+			Reenroll:              reenrollPolicy(cfg.AllowReenroll),
 		})
 		if err != nil {
 			return fmt.Errorf("app: core: %w", err)
@@ -580,16 +603,40 @@ func (a *App) wire(ctx context.Context) error {
 				return err
 			}
 			a.AxM = client
-			routes = append(routes, adminRoute{Pattern: "/axm/", Action: ActionManageBusinessMgr, Family: "axm", Handler: a.axmHandler(client)})
+			routes = append(
+				routes,
+				adminRoute{
+					Pattern: "/axm/",
+					Action:  ActionManageBusinessMgr,
+					Family:  "axm",
+					Handler: a.axmHandler(client),
+				},
+			)
 		}
 		if a.dep == nil {
 			if err := a.wireDEP(ctx); err != nil {
 				return err
 			}
 		}
-		routes = append(routes, adminRoute{Pattern: "/dep/", Action: ActionManageDEP, Family: "dep", Handler: a.dep.handler()})
+		routes = append(
+			routes,
+			adminRoute{
+				Pattern: "/dep/",
+				Action:  ActionManageDEP,
+				Family:  "dep",
+				Handler: a.dep.handler(),
+			},
+		)
 		if a.acme != nil {
-			routes = append(routes, adminRoute{Pattern: "/acme/", Action: ActionReadACME, Family: "acme", Handler: a.acme.handler()})
+			routes = append(
+				routes,
+				adminRoute{
+					Pattern: "/acme/",
+					Action:  ActionReadACME,
+					Family:  "acme",
+					Handler: a.acme.handler(),
+				},
+			)
 		}
 		admin, err := a.buildAdminMux(routes)
 		if err != nil {
@@ -724,6 +771,8 @@ func (a *App) adminStore(ctx context.Context) (adminauth.Store, error) {
 	case a.cfg.AdminStore != nil:
 		return a.cfg.AdminStore, nil
 	case !a.cfg.AdminStoreEnabled:
+		//nolint:nilnil // a nil store is the documented "no principal store"
+		// answer, not a failure: the static token stays the only credential.
 		return nil, nil
 	case a.db == nil:
 		// An in-memory deployment has nowhere durable to put principals; the
