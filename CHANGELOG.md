@@ -1,5 +1,28 @@
 # Changelog
 
+## [2.0.0](https://github.com/deploymenttheory/go-apple-dm/compare/v1.0.0...v2.0.0) (2026-09-04)
+
+
+### ⚠ BREAKING CHANGES
+
+* every MDM_* environment variable is now spelled DM_*. There is no fallback to the old names; a deployment must update its environment before starting this version.
+
+### Features
+
+* **config:** name configuration with the DM_ prefix ([7708d7a](https://github.com/deploymenttheory/go-apple-dm/commit/7708d7af4858e68d35092e119e19adaa7210d284))
+* name configuration with the DM_ prefix ([9dcb70d](https://github.com/deploymenttheory/go-apple-dm/commit/9dcb70d40fc49e066d577bb145f66fcee3f332e5))
+
+
+### Bug Fixes
+
+* **app:** refuse to run the declarative management hop unauthenticated ([79d2332](https://github.com/deploymenttheory/go-apple-dm/commit/79d2332d8a93518aea128c03c1d8e6d56fbc47e5))
+* **app:** seal the secret columns of a durable store ([4b8d569](https://github.com/deploymenttheory/go-apple-dm/commit/4b8d56918b428bb540561390df631644872a29e0))
+* **ddm:** bind the hop's response signature to the HTTP status ([88790d9](https://github.com/deploymenttheory/go-apple-dm/commit/88790d9c3acabcacc94ed7d5ff5f8f8fd39c2699))
+* **httpapi,app:** verify the proxy certificate header against the CA ([c3a2d4c](https://github.com/deploymenttheory/go-apple-dm/commit/c3a2d4ce88b5490ec6655bf2cea1f91197e97ca0))
+* **scep,app:** bind renewal subject and deny re-enrollment by default ([b954e68](https://github.com/deploymenttheory/go-apple-dm/commit/b954e6877624b4ce278b84fdee1ecc29fd8b274e))
+* **scep,app:** bind renewal subject and deny re-enrollment by default ([a4adb54](https://github.com/deploymenttheory/go-apple-dm/commit/a4adb544443a31254735880c30391a8385802c81))
+* **storage:** bound the page size every backend allocates from ([2d48024](https://github.com/deploymenttheory/go-apple-dm/commit/2d4802421181c778f4a37ec08c3462380328840b))
+
 ## 1.0.0 (2026-09-03)
 
 
