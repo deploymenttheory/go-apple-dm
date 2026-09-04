@@ -1,4 +1,4 @@
-// Package sink publishes events off the bus: a projection registry that
+// Package eventsink publishes events off the bus: a projection registry that
 // decides what each event type may say, an slog audit sink, and a
 // MicroMDM-compatible webhook.
 //
@@ -11,6 +11,14 @@
 // "every state change emits an event, and subscribers persist them". Phase 9
 // of the plan of record makes both true, and this package is the half that
 // decides what may leave the process. The persisted half is package audit.
+//
+// It sits beside event rather than inside it because it belongs to a higher
+// layer than the bus it drains. The vocabulary in event is protocol-shaped
+// and depends only on mdm, whereas the projections here must name the
+// payload types of ddm, dep, and push. Nesting the two put a package that
+// knows every domain inside the directory of one that knows none, which is
+// the one thing that stopped event from sitting cleanly in a lower tier
+// (decision record 0044).
 //
 // The design is default-deny projection rather than redaction. A sink that
 // marshals Event.Data reflectively publishes whatever a publisher happened to
@@ -40,4 +48,4 @@
 //     records describe are the check-in and command pages cited by ddm and
 //     service.
 //   - RFC 2104: HMAC, used to sign the webhook body
-package sink
+package eventsink

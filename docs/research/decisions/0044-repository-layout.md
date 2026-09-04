@@ -45,8 +45,15 @@ they are allowed to import; it changes no wire format and no Apple-facing behavi
    import path states which layer a package belongs to, and `schema/` stays at the root as the
    generated tree it is.
 2. The layering is enforced, not asserted: `depguard` forbids `protocol/* -> server/*`,
-   `protocol/* -> appleservices/*` and `pki/* -> server/*`, and CI asserts the import graph is
-   acyclic. None of the four references can make that claim.
+   `protocol/* -> appleservices/*` and `pki/* -> server/*`. None of the four references can make
+   that claim. To be precise about what this fixes: there is no Go import cycle here and never was
+   — the module compiles, so package-level cycles are impossible. The tangle is at *directory*
+   granularity, where `{ddm, dep, event, push, service, storage}` form a strongly connected
+   component once subpackages are collapsed into their parent. That is what blocks tier
+   assignment, because a directory cannot sit in two tiers: `event/sink` names the payload types
+   of three domains while `event` itself depends only on `mdm`, and `storage` reaches into
+   `push/pushcert` while `push` depends on `storage`. Both are fixed by moving the subpackage out
+   of its parent, not by changing any dependency.
 3. Pagination (`Page`, `Result[T]`, and the size bounds) moves to `paging/`. Three quarters of all
    references to `storage` from elsewhere in the module were these two value types, which put the
    declarative engine, the ACME server and the DEP client in the storage package's dependency graph
@@ -59,8 +66,10 @@ they are allowed to import; it changes no wire format and no Apple-facing behavi
 ## Verified by
 
 1. `make verify` stays green across every step, proving `schema/` was not disturbed.
-2. A CI acyclicity check over `go list` output, plus the `depguard` tier rules in `.golangci.yml`;
-   both fail on a re-introduced back edge, which is how the boundary stops being aspirational.
+2. The `depguard` tier rules in `.golangci.yml`, plus a directory-granularity SCC check over
+   `go list` output; both fail on a re-introduced back edge, which is how the boundary stops being
+   aspirational. `pushcert` staying standard-library-only is what keeps
+   `storage -> pushcert -> push -> storage` from becoming a genuine import cycle.
 3. `go list -f '{{join .Imports "\n"}}' ./acme ./dep` contains no `go-apple-dm/storage` entry; the
    coverage gate stays above 95% overall and per package throughout.
 4. In a scratch module, `go get` of the library followed by importing only `protocol/mdm` yields a
@@ -77,8 +86,8 @@ they are allowed to import; it changes no wire format and no Apple-facing behavi
 - **`devicemanagement/` umbrella**: named for Apple's documentation namespace, but it stutters
   against the `go-apple-dm` module path and still expresses no layering.
 - **Group by subject without the refactor**: pure `git mv`, real readability gain, and rejected
-  because it would make the tree look layered while `ddm -> service` and the
-  `{ddm, dep, event, push, service, storage}` cycle persisted underneath. A hierarchy that asserts
+  because it would make the tree look layered while `ddm -> service` and the directory-level
+  `{ddm, dep, event, push, service, storage}` component persisted underneath. A hierarchy that asserts
   a boundary the compiler does not enforce is worse than a flat one, because it misleads.
 - **Move `schema/` under `protocol/`**: rejected for cost with no design benefit. The generator
   emits `schema/...` import paths as string literals in eight places, so the move would require

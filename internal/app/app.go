@@ -26,7 +26,7 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/ddm/sqlstore"
 	"github.com/deploymenttheory/go-apple-dm/dep"
 	"github.com/deploymenttheory/go-apple-dm/event"
-	"github.com/deploymenttheory/go-apple-dm/event/sink"
+	"github.com/deploymenttheory/go-apple-dm/eventsink"
 	"github.com/deploymenttheory/go-apple-dm/httpapi"
 	"github.com/deploymenttheory/go-apple-dm/internal/clock"
 	"github.com/deploymenttheory/go-apple-dm/push"
@@ -820,9 +820,9 @@ func (a *App) wireSinks(ctx context.Context) error {
 	if !a.cfg.Sinks.Enabled() || a.cfg.Bus == nil {
 		return nil
 	}
-	reg := sink.Default()
+	reg := eventsink.Default()
 	if a.cfg.Sinks.Audit {
-		a.cfg.Bus.Subscribe(event.All, sink.Slog(a.cfg.Logger, reg))
+		a.cfg.Bus.Subscribe(event.All, eventsink.Slog(a.cfg.Logger, reg))
 	}
 	store, err := a.auditStore(ctx)
 	if err != nil {
@@ -833,7 +833,7 @@ func (a *App) wireSinks(ctx context.Context) error {
 		a.cfg.Bus.Subscribe(event.All, auditSink(store, reg))
 	}
 	if a.cfg.Sinks.WebhookURL != "" {
-		h, err := sink.Webhook(sink.WebhookConfig{
+		h, err := eventsink.Webhook(eventsink.WebhookConfig{
 			URL:      a.cfg.Sinks.WebhookURL,
 			Registry: reg,
 			HMACKey:  a.cfg.Sinks.WebhookHMACKey,

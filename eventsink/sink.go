@@ -1,5 +1,5 @@
 // Package sink is in event/sink; see doc.go for the package comment.
-package sink
+package eventsink
 
 import (
 	"sort"

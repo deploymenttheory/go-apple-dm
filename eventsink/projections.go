@@ -1,4 +1,4 @@
-package sink
+package eventsink
 
 import (
 	"github.com/deploymenttheory/go-apple-dm/ddm"

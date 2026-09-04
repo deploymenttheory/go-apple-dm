@@ -12,7 +12,7 @@ import (
 	auditinmem "github.com/deploymenttheory/go-apple-dm/audit/inmem"
 	auditsql "github.com/deploymenttheory/go-apple-dm/audit/sqlstore"
 	"github.com/deploymenttheory/go-apple-dm/event"
-	"github.com/deploymenttheory/go-apple-dm/event/sink"
+	"github.com/deploymenttheory/go-apple-dm/eventsink"
 	"github.com/deploymenttheory/go-apple-dm/mdm"
 )
 
@@ -47,7 +47,7 @@ func (a *App) auditStore(ctx context.Context) (audit.Store, error) {
 // auditSink writes each projected event to the trail. A failed write is
 // returned to the bus, which logs it through the error handler: losing an
 // audit record is worth a line, and it must not stop the other sinks.
-func auditSink(store audit.Store, reg *sink.Registry) event.Handler {
+func auditSink(store audit.Store, reg *eventsink.Registry) event.Handler {
 	return func(ctx context.Context, e event.Event) error {
 		rec := reg.Project(e)
 		_, err := store.Append(ctx, audit.Record{
