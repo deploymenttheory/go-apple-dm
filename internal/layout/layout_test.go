@@ -37,7 +37,7 @@ var serverTier = []string{
 	// Implementations split out of a client or protocol package because they
 	// need persistence or a keyring; decision record 0044 moves them under
 	// server/ and their interface stays with its consumer.
-	"axmstore",
+	"axmstore", "pushnotify",
 }
 
 // pureTier is every package proven not to reach serverTier. The list is a
@@ -47,7 +47,7 @@ var pureTier = []string{
 	"acme", "acme/attest", "acme/jose", "adminauth", "audit", "axm", "ca", "cms",
 	"ddm/predicate", "dep", "enroll", "enroll/ade", "enroll/discovery",
 	"enroll/webauth", "event", "gdmf", "mdm", "paging", "plist", "profile",
-	"pushcert", "scep", "secrets", "simulator", "telemetry",
+	"push", "push/apns", "pushcert", "scep", "secrets", "simulator", "telemetry",
 }
 
 // knownServerTierReach records the packages that still reach the server tier
@@ -58,11 +58,6 @@ var pureTier = []string{
 var knownServerTierReach = map[string][]string{
 	"ddm":                  {"service", "storage"},
 	"enroll/accountdriven": {"service", "storage"},
-	"push":                 {"storage"},
-	// apns implements push.Pusher and imports push for the interface, so it
-	// inherits push's storage dependency. The split moves apns to the Apple
-	// client tier and leaves the notifier server-side.
-	"push/apns": {"storage"},
 }
 
 // inServerTier reports whether pkg persists, serves, or assembles. Besides

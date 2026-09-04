@@ -1,4 +1,4 @@
-package push_test
+package pushnotify_test
 
 import (
 	"context"
@@ -6,6 +6,8 @@ import (
 	"sync/atomic"
 	"testing"
 	"time"
+
+	"github.com/deploymenttheory/go-apple-dm/pushnotify"
 
 	"github.com/deploymenttheory/go-apple-dm/internal/clock"
 	"github.com/deploymenttheory/go-apple-dm/internal/testpki"
@@ -101,7 +103,7 @@ func TestStoreCertStoreCachesAndReloads(t *testing.T) {
 	}
 	counting := &countingCertStore{PushCertStore: inner}
 	fake := clock.NewFake(t0)
-	cs := push.NewStoreCertStore(counting, push.WithCertClock(fake), push.WithCertTTL(time.Minute))
+	cs := pushnotify.NewStoreCertStore(counting, pushnotify.WithCertClock(fake), pushnotify.WithCertTTL(time.Minute))
 
 	// Two calls inside the TTL read the store once and never ask for the version.
 	got, err := cs.PushCertificate(ctx, testTopic)
@@ -165,7 +167,7 @@ func TestStoreCertStoreCachesAndReloads(t *testing.T) {
 
 	// TTL 0 checks the version on every call after the first load.
 	perCall := &countingCertStore{PushCertStore: inner}
-	cs0 := push.NewStoreCertStore(perCall, push.WithCertClock(fake), push.WithCertTTL(0))
+	cs0 := pushnotify.NewStoreCertStore(perCall, pushnotify.WithCertClock(fake), pushnotify.WithCertTTL(0))
 	for range 3 {
 		if _, err := cs0.PushCertificate(ctx, testTopic); err != nil {
 			t.Fatal(err)
@@ -176,7 +178,7 @@ func TestStoreCertStoreCachesAndReloads(t *testing.T) {
 	}
 
 	// Defaults (real clock, DefaultCertTTL) serve the certificate too.
-	if _, err := push.NewStoreCertStore(inner).PushCertificate(ctx, testTopic); err != nil {
+	if _, err := pushnotify.NewStoreCertStore(inner).PushCertificate(ctx, testTopic); err != nil {
 		t.Fatal(err)
 	}
 }
@@ -195,7 +197,7 @@ func TestStoreCertStoreErrors(t *testing.T) {
 	// A version check that fails is wrapped; a version check that says the
 	// topic vanished is ErrNoCertificate.
 	stub := &stubCertStore{version: 1, cert: good}
-	cs := push.NewStoreCertStore(stub, push.WithCertClock(fake), push.WithCertTTL(time.Second))
+	cs := pushnotify.NewStoreCertStore(stub, pushnotify.WithCertClock(fake), pushnotify.WithCertTTL(time.Second))
 	if _, err := cs.PushCertificate(ctx, testTopic); err != nil {
 		t.Fatal(err)
 	}
@@ -221,7 +223,7 @@ func TestStoreCertStoreErrors(t *testing.T) {
 	// Garbage PEM is a parse error and nothing is cached, so the next call
 	// hits the store again.
 	garbage := &stubCertStore{cert: &storage.PushCert{Topic: testTopic, CertPEM: []byte("not pem"), KeyPEM: keyPEM, Version: 1}}
-	cs = push.NewStoreCertStore(garbage, push.WithCertClock(fake))
+	cs = pushnotify.NewStoreCertStore(garbage, pushnotify.WithCertClock(fake))
 	for range 2 {
 		if _, err := cs.PushCertificate(ctx, testTopic); !errors.Is(err, pushcert.ErrInvalid) {
 			t.Fatalf("garbage PEM: %v", err)
@@ -233,7 +235,7 @@ func TestStoreCertStoreErrors(t *testing.T) {
 
 	// A cold load that fails is wrapped too.
 	cold := &stubCertStore{certErr: errStub}
-	if _, err := push.NewStoreCertStore(cold).PushCertificate(ctx, testTopic); !errors.Is(err, errStub) {
+	if _, err := pushnotify.NewStoreCertStore(cold).PushCertificate(ctx, testTopic); !errors.Is(err, errStub) {
 		t.Fatalf("cold load error: %v", err)
 	}
 }
@@ -248,7 +250,7 @@ func TestExpiringCerts(t *testing.T) {
 	store := inmem.New()
 
 	// An empty store lists nothing, as an empty slice rather than nil.
-	got, err := push.ExpiringCerts(ctx, store, t0, time.Hour)
+	got, err := pushnotify.ExpiringCerts(ctx, store, t0, time.Hour)
 	if err != nil || got == nil || len(got) != 0 {
 		t.Fatalf("empty store: %v %v", got, err)
 	}
@@ -261,18 +263,18 @@ func TestExpiringCerts(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
-	got, err = push.ExpiringCerts(ctx, store, t0, 5*time.Hour)
+	got, err = pushnotify.ExpiringCerts(ctx, store, t0, 5*time.Hour)
 	if err != nil {
 		t.Fatal(err)
 	}
 	if len(got) != 1 || got[0].Topic != "com.apple.mgmt.External.soon" || got[0].KeyPEM != nil {
 		t.Fatalf("within 5h: %+v", got)
 	}
-	got, err = push.ExpiringCerts(ctx, store, t0, 24*time.Hour)
+	got, err = pushnotify.ExpiringCerts(ctx, store, t0, 24*time.Hour)
 	if err != nil || len(got) != 2 {
 		t.Fatalf("within 24h: %+v %v", got, err)
 	}
-	got, err = push.ExpiringCerts(ctx, store, t0, 0)
+	got, err = pushnotify.ExpiringCerts(ctx, store, t0, 0)
 	if err != nil || len(got) != 0 {
 		t.Fatalf("within 0: %+v %v", got, err)
 	}
@@ -284,12 +286,12 @@ func TestExpiringCerts(t *testing.T) {
 		{Topic: "now", NotAfter: t0},
 		{Topic: "future", NotAfter: t0.Add(time.Minute)},
 	}}
-	got, err = push.ExpiringCerts(ctx, stub, t0, 0)
+	got, err = pushnotify.ExpiringCerts(ctx, stub, t0, 0)
 	if err != nil || len(got) != 2 || got[0].Topic != "past" || got[1].Topic != "now" {
 		t.Fatalf("already past: %+v %v", got, err)
 	}
 	stub.listErr = errStub
-	if _, err := push.ExpiringCerts(ctx, stub, t0, 0); !errors.Is(err, errStub) {
+	if _, err := pushnotify.ExpiringCerts(ctx, stub, t0, 0); !errors.Is(err, errStub) {
 		t.Fatalf("storage error: %v", err)
 	}
 }

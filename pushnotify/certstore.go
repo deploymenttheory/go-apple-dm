@@ -1,4 +1,4 @@
-package push
+package pushnotify
 
 import (
 	"context"
@@ -7,6 +7,8 @@ import (
 	"fmt"
 	"sync"
 	"time"
+
+	"github.com/deploymenttheory/go-apple-dm/push"
 
 	"github.com/deploymenttheory/go-apple-dm/internal/clock"
 	"github.com/deploymenttheory/go-apple-dm/pushcert"
@@ -40,7 +42,7 @@ type StoreCertStore struct {
 	cache map[string]cachedCert
 }
 
-var _ CertStore = (*StoreCertStore)(nil)
+var _ push.CertStore = (*StoreCertStore)(nil)
 
 // CertStoreOption configures a StoreCertStore.
 type CertStoreOption func(*StoreCertStore)
@@ -57,7 +59,7 @@ func WithCertClock(cl clock.Clock) CertStoreOption {
 	return func(c *StoreCertStore) { c.clock = cl }
 }
 
-// NewStoreCertStore returns a CertStore backed by s.
+// NewStoreCertStore returns a push.CertStore backed by s.
 func NewStoreCertStore(s storage.PushCertStore, opts ...CertStoreOption) *StoreCertStore {
 	c := &StoreCertStore{store: s, clock: clock.Real{}, ttl: DefaultCertTTL, cache: map[string]cachedCert{}}
 	for _, o := range opts {
@@ -66,11 +68,11 @@ func NewStoreCertStore(s storage.PushCertStore, opts ...CertStoreOption) *StoreC
 	return c
 }
 
-// PushCertificate implements CertStore. A cached certificate is returned as
+// PushCertificate implements push.CertStore. A cached certificate is returned as
 // is inside the TTL. After the TTL the stored Version is read: when it is
 // unchanged the cache entry is kept for another TTL, otherwise the PEM pair
 // is loaded and parsed again. A topic the store does not know maps to
-// ErrNoCertificate. The mutex is held only around cache reads and writes,
+// push.ErrNoCertificate. The mutex is held only around cache reads and writes,
 // never across a storage call.
 func (c *StoreCertStore) PushCertificate(ctx context.Context, topic string) (tls.Certificate, error) {
 	now := c.clock.Now()
@@ -111,7 +113,7 @@ func (c *StoreCertStore) PushCertificate(ctx context.Context, topic string) (tls
 // unknown topic and wraps anything else with the operation that failed.
 func certStoreError(topic, op string, err error) error {
 	if errors.Is(err, storage.ErrNotFound) {
-		return fmt.Errorf("%w: %s", ErrNoCertificate, topic)
+		return fmt.Errorf("%w: %s", push.ErrNoCertificate, topic)
 	}
 	return fmt.Errorf("push: %s push certificate for %s: %w", op, topic, err)
 }

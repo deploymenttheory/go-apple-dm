@@ -39,7 +39,7 @@ type Enqueuer interface {
 	Enqueue(ctx context.Context, ids []mdm.EnrollmentID, cmd *mdm.Command, o storage.EnqueueOptions) (storage.EnqueueResult, error)
 }
 
-// Pusher sends APNs wake-ups; *push.Notifier satisfies it.
+// Pusher sends APNs wake-ups; *pushnotify.Notifier satisfies it.
 type Pusher interface {
 	Notify(ctx context.Context, ids []mdm.EnrollmentID) (map[mdm.EnrollmentID]push.Result, error)
 }

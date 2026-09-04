@@ -9,10 +9,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/deploymenttheory/go-apple-dm/event"
 	"github.com/deploymenttheory/go-apple-dm/internal/clock"
 	"github.com/deploymenttheory/go-apple-dm/mdm"
-	"github.com/deploymenttheory/go-apple-dm/storage"
 )
 
 // Errors returned by this package.
@@ -124,67 +122,6 @@ func (s StaticCertStore) PushCertificate(_ context.Context, topic string) (tls.C
 		return tls.Certificate{}, fmt.Errorf("%w: %s", ErrNoCertificate, topic)
 	}
 	return c, nil
-}
-
-// Notifier pushes enrollments by id: it looks push info up in storage,
-// sends through the Pusher, and publishes PushTokenInvalid for tokens APNs
-// rejected.
-type Notifier struct {
-	Store  storage.PushStore
-	Pusher Pusher
-	Bus    *event.Bus
-	Clock  clock.Clock
-}
-
-// Notify pushes the given enrollments. Enrollments without push info
-// (disabled or unknown) are skipped and reported with Err set.
-func (n *Notifier) Notify(ctx context.Context, ids []mdm.EnrollmentID) (map[mdm.EnrollmentID]Result, error) {
-	if n.Store == nil || n.Pusher == nil {
-		return nil, errors.New("push: Notifier needs Store and Pusher")
-	}
-	info, err := n.Store.PushInfo(ctx, ids)
-	if err != nil {
-		return nil, fmt.Errorf("push: %w", err)
-	}
-	out := map[mdm.EnrollmentID]Result{}
-	targets := make([]Target, 0, len(info))
-	for _, id := range ids {
-		p, ok := info[id]
-		if !ok {
-			out[id] = Result{Outcome: OutcomeSkipped, Err: fmt.Errorf("%w: no push info for %s", storage.ErrNotFound, id.ID)}
-			continue
-		}
-		targets = append(targets, Target{ID: id, Push: p})
-	}
-	if len(targets) == 0 {
-		return out, nil
-	}
-	results, err := n.Pusher.Push(ctx, targets)
-	if err != nil {
-		return out, err
-	}
-	for id, r := range results {
-		out[id] = r
-		// A dead token and a refused request are different operational
-		// facts, so they are different events: one enrollment is gone, or
-		// one deployment is misconfigured for all of them.
-		var tp event.Type
-		switch r.Outcome {
-		case OutcomeInvalidToken:
-			tp = event.PushTokenInvalid
-		case OutcomeRejected:
-			tp = event.PushRejected
-		case OutcomeSent, OutcomeRateLimited, OutcomeUnavailable, OutcomeSkipped:
-		}
-		if tp != "" && n.Bus != nil {
-			at := time.Now()
-			if n.Clock != nil {
-				at = n.Clock.Now()
-			}
-			_ = n.Bus.Publish(ctx, event.Event{Type: tp, At: at, Enrollment: id, Actor: "apns", Data: r})
-		}
-	}
-	return out, nil
 }
 
 // Coalescer drops repeated pushes to the same enrollment inside a window:

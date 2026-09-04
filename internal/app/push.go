@@ -10,6 +10,7 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/push"
 	"github.com/deploymenttheory/go-apple-dm/push/apns"
 	"github.com/deploymenttheory/go-apple-dm/pushcert"
+	"github.com/deploymenttheory/go-apple-dm/pushnotify"
 )
 
 // Push certificate sources.
@@ -80,7 +81,7 @@ func (p PushConfig) validate() error {
 // wirePush builds the push notifier. It returns nil when pushes are off, and
 // ddm.Notifier treats a nil pusher as "consider it delivered", so the change
 // rows still drain.
-func (a *App) wirePush() (*push.Notifier, error) {
+func (a *App) wirePush() (*pushnotify.Notifier, error) {
 	cfg := a.cfg.Push
 	if !cfg.Enabled() {
 		return nil, nil
@@ -107,7 +108,7 @@ func (a *App) wirePush() (*push.Notifier, error) {
 	if window > 0 {
 		pusher = push.Coalesce(pusher, window, a.cfg.Clock)
 	}
-	return &push.Notifier{Store: a.Store, Pusher: pusher, Bus: a.cfg.Bus, Clock: a.cfg.Clock}, nil
+	return &pushnotify.Notifier{Store: a.Store, Pusher: pusher, Bus: a.cfg.Bus, Clock: a.cfg.Clock}, nil
 }
 
 // pushCertStore resolves the certificate source.
@@ -127,11 +128,11 @@ func (a *App) pushCertStore(cfg PushConfig) (push.CertStore, error) {
 		}
 		return push.StaticCertStore{topic: pair}, nil
 	}
-	opts := []push.CertStoreOption{push.WithCertClock(a.cfg.Clock)}
+	opts := []pushnotify.CertStoreOption{pushnotify.WithCertClock(a.cfg.Clock)}
 	if cfg.CertTTL > 0 {
-		opts = append(opts, push.WithCertTTL(cfg.CertTTL))
+		opts = append(opts, pushnotify.WithCertTTL(cfg.CertTTL))
 	}
-	return push.NewStoreCertStore(a.Store, opts...), nil
+	return pushnotify.NewStoreCertStore(a.Store, opts...), nil
 }
 
 // topicOf reads the topic out of the certificate, so an operator never types

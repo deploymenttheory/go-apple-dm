@@ -29,7 +29,7 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/eventsink"
 	"github.com/deploymenttheory/go-apple-dm/httpapi"
 	"github.com/deploymenttheory/go-apple-dm/internal/clock"
-	"github.com/deploymenttheory/go-apple-dm/push"
+	"github.com/deploymenttheory/go-apple-dm/pushnotify"
 	"github.com/deploymenttheory/go-apple-dm/secrets"
 	"github.com/deploymenttheory/go-apple-dm/service"
 	"github.com/deploymenttheory/go-apple-dm/storage"
@@ -214,7 +214,7 @@ type App struct {
 	// DEP is the device enrollment service; nil on the mdm role.
 	DEP *dep.Client
 	// Push wakes devices; nil when no push source is configured.
-	Push *push.Notifier
+	Push *pushnotify.Notifier
 	// admin authorizes admin callers against the stored Cedar policies. It
 	// is nil when the deployment configured the static DM_ADMIN_TOKEN
 	// instead, which bypasses policy by design (decision record 0034).
