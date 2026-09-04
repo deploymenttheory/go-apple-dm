@@ -11,7 +11,7 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/v3/appleplatformservices/dep/deptest"
 	"github.com/deploymenttheory/go-apple-dm/v3/clock"
 	"github.com/deploymenttheory/go-apple-dm/v3/mdmprotocol/event"
-	"github.com/deploymenttheory/go-apple-dm/v3/server/depstore/inmem"
+	"github.com/deploymenttheory/go-apple-dm/v3/storage/dep/inmem"
 )
 
 var t0 = time.Date(2026, 9, 2, 12, 0, 0, 0, time.UTC)

@@ -14,7 +14,7 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/v3/paging"
 	"github.com/deploymenttheory/go-apple-dm/v3/server/audit"
 	auditinmem "github.com/deploymenttheory/go-apple-dm/v3/server/audit/inmem"
-	"github.com/deploymenttheory/go-apple-dm/v3/server/storage"
+	"github.com/deploymenttheory/go-apple-dm/v3/storage"
 )
 
 var t0app = time.Date(2026, 9, 3, 12, 0, 0, 0, time.UTC)

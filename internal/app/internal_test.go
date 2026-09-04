@@ -17,8 +17,8 @@ import (
 	"time"
 
 	"github.com/deploymenttheory/go-apple-dm/v3/server/ddmsync"
-	"github.com/deploymenttheory/go-apple-dm/v3/server/storage"
-	"github.com/deploymenttheory/go-apple-dm/v3/server/storage/sqlite"
+	"github.com/deploymenttheory/go-apple-dm/v3/server/sqlstore/sqlite"
+	"github.com/deploymenttheory/go-apple-dm/v3/storage"
 	"github.com/deploymenttheory/go-apple-dm/v3/testpki"
 )
 

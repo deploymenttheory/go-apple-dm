@@ -13,8 +13,8 @@ import (
 
 	"github.com/deploymenttheory/go-apple-dm/v3/appleplatformservices/dep"
 	"github.com/deploymenttheory/go-apple-dm/v3/paging"
-	depinmem "github.com/deploymenttheory/go-apple-dm/v3/server/depstore/inmem"
 	depsql "github.com/deploymenttheory/go-apple-dm/v3/server/depstore/sqlstore"
+	depinmem "github.com/deploymenttheory/go-apple-dm/v3/storage/dep/inmem"
 )
 
 // DEPConfig connects the reference server to Apple's device enrollment

@@ -8,9 +8,9 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/v3/appleplatformservices/dep"
 	"github.com/deploymenttheory/go-apple-dm/v3/paging"
 	"github.com/deploymenttheory/go-apple-dm/v3/secrets"
-	"github.com/deploymenttheory/go-apple-dm/v3/server/depstore/sqlstore"
-	"github.com/deploymenttheory/go-apple-dm/v3/server/storage/crypt"
-	"github.com/deploymenttheory/go-apple-dm/v3/server/storage/sqlite"
+	sqlstore "github.com/deploymenttheory/go-apple-dm/v3/server/depstore/sqlstore"
+	"github.com/deploymenttheory/go-apple-dm/v3/server/sqlstore/sqlite"
+	"github.com/deploymenttheory/go-apple-dm/v3/storage/crypt"
 )
 
 // seed writes one of everything for account "a".

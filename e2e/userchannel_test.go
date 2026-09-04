@@ -11,8 +11,8 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/v3/mdmprotocol/plist"
 	"github.com/deploymenttheory/go-apple-dm/v3/schema/commands"
 	"github.com/deploymenttheory/go-apple-dm/v3/server/service"
-	"github.com/deploymenttheory/go-apple-dm/v3/server/storage"
 	"github.com/deploymenttheory/go-apple-dm/v3/simulator"
+	"github.com/deploymenttheory/go-apple-dm/v3/storage"
 )
 
 const userPassword = "correct horse battery staple"

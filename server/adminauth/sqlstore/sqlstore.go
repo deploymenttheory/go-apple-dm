@@ -12,7 +12,7 @@ import (
 	"time"
 
 	"github.com/deploymenttheory/go-apple-dm/v3/server/adminauth"
-	"github.com/deploymenttheory/go-apple-dm/v3/server/storage/sqlcommon"
+	"github.com/deploymenttheory/go-apple-dm/v3/server/sqlstore/sqlcommon"
 )
 
 //go:embed migrations/*/*.sql

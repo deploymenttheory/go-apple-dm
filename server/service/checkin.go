@@ -10,7 +10,7 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/v3/mdmprotocol/mdm"
 	"github.com/deploymenttheory/go-apple-dm/v3/mdmprotocol/plist"
 	"github.com/deploymenttheory/go-apple-dm/v3/schema/checkin"
-	"github.com/deploymenttheory/go-apple-dm/v3/server/storage"
+	"github.com/deploymenttheory/go-apple-dm/v3/storage"
 )
 
 // CheckinResult is the response to a check-in message. Most messages

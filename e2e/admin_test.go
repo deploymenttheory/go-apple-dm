@@ -24,8 +24,8 @@ import (
 	adminsql "github.com/deploymenttheory/go-apple-dm/v3/server/adminauth/sqlstore"
 	"github.com/deploymenttheory/go-apple-dm/v3/server/audit"
 	auditinmem "github.com/deploymenttheory/go-apple-dm/v3/server/audit/inmem"
-	"github.com/deploymenttheory/go-apple-dm/v3/server/storage"
-	"github.com/deploymenttheory/go-apple-dm/v3/server/storage/sqlite"
+	"github.com/deploymenttheory/go-apple-dm/v3/server/sqlstore/sqlite"
+	"github.com/deploymenttheory/go-apple-dm/v3/storage"
 )
 
 // adminHarness is the reference server with a real principal store on its own

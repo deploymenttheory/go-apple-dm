@@ -24,10 +24,10 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/v3/pki/acme"
 	"github.com/deploymenttheory/go-apple-dm/v3/pki/acme/attest/attesttest"
 	"github.com/deploymenttheory/go-apple-dm/v3/schema/ddm"
-	"github.com/deploymenttheory/go-apple-dm/v3/server/acmestore/acmetest"
-	acmeinmem "github.com/deploymenttheory/go-apple-dm/v3/server/acmestore/inmem"
-	depinmem "github.com/deploymenttheory/go-apple-dm/v3/server/depstore/inmem"
 	"github.com/deploymenttheory/go-apple-dm/v3/simulator"
+	"github.com/deploymenttheory/go-apple-dm/v3/storage/acme/acmetest"
+	acmeinmem "github.com/deploymenttheory/go-apple-dm/v3/storage/acme/inmem"
+	depinmem "github.com/deploymenttheory/go-apple-dm/v3/storage/dep/inmem"
 )
 
 // acmeFixture is an enrollment fixture whose profiles carry an ACME

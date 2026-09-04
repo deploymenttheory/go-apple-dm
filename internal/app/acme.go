@@ -19,9 +19,9 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/v3/pki/acme/attest"
 	"github.com/deploymenttheory/go-apple-dm/v3/pki/ca"
 	"github.com/deploymenttheory/go-apple-dm/v3/schema/ddm"
-	acmeinmem "github.com/deploymenttheory/go-apple-dm/v3/server/acmestore/inmem"
 	acmesql "github.com/deploymenttheory/go-apple-dm/v3/server/acmestore/sqlstore"
 	"github.com/deploymenttheory/go-apple-dm/v3/server/httpapi"
+	acmeinmem "github.com/deploymenttheory/go-apple-dm/v3/storage/acme/inmem"
 )
 
 // Identity methods for the enrollment profile.

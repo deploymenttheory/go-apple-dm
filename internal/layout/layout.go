@@ -107,7 +107,7 @@ func (g *Graph) Reaches(from string) []string {
 // reason.
 var namespaces = []string{
 	"internal", "schema",
-	"mdmprotocol", "pki", "appleplatformservices", "server",
+	"mdmprotocol", "pki", "appleplatformservices", "storage", "server",
 }
 
 // Unit is the directory a tier is assigned to: the first path element,

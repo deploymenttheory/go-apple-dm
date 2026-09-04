@@ -63,8 +63,17 @@ they are allowed to import; it changes no wire format and no Apple-facing behavi
    for a struct with two fields. After the move `acme` and `dep` no longer import `storage` at all,
    and `ddm` does so in two files of sixteen.
 4. The reference server becomes its own module, so "this is not a product" is structural rather
-   than a promise in the README, and a consumer importing `protocol/mdm` no longer inherits `pgx`,
-   `cedar-go`, `otel` and `modernc-sqlite` through a module-wide `go.sum`.
+   than a promise in the README, and a consumer importing `mdmprotocol/mdm` no longer inherits
+   `pgx`, `cedar-go` and `modernc-sqlite` through a module-wide `go.sum` — twenty external modules
+   in all.
+
+   The split line is drawn at the database driver, not at persistence. Storage contracts, the
+   in-memory backends, and the contract suites live in the library, because a map is not a
+   database and because a consumer choosing their own backend needs the interfaces and the suite
+   that proves an implementation correct. Only the SQL backends and the assembled server move.
+   Drawing it anywhere else was not possible: eight library packages' *tests* used the in-memory
+   backends, so putting those in the server module would have made each module require the other,
+   and neither could be released first.
 
 ## Verified by
 

@@ -14,10 +14,10 @@ import (
 
 	_ "github.com/jackc/pgx/v5/stdlib" // registers the "pgx" driver
 
-	"github.com/deploymenttheory/go-apple-dm/v3/server/storage"
-	"github.com/deploymenttheory/go-apple-dm/v3/server/storage/inmem"
-	"github.com/deploymenttheory/go-apple-dm/v3/server/storage/postgres"
-	"github.com/deploymenttheory/go-apple-dm/v3/server/storage/sqlite"
+	"github.com/deploymenttheory/go-apple-dm/v3/server/sqlstore/postgres"
+	"github.com/deploymenttheory/go-apple-dm/v3/server/sqlstore/sqlite"
+	"github.com/deploymenttheory/go-apple-dm/v3/storage"
+	"github.com/deploymenttheory/go-apple-dm/v3/storage/inmem"
 )
 
 // newStore opens the storage backend named by E2E_STORE: sqlite (the

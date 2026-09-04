@@ -13,11 +13,11 @@ import (
 	"github.com/jackc/pgx/v5/stdlib"
 
 	"github.com/deploymenttheory/go-apple-dm/v3/pki/acme"
-	"github.com/deploymenttheory/go-apple-dm/v3/server/acmestore/acmetest"
-	"github.com/deploymenttheory/go-apple-dm/v3/server/acmestore/sqlstore"
-	"github.com/deploymenttheory/go-apple-dm/v3/server/storage/mysql"
-	"github.com/deploymenttheory/go-apple-dm/v3/server/storage/postgres"
-	"github.com/deploymenttheory/go-apple-dm/v3/server/storage/sqlcommon"
+	sqlstore "github.com/deploymenttheory/go-apple-dm/v3/server/acmestore/sqlstore"
+	"github.com/deploymenttheory/go-apple-dm/v3/server/sqlstore/mysql"
+	"github.com/deploymenttheory/go-apple-dm/v3/server/sqlstore/postgres"
+	"github.com/deploymenttheory/go-apple-dm/v3/server/sqlstore/sqlcommon"
+	"github.com/deploymenttheory/go-apple-dm/v3/storage/acme/acmetest"
 )
 
 // acmeTables in dependency order for DELETE and DROP.

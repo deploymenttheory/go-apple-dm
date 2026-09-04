@@ -11,8 +11,8 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/v3/server/audit"
 	"github.com/deploymenttheory/go-apple-dm/v3/server/audit/audittest"
 	"github.com/deploymenttheory/go-apple-dm/v3/server/audit/sqlstore"
-	"github.com/deploymenttheory/go-apple-dm/v3/server/storage/sqlcommon"
-	"github.com/deploymenttheory/go-apple-dm/v3/server/storage/sqlite"
+	"github.com/deploymenttheory/go-apple-dm/v3/server/sqlstore/sqlcommon"
+	"github.com/deploymenttheory/go-apple-dm/v3/server/sqlstore/sqlite"
 )
 
 func openDB(t *testing.T) *sql.DB {

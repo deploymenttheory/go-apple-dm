@@ -30,8 +30,8 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/v3/server/httpapi"
 	"github.com/deploymenttheory/go-apple-dm/v3/server/pushnotify"
 	"github.com/deploymenttheory/go-apple-dm/v3/server/service"
-	"github.com/deploymenttheory/go-apple-dm/v3/server/storage"
 	"github.com/deploymenttheory/go-apple-dm/v3/simulator"
+	"github.com/deploymenttheory/go-apple-dm/v3/storage"
 	"github.com/deploymenttheory/go-apple-dm/v3/testpki"
 )
 

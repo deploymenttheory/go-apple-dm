@@ -12,8 +12,8 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/v3/mdmprotocol/profile"
 	"github.com/deploymenttheory/go-apple-dm/v3/schema/commands"
 	"github.com/deploymenttheory/go-apple-dm/v3/server/service"
-	"github.com/deploymenttheory/go-apple-dm/v3/server/storage"
 	"github.com/deploymenttheory/go-apple-dm/v3/simulator"
+	"github.com/deploymenttheory/go-apple-dm/v3/storage"
 )
 
 // E2E-006: a device follows an unsigned enrollment profile, enrolls its

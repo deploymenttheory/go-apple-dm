@@ -22,8 +22,8 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/v3/server/ddmadapter/inproc"
 	"github.com/deploymenttheory/go-apple-dm/v3/server/ddmadapter/internal/proxywire"
 	"github.com/deploymenttheory/go-apple-dm/v3/server/ddmadapter/proxyserver"
-	"github.com/deploymenttheory/go-apple-dm/v3/server/ddmstore/inmem"
 	"github.com/deploymenttheory/go-apple-dm/v3/server/service"
+	"github.com/deploymenttheory/go-apple-dm/v3/storage/ddm/inmem"
 	"github.com/deploymenttheory/go-apple-dm/v3/testpki"
 )
 

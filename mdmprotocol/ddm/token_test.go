@@ -13,7 +13,7 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/v3/mdmprotocol/ddm"
 	schemaddm "github.com/deploymenttheory/go-apple-dm/v3/schema/ddm"
 	"github.com/deploymenttheory/go-apple-dm/v3/schema/support"
-	"github.com/deploymenttheory/go-apple-dm/v3/server/ddmstore/ddmtest"
+	"github.com/deploymenttheory/go-apple-dm/v3/storage/ddm/ddmtest"
 )
 
 // goldenToken reads the DeclarationsToken pinned in testdata/golden_token.txt.

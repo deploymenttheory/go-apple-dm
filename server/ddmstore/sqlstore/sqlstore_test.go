@@ -14,12 +14,12 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/v3/mdmprotocol/mdm"
 	"github.com/deploymenttheory/go-apple-dm/v3/paging"
 	schemaddm "github.com/deploymenttheory/go-apple-dm/v3/schema/ddm"
-	"github.com/deploymenttheory/go-apple-dm/v3/server/ddmstore/ddmtest"
-	"github.com/deploymenttheory/go-apple-dm/v3/server/ddmstore/sqlstore"
-	"github.com/deploymenttheory/go-apple-dm/v3/server/storage/mysql"
-	"github.com/deploymenttheory/go-apple-dm/v3/server/storage/postgres"
-	"github.com/deploymenttheory/go-apple-dm/v3/server/storage/sqlcommon"
-	"github.com/deploymenttheory/go-apple-dm/v3/server/storage/sqlite"
+	sqlstore "github.com/deploymenttheory/go-apple-dm/v3/server/ddmstore/sqlstore"
+	"github.com/deploymenttheory/go-apple-dm/v3/server/sqlstore/mysql"
+	"github.com/deploymenttheory/go-apple-dm/v3/server/sqlstore/postgres"
+	"github.com/deploymenttheory/go-apple-dm/v3/server/sqlstore/sqlcommon"
+	"github.com/deploymenttheory/go-apple-dm/v3/server/sqlstore/sqlite"
+	"github.com/deploymenttheory/go-apple-dm/v3/storage/ddm/ddmtest"
 )
 
 var (

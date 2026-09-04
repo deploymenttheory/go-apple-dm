@@ -17,16 +17,16 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/v3/mdmprotocol/plist"
 	"github.com/deploymenttheory/go-apple-dm/v3/schema/commands"
 	"github.com/deploymenttheory/go-apple-dm/v3/server/ddmadapter/inproc"
-	ddminmem "github.com/deploymenttheory/go-apple-dm/v3/server/ddmstore/inmem"
-	"github.com/deploymenttheory/go-apple-dm/v3/server/ddmstore/sqlstore"
+	sqlstore "github.com/deploymenttheory/go-apple-dm/v3/server/ddmstore/sqlstore"
 	"github.com/deploymenttheory/go-apple-dm/v3/server/ddmsync"
 	"github.com/deploymenttheory/go-apple-dm/v3/server/service"
-	"github.com/deploymenttheory/go-apple-dm/v3/server/storage"
-	"github.com/deploymenttheory/go-apple-dm/v3/server/storage/inmem"
-	"github.com/deploymenttheory/go-apple-dm/v3/server/storage/postgres"
-	"github.com/deploymenttheory/go-apple-dm/v3/server/storage/sqlcommon"
-	"github.com/deploymenttheory/go-apple-dm/v3/server/storage/sqlite"
+	"github.com/deploymenttheory/go-apple-dm/v3/server/sqlstore/postgres"
+	"github.com/deploymenttheory/go-apple-dm/v3/server/sqlstore/sqlcommon"
+	"github.com/deploymenttheory/go-apple-dm/v3/server/sqlstore/sqlite"
 	"github.com/deploymenttheory/go-apple-dm/v3/simulator"
+	"github.com/deploymenttheory/go-apple-dm/v3/storage"
+	ddminmem "github.com/deploymenttheory/go-apple-dm/v3/storage/ddm/inmem"
+	"github.com/deploymenttheory/go-apple-dm/v3/storage/inmem"
 )
 
 // ddmHarness is a harness with the DDM engine wired in-process: the

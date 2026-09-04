@@ -15,9 +15,9 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/v3/server/adminauth"
 	"github.com/deploymenttheory/go-apple-dm/v3/server/adminauth/adminauthtest"
 	"github.com/deploymenttheory/go-apple-dm/v3/server/adminauth/sqlstore"
-	"github.com/deploymenttheory/go-apple-dm/v3/server/storage/mysql"
-	"github.com/deploymenttheory/go-apple-dm/v3/server/storage/postgres"
-	"github.com/deploymenttheory/go-apple-dm/v3/server/storage/sqlcommon"
+	"github.com/deploymenttheory/go-apple-dm/v3/server/sqlstore/mysql"
+	"github.com/deploymenttheory/go-apple-dm/v3/server/sqlstore/postgres"
+	"github.com/deploymenttheory/go-apple-dm/v3/server/sqlstore/sqlcommon"
 )
 
 // adminTables in dependency order for DELETE and DROP.

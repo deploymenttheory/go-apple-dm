@@ -16,8 +16,8 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/v3/clock"
 	"github.com/deploymenttheory/go-apple-dm/v3/mdmprotocol/enroll/ade"
 	"github.com/deploymenttheory/go-apple-dm/v3/mdmprotocol/mdm"
-	depinmem "github.com/deploymenttheory/go-apple-dm/v3/server/depstore/inmem"
 	"github.com/deploymenttheory/go-apple-dm/v3/simulator"
+	depinmem "github.com/deploymenttheory/go-apple-dm/v3/storage/dep/inmem"
 )
 
 // TestE2E_DEPAssign is E2E-011: the token PKI exchange with our fake DEP

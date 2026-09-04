@@ -8,8 +8,8 @@ import (
 
 	"github.com/deploymenttheory/go-apple-dm/v3/paging"
 	"github.com/deploymenttheory/go-apple-dm/v3/pki/acme"
-	"github.com/deploymenttheory/go-apple-dm/v3/server/acmestore/sqlstore"
-	"github.com/deploymenttheory/go-apple-dm/v3/server/storage/sqlite"
+	sqlstore "github.com/deploymenttheory/go-apple-dm/v3/server/acmestore/sqlstore"
+	"github.com/deploymenttheory/go-apple-dm/v3/server/sqlstore/sqlite"
 )
 
 // TestClosedDatabaseSurfaces proves every method reports a driver failure

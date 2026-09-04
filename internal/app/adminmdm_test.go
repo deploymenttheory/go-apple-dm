@@ -18,7 +18,7 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/v3/schema/commands"
 	"github.com/deploymenttheory/go-apple-dm/v3/server/adminauth"
 	"github.com/deploymenttheory/go-apple-dm/v3/server/adminauth/inmem"
-	"github.com/deploymenttheory/go-apple-dm/v3/server/storage"
+	"github.com/deploymenttheory/go-apple-dm/v3/storage"
 	"github.com/deploymenttheory/go-apple-dm/v3/testpki"
 )
 

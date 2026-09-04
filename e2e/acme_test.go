@@ -23,9 +23,9 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/v3/pki/acme/attest"
 	"github.com/deploymenttheory/go-apple-dm/v3/pki/acme/attest/attesttest"
 	"github.com/deploymenttheory/go-apple-dm/v3/pki/ca"
-	acmeinmem "github.com/deploymenttheory/go-apple-dm/v3/server/acmestore/inmem"
 	"github.com/deploymenttheory/go-apple-dm/v3/server/service"
 	"github.com/deploymenttheory/go-apple-dm/v3/simulator"
+	acmeinmem "github.com/deploymenttheory/go-apple-dm/v3/storage/acme/inmem"
 )
 
 // acmeFixture is a harness with an ACME server mounted on the enrollment

@@ -6,7 +6,7 @@ import (
 
 	"github.com/deploymenttheory/go-apple-dm/v3/mdmprotocol/event"
 	"github.com/deploymenttheory/go-apple-dm/v3/paging"
-	"github.com/deploymenttheory/go-apple-dm/v3/server/storage"
+	"github.com/deploymenttheory/go-apple-dm/v3/storage"
 )
 
 // ExportEnrollments pages through enrollment records for migration. Device

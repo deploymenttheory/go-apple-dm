@@ -12,7 +12,7 @@ import (
 
 	"github.com/deploymenttheory/go-apple-dm/v3/clock"
 	"github.com/deploymenttheory/go-apple-dm/v3/pki/pushcert"
-	"github.com/deploymenttheory/go-apple-dm/v3/server/storage"
+	"github.com/deploymenttheory/go-apple-dm/v3/storage"
 )
 
 // DefaultCertTTL is how long a StoreCertStore trusts a cached certificate

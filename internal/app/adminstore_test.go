@@ -14,7 +14,7 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/v3/server/adminauth"
 	"github.com/deploymenttheory/go-apple-dm/v3/server/adminauth/inmem"
 	adminsql "github.com/deploymenttheory/go-apple-dm/v3/server/adminauth/sqlstore"
-	"github.com/deploymenttheory/go-apple-dm/v3/server/storage/sqlite"
+	"github.com/deploymenttheory/go-apple-dm/v3/server/sqlstore/sqlite"
 )
 
 // The debt this closes: adminauth/sqlstore was imported only by its own

@@ -7,7 +7,7 @@ import (
 
 	"github.com/deploymenttheory/go-apple-dm/v3/mdmprotocol/event"
 	"github.com/deploymenttheory/go-apple-dm/v3/mdmprotocol/mdm"
-	"github.com/deploymenttheory/go-apple-dm/v3/server/storage"
+	"github.com/deploymenttheory/go-apple-dm/v3/storage"
 )
 
 // Connect handles one request on the server URL: it records the device's

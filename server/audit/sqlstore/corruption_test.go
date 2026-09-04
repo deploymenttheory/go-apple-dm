@@ -9,7 +9,7 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/v3/server/audit"
 	"github.com/deploymenttheory/go-apple-dm/v3/server/audit/audittest"
 	"github.com/deploymenttheory/go-apple-dm/v3/server/audit/sqlstore"
-	"github.com/deploymenttheory/go-apple-dm/v3/server/storage/sqlite"
+	"github.com/deploymenttheory/go-apple-dm/v3/server/sqlstore/sqlite"
 )
 
 // A row whose fields column is not JSON is damage the store cannot fix, but

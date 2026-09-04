@@ -11,8 +11,8 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/v3/mdmprotocol/mdm"
 	schemaddm "github.com/deploymenttheory/go-apple-dm/v3/schema/ddm"
 	"github.com/deploymenttheory/go-apple-dm/v3/schema/support"
-	"github.com/deploymenttheory/go-apple-dm/v3/server/ddmstore/ddmtest"
-	ddminmem "github.com/deploymenttheory/go-apple-dm/v3/server/ddmstore/inmem"
+	"github.com/deploymenttheory/go-apple-dm/v3/storage/ddm/ddmtest"
+	ddminmem "github.com/deploymenttheory/go-apple-dm/v3/storage/ddm/inmem"
 )
 
 // subscriptionNames lists the StatusItems names of a served

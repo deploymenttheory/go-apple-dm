@@ -14,7 +14,7 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/v3/mdmprotocol/event"
 	"github.com/deploymenttheory/go-apple-dm/v3/mdmprotocol/mdm"
 	"github.com/deploymenttheory/go-apple-dm/v3/schema/commands"
-	"github.com/deploymenttheory/go-apple-dm/v3/server/storage"
+	"github.com/deploymenttheory/go-apple-dm/v3/storage"
 )
 
 // DefaultDedupeKey is the dedupe key NotifierConfig.DedupeKey uses when it is

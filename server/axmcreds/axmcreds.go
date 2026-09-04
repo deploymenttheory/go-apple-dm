@@ -9,7 +9,7 @@ import (
 
 	"github.com/deploymenttheory/go-apple-dm/v3/appleplatformservices/axm"
 	"github.com/deploymenttheory/go-apple-dm/v3/secrets"
-	"github.com/deploymenttheory/go-apple-dm/v3/server/storage/crypt"
+	"github.com/deploymenttheory/go-apple-dm/v3/storage/crypt"
 )
 
 // ErrKeyring reports a missing or unusable keyring.

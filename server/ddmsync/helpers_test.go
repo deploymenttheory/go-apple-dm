@@ -19,7 +19,7 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/v3/mdmprotocol/event"
 	"github.com/deploymenttheory/go-apple-dm/v3/mdmprotocol/mdm"
 	schemaddm "github.com/deploymenttheory/go-apple-dm/v3/schema/ddm"
-	ddminmem "github.com/deploymenttheory/go-apple-dm/v3/server/ddmstore/inmem"
+	ddminmem "github.com/deploymenttheory/go-apple-dm/v3/storage/ddm/inmem"
 )
 
 var t0 = time.Date(2026, 9, 1, 12, 0, 0, 0, time.UTC)

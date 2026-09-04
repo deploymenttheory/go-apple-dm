@@ -18,7 +18,7 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/v3/pki/acme/attest/attesttest"
 	"github.com/deploymenttheory/go-apple-dm/v3/pki/acme/jose"
 	"github.com/deploymenttheory/go-apple-dm/v3/pki/ca"
-	"github.com/deploymenttheory/go-apple-dm/v3/server/acmestore/acmetest"
+	"github.com/deploymenttheory/go-apple-dm/v3/storage/acme/acmetest"
 )
 
 // TestNewOrder covers RFC 8555 section 7.4 and Apple's anti-replay rule for

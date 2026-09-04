@@ -20,8 +20,8 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/v3/mdmprotocol/mdm"
 	"github.com/deploymenttheory/go-apple-dm/v3/paging"
 	schemaddm "github.com/deploymenttheory/go-apple-dm/v3/schema/ddm"
-	"github.com/deploymenttheory/go-apple-dm/v3/server/ddmstore/ddmtest"
-	ddminmem "github.com/deploymenttheory/go-apple-dm/v3/server/ddmstore/inmem"
+	"github.com/deploymenttheory/go-apple-dm/v3/storage/ddm/ddmtest"
+	ddminmem "github.com/deploymenttheory/go-apple-dm/v3/storage/ddm/inmem"
 )
 
 // t0 is the fixed clock every engine test starts from.

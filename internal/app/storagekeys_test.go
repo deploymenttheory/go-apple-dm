@@ -13,7 +13,7 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/v3/internal/app"
 	"github.com/deploymenttheory/go-apple-dm/v3/mdmprotocol/mdm"
 	"github.com/deploymenttheory/go-apple-dm/v3/secrets"
-	"github.com/deploymenttheory/go-apple-dm/v3/server/storage/crypt"
+	"github.com/deploymenttheory/go-apple-dm/v3/storage/crypt"
 	"github.com/deploymenttheory/go-apple-dm/v3/testpki"
 )
 

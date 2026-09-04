@@ -14,7 +14,7 @@ reference server. Module `github.com/deploymenttheory/go-apple-dm/v3`, Go 1.27.
 
 Packages sit in tiers and may import their own tier and every tier below, never above:
 foundation (`paging`, `clock`, `testpki`, `secrets`, `telemetry`) -> `schema/` ->
-`mdmprotocol/` -> `pki/` -> `appleplatformservices/` -> `simulator/` -> `server/` ->
+`mdmprotocol/` -> `pki/` -> `appleplatformservices/` -> `storage/` -> `simulator/` -> `server/` ->
 app (`cmd/`, `internal/app`, `e2e/`). `internal/layout` asserts this in tests, because
 `go-lint.yml` runs golangci-lint with `--issues-exit-code=0` and cannot fail a build.
 See `docs/research/decisions/0044-repository-layout.md`.

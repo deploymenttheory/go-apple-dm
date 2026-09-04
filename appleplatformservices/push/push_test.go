@@ -12,7 +12,7 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/v3/clock"
 	"github.com/deploymenttheory/go-apple-dm/v3/mdmprotocol/mdm"
 	"github.com/deploymenttheory/go-apple-dm/v3/schema/checkin"
-	"github.com/deploymenttheory/go-apple-dm/v3/server/storage/inmem"
+	"github.com/deploymenttheory/go-apple-dm/v3/storage/inmem"
 )
 
 var t0 = time.Date(2026, 9, 1, 12, 0, 0, 0, time.UTC)

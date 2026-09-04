@@ -12,8 +12,8 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/v3/appleplatformservices/push"
 	"github.com/deploymenttheory/go-apple-dm/v3/clock"
 	"github.com/deploymenttheory/go-apple-dm/v3/pki/pushcert"
-	"github.com/deploymenttheory/go-apple-dm/v3/server/storage"
-	"github.com/deploymenttheory/go-apple-dm/v3/server/storage/inmem"
+	"github.com/deploymenttheory/go-apple-dm/v3/storage"
+	"github.com/deploymenttheory/go-apple-dm/v3/storage/inmem"
 	"github.com/deploymenttheory/go-apple-dm/v3/testpki"
 )
 

@@ -14,12 +14,12 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/v3/mdmprotocol/mdm"
 	"github.com/deploymenttheory/go-apple-dm/v3/paging"
 	"github.com/deploymenttheory/go-apple-dm/v3/schema/checkin"
-	"github.com/deploymenttheory/go-apple-dm/v3/server/ddmstore/ddmtest"
-	ddminmem "github.com/deploymenttheory/go-apple-dm/v3/server/ddmstore/inmem"
 	"github.com/deploymenttheory/go-apple-dm/v3/server/service"
-	"github.com/deploymenttheory/go-apple-dm/v3/server/storage"
-	storeinmem "github.com/deploymenttheory/go-apple-dm/v3/server/storage/inmem"
-	"github.com/deploymenttheory/go-apple-dm/v3/server/storage/storagetest"
+	"github.com/deploymenttheory/go-apple-dm/v3/storage"
+	"github.com/deploymenttheory/go-apple-dm/v3/storage/ddm/ddmtest"
+	ddminmem "github.com/deploymenttheory/go-apple-dm/v3/storage/ddm/inmem"
+	storeinmem "github.com/deploymenttheory/go-apple-dm/v3/storage/inmem"
+	"github.com/deploymenttheory/go-apple-dm/v3/storage/storagetest"
 )
 
 // seed gives id a set, a direct assignment, a snapshot, status, and a

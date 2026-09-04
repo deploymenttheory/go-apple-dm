@@ -15,9 +15,9 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/v3/server/audit"
 	"github.com/deploymenttheory/go-apple-dm/v3/server/audit/audittest"
 	"github.com/deploymenttheory/go-apple-dm/v3/server/audit/sqlstore"
-	"github.com/deploymenttheory/go-apple-dm/v3/server/storage/mysql"
-	"github.com/deploymenttheory/go-apple-dm/v3/server/storage/postgres"
-	"github.com/deploymenttheory/go-apple-dm/v3/server/storage/sqlcommon"
+	"github.com/deploymenttheory/go-apple-dm/v3/server/sqlstore/mysql"
+	"github.com/deploymenttheory/go-apple-dm/v3/server/sqlstore/postgres"
+	"github.com/deploymenttheory/go-apple-dm/v3/server/sqlstore/sqlcommon"
 )
 
 // auditTables is every table this migration set owns.
