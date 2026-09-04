@@ -5,7 +5,7 @@
 //
 // The generator keeps Apple's supportedOS metadata as data rather than
 // flattening it into comments, and nothing has read it back for a human until
-// now. `mdmctl explain DeviceLock -target macos:15.0` answers, from the same
+// now. `dmctl explain DeviceLock -target macos:15.0` answers, from the same
 // tables the server validates against, whether a key applies to a supervised
 // Mac on 15.0 and why not when it does not.
 //

@@ -140,8 +140,8 @@ Dependency note: none. Nothing here adds a dependency; the work it justifies rem
 - Moving `mdm.NewCommand` out of `ddm/notifier.go`: KMFDDM and NanoHUB both build the command
   inside their DDM package, and passing a built `*mdm.Command` lets `checkTargets` inspect the real
   `RequestType`.
-- A typed `mdmctl` verb per proxied family route: `dep`, `axm` and `acme` proxy Apple-shaped APIs
-  whose surface is not ours to model. `mdmctl api` keeps them reachable without pretending
+- A typed `dmctl` verb per proxied family route: `dep`, `axm` and `acme` proxy Apple-shaped APIs
+  whose surface is not ours to model. `dmctl api` keeps them reachable without pretending
   otherwise.
 - Retiring the `mdm`/`ddm` role split: the protocol finding constrains behaviour, not deployment.
   Running the declaration engine separately is a legitimate operational choice; the records were

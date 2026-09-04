@@ -1,4 +1,4 @@
-// Package adminclient is the typed HTTP client mdmctl uses against the
+// Package adminclient is the typed HTTP client dmctl uses against the
 // reference server's admin API.
 //
 // # Why

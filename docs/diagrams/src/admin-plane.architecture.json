@@ -13,7 +13,7 @@
         "id": "request",
         "label": "One admin request",
         "focus": [
-          "mdmctl",
+          "dmctl",
           "adminclient",
           "authorized",
           "manager",
@@ -26,10 +26,10 @@
         "label": "Credentials",
         "focus": [
           "config",
-          "mdmctl",
+          "dmctl",
           "statictoken"
         ],
-        "note": "mdmctl references a credential; it never stores one in argv."
+        "note": "dmctl references a credential; it never stores one in argv."
       }
     ],
     "repository": {
@@ -39,9 +39,9 @@
   },
   "components": [
     {
-      "id": "mdmctl",
+      "id": "dmctl",
       "type": "frontend",
-      "label": "mdmctl",
+      "label": "dmctl",
       "sublabel": "explain runs offline",
       "pos": [
         40,
@@ -67,7 +67,7 @@
       ],
       "sources": [
         {
-          "path": "internal/mdmctl/adminclient/adminclient.go",
+          "path": "internal/dmctl/adminclient/adminclient.go",
           "label": "client"
         }
       ]
@@ -95,7 +95,7 @@
     {
       "id": "config",
       "type": "database",
-      "label": "mdmctl.json",
+      "label": "dmctl.json",
       "sublabel": "0600 or refused",
       "pos": [
         340,
@@ -107,7 +107,7 @@
       ],
       "sources": [
         {
-          "path": "internal/mdmctl/config.go",
+          "path": "internal/dmctl/config.go",
           "label": "0600 check"
         }
       ]
@@ -203,14 +203,14 @@
   "connections": [
     {
       "id": "cli-client",
-      "from": "mdmctl",
+      "from": "dmctl",
       "to": "adminclient",
       "label": "typed calls"
     },
     {
       "id": "config-cli",
       "from": "config",
-      "to": "mdmctl",
+      "to": "dmctl",
       "label": "token by reference",
       "variant": "security"
     },

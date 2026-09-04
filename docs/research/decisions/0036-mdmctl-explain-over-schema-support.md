@@ -1,4 +1,4 @@
-# 0036: `mdmctl explain` over `schema/support`
+# 0036: `dmctl explain` over `schema/support`
 
 Status: accepted
 Date: 2026-09-02
@@ -122,7 +122,7 @@ Phase: 8
    `Path` or a `Reason`) (proves claim 6).
 7. `explain.TestTargetReasonIsVerbatim` (asserts the rendered output contains `Check`'s reason
    unchanged) (proves claim 7).
-8. `mdmctl.TestExplainNeedsNoServer` (runs with an unreachable `-server` and succeeds),
+8. `dmctl.TestExplainNeedsNoServer` (runs with an unreachable `-server` and succeeds),
    `explain.TestFamiliesAndListings` (all eight families registered) (prove claim 8).
 
 Failing paths: `explain.TestParseTarget/BadOS`, `/BadVersion`, `/UnknownWord`,

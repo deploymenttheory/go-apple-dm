@@ -1,4 +1,4 @@
-package mdmctl
+package dmctl
 
 import (
 	"context"
@@ -10,7 +10,7 @@ import (
 	"strings"
 	"text/tabwriter"
 
-	"github.com/deploymenttheory/go-apple-dm/internal/mdmctl/adminclient"
+	"github.com/deploymenttheory/go-apple-dm/internal/dmctl/adminclient"
 )
 
 // emit writes one server response in the selected mode.
@@ -22,7 +22,7 @@ func (e *env) emit(resp *adminclient.Response, human func(w *tabwriter.Writer)) 
 	switch e.opts.output {
 	case outputJSON, outputNDJSON:
 		if _, err := e.stdout.Write(resp.Body); err != nil {
-			return fmt.Errorf("mdmctl: write: %w", err)
+			return fmt.Errorf("dmctl: write: %w", err)
 		}
 		if len(resp.Body) > 0 && resp.Body[len(resp.Body)-1] != '\n' {
 			_, _ = fmt.Fprintln(e.stdout)
@@ -31,14 +31,14 @@ func (e *env) emit(resp *adminclient.Response, human func(w *tabwriter.Writer)) 
 	case outputHuman:
 		if human == nil {
 			if _, err := e.stdout.Write(resp.Body); err != nil {
-				return fmt.Errorf("mdmctl: write: %w", err)
+				return fmt.Errorf("dmctl: write: %w", err)
 			}
 			return nil
 		}
 		tw := tabwriter.NewWriter(e.stdout, 0, 8, 2, ' ', 0)
 		human(tw)
 		if err := tw.Flush(); err != nil {
-			return fmt.Errorf("mdmctl: write: %w", err)
+			return fmt.Errorf("dmctl: write: %w", err)
 		}
 		return nil
 	default:
@@ -93,7 +93,7 @@ func (e *env) list(ctx context.Context, c *adminclient.Client, path string, q ur
 				_ = emitRow(it)
 			}
 			if next != "" {
-				defer fmt.Fprintf(e.stderr, "mdmctl: more results; next cursor %s (use -all to follow)\n", next)
+				defer fmt.Fprintf(e.stderr, "dmctl: more results; next cursor %s (use -all to follow)\n", next)
 			}
 		}
 	}
@@ -101,7 +101,7 @@ func (e *env) list(ctx context.Context, c *adminclient.Client, path string, q ur
 		return err
 	}
 	if ferr := tw.Flush(); ferr != nil {
-		return fmt.Errorf("mdmctl: write: %w", ferr)
+		return fmt.Errorf("dmctl: write: %w", ferr)
 	}
 	return nil
 }
@@ -110,7 +110,7 @@ func (e *env) list(ctx context.Context, c *adminclient.Client, path string, q ur
 func (e *env) streamNDJSON(ctx context.Context, c *adminclient.Client, path string, q url.Values) error {
 	return c.Each(ctx, path, q, func(item jsontext.Value) error {
 		if _, err := e.stdout.Write(item); err != nil {
-			return fmt.Errorf("mdmctl: write: %w", err)
+			return fmt.Errorf("dmctl: write: %w", err)
 		}
 		_, _ = fmt.Fprintln(e.stdout)
 		return nil

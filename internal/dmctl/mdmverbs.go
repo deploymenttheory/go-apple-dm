@@ -1,4 +1,4 @@
-package mdmctl
+package dmctl
 
 import (
 	"context"
@@ -360,7 +360,7 @@ func runNotify(ctx context.Context, e *env, args []string) error {
 // The dep, axm and acme families are proxies onto Apple-shaped APIs whose
 // surface is theirs rather than ours, so wrapping each in a typed verb would
 // mean tracking dozens of endpoints we do not define. This keeps every route
-// reachable -- which is what "mdmctl drives every admin route" has to mean --
+// reachable -- which is what "dmctl drives every admin route" has to mean --
 // without pretending to model them.
 func runAPI(ctx context.Context, e *env, args []string) error {
 	fs := e.verbFlags("api")

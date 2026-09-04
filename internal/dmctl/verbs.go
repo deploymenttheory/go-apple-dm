@@ -1,4 +1,4 @@
-package mdmctl
+package dmctl
 
 import (
 	"context"
@@ -13,7 +13,7 @@ import (
 	"text/tabwriter"
 	"time"
 
-	"github.com/deploymenttheory/go-apple-dm/internal/mdmctl/explain"
+	"github.com/deploymenttheory/go-apple-dm/internal/dmctl/explain"
 )
 
 // runExplain answers offline, from the compiled-in schema tables. It builds
@@ -47,7 +47,7 @@ func runExplain(_ context.Context, e *env, args []string) error {
 	matches, err := explain.Resolve(rest[0], *family)
 	if err != nil {
 		if suggestions := explain.Suggest(rest[0], *family, 10); len(suggestions) > 0 {
-			fmt.Fprintf(e.stderr, "mdmctl: %v\ndid you mean:\n", err)
+			fmt.Fprintf(e.stderr, "dmctl: %v\ndid you mean:\n", err)
 			for _, s := range suggestions {
 				fmt.Fprintf(e.stderr, "  %s\n", s)
 			}
@@ -62,7 +62,7 @@ func runExplain(_ context.Context, e *env, args []string) error {
 			fmt.Fprintln(e.stdout)
 		}
 		if err := explain.Render(e.stdout, m, tgt); err != nil {
-			return fmt.Errorf("mdmctl: explain: %w", err)
+			return fmt.Errorf("dmctl: explain: %w", err)
 		}
 	}
 	return nil
@@ -334,7 +334,7 @@ func (e *env) emitToken(resp *adminResponse) error {
 		return e.emit(resp, nil)
 	}
 	fmt.Fprintln(e.stdout, body.Token)
-	fmt.Fprintf(e.stderr, "mdmctl: token for %q; it is not stored and cannot be shown again\n", body.Principal.Name)
+	fmt.Fprintf(e.stderr, "dmctl: token for %q; it is not stored and cannot be shown again\n", body.Principal.Name)
 	return nil
 }
 
@@ -432,19 +432,19 @@ func (e *env) readSource(file string) (string, error) {
 	case "":
 		raw, err := io.ReadAll(e.stdin)
 		if err != nil {
-			return "", fmt.Errorf("mdmctl: read stdin: %w", err)
+			return "", fmt.Errorf("dmctl: read stdin: %w", err)
 		}
 		return string(raw), nil
 	case "-":
 		raw, err := io.ReadAll(e.stdin)
 		if err != nil {
-			return "", fmt.Errorf("mdmctl: read stdin: %w", err)
+			return "", fmt.Errorf("dmctl: read stdin: %w", err)
 		}
 		return string(raw), nil
 	default:
 		raw, err := os.ReadFile(file) // #nosec G304 -- an operator's own file
 		if err != nil {
-			return "", fmt.Errorf("mdmctl: read %s: %w", file, err)
+			return "", fmt.Errorf("dmctl: read %s: %w", file, err)
 		}
 		return string(raw), nil
 	}

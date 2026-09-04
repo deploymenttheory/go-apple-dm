@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/deploymenttheory/go-apple-dm/internal/mdmctl/explain"
+	"github.com/deploymenttheory/go-apple-dm/internal/dmctl/explain"
 	"github.com/deploymenttheory/go-apple-dm/schema/commands"
 	"github.com/deploymenttheory/go-apple-dm/schema/profiles"
 	"github.com/deploymenttheory/go-apple-dm/schema/support"

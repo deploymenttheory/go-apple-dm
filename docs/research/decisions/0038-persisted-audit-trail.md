@@ -111,7 +111,7 @@ values the storage backends already define.
 
 Cross-cutting: `app.TestAuditRouteListsAndPages`, `app.TestAuditRouteRejectsBadInput`,
 `app.TestAuditRouteMapsStoreErrors`, `app.TestAuditRouteAbsentWithoutATrail`, and
-`mdmctl.TestAuditVerb`.
+`dmctl.TestAuditVerb`.
 
 ## Rejected alternatives
 

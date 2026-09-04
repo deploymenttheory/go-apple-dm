@@ -11,7 +11,7 @@ A pure Go library for Apple device management: the MDM check-in and command prot
 Declarative Device Management (DDM), every enrollment path Apple documents (profile, automated,
 account-driven, user channel and Shared iPad), an ACME server with Managed Device Attestation,
 and clients for the device enrollment service and the Apple Business Manager API. A thin
-reference server, `cmd/mdmserver`, wires it all together.
+reference server, `cmd/dmserver`, wires it all together.
 
 ## Why
 
@@ -47,7 +47,7 @@ program needs.
   channel, Shared iPad, and ACME, so your server can be exercised end to end before a real device
   ever touches it. The coverage floor is 95%, gated in CI.
 
-What it is not: a product. There is no UI, no inventory, and no fleet management. `cmd/mdmserver`
+What it is not: a product. There is no UI, no inventory, and no fleet management. `cmd/dmserver`
 is a thin wiring of these packages, there to prove the library works and to be read as an example
 of using it, not to be deployed as a device management platform. Nothing is copied from the
 projects above; `github.com/micromdm/plist` is the single dependency shared with them, so fixtures
@@ -115,11 +115,11 @@ reference server shows each of those wired together.
 
 ```bash
 # One terminal: an all-in-one process on :8080, nothing to install.
-DM_ROLE=all DM_STORAGE=inmem DM_ADMIN_TOKEN=dev-token go run ./cmd/mdmserver
+DM_ROLE=all DM_STORAGE=inmem DM_ADMIN_TOKEN=dev-token go run ./cmd/dmserver
 
 # Another: ask it what it is.
 curl -s localhost:8080/healthz
-go run ./cmd/mdmctl -server http://localhost:8080 -token dev-token status
+go run ./cmd/dmctl -server http://localhost:8080 -token dev-token status
 ```
 
 ```
@@ -136,13 +136,13 @@ revoked without a restart. Create real principals with it, then unset it. Every 
 
 ### Explore the protocol without a server
 
-`mdmctl explain` reads the generated schema tables offline, so it needs neither a server nor a
+`dmctl explain` reads the generated schema tables offline, so it needs neither a server nor a
 device:
 
 ```bash
-go run ./cmd/mdmctl explain DeviceInformation
-go run ./cmd/mdmctl explain DeviceInformation -target macos:15.0,supervised
-go run ./cmd/mdmctl explain com.apple.configuration.softwareupdate.enforcement.specific
+go run ./cmd/dmctl explain DeviceInformation
+go run ./cmd/dmctl explain DeviceInformation -target macos:15.0,supervised
+go run ./cmd/dmctl explain com.apple.configuration.softwareupdate.enforcement.specific
 ```
 
 From there: [docs/diagrams](docs/diagrams/README.md) for how the pieces fit together,
@@ -236,7 +236,7 @@ See [docs/diagrams](docs/diagrams/README.md).
 | `ddm/predicate`, `internal/canonjson` | The NSPredicate subset activations use; RFC 8785 canonicalisation over `encoding/json/jsontext` |
 | `ddm/inmem`, `ddm/sqlstore`, `ddm/ddmtest` | Engine stores on their own migration set and the contract suite both run |
 | `ddm/adapter/inproc`, `ddm/adapter/proxyclient`, `ddm/adapter/proxyserver` | DDM in-process, or split across our own `mdm` and `ddm` roles over an HMAC-signed or mTLS hop |
-| `internal/app`, `cmd/mdmserver`, `Dockerfile` | The reference server: roles, enrollment routes, admin API, background workers, and the container image |
+| `internal/app`, `cmd/dmserver`, `Dockerfile` | The reference server: roles, enrollment routes, admin API, background workers, and the container image |
 | `simulator/` | Device simulator: MDM, DDM, ADE, account-driven, user channel, and Shared iPad clients |
 | `e2e/` | End-to-end scenarios (`make test-e2e`), listed in `docs/testing/e2e-scenarios.md` |
 | `docs/research/` | Reference research, the plan of record, and per-feature decision records |
@@ -244,7 +244,7 @@ See [docs/diagrams](docs/diagrams/README.md).
 
 ## Reference server
 
-`cmd/mdmserver` runs one of three roles. `mdm` serves devices (`/mdm`, `/scep`, the
+`cmd/dmserver` runs one of three roles. `mdm` serves devices (`/mdm`, `/scep`, the
 enrollment routes) and forwards DDM check-ins to a `ddm` role when `DM_DDM_URL` is set; `ddm`
 runs the engine and the admin API; `all` runs everything in one process. Configuration is by
 environment:
@@ -252,8 +252,8 @@ environment:
 | Variables | Purpose |
 |---|---|
 | `DM_ROLE`, `DM_LISTEN`, `DM_STORAGE`, `DM_DSN` | Role, listen address, backend (`sqlite`, `postgres`, `mysql`, `inmem`), and DSN |
-| `DM_ADMIN_STORE` | Open the admin principal and Cedar policy store on this process's database, so `mdmctl principals` and `mdmctl policies` work. Off by default: it mounts the admin API |
-| `DM_ADMIN_TOKEN` | Break-glass bearer token for `/admin/v1/`. Authenticates as root and **bypasses policy**, has no expiry, and cannot be revoked without a restart. It exists because an empty principal store authenticates nobody: set it to create the first principals, then unset it and restart. Its use is audited under the actor `break-glass`, and `mdmctl status` reports whether it is still accepted |
+| `DM_ADMIN_STORE` | Open the admin principal and Cedar policy store on this process's database, so `dmctl principals` and `dmctl policies` work. Off by default: it mounts the admin API |
+| `DM_ADMIN_TOKEN` | Break-glass bearer token for `/admin/v1/`. Authenticates as root and **bypasses policy**, has no expiry, and cannot be revoked without a restart. It exists because an empty principal store authenticates nobody: set it to create the first principals, then unset it and restart. Its use is audited under the actor `break-glass`, and `dmctl status` reports whether it is still accepted |
 | `DM_STORAGE_KEYS`, `DM_STORAGE_KEY_<NAME>`, `DM_SECRETS_DIR`, `DM_STORAGE_KEYS_STRICT` | Keys sealing the secret columns of a persistent store: unlock and bootstrap tokens, APNs push keys, user auth tokens. `DM_STORAGE_KEYS` lists key names active-first, and the material comes from `DM_STORAGE_KEY_<NAME>` or from files in `DM_SECRETS_DIR`. A rotation prepends a name and runs `Rewrap`; `DM_STORAGE_KEYS_STRICT` then refuses any row still in clear. A persistent backend will not start without this |
 | `DM_ALLOW_REENROLL` | Accept an `Authenticate` whose certificate differs from the enrollment's pin, replacing it. Off by default: a certificate carries no binding to an enrollment id, so allowing this makes every certificate the CA issues a key to every enrollment. Turn it on only where devices re-enrol themselves after a wipe |
 | `DM_DDM_URL`, `DM_DDM_SEND_KEY`, `DM_DDM_RECV_KEY`, `DM_DDM_SUBSCRIPTIONS` | The split-deployment hop and synthesised status subscriptions. Both keys are required on either side: the hop carries a check-in verbatim and the receiving role trusts the enrollment id in that body |
@@ -267,16 +267,16 @@ environment:
 | `DM_OIDC_ISSUER`, `DM_OIDC_CLIENT_ID`, `DM_OIDC_CLIENT_SECRET` | The identity provider behind the ADE web view and account-driven pages |
 | `DM_ADE_ANCHOR_FILE`, `DM_ADE_AUDIT`, `DM_REQUIRE_USER_AUTH` | Extra `MachineInfo` signing anchors, audit-only signature policy, and the user authentication gate |
 | `DM_AXM_CLIENT_ID`, `DM_AXM_KEY_ID`, `DM_AXM_KEY_FILE`, `DM_AXM_SCOPE`, `DM_AXM_BASE_URL`, `DM_AXM_TOKEN_URL` | Apple Business Manager API credentials; enables `/admin/v1/axm/` |
-| `DM_AUDIT_STORE`, `DM_AUDIT_RETENTION` | Persist every event to the persistent audit trail on this process's database, and how long to keep records (unset keeps them forever). Read it at `GET /admin/v1/audit` or with `mdmctl audit list --since 1h` |
+| `DM_AUDIT_STORE`, `DM_AUDIT_RETENTION` | Persist every event to the persistent audit trail on this process's database, and how long to keep records (unset keeps them forever). Read it at `GET /admin/v1/audit` or with `dmctl audit list --since 1h` |
 | `DM_AUDIT_LOG`, `DM_WEBHOOK_URL`, `DM_WEBHOOK_HMAC_KEY` | Event sinks: a projected slog record per state change, and a MicroMDM-compatible webhook with an optional SHA-256 body signature. Both off by default. The webhook envelope matches MicroMDM and NanoMDM except that it carries no `raw_payload`, because theirs is the raw check-in body and a `TokenUpdate` body contains the device unlock token |
 | `DM_DEP_BASE_URL`, `DM_DEP_SYNC_INTERVAL`, `DM_DEP_ASSIGN_INTERVAL`, `DM_DEP_PROFILE_URL`, `DM_DEP_USE_PUT` | Device enrollment service endpoint, the background sync worker, and the DEP profile url (defaults to this server) |
 | `DM_PUSH_SOURCE`, `DM_PUSH_CERT_FILE`, `DM_PUSH_KEY_FILE`, `DM_PUSH_HOST`, `DM_PUSH_COALESCE`, `DM_PUSH_CERT_TTL` | Where APNs credentials come from and how pushes are shaped: `off`, `file` (the PEM pair, which a certificate path alone implies) or `store` (the push certificate store). The topic is read from the certificate rather than typed, so it has no variable of its own; `DM_PUSH_HOST` overrides the APNs endpoint for a lab, `DM_PUSH_COALESCE` is the window repeated pushes collapse into (negative disables it), and `DM_PUSH_CERT_TTL` how long a store-backed certificate is cached before its version is rechecked |
 
-`cmd/mdmctl` drives every one of those routes. Typed verbs cover the surfaces this project models
+`cmd/dmctl` drives every one of those routes. Typed verbs cover the surfaces this project models
 -- `enrollments`, `commands`, `push`, `pushcerts`, `export`/`import`, `declarations`, `sets`,
 `notify`, `principals`, `policies`, `audit`, plus `status`, `routes` and `actions` -- and
-`mdmctl api <METHOD> <path>` reaches the rest, including the Business Manager, DEP and ACME
-families that proxy Apple-shaped APIs. `mdmctl explain` answers offline from the compiled-in
+`dmctl api <METHOD> <path>` reaches the rest, including the Business Manager, DEP and ACME
+families that proxy Apple-shaped APIs. `dmctl explain` answers offline from the compiled-in
 schema. E2E-024 walks the server's own route table and fails if any route cannot be driven.
 
 The admin API manages declarations, sets, and assignments (`/admin/v1/declarations`, `/sets`,

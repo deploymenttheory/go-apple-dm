@@ -27,7 +27,7 @@ and PNG, SVG and WebM export from the viewer itself.
 | [acme-internals](https://htmlpreview.github.io/?https://raw.githubusercontent.com/deploymenttheory/go-apple-dm/main/docs/diagrams/acme-internals.html) | `jose`, identifiers, orders, attestation, policy, and the RFC 7807 problem every refusal becomes |
 | [push](https://htmlpreview.github.io/?https://raw.githubusercontent.com/deploymenttheory/go-apple-dm/main/docs/diagrams/push.html) | `push.Notifier` through coalescing to APNs, and where the push certificate comes from |
 | [apple-service-clients](https://htmlpreview.github.io/?https://raw.githubusercontent.com/deploymenttheory/go-apple-dm/main/docs/diagrams/apple-service-clients.html) | The DEP, Business Manager and software-lookup clients, and their three auth schemes |
-| [admin-plane](https://htmlpreview.github.io/?https://raw.githubusercontent.com/deploymenttheory/go-apple-dm/main/docs/diagrams/admin-plane.html) | `mdmctl` to the admin API to Cedar, and how credentials are referenced |
+| [admin-plane](https://htmlpreview.github.io/?https://raw.githubusercontent.com/deploymenttheory/go-apple-dm/main/docs/diagrams/admin-plane.html) | `dmctl` to the admin API to Cedar, and how credentials are referenced |
 | [split-deployment](https://htmlpreview.github.io/?https://raw.githubusercontent.com/deploymenttheory/go-apple-dm/main/docs/diagrams/split-deployment.html) | The `mdm` and `ddm` roles either side of an HMAC-signed hop |
 
 ## Flows

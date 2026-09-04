@@ -32,7 +32,7 @@
 //
 // # References
 //
-//   - Decision record 0031: docs/research/decisions/0031-acme-server-and-attestation.md
+//   - Decision record 0031: docs/research/decisions/0031-acme-server-and-state-store.md
 //   - Plan of record: docs/research/implementation_plan.md (phase 7)
 //   - RFC 8555 (ACME), section 6.2: https://www.rfc-editor.org/rfc/rfc8555#section-6.2
 //   - RFC 7515 (JSON Web Signature): https://www.rfc-editor.org/rfc/rfc7515

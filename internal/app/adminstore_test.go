@@ -18,7 +18,7 @@ import (
 )
 
 // The debt this closes: adminauth/sqlstore was imported only by its own
-// tests. cmd/mdmserver never set AdminStore, so principals, Cedar policies
+// tests. cmd/dmserver never set AdminStore, so principals, Cedar policies
 // and revocable tokens were unreachable from the shipped binary and every
 // phase 8 claim rested on a store an in-process caller injected.
 //

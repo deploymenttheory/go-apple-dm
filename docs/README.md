@@ -6,4 +6,3 @@
 - [diagrams/](diagrams/README.md): interactive architecture, flow and lifecycle diagrams.
 - [security/threat-model.md](security/threat-model.md): STRIDE threat model.
 - [testing/e2e-scenarios.md](testing/e2e-scenarios.md): named end-to-end scenarios.
-- [markdown-syntax-guide.md](markdown-syntax-guide.md): style reference for these documents.

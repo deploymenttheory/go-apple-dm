@@ -17,7 +17,7 @@ type Action struct {
 	// ID is the Cedar action id, `MDM::Action::"<ID>"`.
 	ID string
 	// Help is operator-facing prose naming the consequence, shown by
-	// `mdmctl policy actions`. Zentral writes the same for its secret-reveal
+	// `dmctl policy actions`. Zentral writes the same for its secret-reveal
 	// actions, and it is the difference between an operator granting an
 	// action knowingly and granting it by name.
 	Help string

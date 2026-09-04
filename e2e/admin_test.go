@@ -20,7 +20,7 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/audit"
 	auditinmem "github.com/deploymenttheory/go-apple-dm/audit/inmem"
 	"github.com/deploymenttheory/go-apple-dm/internal/app"
-	"github.com/deploymenttheory/go-apple-dm/internal/mdmctl"
+	"github.com/deploymenttheory/go-apple-dm/internal/dmctl"
 	"github.com/deploymenttheory/go-apple-dm/mdm"
 	"github.com/deploymenttheory/go-apple-dm/push"
 	"github.com/deploymenttheory/go-apple-dm/secrets"
@@ -29,7 +29,7 @@ import (
 )
 
 // adminHarness is the reference server with a real principal store on its own
-// database, driven the way an operator drives it: through mdmctl.
+// database, driven the way an operator drives it: through dmctl.
 type adminHarness struct {
 	app     *app.App
 	url     string
@@ -94,20 +94,20 @@ func newAdminHarness(t *testing.T) *adminHarness {
 	return &adminHarness{app: a, url: srv.URL, store: st, manager: m, trail: trail, woken: pusher}
 }
 
-// ctl runs mdmctl against the harness as the given token, the way an operator
+// ctl runs dmctl against the harness as the given token, the way an operator
 // would.
 func (h *adminHarness) ctl(t *testing.T, token, stdin string, args ...string) (string, error) {
 	t.Helper()
 	env := map[string]string{
-		"MDMCTL_CONFIG": filepath.Join(t.TempDir(), "absent.json"),
-		"MDMCTL_SERVER": h.url,
-		"MDMCTL_TOKEN":  token,
+		"DMCTL_CONFIG": filepath.Join(t.TempDir(), "absent.json"),
+		"DMCTL_SERVER": h.url,
+		"DMCTL_TOKEN":  token,
 	}
 	var out, errOut strings.Builder
-	err := mdmctl.Run(context.Background(), args,
+	err := dmctl.Run(context.Background(), args,
 		func(k string) string { return env[k] }, strings.NewReader(stdin), &out, &errOut)
 	if err != nil {
-		return out.String(), fmt.Errorf("mdmctl %v: %w (stderr: %s)", args, err, errOut.String())
+		return out.String(), fmt.Errorf("dmctl %v: %w (stderr: %s)", args, err, errOut.String())
 	}
 	return out.String(), nil
 }
@@ -121,7 +121,7 @@ func (h *adminHarness) mint(t *testing.T, p adminauth.Principal) string {
 	return string(tok)
 }
 
-// E2E-024: mdmctl drives every admin route the server serves, a read-only
+// E2E-024: dmctl drives every admin route the server serves, a read-only
 // principal is refused and the refusal is audited, a rotated token is
 // rejected, and the server wakes a device.
 //
@@ -203,7 +203,7 @@ func TestE2E_AdminCLI(t *testing.T) {
 			// The walk runs as break-glass so that revoking or deleting the
 			// scratch principal cannot invalidate the walker's credential.
 			_, err := h.ctl(t, "break-glass", "{}", "api", method, path)
-			if err != nil && errors.Is(err, mdmctl.ErrUsage) {
+			if err != nil && errors.Is(err, dmctl.ErrUsage) {
 				t.Errorf("%s %s cannot be expressed by the CLI: %v", method, rt.Pattern, err)
 			}
 			if err != nil && strings.Contains(err.Error(), "connection refused") {
@@ -244,7 +244,7 @@ func TestE2E_AdminCLI(t *testing.T) {
 		}
 	})
 
-	// The reference server wakes a device: mdmctl asks, APNs is told.
+	// The reference server wakes a device: dmctl asks, APNs is told.
 	t.Run("WakesADevice", func(t *testing.T) {
 		before := len(h.woken.woke)
 		if _, err := h.ctl(t, root, "", "push", "device", "UDID-E2E"); err != nil {

@@ -13,7 +13,7 @@
 // packages register their tables in init; callers query them through
 // Lookup or, indirectly, through the generated Validate methods when given
 // a Target. Phase 1 of the plan of record delivers the tables with the
-// schema packages, and phase 8's mdmctl explain reads them.
+// schema packages, and phase 8's dmctl explain reads them.
 //
 // The package holds the query logic and the types; the tables themselves
 // are generated and never hand-edited.

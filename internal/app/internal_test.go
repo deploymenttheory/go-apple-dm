@@ -74,7 +74,7 @@ func TestBuildAdminMuxRefusesUnguardedRoutes(t *testing.T) {
 }
 
 // Every action the route table names is in the registry, and every registered
-// action carries operator-facing prose, so `mdmctl policy actions` can say
+// action carries operator-facing prose, so `dmctl policy actions` can say
 // what granting one means.
 func TestAdminActionsAreComplete(t *testing.T) {
 	reg := mustAdminRegistry()

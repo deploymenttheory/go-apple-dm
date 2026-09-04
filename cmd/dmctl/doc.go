@@ -1,4 +1,4 @@
-// Command mdmctl administers a go-apple-dm reference server: declarations,
+// Command dmctl administers a go-apple-dm reference server: declarations,
 // admin credentials, the policies that bound them, and an offline explain
 // over Apple's schema metadata.
 //
@@ -9,14 +9,14 @@
 // to a supervised Mac on 15.0" without curl and without a browser tab.
 //
 // This file and main.go are the whole binary: argv in, one call out. Every
-// other line lives in internal/mdmctl, which is gated at 95% like the rest of
+// other line lives in internal/dmctl, which is gated at 95% like the rest of
 // the module. That is forced rather than stylistic: the coverage gate counts
 // statements from exempt packages toward the repository total, so a fat main
 // would fail the gate even though cmd/ is exempt per package.
 //
 // # Usage
 //
-//	mdmctl [flags] <command> [flags] [arguments]
+//	dmctl [flags] <command> [flags] [arguments]
 //
 //	explain <id> [-target macos:15.0,supervised]  describe a schema type, offline
 //	status                                        the server's role, families, version
@@ -27,9 +27,12 @@
 //	declarations get|put|delete
 //	version
 //
-//	-server URL      the server (MDMCTL_SERVER)
-//	-token SPEC      a token, @file, or env:NAME (MDMCTL_TOKEN)
-//	-output MODE     human, json, or ndjson
+//	-server URL      the server (DMCTL_SERVER)
+//	-token SPEC      a token, @file, or env:NAME (DMCTL_TOKEN)
+//	-context NAME    a context from the config file (DMCTL_CONTEXT)
+//	-config PATH     the config file (DMCTL_CONFIG), default
+//	                 $XDG_CONFIG_HOME/go-apple-dm/dmctl.json
+//	-output MODE     human, json, or ndjson (DMCTL_OUTPUT)
 //	-all             follow cursors to the end of a listing
 //
 // explain needs no server. Global flags are accepted before or after the
