@@ -138,7 +138,7 @@ Failing paths: `explain.TestParseTarget/BadOS`, `/BadVersion`, `/UnknownWord`,
   `internal/schemagen` would drift from the generator, and the submodule may not be checked out.
   The schema path is cited so the reader can look.
 - Teaching the generator to emit descriptions: worth doing, but it changes every generated package
-  and `NAMES.lock`, so it belongs with a generator change rather than a CLI one.
+  and `EXPORTED_IDENTIFIERS.lock`, so it belongs with a generator change rather than a CLI one.
 - Printing `OK` when there is no support data: it would make the command confidently wrong exactly
   where Apple is silent, which is the failure mode that makes support tables untrustworthy.
 - Picking the first match for an ambiguous id: six real payload types share `com.apple.MCX`, and

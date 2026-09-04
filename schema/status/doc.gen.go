@@ -18,8 +18,9 @@
 //
 // Nothing here is hand-edited: admgen regenerates the package and admgen
 // verify fails when regeneration would change it or drop an exported name
-// (schema/NAMES.lock). Protocol semantics that Apple documents only in prose
-// live in the hand-written packages that import this one.
+// (schema/EXPORTED_IDENTIFIERS.lock). Protocol semantics that Apple
+// documents only in prose live in the hand-written packages that import this
+// one.
 //
 // # References
 //

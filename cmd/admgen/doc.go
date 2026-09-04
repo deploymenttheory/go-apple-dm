@@ -11,7 +11,7 @@
 //
 //	admgen generate   regenerate schema/ from third_party/device-management
 //	admgen verify     fail if regeneration would change anything or drop a name
-//	admgen names      print the exported identifiers that would be generated
+//	admgen identifiers  print the exported identifiers that would be generated
 //
 // The -schema and -out flags override the checkout and output directories.
 // The Makefile runs it as `make verify` (go run ./cmd/admgen verify) after
@@ -28,5 +28,5 @@
 //   - Apple: https://github.com/apple/device-management/blob/release/docs/schema.md
 //   - Apple: https://github.com/apple/device-management
 //   - Schema: third_party/device-management/docs/schema.yaml (meta-schema)
-//   - GeneratedFrom: schema/GENERATED_FROM.json, schema/NAMES.lock, schema/RENAMES.md
+//   - GeneratedFrom: schema/GENERATED_FROM.json, schema/EXPORTED_IDENTIFIERS.lock, schema/ALLOWED_REMOVALS.md
 package main

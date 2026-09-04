@@ -25,7 +25,7 @@ func run(args []string, out *os.File) error {
 		return err
 	}
 	if fs.NArg() != 1 {
-		return fmt.Errorf("usage: admgen [-schema dir] [-out dir] generate|verify|names")
+		return fmt.Errorf("usage: admgen [-schema dir] [-out dir] generate|verify|identifiers")
 	}
 	opts := schemagen.Options{Commit: commitOf(*schemaRoot, *outDir)}
 	switch fs.Arg(0) {
@@ -45,12 +45,12 @@ func run(args []string, out *os.File) error {
 		}
 		fmt.Fprintln(out, "verify: ok")
 		return nil
-	case "names":
+	case "identifiers":
 		files, err := schemagen.Run(*schemaRoot, opts)
 		if err != nil {
 			return err
 		}
-		_, err = out.Write(files["NAMES.lock"])
+		_, err = out.Write(files["EXPORTED_IDENTIFIERS.lock"])
 		return err
 	}
 	return fmt.Errorf("unknown command %q", fs.Arg(0))

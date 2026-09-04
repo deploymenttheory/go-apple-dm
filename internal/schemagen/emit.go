@@ -37,7 +37,7 @@ func Generate(pkgs []*Package, opts Options) (Files, error) {
 		names = append(names, e.exportedNames()...)
 	}
 	sort.Strings(names)
-	files["NAMES.lock"] = []byte(strings.Join(names, "\n") + "\n")
+	files["EXPORTED_IDENTIFIERS.lock"] = []byte(strings.Join(names, "\n") + "\n")
 	return files, nil
 }
 
@@ -132,7 +132,7 @@ func (e *emitter) docFile() []byte {
 	sb.WriteString("//\n")
 	sb.WriteString(wrap("// ",
 		"Nothing here is hand-edited: admgen regenerates the package and admgen verify fails when "+
-			"regeneration would change it or drop an exported name (schema/NAMES.lock). Protocol semantics "+
+			"regeneration would change it or drop an exported name (schema/EXPORTED_IDENTIFIERS.lock). Protocol semantics "+
 			"that Apple documents only in prose live in the hand-written packages that import this one.",
 		width))
 	sb.WriteString("//\n// # References\n//\n")
@@ -223,7 +223,7 @@ func topName(td *TypeDef) string {
 }
 
 // exportedNames lists every exported identifier the package emits, for
-// NAMES.lock.
+// EXPORTED_IDENTIFIERS.lock.
 func (e *emitter) exportedNames() []string {
 	var out []string
 	add := func(s string) { out = append(out, e.pkg.Name+"/"+s) }

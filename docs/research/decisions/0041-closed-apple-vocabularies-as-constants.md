@@ -114,8 +114,8 @@ Phase: 9
    `schema/status` (16), against fleet's 2 hand-written ones. `make verify` fails if regeneration
    would change a byte, so a schema refresh that adds a code adds a constant in the same commit.
 2. **A removed code is a deliberate decision, not a silent one.** Every constant enters
-   `schema/NAMES.lock` (46 new names), so a code Apple withdraws fails `admgen verify` until it is
-   listed in `RENAMES.md`. No reference has any guard here because no reference has the names.
+   `schema/EXPORTED_IDENTIFIERS.lock` (46 new names), so a code Apple withdraws fails `admgen verify` until it is
+   listed in `ALLOWED_REMOVALS.md`. No reference has any guard here because no reference has the names.
 3. **The scoping follows Apple rather than convenience.** `statusreason.yaml` states that "each
    status item defines its own set of `code`, `description`, and `details` values", so `Reasons` is
    `map[string][]ReasonEntry` and every entry carries the schema that declares it. Both meanings of
@@ -140,9 +140,9 @@ Phase: 9
 ## Verified by
 
 1. `schemagen.TestGenerateWholeTree` (asserts `ddm/reasons.gen.go` and `status/reasons.gen.go` are
-   produced, that `commands` gets none, and that the reason constants are in `NAMES.lock`) and
+   produced, that `commands` gets none, and that the reason constants are in `EXPORTED_IDENTIFIERS.lock`) and
    `admgen verify` (proves claim 1; would fail on any hand-maintained list, which is what fleet has).
-2. `schemagen.TestGenerateWholeTree`'s `NAMES.lock` assertions plus `mergeLock`'s existing stale
+2. `schemagen.TestGenerateWholeTree`'s `EXPORTED_IDENTIFIERS.lock` assertions plus `mergeLock`'s existing stale
    check (prove claim 2).
 3. `schemagen.TestGenerateReasonsScopedToSchema` (two synthetic status items declaring one shared
    code with different prose; asserts both declarations survive with their schema paths, and that

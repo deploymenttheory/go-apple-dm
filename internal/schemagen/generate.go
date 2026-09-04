@@ -66,11 +66,11 @@ func Write(outDir string, files Files) error {
 	}
 	defer root.Close()
 	written := map[string]bool{}
-	if generated, ok := files["NAMES.lock"]; ok {
-		existing, _ := root.ReadFile("NAMES.lock")
-		merged, _ := mergeLock(existing, generated, renames(outDir))
+	if generated, ok := files["EXPORTED_IDENTIFIERS.lock"]; ok {
+		existing, _ := root.ReadFile("EXPORTED_IDENTIFIERS.lock")
+		merged, _ := mergeLock(existing, generated, allowedRemovals(outDir))
 		files = cloneFiles(files)
-		files["NAMES.lock"] = merged
+		files["EXPORTED_IDENTIFIERS.lock"] = merged
 	}
 	for rel, data := range files {
 		rel = filepath.FromSlash(rel)
@@ -126,8 +126,8 @@ func cloneFiles(f Files) Files {
 	return out
 }
 
-// mergeLock computes the NAMES.lock content: every name ever generated
-// stays in the lock until RENAMES.md allows its removal. It returns the
+// mergeLock computes the EXPORTED_IDENTIFIERS.lock content: every name ever generated
+// stays in the lock until ALLOWED_REMOVALS.md allows its removal. It returns the
 // merged lock and the names that are neither generated any more nor allowed
 // to go, which is the rename-guard violation list.
 func mergeLock(
@@ -164,8 +164,8 @@ func mergeLock(
 }
 
 // Verify regenerates in memory and compares with outDir: every generated
-// file must be byte-identical, and every name in NAMES.lock must still be
-// generated unless listed in RENAMES.md.
+// file must be byte-identical, and every name in EXPORTED_IDENTIFIERS.lock must still be
+// generated unless listed in ALLOWED_REMOVALS.md.
 func Verify(schemaRoot, outDir string, opts Options) error {
 	files, err := Run(schemaRoot, opts)
 	if err != nil {
@@ -177,16 +177,16 @@ func Verify(schemaRoot, outDir string, opts Options) error {
 	}
 	defer root.Close()
 	var problems []string
-	onDisk, _ := root.ReadFile("NAMES.lock")
-	merged, stale := mergeLock(onDisk, files["NAMES.lock"], renames(outDir))
+	onDisk, _ := root.ReadFile("EXPORTED_IDENTIFIERS.lock")
+	merged, stale := mergeLock(onDisk, files["EXPORTED_IDENTIFIERS.lock"], allowedRemovals(outDir))
 	for _, n := range stale {
 		problems = append(
 			problems,
-			"NAMES.lock: "+n+" is no longer generated; add it to RENAMES.md to allow its removal",
+			"EXPORTED_IDENTIFIERS.lock: "+n+" is no longer generated; add it to ALLOWED_REMOVALS.md to allow its removal",
 		)
 	}
 	files = cloneFiles(files)
-	files["NAMES.lock"] = merged
+	files["EXPORTED_IDENTIFIERS.lock"] = merged
 	for rel, want := range files {
 		got, err := root.ReadFile(filepath.FromSlash(rel))
 		if err != nil {
@@ -204,11 +204,11 @@ func Verify(schemaRoot, outDir string, opts Options) error {
 	return nil
 }
 
-// renames reads RENAMES.md and returns the identifiers allowed to disappear:
+// renames reads ALLOWED_REMOVALS.md and returns the identifiers allowed to disappear:
 // every line of the form "- `package/Name`" (with optional explanation).
-func renames(outDir string) map[string]bool {
+func allowedRemovals(outDir string) map[string]bool {
 	out := map[string]bool{}
-	data, err := os.ReadFile(filepath.Join(filepath.Clean(outDir), "RENAMES.md"))
+	data, err := os.ReadFile(filepath.Join(filepath.Clean(outDir), "ALLOWED_REMOVALS.md"))
 	if err != nil {
 		return out
 	}
