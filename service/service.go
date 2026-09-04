@@ -9,6 +9,7 @@ import (
 	"slices"
 
 	"github.com/deploymenttheory/go-apple-dm/event"
+	"github.com/deploymenttheory/go-apple-dm/hook"
 	"github.com/deploymenttheory/go-apple-dm/internal/clock"
 	"github.com/deploymenttheory/go-apple-dm/mdm"
 	"github.com/deploymenttheory/go-apple-dm/paging"
@@ -131,24 +132,14 @@ func DenyCertReuse(context.Context, *mdm.Request, []storage.CertAssociation) err
 // enrollment currently pins still fails with ErrCertMismatch.
 func AllowCertReuse(context.Context, *mdm.Request, []storage.CertAssociation) error { return nil }
 
-// Call describes one service operation for hooks.
-type Call struct {
-	// Op is "checkin:<MessageType>", "connect", "enqueue", "export", or
-	// "import".
-	Op       string
-	Request  *mdm.Request
-	Checkin  *mdm.Checkin
-	Response *mdm.Response
-	Command  *mdm.Command
-}
+// Call describes one service operation for hooks. It is an alias of
+// hook.Call so a hook can be written without importing this package.
+type Call = hook.Call
 
 // Hook observes and may veto operations. Before runs before storage is
 // touched; an error aborts the operation with CodeForbidden. After runs
-// with the operation's result.
-type Hook interface {
-	Before(ctx context.Context, c *Call) (context.Context, error)
-	After(ctx context.Context, c *Call, err error)
-}
+// with the operation's result. It is an alias of hook.Hook.
+type Hook = hook.Hook
 
 // Config builds a Core.
 type Config struct {

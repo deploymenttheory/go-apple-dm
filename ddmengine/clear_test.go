@@ -1,4 +1,4 @@
-package ddm_test
+package ddmengine_test
 
 import (
 	"bytes"
@@ -7,6 +7,8 @@ import (
 	"log/slog"
 	"strings"
 	"testing"
+
+	"github.com/deploymenttheory/go-apple-dm/ddmengine"
 
 	"github.com/deploymenttheory/go-apple-dm/ddm"
 	"github.com/deploymenttheory/go-apple-dm/ddm/ddmtest"
@@ -168,13 +170,13 @@ func TestServiceHook(t *testing.T) {
 	call := func(op string, id mdm.EnrollmentID) *service.Call {
 		return &service.Call{Op: op, Request: &mdm.Request{ID: id}}
 	}
-	setup := func(t *testing.T, store storage.EnrollmentStore) (*harness, *ddm.ServiceHook) {
+	setup := func(t *testing.T, store storage.EnrollmentStore) (*harness, *ddmengine.ServiceHook) {
 		t.Helper()
 		h := clearHarness(t)
 		for _, id := range all {
 			seed(t, h, id)
 		}
-		return h, ddm.NewServiceHook(h.engine, store, nil)
+		return h, ddmengine.NewServiceHook(h.engine, store, nil)
 	}
 	expect := func(t *testing.T, h *harness, want map[mdm.EnrollmentID]string) {
 		t.Helper()
@@ -235,7 +237,7 @@ func TestServiceHook(t *testing.T) {
 			seed(t, h, id)
 		}
 		var logs bytes.Buffer
-		hook := ddm.NewServiceHook(h.engine, failing, slog.New(slog.NewTextHandler(&logs, nil)))
+		hook := ddmengine.NewServiceHook(h.engine, failing, slog.New(slog.NewTextHandler(&logs, nil)))
 		hook.After(ctx, call("checkin:CheckOut", dev), nil)
 		// The device is still cleared; its user channels could not be found.
 		expect(t, h, map[mdm.EnrollmentID]string{dev: cleared, u1: seeded, u2: seeded, other: seeded})
@@ -243,7 +245,7 @@ func TestServiceHook(t *testing.T) {
 			t.Fatalf("log %q", got)
 		}
 		// With no logger the engine's own is used.
-		quiet := ddm.NewServiceHook(h.engine, failing, nil)
+		quiet := ddmengine.NewServiceHook(h.engine, failing, nil)
 		quiet.After(ctx, call("checkin:CheckOut", other), nil)
 		if got := h.logs.String(); !strings.Contains(got, "list user channels") {
 			t.Fatalf("engine log %q", got)
@@ -254,7 +256,7 @@ func TestServiceHook(t *testing.T) {
 		failing := &ddmtest.Failing{Store: ddminmem.New(), Fail: map[string]error{}}
 		h := newHarness(t, func(c *ddm.Config) { c.Store = failing })
 		failing.Fail["ClearEnrollment"] = errBoom
-		hook := ddm.NewServiceHook(h.engine, nil, nil)
+		hook := ddmengine.NewServiceHook(h.engine, nil, nil)
 		hook.After(ctx, call("checkin:CheckOut", dev), nil)
 		if got := h.logs.String(); !strings.Contains(got, "clear enrollment") || !strings.Contains(got, "boom") {
 			t.Fatalf("log %q", got)
@@ -284,7 +286,7 @@ func TestServiceHook(t *testing.T) {
 				t.Fatal(err)
 			}
 		}
-		ddm.NewServiceHook(h.engine, st, nil).After(ctx, call("checkin:CheckOut", ddmtest.Device(3)), nil)
+		ddmengine.NewServiceHook(h.engine, st, nil).After(ctx, call("checkin:CheckOut", ddmtest.Device(3)), nil)
 		for _, id := range append(users, ddmtest.Device(3)) {
 			if sets, err := h.engine.EnrollmentSets(ctx, id); err != nil || len(sets) != 0 {
 				t.Fatalf("%s not cleared: %v %v", id.ID, sets, err)

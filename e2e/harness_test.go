@@ -28,6 +28,7 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/push"
 	"github.com/deploymenttheory/go-apple-dm/push/apns"
 	"github.com/deploymenttheory/go-apple-dm/push/pushtest"
+	"github.com/deploymenttheory/go-apple-dm/pushnotify"
 	"github.com/deploymenttheory/go-apple-dm/scep"
 	"github.com/deploymenttheory/go-apple-dm/service"
 	"github.com/deploymenttheory/go-apple-dm/simulator"
@@ -58,7 +59,7 @@ type harness struct {
 	scepSigner *ca.Local
 	challenges *scep.OneTimeChallenges
 	apns       *pushtest.Server
-	notifier   *push.Notifier
+	notifier   *pushnotify.Notifier
 
 	mu     sync.Mutex
 	events []event.Event
@@ -143,7 +144,7 @@ func newHarnessMounted(t *testing.T, cfg service.Config, store storage.Store, bu
 	}
 	certs := push.StaticCertStore{pushTopic: tls.Certificate{Certificate: [][]byte{pushID.Cert.Raw}, PrivateKey: pushID.Key, Leaf: pushID.Cert}}
 	client := apns.New(certs, apns.WithHost(h.apns.URL), apns.WithTransport(func(tls.Certificate) *http.Client { return h.apns.Client() }))
-	h.notifier = &push.Notifier{Store: h.store, Pusher: client, Bus: bus, Clock: h.clock}
+	h.notifier = &pushnotify.Notifier{Store: h.store, Pusher: client, Bus: bus, Clock: h.clock}
 	return h
 }
 

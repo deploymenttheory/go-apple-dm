@@ -14,6 +14,7 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/ddm/adapter/inproc"
 	ddminmem "github.com/deploymenttheory/go-apple-dm/ddm/inmem"
 	"github.com/deploymenttheory/go-apple-dm/ddm/sqlstore"
+	"github.com/deploymenttheory/go-apple-dm/ddmengine"
 	"github.com/deploymenttheory/go-apple-dm/event"
 	"github.com/deploymenttheory/go-apple-dm/internal/clock"
 	"github.com/deploymenttheory/go-apple-dm/mdm"
@@ -30,14 +31,14 @@ import (
 
 // ddmHarness is a harness with the DDM engine wired in-process: the
 // engine's store shares the e2e database, inproc.Handler answers
-// DeclarativeManagement check-ins, ddm.ServiceHook clears state on
+// DeclarativeManagement check-ins, ddmengine.ServiceHook clears state on
 // CheckOut and Authenticate, and the notifier enqueues through the core
 // and pushes through the fake APNs.
 type ddmHarness struct {
 	*harness
 	engine   *ddm.Engine
 	ddmStore ddm.Store
-	changes  *ddm.Notifier
+	changes  *ddmengine.Notifier
 }
 
 // newDDMStore opens the engine's store on the same database as the
@@ -85,12 +86,12 @@ func newDDMHarness(t *testing.T, subs bool) *ddmHarness {
 	d.engine = engine
 	cfg := service.Config{
 		DeclarativeManagement: inproc.Handler(engine),
-		Hooks:                 []service.Hook{ddm.NewServiceHook(engine, store, quiet)},
+		Hooks:                 []service.Hook{ddmengine.NewServiceHook(engine, store, quiet)},
 	}
 	d.harness = newHarnessWith(t, cfg, store, bus)
 	// The harness made its own fake clock; the engine must share it.
 	d.harness.clock = fake
-	d.changes, err = ddm.NewNotifier(ddm.NotifierConfig{
+	d.changes, err = ddmengine.NewNotifier(ddmengine.NotifierConfig{
 		Store: ds, Tokens: engine, Enqueuer: d.core, Pusher: d.notifier, Bus: bus, Clock: fake, Logger: quiet,
 	})
 	if err != nil {
@@ -100,9 +101,9 @@ func newDDMHarness(t *testing.T, subs bool) *ddmHarness {
 }
 
 // drain advances past the coalescing window and drains the notifier once.
-func (d *ddmHarness) drain() ddm.DrainResult {
+func (d *ddmHarness) drain() ddmengine.DrainResult {
 	d.t.Helper()
-	d.clock.Advance(ddm.DefaultNotifyWindow)
+	d.clock.Advance(ddmengine.DefaultNotifyWindow)
 	res, err := d.changes.DrainOnce(context.Background())
 	if err != nil {
 		d.t.Fatal(err)

@@ -8,6 +8,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/deploymenttheory/go-apple-dm/pushnotify"
+
 	"github.com/deploymenttheory/go-apple-dm/internal/clock"
 	"github.com/deploymenttheory/go-apple-dm/internal/testpki"
 	"github.com/deploymenttheory/go-apple-dm/push"
@@ -55,7 +57,7 @@ func TestPushWithStoreCertStore(t *testing.T) {
 		leaves = append(leaves, cert.Leaf)
 		return srv.Client()
 	}
-	certs := push.NewStoreCertStore(store, push.WithCertClock(fake), push.WithCertTTL(time.Minute))
+	certs := pushnotify.NewStoreCertStore(store, pushnotify.WithCertClock(fake), pushnotify.WithCertTTL(time.Minute))
 	c := apns.New(certs, apns.WithHost(srv.URL), apns.WithTransport(transport), apns.WithClock(fake))
 
 	res, err := c.Push(ctx, []push.Target{target("a", []byte{1})})

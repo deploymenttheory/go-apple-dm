@@ -18,6 +18,7 @@ import (
 	"time"
 
 	"github.com/deploymenttheory/go-apple-dm/ddm"
+	"github.com/deploymenttheory/go-apple-dm/ddmengine"
 	"github.com/deploymenttheory/go-apple-dm/internal/app"
 	"github.com/deploymenttheory/go-apple-dm/internal/clock"
 	"github.com/deploymenttheory/go-apple-dm/internal/testpki"
@@ -445,8 +446,8 @@ func TestAdminAPI(t *testing.T) {
 		}
 	})
 	t.Run("Notify", func(t *testing.T) {
-		fake.Advance(ddm.DefaultNotifyWindow)
-		var res ddm.DrainResult
+		fake.Advance(ddmengine.DefaultNotifyWindow)
+		var res ddmengine.DrainResult
 		decode(t, do(t, srv, "POST", "/admin/v1/notify", "secret", nil), http.StatusOK, &res)
 		// DEV-1 and U-1 are unknown to the enrollment store, so their changes are dropped.
 		if res.Skipped != 2 || res.Queued != 0 {

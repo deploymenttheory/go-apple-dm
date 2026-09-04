@@ -34,33 +34,33 @@ func load(t *testing.T) *layout.Graph {
 // who wants a declaration type should not acquire a database driver with it.
 var serverTier = []string{
 	"storage", "service", "httpapi", "eventsink", "internal/app", "internal/dmctl",
+	// Implementations split out of a client or protocol package because they
+	// need persistence or a keyring; decision record 0044 moves them under
+	// server/ and their interface stays with its consumer.
+	"axmstore", "ddmengine", "pushnotify",
 }
 
 // pureTier is every package proven not to reach serverTier. The list is a
 // ratchet: it may only grow. A package that appears here and later reaches the
 // server tier fails TestPureTierCannotReachServerTier.
 var pureTier = []string{
-	"acme", "acme/attest", "acme/jose", "adminauth", "audit", "ca", "cms",
-	"ddm/predicate", "dep", "enroll", "enroll/ade", "enroll/discovery",
+	"acme", "acme/attest", "acme/jose", "adminauth", "audit", "axm", "ca", "cms",
+	"ddm", "ddm/predicate", "dep", "enroll", "enroll/accountdriven", "enroll/ade",
+	"enroll/discovery", "hook",
 	"enroll/webauth", "event", "gdmf", "mdm", "paging", "plist", "profile",
-	"pushcert", "scep", "secrets", "simulator", "telemetry",
+	"push", "push/apns", "pushcert", "scep", "secrets", "simulator", "telemetry",
 }
 
-// knownServerTierReach records the packages that still reach the server tier
-// and must not. Each is a hybrid that bundles a protocol or client half with a
-// storage-backed half; decision record 0044 splits them, and every split
-// deletes an entry here. The test asserts the set exactly, so a fix that does
-// not shrink this list fails as loudly as a regression that grows it.
-var knownServerTierReach = map[string][]string{
-	"axm":                  {"storage/crypt"},
-	"ddm":                  {"service", "storage"},
-	"enroll/accountdriven": {"service", "storage"},
-	"push":                 {"storage"},
-	// apns implements push.Pusher and imports push for the interface, so it
-	// inherits push's storage dependency. The split moves apns to the Apple
-	// client tier and leaves the notifier server-side.
-	"push/apns": {"storage"},
-}
+// knownServerTierReach records packages that reach the server tier and must
+// not. It is empty: every hybrid decision record 0044 identified has been
+// split, and axm, ddm, enroll/accountdriven, push, and push/apns each left
+// this map as their split landed.
+//
+// It stays here rather than being deleted with its last entry, because the
+// test asserts the set exactly. An empty map is the assertion that no
+// package reaches the server tier except the ones that belong to it, and
+// adding an entry back is a deliberate act that needs a reason in 0044.
+var knownServerTierReach = map[string][]string{}
 
 // inServerTier reports whether pkg persists, serves, or assembles. Besides
 // the named units, a per-domain sqlstore or inmem package is a persistence

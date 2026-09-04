@@ -1,4 +1,4 @@
-package ddm
+package ddmengine
 
 import (
 	"context"
@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"log/slog"
 	"time"
+
+	"github.com/deploymenttheory/go-apple-dm/ddm"
 
 	"github.com/deploymenttheory/go-apple-dm/event"
 	"github.com/deploymenttheory/go-apple-dm/internal/clock"
@@ -39,12 +41,12 @@ type Enqueuer interface {
 	Enqueue(ctx context.Context, ids []mdm.EnrollmentID, cmd *mdm.Command, o storage.EnqueueOptions) (storage.EnqueueResult, error)
 }
 
-// Pusher sends APNs wake-ups; *push.Notifier satisfies it.
+// Pusher sends APNs wake-ups; *pushnotify.Notifier satisfies it.
 type Pusher interface {
 	Notify(ctx context.Context, ids []mdm.EnrollmentID) (map[mdm.EnrollmentID]push.Result, error)
 }
 
-// TokenSource renders an enrollment's TokensResponse; *Engine satisfies it.
+// TokenSource renders an enrollment's TokensResponse; *ddm.Engine satisfies it.
 type TokenSource interface {
 	Tokens(ctx context.Context, id mdm.EnrollmentID) ([]byte, error)
 }
@@ -52,7 +54,7 @@ type TokenSource interface {
 // NotifierConfig configures NewNotifier. Store, Tokens, and Enqueuer are
 // required; Pusher, Bus, and Logger are optional.
 type NotifierConfig struct {
-	Store    ChangeStore
+	Store    ddm.ChangeStore
 	Tokens   TokenSource
 	Enqueuer Enqueuer
 	Pusher   Pusher
@@ -92,7 +94,7 @@ type Notifier struct {
 }
 
 // ErrNotifierConfig reports a missing required dependency.
-var ErrNotifierConfig = errors.New("ddm: notifier needs Store, Tokens, and Enqueuer")
+var ErrNotifierConfig = errors.New("ddmengine: notifier needs Store, Tokens, and Enqueuer")
 
 // NewNotifier validates the configuration and applies defaults.
 func NewNotifier(cfg NotifierConfig) (*Notifier, error) {
@@ -125,7 +127,7 @@ func NewNotifier(cfg NotifierConfig) (*Notifier, error) {
 }
 
 // Kick wakes Run so the next drain happens now rather than at the next
-// poll. It never blocks; suitable for Engine Config.Wake.
+// poll. It never blocks; suitable for ddm.Engine Config.Wake.
 func (n *Notifier) Kick() {
 	select {
 	case n.kick <- struct{}{}:
@@ -189,7 +191,7 @@ func (r DrainResult) Empty() bool {
 type changeGroup struct {
 	id     mdm.EnrollmentID
 	seqs   []int64
-	rows   []Change
+	rows   []ddm.Change
 	newest time.Time
 	tries  int
 	push   bool
@@ -202,7 +204,7 @@ func (n *Notifier) DrainOnce(ctx context.Context) (DrainResult, error) {
 	now := n.cfg.Clock.Now()
 	rows, err := n.cfg.Store.PendingChanges(ctx, now, n.cfg.Batch)
 	if err != nil {
-		return res, fmt.Errorf("%w: pending: %w", ErrNotifier, err)
+		return res, fmt.Errorf("%w: pending: %w", ddm.ErrNotifier, err)
 	}
 	groups := groupChanges(rows)
 	var ready []*changeGroup
@@ -333,7 +335,7 @@ func (n *Notifier) fail(ctx context.Context, g *changeGroup, cause error, now ti
 	next := now.Add(n.cfg.Backoff(attempt))
 	n.cfg.Logger.WarnContext(ctx, "ddm: notify failed", "enrollment", g.id.ID, "attempt", attempt, "next", next, "error", cause)
 	if err := n.cfg.Store.FailChanges(ctx, g.seqs, cause.Error(), next); err != nil {
-		return fmt.Errorf("%w: fail: %w", ErrNotifier, err)
+		return fmt.Errorf("%w: fail: %w", ddm.ErrNotifier, err)
 	}
 	return nil
 }
@@ -347,7 +349,7 @@ func (n *Notifier) complete(ctx context.Context, groups []*changeGroup) error {
 		seqs = append(seqs, g.seqs...)
 	}
 	if err := n.cfg.Store.CompleteChanges(ctx, seqs); err != nil {
-		return fmt.Errorf("%w: complete: %w", ErrNotifier, err)
+		return fmt.Errorf("%w: complete: %w", ddm.ErrNotifier, err)
 	}
 	if n.cfg.Bus == nil {
 		return nil
@@ -362,7 +364,7 @@ func (n *Notifier) complete(ctx context.Context, groups []*changeGroup) error {
 }
 
 // groupChanges groups rows per enrollment in first-seen order.
-func groupChanges(rows []Change) []*changeGroup {
+func groupChanges(rows []ddm.Change) []*changeGroup {
 	index := map[mdm.EnrollmentID]*changeGroup{}
 	var out []*changeGroup
 	for _, c := range rows {

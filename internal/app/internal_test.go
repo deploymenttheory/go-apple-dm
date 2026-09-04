@@ -16,7 +16,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/deploymenttheory/go-apple-dm/ddm"
+	"github.com/deploymenttheory/go-apple-dm/ddmengine"
 	"github.com/deploymenttheory/go-apple-dm/internal/testpki"
 	"github.com/deploymenttheory/go-apple-dm/storage"
 	"github.com/deploymenttheory/go-apple-dm/storage/sqlite"
@@ -53,7 +53,7 @@ func TestRunSurfacesNonCancelErrors(t *testing.T) {
 	if a.Notifier == nil {
 		t.Fatal("notifier missing")
 	}
-	var _ ddm.TokenSource = a.Engine
+	var _ ddmengine.TokenSource = a.Engine
 }
 
 // buildAdminMux is what makes an action mandatory. Both refusals are
