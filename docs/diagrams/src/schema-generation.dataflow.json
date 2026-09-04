@@ -88,7 +88,7 @@
     {
       "id": "nameslock",
       "type": "database",
-      "label": "NAMES.lock",
+      "label": "EXPORTED_IDENTIFIERS.lock",
       "sublabel": "rename guard",
       "stage": 3,
       "row": 1,
@@ -160,7 +160,7 @@
       "dot": "rose",
       "title": "The rename guard",
       "items": [
-        "NAMES.lock records every exported name",
+        "EXPORTED_IDENTIFIERS.lock records every exported name",
         "A regeneration that would rename a type fails the build instead of breaking callers silently"
       ]
     }

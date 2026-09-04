@@ -14,7 +14,7 @@
 // modelled here fails, so Apple additions surface as explicit work rather
 // than silent data loss. Output is deterministic, and Verify fails when
 // regeneration would change a file or drop an exported name recorded in
-// schema/NAMES.lock unless schema/RENAMES.md allows it.
+// schema/EXPORTED_IDENTIFIERS.lock unless schema/ALLOWED_REMOVALS.md allows it.
 //
 // The generator emits data, not behaviour: struct tags, registries,
 // constraint checks, supportedOS tables, and round-trip tests. Protocol
@@ -31,5 +31,5 @@
 //   - Apple: https://github.com/apple/device-management
 //   - Schema: third_party/device-management/docs/schema.yaml (meta-schema)
 //   - Schema: third_party/device-management/mdm/**, declarative/**, other/**
-//   - GeneratedFrom: schema/GENERATED_FROM.json, schema/NAMES.lock, schema/RENAMES.md
+//   - GeneratedFrom: schema/GENERATED_FROM.json, schema/EXPORTED_IDENTIFIERS.lock, schema/ALLOWED_REMOVALS.md
 package schemagen

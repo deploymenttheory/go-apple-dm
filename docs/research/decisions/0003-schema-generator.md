@@ -33,7 +33,7 @@ Phase: 1
 
 1. Every family generated: commands with a response type for all 65, check-in, errors, profiles, declarations, DDM protocol, status items, and `other`.
 2. `supportedOS` is kept as data: a `schema/support` package answers introduced, deprecated, removed, channel, supervision, shared iPad, and user enrollment questions at runtime, and `Validate(version)` uses it.
-3. Naming contract with `schema/NAMES.lock` and `RENAMES.md`; `admgen verify` fails on silent removals.
+3. Naming contract with `schema/EXPORTED_IDENTIFIERS.lock` and `ALLOWED_REMOVALS.md`; `admgen verify` fails on silent removals.
 4. Nested dictionaries become named types; `subkeytype` shared shapes are emitted once per file.
 5. Generated conformance tests round-trip every type through XML plist, binary plist, and JSON with every documented key populated, and assert registry coverage of every YAML file.
 6. `gopkg.in/yaml.v3` node parsing with our own recursion; no forked YAML library.

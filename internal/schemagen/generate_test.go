@@ -16,7 +16,7 @@ func TestGenerateWholeTree(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Run: %v", err)
 	}
-	// 8 packages x 6 files + NAMES.lock, plus reasons.gen.go for the two
+	// 8 packages x 6 files + EXPORTED_IDENTIFIERS.lock, plus reasons.gen.go for the two
 	// packages whose schemas declare a reason vocabulary.
 	if len(files) != 8*6+1+2 {
 		t.Fatalf("got %d files", len(files))
@@ -33,7 +33,7 @@ func TestGenerateWholeTree(t *testing.T) {
 		t.Error("commands has no reasons but a reasons.gen.go was emitted")
 	}
 	for name, data := range files {
-		if name == "NAMES.lock" {
+		if name == "EXPORTED_IDENTIFIERS.lock" {
 			continue
 		}
 		if _, err := format.Source(data); err != nil {
@@ -43,13 +43,13 @@ func TestGenerateWholeTree(t *testing.T) {
 			t.Errorf("%s: missing generated header", name)
 		}
 	}
-	names := strings.Split(strings.TrimSpace(string(files["NAMES.lock"])), "\n")
+	names := strings.Split(strings.TrimSpace(string(files["EXPORTED_IDENTIFIERS.lock"])), "\n")
 	if !sort.StringsAreSorted(names) || len(names) < 1000 {
-		t.Errorf("NAMES.lock has %d entries, sorted=%v", len(names), sort.StringsAreSorted(names))
+		t.Errorf("EXPORTED_IDENTIFIERS.lock has %d entries, sorted=%v", len(names), sort.StringsAreSorted(names))
 	}
 	for _, want := range []string{"commands/DeviceLock", "commands/DeviceLock.Message", "commands/Registry", "status/DeviceModelFamily.Value", "ddm/Declaration", "ddm/ReasonErrorActivationFailed", "ddm/ReasonCodes", "status/ReasonInfoUpdateAvailable"} {
 		if sort.SearchStrings(names, want) >= len(names) || names[sort.SearchStrings(names, want)] != want {
-			t.Errorf("NAMES.lock missing %s", want)
+			t.Errorf("EXPORTED_IDENTIFIERS.lock missing %s", want)
 		}
 	}
 }
@@ -91,8 +91,8 @@ func TestWriteAndVerify(t *testing.T) {
 	}
 	// A name that was once generated stays in the lock: a stale entry without a
 	// RENAMES entry fails verify, and generate must not drop it either.
-	lock := filepath.Join(out, "NAMES.lock")
-	if err := os.WriteFile(lock, append(files["NAMES.lock"], []byte("commands/Obsolete\n")...), 0o600); err != nil {
+	lock := filepath.Join(out, "EXPORTED_IDENTIFIERS.lock")
+	if err := os.WriteFile(lock, append(files["EXPORTED_IDENTIFIERS.lock"], []byte("commands/Obsolete\n")...), 0o600); err != nil {
 		t.Fatal(err)
 	}
 	err = Verify(root, out, Options{Commit: "test"})
@@ -106,7 +106,7 @@ func TestWriteAndVerify(t *testing.T) {
 		t.Fatal("generate dropped a locked name without a RENAMES entry")
 	}
 	// With a RENAMES entry, generate drops the name and verify passes.
-	if err := os.WriteFile(filepath.Join(out, "RENAMES.md"), []byte("# Renames\n\n- `commands/Obsolete` replaced by nothing\n- not a rename line\n"), 0o600); err != nil {
+	if err := os.WriteFile(filepath.Join(out, "ALLOWED_REMOVALS.md"), []byte("# Renames\n\n- `commands/Obsolete` replaced by nothing\n- not a rename line\n"), 0o600); err != nil {
 		t.Fatal(err)
 	}
 	if err := Verify(root, out, Options{Commit: "test"}); !errors.Is(err, ErrVerify) {
@@ -116,7 +116,7 @@ func TestWriteAndVerify(t *testing.T) {
 		t.Fatal(err)
 	}
 	if data, _ := os.ReadFile(lock); strings.Contains(string(data), "commands/Obsolete") {
-		t.Fatal("generate kept a name RENAMES.md allows to drop")
+		t.Fatal("generate kept a name ALLOWED_REMOVALS.md allows to drop")
 	}
 	if err := Verify(root, out, Options{Commit: "test"}); err != nil {
 		t.Fatalf("Verify with RENAMES entry: %v", err)

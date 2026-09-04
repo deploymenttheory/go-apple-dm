@@ -279,7 +279,7 @@ func TestGenerateSynthetic(t *testing.T) {
 		t.Errorf("doc.gen.go header:\n%s", doc)
 	}
 	for _, want := range []string{
-		"// # Why\n", "// # References\n", "decision record 0003", "schema/NAMES.lock",
+		"// # Why\n", "// # References\n", "decision record 0003", "schema/EXPORTED_IDENTIFIERS.lock",
 		"//   - Decision record 0001: docs/research/decisions/0001-architecture.md\n",
 		"//   - Decision record 0003: docs/research/decisions/0003-schema-generator.md\n",
 		"//   - Plan of record: docs/research/implementation_plan.md (phase 1)\n",

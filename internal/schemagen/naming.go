@@ -14,7 +14,7 @@ import (
 // eSIM becomes ESIM. Identifiers that would start with a digit are prefixed
 // with X. Go keywords and predeclared identifiers are suffixed with an
 // underscore. The rules are deliberately simple so a schema refresh cannot
-// change an existing name; schema/NAMES.lock guards against that.
+// change an existing name; schema/EXPORTED_IDENTIFIERS.lock guards against that.
 
 // goKeywords are Go keywords plus predeclared identifiers that would be
 // confusing as type or field names.
