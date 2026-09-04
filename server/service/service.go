@@ -16,7 +16,7 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/v3/schema/checkin"
 	"github.com/deploymenttheory/go-apple-dm/v3/schema/commands"
 	"github.com/deploymenttheory/go-apple-dm/v3/schema/support"
-	"github.com/deploymenttheory/go-apple-dm/v3/server/storage"
+	"github.com/deploymenttheory/go-apple-dm/v3/storage"
 )
 
 // Code classifies service errors so transports can map them to responses

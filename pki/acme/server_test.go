@@ -14,8 +14,8 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/v3/pki/acme"
 	"github.com/deploymenttheory/go-apple-dm/v3/pki/acme/jose"
 	"github.com/deploymenttheory/go-apple-dm/v3/pki/ca"
-	"github.com/deploymenttheory/go-apple-dm/v3/server/acmestore/acmetest"
-	"github.com/deploymenttheory/go-apple-dm/v3/server/acmestore/inmem"
+	"github.com/deploymenttheory/go-apple-dm/v3/storage/acme/acmetest"
+	"github.com/deploymenttheory/go-apple-dm/v3/storage/acme/inmem"
 )
 
 // TestDirectory proves the directory names exactly the endpoints that

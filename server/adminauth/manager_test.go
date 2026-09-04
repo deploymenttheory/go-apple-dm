@@ -6,10 +6,10 @@ import (
 	"testing"
 	"time"
 
+	"github.com/deploymenttheory/go-apple-dm/server/adminauth"
+	"github.com/deploymenttheory/go-apple-dm/server/adminauth/adminauthtest"
+	"github.com/deploymenttheory/go-apple-dm/server/adminauth/inmem"
 	"github.com/deploymenttheory/go-apple-dm/v3/clock"
-	"github.com/deploymenttheory/go-apple-dm/v3/server/adminauth"
-	"github.com/deploymenttheory/go-apple-dm/v3/server/adminauth/adminauthtest"
-	"github.com/deploymenttheory/go-apple-dm/v3/server/adminauth/inmem"
 )
 
 // newRoot creates the first root principal, as a deployment's bootstrap does.

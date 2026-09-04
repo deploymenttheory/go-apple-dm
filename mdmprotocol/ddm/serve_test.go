@@ -16,7 +16,7 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/v3/paging"
 	schemaddm "github.com/deploymenttheory/go-apple-dm/v3/schema/ddm"
 	"github.com/deploymenttheory/go-apple-dm/v3/schema/support"
-	"github.com/deploymenttheory/go-apple-dm/v3/server/ddmstore/ddmtest"
+	"github.com/deploymenttheory/go-apple-dm/v3/storage/ddm/ddmtest"
 )
 
 // tokensResponse is the SyncTokens body as decoded from the wire.

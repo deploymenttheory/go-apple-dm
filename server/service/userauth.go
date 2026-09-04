@@ -17,7 +17,7 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/v3/mdmprotocol/mdm"
 	"github.com/deploymenttheory/go-apple-dm/v3/mdmprotocol/plist"
 	"github.com/deploymenttheory/go-apple-dm/v3/schema/checkin"
-	"github.com/deploymenttheory/go-apple-dm/v3/server/storage"
+	"github.com/deploymenttheory/go-apple-dm/v3/storage"
 )
 
 // UserAuthenticate errors (decision record 0016).

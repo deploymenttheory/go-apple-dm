@@ -29,7 +29,7 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/v3/pki/acme/attest/attesttest"
 	"github.com/deploymenttheory/go-apple-dm/v3/pki/acme/jose"
 	"github.com/deploymenttheory/go-apple-dm/v3/pki/ca"
-	"github.com/deploymenttheory/go-apple-dm/v3/server/acmestore/inmem"
+	"github.com/deploymenttheory/go-apple-dm/v3/storage/acme/inmem"
 )
 
 // The device every fixture is about: the serial number and UDID the default

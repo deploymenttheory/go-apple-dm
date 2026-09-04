@@ -4,7 +4,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/deploymenttheory/go-apple-dm/v3/server/adminauth"
+	"github.com/deploymenttheory/go-apple-dm/server/adminauth"
 )
 
 func TestMint(t *testing.T) {

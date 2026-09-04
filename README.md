@@ -61,6 +61,16 @@ interoperate. The reasoning behind all of this is decision record
 go get github.com/deploymenttheory/go-apple-dm/v3
 ```
 
+That is the library: the protocol, the declarative engine, every enrollment path,
+the Apple service clients, the storage contracts and their in-memory backend. It
+pulls nine dependencies. The SQL backends and the reference server are a second
+module, so a program that only speaks the protocol never downloads a database
+driver:
+
+```bash
+go get github.com/deploymenttheory/go-apple-dm/server
+```
+
 A check-in and command endpoint over an in-memory store, and a typed command queued for a device:
 
 ```go
@@ -73,10 +83,10 @@ import (
 
 	"github.com/deploymenttheory/go-apple-dm/v3/mdmprotocol/mdm"
 	"github.com/deploymenttheory/go-apple-dm/v3/schema/commands"
-	"github.com/deploymenttheory/go-apple-dm/v3/server/httpapi"
-	"github.com/deploymenttheory/go-apple-dm/v3/server/service"
-	"github.com/deploymenttheory/go-apple-dm/v3/server/storage"
-	"github.com/deploymenttheory/go-apple-dm/v3/server/storage/inmem"
+	"github.com/deploymenttheory/go-apple-dm/server/httpapi"
+	"github.com/deploymenttheory/go-apple-dm/server/service"
+	"github.com/deploymenttheory/go-apple-dm/v3/storage"
+	"github.com/deploymenttheory/go-apple-dm/v3/storage/inmem"
 )
 
 func main() {
@@ -203,8 +213,10 @@ See [docs/diagrams](docs/diagrams/README.md).
 
 ## Layout
 
-Packages are arranged in tiers, and a package may import its own tier and every tier below it,
-never above. `internal/layout` asserts this in tests, because the lint workflow cannot fail a
+The repository is two Go modules. `github.com/deploymenttheory/go-apple-dm/v3` is the library;
+everything under `server/` is `github.com/deploymenttheory/go-apple-dm/server`, which depends on
+the library and never the other way round. Within them, packages are arranged in tiers, and a
+package may import its own tier and every tier below it, never above. `internal/layout` asserts this in tests, because the lint workflow cannot fail a
 build. Decision record [0044](docs/research/decisions/0044-repository-layout.md) has the reasoning.
 
 | Tier | Path | Purpose |
@@ -237,23 +249,25 @@ build. Decision record [0044](docs/research/decisions/0044-repository-layout.md)
 | | `appleplatformservices/gdmf`, `.../gdmftest` | Apple's software lookup service, for the ADE software update gate |
 | | `appleplatformservices/push`, `.../apns`, `.../pushtest` | The vocabulary of a push and the HTTP/2 APNs client that implements it |
 | simulator | `simulator/` | A device in software: MDM, DDM, ADE, account-driven, user channel, Shared iPad, and ACME |
-| server | `server/storage` | Persistence interfaces split by concern, in-memory backend, and the contract suite every backend runs |
-| | `server/storage/sqlcommon`, `.../sqlite`, `.../postgres`, `.../mysql` | One SQL implementation with embedded migrations for SQLite (pure Go), PostgreSQL (pgx), and MySQL |
-| | `server/storage/crypt` | AES-256-GCM sealing of secret columns under named keys, with row-bound AAD and in-place rotation |
+| storage | `storage/` | Persistence interfaces split by concern, and the sentinel errors every backend returns |
+| | `storage/inmem`, `storage/storagetest` | The in-memory backend, and the contract suite every backend runs |
+| | `storage/crypt` | AES-256-GCM sealing of secret columns under named keys, with row-bound AAD and in-place rotation |
+| | `storage/ddm`, `storage/acme`, `storage/dep` | In-memory backends and contract suites for the declarative engine, ACME, and device enrollment |
+| server | `server/sqlstore/sqlcommon`, `.../sqlite`, `.../postgres`, `.../mysql` | One SQL implementation with embedded migrations for SQLite (pure Go), PostgreSQL (pgx), and MySQL |
+| | `server/ddmstore/sqlstore`, `server/acmestore/sqlstore`, `server/depstore/sqlstore` | The SQL half of each domain's persistence, on its own migration set |
 | | `server/service` | Enrollment lifecycle, identity pinning, command delivery, hooks, events, user channels |
 | | `server/httpapi` | Check-in and server URL handlers plus certificate extraction middlewares |
 | | `server/ddmsync` | Apple's synchronization flow: the notifier that turns pending changes into `DeclarativeManagement` commands and pushes, and the hook that clears declarative state on check-out |
-| | `server/ddmstore`, `server/acmestore`, `server/depstore` | Per-domain persistence on its own migration set, each with the contract suite all four backends pass |
 | | `server/ddmadapter` | DDM in-process, or split across `mdm` and `ddm` roles over an HMAC-signed or mTLS hop |
 | | `server/pushnotify` | Resolves an enrollment to a device token and a topic to a stored certificate, and publishes push events |
-| | `server/axmcreds` | Business Manager credentials sealed under a keyring, so the client itself needs no `server/storage/crypt` |
+| | `server/axmcreds` | Business Manager credentials sealed under a keyring, so the client itself needs no `storage/crypt` |
 | | `server/eventsink` | The sinks that project an event down to what may leave the process |
 | | `server/audit` | The persistent audit trail on its own migration set, append-and-prune |
 | | `server/adminauth` | Admin principals and scoped API tokens, authorised by Cedar policies |
-| app | `internal/app`, `cmd/dmserver`, `Dockerfile` | The reference server: roles, enrollment routes, admin API, background workers, container image |
-| | `internal/dmctl`, `cmd/dmctl` | The admin CLI |
+| app | `server/internal/app`, `server/cmd/dmserver`, `Dockerfile` | The reference server: roles, enrollment routes, admin API, background workers, container image |
+| | `server/internal/dmctl`, `server/cmd/dmctl` | The admin CLI |
 | | `internal/layout` | The import graph behind the tier tests |
-| | `e2e/` | End-to-end scenarios (`make test-e2e`), listed in `docs/testing/e2e-scenarios.md` |
+| | `server/e2e/` | End-to-end scenarios (`make test-e2e`), listed in `docs/testing/e2e-scenarios.md` |
 | | `docs/research/` | Reference research, the plan of record, and per-feature decision records |
 
 ## Reference server

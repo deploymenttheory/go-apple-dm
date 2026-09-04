@@ -10,16 +10,16 @@ import (
 	"testing"
 	"time"
 
+	sqlstore "github.com/deploymenttheory/go-apple-dm/server/ddmstore/sqlstore"
+	"github.com/deploymenttheory/go-apple-dm/server/sqlstore/mysql"
+	"github.com/deploymenttheory/go-apple-dm/server/sqlstore/postgres"
+	"github.com/deploymenttheory/go-apple-dm/server/sqlstore/sqlcommon"
+	"github.com/deploymenttheory/go-apple-dm/server/sqlstore/sqlite"
 	"github.com/deploymenttheory/go-apple-dm/v3/mdmprotocol/ddm"
 	"github.com/deploymenttheory/go-apple-dm/v3/mdmprotocol/mdm"
 	"github.com/deploymenttheory/go-apple-dm/v3/paging"
 	schemaddm "github.com/deploymenttheory/go-apple-dm/v3/schema/ddm"
-	"github.com/deploymenttheory/go-apple-dm/v3/server/ddmstore/ddmtest"
-	"github.com/deploymenttheory/go-apple-dm/v3/server/ddmstore/sqlstore"
-	"github.com/deploymenttheory/go-apple-dm/v3/server/storage/mysql"
-	"github.com/deploymenttheory/go-apple-dm/v3/server/storage/postgres"
-	"github.com/deploymenttheory/go-apple-dm/v3/server/storage/sqlcommon"
-	"github.com/deploymenttheory/go-apple-dm/v3/server/storage/sqlite"
+	"github.com/deploymenttheory/go-apple-dm/v3/storage/ddm/ddmtest"
 )
 
 var (

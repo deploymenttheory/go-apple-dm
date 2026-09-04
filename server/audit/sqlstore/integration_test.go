@@ -12,12 +12,12 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/stdlib"
 
-	"github.com/deploymenttheory/go-apple-dm/v3/server/audit"
-	"github.com/deploymenttheory/go-apple-dm/v3/server/audit/audittest"
-	"github.com/deploymenttheory/go-apple-dm/v3/server/audit/sqlstore"
-	"github.com/deploymenttheory/go-apple-dm/v3/server/storage/mysql"
-	"github.com/deploymenttheory/go-apple-dm/v3/server/storage/postgres"
-	"github.com/deploymenttheory/go-apple-dm/v3/server/storage/sqlcommon"
+	"github.com/deploymenttheory/go-apple-dm/server/audit"
+	"github.com/deploymenttheory/go-apple-dm/server/audit/audittest"
+	"github.com/deploymenttheory/go-apple-dm/server/audit/sqlstore"
+	"github.com/deploymenttheory/go-apple-dm/server/sqlstore/mysql"
+	"github.com/deploymenttheory/go-apple-dm/server/sqlstore/postgres"
+	"github.com/deploymenttheory/go-apple-dm/server/sqlstore/sqlcommon"
 )
 
 // auditTables is every table this migration set owns.

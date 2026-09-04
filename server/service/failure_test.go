@@ -5,16 +5,16 @@ import (
 	"errors"
 	"testing"
 
+	"github.com/deploymenttheory/go-apple-dm/server/service"
 	"github.com/deploymenttheory/go-apple-dm/v3/clock"
 	"github.com/deploymenttheory/go-apple-dm/v3/mdmprotocol/event"
 	"github.com/deploymenttheory/go-apple-dm/v3/mdmprotocol/mdm"
 	"github.com/deploymenttheory/go-apple-dm/v3/paging"
 	"github.com/deploymenttheory/go-apple-dm/v3/schema/checkin"
 	"github.com/deploymenttheory/go-apple-dm/v3/schema/commands"
-	"github.com/deploymenttheory/go-apple-dm/v3/server/service"
-	"github.com/deploymenttheory/go-apple-dm/v3/server/storage"
-	"github.com/deploymenttheory/go-apple-dm/v3/server/storage/inmem"
-	"github.com/deploymenttheory/go-apple-dm/v3/server/storage/storagetest"
+	"github.com/deploymenttheory/go-apple-dm/v3/storage"
+	"github.com/deploymenttheory/go-apple-dm/v3/storage/inmem"
+	"github.com/deploymenttheory/go-apple-dm/v3/storage/storagetest"
 	"github.com/deploymenttheory/go-apple-dm/v3/testpki"
 )
 

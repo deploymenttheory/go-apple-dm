@@ -9,10 +9,10 @@ import (
 	"strings"
 	"time"
 
+	"github.com/deploymenttheory/go-apple-dm/server/sqlstore/sqlcommon"
 	"github.com/deploymenttheory/go-apple-dm/v3/mdmprotocol/ddm"
 	"github.com/deploymenttheory/go-apple-dm/v3/mdmprotocol/mdm"
 	"github.com/deploymenttheory/go-apple-dm/v3/paging"
-	"github.com/deploymenttheory/go-apple-dm/v3/server/storage/sqlcommon"
 )
 
 //go:embed migrations/*/*.sql

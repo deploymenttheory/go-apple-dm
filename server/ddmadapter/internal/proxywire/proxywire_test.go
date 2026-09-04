@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/deploymenttheory/go-apple-dm/v3/server/ddmadapter/internal/proxywire"
+	"github.com/deploymenttheory/go-apple-dm/server/ddmadapter/internal/proxywire"
 )
 
 func TestSignVerify(t *testing.T) {

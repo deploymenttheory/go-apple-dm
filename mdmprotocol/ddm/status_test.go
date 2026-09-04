@@ -14,8 +14,8 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/v3/mdmprotocol/mdm"
 	"github.com/deploymenttheory/go-apple-dm/v3/paging"
 	schemaddm "github.com/deploymenttheory/go-apple-dm/v3/schema/ddm"
-	"github.com/deploymenttheory/go-apple-dm/v3/server/ddmstore/ddmtest"
-	ddminmem "github.com/deploymenttheory/go-apple-dm/v3/server/ddmstore/inmem"
+	"github.com/deploymenttheory/go-apple-dm/v3/storage/ddm/ddmtest"
+	ddminmem "github.com/deploymenttheory/go-apple-dm/v3/storage/ddm/inmem"
 )
 
 // report renders a status report in Apple's wire form. full is nil when the

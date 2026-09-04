@@ -14,7 +14,7 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/v3/appleplatformservices/dep/deptest"
 	"github.com/deploymenttheory/go-apple-dm/v3/clock"
 	"github.com/deploymenttheory/go-apple-dm/v3/paging"
-	"github.com/deploymenttheory/go-apple-dm/v3/server/depstore/inmem"
+	"github.com/deploymenttheory/go-apple-dm/v3/storage/dep/inmem"
 )
 
 // newSyncer builds a syncer on the fixture with jitter off.

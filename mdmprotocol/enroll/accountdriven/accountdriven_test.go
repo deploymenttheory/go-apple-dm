@@ -13,12 +13,12 @@ import (
 	"testing"
 	"time"
 
+	"github.com/deploymenttheory/go-apple-dm/v3/mdmprotocol/dmhook"
 	"github.com/deploymenttheory/go-apple-dm/v3/mdmprotocol/enroll"
 	"github.com/deploymenttheory/go-apple-dm/v3/mdmprotocol/enroll/accountdriven"
 	"github.com/deploymenttheory/go-apple-dm/v3/mdmprotocol/mdm"
 	"github.com/deploymenttheory/go-apple-dm/v3/mdmprotocol/profile"
 	"github.com/deploymenttheory/go-apple-dm/v3/schema/profiles"
-	"github.com/deploymenttheory/go-apple-dm/v3/server/service"
 	"github.com/deploymenttheory/go-apple-dm/v3/testpki"
 )
 
@@ -142,7 +142,7 @@ func TestTokens(t *testing.T) {
 		tok, _ := tk.Issue(ctx, accountdriven.KindEnrollment, alice, nil)
 		hook := &accountdriven.CheckinHook{Tokens: tk}
 		req := &mdm.Request{ID: mdm.EnrollmentID{Channel: mdm.ChannelUserEnrollmentDevice, ID: "E1"}, Params: map[string]string{accountdriven.ParamEnrollmentToken: tok}}
-		ctx2, err := hook.Before(ctx, &service.Call{Op: "checkin:Authenticate", Request: req})
+		ctx2, err := hook.Before(ctx, &dmhook.Call{Op: "checkin:Authenticate", Request: req})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -150,15 +150,15 @@ func TestTokens(t *testing.T) {
 			t.Fatalf("identity = %+v %v", id, ok)
 		}
 		bad := &mdm.Request{ID: req.ID, Params: map[string]string{accountdriven.ParamEnrollmentToken: "nope"}}
-		if _, err := hook.Before(ctx, &service.Call{Op: "checkin:TokenUpdate", Request: bad}); !errors.Is(err, accountdriven.ErrEnrollmentToken) {
+		if _, err := hook.Before(ctx, &dmhook.Call{Op: "checkin:TokenUpdate", Request: bad}); !errors.Is(err, accountdriven.ErrEnrollmentToken) {
 			t.Fatalf("bad token = %v", err)
 		}
 		// Other channels and ops are not guarded; nil calls are ignored.
 		dev := &mdm.Request{ID: mdm.EnrollmentID{Channel: mdm.ChannelDevice, ID: "D1"}}
-		if _, err := hook.Before(ctx, &service.Call{Op: "checkin:Authenticate", Request: dev}); err != nil {
+		if _, err := hook.Before(ctx, &dmhook.Call{Op: "checkin:Authenticate", Request: dev}); err != nil {
 			t.Fatal(err)
 		}
-		if _, err := hook.Before(ctx, &service.Call{Op: "connect", Request: bad}); err != nil {
+		if _, err := hook.Before(ctx, &dmhook.Call{Op: "connect", Request: bad}); err != nil {
 			t.Fatal(err)
 		}
 		if _, err := hook.Before(ctx, nil); err != nil {
@@ -166,7 +166,7 @@ func TestTokens(t *testing.T) {
 		}
 		hook.After(ctx, nil, nil)
 		only := &accountdriven.CheckinHook{Tokens: tk, Channels: []mdm.Channel{mdm.ChannelDevice}}
-		if _, err := only.Before(ctx, &service.Call{Op: "checkin:Authenticate", Request: dev}); !errors.Is(err, accountdriven.ErrEnrollmentToken) {
+		if _, err := only.Before(ctx, &dmhook.Call{Op: "checkin:Authenticate", Request: dev}); !errors.Is(err, accountdriven.ErrEnrollmentToken) {
 			t.Fatalf("custom channels = %v", err)
 		}
 	})
@@ -176,7 +176,7 @@ func TestTokens(t *testing.T) {
 		hook := &accountdriven.CheckinHook{Tokens: tk}
 		req := &mdm.Request{ID: mdm.EnrollmentID{Channel: mdm.ChannelUserEnrollmentDevice, ID: "E1"}, Params: map[string]string{accountdriven.ParamEnrollmentToken: tok}}
 		for range 3 {
-			if _, err := hook.Before(ctx, &service.Call{Op: "checkin:Authenticate", Request: req}); err != nil {
+			if _, err := hook.Before(ctx, &dmhook.Call{Op: "checkin:Authenticate", Request: req}); err != nil {
 				t.Fatalf("retry: %v", err)
 			}
 		}

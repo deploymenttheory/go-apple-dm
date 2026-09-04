@@ -5,7 +5,7 @@ import (
 	"errors"
 	"time"
 
-	"github.com/deploymenttheory/go-apple-dm/v3/server/adminauth"
+	"github.com/deploymenttheory/go-apple-dm/server/adminauth"
 )
 
 // ErrFailing is what a Failing store returns from the selected method.

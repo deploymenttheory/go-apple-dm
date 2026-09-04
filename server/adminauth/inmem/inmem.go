@@ -8,7 +8,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/deploymenttheory/go-apple-dm/v3/server/adminauth"
+	"github.com/deploymenttheory/go-apple-dm/server/adminauth"
 )
 
 var _ adminauth.Store = (*Store)(nil)

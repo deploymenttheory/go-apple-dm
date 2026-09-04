@@ -8,7 +8,7 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/v3/mdmprotocol/dmhook"
 	"github.com/deploymenttheory/go-apple-dm/v3/mdmprotocol/mdm"
 	"github.com/deploymenttheory/go-apple-dm/v3/paging"
-	"github.com/deploymenttheory/go-apple-dm/v3/server/storage"
+	"github.com/deploymenttheory/go-apple-dm/v3/storage"
 )
 
 // ServiceHook clears DDM state when an enrollment checks out or

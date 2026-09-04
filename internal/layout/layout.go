@@ -2,7 +2,9 @@ package layout
 
 import (
 	"fmt"
+	"os"
 	"os/exec"
+	"path/filepath"
 	"slices"
 	"sort"
 	"strings"
@@ -18,6 +20,50 @@ var ErrGoList = fmt.Errorf("layout: go list failed")
 type Graph struct {
 	Module  string
 	Imports map[string][]string
+	// External records imports outside this module, which LoadRepo needs to
+	// resolve edges from the server module back into the library.
+	External map[string][]string
+}
+
+// LoadRepo returns one graph spanning every module in the repository. The
+// server is its own module, so a single go list would stop at the library
+// and the tier tests would quietly cover half the tree. Server packages keep
+// their directory as a prefix ("server/service"), so a package's key is its
+// path from the repository root either way.
+func LoadRepo(root string) (*Graph, error) {
+	lib, err := Load(root)
+	if err != nil {
+		return nil, err
+	}
+	serverDir := filepath.Join(root, "server")
+	if _, statErr := os.Stat(filepath.Join(serverDir, "go.mod")); statErr != nil {
+		return lib, nil //nolint:nilerr // one module is a valid repository
+	}
+	srv, err := Load(serverDir)
+	if err != nil {
+		return nil, err
+	}
+	out := &Graph{Module: lib.Module, Imports: map[string][]string{}}
+	for pkg, edges := range lib.Imports {
+		out.Imports[pkg] = edges
+	}
+	// Rewrite the server module onto repository-relative keys, and resolve its
+	// edges into the library by the library's own module path.
+	libPrefix := lib.Module + "/"
+	for pkg, edges := range srv.Imports {
+		var mapped []string
+		for _, e := range edges {
+			mapped = append(mapped, "server/"+e)
+		}
+		for _, raw := range srv.External[pkg] {
+			if strings.HasPrefix(raw, libPrefix) {
+				mapped = append(mapped, strings.TrimPrefix(raw, libPrefix))
+			}
+		}
+		sort.Strings(mapped)
+		out.Imports["server/"+pkg] = mapped
+	}
+	return out, nil
 }
 
 // Load runs go list in dir and returns the in-module import graph.
@@ -26,7 +72,12 @@ func Load(dir string) (*Graph, error) {
 	if err != nil {
 		return nil, err
 	}
+	// In workspace mode go list -m prints every module in the workspace, so
+	// take the first line: the main module of dir.
 	module := strings.TrimSpace(mod)
+	if i := strings.IndexByte(module, '\n'); i >= 0 {
+		module = strings.TrimSpace(module[:i])
+	}
 	if module == "" {
 		return nil, fmt.Errorf("%w: empty module path", ErrGoList)
 	}
@@ -35,21 +86,25 @@ func Load(dir string) (*Graph, error) {
 		return nil, err
 	}
 	prefix := module + "/"
-	g := &Graph{Module: module, Imports: map[string][]string{}}
+	g := &Graph{Module: module, Imports: map[string][]string{}, External: map[string][]string{}}
 	for _, line := range strings.Split(out, "\n") {
 		path, imports, ok := strings.Cut(line, "|")
 		if !ok || !strings.HasPrefix(path, prefix) {
 			continue
 		}
 		from := strings.TrimPrefix(path, prefix)
-		var edges []string
+		var edges, external []string
 		for _, imp := range strings.Split(imports, ",") {
-			if strings.HasPrefix(imp, prefix) {
+			switch {
+			case strings.HasPrefix(imp, prefix):
 				edges = append(edges, strings.TrimPrefix(imp, prefix))
+			case strings.Contains(imp, "."):
+				external = append(external, imp)
 			}
 		}
 		sort.Strings(edges)
 		g.Imports[from] = edges
+		g.External[from] = external
 	}
 	if len(g.Imports) == 0 {
 		return nil, fmt.Errorf("%w: no packages found in %s", ErrGoList, dir)
@@ -60,6 +115,9 @@ func Load(dir string) (*Graph, error) {
 func run(dir string, args ...string) (string, error) {
 	cmd := exec.Command("go", args...)
 	cmd.Dir = dir
+	// Each module is read on its own terms. A workspace would merge them and
+	// hide which module a package belongs to, which is the question here.
+	cmd.Env = append(os.Environ(), "GOWORK=off")
 	out, err := cmd.Output()
 	if err != nil {
 		return "", fmt.Errorf("%w: go %s: %w", ErrGoList, strings.Join(args, " "), err)
@@ -107,7 +165,7 @@ func (g *Graph) Reaches(from string) []string {
 // reason.
 var namespaces = []string{
 	"internal", "schema",
-	"mdmprotocol", "pki", "appleplatformservices", "server",
+	"mdmprotocol", "pki", "appleplatformservices", "storage", "server",
 }
 
 // Unit is the directory a tier is assigned to: the first path element,

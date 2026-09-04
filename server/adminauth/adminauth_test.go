@@ -8,9 +8,9 @@ import (
 
 	"github.com/cedar-policy/cedar-go/types"
 
-	"github.com/deploymenttheory/go-apple-dm/v3/server/adminauth"
-	"github.com/deploymenttheory/go-apple-dm/v3/server/adminauth/adminauthtest"
-	"github.com/deploymenttheory/go-apple-dm/v3/server/adminauth/inmem"
+	"github.com/deploymenttheory/go-apple-dm/server/adminauth"
+	"github.com/deploymenttheory/go-apple-dm/server/adminauth/adminauthtest"
+	"github.com/deploymenttheory/go-apple-dm/server/adminauth/inmem"
 )
 
 func TestValidName(t *testing.T) {

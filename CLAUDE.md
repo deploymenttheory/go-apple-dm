@@ -10,11 +10,19 @@ reference server. Module `github.com/deploymenttheory/go-apple-dm/v3`, Go 1.27.
 - `docs/research/decisions/`: one decision record per feature, from `TEMPLATE.md`. No feature code
   lands without one.
 
+## Modules
+
+Two: `github.com/deploymenttheory/go-apple-dm/v3` at the root is the library, and
+`github.com/deploymenttheory/go-apple-dm/server` under `server/` is the reference
+server. The server depends on the library; nothing in the library may depend on the
+server, in production code or in tests, or neither module can be released. `go.work`
+covers local development. Every `make` target runs in both modules.
+
 ## Layout
 
 Packages sit in tiers and may import their own tier and every tier below, never above:
 foundation (`paging`, `clock`, `testpki`, `secrets`, `telemetry`) -> `schema/` ->
-`mdmprotocol/` -> `pki/` -> `appleplatformservices/` -> `simulator/` -> `server/` ->
+`mdmprotocol/` -> `pki/` -> `appleplatformservices/` -> `storage/` -> `simulator/` -> `server/` ->
 app (`cmd/`, `internal/app`, `e2e/`). `internal/layout` asserts this in tests, because
 `go-lint.yml` runs golangci-lint with `--issues-exit-code=0` and cannot fail a build.
 See `docs/research/decisions/0044-repository-layout.md`.

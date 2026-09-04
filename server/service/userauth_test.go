@@ -11,15 +11,15 @@ import (
 	"testing/iotest"
 	"time"
 
+	"github.com/deploymenttheory/go-apple-dm/server/service"
 	"github.com/deploymenttheory/go-apple-dm/v3/clock"
 	"github.com/deploymenttheory/go-apple-dm/v3/mdmprotocol/event"
 	"github.com/deploymenttheory/go-apple-dm/v3/mdmprotocol/mdm"
 	"github.com/deploymenttheory/go-apple-dm/v3/mdmprotocol/plist"
 	"github.com/deploymenttheory/go-apple-dm/v3/schema/checkin"
-	"github.com/deploymenttheory/go-apple-dm/v3/server/service"
-	"github.com/deploymenttheory/go-apple-dm/v3/server/storage"
-	"github.com/deploymenttheory/go-apple-dm/v3/server/storage/inmem"
 	"github.com/deploymenttheory/go-apple-dm/v3/simulator"
+	"github.com/deploymenttheory/go-apple-dm/v3/storage"
+	"github.com/deploymenttheory/go-apple-dm/v3/storage/inmem"
 )
 
 const (

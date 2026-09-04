@@ -22,7 +22,7 @@ func repoRoot(t *testing.T) string {
 
 func load(t *testing.T) *layout.Graph {
 	t.Helper()
-	g, err := layout.Load(repoRoot(t))
+	g, err := layout.LoadRepo(repoRoot(t))
 	if err != nil {
 		t.Fatalf("load import graph: %v", err)
 	}
@@ -37,6 +37,7 @@ const (
 	tierProtocol          // mdmprotocol: wire formats, no I/O
 	tierPKI               // pki: identity issuance
 	tierServices          // appleplatformservices: outbound clients to Apple
+	tierStorage           // storage: contracts and the in-memory backend, no drivers
 	tierClient            // simulator: a device, in software
 	tierServer            // server: persistence, service layer, transport
 	tierApp               // composition: cmd, internal/app, e2e
@@ -44,8 +45,8 @@ const (
 
 var tierNames = map[int]string{
 	tierFoundation: "foundation", tierSchema: "schema", tierProtocol: "mdmprotocol",
-	tierPKI: "pki", tierServices: "appleplatformservices", tierClient: "simulator",
-	tierServer: "server", tierApp: "app",
+	tierPKI: "pki", tierServices: "appleplatformservices", tierStorage: "storage",
+	tierClient: "simulator", tierServer: "server", tierApp: "app",
 }
 
 // tierOf maps a package to its tier by path, which is the point of the
@@ -61,6 +62,8 @@ func tierOf(pkg string) int {
 		return tierServer
 	case pkg == "simulator":
 		return tierClient
+	case pkg == "storage", strings.HasPrefix(pkg, "storage/"):
+		return tierStorage
 	case strings.HasPrefix(pkg, "appleplatformservices/"):
 		return tierServices
 	case strings.HasPrefix(pkg, "pki/"):

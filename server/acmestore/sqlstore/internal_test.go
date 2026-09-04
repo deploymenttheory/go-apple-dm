@@ -9,8 +9,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/deploymenttheory/go-apple-dm/server/sqlstore/sqlite"
 	"github.com/deploymenttheory/go-apple-dm/v3/pki/acme"
-	"github.com/deploymenttheory/go-apple-dm/v3/server/storage/sqlite"
 )
 
 // t0 is a fixed instant every fixture is dated from.
