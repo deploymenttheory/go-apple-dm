@@ -40,7 +40,16 @@ func TestAxM(t *testing.T) {
 		if err := os.WriteFile(keyFile, keyPEM, 0o600); err != nil {
 			t.Fatal(err)
 		}
-		env := func(m map[string]string) func(string) string { return func(k string) string { return m[k] } }
+		env := func(m map[string]string) func(string) string {
+			return func(k string) string {
+				// A durable store needs a keyring, and sqlite is the default, so
+				// every ParseEnv case supplies one unless it sets its own.
+				if k == app.EnvStorageKeys && m[k] == "" {
+					return "test"
+				}
+				return m[k]
+			}
+		}
 		cfg, err := app.ParseEnv(env(map[string]string{app.EnvAxMClientID: "BUSINESSAPI.abc", app.EnvAxMKeyID: "kid-1", app.EnvAxMKeyFile: keyFile, app.EnvAxMScope: "business.api"}))
 		if err != nil || cfg.AxM.ClientID != "BUSINESSAPI.abc" || cfg.AxM.KeyFile != keyFile {
 			t.Fatalf("env = %+v %v", cfg.AxM, err)

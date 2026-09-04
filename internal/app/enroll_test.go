@@ -340,7 +340,16 @@ func TestEnrollment(t *testing.T) {
 		if _, err := app.ParseDiscovery("Mac"); !errors.Is(err, app.ErrConfig) {
 			t.Fatalf("malformed = %v", err)
 		}
-		env := func(m map[string]string) func(string) string { return func(k string) string { return m[k] } }
+		env := func(m map[string]string) func(string) string {
+			return func(k string) string {
+				// A durable store needs a keyring, and sqlite is the default, so
+				// every ParseEnv case supplies one unless it sets its own.
+				if k == app.EnvStorageKeys && m[k] == "" {
+					return "test"
+				}
+				return m[k]
+			}
+		}
 		cfg, err := app.ParseEnv(env(map[string]string{app.EnvDiscovery: "Mac=mdm-adde", app.EnvPublicURL: "https://x", app.EnvPushTopic: "t", app.EnvSCEPChallenge: "c", app.EnvADEAudit: "true", app.EnvRequireUserAuth: "1"}))
 		if err != nil || cfg.Enroll.Discovery[discovery.ModelFamilyMac] != discovery.VersionADDE || !cfg.Enroll.ADEAudit || !cfg.Enroll.RequireUserAuth {
 			t.Fatalf("env = %+v %v", cfg.Enroll, err)

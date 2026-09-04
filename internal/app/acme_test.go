@@ -236,7 +236,12 @@ func TestACME(t *testing.T) {
 
 	t.Run("Env", func(t *testing.T) {
 		env := func(m map[string]string) func(string) string {
-			return func(k string) string { return m[k] }
+			return func(k string) string {
+				if k == app.EnvStorageKeys && m[k] == "" {
+					return "test"
+				}
+				return m[k]
+			}
 		}
 		cfg, err := app.ParseEnv(env(map[string]string{
 			app.EnvIdentity:       app.IdentityACME,
@@ -740,7 +745,12 @@ func TestACMEIdentifierKeyFallsBackToSCEP(t *testing.T) {
 
 func TestACMEEnvKeys(t *testing.T) {
 	env := func(m map[string]string) func(string) string {
-		return func(k string) string { return m[k] }
+		return func(k string) string {
+			if k == app.EnvStorageKeys && m[k] == "" {
+				return "test"
+			}
+			return m[k]
+		}
 	}
 	base := map[string]string{
 		app.EnvPublicURL:   "https://mdm.example",

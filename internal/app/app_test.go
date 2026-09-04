@@ -22,6 +22,7 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/internal/clock"
 	"github.com/deploymenttheory/go-apple-dm/internal/testpki"
 	"github.com/deploymenttheory/go-apple-dm/mdm"
+	"github.com/deploymenttheory/go-apple-dm/secrets"
 	"github.com/deploymenttheory/go-apple-dm/simulator"
 )
 
@@ -31,6 +32,20 @@ func build(t *testing.T, cfg app.Config) *app.App {
 	t.Helper()
 	if cfg.Logger == nil {
 		cfg.Logger = quiet
+	}
+	// A durable store refuses to run without a keyring, so a test that names
+	// one gets a key even when it is about something else.
+	if cfg.Secrets == nil && cfg.SecretsDir == "" {
+		if cfg.Storage != "inmem" && len(cfg.StorageKeys) == 0 {
+			cfg.StorageKeys = []string{"test"}
+		}
+		if len(cfg.StorageKeys) > 0 {
+			material := secrets.Static{}
+			for _, name := range cfg.StorageKeys {
+				material[name] = []byte("0123456789abcdef0123456789abcdef")
+			}
+			cfg.Secrets = material
+		}
 	}
 	// The hop refuses to run unauthenticated, so a role that serves or calls
 	// it needs a credential even when the test is about something else.
@@ -58,7 +73,16 @@ func serve(t *testing.T, a *app.App) *httptest.Server {
 }
 
 func TestParseEnv(t *testing.T) {
-	env := func(m map[string]string) func(string) string { return func(k string) string { return m[k] } }
+	env := func(m map[string]string) func(string) string {
+		return func(k string) string {
+			// A durable store needs a keyring, and sqlite is the default, so
+			// every ParseEnv case supplies one unless it sets its own.
+			if k == app.EnvStorageKeys && m[k] == "" {
+				return "test"
+			}
+			return m[k]
+		}
+	}
 	t.Run("Defaults", func(t *testing.T) {
 		cfg, err := app.ParseEnv(env(nil))
 		if err != nil {
@@ -202,13 +226,13 @@ func TestBuild(t *testing.T) {
 				t.Errorf("%s: err = %v, want ErrConfig", name, err)
 			}
 		}
-		if _, err := app.Build(ctx, app.Config{Role: app.RoleAll, Storage: "sqlite", DSN: filepath.Join(t.TempDir(), "missing", "x.db"), Logger: quiet}); err == nil {
+		if _, err := app.Build(ctx, app.Config{Role: app.RoleAll, Storage: "sqlite", DSN: filepath.Join(t.TempDir(), "missing", "x.db"), StorageKeys: []string{"k"}, Secrets: secrets.Static{"k": []byte("0123456789abcdef0123456789abcdef")}, Logger: quiet}); err == nil {
 			t.Error("sqlite in a missing directory must fail")
 		}
-		if _, err := app.Build(ctx, app.Config{Role: app.RoleAll, Storage: "postgres", DSN: "postgres://127.0.0.1:1/x?sslmode=disable&connect_timeout=1", Logger: quiet}); err == nil {
+		if _, err := app.Build(ctx, app.Config{Role: app.RoleAll, Storage: "postgres", DSN: "postgres://127.0.0.1:1/x?sslmode=disable&connect_timeout=1", StorageKeys: []string{"k"}, Secrets: secrets.Static{"k": []byte("0123456789abcdef0123456789abcdef")}, Logger: quiet}); err == nil {
 			t.Error("unreachable postgres must fail")
 		}
-		if _, err := app.Build(ctx, app.Config{Role: app.RoleAll, Storage: "mysql", DSN: "mdm:mdm@tcp(127.0.0.1:1)/x?timeout=1s", Logger: quiet}); err == nil {
+		if _, err := app.Build(ctx, app.Config{Role: app.RoleAll, Storage: "mysql", DSN: "mdm:mdm@tcp(127.0.0.1:1)/x?timeout=1s", StorageKeys: []string{"k"}, Secrets: secrets.Static{"k": []byte("0123456789abcdef0123456789abcdef")}, Logger: quiet}); err == nil {
 			t.Error("unreachable mysql must fail")
 		}
 		if _, err := app.Build(ctx, app.Config{Role: app.RoleMDM, Storage: "inmem", DDMURL: "::bad", Logger: quiet}); err == nil {

@@ -23,6 +23,7 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/internal/mdmctl"
 	"github.com/deploymenttheory/go-apple-dm/mdm"
 	"github.com/deploymenttheory/go-apple-dm/push"
+	"github.com/deploymenttheory/go-apple-dm/secrets"
 	"github.com/deploymenttheory/go-apple-dm/storage"
 	"github.com/deploymenttheory/go-apple-dm/storage/sqlite"
 )
@@ -57,6 +58,8 @@ func newAdminHarness(t *testing.T) *adminHarness {
 	pusher := &countingPusher{}
 	a, err := app.Build(context.Background(), app.Config{
 		Role: app.RoleAll, Storage: "sqlite", DSN: dsn,
+		StorageKeys:       []string{"e2e"},
+		Secrets:           secrets.Static{"e2e": []byte("0123456789abcdef0123456789abcdef")},
 		AdminStoreEnabled: true,
 		AdminToken:        "break-glass",
 		Logger:            slog.New(slog.NewTextHandler(io.Discard, nil)),

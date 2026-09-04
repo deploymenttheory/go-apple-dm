@@ -275,7 +275,16 @@ func TestDEP(t *testing.T) {
 		}
 	})
 	t.Run("Env", func(t *testing.T) {
-		env := func(m map[string]string) func(string) string { return func(k string) string { return m[k] } }
+		env := func(m map[string]string) func(string) string {
+			return func(k string) string {
+				// A durable store needs a keyring, and sqlite is the default, so
+				// every ParseEnv case supplies one unless it sets its own.
+				if k == app.EnvStorageKeys && m[k] == "" {
+					return "test"
+				}
+				return m[k]
+			}
+		}
 		cfg, err := app.ParseEnv(env(map[string]string{app.EnvDEPBaseURL: "https://dep.example", app.EnvDEPSyncInterval: "15m", app.EnvDEPUsePUT: "true"}))
 		if err != nil || cfg.DEP.BaseURL != "https://dep.example" || cfg.DEP.SyncInterval != 15*time.Minute || !cfg.DEP.UsePUT {
 			t.Fatalf("env = %+v %v", cfg.DEP, err)
