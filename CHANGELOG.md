@@ -1,5 +1,30 @@
 # Changelog
 
+## [3.0.0](https://github.com/deploymenttheory/go-apple-dm/compare/v2.0.0...v3.0.0) (2026-09-04)
+
+
+### ⚠ BREAKING CHANGES
+
+* packages under server/ move to a second module, github.com/deploymenttheory/go-apple-dm/server.
+* every import path changes, and the module is now github.com/deploymenttheory/go-apple-dm/v3.
+
+### Features
+
+* **service:** answer ReturnToService, and pair the registry with the dispatcher ([f05313f](https://github.com/deploymenttheory/go-apple-dm/commit/f05313fc4de3fe6323aafa9031cca10dcb06bc36))
+* **service:** answer ReturnToService, and pair the registry with the dispatcher ([06007ea](https://github.com/deploymenttheory/go-apple-dm/commit/06007ea3e90a71f5fb74749ced161b574595546d))
+
+
+### Bug Fixes
+
+* **schema:** generate GENERATED_FROM.json, and read the commit from the checkout ([94e156e](https://github.com/deploymenttheory/go-apple-dm/commit/94e156e7c3da61558824aa58155820b58b8a64a0))
+* **schema:** generate GENERATED_FROM.json, and read the commit from the checkout ([6e812ee](https://github.com/deploymenttheory/go-apple-dm/commit/6e812ee329100904bcbab25c8793c14b39eaa4b5))
+
+
+### Code Refactoring
+
+* arrange packages into tiers and move the module to /v3 ([72272a3](https://github.com/deploymenttheory/go-apple-dm/commit/72272a30d1452131c7aee310bc7c102d09837474))
+* publish the reference server as its own module ([3991814](https://github.com/deploymenttheory/go-apple-dm/commit/3991814a4b79443bc1c353f7e10645222fb3f8e8))
+
 ## [2.0.0](https://github.com/deploymenttheory/go-apple-dm/compare/v1.0.0...v2.0.0) (2026-09-04)
 
 
