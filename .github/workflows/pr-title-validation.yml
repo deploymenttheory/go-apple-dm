@@ -4,6 +4,10 @@ on:
   pull_request:
     types: [opened, edited, synchronize, reopened]
 
+# The title is attacker-controlled text. Nothing here needs write access.
+permissions:
+  contents: read
+
 jobs:
   validate-pr-title:
     name: '✅ Validate PR Title'
@@ -16,8 +20,12 @@ jobs:
           egress-policy: audit
 
       - name: Check PR Title
+        # The title reaches the script through the environment, never through
+        # ${{ }} interpolation: an expression is substituted into the source
+        # before bash parses it, so a crafted title would run as code.
+        env:
+          PR_TITLE: ${{ github.event.pull_request.title }}
         run: |
-          PR_TITLE="${{ github.event.pull_request.title }}"
           PATTERN="^(([Ff]eat|[Ff]ix|[Dd]ocs|[Ss]tyle|[Rr]efactor|[Tt]est|[Cc]hore|[Bb]uild|[Cc]i|[Pp]erf)(\(.+\))?: .+|dependabot.*)$"
           
           if ! echo "$PR_TITLE" | grep -qE "$PATTERN"; then

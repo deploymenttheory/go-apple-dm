@@ -3,6 +3,7 @@ package app
 import (
 	"fmt"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/deploymenttheory/go-apple-dm/enroll"
@@ -17,7 +18,15 @@ const (
 	EnvDDMURL     = "MDM_DDM_URL"
 	EnvDDMSendKey = "MDM_DDM_SEND_KEY"
 	EnvDDMRecvKey = "MDM_DDM_RECV_KEY"
-	EnvAdminToken = "MDM_ADMIN_TOKEN" // #nosec G101 -- the variable name, not a credential
+	// EnvStorageKeys names the keys sealing the secret columns, active
+	// first; material comes from MDM_STORAGE_KEY_<NAME> or EnvSecretsDir.
+	EnvStorageKeys       = "MDM_STORAGE_KEYS" // #nosec G101 -- the variable name, not a credential
+	EnvStorageKeysStrict = "MDM_STORAGE_KEYS_STRICT"
+	EnvSecretsDir        = "MDM_SECRETS_DIR" // #nosec G101 -- the variable name, not a credential
+	// EnvAllowReenroll opts back in to the library's permissive
+	// re-enrollment behaviour; see Config.AllowReenroll.
+	EnvAllowReenroll = "MDM_ALLOW_REENROLL"
+	EnvAdminToken    = "MDM_ADMIN_TOKEN" // #nosec G101 -- the variable name, not a credential
 	// EnvAdminStore opens the admin principal and policy store on the
 	// process's own database. Off by default: it mounts the admin API.
 	EnvAdminStore = "MDM_ADMIN_STORE"
@@ -93,6 +102,18 @@ const (
 
 // ParseEnv builds a Config from MDM_* variables through get (os.Getenv in
 // the binary). Booleans accept strconv.ParseBool forms.
+// keyNames splits a comma separated key list, active first, dropping blanks so
+// a trailing comma or a padded list is not a key named "".
+func keyNames(v string) []string {
+	var out []string
+	for name := range strings.SplitSeq(v, ",") {
+		if n := strings.TrimSpace(name); n != "" {
+			out = append(out, n)
+		}
+	}
+	return out
+}
+
 func ParseEnv(get func(string) string) (Config, error) {
 	pick := func(key, def string) string {
 		if v := get(key); v != "" {
@@ -106,6 +127,7 @@ func ParseEnv(get func(string) string) (Config, error) {
 		Storage:    pick(EnvStorage, DefaultStorage),
 		DSN:        pick(EnvDSN, DefaultDSN),
 		DDMURL:     get(EnvDDMURL),
+		SecretsDir: get(EnvSecretsDir),
 		AdminToken: get(EnvAdminToken),
 		Sinks: SinkConfig{
 			WebhookURL:     get(EnvWebhookURL),
@@ -237,6 +259,7 @@ func ParseEnv(get func(string) string) (Config, error) {
 		}
 		cfg.Sinks.Retention = d
 	}
+	cfg.StorageKeys = keyNames(get(EnvStorageKeys))
 	if v := get(EnvACMEIdentTTL); v != "" {
 		d, err := time.ParseDuration(v)
 		if err != nil {
@@ -245,12 +268,14 @@ func ParseEnv(get func(string) string) (Config, error) {
 		cfg.Enroll.ACME.IdentifierTTL = d
 	}
 	for key, dst := range map[string]*bool{
-		EnvADEAudit:        &cfg.Enroll.ADEAudit,
-		EnvRequireUserAuth: &cfg.Enroll.RequireUserAuth,
-		EnvACMEUnattested:  &cfg.Enroll.ACME.AllowUnattested,
-		EnvAdminStore:      &cfg.AdminStoreEnabled,
-		EnvAudit:           &cfg.Sinks.Audit,
-		EnvAuditStore:      &cfg.Sinks.Persist,
+		EnvADEAudit:          &cfg.Enroll.ADEAudit,
+		EnvRequireUserAuth:   &cfg.Enroll.RequireUserAuth,
+		EnvACMEUnattested:    &cfg.Enroll.ACME.AllowUnattested,
+		EnvAllowReenroll:     &cfg.AllowReenroll,
+		EnvStorageKeysStrict: &cfg.StorageKeysStrict,
+		EnvAdminStore:        &cfg.AdminStoreEnabled,
+		EnvAudit:             &cfg.Sinks.Audit,
+		EnvAuditStore:        &cfg.Sinks.Persist,
 	} {
 		if v := get(key); v != "" {
 			b, err := strconv.ParseBool(v)

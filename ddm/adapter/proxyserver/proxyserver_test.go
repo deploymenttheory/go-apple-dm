@@ -214,7 +214,7 @@ func TestSignature(t *testing.T) {
 	t.Run("ResponseSigned", func(t *testing.T) {
 		t.Parallel()
 		w := post(h, body, withHeader(proxywire.HeaderSignature, proxywire.Sign(recv, body)))
-		if err := proxywire.Verify(send, w.Header().Get(proxywire.HeaderSignature), w.Body.Bytes()); err != nil {
+		if err := proxywire.VerifyResponse(send, w.Header().Get(proxywire.HeaderSignature), w.Code, w.Body.Bytes()); err != nil {
 			t.Fatalf("response signature: %v", err)
 		}
 		if w.Header().Get("X-Content-Type-Options") != "nosniff" || w.Header().Get("Content-Type") != "application/json" {
@@ -222,7 +222,7 @@ func TestSignature(t *testing.T) {
 		}
 		// Every status is signed, including the rejections.
 		w = post(h, body)
-		if err := proxywire.Verify(send, w.Header().Get(proxywire.HeaderSignature), w.Body.Bytes()); err != nil || w.Code != http.StatusUnauthorized {
+		if err := proxywire.VerifyResponse(send, w.Header().Get(proxywire.HeaderSignature), w.Code, w.Body.Bytes()); err != nil || w.Code != http.StatusUnauthorized {
 			t.Fatalf("401 signature: %v (%d)", err, w.Code)
 		}
 	})
@@ -233,7 +233,7 @@ func TestSignature(t *testing.T) {
 		if w.Code != http.StatusNotFound || w.Body.Len() != 0 {
 			t.Fatalf("404: %d %s", w.Code, w.Body)
 		}
-		if err := proxywire.Verify(send, w.Header().Get(proxywire.HeaderSignature), nil); err != nil {
+		if err := proxywire.VerifyResponse(send, w.Header().Get(proxywire.HeaderSignature), w.Code, nil); err != nil {
 			t.Fatalf("404 signature: %v", err)
 		}
 		if w.Header().Get("Content-Type") != "" {
@@ -242,7 +242,7 @@ func TestSignature(t *testing.T) {
 		// Empty 200 for status is signed over the empty body as well.
 		b = dmPlist(t, map[string]any{"Endpoint": "status", "Data": []byte(`{}`)})
 		w = post(h, b, withHeader(proxywire.HeaderSignature, proxywire.Sign(recv, b)))
-		if err := proxywire.Verify(send, w.Header().Get(proxywire.HeaderSignature), nil); err != nil || w.Code != http.StatusOK || w.Body.Len() != 0 {
+		if err := proxywire.VerifyResponse(send, w.Header().Get(proxywire.HeaderSignature), w.Code, nil); err != nil || w.Code != http.StatusOK || w.Body.Len() != 0 {
 			t.Fatalf("empty 200 signature: %v (%d %q)", err, w.Code, w.Body)
 		}
 	})
@@ -544,7 +544,7 @@ func TestBackendErrors(t *testing.T) {
 		if w.Code != http.StatusInternalServerError || w.Body.Len() != 0 {
 			t.Fatalf("500: %d %q", w.Code, w.Body)
 		}
-		if err := proxywire.Verify([]byte("k"), w.Header().Get(proxywire.HeaderSignature), nil); err != nil {
+		if err := proxywire.VerifyResponse([]byte("k"), w.Header().Get(proxywire.HeaderSignature), w.Code, nil); err != nil {
 			t.Fatalf("500 is signed: %v", err)
 		}
 	})

@@ -203,7 +203,7 @@ func (s *server) write(w http.ResponseWriter, status int, body []byte) {
 	}
 	h.Set("X-Content-Type-Options", "nosniff")
 	if s.cfg.SendKey != nil {
-		h.Set(proxywire.HeaderSignature, proxywire.Sign(s.cfg.SendKey, body))
+		h.Set(proxywire.HeaderSignature, proxywire.SignResponse(s.cfg.SendKey, status, body))
 	}
 	w.WriteHeader(status)
 	_, _ = w.Write(body) // #nosec G705 -- machine-readable JSON with an explicit non-HTML content type

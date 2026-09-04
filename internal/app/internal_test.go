@@ -38,7 +38,10 @@ func TestCloseCollectsErrors(t *testing.T) {
 }
 
 func TestRunSurfacesNonCancelErrors(t *testing.T) {
-	a, err := Build(context.Background(), Config{Role: RoleDDM, Storage: "inmem"})
+	a, err := Build(context.Background(), Config{
+		Role: RoleDDM, Storage: "inmem",
+		DDMSendKey: []byte("hop-send-key"), DDMRecvKey: []byte("hop-recv-key"),
+	})
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -47,6 +47,41 @@ func TestRenewalSkipsChallenge(t *testing.T) {
 	}
 }
 
+// TestRenewalRequiresMatchingSubject holds the renewal path to both of its
+// conditions: the signer chains to our CA, and its subject is the CSR's.
+// Chaining identifies no single device, so a request that changes the subject
+// needs the challenge like any other.
+func TestRenewalRequiresMatchingSubject(t *testing.T) {
+	t.Parallel()
+	f := newFixture(t)
+	ot := scep.NewOneTimeChallenges(0, nil)
+	s, _ := scep.NewServer(f.signer, f.caCert, f.caKey, scep.WithChallenge(ot))
+	c := serve(t, s)
+	ctx := context.Background()
+	one, _ := ot.Issue(ctx)
+	key := rsaKey(t)
+	cert, err := c.Enroll(ctx, key, scep.EnrollOptions{
+		Subject:   pkix.Name{CommonName: "UDID-A"},
+		Challenge: one,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := c.Enroll(ctx, rsaKey(t), scep.EnrollOptions{
+		Subject: pkix.Name{CommonName: "UDID-B"},
+		Renew:   &scep.Identity{Cert: cert, Key: key},
+	}); !errors.Is(err, scep.ErrRejected) {
+		t.Fatalf("renewal into another subject accepted: %v", err)
+	}
+	// The same identity renewing itself is still allowed without a challenge.
+	if _, err := c.Enroll(ctx, rsaKey(t), scep.EnrollOptions{
+		Subject: pkix.Name{CommonName: "UDID-A"},
+		Renew:   &scep.Identity{Cert: cert, Key: key},
+	}); err != nil {
+		t.Fatalf("same-subject renewal refused: %v", err)
+	}
+}
+
 func TestHandlerBodyAndClientTransportErrors(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t)

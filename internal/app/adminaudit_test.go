@@ -16,6 +16,7 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/internal/app"
 	"github.com/deploymenttheory/go-apple-dm/internal/clock"
 	"github.com/deploymenttheory/go-apple-dm/mdm"
+	"github.com/deploymenttheory/go-apple-dm/secrets"
 )
 
 // auditApp builds a server whose trail is a store the test can also read.
@@ -295,7 +296,9 @@ func TestAuditStoreSelection(t *testing.T) {
 		dsn := filepath.Join(t.TempDir(), "b.db")
 		a, err := app.Build(context.Background(), app.Config{
 			Role: app.RoleAll, Storage: "sqlite", DSN: dsn, AdminToken: "t", Logger: quiet,
-			Sinks: app.SinkConfig{Persist: true},
+			StorageKeys: []string{"test"},
+			Secrets:     secrets.Static{"test": []byte("0123456789abcdef0123456789abcdef")},
+			Sinks:       app.SinkConfig{Persist: true},
 		})
 		if err != nil {
 			t.Fatal(err)

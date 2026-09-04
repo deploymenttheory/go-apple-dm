@@ -351,10 +351,7 @@ func (s *Store) List(ctx context.Context, q storage.EnrollmentQuery, p storage.P
 }
 
 func pageLimit(p storage.Page) int {
-	if p.Limit <= 0 {
-		return storage.DefaultPageSize
-	}
-	return p.Limit
+	return p.Size()
 }
 
 // TouchLastSeen implements storage.EnrollmentStore; it never moves the

@@ -269,7 +269,7 @@ func TestSignature(t *testing.T) {
 	body := []byte(`{"SyncTokens":{}}`)
 	t.Run("ResponseVerified", func(t *testing.T) {
 		t.Parallel()
-		srv := serve(t, &capture{status: 200, body: body, headers: map[string]string{proxywire.HeaderSignature: proxywire.Sign(key, body)}})
+		srv := serve(t, &capture{status: 200, body: body, headers: map[string]string{proxywire.HeaderSignature: proxywire.SignResponse(key, 200, body)}})
 		h := mustHandler(t, proxyclient.Config{URL: srv.URL, RecvKey: key})
 		ck, m := dmCheckin(t, "D1", "tokens", nil)
 		got, err := h(ctx, &mdm.Request{}, ck, m)
@@ -277,18 +277,41 @@ func TestSignature(t *testing.T) {
 			t.Fatalf("%+v %v", got, err)
 		}
 		// Signed 404 verifies over the empty body.
-		srv404 := serve(t, &capture{status: 404, headers: map[string]string{proxywire.HeaderSignature: proxywire.Sign(key, nil)}})
+		srv404 := serve(t, &capture{status: 404, headers: map[string]string{proxywire.HeaderSignature: proxywire.SignResponse(key, 404, nil)}})
 		h404 := mustHandler(t, proxyclient.Config{URL: srv404.URL, RecvKey: key})
 		if got, err := h404(ctx, &mdm.Request{}, ck, m); err != nil || got.Status != 404 {
 			t.Fatalf("signed 404: %+v %v", got, err)
+		}
+	})
+	// A signature over the body alone makes the empty-response MAC a constant,
+	// so an on-path attacker lifts it from any error response and replays it
+	// with a status of their choosing. A forged 404 tells every device it has
+	// no declarations.
+	t.Run("StatusIsCovered", func(t *testing.T) {
+		t.Parallel()
+		ck, m := dmCheckin(t, "D1", "tokens", nil)
+		// The signature the ddm role emits for an empty 500, replayed on a 404.
+		lifted := proxywire.SignResponse(key, 500, nil)
+		srv := serve(t, &capture{status: 404, headers: map[string]string{proxywire.HeaderSignature: lifted}})
+		h := mustHandler(t, proxyclient.Config{URL: srv.URL, RecvKey: key})
+		if _, err := h(ctx, &mdm.Request{}, ck, m); !errors.Is(err, proxywire.ErrBadSignature) {
+			t.Fatalf("replayed signature accepted under another status: %v", err)
+		}
+		// A genuine 200 body, served as a 404 so relay reports no declarations.
+		downgrade := serve(t, &capture{status: 404, body: body, headers: map[string]string{
+			proxywire.HeaderSignature: proxywire.SignResponse(key, 200, body),
+		}})
+		hd := mustHandler(t, proxyclient.Config{URL: downgrade.URL, RecvKey: key})
+		if _, err := hd(ctx, &mdm.Request{}, ck, m); !errors.Is(err, proxywire.ErrBadSignature) {
+			t.Fatalf("status downgrade accepted: %v", err)
 		}
 	})
 	t.Run("BadResponseSignature", func(t *testing.T) {
 		t.Parallel()
 		ck, m := dmCheckin(t, "D1", "tokens", nil)
 		for name, hdr := range map[string]string{
-			"wrong key":  proxywire.Sign([]byte("other"), body),
-			"other body": proxywire.Sign(key, []byte("{}")),
+			"wrong key":  proxywire.SignResponse([]byte("other"), 200, body),
+			"other body": proxywire.SignResponse(key, 200, []byte("{}")),
 			"garbage":    "!!",
 		} {
 			srv := serve(t, &capture{status: 200, body: body, headers: map[string]string{proxywire.HeaderSignature: hdr}})

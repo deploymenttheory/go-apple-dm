@@ -93,6 +93,24 @@ type Result[T any] struct {
 // DefaultPageSize applies when Page.Limit is not positive.
 const DefaultPageSize = 100
 
+// MaxPageSize bounds Page.Limit. A limit reaches a slice allocation before a
+// single row is read, so an unbounded one turns one request into an
+// out-of-memory kill of the process.
+const MaxPageSize = 1000
+
+// Size returns the page size to use: the requested limit, defaulted and
+// bounded, so every backend agrees without repeating the rule.
+func (p Page) Size() int {
+	switch {
+	case p.Limit <= 0:
+		return DefaultPageSize
+	case p.Limit > MaxPageSize:
+		return MaxPageSize
+	default:
+		return p.Limit
+	}
+}
+
 // EnrollmentStore persists enrollment records.
 type EnrollmentStore interface {
 	// UpsertAuthenticate records an Authenticate message. It creates the

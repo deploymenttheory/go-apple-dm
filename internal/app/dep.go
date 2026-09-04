@@ -57,7 +57,7 @@ func (a *App) newDEP(ctx context.Context) (*depService, error) {
 	case a.db == nil:
 		st = depinmem.New()
 	default:
-		s, err := depsql.Open(ctx, a.db, a.dialect, depsql.Options{})
+		s, err := depsql.Open(ctx, a.db, a.dialect, depsql.Options{Keyring: a.keyring})
 		if err != nil {
 			return nil, fmt.Errorf("app: DEP store: %w", err)
 		}

@@ -98,8 +98,11 @@ func (c *client) handle(ctx context.Context, _ *mdm.Request, ck *mdm.Checkin, _ 
 	if err != nil {
 		return service.DMResponse{}, internal(fmt.Errorf("%w: %w", ErrUpstream, err))
 	}
+	// The status is verified with the body because relay switches on it.
 	if c.cfg.RecvKey != nil {
-		if err := proxywire.Verify(c.cfg.RecvKey, resp.Header.Get(proxywire.HeaderSignature), body); err != nil {
+		if err := proxywire.VerifyResponse(
+			c.cfg.RecvKey, resp.Header.Get(proxywire.HeaderSignature), resp.StatusCode, body,
+		); err != nil {
 			return service.DMResponse{}, internal(fmt.Errorf("%w: response: %w", ErrUpstream, err))
 		}
 	}

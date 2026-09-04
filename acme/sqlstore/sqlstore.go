@@ -187,8 +187,5 @@ func placeholders(n int) string {
 
 // pageLimit applies the default page size.
 func pageLimit(p storage.Page) int {
-	if p.Limit <= 0 {
-		return storage.DefaultPageSize
-	}
-	return p.Limit
+	return p.Size()
 }

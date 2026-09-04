@@ -30,8 +30,10 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/httpapi"
 	"github.com/deploymenttheory/go-apple-dm/internal/clock"
 	"github.com/deploymenttheory/go-apple-dm/push"
+	"github.com/deploymenttheory/go-apple-dm/secrets"
 	"github.com/deploymenttheory/go-apple-dm/service"
 	"github.com/deploymenttheory/go-apple-dm/storage"
+	"github.com/deploymenttheory/go-apple-dm/storage/crypt"
 	"github.com/deploymenttheory/go-apple-dm/storage/inmem"
 	"github.com/deploymenttheory/go-apple-dm/storage/mysql"
 	"github.com/deploymenttheory/go-apple-dm/storage/postgres"
@@ -70,6 +72,37 @@ type Config struct {
 	// DDMSendKey signs what this role sends across the hop; DDMRecvKey
 	// verifies what it receives.
 	DDMSendKey, DDMRecvKey []byte
+	// AllowReenroll accepts an Authenticate whose identity certificate
+	// differs from the one the enrollment pins, and replaces the pin with it.
+	// It is service.AllowReenroll, the library default.
+	//
+	// The reference server defaults to service.DenyReenroll. A certificate
+	// carries no binding to an enrollment id, and chaining to the enrollment
+	// CA establishes only that the certificate is one we issued, so a
+	// permissive policy makes every certificate the CA issues a key to every
+	// enrollment. Deployments that need devices to re-enrol themselves after
+	// a wipe set MDM_ALLOW_REENROLL=true.
+	AllowReenroll bool
+	// StorageKeys names the keys that seal the secret columns of a durable
+	// store: unlock tokens, bootstrap tokens, APNs push keys and user auth
+	// tokens. The first is the active key every write seals under, and the
+	// rest are retired keys reads still accept, so a rotation is a prepended
+	// name followed by Rewrap.
+	//
+	// Without a keyring those columns are written in clear, and a stolen
+	// backup, replica or volume yields the push key, which wakes and
+	// impersonates the whole fleet. A durable store therefore requires one.
+	StorageKeys []string
+	// StorageKeysStrict refuses to read a secret column that is not sealed.
+	// It belongs on once Rewrap has run everywhere; before that it would
+	// reject rows written before the keyring existed.
+	StorageKeysStrict bool
+	// SecretsDir resolves StorageKeys from files in one directory, the shape
+	// Docker and Kubernetes secret mounts take. Empty reads them from the
+	// environment as MDM_STORAGE_KEY_<NAME>.
+	SecretsDir string
+	// Secrets overrides both, for tests and embedding.
+	Secrets secrets.Provider
 	// AdminToken enables the admin API on the ddm and all roles with a single
 	// static credential that authenticates as root and bypasses policy.
 	//
@@ -175,6 +208,7 @@ type App struct {
 	Engine   *ddm.Engine
 	Notifier *ddm.Notifier
 	Store    storage.Store
+	keyring  *crypt.Keyring
 	// AxM is the Business Manager client when configured.
 	AxM *axm.Client
 	// DEP is the device enrollment service; nil on the mdm role.
@@ -289,10 +323,21 @@ func Build(ctx context.Context, cfg Config) (*App, error) {
 		return nil, err
 	}
 	if err := a.wire(ctx); err != nil {
+		//nolint:contextcheck // teardown of a half-built App; Close releases
+		// resources already opened and takes no context.
 		_ = a.Close()
 		return nil, err
 	}
 	return a, nil
+}
+
+// reenrollPolicy maps the configuration flag to the service policy. The
+// secure default is deny; see Config.AllowReenroll for why.
+func reenrollPolicy(allow bool) service.ReenrollPolicy {
+	if allow {
+		return service.AllowReenroll
+	}
+	return service.DenyReenroll
 }
 
 func (c Config) validate() error {
@@ -316,6 +361,26 @@ func (c Config) validate() error {
 	}
 	if c.DDMURL != "" && c.Role != RoleMDM {
 		return fmt.Errorf("%w: DDM URL is only for the mdm role", ErrConfig)
+	}
+	// The hop forwards a check-in verbatim and the ddm role resolves the
+	// enrollment from that body, so an unauthenticated hop hands any caller
+	// every enrollment's declarations and its status reports. proxyserver
+	// treats each of its caller checks as optional, which makes requiring one
+	// this package's job: the ddm role exists to serve the hop, and an mdm
+	// role forwarding to it is the other end of the same trust boundary.
+	if c.Storage != "inmem" && len(c.StorageKeys) == 0 {
+		return fmt.Errorf(
+			"%w: %s storage seals unlock tokens, bootstrap tokens and push keys, so it needs %s",
+			ErrConfig, c.Storage, EnvStorageKeys,
+		)
+	}
+	if c.Role == RoleDDM || c.DDMURL != "" {
+		if len(c.DDMSendKey) == 0 || len(c.DDMRecvKey) == 0 {
+			return fmt.Errorf(
+				"%w: the declarative management hop needs %s and %s on both roles",
+				ErrConfig, EnvDDMSendKey, EnvDDMRecvKey,
+			)
+		}
 	}
 	if err := c.Enroll.validate(); err != nil {
 		return err
@@ -346,6 +411,20 @@ func (c *Config) roots() error {
 // certSource picks how the mdm role learns the device certificate.
 func (a *App) certSource() func(http.Handler) http.Handler {
 	switch {
+	// A configured header names where certificates come from, so it is
+	// honoured ahead of the signature: an mTLS-only enrollment profile sends
+	// no Mdm-Signature, and the signature source would leave those requests
+	// with no identity at all. CARoots, when present, verifies the chain.
+	case a.cfg.CertHeader != "":
+		if a.cfg.CARoots == nil {
+			a.cfg.Logger.Warn(
+				"app: certificate header trusted without a CA to verify it; "+
+					"set MDM_CA_FILE, and keep this listener reachable only through the proxy",
+				"header", a.cfg.CertHeader,
+			)
+			return httpapi.CertFromHeader(a.cfg.CertHeader)
+		}
+		return httpapi.CertFromHeader(a.cfg.CertHeader, httpapi.WithHeaderRoots(a.cfg.CARoots))
 	case a.cfg.CARoots != nil:
 		return httpapi.CertFromMdmSignature(
 			cms.VerifyOptions{
@@ -355,8 +434,6 @@ func (a *App) certSource() func(http.Handler) http.Handler {
 			},
 			0,
 		)
-	case a.cfg.CertHeader != "":
-		return httpapi.CertFromHeader(a.cfg.CertHeader)
 	default:
 		a.cfg.Logger.Warn(
 			"app: no CA or certificate header configured; device certificates must arrive over TLS on this process",
@@ -365,31 +442,68 @@ func (a *App) certSource() func(http.Handler) http.Handler {
 	}
 }
 
+// openKeyring resolves StorageKeys once, so a missing or malformed key is a
+// startup failure rather than the first write of an unlock token.
+func (a *App) openKeyring(ctx context.Context) error {
+	if len(a.cfg.StorageKeys) == 0 {
+		return nil
+	}
+	provider := a.cfg.Secrets
+	switch {
+	case provider != nil:
+	case a.cfg.SecretsDir != "":
+		d, err := secrets.NewDir(a.cfg.SecretsDir)
+		if err != nil {
+			return fmt.Errorf("app: secrets directory: %w", err)
+		}
+		a.closers = append(a.closers, d.Close)
+		provider = d
+	default:
+		provider = secrets.Env{Prefix: "MDM_STORAGE_KEY_"}
+	}
+	k, err := crypt.NewKeyring(ctx, crypt.Options{
+		Keys: crypt.Keys{
+			Active:   a.cfg.StorageKeys[0],
+			Accepted: a.cfg.StorageKeys[1:],
+			Strict:   a.cfg.StorageKeysStrict,
+		},
+		Provider: provider,
+	})
+	if err != nil {
+		return fmt.Errorf("app: storage keyring: %w", err)
+	}
+	a.keyring = k
+	return nil
+}
+
 func (a *App) openStorage(ctx context.Context) error {
 	var (
 		dialect sqlcommon.Dialect
 		db      *sql.DB
 	)
+	if err := a.openKeyring(ctx); err != nil {
+		return err
+	}
 	switch a.cfg.Storage {
 	case "inmem":
 		a.Store = inmem.New()
 		return nil
 	case "sqlite":
-		s, err := sqlite.Open(ctx, a.cfg.DSN, sqlite.Options{})
+		s, err := sqlite.Open(ctx, a.cfg.DSN, sqlite.Options{Keyring: a.keyring})
 		if err != nil {
 			return fmt.Errorf("app: sqlite: %w", err)
 		}
 		a.Store, db, dialect = s, s.DB(), sqlite.Dialect
 		a.closers = append(a.closers, s.Close)
 	case "postgres":
-		s, err := postgres.Open(ctx, a.cfg.DSN, postgres.Options{})
+		s, err := postgres.Open(ctx, a.cfg.DSN, postgres.Options{Keyring: a.keyring})
 		if err != nil {
 			return fmt.Errorf("app: postgres: %w", err)
 		}
 		a.Store, db, dialect = s, s.DB(), postgres.Dialect
 		a.closers = append(a.closers, s.Close)
 	default:
-		s, err := mysql.Open(ctx, a.cfg.DSN, mysql.Options{})
+		s, err := mysql.Open(ctx, a.cfg.DSN, mysql.Options{Keyring: a.keyring})
 		if err != nil {
 			return fmt.Errorf("app: mysql: %w", err)
 		}
@@ -477,6 +591,7 @@ func (a *App) wire(ctx context.Context) error {
 				enrollHooks...),
 			DeclarativeManagement: dm,
 			RequireUserAuth:       cfg.Enroll.RequireUserAuth,
+			Reenroll:              reenrollPolicy(cfg.AllowReenroll),
 		})
 		if err != nil {
 			return fmt.Errorf("app: core: %w", err)
@@ -580,16 +695,40 @@ func (a *App) wire(ctx context.Context) error {
 				return err
 			}
 			a.AxM = client
-			routes = append(routes, adminRoute{Pattern: "/axm/", Action: ActionManageBusinessMgr, Family: "axm", Handler: a.axmHandler(client)})
+			routes = append(
+				routes,
+				adminRoute{
+					Pattern: "/axm/",
+					Action:  ActionManageBusinessMgr,
+					Family:  "axm",
+					Handler: a.axmHandler(client),
+				},
+			)
 		}
 		if a.dep == nil {
 			if err := a.wireDEP(ctx); err != nil {
 				return err
 			}
 		}
-		routes = append(routes, adminRoute{Pattern: "/dep/", Action: ActionManageDEP, Family: "dep", Handler: a.dep.handler()})
+		routes = append(
+			routes,
+			adminRoute{
+				Pattern: "/dep/",
+				Action:  ActionManageDEP,
+				Family:  "dep",
+				Handler: a.dep.handler(),
+			},
+		)
 		if a.acme != nil {
-			routes = append(routes, adminRoute{Pattern: "/acme/", Action: ActionReadACME, Family: "acme", Handler: a.acme.handler()})
+			routes = append(
+				routes,
+				adminRoute{
+					Pattern: "/acme/",
+					Action:  ActionReadACME,
+					Family:  "acme",
+					Handler: a.acme.handler(),
+				},
+			)
 		}
 		admin, err := a.buildAdminMux(routes)
 		if err != nil {
@@ -724,6 +863,8 @@ func (a *App) adminStore(ctx context.Context) (adminauth.Store, error) {
 	case a.cfg.AdminStore != nil:
 		return a.cfg.AdminStore, nil
 	case !a.cfg.AdminStoreEnabled:
+		//nolint:nilnil // a nil store is the documented "no principal store"
+		// answer, not a failure: the static token stays the only credential.
 		return nil, nil
 	case a.db == nil:
 		// An in-memory deployment has nowhere durable to put principals; the
