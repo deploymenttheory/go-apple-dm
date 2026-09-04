@@ -77,25 +77,25 @@ jobs:
       postgres:
         image: postgres:17
         env:
-          POSTGRES_USER: mdm
-          POSTGRES_PASSWORD: mdm
-          POSTGRES_DB: mdm
+          POSTGRES_USER: dm
+          POSTGRES_PASSWORD: dm
+          POSTGRES_DB: dm
         ports: ['5432:5432']
         options: >-
-          --health-cmd "pg_isready -U mdm" --health-interval 5s --health-timeout 5s --health-retries 20
+          --health-cmd "pg_isready -U dm" --health-interval 5s --health-timeout 5s --health-retries 20
       mysql:
         image: mysql:8.4
         env:
-          MYSQL_ROOT_PASSWORD: mdm
-          MYSQL_DATABASE: mdm
-          MYSQL_USER: mdm
-          MYSQL_PASSWORD: mdm
+          MYSQL_ROOT_PASSWORD: dm
+          MYSQL_DATABASE: dm
+          MYSQL_USER: dm
+          MYSQL_PASSWORD: dm
         ports: ['3306:3306']
         options: >-
-          --health-cmd "mysqladmin ping -h 127.0.0.1 -pmdm" --health-interval 5s --health-timeout 5s --health-retries 30
+          --health-cmd "mysqladmin ping -h 127.0.0.1 -pdm" --health-interval 5s --health-timeout 5s --health-retries 30
     env:
-      TEST_POSTGRES_DSN: postgres://mdm:mdm@127.0.0.1:5432/mdm?sslmode=disable
-      TEST_MYSQL_DSN: mdm:mdm@tcp(127.0.0.1:3306)/mdm?parseTime=true&multiStatements=true
+      TEST_POSTGRES_DSN: postgres://dm:dm@127.0.0.1:5432/dm?sslmode=disable
+      TEST_MYSQL_DSN: dm:dm@tcp(127.0.0.1:3306)/dm?parseTime=true&multiStatements=true
     steps:
       - name: Harden Runner
         uses: step-security/harden-runner@e14015d583714f6e62063499dc959a02595150a1 # v2.21.1
@@ -138,15 +138,15 @@ jobs:
       postgres:
         image: postgres:17
         env:
-          POSTGRES_USER: mdm
-          POSTGRES_PASSWORD: mdm
-          POSTGRES_DB: mdm
+          POSTGRES_USER: dm
+          POSTGRES_PASSWORD: dm
+          POSTGRES_DB: dm
         ports: ['5432:5432']
         options: >-
-          --health-cmd "pg_isready -U mdm" --health-interval 5s --health-timeout 5s --health-retries 20
+          --health-cmd "pg_isready -U dm" --health-interval 5s --health-timeout 5s --health-retries 20
     env:
       E2E_STORE: ${{ matrix.store }}
-      TEST_POSTGRES_DSN: postgres://mdm:mdm@127.0.0.1:5432/mdm?sslmode=disable
+      TEST_POSTGRES_DSN: postgres://dm:dm@127.0.0.1:5432/dm?sslmode=disable
     steps:
       - name: Harden Runner
         uses: step-security/harden-runner@e14015d583714f6e62063499dc959a02595150a1 # v2.21.1
@@ -170,7 +170,7 @@ jobs:
         run: make test-e2e
       - name: ddm container logs
         if: always()
-        run: docker logs mdm-test-ddm 2>&1 | tail -n 200 || true
+        run: docker logs dm-test-ddm 2>&1 | tail -n 200 || true
       - name: Upload e2e coverage
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:

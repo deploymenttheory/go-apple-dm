@@ -62,8 +62,8 @@ With the code:
 | [0032](0032-managed-device-attestation.md) | Managed Device Attestation: parsing, verification, and policy | accepted | 7 |
 | [0033](0033-acme-identity-in-profiles-and-ddm.md) | ACME identity in enrollment profiles, declarative credentials, and the reference server | accepted | 7 |
 | [0034](0034-admin-api-and-authorization.md) | Admin API surface and authorization | accepted | 8 |
-| [0035](0035-mdmctl-structure-and-credentials.md) | `dmctl` structure, output, and credential handling | accepted | 8 |
-| [0036](0036-mdmctl-explain-over-schema-support.md) | `dmctl explain` over `schema/support` | accepted | 8 |
+| [0035](0035-dmctl-structure-and-credentials.md) | `dmctl` structure, output, and credential handling | accepted | 8 |
+| [0036](0036-dmctl-explain-over-schema-support.md) | `dmctl explain` over `schema/support` | accepted | 8 |
 | [0037](0037-event-sinks-and-redaction.md) | Event sinks and default-deny redaction | accepted | 9 |
 | [0038](0038-persisted-audit-trail.md) | The persisted audit trail | accepted | 9 |
 | [0039](0039-ddm-is-an-extension-of-mdm.md) | Declarative management is an extension of MDM, not a peer | accepted | 9 |
