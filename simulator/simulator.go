@@ -14,10 +14,10 @@ import (
 	"net/http"
 	"sync"
 
-	"github.com/deploymenttheory/go-apple-dm/cms"
-	"github.com/deploymenttheory/go-apple-dm/mdm"
-	"github.com/deploymenttheory/go-apple-dm/plist"
-	"github.com/deploymenttheory/go-apple-dm/schema/commands"
+	"github.com/deploymenttheory/go-apple-dm/v3/mdmprotocol/cms"
+	"github.com/deploymenttheory/go-apple-dm/v3/mdmprotocol/mdm"
+	"github.com/deploymenttheory/go-apple-dm/v3/mdmprotocol/plist"
+	"github.com/deploymenttheory/go-apple-dm/v3/schema/commands"
 )
 
 // Content types Apple devices send.

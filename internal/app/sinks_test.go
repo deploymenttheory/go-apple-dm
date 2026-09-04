@@ -10,9 +10,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/deploymenttheory/go-apple-dm/internal/app"
-	"github.com/deploymenttheory/go-apple-dm/mdm"
-	"github.com/deploymenttheory/go-apple-dm/storage"
+	"github.com/deploymenttheory/go-apple-dm/v3/internal/app"
+	"github.com/deploymenttheory/go-apple-dm/v3/mdmprotocol/mdm"
+	"github.com/deploymenttheory/go-apple-dm/v3/server/storage"
 )
 
 // collector records webhook deliveries.

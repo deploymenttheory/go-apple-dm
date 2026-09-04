@@ -10,7 +10,7 @@ import (
 	"strings"
 	"text/tabwriter"
 
-	"github.com/deploymenttheory/go-apple-dm/internal/dmctl/adminclient"
+	"github.com/deploymenttheory/go-apple-dm/v3/internal/dmctl/adminclient"
 )
 
 // emit writes one server response in the selected mode.

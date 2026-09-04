@@ -11,10 +11,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/deploymenttheory/go-apple-dm/internal/app"
-	"github.com/deploymenttheory/go-apple-dm/internal/testpki"
-	"github.com/deploymenttheory/go-apple-dm/mdm"
-	"github.com/deploymenttheory/go-apple-dm/push"
+	"github.com/deploymenttheory/go-apple-dm/v3/appleplatformservices/push"
+	"github.com/deploymenttheory/go-apple-dm/v3/internal/app"
+	"github.com/deploymenttheory/go-apple-dm/v3/mdmprotocol/mdm"
+	"github.com/deploymenttheory/go-apple-dm/v3/testpki"
 )
 
 // recordingPusher stands in for APNs and records who was woken.

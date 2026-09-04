@@ -12,16 +12,16 @@ import (
 	"strings"
 	"time"
 
-	"github.com/deploymenttheory/go-apple-dm/acme"
-	"github.com/deploymenttheory/go-apple-dm/acme/attest"
-	acmeinmem "github.com/deploymenttheory/go-apple-dm/acme/inmem"
-	acmesql "github.com/deploymenttheory/go-apple-dm/acme/sqlstore"
-	"github.com/deploymenttheory/go-apple-dm/ca"
-	"github.com/deploymenttheory/go-apple-dm/cms"
-	"github.com/deploymenttheory/go-apple-dm/enroll"
-	"github.com/deploymenttheory/go-apple-dm/httpapi"
-	"github.com/deploymenttheory/go-apple-dm/paging"
-	"github.com/deploymenttheory/go-apple-dm/schema/ddm"
+	"github.com/deploymenttheory/go-apple-dm/v3/mdmprotocol/cms"
+	"github.com/deploymenttheory/go-apple-dm/v3/mdmprotocol/enroll"
+	"github.com/deploymenttheory/go-apple-dm/v3/paging"
+	"github.com/deploymenttheory/go-apple-dm/v3/pki/acme"
+	"github.com/deploymenttheory/go-apple-dm/v3/pki/acme/attest"
+	"github.com/deploymenttheory/go-apple-dm/v3/pki/ca"
+	"github.com/deploymenttheory/go-apple-dm/v3/schema/ddm"
+	acmeinmem "github.com/deploymenttheory/go-apple-dm/v3/server/acmestore/inmem"
+	acmesql "github.com/deploymenttheory/go-apple-dm/v3/server/acmestore/sqlstore"
+	"github.com/deploymenttheory/go-apple-dm/v3/server/httpapi"
 )
 
 // Identity methods for the enrollment profile.

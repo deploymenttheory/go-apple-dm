@@ -3,6 +3,7 @@ package layout
 import (
 	"fmt"
 	"os/exec"
+	"slices"
 	"sort"
 	"strings"
 )
@@ -98,13 +99,22 @@ func (g *Graph) Reaches(from string) []string {
 	return out
 }
 
-// Unit is the directory a tier is assigned to: the first path element, except
-// under internal and schema, which are namespaces of unrelated packages
-// rather than one unit ("internal/clock" is a foundation, "internal/app" is
-// the composition root).
+// namespaces hold unrelated packages rather than one cohesive unit, so a
+// unit under them is two path elements deep: "internal/clock" is a
+// foundation and "internal/app" is the composition root, and collapsing
+// them would invent a cycle between what everything imports and what
+// imports everything. The tier directories are namespaces for the same
+// reason.
+var namespaces = []string{
+	"internal", "schema",
+	"mdmprotocol", "pki", "appleplatformservices", "server",
+}
+
+// Unit is the directory a tier is assigned to: the first path element,
+// except under a namespace, where it is the first two.
 func Unit(pkg string) string {
 	parts := strings.Split(pkg, "/")
-	if len(parts) > 1 && (parts[0] == "internal" || parts[0] == "schema") {
+	if len(parts) > 1 && slices.Contains(namespaces, parts[0]) {
 		return parts[0] + "/" + parts[1]
 	}
 	return parts[0]

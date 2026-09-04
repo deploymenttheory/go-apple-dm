@@ -8,7 +8,7 @@
 // answers commands with typed responses, can inject NotNow and Error
 // replies, enrolls through SCEP and the OTA profile service, and runs a
 // declarative management client: it synchronises tokens, declaration items,
-// and declarations, evaluates activation predicates with ddm/predicate, and
+// and declarations, evaluates activation predicates with mdmprotocol/ddm/predicate, and
 // builds status reports with Apple's reason codes so the server's grading
 // is observable. Faults (dropped status, stale token, failed fetch) model
 // the device behaviours the references tripped over. It never imports the

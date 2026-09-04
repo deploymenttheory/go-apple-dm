@@ -6,8 +6,8 @@ package profiles
 import (
 	"regexp"
 
-	"github.com/deploymenttheory/go-apple-dm/schema/support"
-	"github.com/deploymenttheory/go-apple-dm/schema/validation"
+	"github.com/deploymenttheory/go-apple-dm/v3/schema/support"
+	"github.com/deploymenttheory/go-apple-dm/v3/schema/validation"
 )
 
 // Formats from the schema, compiled once.

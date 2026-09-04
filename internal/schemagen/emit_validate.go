@@ -40,7 +40,7 @@ func (e *emitter) validateFile() []byte {
 		b.WriteString("\t\"regexp\"\n\n")
 	}
 	b.WriteString(
-		"\t\"github.com/deploymenttheory/go-apple-dm/schema/support\"\n\t\"github.com/deploymenttheory/go-apple-dm/schema/validation\"\n)\n\n",
+		"\t\"github.com/deploymenttheory/go-apple-dm/v3/schema/support\"\n\t\"github.com/deploymenttheory/go-apple-dm/v3/schema/validation\"\n)\n\n",
 	)
 	if len(patterns) > 0 {
 		b.WriteString("// Formats from the schema, compiled once.\nvar (\n")

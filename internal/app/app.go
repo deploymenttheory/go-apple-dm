@@ -12,34 +12,34 @@ import (
 	"sync"
 	"time"
 
-	"github.com/deploymenttheory/go-apple-dm/adminauth"
-	admininmem "github.com/deploymenttheory/go-apple-dm/adminauth/inmem"
-	adminsql "github.com/deploymenttheory/go-apple-dm/adminauth/sqlstore"
-	"github.com/deploymenttheory/go-apple-dm/audit"
-	"github.com/deploymenttheory/go-apple-dm/axm"
-	"github.com/deploymenttheory/go-apple-dm/cms"
-	"github.com/deploymenttheory/go-apple-dm/ddm"
-	"github.com/deploymenttheory/go-apple-dm/ddm/adapter/inproc"
-	"github.com/deploymenttheory/go-apple-dm/ddm/adapter/proxyclient"
-	"github.com/deploymenttheory/go-apple-dm/ddm/adapter/proxyserver"
-	ddminmem "github.com/deploymenttheory/go-apple-dm/ddm/inmem"
-	"github.com/deploymenttheory/go-apple-dm/ddm/sqlstore"
-	"github.com/deploymenttheory/go-apple-dm/ddmengine"
-	"github.com/deploymenttheory/go-apple-dm/dep"
-	"github.com/deploymenttheory/go-apple-dm/event"
-	"github.com/deploymenttheory/go-apple-dm/eventsink"
-	"github.com/deploymenttheory/go-apple-dm/httpapi"
-	"github.com/deploymenttheory/go-apple-dm/internal/clock"
-	"github.com/deploymenttheory/go-apple-dm/pushnotify"
-	"github.com/deploymenttheory/go-apple-dm/secrets"
-	"github.com/deploymenttheory/go-apple-dm/service"
-	"github.com/deploymenttheory/go-apple-dm/storage"
-	"github.com/deploymenttheory/go-apple-dm/storage/crypt"
-	"github.com/deploymenttheory/go-apple-dm/storage/inmem"
-	"github.com/deploymenttheory/go-apple-dm/storage/mysql"
-	"github.com/deploymenttheory/go-apple-dm/storage/postgres"
-	"github.com/deploymenttheory/go-apple-dm/storage/sqlcommon"
-	"github.com/deploymenttheory/go-apple-dm/storage/sqlite"
+	"github.com/deploymenttheory/go-apple-dm/v3/appleplatformservices/axm"
+	"github.com/deploymenttheory/go-apple-dm/v3/appleplatformservices/dep"
+	"github.com/deploymenttheory/go-apple-dm/v3/clock"
+	"github.com/deploymenttheory/go-apple-dm/v3/mdmprotocol/cms"
+	"github.com/deploymenttheory/go-apple-dm/v3/mdmprotocol/ddm"
+	"github.com/deploymenttheory/go-apple-dm/v3/mdmprotocol/event"
+	"github.com/deploymenttheory/go-apple-dm/v3/secrets"
+	"github.com/deploymenttheory/go-apple-dm/v3/server/adminauth"
+	admininmem "github.com/deploymenttheory/go-apple-dm/v3/server/adminauth/inmem"
+	adminsql "github.com/deploymenttheory/go-apple-dm/v3/server/adminauth/sqlstore"
+	"github.com/deploymenttheory/go-apple-dm/v3/server/audit"
+	"github.com/deploymenttheory/go-apple-dm/v3/server/ddmadapter/inproc"
+	"github.com/deploymenttheory/go-apple-dm/v3/server/ddmadapter/proxyclient"
+	"github.com/deploymenttheory/go-apple-dm/v3/server/ddmadapter/proxyserver"
+	ddminmem "github.com/deploymenttheory/go-apple-dm/v3/server/ddmstore/inmem"
+	"github.com/deploymenttheory/go-apple-dm/v3/server/ddmstore/sqlstore"
+	"github.com/deploymenttheory/go-apple-dm/v3/server/ddmsync"
+	"github.com/deploymenttheory/go-apple-dm/v3/server/eventsink"
+	"github.com/deploymenttheory/go-apple-dm/v3/server/httpapi"
+	"github.com/deploymenttheory/go-apple-dm/v3/server/pushnotify"
+	"github.com/deploymenttheory/go-apple-dm/v3/server/service"
+	"github.com/deploymenttheory/go-apple-dm/v3/server/storage"
+	"github.com/deploymenttheory/go-apple-dm/v3/server/storage/crypt"
+	"github.com/deploymenttheory/go-apple-dm/v3/server/storage/inmem"
+	"github.com/deploymenttheory/go-apple-dm/v3/server/storage/mysql"
+	"github.com/deploymenttheory/go-apple-dm/v3/server/storage/postgres"
+	"github.com/deploymenttheory/go-apple-dm/v3/server/storage/sqlcommon"
+	"github.com/deploymenttheory/go-apple-dm/v3/server/storage/sqlite"
 )
 
 // Role selects what a process serves.
@@ -207,7 +207,7 @@ type App struct {
 	Handler  http.Handler
 	Core     *service.Core
 	Engine   *ddm.Engine
-	Notifier *ddmengine.Notifier
+	Notifier *ddmsync.Notifier
 	Store    storage.Store
 	keyring  *crypt.Keyring
 	// AxM is the Business Manager client when configured.
@@ -548,7 +548,7 @@ func (a *App) wire(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	var pusher ddmengine.Pusher
+	var pusher ddmsync.Pusher
 	if a.Push != nil {
 		pusher = a.Push
 	}
@@ -588,7 +588,7 @@ func (a *App) wire(ctx context.Context) error {
 			Clock:  cfg.Clock,
 			Logger: cfg.Logger,
 			Hooks: append(
-				[]service.Hook{ddmengine.NewServiceHook(engine, a.Store, cfg.Logger)},
+				[]service.Hook{ddmsync.NewServiceHook(engine, a.Store, cfg.Logger)},
 				enrollHooks...),
 			DeclarativeManagement: dm,
 			RequireUserAuth:       cfg.Enroll.RequireUserAuth,
@@ -647,9 +647,9 @@ func (a *App) wire(ctx context.Context) error {
 	// one is pending, and says so here rather than inheriting it: whether to
 	// suppress is a deployment's decision, and ddm defaults to this only
 	// because a nil key means "not set".
-	dedupe := ddmengine.DefaultDedupeKey
-	a.Notifier, err = ddmengine.NewNotifier(
-		ddmengine.NotifierConfig{
+	dedupe := ddmsync.DefaultDedupeKey
+	a.Notifier, err = ddmsync.NewNotifier(
+		ddmsync.NotifierConfig{
 			Store:     st,
 			Tokens:    engine,
 			Enqueuer:  a.Core,
@@ -748,7 +748,7 @@ func (a *App) wire(ctx context.Context) error {
 // The first failure cancels its siblings so Run returns promptly rather than
 // waiting for loops that only stop on cancellation. A loop that stops because
 // the context ended is not a failure, and the two existing loops disagree on
-// how they say so -- ddmengine.Notifier.Run returns ctx.Err(), depService.Run
+// how they say so -- ddmsync.Notifier.Run returns ctx.Err(), depService.Run
 // returns nil -- so cancellation is normalised here rather than in each loop.
 func (a *App) Run(ctx context.Context) error {
 	if len(a.workers) == 0 {

@@ -9,7 +9,7 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/deploymenttheory/go-apple-dm/internal/dmctl"
+	"github.com/deploymenttheory/go-apple-dm/v3/internal/dmctl"
 )
 
 // apiRecorder answers every admin route with a plausible body and remembers

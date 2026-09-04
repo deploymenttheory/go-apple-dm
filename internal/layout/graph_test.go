@@ -7,7 +7,7 @@ import (
 	"slices"
 	"testing"
 
-	"github.com/deploymenttheory/go-apple-dm/internal/layout"
+	"github.com/deploymenttheory/go-apple-dm/v3/internal/layout"
 )
 
 // TestLoadReportsADirectoryThatIsNotAModule covers the failing path: go list

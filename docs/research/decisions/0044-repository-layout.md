@@ -41,11 +41,11 @@ they are allowed to import; it changes no wire format and no Apple-facing behavi
 
 ## What we do better
 
-1. Tiers named for the role they play — `protocol/`, `pki/`, `appleservices/`, `server/` — so an
+1. Tiers named for the role they play — `mdmprotocol/`, `pki/`, `appleplatformservices/`, `server/` — so an
    import path states which layer a package belongs to, and `schema/` stays at the root as the
    generated tree it is.
-2. The layering is enforced, not asserted: the tier rules are tests in `internal/layout`, which
-   fail the build. `depguard` was the obvious home for them and cannot be, because
+2. The layering is enforced, not asserted: `internal/layout` reads the tier from the import path
+   and fails the build on any edge that points upwards. `depguard` was the obvious home for them and cannot be, because
    `.github/workflows/go-lint.yml` runs golangci-lint with `--issues-exit-code=0` and
    `only-new-issues`, so a lint rule reports a violation without failing anything. Tests are the
    only gate this repository actually has. None of the four references makes an enforced claim of
@@ -76,8 +76,15 @@ they are allowed to import; it changes no wire format and no Apple-facing behavi
    `layout.TestPushcertImportsOnlyTheStandardLibrary` keeps
    `storage -> pushcert -> push -> storage` from becoming a genuine import cycle. The suite was
    verified to fail: one added import in `cms` failed five packages transitively.
-3. `go list -f '{{join .Imports "\n"}}' ./acme ./dep` contains no `go-apple-dm/storage` entry; the
-   coverage gate stays above 95% overall and per package throughout.
+3. `layout.TestTiersOnlyImportDownwards` reads every package's tier from its path and rejects any
+   upward edge; `layout.TestEveryTierIsPopulated` stops a renamed tier directory from silently
+   demoting everything under it and making that check vacuous. One exception is recorded and
+   named: `mdmprotocol/enroll/ade` reads Apple's software lookup service to gate Automated Device
+   Enrollment on OS version, so it imports `appleplatformservices/gdmf` for a one-method interface,
+   a value type and a string comparison. The edge is nominal — `gdmf` imports nothing in this
+   module — and the fix is a design choice left open: split gdmf's vocabulary from its HTTP client
+   as push and pushnotify were split, invert at the ade boundary, or give enrollment its own tier.
+   The coverage gate stays above 95% overall and per package throughout.
 4. In a scratch module, `go get` of the library followed by importing only `protocol/mdm` yields a
    `go.sum` with no `pgx`, `cedar-go`, `otel` or `modernc-sqlite`.
 

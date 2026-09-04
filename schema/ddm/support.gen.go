@@ -4,7 +4,7 @@
 package ddm
 
 import (
-	"github.com/deploymenttheory/go-apple-dm/schema/support"
+	"github.com/deploymenttheory/go-apple-dm/v3/schema/support"
 )
 
 // Support returns the support entry for a key path such as "DeviceLock.Message"

@@ -12,8 +12,8 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/codes"
 
-	"github.com/deploymenttheory/go-apple-dm/telemetry"
-	"github.com/deploymenttheory/go-apple-dm/telemetry/telemetrytest"
+	"github.com/deploymenttheory/go-apple-dm/v3/telemetry"
+	"github.com/deploymenttheory/go-apple-dm/v3/telemetry/telemetrytest"
 )
 
 // The contract a consumer relies on: configure nothing, pay nothing. A zero

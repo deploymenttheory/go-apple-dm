@@ -7,7 +7,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/deploymenttheory/go-apple-dm/schema/support"
+	"github.com/deploymenttheory/go-apple-dm/v3/schema/support"
 )
 
 // supportOS is a local alias for readability in tests.
@@ -176,7 +176,7 @@ func overlay(dst *support.OSSupport, src *OSSupport) error {
 func (e *emitter) supportFile() []byte {
 	b := buf()
 	b.WriteString(e.header())
-	b.WriteString("import (\n\t\"github.com/deploymenttheory/go-apple-dm/schema/support\"\n)\n\n")
+	b.WriteString("import (\n\t\"github.com/deploymenttheory/go-apple-dm/v3/schema/support\"\n)\n\n")
 	b.WriteString(
 		"// Support returns the support entry for a key path such as \"DeviceLock.Message\"\n// or \"DeviceLock.response.MessageResult\", or nil when unknown.\nfunc Support(path string) *support.Entry { return supportTable[path] }\n\n",
 	)

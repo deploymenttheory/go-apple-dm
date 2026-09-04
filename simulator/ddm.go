@@ -12,10 +12,10 @@ import (
 	"sync"
 	"time"
 
-	"github.com/deploymenttheory/go-apple-dm/mdm"
-	"github.com/deploymenttheory/go-apple-dm/schema/commands"
-	schemaddm "github.com/deploymenttheory/go-apple-dm/schema/ddm"
-	"github.com/deploymenttheory/go-apple-dm/schema/ddmproto"
+	"github.com/deploymenttheory/go-apple-dm/v3/mdmprotocol/mdm"
+	"github.com/deploymenttheory/go-apple-dm/v3/schema/commands"
+	schemaddm "github.com/deploymenttheory/go-apple-dm/v3/schema/ddm"
+	"github.com/deploymenttheory/go-apple-dm/v3/schema/ddmproto"
 )
 
 // Declarative management client (decision record 0024). The simulator runs

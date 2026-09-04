@@ -3,7 +3,7 @@ package paging_test
 import (
 	"testing"
 
-	"github.com/deploymenttheory/go-apple-dm/paging"
+	"github.com/deploymenttheory/go-apple-dm/v3/paging"
 )
 
 // TestPageSize bounds the page size every backend allocates from. The limit

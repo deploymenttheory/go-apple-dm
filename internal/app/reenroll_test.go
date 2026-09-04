@@ -7,11 +7,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/deploymenttheory/go-apple-dm/internal/app"
-	"github.com/deploymenttheory/go-apple-dm/internal/testpki"
-	"github.com/deploymenttheory/go-apple-dm/mdm"
-	"github.com/deploymenttheory/go-apple-dm/plist"
-	"github.com/deploymenttheory/go-apple-dm/service"
+	"github.com/deploymenttheory/go-apple-dm/v3/internal/app"
+	"github.com/deploymenttheory/go-apple-dm/v3/mdmprotocol/mdm"
+	"github.com/deploymenttheory/go-apple-dm/v3/mdmprotocol/plist"
+	"github.com/deploymenttheory/go-apple-dm/v3/server/service"
+	"github.com/deploymenttheory/go-apple-dm/v3/testpki"
 )
 
 // authenticateAs sends an Authenticate for udid signed by cert, the way a

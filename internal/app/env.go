@@ -6,7 +6,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/deploymenttheory/go-apple-dm/enroll"
+	"github.com/deploymenttheory/go-apple-dm/v3/mdmprotocol/enroll"
 )
 
 // Environment variables read by ParseEnv.

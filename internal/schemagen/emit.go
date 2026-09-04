@@ -10,7 +10,7 @@ import (
 )
 
 // ModulePath is the import path root of generated packages.
-const ModulePath = "github.com/deploymenttheory/go-apple-dm"
+const ModulePath = "github.com/deploymenttheory/go-apple-dm/v3"
 
 // Options control generation.
 type Options struct {

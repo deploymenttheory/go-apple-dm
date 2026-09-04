@@ -6,8 +6,8 @@ package other_test
 import (
 	"testing"
 
-	"github.com/deploymenttheory/go-apple-dm/schema/internal/conformance"
-	"github.com/deploymenttheory/go-apple-dm/schema/other"
+	"github.com/deploymenttheory/go-apple-dm/v3/schema/internal/conformance"
+	"github.com/deploymenttheory/go-apple-dm/v3/schema/other"
 )
 
 func sampleEnrollmentSSODocument(d int) *other.EnrollmentSSODocument {

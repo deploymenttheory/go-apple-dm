@@ -5,7 +5,7 @@ GO ?= go
 COVERAGE_MIN ?= 95
 COVER_DIR := cover
 PKGS := ./...
-INTEGRATION_PKGS := ./storage/... ./ddm/sqlstore/... ./dep/sqlstore/... ./acme/sqlstore/... ./adminauth/sqlstore/... ./audit/sqlstore/... ./internal/app/...
+INTEGRATION_PKGS := ./server/storage/... ./server/ddmstore/... ./server/depstore/... ./server/acmestore/... ./server/adminauth/... ./server/audit/... ./internal/app/...
 E2E_PKGS := ./e2e/...
 E2E_STORE ?= sqlite
 FUZZ_SMOKE_TIME ?= 20s
@@ -55,7 +55,7 @@ test-storage:
 
 ## test-storage-perf: the 100k-row Clear timing gate on PostgreSQL, without the race detector (needs TEST_POSTGRES_DSN)
 test-storage-perf:
-	$(GO) test -count=1 -tags integration -run 'TestClear100kUnderOneSecond' -v ./storage/postgres/
+	$(GO) test -count=1 -tags integration -run 'TestClear100kUnderOneSecond' -v ./server/storage/postgres/
 
 ## test-conformance: generated schema conformance tests only
 test-conformance:

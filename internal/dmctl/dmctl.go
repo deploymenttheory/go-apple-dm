@@ -12,7 +12,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/deploymenttheory/go-apple-dm/internal/dmctl/adminclient"
+	"github.com/deploymenttheory/go-apple-dm/v3/internal/dmctl/adminclient"
 )
 
 // Exit codes. They are documented and distinct so a script can tell a usage

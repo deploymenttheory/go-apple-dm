@@ -4,7 +4,7 @@
 package checkin
 
 import (
-	"github.com/deploymenttheory/go-apple-dm/schema/support"
+	"github.com/deploymenttheory/go-apple-dm/v3/schema/support"
 )
 
 // Message is implemented by every top-level type in this package.

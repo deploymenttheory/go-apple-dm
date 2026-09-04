@@ -7,10 +7,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/deploymenttheory/go-apple-dm/adminauth"
-	"github.com/deploymenttheory/go-apple-dm/adminauth/inmem"
-	"github.com/deploymenttheory/go-apple-dm/event"
-	"github.com/deploymenttheory/go-apple-dm/internal/app"
+	"github.com/deploymenttheory/go-apple-dm/v3/internal/app"
+	"github.com/deploymenttheory/go-apple-dm/v3/mdmprotocol/event"
+	"github.com/deploymenttheory/go-apple-dm/v3/server/adminauth"
+	"github.com/deploymenttheory/go-apple-dm/v3/server/adminauth/inmem"
 )
 
 // policyApp builds a server whose admin API authenticates against a principal

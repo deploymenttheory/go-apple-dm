@@ -1,7 +1,7 @@
 # go-apple-dm
 
 Pure Go library for the Apple MDM protocol and Declarative Device Management, plus a thin
-reference server. Module `github.com/deploymenttheory/go-apple-dm`, Go 1.27.
+reference server. Module `github.com/deploymenttheory/go-apple-dm/v3`, Go 1.27.
 
 ## Plan of record
 
@@ -9,6 +9,15 @@ reference server. Module `github.com/deploymenttheory/go-apple-dm`, Go 1.27.
 - `docs/research/reference_projects.md`: the research every decision is founded on.
 - `docs/research/decisions/`: one decision record per feature, from `TEMPLATE.md`. No feature code
   lands without one.
+
+## Layout
+
+Packages sit in tiers and may import their own tier and every tier below, never above:
+foundation (`paging`, `clock`, `testpki`, `secrets`, `telemetry`) -> `schema/` ->
+`mdmprotocol/` -> `pki/` -> `appleplatformservices/` -> `simulator/` -> `server/` ->
+app (`cmd/`, `internal/app`, `e2e/`). `internal/layout` asserts this in tests, because
+`go-lint.yml` runs golangci-lint with `--issues-exit-code=0` and cannot fail a build.
+See `docs/research/decisions/0044-repository-layout.md`.
 
 ## Rules
 
@@ -21,7 +30,7 @@ reference server. Module `github.com/deploymenttheory/go-apple-dm`, Go 1.27.
 - Do not add a dependency on `deploymenttheory/go-sdk-appleservices`.
 - Do not add code dependencies on NanoMDM, MicroMDM, or their libraries; `github.com/micromdm/plist` is the only accepted exception. Their repositories are read-only references.
 - Conventional commits; release-please manages versions and `CHANGELOG.md`.
-- Every package has a `doc.go` holding its only package comment, laid out like `ddm/doc.go`: a
+- Every package has a `doc.go` holding its only package comment, laid out like `mdmprotocol/ddm/doc.go`: a
   one-sentence "what", a `# Why` section (the need it meets, where it sits in the plan, what it
   deliberately leaves out), and a `# References` section listing the decision records, plan
   phase, internal docs, Apple documentation, schema files, and RFCs it rests on. Generated

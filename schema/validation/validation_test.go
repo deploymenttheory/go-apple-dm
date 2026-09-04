@@ -6,8 +6,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/deploymenttheory/go-apple-dm/schema/support"
-	"github.com/deploymenttheory/go-apple-dm/schema/validation"
+	"github.com/deploymenttheory/go-apple-dm/v3/schema/support"
+	"github.com/deploymenttheory/go-apple-dm/v3/schema/validation"
 )
 
 //go:fix inline

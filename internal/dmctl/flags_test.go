@@ -9,7 +9,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/deploymenttheory/go-apple-dm/internal/dmctl"
+	"github.com/deploymenttheory/go-apple-dm/v3/internal/dmctl"
 )
 
 // Everything after "--" is positional, so an argument that looks like a flag

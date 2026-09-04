@@ -10,10 +10,10 @@ import (
 
 	"time"
 
-	"github.com/deploymenttheory/go-apple-dm/adminauth"
-	"github.com/deploymenttheory/go-apple-dm/adminauth/adminauthtest"
-	"github.com/deploymenttheory/go-apple-dm/adminauth/inmem"
-	"github.com/deploymenttheory/go-apple-dm/internal/app"
+	"github.com/deploymenttheory/go-apple-dm/v3/internal/app"
+	"github.com/deploymenttheory/go-apple-dm/v3/server/adminauth"
+	"github.com/deploymenttheory/go-apple-dm/v3/server/adminauth/adminauthtest"
+	"github.com/deploymenttheory/go-apple-dm/v3/server/adminauth/inmem"
 )
 
 func decodeBody(t *testing.T, resp *http.Response, v any) {

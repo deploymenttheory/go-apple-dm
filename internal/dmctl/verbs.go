@@ -13,7 +13,7 @@ import (
 	"text/tabwriter"
 	"time"
 
-	"github.com/deploymenttheory/go-apple-dm/internal/dmctl/explain"
+	"github.com/deploymenttheory/go-apple-dm/v3/internal/dmctl/explain"
 )
 
 // runExplain answers offline, from the compiled-in schema tables. It builds

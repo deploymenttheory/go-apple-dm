@@ -15,17 +15,17 @@ import (
 	"testing"
 	"time"
 
-	"github.com/deploymenttheory/go-apple-dm/adminauth"
-	adminsql "github.com/deploymenttheory/go-apple-dm/adminauth/sqlstore"
-	"github.com/deploymenttheory/go-apple-dm/audit"
-	auditinmem "github.com/deploymenttheory/go-apple-dm/audit/inmem"
-	"github.com/deploymenttheory/go-apple-dm/internal/app"
-	"github.com/deploymenttheory/go-apple-dm/internal/dmctl"
-	"github.com/deploymenttheory/go-apple-dm/mdm"
-	"github.com/deploymenttheory/go-apple-dm/push"
-	"github.com/deploymenttheory/go-apple-dm/secrets"
-	"github.com/deploymenttheory/go-apple-dm/storage"
-	"github.com/deploymenttheory/go-apple-dm/storage/sqlite"
+	"github.com/deploymenttheory/go-apple-dm/v3/appleplatformservices/push"
+	"github.com/deploymenttheory/go-apple-dm/v3/internal/app"
+	"github.com/deploymenttheory/go-apple-dm/v3/internal/dmctl"
+	"github.com/deploymenttheory/go-apple-dm/v3/mdmprotocol/mdm"
+	"github.com/deploymenttheory/go-apple-dm/v3/secrets"
+	"github.com/deploymenttheory/go-apple-dm/v3/server/adminauth"
+	adminsql "github.com/deploymenttheory/go-apple-dm/v3/server/adminauth/sqlstore"
+	"github.com/deploymenttheory/go-apple-dm/v3/server/audit"
+	auditinmem "github.com/deploymenttheory/go-apple-dm/v3/server/audit/inmem"
+	"github.com/deploymenttheory/go-apple-dm/v3/server/storage"
+	"github.com/deploymenttheory/go-apple-dm/v3/server/storage/sqlite"
 )
 
 // adminHarness is the reference server with a real principal store on its own

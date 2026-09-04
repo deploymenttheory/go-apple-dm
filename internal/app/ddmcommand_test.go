@@ -7,14 +7,14 @@ import (
 	"testing"
 	"time"
 
-	"github.com/deploymenttheory/go-apple-dm/audit"
-	auditinmem "github.com/deploymenttheory/go-apple-dm/audit/inmem"
-	"github.com/deploymenttheory/go-apple-dm/event"
-	"github.com/deploymenttheory/go-apple-dm/internal/app"
-	"github.com/deploymenttheory/go-apple-dm/internal/clock"
-	"github.com/deploymenttheory/go-apple-dm/mdm"
-	"github.com/deploymenttheory/go-apple-dm/paging"
-	"github.com/deploymenttheory/go-apple-dm/storage"
+	"github.com/deploymenttheory/go-apple-dm/v3/clock"
+	"github.com/deploymenttheory/go-apple-dm/v3/internal/app"
+	"github.com/deploymenttheory/go-apple-dm/v3/mdmprotocol/event"
+	"github.com/deploymenttheory/go-apple-dm/v3/mdmprotocol/mdm"
+	"github.com/deploymenttheory/go-apple-dm/v3/paging"
+	"github.com/deploymenttheory/go-apple-dm/v3/server/audit"
+	auditinmem "github.com/deploymenttheory/go-apple-dm/v3/server/audit/inmem"
+	"github.com/deploymenttheory/go-apple-dm/v3/server/storage"
 )
 
 var t0app = time.Date(2026, 9, 3, 12, 0, 0, 0, time.UTC)

@@ -12,9 +12,9 @@ import (
 
 	json "encoding/json/v2"
 
-	"github.com/deploymenttheory/go-apple-dm/cms"
-	"github.com/deploymenttheory/go-apple-dm/plist"
-	"github.com/deploymenttheory/go-apple-dm/profile"
+	"github.com/deploymenttheory/go-apple-dm/v3/mdmprotocol/cms"
+	"github.com/deploymenttheory/go-apple-dm/v3/mdmprotocol/plist"
+	"github.com/deploymenttheory/go-apple-dm/v3/mdmprotocol/profile"
 )
 
 // Automated Device Enrollment constants from Apple's documentation.

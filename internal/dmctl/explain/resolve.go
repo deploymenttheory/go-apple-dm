@@ -6,15 +6,15 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/deploymenttheory/go-apple-dm/schema/checkin"
-	"github.com/deploymenttheory/go-apple-dm/schema/commands"
-	"github.com/deploymenttheory/go-apple-dm/schema/ddm"
-	"github.com/deploymenttheory/go-apple-dm/schema/ddmproto"
-	schemaerrors "github.com/deploymenttheory/go-apple-dm/schema/errors"
-	"github.com/deploymenttheory/go-apple-dm/schema/other"
-	"github.com/deploymenttheory/go-apple-dm/schema/profiles"
-	"github.com/deploymenttheory/go-apple-dm/schema/status"
-	"github.com/deploymenttheory/go-apple-dm/schema/support"
+	"github.com/deploymenttheory/go-apple-dm/v3/schema/checkin"
+	"github.com/deploymenttheory/go-apple-dm/v3/schema/commands"
+	"github.com/deploymenttheory/go-apple-dm/v3/schema/ddm"
+	"github.com/deploymenttheory/go-apple-dm/v3/schema/ddmproto"
+	schemaerrors "github.com/deploymenttheory/go-apple-dm/v3/schema/errors"
+	"github.com/deploymenttheory/go-apple-dm/v3/schema/other"
+	"github.com/deploymenttheory/go-apple-dm/v3/schema/profiles"
+	"github.com/deploymenttheory/go-apple-dm/v3/schema/status"
+	"github.com/deploymenttheory/go-apple-dm/v3/schema/support"
 )
 
 // Errors.

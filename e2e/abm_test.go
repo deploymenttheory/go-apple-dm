@@ -13,8 +13,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/deploymenttheory/go-apple-dm/axm"
-	"github.com/deploymenttheory/go-apple-dm/axm/axmtest"
+	"github.com/deploymenttheory/go-apple-dm/v3/appleplatformservices/axm"
+	"github.com/deploymenttheory/go-apple-dm/v3/appleplatformservices/axm/axmtest"
 )
 
 // TestE2E_ABMAssignDevices is E2E-021: against our fake Business Manager,

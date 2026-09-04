@@ -9,7 +9,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/deploymenttheory/go-apple-dm/internal/app"
+	"github.com/deploymenttheory/go-apple-dm/v3/internal/app"
 )
 
 // quiet keeps the listening line out of the test log. serve dereferences
