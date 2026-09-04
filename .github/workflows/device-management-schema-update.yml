@@ -1,8 +1,10 @@
-name: Schema Drift
+name: Device Management Schema Update
 
-# Weekly, and on demand: compare the pinned apple/device-management submodule
-# against the upstream release and seed branches, regenerate, run conformance
-# tests, and open or update a tracking issue when anything changed.
+# Weekly, and on demand: keep the generated schema current with Apple's
+# apple/device-management repository. Compares the pinned submodule against the
+# upstream release and seed branches, regenerates against upstream, runs the
+# conformance tests and the rename guard, and opens or updates one tracking
+# issue describing the update that is waiting.
 #
 # Apple publishes schema changes in bursts around OS releases rather than
 # daily, and the tracking issue is updated in place rather than reopened, so a
@@ -18,7 +20,7 @@ on:
 
 # A manual run during the scheduled one would race to update the same issue.
 concurrency:
-  group: schema-drift
+  group: device-management-schema-update
   cancel-in-progress: false
 
 permissions:
@@ -26,8 +28,8 @@ permissions:
   issues: write
 
 jobs:
-  schema-drift:
-    name: '🍎 Apple schema drift'
+  schema-update:
+    name: '🍎 Device management schema update'
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
@@ -56,7 +58,7 @@ jobs:
           echo "release=$release" >> "$GITHUB_OUTPUT"
           echo "seeds=$seeds" >> "$GITHUB_OUTPUT"
           {
-            echo "## Apple device-management schema drift"
+            echo "## Apple device management schema update"
             echo
             echo "Pinned: \`$pinned\`  Upstream release: \`$release\`  Seed branches: $seeds"
             echo
@@ -68,28 +70,28 @@ jobs:
             else
               echo "release branch unchanged."
             fi
-          } > drift.md
-          if [ "$pinned" != "$release" ]; then echo "drift=true" >> "$GITHUB_OUTPUT"; else echo "drift=false" >> "$GITHUB_OUTPUT"; fi
-      - name: Regenerate on upstream release and run conformance
-        if: steps.compare.outputs.drift == 'true'
+          } > schema-update.md
+          if [ "$pinned" != "$release" ]; then echo "changed=true" >> "$GITHUB_OUTPUT"; else echo "changed=false" >> "$GITHUB_OUTPUT"; fi
+      - name: Regenerate against upstream and run conformance
+        if: steps.compare.outputs.changed == 'true'
         continue-on-error: true
         run: |
           git -C third_party/device-management checkout -q "${{ steps.compare.outputs.release }}"
           make generate 2>&1 | tail -40
-          { echo; echo "### Conformance on upstream release"; echo '```'; make test-conformance 2>&1 | tail -60; echo '```'; } >> drift.md
-          { echo; echo "### Rename guard"; echo '```'; make verify 2>&1 | tail -40; echo '```'; } >> drift.md
-      - name: Open or update tracking issue
-        if: steps.compare.outputs.drift == 'true'
+          { echo; echo "### Conformance on upstream release"; echo '```'; make test-conformance 2>&1 | tail -60; echo '```'; } >> schema-update.md
+          { echo; echo "### Rename guard"; echo '```'; make verify 2>&1 | tail -40; echo '```'; } >> schema-update.md
+      - name: Open or update the tracking issue
+        if: steps.compare.outputs.changed == 'true'
         uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8.0.0
         with:
           script: |
             const fs = require('fs');
-            const body = fs.readFileSync('drift.md', 'utf8');
-            const title = 'Apple device-management schema drift';
-            const { data: issues } = await github.rest.issues.listForRepo({ owner: context.repo.owner, repo: context.repo.repo, state: 'open', labels: 'schema-drift' });
+            const body = fs.readFileSync('schema-update.md', 'utf8');
+            const title = 'Apple device management schema update';
+            const { data: issues } = await github.rest.issues.listForRepo({ owner: context.repo.owner, repo: context.repo.repo, state: 'open', labels: 'schema-update' });
             const existing = issues.find(i => i.title === title);
             if (existing) {
               await github.rest.issues.update({ owner: context.repo.owner, repo: context.repo.repo, issue_number: existing.number, body });
             } else {
-              await github.rest.issues.create({ owner: context.repo.owner, repo: context.repo.repo, title, body, labels: ['schema-drift'] });
+              await github.rest.issues.create({ owner: context.repo.owner, repo: context.repo.repo, title, body, labels: ['schema-update'] });
             }
