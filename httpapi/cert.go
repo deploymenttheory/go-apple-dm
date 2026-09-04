@@ -25,11 +25,38 @@ func CertFromTLS(next http.Handler) http.Handler {
 	})
 }
 
+// HeaderOption configures CertFromHeader.
+type HeaderOption func(*headerConfig)
+
+type headerConfig struct{ roots *x509.CertPool }
+
+// WithHeaderRoots verifies the header certificate chains to roots before it
+// becomes the device identity.
+//
+// A header carries no proof of possession, so on its own it is a statement by
+// whatever sent the request. A device certificate is not secret: it travels to
+// this server on every check-in and appears in the SCEP CertRep, so anyone who
+// reaches the listener past the proxy can present another device's. Checking
+// the chain narrows that to holders of a certificate the enrollment CA issued,
+// which is worth having even though the proxy is still trusted to prove
+// possession.
+func WithHeaderRoots(roots *x509.CertPool) HeaderOption {
+	return func(c *headerConfig) { c.roots = roots }
+}
+
 // CertFromHeader takes the device certificate from a header set by a TLS
 // terminating proxy. Two encodings are accepted: RFC 9440 (":<base64 DER>:")
-// and URL-escaped PEM, as nginx and Apache produce. A malformed header is
-// rejected with 400; an absent header passes through.
-func CertFromHeader(name string) func(http.Handler) http.Handler {
+// and URL-escaped PEM, as nginx and Apache produce. A malformed header, or one
+// that fails WithHeaderRoots, is rejected with 400; an absent header passes
+// through.
+//
+// Without WithHeaderRoots the header is trusted as given, so the listener must
+// be unreachable except through the proxy.
+func CertFromHeader(name string, opts ...HeaderOption) func(http.Handler) http.Handler {
+	var cfg headerConfig
+	for _, o := range opts {
+		o(&cfg)
+	}
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			v := r.Header.Get(name)
@@ -38,6 +65,12 @@ func CertFromHeader(name string) func(http.Handler) http.Handler {
 				return
 			}
 			cert, err := parseHeaderCert(v)
+			if err == nil && cfg.roots != nil {
+				_, err = cert.Verify(x509.VerifyOptions{
+					Roots:     cfg.roots,
+					KeyUsages: []x509.ExtKeyUsage{x509.ExtKeyUsageClientAuth},
+				})
+			}
 			if err != nil {
 				http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
 				return

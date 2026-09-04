@@ -225,6 +225,30 @@ func TestCertMiddlewares(t *testing.T) {
 		t.Fatalf("absent header: %d", rec.Code)
 	}
 
+	// Header with a trust anchor: a certificate is not secret, so the chain is
+	// what separates a device we issued to from anyone who reaches the
+	// listener past the proxy.
+	inner, seen = certCapture()
+	vh := httpapi.CertFromHeader("X-Client-Cert", httpapi.WithHeaderRoots(ca.Pool()))(inner)
+	if rec = do(t, vh, http.MethodPut, "", "", map[string]string{"X-Client-Cert": rfc}); rec.Code != 200 || !(*seen)[0].Equal(id.Cert) {
+		t.Fatalf("verified header: %d", rec.Code)
+	}
+	other, err := testpki.NewCA("other")
+	if err != nil {
+		t.Fatal(err)
+	}
+	foreign, _ := other.Issue("dev", time.Now().Add(-time.Minute))
+	foreignHdr := ":" + base64.StdEncoding.EncodeToString(foreign.Cert.Raw) + ":"
+	if rec = do(t, vh, http.MethodPut, "", "", map[string]string{"X-Client-Cert": foreignHdr}); rec.Code != 400 {
+		t.Fatalf("foreign certificate accepted: %d", rec.Code)
+	}
+	// Without a pool the same certificate is taken at face value.
+	unverified, useen := certCapture()
+	uh := httpapi.CertFromHeader("X-Client-Cert")(unverified)
+	if rec = do(t, uh, http.MethodPut, "", "", map[string]string{"X-Client-Cert": foreignHdr}); rec.Code != 200 || !(*useen)[0].Equal(foreign.Cert) {
+		t.Fatalf("unverified header: %d", rec.Code)
+	}
+
 	// TLS peer certificate.
 	inner, seen = certCapture()
 	th := httpapi.CertFromTLS(inner)

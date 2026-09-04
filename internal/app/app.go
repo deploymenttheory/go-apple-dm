@@ -382,6 +382,20 @@ func (c *Config) roots() error {
 // certSource picks how the mdm role learns the device certificate.
 func (a *App) certSource() func(http.Handler) http.Handler {
 	switch {
+	// A configured header names where certificates come from, so it is
+	// honoured ahead of the signature: an mTLS-only enrollment profile sends
+	// no Mdm-Signature, and the signature source would leave those requests
+	// with no identity at all. CARoots, when present, verifies the chain.
+	case a.cfg.CertHeader != "":
+		if a.cfg.CARoots == nil {
+			a.cfg.Logger.Warn(
+				"app: certificate header trusted without a CA to verify it; "+
+					"set MDM_CA_FILE, and keep this listener reachable only through the proxy",
+				"header", a.cfg.CertHeader,
+			)
+			return httpapi.CertFromHeader(a.cfg.CertHeader)
+		}
+		return httpapi.CertFromHeader(a.cfg.CertHeader, httpapi.WithHeaderRoots(a.cfg.CARoots))
 	case a.cfg.CARoots != nil:
 		return httpapi.CertFromMdmSignature(
 			cms.VerifyOptions{
@@ -391,8 +405,6 @@ func (a *App) certSource() func(http.Handler) http.Handler {
 			},
 			0,
 		)
-	case a.cfg.CertHeader != "":
-		return httpapi.CertFromHeader(a.cfg.CertHeader)
 	default:
 		a.cfg.Logger.Warn(
 			"app: no CA or certificate header configured; device certificates must arrive over TLS on this process",
