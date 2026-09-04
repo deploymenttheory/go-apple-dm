@@ -6,6 +6,7 @@ import (
 	"log/slog"
 
 	"github.com/deploymenttheory/go-apple-dm/mdm"
+	"github.com/deploymenttheory/go-apple-dm/paging"
 	"github.com/deploymenttheory/go-apple-dm/service"
 	"github.com/deploymenttheory/go-apple-dm/storage"
 )
@@ -58,7 +59,7 @@ func (h *ServiceHook) clear(ctx context.Context, id mdm.EnrollmentID) {
 	if !id.Channel.IsUser() && h.enrollments != nil {
 		cursor := ""
 		for {
-			res, err := h.enrollments.List(ctx, storage.EnrollmentQuery{ParentID: id.ID}, storage.Page{Cursor: cursor})
+			res, err := h.enrollments.List(ctx, storage.EnrollmentQuery{ParentID: id.ID}, paging.Page{Cursor: cursor})
 			if err != nil {
 				h.log.WarnContext(ctx, "ddm: list user channels", "enrollment", id.ID, "error", err)
 				break

@@ -13,7 +13,7 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/acme/attest"
 	"github.com/deploymenttheory/go-apple-dm/ca"
 	"github.com/deploymenttheory/go-apple-dm/event"
-	"github.com/deploymenttheory/go-apple-dm/storage"
+	"github.com/deploymenttheory/go-apple-dm/paging"
 )
 
 // directoryBody is RFC 8555 section 7.1.1. The absent members are the
@@ -145,7 +145,7 @@ func (s *Server) accountOrders(e *exchange) error {
 	if e.r.PathValue("id") != e.account.ID {
 		return NewProblem(ProblemUnauthorized, "the account may only read its own orders")
 	}
-	page := storage.Page{Cursor: e.r.URL.Query().Get("cursor")}
+	page := paging.Page{Cursor: e.r.URL.Query().Get("cursor")}
 	res, err := s.cfg.Store.ListOrders(e.ctx(), e.account.ID, page)
 	if err != nil {
 		return WrapProblem(ProblemServerInternal, err, "the orders could not be read")

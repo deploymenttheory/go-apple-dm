@@ -6,7 +6,7 @@ import (
 
 	"github.com/deploymenttheory/go-apple-dm/ddm"
 	"github.com/deploymenttheory/go-apple-dm/mdm"
-	"github.com/deploymenttheory/go-apple-dm/storage"
+	"github.com/deploymenttheory/go-apple-dm/paging"
 )
 
 // Failing wraps a Store and returns the configured error from any method
@@ -82,9 +82,9 @@ func (f *Failing) DeleteDeclaration(ctx context.Context, identifier string) erro
 }
 
 // ListDeclarations implements ddm.DeclarationStore.
-func (f *Failing) ListDeclarations(ctx context.Context, q ddm.DeclarationQuery, p storage.Page) (storage.Result[ddm.Declaration], error) {
+func (f *Failing) ListDeclarations(ctx context.Context, q ddm.DeclarationQuery, p paging.Page) (paging.Result[ddm.Declaration], error) {
 	if err := f.fail("ListDeclarations"); err != nil {
-		return storage.Result[ddm.Declaration]{}, err
+		return paging.Result[ddm.Declaration]{}, err
 	}
 	return f.Store.ListDeclarations(ctx, q, p)
 }
@@ -122,9 +122,9 @@ func (f *Failing) GetSet(ctx context.Context, name string) (*ddm.Set, error) {
 }
 
 // ListSets implements ddm.SetStore.
-func (f *Failing) ListSets(ctx context.Context, p storage.Page) (storage.Result[ddm.Set], error) {
+func (f *Failing) ListSets(ctx context.Context, p paging.Page) (paging.Result[ddm.Set], error) {
 	if err := f.fail("ListSets"); err != nil {
-		return storage.Result[ddm.Set]{}, err
+		return paging.Result[ddm.Set]{}, err
 	}
 	return f.Store.ListSets(ctx, p)
 }
@@ -186,9 +186,9 @@ func (f *Failing) EnrollmentSets(ctx context.Context, id mdm.EnrollmentID) ([]st
 }
 
 // SetEnrollments implements ddm.AssignmentStore.
-func (f *Failing) SetEnrollments(ctx context.Context, set string, p storage.Page) (storage.Result[mdm.EnrollmentID], error) {
+func (f *Failing) SetEnrollments(ctx context.Context, set string, p paging.Page) (paging.Result[mdm.EnrollmentID], error) {
 	if err := f.fail("SetEnrollments"); err != nil {
-		return storage.Result[mdm.EnrollmentID]{}, err
+		return paging.Result[mdm.EnrollmentID]{}, err
 	}
 	return f.Store.SetEnrollments(ctx, set, p)
 }
@@ -266,33 +266,33 @@ func (f *Failing) DeclarationStatus(ctx context.Context, id mdm.EnrollmentID) ([
 }
 
 // DeclarationStatusByIdentifier implements ddm.StatusStore.
-func (f *Failing) DeclarationStatusByIdentifier(ctx context.Context, identifier string, p storage.Page) (storage.Result[ddm.EnrollmentDeclarationStatus], error) {
+func (f *Failing) DeclarationStatusByIdentifier(ctx context.Context, identifier string, p paging.Page) (paging.Result[ddm.EnrollmentDeclarationStatus], error) {
 	if err := f.fail("DeclarationStatusByIdentifier"); err != nil {
-		return storage.Result[ddm.EnrollmentDeclarationStatus]{}, err
+		return paging.Result[ddm.EnrollmentDeclarationStatus]{}, err
 	}
 	return f.Store.DeclarationStatusByIdentifier(ctx, identifier, p)
 }
 
 // StatusValues implements ddm.StatusStore.
-func (f *Failing) StatusValues(ctx context.Context, id mdm.EnrollmentID, q ddm.StatusValueQuery, p storage.Page) (storage.Result[ddm.StatusValue], error) {
+func (f *Failing) StatusValues(ctx context.Context, id mdm.EnrollmentID, q ddm.StatusValueQuery, p paging.Page) (paging.Result[ddm.StatusValue], error) {
 	if err := f.fail("StatusValues"); err != nil {
-		return storage.Result[ddm.StatusValue]{}, err
+		return paging.Result[ddm.StatusValue]{}, err
 	}
 	return f.Store.StatusValues(ctx, id, q, p)
 }
 
 // StatusErrors implements ddm.StatusStore.
-func (f *Failing) StatusErrors(ctx context.Context, id mdm.EnrollmentID, p storage.Page) (storage.Result[ddm.StatusError], error) {
+func (f *Failing) StatusErrors(ctx context.Context, id mdm.EnrollmentID, p paging.Page) (paging.Result[ddm.StatusError], error) {
 	if err := f.fail("StatusErrors"); err != nil {
-		return storage.Result[ddm.StatusError]{}, err
+		return paging.Result[ddm.StatusError]{}, err
 	}
 	return f.Store.StatusErrors(ctx, id, p)
 }
 
 // StatusReports implements ddm.StatusStore.
-func (f *Failing) StatusReports(ctx context.Context, id mdm.EnrollmentID, p storage.Page) (storage.Result[ddm.StatusReportRecord], error) {
+func (f *Failing) StatusReports(ctx context.Context, id mdm.EnrollmentID, p paging.Page) (paging.Result[ddm.StatusReportRecord], error) {
 	if err := f.fail("StatusReports"); err != nil {
-		return storage.Result[ddm.StatusReportRecord]{}, err
+		return paging.Result[ddm.StatusReportRecord]{}, err
 	}
 	return f.Store.StatusReports(ctx, id, p)
 }

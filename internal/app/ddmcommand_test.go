@@ -13,6 +13,7 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/internal/app"
 	"github.com/deploymenttheory/go-apple-dm/internal/clock"
 	"github.com/deploymenttheory/go-apple-dm/mdm"
+	"github.com/deploymenttheory/go-apple-dm/paging"
 	"github.com/deploymenttheory/go-apple-dm/storage"
 )
 
@@ -191,7 +192,7 @@ func TestOperatorCommandsAreNeverSuppressed(t *testing.T) {
 		}
 	}
 
-	res, err := a.Store.Commands(context.Background(), id, storage.CommandQuery{}, storage.Page{Limit: 10})
+	res, err := a.Store.Commands(context.Background(), id, storage.CommandQuery{}, paging.Page{Limit: 10})
 	if err != nil {
 		t.Fatal(err)
 	}

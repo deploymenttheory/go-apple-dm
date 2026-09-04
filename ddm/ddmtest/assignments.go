@@ -7,8 +7,8 @@ import (
 
 	"github.com/deploymenttheory/go-apple-dm/ddm"
 	"github.com/deploymenttheory/go-apple-dm/mdm"
+	"github.com/deploymenttheory/go-apple-dm/paging"
 	schemaddm "github.com/deploymenttheory/go-apple-dm/schema/ddm"
-	"github.com/deploymenttheory/go-apple-dm/storage"
 )
 
 // RunAssignmentSuite covers AssignmentStore.
@@ -45,7 +45,7 @@ func RunAssignmentSuite(t *testing.T, newStore Factory) {
 		wantStrings(t, "sets", sets, []string{"s"})
 		direct, _ := s.EnrollmentDeclarations(ctx, dev)
 		wantStrings(t, "direct", direct, []string{"a"})
-		r, err := s.SetEnrollments(ctx, "s", storage.Page{})
+		r, err := s.SetEnrollments(ctx, "s", paging.Page{})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -186,7 +186,7 @@ func RunAssignmentSuite(t *testing.T, newStore Factory) {
 			assignSet(t, s, Device(i), "s")
 		}
 		var got []string
-		p := storage.Page{Limit: 2}
+		p := paging.Page{Limit: 2}
 		for {
 			r, err := s.SetEnrollments(ctx, "s", p)
 			if err != nil {
@@ -207,7 +207,7 @@ func RunAssignmentSuite(t *testing.T, newStore Factory) {
 			p.Cursor = r.NextCursor
 		}
 		wantStrings(t, "paged", got, []string{"DEVICE-01", "DEVICE-02", "DEVICE-03", "DEVICE-04", "DEVICE-05"})
-		_, err := s.SetEnrollments(ctx, "nope", storage.Page{})
+		_, err := s.SetEnrollments(ctx, "nope", paging.Page{})
 		wantErr(t, "unknown set", err, ddm.ErrNotFound)
 	})
 

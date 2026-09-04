@@ -11,7 +11,7 @@ import (
 
 	"github.com/deploymenttheory/go-apple-dm/ddm"
 	"github.com/deploymenttheory/go-apple-dm/mdm"
-	"github.com/deploymenttheory/go-apple-dm/storage"
+	"github.com/deploymenttheory/go-apple-dm/paging"
 	"github.com/deploymenttheory/go-apple-dm/storage/sqlcommon"
 )
 
@@ -165,12 +165,12 @@ func placeholders(n int) string {
 }
 
 // pageLimit applies the default page size.
-func pageLimit(p storage.Page) int {
+func pageLimit(p paging.Page) int {
 	return p.Size()
 }
 
 // after appends the keyset condition for a string cursor.
-func after(where []string, args []any, key string, p storage.Page) ([]string, []any) {
+func after(where []string, args []any, key string, p paging.Page) ([]string, []any) {
 	if p.Cursor == "" {
 		return where, args
 	}

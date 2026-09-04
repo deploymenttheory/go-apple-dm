@@ -14,8 +14,8 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/ddm/ddmtest"
 	"github.com/deploymenttheory/go-apple-dm/ddm/sqlstore"
 	"github.com/deploymenttheory/go-apple-dm/mdm"
+	"github.com/deploymenttheory/go-apple-dm/paging"
 	schemaddm "github.com/deploymenttheory/go-apple-dm/schema/ddm"
-	"github.com/deploymenttheory/go-apple-dm/storage"
 	"github.com/deploymenttheory/go-apple-dm/storage/mysql"
 	"github.com/deploymenttheory/go-apple-dm/storage/postgres"
 	"github.com/deploymenttheory/go-apple-dm/storage/sqlcommon"
@@ -302,14 +302,14 @@ func calls(s ddm.Tx) map[string]func(context.Context) error {
 		"GetDeclarationVersion": func(ctx context.Context) error { _, err := s.GetDeclarationVersion(ctx, "a", "t"); return err },
 		"DeleteDeclaration":     func(ctx context.Context) error { return s.DeleteDeclaration(ctx, "a") },
 		"ListDeclarations": func(ctx context.Context) error {
-			_, err := s.ListDeclarations(ctx, ddm.DeclarationQuery{}, storage.Page{})
+			_, err := s.ListDeclarations(ctx, ddm.DeclarationQuery{}, paging.Page{})
 			return err
 		},
 		"PruneVersions":          func(ctx context.Context) error { _, err := s.PruneVersions(ctx); return err },
 		"PutSet":                 func(ctx context.Context) error { _, err := s.PutSet(ctx, "s", t0); return err },
 		"DeleteSet":              func(ctx context.Context) error { return s.DeleteSet(ctx, "s") },
 		"GetSet":                 func(ctx context.Context) error { _, err := s.GetSet(ctx, "s"); return err },
-		"ListSets":               func(ctx context.Context) error { _, err := s.ListSets(ctx, storage.Page{}); return err },
+		"ListSets":               func(ctx context.Context) error { _, err := s.ListSets(ctx, paging.Page{}); return err },
 		"AddSetDeclaration":      func(ctx context.Context) error { _, err := s.AddSetDeclaration(ctx, "s", "a", t0); return err },
 		"RemoveSetDeclaration":   func(ctx context.Context) error { _, err := s.RemoveSetDeclaration(ctx, "s", "a"); return err },
 		"SetDeclarations":        func(ctx context.Context) error { _, err := s.SetDeclarations(ctx, "s"); return err },
@@ -317,7 +317,7 @@ func calls(s ddm.Tx) map[string]func(context.Context) error {
 		"AssignSet":              func(ctx context.Context) error { _, err := s.AssignSet(ctx, dev, "s", t0); return err },
 		"UnassignSet":            func(ctx context.Context) error { _, err := s.UnassignSet(ctx, dev, "s"); return err },
 		"EnrollmentSets":         func(ctx context.Context) error { _, err := s.EnrollmentSets(ctx, dev); return err },
-		"SetEnrollments":         func(ctx context.Context) error { _, err := s.SetEnrollments(ctx, "s", storage.Page{}); return err },
+		"SetEnrollments":         func(ctx context.Context) error { _, err := s.SetEnrollments(ctx, "s", paging.Page{}); return err },
 		"AssignDeclaration":      func(ctx context.Context) error { _, err := s.AssignDeclaration(ctx, dev, "a", t0); return err },
 		"UnassignDeclaration":    func(ctx context.Context) error { _, err := s.UnassignDeclaration(ctx, dev, "a"); return err },
 		"EnrollmentDeclarations": func(ctx context.Context) error { _, err := s.EnrollmentDeclarations(ctx, dev); return err },
@@ -331,15 +331,15 @@ func calls(s ddm.Tx) map[string]func(context.Context) error {
 		"PutStatus":         func(ctx context.Context) error { _, err := s.PutStatus(ctx, dev, update); return err },
 		"DeclarationStatus": func(ctx context.Context) error { _, err := s.DeclarationStatus(ctx, dev); return err },
 		"DeclarationStatusByIdentifier": func(ctx context.Context) error {
-			_, err := s.DeclarationStatusByIdentifier(ctx, "a", storage.Page{})
+			_, err := s.DeclarationStatusByIdentifier(ctx, "a", paging.Page{})
 			return err
 		},
 		"StatusValues": func(ctx context.Context) error {
-			_, err := s.StatusValues(ctx, dev, ddm.StatusValueQuery{}, storage.Page{})
+			_, err := s.StatusValues(ctx, dev, ddm.StatusValueQuery{}, paging.Page{})
 			return err
 		},
-		"StatusErrors":    func(ctx context.Context) error { _, err := s.StatusErrors(ctx, dev, storage.Page{}); return err },
-		"StatusReports":   func(ctx context.Context) error { _, err := s.StatusReports(ctx, dev, storage.Page{}); return err },
+		"StatusErrors":    func(ctx context.Context) error { _, err := s.StatusErrors(ctx, dev, paging.Page{}); return err },
+		"StatusReports":   func(ctx context.Context) error { _, err := s.StatusReports(ctx, dev, paging.Page{}); return err },
 		"RecordChanges":   func(ctx context.Context) error { return s.RecordChanges(ctx, []mdm.EnrollmentID{dev}, "r", t0) },
 		"PendingChanges":  func(ctx context.Context) error { _, err := s.PendingChanges(ctx, t0, 0); return err },
 		"CompleteChanges": func(ctx context.Context) error { return s.CompleteChanges(ctx, []int64{1}) },
@@ -523,7 +523,7 @@ func TestWriteFailuresSurface(t *testing.T) {
 		{"ddm_status_values", "INSERT", partial(ddm.StatusUpdate{Values: []ddm.StatusValue{{Path: "q", Value: []byte("2")}}}), nil},
 		{"ddm_status_values", "DELETE", partial(ddm.StatusUpdate{FullReport: true}), nil},
 		{"ddm_status_errors", "INSERT", partial(ddm.StatusUpdate{Errors: []ddm.StatusError{{StatusItem: "x"}}}), nil},
-		{"ddm_status_reports", "DELETE", partial(ddm.StatusUpdate{KeepReports: 1}), func() bool { r, _ := s.StatusReports(ctx, dev, storage.Page{}); return len(r.Items) == 2 }},
+		{"ddm_status_reports", "DELETE", partial(ddm.StatusUpdate{KeepReports: 1}), func() bool { r, _ := s.StatusReports(ctx, dev, paging.Page{}); return len(r.Items) == 2 }},
 		{"ddm_changes", "INSERT", func() error { return s.RecordChanges(ctx, []mdm.EnrollmentID{dev}, "r", t0) }, nil},
 		{"ddm_changes", "DELETE", func() error { return s.CompleteChanges(ctx, []int64{seq}) }, nil},
 		{"ddm_changes", "UPDATE", func() error { return s.FailChanges(ctx, []int64{seq}, "boom", t0) }, nil},
@@ -604,7 +604,7 @@ func TestCanonicalBytesRoundTripExactly(t *testing.T) {
 	if err != nil || !bytes.Equal(v.Canonical, raw) {
 		t.Fatalf("GetVersion: %v", err)
 	}
-	list, err := s.ListDeclarations(ctx, ddm.DeclarationQuery{}, storage.Page{})
+	list, err := s.ListDeclarations(ctx, ddm.DeclarationQuery{}, paging.Page{})
 	if err != nil || len(list.Items) != 1 || !bytes.Equal(list.Items[0].Canonical, raw) {
 		t.Fatalf("List: %v", err)
 	}
@@ -636,19 +636,19 @@ func TestCanonicalBytesRoundTripExactly(t *testing.T) {
 	if err != nil || !bytes.Equal(rows[0].Reasons, raw) || rows[1].Reasons != nil {
 		t.Fatalf("DeclarationStatus: %v %+v", err, rows)
 	}
-	byID, err := s.DeclarationStatusByIdentifier(ctx, "a", storage.Page{})
+	byID, err := s.DeclarationStatusByIdentifier(ctx, "a", paging.Page{})
 	if err != nil || !bytes.Equal(byID.Items[0].Reasons, raw) {
 		t.Fatalf("ByIdentifier: %v", err)
 	}
-	vals, err := s.StatusValues(ctx, dev, ddm.StatusValueQuery{}, storage.Page{})
+	vals, err := s.StatusValues(ctx, dev, ddm.StatusValueQuery{}, paging.Page{})
 	if err != nil || !bytes.Equal(vals.Items[0].Value, raw) || len(vals.Items[1].Value) != 0 {
 		t.Fatalf("StatusValues: %v %+v", err, vals)
 	}
-	errs, err := s.StatusErrors(ctx, dev, storage.Page{})
+	errs, err := s.StatusErrors(ctx, dev, paging.Page{})
 	if err != nil || errs.Items[0].Reasons != nil || !bytes.Equal(errs.Items[1].Reasons, raw) {
 		t.Fatalf("StatusErrors: %v %+v", err, errs)
 	}
-	reports, err := s.StatusReports(ctx, dev, storage.Page{})
+	reports, err := s.StatusReports(ctx, dev, paging.Page{})
 	if err != nil || !bytes.Equal(reports.Items[0].Raw, raw) {
 		t.Fatalf("StatusReports: %v", err)
 	}
@@ -663,7 +663,7 @@ func TestCanonicalBytesRoundTripExactly(t *testing.T) {
 	if _, err := s.PutStatus(ctx, dev2, ddm.StatusUpdate{ReceivedAt: t0}); err != nil {
 		t.Fatal(err)
 	}
-	if reports, err := s.StatusReports(ctx, dev2, storage.Page{}); err != nil || reports.Items[0].Raw != nil {
+	if reports, err := s.StatusReports(ctx, dev2, paging.Page{}); err != nil || reports.Items[0].Raw != nil {
 		t.Fatalf("empty raw: %v %+v", err, reports)
 	}
 }
@@ -674,34 +674,34 @@ func TestBadCursor(t *testing.T) {
 	s := open(t)
 	seed(t, s)
 	for _, cursor := range []string{"x", "1.5", "-", "9223372036854775808"} {
-		if _, err := s.StatusErrors(ctx, dev, storage.Page{Cursor: cursor}); !errors.Is(err, ddm.ErrInvalid) {
+		if _, err := s.StatusErrors(ctx, dev, paging.Page{Cursor: cursor}); !errors.Is(err, ddm.ErrInvalid) {
 			t.Errorf("StatusErrors cursor %q: %v", cursor, err)
 		}
-		if _, err := s.StatusReports(ctx, dev, storage.Page{Cursor: cursor}); !errors.Is(err, ddm.ErrInvalid) {
+		if _, err := s.StatusReports(ctx, dev, paging.Page{Cursor: cursor}); !errors.Is(err, ddm.ErrInvalid) {
 			t.Errorf("StatusReports cursor %q: %v", cursor, err)
 		}
 	}
 	// A seq cursor before every row is an empty page, not an error.
-	if r, err := s.StatusReports(ctx, dev, storage.Page{Cursor: "0"}); err != nil || len(r.Items) != 0 || r.NextCursor != "" {
+	if r, err := s.StatusReports(ctx, dev, paging.Page{Cursor: "0"}); err != nil || len(r.Items) != 0 || r.NextCursor != "" {
 		t.Fatalf("cursor 0: %+v %v", r, err)
 	}
 	// String cursors are pure keyset: any value is a position.
-	if r, err := s.ListDeclarations(ctx, ddm.DeclarationQuery{}, storage.Page{Cursor: "zzz"}); err != nil || len(r.Items) != 0 {
+	if r, err := s.ListDeclarations(ctx, ddm.DeclarationQuery{}, paging.Page{Cursor: "zzz"}); err != nil || len(r.Items) != 0 {
 		t.Fatalf("declarations after zzz: %+v %v", r, err)
 	}
-	if r, err := s.ListDeclarations(ctx, ddm.DeclarationQuery{}, storage.Page{Cursor: "a"}); err != nil || len(r.Items) != 1 || r.Items[0].Identifier != "b" {
+	if r, err := s.ListDeclarations(ctx, ddm.DeclarationQuery{}, paging.Page{Cursor: "a"}); err != nil || len(r.Items) != 1 || r.Items[0].Identifier != "b" {
 		t.Fatalf("declarations after a: %+v %v", r, err)
 	}
-	if r, err := s.ListSets(ctx, storage.Page{Cursor: "%"}); err != nil || len(r.Items) != 1 {
+	if r, err := s.ListSets(ctx, paging.Page{Cursor: "%"}); err != nil || len(r.Items) != 1 {
 		t.Fatalf("sets after %%: %+v %v", r, err)
 	}
-	if r, err := s.SetEnrollments(ctx, "s", storage.Page{Cursor: dev.ID}); err != nil || len(r.Items) != 0 {
+	if r, err := s.SetEnrollments(ctx, "s", paging.Page{Cursor: dev.ID}); err != nil || len(r.Items) != 0 {
 		t.Fatalf("enrollments after dev: %+v %v", r, err)
 	}
-	if r, err := s.DeclarationStatusByIdentifier(ctx, "a", storage.Page{Cursor: "'"}); err != nil || len(r.Items) != 1 {
+	if r, err := s.DeclarationStatusByIdentifier(ctx, "a", paging.Page{Cursor: "'"}); err != nil || len(r.Items) != 1 {
 		t.Fatalf("status after quote: %+v %v", r, err)
 	}
-	if r, err := s.StatusValues(ctx, dev, ddm.StatusValueQuery{}, storage.Page{Cursor: "p"}); err != nil || len(r.Items) != 0 {
+	if r, err := s.StatusValues(ctx, dev, ddm.StatusValueQuery{}, paging.Page{Cursor: "p"}); err != nil || len(r.Items) != 0 {
 		t.Fatalf("values after p: %+v %v", r, err)
 	}
 	// Empty batches are no-ops.
@@ -734,7 +734,7 @@ func TestScanFailuresSurface(t *testing.T) {
 			}
 			return map[string]func() error{
 				"GetDeclaration":     func() error { _, err := s.GetDeclaration(ctx, "a"); return err },
-				"ListDeclarations":   func() error { _, err := s.ListDeclarations(ctx, ddm.DeclarationQuery{}, storage.Page{}); return err },
+				"ListDeclarations":   func() error { _, err := s.ListDeclarations(ctx, ddm.DeclarationQuery{}, paging.Page{}); return err },
 				"StaticDeclarations": func() error { _, err := s.StaticDeclarations(ctx, dev); return err },
 			}
 		}},
@@ -752,7 +752,7 @@ func TestScanFailuresSurface(t *testing.T) {
 		}, func(s *sqlstore.Store) map[string]func() error {
 			return map[string]func() error{
 				"GetSet":   func() error { _, err := s.GetSet(ctx, "s"); return err },
-				"ListSets": func() error { _, err := s.ListSets(ctx, storage.Page{}); return err },
+				"ListSets": func() error { _, err := s.ListSets(ctx, paging.Page{}); return err },
 			}
 		}},
 		{"set declarations", []string{
@@ -770,7 +770,7 @@ func TestScanFailuresSurface(t *testing.T) {
 			"INSERT INTO ddm_enrollment_sets VALUES ('DEVICE-01', 'x', '', 's', 'bad')",
 		}, func(s *sqlstore.Store) map[string]func() error {
 			return map[string]func() error{
-				"SetEnrollments":      func() error { _, err := s.SetEnrollments(ctx, "s", storage.Page{}); return err },
+				"SetEnrollments":      func() error { _, err := s.SetEnrollments(ctx, "s", paging.Page{}); return err },
 				"AffectedEnrollments": func() error { _, err := s.AffectedEnrollments(ctx, nil, []string{"s"}); return err },
 			}
 		}},
@@ -797,7 +797,7 @@ func TestScanFailuresSurface(t *testing.T) {
 		}, func(s *sqlstore.Store) map[string]func() error {
 			return map[string]func() error{
 				"DeclarationStatus":             func() error { _, err := s.DeclarationStatus(ctx, dev); return err },
-				"DeclarationStatusByIdentifier": func() error { _, err := s.DeclarationStatusByIdentifier(ctx, "a", storage.Page{}); return err },
+				"DeclarationStatusByIdentifier": func() error { _, err := s.DeclarationStatusByIdentifier(ctx, "a", paging.Page{}); return err },
 				"PutStatus full": func() error {
 					_, err := s.PutStatus(ctx, dev, ddm.StatusUpdate{FullReport: true, HasDeclarations: true})
 					return err
@@ -809,21 +809,21 @@ func TestScanFailuresSurface(t *testing.T) {
 			"CREATE TABLE ddm_status_values (enrollment_id TEXT, path TEXT, value BLOB, first_seen TEXT, last_seen TEXT)",
 			"INSERT INTO ddm_status_values VALUES ('DEVICE-01', 'p', x'31', 'bad', 'bad')",
 		}, func(s *sqlstore.Store) map[string]func() error {
-			return map[string]func() error{"StatusValues": func() error { _, err := s.StatusValues(ctx, dev, ddm.StatusValueQuery{}, storage.Page{}); return err }}
+			return map[string]func() error{"StatusValues": func() error { _, err := s.StatusValues(ctx, dev, ddm.StatusValueQuery{}, paging.Page{}); return err }}
 		}},
 		{"status errors", []string{
 			"DROP TABLE ddm_status_errors",
 			"CREATE TABLE ddm_status_errors (seq INTEGER PRIMARY KEY, enrollment_id TEXT, status_item TEXT, reasons BLOB, received_at TEXT)",
 			"INSERT INTO ddm_status_errors VALUES (1, 'DEVICE-01', 'x', NULL, 'bad')",
 		}, func(s *sqlstore.Store) map[string]func() error {
-			return map[string]func() error{"StatusErrors": func() error { _, err := s.StatusErrors(ctx, dev, storage.Page{}); return err }}
+			return map[string]func() error{"StatusErrors": func() error { _, err := s.StatusErrors(ctx, dev, paging.Page{}); return err }}
 		}},
 		{"status reports", []string{
 			"DROP TABLE ddm_status_reports",
 			"CREATE TABLE ddm_status_reports (seq INTEGER PRIMARY KEY, enrollment_id TEXT, full_report INTEGER, raw BLOB, received_at TEXT)",
 			"INSERT INTO ddm_status_reports VALUES (1, 'DEVICE-01', 1, NULL, 'bad')",
 		}, func(s *sqlstore.Store) map[string]func() error {
-			return map[string]func() error{"StatusReports": func() error { _, err := s.StatusReports(ctx, dev, storage.Page{}); return err }}
+			return map[string]func() error{"StatusReports": func() error { _, err := s.StatusReports(ctx, dev, paging.Page{}); return err }}
 		}},
 		{"changes", []string{
 			"DROP TABLE ddm_changes",
@@ -889,7 +889,7 @@ func TestFullIdentityRoundTrip(t *testing.T) {
 	if err := s.RecordChanges(ctx, []mdm.EnrollmentID{usr}, "r", t0); err != nil {
 		t.Fatal(err)
 	}
-	r, err := s.SetEnrollments(ctx, "s", storage.Page{})
+	r, err := s.SetEnrollments(ctx, "s", paging.Page{})
 	if err != nil || len(r.Items) != 2 || r.Items[1] != usr {
 		t.Fatalf("SetEnrollments: %+v %v", r, err)
 	}
@@ -901,7 +901,7 @@ func TestFullIdentityRoundTrip(t *testing.T) {
 	if err != nil || snap.ID != usr {
 		t.Fatalf("Snapshot: %+v %v", snap, err)
 	}
-	byID, err := s.DeclarationStatusByIdentifier(ctx, "a", storage.Page{})
+	byID, err := s.DeclarationStatusByIdentifier(ctx, "a", paging.Page{})
 	if err != nil || len(byID.Items) != 2 || byID.Items[1].ID != usr {
 		t.Fatalf("ByIdentifier: %+v %v", byID, err)
 	}

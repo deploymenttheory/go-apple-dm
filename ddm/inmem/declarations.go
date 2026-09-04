@@ -8,7 +8,7 @@ import (
 	"slices"
 
 	"github.com/deploymenttheory/go-apple-dm/ddm"
-	"github.com/deploymenttheory/go-apple-dm/storage"
+	"github.com/deploymenttheory/go-apple-dm/paging"
 )
 
 func copyDeclaration(d ddm.Declaration) ddm.Declaration {
@@ -102,11 +102,11 @@ func (t *tx) DeleteDeclaration(_ context.Context, identifier string) error {
 
 // ListDeclarations implements ddm.DeclarationStore. The cursor is the last
 // identifier of the previous page. An unknown InSet yields an empty page.
-func (t *tx) ListDeclarations(_ context.Context, q ddm.DeclarationQuery, p storage.Page) (storage.Result[ddm.Declaration], error) {
+func (t *tx) ListDeclarations(_ context.Context, q ddm.DeclarationQuery, p paging.Page) (paging.Result[ddm.Declaration], error) {
 	var inSet map[string]struct{}
 	if q.InSet != "" {
 		if _, ok := t.st.sets[q.InSet]; !ok {
-			return storage.Result[ddm.Declaration]{}, nil
+			return paging.Result[ddm.Declaration]{}, nil
 		}
 		inSet = t.st.members[q.InSet]
 	}
@@ -178,7 +178,7 @@ func (s *Store) DeleteDeclaration(ctx context.Context, identifier string) error 
 }
 
 // ListDeclarations implements ddm.DeclarationStore.
-func (s *Store) ListDeclarations(ctx context.Context, q ddm.DeclarationQuery, p storage.Page) (storage.Result[ddm.Declaration], error) {
+func (s *Store) ListDeclarations(ctx context.Context, q ddm.DeclarationQuery, p paging.Page) (paging.Result[ddm.Declaration], error) {
 	v, done := s.view()
 	defer done()
 	return v.ListDeclarations(ctx, q, p)

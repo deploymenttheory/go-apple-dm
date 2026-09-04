@@ -10,7 +10,7 @@ import (
 
 	"github.com/deploymenttheory/go-apple-dm/ddm"
 	"github.com/deploymenttheory/go-apple-dm/mdm"
-	"github.com/deploymenttheory/go-apple-dm/storage"
+	"github.com/deploymenttheory/go-apple-dm/paging"
 )
 
 func copyStatus(d ddm.DeclarationStatus) ddm.DeclarationStatus {
@@ -174,9 +174,9 @@ func (t *tx) DeclarationStatus(_ context.Context, id mdm.EnrollmentID) ([]ddm.De
 // DeclarationStatusByIdentifier implements ddm.StatusStore. Rows are
 // ordered by (enrollment id, kind) and the cursor is the enrollment id of
 // the last row served.
-func (t *tx) DeclarationStatusByIdentifier(_ context.Context, identifier string, p storage.Page) (storage.Result[ddm.EnrollmentDeclarationStatus], error) {
+func (t *tx) DeclarationStatusByIdentifier(_ context.Context, identifier string, p paging.Page) (paging.Result[ddm.EnrollmentDeclarationStatus], error) {
 	if err := validName("identifier", identifier); err != nil {
-		return storage.Result[ddm.EnrollmentDeclarationStatus]{}, err
+		return paging.Result[ddm.EnrollmentDeclarationStatus]{}, err
 	}
 	var rows []ddm.EnrollmentDeclarationStatus
 	for key, decls := range t.st.statusDecls {
@@ -190,7 +190,7 @@ func (t *tx) DeclarationStatusByIdentifier(_ context.Context, identifier string,
 		return cmp.Or(cmp.Compare(a.ID.ID, b.ID.ID), cmp.Compare(a.Kind, b.Kind))
 	})
 	limit := limitOf(p)
-	var out storage.Result[ddm.EnrollmentDeclarationStatus]
+	var out paging.Result[ddm.EnrollmentDeclarationStatus]
 	for _, row := range rows {
 		if p.Cursor != "" && row.ID.ID <= p.Cursor {
 			continue
@@ -206,9 +206,9 @@ func (t *tx) DeclarationStatusByIdentifier(_ context.Context, identifier string,
 
 // StatusValues implements ddm.StatusStore. PathPrefix is a plain string
 // prefix and the cursor is the last path of the previous page.
-func (t *tx) StatusValues(_ context.Context, id mdm.EnrollmentID, q ddm.StatusValueQuery, p storage.Page) (storage.Result[ddm.StatusValue], error) {
+func (t *tx) StatusValues(_ context.Context, id mdm.EnrollmentID, q ddm.StatusValueQuery, p paging.Page) (paging.Result[ddm.StatusValue], error) {
 	if err := validID(id); err != nil {
-		return storage.Result[ddm.StatusValue]{}, err
+		return paging.Result[ddm.StatusValue]{}, err
 	}
 	rows := t.st.statusValues[id.ID]
 	keys := make([]string, 0, len(rows))
@@ -221,9 +221,9 @@ func (t *tx) StatusValues(_ context.Context, id mdm.EnrollmentID, q ddm.StatusVa
 }
 
 // StatusErrors implements ddm.StatusStore.
-func (t *tx) StatusErrors(_ context.Context, id mdm.EnrollmentID, p storage.Page) (storage.Result[ddm.StatusError], error) {
+func (t *tx) StatusErrors(_ context.Context, id mdm.EnrollmentID, p paging.Page) (paging.Result[ddm.StatusError], error) {
 	if err := validID(id); err != nil {
-		return storage.Result[ddm.StatusError]{}, err
+		return paging.Result[ddm.StatusError]{}, err
 	}
 	bySeq := map[int64]ddm.StatusError{}
 	for _, e := range t.st.statusErrors[id.ID] {
@@ -233,9 +233,9 @@ func (t *tx) StatusErrors(_ context.Context, id mdm.EnrollmentID, p storage.Page
 }
 
 // StatusReports implements ddm.StatusStore.
-func (t *tx) StatusReports(_ context.Context, id mdm.EnrollmentID, p storage.Page) (storage.Result[ddm.StatusReportRecord], error) {
+func (t *tx) StatusReports(_ context.Context, id mdm.EnrollmentID, p paging.Page) (paging.Result[ddm.StatusReportRecord], error) {
 	if err := validID(id); err != nil {
-		return storage.Result[ddm.StatusReportRecord]{}, err
+		return paging.Result[ddm.StatusReportRecord]{}, err
 	}
 	bySeq := map[int64]ddm.StatusReportRecord{}
 	for _, r := range t.st.statusReports[id.ID] {
@@ -259,28 +259,28 @@ func (s *Store) DeclarationStatus(ctx context.Context, id mdm.EnrollmentID) ([]d
 }
 
 // DeclarationStatusByIdentifier implements ddm.StatusStore.
-func (s *Store) DeclarationStatusByIdentifier(ctx context.Context, identifier string, p storage.Page) (storage.Result[ddm.EnrollmentDeclarationStatus], error) {
+func (s *Store) DeclarationStatusByIdentifier(ctx context.Context, identifier string, p paging.Page) (paging.Result[ddm.EnrollmentDeclarationStatus], error) {
 	v, done := s.view()
 	defer done()
 	return v.DeclarationStatusByIdentifier(ctx, identifier, p)
 }
 
 // StatusValues implements ddm.StatusStore.
-func (s *Store) StatusValues(ctx context.Context, id mdm.EnrollmentID, q ddm.StatusValueQuery, p storage.Page) (storage.Result[ddm.StatusValue], error) {
+func (s *Store) StatusValues(ctx context.Context, id mdm.EnrollmentID, q ddm.StatusValueQuery, p paging.Page) (paging.Result[ddm.StatusValue], error) {
 	v, done := s.view()
 	defer done()
 	return v.StatusValues(ctx, id, q, p)
 }
 
 // StatusErrors implements ddm.StatusStore.
-func (s *Store) StatusErrors(ctx context.Context, id mdm.EnrollmentID, p storage.Page) (storage.Result[ddm.StatusError], error) {
+func (s *Store) StatusErrors(ctx context.Context, id mdm.EnrollmentID, p paging.Page) (paging.Result[ddm.StatusError], error) {
 	v, done := s.view()
 	defer done()
 	return v.StatusErrors(ctx, id, p)
 }
 
 // StatusReports implements ddm.StatusStore.
-func (s *Store) StatusReports(ctx context.Context, id mdm.EnrollmentID, p storage.Page) (storage.Result[ddm.StatusReportRecord], error) {
+func (s *Store) StatusReports(ctx context.Context, id mdm.EnrollmentID, p paging.Page) (paging.Result[ddm.StatusReportRecord], error) {
 	v, done := s.view()
 	defer done()
 	return v.StatusReports(ctx, id, p)

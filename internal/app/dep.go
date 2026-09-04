@@ -14,7 +14,7 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/dep"
 	depinmem "github.com/deploymenttheory/go-apple-dm/dep/inmem"
 	depsql "github.com/deploymenttheory/go-apple-dm/dep/sqlstore"
-	"github.com/deploymenttheory/go-apple-dm/storage"
+	"github.com/deploymenttheory/go-apple-dm/paging"
 )
 
 // DEPConfig connects the reference server to Apple's device enrollment
@@ -154,7 +154,7 @@ func (d *depService) Run(ctx context.Context) error {
 			return nil
 		case <-d.app.cfg.Clock.After(interval):
 		}
-		res, err := d.store.ListAccounts(ctx, storage.Page{Limit: 1000})
+		res, err := d.store.ListAccounts(ctx, paging.Page{Limit: 1000})
 		if err != nil {
 			d.app.cfg.Logger.WarnContext(ctx, "app: DEP accounts", "error", err)
 			continue
@@ -200,7 +200,7 @@ func (d *depService) handler() http.Handler {
 	mux.HandleFunc("GET /dep/accounts", func(w http.ResponseWriter, r *http.Request) {
 		res, err := d.store.ListAccounts(
 			r.Context(),
-			storage.Page{Cursor: r.URL.Query().Get("cursor")},
+			paging.Page{Cursor: r.URL.Query().Get("cursor")},
 		)
 		if err != nil {
 			writeError(w, depStatus(err), err)
@@ -291,7 +291,7 @@ func (d *depService) handler() http.Handler {
 	mux.HandleFunc(
 		"GET /dep/accounts/{name}/devices",
 		func(w http.ResponseWriter, r *http.Request) {
-			page := storage.Page{Cursor: r.URL.Query().Get("cursor")}
+			page := paging.Page{Cursor: r.URL.Query().Get("cursor")}
 			if v := r.URL.Query().Get("limit"); v != "" {
 				_, _ = fmt.Sscanf(v, "%d", &page.Limit)
 			}

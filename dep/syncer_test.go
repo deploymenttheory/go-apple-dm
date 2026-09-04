@@ -14,7 +14,7 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/dep/deptest"
 	"github.com/deploymenttheory/go-apple-dm/dep/inmem"
 	"github.com/deploymenttheory/go-apple-dm/internal/clock"
-	"github.com/deploymenttheory/go-apple-dm/storage"
+	"github.com/deploymenttheory/go-apple-dm/paging"
 )
 
 // newSyncer builds a syncer on the fixture with jitter off.
@@ -34,7 +34,7 @@ func newSyncer(t *testing.T, f *fixture, mutate ...func(*dep.SyncerConfig)) *dep
 // serials lists the live serials in the store.
 func serials(t *testing.T, s dep.Store, q dep.DeviceQuery) []string {
 	t.Helper()
-	r, err := s.ListDevices(context.Background(), acct, q, storage.Page{})
+	r, err := s.ListDevices(context.Background(), acct, q, paging.Page{})
 	if err != nil {
 		t.Fatal(err)
 	}

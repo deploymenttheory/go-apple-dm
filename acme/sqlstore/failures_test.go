@@ -8,7 +8,7 @@ import (
 
 	"github.com/deploymenttheory/go-apple-dm/acme"
 	"github.com/deploymenttheory/go-apple-dm/acme/sqlstore"
-	"github.com/deploymenttheory/go-apple-dm/storage"
+	"github.com/deploymenttheory/go-apple-dm/paging"
 	"github.com/deploymenttheory/go-apple-dm/storage/sqlite"
 )
 
@@ -37,9 +37,9 @@ func TestClosedDatabaseSurfaces(t *testing.T) {
 		"GetAuthorization":    func() error { _, err := s.GetAuthorization(ctx, "az-o1"); return err },
 		"GetChallenge":        func() error { _, err := s.GetChallenge(ctx, "ch-o1"); return err },
 		"GetCertificate":      func() error { _, err := s.GetCertificate(ctx, "c1"); return err },
-		"ListOrders":          func() error { _, err := s.ListOrders(ctx, "acct", storage.Page{}); return err },
+		"ListOrders":          func() error { _, err := s.ListOrders(ctx, "acct", paging.Page{}); return err },
 		"ListCertificates": func() error {
-			_, err := s.ListCertificates(ctx, acme.CertificateQuery{AccountID: "acct"}, storage.Page{})
+			_, err := s.ListCertificates(ctx, acme.CertificateQuery{AccountID: "acct"}, paging.Page{})
 			return err
 		},
 		"PutNonce":  func() error { return s.PutNonce(ctx, acme.Nonce{Value: "n2", IssuedAt: t0}) },
@@ -121,7 +121,7 @@ func TestCancelledTransaction(t *testing.T) {
 			tx.PutOrder(cctx, &acme.Order{ID: "o2", AccountID: "acct"}),
 			tx.ClaimIdentifier(cctx, "ci-o2", "o2"),
 			readErr(tx.GetOrder(cctx, "o1")),
-			readErr(tx.ListOrders(cctx, "acct", storage.Page{})),
+			readErr(tx.ListOrders(cctx, "acct", paging.Page{})),
 		)
 		return nil
 	})

@@ -9,6 +9,7 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/internal/clock"
 	"github.com/deploymenttheory/go-apple-dm/internal/testpki"
 	"github.com/deploymenttheory/go-apple-dm/mdm"
+	"github.com/deploymenttheory/go-apple-dm/paging"
 	"github.com/deploymenttheory/go-apple-dm/schema/checkin"
 	"github.com/deploymenttheory/go-apple-dm/schema/commands"
 	"github.com/deploymenttheory/go-apple-dm/service"
@@ -84,7 +85,7 @@ func TestStorageFailuresAreInternal(t *testing.T) {
 			_, err := core.Enqueue(ctx, []mdm.EnrollmentID{dev}, lock, storage.EnqueueOptions{})
 			return err
 		}},
-		{"Export", func() error { _, err := core.ExportEnrollments(ctx, storage.Page{}); return err }},
+		{"Export", func() error { _, err := core.ExportEnrollments(ctx, paging.Page{}); return err }},
 		{"Import", func() error {
 			return core.ImportEnrollment(ctx, storage.EnrollmentExport{ID: dev})
 		}},

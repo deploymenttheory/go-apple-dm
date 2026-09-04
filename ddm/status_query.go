@@ -7,8 +7,8 @@ import (
 	"fmt"
 
 	"github.com/deploymenttheory/go-apple-dm/mdm"
+	"github.com/deploymenttheory/go-apple-dm/paging"
 	"github.com/deploymenttheory/go-apple-dm/schema/status"
-	"github.com/deploymenttheory/go-apple-dm/storage"
 )
 
 // DeclarationStatus lists what an enrollment last reported per declaration.
@@ -18,22 +18,22 @@ func (e *Engine) DeclarationStatus(ctx context.Context, id mdm.EnrollmentID) ([]
 
 // DeclarationStatusByIdentifier pages through every enrollment's status for
 // one declaration.
-func (e *Engine) DeclarationStatusByIdentifier(ctx context.Context, identifier string, p storage.Page) (storage.Result[EnrollmentDeclarationStatus], error) {
+func (e *Engine) DeclarationStatusByIdentifier(ctx context.Context, identifier string, p paging.Page) (paging.Result[EnrollmentDeclarationStatus], error) {
 	return e.store.DeclarationStatusByIdentifier(ctx, identifier, p)
 }
 
 // StatusValues pages through an enrollment's status item values.
-func (e *Engine) StatusValues(ctx context.Context, id mdm.EnrollmentID, q StatusValueQuery, p storage.Page) (storage.Result[StatusValue], error) {
+func (e *Engine) StatusValues(ctx context.Context, id mdm.EnrollmentID, q StatusValueQuery, p paging.Page) (paging.Result[StatusValue], error) {
 	return e.store.StatusValues(ctx, id, q, p)
 }
 
 // StatusErrors pages through an enrollment's reported errors, newest first.
-func (e *Engine) StatusErrors(ctx context.Context, id mdm.EnrollmentID, p storage.Page) (storage.Result[StatusError], error) {
+func (e *Engine) StatusErrors(ctx context.Context, id mdm.EnrollmentID, p paging.Page) (paging.Result[StatusError], error) {
 	return e.store.StatusErrors(ctx, id, p)
 }
 
 // StatusReports pages through retained raw reports, newest first.
-func (e *Engine) StatusReports(ctx context.Context, id mdm.EnrollmentID, p storage.Page) (storage.Result[StatusReportRecord], error) {
+func (e *Engine) StatusReports(ctx context.Context, id mdm.EnrollmentID, p paging.Page) (paging.Result[StatusReportRecord], error) {
 	return e.store.StatusReports(ctx, id, p)
 }
 
@@ -53,7 +53,7 @@ func (e *Engine) ClientCapabilities(ctx context.Context, id mdm.EnrollmentID) (*
 // clientCapabilities reads the item through st: the store outside a
 // transaction, or the Tx while a manifest is computed inside Update.
 func (e *Engine) clientCapabilities(ctx context.Context, st StatusStore, id mdm.EnrollmentID) (*status.ManagementClientCapabilitiesCapabilities, error) {
-	res, err := st.StatusValues(ctx, id, StatusValueQuery{PathPrefix: StatusItemClientCapabilities}, storage.Page{Limit: 1})
+	res, err := st.StatusValues(ctx, id, StatusValueQuery{PathPrefix: StatusItemClientCapabilities}, paging.Page{Limit: 1})
 	if err != nil {
 		return nil, err
 	}

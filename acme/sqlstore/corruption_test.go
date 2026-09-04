@@ -7,7 +7,7 @@ import (
 
 	"github.com/deploymenttheory/go-apple-dm/acme"
 	"github.com/deploymenttheory/go-apple-dm/acme/sqlstore"
-	"github.com/deploymenttheory/go-apple-dm/storage"
+	"github.com/deploymenttheory/go-apple-dm/paging"
 	"github.com/deploymenttheory/go-apple-dm/storage/sqlite"
 )
 
@@ -37,7 +37,7 @@ func TestCorruptRowsSurface(t *testing.T) {
 			return err
 		}},
 		{"order list", "UPDATE acme_orders SET record = X'00'", "acme_orders", "o1", func(s *sqlstore.Store) error {
-			_, err := s.ListOrders(ctx, "acct", storage.Page{})
+			_, err := s.ListOrders(ctx, "acct", paging.Page{})
 			return err
 		}},
 		{"authorization", "UPDATE acme_authorizations SET record = X'00'", "acme_authorizations", "az-o1", func(s *sqlstore.Store) error {
@@ -53,7 +53,7 @@ func TestCorruptRowsSurface(t *testing.T) {
 			return err
 		}},
 		{"certificate list", "UPDATE acme_certificates SET record = X'00'", "acme_certificates", "c1", func(s *sqlstore.Store) error {
-			_, err := s.ListCertificates(ctx, acme.CertificateQuery{}, storage.Page{})
+			_, err := s.ListCertificates(ctx, acme.CertificateQuery{}, paging.Page{})
 			return err
 		}},
 	}

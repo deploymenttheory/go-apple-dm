@@ -11,6 +11,7 @@ import (
 
 	"github.com/deploymenttheory/go-apple-dm/internal/testpki"
 	"github.com/deploymenttheory/go-apple-dm/mdm"
+	"github.com/deploymenttheory/go-apple-dm/paging"
 	"github.com/deploymenttheory/go-apple-dm/schema/checkin"
 	"github.com/deploymenttheory/go-apple-dm/secrets"
 	"github.com/deploymenttheory/go-apple-dm/storage"
@@ -140,7 +141,7 @@ func TestRawColumnIsNotPlaintext(t *testing.T) {
 	if pc, _ := s.PushCert(ctx, "com.apple.mgmt.parity"); !bytes.Contains(pc.KeyPEM, []byte("PRIVATE KEY")) {
 		t.Fatal("push key not decrypted")
 	}
-	list, _ := s.List(ctx, storage.EnrollmentQuery{}, storage.Page{})
+	list, _ := s.List(ctx, storage.EnrollmentQuery{}, paging.Page{})
 	if len(list.Items) != 1 || string(list.Items[0].UnlockToken) != "unlock-secret" {
 		t.Fatalf("List did not open unlock tokens: %+v", list.Items)
 	}
@@ -194,7 +195,7 @@ func TestReadsPlaintextRowsWhenKeyringAdded(t *testing.T) {
 	if _, err := s.Get(ctx, id); !errors.Is(err, crypt.ErrUnsealed) {
 		t.Fatalf("strict read of plaintext: %v", err)
 	}
-	if _, err := s.List(ctx, storage.EnrollmentQuery{}, storage.Page{}); !errors.Is(err, crypt.ErrUnsealed) {
+	if _, err := s.List(ctx, storage.EnrollmentQuery{}, paging.Page{}); !errors.Is(err, crypt.ErrUnsealed) {
 		t.Fatalf("strict list of plaintext: %v", err)
 	}
 	if _, err := s.Rewrap(ctx); !errors.Is(err, crypt.ErrUnsealed) {
@@ -275,7 +276,7 @@ func TestSealedRowWithoutKeyring(t *testing.T) {
 		"BootstrapToken": func() error { _, err := plain.BootstrapToken(ctx, id); return err },
 		"UserAuth":       func() error { _, err := plain.UserAuth(ctx, uid); return err },
 		"PushCert":       func() error { _, err := plain.PushCert(ctx, "com.apple.mgmt.parity"); return err },
-		"Export":         func() error { _, err := plain.Export(ctx, storage.Page{}); return err },
+		"Export":         func() error { _, err := plain.Export(ctx, paging.Page{}); return err },
 	} {
 		if err := call(); !errors.Is(err, crypt.ErrNoKeyring) {
 			t.Errorf("%s: %v", name, err)
@@ -343,7 +344,7 @@ func TestCrossBackendMigration(t *testing.T) {
 	}
 	move := func(from, to storage.Store) {
 		t.Helper()
-		res, err := from.Export(ctx, storage.Page{})
+		res, err := from.Export(ctx, paging.Page{})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -364,8 +365,8 @@ func TestCrossBackendMigration(t *testing.T) {
 	}
 	dst := inmem.New()
 	move(mid, dst)
-	a, _ := src.Export(ctx, storage.Page{})
-	b, _ := dst.Export(ctx, storage.Page{})
+	a, _ := src.Export(ctx, paging.Page{})
+	b, _ := dst.Export(ctx, paging.Page{})
 	if len(a.Items) != 2 || len(b.Items) != 2 {
 		t.Fatalf("exports %d and %d", len(a.Items), len(b.Items))
 	}
@@ -418,7 +419,7 @@ func TestCorruptRowsSurface(t *testing.T) {
 	if _, err := s.DB().ExecContext(ctx, "UPDATE commands SET result_status = 'Error', result_error_chain = '{not json' WHERE command_uuid = 'C1'"); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := s.Commands(ctx, id, storage.CommandQuery{}, storage.Page{}); err == nil || errors.Is(err, storage.ErrNotFound) {
+	if _, err := s.Commands(ctx, id, storage.CommandQuery{}, paging.Page{}); err == nil || errors.Is(err, storage.ErrNotFound) {
 		t.Fatalf("bad error chain: %v", err)
 	}
 	// A push certificate row with an unreadable timestamp.
@@ -438,7 +439,7 @@ func TestCorruptRowsSurface(t *testing.T) {
 	if _, err := s.CertHistory(ctx, id); err == nil {
 		t.Fatal("bad associated_at read")
 	}
-	if _, err := s.Export(ctx, storage.Page{}); err == nil {
+	if _, err := s.Export(ctx, paging.Page{}); err == nil {
 		t.Fatal("export over a bad history row")
 	}
 	// The history table disappears under a device with a pin.
@@ -448,7 +449,7 @@ func TestCorruptRowsSurface(t *testing.T) {
 	if _, err := s.CertHashHistory(ctx, "h"); err == nil {
 		t.Fatal("hash history without the table")
 	}
-	if _, err := s.Export(ctx, storage.Page{}); err == nil {
+	if _, err := s.Export(ctx, paging.Page{}); err == nil {
 		t.Fatal("export without the history table")
 	}
 	if err := s.Import(ctx, storage.EnrollmentExport{ID: id, EnrolledAt: t0, LastSeenAt: t0, CertHistory: []storage.CertAssociation{{ID: id, Hash: "h", At: t0}}}); err == nil {

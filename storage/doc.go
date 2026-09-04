@@ -1,8 +1,8 @@
 // Package storage defines the persistence interfaces the service layer
 // uses, split by concern: enrollments, push tokens, the command queue,
 // bootstrap tokens, certificate associations, push certificates,
-// UserAuthenticate state, and export and import, with Page and cursor
-// types and sentinel errors.
+// UserAuthenticate state, and export and import, with the sentinel errors
+// every backend returns. Pagination is paging.Page and paging.Result.
 //
 // # Why
 //
@@ -21,6 +21,10 @@
 // sqlcommon) and encryption of stored secrets in storage/crypt; this
 // package holds no implementation beyond the NotNow backoff schedule.
 //
+// Cursor pagination lives in paging (decision record 0044): a Page is a
+// request shape and a Result is a value, so a contract can be paginated
+// without depending on the layer that persists things.
+//
 // # References
 //
 //   - Decision record 0005: docs/research/decisions/0005-storage-interfaces.md
@@ -29,6 +33,7 @@
 //   - Decision record 0015: docs/research/decisions/0015-push-cert-store.md
 //   - Decision record 0016: docs/research/decisions/0016-user-authenticate-state.md
 //   - Decision record 0017: docs/research/decisions/0017-enrollment-export-import.md
+//   - Decision record 0044: docs/research/decisions/0044-repository-layout.md
 //   - Plan of record: docs/research/implementation_plan.md (section 3, core domain model; phase 2)
 //   - Threat model: docs/security/threat-model.md (Storage rows)
 //   - End-to-end scenarios: docs/testing/e2e-scenarios.md (E2E-003, E2E-005)

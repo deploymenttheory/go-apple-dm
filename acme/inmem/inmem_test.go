@@ -9,7 +9,7 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/acme"
 	"github.com/deploymenttheory/go-apple-dm/acme/acmetest"
 	"github.com/deploymenttheory/go-apple-dm/acme/inmem"
-	"github.com/deploymenttheory/go-apple-dm/storage"
+	"github.com/deploymenttheory/go-apple-dm/paging"
 )
 
 func TestContract(t *testing.T) {
@@ -120,7 +120,7 @@ func TestPruneKeepsClaims(t *testing.T) {
 func TestMalformedCursor(t *testing.T) {
 	ctx := context.Background()
 	s := inmem.New()
-	page := storage.Page{Cursor: "not base64url!"}
+	page := paging.Page{Cursor: "not base64url!"}
 	if _, err := s.ListOrders(ctx, "acct-1", page); !errors.Is(err, acme.ErrInvalid) {
 		t.Errorf("ListOrders: got %v, want ErrInvalid", err)
 	}
@@ -243,7 +243,7 @@ func TestOptionalFieldsStayAbsent(t *testing.T) {
 func TestPageDefaultLimit(t *testing.T) {
 	ctx := context.Background()
 	s := inmem.New()
-	total := storage.DefaultPageSize + 5
+	total := paging.DefaultPageSize + 5
 	must(t, "seed", s.Update(ctx, func(tx acme.Tx) error {
 		for i := range total {
 			if err := tx.PutOrder(ctx, acmetest.Order(orderID(i), "acct-1")); err != nil {
@@ -252,12 +252,12 @@ func TestPageDefaultLimit(t *testing.T) {
 		}
 		return nil
 	}))
-	r, err := s.ListOrders(ctx, "acct-1", storage.Page{})
+	r, err := s.ListOrders(ctx, "acct-1", paging.Page{})
 	must(t, "list", err)
-	if len(r.Items) != storage.DefaultPageSize || r.NextCursor == "" {
+	if len(r.Items) != paging.DefaultPageSize || r.NextCursor == "" {
 		t.Fatalf("first page: %d items, cursor %q", len(r.Items), r.NextCursor)
 	}
-	r, err = s.ListOrders(ctx, "acct-1", storage.Page{Cursor: r.NextCursor})
+	r, err = s.ListOrders(ctx, "acct-1", paging.Page{Cursor: r.NextCursor})
 	must(t, "second page", err)
 	if len(r.Items) != 5 || r.NextCursor != "" {
 		t.Fatalf("second page: %d items, cursor %q", len(r.Items), r.NextCursor)

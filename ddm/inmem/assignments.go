@@ -8,7 +8,7 @@ import (
 
 	"github.com/deploymenttheory/go-apple-dm/ddm"
 	"github.com/deploymenttheory/go-apple-dm/mdm"
-	"github.com/deploymenttheory/go-apple-dm/storage"
+	"github.com/deploymenttheory/go-apple-dm/paging"
 )
 
 // AssignSet implements ddm.AssignmentStore.
@@ -48,12 +48,12 @@ func (t *tx) EnrollmentSets(_ context.Context, id mdm.EnrollmentID) ([]string, e
 
 // SetEnrollments implements ddm.AssignmentStore. The cursor is the last
 // enrollment id of the previous page.
-func (t *tx) SetEnrollments(_ context.Context, set string, p storage.Page) (storage.Result[mdm.EnrollmentID], error) {
+func (t *tx) SetEnrollments(_ context.Context, set string, p paging.Page) (paging.Result[mdm.EnrollmentID], error) {
 	if err := validName("set name", set); err != nil {
-		return storage.Result[mdm.EnrollmentID]{}, err
+		return paging.Result[mdm.EnrollmentID]{}, err
 	}
 	if _, ok := t.st.sets[set]; !ok {
-		return storage.Result[mdm.EnrollmentID]{}, notFound("set", set)
+		return paging.Result[mdm.EnrollmentID]{}, notFound("set", set)
 	}
 	var keys []string
 	for key, sets := range t.st.enrollSets {
@@ -198,7 +198,7 @@ func (s *Store) EnrollmentSets(ctx context.Context, id mdm.EnrollmentID) ([]stri
 }
 
 // SetEnrollments implements ddm.AssignmentStore.
-func (s *Store) SetEnrollments(ctx context.Context, set string, p storage.Page) (storage.Result[mdm.EnrollmentID], error) {
+func (s *Store) SetEnrollments(ctx context.Context, set string, p paging.Page) (paging.Result[mdm.EnrollmentID], error) {
 	v, done := s.view()
 	defer done()
 	return v.SetEnrollments(ctx, set, p)

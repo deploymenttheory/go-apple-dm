@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"github.com/deploymenttheory/go-apple-dm/dep"
-	"github.com/deploymenttheory/go-apple-dm/storage"
+	"github.com/deploymenttheory/go-apple-dm/paging"
 	"github.com/deploymenttheory/go-apple-dm/storage/crypt"
 	"github.com/deploymenttheory/go-apple-dm/storage/sqlcommon"
 )
@@ -256,6 +256,6 @@ func placeholders(n int) string {
 }
 
 // pageLimit applies the default page size.
-func pageLimit(p storage.Page) int {
+func pageLimit(p paging.Page) int {
 	return p.Size()
 }

@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/deploymenttheory/go-apple-dm/mdm"
+	"github.com/deploymenttheory/go-apple-dm/paging"
 	"github.com/deploymenttheory/go-apple-dm/schema/checkin"
 	"github.com/deploymenttheory/go-apple-dm/storage"
 	"github.com/deploymenttheory/go-apple-dm/storage/sqlcommon"
@@ -138,7 +139,7 @@ func TestClearBatches(t *testing.T) {
 	seen := 0
 	cursor := ""
 	for {
-		res, err := s.Commands(ctx, id, storage.CommandQuery{States: []storage.State{storage.StateCleared}}, storage.Page{Cursor: cursor, Limit: 500})
+		res, err := s.Commands(ctx, id, storage.CommandQuery{States: []storage.State{storage.StateCleared}}, paging.Page{Cursor: cursor, Limit: 500})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -151,7 +152,7 @@ func TestClearBatches(t *testing.T) {
 	if seen != n {
 		t.Fatalf("paged %d of %d", seen, n)
 	}
-	if _, err := s.Commands(ctx, id, storage.CommandQuery{}, storage.Page{Cursor: "x"}); !errors.Is(err, storage.ErrInvalid) {
+	if _, err := s.Commands(ctx, id, storage.CommandQuery{}, paging.Page{Cursor: "x"}); !errors.Is(err, storage.ErrInvalid) {
 		t.Fatal("bad cursor")
 	}
 }
@@ -185,7 +186,7 @@ func TestResultRoundTripAndInvalidIDs(t *testing.T) {
 	if err := s.StoreResult(ctx, id, resp, t0.Add(time.Minute)); err != nil {
 		t.Fatal(err)
 	}
-	got, err := s.Commands(ctx, id, storage.CommandQuery{RequestType: "DeviceLock"}, storage.Page{})
+	got, err := s.Commands(ctx, id, storage.CommandQuery{RequestType: "DeviceLock"}, paging.Page{})
 	if err != nil || len(got.Items) != 1 {
 		t.Fatalf("%+v %v", got, err)
 	}
@@ -202,7 +203,7 @@ func TestResultRoundTripAndInvalidIDs(t *testing.T) {
 	for name, call := range map[string]func() error{
 		"Next":           func() error { _, err := s.Next(ctx, bad, false, t0); return err },
 		"StoreResult":    func() error { return s.StoreResult(ctx, bad, resp, t0) },
-		"Commands":       func() error { _, err := s.Commands(ctx, bad, storage.CommandQuery{}, storage.Page{}); return err },
+		"Commands":       func() error { _, err := s.Commands(ctx, bad, storage.CommandQuery{}, paging.Page{}); return err },
 		"Clear":          func() error { _, err := s.Clear(ctx, bad, storage.ClearFilter{}); return err },
 		"AssociateCert":  func() error { return s.AssociateCert(ctx, bad, "h", t0) },
 		"CertHash":       func() error { _, err := s.CertHash(ctx, bad); return err },
@@ -253,7 +254,7 @@ func TestQueriesFailWithoutSchema(t *testing.T) {
 		},
 		"Next":        func() error { _, err := s.Next(ctx, id, false, t0); return err },
 		"StoreResult": func() error { return s.StoreResult(ctx, id, resp, t0) },
-		"Commands":    func() error { _, err := s.Commands(ctx, id, storage.CommandQuery{}, storage.Page{}); return err },
+		"Commands":    func() error { _, err := s.Commands(ctx, id, storage.CommandQuery{}, paging.Page{}); return err },
 		"Clear":       func() error { _, err := s.Clear(ctx, id, storage.ClearFilter{}); return err },
 		"Upsert":      func() error { return s.UpsertAuthenticate(ctx, id, nil, nil, t0) },
 	}
@@ -285,7 +286,7 @@ func TestQueriesFailWithoutSchema(t *testing.T) {
 	}
 	calls = map[string]func() error{
 		"Get":  func() error { _, err := s.Get(ctx, id); return err },
-		"List": func() error { _, err := s.List(ctx, storage.EnrollmentQuery{}, storage.Page{}); return err },
+		"List": func() error { _, err := s.List(ctx, storage.EnrollmentQuery{}, paging.Page{}); return err },
 		"StoreTokenUpdate": func() error {
 			return s.StoreTokenUpdate(ctx, id, mdm.Push{Topic: "t", Token: []byte{1}, Magic: "m"}, nil, nil, t0)
 		},
@@ -299,7 +300,7 @@ func TestQueriesFailWithoutSchema(t *testing.T) {
 		"CertHashHistory": func() error { _, err := s.CertHashHistory(ctx, "h"); return err },
 		"StoreBootstrap":  func() error { return s.StoreBootstrapToken(ctx, id, []byte{1}, t0) },
 		"BootstrapToken":  func() error { _, err := s.BootstrapToken(ctx, id); return err },
-		"Export":          func() error { _, err := s.Export(ctx, storage.Page{}); return err },
+		"Export":          func() error { _, err := s.Export(ctx, paging.Page{}); return err },
 		"Import": func() error {
 			return s.Import(ctx, storage.EnrollmentExport{ID: id})
 		},

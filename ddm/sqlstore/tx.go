@@ -9,7 +9,7 @@ import (
 	"strings"
 
 	"github.com/deploymenttheory/go-apple-dm/ddm"
-	"github.com/deploymenttheory/go-apple-dm/storage"
+	"github.com/deploymenttheory/go-apple-dm/paging"
 )
 
 // querier is *sql.DB or *sql.Tx.
@@ -162,9 +162,9 @@ func (t *txStore) column(ctx context.Context, op, query string, args ...any) ([]
 // keyset runs a query ordered by its cursor key, asking for one row more
 // than the page so the cursor is set only when more rows exist. scan
 // returns each item with the key that continues after it.
-func keyset[T any](ctx context.Context, t *txStore, op, query string, args []any, p storage.Page, scan func(*sql.Rows) (T, string, error)) (storage.Result[T], error) {
+func keyset[T any](ctx context.Context, t *txStore, op, query string, args []any, p paging.Page, scan func(*sql.Rows) (T, string, error)) (paging.Result[T], error) {
 	limit := pageLimit(p)
-	var out storage.Result[T]
+	var out paging.Result[T]
 	keys := make([]string, 0, limit+1)
 	err := t.each(ctx, op, query+" LIMIT ?", append(args, limit+1), func(rows *sql.Rows) error {
 		item, key, err := scan(rows)
@@ -176,7 +176,7 @@ func keyset[T any](ctx context.Context, t *txStore, op, query string, args []any
 		return nil
 	})
 	if err != nil {
-		return storage.Result[T]{}, err
+		return paging.Result[T]{}, err
 	}
 	if len(out.Items) > limit {
 		out.Items = out.Items[:limit]
@@ -188,7 +188,7 @@ func keyset[T any](ctx context.Context, t *txStore, op, query string, args []any
 // seqCursor parses a newest-first cursor: the seq of the last row served,
 // or 0 with ok false for the first page. Anything but a decimal integer
 // is ddm.ErrInvalid.
-func seqCursor(p storage.Page) (seq int64, ok bool, err error) {
+func seqCursor(p paging.Page) (seq int64, ok bool, err error) {
 	if p.Cursor == "" {
 		return 0, false, nil
 	}

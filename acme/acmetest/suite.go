@@ -16,7 +16,7 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/acme"
 	"github.com/deploymenttheory/go-apple-dm/acme/attest"
 	"github.com/deploymenttheory/go-apple-dm/acme/jose"
-	"github.com/deploymenttheory/go-apple-dm/storage"
+	"github.com/deploymenttheory/go-apple-dm/paging"
 )
 
 // Factory returns a fresh, empty store for one test.
@@ -315,7 +315,7 @@ func runOrderList(t *testing.T, newStore Factory) {
 		return tx.PutOrder(ctx, Order("order-other", "acct-2"))
 	})
 	// A listing is one account's own orders and nobody else's.
-	r, err := s.ListOrders(ctx, "acct-1", storage.Page{})
+	r, err := s.ListOrders(ctx, "acct-1", paging.Page{})
 	must(t, "list", err)
 	if len(r.Items) != n {
 		t.Fatalf("listed %d orders, want %d", len(r.Items), n)
@@ -330,7 +330,7 @@ func runOrderList(t *testing.T, newStore Factory) {
 	}
 	// The cursor reaches every record exactly once and then stops.
 	seen := map[string]int{}
-	pages, p := 0, storage.Page{Limit: 2}
+	pages, p := 0, paging.Page{Limit: 2}
 	for {
 		page, err := s.ListOrders(ctx, "acct-1", p)
 		must(t, "page", err)
@@ -357,11 +357,11 @@ func runOrderList(t *testing.T, newStore Factory) {
 			t.Errorf("order %q seen %d times", id, count)
 		}
 	}
-	if r, _ := s.ListOrders(ctx, "acct-2", storage.Page{}); len(r.Items) != 1 || r.Items[0].ID != "order-other" {
+	if r, _ := s.ListOrders(ctx, "acct-2", paging.Page{}); len(r.Items) != 1 || r.Items[0].ID != "order-other" {
 		t.Fatalf("other account: %+v", r.Items)
 	}
 	// An account with no orders lists nothing, which is not an error.
-	r, err = s.ListOrders(ctx, "acct-nobody", storage.Page{})
+	r, err = s.ListOrders(ctx, "acct-nobody", paging.Page{})
 	must(t, "list unknown account", err)
 	if len(r.Items) != 0 || r.NextCursor != "" {
 		t.Fatalf("unknown account: %+v", r)
@@ -551,7 +551,7 @@ func runCertificateList(t *testing.T, newStore Factory) {
 		"serial in the wrong account": {acme.CertificateQuery{DeviceSerial: "S1", AccountID: "acct-2"}, nil},
 		"unknown udid":                {acme.CertificateQuery{UDID: "nobody"}, nil},
 	} {
-		r, err := s.ListCertificates(ctx, tc.query, storage.Page{})
+		r, err := s.ListCertificates(ctx, tc.query, paging.Page{})
 		must(t, name, err)
 		var ids []string
 		for _, c := range r.Items {
@@ -563,7 +563,7 @@ func runCertificateList(t *testing.T, newStore Factory) {
 	}
 	// Paging a filtered listing reaches every match exactly once.
 	seen := map[string]int{}
-	p := storage.Page{Limit: 1}
+	p := paging.Page{Limit: 1}
 	for pages := 0; ; pages++ {
 		page, err := s.ListCertificates(ctx, acme.CertificateQuery{}, p)
 		must(t, "page", err)
@@ -746,11 +746,11 @@ func readBack(ctx context.Context, tx acme.Tx) error {
 	if _, err := tx.GetCertificate(ctx, "cert-1"); err != nil {
 		return err
 	}
-	orders, err := tx.ListOrders(ctx, "acct-1", storage.Page{})
+	orders, err := tx.ListOrders(ctx, "acct-1", paging.Page{})
 	if err != nil {
 		return err
 	}
-	certs, err := tx.ListCertificates(ctx, acme.CertificateQuery{AccountID: "acct-1"}, storage.Page{})
+	certs, err := tx.ListCertificates(ctx, acme.CertificateQuery{AccountID: "acct-1"}, paging.Page{})
 	if err != nil {
 		return err
 	}
@@ -854,7 +854,7 @@ func runInvalid(t *testing.T, newStore Factory) {
 		"GetAuthorization":      func() error { _, err := s.GetAuthorization(ctx, ""); return err },
 		"GetChallenge":          func() error { _, err := s.GetChallenge(ctx, ""); return err },
 		"GetCertificate":        func() error { _, err := s.GetCertificate(ctx, ""); return err },
-		"ListOrders":            func() error { _, err := s.ListOrders(ctx, "", storage.Page{}); return err },
+		"ListOrders":            func() error { _, err := s.ListOrders(ctx, "", paging.Page{}); return err },
 		"PutAccount nil":        func() error { return write(func(tx acme.Tx) error { return tx.PutAccount(ctx, nil) }) },
 		"PutOrder nil":          func() error { return write(func(tx acme.Tx) error { return tx.PutOrder(ctx, nil) }) },
 		"PutAuthorization nil":  func() error { return write(func(tx acme.Tx) error { return tx.PutAuthorization(ctx, nil) }) },
@@ -929,7 +929,7 @@ func runConcurrency(t *testing.T, newStore Factory) {
 		})
 	}
 	wg.Wait()
-	r, err := s.ListOrders(ctx, "acct-1", storage.Page{})
+	r, err := s.ListOrders(ctx, "acct-1", paging.Page{})
 	if err != nil || len(r.Items) != orders {
 		t.Fatalf("orders after concurrent updates: %d %v", len(r.Items), err)
 	}

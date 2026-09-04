@@ -14,8 +14,8 @@ import (
 	ddminmem "github.com/deploymenttheory/go-apple-dm/ddm/inmem"
 	"github.com/deploymenttheory/go-apple-dm/event"
 	"github.com/deploymenttheory/go-apple-dm/mdm"
+	"github.com/deploymenttheory/go-apple-dm/paging"
 	schemaddm "github.com/deploymenttheory/go-apple-dm/schema/ddm"
-	"github.com/deploymenttheory/go-apple-dm/storage"
 )
 
 // report renders a status report in Apple's wire form. full is nil when the
@@ -63,7 +63,7 @@ func declarationsItem(activations, configurations []map[string]any) map[string]a
 
 func values(t *testing.T, h *harness, id mdm.EnrollmentID, prefix string) map[string]string {
 	t.Helper()
-	res, err := h.engine.StatusValues(context.Background(), id, ddm.StatusValueQuery{PathPrefix: prefix}, storage.Page{Limit: 1000})
+	res, err := h.engine.StatusValues(context.Background(), id, ddm.StatusValueQuery{PathPrefix: prefix}, paging.Page{Limit: 1000})
 	if err != nil {
 		t.Fatalf("StatusValues: %v", err)
 	}
@@ -98,7 +98,7 @@ func TestStatus(t *testing.T) {
 		if _, err := h.engine.Status(ctx, dev, body); !errors.Is(err, ddm.ErrStatusTooLarge) {
 			t.Fatalf("oversized: %v", err)
 		}
-		if res, err := h.engine.StatusReports(ctx, dev, storage.Page{}); err != nil || len(res.Items) != 0 {
+		if res, err := h.engine.StatusReports(ctx, dev, paging.Page{}); err != nil || len(res.Items) != 0 {
 			t.Fatalf("oversized report stored: %+v %v", res, err)
 		}
 		if _, err := h.engine.Status(ctx, dev, []byte(`{"StatusItems":{}}`)); err != nil {
@@ -116,7 +116,7 @@ func TestStatus(t *testing.T) {
 				t.Errorf("%s: %v", body, err)
 			}
 		}
-		if res, err := h.engine.StatusReports(ctx, dev, storage.Page{}); err != nil || len(res.Items) != 0 {
+		if res, err := h.engine.StatusReports(ctx, dev, paging.Page{}); err != nil || len(res.Items) != 0 {
 			t.Fatalf("malformed report stored: %+v %v", res, err)
 		}
 		if len(h.Events()) != 0 {
@@ -324,7 +324,7 @@ func TestStatus(t *testing.T) {
 		if _, err := h.engine.Status(ctx, dev, report(t, nil, map[string]any{}, errs)); err != nil {
 			t.Fatal(err)
 		}
-		res, err := h.engine.StatusErrors(ctx, dev, storage.Page{})
+		res, err := h.engine.StatusErrors(ctx, dev, paging.Page{})
 		if err != nil || len(res.Items) != 2 {
 			t.Fatalf("StatusErrors = %+v, %v", res, err)
 		}
@@ -413,7 +413,7 @@ func TestStatus(t *testing.T) {
 				t.Errorf("%s: %v", name, err)
 			}
 		}
-		if res, err := h.engine.StatusReports(ctx, dev, storage.Page{}); err != nil || len(res.Items) != 0 {
+		if res, err := h.engine.StatusReports(ctx, dev, paging.Page{}); err != nil || len(res.Items) != 0 {
 			t.Fatalf("malformed reports stored: %+v %v", res, err)
 		}
 	})
@@ -443,14 +443,14 @@ func TestStatusQueries(t *testing.T) {
 	})
 	t.Run("ByIdentifier", func(t *testing.T) {
 		t.Parallel()
-		res, err := h.engine.DeclarationStatusByIdentifier(ctx, "com.example.cfg", storage.Page{})
+		res, err := h.engine.DeclarationStatusByIdentifier(ctx, "com.example.cfg", paging.Page{})
 		if err != nil || len(res.Items) != 2 {
 			t.Fatalf("by identifier %+v, %v", res, err)
 		}
 		if res.Items[0].ID != dev || res.Items[0].ServerToken != "t1" || res.Items[1].ID != other || res.Items[1].ServerToken != "t2" {
 			t.Fatalf("by identifier %+v", res.Items)
 		}
-		if res, err := h.engine.DeclarationStatusByIdentifier(ctx, "com.example.none", storage.Page{}); err != nil || len(res.Items) != 0 {
+		if res, err := h.engine.DeclarationStatusByIdentifier(ctx, "com.example.none", paging.Page{}); err != nil || len(res.Items) != 0 {
 			t.Fatalf("unknown identifier %+v, %v", res, err)
 		}
 	})
@@ -463,24 +463,24 @@ func TestStatusQueries(t *testing.T) {
 		if all := values(t, h, dev, ""); len(all) != 4 {
 			t.Fatalf("all values %v", all)
 		}
-		res, err := h.engine.StatusValues(ctx, dev, ddm.StatusValueQuery{}, storage.Page{Limit: 2})
+		res, err := h.engine.StatusValues(ctx, dev, ddm.StatusValueQuery{}, paging.Page{Limit: 2})
 		if err != nil || len(res.Items) != 2 || res.NextCursor == "" {
 			t.Fatalf("paged values %+v, %v", res, err)
 		}
 	})
 	t.Run("Errors", func(t *testing.T) {
 		t.Parallel()
-		res, err := h.engine.StatusErrors(ctx, dev, storage.Page{})
+		res, err := h.engine.StatusErrors(ctx, dev, paging.Page{})
 		if err != nil || len(res.Items) != 1 || res.Items[0].StatusItem != "device.model.family" {
 			t.Fatalf("errors %+v, %v", res, err)
 		}
-		if res, err := h.engine.StatusErrors(ctx, other, storage.Page{}); err != nil || len(res.Items) != 0 {
+		if res, err := h.engine.StatusErrors(ctx, other, paging.Page{}); err != nil || len(res.Items) != 0 {
 			t.Fatalf("other errors %+v, %v", res, err)
 		}
 	})
 	t.Run("Reports", func(t *testing.T) {
 		t.Parallel()
-		res, err := h.engine.StatusReports(ctx, dev, storage.Page{})
+		res, err := h.engine.StatusReports(ctx, dev, paging.Page{})
 		if err != nil || len(res.Items) != 1 || string(res.Items[0].Raw) != string(body) || !res.Items[0].FullReport || res.Items[0].ReceivedAt != t0 {
 			t.Fatalf("reports %+v, %v", res, err)
 		}

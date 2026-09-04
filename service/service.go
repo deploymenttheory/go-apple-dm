@@ -11,6 +11,7 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/event"
 	"github.com/deploymenttheory/go-apple-dm/internal/clock"
 	"github.com/deploymenttheory/go-apple-dm/mdm"
+	"github.com/deploymenttheory/go-apple-dm/paging"
 	"github.com/deploymenttheory/go-apple-dm/schema/checkin"
 	"github.com/deploymenttheory/go-apple-dm/schema/commands"
 	"github.com/deploymenttheory/go-apple-dm/schema/support"
@@ -381,7 +382,7 @@ func targetFor(ctx context.Context, st storage.EnrollmentStore, e *storage.Enrol
 	case mdm.ChannelDevice:
 		if t.OS == support.IOS {
 			// A Shared iPad is recognised by its logged-in user channel.
-			res, err := st.List(ctx, storage.EnrollmentQuery{ParentID: e.ID.ID, Channel: mdm.ChannelSharedIPadUser}, storage.Page{Limit: 1})
+			res, err := st.List(ctx, storage.EnrollmentQuery{ParentID: e.ID.ID, Channel: mdm.ChannelSharedIPadUser}, paging.Page{Limit: 1})
 			t.SharedIPad = err == nil && len(res.Items) > 0
 		}
 	case mdm.ChannelUser:

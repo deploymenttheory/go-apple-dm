@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/deploymenttheory/go-apple-dm/mdm"
+	"github.com/deploymenttheory/go-apple-dm/paging"
 	"github.com/deploymenttheory/go-apple-dm/schema/checkin"
 	"github.com/deploymenttheory/go-apple-dm/storage"
 )
@@ -56,9 +57,9 @@ func (f *Failing) Get(ctx context.Context, id mdm.EnrollmentID) (*storage.Enroll
 }
 
 // List implements storage.EnrollmentStore.
-func (f *Failing) List(ctx context.Context, q storage.EnrollmentQuery, p storage.Page) (storage.Result[storage.Enrollment], error) {
+func (f *Failing) List(ctx context.Context, q storage.EnrollmentQuery, p paging.Page) (paging.Result[storage.Enrollment], error) {
 	if err := f.fail("List"); err != nil {
-		return storage.Result[storage.Enrollment]{}, err
+		return paging.Result[storage.Enrollment]{}, err
 	}
 	return f.Store.List(ctx, q, p)
 }
@@ -96,9 +97,9 @@ func (f *Failing) StoreResult(ctx context.Context, id mdm.EnrollmentID, resp *md
 }
 
 // Commands implements storage.CommandQueue.
-func (f *Failing) Commands(ctx context.Context, id mdm.EnrollmentID, q storage.CommandQuery, p storage.Page) (storage.Result[storage.QueuedCommand], error) {
+func (f *Failing) Commands(ctx context.Context, id mdm.EnrollmentID, q storage.CommandQuery, p paging.Page) (paging.Result[storage.QueuedCommand], error) {
 	if err := f.fail("Commands"); err != nil {
-		return storage.Result[storage.QueuedCommand]{}, err
+		return paging.Result[storage.QueuedCommand]{}, err
 	}
 	return f.Store.Commands(ctx, id, q, p)
 }
@@ -240,9 +241,9 @@ func (f *Failing) ClearUserAuth(ctx context.Context, id mdm.EnrollmentID) error 
 }
 
 // Export implements storage.MigrationStore.
-func (f *Failing) Export(ctx context.Context, p storage.Page) (storage.Result[storage.EnrollmentExport], error) {
+func (f *Failing) Export(ctx context.Context, p paging.Page) (paging.Result[storage.EnrollmentExport], error) {
 	if err := f.fail("Export"); err != nil {
-		return storage.Result[storage.EnrollmentExport]{}, err
+		return paging.Result[storage.EnrollmentExport]{}, err
 	}
 	return f.Store.Export(ctx, p)
 }

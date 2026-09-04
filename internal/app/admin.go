@@ -10,7 +10,7 @@ import (
 
 	"github.com/deploymenttheory/go-apple-dm/ddm"
 	"github.com/deploymenttheory/go-apple-dm/mdm"
-	"github.com/deploymenttheory/go-apple-dm/storage"
+	"github.com/deploymenttheory/go-apple-dm/paging"
 )
 
 // MaxAdminBody bounds admin request bodies.
@@ -164,7 +164,7 @@ func (a *App) ddmAdminRoutes() []adminRoute {
 		func(ctx context.Context, id mdm.EnrollmentID) (any, error) { return e.DeclarationStatus(ctx, id) },
 	)
 	enrollmentGet(ActionReadEnrollmentStatus, "status/values", func(ctx context.Context, id mdm.EnrollmentID) (any, error) {
-		return e.StatusValues(ctx, id, ddm.StatusValueQuery{}, storage.Page{Limit: 1000})
+		return e.StatusValues(ctx, id, ddm.StatusValueQuery{}, paging.Page{Limit: 1000})
 	})
 	enrollmentGet(ActionReadEnrollment, "tokens", func(ctx context.Context, id mdm.EnrollmentID) (any, error) {
 		body, err := e.Tokens(ctx, id)

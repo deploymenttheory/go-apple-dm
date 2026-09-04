@@ -10,6 +10,7 @@ import (
 
 	"github.com/deploymenttheory/go-apple-dm/event"
 	"github.com/deploymenttheory/go-apple-dm/mdm"
+	"github.com/deploymenttheory/go-apple-dm/paging"
 	"github.com/deploymenttheory/go-apple-dm/schema/commands"
 	"github.com/deploymenttheory/go-apple-dm/service"
 	"github.com/deploymenttheory/go-apple-dm/simulator"
@@ -78,7 +79,7 @@ func TestE2E_CommandsInOrder(t *testing.T) {
 			t.Fatalf("order: got %s at %d, want %s", cmd.UUID, i, uuids[i])
 		}
 	}
-	res, err := h.store.Commands(ctx, id, storage.CommandQuery{States: []storage.State{storage.StateAcknowledged}}, storage.Page{})
+	res, err := h.store.Commands(ctx, id, storage.CommandQuery{States: []storage.State{storage.StateAcknowledged}}, paging.Page{})
 	if err != nil || len(res.Items) != 3 {
 		t.Fatalf("acknowledged = %d %v", len(res.Items), err)
 	}
@@ -136,7 +137,7 @@ func TestE2E_NotNowBackoff(t *testing.T) {
 	if err != nil || len(got) != 1 || got[0].UUID != cmd.UUID {
 		t.Fatalf("retry: %v %v", got, err)
 	}
-	res, _ := h.store.Commands(ctx, id, storage.CommandQuery{}, storage.Page{})
+	res, _ := h.store.Commands(ctx, id, storage.CommandQuery{}, paging.Page{})
 	for _, c := range res.Items {
 		if c.Command.UUID == cmd.UUID && (c.State != storage.StateAcknowledged || c.NotNowCount != 1) {
 			t.Fatalf("state after retry: %+v", c)
@@ -164,7 +165,7 @@ func TestE2E_CommandError(t *testing.T) {
 	if _, err := d.Connect(ctx); err != nil {
 		t.Fatal(err)
 	}
-	res, _ := h.store.Commands(ctx, id, storage.CommandQuery{States: []storage.State{storage.StateError}}, storage.Page{})
+	res, _ := h.store.Commands(ctx, id, storage.CommandQuery{States: []storage.State{storage.StateError}}, paging.Page{})
 	if len(res.Items) != 1 || len(res.Items[0].Result.ErrorChain) != 1 || res.Items[0].Result.ErrorChain[0].ErrorCode != 12021 {
 		t.Fatalf("error result %+v", res.Items)
 	}

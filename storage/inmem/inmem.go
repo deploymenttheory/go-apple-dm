@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/deploymenttheory/go-apple-dm/mdm"
+	"github.com/deploymenttheory/go-apple-dm/paging"
 	"github.com/deploymenttheory/go-apple-dm/schema/checkin"
 	"github.com/deploymenttheory/go-apple-dm/storage"
 )
@@ -182,7 +183,7 @@ func (s *Store) Get(_ context.Context, id mdm.EnrollmentID) (*storage.Enrollment
 
 // List implements storage.EnrollmentStore. The cursor is the last id of
 // the previous page.
-func (s *Store) List(_ context.Context, q storage.EnrollmentQuery, p storage.Page) (storage.Result[storage.Enrollment], error) {
+func (s *Store) List(_ context.Context, q storage.EnrollmentQuery, p paging.Page) (paging.Result[storage.Enrollment], error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	ids := make([]string, 0, len(s.enrollments))
@@ -207,9 +208,9 @@ func (s *Store) List(_ context.Context, q storage.EnrollmentQuery, p storage.Pag
 	sort.Strings(ids)
 	limit := p.Limit
 	if limit <= 0 {
-		limit = storage.DefaultPageSize
+		limit = paging.DefaultPageSize
 	}
-	var out storage.Result[storage.Enrollment]
+	var out paging.Result[storage.Enrollment]
 	for i, id := range ids {
 		if i == limit {
 			out.NextCursor = ids[i-1]
@@ -340,12 +341,12 @@ func (s *Store) StoreResult(_ context.Context, id mdm.EnrollmentID, resp *mdm.Re
 }
 
 // Commands implements storage.CommandQueue with offset cursors.
-func (s *Store) Commands(_ context.Context, id mdm.EnrollmentID, q storage.CommandQuery, p storage.Page) (storage.Result[storage.QueuedCommand], error) {
+func (s *Store) Commands(_ context.Context, id mdm.EnrollmentID, q storage.CommandQuery, p paging.Page) (paging.Result[storage.QueuedCommand], error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	r, err := s.get(id)
 	if err != nil {
-		return storage.Result[storage.QueuedCommand]{}, err
+		return paging.Result[storage.QueuedCommand]{}, err
 	}
 	var matches []storage.QueuedCommand
 	for _, c := range slices.Backward(r.queue) {
@@ -362,15 +363,15 @@ func (s *Store) Commands(_ context.Context, id mdm.EnrollmentID, q storage.Comma
 	if p.Cursor != "" {
 		n, err := strconv.Atoi(p.Cursor)
 		if err != nil || n < 0 {
-			return storage.Result[storage.QueuedCommand]{}, fmt.Errorf("%w: bad cursor %q", storage.ErrInvalid, p.Cursor)
+			return paging.Result[storage.QueuedCommand]{}, fmt.Errorf("%w: bad cursor %q", storage.ErrInvalid, p.Cursor)
 		}
 		offset = n
 	}
 	limit := p.Limit
 	if limit <= 0 {
-		limit = storage.DefaultPageSize
+		limit = paging.DefaultPageSize
 	}
-	var out storage.Result[storage.QueuedCommand]
+	var out paging.Result[storage.QueuedCommand]
 	if offset >= len(matches) {
 		return out, nil
 	}

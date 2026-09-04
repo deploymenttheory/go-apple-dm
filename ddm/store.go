@@ -5,8 +5,8 @@ import (
 	"time"
 
 	"github.com/deploymenttheory/go-apple-dm/mdm"
+	"github.com/deploymenttheory/go-apple-dm/paging"
 	schemaddm "github.com/deploymenttheory/go-apple-dm/schema/ddm"
-	"github.com/deploymenttheory/go-apple-dm/storage"
 )
 
 // Declaration is a stored declaration: the canonical JSON of
@@ -168,7 +168,7 @@ type DeclarationStore interface {
 	// memberships, and direct assignments. ErrNotFound when absent.
 	DeleteDeclaration(ctx context.Context, identifier string) error
 	// ListDeclarations pages by identifier.
-	ListDeclarations(ctx context.Context, q DeclarationQuery, p storage.Page) (storage.Result[Declaration], error)
+	ListDeclarations(ctx context.Context, q DeclarationQuery, p paging.Page) (paging.Result[Declaration], error)
 	// PruneVersions deletes revisions that are neither current nor named by
 	// a snapshot item and returns how many.
 	PruneVersions(ctx context.Context) (int64, error)
@@ -181,7 +181,7 @@ type SetStore interface {
 	// DeleteSet removes the set, its memberships, and its assignments.
 	DeleteSet(ctx context.Context, name string) error
 	GetSet(ctx context.Context, name string) (*Set, error)
-	ListSets(ctx context.Context, p storage.Page) (storage.Result[Set], error)
+	ListSets(ctx context.Context, p paging.Page) (paging.Result[Set], error)
 	// AddSetDeclaration returns ErrNotFound when either side is unknown.
 	AddSetDeclaration(ctx context.Context, set, identifier string, at time.Time) (changed bool, err error)
 	RemoveSetDeclaration(ctx context.Context, set, identifier string) (changed bool, err error)
@@ -197,7 +197,7 @@ type AssignmentStore interface {
 	AssignSet(ctx context.Context, id mdm.EnrollmentID, set string, at time.Time) (changed bool, err error)
 	UnassignSet(ctx context.Context, id mdm.EnrollmentID, set string) (changed bool, err error)
 	EnrollmentSets(ctx context.Context, id mdm.EnrollmentID) ([]string, error)
-	SetEnrollments(ctx context.Context, set string, p storage.Page) (storage.Result[mdm.EnrollmentID], error)
+	SetEnrollments(ctx context.Context, set string, p paging.Page) (paging.Result[mdm.EnrollmentID], error)
 	AssignDeclaration(ctx context.Context, id mdm.EnrollmentID, identifier string, at time.Time) (changed bool, err error)
 	UnassignDeclaration(ctx context.Context, id mdm.EnrollmentID, identifier string) (changed bool, err error)
 	// EnrollmentDeclarations lists direct assignments only, sorted.
@@ -227,13 +227,13 @@ type StatusStore interface {
 	PutStatus(ctx context.Context, id mdm.EnrollmentID, u StatusUpdate) (StatusOutcome, error)
 	// DeclarationStatus lists rows sorted by (kind, identifier).
 	DeclarationStatus(ctx context.Context, id mdm.EnrollmentID) ([]DeclarationStatus, error)
-	DeclarationStatusByIdentifier(ctx context.Context, identifier string, p storage.Page) (storage.Result[EnrollmentDeclarationStatus], error)
+	DeclarationStatusByIdentifier(ctx context.Context, identifier string, p paging.Page) (paging.Result[EnrollmentDeclarationStatus], error)
 	// StatusValues pages by path.
-	StatusValues(ctx context.Context, id mdm.EnrollmentID, q StatusValueQuery, p storage.Page) (storage.Result[StatusValue], error)
+	StatusValues(ctx context.Context, id mdm.EnrollmentID, q StatusValueQuery, p paging.Page) (paging.Result[StatusValue], error)
 	// StatusErrors pages newest first.
-	StatusErrors(ctx context.Context, id mdm.EnrollmentID, p storage.Page) (storage.Result[StatusError], error)
+	StatusErrors(ctx context.Context, id mdm.EnrollmentID, p paging.Page) (paging.Result[StatusError], error)
 	// StatusReports pages newest first.
-	StatusReports(ctx context.Context, id mdm.EnrollmentID, p storage.Page) (storage.Result[StatusReportRecord], error)
+	StatusReports(ctx context.Context, id mdm.EnrollmentID, p paging.Page) (paging.Result[StatusReportRecord], error)
 }
 
 // ChangeStore queues notifications.

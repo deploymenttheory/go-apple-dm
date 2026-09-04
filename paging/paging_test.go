@@ -1,9 +1,9 @@
-package storage_test
+package paging_test
 
 import (
 	"testing"
 
-	"github.com/deploymenttheory/go-apple-dm/storage"
+	"github.com/deploymenttheory/go-apple-dm/paging"
 )
 
 // TestPageSize bounds the page size every backend allocates from. The limit
@@ -15,14 +15,14 @@ func TestPageSize(t *testing.T) {
 		limit int
 		want  int
 	}{
-		"unset":        {0, storage.DefaultPageSize},
-		"negative":     {-1, storage.DefaultPageSize},
+		"unset":        {0, paging.DefaultPageSize},
+		"negative":     {-1, paging.DefaultPageSize},
 		"one":          {1, 1},
-		"at the max":   {storage.MaxPageSize, storage.MaxPageSize},
-		"over":         {storage.MaxPageSize + 1, storage.MaxPageSize},
-		"int overflow": {1<<31 - 1, storage.MaxPageSize},
+		"at the max":   {paging.MaxPageSize, paging.MaxPageSize},
+		"over":         {paging.MaxPageSize + 1, paging.MaxPageSize},
+		"int overflow": {1<<31 - 1, paging.MaxPageSize},
 	} {
-		if got := (storage.Page{Limit: tc.limit}).Size(); got != tc.want {
+		if got := (paging.Page{Limit: tc.limit}).Size(); got != tc.want {
 			t.Errorf("%s: Size() = %d, want %d", name, got, tc.want)
 		}
 	}
