@@ -1,4 +1,4 @@
-package sink_test
+package eventsink_test
 
 import (
 	"context"
@@ -17,7 +17,7 @@ import (
 	"time"
 
 	"github.com/deploymenttheory/go-apple-dm/event"
-	"github.com/deploymenttheory/go-apple-dm/event/sink"
+	"github.com/deploymenttheory/go-apple-dm/eventsink"
 	"github.com/deploymenttheory/go-apple-dm/internal/clock"
 	"github.com/deploymenttheory/go-apple-dm/mdm"
 )
@@ -59,7 +59,7 @@ func (r *receiver) sent() []string {
 	return append([]string(nil), r.bodies...)
 }
 
-func newWebhook(t *testing.T, cfg sink.WebhookConfig) (event.Handler, *receiver) {
+func newWebhook(t *testing.T, cfg eventsink.WebhookConfig) (event.Handler, *receiver) {
 	t.Helper()
 	rec := &receiver{}
 	srv := httptest.NewServer(rec.handler())
@@ -71,7 +71,7 @@ func newWebhook(t *testing.T, cfg sink.WebhookConfig) (event.Handler, *receiver)
 	if cfg.Client == nil {
 		cfg.Client = srv.Client()
 	}
-	h, err := sink.Webhook(cfg)
+	h, err := eventsink.Webhook(cfg)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -81,7 +81,7 @@ func newWebhook(t *testing.T, cfg sink.WebhookConfig) (event.Handler, *receiver)
 // The envelope a MicroMDM or NanoMDM receiver expects, minus the one field
 // this package refuses to send.
 func TestWebhookSendsTheMicroMDMEnvelope(t *testing.T) {
-	h, rec := newWebhook(t, sink.WebhookConfig{Clock: clock.Real{}})
+	h, rec := newWebhook(t, eventsink.WebhookConfig{Clock: clock.Real{}})
 	id := mdm.EnrollmentID{Channel: mdm.ChannelDevice, ID: "UDID-1"}
 	if err := h(context.Background(), event.Event{
 		Type: event.TokenUpdated, At: t0, Actor: "device", Enrollment: id,
@@ -125,7 +125,7 @@ func TestWebhookSendsTheMicroMDMEnvelope(t *testing.T) {
 // The whole reason the envelope differs: what NanoMDM and MicroMDM put in
 // raw_payload must not be on the wire at all.
 func TestWebhookNeverSendsSecrets(t *testing.T) {
-	h, rec := newWebhook(t, sink.WebhookConfig{Clock: clock.Real{}})
+	h, rec := newWebhook(t, eventsink.WebhookConfig{Clock: clock.Real{}})
 	for _, e := range events() {
 		if err := h(context.Background(), e); err != nil {
 			t.Fatalf("%s: %v", e.Type, err)
@@ -143,7 +143,7 @@ func TestWebhookNeverSendsSecrets(t *testing.T) {
 // A command result becomes the acknowledge event, which is the split both
 // references make.
 func TestWebhookSplitsAcknowledgeFromCheckin(t *testing.T) {
-	h, rec := newWebhook(t, sink.WebhookConfig{Clock: clock.Real{}})
+	h, rec := newWebhook(t, eventsink.WebhookConfig{Clock: clock.Real{}})
 	err := h(context.Background(), event.Event{
 		Type: event.CommandResult, At: t0,
 		Enrollment: mdm.EnrollmentID{ID: "UDID-1"},
@@ -165,15 +165,15 @@ func TestWebhookSplitsAcknowledgeFromCheckin(t *testing.T) {
 
 func TestWebhookSignsTheBody(t *testing.T) {
 	key := []byte("shared-secret")
-	h, rec := newWebhook(t, sink.WebhookConfig{HMACKey: key, Clock: clock.Real{}})
+	h, rec := newWebhook(t, eventsink.WebhookConfig{HMACKey: key, Clock: clock.Real{}})
 	if err := h(context.Background(), event.Event{Type: event.CheckedOut, At: t0}); err != nil {
 		t.Fatal(err)
 	}
 	mac := hmac.New(sha256.New, key)
 	mac.Write([]byte(rec.sent()[0]))
 	want := base64.StdEncoding.EncodeToString(mac.Sum(nil))
-	if got := rec.heads[0].Get(sink.HMACHeader); got != want {
-		t.Fatalf("%s = %q, want %q", sink.HMACHeader, got, want)
+	if got := rec.heads[0].Get(eventsink.HMACHeader); got != want {
+		t.Fatalf("%s = %q, want %q", eventsink.HMACHeader, got, want)
 	}
 }
 
@@ -183,7 +183,7 @@ func TestWebhookRetriesThenSucceeds(t *testing.T) {
 	rec := &receiver{fail: 2}
 	srv := httptest.NewServer(rec.handler())
 	defer srv.Close()
-	h, err := sink.Webhook(sink.WebhookConfig{
+	h, err := eventsink.Webhook(eventsink.WebhookConfig{
 		URL: srv.URL, Client: srv.Client(), Logger: quiet(),
 		Retries: 2, Backoff: time.Millisecond, Clock: clock.Real{},
 	})
@@ -202,7 +202,7 @@ func TestWebhookReportsAPersistentFailure(t *testing.T) {
 	rec := &receiver{fail: 99}
 	srv := httptest.NewServer(rec.handler())
 	defer srv.Close()
-	h, err := sink.Webhook(sink.WebhookConfig{
+	h, err := eventsink.Webhook(eventsink.WebhookConfig{
 		URL: srv.URL, Client: srv.Client(), Logger: quiet(),
 		Retries: 1, Backoff: time.Millisecond, Clock: clock.Real{},
 	})
@@ -225,7 +225,7 @@ func TestWebhookStopsOnCancellation(t *testing.T) {
 	rec := &receiver{fail: 99}
 	srv := httptest.NewServer(rec.handler())
 	defer srv.Close()
-	h, err := sink.Webhook(sink.WebhookConfig{
+	h, err := eventsink.Webhook(eventsink.WebhookConfig{
 		URL: srv.URL, Client: srv.Client(), Logger: quiet(),
 		Retries: 5, Backoff: time.Hour, Clock: clock.Real{},
 	})
@@ -240,14 +240,14 @@ func TestWebhookStopsOnCancellation(t *testing.T) {
 }
 
 func TestWebhookNeedsAURL(t *testing.T) {
-	if _, err := sink.Webhook(sink.WebhookConfig{}); !errors.Is(err, sink.ErrWebhookConfig) {
+	if _, err := eventsink.Webhook(eventsink.WebhookConfig{}); !errors.Is(err, eventsink.ErrWebhookConfig) {
 		t.Fatalf("err = %v, want ErrWebhookConfig", err)
 	}
 }
 
 // An unreachable receiver is an error, not a panic.
 func TestWebhookReportsATransportFailure(t *testing.T) {
-	h, err := sink.Webhook(sink.WebhookConfig{
+	h, err := eventsink.Webhook(eventsink.WebhookConfig{
 		URL: "http://127.0.0.1:1", Logger: quiet(), Retries: -1, Clock: clock.Real{},
 	})
 	if err != nil {
@@ -261,7 +261,7 @@ func TestWebhookReportsATransportFailure(t *testing.T) {
 // A zero event time is stamped from the clock rather than sent as year zero.
 func TestWebhookStampsAMissingTime(t *testing.T) {
 	fake := clock.NewFake(t0)
-	h, rec := newWebhook(t, sink.WebhookConfig{Clock: fake})
+	h, rec := newWebhook(t, eventsink.WebhookConfig{Clock: fake})
 	if err := h(context.Background(), event.Event{Type: event.CheckedOut}); err != nil {
 		t.Fatal(err)
 	}
@@ -279,7 +279,7 @@ func TestWebhookRejectsABadURL(t *testing.T) {
 		"NoHost":      "http://",
 	} {
 		t.Run(name, func(t *testing.T) {
-			if _, err := sink.Webhook(sink.WebhookConfig{URL: u}); !errors.Is(err, sink.ErrWebhookConfig) {
+			if _, err := eventsink.Webhook(eventsink.WebhookConfig{URL: u}); !errors.Is(err, eventsink.ErrWebhookConfig) {
 				t.Fatalf("err = %v, want ErrWebhookConfig", err)
 			}
 		})

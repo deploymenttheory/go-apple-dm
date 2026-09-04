@@ -10,7 +10,7 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/internal/clock"
 	"github.com/deploymenttheory/go-apple-dm/internal/testpki"
 	"github.com/deploymenttheory/go-apple-dm/push"
-	"github.com/deploymenttheory/go-apple-dm/push/pushcert"
+	"github.com/deploymenttheory/go-apple-dm/pushcert"
 	"github.com/deploymenttheory/go-apple-dm/storage"
 	"github.com/deploymenttheory/go-apple-dm/storage/inmem"
 )

@@ -1,4 +1,4 @@
-package sink_test
+package eventsink_test
 
 import (
 	"bytes"
@@ -12,7 +12,7 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/ddm"
 	"github.com/deploymenttheory/go-apple-dm/dep"
 	"github.com/deploymenttheory/go-apple-dm/event"
-	"github.com/deploymenttheory/go-apple-dm/event/sink"
+	"github.com/deploymenttheory/go-apple-dm/eventsink"
 	"github.com/deploymenttheory/go-apple-dm/mdm"
 	"github.com/deploymenttheory/go-apple-dm/push"
 	"github.com/deploymenttheory/go-apple-dm/schema/checkin"
@@ -98,7 +98,7 @@ func sentinels() []string {
 // the secret that clears a device passcode -- along with the push token and
 // PushMagic. Nothing seeded into a payload may survive projection.
 func TestNoSecretSurvivesProjection(t *testing.T) {
-	reg := sink.Default()
+	reg := eventsink.Default()
 	for _, e := range events() {
 		rec := reg.Project(e)
 		encoded, err := json.Marshal(rec)
@@ -115,7 +115,7 @@ func TestNoSecretSurvivesProjection(t *testing.T) {
 
 // The specific field, named, so a regression says what broke.
 func TestTokenUpdateProjectsOnlyOperationalFields(t *testing.T) {
-	rec := sink.Default().Project(event.Event{
+	rec := eventsink.Default().Project(event.Event{
 		Type: event.TokenUpdated, At: t0, Data: tokenUpdateWithSecrets(),
 	})
 	want := map[string]any{
@@ -136,7 +136,7 @@ func TestTokenUpdateProjectsOnlyOperationalFields(t *testing.T) {
 // Default-deny: the failure mode of an unregistered event is a thin record,
 // never a leaked payload.
 func TestUnregisteredEventProjectsMetadataOnly(t *testing.T) {
-	reg := sink.NewRegistry()
+	reg := eventsink.NewRegistry()
 	rec := reg.Project(event.Event{
 		Type: event.TokenUpdated, At: t0, Actor: "device", Data: tokenUpdateWithSecrets(),
 	})
@@ -154,7 +154,7 @@ func TestUnregisteredEventProjectsMetadataOnly(t *testing.T) {
 // A projection that meets a payload it does not expect degrades to metadata
 // rather than guessing.
 func TestProjectionTypeMismatchIsBare(t *testing.T) {
-	rec := sink.Default().Project(event.Event{
+	rec := eventsink.Default().Project(event.Event{
 		Type: event.TokenUpdated, At: t0, Data: "not a TokenUpdate",
 	})
 	if rec.Fields != nil {
@@ -165,7 +165,7 @@ func TestProjectionTypeMismatchIsBare(t *testing.T) {
 // Registering nil is how a type says its metadata is the whole story. That
 // has to be distinguishable from never having been considered.
 func TestMetadataOnlyIsDistinctFromUnknown(t *testing.T) {
-	reg := sink.NewRegistry()
+	reg := eventsink.NewRegistry()
 	reg.Register(event.CheckedOut, nil)
 	if !reg.Known(event.CheckedOut) {
 		t.Fatal("a nil registration must still be known")
@@ -181,7 +181,7 @@ func TestMetadataOnlyIsDistinctFromUnknown(t *testing.T) {
 // Every event type the module declares must be in the table. Adding one
 // without a decision about its payload should fail here, not in production.
 func TestEveryEventTypeIsProjected(t *testing.T) {
-	reg := sink.Default()
+	reg := eventsink.Default()
 	declared := []event.Type{
 		event.Enrolled, event.Reenrolled, event.TokenUpdated, event.CheckedOut,
 		event.CertRotated, event.CommandQueued, event.CommandSent, event.CommandResult,
@@ -207,7 +207,7 @@ func TestEveryEventTypeIsProjected(t *testing.T) {
 
 func TestSlogSinkWritesProjectedRecords(t *testing.T) {
 	var buf bytes.Buffer
-	h := sink.Slog(slog.New(slog.NewJSONHandler(&buf, nil)), nil)
+	h := eventsink.Slog(slog.New(slog.NewJSONHandler(&buf, nil)), nil)
 	for _, e := range events() {
 		if err := h(context.Background(), e); err != nil {
 			t.Fatalf("%s: %v", e.Type, err)
@@ -228,7 +228,7 @@ func TestSlogSinkWritesProjectedRecords(t *testing.T) {
 
 // A nil logger and registry are usable defaults rather than a panic.
 func TestSlogSinkDefaults(t *testing.T) {
-	if err := sink.Slog(nil, nil)(context.Background(), event.Event{Type: event.CheckedOut, At: t0}); err != nil {
+	if err := eventsink.Slog(nil, nil)(context.Background(), event.Event{Type: event.CheckedOut, At: t0}); err != nil {
 		t.Fatal(err)
 	}
 }
@@ -238,7 +238,7 @@ func TestSlogSinkDefaults(t *testing.T) {
 // leak. Asserting it once per type also keeps a new projection from shipping
 // without one.
 func TestEveryProjectionRefusesAMismatchedPayload(t *testing.T) {
-	reg := sink.Default()
+	reg := eventsink.Default()
 	for _, tp := range reg.Types() {
 		got := reg.Project(event.Event{Type: tp, At: t0, Data: struct{ Nope string }{secretUnlock}})
 		if got.Fields != nil {
@@ -250,7 +250,7 @@ func TestEveryProjectionRefusesAMismatchedPayload(t *testing.T) {
 // The remaining payload shapes, so every projection is exercised with the
 // type it expects as well as one it does not.
 func TestRemainingProjections(t *testing.T) {
-	reg := sink.Default()
+	reg := eventsink.Default()
 	cases := []struct {
 		name  string
 		ev    event.Event
@@ -309,7 +309,7 @@ func TestRemainingProjections(t *testing.T) {
 
 // An empty string payload projects nothing rather than an empty key.
 func TestEmptyStringPayloadIsBare(t *testing.T) {
-	if f := sink.Default().Project(event.Event{Type: event.CertRotated, At: t0, Data: ""}).Fields; f != nil {
+	if f := eventsink.Default().Project(event.Event{Type: event.CertRotated, At: t0, Data: ""}).Fields; f != nil {
 		t.Fatalf("fields = %v, want none", f)
 	}
 }

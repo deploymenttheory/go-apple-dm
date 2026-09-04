@@ -9,7 +9,7 @@ import (
 
 	"github.com/deploymenttheory/go-apple-dm/push"
 	"github.com/deploymenttheory/go-apple-dm/push/apns"
-	"github.com/deploymenttheory/go-apple-dm/push/pushcert"
+	"github.com/deploymenttheory/go-apple-dm/pushcert"
 )
 
 // Push certificate sources.

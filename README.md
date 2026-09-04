@@ -215,7 +215,8 @@ See [docs/diagrams](docs/diagrams/README.md).
 | `storage/sqlcommon`, `storage/sqlite`, `storage/postgres`, `storage/mysql` | One SQL implementation with embedded migrations for SQLite (pure Go), PostgreSQL (pgx), and MySQL; secret columns sealed when a keyring is configured |
 | `storage/crypt` | AES-256-GCM sealing of secret columns under named keys from `secrets.Provider`, with row-bound AAD and in-place key rotation |
 | `httpapi/` | Check-in and server URL handlers plus certificate extraction middlewares |
-| `push/`, `push/apns`, `push/pushcert` | Pusher interface, notifier, coalescing, HTTP/2 APNs client and fake server; push certificate parsing, topic derivation, and a store-backed certificate cache |
+| `push/`, `push/apns` | Pusher interface, notifier, coalescing, HTTP/2 APNs client and fake server, and a store-backed certificate cache |
+| `pushcert/` | Push certificate parsing and topic derivation; standard library only, so `storage` can validate an uploaded certificate without depending on `push` |
 | `ca/`, `scep/` | Certificate authority abstraction and a SCEP endpoint with one-time and HMAC challenges, plus a client |
 | `profile/`, `enroll/` | Configuration profile composition, signing, and parsing; MDM enrollment profile builder (device, user, Shared iPad); OTA profile service |
 | `enroll/ade`, `enroll/adetest` | Automated device enrollment: `MachineInfo` parsing and CMS verification, the software update gate, web view resume and finish, DEP lookup and policy hooks; fixtures and a fake device CA |
@@ -233,7 +234,7 @@ See [docs/diagrams](docs/diagrams/README.md).
 | `secrets/` | Redacting secret type and providers (static, environment, directory, chain) |
 | `ddm/` | Declarative Device Management engine: content-addressed declarations, sets and membership, snapshots, status reports, status subscriptions, cleanup on CheckOut, change notifier |
 | `audit`, `audit/inmem`, `audit/sqlstore`, `audit/audittest` | The persistent audit trail on its own migration set, append-and-prune, with the contract suite all four backends pass |
-| `event`, `event/sink` | The typed event bus, and the sinks that project an event down to what may leave the process before an slog record or a webhook carries it |
+| `event`, `eventsink` | The typed event bus, and the sinks that project an event down to what may leave the process before an slog record or a webhook carries it |
 | `ddm/predicate`, `internal/canonjson` | The NSPredicate subset activations use; RFC 8785 canonicalisation over `encoding/json/jsontext` |
 | `ddm/inmem`, `ddm/sqlstore`, `ddm/ddmtest` | Engine stores on their own migration set and the contract suite both run |
 | `ddm/adapter/inproc`, `ddm/adapter/proxyclient`, `ddm/adapter/proxyserver` | DDM in-process, or split across our own `mdm` and `ddm` roles over an HMAC-signed or mTLS hop |

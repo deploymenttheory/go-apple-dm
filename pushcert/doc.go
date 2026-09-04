@@ -12,12 +12,17 @@
 //
 // This package imports only the standard library on purpose: storage
 // backends import it to validate uploaded push certificates, and push
-// imports storage, so any dependency on push would create an import
-// cycle. Sending pushes is push and push/apns.
+// imports storage, so a dependency on push here would close the loop
+// storage -> pushcert -> push -> storage into a real import cycle. That
+// constraint used to be held by discipline alone, in a package nested
+// under the very one it may not touch; it now lives outside push, where
+// the layering says so (decision record 0044). Sending pushes is push and
+// push/apns.
 //
 // # References
 //
 //   - Decision record 0007: docs/research/decisions/0007-apns-push.md
+//   - Decision record 0044: docs/research/decisions/0044-repository-layout.md
 //   - Decision record 0015: docs/research/decisions/0015-push-cert-store.md
 //   - Plan of record: docs/research/implementation_plan.md (phase 4)
 //   - Threat model: docs/security/threat-model.md (wrong or expired push certificate row)

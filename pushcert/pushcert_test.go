@@ -12,7 +12,7 @@ import (
 	"time"
 
 	"github.com/deploymenttheory/go-apple-dm/internal/testpki"
-	"github.com/deploymenttheory/go-apple-dm/push/pushcert"
+	"github.com/deploymenttheory/go-apple-dm/pushcert"
 )
 
 const topic = "com.apple.mgmt.External.test"
