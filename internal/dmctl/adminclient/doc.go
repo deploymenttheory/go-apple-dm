@@ -13,7 +13,7 @@
 //
 // # References
 //
-//   - Decision record: docs/research/decisions/0035-mdmctl-structure-and-credentials.md
+//   - Decision record: docs/research/decisions/0035-dmctl-structure-and-credentials.md
 //   - Decision record: docs/research/decisions/0034-admin-api-and-authorization.md
 //   - Plan of record: docs/research/implementation_plan.md (phase 8)
 //   - RFC 6750: bearer token usage

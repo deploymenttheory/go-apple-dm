@@ -97,7 +97,7 @@ const (
 	DefaultRole    = RoleAll
 	DefaultListen  = ":8080"
 	DefaultStorage = "sqlite"
-	DefaultDSN     = "mdm.db"
+	DefaultDSN     = "dm.db"
 )
 
 // ParseEnv builds a Config from DM_* variables through get (os.Getenv in

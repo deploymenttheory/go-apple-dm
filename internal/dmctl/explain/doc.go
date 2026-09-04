@@ -21,8 +21,8 @@
 //
 // # References
 //
-//   - Decision record: docs/research/decisions/0036-mdmctl-explain-over-schema-support.md
-//   - Decision record: docs/research/decisions/0035-mdmctl-structure-and-credentials.md
+//   - Decision record: docs/research/decisions/0036-dmctl-explain-over-schema-support.md
+//   - Decision record: docs/research/decisions/0035-dmctl-structure-and-credentials.md
 //   - Plan of record: docs/research/implementation_plan.md (phase 8)
 //   - Apple: https://github.com/apple/device-management/blob/release/docs/schema.md
 //   - Schema: third_party/device-management/docs/schema.yaml (supportedOS)

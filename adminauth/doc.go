@@ -38,7 +38,7 @@
 // # References
 //
 //   - Decision record: docs/research/decisions/0034-admin-api-and-authorization.md
-//   - Decision record: docs/research/decisions/0035-mdmctl-structure-and-credentials.md
+//   - Decision record: docs/research/decisions/0035-dmctl-structure-and-credentials.md
 //   - Plan of record: docs/research/implementation_plan.md (phase 8)
 //   - Threat model: docs/security/threat-model.md (admin API, repudiation)
 //   - E2E scenarios: docs/testing/e2e-scenarios.md (E2E-024)

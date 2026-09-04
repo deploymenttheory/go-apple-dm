@@ -76,8 +76,9 @@ against `verbs.go`, which drives the admin plane. That file keeps its name becau
 names the protocol, not the tool.
 5. No compatibility shim. `ParseEnv` takes an injected getter, so a dual-read fallback would have
    been cheap to write and permanent to carry: two documented spellings for every value and a
-   legacy map nobody deletes. The rename is a `BREAKING CHANGE` on a pre-1.0 reference server
-   instead, which release-please records.
+   legacy map nobody deletes. Nothing is deployed on the old names -- the reference server exists
+   to be read and run from a clone -- so the rename is simply the new spelling, with no migration
+   period to document and no deprecation to schedule.
 
 ## Verified by
 

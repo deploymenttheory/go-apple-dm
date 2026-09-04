@@ -88,7 +88,7 @@ func TestParseEnv(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		if cfg.Role != app.RoleAll || cfg.Listen != ":8080" || cfg.Storage != "sqlite" || cfg.DSN != "mdm.db" || !cfg.Subscriptions {
+		if cfg.Role != app.RoleAll || cfg.Listen != ":8080" || cfg.Storage != "sqlite" || cfg.DSN != "dm.db" || !cfg.Subscriptions {
 			t.Fatalf("cfg = %+v", cfg)
 		}
 	})
@@ -232,7 +232,7 @@ func TestBuild(t *testing.T) {
 		if _, err := app.Build(ctx, app.Config{Role: app.RoleAll, Storage: "postgres", DSN: "postgres://127.0.0.1:1/x?sslmode=disable&connect_timeout=1", StorageKeys: []string{"k"}, Secrets: secrets.Static{"k": []byte("0123456789abcdef0123456789abcdef")}, Logger: quiet}); err == nil {
 			t.Error("unreachable postgres must fail")
 		}
-		if _, err := app.Build(ctx, app.Config{Role: app.RoleAll, Storage: "mysql", DSN: "mdm:mdm@tcp(127.0.0.1:1)/x?timeout=1s", StorageKeys: []string{"k"}, Secrets: secrets.Static{"k": []byte("0123456789abcdef0123456789abcdef")}, Logger: quiet}); err == nil {
+		if _, err := app.Build(ctx, app.Config{Role: app.RoleAll, Storage: "mysql", DSN: "dm:dm@tcp(127.0.0.1:1)/x?timeout=1s", StorageKeys: []string{"k"}, Secrets: secrets.Static{"k": []byte("0123456789abcdef0123456789abcdef")}, Logger: quiet}); err == nil {
 			t.Error("unreachable mysql must fail")
 		}
 		if _, err := app.Build(ctx, app.Config{Role: app.RoleMDM, Storage: "inmem", DDMURL: "::bad", Logger: quiet}); err == nil {

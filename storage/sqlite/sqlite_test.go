@@ -22,7 +22,7 @@ import (
 
 func open(t *testing.T) *sqlite.Store {
 	t.Helper()
-	s, err := sqlite.Open(context.Background(), filepath.Join(t.TempDir(), "mdm.db"), sqlite.Options{})
+	s, err := sqlite.Open(context.Background(), filepath.Join(t.TempDir(), "dm.db"), sqlite.Options{})
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -11,9 +11,9 @@
 #   ddm-env   print the ddm export lines (TEST_DDM_URL and the shared keys)
 set -euo pipefail
 
-PG=mdm-test-postgres
-MY=mdm-test-mysql
-DDM=mdm-test-ddm
+PG=dm-test-postgres
+MY=dm-test-mysql
+DDM=dm-test-ddm
 DDM_IMAGE=go-apple-dm:test
 DDM_PORT="${TEST_DDM_PORT:-8090}"
 # Shared secrets for the test hop between the roles; CI sets the same values.
@@ -33,8 +33,8 @@ print_ddm_env() {
 }
 
 print_env() {
-  echo "export TEST_POSTGRES_DSN='postgres://mdm:mdm@127.0.0.1:5432/mdm?sslmode=disable'"
-  echo "export TEST_MYSQL_DSN='mdm:mdm@tcp(127.0.0.1:3306)/mdm?parseTime=true&multiStatements=true'"
+  echo "export TEST_POSTGRES_DSN='postgres://dm:dm@127.0.0.1:5432/dm?sslmode=disable'"
+  echo "export TEST_MYSQL_DSN='dm:dm@tcp(127.0.0.1:3306)/dm?parseTime=true&multiStatements=true'"
 }
 
 # ensure NAME ARGS...: reuse a running container, start a stopped one, else create it.
@@ -69,12 +69,12 @@ wait_for() {
 
 case "${1:-}" in
   up)
-    ensure "$PG" -e POSTGRES_USER=mdm -e POSTGRES_PASSWORD=mdm -e POSTGRES_DB=mdm \
+    ensure "$PG" -e POSTGRES_USER=dm -e POSTGRES_PASSWORD=dm -e POSTGRES_DB=dm \
       -p 5432:5432 postgres:17
-    ensure "$MY" -e MYSQL_ROOT_PASSWORD=mdm -e MYSQL_DATABASE=mdm -e MYSQL_USER=mdm \
-      -e MYSQL_PASSWORD=mdm -p 3306:3306 mysql:8.4
-    wait_for "$PG" docker exec "$PG" pg_isready -U mdm
-    wait_for "$MY" docker exec "$MY" mysqladmin ping -h 127.0.0.1 -uroot -pmdm --silent
+    ensure "$MY" -e MYSQL_ROOT_PASSWORD=dm -e MYSQL_DATABASE=dm -e MYSQL_USER=dm \
+      -e MYSQL_PASSWORD=dm -p 3306:3306 mysql:8.4
+    wait_for "$PG" docker exec "$PG" pg_isready -U dm
+    wait_for "$MY" docker exec "$MY" mysqladmin ping -h 127.0.0.1 -uroot -pdm --silent
     print_env
     ;;
   down)

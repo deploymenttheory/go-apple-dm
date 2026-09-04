@@ -40,8 +40,8 @@
 //
 // # References
 //
-//   - Decision record: docs/research/decisions/0035-mdmctl-structure-and-credentials.md
-//   - Decision record: docs/research/decisions/0036-mdmctl-explain-over-schema-support.md
+//   - Decision record: docs/research/decisions/0035-dmctl-structure-and-credentials.md
+//   - Decision record: docs/research/decisions/0036-dmctl-explain-over-schema-support.md
 //   - Decision record: docs/research/decisions/0034-admin-api-and-authorization.md
 //   - Plan of record: docs/research/implementation_plan.md (phase 8)
 //   - E2E scenarios: docs/testing/e2e-scenarios.md (E2E-024)
