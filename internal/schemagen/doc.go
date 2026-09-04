@@ -24,6 +24,7 @@
 // # References
 //
 //   - Decision record 0001: docs/research/decisions/0001-architecture.md
+//   - Decision record 0046: docs/research/decisions/0046-generated-from-is-generated.md
 //   - Decision record 0003: docs/research/decisions/0003-schema-generator.md
 //   - Decision record 0018: docs/research/decisions/0018-go-1.27-baseline.md (JSON policy for generated marshal methods)
 //   - Plan of record: docs/research/implementation_plan.md (section 2, the generator; phase 1)

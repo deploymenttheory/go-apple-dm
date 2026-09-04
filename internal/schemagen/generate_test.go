@@ -16,12 +16,13 @@ func TestGenerateWholeTree(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Run: %v", err)
 	}
-	// 8 packages x 6 files + EXPORTED_IDENTIFIERS.lock, plus reasons.gen.go for the two
-	// packages whose schemas declare a reason vocabulary.
-	if len(files) != 8*6+1+2 {
+	// 8 packages x 6 files, plus reasons.gen.go for the two packages whose
+	// schemas declare a reason vocabulary, plus the two records that describe
+	// the tree as a whole: EXPORTED_IDENTIFIERS.lock and GENERATED_FROM.json.
+	if len(files) != 8*6+2+2 {
 		t.Fatalf("got %d files", len(files))
 	}
-	for _, name := range []string{"ddm/reasons.gen.go", "status/reasons.gen.go"} {
+	for _, name := range []string{"ddm/reasons.gen.go", "status/reasons.gen.go", "GENERATED_FROM.json"} {
 		if _, ok := files[name]; !ok {
 			t.Errorf("missing %s", name)
 		}
@@ -33,7 +34,8 @@ func TestGenerateWholeTree(t *testing.T) {
 		t.Error("commands has no reasons but a reasons.gen.go was emitted")
 	}
 	for name, data := range files {
-		if name == "EXPORTED_IDENTIFIERS.lock" {
+		// The two records describing the tree are not Go source.
+		if name == "EXPORTED_IDENTIFIERS.lock" || name == "GENERATED_FROM.json" {
 			continue
 		}
 		if _, err := format.Source(data); err != nil {
