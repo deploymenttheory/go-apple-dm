@@ -2,10 +2,13 @@
 # scripts/testdb.sh ddm-up. Never pulled from a third party (decision record 0025).
 FROM golang:1.27 AS build
 WORKDIR /src
-COPY go.mod go.sum ./
-RUN go mod download
+# The reference server is its own module and depends on the library module in
+# this same repository, so both go.mod files and the workspace come first.
+COPY go.mod go.sum go.work ./
+COPY server/go.mod server/go.sum ./server/
+RUN go mod download all
 COPY . .
-RUN CGO_ENABLED=0 go build -trimpath -ldflags="-s -w" -o /out/dmserver ./cmd/dmserver
+RUN CGO_ENABLED=0 go build -trimpath -ldflags="-s -w" -o /out/dmserver ./server/cmd/dmserver
 # The runtime image has no shell, so the data directory is prepared here and
 # copied in with the runtime user's ownership.
 RUN mkdir -p /out/data

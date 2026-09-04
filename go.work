@@ -1,0 +1,10 @@
+// Local development across both modules. Releases resolve
+// github.com/deploymenttheory/go-apple-dm/v3 from the module proxy; this file
+// makes the server module build against the working tree instead, so a change
+// to the library is visible to the server without a tag or a replace directive.
+go 1.27.0
+
+use (
+	.
+	./server
+)

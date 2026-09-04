@@ -7,7 +7,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/deploymenttheory/go-apple-dm/v3/server/audit"
+	"github.com/deploymenttheory/go-apple-dm/server/audit"
 )
 
 // Store is an in-memory audit trail. It is unsealed and unbounded by design:

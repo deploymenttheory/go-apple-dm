@@ -8,9 +8,9 @@ import (
 	"os"
 	"testing"
 
+	"github.com/deploymenttheory/go-apple-dm/server/sqlstore/mysql"
+	"github.com/deploymenttheory/go-apple-dm/server/sqlstore/sqlcommon"
 	"github.com/deploymenttheory/go-apple-dm/v3/secrets"
-	"github.com/deploymenttheory/go-apple-dm/v3/server/sqlstore/mysql"
-	"github.com/deploymenttheory/go-apple-dm/v3/server/sqlstore/sqlcommon"
 	"github.com/deploymenttheory/go-apple-dm/v3/storage"
 	"github.com/deploymenttheory/go-apple-dm/v3/storage/crypt"
 	"github.com/deploymenttheory/go-apple-dm/v3/storage/storagetest"

@@ -8,11 +8,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/deploymenttheory/go-apple-dm/v3/server/adminauth"
-	"github.com/deploymenttheory/go-apple-dm/v3/server/adminauth/adminauthtest"
-	"github.com/deploymenttheory/go-apple-dm/v3/server/adminauth/sqlstore"
-	"github.com/deploymenttheory/go-apple-dm/v3/server/sqlstore/sqlcommon"
-	"github.com/deploymenttheory/go-apple-dm/v3/server/sqlstore/sqlite"
+	"github.com/deploymenttheory/go-apple-dm/server/adminauth"
+	"github.com/deploymenttheory/go-apple-dm/server/adminauth/adminauthtest"
+	"github.com/deploymenttheory/go-apple-dm/server/adminauth/sqlstore"
+	"github.com/deploymenttheory/go-apple-dm/server/sqlstore/sqlcommon"
+	"github.com/deploymenttheory/go-apple-dm/server/sqlstore/sqlite"
 )
 
 func openDB(t *testing.T) *sql.DB {

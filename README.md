@@ -61,6 +61,16 @@ interoperate. The reasoning behind all of this is decision record
 go get github.com/deploymenttheory/go-apple-dm/v3
 ```
 
+That is the library: the protocol, the declarative engine, every enrollment path,
+the Apple service clients, the storage contracts and their in-memory backend. It
+pulls nine dependencies. The SQL backends and the reference server are a second
+module, so a program that only speaks the protocol never downloads a database
+driver:
+
+```bash
+go get github.com/deploymenttheory/go-apple-dm/server
+```
+
 A check-in and command endpoint over an in-memory store, and a typed command queued for a device:
 
 ```go
@@ -73,8 +83,8 @@ import (
 
 	"github.com/deploymenttheory/go-apple-dm/v3/mdmprotocol/mdm"
 	"github.com/deploymenttheory/go-apple-dm/v3/schema/commands"
-	"github.com/deploymenttheory/go-apple-dm/v3/server/httpapi"
-	"github.com/deploymenttheory/go-apple-dm/v3/server/service"
+	"github.com/deploymenttheory/go-apple-dm/server/httpapi"
+	"github.com/deploymenttheory/go-apple-dm/server/service"
 	"github.com/deploymenttheory/go-apple-dm/v3/storage"
 	"github.com/deploymenttheory/go-apple-dm/v3/storage/inmem"
 )
@@ -203,8 +213,10 @@ See [docs/diagrams](docs/diagrams/README.md).
 
 ## Layout
 
-Packages are arranged in tiers, and a package may import its own tier and every tier below it,
-never above. `internal/layout` asserts this in tests, because the lint workflow cannot fail a
+The repository is two Go modules. `github.com/deploymenttheory/go-apple-dm/v3` is the library;
+everything under `server/` is `github.com/deploymenttheory/go-apple-dm/server`, which depends on
+the library and never the other way round. Within them, packages are arranged in tiers, and a
+package may import its own tier and every tier below it, never above. `internal/layout` asserts this in tests, because the lint workflow cannot fail a
 build. Decision record [0044](docs/research/decisions/0044-repository-layout.md) has the reasoning.
 
 | Tier | Path | Purpose |
@@ -252,10 +264,10 @@ build. Decision record [0044](docs/research/decisions/0044-repository-layout.md)
 | | `server/eventsink` | The sinks that project an event down to what may leave the process |
 | | `server/audit` | The persistent audit trail on its own migration set, append-and-prune |
 | | `server/adminauth` | Admin principals and scoped API tokens, authorised by Cedar policies |
-| app | `internal/app`, `cmd/dmserver`, `Dockerfile` | The reference server: roles, enrollment routes, admin API, background workers, container image |
-| | `internal/dmctl`, `cmd/dmctl` | The admin CLI |
+| app | `server/internal/app`, `server/cmd/dmserver`, `Dockerfile` | The reference server: roles, enrollment routes, admin API, background workers, container image |
+| | `server/internal/dmctl`, `server/cmd/dmctl` | The admin CLI |
 | | `internal/layout` | The import graph behind the tier tests |
-| | `e2e/` | End-to-end scenarios (`make test-e2e`), listed in `docs/testing/e2e-scenarios.md` |
+| | `server/e2e/` | End-to-end scenarios (`make test-e2e`), listed in `docs/testing/e2e-scenarios.md` |
 | | `docs/research/` | Reference research, the plan of record, and per-feature decision records |
 
 ## Reference server

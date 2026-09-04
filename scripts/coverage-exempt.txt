@@ -4,6 +4,7 @@
 
 # Wiring-only binaries; logic lives in internal/app which is gated.
 ^github.com/deploymenttheory/go-apple-dm/v3/cmd/
+^github.com/deploymenttheory/go-apple-dm/server/cmd/
 
 # Test helpers are exercised by the suites they serve.
 ^github.com/deploymenttheory/go-apple-dm/v3/storage/storagetest$
@@ -11,7 +12,7 @@
 ^github.com/deploymenttheory/go-apple-dm/v3/simulator$
 ^github.com/deploymenttheory/go-apple-dm/v3/schema/internal/conformance$
 ^github.com/deploymenttheory/go-apple-dm/v3/testpki$
-^github.com/deploymenttheory/go-apple-dm/v3/server/sqlstore/sqltest$  # benchmark seed helper, exercised by integration benchmarks
+^github.com/deploymenttheory/go-apple-dm/server/sqlstore/sqltest$  # benchmark seed helper, exercised by integration benchmarks
 ^github.com/deploymenttheory/go-apple-dm/v3/storage/ddm/ddmtest$
 ^github.com/deploymenttheory/go-apple-dm/v3/mdmprotocol/enroll/webauth/webauthtest$  # fake OIDC provider, exercised by the webauth, ADE, and simulator suites
 ^github.com/deploymenttheory/go-apple-dm/v3/mdmprotocol/enroll/adetest$  # MachineInfo signing helper, exercised by the enroll/ade, simulator, and e2e suites
@@ -20,5 +21,5 @@
 ^github.com/deploymenttheory/go-apple-dm/v3/appleplatformservices/dep/deptest$  # fake device enrollment service and failing store, exercised by the dep, internal/app, and e2e suites
 ^github.com/deploymenttheory/go-apple-dm/v3/storage/acme/acmetest$  # ACME store contract suite and failing store, exercised by the acme/inmem and acme/sqlstore suites
 ^github.com/deploymenttheory/go-apple-dm/v3/pki/acme/attest/attesttest$  # fake Apple attestation authority, exercised by the acme/attest, acme, simulator, and e2e suites
-^github.com/deploymenttheory/go-apple-dm/v3/server/adminauth/adminauthtest$  # admin principal and policy store contract suite, exercised by adminauth/inmem and adminauth/sqlstore
-^github.com/deploymenttheory/go-apple-dm/v3/server/audit/audittest$  # audit trail contract suite and failing store, exercised by audit/inmem and audit/sqlstore
+^github.com/deploymenttheory/go-apple-dm/server/adminauth/adminauthtest$  # admin principal and policy store contract suite, exercised by adminauth/inmem and adminauth/sqlstore
+^github.com/deploymenttheory/go-apple-dm/server/audit/audittest$  # audit trail contract suite and failing store, exercised by audit/inmem and audit/sqlstore

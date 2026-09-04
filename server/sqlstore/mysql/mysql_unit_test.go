@@ -8,7 +8,7 @@ import (
 
 	gomysql "github.com/go-sql-driver/mysql"
 
-	"github.com/deploymenttheory/go-apple-dm/v3/server/sqlstore/mysql"
+	"github.com/deploymenttheory/go-apple-dm/server/sqlstore/mysql"
 )
 
 func TestOpenArgumentErrors(t *testing.T) {

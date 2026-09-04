@@ -8,9 +8,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/deploymenttheory/go-apple-dm/v3/server/adminauth"
-	"github.com/deploymenttheory/go-apple-dm/v3/server/adminauth/sqlstore"
-	"github.com/deploymenttheory/go-apple-dm/v3/server/sqlstore/sqlite"
+	"github.com/deploymenttheory/go-apple-dm/server/adminauth"
+	"github.com/deploymenttheory/go-apple-dm/server/adminauth/sqlstore"
+	"github.com/deploymenttheory/go-apple-dm/server/sqlstore/sqlite"
 )
 
 // openWithDB returns a migrated store and the pool behind it, so a test can

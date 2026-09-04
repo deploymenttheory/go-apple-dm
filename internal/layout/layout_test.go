@@ -22,7 +22,7 @@ func repoRoot(t *testing.T) string {
 
 func load(t *testing.T) *layout.Graph {
 	t.Helper()
-	g, err := layout.Load(repoRoot(t))
+	g, err := layout.LoadRepo(repoRoot(t))
 	if err != nil {
 		t.Fatalf("load import graph: %v", err)
 	}

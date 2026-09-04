@@ -5,10 +5,10 @@ import (
 	"strings"
 	"testing"
 
+	sqlstore "github.com/deploymenttheory/go-apple-dm/server/acmestore/sqlstore"
+	"github.com/deploymenttheory/go-apple-dm/server/sqlstore/sqlite"
 	"github.com/deploymenttheory/go-apple-dm/v3/paging"
 	"github.com/deploymenttheory/go-apple-dm/v3/pki/acme"
-	sqlstore "github.com/deploymenttheory/go-apple-dm/v3/server/acmestore/sqlstore"
-	"github.com/deploymenttheory/go-apple-dm/v3/server/sqlstore/sqlite"
 )
 
 // TestCorruptRowsSurface: a record another process mangled is reported and

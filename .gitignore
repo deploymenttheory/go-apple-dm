@@ -57,3 +57,6 @@ third_party/refs/
 docs/diagrams/*.visual-check.json
 docs/diagrams/*.visual-check.html
 docs/diagrams/*.visual-check.*.png
+
+# Workspace checksum file; go.work itself is committed.
+go.work.sum

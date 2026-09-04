@@ -3,9 +3,9 @@ package inmem_test
 import (
 	"testing"
 
-	"github.com/deploymenttheory/go-apple-dm/v3/server/audit"
-	"github.com/deploymenttheory/go-apple-dm/v3/server/audit/audittest"
-	"github.com/deploymenttheory/go-apple-dm/v3/server/audit/inmem"
+	"github.com/deploymenttheory/go-apple-dm/server/audit"
+	"github.com/deploymenttheory/go-apple-dm/server/audit/audittest"
+	"github.com/deploymenttheory/go-apple-dm/server/audit/inmem"
 )
 
 func TestContract(t *testing.T) {

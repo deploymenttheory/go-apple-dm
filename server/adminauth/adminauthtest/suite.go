@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/deploymenttheory/go-apple-dm/v3/server/adminauth"
+	"github.com/deploymenttheory/go-apple-dm/server/adminauth"
 )
 
 // t0 is the instant every case starts from, so stored timestamps are

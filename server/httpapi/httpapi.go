@@ -12,10 +12,10 @@ import (
 	"strings"
 	"time"
 
+	"github.com/deploymenttheory/go-apple-dm/server/service"
 	"github.com/deploymenttheory/go-apple-dm/v3/mdmprotocol/mdm"
 	"github.com/deploymenttheory/go-apple-dm/v3/mdmprotocol/plist"
 	schemaerrors "github.com/deploymenttheory/go-apple-dm/v3/schema/errors"
-	"github.com/deploymenttheory/go-apple-dm/v3/server/service"
 )
 
 // Content types Apple devices send.

@@ -12,11 +12,11 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/stdlib"
 
+	sqlstore "github.com/deploymenttheory/go-apple-dm/server/ddmstore/sqlstore"
+	"github.com/deploymenttheory/go-apple-dm/server/sqlstore/mysql"
+	"github.com/deploymenttheory/go-apple-dm/server/sqlstore/postgres"
+	"github.com/deploymenttheory/go-apple-dm/server/sqlstore/sqlcommon"
 	"github.com/deploymenttheory/go-apple-dm/v3/mdmprotocol/ddm"
-	sqlstore "github.com/deploymenttheory/go-apple-dm/v3/server/ddmstore/sqlstore"
-	"github.com/deploymenttheory/go-apple-dm/v3/server/sqlstore/mysql"
-	"github.com/deploymenttheory/go-apple-dm/v3/server/sqlstore/postgres"
-	"github.com/deploymenttheory/go-apple-dm/v3/server/sqlstore/sqlcommon"
 	"github.com/deploymenttheory/go-apple-dm/v3/storage/ddm/ddmtest"
 )
 

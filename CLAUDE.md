@@ -10,6 +10,14 @@ reference server. Module `github.com/deploymenttheory/go-apple-dm/v3`, Go 1.27.
 - `docs/research/decisions/`: one decision record per feature, from `TEMPLATE.md`. No feature code
   lands without one.
 
+## Modules
+
+Two: `github.com/deploymenttheory/go-apple-dm/v3` at the root is the library, and
+`github.com/deploymenttheory/go-apple-dm/server` under `server/` is the reference
+server. The server depends on the library; nothing in the library may depend on the
+server, in production code or in tests, or neither module can be released. `go.work`
+covers local development. Every `make` target runs in both modules.
+
 ## Layout
 
 Packages sit in tiers and may import their own tier and every tier below, never above:

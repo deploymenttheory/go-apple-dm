@@ -6,8 +6,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/deploymenttheory/go-apple-dm/server/audit"
 	"github.com/deploymenttheory/go-apple-dm/v3/mdmprotocol/mdm"
-	"github.com/deploymenttheory/go-apple-dm/v3/server/audit"
 )
 
 // T0 is the fixed base time every case builds on, so stored timestamps are

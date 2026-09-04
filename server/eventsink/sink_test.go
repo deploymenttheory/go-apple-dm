@@ -9,13 +9,13 @@ import (
 	"testing"
 	"time"
 
+	"github.com/deploymenttheory/go-apple-dm/server/eventsink"
 	"github.com/deploymenttheory/go-apple-dm/v3/appleplatformservices/dep"
 	"github.com/deploymenttheory/go-apple-dm/v3/appleplatformservices/push"
 	"github.com/deploymenttheory/go-apple-dm/v3/mdmprotocol/ddm"
 	"github.com/deploymenttheory/go-apple-dm/v3/mdmprotocol/event"
 	"github.com/deploymenttheory/go-apple-dm/v3/mdmprotocol/mdm"
 	"github.com/deploymenttheory/go-apple-dm/v3/schema/checkin"
-	"github.com/deploymenttheory/go-apple-dm/v3/server/eventsink"
 )
 
 var t0 = time.Date(2026, 9, 3, 12, 0, 0, 0, time.UTC)

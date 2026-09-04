@@ -5,7 +5,14 @@ GO ?= go
 COVERAGE_MIN ?= 95
 COVER_DIR := cover
 PKGS := ./...
-INTEGRATION_PKGS := ./server/sqlstore/... ./server/ddmstore/... ./server/depstore/... ./server/acmestore/... ./server/adminauth/... ./server/audit/... ./internal/app/...
+# The reference server is its own module (decision record 0044), so every test
+# target runs twice. Coverage is attributed across both, or a library package
+# exercised only by an end-to-end scenario would read as uncovered.
+SERVER_DIR := server
+LIB_MOD := github.com/deploymenttheory/go-apple-dm/v3
+SRV_MOD := github.com/deploymenttheory/go-apple-dm/server
+ALL_PKGS := $(LIB_MOD)/...,$(SRV_MOD)/...
+INTEGRATION_PKGS := ./sqlstore/... ./ddmstore/... ./depstore/... ./acmestore/... ./adminauth/... ./audit/... ./internal/app/...
 E2E_PKGS := ./e2e/...
 E2E_STORE ?= sqlite
 FUZZ_SMOKE_TIME ?= 20s
@@ -40,22 +47,24 @@ verify: submodule
 ## lint: run golangci-lint with the repository configuration
 lint:
 	golangci-lint run --config=.golangci.yml ./...
+	cd $(SERVER_DIR) && golangci-lint run --config=../.golangci.yml ./...
 
 ## test: unit tests with race detector, coverage written to cover/unit
 test:
 	@rm -rf $(COVER_DIR)/unit && mkdir -p $(COVER_DIR)/unit
-	$(GO) test -race -shuffle=on -count=1 -cover -coverpkg=$(PKGS) $(PKGS) -args -test.gocoverdir=$(PWD)/$(COVER_DIR)/unit
+	$(GO) test -race -shuffle=on -count=1 -cover -coverpkg=$(LIB_MOD)/... $(PKGS) -args -test.gocoverdir=$(PWD)/$(COVER_DIR)/unit
+	cd $(SERVER_DIR) && $(GO) test -race -shuffle=on -count=1 -cover -coverpkg=$(ALL_PKGS) ./... -args -test.gocoverdir=$(PWD)/$(COVER_DIR)/unit
 
 ## test-storage: storage contract suites against SQL backends (needs TEST_POSTGRES_DSN / TEST_MYSQL_DSN; `make testdb-up` starts both in Docker and prints the exports)
 test-storage:
 	@rm -rf $(COVER_DIR)/storage && mkdir -p $(COVER_DIR)/storage
-	@if $(GO) list $(INTEGRATION_PKGS) >/dev/null 2>&1; then \
-		$(GO) test -race -count=1 -tags integration -cover -coverpkg=$(PKGS) $(INTEGRATION_PKGS) -args -test.gocoverdir=$(PWD)/$(COVER_DIR)/storage; \
+	@cd $(SERVER_DIR) && if $(GO) list $(INTEGRATION_PKGS) >/dev/null 2>&1; then \
+		$(GO) test -race -count=1 -tags integration -cover -coverpkg=$(ALL_PKGS) $(INTEGRATION_PKGS) -args -test.gocoverdir=$(PWD)/$(COVER_DIR)/storage; \
 	else echo "no storage packages yet"; fi
 
 ## test-storage-perf: the 100k-row Clear timing gate on PostgreSQL, without the race detector (needs TEST_POSTGRES_DSN)
 test-storage-perf:
-	$(GO) test -count=1 -tags integration -run 'TestClear100kUnderOneSecond' -v ./server/sqlstore/postgres/
+	cd $(SERVER_DIR) && $(GO) test -count=1 -tags integration -run 'TestClear100kUnderOneSecond' -v ./sqlstore/postgres/
 
 ## test-conformance: generated schema conformance tests only
 test-conformance:
@@ -67,8 +76,8 @@ test-conformance:
 test-e2e: export E2E_STORE := $(E2E_STORE)
 test-e2e:
 	@rm -rf $(COVER_DIR)/e2e-$(E2E_STORE) && mkdir -p $(COVER_DIR)/e2e-$(E2E_STORE)
-	@if $(GO) list $(E2E_PKGS) >/dev/null 2>&1; then \
-		$(GO) test -race -count=1 -tags e2e -cover -coverpkg=$(PKGS) $(E2E_PKGS) -args -test.gocoverdir=$(PWD)/$(COVER_DIR)/e2e-$(E2E_STORE); \
+	@cd $(SERVER_DIR) && if $(GO) list $(E2E_PKGS) >/dev/null 2>&1; then \
+		$(GO) test -race -count=1 -tags e2e -cover -coverpkg=$(ALL_PKGS) $(E2E_PKGS) -args -test.gocoverdir=$(PWD)/$(COVER_DIR)/e2e-$(E2E_STORE); \
 	else echo "no e2e packages yet"; fi
 
 ## docker-build: build the reference server image from this repository (never pulled from a third party)

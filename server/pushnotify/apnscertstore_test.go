@@ -8,8 +8,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/deploymenttheory/go-apple-dm/server/pushnotify"
 	"github.com/deploymenttheory/go-apple-dm/v3/mdmprotocol/mdm"
-	"github.com/deploymenttheory/go-apple-dm/v3/server/pushnotify"
 
 	"github.com/deploymenttheory/go-apple-dm/v3/appleplatformservices/push"
 	"github.com/deploymenttheory/go-apple-dm/v3/appleplatformservices/push/apns"

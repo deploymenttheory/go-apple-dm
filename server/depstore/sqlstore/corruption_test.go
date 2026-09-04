@@ -5,11 +5,11 @@ import (
 	"testing"
 	"time"
 
+	sqlstore "github.com/deploymenttheory/go-apple-dm/server/depstore/sqlstore"
+	"github.com/deploymenttheory/go-apple-dm/server/sqlstore/sqlite"
 	"github.com/deploymenttheory/go-apple-dm/v3/appleplatformservices/dep"
 	"github.com/deploymenttheory/go-apple-dm/v3/paging"
 	"github.com/deploymenttheory/go-apple-dm/v3/secrets"
-	sqlstore "github.com/deploymenttheory/go-apple-dm/v3/server/depstore/sqlstore"
-	"github.com/deploymenttheory/go-apple-dm/v3/server/sqlstore/sqlite"
 	"github.com/deploymenttheory/go-apple-dm/v3/storage/crypt"
 )
 

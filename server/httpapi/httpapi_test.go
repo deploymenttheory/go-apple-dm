@@ -15,12 +15,12 @@ import (
 	"testing"
 	"time"
 
+	"github.com/deploymenttheory/go-apple-dm/server/httpapi"
+	"github.com/deploymenttheory/go-apple-dm/server/service"
 	"github.com/deploymenttheory/go-apple-dm/v3/mdmprotocol/cms"
 	"github.com/deploymenttheory/go-apple-dm/v3/mdmprotocol/mdm"
 	"github.com/deploymenttheory/go-apple-dm/v3/mdmprotocol/plist"
 	"github.com/deploymenttheory/go-apple-dm/v3/schema/commands"
-	"github.com/deploymenttheory/go-apple-dm/v3/server/httpapi"
-	"github.com/deploymenttheory/go-apple-dm/v3/server/service"
 	"github.com/deploymenttheory/go-apple-dm/v3/testpki"
 )
 

@@ -11,12 +11,12 @@ import (
 	"testing"
 	"time"
 
+	"github.com/deploymenttheory/go-apple-dm/server/sqlstore/sqlcommon"
+	"github.com/deploymenttheory/go-apple-dm/server/sqlstore/sqlite"
+	"github.com/deploymenttheory/go-apple-dm/server/sqlstore/sqltest"
 	"github.com/deploymenttheory/go-apple-dm/v3/mdmprotocol/mdm"
 	"github.com/deploymenttheory/go-apple-dm/v3/paging"
 	"github.com/deploymenttheory/go-apple-dm/v3/schema/checkin"
-	"github.com/deploymenttheory/go-apple-dm/v3/server/sqlstore/sqlcommon"
-	"github.com/deploymenttheory/go-apple-dm/v3/server/sqlstore/sqlite"
-	"github.com/deploymenttheory/go-apple-dm/v3/server/sqlstore/sqltest"
 	"github.com/deploymenttheory/go-apple-dm/v3/storage"
 	"github.com/deploymenttheory/go-apple-dm/v3/storage/storagetest"
 )

@@ -14,7 +14,7 @@ set -euo pipefail
 COVER_DIR="${1:-cover}"
 MIN="${COVERAGE_MIN:-95}"
 EXEMPT_FILE="$(dirname "$0")/coverage-exempt.txt"
-MODULE="$(go list -m)"
+MODULE="$(go list -m | head -1)"
 
 inputs=()
 for dir in "$COVER_DIR"/*/; do

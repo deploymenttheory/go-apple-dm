@@ -11,7 +11,7 @@ import (
 	"testing/synctest"
 	"time"
 
-	"github.com/deploymenttheory/go-apple-dm/v3/server/ddmsync"
+	"github.com/deploymenttheory/go-apple-dm/server/ddmsync"
 
 	"github.com/deploymenttheory/go-apple-dm/v3/appleplatformservices/push"
 	"github.com/deploymenttheory/go-apple-dm/v3/clock"
