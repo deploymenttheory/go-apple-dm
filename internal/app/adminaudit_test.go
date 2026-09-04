@@ -41,7 +41,7 @@ func readAll(t *testing.T, st audit.Store) []audit.Record {
 }
 
 // The repudiation control, end to end: a state change through the assembled
-// server lands in a durable trail, projected rather than raw.
+// server lands in a persistent trail, projected rather than raw.
 func TestAuditTrailRecordsStateChanges(t *testing.T) {
 	a, st := auditApp(t, app.Config{})
 	publishSomething(t, a)

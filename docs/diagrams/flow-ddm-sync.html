@@ -4452,7 +4452,7 @@
       border: 0;
     }
 
-    /* Route Probe separates a durable two-point query from selection and
+    /* Route Probe separates a persistent two-point query from selection and
        one-hop hover. Only the chosen shortest directed path stays prominent;
        the traveling signal is cloned viewer geometry and never authored SVG. */
     svg[data-route-picking="target"] [data-node-id] { opacity: 0.24; }
@@ -5067,7 +5067,7 @@
           <rect x="311.4" y="185.5" width="142" height="16" rx="3" class="c-mask"/>
           <text x="382.4" y="195.5" class="t-backend" font-size="9" text-anchor="middle">declaration + change rows</text>
         </g>
-        <text data-detail="fine" x="317.1" y="223.5" class="t-dim" font-size="7">written in the same transaction; the change rows are the durable signal</text>
+        <text data-detail="fine" x="317.1" y="223.5" class="t-dim" font-size="7">written in the same transaction; the change rows are the persistent signal</text>
         </g>
 
         <g data-edge-from="admin" data-edge-to="notifier" data-edge-label="Kick" data-edge-key="2" data-edge-id="kick">
@@ -5447,7 +5447,7 @@
           <h3>Change to command</h3>
         </div>
         <ul>
-          <li>&bull; The engine no longer calls back into the notifier: the change rows are the durable signal</li>
+          <li>&bull; The engine no longer calls back into the notifier: the change rows are the persistent signal</li>
           <li>&bull; Its Enqueuer is service.Core, so a DDM kick runs the hooks and the target screen like any command</li>
         </ul>
       </div>
@@ -8920,7 +8920,7 @@
     })();
 
     /* ============================================================
-       Intent Trace — temporary one-hop topology before durable focus.
+       Intent Trace — temporary one-hop topology before persistent focus.
        Fine-pointer hover and keyboard focus share the same stable-ID preview;
        touch continues directly to the existing click-to-focus contract.
        ============================================================ */

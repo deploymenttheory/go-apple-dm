@@ -1,4 +1,4 @@
-// Package audit is the durable record of everything the server did: an
+// Package audit is the persistent record of everything the server did: an
 // append-and-prune store of projected events, with the in-memory and SQL
 // backends behind one contract.
 //
@@ -8,7 +8,7 @@
 // an event and that subscribers persist them. Phase 9 made the first half
 // true with event/sink, which decides what an event may say. This package is
 // the second half: the place those records go so a question can be asked
-// afterwards. An slog sink is attributable but only as durable as the log
+// afterwards. An slog sink is attributable but only as persistent as the log
 // stream someone remembered to ship; proving who erased a device three weeks
 // ago needs a table.
 //

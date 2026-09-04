@@ -386,7 +386,7 @@ func TestPutDeclaration(t *testing.T) {
 			t.Fatalf("PutDeclaration: %v", err)
 		}
 		// A failed write must leave no change rows behind: the rows are the
-		// durable signal the notifier drains, so a row here would wake a
+		// persistent signal the notifier drains, so a row here would wake a
 		// device for a declaration that was never stored.
 		if rows := h.pending(); len(rows) != 0 {
 			t.Fatalf("change rows recorded after a failed write: %v", pendingIDs(rows))

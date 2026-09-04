@@ -19,7 +19,7 @@
 // a backend that let a caller reach into stored bytes would break
 // issuance in a way no unit test of the caller would show.
 //
-// It is not durable, and nonces resting only in memory means a restart
+// It is not persistent, and nonces resting only in memory means a restart
 // invalidates every outstanding one; a client answers a badNonce by
 // retrying with a fresh nonce, so that is a stumble rather than a fault.
 // Deployments use a persistent backend, which passes the same suite.

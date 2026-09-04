@@ -3,7 +3,7 @@
 //
 // # Why
 //
-// The DEP client needs durable accounts with their OAuth tokens, the
+// The DEP client needs persistent accounts with their OAuth tokens, the
 // shared session, the sync cursor with the time it was received, the
 // token PKI keypairs, every device Apple reported, the profiles defined,
 // and per-serial assignment outcomes, with the same semantics on every

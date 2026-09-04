@@ -35,7 +35,7 @@ Phase: 4
 
 ## What we do better
 
-1. History is append-only and durable: `cert_associations(enrollment_id, cert_hash, associated_at)` is written in the same transaction as `AssociateCert`, survives re-enrollment, and is read through `CertHistory` (per enrollment, oldest first) and `CertHashHistory` (per hash). All four backends return the same rows.
+1. History is append-only and persistent: `cert_associations(enrollment_id, cert_hash, associated_at)` is written in the same transaction as `AssociateCert`, survives re-enrollment, and is read through `CertHistory` (per enrollment, oldest first) and `CertHashHistory` (per hash). All four backends return the same rows.
 2. Reuse is a service policy, not a boolean: `CertReusePolicy` (set through `Config.CertReuse`) with `DenyCertReuse` as the default rejects an `Authenticate` whose hash appears in another enrollment's history with `CodeForbidden` and `ErrCertReused` (a custom policy's error is wrapped so `errors.Is(err, ErrCertReused)` still holds), and publishes `CertReuseDenied` with the history rows; `AllowCertReuse` is an explicit opt-in. The policy is not consulted under `PinOff`.
 3. Retroactive pinning in `authorize()` only pins a hash that has never been seen on another enrollment; otherwise `PinEnforce` refuses with `ErrCertReused` and `PinWarn` logs, and in both cases nothing is written.
 4. The live pin stays unique: a race for the same hash yields exactly one success and `ErrConflict` for the rest (`codeForStorage` maps it to `CodeForbidden`), and `AllowCertReuse` cannot override a live pin. A failed history insert rolls back the pin.

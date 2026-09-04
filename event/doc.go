@@ -17,7 +17,7 @@
 // reported through the bus error handler without stopping other handlers,
 // and no persistence. The sinks live in event/sink, which projects an event
 // down to what may leave the process before an slog record or a webhook
-// carries it; the durable trail the threat model's repudiation control needs
+// carries it; the persistent trail the threat model's repudiation control needs
 // is package audit.
 //
 // # References

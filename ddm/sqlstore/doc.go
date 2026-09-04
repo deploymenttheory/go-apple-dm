@@ -3,7 +3,7 @@
 //
 // # Why
 //
-// The engine needs durable declarations, versions, sets, assignments,
+// The engine needs persistent declarations, versions, sets, assignments,
 // per-enrollment snapshots, status, and the change queue, with the same
 // semantics on every backend the MDM storage already supports. This package
 // reuses storage/sqlcommon's dialects and migration runner but owns its own

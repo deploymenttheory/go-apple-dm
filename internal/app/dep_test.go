@@ -277,7 +277,7 @@ func TestDEP(t *testing.T) {
 	t.Run("Env", func(t *testing.T) {
 		env := func(m map[string]string) func(string) string {
 			return func(k string) string {
-				// A durable store needs a keyring, and sqlite is the default, so
+				// A persistent store needs a keyring, and sqlite is the default, so
 				// every ParseEnv case supplies one unless it sets its own.
 				if k == app.EnvStorageKeys && m[k] == "" {
 					return "test"

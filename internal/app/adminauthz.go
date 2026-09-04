@@ -224,7 +224,7 @@ func (w *statusRecorder) Write(b []byte) (int, error) {
 
 // kickNotifier shortens the wait after a declarative change.
 //
-// The durable signal is the change rows the engine writes inside its
+// The persistent signal is the change rows the engine writes inside its
 // transaction, which the notifier drains on its poll; this only saves the
 // poll interval. It lives here, in the one wrapper every admin route passes
 // through, rather than in each handler, so a route added later cannot forget

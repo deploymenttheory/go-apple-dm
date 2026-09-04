@@ -10,7 +10,7 @@
 // the suite in storage/storagetest defines its behaviour, so it doubles as
 // the executable specification the SQL backends are measured against.
 //
-// It is not durable and is not tuned: no pagination cost model, no
+// It is not persistent and is not tuned: no pagination cost model, no
 // encryption at rest, no concurrency beyond one mutex. Anything that must
 // survive a restart uses sqlite, postgres, or mysql.
 //

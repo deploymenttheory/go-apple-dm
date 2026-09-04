@@ -83,7 +83,7 @@ type Config struct {
 	// enrollment. Deployments that need devices to re-enrol themselves after
 	// a wipe set MDM_ALLOW_REENROLL=true.
 	AllowReenroll bool
-	// StorageKeys names the keys that seal the secret columns of a durable
+	// StorageKeys names the keys that seal the secret columns of a persistent
 	// store: unlock tokens, bootstrap tokens, APNs push keys and user auth
 	// tokens. The first is the active key every write seals under, and the
 	// rest are retired keys reads still accept, so a rotation is a prepended
@@ -91,7 +91,7 @@ type Config struct {
 	//
 	// Without a keyring those columns are written in clear, and a stolen
 	// backup, replica or volume yields the push key, which wakes and
-	// impersonates the whole fleet. A durable store therefore requires one.
+	// impersonates the whole fleet. A persistent store therefore requires one.
 	StorageKeys []string
 	// StorageKeysStrict refuses to read a secret column that is not sealed.
 	// It belongs on once Rewrap has run everywhere; before that it would
@@ -170,7 +170,7 @@ type Config struct {
 type SinkConfig struct {
 	// Audit writes a projected slog record for every event. It is the
 	// cheapest form of the threat model's repudiation control: attributable,
-	// but only as durable as the log stream it is shipped to.
+	// but only as persistent as the log stream it is shipped to.
 	Audit bool
 	// WebhookURL receives a POST per event in the MicroMDM envelope, minus
 	// the raw payload those servers include (event/sink explains why).
@@ -179,7 +179,7 @@ type SinkConfig struct {
 	WebhookHMACKey []byte
 	// Persist writes every event to the audit trail on the process's own
 	// database. This is what makes the threat model's repudiation control
-	// real: an slog record is only as durable as the log stream someone
+	// real: an slog record is only as persistent as the log stream someone
 	// remembered to ship, and proving who erased a device three weeks ago
 	// needs a table.
 	Persist bool
@@ -639,7 +639,7 @@ func (a *App) wire(ctx context.Context) error {
 	// the audit trail.
 	//
 	// This ordering is only possible because the engine no longer calls back
-	// into the notifier. The durable signal is the change rows recordAffected
+	// into the notifier. The persistent signal is the change rows recordAffected
 	// writes inside the transaction; the admin route wrapper kicks the
 	// notifier after a change so the 1s poll is not the only trigger.
 	// The reference server suppresses a second DeclarativeManagement while
@@ -867,7 +867,7 @@ func (a *App) adminStore(ctx context.Context) (adminauth.Store, error) {
 		// answer, not a failure: the static token stays the only credential.
 		return nil, nil
 	case a.db == nil:
-		// An in-memory deployment has nowhere durable to put principals; the
+		// An in-memory deployment has nowhere persistent to put principals; the
 		// store still works so the admin API behaves the same way in tests
 		// and in a throwaway run.
 		return admininmem.New(), nil

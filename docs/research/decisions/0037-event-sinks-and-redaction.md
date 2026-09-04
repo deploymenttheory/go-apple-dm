@@ -116,7 +116,7 @@ separate record because they instrument call sites rather than subscribe to the 
 - Offering `IncludeRawPayload` for byte-level MicroMDM compatibility: the events carry parsed
   messages, so it would require threading raw bodies through the bus purely to make the leak
   available. A receiver that must parse the plist wants the check-in handler, not a webhook.
-- Persisting from the sink directly: the durable trail is a storage concern with its own contract
+- Persisting from the sink directly: the persistent trail is a storage concern with its own contract
   suite and retention, and is record 0038.
 - A dedicated delivery queue with its own worker: the bus's async mode already decouples delivery,
   and a queue that survives restart is what the audit table is for.

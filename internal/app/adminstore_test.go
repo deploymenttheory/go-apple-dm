@@ -83,7 +83,7 @@ func TestAdminStoreOffByDefault(t *testing.T) {
 	}
 }
 
-// An in-memory deployment has nowhere durable for principals, but the admin
+// An in-memory deployment has nowhere persistent for principals, but the admin
 // API must still behave the same way.
 func TestAdminStoreWithoutADatabase(t *testing.T) {
 	a := build(t, app.Config{

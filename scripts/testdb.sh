@@ -20,7 +20,7 @@ DDM_PORT="${TEST_DDM_PORT:-8090}"
 DDM_SEND_KEY="${TEST_DDM_SEND_KEY:-mdm-to-ddm-test-key}"
 DDM_RECV_KEY="${TEST_DDM_RECV_KEY:-ddm-to-mdm-test-key}"
 DDM_ADMIN_TOKEN="${TEST_DDM_ADMIN_TOKEN:-admin-test-token}"
-# The container writes a durable sqlite store, which seals its secret columns
+# The container writes a persistent sqlite store, which seals its secret columns
 # and so needs a key. Test material, never a deployment value.
 DDM_STORAGE_KEY_NAME="${TEST_DDM_STORAGE_KEY_NAME:-e2e}"
 DDM_STORAGE_KEY="${TEST_DDM_STORAGE_KEY:-e2e-storage-key-of-sufficient-length}"

@@ -17,11 +17,11 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/storage/crypt"
 )
 
-// TestDurableStorageNeedsAKeyring holds a durable deployment to a keyring. The
+// TestpersistentStorageNeedsAKeyring holds a persistent deployment to a keyring. The
 // secret columns hold the APNs push key, the escrowed bootstrap and unlock
 // tokens and the user auth token, so without one a stolen backup, replica or
 // volume is a fleet compromise rather than a data loss.
-func TestDurableStorageNeedsAKeyring(t *testing.T) {
+func TestpersistentStorageNeedsAKeyring(t *testing.T) {
 	t.Parallel()
 	_, err := app.Build(context.Background(), app.Config{
 		Role: app.RoleAll, Storage: "sqlite",
@@ -30,7 +30,7 @@ func TestDurableStorageNeedsAKeyring(t *testing.T) {
 	if !errors.Is(err, app.ErrConfig) {
 		t.Fatalf("Build = %v, want a configuration error", err)
 	}
-	// An in-memory store has nothing durable to protect.
+	// An in-memory store has nothing persistent to protect.
 	a, err := app.Build(context.Background(), app.Config{
 		Role: app.RoleAll, Storage: "inmem", Logger: quiet,
 	})

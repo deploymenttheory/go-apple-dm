@@ -12,7 +12,7 @@
 // which gives the transactional semantics the suite demands without a
 // transaction log.
 //
-// It is not durable. Deployments use ddm/sqlstore, which passes the same
+// It is not persistent. Deployments use ddm/sqlstore, which passes the same
 // suite.
 //
 // # References

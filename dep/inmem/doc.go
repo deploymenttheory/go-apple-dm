@@ -16,7 +16,7 @@
 // dep/sqlstore seals its columns, so the sealing contract is one code
 // path on both backends.
 //
-// It is not durable. Deployments use dep/sqlstore, which passes the same
+// It is not persistent. Deployments use dep/sqlstore, which passes the same
 // suite.
 //
 // # References

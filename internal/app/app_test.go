@@ -33,7 +33,7 @@ func build(t *testing.T, cfg app.Config) *app.App {
 	if cfg.Logger == nil {
 		cfg.Logger = quiet
 	}
-	// A durable store refuses to run without a keyring, so a test that names
+	// A persistent store refuses to run without a keyring, so a test that names
 	// one gets a key even when it is about something else.
 	if cfg.Secrets == nil && cfg.SecretsDir == "" {
 		if cfg.Storage != "inmem" && len(cfg.StorageKeys) == 0 {
@@ -75,7 +75,7 @@ func serve(t *testing.T, a *app.App) *httptest.Server {
 func TestParseEnv(t *testing.T) {
 	env := func(m map[string]string) func(string) string {
 		return func(k string) string {
-			// A durable store needs a keyring, and sqlite is the default, so
+			// A persistent store needs a keyring, and sqlite is the default, so
 			// every ParseEnv case supplies one unless it sets its own.
 			if k == app.EnvStorageKeys && m[k] == "" {
 				return "test"

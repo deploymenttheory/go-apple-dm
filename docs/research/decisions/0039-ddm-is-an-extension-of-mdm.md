@@ -88,7 +88,7 @@ Dependency note: none. Nothing here adds a dependency; the work it justifies rem
 2. **DDM's command travels the MDM command path**, so it is screened against `schema/support`,
    runs the hook chain, and appears in the event bus and the audit trail — like every other command.
    Zentral is the only reference that also does this; NanoMDM has no path rich enough to bypass.
-3. **No callback from the serving side into dispatch.** `Config.Wake` is gone; the durable signal
+3. **No callback from the serving side into dispatch.** `Config.Wake` is gone; the persistent signal
    is the change rows written inside the transaction. The latency shortcut lives once in the admin
    route wrapper, where a route added later cannot forget it, rather than repeated per handler.
 4. **Coalescing.** A burst of edits becomes one command per enrollment, with a window, dedupe and

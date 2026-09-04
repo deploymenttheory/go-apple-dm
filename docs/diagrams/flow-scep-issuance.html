@@ -4452,7 +4452,7 @@
       border: 0;
     }
 
-    /* Route Probe separates a durable two-point query from selection and
+    /* Route Probe separates a persistent two-point query from selection and
        one-hop hover. Only the chosen shortest directed path stays prominent;
        the traveling signal is cloned viewer geometry and never authored SVG. */
     svg[data-route-picking="target"] [data-node-id] { opacity: 0.24; }
@@ -8892,7 +8892,7 @@
     })();
 
     /* ============================================================
-       Intent Trace — temporary one-hop topology before durable focus.
+       Intent Trace — temporary one-hop topology before persistent focus.
        Fine-pointer hover and keyboard focus share the same stable-ID preview;
        touch continues directly to the existing click-to-focus contract.
        ============================================================ */
