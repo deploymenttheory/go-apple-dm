@@ -296,7 +296,7 @@ storage wrapper, recorded round-trippers for DEP and ABM.
 | `go-test.yml` | `coverage-gate` | needs the above; merges profiles; runs the gate |
 | `go-test.yml` | `fuzz-smoke` | `make fuzz-smoke` |
 | `security.yml` | `govulncheck`, `gosec-sarif` | vulnerability scan; SARIF to code scanning |
-| `device-management-schema-update.yml` (weekly, and `workflow_dispatch`) | `schema-update` | compares submodule commit to upstream `release` and `seed_*`; regenerates; runs conformance; opens or updates an issue describing the waiting update |
+| `device-management-schema-update.yml` (weekly, and `workflow_dispatch`) | `schema-update` | compares submodule commit to upstream `release`; regenerates; runs conformance, the removal guard, and the check-in coverage test; opens or updates a pull request carrying the regenerated tree, titled with the Apple OS version it moves to; reports `seed_*` drift without merging it |
 | `release-please.yml` (exists) | unchanged | add `release-please-config.json` with `release-type: go` and manifest |
 
 `make ci` runs everything locally so green local predicts green CI.
@@ -381,7 +381,8 @@ closed, and the public API has been frozen for two minor releases.
 ## 11. Risks and mitigations
 
 - **Apple schema drift**: submodule pinned; weekly device management schema update job, runnable
-  on demand; rename-guard; seed branch conformance before each Apple release.
+  on demand, which opens the update as a pull request with conformance, the removal guard and the
+  check-in coverage test already run; seed branches reported but never merged.
 - **OS 27 removes legacy software update commands**: DDM software update declarations ship in
   phase 5; legacy commands carry runtime deprecation warnings from the metadata API.
 - **Binary plist edge cases**: fuzz decoders; fixtures from real devices; size and depth limits.

@@ -2,15 +2,17 @@ name: Device Management Schema Update
 
 # Weekly, and on demand: keep the generated schema current with Apple's
 # apple/device-management repository. Compares the pinned submodule against the
-# upstream release and seed branches, regenerates against upstream, runs the
-# conformance tests and the rename guard, and opens or updates one tracking
-# issue describing the update that is waiting.
+# upstream release branch, regenerates against it, and opens a pull request
+# with the result when anything changed.
+#
+# It opens a pull request rather than an issue because an issue asks a human to
+# repeat work a machine has already done: the branch it pushes is the update,
+# already regenerated and already checked. What a human decides is whether to
+# take it, and what to do about anything the checks flag.
 #
 # Apple publishes schema changes in bursts around OS releases rather than
-# daily, and the tracking issue is updated in place rather than reopened, so a
-# nightly run mostly rewrote the same issue with the same body. Weekly keeps
-# the signal and drops the noise; workflow_dispatch covers the days when
-# something has actually shipped and you do not want to wait.
+# daily, so this runs weekly; workflow_dispatch covers the days when something
+# has shipped and you do not want to wait.
 
 on:
   schedule:
@@ -18,80 +20,188 @@ on:
     - cron: '23 3 * * 1'
   workflow_dispatch:
 
-# A manual run during the scheduled one would race to update the same issue.
+# A manual run during the scheduled one would race to push the same branch.
 concurrency:
   group: device-management-schema-update
   cancel-in-progress: false
 
 permissions:
   contents: read
-  issues: write
 
 jobs:
   schema-update:
     name: '🍎 Device management schema update'
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    permissions:
+      contents: write
+      pull-requests: write
     steps:
       - name: Harden Runner
         uses: step-security/harden-runner@e14015d583714f6e62063499dc959a02595150a1 # v2.21.1
         with:
           egress-policy: audit
+
+      # The same org App release-please uses. A pull request pushed with the
+      # default GITHUB_TOKEN does not trigger workflows, so the schema update
+      # would arrive with no conformance run, no coverage gate and no tier
+      # tests: exactly the checks that make it safe to take.
+      - uses: actions/create-github-app-token@v3
+        id: app-token
+        if: ${{ vars.RP_APP_ID != '' }}
+        continue-on-error: true
+        with:
+          app-id: ${{ vars.RP_APP_ID }}
+          private-key: ${{ secrets.RP_APP_PRIVATE_KEY }}
+
+      - name: Which credential
+        run: |
+          if [ -n "${{ steps.app-token.outputs.token }}" ]; then
+            echo "using the org App; the pull request will run CI"
+          else
+            echo "::warning::App token unavailable (RP_APP_ID/RP_APP_PRIVATE_KEY unset, or the App is not installed here) — falling back to the repo PAT"
+          fi
+
       - name: Checkout Code
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           submodules: recursive
+          token: ${{ steps.app-token.outputs.token || secrets.RELEASE_PLEASE_PAT || github.token }}
+
       - name: Setup Go
         uses: actions/setup-go@7a3fe6cf4cb3a834922a1244abfce67bcef6a0c5 # v6.2.0
         with:
           go-version-file: 'go.mod'
           cache: true
-      - name: Compare against upstream
+
+      - name: Compare the pin against upstream
         id: compare
         run: |
           set -euo pipefail
-          pinned="$(git -C third_party/device-management rev-parse HEAD)"
-          git -C third_party/device-management fetch -q origin 'refs/heads/*:refs/remotes/origin/*'
-          release="$(git -C third_party/device-management rev-parse origin/release)"
-          seeds="$(git -C third_party/device-management branch -r --list 'origin/seed_*' | sed 's#origin/##' | xargs)"
-          echo "pinned=$pinned" >> "$GITHUB_OUTPUT"
-          echo "release=$release" >> "$GITHUB_OUTPUT"
-          echo "seeds=$seeds" >> "$GITHUB_OUTPUT"
+          sub=third_party/device-management
+          pinned="$(git -C "$sub" rev-parse HEAD)"
+          git -C "$sub" fetch -q origin 'refs/heads/*:refs/remotes/origin/*'
+          release="$(git -C "$sub" rev-parse origin/release)"
           {
-            echo "## Apple device management schema update"
-            echo
-            echo "Pinned: \`$pinned\`  Upstream release: \`$release\`  Seed branches: $seeds"
-            echo
-            if [ "$pinned" != "$release" ]; then
-              echo "### Files changed on release since pin"
-              echo '```'
-              git -C third_party/device-management diff --stat "$pinned" "$release" -- '*.yaml' | tail -60
-              echo '```'
-            else
-              echo "release branch unchanged."
-            fi
-          } > schema-update.md
-          if [ "$pinned" != "$release" ]; then echo "changed=true" >> "$GITHUB_OUTPUT"; else echo "changed=false" >> "$GITHUB_OUTPUT"; fi
-      - name: Regenerate against upstream and run conformance
+            echo "pinned=$pinned"
+            echo "release=$release"
+            echo "short=$(git -C "$sub" rev-parse --short "$release")"
+            echo "changed=$([ "$pinned" != "$release" ] && echo true || echo false)"
+          } >> "$GITHUB_OUTPUT"
+
+          # Seed branches are where Apple stages the next OS, so drift there is
+          # the earliest warning there is. They are reported, never merged: a
+          # seed is not a release and must not become the pin.
+          : > seeds.md
+          for seed in $(git -C "$sub" branch -r --list 'origin/seed_*' | sed 's#origin/##'); do
+            head="$(git -C "$sub" rev-parse "origin/$seed")"
+            n="$(git -C "$sub" diff --name-only "$release" "$head" -- '*.yaml' | wc -l | tr -d ' ')"
+            [ "$n" -gt 0 ] && echo "| \`$seed\` | $n |" >> seeds.md
+          done
+
+      - name: Record the current schema
         if: steps.compare.outputs.changed == 'true'
+        run: |
+          set -euo pipefail
+          go run ./cmd/admgen versions > /tmp/versions.before
+          sort schema/EXPORTED_IDENTIFIERS.lock > /tmp/identifiers.before
+
+      - name: Regenerate against upstream
+        if: steps.compare.outputs.changed == 'true'
+        run: |
+          set -euo pipefail
+          git -C third_party/device-management checkout -q "${{ steps.compare.outputs.release }}"
+          make generate
+          go run ./cmd/admgen versions > /tmp/versions.after
+          go run ./cmd/admgen identifiers | sort > /tmp/identifiers.after
+
+      # Every check runs, and none of them stops the pull request being opened.
+      # A schema update that fails conformance is precisely the one a human
+      # needs to see; refusing to open it would leave the failure invisible
+      # until someone happened to bump the submodule by hand.
+      - name: Check the regenerated tree
+        if: steps.compare.outputs.changed == 'true'
+        id: checks
         continue-on-error: true
         run: |
-          git -C third_party/device-management checkout -q "${{ steps.compare.outputs.release }}"
-          make generate 2>&1 | tail -40
-          { echo; echo "### Conformance on upstream release"; echo '```'; make test-conformance 2>&1 | tail -60; echo '```'; } >> schema-update.md
-          { echo; echo "### Rename guard"; echo '```'; make verify 2>&1 | tail -40; echo '```'; } >> schema-update.md
-      - name: Open or update the tracking issue
+          set +e
+          make test-conformance > /tmp/conformance.log 2>&1; echo "conformance=$?" >> "$GITHUB_OUTPUT"
+          make verify           > /tmp/verify.log      2>&1; echo "verify=$?"      >> "$GITHUB_OUTPUT"
+          (cd server && go test ./service/ -run TestEveryCheckinMessageIsHandled) \
+                                > /tmp/handled.log     2>&1; echo "handled=$?"     >> "$GITHUB_OUTPUT"
+          exit 0
+
+      - name: Describe the update
         if: steps.compare.outputs.changed == 'true'
-        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8.0.0
-        with:
-          script: |
-            const fs = require('fs');
-            const body = fs.readFileSync('schema-update.md', 'utf8');
-            const title = 'Apple device management schema update';
-            const { data: issues } = await github.rest.issues.listForRepo({ owner: context.repo.owner, repo: context.repo.repo, state: 'open', labels: 'schema-update' });
-            const existing = issues.find(i => i.title === title);
-            if (existing) {
-              await github.rest.issues.update({ owner: context.repo.owner, repo: context.repo.repo, issue_number: existing.number, body });
-            } else {
-              await github.rest.issues.create({ owner: context.repo.owner, repo: context.repo.repo, title, body, labels: ['schema-update'] });
-            }
+        id: describe
+        run: |
+          set -euo pipefail
+          sub=third_party/device-management
+
+          # What moved, in the terms an operator cares about: OS versions.
+          : > versions.md
+          join -a1 -a2 -e '-' -o '0,1.2,2.2' -t "$(printf '\t')" \
+            /tmp/versions.before /tmp/versions.after 2>/dev/null |
+            while IFS="$(printf '\t')" read -r os before after; do
+              [ "$before" = "$after" ] && continue
+              echo "| $os | $before | **$after** |" >> versions.md
+            done
+          newest="$(cut -f2 /tmp/versions.after | sort -V | tail -1)"
+          echo "newest=$newest" >> "$GITHUB_OUTPUT"
+          if [ -s versions.md ]; then
+            echo "title=chore(schema): Apple device management $newest" >> "$GITHUB_OUTPUT"
+          else
+            echo "title=chore(schema): Apple device management ${{ steps.compare.outputs.short }}" >> "$GITHUB_OUTPUT"
+          fi
+
+          # An identifier that is generated no longer is a rename or a removal,
+          # and needs a line in ALLOWED_REMOVALS.md before verify will pass.
+          comm -23 /tmp/identifiers.before /tmp/identifiers.after > /tmp/removed || true
+          comm -13 /tmp/identifiers.before /tmp/identifiers.after > /tmp/added   || true
+          {
+            echo "added=$(wc -l < /tmp/added | tr -d ' ')"
+            echo "removed=$(wc -l < /tmp/removed | tr -d ' ')"
+          } >> "$GITHUB_OUTPUT"
+          git -C "$sub" log --oneline "${{ steps.compare.outputs.pinned }}..${{ steps.compare.outputs.release }}" > /tmp/commits.log
+
+      - name: Open or update the pull request
+        if: steps.compare.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token || secrets.RELEASE_PLEASE_PAT || github.token }}
+          PINNED: ${{ steps.compare.outputs.pinned }}
+          RELEASE: ${{ steps.compare.outputs.release }}
+          SHORT: ${{ steps.compare.outputs.short }}
+          NEWEST: ${{ steps.describe.outputs.newest }}
+          ADDED: ${{ steps.describe.outputs.added }}
+          REMOVED: ${{ steps.describe.outputs.removed }}
+          CONFORMANCE: ${{ steps.checks.outputs.conformance }}
+          VERIFY: ${{ steps.checks.outputs.verify }}
+          HANDLED: ${{ steps.checks.outputs.handled }}
+        run: |
+          set -euo pipefail
+          if git diff --quiet && git diff --quiet --cached; then
+            echo "upstream moved but the generated tree is identical; nothing to open"
+            exit 0
+          fi
+          # One branch per upstream commit, so re-running updates the same pull
+          # request instead of opening another.
+          branch="schema/update-${{ steps.compare.outputs.short }}"
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout -b "$branch"
+          git add -A
+          git commit -q -m "chore(schema): regenerate from apple/device-management ${{ steps.compare.outputs.short }}" \
+            -m "Pin moves to ${{ steps.compare.outputs.release }}. Opened by the Device Management Schema Update workflow."
+          git push -f -q origin "$branch"
+
+          bash .github/scripts/schema-update-body.sh > /tmp/body.md
+
+          if pr="$(gh pr list --head "$branch" --state open --json number -q '.[0].number')" && [ -n "$pr" ]; then
+            gh pr edit "$pr" --title "${{ steps.describe.outputs.title }}" --body-file /tmp/body.md
+            echo "updated pull request #$pr"
+          else
+            gh pr create --base "${{ github.event.repository.default_branch }}" --head "$branch" \
+              --title "${{ steps.describe.outputs.title }}" --body-file /tmp/body.md \
+              --label schema-update
+            echo "opened a pull request for $branch"
+          fi
