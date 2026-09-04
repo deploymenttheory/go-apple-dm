@@ -1,4 +1,4 @@
-package mdmctl
+package dmctl
 
 import (
 	json "encoding/json/v2"
@@ -11,7 +11,7 @@ import (
 )
 
 // ErrConfigPermissions is a config file other users can read.
-var ErrConfigPermissions = errors.New("mdmctl: config file is readable by other users")
+var ErrConfigPermissions = errors.New("dmctl: config file is readable by other users")
 
 // Config is the on-disk configuration.
 //
@@ -45,13 +45,13 @@ func (c Context) token(getenv func(string) string) (string, error) {
 	case c.TokenEnv != "":
 		v := strings.TrimSpace(getenv(c.TokenEnv))
 		if v == "" {
-			return "", fmt.Errorf("mdmctl: %s is empty", c.TokenEnv)
+			return "", fmt.Errorf("dmctl: %s is empty", c.TokenEnv)
 		}
 		return v, nil
 	case c.TokenFile != "":
 		raw, err := os.ReadFile(c.TokenFile)
 		if err != nil {
-			return "", fmt.Errorf("mdmctl: read token file: %w", err)
+			return "", fmt.Errorf("dmctl: read token file: %w", err)
 		}
 		return strings.TrimSpace(string(raw)), nil
 	default:
@@ -61,7 +61,7 @@ func (c Context) token(getenv func(string) string) (string, error) {
 
 // DefaultConfigPath is where the config lives when none is given.
 func DefaultConfigPath(getenv func(string) string) string {
-	if p := getenv("MDMCTL_CONFIG"); p != "" {
+	if p := getenv(EnvConfig); p != "" {
 		return p
 	}
 	base := getenv("XDG_CONFIG_HOME")
@@ -72,7 +72,7 @@ func DefaultConfigPath(getenv func(string) string) string {
 		}
 		base = filepath.Join(home, ".config")
 	}
-	return filepath.Join(base, "go-apple-dm", "mdmctl.json")
+	return filepath.Join(base, "go-apple-dm", "dmctl.json")
 }
 
 // loadConfig reads the active context, or nil when there is no config file.
@@ -89,7 +89,7 @@ func (e *env) loadConfig() (*Context, error) {
 		return nil, nil
 	}
 	if err != nil {
-		return nil, fmt.Errorf("mdmctl: config: %w", err)
+		return nil, fmt.Errorf("dmctl: config: %w", err)
 	}
 	// A credential-adjacent file that other users can read is refused rather
 	// than used, because reading it is what makes the leak matter.
@@ -98,11 +98,11 @@ func (e *env) loadConfig() (*Context, error) {
 	}
 	raw, err := os.ReadFile(path) // #nosec G304 -- an operator's own config path
 	if err != nil {
-		return nil, fmt.Errorf("mdmctl: config: %w", err)
+		return nil, fmt.Errorf("dmctl: config: %w", err)
 	}
 	var cfg Config
 	if err := json.Unmarshal(raw, &cfg); err != nil {
-		return nil, fmt.Errorf("mdmctl: config %s: %w", path, err)
+		return nil, fmt.Errorf("dmctl: config %s: %w", path, err)
 	}
 	name := e.opts.context
 	if name == "" {

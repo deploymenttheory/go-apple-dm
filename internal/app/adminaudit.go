@@ -133,7 +133,7 @@ func (a *App) listAudit(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	// Items and NextCursor are the page shape every other listing uses, so
-	// mdmctl reads it with the client's existing paging helper.
+	// dmctl reads it with the client's existing paging helper.
 	writeJSON(w, http.StatusOK, map[string]any{"Items": auditViews(res.Items), "NextCursor": res.NextCursor})
 }
 

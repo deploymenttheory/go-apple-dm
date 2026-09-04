@@ -60,7 +60,7 @@ const (
 )
 
 // Config is the process configuration; see ParseEnv for the DM_*
-// variables and cmd/mdmserver for the flags.
+// variables and cmd/dmserver for the flags.
 type Config struct {
 	Role    Role
 	Listen  string
@@ -742,7 +742,7 @@ func (a *App) wire(ctx context.Context) error {
 
 // Run supervises every registered background loop until ctx is cancelled or
 // one of them fails, whichever comes first. The HTTP listener is the
-// caller's (cmd/mdmserver, or httptest in tests).
+// caller's (cmd/dmserver, or httptest in tests).
 //
 // The first failure cancels its siblings so Run returns promptly rather than
 // waiting for loops that only stop on cancellation. A loop that stops because
@@ -856,7 +856,7 @@ func (a *App) wireSinks(ctx context.Context) error {
 // credential.
 //
 // Before this existed, adminauth/sqlstore was imported only by its own tests:
-// cmd/mdmserver never set AdminStore, so the principals, policies and
+// cmd/dmserver never set AdminStore, so the principals, policies and
 // revocable tokens of record 0034 were unreachable from the shipped binary.
 func (a *App) adminStore(ctx context.Context) (adminauth.Store, error) {
 	switch {

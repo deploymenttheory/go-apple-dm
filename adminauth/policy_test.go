@@ -204,7 +204,7 @@ func TestRegistry(t *testing.T) {
 	if _, ok := reg.Lookup("nope"); ok {
 		t.Fatal("Lookup found an action that was never registered")
 	}
-	// Every action carries operator-facing prose, so `mdmctl policy actions`
+	// Every action carries operator-facing prose, so `dmctl policy actions`
 	// can say what granting it means.
 	for _, a := range reg.Actions() {
 		if a.Help == "" {

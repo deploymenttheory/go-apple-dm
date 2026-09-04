@@ -20,7 +20,7 @@ Phase: 8
 
 Framing: Apple defines the device-facing protocol and says nothing about how a server is
 administered. The admin API is therefore ours, and its job is to make the reference server
-demonstrable and to give `mdmctl` (0035) something to call — not to be a product's API. A product
+demonstrable and to give `dmctl` (0035) something to call — not to be a product's API. A product
 embeds `service.Core`, `ddm.Engine` and the stores directly and brings its own API and its own
 identity model, as Fleet does.
 
@@ -102,7 +102,7 @@ brings. The evaluator stays behind `adminauth`, so the blast radius of a future 
   caller auth from outbound Apple auth, deleting the inbound `Authorization` header before proxying.
 - **MicroMDM**: the operator supplies the API key; nothing generates, hashes or stores it
   server-side. `mdmctl` persists it in cleartext at `~/.micromdm/<name>.json` under a directory
-  created `0777`, and `mdmctl config print` echoes it.
+  created `0777`, and `dmctl config print` echoes it.
 - **smallstep/certificates**: an admin is a persisted `(subject, provisioner)` pair authenticated by
   an x5c-signed JWT verified against the CA's own roots, with single-use replay protection, a
   one-minute clock leeway, and an audience bound to the request path
@@ -281,14 +281,14 @@ still works when the store is empty or unreachable.
 Two supporting changes come with it. Requests authenticated this way are audited under the fixed
 actor `break-glass` rather than a principal name, and log a warning naming the method and path
 whenever a principal store is also configured. `GET /config` reports whether the credential is
-accepted, so `mdmctl status` can say it out loud.
+accepted, so `dmctl status` can say it out loud.
 
 **Why.** The original rule made the feature unreachable. An empty principal store authenticates
 nobody, and `POST /principals` -- the route that creates the first one -- is itself an authorized
 admin route, so a deployment that enabled the store locked itself out. Two alternatives were
 rejected. Minting a root principal at first start and printing its token puts a live root
 credential into container start-up logs, where it is captured by every log shipper in the path. An
-offline `mdmctl bootstrap` writing straight to the database needs DSN access and bypasses the very
+offline `dmctl bootstrap` writing straight to the database needs DSN access and bypasses the very
 authorization path it is bootstrapping, so the first credential would be the one credential never
 checked by the system that issues it. Reusing the token that already exists, is already documented,
 and is already understood as the development opt-out adds no new mechanism; making its use visible
@@ -297,8 +297,8 @@ in the audit trail is what makes keeping it defensible.
 **So what.** It is a standing root credential with no expiry that cannot be revoked without
 restarting the process. While it is set, every least-privilege property claimed above is void for
 whoever holds it, which makes leaving it configured the most likely way a deployment of this server
-gets owned. The operator sequence is: set it for first start, create principals with `mdmctl
-principals create`, confirm `mdmctl status` reports break-glass active, unset it, restart, and
+gets owned. The operator sequence is: set it for first start, create principals with `dmctl
+principals create`, confirm `dmctl status` reports break-glass active, unset it, restart, and
 confirm status reports it gone. **An audit record carrying the actor `break-glass` after that point
 is an incident**, and it is a fixed string so that it can be alerted on. The runbook is in
 `docs/operations/deployment.md`.
@@ -307,11 +307,11 @@ Verified by: `app.TestBreakGlassAlongsideThePrincipalStore` (bootstraps an empty
 under its own actor, bypasses policy while a stored principal is refused, and is reported by
 `GET /config`), `app.TestAdminStoreOnTheProcessDatabase` (a principal from the server's own store
 authenticates, which is what made the store reachable at all), and
-`mdmctl.TestStatusReportsBreakGlass`.
+`dmctl.TestStatusReportsBreakGlass`.
 
 ### 2. The principal store is opened by the server (2026-09-03, phase 9)
 
-**What changed.** `adminauth/sqlstore` was imported only by its own tests: `cmd/mdmserver` never
+**What changed.** `adminauth/sqlstore` was imported only by its own tests: `cmd/dmserver` never
 set `Config.AdminStore`, so every claim in this record was true only of a store an in-process
 caller injected. `internal/app` now opens it on the process's own database, behind
 `DM_ADMIN_STORE`, following the same three-way selection as the other satellite stores -- an

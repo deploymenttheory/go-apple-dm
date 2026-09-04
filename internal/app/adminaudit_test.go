@@ -87,7 +87,7 @@ func TestAuditTrailAttributesAdminRequests(t *testing.T) {
 }
 
 // The route is mounted only when a trail exists, and it pages the way every
-// other listing does so mdmctl reads it with the client's existing helper.
+// other listing does so dmctl reads it with the client's existing helper.
 func TestAuditRouteListsAndPages(t *testing.T) {
 	a, st := auditApp(t, app.Config{})
 	srv := serve(t, a)

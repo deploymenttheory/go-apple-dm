@@ -43,7 +43,7 @@ const (
 )
 
 // AdminActions describes every action, with operator-facing prose naming the
-// consequence. `mdmctl policy actions` prints these, so an operator granting
+// consequence. `dmctl policy actions` prints these, so an operator granting
 // an action knows what they are granting rather than guessing from its name.
 func AdminActions() []adminauth.Action {
 	return []adminauth.Action{
@@ -148,7 +148,7 @@ func (a *App) buildAdminMux(routes []adminRoute) (http.Handler, error) {
 }
 
 // AdminRoutes returns the mounted admin route table: pattern, action, and
-// family, with no handlers. It is what GET /routes serves and what mdmctl
+// family, with no handlers. It is what GET /routes serves and what dmctl
 // reads to explain a 404.
 func (a *App) AdminRoutes() []adminRoute { return a.adminTable }
 

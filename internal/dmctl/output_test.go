@@ -1,4 +1,4 @@
-package mdmctl_test
+package dmctl_test
 
 import (
 	"context"
@@ -8,7 +8,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/deploymenttheory/go-apple-dm/internal/mdmctl"
+	"github.com/deploymenttheory/go-apple-dm/internal/dmctl"
 )
 
 // failWriter fails after n successful writes, so a write error partway
@@ -33,8 +33,8 @@ func jsonServer(t *testing.T, body string) map[string]string {
 	}))
 	t.Cleanup(srv.Close)
 	env := noConfig(t)
-	env["MDMCTL_SERVER"] = srv.URL
-	env["MDMCTL_TOKEN"] = "tok"
+	env["DMCTL_SERVER"] = srv.URL
+	env["DMCTL_TOKEN"] = "tok"
 	return env
 }
 
@@ -78,7 +78,7 @@ func TestWriteFailuresSurface(t *testing.T) {
 		"ndjson":      {"-output", "ndjson", "principals", "list"},
 	} {
 		var errBuf strings.Builder
-		err := mdmctl.Run(context.Background(), args, getenv, strings.NewReader(""),
+		err := dmctl.Run(context.Background(), args, getenv, strings.NewReader(""),
 			&failWriter{}, &errBuf)
 		if err == nil {
 			t.Errorf("%s: a failing stdout produced no error", name)
@@ -89,7 +89,7 @@ func TestWriteFailuresSurface(t *testing.T) {
 // An explain rendering failure is reported too.
 func TestExplainWriteFailure(t *testing.T) {
 	var errBuf strings.Builder
-	err := mdmctl.Run(context.Background(), []string{"explain", "DeviceLock"},
+	err := dmctl.Run(context.Background(), []string{"explain", "DeviceLock"},
 		func(string) string { return "" }, strings.NewReader(""),
 		&failWriter{}, &errBuf)
 	if err == nil {
@@ -105,7 +105,7 @@ func (failReader) Read([]byte) (int, error) { return 0, errors.New("pipe broken"
 func TestStdinFailureSurfaces(t *testing.T) {
 	env := jsonServer(t, `{"Name":"ops"}`)
 	var out, errBuf strings.Builder
-	err := mdmctl.Run(context.Background(), []string{"policies", "put", "ops"},
+	err := dmctl.Run(context.Background(), []string{"policies", "put", "ops"},
 		func(k string) string { return env[k] }, failReader{}, &out, &errBuf)
 	if err == nil {
 		t.Fatal("a failing stdin produced no error")

@@ -18,7 +18,7 @@ import (
 
 func main() {
 	if err := run(context.Background(), os.Args[1:], os.Getenv, os.Stdout); err != nil {
-		fmt.Fprintln(os.Stderr, "mdmserver:", err)
+		fmt.Fprintln(os.Stderr, "dmserver:", err)
 		os.Exit(1)
 	}
 }
@@ -28,7 +28,7 @@ func run(ctx context.Context, args []string, getenv func(string) string, out *os
 	if err != nil && !errors.Is(err, app.ErrConfig) {
 		return err
 	}
-	fs := flag.NewFlagSet("mdmserver", flag.ContinueOnError)
+	fs := flag.NewFlagSet("dmserver", flag.ContinueOnError)
 	fs.SetOutput(out)
 	var check, sendKey, recvKey, storageKeys string
 	role := fs.String("role", string(cfg.Role), "mdm, ddm, or all ("+app.EnvRole+")")
@@ -106,7 +106,7 @@ const (
 
 // errWorkersStuck reports workers that outlived the shutdown deadline. It is
 // a static error so callers can match it.
-var errWorkersStuck = errors.New("mdmserver: workers did not stop before the shutdown deadline")
+var errWorkersStuck = errors.New("dmserver: workers did not stop before the shutdown deadline")
 
 func serve(ctx context.Context, cfg app.Config) error {
 	ctx, stop := signal.NotifyContext(ctx, os.Interrupt, syscall.SIGTERM)
@@ -137,7 +137,7 @@ func serve(ctx context.Context, cfg app.Config) error {
 	go func() { workers <- a.Run(workerCtx) }()
 	serving := make(chan error, 1)
 	go func() {
-		cfg.Logger.Info("mdmserver: listening", "role", string(cfg.Role), "addr", cfg.Listen, "storage", cfg.Storage)
+		cfg.Logger.Info("dmserver: listening", "role", string(cfg.Role), "addr", cfg.Listen, "storage", cfg.Storage)
 		if err := srv.ListenAndServe(); !errors.Is(err, http.ErrServerClosed) {
 			serving <- err
 		}
@@ -160,7 +160,7 @@ func serve(ctx context.Context, cfg app.Config) error {
 	shutdownCtx, cancel := context.WithTimeout(context.Background(), shutdownTimeout)
 	defer cancel()
 	if err := srv.Shutdown(shutdownCtx); err != nil && first == nil {
-		first = fmt.Errorf("mdmserver: shutdown: %w", err)
+		first = fmt.Errorf("dmserver: shutdown: %w", err)
 	}
 	stopWorkers()
 	if !workersDone {

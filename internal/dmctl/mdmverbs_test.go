@@ -1,4 +1,4 @@
-package mdmctl_test
+package dmctl_test
 
 import (
 	"errors"
@@ -9,7 +9,7 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/deploymenttheory/go-apple-dm/internal/mdmctl"
+	"github.com/deploymenttheory/go-apple-dm/internal/dmctl"
 )
 
 // apiRecorder answers every admin route with a plausible body and remembers
@@ -67,8 +67,8 @@ func mdmServer(t *testing.T) (*apiRecorder, map[string]string) {
 	}))
 	t.Cleanup(srv.Close)
 	env := noConfig(t)
-	env["MDMCTL_SERVER"] = srv.URL
-	env["MDMCTL_TOKEN"] = "tok"
+	env["DMCTL_SERVER"] = srv.URL
+	env["DMCTL_TOKEN"] = "tok"
 	return rec, env
 }
 
@@ -236,7 +236,7 @@ func TestAPIVerb(t *testing.T) {
 
 	t.Run("NeedsAMethodAndPath", func(t *testing.T) {
 		_, env := mdmServer(t)
-		if _, _, err := run(t, env, "api", "GET"); !errors.Is(err, mdmctl.ErrUsage) {
+		if _, _, err := run(t, env, "api", "GET"); !errors.Is(err, dmctl.ErrUsage) {
 			t.Fatalf("err = %v, want ErrUsage", err)
 		}
 	})
@@ -265,7 +265,7 @@ func TestMDMVerbUsageErrors(t *testing.T) {
 		{"sets", "add", "lab"},
 		{"sets", "assign", "device", "UDID-1"},
 	} {
-		if _, _, err := run(t, env, args...); !errors.Is(err, mdmctl.ErrUsage) {
+		if _, _, err := run(t, env, args...); !errors.Is(err, dmctl.ErrUsage) {
 			t.Errorf("%v: err = %v, want ErrUsage", args, err)
 		}
 	}
@@ -297,11 +297,11 @@ func verbInvocations() [][]string {
 // usage rather than as a transport failure halfway through.
 func TestMDMVerbsRejectABadServer(t *testing.T) {
 	env := noConfig(t)
-	env["MDMCTL_SERVER"] = "ftp://example.com"
-	env["MDMCTL_TOKEN"] = "tok"
+	env["DMCTL_SERVER"] = "ftp://example.com"
+	env["DMCTL_TOKEN"] = "tok"
 	for _, args := range verbInvocations() {
 		full := append([]string{}, args...)
-		if _, _, err := runWithStdin(t, env, "{}", full...); !errors.Is(err, mdmctl.ErrUsage) {
+		if _, _, err := runWithStdin(t, env, "{}", full...); !errors.Is(err, dmctl.ErrUsage) {
 			t.Errorf("%v: err = %v, want ErrUsage", args, err)
 		}
 	}
@@ -321,8 +321,8 @@ func TestMDMVerbsExplainAMissingFamily(t *testing.T) {
 	}))
 	defer srv.Close()
 	env := noConfig(t)
-	env["MDMCTL_SERVER"] = srv.URL
-	env["MDMCTL_TOKEN"] = "tok"
+	env["DMCTL_SERVER"] = srv.URL
+	env["DMCTL_TOKEN"] = "tok"
 
 	_, _, err := run(t, env, "enrollments", "list")
 	if err == nil {
@@ -354,7 +354,7 @@ func TestMDMVerbsRejectAnUnknownFlag(t *testing.T) {
 	_, env := mdmServer(t)
 	for _, args := range verbInvocations() {
 		full := append(append([]string{}, args...), "-nonsense")
-		if _, _, err := runWithStdin(t, env, "{}", full...); !errors.Is(err, mdmctl.ErrUsage) {
+		if _, _, err := runWithStdin(t, env, "{}", full...); !errors.Is(err, dmctl.ErrUsage) {
 			t.Errorf("%v: err = %v, want ErrUsage", full, err)
 		}
 	}

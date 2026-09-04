@@ -61,9 +61,20 @@ it names one specific protocol — the check-in and command transport — not th
    of those would change bytes on the wire, which is the test that separates the two cases.
 3. One prefix per product, not one per binary. `DM_` for the server and `DMCTL_` for the CLI are
    the same word plus the tool's own name, rather than the unrelated pair `MDM_`/`MDMCTL_`. The
-   server half of the rename lands first; the CLI half arrives with the binary rename, so
-   `DMCTL_` and `internal/dmctl` postdate this record by one change.
-4. No compatibility shim. `ParseEnv` takes an injected getter, so a dual-read fallback would have
+   binaries follow the same rule: `mdmserver` and `mdmctl` became `dmserver` and `dmctl`, and
+   `internal/mdmctl` became `internal/dmctl`. The server half landed first and the CLI half in
+   the change after it.
+4. The tool's own name is not Apple's. `micromdm`'s CLI is also called `mdmctl`, so before this
+   change the two projects' tools collided on `$PATH` and in prose: decision record 0035 has to
+   say "micromdm's `cmd/mdmctl`" to disambiguate from ours in the same paragraph. `dmctl` removes
+   the collision, and the references to micromdm's tool keep their spelling because they name
+   someone else's program.
+
+The exception the rule keeps is the same one everywhere else: `internal/dmctl/mdmverbs.go` holds
+the verbs that drive the MDM protocol -- enrollments, commands, push, push certificates -- as
+against `verbs.go`, which drives the admin plane. That file keeps its name because "mdm" there
+names the protocol, not the tool.
+5. No compatibility shim. `ParseEnv` takes an injected getter, so a dual-read fallback would have
    been cheap to write and permanent to carry: two documented spellings for every value and a
    legacy map nobody deletes. The rename is a `BREAKING CHANGE` on a pre-1.0 reference server
    instead, which release-please records.
@@ -78,8 +89,11 @@ it names one specific protocol — the check-in and command transport — not th
    `other.TestConformanceRoundTrip` / `other.TestConformanceValidate` (prove claim 2 for Apple's
    vocabulary; these compare literal wire values against the pinned YAML and fail if one of those
    constants is renamed).
-4. `dmctl.TestDefaultConfigPathHomeFallback` and `dmctl.TestConfigTokenSources` (prove claim 3).
-5. `make test-e2e` with `scripts/testdb.sh` (proves claim 4 end to end: the `ddm` role runs in a
+4. `dmctl.TestDefaultConfigPathHomeFallback` and `dmctl.TestConfigTokenSources` (prove claim 3;
+   the config path they assert is `go-apple-dm/dmctl.json`, so the rename cannot half-land).
+   `dmctl.TestCmdMainStaysThin` parses `cmd/dmctl/main.go` by path and fails if the binary moves
+   without its test following (proves claim 4).
+5. `make test-e2e` with `scripts/testdb.sh` (proves claim 5 end to end: the `ddm` role runs in a
    container configured only by `-e DM_*`, so any variable missed by the rename fails the
    split-deployment hop rather than silently taking a default).
 

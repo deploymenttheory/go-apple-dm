@@ -1,4 +1,4 @@
-// Package main is the mdmserver command: it runs the reference server in one of three roles: mdm
+// Package main is the dmserver command: it runs the reference server in one of three roles: mdm
 // (check-in and connect), ddm (the declarative management engine behind
 // the internal hop and the admin API), or all (both in one process).
 //
@@ -13,10 +13,10 @@
 //
 // # Usage
 //
-//	mdmserver [-role mdm|ddm|all] [-listen :8080] [-storage sqlite|postgres|mysql|inmem]
+//	dmserver [-role mdm|ddm|all] [-listen :8080] [-storage sqlite|postgres|mysql|inmem]
 //	          [-dsn PATH_OR_DSN] [-ddm-url URL] [-ddm-send-key K] [-ddm-recv-key K]
 //	          [-admin-token T] [-ca-file PEM | -cert-header NAME] [-ddm-subscriptions=true]
-//	mdmserver -check http://127.0.0.1:8080/healthz
+//	dmserver -check http://127.0.0.1:8080/healthz
 //
 // # References
 //

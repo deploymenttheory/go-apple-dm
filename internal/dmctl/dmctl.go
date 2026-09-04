@@ -1,4 +1,4 @@
-package mdmctl
+package dmctl
 
 import (
 	"context"
@@ -12,7 +12,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/deploymenttheory/go-apple-dm/internal/mdmctl/adminclient"
+	"github.com/deploymenttheory/go-apple-dm/internal/dmctl/adminclient"
 )
 
 // Exit codes. They are documented and distinct so a script can tell a usage
@@ -59,7 +59,18 @@ type options struct {
 	verbose  bool
 }
 
-// DefaultServer is used when neither -server, MDMCTL_SERVER, nor the selected
+// Environment variables read for the global flags. The flag help quotes these
+// constants rather than repeating the names, so a rename cannot leave the help
+// describing a variable the tool no longer reads.
+const (
+	EnvServer  = "DMCTL_SERVER"
+	EnvToken   = "DMCTL_TOKEN" // #nosec G101 -- the variable name, not a credential
+	EnvContext = "DMCTL_CONTEXT"
+	EnvConfig  = "DMCTL_CONFIG"
+	EnvOutput  = "DMCTL_OUTPUT"
+)
+
+// DefaultServer is used when neither -server, DMCTL_SERVER, nor the selected
 // config context names one.
 const DefaultServer = "http://127.0.0.1:8080"
 
@@ -78,7 +89,7 @@ func Run(ctx context.Context, args []string, getenv func(string) string, stdin i
 	}
 	e := &env{stdin: stdin, stdout: stdout, stderr: stderr, getenv: getenv}
 
-	fs := newFlagSet("mdmctl", stderr)
+	fs := newFlagSet("dmctl", stderr)
 	e.opts.bind(fs, defaultsFromEnv(getenv))
 	fs.Usage = func() { usage(stderr, fs) }
 	if err := fs.Parse(args); err != nil {
@@ -100,7 +111,7 @@ func Run(ctx context.Context, args []string, getenv func(string) string, stdin i
 		return fmt.Errorf("%w: unknown command %q", ErrUsage, verb)
 	}
 	if e.opts.insecure {
-		fmt.Fprintln(stderr, "mdmctl: warning: -insecure disables TLS verification")
+		fmt.Fprintln(stderr, "dmctl: warning: -insecure disables TLS verification")
 	}
 	return cmd.run(ctx, e, rest)
 }
@@ -171,7 +182,7 @@ func commands() map[string]command {
 		{"export", "export enrollments for migration", runExport},
 		{"import", "import an exported enrollment record", runImport},
 		{"api", "call any admin route by method and path", runAPI},
-		{"version", "print the mdmctl version", runVersion},
+		{"version", "print the dmctl version", runVersion},
 	}
 	out := make(map[string]command, len(cmds))
 	for _, c := range cmds {
@@ -186,11 +197,11 @@ func defaultsFromEnv(getenv func(string) string) options {
 		// Left empty when unset so a config context's Server can apply.
 		// Defaulting here made e.opts.server never empty, which is what made
 		// the context field below unreachable.
-		server:  getenv("MDMCTL_SERVER"),
-		token:   getenv("MDMCTL_TOKEN"),
-		context: getenv("MDMCTL_CONTEXT"),
-		config:  getenv("MDMCTL_CONFIG"),
-		output:  firstNonEmpty(getenv("MDMCTL_OUTPUT"), outputHuman),
+		server:  getenv(EnvServer),
+		token:   getenv(EnvToken),
+		context: getenv(EnvContext),
+		config:  getenv(EnvConfig),
+		output:  firstNonEmpty(getenv(EnvOutput), outputHuman),
 		timeout: adminclient.DefaultTimeout,
 	}
 }
@@ -203,10 +214,10 @@ func defaultsFromEnv(getenv func(string) string) options {
 // operator wrote before the verb, which is the bug this signature exists to
 // prevent.
 func (o *options) bind(fs *flag.FlagSet, def options) {
-	fs.StringVar(&o.server, "server", def.server, "server base URL (MDMCTL_SERVER)")
-	fs.StringVar(&o.token, "token", def.token, "bearer token, @file, or env:NAME (MDMCTL_TOKEN)")
-	fs.StringVar(&o.context, "context", def.context, "context from the config file (MDMCTL_CONTEXT)")
-	fs.StringVar(&o.config, "config", def.config, "config file path (MDMCTL_CONFIG)")
+	fs.StringVar(&o.server, "server", def.server, "server base URL ("+EnvServer+")")
+	fs.StringVar(&o.token, "token", def.token, "bearer token, @file, or env:NAME ("+EnvToken+")")
+	fs.StringVar(&o.context, "context", def.context, "context from the config file ("+EnvContext+")")
+	fs.StringVar(&o.config, "config", def.config, "config file path ("+EnvConfig+")")
 	fs.StringVar(&o.output, "output", def.output, "output: human, json, or ndjson")
 	fs.IntVar(&o.limit, "limit", def.limit, "page size (0 uses the server default)")
 	fs.BoolVar(&o.all, "all", def.all, "follow cursors to the end of a listing")
@@ -223,7 +234,7 @@ func newFlagSet(name string, w io.Writer) *flag.FlagSet {
 }
 
 // verbFlags returns a flag set for a verb, seeded with the same global flag
-// variables so `mdmctl -json declarations list` and `mdmctl declarations list
+// variables so `dmctl -json declarations list` and `dmctl declarations list
 // -json` behave identically. The flag package stops at the first non-flag
 // argument, so without this the second form would not parse.
 func (e *env) verbFlags(name string) *flag.FlagSet {
@@ -238,7 +249,7 @@ func (e *env) verbFlags(name string) *flag.FlagSet {
 // reorder moves flag arguments ahead of positional ones.
 //
 // The flag package stops parsing at the first non-flag argument, so without
-// this `mdmctl explain DeviceLock -target macos:15.0` would silently ignore
+// this `dmctl explain DeviceLock -target macos:15.0` would silently ignore
 // the target and print the untargeted table: the worst kind of wrong, since
 // it answers a different question without saying so. Everything after "--" is
 // positional.
@@ -293,8 +304,8 @@ func (e *env) parseVerb(fs *flag.FlagSet, args []string) ([]string, error) {
 
 // usage prints the verb list and the global flags.
 func usage(w io.Writer, fs *flag.FlagSet) {
-	fmt.Fprintln(w, "mdmctl administers a go-apple-dm reference server.")
-	fmt.Fprintln(w, "\nUsage:\n  mdmctl [flags] <command> [flags] [arguments]")
+	fmt.Fprintln(w, "dmctl administers a go-apple-dm reference server.")
+	fmt.Fprintln(w, "\nUsage:\n  dmctl [flags] <command> [flags] [arguments]")
 	fmt.Fprintln(w, "\nCommands:")
 	cmds := commands()
 	names := make([]string, 0, len(cmds))
@@ -348,14 +359,14 @@ func readTokenSpec(spec string, getenv func(string) string) (string, error) {
 	case strings.HasPrefix(spec, "@"):
 		raw, err := os.ReadFile(spec[1:])
 		if err != nil {
-			return "", fmt.Errorf("mdmctl: read token file: %w", err)
+			return "", fmt.Errorf("dmctl: read token file: %w", err)
 		}
 		return strings.TrimSpace(string(raw)), nil
 	case strings.HasPrefix(spec, "env:"):
 		name := strings.TrimPrefix(spec, "env:")
 		v := strings.TrimSpace(getenv(name))
 		if v == "" {
-			return "", fmt.Errorf("mdmctl: %s is empty", name)
+			return "", fmt.Errorf("dmctl: %s is empty", name)
 		}
 		return v, nil
 	default:
@@ -370,7 +381,7 @@ func (e *env) client() (*adminclient.Client, error) {
 	if err != nil {
 		return nil, err
 	}
-	// Precedence: the -server flag or MDMCTL_SERVER, then the selected config
+	// Precedence: the -server flag or DMCTL_SERVER, then the selected config
 	// context, then the built-in default.
 	if server == "" {
 		if cfg, cerr := e.loadConfig(); cerr == nil && cfg != nil {
@@ -382,7 +393,7 @@ func (e *env) client() (*adminclient.Client, error) {
 	}
 	var trace func(string)
 	if e.opts.verbose {
-		trace = func(s string) { fmt.Fprintln(e.stderr, "mdmctl:", s) }
+		trace = func(s string) { fmt.Fprintln(e.stderr, "dmctl:", s) }
 	}
 	c, err := adminclient.New(adminclient.Config{
 		BaseURL: server, Token: tok, Timeout: e.opts.timeout,

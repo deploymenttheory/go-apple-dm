@@ -1,4 +1,4 @@
-package mdmctl_test
+package dmctl_test
 
 import (
 	"errors"
@@ -9,7 +9,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/deploymenttheory/go-apple-dm/internal/mdmctl"
+	"github.com/deploymenttheory/go-apple-dm/internal/dmctl"
 )
 
 // Everything after "--" is positional, so an argument that looks like a flag
@@ -17,7 +17,7 @@ import (
 func TestDoubleDashEndsFlags(t *testing.T) {
 	env := noConfig(t)
 	_, errOut, err := run(t, env, "explain", "--", "-not-a-flag")
-	if !errors.Is(err, mdmctl.ErrUsage) {
+	if !errors.Is(err, dmctl.ErrUsage) {
 		t.Fatalf("err = %v, want a not-found usage error", err)
 	}
 	// It was treated as an identifier to look up, not as an unknown flag.
@@ -30,7 +30,7 @@ func TestDoubleDashEndsFlags(t *testing.T) {
 // rather than silently ignored.
 func TestUnknownFlagAfterPositional(t *testing.T) {
 	_, errOut, err := run(t, noConfig(t), "explain", "DeviceLock", "-nope")
-	if !errors.Is(err, mdmctl.ErrUsage) {
+	if !errors.Is(err, dmctl.ErrUsage) {
 		t.Fatalf("err = %v, want ErrUsage", err)
 	}
 	if !strings.Contains(errOut, "nope") {
@@ -72,7 +72,7 @@ func TestConfigTokenSources(t *testing.T) {
 
 	write := func(t *testing.T, body string) string {
 		t.Helper()
-		path := filepath.Join(t.TempDir(), "mdmctl.json")
+		path := filepath.Join(t.TempDir(), "dmctl.json")
 		if err := os.WriteFile(path, []byte(body), 0o600); err != nil {
 			t.Fatal(err)
 		}
@@ -86,7 +86,7 @@ func TestConfigTokenSources(t *testing.T) {
 			t.Fatal(err)
 		}
 		path := write(t, `{"current":"lab","contexts":{"lab":{"server":"`+srv.URL+`","token_file":"`+tok+`"}}}`)
-		if _, _, err := run(t, map[string]string{"MDMCTL_CONFIG": path, "MDMCTL_SERVER": srv.URL}, "status"); err != nil {
+		if _, _, err := run(t, map[string]string{"DMCTL_CONFIG": path, "DMCTL_SERVER": srv.URL}, "status"); err != nil {
 			t.Fatalf("token_file: %v", err)
 		}
 	})
@@ -94,21 +94,21 @@ func TestConfigTokenSources(t *testing.T) {
 	// An inlined token still works; it is writing one that takes a flag.
 	t.Run("InlineToken", func(t *testing.T) {
 		path := write(t, `{"current":"lab","contexts":{"lab":{"server":"`+srv.URL+`","token":"from-config"}}}`)
-		if _, _, err := run(t, map[string]string{"MDMCTL_CONFIG": path, "MDMCTL_SERVER": srv.URL}, "status"); err != nil {
+		if _, _, err := run(t, map[string]string{"DMCTL_CONFIG": path, "DMCTL_SERVER": srv.URL}, "status"); err != nil {
 			t.Fatalf("inline token: %v", err)
 		}
 	})
 
 	t.Run("MissingTokenFile", func(t *testing.T) {
 		path := write(t, `{"current":"lab","contexts":{"lab":{"server":"x","token_file":"/no/such/file"}}}`)
-		if _, _, err := run(t, map[string]string{"MDMCTL_CONFIG": path}, "status"); err == nil {
+		if _, _, err := run(t, map[string]string{"DMCTL_CONFIG": path}, "status"); err == nil {
 			t.Fatal("a missing token file was accepted")
 		}
 	})
 
 	t.Run("EmptyTokenEnv", func(t *testing.T) {
 		path := write(t, `{"current":"lab","contexts":{"lab":{"server":"x","token_env":"UNSET"}}}`)
-		if _, _, err := run(t, map[string]string{"MDMCTL_CONFIG": path}, "status"); err == nil {
+		if _, _, err := run(t, map[string]string{"DMCTL_CONFIG": path}, "status"); err == nil {
 			t.Fatal("an unset token variable was accepted")
 		}
 	})
@@ -116,7 +116,7 @@ func TestConfigTokenSources(t *testing.T) {
 	// No "current" and no -context means no credential rather than a crash.
 	t.Run("NoCurrentContext", func(t *testing.T) {
 		path := write(t, `{"contexts":{"lab":{"server":"x"}}}`)
-		env := map[string]string{"MDMCTL_CONFIG": path, "MDMCTL_SERVER": srv.URL}
+		env := map[string]string{"DMCTL_CONFIG": path, "DMCTL_SERVER": srv.URL}
 		if _, _, err := run(t, env, "status"); err == nil {
 			t.Fatal("expected the request to be refused with no credential")
 		}
@@ -124,19 +124,19 @@ func TestConfigTokenSources(t *testing.T) {
 }
 
 func TestDefaultConfigPathHomeFallback(t *testing.T) {
-	got := mdmctl.DefaultConfigPath(func(k string) string {
+	got := dmctl.DefaultConfigPath(func(k string) string {
 		if k == "HOME" {
 			return "/home/op"
 		}
 		return ""
 	})
-	want := filepath.Join("/home/op", ".config", "go-apple-dm", "mdmctl.json")
+	want := filepath.Join("/home/op", ".config", "go-apple-dm", "dmctl.json")
 	if got != want {
 		t.Fatalf("DefaultConfigPath = %q, want %q", got, want)
 	}
-	// MDMCTL_CONFIG wins over both.
-	if got := mdmctl.DefaultConfigPath(func(k string) string {
-		if k == "MDMCTL_CONFIG" {
+	// DMCTL_CONFIG wins over both.
+	if got := dmctl.DefaultConfigPath(func(k string) string {
+		if k == "DMCTL_CONFIG" {
 			return "/explicit.json"
 		}
 		return "/home/op"
@@ -178,7 +178,7 @@ func TestBadFlagOnSubcommands(t *testing.T) {
 		{"routes", "-bogus"},
 		{"actions", "-bogus"},
 	} {
-		if _, _, err := run(t, env, args...); !errors.Is(err, mdmctl.ErrUsage) {
+		if _, _, err := run(t, env, args...); !errors.Is(err, dmctl.ErrUsage) {
 			t.Errorf("%v: err = %v, want ErrUsage", args, err)
 		}
 	}
@@ -190,10 +190,10 @@ func TestBadFlagOnSubcommands(t *testing.T) {
 func TestUnreadableConfig(t *testing.T) {
 	dir := t.TempDir()
 	// A directory where a file belongs: stat succeeds, reading does not.
-	if err := os.Mkdir(filepath.Join(dir, "mdmctl.json"), 0o700); err != nil {
+	if err := os.Mkdir(filepath.Join(dir, "dmctl.json"), 0o700); err != nil {
 		t.Fatal(err)
 	}
-	if _, _, err := run(t, map[string]string{"MDMCTL_CONFIG": filepath.Join(dir, "mdmctl.json")}, "status"); err == nil {
+	if _, _, err := run(t, map[string]string{"DMCTL_CONFIG": filepath.Join(dir, "dmctl.json")}, "status"); err == nil {
 		t.Fatal("an unreadable config was accepted")
 	}
 }
@@ -207,8 +207,8 @@ func TestNotFoundWithUnreachableConfig(t *testing.T) {
 	}))
 	defer srv.Close()
 	env := noConfig(t)
-	env["MDMCTL_SERVER"] = srv.URL
-	env["MDMCTL_TOKEN"] = "tok"
+	env["DMCTL_SERVER"] = srv.URL
+	env["DMCTL_TOKEN"] = "tok"
 	_, _, err := run(t, env, "principals", "list")
 	if err == nil || !strings.Contains(err.Error(), "not found") {
 		t.Fatalf("err = %v, want the original not-found", err)

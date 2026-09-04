@@ -1,4 +1,4 @@
-# 0035: `mdmctl` structure, output, and credential handling
+# 0035: `dmctl` structure, output, and credential handling
 
 Status: accepted
 Date: 2026-09-02
@@ -7,9 +7,9 @@ Phase: 8
 ## Apple sources
 
 - Doc: <https://developer.apple.com/documentation/devicemanagement/commands-and-queries>
-  (`mdmctl commands send` composes these)
+  (`dmctl commands send` composes these)
 - Doc: <https://developer.apple.com/documentation/devicemanagement/devicemanagement-declarations>
-  (`mdmctl declarations` manages these)
+  (`dmctl declarations` manages these)
 - YAML: `third_party/device-management/mdm/commands/*.yaml` (the payloads `commands send` builds and
   the generated `Validate` it runs before the server sees them)
 
@@ -27,14 +27,14 @@ is what other MDM admin CLIs got right and wrong.
 - `micromdm/nanomdm@494831912abf895b41d533b5a9d81e2d6aa8ae10` `cmd/nano2nano/main.go`
 - `fleetdm/fleet@111bc85f1d6cf1e7952efb6f9ea9d6277c36529a` `server/service/middleware/auth/api_only.go`
   (the endpoint-restricted API-only user, the closest thing to a scoped CLI credential)
-- Ours: `cmd/mdmserver/main.go` (the testable-`run` shape), `cmd/admgen/main.go` (subcommand
+- Ours: `cmd/dmserver/main.go` (the testable-`run` shape), `cmd/admgen/main.go` (subcommand
   dispatch), `scripts/coverage-gate.sh`, `scripts/coverage-exempt.txt`
 
 ## Known pitfalls found
 
 - `micromdm/micromdm` `cmd/mdmctl/config.go:239,243`: the API token is written in cleartext to
   `~/.micromdm/<name>.json`; the file is `0600` but the directory is created `0777`, and
-  `mdmctl config print` echoes the token to stdout.
+  `dmctl config print` echoes the token to stdout.
 - `micromdm/micromdm` `cmd/mdmctl/config.go:27`: a `skip_verify` flag becomes
   `tls.Config{InsecureSkipVerify: true}` with no warning at use.
 - `micromdm/micromdm` `cmd/mdmctl/get.go:45`, `config.go:38`: `os.Exit(1)` from inside subcommand
@@ -59,7 +59,7 @@ is what other MDM admin CLIs got right and wrong.
 - Ours: `scripts/coverage-gate.sh:92` computes the overall figure from every package in the merged
   profile, and `make test` runs `-coverpkg=./...`, so `cmd/` statements count toward the total even
   though `scripts/coverage-exempt.txt` exempts the package. The exemption suppresses the per-package
-  FAIL line only. `cmd/mdmserver/main.go` is already 109 lines against the plan's "<100".
+  FAIL line only. `cmd/dmserver/main.go` is already 109 lines against the plan's "<100".
 
 ## What they do
 
@@ -79,11 +79,11 @@ is what other MDM admin CLIs got right and wrong.
 
 ## What we do better
 
-1. The CLI's logic is gated at 95%, not hidden behind the `cmd/` exemption. `cmd/mdmctl/main.go` is
-   a single function that parses argv and calls `mdmctl.Run`; everything else lives in
-   `internal/mdmctl`, `internal/mdmctl/adminclient` and `internal/mdmctl/explain`. This is forced by
+1. The CLI's logic is gated at 95%, not hidden behind the `cmd/` exemption. `cmd/dmctl/main.go` is
+   a single function that parses argv and calls `dmctl.Run`; everything else lives in
+   `internal/dmctl`, `internal/dmctl/adminclient` and `internal/dmctl/explain`. This is forced by
    arithmetic, not taste: exempt packages still contribute statements to the overall figure, so a
-   3000-line uncovered `cmd/mdmctl` would fail `make ci` outright. A test parses the exempt file and
+   3000-line uncovered `cmd/dmctl` would fail `make ci` outright. A test parses the exempt file and
    fails when it grows a second function. micromdm's `cmd/mdmctl` is 3185 lines with three trivial
    tests; nanohubctl has none.
 2. The config file stores a reference to a credential, never the credential: `token_env` or
@@ -112,29 +112,29 @@ is what other MDM admin CLIs got right and wrong.
 
 ## Verified by
 
-1. `mdmctl.TestCmdMainStaysThin` (parses `cmd/mdmctl/main.go` with `go/parser` and fails on a second
-   function or excess length), plus `internal/mdmctl` and its two subpackages passing the 95% gate
+1. `dmctl.TestCmdMainStaysThin` (parses `cmd/dmctl/main.go` with `go/parser` and fails on a second
+   function or excess length), plus `internal/dmctl` and its two subpackages passing the 95% gate
    (prove claim 1; would fail on micromdm and nanohubctl, whose CLI logic is untestable in `cmd/`
    and behind a global singleton respectively).
-2. `mdmctl.TestConfig/NeverWritesTokenByDefault`, `/RefusesWorldReadable`, `/RefusesGroupReadable`,
+2. `dmctl.TestConfig/NeverWritesTokenByDefault`, `/RefusesWorldReadable`, `/RefusesGroupReadable`,
    `/InlineRequiresFlagAndWarns`, `/TokenNotAPositionalArgument` (prove claim 2; would fail on
    micromdm, which writes cleartext under a `0777` directory, and on nanohubctl, which additionally
    prints the key).
-3. `mdmctl.TestOutput/JSONIsVerbatim`, `/NDJSONStreamsItems` (prove claim 3; would fail on
+3. `dmctl.TestOutput/JSONIsVerbatim`, `/NDJSONStreamsItems` (prove claim 3; would fail on
    nanohubctl because `MarshalIndent` re-renders the body).
-4. `mdmctl.TestPagination/FollowsCursorWithAll`, `/CursorGoesToStderr` (prove claim 4; would fail on
+4. `dmctl.TestPagination/FollowsCursorWithAll`, `/CursorGoesToStderr` (prove claim 4; would fail on
    all three references, none of which paginate).
-5. `mdmctl.TestExitCodes/Usage`, `/Auth`, `/Partial`, `/RequestFailed` (prove claim 5; would fail on
+5. `dmctl.TestExitCodes/Usage`, `/Auth`, `/Partial`, `/RequestFailed` (prove claim 5; would fail on
    micromdm and nanohubctl, which `os.Exit(1)` or `log.Fatal` from inside subcommands).
-6. `mdmctl.TestNotFoundExplainsRole` (proves claim 6).
-7. `mdmctl.TestCommandsSend/PayloadFromFile`, `/PayloadFromSet`, `/PayloadFromStdin`,
+6. `dmctl.TestNotFoundExplainsRole` (proves claim 6).
+7. `dmctl.TestCommandsSend/PayloadFromFile`, `/PayloadFromSet`, `/PayloadFromStdin`,
    `/DryRunNeedsNoServer`, `/TargetSyntaxMatchesResolve` (prove claim 7; `nano2nano` and the kmfddm
    scripts have no local validation at all).
 
 Failing-path coverage per the repo rule: `adminclient.TestDo/Timeout`, `/BadJSON`,
-`/NonJSONErrorBody`, `/RedirectRefused`, `/BodyTooLarge`; `mdmctl.TestGlobalFlagsAfterVerb` (the
+`/NonJSONErrorBody`, `/RedirectRefused`, `/BodyTooLarge`; `dmctl.TestGlobalFlagsAfterVerb` (the
 `flag` package stops at the first non-flag argument, so the verb's flag set is seeded with the same
-global variables and both orderings must agree); `mdmctl.TestEveryVerbHasHelp`.
+global variables and both orderings must agree); `dmctl.TestEveryVerbHasHelp`.
 
 End to end: `e2e.TestE2E_AdminCLI` (E2E-024).
 
@@ -143,7 +143,7 @@ End to end: `e2e.TestE2E_AdminCLI` (E2E-024).
 - cobra, urfave/cli, or viper (nanohubctl uses two of the three): a new module dependency, which
   records 0031 and 0032 refused on principle. `flag` plus a dispatch map is enough for a verb tree,
   and `cmd/admgen` already sets the precedent in this repo.
-- A public `mdmctl` or `adminclient` package: phase 10 freezes the public API for two minor
+- A public `dmctl` or `adminclient` package: phase 10 freezes the public API for two minor
   releases, and the admin routes are being redesigned in this same phase. Promoting the client is a
   phase 10 decision once the routes have settled.
 - One package instead of three: `.golangci.yml` enables `gocyclo`, and three packages give three

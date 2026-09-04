@@ -35,12 +35,12 @@
         "id": "admin-plane",
         "label": "Admin plane",
         "focus": [
-          "mdmctl",
+          "dmctl",
           "adminapi",
           "depaxm",
           "appleapis"
         ],
-        "note": "mdmctl authenticates with a bearer token; Cedar authorizes each admin action."
+        "note": "dmctl authenticates with a bearer token; Cedar authorizes each admin action."
       }
     ],
     "repository": {
@@ -92,9 +92,9 @@
       ]
     },
     {
-      "id": "mdmctl",
+      "id": "dmctl",
       "type": "frontend",
-      "label": "mdmctl",
+      "label": "dmctl",
       "sublabel": "admin CLI",
       "pos": [
         40,
@@ -341,7 +341,7 @@
     },
     {
       "id": "cli-admin",
-      "from": "mdmctl",
+      "from": "dmctl",
       "to": "adminapi",
       "label": "Bearer token",
       "variant": "security"

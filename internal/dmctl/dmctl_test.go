@@ -1,4 +1,4 @@
-package mdmctl_test
+package dmctl_test
 
 import (
 	"context"
@@ -10,8 +10,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/deploymenttheory/go-apple-dm/internal/mdmctl"
-	"github.com/deploymenttheory/go-apple-dm/internal/mdmctl/adminclient"
+	"github.com/deploymenttheory/go-apple-dm/internal/dmctl"
+	"github.com/deploymenttheory/go-apple-dm/internal/dmctl/adminclient"
 )
 
 // run executes the CLI and returns stdout, stderr, and the error.
@@ -19,7 +19,7 @@ func run(t *testing.T, env map[string]string, args ...string) (string, string, e
 	t.Helper()
 	var out, errBuf strings.Builder
 	getenv := func(k string) string { return env[k] }
-	err := mdmctl.Run(context.Background(), args, getenv, strings.NewReader(""), &out, &errBuf)
+	err := dmctl.Run(context.Background(), args, getenv, strings.NewReader(""), &out, &errBuf)
 	return out.String(), errBuf.String(), err
 }
 
@@ -28,7 +28,7 @@ func runWithStdin(t *testing.T, env map[string]string, stdin string, args ...str
 	t.Helper()
 	var out, errBuf strings.Builder
 	getenv := func(k string) string { return env[k] }
-	err := mdmctl.Run(context.Background(), args, getenv, strings.NewReader(stdin), &out, &errBuf)
+	err := dmctl.Run(context.Background(), args, getenv, strings.NewReader(stdin), &out, &errBuf)
 	return out.String(), errBuf.String(), err
 }
 
@@ -36,13 +36,13 @@ func runWithStdin(t *testing.T, env map[string]string, stdin string, args ...str
 // never influences a test.
 func noConfig(t *testing.T) map[string]string {
 	t.Helper()
-	return map[string]string{"MDMCTL_CONFIG": filepath.Join(t.TempDir(), "absent.json")}
+	return map[string]string{"DMCTL_CONFIG": filepath.Join(t.TempDir(), "absent.json")}
 }
 
 func TestUsage(t *testing.T) {
 	t.Run("NoCommand", func(t *testing.T) {
 		_, errOut, err := run(t, noConfig(t))
-		if !errors.Is(err, mdmctl.ErrUsage) {
+		if !errors.Is(err, dmctl.ErrUsage) {
 			t.Fatalf("err = %v, want ErrUsage", err)
 		}
 		if !strings.Contains(errOut, "Commands:") {
@@ -52,14 +52,14 @@ func TestUsage(t *testing.T) {
 
 	t.Run("UnknownCommand", func(t *testing.T) {
 		_, _, err := run(t, noConfig(t), "nope")
-		if !errors.Is(err, mdmctl.ErrUsage) {
+		if !errors.Is(err, dmctl.ErrUsage) {
 			t.Fatalf("err = %v, want ErrUsage", err)
 		}
 	})
 
 	t.Run("BadFlag", func(t *testing.T) {
 		_, _, err := run(t, noConfig(t), "-nosuchflag", "version")
-		if !errors.Is(err, mdmctl.ErrUsage) {
+		if !errors.Is(err, dmctl.ErrUsage) {
 			t.Fatalf("err = %v, want ErrUsage", err)
 		}
 	})
@@ -68,7 +68,7 @@ func TestUsage(t *testing.T) {
 	// being discoverable.
 	t.Run("EveryVerbIsListed", func(t *testing.T) {
 		_, errOut, _ := run(t, noConfig(t))
-		for _, verb := range mdmctl.Verbs() {
+		for _, verb := range dmctl.Verbs() {
 			if !strings.Contains(errOut, verb) {
 				t.Errorf("verb %q is missing from the help", verb)
 			}
@@ -83,16 +83,16 @@ func TestExitCodes(t *testing.T) {
 		err  error
 		want int
 	}{
-		"ok":         {nil, mdmctl.ExitOK},
-		"usage":      {mdmctl.ErrUsage, mdmctl.ExitUsage},
-		"partial":    {mdmctl.ErrPartial, mdmctl.ExitPartial},
-		"unauth":     {adminclient.ErrUnauthorized, mdmctl.ExitAuth},
-		"forbidden":  {adminclient.ErrForbidden, mdmctl.ExitAuth},
-		"notfound":   {adminclient.ErrNotFound, mdmctl.ExitFailed},
-		"transport":  {errors.New("boom"), mdmctl.ExitFailed},
-		"wrapped401": {errors.Join(errors.New("x"), adminclient.ErrUnauthorized), mdmctl.ExitAuth},
+		"ok":         {nil, dmctl.ExitOK},
+		"usage":      {dmctl.ErrUsage, dmctl.ExitUsage},
+		"partial":    {dmctl.ErrPartial, dmctl.ExitPartial},
+		"unauth":     {adminclient.ErrUnauthorized, dmctl.ExitAuth},
+		"forbidden":  {adminclient.ErrForbidden, dmctl.ExitAuth},
+		"notfound":   {adminclient.ErrNotFound, dmctl.ExitFailed},
+		"transport":  {errors.New("boom"), dmctl.ExitFailed},
+		"wrapped401": {errors.Join(errors.New("x"), adminclient.ErrUnauthorized), dmctl.ExitAuth},
 	} {
-		if got := mdmctl.ExitCode(tc.err); got != tc.want {
+		if got := dmctl.ExitCode(tc.err); got != tc.want {
 			t.Errorf("%s: ExitCode = %d, want %d", name, got, tc.want)
 		}
 	}
@@ -136,14 +136,14 @@ func TestExplainVerb(t *testing.T) {
 	env := noConfig(t)
 
 	t.Run("NeedsAnArgument", func(t *testing.T) {
-		if _, _, err := run(t, env, "explain"); !errors.Is(err, mdmctl.ErrUsage) {
+		if _, _, err := run(t, env, "explain"); !errors.Is(err, dmctl.ErrUsage) {
 			t.Fatalf("err = %v, want ErrUsage", err)
 		}
 	})
 
 	t.Run("SuggestsOnANearMiss", func(t *testing.T) {
 		_, errOut, err := run(t, env, "explain", "DeviceLok")
-		if !errors.Is(err, mdmctl.ErrUsage) {
+		if !errors.Is(err, dmctl.ErrUsage) {
 			t.Fatalf("err = %v, want ErrUsage", err)
 		}
 		if !strings.Contains(errOut, "did you mean") || !strings.Contains(errOut, "DeviceLock") {
@@ -164,7 +164,7 @@ func TestExplainVerb(t *testing.T) {
 		if err != nil || !strings.Contains(out, "DeviceLock.") {
 			t.Fatalf("paths = %q, %v", out, err)
 		}
-		if _, _, err := run(t, env, "explain", "-list", "-family", "nope"); !errors.Is(err, mdmctl.ErrUsage) {
+		if _, _, err := run(t, env, "explain", "-list", "-family", "nope"); !errors.Is(err, dmctl.ErrUsage) {
 			t.Fatalf("unknown family: %v", err)
 		}
 	})
@@ -188,7 +188,7 @@ func TestExplainVerb(t *testing.T) {
 	})
 
 	t.Run("BadTarget", func(t *testing.T) {
-		if _, _, err := run(t, env, "explain", "DeviceLock", "-target", "linux:1"); !errors.Is(err, mdmctl.ErrUsage) {
+		if _, _, err := run(t, env, "explain", "DeviceLock", "-target", "linux:1"); !errors.Is(err, dmctl.ErrUsage) {
 			t.Fatalf("err = %v, want ErrUsage", err)
 		}
 	})
@@ -225,8 +225,8 @@ func TestServerVerbs(t *testing.T) {
 	}))
 	defer srv.Close()
 	env := noConfig(t)
-	env["MDMCTL_SERVER"] = srv.URL
-	env["MDMCTL_TOKEN"] = "tok"
+	env["DMCTL_SERVER"] = srv.URL
+	env["DMCTL_TOKEN"] = "tok"
 
 	t.Run("Status", func(t *testing.T) {
 		out, _, err := run(t, env, "status")
@@ -278,27 +278,27 @@ func TestServerVerbs(t *testing.T) {
 	})
 
 	t.Run("UnknownOutputMode", func(t *testing.T) {
-		if _, _, err := run(t, env, "-output", "yaml", "status"); !errors.Is(err, mdmctl.ErrUsage) {
+		if _, _, err := run(t, env, "-output", "yaml", "status"); !errors.Is(err, dmctl.ErrUsage) {
 			t.Fatalf("err = %v, want ErrUsage", err)
 		}
 	})
 
 	t.Run("BadCredentialIsExitAuth", func(t *testing.T) {
 		bad := noConfig(t)
-		bad["MDMCTL_SERVER"] = srv.URL
-		bad["MDMCTL_TOKEN"] = "wrong"
+		bad["DMCTL_SERVER"] = srv.URL
+		bad["DMCTL_TOKEN"] = "wrong"
 		_, _, err := run(t, bad, "status")
-		if mdmctl.ExitCode(err) != mdmctl.ExitAuth {
-			t.Fatalf("exit = %d, want ExitAuth for %v", mdmctl.ExitCode(err), err)
+		if dmctl.ExitCode(err) != dmctl.ExitAuth {
+			t.Fatalf("exit = %d, want ExitAuth for %v", dmctl.ExitCode(err), err)
 		}
 	})
 
 	t.Run("SubcommandRequired", func(t *testing.T) {
 		for _, verb := range []string{"principals", "policies", "declarations"} {
-			if _, _, err := run(t, env, verb); !errors.Is(err, mdmctl.ErrUsage) {
+			if _, _, err := run(t, env, verb); !errors.Is(err, dmctl.ErrUsage) {
 				t.Errorf("%s with no subcommand: %v", verb, err)
 			}
-			if _, _, err := run(t, env, verb, "nope"); !errors.Is(err, mdmctl.ErrUsage) {
+			if _, _, err := run(t, env, verb, "nope"); !errors.Is(err, dmctl.ErrUsage) {
 				t.Errorf("%s nope: %v", verb, err)
 			}
 		}
@@ -306,8 +306,8 @@ func TestServerVerbs(t *testing.T) {
 
 	t.Run("BadServerURL", func(t *testing.T) {
 		bad := noConfig(t)
-		bad["MDMCTL_SERVER"] = "not a url"
-		if _, _, err := run(t, bad, "status"); !errors.Is(err, mdmctl.ErrUsage) {
+		bad["DMCTL_SERVER"] = "not a url"
+		if _, _, err := run(t, bad, "status"); !errors.Is(err, dmctl.ErrUsage) {
 			t.Fatalf("err = %v, want ErrUsage", err)
 		}
 	})
@@ -339,7 +339,7 @@ func TestServerVerbs(t *testing.T) {
 func TestConfig(t *testing.T) {
 	t.Run("TokenByReference", func(t *testing.T) {
 		dir := t.TempDir()
-		path := filepath.Join(dir, "mdmctl.json")
+		path := filepath.Join(dir, "dmctl.json")
 		if err := os.WriteFile(path, []byte(`{"current":"lab","contexts":{"lab":{"server":"http://x","token_env":"LAB_TOKEN"}}}`), 0o600); err != nil {
 			t.Fatal(err)
 		}
@@ -352,9 +352,9 @@ func TestConfig(t *testing.T) {
 		}))
 		defer srv.Close()
 		env := map[string]string{
-			"MDMCTL_CONFIG": path,
-			"LAB_TOKEN":     "from-env",
-			"MDMCTL_SERVER": srv.URL,
+			"DMCTL_CONFIG": path,
+			"LAB_TOKEN":    "from-env",
+			"DMCTL_SERVER": srv.URL,
 		}
 		if _, _, err := run(t, env, "status"); err != nil {
 			t.Fatalf("status with a referenced token: %v", err)
@@ -365,50 +365,50 @@ func TestConfig(t *testing.T) {
 	// what makes the leak matter.
 	t.Run("RefusesWorldReadable", func(t *testing.T) {
 		dir := t.TempDir()
-		path := filepath.Join(dir, "mdmctl.json")
+		path := filepath.Join(dir, "dmctl.json")
 		if err := os.WriteFile(path, []byte(`{"current":"lab","contexts":{"lab":{"server":"http://x"}}}`), 0o644); err != nil {
 			t.Fatal(err)
 		}
-		_, _, err := run(t, map[string]string{"MDMCTL_CONFIG": path}, "status")
-		if !errors.Is(err, mdmctl.ErrConfigPermissions) {
+		_, _, err := run(t, map[string]string{"DMCTL_CONFIG": path}, "status")
+		if !errors.Is(err, dmctl.ErrConfigPermissions) {
 			t.Fatalf("err = %v, want ErrConfigPermissions", err)
 		}
 	})
 
 	t.Run("UnknownContext", func(t *testing.T) {
 		dir := t.TempDir()
-		path := filepath.Join(dir, "mdmctl.json")
+		path := filepath.Join(dir, "dmctl.json")
 		if err := os.WriteFile(path, []byte(`{"current":"lab","contexts":{"lab":{"server":"http://x"}}}`), 0o600); err != nil {
 			t.Fatal(err)
 		}
-		_, _, err := run(t, map[string]string{"MDMCTL_CONFIG": path}, "-context", "nope", "status")
-		if !errors.Is(err, mdmctl.ErrUsage) {
+		_, _, err := run(t, map[string]string{"DMCTL_CONFIG": path}, "-context", "nope", "status")
+		if !errors.Is(err, dmctl.ErrUsage) {
 			t.Fatalf("err = %v, want ErrUsage", err)
 		}
 	})
 
 	t.Run("MalformedConfig", func(t *testing.T) {
 		dir := t.TempDir()
-		path := filepath.Join(dir, "mdmctl.json")
+		path := filepath.Join(dir, "dmctl.json")
 		if err := os.WriteFile(path, []byte(`{`), 0o600); err != nil {
 			t.Fatal(err)
 		}
-		if _, _, err := run(t, map[string]string{"MDMCTL_CONFIG": path}, "status"); err == nil {
+		if _, _, err := run(t, map[string]string{"DMCTL_CONFIG": path}, "status"); err == nil {
 			t.Fatal("a malformed config was accepted")
 		}
 	})
 
 	t.Run("DefaultPath", func(t *testing.T) {
-		got := mdmctl.DefaultConfigPath(func(k string) string {
+		got := dmctl.DefaultConfigPath(func(k string) string {
 			if k == "XDG_CONFIG_HOME" {
 				return "/tmp/cfg"
 			}
 			return ""
 		})
-		if got != filepath.Join("/tmp/cfg", "go-apple-dm", "mdmctl.json") {
+		if got != filepath.Join("/tmp/cfg", "go-apple-dm", "dmctl.json") {
 			t.Fatalf("DefaultConfigPath = %q", got)
 		}
-		if mdmctl.DefaultConfigPath(func(string) string { return "" }) != "" {
+		if dmctl.DefaultConfigPath(func(string) string { return "" }) != "" {
 			t.Fatal("DefaultConfigPath with no HOME should be empty")
 		}
 	})
@@ -439,7 +439,7 @@ func TestTokenSpecs(t *testing.T) {
 		"env":    "env:SOME_TOKEN",
 	} {
 		env := noConfig(t)
-		env["MDMCTL_SERVER"] = srv.URL
+		env["DMCTL_SERVER"] = srv.URL
 		env["SOME_TOKEN"] = "secret-value"
 		if _, _, err := run(t, env, "-token", spec, "status"); err != nil {
 			t.Errorf("%s: %v", name, err)
@@ -447,7 +447,7 @@ func TestTokenSpecs(t *testing.T) {
 	}
 
 	env := noConfig(t)
-	env["MDMCTL_SERVER"] = srv.URL
+	env["DMCTL_SERVER"] = srv.URL
 	if _, _, err := run(t, env, "-token", "@"+filepath.Join(dir, "absent"), "status"); err == nil {
 		t.Fatal("a missing token file was accepted")
 	}
@@ -488,8 +488,8 @@ func TestStatusReportsBreakGlass(t *testing.T) {
 			}))
 			defer srv.Close()
 			env := noConfig(t)
-			env["MDMCTL_SERVER"] = srv.URL
-			env["MDMCTL_TOKEN"] = "tok"
+			env["DMCTL_SERVER"] = srv.URL
+			env["DMCTL_TOKEN"] = "tok"
 			out, _, err := run(t, env, "status")
 			if err != nil {
 				t.Fatal(err)
@@ -524,8 +524,8 @@ func TestAuditVerb(t *testing.T) {
 	}))
 	defer srv.Close()
 	env := noConfig(t)
-	env["MDMCTL_SERVER"] = srv.URL
-	env["MDMCTL_TOKEN"] = "tok"
+	env["DMCTL_SERVER"] = srv.URL
+	env["DMCTL_TOKEN"] = "tok"
 
 	t.Run("List", func(t *testing.T) {
 		out, _, err := run(t, env, "audit", "list")
@@ -579,19 +579,19 @@ func TestAuditVerb(t *testing.T) {
 	})
 
 	t.Run("BadAge", func(t *testing.T) {
-		if _, _, err := run(t, env, "audit", "list", "-since", "yesterday"); !errors.Is(err, mdmctl.ErrUsage) {
+		if _, _, err := run(t, env, "audit", "list", "-since", "yesterday"); !errors.Is(err, dmctl.ErrUsage) {
 			t.Fatalf("err = %v, want ErrUsage", err)
 		}
 	})
 
 	t.Run("NoSubcommand", func(t *testing.T) {
-		if _, _, err := run(t, env, "audit"); !errors.Is(err, mdmctl.ErrUsage) {
+		if _, _, err := run(t, env, "audit"); !errors.Is(err, dmctl.ErrUsage) {
 			t.Fatalf("err = %v, want ErrUsage", err)
 		}
 	})
 
 	t.Run("UnknownSubcommand", func(t *testing.T) {
-		if _, _, err := run(t, env, "audit", "purge"); !errors.Is(err, mdmctl.ErrUsage) {
+		if _, _, err := run(t, env, "audit", "purge"); !errors.Is(err, dmctl.ErrUsage) {
 			t.Fatalf("err = %v, want ErrUsage", err)
 		}
 	})
@@ -600,7 +600,7 @@ func TestAuditVerb(t *testing.T) {
 // A config context names a server, which is most of the point of having
 // contexts. The fallback that read it was guarded by `e.opts.server == ""`,
 // which defaultsFromEnv made impossible, so the field was dead: every
-// invocation went to the built-in default unless -server or MDMCTL_SERVER
+// invocation went to the built-in default unless -server or DMCTL_SERVER
 // said otherwise.
 func TestServerPrecedence(t *testing.T) {
 	newServer := func(t *testing.T, name string, hit *string) *httptest.Server {
@@ -618,12 +618,12 @@ func TestServerPrecedence(t *testing.T) {
 		var hit string
 		srv := newServer(t, "context", &hit)
 		dir := t.TempDir()
-		path := filepath.Join(dir, "mdmctl.json")
+		path := filepath.Join(dir, "dmctl.json")
 		body := `{"current":"lab","contexts":{"lab":{"server":"` + srv.URL + `","token":"t"}}}`
 		if err := os.WriteFile(path, []byte(body), 0o600); err != nil {
 			t.Fatal(err)
 		}
-		if _, _, err := run(t, map[string]string{"MDMCTL_CONFIG": path}, "status"); err != nil {
+		if _, _, err := run(t, map[string]string{"DMCTL_CONFIG": path}, "status"); err != nil {
 			t.Fatalf("status: %v", err)
 		}
 		if hit != "context" {
@@ -636,12 +636,12 @@ func TestServerPrecedence(t *testing.T) {
 		ctxSrv := newServer(t, "context", &ctxHit)
 		flagSrv := newServer(t, "flag", &flagHit)
 		dir := t.TempDir()
-		path := filepath.Join(dir, "mdmctl.json")
+		path := filepath.Join(dir, "dmctl.json")
 		body := `{"current":"lab","contexts":{"lab":{"server":"` + ctxSrv.URL + `","token":"t"}}}`
 		if err := os.WriteFile(path, []byte(body), 0o600); err != nil {
 			t.Fatal(err)
 		}
-		env := map[string]string{"MDMCTL_CONFIG": path}
+		env := map[string]string{"DMCTL_CONFIG": path}
 		if _, _, err := run(t, env, "-server", flagSrv.URL, "status"); err != nil {
 			t.Fatalf("status: %v", err)
 		}
@@ -655,12 +655,12 @@ func TestServerPrecedence(t *testing.T) {
 		ctxSrv := newServer(t, "context", &ctxHit)
 		envSrv := newServer(t, "env", &envHit)
 		dir := t.TempDir()
-		path := filepath.Join(dir, "mdmctl.json")
+		path := filepath.Join(dir, "dmctl.json")
 		body := `{"current":"lab","contexts":{"lab":{"server":"` + ctxSrv.URL + `","token":"t"}}}`
 		if err := os.WriteFile(path, []byte(body), 0o600); err != nil {
 			t.Fatal(err)
 		}
-		env := map[string]string{"MDMCTL_CONFIG": path, "MDMCTL_SERVER": envSrv.URL, "MDMCTL_TOKEN": "t"}
+		env := map[string]string{"DMCTL_CONFIG": path, "DMCTL_SERVER": envSrv.URL, "DMCTL_TOKEN": "t"}
 		if _, _, err := run(t, env, "status"); err != nil {
 			t.Fatalf("status: %v", err)
 		}
@@ -676,7 +676,7 @@ func TestServerPrecedence(t *testing.T) {
 		// Nothing is listening there in a test, so this is a transport
 		// failure rather than a usage error: the point is that a server was
 		// chosen at all.
-		if errors.Is(err, mdmctl.ErrUsage) {
+		if errors.Is(err, dmctl.ErrUsage) {
 			t.Fatalf("no default server was applied: %v", err)
 		}
 	})

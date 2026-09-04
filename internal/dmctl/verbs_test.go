@@ -1,4 +1,4 @@
-package mdmctl_test
+package dmctl_test
 
 import (
 	"context"
@@ -12,7 +12,7 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/deploymenttheory/go-apple-dm/internal/mdmctl"
+	"github.com/deploymenttheory/go-apple-dm/internal/dmctl"
 )
 
 // fakeAdmin records what the CLI sent and answers like the real admin API.
@@ -94,8 +94,8 @@ func fakeServer(t *testing.T) (*fakeAdmin, map[string]string) {
 	srv := httptest.NewServer(http.HandlerFunc(f.serve))
 	t.Cleanup(srv.Close)
 	env := noConfig(t)
-	env["MDMCTL_SERVER"] = srv.URL
-	env["MDMCTL_TOKEN"] = "tok"
+	env["DMCTL_SERVER"] = srv.URL
+	env["DMCTL_TOKEN"] = "tok"
 	return f, env
 }
 
@@ -122,7 +122,7 @@ func TestPrincipalVerbs(t *testing.T) {
 	})
 
 	t.Run("CreateNeedsAName", func(t *testing.T) {
-		if _, _, err := run(t, env, "principals", "create"); !errors.Is(err, mdmctl.ErrUsage) {
+		if _, _, err := run(t, env, "principals", "create"); !errors.Is(err, dmctl.ErrUsage) {
 			t.Fatalf("err = %v, want ErrUsage", err)
 		}
 	})
@@ -153,14 +153,14 @@ func TestPrincipalVerbs(t *testing.T) {
 		if got := f.last(); got.method != http.MethodPatch || !strings.Contains(got.body, "ops") {
 			t.Fatalf("request = %+v", got)
 		}
-		if _, _, err := run(t, env, "principals", "set-roles"); !errors.Is(err, mdmctl.ErrUsage) {
+		if _, _, err := run(t, env, "principals", "set-roles"); !errors.Is(err, dmctl.ErrUsage) {
 			t.Fatal("set-roles with no name should be a usage error")
 		}
 	})
 
 	t.Run("NamesAreRequired", func(t *testing.T) {
 		for _, sub := range []string{"get", "rotate", "revoke", "delete"} {
-			if _, _, err := run(t, env, "principals", sub); !errors.Is(err, mdmctl.ErrUsage) {
+			if _, _, err := run(t, env, "principals", sub); !errors.Is(err, dmctl.ErrUsage) {
 				t.Errorf("principals %s with no name: %v", sub, err)
 			}
 		}
@@ -260,7 +260,7 @@ func TestPolicyVerbs(t *testing.T) {
 
 	t.Run("PutFromStdin", func(t *testing.T) {
 		var out, errOut strings.Builder
-		err := mdmctl.Run(context.Background(),
+		err := dmctl.Run(context.Background(),
 			[]string{"policies", "put", "ops"},
 			func(k string) string { return env[k] },
 			strings.NewReader("permit (principal, action, resource);"),
@@ -287,7 +287,7 @@ func TestPolicyVerbs(t *testing.T) {
 
 	t.Run("NamesAreRequired", func(t *testing.T) {
 		for _, sub := range []string{"get", "put", "delete"} {
-			if _, _, err := run(t, env, "policies", sub); !errors.Is(err, mdmctl.ErrUsage) {
+			if _, _, err := run(t, env, "policies", sub); !errors.Is(err, dmctl.ErrUsage) {
 				t.Errorf("policies %s with no name: %v", sub, err)
 			}
 		}
@@ -326,7 +326,7 @@ func TestDeclarationVerbs(t *testing.T) {
 
 	t.Run("NamesAreRequired", func(t *testing.T) {
 		for _, sub := range []string{"get", "delete"} {
-			if _, _, err := run(t, env, "declarations", sub); !errors.Is(err, mdmctl.ErrUsage) {
+			if _, _, err := run(t, env, "declarations", sub); !errors.Is(err, dmctl.ErrUsage) {
 				t.Errorf("declarations %s with no name: %v", sub, err)
 			}
 		}
@@ -346,8 +346,8 @@ func TestNotFoundExplainsRole(t *testing.T) {
 	}))
 	defer srv.Close()
 	env := noConfig(t)
-	env["MDMCTL_SERVER"] = srv.URL
-	env["MDMCTL_TOKEN"] = "tok"
+	env["DMCTL_SERVER"] = srv.URL
+	env["DMCTL_TOKEN"] = "tok"
 
 	_, _, err := run(t, env, "principals", "list")
 	if err == nil {
@@ -373,8 +373,8 @@ func TestEveryVerbSurfacesAServerFailure(t *testing.T) {
 	}))
 	defer srv.Close()
 	env := noConfig(t)
-	env["MDMCTL_SERVER"] = srv.URL
-	env["MDMCTL_TOKEN"] = "tok"
+	env["DMCTL_SERVER"] = srv.URL
+	env["DMCTL_TOKEN"] = "tok"
 
 	dir := t.TempDir()
 	src := filepath.Join(dir, "src")
@@ -403,8 +403,8 @@ func TestEveryVerbSurfacesAServerFailure(t *testing.T) {
 	} {
 		if _, _, err := run(t, env, args...); err == nil {
 			t.Errorf("%s: a 500 produced no error", name)
-		} else if mdmctl.ExitCode(err) != mdmctl.ExitFailed {
-			t.Errorf("%s: exit = %d, want ExitFailed", name, mdmctl.ExitCode(err))
+		} else if dmctl.ExitCode(err) != dmctl.ExitFailed {
+			t.Errorf("%s: exit = %d, want ExitFailed", name, dmctl.ExitCode(err))
 		}
 	}
 }
@@ -413,7 +413,7 @@ func TestEveryVerbSurfacesAServerFailure(t *testing.T) {
 func TestReadSourceDash(t *testing.T) {
 	f, env := fakeServer(t)
 	var out, errBuf strings.Builder
-	err := mdmctl.Run(context.Background(),
+	err := dmctl.Run(context.Background(),
 		[]string{"policies", "put", "ops", "-file", "-"},
 		func(k string) string { return env[k] },
 		strings.NewReader("permit (principal, action, resource);"),
