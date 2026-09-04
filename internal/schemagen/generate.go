@@ -23,7 +23,11 @@ type GeneratedFrom struct {
 	Commit     string `json:"commit"`
 	YAMLSHA256 string `json:"yaml_sha256"`
 	OSVersions string `json:"os_versions"`
-	Fetched    string `json:"fetched"`
+	// CommitDate is the committer date of Commit, as YYYY-MM-DD. It records
+	// when Apple published the change rather than when the generator ran, so the
+	// file stays a function of the checkout and make verify can hold it to
+	// the same determinism as the generated Go.
+	CommitDate string `json:"commit_date"`
 	Generator  string `json:"generator"`
 }
 
@@ -41,16 +45,33 @@ func ReadGeneratedFrom(path string) (*GeneratedFrom, error) {
 }
 
 // Run loads the tree, builds packages, and generates files.
+//
+// The commit is read from the checkout when Options.Commit is empty, which is
+// how every caller outside the tests uses it. Reading it from the output
+// directory instead, as the CLI once did, meant that bumping the submodule and
+// regenerating stamped the commit the tree had just moved away from.
 func Run(schemaRoot string, opts Options) (Files, error) {
 	tree, err := Load(schemaRoot)
 	if err != nil {
 		return nil, err
 	}
+	if opts.Commit == "" {
+		opts.Commit = gitHEAD(schemaRoot)
+	}
 	pkgs, err := Build(tree)
 	if err != nil {
 		return nil, err
 	}
-	return Generate(pkgs, opts)
+	files, err := Generate(pkgs, opts)
+	if err != nil {
+		return nil, err
+	}
+	record, err := describe(schemaRoot, tree, opts.Commit)
+	if err != nil {
+		return nil, err
+	}
+	files[generatedFromFile] = record
+	return files, nil
 }
 
 // Write stores files under outDir, creating package directories and

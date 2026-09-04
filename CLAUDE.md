@@ -32,7 +32,9 @@ See `docs/research/decisions/0044-repository-layout.md`.
 - Read at least two reference implementations before writing a feature (`make refs` clones them
   under `third_party/refs/`, read-only). Never copy code from them.
 - Generated code lives only under `schema/` and is produced by `make generate` from the pinned
-  submodule `third_party/device-management`. Never hand-edit `*.gen.go`.
+  submodule `third_party/device-management`. Never hand-edit `*.gen.go`,
+  `schema/EXPORTED_IDENTIFIERS.lock`, or `schema/GENERATED_FROM.json`: all three are generated and
+  `make verify` holds them to it. `schema/ALLOWED_REMOVALS.md` is the one file there you do edit.
 - Coverage floor is 95% overall and per non-exempt package (`scripts/coverage-exempt.txt`).
   Every exported function has a failing-path test.
 - Do not add a dependency on `deploymenttheory/go-sdk-appleservices`.

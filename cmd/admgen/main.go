@@ -4,8 +4,7 @@ import (
 	"flag"
 	"fmt"
 	"os"
-	"os/exec"
-	"strings"
+	"sort"
 
 	"github.com/deploymenttheory/go-apple-dm/v3/internal/schemagen"
 )
@@ -25,9 +24,11 @@ func run(args []string, out *os.File) error {
 		return err
 	}
 	if fs.NArg() != 1 {
-		return fmt.Errorf("usage: admgen [-schema dir] [-out dir] generate|verify|identifiers")
+		return fmt.Errorf("usage: admgen [-schema dir] [-out dir] generate|verify|identifiers|versions")
 	}
-	opts := schemagen.Options{Commit: commitOf(*schemaRoot, *outDir)}
+	// Commit is left empty: schemagen reads it from the checkout. Reading it
+	// from the output directory made a submodule bump stamp the old commit.
+	opts := schemagen.Options{}
 	switch fs.Arg(0) {
 	case "generate":
 		files, err := schemagen.Run(*schemaRoot, opts)
@@ -45,6 +46,21 @@ func run(args []string, out *os.File) error {
 		}
 		fmt.Fprintln(out, "verify: ok")
 		return nil
+	case "versions":
+		tree, err := schemagen.Load(*schemaRoot)
+		if err != nil {
+			return err
+		}
+		newest := schemagen.NewestIntroduced(tree)
+		families := make([]string, 0, len(newest))
+		for f := range newest {
+			families = append(families, f)
+		}
+		sort.Strings(families)
+		for _, f := range families {
+			fmt.Fprintf(out, "%s\t%s\n", f, newest[f])
+		}
+		return nil
 	case "identifiers":
 		files, err := schemagen.Run(*schemaRoot, opts)
 		if err != nil {
@@ -54,17 +70,4 @@ func run(args []string, out *os.File) error {
 		return err
 	}
 	return fmt.Errorf("unknown command %q", fs.Arg(0))
-}
-
-// commitOf returns the pinned commit from GENERATED_FROM.json, falling back to
-// the checkout's git HEAD.
-func commitOf(schemaRoot, outDir string) string {
-	if p, err := schemagen.ReadGeneratedFrom(outDir + "/GENERATED_FROM.json"); err == nil && p.Commit != "" {
-		return p.Commit
-	}
-	cmd := exec.Command("git", "-C", schemaRoot, "rev-parse", "HEAD") // #nosec G204 -- operator-supplied checkout path
-	if b, err := cmd.Output(); err == nil {
-		return strings.TrimSpace(string(b))
-	}
-	return "unknown"
 }
