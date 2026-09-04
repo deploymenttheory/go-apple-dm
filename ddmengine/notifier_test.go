@@ -1,4 +1,4 @@
-package ddm_test
+package ddmengine_test
 
 import (
 	"context"
@@ -10,6 +10,8 @@ import (
 	"testing"
 	"testing/synctest"
 	"time"
+
+	"github.com/deploymenttheory/go-apple-dm/ddmengine"
 
 	"github.com/deploymenttheory/go-apple-dm/ddm"
 	"github.com/deploymenttheory/go-apple-dm/ddm/ddmtest"
@@ -102,12 +104,12 @@ type notifierFixture struct {
 	enq      *fakeEnqueuer
 	pusher   *fakePusher
 	bus      *event.Bus
-	notifier *ddm.Notifier
+	notifier *ddmengine.Notifier
 	events   []event.Event
 	evMu     sync.Mutex
 }
 
-func newNotifierFixture(t *testing.T, mutate func(*ddm.NotifierConfig)) *notifierFixture {
+func newNotifierFixture(t *testing.T, mutate func(*ddmengine.NotifierConfig)) *notifierFixture {
 	t.Helper()
 	f := &notifierFixture{store: ddminmem.New(), clock: clock.NewFake(notifierT0), enq: &fakeEnqueuer{}, pusher: &fakePusher{}, bus: event.New()}
 	f.bus.Subscribe(event.DDMChanged, func(_ context.Context, e event.Event) error {
@@ -121,14 +123,14 @@ func newNotifierFixture(t *testing.T, mutate func(*ddm.NotifierConfig)) *notifie
 	if err != nil {
 		t.Fatalf("engine: %v", err)
 	}
-	cfg := ddm.NotifierConfig{Store: f.store, Tokens: f.engine, Enqueuer: f.enq, Pusher: f.pusher, Bus: f.bus, Clock: f.clock}
+	cfg := ddmengine.NotifierConfig{Store: f.store, Tokens: f.engine, Enqueuer: f.enq, Pusher: f.pusher, Bus: f.bus, Clock: f.clock}
 	if mutate != nil {
 		mutate(&cfg)
 	}
 	if cfg.Clock != f.clock {
 		// The engine must stamp changes with the same clock the notifier reads
 		// (a synctest bubble's real clock, for the Run tests).
-		sameTokens := cfg.Tokens == ddm.TokenSource(f.engine)
+		sameTokens := cfg.Tokens == ddmengine.TokenSource(f.engine)
 		if f.engine, err = ddm.New(ddm.Config{Store: f.store, Clock: cfg.Clock}); err != nil {
 			t.Fatalf("engine: %v", err)
 		}
@@ -136,7 +138,7 @@ func newNotifierFixture(t *testing.T, mutate func(*ddm.NotifierConfig)) *notifie
 			cfg.Tokens = f.engine
 		}
 	}
-	f.notifier, err = ddm.NewNotifier(cfg)
+	f.notifier, err = ddmengine.NewNotifier(cfg)
 	if err != nil {
 		t.Fatalf("notifier: %v", err)
 	}
@@ -155,7 +157,7 @@ func (f *notifierFixture) assignFresh(t *testing.T, id mdm.EnrollmentID, name st
 	}
 }
 
-func (f *notifierFixture) drain(t *testing.T) ddm.DrainResult {
+func (f *notifierFixture) drain(t *testing.T) ddmengine.DrainResult {
 	t.Helper()
 	res, err := f.notifier.DrainOnce(context.Background())
 	if err != nil {
@@ -180,13 +182,13 @@ func TestNewNotifier(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		cases := map[string]ddm.NotifierConfig{
+		cases := map[string]ddmengine.NotifierConfig{
 			"no store":    {Tokens: eng, Enqueuer: &fakeEnqueuer{}},
 			"no tokens":   {Store: st, Enqueuer: &fakeEnqueuer{}},
 			"no enqueuer": {Store: st, Tokens: eng},
 		}
 		for name, cfg := range cases {
-			if _, err := ddm.NewNotifier(cfg); !errors.Is(err, ddm.ErrNotifierConfig) {
+			if _, err := ddmengine.NewNotifier(cfg); !errors.Is(err, ddmengine.ErrNotifierConfig) {
 				t.Errorf("%s: err = %v, want ErrNotifierConfig", name, err)
 			}
 		}
@@ -197,7 +199,7 @@ func TestNewNotifier(t *testing.T) {
 			t.Fatal("nil notifier")
 		}
 		// A zero-value drain over an empty store succeeds with defaults.
-		if res := f.drain(t); res != (ddm.DrainResult{}) {
+		if res := f.drain(t); res != (ddmengine.DrainResult{}) {
 			t.Fatalf("drain = %+v, want zero", res)
 		}
 	})
@@ -216,7 +218,7 @@ func TestNotifier(t *testing.T) {
 		if res.Deferred != 1 || res.Queued != 0 {
 			t.Fatalf("within window: %+v, want 1 deferred", res)
 		}
-		f.clock.Advance(ddm.DefaultNotifyWindow)
+		f.clock.Advance(ddmengine.DefaultNotifyWindow)
 		res = f.drain(t)
 		if res.Queued != 1 || res.Pushed != 1 {
 			t.Fatalf("after window: %+v, want 1 queued 1 pushed", res)
@@ -237,7 +239,7 @@ func TestNotifier(t *testing.T) {
 			ids = append(ids, id)
 			f.assignFresh(t, id, fmt.Sprintf("com.example.only.%d", i))
 		}
-		f.clock.Advance(ddm.DefaultNotifyWindow)
+		f.clock.Advance(ddmengine.DefaultNotifyWindow)
 		res := f.drain(t)
 		if res.Queued != n || res.Pushed != n {
 			t.Fatalf("drain = %+v, want %d queued and pushed", res, n)
@@ -249,7 +251,7 @@ func TestNotifier(t *testing.T) {
 			}
 			id := c.ids[0]
 			seen[id] = true
-			if c.opts.DedupeKey != ddm.DefaultDedupeKey {
+			if c.opts.DedupeKey != ddmengine.DefaultDedupeKey {
 				t.Fatalf("dedupe key = %q", c.opts.DedupeKey)
 			}
 			dm, ok := c.cmd.Payload.(*commands.DeclarativeManagement)
@@ -282,7 +284,7 @@ func TestNotifier(t *testing.T) {
 		dev := ddmtest.Device(1)
 		f.enq.skip = map[mdm.EnrollmentID]error{dev: fmt.Errorf("%w: pending", storage.ErrConflict)}
 		f.assignFresh(t, dev, "com.example.dedupe")
-		f.clock.Advance(ddm.DefaultNotifyWindow)
+		f.clock.Advance(ddmengine.DefaultNotifyWindow)
 		res := f.drain(t)
 		if res.Deduped != 1 || res.Pushed != 1 || res.Queued != 0 {
 			t.Fatalf("drain = %+v, want 1 deduped and pushed", res)
@@ -296,7 +298,7 @@ func TestNotifier(t *testing.T) {
 		dev := ddmtest.Device(1)
 		f.enq.skip = map[mdm.EnrollmentID]error{dev: fmt.Errorf("%w: %s", storage.ErrDisabled, dev.ID)}
 		f.assignFresh(t, dev, "com.example.disabled")
-		f.clock.Advance(ddm.DefaultNotifyWindow)
+		f.clock.Advance(ddmengine.DefaultNotifyWindow)
 		res := f.drain(t)
 		if res.Skipped != 1 || res.Pushed != 0 {
 			t.Fatalf("drain = %+v, want 1 skipped 0 pushed", res)
@@ -312,7 +314,7 @@ func TestNotifier(t *testing.T) {
 		f := newNotifierFixture(t, nil)
 		dev := ddmtest.Device(1)
 		f.assignFresh(t, dev, "com.example.retry")
-		f.clock.Advance(ddm.DefaultNotifyWindow)
+		f.clock.Advance(ddmengine.DefaultNotifyWindow)
 		f.enq.err = errors.New("queue down")
 		res := f.drain(t)
 		if res.Failed != 1 || res.Pushed != 0 {
@@ -326,7 +328,7 @@ func TestNotifier(t *testing.T) {
 			t.Fatalf("next = %v, want %v", rows[0].NextAttemptAt, want)
 		}
 		// Not due yet: nothing happens.
-		if res := f.drain(t); res != (ddm.DrainResult{}) {
+		if res := f.drain(t); res != (ddmengine.DrainResult{}) {
 			t.Fatalf("early drain = %+v", res)
 		}
 		f.enq.err = nil
@@ -339,12 +341,12 @@ func TestNotifier(t *testing.T) {
 		}
 	})
 	t.Run("TokensFailureRecorded", func(t *testing.T) {
-		f := newNotifierFixture(t, func(c *ddm.NotifierConfig) {
+		f := newNotifierFixture(t, func(c *ddmengine.NotifierConfig) {
 			c.Tokens = tokensFunc(func(context.Context, mdm.EnrollmentID) ([]byte, error) { return nil, errors.New("boom") })
 		})
 		dev := ddmtest.Device(1)
 		f.assignFresh(t, dev, "com.example.tokens")
-		f.clock.Advance(ddm.DefaultNotifyWindow)
+		f.clock.Advance(ddmengine.DefaultNotifyWindow)
 		if res := f.drain(t); res.Failed != 1 {
 			t.Fatalf("drain = %+v", res)
 		}
@@ -356,7 +358,7 @@ func TestNotifier(t *testing.T) {
 		f := newNotifierFixture(t, nil)
 		dev := ddmtest.Device(1)
 		f.assignFresh(t, dev, "com.example.push")
-		f.clock.Advance(ddm.DefaultNotifyWindow)
+		f.clock.Advance(ddmengine.DefaultNotifyWindow)
 		f.pusher.err = errors.New("apns down")
 		if res := f.drain(t); res.Failed != 1 || res.Pushed != 0 {
 			t.Fatalf("drain = %+v, want 1 failed", res)
@@ -393,7 +395,7 @@ func TestNotifier(t *testing.T) {
 		f := newNotifierFixture(t, nil)
 		dev := ddmtest.Device(1)
 		f.assignFresh(t, dev, "com.example.rejected")
-		f.clock.Advance(ddm.DefaultNotifyWindow)
+		f.clock.Advance(ddmengine.DefaultNotifyWindow)
 		f.pusher.results = map[mdm.EnrollmentID]push.Result{dev: {
 			Outcome: push.OutcomeRejected, Status: 400,
 			Err: fmt.Errorf("%w: 400 DeviceTokenNotForTopic", push.ErrRejected),
@@ -410,10 +412,10 @@ func TestNotifier(t *testing.T) {
 		}
 	})
 	t.Run("NoPusherStillCompletes", func(t *testing.T) {
-		f := newNotifierFixture(t, func(c *ddm.NotifierConfig) { c.Pusher = nil })
+		f := newNotifierFixture(t, func(c *ddmengine.NotifierConfig) { c.Pusher = nil })
 		dev := ddmtest.Device(1)
 		f.assignFresh(t, dev, "com.example.nopush")
-		f.clock.Advance(ddm.DefaultNotifyWindow)
+		f.clock.Advance(ddmengine.DefaultNotifyWindow)
 		if res := f.drain(t); res.Queued != 1 || res.Pushed != 1 {
 			t.Fatalf("drain = %+v", res)
 		}
@@ -425,13 +427,13 @@ func TestNotifier(t *testing.T) {
 		for _, method := range []string{"PendingChanges", "CompleteChanges", "FailChanges"} {
 			t.Run(method, func(t *testing.T) {
 				var failing *ddmtest.Failing
-				f := newNotifierFixture(t, func(c *ddm.NotifierConfig) {
+				f := newNotifierFixture(t, func(c *ddmengine.NotifierConfig) {
 					failing = &ddmtest.Failing{Store: c.Store.(ddm.Store), Fail: map[string]error{}}
 					c.Store = failing
 				})
 				dev := ddmtest.Device(1)
 				f.assignFresh(t, dev, "com.example.store")
-				f.clock.Advance(ddm.DefaultNotifyWindow)
+				f.clock.Advance(ddmengine.DefaultNotifyWindow)
 				if method == "FailChanges" {
 					f.enq.err = errors.New("queue down")
 				}
@@ -448,7 +450,7 @@ func TestNotifier(t *testing.T) {
 		dev := ddmtest.Device(1)
 		f.assignFresh(t, dev, "com.example.ev1")
 		f.assignFresh(t, dev, "com.example.ev2")
-		f.clock.Advance(ddm.DefaultNotifyWindow)
+		f.clock.Advance(ddmengine.DefaultNotifyWindow)
 		f.drain(t)
 		f.evMu.Lock()
 		defer f.evMu.Unlock()
@@ -468,12 +470,12 @@ func TestNotifier(t *testing.T) {
 		f := newNotifierFixture(t, nil)
 		dev := ddmtest.Device(1)
 		f.assignFresh(t, dev, "com.example.gone")
-		f.clock.Advance(ddm.DefaultNotifyWindow)
+		f.clock.Advance(ddmengine.DefaultNotifyWindow)
 		f.drain(t)
 		if err := f.engine.DeleteDeclaration(ctx, "com.example.gone"); err != nil {
 			t.Fatal(err)
 		}
-		f.clock.Advance(ddm.DefaultNotifyWindow)
+		f.clock.Advance(ddmengine.DefaultNotifyWindow)
 		if res := f.drain(t); res.Queued != 1 {
 			t.Fatalf("delete drain = %+v, want 1 queued", res)
 		}
@@ -482,9 +484,9 @@ func TestNotifier(t *testing.T) {
 		}
 	})
 	t.Run("NoBus", func(t *testing.T) {
-		f := newNotifierFixture(t, func(c *ddm.NotifierConfig) { c.Bus = nil })
+		f := newNotifierFixture(t, func(c *ddmengine.NotifierConfig) { c.Bus = nil })
 		f.assignFresh(t, ddmtest.Device(1), "com.example.nobus")
-		f.clock.Advance(ddm.DefaultNotifyWindow)
+		f.clock.Advance(ddmengine.DefaultNotifyWindow)
 		if res := f.drain(t); res.Queued != 1 {
 			t.Fatalf("drain = %+v", res)
 		}
@@ -492,7 +494,7 @@ func TestNotifier(t *testing.T) {
 	t.Run("PublishErrorLogged", func(t *testing.T) {
 		f := newNotifierFixture(t, nil)
 		f.assignFresh(t, ddmtest.Device(1), "com.example.closedbus")
-		f.clock.Advance(ddm.DefaultNotifyWindow)
+		f.clock.Advance(ddmengine.DefaultNotifyWindow)
 		if err := f.bus.Close(ctx); err != nil {
 			t.Fatal(err)
 		}
@@ -505,12 +507,12 @@ func TestNotifier(t *testing.T) {
 	})
 	t.Run("PushFailureStoreErrorSurfaces", func(t *testing.T) {
 		var failing *ddmtest.Failing
-		f := newNotifierFixture(t, func(c *ddm.NotifierConfig) {
+		f := newNotifierFixture(t, func(c *ddmengine.NotifierConfig) {
 			failing = &ddmtest.Failing{Store: c.Store.(ddm.Store), Fail: map[string]error{}}
 			c.Store = failing
 		})
 		f.assignFresh(t, ddmtest.Device(1), "com.example.pushstore")
-		f.clock.Advance(ddm.DefaultNotifyWindow)
+		f.clock.Advance(ddmengine.DefaultNotifyWindow)
 		f.pusher.err = errors.New("apns down")
 		failing.Fail["FailChanges"] = errors.New("disk on fire")
 		if _, err := f.notifier.DrainOnce(ctx); !errors.Is(err, ddm.ErrNotifier) {
@@ -519,7 +521,7 @@ func TestNotifier(t *testing.T) {
 	})
 	t.Run("KickWakesRunImmediately", func(t *testing.T) {
 		synctest.Test(t, func(t *testing.T) {
-			f := newNotifierFixture(t, func(c *ddm.NotifierConfig) {
+			f := newNotifierFixture(t, func(c *ddmengine.NotifierConfig) {
 				c.Clock = clock.Real{}
 				c.Poll = time.Hour
 				c.Window = 0
@@ -542,7 +544,7 @@ func TestNotifier(t *testing.T) {
 				t.Fatal(err)
 			}
 			// Window 0 falls back to the default, so wait for the change to age.
-			time.Sleep(ddm.DefaultNotifyWindow + time.Millisecond)
+			time.Sleep(ddmengine.DefaultNotifyWindow + time.Millisecond)
 			f.notifier.Kick()
 			f.notifier.Kick() // a second kick never blocks
 			synctest.Wait()
@@ -553,12 +555,12 @@ func TestNotifier(t *testing.T) {
 	})
 	t.Run("RunStopsOnContext", func(t *testing.T) {
 		synctest.Test(t, func(t *testing.T) {
-			f := newNotifierFixture(t, func(c *ddm.NotifierConfig) {
+			f := newNotifierFixture(t, func(c *ddmengine.NotifierConfig) {
 				c.Clock = clock.Real{}
 				c.Poll = 50 * time.Millisecond
 			})
 			var failing *ddmtest.Failing
-			f2 := newNotifierFixture(t, func(c *ddm.NotifierConfig) {
+			f2 := newNotifierFixture(t, func(c *ddmengine.NotifierConfig) {
 				c.Clock = clock.Real{}
 				c.Poll = 50 * time.Millisecond
 				failing = &ddmtest.Failing{Store: c.Store.(ddm.Store), Fail: map[string]error{"PendingChanges": errors.New("down")}}
@@ -580,7 +582,7 @@ func TestNotifier(t *testing.T) {
 			if err := f.engine.Touch(ctx, []mdm.EnrollmentID{dev}, ddm.ReasonTouch); err != nil {
 				t.Fatal(err)
 			}
-			time.Sleep(ddm.DefaultNotifyWindow + 100*time.Millisecond)
+			time.Sleep(ddmengine.DefaultNotifyWindow + 100*time.Millisecond)
 			synctest.Wait()
 			if f.enq.count() != 1 {
 				t.Fatalf("poll did not drain: enqueues = %d", f.enq.count())
@@ -606,9 +608,9 @@ func TestNotifierDedupeIsConfigurable(t *testing.T) {
 		t.Parallel()
 		f := newNotifierFixture(t, nil)
 		f.assignFresh(t, ddmtest.Device(1), "com.example.a")
-		f.clock.Advance(ddm.DefaultNotifyWindow)
+		f.clock.Advance(ddmengine.DefaultNotifyWindow)
 		f.drain(t)
-		if len(f.enq.calls) == 0 || f.enq.calls[0].opts.DedupeKey != ddm.DefaultDedupeKey {
+		if len(f.enq.calls) == 0 || f.enq.calls[0].opts.DedupeKey != ddmengine.DefaultDedupeKey {
 			t.Fatalf("calls = %+v", f.enq.calls)
 		}
 	})
@@ -616,9 +618,9 @@ func TestNotifierDedupeIsConfigurable(t *testing.T) {
 	t.Run("EmptyKeyTurnsSuppressionOff", func(t *testing.T) {
 		t.Parallel()
 		off := ""
-		f := newNotifierFixture(t, func(c *ddm.NotifierConfig) { c.DedupeKey = &off })
+		f := newNotifierFixture(t, func(c *ddmengine.NotifierConfig) { c.DedupeKey = &off })
 		f.assignFresh(t, ddmtest.Device(1), "com.example.a")
-		f.clock.Advance(ddm.DefaultNotifyWindow)
+		f.clock.Advance(ddmengine.DefaultNotifyWindow)
 		if res := f.drain(t); res.Queued != 1 {
 			t.Fatalf("first drain = %+v", res)
 		}
@@ -632,9 +634,9 @@ func TestNotifierDedupeIsConfigurable(t *testing.T) {
 	t.Run("ACustomKeyIsUsedVerbatim", func(t *testing.T) {
 		t.Parallel()
 		key := "declarative-sync"
-		f := newNotifierFixture(t, func(c *ddm.NotifierConfig) { c.DedupeKey = &key })
+		f := newNotifierFixture(t, func(c *ddmengine.NotifierConfig) { c.DedupeKey = &key })
 		f.assignFresh(t, ddmtest.Device(1), "com.example.a")
-		f.clock.Advance(ddm.DefaultNotifyWindow)
+		f.clock.Advance(ddmengine.DefaultNotifyWindow)
 		f.drain(t)
 		if len(f.enq.calls) == 0 || f.enq.calls[0].opts.DedupeKey != key {
 			t.Fatalf("calls = %+v", f.enq.calls)
@@ -646,17 +648,17 @@ func TestNotifierDedupeIsConfigurable(t *testing.T) {
 // nothing anywhere recorded that a device had not been woken.
 func TestNotifierReportsEveryDrain(t *testing.T) {
 	t.Parallel()
-	var got []ddm.DrainResult
+	var got []ddmengine.DrainResult
 	var mu sync.Mutex
-	f := newNotifierFixture(t, func(c *ddm.NotifierConfig) {
-		c.OnDrain = func(_ context.Context, res ddm.DrainResult) {
+	f := newNotifierFixture(t, func(c *ddmengine.NotifierConfig) {
+		c.OnDrain = func(_ context.Context, res ddmengine.DrainResult) {
 			mu.Lock()
 			defer mu.Unlock()
 			got = append(got, res)
 		}
 	})
 	f.assignFresh(t, ddmtest.Device(1), "com.example.a")
-	f.clock.Advance(ddm.DefaultNotifyWindow)
+	f.clock.Advance(ddmengine.DefaultNotifyWindow)
 
 	ctx, cancel := context.WithCancel(context.Background())
 	done := make(chan error, 1)
@@ -676,7 +678,7 @@ func TestNotifierReportsEveryDrain(t *testing.T) {
 	}
 }
 
-func waitForDrain(t *testing.T, mu *sync.Mutex, got *[]ddm.DrainResult) {
+func waitForDrain(t *testing.T, mu *sync.Mutex, got *[]ddmengine.DrainResult) {
 	t.Helper()
 	deadline := time.Now().Add(5 * time.Second)
 	for time.Now().Before(deadline) {

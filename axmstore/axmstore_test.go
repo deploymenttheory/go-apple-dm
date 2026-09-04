@@ -143,3 +143,24 @@ func TestCredentials(t *testing.T) {
 		}
 	})
 }
+
+// TestPutWithoutAKeyring covers the seal failure. New rejects a nil keyring,
+// so this reaches Put the only way it can be reached in practice: a Store
+// whose keyring is gone. The credentials must not be retained when sealing
+// fails, or a later Sealed would hand out a record that was never encrypted.
+func TestPutWithoutAKeyring(t *testing.T) {
+	t.Parallel()
+	s := &Store{data: map[string][]byte{}}
+	creds := axm.Credentials{
+		ClientID:      testClientID,
+		KeyID:         testKeyID,
+		PrivateKeyPEM: secrets.New(sec1PEM(t, newKey(t))),
+	}
+	err := s.Put(context.Background(), "prod", creds)
+	if !errors.Is(err, crypt.ErrNoKeyring) {
+		t.Fatalf("Put without a keyring = %v, want crypt.ErrNoKeyring", err)
+	}
+	if got := s.Sealed("prod"); got != nil {
+		t.Errorf("Sealed after a failed Put = %x, want nothing retained", got)
+	}
+}

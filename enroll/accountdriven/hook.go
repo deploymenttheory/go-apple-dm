@@ -5,15 +5,15 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/deploymenttheory/go-apple-dm/hook"
 	"github.com/deploymenttheory/go-apple-dm/mdm"
-	"github.com/deploymenttheory/go-apple-dm/service"
 )
 
 // ErrEnrollmentToken is the hook's veto: the check-in carried no valid
 // enrollment token.
 var ErrEnrollmentToken = errors.New("accountdriven: enrollment token required")
 
-// CheckinHook is a service.Hook that requires the enrollment token on the
+// CheckinHook is a hook.Hook that requires the enrollment token on the
 // Authenticate and TokenUpdate of user enrollments (the token travels in
 // ServerURL as a query parameter, which the HTTP layer exposes as
 // Request.Params). Unlike the access token it is not consumed, so a retried
@@ -34,8 +34,8 @@ func IdentityFromContext(ctx context.Context) (Identity, bool) {
 	return id, ok
 }
 
-// Before implements service.Hook.
-func (h *CheckinHook) Before(ctx context.Context, c *service.Call) (context.Context, error) {
+// Before implements hook.Hook.
+func (h *CheckinHook) Before(ctx context.Context, c *hook.Call) (context.Context, error) {
 	if c == nil || c.Request == nil {
 		return ctx, nil
 	}
@@ -53,8 +53,8 @@ func (h *CheckinHook) Before(ctx context.Context, c *service.Call) (context.Cont
 	return context.WithValue(ctx, identityKey{}, rec.Identity), nil
 }
 
-// After implements service.Hook.
-func (h *CheckinHook) After(context.Context, *service.Call, error) {}
+// After implements hook.Hook.
+func (h *CheckinHook) After(context.Context, *hook.Call, error) {}
 
 func (h *CheckinHook) guards(ch mdm.Channel) bool {
 	if len(h.Channels) == 0 {

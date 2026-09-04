@@ -24,6 +24,7 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/ddm/adapter/proxyserver"
 	ddminmem "github.com/deploymenttheory/go-apple-dm/ddm/inmem"
 	"github.com/deploymenttheory/go-apple-dm/ddm/sqlstore"
+	"github.com/deploymenttheory/go-apple-dm/ddmengine"
 	"github.com/deploymenttheory/go-apple-dm/dep"
 	"github.com/deploymenttheory/go-apple-dm/event"
 	"github.com/deploymenttheory/go-apple-dm/eventsink"
@@ -206,7 +207,7 @@ type App struct {
 	Handler  http.Handler
 	Core     *service.Core
 	Engine   *ddm.Engine
-	Notifier *ddm.Notifier
+	Notifier *ddmengine.Notifier
 	Store    storage.Store
 	keyring  *crypt.Keyring
 	// AxM is the Business Manager client when configured.
@@ -547,7 +548,7 @@ func (a *App) wire(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	var pusher ddm.Pusher
+	var pusher ddmengine.Pusher
 	if a.Push != nil {
 		pusher = a.Push
 	}
@@ -587,7 +588,7 @@ func (a *App) wire(ctx context.Context) error {
 			Clock:  cfg.Clock,
 			Logger: cfg.Logger,
 			Hooks: append(
-				[]service.Hook{ddm.NewServiceHook(engine, a.Store, cfg.Logger)},
+				[]service.Hook{ddmengine.NewServiceHook(engine, a.Store, cfg.Logger)},
 				enrollHooks...),
 			DeclarativeManagement: dm,
 			RequireUserAuth:       cfg.Enroll.RequireUserAuth,
@@ -646,9 +647,9 @@ func (a *App) wire(ctx context.Context) error {
 	// one is pending, and says so here rather than inheriting it: whether to
 	// suppress is a deployment's decision, and ddm defaults to this only
 	// because a nil key means "not set".
-	dedupe := ddm.DefaultDedupeKey
-	a.Notifier, err = ddm.NewNotifier(
-		ddm.NotifierConfig{
+	dedupe := ddmengine.DefaultDedupeKey
+	a.Notifier, err = ddmengine.NewNotifier(
+		ddmengine.NotifierConfig{
 			Store:     st,
 			Tokens:    engine,
 			Enqueuer:  a.Core,
@@ -747,7 +748,7 @@ func (a *App) wire(ctx context.Context) error {
 // The first failure cancels its siblings so Run returns promptly rather than
 // waiting for loops that only stop on cancellation. A loop that stops because
 // the context ended is not a failure, and the two existing loops disagree on
-// how they say so -- ddm.Notifier.Run returns ctx.Err(), depService.Run
+// how they say so -- ddmengine.Notifier.Run returns ctx.Err(), depService.Run
 // returns nil -- so cancellation is normalised here rather than in each loop.
 func (a *App) Run(ctx context.Context) error {
 	if len(a.workers) == 0 {

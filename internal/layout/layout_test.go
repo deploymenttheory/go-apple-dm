@@ -37,7 +37,7 @@ var serverTier = []string{
 	// Implementations split out of a client or protocol package because they
 	// need persistence or a keyring; decision record 0044 moves them under
 	// server/ and their interface stays with its consumer.
-	"axmstore", "pushnotify",
+	"axmstore", "ddmengine", "pushnotify",
 }
 
 // pureTier is every package proven not to reach serverTier. The list is a
@@ -45,20 +45,22 @@ var serverTier = []string{
 // server tier fails TestPureTierCannotReachServerTier.
 var pureTier = []string{
 	"acme", "acme/attest", "acme/jose", "adminauth", "audit", "axm", "ca", "cms",
-	"ddm/predicate", "dep", "enroll", "enroll/ade", "enroll/discovery",
+	"ddm", "ddm/predicate", "dep", "enroll", "enroll/accountdriven", "enroll/ade",
+	"enroll/discovery", "hook",
 	"enroll/webauth", "event", "gdmf", "mdm", "paging", "plist", "profile",
 	"push", "push/apns", "pushcert", "scep", "secrets", "simulator", "telemetry",
 }
 
-// knownServerTierReach records the packages that still reach the server tier
-// and must not. Each is a hybrid that bundles a protocol or client half with a
-// storage-backed half; decision record 0044 splits them, and every split
-// deletes an entry here. The test asserts the set exactly, so a fix that does
-// not shrink this list fails as loudly as a regression that grows it.
-var knownServerTierReach = map[string][]string{
-	"ddm":                  {"service", "storage"},
-	"enroll/accountdriven": {"service", "storage"},
-}
+// knownServerTierReach records packages that reach the server tier and must
+// not. It is empty: every hybrid decision record 0044 identified has been
+// split, and axm, ddm, enroll/accountdriven, push, and push/apns each left
+// this map as their split landed.
+//
+// It stays here rather than being deleted with its last entry, because the
+// test asserts the set exactly. An empty map is the assertion that no
+// package reaches the server tier except the ones that belong to it, and
+// adding an entry back is a deliberate act that needs a reason in 0044.
+var knownServerTierReach = map[string][]string{}
 
 // inServerTier reports whether pkg persists, serves, or assembles. Besides
 // the named units, a per-domain sqlstore or inmem package is a persistence

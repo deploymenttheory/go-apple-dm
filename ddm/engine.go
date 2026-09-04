@@ -117,6 +117,10 @@ func New(cfg Config) (*Engine, error) {
 // Store exposes the backend for tests and administrative tooling.
 func (e *Engine) Store() Store { return e.store }
 
+// Logger returns the engine's logger, never nil, so a component built
+// around an engine can inherit its logging rather than invent one.
+func (e *Engine) Logger() *slog.Logger { return e.log }
+
 func (e *Engine) publish(ctx context.Context, t event.Type, id mdm.EnrollmentID, data any) {
 	if e.bus == nil {
 		return

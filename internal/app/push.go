@@ -79,7 +79,7 @@ func (p PushConfig) validate() error {
 }
 
 // wirePush builds the push notifier. It returns nil when pushes are off, and
-// ddm.Notifier treats a nil pusher as "consider it delivered", so the change
+// ddmengine.Notifier treats a nil pusher as "consider it delivered", so the change
 // rows still drain.
 func (a *App) wirePush() (*pushnotify.Notifier, error) {
 	cfg := a.cfg.Push
