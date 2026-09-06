@@ -34,7 +34,7 @@
     ],
     "repository": {
       "url": "https://github.com/deploymenttheory/go-apple-dm",
-      "revision": "12ef0a355a7a81901b953b0c0195dafb96326917"
+      "revision": "0e487dd17ae7dffcad8674c668ff59e56c73d8f3"
     }
   },
   "components": [
