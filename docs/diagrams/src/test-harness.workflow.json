@@ -1,0 +1,207 @@
+{
+  "schema_version": 2,
+  "diagram_type": "workflow",
+  "meta": {
+    "title": "Test Pipeline and the Coverage Gate",
+    "quality_profile": "showcase",
+    "views": [
+      {
+        "id": "contract",
+        "label": "Storage contract",
+        "focus": [
+          "unit",
+          "contract",
+          "backends",
+          "coverage"
+        ],
+        "note": "One suite runs against every backend, including an error-injecting wrapper."
+      },
+      {
+        "id": "scenarios",
+        "label": "Scenarios",
+        "focus": [
+          "simulator",
+          "e2e",
+          "coverage"
+        ],
+        "note": "A real server, the device simulator as the client, and fakes for every Apple service."
+      }
+    ],
+    "legend": {
+      "mode": "auto",
+      "entries": {
+        "backend": {
+          "label": "test stage"
+        },
+        "security": {
+          "label": "coverage gate"
+        },
+        "database": {
+          "label": "backend under test"
+        }
+      }
+    }
+  },
+  "lanes": [
+    {
+      "id": "unit",
+      "label": "Unit and fuzz"
+    },
+    {
+      "id": "storage",
+      "label": "Storage contract"
+    },
+    {
+      "id": "scenario",
+      "label": "End-to-end scenarios"
+    }
+  ],
+  "phases": [
+    {
+      "id": "p1",
+      "label": "Run",
+      "fromCol": 0,
+      "toCol": 3
+    },
+    {
+      "id": "p2",
+      "label": "Gate",
+      "fromCol": 4,
+      "toCol": 4
+    }
+  ],
+  "mainPath": [
+    "unit",
+    "fuzz",
+    "contract",
+    "backends",
+    "coverage"
+  ],
+  "nodes": [
+    {
+      "id": "unit",
+      "lane": "unit",
+      "col": 0,
+      "type": "backend",
+      "label": "make test",
+      "sublabel": "race detector",
+      "width": 140
+    },
+    {
+      "id": "fuzz",
+      "lane": "unit",
+      "col": 1,
+      "type": "backend",
+      "label": "fuzz smoke",
+      "sublabel": "cbor \u00b7 plist \u00b7 jose",
+      "width": 150
+    },
+    {
+      "id": "contract",
+      "lane": "storage",
+      "col": 2,
+      "type": "backend",
+      "label": "contract suites",
+      "sublabel": "storagetest \u00b7 ddmtest",
+      "width": 160
+    },
+    {
+      "id": "backends",
+      "lane": "storage",
+      "col": 3,
+      "type": "database",
+      "label": "every backend",
+      "sublabel": "inmem \u00b7 sqlite \u00b7 pg \u00b7 mysql",
+      "width": 170
+    },
+    {
+      "id": "simulator",
+      "lane": "scenario",
+      "col": 2,
+      "type": "backend",
+      "label": "simulator.Device",
+      "sublabel": "no hardware",
+      "width": 150
+    },
+    {
+      "id": "e2e",
+      "lane": "scenario",
+      "col": 3,
+      "type": "backend",
+      "label": "e2e scenarios",
+      "sublabel": "sqlite, postgres or inmem",
+      "width": 160
+    },
+    {
+      "id": "coverage",
+      "lane": "scenario",
+      "col": 4,
+      "type": "security",
+      "label": "95% gate",
+      "sublabel": "overall and per package",
+      "width": 160
+    }
+  ],
+  "edges": [
+    {
+      "id": "t1",
+      "from": "unit",
+      "to": "fuzz",
+      "label": "then",
+      "role": "main"
+    },
+    {
+      "id": "t2",
+      "from": "fuzz",
+      "to": "contract",
+      "label": "then",
+      "role": "main"
+    },
+    {
+      "id": "t3",
+      "from": "contract",
+      "to": "backends",
+      "label": "one suite each",
+      "role": "main"
+    },
+    {
+      "id": "t4",
+      "from": "backends",
+      "to": "coverage",
+      "label": "profiles",
+      "role": "main"
+    },
+    {
+      "id": "t5",
+      "from": "simulator",
+      "to": "e2e",
+      "label": "drives",
+      "role": "branch"
+    },
+    {
+      "id": "t6",
+      "from": "e2e",
+      "to": "coverage",
+      "label": "profiles",
+      "role": "branch"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "No hardware required",
+      "items": [
+        "The simulator speaks MDM, DDM, ADE, account-driven, user channel and ACME",
+        "It imports no server-side engine, so agreement between the two is never assumed"
+      ]
+    },
+    {
+      "dot": "rose",
+      "title": "The gate",
+      "items": [
+        "95% overall and per non-exempt package; every exported function has a failing-path test",
+        "A Failing wrapper injects an error by method name so refusal paths are covered too"
+      ]
+    }
+  ]
+}

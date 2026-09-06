@@ -5,3 +5,8 @@
 * text=auto
 
 *.json text eol=lf
+
+# Generated diagrams (archify); sources live in docs/diagrams/src
+docs/diagrams/*.html linguist-generated=true
+docs/diagrams/*.png  linguist-generated=true
+docs/diagrams/*.png  binary

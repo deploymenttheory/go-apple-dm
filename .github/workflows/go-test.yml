@@ -1,0 +1,241 @@
+name: Go Test
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+env:
+  COVERAGE_MIN: "95"
+
+jobs:
+  unit:
+    name: '🧪 Unit (${{ matrix.os }})'
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@e14015d583714f6e62063499dc959a02595150a1 # v2.21.1
+        with:
+          egress-policy: audit
+      - name: Checkout Code
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          submodules: recursive
+      - name: Setup Go
+        uses: actions/setup-go@7a3fe6cf4cb3a834922a1244abfce67bcef6a0c5 # v6.2.0
+        with:
+          go-version-file: 'go.mod'
+          cache: true
+      - name: Unit tests
+        run: make test
+      - name: Upload unit coverage
+        if: matrix.os == 'ubuntu-latest'
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: cover-unit
+          path: cover/unit
+          if-no-files-found: error
+
+  generate-check:
+    name: '🧬 Generate check'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@e14015d583714f6e62063499dc959a02595150a1 # v2.21.1
+        with:
+          egress-policy: audit
+      - name: Checkout Code
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          submodules: recursive
+      - name: Setup Go
+        uses: actions/setup-go@7a3fe6cf4cb3a834922a1244abfce67bcef6a0c5 # v6.2.0
+        with:
+          go-version-file: 'go.mod'
+          cache: true
+      - name: Regenerate and verify
+        run: |
+          make generate
+          git diff --exit-code
+          make verify
+
+  storage-integration:
+    name: '🗄️ Storage integration'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: dm
+          POSTGRES_PASSWORD: dm
+          POSTGRES_DB: dm
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U dm" --health-interval 5s --health-timeout 5s --health-retries 20
+      mysql:
+        image: mysql:8.4
+        env:
+          MYSQL_ROOT_PASSWORD: dm
+          MYSQL_DATABASE: dm
+          MYSQL_USER: dm
+          MYSQL_PASSWORD: dm
+        ports: ['3306:3306']
+        options: >-
+          --health-cmd "mysqladmin ping -h 127.0.0.1 -pdm" --health-interval 5s --health-timeout 5s --health-retries 30
+    env:
+      TEST_POSTGRES_DSN: postgres://dm:dm@127.0.0.1:5432/dm?sslmode=disable
+      TEST_MYSQL_DSN: dm:dm@tcp(127.0.0.1:3306)/dm?parseTime=true&multiStatements=true
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@e14015d583714f6e62063499dc959a02595150a1 # v2.21.1
+        with:
+          egress-policy: audit
+      - name: Checkout Code
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          submodules: recursive
+      - name: Setup Go
+        uses: actions/setup-go@7a3fe6cf4cb3a834922a1244abfce67bcef6a0c5 # v6.2.0
+        with:
+          go-version-file: 'go.mod'
+          cache: true
+      - name: Storage suites
+        run: make test-storage
+      - name: Storage timing gate
+        # Shared GitHub runners with a service container measure about 2s for
+        # the 100k-row Clear; the one-second assertion is enforced by
+        # `make ci` on developer machines and only logged here.
+        env:
+          STORAGE_TIMING: "off"
+        run: make test-storage-perf
+      - name: Upload storage coverage
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: cover-storage
+          path: cover/storage
+          if-no-files-found: ignore
+
+  e2e:
+    name: '🔁 End to end (${{ matrix.store }})'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        store: [sqlite, postgres]
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: dm
+          POSTGRES_PASSWORD: dm
+          POSTGRES_DB: dm
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U dm" --health-interval 5s --health-timeout 5s --health-retries 20
+    env:
+      E2E_STORE: ${{ matrix.store }}
+      TEST_POSTGRES_DSN: postgres://dm:dm@127.0.0.1:5432/dm?sslmode=disable
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@e14015d583714f6e62063499dc959a02595150a1 # v2.21.1
+        with:
+          egress-policy: audit
+      - name: Checkout Code
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          submodules: recursive
+      - name: Setup Go
+        uses: actions/setup-go@7a3fe6cf4cb3a834922a1244abfce67bcef6a0c5 # v6.2.0
+        with:
+          go-version-file: 'go.mod'
+          cache: true
+      - name: Build and start our ddm role container
+        run: |
+          scripts/testdb.sh ddm-up > ddm.env
+          cat ddm.env
+          sed -e 's/^export //' -e "s/'//g" ddm.env >> "$GITHUB_ENV"
+      - name: E2E scenarios
+        run: make test-e2e
+      - name: ddm container logs
+        if: always()
+        run: docker logs dm-test-ddm 2>&1 | tail -n 200 || true
+      - name: Upload e2e coverage
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: cover-e2e-${{ matrix.store }}
+          path: cover/e2e-${{ matrix.store }}
+          if-no-files-found: ignore
+
+  coverage-gate:
+    name: '📊 Coverage gate'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    needs: [unit, storage-integration, e2e]
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@e14015d583714f6e62063499dc959a02595150a1 # v2.21.1
+        with:
+          egress-policy: audit
+      - name: Checkout Code
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - name: Setup Go
+        uses: actions/setup-go@7a3fe6cf4cb3a834922a1244abfce67bcef6a0c5 # v6.2.0
+        with:
+          go-version-file: 'go.mod'
+          cache: true
+      - name: Download coverage
+        uses: actions/download-artifact@v6
+        with:
+          pattern: cover-*
+          path: cover-dl
+      - name: Arrange coverage directories
+        run: |
+          mkdir -p cover
+          for d in cover-dl/cover-*; do
+            name="${d##*/cover-}"; mkdir -p "cover/$name"; cp -r "$d"/. "cover/$name"/ 2>/dev/null || true
+          done
+          ls -R cover | head -50
+      - name: Enforce minimum
+        run: make coverage
+      - name: Upload report
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: coverage-report
+          path: |
+            cover/merged.html
+            cover/packages.txt
+          if-no-files-found: ignore
+
+  fuzz-smoke:
+    name: '🎲 Fuzz smoke'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@e14015d583714f6e62063499dc959a02595150a1 # v2.21.1
+        with:
+          egress-policy: audit
+      - name: Checkout Code
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          submodules: recursive
+      - name: Setup Go
+        uses: actions/setup-go@7a3fe6cf4cb3a834922a1244abfce67bcef6a0c5 # v6.2.0
+        with:
+          go-version-file: 'go.mod'
+          cache: true
+      - name: Fuzz smoke
+        run: make fuzz-smoke

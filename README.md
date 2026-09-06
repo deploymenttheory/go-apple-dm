@@ -1,75 +1,361 @@
-# Template
+# go-apple-dm
 
-This repository serves as a **Default Template Repository** according official [GitHub Contributing Guidelines][ProjectSetup] for healthy contributions. It brings you clean default Templates for several areas:
+[![Release](https://img.shields.io/github/v/release/deploymenttheory/go-apple-dm)](https://github.com/deploymenttheory/go-apple-dm/releases)
+[![CI](https://github.com/deploymenttheory/go-apple-dm/actions/workflows/ci.yml/badge.svg)](https://github.com/deploymenttheory/go-apple-dm/actions/workflows/ci.yml)
+[![Go Reference](https://pkg.go.dev/badge/github.com/deploymenttheory/go-apple-dm.svg)](https://pkg.go.dev/github.com/deploymenttheory/go-apple-dm)
+[![Go Version](https://img.shields.io/github/go-mod/go-version/deploymenttheory/go-apple-dm)](https://go.dev/)
+[![License](https://img.shields.io/github/license/deploymenttheory/go-apple-dm)](LICENSE)
+![Status: Preview](https://img.shields.io/badge/status-preview-58A6FF)
 
-- [Azure DevOps Pull Requests](.azuredevops/PULL_REQUEST_TEMPLATE.md) ([`.azuredevops\PULL_REQUEST_TEMPLATE.md`](`.azuredevops\PULL_REQUEST_TEMPLATE.md`))
-- [Azure Pipelines](.pipelines/pipeline.yml) ([`.pipelines/pipeline.yml`](`.pipelines/pipeline.yml`))
-- [GitHub Workflows](.github/workflows/)
-  - [Super Linter](.github/workflows/linter.yml) ([`.github/workflows/linter.yml`](`.github/workflows/linter.yml`))
-  - [Sample Workflows](.github/workflows/workflow.yml) ([`.github/workflows/workflow.yml`](`.github/workflows/workflow.yml`))
-- [GitHub Pull Requests](.github/PULL_REQUEST_TEMPLATE.md) ([`.github/PULL_REQUEST_TEMPLATE.md`](`.github/PULL_REQUEST_TEMPLATE.md`))
-- [GitHub Issues](.github/ISSUE_TEMPLATE/)
-  - [Feature Requests](.github/ISSUE_TEMPLATE/FEATURE_REQUEST.md) ([`.github/ISSUE_TEMPLATE/FEATURE_REQUEST.md`](`.github/ISSUE_TEMPLATE/FEATURE_REQUEST.md`))
-  - [Bug Reports](.github/ISSUE_TEMPLATE/BUG_REPORT.md) ([`.github/ISSUE_TEMPLATE/BUG_REPORT.md`](`.github/ISSUE_TEMPLATE/BUG_REPORT.md`))
-- [Codeowners](.github/CODEOWNERS) ([`.github/CODEOWNERS`](`.github/CODEOWNERS`)) _adjust usernames once cloned_
-- [Wiki and Documentation](docs/) ([`docs/`](`docs/`))
-- [gitignore](.gitignore) ([`.gitignore`](.gitignore))
-- [gitattributes](.gitattributes) ([`.gitattributes`](.gitattributes))
-- [Changelog](CHANGELOG.md) ([`CHANGELOG.md`](`CHANGELOG.md`))
-- [Code of Conduct](CODE_OF_CONDUCT.md) ([`CODE_OF_CONDUCT.md`](`CODE_OF_CONDUCT.md`))
-- [Contribution](CONTRIBUTING.md) ([`CONTRIBUTING.md`](`CONTRIBUTING.md`))
-- [License](LICENSE) ([`LICENSE`](`LICENSE`)) _adjust projectname once cloned_
-- [Readme](README.md) ([`README.md`](`README.md`))
-- [Security](SECURITY.md) ([`SECURITY.md`](`SECURITY.md`))
+A pure Go library for Apple device management: the MDM check-in and command protocol,
+Declarative Device Management (DDM), every enrollment path Apple documents (profile, automated,
+account-driven, user channel and Shared iPad), an ACME server with Managed Device Attestation,
+and clients for the device enrollment service and the Apple Business Manager API. A thin
+reference server, `cmd/dmserver`, wires it all together.
 
+## Why
 
-## Status
+Apple documents its device management protocol thoroughly, and in Go it has never been available
+as something you can simply import. The implementations that exist are servers first. NanoMDM is
+deliberately minimal: it hides `context.Context` inside a request struct, hands DDM check-ins back
+as raw `[]byte`, and offers a single webhook as its one integration point. KMFDDM runs declarative
+management as a separate experimental process. Fleet's MDM is a product, and vendors NanoMDM and
+NanoDEP as forks rather than depending on them. Each is a sound answer to the question it was
+built to answer, and this library learns from all three. None of them is a library you can build
+your own product on.
 
-[![Super Linter](<https://github.com/segraef/Template/actions/workflows/linter.yml/badge.svg>)](<https://github.com/segraef/Template/actions/workflows/linter.yml>)
+That is what this is. The protocol, the declarative engine, every enrollment path, and the Apple
+service clients, as ordinary Go packages you import into your own program and wire the way your
+program needs.
 
-[![Sample Workflow](<https://github.com/segraef/Template/actions/workflows/workflow.yml/badge.svg>)](<https://github.com/segraef/Template/actions/workflows/workflow.yml>)
+- **Typed from Apple's own schema, not by hand.** All 65 commands with their responses, check-in
+  messages, profiles, declarations, status and protocol types are generated in this repository from
+  the pinned `apple/device-management` YAML, along with the metadata that answers whether a key
+  applies to a supervised Mac on 15.0. A naming lock makes regeneration fail loudly rather than
+  rename a type out from under you, so Apple's schema drift becomes `make generate` and a diff to
+  review instead of a manual audit every autumn.
+- **A library shape, held to deliberately.** `context.Context` first, typed errors, and a hook
+  chain; every state change is a typed event on an in-process bus, so audit trails, webhooks,
+  metrics, and reconcilers are ordinary subscribers rather than special cases wired into the core.
+- **Storage you choose.** Interfaces split by concern, with in-memory, SQLite, PostgreSQL, and
+  MySQL backends that all pass one contract suite. Secrets at rest are sealed under named keys with
+  in-place rotation.
+- **The whole surface, not the core alone.** The parts most projects leave you to write — ACME
+  with Managed Device Attestation, account-driven enrollment, Shared iPad, the device enrollment
+  service, the Business Manager API — are here, each with a fake for your tests.
+- **Testable without hardware.** A device simulator speaks MDM, DDM, ADE, account-driven, user
+  channel, Shared iPad, and ACME, so your server can be exercised end to end before a real device
+  ever touches it. The coverage floor is 95%, gated in CI.
 
-## Creating a repository from a template
+What it is not: a product. There is no UI, no inventory, and no fleet management. `cmd/dmserver`
+is a thin wiring of these packages, there to prove the library works and to be read as an example
+of using it, not to be deployed as a device management platform. Nothing is copied from the
+projects above; `github.com/micromdm/plist` is the single dependency shared with them, so fixtures
+interoperate. The reasoning behind all of this is decision record
+[0001](docs/research/decisions/0001-architecture.md), and the projects studied are credited in
+[reference_projects.md](docs/research/reference_projects.md).
 
-You can [generate](https://github.com/segraef/Template/generate) a new repository with the same directory structure and files as an existing repository. More details can be found [here][CreateFromTemplate].
+## Quick start
 
-## Reporting Issues and Feedback
+```bash
+go get github.com/deploymenttheory/go-apple-dm
+```
 
-### Issues and Bugs
+The API is not yet stable. This is a `v0` module, which is Go's way of saying
+so: expect breaking changes between minor versions until it reaches `v1`.
 
-If you find any bugs, please file an issue in the [GitHub Issues][GitHubIssues] page. Please fill out the provided template with the appropriate information.
+That is the library: the protocol, the declarative engine, every enrollment path,
+the Apple service clients, the storage contracts and their in-memory backend. It
+pulls nine dependencies. The SQL backends and the reference server are a second
+module, so a program that only speaks the protocol never downloads a database
+driver:
 
-If you are taking the time to mention a problem, even a seemingly minor one, it is greatly appreciated, and a totally valid contribution to this project. **Thank you!**
+```bash
+go get github.com/deploymenttheory/go-apple-dm/server
+```
 
-## Feedback
+A check-in and command endpoint over an in-memory store, and a typed command queued for a device:
 
-If there is a feature you would like to see in here, please file an issue or feature request in the [GitHub Issues][GitHubIssues] page to provide direct feedback.
+```go
+package main
 
-## Contribution
+import (
+	"context"
+	"log"
+	"net/http"
 
-If you would like to become an active contributor to this repository or project, please follow the instructions provided in [`CONTRIBUTING.md`][Contributing].
+	"github.com/deploymenttheory/go-apple-dm/mdmprotocol/mdm"
+	"github.com/deploymenttheory/go-apple-dm/schema/commands"
+	"github.com/deploymenttheory/go-apple-dm/server/httpapi"
+	"github.com/deploymenttheory/go-apple-dm/server/service"
+	"github.com/deploymenttheory/go-apple-dm/storage"
+	"github.com/deploymenttheory/go-apple-dm/storage/inmem"
+)
 
-## Learn More
+func main() {
+	core, err := service.New(service.Config{Store: inmem.New()})
+	if err != nil {
+		log.Fatal(err)
+	}
 
-* [GitHub Documentation][GitHubDocs]
-* [Azure DevOps Documentation][AzureDevOpsDocs]
-* [Microsoft Azure Documentation][MicrosoftAzureDocs]
+	// One path serves check-in and connect; the handler routes on content type,
+	// and the middleware takes the device identity from the TLS peer certificate.
+	http.Handle("/mdm", httpapi.CertFromTLS(httpapi.Handler(httpapi.Config{
+		Checkin: core,
+		Connect: core,
+	})))
 
-<!-- References -->
+	// The payload carries its own RequestType; the envelope gets a time-ordered
+	// CommandUUID. Targets are checked against the schema before they are queued.
+	cmd, err := mdm.NewCommand(&commands.DeviceInformation{})
+	if err != nil {
+		log.Fatal(err)
+	}
+	id := mdm.EnrollmentID{Channel: mdm.ChannelDevice, ID: "00008030-000000000000001E"}
+	if _, err := core.Enqueue(context.Background(), []mdm.EnrollmentID{id}, cmd, storage.EnqueueOptions{}); err != nil {
+		log.Fatal(err)
+	}
 
-<!-- Local -->
-[ProjectSetup]: <https://docs.github.com/en/communities/setting-up-your-project-for-healthy-contributions>
-[CreateFromTemplate]: <https://docs.github.com/en/github/creating-cloning-and-archiving-repositories/creating-a-repository-on-github/creating-a-repository-from-a-template>
-[GitHubDocs]: <https://docs.github.com/>
-[AzureDevOpsDocs]: <https://docs.microsoft.com/en-us/azure/devops/?view=azure-devops>
-[GitHubIssues]: <https://github.com/segraef/Template/issues>
-[Contributing]: CONTRIBUTING.md
+	log.Fatal(http.ListenAndServe(":8080", nil))
+}
+```
 
-<!-- External -->
-[Az]: <https://img.shields.io/powershellgallery/v/Az.svg?style=flat-square&label=Az>
-[AzGallery]: <https://www.powershellgallery.com/packages/Az/>
-[PowerShellCore]: <https://github.com/PowerShell/PowerShell/releases/latest>
+Swap `inmem.New()` for `sqlite.Open`, `postgres.Open`, or `mysql.Open` and nothing above changes.
+For a real deployment add a push certificate, an enrollment identity (SCEP or ACME), and TLS; the
+reference server shows each of those wired together.
 
-<!-- Docs -->
-[MicrosoftAzureDocs]: <https://docs.microsoft.com/en-us/azure/>
-[PowerShellDocs]: <https://docs.microsoft.com/en-us/powershell/>
+### Or run the reference server
+
+```bash
+# One terminal: an all-in-one process on :8080, nothing to install.
+DM_ROLE=all DM_STORAGE=inmem DM_ADMIN_TOKEN=dev-token go run ./cmd/dmserver
+
+# Another: ask it what it is.
+curl -s localhost:8080/healthz
+go run ./cmd/dmctl -server http://localhost:8080 -token dev-token status
+```
+
+```
+Role:           all
+Version:        v0.0.0-20260903102158-a26bcbb63052
+Families:       ddm, dep, introspection, mdm
+Authorization:  static token (development)
+Break-glass:    active (the only credential; no principal store configured)
+```
+
+`DM_ADMIN_TOKEN` is a break-glass credential for getting started: it bypasses policy and cannot be
+revoked without a restart. Create real principals with it, then unset it. Every variable is in
+[Reference server](#reference-server) below, and `make docker-build` produces the container image.
+
+### Explore the protocol without a server
+
+`dmctl explain` reads the generated schema tables offline, so it needs neither a server nor a
+device:
+
+```bash
+go run ./cmd/dmctl explain DeviceInformation
+go run ./cmd/dmctl explain DeviceInformation -target macos:15.0,supervised
+go run ./cmd/dmctl explain com.apple.configuration.softwareupdate.enforcement.specific
+```
+
+From there: [docs/diagrams](docs/diagrams/README.md) for how the pieces fit together,
+[e2e/](e2e/) and [docs/testing/e2e-scenarios.md](docs/testing/e2e-scenarios.md) for worked
+end-to-end scenarios, and [`simulator/`](simulator/) to drive a server without hardware.
+
+## Architecture
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/diagrams/system-architecture.dark.png">
+  <img alt="go-apple-dm high-level design" src="docs/diagrams/system-architecture.light.png">
+</picture>
+
+Twenty-seven interactive diagrams cover each component and each protocol flow, from package
+layering to the ACME attestation exchange. Architecture diagrams carry git-verified source pins.
+See [docs/diagrams](docs/diagrams/README.md).
+
+## What it provides
+
+- **Protocol core.** Typed check-in, command, and response messages generated from Apple's
+  `device-management` schema, never hand-edited. Detached and attached CMS verification.
+- **Service layer.** Enrollment lifecycle, identity pinning, command queue with dedupe keys,
+  hooks and an event bus, user-channel and Shared iPad handling, optional user authentication
+  gate, and schema-driven checks that a command is supported by the enrolled OS and version.
+- **Storage.** In-memory, SQLite (pure Go), PostgreSQL, and MySQL behind one contract-tested
+  interface set. Secret columns are sealed with AES-256-GCM under named keys with in-place
+  rotation. Every schema lives in a single `0001_init.sql` per dialect per migration set.
+- **Push.** APNs HTTP/2 client, notifier with invalid-token events, coalescing, push certificate
+  parsing and topic derivation, and a fake APNs server for tests.
+- **Enrollment identities.** A certificate authority abstraction and a SCEP service with
+  one-time and HMAC challenges, plus a client. Or ACME with Managed Device Attestation: the
+  device generates a key in its Secure Enclave, Apple attests to the key and the hardware, and
+  the server issues only after checking that attestation against the device it expected and
+  against a policy of your choosing.
+- **Enrollment paths.** Profile enrollment with an OTA profile service; automated device
+  enrollment with typed `MachineInfo` parsing, CMS signature verification against Apple's
+  device CAs, the software update gate, and an OIDC web view; service discovery for
+  account-driven enrollment with both the `apple-as-web` and `apple-oauth2` flows on an
+  authorization server of our own; user channel enrollment and Shared iPad users.
+- **Device enrollment service (DEP).** OAuth 1.0a session client with cursor handling, token
+  PKI for the portal exchange, a device syncer, a profile assigner with read-back, in-memory and
+  SQL stores, and a fake service for tests.
+- **Apple Business Manager API.** ES256 client assertion, JSON:API paging, device and server
+  listing, assignment activities with convergence, rate-limit handling, and a fake server.
+- **Declarative Device Management.** Declarations with content-addressed `ServerToken`s
+  (RFC 8785 canonical JSON), sets and dynamic membership, per-enrollment snapshots so a device
+  always fetches what its manifest advertised, status reports stored per item, synthesised
+  status subscriptions, an NSPredicate subset validated at upload, and a coalescing change
+  notifier. The engine runs in-process or split across our own `mdm` and `ddm` roles.
+- **Managed Device Attestation.** Chain verification to the Apple Enterprise Attestation Root,
+  a required freshness code, the attested key bound to the key being certified, and all ten of
+  Apple's device property extensions parsed by their documented types. The same verifier reads
+  an ACME challenge response and a `DevicePropertiesAttestation` query response.
+- **Device simulator.** MDM, DDM, ADE, account-driven, user channel, Shared iPad, and ACME
+  clients so a server can be tested without hardware.
+- **Reference server.** Roles `mdm`, `ddm`, and `all`, a bearer-protected admin API, `DM_*`
+  environment configuration, `/healthz`, and a distroless container image built by CI.
+
+## Layout
+
+The repository is two Go modules. `github.com/deploymenttheory/go-apple-dm` is the library;
+everything under `server/` is `github.com/deploymenttheory/go-apple-dm/server`, which depends on
+the library and never the other way round. Within them, packages are arranged in tiers, and a
+package may import its own tier and every tier below it, never above. `internal/layout` asserts this in tests, because the lint workflow cannot fail a
+build. Decision record [0044](docs/research/decisions/0044-repository-layout.md) has the reasoning.
+
+| Tier | Path | Purpose |
+|---|---|---|
+| foundation | `paging/` | Cursor pagination every store contract shares: `Page`, `Result[T]`, and the size bounds |
+| | `clock/` | The injectable clock, and the fake every time-dependent test uses |
+| | `testpki/` | Certificate authorities and leaves for tests, yours as well as ours |
+| | `secrets/` | Redacting secret type and providers (static, environment, directory, chain) |
+| | `telemetry/` | OpenTelemetry seam: `Config`, a cardinality-bounding `Vocabulary`, a measuring `RoundTripper` |
+| schema | `schema/` | Generated from `third_party/device-management`, never hand-edited; `schema/support` answers whether a command or key applies to an OS and version |
+| | `internal/schemagen`, `cmd/admgen` | The generator. `admgen versions` reports the newest OS version per family; `admgen identifiers` prints the exported API the lock protects |
+| `.github/workflows/device-management-schema-update.yml` | Weekly, and on demand: regenerates against Apple's `release` branch and opens the update as a pull request, titled with the OS version it moves to |
+| mdmprotocol | `mdmprotocol/plist` | The one point of contact with plist encoding, including a bounded decoder for untrusted input |
+| | `mdmprotocol/mdm` | Protocol core: enrollment identity, check-in decoding, command and response envelopes |
+| | `mdmprotocol/cms` | Detached and attached CMS signing and verification, `Mdm-Signature` with signing-time tolerance |
+| | `mdmprotocol/profile` | Configuration profile composition, signing, and parsing |
+| | `mdmprotocol/event` | The typed event bus every state change publishes to |
+| | `mdmprotocol/dmhook` | `Call` and `Hook`: what a service hook is written against, without importing the service layer |
+| | `mdmprotocol/ddm`, `mdmprotocol/ddm/predicate` | Declarative management: content-addressed declarations, sets and membership, snapshots, status reports and subscriptions, and the NSPredicate subset activations use |
+| | `mdmprotocol/enroll` | Enrollment profile builder (device, user, Shared iPad) and the OTA profile service |
+| | `mdmprotocol/enroll/ade`, `.../adetest` | Automated device enrollment: `MachineInfo` parsing and CMS verification, the software update gate, web view resume and finish |
+| | `mdmprotocol/enroll/accountdriven` | Account-driven enrollment: the `Bearer` challenge, `apple-as-web` and `apple-oauth2`, token issuance |
+| | `mdmprotocol/enroll/discovery` | The `/.well-known/com.apple.remotemanagement` document, per user type |
+| | `mdmprotocol/enroll/webauth`, `.../webauthtest` | OpenID Connect relying party for the enrollment web view, and a fake identity provider |
+| pki | `pki/ca`, `pki/scep` | Certificate authority abstraction, and a SCEP endpoint with one-time and HMAC challenges plus a client |
+| | `pki/acme`, `pki/acme/jose` | ACME for Apple's ACME payload: directory, nonces, accounts, orders, `device-attest-01`, finalize, download; JWS and JWK including the interop fix for Apple clients that omit leading zero bytes |
+| | `pki/acme/attest`, `.../attesttest` | Managed Device Attestation verification, and a stand-in attestation authority |
+| | `pki/pushcert` | Push certificate parsing and topic derivation; standard library only, so storage can validate an uploaded certificate without depending on push |
+| appleplatformservices | `appleplatformservices/dep`, `.../deptest` | Device enrollment service client (OAuth 1.0a, sessions, cursors, token PKI) and the fake service |
+| | `appleplatformservices/axm`, `.../axmtest` | Apple School Manager and Apple Business API client (ES256 client assertion, JSON:API paging) and its fake |
+| | `appleplatformservices/gdmf`, `.../gdmftest` | Apple's software lookup service, for the ADE software update gate |
+| | `appleplatformservices/push`, `.../apns`, `.../pushtest` | The vocabulary of a push and the HTTP/2 APNs client that implements it |
+| simulator | `simulator/` | A device in software: MDM, DDM, ADE, account-driven, user channel, Shared iPad, and ACME |
+| storage | `storage/` | Persistence interfaces split by concern, and the sentinel errors every backend returns |
+| | `storage/inmem`, `storage/storagetest` | The in-memory backend, and the contract suite every backend runs |
+| | `storage/crypt` | AES-256-GCM sealing of secret columns under named keys, with row-bound AAD and in-place rotation |
+| | `storage/ddm`, `storage/acme`, `storage/dep` | In-memory backends and contract suites for the declarative engine, ACME, and device enrollment |
+| server | `server/sqlstore/sqlcommon`, `.../sqlite`, `.../postgres`, `.../mysql` | One SQL implementation with embedded migrations for SQLite (pure Go), PostgreSQL (pgx), and MySQL |
+| | `server/ddmstore/sqlstore`, `server/acmestore/sqlstore`, `server/depstore/sqlstore` | The SQL half of each domain's persistence, on its own migration set |
+| | `server/service` | Enrollment lifecycle, identity pinning, command delivery, hooks, events, user channels |
+| | `server/httpapi` | Check-in and server URL handlers plus certificate extraction middlewares |
+| | `server/ddmsync` | Apple's synchronization flow: the notifier that turns pending changes into `DeclarativeManagement` commands and pushes, and the hook that clears declarative state on check-out |
+| | `server/ddmadapter` | DDM in-process, or split across `mdm` and `ddm` roles over an HMAC-signed or mTLS hop |
+| | `server/pushnotify` | Resolves an enrollment to a device token and a topic to a stored certificate, and publishes push events |
+| | `server/axmcreds` | Business Manager credentials sealed under a keyring, so the client itself needs no `storage/crypt` |
+| | `server/eventsink` | The sinks that project an event down to what may leave the process |
+| | `server/audit` | The persistent audit trail on its own migration set, append-and-prune |
+| | `server/adminauth` | Admin principals and scoped API tokens, authorised by Cedar policies |
+| app | `server/internal/app`, `server/cmd/dmserver`, `Dockerfile` | The reference server: roles, enrollment routes, admin API, background workers, container image |
+| | `server/internal/dmctl`, `server/cmd/dmctl` | The admin CLI |
+| | `internal/layout` | The import graph behind the tier tests |
+| | `server/e2e/` | End-to-end scenarios (`make test-e2e`), listed in `docs/testing/e2e-scenarios.md` |
+| | `docs/research/` | Reference research, the plan of record, and per-feature decision records |
+
+## Reference server
+
+`cmd/dmserver` runs one of three roles. `mdm` serves devices (`/mdm`, `/scep`, the
+enrollment routes) and forwards DDM check-ins to a `ddm` role when `DM_DDM_URL` is set; `ddm`
+runs the engine and the admin API; `all` runs everything in one process. Configuration is by
+environment:
+
+| Variables | Purpose |
+|---|---|
+| `DM_ROLE`, `DM_LISTEN`, `DM_STORAGE`, `DM_DSN` | Role, listen address, backend (`sqlite`, `postgres`, `mysql`, `inmem`), and DSN |
+| `DM_ADMIN_STORE` | Open the admin principal and Cedar policy store on this process's database, so `dmctl principals` and `dmctl policies` work. Off by default: it mounts the admin API |
+| `DM_ADMIN_TOKEN` | Break-glass bearer token for `/admin/v1/`. Authenticates as root and **bypasses policy**, has no expiry, and cannot be revoked without a restart. It exists because an empty principal store authenticates nobody: set it to create the first principals, then unset it and restart. Its use is audited under the actor `break-glass`, and `dmctl status` reports whether it is still accepted |
+| `DM_STORAGE_KEYS`, `DM_STORAGE_KEY_<NAME>`, `DM_SECRETS_DIR`, `DM_STORAGE_KEYS_STRICT` | Keys sealing the secret columns of a persistent store: unlock and bootstrap tokens, APNs push keys, user auth tokens. `DM_STORAGE_KEYS` lists key names active-first, and the material comes from `DM_STORAGE_KEY_<NAME>` or from files in `DM_SECRETS_DIR`. A rotation prepends a name and runs `Rewrap`; `DM_STORAGE_KEYS_STRICT` then refuses any row still in clear. A persistent backend will not start without this |
+| `DM_ALLOW_REENROLL` | Accept an `Authenticate` whose certificate differs from the enrollment's pin, replacing it. Off by default: a certificate carries no binding to an enrollment id, so allowing this makes every certificate the CA issues a key to every enrollment. Turn it on only where devices re-enrol themselves after a wipe |
+| `DM_DDM_URL`, `DM_DDM_SEND_KEY`, `DM_DDM_RECV_KEY`, `DM_DDM_SUBSCRIPTIONS` | The split-deployment hop and synthesised status subscriptions. Both keys are required on either side: the hop carries a check-in verbatim and the receiving role trusts the enrollment id in that body |
+| `DM_CA_FILE`, `DM_CERT_HEADER` | Client certificate verification, direct or behind a proxy |
+| `DM_PUBLIC_URL`, `DM_PUSH_TOPIC` | Turn on the enrollment routes; the server URL devices are given and the push topic |
+| `DM_ENROLL_CA_CERT_FILE`, `DM_ENROLL_CA_KEY_FILE`, `DM_SCEP_CHALLENGE`, `DM_SCEP_HMAC_KEY` | The enrollment identity CA and its SCEP challenge; a self-signed CA is generated for development |
+| `DM_IDENTITY` | Where an enrolled device's identity comes from: `scep` (the default) or `acme` |
+| `DM_ACME_POLICY`, `DM_ACME_KEY`, `DM_ACME_HMAC_KEY`, `DM_ACME_ANCHOR_FILE`, `DM_ACME_ALLOW_UNATTESTED`, `DM_ACME_IDENTIFIER_TTL` | Which devices may enroll (`any`, `dep`, `sip`), the key the device generates (`ec256`, `ec384`, `rsa2048`, `rsa4096`), the key that mints client identifiers, extra attestation anchors for a lab, whether a device that cannot attest may enroll, and how long a client identifier stays usable |
+| `DM_PROFILE_IDENTIFIER`, `DM_ORGANIZATION` | Enrollment profile identity |
+| `DM_DISCOVERY`, `DM_ACCOUNT_DRIVEN_METHOD` | Service discovery per user type (`Mac=mdm-adde,iPhone=mdm-byod`) and the account-driven flow (`apple-as-web` or `apple-oauth2`) |
+| `DM_OIDC_ISSUER`, `DM_OIDC_CLIENT_ID`, `DM_OIDC_CLIENT_SECRET` | The identity provider behind the ADE web view and account-driven pages |
+| `DM_ADE_ANCHOR_FILE`, `DM_ADE_AUDIT`, `DM_REQUIRE_USER_AUTH` | Extra `MachineInfo` signing anchors, audit-only signature policy, and the user authentication gate |
+| `DM_RETURN_TO_SERVICE` | Allow a supervised Automated Device Enrollment device to erase itself and re-enrol when it asks. Off by default: the answer to this request wipes a device |
+| `DM_AXM_CLIENT_ID`, `DM_AXM_KEY_ID`, `DM_AXM_KEY_FILE`, `DM_AXM_SCOPE`, `DM_AXM_BASE_URL`, `DM_AXM_TOKEN_URL` | Apple Business Manager API credentials; enables `/admin/v1/axm/` |
+| `DM_AUDIT_STORE`, `DM_AUDIT_RETENTION` | Persist every event to the persistent audit trail on this process's database, and how long to keep records (unset keeps them forever). Read it at `GET /admin/v1/audit` or with `dmctl audit list --since 1h` |
+| `DM_AUDIT_LOG`, `DM_WEBHOOK_URL`, `DM_WEBHOOK_HMAC_KEY` | Event sinks: a projected slog record per state change, and a MicroMDM-compatible webhook with an optional SHA-256 body signature. Both off by default. The webhook envelope matches MicroMDM and NanoMDM except that it carries no `raw_payload`, because theirs is the raw check-in body and a `TokenUpdate` body contains the device unlock token |
+| `DM_DEP_BASE_URL`, `DM_DEP_SYNC_INTERVAL`, `DM_DEP_ASSIGN_INTERVAL`, `DM_DEP_PROFILE_URL`, `DM_DEP_USE_PUT` | Device enrollment service endpoint, the background sync worker, and the DEP profile url (defaults to this server) |
+| `DM_PUSH_SOURCE`, `DM_PUSH_CERT_FILE`, `DM_PUSH_KEY_FILE`, `DM_PUSH_HOST`, `DM_PUSH_COALESCE`, `DM_PUSH_CERT_TTL` | Where APNs credentials come from and how pushes are shaped: `off`, `file` (the PEM pair, which a certificate path alone implies) or `store` (the push certificate store). The topic is read from the certificate rather than typed, so it has no variable of its own; `DM_PUSH_HOST` overrides the APNs endpoint for a lab, `DM_PUSH_COALESCE` is the window repeated pushes collapse into (negative disables it), and `DM_PUSH_CERT_TTL` how long a store-backed certificate is cached before its version is rechecked |
+
+`cmd/dmctl` drives every one of those routes. Typed verbs cover the surfaces this project models
+-- `enrollments`, `commands`, `push`, `pushcerts`, `export`/`import`, `declarations`, `sets`,
+`notify`, `principals`, `policies`, `audit`, plus `status`, `routes` and `actions` -- and
+`dmctl api <METHOD> <path>` reaches the rest, including the Business Manager, DEP and ACME
+families that proxy Apple-shaped APIs. `dmctl explain` answers offline from the compiled-in
+schema. E2E-024 walks the server's own route table and fails if any route cannot be driven.
+
+The admin API manages declarations, sets, and assignments (`/admin/v1/declarations`, `/sets`,
+`/enrollments`), Business Manager servers, devices, and activities (`/admin/v1/axm/`), DEP
+accounts: token PKI generation, `.p7m` import, device listing, profile definition, and sync
+(`/admin/v1/dep/accounts/`), and issued ACME identities with the hardware Apple attested for
+each (`/admin/v1/acme/certificates`). The exact routes and constants are in `internal/app`.
+
+## Development
+
+```bash
+git submodule update --init   # pinned Apple schema
+make ci                       # lint, verify, test, storage, e2e, fuzz smoke, coverage gate
+make testdb-up                # PostgreSQL and MySQL in Docker for `make test-storage` and `E2E_STORE=postgres make test-e2e`
+make test-storage-perf        # the 100k-row Clear timing gate on PostgreSQL, without the race detector
+make testdb-down              # remove the Docker test databases
+make testdb-ddm-up            # build our image and run the ddm role for `TestE2E_DDMSplitDeployment`
+make testdb-ddm-down          # remove the ddm role container
+make refs                     # clone the reference projects for research (never imported)
+```
+
+Coverage floor is 95% overall and per package. See `Makefile` targets with `make help`.
+
+Dependencies stay minimal on purpose: the plist codec, the smallstep CMS and SCEP libraries,
+the SQL drivers, `golang.org/x/crypto`, and `cedar-policy/cedar-go` for admin authorization.
+OAuth 1.0a, the ES256 client assertion, the OIDC relying party, the OAuth 2 authorization server,
+the ACME server, its JWS layer, and the CBOR subset an attestation object needs are all
+implemented in this module. Cedar is the one deliberate exception, and decision record 0034 gives
+the reasoning: an authorization policy language is not a few hundred lines of parsing the way a
+JWS serialisation or a CBOR subset is, and hand-rolling one is how the reference CAs ended up
+matching URL prefixes. The simulator drives the ACME server with `golang.org/x/crypto/acme`,
+because testing a server against its own client shows only that the two agree. Nothing from
+NanoMDM or MicroMDM is imported beyond the plist package.
+
+## Sources
+
+Apple's [Device Management documentation](https://developer.apple.com/documentation/devicemanagement)
+and the [apple/device-management](https://github.com/apple/device-management) schema repository are
+the primary sources. The open source projects this work learns from are catalogued in
+[docs/research/reference_projects.md](docs/research/reference_projects.md).
+
+## Contributing
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) and the decision record process in
+[docs/research/decisions/README.md](docs/research/decisions/README.md).
+
+## License
+
+MIT. See [LICENSE](LICENSE).

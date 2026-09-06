@@ -1,0 +1,176 @@
+{
+  "schema_version": 1,
+  "diagram_type": "dataflow",
+  "meta": {
+    "title": "Request Decode Pipeline",
+    "quality_profile": "showcase",
+    "viewBox": [
+      1080,
+      620
+    ],
+    "views": [
+      {
+        "id": "body",
+        "label": "Body",
+        "focus": [
+          "body",
+          "plist",
+          "checkin"
+        ],
+        "note": "A bounded plist decode, then a typed check-in message."
+      },
+      {
+        "id": "identity",
+        "label": "Identity",
+        "focus": [
+          "signature",
+          "cms",
+          "cert"
+        ],
+        "note": "The identity certificate is recovered from the detached CMS signature."
+      }
+    ]
+  },
+  "stages": [
+    {
+      "label": "Wire"
+    },
+    {
+      "label": "Decode"
+    },
+    {
+      "label": "Typed"
+    }
+  ],
+  "nodes": [
+    {
+      "id": "body",
+      "type": "external",
+      "label": "PUT body",
+      "sublabel": "XML or binary plist",
+      "stage": 0,
+      "row": 0,
+      "tag": "untrusted",
+      "width": 130
+    },
+    {
+      "id": "signature",
+      "type": "security",
+      "label": "Mdm-Signature",
+      "sublabel": "detached CMS",
+      "stage": 0,
+      "row": 1,
+      "tag": "untrusted",
+      "width": 130
+    },
+    {
+      "id": "plist",
+      "type": "backend",
+      "label": "plist.Decoder",
+      "sublabel": "byte and depth bounded",
+      "stage": 1,
+      "row": 0,
+      "width": 130
+    },
+    {
+      "id": "cms",
+      "type": "security",
+      "label": "cms.VerifyHeader",
+      "sublabel": "skew tolerance",
+      "stage": 1,
+      "row": 1,
+      "width": 130
+    },
+    {
+      "id": "checkin",
+      "type": "backend",
+      "label": "mdm.Checkin",
+      "sublabel": "one of eight messages",
+      "stage": 2,
+      "row": 0,
+      "width": 130
+    },
+    {
+      "id": "response",
+      "type": "backend",
+      "label": "mdm.Response",
+      "sublabel": "command result",
+      "stage": 2,
+      "row": 1,
+      "width": 130
+    },
+    {
+      "id": "cert",
+      "type": "security",
+      "label": "identity certificate",
+      "sublabel": "pinned per enrollment",
+      "stage": 2,
+      "row": 2,
+      "width": 130
+    }
+  ],
+  "flows": [
+    {
+      "from": "body",
+      "to": "plist",
+      "label": "decode",
+      "classification": "untrusted input",
+      "variant": "emphasis",
+      "route": "straight"
+    },
+    {
+      "from": "signature",
+      "to": "cms",
+      "label": "verify",
+      "classification": "untrusted input",
+      "variant": "security",
+      "route": "straight"
+    },
+    {
+      "from": "plist",
+      "to": "checkin",
+      "label": "check-in",
+      "variant": "emphasis",
+      "route": "straight"
+    },
+    {
+      "from": "plist",
+      "to": "response",
+      "label": "response",
+      "variant": "default"
+    },
+    {
+      "from": "cms",
+      "to": "cert",
+      "label": "signer",
+      "classification": "pinned",
+      "variant": "security"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "One codec boundary",
+      "items": [
+        "plist is the library's only point of contact with property lists",
+        "The decoder is byte- and depth-limited because device input is untrusted"
+      ]
+    },
+    {
+      "dot": "rose",
+      "title": "Identity",
+      "items": [
+        "The certificate comes from TLS, a proxy header, or the detached Mdm-Signature",
+        "Whichever the source, it is pinned to the enrollment and checked on every later message"
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "Not here",
+      "items": [
+        "schema/support screens outbound commands, not decoded check-ins",
+        "That screen is in flow-command-delivery, on service.Core.Enqueue"
+      ]
+    }
+  ]
+}

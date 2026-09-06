@@ -1,0 +1,337 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "Package Tiers and Import Direction",
+    "quality_profile": "showcase",
+    "views": [
+      {
+        "id": "spine",
+        "label": "Composition to leaf",
+        "focus": [
+          "apptier",
+          "servertier",
+          "storagetier",
+          "protocoltier",
+          "schematier"
+        ],
+        "note": "The deepest import chain: the reference server down to the generated types it decodes with."
+      },
+      {
+        "id": "modules",
+        "label": "Where the module splits",
+        "focus": [
+          "apptier",
+          "servertier",
+          "storagetier",
+          "protocoltier"
+        ],
+        "note": "Everything under server/ is a second module. Importing the protocol never brings a database driver."
+      }
+    ],
+    "viewBox": [
+      1360,
+      560
+    ],
+    "repository": {
+      "url": "https://github.com/deploymenttheory/go-apple-dm",
+      "revision": "12ef0a355a7a81901b953b0c0195dafb96326917"
+    }
+  },
+  "components": [
+    {
+      "id": "apptier",
+      "type": "backend",
+      "label": "app",
+      "sublabel": "cmd \u00b7 internal/app \u00b7 e2e",
+      "pos": [
+        40,
+        270.0
+      ],
+      "size": [
+        160,
+        70
+      ],
+      "tag": "5 packages",
+      "sources": [
+        {
+          "path": "server/internal/app/app.go",
+          "label": "wire"
+        }
+      ]
+    },
+    {
+      "id": "servertier",
+      "type": "backend",
+      "label": "server/",
+      "sublabel": "service \u00b7 httpapi \u00b7 ddmsync",
+      "pos": [
+        280,
+        270.0
+      ],
+      "size": [
+        170,
+        70
+      ],
+      "tag": "32 packages",
+      "sources": [
+        {
+          "path": "server/service/checkin.go",
+          "label": "check-in"
+        },
+        {
+          "path": "server/ddmsync/notifier.go",
+          "label": "declarations"
+        }
+      ]
+    },
+    {
+      "id": "simtier",
+      "type": "external",
+      "label": "simulator/",
+      "sublabel": "a device, in software",
+      "pos": [
+        840,
+        430.0
+      ],
+      "size": [
+        180,
+        70
+      ],
+      "tag": "1 package",
+      "sources": [
+        {
+          "path": "simulator/simulator.go",
+          "label": "device"
+        }
+      ]
+    },
+    {
+      "id": "storagetier",
+      "type": "database",
+      "label": "storage/",
+      "sublabel": "contracts \u00b7 in-memory",
+      "pos": [
+        560,
+        270.0
+      ],
+      "size": [
+        180,
+        70
+      ],
+      "tag": "9 packages",
+      "sources": [
+        {
+          "path": "storage/storage.go",
+          "label": "contract"
+        }
+      ]
+    },
+    {
+      "id": "clienttier",
+      "type": "cloud",
+      "label": "appleplatformservices/",
+      "sublabel": "dep \u00b7 axm \u00b7 gdmf \u00b7 push",
+      "pos": [
+        560,
+        110.0
+      ],
+      "size": [
+        180,
+        70
+      ],
+      "tag": "9 packages",
+      "sources": [
+        {
+          "path": "appleplatformservices/dep/client.go",
+          "label": "DEP"
+        }
+      ]
+    },
+    {
+      "id": "pkitier",
+      "type": "security",
+      "label": "pki/",
+      "sublabel": "ca \u00b7 scep \u00b7 acme \u00b7 pushcert",
+      "pos": [
+        560,
+        430.0
+      ],
+      "size": [
+        180,
+        70
+      ],
+      "tag": "7 packages",
+      "sources": [
+        {
+          "path": "pki/acme/server.go",
+          "label": "ACME"
+        },
+        {
+          "path": "pki/pushcert/pushcert.go",
+          "label": "stdlib only"
+        }
+      ]
+    },
+    {
+      "id": "protocoltier",
+      "type": "backend",
+      "label": "mdmprotocol/",
+      "sublabel": "mdm \u00b7 ddm \u00b7 enroll \u00b7 plist",
+      "pos": [
+        840,
+        270.0
+      ],
+      "size": [
+        180,
+        70
+      ],
+      "tag": "15 packages",
+      "sources": [
+        {
+          "path": "mdmprotocol/mdm/checkin.go",
+          "label": "decode"
+        },
+        {
+          "path": "mdmprotocol/dmhook/dmhook.go",
+          "label": "hooks"
+        }
+      ]
+    },
+    {
+      "id": "schematier",
+      "type": "backend",
+      "label": "schema/",
+      "sublabel": "generated from Apple",
+      "pos": [
+        840,
+        110.0
+      ],
+      "size": [
+        180,
+        70
+      ],
+      "tag": "11 packages",
+      "sources": [
+        {
+          "path": "schema/GENERATED_FROM.json",
+          "label": "pin"
+        }
+      ]
+    },
+    {
+      "id": "foundationtier",
+      "type": "backend",
+      "label": "foundation",
+      "sublabel": "paging \u00b7 clock \u00b7 secrets",
+      "pos": [
+        1120,
+        270.0
+      ],
+      "size": [
+        180,
+        70
+      ],
+      "tag": "6 packages",
+      "sources": [
+        {
+          "path": "paging/paging.go",
+          "label": "paging"
+        }
+      ]
+    }
+  ],
+  "boundaries": [
+    {
+      "kind": "region",
+      "label": "module: go-apple-dm/server",
+      "wraps": [
+        "apptier",
+        "servertier"
+      ],
+      "pad": 26
+    },
+    {
+      "kind": "region",
+      "label": "module: go-apple-dm",
+      "wraps": [
+        "simtier",
+        "storagetier",
+        "clienttier",
+        "pkitier",
+        "protocoltier",
+        "schematier",
+        "foundationtier"
+      ],
+      "pad": 26
+    }
+  ],
+  "connections": [
+    {
+      "from": "apptier",
+      "to": "servertier",
+      "label": "assembles"
+    },
+    {
+      "from": "servertier",
+      "to": "storagetier"
+    },
+    {
+      "from": "servertier",
+      "to": "clienttier",
+      "label": "calls Apple"
+    },
+    {
+      "from": "storagetier",
+      "to": "protocoltier"
+    },
+    {
+      "from": "storagetier",
+      "to": "pkitier",
+      "label": "push certificates",
+      "labelDy": 58
+    },
+    {
+      "from": "clienttier",
+      "to": "protocoltier"
+    },
+    {
+      "from": "pkitier",
+      "to": "protocoltier"
+    },
+    {
+      "from": "simtier",
+      "to": "protocoltier",
+      "label": "drives a server"
+    },
+    {
+      "from": "protocoltier",
+      "to": "schematier",
+      "label": "generated types"
+    },
+    {
+      "from": "protocoltier",
+      "to": "foundationtier"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "Reading the arrows",
+      "items": [
+        "Every arrow means \"imports\": the tail depends on the head",
+        "A tier may import its own and every tier to its right, never to its left",
+        "internal/layout reads the tier from the import path and fails the build on an upward edge"
+      ]
+    },
+    {
+      "dot": "rose",
+      "title": "What the split buys",
+      "items": [
+        "server/ is a second Go module, so it can depend on the library and never the reverse",
+        "Importing mdmprotocol/mdm brings nine dependencies and no database driver",
+        "pki/pushcert imports nothing, so storage can validate a certificate without depending on push"
+      ]
+    }
+  ]
+}

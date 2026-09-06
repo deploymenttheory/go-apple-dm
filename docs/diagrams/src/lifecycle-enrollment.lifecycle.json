@@ -1,0 +1,184 @@
+{
+  "schema_version": 1,
+  "diagram_type": "lifecycle",
+  "meta": {
+    "title": "Enrollment Lifecycle",
+    "quality_profile": "showcase",
+    "viewBox": [
+      1080,
+      630
+    ],
+    "views": [
+      {
+        "id": "enroll",
+        "label": "Becoming manageable",
+        "focus": [
+          "unknown",
+          "authenticated",
+          "enabled"
+        ],
+        "note": "Authenticate pins the identity; only TokenUpdate makes the enrollment usable."
+      },
+      {
+        "id": "recover",
+        "label": "Re-enrollment",
+        "focus": [
+          "authenticated",
+          "reenrolled"
+        ],
+        "note": "A new identity clears tokens and the pending queue, then re-pins."
+      }
+    ]
+  },
+  "lanes": [
+    {
+      "id": "main",
+      "label": "Enrollment states"
+    },
+    {
+      "id": "rotation",
+      "label": "Rotation"
+    },
+    {
+      "id": "terminal",
+      "label": "Exits"
+    }
+  ],
+  "states": [
+    {
+      "id": "unknown",
+      "type": "start",
+      "label": "Unknown",
+      "sublabel": "no enrollment row",
+      "lane": "main",
+      "col": 0,
+      "step": "01"
+    },
+    {
+      "id": "authenticated",
+      "type": "active",
+      "label": "Authenticated",
+      "sublabel": "certificate pinned",
+      "lane": "main",
+      "col": 2,
+      "step": "02"
+    },
+    {
+      "id": "enabled",
+      "type": "success",
+      "label": "Enabled",
+      "sublabel": "push token stored",
+      "lane": "main",
+      "col": 4,
+      "step": "03"
+    },
+    {
+      "id": "reenrolled",
+      "type": "failure",
+      "label": "Re-enrolled",
+      "sublabel": "tokens and queue cleared",
+      "lane": "rotation",
+      "col": 0,
+      "tag": "recoverable"
+    },
+    {
+      "id": "denied",
+      "type": "failure",
+      "label": "Reuse denied",
+      "sublabel": "held by another enrollment",
+      "lane": "terminal",
+      "col": 1,
+      "tag": "refused"
+    },
+    {
+      "id": "checkedout",
+      "type": "failure",
+      "label": "Checked out",
+      "sublabel": "DDM state cleared",
+      "lane": "terminal",
+      "col": 2,
+      "tag": "terminal"
+    }
+  ],
+  "transitions": [
+    {
+      "id": "auth",
+      "from": "unknown",
+      "to": "authenticated",
+      "label": "Authenticate",
+      "variant": "emphasis",
+      "route": "straight"
+    },
+    {
+      "id": "token",
+      "from": "authenticated",
+      "to": "enabled",
+      "label": "TokenUpdate",
+      "variant": "emphasis",
+      "route": "straight"
+    },
+    {
+      "id": "rotate",
+      "from": "authenticated",
+      "to": "reenrolled",
+      "label": "new identity",
+      "variant": "default",
+      "fromSide": "bottom",
+      "toSide": "top",
+      "route": "straight",
+      "labelAt": [
+        402,
+        228
+      ]
+    },
+    {
+      "id": "repin",
+      "from": "reenrolled",
+      "to": "authenticated",
+      "label": "re-pinned",
+      "variant": "emphasis",
+      "route": "left-channel"
+    },
+    {
+      "id": "reuse",
+      "from": "authenticated",
+      "to": "denied",
+      "label": "held elsewhere",
+      "variant": "security",
+      "channelX": 479,
+      "labelAt": [
+        479.0,
+        350.0
+      ]
+    },
+    {
+      "id": "checkout",
+      "from": "enabled",
+      "to": "checkedout",
+      "label": "CheckOut",
+      "variant": "security",
+      "labelAt": [
+        710.0,
+        202.0
+      ]
+    }
+  ],
+  "cards": [
+    {
+      "dot": "emerald",
+      "title": "Two check-ins to become manageable",
+      "items": [
+        "Authenticate upserts the enrollment and pins the certificate fingerprint",
+        "TokenUpdate stores the push token and is what actually enables the enrollment"
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "Re-enrollment",
+      "items": [
+        "A different certificate for a known enrollment is a policy decision, allowed by default",
+        "The upsert clears push info, unlock and bootstrap tokens, the pin, and the pending queue"
+      ]
+    }
+  ]
+}
