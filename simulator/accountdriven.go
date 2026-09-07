@@ -16,6 +16,7 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/mdmprotocol/cms"
 	"github.com/deploymenttheory/go-apple-dm/mdmprotocol/plist"
 	"github.com/deploymenttheory/go-apple-dm/mdmprotocol/profile"
+	"github.com/deploymenttheory/go-apple-dm/secrets"
 )
 
 // Account-driven enrollment constants from Apple's flow description.
@@ -167,7 +168,16 @@ func (d *Device) AccountDrivenEnroll(ctx context.Context, opts AccountDrivenOpti
 	if err := d.ApplyProfile(ctx, data, opts.Parse); err != nil {
 		return res, err
 	}
-	d.EnrollmentID = strings.ToUpper(uuid.NewV7().String())
+	d.accountMu.Lock()
+	d.accountDriven = true
+	d.accessToken = secrets.New([]byte(bearer))
+	d.reauthenticate = opts.Authenticate
+	d.accountMu.Unlock()
+	if res.Chosen.Version == "mdm-byod" {
+		d.EnrollmentID = strings.ToUpper(uuid.NewV7().String())
+	} else {
+		d.EnrollmentID = ""
+	}
 	if err := d.Enroll(ctx); err != nil {
 		return res, err
 	}
@@ -316,6 +326,10 @@ func (d *Device) OAuth2CodeFlow(ctx context.Context, c AuthChallenge, loginHint 
 		return "", fmt.Errorf("%w: redirect without code", ErrAccountDriven)
 	}
 	form := url.Values{"grant_type": {"authorization_code"}, "code": {code}, "redirect_uri": {c.RedirectURL}, "client_id": {c.ClientID}}
+	return d.exchangeAccountToken(ctx, c, form)
+}
+
+func (d *Device) exchangeAccountToken(ctx context.Context, c AuthChallenge, form url.Values) (string, error) {
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, c.TokenURL, strings.NewReader(form.Encode()))
 	if err != nil {
 		return "", fmt.Errorf("%w: %w", ErrAccountDriven, err)
@@ -331,11 +345,96 @@ func (d *Device) OAuth2CodeFlow(ctx context.Context, c AuthChallenge, loginHint 
 		return "", &HTTPError{Status: resp.StatusCode, Body: data}
 	}
 	var tr struct {
-		AccessToken string `json:"access_token"`
-		TokenType   string `json:"token_type"`
+		AccessToken  string `json:"access_token"`
+		TokenType    string `json:"token_type"`
+		RefreshToken string `json:"refresh_token"`
 	}
-	if err := json.Unmarshal(data, &tr); err != nil || tr.AccessToken == "" {
+	if err := json.Unmarshal(data, &tr); err != nil || tr.AccessToken == "" || !strings.EqualFold(tr.TokenType, "Bearer") {
 		return "", fmt.Errorf("%w: token response: %v", ErrAccountDriven, err)
 	}
+	d.accountMu.Lock()
+	d.accessToken = secrets.New([]byte(tr.AccessToken))
+	d.refreshToken = secrets.New([]byte(tr.RefreshToken))
+	d.oauthChallenge = c
+	d.accountMu.Unlock()
 	return tr.AccessToken, nil
+}
+
+// AccountTokens returns redacted copies of the current OAuth credentials.
+func (d *Device) AccountTokens() (secrets.Secret, secrets.Secret) {
+	d.accountMu.Lock()
+	defer d.accountMu.Unlock()
+	return d.accessToken, d.refreshToken
+}
+
+// RefreshAccountToken rotates the retained OAuth refresh credential.
+func (d *Device) RefreshAccountToken(ctx context.Context) (string, error) {
+	d.accountMu.Lock()
+	token, c := d.refreshToken, d.oauthChallenge
+	d.accountMu.Unlock()
+	if token.IsZero() {
+		return "", fmt.Errorf("%w: no refresh token", ErrAccountDriven)
+	}
+	return d.exchangeAccountToken(ctx, c, url.Values{"grant_type": {"refresh_token"}, "refresh_token": {string(token.Bytes())}, "client_id": {c.ClientID}})
+}
+
+// accountRequest retries the identical interrupted request once after successful
+// reauthentication. It retains the response plist and command UUID, avoiding a
+// reset to Idle that would lose an acknowledged command result.
+func (d *Device) accountRequest(req *http.Request, body []byte) (*http.Response, error) {
+	d.accountMu.Lock()
+	enabled, token, reauth := d.accountDriven, d.accessToken, d.reauthenticate
+	d.accountMu.Unlock()
+	require := enabled
+	if modelFamily(d.ProductName) == "Mac" {
+		var identity struct {
+			UserID           string
+			EnrollmentUserID string
+		}
+		if err := plist.Unmarshal(body, &identity); err == nil && identity.UserID == "" && identity.EnrollmentUserID == "" {
+			require = false
+		}
+	}
+	if !require {
+		return d.Client.Do(req)
+	}
+	req.Header.Set("Authorization", "Bearer "+string(token.Bytes()))
+	resp, err := d.Client.Do(req)
+	if err != nil || resp.StatusCode != http.StatusUnauthorized || reauth == nil {
+		return resp, err
+	}
+	challenge, err := ParseAuthChallenge(resp.Header.Get("WWW-Authenticate"))
+	if err != nil {
+		return resp, nil
+	}
+	_, _ = io.Copy(io.Discard, io.LimitReader(resp.Body, accountDrivenMaxBody))
+	_ = resp.Body.Close()
+	d.reauthMu.Lock()
+	defer d.reauthMu.Unlock()
+	d.accountMu.Lock()
+	current := d.accessToken
+	d.accountMu.Unlock()
+	if current.Equal(token) {
+		var bearer string
+		if challenge.Method == "apple-oauth2" {
+			bearer, err = d.RefreshAccountToken(req.Context())
+		} else {
+			err = ErrAccountDriven
+		}
+		if err != nil {
+			bearer, err = reauth(req.Context(), challenge)
+		}
+		if err != nil {
+			return nil, err
+		}
+		current = secrets.New([]byte(bearer))
+		d.accountMu.Lock()
+		d.accessToken = current
+		d.accountMu.Unlock()
+	}
+	retry := req.Clone(req.Context())
+	retry.Body = io.NopCloser(bytes.NewReader(body))
+	retry.ContentLength = int64(len(body))
+	retry.Header.Set("Authorization", "Bearer "+string(current.Bytes()))
+	return d.Client.Do(retry)
 }

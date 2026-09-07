@@ -6,6 +6,7 @@ import (
 	"crypto/x509"
 	"errors"
 	"fmt"
+	"github.com/deploymenttheory/go-apple-dm/secrets"
 	"log/slog"
 	"net/http"
 	"net/url"
@@ -20,8 +21,8 @@ const (
 	VersionADDE = "mdm-adde"
 	ModeBYOD    = "BYOD"
 	ModeADDE    = "ADDE"
-	// ParamEnrollmentToken is the ServerURL query parameter carrying the
-	// enrollment token into every check-in and connect.
+	// ParamEnrollmentToken identifies legacy profiles for an explicit migration.
+	// Deprecated: query credentials no longer authorize enrollment.
 	ParamEnrollmentToken = "enrollment-token"
 	// ContentTypeProfile is the profile response type.
 	ContentTypeProfile = "application/x-apple-aspen-config"
@@ -69,7 +70,7 @@ type Authenticator interface {
 
 // ProfileHook builds the enrollment profile for an authenticated identity.
 // The handler then sets EnrollmentMode and AssignedManagedAppleID and
-// appends the enrollment token, so hooks leave those alone.
+// supplies AssociationFromContext for a certificate-bound enrollment reference.
 type ProfileHook func(ctx context.Context, id Identity, info *DeviceInfo) (*enroll.Profile, error)
 
 // Config builds a Handler.
@@ -80,7 +81,10 @@ type Config struct {
 	Parse   Parser
 	Auth    Authenticator
 	Tokens  *Tokens
-	Profile ProfileHook
+	// Verifier may validate external IdP tokens instead of built-in Tokens.
+	Verifier     Verifier
+	Associations *Associations
+	Profile      ProfileHook
 	// SignCert and SignKey sign the profile (CMS attached).
 	SignCert *x509.Certificate
 	SignKey  crypto.Signer
@@ -97,10 +101,19 @@ func New(cfg Config) (*Handler, error) {
 	switch {
 	case cfg.Version != VersionBYOD && cfg.Version != VersionADDE:
 		return nil, fmt.Errorf("%w: Version must be %s or %s", ErrConfig, VersionBYOD, VersionADDE)
-	case cfg.Parse == nil || cfg.Auth == nil || cfg.Tokens == nil || cfg.Profile == nil:
+	case cfg.Parse == nil || cfg.Auth == nil || (cfg.Tokens == nil && cfg.Verifier == nil) || cfg.Profile == nil:
 		return nil, fmt.Errorf("%w: Parse, Auth, Tokens, and Profile are required", ErrConfig)
 	case cfg.SignCert == nil || cfg.SignKey == nil:
 		return nil, fmt.Errorf("%w: SignCert and SignKey are required", ErrConfig)
+	}
+	if cfg.Verifier == nil {
+		cfg.Verifier = cfg.Tokens
+	}
+	if cfg.Associations == nil {
+		cfg.Associations = cfg.Tokens.AssociationStore()
+	}
+	if cfg.Associations == nil {
+		return nil, fmt.Errorf("%w: Associations is required", ErrConfig)
 	}
 	if cfg.Logger == nil {
 		cfg.Logger = slog.Default()
@@ -132,19 +145,23 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		h.fail(w, r, err, http.StatusBadRequest)
 		return
 	}
-	bearer, ok := strings.CutPrefix(r.Header.Get("Authorization"), "Bearer ")
-	if !ok || bearer == "" {
+	bearer := Bearer(r.Header.Get("Authorization"))
+	if bearer.IsZero() {
 		h.challenge(w, r, info)
 		return
 	}
-	rec, err := h.cfg.Tokens.Consume(r.Context(), KindAccess, bearer)
+	id, err := h.cfg.Verifier.Verify(r.Context(), bearer)
 	if err != nil {
-		// Invalid, expired, or replayed: a fresh challenge, never 500.
+		// Storage/IdP failures must not masquerade as expired authentication.
+		if !errors.Is(err, ErrTokenNotFound) && !errors.Is(err, ErrTokenExpired) && !errors.Is(err, ErrTokenUsed) {
+			h.fail(w, r, err, http.StatusInternalServerError)
+			return
+		}
 		h.cfg.Logger.InfoContext(r.Context(), "accountdriven: bearer rejected", "error", err)
 		h.challenge(w, r, info)
 		return
 	}
-	h.serveProfile(w, r, rec.Identity, info)
+	h.serveProfile(w, r, id, info)
 }
 
 func (h *Handler) challenge(w http.ResponseWriter, r *http.Request, info *DeviceInfo) {
@@ -165,17 +182,18 @@ func (h *Handler) challenge(w http.ResponseWriter, r *http.Request, info *Device
 // serveProfile finalises, signs, and writes the profile.
 func (h *Handler) serveProfile(w http.ResponseWriter, r *http.Request, id Identity, info *DeviceInfo) {
 	ctx := r.Context()
+	a, err := h.cfg.Associations.Create(ctx, id, h.cfg.Version, info.Product)
+	if err != nil {
+		h.fail(w, r, err, http.StatusInternalServerError)
+		return
+	}
+	ctx = context.WithValue(ctx, associationContextKey{}, a)
 	p, err := h.cfg.Profile(ctx, id, info)
 	if err != nil {
 		h.fail(w, r, err, http.StatusInternalServerError)
 		return
 	}
-	enrollmentToken, err := h.cfg.Tokens.Issue(ctx, KindEnrollment, id, nil)
-	if err != nil {
-		h.fail(w, r, err, http.StatusInternalServerError)
-		return
-	}
-	if err := Finalize(p, h.cfg.Version, id, enrollmentToken); err != nil {
+	if err := Finalize(p, h.cfg.Version, id, ""); err != nil {
 		h.fail(w, r, err, http.StatusInternalServerError)
 		return
 	}
@@ -195,12 +213,13 @@ func (h *Handler) serveProfile(w http.ResponseWriter, r *http.Request, id Identi
 	_, _ = w.Write(signed)
 }
 
-// Finalize enforces the account-driven keys on a profile: EnrollmentMode
-// from the discovery version, AssignedManagedAppleID from the identity
-// (required), and the enrollment token appended to ServerURL and
-// CheckInURL. A profile that already carries a different mode or managed
-// Apple ID is rejected: those keys are immutable.
-func Finalize(p *enroll.Profile, version string, id Identity, enrollmentToken string) error {
+// Finalize sets Apple's account-driven profile keys. The final argument is
+// retained for source compatibility and is ignored: bearer credentials belong in
+// Authorization, never in a profile URL.
+func Finalize(p *enroll.Profile, version string, id Identity, _ string) error {
+	if p == nil {
+		return ErrConfig
+	}
 	mode, err := Mode(version)
 	if err != nil {
 		return err
@@ -216,29 +235,23 @@ func Finalize(p *enroll.Profile, version string, id Identity, enrollmentToken st
 	}
 	p.EnrollmentMode = mode
 	p.AssignedManagedAppleID = id.ManagedAppleAccount
-	if enrollmentToken != "" {
-		p.ServerURL, err = withParam(p.ServerURL, ParamEnrollmentToken, enrollmentToken)
-		if err != nil {
+	for _, raw := range []string{p.ServerURL, p.CheckInURL} {
+		if _, err := url.Parse(raw); err != nil {
 			return err
 		}
-		if p.CheckInURL != "" {
-			if p.CheckInURL, err = withParam(p.CheckInURL, ParamEnrollmentToken, enrollmentToken); err != nil {
-				return err
-			}
-		}
 	}
+
 	return nil
 }
 
-func withParam(raw, key, value string) (string, error) {
-	u, err := url.Parse(raw)
-	if err != nil {
-		return "", fmt.Errorf("accountdriven: url %q: %w", raw, err)
+// Bearer parses RFC 6750 authorization with a case-insensitive scheme. It never
+// accepts multiple credentials or whitespace inside a token.
+func Bearer(header string) secrets.Secret {
+	scheme, value, ok := strings.Cut(header, " ")
+	if !ok || !strings.EqualFold(scheme, "Bearer") || value == "" || strings.ContainsAny(value, " \t\r\n,") {
+		return secrets.Secret{}
 	}
-	q := u.Query()
-	q.Set(key, value)
-	u.RawQuery = q.Encode()
-	return u.String(), nil
+	return secrets.New([]byte(value))
 }
 
 // fail writes an error: an *HTTPError is relayed as is (the device sees

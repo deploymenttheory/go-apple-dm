@@ -8,7 +8,8 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
-	"sync"
+	"github.com/deploymenttheory/go-apple-dm/secrets"
+	"github.com/deploymenttheory/go-apple-dm/state"
 	"time"
 )
 
@@ -49,11 +50,10 @@ type Kind string
 
 // Token kinds.
 const (
-	// KindAccess is the bearer the device presents on the second POST:
-	// single use, short lived (also the OAuth 2 access token).
+	// KindAccess is the reusable bearer for profile retrieval and ongoing MDM requests.
 	KindAccess Kind = "access"
-	// KindEnrollment travels in the profile's ServerURL and authorises the
-	// check-in; long lived, reusable.
+	// KindEnrollment is retained for migration tooling only.
+	// Deprecated: query credentials do not authorize account-driven requests.
 	KindEnrollment Kind = "enrollment"
 	// KindRefresh is the OAuth 2 refresh token; rotated on use.
 	KindRefresh Kind = "refresh"
@@ -165,6 +165,9 @@ func (t *Tokens) Check(ctx context.Context, k Kind, tok string) (Record, error) 
 	if !t.now().Before(rec.ExpiresAt) {
 		return Record{}, ErrTokenExpired
 	}
+	if !rec.UsedAt.IsZero() {
+		return Record{}, ErrTokenUsed
+	}
 	return rec, nil
 }
 
@@ -184,54 +187,14 @@ func (t *Tokens) Consume(ctx context.Context, k Kind, tok string) (Record, error
 	return rec, nil
 }
 
-// MemStore is an in-memory TokenStore.
-type MemStore struct {
-	mu   sync.Mutex
-	recs map[string]Record
-}
+// MemStore is an in-memory transactional TokenStore.
+type MemStore struct{ *StateTokenStore }
 
 // NewMemStore returns an empty store.
-func NewMemStore() *MemStore { return &MemStore{recs: map[string]Record{}} }
+func NewMemStore() *MemStore { return &MemStore{&StateTokenStore{Backend: state.NewMemory()}} }
 
-// Put implements TokenStore.
-func (m *MemStore) Put(_ context.Context, hash string, rec Record) error {
-	m.mu.Lock()
-	defer m.mu.Unlock()
-	m.recs[hash] = rec
-	return nil
-}
-
-// Get implements TokenStore.
-func (m *MemStore) Get(_ context.Context, hash string) (Record, error) {
-	m.mu.Lock()
-	defer m.mu.Unlock()
-	rec, ok := m.recs[hash]
-	if !ok {
-		return Record{}, ErrTokenNotFound
-	}
-	return rec, nil
-}
-
-// MarkUsed implements TokenStore.
-func (m *MemStore) MarkUsed(_ context.Context, hash string, at time.Time) error {
-	m.mu.Lock()
-	defer m.mu.Unlock()
-	rec, ok := m.recs[hash]
-	if !ok {
-		return ErrTokenNotFound
-	}
-	if !rec.UsedAt.IsZero() {
-		return ErrTokenUsed
-	}
-	rec.UsedAt = at
-	m.recs[hash] = rec
-	return nil
-}
-
-// Delete implements TokenStore.
-func (m *MemStore) Delete(_ context.Context, hash string) error {
-	m.mu.Lock()
-	defer m.mu.Unlock()
-	delete(m.recs, hash)
-	return nil
+// Verify implements Verifier using a reusable access token.
+func (t *Tokens) Verify(ctx context.Context, bearer secrets.Secret) (Identity, error) {
+	rec, err := t.Check(ctx, KindAccess, string(bearer.Bytes()))
+	return rec.Identity, err
 }

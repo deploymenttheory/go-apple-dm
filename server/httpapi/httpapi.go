@@ -12,10 +12,11 @@ import (
 	"strings"
 	"time"
 
-	"github.com/deploymenttheory/go-apple-dm/server/service"
+	"github.com/deploymenttheory/go-apple-dm/mdmprotocol/enroll/accountdriven"
 	"github.com/deploymenttheory/go-apple-dm/mdmprotocol/mdm"
 	"github.com/deploymenttheory/go-apple-dm/mdmprotocol/plist"
 	schemaerrors "github.com/deploymenttheory/go-apple-dm/schema/errors"
+	"github.com/deploymenttheory/go-apple-dm/server/service"
 )
 
 // Content types Apple devices send.
@@ -120,6 +121,7 @@ func (c Config) request(r *http.Request) *mdm.Request {
 	}
 	return &mdm.Request{
 		Certificate: CertFromContext(r.Context()),
+		Bearer:      accountdriven.Bearer(r.Header.Get("Authorization")),
 		Params:      params,
 		Peer:        mdm.PeerInfo{RemoteAddr: r.RemoteAddr, UserAgent: r.UserAgent()},
 		ReceivedAt:  c.now(),
@@ -228,8 +230,18 @@ func (c Config) fail(w http.ResponseWriter, r *http.Request, status int, err err
 	http.Error(w, http.StatusText(status), status)
 }
 
-// serviceError maps service codes to HTTP statuses. 401 is never used.
+// serviceError uses 401 only for a typed account-driven reauthentication challenge.
 func (c Config) serviceError(w http.ResponseWriter, r *http.Request, err error) {
+	if reauth, ok := errors.AsType[*accountdriven.Reauthentication](err); ok {
+		header, e := reauth.Challenge.Header()
+		if e != nil {
+			c.fail(w, r, http.StatusInternalServerError, e)
+			return
+		}
+		w.Header().Set("WWW-Authenticate", header)
+		w.WriteHeader(http.StatusUnauthorized)
+		return
+	}
 	switch service.CodeOf(err) {
 	case service.CodeBadRequest:
 		c.fail(w, r, http.StatusBadRequest, err)

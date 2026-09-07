@@ -59,14 +59,15 @@ func (f CSRVerifierFunc) VerifyCSR(ctx context.Context, csr *x509.CertificateReq
 // Server implements the SCEP operations. The RA (the certificate and key
 // devices encrypt the envelope to) must be RSA.
 type Server struct {
-	signer     ca.Signer
-	raCert     *x509.Certificate
-	raKey      crypto.Signer
-	policy     ca.Policy
-	challenge  Challenge
-	csrVerify  CSRVerifier
-	extraCerts []*x509.Certificate
-	log        *slog.Logger
+	signer            ca.Signer
+	raCert            *x509.Certificate
+	raKey             crypto.Signer
+	policy            ca.Policy
+	challenge         Challenge
+	csrVerify         CSRVerifier
+	extraCerts        []*x509.Certificate
+	log               *slog.Logger
+	certificateStatus func(context.Context, *x509.Certificate) error
 }
 
 // Option configures the Server.
@@ -80,6 +81,12 @@ func WithCSRVerifier(v CSRVerifier) Option { return func(s *Server) { s.csrVerif
 
 // WithPolicy sets the signing policy.
 func WithPolicy(p ca.Policy) Option { return func(s *Server) { s.policy = p } }
+
+// WithCertificateStatus checks renewal and CA-issued signing certificates before
+// challenge fallback. A revoked renewal can never fall back to a shared challenge.
+func WithCertificateStatus(check func(context.Context, *x509.Certificate) error) Option {
+	return func(s *Server) { s.certificateStatus = check }
+}
 
 // WithExtraCerts adds certificates to GetCACert (intermediates, or a
 // separate CA when the RA is not the CA).
@@ -143,6 +150,14 @@ func (s *Server) PKIOperation(ctx context.Context, body []byte) ([]byte, error) 
 	req := msg.CSRReqMessage
 	if req == nil || req.CSR == nil {
 		return nil, fmt.Errorf("%w: no CSR in envelope", ErrCSR)
+	}
+	if signer := p7.GetOnlySigner(); s.certificateStatus != nil && signer != nil {
+		selfSigned := bytes.Equal(signer.RawIssuer, signer.RawSubject) && signer.CheckSignature(signer.SignatureAlgorithm, signer.RawTBSCertificate, signer.Signature) == nil
+		if msg.MessageType == smallscep.RenewalReq || !selfSigned {
+			if err := s.certificateStatus(ctx, signer); err != nil {
+				return s.fail(msg, smallscep.BadRequest, err)
+			}
+		}
 	}
 	// A renewal is signed by the enrollment's current certificate for the
 	// same subject, so the challenge is skipped: that identity already proves

@@ -165,6 +165,7 @@ func Verbs() []string {
 // function.
 func commands() map[string]command {
 	cmds := []command{
+		{"certificates", "import, inspect, and revoke device certificates", runCertificates},
 		{"explain", "describe a command, declaration, payload, or status item, offline", runExplain},
 		{"status", "show the server's role, families, and version", runStatus},
 		{"routes", "list the admin routes the server serves", runRoutes},

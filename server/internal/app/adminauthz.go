@@ -9,9 +9,9 @@ import (
 
 	"github.com/cedar-policy/cedar-go/types"
 
-	"github.com/deploymenttheory/go-apple-dm/server/adminauth"
 	"github.com/deploymenttheory/go-apple-dm/mdmprotocol/event"
 	"github.com/deploymenttheory/go-apple-dm/mdmprotocol/mdm"
+	"github.com/deploymenttheory/go-apple-dm/server/adminauth"
 )
 
 // Admin action ids. Every admin route declares one, and the set below is the
@@ -47,6 +47,9 @@ const (
 // an action knows what they are granting rather than guessing from its name.
 func AdminActions() []adminauth.Action {
 	return []adminauth.Action{
+		{ID: ActionReadCertificates, Help: "Read certificate issuance and revocation status.", Resource: adminauth.EntitySystem},
+		{ID: ActionImportCertificates, Help: "Register an existing CA-issued certificate for status enforcement.", Resource: adminauth.EntitySystem},
+		{ID: ActionRevokeCertificates, Help: "Permanently revoke a device certificate, stopping its use and renewal.", Resource: adminauth.EntitySystem},
 		{ID: ActionPutDeclaration, Help: "Publish or replace a declaration, which changes what devices apply.", Resource: adminauth.EntityDeclaration},
 		{ID: ActionGetDeclaration, Help: "Read a declaration's stored JSON.", Resource: adminauth.EntityDeclaration},
 		{ID: ActionDeleteDeclaration, Help: "Remove a declaration from every set and device that has it.", Resource: adminauth.EntityDeclaration},

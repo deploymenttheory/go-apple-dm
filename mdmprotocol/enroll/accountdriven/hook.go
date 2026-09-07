@@ -4,66 +4,134 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"net/http"
+	"strings"
 
 	"github.com/deploymenttheory/go-apple-dm/mdmprotocol/dmhook"
 	"github.com/deploymenttheory/go-apple-dm/mdmprotocol/mdm"
+	"github.com/deploymenttheory/go-apple-dm/state"
 )
 
-// ErrEnrollmentToken is the hook's veto: the check-in carried no valid
-// enrollment token.
-var ErrEnrollmentToken = errors.New("accountdriven: enrollment token required")
+// ErrEnrollmentToken indicates that account enrollment authorization failed.
+var ErrEnrollmentToken = errors.New("accountdriven: enrollment authorization required")
 
-// CheckinHook is a dmhook.Hook that requires the enrollment token on the
-// Authenticate and TokenUpdate of user enrollments (the token travels in
-// ServerURL as a query parameter, which the HTTP layer exposes as
-// Request.Params). Unlike the access token it is not consumed, so a retried
-// check-in succeeds. Managed Apple Account and identity claims are attached to
-// the context for later hooks through IdentityFromContext.
+// Reauthentication asks the transport to restart account authentication. Only
+// recognized, certificate-associated account enrollments may produce this result.
+type Reauthentication struct{ Challenge Challenge }
+
+func (e *Reauthentication) Error() string { return "accountdriven: reauthentication required" }
+
+// CheckinHook authenticates account-driven check-in, command and DDM requests.
+// It selects flows by issuer-registered certificate associations, not channel alone.
 type CheckinHook struct {
-	Tokens *Tokens
-	// Channels selects which enrollment kinds the hook guards; nil means
-	// the User Enrollment channels.
+	Tokens       *Tokens
+	Verifier     Verifier
+	Associations *Associations
+	Auth         Authenticator
+	// Channels is retained for source compatibility; platform and origin determine
+	// requirements. Deprecated: channel-only filtering cannot identify ADDE.
 	Channels []mdm.Channel
 }
 
 type identityKey struct{}
 
-// IdentityFromContext returns the identity the hook verified.
+// IdentityFromContext returns the verified account identity.
 func IdentityFromContext(ctx context.Context) (Identity, bool) {
 	id, ok := ctx.Value(identityKey{}).(Identity)
 	return id, ok
 }
+func (h *CheckinHook) associations() *Associations {
+	if h.Associations != nil {
+		return h.Associations
+	}
+	return h.Tokens.AssociationStore()
+}
 
-// Before implements dmhook.Hook.
+// Before verifies certificate association and, where Apple sends one, bearer
+// identity. It reserves an Authenticate identity atomically before any side effect.
 func (h *CheckinHook) Before(ctx context.Context, c *dmhook.Call) (context.Context, error) {
 	if c == nil || c.Request == nil {
 		return ctx, nil
 	}
-	if c.Op != "checkin:Authenticate" && c.Op != "checkin:TokenUpdate" {
+	r := c.Request
+	s := h.associations()
+	if s == nil {
+		return ctx, ErrConfig
+	}
+	a, err := s.ByCertificate(ctx, r.Certificate)
+	if errors.Is(err, state.ErrNotFound) {
+		if r.ID.Channel == mdm.ChannelUserEnrollmentDevice || r.ID.Channel == mdm.ChannelUserEnrollmentUser || r.Params[ParamEnrollmentToken] != "" || (r.Certificate != nil && strings.HasPrefix(r.Certificate.Subject.CommonName, CertificateSubjectPrefix)) {
+			return ctx, ErrEnrollmentToken
+		}
 		return ctx, nil
 	}
-	if !h.guards(c.Request.ID.Channel) {
-		return ctx, nil
-	}
-	tok := c.Request.Params[ParamEnrollmentToken]
-	rec, err := h.Tokens.Check(ctx, KindEnrollment, tok)
 	if err != nil {
-		return ctx, fmt.Errorf("%w: %w", ErrEnrollmentToken, err)
+		return ctx, err
 	}
-	return context.WithValue(ctx, identityKey{}, rec.Identity), nil
+	device := r.ID.Device()
+	if err := device.Validate(); err != nil {
+		return ctx, err
+	}
+	if (a.Origin == VersionBYOD) != (device.Channel == mdm.ChannelUserEnrollmentDevice) {
+		return ctx, ErrAssociation
+	}
+	if a.Enrollment.ID != "" && a.Enrollment != device {
+		return ctx, ErrAssociation
+	}
+	if a.Enrollment.ID == "" && (c.Op != "checkin:Authenticate" || r.ID.Channel.IsUser()) {
+		return ctx, ErrAssociation
+	}
+	if a.RequiresBearer(r.ID.Channel) {
+		verifier := h.Verifier
+		if verifier == nil {
+			verifier = h.Tokens
+		}
+		if verifier == nil {
+			return ctx, ErrConfig
+		}
+		id, err := verifier.Verify(ctx, r.Bearer)
+		if err != nil {
+			if !errors.Is(err, ErrTokenNotFound) && !errors.Is(err, ErrTokenExpired) && !errors.Is(err, ErrTokenUsed) {
+				return ctx, err
+			}
+			if h.Auth == nil {
+				return ctx, ErrEnrollmentToken
+			}
+			challenge, err := h.Auth.Challenge(ctx, &http.Request{}, &DeviceInfo{Product: a.Product})
+			if err != nil {
+				return ctx, err
+			}
+			if _, err := challenge.Header(); err != nil {
+				return ctx, err
+			}
+			return ctx, &Reauthentication{Challenge: challenge}
+		}
+		if !sameIdentity(a.Identity, id) {
+			return ctx, fmt.Errorf("%w: %w", ErrEnrollmentToken, ErrAssociation)
+		}
+	}
+	if c.Op == "checkin:Authenticate" {
+		if err := s.Bind(ctx, a.Reference, device, false); err != nil {
+			return ctx, err
+		}
+	}
+	if c.Op != "checkin:Authenticate" && a.ConfirmedAt.IsZero() {
+		return ctx, ErrAssociation
+	}
+	ctx = context.WithValue(ctx, associationContextKey{}, a)
+	return context.WithValue(ctx, identityKey{}, a.Identity), nil
+}
+
+// Complete confirms a successful Authenticate; failures propagate to the transport
+// so it cannot report success with an unconfirmed association.
+func (h *CheckinHook) Complete(ctx context.Context, c *dmhook.Call) error {
+	if c != nil && c.Request != nil && c.Op == "checkin:Authenticate" {
+		if a, ok := AssociationFromContext(ctx); ok {
+			return h.associations().Bind(ctx, a.Reference, c.Request.ID.Device(), true)
+		}
+	}
+	return nil
 }
 
 // After implements dmhook.Hook.
 func (h *CheckinHook) After(context.Context, *dmhook.Call, error) {}
-
-func (h *CheckinHook) guards(ch mdm.Channel) bool {
-	if len(h.Channels) == 0 {
-		return ch == mdm.ChannelUserEnrollmentDevice || ch == mdm.ChannelUserEnrollmentUser
-	}
-	for _, c := range h.Channels {
-		if c == ch {
-			return true
-		}
-	}
-	return false
-}

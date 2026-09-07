@@ -10,10 +10,12 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/deploymenttheory/go-apple-dm/mdmprotocol/cms"
 	"github.com/deploymenttheory/go-apple-dm/mdmprotocol/event"
 	"github.com/deploymenttheory/go-apple-dm/paging"
 	"github.com/deploymenttheory/go-apple-dm/pki/acme/attest"
 	"github.com/deploymenttheory/go-apple-dm/pki/ca"
+	"github.com/deploymenttheory/go-apple-dm/pki/revocation"
 )
 
 // directoryBody is RFC 8555 section 7.1.1. The absent members are the
@@ -24,6 +26,7 @@ type directoryBody struct {
 	NewNonce   string        `json:"newNonce"`
 	NewAccount string        `json:"newAccount"`
 	NewOrder   string        `json:"newOrder"`
+	RevokeCert string        `json:"revokeCert,omitempty"`
 	Meta       directoryMeta `json:"meta"`
 }
 
@@ -36,6 +39,7 @@ func (s *Server) directory(e *exchange) error {
 		NewNonce:   s.url(pathNewNonce),
 		NewAccount: s.url(pathNewAccount),
 		NewOrder:   s.url(pathNewOrder),
+		RevokeCert: s.revocationURL(),
 	})
 }
 
@@ -737,7 +741,8 @@ func (s *Server) issue(e *exchange, o *Order, csr *x509.CertificateRequest) (*is
 		}
 		policy.NotAfter = o.Binding.NotAfter
 	}
-	cert, err := s.cfg.Signer.Sign(e.ctx(), csr, policy)
+	provenance := revocation.Provenance{Source: "acme", AccountID: o.AccountID, Identifiers: []string{o.Identifier.Type + ":" + o.Identifier.Value}}
+	cert, err := s.cfg.Signer.Sign(revocation.WithProvenance(e.ctx(), provenance), csr, policy)
 	if err != nil {
 		if errors.Is(err, ca.ErrPolicy) || errors.Is(err, ca.ErrCSR) {
 			return nil, WrapProblem(ProblemBadCSR, err, "the certificate request was refused")
@@ -745,6 +750,11 @@ func (s *Server) issue(e *exchange, o *Order, csr *x509.CertificateRequest) (*is
 		return nil, WrapProblem(ProblemServerInternal, err, "the certificate could not be signed")
 	}
 	chain := encodeChain(cert, s.cfg.Signer.Chain())
+	if s.cfg.Revocations != nil {
+		if err := s.cfg.Revocations.Register(e.ctx(), cms.Fingerprint(s.cfg.Signer.Certificate()), cert, provenance); err != nil {
+			return nil, WrapProblem(ProblemServerInternal, err, "certificate registry unavailable")
+		}
+	}
 	challenge, err := s.challengeOf(e, o)
 	if err != nil {
 		return nil, err

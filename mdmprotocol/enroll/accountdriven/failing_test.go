@@ -3,6 +3,7 @@ package accountdriven_test
 import (
 	"context"
 	"errors"
+	"github.com/deploymenttheory/go-apple-dm/state"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -69,17 +70,19 @@ func TestStoreFailures(t *testing.T) {
 			t.Fatalf("get = %v", err)
 		}
 	})
-	t.Run("HandlerEnrollmentTokenIssueFails", func(t *testing.T) {
-		tk, fs := newFailing(map[string]error{})
+	t.Run("HandlerAssociationWriteFails", func(t *testing.T) {
+		tk, _ := newFailing(nil)
 		access, _ := tk.Issue(ctx, accountdriven.KindAccess, alice, nil)
-		h, _ := accountdriven.New(accountdriven.Config{Version: accountdriven.VersionBYOD, Parse: parseBody, Auth: &accountdriven.AppleAsWeb{URL: "https://x/a", Tokens: tk}, Tokens: tk, Profile: baseProfile, SignCert: signer.Cert, SignKey: signer.Key})
-		fs.fail["Put"] = boom
+		h, err := accountdriven.New(accountdriven.Config{Version: accountdriven.VersionBYOD, Parse: parseBody, Auth: &accountdriven.AppleAsWeb{URL: "https://x/a", Tokens: tk}, Tokens: tk, Associations: &accountdriven.Associations{Store: &failedState{Store: state.NewMemory(), err: boom}}, Profile: baseProfile, SignCert: signer.Cert, SignKey: signer.Key})
+		if err != nil {
+			t.Fatal(err)
+		}
 		rec := httptest.NewRecorder()
 		req := httptest.NewRequest(http.MethodPost, "/enroll", strings.NewReader(body))
 		req.Header.Set("Authorization", "Bearer "+access)
 		h.ServeHTTP(rec, req)
 		if rec.Code != http.StatusInternalServerError {
-			t.Fatalf("status = %d", rec.Code)
+			t.Fatalf("status=%d", rec.Code)
 		}
 	})
 	t.Run("AsWebFinishIssueFails", func(t *testing.T) {
@@ -102,7 +105,7 @@ func TestStoreFailures(t *testing.T) {
 			t.Fatalf("grant = %v", err)
 		}
 		delete(fs.fail, "Put")
-		code, _ := tk.Issue(ctx, accountdriven.KindCode, alice, nil)
+		code, _ := tk.Issue(ctx, accountdriven.KindCode, alice, map[string]string{"client_id": o.ClientID, "redirect_uri": o.RedirectURL, "scope": o.Scope})
 		fs.fail["Put"] = boom
 		form := url.Values{"grant_type": {"authorization_code"}, "code": {code}, "redirect_uri": {o.RedirectURL}, "client_id": {"c"}}
 		rec := httptest.NewRecorder()
@@ -133,7 +136,7 @@ func TestStoreFailures(t *testing.T) {
 		if o.AccessTTL = time.Minute; o.AccessTTL != time.Minute {
 			t.Fatal("unreachable")
 		}
-		code2, _ := tk.Issue(ctx, accountdriven.KindCode, alice, nil)
+		code2, _ := tk.Issue(ctx, accountdriven.KindCode, alice, map[string]string{"client_id": o.ClientID, "redirect_uri": o.RedirectURL, "scope": o.Scope})
 		rec = httptest.NewRecorder()
 		tr = httptest.NewRequest(http.MethodPost, "/t", strings.NewReader(url.Values{"grant_type": {"authorization_code"}, "code": {code2}, "redirect_uri": {o.RedirectURL}, "client_id": {"c"}}.Encode()))
 		tr.Header.Set("Content-Type", "application/x-www-form-urlencoded")
@@ -149,3 +152,17 @@ func TestStoreFailures(t *testing.T) {
 		}
 	})
 }
+
+func (f *failingStore) Exchange(ctx context.Context, hash string, at time.Time, validate func(accountdriven.Record) error, replacements map[string]accountdriven.Record) error {
+	if err := f.fail["Put"]; err != nil {
+		return err
+	}
+	return f.TokenStore.(accountdriven.AtomicTokenStore).Exchange(ctx, hash, at, validate, replacements)
+}
+
+type failedState struct {
+	state.Store
+	err error
+}
+
+func (s *failedState) Update(context.Context, []string, func(state.Tx) error) error { return s.err }

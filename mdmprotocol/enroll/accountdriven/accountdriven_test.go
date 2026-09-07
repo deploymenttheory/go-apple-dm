@@ -137,53 +137,27 @@ func TestTokens(t *testing.T) {
 			t.Fatalf("expired = %v", err)
 		}
 	})
-	t.Run("EnrollmentTokenAuthorisesCheckin", func(t *testing.T) {
+	t.Run("LegacyQueryCredentialCannotAuthorize", func(t *testing.T) {
 		tk := newTokens(&fakeClock{now: t0})
-		tok, _ := tk.Issue(ctx, accountdriven.KindEnrollment, alice, nil)
+		token, _ := tk.Issue(ctx, accountdriven.KindEnrollment, alice, nil)
 		hook := &accountdriven.CheckinHook{Tokens: tk}
-		req := &mdm.Request{ID: mdm.EnrollmentID{Channel: mdm.ChannelUserEnrollmentDevice, ID: "E1"}, Params: map[string]string{accountdriven.ParamEnrollmentToken: tok}}
-		ctx2, err := hook.Before(ctx, &dmhook.Call{Op: "checkin:Authenticate", Request: req})
-		if err != nil {
-			t.Fatal(err)
-		}
-		if id, ok := accountdriven.IdentityFromContext(ctx2); !ok || id.ManagedAppleAccount != alice.ManagedAppleAccount {
-			t.Fatalf("identity = %+v %v", id, ok)
-		}
-		bad := &mdm.Request{ID: req.ID, Params: map[string]string{accountdriven.ParamEnrollmentToken: "nope"}}
-		if _, err := hook.Before(ctx, &dmhook.Call{Op: "checkin:TokenUpdate", Request: bad}); !errors.Is(err, accountdriven.ErrEnrollmentToken) {
-			t.Fatalf("bad token = %v", err)
-		}
-		// Other channels and ops are not guarded; nil calls are ignored.
-		dev := &mdm.Request{ID: mdm.EnrollmentID{Channel: mdm.ChannelDevice, ID: "D1"}}
-		if _, err := hook.Before(ctx, &dmhook.Call{Op: "checkin:Authenticate", Request: dev}); err != nil {
-			t.Fatal(err)
-		}
-		if _, err := hook.Before(ctx, &dmhook.Call{Op: "connect", Request: bad}); err != nil {
-			t.Fatal(err)
+		for _, op := range []string{"checkin:Authenticate", "checkin:TokenUpdate", "connect", "checkin:DeclarativeManagement"} {
+			r := &mdm.Request{ID: mdm.EnrollmentID{Channel: mdm.ChannelUserEnrollmentDevice, ID: "E1"}, Params: map[string]string{accountdriven.ParamEnrollmentToken: token}}
+			if _, err := hook.Before(ctx, &dmhook.Call{Op: op, Request: r}); !errors.Is(err, accountdriven.ErrEnrollmentToken) {
+				t.Fatalf("%s: %v", op, err)
+			}
 		}
 		if _, err := hook.Before(ctx, nil); err != nil {
 			t.Fatal(err)
 		}
+		if _, err := hook.Before(ctx, &dmhook.Call{Op: "connect", Request: &mdm.Request{ID: mdm.EnrollmentID{Channel: mdm.ChannelDevice, ID: "traditional"}}}); err != nil {
+			t.Fatal(err)
+		}
 		hook.After(ctx, nil, nil)
-		only := &accountdriven.CheckinHook{Tokens: tk, Channels: []mdm.Channel{mdm.ChannelDevice}}
-		if _, err := only.Before(ctx, &dmhook.Call{Op: "checkin:Authenticate", Request: dev}); !errors.Is(err, accountdriven.ErrEnrollmentToken) {
-			t.Fatalf("custom channels = %v", err)
-		}
-	})
-	t.Run("RetriedCheckinSucceeds", func(t *testing.T) {
-		tk := newTokens(&fakeClock{now: t0})
-		tok, _ := tk.Issue(ctx, accountdriven.KindEnrollment, alice, nil)
-		hook := &accountdriven.CheckinHook{Tokens: tk}
-		req := &mdm.Request{ID: mdm.EnrollmentID{Channel: mdm.ChannelUserEnrollmentDevice, ID: "E1"}, Params: map[string]string{accountdriven.ParamEnrollmentToken: tok}}
-		for range 3 {
-			if _, err := hook.Before(ctx, &dmhook.Call{Op: "checkin:Authenticate", Request: req}); err != nil {
-				t.Fatalf("retry: %v", err)
-			}
-		}
 	})
 	t.Run("RefreshRotates", func(t *testing.T) {
 		f := newFixture(t, accountdriven.VersionBYOD, true)
-		code, _ := f.tokens.Issue(ctx, accountdriven.KindCode, alice, nil)
+		code, _ := f.tokens.Issue(ctx, accountdriven.KindCode, alice, map[string]string{"client_id": f.oauth.ClientID, "redirect_uri": f.oauth.RedirectURL, "scope": f.oauth.Scope})
 		first := f.token(t, url.Values{"grant_type": {"authorization_code"}, "code": {code}, "redirect_uri": {f.oauth.RedirectURL}, "client_id": {f.oauth.ClientID}})
 		if first.RefreshToken == "" || first.AccessToken == "" || first.TokenType != "Bearer" || first.ExpiresIn <= 0 {
 			t.Fatalf("token response = %+v", first)
@@ -365,13 +339,14 @@ func TestFlow(t *testing.T) {
 				t.Fatalf("profile keys = %q %q", p.EnrollmentMode, p.AssignedManagedAppleID)
 			}
 			u, _ := url.Parse(p.ServerURL)
-			tok := u.Query().Get(accountdriven.ParamEnrollmentToken)
-			if _, err := f.tokens.Check(ctx, accountdriven.KindEnrollment, tok); err != nil {
-				t.Fatalf("enrollment token in ServerURL: %v", err)
+			if u.Query().Has(accountdriven.ParamEnrollmentToken) {
+				t.Fatal("profile leaked legacy query credential")
 			}
-			// Replay of the access token: a fresh challenge, not a profile.
-			if res := f.post(t, access); res.StatusCode != http.StatusUnauthorized || res.Header.Get("WWW-Authenticate") == "" {
-				t.Fatalf("replayed bearer = %d", res.StatusCode)
+			if _, err := f.tokens.Check(ctx, accountdriven.KindAccess, access); err != nil {
+				t.Fatal("profile retrieval consumed bearer", err)
+			}
+			if res := f.post(t, access); res.StatusCode != http.StatusOK {
+				t.Fatalf("reusable bearer: %d", res.StatusCode)
 			}
 			if res := f.post(t, "garbage"); res.StatusCode != http.StatusUnauthorized {
 				t.Fatalf("garbage bearer = %d", res.StatusCode)
@@ -492,8 +467,8 @@ func TestProfile(t *testing.T) {
 		}
 		for _, u := range []string{p.ServerURL, p.CheckInURL} {
 			parsed, _ := url.Parse(u)
-			if parsed.Query().Get(accountdriven.ParamEnrollmentToken) != "tok" {
-				t.Fatalf("token missing in %s", u)
+			if parsed.Query().Has(accountdriven.ParamEnrollmentToken) {
+				t.Fatalf("query credential present in %s", u)
 			}
 		}
 		if q, _ := url.Parse(p.ServerURL); q.Query().Get("x") != "1" {
