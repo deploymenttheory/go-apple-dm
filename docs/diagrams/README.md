@@ -3,27 +3,19 @@
 Twenty-seven interactive diagrams of this library and the reference server, generated with the
 [archify](https://github.com/tt-a1i/archify) skill from the JSON sources in [`src/`](src/).
 
-Each `.html` file is self-contained: no build step, no network, no dependencies. Open one from a
-`git clone` and it works. GitHub serves HTML from a repository as source rather than rendering it,
-so the links below go through [htmlpreview](https://htmlpreview.github.io), which fetches the raw
-file from `main` and renders it in place; the first load of a diagram takes a moment. The root
-[README](../../README.md) carries a rendered image of the high-level design.
+Each `.html` file opens locally without a build step or network connection. GitHub displays
+repository HTML as source, so the links below use [htmlpreview](https://htmlpreview.github.io)
+to fetch and render the file from `main`. The root [README](../../README.md) embeds a rendered
+architecture image.
 
-Every diagram supports search, focus, relationship tracing, guided views, a light and dark theme,
-and PNG, SVG and WebM export from the viewer itself.
+The viewer provides search, focus, relationship tracing, guided views, light/dark themes and
+image/video export. The generated HTML includes the viewer runtime; edit authored diagram
+content in JSON and regenerate rather than modifying HTML.
 
-Each source pins the commit it was verified against and the files it points at, and archify checks
-both against a local checkout before it renders, so a diagram cannot cite a file that has moved.
-Regenerate one with:
-
-```bash
-node <archify>/bin/archify.mjs deliver <type> docs/diagrams/src/<name>.json docs/diagrams/<name>.html \
-  --quality showcase --repo-root .
-```
-
-The checkout's `origin` must be the canonical `deploymenttheory/go-apple-dm` URL; a clone made
-before the repository was renamed still points at `go-apple-mdm`, and the evidence check compares
-the two.
+Architecture sources pin a repository revision and component file paths. Validation checks
+those paths against the local Git objects. Other diagram types describe protocol relationships
+without per-component source pins. All diagrams are reviewed against the architecture guide
+and the cited package contracts.
 
 ## Structure
 
@@ -32,13 +24,13 @@ the two.
 | [system-architecture](https://htmlpreview.github.io/?https://raw.githubusercontent.com/deploymenttheory/go-apple-dm/main/docs/diagrams/system-architecture.html) | The high-level design: Apple's services, the reference server's roles, storage, and the admin plane |
 | [package-layering](https://htmlpreview.github.io/?https://raw.githubusercontent.com/deploymenttheory/go-apple-dm/main/docs/diagrams/package-layering.html) | The nine tiers, the direction a tier may import in, and where the module splits |
 | [storage-contract](https://htmlpreview.github.io/?https://raw.githubusercontent.com/deploymenttheory/go-apple-dm/main/docs/diagrams/storage-contract.html) | All eight interfaces `storage.Store` composes, and which caller depends on each |
-| [storage-backends](https://htmlpreview.github.io/?https://raw.githubusercontent.com/deploymenttheory/go-apple-dm/main/docs/diagrams/storage-backends.html) | The one SQL implementation, the Dialect each backend supplies, and sealed columns |
-| [service-layer](https://htmlpreview.github.io/?https://raw.githubusercontent.com/deploymenttheory/go-apple-dm/main/docs/diagrams/service-layer.html) | The seams: certificate middlewares, the hook chain, `DMHandler`, `UserVerifier`, and the event bus |
-| [checkin-dispatch](https://htmlpreview.github.io/?https://raw.githubusercontent.com/deploymenttheory/go-apple-dm/main/docs/diagrams/checkin-dispatch.html) | All eight check-in messages, split into state changes and answers, and how each is refused |
+| [storage-backends](https://htmlpreview.github.io/?https://raw.githubusercontent.com/deploymenttheory/go-apple-dm/main/docs/diagrams/storage-backends.html) | Shared SQL implementation, backend dialects and column sealing |
+| [service-layer](https://htmlpreview.github.io/?https://raw.githubusercontent.com/deploymenttheory/go-apple-dm/main/docs/diagrams/service-layer.html) | Certificate middleware, hooks, `DMHandler`, `UserVerifier` and events |
+| [checkin-dispatch](https://htmlpreview.github.io/?https://raw.githubusercontent.com/deploymenttheory/go-apple-dm/main/docs/diagrams/checkin-dispatch.html) | All nine check-in messages, split into state changes and answers, and how each is refused |
 | [ddm-engine](https://htmlpreview.github.io/?https://raw.githubusercontent.com/deploymenttheory/go-apple-dm/main/docs/diagrams/ddm-engine.html) | The engine, the notifier, and the change rows that decouple them |
 | [ddm-serve](https://htmlpreview.github.io/?https://raw.githubusercontent.com/deploymenttheory/go-apple-dm/main/docs/diagrams/ddm-serve.html) | The four endpoint operations and the two refusals `ParseEndpoint` can produce |
 | [acme-internals](https://htmlpreview.github.io/?https://raw.githubusercontent.com/deploymenttheory/go-apple-dm/main/docs/diagrams/acme-internals.html) | `jose`, identifiers, orders, attestation, policy, and the RFC 7807 problem every refusal becomes |
-| [push](https://htmlpreview.github.io/?https://raw.githubusercontent.com/deploymenttheory/go-apple-dm/main/docs/diagrams/push.html) | `push.Notifier` through coalescing to APNs, and where the push certificate comes from |
+| [push](https://htmlpreview.github.io/?https://raw.githubusercontent.com/deploymenttheory/go-apple-dm/main/docs/diagrams/push.html) | `pushnotify.Notifier` through coalescing to APNs, and where the push certificate comes from |
 | [apple-service-clients](https://htmlpreview.github.io/?https://raw.githubusercontent.com/deploymenttheory/go-apple-dm/main/docs/diagrams/apple-service-clients.html) | The DEP, Business Manager and software-lookup clients, and their three auth schemes |
 | [admin-plane](https://htmlpreview.github.io/?https://raw.githubusercontent.com/deploymenttheory/go-apple-dm/main/docs/diagrams/admin-plane.html) | `dmctl` to the admin API to Cedar, and how credentials are referenced |
 | [split-deployment](https://htmlpreview.github.io/?https://raw.githubusercontent.com/deploymenttheory/go-apple-dm/main/docs/diagrams/split-deployment.html) | The `mdm` and `ddm` roles either side of an HMAC-signed hop |
@@ -54,9 +46,9 @@ the two.
 | [test-harness](https://htmlpreview.github.io/?https://raw.githubusercontent.com/deploymenttheory/go-apple-dm/main/docs/diagrams/test-harness.html) | workflow | The test pipeline from unit tests to the coverage gate |
 | [flow-dep-sync-assign](https://htmlpreview.github.io/?https://raw.githubusercontent.com/deploymenttheory/go-apple-dm/main/docs/diagrams/flow-dep-sync-assign.html) | workflow | The token PKI exchange, then the sync and assignment workers |
 | [flow-ade-enrollment](https://htmlpreview.github.io/?https://raw.githubusercontent.com/deploymenttheory/go-apple-dm/main/docs/diagrams/flow-ade-enrollment.html) | sequence | Signed `MachineInfo`, the update gate, the OIDC web view, then check-in |
-| [flow-account-driven-enrollment](https://htmlpreview.github.io/?https://raw.githubusercontent.com/deploymenttheory/go-apple-dm/main/docs/diagrams/flow-account-driven-enrollment.html) | sequence | Discovery, the `401` Bearer challenge, web authentication, then a token-gated check-in |
-| [flow-command-delivery](https://htmlpreview.github.io/?https://raw.githubusercontent.com/deploymenttheory/go-apple-dm/main/docs/diagrams/flow-command-delivery.html) | sequence | Enqueue with target validation, the APNs wake, and what one connect actually does |
-| [flow-ddm-sync](https://htmlpreview.github.io/?https://raw.githubusercontent.com/deploymenttheory/go-apple-dm/main/docs/diagrams/flow-ddm-sync.html) | sequence | A declaration change becoming one command, and the four endpoints the device then pulls |
+| [flow-account-driven-enrollment](https://htmlpreview.github.io/?https://raw.githubusercontent.com/deploymenttheory/go-apple-dm/main/docs/diagrams/flow-account-driven-enrollment.html) | sequence | Discovery, the `401` Bearer challenge, web authentication, then certificate association and bearer authentication |
+| [flow-command-delivery](https://htmlpreview.github.io/?https://raw.githubusercontent.com/deploymenttheory/go-apple-dm/main/docs/diagrams/flow-command-delivery.html) | sequence | Target validation, queueing, APNs wake and the connect exchange |
+| [flow-ddm-sync](https://htmlpreview.github.io/?https://raw.githubusercontent.com/deploymenttheory/go-apple-dm/main/docs/diagrams/flow-ddm-sync.html) | sequence | Declaration changes, synchronization commands, declaration retrieval and status reporting |
 | [flow-acme-attestation](https://htmlpreview.github.io/?https://raw.githubusercontent.com/deploymenttheory/go-apple-dm/main/docs/diagrams/flow-acme-attestation.html) | sequence | The ACME order, `device-attest-01`, and the four checks before a certificate is issued |
 | [flow-scep-issuance](https://htmlpreview.github.io/?https://raw.githubusercontent.com/deploymenttheory/go-apple-dm/main/docs/diagrams/flow-scep-issuance.html) | sequence | `GetCACaps`, `GetCACert`, and a `PKIOperation` gated by a challenge |
 | [lifecycle-command](https://htmlpreview.github.io/?https://raw.githubusercontent.com/deploymenttheory/go-apple-dm/main/docs/diagrams/lifecycle-command.html) | lifecycle | `pending` to `sent` to a terminal outcome, with the `NotNow` retry |
@@ -64,23 +56,26 @@ the two.
 
 ## Regenerating
 
-The sources in [`src/`](src/) are the record; the HTML is generated. `archify` is an agent skill,
-not a dependency of this module, so there is no `make` target: install the skill, then
+Edit the sources in [`src/`](src/) and regenerate the HTML with the installed `archify` skill.
+Replace `<archify>` with the skill directory:
 
 ```bash
-archify deliver <type> docs/diagrams/src/<name>.<type>.json docs/diagrams/<name>.html \
+node <archify>/bin/archify.mjs deliver <type> docs/diagrams/src/<name>.<type>.json docs/diagrams/<name>.html \
   --quality showcase --json
-archify visual-check docs/diagrams/<name>.html --json
+node <archify>/bin/archify.mjs visual-check docs/diagrams/<name>.html --json
 ```
 
 `<type>` is the second extension of the source file: `architecture`, `workflow`, `sequence`,
 `dataflow`, or `lifecycle`. Architecture diagrams additionally need `--repo-root .`, because they
 carry git-verified source pins: `meta.repository` names a commit and each component cites real
 file paths, which the renderer checks against the local git objects. A wrong path, line range or
-commit fails the render rather than shipping a plausible lie.
+commit fails validation.
 
-Every diagram passes `--quality showcase` with no errors or warnings and contains itself within a
-1440x900 desktop viewport in both themes. Two constraints are worth knowing before editing one:
+Validate with `--quality showcase`, then run `visual-check` on the delivered HTML. Inspect both
+themes and the default READ view. Browser checks measure 1440×900, 1600×1000, 1920×1080 and
+2048×1320. Source validation, browser evidence and visual review are separate checks.
+
+Layout constraints:
 an architecture canvas must satisfy `height / width <= 0.59`, and a workflow compiles to at most
 four lanes and five columns.
 

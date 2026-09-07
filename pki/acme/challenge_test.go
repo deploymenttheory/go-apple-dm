@@ -204,13 +204,9 @@ func TestChallenge(t *testing.T) {
 		})
 
 		t.Run("FinalizeAlsoWorks", func(t *testing.T) {
-			// The challenge handler stores the attestation object exactly as
-			// it arrived, and a well formed statement carrying no chain is
-			// not empty, so finalize has to read attest.ErrNoAttestation as
-			// the case the challenge deliberately accepted rather than as a
-			// corrupt record. Nothing attested to a key here, so nothing
-			// binds the certificate request's key: that is the cost of the
-			// setting, and it is why the default is to refuse.
+			// An accepted no-chain statement remains a nonempty attestation object.
+			// Finalize must preserve the explicit unattested policy decision; no attested
+			// key is available to compare with the CSR.
 			f := newFixture(t, func(c *acme.Config) { c.AllowUnattested = true })
 			fl := f.begin(testIdentifier)
 			requireStatus(t, fl.answer(empty), http.StatusOK)
@@ -293,8 +289,8 @@ func TestChallenge(t *testing.T) {
 	})
 
 	t.Run("AnsweredTwiceReturnsTheCurrentState", func(t *testing.T) {
-		// A repeated post reports where things stand rather than validating
-		// again, which is the idempotency nanoca buys with a lease.
+		// A repeated challenge POST reports the stored status without repeating
+		// verification.
 		f := newFixture(t)
 		fl := f.begin(testIdentifier)
 		object := fl.attestation(deviceProperties())
@@ -354,8 +350,8 @@ func TestChallenge(t *testing.T) {
 	})
 
 	t.Run("SettleFailure", func(t *testing.T) {
-		// A challenge that cannot be settled is reported as our fault, not
-		// as the refusal that caused it.
+		// A persistence failure while settling a challenge must return an internal
+		// error.
 		f := newFixture(t)
 		fl := f.begin(testIdentifier)
 		object := fl.attestation(attest.Properties{SerialNumber: "C02NOTTHISONE"})

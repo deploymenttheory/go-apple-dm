@@ -25,14 +25,9 @@ import (
 // ErrACME is an ACME enrollment that did not complete.
 var ErrACME = errors.New("simulator: ACME enrollment")
 
-// ACMEOptions control how the simulated device answers a device-attest-01
-// challenge.
-//
-// The client itself is golang.org/x/crypto/acme rather than anything from
-// this repository. Testing a server against its own client proves that the
-// two agree, not that the server implements RFC 8555, so the simulator
-// drives it with an independent implementation and only the attestation,
-// which is Apple's own extension, is ours.
+// ACMEOptions configures the simulator's device-attest-01 response. The client
+// uses golang.org/x/crypto/acme for the base ACME exchange and supplies Apple's
+// attestation extension separately.
 type ACMEOptions struct {
 	// Attestation mints the attestation. Nil means the device produces
 	// none, which is what hardware without a Secure Enclave does and what
@@ -131,9 +126,8 @@ func (d *Device) ACMEEnroll(ctx context.Context, p *enroll.ACME, o ACMEOptions) 
 	return nil
 }
 
-// deviceAttestChallenge finds the challenge Apple answers. A device that is
-// offered anything else cannot enroll, and saying so plainly is more useful
-// than failing later on an empty token.
+// deviceAttestChallenge selects device-attest-01 and returns an error when the
+// server offers no supported challenge.
 func deviceAttestChallenge(authz *xacme.Authorization) (*xacme.Challenge, error) {
 	for _, c := range authz.Challenges {
 		if c.Type == "device-attest-01" {

@@ -1,48 +1,30 @@
-// Command dmctl administers a go-apple-dm reference server: declarations,
-// admin credentials, the policies that bound them, and an offline explain
-// over Apple's schema metadata.
+// Command dmctl administers the reference server and explains compiled Apple
+// schema metadata offline.
 //
-// # Why
+// # Design
 //
-// The admin API needs a first-party client, and an operator needs one command
-// that can answer "what does this credential allow" and "does this key apply
-// to a supervised Mac on 15.0" without curl and without a browser tab.
-//
-// This file and main.go are the whole binary: argv in, one call out. Every
-// other line lives in internal/dmctl, which is gated at 95% like the rest of
-// the module. That is forced rather than stylistic: the coverage gate counts
-// statements from exempt packages toward the repository total, so a fat main
-// would fail the gate even though cmd/ is exempt per package.
+// The entry point delegates argument handling and execution to
+// server/internal/dmctl so CLI behavior can be tested directly. Global flags
+// work before or after a command. Use dmctl help and each command's -help for
+// the current verb and option list. JSON output preserves server bytes, while
+// human and NDJSON modes support interactive and streaming use.
 //
 // # Usage
 //
 //	dmctl [flags] <command> [flags] [arguments]
+//	dmctl explain DeviceInformation -target macos:15.0,supervised
+//	dmctl -server http://localhost:8080 -token env:DM_ADMIN_TOKEN status
+//	dmctl api GET /admin/v1/routes
 //
-//	explain <id> [-target macos:15.0,supervised]  describe a schema type, offline
-//	status                                        the server's role, families, version
-//	routes                                        the admin routes this server serves
-//	actions                                       what each grantable action means
-//	principals list|get|create|rotate|revoke|delete|set-roles
-//	policies   list|get|put|delete
-//	declarations get|put|delete
-//	version
-//
-//	-server URL      the server (DMCTL_SERVER)
-//	-token SPEC      a token, @file, or env:NAME (DMCTL_TOKEN)
-//	-context NAME    a context from the config file (DMCTL_CONTEXT)
-//	-config PATH     the config file (DMCTL_CONFIG), default
-//	                 $XDG_CONFIG_HOME/go-apple-dm/dmctl.json
-//	-output MODE     human, json, or ndjson (DMCTL_OUTPUT)
-//	-all             follow cursors to the end of a listing
-//
-// explain needs no server. Global flags are accepted before or after the
-// command, so both orderings work.
+// Configuration can select server, token references, context and output through
+// DMCTL_* variables or a restricted config file. The default config path is
+// $XDG_CONFIG_HOME/go-apple-dm/dmctl.json, with a home-directory fallback.
+// explain requires neither a server nor credentials.
 //
 // # References
 //
-//   - Decision record: docs/research/decisions/0035-dmctl-structure-and-credentials.md
-//   - Decision record: docs/research/decisions/0036-dmctl-explain-over-schema-support.md
-//   - Decision record: docs/research/decisions/0034-admin-api-and-authorization.md
-//   - Plan of record: docs/research/implementation_plan.md (phase 8)
-//   - E2E scenarios: docs/testing/e2e-scenarios.md (E2E-024)
+//   - Decision record: https://github.com/deploymenttheory/go-apple-dm/blob/main/docs/research/decisions/0035-dmctl-structure-and-credentials.md
+//   - Decision record: https://github.com/deploymenttheory/go-apple-dm/blob/main/docs/research/decisions/0036-dmctl-explain-over-schema-support.md
+//   - Decision record: https://github.com/deploymenttheory/go-apple-dm/blob/main/docs/research/decisions/0034-admin-api-and-authorization.md
+//   - E2E scenarios: https://github.com/deploymenttheory/go-apple-dm/blob/main/docs/testing/e2e-scenarios.md (E2E-024)
 package main

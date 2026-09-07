@@ -209,8 +209,7 @@ func TestAdminPolicy(t *testing.T) {
 		}
 	})
 
-	// A refusal names the principal, so an operator can see who was denied
-	// what. Neither Fleet nor Zentral records this.
+	// The refusal identifies the principal and attempted action.
 	t.Run("DenialIsAuditedWithThePrincipal", func(t *testing.T) {
 		resp := adminReq(t, srv, http.MethodPut, "/admin/v1/declarations", reader, decl)
 		_ = resp.Body.Close()

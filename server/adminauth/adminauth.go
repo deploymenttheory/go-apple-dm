@@ -74,19 +74,15 @@ var (
 	// ErrEscalation is an attempt to issue a credential for a principal whose
 	// authority the caller does not already hold.
 	ErrEscalation = errors.New("adminauth: cannot issue credentials for a more privileged principal")
-	// ErrUnknownAction is a policy naming an action no route serves. Cedar
-	// parses such a policy happily and it then silently never grants, so the
-	// check is ours to make.
+	// ErrUnknownAction indicates a policy reference to an action absent from the
+	// route registry. This additional validation follows Cedar syntax parsing.
 	ErrUnknownAction = errors.New("adminauth: unknown action")
 )
 
-// Principal is an admin caller.
-//
-// Authority comes from policies that name the principal or one of its roles,
-// evaluated by Cedar. The one exception is Root, which is deliberately outside
-// the policy system: a principal that may edit policies can grant itself
-// anything, so that capability cannot itself be policy-granted. Zentral draws
-// the same line, excluding policy mutation from the permissions it bounds.
+// Principal is an administrative caller authorized by policies naming the
+// principal or its roles. Root is checked outside policy evaluation for
+// privileged administration, so policy grants cannot authorize editing their own
+// authority.
 type Principal struct {
 	Name  string
 	Roles []string
@@ -100,9 +96,7 @@ type Principal struct {
 	TokenID string
 	// TokenAt is when the current token was minted (zero when revoked).
 	TokenAt time.Time
-	// ExpiresAt is when the current token stops being accepted; zero never
-	// expires. Fleet makes every API-only token non-expiring with no way to
-	// say otherwise, which is the failure this field exists to avoid.
+	// ExpiresAt is when the current token stops being accepted; zero means no expiry.
 	ExpiresAt time.Time
 }
 

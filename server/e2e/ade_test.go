@@ -140,8 +140,8 @@ func TestE2E_ADEWebViewAuth(t *testing.T) {
 	d.SerialNumber, d.ProductName, d.OSVersion = "C02ADEWEB1", "Mac16,1", "26.0"
 	d.Client = f.trustBoth()
 	err := d.ADEEnroll(ctx, f.server.URL+"/ade", simulator.ADEOptions{WebView: func(_ context.Context, first *http.Response) (*http.Response, error) {
-		// The client already followed the flow: our Begin redirect to the
-		// provider, its redirect back with the code, and the profile.
+		// The client followed the authorization redirect, provider callback and
+		// profile response.
 		return first, nil
 	}})
 	if err != nil {

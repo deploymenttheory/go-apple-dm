@@ -1,8 +1,10 @@
 # Documentation
 
-- [research/implementation_plan.md](research/implementation_plan.md): the approved phased plan and plan of record.
-- [research/reference_projects.md](research/reference_projects.md): Apple primary sources and the open source projects this library learns from.
-- [research/decisions/](research/decisions/README.md): per-feature decision records and the build-loop checklist.
-- [diagrams/](diagrams/README.md): interactive architecture, flow and lifecycle diagrams.
-- [security/threat-model.md](security/threat-model.md): STRIDE threat model.
-- [testing/e2e-scenarios.md](testing/e2e-scenarios.md): named end-to-end scenarios.
+- [Architecture](architecture.md): implemented capabilities, module boundaries and limitations.
+- [Design decisions](research/decisions/README.md): current design and supporting evidence.
+- [Diagrams](diagrams/README.md): interactive architecture, protocol and lifecycle views.
+- [Enrollment security operations](operations/enrollment-security.md): trust, persistence, revocation and rate-limit configuration.
+- [Threat model](security/threat-model.md): assets, trust boundaries, controls and residual risks.
+- [Test scenarios](testing/e2e-scenarios.md): executable simulator scenarios and their limits.
+- [Reference catalogue](research/reference_projects.md): Apple documentation and external implementation references.
+- [v0.1.0 documentation review](reviews/v0.1.0-documentation.md): review coverage, validation and diagram artifact receipts.

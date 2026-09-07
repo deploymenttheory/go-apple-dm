@@ -19,7 +19,7 @@ type Clock interface {
 // Real is a Clock backed by the time package.
 type Real struct{}
 
-// Now implements Clock.
+// Now returns the current wall-clock time.
 func (Real) Now() time.Time { return time.Now() }
 
 // Since implements Clock.
@@ -45,7 +45,7 @@ func NewFake(now time.Time) *Fake {
 	return &Fake{now: now}
 }
 
-// Now implements Clock.
+// Now returns the fake clock's current time under its lock.
 func (f *Fake) Now() time.Time {
 	f.mu.Lock()
 	defer f.mu.Unlock()

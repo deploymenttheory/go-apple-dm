@@ -93,10 +93,7 @@ func sentinels() []string {
 	return []string{secretUnlock, secretPush, secretMagic, secretUser}
 }
 
-// The claim this package exists to make. NanoMDM and MicroMDM both forward
-// the raw check-in body, so a TokenUpdate hands the receiver UnlockToken --
-// the secret that clears a device passcode -- along with the push token and
-// PushMagic. Nothing seeded into a payload may survive projection.
+// Sensitive values seeded into event payloads must not survive projection.
 func TestNoSecretSurvivesProjection(t *testing.T) {
 	reg := eventsink.Default()
 	for _, e := range events() {
@@ -162,8 +159,8 @@ func TestProjectionTypeMismatchIsBare(t *testing.T) {
 	}
 }
 
-// Registering nil is how a type says its metadata is the whole story. That
-// has to be distinguishable from never having been considered.
+// An explicit nil projection must remain distinguishable from an unregistered
+// type.
 func TestMetadataOnlyIsDistinctFromUnknown(t *testing.T) {
 	reg := eventsink.NewRegistry()
 	reg.Register(event.CheckedOut, nil)

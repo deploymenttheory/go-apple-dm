@@ -199,8 +199,7 @@ func ConnectHandler(cfg Config) http.Handler {
 	})
 }
 
-// Handler routes by content type so both URLs can point at one path, as
-// NanoMDM and MicroMDM deployments commonly do.
+// Handler routes by content type so CheckInURL and ServerURL can share a path.
 func Handler(cfg Config) http.Handler {
 	checkin, connect := CheckinHandler(cfg), ConnectHandler(cfg)
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

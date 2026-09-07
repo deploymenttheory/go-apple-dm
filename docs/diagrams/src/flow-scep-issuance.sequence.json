@@ -28,7 +28,7 @@
           "ca",
           "device"
         ],
-        "note": "The challenge gates issuance; the CA signs, and a refusal is still a signed 200."
+        "note": "Authorized issuance returns a certificate; protocol refusals use a signed CertRep."
       }
     ]
   },
@@ -49,7 +49,7 @@
       "id": "challenge",
       "type": "security",
       "label": "Challenge",
-      "sublabel": "static \u00b7 HMAC \u00b7 one-time"
+      "sublabel": "static · HMAC · one-time"
     },
     {
       "id": "ca",
@@ -148,7 +148,7 @@
       "from": "scep",
       "to": "device",
       "y": 449.5,
-      "label": "CertRep, always 200",
+      "label": "CertRep: success or failure",
       "variant": "emphasis"
     },
     {
@@ -186,15 +186,15 @@
       "dot": "cyan",
       "title": "Challenge strategies",
       "items": [
-        "A static shared password from DM_SCEP_CHALLENGE",
-        "An HMAC password minted per device when DM_SCEP_HMAC_KEY is set, and re-derived from the CSR common name"
+        "Traditional enrollment supports static or HMAC challenges",
+        "Account enrollment uses CSR-bound credentials and trusted issuance registration"
       ]
     },
     {
       "dot": "rose",
-      "title": "Failure is still a 200",
+      "title": "SCEP protocol errors",
       "items": [
-        "A refusal is a signed CertRep with a failInfo, not an HTTP error",
+        "SCEP protocol refusal uses signed CertRep with failInfo; malformed HTTP input can fail earlier",
         "The device reads failInfo to learn why"
       ]
     }

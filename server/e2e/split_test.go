@@ -63,9 +63,9 @@ func mdmRole(t *testing.T, e splitEnv, sendKey, recvKey string) *harness {
 	return newHarness(t, service.Config{DeclarativeManagement: dm})
 }
 
-// TestE2E_DDMSplitDeployment is E2E-010: our own binary in the ddm role,
-// built from this repository and running in a container, serves Apple's
-// DDM endpoints to a device enrolled with an in-process mdm role.
+// TestE2E_DDMSplitDeployment covers E2E-010: an in-process mdm role forwards
+// declarative check-ins to the project's dmserver container running the ddm
+// role.
 func TestE2E_DDMSplitDeployment(t *testing.T) {
 	ctx := context.Background()
 	e := splitEnvFromOS(t)
@@ -88,8 +88,8 @@ func TestE2E_DDMSplitDeployment(t *testing.T) {
 	if err != nil {
 		t.Fatalf("sync through the hop: %v", err)
 	}
-	// The container synthesises status subscriptions (its default), so the
-	// manifest carries our declaration plus that one.
+	// The container's default synthesized subscription adds a declaration to the
+	// assigned fixture.
 	fetched := map[string]bool{}
 	for _, k := range sync.Fetched {
 		fetched[k] = true

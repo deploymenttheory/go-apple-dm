@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # refs.sh: clone the reference implementations read-only into third_party/refs.
-# These are never vendored or copied; they exist so the build loop in
-# docs/research/implementation_plan.md section 8 can read them locally.
+# Existing reference checkouts are reset to the fetched commit.
+# See docs/research/reference_projects.md for the reference catalogue.
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 DEST="$ROOT/third_party/refs"

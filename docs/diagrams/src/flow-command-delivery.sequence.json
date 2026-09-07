@@ -53,13 +53,13 @@
       "id": "core",
       "type": "backend",
       "label": "service.Core",
-      "sublabel": "Enqueue \u00b7 Connect"
+      "sublabel": "Enqueue · Connect"
     },
     {
       "id": "store",
       "type": "database",
       "label": "storage.Store",
-      "sublabel": "queue \u00b7 pins \u00b7 tokens"
+      "sublabel": "queue · pins · tokens"
     },
     {
       "id": "push",
@@ -214,12 +214,12 @@
       "title": "Target validation",
       "items": [
         "service.Core asks schema/commands whether the command applies to that OS, version and channel",
-        "An unsupported target is skipped with ErrUnsupportedTarget, not failed"
+        "Unsupported targets are skipped with ErrUnsupportedTarget"
       ]
     },
     {
       "dot": "emerald",
-      "title": "One connect does three things",
+      "title": "Connect result and delivery",
       "items": [
         "Stores the result of the previous command",
         "Takes the next pending command and marks it sent"

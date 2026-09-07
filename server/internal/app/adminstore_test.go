@@ -17,14 +17,8 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/mdmprotocol/event"
 )
 
-// The debt this closes: adminauth/sqlstore was imported only by its own
-// tests. cmd/dmserver never set AdminStore, so principals, Cedar policies
-// and revocable tokens were unreachable from the shipped binary and every
-// phase 8 claim rested on a store an in-process caller injected.
-//
-// This builds the server the way the binary does -- a database DSN and
-// DM_ADMIN_STORE, nothing injected -- then authenticates with a principal
-// created through the store the server opened for itself.
+// Build from a database DSN and DM_ADMIN_STORE, without an injected store, then
+// authenticate with a principal from the store opened by the application.
 func TestAdminStoreOnTheProcessDatabase(t *testing.T) {
 	dsn := filepath.Join(t.TempDir(), "admin.db")
 	a := build(t, app.Config{
@@ -122,10 +116,8 @@ func TestAdminStoreInjectionWins(t *testing.T) {
 	}
 }
 
-// Break-glass: the static token keeps working beside a principal store,
-// because an empty store authenticates nobody and the route that creates the
-// first principal is itself authorized. Before this, configuring a store made
-// DM_ADMIN_TOKEN silently stop working.
+// The static token remains usable alongside the principal store so an empty
+// store can be bootstrapped through authorized routes.
 func TestBreakGlassAlongsideThePrincipalStore(t *testing.T) {
 	bus := event.New()
 	rec := &recorder{}

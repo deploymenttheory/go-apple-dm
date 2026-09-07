@@ -17,10 +17,9 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/appleplatformservices/axm/axmtest"
 )
 
-// TestE2E_ABMAssignDevices is E2E-021: against our fake Business Manager,
-// list servers and devices with paging, assign devices to our server,
-// wait for the activity and the assignment to converge, read the audit
-// events, unassign; then prove the token expiry replay and Retry-After.
+// TestE2E_ABMAssignDevices covers E2E-021: paged resource reads, assignment
+// completion and convergence, audit reads, unassignment, expired-token replay
+// and Retry-After against the fake Business Manager API.
 func TestE2E_ABMAssignDevices(t *testing.T) {
 	ctx := context.Background()
 	key, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)

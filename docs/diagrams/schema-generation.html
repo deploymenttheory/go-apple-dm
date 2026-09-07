@@ -5375,10 +5375,10 @@
       <div class="card">
         <div class="card-header">
           <div class="card-dot cyan"></div>
-          <h3>Never hand-edited</h3>
+          <h3>Generated output</h3>
         </div>
         <ul>
-          <li>&bull; Every file under schema/ is emitted by make generate from the pinned submodule</li>
+          <li>&bull; Generated schema files come from make generate; support code and removal policy are handwritten</li>
           <li>&bull; GENERATED_FROM.json is emitted too, so the record of which Apple commit the tree came from cannot drift from the tree</li>
           <li>&bull; make verify regenerates and fails if the checked-in output differs</li>
         </ul>

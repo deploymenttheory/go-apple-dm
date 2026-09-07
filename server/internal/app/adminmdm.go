@@ -173,9 +173,7 @@ func (a *App) enqueueCommand(w http.ResponseWriter, r *http.Request) {
 		a.storageStatus(w, r, err)
 		return
 	}
-	// A target the server refused is reported rather than silently dropped:
-	// Core.Enqueue screens against schema/support, so "queued: 0" with a
-	// reason is the useful answer.
+	// Include each target's validation reason from Core.Enqueue in the response.
 	out := map[string]any{"CommandUUID": cmd.UUID, "Queued": len(res.Queued)}
 	if reason, ok := res.Skipped[id]; ok {
 		out["Skipped"] = reason.Error()
@@ -222,8 +220,8 @@ func (a *App) clearCommands(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, map[string]any{"Cleared": n})
 }
 
-// pushEnrollment wakes one device now. The queue is unchanged: this is the
-// "the device has not checked in" lever, not a way to send anything.
+// pushEnrollment sends a wake request for one enrollment without changing its
+// command queue.
 func (a *App) pushEnrollment(w http.ResponseWriter, r *http.Request) {
 	id, err := enrollmentFromPath(r)
 	if err != nil {
@@ -256,8 +254,7 @@ func (a *App) listPushCerts(w http.ResponseWriter, r *http.Request) {
 		a.storageStatus(w, r, err)
 		return
 	}
-	// The private key never leaves the server, so the view is the topic and
-	// what an operator needs to plan a renewal.
+	// This listing exposes topic and renewal metadata without the private key.
 	items := make([]pushCertView, 0, len(certs))
 	for _, c := range certs {
 		items = append(items, pushCertView{

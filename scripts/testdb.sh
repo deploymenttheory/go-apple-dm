@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # testdb.sh: PostgreSQL and MySQL in Docker for the storage and e2e suites,
-# and our own reference server in the ddm role for the split-deployment e2e.
+# and the reference server in the ddm role for the split-deployment e2e.
 #
 # Usage: scripts/testdb.sh up|down|env|ddm-up|ddm-down|ddm-env
 #   up        start (or reuse) both database containers, wait for readiness, print exports

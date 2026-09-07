@@ -111,9 +111,8 @@ func TestExplainNeedsNoServer(t *testing.T) {
 	}
 }
 
-// The flag package stops at the first positional argument, so a flag written
-// after one would be silently ignored: the worst kind of wrong, because it
-// answers a different question without saying so.
+// Flags after positional arguments must be parsed, including the target used by
+// explain.
 func TestGlobalFlagsAfterVerb(t *testing.T) {
 	env := noConfig(t)
 	before, _, err := run(t, env, "explain", "-target", "macos:15.0", "DeviceLock")

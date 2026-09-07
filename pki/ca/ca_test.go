@@ -50,14 +50,9 @@ func TestSelfSignedAndLocalSignsWithPolicy(t *testing.T) {
 		t.Fatalf("self-signed CA %+v", cert.Subject)
 	}
 	depot := ca.NewMemoryDepot()
-	// The fake instant is anchored to now rather than a fixed date. The
-	// self-signed CA above is issued against the wall clock, so a leaf signed
-	// at a hardcoded past instant falls outside the root's validity, and one
-	// signed in the past expires in real time: the previous fixed date made
-	// this test start failing 48 hours after it. Signing stays deterministic
-	// because every assertion below is relative to fake.Now(). It is truncated
-	// to a second because x509 stores whole seconds, so an instant carrying
-	// nanoseconds would never compare equal to the certificate it produced.
+	// Anchor the fake clock to the wall-clock CA validity window so issued leaves
+	// remain valid. Truncate to whole seconds because X.509 encodes second
+	// precision; assertions use the same injected instant.
 	fake := clock.NewFake(time.Now().UTC().Truncate(time.Second))
 	signer, err := ca.NewLocal(cert, key, ca.WithDepot(depot), ca.WithClock(fake), ca.WithChain(cert))
 	if err != nil {

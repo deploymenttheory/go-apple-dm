@@ -24,7 +24,7 @@
           "mux",
           "workers"
         ],
-        "note": "One mux; ddm-notifier and audit-retention always, dep-syncer when DEP is built."
+        "note": "The mux and workers depend on the configured role and enabled services."
       }
     ],
     "legend": {
@@ -98,7 +98,7 @@
       "col": 1,
       "type": "security",
       "label": "Role",
-      "sublabel": "mdm \u00b7 ddm \u00b7 all",
+      "sublabel": "mdm · ddm · all",
       "width": 140
     },
     {
@@ -134,7 +134,7 @@
       "col": 4,
       "type": "backend",
       "label": "App.Run",
-      "sublabel": "two, plus dep-syncer",
+      "sublabel": "configured workers",
       "width": 150
     },
     {
@@ -203,10 +203,10 @@
     },
     {
       "dot": "rose",
-      "title": "Fail at build, not at runtime",
+      "title": "Optional security services",
       "items": [
-        "An ACME dep or sip policy without a DEP store is a build error",
-        "buildAdminMux refuses a route with no action, so a typo cannot ship"
+        "Revocation requires persistent CA keys and explicit CRL/OCSP lifetimes",
+        "DM_RATE_LIMITS enables selected route quotas; both controls default off"
       ]
     }
   ]

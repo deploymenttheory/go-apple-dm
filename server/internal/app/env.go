@@ -159,8 +159,8 @@ func ParseEnv(get func(string) string) (Config, error) {
 		CertFile: get(EnvPushCertFile),
 		KeyFile:  get(EnvPushKeyFile),
 		Host:     get(EnvPushHost),
-		// The topic comes from the certificate; there is deliberately no
-		// variable for it.
+		// The APNs transport topic is derived from the certificate. DM_PUSH_TOPIC
+		// separately configures the enrollment profile topic.
 		Topic: get(EnvPushTopic),
 	}
 	// A file pair with no explicit source is the source: an operator who

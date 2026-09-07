@@ -177,11 +177,9 @@ func SANExtension(names SANs, subjectEmpty bool) (pkix.Extension, bool, error) {
 	return pkix.Extension{Id: oidSubjectAltName, Critical: subjectEmpty, Value: tlv(idSequence, body)}, true, nil
 }
 
-// tlv encodes one DER value: the identifier octet, the length in its
-// shortest definite form, then the body. The package writes these by hand
-// because encoding/asn1 offers no way to say "this tag around bytes I have
-// already encoded" without an error return that the fixed tags here can
-// never produce.
+// tlv wraps an encoded body with an identifier octet and the shortest definite
+// DER length. The fixed single-octet tags used here allow direct encoding
+// without encoding/asn1's general-purpose marshaling and error handling.
 func tlv(identifier byte, body []byte) []byte {
 	der := make([]byte, 0, len(body)+6)
 	der = append(der, identifier)

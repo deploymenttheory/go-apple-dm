@@ -1,48 +1,36 @@
 # 0004: Check-in and command protocol core
 
-Status: accepted
-Date: 2026-09-01
-Phase: 2
+## Context
 
-## Apple sources
+Device and user channels share the check-in and command transport but use different enrollment identifiers.
 
-- Doc: <https://developer.apple.com/documentation/devicemanagement/check-in>
-- Doc: <https://developer.apple.com/documentation/devicemanagement/commands-and-queries>
-- Doc: <https://developer.apple.com/documentation/devicemanagement/handling-notnow-status-responses>
-- YAML: `third_party/device-management/mdm/checkin/*.yaml`, `mdm/commands/*.yaml`
+## Decision
 
-## References read
+Check-in decoding resolves generated `schema/checkin` messages in a single pass and retains raw bytes. `NewCommand` wraps typed payloads with `RequestType` and an uppercase UUIDv7 `CommandUUID`. Response decoding uses the command registry when the request type is known.
 
-- `micromdm/nanomdm@main` `mdm/checkin.go`, `mdm/command.go`, `mdm/mdm.go`, `mdm/type.go`, `service/nanomdm/service.go`
-- `fleetdm/fleet@main` `pkg/mdm/mdmtest/apple.go` (device side: Authenticate, TokenUpdate, Idle loop, NotNow, Error, user channel)
+`Enrollment.Resolve` represents device, user, Shared iPad user, User Enrollment device, and User Enrollment user channels. Shared iPad uses Apple's all-`F` `UserID` sentinel and `UserShortName`; User Enrollment uses `EnrollmentID` and `EnrollmentUserID`. Invalid combinations and missing identifiers return errors.
 
-## Known pitfalls found
+## Rationale
 
-- NanoMDM hides `context.Context` inside `mdm.Request` and check-in handlers return `[]byte` for DDM; every derivative re-wraps it.
-- NanoMDM `Command` keeps only `CommandUUID` and `RequestType`; typed payloads and responses are left to callers (NanoCMD grew `mdmcommands` to compensate).
-- NanoMDM #71: re-enrollment (`Authenticate`) does not clear bootstrap and unlock tokens.
-- Shared iPad user channel is identified by the sentinel `UserID` `FFFFFFFF-FFFF-FFFF-FFFF-FFFFFFFFFFFF`, with the real user in `UserShortName`; user enrollments identify by `EnrollmentID` and `EnrollmentUserID` rather than `UDID`.
+Explicit channel types support command-target validation and separate device and user state. Retained bytes allow signature verification and forwarding without re-encoding.
 
-## What they do
+## Constraints
 
-- **NanoMDM**: single-pass plist dispatch on `MessageType` via `UnmarshalPlist`; `Raw` bytes retained; `Enrollment.Resolved()` derives device/user/shared iPad/user-enrollment ids with `device:user` composite ids; `CommandResults` parsed to `CommandUUID`, `Status`, `ErrorChain`; `Idle` is a status; `NotNow` passes `skipNotNow` to the queue.
-- **Fleet test client**: signs every body with detached PKCS7 in `Mdm-Signature`; `Idle` posts `Status: Idle` with `Topic`, `UDID`, `EnrollmentID`; user channel adds `UserID`; DDM check-ins carry `Endpoint` and `Data`.
+Decoding establishes message shape and identity fields, not authorization. Certificate, bearer and enrollment policy checks belong to the service and enrollment layers.
 
-## What we do better
+## Verification
 
-1. Check-in messages decode straight into the generated `schema/checkin` types (single pass, `Raw` retained), so every wire key is typed and validated against the schema.
-2. Commands carry typed payloads from `schema/commands`; `NewCommand` injects `RequestType` and an RFC 9562 UUIDv7; `DecodeResponse` resolves the typed response through the registry when the RequestType is known.
-3. `Enrollment.Resolve` models five channels explicitly (device, user, shared iPad user, user-enrollment device, user-enrollment user) with the parent id, and rejects malformed combinations.
-4. Decoding applies the `plist` size and depth limits, and rejects unknown message types and missing enrollment ids with sentinel errors.
+Protocol tests cover generated message dispatch, channel resolution, typed command/response round trips, limits and malformed input. Service tests pair the generated check-in registry with dispatch coverage.
 
-## Verified by
+## References
 
-1. `TestDecodeCheckinTypes`, `TestDecodeCheckinRejects` (unknown type, limits, missing id).
-2. `TestNewCommandRoundTrip`, `TestDecodeResponseTyped`, `TestDecodeResponseIdleAndError`.
-3. `TestEnrollmentResolve` (table over all five channels and invalid mixes).
-4. `FuzzDecodeCheckin`, `FuzzDecodeResponse`.
+- [mdmprotocol/mdm](../../../mdmprotocol/mdm)
+- [server/service](../../../server/service)
+- <https://developer.apple.com/documentation/devicemanagement/check-in>
+- <https://developer.apple.com/documentation/devicemanagement/commands-and-queries>
+- <https://developer.apple.com/documentation/devicemanagement/handling-notnow-status-responses>
 
-## Rejected alternatives
+Reference source identifiers and paths (relative to the named project):
 
-- Untyped `map[string]any` messages: loses validation and the generated support metadata.
-- Two-pass decode (type then message): simpler but doubles parsing of every check-in.
+- `micromdm/nanomdm@main`, `mdm/checkin.go`, `mdm/command.go`, `mdm/mdm.go`, `mdm/type.go`, `service/nanomdm/service.go`
+- `fleetdm/fleet@main`, `pkg/mdm/mdmtest/apple.go`

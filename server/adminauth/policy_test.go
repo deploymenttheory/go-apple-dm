@@ -153,9 +153,8 @@ func TestAuthorize(t *testing.T) {
 	})
 }
 
-// A policy naming an action nobody serves parses cleanly in Cedar and then
-// silently never grants. Refusing it at write time is the whole reason the
-// registry exists.
+// Cedar syntax parsing alone accepts unknown actions; registry validation must
+// reject them before storage.
 func TestPutPolicyRejectsUnknownAction(t *testing.T) {
 	ctx := context.Background()
 	m, _, _ := manager(t)

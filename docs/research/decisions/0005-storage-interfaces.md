@@ -1,50 +1,36 @@
 # 0005: Storage interfaces, in-memory backend, contract suite
 
-Status: accepted
-Date: 2026-09-01
-Phase: 2
+## Context
 
-## Apple sources
+Enrollment lifecycle, command delivery, certificate ownership and escrowed tokens require consistent persistence behavior across backends.
 
-- Doc: <https://developer.apple.com/documentation/devicemanagement/check-in> (what an enrollment record must retain: topic, push token, push magic, unlock token, bootstrap token)
-- Doc: <https://developer.apple.com/documentation/devicemanagement/sending-mdm-commands-to-a-device>
+## Decision
 
-## References read
+`storage.Store` composes concern-specific interfaces, including enrollment, queue, push, certificate, bootstrap-token, user-authentication and migration operations. Methods take contexts and return shared sentinel errors.
 
-- `micromdm/nanomdm@main` `storage/storage.go`, `storage/mdm.go`, `storage/queue.go`, `storage/push.go`, `storage/pushcert.go`, `storage/certauth.go`, `storage/bstoken.go`
-- `jessepeterson/kmfddm@main` `storage/*.go` (pagination absent, last-seen absent)
-- NanoMDM issues #260, #86, #71; KMFDDM issues #5, #6, #41
+`UpsertAuthenticate` resets enrollment state transactionally, clearing pending work, push state, escrowed tokens and the active certificate pin while retaining certificate history. Device lifecycle changes also affect dependent user channels. Lists use cursors, and command delivery persists `NotNow` retry state. `Clear` accepts a filter and returns the number affected.
 
-## Known pitfalls found
+## Rationale
 
-- NanoMDM #260: `ClearQueue` on Postgres is slow (row-by-row, no status index).
-- NanoMDM #86: bootstrap tokens are not migrated between backends.
-- NanoMDM #71: re-enrollment leaves bootstrap and unlock tokens from the previous identity.
-- KMFDDM #5/#6: no last-seen timestamp, no pagination on list endpoints.
-- NanoMDM keeps `context.Context` inside `mdm.Request` for storage calls.
+Narrow interfaces allow consumers to implement or fake only the operations they need. The in-memory backend and shared contract suites define behavior independently of SQL dialects.
 
-## What they do
+## Constraints
 
-- **NanoMDM**: one `AllStorage` union of small interfaces; `StoreAuthenticate` disables the enrollment until `TokenUpdate`; `RetrieveNextCommand(skipNotNow)`; results stored per command; `TokenUpdateTally` for migration; cert hash association tables.
-- **KMFDDM**: file/diskv/inmem/MySQL with declaration, set, enrollment, and status interfaces.
+Certificate history is distinct from the live pin and from account-driven certificate associations (records 0014 and 0047). Store contracts do not make operations across separate domain stores a distributed transaction.
 
-## What we do better
+## Verification
 
-1. Interfaces split by concern with explicit `context.Context` and typed inputs: `EnrollmentStore`, `CommandQueue`, `PushStore`, `CertAuthStore`, `BootstrapTokenStore`.
-2. `UpsertAuthenticate` is transactional: it resets push info, clears the pending queue, bootstrap token, unlock token, and cert association in one operation, so re-enrollment never leaks state.
-3. `TouchLastSeen` and cursor pagination on `List` from the start; `Clear` takes a filter and returns the count so backends can index and batch it.
-4. `NotNow` handling is persisted per command with backoff metadata instead of per connection.
-5. A `storagetest` contract suite that every backend runs, including concurrency and idempotency cases, so the in-memory, SQLite, PostgreSQL, and MySQL backends behave identically.
+`storage/storagetest` covers lifecycle, pagination, idempotency, queue outcomes, certificate races, token storage and export/import. SQL backends run the same suites.
 
-## Verified by
+## References
 
-1. `storagetest.RunEnrollmentSuite`, `RunCommandQueueSuite`, `RunPushSuite`, `RunCertAuthSuite`, `RunBootstrapTokenSuite` on `inmem`.
-2. `RunEnrollmentSuite/ReenrollClearsState`.
-3. `RunEnrollmentSuite/ListPagination`, `RunCommandQueueSuite/ClearFilter`.
-4. `RunCommandQueueSuite/OrderAndResults` (the NotNow backoff steps live inside it).
-5. `sqlite.TestContract`, `postgres.TestContract`, `mysql.TestContract`.
+- [storage](../../../storage)
+- [storage/inmem](../../../storage/inmem)
+- [storage/storagetest](../../../storage/storagetest)
+- <https://developer.apple.com/documentation/devicemanagement/check-in>
+- <https://developer.apple.com/documentation/devicemanagement/sending-mdm-commands-to-a-device>
 
-## Rejected alternatives
+Reference source identifiers and paths (relative to the named project):
 
-- One monolithic storage interface: harder to fake and to implement partially.
-- Storing raw plists only: keeps the door open for later, but typed enrollment records are what every consumer needs.
+- `micromdm/nanomdm@main`, `storage/storage.go`, `storage/mdm.go`, `storage/queue.go`, `storage/push.go`, `storage/pushcert.go`, `storage/certauth.go`, `storage/bstoken.go`
+- `jessepeterson/kmfddm@main`, `storage/*.go`

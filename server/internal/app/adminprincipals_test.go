@@ -206,9 +206,8 @@ func TestAdminPolicyRoutes(t *testing.T) {
 		}
 	})
 
-	// A policy naming an action nobody serves is refused when it is written,
-	// with the known actions in the message. Cedar alone would accept it and
-	// it would then silently never grant.
+	// Reject unknown action references before storage and include the known actions
+	// in the error.
 	t.Run("UnknownActionIsRefusedAtWriteTime", func(t *testing.T) {
 		resp := adminReq(t, srv, http.MethodPut, "/admin/v1/policies/typo", rootTok,
 			`{"Source":`+quote(`permit (principal, action == MDM::Action::"lstEnrollments", resource);`)+`}`)

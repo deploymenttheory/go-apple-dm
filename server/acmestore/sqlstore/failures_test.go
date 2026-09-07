@@ -12,10 +12,8 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/pki/acme"
 )
 
-// TestClosedDatabaseSurfaces proves every method reports a driver failure
-// instead of hiding it: the database is closed under the store. A store
-// that answered ErrNotFound here would tell the server a record was never
-// written when in truth it could not be read.
+// TestClosedDatabaseSurfaces checks that driver failures remain errors and are
+// not misclassified as missing records.
 func TestClosedDatabaseSurfaces(t *testing.T) {
 	ctx := context.Background()
 	db := openDB(t)

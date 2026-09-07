@@ -64,11 +64,10 @@ func seed100k(tb testing.TB, s *postgres.Store) mdm.EnrollmentID {
 	return id
 }
 
-// TestClear100kUnderOneSecond is the phase 4 exit criterion from the plan:
-// Clear on 100k rows under 1s on PostgreSQL (NanoMDM #260 took minutes).
-// The assertion is skipped under the race detector (make test-storage-perf
-// runs it without) and STORAGE_TIMING=off downgrades it to a log line on
-// slow machines.
+// TestClear100kUnderOneSecond measures clearing 100,000 queued rows on
+// PostgreSQL. The timing assertion is skipped under the race detector; make
+// test-storage-perf runs without it. STORAGE_TIMING=off records timing without
+// enforcing the threshold.
 func TestClear100kUnderOneSecond(t *testing.T) {
 	s := openFresh(t)
 	id := seed100k(t, s)

@@ -10,7 +10,7 @@
     ],
     "repository": {
       "url": "https://github.com/deploymenttheory/go-apple-dm",
-      "revision": "0e487dd17ae7dffcad8674c668ff59e56c73d8f3"
+      "revision": "a817270f13b4ef7a9b1d2895118981120546b3a2"
     },
     "views": [
       {
@@ -32,7 +32,7 @@
           "errors",
           "core"
         ],
-        "note": "An unknown enrollment is a 403; httpapi never returns 401."
+        "note": "Unknown enrollment returns 403; known account sessions can request reauthentication with 401."
       },
       {
         "id": "seams",
@@ -54,7 +54,7 @@
           "bus",
           "sinks"
         ],
-        "note": "Webhook and slog sinks ship in event/sink; the server adds its own audit sink."
+        "note": "server/eventsink provides projected webhook and slog output; audit persistence is optional."
       }
     ]
   },
@@ -63,7 +63,7 @@
       "id": "certmw",
       "type": "security",
       "label": "Cert middlewares",
-      "sublabel": "TLS \u00b7 header \u00b7 signature",
+      "sublabel": "TLS · header · signature",
       "pos": [
         40,
         110
@@ -97,7 +97,7 @@
       "id": "errors",
       "type": "backend",
       "label": "service.Code",
-      "sublabel": "403 \u00b7 400 \u00b7 410 \u00b7 501",
+      "sublabel": "403 · 400 · 410 · 501",
       "pos": [
         40,
         410
@@ -157,7 +157,7 @@
       "id": "sinks",
       "type": "backend",
       "label": "eventsink",
-      "sublabel": "webhook \u00b7 slog",
+      "sublabel": "webhook · slog",
       "pos": [
         380,
         560
@@ -182,7 +182,7 @@
       "id": "hooks",
       "type": "backend",
       "label": "Hook chain",
-      "sublabel": "Before \u00b7 After \u00b7 veto",
+      "sublabel": "Before · After · veto",
       "pos": [
         700,
         110
@@ -202,7 +202,7 @@
       "id": "core",
       "type": "backend",
       "label": "service.Core",
-      "sublabel": "Checkin \u00b7 Connect \u00b7 Enqueue",
+      "sublabel": "Checkin · Connect · Enqueue",
       "pos": [
         700,
         260
@@ -240,7 +240,7 @@
       "id": "verifier",
       "type": "security",
       "label": "UserVerifier",
-      "sublabel": "digest, or your own",
+      "sublabel": "digest or custom verifier",
       "pos": [
         1020,
         110
@@ -254,7 +254,7 @@
       "id": "storepkg",
       "type": "database",
       "label": "storage.Store",
-      "sublabel": "pins \u00b7 queue \u00b7 tokens",
+      "sublabel": "pins · queue · tokens",
       "pos": [
         1020,
         260
@@ -377,15 +377,15 @@
       "title": "One URL, two protocols",
       "items": [
         "aspen-mdm-checkin routes to check-in, aspen-mdm to the command handler",
-        "Anything else is a 415; another method is a 405; an unknown enrollment is a 403, never a 401"
+        "Unsupported content type is 415; wrong method is 405; account reauthentication can return 401"
       ]
     },
     {
       "dot": "emerald",
-      "title": "Extension without coupling",
+      "title": "Authorization order",
       "items": [
-        "A hook can veto an operation before it runs, and the veto becomes a 403",
-        "The DDM engine attaches as a DMHandler, which is why service never imports ddm"
+        "Enabled certificate status checks precede hooks and service side effects",
+        "Account hooks reserve identity before storage and confirm after success"
       ]
     }
   ]

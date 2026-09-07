@@ -9,12 +9,9 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/schema/checkin"
 )
 
-// Default is the projection table for every event type this module declares.
-//
-// Registering a type with nil says its metadata is the whole story. Leaving a
-// type out entirely is not a way to say that: TestEveryEventTypeIsProjected
-// fails, because the difference between "considered and bare" and "forgotten"
-// is the difference this table exists to keep.
+// Default registers projections for declared event types. A nil projection
+// explicitly selects metadata only. TestEveryEventTypeIsProjected distinguishes
+// that choice from an unregistered type.
 func Default() *Registry {
 	r := NewRegistry()
 
@@ -23,12 +20,9 @@ func Default() *Registry {
 	r.Register(event.Enrolled, authenticate)
 	r.Register(event.Reenrolled, authenticate)
 
-	// TokenUpdate is the reason this package is default-deny. The message
-	// carries UnlockToken, the secret that clears a device passcode, plus the
-	// push token, PushMagic, and the user's short and long names. NanoMDM and
-	// MicroMDM both forward the whole check-in body base64-encoded, so all of
-	// that reaches the webhook receiver. Three booleans and a topic are what
-	// an audit trail actually needs.
+	// TokenUpdate includes unlock tokens, push credentials and user names. The
+	// projection
+	// emits selected operational fields without disclosing those values.
 	r.Register(event.TokenUpdated, tokenUpdate)
 
 	r.Register(event.CheckedOut, nil)
@@ -85,9 +79,8 @@ func authenticate(data any) map[string]any {
 	return out
 }
 
-// tokenUpdate deliberately reads three fields and no more. Adding one here is
-// a decision to publish it; the sentinel test in this package is what stops
-// that decision being made by accident.
+// tokenUpdate selects only the three reviewed operational fields. Tests check
+// that escrowed tokens and other sensitive fields are absent.
 func tokenUpdate(data any) map[string]any {
 	m, ok := data.(*checkin.TokenUpdate)
 	if !ok {

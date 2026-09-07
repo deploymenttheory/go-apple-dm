@@ -1,14 +1,18 @@
-// Package statestore persists atomic protocol state in SQLite, PostgreSQL and MySQL.
+// Package statestore persists atomic protocol byte records in SQLite, PostgreSQL
+// and MySQL.
 //
-// # Why
+// # Design
 //
-// The reference server's security services must survive restarts and coordinate
-// across replicas. Fixed lock shards, ordered before writes, bound lock metadata;
-// database time governs expiry and quotas. The caller owns the database pool.
+// Security services use these records for grants, certificate associations,
+// revocation and quota accounting across replicas. Transactions lock fixed
+// shards in deterministic order before reading database time, bounding lock
+// metadata and coordinating expiry decisions. The protocol-state schema has its
+// own migrations. The caller owns the database pool and chooses serialization
+// and namespaces through domain interfaces.
 //
 // # References
 //
-//   - docs/research/decisions/0047-enrollment-authentication-and-optional-security-services.md
+//   - https://github.com/deploymenttheory/go-apple-dm/blob/main/docs/research/decisions/0047-enrollment-authentication-and-optional-security-services.md
 //   - state.Store
 //   - server/sqlstore/sqlcommon
 package statestore

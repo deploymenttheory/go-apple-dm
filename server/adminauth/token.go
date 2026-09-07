@@ -10,16 +10,14 @@ import (
 	"strings"
 )
 
-// Token format. A token is a type prefix, a random body, and a checksum:
+// Token format: a type prefix, a random body and a checksum.
 //
 //	mdmt_<30 base62 characters><6 base62 checksum characters>
 //
-// The prefix makes the credential recognisable to a secret scanner, and the
-// checksum lets the server reject a mistyped or truncated value before it
-// touches the database. The body carries 30*log2(62) is about 178 bits of
-// entropy, so the stored digest needs no salt or key derivation: there is no
-// dictionary to attack. Zentral's ztlu_/ztls_ tokens are the model here
-// (record 0034); Fleet, by contrast, stores its bearer tokens in plaintext.
+// The prefix supports secret scanning. The checksum rejects malformed values before
+// storage lookup. The random body provides approximately 178 bits of entropy;
+// storage
+// holds its digest rather than the bearer value. See decision 0034.
 const (
 	// Prefix precedes every admin token.
 	Prefix = "mdmt_"

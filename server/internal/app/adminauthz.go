@@ -14,10 +14,8 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/server/adminauth"
 )
 
-// Admin action ids. Every admin route declares one, and the set below is the
-// registry a stored policy is validated against, so a policy naming an action
-// that no route serves is refused when it is written rather than silently
-// never granting (decision record 0034).
+// Administrative action IDs form the registry used to validate stored policy
+// references. Each route declares its action (decision record 0034).
 const (
 	ActionPutDeclaration       = "putDeclaration"
 	ActionGetDeclaration       = "getDeclaration"
@@ -191,12 +189,9 @@ type adminRoute struct {
 	// Family names the group a role must be able to back, so a role that did
 	// not build the dependency does not register the route.
 	Family string
-	// Introspection marks a route that answers what the server is rather than
-	// what it holds: the role it runs, and the route table itself. Those are
-	// authenticated but not policy-gated, because a caller needs them to
-	// interpret a 404 that is really a role split, and a policy that had to
-	// grant them first would make the explanation unreachable exactly when it
-	// is needed. They return no fleet data.
+	// Introspection routes expose role and route metadata without fleet data. They
+	// require authentication but bypass policy evaluation so authenticated clients
+	// can determine which families the process serves.
 	Introspection bool
 	Handler       http.Handler
 }
@@ -205,10 +200,8 @@ type adminRoute struct {
 var (
 	// ErrForbidden is a caller authenticated but not permitted.
 	ErrForbidden = errors.New("app: forbidden")
-	// ErrAdminUnconfigured is an admin API with neither a principal store nor
-	// a static token. It is a Build error rather than a silently disabled
-	// API, so a deployment cannot believe it is serving one when it is not
-	// (decision record 0034).
+	// ErrAdminUnconfigured reports that an enabled admin API has neither a
+	// principal store nor a static token. Build returns this configuration error.
 	ErrAdminUnconfigured = errors.New(
 		"app: admin API needs DM_ADMIN_TOKEN or an admin principal store",
 	)
@@ -335,17 +328,9 @@ func (w *statusRecorder) Write(b []byte) (int, error) {
 	return n, nil
 }
 
-// kickNotifier shortens the wait after a declarative change.
-//
-// The persistent signal is the change rows the engine writes inside its
-// transaction, which the notifier drains on its poll; this only saves the
-// poll interval. It lives here, in the one wrapper every admin route passes
-// through, rather than in each handler, so a route added later cannot forget
-// it (decision record 0039).
-//
-// Kick never blocks and a drain with no rows does nothing, so a successful
-// mutating request on the ddm family is a good enough trigger without asking
-// the engine whether anything actually changed.
+// kickNotifier requests a drain after successful DDM mutations. Persistent
+// change rows remain the notification signal; this wrapper reduces polling
+// latency. Kick is nonblocking, and a drain without pending rows has no effect.
 func (a *App) kickNotifier(rt adminRoute, r *http.Request, status int) {
 	if a.Notifier == nil || rt.Family != "ddm" {
 		return

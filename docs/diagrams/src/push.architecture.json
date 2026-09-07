@@ -35,7 +35,7 @@
     ],
     "repository": {
       "url": "https://github.com/deploymenttheory/go-apple-dm",
-      "revision": "0e487dd17ae7dffcad8674c668ff59e56c73d8f3"
+      "revision": "a817270f13b4ef7a9b1d2895118981120546b3a2"
     }
   },
   "components": [
@@ -43,7 +43,7 @@
       "id": "caller",
       "type": "backend",
       "label": "Callers",
-      "sublabel": "ddmsync.Notifier \u00b7 admin API",
+      "sublabel": "ddmsync.Notifier · admin API",
       "pos": [
         40,
         260.0
@@ -57,7 +57,7 @@
       "id": "pushstore",
       "type": "database",
       "label": "storage.PushStore",
-      "sublabel": "token \u00b7 topic \u00b7 magic",
+      "sublabel": "token · topic · magic",
       "pos": [
         340,
         110.0
@@ -82,7 +82,7 @@
       ],
       "sources": [
         {
-          "path": "appleplatformservices/push/push.go",
+          "path": "server/pushnotify/notifier.go",
           "label": "Notify"
         }
       ]
@@ -236,7 +236,7 @@
       "id": "notifier-bus",
       "from": "notifier",
       "to": "bus",
-      "label": "410 marks invalid",
+      "label": "410 emits invalid event",
       "labelAt": [
         425.0,
         344.0
@@ -291,10 +291,10 @@
     },
     {
       "dot": "rose",
-      "title": "Honest failure",
+      "title": "Push outcomes",
       "items": [
-        "A 410 marks the token invalid and publishes PushTokenInvalid",
-        "Nothing retries a dead token forever"
+        "A 410 publishes PushTokenInvalid; the caller decides how to retire stored tokens",
+        "Transient failures are distinct from invalid-token outcomes"
       ]
     }
   ]

@@ -10,9 +10,8 @@ import (
 	"github.com/cedar-policy/cedar-go/types"
 )
 
-// Action is an operation an admin route declares. The set is closed and owned
-// by the route table, which is what lets a policy naming an action nobody
-// serves be refused when it is written rather than silently never granting.
+// Action describes an operation from the route registry. Policy validation
+// rejects references outside this registry.
 type Action struct {
 	// ID is the Cedar action id, `MDM::Action::"<ID>"`.
 	ID string
@@ -84,15 +83,10 @@ type PolicySet struct {
 // Version is the store version this set was compiled from.
 func (p *PolicySet) Version() int64 { return p.version }
 
-// Compile parses and validates policy documents into a decision-ready set.
-//
-// Validation is two steps. Cedar's parser rejects malformed syntax, which is
-// the stable half. It does not reject a policy naming an action that does not
-// exist -- such a policy compiles and then silently never grants, which is
-// exactly the failure Zentral's schema validation exists to prevent -- so
-// every action id referenced is additionally checked against the registry.
-// The result is a typo refused at write time without depending on cedar-go's
-// experimental schema package.
+// Compile parses policy documents with Cedar and checks referenced actions
+// against the supplied registry. It returns a compiled set only when both checks
+// succeed. Action validation uses the stable API without the experimental schema
+// package.
 func Compile(reg *Registry, version int64, docs []Policy) (*PolicySet, error) {
 	set := cedar.NewPolicySet()
 	for _, doc := range docs {

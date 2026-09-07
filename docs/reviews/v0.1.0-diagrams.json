@@ -1,0 +1,965 @@
+{
+  "source_revision": "a817270f13b4ef7a9b1d2895118981120546b3a2",
+  "browser_scope": {
+    "detail": "read",
+    "motion": "still",
+    "light_containment_viewports": [
+      [
+        1440,
+        900
+      ],
+      [
+        1600,
+        1000
+      ],
+      [
+        1920,
+        1080
+      ],
+      [
+        2048,
+        1320
+      ]
+    ],
+    "capture_viewports": [
+      [
+        1440,
+        900
+      ],
+      [
+        2048,
+        1320
+      ]
+    ],
+    "capture_themes": [
+      "light",
+      "dark"
+    ],
+    "interaction_viewport": [
+      2048,
+      1320
+    ],
+    "interaction_theme": "light"
+  },
+  "visual_review_method": "Rendered light/dark screenshots inspected for label fit, routing, composition and readability; corrected sequence diagrams rechecked after delivery. README PNG crops inspected in both themes.",
+  "diagrams": [
+    {
+      "diagram_type": "architecture",
+      "specification": "docs/diagrams/src/acme-internals.architecture.json",
+      "output": "docs/diagrams/acme-internals.html",
+      "specification_sha256": "ee4b6816e9bf7afe66a5a190807adc4ae4ff4caa9fbbb6908aa8ed1496f00fe3",
+      "artifact_sha256": "d9d4796fa1c6260fbfa6fdadd49ab40e9393b1f5ddce04ee9da516acdb97252a",
+      "artifact_bytes": 722980,
+      "validation": {
+        "checksPassed": 9,
+        "checkCount": 9,
+        "compositionProfile": "showcase",
+        "compositionStatus": "pass",
+        "errors": 0,
+        "warnings": 0
+      },
+      "browser_evidence": "passed",
+      "visual_review": "passed",
+      "correction_rounds": 0,
+      "interactions": {
+        "guided_views": 4,
+        "guided_views_passed": true,
+        "search_status": "2 of 13 nodes",
+        "focus_opened": true,
+        "focus_closed": true,
+        "export_controls": [
+          "share-card",
+          "png",
+          "jpeg",
+          "webp",
+          "svg",
+          "webm"
+        ]
+      }
+    },
+    {
+      "diagram_type": "architecture",
+      "specification": "docs/diagrams/src/admin-plane.architecture.json",
+      "output": "docs/diagrams/admin-plane.html",
+      "specification_sha256": "c3abb8fe082c3013f02a737cec9b83ba83bb24746487bf224876680913ad4232",
+      "artifact_sha256": "d277d9d171e1d5734efd61fbca0be76cfa241ebe86de71a1ff5cb534328ff0fe",
+      "artifact_bytes": 715657,
+      "validation": {
+        "checksPassed": 9,
+        "checkCount": 9,
+        "compositionProfile": "showcase",
+        "compositionStatus": "pass",
+        "errors": 0,
+        "warnings": 0
+      },
+      "browser_evidence": "passed",
+      "visual_review": "passed",
+      "correction_rounds": 0,
+      "interactions": {
+        "guided_views": 2,
+        "guided_views_passed": true,
+        "search_status": "0 of 9 nodes",
+        "focus_opened": true,
+        "focus_closed": true,
+        "export_controls": [
+          "share-card",
+          "png",
+          "jpeg",
+          "webp",
+          "svg",
+          "webm"
+        ]
+      }
+    },
+    {
+      "diagram_type": "architecture",
+      "specification": "docs/diagrams/src/apple-service-clients.architecture.json",
+      "output": "docs/diagrams/apple-service-clients.html",
+      "specification_sha256": "0e54bda81aed0dd2a3522346681fcd5351a499034052fa085736ef95484cb95f",
+      "artifact_sha256": "2f4a80fa4beef9ae336811225c03f4dadea65e608397fc1ee2ceec66519b21e6",
+      "artifact_bytes": 714297,
+      "validation": {
+        "checksPassed": 9,
+        "checkCount": 9,
+        "compositionProfile": "showcase",
+        "compositionStatus": "pass",
+        "errors": 0,
+        "warnings": 0
+      },
+      "browser_evidence": "passed",
+      "visual_review": "passed",
+      "correction_rounds": 0,
+      "interactions": {
+        "guided_views": 2,
+        "guided_views_passed": true,
+        "search_status": "2 of 10 nodes",
+        "focus_opened": true,
+        "focus_closed": true,
+        "export_controls": [
+          "share-card",
+          "png",
+          "jpeg",
+          "webp",
+          "svg",
+          "webm"
+        ]
+      }
+    },
+    {
+      "diagram_type": "workflow",
+      "specification": "docs/diagrams/src/checkin-dispatch.workflow.json",
+      "output": "docs/diagrams/checkin-dispatch.html",
+      "specification_sha256": "88f7fcc828d0030a2e869c5bf3c5604eb904f42f54ae4cc691bdbd0ab990f2e0",
+      "artifact_sha256": "df0bb5e576672e1479d98e76f6fd436b0942ce88023c4e6b2214c08e13521b4c",
+      "artifact_bytes": 720021,
+      "validation": {
+        "checksPassed": 9,
+        "checkCount": 9,
+        "compositionProfile": "showcase",
+        "compositionStatus": "pass",
+        "errors": 0,
+        "warnings": 0
+      },
+      "browser_evidence": "passed",
+      "visual_review": "passed",
+      "correction_rounds": 1,
+      "interactions": {
+        "guided_views": 3,
+        "guided_views_passed": true,
+        "search_status": "0 of 12 nodes",
+        "focus_opened": true,
+        "focus_closed": true,
+        "export_controls": [
+          "share-card",
+          "png",
+          "jpeg",
+          "webp",
+          "svg",
+          "webm"
+        ]
+      }
+    },
+    {
+      "diagram_type": "architecture",
+      "specification": "docs/diagrams/src/ddm-engine.architecture.json",
+      "output": "docs/diagrams/ddm-engine.html",
+      "specification_sha256": "da0cf70331804de31ce364ba5a94fa1195da8a6c0d11a1d932f59070799c95e9",
+      "artifact_sha256": "357b3145a447f18ea6b63b5013135f62c3d5928a29b5f065e60a51794d6985e3",
+      "artifact_bytes": 718026,
+      "validation": {
+        "checksPassed": 9,
+        "checkCount": 9,
+        "compositionProfile": "showcase",
+        "compositionStatus": "pass",
+        "errors": 0,
+        "warnings": 0
+      },
+      "browser_evidence": "passed",
+      "visual_review": "passed",
+      "correction_rounds": 1,
+      "interactions": {
+        "guided_views": 3,
+        "guided_views_passed": true,
+        "search_status": "2 of 11 nodes",
+        "focus_opened": true,
+        "focus_closed": true,
+        "export_controls": [
+          "share-card",
+          "png",
+          "jpeg",
+          "webp",
+          "svg",
+          "webm"
+        ]
+      }
+    },
+    {
+      "diagram_type": "workflow",
+      "specification": "docs/diagrams/src/ddm-serve.workflow.json",
+      "output": "docs/diagrams/ddm-serve.html",
+      "specification_sha256": "a932c7b92dc76a79ab6944397e08f6ed9064b2ead2eb2619c57a072c7bb7b97e",
+      "artifact_sha256": "353b0cdb8321086416b4aaa1e532cb70f524a1061dc71aa5723e2d0573f9881c",
+      "artifact_bytes": 717433,
+      "validation": {
+        "checksPassed": 9,
+        "checkCount": 9,
+        "compositionProfile": "showcase",
+        "compositionStatus": "pass",
+        "errors": 0,
+        "warnings": 0
+      },
+      "browser_evidence": "passed",
+      "visual_review": "passed",
+      "correction_rounds": 0,
+      "interactions": {
+        "guided_views": 3,
+        "guided_views_passed": true,
+        "search_status": "1 of 11 nodes",
+        "focus_opened": true,
+        "focus_closed": true,
+        "export_controls": [
+          "share-card",
+          "png",
+          "jpeg",
+          "webp",
+          "svg",
+          "webm"
+        ]
+      }
+    },
+    {
+      "diagram_type": "workflow",
+      "specification": "docs/diagrams/src/enrollment-paths.workflow.json",
+      "output": "docs/diagrams/enrollment-paths.html",
+      "specification_sha256": "36b7dcd10ce12b8c71bbed43d86c4cf5ea388f89f328da3fe9528b333fe6aac9",
+      "artifact_sha256": "006d0c9a9c1f3ad8232a8126a93640c93864e9736759565460061d9e17ce71bb",
+      "artifact_bytes": 716523,
+      "validation": {
+        "checksPassed": 9,
+        "checkCount": 9,
+        "compositionProfile": "showcase",
+        "compositionStatus": "pass",
+        "errors": 0,
+        "warnings": 0
+      },
+      "browser_evidence": "passed",
+      "visual_review": "passed",
+      "correction_rounds": 0,
+      "interactions": {
+        "guided_views": 3,
+        "guided_views_passed": true,
+        "search_status": "5 of 10 nodes",
+        "focus_opened": true,
+        "focus_closed": true,
+        "export_controls": [
+          "share-card",
+          "png",
+          "jpeg",
+          "webp",
+          "svg",
+          "webm"
+        ]
+      }
+    },
+    {
+      "diagram_type": "sequence",
+      "specification": "docs/diagrams/src/flow-account-driven-enrollment.sequence.json",
+      "output": "docs/diagrams/flow-account-driven-enrollment.html",
+      "specification_sha256": "571a7fa7c7ace227d5f37143841ec4b4774e80a39c8b3362fc0473bb1e711d3d",
+      "artifact_sha256": "d47f3f58584c590b7d69581eabb7c1d19b19a6f45542856894f1020dc307c17d",
+      "artifact_bytes": 714149,
+      "validation": {
+        "checksPassed": 9,
+        "checkCount": 9,
+        "compositionProfile": "showcase",
+        "compositionStatus": "pass",
+        "errors": 0,
+        "warnings": 0
+      },
+      "browser_evidence": "passed",
+      "visual_review": "passed",
+      "correction_rounds": 1,
+      "interactions": {
+        "guided_views": 2,
+        "guided_views_passed": true,
+        "search_status": "1 of 6 nodes",
+        "focus_opened": true,
+        "focus_closed": true,
+        "export_controls": [
+          "share-card",
+          "png",
+          "jpeg",
+          "webp",
+          "svg",
+          "webm"
+        ]
+      }
+    },
+    {
+      "diagram_type": "sequence",
+      "specification": "docs/diagrams/src/flow-acme-attestation.sequence.json",
+      "output": "docs/diagrams/flow-acme-attestation.html",
+      "specification_sha256": "2ba8d2be0b8ddaa340df6bdf4930448c66fa18d2ac4429fb7c651ba27acfcc88",
+      "artifact_sha256": "d58950c02a76848535d8e1b97d844aef949394f01ab2ac7394e4de8ce36cfb05",
+      "artifact_bytes": 713255,
+      "validation": {
+        "checksPassed": 9,
+        "checkCount": 9,
+        "compositionProfile": "showcase",
+        "compositionStatus": "pass",
+        "errors": 0,
+        "warnings": 0
+      },
+      "browser_evidence": "passed",
+      "visual_review": "passed",
+      "correction_rounds": 1,
+      "interactions": {
+        "guided_views": 2,
+        "guided_views_passed": true,
+        "search_status": "1 of 6 nodes",
+        "focus_opened": true,
+        "focus_closed": true,
+        "export_controls": [
+          "share-card",
+          "png",
+          "jpeg",
+          "webp",
+          "svg",
+          "webm"
+        ]
+      }
+    },
+    {
+      "diagram_type": "sequence",
+      "specification": "docs/diagrams/src/flow-ade-enrollment.sequence.json",
+      "output": "docs/diagrams/flow-ade-enrollment.html",
+      "specification_sha256": "f36bc913c8cb9bc7d19167f3cfe7ef78cbdc317f216eca610138a2b4afe06021",
+      "artifact_sha256": "8892b699369177cf3b184a4bee7516fde0a4c966adba96f7d67247a853c896f4",
+      "artifact_bytes": 713636,
+      "validation": {
+        "checksPassed": 9,
+        "checkCount": 9,
+        "compositionProfile": "showcase",
+        "compositionStatus": "pass",
+        "errors": 0,
+        "warnings": 0
+      },
+      "browser_evidence": "passed",
+      "visual_review": "passed",
+      "correction_rounds": 0,
+      "interactions": {
+        "guided_views": 2,
+        "guided_views_passed": true,
+        "search_status": "1 of 6 nodes",
+        "focus_opened": true,
+        "focus_closed": true,
+        "export_controls": [
+          "share-card",
+          "png",
+          "jpeg",
+          "webp",
+          "svg",
+          "webm"
+        ]
+      }
+    },
+    {
+      "diagram_type": "sequence",
+      "specification": "docs/diagrams/src/flow-command-delivery.sequence.json",
+      "output": "docs/diagrams/flow-command-delivery.html",
+      "specification_sha256": "e704415bc589a0a271d48a11e3aeb4a8afab5f7d856e207c8b8dfba21a85ca97",
+      "artifact_sha256": "0d2ff1864487202d0ec58bf2638cef6814aaf1341e1d386886e186b770fb2265",
+      "artifact_bytes": 713200,
+      "validation": {
+        "checksPassed": 9,
+        "checkCount": 9,
+        "compositionProfile": "showcase",
+        "compositionStatus": "pass",
+        "errors": 0,
+        "warnings": 0
+      },
+      "browser_evidence": "passed",
+      "visual_review": "passed",
+      "correction_rounds": 0,
+      "interactions": {
+        "guided_views": 3,
+        "guided_views_passed": true,
+        "search_status": "1 of 6 nodes",
+        "focus_opened": true,
+        "focus_closed": true,
+        "export_controls": [
+          "share-card",
+          "png",
+          "jpeg",
+          "webp",
+          "svg",
+          "webm"
+        ]
+      }
+    },
+    {
+      "diagram_type": "sequence",
+      "specification": "docs/diagrams/src/flow-ddm-sync.sequence.json",
+      "output": "docs/diagrams/flow-ddm-sync.html",
+      "specification_sha256": "bd97c6cbc7a20b42a1702dccea43403950d9c0bd5d1aad78c2188b2eface0d15",
+      "artifact_sha256": "7b2f5c483cde7df72ebff6d0e8bfa2f280d564432990d8eb629f28fd06232513",
+      "artifact_bytes": 713050,
+      "validation": {
+        "checksPassed": 9,
+        "checkCount": 9,
+        "compositionProfile": "showcase",
+        "compositionStatus": "pass",
+        "errors": 0,
+        "warnings": 0
+      },
+      "browser_evidence": "passed",
+      "visual_review": "passed",
+      "correction_rounds": 0,
+      "interactions": {
+        "guided_views": 2,
+        "guided_views_passed": true,
+        "search_status": "1 of 6 nodes",
+        "focus_opened": true,
+        "focus_closed": true,
+        "export_controls": [
+          "share-card",
+          "png",
+          "jpeg",
+          "webp",
+          "svg",
+          "webm"
+        ]
+      }
+    },
+    {
+      "diagram_type": "workflow",
+      "specification": "docs/diagrams/src/flow-dep-sync-assign.workflow.json",
+      "output": "docs/diagrams/flow-dep-sync-assign.html",
+      "specification_sha256": "ac03b817f79ac7ad49eedd54b35b5b1f658550071daed5026e9e20d565420b8a",
+      "artifact_sha256": "b305505d7cf75bfab8371c596b7cbf9dd8b628fff96f2c35a3d9384d211e65e2",
+      "artifact_bytes": 712582,
+      "validation": {
+        "checksPassed": 9,
+        "checkCount": 9,
+        "compositionProfile": "showcase",
+        "compositionStatus": "pass",
+        "errors": 0,
+        "warnings": 0
+      },
+      "browser_evidence": "passed",
+      "visual_review": "passed",
+      "correction_rounds": 0,
+      "interactions": {
+        "guided_views": 2,
+        "guided_views_passed": true,
+        "search_status": "1 of 8 nodes",
+        "focus_opened": true,
+        "focus_closed": true,
+        "export_controls": [
+          "share-card",
+          "png",
+          "jpeg",
+          "webp",
+          "svg",
+          "webm"
+        ]
+      }
+    },
+    {
+      "diagram_type": "sequence",
+      "specification": "docs/diagrams/src/flow-scep-issuance.sequence.json",
+      "output": "docs/diagrams/flow-scep-issuance.html",
+      "specification_sha256": "3f0edbd86da7a9a29550c3d6954cf5e3a36ab030f5f4722adf827f3e662ada5b",
+      "artifact_sha256": "37c744da833c13b21075875fd01071288731ab68a901a09feb6fc7d2613080e6",
+      "artifact_bytes": 711075,
+      "validation": {
+        "checksPassed": 9,
+        "checkCount": 9,
+        "compositionProfile": "showcase",
+        "compositionStatus": "pass",
+        "errors": 0,
+        "warnings": 0
+      },
+      "browser_evidence": "passed",
+      "visual_review": "passed",
+      "correction_rounds": 0,
+      "interactions": {
+        "guided_views": 2,
+        "guided_views_passed": true,
+        "search_status": "1 of 4 nodes",
+        "focus_opened": true,
+        "focus_closed": true,
+        "export_controls": [
+          "share-card",
+          "png",
+          "jpeg",
+          "webp",
+          "svg",
+          "webm"
+        ]
+      }
+    },
+    {
+      "diagram_type": "lifecycle",
+      "specification": "docs/diagrams/src/lifecycle-command.lifecycle.json",
+      "output": "docs/diagrams/lifecycle-command.html",
+      "specification_sha256": "9bf4e532268a655e64270542a7b854d996008de5b3e75da3290fe33c3dc77138",
+      "artifact_sha256": "c3c487dcbc8c19dc111af94a9623e6a16c6a5f449260a9547cc65c5e1c00b829",
+      "artifact_bytes": 708528,
+      "validation": {
+        "checksPassed": 9,
+        "checkCount": 9,
+        "compositionProfile": "showcase",
+        "compositionStatus": "pass",
+        "errors": 0,
+        "warnings": 0
+      },
+      "browser_evidence": "passed",
+      "visual_review": "passed",
+      "correction_rounds": 0,
+      "interactions": {
+        "guided_views": 2,
+        "guided_views_passed": true,
+        "search_status": "1 of 6 nodes",
+        "focus_opened": true,
+        "focus_closed": true,
+        "export_controls": [
+          "share-card",
+          "png",
+          "jpeg",
+          "webp",
+          "svg",
+          "webm"
+        ]
+      }
+    },
+    {
+      "diagram_type": "lifecycle",
+      "specification": "docs/diagrams/src/lifecycle-enrollment.lifecycle.json",
+      "output": "docs/diagrams/lifecycle-enrollment.html",
+      "specification_sha256": "129001b364d78d00240ab6f86f82a867617328aeac8b7f357204ec1190ea8c58",
+      "artifact_sha256": "981d83b3b232695b487c20fb683f857323395c890439d955f18532a7826deeeb",
+      "artifact_bytes": 708767,
+      "validation": {
+        "checksPassed": 9,
+        "checkCount": 9,
+        "compositionProfile": "showcase",
+        "compositionStatus": "pass",
+        "errors": 0,
+        "warnings": 0
+      },
+      "browser_evidence": "passed",
+      "visual_review": "passed",
+      "correction_rounds": 0,
+      "interactions": {
+        "guided_views": 2,
+        "guided_views_passed": true,
+        "search_status": "0 of 6 nodes",
+        "focus_opened": true,
+        "focus_closed": true,
+        "export_controls": [
+          "share-card",
+          "png",
+          "jpeg",
+          "webp",
+          "svg",
+          "webm"
+        ]
+      }
+    },
+    {
+      "diagram_type": "architecture",
+      "specification": "docs/diagrams/src/package-layering.architecture.json",
+      "output": "docs/diagrams/package-layering.html",
+      "specification_sha256": "b33656bcad1bbe408d1cda6bfce5ad7e9d65ed3b6cc8ff1999383fd1467a3489",
+      "artifact_sha256": "d2fb851f8d7c7ec015372c64eb6bf56b6fda84a2a440fb91070b4b111baa9b67",
+      "artifact_bytes": 715364,
+      "validation": {
+        "checksPassed": 9,
+        "checkCount": 9,
+        "compositionProfile": "showcase",
+        "compositionStatus": "pass",
+        "errors": 0,
+        "warnings": 0
+      },
+      "browser_evidence": "passed",
+      "visual_review": "passed",
+      "correction_rounds": 0,
+      "interactions": {
+        "guided_views": 2,
+        "guided_views_passed": true,
+        "search_status": "1 of 9 nodes",
+        "focus_opened": true,
+        "focus_closed": true,
+        "export_controls": [
+          "share-card",
+          "png",
+          "jpeg",
+          "webp",
+          "svg",
+          "webm"
+        ]
+      }
+    },
+    {
+      "diagram_type": "architecture",
+      "specification": "docs/diagrams/src/push.architecture.json",
+      "output": "docs/diagrams/push.html",
+      "specification_sha256": "ee7b575b0672f534e7ee7976cc2405d8bb4f75f325ae2bbde95dfbd91742271e",
+      "artifact_sha256": "02bfe9d0bdd0eb50b16968b51e2571a6762838530f891e710217b433f03c5b9d",
+      "artifact_bytes": 714181,
+      "validation": {
+        "checksPassed": 9,
+        "checkCount": 9,
+        "compositionProfile": "showcase",
+        "compositionStatus": "pass",
+        "errors": 0,
+        "warnings": 0
+      },
+      "browser_evidence": "passed",
+      "visual_review": "passed",
+      "correction_rounds": 0,
+      "interactions": {
+        "guided_views": 2,
+        "guided_views_passed": true,
+        "search_status": "0 of 10 nodes",
+        "focus_opened": true,
+        "focus_closed": true,
+        "export_controls": [
+          "share-card",
+          "png",
+          "jpeg",
+          "webp",
+          "svg",
+          "webm"
+        ]
+      }
+    },
+    {
+      "diagram_type": "workflow",
+      "specification": "docs/diagrams/src/reference-server.workflow.json",
+      "output": "docs/diagrams/reference-server.html",
+      "specification_sha256": "031979d2546dc5f002891c0314547a7e026e31cd0caea55ec4fab8f863333d7f",
+      "artifact_sha256": "02ac38e32421579c80344ac8640a6938fc884ca1d3bbcd1a8dc7a2869186843f",
+      "artifact_bytes": 709820,
+      "validation": {
+        "checksPassed": 9,
+        "checkCount": 9,
+        "compositionProfile": "showcase",
+        "compositionStatus": "pass",
+        "errors": 0,
+        "warnings": 0
+      },
+      "browser_evidence": "passed",
+      "visual_review": "passed",
+      "correction_rounds": 0,
+      "interactions": {
+        "guided_views": 2,
+        "guided_views_passed": true,
+        "search_status": "0 of 7 nodes",
+        "focus_opened": true,
+        "focus_closed": true,
+        "export_controls": [
+          "share-card",
+          "png",
+          "jpeg",
+          "webp",
+          "svg",
+          "webm"
+        ]
+      }
+    },
+    {
+      "diagram_type": "dataflow",
+      "specification": "docs/diagrams/src/request-decode.dataflow.json",
+      "output": "docs/diagrams/request-decode.html",
+      "specification_sha256": "0c58df2dff4b40b9521197e1167292134aabdffd285a8b85b001ef65b1bcfae7",
+      "artifact_sha256": "023418b0a10d378e19465d3476ede0177de735fa26bbe930d4f9b01c6f4d3871",
+      "artifact_bytes": 708533,
+      "validation": {
+        "checksPassed": 9,
+        "checkCount": 9,
+        "compositionProfile": "showcase",
+        "compositionStatus": "pass",
+        "errors": 0,
+        "warnings": 0
+      },
+      "browser_evidence": "passed",
+      "visual_review": "passed",
+      "correction_rounds": 0,
+      "interactions": {
+        "guided_views": 2,
+        "guided_views_passed": true,
+        "search_status": "0 of 7 nodes",
+        "focus_opened": true,
+        "focus_closed": true,
+        "export_controls": [
+          "share-card",
+          "png",
+          "jpeg",
+          "webp",
+          "svg",
+          "webm"
+        ]
+      }
+    },
+    {
+      "diagram_type": "dataflow",
+      "specification": "docs/diagrams/src/schema-generation.dataflow.json",
+      "output": "docs/diagrams/schema-generation.html",
+      "specification_sha256": "c232d4ac8129f81bc570ee3e56fe708166a54e150c06cd9c4809d119c25090a1",
+      "artifact_sha256": "92d3da5a9ecfa6543880df7060228338a2a286647b3cf80979e2631e101a50f1",
+      "artifact_bytes": 710151,
+      "validation": {
+        "checksPassed": 9,
+        "checkCount": 9,
+        "compositionProfile": "showcase",
+        "compositionStatus": "pass",
+        "errors": 0,
+        "warnings": 0
+      },
+      "browser_evidence": "passed",
+      "visual_review": "passed",
+      "correction_rounds": 0,
+      "interactions": {
+        "guided_views": 2,
+        "guided_views_passed": true,
+        "search_status": "1 of 7 nodes",
+        "focus_opened": true,
+        "focus_closed": true,
+        "export_controls": [
+          "share-card",
+          "png",
+          "jpeg",
+          "webp",
+          "svg",
+          "webm"
+        ]
+      }
+    },
+    {
+      "diagram_type": "architecture",
+      "specification": "docs/diagrams/src/service-layer.architecture.json",
+      "output": "docs/diagrams/service-layer.html",
+      "specification_sha256": "d999fadf5e586cf62fe0f9342a1868b0bb60dbb3d2ceebdde1d8bd1f043edab2",
+      "artifact_sha256": "26fffd6a05316e1215aa3d3c46ba8351841fdf1a61d6120670cf8a43d2b92504",
+      "artifact_bytes": 720654,
+      "validation": {
+        "checksPassed": 9,
+        "checkCount": 9,
+        "compositionProfile": "showcase",
+        "compositionStatus": "pass",
+        "errors": 0,
+        "warnings": 0
+      },
+      "browser_evidence": "passed",
+      "visual_review": "passed",
+      "correction_rounds": 0,
+      "interactions": {
+        "guided_views": 4,
+        "guided_views_passed": true,
+        "search_status": "1 of 12 nodes",
+        "focus_opened": true,
+        "focus_closed": true,
+        "export_controls": [
+          "share-card",
+          "png",
+          "jpeg",
+          "webp",
+          "svg",
+          "webm"
+        ]
+      }
+    },
+    {
+      "diagram_type": "architecture",
+      "specification": "docs/diagrams/src/split-deployment.architecture.json",
+      "output": "docs/diagrams/split-deployment.html",
+      "specification_sha256": "b548c52844b4e60d15c4d27e8015310d85062261807e5787b085a432b47f77cc",
+      "artifact_sha256": "da86ea826752472c09b1f43a84ec4a21cb8586321f9c820478b649181a9c4f32",
+      "artifact_bytes": 712173,
+      "validation": {
+        "checksPassed": 9,
+        "checkCount": 9,
+        "compositionProfile": "showcase",
+        "compositionStatus": "pass",
+        "errors": 0,
+        "warnings": 0
+      },
+      "browser_evidence": "passed",
+      "visual_review": "passed",
+      "correction_rounds": 0,
+      "interactions": {
+        "guided_views": 2,
+        "guided_views_passed": true,
+        "search_status": "1 of 8 nodes",
+        "focus_opened": true,
+        "focus_closed": true,
+        "export_controls": [
+          "share-card",
+          "png",
+          "jpeg",
+          "webp",
+          "svg",
+          "webm"
+        ]
+      }
+    },
+    {
+      "diagram_type": "architecture",
+      "specification": "docs/diagrams/src/storage-backends.architecture.json",
+      "output": "docs/diagrams/storage-backends.html",
+      "specification_sha256": "7053efcf7cf44a58110ebb18f9f89a4855f4ae2187f08eed5e37f2e41555fefd",
+      "artifact_sha256": "a1384c8d4dc31be221e5a5a4de552e5e4844499f73305e310e9590cc530d4a15",
+      "artifact_bytes": 721723,
+      "validation": {
+        "checksPassed": 9,
+        "checkCount": 9,
+        "compositionProfile": "showcase",
+        "compositionStatus": "pass",
+        "errors": 0,
+        "warnings": 0
+      },
+      "browser_evidence": "passed",
+      "visual_review": "passed",
+      "correction_rounds": 0,
+      "interactions": {
+        "guided_views": 4,
+        "guided_views_passed": true,
+        "search_status": "0 of 12 nodes",
+        "focus_opened": true,
+        "focus_closed": true,
+        "export_controls": [
+          "share-card",
+          "png",
+          "jpeg",
+          "webp",
+          "svg",
+          "webm"
+        ]
+      }
+    },
+    {
+      "diagram_type": "architecture",
+      "specification": "docs/diagrams/src/storage-contract.architecture.json",
+      "output": "docs/diagrams/storage-contract.html",
+      "specification_sha256": "a16943646719d8baa351f531d5f15e4e00f0d48ae2b43d9a4d3055ada8af00b3",
+      "artifact_sha256": "281708795d1cd30c49271f711d1073fa76a1b5802abf6bd041f5da1f79bf62b2",
+      "artifact_bytes": 721556,
+      "validation": {
+        "checksPassed": 9,
+        "checkCount": 9,
+        "compositionProfile": "showcase",
+        "compositionStatus": "pass",
+        "errors": 0,
+        "warnings": 0
+      },
+      "browser_evidence": "passed",
+      "visual_review": "passed",
+      "correction_rounds": 0,
+      "interactions": {
+        "guided_views": 4,
+        "guided_views_passed": true,
+        "search_status": "1 of 16 nodes",
+        "focus_opened": true,
+        "focus_closed": true,
+        "export_controls": [
+          "share-card",
+          "png",
+          "jpeg",
+          "webp",
+          "svg",
+          "webm"
+        ]
+      }
+    },
+    {
+      "diagram_type": "architecture",
+      "specification": "docs/diagrams/src/system-architecture.architecture.json",
+      "output": "docs/diagrams/system-architecture.html",
+      "specification_sha256": "1a122664480bf0d912315bc796ee6a4f5053a4215c8eafd6326b894a3fd91486",
+      "artifact_sha256": "0d7ee5f1778626516ab99a0c7caccdf3722c5e48ae5faf2df3fdd600e679afa3",
+      "artifact_bytes": 720941,
+      "validation": {
+        "checksPassed": 9,
+        "checkCount": 9,
+        "compositionProfile": "showcase",
+        "compositionStatus": "pass",
+        "errors": 0,
+        "warnings": 0
+      },
+      "browser_evidence": "passed",
+      "visual_review": "passed",
+      "correction_rounds": 0,
+      "interactions": {
+        "guided_views": 3,
+        "guided_views_passed": true,
+        "search_status": "2 of 11 nodes",
+        "focus_opened": true,
+        "focus_closed": true,
+        "export_controls": [
+          "share-card",
+          "png",
+          "jpeg",
+          "webp",
+          "svg",
+          "webm"
+        ]
+      }
+    },
+    {
+      "diagram_type": "workflow",
+      "specification": "docs/diagrams/src/test-harness.workflow.json",
+      "output": "docs/diagrams/test-harness.html",
+      "specification_sha256": "706babe7328bd60edc6e26e8f270bafda441208aaf691a7650704f6b85d72dc6",
+      "artifact_sha256": "a19b140c4f9644bc33632785d32056903d85da5aeb2d500b649c9a7691f95338",
+      "artifact_bytes": 709405,
+      "validation": {
+        "checksPassed": 9,
+        "checkCount": 9,
+        "compositionProfile": "showcase",
+        "compositionStatus": "pass",
+        "errors": 0,
+        "warnings": 0
+      },
+      "browser_evidence": "passed",
+      "visual_review": "passed",
+      "correction_rounds": 0,
+      "interactions": {
+        "guided_views": 2,
+        "guided_views_passed": true,
+        "search_status": "1 of 7 nodes",
+        "focus_opened": true,
+        "focus_closed": true,
+        "export_controls": [
+          "share-card",
+          "png",
+          "jpeg",
+          "webp",
+          "svg",
+          "webm"
+        ]
+      }
+    }
+  ]
+}

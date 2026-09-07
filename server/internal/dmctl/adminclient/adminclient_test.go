@@ -235,8 +235,7 @@ func TestDo(t *testing.T) {
 	})
 }
 
-// None of the reference admin CLIs paginate, so a large fleet silently
-// truncates for them.
+// The client follows cursors across every response page.
 func TestEach(t *testing.T) {
 	ctx := context.Background()
 

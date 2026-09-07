@@ -259,8 +259,8 @@ func sealWith(t *testing.T, name, plaintext string) []byte {
 	return b
 }
 
-// TestSealedRowWithoutKeyring: a database written with a keyring must not
-// be readable, or silently wrong, when opened without one.
+// TestSealedRowWithoutKeyring checks that sealed values cannot be returned as
+// plaintext when a store opens without a keyring.
 func TestSealedRowWithoutKeyring(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()

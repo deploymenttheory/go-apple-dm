@@ -1,27 +1,19 @@
-// Package dmctl implements the admin CLI. cmd/dmctl is a main that parses
-// argv and calls Run; everything else lives here.
+// Package dmctl implements command dispatch, configuration and output for the
+// administrative CLI.
 //
-// # Why
+// # Design
 //
-// The split is forced by arithmetic rather than taste. scripts/coverage-gate.sh
-// computes the repository figure from every package in the merged profile,
-// including exempt ones, and make test runs with -coverpkg=./..., so an
-// uncovered command package still drags the total down. The cmd/ exemption
-// suppresses the per-package line and nothing more. Keeping the logic here
-// means it is gated at 95% like everything else; micromdm's cmd/dmctl is
-// 3185 lines with three trivial tests, and nanohubctl has none.
-//
-// Two behaviours are worth knowing about. Credentials are referenced, never
-// stored: the config file holds the name of an environment variable or a file
-// path, and there is no subcommand whose job is printing a secret. And the
-// output modes are separate on purpose, with -output json emitting the
-// server's bytes unchanged so canonical JSON survives to jq.
+// server/cmd/dmctl delegates to Run so behavior is testable without a
+// subprocess. Configuration stores credential references by default; explicit
+// inline storage requires an option and warning. JSON output preserves server
+// bytes, while human and NDJSON modes provide table and streaming output. HTTP
+// handling and offline schema explanation live in subpackages. Exit codes
+// distinguish usage, authorization, request failure and partial success.
 //
 // # References
 //
-//   - Decision record: docs/research/decisions/0035-dmctl-structure-and-credentials.md
-//   - Decision record: docs/research/decisions/0036-dmctl-explain-over-schema-support.md
-//   - Decision record: docs/research/decisions/0034-admin-api-and-authorization.md
-//   - Plan of record: docs/research/implementation_plan.md (phase 8)
-//   - E2E scenarios: docs/testing/e2e-scenarios.md (E2E-024)
+//   - Decision record: https://github.com/deploymenttheory/go-apple-dm/blob/main/docs/research/decisions/0035-dmctl-structure-and-credentials.md
+//   - Decision record: https://github.com/deploymenttheory/go-apple-dm/blob/main/docs/research/decisions/0036-dmctl-explain-over-schema-support.md
+//   - Decision record: https://github.com/deploymenttheory/go-apple-dm/blob/main/docs/research/decisions/0034-admin-api-and-authorization.md
+//   - E2E scenarios: https://github.com/deploymenttheory/go-apple-dm/blob/main/docs/testing/e2e-scenarios.md (E2E-024)
 package dmctl

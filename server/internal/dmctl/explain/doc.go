@@ -1,29 +1,21 @@
-// Package explain answers what a command, declaration, profile payload, or
-// status item is, and where Apple says it applies.
+// Package explain resolves compiled schema identifiers and renders their support
+// metadata.
 //
-// # Why
+// # Design
 //
-// The generator keeps Apple's supportedOS metadata as data rather than
-// flattening it into comments, and nothing has read it back for a human until
-// now. `dmctl explain DeviceLock -target macos:15.0` answers, from the same
-// tables the server validates against, whether a key applies to a supervised
-// Mac on 15.0 and why not when it does not.
+// Resolution covers Go names, wire identifiers and dotted paths across generated
+// families. Ambiguity returns all matches, and suggestions help locate nearby
+// identifiers. Unspecified tri-state values render as a dash; missing support or
+// target OS renders as unknown. Reasons come directly from schema/support.
 //
-// Two rules make the answers trustworthy. A tri-state that Apple left unstated
-// renders as "-", never as "no", because the generator kept those as pointers
-// precisely so "forbidden" and "unsaid" stay distinguishable. And the two
-// answers that mean "we do not know" -- an entry with no support data, and a
-// query with no target OS -- render as "unknown", never "OK", so the command
-// never asserts a fact Apple did not state.
-//
-// It is offline by construction: it reads compiled-in tables, builds no
-// client, and reads neither server nor token.
+// The package reads compiled tables and creates no HTTP client. It describes the
+// binary's schema pin rather than live documentation or observed device
+// capabilities.
 //
 // # References
 //
-//   - Decision record: docs/research/decisions/0036-dmctl-explain-over-schema-support.md
-//   - Decision record: docs/research/decisions/0035-dmctl-structure-and-credentials.md
-//   - Plan of record: docs/research/implementation_plan.md (phase 8)
+//   - Decision record: https://github.com/deploymenttheory/go-apple-dm/blob/main/docs/research/decisions/0036-dmctl-explain-over-schema-support.md
+//   - Decision record: https://github.com/deploymenttheory/go-apple-dm/blob/main/docs/research/decisions/0035-dmctl-structure-and-credentials.md
 //   - Apple: https://github.com/apple/device-management/blob/release/docs/schema.md
 //   - Schema: third_party/device-management/docs/schema.yaml (supportedOS)
 package explain

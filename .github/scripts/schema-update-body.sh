@@ -1,10 +1,8 @@
 #!/usr/bin/env bash
 # schema-update-body.sh: compose the pull request body for a schema update.
 #
-# Reads what the workflow already produced, so the body says what actually
-# happened rather than what was expected to: the version table, the identifier
-# counts, and the output of each check that ran. Separate from the workflow
-# because a heredoc of this size inside YAML is unreadable and untestable.
+# Summarizes generated versions, exported-name changes and check results.
+# Kept separate from workflow YAML to simplify review of the Markdown template.
 #
 # Inputs, all set by the workflow: PINNED, RELEASE, SHORT, NEWEST, ADDED,
 # REMOVED, CONFORMANCE, VERIFY, HANDLED, and the files under /tmp.
@@ -16,7 +14,7 @@ block() { # block <file> <language>
 }
 
 cat <<EOF
-Apple moved \`apple/device-management\` on the \`release\` branch, and this is the regenerated tree.
+Regenerate against the updated \`apple/device-management\` release-branch commit.
 
 | | |
 |---|---|
@@ -29,9 +27,9 @@ if [ -s versions.md ]; then
   echo
   echo "## Apple software versions"
   echo
-  echo "The newest version each OS family gains a schema in. This is what the update *is*, in the terms a deployment cares about."
+  echo "Maximum schema version for each OS family before and after regeneration."
   echo
-  echo "| OS | was | now |"
+  echo "| OS | Previous | Updated |"
   echo "|---|---|---|"
   cat versions.md
 fi
@@ -51,7 +49,7 @@ if [ "${REMOVED:-0}" != "0" ]; then
   echo
   echo "## :warning: Identifiers are no longer generated"
   echo
-  echo "Apple renamed or withdrew these. \`make verify\` fails until each has a line in \`schema/ALLOWED_REMOVALS.md\` saying why it may go, which is a deliberate decision and the reason this is not automatic:"
+  echo "These identifiers are absent from regenerated output. \`make verify\` fails until each has a line in \`schema/ALLOWED_REMOVALS.md\` documenting an intentional removal:"
   echo
   block /tmp/removed
 fi
@@ -93,7 +91,7 @@ if [ -s seeds.md ]; then
   echo
   echo "## Seed branches ahead of \`release\`"
   echo
-  echo "Where Apple stages the next OS. Reported only: a seed is not a release and must not become the pin."
+  echo "Seed-branch changes are reported for review; this workflow keeps the pin on the release branch."
   echo
   echo "| Branch | YAML files ahead |"
   echo "|---|---|"

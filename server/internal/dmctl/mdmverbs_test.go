@@ -72,9 +72,8 @@ func mdmServer(t *testing.T) (*apiRecorder, map[string]string) {
 	return rec, env
 }
 
-// The MDM half of the admin API is now driveable, which it was not: the CLI
-// covered declarations and principals and nothing that touches an enrollment
-// or its command queue.
+// Exercise the typed MDM administrative verbs for enrollments, commands and
+// push.
 func TestMDMVerbs(t *testing.T) {
 	cases := []struct {
 		name   string
@@ -182,9 +181,8 @@ func containsAny(reqs []string, want string) bool {
 	return false
 }
 
-// The dep, axm and acme families proxy Apple-shaped APIs whose surface is not
-// ours to model, so the escape hatch keeps them reachable rather than
-// pretending "every admin route" excludes them.
+// The api verb reaches registered DEP, AxM and ACME routes without dedicated
+// command wrappers.
 func TestAPIVerb(t *testing.T) {
 	t.Run("ReachesAProxiedFamily", func(t *testing.T) {
 		rec, env := mdmServer(t)
@@ -348,8 +346,7 @@ func TestMDMVerbsReportAnUnreadableFile(t *testing.T) {
 	}
 }
 
-// An unknown flag is a usage error on every verb, not a silently ignored
-// argument that makes the operator think something ran.
+// Unknown flags return a usage error for every verb.
 func TestMDMVerbsRejectAnUnknownFlag(t *testing.T) {
 	_, env := mdmServer(t)
 	for _, args := range verbInvocations() {

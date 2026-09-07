@@ -1,23 +1,23 @@
-// Package proxyclient is the mdm role's egress to a separate ddm role.
+// Package proxyclient forwards MDM declarative check-ins to a separately
+// deployed declaration engine.
 //
-// # Why
+// # Design
 //
-// When the engine runs in another process, the mdm role still has to answer
-// the device's DeclarativeManagement check-in. This service.DMHandler
-// forwards the check-in plist exactly as the device sent it over the
-// proxywire contract, signs the request, verifies the response signature,
-// bounds the body and the time spent, and relays Apple's status and body
-// back untouched: 200 with the JSON, the empty 200 for status, and 404 so
-// the device removes a declaration. Upstream failures (transport, 5xx, and
-// an authentication failure at the ddm role) surface as CodeInternal
-// wrapping ErrUpstream, never as a 404 the device would act on. A base URL
-// with a path prefix is joined, not resolved, so no segment is lost.
+// The service.DMHandler forwards original plist bytes, applies configured
+// request signing and response verification, and bounds response size and time.
+// Device-facing 200, empty status responses and declaration 404 responses are
+// preserved. Transport, authentication and upstream server failures become
+// internal service errors rather than declaration-removal responses. URL joining
+// preserves a configured path prefix.
+//
+// Callers configure authentication and transport protection. The reference
+// server requires both request and response HMAC keys for the split hop.
 //
 // # References
 //
-//   - Decision record 0023: docs/research/decisions/0023-ddm-adapters-and-wire-contract.md
-//   - Decision record 0025: docs/research/decisions/0025-reference-server-roles-and-container.md
-//   - Threat model: docs/security/threat-model.md (trust boundary 5)
-//   - E2E scenarios: docs/testing/e2e-scenarios.md (E2E-010)
+//   - Decision record 0023: https://github.com/deploymenttheory/go-apple-dm/blob/main/docs/research/decisions/0023-ddm-adapters-and-wire-contract.md
+//   - Decision record 0025: https://github.com/deploymenttheory/go-apple-dm/blob/main/docs/research/decisions/0025-reference-server-roles-and-container.md
+//   - Threat model: https://github.com/deploymenttheory/go-apple-dm/blob/main/docs/security/threat-model.md (private DDM proxy)
+//   - E2E scenarios: https://github.com/deploymenttheory/go-apple-dm/blob/main/docs/testing/e2e-scenarios.md (E2E-010)
 //   - Apple: https://developer.apple.com/documentation/devicemanagement/declarativemanagementrequest
 package proxyclient

@@ -204,7 +204,7 @@
   "cards": [
     {
       "dot": "cyan",
-      "title": "Two lanes, one handler",
+      "title": "ADE entry points",
       "items": [
         "POST is the token lane and finishes immediately",
         "GET is the configuration_web_url lane and resumes after OIDC"

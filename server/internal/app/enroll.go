@@ -680,16 +680,10 @@ func parseSignerPEM(data []byte) (crypto.Signer, error) {
 	}
 }
 
-// returnToService is the reference server's return-to-service policy: allow it
-// when the operator turned it on, refuse it otherwise. It answers the whole
-// question a real policy has to answer -- may this device erase itself now --
-// and nothing else, because everything else is deployment-specific: which
-// Wi-Fi profile to install after the erasure, and whether to hand the device
-// an MDM profile directly rather than let it fetch one.
-//
-// The bootstrap token is deliberately absent here. service attaches the one it
-// already holds for the enrollment, so a policy cannot forget it and silently
-// turn every return to service into a full erasure (decision record 0045).
+// returnToService builds the response when the operator enables the feature.
+// Deployment-specific eligibility and post-erasure configuration require
+// additional policy. The service attaches an available escrowed bootstrap token
+// when the response omits it.
 func returnToService(enabled bool) service.ReturnToServiceHandler {
 	if !enabled {
 		return nil

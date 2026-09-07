@@ -49,15 +49,9 @@ var version = sync.OnceValue(func() string {
 // Version returns the library version reported on every meter and tracer.
 func Version() string { return version() }
 
-// Config carries the OpenTelemetry providers a package should instrument
-// through. It is embedded in each package's own Config beside Logger, Clock
-// and Bus, and every field is optional.
-//
-// A nil provider means no-op, not "use the global". Reading
-// otel.GetMeterProvider() would let a consumer's unrelated global
-// configuration silently switch this library on, which is the opposite of
-// the contract: unless a consumer passes a provider here, this library
-// records nothing and allocates nothing.
+// Config supplies optional metric and trace providers. Nil providers select
+// no-op implementations without reading global OpenTelemetry configuration.
+// Consumers retain ownership of SDKs and exporters.
 type Config struct {
 	// MeterProvider supplies meters. Nil records no metrics.
 	MeterProvider metric.MeterProvider

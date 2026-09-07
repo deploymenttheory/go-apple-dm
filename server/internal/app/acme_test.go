@@ -579,8 +579,7 @@ func TestACMEWiring(t *testing.T) {
 
 	t.Run("CredentialForAnUnknownCertificate", func(t *testing.T) {
 		f := newACMEAppFixture(t, nil)
-		// A certificate this server issued, held by a device that never
-		// completed check-in, is not yet an enrollment we know.
+		// Issuance without completed check-in does not create an enrollment.
 		d := f.acmeDevice(t, "ACME-UNKNOWN", "Mac16,1")
 		if err := applyACME(ctx, d, adeProfile(t, f, d), f.attestation); err != nil {
 			t.Fatal(err)
@@ -684,10 +683,8 @@ func (f *acmeAppFixture) acmeStore(t *testing.T) acme.Store {
 }
 
 func TestACMEPolicyFaultIsNotARefusal(t *testing.T) {
-	// A lookup that fails is a fault on our side, not a device that was
-	// turned away, so the challenge stays pending and the device can try
-	// again once the store is well. Settling it invalid would lock a
-	// legitimate device out until someone reissued its profile.
+	// A lookup failure leaves the challenge pending so the device can retry after
+	// storage recovers.
 	ctx := context.Background()
 	failing := &deptest.Failing{Store: depinmem.New()}
 	f := newACMEAppFixture(t, func(cfg *app.Config) {
@@ -797,10 +794,8 @@ func TestACMEEnvKeys(t *testing.T) {
 }
 
 func TestACMEDEPPolicyNeedsTheDEPStore(t *testing.T) {
-	// The mdm role runs no device enrollment service, so a policy that asks
-	// it about every device could never say yes. Saying so at startup is
-	// better than answering every enrolment with a server error, which is
-	// what the client would then retry until it gave up.
+	// A role without the required DEP store must reject the ownership-policy
+	// configuration during Build.
 	_, err := app.Build(context.Background(), app.Config{
 		Role: app.RoleMDM, Storage: "inmem", Logger: quiet,
 		Enroll: app.EnrollConfig{

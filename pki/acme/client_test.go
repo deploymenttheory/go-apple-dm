@@ -16,12 +16,9 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/pki/ca"
 )
 
-// TestEnrollmentWithAnIndependentClient drives the whole exchange with
-// golang.org/x/crypto/acme rather than with anything from this repository.
-// A server tested only against its own client proves the two agree, not
-// that the server implements RFC 8555, so the only part of this that is
-// ours is the attestation, which is Apple's extension rather than the
-// protocol.
+// TestEnrollmentWithAnIndependentClient exercises RFC 8555 with
+// golang.org/x/crypto/acme. The test supplies Apple's attestation extension
+// separately, so the server is exercised by an independent ACME client.
 func TestEnrollmentWithAnIndependentClient(t *testing.T) {
 	f := newFixture(t)
 	ctx := t.Context()
@@ -116,8 +113,7 @@ func TestEnrollmentWithAnIndependentClient(t *testing.T) {
 		t.Errorf("permanent identifier = %q, want %q", value, testIdentifier)
 	}
 
-	// Keeping the attested facts alongside the certificate is what lets an
-	// operator ask later which hardware holds a given identity.
+	// The certificate record retains the attested device properties.
 	certs, err := f.store.ListCertificates(ctx, acme.CertificateQuery{}, paging.Page{})
 	if err != nil {
 		t.Fatal(err)

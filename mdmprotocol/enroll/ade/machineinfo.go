@@ -66,8 +66,9 @@ type ParseOptions struct {
 	// AppleAnchors(). They are certificates rather than a pool because the
 	// path is built without validity windows and a pool cannot be walked.
 	Anchors []*x509.Certificate
-	// EnforceValidity applies certificate validity windows at Now. Off by
-	// default: Apple's Device CA expired in 2014 and still issues.
+	// EnforceValidity checks certificate validity windows at Now. It is disabled by
+	// default to support Apple's device chain with an expired Device CA
+	// intermediate.
 	EnforceValidity bool
 	// Audit logs a verification failure and returns the MachineInfo with
 	// Verified false instead of an error. It is per handler, never global.

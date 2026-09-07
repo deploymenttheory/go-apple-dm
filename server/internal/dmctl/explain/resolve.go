@@ -56,9 +56,8 @@ type entry struct {
 // what an operator asks about most, then declarations and profiles.
 var families = []string{"commands", "ddm", "profiles", "status", "checkin", "ddmproto", "errors", "other"}
 
-// index is built once from the generated registries. Every schema package is
-// imported here, which is also what registers its support table, so no
-// question is silently unanswerable because a family was not linked in.
+// index loads all generated family registries once, registering their support
+// metadata for offline lookup.
 var index = buildIndex()
 
 func buildIndex() map[string][]entry {
@@ -236,9 +235,7 @@ func Suggest(arg, family string, limit int) []string {
 		if len(out) == 0 {
 			continue
 		}
-		// Closest first: a longer shared prefix is a better guess than an
-		// earlier alphabet, so the name the operator meant leads the list
-		// rather than being buried under its siblings.
+		// Rank longer shared prefixes first, using alphabetical order for ties.
 		sort.Slice(out, func(i, j int) bool {
 			pi, pj := sharedPrefix(strings.ToLower(out[i]), needle), sharedPrefix(strings.ToLower(out[j]), needle)
 			if pi != pj {

@@ -2,18 +2,10 @@ module github.com/deploymenttheory/go-apple-dm
 
 go 1.27.0
 
-// Everything published under this path before v0.1.0 is withdrawn. v1.0.0 was
-// tagged by release-please while the library was still being built, and
-// nothing depended on it. The project restarts at v0.1.0, where a pre-1.0
-// version says what is true: the API is not yet stable.
-//
-// v2.0.0 is absent because it cannot be named here and does not need to be.
-// The go command rejects it -- "should be v0 or v1, not v2" -- for a module
-// path with no /v2 suffix, and that missing suffix is the same reason the
-// proxy never served it: its version list holds only v1.0.0.
+// These releases are withdrawn. Use the pre-1.0 API; it is not yet stable.
 retract (
-	v1.0.1 // Retraction only; carries this block.
-	v1.0.0 // Tagged before the library was ready.
+	v1.0.1 // Retraction notice.
+	v1.0.0 // Withdrawn release.
 )
 
 require (

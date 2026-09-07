@@ -2,7 +2,7 @@
   "schema_version": 1,
   "diagram_type": "sequence",
   "meta": {
-    "title": "Account-Driven Enrollment",
+    "title": "Account-driven enrollment",
     "quality_profile": "showcase",
     "viewBox": [
       1080,
@@ -27,7 +27,7 @@
           "account",
           "idp"
         ],
-        "note": "An unauthenticated POST earns a 401 that names the authentication method."
+        "note": "An unauthenticated POST receives a 401 naming the authentication method."
       }
     ]
   },
@@ -36,7 +36,7 @@
       "id": "device",
       "type": "external",
       "label": "Device",
-      "sublabel": "user's Apple Account"
+      "sublabel": "Managed Apple Account"
     },
     {
       "id": "discovery",
@@ -53,14 +53,14 @@
     {
       "id": "idp",
       "type": "security",
-      "label": "Identity provider",
-      "sublabel": "OIDC"
+      "label": "Enrollment auth",
+      "sublabel": "OIDC → access token"
     },
     {
       "id": "profile",
       "type": "backend",
-      "label": "enroll.Profile",
-      "sublabel": "Finalize"
+      "label": "Profile / issuer",
+      "sublabel": "SCEP or ACME"
     },
     {
       "id": "core",
@@ -78,12 +78,12 @@
     {
       "from": 222.0,
       "to": 341.5,
-      "label": "Challenge and auth"
+      "label": "Auth"
     },
     {
       "from": 344.0,
       "to": 494.0,
-      "label": "Profile and check-in"
+      "label": "Issuance"
     }
   ],
   "messages": [
@@ -132,9 +132,9 @@
     {
       "id": "token",
       "from": "idp",
-      "to": "account",
+      "to": "device",
       "y": 327.5,
-      "label": "identity, then an access token",
+      "label": "Reusable access token",
       "variant": "return"
     },
     {
@@ -144,7 +144,7 @@
       "y": 358.0,
       "label": "POST with Bearer",
       "variant": "emphasis",
-      "note": "the access token is single-use; a failure returns a fresh challenge, never a 500"
+      "note": "reusable until expiry or invalidation; infrastructure errors remain server errors"
     },
     {
       "id": "build",
@@ -159,24 +159,27 @@
       "from": "profile",
       "to": "device",
       "y": 419.0,
-      "label": "EnrollmentMode + enrollment-token",
-      "variant": "emphasis"
+      "label": "Profile with issuance reference",
+      "variant": "emphasis",
+      "note": "trusted issuer registers certificate/account association before returning the certificate"
     },
     {
       "id": "checkin",
       "from": "device",
       "to": "core",
       "y": 449.5,
-      "label": "Authenticate with enrollment-token",
-      "variant": "emphasis"
+      "label": "Authenticate: certificate + bearer",
+      "variant": "emphasis",
+      "note": "macOS device channel omits bearer; other account channels require it"
     },
     {
       "id": "hook",
       "from": "core",
       "to": "device",
       "y": 480.0,
-      "label": "hook validates, or 403",
-      "variant": "return"
+      "label": "reserve, persist, confirm",
+      "variant": "return",
+      "note": "successful storage confirms the reserved enrollment identifier; invalid bearer can trigger 401"
     }
   ],
   "activations": [
@@ -204,16 +207,16 @@
       "dot": "cyan",
       "title": "Discovery",
       "items": [
-        "DM_DISCOVERY maps a model family to mdm-byod or mdm-adde",
-        "An unrouted family is refused with com.apple.well-known.failed"
+        "DM_DISCOVERY selects mdm-byod or mdm-adde by model family",
+        "Legacy query-string enrollment credentials are rejected"
       ]
     },
     {
       "dot": "emerald",
-      "title": "Two documented flows",
+      "title": "Certificate and bearer checks",
       "items": [
-        "apple-as-web opens an ASWebAuthenticationSession and ends in a 308 redirect",
-        "apple-oauth2 uses an authorization code and a token endpoint, both implemented here"
+        "Trusted issuance binds certificate, account and enrollment reference",
+        "Reusable bearer; macOS device channel omits it; known sessions can reauthenticate"
       ]
     }
   ]

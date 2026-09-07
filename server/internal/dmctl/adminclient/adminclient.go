@@ -83,11 +83,8 @@ func New(cfg Config) (*Client, error) {
 	if hc == nil {
 		hc = &http.Client{}
 	}
-	// Insecure was declared but never acted on, so -insecure silently did
-	// nothing and an operator testing against a self-signed lab certificate
-	// got a verification failure they had already tried to opt out of. It
-	// applies only to a client this package built: overriding the transport
-	// of one the caller supplied would be surprising.
+	// Insecure affects only an HTTP client constructed here. A supplied client
+	// retains its transport and TLS policy.
 	if cfg.Insecure && cfg.HTTPClient == nil {
 		hc.Transport = &http.Transport{
 			// #nosec G402 -- the operator asked for this explicitly with
@@ -214,11 +211,8 @@ type page struct {
 	NextCursor string
 }
 
-// Each calls fn for every item of a paged listing, following NextCursor until
-// the server stops returning one. None of the reference admin CLIs paginate,
-// so a large fleet silently truncates for them.
-//
-// fn receives each item's raw JSON, unmodified.
+// Each calls fn with each item's unchanged JSON, following NextCursor until
+// exhausted. Request, decoding and callback errors stop iteration.
 func (c *Client) Each(ctx context.Context, path string, query url.Values, fn func(jsontext.Value) error) error {
 	if query == nil {
 		query = url.Values{}
@@ -263,10 +257,9 @@ func (c *Client) Page(ctx context.Context, path string, query url.Values) ([]jso
 	return p.Items, p.NextCursor, nil
 }
 
-// ServerConfig describes the server: its role, the route families it serves,
-// the version, and which admin credentials it accepts. The CLI reads it to
-// explain a 404 that is really a role split, and to report a break-glass
-// token that outlived its bootstrap.
+// ServerConfig reports role, available families, version and accepted credential
+// modes. The CLI uses it to explain unavailable routes and display break-glass
+// status.
 type ServerConfig struct {
 	Role     string
 	Version  string

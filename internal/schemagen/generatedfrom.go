@@ -29,15 +29,9 @@ const generatorName = "admgen (cmd/admgen, internal/schemagen)"
 // order in every supportedOS block.
 var osFamilies = []string{"iOS", "macOS", "tvOS", "visionOS", "watchOS"}
 
-// describe builds GENERATED_FROM.json for a checkout.
-//
-// Every field is a function of the checkout alone, so regenerating the same
-// pin produces the same bytes and `make verify` can hold this file to the same
-// standard as the generated Go. That is why the commit's own date is recorded
-// rather than the time the generator ran: a wall clock would make the file
-// differ on every run and the determinism check would have to skip it, which
-// is how the previous hand-maintained version came to record a commit the tree
-// had long since moved past.
+// describe builds deterministic GENERATED_FROM.json bytes from the schema
+// checkout. The commit's own date is recorded so identical inputs produce
+// identical output regardless of generation time.
 func describe(schemaRoot string, t *Tree, commit string) ([]byte, error) {
 	sum, err := yamlSHA256(schemaRoot)
 	if err != nil {

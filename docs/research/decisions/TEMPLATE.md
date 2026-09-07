@@ -1,38 +1,28 @@
-# NNNN: <feature>
+# NNNN: <design decision>
 
-Status: proposed | accepted | superseded by NNNN
-Date: YYYY-MM-DD
-Phase: N
+## Context
 
-## Apple sources
+<The requirement or constraint that the design addresses.>
 
-- Doc: <https://developer.apple.com/documentation/devicemanagement/...>
-- YAML: `third_party/device-management/<path>.yaml`
+## Decision
 
-## References read
+<Current behavior, boundaries and contracts. Distinguish protocol requirements from project policy.>
 
-- `<owner>/<repo>@<commit>` `<path>`
-- `<owner>/<repo>@<commit>` `<path>`
+## Rationale
 
-## Known pitfalls found
+<Why this design meets the requirement; include material alternatives and tradeoffs when useful.>
 
-- <issue or commit link>: one line on what went wrong for them
+## Constraints
 
-## What they do
+<Operational requirements, compatibility limits and unresolved factual limitations.>
 
-- **<reference A>**: 3 to 6 bullets
-- **<reference B>**: 3 to 6 bullets
+## Verification
 
-## What we do better
+<Existing tests, source paths or reproducible checks that support the decision.>
 
-1. <claim>
-2. <claim>
+## References
 
-## Verified by
+<Primary documentation, pinned schema paths and useful implementation references with commit identifiers.>
 
-1. `Test...` (proves claim 1; would fail on reference behaviour because ...)
-2. `Test...`
-
-## Rejected alternatives
-
-- <alternative>: one line on why not
+<!-- Omit sections that add no useful information. Integrate amendments into the relevant
+section; preserve the decision number and filename. Do not add implementation milestones. -->

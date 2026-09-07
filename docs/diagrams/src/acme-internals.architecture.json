@@ -10,12 +10,12 @@
     ],
     "repository": {
       "url": "https://github.com/deploymenttheory/go-apple-dm",
-      "revision": "0e487dd17ae7dffcad8674c668ff59e56c73d8f3"
+      "revision": "a817270f13b4ef7a9b1d2895118981120546b3a2"
     },
     "views": [
       {
         "id": "signed",
-        "label": "Every request is signed",
+        "label": "Signed ACME POSTs",
         "focus": [
           "device",
           "server",
@@ -91,7 +91,7 @@
       "id": "jose",
       "type": "security",
       "label": "acme/jose",
-      "sublabel": "JWS \u00b7 JWK \u00b7 thumbprint",
+      "sublabel": "JWS · JWK · thumbprint",
       "pos": [
         380,
         110
@@ -139,7 +139,7 @@
       "id": "attest",
       "type": "security",
       "label": "acme/attest",
-      "sublabel": "Apple root \u00b7 properties",
+      "sublabel": "Apple root · properties",
       "pos": [
         380,
         410
@@ -196,7 +196,7 @@
     {
       "id": "orders",
       "type": "backend",
-      "label": "Order \u00b7 Authorization",
+      "label": "Order · Authorization",
       "sublabel": "one device-attest-01",
       "pos": [
         700,
@@ -237,7 +237,7 @@
       "id": "policy",
       "type": "security",
       "label": "acme.Policy",
-      "sublabel": "any \u00b7 dep \u00b7 sip",
+      "sublabel": "any · dep · sip",
       "pos": [
         700,
         560
@@ -257,7 +257,7 @@
       "id": "identifiers",
       "type": "security",
       "label": "Identifiers",
-      "sublabel": "HMAC \u00b7 static \u00b7 one-time",
+      "sublabel": "HMAC · static · one-time",
       "pos": [
         1020,
         260
@@ -276,7 +276,7 @@
     {
       "id": "sqlstore",
       "type": "database",
-      "label": "acme/sqlstore \u00b7 inmem",
+      "label": "acme/sqlstore · inmem",
       "sublabel": "own migration set",
       "pos": [
         1020,
@@ -421,7 +421,7 @@
   "cards": [
     {
       "dot": "cyan",
-      "title": "Four checks before a certificate",
+      "title": "Attestation verification",
       "items": [
         "The chain verifies to the Apple Enterprise Attestation Root",
         "Freshness comes from the challenge token, the attested key must be the CSR key, and the attestation must name the bound device"
@@ -429,10 +429,10 @@
     },
     {
       "dot": "rose",
-      "title": "Refusal is a document",
+      "title": "Optional certificate status",
       "items": [
-        "Every failure leaves as an RFC 7807 problem, never a bare status",
-        "The subject comes from the binding, never from the CSR"
+        "Enabled revocation registers issuance before the certificate is returned",
+        "Optional revokeCert uses certificate-key or account authorization"
       ]
     }
   ]

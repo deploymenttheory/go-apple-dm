@@ -11,12 +11,10 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/schema/support"
 )
 
-// RoundTrip encodes v, decodes into a fresh value from newT, re-encodes, and
-// requires the two encodings to decode to the same generic value, for JSON
-// and, unless jsonOnly, for XML plist and for binary plist produced by an
-// independent encoder (howett.net/plist) and decoded by ours. Comparing
-// decoded generic values rather than bytes keeps the check meaningful for
-// fields typed as any, where a typed value decodes to a map.
+// RoundTrip encodes v, decodes into newT and compares decoded generic values
+// after re-encoding. It checks JSON and, unless jsonOnly, XML plist and binary
+// plist produced by the independent howett.net/plist encoder. Value comparison
+// supports fields typed as any without requiring identical encoded bytes.
 func RoundTrip(t *testing.T, v any, newT func() any, jsonOnly bool) {
 	t.Helper()
 	first, err := json.Marshal(v)

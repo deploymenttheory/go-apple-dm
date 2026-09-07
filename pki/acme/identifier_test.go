@@ -84,9 +84,7 @@ func TestHMACIdentifiers(t *testing.T) {
 		binding["serial"] = "C02SOMEONEELSES"
 		editedPayload := base64.RawURLEncoding.EncodeToString(mustJSON(t, sealed))
 
-		// A payload that authenticates but is not the JSON we wrote can only
-		// come from someone holding the key, so it has to fail on its own
-		// terms rather than reaching the decoder unguarded.
+		// Authenticated identifier payloads still require valid JSON and structure.
 		notJSON := []byte("this authenticates but is not a sealed binding")
 		mac := hmac.New(sha256.New, identifierSeed)
 		mac.Write(notJSON)
@@ -251,9 +249,8 @@ func TestIdentifiersFunc(t *testing.T) {
 	}
 
 	t.Run("AFaultIsNotARefusal", func(t *testing.T) {
-		// An identifier source that broke is our fault, so the order fails
-		// with a server error rather than telling the device its identifier
-		// was no good.
+		// Identifier-provider failures return a server error, preserving the
+		// distinction from an invalid client identifier.
 		f := newFixture(t, func(c *acme.Config) {
 			c.Identifiers = acme.IdentifiersFunc(
 				func(context.Context, string) (acme.Binding, error) {

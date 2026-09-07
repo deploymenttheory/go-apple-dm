@@ -12,9 +12,9 @@ import (
 // Verdict is how one key answers for a target.
 type Verdict string
 
-// Verdicts. Unknown is deliberately distinct from OK: Check reports
-// Supported for an entry it has no data for and for a query with no target
-// OS, and rendering either as OK would assert a fact Apple never stated.
+// Unknown distinguishes missing support or target data from verified support.
+// Check can return Supported in those cases, so rendering also inspects the
+// inputs.
 const (
 	VerdictOK         Verdict = "OK"
 	VerdictNo         Verdict = "NO"
@@ -22,13 +22,9 @@ const (
 	VerdictUnknown    Verdict = "unknown"
 )
 
-// verdictFor grades one support entry against a target.
-//
-// The two "we do not know" cases are decided from the inputs rather than by
-// matching Check's reason text, so a reworded reason cannot silently turn an
-// unknown into an OK. Everything else prints Check's reason verbatim, which
-// is what makes this agree word for word with the rejection an enqueue
-// returns for the same key.
+// verdictFor derives unknown status from missing support or target data. Other
+// results retain Check's reason verbatim so CLI explanation and enqueue
+// validation use the same text.
 func verdictFor(e *support.Entry, t support.Target) (Verdict, string) {
 	if e == nil {
 		return VerdictUnknown, "no support data"

@@ -31,17 +31,12 @@ func (d *Decision) Properties() attest.Properties {
 	return d.Attestation.Properties
 }
 
-// Policy decides whether to issue. It runs after the attestation has been
-// verified and after the attested device has been matched against the
-// binding, so a policy is asked "should this device get a certificate",
-// never "is this attestation genuine".
+// Policy decides whether to issue after attestation verification and device binding
+// checks.
 //
-// A policy that refuses should return a problem wrapping ErrRejected or
-// ErrUnauthorized, which settles the challenge invalid. Any other error is
-// treated as a server fault: the challenge stays pending and the client may
-// retry, because a lookup that failed is not a device that was refused.
-// step-ca and nanoca ship without this seam, which is why the step-ca
-// documentation warns that it trusts any Apple device.
+// A refusal should wrap ErrRejected or ErrUnauthorized to invalidate the challenge.
+// Other errors leave the challenge pending so clients can retry infrastructure
+// failures.
 type Policy interface {
 	Authorize(ctx context.Context, d *Decision) error
 }

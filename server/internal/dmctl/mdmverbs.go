@@ -355,13 +355,9 @@ func runNotify(ctx context.Context, e *env, args []string) error {
 	return e.emit(resp, nil)
 }
 
-// runAPI is the escape hatch: any admin route, by method and path.
-//
-// The dep, axm and acme families are proxies onto Apple-shaped APIs whose
-// surface is theirs rather than ours, so wrapping each in a typed verb would
-// mean tracking dozens of endpoints we do not define. This keeps every route
-// reachable -- which is what "dmctl drives every admin route" has to mean --
-// without pretending to model them.
+// runAPI sends an administrative request with an explicit method and path. It
+// exposes routes without a dedicated CLI verb, including DEP, AxM and ACME
+// operations.
 func runAPI(ctx context.Context, e *env, args []string) error {
 	fs := e.verbFlags("api")
 	file := fs.String("file", "", "read the request body from a file, or - for stdin")

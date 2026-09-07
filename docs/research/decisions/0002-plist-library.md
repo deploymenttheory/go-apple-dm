@@ -1,45 +1,36 @@
 # 0002: plist encoding and decoding
 
-Status: accepted
-Date: 2026-09-01
-Phase: 0
+## Context
 
-## Apple sources
+MDM requests and responses use property lists. Untrusted input requires format detection and resource limits.
 
-- Doc: <https://developer.apple.com/documentation/devicemanagement/check-in> (XML plist request bodies)
-- Doc: <https://developer.apple.com/documentation/devicemanagement/commands-and-queries>
+## Decision
 
-## References read
+`mdmprotocol/plist` wraps `github.com/micromdm/plist` for XML and binary encoding and decoding. The wrapper provides format detection and byte and XML nesting limits. Protocol decoding dispatches on message type and retains the original request bytes.
 
-- `micromdm/plist` README, `NewXMLDecoder`, `NewBinaryDecoder`, `Unmarshaler`
-- `DHowett/go-plist` README
-- `micromdm/nanomdm` `mdm/checkin.go` (`checkinUnmarshaller` single-pass dispatch on `MessageType`)
-- `fleetdm/fleet` `go.mod` (imports both `micromdm/plist` and `howett.net/plist`)
-- `deploymenttheory/go-sdk-appleservices` `internal/plistenc` (hand-rolled XML encoder, encode only)
+## Rationale
 
-## Known pitfalls found
+A shared wrapper gives protocol callers one codec and one place to configure input bounds. Supporting both formats allows the same typed messages to handle XML and binary inputs.
 
-- Fleet carries two plist libraries plus the legacy `groob/plist` path, which drifts.
-- go-sdk-appleservices hand-rolled an encoder and therefore cannot decode device responses at all.
-- Devices can send binary plists; a decoder that only speaks XML fails on those.
+## Constraints
 
-## What they do
+Callers must use the bounded decode path for untrusted input. The wrapper's limits are implementation controls, not additional Apple wire fields.
 
-- **NanoMDM**: `micromdm/plist`, single-pass dispatch via `UnmarshalPlist(func(any) error)`, `Raw` bytes retained on every message.
-- **Fleet**: `micromdm/plist` for protocol code, `howett.net/plist` elsewhere.
-- **go-sdk-appleservices**: internal encode-only writer.
+## Verification
 
-## What we do better
+Plist tests cover format detection, malformed input and limits. Protocol fuzz targets exercise check-in and response decoding.
 
-1. One library, `github.com/micromdm/plist`, wrapped in a local `plist/` package that adds `DetectFormat`, `MaxBytes`, `MaxDepth`, and dispatch helpers, so the choice is swappable in one place and untrusted input is bounded.
-2. Both XML and binary accepted on every decode path; fuzz targets cover both.
+## References
 
-## Verified by
+- [mdmprotocol/plist](../../../mdmprotocol/plist)
+- [mdmprotocol/mdm](../../../mdmprotocol/mdm)
+- <https://developer.apple.com/documentation/devicemanagement/check-in>
+- <https://developer.apple.com/documentation/devicemanagement/commands-and-queries>
 
-1. `TestPlistLimits`, `TestDetectFormat` (phase 1).
-2. `FuzzCheckinDecode`, `FuzzResponseDecode` seeded with XML and binary fixtures (phase 2).
+Reference source identifiers and paths (relative to the named project):
 
-## Rejected alternatives
-
-- `howett.net/plist` only: no interop advantage and the reference fixtures use micromdm/plist conventions.
-- Hand-rolled encoder: proven dead end in the SDK.
+- `micromdm/plist`, `NewXMLDecoder`, `NewBinaryDecoder`, `Unmarshaler`
+- `DHowett/go-plist`
+- `micromdm/nanomdm`, `mdm/checkin.go`, `checkinUnmarshaller`, `MessageType`
+- `fleetdm/fleet`, `go.mod`, `micromdm/plist`, `howett.net/plist`
+- `deploymenttheory/go-sdk-appleservices`, `internal/plistenc`

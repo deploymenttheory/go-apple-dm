@@ -1,57 +1,40 @@
 # 0001: Library-first architecture with a generated schema core
 
-Status: accepted
-Date: 2026-09-01
-Phase: 0
+## Context
 
-## Apple sources
+Applications need reusable Apple device management protocol components and an example of how to assemble them into a server.
 
-- Doc: <https://developer.apple.com/documentation/devicemanagement>
-- Doc: <https://developer.apple.com/documentation/devicemanagement/integrating-declarative-management>
-- YAML: `third_party/device-management/**` at commit `67045e2f` (see `schema/GENERATED_FROM.json`)
+## Decision
 
-## References read
+The root Go module provides generated schema types, protocol handling, certificate services, Apple service clients, storage contracts, in-memory implementations, and a simulator. The `server` module depends on the library and supplies SQL backends, orchestration, HTTP adapters, and administrative tools. Library code and tests do not import the server module.
 
-- `micromdm/nanomdm` `service/service.go`, `storage/*.go`, `mdm/checkin.go`, `mdm/command.go`, `mdm/mdm.go`
-- `jessepeterson/kmfddm` `storage/*.go`, `ddm/*.go`
-- `fleetdm/fleet` `server/mdm/nanomdm/README.md`, `docs/Contributing/architecture/mdm/apple-declarative-device-management.md`
-- `deploymenttheory/go-sdk-appleservices` `device_management/**` (survey, see plan)
-- Full survey: `docs/research/reference_projects.md`
+Service methods take explicit contexts. Hooks wrap operations, and a typed event bus supports subscribers such as audit and webhook sinks. Declarative device management uses the MDM transport and enrollment identity. The declaration engine can run in-process or through the authenticated internal adapter described in record 0023.
 
-## Known pitfalls found
+## Rationale
 
-- NanoMDM #260: `ClearQueue` becomes very slow on Postgres (no status index, row-by-row).
-- NanoMDM #86: bootstrap tokens are not migrated between backends.
-- NanoMDM #73: no tolerance for PKCS7 signing time skew during enrollment.
-- NanoMDM #71: bootstrap and unlock tokens are not cleared on re-enrollment.
-- KMFDDM #41: status report data is not cleared on un-enrollment or re-enrollment.
-- KMFDDM #6, #5, #2, #11, #96: no pagination, no last-seen, no status webhook, notifier does not scale, no Postgres.
-- go-sdk-appleservices: emit-only, no decoder, no check-in or status types, regenerated weekly with possible renames on v0.x.
+Separate modules let consumers use protocol packages without the server's database drivers and authorization dependencies. Generated types and runtime support metadata keep protocol modeling tied to the pinned Apple schema. Shared storage contract suites define backend behavior.
 
-## What they do
+## Constraints
 
-- **NanoMDM**: hides `context.Context` inside `mdm.Request`; check-in service returns raw `[]byte` for DDM; a single webhook service is the only integration point; storage is one `AllStorage` union; DDM is proxied over HTTP to a separate process.
-- **KMFDDM**: separate binary; hashes declaration JSON as stored (not canonical); file, diskv, inmem, MySQL backends; Python helper scripts for set management.
-- **Fleet**: vendors NanoMDM and NanoDEP as forks; DDM handled by cron reconcilers; one unconditional activation per configuration; status subscription values discarded.
+The reference server has no management UI, inventory product, or fleet policy system. Its internal split-deployment protocol is specific to this project; it does not implement NanoMDM's `-dm` header contract. Hardware compatibility requires testing on Apple devices.
 
-## What we do better
+## Verification
 
-1. Context-first service interfaces with typed errors and a hook chain; every state change is a typed event on an in-process bus, so webhooks, audit, metrics, and reconcilers are subscribers rather than special cases.
-2. Storage interfaces split by concern with pagination, last-seen, transactional re-enrollment cleanup, an indexed command queue, and a migration store that carries bootstrap and unlock tokens (0017).
-3. All protocol types (commands with responses, check-in, profiles, declarations, status, protocol, errors) generated in-repo from Apple's YAML with a naming lock so regeneration never silently renames, and runtime OS and channel support metadata.
-4. DDM engine embedded in-process with content-addressed tokens, dynamic membership, retained status values, and a NanoMDM `-dm` compatible proxy adapter for drop-in use.
-5. Four storage backends behind one contract suite from the start.
+The import-layout tests enforce module and tier boundaries. Service tests cover hooks and events; storage contract suites cover enrollment, command delivery, certificates, and migration. Schema regeneration is checked by `make verify`.
 
-## Verified by
+## References
 
-1. `TestServiceHooksAndEvents` (phase 2), `TestWebhookIsASubscriber` (phase 2).
-2. `storagetest.RunCommandQueueSuite/ClearFilter`, `postgres.TestClear100kUnderOneSecond` and `BenchmarkClear100k` (phase 4), `RunEnrollmentSuite/ReenrollClearsState` (phase 2), `storagetest.RunMigrationSuite/RoundTripAllFields` (phase 4, 0017).
-3. `TestRegistryCoversEveryYAML`, `TestRenameGuard` (phase 1).
-4. `TestTokenStableUnderKeyReorder`, `TestProxyServerInteropNanoMDM` (phase 5).
-5. `storagetest` suites green on inmem, sqlite, postgres, mysql (phase 4).
+- [mdmprotocol/mdm](../../../mdmprotocol/mdm)
+- [mdmprotocol/ddm](../../../mdmprotocol/ddm)
+- [server/service](../../../server/service)
+- [storage](../../../storage)
+- [internal/layout](../../../internal/layout)
+- <https://developer.apple.com/documentation/devicemanagement>
+- <https://developer.apple.com/documentation/devicemanagement/integrating-declarative-management>
 
-## Rejected alternatives
+Reference source identifiers and paths (relative to the named project):
 
-- Depend on `deploymenttheory/go-sdk-appleservices` for types: emit-only and unstable; user reversed this choice.
-- Depend on `korylprince/go-adm` generated packages: external single maintainer, requires a go-yaml fork, no naming contract.
-- Fork NanoMDM: would inherit the untyped, context-hidden API and the single-webhook integration model.
+- `micromdm/nanomdm`, `service/service.go`, `storage/*.go`, `mdm/checkin.go`, `mdm/command.go`, `mdm/mdm.go`
+- `jessepeterson/kmfddm`, `storage/*.go`, `ddm/*.go`
+- `fleetdm/fleet`, `server/mdm/nanomdm/README.md`, `docs/Contributing/architecture/mdm/apple-declarative-device-management.md`
+- `deploymenttheory/go-sdk-appleservices`, `device_management/**`

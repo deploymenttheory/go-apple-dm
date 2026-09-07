@@ -206,9 +206,8 @@ func (s *Server) SetConsistencyLag(d time.Duration) {
 	s.mu.Unlock()
 }
 
-// SetConsistencyReads makes the next n reads of a completed activity's
-// assignment report it as not yet visible, whatever the clock says. It is
-// the deterministic way to make a client wait.
+// SetConsistencyReads hides a completed activity's assignment for the next
+// n reads, independently of the clock, so tests can assert client polling.
 func (s *Server) SetConsistencyReads(n int) {
 	s.mu.Lock()
 	s.lagReads = n

@@ -1,21 +1,16 @@
-// Package adminauthtest is the contract suite every adminauth.Store must
-// pass, plus a failing store for error-path tests.
+// Package adminauthtest defines adminauth.Store contract tests and a
+// failing-store wrapper.
 //
-// # Why
+// # Design
 //
-// The in-memory store and the three SQL backends have to behave identically,
-// or an authorization decision would depend on which database a deployment
-// chose. RunSuite is what proves that, the same way storagetest, ddmtest,
-// deptest, and acmetest do for their own interfaces.
-//
-// The cases that matter most are the ones a naive implementation gets wrong: a
-// revoked principal must not be findable by an empty digest, a rotated token
-// must stop working the moment the new one is issued, and the policy version
-// must move on every write so a cached compilation notices.
+// RunSuite checks principal lookup, token digests, revocation, immediate
+// rotation and policy-version changes across backends. The suite keeps
+// authorization persistence independent of the selected database. Failure
+// injection exercises authentication and administration error paths without
+// corrupting a real store.
 //
 // # References
 //
-//   - Decision record: docs/research/decisions/0034-admin-api-and-authorization.md
-//   - Plan of record: docs/research/implementation_plan.md (phase 8)
+//   - Decision record: https://github.com/deploymenttheory/go-apple-dm/blob/main/docs/research/decisions/0034-admin-api-and-authorization.md
 //   - Sibling suites: server/storage/storagetest, server/ddmstore/ddmtest, acme/acmetest
 package adminauthtest

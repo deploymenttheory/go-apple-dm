@@ -1,9 +1,9 @@
 # Enrollment security operations
 
-Account-driven enrollment now binds a reusable access token's managed Apple
-account, subject and issuer to an issued identity certificate and enrollment.
+Account-driven enrollment binds a reusable access token's Managed Apple
+Account, subject and issuer to an issued identity certificate and enrollment.
 Optional certificate status enforcement and inbound rate limits remain disabled
-until configured. The design and reference implementation comparison are in
+until configured. The design and supporting references are in
 [decision 0047](../research/decisions/0047-enrollment-authentication-and-optional-security-services.md).
 
 ## Account-driven enrollment and migration
@@ -31,7 +31,7 @@ Traditional enrollment does not acquire this reauthentication behavior.
 Authorization codes and rotating refresh tokens are consumed atomically, after
 validating their stored client, redirect and scope binding. Access tokens are
 reusable until expiration or rotation. A custom verifier must return a stable
-managed Apple account, subject and issuer and validate its own token signature,
+Managed Apple Account, subject and issuer and validate its own token signature,
 issuer, audience and validity. Infrastructure failures must remain errors; only
 the documented invalid-token errors initiate reauthentication. Apple-facing OAuth
 does not require additional undocumented PKCE parameters. Upstream OIDC retains
@@ -128,7 +128,7 @@ comma-separated list of explicitly trusted CIDRs only when needed. Forwarded
 addresses are walked from the trusted peer toward the first untrusted hop;
 malformed headers fall back to the socket address.
 
-## ADE policy and release validation
+## ADE policy and device validation
 
 The reusable ADE hook remains available for deployments that require a DEP/ABM
 ownership lookup. The reference server does not impose that policy universally;

@@ -103,9 +103,8 @@ func TestAssigner(t *testing.T) {
 		if res, err := a.RunOnce(ctx); err != nil || res.Candidates != 0 {
 			t.Fatalf("converged %+v %v", res, err)
 		}
-		// A server move: Apple reports the device modified with the profile
-		// gone. State says it is off the profile, so it is re-assigned
-		// (nanodep and Fleet act on op_type=added only and would not).
+		// A modified device with no assigned profile is reassigned from stored desired
+		// state.
 		f.srv.ModifyDevice("A", func(d *dep.Device) { d.ProfileUUID, d.ProfileStatus = "", dep.ProfileStatusRemoved })
 		f.clock.Advance(time.Minute)
 		f.sync(t)

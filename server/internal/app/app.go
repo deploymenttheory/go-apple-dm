@@ -77,16 +77,13 @@ type Config struct {
 	// DDMSendKey signs what this role sends across the hop; DDMRecvKey
 	// verifies what it receives.
 	DDMSendKey, DDMRecvKey []byte
-	// AllowReenroll accepts an Authenticate whose identity certificate
-	// differs from the one the enrollment pins, and replaces the pin with it.
-	// It is service.AllowReenroll, the library default.
+	// AllowReenroll accepts Authenticate with a different certificate and replaces
+	// the enrollment pin. The library defaults to allowing this; the reference
+	// server defaults to DenyReenroll.
 	//
-	// The reference server defaults to service.DenyReenroll. A certificate
-	// carries no binding to an enrollment id, and chaining to the enrollment
-	// CA establishes only that the certificate is one we issued, so a
-	// permissive policy makes every certificate the CA issues a key to every
-	// enrollment. Deployments that need devices to re-enrol themselves after
-	// a wipe set DM_ALLOW_REENROLL=true.
+	// Enable only with appropriate enrollment admission. CA trust alone does not
+	// bind a certificate to an enrollment identifier; account-driven issuance
+	// associations provide an additional binding for those sessions.
 	AllowReenroll bool
 	// StorageKeys names the keys that seal the secret columns of a persistent
 	// store: unlock tokens, bootstrap tokens, APNs push keys and user auth
@@ -177,8 +174,8 @@ type SinkConfig struct {
 	// cheapest form of the threat model's repudiation control: attributable,
 	// but only as persistent as the log stream it is shipped to.
 	Audit bool
-	// WebhookURL receives a POST per event in the MicroMDM envelope, minus
-	// the raw payload those servers include (event/sink explains why).
+	// WebhookURL receives projected events in a MicroMDM-compatible envelope without
+	// raw_payload.
 	WebhookURL string
 	// WebhookHMACKey signs the webhook body when set.
 	WebhookHMACKey []byte
@@ -190,8 +187,7 @@ type SinkConfig struct {
 	Persist bool
 	// AuditStore overrides Persist with a caller's own trail.
 	AuditStore audit.Store
-	// Retention is how long records are kept. Zero keeps them forever, which
-	// is a choice a deployment should make deliberately rather than inherit.
+	// Retention is the maximum record age. Zero disables age-based pruning.
 	Retention time.Duration
 	// PruneInterval is how often retention runs; DefaultAuditPruneInterval
 	// when unset.
@@ -643,21 +639,13 @@ func (a *App) wire(ctx context.Context) error {
 		a.Core = core
 	}
 
-	// The notifier is built after the core because DeclarativeManagement is
-	// an MDM command and travels the MDM command path: Core.Enqueue runs the
-	// hook chain, screens the target against schema/support, and publishes
-	// CommandQueued. Enqueueing straight into storage skipped all three,
-	// which kept every DDM-driven command out of the event bus and so out of
-	// the audit trail.
+	// Build the notifier after Core so DeclarativeManagement commands pass through
+	// hooks, target validation and CommandQueued events. The engine writes change rows
+	// transactionally; the notifier reads them without an engine callback. Admin routes
+	// also kick the notifier to reduce delay between polls.
 	//
-	// This ordering is only possible because the engine no longer calls back
-	// into the notifier. The persistent signal is the change rows recordAffected
-	// writes inside the transaction; the admin route wrapper kicks the
-	// notifier after a change so the 1s poll is not the only trigger.
-	// The reference server suppresses a second DeclarativeManagement while
-	// one is pending, and says so here rather than inheriting it: whether to
-	// suppress is a deployment's decision, and ddm defaults to this only
-	// because a nil key means "not set".
+	// The reference server explicitly deduplicates pending DeclarativeManagement
+	// commands.
 	dedupe := ddmsync.DefaultDedupeKey
 	a.Notifier, err = ddmsync.NewNotifier(
 		ddmsync.NotifierConfig{
@@ -880,9 +868,7 @@ func (a *App) adminStore(ctx context.Context) (adminauth.Store, error) {
 		// answer, not a failure: the static token stays the only credential.
 		return nil, nil
 	case a.db == nil:
-		// An in-memory deployment has nowhere persistent to put principals; the
-		// store still works so the admin API behaves the same way in tests
-		// and in a throwaway run.
+		// The in-memory principal store supports administration without durable state.
 		return admininmem.New(), nil
 	default:
 		s, err := adminsql.Open(ctx, a.db, a.dialect, adminsql.Options{})

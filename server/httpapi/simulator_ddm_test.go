@@ -59,8 +59,8 @@ type ddmStub struct {
 	statusBody string
 	// wrongIdentifier, when set, replaces the Identifier in declaration bodies.
 	wrongIdentifier string
-	// churn bumps the token after every tokens and declaration-items
-	// answer, so the sync never settles (Fleet issue 43050).
+	// churn changes the token after each tokens and declaration-items response to
+	// prevent convergence.
 	churn bool
 	// bumpAfterTokens bumps the token after that many tokens answers, so the
 	// manifest arrives with a newer token than the tokens call reported.

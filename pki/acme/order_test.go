@@ -59,9 +59,8 @@ func TestNewOrder(t *testing.T) {
 		}
 	})
 
-	// IdentifierIsOneTime is Apple's anti-replay code taken at its word: the
-	// ClientIdentifier buys exactly one certificate. Neither nanoca nor
-	// step-ca consumes it, so on either of them this order would succeed.
+	// IdentifierIsOneTime verifies that a claimed ClientIdentifier cannot create
+	// another order.
 	t.Run("IdentifierIsOneTime", func(t *testing.T) {
 		f := newFixture(t)
 		acct := f.register()
@@ -76,8 +75,7 @@ func TestNewOrder(t *testing.T) {
 			t.Errorf("subproblem identifier = %q, want %q", got, testIdentifier)
 		}
 
-		// A different account does no better: the claim is on the
-		// identifier, not on the account that took it.
+		// The identifier claim applies across accounts.
 		other := f.register()
 		requireProblem(
 			t, other.post(f.url("/new-order"), orderRequest(testIdentifier)),
@@ -264,8 +262,8 @@ func TestOrderEndpoint(t *testing.T) {
 			"Order":         {"/order/" + idOf(fl.orderURL), map[string]error{"GetOrder": errStore}},
 			"Authorization": {"/authz/" + idOf(fl.authzURL), map[string]error{"GetAuthorization": errStore}},
 			"Challenge":     {"/challenge/" + idOf(fl.chalURL), map[string]error{"GetChallenge": errStore}},
-			// The authorization is found but the challenge it names cannot
-			// be read, which is our fault and not a missing record.
+			// Failure to read an existing authorization's challenge returns an internal
+			// error.
 			"ChallengeOfAuthorization": {
 				"/authz/" + idOf(fl.authzURL), map[string]error{"GetChallenge": errStore},
 			},
@@ -283,8 +281,7 @@ func TestOrderEndpoint(t *testing.T) {
 	})
 
 	t.Run("ExpiredAuthorizationReportsExpired", func(t *testing.T) {
-		// Expiry is reported without waiting for a sweeper to have run, so
-		// a client reading a stale authorization is told the truth.
+		// Authorization expiry is enforced during reads without waiting for pruning.
 		g := newFixture(t)
 		other := g.begin(testIdentifier)
 		g.clock.Advance(acme.DefaultOrderTTL + time.Minute)
@@ -317,10 +314,7 @@ func TestFinalize(t *testing.T) {
 		}
 	})
 
-	// KeyMustMatchAttestation is the binding Apple's guidance asks for and
-	// the one the reference implementations miss: nanoca and Fleet never
-	// compare the attested key with the certificate request, and step-ca
-	// skips the comparison when the authorization carries no fingerprint.
+	// KeyMustMatchAttestation verifies that the CSR key matches the attested key.
 	t.Run("KeyMustMatchAttestation", func(t *testing.T) {
 		f := newFixture(t)
 		fl := f.begin(testIdentifier).pass()
@@ -443,9 +437,7 @@ func TestFinalize(t *testing.T) {
 	})
 
 	t.Run("SignerFails", func(t *testing.T) {
-		// A signer that breaks is our fault, and a terminal one at that:
-		// the order is settled invalid rather than left for a retry that
-		// would fail the same way.
+		// A signing failure settles the order invalid and returns a server error.
 		f := newFixture(t, func(c *acme.Config) { c.Signer = brokenSigner{c.Signer} })
 		fl := f.begin(testIdentifier).pass()
 		requireProblem(t, fl.finalizeWith(fl.key, pkix.Name{}), acme.ProblemServerInternal)
@@ -480,9 +472,8 @@ func TestFinalize(t *testing.T) {
 	})
 
 	t.Run("SettlingTheOrderFails", func(t *testing.T) {
-		// A terminal fault settles the order invalid, and a store that
-		// cannot record that is our fault rather than the attestation's, so
-		// the client is told to retry rather than that its device is wrong.
+		// Failure to persist terminal state returns an internal error so the request
+		// can be retried.
 		f := newFixture(t, func(c *acme.Config) { c.OrderTTL = 30 * 24 * time.Hour })
 		fl := f.begin(testIdentifier)
 		props := deviceProperties()
@@ -511,8 +502,8 @@ func TestFinalize(t *testing.T) {
 	})
 
 	t.Run("StoredAttestationIsUnreadable", func(t *testing.T) {
-		// A record the server wrote itself cannot be corrupt, so this is
-		// reported as our fault rather than the device's.
+		// Malformed stored records return an internal error rather than a
+		// client-validation error.
 		f := newFixture(t)
 		fl := f.begin(testIdentifier).pass()
 		record := challengeRecord(t, f, fl)

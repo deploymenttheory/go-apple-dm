@@ -229,9 +229,7 @@ func TestRunWithoutWorkersWaitsForCancellation(t *testing.T) {
 	}
 }
 
-// The debt this fixes: the process could exit while a loop was mid-drain.
-// Run must not return until every worker's own cleanup has finished, not
-// merely until cancellation was delivered.
+// Run must wait for worker cleanup after cancellation before returning.
 func TestRunWaitsForWorkersToFinishDraining(t *testing.T) {
 	a := &App{}
 	var drained atomic.Bool

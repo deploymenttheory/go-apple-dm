@@ -88,21 +88,13 @@ func isScaffolding(pkg string) bool {
 		pkg == "schema/internal/conformance"
 }
 
-// knownTierExceptions records edges that point upwards and must not. Each
-// needs a reason and a plan; the test asserts the set exactly, so removing
-// one is as loud as adding one.
+// knownTierExceptions records the exact permitted upward import edges.
 //
-// mdmprotocol/enroll/ade gates Automated Device Enrollment on the device
-// running a recent enough OS, and answers "what is the newest version Apple
-// publishes for this device" by reading Apple's software lookup service. It
-// uses gdmf.Lookup (one method), gdmf.Asset (a value type), and
-// gdmf.CompareVersions (a pure string helper) -- vocabulary rather than
-// client, which is why the edge is nominal today: gdmf imports nothing in
-// this module, so nothing actually leaks through it. It is recorded rather
-// than resolved because the fix is a design choice: split gdmf's vocabulary
-// from its HTTP client the way push and pushnotify were split, invert at
-// the ade boundary with an adapter in the composition root, or accept that
-// enrollment sits above the Apple clients and give it its own tier.
+// ADE uses gdmf.Lookup, gdmf.Asset and gdmf.CompareVersions for its
+// software-update gate. gdmf has no in-module dependencies. Separating this
+// vocabulary or adapting it at the composition boundary remains an open design
+// choice; the test rejects additions to or unrecorded removals from this
+// exception set.
 var knownTierExceptions = map[string][]string{
 	"mdmprotocol/enroll/ade": {"appleplatformservices/gdmf"},
 }

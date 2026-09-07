@@ -1,23 +1,17 @@
-// Package testpki generates throwaway certificate authorities and device
-// identities for tests and the device simulator.
+// Package testpki creates ephemeral certificate authorities and identities for
+// tests and the device simulator.
 //
-// # Why
+// # Design
 //
-// Nearly every package in the library needs a certificate at test time: an
-// enrollment identity to sign a check-in with, a CA to chain it to, a push
-// certificate whose subject UID carries an APNs topic, or a server
-// certificate for an in-process TLS listener. Generating them once here
-// keeps the fixtures consistent across enroll, httpapi, push, service,
-// storage, the simulator, and the end-to-end suite, and keeps private keys
-// out of the repository, as the plan of record's test strategy requires.
-//
-// Nothing here is meant for production: keys are ephemeral, validity is
-// short, and there is no policy. Real issuance goes through ca and scep.
+// Shared fixtures provide device signing identities, TLS server certificates and
+// APNs-topic certificates with consistent chain structure. Keys are generated at
+// test time and validity is short. These helpers do not apply production
+// issuance policy and their roots must not be trusted outside tests. Production
+// signing uses pki/ca with configured keys, policy and storage.
 //
 // # References
 //
-//   - Plan of record: docs/research/implementation_plan.md (section 6, test strategy; phase 2)
-//   - End-to-end scenarios: docs/testing/e2e-scenarios.md
+//   - End-to-end scenarios: https://github.com/deploymenttheory/go-apple-dm/blob/main/docs/testing/e2e-scenarios.md
 //   - Apple: https://developer.apple.com/documentation/devicemanagement/managing-certificates-for-device-management-services-and-devices
 //   - Apple: https://developer.apple.com/documentation/devicemanagement/setting-up-push-notifications-for-your-device-management-customers
 package testpki

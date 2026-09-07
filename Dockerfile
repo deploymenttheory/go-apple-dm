@@ -1,5 +1,5 @@
 # Reference server image: built from this repository by CI and by
-# scripts/testdb.sh ddm-up. Never pulled from a third party (decision record 0025).
+# scripts/testdb.sh ddm-up. See decision record 0025 for the role split.
 FROM golang:1.27 AS build
 WORKDIR /src
 # The reference server is its own module and depends on the library module in

@@ -5,14 +5,9 @@ name: Device Management Schema Update
 # upstream release branch, regenerates against it, and opens a pull request
 # with the result when anything changed.
 #
-# It opens a pull request rather than an issue because an issue asks a human to
-# repeat work a machine has already done: the branch it pushes is the update,
-# already regenerated and already checked. What a human decides is whether to
-# take it, and what to do about anything the checks flag.
-#
-# Apple publishes schema changes in bursts around OS releases rather than
-# daily, so this runs weekly; workflow_dispatch covers the days when something
-# has shipped and you do not want to wait.
+# The pull request contains regenerated output and validation results for review.
+# Weekly scheduling follows release-branch changes; workflow_dispatch supports
+# an explicit update between scheduled runs.
 
 on:
   schedule:
@@ -42,10 +37,8 @@ jobs:
         with:
           egress-policy: audit
 
-      # The same org App release-please uses. A pull request pushed with the
-      # default GITHUB_TOKEN does not trigger workflows, so the schema update
-      # would arrive with no conformance run, no coverage gate and no tier
-      # tests: exactly the checks that make it safe to take.
+      # Use the release-please App so the resulting pull request triggers CI,
+      # including conformance, coverage and module-boundary checks.
       - uses: actions/create-github-app-token@v3
         id: app-token
         if: ${{ vars.RP_APP_ID != '' }}
@@ -89,9 +82,8 @@ jobs:
             echo "changed=$([ "$pinned" != "$release" ] && echo true || echo false)"
           } >> "$GITHUB_OUTPUT"
 
-          # Seed branches are where Apple stages the next OS, so drift there is
-          # the earliest warning there is. They are reported, never merged: a
-          # seed is not a release and must not become the pin.
+          # Report seed-branch differences for review. Only the release branch
+          # is eligible for the schema pin.
           : > seeds.md
           for seed in $(git -C "$sub" branch -r --list 'origin/seed_*' | sed 's#origin/##'); do
             head="$(git -C "$sub" rev-parse "origin/$seed")"
@@ -115,10 +107,8 @@ jobs:
           go run ./cmd/admgen versions > /tmp/versions.after
           go run ./cmd/admgen identifiers | sort > /tmp/identifiers.after
 
-      # Every check runs, and none of them stops the pull request being opened.
-      # A schema update that fails conformance is precisely the one a human
-      # needs to see; refusing to open it would leave the failure invisible
-      # until someone happened to bump the submodule by hand.
+      # Run every check and include failures in the pull request for review.
+      # Failed checks do not suppress creation of the update pull request.
       - name: Check the regenerated tree
         if: steps.compare.outputs.changed == 'true'
         id: checks
@@ -138,7 +128,7 @@ jobs:
           set -euo pipefail
           sub=third_party/device-management
 
-          # What moved, in the terms an operator cares about: OS versions.
+          # Compare maximum schema versions by OS family.
           : > versions.md
           join -a1 -a2 -e '-' -o '0,1.2,2.2' -t "$(printf '\t')" \
             /tmp/versions.before /tmp/versions.after 2>/dev/null |
@@ -154,8 +144,8 @@ jobs:
             echo "title=chore(schema): Apple device management ${{ steps.compare.outputs.short }}" >> "$GITHUB_OUTPUT"
           fi
 
-          # An identifier that is generated no longer is a rename or a removal,
-          # and needs a line in ALLOWED_REMOVALS.md before verify will pass.
+          # An identifier absent from regenerated output needs an entry in
+          # ALLOWED_REMOVALS.md before verify will pass.
           comm -23 /tmp/identifiers.before /tmp/identifiers.after > /tmp/removed || true
           comm -13 /tmp/identifiers.before /tmp/identifiers.after > /tmp/added   || true
           {

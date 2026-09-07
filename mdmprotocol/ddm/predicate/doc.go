@@ -1,29 +1,15 @@
-// Package predicate parses and evaluates the subset of Apple's NSPredicate
-// format-string syntax that Declarative Device Management activation
-// predicates use.
+// Package predicate parses and evaluates a subset of NSPredicate syntax for
+// declarative device management activations.
 //
-// # Why
+// # Design
 //
-// The com.apple.activation.simple declaration carries an optional Predicate
-// key that Apple's schema describes only as "a predicate format string"
-// (third_party/device-management/declarative/declarations/activations/simple.yaml,
-// which points at the Predicate Programming Guide). The activation installs
-// its configurations only when the predicate is absent or evaluates to
-// true, so a server that wants to reject a bad predicate at upload time, or
-// a simulator that wants to behave like a device, needs to parse and
-// evaluate it. Phase 5 of the plan of record adds both (decision record
-// 0024): the engine calls Validate when a declaration is stored, and the
-// simulator's DDM client evaluates against its @property values and
-// @status items. Forms observed in the wild are `(@property(shard) <= 75)`,
-// `@status(device.identifier.serial-number) == 'ZYXW4321'` and `1==0`.
-//
-// The package implements only what activations need and rejects the rest
-// of NSPredicate explicitly, as the Unsupported constructs section lists.
-// It does not decide which declarations a device sees; that is ddm's
-// membership resolution, which runs before predicates are consulted.
+// The engine validates activation predicates at upload, and the simulator
+// evaluates them against @property values and @status items. Unsupported forms
+// return an explicit error. Membership resolution determines which declarations
+// a device sees; predicate evaluation determines whether an activation applies
+// its configurations.
 //
 // # Grammar
-//
 // Keywords and operators are case-insensitive. Whitespace between tokens is
 // insignificant.
 //
@@ -71,11 +57,10 @@
 //
 // # References
 //
-//   - Decision record 0020: docs/research/decisions/0020-ddm-engine-membership-and-storage.md
-//   - Decision record 0024: docs/research/decisions/0024-simulator-ddm-client-and-predicates.md
-//   - Plan of record: docs/research/implementation_plan.md (section 4, DDM engine; phase 5)
-//   - Threat model: docs/security/threat-model.md (Admin upload of declarations row)
-//   - End-to-end scenarios: docs/testing/e2e-scenarios.md (E2E-009)
+//   - Decision record 0020: https://github.com/deploymenttheory/go-apple-dm/blob/main/docs/research/decisions/0020-ddm-engine-membership-and-storage.md
+//   - Decision record 0024: https://github.com/deploymenttheory/go-apple-dm/blob/main/docs/research/decisions/0024-simulator-ddm-client-and-predicates.md
+//   - Threat model: https://github.com/deploymenttheory/go-apple-dm/blob/main/docs/security/threat-model.md (Admin upload of declarations row)
+//   - End-to-end scenarios: https://github.com/deploymenttheory/go-apple-dm/blob/main/docs/testing/e2e-scenarios.md (E2E-009)
 //   - Apple: https://developer.apple.com/documentation/devicemanagement/leveraging-the-declarative-management-data-model-to-scale-devices
 //   - Apple: https://developer.apple.com/library/archive/documentation/Cocoa/Conceptual/Predicates/AdditionalChapters/Introduction.html
 //   - Schema: third_party/device-management/declarative/declarations/activations/simple.yaml (Predicate)

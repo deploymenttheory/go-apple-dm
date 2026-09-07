@@ -38,18 +38,18 @@ linters:
     - govet          # catches suspicious Go constructs
     - staticcheck    # static analyses (nil‐checks, API misuse, etc.)
     - errcheck       # ensures you never ignore an error return
-    - unused         # finds dead code we no longer need
+    - unused         # finds unused declarations
     - ineffassign    # flags assignments that have no effect
   
     # error-handling best practices
     - errorlint      # flag missing %w wraps
     - err113         # enforce correct error-handling patterns
 
-    # Terraform‐specific safety & resource handling
+    # HTTP resource handling and security
     - bodyclose      # makes sure every HTTP response body is closed
     - gosec          # scans for security issues (e.g. hardcoded credentials)
     
-    # Specifically important for API clients (Microsoft 365 API)
+    # Context propagation and return-value contracts
     - contextcheck   # check whether function uses a non-inherited context
     - noctx          # finds sending http request without context.Context
     - nilnil         # checks that there is no simultaneous return of nil error and invalid value
@@ -61,7 +61,7 @@ linters:
     - gocyclo        # warn on high cyclomatic complexity
     - wrapcheck      # checks that errors from external packages are wrapped
     
-    # API/Terraform specific
+    # Serialization tags
     - musttag        # enforce field tags in (un)marshaled structs
     - tagliatelle    # checks struct tags (important for JSON/XML APIs)
 
@@ -87,7 +87,7 @@ linters:
 
     # fine-grained rules to drop issues by path, linter, text, or source
     rules:
-      # in test files, silence these noisy checks
+      # Suppress selected diagnostics in test files
       - path: _test\.go
         linters:
           - gocyclo
@@ -100,7 +100,7 @@ linters:
         linters:
           - forbidigo
 
-      # silence known gosec warning in this vendored code
+      # Suppress the configured HMAC diagnostic by path
       - path: internal/hmac/
         text: "weak cryptographic primitive"
         linters:
@@ -127,10 +127,10 @@ linters:
 
     # Never exclude these critical paths, even if they match patterns above
     paths-except:
-      - "internal/.*\\.go$"       # Core provider logic
+      - "internal/.*\\.go$"       # Internal implementation packages
 
 formatters:
-  # Only run the formatters you actually want to auto‐fix in CI
+  # Enabled formatters; use --fix=false when linting without rewriting
   enable:
     - gofumpt     # strict Go formatting (superset of gofmt)
     - goimports   # fixes imports (add/remove/sort)
@@ -148,7 +148,7 @@ formatters:
 
   # Exclude generated or special‐case files from formatting checks
   exclusions:
-    warn-unused: true   # error if any of the below rules never match
+    warn-unused: true   # warn about unmatched exclusions
     generated: strict   # only skip files with exact “// Code generated … DO NOT EDIT.”
     paths:
       - ".*\\.gen\\.go$"       # ignore any *.gen.go files

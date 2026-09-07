@@ -17,9 +17,9 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/storage/crypt"
 )
 
-// ClearBatchSize bounds one Clear statement so a large queue never holds
-// a long lock (NanoMDM #260). 5,000 keeps a batch well under 100ms on
-// PostgreSQL while clearing 100k rows in under a second.
+// ClearBatchSize bounds each Clear statement to limit lock duration. The PostgreSQL
+// performance test measures clearing 100,000 rows; timing depends on the database
+// and host.
 const ClearBatchSize = 5000
 
 // Store implements storage.Store over a *sql.DB.

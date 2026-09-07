@@ -5073,15 +5073,15 @@
         <text data-detail="fine" x="100" y="289" class="t-security" font-size="7" text-anchor="middle">untrusted</text>
         </g>
 
-        <g id="node-plist" data-node-id="plist" data-node-label="plist.Decoder" tabindex="0" role="button" aria-label="Focus plist.Decoder, byte and depth bounded, 02 / Decode" aria-pressed="false" data-node-kind="backend" data-node-sublabel="byte and depth bounded" data-node-context="02 / Decode">
-          <title>plist.Decoder · byte and depth bounded · 02 / Decode</title>
+        <g id="node-plist" data-node-id="plist" data-node-label="plist.Decoder" tabindex="0" role="button" aria-label="Focus plist.Decoder, bytes; XML depth bound, 02 / Decode" aria-pressed="false" data-node-kind="backend" data-node-sublabel="bytes; XML depth bound" data-node-context="02 / Decode">
+          <title>plist.Decoder · bytes; XML depth bound · 02 / Decode</title>
           <rect x="250" y="128" width="130" height="58" rx="6" class="c-mask"/>
           <rect x="250" y="128" width="130" height="58" rx="6" class="c-backend" stroke-width="1.5"/>
           <g aria-hidden="true" data-semantic-sigil="backend" class="semantic-sigil s-backend" transform="translate(256 134) scale(0.6875)">
             <path d="M6 3 3 8l3 5M10 3l3 5-3 5"/>
           </g>
           <text data-node-label="" data-detail-anchor="" x="315" y="149" class="t-primary" font-size="10" font-weight="600" text-anchor="middle">plist.Decoder</text>
-          <text data-detail="context" x="315" y="165" class="t-muted" font-size="7" text-anchor="middle">byte and depth bounded</text>
+          <text data-detail="context" x="315" y="165" class="t-muted" font-size="7" text-anchor="middle">bytes; XML depth bound</text>
         </g>
 
         <g id="node-cms" data-node-id="cms" data-node-label="cms.VerifyHeader" tabindex="0" role="button" aria-label="Focus cms.VerifyHeader, skew tolerance, 02 / Decode" aria-pressed="false" data-node-kind="security" data-node-sublabel="skew tolerance" data-node-context="02 / Decode">
@@ -5096,15 +5096,15 @@
           <text data-detail="context" x="315" y="279" class="t-muted" font-size="7" text-anchor="middle">skew tolerance</text>
         </g>
 
-        <g id="node-checkin" data-node-id="checkin" data-node-label="mdm.Checkin" tabindex="0" role="button" aria-label="Focus mdm.Checkin, one of eight messages, 03 / Typed" aria-pressed="false" data-node-kind="backend" data-node-sublabel="one of eight messages" data-node-context="03 / Typed">
-          <title>mdm.Checkin · one of eight messages · 03 / Typed</title>
+        <g id="node-checkin" data-node-id="checkin" data-node-label="mdm.Checkin" tabindex="0" role="button" aria-label="Focus mdm.Checkin, one of nine messages, 03 / Typed" aria-pressed="false" data-node-kind="backend" data-node-sublabel="one of nine messages" data-node-context="03 / Typed">
+          <title>mdm.Checkin · one of nine messages · 03 / Typed</title>
           <rect x="465" y="128" width="130" height="58" rx="6" class="c-mask"/>
           <rect x="465" y="128" width="130" height="58" rx="6" class="c-backend" stroke-width="1.5"/>
           <g aria-hidden="true" data-semantic-sigil="backend" class="semantic-sigil s-backend" transform="translate(471 134) scale(0.6875)">
             <path d="M6 3 3 8l3 5M10 3l3 5-3 5"/>
           </g>
           <text data-node-label="" data-detail-anchor="" x="530" y="149" class="t-primary" font-size="10" font-weight="600" text-anchor="middle">mdm.Checkin</text>
-          <text data-detail="context" x="530" y="165" class="t-muted" font-size="7" text-anchor="middle">one of eight messages</text>
+          <text data-detail="context" x="530" y="165" class="t-muted" font-size="7" text-anchor="middle">one of nine messages</text>
         </g>
 
         <g id="node-response" data-node-id="response" data-node-label="mdm.Response" tabindex="0" role="button" aria-label="Focus mdm.Response, command result, 03 / Typed" aria-pressed="false" data-node-kind="backend" data-node-sublabel="command result" data-node-context="03 / Typed">
@@ -5364,7 +5364,7 @@
         </div>
         <ul>
           <li>&bull; plist is the library&#39;s only point of contact with property lists</li>
-          <li>&bull; The decoder is byte- and depth-limited because device input is untrusted</li>
+          <li>&bull; Input has a byte bound; XML decoding also limits nesting depth</li>
         </ul>
       </div>
 
@@ -5382,7 +5382,7 @@
       <div class="card">
         <div class="card-header">
           <div class="card-dot amber"></div>
-          <h3>Not here</h3>
+          <h3>Outbound validation</h3>
         </div>
         <ul>
           <li>&bull; schema/support screens outbound commands, not decoded check-ins</li>

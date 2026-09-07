@@ -111,7 +111,7 @@ func TestClientEnrolls(t *testing.T) {
 	if renewed.SerialNumber.Cmp(cert.SerialNumber) == 0 {
 		t.Fatal("renewal reused the serial")
 	}
-	// A "renewal" signed by a certificate we did not issue must pass the challenge.
+	// An untrusted renewal signer must pass challenge validation.
 	stranger, strangerKey, _ := ca.NewSelfSigned(ca.SelfSignedOptions{Subject: pkix.Name{CommonName: "other"}})
 	if _, err := c.Enroll(ctx, rsaKey(t), scep.EnrollOptions{Subject: subject, Renew: &scep.Identity{Cert: stranger, Key: strangerKey}}); !errors.Is(err, scep.ErrRejected) {
 		t.Fatalf("foreign renewal: %v", err)
@@ -305,7 +305,7 @@ func TestClientErrors(t *testing.T) {
 	if _, err := c.Enroll(ctx, rsaKey(t), scep.EnrollOptions{Recipients: []*x509.Certificate{f.caCert}}); !errors.Is(err, scep.ErrClient) {
 		t.Fatalf("bad CertRep: %v", err)
 	}
-	// A CertRep we cannot decrypt (encrypted to someone else).
+	// A CertRep encrypted to a different recipient cannot be decrypted.
 	ecCert, ecKey := ecIdentity(t)
 	if _, err := scep.SelfSigned(ecKey, pkix.Name{CommonName: "x"}); err != nil {
 		t.Fatal(err)
@@ -319,8 +319,7 @@ func TestClientErrors(t *testing.T) {
 
 func TestClientUndecryptableCertRep(t *testing.T) {
 	t.Parallel()
-	// The real server issues to the request, but we forward a CertRep for a
-	// different request so the client cannot decrypt it.
+	// Return a CertRep for another request to exercise client decryption failure.
 	f := newFixture(t)
 	s, _ := scep.NewServer(f.signer, f.caCert, f.caKey)
 	real := httptest.NewServer(s.Handler())

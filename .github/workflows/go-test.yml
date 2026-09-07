@@ -161,7 +161,7 @@ jobs:
         with:
           go-version-file: 'go.mod'
           cache: true
-      - name: Build and start our ddm role container
+      - name: Build and start the ddm role container
         run: |
           scripts/testdb.sh ddm-up > ddm.env
           cat ddm.env

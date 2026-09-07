@@ -183,13 +183,9 @@ func (s *Server) PKIOperation(ctx context.Context, body []byte) ([]byte, error) 
 	return rep.Raw, nil
 }
 
-// isRenewal reports whether the request is a RenewalReq signed by a
-// certificate that chains to our CA and carries the same subject as the CSR.
-//
-// Both halves are required. Chaining establishes that the signer is a device
-// we issued to; the subject establishes which one. A request that changes the
-// subject asks for a different identity, so it needs the challenge that binds
-// a subject to its enrollment.
+// isRenewal accepts a RenewalReq signer only when it chains to the configured CA
+// and has the CSR's subject. Chain trust alone does not authorize a different
+// subject. A failed check leaves the request subject to challenge validation.
 func (s *Server) isRenewal(msg *smallscep.PKIMessage, signer *x509.Certificate, csr *x509.CertificateRequest) bool {
 	if msg.MessageType != smallscep.RenewalReq || signer == nil || csr == nil {
 		return false

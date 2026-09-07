@@ -273,10 +273,9 @@ func properties(leaf *x509.Certificate) (Properties, error) {
 	return p, nil
 }
 
-// extensionInt reads a DER integer extension. An empty value is treated as
-// absent, since Apple states that a property its servers cannot verify may
-// be blank; anything else that will not parse is an error rather than a
-// silently wrong answer.
+// extensionInt parses a DER integer property, rejecting malformed data and
+// trailing bytes. An empty value is treated as absent, as Apple permits for
+// unverifiable properties.
 func extensionInt(value []byte, what string) (*int, error) {
 	if len(value) == 0 {
 		return nil, nil

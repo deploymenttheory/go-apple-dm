@@ -8,9 +8,7 @@ import (
 	schemaddm "github.com/deploymenttheory/go-apple-dm/schema/ddm"
 )
 
-// validatePredicate rejects an activation whose Predicate would not parse,
-// so a device is never handed a predicate it cannot evaluate (Fleet
-// FB24193230 wedged devices this way).
+// validatePredicate rejects activation predicates outside the supported grammar.
 func (e *Engine) validatePredicate(d *Declaration) error {
 	if d.Type != schemaddm.DeclarationTypeActivationSimple {
 		return nil

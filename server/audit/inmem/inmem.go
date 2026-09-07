@@ -10,10 +10,8 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/server/audit"
 )
 
-// Store is an in-memory audit trail. It is unsealed and unbounded by design:
-// tests and a throwaway run want the same behaviour as SQL without a
-// database, and a deployment that needs the records to survive a restart
-// configures one.
+// Store is an unsealed, unbounded in-memory audit trail. Records do not survive
+// restart.
 type Store struct {
 	mu      sync.RWMutex
 	records []audit.Record

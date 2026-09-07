@@ -8,11 +8,9 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/pki/acme/jose"
 )
 
-// FuzzParse feeds arbitrary bytes to Parse. Parse is the first thing an ACME
-// server runs over an unauthenticated request body, so the contract it has
-// to keep is that it never panics, and that whatever it does accept carries
-// the two things every later stage assumes: the raw protected header the
-// signature is computed over, and an algorithm we know how to verify.
+// FuzzParse checks that arbitrary untrusted JWS input cannot panic Parse.
+// Accepted values must preserve the protected bytes and identify a supported
+// verification algorithm.
 func FuzzParse(f *testing.F) {
 	key := testP256(f)
 	f.Add(signedFor(f, key, []byte(`{"termsOfServiceAgreed":true}`)))

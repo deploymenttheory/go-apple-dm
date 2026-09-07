@@ -10,7 +10,7 @@
     ],
     "repository": {
       "url": "https://github.com/deploymenttheory/go-apple-dm",
-      "revision": "0e487dd17ae7dffcad8674c668ff59e56c73d8f3"
+      "revision": "a817270f13b4ef7a9b1d2895118981120546b3a2"
     },
     "views": [
       {
@@ -186,7 +186,7 @@
       "id": "migrationstore",
       "type": "database",
       "label": "MigrationStore",
-      "sublabel": "Export \u00b7 Import",
+      "sublabel": "Export · Import",
       "pos": [
         380,
         560
@@ -230,7 +230,7 @@
       "id": "pushstore",
       "type": "database",
       "label": "PushStore",
-      "sublabel": "token \u00b7 push magic",
+      "sublabel": "token · push magic",
       "pos": [
         700,
         260
@@ -420,17 +420,17 @@
   "cards": [
     {
       "dot": "cyan",
-      "title": "Composed, not monolithic",
+      "title": "Composed store interfaces",
       "items": [
         "One backend satisfies all eight; a caller depends only on the part it needs",
-        "Every backend runs the same contract suite, so the split is enforced not merely documented"
+        "The shared contract suite runs against each backend"
       ]
     },
     {
       "dot": "rose",
       "title": "Sentinels",
       "items": [
-        "ErrNotFound, ErrDisabled, ErrConflict and ErrInvalid are the whole error vocabulary",
+        "Stores expose sentinel contract errors and wrap database failures",
         "Re-enrollment clears push info, tokens, the pin and the pending queue in one transaction"
       ]
     }

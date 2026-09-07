@@ -1,50 +1,39 @@
 # 0007: APNs push for MDM
 
-Status: accepted
-Date: 2026-09-01
-Phase: 3
+## Context
 
-## Apple sources
+APNs wakes a managed device so that it can contact the command endpoint. A push response does not report command execution.
 
-- Doc: <https://developer.apple.com/documentation/devicemanagement/setting-up-push-notifications-for-your-device-management-customers>
-- Doc: <https://developer.apple.com/documentation/devicemanagement/dealing-with-inactive-managed-devices-and-invalid-push-tokens>
-- Doc: <https://developer.apple.com/documentation/usernotifications/sending-notification-requests-to-apns> (headers, status codes, reason strings)
-- YAML: `third_party/device-management/mdm/checkin/tokenupdate.yaml` (Topic, PushMagic, Token)
+## Decision
 
-## References read
+`push.Pusher` returns a result per enrollment with a classified `Outcome`, reason and optional retry delay. The APNs client uses certificate authentication and HTTP/2, with clients cached per topic. Push certificates can be supplied from files or a store; expiry is checked before sending.
 
-- `micromdm/nanomdm@main` `push/nanopush/*.go` (own HTTP/2 client), `push/buford/*.go` (adapter), `storage/pushcert.go` (stale token per topic), `mdm/push.go`
-- `RobotsAndPencils/buford` (archived) as used by micromdm, nanomdm, Fleet
-- `sideshow/apns2` (maintained general client, not MDM specific)
-- `fleetdm/fleet@main` `cmd/apple-apns-mock` (Redis-coordinated mock) and `server/mdm/apple/*push*`
+The notifier resolves channel-specific push information and publishes outcomes. Coalescing combines repeated notifications within a configured window. Only APNs HTTP 410 produces the invalid-token outcome; the caller decides whether to retire the stored token. Request/configuration failures and retryable transport failures remain distinct (record 0042).
 
-## Known pitfalls found
+## Rationale
 
-- `buford` is archived yet still a direct dependency of every reference; nanomdm added `nanopush` to stop depending on it.
-- Invalid tokens must be recorded so the server stops pushing and can surface inactive devices; NanoMDM leaves this to the caller. **Corrected by record 0042**: this originally read "410 `Unregistered`, 400 `BadDeviceToken`, `DeviceTokenNotForTopic`", but the Apple page cited above says nothing about any reason string, and the two 400 reasons describe a request the sender must fix rather than a device that is gone. Only 410 retires an enrollment.
-- A push storm on a busy device (many commands enqueued) sends one APNs request per command; Fleet coalesces in its cron.
-- Push certificates expire yearly; NanoMDM's `IsPushCertStale` token forces a reload but nothing tracks expiry.
+Typed outcomes let callers distinguish an inactive token from a request that must be corrected. Coalescing reduces duplicate wake requests without changing command queue state.
 
-## What they do
+## Constraints
 
-- **nanopush**: one `http.Client` per topic with the push certificate as the TLS client cert, `POST /3/device/<token>` with `{"mdm":"<magic>"}`, `apns-topic`, `apns-push-type: mdm`, parses `apns-id` and the JSON `reason`.
-- **Fleet**: APNs mock for load tests; pushes triggered by reconcile cron.
+APNs acceptance is not device delivery or command acknowledgement. Missing or invalid `Retry-After` is represented as zero; retry policy belongs to the caller. An APNs 400 such as `BadDeviceToken` does not establish that an enrollment is inactive.
 
-## What we do better
+## Verification
 
-1. `push.Pusher` is an interface with a `Result` per enrollment that says whether the token is invalid and how long to back off (`Retry-After`), so the service can publish `PushTokenInvalid` and skip dead tokens instead of retrying forever. Record 0042 replaces the two booleans with a closed `Result.Outcome` that also distinguishes a refused request from a dead token.
-2. `push/apns` uses only `net/http` (HTTP/2 negotiated by TLS) with one client per topic, certificates fetched from a `CertStore` that can rotate, and certificate expiry surfaced as an error before the request.
-3. `push.Coalesce` collapses repeated pushes to the same enrollment inside a window; `push.Notifier` looks up push info from storage, sends, and publishes events, so callers push by enrollment id.
-4. `pushtest` provides a scripted fake `Pusher` and an in-process APNs server so every path (410, 429 with Retry-After, 400 reasons, 5xx) is testable offline.
+APNs tests cover status/reason mapping, per-topic clients and certificate expiry. Notifier and coalescing tests use scripted push fakes and an in-process APNs server.
 
-## Verified by
+## References
 
-1. `push/apns.TestStatusMapping`, `push.TestNotifierPublishesInvalidToken`, and from record 0042 `push/apns.TestClassifyEveryDocumentedReason`.
-2. `push/apns.TestPerTopicClientsAndExpiry`.
-3. `push.TestCoalesce`.
-4. `pushtest.TestServerScripting`.
+- [appleplatformservices/push](../../../appleplatformservices/push)
+- [appleplatformservices/push/apns](../../../appleplatformservices/push/apns)
+- [server/pushnotify](../../../server/pushnotify)
+- <https://developer.apple.com/documentation/devicemanagement/setting-up-push-notifications-for-your-device-management-customers>
+- <https://developer.apple.com/documentation/devicemanagement/dealing-with-inactive-managed-devices-and-invalid-push-tokens>
+- <https://developer.apple.com/documentation/usernotifications/sending-notification-requests-to-apns>
 
-## Rejected alternatives
+Reference source identifiers and paths (relative to the named project):
 
-- `sideshow/apns2`: fine library, but MDM needs only one request shape and certificate auth; a dependency for 60 lines of HTTP is not worth the surface.
-- `buford`: archived.
+- `micromdm/nanomdm@main`, `push/nanopush/*.go`, `push/buford/*.go`, `storage/pushcert.go`, `mdm/push.go`
+- `RobotsAndPencils/buford`
+- `sideshow/apns2`
+- `fleetdm/fleet@main`, `cmd/apple-apns-mock`, `server/mdm/apple/*push*`

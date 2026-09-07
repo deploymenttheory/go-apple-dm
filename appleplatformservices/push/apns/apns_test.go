@@ -91,9 +91,8 @@ func TestStatusMapping(t *testing.T) {
 	if len(reqs) != 5 || reqs[0].Token != "01" || reqs[0].Topic != "com.apple.mgmt.External.test" || reqs[0].PushType != "mdm" || reqs[0].Priority != "10" || reqs[0].Magic != "magic-ok" {
 		t.Fatalf("requests %+v", reqs)
 	}
-	// A 503 with no Retry-After reports zero, not an invented default: a
-	// caller must be able to tell a pause Apple asked for from one we
-	// assumed. apns.DefaultRetryAfter is there for a caller that wants a floor.
+	// An absent Retry-After yields zero. Callers can apply DefaultRetryAfter as
+	// their own retry floor.
 	srv.ScriptToken(busy, pushtest.Script{Status: 503})
 	res, _ = c.Push(ctx, []push.Target{target("busy", busy)})
 	if r := res[targets[3].ID]; r.Outcome != push.OutcomeRateLimited || r.RetryAfter != 0 {

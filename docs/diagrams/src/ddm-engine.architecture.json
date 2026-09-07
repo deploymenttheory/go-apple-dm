@@ -10,7 +10,7 @@
     ],
     "repository": {
       "url": "https://github.com/deploymenttheory/go-apple-dm",
-      "revision": "0e487dd17ae7dffcad8674c668ff59e56c73d8f3"
+      "revision": "a817270f13b4ef7a9b1d2895118981120546b3a2"
     },
     "views": [
       {
@@ -52,7 +52,7 @@
       "id": "adapters",
       "type": "backend",
       "label": "ddmadapter",
-      "sublabel": "inproc \u00b7 proxyclient",
+      "sublabel": "inproc · proxyclient",
       "pos": [
         40,
         110
@@ -90,7 +90,7 @@
       "id": "servicehook",
       "type": "backend",
       "label": "ddmsync.ServiceHook",
-      "sublabel": "a service.Hook",
+      "sublabel": "clear enrollment state",
       "pos": [
         40,
         410
@@ -101,7 +101,7 @@
       ],
       "sources": [
         {
-          "path": "mdmprotocol/ddm/clear.go",
+          "path": "server/ddmsync/servicehook.go",
           "label": "clear on check-in"
         }
       ]
@@ -110,7 +110,7 @@
       "id": "engine",
       "type": "backend",
       "label": "ddm.Engine",
-      "sublabel": "Handle \u00b7 Tokens",
+      "sublabel": "Handle · Tokens",
       "pos": [
         380,
         260
@@ -247,7 +247,7 @@
     {
       "id": "sqlstore",
       "type": "database",
-      "label": "ddm/sqlstore \u00b7 inmem",
+      "label": "ddm/sqlstore · inmem",
       "sublabel": "own migration set",
       "pos": [
         1020,
@@ -333,7 +333,7 @@
   "cards": [
     {
       "dot": "cyan",
-      "title": "Deliberately decoupled",
+      "title": "Transactional change records",
       "items": [
         "The engine writes change rows inside its transaction and never calls back into the notifier",
         "The notifier drains them on a 1s poll; the admin route wrapper Kicks it so the poll is not the only trigger"

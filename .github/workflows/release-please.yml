@@ -20,19 +20,11 @@ jobs:
       with:
         egress-policy: audit
 
-    # The org's release-please GitHub App rather than a personal token: the
-    # token is minted per run and expires in an hour, and it belongs to the
-    # org rather than to whoever created the PAT — a PAT dies with its
-    # owner's access and takes every repo's releases with it.
+    # The organization's release-please GitHub App mints a token per run,
+    # avoiding dependence on an individual PAT owner's continued access.
     #
-    # actions:write is the load-bearing permission. Tags pushed with the
-    # default GITHUB_TOKEN deliberately do not trigger workflows, which
-    # would leave every release tagged and unbuilt; the App can.
-    #
-    # continue-on-error keeps releases working where the App is not yet
-    # installed or its key is not provisioned: the next step falls back to
-    # the PAT and says so, because a silent fallback is how a repo ends up
-    # believing it uses the App when it never has.
+    # App credentials allow tag pushes to trigger release workflows.
+    # If the App is unavailable, the next step uses the configured PAT.
     - uses: actions/create-github-app-token@v3
       id: app-token
       if: ${{ vars.RP_APP_ID != '' }}
@@ -51,15 +43,8 @@ jobs:
 
     - uses: googleapis/release-please-action@45996ed1f6d02564a971a2fa1b5860e934307cf7 # v5.0.0
       with:
-        # No release-type here, deliberately. Setting one selects the action's
-        # single-package mode, which ignores release-please-config.json and
-        # .release-please-manifest.json entirely: the manifest's 0.1.0,
-        # bump-minor-pre-major, and the second package under server/ are all
-        # silently discarded, and a first release defaults to 1.0.0. That is
-        # how this project came to be tagged v1.0.0 and then v2.0.0 while it
-        # was still being written.
-        #
-        # Without it the action uses manifest mode, and config-file and
-        # manifest-file already default to the two files in this repository.
-        # The release type stays where it belongs, in the config.
+        # Omit release-type to use manifest mode for both modules. Setting it
+        # here selects single-package mode and bypasses the manifest's version
+        # and pre-1.0 settings. Release types belong in release-please-config.json;
+        # config-file and manifest-file use the default repository paths.
         token: ${{ steps.app-token.outputs.token || secrets.RELEASE_PLEASE_PAT }}

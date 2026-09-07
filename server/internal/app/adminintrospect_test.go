@@ -15,10 +15,8 @@ import (
 func TestAdminIntrospection(t *testing.T) {
 	a, m, _ := policyApp(t, nil)
 	srv := serve(t, a).URL
-	// A principal with no policy at all: introspection is authenticated but
-	// not policy-gated, because a caller needs it to interpret a 404 that is
-	// really a role split, and a policy that had to grant it first would make
-	// the explanation unreachable exactly when it is needed.
+	// Introspection requires authentication even when the principal has no policy
+	// grants.
 	tok := mintPrincipal(t, m, adminauth.Principal{Name: "nobody"})
 
 	t.Run("ConfigNeedsNoGrant", func(t *testing.T) {

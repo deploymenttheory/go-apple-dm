@@ -112,9 +112,8 @@ func TestDDMCommandTravelsTheCommandPath(t *testing.T) {
 
 }
 
-// The engine no longer calls back into the notifier, so the admin route
-// wrapper is what shortens the wait after a declarative change. It lives in
-// one place so a route added later cannot forget it.
+// The admin route wrapper requests a notifier drain after successful declarative
+// writes; the engine communicates changes through persistent rows.
 func TestAdminWriteKicksTheNotifier(t *testing.T) {
 	// With a fake clock the notifier's poll never fires, so the only thing
 	// that can start another drain is a kick. Each loop iteration parks on

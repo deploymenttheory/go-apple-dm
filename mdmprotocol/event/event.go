@@ -39,7 +39,7 @@ const (
 	UserAuthenticated  Type = "user-authenticated"  // UserAuthenticate digest accepted, AuthToken issued
 	UserAuthFailed     Type = "user-auth-failed"    // UserAuthenticate digest rejected or challenge expired
 
-	// ACME and attestation (phase 7).
+	// ACME and attestation events.
 
 	// ACMEChallengeValid is a device-attest-01 challenge that passed
 	// verification and policy.
@@ -53,15 +53,13 @@ const (
 	// on: a device that fails here is either faulty or not what it claims.
 	AttestationRejected Type = "attestation-rejected"
 
-	// Admin API (phase 8).
+	// Administrative API events.
 
 	// AdminAction is a mutating admin request that was allowed. Actor is the
 	// principal name and Data names the action, method, path, and the
 	// credential that acted, never the token and never the body.
 	AdminAction Type = "admin-action"
-	// AdminDenied is an admin request refused by authorization. Neither Fleet
-	// nor Zentral records a denial as an event, so neither can answer who
-	// probed what and was refused; this is that record (decision 0034).
+	// AdminDenied records an administrative request refused by authorization.
 	AdminDenied Type = "admin-denied"
 
 	// All subscribes to every type.
