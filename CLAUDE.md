@@ -1,59 +1,44 @@
 # go-apple-dm
 
-Pure Go library for the Apple MDM protocol and Declarative Device Management, plus a thin
-reference server. Module `github.com/deploymenttheory/go-apple-dm`, Go 1.27.
+Go libraries for Apple's MDM protocol and declarative device management, with a reference server.
+Read [CONTRIBUTING.md](CONTRIBUTING.md) for editorial and validation requirements and
+[docs/architecture.md](docs/architecture.md) for the implemented design.
 
-## Plan of record
+## Modules and dependencies
 
-- `docs/research/implementation_plan.md`: approved phased plan. Follow its phase order and exit criteria.
-- `docs/research/reference_projects.md`: the research every decision is founded on.
-- `docs/research/decisions/`: one decision record per feature, from `TEMPLATE.md`. No feature code
-  lands without one.
+The root module is `github.com/deploymenttheory/go-apple-dm`; `server/` is
+`github.com/deploymenttheory/go-apple-dm/server`. Both use Go 1.27. The server depends on the
+library. Library code and tests must not import the server. `go.work` supports local development.
+`internal/layout` enforces the tier constraints and explicit exceptions.
 
-## Modules
+Do not add a dependency on `deploymenttheory/go-sdk-appleservices`. NanoMDM, MicroMDM and
+related repositories under `third_party/refs` are read-only references, not code dependencies;
+`github.com/micromdm/plist` is the accepted exception. Consult relevant primary sources and
+implementation references when evaluating protocol behavior. Do not copy third-party code.
 
-Two: `github.com/deploymenttheory/go-apple-dm` at the root is the library, and
-`github.com/deploymenttheory/go-apple-dm/server` under `server/` is the reference
-server. The server depends on the library; nothing in the library may depend on the
-server, in production code or in tests, or neither module can be released. `go.work`
-covers local development. Every `make` target runs in both modules.
+## Generated files
 
-## Layout
+`make generate` uses the pinned `third_party/device-management` submodule. Never hand-edit
+`*.gen.go`, `schema/EXPORTED_IDENTIFIERS.lock` or `schema/GENERATED_FROM.json`; `make verify`
+checks deterministic regeneration and exported-name removals. Edit generator documentation
+at its source. Preserve Apple's verbatim descriptions and exact protocol identifiers.
 
-Packages sit in tiers and may import their own tier and every tier below, never above:
-foundation (`paging`, `clock`, `testpki`, `secrets`, `telemetry`) -> `schema/` ->
-`mdmprotocol/` -> `pki/` -> `appleplatformservices/` -> `storage/` -> `simulator/` -> `server/` ->
-app (`cmd/`, `internal/app`, `e2e/`). `internal/layout` asserts this in tests, because
-`go-lint.yml` runs golangci-lint with `--issues-exit-code=0` and cannot fail a build.
-See `docs/research/decisions/0044-repository-layout.md`.
+## Design and comments
 
-## Rules
+Use the current-design format in [docs/research/decisions/TEMPLATE.md](docs/research/decisions/TEMPLATE.md)
+for significant decisions. Integrate amendments without changing decision filenames or numbers.
+Explain behavior, contracts, rationale and limitations; omit implementation chronology and
+comparative claims. Keep package comments in `doc.go` with a concise summary, useful sections
+and references. Generated packages follow the corresponding layout in `doc.gen.go`.
 
-- Read at least two reference implementations before writing a feature (`make refs` clones them
-  under `third_party/refs/`, read-only). Never copy code from them.
-- Generated code lives only under `schema/` and is produced by `make generate` from the pinned
-  submodule `third_party/device-management`. Never hand-edit `*.gen.go`,
-  `schema/EXPORTED_IDENTIFIERS.lock`, or `schema/GENERATED_FROM.json`: all three are generated and
-  `make verify` holds them to it. `schema/ALLOWED_REMOVALS.md` is the one file there you do edit.
-- Coverage floor is 95% overall and per non-exempt package (`scripts/coverage-exempt.txt`).
-  Every exported function has a failing-path test.
-- Do not add a dependency on `deploymenttheory/go-sdk-appleservices`.
-- Do not add code dependencies on NanoMDM, MicroMDM, or their libraries; `github.com/micromdm/plist` is the only accepted exception. Their repositories are read-only references.
-- Conventional commits; release-please manages versions and `CHANGELOG.md`.
-- Every package has a `doc.go` holding its only package comment, laid out like `mdmprotocol/ddm/doc.go`: a
-  one-sentence "what", a `# Why` section (the need it meets, where it sits in the plan, what it
-  deliberately leaves out), and a `# References` section listing the decision records, plan
-  phase, internal docs, Apple documentation, schema files, and RFCs it rests on. Generated
-  `schema/*` packages get the same layout from `doc.gen.go` through the generator.
+## Checks
 
-## Commands
+- `make verify`: generation and exported-name guard.
+- `make test`: both modules with race detection and coverage.
+- `make testdb-up`, then `make test-storage`: SQL contract tests using the printed DSNs.
+- `make test-e2e`: simulator scenarios; `make fuzz-smoke`: bounded fuzz runs.
+- `make coverage`: 95% overall and per non-exempt package; see `scripts/coverage-exempt.txt`.
+- Lint each module with `--fix=false` when automatic rewriting is inappropriate.
 
-```bash
-make ci            # lint, verify, test, test-storage, test-e2e, fuzz-smoke, coverage
-make test          # unit tests with race detector and coverage
-make testdb-up     # PostgreSQL and MySQL in Docker; prints the TEST_*_DSN exports for test-storage
-make test-storage-perf  # 100k-row Clear timing gate on PostgreSQL, no race detector
-make generate      # regenerate schema packages
-make verify        # deterministic regeneration + rename guard
-make coverage      # enforce the 95% gate on collected profiles
-```
+Add failure-path coverage for exported functions. Use Conventional Commits; release-please owns
+release versions and changelogs. See `make help` for complete command requirements.

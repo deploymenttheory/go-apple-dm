@@ -14,7 +14,7 @@ const ProblemPrefix = "urn:ietf:params:acme:error:"
 // section 6.7 that a device-attest-01 server can actually reach, plus
 // badAttestationStatement from the ACME device attestation draft.
 const (
-	// ProblemAccountDoesNotExist is a kid naming an account we do not have.
+	// ProblemAccountDoesNotExist indicates that kid names an unknown account.
 	ProblemAccountDoesNotExist = "accountDoesNotExist"
 	// ProblemBadCSR is a certificate request the server will not sign.
 	ProblemBadCSR = "badCSR"
@@ -38,10 +38,10 @@ const (
 	ProblemRejectedIdentifier = "rejectedIdentifier"
 	// ProblemUnauthorized is a request the account may not make.
 	ProblemUnauthorized = "unauthorized"
-	// ProblemUnsupportedIdentifier is an identifier type we do not issue
-	// for.
+	// ProblemUnsupportedIdentifier indicates an identifier type the server does not
+	// issue for.
 	ProblemUnsupportedIdentifier = "unsupportedIdentifier"
-	// ProblemServerInternal is our fault.
+	// ProblemServerInternal indicates a server-side failure.
 	ProblemServerInternal      = "serverInternal"
 	ProblemBadRevocationReason = "badRevocationReason"
 	ProblemAlreadyRevoked      = "alreadyRevoked"
@@ -59,8 +59,8 @@ type Problem struct {
 	// Algorithms is the accepted set, sent with badSignatureAlgorithm as
 	// RFC 8555 section 6.2 requires.
 	Algorithms []string `json:"algorithms,omitempty"`
-	// wrapped carries the cause for the server log. It never reaches the
-	// device: a client learns the shape of the fault, not our internals.
+	// wrapped retains the internal cause for logging while the response exposes
+	// only the protocol problem.
 	wrapped error
 }
 

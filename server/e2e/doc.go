@@ -1,25 +1,24 @@
 //go:build e2e
 
-// Package e2e runs the named end-to-end scenarios against a real HTTP
-// server built from the library, with the device simulator as the client.
+// Package e2e runs named protocol scenarios against the assembled reference
+// server and device simulator.
 //
-// # Why
+// # Design
 //
-// Unit and contract suites prove each package on its own; the scenarios in
-// docs/testing/e2e-scenarios.md prove the protocol paths Apple documents
-// end to end: service core, a storage backend chosen by E2E_STORE (sqlite by
-// default; postgres or inmem), HTTP handlers with Mdm-Signature
-// verification, SCEP and OTA enrollment, push through a fake APNs, and the
-// declarative management engine in-process or, for E2E-010, split across
-// our own mdm and ddm roles with the ddm role in a container built from
-// this repository. The package is a test-only package behind the e2e build
-// tag and is run by "make test-e2e".
+// The e2e build tag enables these tests. E2E_STORE selects SQLite, PostgreSQL or
+// in-memory MDM storage; SQLite is the default. Scenarios exercise signed
+// requests, enrollment, commands, push fakes, declarative management,
+// administration and optional security controls. The split-deployment scenario
+// can use a ddm container built from this repository.
+//
+// Run make test-e2e. External database and container cases require their
+// documented environment settings and can skip when absent. Simulator-based
+// results do not establish physical Apple-device interoperability.
 //
 // # References
 //
-//   - E2E scenarios: docs/testing/e2e-scenarios.md
-//   - Plan of record: docs/research/implementation_plan.md (exit criteria per phase)
-//   - Threat model: docs/security/threat-model.md (each control names its e2e proof)
-//   - Decision record 0025: docs/research/decisions/0025-reference-server-roles-and-container.md
+//   - E2E scenarios: https://github.com/deploymenttheory/go-apple-dm/blob/main/docs/testing/e2e-scenarios.md
+//   - Threat model: https://github.com/deploymenttheory/go-apple-dm/blob/main/docs/security/threat-model.md (each control names its e2e proof)
+//   - Decision record 0025: https://github.com/deploymenttheory/go-apple-dm/blob/main/docs/research/decisions/0025-reference-server-roles-and-container.md
 //   - Container and databases: scripts/testdb.sh (up, ddm-up)
 package e2e

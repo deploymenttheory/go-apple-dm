@@ -185,10 +185,8 @@ func (s *acmeService) policy() (acme.Policy, error) {
 	case "", ACMEPolicyAny:
 		return acme.AllowAll(), nil
 	case ACMEPolicyDEP, ACMEPolicySIP:
-		// Ownership according to Apple: the device has to be assigned to
-		// this organisation in the device enrollment service. Without that
-		// store the policy could never say yes, so it is a configuration
-		// error now rather than a server error on every enrollment.
+		// The DEP ownership policy requires a device store. Reject missing
+		// configuration during Build rather than on each enrollment request.
 		if s.app.dep == nil {
 			return nil, fmt.Errorf(
 				"%w: %s=%s needs the device enrollment service, which the %s role does not run",
@@ -320,14 +318,12 @@ func (s *acmeService) credentialHandler() http.Handler {
 	})
 }
 
-// handler is the admin API for ACME, mounted under the admin prefix:
+// handler exposes ACME certificate and order metadata under the admin prefix:
 //
 //	GET /acme/certificates?serial=&udid=&account=&cursor=
 //	GET /acme/orders?account=&cursor=
 //
-// The certificate listing is the operational question this phase answers:
-// which hardware holds which identity, according to Apple rather than
-// according to what the device told us.
+// Certificate records include properties verified during attestation.
 func (s *acmeService) handler() http.Handler {
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /acme/certificates", func(w http.ResponseWriter, r *http.Request) {

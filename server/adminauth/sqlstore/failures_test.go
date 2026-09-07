@@ -75,9 +75,7 @@ func TestWriteFailuresSurface(t *testing.T) {
 	}
 }
 
-// A closed pool must not be mistaken for a missing row: ErrNotFound would tell
-// a caller the principal does not exist when the truth is that storage is
-// unreachable.
+// A closed pool returns a storage error, not ErrNotFound.
 func TestClosedPoolIsNotNotFound(t *testing.T) {
 	ctx := context.Background()
 	db, err := sql.Open("sqlite", sqlite.DSN(filepath.Join(t.TempDir(), "n.db"), sqlite.Options{}))

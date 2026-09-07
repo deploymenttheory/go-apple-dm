@@ -105,8 +105,7 @@ type LeafOptions struct {
 	// PublicKey is the attested key. Required: an attestation exists to
 	// speak for a key.
 	PublicKey crypto.PublicKey
-	// NotBefore and NotAfter default to a window around now. Apple's leaves
-	// live about ninety days.
+	// NotBefore and NotAfter default to a validity window around the current time.
 	NotBefore, NotAfter time.Time
 	// Extra extensions are added verbatim, for tests that need a malformed
 	// or unexpected one.

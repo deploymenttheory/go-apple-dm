@@ -315,8 +315,8 @@ func (a *Assigner) record(ctx context.Context, profileUUID string, batch []strin
 		}
 	}
 	if a.cfg.ReadBack {
-		// Every serial of the batch: Apple's profile_status is the truth
-		// for NOT_ACCESSIBLE and FAILED devices too.
+		// Inspect every serial: profile_status also applies to NOT_ACCESSIBLE and
+		// FAILED outcomes.
 		return a.readBack(ctx, batch)
 	}
 	return nil

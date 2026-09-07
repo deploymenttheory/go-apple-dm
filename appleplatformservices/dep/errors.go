@@ -85,8 +85,9 @@ const (
 	CodeMagicInvalid        = "MAGIC_INVALID"
 	CodeSupportEmailInvalid = "SUPPORT_EMAIL_INVALID"
 	CodeSupportPhoneInvalid = "SUPPORT_PHONE_INVALID"
-	// CodeSkipKeyInvalid is ours: Apple's page does not name the code for
-	// an unknown skip_setup_items entry, so the local validator uses this.
+	// CodeSkipKeyInvalid is the local validation code for an unknown
+	// skip_setup_items entry. Apple's documentation does not specify a code for
+	// this case.
 	CodeSkipKeyInvalid = "SKIP_SETUP_ITEM_INVALID"
 )
 

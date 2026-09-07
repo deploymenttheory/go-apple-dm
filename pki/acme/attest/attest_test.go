@@ -284,9 +284,8 @@ func TestVerifyFreshness(t *testing.T) {
 }
 
 func TestVerifyBindsTheAttestedKey(t *testing.T) {
-	// Apple's guidance is to retain the public key in the attestation leaf
-	// for a later validation. Without this check anyone who observes a
-	// valid attestation could have an unrelated key certified.
+	// The CSR key must match the attestation leaf key; a valid attestation for
+	// another key cannot authorize issuance.
 	ca := newCA(t)
 	attested := key(t)
 	other := key(t)
@@ -321,8 +320,7 @@ func TestVerifyChain(t *testing.T) {
 	ca := newCA(t)
 	k := key(t)
 	t.Run("ForeignAuthority", func(t *testing.T) {
-		// A chain that verifies against its own root must not verify
-		// against ours.
+		// A chain verified under another root must fail under the configured roots.
 		other := newCA(t)
 		raw, err := other.ObjectForToken(token, macProperties(), k.Public())
 		if err != nil {
@@ -550,7 +548,7 @@ func TestAttestTestCAErrors(t *testing.T) {
 	if _, err := ca.ObjectForToken(token, attest.Properties{}, nil); !errors.Is(err, attesttest.ErrCA) {
 		t.Fatalf("no key = %v", err)
 	}
-	// A chain from another authority, signed by a root we do not trust.
+	// A chain signed by an untrusted authority.
 	k := key(t)
 	other := newCA(t)
 	leaf, err := ca.Leaf(attesttest.LeafOptions{

@@ -24,7 +24,7 @@
           "depapi",
           "assignapi"
         ],
-        "note": "One background worker: each pass syncs devices, then converges assignments."
+        "note": "The DEP worker syncs device state and reconciles profile assignments."
       }
     ],
     "legend": {

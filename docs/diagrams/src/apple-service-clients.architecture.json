@@ -23,18 +23,18 @@
       },
       {
         "id": "auth",
-        "label": "Three auth schemes",
+        "label": "Service authentication",
         "focus": [
           "depclient",
           "axmclient",
           "gdmfclient"
         ],
-        "note": "Each Apple service authenticates differently; none of it is shared."
+        "note": "DEP uses OAuth 1.0a, axm uses ES256 assertions, and GDMF is public."
       }
     ],
     "repository": {
       "url": "https://github.com/deploymenttheory/go-apple-dm",
-      "revision": "0e487dd17ae7dffcad8674c668ff59e56c73d8f3"
+      "revision": "a817270f13b4ef7a9b1d2895118981120546b3a2"
     }
   },
   "components": [
@@ -84,7 +84,7 @@
       "id": "depclient",
       "type": "backend",
       "label": "dep.Client",
-      "sublabel": "sessions \u00b7 cursors \u00b7 token PKI",
+      "sublabel": "sessions · cursors · token PKI",
       "pos": [
         340,
         110.0
@@ -108,7 +108,7 @@
       "id": "axmclient",
       "type": "backend",
       "label": "axm.Client",
-      "sublabel": "paging \u00b7 activities",
+      "sublabel": "paging · activities",
       "pos": [
         340,
         260.0
@@ -149,7 +149,7 @@
       "id": "syncer",
       "type": "backend",
       "label": "dep.Syncer",
-      "sublabel": "cursor expiry \u00b7 dedupe",
+      "sublabel": "cursor expiry · dedupe",
       "pos": [
         640,
         110.0
@@ -203,7 +203,7 @@
       "id": "depstore",
       "type": "database",
       "label": "dep.Store",
-      "sublabel": "accounts \u00b7 devices \u00b7 assignments",
+      "sublabel": "accounts · devices · assignments",
       "pos": [
         940,
         110.0
@@ -280,7 +280,7 @@
   "cards": [
     {
       "dot": "cyan",
-      "title": "Three services, three auth schemes",
+      "title": "Service authentication",
       "items": [
         "DEP uses OAuth 1.0a with a server token from the portal exchange",
         "Business Manager uses an ES256 client assertion",
@@ -293,7 +293,7 @@
       "items": [
         "The syncer pages by cursor and handles cursor expiry by refetching",
         "The assigner is state-driven and reads back what Apple recorded",
-        "A 429 backs the account off rather than hammering the endpoint"
+        "A 429 delays retries according to the service response"
       ]
     },
     {

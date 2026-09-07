@@ -78,8 +78,7 @@ func newWebhook(t *testing.T, cfg eventsink.WebhookConfig) (event.Handler, *rece
 	return h, rec
 }
 
-// The envelope a MicroMDM or NanoMDM receiver expects, minus the one field
-// this package refuses to send.
+// Verify the MicroMDM-compatible envelope and omission of raw_payload.
 func TestWebhookSendsTheMicroMDMEnvelope(t *testing.T) {
 	h, rec := newWebhook(t, eventsink.WebhookConfig{Clock: clock.Real{}})
 	id := mdm.EnrollmentID{Channel: mdm.ChannelDevice, ID: "UDID-1"}
@@ -122,8 +121,7 @@ func TestWebhookSendsTheMicroMDMEnvelope(t *testing.T) {
 	}
 }
 
-// The whole reason the envelope differs: what NanoMDM and MicroMDM put in
-// raw_payload must not be on the wire at all.
+// Raw check-in payloads must not be exported to webhook receivers.
 func TestWebhookNeverSendsSecrets(t *testing.T) {
 	h, rec := newWebhook(t, eventsink.WebhookConfig{Clock: clock.Real{}})
 	for _, e := range events() {
@@ -177,8 +175,7 @@ func TestWebhookSignsTheBody(t *testing.T) {
 	}
 }
 
-// NanoMDM gives up after one attempt. A receiver that is briefly down should
-// not cost an audit record.
+// Retry transient receiver failures within the configured attempt limit.
 func TestWebhookRetriesThenSucceeds(t *testing.T) {
 	rec := &receiver{fail: 2}
 	srv := httptest.NewServer(rec.handler())

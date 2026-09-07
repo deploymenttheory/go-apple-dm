@@ -107,7 +107,7 @@
       "id": "generatedfrom",
       "type": "database",
       "label": "GENERATED_FROM.json",
-      "sublabel": "commit \u00b7 versions \u00b7 digest",
+      "sublabel": "commit · versions · digest",
       "stage": 1,
       "row": 2,
       "width": 150
@@ -160,16 +160,16 @@
       "from": "yaml",
       "to": "generatedfrom",
       "variant": "default",
-      "label": "commit \u00b7 digest",
+      "label": "commit · digest",
       "classification": "provenance"
     }
   ],
   "cards": [
     {
       "dot": "cyan",
-      "title": "Never hand-edited",
+      "title": "Generated output",
       "items": [
-        "Every file under schema/ is emitted by make generate from the pinned submodule",
+        "Generated schema files come from make generate; support code and removal policy are handwritten",
         "GENERATED_FROM.json is emitted too, so the record of which Apple commit the tree came from cannot drift from the tree",
         "make verify regenerates and fails if the checked-in output differs"
       ]

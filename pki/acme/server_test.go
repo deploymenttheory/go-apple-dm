@@ -166,10 +166,8 @@ func TestNew(t *testing.T) {
 // TestSignedRequest covers RFC 8555 section 6: everything the server checks
 // about a JWS before an endpoint sees it.
 func TestSignedRequest(t *testing.T) {
-	// URLHeaderIsThePublishedURL proves the expected url is the one the
-	// directory published rather than one rebuilt from the request. step-ca
-	// builds it from r.Host and the path, so a proxy that rewrites Host
-	// breaks it; nanoca additionally requires r.TLS to be set.
+	// URLHeaderIsThePublishedURL checks the JWS URL against the published directory
+	// URL.
 	t.Run("URLHeaderIsThePublishedURL", func(t *testing.T) {
 		f := newFixture(t)
 		acct := f.register()
@@ -191,11 +189,8 @@ func TestSignedRequest(t *testing.T) {
 		}
 	})
 
-	// ProxyHostIsIgnored is the deployment case: TLS is terminated at the
-	// edge and the last hop rewrites Host, so nothing about the connection
-	// may be trusted. The same request that succeeds here fails on nanoca,
-	// which insists on r.TLS, and on step-ca, which compares against
-	// r.Host.
+	// ProxyHostIsIgnored verifies URL validation when a TLS proxy rewrites the backend
+	// Host.
 	t.Run("ProxyHostIsIgnored", func(t *testing.T) {
 		f := newFixture(t)
 		acct := f.register()
@@ -375,8 +370,7 @@ func TestSignedRequest(t *testing.T) {
 	})
 
 	t.Run("StoredAccountKeyIsUnusable", func(t *testing.T) {
-		// A record the server itself wrote cannot be malformed, so this is
-		// our fault when it happens and must not look like the client's.
+		// Malformed stored records must be reported as server errors.
 		f := newFixture(t)
 		acct := f.register()
 		record, err := f.store.GetAccount(t.Context(), acct.id)

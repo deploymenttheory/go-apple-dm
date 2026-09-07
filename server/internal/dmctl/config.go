@@ -33,9 +33,8 @@ type Context struct {
 	TokenEnv string `json:"token_env,omitempty"`
 	// TokenFile names a file holding the credential.
 	TokenFile string `json:"token_file,omitempty"`
-	// Token is an inlined credential. Writing one requires an explicit flag
-	// and prints a warning; it exists because some environments have nowhere
-	// better, not because it is a good idea.
+	// Token stores an inline credential. Writing it requires explicit opt-in and
+	// emits a warning; token_env and token_file are the default alternatives.
 	Token string `json:"token,omitempty"`
 }
 

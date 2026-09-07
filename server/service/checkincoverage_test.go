@@ -9,10 +9,9 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/schema/checkin"
 )
 
-// knownUnhandledCheckin lists message types the generator emits that the
-// service deliberately does not act on, each with the reason. It is empty, and
-// an entry is a decision rather than a shrug: answering a check-in Apple
-// defines with "unsupported message" is a 400 to a real device.
+// knownUnhandledCheckin records generated messages intentionally unsupported by
+// the service. Each entry requires a reason; the current set is empty. The test
+// checks real decoder and dispatcher behavior.
 var knownUnhandledCheckin = map[string]string{}
 
 // TestEveryCheckinMessageIsHandled pairs the generated check-in registry

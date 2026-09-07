@@ -12,9 +12,8 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/telemetry/telemetrytest"
 )
 
-// A fake that silently records nothing would make every assertion built on
-// it pass vacuously — including the one that proves a device token never
-// reaches telemetry. So the recorder is tested directly.
+// Verify recorder behavior directly so missing instrumentation cannot make
+// disclosure assertions pass without measurements.
 func TestRecorderCapturesEveryInstrumentKind(t *testing.T) {
 	t.Parallel()
 	rec := telemetrytest.NewRecorder()

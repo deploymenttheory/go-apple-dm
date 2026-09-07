@@ -12,12 +12,11 @@ import (
 	"time"
 )
 
-// OAuth2 is the apple-oauth2 flow: we are the OAuth 2 authorization server
-// for a public client. The device builds the authorization request from
-// the 401 parameters (adding login_hint), the person authenticates on the
-// authorization page, Grant issues a code and redirects (308) to the
-// redirect-url with code and state, and the token endpoint exchanges the
-// code (or a refresh token) for the bearer used on the second POST.
+// OAuth2 serves the apple-oauth2 authorization-code flow for a public client.
+// The device builds an authorization request from the challenge parameters.
+// After user authentication, Grant issues a code and redirects to the configured
+// redirect URL with code and state. The token endpoint exchanges a code or
+// refresh token for the reusable access bearer.
 type OAuth2 struct {
 	AuthorizationURL string
 	TokenURL         string
@@ -49,8 +48,8 @@ type AuthorizationRequest struct {
 	Scope     string
 }
 
-// ParseAuthorization validates the device's authorization request:
-// response_type=code, our client id and redirect URI, a state.
+// ParseAuthorization validates response_type=code, the configured client ID and
+// redirect URI, and a nonempty state.
 func (o *OAuth2) ParseAuthorization(r *http.Request) (*AuthorizationRequest, error) {
 	q := r.URL.Query()
 	switch {

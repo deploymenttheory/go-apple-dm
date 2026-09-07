@@ -11,7 +11,7 @@
     "views": [
       {
         "id": "enroll",
-        "label": "Becoming manageable",
+        "label": "Enrollment activation",
         "focus": [
           "unknown",
           "authenticated",
@@ -166,7 +166,7 @@
   "cards": [
     {
       "dot": "emerald",
-      "title": "Two check-ins to become manageable",
+      "title": "Enrollment activation",
       "items": [
         "Authenticate upserts the enrollment and pins the certificate fingerprint",
         "TokenUpdate stores the push token and is what actually enables the enrollment"
@@ -176,7 +176,7 @@
       "dot": "amber",
       "title": "Re-enrollment",
       "items": [
-        "A different certificate for a known enrollment is a policy decision, allowed by default",
+        "Changed certificates require policy: library allows by default; reference server denies",
         "The upsert clears push info, unlock and bootstrap tokens, the pin, and the pending queue"
       ]
     }

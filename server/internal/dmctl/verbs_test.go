@@ -333,8 +333,7 @@ func TestDeclarationVerbs(t *testing.T) {
 	})
 }
 
-// A 404 that is really a role split becomes a sentence rather than a mystery.
-// No reference server has roles, so none of their CLIs needs this.
+// A route missing from the current role receives a role-specific explanation.
 func TestNotFoundExplainsRole(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if strings.HasSuffix(r.URL.Path, "/config") {

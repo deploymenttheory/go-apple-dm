@@ -1,21 +1,16 @@
-// Package inproc adapts a ddm.Engine to service.DMHandler for a server that
-// runs the mdm and ddm roles in one process.
+// Package inproc adapts a local ddm.Engine to service.DMHandler.
 //
-// # Why
+// # Design
 //
-// The service core answers a DeclarativeManagement check-in through one
-// function type, service.DMHandler, whatever sits behind it. This package
-// is the single-process binding: it maps the check-in's Endpoint and Data
-// to Engine.Handle and turns the engine's errors into the service codes the
-// HTTP layer already maps (400 for a malformed endpoint or status body, 404
-// for an unknown declaration, 500 otherwise). It is the counterpart of
-// proxyclient and proxyserver: the same check-in produces the same body and
-// status through either, which proxyserver's parity test pins.
+// The adapter maps the check-in's Endpoint and Data to the engine and returns
+// the protocol response: JSON for reads, empty 200 for accepted status, 404 for
+// an unknown declaration and 400 for malformed input. Engine failures map to
+// internal service errors. Parity tests compare the same operations with the
+// split-process adapters.
 //
 // # References
 //
-//   - Decision record 0023: docs/research/decisions/0023-ddm-adapters-and-wire-contract.md
-//   - Plan of record: docs/research/implementation_plan.md (phase 5)
+//   - Decision record 0023: https://github.com/deploymenttheory/go-apple-dm/blob/main/docs/research/decisions/0023-ddm-adapters-and-wire-contract.md
 //   - Apple: https://developer.apple.com/documentation/devicemanagement/declarativemanagementrequest
 //   - Schema: third_party/device-management/mdm/checkin/declarativemanagement.yaml
 package inproc

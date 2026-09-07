@@ -10,7 +10,7 @@
     ],
     "repository": {
       "url": "https://github.com/deploymenttheory/go-apple-dm",
-      "revision": "0e487dd17ae7dffcad8674c668ff59e56c73d8f3"
+      "revision": "a817270f13b4ef7a9b1d2895118981120546b3a2"
     },
     "views": [
       {
@@ -44,7 +44,7 @@
           "pool",
           "featuremig"
         ],
-        "note": "Five feature stores share one *sql.DB and version their schema independently."
+        "note": "Domain stores and protocol security state share one SQL pool with separate migrations."
       },
       {
         "id": "proof",
@@ -86,7 +86,7 @@
       "type": "security",
       "label": "secrets.Provider",
       "sublabel": "where keys come from",
-      "tag": "static \u00b7 env \u00b7 dir \u00b7 chain",
+      "tag": "static · env · dir · chain",
       "pos": [
         40,
         410
@@ -167,7 +167,7 @@
       "type": "database",
       "label": "Sealed columns",
       "sublabel": "row-bound AAD",
-      "tag": "push key \u00b7 DEP token",
+      "tag": "push key · DEP token",
       "pos": [
         380,
         560
@@ -205,7 +205,7 @@
       "id": "dialect",
       "type": "backend",
       "label": "Dialect",
-      "sublabel": "placeholders \u00b7 locking",
+      "sublabel": "placeholders · locking",
       "pos": [
         700,
         260
@@ -228,7 +228,7 @@
       "type": "database",
       "label": "Feature stores",
       "sublabel": "own migration set each",
-      "tag": "acme \u00b7 adminauth \u00b7 audit \u00b7 ddm \u00b7 dep",
+      "tag": "acme · adminauth · audit · ddm · dep",
       "pos": [
         700,
         410
@@ -261,7 +261,7 @@
     {
       "id": "sqlbackends",
       "type": "database",
-      "label": "sqlite \u00b7 postgres \u00b7 mysql",
+      "label": "sqlite · postgres · mysql",
       "sublabel": "each supplies a Dialect",
       "pos": [
         1020,
@@ -417,7 +417,7 @@
   "cards": [
     {
       "dot": "cyan",
-      "title": "One contract, five backends",
+      "title": "Shared backend contracts",
       "items": [
         "In-memory, SQLite (pure Go), PostgreSQL and MySQL all run the same suite",
         "A Failing wrapper injects an error by method name for failing-path tests"
@@ -425,10 +425,10 @@
     },
     {
       "dot": "rose",
-      "title": "Errors are sentinels",
+      "title": "Sealing boundary",
       "items": [
-        "ErrNotFound, ErrDisabled, ErrConflict and ErrInvalid are the whole vocabulary",
-        "A driver's unique-violation is mapped to ErrConflict by the Dialect"
+        "Selected secret columns use row-bound AES-256-GCM",
+        "Raw check-in records can contain unsealed secrets; protect database and backups"
       ]
     }
   ]

@@ -74,16 +74,14 @@ const (
 	KeyTypeRSA = "RSA"
 )
 
-// ACME describes the com.apple.security.acme payload: the device generates
-// a key, obtains a certificate for it from an ACME server, and uses the
-// result as its identity.
+// ACME configures the com.apple.security.acme identity payload. The device
+// generates a key and requests a certificate from the selected ACME server.
+// HardwareBound and Attest select Secure Enclave key generation and Managed
+// Device Attestation when supported.
 //
-// This is the alternative to SCEP, and the better one where the hardware
-// allows it. A SCEP identity is authenticated by a challenge password that
-// has to be carried in the profile; an attested ACME identity is a key the
-// Secure Enclave generated and that Apple's servers vouch for, so the
-// profile carries a client identifier rather than a secret that issues
-// certificates to whoever holds it.
+// The client identifier authorizes an issuance attempt and must be protected. An
+// attested key and verified device properties still require the server's
+// admission policy.
 type ACME struct {
 	// DirectoryURL is the ACME directory, which must use https.
 	DirectoryURL string
@@ -101,9 +99,9 @@ type ACME struct {
 	// Attest asks the device for an attestation of the key and of the
 	// hardware, which the ACME server verifies. Requires HardwareBound.
 	Attest bool
-	// Subject, SubjectAltName, UsageFlags, and ExtendedKeyUsage are what
-	// the device asks for. Apple states the server may override or ignore
-	// them, and ours sets the subject itself.
+	// Subject, SubjectAltName, UsageFlags and ExtendedKeyUsage express the device's
+	// requested certificate properties. Apple permits the server to override them;
+	// the reference server selects the subject.
 	Subject          pkix.Name
 	SubjectAltName   *profiles.ACMECertificateSubjectAltName
 	UsageFlags       *int64

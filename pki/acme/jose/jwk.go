@@ -26,9 +26,8 @@ const (
 	curveP521 = "P-521"
 )
 
-// minRSABits is the shortest RSA modulus this package will verify with. An
-// ACME account or certificate key below it is not an interoperability
-// problem to be worked around, it is a key we decline to trust.
+// minRSABits is the minimum accepted RSA modulus size for account and
+// certificate keys.
 const minRSABits = 2048
 
 // JWK is a public key in JSON Web Key form, holding only the members RFC
@@ -64,7 +63,7 @@ func curveByName(name string) (elliptic.Curve, int, bool) {
 	}
 }
 
-// curveName is the inverse of curveByName for the curves we support.
+// curveName returns the JWK name of a supported curve, reversing curveByName.
 func curveName(c elliptic.Curve) (string, int, bool) {
 	switch c {
 	case elliptic.P256():
@@ -78,9 +77,9 @@ func curveName(c elliptic.Curve) (string, int, bool) {
 	}
 }
 
-// JWKFromPublic converts an EC (P-256, P-384 or P-521) or RSA public key
-// into its JWK form. Any other key type, an EC key on a curve we do not
-// support, and an RSA key below minRSABits are ErrKey.
+// JWKFromPublic converts supported EC (P-256, P-384 or P-521) and RSA public
+// keys to JWK. Unsupported key types/curves and RSA moduli below minRSABits
+// return ErrKey.
 func JWKFromPublic(pub crypto.PublicKey) (*JWK, error) {
 	switch k := pub.(type) {
 	case *ecdsa.PublicKey:
@@ -132,7 +131,7 @@ func fixedWidth(v *big.Int, size int) ([]byte, error) {
 	return v.FillBytes(make([]byte, size)), nil
 }
 
-// checkRSASize rejects a modulus we consider too short to trust.
+// checkRSASize rejects RSA moduli shorter than minRSABits.
 func checkRSASize(k *rsa.PublicKey) error {
 	if k.N == nil || k.N.Sign() <= 0 {
 		return fmt.Errorf("%w: empty RSA modulus", ErrKey)

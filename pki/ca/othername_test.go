@@ -47,7 +47,7 @@ func sanCert(value []byte) *x509.Certificate {
 	return &x509.Certificate{Extensions: []pkix.Extension{{Id: sanOID, Value: value}}}
 }
 
-// testSigner returns a signer over a throwaway CA.
+// testSigner returns a signer backed by a temporary test CA.
 func testSigner(t *testing.T) *ca.Local {
 	t.Helper()
 	cert, key, err := ca.NewSelfSigned(ca.SelfSignedOptions{})

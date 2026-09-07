@@ -1,20 +1,17 @@
-// Package adminclient is the typed HTTP client dmctl uses against the
-// reference server's admin API.
+// Package adminclient implements dmctl's internal HTTP access to the reference
+// server admin API.
 //
-// # Why
+// # Design
 //
-// It exists so the CLI has one place that knows about bearer tokens, error
-// bodies, and cursors, and so those are testable without a process. Three
-// properties matter, and each answers something a reference CLI got wrong:
-// a response body is handed back byte for byte so canonical JSON survives to
-// jq, where nanohubctl re-indents it; cursors are followed on request, where
-// none of the reference CLIs paginate at all; and a redirect is refused, so a
-// bearer token cannot be replayed to a host the operator did not name.
+// The client centralizes bearer authentication, bounded response reads, typed
+// error handling and cursor iteration. Response bodies remain unchanged for
+// machine-readable CLI output. Redirects are refused to keep credentials bound
+// to the selected destination. Callers choose whether to fetch one page or
+// iterate, and cancellation propagates through requests.
 //
 // # References
 //
-//   - Decision record: docs/research/decisions/0035-dmctl-structure-and-credentials.md
-//   - Decision record: docs/research/decisions/0034-admin-api-and-authorization.md
-//   - Plan of record: docs/research/implementation_plan.md (phase 8)
+//   - Decision record: https://github.com/deploymenttheory/go-apple-dm/blob/main/docs/research/decisions/0035-dmctl-structure-and-credentials.md
+//   - Decision record: https://github.com/deploymenttheory/go-apple-dm/blob/main/docs/research/decisions/0034-admin-api-and-authorization.md
 //   - RFC 6750: bearer token usage
 package adminclient

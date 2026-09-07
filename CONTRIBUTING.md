@@ -1,17 +1,51 @@
-# Contribution
+# Contributing
 
-Thanks for considering contributing to this project! We are really glad you are reading this, because we need volunteer developers to help this project come to fruition.
+Report bugs and propose changes through the [issue templates](https://github.com/deploymenttheory/go-apple-dm/issues/new/choose).
+Follow the [code of conduct](CODE_OF_CONDUCT.md). Report vulnerabilities through the process in
+[SECURITY.md](SECURITY.md).
 
-Please note we have a code of conduct, please follow it in all your interactions with the project.
+## Development and validation
 
-## Issues
+Use Go 1.27 and initialize the pinned Apple schema with `git submodule update --init`.
+The workspace contains two modules: the root library and `server`. The library must not import
+the server, including in tests. The package import constraints are documented in
+[architecture.md](docs/architecture.md) and enforced by `internal/layout`.
 
-If you find any bugs, please file an issue in the [GitHub issues][GitHubIssues] page. Please fill out the provided template with the appropriate information.
+Run checks appropriate to the change. `make verify` checks generated output; `make test` runs
+both modules with the race detector. Storage changes require the shared contract suite and
+SQL integration tests. Protocol changes require relevant simulator scenarios and failure-path
+tests. `make help` describes the database, end-to-end, fuzz and coverage targets. The coverage
+floor is 95% overall and per non-exempt package; exemptions are listed in
+[scripts/coverage-exempt.txt](scripts/coverage-exempt.txt).
 
-If you are taking the time to mention a problem, even a seemingly minor one, it is greatly appreciated, and a totally valid contribution to this project. Thank you!
+For a review that must preserve formatting, run golangci-lint with `--fix=false` in each module.
+The checked-in configuration otherwise enables automatic fixes.
 
-<!-- References -->
+## Documentation and design
 
-<!-- Local -->
-[GitHubIssues]: <https://github.com/segraef/Template/issues>
-[Contributing]: CONTRIBUTING.md
+Describe current behavior in direct, neutral English. Explain contracts, operational requirements,
+limitations and useful design rationale. Distinguish Apple protocol requirements from project
+policy. Use Apple's enrollment terminology; preserve exact Go identifiers and wire keys.
+Avoid development milestones, competitive claims and comments that repeat the code.
+
+Use a package comment in `doc.go`: a `Package` summary, relevant behavior and constraints,
+and useful references. Add `# Design` or other sections when they improve navigation. Function
+comments describe inputs, results, errors and significant side effects or concurrency requirements.
+Do not paraphrase verbatim Apple schema descriptions.
+
+Document significant design decisions using the [decision template](docs/research/decisions/TEMPLATE.md).
+Integrate amendments into the current decision and preserve its number and filename. Update
+[architecture.md](docs/architecture.md), related guides and diagram sources when behavior changes.
+Diagram JSON sources and regeneration instructions are in [docs/diagrams](docs/diagrams/README.md).
+
+Edit project-authored generated comments in `internal/schemagen`, then run `make generate` and
+`make verify`. Do not hand-edit `*.gen.go`, `schema/EXPORTED_IDENTIFIERS.lock` or
+`schema/GENERATED_FROM.json`. Record intentional exported-name removals in
+[schema/ALLOWED_REMOVALS.md](schema/ALLOWED_REMOVALS.md).
+
+## Pull requests
+
+Use Conventional Commit titles. Explain the problem, resulting behavior, relevant tradeoffs
+and validation. Link related issues and design decisions. Keep dependencies justified and
+include migration requirements for persistent or protocol state. Release-please manages
+versions and changelogs; ordinary documentation changes do not change release metadata.

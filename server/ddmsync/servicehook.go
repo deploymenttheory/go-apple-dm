@@ -11,9 +11,9 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/storage"
 )
 
-// ServiceHook clears DDM state when an enrollment checks out or
-// re-authenticates (the device's user channels included), so a wiped or
-// re-enrolled device never inherits declarations (KMFDDM #41).
+// ServiceHook clears DDM state after successful checkout or authentication,
+// including
+// the device's user channels. Cleanup failures are logged.
 type ServiceHook struct {
 	engine      *ddm.Engine
 	enrollments storage.EnrollmentStore

@@ -22,9 +22,8 @@ type errReader struct{}
 
 func (errReader) Read([]byte) (int, error) { return 0, errors.New("read failed") }
 
-// TestRenewalSkipsChallenge is the named proof for decision record 0008:
-// a RenewalReq signed by an identity we issued needs no challenge, while a
-// fresh PKCSReq without one is rejected.
+// TestRenewalSkipsChallenge checks that a trusted renewal signer needs no
+// challenge while a fresh PKCSReq requires one.
 func TestRenewalSkipsChallenge(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t)
@@ -47,10 +46,9 @@ func TestRenewalSkipsChallenge(t *testing.T) {
 	}
 }
 
-// TestRenewalRequiresMatchingSubject holds the renewal path to both of its
-// conditions: the signer chains to our CA, and its subject is the CSR's.
-// Chaining identifies no single device, so a request that changes the subject
-// needs the challenge like any other.
+// TestRenewalRequiresMatchingSubject checks both CA trust and equality with the
+// CSR subject. A trusted signer requesting another subject must supply the
+// challenge.
 func TestRenewalRequiresMatchingSubject(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t)

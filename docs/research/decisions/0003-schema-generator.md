@@ -1,53 +1,37 @@
 # 0003: In-repo schema generator over apple/device-management
 
-Status: accepted
-Date: 2026-09-01
-Phase: 1
+## Context
 
-## Apple sources
+Apple's pinned YAML schema describes multiple protocol families, nested dictionaries, validation rules and platform availability.
 
-- Doc: <https://github.com/apple/device-management/blob/release/docs/schema.md>
-- YAML: `third_party/device-management/docs/schema.yaml` (meta-schema), `mdm/**`, `declarative/**`, `other/**`
+## Decision
 
-## References read
+The in-repository generator uses `gopkg.in/yaml.v3` nodes to emit commands and responses, check-in messages, errors, profiles, declarations, declarative protocol messages, status items and other types. Nested dictionaries receive named types. Support metadata remains data in `schema/support`; callers use `Check`, `Lookup`, `Families` and `Paths`.
 
-- `jessepeterson/admgen` (`admgencmd`), `jessepeterson/mdmcommands` (generated output, `generate.go`)
-- `korylprince/go-adm` (`yamlschema`, `cmdgen`, `profilegen`, `declgen`, `GENERATE_SHA`)
-- `deploymenttheory/go-sdk-appleservices` `device_management/internal/{spec,codegen}`, `cmd/fetchspec`, `GENERATED_FROM.json`
-- `macadmins/contour` `crates/mdm-schema` (Rust validator)
+Generated conformance tests exercise XML plist, binary plist and JSON round trips. `schema/EXPORTED_IDENTIFIERS.lock` tracks exported names, and approved removals belong in `schema/ALLOWED_REMOVALS.md`. Provenance is generated from the checked-out schema as described in record 0046.
 
-## Known pitfalls found
+## Rationale
 
-- admgen/mdmcommands generate commands only; no responses beyond what Apple lists, no check-in, no DDM.
-- go-adm needs a forked go-yaml to parse Apple's recursive YAML.
-- go-sdk-appleservices flattens `supportedOS` into comments and regenerates weekly with no rename protection; 31 of 66 commands have no response struct.
-- Apple's schema uses in-file YAML anchors (`&id001` / `*id001`) for shared `subkeytype` structures; every `subkeytype` is paired with `subkeys` in the same file (verified by grep on the pinned commit).
+One loader and emitter set keeps type generation, validation, metadata and provenance consistent. The identifier lock makes removals reviewable when the schema changes.
 
-## What they do
+## Constraints
 
-- **admgen**: one struct per command from `payloadkeys`, response from `responsekeys`; plist tags; no validation.
-- **go-adm**: AST over the YAML, emits commands, profiles, declarations; pins a commit.
-- **go-sdk-appleservices**: JSON snapshots of the YAML, generated `Validate()` with literals baked in, deterministic regeneration gate in CI.
+Apple's descriptions are preserved verbatim. Project-authored generated documentation is changed in the generator. The lock guards exported names; it does not guarantee that every change to a type is source compatible.
 
-## What we do better
+## Verification
 
-1. Every family generated: commands with a response type for all 65, check-in, errors, profiles, declarations, DDM protocol, status items, and `other`.
-2. `supportedOS` is kept as data: a `schema/support` package answers introduced, deprecated, removed, channel, supervision, shared iPad, and user enrollment questions at runtime, and `Validate(version)` uses it.
-3. Naming contract with `schema/EXPORTED_IDENTIFIERS.lock` and `ALLOWED_REMOVALS.md`; `admgen verify` fails on silent removals.
-4. Nested dictionaries become named types; `subkeytype` shared shapes are emitted once per file.
-5. Generated conformance tests round-trip every type through XML plist, binary plist, and JSON with every documented key populated, and assert registry coverage of every YAML file.
-6. `gopkg.in/yaml.v3` node parsing with our own recursion; no forked YAML library.
+Generator tests cover complete-tree generation, schema coverage, nested types, reason vocabularies and identifier removal. `make verify` compares deterministic regeneration with the committed output.
 
-## Verified by
+## References
 
-1. `TestRegistryCoversEveryYAML` per family.
-2. `TestSupportsMatrix` golden table; `TestValidateVersionAware`.
-3. `TestRenameGuard` (removes an identifier in a temp copy and expects failure).
-4. `TestSubkeyTypeEmittedOnce`.
-5. `Test*Conformance` generated files.
-6. `TestLoadAllYAMLNoUnknownKeys` (strict loader fails on unknown keys).
+- [internal/schemagen](../../../internal/schemagen)
+- [cmd/admgen](../../../cmd/admgen)
+- [schema](../../../schema)
+- <https://github.com/apple/device-management/blob/release/docs/schema.md>
 
-## Rejected alternatives
+Reference source identifiers and paths (relative to the named project):
 
-- External generator dependency (go-adm, admgen): no naming contract, partial coverage.
-- Hand-written types: 300+ YAML files change yearly; unsustainable.
+- `jessepeterson/admgen`, `admgencmd`, `jessepeterson/mdmcommands`, `generate.go`
+- `korylprince/go-adm`, `yamlschema`, `cmdgen`, `profilegen`, `declgen`, `GENERATE_SHA`
+- `deploymenttheory/go-sdk-appleservices`, `device_management/internal/{spec,codegen}`, `cmd/fetchspec`, `GENERATED_FROM.json`
+- `macadmins/contour`, `crates/mdm-schema`

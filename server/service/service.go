@@ -113,18 +113,14 @@ type GetTokenHandler func(ctx context.Context, r *mdm.Request, m *checkin.GetTok
 // which is the default behaviour.
 type UserAuthenticateHandler func(ctx context.Context, r *mdm.Request, m *checkin.UserAuthenticate) (*mdm.UserAuthenticateResponse, error)
 
-// ReturnToServiceHandler answers a ReturnToService check-in with the
-// configuration the device should apply. The device sends this message only
-// when its Automated Device Enrollment profile has put it in return-to-service
-// mode, either because a user triggered it or because the idle timeout
-// expired, so the handler decides one thing: whether this device may erase
-// itself and re-enrol now.
+// ReturnToServiceHandler selects the configuration returned to a device
+// requesting Return to Service. Deployment policy decides whether to enable
+// erasure and re-enrollment.
 //
-// The service fills BootstrapToken from storage when the handler leaves it
-// empty. Apple's rule is that without the token the device performs a full
-// erasure and cannot preserve apps, and the server is already holding the
-// token this enrollment sent in SetBootstrapToken, so forgetting to attach it
-// would silently downgrade every return to service (decision record 0045).
+// For an enabled response, the service fills an omitted BootstrapToken from
+// storage when available and preserves a supplied token. Without a token, Apple
+// devices can erase fully without app preservation. A nil response is treated as
+// disabled.
 type ReturnToServiceHandler func(ctx context.Context, r *mdm.Request, m *checkin.ReturnToService) (*checkin.ReturnToServiceResponse, error)
 
 // ReenrollPolicy decides whether an Authenticate from an enrollment whose

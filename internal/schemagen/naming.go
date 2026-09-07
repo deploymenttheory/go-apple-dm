@@ -7,14 +7,12 @@ import (
 
 // Naming contract (decision record 0003).
 //
-// A Go identifier is derived from an Apple key or title by splitting on every
-// character that is not a letter or digit, then joining the segments with the
-// first letter of each segment upper-cased and the rest preserved. Apple's own
-// capitalisation therefore survives: UDID stays UDID, OSUpdate stays OSUpdate,
-// eSIM becomes ESIM. Identifiers that would start with a digit are prefixed
-// with X. Go keywords and predeclared identifiers are suffixed with an
-// underscore. The rules are deliberately simple so a schema refresh cannot
-// change an existing name; schema/EXPORTED_IDENTIFIERS.lock guards against that.
+// Identifiers split Apple keys/titles at non-letter/digit characters and
+// capitalize the first letter of each segment while preserving the rest. UDID
+// and OSUpdate retain their capitalization; eSIM becomes ESIM. Leading digits
+// receive an X prefix; Go keywords and predeclared names receive an underscore
+// suffix. The exported-identifier lock detects removals when naming or schema
+// inputs change.
 
 // goKeywords are Go keywords plus predeclared identifiers that would be
 // confusing as type or field names.

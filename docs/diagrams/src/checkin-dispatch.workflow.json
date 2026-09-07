@@ -15,7 +15,7 @@
           "setbootstrap",
           "checkout"
         ],
-        "note": "One enrollment's life, in the order it happens; each returns an empty body."
+        "note": "State-changing check-ins return empty bodies; their ordering depends on the device."
       },
       {
         "id": "answers",
@@ -27,7 +27,7 @@
           "userauthenticate",
           "declarative"
         ],
-        "note": "Any of these, whenever the device asks; three marshal a plist, DeclarativeManagement returns JSON."
+        "note": "Four response types marshal plist; DeclarativeManagement returns JSON."
       },
       {
         "id": "gate",
@@ -37,7 +37,7 @@
           "authorize",
           "refusal"
         ],
-        "note": "authorize runs on the other seven messages; Authenticate does its own rotation and reuse checks."
+        "note": "Certificate status precedes dispatch; Authenticate has rotation and reuse checks."
       }
     ],
     "legend": {
@@ -74,7 +74,7 @@
   "groups": [
     {
       "id": "life",
-      "label": "one enrollment's life, in order",
+      "label": "state-changing check-ins",
       "lane": "write",
       "fromCol": 1,
       "toCol": 4
@@ -181,24 +181,24 @@
       "lane": "gate",
       "col": 1,
       "type": "security",
-      "label": "Identity checks",
-      "sublabel": "pin \u00b7 rotation",
+      "label": "Identity and status",
+      "sublabel": "pin · status · account",
       "width": 150,
-      "tag": "Core.authorize, or Authenticate's own"
+      "tag": "Certificate and account policy"
     },
     {
       "id": "refusal",
       "lane": "gate",
       "col": 4,
       "type": "security",
-      "label": "403, never 401",
-      "sublabel": "400 \u00b7 410 \u00b7 501",
+      "label": "403 or account 401",
+      "sublabel": "400 · 410 · 501",
       "width": 150
     },
     {
       "id": "returntoservice",
-      "lane": "read",
-      "col": 5,
+      "lane": "entry",
+      "col": 4,
       "type": "backend",
       "label": "ReturnToService",
       "sublabel": "erase, re-enrol",
@@ -304,9 +304,9 @@
       "dot": "rose",
       "title": "Refusal",
       "items": [
-        "An unknown enrollment is a 403, never a 401",
+        "Unknown enrollments get 403; recognized account sessions can receive a 401 challenge",
         "A declined user is a 410",
-        "ReturnToService with no handler answers Enabled false, not an error: a missing handler must never erase a device"
+        "ReturnToService with no handler answers Enabled false"
       ]
     }
   ]

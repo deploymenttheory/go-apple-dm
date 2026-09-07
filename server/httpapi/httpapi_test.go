@@ -225,9 +225,9 @@ func TestCertMiddlewares(t *testing.T) {
 		t.Fatalf("absent header: %d", rec.Code)
 	}
 
-	// Header with a trust anchor: a certificate is not secret, so the chain is
-	// what separates a device we issued to from anyone who reaches the
-	// listener past the proxy.
+	// Header certificate chain checks reject untrusted issuers. The trusted proxy
+	// must separately verify key possession and prevent direct access or forged
+	// headers.
 	inner, seen = certCapture()
 	vh := httpapi.CertFromHeader("X-Client-Cert", httpapi.WithHeaderRoots(ca.Pool()))(inner)
 	if rec = do(t, vh, http.MethodPut, "", "", map[string]string{"X-Client-Cert": rfc}); rec.Code != 200 || !(*seen)[0].Equal(id.Cert) {

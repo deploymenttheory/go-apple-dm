@@ -111,8 +111,7 @@ func (c *Client) GetCACert(ctx context.Context) ([]*x509.Certificate, error) {
 type EnrollOptions struct {
 	Subject   pkix.Name
 	Challenge string
-	// Renew signs the request with an existing identity instead of a
-	// throwaway self-signed certificate, making it a RenewalReq.
+	// Renew signs with an existing identity and sends a RenewalReq.
 	Renew *Identity
 	// Recipients overrides the CA certificates fetched with GetCACert.
 	Recipients []*x509.Certificate

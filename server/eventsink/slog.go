@@ -8,14 +8,9 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/mdmprotocol/event"
 )
 
-// Slog returns a handler that writes one projected record per event.
-//
-// It is the audit trail's cheapest form: an operator who ships stderr to a log
-// stack gets an attributable record of every state change without configuring
-// storage. What it cannot do is answer a question later, which is why the
-// persisted trail exists beside it.
-//
-// Fields are emitted in sorted order so a record is stable enough to diff.
+// Slog returns a handler that writes one projected record per event with sorted
+// fields. Durability and retention depend on the deployment's log collection;
+// the handler does not persist records itself.
 func Slog(log *slog.Logger, reg *Registry) event.Handler {
 	if log == nil {
 		log = slog.Default()

@@ -1,24 +1,23 @@
-// Package simulator drives an MDM server the way an Apple device does.
+// Package simulator exercises modeled Apple MDM and enrollment flows as a
+// device-side test client.
 //
-// # Why
+// # Design
 //
-// Servers need to be tested end to end without hardware. The simulator
-// performs check-in (Authenticate, TokenUpdate, CheckOut, bootstrap tokens,
-// GetToken, DeclarativeManagement), polls the server URL with Idle,
-// answers commands with typed responses, can inject NotNow and Error
-// replies, enrolls through SCEP and the OTA profile service, and runs a
-// declarative management client: it synchronises tokens, declaration items,
-// and declarations, evaluates activation predicates with mdmprotocol/ddm/predicate, and
-// builds status reports with Apple's reason codes so the server's grading
-// is observable. Faults (dropped status, stale token, failed fetch) model
-// the device behaviours the references tripped over. It never imports the
-// server-side engine, so it stays an independent client.
+// The client supports check-in, command polling/results, SCEP, OTA, ADE,
+// account-driven authentication, user channels, Shared iPad and ACME.
+// Declarative synchronization tracks tokens and versions, evaluates the
+// supported predicate subset and emits full/incremental status reports. Fault
+// options cover NotNow, command errors, stale tokens, failed fetches and dropped
+// reports.
+//
+// The simulator uses independent client paths where available, including
+// golang.org/x/crypto/acme. It does not reproduce every device behavior; tests
+// against it do not replace physical-device and live-service validation.
 //
 // # References
 //
-//   - Decision record 0024: docs/research/decisions/0024-simulator-ddm-client-and-predicates.md
-//   - Plan of record: docs/research/implementation_plan.md (phase 2, phase 5)
-//   - E2E scenarios: docs/testing/e2e-scenarios.md
+//   - Decision record 0024: https://github.com/deploymenttheory/go-apple-dm/blob/main/docs/research/decisions/0024-simulator-ddm-client-and-predicates.md
+//   - E2E scenarios: https://github.com/deploymenttheory/go-apple-dm/blob/main/docs/testing/e2e-scenarios.md
 //   - Apple: https://developer.apple.com/documentation/devicemanagement/check-in
 //   - Apple: https://developer.apple.com/documentation/devicemanagement/commands-and-queries
 //   - Apple: https://developer.apple.com/documentation/devicemanagement/integrating-declarative-management

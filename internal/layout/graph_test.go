@@ -10,10 +10,8 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/internal/layout"
 )
 
-// TestLoadReportsADirectoryThatIsNotAModule covers the failing path: go list
-// cannot enumerate a directory outside a module, and the caller needs to know
-// that the graph is absent rather than empty, because an empty graph would
-// silently pass every boundary test in this package.
+// TestLoadReportsADirectoryThatIsNotAModule checks that go list failures return
+// an error. An empty graph would incorrectly satisfy boundary checks.
 func TestLoadReportsADirectoryThatIsNotAModule(t *testing.T) {
 	t.Parallel()
 	g, err := layout.Load(t.TempDir())

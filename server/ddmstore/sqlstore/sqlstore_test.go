@@ -100,8 +100,8 @@ func TestOpenMigrates(t *testing.T) {
 	if _, err := again.GetSet(ctx, "s"); err != nil {
 		t.Fatal(err)
 	}
-	// The MDM storage schema can share the database: its own migration
-	// table is untouched by ours.
+	// The MDM and DDM schemas retain independent migration versions in one
+	// database.
 	if _, err := sqlcommon.Migrate(ctx, db, sqlite.Dialect); err != nil {
 		t.Fatal(err)
 	}

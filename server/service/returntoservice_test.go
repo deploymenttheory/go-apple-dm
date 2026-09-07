@@ -37,12 +37,9 @@ func TestReturnToServiceWithoutAHandlerAnswersDisabled(t *testing.T) {
 	}
 }
 
-// TestReturnToServiceAttachesTheStoredBootstrapToken is the reason this is not
-// merely a passthrough handler. Apple's rule is that without the bootstrap
-// token the device performs a full erasure and cannot preserve apps; the
-// server is already holding the token the device sent in SetBootstrapToken, so
-// a handler that forgets to attach it would silently downgrade every return to
-// service.
+// TestReturnToServiceAttachesTheStoredBootstrapToken checks that an enabled
+// policy response receives the escrowed token when omitted, supporting app
+// preservation.
 func TestReturnToServiceAttachesTheStoredBootstrapToken(t *testing.T) {
 	t.Parallel()
 	const udid = "RTS-TOKEN"

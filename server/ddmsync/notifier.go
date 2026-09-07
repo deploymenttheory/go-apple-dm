@@ -126,8 +126,8 @@ func NewNotifier(cfg NotifierConfig) (*Notifier, error) {
 	return &Notifier{cfg: cfg, kick: make(chan struct{}, 1)}, nil
 }
 
-// Kick wakes Run so the next drain happens now rather than at the next
-// poll. It never blocks; suitable for ddm.Engine Config.Wake.
+// Kick requests an immediate drain instead of waiting for the next poll. It is
+// nonblocking and can be called after an administrative write.
 func (n *Notifier) Kick() {
 	select {
 	case n.kick <- struct{}{}:

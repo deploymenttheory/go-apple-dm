@@ -33,16 +33,12 @@ type Identifier struct {
 	Value string `json:"value"`
 }
 
-// Binding is what the server knows about the device an identifier was
-// issued to. It is decided when the order is created, stored on the order,
-// and enforced when the attestation arrives and again when the certificate
-// is signed, so a device cannot be told one thing at enrollment and issued
-// something else later.
+// Binding records the expected device for a client identifier. It is stored on
+// the order and checked against attestation during validation and issuance.
 //
-// A binding with neither a serial number nor a UDID names no device. That
-// is the ordinary case for a user enrollment, where Apple's attestation
-// carries no identity, and AllowUnidentified says whether the deployment
-// accepts it.
+// An empty serial number and UDID represent an unidentified device, as can occur
+// with User Enrollment. AllowUnidentified controls whether policy accepts that
+// case.
 type Binding struct {
 	// Serial and UDID are the device the identifier was issued for. When
 	// set, the attestation must agree.
@@ -125,10 +121,8 @@ type Challenge struct {
 	Error       *Problem  `json:"error,omitempty"`
 }
 
-// Certificate is an issued identity and what the attestation said about the
-// device it was issued to. Keeping the device properties alongside the
-// certificate is what lets an operator ask later which hardware holds a
-// given identity.
+// Certificate records an issued identity and the device properties verified
+// during attestation.
 type Certificate struct {
 	ID        string            `json:"id"`
 	OrderID   string            `json:"order_id"`

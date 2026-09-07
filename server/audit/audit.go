@@ -74,12 +74,9 @@ type Record struct {
 	Fields map[string]any
 }
 
-// Store persists the audit trail.
-//
-// It is deliberately append-and-prune: there is no update and no delete by
-// id. A trail whose rows can be edited answers no question worth asking, and
-// the only removal is by age, so retention is a policy rather than a way to
-// lose one inconvenient record.
+// Store appends projected audit records, queries them and prunes by age. It
+// exposes no update or delete-by-ID method. Database access controls remain
+// necessary because this API does not prevent direct row modification.
 type Store interface {
 	// Append writes one record and returns it with its assigned ID.
 	// ErrInvalid for a record with no type.

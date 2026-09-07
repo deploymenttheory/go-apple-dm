@@ -319,9 +319,8 @@ func (e *env) setRoles(ctx context.Context, c clientDoer, args []string) error {
 	return e.emit(resp, nil)
 }
 
-// emitToken prints a newly minted credential. It is the only place a token is
-// ever written, and it goes to stdout alone so it can be captured without the
-// surrounding prose.
+// emitToken writes an issued credential alone on stdout so scripts can capture
+// it. Later read operations return only credential metadata.
 func (e *env) emitToken(resp *adminResponse) error {
 	if e.opts.output != outputHuman {
 		return e.emit(resp, nil)

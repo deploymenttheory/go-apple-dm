@@ -119,11 +119,11 @@ func (e *emitter) docFile() []byte {
 		len(e.pkg.Schemas),
 		len(e.pkg.Types),
 	), width))
-	sb.WriteString("//\n// # Why\n//\n")
+	sb.WriteString("//\n// # Design\n//\n")
 	sb.WriteString(wrap("// ", fmt.Sprintf(
 		"Apple publishes the wire format of the %s as YAML in https://github.com/apple/device-management, "+
-			"pinned here as a git submodule. Generating this package from that pinned commit keeps the wire "+
-			"types, validation, and support metadata identical to Apple's schema (decision record 0003). "+
+			"pinned here as a git submodule. Generating this package from that pinned commit derives the wire "+
+			"types, validation, and support metadata from Apple's schema (decision record 0003). "+
 			"Every type carries plist and json struct tags with Apple's wire keys, a Validate method driven "+
 			"by the schema's constraints, and support metadata queryable through Support(path) or the "+
 			"schema/support package.",
@@ -131,16 +131,20 @@ func (e *emitter) docFile() []byte {
 	), width))
 	sb.WriteString("//\n")
 	sb.WriteString(wrap("// ",
-		"Nothing here is hand-edited: admgen regenerates the package and admgen verify fails when "+
+		"Edit the generator to change this package. admgen verify fails when "+
 			"regeneration would change it or drop an exported name (schema/EXPORTED_IDENTIFIERS.lock). Protocol semantics "+
 			"that Apple documents only in prose live in the hand-written packages that import this one.",
 		width))
 	sb.WriteString("//\n// # References\n//\n")
-	sb.WriteString("//   - Decision record 0001: docs/research/decisions/0001-architecture.md\n")
 	sb.WriteString(
-		"//   - Decision record 0003: docs/research/decisions/0003-schema-generator.md\n",
+		"//   - Decision record 0001: https://github.com/deploymenttheory/go-apple-dm/blob/main/docs/research/decisions/0001-architecture.md\n",
 	)
-	sb.WriteString("//   - Plan of record: docs/research/implementation_plan.md (phase 1)\n")
+	sb.WriteString(
+		"//   - Decision record 0003: https://github.com/deploymenttheory/go-apple-dm/blob/main/docs/research/decisions/0003-schema-generator.md\n",
+	)
+	sb.WriteString(
+		"//   - Architecture: https://github.com/deploymenttheory/go-apple-dm/blob/main/docs/architecture.md\n",
+	)
 	fmt.Fprintf(&sb, "//   - Apple: %s\n", url)
 	sb.WriteString(
 		"//   - Apple: https://github.com/apple/device-management/blob/release/docs/schema.md\n",

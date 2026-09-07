@@ -530,10 +530,9 @@ func (s *Server) authorize(e *exchange, o *Order, a *attest.Attestation) error {
 	return nil
 }
 
-// settleChallenge records a failed validation. A fault that is the client's
-// settles the challenge, its authorization, and its order invalid, because
-// repeating the request would fail the same way. A fault that is ours
-// leaves everything pending so a retry can succeed.
+// settleChallenge marks client validation failures invalid across the challenge,
+// authorization and order. Server or policy-lookup failures leave the pending
+// state available for retry.
 func (s *Server) settleChallenge(
 	e *exchange,
 	c *Challenge,

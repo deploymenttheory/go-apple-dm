@@ -1,25 +1,19 @@
-// Package sqlstore is the SQL-backed adminauth.Store for SQLite, PostgreSQL,
-// and MySQL.
+// Package sqlstore persists administrative principals, token digests and
+// policies in SQL.
 //
-// # Why
+// # Design
 //
-// Admin credentials have to be revocable without restarting the process, and
-// policies have to survive one, so both live in the database rather than in
-// configuration. Fleet's API-only tokens are the counter-example this exists
-// to avoid: they never expire and there is no way to say otherwise.
-//
-// The schema is its own migration set, `adminauth_schema_migrations`, so the
-// admin tables version independently of the MDM, DDM, DEP, and ACME sets, the
-// same separation records 0020 and 0031 made. There is no keyring here: the
-// only credential-shaped column holds a SHA-256 digest of a token, and a
-// digest is not a secret. Sealing it would protect nothing and would add a
-// strict-mode failure path on the authentication hot path.
+// SQLite, PostgreSQL and MySQL share the adminauth.Store contract and a separate
+// adminauth_schema_migrations set. Credential digests support lookup, rotation
+// and revocation without storing raw API tokens. Policies survive process
+// restarts and use versions for cache invalidation. Records are not sealed with
+// a keyring, so database authorization and backups remain deployment
+// responsibilities.
 //
 // # References
 //
-//   - Decision record: docs/research/decisions/0034-admin-api-and-authorization.md
-//   - Plan of record: docs/research/implementation_plan.md (phase 8)
-//   - Threat model: docs/security/threat-model.md (admin API)
+//   - Decision record: https://github.com/deploymenttheory/go-apple-dm/blob/main/docs/research/decisions/0034-admin-api-and-authorization.md
+//   - Threat model: https://github.com/deploymenttheory/go-apple-dm/blob/main/docs/security/threat-model.md (admin API)
 //   - Contract suite: adminauth/adminauthtest
 //   - Migration mechanics: server/storage/sqlcommon
 package sqlstore

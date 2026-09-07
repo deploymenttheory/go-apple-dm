@@ -1,36 +1,32 @@
-// Package service implements the MDM server behaviour behind the check-in
-// and command endpoints.
+// Package service implements enrollment lifecycle, authorization and command
+// delivery behind MDM endpoints.
 //
-// # Why
+// # Design
 //
-// The HTTP layer decodes and authenticates; this package decides. It owns
-// the enrollment lifecycle (Authenticate, TokenUpdate, CheckOut, user
-// channels), identity pinning and re-enrollment policy, command delivery
-// with NotNow backoff, the optional message handlers (GetToken,
-// UserAuthenticate, DeclarativeManagement through service.DMHandler), and
-// the hooks and events that let integrators observe or veto every step.
-// Storage is behind the storage interfaces so the same core runs on every
-// backend, and the DDM engine plugs in through the handler and hook seams
-// rather than being imported.
+// Core handles Authenticate, TokenUpdate, CheckOut, certificate pins/reuse, user
+// channels and command results. Storage interfaces support interchangeable
+// backends. Hooks can observe or veto operations, and typed events report
+// outcomes. Optional handlers implement GetToken, UserAuthenticate,
+// DeclarativeManagement and ReturnToService.
 //
-// Return to service is a seam rather than a policy. A supervised Automated
-// Enrollment device asks whether it may erase itself and re-enrol; whether the
-// answer is yes belongs to the deployment, so Config.ReturnToService decides
-// it and an unconfigured server answers no. What the service does own is the
-// bootstrap token: it attaches the one it already holds for the enrollment
-// when the policy left it empty, because without it the device erases fully
-// and cannot preserve apps, and that is not a mistake a deployment should be
-// able to make by omission (decision record 0045).
+// Certificate status checking, when configured, precedes hooks and device side
+// effects independently of pin mode. The library permits re-enrollment by
+// default; the reference server denies changed identities unless enabled.
+// Command-target checks use available OS/channel metadata but assume unrecorded
+// supervision, ADE and user-approved MDM state.
+//
+// An unconfigured ReturnToService handler answers disabled. An enabled response
+// receives the stored bootstrap token if available and not supplied by policy;
+// without one, the device can erase fully without app preservation.
 //
 // # References
 //
-//   - Decision record 0004: docs/research/decisions/0004-checkin-and-command-core.md
-//   - Decision record 0005: docs/research/decisions/0005-storage-interfaces.md
-//   - Decision record 0014: docs/research/decisions/0014-cert-association-history.md
-//   - Decision record 0016: docs/research/decisions/0016-user-authenticate-state.md
-//   - Decision record 0023: docs/research/decisions/0023-ddm-adapters-and-wire-contract.md (DMHandler)
-//   - Plan of record: docs/research/implementation_plan.md (phase 2)
-//   - Threat model: docs/security/threat-model.md
+//   - Decision record 0004: https://github.com/deploymenttheory/go-apple-dm/blob/main/docs/research/decisions/0004-checkin-and-command-core.md
+//   - Decision record 0005: https://github.com/deploymenttheory/go-apple-dm/blob/main/docs/research/decisions/0005-storage-interfaces.md
+//   - Decision record 0014: https://github.com/deploymenttheory/go-apple-dm/blob/main/docs/research/decisions/0014-cert-association-history.md
+//   - Decision record 0016: https://github.com/deploymenttheory/go-apple-dm/blob/main/docs/research/decisions/0016-user-authenticate-state.md
+//   - Decision record 0023: https://github.com/deploymenttheory/go-apple-dm/blob/main/docs/research/decisions/0023-ddm-adapters-and-wire-contract.md (DMHandler)
+//   - Threat model: https://github.com/deploymenttheory/go-apple-dm/blob/main/docs/security/threat-model.md
 //   - Apple: https://developer.apple.com/documentation/devicemanagement/check-in
 //   - Apple: https://developer.apple.com/documentation/devicemanagement/sending-mdm-commands-to-a-device
 //   - Apple: https://developer.apple.com/documentation/devicemanagement/handling-notnow-status-responses

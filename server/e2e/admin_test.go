@@ -121,13 +121,9 @@ func (h *adminHarness) mint(t *testing.T, p adminauth.Principal) string {
 	return string(tok)
 }
 
-// E2E-024: dmctl drives every admin route the server serves, a read-only
-// principal is refused and the refusal is audited, a rotated token is
-// rejected, and the server wakes a device.
-//
-// The route walk is the part that keeps working: it reads GET /routes and
-// asserts the CLI can reach each one, so a route added later with no CLI path
-// fails here rather than being discovered by an operator.
+// E2E-024 exercises every registered admin route through dmctl, authorization
+// denial/auditing, token rotation and device wakeup. The route table drives the
+// test so newly registered routes require a CLI path.
 func TestE2E_AdminCLI(t *testing.T) {
 	h := newAdminHarness(t)
 
@@ -170,11 +166,8 @@ func TestE2E_AdminCLI(t *testing.T) {
 			t.Fatal("the server advertised no routes")
 		}
 
-		// Scratch targets absorb the destructive routes. The principal
-		// routes include revoke and delete, so walking them as the caller's
-		// own identity would revoke the credential doing the walking; the
-		// enrollment routes include disable, which would silently break the
-		// push assertion in a later subtest.
+		// Use separate targets for revoke, delete and disable operations so the route
+		// walk retains its own credential and the enrollment used by push assertions.
 		h.mint(t, adminauth.Principal{Name: scratchPrincipal})
 		scratch := mdm.EnrollmentID{Channel: mdm.ChannelDevice, ID: scratchEnrollment}
 		err = h.app.Core.ImportEnrollment(context.Background(), storage.EnrollmentExport{
@@ -229,8 +222,7 @@ func TestE2E_AdminCLI(t *testing.T) {
 		}
 	})
 
-	// A rotated credential invalidates the previous value immediately, which
-	// is the property a single shared secret cannot offer at all.
+	// Rotation invalidates the previous credential immediately.
 	t.Run("RotatedTokenIsRejected", func(t *testing.T) {
 		rotating := h.mint(t, adminauth.Principal{Name: "rotating", Root: true})
 		if _, err := h.ctl(t, rotating, "", "status"); err != nil {

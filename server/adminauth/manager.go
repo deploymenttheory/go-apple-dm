@@ -230,10 +230,8 @@ func (m *Manager) Principals(ctx context.Context, p Page) (Result[Principal], er
 	return m.store.Principals(ctx, p)
 }
 
-// PutPolicy validates and stores a policy document. Validation is at write
-// time on purpose: a policy naming an action nobody serves parses cleanly and
-// then silently never grants, so refusing it here is the difference between an
-// error an operator sees and a rule that quietly does nothing.
+// PutPolicy parses and validates the policy, rejects unknown action references,
+// and stores it only after validation succeeds.
 func (m *Manager) PutPolicy(ctx context.Context, actor Principal, doc Policy) (Policy, error) {
 	if err := m.canAdminister(actor); err != nil {
 		return Policy{}, err
@@ -268,14 +266,9 @@ func (m *Manager) DeletePolicy(ctx context.Context, actor Principal, name string
 	return m.store.DeletePolicy(ctx, name)
 }
 
-// canAdminister gates *policy* administration on Root rather than on a
-// policy, because a principal that can edit policies can grant itself
-// anything, so the capability cannot be the thing the policies bound.
-//
-// Credential administration is deliberately not gated here: it is a normal
-// action a policy may grant, bounded by Covers so a caller can never issue a
-// credential more privileged than its own. Zentral draws the line in the same
-// place.
+// canAdminister requires Root for policy administration so a policy cannot grant
+// authority to edit itself. Credential administration uses ordinary action
+// authorization with Covers restrictions on the target's authority.
 func (m *Manager) canAdminister(actor Principal) error {
 	if !actor.Root {
 		return fmt.Errorf("%w: %s is not a root principal", ErrDenied, actor.Name)

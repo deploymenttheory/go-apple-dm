@@ -1,26 +1,25 @@
-// Package main is the dmserver command: it runs the reference server in one of three roles: mdm
-// (check-in and connect), ddm (the declarative management engine behind
-// the internal hop and the admin API), or all (both in one process).
+// Package main runs the reference server in mdm, ddm or all mode.
 //
-// # Why
+// # Design
 //
-// CI and the split-deployment scenario (E2E-010) need our own binary in a
-// container, built from this repository, so both ends of the internal
-// wire contract are ours. The command is a thin shell over internal/app:
-// it reads DM_* variables, lets flags override them, serves HTTP, and
-// offers -check for container health probes without a shell. Everything
-// else lives in the library packages so it stays testable.
+// The command reads DM_* variables, applies flag overrides and delegates
+// composition to server/internal/app. The mdm role serves device ingress; ddm
+// serves a declaration engine through the internal adapter; all combines them.
+// Administrative families depend on configured components and credentials. TLS
+// termination belongs to the deployment.
 //
 // # Usage
 //
-//	dmserver [-role mdm|ddm|all] [-listen :8080] [-storage sqlite|postgres|mysql|inmem]
-//	          [-dsn PATH_OR_DSN] [-ddm-url URL] [-ddm-send-key K] [-ddm-recv-key K]
-//	          [-admin-token T] [-ca-file PEM | -cert-header NAME] [-ddm-subscriptions=true]
+//	dmserver -role all -storage inmem -admin-token dev-token
 //	dmserver -check http://127.0.0.1:8080/healthz
+//
+// Use -help for current flags. The -check mode supports container health probes
+// without a shell. Persistent storage, enrollment, authentication and optional
+// security services require the configuration documented in the README and
+// operations guide.
 //
 // # References
 //
-//   - Decision record 0025: docs/research/decisions/0025-reference-server-roles-and-container.md
-//   - Plan of record: docs/research/implementation_plan.md (phase 5, phase 8)
+//   - Decision record 0025: https://github.com/deploymenttheory/go-apple-dm/blob/main/docs/research/decisions/0025-reference-server-roles-and-container.md
 //   - Container: Dockerfile, scripts/testdb.sh (ddm-up), .github/workflows/go-test.yml (e2e job)
 package main

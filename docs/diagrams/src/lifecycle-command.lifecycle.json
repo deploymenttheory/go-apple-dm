@@ -76,7 +76,7 @@
       "id": "notnow",
       "type": "failure",
       "label": "NotNow",
-      "sublabel": "declined for now",
+      "sublabel": "temporarily deferred",
       "lane": "retry",
       "col": 0,
       "tag": "retryable"
@@ -162,7 +162,7 @@
   "cards": [
     {
       "dot": "amber",
-      "title": "NotNow is not failure",
+      "title": "NotNow retry",
       "items": [
         "The command stays queued behind a backoff that starts at 30s and doubles to a one hour cap",
         "A connect carrying NotNow skips not-now commands whose backoff has not elapsed"

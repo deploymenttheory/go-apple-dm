@@ -2,7 +2,7 @@
   "schema_version": 1,
   "diagram_type": "architecture",
   "meta": {
-    "title": "go-apple-dm High-Level Design",
+    "title": "go-apple-dm architecture",
     "quality_profile": "showcase",
     "viewBox": [
       1300,
@@ -40,12 +40,12 @@
           "depaxm",
           "appleapis"
         ],
-        "note": "dmctl authenticates with a bearer token; Cedar authorizes each admin action."
+        "note": "Stored principals use Cedar policy; the bootstrap token bypasses policy."
       }
     ],
     "repository": {
       "url": "https://github.com/deploymenttheory/go-apple-dm",
-      "revision": "0e487dd17ae7dffcad8674c668ff59e56c73d8f3"
+      "revision": "a817270f13b4ef7a9b1d2895118981120546b3a2"
     }
   },
   "components": [
@@ -53,7 +53,7 @@
       "id": "appleapis",
       "type": "external",
       "label": "Apple services",
-      "sublabel": "DEP \u00b7 Business Manager",
+      "sublabel": "DEP · Business Manager",
       "pos": [
         40,
         110
@@ -67,7 +67,7 @@
       "id": "devices",
       "type": "external",
       "label": "Apple devices",
-      "sublabel": "Mac \u00b7 iPhone \u00b7 iPad",
+      "sublabel": "Mac · iPhone · iPad",
       "pos": [
         40,
         260
@@ -109,7 +109,7 @@
       "id": "depaxm",
       "type": "backend",
       "label": "Service clients",
-      "sublabel": "dep \u00b7 axm \u00b7 gdmf",
+      "sublabel": "dep · axm · gdmf",
       "pos": [
         380,
         110
@@ -123,7 +123,7 @@
       "id": "httpsurface",
       "type": "backend",
       "label": "Device HTTP surface",
-      "sublabel": "/mdm \u00b7 /scep \u00b7 /acme",
+      "sublabel": "/mdm · /scep · /acme",
       "pos": [
         380,
         260
@@ -198,7 +198,7 @@
       "id": "engine",
       "type": "backend",
       "label": "DDM engine",
-      "sublabel": "ddm.Engine \u00b7 ddmsync",
+      "sublabel": "ddm.Engine · ddmsync",
       "pos": [
         700,
         410
@@ -222,7 +222,7 @@
       "id": "store",
       "type": "database",
       "label": "Storage",
-      "sublabel": "storage.Store \u00b7 feature stores",
+      "sublabel": "storage.Store · feature stores",
       "pos": [
         1020,
         260
@@ -251,7 +251,7 @@
     },
     {
       "kind": "region",
-      "label": "Reference server \u2014 roles mdm \u00b7 ddm \u00b7 all",
+      "label": "Reference server — roles mdm · ddm · all",
       "wraps": [
         "depaxm",
         "httpsurface",
@@ -275,7 +275,7 @@
       "id": "clients-apple",
       "from": "depaxm",
       "to": "appleapis",
-      "label": "OAuth 1.0a \u00b7 ES256",
+      "label": "OAuth 1.0a · ES256",
       "variant": "emphasis"
     },
     {
@@ -302,7 +302,7 @@
       "id": "core-store",
       "from": "core",
       "to": "store",
-      "label": "enrollments \u00b7 queue"
+      "label": "enrollments · queue"
     },
     {
       "id": "apns-device",
@@ -337,7 +337,7 @@
       "id": "engine-store",
       "from": "engine",
       "to": "store",
-      "label": "declarations \u00b7 snapshots"
+      "label": "declarations · snapshots"
     },
     {
       "id": "cli-admin",
@@ -350,13 +350,13 @@
       "id": "admin-engine",
       "from": "adminapi",
       "to": "engine",
-      "label": "declarations \u00b7 sets"
+      "label": "declarations · sets"
     },
     {
       "id": "admin-clients",
       "from": "adminapi",
       "to": "depaxm",
-      "label": "assign \u00b7 sync",
+      "label": "assign · sync",
       "fromSide": "right",
       "toSide": "right",
       "via": [
@@ -387,14 +387,14 @@
       "items": [
         "Roles mdm, ddm, or all from one binary",
         "service.Core never imports ddm; the engine plugs in as a DMHandler",
-        "ddm.Notifier enqueues the command and calls push; the Engine only writes change rows in its transaction"
+        "ddmsync.Notifier enqueues commands and pushes; the engine writes change rows"
       ]
     },
     {
       "dot": "rose",
       "title": "Admin plane",
       "items": [
-        "Bearer token, then Cedar authorizes every admin action",
+        "Stored principals use Cedar; DM_ADMIN_TOKEN bypasses policy",
         "/admin/v1/dep and /admin/v1/axm drive the service clients",
         "dep authenticates with OAuth 1.0a, axm with an ES256 client assertion, gdmf is unauthenticated"
       ]

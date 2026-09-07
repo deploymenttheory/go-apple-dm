@@ -1,17 +1,14 @@
-// Package inmem is the in-memory audit trail: the backend every unit test
-// uses and the one a deployment without a database falls back to.
+// Package inmem provides an in-memory audit trail for tests and development.
 //
-// # Why
+// # Design
 //
-// The contract in package audit has to be satisfiable without a database, so
-// the reference server behaves the same way whether or not one is configured
-// and so the suites that exercise the trail need no fixture. It is unsealed
-// and unbounded on purpose: records live as long as the process, and a
-// deployment that needs them to outlive it configures audit/sqlstore.
+// The backend follows the same ordering, filtering and pruning contract as SQL
+// stores. Records are unsealed and remain until pruned or the process exits; no
+// automatic size cap is imposed. Consumers requiring persistence or bounded
+// retention must configure those controls explicitly.
 //
 // # References
 //
-//   - Decision record 0038: docs/research/decisions/0038-persisted-audit-trail.md
+//   - Decision record 0038: https://github.com/deploymenttheory/go-apple-dm/blob/main/docs/research/decisions/0038-persisted-audit-trail.md
 //   - Contract suite: audit/audittest
-//   - Plan of record: docs/research/implementation_plan.md (phase 9)
 package inmem

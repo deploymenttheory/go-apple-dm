@@ -206,11 +206,8 @@ func TestE2E_ACMEAttest(t *testing.T) {
 		}
 	})
 
-	// Each of these is a real attack or a real fault, and each must be
-	// refused. The reference implementations accept some of them: nanoca
-	// and Fleet do not compare the certificate request's key with the
-	// attested key, and step-ca skips the freshness check when the leaf
-	// carries no freshness extension.
+	// Invalid attestation chains, missing freshness and mismatched CSR keys must be
+	// refused.
 	refusals := []struct {
 		name    string
 		options func(f *acmeFixture) simulator.ACMEOptions
@@ -300,9 +297,7 @@ func TestE2E_ACMEAttest(t *testing.T) {
 	}
 
 	t.Run("ClientIdentifierBuysOneCertificate", func(t *testing.T) {
-		// Apple calls the ClientIdentifier an anti-replay code. Neither
-		// nanoca nor step-ca consumes it, so on those servers one
-		// identifier buys any number of certificates.
+		// A claimed ClientIdentifier cannot authorize another order.
 		f := newACMEFixture(t)
 		const udid, serial = "ACME-UDID-3", "C02ACME0003"
 		data := f.profile(t, udid, acme.Binding{Serial: serial, UDID: udid, CommonName: serial})

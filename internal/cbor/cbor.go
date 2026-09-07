@@ -163,17 +163,14 @@ func (d *decoder) readArg(n int) (uint64, error) {
 	return v, nil
 }
 
-// fits turns a length argument into an int, rejecting one that the bytes
-// still unread could not possibly satisfy: a header claiming four billion
-// elements costs a comparison rather than an allocation. Checking and
-// converting in the same place is what makes every later use of the result
-// safe, so this is the only conversion of an attacker-supplied length.
+// fits converts a length to int only when the remaining bytes can contain it,
+// avoiding allocation from an unbounded length header.
 //
-// perItem is the smallest number of bytes one element can occupy: one for a
-// string byte or an array element, two for a map entry and its key.
+// perItem is the minimum bytes per element: one for a string byte or array
+// element, two for a map entry and its key.
 //
 // #nosec G115 -- the remaining length is never negative, and n is compared
-// against it before it is converted.
+// against it before conversion.
 func (d *decoder) fits(n uint64, perItem int) (int, error) {
 	remaining := len(d.buf) - d.off
 	if n > uint64(remaining/perItem) {

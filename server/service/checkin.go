@@ -295,15 +295,9 @@ func (c *Core) getBootstrapToken(ctx context.Context, r *mdm.Request) (*CheckinR
 	return plistResult(resp)
 }
 
-// handleReturnToService answers the device's request for its return-to-service
-// configuration. Apple sends this only from a device whose Automated Device
-// Enrollment profile put it in return-to-service mode, so the question is not
-// whether the device may ask but whether the server agrees now.
-//
-// With no handler configured the answer is Enabled false. That is a valid
-// response meaning "do not erase", and it is the reading an unconfigured
-// server should give: a missing handler must not be the difference between a
-// device staying as it is and a device wiping itself.
+// handleReturnToService authorizes the enrollment and calls the optional policy
+// handler. Missing or nil policy responses produce Enabled false. An enabled
+// response receives an available stored bootstrap token when it omits one.
 func (c *Core) handleReturnToService(ctx context.Context, r *mdm.Request, m *checkin.ReturnToService) (*CheckinResult, error) {
 	if err := c.authorize(ctx, r); err != nil {
 		return nil, err
@@ -320,10 +314,8 @@ func (c *Core) handleReturnToService(ctx context.Context, r *mdm.Request, m *che
 	if resp == nil {
 		return plistResult(checkin.ReturnToServiceResponse{})
 	}
-	// App preservation needs the bootstrap token this enrollment already sent
-	// in SetBootstrapToken. A handler that does not attach it would silently
-	// turn every return to service into a full erasure, so the service
-	// attaches the stored token when the handler left it empty.
+	// Use the escrowed bootstrap token for app preservation when policy did not
+	// supply one. If none is stored, an enabled response permits full erasure.
 	if resp.ReturnToService.Enabled && len(resp.ReturnToService.BootstrapToken) == 0 {
 		tok, tokErr := c.store.BootstrapToken(ctx, r.ID)
 		switch {

@@ -19,17 +19,14 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/mdmprotocol/event"
 )
 
-// Webhook wire constants, chosen to match what MicroMDM and NanoMDM receivers
-// already expect.
+// Webhook wire constants identify the MicroMDM-compatible event envelope.
 const (
 	// ContentType is what both references send.
 	ContentType = "application/json; charset=utf-8"
-	// HMACHeader carries a base64 SHA-256 HMAC of the body, as NanoMDM's
-	// WithHMACSecret does.
+	// HMACHeader carries a base64-encoded SHA-256 HMAC of the body.
 	HMACHeader = "X-Hmac-Signature"
-	// DefaultMaxResponse bounds what is read back from the receiver. Neither
-	// reference reads the body at all, so neither bounds it either; we read a
-	// little to put the receiver's complaint in the log.
+	// DefaultMaxResponse bounds receiver response bytes read for webhook
+	// diagnostics.
 	DefaultMaxResponse = 4 << 10
 	// DefaultTimeout bounds one delivery attempt.
 	DefaultTimeout = 10 * time.Second
@@ -63,9 +60,8 @@ type WebhookConfig struct {
 	Logger  *slog.Logger
 }
 
-// envelope is the MicroMDM webhook event shape: topic, event id, timestamp,
-// and one of two payload objects. Receivers written for MicroMDM or NanoMDM
-// read this without modification.
+// envelope carries the MicroMDM-compatible topic, event identifier, timestamp and
+// check-in or acknowledgement payload. The raw_payload field is omitted.
 type envelope struct {
 	Topic       string     `json:"topic"`
 	EventID     string     `json:"event_id,omitempty"`
@@ -74,8 +70,7 @@ type envelope struct {
 	Acknowledge *ackEv     `json:"acknowledge_event,omitempty"`
 }
 
-// checkinEv and ackEv carry no raw_payload field, which is the one place this
-// envelope departs from MicroMDM's. See Webhook.
+// checkinEv and ackEv omit raw_payload because raw messages can contain secrets.
 type checkinEv struct {
 	UDID         string         `json:"udid,omitempty"`
 	EnrollmentID string         `json:"enrollment_id,omitempty"`
@@ -89,27 +84,14 @@ type ackEv struct {
 	Fields      map[string]any `json:"fields,omitempty"`
 }
 
-// Webhook returns a handler that POSTs each event to a receiver.
+// Webhook returns a handler that POSTs projected events using the
+// MicroMDM-compatible topic, event_id, created_at and
+// checkin_event/acknowledge_event envelope. raw_payload is omitted because a raw
+// check-in can contain escrowed tokens and other sensitive values.
 //
-// The envelope is MicroMDM's -- topic, event_id, created_at, and one of
-// checkin_event or acknowledge_event -- so a receiver written for MicroMDM or
-// NanoMDM reads the shape it expects. It departs from them in exactly one
-// way, deliberately: there is no raw_payload.
-//
-// Both references set raw_payload to the base64 of the originating check-in
-// body. For a TokenUpdate that body contains UnlockToken, the secret that
-// clears a device passcode, along with the push token, PushMagic and the
-// user's names, so every one of those reaches the receiver and every hop in
-// front of it. This package publishes projected fields instead. There is no
-// option to restore it: the events carry parsed messages rather than the
-// bytes, and re-plumbing the raw body through the bus to offer the switch
-// would be reintroducing the leak in order to make it configurable. A
-// receiver that parses the plist itself needs the check-in handler, not a
-// webhook.
-//
-// Delivery must not be on the bus's synchronous path. NanoMDM sends inside the
-// check-in handler, so a slow receiver delays every device check-in; subscribe
-// this to a bus built with event.WithAsync, which internal/app does.
+// Use event.WithAsync to keep receiver latency off device requests. The
+// reference application configures this mode. Delivery has bounded replies and
+// retries but is not durable across process failure.
 func Webhook(cfg WebhookConfig) (event.Handler, error) {
 	if cfg.URL == "" {
 		return nil, fmt.Errorf("%w: no URL", ErrWebhookConfig)
@@ -157,9 +139,8 @@ func Webhook(cfg WebhookConfig) (event.Handler, error) {
 	}, nil
 }
 
-// build turns an event into the MicroMDM envelope. Command results become the
-// acknowledge event, everything else the check-in event, which is the split
-// both references make.
+// build projects command results into acknowledge_event and other events into
+// checkin_event.
 func build(cfg WebhookConfig, e event.Event) envelope {
 	rec := cfg.Registry.Project(e)
 	env := envelope{Topic: "mdm." + rec.Type, CreatedAt: rec.At}

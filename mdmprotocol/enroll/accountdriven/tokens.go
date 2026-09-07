@@ -28,12 +28,11 @@ const (
 	DefaultCodeTTL       = 5 * time.Minute
 )
 
-// Identity is who authenticated.
+// Identity identifies the authenticated subject and issuer.
 //
-// ManagedAppleAccount is required: it becomes AssignedManagedAppleID in the
-// enrollment profile. The names differ because Apple renamed the concept to
-// Managed Apple Account while the profile key kept its original spelling, and
-// a key on the wire is not ours to rename.
+// ManagedAppleAccount is required and populates AssignedManagedAppleID in the
+// profile. The wire key retains Apple's spelling even though the account
+// terminology is Managed Apple Account.
 type Identity struct {
 	// UserIdentifier is what the person typed (user@domain).
 	UserIdentifier string

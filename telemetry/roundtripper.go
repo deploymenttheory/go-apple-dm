@@ -14,16 +14,8 @@ import (
 	"go.opentelemetry.io/otel/trace"
 )
 
-// Attribute keys from OpenTelemetry's HTTP semantic conventions.
-//
-// Only the stable subset is used. They are named here rather than imported
-// from a semconv package: those are published one import path per
-// specification release (.../semconv/v1.42.0, v1.43.0, and so on), so an
-// import pins a spec version in our source and every otel upgrade is then a
-// choice between editing the path and going stale. It saves no dependency —
-// otel/trace already links a semconv package — but the five names below are
-// in the stable set, whose spelling cannot change without a major version of
-// the specification, so pinning buys nothing.
+// Attribute keys used by the HTTP instrumentation. The small fixed set is
+// maintained locally so only reviewed attributes enter emitted telemetry.
 const (
 	AttrHTTPRequestMethod      = "http.request.method"
 	AttrHTTPResponseStatusCode = "http.response.status_code"
@@ -93,18 +85,14 @@ type roundTripper struct {
 	opts     rtOptions
 }
 
-// RoundTripper wraps next so every outbound request records
-// http.client.request.duration and, when a TracerProvider is configured, one
-// span. A nil next uses http.DefaultTransport.
+// RoundTripper wraps next with HTTP duration metrics and optional spans. A nil
+// next uses http.DefaultTransport; without providers the transport is returned
+// unwrapped.
 //
-// It records the request method, the server address and port, the response
-// status and the error type — and deliberately nothing drawn from the URL
-// path, query or body, on the span as much as on the metric. That is not
-// only a cardinality rule: an APNs push is a POST to /3/device/<device
-// token>, so a path recorded anywhere in telemetry publishes the credential
-// that wakes a device to every backend the traces reach.
-//
-// Errors are returned unchanged, so the wrapper is transparent to callers.
+// Attributes include bounded method, server address/port, status and error
+// category. Paths, queries, bodies and error messages are omitted to limit
+// cardinality and avoid exposing values such as APNs device tokens. Response and
+// error values are returned unchanged.
 func RoundTripper(next http.RoundTripper, cfg Config, opts ...Option) http.RoundTripper {
 	o := rtOptions{now: time.Now}
 	for _, fn := range opts {

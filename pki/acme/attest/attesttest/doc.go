@@ -1,25 +1,18 @@
-// Package attesttest mints Managed Device Attestation chains that look like
-// Apple's, for tests and for the device simulator.
+// Package attesttest generates Managed Device Attestation test chains and
+// property extensions.
 //
-// # Why
+// # Design
 //
-// Real attestations come from Apple's servers and cover real hardware, so
-// nothing in this repository can produce one. Everything that exercises the
-// attestation path needs a stand-in: the verifier's own tests, the ACME
-// server's tests, the device simulator, and the end-to-end scenarios. This
-// package is that stand-in. It builds a root and an intermediate of its own
-// and issues leaves carrying the same extensions in the same encodings that
-// Apple uses, so a test that passes here would pass against a real chain
-// for the same reasons.
-//
-// It is a test helper, not a security boundary: its anchors must never be
-// configured on a server facing real devices, which is why they are
-// supplied explicitly rather than added to the package defaults.
+// Test authorities issue leaves using the modeled Apple property encodings so
+// verifier, ACME and simulator tests can exercise valid and malformed
+// attestations without Apple hardware. These chains establish fixture behavior
+// only; passing fixture tests does not establish interoperability with real
+// device attestations. Test anchors must never be trusted by a deployment
+// accepting real devices.
 //
 // # References
 //
-//   - Decision record 0032: docs/research/decisions/0032-managed-device-attestation.md
-//   - Plan of record: docs/research/implementation_plan.md (phase 7)
+//   - Decision record 0032: https://github.com/deploymenttheory/go-apple-dm/blob/main/docs/research/decisions/0032-managed-device-attestation.md
 //   - Apple: https://developer.apple.com/documentation/devicemanagement/deviceinformationresponse
 //   - Schema: third_party/device-management/mdm/commands/information.device.yaml
 package attesttest

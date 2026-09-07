@@ -471,9 +471,8 @@ func TestIsUniqueViolation(t *testing.T) {
 	}
 }
 
-// BenchmarkClear100k measures Clear over a queue of 100,000 pending
-// commands (plan phase 4 exit criterion; the gate is enforced on
-// PostgreSQL in the integration tests).
+// BenchmarkClear100k measures clearing 100,000 pending commands. The
+// corresponding timing gate runs in the PostgreSQL integration tests.
 func BenchmarkClear100k(b *testing.B) {
 	ctx := context.Background()
 	id := mdm.EnrollmentID{Channel: mdm.ChannelDevice, ID: "bench"}

@@ -36,18 +36,10 @@ func Sign(key, body []byte) string {
 	return sign(key, nil, body)
 }
 
-// SignResponse returns the header value for a response carrying body under
-// status.
-//
-// The status is covered because the receiving side's trust decision is a
-// switch on it while every error path sends an empty body. A MAC over the body
-// alone makes the signature of an empty response a constant, which an on-path
-// attacker lifts from any error response and replays with a status of their
-// choosing: a forged 404 tells every device it has no declarations.
-//
-// The content type is deliberately not covered. It carries no trust decision,
-// and an intermediary that normalises the header would break verification for
-// nothing.
+// SignResponse authenticates status and body together. Covering status prevents
+// an authenticated empty error body from being replayed as a declaration-removal
+// 404. Content type is excluded because the adapter does not use it for
+// authorization decisions.
 func SignResponse(key []byte, status int, body []byte) string {
 	return sign(key, preamble(status), body)
 }

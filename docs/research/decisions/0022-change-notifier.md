@@ -1,62 +1,35 @@
 # 0022: Change notifier
 
-Status: accepted
-Date: 2026-09-02
-Phase: 5
+## Context
 
-## Apple sources
+Declaration changes need to reach devices despite enqueue failures, push failures and bursts of administrative writes.
 
-- Doc: <https://developer.apple.com/documentation/devicemanagement/integrating-declarative-management> (the `DeclarativeManagement` command tells the device to synchronise)
-- Doc: <https://developer.apple.com/documentation/devicemanagement/sending-mdm-commands-to-a-device>
-- YAML: `third_party/device-management/mdm/checkin/declarativemanagement.yaml` (command `Data` optional; the first send enables the engine)
-- YAML: `third_party/device-management/declarative/protocol/tokensresponse.yaml` (the payload carried in `Data`)
+## Decision
 
-## References read
+The notifier drains transactional change rows grouped by enrollment. It waits for the configured coalescing window, builds one `DeclarativeManagement` command per enrollment with that enrollment's tokens, and enqueues through the service using the `ddm` dedupe key. Existing pending work is reused and the enrollment is still pushed.
 
-- `jessepeterson/kmfddm@4b75a76` `notifier/notifier.go`, `notifier/cmd_dm.go`, `http/api/notify.go`, `http/api/declarations.go`, `http/api/sets.go`
-- `fleetdm/fleet@b44343c` `server/service/apple_mdm.go` (DDM command enqueue after a declaration change), `server/datastore/mysql/apple_mdm.go` (cron reconcile)
-- Record 0007 (push notifier and coalescing) for the `push.Notifier` and `push.Coalesce` contract.
+Failures record attempts, errors and the next retry time. `Run` polls until cancellation, and `Kick` requests an earlier drain. Deletes create notification work in the same transaction as the mutation.
 
-## Known pitfalls found
+## Rationale
 
-- KMFDDM: notify runs synchronously after the API has already answered 204, so a failure is invisible to the caller.
-- KMFDDM: enqueue and push failures are swallowed.
-- KMFDDM: the request body buffer is drained after the first 30-id chunk, so enrollments 31 and later receive an empty command.
-- KMFDDM: `DELETE` on a declaration or set never notifies, so devices keep a removed declaration until something else changes.
-- KMFDDM: tokens are front-loaded into the command only when exactly one enrollment is targeted; every other device makes an extra `tokens` round trip.
-- KMFDDM #11: no coalescing; a burst of uploads produces a command and a push per upload.
-- Fleet: a failed enqueue is never retried; a cron reconcile eventually catches up, so the delay depends on the cron interval.
+Persistent changes allow retry independently of the originating HTTP request. Service enqueue retains command-target checks, hooks and events. Grouping and deduplication reduce repeated commands for the same enrollment.
 
-## What they do
+## Constraints
 
-- **KMFDDM**: `notifier.Notifier` called by the API handlers after the write; builds one `DeclarativeManagement` command per chunk; pushes through NanoMDM's API.
-- **Fleet**: enqueues the command when a declaration changes; a cron job reconciles per-host rows and re-enqueues.
+Queueing and APNs acceptance do not establish device synchronization. Push outcomes follow record 0042. The event bus and webhook delivery are separate from this persistent change queue.
 
-## What we do better
+## Verification
 
-1. Change rows are written inside the mutating transaction (0020), so a committed change always has a row and a rolled-back write never notifies.
-2. `ddm.Notifier{Store, Tokens, Enqueuer, Pusher, Bus, Clock, Window, Poll, Batch, Backoff}` drains pending rows grouped per enrollment and defers a group while its newest change is younger than `Window` (default 2s), so a burst becomes one command.
-3. One `DeclarativeManagement` command per enrollment with `Data` always carrying that enrollment's `TokensResponse`, regardless of how many enrollments are in the batch.
-4. Enqueue uses `DedupeKey: "ddm"`; when a pending DDM command already exists the change is completed without a new command and the enrollment is still pushed.
-5. Failures are recorded on the change rows (`Attempts`, `LastError`, `NextAttemptAt` with backoff) and never swallowed; store failures surface from `DrainOnce`.
-6. One push per batch through `push.Notifier`, and `DDMChanged` is published once per drained enrollment.
-7. Deletes record changes before the row goes away, so a removed declaration or set notifies.
-8. `Run(ctx)` polls every `Poll` and `Kick()` wakes it immediately; `Run` stops on context cancellation. Tests run under `testing/synctest` with a real `time.After` inside the bubble.
+Notifier tests cover coalescing, per-enrollment tokens, dedupe, disabled enrollments, enqueue/push failures, storage errors, wakeups and cancellation. Store contracts verify change recording and rollback.
 
-## Verified by
+## References
 
-1. `ddmtest.RunAll/Changes/RecordInsideUpdate`, `/Changes/PendingByNextAttempt`, `/Changes/CompleteRemoves`, `/Changes/FailNeverDeletes` (prove claim 1).
-2. `ddm.TestNotifier/CoalescesBurstWithinWindow` (proves claim 2; would fail on KMFDDM because each write notifies).
-3. `ddm.TestNotifier/OneCommandPerEnrollment` (proves claim 3; would fail on KMFDDM because tokens are only attached for a single target and the 31st enrollment gets an empty command).
-4. `ddm.TestNotifier/DedupeSkipCompletesAndPushes`, `/DisabledEnrollmentSkipped` (prove claim 4).
-5. `ddm.TestNotifier/EnqueueFailureRecordedAndRetried`, `/PushFailureRecorded`, `/StoreFailuresSurface` (prove claim 5; would fail on KMFDDM and Fleet because a failed enqueue is dropped).
-6. `ddm.TestNotifier/PublishesDDMChanged` and the push count asserted in `/CoalescesBurstWithinWindow` (prove claim 6).
-7. `ddm.TestNotifier/DeleteNotifies` (proves claim 7; would fail on KMFDDM because DELETE never notifies).
-8. `ddm.TestNotifier/KickWakesRunImmediately`, `/RunStopsOnContext`, `ddm.TestNewNotifier/RequiresStoreTokensEnqueuer` (prove claim 8).
+- [server/ddmsync](../../../server/ddmsync)
+- [storage/ddm](../../../storage/ddm)
+- <https://developer.apple.com/documentation/devicemanagement/integrating-declarative-management>
+- <https://developer.apple.com/documentation/devicemanagement/sending-mdm-commands-to-a-device>
 
-## Rejected alternatives
+Reference source identifiers and paths (relative to the named project):
 
-- Notifying synchronously from the admin call (KMFDDM): the caller cannot see a failure that happens after the answer, and there is no retry.
-- A cron reconcile over per-enrollment rows (Fleet): correct but slow and a full scan; the change table is the work queue.
-- Sending the command without `Data`: costs every device a `tokens` round trip that the server already knows the answer to.
-- A separate goroutine per change: no coalescing and unbounded fan-out under a burst.
+- `jessepeterson/kmfddm@4b75a76`, `notifier/notifier.go`, `notifier/cmd_dm.go`, `http/api/notify.go`, `http/api/declarations.go`, `http/api/sets.go`
+- `fleetdm/fleet@b44343c`, `server/service/apple_mdm.go`, `server/datastore/mysql/apple_mdm.go`

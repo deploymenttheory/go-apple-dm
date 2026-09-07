@@ -35,7 +35,7 @@
     ],
     "repository": {
       "url": "https://github.com/deploymenttheory/go-apple-dm",
-      "revision": "0e487dd17ae7dffcad8674c668ff59e56c73d8f3"
+      "revision": "a817270f13b4ef7a9b1d2895118981120546b3a2"
     }
   },
   "components": [
@@ -43,7 +43,7 @@
       "id": "apptier",
       "type": "backend",
       "label": "app",
-      "sublabel": "cmd \u00b7 internal/app \u00b7 e2e",
+      "sublabel": "cmd · internal/app · e2e",
       "pos": [
         40,
         270.0
@@ -64,7 +64,7 @@
       "id": "servertier",
       "type": "backend",
       "label": "server/",
-      "sublabel": "service \u00b7 httpapi \u00b7 ddmsync",
+      "sublabel": "service · httpapi · ddmsync",
       "pos": [
         280,
         270.0
@@ -110,7 +110,7 @@
       "id": "storagetier",
       "type": "database",
       "label": "storage/",
-      "sublabel": "contracts \u00b7 in-memory",
+      "sublabel": "contracts · in-memory",
       "pos": [
         560,
         270.0
@@ -131,7 +131,7 @@
       "id": "clienttier",
       "type": "cloud",
       "label": "appleplatformservices/",
-      "sublabel": "dep \u00b7 axm \u00b7 gdmf \u00b7 push",
+      "sublabel": "dep · axm · gdmf · push",
       "pos": [
         560,
         110.0
@@ -152,7 +152,7 @@
       "id": "pkitier",
       "type": "security",
       "label": "pki/",
-      "sublabel": "ca \u00b7 scep \u00b7 acme \u00b7 pushcert",
+      "sublabel": "ca · scep · acme · pushcert",
       "pos": [
         560,
         430.0
@@ -177,7 +177,7 @@
       "id": "protocoltier",
       "type": "backend",
       "label": "mdmprotocol/",
-      "sublabel": "mdm \u00b7 ddm \u00b7 enroll \u00b7 plist",
+      "sublabel": "mdm · ddm · enroll · plist",
       "pos": [
         840,
         270.0
@@ -223,7 +223,7 @@
       "id": "foundationtier",
       "type": "backend",
       "label": "foundation",
-      "sublabel": "paging \u00b7 clock \u00b7 secrets",
+      "sublabel": "paging · clock · secrets",
       "pos": [
         1120,
         270.0
@@ -326,11 +326,11 @@
     },
     {
       "dot": "rose",
-      "title": "What the split buys",
+      "title": "Module boundary",
       "items": [
         "server/ is a second Go module, so it can depend on the library and never the reverse",
-        "Importing mdmprotocol/mdm brings nine dependencies and no database driver",
-        "pki/pushcert imports nothing, so storage can validate a certificate without depending on push"
+        "The library module has no SQL driver dependency",
+        "pki/pushcert uses only the standard library, keeping certificate parsing independent of push"
       ]
     }
   ]

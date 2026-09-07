@@ -62,8 +62,8 @@ func mustEC(t testing.TB, curve elliptic.Curve) *ecdsa.PrivateKey {
 // b64 is unpadded base64url, the only encoding this package accepts.
 func b64(s string) string { return base64.RawURLEncoding.EncodeToString([]byte(s)) }
 
-// jwsBody assembles a flattened JWS from already-encoded members, so that a
-// test can produce a body no honest signer would.
+// jwsBody assembles encoded members directly so tests can construct malformed
+// flattened JWS values.
 func jwsBody(t testing.TB, members map[string]any) []byte {
 	t.Helper()
 	body, err := json.Marshal(members)

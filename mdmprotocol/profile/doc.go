@@ -1,29 +1,21 @@
-// Package profile composes, signs, and parses Apple configuration profiles
-// (.mobileconfig): the top-level envelope, the common payload keys, stable
-// identifiers, and CMS signing.
+// Package profile composes, signs and parses Apple configuration profiles.
 //
-// # Why
+// # Design
 //
-// Every enrollment starts with a profile, and phase 3 of the plan of record
-// needs one built from typed payloads rather than templated XML. Payload
-// bodies are the generated types in schema/profiles; this package supplies
-// what Apple documents under profile-specific payload keys but does not
-// generate: the Configuration envelope, PayloadIdentifier and PayloadUUID
-// handling, scope, and a Resolver that maps PayloadType to a typed payload
-// on parse (decision record 0009). Signing and parsing share the cms
-// package so a signed profile round-trips and RequireSignature can reject
-// an unsigned one.
+// The package supplies the top-level envelope and common payload keys around
+// generated schema/profiles values. Callers choose stable PayloadIdentifier and
+// PayloadUUID values; a Resolver selects typed payloads during parsing. Attached
+// CMS signing and signature-required parsing use mdmprotocol/cms.
 //
-// Which payloads go into an enrollment profile, and the OTA flow that
-// delivers them, are enroll's concern; the payload schemas themselves are
-// generated and never hand-edited.
+// Payload selection for MDM enrollment and OTA delivery belong to
+// mdmprotocol/enroll. Preserving identifiers across updates is the caller's
+// responsibility.
 //
 // # References
 //
-//   - Decision record 0009: docs/research/decisions/0009-enrollment-profiles.md
-//   - Decision record 0010: docs/research/decisions/0010-ota-profile-service.md
-//   - Plan of record: docs/research/implementation_plan.md (phase 3)
-//   - Threat model: docs/security/threat-model.md (Enrollment profile row)
+//   - Decision record 0009: https://github.com/deploymenttheory/go-apple-dm/blob/main/docs/research/decisions/0009-enrollment-profiles.md
+//   - Decision record 0010: https://github.com/deploymenttheory/go-apple-dm/blob/main/docs/research/decisions/0010-ota-profile-service.md
+//   - Threat model: https://github.com/deploymenttheory/go-apple-dm/blob/main/docs/security/threat-model.md (Enrollment profile row)
 //   - Apple: https://developer.apple.com/documentation/devicemanagement/profile-specific-payload-keys
 //   - Apple: https://developer.apple.com/documentation/devicemanagement/deploying-device-management-enrollment-profiles
 //   - Schema: third_party/device-management/mdm/profiles/TopLevel.yaml, CommonPayloadKeys.yaml

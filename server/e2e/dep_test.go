@@ -20,11 +20,9 @@ import (
 	depinmem "github.com/deploymenttheory/go-apple-dm/storage/dep/inmem"
 )
 
-// TestE2E_DEPAssign is E2E-011: the token PKI exchange with our fake DEP
-// service, fetch then sync with cursor expiry, a profile defined and
-// assigned by the state-driven assigner, the device enrolling through ADE
-// with verified MachineInfo joined to its DEP record, and the software
-// update gate answering 403 for an old OS.
+// TestE2E_DEPAssign covers E2E-011: token PKI exchange, fetch/sync with cursor
+// expiry, state-driven profile assignment, verified ADE MachineInfo with DEP
+// enrichment, and the software-update response.
 func TestE2E_DEPAssign(t *testing.T) {
 	ctx := context.Background()
 	const account = "abm"
@@ -109,7 +107,7 @@ func TestE2E_DEPAssign(t *testing.T) {
 		t.Fatalf("stale cursor = %+v %v", res, err)
 	}
 
-	// Define the profile pointing at our ADE endpoint and assign.
+	// Define and assign a profile pointing at the test ADE endpoint.
 	profile := &dep.Profile{ProfileName: "go-apple-dm e2e", URL: f.server.URL + "/ade", OrgMagic: "e2e", AwaitDeviceConfigured: new(true), IsSupervised: new(true), IsMDMRemovable: new(false)}
 	resp, err := client.DefineProfile(ctx, account, profile)
 	if err != nil {

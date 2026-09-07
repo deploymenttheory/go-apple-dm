@@ -5,9 +5,8 @@ GO ?= go
 COVERAGE_MIN ?= 95
 COVER_DIR := cover
 PKGS := ./...
-# The reference server is its own module (decision record 0044), so every test
-# target runs twice. Coverage is attributed across both, or a library package
-# exercised only by an end-to-end scenario would read as uncovered.
+# Unit tests cover both modules. Coverage includes library packages exercised
+# by server scenarios; individual specialized targets select their relevant packages.
 SERVER_DIR := server
 LIB_MOD := github.com/deploymenttheory/go-apple-dm
 SRV_MOD := github.com/deploymenttheory/go-apple-dm/server
@@ -42,7 +41,7 @@ generate: submodule
 
 ## verify: fail if regeneration changes anything or removes an exported identifier
 verify: submodule
-	@if [ -d cmd/admgen ]; then $(GO) run ./cmd/admgen verify; else echo "cmd/admgen not present yet (phase 1)"; fi
+	@if [ -d cmd/admgen ]; then $(GO) run ./cmd/admgen verify; else echo "schema generator directory is missing"; fi
 
 ## lint: run golangci-lint with the repository configuration
 lint:
@@ -80,11 +79,11 @@ test-e2e:
 		$(GO) test -race -count=1 -tags e2e -cover -coverpkg=$(ALL_PKGS) $(E2E_PKGS) -args -test.gocoverdir=$(PWD)/$(COVER_DIR)/e2e-$(E2E_STORE); \
 	else echo "no e2e packages yet"; fi
 
-## docker-build: build the reference server image from this repository (never pulled from a third party)
+## docker-build: build the reference server image from this repository
 docker-build:
 	docker build -t go-apple-dm:test .
 
-## testdb-ddm-up: build the image and run our ddm role in Docker for TestE2E_DDMSplitDeployment; prints the exports
+## testdb-ddm-up: build the image and run the ddm role in Docker for TestE2E_DDMSplitDeployment; prints the exports
 testdb-ddm-up:
 	scripts/testdb.sh ddm-up
 

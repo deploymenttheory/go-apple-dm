@@ -29,13 +29,9 @@ type Record struct {
 	Fields  map[string]any `json:"fields,omitempty"`
 }
 
-// Registry decides what each event type may publish.
-//
-// It is default-deny: an event type with no entry projects nothing but
-// metadata, so adding an event without thinking about its payload cannot leak
-// one. Registering nil is how a type says "metadata is all there is",
-// deliberately rather than by omission, and Known reports the difference so a
-// test can insist every declared type was considered.
+// Registry selects fields for external event records. Unregistered types produce
+// metadata only. Registering nil explicitly chooses that behavior, and Known
+// distinguishes a registered metadata-only type from an unknown one.
 type Registry struct {
 	mu      sync.RWMutex
 	entries map[event.Type]Projection
@@ -58,9 +54,8 @@ func (r *Registry) Register(t event.Type, p Projection) {
 	}
 }
 
-// Known reports whether the type was registered at all, projection or not.
-// An unknown type still yields a valid metadata-only Record; this is how a
-// test tells "deliberately bare" from "forgotten".
+// Known reports whether a type was registered, including a nil projection.
+// Unknown types still produce a metadata-only Record.
 func (r *Registry) Known(t event.Type) bool {
 	r.mu.RLock()
 	defer r.mu.RUnlock()

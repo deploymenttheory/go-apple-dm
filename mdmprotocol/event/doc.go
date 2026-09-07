@@ -1,30 +1,22 @@
-// Package event is the in-process event bus every state change in the
-// service layer publishes to: typed events with an enrollment id, an actor,
-// and a timestamp, dispatched to subscribers by type.
+// Package event provides an in-process bus for typed events with enrollment,
+// actor and timestamp metadata.
 //
-// # Why
+// # Design
 //
-// Webhooks, audit logs, metrics, and the DDM change notifier all want to
-// know when an enrollment appears, a token changes, a command completes, or
-// a certificate rotates. Making them subscribers of one bus rather than
-// special cases inside the service is the shape decision record 0001 chose
-// for the library, and the threat model's repudiation control depends on
-// it: every state change emits an event, and subscribers persist them.
-// Phase 2 of the plan of record delivers the bus alongside the protocol
-// core.
+// Subscribers can observe lifecycle and command outcomes without being coupled
+// to the service implementation. The bus supports synchronous and asynchronous
+// dispatch and configurable handler-error reporting. Close drains queued
+// asynchronous work. The bus itself has no durable storage.
 //
-// The bus is deliberately small: synchronous dispatch, a handler error
-// reported through the bus error handler without stopping other handlers,
-// and no persistence. The sinks live in server/eventsink, which projects an event
-// down to what may leave the process before an slog record or a webhook
-// carries it; the persistent trail the threat model's repudiation control needs
-// is package audit.
+// Events may contain sensitive protocol data. External sinks in server/eventsink
+// apply an explicit projection, and server/audit persists that projection when
+// configured. Direct subscribers must apply their own disclosure policy. The DDM
+// notifier consumes persistent change rows rather than relying on bus delivery.
 //
 // # References
 //
-//   - Decision record 0001: docs/research/decisions/0001-architecture.md
-//   - Decision record 0006: docs/research/decisions/0006-mdm-signature-verification.md (CertRotated)
-//   - Decision record 0015: docs/research/decisions/0015-push-cert-store.md
-//   - Plan of record: docs/research/implementation_plan.md (phase 2)
-//   - Threat model: docs/security/threat-model.md (Repudiation)
+//   - Decision record 0001: https://github.com/deploymenttheory/go-apple-dm/blob/main/docs/research/decisions/0001-architecture.md
+//   - Decision record 0006: https://github.com/deploymenttheory/go-apple-dm/blob/main/docs/research/decisions/0006-mdm-signature-verification.md (CertRotated)
+//   - Decision record 0015: https://github.com/deploymenttheory/go-apple-dm/blob/main/docs/research/decisions/0015-push-cert-store.md
+//   - Threat model: https://github.com/deploymenttheory/go-apple-dm/blob/main/docs/security/threat-model.md (Repudiation)
 package event

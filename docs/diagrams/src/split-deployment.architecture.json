@@ -33,7 +33,7 @@
     ],
     "repository": {
       "url": "https://github.com/deploymenttheory/go-apple-dm",
-      "revision": "0e487dd17ae7dffcad8674c668ff59e56c73d8f3"
+      "revision": "a817270f13b4ef7a9b1d2895118981120546b3a2"
     }
   },
   "components": [
@@ -101,7 +101,7 @@
       "sources": [
         {
           "path": "server/ddmadapter/internal/proxywire/proxywire.go",
-          "label": "Sign \u00b7 Verify"
+          "label": "Sign · Verify"
         }
       ]
     },
@@ -129,7 +129,7 @@
       "id": "proxyserver",
       "type": "backend",
       "label": "proxyserver",
-      "sublabel": "/ddm/v1/declarative-management",
+      "sublabel": "/v1/declarative-management",
       "pos": [
         940,
         110.0
@@ -232,7 +232,7 @@
   "cards": [
     {
       "dot": "cyan",
-      "title": "A real code boundary",
+      "title": "Adapter boundary",
       "items": [
         "proxyclient imports proxywire and service, but never ddm",
         "So when DM_DDM_URL is set the mdm role can only reach the engine over the hop; unset, it calls inproc in-process"
@@ -243,13 +243,13 @@
       "title": "The hop",
       "items": [
         "The raw check-in body is POSTed unchanged, with its own Content-Type",
-        "X-MDM-Signature carries base64(HMAC-SHA256(key, body)), both directions",
-        "Separate send and receive keys; mTLS and bearer auth are optional extras"
+        "HMAC covers request body and response status plus body",
+        "The reference server requires both HMAC keys; mTLS and bearer options are library features"
       ]
     },
     {
       "dot": "rose",
-      "title": "Relayed faithfully",
+      "title": "Response mapping",
       "items": [
         "200 returns the body, 404 stays 404, 400 becomes a bad-request error",
         "Anything else becomes an internal error rather than leaking a status",

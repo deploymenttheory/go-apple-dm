@@ -4,28 +4,28 @@
 // Package checkin holds the MDM check-in messages generated from Apple's
 // device management schema: 9 schema files and 14 types.
 //
-// # Why
+// # Design
 //
 // Apple publishes the wire format of the MDM check-in messages as YAML in
 // https://github.com/apple/device-management, pinned here as a git
-// submodule. Generating this package from that pinned commit keeps the wire
-// types, validation, and support metadata identical to Apple's schema
-// (decision record 0003). Every type carries plist and json struct tags with
-// Apple's wire keys, a Validate method driven by the schema's constraints,
-// and support metadata queryable through Support(path) or the schema/support
+// submodule. Generating this package from that pinned commit derives the
+// wire types, validation, and support metadata from Apple's schema (decision
+// record 0003). Every type carries plist and json struct tags with Apple's
+// wire keys, a Validate method driven by the schema's constraints, and
+// support metadata queryable through Support(path) or the schema/support
 // package.
 //
-// Nothing here is hand-edited: admgen regenerates the package and admgen
-// verify fails when regeneration would change it or drop an exported name
+// Edit the generator to change this package. admgen verify fails when
+// regeneration would change it or drop an exported name
 // (schema/EXPORTED_IDENTIFIERS.lock). Protocol semantics that Apple
 // documents only in prose live in the hand-written packages that import this
 // one.
 //
 // # References
 //
-//   - Decision record 0001: docs/research/decisions/0001-architecture.md
-//   - Decision record 0003: docs/research/decisions/0003-schema-generator.md
-//   - Plan of record: docs/research/implementation_plan.md (phase 1)
+//   - Decision record 0001: https://github.com/deploymenttheory/go-apple-dm/blob/main/docs/research/decisions/0001-architecture.md
+//   - Decision record 0003: https://github.com/deploymenttheory/go-apple-dm/blob/main/docs/research/decisions/0003-schema-generator.md
+//   - Architecture: https://github.com/deploymenttheory/go-apple-dm/blob/main/docs/architecture.md
 //   - Apple: https://developer.apple.com/documentation/devicemanagement/check-in
 //   - Apple: https://github.com/apple/device-management/blob/release/docs/schema.md
 //   - Schema: third_party/device-management/mdm/checkin/**

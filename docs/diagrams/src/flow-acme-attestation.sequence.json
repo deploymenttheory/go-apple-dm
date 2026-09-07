@@ -28,7 +28,7 @@
           "attest",
           "policy"
         ],
-        "note": "Four separate checks stand between an attestation and a certificate."
+        "note": "Verification checks the chain, freshness, requested key and bound device."
       }
     ]
   },
@@ -49,7 +49,7 @@
       "id": "store",
       "type": "database",
       "label": "acme.Store",
-      "sublabel": "nonces \u00b7 orders"
+      "sublabel": "nonces · orders"
     },
     {
       "id": "attest",
@@ -61,7 +61,7 @@
       "id": "policy",
       "type": "security",
       "label": "Policy",
-      "sublabel": "any \u00b7 dep \u00b7 sip"
+      "sublabel": "any · dep · sip"
     },
     {
       "id": "ca",
@@ -79,7 +79,7 @@
     {
       "from": 283.0,
       "to": 402.5,
-      "label": "device-attest-01"
+      "label": "Attest"
     },
     {
       "from": 405.0,
@@ -151,7 +151,7 @@
       "from": "acme",
       "to": "policy",
       "y": 388.5,
-      "label": "may this device enroll?",
+      "label": "evaluate admission policy",
       "variant": "security"
     },
     {
@@ -191,7 +191,7 @@
   "cards": [
     {
       "dot": "cyan",
-      "title": "What is checked",
+      "title": "Attestation checks",
       "items": [
         "The chain verifies to the Apple Enterprise Attestation Root",
         "The freshness code is derived from the challenge token"
@@ -199,7 +199,7 @@
     },
     {
       "dot": "rose",
-      "title": "What is refused",
+      "title": "Rejected evidence",
       "items": [
         "A chain from another authority, and a stale freshness code",
         "A CSR for a key the attestation did not cover"

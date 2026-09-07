@@ -82,18 +82,14 @@ type JWS struct {
 	Protected []byte
 	Signature []byte
 
-	// signingInput is protected || "." || payload, both as received. RFC
-	// 7515 section 5.2 step 8 signs those octets, so we keep them rather
-	// than re-encoding and risking a byte-for-byte difference.
+	// signingInput preserves the received protected and payload encodings joined by
+	// a period, as required by RFC 7515 section 5.2 step 8.
 	signingInput []byte
 }
 
-// flattened mirrors the flattened JSON serialisation of RFC 7515 section
-// 7.2.2. The three members we want are pointers so that Parse can tell a
-// member that was absent from one that was present and empty, which is the
-// difference between a detached payload and a POST-as-GET. The two members
-// we refuse are declared so we can name them in the error; anything else is
-// rejected by RejectUnknownMembers.
+// flattened models RFC 7515 section 7.2.2. Pointer members distinguish absence
+// from an empty POST-as-GET payload. Explicit unsupported members provide
+// specific errors; RejectUnknownMembers rejects other fields.
 type flattened struct {
 	Protected  *string        `json:"protected"`
 	Payload    *string        `json:"payload"`
@@ -116,17 +112,13 @@ type protectedHeader struct {
 	Crit  jsontext.Value `json:"crit"`
 }
 
-// Parse reads one flattened-serialisation JWS and checks its shape against
-// what RFC 8555 section 6.2 allows. It does not verify the signature; that
-// needs a key, which the caller finds from the kid or the jwk this returns.
+// Parse checks the flattened JWS shape required by RFC 8555 section 6.2. It
+// returns the protected header and payload but does not verify the signature;
+// callers resolve the key from kid or jwk and verify separately.
 //
-// The rules are deliberately unforgiving. A general serialisation, an
-// unprotected header, a detached payload, an unknown top-level member, an
-// unencoded payload (RFC 7797 b64), a crit member, a missing url or nonce,
-// both or neither of jwk and kid, padded base64: each of those is a
-// malformed request rather than a variation to be accommodated, and letting
-// one through would mean a handler reading a value the signature never
-// covered.
+// General serialization, unprotected headers, detached/unencoded payloads,
+// unknown members, crit, missing url/nonce, both or neither of jwk/kid, and
+// padded base64 are rejected.
 func Parse(body []byte) (*JWS, error) {
 	if len(body) > MaxBody {
 		return nil, fmt.Errorf("%w: body of %d bytes exceeds the %d byte limit", ErrParse, len(body), MaxBody)
@@ -189,15 +181,13 @@ func parseProtected(raw []byte) (*Header, error) {
 	if err := json.Unmarshal(raw, &p); err != nil {
 		return nil, fmt.Errorf("%w: %w", ErrHeader, err)
 	}
-	// RFC 7797's unencoded payload option changes what the signature covers,
-	// and ACME has no use for it; a b64 of false is a request we cannot
-	// safely interpret rather than one we should try to.
+	// RFC 7797 changes the signing input. ACME requests do not support this
+	// unencoded-payload option.
 	if p.B64 != nil && !*p.B64 {
 		return nil, fmt.Errorf("%w: b64 is false; unencoded payloads (RFC 7797) are not accepted", ErrHeader)
 	}
-	// crit names extensions the sender insists we understand. We understand
-	// none of them, and RFC 7515 section 4.1.11 says that means we must
-	// reject the JWS.
+	// No critical extensions are implemented, so RFC 7515 section 4.1.11 requires
+	// rejection of crit.
 	if len(p.Crit) > 0 {
 		return nil, fmt.Errorf("%w: crit is present and no extensions are supported", ErrHeader)
 	}
@@ -323,27 +313,13 @@ func (j *JWS) verifyECDSA(pub crypto.PublicKey, digest []byte, wantCurve string,
 // maxOmittedZeroBytes+1 candidate splits, each one ECDSA verification.
 const maxOmittedZeroBytes = 3
 
-// candidateSplits returns the (r, s) pairs worth trying for a signature of
-// the given length, each already padded to size bytes.
+// candidateSplits returns padded (r, s) candidates for short ECDSA signatures.
 //
-// The straightforward case is the only correct one: RFC 7515 section 3.4
-// fixes the signature at 2*size octets, r and s each left-padded to size,
-// and that is what every conforming client sends. Some of Apple's ACME
-// clients do not: they encode r and s as minimal big-endian integers and so
-// drop leading zero bytes, producing a signature one or two octets short.
-// step-ca ran into the same clients and patches the signature in
-// retryVerificationWithPatchedSignatures (acme/api/middleware.go): it
-// special-cases a deficit of exactly one, trying a zero prepended to r and
-// then to s, and a deficit of exactly two, assuming one zero was dropped
-// from each, mutating the parsed JWS in place and restoring it afterwards.
-//
-// Ours is the same idea expressed as a loop and without mutation. For a
-// deficit d we try every way of splitting d between the front of r and the
-// front of s, which is d+1 candidates and covers step-ca's two cases plus
-// the ones it declines to guess at, and we compute the candidates instead
-// of rewriting the signature we were handed. A signature longer than
-// 2*size is never a truncation and is always rejected, and so is a deficit
-// beyond maxOmittedZeroBytes.
+// RFC 7518 requires two fixed-width integers. Some Apple ACME clients omit
+// leading zero bytes. For a deficit d, the helper tries each of the d+1 possible
+// distributions of those omitted bytes without mutating the input. Oversized
+// signatures and deficits beyond maxOmittedZeroBytes are rejected. Every
+// candidate still requires signature verification.
 func candidateSplits(sig []byte, size int) [][2][]byte {
 	want := 2 * size
 	switch {
@@ -354,8 +330,8 @@ func candidateSplits(sig []byte, size int) [][2][]byte {
 	}
 	deficit := want - len(sig)
 	out := make([][2][]byte, 0, deficit+1)
-	// fromR is how many leading zero bytes we assume were dropped from r;
-	// the remainder were dropped from s.
+	// fromR is the candidate number of zero bytes omitted from r; the remaining
+	// deficit is assigned to s.
 	for fromR := range deficit + 1 {
 		rLen := size - fromR
 		r := make([]byte, size)
@@ -375,8 +351,7 @@ func (j *JWS) verifyRSA(pub crypto.PublicKey, hash crypto.Hash, digest []byte) e
 	if err := checkRSASize(key); err != nil {
 		return err
 	}
-	// RFC 7518 section 3.3 defines RS* as PKCS #1 v1.5; PSS is PS*, which we
-	// do not accept, so there is nothing to negotiate here.
+	// RS* uses PKCS #1 v1.5 per RFC 7518 section 3.3. PSS (PS*) is unsupported.
 	if err := rsa.VerifyPKCS1v15(key, hash, digest, j.Signature); err != nil {
 		return fmt.Errorf("%w: %w", ErrSignature, err)
 	}
@@ -394,14 +369,12 @@ type signHeader struct {
 	JWK   *JWK   `json:"jwk,omitempty"`
 }
 
-// Sign produces a flattened JWS over payload. It exists for the tests, for
-// the simulator, and for any client code that has to talk to an ACME server
-// of our own; a server never signs a JWS.
+// Sign produces a flattened JWS over payload for clients and test fixtures. An
+// empty h.Algorithm selects the EC-curve algorithm or RS256 for RSA. A supplied
+// algorithm must be supported and match the key.
 //
-// If h.Algorithm is empty the algorithm is derived from the key: the curve
-// for ECDSA, RS256 for RSA. If it is set it must be one we accept and it
-// must match the key. The rest of h is written out as given, so a caller can
-// produce a header Parse will reject on purpose.
+// Other header fields are emitted as supplied, allowing tests to construct
+// headers that Parse rejects. ACME server responses do not use this helper.
 func Sign(key crypto.Signer, h Header, payload []byte) ([]byte, error) {
 	if key == nil {
 		return nil, fmt.Errorf("%w: nil signer", ErrKey)

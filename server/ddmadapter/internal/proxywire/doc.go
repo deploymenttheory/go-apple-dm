@@ -1,23 +1,22 @@
-// Package proxywire is the wire contract between our mdm role and our ddm
-// role when they run as separate processes.
+// Package proxywire defines the internal protocol between separately deployed
+// MDM and declaration-engine roles.
 //
-// # Why
+// # Design
 //
-// Apple defines the device-facing protocol and nothing about splitting an
-// MDM server into processes, so the hop between the roles is ours. It
-// carries Apple's message unchanged: one route, a POST whose body is the
-// DeclarativeManagement check-in plist exactly as the device sent it, so
-// the receiving side resolves the enrollment the same way the device path
-// does. Authentication is an HMAC-SHA256 over the body in X-MDM-Signature,
-// verified in both directions, with a body limit; mutual TLS and a bearer
-// token are layered on by proxyserver. Nothing here is borrowed from
-// NanoMDM or MicroMDM. The package is internal to the adapters so the
-// contract can change with them.
+// POST /v1/declarative-management carries the original DeclarativeManagement
+// check-in plist. Request HMACs cover the body; response HMACs cover status and
+// body. Shared helpers apply body limits and signature encoding. Proxyserver can
+// additionally require mutual TLS or another authorization check.
+//
+// This is a project-specific deployment protocol, not an Apple or NanoMDM
+// transport contract. The adapters resolve enrollment from the forwarded
+// message. HMAC does not encrypt data, and this protocol does not maintain a
+// replay nonce store.
 //
 // # References
 //
-//   - Decision record 0023: docs/research/decisions/0023-ddm-adapters-and-wire-contract.md
-//   - Threat model: docs/security/threat-model.md (trust boundary 5)
+//   - Decision record 0023: https://github.com/deploymenttheory/go-apple-dm/blob/main/docs/research/decisions/0023-ddm-adapters-and-wire-contract.md
+//   - Threat model: https://github.com/deploymenttheory/go-apple-dm/blob/main/docs/security/threat-model.md (private DDM proxy)
 //   - Apple: https://developer.apple.com/documentation/devicemanagement/declarativemanagementrequest
 //   - RFC 2104 (HMAC): https://www.rfc-editor.org/rfc/rfc2104
 package proxywire

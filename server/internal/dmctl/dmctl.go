@@ -222,13 +222,9 @@ func defaultsFromEnv(getenv func(string) string) options {
 	}
 }
 
-// bind attaches the global flags, taking their defaults from def.
-//
-// A verb re-binds the same variables so a global may be written after the
-// verb, and def is then the values parsed before it. Seeding from the
-// environment again at that point would silently discard everything the
-// operator wrote before the verb, which is the bug this signature exists to
-// prevent.
+// bind attaches global flags with defaults from def. Subcommands reuse the
+// values parsed before the verb so later flags override them without resetting
+// them from the environment.
 func (o *options) bind(fs *flag.FlagSet, def options) {
 	fs.StringVar(&o.server, "server", def.server, "server base URL ("+EnvServer+")")
 	fs.StringVar(&o.token, "token", def.token, "bearer token, @file, or env:NAME ("+EnvToken+")")
@@ -267,13 +263,9 @@ func (e *env) verbFlags(name string) *flag.FlagSet {
 	return fs
 }
 
-// reorder moves flag arguments ahead of positional ones.
-//
-// The flag package stops parsing at the first non-flag argument, so without
-// this `dmctl explain DeviceLock -target macos:15.0` would silently ignore
-// the target and print the untargeted table: the worst kind of wrong, since
-// it answers a different question without saying so. Everything after "--" is
-// positional.
+// reorder moves flags before positional arguments because flag.Parse stops at
+// the first positional. It preserves all arguments after -- as positional,
+// allowing options such as -target after an explain identifier.
 func reorder(fs *flag.FlagSet, args []string) []string {
 	var flags, positional []string
 	for i := 0; i < len(args); i++ {
@@ -426,10 +418,8 @@ func (e *env) client() (*adminclient.Client, error) {
 	return c, nil
 }
 
-// explainNotFound turns a 404 into a sentence when the route is missing
-// because of the role the server runs rather than because the object is not
-// there. No reference server has roles, so none needs this; ours does, and a
-// bare 404 sends an operator looking for the wrong thing.
+// explainNotFound uses server configuration to distinguish an unavailable route
+// family from a missing resource and reports the role that serves the family.
 func (e *env) explainNotFound(
 	ctx context.Context,
 	c *adminclient.Client,

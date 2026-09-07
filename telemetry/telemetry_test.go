@@ -216,8 +216,7 @@ func TestRoundTripperRecordsTheStableAttributes(t *testing.T) {
 	}
 }
 
-// A method we do not recognise comes from a caller, so it is bounded like
-// any other string rather than trusted onto a label.
+// Unknown methods map to the bounded fallback value.
 func TestRoundTripperBoundsTheMethod(t *testing.T) {
 	t.Parallel()
 	rec := telemetrytest.NewRecorder()

@@ -33,7 +33,5 @@ require (
 	modernc.org/memory v1.11.0 // indirect
 )
 
-// The library module is released from this repository at the same commit, so
-// before v3.0.0 exists as a tag there is nothing to resolve. go.work covers a
-// checkout of the whole repository; this covers building server/ on its own.
+// Resolve the library from this checkout when building the server module directly.
 replace github.com/deploymenttheory/go-apple-dm => ../

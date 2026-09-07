@@ -7,7 +7,7 @@
     "views": [
       {
         "id": "ade",
-        "label": "Automated",
+        "label": "Automated Device Enrollment",
         "focus": [
           "adedevice",
           "machineinfo",
@@ -25,7 +25,7 @@
           "challenge",
           "adprofile"
         ],
-        "note": "Discovery routes the device; the first POST earns a 401 that names the method."
+        "note": "Discovery selects an endpoint; an unauthenticated POST receives an authentication challenge."
       },
       {
         "id": "refused",
@@ -56,7 +56,7 @@
   "lanes": [
     {
       "id": "ade",
-      "label": "Automated"
+      "label": "Automated Device Enrollment"
     },
     {
       "id": "account",
@@ -124,7 +124,7 @@
       "col": 2,
       "type": "security",
       "label": "Update gate",
-      "sublabel": "is the OS new enough?",
+      "sublabel": "configured minimum OS",
       "width": 160
     },
     {
@@ -141,8 +141,8 @@
       "lane": "account",
       "col": 0,
       "type": "external",
-      "label": "BYOD device",
-      "sublabel": "user's Apple Account",
+      "label": "Account enrollment",
+      "sublabel": "Managed Apple Account",
       "width": 150
     },
     {
@@ -151,7 +151,7 @@
       "col": 1,
       "type": "backend",
       "label": "discovery",
-      "sublabel": "which enrollment?",
+      "sublabel": "model-family route",
       "width": 140
     },
     {
@@ -169,7 +169,7 @@
       "col": 3,
       "type": "backend",
       "label": "bearer accepted",
-      "sublabel": "single use",
+      "sublabel": "reusable access token",
       "width": 150
     },
     {
@@ -266,7 +266,7 @@
   "cards": [
     {
       "dot": "cyan",
-      "title": "Two paths, one builder",
+      "title": "Enrollment profile issuance",
       "items": [
         "Both end at the same enroll.Profile, signed by the enrollment CA",
         "An old OS and an unrouted model family are refused before any profile is built"

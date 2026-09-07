@@ -1,51 +1,37 @@
 # 0008: SCEP endpoint and pluggable CA
 
-Status: accepted
-Date: 2026-09-01
-Phase: 3
+## Context
 
-## Apple sources
+Enrollment profiles can request an identity certificate through SCEP. Issuance and renewal need caller-controlled authorization and certificate policy.
 
-- Doc: <https://developer.apple.com/documentation/devicemanagement/scep> (SCEP payload keys: URL, Name, Challenge, Subject, Keysize, Key Type, Key Usage, CAFingerprint, Retries, RetryDelay)
-- Doc: <https://developer.apple.com/documentation/devicemanagement/managing-certificates-for-device-management-services-and-devices>
-- YAML: `third_party/device-management/mdm/profiles/com.apple.security.scep.yaml`
-- RFC 8894 (SCEP)
+## Decision
 
-## References read
+`ca.Signer` and `ca.Depot` separate signing from certificate storage. `ca.Local` applies configured validity, usage and SAN policy and allocates random serial numbers. SCEP uses `smallstep/scep` for message parsing and response construction, with static, one-time and expiring HMAC challenge implementations and a CSR-verification hook.
 
-- `smallstep/scep@main` `scep.go` (`ParsePKIMessage`, `DecryptPKIEnvelope`, `Success`, `Fail`, `NewCSRRequest`, `CACerts`, `DegenerateCertificates`)
-- `micromdm/scep@main` `server/service.go` (GetCACaps string, GetCACert single vs degenerate, PKIOperation flow), `server/csrsigner.go` (static challenge middleware with constant-time compare and a TODO about renewals), `depot/depot.go` (Depot interface), `csrverifier`
-- `jessepeterson/mysqlscepserver` (SQL depot)
+A renewal can skip the challenge only after verifying the existing signer against the CA and the CSR subject. When status enforcement is configured, a revoked, expired or unknown signer cannot bypass it with a challenge. Trusted issuance callbacks register certificates before returning them to the client.
 
-## Known pitfalls found
+## Rationale
 
-- micromdm/scep's README says the server is basic and unlikely to be supported; challenge validation is a static shared secret compared for every message type, and the code carries a TODO about whether renewals should bypass it.
-- The SCEP RA certificate must be RSA: devices encrypt the PKCS#7 envelope to it.
-- Serial allocation by counter in a file depot races across processes.
-- `HasCN` renewal logic couples the depot to policy.
+Policy hooks support different enrollment admission rules without coupling the protocol implementation to a CA deployment. A shared client exercises issuance from the device side.
 
-## What they do
+## Constraints
 
-- **micromdm/scep**: `ParsePKIMessage` with CA certs, decrypt envelope with the RA key, `SignCSRContext` chain (challenge middleware, then depot signer with validity days and serial from depot), `Success`/`Fail` with `BadRequest`.
-- **smallstep/scep**: the protocol library both use.
+The SCEP recipient certificate must support RSA envelope decryption. Static and HMAC challenges are not one-time credentials; account-driven profiles use a separate credential bound to the first CSR. Operators supply persistent CA material for persistent deployments.
 
-## What we do better
+## Verification
 
-1. `ca.Signer` and `ca.Depot` are small interfaces; `ca.Local` signs with an in-memory key and any depot, with a `Policy` (validity, key usages, SAN allow-list) instead of depot-coupled renewal rules; serials are 128-bit random.
-2. `scep.Challenge` is an interface with three implementations: static, one-time (bound to an enrollment and consumed on use), and HMAC-derived (stateless, expiring), so an enrollment profile can carry a challenge that cannot be replayed.
-3. Renewals (an existing signer certificate that chains to the CA) skip the challenge, resolving the reference TODO explicitly and testably.
-4. A `CSRVerifier` hook sees the decrypted CSR and the request context before signing, for policy such as subject or key size checks.
-5. `scep.Client` performs GetCACert and PKIOperation so the simulator can enrol exactly like a device.
+CA and SCEP tests cover policy, serial generation, challenge consumption/expiry, renewal identity checks, CSR rejection, client enrollment and optional revocation checks.
 
-## Verified by
+## References
 
-1. `ca.TestLocalSignsWithPolicy`, `ca.TestSerialsAreRandom`.
-2. `scep.TestChallenges` (static, one-time consumed, HMAC expiry).
-3. `scep.TestRenewalSkipsChallenge`.
-4. `scep.TestCSRVerifierVeto`.
-5. `scep.TestClientEnrolls`, `e2e.TestE2E_SCEPEnrollPush`.
+- [pki/ca](../../../pki/ca)
+- [pki/scep](../../../pki/scep)
+- [pki/revocation](../../../pki/revocation)
+- <https://developer.apple.com/documentation/devicemanagement/scep>
+- <https://developer.apple.com/documentation/devicemanagement/managing-certificates-for-device-management-services-and-devices>
 
-## Rejected alternatives
+Reference source identifiers and paths (relative to the named project):
 
-- Depending on micromdm/scep's server: unmaintained by its own admission.
-- step-ca as the only CA: too large to embed; kept as an external option through `ca.Signer`.
+- `smallstep/scep@main`, `scep.go`, `ParsePKIMessage`, `DecryptPKIEnvelope`, `Success`, `Fail`, `NewCSRRequest`, `CACerts`, `DegenerateCertificates`
+- `micromdm/scep@main`, `server/service.go`, `server/csrsigner.go`, `depot/depot.go`, `csrverifier`
+- `jessepeterson/mysqlscepserver`

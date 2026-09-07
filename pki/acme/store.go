@@ -78,13 +78,12 @@ type Tx interface {
 	Writer
 }
 
-// Store is the ACME state: accounts, orders, authorizations, challenges,
-// issued certificates, and nonces.
+// Store persists ACME accounts, orders, authorizations, challenges, certificates
+// and nonces.
 //
-// Nonces are outside the transaction deliberately. Every signed request
-// takes one, they carry no relationship to anything else, and taking one
-// has to be atomic on its own, so they are their own two methods rather
-// than a transaction each.
+// Nonce operations are independently atomic because each signed request consumes
+// a nonce before its domain transaction. They do not participate in the
+// order/account transaction callback.
 type Store interface {
 	Reader
 	// Update runs fn in a transaction, retrying nothing: a caller that

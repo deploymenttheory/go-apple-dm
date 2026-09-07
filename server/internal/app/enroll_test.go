@@ -230,8 +230,8 @@ func TestEnrollment(t *testing.T) {
 		_, err := d.AccountDrivenEnroll(ctx, simulator.AccountDrivenOptions{UserIdentifier: "alice@example.com", DiscoveryURL: f.publicURL,
 			Authenticate: func(ctx context.Context, c simulator.AuthChallenge) (string, error) {
 				return d.OAuth2CodeFlow(ctx, c, "alice@example.com", func(ctx context.Context, authorizationURL string) (string, error) {
-					// The sign-in page: our authorization endpoint hands
-					// off to the provider and ends with the 308.
+					// The authorization page delegates to the provider and completes with a 308
+					// redirect.
 					req, _ := http.NewRequestWithContext(ctx, http.MethodGet, authorizationURL, nil)
 					res, err := f.client().Do(req)
 					if err != nil {

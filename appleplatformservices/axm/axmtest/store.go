@@ -130,16 +130,10 @@ func (c *collection) all() []*resource {
 	return out
 }
 
-// assignment is a device's assignment to a server with when it becomes
-// visible.
+// assignment records a device's server assignment and its visibility delay.
 //
-// Apple's assignment endpoints are eventually consistent, so a fake that
-// answers immediately would let a client pass without ever polling. Two
-// ways of expressing the delay are offered because they answer different
-// questions. A wall-clock lag says how long convergence takes. A read
-// count says how many reads see the old answer, and only that one is
-// deterministic: a machine slow enough to spend the whole lag between the
-// assignment and the first read would otherwise observe no delay at all.
+// The delay models eventual consistency. A wall-clock lag models convergence
+// time; a read count forces polling even if the first read occurs after that lag.
 type assignment struct {
 	serverID  string
 	visibleAt time.Time

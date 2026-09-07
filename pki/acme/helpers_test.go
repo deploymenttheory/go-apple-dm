@@ -32,9 +32,8 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/storage/acme/inmem"
 )
 
-// The device every fixture is about: the serial number and UDID the default
-// client identifier was minted for, so a test that changes one of them is
-// deliberately describing a different device.
+// Default fixtures bind identifiers to this serial number and UDID. Changing
+// either creates a device-binding mismatch.
 const (
 	testSerial     = "C02XX1234567"
 	testUDID       = "00008030-000A1B2C3D4E5F60"

@@ -67,7 +67,7 @@
       "id": "plist",
       "type": "backend",
       "label": "plist.Decoder",
-      "sublabel": "byte and depth bounded",
+      "sublabel": "bytes; XML depth bound",
       "stage": 1,
       "row": 0,
       "width": 130
@@ -85,7 +85,7 @@
       "id": "checkin",
       "type": "backend",
       "label": "mdm.Checkin",
-      "sublabel": "one of eight messages",
+      "sublabel": "one of nine messages",
       "stage": 2,
       "row": 0,
       "width": 130
@@ -153,7 +153,7 @@
       "title": "One codec boundary",
       "items": [
         "plist is the library's only point of contact with property lists",
-        "The decoder is byte- and depth-limited because device input is untrusted"
+        "Input has a byte bound; XML decoding also limits nesting depth"
       ]
     },
     {
@@ -166,7 +166,7 @@
     },
     {
       "dot": "amber",
-      "title": "Not here",
+      "title": "Outbound validation",
       "items": [
         "schema/support screens outbound commands, not decoded check-ins",
         "That screen is in flow-command-delivery, on service.Core.Enqueue"

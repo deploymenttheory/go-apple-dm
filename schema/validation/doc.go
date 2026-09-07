@@ -1,28 +1,23 @@
-// Package validation collects schema validation results for generated
-// types: a Collector the generated Validate methods report into and the
-// Error and Errors types callers inspect.
+// Package validation collects constraint failures from generated schema
+// validators.
 //
-// # Why
+// # Design
 //
-// Apple's schema declares, per key, presence, allowed values, numeric
-// ranges, formats, and repetition limits. Phase 1 of the plan of record
-// generates a Validate method from those constraints (decision record
-// 0003), and the value of that method is in reporting everything wrong
-// with a value in one pass rather than stopping at the first fault, so an
-// operator fixing a profile or a declaration sees the whole list.
-// Generated methods call the Collector for every key with the rule and the
-// key's support entry; given a Target, the Collector also records whether
-// the target OS version and enrollment context accept each key.
+// Generated Validate methods report presence, range, format, value and
+// repetition checks to Collector. A supplied support.Target also enables
+// platform and enrollment-context checks for populated fields. Aggregating
+// errors lets callers inspect multiple invalid values in one pass.
 //
-// The package defines the vocabulary and the accumulator only. The rules
-// are generated, and the support tables live in schema/support.
+// This package defines the result types and accumulation behavior. The generator
+// defines schema-specific rules, and schema/support holds availability metadata.
+// Successful structural validation does not prove a payload will install on a
+// physical device.
 //
 // # References
 //
-//   - Decision record 0003: docs/research/decisions/0003-schema-generator.md
-//   - Decision record 0004: docs/research/decisions/0004-checkin-and-command-core.md (validated command payloads)
-//   - Decision record 0009: docs/research/decisions/0009-enrollment-profiles.md (validated profiles)
-//   - Plan of record: docs/research/implementation_plan.md (section 2, the generator; phase 1)
+//   - Decision record 0003: https://github.com/deploymenttheory/go-apple-dm/blob/main/docs/research/decisions/0003-schema-generator.md
+//   - Decision record 0004: https://github.com/deploymenttheory/go-apple-dm/blob/main/docs/research/decisions/0004-checkin-and-command-core.md (validated command payloads)
+//   - Decision record 0009: https://github.com/deploymenttheory/go-apple-dm/blob/main/docs/research/decisions/0009-enrollment-profiles.md (validated profiles)
 //   - Apple: https://github.com/apple/device-management/blob/release/docs/schema.md
 //   - Schema: third_party/device-management/docs/schema.yaml (meta-schema)
 package validation

@@ -146,9 +146,7 @@ func (r *recorder) ofType(t event.Type) []event.Event {
 	return out
 }
 
-// Neither Fleet nor Zentral records an authorization denial as an event:
-// Fleet logs role denials at debug and never writes them to its activity
-// feed, and Zentral emits none at all. This is that record.
+// Authorization denials emit an event identifying the attempted action.
 func TestAdminAudit(t *testing.T) {
 	bus := event.New()
 	rec := &recorder{}
@@ -245,8 +243,7 @@ func TestAdminAudit(t *testing.T) {
 	})
 }
 
-// The admin API must not mount without a way to authenticate a caller.
-// KMFDDM logs a line and keeps serving; NanoCMD does not even log.
+// The admin API requires a configured authentication mechanism.
 func TestAdminNotMountedWithoutCredential(t *testing.T) {
 	a := build(t, app.Config{Role: app.RoleAll, Storage: "inmem", Listen: ":0"})
 	srv := serve(t, a)

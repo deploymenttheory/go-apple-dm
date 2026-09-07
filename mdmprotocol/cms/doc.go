@@ -1,31 +1,23 @@
-// Package cms signs and verifies the CMS (PKCS #7) signatures Apple MDM
-// uses: the detached signature a device sends in the Mdm-Signature header
-// when the MDM payload sets SignMessage, and the attached signature a
-// server puts on configuration profiles.
+// Package cms signs and verifies attached and detached CMS signatures used by
+// Apple device management.
 //
-// # Why
+// # Design
 //
-// The Mdm-Signature header is how a check-in or connect request proves it
-// came from the enrolled device when TLS client certificates are not
-// available to the application, and a signed enrollment profile is how a
-// device knows the profile was not altered in transit. Phase 2 of the plan
-// of record needs both. Verification wraps github.com/smallstep/pkcs7 and
-// adds what that library lacks: a trust store, an injectable clock, and a
-// signing-time tolerance (decision record 0006), because a device whose
-// clock lags can sign with a certificate whose NotBefore is a few seconds
-// in the future, which the library rejects unconditionally.
+// Detached signatures authenticate Mdm-Signature request bodies; attached
+// signatures carry configuration-profile content. Verification requires one
+// signer and supports explicit trust roots, an injected clock and configured
+// signing-time tolerance. The tolerant path still validates digest, attributes,
+// signature and chain.
 //
-// The package knows nothing about enrollments or HTTP. httpapi turns a
-// verified signer certificate into the request identity, and profile
-// decides when a profile must be signed. Header encoding and decoding
-// live here so both sides of the protocol agree on the format.
+// A valid signature proves key possession, not authorization for an enrollment.
+// HTTP certificate extraction and service pinning apply that separate policy.
+// Callers select trust roots and whether profile parsing requires a signature.
 //
 // # References
 //
-//   - Decision record 0006: docs/research/decisions/0006-mdm-signature-verification.md
-//   - Decision record 0009: docs/research/decisions/0009-enrollment-profiles.md
-//   - Plan of record: docs/research/implementation_plan.md (phase 2)
-//   - Threat model: docs/security/threat-model.md (/checkin and /connect rows)
+//   - Decision record 0006: https://github.com/deploymenttheory/go-apple-dm/blob/main/docs/research/decisions/0006-mdm-signature-verification.md
+//   - Decision record 0009: https://github.com/deploymenttheory/go-apple-dm/blob/main/docs/research/decisions/0009-enrollment-profiles.md
+//   - Threat model: https://github.com/deploymenttheory/go-apple-dm/blob/main/docs/security/threat-model.md (/checkin and /connect rows)
 //   - Apple: https://developer.apple.com/documentation/devicemanagement/check-in
 //   - Apple: https://developer.apple.com/documentation/devicemanagement/managing-certificates-for-device-management-services-and-devices
 //   - Schema: third_party/device-management/mdm/profiles/com.apple.mdm.yaml (SignMessage)

@@ -48,9 +48,9 @@ func newStore(t *testing.T) storage.Store {
 	}
 }
 
-// newPostgresStore creates a throwaway schema on the TEST_POSTGRES_DSN
-// server and opens the store with search_path pointed at it, so parallel
-// tests never share tables. The schema is dropped after the store closes.
+// newPostgresStore creates a separate schema on TEST_POSTGRES_DSN and sets
+// search_path
+// for this test. The schema is dropped after the store closes.
 func newPostgresStore(t *testing.T) storage.Store {
 	t.Helper()
 	ctx := context.Background()

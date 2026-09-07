@@ -29,12 +29,12 @@
           "dmctl",
           "statictoken"
         ],
-        "note": "dmctl references a credential; it never stores one in argv."
+        "note": "Use file or environment credential references to keep secrets out of command arguments."
       }
     ],
     "repository": {
       "url": "https://github.com/deploymenttheory/go-apple-dm",
-      "revision": "0e487dd17ae7dffcad8674c668ff59e56c73d8f3"
+      "revision": "a817270f13b4ef7a9b1d2895118981120546b3a2"
     }
   },
   "components": [
@@ -56,7 +56,7 @@
       "id": "adminclient",
       "type": "backend",
       "label": "adminclient",
-      "sublabel": "no redirects \u00b7 32 MiB cap",
+      "sublabel": "no redirects · 32 MiB cap",
       "pos": [
         340,
         110.0
@@ -130,7 +130,7 @@
       "id": "manager",
       "type": "security",
       "label": "adminauth.Manager",
-      "sublabel": "Authenticate \u00b7 Authorize",
+      "sublabel": "Authenticate · Authorize",
       "pos": [
         640,
         260.0
@@ -150,7 +150,7 @@
       "id": "routes",
       "type": "backend",
       "label": "Admin route table",
-      "sublabel": "eight families",
+      "sublabel": "configured route families",
       "pos": [
         640,
         410.0
@@ -189,7 +189,7 @@
       "id": "adminstore",
       "type": "database",
       "label": "adminauth.Store",
-      "sublabel": "principals \u00b7 tokens \u00b7 policies",
+      "sublabel": "principals · tokens · policies",
       "pos": [
         940,
         410.0
@@ -265,7 +265,7 @@
       "id": "manager-store",
       "from": "manager",
       "to": "adminstore",
-      "label": "principals \u00b7 policies"
+      "label": "principals · policies"
     }
   ],
   "cards": [
@@ -274,13 +274,13 @@
       "title": "Every admin request",
       "items": [
         "Bearer, then a principal, then a policy decision, then the handler",
-        "Families: mdm, ddm, dep, axm, acme, principals, audit, introspection",
+        "Families include mdm, ddm, dep, axm, acme, pki, principals, audit and introspection",
         "A route with no action is a build error, not a runtime one"
       ]
     },
     {
       "dot": "rose",
-      "title": "Deliberate gaps",
+      "title": "Bootstrap authority",
       "items": [
         "The static token is compared first, in constant time, so it works when the principal store is empty or unreachable",
         "It authenticates as root and bypasses Cedar entirely",
@@ -291,9 +291,9 @@
       "dot": "emerald",
       "title": "Credentials by reference",
       "items": [
-        "A bare value, @file, or env:NAME; never a positional argument, because argv is world-readable",
+        "Use @file or env:NAME references; literal token arguments may appear in process listings",
         "A config file with any group or other permission bits is refused",
-        "The only place a token is printed is stdout alone, with the explanation on stderr"
+        "Token creation prints the credential to stdout; protect captured output"
       ]
     }
   ]
