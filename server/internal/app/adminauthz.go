@@ -9,9 +9,9 @@ import (
 
 	"github.com/cedar-policy/cedar-go/types"
 
-	"github.com/deploymenttheory/go-apple-dm/server/adminauth"
 	"github.com/deploymenttheory/go-apple-dm/mdmprotocol/event"
 	"github.com/deploymenttheory/go-apple-dm/mdmprotocol/mdm"
+	"github.com/deploymenttheory/go-apple-dm/server/adminauth"
 )
 
 // Admin action ids. Every admin route declares one, and the set below is the
@@ -47,28 +47,131 @@ const (
 // an action knows what they are granting rather than guessing from its name.
 func AdminActions() []adminauth.Action {
 	return []adminauth.Action{
-		{ID: ActionPutDeclaration, Help: "Publish or replace a declaration, which changes what devices apply.", Resource: adminauth.EntityDeclaration},
-		{ID: ActionGetDeclaration, Help: "Read a declaration's stored JSON.", Resource: adminauth.EntityDeclaration},
-		{ID: ActionDeleteDeclaration, Help: "Remove a declaration from every set and device that has it.", Resource: adminauth.EntityDeclaration},
-		{ID: ActionAssignSet, Help: "Change which declarations a device receives.", Resource: adminauth.EntityEnrollment},
-		{ID: ActionReadEnrollment, Help: "Read an enrollment's declarations, tokens, and assignments.", Resource: adminauth.EntityEnrollment},
-		{ID: ActionReadEnrollmentStatus, Help: "Read the status a device reported, including its inventory.", Resource: adminauth.EntityEnrollment},
-		{ID: ActionNotify, Help: "Drain pending declaration changes and wake the affected devices.", Resource: adminauth.EntitySystem},
-		{ID: ActionManageDEP, Help: "Administer device enrollment service accounts, tokens, and profiles.", Resource: adminauth.EntityDEPAccount},
-		{ID: ActionManageBusinessMgr, Help: "List and reassign hardware in Apple Business Manager.", Resource: adminauth.EntitySystem},
-		{ID: ActionReadACME, Help: "Read issued ACME identities and the hardware Apple attested for each.", Resource: adminauth.EntitySystem},
-		{ID: ActionManagePrincipals, Help: "Create, rotate, and revoke admin credentials.", Resource: adminauth.EntitySystem},
-		{ID: ActionManagePolicies, Help: "Edit the policies that decide what every other principal may do.", Resource: adminauth.EntitySystem},
-		{ID: ActionDisableEnrollment, Help: "Stop an enrollment receiving commands and pushes, as a check-out would.", Resource: adminauth.EntityEnrollment},
-		{ID: ActionEnqueueCommand, Help: "Send any MDM command to a device, including erase and lock.", Resource: adminauth.EntityEnrollment},
-		{ID: ActionReadCommands, Help: "Read an enrollment's command queue and the results devices returned.", Resource: adminauth.EntityEnrollment},
-		{ID: ActionClearCommands, Help: "Discard an enrollment's pending commands.", Resource: adminauth.EntityEnrollment},
-		{ID: ActionPushEnrollment, Help: "Wake a device now with an APNs push, without queueing anything.", Resource: adminauth.EntityEnrollment},
-		{ID: ActionManagePushCerts, Help: "Read push certificate topics and expiry, and upload or renew one.", Resource: adminauth.EntitySystem},
-		{ID: ActionExportEnrollments, Help: "Export enrollments, including bootstrap and unlock tokens, for migration.", Resource: adminauth.EntitySystem},
-		{ID: ActionImportEnrollments, Help: "Write an exported enrollment record, tokens and pins included.", Resource: adminauth.EntitySystem},
-		{ID: ActionReadAudit, Help: "Read the audit trail: who did what, when, and to which enrollment.", Resource: adminauth.EntitySystem},
-		{ID: ActionReadConfig, Help: "Read the server's role and route table. Authenticated callers always may; a policy does not gate it.", Resource: adminauth.EntitySystem},
+		{
+			ID:       ActionReadCertificates,
+			Help:     "Read certificate issuance and revocation status.",
+			Resource: adminauth.EntitySystem,
+		},
+		{
+			ID:       ActionImportCertificates,
+			Help:     "Register an existing CA-issued certificate for status enforcement.",
+			Resource: adminauth.EntitySystem,
+		},
+		{
+			ID:       ActionRevokeCertificates,
+			Help:     "Permanently revoke a device certificate, stopping its use and renewal.",
+			Resource: adminauth.EntitySystem,
+		},
+		{
+			ID:       ActionPutDeclaration,
+			Help:     "Publish or replace a declaration, which changes what devices apply.",
+			Resource: adminauth.EntityDeclaration,
+		},
+		{
+			ID:       ActionGetDeclaration,
+			Help:     "Read a declaration's stored JSON.",
+			Resource: adminauth.EntityDeclaration,
+		},
+		{
+			ID:       ActionDeleteDeclaration,
+			Help:     "Remove a declaration from every set and device that has it.",
+			Resource: adminauth.EntityDeclaration,
+		},
+		{
+			ID:       ActionAssignSet,
+			Help:     "Change which declarations a device receives.",
+			Resource: adminauth.EntityEnrollment,
+		},
+		{
+			ID:       ActionReadEnrollment,
+			Help:     "Read an enrollment's declarations, tokens, and assignments.",
+			Resource: adminauth.EntityEnrollment,
+		},
+		{
+			ID:       ActionReadEnrollmentStatus,
+			Help:     "Read the status a device reported, including its inventory.",
+			Resource: adminauth.EntityEnrollment,
+		},
+		{
+			ID:       ActionNotify,
+			Help:     "Drain pending declaration changes and wake the affected devices.",
+			Resource: adminauth.EntitySystem,
+		},
+		{
+			ID:       ActionManageDEP,
+			Help:     "Administer device enrollment service accounts, tokens, and profiles.",
+			Resource: adminauth.EntityDEPAccount,
+		},
+		{
+			ID:       ActionManageBusinessMgr,
+			Help:     "List and reassign hardware in Apple Business Manager.",
+			Resource: adminauth.EntitySystem,
+		},
+		{
+			ID:       ActionReadACME,
+			Help:     "Read issued ACME identities and the hardware Apple attested for each.",
+			Resource: adminauth.EntitySystem,
+		},
+		{
+			ID:       ActionManagePrincipals,
+			Help:     "Create, rotate, and revoke admin credentials.",
+			Resource: adminauth.EntitySystem,
+		},
+		{
+			ID:       ActionManagePolicies,
+			Help:     "Edit the policies that decide what every other principal may do.",
+			Resource: adminauth.EntitySystem,
+		},
+		{
+			ID:       ActionDisableEnrollment,
+			Help:     "Stop an enrollment receiving commands and pushes, as a check-out would.",
+			Resource: adminauth.EntityEnrollment,
+		},
+		{
+			ID:       ActionEnqueueCommand,
+			Help:     "Send any MDM command to a device, including erase and lock.",
+			Resource: adminauth.EntityEnrollment,
+		},
+		{
+			ID:       ActionReadCommands,
+			Help:     "Read an enrollment's command queue and the results devices returned.",
+			Resource: adminauth.EntityEnrollment,
+		},
+		{
+			ID:       ActionClearCommands,
+			Help:     "Discard an enrollment's pending commands.",
+			Resource: adminauth.EntityEnrollment,
+		},
+		{
+			ID:       ActionPushEnrollment,
+			Help:     "Wake a device now with an APNs push, without queueing anything.",
+			Resource: adminauth.EntityEnrollment,
+		},
+		{
+			ID:       ActionManagePushCerts,
+			Help:     "Read push certificate topics and expiry, and upload or renew one.",
+			Resource: adminauth.EntitySystem,
+		},
+		{
+			ID:       ActionExportEnrollments,
+			Help:     "Export enrollments, including bootstrap and unlock tokens, for migration.",
+			Resource: adminauth.EntitySystem,
+		},
+		{
+			ID:       ActionImportEnrollments,
+			Help:     "Write an exported enrollment record, tokens and pins included.",
+			Resource: adminauth.EntitySystem,
+		},
+		{
+			ID:       ActionReadAudit,
+			Help:     "Read the audit trail: who did what, when, and to which enrollment.",
+			Resource: adminauth.EntitySystem,
+		},
+		{
+			ID:       ActionReadConfig,
+			Help:     "Read the server's role and route table. Authenticated callers always may; a policy does not gate it.",
+			Resource: adminauth.EntitySystem,
+		},
 	}
 }
 
@@ -106,7 +209,9 @@ var (
 	// a static token. It is a Build error rather than a silently disabled
 	// API, so a deployment cannot believe it is serving one when it is not
 	// (decision record 0034).
-	ErrAdminUnconfigured = errors.New("app: admin API needs DM_ADMIN_TOKEN or an admin principal store")
+	ErrAdminUnconfigured = errors.New(
+		"app: admin API needs DM_ADMIN_TOKEN or an admin principal store",
+	)
 )
 
 // adminEnabled reports whether the admin API has a way to authenticate a
@@ -136,10 +241,14 @@ func (a *App) buildAdminMux(routes []adminRoute) (http.Handler, error) {
 	mux := http.NewServeMux()
 	for _, rt := range routes {
 		if rt.Action == "" {
-			return nil, fmt.Errorf("app: admin route %q declares no action", rt.Pattern)
+			return nil, fmt.Errorf("%w: admin route %q declares no action", ErrConfig, rt.Pattern)
 		}
 		if _, ok := reg.Lookup(rt.Action); !ok {
-			return nil, fmt.Errorf("app: admin route %q names unknown action %q", rt.Pattern, rt.Action)
+			return nil, fmt.Errorf(
+				"%w: admin route %q names unknown action %q",
+				ErrConfig, rt.Pattern,
+				rt.Action,
+			)
 		}
 		mux.Handle(rt.Pattern, a.authorized(rt))
 	}
@@ -186,7 +295,11 @@ func (a *App) authorized(rt adminRoute) http.Handler {
 		if !bypass && !rt.Introspection {
 			if err := a.checkPolicy(r, p, rt); err != nil {
 				a.auditDenied(r, p, rt, err)
-				writeError(w, http.StatusForbidden, fmt.Errorf("%w: %s requires %q", ErrForbidden, p.Name, rt.Action))
+				writeError(
+					w,
+					http.StatusForbidden,
+					fmt.Errorf("%w: %s requires %q", ErrForbidden, p.Name, rt.Action),
+				)
 				return
 			}
 		}
@@ -260,15 +373,26 @@ func (a *App) principal(r *http.Request) (adminauth.Principal, bool, error) {
 		if a.admin != nil {
 			// Only worth saying when principals exist: until they do, the
 			// static token is the intended and only way in.
-			a.cfg.Logger.WarnContext(r.Context(), "app: admin request used the break-glass token, which bypasses policy; create principals and unset DM_ADMIN_TOKEN",
-				"actor", BreakGlassActor, "method", r.Method, "path", r.URL.Path)
+			a.cfg.Logger.WarnContext(
+				r.Context(),
+				"app: admin request used the break-glass token, which bypasses policy; create principals and unset DM_ADMIN_TOKEN",
+				"actor",
+				BreakGlassActor,
+				"method",
+				r.Method,
+				"path",
+				r.URL.Path,
+			)
 		}
 		return breakGlassPrincipal, true, nil
 	}
 	if a.admin != nil {
 		p, err := a.admin.Authenticate(r.Context(), adminauth.Token(tok))
 		if err != nil {
-			return adminauth.Principal{}, false, err
+			return adminauth.Principal{}, false, fmt.Errorf(
+				"app: authenticate administrator: %w",
+				err,
+			)
 		}
 		return p, false, nil
 	}
@@ -289,7 +413,7 @@ func (a *App) checkPolicy(r *http.Request, p adminauth.Principal, rt adminRoute)
 	}
 	d, err := a.admin.Authorize(r.Context(), p, rt.Action, a.adminResource(r), adminContext(r))
 	if err != nil {
-		return err
+		return fmt.Errorf("app: authorize administrator: %w", err)
 	}
 	if !d.Allowed {
 		return fmt.Errorf("%w: %s on %s", adminauth.ErrDenied, p.Name, rt.Action)
@@ -347,7 +471,13 @@ func (a *App) auditDenied(r *http.Request, p adminauth.Principal, rt adminRoute,
 	a.publishAdmin(r, event.AdminDenied, p, rt, cause)
 }
 
-func (a *App) publishAdmin(r *http.Request, t event.Type, p adminauth.Principal, rt adminRoute, cause error) {
+func (a *App) publishAdmin(
+	r *http.Request,
+	t event.Type,
+	p adminauth.Principal,
+	rt adminRoute,
+	cause error,
+) {
 	data := map[string]any{
 		"Action":  rt.Action,
 		"Method":  r.Method,

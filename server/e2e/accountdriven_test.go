@@ -3,6 +3,7 @@
 package e2e
 
 import (
+	"bytes"
 	"context"
 	"crypto/x509"
 	"crypto/x509/pkix"
@@ -13,7 +14,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/deploymenttheory/go-apple-dm/server/service"
 	"github.com/deploymenttheory/go-apple-dm/mdmprotocol/cms"
 	"github.com/deploymenttheory/go-apple-dm/mdmprotocol/enroll"
 	"github.com/deploymenttheory/go-apple-dm/mdmprotocol/enroll/accountdriven"
@@ -21,6 +21,7 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/mdmprotocol/mdm"
 	"github.com/deploymenttheory/go-apple-dm/mdmprotocol/plist"
 	"github.com/deploymenttheory/go-apple-dm/mdmprotocol/profile"
+	"github.com/deploymenttheory/go-apple-dm/server/service"
 	"github.com/deploymenttheory/go-apple-dm/simulator"
 )
 
@@ -43,6 +44,7 @@ func newADFixture(t *testing.T, oauth bool) *adFixture {
 	f.asweb = &accountdriven.AppleAsWeb{URL: "https://mdm.example/authenticate", Tokens: f.tokens}
 	cfg := service.Config{Hooks: []service.Hook{&accountdriven.CheckinHook{Tokens: f.tokens}}}
 	f.harness = newHarnessMounted(t, cfg, newStore(t), newBus(), func(h *harness, mux *http.ServeMux) {
+		h.certificateIssued = f.tokens.AssociationStore().RegisterCertificate
 		signer, err := h.ca.Issue("profile signer", time.Now().Add(-time.Minute))
 		if err != nil {
 			t.Fatal(err)
@@ -68,15 +70,19 @@ func newADFixture(t *testing.T, oauth bool) *adFixture {
 			}
 			return &accountdriven.DeviceInfo{Language: body.Language, Product: body.Product, Version: body.Version, Raw: content}, nil
 		}
-		profileHook := func(_ context.Context, id accountdriven.Identity, info *accountdriven.DeviceInfo) (*enroll.Profile, error) {
-			challenge, err := h.challenges.Issue(context.Background())
+		profileHook := func(ctx context.Context, id accountdriven.Identity, info *accountdriven.DeviceInfo) (*enroll.Profile, error) {
+			association, ok := accountdriven.AssociationFromContext(ctx)
+			if !ok {
+				return nil, accountdriven.ErrAssociation
+			}
+			challenge, err := h.challenges.Issue(ctx)
 			if err != nil {
 				return nil, err
 			}
 			return &enroll.Profile{
 				Identifier: "com.example.e2e.account-driven", DisplayName: "go-apple-dm e2e", Organization: "go-apple-dm",
 				Topic: pushTopic, ServerURL: h.server.URL + "/mdm", CheckInURL: h.server.URL + "/mdm",
-				SCEP:  &enroll.SCEP{URL: h.server.URL + "/scep", Challenge: challenge, Subject: pkix.Name{CommonName: id.ManagedAppleAccount + "/" + info.Product, Organization: []string{"go-apple-dm"}}},
+				SCEP:  &enroll.SCEP{URL: h.server.URL + "/scep", Challenge: challenge, Subject: pkix.Name{CommonName: accountdriven.CertificateSubjectPrefix + association.Reference, Organization: []string{"go-apple-dm"}}},
 				Roots: []*x509.Certificate{h.scepCA},
 			}, nil
 		}
@@ -127,8 +133,8 @@ func (f *adFixture) asWebAuthenticate(user string) func(context.Context, simulat
 
 // TestE2E_ServiceDiscovery is E2E-012: discovery routes a Mac to
 // mdm-adde and an iPhone to mdm-byod; each enrols through the
-// apple-as-web flow with the right EnrollmentMode, the enrollment token
-// authorises the check-in, and a check-in without it is refused.
+// apple-as-web flow with the right EnrollmentMode. The issued certificate and
+// reusable bearer authorize check-in under the platform-specific channel rules.
 func TestE2E_ServiceDiscovery(t *testing.T) {
 	ctx := context.Background()
 	f := newADFixture(t, false)
@@ -146,7 +152,7 @@ func TestE2E_ServiceDiscovery(t *testing.T) {
 	if err != nil || p.EnrollmentMode != accountdriven.ModeADDE || p.AssignedManagedAppleID != "mac@example.com" {
 		t.Fatalf("mac profile = %+v %v", p, err)
 	}
-	if e, err := f.store.Get(ctx, mdm.EnrollmentID{Channel: mdm.ChannelUserEnrollmentDevice, ID: mac.EnrollmentID}); err != nil || !e.Enabled {
+	if e, err := f.store.Get(ctx, mdm.EnrollmentID{Channel: mdm.ChannelDevice, ID: mac.UDID}); err != nil || !e.Enabled {
 		t.Fatalf("mac enrollment = %+v %v", e, err)
 	}
 
@@ -176,17 +182,17 @@ func TestE2E_ServiceDiscovery(t *testing.T) {
 		t.Fatalf("watch = %v", err)
 	}
 
-	// Without the enrollment token the check-in is refused (403), and a
-	// retried check-in with it succeeds because the token is not consumed.
-	withToken := phone.CheckinURL
-	phone.CheckinURL = f.server.URL + "/mdm"
+	// Dropping the bearer on the iPhone channel denies check-in. Restoring it
+	// permits retries without consuming the access token or changing enrollment.
+	originalTransport := phone.Client.Transport
+	phone.Client.Transport = stripAccountBearer{base: originalTransport}
 	if err := phone.TokenUpdate(ctx); !errors.As(err, &herr) || herr.Status != http.StatusForbidden {
-		t.Fatalf("check-in without enrollment token = %v", err)
+		t.Fatalf("check-in without bearer = %v", err)
 	}
-	phone.CheckinURL = withToken
+	phone.Client.Transport = originalTransport
 	for range 2 {
 		if err := phone.TokenUpdate(ctx); err != nil {
-			t.Fatalf("retried check-in with the enrollment token: %v", err)
+			t.Fatal(err)
 		}
 	}
 	if f.countEvents("enrolled") == 0 {
@@ -247,4 +253,24 @@ func TestE2E_AccountDrivenOAuth2(t *testing.T) {
 	if got, err := phone.Connect(ctx); err != nil || len(got) != 0 {
 		t.Fatalf("connect: %v %v", got, err)
 	}
+	oldAccess, oldRefresh := phone.AccountTokens()
+	if _, err := phone.RefreshAccountToken(ctx); err != nil {
+		t.Fatal(err)
+	}
+	newAccess, newRefresh := phone.AccountTokens()
+	if bytes.Equal(oldAccess.Bytes(), newAccess.Bytes()) || bytes.Equal(oldRefresh.Bytes(), newRefresh.Bytes()) {
+		t.Fatal("credentials did not rotate")
+	}
+	if _, err := phone.Connect(ctx); err != nil {
+		t.Fatal(err)
+	}
+
+}
+
+type stripAccountBearer struct{ base http.RoundTripper }
+
+func (s stripAccountBearer) RoundTrip(r *http.Request) (*http.Response, error) {
+	clone := r.Clone(r.Context())
+	clone.Header.Del("Authorization")
+	return s.base.RoundTrip(clone)
 }

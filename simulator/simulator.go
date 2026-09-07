@@ -19,6 +19,7 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/mdmprotocol/plist"
 	"github.com/deploymenttheory/go-apple-dm/schema/checkin"
 	"github.com/deploymenttheory/go-apple-dm/schema/commands"
+	"github.com/deploymenttheory/go-apple-dm/secrets"
 )
 
 // Content types Apple devices send.
@@ -96,9 +97,16 @@ type Device struct {
 	PushToken   []byte
 	UnlockToken []byte
 
-	mu       sync.Mutex
-	commands []*mdm.Command
-	replies  []Reply
+	accountMu      sync.Mutex
+	reauthMu       sync.Mutex
+	accountDriven  bool
+	accessToken    secrets.Secret
+	refreshToken   secrets.Secret
+	reauthenticate func(context.Context, AuthChallenge) (string, error)
+	oauthChallenge AuthChallenge
+	mu             sync.Mutex
+	commands       []*mdm.Command
+	replies        []Reply
 
 	// Declarative management: options and the device channel's client state.
 	acme        ACMEOptions
@@ -412,7 +420,7 @@ func (d *Device) put(ctx context.Context, url, contentType string, body []byte) 
 		}
 		req.Header.Set(cms.HeaderName, cms.EncodeHeader(sig))
 	}
-	resp, err := d.Client.Do(req)
+	resp, err := d.accountRequest(req, body)
 	if err != nil {
 		return nil, fmt.Errorf("simulator: %w", err)
 	}

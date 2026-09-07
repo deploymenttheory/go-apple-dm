@@ -42,7 +42,10 @@ const (
 	// for.
 	ProblemUnsupportedIdentifier = "unsupportedIdentifier"
 	// ProblemServerInternal is our fault.
-	ProblemServerInternal = "serverInternal"
+	ProblemServerInternal      = "serverInternal"
+	ProblemBadRevocationReason = "badRevocationReason"
+	ProblemAlreadyRevoked      = "alreadyRevoked"
+	ProblemRateLimited         = "rateLimited"
 )
 
 // Problem is an RFC 7807 problem document as RFC 8555 profiles it. It is
@@ -96,6 +99,9 @@ func (p *Problem) Terminal() bool { return p.Status < http.StatusInternalServerE
 
 // problemStatus maps each type to the status RFC 8555 gives it.
 var problemStatus = map[string]int{
+	ProblemBadRevocationReason:     http.StatusBadRequest,
+	ProblemAlreadyRevoked:          http.StatusBadRequest,
+	ProblemRateLimited:             http.StatusTooManyRequests,
 	ProblemAccountDoesNotExist:     http.StatusBadRequest,
 	ProblemBadCSR:                  http.StatusBadRequest,
 	ProblemBadNonce:                http.StatusBadRequest,

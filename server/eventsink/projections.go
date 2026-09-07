@@ -52,6 +52,7 @@ func Default() *Registry {
 	r.Register(event.DDMStatusReceived, nil)
 
 	r.Register(event.ACMEChallengeValid, passthrough("identifier", "serial"))
+	r.Register(event.CertificateRevoked, passthrough("issuer", "serial", "reason"))
 	r.Register(event.ACMEIssued, passthrough("serial", "identifier", "device"))
 	r.Register(event.AttestationRejected, passthrough("identifier", "reason"))
 

@@ -12,15 +12,14 @@ import (
 	"strings"
 	"time"
 
-	acmesql "github.com/deploymenttheory/go-apple-dm/server/acmestore/sqlstore"
-	"github.com/deploymenttheory/go-apple-dm/server/httpapi"
 	"github.com/deploymenttheory/go-apple-dm/mdmprotocol/cms"
 	"github.com/deploymenttheory/go-apple-dm/mdmprotocol/enroll"
 	"github.com/deploymenttheory/go-apple-dm/paging"
 	"github.com/deploymenttheory/go-apple-dm/pki/acme"
 	"github.com/deploymenttheory/go-apple-dm/pki/acme/attest"
-	"github.com/deploymenttheory/go-apple-dm/pki/ca"
 	"github.com/deploymenttheory/go-apple-dm/schema/ddm"
+	acmesql "github.com/deploymenttheory/go-apple-dm/server/acmestore/sqlstore"
+	"github.com/deploymenttheory/go-apple-dm/server/httpapi"
 	acmeinmem "github.com/deploymenttheory/go-apple-dm/storage/acme/inmem"
 )
 
@@ -133,7 +132,8 @@ func (a *App) newACME(ctx context.Context, e *enrollment) (*acmeService, error) 
 		Prefix:      PathACME,
 		Store:       store,
 		Signer:      e.local,
-		CAPolicy:    ca.Policy{ExtKeyUsage: []x509.ExtKeyUsage{x509.ExtKeyUsageClientAuth}},
+		CAPolicy:    a.issuancePolicy(e),
+		Revocations: a.acmeRevocations(),
 		Identifiers: identifiers,
 		Authorize:   policy,
 		// A device that cannot attest is worth knowing about, so the

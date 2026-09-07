@@ -5,6 +5,7 @@ import (
 	json "encoding/json/v2"
 	"errors"
 	"fmt"
+	"maps"
 	"net/http"
 	"net/url"
 	"strings"
@@ -25,7 +26,7 @@ type OAuth2 struct {
 	ClientID    string
 	Scope       string
 	Tokens      *Tokens
-	// AccessTTL is reported as expires_in; zero uses the token default.
+	// AccessTTL controls both issuance and expires_in; zero uses Tokens.AccessTTL.
 	AccessTTL time.Duration
 }
 
@@ -59,20 +60,25 @@ func (o *OAuth2) ParseAuthorization(r *http.Request) (*AuthorizationRequest, err
 		return nil, fmt.Errorf("%w: unknown client_id", ErrOAuth2Request)
 	case q.Get("redirect_uri") != o.RedirectURL:
 		return nil, fmt.Errorf("%w: redirect_uri mismatch", ErrOAuth2Request)
+	case q.Get("scope") != "" && q.Get("scope") != o.Scope:
+		return nil, fmt.Errorf("%w: scope mismatch", ErrOAuth2Request)
 	case q.Get("state") == "":
 		return nil, fmt.Errorf("%w: state is required", ErrOAuth2Request)
 	}
-	return &AuthorizationRequest{State: q.Get("state"), LoginHint: q.Get("login_hint"), Scope: q.Get("scope")}, nil
+	return &AuthorizationRequest{State: q.Get("state"), LoginHint: q.Get("login_hint"), Scope: o.Scope}, nil
 }
 
 // Grant completes authorization for id: it issues a single-use code bound
 // to the request and redirects (308) to the redirect URL with code and
 // the echoed state.
 func (o *OAuth2) Grant(w http.ResponseWriter, r *http.Request, req *AuthorizationRequest, id Identity) error {
+	if req == nil || req.State == "" || req.Scope != o.Scope {
+		return ErrOAuth2Request
+	}
 	if id.ManagedAppleAccount == "" {
 		return ErrManagedAppleAccount
 	}
-	code, err := o.Tokens.Issue(r.Context(), KindCode, id, map[string]string{"redirect_uri": o.RedirectURL, "client_id": o.ClientID, "state": req.State})
+	code, err := o.Tokens.Issue(r.Context(), KindCode, id, map[string]string{"redirect_uri": o.RedirectURL, "client_id": o.ClientID, "state": req.State, "scope": req.Scope})
 	if err != nil {
 		return err
 	}
@@ -121,48 +127,30 @@ func (o *OAuth2) TokenHandler() http.Handler {
 			writeTokenError(w, http.StatusUnauthorized, "invalid_client", "unknown client_id")
 			return
 		}
-		var id Identity
+		var kind Kind
+		var value string
 		switch r.PostForm.Get("grant_type") {
 		case "authorization_code":
-			if r.PostForm.Get("redirect_uri") != o.RedirectURL {
-				writeTokenError(w, http.StatusBadRequest, "invalid_grant", "redirect_uri mismatch")
-				return
-			}
-			rec, err := o.Tokens.Consume(r.Context(), KindCode, r.PostForm.Get("code"))
-			if err != nil {
-				writeTokenError(w, http.StatusBadRequest, "invalid_grant", "code rejected")
-				return
-			}
-			id = rec.Identity
+			kind, value = KindCode, r.PostForm.Get("code")
 		case "refresh_token":
-			rec, err := o.Tokens.Consume(r.Context(), KindRefresh, r.PostForm.Get("refresh_token"))
-			if err != nil {
-				writeTokenError(w, http.StatusBadRequest, "invalid_grant", "refresh token rejected")
-				return
-			}
-			id = rec.Identity
+			kind, value = KindRefresh, r.PostForm.Get("refresh_token")
 		default:
 			writeTokenError(w, http.StatusBadRequest, "unsupported_grant_type", "")
 			return
 		}
-		access, err := o.Tokens.Issue(r.Context(), KindAccess, id, nil)
+		result, err := o.exchange(r.Context(), kind, value, r.PostForm)
 		if err != nil {
-			writeTokenError(w, http.StatusInternalServerError, "server_error", "")
+			if errors.Is(err, ErrOAuth2Grant) || errors.Is(err, ErrTokenNotFound) || errors.Is(err, ErrTokenExpired) || errors.Is(err, ErrTokenUsed) {
+				writeTokenError(w, http.StatusBadRequest, "invalid_grant", "grant rejected")
+			} else {
+				writeTokenError(w, http.StatusInternalServerError, "server_error", "")
+			}
 			return
-		}
-		refresh, err := o.Tokens.Issue(r.Context(), KindRefresh, id, nil)
-		if err != nil {
-			writeTokenError(w, http.StatusInternalServerError, "server_error", "")
-			return
-		}
-		ttl := o.AccessTTL
-		if ttl <= 0 {
-			ttl = o.Tokens.ttl(KindAccess)
 		}
 		w.Header().Set("Content-Type", "application/json")
 		w.Header().Set("Cache-Control", "no-store")
 		w.Header().Set("Pragma", "no-cache")
-		_ = json.MarshalWrite(w, TokenResponse{TokenType: "Bearer", Scope: o.Scope, AccessToken: access, ExpiresIn: int64(ttl / time.Second), RefreshToken: refresh})
+		_ = json.MarshalWrite(w, result)
 	})
 }
 
@@ -175,3 +163,51 @@ func writeTokenError(w http.ResponseWriter, status int, code, desc string) {
 
 // LoginHint reads the login_hint of an authorization request.
 func LoginHint(r *http.Request) string { return strings.TrimSpace(r.URL.Query().Get("login_hint")) }
+
+// exchange validates bound metadata again under the consuming transaction. A
+// malformed request cannot burn a valid code or refresh token.
+func (o *OAuth2) exchange(ctx context.Context, kind Kind, value string, form url.Values) (TokenResponse, error) {
+	st, ok := o.Tokens.Store.(AtomicTokenStore)
+	if !ok {
+		return TokenResponse{}, fmt.Errorf("%w: atomic token store required", ErrConfig)
+	}
+	rec, err := o.Tokens.Check(ctx, kind, value)
+	if err != nil {
+		return TokenResponse{}, err
+	}
+	validate := func(r Record) error {
+		if r.Kind != kind || r.Meta["client_id"] != o.ClientID || r.Meta["scope"] != o.Scope {
+			return ErrOAuth2Grant
+		}
+		if kind == KindCode && (r.Meta["redirect_uri"] != o.RedirectURL || form.Get("redirect_uri") != r.Meta["redirect_uri"]) {
+			return ErrOAuth2Grant
+		}
+		if scope := form.Get("scope"); scope != "" && scope != r.Meta["scope"] {
+			return ErrOAuth2Grant
+		}
+		return nil
+	}
+	if err := validate(rec); err != nil {
+		return TokenResponse{}, err
+	}
+	access, err := NewToken()
+	if err != nil {
+		return TokenResponse{}, err
+	}
+	refresh, err := NewToken()
+	if err != nil {
+		return TokenResponse{}, err
+	}
+	now := o.Tokens.now()
+	ttl := or(o.AccessTTL, o.Tokens.ttl(KindAccess))
+	meta := maps.Clone(rec.Meta)
+	delete(meta, "access_hash")
+	delete(meta, "state")
+	accessRec := Record{Kind: KindAccess, Identity: rec.Identity, IssuedAt: now, ExpiresAt: now.Add(ttl), Meta: maps.Clone(meta)}
+	meta["access_hash"] = Hash(access)
+	refreshRec := Record{Kind: KindRefresh, Identity: rec.Identity, IssuedAt: now, ExpiresAt: now.Add(o.Tokens.ttl(KindRefresh)), Meta: meta}
+	if err := st.Exchange(ctx, Hash(value), now, validate, map[string]Record{Hash(access): accessRec, Hash(refresh): refreshRec}); err != nil {
+		return TokenResponse{}, err
+	}
+	return TokenResponse{TokenType: "Bearer", Scope: o.Scope, AccessToken: access, RefreshToken: refresh, ExpiresIn: int64(ttl / time.Second)}, nil
+}

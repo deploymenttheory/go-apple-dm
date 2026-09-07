@@ -48,6 +48,9 @@ var ErrConfig = errors.New("acme: invalid configuration")
 
 // Config builds a Server.
 type Config struct {
+	// Revocations enables RFC 8555 revokeCert and records issuance provenance.
+	// Nil leaves revocation endpoints absent. The implementation may be external.
+	Revocations Revocations
 	// BaseURL is the externally visible origin, such as
 	// https://mdm.example. Every URL the server hands out is built from it,
 	// and the url header of every signed request is checked against it, so
@@ -171,6 +174,9 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("POST "+p+pathAuthz+"{id}", s.signed(s.authorization, requireKID))
 	mux.HandleFunc("POST "+p+pathChallenge+"{id}", s.signed(s.challenge, requireKID))
 	mux.HandleFunc("POST "+p+pathCert+"{id}", s.signed(s.certificate, requireKID))
+	if s.cfg.Revocations != nil {
+		mux.HandleFunc("POST "+p+"/revoke-cert", s.signed(s.revokeCertificate, allowEitherKey))
+	}
 	// Anything else under the prefix is a client mistake, answered as an
 	// ACME problem rather than as the multiplexer's HTML.
 	mux.HandleFunc(p+"/", s.plain(func(e *exchange) error {
@@ -206,6 +212,7 @@ const (
 	allowJWK keyMode = iota
 	// requireKID is everything else, where the key is the account's.
 	requireKID
+	allowEitherKey
 )
 
 // plain wraps an endpoint that takes no signature.
@@ -297,7 +304,7 @@ func (s *Server) authenticate(e *exchange, mode keyMode) error {
 // new account, the account's own for everything else.
 func (s *Server) keyFor(e *exchange, mode keyMode) (any, error) {
 	h := e.jws.Header
-	if mode == allowJWK {
+	if mode == allowJWK || (mode == allowEitherKey && h.JWK != nil) {
 		if h.JWK == nil {
 			return nil, NewProblem(ProblemMalformed, "a new account must be signed with its own key")
 		}

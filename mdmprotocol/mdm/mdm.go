@@ -5,6 +5,8 @@ import (
 	"errors"
 	"fmt"
 	"time"
+
+	"github.com/deploymenttheory/go-apple-dm/secrets"
 )
 
 // Channel identifies which MDM channel an enrollment identity belongs to.
@@ -164,9 +166,11 @@ type Request struct {
 	ID          EnrollmentID
 	Enrollment  Enrollment
 	Certificate *x509.Certificate
-	Params      map[string]string
-	Peer        PeerInfo
-	ReceivedAt  time.Time
+	// Bearer carries account-driven authorization and redacts itself in logs.
+	Bearer     secrets.Secret
+	Params     map[string]string
+	Peer       PeerInfo
+	ReceivedAt time.Time
 }
 
 // ParseError wraps a decode failure with the offending content so callers

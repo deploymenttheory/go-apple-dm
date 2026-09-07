@@ -19,6 +19,11 @@ func (c *Core) Connect(ctx context.Context, r *mdm.Request, resp *mdm.Response) 
 		return nil, wrapCode(CodeBadRequest, fmt.Errorf("%w: nil request or response", ErrInvalidMessage))
 	}
 	r.ID = resp.ID
+	if c.certificateStatus != nil {
+		if err := c.certificateStatus(ctx, r.Certificate); err != nil {
+			return nil, wrapCode(CodeForbidden, err)
+		}
+	}
 	r.Enrollment = resp.Enrollment
 	call := &Call{Op: "connect", Request: r, Response: resp}
 	ctx, after, err := c.runHooks(ctx, call)

@@ -31,6 +31,11 @@ func (c *Core) Checkin(ctx context.Context, r *mdm.Request, ck *mdm.Checkin) (*C
 		return nil, wrapCode(CodeBadRequest, fmt.Errorf("%w: nil request or message", ErrInvalidMessage))
 	}
 	r.ID = ck.ID
+	if c.certificateStatus != nil {
+		if err := c.certificateStatus(ctx, r.Certificate); err != nil {
+			return nil, wrapCode(CodeForbidden, err)
+		}
+	}
 	r.Enrollment = ck.Enrollment
 	call := &Call{Op: "checkin:" + ck.Type, Request: r, Checkin: ck}
 	ctx, after, err := c.runHooks(ctx, call)
@@ -38,6 +43,18 @@ func (c *Core) Checkin(ctx context.Context, r *mdm.Request, ck *mdm.Checkin) (*C
 		return nil, err
 	}
 	res, err := c.dispatchCheckin(ctx, r, ck)
+	if err == nil {
+		for _, h := range c.hooks {
+			if h, ok := h.(interface {
+				Complete(context.Context, *Call) error
+			}); ok {
+				if e := h.Complete(ctx, call); e != nil {
+					err = wrapCode(CodeInternal, e)
+					break
+				}
+			}
+		}
+	}
 	after(err)
 	if err != nil {
 		return nil, err

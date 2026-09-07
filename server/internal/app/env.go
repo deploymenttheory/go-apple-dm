@@ -287,7 +287,7 @@ func ParseEnv(get func(string) string) (Config, error) {
 			*dst = b
 		}
 	}
-	return cfg, cfg.validate()
+	return securityConfigFromEnv(get, cfg)
 }
 
 // parseACMEKey reads the key a device should generate, named the way an

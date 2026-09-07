@@ -12,6 +12,14 @@ import (
 	"sync"
 	"time"
 
+	"github.com/deploymenttheory/go-apple-dm/appleplatformservices/axm"
+	"github.com/deploymenttheory/go-apple-dm/appleplatformservices/dep"
+	"github.com/deploymenttheory/go-apple-dm/clock"
+	"github.com/deploymenttheory/go-apple-dm/mdmprotocol/cms"
+	"github.com/deploymenttheory/go-apple-dm/mdmprotocol/ddm"
+	"github.com/deploymenttheory/go-apple-dm/mdmprotocol/event"
+	"github.com/deploymenttheory/go-apple-dm/pki/revocation"
+	"github.com/deploymenttheory/go-apple-dm/secrets"
 	"github.com/deploymenttheory/go-apple-dm/server/adminauth"
 	admininmem "github.com/deploymenttheory/go-apple-dm/server/adminauth/inmem"
 	adminsql "github.com/deploymenttheory/go-apple-dm/server/adminauth/sqlstore"
@@ -29,13 +37,7 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/server/sqlstore/postgres"
 	"github.com/deploymenttheory/go-apple-dm/server/sqlstore/sqlcommon"
 	"github.com/deploymenttheory/go-apple-dm/server/sqlstore/sqlite"
-	"github.com/deploymenttheory/go-apple-dm/appleplatformservices/axm"
-	"github.com/deploymenttheory/go-apple-dm/appleplatformservices/dep"
-	"github.com/deploymenttheory/go-apple-dm/clock"
-	"github.com/deploymenttheory/go-apple-dm/mdmprotocol/cms"
-	"github.com/deploymenttheory/go-apple-dm/mdmprotocol/ddm"
-	"github.com/deploymenttheory/go-apple-dm/mdmprotocol/event"
-	"github.com/deploymenttheory/go-apple-dm/secrets"
+	"github.com/deploymenttheory/go-apple-dm/state"
 	"github.com/deploymenttheory/go-apple-dm/storage"
 	"github.com/deploymenttheory/go-apple-dm/storage/crypt"
 	ddminmem "github.com/deploymenttheory/go-apple-dm/storage/ddm/inmem"
@@ -63,10 +65,12 @@ const (
 // Config is the process configuration; see ParseEnv for the DM_*
 // variables and cmd/dmserver for the flags.
 type Config struct {
-	Role    Role
-	Listen  string
-	Storage string // sqlite, postgres, mysql, inmem
-	DSN     string // file path for sqlite
+	PKI        PKIConfig
+	RateLimits RateLimitConfig
+	Role       Role
+	Listen     string
+	Storage    string // sqlite, postgres, mysql, inmem
+	DSN        string // file path for sqlite
 	// DDMURL, on the mdm role, forwards DeclarativeManagement check-ins to
 	// a ddm role through proxyclient; empty means the local engine.
 	DDMURL string
@@ -221,14 +225,16 @@ type App struct {
 	// instead, which bypasses policy by design (decision record 0034).
 	admin *adminauth.Manager
 	// adminTable is the mounted admin route table, served by GET /routes.
-	adminTable []adminRoute
-	acme       *acmeService
-	dep        *depService
-	cfg        Config
-	enroll     *enrollment
-	db         *sql.DB
-	dialect    sqlcommon.Dialect
-	closers    []func() error
+	adminTable  []adminRoute
+	acme        *acmeService
+	dep         *depService
+	cfg         Config
+	enroll      *enrollment
+	db          *sql.DB
+	dialect     sqlcommon.Dialect
+	protocol    state.Store
+	revocations *revocation.Registry
+	closers     []func() error
 	// workers are the supervised background loops, in registration order.
 	// Run starts every one of them; nothing here is started by Build.
 	workers []worker
@@ -342,6 +348,9 @@ func reenrollPolicy(allow bool) service.ReenrollPolicy {
 }
 
 func (c Config) validate() error {
+	if err := c.validateSecurity(); err != nil {
+		return err
+	}
 	switch c.Role {
 	case RoleMDM, RoleDDM, RoleAll:
 	default:
@@ -583,10 +592,11 @@ func (a *App) wire(ctx context.Context) error {
 			return err
 		}
 		core, err := service.New(service.Config{
-			Store:  a.Store,
-			Bus:    cfg.Bus,
-			Clock:  cfg.Clock,
-			Logger: cfg.Logger,
+			Store:             a.Store,
+			Bus:               cfg.Bus,
+			Clock:             cfg.Clock,
+			Logger:            cfg.Logger,
+			CertificateStatus: a.certificateStatus(),
 			Hooks: append(
 				[]service.Hook{ddmsync.NewServiceHook(engine, a.Store, cfg.Logger)},
 				enrollHooks...),
@@ -732,14 +742,15 @@ func (a *App) wire(ctx context.Context) error {
 				},
 			)
 		}
+		routes = append(routes, a.pkiAdminRoutes()...)
 		admin, err := a.buildAdminMux(routes)
 		if err != nil {
 			return err
 		}
 		mux.Handle(PathAdmin, http.StripPrefix(PathAdmin[:len(PathAdmin)-1], admin))
 	}
-	a.Handler = mux
-	return nil
+	a.Handler, err = a.withRateLimits(ctx, mux)
+	return err
 }
 
 // Run supervises every registered background loop until ctx is cancelled or

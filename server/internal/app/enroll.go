@@ -14,7 +14,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/deploymenttheory/go-apple-dm/server/service"
+	"github.com/deploymenttheory/go-apple-dm/mdmprotocol/cms"
 	"github.com/deploymenttheory/go-apple-dm/mdmprotocol/enroll"
 	"github.com/deploymenttheory/go-apple-dm/mdmprotocol/enroll/accountdriven"
 	"github.com/deploymenttheory/go-apple-dm/mdmprotocol/enroll/ade"
@@ -26,6 +26,7 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/pki/ca"
 	"github.com/deploymenttheory/go-apple-dm/pki/scep"
 	"github.com/deploymenttheory/go-apple-dm/schema/checkin"
+	"github.com/deploymenttheory/go-apple-dm/server/service"
 )
 
 // Enrollment routes on the mdm and all roles (decision records 0027 to 0029).
@@ -187,11 +188,28 @@ func (a *App) wireEnrollment(ctx context.Context, mux *http.ServeMux) ([]service
 	if err := e.loadCA(a); err != nil {
 		return nil, err
 	}
-	var err error
+	st, err := a.protocolState(ctx)
+	if err != nil {
+		return nil, err
+	}
+	e.tokens = &accountdriven.Tokens{
+		Store: &accountdriven.StateTokenStore{Backend: st},
+		Now:   a.cfg.Clock.Now,
+	}
+	if err := a.wirePKI(ctx, e, mux); err != nil {
+		return nil, err
+	}
 	if e.local, err = ca.NewLocal(
 		e.caCert,
 		e.caKey,
-		ca.WithDepot(ca.NewMemoryDepot()),
+		ca.WithDepot(
+			&enrollmentDepot{
+				Depot:        ca.NewMemoryDepot(),
+				associations: e.tokens.AssociationStore(),
+				registry:     a.revocations,
+				issuer:       cms.Fingerprint(e.caCert),
+			},
+		),
 	); err != nil {
 		return nil, fmt.Errorf("app: enrollment CA: %w", err)
 	}
@@ -210,7 +228,11 @@ func (a *App) wireEnrollment(ctx context.Context, mux *http.ServeMux) ([]service
 		e.local,
 		e.caCert,
 		e.caKey,
-		scep.WithChallenge(e.challenge),
+		scep.WithChallenge(
+			enrollmentChallenge{base: e.challenge, associations: e.tokens.AssociationStore()},
+		),
+		scep.WithPolicy(a.issuancePolicy(e)),
+		scep.WithCertificateStatus(a.certificateStatus()),
 		scep.WithLogger(a.cfg.Logger),
 	)
 	if err != nil {
@@ -229,9 +251,8 @@ func (a *App) wireEnrollment(ctx context.Context, mux *http.ServeMux) ([]service
 	// The credential document identifies the device by the certificate it
 	// presents, so it goes behind the same certificate source as the MDM
 	// endpoints rather than being readable by anyone with the URL.
-	mux.Handle(PathACMECredential, a.certSource()(e.acme.credentialHandler()))
+	mux.Handle(PathACMECredential, a.certSource()(a.credentialSecurity(e.acme.credentialHandler())))
 
-	e.tokens = &accountdriven.Tokens{Store: accountdriven.NewMemStore(), Now: a.cfg.Clock.Now}
 	e.asweb = &accountdriven.AppleAsWeb{URL: e.base + PathAuthenticate, Tokens: e.tokens}
 	e.oauth = &accountdriven.OAuth2{
 		AuthorizationURL: e.base + PathOAuth2Authorize,
@@ -318,14 +339,28 @@ func (a *App) wireEnrollment(ctx context.Context, mux *http.ServeMux) ([]service
 			Parse:   parse,
 			Auth:    auth,
 			Tokens:  e.tokens,
-			Profile: func(_ context.Context, id accountdriven.Identity, info *accountdriven.DeviceInfo) (*enroll.Profile, error) {
-				// An account-driven enrollment knows the person, not the
-				// hardware, and a user enrollment attests to no hardware at
-				// all, so the binding names no device.
-				return e.profile(acme.Binding{
-					CommonName:        id.ManagedAppleAccount + "/" + info.Product,
-					AllowUnidentified: true,
-				})
+			Profile: func(ctx context.Context, id accountdriven.Identity, info *accountdriven.DeviceInfo) (*enroll.Profile, error) {
+				association, ok := accountdriven.AssociationFromContext(ctx)
+				if !ok {
+					return nil, accountdriven.ErrAssociation
+				}
+				p, err := e.profile(
+					acme.Binding{
+						CommonName:        accountdriven.CertificateSubjectPrefix + association.Reference,
+						AllowUnidentified: true,
+					},
+				)
+				if err != nil {
+					return nil, err
+				}
+				if p.SCEP != nil {
+					p.SCEP.Challenge, err = e.tokens.AssociationStore().
+						IssueSCEPChallenge(ctx, association.Reference, time.Hour)
+				}
+				if err != nil {
+					return nil, fmt.Errorf("app: issue profile SCEP challenge: %w", err)
+				}
+				return p, nil
 			},
 			SignCert: e.caCert,
 			SignKey:  e.caKey,
@@ -402,7 +437,7 @@ func (a *App) wireEnrollment(ctx context.Context, mux *http.ServeMux) ([]service
 	} else {
 		a.cfg.Logger.Warn("app: no OIDC issuer configured; only the token-based ADE lane can enrol")
 	}
-	hooks := []service.Hook{&accountdriven.CheckinHook{Tokens: e.tokens}}
+	hooks := []service.Hook{&accountdriven.CheckinHook{Tokens: e.tokens, Auth: auth}}
 	a.enroll = e
 	return hooks, nil
 }
@@ -420,6 +455,7 @@ func (e *enrollment) complete(
 		UserIdentifier:      bound.LoginHint,
 		ManagedAppleAccount: claims.Email,
 		Subject:             claims.Subject,
+		Issuer:              e.cfg.OIDC.Issuer,
 		Claims:              claims.Raw,
 	}
 	switch bound.Extra["flow"] {

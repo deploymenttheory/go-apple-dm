@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"crypto/x509"
 	"errors"
 	"fmt"
 	"log/slog"
@@ -163,6 +164,9 @@ type Config struct {
 	// Clock defaults to the real clock.
 	Clock clock.Clock
 	Hooks []Hook
+	// CertificateStatus is optional and independent of Pinning. It runs before
+	// hooks or side effects on all device requests, including Authenticate and DDM.
+	CertificateStatus func(context.Context, *x509.Certificate) error
 	// Logger defaults to slog.Default.
 	Logger *slog.Logger
 	// Pinning defaults to PinEnforce.
@@ -206,20 +210,21 @@ func DenyReenroll(context.Context, *mdm.Request, *storage.Enrollment) error { re
 
 // Core is the service implementation.
 type Core struct {
-	store           storage.Store
-	bus             *event.Bus
-	clock           clock.Clock
-	hooks           []Hook
-	log             *slog.Logger
-	pinning         PinMode
-	reenroll        ReenrollPolicy
-	reuse           CertReusePolicy
-	dm              DMHandler
-	getToken        GetTokenHandler
-	userAuth        UserAuthenticateHandler
-	returnToService ReturnToServiceHandler
-	requireUserAuth bool
-	validateTargets bool
+	store             storage.Store
+	bus               *event.Bus
+	clock             clock.Clock
+	hooks             []Hook
+	log               *slog.Logger
+	pinning           PinMode
+	reenroll          ReenrollPolicy
+	reuse             CertReusePolicy
+	dm                DMHandler
+	getToken          GetTokenHandler
+	userAuth          UserAuthenticateHandler
+	returnToService   ReturnToServiceHandler
+	requireUserAuth   bool
+	validateTargets   bool
+	certificateStatus func(context.Context, *x509.Certificate) error
 }
 
 // New validates the configuration and builds a Core.
@@ -229,7 +234,8 @@ func New(cfg Config) (*Core, error) {
 	}
 	c := &Core{
 		store: cfg.Store, bus: cfg.Bus, clock: cfg.Clock, hooks: cfg.Hooks, log: cfg.Logger,
-		pinning: cfg.Pinning, reenroll: cfg.Reenroll, reuse: cfg.CertReuse,
+		certificateStatus: cfg.CertificateStatus,
+		pinning:           cfg.Pinning, reenroll: cfg.Reenroll, reuse: cfg.CertReuse,
 		dm: cfg.DeclarativeManagement, getToken: cfg.GetToken, userAuth: cfg.UserAuthenticate,
 		returnToService: cfg.ReturnToService,
 		requireUserAuth: cfg.RequireUserAuth, validateTargets: cfg.ValidateTargets == nil || *cfg.ValidateTargets,

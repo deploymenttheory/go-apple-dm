@@ -63,6 +63,9 @@ type Policy struct {
 	// the existing behaviour: any RSA key of at least MinRSABits, and any
 	// ECDSA key.
 	AllowedKeys []KeyKind
+	// CRLDistributionPoints and OCSPServer advertise optional issuer status URLs.
+	CRLDistributionPoints []string
+	OCSPServer            []string
 }
 
 // KeyKind names a public key type and size that the CA can be told to
@@ -250,6 +253,8 @@ func (l *Local) Sign(ctx context.Context, csr *x509.CertificateRequest, p Policy
 		KeyUsage:              keyUsage,
 		ExtKeyUsage:           p.ExtKeyUsage,
 		BasicConstraintsValid: true,
+		CRLDistributionPoints: slices.Clone(p.CRLDistributionPoints),
+		OCSPServer:            slices.Clone(p.OCSPServer),
 	}
 	switch {
 	case len(p.OtherNames) > 0:

@@ -46,6 +46,8 @@ const (
 	ACMEChallengeValid Type = "acme-challenge-valid"
 	// ACMEIssued is a device identity certificate issued through ACME.
 	ACMEIssued Type = "acme-issued"
+	// CertificateRevoked is an irreversible issuer-registry status change.
+	CertificateRevoked Type = "certificate-revoked"
 	// AttestationRejected is an attestation that failed verification, named
 	// the wrong device, or was refused by policy. It is the event to alert
 	// on: a device that fails here is either faulty or not what it claims.

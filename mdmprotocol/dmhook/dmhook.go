@@ -24,3 +24,10 @@ type Hook interface {
 	Before(ctx context.Context, c *Call) (context.Context, error)
 	After(ctx context.Context, c *Call, err error)
 }
+
+// Completer persists a successful check-in's authorization state before the
+// transport reports success. An error is returned to the device; implementations
+// must permit an idempotent retry after a partially completed service operation.
+type Completer interface {
+	Complete(context.Context, *Call) error
+}

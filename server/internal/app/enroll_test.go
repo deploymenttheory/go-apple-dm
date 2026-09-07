@@ -18,12 +18,12 @@ import (
 	"testing"
 	"time"
 
-	"github.com/deploymenttheory/go-apple-dm/server/internal/app"
 	"github.com/deploymenttheory/go-apple-dm/mdmprotocol/enroll/accountdriven"
 	"github.com/deploymenttheory/go-apple-dm/mdmprotocol/enroll/discovery"
 	"github.com/deploymenttheory/go-apple-dm/mdmprotocol/enroll/webauth/webauthtest"
 	"github.com/deploymenttheory/go-apple-dm/mdmprotocol/mdm"
 	"github.com/deploymenttheory/go-apple-dm/pki/ca"
+	"github.com/deploymenttheory/go-apple-dm/server/internal/app"
 	"github.com/deploymenttheory/go-apple-dm/simulator"
 	"github.com/deploymenttheory/go-apple-dm/testpki"
 )
@@ -209,17 +209,20 @@ func TestEnrollment(t *testing.T) {
 		if e, err := f.app.Store.Get(ctx, mdm.EnrollmentID{Channel: mdm.ChannelUserEnrollmentDevice, ID: d.EnrollmentID}); err != nil || !e.Enabled {
 			t.Fatalf("enrollment = %+v %v", e, err)
 		}
-		// The enrollment token guards the check-in.
-		withToken := d.CheckinURL
-		d.CheckinURL = f.publicURL + app.PathMDM
-		var herr *simulator.HTTPError
-		if err := d.TokenUpdate(ctx); !errors.As(err, &herr) || herr.Status != http.StatusForbidden {
-			t.Fatalf("check-in without the enrollment token = %v", err)
+		// Apple's bearer authorizes ongoing requests; profile URLs contain no credential.
+		if strings.Contains(d.CheckinURL, "enrollment-token") {
+			t.Fatal("legacy query credential in profile")
 		}
-		d.CheckinURL = withToken
 		if err := d.TokenUpdate(ctx); err != nil {
 			t.Fatal(err)
 		}
+		impostor := simulator.New("unused", simulator.WithClient(d.Client), simulator.WithIdentity(d.Identity), simulator.WithURLs(d.CheckinURL, d.ServerURL), simulator.WithTopic(d.Topic))
+		impostor.EnrollmentID = d.EnrollmentID
+		var herr *simulator.HTTPError
+		if err := impostor.TokenUpdate(ctx); !errors.As(err, &herr) || herr.Status != http.StatusUnauthorized {
+			t.Fatalf("missing bearer: %v", err)
+		}
+
 	})
 	t.Run("AccountDrivenOAuth2", func(t *testing.T) {
 		f := newEnrollFixture(t, accountdriven.MethodAppleOAuth2, nil)
