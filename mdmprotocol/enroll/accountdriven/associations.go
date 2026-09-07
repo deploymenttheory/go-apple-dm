@@ -184,7 +184,7 @@ func (a Association) RequiresBearer(ch mdm.Channel) bool {
 }
 
 func sameIdentity(a, b Identity) bool {
-	return a.ManagedAppleAccount != "" && a.ManagedAppleAccount == b.ManagedAppleAccount && a.Subject == b.Subject
+	return a.ManagedAppleAccount != "" && a.ManagedAppleAccount == b.ManagedAppleAccount && a.Subject == b.Subject && a.Issuer == b.Issuer
 }
 
 type associationContextKey struct{}

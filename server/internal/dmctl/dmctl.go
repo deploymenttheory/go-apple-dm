@@ -83,7 +83,13 @@ const (
 
 // Run parses argv and dispatches. It returns an error; the caller maps it to
 // an exit code with ExitCode.
-func Run(ctx context.Context, args []string, getenv func(string) string, stdin io.Reader, stdout, stderr io.Writer) error {
+func Run(
+	ctx context.Context,
+	args []string,
+	getenv func(string) string,
+	stdin io.Reader,
+	stdout, stderr io.Writer,
+) error {
 	if getenv == nil {
 		getenv = func(string) string { return "" }
 	}
@@ -135,7 +141,12 @@ func ExitCode(err error) int {
 // clientDoer is the part of adminclient.Client the verb helpers need, so a
 // helper can be exercised without standing up a server.
 type clientDoer interface {
-	Do(ctx context.Context, method, path string, query url.Values, body any) (*adminclient.Response, error)
+	Do(
+		ctx context.Context,
+		method, path string,
+		query url.Values,
+		body any,
+	) (*adminclient.Response, error)
 }
 
 // adminResponse names the client's response type locally.
@@ -166,7 +177,11 @@ func Verbs() []string {
 func commands() map[string]command {
 	cmds := []command{
 		{"certificates", "import, inspect, and revoke device certificates", runCertificates},
-		{"explain", "describe a command, declaration, payload, or status item, offline", runExplain},
+		{
+			"explain",
+			"describe a command, declaration, payload, or status item, offline",
+			runExplain,
+		},
 		{"status", "show the server's role, families, and version", runStatus},
 		{"routes", "list the admin routes the server serves", runRoutes},
 		{"principals", "administer admin credentials", runPrincipals},
@@ -217,7 +232,12 @@ func defaultsFromEnv(getenv func(string) string) options {
 func (o *options) bind(fs *flag.FlagSet, def options) {
 	fs.StringVar(&o.server, "server", def.server, "server base URL ("+EnvServer+")")
 	fs.StringVar(&o.token, "token", def.token, "bearer token, @file, or env:NAME ("+EnvToken+")")
-	fs.StringVar(&o.context, "context", def.context, "context from the config file ("+EnvContext+")")
+	fs.StringVar(
+		&o.context,
+		"context",
+		def.context,
+		"context from the config file ("+EnvContext+")",
+	)
 	fs.StringVar(&o.config, "config", def.config, "config file path ("+EnvConfig+")")
 	fs.StringVar(&o.output, "output", def.output, "output: human, json, or ndjson")
 	fs.IntVar(&o.limit, "limit", def.limit, "page size (0 uses the server default)")
@@ -367,7 +387,7 @@ func readTokenSpec(spec string, getenv func(string) string) (string, error) {
 		name := strings.TrimPrefix(spec, "env:")
 		v := strings.TrimSpace(getenv(name))
 		if v == "" {
-			return "", fmt.Errorf("dmctl: %s is empty", name)
+			return "", fmt.Errorf("%w: %s is empty", ErrUsage, name)
 		}
 		return v, nil
 	default:
@@ -410,7 +430,12 @@ func (e *env) client() (*adminclient.Client, error) {
 // because of the role the server runs rather than because the object is not
 // there. No reference server has roles, so none needs this; ours does, and a
 // bare 404 sends an operator looking for the wrong thing.
-func (e *env) explainNotFound(ctx context.Context, c *adminclient.Client, family string, err error) error {
+func (e *env) explainNotFound(
+	ctx context.Context,
+	c *adminclient.Client,
+	family string,
+	err error,
+) error {
 	if !errors.Is(err, adminclient.ErrNotFound) || family == "" {
 		return err
 	}
@@ -423,5 +448,10 @@ func (e *env) explainNotFound(ctx context.Context, c *adminclient.Client, family
 			return err
 		}
 	}
-	return fmt.Errorf("%w (this server runs role=%s, which does not serve %s)", err, cfg.Role, family)
+	return fmt.Errorf(
+		"%w (this server runs role=%s, which does not serve %s)",
+		err,
+		cfg.Role,
+		family,
+	)
 }

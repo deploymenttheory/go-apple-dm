@@ -26,6 +26,18 @@ type Bucket struct {
 	Burst    int
 }
 
+// Validate checks that a quota can be represented with shared microsecond precision.
+func (b Bucket) Validate() error {
+	if b.Key == "" || b.Interval < time.Microsecond || b.Interval%time.Microsecond != 0 ||
+		b.Interval > 24*time.Hour ||
+		b.Burst < 1 ||
+		b.Burst > 1000000 ||
+		int64(b.Burst) > int64((30*24*time.Hour)/b.Interval) {
+		return ErrInvalid
+	}
+	return nil
+}
+
 // Decision reports the atomic result across all requested buckets.
 type Decision struct {
 	Allowed    bool
@@ -64,8 +76,8 @@ func (l *Limiter) Check(ctx context.Context, buckets []Bucket) (Decision, error)
 	keys := []string{prefix + "capacity"}
 	seen := map[string]bool{}
 	for _, b := range buckets {
-		if b.Key == "" || b.Interval < time.Microsecond || b.Interval%time.Microsecond != 0 || b.Interval > 24*time.Hour || b.Burst < 1 || b.Burst > 1000000 || int64(b.Burst) > int64((30*24*time.Hour)/b.Interval) {
-			return Decision{}, ErrInvalid
+		if err := b.Validate(); err != nil {
+			return Decision{}, err
 		}
 		k := prefix + key(b.Key)
 		if seen[k] {

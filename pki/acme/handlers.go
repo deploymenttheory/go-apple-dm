@@ -18,10 +18,7 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/pki/revocation"
 )
 
-// directoryBody is RFC 8555 section 7.1.1. The absent members are the
-// endpoints this server does not implement: a device never revokes a
-// certificate or rolls an account key, and advertising an endpoint that
-// answers nothing helps nobody.
+// directoryBody advertises only implemented endpoints; revocation is optional.
 type directoryBody struct {
 	NewNonce   string        `json:"newNonce"`
 	NewAccount string        `json:"newAccount"`

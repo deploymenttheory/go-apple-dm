@@ -66,7 +66,7 @@ func (a *App) protocolState(ctx context.Context) (state.Store, error) {
 	} else {
 		s, err := statestore.Open(ctx, a.db, a.dialect)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("app: open protocol state: %w", err)
 		}
 		a.protocol = s
 	}
@@ -89,17 +89,23 @@ func (d *enrollmentDepot) Put(ctx context.Context, c *x509.Certificate) error {
 		if p.Source == "" {
 			p.Source = "scep"
 		}
-		if ref, ok := strings.CutPrefix(c.Subject.CommonName, accountdriven.CertificateSubjectPrefix); ok {
+		if ref, ok := strings.CutPrefix(
+			c.Subject.CommonName,
+			accountdriven.CertificateSubjectPrefix,
+		); ok {
 			p.EnrollmentReference = ref
 		}
 		if err := d.registry.Register(ctx, d.issuer, c, p); err != nil {
-			return err
+			return fmt.Errorf("app: register issuance: %w", err)
 		}
 	}
 	if err := d.associations.RegisterCertificate(ctx, c); err != nil {
-		return err
+		return fmt.Errorf("app: register account certificate: %w", err)
 	}
-	return d.Depot.Put(ctx, c)
+	if err := d.Depot.Put(ctx, c); err != nil {
+		return fmt.Errorf("app: persist certificate: %w", err)
+	}
+	return nil
 }
 
 type enrollmentChallenge struct {
@@ -107,11 +113,22 @@ type enrollmentChallenge struct {
 	associations *accountdriven.Associations
 }
 
-func (c enrollmentChallenge) Verify(ctx context.Context, password string, csr *x509.CertificateRequest) error {
-	if csr != nil && strings.HasPrefix(csr.Subject.CommonName, accountdriven.CertificateSubjectPrefix) {
-		return c.associations.VerifySCEPChallenge(ctx, password, csr)
+func (c enrollmentChallenge) Verify(
+	ctx context.Context,
+	password string,
+	csr *x509.CertificateRequest,
+) error {
+	if csr != nil &&
+		strings.HasPrefix(csr.Subject.CommonName, accountdriven.CertificateSubjectPrefix) {
+		if err := c.associations.VerifySCEPChallenge(ctx, password, csr); err != nil {
+			return fmt.Errorf("app: account SCEP challenge: %w", err)
+		}
+		return nil
 	}
-	return c.base.Verify(ctx, password, csr)
+	if err := c.base.Verify(ctx, password, csr); err != nil {
+		return fmt.Errorf("app: SCEP challenge: %w", err)
+	}
+	return nil
 }
 
 func (a *App) wirePKI(ctx context.Context, e *enrollment, mux *http.ServeMux) error {
@@ -119,7 +136,15 @@ func (a *App) wirePKI(ctx context.Context, e *enrollment, mux *http.ServeMux) er
 	if !cfg.Enabled {
 		return nil
 	}
-	issuers := []revocation.Issuer{{Certificate: e.caCert, Signer: e.caKey, CRLTTL: cfg.CRLTTL, CRLRefresh: cfg.CRLRefresh, OCSPTTL: cfg.OCSPTTL}}
+	issuers := []revocation.Issuer{
+		{
+			Certificate: e.caCert,
+			Signer:      e.caKey,
+			CRLTTL:      cfg.CRLTTL,
+			CRLRefresh:  cfg.CRLRefresh,
+			OCSPTTL:     cfg.OCSPTTL,
+		},
+	}
 	for _, files := range cfg.Retired {
 		certs, err := readCertsPEM(files.Certificate)
 		if err != nil {
@@ -127,29 +152,40 @@ func (a *App) wirePKI(ctx context.Context, e *enrollment, mux *http.ServeMux) er
 		}
 		keyPEM, err := os.ReadFile(files.Key)
 		if err != nil {
-			return err
+			return fmt.Errorf("app: read retired issuer key: %w", err)
 		}
 		key, err := parseSignerPEM(keyPEM)
 		if err != nil {
 			return err
 		}
-		issuers = append(issuers, revocation.Issuer{Certificate: certs[0], Signer: key, CRLTTL: cfg.CRLTTL, CRLRefresh: cfg.CRLRefresh, OCSPTTL: cfg.OCSPTTL})
+		issuers = append(
+			issuers,
+			revocation.Issuer{
+				Certificate: certs[0],
+				Signer:      key,
+				CRLTTL:      cfg.CRLTTL,
+				CRLRefresh:  cfg.CRLRefresh,
+				OCSPTTL:     cfg.OCSPTTL,
+			},
+		)
 	}
 	reg, err := revocation.New(a.protocol, issuers...)
 	if err != nil {
-		return err
+		return fmt.Errorf("app: configure revocation registry: %w", err)
 	}
 	reg.Now = a.cfg.Clock.Now
 	a.revocations = reg
 	mux.Handle("/pki/", reg.Handler("/pki"))
 	return nil
 }
+
 func (a *App) certificateStatus() func(context.Context, *x509.Certificate) error {
 	if a.revocations == nil {
 		return nil
 	}
 	return a.revocations.Check
 }
+
 func (a *App) issuancePolicy(e *enrollment) ca.Policy {
 	p := ca.Policy{ExtKeyUsage: []x509.ExtKeyUsage{x509.ExtKeyUsageClientAuth}}
 	if a.revocations != nil {
@@ -159,6 +195,7 @@ func (a *App) issuancePolicy(e *enrollment) ca.Policy {
 	}
 	return p
 }
+
 func (a *App) acmeRevocations() acme.Revocations {
 	if a.revocations == nil {
 		return nil
@@ -171,7 +208,7 @@ func (a *App) credentialSecurity(next http.Handler) http.Handler {
 		cert := httpapi.CertFromContext(r.Context())
 		if a.revocations != nil {
 			if err := a.revocations.Check(r.Context(), cert); err != nil {
-				http.Error(w, "Forbidden", 403)
+				http.Error(w, "Forbidden", http.StatusForbidden)
 				return
 			}
 		}
@@ -210,32 +247,57 @@ func (a *App) withRateLimits(ctx context.Context, next http.Handler) (http.Handl
 	if err != nil {
 		return nil, err
 	}
-	limiter := &ratelimit.Limiter{Store: st, MaxEntries: cfg.MaxEntries, Namespace: "reference-http"}
-	return ratelimit.Middleware(ratelimit.HTTPConfig{Limiter: limiter, Buckets: func(r *http.Request) []ratelimit.Bucket {
-		family := routeFamily(r.URL.Path)
-		q, ok := cfg.Routes[family]
-		if !ok {
-			return nil
-		}
-		return []ratelimit.Bucket{{Key: family + "/global", Interval: q.GlobalInterval, Burst: q.GlobalBurst}, {Key: family + "/peer/" + ratelimit.PeerKey(r, cfg.TrustedProxies), Interval: q.Interval, Burst: q.Burst}}
-	}, Reject: func(w http.ResponseWriter, r *http.Request, status int) {
-		if routeFamily(r.URL.Path) == "acme" {
-			code := acme.ProblemRateLimited
-			if status == 503 {
-				code = acme.ProblemServerInternal
+	limiter := &ratelimit.Limiter{
+		Store:      st,
+		MaxEntries: cfg.MaxEntries,
+		Namespace:  "reference-http",
+	}
+	return ratelimit.Middleware(
+		ratelimit.HTTPConfig{Limiter: limiter, Buckets: func(r *http.Request) []ratelimit.Bucket {
+			family := routeFamily(r.URL.Path)
+			q, ok := cfg.Routes[family]
+			if !ok {
+				return nil
 			}
-			w.Header().Set("Content-Type", "application/problem+json")
-			w.WriteHeader(status)
-			_ = json.MarshalWrite(w, map[string]any{"type": acme.ProblemPrefix + code, "status": status, "detail": http.StatusText(status)})
-			return
-		}
-		http.Error(w, http.StatusText(status), status)
-	}}, next), nil
+			return []ratelimit.Bucket{
+				{Key: family + "/global", Interval: q.GlobalInterval, Burst: q.GlobalBurst},
+				{
+					Key:      family + "/peer/" + ratelimit.PeerKey(r, cfg.TrustedProxies),
+					Interval: q.Interval,
+					Burst:    q.Burst,
+				},
+			}
+		}, Reject: func(w http.ResponseWriter, r *http.Request, status int) {
+			if routeFamily(r.URL.Path) == "acme" {
+				code := acme.ProblemRateLimited
+				if status == 503 {
+					code = acme.ProblemServerInternal
+				}
+				w.Header().Set("Content-Type", "application/problem+json")
+				w.WriteHeader(status)
+				_ = json.MarshalWrite(
+					w,
+					map[string]any{
+						"type":   acme.ProblemPrefix + code,
+						"status": status,
+						"detail": http.StatusText(status),
+					},
+				)
+				return
+			}
+			http.Error(w, http.StatusText(status), status)
+		}},
+		next,
+	), nil
 }
 
 func (c Config) validateSecurity() error {
-	if c.PKI.Enabled && (!c.Enroll.Enabled() || c.PKI.CRLTTL <= 0 || c.PKI.CRLRefresh <= 0 || c.PKI.CRLRefresh >= c.PKI.CRLTTL || c.PKI.OCSPTTL <= 0) {
-		return fmt.Errorf("%w: PKI requires enrollment and explicit valid publication lifetimes", ErrConfig)
+	if c.PKI.Enabled &&
+		(!c.Enroll.Enabled() || c.PKI.CRLTTL <= 0 || c.PKI.CRLRefresh <= 0 || c.PKI.CRLRefresh >= c.PKI.CRLTTL || c.PKI.OCSPTTL <= 0) {
+		return fmt.Errorf(
+			"%w: PKI requires enrollment and explicit valid publication lifetimes",
+			ErrConfig,
+		)
 	}
 	if c.RateLimits.MaxEntries < 0 || c.RateLimits.MaxEntries > 10000 {
 		return fmt.Errorf("%w: rate limit capacity must be at most 10000", ErrConfig)
@@ -246,9 +308,10 @@ func (c Config) validateSecurity() error {
 		default:
 			return fmt.Errorf("%w: unknown rate-limit route family %q", ErrConfig, family)
 		}
-		lim := &ratelimit.Limiter{Store: state.NewMemory()}
-		if _, err := lim.Check(context.Background(), []ratelimit.Bucket{{Key: "peer", Interval: q.Interval, Burst: q.Burst}, {Key: "global", Interval: q.GlobalInterval, Burst: q.GlobalBurst}}); err != nil {
-			return fmt.Errorf("%w: quota %s: %w", ErrConfig, family, err)
+		for _, b := range []ratelimit.Bucket{{Key: "peer", Interval: q.Interval, Burst: q.Burst}, {Key: "global", Interval: q.GlobalInterval, Burst: q.GlobalBurst}} {
+			if err := b.Validate(); err != nil {
+				return fmt.Errorf("%w: quota %s: %w", ErrConfig, family, err)
+			}
 		}
 	}
 	return nil

@@ -120,8 +120,8 @@ type AccountDrivenResult struct {
 // AccountDrivenEnroll runs Apple's account-driven enrollment: service
 // discovery, the first signed POST, the 401 challenge, authentication
 // through opts.Authenticate, the second POST with the bearer, then
-// ApplyProfile and Enroll as a User Enrollment identified by a fresh
-// EnrollmentID.
+// ApplyProfile and Enroll. BYOD uses a fresh EnrollmentID; ADDE uses the
+// device UDID and ordinary device channel.
 func (d *Device) AccountDrivenEnroll(ctx context.Context, opts AccountDrivenOptions) (*AccountDrivenResult, error) {
 	if opts.Authenticate == nil {
 		return nil, fmt.Errorf("%w: Authenticate is required", ErrAccountDriven)

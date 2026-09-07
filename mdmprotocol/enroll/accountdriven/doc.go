@@ -11,16 +11,18 @@
 // WWW-Authenticate header selects a flow, authenticates in a web view
 // (apple-as-web) or through an OAuth 2 authorization server we run
 // (apple-oauth2), and posts again with a bearer token to receive the
-// profile. Phase 6 of the plan of record adds it with two token tiers: a
-// single-use access token for the profile fetch and a separate enrollment
-// token that authorises the check-in, so a retried Authenticate never fails
-// because the challenge was consumed. The body parser is injected so the
-// same CMS verification as Automated Device Enrollment applies, and the
+// profile. Phase 6 uses a reusable access bearer plus certificate-backed
+// enrollment associations (record 0047 amends the original token design).
+// Authorization codes are consumed once; refresh tokens rotate atomically.
+// macOS device channels omit the bearer as Apple documents; macOS user
+// channels and iOS/iPadOS/visionOS channels verify it on ongoing requests.
+// The body parser and identity verifier are injected, and the
 // profile comes from the enroll builder with EnrollmentMode and
 // AssignedManagedAppleID enforced.
 //
 // # References
 //
+//   - Decision record 0047: docs/research/decisions/0047-enrollment-authentication-and-optional-security-services.md
 //   - Decision record 0028: docs/research/decisions/0028-account-driven-enrollment-and-service-discovery.md
 //   - Decision record 0027: docs/research/decisions/0027-ade-enrollment-machineinfo-and-web-view-auth.md (body verification)
 //   - Plan of record: docs/research/implementation_plan.md (phase 6)

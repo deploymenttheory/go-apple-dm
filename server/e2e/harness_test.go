@@ -17,9 +17,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/deploymenttheory/go-apple-dm/server/httpapi"
-	"github.com/deploymenttheory/go-apple-dm/server/pushnotify"
-	"github.com/deploymenttheory/go-apple-dm/server/service"
 	"github.com/deploymenttheory/go-apple-dm/appleplatformservices/push"
 	"github.com/deploymenttheory/go-apple-dm/appleplatformservices/push/apns"
 	"github.com/deploymenttheory/go-apple-dm/appleplatformservices/push/pushtest"
@@ -30,6 +27,9 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/mdmprotocol/mdm"
 	"github.com/deploymenttheory/go-apple-dm/pki/ca"
 	"github.com/deploymenttheory/go-apple-dm/pki/scep"
+	"github.com/deploymenttheory/go-apple-dm/server/httpapi"
+	"github.com/deploymenttheory/go-apple-dm/server/pushnotify"
+	"github.com/deploymenttheory/go-apple-dm/server/service"
 	"github.com/deploymenttheory/go-apple-dm/simulator"
 	"github.com/deploymenttheory/go-apple-dm/storage"
 	"github.com/deploymenttheory/go-apple-dm/testpki"
@@ -55,11 +55,12 @@ type harness struct {
 
 	// Enrollment identity issuance and push, added with the SCEP, OTA, and
 	// APNs scenarios.
-	scepCA     *x509.Certificate
-	scepSigner *ca.Local
-	challenges *scep.OneTimeChallenges
-	apns       *pushtest.Server
-	notifier   *pushnotify.Notifier
+	scepCA            *x509.Certificate
+	scepSigner        *ca.Local
+	certificateIssued func(context.Context, *x509.Certificate) error
+	challenges        *scep.OneTimeChallenges
+	apns              *pushtest.Server
+	notifier          *pushnotify.Notifier
 
 	mu     sync.Mutex
 	events []event.Event
@@ -110,7 +111,7 @@ func newHarnessMounted(t *testing.T, cfg service.Config, store storage.Store, bu
 		t.Fatal(err)
 	}
 	h.scepCA = scepCert
-	h.scepSigner, err = ca.NewLocal(scepCert, scepKey, ca.WithDepot(ca.NewMemoryDepot()))
+	h.scepSigner, err = ca.NewLocal(scepCert, scepKey, ca.WithDepot(&harnessDepot{Depot: ca.NewMemoryDepot(), h: h}))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -250,4 +251,20 @@ func (h *harness) eventTypes() []event.Type {
 
 func deviceID(udid string) mdm.EnrollmentID {
 	return mdm.EnrollmentID{Channel: mdm.ChannelDevice, ID: udid}
+}
+
+// harnessDepot allows enrollment scenarios to persist their issuance association
+// at the same trusted boundary used by the reference server.
+type harnessDepot struct {
+	ca.Depot
+	h *harness
+}
+
+func (d *harnessDepot) Put(ctx context.Context, cert *x509.Certificate) error {
+	if d.h.certificateIssued != nil {
+		if err := d.h.certificateIssued(ctx, cert); err != nil {
+			return err
+		}
+	}
+	return d.Depot.Put(ctx, cert)
 }

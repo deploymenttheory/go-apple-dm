@@ -39,7 +39,11 @@ func parseSecurityEnv(get func(string) string, c *Config) error {
 		}
 	}
 	if raw := get(EnvPKIRetiredIssuers); raw != "" {
-		if err := json.Unmarshal([]byte(raw), &c.PKI.Retired, json.RejectUnknownMembers(true)); err != nil {
+		if err := json.Unmarshal(
+			[]byte(raw),
+			&c.PKI.Retired,
+			json.RejectUnknownMembers(true),
+		); err != nil {
 			return fmt.Errorf("%w: %s: %w", ErrConfig, EnvPKIRetiredIssuers, err)
 		}
 	}
@@ -63,10 +67,14 @@ func parseSecurityEnv(get func(string) string, c *Config) error {
 		var quotas map[string]struct {
 			Interval       string `json:"interval"`
 			Burst          int    `json:"burst"`
-			GlobalInterval string `json:"global_interval"`
-			GlobalBurst    int    `json:"global_burst"`
+			GlobalInterval string `json:"global_interval"` //nolint:tagliatelle // Environment configuration uses snake_case.
+			GlobalBurst    int    `json:"global_burst"`    //nolint:tagliatelle // Environment configuration uses snake_case.
 		}
-		if err := json.Unmarshal([]byte(raw), &quotas, json.RejectUnknownMembers(true)); err != nil {
+		if err := json.Unmarshal(
+			[]byte(raw),
+			&quotas,
+			json.RejectUnknownMembers(true),
+		); err != nil {
 			return fmt.Errorf("%w: %s: %w", ErrConfig, EnvRateLimits, err)
 		}
 		c.RateLimits.Routes = map[string]RouteQuota{}
@@ -79,8 +87,20 @@ func parseSecurityEnv(get func(string) string, c *Config) error {
 			if err != nil {
 				return fmt.Errorf("%w: %s global interval: %w", ErrConfig, name, err)
 			}
-			c.RateLimits.Routes[name] = RouteQuota{Interval: interval, Burst: q.Burst, GlobalInterval: global, GlobalBurst: q.GlobalBurst}
+			c.RateLimits.Routes[name] = RouteQuota{
+				Interval:       interval,
+				Burst:          q.Burst,
+				GlobalInterval: global,
+				GlobalBurst:    q.GlobalBurst,
+			}
 		}
 	}
 	return nil
+}
+
+func securityConfigFromEnv(get func(string) string, cfg Config) (Config, error) {
+	if err := parseSecurityEnv(get, &cfg); err != nil {
+		return Config{}, err
+	}
+	return cfg, cfg.validate()
 }

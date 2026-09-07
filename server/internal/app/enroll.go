@@ -192,14 +192,24 @@ func (a *App) wireEnrollment(ctx context.Context, mux *http.ServeMux) ([]service
 	if err != nil {
 		return nil, err
 	}
-	e.tokens = &accountdriven.Tokens{Store: &accountdriven.StateTokenStore{Backend: st}, Now: a.cfg.Clock.Now}
+	e.tokens = &accountdriven.Tokens{
+		Store: &accountdriven.StateTokenStore{Backend: st},
+		Now:   a.cfg.Clock.Now,
+	}
 	if err := a.wirePKI(ctx, e, mux); err != nil {
 		return nil, err
 	}
 	if e.local, err = ca.NewLocal(
 		e.caCert,
 		e.caKey,
-		ca.WithDepot(&enrollmentDepot{Depot: ca.NewMemoryDepot(), associations: e.tokens.AssociationStore(), registry: a.revocations, issuer: cms.Fingerprint(e.caCert)}),
+		ca.WithDepot(
+			&enrollmentDepot{
+				Depot:        ca.NewMemoryDepot(),
+				associations: e.tokens.AssociationStore(),
+				registry:     a.revocations,
+				issuer:       cms.Fingerprint(e.caCert),
+			},
+		),
 	); err != nil {
 		return nil, fmt.Errorf("app: enrollment CA: %w", err)
 	}
@@ -218,7 +228,9 @@ func (a *App) wireEnrollment(ctx context.Context, mux *http.ServeMux) ([]service
 		e.local,
 		e.caCert,
 		e.caKey,
-		scep.WithChallenge(enrollmentChallenge{base: e.challenge, associations: e.tokens.AssociationStore()}),
+		scep.WithChallenge(
+			enrollmentChallenge{base: e.challenge, associations: e.tokens.AssociationStore()},
+		),
 		scep.WithPolicy(a.issuancePolicy(e)),
 		scep.WithCertificateStatus(a.certificateStatus()),
 		scep.WithLogger(a.cfg.Logger),
@@ -332,15 +344,23 @@ func (a *App) wireEnrollment(ctx context.Context, mux *http.ServeMux) ([]service
 				if !ok {
 					return nil, accountdriven.ErrAssociation
 				}
-				p, err := e.profile(acme.Binding{CommonName: accountdriven.CertificateSubjectPrefix + association.Reference, AllowUnidentified: true})
+				p, err := e.profile(
+					acme.Binding{
+						CommonName:        accountdriven.CertificateSubjectPrefix + association.Reference,
+						AllowUnidentified: true,
+					},
+				)
 				if err != nil {
 					return nil, err
 				}
 				if p.SCEP != nil {
-					p.SCEP.Challenge, err = e.tokens.AssociationStore().IssueSCEPChallenge(ctx, association.Reference, time.Hour)
+					p.SCEP.Challenge, err = e.tokens.AssociationStore().
+						IssueSCEPChallenge(ctx, association.Reference, time.Hour)
 				}
-				return p, err
-
+				if err != nil {
+					return nil, fmt.Errorf("app: issue profile SCEP challenge: %w", err)
+				}
+				return p, nil
 			},
 			SignCert: e.caCert,
 			SignKey:  e.caKey,
@@ -435,6 +455,7 @@ func (e *enrollment) complete(
 		UserIdentifier:      bound.LoginHint,
 		ManagedAppleAccount: claims.Email,
 		Subject:             claims.Subject,
+		Issuer:              e.cfg.OIDC.Issuer,
 		Claims:              claims.Raw,
 	}
 	switch bound.Extra["flow"] {

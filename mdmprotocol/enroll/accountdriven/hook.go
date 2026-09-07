@@ -83,7 +83,7 @@ func (h *CheckinHook) Before(ctx context.Context, c *dmhook.Call) (context.Conte
 	}
 	if a.RequiresBearer(r.ID.Channel) {
 		verifier := h.Verifier
-		if verifier == nil {
+		if verifier == nil && h.Tokens != nil {
 			verifier = h.Tokens
 		}
 		if verifier == nil {

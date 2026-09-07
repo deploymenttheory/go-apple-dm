@@ -11,12 +11,12 @@
 // from Apple's servers describing the hardware it lives on. This package is
 // the server side of that exchange.
 //
-// It implements what Apple's client actually uses and nothing else: a
+// Its enrollment endpoints implement Apple's client flow: a
 // directory, nonces, accounts, orders for a single permanent-identifier,
 // one device-attest-01 challenge per order, finalize, and certificate
-// download. Certificate revocation and account key rollover are absent
-// because the device never asks for them, and an endpoint that is never
-// exercised is an endpoint whose faults are never found.
+// download. An optional registry adds RFC 8555 revokeCert for certificate-key,
+// issuing-account, and all-identifier authorization. Account key rollover
+// remains outside this implementation.
 //
 // Three decisions shape the rest:
 //

@@ -41,6 +41,8 @@ type Identity struct {
 	ManagedAppleAccount string
 	// Subject is the identity provider's stable id, when known.
 	Subject string
+	// Issuer namespaces Subject when the verifier supports multiple identity providers.
+	Issuer string
 	// Claims carries anything else the authenticator learned.
 	Claims map[string]any
 }

@@ -49,7 +49,7 @@ roadmap item rather than a control, and belongs in Roadmap below.
 | ADE software update gate | Device enrols below the required OS; wrong body shape wedges Setup Assistant | Gate runs only when `MDM_CAN_REQUEST_SOFTWARE_UPDATE`; 403 body validated against `softwareupdate.required.yaml` as JSON or plist; GDMF failure proceeds | `ade.TestSoftwareUpdate/*` |
 | Web view authentication (`configuration_web_url`) | State fixation, replay, cookie loss, IdP token forgery, open redirect | Our own OIDC relying party: 128-bit single-use state bound to `SERIAL` and `UDID` with a TTL under the Setup Assistant limit, PKCE S256, `nonce` verified in the id_token, JWKS signature check (ES256, RS256), `https` only, no cookies, `access_denied` is 403 and IdP errors 502 | `webauth.TestFlow/*`, `webauthtest.TestProvider/*` |
 | Service discovery | Wrong enrollment type routed; leaking configuration; unauthenticated probing | Exact `model-family` parsing, router hook, `https` `BaseURL` only, `Cache-Control: no-store`, rejection as 403 `com.apple.well-known.failed`; the document is public by Apple's design (it is also assigned to Apple through the DEP API) | `discovery.TestHandler/*` |
-| Account-driven enrollment | Bearer replay; challenge exhaustion; profile for the wrong user; retried check-in failing | Two-tier tokens: single-use short-lived access token for the profile fetch, separate enrollment token for `Authenticate` and `TokenUpdate`, constant-time compare, clock-injected expiry, one pending challenge per device, `AssignedManagedAppleID` always from the authenticated identity, both `apple-as-web` and `apple-oauth2` flows with `https` parameters only | `accountdriven.TestTokens/*`, `accountdriven.TestFlow/*`, `accountdriven.TestProfile/*` |
+| Account-driven enrollment | Wrong-account bearer use, identity replay, consumed grants, retries | Reusable bearer plus issuer-registered certificate/profile association; subject, issuer and Managed Apple Account match; atomic device identity reservation followed by successful-Authenticate confirmation; client/redirect/scope-bound atomic code and refresh exchange; Apple's macOS device-channel bearer exception; memory or SQL state | `accountdriven.TestBearerIdentityAndChannelRules`, `accountdriven.TestAssociationClaimRaceAndChallenge`, `accountdriven.TestOAuthMetadataBeforeConsumeAndConcurrentRotation`, `simulator.TestReauthenticationRetainsInterruptedCommandResult` |
 | User channel | Device-only commands reaching a user channel; user channel without authentication; one user's CheckOut disabling others | Enqueue validates targets against Apple's support metadata; `RequireUserAuth` gates `TokenUpdate` on a completed `UserAuthenticate`; user channels keyed by device and user; user CheckOut disables only that user | `service.TestEnqueue/*`, `service.TestUserAuthenticatePolicy/*`, `storagetest.RunEnrollmentSuite/ManyUsersPerDevice`, `service.TestCheckOut/UserChannel` |
 | SCEP | Unauthorised certificate issuance | Challenge providers: one-time (consumed on first use, expiring) and HMAC bound to the CSR subject; renewals accepted only from certificates that chain to our CA **and carry the same subject as the CSR**, because chaining alone proves the signer is some device we issued to and never that it is the device the CSR names; CSR verifier hook; CA policy on key size, usage, SANs | `scep.TestChallenges`, `scep.TestRenewalSkipsChallenge`, `scep.TestRenewalRequiresMatchingSubject`, `scep.TestCSRVerifierVeto`, `ca.TestSelfSignedAndLocalSignsWithPolicy`, `e2e.TestE2E_SCEPEnrollPush` |
 | SCEP | Oversized or malformed PKI messages | Body limit, signed failure CertRep for policy rejections, 400 for unparseable envelopes | `scep.TestCACertBundleAndHandlerErrors`, `scep.TestHandlerBodyAndClientTransportErrors` |
@@ -77,7 +77,7 @@ roadmap item rather than a control, and belongs in Roadmap below.
 | Push | Wrong or expired push certificate stored; key exposure through listing | `pushcert.Parse` proves key and certificate pairing and derives the topic; store rejects mismatched topics and expired certificates; `PushCerts` never returns keys and `key_pem` is sealed; `StoreCertStore` reloads on `version` change | `pushcert.TestParse`, `storagetest.RunPushCertSuite/Invalid` (key mismatch, topic mismatch, expired, not yet valid, no topic), `RunPushCertSuite/StoreGetList`, `RunPushCertSuite/OverwriteBumpsVersion`, `sqlite.TestRawColumnIsNotPlaintext`, `push.TestStoreCertStoreCachesAndReloads`, `push.TestStoreCertStoreErrors`, `apns.TestPushWithStoreCertStore` |
 | `/checkin` (`UserAuthenticate`) | Digest replay or brute force on the user channel | One-shot random challenge with a 5-minute TTL, cleared on failure; constant-time compare in `HA1Verifier`; token issued only after a stored challenge; tokens sealed at rest | `service.TestDigestUserAuthFlow` (`ChallengeDiffersPerCall`, `Expired`, `WrongDigest`, `NoChallenge`), `service.TestHA1Verifier`, `storagetest.RunUserAuthSuite/ChallengeAndTokenRoundTrip` (token without a challenge is `ErrNotFound`), `storagetest.RunUserAuthSuite/ClearedOnDeviceReenroll`, `sqlite.TestRawColumnIsNotPlaintext` |
 | Admin import | Imported record hijacks a pinned identity or orphans user channels | `Import` refuses a `CertHash` pinned elsewhere (`ErrConflict`), an orphan user channel or foreign history rows (`ErrInvalid`); one transaction; queue untouched; `EnrollmentImported` published with actor `admin` | `storagetest.RunMigrationSuite/ImportRejects`, `storagetest.RunMigrationSuite/RoundTripAllFields`, `sqlite.TestCrossBackendMigration`, `service.TestImportExportPublishes`, `service.TestStorageFailuresAreInternal` |
-| `/checkin`, `/connect` | Unenrolling devices by mistake | Handlers never return 401; Apple's unrecognized-device body only with `httpapi.Config.UnenrollUnknown` | `httpapi.TestServiceErrorMapping` |
+| `/checkin`, `/connect` | Unenrolling devices by mistake | Traditional certificate/pinning failures do not produce 401; only a recognized account-driven enrollment may request reauthentication through a typed challenge. Apple's unrecognized-device body remains opt-in through `httpapi.Config.UnenrollUnknown` | `httpapi.TestServiceErrorMapping` |
 
 ## Repudiation
 
@@ -91,17 +91,39 @@ Information disclosure through those subscribers is a control in its own right, 
 - Compromise of Apple services.
 - TLS termination configuration of the deployment (documented in the deployment guide, phase 8).
 
-## Roadmap
+## Optional controls and deployment choices
 
-Controls this model names that the reference server does not yet enforce, and gaps with no control
-at all. Each is a threat that currently rests on deployment discipline rather than on code.
+Record [0047](../research/decisions/0047-enrollment-authentication-and-optional-security-services.md)
+corrects the original roadmap. The library does not require an organizational
+ownership policy merely because a product reference chooses one.
 
-| Item | Why it matters |
+| Item | Current behavior and evidence |
 |---|---|
-| Expose the DDM hop's mutual TLS and bearer options in `internal/app` | `proxyserver` implements both, no environment variable reaches them, and mutual TLS is the only mitigation for an unsigned status code. |
-| Consult the device enrollment service in ADE admission | `ade.Config.DEP` is unset, so `admit` admits unconditionally and any genuine Apple device receives an enrollment profile carrying the SCEP challenge. |
-| Gate ADE issuance on `Identity.Verified` | `DM_ADE_AUDIT` accepts an unverified `MachineInfo` and records the fact, but no caller reads the flag, so issuance proceeds on a self-signed claim of any serial. |
-| Bind the account-driven enrollment token to an enrollment id, and guard the ADDE channel | The token record carries an identity that is never compared to the request's, and the check-in hook's default channel set omits account-driven device enrollment. |
-| Add PKCE to the account-driven OAuth 2 lane | The lane is a public client redirecting to a custom URL scheme, the interception surface PKCE exists to close; `enroll/webauth` already does PKCE S256 upstream. |
-| Rate-limit inbound endpoints | Issuance, challenge verification and admin authentication are unthrottled. The comparisons are constant time, so the exposure is throughput rather than timing. |
-| Certificate revocation | There is no CRL, no OCSP and no revocation list, so a compromised device certificate can only be answered by unpinning its enrollment. |
+| ADE admission | `ade.Config.DEP` enriches/advises admission when configured, and `ProfileHook` may reject issuance. Leaving DEP unset is supported library behavior, not a missing mandatory Apple check. The reference server does not impose a live DEP lookup. |
+| ADE audit mode | Signed MachineInfo verification is strict by default. `DM_ADE_AUDIT` is an explicit permissive diagnostic mode; `Identity.Verified` makes that fact available to admission policy. Selecting audit mode must not be mistaken for strict verification. |
+| Account bearer identity | Implemented certificate/profile/account association with atomic identity reservation and confirmation. BYOD and ADDE follow Apple's platform/channel bearer rules; legacy query credentials are rejected. See record 0028 and the tests above. |
+| PKCE | Not required on Apple's documented device-facing OAuth enrollment flow. Upstream OIDC already uses S256. Adding undocumented mandatory device parameters would change interoperability rather than establish a supported fix. |
+| Inbound rate limiting | Optional `ratelimit` GCRA with bounded keys, atomic all-or-none buckets and authoritative store time. The reference server enables explicit route quotas through `DM_RATE_LIMITS`; socket-peer identity is the default, trusted forwarded headers are opt-in. Limited requests get 429/Retry-After; storage failure gets 503. `ratelimit.TestAtomicQuotas`, `ratelimit.TestConcurrentCapacityAndFailures`, `statestore.TestSQLiteSharedState`, `app.TestExplicitRateLimitsAndSecurityEnvironment`. |
+| Certificate revocation | Optional issuer registry with persisted DER/provenance/status, signed CRL and OCSP, ACME revokeCert and protected admin/CLI operations. Status checks precede MDM mutations, delivery, DDM credential issuance and SCEP renewal, independently of pin mode. Unknown certificates fail closed. Unpinning and checkout do not revoke, and neither is a replacement for this registry. `revocation.TestRevocationAndSignedPublication`, `scep.TestRevokedRenewalCannotUseChallengeFallback`, `service.TestCertificateStatusPrecedesAllSideEffectsAndPinModes`, `app.TestPKIAndAccountStatePersistAcrossInstances`. |
+
+## Remaining validation and deployment responsibilities
+
+- Validate the account authentication/reauthentication flows on supported physical
+  Apple devices. Simulator and protocol tests do not establish that result.
+- Choose and enable deployment quotas and revocation policy. Both services are off
+  unless configured; certificate issuance alone does not activate revocation checks.
+- Import pre-existing certificate DER before enabling registry enforcement. An
+  enrollment pin has insufficient data to publish an issuer-signed status record.
+- Migrate old query-token account profiles by deliberate re-enrollment. No fallback
+  silently grants them the new bearer semantics.
+- Share issuer keys/certificates and the process database across replicas. Retain old
+  issuer signing configuration while its certificates need status publication.
+- The existing upstream OIDC browser state store remains in memory in the reference
+  composition; deployments spanning replicas must route that browser exchange to
+  one process or inject a shared `webauth.StateStore`. Completed account tokens and
+  enrollment associations are persisted independently.
+- Expose the DDM hop's optional mutual TLS and bearer settings in `internal/app` if
+  desired. Its configured request/response HMAC controls remain in force.
+
+Operational configuration and migration details are in
+[enrollment-security.md](../operations/enrollment-security.md).

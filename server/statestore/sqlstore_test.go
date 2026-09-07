@@ -1,17 +1,25 @@
 package statestore_test
 
 import (
+	"bytes"
 	"context"
+	"crypto/rand"
+	"crypto/x509"
 	"database/sql"
 	"errors"
 	"fmt"
+	"math/big"
 	"path/filepath"
 	"sync"
 	"sync/atomic"
 	"testing"
 	"time"
 
+	"github.com/deploymenttheory/go-apple-dm/mdmprotocol/cms"
 	"github.com/deploymenttheory/go-apple-dm/mdmprotocol/enroll/accountdriven"
+	"github.com/deploymenttheory/go-apple-dm/mdmprotocol/mdm"
+	"github.com/deploymenttheory/go-apple-dm/pki/ca"
+	"github.com/deploymenttheory/go-apple-dm/pki/revocation"
 	"github.com/deploymenttheory/go-apple-dm/ratelimit"
 	"github.com/deploymenttheory/go-apple-dm/server/sqlstore/sqlcommon"
 	"github.com/deploymenttheory/go-apple-dm/server/sqlstore/sqlite"
@@ -126,6 +134,7 @@ func exercise(t *testing.T, db *sql.DB, dialect sqlcommon.Dialect) {
 	if accepted.Load() != 1 {
 		t.Fatal("single-use token accepted", accepted.Load())
 	}
+	exerciseCertificateState(t, a, b)
 	// Rejecting metadata leaves the token available for its rightful client.
 	if err := stores[0].Put(ctx, token+"2", accountdriven.Record{Kind: accountdriven.KindCode, ExpiresAt: now.Add(time.Hour)}); err != nil {
 		t.Fatal(err)
@@ -206,5 +215,192 @@ func TestInvalidAndDatabaseFailures(t *testing.T) {
 	}
 	if err := s.Update(ctx, []string{"a"}, func(state.Tx) error { return nil }); err == nil {
 		t.Fatal("closed update")
+	}
+}
+
+func TestMalformedRowsAndFailedPruning(t *testing.T) {
+	t.Run("malformed expiry", func(t *testing.T) {
+		ctx := t.Context()
+		db := sqliteDB(t)
+		s, err := statestore.Open(ctx, db, sqlite.Dialect)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if _, err := db.ExecContext(ctx, "INSERT INTO protocol_state VALUES ('corrupt', X'00', 'not a timestamp')"); err != nil {
+			t.Fatal(err)
+		}
+		if _, err := s.List(ctx, "", "", 10); err == nil {
+			t.Fatal("malformed expiry accepted")
+		}
+	})
+	t.Run("malformed key", func(t *testing.T) {
+		ctx := t.Context()
+		db := sqliteDB(t)
+		s, err := statestore.Open(ctx, db, sqlite.Dialect)
+		if err != nil {
+			t.Fatal(err)
+		}
+		// SQLite permits NULL in a non-integer PRIMARY KEY. State writers never
+		// create one, but an out-of-band damaged row must be reported by pruning.
+		if _, err := db.ExecContext(ctx, "INSERT INTO protocol_state VALUES (NULL, X'00', 1)"); err != nil {
+			t.Fatal(err)
+		}
+		if n, err := s.Prune(ctx, 10); err == nil || n != 0 {
+			t.Fatal(n, err)
+		}
+	})
+	t.Run("delete rollback", func(t *testing.T) {
+		ctx := t.Context()
+		db := sqliteDB(t)
+		s, err := statestore.Open(ctx, db, sqlite.Dialect)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if err := s.Update(ctx, []string{"a", "b"}, func(tx state.Tx) error {
+			for _, key := range []string{"a", "b"} {
+				if err := tx.Put(ctx, state.Record{Key: key, ExpiresAt: tx.Now().Add(-time.Hour)}); err != nil {
+					return err
+				}
+			}
+			return nil
+		}); err != nil {
+			t.Fatal(err)
+		}
+		if _, err := db.ExecContext(ctx, "CREATE TRIGGER prevent_delete BEFORE DELETE ON protocol_state WHEN OLD.record_key = 'b' BEGIN SELECT RAISE(ABORT, 'injected delete failure'); END"); err != nil {
+			t.Fatal(err)
+		}
+		if n, err := s.Prune(ctx, 10); err == nil || n != 0 {
+			t.Fatal("partial prune reported", n, err)
+		}
+		rows, err := s.List(ctx, "", "", 10)
+		if err != nil || len(rows) != 2 || rows[0].ExpiresAt.IsZero() {
+			t.Fatal("partial prune committed", rows, err)
+		}
+	})
+	for _, table := range []string{"protocol_state", "protocol_state_locks"} {
+		t.Run("missing "+table, func(t *testing.T) {
+			ctx := t.Context()
+			db := sqliteDB(t)
+			s, err := statestore.Open(ctx, db, sqlite.Dialect)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if _, err := db.ExecContext(ctx, "DROP TABLE "+table); err != nil {
+				t.Fatal(err)
+			}
+			if table == "protocol_state" {
+				if _, err := s.Prune(ctx, 10); err == nil {
+					t.Fatal("missing data table concealed")
+				}
+			} else if err := s.Update(ctx, []string{"a"}, func(state.Tx) error { t.Error("ran without lock"); return nil }); err == nil {
+				t.Fatal("missing locks concealed")
+			}
+		})
+	}
+}
+
+// Run the same certificate publication and device-binding races on every backend.
+func exerciseCertificateState(t *testing.T, a, b state.Store) {
+	t.Helper()
+	ctx := t.Context()
+	assocs := []*accountdriven.Associations{{Store: a}, {Store: b}}
+	record, err := assocs[0].Create(ctx, accountdriven.Identity{ManagedAppleAccount: "alice@example.com", Subject: "alice", Issuer: "idp"}, accountdriven.VersionBYOD, "iPhone17,2")
+	if err != nil {
+		t.Fatal(err)
+	}
+	var winners atomic.Int64
+	var wg sync.WaitGroup
+	for i := range 16 {
+		wg.Go(func() {
+			id := mdm.EnrollmentID{Channel: mdm.ChannelUserEnrollmentDevice, ID: fmt.Sprintf("device-%d", i)}
+			err := assocs[i%2].Bind(ctx, record.Reference, id, false)
+			if err == nil {
+				winners.Add(1)
+			} else if !errors.Is(err, accountdriven.ErrAssociation) {
+				t.Error(err)
+			}
+		})
+	}
+	wg.Wait()
+	if winners.Load() != 1 {
+		t.Fatal("multiple device bindings", winners.Load())
+	}
+	bound, err := assocs[1].Get(ctx, record.Reference)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := assocs[1].Bind(ctx, record.Reference, bound.Enrollment, true); err != nil {
+		t.Fatal(err)
+	}
+	if err := assocs[0].Bind(ctx, record.Reference, bound.Enrollment, true); err != nil {
+		t.Fatal("retry not idempotent", err)
+	}
+	root, key, err := ca.NewSelfSigned(ca.SelfSignedOptions{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	issuer := revocation.Issuer{Certificate: root, Signer: key, CRLTTL: time.Hour, CRLRefresh: time.Minute, OCSPTTL: time.Minute}
+	r1, err := revocation.New(a, issuer)
+	if err != nil {
+		t.Fatal(err)
+	}
+	r2, err := revocation.New(b, issuer)
+	if err != nil {
+		t.Fatal(err)
+	}
+	registries := []*revocation.Registry{r1, r2}
+	id := cms.Fingerprint(root)
+	template := &x509.Certificate{SerialNumber: big.NewInt(1), NotBefore: time.Now().Add(-time.Minute), NotAfter: time.Now().Add(time.Hour), KeyUsage: x509.KeyUsageDigitalSignature}
+	der, err := x509.CreateCertificate(rand.Reader, template, root, key.Public(), key)
+	if err != nil {
+		t.Fatal(err)
+	}
+	leaf, err := x509.ParseCertificate(der)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := r1.Register(ctx, id, leaf, revocation.Provenance{Source: "import"}); err != nil {
+		t.Fatal(err)
+	}
+	first, err := r1.CRL(ctx, id)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for i := range 12 {
+		wg.Go(func() {
+			der, err := registries[i%2].CRL(ctx, id)
+			if err != nil || !bytes.Equal(first, der) {
+				t.Error("replicas published conflicting CRLs", err)
+			}
+		})
+	}
+	wg.Wait()
+	winners.Store(0)
+	for i := range 12 {
+		wg.Go(func() {
+			err := registries[i%2].Revoke(ctx, id, leaf.SerialNumber, 1)
+			if err == nil {
+				winners.Add(1)
+			} else if !errors.Is(err, revocation.ErrRevoked) {
+				t.Error(err)
+			}
+		})
+	}
+	wg.Wait()
+	if winners.Load() != 1 {
+		t.Fatal("multiple revocations", winners.Load())
+	}
+	for _, r := range registries {
+		if err := r.Check(ctx, leaf); !errors.Is(err, revocation.ErrRevoked) {
+			t.Fatal("replica missed revocation", err)
+		}
+		der, err := r.CRL(ctx, id)
+		if err != nil {
+			t.Fatal(err)
+		}
+		crl, err := x509.ParseRevocationList(der)
+		if err != nil || crl.CheckSignatureFrom(root) != nil || crl.Number.Int64() != 2 || len(crl.RevokedCertificateEntries) != 1 {
+			t.Fatal(crl, err)
+		}
 	}
 }
