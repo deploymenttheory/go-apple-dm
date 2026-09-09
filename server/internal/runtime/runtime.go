@@ -88,6 +88,17 @@ func Serve(ctx context.Context, cfg app.Config) error {
 		}
 	}()
 
+	return supervise(ctx, srv, serving, workers, stopWorkers, shutdownTimeout)
+}
+
+// supervise preserves the first failure while draining HTTP before stopping workers.
+func supervise(
+	ctx context.Context,
+	srv *http.Server,
+	serving, workers <-chan error,
+	stopWorkers context.CancelFunc,
+	timeout time.Duration,
+) error {
 	var first error
 	workersDone := false
 	select {
@@ -102,7 +113,7 @@ func Serve(ctx context.Context, cfg app.Config) error {
 	// tell the workers to finish, then wait for them. Reporting success
 	// before the notifier and the DEP syncer have stopped is what let the
 	// old path exit mid-drain.
-	shutdownCtx, cancel := context.WithTimeout(context.WithoutCancel(ctx), shutdownTimeout)
+	shutdownCtx, cancel := context.WithTimeout(context.WithoutCancel(ctx), timeout)
 	defer cancel()
 	if err := srv.Shutdown(shutdownCtx); err != nil {
 		_ = srv.Close()
@@ -128,15 +139,10 @@ func Serve(ctx context.Context, cfg app.Config) error {
 
 func serveHTTP(srv *http.Server, listener net.Listener, cfg app.Config) error {
 	if cfg.TLSCertFile != "" {
-		err := srv.ServeTLS(listener, cfg.TLSCertFile, cfg.TLSKeyFile)
-		if err != nil {
-			return fmt.Errorf("runtime TLS: %w", err)
-		}
-		return nil
+		return fmt.Errorf(
+			"runtime TLS: %w",
+			srv.ServeTLS(listener, cfg.TLSCertFile, cfg.TLSKeyFile),
+		)
 	}
-	err := srv.Serve(listener)
-	if err != nil {
-		return fmt.Errorf("runtime HTTP: %w", err)
-	}
-	return nil
+	return fmt.Errorf("runtime HTTP: %w", srv.Serve(listener))
 }

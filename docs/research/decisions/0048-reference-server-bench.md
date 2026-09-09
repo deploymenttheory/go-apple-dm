@@ -63,6 +63,15 @@ regressions. `make test-acceptance` runs built server processes, including both
 split roles. `make test-contract` verifies the underlying persistence interfaces.
 `make bench-docs-check` compares generated catalogue documentation with code.
 
+Unit tests run the maintained scenarios against the embedded reference server
+with interrupted exchanges and incomplete evidence. They also exercise missing
+workspace prerequisites, supervisor exits, and live receipt/acknowledgement
+validation through local fixtures. A negative enrollment scenario must observe
+an explicit protocol rejection; a transport error or unavailable service is a
+failed scenario. Coverage retains the repository's 95% overall and per-package
+gates, with no additional exemptions for the bench.
+
+
 ## References
 
 - [Testing guide](../../testing/bench.md)

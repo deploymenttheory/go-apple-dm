@@ -166,6 +166,10 @@ func TestVendorEnvelope(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	intermediateKey, err := rsa.GenerateKey(rand.Reader, 2048)
+	if err != nil {
+		t.Fatal(err)
+	}
 	now := time.Now().Truncate(time.Second)
 	intermediate := &x509.Certificate{
 		SerialNumber:          big.NewInt(5),
@@ -180,7 +184,7 @@ func TestVendorEnvelope(t *testing.T) {
 		rand.Reader,
 		intermediate,
 		root.Cert,
-		root.Key.Public(),
+		intermediateKey.Public(),
 		root.Key,
 	)
 	if err != nil {
@@ -197,7 +201,13 @@ func TestVendorEnvelope(t *testing.T) {
 		NotAfter:     now.Add(time.Hour),
 		KeyUsage:     x509.KeyUsageDigitalSignature,
 	}
-	der, err = x509.CreateCertificate(rand.Reader, leaf, intermediate, vendorKey.Public(), root.Key)
+	der, err = x509.CreateCertificate(
+		rand.Reader,
+		leaf,
+		intermediate,
+		vendorKey.Public(),
+		intermediateKey,
+	)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -246,6 +256,7 @@ func TestVendorEnvelope(t *testing.T) {
 		at              time.Time
 	}{
 		{tampered, chain, vendorPEM, root.Pool(), now},
+		{csr, append(append(pemBlock("CERTIFICATE", der), pemBlock("CERTIFICATE", root.Cert.Raw)...), pemBlock("CERTIFICATE", intermediate.Raw)...), vendorPEM, root.Pool(), now},
 		{csr, pemBlock("CERTIFICATE", der), vendorPEM, root.Pool(), now},
 		{csr, chain, key, root.Pool(), now},
 		{csr, chain, vendorPEM, x509.NewCertPool(), now},

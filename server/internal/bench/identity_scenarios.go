@@ -4,9 +4,13 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
+	"net/http"
 	"net/url"
 	"os"
+
+	xacme "golang.org/x/crypto/acme"
 
 	"github.com/deploymenttheory/go-apple-dm/mdmprotocol/mdm"
 	"github.com/deploymenttheory/go-apple-dm/mdmprotocol/plist"
@@ -74,8 +78,11 @@ func acmeEnroll(ctx context.Context, e *Environment, _ string) error {
 		simulator.WithACME(simulator.ACMEOptions{Attestation: authority}),
 	)
 	replay.SerialNumber = d.SerialNumber
-	if replay.ApplyProfile(ctx, raw, profile.ParseOptions{}) == nil {
+	if err = replay.ApplyProfile(ctx, raw, profile.ParseOptions{}); err == nil {
 		return fmt.Errorf("%w: ACME client identifier replay was accepted", errOperation)
+	}
+	if err = expectedRejection(err); err != nil {
+		return err
 	}
 	foreign, err := attesttest.NewCA()
 	if err != nil {
@@ -84,6 +91,9 @@ func acmeEnroll(ctx context.Context, e *Environment, _ string) error {
 	for _, fault := range []simulator.ACMEFaults{{WrongKey: true}, {StaleFreshness: true}, {NoAttestation: true}, {ForeignCA: foreign}} {
 		if _, _, err = e.acmeDevice(ctx, fault); err == nil {
 			return fmt.Errorf("%w: invalid managed device attestation was accepted", errOperation)
+		}
+		if err = expectedRejection(err); err != nil {
+			return err
 		}
 	}
 	return nil
@@ -150,6 +160,9 @@ func otaEnroll(ctx context.Context, e *Environment, _ string) error {
 	); err == nil {
 		return fmt.Errorf("%w: OTA invalid challenge accepted", errOperation)
 	}
+	if err = expectedRejection(err); err != nil {
+		return err
+	}
 	return wrapError(d.OTAEnroll(ctx, e.URL+"/ota", "bench-ota", identity, profile.ParseOptions{}))
 }
 
@@ -203,8 +216,11 @@ func userChannels(ctx context.Context, e *Environment, _ string) error {
 		return wrapError(err)
 	}
 	alice, bob := d.User("alice", "alice", "Alice"), d.User("bob", "bob", "Bob")
-	if alice.TokenUpdate(ctx) == nil {
+	if err = alice.TokenUpdate(ctx); err == nil {
 		return fmt.Errorf("%w: unauthenticated user TokenUpdate accepted", errOperation)
+	}
+	if err = expectedRejection(err); err != nil {
+		return err
 	}
 	if err = authenticateUser(ctx, alice); err != nil {
 		return wrapError(err)
@@ -315,4 +331,21 @@ func sharedIPad(ctx context.Context, e *Environment, _ string) error {
 		return fmt.Errorf("%w: shared iPad user routing differs", errOperation)
 	}
 	return nil
+}
+
+// expectedRejection keeps network and infrastructure failures from satisfying a
+// negative enrollment check. Only an explicit client/authentication rejection counts.
+func expectedRejection(err error) error {
+	var protocol *simulator.HTTPError
+	if errors.As(err, &protocol) &&
+		(protocol.Status == http.StatusBadRequest || protocol.Status == http.StatusUnauthorized || protocol.Status == http.StatusForbidden) {
+		return nil
+	}
+	var problem *xacme.Error
+	if errors.As(err, &problem) &&
+		(problem.StatusCode == http.StatusBadRequest || problem.StatusCode == http.StatusForbidden) &&
+		problem.ProblemType != "" {
+		return nil
+	}
+	return fmt.Errorf("%w: expected protocol rejection, got: %w", errOperation, err)
 }

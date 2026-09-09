@@ -1,7 +1,7 @@
 # Reference bench validation — 9 September 2026
 
 Implementation branch: `feat/apns-certificate-workflow`. These results describe
-the uncommitted implementation at validation time, not a published release.
+the implementation and coverage follow-up on PR #12, not a published release.
 
 ## Passing checks
 
@@ -28,26 +28,39 @@ The older Docker-packaged split regression requires its separate container
 configuration and was not exercised locally in this validation. The existing CI
 job retains it; local process acceptance exercised both native split roles.
 
-## Coverage gate remains failing
+## Coverage gate passes
 
-`make coverage` reports **94.83% overall**, below the existing **95%** threshold.
-The following packages also remain below the package threshold:
+`make coverage` reports **95.87% overall** against the unchanged **95%** threshold.
+Every non-exempt package meets its package threshold. The packages previously
+below the gate now report:
 
 | Package | Coverage |
 |---|---:|
-| `appleplatformservices/push/apns` | 94.32% |
-| `pki/pushcert` | 89.20% |
-| `server/apppush` | 93.75% |
-| `server/internal/app` | 93.46% |
-| `server/internal/bench` | 69.21% |
-| `server/internal/dmctl` | 85.33% |
-| `server/internal/runtime` | 81.69% |
-| `storage` | 94.59% |
+| `appleplatformservices/push/apns` | 96.07% |
+| `pki/pushcert` | 95.31% |
+| `server/apppush` | 95.00% |
+| `server/internal/app` | 95.25% |
+| `server/internal/bench` | 95.18% |
+| `server/internal/dmctl` | 95.00% |
+| `server/internal/runtime` | 98.48% |
+| `storage` | 97.30% |
 
-The threshold and exemption list are unchanged. Passing functional tests does
-not make this change ready for CI under the current coverage policy. Further
-coverage work is required before that gate passes. Inspect `cover/merged.html`
-and `cover/packages.txt` after reproducing the unit, contract and E2E targets.
+This measurement merges fresh race-enabled unit, PostgreSQL/MySQL storage
+contract, and SQLite E2E/embedded-acceptance coverage. Thresholds and exemptions
+are unchanged. Reproduce with `make test`, `make test-contract`, `make test-e2e`,
+and `make coverage`; inspect `cover/merged.html` and `cover/packages.txt`.
+
+Added regressions exercise malformed certificates and CSRs, invalid TLS key
+usage, CLI signing/import and bench commands, operator API validation, missing
+and unwritable workspace files, credential preservation, supervisor process
+exits, ordered shutdown, live receipt/acknowledgement requirements, and interrupted
+or incomplete scenario exchanges. The tests use temporary identities and local
+fixtures.
+
+The outage tests exposed negative enrollment checks that accepted unrelated
+transport errors as proof of rejection. ACME, OTA and user-channel checks now
+require an explicit protocol rejection. The shared runtime shutdown coordinator
+also has direct tests for HTTP draining, worker failure and deadlines.
 
 ## Live prerequisites
 
