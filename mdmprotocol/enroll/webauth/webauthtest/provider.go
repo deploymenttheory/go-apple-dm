@@ -142,14 +142,31 @@ func sharedRSAKey() *rsa.PrivateKey {
 // public, subject "user-1", ES256. It is closed when the test ends.
 func New(tb testing.TB) *Provider {
 	tb.Helper()
-	es, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
+	p, err := Start()
 	if err != nil {
 		tb.Fatal(err)
 	}
+	tb.Cleanup(p.Server.Close)
+	return p
+}
+
+// Start runs a reusable fixture provider. The caller closes its Server.
+func Start() (*Provider, error) {
+	es, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
+	if err != nil {
+		return nil, err
+	}
 	p := &Provider{
 		opts: Options{
-			ClientID: "enroll-client", Subject: "user-1", Email: "user-1@example.com", EmailVerified: true,
-			Name: "User One", PreferredUsername: "user1", Groups: []string{"staff"}, Alg: AlgES256, Now: time.Now,
+			ClientID:          "enroll-client",
+			Subject:           "user-1",
+			Email:             "user-1@example.com",
+			EmailVerified:     true,
+			Name:              "User One",
+			PreferredUsername: "user1",
+			Groups:            []string{"staff"},
+			Alg:               AlgES256,
+			Now:               time.Now,
 		},
 		codes: map[string]codeRecord{},
 		es:    es, rs: sharedRSAKey(), esKID: "es256-1", rsKID: "rs256-1", generation: 1,
@@ -160,8 +177,7 @@ func New(tb testing.TB) *Provider {
 	mux.HandleFunc("GET /authorize", p.authorize)
 	mux.HandleFunc("POST /token", p.token)
 	p.Server = httptest.NewTLSServer(mux)
-	tb.Cleanup(p.Server.Close)
-	return p
+	return p, nil
 }
 
 // Set changes the options under the provider's lock.
@@ -183,7 +199,11 @@ func (p *Provider) Issuer() string { return p.Server.URL }
 // Endpoints returns the explicit endpoints for a relying party that skips
 // discovery.
 func (p *Provider) Endpoints() webauth.Endpoints {
-	return webauth.Endpoints{Authorization: p.Server.URL + "/authorize", Token: p.Server.URL + "/token", JWKS: p.Server.URL + "/jwks"}
+	return webauth.Endpoints{
+		Authorization: p.Server.URL + "/authorize",
+		Token:         p.Server.URL + "/token",
+		JWKS:          p.Server.URL + "/jwks",
+	}
 }
 
 // Certificate is the server's TLS certificate for clients that need to
@@ -247,7 +267,11 @@ func (p *Provider) discovery(w http.ResponseWriter, _ *http.Request) {
 		"subject_types_supported":               []string{"public"},
 		"id_token_signing_alg_values_supported": []string{AlgES256, AlgRS256},
 		"code_challenge_methods_supported":      []string{"S256"},
-		"token_endpoint_auth_methods_supported": []string{"client_secret_basic", "client_secret_post", "none"},
+		"token_endpoint_auth_methods_supported": []string{
+			"client_secret_basic",
+			"client_secret_post",
+			"none",
+		},
 	})
 }
 
@@ -273,9 +297,19 @@ func (p *Provider) authorize(w http.ResponseWriter, r *http.Request) {
 	o := p.options()
 	q := r.URL.Query()
 	ar := AuthorizeRequest{
-		ResponseType: q.Get("response_type"), ClientID: q.Get("client_id"), RedirectURI: q.Get("redirect_uri"),
-		Scope: q.Get("scope"), State: q.Get("state"), Nonce: q.Get("nonce"), CodeChallenge: q.Get("code_challenge"),
-		CodeChallengeMethod: q.Get("code_challenge_method"), LoginHint: q.Get("login_hint"),
+		ResponseType: q.Get(
+			"response_type",
+		),
+		ClientID:    q.Get("client_id"),
+		RedirectURI: q.Get("redirect_uri"),
+		Scope: q.Get(
+			"scope",
+		),
+		State:               q.Get("state"),
+		Nonce:               q.Get("nonce"),
+		CodeChallenge:       q.Get("code_challenge"),
+		CodeChallengeMethod: q.Get("code_challenge_method"),
+		LoginHint:           q.Get("login_hint"),
 	}
 	p.mu.Lock()
 	p.authorizes = append(p.authorizes, ar)
@@ -312,7 +346,12 @@ func (p *Provider) authorize(w http.ResponseWriter, r *http.Request) {
 	default:
 		code := randomString()
 		p.mu.Lock()
-		p.codes[code] = codeRecord{challenge: ar.CodeChallenge, method: ar.CodeChallengeMethod, nonce: ar.Nonce, redirect: ar.RedirectURI}
+		p.codes[code] = codeRecord{
+			challenge: ar.CodeChallenge,
+			method:    ar.CodeChallengeMethod,
+			nonce:     ar.Nonce,
+			redirect:  ar.RedirectURI,
+		}
 		p.mu.Unlock()
 		bq.Set("code", code)
 	}
@@ -327,8 +366,16 @@ func (p *Provider) token(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	tr := TokenRequest{
-		GrantType: r.PostForm.Get("grant_type"), Code: r.PostForm.Get("code"), RedirectURI: r.PostForm.Get("redirect_uri"),
-		CodeVerifier: r.PostForm.Get("code_verifier"), ClientID: r.PostForm.Get("client_id"), ClientSecret: r.PostForm.Get("client_secret"),
+		GrantType: r.PostForm.Get(
+			"grant_type",
+		),
+		Code:        r.PostForm.Get("code"),
+		RedirectURI: r.PostForm.Get("redirect_uri"),
+		CodeVerifier: r.PostForm.Get(
+			"code_verifier",
+		),
+		ClientID:     r.PostForm.Get("client_id"),
+		ClientSecret: r.PostForm.Get("client_secret"),
 	}
 	if user, pass, ok := r.BasicAuth(); ok {
 		tr.BasicAuth = true
@@ -354,7 +401,11 @@ func (p *Provider) token(w http.ResponseWriter, r *http.Request) {
 	case o.TokenStatus != 0:
 		tokenError(w, o.TokenStatus, "server_error", "scripted")
 	default:
-		resp := map[string]any{"access_token": randomString(), "token_type": "Bearer", "expires_in": 3600}
+		resp := map[string]any{
+			"access_token": randomString(),
+			"token_type":   "Bearer",
+			"expires_in":   3600,
+		}
 		if !o.OmitIDToken {
 			idToken, err := p.SignIDToken(p.claims(o, rec.nonce))
 			if err != nil {
@@ -382,9 +433,17 @@ func (p *Provider) claims(o Options, nonce string) map[string]any {
 		iat, exp = now.Add(-3*time.Hour), now.Add(-2*time.Hour)
 	}
 	return map[string]any{
-		"iss": p.Server.URL, "sub": o.Subject, "aud": aud, "exp": exp.Unix(), "iat": iat.Unix(), "nonce": nonce,
-		"email": o.Email, "email_verified": o.EmailVerified, "name": o.Name, "preferred_username": o.PreferredUsername,
-		"groups": o.Groups,
+		"iss":                p.Server.URL,
+		"sub":                o.Subject,
+		"aud":                aud,
+		"exp":                exp.Unix(),
+		"iat":                iat.Unix(),
+		"nonce":              nonce,
+		"email":              o.Email,
+		"email_verified":     o.EmailVerified,
+		"name":               o.Name,
+		"preferred_username": o.PreferredUsername,
+		"groups":             o.Groups,
 	}
 }
 
@@ -484,7 +543,9 @@ func (p *Provider) Client(trust ...*x509.Certificate) *WebView {
 	for _, c := range trust {
 		pool.AddCert(c)
 	}
-	transport := &http.Transport{TLSClientConfig: &tls.Config{RootCAs: pool, MinVersion: tls.VersionTLS12}}
+	transport := &http.Transport{
+		TLSClientConfig: &tls.Config{RootCAs: pool, MinVersion: tls.VersionTLS12},
+	}
 	client := &http.Client{
 		Transport:     transport,
 		CheckRedirect: func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse },

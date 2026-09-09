@@ -27,15 +27,24 @@ func TestSyncDelivery(t *testing.T) {
 		return nil
 	})
 	id := mdm.EnrollmentID{Channel: mdm.ChannelDevice, ID: "D"}
-	if err := b.Publish(context.Background(), event.Event{Type: event.Enrolled, Enrollment: id}); err != nil {
+	if err := b.Publish(
+		context.Background(),
+		event.Event{Type: event.Enrolled, Enrollment: id},
+	); err != nil {
 		t.Fatal(err)
 	}
-	if err := b.Publish(context.Background(), event.Event{Type: event.CheckedOut, Enrollment: id}); err != nil {
+	if err := b.Publish(
+		context.Background(),
+		event.Event{Type: event.CheckedOut, Enrollment: id},
+	); err != nil {
 		t.Fatal(err)
 	}
 	unsub()
 	unsub() // idempotent
-	if err := b.Publish(context.Background(), event.Event{Type: event.Enrolled, Enrollment: id}); err != nil {
+	if err := b.Publish(
+		context.Background(),
+		event.Event{Type: event.Enrolled, Enrollment: id},
+	); err != nil {
 		t.Fatal(err)
 	}
 	want := []string{"typed:enrolled", "all:enrolled", "all:checked-out", "all:enrolled"}
@@ -52,7 +61,9 @@ func TestSyncDelivery(t *testing.T) {
 func TestHandlerErrors(t *testing.T) {
 	t.Parallel()
 	var reported []error
-	b := event.New(event.WithErrorHandler(func(_ event.Event, err error) { reported = append(reported, err) }))
+	b := event.New(
+		event.WithErrorHandler(func(_ event.Event, err error) { reported = append(reported, err) }),
+	)
 	boom := errors.New("boom")
 	b.Subscribe(event.All, func(context.Context, event.Event) error { return boom })
 	b.Subscribe(event.All, func(context.Context, event.Event) error { return nil })
@@ -75,7 +86,10 @@ func TestAsyncAndClose(t *testing.T) {
 		return nil
 	})
 	for range 5 {
-		if err := b.Publish(context.Background(), event.Event{Type: event.CommandQueued, At: time.Now()}); err != nil {
+		if err := b.Publish(
+			context.Background(),
+			event.Event{Type: event.CommandQueued, At: time.Now()},
+		); err != nil {
 			t.Fatal(err)
 		}
 	}
@@ -87,7 +101,13 @@ func TestAsyncAndClose(t *testing.T) {
 	if got != 5 {
 		t.Fatalf("delivered %d, want 5", got)
 	}
-	if err := b.Publish(context.Background(), event.Event{Type: event.CommandQueued}); !errors.Is(err, event.ErrClosed) {
+	if err := b.Publish(
+		context.Background(),
+		event.Event{Type: event.CommandQueued},
+	); !errors.Is(
+		err,
+		event.ErrClosed,
+	) {
 		t.Fatalf("publish after close: %v", err)
 	}
 }
@@ -104,4 +124,33 @@ func TestCloseTimeout(t *testing.T) {
 		t.Fatalf("Close = %v, want deadline", err)
 	}
 	close(release)
+}
+
+// An accepted asynchronous event must survive the HTTP request finishing.
+func TestAsyncDeliveryOutlivesRequest(t *testing.T) {
+	b := event.New(event.WithAsync())
+	entered := make(chan struct{})
+	release := make(chan struct{})
+	result := make(chan error, 1)
+	b.Subscribe(event.All, func(ctx context.Context, _ event.Event) error {
+		close(entered)
+		<-release
+		result <- ctx.Err()
+		return nil
+	})
+	ctx, cancel := context.WithCancel(context.Background())
+	if err := b.Publish(ctx, event.Event{Type: event.Enrolled}); err != nil {
+		t.Fatal(err)
+	}
+	<-entered
+	cancel()
+	close(release)
+	if err := <-result; err != nil {
+		t.Fatalf("accepted event was cancelled: %v", err)
+	}
+	timeout, done := context.WithTimeout(context.Background(), time.Second)
+	defer done()
+	if err := b.Close(timeout); err != nil {
+		t.Fatal(err)
+	}
 }

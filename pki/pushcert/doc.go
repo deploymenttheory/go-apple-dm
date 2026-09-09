@@ -1,5 +1,5 @@
-// Package pushcert parses APNs certificate/key pairs and derives their push
-// topic.
+// Package pushcert inspects APNs certificates, validates MDM and app identities,
+// and generates customer CSRs and Apple vendor-signed portal requests.
 //
 // # Design
 //
@@ -10,6 +10,12 @@
 // or database drivers. Sending notifications belongs to
 // appleplatformservices/push/apns, and persisted credential lookup to
 // server/pushnotify.
+//
+// Parse retains MDM-only topic authorization; ParseApp handles ordinary app
+// certificates. DER downloads and PEM chains are accepted. Validate checks the
+// signing key, certificate validity and requested topic. Inspect needs no key.
+// GenerateCSR keeps customer keys local; SignCSR accepts only the public CSR,
+// vendor identity and explicit trusted roots. Neither parser verifies revocation.
 //
 // # References
 //

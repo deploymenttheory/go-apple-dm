@@ -14,6 +14,7 @@ import (
 
 	"github.com/deploymenttheory/go-apple-dm/appleplatformservices/axm"
 	"github.com/deploymenttheory/go-apple-dm/appleplatformservices/dep"
+	"github.com/deploymenttheory/go-apple-dm/appleplatformservices/push/apns"
 	"github.com/deploymenttheory/go-apple-dm/clock"
 	"github.com/deploymenttheory/go-apple-dm/mdmprotocol/cms"
 	"github.com/deploymenttheory/go-apple-dm/mdmprotocol/ddm"
@@ -23,6 +24,7 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/server/adminauth"
 	admininmem "github.com/deploymenttheory/go-apple-dm/server/adminauth/inmem"
 	adminsql "github.com/deploymenttheory/go-apple-dm/server/adminauth/sqlstore"
+	"github.com/deploymenttheory/go-apple-dm/server/apppush"
 	"github.com/deploymenttheory/go-apple-dm/server/audit"
 	"github.com/deploymenttheory/go-apple-dm/server/ddmadapter/inproc"
 	"github.com/deploymenttheory/go-apple-dm/server/ddmadapter/proxyclient"
@@ -65,12 +67,13 @@ const (
 // Config is the process configuration; see ParseEnv for the DM_*
 // variables and cmd/dmserver for the flags.
 type Config struct {
-	PKI        PKIConfig
-	RateLimits RateLimitConfig
-	Role       Role
-	Listen     string
-	Storage    string // sqlite, postgres, mysql, inmem
-	DSN        string // file path for sqlite
+	PKI                     PKIConfig
+	RateLimits              RateLimitConfig
+	Role                    Role
+	TLSCertFile, TLSKeyFile string
+	Listen                  string
+	Storage                 string // sqlite, postgres, mysql, inmem
+	DSN                     string // file path for sqlite
 	// DDMURL, on the mdm role, forwards DeclarativeManagement check-ins to
 	// a ddm role through proxyclient; empty means the local engine.
 	DDMURL string
@@ -155,9 +158,10 @@ type Config struct {
 	DEP DEPConfig
 	// Push selects where APNs credentials come from. With no source the
 	// server queues commands and never wakes a device.
-	Push   PushConfig
-	Logger *slog.Logger
-	Clock  clock.Clock
+	AppPush AppPushConfig
+	Push    PushConfig
+	Logger  *slog.Logger
+	Clock   clock.Clock
 	// Bus carries the typed events every state change publishes. When nil,
 	// Build creates one so the sinks below have something to subscribe to;
 	// pass one to observe events from outside the process.
@@ -204,12 +208,14 @@ var ErrConfig = errors.New("app: invalid configuration")
 
 // App is a built process.
 type App struct {
-	Handler  http.Handler
-	Core     *service.Core
-	Engine   *ddm.Engine
-	Notifier *ddmsync.Notifier
-	Store    storage.Store
-	keyring  *crypt.Keyring
+	appPushStore   *apppush.Store
+	appPushClients map[string]*apns.AppClient
+	Handler        http.Handler
+	Core           *service.Core
+	Engine         *ddm.Engine
+	Notifier       *ddmsync.Notifier
+	Store          storage.Store
+	keyring        *crypt.Keyring
 	// AxM is the Business Manager client when configured.
 	AxM *axm.Client
 	// DEP is the device enrollment service; nil on the mdm role.
@@ -344,6 +350,9 @@ func reenrollPolicy(allow bool) service.ReenrollPolicy {
 }
 
 func (c Config) validate() error {
+	if (c.TLSCertFile == "") != (c.TLSKeyFile == "") {
+		return fmt.Errorf("%w: TLS certificate and key must be configured together", ErrConfig)
+	}
 	if err := c.validateSecurity(); err != nil {
 		return err
 	}
@@ -559,6 +568,7 @@ func (a *App) wire(ctx context.Context) error {
 	}
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET "+PathHealthz, a.healthz)
+	mux.HandleFunc("GET /readyz", a.readyz)
 	if cfg.Role == RoleMDM || cfg.Role == RoleAll {
 		dm := inproc.Handler(engine)
 		if cfg.DDMURL != "" {
@@ -587,6 +597,10 @@ func (a *App) wire(ctx context.Context) error {
 		if err != nil {
 			return err
 		}
+		userAuth, err := a.userAuthenticator()
+		if err != nil {
+			return err
+		}
 		core, err := service.New(service.Config{
 			Store:             a.Store,
 			Bus:               cfg.Bus,
@@ -599,6 +613,7 @@ func (a *App) wire(ctx context.Context) error {
 			DeclarativeManagement: dm,
 			ReturnToService:       returnToService(cfg.Enroll.ReturnToService),
 			RequireUserAuth:       cfg.Enroll.RequireUserAuth,
+			UserAuthenticate:      userAuth,
 			Reenroll:              reenrollPolicy(cfg.AllowReenroll),
 		})
 		if err != nil {
@@ -667,75 +682,8 @@ func (a *App) wire(ctx context.Context) error {
 	// Every role that has a credential serves the admin API. Withholding it
 	// from the mdm role would leave the half that owns enrollments, commands
 	// and push with no administrative surface.
-	if a.adminEnabled() {
-		store, err := a.adminStore(ctx)
-		if err != nil {
-			return err
-		}
-		if store != nil {
-			m, err := adminauth.New(store, mustAdminRegistry(), adminauth.WithClock(cfg.Clock))
-			if err != nil {
-				return fmt.Errorf("app: admin authorization: %w", err)
-			}
-			a.admin = m
-		}
-		var routes []adminRoute
-		routes = append(routes, a.introspectionRoutes()...)
-		routes = append(routes, a.ddmAdminRoutes()...)
-		routes = append(routes, a.mdmAdminRoutes()...)
-		if a.admin != nil {
-			routes = append(routes, a.principalRoutes()...)
-		}
-		if a.audit != nil {
-			routes = append(routes, a.auditRoutes()...)
-		}
-		if cfg.AxM.Enabled() {
-			client, err := a.newAxM(ctx)
-			if err != nil {
-				return err
-			}
-			a.AxM = client
-			routes = append(
-				routes,
-				adminRoute{
-					Pattern: "/axm/",
-					Action:  ActionManageBusinessMgr,
-					Family:  "axm",
-					Handler: a.axmHandler(client),
-				},
-			)
-		}
-		if a.dep == nil {
-			if err := a.wireDEP(ctx); err != nil {
-				return err
-			}
-		}
-		routes = append(
-			routes,
-			adminRoute{
-				Pattern: "/dep/",
-				Action:  ActionManageDEP,
-				Family:  "dep",
-				Handler: a.dep.handler(),
-			},
-		)
-		if a.acme != nil {
-			routes = append(
-				routes,
-				adminRoute{
-					Pattern: "/acme/",
-					Action:  ActionReadACME,
-					Family:  "acme",
-					Handler: a.acme.handler(),
-				},
-			)
-		}
-		routes = append(routes, a.pkiAdminRoutes()...)
-		admin, err := a.buildAdminMux(routes)
-		if err != nil {
-			return err
-		}
-		mux.Handle(PathAdmin, http.StripPrefix(PathAdmin[:len(PathAdmin)-1], admin))
+	if err := a.wireAdmin(ctx, mux); err != nil {
+		return err
 	}
 	a.Handler, err = a.withRateLimits(ctx, mux)
 	return err
@@ -890,5 +838,100 @@ func (a *App) wireDEP(ctx context.Context) error {
 	}
 	a.dep, a.DEP = svc, svc.client
 	a.addWorker("dep-syncer", svc.Run)
+	return nil
+}
+
+// TLSClientRoots returns the configured device identity trust roots.
+func (a *App) TLSClientRoots() *x509.CertPool { return a.cfg.CARoots }
+
+// readyz requires storage and all configured background loops to be running.
+func (a *App) readyz(w http.ResponseWriter, r *http.Request) {
+	for _, worker := range a.Workers() {
+		if !worker.Running {
+			http.Error(w, "worker unavailable", http.StatusServiceUnavailable)
+			return
+		}
+	}
+	a.healthz(w, r)
+}
+
+func (a *App) wireAdmin(ctx context.Context, mux *http.ServeMux) error {
+	if !a.adminEnabled() {
+		return nil
+	}
+	cfg := a.cfg
+	store, err := a.adminStore(ctx)
+	if err != nil {
+		return err
+	}
+	if store != nil {
+		m, err := adminauth.New(store, mustAdminRegistry(), adminauth.WithClock(cfg.Clock))
+		if err != nil {
+			return fmt.Errorf("app: admin authorization: %w", err)
+		}
+		a.admin = m
+	}
+	var routes []adminRoute
+	routes = append(routes, a.introspectionRoutes()...)
+	routes = append(routes, a.ddmAdminRoutes()...)
+	routes = append(routes, a.mdmAdminRoutes()...)
+	extras, err := a.operatorRoutes(ctx)
+	if err != nil {
+		return err
+	}
+	routes = append(routes, extras...)
+	if a.admin != nil {
+		routes = append(routes, a.principalRoutes()...)
+	}
+	if a.audit != nil {
+		routes = append(routes, a.auditRoutes()...)
+	}
+	if cfg.AxM.Enabled() {
+		client, err := a.newAxM(ctx)
+		if err != nil {
+			return err
+		}
+		a.AxM = client
+		routes = append(
+			routes,
+			adminRoute{
+				Pattern: "/axm/",
+				Action:  ActionManageBusinessMgr,
+				Family:  "axm",
+				Handler: a.axmHandler(client),
+			},
+		)
+	}
+	if a.dep == nil {
+		if err := a.wireDEP(ctx); err != nil {
+			return err
+		}
+	}
+	routes = append(
+		routes,
+		adminRoute{
+			Pattern: "/dep/",
+			Action:  ActionManageDEP,
+			Family:  "dep",
+			Handler: a.dep.handler(),
+		},
+	)
+	if a.acme != nil {
+		routes = append(
+			routes,
+			adminRoute{
+				Pattern: "/acme/",
+				Action:  ActionReadACME,
+				Family:  "acme",
+				Handler: a.acme.handler(),
+			},
+		)
+	}
+	routes = append(routes, a.pkiAdminRoutes()...)
+	admin, err := a.buildAdminMux(routes)
+	if err != nil {
+		return err
+	}
+	mux.Handle(PathAdmin, http.StripPrefix(PathAdmin[:len(PathAdmin)-1], admin))
 	return nil
 }

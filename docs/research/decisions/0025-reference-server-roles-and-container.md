@@ -6,6 +6,8 @@ The library needs a runnable composition for local development and integration t
 
 ## Decision
 
+The shared runtime, optional native TLS, and process-based bench extend this decision; see [0048](0048-reference-server-bench.md). `dmserver` remains the serving executable. The bench owns fixture services and process supervision.
+
 `app.Build` validates configuration and assembles stores, protocol services, enrollment handlers, administrative routes and workers. `server/cmd/dmserver` handles process startup. Roles are `mdm`, `ddm` and `all`; the split determines where the declaration engine runs, not a separate Apple protocol boundary.
 
 Administrative families are mounted according to available components and credentials. An `mdm` role forwarding declarations does not expose a local DDM administrative family. `/healthz` checks readiness against storage. The container uses a Go builder and a distroless, non-root runtime.

@@ -116,3 +116,35 @@ uses process-local state and requires session affinity or an injected shared sto
 public HTTPS, Apple credentials, network admission, backup protection and physical-device
 validation remain deployment responsibilities. The [threat model](security/threat-model.md) and
 [configuration guide](../README.md#reference-server) describe these boundaries.
+
+## Shared reference-server runtime and scenarios
+
+The [bench decision](research/decisions/0048-reference-server-bench.md) consolidates
+local demonstration and automated execution around the ordinary server runtime.
+
+```mermaid
+flowchart LR
+    Make[Makefile and CI] --> CLI[dmctl bench]
+    CLI --> Scenarios[Shared Go scenarios]
+    Tests[E2E adapter] --> Scenarios
+    Scenarios --> API[Administration and device APIs]
+    CLI --> Process[dmserver processes]
+    Process --> Runtime[Shared runtime and app.Build]
+    Tests --> Runtime
+    Runtime --> API
+    Runtime --> Store[Configured persistent stores]
+    Runtime --> External[Apple services or bench fixtures]
+    Devices[Simulator or real device] --> API
+    Contracts[Interface contract suites] --> Store
+    Scenarios --> Evidence[JSON and JUnit evidence]
+```
+
+The supervisor owns fake APNs, DEP, ABM, OIDC and attestation material. Those
+fixtures are outside the application route table. Native TLS, worker readiness,
+profile issuance, command results, OTA, user authentication and server-managed app
+pushes are reusable server capabilities. Contract suites and detailed component
+regressions keep their direct observation points; the shared scenarios use APIs.
+
+See [bench/server operations](operations/reference-bench.md) for configuration,
+API authorization and persistence, and [the catalogue](testing/bench-catalogue.md)
+for execution modes and retained regression mappings.

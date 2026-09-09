@@ -5,12 +5,13 @@ import (
 	"crypto/x509"
 	"fmt"
 	"net/http"
+	"os"
 	"time"
 
-	"github.com/deploymenttheory/go-apple-dm/server/pushnotify"
 	"github.com/deploymenttheory/go-apple-dm/appleplatformservices/push"
 	"github.com/deploymenttheory/go-apple-dm/appleplatformservices/push/apns"
 	"github.com/deploymenttheory/go-apple-dm/pki/pushcert"
+	"github.com/deploymenttheory/go-apple-dm/server/pushnotify"
 )
 
 // Push certificate sources.
@@ -45,7 +46,8 @@ type PushConfig struct {
 	// wrong.
 	Topic string
 	// Host overrides the APNs endpoint, for the lab and for tests.
-	Host string
+	Host       string
+	RootCAFile string
 	// Coalesce is the window repeated pushes collapse into; zero uses
 	// DefaultPushCoalesce, negative disables coalescing.
 	Coalesce time.Duration
@@ -84,7 +86,7 @@ func (p PushConfig) validate() error {
 func (a *App) wirePush() (*pushnotify.Notifier, error) {
 	cfg := a.cfg.Push
 	if !cfg.Enabled() {
-		return nil, nil
+		return nil, nil //nolint:nilnil // Unconfigured optional integration has no handler.
 	}
 	pusher := cfg.Pusher
 	if pusher == nil {
@@ -92,14 +94,27 @@ func (a *App) wirePush() (*pushnotify.Notifier, error) {
 		if err != nil {
 			return nil, err
 		}
-		opts := []apns.Option{}
+		opts := []apns.Option{apns.WithClock(a.cfg.Clock)}
+		if cfg.RootCAFile != "" {
+			certs, err := readCertsPEM(cfg.RootCAFile)
+			if err != nil {
+				return nil, err
+			}
+			roots := x509.NewCertPool()
+			for _, c := range certs {
+				roots.AddCert(c)
+			}
+			opts = append(opts, apns.WithRootCAs(roots))
+		}
 		if cfg.Host != "" {
 			opts = append(opts, apns.WithHost(cfg.Host))
 		}
 		if cfg.Transport != nil {
 			opts = append(opts, apns.WithTransport(cfg.Transport))
 		}
-		pusher = apns.New(certs, opts...)
+		client := apns.New(certs, opts...)
+		a.closers = append(a.closers, client.Close)
+		pusher = client
 	}
 	window := cfg.Coalesce
 	if window == 0 {
@@ -108,25 +123,37 @@ func (a *App) wirePush() (*pushnotify.Notifier, error) {
 	if window > 0 {
 		pusher = push.Coalesce(pusher, window, a.cfg.Clock)
 	}
-	return &pushnotify.Notifier{Store: a.Store, Pusher: pusher, Bus: a.cfg.Bus, Clock: a.cfg.Clock}, nil
+	return &pushnotify.Notifier{
+		Store:  a.Store,
+		Pusher: pusher,
+		Bus:    a.cfg.Bus,
+		Clock:  a.cfg.Clock,
+	}, nil
 }
 
 // pushCertStore resolves the certificate source.
 func (a *App) pushCertStore(cfg PushConfig) (push.CertStore, error) {
 	if cfg.Source == PushSourceFile {
-		pair, err := tls.LoadX509KeyPair(cfg.CertFile, cfg.KeyFile)
+		certData, err := os.ReadFile(cfg.CertFile)
+		if err != nil {
+			return nil, fmt.Errorf("%w: read push certificate: %w", ErrConfig, err)
+		}
+		keyData, err := os.ReadFile(cfg.KeyFile)
+		if err != nil {
+			return nil, fmt.Errorf("%w: read push key: %w", ErrConfig, err)
+		}
+		pair, err := pushcert.Parse(certData, keyData)
 		if err != nil {
 			return nil, fmt.Errorf("%w: push certificate: %w", ErrConfig, err)
 		}
 		topic := cfg.Topic
 		if topic == "" {
-			var terr error
-			topic, terr = topicOf(pair.Leaf)
-			if terr != nil {
-				return nil, terr
-			}
+			topic = pair.Topic
 		}
-		return push.StaticCertStore{topic: pair}, nil
+		if err := pushcert.Validate(pair.TLS, topic, true, a.cfg.Clock.Now()); err != nil {
+			return nil, fmt.Errorf("%w: push certificate: %w", ErrConfig, err)
+		}
+		return push.StaticCertStore{topic: pair.TLS}, nil
 	}
 	opts := []pushnotify.CertStoreOption{pushnotify.WithCertClock(a.cfg.Clock)}
 	if cfg.CertTTL > 0 {
@@ -151,4 +178,25 @@ func topicOf(leaf *x509.Certificate) (string, error) {
 		return "", fmt.Errorf("%w: push certificate: %w", ErrConfig, err)
 	}
 	return topic, nil
+}
+
+// trustedHTTPClient augments system roots for configured service endpoints.
+func trustedHTTPClient(file string) (*http.Client, error) {
+	roots, err := x509.SystemCertPool()
+	if err != nil {
+		roots = x509.NewCertPool()
+	}
+	certs, err := readCertsPEM(file)
+	if err != nil {
+		return nil, err
+	}
+	for _, cert := range certs {
+		roots.AddCert(cert)
+	}
+	return &http.Client{
+		Timeout: 30 * time.Second,
+		Transport: &http.Transport{
+			TLSClientConfig: &tls.Config{MinVersion: tls.VersionTLS12, RootCAs: roots},
+		},
+	}, nil
 }

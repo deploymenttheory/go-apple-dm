@@ -17,27 +17,30 @@ import (
 // Administrative action IDs form the registry used to validate stored policy
 // references. Each route declares its action (decision record 0034).
 const (
-	ActionPutDeclaration       = "putDeclaration"
-	ActionGetDeclaration       = "getDeclaration"
-	ActionDeleteDeclaration    = "deleteDeclaration"
-	ActionAssignSet            = "assignSet"
-	ActionReadEnrollment       = "readEnrollment"
-	ActionReadEnrollmentStatus = "readEnrollmentStatus"
-	ActionNotify               = "notify"
-	ActionManageDEP            = "manageDEP"
-	ActionManageBusinessMgr    = "manageBusinessManager"
-	ActionReadACME             = "readACME"
-	ActionManagePrincipals     = "managePrincipals"
-	ActionReadAudit            = "readAudit"
-	ActionDisableEnrollment    = "disableEnrollment"
-	ActionEnqueueCommand       = "enqueueCommand"
-	ActionReadCommands         = "readCommands"
-	ActionClearCommands        = "clearCommands"
-	ActionPushEnrollment       = "pushEnrollment"
-	ActionManagePushCerts      = "managePushCertificates"
-	ActionExportEnrollments    = "exportEnrollments"
-	ActionImportEnrollments    = "importEnrollments"
-	ActionManagePolicies       = "managePolicies"
+	ActionManageAppPush          = "manageAppPushCredentials"
+	ActionSendAppPush            = "sendAppPush"
+	ActionIssueEnrollmentProfile = "issueEnrollmentProfile"
+	ActionPutDeclaration         = "putDeclaration"
+	ActionGetDeclaration         = "getDeclaration"
+	ActionDeleteDeclaration      = "deleteDeclaration"
+	ActionAssignSet              = "assignSet"
+	ActionReadEnrollment         = "readEnrollment"
+	ActionReadEnrollmentStatus   = "readEnrollmentStatus"
+	ActionNotify                 = "notify"
+	ActionManageDEP              = "manageDEP"
+	ActionManageBusinessMgr      = "manageBusinessManager"
+	ActionReadACME               = "readACME"
+	ActionManagePrincipals       = "managePrincipals"
+	ActionReadAudit              = "readAudit"
+	ActionDisableEnrollment      = "disableEnrollment"
+	ActionEnqueueCommand         = "enqueueCommand"
+	ActionReadCommands           = "readCommands"
+	ActionClearCommands          = "clearCommands"
+	ActionPushEnrollment         = "pushEnrollment"
+	ActionManagePushCerts        = "managePushCertificates"
+	ActionExportEnrollments      = "exportEnrollments"
+	ActionImportEnrollments      = "importEnrollments"
+	ActionManagePolicies         = "managePolicies"
 )
 
 // AdminActions describes every action, with operator-facing prose naming the
@@ -45,6 +48,21 @@ const (
 // an action knows what they are granting rather than guessing from its name.
 func AdminActions() []adminauth.Action {
 	return []adminauth.Action{
+		{
+			ID:       ActionManageAppPush,
+			Help:     "Import, renew and list app push credentials.",
+			Resource: adminauth.EntitySystem,
+		},
+		{
+			ID:       ActionSendAppPush,
+			Help:     "Send app alert and background notifications.",
+			Resource: adminauth.EntitySystem,
+		},
+		{
+			ID:       ActionIssueEnrollmentProfile,
+			Help:     "Issue a configured device enrollment profile.",
+			Resource: adminauth.EntitySystem,
+		},
 		{
 			ID:       ActionReadCertificates,
 			Help:     "Read certificate issuance and revocation status.",

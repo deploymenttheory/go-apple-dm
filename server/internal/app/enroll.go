@@ -49,6 +49,8 @@ const (
 // EnrollConfig turns the enrollment routes on. It is inactive until
 // PublicURL and Topic are set.
 type EnrollConfig struct {
+	UserAuthHA1File             string
+	OTAAnchorFile, OTAChallenge string
 	// PublicURL is the https base devices reach (profiles, discovery,
 	// redirects).
 	PublicURL string
@@ -97,6 +99,7 @@ type EnrollConfig struct {
 
 // OIDCConfig is the relying-party configuration.
 type OIDCConfig struct {
+	RootCAFile                     string
 	Issuer, ClientID, ClientSecret string
 	// HTTPClient reaches the provider; tests point it at a fake.
 	HTTPClient *http.Client
@@ -372,73 +375,14 @@ func (a *App) wireEnrollment(ctx context.Context, mux *http.ServeMux) ([]service
 		mux.Handle(PathEnroll+version, h)
 	}
 
-	// The identity provider behind every web flow.
-	if cfg.OIDC.Issuer != "" {
-		e.flow, err = webauth.New(webauth.Config{
-			Issuer:       cfg.OIDC.Issuer,
-			ClientID:     cfg.OIDC.ClientID,
-			ClientSecret: cfg.OIDC.ClientSecret,
-			RedirectURL:  e.base + PathOIDCCallback,
-			StateStore:   webauth.NewMemoryStore(),
-			HTTPClient:   cfg.OIDC.HTTPClient,
-			Clock:        a.cfg.Clock,
-			Logger:       a.cfg.Logger,
-			Authorizer: func(_ context.Context, _ webauth.Bound, c webauth.Claims) (webauth.Decision, error) {
-				if c.Email == "" {
-					return webauth.Decision{}, fmt.Errorf("%w: no email claim", webauth.ErrDenied)
-				}
-				return webauth.Decision{Profile: "default"}, nil
-			},
-			Complete: e.complete,
-		})
-		if err != nil {
-			return nil, fmt.Errorf("app: OIDC: %w", err)
-		}
-		mux.Handle(PathOIDCCallback, e.flow.Callback())
-		mux.HandleFunc("GET "+PathAuthenticate, func(w http.ResponseWriter, r *http.Request) {
-			hint := accountdriven.UserIdentifier(r)
-			if err := e.flow.Begin(
-				w,
-				r,
-				webauth.Bound{LoginHint: hint, Extra: map[string]string{"flow": "asweb"}},
-			); err != nil {
-				http.Error(
-					w,
-					http.StatusText(http.StatusInternalServerError),
-					http.StatusInternalServerError,
-				)
-			}
-		})
-		mux.HandleFunc("GET "+PathOAuth2Authorize, func(w http.ResponseWriter, r *http.Request) {
-			req, err := e.oauth.ParseAuthorization(r)
-			if err != nil {
-				http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
-				return
-			}
-			if err := e.flow.Begin(
-				w,
-				r,
-				webauth.Bound{
-					LoginHint: req.LoginHint,
-					Extra: map[string]string{
-						"flow":  "oauth2",
-						"state": req.State,
-						"scope": req.Scope,
-					},
-				},
-			); err != nil {
-				http.Error(
-					w,
-					http.StatusText(http.StatusInternalServerError),
-					http.StatusInternalServerError,
-				)
-			}
-		})
-	} else {
-		a.cfg.Logger.Warn("app: no OIDC issuer configured; only the token-based ADE lane can enrol")
+	if err := a.wireOIDC(e, mux); err != nil {
+		return nil, err
 	}
 	hooks := []service.Hook{&accountdriven.CheckinHook{Tokens: e.tokens, Auth: auth}}
 	a.enroll = e
+	if err := a.wireOTA(mux); err != nil {
+		return nil, err
+	}
 	return hooks, nil
 }
 
@@ -693,4 +637,89 @@ func returnToService(enabled bool) service.ReturnToServiceHandler {
 			ReturnToService: checkin.ReturnToServiceResponseReturnToService{Enabled: true},
 		}, nil
 	}
+}
+
+func (c OIDCConfig) client() (*http.Client, error) {
+	if c.RootCAFile != "" {
+		return trustedHTTPClient(c.RootCAFile)
+	}
+	if c.HTTPClient != nil {
+		return c.HTTPClient, nil
+	}
+	return http.DefaultClient, nil
+}
+
+func (a *App) wireOIDC(e *enrollment, mux *http.ServeMux) error {
+	cfg := a.cfg.Enroll
+	var err error
+	// The identity provider behind every web flow.
+	if cfg.OIDC.Issuer != "" {
+		cfg.OIDC.HTTPClient, err = cfg.OIDC.client()
+		if err != nil {
+			return err
+		}
+		e.flow, err = webauth.New(webauth.Config{
+			Issuer:       cfg.OIDC.Issuer,
+			ClientID:     cfg.OIDC.ClientID,
+			ClientSecret: cfg.OIDC.ClientSecret,
+			RedirectURL:  e.base + PathOIDCCallback,
+			StateStore:   webauth.NewMemoryStore(),
+			HTTPClient:   cfg.OIDC.HTTPClient,
+			Clock:        a.cfg.Clock,
+			Logger:       a.cfg.Logger,
+			Authorizer: func(_ context.Context, _ webauth.Bound, c webauth.Claims) (webauth.Decision, error) {
+				if c.Email == "" {
+					return webauth.Decision{}, fmt.Errorf("%w: no email claim", webauth.ErrDenied)
+				}
+				return webauth.Decision{Profile: "default"}, nil
+			},
+			Complete: e.complete,
+		})
+		if err != nil {
+			return fmt.Errorf("app: OIDC: %w", err)
+		}
+		mux.Handle(PathOIDCCallback, e.flow.Callback())
+		mux.HandleFunc("GET "+PathAuthenticate, func(w http.ResponseWriter, r *http.Request) {
+			hint := accountdriven.UserIdentifier(r)
+			if err := e.flow.Begin(
+				w,
+				r,
+				webauth.Bound{LoginHint: hint, Extra: map[string]string{"flow": "asweb"}},
+			); err != nil {
+				http.Error(
+					w,
+					http.StatusText(http.StatusInternalServerError),
+					http.StatusInternalServerError,
+				)
+			}
+		})
+		mux.HandleFunc("GET "+PathOAuth2Authorize, func(w http.ResponseWriter, r *http.Request) {
+			req, err := e.oauth.ParseAuthorization(r)
+			if err != nil {
+				http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
+				return
+			}
+			if err := e.flow.Begin(
+				w,
+				r,
+				webauth.Bound{
+					LoginHint: req.LoginHint,
+					Extra: map[string]string{
+						"flow":  "oauth2",
+						"state": req.State,
+						"scope": req.Scope,
+					},
+				},
+			); err != nil {
+				http.Error(
+					w,
+					http.StatusText(http.StatusInternalServerError),
+					http.StatusInternalServerError,
+				)
+			}
+		})
+	} else {
+		a.cfg.Logger.Warn("app: no OIDC issuer configured; only the token-based ADE lane can enrol")
+	}
+	return nil
 }

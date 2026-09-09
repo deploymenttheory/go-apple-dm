@@ -1,4 +1,5 @@
-// Package apns implements the APNs HTTP/2 client for MDM notifications.
+// Package apns implements certificate-authenticated APNs HTTP/2 clients for
+// MDM wake-ups and ordinary app alert/background notifications.
 //
 // # Design
 //
@@ -9,7 +10,9 @@
 // request rejections and retryable failures remain distinct. RetryAfter reflects
 // the response header when valid.
 //
-// The package implements push.Pusher. Enrollment lookup, certificate-store
+// Client implements push.Pusher; NewApp returns a separate app sender. Close
+// cancels active requests and retires connections, as does certificate rotation.
+// Enrollment lookup, certificate-store
 // caching and event publication belong to server/pushnotify. APNs acceptance
 // does not establish device delivery or command execution.
 //

@@ -38,13 +38,22 @@ type Parsed struct {
 	NotBefore, NotAfter time.Time
 }
 
-// Parse decodes a PEM certificate and a PEM private key, checks that the
+// Parse decodes a PEM chain or DER certificate and a PEM private key, checks that the
 // key matches the leaf's public key, and derives the topic from the leaf's
 // subject UID. The first CERTIFICATE block is the leaf; further CERTIFICATE
 // blocks are kept as the chain. The key may be PKCS#1 RSA, PKCS#8, or SEC 1
 // EC; encrypted keys are rejected. Errors wrap ErrInvalid, ErrKeyMismatch,
 // or ErrNoTopic.
 func Parse(certPEM, keyPEM []byte) (Parsed, error) {
+	p, err := parsePair(certPEM, keyPEM)
+	if err != nil {
+		return Parsed{}, err
+	}
+	p.Topic, err = TopicFromCert(p.Leaf)
+	return p, err
+}
+
+func parsePair(certPEM, keyPEM []byte) (Parsed, error) {
 	chain, err := decodeCertificates(certPEM)
 	if err != nil {
 		return Parsed{}, err
@@ -61,14 +70,9 @@ func Parse(certPEM, keyPEM []byte) (Parsed, error) {
 	if !ok || !pub.Equal(key.Public()) {
 		return Parsed{}, ErrKeyMismatch
 	}
-	topic, err := TopicFromCert(leaf)
-	if err != nil {
-		return Parsed{}, err
-	}
 	return Parsed{
 		TLS:       tls.Certificate{Certificate: chain, PrivateKey: key, Leaf: leaf},
 		Leaf:      leaf,
-		Topic:     topic,
 		NotBefore: leaf.NotBefore,
 		NotAfter:  leaf.NotAfter,
 	}, nil
@@ -89,7 +93,7 @@ func TopicFromCert(cert *x509.Certificate) (string, error) {
 		if !ok || s == "" {
 			continue
 		}
-		if !strings.HasPrefix(s, TopicPrefix) {
+		if !strings.HasPrefix(s, TopicPrefix+".") || len(s) == len(TopicPrefix)+1 {
 			return "", fmt.Errorf("%w: UID %q does not start with %s", ErrNoTopic, s, TopicPrefix)
 		}
 		return s, nil
@@ -102,10 +106,18 @@ func TopicFromCert(cert *x509.Certificate) (string, error) {
 func decodeCertificates(p []byte) ([][]byte, error) {
 	block, rest := pem.Decode(p)
 	if block == nil {
-		return nil, fmt.Errorf("%w: no PEM block in certificate", ErrInvalid)
+		cert, err := x509.ParseCertificate(p)
+		if err != nil {
+			return nil, fmt.Errorf("%w: expected PEM or DER certificate: %w", ErrInvalid, err)
+		}
+		return [][]byte{cert.Raw}, nil
 	}
 	if block.Type != "CERTIFICATE" {
-		return nil, fmt.Errorf("%w: first PEM block is %q, want CERTIFICATE", ErrInvalid, block.Type)
+		return nil, fmt.Errorf(
+			"%w: first PEM block is %q, want CERTIFICATE",
+			ErrInvalid,
+			block.Type,
+		)
 	}
 	chain := [][]byte{block.Bytes}
 	for {
@@ -130,7 +142,8 @@ func decodeKey(p []byte) (signer, error) {
 	if block == nil {
 		return nil, fmt.Errorf("%w: no PEM block in key", ErrInvalid)
 	}
-	if _, encrypted := block.Headers["Proc-Type"]; encrypted || strings.Contains(block.Type, "ENCRYPTED") {
+	if _, encrypted := block.Headers["Proc-Type"]; encrypted ||
+		strings.Contains(block.Type, "ENCRYPTED") {
 		return nil, fmt.Errorf("%w: encrypted private keys are not supported", ErrInvalid)
 	}
 	var (

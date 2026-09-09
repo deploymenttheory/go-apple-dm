@@ -130,17 +130,23 @@ func (ca *CA) IssuePushWithKey(
 	return ca.issue(subject, notBefore, key)
 }
 
-func (ca *CA) issue(subject pkix.Name, notBefore time.Time, key crypto.Signer) (*Identity, error) {
+func (ca *CA) issue(
+	subject pkix.Name,
+	notBefore time.Time,
+	key crypto.Signer,
+	extensions ...pkix.Extension,
+) (*Identity, error) {
 	if key == nil {
 		return nil, ErrNilKey
 	}
 	tmpl := &x509.Certificate{
-		SerialNumber: big.NewInt(ca.serial.Add(1)),
-		Subject:      subject,
-		NotBefore:    notBefore,
-		NotAfter:     notBefore.Add(24 * time.Hour),
-		KeyUsage:     x509.KeyUsageDigitalSignature,
-		ExtKeyUsage:  []x509.ExtKeyUsage{x509.ExtKeyUsageClientAuth},
+		SerialNumber:    big.NewInt(ca.serial.Add(1)),
+		ExtraExtensions: extensions,
+		Subject:         subject,
+		NotBefore:       notBefore,
+		NotAfter:        notBefore.Add(24 * time.Hour),
+		KeyUsage:        x509.KeyUsageDigitalSignature,
+		ExtKeyUsage:     []x509.ExtKeyUsage{x509.ExtKeyUsageClientAuth},
 	}
 	der, err := x509.CreateCertificate(rand.Reader, tmpl, ca.Cert, key.Public(), ca.Key)
 	if err != nil {
@@ -151,4 +157,29 @@ func (ca *CA) issue(subject pkix.Name, notBefore time.Time, key crypto.Signer) (
 		return nil, fmt.Errorf("testpki: %w", err)
 	}
 	return &Identity{Cert: cert, Key: key}, nil
+}
+
+// IssueApp signs a provider identity whose Apple topic extension authorizes
+// ordinary app notifications. It does not authorize MDM pushes.
+func (ca *CA) IssueApp(topic string, notBefore time.Time) (*Identity, error) {
+	key, err := rsa.GenerateKey(rand.Reader, 2048)
+	if err != nil {
+		return nil, err
+	}
+	value, err := asn1.Marshal(struct {
+		Topic    string
+		Services []string
+	}{topic, []string{"topic"}})
+	if err != nil {
+		return nil, err
+	}
+	return ca.issue(
+		pkix.Name{
+			CommonName: topic,
+			ExtraNames: []pkix.AttributeTypeAndValue{{Type: oidUserID, Value: topic}},
+		},
+		notBefore,
+		key,
+		pkix.Extension{Id: asn1.ObjectIdentifier{1, 2, 840, 113635, 100, 6, 3, 6}, Value: value},
+	)
 }

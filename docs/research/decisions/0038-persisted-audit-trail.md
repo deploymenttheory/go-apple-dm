@@ -6,6 +6,10 @@ Operators need retained, attributable records of device and administrative activ
 
 ## Decision
 
+Accepted asynchronous events retain request context values but are delivered independently
+of request cancellation. Shutdown drains them before closing the audit store, so a
+completed HTTP response does not cancel its pending audit write.
+
 `audit.Store` exposes append, query and age-based prune operations. Records contain projected fields from the event registry, event metadata and an actor string captured at the time. There is no update or delete-by-ID operation. IDs are not reused after pruning.
 
 SQL backends share the application pool but own a migration set and query indexes. An optional worker applies configured age-based retention and retries failed prune operations. Retention is disabled when no duration is configured.

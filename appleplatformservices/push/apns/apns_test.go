@@ -21,7 +21,7 @@ import (
 
 func pushCert(t *testing.T, ca *testpki.CA, notBefore time.Time) tls.Certificate {
 	t.Helper()
-	id, err := ca.Issue("com.apple.mgmt.External.test", notBefore)
+	id, err := ca.IssuePush("com.apple.mgmt.External.test", notBefore)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -29,15 +29,25 @@ func pushCert(t *testing.T, ca *testpki.CA, notBefore time.Time) tls.Certificate
 }
 
 func target(id string, token []byte) push.Target {
-	return push.Target{ID: mdm.EnrollmentID{Channel: mdm.ChannelDevice, ID: id}, Push: mdm.Push{Topic: "com.apple.mgmt.External.test", Token: token, Magic: "magic-" + id}}
+	return push.Target{
+		ID:   mdm.EnrollmentID{Channel: mdm.ChannelDevice, ID: id},
+		Push: mdm.Push{Topic: "com.apple.mgmt.External.test", Token: token, Magic: "magic-" + id},
+	}
 }
 
-func newClient(t *testing.T, srv *pushtest.Server, store push.CertStore, opts ...apns.Option) *apns.Client {
+func newClient(
+	t *testing.T,
+	srv *pushtest.Server,
+	store push.CertStore,
+	opts ...apns.Option,
+) *apns.Client {
 	t.Helper()
 	// The test server is TLS with its own CA; route the client's per-topic
 	// transport through the server's client so the certificate is trusted.
 	transport := func(tls.Certificate) *http.Client { return srv.Client() }
-	return apns.New(store, append([]apns.Option{apns.WithHost(srv.URL), apns.WithTransport(transport)}, opts...)...)
+	return apns.New(
+		store,
+		append([]apns.Option{apns.WithHost(srv.URL), apns.WithTransport(transport)}, opts...)...)
 }
 
 func TestStatusMapping(t *testing.T) {
@@ -46,19 +56,30 @@ func TestStatusMapping(t *testing.T) {
 	ca, _ := testpki.NewCA("apns")
 	srv := pushtest.NewServer()
 	t.Cleanup(srv.Close)
-	store := push.StaticCertStore{"com.apple.mgmt.External.test": pushCert(t, ca, time.Now().Add(-time.Hour))}
+	store := push.StaticCertStore{
+		"com.apple.mgmt.External.test": pushCert(t, ca, time.Now().Add(-time.Hour)),
+	}
 	c := newClient(t, srv, store)
 	ok, gone, bad, busy, boom := []byte{1}, []byte{2}, []byte{3}, []byte{4}, []byte{5}
 	srv.ScriptToken(gone, pushtest.Script{Status: 410, Reason: "Unregistered"})
 	srv.ScriptToken(bad, pushtest.Script{Status: 400, Reason: "BadDeviceToken"})
 	srv.ScriptToken(busy, pushtest.Script{Status: 429, Reason: "TooManyRequests", RetryAfter: 7})
 	srv.ScriptToken(boom, pushtest.Script{Status: 500, Reason: "InternalServerError"})
-	targets := []push.Target{target("ok", ok), target("gone", gone), target("bad", bad), target("busy", busy), target("boom", boom), {ID: mdm.EnrollmentID{ID: "empty"}}}
+	targets := []push.Target{
+		target("ok", ok),
+		target("gone", gone),
+		target("bad", bad),
+		target("busy", busy),
+		target("boom", boom),
+		{ID: mdm.EnrollmentID{ID: "empty"}},
+	}
 	res, err := c.Push(ctx, targets)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if r := res[targets[0].ID]; r.Outcome != push.OutcomeSent || !r.Sent() || r.Status != 200 || r.APNSID == "" || r.Err != nil {
+	if r := res[targets[0].ID]; r.Outcome != push.OutcomeSent || !r.Sent() || r.Status != 200 ||
+		r.APNSID == "" ||
+		r.Err != nil {
 		t.Errorf("ok: %+v", r)
 	}
 	// 410 is the only status Apple tells a sender to stop pushing on.
@@ -84,11 +105,15 @@ func TestStatusMapping(t *testing.T) {
 		t.Errorf("boom: %+v", r)
 	}
 	// An enrollment with no usable push info never reaches APNs at all.
-	if r := res[targets[5].ID]; r.Outcome != push.OutcomeSkipped || !errors.Is(r.Err, push.ErrInvalidToken) {
+	if r := res[targets[5].ID]; r.Outcome != push.OutcomeSkipped ||
+		!errors.Is(r.Err, push.ErrInvalidToken) {
 		t.Errorf("empty push info: %+v", r)
 	}
 	reqs := srv.Requests()
-	if len(reqs) != 5 || reqs[0].Token != "01" || reqs[0].Topic != "com.apple.mgmt.External.test" || reqs[0].PushType != "mdm" || reqs[0].Priority != "10" || reqs[0].Magic != "magic-ok" {
+	if len(reqs) != 5 || reqs[0].Token != "01" || reqs[0].Topic != "com.apple.mgmt.External.test" ||
+		reqs[0].PushType != "mdm" ||
+		reqs[0].Priority != "10" ||
+		reqs[0].Magic != "magic-ok" {
 		t.Fatalf("requests %+v", reqs)
 	}
 	// An absent Retry-After yields zero. Callers can apply DefaultRetryAfter as
@@ -158,9 +183,18 @@ func TestPerTopicClientsAndExpiry(t *testing.T) {
 	store := push.StaticCertStore{"com.apple.mgmt.External.test": valid}
 	builds := 0
 	transport := func(tls.Certificate) *http.Client { builds++; return srv.Client() }
-	c := apns.New(store, apns.WithHost(srv.URL), apns.WithTransport(transport), apns.WithClock(fake), apns.WithTimeout(time.Second))
+	c := apns.New(
+		store,
+		apns.WithHost(srv.URL),
+		apns.WithTransport(transport),
+		apns.WithClock(fake),
+		apns.WithTimeout(time.Second),
+	)
 	for range 3 {
-		if res, _ := c.Push(ctx, []push.Target{target("a", []byte{1})}); !res[target("a", nil).ID].Sent() {
+		if res, _ := c.Push(
+			ctx,
+			[]push.Target{target("a", []byte{1})},
+		); !res[target("a", nil).ID].Sent() {
 			t.Fatal("push failed")
 		}
 	}
@@ -182,17 +216,41 @@ func TestPerTopicClientsAndExpiry(t *testing.T) {
 		t.Fatalf("expired: %+v", r)
 	}
 	// Missing topic, empty certificate, and unparsable leaf.
-	res, _ = c.Push(ctx, []push.Target{{ID: mdm.EnrollmentID{ID: "x"}, Push: mdm.Push{Topic: "other", Token: []byte{1}, Magic: "m"}}})
+	res, _ = c.Push(
+		ctx,
+		[]push.Target{
+			{
+				ID:   mdm.EnrollmentID{ID: "x"},
+				Push: mdm.Push{Topic: "other", Token: []byte{1}, Magic: "m"},
+			},
+		},
+	)
 	if r := res[mdm.EnrollmentID{ID: "x"}]; !errors.Is(r.Err, push.ErrNoCertificate) {
 		t.Fatalf("missing topic: %+v", r)
 	}
 	store["empty"] = tls.Certificate{}
-	res, _ = c.Push(ctx, []push.Target{{ID: mdm.EnrollmentID{ID: "e"}, Push: mdm.Push{Topic: "empty", Token: []byte{1}, Magic: "m"}}})
+	res, _ = c.Push(
+		ctx,
+		[]push.Target{
+			{
+				ID:   mdm.EnrollmentID{ID: "e"},
+				Push: mdm.Push{Topic: "empty", Token: []byte{1}, Magic: "m"},
+			},
+		},
+	)
 	if r := res[mdm.EnrollmentID{ID: "e"}]; !errors.Is(r.Err, push.ErrNoCertificate) {
 		t.Fatalf("empty cert: %+v", r)
 	}
 	store["garbage"] = tls.Certificate{Certificate: [][]byte{{1, 2, 3}}}
-	res, _ = c.Push(ctx, []push.Target{{ID: mdm.EnrollmentID{ID: "g"}, Push: mdm.Push{Topic: "garbage", Token: []byte{1}, Magic: "m"}}})
+	res, _ = c.Push(
+		ctx,
+		[]push.Target{
+			{
+				ID:   mdm.EnrollmentID{ID: "g"},
+				Push: mdm.Push{Topic: "garbage", Token: []byte{1}, Magic: "m"},
+			},
+		},
+	)
 	if r := res[mdm.EnrollmentID{ID: "g"}]; r.Err == nil {
 		t.Fatal("garbage cert should fail")
 	}
@@ -200,12 +258,25 @@ func TestPerTopicClientsAndExpiry(t *testing.T) {
 	noLeaf := valid
 	noLeaf.Leaf = nil
 	fresh := clock.NewFake(time.Now())
-	c2 := apns.New(push.StaticCertStore{"com.apple.mgmt.External.test": noLeaf}, apns.WithHost(srv.URL), apns.WithTransport(transport), apns.WithClock(fresh))
-	if res, _ := c2.Push(ctx, []push.Target{target("a", []byte{1})}); !res[target("a", nil).ID].Sent() {
+	c2 := apns.New(
+		push.StaticCertStore{"com.apple.mgmt.External.test": noLeaf},
+		apns.WithHost(srv.URL),
+		apns.WithTransport(transport),
+		apns.WithClock(fresh),
+	)
+	if res, _ := c2.Push(
+		ctx,
+		[]push.Target{target("a", []byte{1})},
+	); !res[target("a", nil).ID].Sent() {
 		t.Fatal("no-leaf cert should work")
 	}
 	// Unreachable host.
-	c3 := apns.New(store, apns.WithHost("https://127.0.0.1:1"), apns.WithClock(fresh), apns.WithTimeout(200*time.Millisecond))
+	c3 := apns.New(
+		store,
+		apns.WithHost("https://127.0.0.1:1"),
+		apns.WithClock(fresh),
+		apns.WithTimeout(200*time.Millisecond),
+	)
 	res, _ = c3.Push(ctx, []push.Target{target("a", []byte{1})})
 	if r := res[target("a", nil).ID]; !errors.Is(r.Err, push.ErrUpstream) {
 		t.Fatalf("unreachable: %+v", r)
@@ -215,8 +286,15 @@ func TestPerTopicClientsAndExpiry(t *testing.T) {
 func TestTopicFromCert(t *testing.T) {
 	t.Parallel()
 	uid := asn1.ObjectIdentifier{0, 9, 2342, 19200300, 100, 1, 1}
-	cert := &x509.Certificate{Subject: pkix.Name{Names: []pkix.AttributeTypeAndValue{{Type: uid, Value: "com.apple.mgmt.External.abc"}}}}
-	if topic, err := apns.TopicFromCert(cert); err != nil || topic != "com.apple.mgmt.External.abc" {
+	cert := &x509.Certificate{
+		Subject: pkix.Name{
+			Names: []pkix.AttributeTypeAndValue{{Type: uid, Value: "com.apple.mgmt.External.abc"}},
+		},
+	}
+	if topic, err := apns.TopicFromCert(
+		cert,
+	); err != nil ||
+		topic != "com.apple.mgmt.External.abc" {
 		t.Fatalf("topic = %q %v", topic, err)
 	}
 	if _, err := apns.TopicFromCert(&x509.Certificate{}); err == nil {

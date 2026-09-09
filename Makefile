@@ -11,8 +11,8 @@ SERVER_DIR := server
 LIB_MOD := github.com/deploymenttheory/go-apple-dm
 SRV_MOD := github.com/deploymenttheory/go-apple-dm/server
 ALL_PKGS := $(LIB_MOD)/...,$(SRV_MOD)/...
-INTEGRATION_PKGS := ./statestore/... ./sqlstore/... ./ddmstore/... ./depstore/... ./acmestore/... ./adminauth/... ./audit/... ./internal/app/...
-E2E_PKGS := ./e2e/...
+INTEGRATION_PKGS := ./apppush/... ./statestore/... ./sqlstore/... ./ddmstore/... ./depstore/... ./acmestore/... ./adminauth/... ./audit/... ./internal/app/...
+E2E_PKGS := ./e2e/... ./acceptance/...
 E2E_STORE ?= sqlite
 FUZZ_SMOKE_TIME ?= 20s
 FUZZ_TIME ?= 10m
@@ -55,11 +55,13 @@ test:
 	cd $(SERVER_DIR) && $(GO) test -race -shuffle=on -count=1 -cover -coverpkg=$(ALL_PKGS) ./... -args -test.gocoverdir=$(PWD)/$(COVER_DIR)/unit
 
 ## test-storage: storage contract suites against SQL backends (needs TEST_POSTGRES_DSN / TEST_MYSQL_DSN; `make testdb-up` starts both in Docker and prints the exports)
-test-storage:
+test-storage: test-contract
+
+## test-contract: storage and interface contract suites across configured SQL backends
+test-contract:
+	$(GO) test -race ./storage/... ./state/...
 	@rm -rf $(COVER_DIR)/storage && mkdir -p $(COVER_DIR)/storage
-	@cd $(SERVER_DIR) && if $(GO) list $(INTEGRATION_PKGS) >/dev/null 2>&1; then \
-		$(GO) test -race -count=1 -tags integration -cover -coverpkg=$(ALL_PKGS) $(INTEGRATION_PKGS) -args -test.gocoverdir=$(PWD)/$(COVER_DIR)/storage; \
-	else echo "no storage packages yet"; fi
+	cd $(SERVER_DIR) && $(GO) test -race -count=1 -tags integration -cover -coverpkg=$(ALL_PKGS) $(INTEGRATION_PKGS) -args -test.gocoverdir=$(PWD)/$(COVER_DIR)/storage
 
 ## test-storage-perf: the 100k-row Clear timing gate on PostgreSQL, without the race detector (needs TEST_POSTGRES_DSN)
 test-storage-perf:
@@ -75,9 +77,7 @@ test-conformance:
 test-e2e: export E2E_STORE := $(E2E_STORE)
 test-e2e:
 	@rm -rf $(COVER_DIR)/e2e-$(E2E_STORE) && mkdir -p $(COVER_DIR)/e2e-$(E2E_STORE)
-	@cd $(SERVER_DIR) && if $(GO) list $(E2E_PKGS) >/dev/null 2>&1; then \
-		$(GO) test -race -count=1 -tags e2e -cover -coverpkg=$(ALL_PKGS) $(E2E_PKGS) -args -test.gocoverdir=$(PWD)/$(COVER_DIR)/e2e-$(E2E_STORE); \
-	else echo "no e2e packages yet"; fi
+	cd $(SERVER_DIR) && $(GO) test -race -count=1 -tags e2e -cover -coverpkg=$(ALL_PKGS) $(E2E_PKGS) -args -test.gocoverdir=$(PWD)/$(COVER_DIR)/e2e-$(E2E_STORE)
 
 ## docker-build: build the reference server image from this repository
 docker-build:
@@ -124,10 +124,71 @@ refs-activity:
 	@scripts/refs-activity.sh
 
 ## ci: everything CI runs, in order
-ci: lint verify test test-storage test-storage-perf test-e2e fuzz-smoke coverage
+ci: lint verify test test-storage test-storage-perf test-e2e test-acceptance bench-docs-check fuzz-smoke coverage
 
 ## clean: remove coverage output
 clean:
 	rm -rf $(COVER_DIR)
 
 .PHONY: help tools submodule generate verify lint test test-storage test-storage-perf test-conformance test-e2e testdb-up testdb-down docker-build testdb-ddm-up testdb-ddm-down fuzz-smoke fuzz coverage vuln refs refs-activity ci clean
+
+# Bench recipes delegate to dmctl; Go owns workspace and scenario behavior.
+BENCH_WORKSPACE ?= test-lab/local
+BENCH_MODE ?= simulated
+BENCH_STORAGE ?= sqlite
+BENCH_TOPOLOGY ?= all
+BENCH_LISTEN ?= 127.0.0.1:8443
+BENCH_SCENARIO ?= all
+BENCH_DEVICE_ID ?=
+BENCH_REPORT_DIR ?= cover/acceptance
+BENCH_REVISION := $(shell git describe --always --dirty)
+BENCH_BIN_DIR := test-lab/local/bin
+
+## bench-build: build dmserver and dmctl for bench and acceptance runs
+bench-build:
+	@mkdir -p "$(BENCH_BIN_DIR)"
+	$(GO) build -o "$(BENCH_BIN_DIR)/dmserver" ./server/cmd/dmserver
+	$(GO) build -o "$(BENCH_BIN_DIR)/dmctl" ./server/cmd/dmctl
+
+## bench-init: initialize BENCH_WORKSPACE (BENCH_MODE, BENCH_STORAGE, BENCH_TOPOLOGY, BENCH_LISTEN)
+bench-init: bench-build
+	"$(BENCH_BIN_DIR)/dmctl" bench init -workspace "$(BENCH_WORKSPACE)" -mode "$(BENCH_MODE)" -storage "$(BENCH_STORAGE)" -topology "$(BENCH_TOPOLOGY)" -listen "$(BENCH_LISTEN)"
+
+## bench-doctor: inspect workspace and live prerequisites without changing device state
+bench-doctor: bench-build
+	"$(BENCH_BIN_DIR)/dmctl" bench doctor -workspace "$(BENCH_WORKSPACE)"
+
+## bench-up: supervise dmserver and fixtures in the foreground; use another terminal for bench-run
+bench-up: bench-build
+	"$(BENCH_BIN_DIR)/dmctl" bench up -workspace "$(BENCH_WORKSPACE)" -dmserver "$(BENCH_BIN_DIR)/dmserver"
+
+## bench-down: stop the workspace supervisor and drain its server processes
+bench-down:
+	"$(BENCH_BIN_DIR)/dmctl" bench down -workspace "$(BENCH_WORKSPACE)"
+
+## bench-list: list stable scenario IDs, execution modes and retained regressions
+bench-list: bench-build
+	"$(BENCH_BIN_DIR)/dmctl" bench list
+
+## bench-run: run BENCH_SCENARIO against the workspace; BENCH_DEVICE_ID selects a live MDM device
+bench-run: bench-build
+	"$(BENCH_BIN_DIR)/dmctl" bench run -workspace "$(BENCH_WORKSPACE)" -scenario "$(BENCH_SCENARIO)" -device-id "$(BENCH_DEVICE_ID)" -revision "$(BENCH_REVISION)"
+
+## bench-status: query the workspace supervisor
+bench-status:
+	"$(BENCH_BIN_DIR)/dmctl" bench status -workspace "$(BENCH_WORKSPACE)"
+
+## test-acceptance: shared scenarios against built dmserver processes, including split topology
+# Absolute paths survive go test's package working directory.
+test-acceptance: bench-build
+	BENCH_DMSERVER="$(abspath $(BENCH_BIN_DIR))/dmserver" BENCH_DMCTL="$(abspath $(BENCH_BIN_DIR))/dmctl" BENCH_REPORT_DIR="$(abspath $(BENCH_REPORT_DIR))" BENCH_REVISION="$(BENCH_REVISION)" $(GO) test -race -count=1 -timeout 300s -tags acceptance ./server/acceptance/...
+
+## bench-docs: regenerate the catalogue from executable scenario metadata
+bench-docs: bench-build
+	"$(BENCH_BIN_DIR)/dmctl" bench list -format markdown > docs/testing/bench-catalogue.md
+
+## bench-docs-check: verify the documented scenario catalogue matches the implementation
+bench-docs-check: bench-build
+	@tmp=$$(mktemp); "$(BENCH_BIN_DIR)/dmctl" bench list -format markdown > "$$tmp" && diff -u docs/testing/bench-catalogue.md "$$tmp"; status=$$?; rm -f "$$tmp"; exit $$status
+
+.PHONY: test-contract test-acceptance bench-build bench-init bench-doctor bench-up bench-down bench-list bench-run bench-status bench-docs bench-docs-check

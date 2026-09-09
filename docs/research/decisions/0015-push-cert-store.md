@@ -6,6 +6,8 @@ APNs credentials are selected by topic and can be renewed while the server is ru
 
 ## Decision
 
+This store remains MDM-only. Ordinary app provider identities use a separate encrypted state namespace and separate API actions, as described in [0049](0049-server-managed-app-push.md).
+
 `pki/pushcert` parses standard-library-supported PEM key formats, verifies key/certificate pairing and derives the topic from the certificate UID. Store writes validate the topic and validity period and increment a version under a lock. Lists expose certificate metadata without private keys; SQL private-key columns are sealed.
 
 `server/pushnotify` caches certificates per topic. A stale cache entry checks the stored version and reloads when it changes. A failed reload returns an error. The default cache TTL is 30 seconds; a zero TTL checks each time. `ExpiringCerts` supports scheduled expiry checks.

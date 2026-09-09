@@ -7,9 +7,11 @@ import (
 	"crypto/x509"
 	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"strconv"
 	"sync"
 	"time"
@@ -32,16 +34,17 @@ type Client struct {
 	host    string
 	clock   clock.Clock
 	timeout time.Duration
+	roots   *x509.CertPool
 	// transport builds the HTTP client for a topic; tests override it.
 	transport func(cert tls.Certificate) *http.Client
 
 	mu      sync.Mutex
 	clients map[string]*topicClient
+	closed  bool
 }
 
 type topicClient struct {
 	client *http.Client
-	expiry time.Time
 	leaf   *x509.Certificate
 }
 
@@ -57,6 +60,9 @@ func WithClock(cl clock.Clock) Option { return func(c *Client) { c.clock = cl } 
 // WithTimeout sets the per-request timeout (default 20s).
 func WithTimeout(d time.Duration) Option { return func(c *Client) { c.timeout = d } }
 
+// WithRootCAs overrides server trust anchors. Nil uses the system trust store.
+func WithRootCAs(roots *x509.CertPool) Option { return func(c *Client) { c.roots = roots } }
+
 // WithTransport replaces how per-topic HTTP clients are built (tests).
 func WithTransport(f func(cert tls.Certificate) *http.Client) Option {
 	return func(c *Client) { c.transport = f }
@@ -64,7 +70,13 @@ func WithTransport(f func(cert tls.Certificate) *http.Client) Option {
 
 // New creates a client that fetches push certificates from certs.
 func New(certs push.CertStore, opts ...Option) *Client {
-	c := &Client{certs: certs, host: ProductionHost, clock: clock.Real{}, timeout: 20 * time.Second, clients: map[string]*topicClient{}}
+	c := &Client{
+		certs:   certs,
+		host:    ProductionHost,
+		clock:   clock.Real{},
+		timeout: 20 * time.Second,
+		clients: map[string]*topicClient{},
+	}
 	c.transport = c.defaultTransport
 	for _, o := range opts {
 		o(c)
@@ -76,7 +88,11 @@ func (c *Client) defaultTransport(cert tls.Certificate) *http.Client {
 	return &http.Client{
 		Timeout: c.timeout,
 		Transport: &http.Transport{
-			TLSClientConfig:   &tls.Config{Certificates: []tls.Certificate{cert}, MinVersion: tls.VersionTLS12},
+			TLSClientConfig: &tls.Config{
+				Certificates: []tls.Certificate{cert},
+				MinVersion:   tls.VersionTLS12,
+				RootCAs:      c.roots,
+			},
 			ForceAttemptHTTP2: true,
 		},
 	}
@@ -84,7 +100,7 @@ func (c *Client) defaultTransport(cert tls.Certificate) *http.Client {
 
 // clientFor returns the HTTP client for a topic, loading the certificate on
 // first use or after it changed; an expired certificate is an error.
-func (c *Client) clientFor(ctx context.Context, topic string) (*http.Client, error) {
+func (c *Client) clientFor(ctx context.Context, topic string, mdmPush bool) (*http.Client, error) {
 	cert, err := c.certs.PushCertificate(ctx, topic)
 	if err != nil {
 		return nil, err
@@ -92,29 +108,46 @@ func (c *Client) clientFor(ctx context.Context, topic string) (*http.Client, err
 	if len(cert.Certificate) == 0 {
 		return nil, fmt.Errorf("%w: %s", push.ErrNoCertificate, topic)
 	}
-	leaf := cert.Leaf
-	if leaf == nil {
-		leaf, err = x509.ParseCertificate(cert.Certificate[0])
-		if err != nil {
-			return nil, fmt.Errorf("push: parse push certificate: %w", err)
-		}
+	leaf, err := x509.ParseCertificate(cert.Certificate[0])
+	if err != nil {
+		return nil, fmt.Errorf("push: parse push certificate: %w", err)
 	}
 	now := c.clock.Now()
-	if now.After(leaf.NotAfter) {
-		return nil, fmt.Errorf("%w: %s expired %s", push.ErrCertExpired, topic, leaf.NotAfter.Format(time.RFC3339))
+	if !now.Before(leaf.NotAfter) {
+		return nil, fmt.Errorf(
+			"%w: %s expired %s",
+			push.ErrCertExpired,
+			topic,
+			leaf.NotAfter.Format(time.RFC3339),
+		)
 	}
+	if err := pushcert.Validate(cert, topic, mdmPush, now); err != nil {
+		return nil, err
+	}
+	cert.Leaf = leaf
 	c.mu.Lock()
 	defer c.mu.Unlock()
+	if c.closed {
+		return nil, ErrClosed
+	}
 	if tc, ok := c.clients[topic]; ok && tc.leaf.Equal(leaf) {
 		return tc.client, nil
 	}
-	tc := &topicClient{client: c.transport(cert), expiry: leaf.NotAfter, leaf: leaf}
+	if old := c.clients[topic]; old != nil {
+		closeClient(old.client)
+	}
+	httpClient := *c.transport(cert)
+	httpClient.Transport = newManagedTransport(httpClient.Transport)
+	tc := &topicClient{client: &httpClient, leaf: leaf}
 	c.clients[topic] = tc
 	return tc.client, nil
 }
 
 // Push implements push.Pusher.
-func (c *Client) Push(ctx context.Context, targets []push.Target) (map[mdm.EnrollmentID]push.Result, error) {
+func (c *Client) Push(
+	ctx context.Context,
+	targets []push.Target,
+) (map[mdm.EnrollmentID]push.Result, error) {
 	out := make(map[mdm.EnrollmentID]push.Result, len(targets))
 	for _, t := range targets {
 		if err := ctx.Err(); err != nil {
@@ -133,29 +166,62 @@ type apnsError struct {
 
 func (c *Client) pushOne(ctx context.Context, t push.Target) push.Result {
 	if !t.Push.Valid() {
-		return push.Result{Outcome: push.OutcomeSkipped, Err: fmt.Errorf("%w: incomplete push info", push.ErrInvalidToken)}
-	}
-	client, err := c.clientFor(ctx, t.Push.Topic)
-	if err != nil {
-		return push.Result{Err: err}
+		return push.Result{
+			Outcome: push.OutcomeSkipped,
+			Err:     fmt.Errorf("%w: incomplete push info", push.ErrInvalidToken),
+		}
 	}
 	body, err := json.Marshal(map[string]string{"mdm": t.Push.Magic})
 	if err != nil {
 		return push.Result{Err: fmt.Errorf("push: %w", err)}
 	}
-	url := c.host + "/3/device/" + hex.EncodeToString(t.Push.Token)
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, url, bytes.NewReader(body))
+	return c.send(
+		ctx,
+		notification{
+			topic:    t.Push.Topic,
+			token:    t.Push.Token,
+			kind:     "mdm",
+			priority: 10,
+			body:     body,
+		},
+		true,
+	)
+}
+
+type notification struct {
+	topic      string
+	token      []byte
+	kind       string
+	priority   int
+	expiration int64
+	body       []byte
+}
+
+func (c *Client) send(ctx context.Context, n notification, mdmPush bool) push.Result {
+	client, err := c.clientFor(ctx, n.topic, mdmPush)
 	if err != nil {
-		return push.Result{Err: fmt.Errorf("push: %w", err)}
+		return push.Result{Outcome: push.OutcomeRejected, Err: err}
+	}
+	endpoint := c.host + "/3/device/" + hex.EncodeToString(n.token)
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, endpoint, bytes.NewReader(n.body))
+	if err != nil {
+		return push.Result{Outcome: push.OutcomeRejected, Err: fmt.Errorf("push: %w", err)}
 	}
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("apns-topic", t.Push.Topic)
-	req.Header.Set("apns-push-type", "mdm")
-	req.Header.Set("apns-priority", "10")
-	req.Header.Set("apns-expiration", "0")
+	req.Header.Set("apns-topic", n.topic)
+	req.Header.Set("apns-push-type", n.kind)
+	req.Header.Set("apns-priority", strconv.Itoa(n.priority))
+	req.Header.Set("apns-expiration", strconv.FormatInt(n.expiration, 10))
 	resp, err := client.Do(req)
 	if err != nil {
-		return push.Result{Outcome: push.OutcomeUnavailable, Err: fmt.Errorf("%w: %w", push.ErrUpstream, err)}
+		var urlErr *url.Error
+		if errors.As(err, &urlErr) {
+			err = urlErr.Err
+		}
+		return push.Result{
+			Outcome: push.OutcomeUnavailable,
+			Err:     fmt.Errorf("%w: %w", push.ErrUpstream, err),
+		}
 	}
 	defer resp.Body.Close()
 	r := push.Result{Status: resp.StatusCode, APNSID: resp.Header.Get("apns-id")}

@@ -36,7 +36,10 @@ import (
 func (a *App) mdmAdminRoutes() []adminRoute {
 	var routes []adminRoute
 	add := func(action, pattern string, fn http.HandlerFunc) {
-		routes = append(routes, adminRoute{Pattern: pattern, Action: action, Family: "mdm", Handler: fn})
+		routes = append(
+			routes,
+			adminRoute{Pattern: pattern, Action: action, Family: "mdm", Handler: fn},
+		)
 	}
 
 	add(ActionReadEnrollment, "GET /enrollments", a.listEnrollments)
@@ -44,6 +47,11 @@ func (a *App) mdmAdminRoutes() []adminRoute {
 	add(ActionDisableEnrollment, "DELETE /enrollments/{channel}/{id}", a.disableEnrollment)
 	add(ActionEnqueueCommand, "POST /enrollments/{channel}/{id}/commands", a.enqueueCommand)
 	add(ActionReadCommands, "GET /enrollments/{channel}/{id}/commands", a.listCommands)
+	add(
+		ActionReadCommands,
+		"GET /enrollments/{channel}/{id}/commands/{uuid}/result",
+		a.getCommandResult,
+	)
 	add(ActionClearCommands, "DELETE /enrollments/{channel}/{id}/commands", a.clearCommands)
 	add(ActionPushEnrollment, "POST /enrollments/{channel}/{id}/push", a.pushEnrollment)
 	add(ActionManagePushCerts, "GET /pushcerts", a.listPushCerts)
@@ -80,7 +88,11 @@ func (a *App) storageStatus(w http.ResponseWriter, r *http.Request, err error) {
 		writeError(w, http.StatusGone, err)
 	default:
 		a.cfg.Logger.WarnContext(r.Context(), "app: admin mdm", "path", r.URL.Path, "error", err)
-		writeError(w, http.StatusInternalServerError, errors.New("app: storage unavailable"))
+		writeError(
+			w,
+			http.StatusInternalServerError,
+			fmt.Errorf("%w: app: storage unavailable", errOperation),
+		)
 	}
 }
 
@@ -105,7 +117,11 @@ func (a *App) listEnrollments(w http.ResponseWriter, r *http.Request) {
 	if v := r.URL.Query().Get("enabled"); v != "" {
 		b, err := strconv.ParseBool(v)
 		if err != nil {
-			writeError(w, http.StatusBadRequest, fmt.Errorf("%w: enabled %q", storage.ErrInvalid, v))
+			writeError(
+				w,
+				http.StatusBadRequest,
+				fmt.Errorf("%w: enabled %q", storage.ErrInvalid, v),
+			)
 			return
 		}
 		q.Enabled = &b
@@ -229,7 +245,11 @@ func (a *App) pushEnrollment(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if a.Push == nil {
-		writeError(w, http.StatusServiceUnavailable, errors.New("app: no push source configured"))
+		writeError(
+			w,
+			http.StatusServiceUnavailable,
+			fmt.Errorf("%w: app: no push source configured", errOperation),
+		)
 		return
 	}
 	results, err := a.Push.Notify(r.Context(), []mdm.EnrollmentID{id})
@@ -276,16 +296,29 @@ func (a *App) putPushCert(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if in.CertPEM == "" || in.KeyPEM == "" {
-		writeError(w, http.StatusBadRequest, errors.New("app: push certificate needs CertPEM and KeyPEM"))
+		writeError(
+			w,
+			http.StatusBadRequest,
+			fmt.Errorf("%w: app: push certificate needs CertPEM and KeyPEM", errOperation),
+		)
 		return
 	}
-	cert, err := a.Store.StorePushCert(r.Context(), in.Topic, []byte(in.CertPEM), []byte(in.KeyPEM), a.cfg.Clock.Now())
+	cert, err := a.Store.StorePushCert(
+		r.Context(),
+		in.Topic,
+		[]byte(in.CertPEM),
+		[]byte(in.KeyPEM),
+		a.cfg.Clock.Now(),
+	)
 	if err != nil {
 		a.storageStatus(w, r, err)
 		return
 	}
 	writeJSON(w, http.StatusOK, pushCertView{
-		Topic: cert.Topic, NotAfter: cert.NotAfter, Version: cert.Version, UpdatedAt: cert.UpdatedAt,
+		Topic:     cert.Topic,
+		NotAfter:  cert.NotAfter,
+		Version:   cert.Version,
+		UpdatedAt: cert.UpdatedAt,
 	})
 }
 
@@ -338,6 +371,8 @@ func channelFromName(s string) (mdm.Channel, error) {
 // enrollmentView is the wire shape. It carries no unlock token, no bootstrap
 // token and no raw check-in plists: those are secrets and evidence, not
 // inventory.
+//
+//nolint:tagliatelle // Preserve the established PascalCase administration API.
 type enrollmentView struct {
 	Channel        string
 	ID             string
@@ -370,6 +405,8 @@ func viewEnrollment(e storage.Enrollment) enrollmentView {
 
 // queuedView omits the command plist and the device's raw response: the
 // identifiers and the outcome are what a queue listing is for.
+//
+//nolint:tagliatelle // Preserve the established PascalCase administration API.
 type queuedView struct {
 	CommandUUID string
 	RequestType string

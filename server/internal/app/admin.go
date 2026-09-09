@@ -43,7 +43,10 @@ var (
 func (a *App) ddmAdminRoutes() []adminRoute {
 	var routes []adminRoute
 	add := func(action, pattern string, fn http.HandlerFunc) {
-		routes = append(routes, adminRoute{Pattern: pattern, Action: action, Family: "ddm", Handler: fn})
+		routes = append(
+			routes,
+			adminRoute{Pattern: pattern, Action: action, Family: "ddm", Handler: fn},
+		)
 	}
 	e := a.Engine
 	add(ActionPutDeclaration, "PUT /declarations", func(w http.ResponseWriter, r *http.Request) {
@@ -68,21 +71,29 @@ func (a *App) ddmAdminRoutes() []adminRoute {
 			},
 		)
 	})
-	add(ActionGetDeclaration, "GET /declarations/{id}", func(w http.ResponseWriter, r *http.Request) {
-		d, err := e.GetDeclaration(r.Context(), r.PathValue("id"))
-		if err != nil {
-			writeError(w, statusFor(err), err)
-			return
-		}
-		w.Header().Set("Content-Type", "application/json")
-		w.Header().Set("X-Content-Type-Options", "nosniff")
-		_, _ = w.Write(
-			d.Canonical,
-		) // #nosec G705 -- canonical JSON produced by the engine, served as JSON with nosniff
-	})
-	add(ActionDeleteDeclaration, "DELETE /declarations/{id}", func(w http.ResponseWriter, r *http.Request) {
-		respond(w, e.DeleteDeclaration(r.Context(), r.PathValue("id")))
-	})
+	add(
+		ActionGetDeclaration,
+		"GET /declarations/{id}",
+		func(w http.ResponseWriter, r *http.Request) {
+			d, err := e.GetDeclaration(r.Context(), r.PathValue("id"))
+			if err != nil {
+				writeError(w, statusFor(err), err)
+				return
+			}
+			w.Header().Set("Content-Type", "application/json")
+			w.Header().Set("X-Content-Type-Options", "nosniff")
+			_, _ = w.Write(
+				d.Canonical,
+			) // #nosec G705 -- canonical JSON produced by the engine, served as JSON with nosniff
+		},
+	)
+	add(
+		ActionDeleteDeclaration,
+		"DELETE /declarations/{id}",
+		func(w http.ResponseWriter, r *http.Request) {
+			respond(w, e.DeleteDeclaration(r.Context(), r.PathValue("id")))
+		},
+	)
 	add(ActionAssignSet,
 		"PUT /sets/{set}/declarations/{id}",
 		func(w http.ResponseWriter, r *http.Request) {
@@ -159,24 +170,33 @@ func (a *App) ddmAdminRoutes() []adminRoute {
 			return ids, nil
 		},
 	)
-	enrollmentGet(ActionReadEnrollmentStatus,
+	enrollmentGet(
+		ActionReadEnrollmentStatus,
 		"status",
 		func(ctx context.Context, id mdm.EnrollmentID) (any, error) { return e.DeclarationStatus(ctx, id) },
 	)
-	enrollmentGet(ActionReadEnrollmentStatus, "status/values", func(ctx context.Context, id mdm.EnrollmentID) (any, error) {
-		return e.StatusValues(ctx, id, ddm.StatusValueQuery{}, paging.Page{Limit: 1000})
-	})
-	enrollmentGet(ActionReadEnrollment, "tokens", func(ctx context.Context, id mdm.EnrollmentID) (any, error) {
-		body, err := e.Tokens(ctx, id)
-		if err != nil {
-			return nil, fmt.Errorf("app: tokens: %w", err)
-		}
-		var v any
-		if err := json.Unmarshal(body, &v); err != nil {
-			return nil, fmt.Errorf("app: tokens: %w", err)
-		}
-		return v, nil
-	})
+	enrollmentGet(
+		ActionReadEnrollmentStatus,
+		"status/values",
+		func(ctx context.Context, id mdm.EnrollmentID) (any, error) {
+			return e.StatusValues(ctx, id, ddm.StatusValueQuery{}, paging.Page{Limit: 1000})
+		},
+	)
+	enrollmentGet(
+		ActionReadEnrollment,
+		"tokens",
+		func(ctx context.Context, id mdm.EnrollmentID) (any, error) {
+			body, err := e.Tokens(ctx, id)
+			if err != nil {
+				return nil, fmt.Errorf("app: tokens: %w", err)
+			}
+			var v any
+			if err := json.Unmarshal(body, &v); err != nil {
+				return nil, fmt.Errorf("app: tokens: %w", err)
+			}
+			return v, nil
+		},
+	)
 	add(ActionNotify, "POST /notify", func(w http.ResponseWriter, r *http.Request) {
 		res, err := a.Notifier.DrainOnce(r.Context())
 		if err != nil {
@@ -190,15 +210,12 @@ func (a *App) ddmAdminRoutes() []adminRoute {
 
 func enrollmentFromPath(r *http.Request) (mdm.EnrollmentID, error) {
 	id := mdm.EnrollmentID{ID: r.PathValue("id")}
-	switch r.PathValue("channel") {
-	case "device":
-		id.Channel = mdm.ChannelDevice
-	case "user":
-		id.Channel = mdm.ChannelUser
-		id.ParentID = r.URL.Query().Get("parent")
-	default:
-		return mdm.EnrollmentID{}, fmt.Errorf("%w: %q", ErrBadChannel, r.PathValue("channel"))
+	channel, err := channelFromName(r.PathValue("channel"))
+	if err != nil {
+		return mdm.EnrollmentID{}, err
 	}
+	id.Channel = channel
+	id.ParentID = r.URL.Query().Get("parent")
 	if err := id.Validate(); err != nil {
 		return mdm.EnrollmentID{}, fmt.Errorf("app: enrollment: %w", err)
 	}

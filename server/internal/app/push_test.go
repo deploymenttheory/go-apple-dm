@@ -11,9 +11,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/deploymenttheory/go-apple-dm/server/internal/app"
 	"github.com/deploymenttheory/go-apple-dm/appleplatformservices/push"
 	"github.com/deploymenttheory/go-apple-dm/mdmprotocol/mdm"
+	"github.com/deploymenttheory/go-apple-dm/server/internal/app"
 	"github.com/deploymenttheory/go-apple-dm/testpki"
 )
 
@@ -23,7 +23,10 @@ type recordingPusher struct {
 	woke []mdm.EnrollmentID
 }
 
-func (p *recordingPusher) Push(_ context.Context, targets []push.Target) (map[mdm.EnrollmentID]push.Result, error) {
+func (p *recordingPusher) Push(
+	_ context.Context,
+	targets []push.Target,
+) (map[mdm.EnrollmentID]push.Result, error) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 	out := make(map[mdm.EnrollmentID]push.Result, len(targets))
@@ -197,16 +200,31 @@ func TestPushCertSourceOptions(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	// An explicit topic skips deriving one.
+	// An explicit topic must agree with the certificate.
 	a := build(t, app.Config{
 		Role: app.RoleAll, Storage: "inmem", Listen: ":0", AdminToken: "t",
 		Push: app.PushConfig{
 			Source: app.PushSourceFile, CertFile: certPath, KeyFile: keyPath,
-			Topic: "com.apple.mgmt.External.explicit", Host: "https://apns.example",
+			Topic: "com.apple.mgmt.External.opts", Host: "https://apns.example",
 		},
 	})
 	if a.Push == nil {
 		t.Fatal("no notifier with an explicit topic")
+	}
+
+	_, err = app.Build(context.Background(), app.Config{
+		Role:    app.RoleAll,
+		Storage: "inmem",
+		Logger:  quiet,
+		Push: app.PushConfig{
+			Source:   app.PushSourceFile,
+			CertFile: certPath,
+			KeyFile:  keyPath,
+			Topic:    "com.apple.mgmt.External.wrong",
+		},
+	})
+	if !errors.Is(err, app.ErrConfig) {
+		t.Fatalf("wrong explicit topic: %v", err)
 	}
 
 	// The store source takes a cache TTL.

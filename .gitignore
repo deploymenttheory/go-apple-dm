@@ -60,3 +60,6 @@ docs/diagrams/*.visual-check.*.png
 
 # Workspace checksum file; go.work itself is committed.
 go.work.sum
+
+# Real APNs/MDM lab identities, tokens, profiles, databases and evidence.
+/test-lab/local/
