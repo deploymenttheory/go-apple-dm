@@ -144,7 +144,8 @@ func (b *Bus) Subscribe(t Type, h Handler) func() {
 
 // Publish delivers e to subscribers of e.Type and of All. In synchronous
 // mode it returns the joined handler errors; in asynchronous mode it
-// returns immediately and errors go to the error handler.
+// returns immediately and errors go to the error handler. Async delivery retains
+// context values but outlives request cancellation; Close drains accepted events.
 func (b *Bus) Publish(ctx context.Context, e Event) error {
 	b.closeMu.Lock()
 	if b.closed {
@@ -154,6 +155,7 @@ func (b *Bus) Publish(ctx context.Context, e Event) error {
 	if b.async {
 		b.wg.Add(1)
 		b.closeMu.Unlock()
+		ctx = context.WithoutCancel(ctx)
 		go func() {
 			defer b.wg.Done()
 			_ = b.deliver(ctx, e)

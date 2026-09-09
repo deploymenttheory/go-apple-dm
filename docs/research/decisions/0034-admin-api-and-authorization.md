@@ -6,6 +6,8 @@ Administrative routes can enqueue destructive commands, export secrets and chang
 
 ## Decision
 
+The normal authorization model also applies to enrollment-profile issuance, enrollment-scoped command results and app push administration. See [0049](0049-server-managed-app-push.md) and the [API additions](../../operations/reference-bench.md). These are operational capabilities, not fixture-control routes.
+
 Routes declare Cedar actions in the same table used to build the mux. Requests are evaluated with principal, action, resource and context under default-deny policies. Stored API credentials contain a checksum and are retained only as SHA-256 digests. Rotation and revocation invalidate stored tokens.
 
 Root authority is a principal property checked outside Cedar for sensitive principal/policy administration. Credential issuance applies role-subset and directly-named-principal restrictions, and the last root cannot be removed, demoted or revoked. Policy writes validate referenced action names. Routine read responses project fields rather than expose complete stored records.

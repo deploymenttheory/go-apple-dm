@@ -47,6 +47,7 @@ type env struct {
 
 // options are the global flags, which are accepted before or after the verb.
 type options struct {
+	caFile   string
 	server   string
 	token    string
 	context  string
@@ -176,6 +177,9 @@ func Verbs() []string {
 // function.
 func commands() map[string]command {
 	cmds := []command{
+		{"bench", "prepare and run maintained reference-server scenarios", runBench},
+		{"apppush", "manage server app push credentials and send notifications", runAppPush},
+		{"apns", "inspect certificates, validate identities, and send app notifications", runAPNS},
 		{"certificates", "import, inspect, and revoke device certificates", runCertificates},
 		{
 			"explain",
@@ -214,6 +218,7 @@ func defaultsFromEnv(getenv func(string) string) options {
 		// Defaulting here made e.opts.server never empty, which is what made
 		// the context field below unreachable.
 		server:  getenv(EnvServer),
+		caFile:  getenv("DMCTL_CA_FILE"),
 		token:   getenv(EnvToken),
 		context: getenv(EnvContext),
 		config:  getenv(EnvConfig),
@@ -226,6 +231,12 @@ func defaultsFromEnv(getenv func(string) string) options {
 // values parsed before the verb so later flags override them without resetting
 // them from the environment.
 func (o *options) bind(fs *flag.FlagSet, def options) {
+	fs.StringVar(
+		&o.caFile,
+		"ca-file",
+		def.caFile,
+		"PEM trust roots for the admin server (DMCTL_CA_FILE)",
+	)
 	fs.StringVar(&o.server, "server", def.server, "server base URL ("+EnvServer+")")
 	fs.StringVar(&o.token, "token", def.token, "bearer token, @file, or env:NAME ("+EnvToken+")")
 	fs.StringVar(
@@ -331,7 +342,10 @@ func usage(w io.Writer, fs *flag.FlagSet) {
 	}
 	fmt.Fprintln(w, "\nFlags:")
 	fs.PrintDefaults()
-	fmt.Fprintln(w, "\nexplain needs no server. Everything else reads -server and -token.")
+	fmt.Fprintln(
+		w,
+		"\nexplain and certificate preparation work offline. bench manages its own workspace; administration reads -server and -token.",
+	)
 }
 
 func runVersion(_ context.Context, e *env, _ []string) error {
@@ -410,6 +424,7 @@ func (e *env) client() (*adminclient.Client, error) {
 	}
 	c, err := adminclient.New(adminclient.Config{
 		BaseURL: server, Token: tok, Timeout: e.opts.timeout,
+		CAFile:   e.opts.caFile,
 		Insecure: e.opts.insecure, Trace: trace,
 	})
 	if err != nil {

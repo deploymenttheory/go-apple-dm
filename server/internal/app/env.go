@@ -123,13 +123,20 @@ func ParseEnv(get func(string) string) (Config, error) {
 		return def
 	}
 	cfg := Config{
-		Role:       Role(pick(EnvRole, string(DefaultRole))),
-		Listen:     pick(EnvListen, DefaultListen),
-		Storage:    pick(EnvStorage, DefaultStorage),
-		DSN:        pick(EnvDSN, DefaultDSN),
-		DDMURL:     get(EnvDDMURL),
-		SecretsDir: get(EnvSecretsDir),
-		AdminToken: get(EnvAdminToken),
+		AppPush: AppPushConfig{
+			DevelopmentHost: get("DM_APP_PUSH_DEVELOPMENT_HOST"),
+			ProductionHost:  get("DM_APP_PUSH_PRODUCTION_HOST"),
+			RootCAFile:      get("DM_APP_PUSH_ROOT_CA_FILE"),
+		},
+		TLSCertFile: get("DM_TLS_CERT_FILE"),
+		TLSKeyFile:  get("DM_TLS_KEY_FILE"),
+		Role:        Role(pick(EnvRole, string(DefaultRole))),
+		Listen:      pick(EnvListen, DefaultListen),
+		Storage:     pick(EnvStorage, DefaultStorage),
+		DSN:         pick(EnvDSN, DefaultDSN),
+		DDMURL:      get(EnvDDMURL),
+		SecretsDir:  get(EnvSecretsDir),
+		AdminToken:  get(EnvAdminToken),
 		Sinks: SinkConfig{
 			WebhookURL:     get(EnvWebhookURL),
 			WebhookHMACKey: []byte(get(EnvWebhookHMACKey)),
@@ -155,10 +162,11 @@ func ParseEnv(get func(string) string) (Config, error) {
 		cfg.DSN = ""
 	}
 	cfg.Push = PushConfig{
-		Source:   get(EnvPushSource),
-		CertFile: get(EnvPushCertFile),
-		KeyFile:  get(EnvPushKeyFile),
-		Host:     get(EnvPushHost),
+		Source:     get(EnvPushSource),
+		CertFile:   get(EnvPushCertFile),
+		KeyFile:    get(EnvPushKeyFile),
+		Host:       get(EnvPushHost),
+		RootCAFile: get("DM_PUSH_ROOT_CA_FILE"),
 		// The APNs transport topic is derived from the certificate. DM_PUSH_TOPIC
 		// separately configures the enrollment profile topic.
 		Topic: get(EnvPushTopic),
@@ -184,6 +192,11 @@ func ParseEnv(get func(string) string) (Config, error) {
 		}
 	}
 	cfg.Enroll = EnrollConfig{
+		UserAuthHA1File: get(
+			"DM_USER_AUTH_HA1_FILE",
+		),
+		OTAAnchorFile: get("DM_OTA_ANCHOR_FILE"),
+		OTAChallenge:  get("DM_OTA_CHALLENGE"),
 		PublicURL: get(
 			EnvPublicURL,
 		),
@@ -198,6 +211,7 @@ func ParseEnv(get func(string) string) (Config, error) {
 		AccountDrivenMethod: get(EnvAccountDrivenMethod),
 		ADEAnchorFile:       get(EnvADEAnchorFile),
 		OIDC: OIDCConfig{
+			RootCAFile:   get("DM_OIDC_ROOT_CA_FILE"),
 			Issuer:       get(EnvOIDCIssuer),
 			ClientID:     get(EnvOIDCClientID),
 			ClientSecret: get(EnvOIDCClientSecret),

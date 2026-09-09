@@ -3,6 +3,7 @@ package pushtest
 import (
 	"context"
 	"crypto/tls"
+	"crypto/x509"
 	"encoding/hex"
 	"encoding/json"
 	"errors"
@@ -27,7 +28,10 @@ type Fake struct {
 }
 
 // Push implements push.Pusher.
-func (f *Fake) Push(_ context.Context, targets []push.Target) (map[mdm.EnrollmentID]push.Result, error) {
+func (f *Fake) Push(
+	_ context.Context,
+	targets []push.Target,
+) (map[mdm.EnrollmentID]push.Result, error) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 	f.Calls = append(f.Calls, append([]push.Target(nil), targets...))
@@ -83,10 +87,20 @@ type Server struct {
 }
 
 // NewServer starts a TLS server. Use ClientCertificate to require mutual TLS.
-func NewServer() *Server {
+func NewServer() *Server { return NewServerWithClientCAs(nil) }
+
+// NewServerWithClientCAs optionally verifies provider certificates during TLS.
+func NewServerWithClientCAs(roots *x509.CertPool) *Server {
 	s := &Server{scripts: map[string]Script{}}
 	s.Server = httptest.NewUnstartedServer(http.HandlerFunc(s.handle))
 	s.Server.EnableHTTP2 = true
+	if roots != nil {
+		s.Server.TLS = &tls.Config{
+			MinVersion: tls.VersionTLS12,
+			ClientAuth: tls.RequireAndVerifyClientCert,
+			ClientCAs:  roots,
+		}
+	}
 	s.Server.StartTLS()
 	return s
 }
@@ -113,7 +127,14 @@ func (s *Server) handle(w http.ResponseWriter, r *http.Request) {
 	token := strings.TrimPrefix(r.URL.Path, "/3/device/")
 	var body map[string]string
 	_ = json.NewDecoder(r.Body).Decode(&body)
-	req := Request{Token: token, Topic: r.Header.Get("apns-topic"), PushType: r.Header.Get("apns-push-type"), Priority: r.Header.Get("apns-priority"), Magic: body["mdm"], Headers: r.Header.Clone()}
+	req := Request{
+		Token:    token,
+		Topic:    r.Header.Get("apns-topic"),
+		PushType: r.Header.Get("apns-push-type"),
+		Priority: r.Header.Get("apns-priority"),
+		Magic:    body["mdm"],
+		Headers:  r.Header.Clone(),
+	}
 	s.mu.Lock()
 	s.requests = append(s.requests, req)
 	sc, ok := s.scripts[token]

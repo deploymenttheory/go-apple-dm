@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"crypto/tls"
+	"crypto/x509"
 	"encoding/json/jsontext"
 	json "encoding/json/v2"
 	"errors"
@@ -11,6 +12,7 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"os"
 	"strings"
 	"time"
 )
@@ -39,6 +41,7 @@ const MaxBody = 32 << 20
 
 // Config builds a Client.
 type Config struct {
+	CAFile string
 	// BaseURL is the server root, without the admin prefix.
 	BaseURL string
 	// Token is the bearer credential.
@@ -85,6 +88,22 @@ func New(cfg Config) (*Client, error) {
 	}
 	// Insecure affects only an HTTP client constructed here. A supplied client
 	// retains its transport and TLS policy.
+	if cfg.CAFile != "" && cfg.HTTPClient == nil {
+		b, err := os.ReadFile(cfg.CAFile)
+		if err != nil {
+			return nil, fmt.Errorf("%w: CA file: %w", ErrConfig, err)
+		}
+		roots, err := x509.SystemCertPool()
+		if err != nil {
+			roots = x509.NewCertPool()
+		}
+		if !roots.AppendCertsFromPEM(b) {
+			return nil, fmt.Errorf("%w: no certificates in CA file", ErrConfig)
+		}
+		hc.Transport = &http.Transport{
+			TLSClientConfig: &tls.Config{MinVersion: tls.VersionTLS12, RootCAs: roots},
+		}
+	}
 	if cfg.Insecure && cfg.HTTPClient == nil {
 		hc.Transport = &http.Transport{
 			// #nosec G402 -- the operator asked for this explicitly with
@@ -114,7 +133,12 @@ type Response struct {
 
 // Do issues one request. path is relative to the admin prefix, for example
 // "/principals" or "/declarations/com.example.a".
-func (c *Client) Do(ctx context.Context, method, path string, query url.Values, body any) (*Response, error) {
+func (c *Client) Do(
+	ctx context.Context,
+	method, path string,
+	query url.Values,
+	body any,
+) (*Response, error) {
 	u := *c.base
 	u.Path = strings.TrimRight(u.Path, "/") + Prefix + path
 	if len(query) > 0 {
@@ -213,7 +237,12 @@ type page struct {
 
 // Each calls fn with each item's unchanged JSON, following NextCursor until
 // exhausted. Request, decoding and callback errors stop iteration.
-func (c *Client) Each(ctx context.Context, path string, query url.Values, fn func(jsontext.Value) error) error {
+func (c *Client) Each(
+	ctx context.Context,
+	path string,
+	query url.Values,
+	fn func(jsontext.Value) error,
+) error {
 	if query == nil {
 		query = url.Values{}
 	}
@@ -245,7 +274,11 @@ func (c *Client) Each(ctx context.Context, path string, query url.Values, fn fun
 }
 
 // Page fetches one page and returns its items and the next cursor.
-func (c *Client) Page(ctx context.Context, path string, query url.Values) ([]jsontext.Value, string, error) {
+func (c *Client) Page(
+	ctx context.Context,
+	path string,
+	query url.Values,
+) ([]jsontext.Value, string, error) {
 	resp, err := c.Do(ctx, http.MethodGet, path, query, nil)
 	if err != nil {
 		return nil, "", err

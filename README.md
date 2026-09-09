@@ -63,6 +63,11 @@ go run ./server/cmd/dmctl explain com.apple.configuration.softwareupdate.enforce
 For embedding examples, see the package documentation and the executable scenarios in
 [server/e2e](server/e2e/) and [simulator](simulator/).
 
+The [reference-server bench](test-lab/README.md) combines simulated scenarios, process acceptance, and live-device testing. It covers certificate inspection,
+app alert/background pushes, MDM vendor CSR signing, and testing both paths on a Mac.
+Real credentials and test evidence stay in the gitignored `test-lab/local/` directory.
+Use `make bench-init`, `make bench-up`, and `make bench-run`; see the [testing guide](docs/testing/bench.md) and [API/configuration additions](docs/operations/reference-bench.md).
+
 ## Architecture
 
 <picture>

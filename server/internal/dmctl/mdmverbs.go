@@ -31,7 +31,11 @@ func needTarget(e *env, name string, args []string) (channel, id, parent string,
 		return "", "", "", err
 	}
 	if len(rest) < 2 {
-		return "", "", "", fmt.Errorf("%w: %s needs a channel and an id, for example: device UDID", ErrUsage, name)
+		return "", "", "", fmt.Errorf(
+			"%w: %s needs a channel and an id, for example: device UDID",
+			ErrUsage,
+			name,
+		)
 	}
 	return rest[0], rest[1], *p, nil
 }
@@ -52,7 +56,11 @@ func runEnrollments(ctx context.Context, e *env, args []string) error {
 		var (
 			channel = fs.String("channel", "", "only this channel, for example device or user")
 			serial  = fs.String("serial", "", "only this serial number")
-			enabled = fs.String("enabled", "", "only enabled (true) or disabled (false) enrollments")
+			enabled = fs.String(
+				"enabled",
+				"",
+				"only enabled (true) or disabled (false) enrollments",
+			)
 		)
 		if _, err := e.parseVerb(fs, rest); err != nil {
 			return err
@@ -204,9 +212,15 @@ func runPush(ctx context.Context, e *env, args []string) error {
 // runPushCerts reads the push certificates and uploads a renewal.
 func runPushCerts(ctx context.Context, e *env, args []string) error {
 	if len(args) == 0 {
-		return fmt.Errorf("%w: pushcerts needs a subcommand: list, put", ErrUsage)
+		return fmt.Errorf("%w: pushcerts needs a subcommand: list, put, csr, sign", ErrUsage)
 	}
 	sub, rest := args[0], args[1:]
+	if sub == "csr" {
+		return runPushCSR(e, rest)
+	}
+	if sub == "sign" {
+		return runSignCSR(e, rest)
+	}
 	c, err := e.client()
 	if err != nil {
 		return err
@@ -220,16 +234,23 @@ func runPushCerts(ctx context.Context, e *env, args []string) error {
 		err := e.list(ctx, c, "/pushcerts", nil,
 			[]string{"TOPIC", "NOT AFTER", "VERSION"},
 			func(item jsontext.Value) []string {
-				return []string{field(item, "Topic"), field(item, "NotAfter"), field(item, "Version")}
+				return []string{
+					field(item, "Topic"),
+					field(item, "NotAfter"),
+					field(item, "Version"),
+				}
 			})
 		return e.explainNotFound(ctx, c, "mdm", err)
 	case "put":
 		fs := e.verbFlags("pushcerts put")
 		file := fs.String("file", "", "read the JSON body from a file, or - for stdin")
+		cert := fs.String("cert", "", "PEM or DER MDM certificate (instead of JSON input)")
+		key := fs.String("key", "", "matching PEM key (with -cert)")
+		topic := fs.String("topic", "", "expected MDM topic (with -cert); empty derives it")
 		if _, err := e.parseVerb(fs, rest); err != nil {
 			return err
 		}
-		src, err := e.readSource(*file)
+		src, err := e.pushCertificateUpload(*file, *cert, *key, *topic)
 		if err != nil {
 			return err
 		}
@@ -306,7 +327,11 @@ func runSets(ctx context.Context, e *env, args []string) error {
 		if sub == "remove" {
 			method = http.MethodDelete
 		}
-		path := "/sets/" + url.PathEscape(positional[0]) + "/declarations/" + url.PathEscape(positional[1])
+		path := "/sets/" + url.PathEscape(
+			positional[0],
+		) + "/declarations/" + url.PathEscape(
+			positional[1],
+		)
 		resp, err := c.Do(ctx, method, path, nil, nil)
 		if err != nil {
 			return e.explainNotFound(ctx, c, "ddm", err)
@@ -366,7 +391,10 @@ func runAPI(ctx context.Context, e *env, args []string) error {
 		return err
 	}
 	if len(positional) < 2 {
-		return fmt.Errorf("%w: api needs a method and a path, for example: api GET /dep/accounts", ErrUsage)
+		return fmt.Errorf(
+			"%w: api needs a method and a path, for example: api GET /dep/accounts",
+			ErrUsage,
+		)
 	}
 	method := strings.ToUpper(positional[0])
 	path := positional[1]
@@ -394,7 +422,7 @@ func runAPI(ctx context.Context, e *env, args []string) error {
 	}
 	resp, err := cl.Do(ctx, method, raw, q, body)
 	if err != nil {
-		return err
+		return wrapError(err)
 	}
 	return e.emit(resp, nil)
 }

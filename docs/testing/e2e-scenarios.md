@@ -1,5 +1,12 @@
 # End-to-end scenarios
 
+These are the retained detailed regressions. The [shared bench catalogue](bench-catalogue.md)
+links them to scenarios against the reference server's actual runtime. `make test-e2e`
+runs both; `make test-acceptance` exercises built server processes. See the
+[testing guide](bench.md) for the distinction between public workflow checks and
+internal timing/storage assertions.
+
+
 The named tests in [server/e2e](../../server/e2e/) compose protocol clients, simulator devices,
 fake Apple services and storage backends. Their assertions verify modeled exchanges; they do
 not establish physical-device compatibility. Apple sources are indexed in the

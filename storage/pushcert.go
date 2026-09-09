@@ -19,13 +19,35 @@ func ValidatePushCert(topic string, certPEM, keyPEM []byte, at time.Time) (PushC
 		return PushCert{}, fmt.Errorf("%w: %w", ErrInvalid, err)
 	}
 	if topic != "" && topic != p.Topic {
-		return PushCert{}, fmt.Errorf("%w: certificate topic %q does not match %q", ErrInvalid, p.Topic, topic)
+		return PushCert{}, fmt.Errorf(
+			"%w: certificate topic %q does not match %q",
+			ErrInvalid,
+			p.Topic,
+			topic,
+		)
 	}
-	if at.After(p.NotAfter) {
-		return PushCert{}, fmt.Errorf("%w: certificate for %s expired %s", ErrInvalid, p.Topic, p.NotAfter.UTC().Format(time.RFC3339))
+	if !at.Before(p.NotAfter) {
+		return PushCert{}, fmt.Errorf(
+			"%w: certificate for %s expired %s",
+			ErrInvalid,
+			p.Topic,
+			p.NotAfter.UTC().Format(time.RFC3339),
+		)
 	}
 	if at.Before(p.NotBefore) {
-		return PushCert{}, fmt.Errorf("%w: certificate for %s not valid before %s", ErrInvalid, p.Topic, p.NotBefore.UTC().Format(time.RFC3339))
+		return PushCert{}, fmt.Errorf(
+			"%w: certificate for %s not valid before %s",
+			ErrInvalid,
+			p.Topic,
+			p.NotBefore.UTC().Format(time.RFC3339),
+		)
+	}
+	if err := pushcert.Validate(p.TLS, p.Topic, true, at); err != nil {
+		return PushCert{}, fmt.Errorf("%w: %w", ErrInvalid, err)
+	}
+	certPEM, err = pushcert.PEM(certPEM)
+	if err != nil {
+		return PushCert{}, fmt.Errorf("%w: %w", ErrInvalid, err)
 	}
 	return PushCert{
 		Topic:    p.Topic,

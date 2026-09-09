@@ -77,14 +77,25 @@ func newBus() *event.Bus { return event.New() }
 // newHarnessWith builds the server around a store and bus the caller made
 // first, so components that need them before the core exists (the DDM
 // engine) can be wired into cfg.
-func newHarnessWith(t *testing.T, cfg service.Config, store storage.Store, bus *event.Bus) *harness {
+func newHarnessWith(
+	t *testing.T,
+	cfg service.Config,
+	store storage.Store,
+	bus *event.Bus,
+) *harness {
 	t.Helper()
 	return newHarnessMounted(t, cfg, store, bus, nil)
 }
 
 // newHarnessMounted also lets a scenario mount extra routes; mount runs
 // before the server starts, so handlers must read h.server.URL lazily.
-func newHarnessMounted(t *testing.T, cfg service.Config, store storage.Store, bus *event.Bus, mount func(h *harness, mux *http.ServeMux)) *harness {
+func newHarnessMounted(
+	t *testing.T,
+	cfg service.Config,
+	store storage.Store,
+	bus *event.Bus,
+	mount func(h *harness, mux *http.ServeMux),
+) *harness {
 	t.Helper()
 	testCA, err := testpki.NewCA("go-apple-dm test CA")
 	if err != nil {
@@ -106,17 +117,29 @@ func newHarnessMounted(t *testing.T, cfg service.Config, store storage.Store, bu
 
 	// SCEP CA: identities it issues are trusted for Mdm-Signature alongside
 	// the pre-issued test CA.
-	scepCert, scepKey, err := ca.NewSelfSigned(ca.SelfSignedOptions{Subject: pkix.Name{CommonName: "go-apple-dm SCEP CA"}})
+	scepCert, scepKey, err := ca.NewSelfSigned(
+		ca.SelfSignedOptions{Subject: pkix.Name{CommonName: "go-apple-dm SCEP CA"}},
+	)
 	if err != nil {
 		t.Fatal(err)
 	}
 	h.scepCA = scepCert
-	h.scepSigner, err = ca.NewLocal(scepCert, scepKey, ca.WithDepot(&harnessDepot{Depot: ca.NewMemoryDepot(), h: h}))
+	h.scepSigner, err = ca.NewLocal(
+		scepCert,
+		scepKey,
+		ca.WithDepot(&harnessDepot{Depot: ca.NewMemoryDepot(), h: h}),
+	)
 	if err != nil {
 		t.Fatal(err)
 	}
 	h.challenges = scep.NewOneTimeChallenges(time.Hour, h.clock)
-	scepServer, err := scep.NewServer(h.scepSigner, scepCert, scepKey, scep.WithChallenge(h.challenges), scep.WithLogger(quiet))
+	scepServer, err := scep.NewServer(
+		h.scepSigner,
+		scepCert,
+		scepKey,
+		scep.WithChallenge(h.challenges),
+		scep.WithLogger(quiet),
+	)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -139,12 +162,22 @@ func newHarnessMounted(t *testing.T, cfg service.Config, store storage.Store, bu
 	// Fake APNs behind the real client.
 	h.apns = pushtest.NewServer()
 	t.Cleanup(h.apns.Close)
-	pushID, err := testCA.Issue(pushTopic, time.Now().Add(-time.Minute))
+	pushID, err := testCA.IssuePush(pushTopic, time.Now().Add(-time.Minute))
 	if err != nil {
 		t.Fatal(err)
 	}
-	certs := push.StaticCertStore{pushTopic: tls.Certificate{Certificate: [][]byte{pushID.Cert.Raw}, PrivateKey: pushID.Key, Leaf: pushID.Cert}}
-	client := apns.New(certs, apns.WithHost(h.apns.URL), apns.WithTransport(func(tls.Certificate) *http.Client { return h.apns.Client() }))
+	certs := push.StaticCertStore{
+		pushTopic: tls.Certificate{
+			Certificate: [][]byte{pushID.Cert.Raw},
+			PrivateKey:  pushID.Key,
+			Leaf:        pushID.Cert,
+		},
+	}
+	client := apns.New(
+		certs,
+		apns.WithHost(h.apns.URL),
+		apns.WithTransport(func(tls.Certificate) *http.Client { return h.apns.Client() }),
+	)
 	h.notifier = &pushnotify.Notifier{Store: h.store, Pusher: client, Bus: bus, Clock: h.clock}
 	return h
 }
@@ -158,9 +191,17 @@ func (h *harness) enrollmentProfile(udid string) []byte {
 		h.t.Fatal(err)
 	}
 	data, err := enroll.Profile{
-		Identifier: "com.example.e2e", DisplayName: "go-apple-dm e2e", Organization: "go-apple-dm",
-		Topic: pushTopic, ServerURL: h.server.URL + "/mdm", CheckInURL: h.server.URL + "/mdm",
-		SCEP:               &enroll.SCEP{URL: h.server.URL + "/scep", Challenge: challenge, Subject: pkix.Name{CommonName: udid, Organization: []string{"go-apple-dm"}}},
+		Identifier:   "com.example.e2e",
+		DisplayName:  "go-apple-dm e2e",
+		Organization: "go-apple-dm",
+		Topic:        pushTopic,
+		ServerURL:    h.server.URL + "/mdm",
+		CheckInURL:   h.server.URL + "/mdm",
+		SCEP: &enroll.SCEP{
+			URL:       h.server.URL + "/scep",
+			Challenge: challenge,
+			Subject:   pkix.Name{CommonName: udid, Organization: []string{"go-apple-dm"}},
+		},
 		Roots:              []*x509.Certificate{h.scepCA},
 		ServerCapabilities: []string{enroll.CapabilityBootstrapToken, enroll.CapabilityToken},
 	}.Marshal()
@@ -200,8 +241,14 @@ func (h *harness) otaService(logger *slog.Logger) *enroll.OTAService {
 				return nil, err
 			}
 			p := &enroll.Profile{
-				Identifier: "com.example.e2e.ota", Topic: pushTopic, ServerURL: h.server.URL + "/mdm",
-				SCEP: &enroll.SCEP{URL: h.server.URL + "/scep", Challenge: challenge, Subject: pkix.Name{CommonName: r.Attributes.UDID}},
+				Identifier: "com.example.e2e.ota",
+				Topic:      pushTopic,
+				ServerURL:  h.server.URL + "/mdm",
+				SCEP: &enroll.SCEP{
+					URL:       h.server.URL + "/scep",
+					Challenge: challenge,
+					Subject:   pkix.Name{CommonName: r.Attributes.UDID},
+				},
 			}
 			built, err := p.Build()
 			if err != nil {

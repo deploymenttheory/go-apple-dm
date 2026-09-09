@@ -119,3 +119,7 @@ Apple's documentation, which each package cites in the `# References` section of
 
 The design decisions the diagrams reflect are recorded in
 [`docs/research/decisions/`](../research/decisions/README.md).
+
+The [shared-runtime and bench flow](../architecture.md#shared-reference-server-runtime-and-scenarios)
+connects the component views above to `dmctl bench`, process acceptance, and interface contracts.
+Fixture controllers are outside the production administration plane.
