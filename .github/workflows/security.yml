@@ -6,14 +6,16 @@ on:
       - '.release-please-manifest.json'
       - 'docs/**'
       - '**/*.md'
+      - '.github/workflows/**'
   push:
     branches:
       - main
-    # Documentation and release metadata do not change executable code.
+    # Run application CI when a push includes application or dependency changes.
     paths-ignore:
       - '.release-please-manifest.json'
       - 'docs/**'
       - '**/*.md'
+      - '.github/workflows/**'
   schedule:
     - cron: '17 4 * * 1'
 

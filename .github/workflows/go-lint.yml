@@ -5,7 +5,6 @@ on:
   pull_request:
     types: [opened, synchronize]
     paths:
-      - '.github/workflows/go-lint.yml'
       - '.golangci.yml'
       - '**/*.go'
 
