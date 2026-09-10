@@ -1,0 +1,264 @@
+{
+  "schema_version": 1,
+  "diagram_type": "sequence",
+  "meta": {
+    "title": "Controlled Enrollment-profile Replacement",
+    "quality_profile": "showcase",
+    "column_fit": "spread",
+    "viewBox": [
+      1320,
+      898
+    ],
+    "colour_profile": "purpose-v1",
+    "legend": {
+      "mode": "hidden"
+    }
+  },
+  "participants": [
+    {
+      "id": "operator",
+      "label": "Operator or bench",
+      "sublabel": "Prepare and request wake",
+      "type": "external",
+      "purpose": "neutral"
+    },
+    {
+      "id": "admin",
+      "label": "Enrollment admin",
+      "sublabel": "Stage replacement",
+      "type": "backend",
+      "purpose": "service"
+    },
+    {
+      "id": "store",
+      "label": "Replacement state",
+      "sublabel": "Keep active state intact",
+      "type": "database",
+      "purpose": "storage"
+    },
+    {
+      "id": "device",
+      "label": "Apple device",
+      "sublabel": "Old then candidate identity",
+      "type": "external",
+      "purpose": "neutral"
+    },
+    {
+      "id": "issuer",
+      "label": "Identity issuer",
+      "sublabel": "SCEP or ACME",
+      "type": "backend",
+      "purpose": "certificate"
+    },
+    {
+      "id": "core",
+      "label": "MDM service",
+      "sublabel": "Constrain candidate traffic",
+      "type": "backend",
+      "purpose": "service"
+    }
+  ],
+  "cards": [
+    {
+      "title": "Before starting",
+      "items": [
+        "The device must be enabled and have a recorded original profile with profile-installation rights. The replacement must keep the management endpoint and MDM topic.",
+        "The admin action requires replaceEnrollmentProfile authority. Preparation stores the replacement command outside the ordinary command queue.",
+        "Preparing the attempt does not send a wake. The operator or bench requests APNs separately. Only the old identity may fetch the credential-bearing InstallProfile; candidate traffic cannot retrieve ordinary queued commands."
+      ],
+      "dot": "policy"
+    },
+    {
+      "title": "Commit conditions",
+      "items": [
+        "Promotion requires candidate Authenticate, a valid device-channel TokenUpdate, and acknowledgement of the delivered InstallProfile command. Acknowledgement may arrive before or after candidate check-in.",
+        "The original top-level profile and MDM payload metadata are retained; the identity payload receives a fresh UUID and issuance authorization. A replacement can select SCEP or ACME."
+      ],
+      "dot": "policy"
+    },
+    {
+      "title": "Unsuccessful attempts",
+      "items": [
+        "Error or CommandFormatError fails the attempt; cancellation and expiry also end it without promoting the candidate. NotNow leaves the attempt pending.",
+        "The server keeps its working enrollment, queue, escrow, and user channels. This is server-side preservation; real-device rollback remains unverified in PR 14.",
+        "The attempt expires after 30 minutes. Storage evaluates expiry during transitions, including reads; there is no background expiry worker."
+      ],
+      "dot": "failure"
+    },
+    {
+      "title": "Public documentation",
+      "items": [
+        "Deploying device management enrollment profiles — https://developer.apple.com/documentation/devicemanagement/deploying-device-management-enrollment-profiles",
+        "MDM payload — https://developer.apple.com/documentation/devicemanagement/mdm",
+        "ACMECertificate — https://developer.apple.com/documentation/devicemanagement/acmecertificate",
+        "SCEP — https://developer.apple.com/documentation/devicemanagement/scep"
+      ],
+      "dot": "transport"
+    }
+  ],
+  "messages": [
+    {
+      "id": "prepare",
+      "from": "operator",
+      "to": "admin",
+      "label": "POST the enrollment-scoped replacement action",
+      "y": 175,
+      "variant": "default",
+      "purpose": "transport"
+    },
+    {
+      "id": "read",
+      "from": "admin",
+      "to": "store",
+      "label": "Read enabled enrollment and original profile",
+      "y": 211,
+      "variant": "default",
+      "purpose": "storage"
+    },
+    {
+      "id": "begin",
+      "from": "admin",
+      "to": "store",
+      "label": "Begin a 30-minute replacement attempt",
+      "y": 247,
+      "variant": "default",
+      "purpose": "storage"
+    },
+    {
+      "id": "prepared",
+      "from": "admin",
+      "to": "operator",
+      "label": "Return redacted attempt metadata",
+      "y": 283,
+      "variant": "default",
+      "purpose": "transport"
+    },
+    {
+      "id": "wake",
+      "from": "operator",
+      "to": "device",
+      "label": "Request APNs wake through the MDM notifier",
+      "y": 319,
+      "variant": "dashed",
+      "purpose": "transport"
+    },
+    {
+      "id": "poll",
+      "from": "device",
+      "to": "core",
+      "label": "Poll with the current enrollment identity",
+      "y": 355,
+      "variant": "default",
+      "purpose": "authentication"
+    },
+    {
+      "id": "deliver",
+      "from": "core",
+      "to": "store",
+      "label": "Mark replacement InstallProfile as delivered",
+      "y": 391,
+      "variant": "default",
+      "purpose": "storage"
+    },
+    {
+      "id": "profile",
+      "from": "core",
+      "to": "device",
+      "label": "Return InstallProfile with fresh identity authorization",
+      "y": 427,
+      "variant": "default",
+      "purpose": "artifact"
+    },
+    {
+      "id": "issue",
+      "from": "device",
+      "to": "issuer",
+      "label": "Complete authorized SCEP or ACME issuance",
+      "y": 463,
+      "variant": "default",
+      "purpose": "certificate"
+    },
+    {
+      "id": "register",
+      "from": "issuer",
+      "to": "store",
+      "label": "Record the candidate certificate fingerprint",
+      "y": 499,
+      "variant": "default",
+      "purpose": "storage"
+    },
+    {
+      "id": "identity",
+      "from": "issuer",
+      "to": "device",
+      "label": "Return candidate identity certificate",
+      "y": 535,
+      "variant": "default",
+      "purpose": "certificate"
+    },
+    {
+      "id": "authenticate",
+      "from": "device",
+      "to": "core",
+      "label": "Authenticate with the candidate identity",
+      "y": 571,
+      "variant": "default",
+      "purpose": "authentication"
+    },
+    {
+      "id": "stageauth",
+      "from": "core",
+      "to": "store",
+      "label": "Record successful candidate authentication",
+      "y": 607,
+      "variant": "default",
+      "purpose": "storage"
+    },
+    {
+      "id": "token",
+      "from": "device",
+      "to": "core",
+      "label": "TokenUpdate with candidate identity and push details",
+      "y": 643,
+      "variant": "default",
+      "purpose": "authentication"
+    },
+    {
+      "id": "stagetoken",
+      "from": "core",
+      "to": "store",
+      "label": "Stage the candidate device token",
+      "y": 679,
+      "variant": "default",
+      "purpose": "storage"
+    },
+    {
+      "id": "ack",
+      "from": "device",
+      "to": "core",
+      "label": "Acknowledge the delivered InstallProfile command",
+      "y": 715,
+      "variant": "default",
+      "purpose": "success"
+    },
+    {
+      "id": "result",
+      "from": "core",
+      "to": "store",
+      "label": "Record acknowledgement and evaluate completion",
+      "y": 751,
+      "variant": "default",
+      "note": "Atomically promote candidate identity and tokens",
+      "purpose": "storage"
+    },
+    {
+      "id": "complete",
+      "from": "core",
+      "to": "device",
+      "label": "Return an empty successful response",
+      "y": 787,
+      "variant": "default",
+      "purpose": "success"
+    }
+  ]
+}

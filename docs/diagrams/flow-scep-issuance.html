@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="dark" data-preset="classic">
+<html data-reading-layout="scroll" lang="en" data-theme="dark" data-preset="classic">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -4846,6 +4846,109 @@
       .source-evidence-beacon,
       svg [data-node-id], svg [data-edge-from], svg [data-detail], svg [data-detail-anchor], svg [data-legend-hit], svg { transition: none !important; }
     }
+
+    /* User-selected reading layout: full detail, larger text, vertical scroll. */
+    html[data-reading-layout="scroll"] .container { max-width: 1600px; min-width: 0; }
+    html[data-reading-layout="scroll"] .diagram-container { min-width: 0; }
+    html[data-reading-layout="scroll"] .cards { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    html[data-reading-layout="scroll"] .card { min-width: 0; padding: 1.25rem; }
+    html[data-reading-layout="scroll"] .card h3 { font-size: 1rem; line-height: 1.4; }
+    html[data-reading-layout="scroll"] .card li { font-size: 0.9375rem; line-height: 1.65; overflow-wrap: anywhere; }
+    html[data-reading-layout="scroll"] .card a { color: var(--frontend-stroke); text-decoration: underline; text-underline-offset: 3px; }
+    html[data-reading-layout="scroll"] .header { min-width: 0; }
+    html[data-reading-layout="scroll"] .header h1 { overflow-wrap: anywhere; }
+    html[data-reading-layout="scroll"]:not([data-embed="true"]):not([data-present="true"]) .toolbar {
+      position: relative;
+      top: auto;
+      right: auto;
+      width: 100%;
+      max-width: 1600px;
+      margin: 0 auto 1rem;
+      justify-content: flex-end;
+      flex-wrap: wrap;
+    }
+    html[data-reading-layout="scroll"]:not([data-embed="true"]):not([data-present="true"]) .header { padding-right: 0; }
+    @media (max-width: 900px) {
+      html[data-reading-layout="scroll"] .cards { grid-template-columns: 1fr; }
+    }
+
+[data-theme="light"] {
+  --purpose-service: #2563eb; --purpose-service-fill: rgba(37,99,235,.08);
+  --purpose-transport: #087e98; --purpose-transport-fill: rgba(8,126,152,.08);
+  --purpose-storage: #0f766e; --purpose-storage-fill: rgba(15,118,110,.08);
+  --purpose-authentication: #4338ca; --purpose-authentication-fill: rgba(67,56,202,.08);
+  --purpose-certificate: #7c3aed; --purpose-certificate-fill: rgba(124,58,237,.08);
+  --purpose-policy: #a21caf; --purpose-policy-fill: rgba(162,28,175,.08);
+  --purpose-artifact: #80552f; --purpose-artifact-fill: rgba(128,85,47,.08);
+  --purpose-neutral: #526174; --purpose-neutral-fill: rgba(82,97,116,.08);
+  --purpose-success: #15803d; --purpose-success-fill: rgba(21,128,61,.08);
+  --purpose-warning: #a65b00; --purpose-warning-fill: rgba(166,91,0,.08);
+  --purpose-failure: #c62828; --purpose-failure-fill: rgba(198,40,40,.08);
+}
+[data-theme="dark"] {
+  --purpose-service: #60a5fa; --purpose-service-fill: rgba(96,165,250,.10);
+  --purpose-transport: #22d3ee; --purpose-transport-fill: rgba(34,211,238,.10);
+  --purpose-storage: #2dd4bf; --purpose-storage-fill: rgba(45,212,191,.10);
+  --purpose-authentication: #9397ff; --purpose-authentication-fill: rgba(147,151,255,.10);
+  --purpose-certificate: #c084fc; --purpose-certificate-fill: rgba(192,132,252,.10);
+  --purpose-policy: #e879f9; --purpose-policy-fill: rgba(232,121,249,.10);
+  --purpose-artifact: #c99a6b; --purpose-artifact-fill: rgba(201,154,107,.10);
+  --purpose-neutral: #a8b4c5; --purpose-neutral-fill: rgba(168,180,197,.10);
+  --purpose-success: #4ade80; --purpose-success-fill: rgba(74,222,128,.10);
+  --purpose-warning: #ffb347; --purpose-warning-fill: rgba(255,179,71,.10);
+  --purpose-failure: #ff7373; --purpose-failure-fill: rgba(255,115,115,.10);
+}
+svg [data-purpose="service"], svg .purpose-service { --purpose-stroke: var(--purpose-service); --purpose-fill: var(--purpose-service-fill); }
+.card-dot.service { background: var(--purpose-service); }
+
+svg [data-purpose="transport"], svg .purpose-transport { --purpose-stroke: var(--purpose-transport); --purpose-fill: var(--purpose-transport-fill); }
+.card-dot.transport { background: var(--purpose-transport); }
+
+svg [data-purpose="storage"], svg .purpose-storage { --purpose-stroke: var(--purpose-storage); --purpose-fill: var(--purpose-storage-fill); }
+.card-dot.storage { background: var(--purpose-storage); }
+
+svg [data-purpose="authentication"], svg .purpose-authentication { --purpose-stroke: var(--purpose-authentication); --purpose-fill: var(--purpose-authentication-fill); }
+.card-dot.authentication { background: var(--purpose-authentication); }
+
+svg [data-purpose="certificate"], svg .purpose-certificate { --purpose-stroke: var(--purpose-certificate); --purpose-fill: var(--purpose-certificate-fill); }
+.card-dot.certificate { background: var(--purpose-certificate); }
+
+svg [data-purpose="policy"], svg .purpose-policy { --purpose-stroke: var(--purpose-policy); --purpose-fill: var(--purpose-policy-fill); }
+.card-dot.policy { background: var(--purpose-policy); }
+
+svg [data-purpose="artifact"], svg .purpose-artifact { --purpose-stroke: var(--purpose-artifact); --purpose-fill: var(--purpose-artifact-fill); }
+.card-dot.artifact { background: var(--purpose-artifact); }
+
+svg [data-purpose="neutral"], svg .purpose-neutral { --purpose-stroke: var(--purpose-neutral); --purpose-fill: var(--purpose-neutral-fill); }
+.card-dot.neutral { background: var(--purpose-neutral); }
+
+svg [data-purpose="success"], svg .purpose-success { --purpose-stroke: var(--purpose-success); --purpose-fill: var(--purpose-success-fill); }
+.card-dot.success { background: var(--purpose-success); }
+
+svg [data-purpose="warning"], svg .purpose-warning { --purpose-stroke: var(--purpose-warning); --purpose-fill: var(--purpose-warning-fill); }
+.card-dot.warning { background: var(--purpose-warning); }
+
+svg [data-purpose="failure"], svg .purpose-failure { --purpose-stroke: var(--purpose-failure); --purpose-fill: var(--purpose-failure-fill); }
+.card-dot.failure { background: var(--purpose-failure); }
+/* Literal colours are resolved by Archify's canonical export in both themes. */
+svg [data-node-id][data-purpose] > rect:not(.c-mask) { fill: var(--purpose-fill); stroke: var(--purpose-stroke); }
+svg [data-node-id][data-purpose] > .semantic-sigil { color: var(--purpose-stroke); }
+svg [data-node-id][data-purpose] > text[data-detail="fine"] { fill: var(--purpose-stroke); }
+svg .purpose-arrow { stroke: var(--purpose-stroke); fill: none; }
+svg .purpose-marker, svg .purpose-swatch { fill: var(--purpose-stroke); }
+svg [data-edge-from][data-purpose] text:not(.t-dim) { fill: var(--purpose-stroke); }
+svg .purpose-legend-rule { stroke: var(--lane-stroke); stroke-width: 1; }
+/* Boundaries describe structure, not a warning or an authorization result. */
+svg .c-region, svg .c-security-group { stroke: var(--purpose-neutral); fill: none; }
+svg [data-boundary-label] { fill: var(--purpose-neutral); }
+/* Unclassified viewer accents and structural rails must not imply outcomes. */
+[data-theme], html[data-reading-layout="scroll"] {
+  --frontend-stroke: var(--purpose-transport); --backend-stroke: var(--purpose-service);
+  --database-stroke: var(--purpose-storage); --cloud-stroke: var(--purpose-neutral);
+  --security-stroke: var(--purpose-authentication); --messagebus-stroke: var(--purpose-transport);
+  --external-stroke: var(--purpose-neutral); --arrow-emphasis: var(--purpose-service);
+}
+
   </style>
 </head>
 <body>
@@ -5004,11 +5107,22 @@
     <!-- Main Diagram -->
     <div class="diagram-container" data-detail-level="read"
          data-preset-badge-editorial-plate="ARCHIFY / PLATE 04">
-      <svg viewBox="0 0 1080 566" role="img" lang="en" aria-labelledby="archify-diagram-title archify-diagram-description" data-preset="classic" data-quality-profile="showcase">
+      <svg viewBox="0 0 1320 794" role="img" lang="en" aria-labelledby="archify-diagram-title archify-diagram-description" data-preset="classic" data-quality-profile="showcase">
         <title id="archify-diagram-title">SCEP Identity Issuance</title>
         <desc id="archify-diagram-description">A sequence diagram generated by Archify.</desc>
         <!-- Definitions -->
         <defs>
+<marker id="purpose-arrowhead-service" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto"><polygon points="0 0, 10 3.5, 0 7" class="purpose-marker purpose-service"/></marker>
+<marker id="purpose-arrowhead-transport" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto"><polygon points="0 0, 10 3.5, 0 7" class="purpose-marker purpose-transport"/></marker>
+<marker id="purpose-arrowhead-storage" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto"><polygon points="0 0, 10 3.5, 0 7" class="purpose-marker purpose-storage"/></marker>
+<marker id="purpose-arrowhead-authentication" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto"><polygon points="0 0, 10 3.5, 0 7" class="purpose-marker purpose-authentication"/></marker>
+<marker id="purpose-arrowhead-certificate" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto"><polygon points="0 0, 10 3.5, 0 7" class="purpose-marker purpose-certificate"/></marker>
+<marker id="purpose-arrowhead-policy" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto"><polygon points="0 0, 10 3.5, 0 7" class="purpose-marker purpose-policy"/></marker>
+<marker id="purpose-arrowhead-artifact" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto"><polygon points="0 0, 10 3.5, 0 7" class="purpose-marker purpose-artifact"/></marker>
+<marker id="purpose-arrowhead-neutral" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto"><polygon points="0 0, 10 3.5, 0 7" class="purpose-marker purpose-neutral"/></marker>
+<marker id="purpose-arrowhead-success" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto"><polygon points="0 0, 10 3.5, 0 7" class="purpose-marker purpose-success"/></marker>
+<marker id="purpose-arrowhead-warning" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto"><polygon points="0 0, 10 3.5, 0 7" class="purpose-marker purpose-warning"/></marker>
+<marker id="purpose-arrowhead-failure" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto"><polygon points="0 0, 10 3.5, 0 7" class="purpose-marker purpose-failure"/></marker>
           <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
             <polygon points="0 0, 10 3.5, 0 7" class="m-default" />
           </marker>
@@ -5030,192 +5144,172 @@
         <rect width="100%" height="100%" fill="url(#grid)" />
 
         <!-- Time Segments -->
-        <rect data-graph-role="structural-frame" data-composition-frame-kind="segment" data-composition-frame-id="0" x="48" y="161" width="984" height="119.5" rx="10" class="c-lane" stroke-width="1"/>
 
-        <rect data-graph-role="structural-frame" data-composition-frame-kind="segment" data-composition-frame-id="1" x="48" y="283" width="984" height="211" rx="10" class="c-lane" stroke-width="1"/>
 
         <!-- Lifelines -->
-        <path d="M 157 142 L 157 501" class="a-default" stroke-width="0.8" stroke-dasharray="3,7"/>
-        <path d="M 419.6666666666667 142 L 419.6666666666667 501" class="a-default" stroke-width="0.8" stroke-dasharray="3,7"/>
-        <path d="M 682.3333333333334 142 L 682.3333333333334 501" class="a-default" stroke-width="0.8" stroke-dasharray="3,7"/>
-        <path d="M 945 142 L 945 501" class="a-default" stroke-width="0.8" stroke-dasharray="3,7"/>
+        <path d="M 157 142 L 157 581" class="a-default" stroke-width="0.8" stroke-dasharray="3,7"/>
+        <path d="M 499.6666666666667 142 L 499.6666666666667 581" class="a-default" stroke-width="0.8" stroke-dasharray="3,7"/>
+        <path d="M 842.3333333333334 142 L 842.3333333333334 581" class="a-default" stroke-width="0.8" stroke-dasharray="3,7"/>
+        <path d="M 1185 142 L 1185 581" class="a-default" stroke-width="0.8" stroke-dasharray="3,7"/>
 
         <!-- Activations -->
-        <rect x="414.6666666666667" y="169" width="10" height="319" rx="3" class="c-mask"/>
-        <rect x="414.6666666666667" y="169" width="10" height="319" rx="3" class="c-backend" stroke-width="1"/>
-        <rect x="677.3333333333334" y="321.5" width="10" height="44.5" rx="3" class="c-mask"/>
-        <rect x="677.3333333333334" y="321.5" width="10" height="44.5" rx="3" class="c-security" stroke-width="1"/>
-        <rect x="940" y="382.5" width="10" height="44.5" rx="3" class="c-mask"/>
-        <rect x="940" y="382.5" width="10" height="44.5" rx="3" class="c-security" stroke-width="1"/>
+
 
         <!-- Messages -->
-        <g data-edge-from="device" data-edge-to="scep" data-edge-label="operation=GetCACaps" data-edge-key="0" data-edge-id="caps">
-          <path data-composition-edge-from="device" data-composition-edge-to="scep" data-composition-edge-id="caps" data-composition-points="164,175;412.6666666666667,175" d="M 164 175 L 412.6666666666667 175" class="a-default" stroke-width="1.4" marker-end="url(#arrowhead)"/>
+        <g data-edge-from="device" data-edge-to="scep" data-edge-label="operation=GetCACaps" data-edge-key="0" data-edge-id="caps" data-purpose="transport">
+          <path data-composition-edge-from="device" data-composition-edge-to="scep" data-composition-edge-id="caps" data-composition-points="164,175;492.6666666666667,175" d="M 164 175 L 492.6666666666667 175" class="a-default purpose-arrow purpose-transport" stroke-width="1.4" marker-end="url(#purpose-arrowhead-transport)"/>
         <g data-detail="context">
-          <rect x="232.93333333333337" y="155" width="110.8" height="16" rx="3" class="c-mask"/>
-          <text x="288.33333333333337" y="165" class="t-backend" font-size="9" text-anchor="middle">operation=GetCACaps</text>
+          <rect x="259.6333333333334" y="155" width="137.39999999999998" height="16" rx="3" class="c-mask"/>
+          <text x="328.33333333333337" y="165" class="t-backend" font-size="11" text-anchor="middle">operation=GetCACaps</text>
         </g>
         </g>
 
-        <g data-edge-from="scep" data-edge-to="device" data-edge-label="POSTPKIOperation, SHA-256, Renewal" data-edge-key="1" data-edge-id="caps-back">
-          <path data-composition-edge-from="scep" data-composition-edge-to="device" data-composition-edge-id="caps-back" data-composition-points="412.6666666666667,205.5;164,205.5" d="M 412.6666666666667 205.5 L 164 205.5" class="a-default" stroke-width="1.4" stroke-dasharray="3,5" marker-end="url(#arrowhead)"/>
+        <g data-edge-from="scep" data-edge-to="device" data-edge-label="Supported SCEP capabilities" data-edge-key="1" data-edge-id="caps-back" data-purpose="transport">
+          <path data-composition-edge-from="scep" data-composition-edge-to="device" data-composition-edge-id="caps-back" data-composition-points="492.6666666666667,211;164,211" d="M 492.6666666666667 211 L 164 211" class="a-default purpose-arrow purpose-transport" stroke-width="1.4" stroke-dasharray="3,5" marker-end="url(#purpose-arrowhead-transport)"/>
         <g data-detail="context">
-          <rect x="193.93333333333337" y="185.5" width="188.8" height="16" rx="3" class="c-mask"/>
-          <text x="288.33333333333337" y="195.5" class="t-muted" font-size="9" text-anchor="middle">POSTPKIOperation, SHA-256, Renewal</text>
+          <rect x="233.23333333333338" y="191" width="190.2" height="16" rx="3" class="c-mask"/>
+          <text x="328.33333333333337" y="201" class="t-muted" font-size="11" text-anchor="middle">Supported SCEP capabilities</text>
         </g>
         </g>
 
-        <g data-edge-from="device" data-edge-to="scep" data-edge-label="operation=GetCACert" data-edge-key="2" data-edge-id="cacert">
-          <path data-composition-edge-from="device" data-composition-edge-to="scep" data-composition-edge-id="cacert" data-composition-points="164,236;412.6666666666667,236" d="M 164 236 L 412.6666666666667 236" class="a-default" stroke-width="1.4" marker-end="url(#arrowhead)"/>
+        <g data-edge-from="device" data-edge-to="scep" data-edge-label="operation=GetCACert" data-edge-key="2" data-edge-id="cacert" data-purpose="transport">
+          <path data-composition-edge-from="device" data-composition-edge-to="scep" data-composition-edge-id="cacert" data-composition-points="164,247;492.6666666666667,247" d="M 164 247 L 492.6666666666667 247" class="a-default purpose-arrow purpose-transport" stroke-width="1.4" marker-end="url(#purpose-arrowhead-transport)"/>
         <g data-detail="context">
-          <rect x="232.93333333333337" y="216" width="110.8" height="16" rx="3" class="c-mask"/>
-          <text x="288.33333333333337" y="226" class="t-backend" font-size="9" text-anchor="middle">operation=GetCACert</text>
+          <rect x="259.6333333333334" y="227" width="137.39999999999998" height="16" rx="3" class="c-mask"/>
+          <text x="328.33333333333337" y="237" class="t-backend" font-size="11" text-anchor="middle">operation=GetCACert</text>
         </g>
         </g>
 
-        <g data-edge-from="scep" data-edge-to="device" data-edge-label="the CA certificate" data-edge-key="3" data-edge-id="cacert-back">
-          <path data-composition-edge-from="scep" data-composition-edge-to="device" data-composition-edge-id="cacert-back" data-composition-points="412.6666666666667,266.5;164,266.5" d="M 412.6666666666667 266.5 L 164 266.5" class="a-default" stroke-width="1.4" stroke-dasharray="3,5" marker-end="url(#arrowhead)"/>
+        <g data-edge-from="scep" data-edge-to="device" data-edge-label="CA/RA certificate material" data-edge-key="3" data-edge-id="cacert-back" data-purpose="certificate">
+          <path data-composition-edge-from="scep" data-composition-edge-to="device" data-composition-edge-id="cacert-back" data-composition-points="492.6666666666667,283;164,283" d="M 492.6666666666667 283 L 164 283" class="a-default purpose-arrow purpose-certificate" stroke-width="1.4" stroke-dasharray="3,5" marker-end="url(#purpose-arrowhead-certificate)"/>
         <g data-detail="context">
-          <rect x="235.53333333333336" y="246.5" width="105.60000000000001" height="16" rx="3" class="c-mask"/>
-          <text x="288.33333333333337" y="256.5" class="t-muted" font-size="9" text-anchor="middle">the CA certificate</text>
+          <rect x="236.53333333333336" y="263" width="183.6" height="16" rx="3" class="c-mask"/>
+          <text x="328.33333333333337" y="273" class="t-muted" font-size="11" text-anchor="middle">CA/RA certificate material</text>
         </g>
         </g>
 
-        <g data-edge-from="device" data-edge-to="scep" data-edge-label="PKIOperation, PKCSReq" data-edge-key="4" data-edge-id="pki">
-          <path data-composition-edge-from="device" data-composition-edge-to="scep" data-composition-edge-id="pki" data-composition-points="164,297;412.6666666666667,297" d="M 164 297 L 412.6666666666667 297" class="a-emphasis" stroke-width="1.8" marker-end="url(#arrowhead-emphasis)"/>
+        <g data-edge-from="device" data-edge-to="scep" data-edge-label="Signed, encrypted PKCSReq" data-edge-key="4" data-edge-id="pki" data-purpose="transport">
+          <path data-composition-edge-from="device" data-composition-edge-to="scep" data-composition-edge-id="pki" data-composition-points="164,319;492.6666666666667,319" d="M 164 319 L 492.6666666666667 319" class="a-emphasis purpose-arrow purpose-transport" stroke-width="1.8" marker-end="url(#purpose-arrowhead-transport)"/>
         <g data-detail="context">
-          <rect x="227.73333333333338" y="277" width="121.2" height="16" rx="3" class="c-mask"/>
-          <text x="288.33333333333337" y="287" class="t-backend" font-size="9" text-anchor="middle">PKIOperation, PKCSReq</text>
+          <rect x="239.83333333333337" y="299" width="177" height="16" rx="3" class="c-mask"/>
+          <text x="328.33333333333337" y="309" class="t-backend" font-size="11" text-anchor="middle">Signed, encrypted PKCSReq</text>
         </g>
         </g>
 
-        <g data-edge-from="scep" data-edge-to="challenge" data-edge-label="challengePassword from the CSR" data-edge-key="5" data-edge-id="verify">
-          <path data-composition-edge-from="scep" data-composition-edge-to="challenge" data-composition-edge-id="verify" data-composition-points="426.6666666666667,327.5;675.3333333333334,327.5" d="M 426.6666666666667 327.5 L 675.3333333333334 327.5" class="a-security" stroke-width="1.4" marker-end="url(#arrowhead-security)"/>
+        <g data-edge-from="scep" data-edge-to="challenge" data-edge-label="Validate CSR challenge password" data-edge-key="5" data-edge-id="verify" data-purpose="authentication">
+          <path data-composition-edge-from="scep" data-composition-edge-to="challenge" data-composition-edge-id="verify" data-composition-points="506.6666666666667,355;835.3333333333334,355" d="M 506.6666666666667 355 L 835.3333333333334 355" class="a-default purpose-arrow purpose-authentication" stroke-width="1.4" marker-end="url(#purpose-arrowhead-authentication)"/>
         <g data-detail="context">
-          <rect x="467" y="307.5" width="168" height="16" rx="3" class="c-mask"/>
-          <text x="551" y="317.5" class="t-security" font-size="9" text-anchor="middle">challengePassword from the CSR</text>
+          <rect x="562.7" y="335" width="216.6" height="16" rx="3" class="c-mask"/>
+          <text x="671" y="345" class="t-security" font-size="11" text-anchor="middle">Validate CSR challenge password</text>
         </g>
         </g>
 
-        <g data-edge-from="challenge" data-edge-to="scep" data-edge-label="derived from the common name" data-edge-key="6" data-edge-id="verify-back">
-          <path data-composition-edge-from="challenge" data-composition-edge-to="scep" data-composition-edge-id="verify-back" data-composition-points="675.3333333333334,358;426.6666666666667,358" d="M 675.3333333333334 358 L 426.6666666666667 358" class="a-default" stroke-width="1.4" stroke-dasharray="3,5" marker-end="url(#arrowhead)"/>
+        <g data-edge-from="challenge" data-edge-to="scep" data-edge-label="Authorization accepted or rejected" data-edge-key="6" data-edge-id="verify-back" data-purpose="policy">
+          <path data-composition-edge-from="challenge" data-composition-edge-to="scep" data-composition-edge-id="verify-back" data-composition-points="835.3333333333334,391;506.6666666666667,391" d="M 835.3333333333334 391 L 506.6666666666667 391" class="a-default purpose-arrow purpose-policy" stroke-width="1.4" stroke-dasharray="3,5" marker-end="url(#purpose-arrowhead-policy)"/>
         <g data-detail="context">
-          <rect x="472.2" y="338" width="157.6" height="16" rx="3" class="c-mask"/>
-          <text x="551" y="348" class="t-muted" font-size="9" text-anchor="middle">derived from the common name</text>
+          <rect x="552.8" y="371" width="236.39999999999998" height="16" rx="3" class="c-mask"/>
+          <text x="671" y="381" class="t-muted" font-size="11" text-anchor="middle">Authorization accepted or rejected</text>
         </g>
         </g>
 
-        <g data-edge-from="scep" data-edge-to="ca" data-edge-label="Sign(CSR, policy)" data-edge-key="7" data-edge-id="sign">
-          <path data-composition-edge-from="scep" data-composition-edge-to="ca" data-composition-edge-id="sign" data-composition-points="426.6666666666667,388.5;938,388.5" d="M 426.6666666666667 388.5 L 938 388.5" class="a-default" stroke-width="1.4" marker-end="url(#arrowhead)"/>
+        <g data-edge-from="scep" data-edge-to="device" data-edge-label="Rejected: signed failure CertRep; stop" data-edge-key="7" data-edge-id="refused" data-purpose="failure">
+          <path data-composition-edge-from="scep" data-composition-edge-to="device" data-composition-edge-id="refused" data-composition-points="492.6666666666667,427;164,427" d="M 492.6666666666667 427 L 164 427" class="a-default purpose-arrow purpose-failure" stroke-width="1.4" stroke-dasharray="3,5" marker-end="url(#purpose-arrowhead-failure)"/>
         <g data-detail="context">
-          <rect x="632.1333333333333" y="368.5" width="100.4" height="16" rx="3" class="c-mask"/>
-          <text x="682.3333333333334" y="378.5" class="t-backend" font-size="9" text-anchor="middle">Sign(CSR, policy)</text>
+          <rect x="196.9333333333334" y="407" width="262.79999999999995" height="16" rx="3" class="c-mask"/>
+          <text x="328.33333333333337" y="417" class="t-muted" font-size="11" text-anchor="middle">Rejected: signed failure CertRep; stop</text>
         </g>
         </g>
 
-        <g data-edge-from="ca" data-edge-to="scep" data-edge-label="client certificate" data-edge-key="8" data-edge-id="cert">
-          <path data-composition-edge-from="ca" data-composition-edge-to="scep" data-composition-edge-id="cert" data-composition-points="938,419;426.6666666666667,419" d="M 938 419 L 426.6666666666667 419" class="a-default" stroke-width="1.4" stroke-dasharray="3,5" marker-end="url(#arrowhead)"/>
+        <g data-edge-from="scep" data-edge-to="ca" data-edge-label="Accepted: validate CSR and issue" data-edge-key="8" data-edge-id="sign" data-purpose="certificate">
+          <path data-composition-edge-from="scep" data-composition-edge-to="ca" data-composition-edge-id="sign" data-composition-points="506.6666666666667,463;1178,463" d="M 506.6666666666667 463 L 1178 463" class="a-default purpose-arrow purpose-certificate" stroke-width="1.4" marker-end="url(#purpose-arrowhead-certificate)"/>
         <g data-detail="context">
-          <rect x="629.5333333333334" y="399" width="105.60000000000001" height="16" rx="3" class="c-mask"/>
-          <text x="682.3333333333334" y="409" class="t-muted" font-size="9" text-anchor="middle">client certificate</text>
+          <rect x="730.7333333333333" y="443" width="223.2" height="16" rx="3" class="c-mask"/>
+          <text x="842.3333333333334" y="453" class="t-backend" font-size="11" text-anchor="middle">Accepted: validate CSR and issue</text>
         </g>
         </g>
 
-        <g data-edge-from="scep" data-edge-to="device" data-edge-label="CertRep: success or failure" data-edge-key="9" data-edge-id="certrep">
-          <path data-composition-edge-from="scep" data-composition-edge-to="device" data-composition-edge-id="certrep" data-composition-points="412.6666666666667,449.5;164,449.5" d="M 412.6666666666667 449.5 L 164 449.5" class="a-emphasis" stroke-width="1.8" marker-end="url(#arrowhead-emphasis)"/>
+        <g data-edge-from="ca" data-edge-to="scep" data-edge-label="Device identity certificate" data-edge-key="9" data-edge-id="cert" data-purpose="certificate">
+          <path data-composition-edge-from="ca" data-composition-edge-to="scep" data-composition-edge-id="cert" data-composition-points="1178,499;506.6666666666667,499" d="M 1178 499 L 506.6666666666667 499" class="a-default purpose-arrow purpose-certificate" stroke-width="1.4" stroke-dasharray="3,5" marker-end="url(#purpose-arrowhead-certificate)"/>
         <g data-detail="context">
-          <rect x="212.13333333333338" y="429.5" width="152.4" height="16" rx="3" class="c-mask"/>
-          <text x="288.33333333333337" y="439.5" class="t-backend" font-size="9" text-anchor="middle">CertRep: success or failure</text>
+          <rect x="747.2333333333333" y="479" width="190.2" height="16" rx="3" class="c-mask"/>
+          <text x="842.3333333333334" y="489" class="t-muted" font-size="11" text-anchor="middle">Device identity certificate</text>
         </g>
+        <text data-detail="fine" x="518.6666666666667" y="517" class="t-dim" font-size="7">Register account/replacement identity</text>
         </g>
 
-        <g data-edge-from="scep" data-edge-to="device" data-edge-label="or a signed CertRep with failInfo" data-edge-key="10" data-edge-id="refused">
-          <path data-composition-edge-from="scep" data-composition-edge-to="device" data-composition-edge-id="refused" data-composition-points="412.6666666666667,480;164,480" d="M 412.6666666666667 480 L 164 480" class="a-security" stroke-width="1.4" marker-end="url(#arrowhead-security)"/>
+        <g data-edge-from="scep" data-edge-to="device" data-edge-label="Success: signed CertRep" data-edge-key="10" data-edge-id="certrep" data-purpose="success">
+          <path data-composition-edge-from="scep" data-composition-edge-to="device" data-composition-edge-id="certrep" data-composition-points="492.6666666666667,535;164,535" d="M 492.6666666666667 535 L 164 535" class="a-default purpose-arrow purpose-success" stroke-width="1.4" stroke-dasharray="3,5" marker-end="url(#purpose-arrowhead-success)"/>
         <g data-detail="context">
-          <rect x="196.53333333333336" y="460" width="183.6" height="16" rx="3" class="c-mask"/>
-          <text x="288.33333333333337" y="470" class="t-security" font-size="9" text-anchor="middle">or a signed CertRep with failInfo</text>
+          <rect x="246.4333333333334" y="515" width="163.79999999999998" height="16" rx="3" class="c-mask"/>
+          <text x="328.33333333333337" y="525" class="t-muted" font-size="11" text-anchor="middle">Success: signed CertRep</text>
         </g>
-        <text data-detail="fine" x="176" y="498" class="t-dim" font-size="7">a refusal is still delivered with 200; the device reads failInfo</text>
         </g>
 
         <!-- Segment Labels -->
-        <g data-graph-role="segment-label" data-segment-id="0">
-          <rect x="56" y="139" width="76.4" height="18" rx="3" class="c-mask"/>
-          <text x="62" y="152" class="t-dim" font-size="9" font-weight="600">Capabilities</text>
-        </g>
-        <g data-graph-role="segment-label" data-segment-id="1">
-          <rect x="56" y="261" width="76.4" height="18" rx="3" class="c-mask"/>
-          <text x="62" y="274" class="t-dim" font-size="9" font-weight="600">PKIOperation</text>
-        </g>
+
 
         <!-- Participants -->
-        <g id="node-device" data-node-id="device" data-node-label="Device" tabindex="0" role="button" aria-label="Focus Device, from the profile payload, Sequence participant" aria-pressed="false" data-node-kind="external" data-node-sublabel="from the profile payload" data-node-context="Sequence participant">
-          <title>Device · from the profile payload · Sequence participant</title>
+        <g id="node-device" data-node-id="device" data-node-label="Apple device" tabindex="0" role="button" aria-label="Focus Apple device, Follow SCEP payload, Sequence participant" aria-pressed="false" data-node-kind="external" data-node-sublabel="Follow SCEP payload" data-node-context="Sequence participant" data-purpose="neutral">
+          <title>Apple device · Follow SCEP payload · Sequence participant</title>
           <rect x="62" y="72" width="190" height="54" rx="6" class="c-mask"/>
           <rect x="62" y="72" width="190" height="54" rx="6" class="c-external" stroke-width="1.5"/>
           <g aria-hidden="true" data-semantic-sigil="external" class="semantic-sigil s-external" transform="translate(68 78) scale(0.6875)">
             <rect x="2.5" y="5" width="8.5" height="8" rx="1.5"/>
             <path d="M8 2.5h5.5V8M13.5 2.5 7.5 8.5"/>
           </g>
-          <text data-node-label="" data-detail-anchor="" x="157" y="94" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">Device</text>
-          <text data-detail="context" x="157" y="111" class="t-muted" font-size="7" text-anchor="middle">from the profile payload</text>
+          <text data-node-label="" data-detail-anchor="" x="157" y="94" class="t-primary" font-size="14" font-weight="600" text-anchor="middle">Apple device</text>
+          <text data-detail="context" x="157" y="111" class="t-muted" font-size="11" text-anchor="middle">Follow SCEP payload</text>
         </g>
 
-        <g id="node-scep" data-node-id="scep" data-node-label="scep.Server" tabindex="0" role="button" aria-label="Focus scep.Server, /scep, Sequence participant" aria-pressed="false" data-node-kind="backend" data-node-sublabel="/scep" data-node-context="Sequence participant">
-          <title>scep.Server · /scep · Sequence participant</title>
-          <rect x="324.6666666666667" y="72" width="190" height="54" rx="6" class="c-mask"/>
-          <rect x="324.6666666666667" y="72" width="190" height="54" rx="6" class="c-backend" stroke-width="1.5"/>
-          <g aria-hidden="true" data-semantic-sigil="backend" class="semantic-sigil s-backend" transform="translate(330.6666666666667 78) scale(0.6875)">
+        <g id="node-scep" data-node-id="scep" data-node-label="SCEP server" tabindex="0" role="button" aria-label="Focus SCEP server, Validate certificate request, Sequence participant" aria-pressed="false" data-node-kind="backend" data-node-sublabel="Validate certificate request" data-node-context="Sequence participant" data-purpose="service">
+          <title>SCEP server · Validate certificate request · Sequence participant</title>
+          <rect x="404.6666666666667" y="72" width="190" height="54" rx="6" class="c-mask"/>
+          <rect x="404.6666666666667" y="72" width="190" height="54" rx="6" class="c-backend" stroke-width="1.5"/>
+          <g aria-hidden="true" data-semantic-sigil="backend" class="semantic-sigil s-backend" transform="translate(410.6666666666667 78) scale(0.6875)">
             <path d="M6 3 3 8l3 5M10 3l3 5-3 5"/>
           </g>
-          <text data-node-label="" data-detail-anchor="" x="419.6666666666667" y="94" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">scep.Server</text>
-          <text data-detail="context" x="419.6666666666667" y="111" class="t-muted" font-size="7" text-anchor="middle">/scep</text>
+          <text data-node-label="" data-detail-anchor="" x="499.6666666666667" y="94" class="t-primary" font-size="14" font-weight="600" text-anchor="middle">SCEP server</text>
+          <text data-detail="context" x="499.6666666666667" y="111" class="t-muted" font-size="10.8" text-anchor="middle">Validate certificate request</text>
         </g>
 
-        <g id="node-challenge" data-node-id="challenge" data-node-label="Challenge" tabindex="0" role="button" aria-label="Focus Challenge, static · HMAC · one-time, Sequence participant" aria-pressed="false" data-node-kind="security" data-node-sublabel="static · HMAC · one-time" data-node-context="Sequence participant">
-          <title>Challenge · static · HMAC · one-time · Sequence participant</title>
-          <rect x="587.3333333333334" y="72" width="190" height="54" rx="6" class="c-mask"/>
-          <rect x="587.3333333333334" y="72" width="190" height="54" rx="6" class="c-security" stroke-width="1.5"/>
-          <g aria-hidden="true" data-semantic-sigil="security" class="semantic-sigil s-security" transform="translate(593.3333333333334 78) scale(0.6875)">
+        <g id="node-challenge" data-node-id="challenge" data-node-label="Issuance policy" tabindex="0" role="button" aria-label="Focus Issuance policy, Shared, HMAC, or one-use, Sequence participant" aria-pressed="false" data-node-kind="security" data-node-sublabel="Shared, HMAC, or one-use" data-node-context="Sequence participant" data-purpose="policy">
+          <title>Issuance policy · Shared, HMAC, or one-use · Sequence participant</title>
+          <rect x="747.3333333333334" y="72" width="190" height="54" rx="6" class="c-mask"/>
+          <rect x="747.3333333333334" y="72" width="190" height="54" rx="6" class="c-security" stroke-width="1.5"/>
+          <g aria-hidden="true" data-semantic-sigil="security" class="semantic-sigil s-security" transform="translate(753.3333333333334 78) scale(0.6875)">
             <path d="M8 2.2 13 4v3.5c0 3.1-1.8 5.4-5 6.5-3.2-1.1-5-3.4-5-6.5V4Z"/>
             <path d="m5.8 8 1.5 1.5 3-3"/>
           </g>
-          <text data-node-label="" data-detail-anchor="" x="682.3333333333334" y="94" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">Challenge</text>
-          <text data-detail="context" x="682.3333333333334" y="111" class="t-muted" font-size="7" text-anchor="middle">static · HMAC · one-time</text>
+          <text data-node-label="" data-detail-anchor="" x="842.3333333333334" y="94" class="t-primary" font-size="14" font-weight="600" text-anchor="middle">Issuance policy</text>
+          <text data-detail="context" x="842.3333333333334" y="111" class="t-muted" font-size="11" text-anchor="middle">Shared, HMAC, or one-use</text>
         </g>
 
-        <g id="node-ca" data-node-id="ca" data-node-label="ca.Local" tabindex="0" role="button" aria-label="Focus ca.Local, enrollment CA, Sequence participant" aria-pressed="false" data-node-kind="security" data-node-sublabel="enrollment CA" data-node-context="Sequence participant">
-          <title>ca.Local · enrollment CA · Sequence participant</title>
-          <rect x="850" y="72" width="190" height="54" rx="6" class="c-mask"/>
-          <rect x="850" y="72" width="190" height="54" rx="6" class="c-security" stroke-width="1.5"/>
-          <g aria-hidden="true" data-semantic-sigil="security" class="semantic-sigil s-security" transform="translate(856 78) scale(0.6875)">
+        <g id="node-ca" data-node-id="ca" data-node-label="Identity CA" tabindex="0" role="button" aria-label="Focus Identity CA, Sign approved request, Sequence participant" aria-pressed="false" data-node-kind="security" data-node-sublabel="Sign approved request" data-node-context="Sequence participant" data-purpose="certificate">
+          <title>Identity CA · Sign approved request · Sequence participant</title>
+          <rect x="1090" y="72" width="190" height="54" rx="6" class="c-mask"/>
+          <rect x="1090" y="72" width="190" height="54" rx="6" class="c-security" stroke-width="1.5"/>
+          <g aria-hidden="true" data-semantic-sigil="security" class="semantic-sigil s-security" transform="translate(1096 78) scale(0.6875)">
             <path d="M8 2.2 13 4v3.5c0 3.1-1.8 5.4-5 6.5-3.2-1.1-5-3.4-5-6.5V4Z"/>
             <path d="m5.8 8 1.5 1.5 3-3"/>
           </g>
-          <text data-node-label="" data-detail-anchor="" x="945" y="94" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">ca.Local</text>
-          <text data-detail="context" x="945" y="111" class="t-muted" font-size="7" text-anchor="middle">enrollment CA</text>
+          <text data-node-label="" data-detail-anchor="" x="1185" y="94" class="t-primary" font-size="14" font-weight="600" text-anchor="middle">Identity CA</text>
+          <text data-detail="context" x="1185" y="111" class="t-muted" font-size="11" text-anchor="middle">Sign approved request</text>
         </g>
 
         <!-- Legend -->
-        <g data-legend="">
-          <text x="40" y="492" class="t-primary" font-size="12" font-weight="650">Legend</text>
-          <g data-legend-semantic-kind="emphasis" data-legend-x="40" data-legend-baseline="512" data-legend-width="78">
-            <path d="M 40 509 L 74 509" class="a-emphasis" stroke-width="1.8" marker-end="url(#arrowhead-emphasis)"/>
-            <text x="83" y="512" class="t-muted" font-size="10" font-weight="500">request</text>
-          </g>
-          <g data-legend-semantic-kind="return" data-legend-x="140" data-legend-baseline="512" data-legend-width="73">
-            <path d="M 140 509 L 174 509" class="a-default" stroke-width="1.4" stroke-dasharray="3,5" marker-end="url(#arrowhead)"/>
-            <text x="183" y="512" class="t-muted" font-size="10" font-weight="500">return</text>
-          </g>
-          <g data-legend-semantic-kind="security" data-legend-x="235" data-legend-baseline="512" data-legend-width="83">
-            <path d="M 235 509 L 269 509" class="a-security" stroke-width="1.4" marker-end="url(#arrowhead-security)"/>
-            <text x="278" y="512" class="t-muted" font-size="10" font-weight="500">security</text>
-          </g>
-          <g data-legend-semantic-kind="default" data-legend-x="340" data-legend-baseline="512" data-legend-width="118">
-            <path d="M 340 509 L 374 509" class="a-default" stroke-width="1.4" marker-end="url(#arrowhead)"/>
-            <text x="383" y="512" class="t-muted" font-size="10" font-weight="500">default message</text>
-          </g>
-        </g>
+<g data-graph-role="legend" data-purpose-legend="" aria-label="Colour legend">
+    <path d="M 40 654 H 1280" class="purpose-legend-rule"/>
+    <text x="40" y="674" class="t-primary" font-size="14" font-weight="600">Colour legend</text>
+    <g data-purpose-legend-entry="service"><rect x="40" y="693" width="13" height="13" rx="3" class="purpose-swatch purpose-service"/><text x="62" y="704" class="t-primary" font-size="13">Services and processing</text></g>
+<g data-purpose-legend-entry="transport"><rect x="350" y="693" width="13" height="13" rx="3" class="purpose-swatch purpose-transport"/><text x="372" y="704" class="t-primary" font-size="13">Communication and transport</text></g>
+<g data-purpose-legend-entry="authentication"><rect x="660" y="693" width="13" height="13" rx="3" class="purpose-swatch purpose-authentication"/><text x="682" y="704" class="t-primary" font-size="13">Authentication and identity</text></g>
+<g data-purpose-legend-entry="certificate"><rect x="970" y="693" width="13" height="13" rx="3" class="purpose-swatch purpose-certificate"/><text x="992" y="704" class="t-primary" font-size="13">Certificates and cryptography</text></g>
+<g data-purpose-legend-entry="policy"><rect x="40" y="723" width="13" height="13" rx="3" class="purpose-swatch purpose-policy"/><text x="62" y="734" class="t-primary" font-size="13">Authorization and policy</text></g>
+<g data-purpose-legend-entry="neutral"><rect x="350" y="723" width="13" height="13" rx="3" class="purpose-swatch purpose-neutral"/><text x="372" y="734" class="t-primary" font-size="13">Actors, structure, neutral states</text></g>
+<g data-purpose-legend-entry="success"><rect x="660" y="723" width="13" height="13" rx="3" class="purpose-swatch purpose-success"/><text x="682" y="734" class="t-primary" font-size="13">Successful or accepted</text></g>
+<g data-purpose-legend-entry="failure"><rect x="970" y="723" width="13" height="13" rx="3" class="purpose-swatch purpose-failure"/><text x="992" y="734" class="t-primary" font-size="13">Failed, rejected, or invalid</text></g>
+    <text x="40" y="770" class="t-muted" font-size="12">Colour identifies purpose or outcome; line style does not imply success or failure.</text>
+  </g>
       </svg>
       <p class="intent-trace-status no-print" id="intent-trace-status" role="status" aria-live="polite" aria-atomic="true"></p>
       <div class="share-chapter-cue no-print" id="share-chapter-cue" hidden role="status" aria-live="polite">
@@ -5404,23 +5498,45 @@
     <div class="cards">
       <div class="card">
         <div class="card-header">
-          <div class="card-dot cyan"></div>
-          <h3>Challenge strategies</h3>
+          <div class="card-dot policy"></div>
+          <h3>Issuance authorization</h3>
         </div>
         <ul>
-          <li>&bull; Traditional enrollment supports static or HMAC challenges</li>
-          <li>&bull; Account enrollment uses CSR-bound credentials and trusted issuance registration</li>
+          <li>&bull; The profile selects the SCEP endpoint and challenge. Static and HMAC challenges are traditional strategies; account and replacement credentials bind issuance to an authorized request.</li>
+          <li>&bull; A successful challenge permits CSR validation and signing; it does not itself issue the certificate.</li>
         </ul>
       </div>
 
       <div class="card">
         <div class="card-header">
-          <div class="card-dot rose"></div>
-          <h3>SCEP protocol errors</h3>
+          <div class="card-dot service"></div>
+          <h3>Success, failure, and renewal</h3>
         </div>
         <ul>
-          <li>&bull; SCEP protocol refusal uses signed CertRep with failInfo; malformed HTTP input can fail earlier</li>
-          <li>&bull; The device reads failInfo to learn why</li>
+          <li>&bull; Successful issuance returns the device identity in a signed CertRep. Protocol rejection instead returns failInfo; malformed transport input may fail earlier.</li>
+          <li>&bull; An accepted renewal proves possession with the existing certificate and can bypass the initial challenge. Configured certificate-status checks still apply.</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-dot authentication"></div>
+          <h3>Enrollment association</h3>
+        </div>
+        <ul>
+          <li>&bull; For account enrollment and controlled replacement, trusted issuance records the certificate association before the certificate is returned. HTTPS trust is configured separately.</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-dot transport"></div>
+          <h3>Public documentation</h3>
+        </div>
+        <ul>
+          <li>&bull; <a href="https://developer.apple.com/documentation/devicemanagement/scep" target="_blank" rel="noopener noreferrer">SCEP</a></li>
+          <li>&bull; <a href="https://www.rfc-editor.org/rfc/rfc8894" target="_blank" rel="noopener noreferrer">RFC 8894 — SCEP</a></li>
+          <li>&bull; <a href="https://developer.apple.com/documentation/devicemanagement/deploying-device-management-enrollment-profiles" target="_blank" rel="noopener noreferrer">Deploying device management enrollment profiles</a></li>
         </ul>
       </div>
     </div>
@@ -10905,7 +11021,7 @@
       }
       function eligible() {
         return Boolean(
-          shell && diagram && svg && ratio >= WIDE_RATIO &&
+          html.getAttribute("data-reading-layout") !== "scroll" && shell && diagram && svg && ratio >= WIDE_RATIO &&
           window.innerWidth >= MIN_DESKTOP_WIDTH &&
           html.getAttribute('data-embed') !== 'true' &&
           html.getAttribute('data-present') !== 'true' &&

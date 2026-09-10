@@ -1,0 +1,222 @@
+{
+  "schema_version": 2,
+  "diagram_type": "workflow",
+  "meta": {
+    "title": "APNs Credentials: MDM and App Certificate Workflows",
+    "quality_profile": "showcase",
+    "legend": {
+      "mode": "hidden"
+    },
+    "colour_profile": "purpose-v1"
+  },
+  "lanes": [
+    {
+      "id": "mdm",
+      "label": "MDM customer credential"
+    },
+    {
+      "id": "app",
+      "label": "App provider credential"
+    }
+  ],
+  "nodes": [
+    {
+      "id": "mdm-key",
+      "lane": "mdm",
+      "col": 0,
+      "label": "Create key and CSR",
+      "sublabel": "Keep the customer private key",
+      "type": "security",
+      "width": 225,
+      "height": 68,
+      "purpose": "certificate"
+    },
+    {
+      "id": "vendor",
+      "lane": "mdm",
+      "col": 1,
+      "label": "Vendor signs request",
+      "sublabel": "Use MDM vendor signing identity",
+      "type": "security",
+      "width": 225,
+      "height": 68,
+      "purpose": "certificate"
+    },
+    {
+      "id": "portal",
+      "lane": "mdm",
+      "col": 2,
+      "label": "Apple push portal",
+      "sublabel": "Customer obtains certificate",
+      "type": "external",
+      "width": 225,
+      "height": 68,
+      "purpose": "neutral"
+    },
+    {
+      "id": "mdm-import",
+      "lane": "mdm",
+      "col": 3,
+      "label": "Validate MDM import",
+      "sublabel": "Check key, validity, and topic",
+      "type": "security",
+      "width": 225,
+      "height": 68,
+      "purpose": "certificate"
+    },
+    {
+      "id": "mdm-store",
+      "lane": "mdm",
+      "col": 4,
+      "label": "MDM certificate store",
+      "sublabel": "Commit a new credential version",
+      "type": "database",
+      "width": 225,
+      "height": 68,
+      "purpose": "storage"
+    },
+    {
+      "id": "app-key",
+      "lane": "app",
+      "col": 0,
+      "label": "App certificate and key",
+      "sublabel": "Apple Developer provisioning",
+      "type": "external",
+      "width": 225,
+      "height": 68,
+      "purpose": "certificate"
+    },
+    {
+      "id": "app-import",
+      "lane": "app",
+      "col": 1,
+      "label": "Validate app import",
+      "sublabel": "Check provider type and topic",
+      "type": "security",
+      "width": 225,
+      "height": 68,
+      "purpose": "certificate"
+    },
+    {
+      "id": "app-store",
+      "lane": "app",
+      "col": 2,
+      "label": "Encrypted app store",
+      "sublabel": "Separate apppush/v1/ namespace",
+      "type": "database",
+      "width": 225,
+      "height": 68,
+      "purpose": "storage"
+    },
+    {
+      "id": "clients",
+      "lane": "app",
+      "col": 4,
+      "label": "Retire old connections",
+      "sublabel": "Use the replacement credential",
+      "type": "backend",
+      "width": 225,
+      "height": 68,
+      "purpose": "service"
+    }
+  ],
+  "edges": [
+    {
+      "id": "m1",
+      "from": "mdm-key",
+      "to": "vendor",
+      "label": "Submit CSR",
+      "role": "main",
+      "purpose": "certificate"
+    },
+    {
+      "id": "m2",
+      "from": "vendor",
+      "to": "portal",
+      "label": "Upload signed request",
+      "role": "main",
+      "purpose": "certificate"
+    },
+    {
+      "id": "m3",
+      "from": "portal",
+      "to": "mdm-import",
+      "label": "Certificate and key",
+      "role": "main",
+      "purpose": "certificate"
+    },
+    {
+      "id": "m4",
+      "from": "mdm-import",
+      "to": "mdm-store",
+      "label": "Commit",
+      "role": "main",
+      "purpose": "storage"
+    },
+    {
+      "id": "m5",
+      "from": "mdm-store",
+      "to": "clients",
+      "label": "On MDM reload",
+      "role": "branch",
+      "purpose": "transport"
+    },
+    {
+      "id": "a1",
+      "from": "app-key",
+      "to": "app-import",
+      "label": "Certificate and key",
+      "role": "main",
+      "purpose": "certificate"
+    },
+    {
+      "id": "a2",
+      "from": "app-import",
+      "to": "app-store",
+      "label": "Encrypt and commit",
+      "role": "main",
+      "purpose": "certificate"
+    },
+    {
+      "id": "a3",
+      "from": "app-store",
+      "to": "clients",
+      "label": "After app import",
+      "role": "main",
+      "purpose": "transport"
+    }
+  ],
+  "cards": [
+    {
+      "title": "Different credentials",
+      "items": [
+        "MDM customer certificates authorize MDM wake notifications. App provider certificates authorize app notifications for their permitted topics.",
+        "The MDM vendor signing identity signs customer CSR requests; it is not the credential used to send customer MDM pushes."
+      ],
+      "dot": "certificate"
+    },
+    {
+      "title": "Validation and replacement",
+      "items": [
+        "Inspecting a certificate does not prove possession of its private key. Import and send validation require a matching certificate/key pair.",
+        "Invalid imports leave the existing credential in place. Successful replacement retires cached connections, and shutdown closes clients."
+      ],
+      "dot": "certificate"
+    },
+    {
+      "title": "Persistent storage",
+      "items": [
+        "App push credentials require encryption in persistent state. They are separate from the MDM certificate table and its key-rewrap path."
+      ],
+      "dot": "storage"
+    },
+    {
+      "title": "Public documentation",
+      "items": [
+        "Setting up push notifications for your device management customers — https://developer.apple.com/documentation/devicemanagement/setting-up-push-notifications-for-your-device-management-customers",
+        "Establishing a certificate-based connection to APNs — https://developer.apple.com/documentation/usernotifications/establishing-a-certificate-based-connection-to-apns"
+      ],
+      "dot": "transport"
+    }
+  ]
+}

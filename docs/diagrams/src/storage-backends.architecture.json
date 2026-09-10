@@ -10,7 +10,7 @@
     ],
     "repository": {
       "url": "https://github.com/deploymenttheory/go-apple-dm",
-      "revision": "a817270f13b4ef7a9b1d2895118981120546b3a2"
+      "revision": "ff85958196cb013e8e14c1055f067319b07e3299"
     },
     "views": [
       {
@@ -26,25 +26,25 @@
       },
       {
         "id": "sealed",
-        "label": "Secrets at rest",
+        "label": "Configured encryption",
         "focus": [
           "secretspkg",
           "crypt",
           "sealedcols",
           "sqlcommon"
         ],
-        "note": "Secret columns are sealed before they reach the driver."
+        "note": "A configured keyring seals selected SQL values, including pending replacement credentials and tokens."
       },
       {
         "id": "features",
-        "label": "Feature stores",
+        "label": "Feature persistence",
         "focus": [
           "featurestores",
           "dialect",
           "pool",
           "featuremig"
         ],
-        "note": "Domain stores and protocol security state share one SQL pool with separate migrations."
+        "note": "Persistent feature stores share a SQL pool. App push uses a separate namespace in transactional state."
       },
       {
         "id": "proof",
@@ -56,7 +56,11 @@
         ],
         "note": "One contract suite runs against every backend."
       }
-    ]
+    ],
+    "colour_profile": "purpose-v1",
+    "legend": {
+      "mode": "hidden"
+    }
   },
   "components": [
     {
@@ -65,11 +69,11 @@
       "label": "storage.Store",
       "sublabel": "eight interfaces",
       "pos": [
-        40,
+        15.0,
         260
       ],
       "size": [
-        170,
+        220,
         70
       ],
       "sources": [
@@ -79,20 +83,20 @@
           "end_line": 360,
           "label": "composed Store"
         }
-      ]
+      ],
+      "purpose": "storage"
     },
     {
       "id": "secretspkg",
       "type": "security",
       "label": "secrets.Provider",
       "sublabel": "where keys come from",
-      "tag": "static · env · dir · chain",
       "pos": [
-        40,
+        15.0,
         410
       ],
       "size": [
-        170,
+        220,
         70
       ],
       "sources": [
@@ -100,19 +104,20 @@
           "path": "secrets/secrets.go",
           "label": "providers"
         }
-      ]
+      ],
+      "purpose": "certificate"
     },
     {
       "id": "inmem",
       "type": "database",
-      "label": "storage/inmem",
-      "sublabel": "reference backend",
+      "label": "In-memory backend",
+      "sublabel": "Process-local development",
       "pos": [
-        380,
+        355.0,
         110
       ],
       "size": [
-        170,
+        220,
         70
       ],
       "sources": [
@@ -120,7 +125,8 @@
           "path": "storage/inmem/inmem.go",
           "label": "map store"
         }
-      ]
+      ],
+      "purpose": "storage"
     },
     {
       "id": "sqlcommon",
@@ -128,11 +134,11 @@
       "label": "sqlcommon",
       "sublabel": "one SQL implementation",
       "pos": [
-        380,
+        355.0,
         260
       ],
       "size": [
-        170,
+        220,
         70
       ],
       "sources": [
@@ -140,19 +146,20 @@
           "path": "server/sqlstore/sqlcommon/dialect.go",
           "label": "Dialect contract"
         }
-      ]
+      ],
+      "purpose": "storage"
     },
     {
       "id": "crypt",
       "type": "security",
-      "label": "storage/crypt",
-      "sublabel": "AES-256-GCM keyring",
+      "label": "Encryption keyring",
+      "sublabel": "Encrypt selected values",
       "pos": [
-        380,
+        355.0,
         410
       ],
       "size": [
-        170,
+        220,
         70
       ],
       "sources": [
@@ -160,34 +167,35 @@
           "path": "storage/crypt/crypt.go",
           "label": "seal and open"
         }
-      ]
+      ],
+      "purpose": "certificate"
     },
     {
       "id": "sealedcols",
       "type": "database",
-      "label": "Sealed columns",
-      "sublabel": "row-bound AAD",
-      "tag": "push key · DEP token",
+      "label": "Protected SQL values",
+      "sublabel": "Tokens, keys, replacement",
       "pos": [
-        380,
+        355.0,
         560
       ],
       "size": [
-        170,
+        220,
         70
-      ]
+      ],
+      "purpose": "storage"
     },
     {
       "id": "suite",
       "type": "backend",
-      "label": "storage/storagetest",
-      "sublabel": "one suite, every backend",
+      "label": "Backend contract tests",
+      "sublabel": "Verify common behavior",
       "pos": [
-        700,
+        675.0,
         110
       ],
       "size": [
-        170,
+        220,
         70
       ],
       "sources": [
@@ -199,7 +207,8 @@
           "path": "storage/storagetest/failing.go",
           "label": "error injection"
         }
-      ]
+      ],
+      "purpose": "service"
     },
     {
       "id": "dialect",
@@ -207,11 +216,11 @@
       "label": "Dialect",
       "sublabel": "placeholders · locking",
       "pos": [
-        700,
+        675.0,
         260
       ],
       "size": [
-        170,
+        220,
         70
       ],
       "sources": [
@@ -221,34 +230,35 @@
           "end_line": 31,
           "label": "Dialect"
         }
-      ]
+      ],
+      "purpose": "storage"
     },
     {
       "id": "featurestores",
       "type": "database",
-      "label": "Feature stores",
-      "sublabel": "own migration set each",
-      "tag": "acme · adminauth · audit · ddm · dep",
+      "label": "Feature stores + state.Store",
+      "sublabel": "Own contracts and migrations",
       "pos": [
-        700,
+        675.0,
         410
       ],
       "size": [
-        170,
+        220,
         70
-      ]
+      ],
+      "purpose": "storage"
     },
     {
       "id": "pool",
       "type": "backend",
-      "label": "one *sql.DB",
-      "sublabel": "shared by every store",
+      "label": "Shared SQL pool",
+      "sublabel": "Persistent stores reuse it",
       "pos": [
-        700,
+        675.0,
         560
       ],
       "size": [
-        170,
+        220,
         70
       ],
       "sources": [
@@ -256,7 +266,8 @@
           "path": "server/internal/app/app.go",
           "label": "openStorage"
         }
-      ]
+      ],
+      "purpose": "storage"
     },
     {
       "id": "sqlbackends",
@@ -264,11 +275,11 @@
       "label": "sqlite · postgres · mysql",
       "sublabel": "each supplies a Dialect",
       "pos": [
-        1020,
+        995.0,
         260
       ],
       "size": [
-        170,
+        220,
         70
       ],
       "sources": [
@@ -284,7 +295,8 @@
           "path": "server/sqlstore/mysql/mysql.go",
           "label": "go-sql-driver"
         }
-      ]
+      ],
+      "purpose": "storage"
     },
     {
       "id": "featuremig",
@@ -292,13 +304,14 @@
       "label": "Own migration set",
       "sublabel": "per feature, per driver",
       "pos": [
-        1020,
+        995.0,
         410
       ],
       "size": [
-        170,
+        220,
         70
-      ]
+      ],
+      "purpose": "artifact"
     }
   ],
   "connections": [
@@ -306,7 +319,8 @@
       "id": "e1",
       "from": "contract",
       "to": "sqlcommon",
-      "label": "one SQL path"
+      "label": "one SQL path",
+      "purpose": "storage"
     },
     {
       "id": "e2",
@@ -324,13 +338,15 @@
       "labelAt": [
         252,
         145
-      ]
+      ],
+      "purpose": "storage"
     },
     {
       "id": "e3",
       "from": "inmem",
       "to": "suite",
-      "label": "runs the suite"
+      "label": "runs the suite",
+      "purpose": "service"
     },
     {
       "id": "e4",
@@ -348,19 +364,30 @@
       "labelAt": [
         988,
         145
-      ]
+      ],
+      "purpose": "service"
     },
     {
       "id": "e5",
       "from": "sqlcommon",
       "to": "dialect",
-      "label": "asks the dialect"
+      "label": "asks the dialect",
+      "labelAt": [
+        625.0,
+        344.0
+      ],
+      "purpose": "storage"
     },
     {
       "id": "e6",
       "from": "sqlbackends",
       "to": "dialect",
-      "label": "each supplies one"
+      "label": "each supplies one",
+      "labelAt": [
+        945.0,
+        344.0
+      ],
+      "purpose": "storage"
     },
     {
       "id": "e7",
@@ -371,14 +398,16 @@
       "labelAt": [
         465.0,
         344.0
-      ]
+      ],
+      "purpose": "certificate"
     },
     {
       "id": "e8",
       "from": "secretspkg",
       "to": "crypt",
       "label": "named keys",
-      "variant": "security"
+      "variant": "security",
+      "purpose": "certificate"
     },
     {
       "id": "e9",
@@ -389,19 +418,26 @@
       "labelAt": [
         465.0,
         494.0
-      ]
+      ],
+      "purpose": "certificate"
     },
     {
       "id": "e10",
       "from": "featurestores",
       "to": "dialect",
-      "label": "reuse the dialect"
+      "label": "reuse the dialect",
+      "purpose": "storage"
     },
     {
       "id": "e11",
       "from": "featurestores",
       "to": "featuremig",
-      "label": "own migration set"
+      "label": "own migration set",
+      "labelAt": [
+        945.0,
+        494.0
+      ],
+      "purpose": "artifact"
     },
     {
       "id": "e12",
@@ -411,24 +447,40 @@
       "labelAt": [
         785.0,
         494.0
-      ]
+      ],
+      "purpose": "storage"
     }
   ],
   "cards": [
     {
-      "dot": "cyan",
-      "title": "Shared backend contracts",
+      "dot": "storage",
+      "title": "Shared implementation",
       "items": [
-        "In-memory, SQLite (pure Go), PostgreSQL and MySQL all run the same suite",
-        "A Failing wrapper injects an error by method name for failing-path tests"
+        "SQLite, PostgreSQL, and MySQL reuse sqlcommon with backend-specific dialects. Memory storage implements the contracts without a SQL database.",
+        "Replacement tests verify successful promotion and failed, cancelled, or expired attempts without resetting working enrollment state."
       ]
     },
     {
-      "dot": "rose",
-      "title": "Sealing boundary",
+      "dot": "certificate",
+      "title": "Encryption boundaries",
       "items": [
-        "Selected secret columns use row-bound AES-256-GCM",
-        "Raw check-in records can contain unsealed secrets; protect database and backups"
+        "With a keyring, SQL stores seal selected secret columns and the replacement state blob. Raw check-in data can still contain secrets.",
+        "Persistent app push credentials require encryption and occupy apppush/v1/ in state.Store. They do not use the MDM push-certificate table."
+      ]
+    },
+    {
+      "dot": "certificate",
+      "title": "Key rotation",
+      "items": [
+        "The SQL rewrap list includes replacement state. It does not rewrap apppush/v1/; retain accepted keys until those credentials are re-imported."
+      ]
+    },
+    {
+      "dot": "transport",
+      "title": "Public documentation",
+      "items": [
+        "Go cipher.NewGCM — https://pkg.go.dev/crypto/cipher#NewGCM",
+        "Go Modules Reference — https://go.dev/ref/mod"
       ]
     }
   ]

@@ -10,30 +10,30 @@
     ],
     "repository": {
       "url": "https://github.com/deploymenttheory/go-apple-dm",
-      "revision": "a817270f13b4ef7a9b1d2895118981120546b3a2"
+      "revision": "ff85958196cb013e8e14c1055f067319b07e3299"
     },
     "views": [
       {
         "id": "serveloop",
-        "label": "Serve loop",
+        "label": "Serve device requests",
         "focus": [
           "device",
           "adapters",
           "engine",
           "ddmstore"
         ],
-        "note": "The device reaches the engine only as service.Core's DMHandler."
+        "note": "The MDM service forwards declarative check-ins through an in-process adapter or the signed internal HTTP adapter."
       },
       {
         "id": "notifyloop",
-        "label": "Notify loop",
+        "label": "Notify after commit",
         "focus": [
           "notifier",
           "ddmstore",
           "core",
           "pushn"
         ],
-        "note": "The notifier polls change rows; the engine never calls back into it."
+        "note": "The notifier reads committed changes, queues a synchronization command, and requests a wake through its configured pusher."
       },
       {
         "id": "content",
@@ -45,20 +45,24 @@
         ],
         "note": "A ServerToken is the hash of the RFC 8785 canonical declaration."
       }
-    ]
+    ],
+    "colour_profile": "purpose-v1",
+    "legend": {
+      "mode": "hidden"
+    }
   },
   "components": [
     {
       "id": "adapters",
       "type": "backend",
-      "label": "ddmadapter",
-      "sublabel": "inproc · proxyclient",
+      "label": "Declarative adapters",
+      "sublabel": "Bridge check-in to engine",
       "pos": [
-        40,
+        15.0,
         110
       ],
       "size": [
-        170,
+        220,
         70
       ],
       "sources": [
@@ -70,7 +74,8 @@
           "path": "server/ddmadapter/proxyclient/proxyclient.go",
           "label": "over the hop"
         }
-      ]
+      ],
+      "purpose": "transport"
     },
     {
       "id": "device",
@@ -78,25 +83,26 @@
       "label": "Device",
       "sublabel": "DeclarativeManagement",
       "pos": [
-        40,
+        15.0,
         260
       ],
       "size": [
-        170,
+        220,
         70
-      ]
+      ],
+      "purpose": "neutral"
     },
     {
       "id": "servicehook",
       "type": "backend",
-      "label": "ddmsync.ServiceHook",
-      "sublabel": "clear enrollment state",
+      "label": "Enrollment cleanup hook",
+      "sublabel": "Ordinary reset or CheckOut",
       "pos": [
-        40,
+        15.0,
         410
       ],
       "size": [
-        170,
+        220,
         70
       ],
       "sources": [
@@ -104,19 +110,20 @@
           "path": "server/ddmsync/servicehook.go",
           "label": "clear on check-in"
         }
-      ]
+      ],
+      "purpose": "service"
     },
     {
       "id": "engine",
       "type": "backend",
-      "label": "ddm.Engine",
-      "sublabel": "Handle · Tokens",
+      "label": "Declarative engine",
+      "sublabel": "Assigned state and status",
       "pos": [
-        380,
+        355.0,
         260
       ],
       "size": [
-        170,
+        220,
         70
       ],
       "sources": [
@@ -128,19 +135,20 @@
           "path": "mdmprotocol/ddm/serve.go",
           "label": "Handle"
         }
-      ]
+      ],
+      "purpose": "service"
     },
     {
       "id": "canonjson",
       "type": "backend",
-      "label": "internal/canonjson",
-      "sublabel": "RFC 8785",
+      "label": "Canonical JSON",
+      "sublabel": "Stable declaration tokens",
       "pos": [
-        380,
+        355.0,
         410
       ],
       "size": [
-        170,
+        220,
         70
       ],
       "sources": [
@@ -148,19 +156,20 @@
           "path": "internal/canonjson/canonjson.go",
           "label": "canonical JSON"
         }
-      ]
+      ],
+      "purpose": "service"
     },
     {
       "id": "notifier",
       "type": "backend",
-      "label": "ddmsync.Notifier",
-      "sublabel": "2s coalescing window",
+      "label": "Change notifier",
+      "sublabel": "Coalesce committed changes",
       "pos": [
-        700,
+        675.0,
         110
       ],
       "size": [
-        170,
+        220,
         70
       ],
       "sources": [
@@ -168,19 +177,20 @@
           "path": "server/ddmsync/notifier.go",
           "label": "DrainOnce"
         }
-      ]
+      ],
+      "purpose": "transport"
     },
     {
       "id": "ddmstore",
       "type": "database",
-      "label": "ddm.Store",
-      "sublabel": "Update(fn func(Tx))",
+      "label": "Declarative state store",
+      "sublabel": "Assignments and snapshots",
       "pos": [
-        700,
+        675.0,
         260
       ],
       "size": [
-        170,
+        220,
         70
       ],
       "sources": [
@@ -188,19 +198,20 @@
           "path": "mdmprotocol/ddm/store.go",
           "label": "store contract"
         }
-      ]
+      ],
+      "purpose": "storage"
     },
     {
       "id": "predicate",
       "type": "backend",
-      "label": "ddm/predicate",
-      "sublabel": "NSPredicate subset",
+      "label": "Predicate syntax check",
+      "sublabel": "Validate supported grammar",
       "pos": [
-        700,
+        675.0,
         410
       ],
       "size": [
-        170,
+        220,
         70
       ],
       "sources": [
@@ -208,19 +219,20 @@
           "path": "mdmprotocol/ddm/predicate/predicate.go",
           "label": "activation"
         }
-      ]
+      ],
+      "purpose": "service"
     },
     {
       "id": "core",
       "type": "backend",
-      "label": "service.Core",
-      "sublabel": "Enqueue runs the hooks",
+      "label": "MDM command service",
+      "sublabel": "Validate and queue sync",
       "pos": [
-        1020,
+        995.0,
         110
       ],
       "size": [
-        170,
+        220,
         70
       ],
       "sources": [
@@ -228,21 +240,23 @@
           "path": "server/service/service.go",
           "label": "Enqueue"
         }
-      ]
+      ],
+      "purpose": "service"
     },
     {
       "id": "pushn",
       "type": "backend",
-      "label": "pushnotify.Notifier",
-      "sublabel": "wake the device",
+      "label": "MDM wake notifier",
+      "sublabel": "Prompt device connection",
       "pos": [
-        1020,
+        995.0,
         260
       ],
       "size": [
-        170,
+        220,
         70
-      ]
+      ],
+      "purpose": "transport"
     },
     {
       "id": "sqlstore",
@@ -250,13 +264,14 @@
       "label": "ddm/sqlstore · inmem",
       "sublabel": "own migration set",
       "pos": [
-        1020,
+        995.0,
         410
       ],
       "size": [
-        170,
+        220,
         70
-      ]
+      ],
+      "purpose": "storage"
     }
   ],
   "connections": [
@@ -264,87 +279,114 @@
       "id": "e1",
       "from": "device",
       "to": "adapters",
-      "label": "check-in message"
+      "label": "check-in message",
+      "purpose": "transport"
     },
     {
       "id": "e2",
       "from": "adapters",
       "to": "engine",
-      "label": "Handle(endpoint)"
+      "label": "Handle(endpoint)",
+      "purpose": "transport"
     },
     {
       "id": "e3",
       "from": "servicehook",
       "to": "engine",
-      "label": "clear on CheckOut or Authenticate",
-      "variant": "security"
+      "label": "Ordinary reset cleanup",
+      "variant": "security",
+      "purpose": "service"
     },
     {
       "id": "e4",
       "from": "engine",
       "to": "ddmstore",
-      "label": "change rows, in one Tx"
+      "label": "Commit state and changes",
+      "labelAt": [
+        625,
+        250
+      ],
+      "purpose": "storage"
     },
     {
       "id": "e5",
       "from": "engine",
       "to": "canonjson",
-      "label": "ServerToken",
+      "label": "Derive stable tokens",
       "labelAt": [
         465.0,
         344.0
-      ]
+      ],
+      "purpose": "service"
     },
     {
       "id": "e6",
       "from": "engine",
       "to": "predicate",
-      "label": "activation predicate"
+      "label": "Validate syntax",
+      "purpose": "service"
     },
     {
       "id": "e7",
       "from": "notifier",
       "to": "ddmstore",
-      "label": "PendingChanges",
+      "label": "Read pending changes",
       "labelAt": [
         785.0,
         194.0
-      ]
+      ],
+      "purpose": "storage"
     },
     {
       "id": "e8",
       "from": "notifier",
       "to": "core",
-      "label": "Enqueue, dedupe ddm"
+      "label": "Enqueue, dedupe ddm",
+      "labelAt": [
+        945,
+        100
+      ],
+      "purpose": "service"
     },
     {
       "id": "e9",
       "from": "notifier",
       "to": "pushn",
-      "label": "Notify"
+      "label": "Notify",
+      "purpose": "transport"
     },
     {
       "id": "e10",
       "from": "ddmstore",
       "to": "sqlstore",
-      "label": "sqlstore or inmem"
+      "label": "sqlstore or inmem",
+      "purpose": "storage"
     }
   ],
   "cards": [
     {
-      "dot": "cyan",
-      "title": "Transactional change records",
+      "dot": "service",
+      "title": "From desired state to synchronization",
       "items": [
-        "The engine writes change rows inside its transaction and never calls back into the notifier",
-        "The notifier drains them on a 1s poll; the admin route wrapper Kicks it so the poll is not the only trigger"
+        "The engine commits declaration changes and their change records together. The notifier reads those records after commit.",
+        "The notifier queues a DeclarativeManagement command through service.Core and requests an MDM push when a pusher is configured."
       ]
     },
     {
-      "dot": "emerald",
-      "title": "Through the command path",
+      "dot": "service",
+      "title": "Timing and cleanup",
       "items": [
-        "The notifier's Enqueuer is service.Core, so a DDM kick runs the hooks, the target screen and the audit trail",
-        "One DeclarativeManagement command per enrollment, under the dedupe key ddm"
+        "Defaults coalesce recent changes for two seconds and poll each second; admin mutations also wake the notifier. These timings are repository policy.",
+        "Ordinary Authenticate and CheckOut cleanup clears declarative state. Controlled profile replacement avoids that reset and retains the working enrollment’s state."
+      ]
+    },
+    {
+      "dot": "transport",
+      "title": "Public documentation",
+      "items": [
+        "Integrating declarative management — https://developer.apple.com/documentation/devicemanagement/integrating-declarative-management",
+        "Declarations — https://developer.apple.com/documentation/devicemanagement/devicemanagement-declarations",
+        "RFC 8785 — JSON Canonicalization Scheme — https://www.rfc-editor.org/rfc/rfc8785"
       ]
     }
   ]

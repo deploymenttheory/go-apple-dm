@@ -5,8 +5,8 @@
     "title": "go-apple-dm architecture",
     "quality_profile": "showcase",
     "viewBox": [
-      1300,
-      690
+      1500,
+      960
     ],
     "views": [
       {
@@ -33,35 +33,40 @@
       },
       {
         "id": "admin-plane",
-        "label": "Admin plane",
+        "label": "Administrative access",
         "focus": [
           "dmctl",
           "adminapi",
           "depaxm",
           "appleapis"
         ],
-        "note": "Stored principals use Cedar policy; the bootstrap token bypasses policy."
+        "note": "Stored principals require Cedar authorization. The static root admin token bypasses it; it is not a macOS bootstrap token."
       }
     ],
     "repository": {
       "url": "https://github.com/deploymenttheory/go-apple-dm",
-      "revision": "a817270f13b4ef7a9b1d2895118981120546b3a2"
+      "revision": "ff85958196cb013e8e14c1055f067319b07e3299"
+    },
+    "colour_profile": "purpose-v1",
+    "legend": {
+      "mode": "hidden"
     }
   },
   "components": [
     {
       "id": "appleapis",
       "type": "external",
-      "label": "Apple services",
-      "sublabel": "DEP · Business Manager",
+      "label": "Apple management APIs",
+      "sublabel": "Assignment and business data",
       "pos": [
         40,
-        110
+        100
       ],
       "size": [
-        170,
+        220,
         70
-      ]
+      ],
+      "purpose": "neutral"
     },
     {
       "id": "devices",
@@ -70,26 +75,28 @@
       "sublabel": "Mac · iPhone · iPad",
       "pos": [
         40,
-        260
+        300
       ],
       "size": [
-        170,
+        220,
         70
-      ]
+      ],
+      "purpose": "neutral"
     },
     {
       "id": "apns",
       "type": "cloud",
       "label": "APNs",
-      "sublabel": "HTTP/2",
+      "sublabel": "Apple push provider service",
       "pos": [
         40,
-        410
+        500
       ],
       "size": [
-        170,
+        220,
         70
-      ]
+      ],
+      "purpose": "neutral"
     },
     {
       "id": "dmctl",
@@ -97,13 +104,14 @@
       "label": "dmctl",
       "sublabel": "admin CLI",
       "pos": [
-        40,
-        560
+        1120,
+        700
       ],
       "size": [
-        170,
+        220,
         70
-      ]
+      ],
+      "purpose": "neutral"
     },
     {
       "id": "depaxm",
@@ -111,25 +119,26 @@
       "label": "Service clients",
       "sublabel": "dep · axm · gdmf",
       "pos": [
-        380,
-        110
+        400,
+        100
       ],
       "size": [
-        170,
+        220,
         70
-      ]
+      ],
+      "purpose": "transport"
     },
     {
       "id": "httpsurface",
       "type": "backend",
-      "label": "Device HTTP surface",
-      "sublabel": "/mdm · /scep · /acme",
+      "label": "Device endpoints",
+      "sublabel": "Enrollment and /mdm",
       "pos": [
-        380,
-        260
+        400,
+        300
       ],
       "size": [
-        170,
+        220,
         70
       ],
       "sources": [
@@ -137,21 +146,23 @@
           "path": "server/httpapi/httpapi.go",
           "label": "/mdm"
         }
-      ]
+      ],
+      "purpose": "transport"
     },
     {
       "id": "push",
       "type": "backend",
-      "label": "pushnotify.Notifier",
-      "sublabel": "coalesced",
+      "label": "MDM wake notifier",
+      "sublabel": "Prompt a device connection",
       "pos": [
-        380,
-        410
+        400,
+        500
       ],
       "size": [
-        170,
+        220,
         70
-      ]
+      ],
+      "purpose": "transport"
     },
     {
       "id": "adminapi",
@@ -159,20 +170,20 @@
       "label": "Admin API",
       "sublabel": "/admin/v1",
       "pos": [
-        380,
-        560
+        760,
+        700
       ],
       "size": [
-        170,
+        220,
         70
       ],
-      "tag": "Cedar policy",
       "sources": [
         {
           "path": "server/internal/app/adminauthz.go",
           "label": "authorized"
         }
-      ]
+      ],
+      "purpose": "transport"
     },
     {
       "id": "core",
@@ -180,11 +191,11 @@
       "label": "MDM service",
       "sublabel": "service.Core",
       "pos": [
-        700,
-        260
+        760,
+        300
       ],
       "size": [
-        170,
+        220,
         70
       ],
       "sources": [
@@ -192,19 +203,20 @@
           "path": "server/service/service.go",
           "label": "Core"
         }
-      ]
+      ],
+      "purpose": "service"
     },
     {
       "id": "engine",
       "type": "backend",
-      "label": "DDM engine",
-      "sublabel": "ddm.Engine · ddmsync",
+      "label": "Declarative management",
+      "sublabel": "Desired state and status",
       "pos": [
-        700,
-        410
+        760,
+        500
       ],
       "size": [
-        170,
+        220,
         70
       ],
       "sources": [
@@ -216,19 +228,20 @@
           "path": "server/ddmsync/notifier.go",
           "label": "Notifier"
         }
-      ]
+      ],
+      "purpose": "service"
     },
     {
       "id": "store",
       "type": "database",
-      "label": "Storage",
-      "sublabel": "storage.Store · feature stores",
+      "label": "Persistent state",
+      "sublabel": "Enrollment and feature data",
       "pos": [
-        1020,
-        260
+        1120,
+        300
       ],
       "size": [
-        170,
+        220,
         70
       ],
       "sources": [
@@ -236,7 +249,28 @@
           "path": "storage/storage.go",
           "label": "Store"
         }
-      ]
+      ],
+      "purpose": "storage"
+    },
+    {
+      "id": "apppush",
+      "label": "App notifications",
+      "sublabel": "Explicit app topic and host",
+      "type": "backend",
+      "pos": [
+        400,
+        700
+      ],
+      "size": [
+        220,
+        70
+      ],
+      "sources": [
+        {
+          "path": "server/internal/app/apppush.go"
+        }
+      ],
+      "purpose": "transport"
     }
   ],
   "boundaries": [
@@ -251,7 +285,7 @@
     },
     {
       "kind": "region",
-      "label": "Reference server — roles mdm · ddm · all",
+      "label": "Reference server: shared HTTP and worker lifecycle",
       "wraps": [
         "depaxm",
         "httpsurface",
@@ -259,7 +293,8 @@
         "adminapi",
         "core",
         "engine",
-        "store"
+        "store",
+        "apppush"
       ]
     },
     {
@@ -275,128 +310,226 @@
       "id": "clients-apple",
       "from": "depaxm",
       "to": "appleapis",
-      "label": "OAuth 1.0a · ES256",
-      "variant": "emphasis"
+      "label": "OAuth API requests",
+      "variant": "emphasis",
+      "purpose": "transport"
     },
     {
       "id": "device-checkin",
       "from": "devices",
       "to": "httpsurface",
-      "label": "check-in + connect",
-      "variant": "emphasis"
-    },
-    {
-      "id": "device-enroll",
-      "from": "devices",
-      "to": "httpsurface",
-      "label": "enroll: SCEP / ACME",
-      "labelDy": -18
+      "label": "Enrollment and MDM requests",
+      "variant": "emphasis",
+      "labelAt": [
+        330,
+        284
+      ],
+      "purpose": "transport"
     },
     {
       "id": "http-core",
       "from": "httpsurface",
       "to": "core",
-      "label": "decoded message"
+      "label": "decoded message",
+      "labelAt": [
+        690,
+        284
+      ],
+      "purpose": "service"
     },
     {
       "id": "core-store",
       "from": "core",
       "to": "store",
-      "label": "enrollments · queue"
+      "label": "enrollments · queue",
+      "labelAt": [
+        1050,
+        284
+      ],
+      "purpose": "storage"
     },
     {
       "id": "apns-device",
       "from": "apns",
       "to": "devices",
-      "label": "wake",
-      "variant": "dashed"
+      "label": "Prompt connection",
+      "variant": "dashed",
+      "purpose": "transport"
     },
     {
       "id": "push-apns",
       "from": "push",
       "to": "apns",
-      "label": "one push per target"
+      "label": "one push per target",
+      "labelAt": [
+        330,
+        484
+      ],
+      "purpose": "transport"
     },
     {
       "id": "engine-push",
       "from": "engine",
       "to": "push",
-      "label": "Notify"
+      "label": "Request MDM wake",
+      "labelAt": [
+        690,
+        484
+      ],
+      "purpose": "transport"
     },
     {
       "id": "core-engine",
       "from": "core",
       "to": "engine",
-      "label": "DMHandler",
+      "label": "Declarative check-in",
       "labelAt": [
-        785.0,
-        344.0
-      ]
-    },
-    {
-      "id": "engine-store",
-      "from": "engine",
-      "to": "store",
-      "label": "declarations · snapshots"
+        870,
+        440
+      ],
+      "purpose": "service"
     },
     {
       "id": "cli-admin",
       "from": "dmctl",
       "to": "adminapi",
       "label": "Bearer token",
-      "variant": "security"
+      "variant": "security",
+      "labelAt": [
+        1050,
+        784
+      ],
+      "purpose": "authentication"
     },
     {
       "id": "admin-engine",
       "from": "adminapi",
       "to": "engine",
-      "label": "declarations · sets"
+      "label": "declarations · sets",
+      "labelAt": [
+        870,
+        640
+      ],
+      "purpose": "artifact"
     },
     {
       "id": "admin-clients",
       "from": "adminapi",
       "to": "depaxm",
       "label": "assign · sync",
+      "fromSide": "bottom",
+      "toSide": "right",
+      "via": [
+        [
+          870,
+          850
+        ],
+        [
+          1410,
+          850
+        ],
+        [
+          1410,
+          135
+        ]
+      ],
+      "labelAt": [
+        1410,
+        600
+      ],
+      "purpose": "service"
+    },
+    {
+      "id": "admin-app",
+      "from": "adminapi",
+      "to": "apppush",
+      "label": "Send app notification",
+      "labelAt": [
+        690,
+        784
+      ],
+      "purpose": "transport"
+    },
+    {
+      "id": "app-apns",
+      "from": "apppush",
+      "to": "apns",
+      "label": "App provider request",
+      "fromSide": "left",
+      "toSide": "right",
+      "via": [
+        [
+          300,
+          735
+        ],
+        [
+          300,
+          535
+        ]
+      ],
+      "labelAt": [
+        300,
+        650
+      ],
+      "purpose": "transport"
+    },
+    {
+      "id": "admin-core",
+      "from": "adminapi",
+      "to": "core",
+      "label": "Commands / replacement",
       "fromSide": "right",
       "toSide": "right",
       "via": [
         [
-          1240,
-          595
+          1020,
+          735
         ],
         [
-          1240,
-          145
+          1020,
+          335
         ]
-      ]
+      ],
+      "labelAt": [
+        1020,
+        630
+      ],
+      "purpose": "service"
     }
   ],
   "cards": [
     {
-      "dot": "cyan",
-      "title": "Device protocol",
+      "dot": "transport",
+      "title": "How devices communicate",
       "items": [
-        "One /mdm URL serves check-in and connect, forked on Content-Type",
-        "DDM has no device URL of its own: it arrives as a check-in message",
-        "Identity comes from SCEP or ACME with Managed Device Attestation"
+        "An enrollment profile points the device to /mdm for check-in and command requests. SCEP or ACME issues the device identity certificate.",
+        "This server carries declarative management requests inside MDM check-in messages. APNs prompts a connection; it does not deliver MDM commands."
       ]
     },
     {
-      "dot": "emerald",
-      "title": "Server",
+      "dot": "service",
+      "title": "What the server manages",
       "items": [
-        "Roles mdm, ddm, or all from one binary",
-        "service.Core never imports ddm; the engine plugs in as a DMHandler",
-        "ddmsync.Notifier enqueues commands and pushes; the engine writes change rows"
+        "The shared runtime serves HTTP or native TLS and supervises background workers. Roles select the mounted services.",
+        "The admin API manages commands, declarations, enrollment profiles, controlled replacement, and separate app push credentials.",
+        "The MDM service and declarative engine share persistent enrollment and feature stores; the overview shows selected control paths."
       ]
     },
     {
-      "dot": "rose",
-      "title": "Admin plane",
+      "dot": "transport",
+      "title": "Read next",
       "items": [
-        "Stored principals use Cedar; DM_ADMIN_TOKEN bypasses policy",
-        "/admin/v1/dep and /admin/v1/axm drive the service clients",
-        "dep authenticates with OAuth 1.0a, axm with an ES256 client assertion, gdmf is unauthenticated"
+        "Follow the enrollment diagrams for discovery and trust, the command flow for device requests, and the companion diagrams for replacement, app notifications, and the test bench."
+      ]
+    },
+    {
+      "dot": "transport",
+      "title": "Public documentation",
+      "items": [
+        "Device Management — https://developer.apple.com/documentation/devicemanagement",
+        "Sending MDM commands to a device — https://developer.apple.com/documentation/devicemanagement/sending-mdm-commands-to-a-device",
+        "Integrating declarative management — https://developer.apple.com/documentation/devicemanagement/integrating-declarative-management",
+        "MDM payload — https://developer.apple.com/documentation/devicemanagement/mdm"
       ]
     }
   ]

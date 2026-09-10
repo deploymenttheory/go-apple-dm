@@ -11,7 +11,7 @@
     "views": [
       {
         "id": "request",
-        "label": "One admin request",
+        "label": "Authorize an admin request",
         "focus": [
           "dmctl",
           "adminclient",
@@ -19,7 +19,7 @@
           "manager",
           "cedar"
         ],
-        "note": "Bearer token, then a principal, then a Cedar decision, then the handler."
+        "note": "Static root tokens bypass Cedar. Stored-principal tokens require a policy decision before the route handler runs."
       },
       {
         "id": "credentials",
@@ -34,35 +34,40 @@
     ],
     "repository": {
       "url": "https://github.com/deploymenttheory/go-apple-dm",
-      "revision": "a817270f13b4ef7a9b1d2895118981120546b3a2"
+      "revision": "ff85958196cb013e8e14c1055f067319b07e3299"
+    },
+    "colour_profile": "purpose-v1",
+    "legend": {
+      "mode": "hidden"
     }
   },
   "components": [
     {
       "id": "dmctl",
       "type": "frontend",
-      "label": "dmctl",
-      "sublabel": "explain runs offline",
+      "label": "Administration client",
+      "sublabel": "dmctl or another API client",
       "pos": [
-        40,
+        15.0,
         260.0
       ],
       "size": [
-        170,
+        220,
         70
-      ]
+      ],
+      "purpose": "neutral"
     },
     {
       "id": "adminclient",
       "type": "backend",
-      "label": "adminclient",
-      "sublabel": "no redirects · 32 MiB cap",
+      "label": "Admin HTTP client",
+      "sublabel": "Bound responses; no redirects",
       "pos": [
-        340,
+        315.0,
         110.0
       ],
       "size": [
-        170,
+        220,
         70
       ],
       "sources": [
@@ -70,19 +75,20 @@
           "path": "server/internal/dmctl/adminclient/adminclient.go",
           "label": "client"
         }
-      ]
+      ],
+      "purpose": "transport"
     },
     {
       "id": "authorized",
       "type": "security",
-      "label": "App.authorized",
-      "sublabel": "every admin route",
+      "label": "Route authorization",
+      "sublabel": "Check action and resource",
       "pos": [
-        340,
+        315.0,
         260.0
       ],
       "size": [
-        170,
+        220,
         70
       ],
       "sources": [
@@ -90,27 +96,29 @@
           "path": "server/internal/app/adminauthz.go",
           "label": "authorized"
         }
-      ]
+      ],
+      "purpose": "policy"
     },
     {
       "id": "config",
       "type": "database",
-      "label": "dmctl.json",
-      "sublabel": "0600 or refused",
+      "label": "CLI credentials",
+      "sublabel": "Reject group or other access",
       "pos": [
-        340,
+        315.0,
         410.0
       ],
       "size": [
-        170,
+        220,
         70
       ],
       "sources": [
         {
           "path": "server/internal/dmctl/config.go",
-          "label": "0600 check"
+          "label": "Private permission bits"
         }
-      ]
+      ],
+      "purpose": "artifact"
     },
     {
       "id": "statictoken",
@@ -118,25 +126,26 @@
       "label": "DM_ADMIN_TOKEN",
       "sublabel": "root, bypasses Cedar",
       "pos": [
-        640,
+        615.0,
         110.0
       ],
       "size": [
-        170,
+        220,
         70
-      ]
+      ],
+      "purpose": "authentication"
     },
     {
       "id": "manager",
       "type": "security",
-      "label": "adminauth.Manager",
-      "sublabel": "Authenticate · Authorize",
+      "label": "Stored-principal policy",
+      "sublabel": "Authenticate and authorize",
       "pos": [
-        640,
+        615.0,
         260.0
       ],
       "size": [
-        170,
+        220,
         70
       ],
       "sources": [
@@ -144,22 +153,22 @@
           "path": "server/adminauth/adminauth.go",
           "label": "Manager"
         }
-      ]
+      ],
+      "purpose": "policy"
     },
     {
       "id": "routes",
       "type": "backend",
-      "label": "Admin route table",
-      "sublabel": "configured route families",
+      "label": "Authorized route handler",
+      "sublabel": "Manage enabled capabilities",
       "pos": [
-        640,
+        625.0,
         410.0
       ],
       "size": [
-        190,
+        220,
         70
       ],
-      "tag": "every route declares an action",
       "sources": [
         {
           "path": "server/internal/app/adminmdm.go",
@@ -169,7 +178,8 @@
           "path": "server/internal/app/admin.go",
           "label": "ddm family"
         }
-      ]
+      ],
+      "purpose": "service"
     },
     {
       "id": "cedar",
@@ -177,27 +187,29 @@
       "label": "Cedar policy",
       "sublabel": "cedar-policy/cedar-go",
       "pos": [
-        940,
+        915.0,
         260.0
       ],
       "size": [
-        170,
+        220,
         70
-      ]
+      ],
+      "purpose": "policy"
     },
     {
       "id": "adminstore",
       "type": "database",
-      "label": "adminauth.Store",
-      "sublabel": "principals · tokens · policies",
+      "label": "Administration state",
+      "sublabel": "Principals and policies",
       "pos": [
-        940,
+        915.0,
         410.0
       ],
       "size": [
-        170,
+        220,
         70
-      ]
+      ],
+      "purpose": "storage"
     }
   ],
   "connections": [
@@ -205,14 +217,16 @@
       "id": "cli-client",
       "from": "dmctl",
       "to": "adminclient",
-      "label": "typed calls"
+      "label": "typed calls",
+      "purpose": "transport"
     },
     {
       "id": "config-cli",
       "from": "config",
       "to": "dmctl",
       "label": "token by reference",
-      "variant": "security"
+      "variant": "security",
+      "purpose": "authentication"
     },
     {
       "id": "client-authorized",
@@ -223,13 +237,15 @@
       "labelAt": [
         425.0,
         194.0
-      ]
+      ],
+      "purpose": "authentication"
     },
     {
       "id": "authorized-manager",
       "from": "authorized",
       "to": "manager",
-      "label": "Authenticate"
+      "label": "Authenticate",
+      "purpose": "authentication"
     },
     {
       "id": "authorized-static",
@@ -247,53 +263,67 @@
           725,
           218
         ]
-      ]
+      ],
+      "purpose": "authentication"
     },
     {
       "id": "authorized-routes",
       "from": "authorized",
       "to": "routes",
-      "label": "then the handler"
+      "label": "then the handler",
+      "purpose": "policy"
     },
     {
       "id": "manager-cedar",
       "from": "manager",
       "to": "cedar",
-      "label": "action + resource"
+      "label": "action + resource",
+      "labelAt": [
+        875,
+        250
+      ],
+      "purpose": "policy"
     },
     {
       "id": "manager-store",
       "from": "manager",
       "to": "adminstore",
-      "label": "principals · policies"
+      "label": "principals · policies",
+      "purpose": "storage"
     }
   ],
   "cards": [
     {
-      "dot": "cyan",
-      "title": "Every admin request",
+      "dot": "policy",
+      "title": "Two authorization paths",
       "items": [
-        "Bearer, then a principal, then a policy decision, then the handler",
-        "Families include mdm, ddm, dep, axm, acme, pki, principals, audit and introspection",
-        "A route with no action is a build error, not a runtime one"
+        "The static DM_ADMIN_TOKEN is checked first and grants root authority without Cedar. Stored-principal tokens are authenticated and authorized against policy.",
+        "Each registered admin route declares an action. Policy editing requires root independently of Cedar."
       ]
     },
     {
-      "dot": "rose",
-      "title": "Bootstrap authority",
+      "dot": "transport",
+      "title": "Current route coverage",
       "items": [
-        "The static token is compared first, in constant time, so it works when the principal store is empty or unreachable",
-        "It authenticates as root and bypasses Cedar entirely",
-        "Policy editing is gated on root in Go, outside Cedar, because a policy that can edit policies could grant itself anything"
+        "Routes include MDM commands and results, declarative state, Apple service clients, certificates, audit, and principal administration.",
+        "PRs 12 and 14 add app push credentials and sends, enrollment-profile issuance, enrollment evidence, and controlled replacement."
       ]
     },
     {
-      "dot": "emerald",
-      "title": "Credentials by reference",
+      "dot": "authentication",
+      "title": "CLI credentials",
       "items": [
-        "Use @file or env:NAME references; literal token arguments may appear in process listings",
-        "A config file with any group or other permission bits is refused",
-        "Token creation prints the credential to stdout; protect captured output"
+        "Reference tokens through a protected file or environment variable. The config rejects group and other permission bits.",
+        "Offline explanation and local bench supervision do not follow this HTTP request path."
+      ]
+    },
+    {
+      "dot": "transport",
+      "title": "Public documentation",
+      "items": [
+        "Cedar authorization overview — https://docs.cedarpolicy.com/",
+        "Sending MDM commands to a device — https://developer.apple.com/documentation/devicemanagement/sending-mdm-commands-to-a-device",
+        "Deploying device management enrollment profiles — https://developer.apple.com/documentation/devicemanagement/deploying-device-management-enrollment-profiles"
       ]
     }
   ]

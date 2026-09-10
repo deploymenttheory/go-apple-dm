@@ -22,18 +22,22 @@
       },
       {
         "id": "single",
-        "label": "Single process",
+        "label": "In-process adapter",
         "focus": [
           "mdmrole",
           "inproc",
           "engine"
         ],
-        "note": "Role all keeps the same seam but calls the engine directly."
+        "note": "Without a remote declarative URL, the service invokes the engine through its in-process adapter."
       }
     ],
     "repository": {
       "url": "https://github.com/deploymenttheory/go-apple-dm",
-      "revision": "a817270f13b4ef7a9b1d2895118981120546b3a2"
+      "revision": "ff85958196cb013e8e14c1055f067319b07e3299"
+    },
+    "colour_profile": "purpose-v1",
+    "legend": {
+      "mode": "hidden"
     }
   },
   "components": [
@@ -43,25 +47,26 @@
       "label": "Device",
       "sublabel": "check-in to /mdm",
       "pos": [
-        40,
+        15.0,
         260.0
       ],
       "size": [
-        170,
+        220,
         70
-      ]
+      ],
+      "purpose": "neutral"
     },
     {
       "id": "proxyclient",
       "type": "backend",
-      "label": "proxyclient",
-      "sublabel": "does not import ddm",
+      "label": "Forwarding client",
+      "sublabel": "Preserve check-in body",
       "pos": [
-        340,
+        315.0,
         110.0
       ],
       "size": [
-        170,
+        220,
         70
       ],
       "sources": [
@@ -69,33 +74,35 @@
           "path": "server/ddmadapter/proxyclient/proxyclient.go",
           "label": "egress"
         }
-      ]
+      ],
+      "purpose": "transport"
     },
     {
       "id": "mdmrole",
       "type": "backend",
-      "label": "mdm role",
-      "sublabel": "service.Core",
+      "label": "Device-facing MDM role",
+      "sublabel": "Receive and authorize",
       "pos": [
-        340,
+        315.0,
         260.0
       ],
       "size": [
-        170,
+        220,
         70
-      ]
+      ],
+      "purpose": "service"
     },
     {
       "id": "hop",
       "type": "security",
-      "label": "X-MDM-Signature",
-      "sublabel": "HMAC-SHA256, optional mTLS",
+      "label": "Signed internal HTTP",
+      "sublabel": "HMAC request and response",
       "pos": [
-        640,
+        615.0,
         110.0
       ],
       "size": [
-        170,
+        220,
         70
       ],
       "sources": [
@@ -103,19 +110,20 @@
           "path": "server/ddmadapter/internal/proxywire/proxywire.go",
           "label": "Sign · Verify"
         }
-      ]
+      ],
+      "purpose": "authentication"
     },
     {
       "id": "inproc",
       "type": "backend",
-      "label": "inproc adapter",
-      "sublabel": "role all",
+      "label": "In-process adapter",
+      "sublabel": "No remote URL configured",
       "pos": [
-        640,
+        615.0,
         260.0
       ],
       "size": [
-        170,
+        220,
         70
       ],
       "sources": [
@@ -123,19 +131,20 @@
           "path": "server/ddmadapter/inproc/inproc.go",
           "label": "in process"
         }
-      ]
+      ],
+      "purpose": "service"
     },
     {
       "id": "proxyserver",
       "type": "backend",
-      "label": "proxyserver",
-      "sublabel": "/v1/declarative-management",
+      "label": "Forwarding endpoint",
+      "sublabel": "Verify signature and decode",
       "pos": [
-        940,
+        915.0,
         110.0
       ],
       "size": [
-        170,
+        220,
         70
       ],
       "sources": [
@@ -143,35 +152,38 @@
           "path": "server/ddmadapter/proxyserver/proxyserver.go",
           "label": "ingress"
         }
-      ]
+      ],
+      "purpose": "transport"
     },
     {
       "id": "engine",
       "type": "backend",
-      "label": "ddm.Engine",
-      "sublabel": "ddm role",
+      "label": "Declarative engine",
+      "sublabel": "Handle forwarded operation",
       "pos": [
-        940,
+        915.0,
         260.0
       ],
       "size": [
-        170,
+        220,
         70
-      ]
+      ],
+      "purpose": "service"
     },
     {
       "id": "ddmstore",
       "type": "database",
-      "label": "ddm.Store",
-      "sublabel": "own migration set",
+      "label": "Declarative store",
+      "sublabel": "Snapshots and device status",
       "pos": [
-        940,
+        915.0,
         410.0
       ],
       "size": [
-        170,
+        220,
         70
-      ]
+      ],
+      "purpose": "storage"
     }
   ],
   "connections": [
@@ -179,33 +191,50 @@
       "id": "device-mdm",
       "from": "device",
       "to": "mdmrole",
-      "label": "DeclarativeManagement"
+      "label": "DeclarativeManagement",
+      "labelAt": [
+        275.0,
+        344.0
+      ],
+      "purpose": "transport"
     },
     {
       "id": "mdm-proxyclient",
       "from": "mdmrole",
       "to": "proxyclient",
-      "label": "DM_DDM_URL set"
+      "label": "DM_DDM_URL set",
+      "purpose": "transport"
     },
     {
       "id": "mdm-inproc",
       "from": "mdmrole",
       "to": "inproc",
-      "label": "otherwise"
+      "label": "otherwise",
+      "purpose": "service"
     },
     {
       "id": "client-hop",
       "from": "proxyclient",
       "to": "hop",
       "label": "body unchanged",
-      "variant": "security"
+      "variant": "security",
+      "labelAt": [
+        575.0,
+        194.0
+      ],
+      "purpose": "transport"
     },
     {
       "id": "hop-server",
       "from": "hop",
       "to": "proxyserver",
       "label": "verify, then decode",
-      "variant": "security"
+      "variant": "security",
+      "labelAt": [
+        875.0,
+        194.0
+      ],
+      "purpose": "authentication"
     },
     {
       "id": "server-engine",
@@ -213,47 +242,64 @@
       "to": "engine",
       "label": "Handle(endpoint)",
       "labelAt": [
-        1025.0,
-        194.0
-      ]
+        1025,
+        220
+      ],
+      "purpose": "transport"
     },
     {
       "id": "inproc-engine",
       "from": "inproc",
       "to": "engine",
-      "label": "Handle(endpoint)"
+      "label": "Handle(endpoint)",
+      "labelAt": [
+        875,
+        344
+      ],
+      "purpose": "service"
     },
     {
       "id": "engine-store",
       "from": "engine",
-      "to": "ddmstore"
+      "to": "ddmstore",
+      "label": "Persist declarative state",
+      "labelAt": [
+        1025,
+        376
+      ],
+      "purpose": "storage"
     }
   ],
   "cards": [
     {
-      "dot": "cyan",
-      "title": "Adapter boundary",
+      "dot": "service",
+      "title": "Choosing the adapter",
       "items": [
-        "proxyclient imports proxywire and service, but never ddm",
-        "So when DM_DDM_URL is set the mdm role can only reach the engine over the hop; unset, it calls inproc in-process"
+        "With DM_DDM_URL configured, the MDM role forwards declarative requests to the DDM role. Otherwise it calls the in-process adapter.",
+        "The device continues to use /mdm; the internal forwarding endpoint is not a device enrollment URL."
       ]
     },
     {
-      "dot": "emerald",
-      "title": "The hop",
+      "dot": "authentication",
+      "title": "Internal transport and runtime",
       "items": [
-        "The raw check-in body is POSTed unchanged, with its own Content-Type",
-        "HMAC covers request body and response status plus body",
-        "The reference server requires both HMAC keys; mTLS and bearer options are library features"
+        "The reference server requires request and response HMAC keys. A custom library HTTP client can add mutual TLS; that is not automatic server configuration.",
+        "The shared runtime supports HTTP or native TLS and drains requests before workers. Process acceptance includes split-role scenarios."
       ]
     },
     {
-      "dot": "rose",
-      "title": "Response mapping",
+      "dot": "failure",
+      "title": "Error mapping",
       "items": [
-        "200 returns the body, 404 stays 404, 400 becomes a bad-request error",
-        "Anything else becomes an internal error rather than leaking a status",
-        "Wrong keys and oversized bodies are rejected at the boundary"
+        "Successful bodies and declaration-not-found responses pass back through the adapter. Bad requests map to service errors; other upstream failures become internal errors."
+      ]
+    },
+    {
+      "dot": "transport",
+      "title": "Public documentation",
+      "items": [
+        "Declarative Management check-in — https://developer.apple.com/documentation/devicemanagement/declarative-management",
+        "RFC 9440 — Client-Cert HTTP Header Field — https://www.rfc-editor.org/rfc/rfc9440"
       ]
     }
   ]

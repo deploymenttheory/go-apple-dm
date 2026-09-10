@@ -5,8 +5,8 @@
     "title": "Schema Generation Pipeline",
     "quality_profile": "showcase",
     "viewBox": [
-      1080,
-      560
+      1240,
+      510
     ],
     "views": [
       {
@@ -31,7 +31,11 @@
         ],
         "note": "make verify fails when regeneration would rename a type."
       }
-    ]
+    ],
+    "colour_profile": "purpose-v1",
+    "legend": {
+      "mode": "hidden"
+    }
   },
   "stages": [
     {
@@ -51,66 +55,80 @@
     {
       "id": "yaml",
       "type": "external",
-      "label": "device-management",
-      "sublabel": "pinned submodule",
+      "label": "Apple schema repository",
+      "sublabel": "Pinned upstream revision",
       "stage": 0,
       "row": 0,
       "tag": "third_party",
-      "width": 150
+      "width": 190,
+      "height": 58,
+      "purpose": "artifact"
     },
     {
       "id": "loader",
       "type": "backend",
-      "label": "internal/schemagen",
-      "sublabel": "strict loader and model",
+      "label": "Schema generator",
+      "sublabel": "Load and validate YAML",
       "stage": 1,
       "row": 0,
-      "width": 150
+      "width": 190,
+      "height": 58,
+      "purpose": "service"
     },
     {
       "id": "types",
       "type": "backend",
-      "label": "types.gen.go",
-      "sublabel": "typed messages",
+      "label": "Generated Go types",
+      "sublabel": "Apple messages and payloads",
       "stage": 2,
       "row": 0,
-      "width": 150
+      "width": 190,
+      "height": 58,
+      "purpose": "artifact"
     },
     {
       "id": "registry",
       "type": "backend",
-      "label": "registry.gen.go",
-      "sublabel": "identifier to type",
+      "label": "Registries and support",
+      "sublabel": "Identifiers and availability",
       "stage": 2,
       "row": 1,
-      "width": 150
+      "width": 190,
+      "height": 58,
+      "purpose": "artifact"
     },
     {
       "id": "nameslock",
       "type": "database",
-      "label": "EXPORTED_IDENTIFIERS.lock",
-      "sublabel": "rename guard",
+      "label": "Public-name lock",
+      "sublabel": "Detect identifier changes",
       "stage": 3,
       "row": 1,
-      "width": 150
+      "width": 190,
+      "height": 58,
+      "purpose": "artifact"
     },
     {
       "id": "conformance",
       "type": "backend",
-      "label": "conformance tests",
-      "sublabel": "round-trip every type",
+      "label": "Conformance tests",
+      "sublabel": "Verify encoding and rules",
       "stage": 3,
       "row": 0,
-      "width": 150
+      "width": 190,
+      "height": 58,
+      "purpose": "service"
     },
     {
       "id": "generatedfrom",
       "type": "database",
-      "label": "GENERATED_FROM.json",
-      "sublabel": "commit · versions · digest",
+      "label": "Generation provenance",
+      "sublabel": "Source commit and digest",
       "stage": 1,
       "row": 2,
-      "width": 150
+      "width": 190,
+      "height": 58,
+      "purpose": "artifact"
     }
   ],
   "flows": [
@@ -121,20 +139,26 @@
       "classification": "read-only",
       "variant": "emphasis",
       "route": "straight",
-      "labelDy": -24
+      "labelDy": -24,
+      "id": "flow-1",
+      "purpose": "artifact"
     },
     {
       "from": "loader",
       "to": "types",
       "label": "structs",
       "variant": "emphasis",
-      "route": "straight"
+      "route": "straight",
+      "id": "flow-2",
+      "purpose": "artifact"
     },
     {
       "from": "loader",
       "to": "registry",
       "label": "registry",
-      "variant": "default"
+      "variant": "default",
+      "id": "flow-3",
+      "purpose": "artifact"
     },
     {
       "from": "types",
@@ -144,9 +168,11 @@
       "variant": "dashed",
       "route": "straight",
       "labelAt": [
-        638.0,
-        200.0
-      ]
+        925,
+        126
+      ],
+      "id": "flow-4",
+      "purpose": "service"
     },
     {
       "from": "registry",
@@ -154,32 +180,43 @@
       "label": "names",
       "classification": "make verify",
       "variant": "security",
-      "route": "straight"
+      "route": "straight",
+      "id": "flow-5",
+      "purpose": "artifact"
     },
     {
       "from": "yaml",
       "to": "generatedfrom",
       "variant": "default",
       "label": "commit · digest",
-      "classification": "provenance"
+      "classification": "provenance",
+      "id": "flow-6",
+      "purpose": "artifact"
     }
   ],
   "cards": [
     {
-      "dot": "cyan",
-      "title": "Generated output",
+      "dot": "artifact",
+      "title": "Generated and handwritten responsibilities",
       "items": [
-        "Generated schema files come from make generate; support code and removal policy are handwritten",
-        "GENERATED_FROM.json is emitted too, so the record of which Apple commit the tree came from cannot drift from the tree",
-        "make verify regenerates and fails if the checked-in output differs"
+        "make generate emits Go types, registries, support tables, tests, and source provenance from the pinned Apple schemas.",
+        "Handwritten code applies runtime policy and wraps generated data. Generation does not establish device compatibility by itself."
       ]
     },
     {
-      "dot": "rose",
-      "title": "The rename guard",
+      "dot": "service",
+      "title": "Verification",
       "items": [
-        "EXPORTED_IDENTIFIERS.lock records every exported name",
-        "A regeneration that would rename a type fails the build instead of breaking callers silently"
+        "make verify regenerates the outputs and detects changes against the checked-in files. EXPORTED_IDENTIFIERS.lock guards public naming stability.",
+        "GENERATED_FROM.json records the Apple revision and schema digest used for generation."
+      ]
+    },
+    {
+      "dot": "transport",
+      "title": "Public documentation",
+      "items": [
+        "Apple device-management schema repository — https://github.com/apple/device-management",
+        "Go Modules Reference — https://go.dev/ref/mod"
       ]
     }
   ]

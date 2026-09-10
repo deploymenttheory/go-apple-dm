@@ -5,30 +5,13 @@
     "title": "Command Queue Lifecycle",
     "quality_profile": "showcase",
     "viewBox": [
-      1080,
-      630
+      1280,
+      700
     ],
-    "views": [
-      {
-        "id": "happy",
-        "label": "Delivered",
-        "focus": [
-          "pending",
-          "sent",
-          "acknowledged"
-        ],
-        "note": "Enqueued, handed to the device on its next connect, then acknowledged."
-      },
-      {
-        "id": "notnow",
-        "label": "NotNow",
-        "focus": [
-          "sent",
-          "notnow"
-        ],
-        "note": "A NotNow leaves the command queued behind a doubling backoff."
-      }
-    ]
+    "colour_profile": "purpose-v1",
+    "legend": {
+      "mode": "hidden"
+    }
   },
   "lanes": [
     {
@@ -49,55 +32,70 @@
       "id": "pending",
       "type": "start",
       "label": "Pending",
-      "sublabel": "enqueued",
+      "sublabel": "Waiting for a device poll",
       "lane": "main",
       "col": 0,
-      "step": "01"
+      "step": "01",
+      "width": 220,
+      "height": 52,
+      "purpose": "service"
     },
     {
       "id": "sent",
       "type": "active",
       "label": "Sent",
-      "sublabel": "handed to the device",
+      "sublabel": "Selected for HTTP response",
       "lane": "main",
       "col": 2,
-      "step": "02"
+      "step": "02",
+      "width": 220,
+      "height": 52,
+      "purpose": "transport"
     },
     {
       "id": "acknowledged",
       "type": "success",
       "label": "Acknowledged",
-      "sublabel": "typed response stored",
+      "sublabel": "Device result stored",
       "lane": "main",
       "col": 4,
-      "step": "03"
+      "step": "03",
+      "width": 220,
+      "height": 52,
+      "purpose": "success"
     },
     {
       "id": "notnow",
-      "type": "failure",
+      "type": "waiting",
       "label": "NotNow",
-      "sublabel": "temporarily deferred",
+      "sublabel": "Wait for an eligible poll",
       "lane": "retry",
       "col": 0,
-      "tag": "retryable"
+      "width": 220,
+      "height": 52,
+      "purpose": "warning"
     },
     {
       "id": "cleared",
-      "type": "failure",
+      "type": "neutral",
       "label": "Cleared",
-      "sublabel": "Clear or re-enrollment",
+      "sublabel": "No longer eligible",
       "lane": "terminal",
-      "col": 1,
-      "tag": "terminal"
+      "col": 0,
+      "width": 220,
+      "height": 52,
+      "purpose": "neutral"
     },
     {
       "id": "errored",
       "type": "failure",
-      "label": "Error",
-      "sublabel": "ErrorChain stored",
+      "label": "Command failed",
+      "sublabel": "Error / CommandFormatError",
       "lane": "terminal",
       "col": 2,
-      "tag": "terminal"
+      "width": 220,
+      "height": 52,
+      "purpose": "failure"
     }
   ],
   "transitions": [
@@ -105,9 +103,16 @@
       "id": "take",
       "from": "pending",
       "to": "sent",
-      "label": "Next() marks it sent",
+      "label": "Device polls; select command",
       "variant": "emphasis",
-      "route": "straight"
+      "fromSide": "right",
+      "toSide": "left",
+      "via": [],
+      "labelAt": [
+        385,
+        138
+      ],
+      "purpose": "transport"
     },
     {
       "id": "ack",
@@ -115,7 +120,14 @@
       "to": "acknowledged",
       "label": "Acknowledged",
       "variant": "emphasis",
-      "route": "straight"
+      "fromSide": "right",
+      "toSide": "left",
+      "via": [],
+      "labelAt": [
+        855,
+        138
+      ],
+      "purpose": "success"
     },
     {
       "id": "decline",
@@ -125,55 +137,176 @@
       "variant": "default",
       "fromSide": "bottom",
       "toSide": "top",
-      "route": "straight",
+      "via": [],
       "labelAt": [
-        402,
-        228
-      ]
+        675,
+        258
+      ],
+      "purpose": "warning"
     },
     {
       "id": "retry",
       "from": "notnow",
       "to": "sent",
-      "label": "backoff elapsed",
+      "label": "Later eligible poll",
       "variant": "emphasis",
-      "route": "left-channel"
+      "fromSide": "left",
+      "toSide": "left",
+      "via": [
+        [
+          450,
+          304
+        ],
+        [
+          450,
+          152
+        ]
+      ],
+      "labelAt": [
+        450,
+        220
+      ],
+      "purpose": "warning"
     },
     {
       "id": "fail",
       "from": "sent",
       "to": "errored",
-      "label": "Error",
+      "label": "Error / CommandFormatError",
       "variant": "security",
-      "channelX": 635
+      "fromSide": "bottom",
+      "toSide": "top",
+      "via": [
+        [
+          620,
+          210
+        ],
+        [
+          1090,
+          210
+        ]
+      ],
+      "labelAt": [
+        1090,
+        250
+      ],
+      "purpose": "failure"
     },
     {
       "id": "clear",
       "from": "sent",
       "to": "cleared",
-      "label": "while non-terminal",
+      "label": "Clear or reset",
       "variant": "security",
+      "fromSide": "right",
+      "toSide": "right",
+      "via": [
+        [
+          900,
+          152
+        ],
+        [
+          900,
+          476
+        ]
+      ],
       "labelAt": [
-        479.0,
-        350.0
-      ]
+        900,
+        376
+      ],
+      "purpose": "neutral"
+    },
+    {
+      "id": "redeliver",
+      "from": "sent",
+      "to": "sent",
+      "label": "Poll before terminal result",
+      "fromSide": "top",
+      "toSide": "right",
+      "via": [
+        [
+          620,
+          76
+        ],
+        [
+          780,
+          76
+        ],
+        [
+          780,
+          152
+        ]
+      ],
+      "labelAt": [
+        705,
+        66
+      ],
+      "purpose": "transport"
+    },
+    {
+      "id": "clear-pending",
+      "from": "pending",
+      "to": "cleared",
+      "label": "Clear or reset",
+      "fromSide": "bottom",
+      "toSide": "left",
+      "via": [
+        [
+          150,
+          476
+        ]
+      ],
+      "labelAt": [
+        340,
+        464
+      ],
+      "purpose": "neutral"
+    },
+    {
+      "id": "clear-notnow",
+      "from": "notnow",
+      "to": "cleared",
+      "label": "Clear or reset",
+      "fromSide": "bottom",
+      "toSide": "top",
+      "via": [],
+      "labelAt": [
+        620,
+        395
+      ],
+      "purpose": "neutral"
     }
   ],
   "cards": [
     {
-      "dot": "amber",
-      "title": "NotNow retry",
+      "dot": "warning",
+      "title": "Deferred commands",
       "items": [
-        "The command stays queued behind a backoff that starts at 30s and doubles to a one hour cap",
-        "A connect carrying NotNow skips not-now commands whose backoff has not elapsed"
+        "A NotNow response schedules a repository-defined retry delay: 30 seconds, doubling to a one-hour cap.",
+        "That same connection skips all commands already in NotNow, even if their delay has elapsed. A later eligible device poll can retry them."
       ]
     },
     {
-      "dot": "rose",
-      "title": "Terminal",
+      "dot": "service",
+      "title": "Delivery and terminal outcomes",
       "items": [
-        "Acknowledged is terminal, so an acknowledged command is never cleared",
-        "Clear and re-enrollment sweep the non-terminal states only"
+        "Sent means the server selected a command for delivery; it does not prove execution. A sent command can be selected again until a terminal result is recorded.",
+        "Acknowledged, Error, and CommandFormatError are terminal outcomes. Clear affects non-terminal commands, including pending and NotNow."
+      ]
+    },
+    {
+      "dot": "service",
+      "title": "Separate replacement path",
+      "items": [
+        "Controlled enrollment-profile replacement tracks its InstallProfile command in the replacement record. This diagram describes the ordinary command queue."
+      ]
+    },
+    {
+      "dot": "transport",
+      "title": "Public documentation",
+      "items": [
+        "Sending MDM commands to a device — https://developer.apple.com/documentation/devicemanagement/sending-mdm-commands-to-a-device",
+        "Handling NotNow status responses — https://developer.apple.com/documentation/devicemanagement/handling-notnow-status-responses"
       ]
     }
   ]

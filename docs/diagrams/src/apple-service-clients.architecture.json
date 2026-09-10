@@ -5,7 +5,7 @@
     "title": "Apple Service Clients",
     "quality_profile": "showcase",
     "viewBox": [
-      1170,
+      1200,
       540
     ],
     "views": [
@@ -29,42 +29,48 @@
           "axmclient",
           "gdmfclient"
         ],
-        "note": "DEP uses OAuth 1.0a, axm uses ES256 assertions, and GDMF is public."
+        "note": "dep uses OAuth 1.0a; axm exchanges an ES256 assertion for a bearer access token; software lookup requires no credentials."
       }
     ],
     "repository": {
       "url": "https://github.com/deploymenttheory/go-apple-dm",
-      "revision": "a817270f13b4ef7a9b1d2895118981120546b3a2"
+      "revision": "ff85958196cb013e8e14c1055f067319b07e3299"
+    },
+    "colour_profile": "purpose-v1",
+    "legend": {
+      "mode": "hidden"
     }
   },
   "components": [
     {
       "id": "depsvc",
       "type": "external",
-      "label": "DEP service",
-      "sublabel": "Device assignment API",
+      "label": "Device-assignment API",
+      "sublabel": "Automated Device Enrollment",
       "pos": [
-        40,
+        45.0,
         110.0
       ],
       "size": [
-        170,
+        220,
         70
-      ]
+      ],
+      "purpose": "neutral"
     },
     {
       "id": "abm",
       "type": "external",
-      "label": "Business Manager API",
-      "sublabel": "JSON:API",
+      "label": "Apple business APIs",
+      "sublabel": "Business and school data",
       "pos": [
-        40,
+        45.0,
         260.0
       ],
       "size": [
-        170,
+        220,
         70
-      ]
+      ],
+      "purpose": "neutral"
     },
     {
       "id": "gdmfsvc",
@@ -72,25 +78,26 @@
       "label": "gdmf.apple.com",
       "sublabel": "software lookup",
       "pos": [
-        40,
+        45.0,
         410.0
       ],
       "size": [
-        170,
+        220,
         70
-      ]
+      ],
+      "purpose": "neutral"
     },
     {
       "id": "depclient",
       "type": "backend",
       "label": "dep.Client",
-      "sublabel": "sessions · cursors · token PKI",
+      "sublabel": "Authenticated assignment API",
       "pos": [
-        340,
+        345.0,
         110.0
       ],
       "size": [
-        170,
+        220,
         70
       ],
       "sources": [
@@ -102,40 +109,41 @@
           "path": "appleplatformservices/dep/oauth1.go",
           "label": "OAuth 1.0a"
         }
-      ]
+      ],
+      "purpose": "transport"
     },
     {
       "id": "axmclient",
       "type": "backend",
       "label": "axm.Client",
-      "sublabel": "paging · activities",
+      "sublabel": "OAuth and paged API calls",
       "pos": [
-        340,
+        345.0,
         260.0
       ],
       "size": [
-        170,
+        220,
         70
       ],
-      "tag": "sealed credentials",
       "sources": [
         {
           "path": "appleplatformservices/axm/auth.go",
           "label": "ES256 assertion"
         }
-      ]
+      ],
+      "purpose": "transport"
     },
     {
       "id": "gdmfclient",
       "type": "backend",
-      "label": "gdmf.Client",
-      "sublabel": "TTL cache, last-good",
+      "label": "Software lookup client",
+      "sublabel": "Cache and last-good fallback",
       "pos": [
-        340,
+        345.0,
         410.0
       ],
       "size": [
-        170,
+        220,
         70
       ],
       "sources": [
@@ -143,19 +151,20 @@
           "path": "appleplatformservices/gdmf/gdmf.go",
           "label": "catalogue"
         }
-      ]
+      ],
+      "purpose": "transport"
     },
     {
       "id": "syncer",
       "type": "backend",
-      "label": "dep.Syncer",
-      "sublabel": "cursor expiry · dedupe",
+      "label": "Inventory synchronizer",
+      "sublabel": "Fetch then apply changes",
       "pos": [
-        640,
+        645.0,
         110.0
       ],
       "size": [
-        170,
+        220,
         70
       ],
       "sources": [
@@ -163,19 +172,20 @@
           "path": "appleplatformservices/dep/syncer.go",
           "label": "cursor sync"
         }
-      ]
+      ],
+      "purpose": "service"
     },
     {
       "id": "assigner",
       "type": "backend",
-      "label": "dep.Assigner",
-      "sublabel": "state-driven",
+      "label": "Profile reconciler",
+      "sublabel": "Assign and verify Apple state",
       "pos": [
-        640,
+        645.0,
         260.0
       ],
       "size": [
-        170,
+        220,
         70
       ],
       "sources": [
@@ -183,35 +193,38 @@
           "path": "appleplatformservices/dep/assigner.go",
           "label": "assignment"
         }
-      ]
+      ],
+      "purpose": "service"
     },
     {
       "id": "adegate",
       "type": "backend",
-      "label": "ADE update gate",
-      "sublabel": "enroll/ade",
+      "label": "Enrollment OS policy",
+      "sublabel": "Select required OS version",
       "pos": [
-        640,
+        645.0,
         410.0
       ],
       "size": [
-        170,
+        220,
         70
-      ]
+      ],
+      "purpose": "policy"
     },
     {
       "id": "depstore",
       "type": "database",
       "label": "dep.Store",
-      "sublabel": "accounts · devices · assignments",
+      "sublabel": "Accounts and device state",
       "pos": [
-        940,
+        945.0,
         110.0
       ],
       "size": [
-        170,
+        220,
         70
-      ]
+      ],
+      "purpose": "storage"
     }
   ],
   "boundaries": [
@@ -231,77 +244,108 @@
       "from": "depclient",
       "to": "depsvc",
       "label": "OAuth 1.0a",
-      "variant": "security"
+      "variant": "security",
+      "purpose": "authentication"
     },
     {
       "id": "axm-auth",
       "from": "axmclient",
       "to": "abm",
-      "label": "ES256 assertion",
-      "variant": "security"
+      "label": "OAuth access token",
+      "variant": "security",
+      "labelAt": [
+        305.0,
+        344.0
+      ],
+      "purpose": "authentication"
     },
     {
       "id": "gdmf-auth",
       "from": "gdmfclient",
       "to": "gdmfsvc",
-      "label": "public GET"
+      "label": "public GET",
+      "purpose": "transport"
     },
     {
       "id": "syncer-client",
       "from": "syncer",
       "to": "depclient",
-      "label": "FetchDevices"
+      "label": "Fetch / SyncDevices",
+      "labelAt": [
+        605,
+        100
+      ],
+      "purpose": "transport"
     },
     {
       "id": "assigner-client",
       "from": "assigner",
       "to": "depclient",
-      "label": "AssignProfile"
+      "label": "Assign and read back",
+      "purpose": "transport"
     },
     {
       "id": "syncer-store",
       "from": "syncer",
       "to": "depstore",
-      "label": "commit in a Tx"
+      "label": "Commit devices + cursor",
+      "labelAt": [
+        905,
+        100
+      ],
+      "purpose": "storage"
     },
     {
       "id": "assigner-store",
       "from": "assigner",
       "to": "depstore",
-      "label": "read back"
+      "label": "Read and save state",
+      "purpose": "storage"
     },
     {
       "id": "gdmf-gate",
       "from": "gdmfclient",
       "to": "adegate",
-      "label": "latest version"
+      "label": "latest version",
+      "labelAt": [
+        605.0,
+        494.0
+      ],
+      "purpose": "transport"
     }
   ],
   "cards": [
     {
-      "dot": "cyan",
-      "title": "Service authentication",
+      "dot": "authentication",
+      "title": "Three authentication models",
       "items": [
-        "DEP uses OAuth 1.0a with a server token from the portal exchange",
-        "Business Manager uses an ES256 client assertion",
-        "The software lookup service needs no credentials at all"
+        "The device-assignment client uses OAuth 1.0a credentials from the server-token exchange. The package retains the name dep.",
+        "axm exchanges an ES256-signed client assertion for an OAuth access token, then uses that token as Bearer authentication on API calls.",
+        "Software catalogue lookup uses public HTTPS requests; it does not use the device-assignment or business API credentials."
       ]
     },
     {
-      "dot": "emerald",
-      "title": "Assignment",
+      "dot": "service",
+      "title": "Inventory and assignments",
       "items": [
-        "The syncer pages by cursor and handles cursor expiry by refetching",
-        "The assigner is state-driven and reads back what Apple recorded",
-        "A 429 delays retries according to the service response"
+        "The synchronizer starts with a full fetch and follows incremental cursors; an expired cursor causes a new full fetch.",
+        "The reconciler compares desired profile assignment with stored devices and calls Apple. Readback is configurable in the library and enabled by the reference server."
       ]
     },
     {
-      "dot": "rose",
-      "title": "Software update gate",
+      "dot": "policy",
+      "title": "Software updates",
       "items": [
-        "An old OS is refused with ErrorCodeCodeSoftwareUpdateRequired (com.apple.softwareupdate.required)",
-        "gdmf answers what the latest version is for that device"
+        "The enrollment handler applies its configured update policy. Software lookup supplies available versions; it does not itself send the device’s HTTP rejection."
+      ]
+    },
+    {
+      "dot": "transport",
+      "title": "Public documentation",
+      "items": [
+        "Device assignment — https://developer.apple.com/documentation/devicemanagement/device-assignment",
+        "Implementing OAuth for the Apple School Manager and Apple Business APIs — https://developer.apple.com/documentation/apple-school-and-business-manager-api/implementing-oauth-for-the-apple-school-manager-and-apple-business-api",
+        "ErrorCodeSoftwareUpdateRequired — https://developer.apple.com/documentation/devicemanagement/errorcodesoftwareupdaterequired"
       ]
     }
   ]

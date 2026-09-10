@@ -5,8 +5,8 @@
     "title": "ACME with Managed Device Attestation",
     "quality_profile": "showcase",
     "viewBox": [
-      1080,
-      566
+      1320,
+      754
     ],
     "column_fit": "spread",
     "views": [
@@ -22,69 +22,62 @@
       },
       {
         "id": "attest",
-        "label": "Attestation",
+        "label": "Verify evidence and key",
         "focus": [
           "acme",
           "attest",
           "policy"
         ],
-        "note": "Verification checks the chain, freshness, requested key and bound device."
+        "note": "Challenge processing verifies evidence and policy; finalization verifies that the CSR uses the attested key."
       }
-    ]
+    ],
+    "colour_profile": "purpose-v1",
+    "legend": {
+      "mode": "hidden"
+    }
   },
   "participants": [
     {
       "id": "device",
       "type": "external",
-      "label": "Device",
-      "sublabel": "Secure Enclave key"
+      "label": "Apple device",
+      "sublabel": "Hardware-bound key",
+      "purpose": "neutral"
     },
     {
       "id": "acme",
       "type": "backend",
-      "label": "acme.Server",
-      "sublabel": "/acme"
+      "label": "ACME server",
+      "sublabel": "Coordinate issuance",
+      "purpose": "service"
     },
     {
       "id": "store",
       "type": "database",
-      "label": "acme.Store",
-      "sublabel": "nonces · orders"
+      "label": "ACME state store",
+      "sublabel": "Identifiers and orders",
+      "purpose": "storage"
     },
     {
       "id": "attest",
       "type": "security",
-      "label": "acme/attest",
-      "sublabel": "chain + properties"
+      "label": "Attestation",
+      "sublabel": "Apple chain and freshness",
+      "purpose": "authentication"
     },
     {
       "id": "policy",
       "type": "security",
-      "label": "Policy",
-      "sublabel": "any · dep · sip"
+      "label": "Admission policy",
+      "sublabel": "Accept or reject device",
+      "purpose": "policy"
     },
     {
       "id": "ca",
       "type": "security",
-      "label": "ca.Local",
-      "sublabel": "enrollment CA"
-    }
-  ],
-  "segments": [
-    {
-      "from": 161.0,
-      "to": 280.5,
-      "label": "Order"
-    },
-    {
-      "from": 283.0,
-      "to": 402.5,
-      "label": "Attest"
-    },
-    {
-      "from": 405.0,
-      "to": 494.0,
-      "label": "Finalize"
+      "label": "Identity CA",
+      "sublabel": "Sign approved CSR",
+      "purpose": "certificate"
     }
   ],
   "messages": [
@@ -92,117 +85,154 @@
       "id": "directory",
       "from": "device",
       "to": "acme",
-      "y": 175.0,
       "label": "GET /acme/directory",
-      "variant": "default"
+      "y": 175,
+      "variant": "default",
+      "purpose": "transport"
+    },
+    {
+      "id": "nonce",
+      "from": "device",
+      "to": "acme",
+      "label": "HEAD /acme/new-nonce",
+      "y": 211,
+      "variant": "default",
+      "purpose": "transport"
+    },
+    {
+      "id": "nonce-back",
+      "from": "acme",
+      "to": "device",
+      "label": "Replay-Nonce header",
+      "y": 247,
+      "variant": "return",
+      "purpose": "authentication"
     },
     {
       "id": "account",
       "from": "device",
       "to": "acme",
-      "y": 205.5,
       "label": "POST /acme/new-account",
+      "y": 283,
       "variant": "default",
-      "note": "JWS with an embedded JWK; later requests use the key id"
+      "purpose": "transport"
     },
     {
       "id": "order",
       "from": "device",
       "to": "acme",
-      "y": 236.0,
       "label": "POST /acme/new-order",
+      "y": 319,
       "variant": "emphasis",
-      "note": "one permanent-identifier, no notBefore or notAfter"
+      "purpose": "transport"
     },
     {
       "id": "claim",
       "from": "acme",
       "to": "store",
-      "y": 266.5,
-      "label": "ClaimIdentifier, single use",
-      "variant": "security"
+      "label": "Claim enrollment identifier once",
+      "y": 355,
+      "variant": "security",
+      "purpose": "storage"
     },
     {
       "id": "challenge",
       "from": "device",
       "to": "acme",
-      "y": 297.0,
-      "label": "POST the attestation object",
-      "variant": "emphasis"
+      "label": "Submit device-attest-01 evidence",
+      "y": 391,
+      "variant": "emphasis",
+      "purpose": "authentication"
     },
     {
       "id": "chain",
       "from": "acme",
       "to": "attest",
-      "y": 327.5,
-      "label": "verify to the Apple root",
-      "variant": "security"
-    },
-    {
-      "id": "binding",
-      "from": "acme",
-      "to": "store",
-      "y": 358.0,
-      "label": "serial and UDID match the binding",
-      "variant": "security"
+      "label": "Verify Apple chain and freshness",
+      "y": 427,
+      "variant": "security",
+      "note": "Compare required identifiers",
+      "purpose": "authentication"
     },
     {
       "id": "authorize",
       "from": "acme",
       "to": "policy",
-      "y": 388.5,
-      "label": "evaluate admission policy",
-      "variant": "security"
+      "label": "Evaluate admission policy",
+      "y": 463,
+      "variant": "security",
+      "purpose": "policy"
     },
     {
       "id": "finalize",
       "from": "device",
       "to": "acme",
-      "y": 419.0,
-      "label": "POST finalize with the CSR",
+      "label": "POST finalize: CSR with attested key",
+      "y": 499,
       "variant": "emphasis",
-      "note": "the CSR key must be the key the attestation covered"
+      "purpose": "certificate"
     },
     {
       "id": "sign",
       "from": "acme",
       "to": "ca",
-      "y": 449.5,
-      "label": "Sign with a PermanentIdentifier",
-      "variant": "default"
+      "label": "Issue with PermanentIdentifier",
+      "y": 535,
+      "variant": "default",
+      "purpose": "certificate"
+    },
+    {
+      "id": "order-back",
+      "from": "acme",
+      "to": "device",
+      "label": "Finalized order: certificate URL",
+      "y": 571,
+      "variant": "return",
+      "purpose": "success"
+    },
+    {
+      "id": "cert-get",
+      "from": "device",
+      "to": "acme",
+      "label": "POST-as-GET certificate URL",
+      "y": 607,
+      "variant": "default",
+      "purpose": "transport"
     },
     {
       "id": "download",
       "from": "acme",
       "to": "device",
-      "y": 480.0,
-      "label": "PEM chain",
-      "variant": "return"
-    }
-  ],
-  "activations": [
-    {
-      "participant": "acme",
-      "from": 169.0,
-      "to": 488.0,
-      "type": "backend"
+      "label": "Return PEM certificate chain",
+      "y": 643,
+      "variant": "return",
+      "purpose": "certificate"
     }
   ],
   "cards": [
     {
-      "dot": "cyan",
-      "title": "Attestation checks",
+      "dot": "authentication",
+      "title": "Two verification stages",
       "items": [
-        "The chain verifies to the Apple Enterprise Attestation Root",
-        "The freshness code is derived from the challenge token"
+        "Challenge processing verifies the Apple attestation chain, freshness, required device identifiers, and configured admission policy.",
+        "Finalization verifies the certificate signing request and checks that its public key matches the attested key."
       ]
     },
     {
-      "dot": "rose",
-      "title": "Rejected evidence",
+      "dot": "certificate",
+      "title": "Certificate retrieval",
       "items": [
-        "A chain from another authority, and a stale freshness code",
-        "A CSR for a key the attestation did not cover"
+        "Signed requests consume one-use replay nonces. A finalized order provides a certificate URL that the client retrieves using POST-as-GET.",
+        "SCEP and ACME identity issuance are independent of the HTTPS trust anchors distributed for enrollment endpoints."
+      ]
+    },
+    {
+      "dot": "transport",
+      "title": "Public documentation",
+      "items": [
+        "ACMECertificate — https://developer.apple.com/documentation/devicemanagement/acmecertificate",
+        "Deploy Managed Device Attestation — https://support.apple.com/en-gb/guide/deployment/dep54e5ac1fd/web",
+        "RFC 8555 — ACME — https://www.rfc-editor.org/rfc/rfc8555"
       ]
     }
   ]

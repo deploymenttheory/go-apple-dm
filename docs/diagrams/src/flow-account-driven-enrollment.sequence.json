@@ -5,19 +5,19 @@
     "title": "Account-driven enrollment",
     "quality_profile": "showcase",
     "viewBox": [
-      1080,
-      566
+      1320,
+      790
     ],
     "column_fit": "spread",
     "views": [
       {
         "id": "discovery",
-        "label": "Discovery",
+        "label": "Discover the enrollment method",
         "focus": [
           "device",
           "discovery"
         ],
-        "note": "The organisation domain routes the device to a BYOD or ADDE enrollment URL."
+        "note": "The organization domain selects account-driven User Enrollment (mdm-byod) or Device Enrollment (mdm-adde)."
       },
       {
         "id": "challenge",
@@ -29,61 +29,54 @@
         ],
         "note": "An unauthenticated POST receives a 401 naming the authentication method."
       }
-    ]
+    ],
+    "colour_profile": "purpose-v1",
+    "legend": {
+      "mode": "hidden"
+    }
   },
   "participants": [
     {
       "id": "device",
       "type": "external",
-      "label": "Device",
-      "sublabel": "Managed Apple Account"
+      "label": "Device and user",
+      "sublabel": "Managed Apple Account",
+      "purpose": "neutral"
     },
     {
       "id": "discovery",
       "type": "backend",
-      "label": "enroll/discovery",
-      "sublabel": "/.well-known"
+      "label": "Discovery",
+      "sublabel": "Select enrollment type",
+      "purpose": "transport"
     },
     {
       "id": "account",
       "type": "backend",
-      "label": "accountdriven",
-      "sublabel": "/enroll/mdm-byod"
+      "label": "Account endpoint",
+      "sublabel": "mdm-byod or mdm-adde",
+      "purpose": "transport"
     },
     {
       "id": "idp",
       "type": "security",
-      "label": "Enrollment auth",
-      "sublabel": "OIDC → access token"
+      "label": "Authentication",
+      "sublabel": "Web or OAuth flow",
+      "purpose": "authentication"
     },
     {
       "id": "profile",
       "type": "backend",
       "label": "Profile / issuer",
-      "sublabel": "SCEP or ACME"
+      "sublabel": "SCEP or ACME identity",
+      "purpose": "certificate"
     },
     {
       "id": "core",
       "type": "backend",
-      "label": "service.Core",
-      "sublabel": "check-in"
-    }
-  ],
-  "segments": [
-    {
-      "from": 161.0,
-      "to": 219.5,
-      "label": "Discovery"
-    },
-    {
-      "from": 222.0,
-      "to": 341.5,
-      "label": "Auth"
-    },
-    {
-      "from": 344.0,
-      "to": 494.0,
-      "label": "Issuance"
+      "label": "MDM service",
+      "sublabel": "Check account identity",
+      "purpose": "service"
     }
   ],
   "messages": [
@@ -91,132 +84,169 @@
       "id": "wellknown",
       "from": "device",
       "to": "discovery",
-      "y": 175.0,
-      "label": "GET .well-known",
+      "label": "Discover enrollment service",
+      "y": 175,
       "variant": "emphasis",
-      "note": "routed by model-family and user-identifier"
+      "purpose": "transport"
     },
     {
       "id": "servers",
       "from": "discovery",
       "to": "device",
-      "y": 205.5,
-      "label": "Version + BaseURL",
-      "variant": "return"
+      "label": "Enrollment type and BaseURL",
+      "y": 211,
+      "variant": "return",
+      "purpose": "transport"
     },
     {
       "id": "post1",
       "from": "device",
       "to": "account",
-      "y": 236.0,
-      "label": "POST, no Authorization",
+      "label": "POST without Authorization",
+      "y": 247,
       "variant": "default",
-      "note": "body is a CMS-signed plist, capped at 64 KiB"
+      "purpose": "transport"
     },
     {
       "id": "challenge",
       "from": "account",
       "to": "device",
-      "y": 266.5,
-      "label": "401 with a Bearer challenge",
-      "variant": "security"
+      "label": "401 with Bearer challenge",
+      "y": 283,
+      "variant": "security",
+      "purpose": "authentication"
     },
     {
       "id": "webauth",
       "from": "device",
       "to": "idp",
-      "y": 297.0,
-      "label": "apple-as-web or apple-oauth2",
-      "variant": "security"
+      "label": "apple-as-web OR apple-oauth2",
+      "y": 319,
+      "variant": "security",
+      "purpose": "authentication"
     },
     {
       "id": "token",
       "from": "idp",
       "to": "device",
-      "y": 327.5,
       "label": "Reusable access token",
-      "variant": "return"
+      "y": 355,
+      "variant": "return",
+      "purpose": "authentication"
     },
     {
       "id": "post2",
       "from": "device",
       "to": "account",
-      "y": 358.0,
-      "label": "POST with Bearer",
+      "label": "POST with Bearer token",
+      "y": 391,
       "variant": "emphasis",
-      "note": "reusable until expiry or invalidation; infrastructure errors remain server errors"
+      "purpose": "authentication"
     },
     {
       "id": "build",
       "from": "account",
       "to": "profile",
-      "y": 388.5,
-      "label": "ManagedAppleID/Product",
-      "variant": "default"
+      "label": "Build profile for this account",
+      "y": 427,
+      "variant": "default",
+      "purpose": "artifact"
     },
     {
       "id": "finalize",
+      "from": "account",
+      "to": "device",
+      "label": "Return enrollment profile",
+      "y": 463,
+      "variant": "return",
+      "purpose": "artifact"
+    },
+    {
+      "id": "identity",
+      "from": "device",
+      "to": "profile",
+      "label": "Request SCEP or ACME identity",
+      "y": 499,
+      "variant": "default",
+      "purpose": "certificate"
+    },
+    {
+      "id": "certificate",
       "from": "profile",
       "to": "device",
-      "y": 419.0,
-      "label": "Profile with issuance reference",
-      "variant": "emphasis",
-      "note": "trusted issuer registers certificate/account association before returning the certificate"
+      "label": "Issue and register account identity",
+      "y": 535,
+      "variant": "return",
+      "purpose": "certificate"
     },
     {
       "id": "checkin",
       "from": "device",
       "to": "core",
-      "y": 449.5,
-      "label": "Authenticate: certificate + bearer",
+      "label": "Authenticate; bearer by channel",
+      "y": 571,
       "variant": "emphasis",
-      "note": "macOS device channel omits bearer; other account channels require it"
+      "purpose": "authentication"
     },
     {
       "id": "hook",
       "from": "core",
       "to": "device",
-      "y": 480.0,
-      "label": "reserve, persist, confirm",
+      "label": "HTTP 200; empty body",
+      "y": 607,
       "variant": "return",
-      "note": "successful storage confirms the reserved enrollment identifier; invalid bearer can trigger 401"
-    }
-  ],
-  "activations": [
-    {
-      "participant": "account",
-      "from": 230.0,
-      "to": 396.5,
-      "type": "backend"
+      "purpose": "success"
     },
     {
-      "participant": "device",
-      "from": 169.0,
-      "to": 488.0,
-      "type": "external"
+      "id": "tokenupdate",
+      "from": "device",
+      "to": "core",
+      "label": "TokenUpdate with push details",
+      "y": 643,
+      "variant": "emphasis",
+      "purpose": "transport"
     },
     {
-      "participant": "core",
-      "from": 443.5,
-      "to": 488.0,
-      "type": "backend"
+      "id": "enabled",
+      "from": "core",
+      "to": "device",
+      "label": "HTTP 200; channel enabled",
+      "y": 679,
+      "variant": "return",
+      "purpose": "success"
     }
   ],
   "cards": [
     {
-      "dot": "cyan",
-      "title": "Discovery",
+      "dot": "authentication",
+      "title": "Discovery and authentication",
       "items": [
-        "DM_DISCOVERY selects mdm-byod or mdm-adde by model family",
-        "Legacy query-string enrollment credentials are rejected"
+        "The well-known response advertises an enrollment type and service URL. DM_DISCOVERY selects the route by model family.",
+        "An unauthenticated request receives the configured authentication challenge. The resulting access token remains reusable until expiry or invalidation."
       ]
     },
     {
-      "dot": "emerald",
-      "title": "Certificate and bearer checks",
+      "dot": "policy",
+      "title": "Identity and channel checks",
       "items": [
-        "Trusted issuance binds certificate, account and enrollment reference",
-        "Reusable bearer; macOS device channel omits it; known sessions can reauthenticate"
+        "Trusted SCEP or ACME issuance registers the certificate/account association. Service hooks reserve and confirm that association around enrollment persistence.",
+        "macOS device-channel requests omit the bearer token; applicable account channels require it and may receive a reauthentication challenge."
+      ]
+    },
+    {
+      "dot": "success",
+      "title": "Completed enrollment",
+      "items": [
+        "After obtaining its certificate, the device sends Authenticate and TokenUpdate. The latter stores push details and enables the channel."
+      ]
+    },
+    {
+      "dot": "transport",
+      "title": "Public documentation",
+      "items": [
+        "Onboarding users with account-driven enrollment — https://developer.apple.com/documentation/devicemanagement/onboarding-users-with-account-driven-enrollment",
+        "Deploying device management enrollment profiles — https://developer.apple.com/documentation/devicemanagement/deploying-device-management-enrollment-profiles",
+        "MDM payload — https://developer.apple.com/documentation/devicemanagement/mdm"
       ]
     }
   ]

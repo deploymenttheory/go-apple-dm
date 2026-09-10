@@ -2,7 +2,7 @@
   "schema_version": 1,
   "diagram_type": "architecture",
   "meta": {
-    "title": "Push: Waking a Managed Device",
+    "title": "MDM Push Notifications: Prompting Device Connections",
     "quality_profile": "showcase",
     "viewBox": [
       1170,
@@ -35,49 +35,55 @@
     ],
     "repository": {
       "url": "https://github.com/deploymenttheory/go-apple-dm",
-      "revision": "a817270f13b4ef7a9b1d2895118981120546b3a2"
+      "revision": "ff85958196cb013e8e14c1055f067319b07e3299"
+    },
+    "colour_profile": "purpose-v1",
+    "legend": {
+      "mode": "hidden"
     }
   },
   "components": [
     {
       "id": "caller",
       "type": "backend",
-      "label": "Callers",
-      "sublabel": "ddmsync.Notifier · admin API",
+      "label": "Command or DDM caller",
+      "sublabel": "Request a separate wake",
       "pos": [
-        40,
+        15.0,
         260.0
       ],
       "size": [
-        170,
+        220,
         70
-      ]
+      ],
+      "purpose": "service"
     },
     {
       "id": "pushstore",
       "type": "database",
-      "label": "storage.PushStore",
-      "sublabel": "token · topic · magic",
+      "label": "Stored MDM push details",
+      "sublabel": "Token, topic, and PushMagic",
       "pos": [
-        340,
+        315.0,
         110.0
       ],
       "size": [
-        170,
+        220,
         70
-      ]
+      ],
+      "purpose": "storage"
     },
     {
       "id": "notifier",
       "type": "backend",
-      "label": "pushnotify.Notifier",
-      "sublabel": "Notify(ids)",
+      "label": "MDM wake notifier",
+      "sublabel": "Resolve enabled targets",
       "pos": [
-        340,
+        315.0,
         260.0
       ],
       "size": [
-        170,
+        220,
         70
       ],
       "sources": [
@@ -85,61 +91,65 @@
           "path": "server/pushnotify/notifier.go",
           "label": "Notify"
         }
-      ]
+      ],
+      "purpose": "transport"
     },
     {
       "id": "bus",
       "type": "messagebus",
-      "label": "event.Bus",
-      "sublabel": "PushTokenInvalid",
+      "label": "Invalid-token event",
+      "sublabel": "Caller decides retirement",
       "pos": [
-        340,
+        315.0,
         410.0
       ],
       "size": [
-        170,
+        220,
         70
-      ]
+      ],
+      "purpose": "failure"
     },
     {
       "id": "coalescer",
       "type": "backend",
-      "label": "push.Coalescer",
-      "sublabel": "5s window",
+      "label": "Duplicate suppression",
+      "sublabel": "Coalesce for five seconds",
       "pos": [
-        640,
+        615.0,
         260.0
       ],
       "size": [
-        170,
+        220,
         70
-      ]
+      ],
+      "purpose": "service"
     },
     {
       "id": "certstoredb",
       "type": "database",
-      "label": "storage.PushCertStore",
-      "sublabel": "versioned rows",
+      "label": "MDM certificate store",
+      "sublabel": "Versioned topic credentials",
       "pos": [
-        640,
+        615.0,
         410.0
       ],
       "size": [
-        170,
+        220,
         70
-      ]
+      ],
+      "purpose": "storage"
     },
     {
       "id": "apnsclient",
       "type": "backend",
-      "label": "push/apns.Client",
-      "sublabel": "HTTP/2",
+      "label": "MDM APNs client",
+      "sublabel": "Send wake over HTTP/2",
       "pos": [
-        940,
+        915.0,
         260.0
       ],
       "size": [
-        170,
+        220,
         70
       ],
       "sources": [
@@ -147,19 +157,20 @@
           "path": "appleplatformservices/push/apns/apns.go",
           "label": "HTTP/2"
         }
-      ]
+      ],
+      "purpose": "transport"
     },
     {
       "id": "certstore",
       "type": "backend",
-      "label": "push.CertStore",
-      "sublabel": "static or store-backed",
+      "label": "Certificate provider",
+      "sublabel": "Load credential by topic",
       "pos": [
-        940,
+        915.0,
         410.0
       ],
       "size": [
-        170,
+        220,
         70
       ],
       "sources": [
@@ -167,7 +178,8 @@
           "path": "server/pushnotify/certstore.go",
           "label": "StoreCertStore"
         }
-      ]
+      ],
+      "purpose": "certificate"
     },
     {
       "id": "apns",
@@ -175,25 +187,26 @@
       "label": "APNs",
       "sublabel": "api.push.apple.com",
       "pos": [
-        940,
+        915.0,
         110.0
       ],
       "size": [
-        170,
+        220,
         70
-      ]
+      ],
+      "purpose": "neutral"
     },
     {
       "id": "pushcert",
       "type": "backend",
-      "label": "pushcert",
-      "sublabel": "topic from certificate",
+      "label": "MDM credential validation",
+      "sublabel": "Key, validity, and topic",
       "pos": [
-        640,
+        615.0,
         560.0
       ],
       "size": [
-        170,
+        220,
         70
       ],
       "sources": [
@@ -201,7 +214,23 @@
           "path": "pki/pushcert/pushcert.go",
           "label": "topic"
         }
-      ]
+      ],
+      "purpose": "certificate"
+    },
+    {
+      "id": "device",
+      "label": "Enrolled Apple device",
+      "sublabel": "Connect to /mdm after wake",
+      "type": "external",
+      "pos": [
+        615,
+        110
+      ],
+      "size": [
+        220,
+        70
+      ],
+      "purpose": "neutral"
     }
   ],
   "boundaries": [
@@ -220,7 +249,8 @@
       "id": "caller-notifier",
       "from": "caller",
       "to": "notifier",
-      "label": "Notify(ids)"
+      "label": "Notify(ids)",
+      "purpose": "transport"
     },
     {
       "id": "store-notifier",
@@ -230,71 +260,112 @@
       "labelAt": [
         425.0,
         194.0
-      ]
+      ],
+      "purpose": "storage"
     },
     {
       "id": "notifier-bus",
       "from": "notifier",
       "to": "bus",
-      "label": "410 emits invalid event",
+      "label": "APNs 410 event",
       "labelAt": [
         425.0,
         344.0
-      ]
+      ],
+      "purpose": "failure"
     },
     {
       "id": "notifier-coalescer",
       "from": "notifier",
       "to": "coalescer",
-      "label": "one per target"
+      "label": "one per target",
+      "labelAt": [
+        575.0,
+        344.0
+      ],
+      "purpose": "service"
     },
     {
       "id": "coalescer-client",
       "from": "coalescer",
       "to": "apnsclient",
-      "label": "burst collapsed"
+      "label": "burst collapsed",
+      "labelAt": [
+        875.0,
+        344.0
+      ],
+      "purpose": "transport"
     },
     {
       "id": "client-apns",
       "from": "apnsclient",
       "to": "apns",
-      "label": "apns-push-type mdm"
+      "label": "MDM wake payload",
+      "purpose": "transport"
     },
     {
       "id": "certstore-client",
       "from": "certstore",
       "to": "apnsclient",
       "label": "cert for topic",
-      "variant": "security"
+      "variant": "security",
+      "purpose": "certificate"
     },
     {
       "id": "db-certstore",
       "from": "certstoredb",
       "to": "certstore",
-      "label": "reload on change"
+      "label": "reload on change",
+      "labelAt": [
+        875,
+        400
+      ],
+      "purpose": "storage"
     },
     {
       "id": "certstore-pushcert",
       "from": "certstore",
       "to": "pushcert",
-      "label": "derive topic"
+      "label": "derive topic",
+      "purpose": "certificate"
+    },
+    {
+      "id": "apns-device",
+      "from": "apns",
+      "to": "device",
+      "variant": "dashed",
+      "label": "Prompt MDM connection",
+      "labelAt": [
+        875,
+        100
+      ],
+      "purpose": "transport"
     }
   ],
   "cards": [
     {
-      "dot": "cyan",
-      "title": "Send path",
+      "dot": "transport",
+      "title": "What the push contains",
       "items": [
-        "Notifier reads push info from storage, then sends one push per Target",
-        "A burst for one enrollment collapses into a single push"
+        "The notifier loads the device’s APNs token, MDM topic, and PushMagic. Repeated wake requests are coalesced.",
+        "The notification prompts a device connection. Commands are delivered in the later HTTPS response from the MDM server."
       ]
     },
     {
-      "dot": "rose",
-      "title": "Push outcomes",
+      "dot": "certificate",
+      "title": "Credentials and outcomes",
       "items": [
-        "A 410 publishes PushTokenInvalid; the caller decides how to retire stored tokens",
-        "Transient failures are distinct from invalid-token outcomes"
+        "The client selects the MDM push certificate by topic. Certificate replacement retires cached connections; shutdown closes the clients.",
+        "APNs acceptance does not prove that a command ran. App notifications use a separate client and credential store; see the app delivery companion."
+      ]
+    },
+    {
+      "dot": "transport",
+      "title": "Public documentation",
+      "items": [
+        "Setting up push notifications for your device management customers — https://developer.apple.com/documentation/devicemanagement/setting-up-push-notifications-for-your-device-management-customers",
+        "Sending MDM commands to a device — https://developer.apple.com/documentation/devicemanagement/sending-mdm-commands-to-a-device",
+        "Establishing a certificate-based connection to APNs — https://developer.apple.com/documentation/usernotifications/establishing-a-certificate-based-connection-to-apns"
       ]
     }
   ]

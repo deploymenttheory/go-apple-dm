@@ -2,7 +2,7 @@
   "schema_version": 1,
   "diagram_type": "architecture",
   "meta": {
-    "title": "Service Core: Seams and Refusal",
+    "title": "MDM Service: Request Handling and Extension Points",
     "quality_profile": "showcase",
     "viewBox": [
       1300,
@@ -10,7 +10,7 @@
     ],
     "repository": {
       "url": "https://github.com/deploymenttheory/go-apple-dm",
-      "revision": "a817270f13b4ef7a9b1d2895118981120546b3a2"
+      "revision": "ff85958196cb013e8e14c1055f067319b07e3299"
     },
     "views": [
       {
@@ -36,7 +36,7 @@
       },
       {
         "id": "seams",
-        "label": "Seams",
+        "label": "Extension interfaces",
         "focus": [
           "core",
           "hooks",
@@ -44,7 +44,7 @@
           "verifier",
           "ddmengine"
         ],
-        "note": "Every feature attaches through an interface, so service imports none of them."
+        "note": "Declarative request adapters and user-authentication verifiers supply behaviour through service interfaces."
       },
       {
         "id": "events",
@@ -56,20 +56,24 @@
         ],
         "note": "server/eventsink provides projected webhook and slog output; audit persistence is optional."
       }
-    ]
+    ],
+    "colour_profile": "purpose-v1",
+    "legend": {
+      "mode": "hidden"
+    }
   },
   "components": [
     {
       "id": "certmw",
       "type": "security",
-      "label": "Cert middlewares",
-      "sublabel": "TLS · header · signature",
+      "label": "Identity extraction",
+      "sublabel": "TLS, proxy, or signed body",
       "pos": [
-        40,
+        15.0,
         110
       ],
       "size": [
-        170,
+        220,
         70
       ],
       "sources": [
@@ -77,7 +81,8 @@
           "path": "server/httpapi/httpapi.go",
           "label": "cert middlewares"
         }
-      ]
+      ],
+      "purpose": "authentication"
     },
     {
       "id": "device",
@@ -85,25 +90,26 @@
       "label": "Enrolled device",
       "sublabel": "PUT plist",
       "pos": [
-        40,
+        15.0,
         260
       ],
       "size": [
-        170,
+        220,
         70
-      ]
+      ],
+      "purpose": "neutral"
     },
     {
       "id": "errors",
       "type": "backend",
-      "label": "service.Code",
-      "sublabel": "403 · 400 · 410 · 501",
+      "label": "HTTP error mapping",
+      "sublabel": "Map service failures",
       "pos": [
-        40,
+        15.0,
         410
       ],
       "size": [
-        170,
+        220,
         70
       ],
       "sources": [
@@ -111,19 +117,20 @@
           "path": "server/service/service.go",
           "label": "error codes"
         }
-      ]
+      ],
+      "purpose": "service"
     },
     {
       "id": "httpapi",
       "type": "backend",
-      "label": "httpapi",
-      "sublabel": "/mdm Content-Type fork",
+      "label": "MDM HTTP handler",
+      "sublabel": "Check-in or command traffic",
       "pos": [
-        380,
+        355.0,
         260
       ],
       "size": [
-        170,
+        220,
         70
       ],
       "sources": [
@@ -131,19 +138,20 @@
           "path": "server/httpapi/httpapi.go",
           "label": "handlers"
         }
-      ]
+      ],
+      "purpose": "transport"
     },
     {
       "id": "bus",
       "type": "messagebus",
-      "label": "event.Bus",
-      "sublabel": "synchronous by default",
+      "label": "Event bus",
+      "sublabel": "Publishes service outcomes",
       "pos": [
-        380,
+        355.0,
         410
       ],
       "size": [
-        170,
+        220,
         70
       ],
       "sources": [
@@ -151,19 +159,20 @@
           "path": "mdmprotocol/event/event.go",
           "label": "Publish"
         }
-      ]
+      ],
+      "purpose": "transport"
     },
     {
       "id": "sinks",
       "type": "backend",
-      "label": "eventsink",
-      "sublabel": "webhook · slog",
+      "label": "Event consumers",
+      "sublabel": "Audit, logs, and webhooks",
       "pos": [
-        380,
+        355.0,
         560
       ],
       "size": [
-        170,
+        220,
         70
       ],
       "sources": [
@@ -176,19 +185,19 @@
           "label": "slog"
         }
       ],
-      "tag": "plus internal/app audit"
+      "purpose": "service"
     },
     {
       "id": "hooks",
       "type": "backend",
-      "label": "Hook chain",
-      "sublabel": "Before · After · veto",
+      "label": "Service hooks",
+      "sublabel": "Policy and completion",
       "pos": [
-        700,
+        355,
         110
       ],
       "size": [
-        170,
+        220,
         70
       ],
       "sources": [
@@ -196,19 +205,20 @@
           "path": "server/service/service.go",
           "label": "Hook and Call"
         }
-      ]
+      ],
+      "purpose": "policy"
     },
     {
       "id": "core",
       "type": "backend",
-      "label": "service.Core",
-      "sublabel": "Checkin · Connect · Enqueue",
+      "label": "MDM service core",
+      "sublabel": "Check-in and command queue",
       "pos": [
-        700,
+        675.0,
         260
       ],
       "size": [
-        170,
+        220,
         70
       ],
       "sources": [
@@ -220,35 +230,38 @@
           "path": "server/service/connect.go",
           "label": "Connect"
         }
-      ]
+      ],
+      "purpose": "service"
     },
     {
       "id": "dmhandler",
       "type": "backend",
-      "label": "DMHandler",
-      "sublabel": "inproc or proxyclient",
+      "label": "Declarative adapter",
+      "sublabel": "In-process or signed HTTP",
       "pos": [
-        700,
+        675.0,
         410
       ],
       "size": [
-        170,
+        220,
         70
-      ]
+      ],
+      "purpose": "transport"
     },
     {
       "id": "verifier",
       "type": "security",
-      "label": "UserVerifier",
-      "sublabel": "digest or custom verifier",
+      "label": "User-channel verifier",
+      "sublabel": "Check authentication digest",
       "pos": [
-        1020,
+        995.0,
         110
       ],
       "size": [
-        170,
+        220,
         70
-      ]
+      ],
+      "purpose": "authentication"
     },
     {
       "id": "storepkg",
@@ -256,13 +269,14 @@
       "label": "storage.Store",
       "sublabel": "pins · queue · tokens",
       "pos": [
-        1020,
+        995.0,
         260
       ],
       "size": [
-        170,
+        220,
         70
-      ]
+      ],
+      "purpose": "storage"
     },
     {
       "id": "ddmengine",
@@ -270,13 +284,34 @@
       "label": "ddm.Engine",
       "sublabel": "service never imports ddm",
       "pos": [
-        1020,
+        995.0,
         410
       ],
       "size": [
-        170,
+        220,
         70
-      ]
+      ],
+      "purpose": "service"
+    },
+    {
+      "id": "replacement",
+      "label": "ReplacementStore",
+      "sublabel": "Optional staged promotion",
+      "type": "database",
+      "pos": [
+        675,
+        110
+      ],
+      "size": [
+        220,
+        70
+      ],
+      "sources": [
+        {
+          "path": "storage/replacement.go"
+        }
+      ],
+      "purpose": "storage"
     }
   ],
   "connections": [
@@ -285,7 +320,12 @@
       "from": "device",
       "to": "httpapi",
       "label": "check-in or connect",
-      "variant": "emphasis"
+      "variant": "emphasis",
+      "labelAt": [
+        295,
+        245
+      ],
+      "purpose": "transport"
     },
     {
       "id": "e2",
@@ -293,33 +333,65 @@
       "to": "httpapi",
       "label": "identity certificate",
       "variant": "security",
-      "fromSide": "right",
+      "fromSide": "bottom",
       "toSide": "top",
       "via": [
         [
+          125,
+          220
+        ],
+        [
           465,
-          145
+          220
         ]
-      ]
+      ],
+      "labelAt": [
+        295,
+        208
+      ],
+      "purpose": "authentication"
     },
     {
       "id": "e3",
       "from": "httpapi",
       "to": "core",
-      "label": "decoded message"
+      "label": "decoded message",
+      "labelAt": [
+        625,
+        248
+      ],
+      "purpose": "transport"
     },
     {
       "id": "e4",
       "from": "httpapi",
       "to": "errors",
-      "label": "refusal body",
-      "variant": "security"
+      "label": "Map HTTP errors",
+      "variant": "security",
+      "purpose": "failure"
     },
     {
       "id": "e5",
       "from": "core",
       "to": "hooks",
-      "label": "every operation"
+      "label": "Run service hooks",
+      "fromSide": "top",
+      "toSide": "bottom",
+      "via": [
+        [
+          785,
+          220
+        ],
+        [
+          465,
+          220
+        ]
+      ],
+      "labelAt": [
+        625,
+        208
+      ],
+      "purpose": "policy"
     },
     {
       "id": "e6",
@@ -329,30 +401,34 @@
       "labelAt": [
         945,
         312
-      ]
+      ],
+      "purpose": "storage"
     },
     {
       "id": "e7",
       "from": "core",
       "to": "dmhandler",
-      "label": "DeclarativeManagement",
+      "label": "Declarative check-in",
       "labelAt": [
         785.0,
         344.0
-      ]
+      ],
+      "purpose": "transport"
     },
     {
       "id": "e8",
       "from": "core",
       "to": "verifier",
       "label": "UserAuthenticate",
-      "variant": "security"
+      "variant": "security",
+      "purpose": "authentication"
     },
     {
       "id": "e9",
       "from": "core",
       "to": "bus",
-      "label": "state change"
+      "label": "state change",
+      "purpose": "transport"
     },
     {
       "id": "e10",
@@ -362,30 +438,58 @@
       "labelAt": [
         465.0,
         494.0
-      ]
+      ],
+      "purpose": "transport"
     },
     {
       "id": "e11",
       "from": "dmhandler",
       "to": "ddmengine",
-      "label": "Handle(endpoint)"
+      "label": "Handle(endpoint)",
+      "labelAt": [
+        945.0,
+        494.0
+      ],
+      "purpose": "transport"
+    },
+    {
+      "id": "core-replacement",
+      "from": "core",
+      "to": "replacement",
+      "label": "Stage / commit replacement",
+      "fromSide": "top",
+      "toSide": "bottom",
+      "labelAt": [
+        785,
+        200
+      ],
+      "purpose": "storage"
     }
   ],
   "cards": [
     {
-      "dot": "cyan",
-      "title": "One URL, two protocols",
+      "dot": "service",
+      "title": "Request processing",
       "items": [
-        "aspen-mdm-checkin routes to check-in, aspen-mdm to the command handler",
-        "Unsupported content type is 415; wrong method is 405; account reauthentication can return 401"
+        "The HTTP handler distinguishes check-in from command traffic by Content-Type. The service checks configured certificate status before running hooks.",
+        "A pending profile replacement handles its permitted candidate exchanges before ordinary dispatch; unrelated requests still require the appropriate identity checks."
       ]
     },
     {
-      "dot": "emerald",
-      "title": "Authorization order",
+      "dot": "service",
+      "title": "Extension points",
       "items": [
-        "Enabled certificate status checks precede hooks and service side effects",
-        "Account hooks reserve identity before storage and confirm after success"
+        "DMHandler connects the service to declarative management without importing the engine. UserVerifier supplies user-channel authentication policy.",
+        "Events report completed operations. Asynchronous subscribers preserve accepted work after request cancellation, within their configured drain lifecycle."
+      ]
+    },
+    {
+      "dot": "transport",
+      "title": "Public documentation",
+      "items": [
+        "Check-in — https://developer.apple.com/documentation/devicemanagement/check-in",
+        "Sending MDM commands to a device — https://developer.apple.com/documentation/devicemanagement/sending-mdm-commands-to-a-device",
+        "Declarative Management check-in — https://developer.apple.com/documentation/devicemanagement/declarative-management"
       ]
     }
   ]

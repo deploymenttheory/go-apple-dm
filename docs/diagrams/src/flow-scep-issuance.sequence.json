@@ -5,8 +5,8 @@
     "title": "SCEP Identity Issuance",
     "quality_profile": "showcase",
     "viewBox": [
-      1080,
-      566
+      1320,
+      646
     ],
     "column_fit": "spread",
     "views": [
@@ -30,44 +30,40 @@
         ],
         "note": "Authorized issuance returns a certificate; protocol refusals use a signed CertRep."
       }
-    ]
+    ],
+    "colour_profile": "purpose-v1",
+    "legend": {
+      "mode": "hidden"
+    }
   },
   "participants": [
     {
       "id": "device",
       "type": "external",
-      "label": "Device",
-      "sublabel": "from the profile payload"
+      "label": "Apple device",
+      "sublabel": "Follow SCEP payload",
+      "purpose": "neutral"
     },
     {
       "id": "scep",
       "type": "backend",
-      "label": "scep.Server",
-      "sublabel": "/scep"
+      "label": "SCEP server",
+      "sublabel": "Validate certificate request",
+      "purpose": "service"
     },
     {
       "id": "challenge",
       "type": "security",
-      "label": "Challenge",
-      "sublabel": "static · HMAC · one-time"
+      "label": "Issuance policy",
+      "sublabel": "Shared, HMAC, or one-use",
+      "purpose": "policy"
     },
     {
       "id": "ca",
       "type": "security",
-      "label": "ca.Local",
-      "sublabel": "enrollment CA"
-    }
-  ],
-  "segments": [
-    {
-      "from": 161.0,
-      "to": 280.5,
-      "label": "Capabilities"
-    },
-    {
-      "from": 283.0,
-      "to": 494.0,
-      "label": "PKIOperation"
+      "label": "Identity CA",
+      "sublabel": "Sign approved request",
+      "purpose": "certificate"
     }
   ],
   "messages": [
@@ -75,127 +71,134 @@
       "id": "caps",
       "from": "device",
       "to": "scep",
-      "y": 175.0,
       "label": "operation=GetCACaps",
-      "variant": "default"
+      "y": 175,
+      "variant": "default",
+      "purpose": "transport"
     },
     {
       "id": "caps-back",
       "from": "scep",
       "to": "device",
-      "y": 205.5,
-      "label": "POSTPKIOperation, SHA-256, Renewal",
-      "variant": "return"
+      "label": "Supported SCEP capabilities",
+      "y": 211,
+      "variant": "return",
+      "purpose": "transport"
     },
     {
       "id": "cacert",
       "from": "device",
       "to": "scep",
-      "y": 236.0,
       "label": "operation=GetCACert",
-      "variant": "default"
+      "y": 247,
+      "variant": "default",
+      "purpose": "transport"
     },
     {
       "id": "cacert-back",
       "from": "scep",
       "to": "device",
-      "y": 266.5,
-      "label": "the CA certificate",
-      "variant": "return"
+      "label": "CA/RA certificate material",
+      "y": 283,
+      "variant": "return",
+      "purpose": "certificate"
     },
     {
       "id": "pki",
       "from": "device",
       "to": "scep",
-      "y": 297.0,
-      "label": "PKIOperation, PKCSReq",
-      "variant": "emphasis"
+      "label": "Signed, encrypted PKCSReq",
+      "y": 319,
+      "variant": "emphasis",
+      "purpose": "transport"
     },
     {
       "id": "verify",
       "from": "scep",
       "to": "challenge",
-      "y": 327.5,
-      "label": "challengePassword from the CSR",
-      "variant": "security"
+      "label": "Validate CSR challenge password",
+      "y": 355,
+      "variant": "security",
+      "purpose": "authentication"
     },
     {
       "id": "verify-back",
       "from": "challenge",
       "to": "scep",
-      "y": 358.0,
-      "label": "derived from the common name",
-      "variant": "return"
-    },
-    {
-      "id": "sign",
-      "from": "scep",
-      "to": "ca",
-      "y": 388.5,
-      "label": "Sign(CSR, policy)",
-      "variant": "default"
-    },
-    {
-      "id": "cert",
-      "from": "ca",
-      "to": "scep",
-      "y": 419.0,
-      "label": "client certificate",
-      "variant": "return"
-    },
-    {
-      "id": "certrep",
-      "from": "scep",
-      "to": "device",
-      "y": 449.5,
-      "label": "CertRep: success or failure",
-      "variant": "emphasis"
+      "label": "Authorization accepted or rejected",
+      "y": 391,
+      "variant": "return",
+      "purpose": "policy"
     },
     {
       "id": "refused",
       "from": "scep",
       "to": "device",
-      "y": 480.0,
-      "label": "or a signed CertRep with failInfo",
-      "variant": "security",
-      "note": "a refusal is still delivered with 200; the device reads failInfo"
-    }
-  ],
-  "activations": [
-    {
-      "participant": "scep",
-      "from": 169.0,
-      "to": 488.0,
-      "type": "backend"
+      "label": "Rejected: signed failure CertRep; stop",
+      "y": 427,
+      "variant": "return",
+      "purpose": "failure"
     },
     {
-      "participant": "challenge",
-      "from": 321.5,
-      "to": 366.0,
-      "type": "security"
+      "id": "sign",
+      "from": "scep",
+      "to": "ca",
+      "label": "Accepted: validate CSR and issue",
+      "y": 463,
+      "variant": "default",
+      "purpose": "certificate"
     },
     {
-      "participant": "ca",
-      "from": 382.5,
-      "to": 427.0,
-      "type": "security"
+      "id": "cert",
+      "from": "ca",
+      "to": "scep",
+      "label": "Device identity certificate",
+      "y": 499,
+      "variant": "return",
+      "note": "Register account/replacement identity",
+      "purpose": "certificate"
+    },
+    {
+      "id": "certrep",
+      "from": "scep",
+      "to": "device",
+      "label": "Success: signed CertRep",
+      "y": 535,
+      "variant": "return",
+      "purpose": "success"
     }
   ],
   "cards": [
     {
-      "dot": "cyan",
-      "title": "Challenge strategies",
+      "dot": "policy",
+      "title": "Issuance authorization",
       "items": [
-        "Traditional enrollment supports static or HMAC challenges",
-        "Account enrollment uses CSR-bound credentials and trusted issuance registration"
+        "The profile selects the SCEP endpoint and challenge. Static and HMAC challenges are traditional strategies; account and replacement credentials bind issuance to an authorized request.",
+        "A successful challenge permits CSR validation and signing; it does not itself issue the certificate."
       ]
     },
     {
-      "dot": "rose",
-      "title": "SCEP protocol errors",
+      "dot": "service",
+      "title": "Success, failure, and renewal",
       "items": [
-        "SCEP protocol refusal uses signed CertRep with failInfo; malformed HTTP input can fail earlier",
-        "The device reads failInfo to learn why"
+        "Successful issuance returns the device identity in a signed CertRep. Protocol rejection instead returns failInfo; malformed transport input may fail earlier.",
+        "An accepted renewal proves possession with the existing certificate and can bypass the initial challenge. Configured certificate-status checks still apply."
+      ]
+    },
+    {
+      "dot": "authentication",
+      "title": "Enrollment association",
+      "items": [
+        "For account enrollment and controlled replacement, trusted issuance records the certificate association before the certificate is returned. HTTPS trust is configured separately."
+      ]
+    },
+    {
+      "dot": "transport",
+      "title": "Public documentation",
+      "items": [
+        "SCEP — https://developer.apple.com/documentation/devicemanagement/scep",
+        "RFC 8894 — SCEP — https://www.rfc-editor.org/rfc/rfc8894",
+        "Deploying device management enrollment profiles — https://developer.apple.com/documentation/devicemanagement/deploying-device-management-enrollment-profiles"
       ]
     }
   ]

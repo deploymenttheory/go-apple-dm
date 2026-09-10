@@ -5,8 +5,8 @@
     "title": "MDM Command Delivery",
     "quality_profile": "showcase",
     "viewBox": [
-      1080,
-      566
+      1320,
+      718
     ],
     "column_fit": "spread",
     "views": [
@@ -22,79 +22,72 @@
       },
       {
         "id": "wake",
-        "label": "Wake",
+        "label": "Prompt a device connection",
         "focus": [
           "push",
           "apns",
           "device"
         ],
-        "note": "The server cannot reach the device; it asks APNs to wake it."
+        "note": "APNs prompts the device to contact the MDM server. Its acceptance response does not prove command execution."
       },
       {
         "id": "collect",
-        "label": "Collect and report",
+        "label": "Collect results and deliver",
         "focus": [
           "device",
           "core",
           "store"
         ],
-        "note": "One connect stores the previous result and takes the next command."
+        "note": "A device poll records a non-Idle result, then receives the next eligible command or an empty successful response."
       }
-    ]
+    ],
+    "colour_profile": "purpose-v1",
+    "legend": {
+      "mode": "hidden"
+    }
   },
   "participants": [
     {
       "id": "admin",
       "type": "external",
-      "label": "Admin API",
-      "sublabel": "enqueue, then push"
+      "label": "Administrator",
+      "sublabel": "Queue and request wake",
+      "purpose": "neutral"
     },
     {
       "id": "core",
       "type": "backend",
-      "label": "service.Core",
-      "sublabel": "Enqueue · Connect"
+      "label": "MDM service",
+      "sublabel": "Process device polls",
+      "purpose": "service"
     },
     {
       "id": "store",
       "type": "database",
-      "label": "storage.Store",
-      "sublabel": "queue · pins · tokens"
+      "label": "Command store",
+      "sublabel": "Track delivery and results",
+      "purpose": "storage"
     },
     {
       "id": "push",
       "type": "backend",
-      "label": "pushnotify.Notifier",
-      "sublabel": "coalesced"
+      "label": "Wake notifier",
+      "sublabel": "Coalesce wake requests",
+      "purpose": "transport"
     },
     {
       "id": "apns",
       "type": "cloud",
       "label": "APNs",
-      "sublabel": "HTTP/2"
+      "sublabel": "Prompt a connection",
+      "purpose": "neutral"
     },
     {
       "id": "device",
       "type": "external",
-      "label": "Device",
-      "sublabel": "enrolled"
-    }
-  ],
-  "segments": [
-    {
-      "from": 161.0,
-      "to": 250.0,
-      "label": "Enqueue"
-    },
-    {
-      "from": 252.5,
-      "to": 341.5,
-      "label": "Wake"
-    },
-    {
-      "from": 344.0,
-      "to": 494.0,
-      "label": "Connect"
+      "label": "Apple device",
+      "sublabel": "Request and run commands",
+      "purpose": "neutral"
     }
   ],
   "messages": [
@@ -102,127 +95,150 @@
       "id": "enqueue",
       "from": "admin",
       "to": "core",
-      "y": 175.0,
-      "label": "Enqueue(ids, cmd)",
-      "variant": "emphasis"
+      "label": "Queue command for selected targets",
+      "y": 175,
+      "variant": "emphasis",
+      "purpose": "transport"
     },
     {
       "id": "target-read",
       "from": "core",
       "to": "store",
-      "y": 205.5,
-      "label": "Get(id) for each target",
-      "variant": "default"
+      "label": "Read OS, version, and channel",
+      "y": 211,
+      "variant": "default",
+      "purpose": "storage"
     },
     {
       "id": "queue",
       "from": "core",
       "to": "store",
-      "y": 236.0,
-      "label": "CommandQueue.Enqueue",
-      "variant": "default"
+      "label": "Store command for supported targets",
+      "y": 247,
+      "variant": "default",
+      "purpose": "storage"
     },
     {
       "id": "notify",
       "from": "admin",
       "to": "push",
-      "y": 266.5,
-      "label": "Notify(ids)",
+      "label": "Request MDM wake separately",
+      "y": 283,
       "variant": "default",
-      "note": "service never imports push; the caller pushes"
+      "purpose": "transport"
     },
     {
       "id": "apns-post",
       "from": "push",
       "to": "apns",
-      "y": 297.0,
-      "label": "apns-push-type mdm",
-      "variant": "security"
+      "label": "MDM push: PushMagic, not command",
+      "y": 319,
+      "variant": "security",
+      "purpose": "transport"
     },
     {
       "id": "wake",
       "from": "apns",
       "to": "device",
-      "y": 327.5,
-      "label": "wake",
-      "variant": "emphasis"
+      "label": "Asynchronous connection prompt",
+      "y": 355,
+      "variant": "dashed",
+      "purpose": "transport"
     },
     {
       "id": "connect",
       "from": "device",
       "to": "core",
-      "y": 358.0,
-      "label": "PUT /mdm",
-      "variant": "emphasis"
+      "label": "PUT /mdm: Idle or previous result",
+      "y": 391,
+      "variant": "emphasis",
+      "purpose": "transport"
     },
     {
       "id": "store-result",
       "from": "core",
       "to": "store",
-      "y": 388.5,
-      "label": "StoreResult(previous)",
-      "variant": "default"
+      "label": "Non-Idle only: store previous result",
+      "y": 427,
+      "variant": "default",
+      "purpose": "storage"
     },
     {
       "id": "next",
       "from": "core",
       "to": "store",
-      "y": 419.0,
-      "label": "Next(id, skipNotNow)",
-      "variant": "default"
+      "label": "Select eligible command; mark sent",
+      "y": 463,
+      "variant": "default",
+      "purpose": "storage"
     },
     {
       "id": "deliver",
       "from": "core",
       "to": "device",
-      "y": 449.5,
-      "label": "200 application/xml",
-      "variant": "return"
+      "label": "Command, or empty HTTP 200",
+      "y": 499,
+      "variant": "return",
+      "purpose": "transport"
     },
     {
       "id": "ack",
       "from": "device",
       "to": "core",
-      "y": 480.0,
-      "label": "Acknowledged + CommandUUID",
-      "variant": "default"
-    }
-  ],
-  "activations": [
-    {
-      "participant": "core",
-      "from": 169.0,
-      "to": 488.0,
-      "type": "backend"
+      "label": "Report status with CommandUUID",
+      "y": 535,
+      "variant": "default",
+      "purpose": "transport"
     },
     {
-      "participant": "push",
-      "from": 260.5,
-      "to": 305.0,
-      "type": "backend"
+      "id": "ack-store",
+      "from": "core",
+      "to": "store",
+      "label": "Store acknowledged result",
+      "y": 571,
+      "variant": "default",
+      "purpose": "storage"
     },
     {
-      "participant": "device",
-      "from": 321.5,
-      "to": 488.0,
-      "type": "external"
+      "id": "continue",
+      "from": "core",
+      "to": "device",
+      "label": "Next command, or empty HTTP 200",
+      "y": 607,
+      "variant": "return",
+      "purpose": "transport"
     }
   ],
   "cards": [
     {
-      "dot": "cyan",
-      "title": "Target validation",
+      "dot": "transport",
+      "title": "Queue, wake, and collect",
       "items": [
-        "service.Core asks schema/commands whether the command applies to that OS, version and channel",
-        "Unsupported targets are skipped with ErrUnsupportedTarget"
+        "The service validates each target and queues commands for supported, enabled enrollments. The caller separately requests the MDM wake notification.",
+        "The device initiates the command request. The HTTP response carries the command; APNs does not carry it."
       ]
     },
     {
-      "dot": "emerald",
-      "title": "Connect result and delivery",
+      "dot": "service",
+      "title": "Results and special paths",
       "items": [
-        "Stores the result of the previous command",
-        "Takes the next pending command and marks it sent"
+        "An incoming non-Idle status is stored before selecting the next eligible command. An empty HTTP 200 ends the exchange when no command is available.",
+        "Controlled enrollment-profile replacement intercepts the command connection and uses its staged InstallProfile record. See the replacement companion."
+      ]
+    },
+    {
+      "dot": "service",
+      "title": "Observing completion",
+      "items": [
+        "Use the stored command result or device evidence to establish completion. APNs acceptance and a queue state of sent are earlier steps."
+      ]
+    },
+    {
+      "dot": "transport",
+      "title": "Public documentation",
+      "items": [
+        "Sending MDM commands to a device — https://developer.apple.com/documentation/devicemanagement/sending-mdm-commands-to-a-device",
+        "Handling NotNow status responses — https://developer.apple.com/documentation/devicemanagement/handling-notnow-status-responses"
       ]
     }
   ]

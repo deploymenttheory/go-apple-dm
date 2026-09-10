@@ -2,11 +2,11 @@
   "schema_version": 1,
   "diagram_type": "sequence",
   "meta": {
-    "title": "Declarative Management Sync",
+    "title": "Declarative Device Management: Change, Synchronize, Report",
     "quality_profile": "showcase",
     "viewBox": [
-      1080,
-      566
+      1320,
+      1006
     ],
     "column_fit": "spread",
     "views": [
@@ -23,69 +23,63 @@
       },
       {
         "id": "fetch",
-        "label": "Device fetch",
+        "label": "Synchronize declarations",
         "focus": [
           "device",
+          "core",
           "engine",
           "ddmstore"
         ],
-        "note": "Tokens, then the manifest, then only what the device does not have."
+        "note": "The device uses check-in requests to compare tokens, fetch the manifest and changed declarations, and report status."
       }
-    ]
+    ],
+    "colour_profile": "purpose-v1",
+    "legend": {
+      "mode": "hidden"
+    }
   },
   "participants": [
     {
       "id": "admin",
       "type": "external",
       "label": "Admin API",
-      "sublabel": "/admin/v1"
+      "sublabel": "Change desired state",
+      "purpose": "neutral"
     },
     {
       "id": "engine",
       "type": "backend",
-      "label": "ddm.Engine",
-      "sublabel": "Handle · Tokens"
+      "label": "DDM engine",
+      "sublabel": "Compute assigned state",
+      "purpose": "service"
     },
     {
       "id": "ddmstore",
       "type": "database",
-      "label": "ddm.Store",
-      "sublabel": "snapshots · changes"
+      "label": "Declarative store",
+      "sublabel": "Snapshots and changes",
+      "purpose": "storage"
     },
     {
       "id": "notifier",
       "type": "backend",
-      "label": "ddmsync.Notifier",
-      "sublabel": "2s window"
+      "label": "Change notifier",
+      "sublabel": "Queue sync and wake",
+      "purpose": "transport"
     },
     {
       "id": "core",
       "type": "backend",
-      "label": "service.Core",
-      "sublabel": "Enqueue"
+      "label": "MDM and adapters",
+      "sublabel": "Forward check-in to DDM",
+      "purpose": "service"
     },
     {
       "id": "device",
       "type": "external",
-      "label": "Device",
-      "sublabel": "check-in to /mdm"
-    }
-  ],
-  "segments": [
-    {
-      "from": 161.0,
-      "to": 250.0,
-      "label": "Publish"
-    },
-    {
-      "from": 252.5,
-      "to": 341.5,
-      "label": "Notify"
-    },
-    {
-      "from": 344.0,
-      "to": 494.0,
-      "label": "Device pulls"
+      "label": "Apple device",
+      "sublabel": "Fetch and report state",
+      "purpose": "neutral"
     }
   ],
   "messages": [
@@ -93,129 +87,223 @@
       "id": "put",
       "from": "admin",
       "to": "engine",
-      "y": 175.0,
-      "label": "PUT /declarations",
-      "variant": "emphasis"
+      "label": "Update an assigned declaration",
+      "y": 175,
+      "variant": "emphasis",
+      "purpose": "artifact"
     },
     {
       "id": "changerows",
       "from": "engine",
       "to": "ddmstore",
-      "y": 205.5,
-      "label": "declaration + change rows",
+      "label": "Commit state and change records",
+      "y": 211,
       "variant": "default",
-      "note": "written in the same transaction; the change rows are the persistent signal"
+      "purpose": "storage"
     },
     {
       "id": "kick",
       "from": "admin",
       "to": "notifier",
-      "y": 236.0,
-      "label": "Kick",
+      "label": "Wake notifier; periodic poll also runs",
+      "y": 247,
       "variant": "dashed",
-      "note": "the admin route wrapper kicks, so the 1s poll is not the only trigger"
+      "purpose": "transport"
     },
     {
       "id": "pending",
       "from": "notifier",
       "to": "ddmstore",
-      "y": 266.5,
-      "label": "PendingChanges",
-      "variant": "default"
+      "label": "Read committed enrollment changes",
+      "y": 283,
+      "variant": "default",
+      "purpose": "storage"
     },
     {
       "id": "tokensread",
       "from": "notifier",
       "to": "engine",
-      "y": 297.0,
-      "label": "Tokens(id)",
-      "variant": "default"
+      "label": "Build current sync tokens",
+      "y": 319,
+      "variant": "default",
+      "purpose": "service"
     },
     {
       "id": "enqueue",
       "from": "notifier",
       "to": "core",
-      "y": 327.5,
-      "label": "Enqueue, dedupe key ddm",
+      "label": "Queue DeclarativeManagement command",
+      "y": 355,
       "variant": "default",
-      "note": "through service.Core, so hooks, the target screen and the audit trail all run"
+      "purpose": "service"
+    },
+    {
+      "id": "wake",
+      "from": "notifier",
+      "to": "device",
+      "label": "APNs wake via MDM push notifier",
+      "y": 391,
+      "variant": "dashed",
+      "purpose": "transport"
+    },
+    {
+      "id": "poll",
+      "from": "device",
+      "to": "core",
+      "label": "Poll for command",
+      "y": 427,
+      "variant": "default",
+      "purpose": "transport"
     },
     {
       "id": "deliver",
       "from": "core",
       "to": "device",
-      "y": 358.0,
-      "label": "delivered on next connect",
-      "variant": "emphasis"
+      "label": "Return DeclarativeManagement",
+      "y": 463,
+      "variant": "return",
+      "purpose": "transport"
     },
     {
       "id": "tokens",
       "from": "device",
+      "to": "core",
+      "label": "Check-in: tokens",
+      "y": 499,
+      "variant": "default",
+      "purpose": "transport"
+    },
+    {
+      "id": "tokens-forward",
+      "from": "core",
       "to": "engine",
-      "y": 388.5,
-      "label": "tokens",
-      "variant": "default"
+      "label": "Refresh snapshot and sync token",
+      "y": 535,
+      "variant": "default",
+      "purpose": "service"
+    },
+    {
+      "id": "tokens-back",
+      "from": "core",
+      "to": "device",
+      "label": "Return SyncTokens JSON",
+      "y": 571,
+      "variant": "return",
+      "purpose": "artifact"
     },
     {
       "id": "items",
       "from": "device",
+      "to": "core",
+      "label": "Check-in: declaration-items",
+      "y": 607,
+      "variant": "default",
+      "purpose": "transport"
+    },
+    {
+      "id": "items-forward",
+      "from": "core",
       "to": "engine",
-      "y": 419.0,
-      "label": "declaration-items",
-      "variant": "default"
+      "label": "Refresh and read manifest",
+      "y": 643,
+      "variant": "default",
+      "purpose": "service"
+    },
+    {
+      "id": "items-back",
+      "from": "core",
+      "to": "device",
+      "label": "Return declaration manifest",
+      "y": 679,
+      "variant": "return",
+      "purpose": "artifact"
     },
     {
       "id": "fetch",
       "from": "device",
+      "to": "core",
+      "label": "Check-in: declaration/{kind}/{identifier}",
+      "y": 715,
+      "variant": "default",
+      "purpose": "transport"
+    },
+    {
+      "id": "fetch-forward",
+      "from": "core",
       "to": "engine",
-      "y": 449.5,
-      "label": "declaration/{kind}/{id}",
-      "variant": "default"
+      "label": "Read advertised declaration version",
+      "y": 751,
+      "variant": "default",
+      "purpose": "storage"
+    },
+    {
+      "id": "fetch-back",
+      "from": "core",
+      "to": "device",
+      "label": "Return declaration JSON",
+      "y": 787,
+      "variant": "return",
+      "purpose": "artifact"
     },
     {
       "id": "status",
       "from": "device",
+      "to": "core",
+      "label": "Check-in: status report",
+      "y": 823,
+      "variant": "default",
+      "purpose": "transport"
+    },
+    {
+      "id": "status-forward",
+      "from": "core",
       "to": "engine",
-      "y": 480.0,
-      "label": "status report",
-      "variant": "default"
-    }
-  ],
-  "activations": [
-    {
-      "participant": "engine",
-      "from": 169.0,
-      "to": 488.0,
-      "type": "backend"
+      "label": "Validate and persist status",
+      "y": 859,
+      "variant": "default",
+      "purpose": "storage"
     },
     {
-      "participant": "notifier",
-      "from": 230.0,
-      "to": 335.5,
-      "type": "backend"
-    },
-    {
-      "participant": "device",
-      "from": 352.0,
-      "to": 488.0,
-      "type": "external"
+      "id": "status-back",
+      "from": "core",
+      "to": "device",
+      "label": "Empty HTTP 200 acknowledgement",
+      "y": 895,
+      "variant": "return",
+      "purpose": "success"
     }
   ],
   "cards": [
     {
-      "dot": "cyan",
-      "title": "Four endpoints, one URL",
+      "dot": "transport",
+      "title": "Server-side change notification",
       "items": [
-        "The device never gets a DDM URL: every call is a check-in message to /mdm",
-        "tokens, declaration-items, declaration/{kind}/{identifier}, status"
+        "The engine commits changes to assigned declarations and persistent change records. The notifier queues a synchronization command through service.Core.",
+        "A configured pusher prompts the device to poll. The device receives the command from the MDM server’s response."
       ]
     },
     {
-      "dot": "rose",
-      "title": "Change to command",
+      "dot": "transport",
+      "title": "Device synchronization",
       "items": [
-        "The engine writes persistent change rows for the notifier",
-        "Its Enqueuer is service.Core, so a DDM kick runs the hooks and the target screen like any command"
+        "This server carries Endpoint values inside DeclarativeManagement check-ins to /mdm. The adapter passes each operation to the engine.",
+        "The device compares synchronization tokens, fetches the manifest and changed declarations as needed, and reports status separately."
+      ]
+    },
+    {
+      "dot": "storage",
+      "title": "State preservation",
+      "items": [
+        "Ordinary enrollment reset or checkout clears declarative state through the service hook. Controlled profile replacement avoids that reset."
+      ]
+    },
+    {
+      "dot": "transport",
+      "title": "Public documentation",
+      "items": [
+        "Integrating declarative management — https://developer.apple.com/documentation/devicemanagement/integrating-declarative-management",
+        "Declarative Management check-in — https://developer.apple.com/documentation/devicemanagement/declarative-management",
+        "Declarations — https://developer.apple.com/documentation/devicemanagement/devicemanagement-declarations"
       ]
     }
   ]

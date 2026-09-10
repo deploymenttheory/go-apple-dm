@@ -2,7 +2,7 @@
   "schema_version": 1,
   "diagram_type": "architecture",
   "meta": {
-    "title": "Package Tiers and Import Direction",
+    "title": "Package Dependencies and Module Boundaries",
     "quality_profile": "showcase",
     "views": [
       {
@@ -30,50 +30,53 @@
       }
     ],
     "viewBox": [
-      1360,
+      1390,
       560
     ],
     "repository": {
       "url": "https://github.com/deploymenttheory/go-apple-dm",
-      "revision": "a817270f13b4ef7a9b1d2895118981120546b3a2"
+      "revision": "ff85958196cb013e8e14c1055f067319b07e3299"
+    },
+    "colour_profile": "purpose-v1",
+    "legend": {
+      "mode": "hidden"
     }
   },
   "components": [
     {
       "id": "apptier",
       "type": "backend",
-      "label": "app",
-      "sublabel": "cmd · internal/app · e2e",
+      "label": "Composition and tooling",
+      "sublabel": "Server, bench, and CLI",
       "pos": [
-        40,
+        40.0,
         270.0
       ],
       "size": [
-        160,
+        220,
         70
       ],
-      "tag": "5 packages",
       "sources": [
         {
           "path": "server/internal/app/app.go",
           "label": "wire"
         }
-      ]
+      ],
+      "purpose": "service"
     },
     {
       "id": "servertier",
       "type": "backend",
-      "label": "server/",
-      "sublabel": "service · httpapi · ddmsync",
+      "label": "Server implementations",
+      "sublabel": "Services and SQL stores",
       "pos": [
-        280,
+        285.0,
         270.0
       ],
       "size": [
-        170,
+        220,
         70
       ],
-      "tag": "32 packages",
       "sources": [
         {
           "path": "server/service/checkin.go",
@@ -83,85 +86,85 @@
           "path": "server/ddmsync/notifier.go",
           "label": "declarations"
         }
-      ]
+      ],
+      "purpose": "service"
     },
     {
       "id": "simtier",
       "type": "external",
-      "label": "simulator/",
-      "sublabel": "a device, in software",
+      "label": "Device simulator",
+      "sublabel": "Modeled protocol exchanges",
       "pos": [
-        840,
+        850.0,
         430.0
       ],
       "size": [
-        180,
+        220,
         70
       ],
-      "tag": "1 package",
       "sources": [
         {
           "path": "simulator/simulator.go",
           "label": "device"
         }
-      ]
+      ],
+      "purpose": "neutral"
     },
     {
       "id": "storagetier",
       "type": "database",
-      "label": "storage/",
-      "sublabel": "contracts · in-memory",
+      "label": "Storage contracts",
+      "sublabel": "Interfaces and memory stores",
       "pos": [
-        560,
+        570.0,
         270.0
       ],
       "size": [
-        180,
+        220,
         70
       ],
-      "tag": "9 packages",
       "sources": [
         {
           "path": "storage/storage.go",
           "label": "contract"
         }
-      ]
+      ],
+      "purpose": "storage"
     },
     {
       "id": "clienttier",
       "type": "cloud",
-      "label": "appleplatformservices/",
-      "sublabel": "dep · axm · gdmf · push",
+      "label": "Apple service clients",
+      "sublabel": "Assignment and push APIs",
       "pos": [
-        560,
+        570.0,
         110.0
       ],
       "size": [
-        180,
+        220,
         70
       ],
-      "tag": "9 packages",
       "sources": [
         {
           "path": "appleplatformservices/dep/client.go",
           "label": "DEP"
         }
-      ]
+      ],
+      "purpose": "transport"
     },
     {
       "id": "pkitier",
       "type": "security",
-      "label": "pki/",
-      "sublabel": "ca · scep · acme · pushcert",
+      "label": "Certificate services",
+      "sublabel": "Issue and verify identities",
       "pos": [
-        560,
+        570.0,
         430.0
       ],
       "size": [
-        180,
+        220,
         70
       ],
-      "tag": "7 packages",
       "sources": [
         {
           "path": "pki/acme/server.go",
@@ -171,22 +174,22 @@
           "path": "pki/pushcert/pushcert.go",
           "label": "stdlib only"
         }
-      ]
+      ],
+      "purpose": "certificate"
     },
     {
       "id": "protocoltier",
       "type": "backend",
-      "label": "mdmprotocol/",
-      "sublabel": "mdm · ddm · enroll · plist",
+      "label": "Management protocols",
+      "sublabel": "Wire messages and engines",
       "pos": [
-        840,
+        850.0,
         270.0
       ],
       "size": [
-        180,
+        220,
         70
       ],
-      "tag": "15 packages",
       "sources": [
         {
           "path": "mdmprotocol/mdm/checkin.go",
@@ -196,49 +199,50 @@
           "path": "mdmprotocol/dmhook/dmhook.go",
           "label": "hooks"
         }
-      ]
+      ],
+      "purpose": "transport"
     },
     {
       "id": "schematier",
       "type": "backend",
-      "label": "schema/",
-      "sublabel": "generated from Apple",
+      "label": "Generated Apple schemas",
+      "sublabel": "Typed payloads and rules",
       "pos": [
-        840,
+        850.0,
         110.0
       ],
       "size": [
-        180,
+        220,
         70
       ],
-      "tag": "11 packages",
       "sources": [
         {
           "path": "schema/GENERATED_FROM.json",
           "label": "pin"
         }
-      ]
+      ],
+      "purpose": "artifact"
     },
     {
       "id": "foundationtier",
       "type": "backend",
-      "label": "foundation",
-      "sublabel": "paging · clock · secrets",
+      "label": "Shared utilities",
+      "sublabel": "Clock, paging, and secrets",
       "pos": [
-        1120,
+        1130.0,
         270.0
       ],
       "size": [
-        180,
+        220,
         70
       ],
-      "tag": "6 packages",
       "sources": [
         {
           "path": "paging/paging.go",
           "label": "paging"
         }
-      ]
+      ],
+      "purpose": "service"
     }
   ],
   "boundaries": [
@@ -270,67 +274,125 @@
     {
       "from": "apptier",
       "to": "servertier",
-      "label": "assembles"
+      "label": "imports",
+      "id": "import-0",
+      "labelAt": [
+        273.0,
+        354.0
+      ],
+      "purpose": "neutral"
     },
     {
       "from": "servertier",
-      "to": "storagetier"
+      "to": "storagetier",
+      "id": "import-1",
+      "purpose": "neutral"
     },
     {
       "from": "servertier",
       "to": "clienttier",
-      "label": "calls Apple"
+      "label": "imports API clients",
+      "id": "import-2",
+      "purpose": "neutral"
     },
     {
       "from": "storagetier",
-      "to": "protocoltier"
+      "to": "protocoltier",
+      "id": "import-3",
+      "purpose": "neutral"
     },
     {
       "from": "storagetier",
       "to": "pkitier",
       "label": "push certificates",
-      "labelDy": 58
+      "labelDy": 58,
+      "id": "import-4",
+      "purpose": "neutral"
     },
     {
       "from": "clienttier",
-      "to": "protocoltier"
+      "to": "protocoltier",
+      "id": "import-5",
+      "purpose": "neutral"
     },
     {
       "from": "pkitier",
-      "to": "protocoltier"
+      "to": "protocoltier",
+      "id": "import-6",
+      "purpose": "neutral"
     },
     {
       "from": "simtier",
       "to": "protocoltier",
-      "label": "drives a server"
+      "label": "imports protocol types",
+      "id": "import-7",
+      "purpose": "neutral"
     },
     {
       "from": "protocoltier",
       "to": "schematier",
-      "label": "generated types"
+      "label": "generated types",
+      "id": "import-8",
+      "purpose": "neutral"
     },
     {
       "from": "protocoltier",
-      "to": "foundationtier"
+      "to": "foundationtier",
+      "id": "import-9",
+      "purpose": "neutral"
+    },
+    {
+      "id": "ade-gdmf-exception",
+      "from": "protocoltier",
+      "to": "clienttier",
+      "variant": "dashed",
+      "label": "ADE OS lookup exception",
+      "fromSide": "left",
+      "toSide": "bottom",
+      "via": [
+        [
+          815,
+          305
+        ],
+        [
+          815,
+          220
+        ],
+        [
+          680,
+          220
+        ]
+      ],
+      "labelAt": [
+        700,
+        208
+      ],
+      "purpose": "neutral"
     }
   ],
   "cards": [
     {
-      "dot": "cyan",
-      "title": "Reading the arrows",
+      "dot": "neutral",
+      "title": "How to read this map",
       "items": [
-        "Every arrow means \"imports\": the tail depends on the head",
-        "A tier may import its own and every tier to its right, never to its left",
-        "internal/layout reads the tier from the import path and fails the build on an upward edge"
+        "Arrows show selected package dependencies, not network traffic. server/ is a separate Go module that imports the library.",
+        "The map groups composition code by purpose. The current tier test classifies server-prefixed packages in the server tier."
       ]
     },
     {
-      "dot": "rose",
-      "title": "Module boundary",
+      "dot": "policy",
+      "title": "Enforced rules and exceptions",
       "items": [
-        "server/ is a second Go module, so it can depend on the library and never the reverse",
-        "The library module has no SQL driver dependency",
-        "pki/pushcert uses only the standard library, keeping certificate parsing independent of push"
+        "Tests reject unapproved upward imports and package-unit cycles. The explicit upward exception is mdmprotocol/enroll/ade importing appleplatformservices/gdmf.",
+        "Test scaffolding is excluded from the tier rule. pki/pushcert remains independent of the push client and imports only the standard library."
+      ]
+    },
+    {
+      "dot": "transport",
+      "title": "Public documentation",
+      "items": [
+        "Go Modules Reference — https://go.dev/ref/mod",
+        "Apple device-management schema repository — https://github.com/apple/device-management"
       ]
     }
   ]

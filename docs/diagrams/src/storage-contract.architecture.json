@@ -10,19 +10,19 @@
     ],
     "repository": {
       "url": "https://github.com/deploymenttheory/go-apple-dm",
-      "revision": "a817270f13b4ef7a9b1d2895118981120546b3a2"
+      "revision": "ff85958196cb013e8e14c1055f067319b07e3299"
     },
     "views": [
       {
         "id": "enrollment",
-        "label": "Enrollment",
+        "label": "Enrollment identity",
         "focus": [
           "authn",
           "enrollmentstore",
           "certauthstore",
           "authorize"
         ],
-        "note": "Authenticate upserts the record; every later message is checked against the pinned certificate."
+        "note": "Ordinary enrollment associates an identity. Later requests enforce configured pinning or the authorized replacement handshake."
       },
       {
         "id": "delivery",
@@ -37,42 +37,47 @@
       },
       {
         "id": "secrets",
-        "label": "Escrow",
+        "label": "Stored credentials",
         "focus": [
           "setbst",
           "bootstraptokenstore",
           "userauthstore",
           "userauth"
         ],
-        "note": "Bootstrap tokens and digest state are sealed at rest."
+        "note": "Bootstrap and user-auth tokens are encrypted by configured SQL backends; encryption is not an interface guarantee."
       },
       {
         "id": "migration",
-        "label": "Migration",
+        "label": "Move enrollment records",
         "focus": [
           "export",
           "migrationstore",
           "pushcertstore",
           "pushcertmgr"
         ],
-        "note": "Export and import move an enrollment between backends with its tokens intact."
+        "note": "Export and import transfer enrollment records and tokens. The ordinary command queue is not included."
       }
-    ]
+    ],
+    "colour_profile": "purpose-v1",
+    "legend": {
+      "mode": "hidden"
+    }
   },
   "components": [
     {
       "id": "authn",
       "type": "backend",
-      "label": "Authenticate",
-      "sublabel": "first check-in",
+      "label": "Authenticate handler",
+      "sublabel": "Create or reset enrollment",
       "pos": [
-        40,
+        15.0,
         110
       ],
       "size": [
-        170,
+        220,
         70
-      ]
+      ],
+      "purpose": "authentication"
     },
     {
       "id": "enqueue",
@@ -80,27 +85,29 @@
       "label": "Core.Enqueue",
       "sublabel": "one row per target",
       "pos": [
-        40,
+        15.0,
         260
       ],
       "size": [
-        170,
+        220,
         70
-      ]
+      ],
+      "purpose": "service"
     },
     {
       "id": "setbst",
       "type": "backend",
       "label": "SetBootstrapToken",
-      "sublabel": "escrow after FileVault",
+      "sublabel": "Escrow a bootstrap token",
       "pos": [
-        40,
+        15.0,
         410
       ],
       "size": [
-        170,
+        220,
         70
-      ]
+      ],
+      "purpose": "storage"
     },
     {
       "id": "export",
@@ -108,13 +115,14 @@
       "label": "ExportEnrollments",
       "sublabel": "backend to backend",
       "pos": [
-        40,
+        15.0,
         560
       ],
       "size": [
-        170,
+        220,
         70
-      ]
+      ],
+      "purpose": "storage"
     },
     {
       "id": "enrollmentstore",
@@ -122,11 +130,11 @@
       "label": "EnrollmentStore",
       "sublabel": "the enrollment record",
       "pos": [
-        380,
+        355.0,
         110
       ],
       "size": [
-        170,
+        220,
         70
       ],
       "sources": [
@@ -136,7 +144,8 @@
           "end_line": 118,
           "label": "EnrollmentStore"
         }
-      ]
+      ],
+      "purpose": "storage"
     },
     {
       "id": "commandqueue",
@@ -144,11 +153,11 @@
       "label": "CommandQueue",
       "sublabel": "queue per enrollment",
       "pos": [
-        380,
+        355.0,
         260
       ],
       "size": [
-        170,
+        220,
         70
       ],
       "sources": [
@@ -158,19 +167,20 @@
           "end_line": 218,
           "label": "CommandQueue"
         }
-      ]
+      ],
+      "purpose": "storage"
     },
     {
       "id": "bootstraptokenstore",
       "type": "database",
       "label": "BootstrapTokenStore",
-      "sublabel": "sealed at rest",
+      "sublabel": "Store and retrieve tokens",
       "pos": [
-        380,
+        355.0,
         410
       ],
       "size": [
-        170,
+        220,
         70
       ],
       "sources": [
@@ -180,7 +190,8 @@
           "end_line": 264,
           "label": "BootstrapTokenStore"
         }
-      ]
+      ],
+      "purpose": "storage"
     },
     {
       "id": "migrationstore",
@@ -188,11 +199,11 @@
       "label": "MigrationStore",
       "sublabel": "Export · Import",
       "pos": [
-        380,
+        355.0,
         560
       ],
       "size": [
-        170,
+        220,
         70
       ],
       "sources": [
@@ -202,19 +213,20 @@
           "end_line": 348,
           "label": "MigrationStore"
         }
-      ]
+      ],
+      "purpose": "storage"
     },
     {
       "id": "certauthstore",
       "type": "security",
       "label": "CertAuthStore",
-      "sublabel": "pin and history",
+      "sublabel": "Identity pins and history",
       "pos": [
-        700,
+        675.0,
         110
       ],
       "size": [
-        170,
+        220,
         70
       ],
       "sources": [
@@ -224,19 +236,20 @@
           "end_line": 255,
           "label": "CertAuthStore"
         }
-      ]
+      ],
+      "purpose": "storage"
     },
     {
       "id": "pushstore",
       "type": "database",
       "label": "PushStore",
-      "sublabel": "token · push magic",
+      "sublabel": "Token, topic, and PushMagic",
       "pos": [
-        700,
+        675.0,
         260
       ],
       "size": [
-        170,
+        220,
         70
       ],
       "sources": [
@@ -246,7 +259,8 @@
           "end_line": 224,
           "label": "PushStore"
         }
-      ]
+      ],
+      "purpose": "storage"
     },
     {
       "id": "userauthstore",
@@ -254,11 +268,11 @@
       "label": "UserAuthStore",
       "sublabel": "digest challenge state",
       "pos": [
-        700,
+        675.0,
         410
       ],
       "size": [
-        170,
+        220,
         70
       ],
       "sources": [
@@ -268,19 +282,20 @@
           "end_line": 327,
           "label": "UserAuthStore"
         }
-      ]
+      ],
+      "purpose": "storage"
     },
     {
       "id": "pushcertstore",
       "type": "security",
       "label": "PushCertStore",
-      "sublabel": "APNs cert and key",
+      "sublabel": "MDM certificate and key",
       "pos": [
-        700,
+        675.0,
         560
       ],
       "size": [
-        170,
+        220,
         70
       ],
       "sources": [
@@ -290,21 +305,23 @@
           "end_line": 293,
           "label": "PushCertStore"
         }
-      ]
+      ],
+      "purpose": "storage"
     },
     {
       "id": "authorize",
       "type": "security",
-      "label": "Core.authorize",
-      "sublabel": "pin on every message",
+      "label": "Identity authorization",
+      "sublabel": "Check enrollment identity",
       "pos": [
-        1020,
+        995.0,
         110
       ],
       "size": [
-        170,
+        220,
         70
-      ]
+      ],
+      "purpose": "policy"
     },
     {
       "id": "pushsvc",
@@ -312,13 +329,14 @@
       "label": "pushnotify.Notifier",
       "sublabel": "wake the device",
       "pos": [
-        1020,
+        995.0,
         260
       ],
       "size": [
-        170,
+        220,
         70
-      ]
+      ],
+      "purpose": "transport"
     },
     {
       "id": "userauth",
@@ -326,27 +344,29 @@
       "label": "UserAuthenticate",
       "sublabel": "challenge, then token",
       "pos": [
-        1020,
+        995.0,
         410
       ],
       "size": [
-        170,
+        220,
         70
-      ]
+      ],
+      "purpose": "authentication"
     },
     {
       "id": "pushcertmgr",
       "type": "backend",
-      "label": "admin /pushcerts",
-      "sublabel": "upload or renew",
+      "label": "MDM certificate admin",
+      "sublabel": "Import a topic credential",
       "pos": [
-        1020,
+        995.0,
         560
       ],
       "size": [
-        170,
+        220,
         70
-      ]
+      ],
+      "purpose": "certificate"
     }
   ],
   "boundaries": [
@@ -370,68 +390,100 @@
       "id": "s1",
       "from": "authn",
       "to": "enrollmentstore",
-      "label": "upserts it"
+      "label": "Create or reset",
+      "purpose": "storage"
     },
     {
       "id": "s2",
       "from": "enqueue",
       "to": "commandqueue",
-      "label": "enqueues"
+      "label": "enqueues",
+      "purpose": "storage"
     },
     {
       "id": "s3",
       "from": "setbst",
       "to": "bootstraptokenstore",
-      "label": "escrows"
+      "label": "Escrow token",
+      "purpose": "storage"
     },
     {
       "id": "s4",
       "from": "export",
       "to": "migrationstore",
-      "label": "pages exports"
+      "label": "pages exports",
+      "purpose": "storage"
     },
     {
       "id": "s5",
       "from": "authorize",
       "to": "certauthstore",
       "label": "reads the pin",
-      "variant": "security"
+      "variant": "security",
+      "purpose": "policy"
     },
     {
       "id": "s6",
       "from": "pushsvc",
       "to": "pushstore",
-      "label": "reads PushInfo"
+      "label": "reads PushInfo",
+      "purpose": "storage"
     },
     {
       "id": "s7",
       "from": "userauth",
       "to": "userauthstore",
-      "label": "stores the state"
+      "label": "stores the state",
+      "labelAt": [
+        945.0,
+        494.0
+      ],
+      "purpose": "storage"
     },
     {
       "id": "s8",
       "from": "pushcertmgr",
       "to": "pushcertstore",
-      "label": "seals the key",
-      "variant": "security"
+      "label": "Validate and store",
+      "variant": "security",
+      "labelAt": [
+        945.0,
+        644.0
+      ],
+      "purpose": "certificate"
     }
   ],
   "cards": [
     {
-      "dot": "cyan",
-      "title": "Composed store interfaces",
+      "dot": "storage",
+      "title": "Eight composed interfaces",
       "items": [
-        "One backend satisfies all eight; a caller depends only on the part it needs",
-        "The shared contract suite runs against each backend"
+        "storage.Store combines these eight contracts. Callers can depend on a smaller interface when they need only part of the behaviour.",
+        "Ordinary Authenticate upserts can reset tokens and non-terminal commands. Controlled profile replacement follows a different contract."
       ]
     },
     {
-      "dot": "rose",
-      "title": "Sentinels",
+      "dot": "storage",
+      "title": "Optional replacement contract",
       "items": [
-        "Stores expose sentinel contract errors and wrap database failures",
-        "Re-enrollment clears push info, tokens, the pin and the pending queue in one transaction"
+        "ReplacementStore atomically tracks the candidate identity and promotes it only after successful check-in and command acknowledgement.",
+        "The transition preserves the enrollment, user channels, escrow, and ordinary command queue. Shared tests exercise the memory and SQL implementations."
+      ]
+    },
+    {
+      "dot": "storage",
+      "title": "Storage guarantees",
+      "items": [
+        "Encryption depends on the backend and configured keyring; it is not promised by the interfaces alone. App push credentials live in a separate state store."
+      ]
+    },
+    {
+      "dot": "transport",
+      "title": "Public documentation",
+      "items": [
+        "Check-in — https://developer.apple.com/documentation/devicemanagement/check-in",
+        "Set Bootstrap Token — https://developer.apple.com/documentation/devicemanagement/set-bootstrap-token",
+        "Go cipher.NewGCM — https://pkg.go.dev/crypto/cipher#NewGCM"
       ]
     }
   ]
