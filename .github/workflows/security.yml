@@ -2,9 +2,18 @@ name: Security
 
 on:
   pull_request:
+    paths-ignore:
+      - '.release-please-manifest.json'
+      - 'docs/**'
+      - '**/*.md'
   push:
     branches:
       - main
+    # Documentation and release metadata do not change executable code.
+    paths-ignore:
+      - '.release-please-manifest.json'
+      - 'docs/**'
+      - '**/*.md'
   schedule:
     - cron: '17 4 * * 1'
 
@@ -14,6 +23,11 @@ permissions:
 
 jobs:
   govulncheck:
+    # Release-please PRs only prepare release metadata; normal changes retain CI.
+    if: >-
+      ${{ github.event_name != 'pull_request' ||
+          github.event.pull_request.head.repo.full_name != github.repository ||
+          github.head_ref != 'release-please--branches--main' }}
     name: '🛡️ govulncheck'
     runs-on: ubuntu-latest
     timeout-minutes: 15
@@ -35,6 +49,11 @@ jobs:
           govulncheck ./...
 
   gosec:
+    # Release-please PRs only prepare release metadata; normal changes retain CI.
+    if: >-
+      ${{ github.event_name != 'pull_request' ||
+          github.event.pull_request.head.repo.full_name != github.repository ||
+          github.head_ref != 'release-please--branches--main' }}
     name: '🔍 gosec SARIF'
     runs-on: ubuntu-latest
     timeout-minutes: 15

@@ -49,3 +49,13 @@ Use Conventional Commit titles. Explain the problem, resulting behavior, relevan
 and validation. Link related issues and design decisions. Keep dependencies justified and
 include migration requirements for persistent or protocol state. Release-please manages
 versions and changelogs; ordinary documentation changes do not change release metadata.
+
+The repository-owned `release-please--branches--main` PR prepares release metadata
+and skips test, lint, security, dependency-review and title-validation jobs. Normal
+PRs retain their existing checks. Go Test and Security skip PRs and pushes to
+`main` when every changed path matches `docs/**`, `**/*.md` or
+`.release-please-manifest.json`. This includes root and server changelogs. Mixed
+changes that include code, dependencies or workflows retain normal CI. PR title
+validation remains enabled for ordinary documentation PRs.
+Release-please still runs on `main` pushes to manage releases and tags, and the
+scheduled security scan remains enabled.
