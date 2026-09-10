@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.3.2](https://github.com/deploymenttheory/go-apple-dm/compare/v0.3.1...v0.3.2) (2026-09-10)
+
+
+### Bug Fixes
+
+* **security:** enforce enrollment trust boundaries ([4f5c793](https://github.com/deploymenttheory/go-apple-dm/commit/4f5c793fdf7ec8ca34f4895a8685577e010676f0))
+* **security:** enforce enrollment trust boundaries ([0776e88](https://github.com/deploymenttheory/go-apple-dm/commit/0776e88a4a98b35f88e8997dff66bf573f25378c))
+
 ## [0.3.1](https://github.com/deploymenttheory/go-apple-dm/compare/v0.3.0...v0.3.1) (2026-09-10)
 
 
