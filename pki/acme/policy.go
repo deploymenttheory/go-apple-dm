@@ -18,7 +18,8 @@ type Decision struct {
 	Identifier Identifier
 	// Attestation is what the device proved, or nil when it sent no
 	// attestation. A nil attestation only reaches a policy when the server
-	// is configured not to require one.
+	// explicitly allows an alternative authorization, either globally or
+	// through AuthorizeUnattested.
 	Attestation *attest.Attestation
 }
 

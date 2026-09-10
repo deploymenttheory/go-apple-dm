@@ -197,7 +197,9 @@ func TestParseErrors(t *testing.T) {
 	}
 	// Integer forms of PayloadVersion.
 	for _, v := range []any{int64(2), uint64(2), 2, 2.0} {
-		m := map[string]any{"PayloadType": "Configuration", "PayloadVersion": v, "PayloadIdentifier": "i", "PayloadUUID": "u"}
+		m := map[string]any{"PayloadType": "Configuration", "PayloadVersion": v, "PayloadIdentifier": "i", "PayloadUUID": "u",
+			"PayloadContent": []any{},
+		}
 		d, _ := plist.Marshal(m)
 		if got, err := profile.Parse(d, profile.ParseOptions{}); err != nil || got.Profile.Version != 2 {
 			t.Fatalf("version %T: %v", v, err)

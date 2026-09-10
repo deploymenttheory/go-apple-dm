@@ -48,23 +48,28 @@ func TestOTAProfileBuild(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	raw, ok := profile.Find[*profile.Raw](back.Profile)
-	if !ok || raw.Type != enroll.PayloadTypeProfileService {
-		t.Fatalf("%+v", raw)
+	// Inspect the wire envelope independently of profile.Parse.
+	var wire map[string]any
+	if err := plist.Unmarshal(data, &wire); err != nil {
+		t.Fatal(err)
 	}
-	content, _ := raw.Keys["PayloadContent"].(map[string]any)
-	if content["URL"] != "https://mdm.example.com/ota" || content["Challenge"] != "c1" {
-		t.Fatalf("content %v", content)
+	if wire["PayloadType"] != "Profile Service" {
+		t.Fatalf("wrong top-level type: %v", wire["PayloadType"])
 	}
-	if attrs, _ := content["DeviceAttributes"].([]any); len(attrs) != len(enroll.DefaultDeviceAttributes) {
-		t.Fatalf("attrs %v", content["DeviceAttributes"])
+	content, ok := wire["PayloadContent"].(map[string]any)
+	if !ok || content["URL"] != "https://mdm.example.com/ota" || content["Challenge"] != "c1" {
+		t.Fatalf("content: %v", wire["PayloadContent"])
+	}
+	if back.Profile.Service == nil || len(back.Profile.Payloads) != 0 ||
+		len(back.Profile.Service.DeviceAttributes) != len(enroll.DefaultDeviceAttributes) {
+		t.Fatalf("parsed: %+v", back.Profile)
 	}
 	if _, err := (enroll.OTAProfile{}).Build(); !errors.Is(err, enroll.ErrOTA) {
 		t.Fatal("empty")
 	}
 	custom, _ := enroll.OTAProfile{Identifier: "i", URL: "https://x", DeviceAttributes: []string{enroll.AttrUDID}}.Build()
-	if c := custom.Payloads[0].Content.(*profile.Raw).Keys["PayloadContent"].(map[string]any); len(c["DeviceAttributes"].([]string)) != 1 || c["Challenge"] != nil {
-		t.Fatalf("%v", c)
+	if len(custom.Service.DeviceAttributes) != 1 || custom.Service.Challenge != "" {
+		t.Fatalf("%+v", custom.Service)
 	}
 }
 

@@ -1120,9 +1120,6 @@ func (s *Store) StoreBootstrapToken(
 	token []byte,
 	at time.Time,
 ) error {
-	if len(token) == 0 {
-		return storage.ErrInvalid
-	}
 	if err := validID(id); err != nil {
 		return err
 	}

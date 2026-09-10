@@ -245,10 +245,12 @@ type CertAuthStore interface {
 	CertHashHistory(ctx context.Context, hash string) ([]CertAssociation, error)
 }
 
-// BootstrapTokenStore escrows macOS bootstrap tokens (device channel).
+// BootstrapTokenStore escrows Apple bootstrap tokens (device channel).
 type BootstrapTokenStore interface {
 	// StoreBootstrapToken escrows token for the device channel of id and
-	// records at as Enrollment.BootstrapTokenAt.
+	// records at as Enrollment.BootstrapTokenAt. A nil or empty token clears
+	// the escrow, including when no token was previously stored (Apple's
+	// SetBootstrapToken protocol). The timestamp records the last change.
 	StoreBootstrapToken(ctx context.Context, id mdm.EnrollmentID, token []byte, at time.Time) error
 	// BootstrapToken returns the token or ErrNotFound.
 	BootstrapToken(ctx context.Context, id mdm.EnrollmentID) ([]byte, error)

@@ -16,7 +16,7 @@ A common identifier and verifier path ties issuance to its authorization context
 
 ## Constraints
 
-The pinned declarative credential schema's macOS `HardwareBound` guidance differs from the profile/attestation configuration accepted by this implementation. Validate the selected combination on target hardware; simulator tests do not resolve that discrepancy. Unsupported hardware needs explicit unattested policy. Persistent CA and identifier keys are deployment requirements.
+Mac declarative credentials follow the pinned schema: `HardwareBound=false` and `Attest=false`. Their issuance uses a five-minute grant bound to the existing authenticated enrollment certificate, checked again at challenge and finalization; initial enrollment retains its attestation requirement. The new key has no hardware-attestation assurance, and policies requiring attested properties still apply. Enrollment-profile ACME flags remain distinct from declarative credential flags. Persistent CA, protocol state and identifier keys are deployment requirements. Validate interoperability on target hardware; simulator tests do not establish physical-device compatibility.
 
 ## Verification
 

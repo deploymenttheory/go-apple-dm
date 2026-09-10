@@ -20,6 +20,7 @@ import (
 	smallscep "github.com/smallstep/scep"
 
 	"github.com/deploymenttheory/go-apple-dm/clock"
+	"github.com/deploymenttheory/go-apple-dm/internal/scepwire"
 	"github.com/deploymenttheory/go-apple-dm/pki/ca"
 	"github.com/deploymenttheory/go-apple-dm/pki/scep"
 )
@@ -47,7 +48,7 @@ func newFixture(t *testing.T) fixture {
 
 func serve(t *testing.T, s *scep.Server) *scep.Client {
 	t.Helper()
-	srv := httptest.NewServer(s.Handler())
+	srv := httptest.NewTLSServer(s.Handler())
 	t.Cleanup(srv.Close)
 	return scep.NewClient(srv.URL+"/scep", srv.Client())
 }
@@ -189,7 +190,7 @@ func TestCACertBundleAndHandlerErrors(t *testing.T) {
 	self, _ := scep.SelfSigned(key, pkix.Name{CommonName: "UDID-4"})
 	csrDER, _ := x509.CreateCertificateRequest(rand.Reader, &x509.CertificateRequest{Subject: pkix.Name{CommonName: "UDID-4"}}, key)
 	csr, _ := x509.ParseCertificateRequest(csrDER)
-	msg, err := smallscep.NewCSRRequest(csr, &smallscep.PKIMessage{MessageType: smallscep.PKCSReq, Recipients: []*x509.Certificate{f.caCert}, SignerCert: self, SignerKey: key})
+	msg, err := scepwire.Request(csr, &smallscep.PKIMessage{MessageType: smallscep.PKCSReq, Recipients: []*x509.Certificate{f.caCert}, SignerCert: self, SignerKey: key})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -207,7 +208,7 @@ func TestCACertBundleAndHandlerErrors(t *testing.T) {
 	}
 	// Envelope encrypted to a different RA cannot be decrypted: unparseable, 400.
 	other, _, _ := ca.NewSelfSigned(ca.SelfSignedOptions{})
-	msg2, _ := smallscep.NewCSRRequest(csr, &smallscep.PKIMessage{MessageType: smallscep.PKCSReq, Recipients: []*x509.Certificate{other}, SignerCert: self, SignerKey: key})
+	msg2, _ := scepwire.Request(csr, &smallscep.PKIMessage{MessageType: smallscep.PKCSReq, Recipients: []*x509.Certificate{other}, SignerCert: self, SignerKey: key})
 	rec = httptest.NewRecorder()
 	h.ServeHTTP(rec, httptest.NewRequest(http.MethodPost, "/scep?operation=PKIOperation", strings.NewReader(string(msg2.Raw))))
 	if rec.Code != http.StatusBadRequest {
@@ -263,7 +264,7 @@ func TestClientErrors(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
 	c := scep.NewClient("http://127.0.0.1:1/scep", nil)
-	if c.HTTP != http.DefaultClient {
+	if c.HTTP == http.DefaultClient || c.HTTP.Timeout != 30*time.Second {
 		t.Fatal("default client")
 	}
 	if _, err := c.GetCACaps(ctx); !errors.Is(err, scep.ErrClient) {
@@ -332,7 +333,7 @@ func TestClientUndecryptableCertRep(t *testing.T) {
 	real := httptest.NewServer(s.Handler())
 	defer real.Close()
 	var stored []byte
-	proxy := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	proxy := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Query().Get("operation") != "PKIOperation" {
 			resp, err := http.Get(real.URL + "?" + r.URL.RawQuery) //nolint:noctx // test helper
 			if err != nil {

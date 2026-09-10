@@ -44,8 +44,9 @@ func (a *App) recordIssuedIdentity(ctx context.Context, c *x509.Certificate) err
 	}
 	binding, _ := ctx.Value(issuanceBindingKey{}).(acme.Binding)
 	provenance := revocation.ProvenanceFromContext(ctx)
-	if binding.UDID == "" {
-		binding.UDID = provenance.UDID
+	udid := binding.EnrollmentUDID()
+	if udid == "" {
+		udid = provenance.UDID
 	}
 	if binding.Serial == "" {
 		binding.Serial = provenance.Serial
@@ -55,7 +56,7 @@ func (a *App) recordIssuedIdentity(ctx context.Context, c *x509.Certificate) err
 			Method:       method,
 			EnrollmentID: provenance.EnrollmentID,
 			NotAfter:     c.NotAfter,
-			UDID:         binding.UDID,
+			UDID:         udid,
 			Serial:       binding.Serial,
 		},
 	)
@@ -319,11 +320,12 @@ func (a *App) prepareReplacement(
 		method = IdentitySCEP
 	}
 	attempt := profile.NewUUID()
-	b := acme.Binding{
-		UDID:       id.ID,
-		Serial:     e.Device.SerialNumber,
-		CommonName: replacementSubject(id, attempt),
-	}
+	b := deviceBinding(
+		id.ID,
+		e.Device.SerialNumber,
+		e.Device.ProductName,
+		replacementSubject(id, attempt),
+	)
 	fresh, err := a.enroll.profileWithIdentity(ctx, b, method)
 	if err != nil {
 		return nil, fmt.Errorf("%w: %w", storage.ErrInvalid, err)

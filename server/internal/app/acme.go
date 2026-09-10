@@ -20,6 +20,7 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/pki/acme"
 	"github.com/deploymenttheory/go-apple-dm/pki/acme/attest"
 	"github.com/deploymenttheory/go-apple-dm/schema/ddm"
+	"github.com/deploymenttheory/go-apple-dm/schema/support"
 	acmesql "github.com/deploymenttheory/go-apple-dm/server/acmestore/sqlstore"
 	"github.com/deploymenttheory/go-apple-dm/server/httpapi"
 	"github.com/deploymenttheory/go-apple-dm/storage"
@@ -139,6 +140,12 @@ func (a *App) newACME(ctx context.Context, e *enrollment) (*acmeService, error) 
 		Revocations: a.acmeRevocations(),
 		Identifiers: identifiers,
 		Authorize: acme.Chain(
+			acme.PolicyFunc(func(ctx context.Context, d *acme.Decision) error {
+				if d.Binding.EnrollmentID != "" {
+					return svc.authorizeCredential(ctx, d, false)
+				}
+				return nil
+			}),
 			policy,
 			acme.PolicyFunc(func(ctx context.Context, d *acme.Decision) error {
 				_, err := e.admit(ctx, d.Binding)
@@ -152,12 +159,21 @@ func (a *App) newACME(ctx context.Context, e *enrollment) (*acmeService, error) 
 		// default refuses it rather than quietly issuing on the strength of
 		// a client identifier alone.
 		AllowUnattested: cfg.AllowUnattested,
-		Anchors:         anchors,
-		Clock:           a.cfg.Clock,
-		Bus:             a.cfg.Bus,
-		Logger:          a.cfg.Logger,
-		NonceTTL:        cfg.NonceTTL,
-		OrderTTL:        cfg.OrderTTL,
+		AuthorizeUnattested: acme.PolicyFunc(func(ctx context.Context, d *acme.Decision) error {
+			if d.Binding.EnrollmentID == "" {
+				return acme.NewProblem(
+					acme.ProblemBadAttestationStatement,
+					"initial enrollment requires an attestation",
+				)
+			}
+			return svc.authorizeCredential(ctx, d, true)
+		}),
+		Anchors:  anchors,
+		Clock:    a.cfg.Clock,
+		Bus:      a.cfg.Bus,
+		Logger:   a.cfg.Logger,
+		NonceTTL: cfg.NonceTTL,
+		OrderTTL: cfg.OrderTTL,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("app: ACME server: %w", err)
@@ -248,8 +264,25 @@ func (s *acmeService) depLookup(ctx context.Context, serial string) (bool, error
 	}
 }
 
-// acmePayload builds the ACME payload for one device.
+// deviceBinding keeps MDM admission separate from hardware attestation.
+// Initial Mac enrollment supplies no ProvisioningUDID, so its serial number
+// is the hardware binding. Unknown products also require a serial number.
+func deviceBinding(udid, serial, product, cn string) acme.Binding {
+	b := acme.Binding{MDMUDID: udid, Serial: serial, CommonName: cn}
+	if os := support.OSFromProduct(product); os != "" && os != support.MacOS {
+		b.UDID = udid
+	}
+	return b
+}
+
+// acmePayload builds the ACME enrollment payload for one device.
 func (s *acmeService) acmePayload(b acme.Binding, directoryURL string) (*enroll.ACME, error) {
+	if !b.Identified() && !b.AllowUnidentified {
+		return nil, fmt.Errorf(
+			"%w: ACME needs a serial number or attestation UDID",
+			ErrBadACMERequest,
+		)
+	}
 	identifier, err := s.identifiers.Issue(b)
 	if err != nil {
 		return nil, fmt.Errorf("app: ACME identifier: %w", err)
@@ -324,9 +357,25 @@ func (s *acmeService) credentialHandler() http.Handler {
 			writeError(w, http.StatusForbidden, storage.ErrDisabled)
 			return
 		}
+		target := support.Target{OS: support.OSFromProduct(enrollment.Device.ProductName)}
+		version, versionErr := support.ParseVersion(enrollment.Device.OSVersion)
+		if target.OS == "" || versionErr != nil {
+			writeError(
+				w,
+				http.StatusForbidden,
+				fmt.Errorf(
+					"%w: credential requires a known device platform and version",
+					ErrBadACMERequest,
+				),
+			)
+			return
+		}
+		target.Version = version
 		binding := acme.Binding{
 			Serial:       enrollment.Device.SerialNumber,
 			EnrollmentID: string(id.ID),
+			MDMUDID:      id.ID,
+			CommonName:   cert.Subject.CommonName,
 			// A user channel has no hardware of its own to attest.
 			AllowUnidentified: enrollment.Device.SerialNumber == "",
 		}
@@ -341,11 +390,33 @@ func (s *acmeService) credentialHandler() http.Handler {
 			KeyType:          payload.KeyType,
 			KeySize:          payload.KeySize,
 			HardwareBound:    payload.HardwareBound,
+			Subject:          enroll.SubjectFromName(payload.Subject),
 		}
-		if payload.Attest {
+		if target.OS == support.MacOS {
+			credential.HardwareBound = false
+			credential.Attest = new(false)
+		} else if payload.Attest {
 			attestFlag := true
 			credential.Attest = &attestFlag
 		}
+		if err := credential.Validate(target); err != nil {
+			writeError(
+				w,
+				http.StatusForbidden,
+				fmt.Errorf("%w: unsupported credential: %w", ErrBadACMERequest, err),
+			)
+			return
+		}
+		if err := s.recordCredentialGrant(
+			r.Context(),
+			credential.ClientIdentifier,
+			id,
+			cert,
+		); err != nil {
+			writeError(w, http.StatusInternalServerError, err)
+			return
+		}
+		w.Header().Set("Cache-Control", "no-store")
 		writeJSON(w, http.StatusOK, credential)
 	})
 }

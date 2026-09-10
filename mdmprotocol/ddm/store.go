@@ -51,6 +51,8 @@ type SnapshotItem struct {
 	DeclarationRef
 	// BaseToken is the stored declaration's token; ServerToken differs only
 	// when an Expander rewrote the bytes for this enrollment.
+	// Empty only for the engine-generated status subscription, which has
+	// no stored base version.
 	BaseToken string
 	// Expanded holds the per-enrollment canonical bytes when they differ
 	// from the stored declaration; nil otherwise.

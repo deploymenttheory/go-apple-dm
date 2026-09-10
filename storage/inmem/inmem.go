@@ -598,9 +598,6 @@ func (s *Store) EnrollmentByCertHash(_ context.Context, hash string) (mdm.Enroll
 
 // StoreBootstrapToken implements storage.BootstrapTokenStore.
 func (s *Store) StoreBootstrapToken(_ context.Context, id mdm.EnrollmentID, token []byte, at time.Time) error {
-	if len(token) == 0 {
-		return fmt.Errorf("%w: empty bootstrap token", storage.ErrInvalid)
-	}
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	dev := id.Device()
@@ -611,7 +608,11 @@ func (s *Store) StoreBootstrapToken(_ context.Context, id mdm.EnrollmentID, toke
 	if !r.DisabledAt.IsZero() {
 		return storage.ErrDisabled
 	}
-	s.bootstrap[dev.ID] = append([]byte(nil), token...)
+	if len(token) == 0 {
+		delete(s.bootstrap, dev.ID)
+	} else {
+		s.bootstrap[dev.ID] = append([]byte(nil), token...)
+	}
 	r.BootstrapTokenAt = at
 	return nil
 }

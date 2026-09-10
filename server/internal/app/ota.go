@@ -9,7 +9,6 @@ import (
 
 	"github.com/deploymenttheory/go-apple-dm/mdmprotocol/enroll"
 	"github.com/deploymenttheory/go-apple-dm/mdmprotocol/profile"
-	"github.com/deploymenttheory/go-apple-dm/pki/acme"
 )
 
 // wireOTA uses the configured enrollment issuer for both OTA phases. Bootstrap
@@ -53,11 +52,12 @@ func (a *App) wireOTA(mux *http.ServeMux) error {
 		Profile: func(ctx context.Context, r *enroll.OTARequest) ([]byte, error) {
 			p, err := e.profile(
 				ctx,
-				acme.Binding{
-					UDID:       r.Attributes.UDID,
-					Serial:     r.Attributes.Serial,
-					CommonName: r.Attributes.UDID,
-				},
+				deviceBinding(
+					r.Attributes.UDID,
+					r.Attributes.Serial,
+					r.Attributes.Product,
+					r.Attributes.UDID,
+				),
 			)
 			if err != nil {
 				return nil, wrapError(err)

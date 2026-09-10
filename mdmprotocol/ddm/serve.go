@@ -139,12 +139,34 @@ func (e *Engine) Declaration(ctx context.Context, id mdm.EnrollmentID, kind sche
 		if item.Identifier != identifier || item.Kind != kind {
 			continue
 		}
-		if item.Expanded != nil {
+		generated := item.Identifier == SubscriptionIdentifier &&
+			item.Kind == schemaddm.KindConfiguration &&
+			e.subs.Enabled
+		if generated && item.BaseToken == "" && item.Expanded != nil {
 			return RenderDeclaration(item.Expanded, item.ServerToken)
 		}
 		v, err := e.store.GetDeclarationVersion(ctx, identifier, item.BaseToken)
+		if errors.Is(err, ErrNotFound) && generated {
+			// Older snapshots assigned a base token to synthetic subscriptions.
+			// Rebuild from current authoritative state; never serve the stale
+			// bytes of a deleted administrator override of this identifier.
+			fresh, refreshErr := e.refreshSnapshot(ctx, id)
+			if refreshErr != nil {
+				return nil, refreshErr
+			}
+			for _, current := range fresh.Items {
+				if current.Identifier == identifier && current.Kind == kind &&
+					current.BaseToken == "" &&
+					current.Expanded != nil {
+					return RenderDeclaration(current.Expanded, current.ServerToken)
+				}
+			}
+		}
 		if err != nil {
 			return nil, err
+		}
+		if item.Expanded != nil {
+			return RenderDeclaration(item.Expanded, item.ServerToken)
 		}
 		return RenderDeclaration(v.Canonical, item.ServerToken)
 	}

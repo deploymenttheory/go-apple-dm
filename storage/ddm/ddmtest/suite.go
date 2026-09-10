@@ -22,6 +22,7 @@ func RunAll(t *testing.T, newStore Factory) {
 	t.Run("Sets", func(t *testing.T) { RunSetSuite(t, newStore) })
 	t.Run("Assignments", func(t *testing.T) { RunAssignmentSuite(t, newStore) })
 	t.Run("Snapshots", func(t *testing.T) { RunSnapshotSuite(t, newStore) })
+	t.Run("ExpandedDeletion", func(t *testing.T) { RunExpandedDeletionSuite(t, newStore) })
 	t.Run("Status", func(t *testing.T) { RunStatusSuite(t, newStore) })
 	t.Run("Changes", func(t *testing.T) { RunChangeSuite(t, newStore) })
 	t.Run("Clear", func(t *testing.T) { RunClearSuite(t, newStore) })

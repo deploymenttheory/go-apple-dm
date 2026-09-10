@@ -26,7 +26,7 @@ import (
 // https://developer.apple.com/library/archive/documentation/NetworkingInternet/Conceptual/iPhoneOTAConfiguration/
 
 // PayloadTypeProfileService is the payload type of the initial OTA profile.
-const PayloadTypeProfileService = "Profile Service"
+const PayloadTypeProfileService = profile.PayloadTypeProfileService
 
 // ContentTypeProfile is the response content type for a profile.
 const ContentTypeProfile = "application/x-apple-aspen-config"
@@ -60,7 +60,8 @@ type OTAProfile struct {
 	Organization string
 	Description  string
 	UUID         string
-	PayloadUUID  string
+	// Deprecated: Profile Service has only the top-level UUID. Use UUID.
+	PayloadUUID string
 	// URL the device POSTs its attributes to.
 	URL string
 	// Challenge is echoed back by the device in phase 1.
@@ -77,17 +78,16 @@ func (o OTAProfile) Build() (*profile.Profile, error) {
 	if len(attrs) == 0 {
 		attrs = DefaultDeviceAttributes
 	}
-	content := map[string]any{"URL": o.URL, "DeviceAttributes": attrs}
-	if o.Challenge != "" {
-		content["Challenge"] = o.Challenge
-	}
 	p := &profile.Profile{
 		Identifier: o.Identifier, UUID: orUUID(o.UUID), DisplayName: o.DisplayName,
 		Organization: o.Organization, Description: o.Description,
-		Payloads: []profile.Payload{{
-			Identifier: o.Identifier + ".profile-service", UUID: orUUID(o.PayloadUUID), DisplayName: o.DisplayName,
-			Content: &profile.Raw{Type: PayloadTypeProfileService, Keys: map[string]any{"PayloadContent": content}},
-		}},
+		Service: &profile.ProfileService{
+			URL:              o.URL,
+			Challenge:        o.Challenge,
+			DeviceAttributes: append([]string(nil), attrs...),
+		}}
+	if _, err := p.Map(); err != nil {
+		return nil, fmt.Errorf("%w: %w", ErrOTA, err)
 	}
 	return p, nil
 }

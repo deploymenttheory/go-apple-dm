@@ -15,6 +15,13 @@
 // composition to mdmprotocol/enroll. An RSA recipient key is required for SCEP
 // envelope decryption.
 //
+// Outgoing messages use AES-128-CBC and SHA-256, with no process-global
+// algorithm changes. Incoming single-DES envelopes are rejected. Clients
+// authenticate CA discovery with verified HTTPS or explicitly pinned CA/RA
+// recipients; HTTP requires pins. CertReps must match the expected signer,
+// transaction, nonce, key and certificate chain. Redirects are refused and an
+// unset HTTP timeout defaults to 30 seconds.
+//
 // # References
 //
 //   - Decision record 0008: https://github.com/deploymenttheory/go-apple-dm/blob/main/docs/research/decisions/0008-scep-and-ca.md

@@ -17,8 +17,11 @@ import (
 	"strings"
 	"time"
 
+	"github.com/smallstep/pkcs7"
 	smallscep "github.com/smallstep/scep"
 	"github.com/smallstep/scep/x509util"
+
+	"github.com/deploymenttheory/go-apple-dm/internal/scepwire"
 )
 
 // Client errors.
@@ -35,20 +38,26 @@ type Client struct {
 	HTTP *http.Client
 }
 
-// NewClient creates a client for the SCEP URL.
+// NewClient creates a client for the SCEP URL. It copies h, supplies a
+// 30-second timeout when unset, and refuses redirects.
 func NewClient(scepURL string, h *http.Client) *Client {
 	if h == nil {
 		h = http.DefaultClient
 	}
-	return &Client{URL: scepURL, HTTP: h}
+	copy := *h
+	if copy.Timeout == 0 {
+		copy.Timeout = 30 * time.Second
+	}
+	copy.CheckRedirect = func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }
+	return &Client{URL: scepURL, HTTP: &copy}
 }
 
-func (c *Client) get(ctx context.Context, op string) ([]byte, string, error) {
+func (c *Client) get(ctx context.Context, op string, requireTLS bool) ([]byte, string, error) {
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, c.operationURL(op), nil)
 	if err != nil {
 		return nil, "", fmt.Errorf("%w: %w", ErrClient, err)
 	}
-	return c.do(req)
+	return c.do(req, requireTLS)
 }
 
 // operationURL appends operation=op to the SCEP URL, keeping any query
@@ -61,15 +70,21 @@ func (c *Client) operationURL(op string) string {
 	return c.URL + sep + "operation=" + url.QueryEscape(op)
 }
 
-func (c *Client) do(req *http.Request) ([]byte, string, error) {
+func (c *Client) do(req *http.Request, requireTLS bool) ([]byte, string, error) {
 	resp, err := c.HTTP.Do(req)
 	if err != nil {
 		return nil, "", fmt.Errorf("%w: %w", ErrClient, err)
 	}
 	defer resp.Body.Close()
-	body, err := io.ReadAll(io.LimitReader(resp.Body, maxMessage))
+	if requireTLS && (resp.TLS == nil || len(resp.TLS.VerifiedChains) == 0) {
+		return nil, "", fmt.Errorf("%w: CA discovery requires verified TLS", ErrClient)
+	}
+	body, err := io.ReadAll(io.LimitReader(resp.Body, maxMessage+1))
 	if err != nil {
 		return nil, "", fmt.Errorf("%w: %w", ErrClient, err)
+	}
+	if len(body) > maxMessage {
+		return nil, "", fmt.Errorf("%w: response exceeds size limit", ErrClient)
 	}
 	if resp.StatusCode != http.StatusOK {
 		return nil, "", fmt.Errorf("%w: HTTP %d", ErrClient, resp.StatusCode)
@@ -79,14 +94,19 @@ func (c *Client) do(req *http.Request) ([]byte, string, error) {
 
 // GetCACaps fetches the capability list.
 func (c *Client) GetCACaps(ctx context.Context) (string, error) {
-	b, _, err := c.get(ctx, "GetCACaps")
+	b, _, err := c.get(ctx, "GetCACaps", false)
 	return string(b), err
 }
 
 // GetCACert fetches the RA/CA certificates; the first is the recipient
-// the envelope is encrypted to.
+// the envelope is encrypted to. This method alone does not authenticate
+// the certificates; Enroll authenticates discovery before using them.
 func (c *Client) GetCACert(ctx context.Context) ([]*x509.Certificate, error) {
-	b, ct, err := c.get(ctx, "GetCACert")
+	return c.getCACert(ctx, false)
+}
+
+func (c *Client) getCACert(ctx context.Context, requireTLS bool) ([]*x509.Certificate, error) {
+	b, ct, err := c.get(ctx, "GetCACert", requireTLS)
 	if err != nil {
 		return nil, err
 	}
@@ -113,8 +133,12 @@ type EnrollOptions struct {
 	Challenge string
 	// Renew signs with an existing identity and sends a RenewalReq.
 	Renew *Identity
-	// Recipients overrides the CA certificates fetched with GetCACert.
+	// Recipients pins the trusted CA/RA bundle, overriding GetCACert.
+	// Required for HTTP enrollment. Do not populate it from an untrusted fetch.
 	Recipients []*x509.Certificate
+	// Roots overrides the CA trust anchors derived from Recipients or
+	// verified HTTPS discovery. Supply it when pinning only RA certificates.
+	Roots *x509.CertPool
 }
 
 // Identity is a certificate and its key.
@@ -131,9 +155,41 @@ func (c *Client) Enroll(ctx context.Context, key crypto.Signer, o EnrollOptions)
 	}
 	recipients := o.Recipients
 	if len(recipients) == 0 {
-		var err error
-		if recipients, err = c.GetCACert(ctx); err != nil {
+		u, err := url.Parse(c.URL)
+		if err != nil || u.Scheme != "https" {
+			return nil, fmt.Errorf(
+				"%w: automatic CA discovery requires HTTPS; pin Recipients for HTTP",
+				ErrClient,
+			)
+		}
+		if recipients, err = c.getCACert(ctx, true); err != nil {
 			return nil, err
+		}
+	}
+	roots := o.Roots
+	if roots == nil {
+		roots = x509.NewCertPool()
+		for _, cert := range recipients {
+			if cert != nil && cert.IsCA {
+				roots.AddCert(cert)
+			}
+		}
+	}
+	intermediates := x509.NewCertPool()
+	for _, cert := range recipients {
+		if cert == nil {
+			return nil, fmt.Errorf("%w: nil CA/RA certificate", ErrClient)
+		}
+		intermediates.AddCert(cert)
+	}
+	verify := x509.VerifyOptions{
+		Roots:         roots,
+		Intermediates: intermediates,
+		KeyUsages:     []x509.ExtKeyUsage{x509.ExtKeyUsageAny},
+	}
+	for _, cert := range recipients {
+		if _, err := cert.Verify(verify); err != nil {
+			return nil, fmt.Errorf("%w: CA/RA certificate: %w", ErrClient, err)
 		}
 	}
 	csrDER, err := x509util.CreateCertificateRequest(rand.Reader, &x509util.CertificateRequest{
@@ -151,6 +207,9 @@ func (c *Client) Enroll(ctx context.Context, key crypto.Signer, o EnrollOptions)
 	}
 	tmpl := &smallscep.PKIMessage{MessageType: smallscep.PKCSReq, Recipients: recipients}
 	if o.Renew != nil {
+		if o.Renew.Cert == nil || o.Renew.Key == nil {
+			return nil, fmt.Errorf("%w: incomplete renewal identity", ErrClient)
+		}
 		tmpl.MessageType = smallscep.RenewalReq
 		tmpl.SignerCert, tmpl.SignerKey = o.Renew.Cert, o.Renew.Key
 	} else {
@@ -160,7 +219,7 @@ func (c *Client) Enroll(ctx context.Context, key crypto.Signer, o EnrollOptions)
 		}
 		tmpl.SignerCert, tmpl.SignerKey = self, key
 	}
-	msg, err := smallscep.NewCSRRequest(csr, tmpl)
+	msg, err := scepwire.Request(csr, tmpl)
 	if err != nil {
 		return nil, fmt.Errorf("%w: build PKIMessage: %w", ErrClient, err)
 	}
@@ -169,24 +228,64 @@ func (c *Client) Enroll(ctx context.Context, key crypto.Signer, o EnrollOptions)
 		return nil, fmt.Errorf("%w: %w", ErrClient, err)
 	}
 	req.Header.Set("Content-Type", ContentTypePKIMessage)
-	body, _, err := c.do(req)
+	body, _, err := c.do(req, false)
 	if err != nil {
 		return nil, err
 	}
-	rep, err := smallscep.ParsePKIMessage(body)
+	// Limit signers to the authenticated CA/RA bundle, not arbitrary device
+	// certificates that happen to chain to the same CA.
+	rep, err := smallscep.ParsePKIMessage(body, smallscep.WithCACerts(recipients))
 	if err != nil {
 		return nil, fmt.Errorf("%w: parse CertRep: %w", ErrClient, err)
+	}
+	if rep.MessageType != smallscep.CertRep || rep.CertRepMessage == nil ||
+		rep.TransactionID != msg.TransactionID || !bytes.Equal(rep.RecipientNonce, msg.SenderNonce) {
+		return nil, fmt.Errorf("%w: CertRep does not match the request", ErrClient)
 	}
 	if rep.PKIStatus == smallscep.FAILURE {
 		return nil, fmt.Errorf("%w: %s", ErrRejected, rep.FailInfo)
 	}
-	if err := rep.DecryptPKIEnvelope(tmpl.SignerCert, tmpl.SignerKey); err != nil {
+	if rep.PKIStatus != smallscep.SUCCESS {
+		return nil, fmt.Errorf("%w: enrollment is pending", ErrClient)
+	}
+	// Decode the entire inner bundle rather than assuming its first entry
+	// is the issued certificate (or that an entry exists).
+	signed, err := pkcs7.Parse(body)
+	if err != nil {
+		return nil, fmt.Errorf("%w: CertRep: %w", ErrClient, err)
+	}
+	if err := scepwire.CheckEnvelope(signed.Content); err != nil {
+		return nil, fmt.Errorf("%w: %w", ErrClient, err)
+	}
+	envelope, err := pkcs7.Parse(signed.Content)
+	if err != nil {
+		return nil, fmt.Errorf("%w: CertRep envelope: %w", ErrClient, err)
+	}
+	der, err := envelope.Decrypt(tmpl.SignerCert, tmpl.SignerKey)
+	if err != nil {
 		return nil, fmt.Errorf("%w: decrypt CertRep: %w", ErrClient, err)
 	}
-	if rep.CertRepMessage == nil || rep.Certificate == nil {
-		return nil, fmt.Errorf("%w: CertRep without certificate", ErrClient)
+	certs, err := smallscep.CACerts(der)
+	if err != nil {
+		return nil, fmt.Errorf("%w: CertRep certificates: %w", ErrClient, err)
 	}
-	return rep.Certificate, nil
+	var issued *x509.Certificate
+	for _, cert := range certs {
+		intermediates.AddCert(cert)
+		if bytes.Equal(cert.RawSubjectPublicKeyInfo, csr.RawSubjectPublicKeyInfo) {
+			if issued != nil {
+				return nil, fmt.Errorf("%w: ambiguous issued certificate", ErrClient)
+			}
+			issued = cert
+		}
+	}
+	if issued == nil {
+		return nil, fmt.Errorf("%w: CertRep has no certificate for the requested key", ErrClient)
+	}
+	if _, err := issued.Verify(verify); err != nil {
+		return nil, fmt.Errorf("%w: issued certificate: %w", ErrClient, err)
+	}
+	return issued, nil
 }
 
 func signatureAlgorithm(key crypto.Signer) x509.SignatureAlgorithm {

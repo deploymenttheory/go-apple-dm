@@ -833,7 +833,7 @@ func RunBootstrapTokenSuite(t *testing.T, newStore Factory) {
 	if _, err := s.BootstrapToken(ctx, device(9)); !errors.Is(err, storage.ErrNotFound) {
 		t.Fatalf("unknown get: %v", err)
 	}
-	if err := s.StoreBootstrapToken(ctx, device(1), nil, t0); !errors.Is(err, storage.ErrInvalid) {
+	if err := s.StoreBootstrapToken(ctx, device(1), nil, t0); err != nil {
 		t.Fatalf("empty token: %v", err)
 	}
 	if err := s.StoreBootstrapToken(ctx, user(1, "u"), []byte("tok"), t0); err != nil {
@@ -858,6 +858,34 @@ func RunBootstrapTokenSuite(t *testing.T, newStore Factory) {
 	}
 	if tok, _ := s.BootstrapToken(ctx, device(1)); string(tok) != "tok2" {
 		t.Fatalf("overwritten token = %q", tok)
+	}
+	for _, empty := range [][]byte{nil, {}} {
+		if err := s.StoreBootstrapToken(ctx, device(1), empty, t0.Add(2*time.Hour)); err != nil {
+			t.Fatal(err)
+		}
+		if _, err := s.BootstrapToken(ctx, device(1)); !errors.Is(err, storage.ErrNotFound) {
+			t.Fatalf("cleared token: %v", err)
+		}
+		if e, _ := s.Get(ctx, device(1)); !e.BootstrapTokenAt.Equal(t0.Add(2 * time.Hour)) {
+			t.Fatal("clear timestamp not recorded")
+		}
+		if err := s.StoreBootstrapToken(
+			ctx,
+			device(9),
+			empty,
+			t0,
+		); !errors.Is(
+			err,
+			storage.ErrNotFound,
+		) {
+			t.Fatalf("unknown clear: %v", err)
+		}
+	}
+	if err := s.Disable(ctx, device(1), t0.Add(3*time.Hour)); err != nil {
+		t.Fatal(err)
+	}
+	if err := s.StoreBootstrapToken(ctx, device(1), nil, t0); !errors.Is(err, storage.ErrDisabled) {
+		t.Fatalf("disabled clear: %v", err)
 	}
 }
 

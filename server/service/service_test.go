@@ -10,13 +10,13 @@ import (
 	"testing"
 	"time"
 
-	"github.com/deploymenttheory/go-apple-dm/server/service"
 	"github.com/deploymenttheory/go-apple-dm/clock"
 	"github.com/deploymenttheory/go-apple-dm/mdmprotocol/event"
 	"github.com/deploymenttheory/go-apple-dm/mdmprotocol/mdm"
 	"github.com/deploymenttheory/go-apple-dm/mdmprotocol/plist"
 	"github.com/deploymenttheory/go-apple-dm/schema/checkin"
 	"github.com/deploymenttheory/go-apple-dm/schema/commands"
+	"github.com/deploymenttheory/go-apple-dm/server/service"
 	"github.com/deploymenttheory/go-apple-dm/storage"
 	"github.com/deploymenttheory/go-apple-dm/storage/inmem"
 	"github.com/deploymenttheory/go-apple-dm/testpki"
@@ -172,6 +172,19 @@ func TestEnrollAndCommandFlow(t *testing.T) {
 	if err != nil || !strings.Contains(string(got.Body), "YnN0") || got.ContentType != service.ContentTypePlist {
 		t.Fatalf("GetBootstrapToken: %+v %v", got, err)
 	}
+	for _, extra := range []map[string]any{nil, {"BootstrapToken": []byte{}}} {
+		if _, err := h.core.Checkin(
+			ctx,
+			req(h.cert),
+			simple(t, "SetBootstrapToken", "D1", extra),
+		); err != nil {
+			t.Fatal(err)
+		}
+		result, err := h.core.Checkin(ctx, req(h.cert), simple(t, "GetBootstrapToken", "D1", nil))
+		if err != nil || strings.Contains(string(result.Body), "BootstrapToken") {
+			t.Fatalf("cleared escrow returned: %+v %v", result, err)
+		}
+	}
 	// Check out.
 	if _, err := h.core.Checkin(ctx, req(h.cert), simple(t, "CheckOut", "D1", nil)); err != nil {
 		t.Fatal(err)
@@ -179,7 +192,8 @@ func TestEnrollAndCommandFlow(t *testing.T) {
 	if e, _ := h.store.Get(ctx, dev); e.Enabled {
 		t.Fatal("still enabled after CheckOut")
 	}
-	want := []string{"enrolled", "token-updated", "command-queued", "command-sent", "command-result", "command-sent", "command-result", "command-result", "bootstrap-token-set", "checked-out"}
+	want := []string{"enrolled", "token-updated", "command-queued", "command-sent", "command-result", "command-sent", "command-result", "command-result", "bootstrap-token-set",
+		"bootstrap-token-set", "bootstrap-token-set", "checked-out"}
 	if got := h.eventTypes(); strings.Join(got, ",") != strings.Join(want, ",") {
 		t.Fatalf("events = %v\nwant %v", got, want)
 	}
