@@ -1,5 +1,9 @@
 # Reference bench validation — 9 September 2026
 
+For the subsequent enrollment changes, see the
+[10 September enrollment validation](enrollment-validation.md). The passing gate
+below applies to PR #12, not to that later branch.
+
 Implementation branch: `feat/apns-certificate-workflow`. These results describe
 the implementation and coverage follow-up on PR #12, not a published release.
 

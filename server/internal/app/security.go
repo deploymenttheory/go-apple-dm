@@ -81,9 +81,18 @@ type enrollmentDepot struct {
 	associations *accountdriven.Associations
 	registry     *revocation.Registry
 	issuer       string
+	app          *App
 }
 
 func (d *enrollmentDepot) Put(ctx context.Context, c *x509.Certificate) error {
+	if d.app != nil {
+		if err := d.app.replacementIssuance(ctx, c); err != nil {
+			return err
+		}
+		if err := d.app.recordIssuedIdentity(ctx, c); err != nil {
+			return err
+		}
+	}
 	if d.registry != nil {
 		p := revocation.ProvenanceFromContext(ctx)
 		if p.Source == "" {
@@ -111,6 +120,7 @@ func (d *enrollmentDepot) Put(ctx context.Context, c *x509.Certificate) error {
 type enrollmentChallenge struct {
 	base         scep.Challenge
 	associations *accountdriven.Associations
+	app          *App
 }
 
 func (c enrollmentChallenge) Verify(
@@ -118,6 +128,10 @@ func (c enrollmentChallenge) Verify(
 	password string,
 	csr *x509.CertificateRequest,
 ) error {
+	if c.app != nil && csr != nil &&
+		strings.HasPrefix(csr.Subject.CommonName, replacementSubjectPrefix) {
+		return c.app.replacementChallenge(ctx, password, csr)
+	}
 	if csr != nil &&
 		strings.HasPrefix(csr.Subject.CommonName, accountdriven.CertificateSubjectPrefix) {
 		if err := c.associations.VerifySCEPChallenge(ctx, password, csr); err != nil {

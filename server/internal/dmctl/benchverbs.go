@@ -18,7 +18,7 @@ import (
 func runBench(ctx context.Context, e *env, args []string) error {
 	if len(args) == 0 {
 		return fmt.Errorf(
-			"%w: bench needs init, doctor, list, up, run, profile, status, or down",
+			"%w: bench needs init, doctor, enrollment-preflight, trust, list, up, run, profile, replace, status, or down",
 			ErrUsage,
 		)
 	}
@@ -36,6 +36,7 @@ func runBench(ctx context.Context, e *env, args []string) error {
 	)
 	scenario := fs.String("scenario", "all", "stable scenario ID, family, or all (run)")
 	device := fs.String("device-id", "", "target device ID (live run/profile)")
+	identity := fs.String("identity", "", "acme or scep; empty uses server default")
 	destination := fs.String("file", "", "new profile output path (profile)")
 	format := fs.String("format", "json", "json or markdown (list)")
 	revision := fs.String("revision", version(), "source revision recorded in evidence")
@@ -53,12 +54,9 @@ func runBench(ctx context.Context, e *env, args []string) error {
 		return wrapError(bench.Init(*dir, *mode, *storage, *topology, *listen))
 	}
 	if sub == "list" {
-		if *format == "markdown" {
-			_, err := fmt.Fprint(e.stdout, bench.Markdown())
-			return wrapError(err)
-		}
-		return wrapError(json.NewEncoder(e.stdout).Encode(bench.Catalogue()))
+		return benchList(e, *format)
 	}
+
 	w, err := bench.Load(*dir)
 	if err != nil {
 		return wrapError(err)
@@ -66,21 +64,21 @@ func runBench(ctx context.Context, e *env, args []string) error {
 	if sub == "doctor" {
 		return wrapError(json.NewEncoder(e.stdout).Encode(w.Doctor()))
 	}
-	if sub == "up" {
-		ctx, cancel := signal.NotifyContext(ctx, os.Interrupt, syscall.SIGTERM)
-		defer cancel()
-		b, err := filepath.Abs(*binary)
-		if err != nil {
-			return wrapError(err)
-		}
-		return wrapError(bench.Up(ctx, w, b, e.stdout))
+	if sub == "enrollment-preflight" || sub == "trust" {
+		return benchEnrollmentOffline(e, w, sub, *identity, *destination)
 	}
+	if sub == "up" {
+		return benchUp(ctx, e, w, *binary)
+	}
+
 	instance, err := bench.Attach(w)
 	if err != nil {
 		return wrapError(err)
 	}
 	defer instance.Client.CloseIdleConnections()
 	switch sub {
+	case "replace":
+		return benchReplace(ctx, e, instance, *device, *identity)
 	case "status", "down":
 		method, path := "GET", "/status"
 		if sub == "down" {
@@ -103,7 +101,7 @@ func runBench(ctx context.Context, e *env, args []string) error {
 		if *destination == "" {
 			return fmt.Errorf("%w: -file is required", ErrUsage)
 		}
-		return wrapError(bench.Profile(ctx, instance, *device, *destination))
+		return wrapError(bench.ProfileWithIdentity(ctx, instance, *device, *identity, *destination))
 	case "run":
 		selected, err := bench.SelectMode(instance.Mode, *scenario)
 		if err != nil {
@@ -150,3 +148,53 @@ func runBench(ctx context.Context, e *env, args []string) error {
 var errBenchSelection = errors.New(
 	"bench: selection contains failed, blocked, or unsupported scenarios; inspect evidence",
 )
+
+func benchEnrollmentOffline(e *env, w *bench.Workspace, sub, identity, destination string) error {
+	if sub == "trust" {
+		if destination == "" {
+			return fmt.Errorf("%w: -file is required", ErrUsage)
+		}
+		return wrapError(bench.ExportTrust(w, destination))
+	}
+	result := bench.EnrollmentPreflight(w, identity)
+	if err := json.NewEncoder(e.stdout).Encode(result); err != nil {
+		return wrapError(err)
+	}
+	if ready, _ := result["Ready"].(bool); !ready {
+		return bench.ErrBlocked
+	}
+	return nil
+}
+
+func benchReplace(
+	ctx context.Context,
+	e *env,
+	instance *bench.Environment,
+	device, identity string,
+) error {
+	result, err := bench.Replace(ctx, instance, device, identity)
+	if result != nil {
+		if outputErr := json.NewEncoder(e.stdout).Encode(result); outputErr != nil {
+			return wrapError(outputErr)
+		}
+	}
+	return wrapError(err)
+}
+
+func benchList(e *env, format string) error {
+	if format == "markdown" {
+		_, err := fmt.Fprint(e.stdout, bench.Markdown())
+		return wrapError(err)
+	}
+	return wrapError(json.NewEncoder(e.stdout).Encode(bench.Catalogue()))
+}
+
+func benchUp(ctx context.Context, e *env, w *bench.Workspace, binary string) error {
+	ctx, cancel := signal.NotifyContext(ctx, os.Interrupt, syscall.SIGTERM)
+	defer cancel()
+	b, err := filepath.Abs(binary)
+	if err != nil {
+		return wrapError(err)
+	}
+	return wrapError(bench.Up(ctx, w, b, e.stdout))
+}

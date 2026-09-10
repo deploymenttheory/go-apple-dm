@@ -42,7 +42,14 @@ func (c *Core) Checkin(ctx context.Context, r *mdm.Request, ck *mdm.Checkin) (*C
 	if err != nil {
 		return nil, err
 	}
-	res, err := c.dispatchCheckin(ctx, r, ck)
+	handled, err := c.replacementCheckin(ctx, r, ck)
+	var res *CheckinResult
+	if handled {
+		// A profile update must not trigger hooks that clear state on re-enrollment.
+		call.Op = "replacement:" + ck.Type
+	} else if err == nil {
+		res, err = c.dispatchCheckin(ctx, r, ck)
+	}
 	if err == nil {
 		for _, h := range c.hooks {
 			if h, ok := h.(interface {

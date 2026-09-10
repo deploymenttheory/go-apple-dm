@@ -17,13 +17,14 @@ import (
 
 // Store implements storage.Store in memory.
 type Store struct {
-	mu          sync.Mutex
-	enrollments map[string]*record          // by id
-	certs       map[string]mdm.EnrollmentID // cert hash -> device channel id
-	bootstrap   map[string][]byte           // device channel id -> token
-	history     []storage.CertAssociation   // append-only pin history, oldest first
-	pushCerts   map[string]*storage.PushCert
-	userAuth    map[string]*storage.UserAuthState // by user channel id
+	mu           sync.Mutex
+	enrollments  map[string]*record          // by id
+	certs        map[string]mdm.EnrollmentID // cert hash -> device channel id
+	bootstrap    map[string][]byte           // device channel id -> token
+	history      []storage.CertAssociation   // append-only pin history, oldest first
+	pushCerts    map[string]*storage.PushCert
+	userAuth     map[string]*storage.UserAuthState // by user channel id
+	replacements map[string]*storage.Replacement
 }
 
 type record struct {
@@ -36,6 +37,7 @@ func New() *Store {
 	return &Store{
 		enrollments: map[string]*record{}, certs: map[string]mdm.EnrollmentID{}, bootstrap: map[string][]byte{},
 		pushCerts: map[string]*storage.PushCert{}, userAuth: map[string]*storage.UserAuthState{},
+		replacements: map[string]*storage.Replacement{},
 	}
 }
 

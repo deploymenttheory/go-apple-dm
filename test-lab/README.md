@@ -165,3 +165,10 @@ failed result; it does not claim successful delivery.
 - Stop the bench before editing its configuration. Preserve local identity files
   and databases when restarting. Uninstall device profiles manually after testing.
 - `dmlab` and `lab.py` have been retired. Use the commands above for all lab orchestration.
+
+## ACME and SCEP enrollment
+
+The [Mac enrollment runbook](../docs/operations/mac-enrollment-testing.md) covers
+preflight, local HTTPS trust, manual enrollment, authorized identity replacement
+and the separate ACME/SCEP live acceptance runs. These use the maintained server
+and bench; no separate enrollment spike executable is needed.

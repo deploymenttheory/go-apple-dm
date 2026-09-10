@@ -8,9 +8,9 @@ import (
 	"os"
 	"testing"
 
+	"github.com/deploymenttheory/go-apple-dm/secrets"
 	"github.com/deploymenttheory/go-apple-dm/server/sqlstore/mysql"
 	"github.com/deploymenttheory/go-apple-dm/server/sqlstore/sqlcommon"
-	"github.com/deploymenttheory/go-apple-dm/secrets"
 	"github.com/deploymenttheory/go-apple-dm/storage"
 	"github.com/deploymenttheory/go-apple-dm/storage/crypt"
 	"github.com/deploymenttheory/go-apple-dm/storage/storagetest"
@@ -25,14 +25,14 @@ func TestContract(t *testing.T) {
 	if _, err := mysql.Open(ctx, "nobody:x@tcp(127.0.0.1:1)/none", mysql.Options{}); err == nil {
 		t.Fatal("unreachable server")
 	}
-	s, err := mysql.Open(ctx, dsn, mysql.Options{Pool: sqlcommon.Pool{MaxOpenConns: 8, MaxIdleConns: 4}})
+	s, err := mysql.Open(ctx, dsn, mysql.Options{SkipMigrate: true, Pool: sqlcommon.Pool{MaxOpenConns: 8, MaxIdleConns: 4}})
 	if err != nil {
 		t.Fatal(err)
 	}
 	defer s.Close()
 	// Start from an empty schema every run, even when the database carries
 	// a schema from an older build.
-	if _, err := s.DB().ExecContext(ctx, "DROP TABLE IF EXISTS user_auth, push_certs, cert_associations, commands, enrollments, schema_migrations"); err != nil {
+	if _, err := s.DB().ExecContext(ctx, "DROP TABLE IF EXISTS enrollment_replacements, user_auth, push_certs, cert_associations, commands, enrollments, schema_migrations"); err != nil {
 		t.Fatal(err)
 	}
 	// A conflicting table makes Open fail at migration time.
@@ -50,7 +50,7 @@ func TestContract(t *testing.T) {
 	}
 	reset := func(t *testing.T, st storage.Store) storage.Store {
 		t.Helper()
-		for _, table := range []string{"user_auth", "push_certs", "cert_associations", "commands", "enrollments"} {
+		for _, table := range []string{"enrollment_replacements", "user_auth", "push_certs", "cert_associations", "commands", "enrollments"} {
 			if _, err := s.DB().ExecContext(ctx, "DELETE FROM "+table); err != nil {
 				t.Fatal(err)
 			}
@@ -77,6 +77,7 @@ func TestContract(t *testing.T) {
 		t.Run("PushCert", func(t *testing.T) { storagetest.RunPushCertSuite(t, f) })
 		t.Run("UserAuth", func(t *testing.T) { storagetest.RunUserAuthSuite(t, f) })
 		t.Run("Migration", func(t *testing.T) { storagetest.RunMigrationSuite(t, f) })
+		t.Run("Replacement", func(t *testing.T) { storagetest.RunReplacementSuite(t, f) })
 		if n, err := enc.Rewrap(ctx); err != nil || n != 0 {
 			t.Fatalf("Rewrap after the encrypted run = %d %v (every row must already be sealed)", n, err)
 		}

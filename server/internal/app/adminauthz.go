@@ -20,6 +20,7 @@ const (
 	ActionManageAppPush          = "manageAppPushCredentials"
 	ActionSendAppPush            = "sendAppPush"
 	ActionIssueEnrollmentProfile = "issueEnrollmentProfile"
+	ActionReplaceEnrollment      = "replaceEnrollmentProfile"
 	ActionPutDeclaration         = "putDeclaration"
 	ActionGetDeclaration         = "getDeclaration"
 	ActionDeleteDeclaration      = "deleteDeclaration"
@@ -48,6 +49,11 @@ const (
 // an action knows what they are granting rather than guessing from its name.
 func AdminActions() []adminauth.Action {
 	return []adminauth.Action{
+		{
+			ID:       ActionReplaceEnrollment,
+			Help:     "Replace an enrolled device's MDM profile and rotate its identity, or cancel a pending replacement.",
+			Resource: adminauth.EntityEnrollment,
+		},
 		{
 			ID:       ActionManageAppPush,
 			Help:     "Import, renew and list app push credentials.",

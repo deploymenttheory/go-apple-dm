@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strings"
 	"testing"
 	"time"
 )
@@ -48,7 +49,7 @@ func testWorkspace(t *testing.T, mode string) *Workspace {
 // outage, lost acknowledgement, or unavailable administrative result.
 func TestScenariosRejectInterruptedExchanges(t *testing.T) {
 	for _, s := range Catalogue() {
-		if s.ID == "LIVE-001" || s.ID == "E2E-003" || s.ID == "E2E-010" {
+		if strings.HasPrefix(s.ID, "LIVE-") || s.ID == "E2E-003" || s.ID == "E2E-010" {
 			continue
 		}
 		t.Run(s.ID, func(t *testing.T) {

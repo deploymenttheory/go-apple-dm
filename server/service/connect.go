@@ -37,6 +37,9 @@ func (c *Core) Connect(ctx context.Context, r *mdm.Request, resp *mdm.Response) 
 }
 
 func (c *Core) connect(ctx context.Context, r *mdm.Request, resp *mdm.Response) (*mdm.Command, error) {
+	if cmd, handled, err := c.replacementConnect(ctx, r, resp); handled || err != nil {
+		return cmd, err
+	}
 	if err := c.authorize(ctx, r); err != nil {
 		return nil, err
 	}

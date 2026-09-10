@@ -30,6 +30,7 @@ func RunAll(t *testing.T, newStore Factory) {
 	t.Run("UserAuth", func(t *testing.T) { RunUserAuthSuite(t, newStore) })
 	t.Run("Migration", func(t *testing.T) { RunMigrationSuite(t, newStore) })
 	t.Run("Concurrency", func(t *testing.T) { RunConcurrencySuite(t, newStore) })
+	t.Run("Replacement", func(t *testing.T) { RunReplacementSuite(t, newStore) })
 }
 
 var t0 = time.Date(2026, 9, 1, 12, 0, 0, 0, time.UTC)

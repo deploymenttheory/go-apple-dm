@@ -21,10 +21,11 @@ server. No fixture control, test clock or fault-injection route is mounted in th
 normal application. Scenario-specific configuration starts isolated instances.
 Local workspaces persist; automated acceptance creates disposable workspaces.
 
-Reusable operator capabilities belong in the reference server: enrollment-profile
-issuance, enrollment-scoped command-result retrieval, configured OTA and user
-identity verification, and app notification administration. The old `dmlab` and
-Python runner are removed; the native host app remains a device-side fixture.
+Reusable operator capabilities belong in the reference server: service discovery,
+enrollment-profile issuance and replacement, issuance evidence, enrollment-scoped
+command-result retrieval, configured OTA and user identity verification, and app
+notification administration. The old `dmlab` and Python runner are removed; the
+native host app remains a device-side fixture.
 
 Contract suites continue to exercise interfaces directly. Detailed E2E regressions
 retain timing, storage and fault assertions that need component access. Their IDs
@@ -63,6 +64,15 @@ regressions. `make test-acceptance` runs built server processes, including both
 split roles. `make test-contract` verifies the underlying persistence interfaces.
 `make bench-docs-check` compares generated catalogue documentation with code.
 
+Enrollment scenarios use the same profile API for ACME and SCEP and exercise
+successful and failed replacement. Offline preflight and trust export prepare
+a live Mac through `bench-enrollment-preflight`, `bench-trust`, `bench-profile`
+and `bench-replace`. Live acceptance requires recorded issuance, check-in, an
+APNs-triggered inventory response and the installing user's management channel.
+These scenarios require actual device evidence before they can pass. The bench
+derives a stable ACME identifier key from its retained workspace secret so a
+restart does not invalidate previously issued identifiers.
+
 Unit tests run the maintained scenarios against the embedded reference server
 with interrupted exchanges and incomplete evidence. They also exercise missing
 workspace prerequisites, supervisor exits, and live receipt/acknowledgement
@@ -71,7 +81,6 @@ an explicit protocol rejection; a transport error or unavailable service is a
 failed scenario. Coverage retains the repository's 95% overall and per-package
 gates, with no additional exemptions for the bench.
 
-
 ## References
 
 - [Testing guide](../../testing/bench.md)
@@ -79,3 +88,6 @@ gates, with no additional exemptions for the bench.
 - [Server-managed app pushes](0049-server-managed-app-push.md)
 - [Admin API](0034-admin-api-and-authorization.md)
 - [CLI conventions](0035-dmctl-structure-and-credentials.md)
+- [Enrollment profiles](0009-enrollment-profiles.md)
+- [ADE enrollment and service configuration](0027-ade-enrollment-machineinfo-and-web-view-auth.md)
+- [Mac enrollment runbook](../../operations/mac-enrollment-testing.md)

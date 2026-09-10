@@ -93,7 +93,14 @@ CREATE TABLE user_auth (
     CONSTRAINT fk_user_auth_parent FOREIGN KEY (parent_id) REFERENCES enrollments (id) ON DELETE CASCADE
 ) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin;
 
+CREATE TABLE enrollment_replacements (
+    enrollment_id VARCHAR(255) NOT NULL PRIMARY KEY,
+    state_blob LONGBLOB NOT NULL,
+    FOREIGN KEY (enrollment_id) REFERENCES enrollments(id)
+) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin;
+
 -- +down
+DROP TABLE enrollment_replacements;
 DROP TABLE user_auth;
 DROP TABLE push_certs;
 DROP TABLE cert_associations;

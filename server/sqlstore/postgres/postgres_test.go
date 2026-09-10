@@ -10,12 +10,12 @@ import (
 	"testing"
 	"time"
 
-	"github.com/deploymenttheory/go-apple-dm/server/sqlstore/postgres"
-	"github.com/deploymenttheory/go-apple-dm/server/sqlstore/sqlcommon"
-	"github.com/deploymenttheory/go-apple-dm/server/sqlstore/sqltest"
 	"github.com/deploymenttheory/go-apple-dm/mdmprotocol/mdm"
 	"github.com/deploymenttheory/go-apple-dm/schema/checkin"
 	"github.com/deploymenttheory/go-apple-dm/secrets"
+	"github.com/deploymenttheory/go-apple-dm/server/sqlstore/postgres"
+	"github.com/deploymenttheory/go-apple-dm/server/sqlstore/sqlcommon"
+	"github.com/deploymenttheory/go-apple-dm/server/sqlstore/sqltest"
 	"github.com/deploymenttheory/go-apple-dm/storage"
 	"github.com/deploymenttheory/go-apple-dm/storage/crypt"
 	"github.com/deploymenttheory/go-apple-dm/storage/storagetest"
@@ -29,7 +29,7 @@ func openFresh(tb testing.TB) *postgres.Store {
 		tb.Skip("TEST_POSTGRES_DSN not set")
 	}
 	ctx := context.Background()
-	s, err := postgres.Open(ctx, dsn, postgres.Options{Pool: sqlcommon.Pool{MaxOpenConns: 8, MaxIdleConns: 4}})
+	s, err := postgres.Open(ctx, dsn, postgres.Options{SkipMigrate: true, Pool: sqlcommon.Pool{MaxOpenConns: 8, MaxIdleConns: 4}})
 	if err != nil {
 		tb.Fatal(err)
 	}
@@ -47,7 +47,7 @@ func resetSchema(tb testing.TB, db interface {
 	ExecContext(context.Context, string, ...any) (sql.Result, error)
 }) {
 	tb.Helper()
-	if _, err := db.ExecContext(context.Background(), "DROP TABLE IF EXISTS user_auth, push_certs, cert_associations, commands, enrollments, schema_migrations CASCADE"); err != nil {
+	if _, err := db.ExecContext(context.Background(), "DROP TABLE IF EXISTS enrollment_replacements, user_auth, push_certs, cert_associations, commands, enrollments, schema_migrations CASCADE"); err != nil {
 		tb.Fatal(err)
 	}
 }
@@ -110,7 +110,7 @@ func TestContract(t *testing.T) {
 	if _, err := postgres.Open(ctx, "postgres://nobody:x@127.0.0.1:1/none", postgres.Options{}); err == nil {
 		t.Fatal("unreachable server")
 	}
-	s, err := postgres.Open(ctx, dsn, postgres.Options{Pool: sqlcommon.Pool{MaxOpenConns: 8, MaxIdleConns: 4}})
+	s, err := postgres.Open(ctx, dsn, postgres.Options{SkipMigrate: true, Pool: sqlcommon.Pool{MaxOpenConns: 8, MaxIdleConns: 4}})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -132,7 +132,7 @@ func TestContract(t *testing.T) {
 	}
 	reset := func(t *testing.T, st storage.Store) storage.Store {
 		t.Helper()
-		for _, table := range []string{"user_auth", "push_certs", "cert_associations", "commands", "enrollments"} {
+		for _, table := range []string{"enrollment_replacements", "user_auth", "push_certs", "cert_associations", "commands", "enrollments"} {
 			if _, err := s.DB().ExecContext(ctx, "DELETE FROM "+table); err != nil {
 				t.Fatal(err)
 			}
@@ -159,6 +159,7 @@ func TestContract(t *testing.T) {
 		t.Run("PushCert", func(t *testing.T) { storagetest.RunPushCertSuite(t, f) })
 		t.Run("UserAuth", func(t *testing.T) { storagetest.RunUserAuthSuite(t, f) })
 		t.Run("Migration", func(t *testing.T) { storagetest.RunMigrationSuite(t, f) })
+		t.Run("Replacement", func(t *testing.T) { storagetest.RunReplacementSuite(t, f) })
 		if n, err := enc.Rewrap(ctx); err != nil || n != 0 {
 			t.Fatalf("Rewrap after the encrypted run = %d %v (every row must already be sealed)", n, err)
 		}

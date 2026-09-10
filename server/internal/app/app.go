@@ -602,11 +602,12 @@ func (a *App) wire(ctx context.Context) error {
 			return err
 		}
 		core, err := service.New(service.Config{
-			Store:             a.Store,
-			Bus:               cfg.Bus,
-			Clock:             cfg.Clock,
-			Logger:            cfg.Logger,
-			CertificateStatus: a.certificateStatus(),
+			Store:              a.Store,
+			EnableReplacements: a.replacementStore() != nil && a.enroll != nil,
+			Bus:                cfg.Bus,
+			Clock:              cfg.Clock,
+			Logger:             cfg.Logger,
+			CertificateStatus:  a.certificateStatus(),
 			Hooks: append(
 				[]service.Hook{ddmsync.NewServiceHook(engine, a.Store, cfg.Logger)},
 				enrollHooks...),

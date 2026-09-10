@@ -68,6 +68,7 @@ type sealedColumn struct {
 }
 
 var sealedColumns = []sealedColumn{
+	{"enrollment_replacements", "state_blob", "enrollment_id", purposeReplacement},
 	{"enrollments", "unlock_token", "id", purposeUnlockToken},
 	{"enrollments", "bootstrap_token", "id", purposeBootstrapToken},
 	{"push_certs", "key_pem", "topic", purposePushKey},

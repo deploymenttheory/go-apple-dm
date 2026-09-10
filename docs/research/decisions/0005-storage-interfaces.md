@@ -10,6 +10,13 @@ Enrollment lifecycle, command delivery, certificate ownership and escrowed token
 
 `UpsertAuthenticate` resets enrollment state transactionally, clearing pending work, push state, escrowed tokens and the active certificate pin while retaining certificate history. Device lifecycle changes also affect dependent user channels. Lists use cursors, and command delivery persists `NotNow` retry state. `Clear` accepts a filter and returns the number affected.
 
+The optional `ReplacementStore` extension supports the profile-update lifecycle
+described in [record 0009](0009-enrollment-profiles.md). A shared state machine
+runs under an in-memory lock or SQL transaction. It commits the candidate pin,
+tokens and certificate history together, preserving the command queue, escrow
+and user channels. Pending attempts survive SQL-backed process restarts; their
+commands and staged tokens use the configured storage keyring.
+
 ## Rationale
 
 Narrow interfaces allow consumers to implement or fake only the operations they need. The in-memory backend and shared contract suites define behavior independently of SQL dialects.
@@ -21,6 +28,10 @@ Certificate history is distinct from the live pin and from account-driven certif
 ## Verification
 
 `storage/storagetest` covers lifecycle, pagination, idempotency, queue outcomes, certificate races, token storage and export/import. SQL backends run the same suites.
+
+Replacement contracts cover commit ordering, concurrent creation, user tokens,
+queue and escrow preservation, cancellation, expiry and device-reported failure.
+PostgreSQL and MySQL also run these contracts with encryption enabled.
 
 ## References
 
