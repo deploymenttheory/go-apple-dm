@@ -50,8 +50,9 @@ func (a *App) wireOTA(mux *http.ServeMux) error {
 			}
 			return nil
 		},
-		Profile: func(_ context.Context, r *enroll.OTARequest) ([]byte, error) {
+		Profile: func(ctx context.Context, r *enroll.OTARequest) ([]byte, error) {
 			p, err := e.profile(
+				ctx,
 				acme.Binding{UDID: r.Attributes.UDID, CommonName: r.Attributes.UDID},
 			)
 			if err != nil {
@@ -64,13 +65,14 @@ func (a *App) wireOTA(mux *http.ServeMux) error {
 			if err != nil {
 				return nil, wrapError(err)
 			}
+			var bootstrap []profile.Payload
 			for _, payload := range built.Payloads {
-				if payload.Content.PayloadTypeName() == "com.apple.security.scep" {
-					built.Payloads = []profile.Payload{payload}
-					return built.Marshal()
+				if payload.Content.PayloadTypeName() != "com.apple.mdm" {
+					bootstrap = append(bootstrap, payload)
 				}
 			}
-			return nil, fmt.Errorf("%w: OTA profile has no SCEP identity", errOperation)
+			built.Payloads = bootstrap
+			return built.Marshal()
 		},
 	}
 	mux.Handle("/ota", ota.Handler())

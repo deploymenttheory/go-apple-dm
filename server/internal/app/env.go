@@ -50,6 +50,7 @@ const (
 	EnvSCEPChallenge       = "DM_SCEP_CHALLENGE" // #nosec G101 -- the variable name, not a credential
 	EnvSCEPHMACKey         = "DM_SCEP_HMAC_KEY"  // #nosec G101 -- the variable name, not a credential
 	EnvProfileIdentifier   = "DM_PROFILE_IDENTIFIER"
+	EnvEnrollTLSAnchorFile = "DM_ENROLL_TLS_ANCHOR_FILE"
 	EnvOrganization        = "DM_ORGANIZATION"
 	EnvDiscovery           = "DM_DISCOVERY"
 	EnvAccountDrivenMethod = "DM_ACCOUNT_DRIVEN_METHOD"
@@ -207,6 +208,7 @@ func ParseEnv(get func(string) string) (Config, error) {
 			EnvSCEPChallenge,
 		),
 		ProfileIdentifier:   get(EnvProfileIdentifier),
+		TLSAnchorFile:       get(EnvEnrollTLSAnchorFile),
 		Organization:        get(EnvOrganization),
 		AccountDrivenMethod: get(EnvAccountDrivenMethod),
 		ADEAnchorFile:       get(EnvADEAnchorFile),

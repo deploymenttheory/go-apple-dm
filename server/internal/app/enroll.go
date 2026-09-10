@@ -27,6 +27,7 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/pki/scep"
 	"github.com/deploymenttheory/go-apple-dm/schema/checkin"
 	"github.com/deploymenttheory/go-apple-dm/server/service"
+	"github.com/deploymenttheory/go-apple-dm/state"
 )
 
 // Enrollment routes on the mdm and all roles (decision records 0027 to 0029).
@@ -60,6 +61,10 @@ type EnrollConfig struct {
 	// issues device identities through SCEP; both empty means a
 	// self-signed CA is generated at start (development only) and logged.
 	CACertFile, CAKeyFile string
+	// TLSAnchorFile contains public CA certificates needed to trust the HTTPS
+	// enrollment endpoints. Empty means publicly trusted HTTPS. It is independent
+	// of the identity issuer and the incoming ADE/OTA signing anchors.
+	TLSAnchorFile string
 	// SCEPChallenge is the shared SCEP challenge (development); an HMAC
 	// challenge derives one-time passwords when SCEPHMACKey is set instead.
 	SCEPChallenge     string
@@ -179,6 +184,8 @@ type enrollment struct {
 	ade       *ade.Handler
 	flow      *webauth.Flow
 	challenge scep.Challenge
+	trust     []*x509.Certificate
+	state     state.Store
 }
 
 // wireEnrollment mounts the routes; it returns the hooks the core needs.
@@ -195,6 +202,10 @@ func (a *App) wireEnrollment(ctx context.Context, mux *http.ServeMux) ([]service
 	if err != nil {
 		return nil, err
 	}
+	e.state = st
+	if err := a.wireServiceConfig(e, mux); err != nil {
+		return nil, err
+	}
 	e.tokens = &accountdriven.Tokens{
 		Store: &accountdriven.StateTokenStore{Backend: st},
 		Now:   a.cfg.Clock.Now,
@@ -207,6 +218,7 @@ func (a *App) wireEnrollment(ctx context.Context, mux *http.ServeMux) ([]service
 		e.caKey,
 		ca.WithDepot(
 			&enrollmentDepot{
+				app:          a,
 				Depot:        ca.NewMemoryDepot(),
 				associations: e.tokens.AssociationStore(),
 				registry:     a.revocations,
@@ -232,7 +244,11 @@ func (a *App) wireEnrollment(ctx context.Context, mux *http.ServeMux) ([]service
 		e.caCert,
 		e.caKey,
 		scep.WithChallenge(
-			enrollmentChallenge{base: e.challenge, associations: e.tokens.AssociationStore()},
+			enrollmentChallenge{
+				base:         e.challenge,
+				associations: e.tokens.AssociationStore(),
+				app:          a,
+			},
 		),
 		scep.WithPolicy(a.issuancePolicy(e)),
 		scep.WithCertificateStatus(a.certificateStatus()),
@@ -289,12 +305,12 @@ func (a *App) wireEnrollment(ctx context.Context, mux *http.ServeMux) ([]service
 	e.ade = ade.New(ade.Config{
 		Parse:  ade.ParseOptions{Anchors: anchors, Audit: cfg.ADEAudit, Logger: a.cfg.Logger},
 		Signer: ade.Signer{Cert: e.caCert, Key: e.caKey},
-		Profile: func(_ context.Context, p *ade.Parsed, id ade.Identity) (*enroll.Profile, error) {
+		Profile: func(ctx context.Context, p *ade.Parsed, id ade.Identity) (*enroll.Profile, error) {
 			cn := p.SERIAL
 			if email, _ := id.Claims["email"].(string); email != "" {
 				cn = email + "/" + p.SERIAL
 			}
-			return e.profile(acme.Binding{
+			return e.profile(ctx, acme.Binding{
 				Serial:     p.SERIAL,
 				UDID:       p.UDID,
 				CommonName: cn,
@@ -326,7 +342,8 @@ func (a *App) wireEnrollment(ctx context.Context, mux *http.ServeMux) ([]service
 				)
 			}
 		}),
-		Logger: a.cfg.Logger, Now: a.cfg.Clock.Now,
+		Logger: a.cfg.Logger,
+		Now:    a.cfg.Clock.Now,
 	})
 	mux.Handle(PathADE, e.ade)
 
@@ -348,6 +365,7 @@ func (a *App) wireEnrollment(ctx context.Context, mux *http.ServeMux) ([]service
 					return nil, accountdriven.ErrAssociation
 				}
 				p, err := e.profile(
+					ctx,
 					acme.Binding{
 						CommonName:        accountdriven.CertificateSubjectPrefix + association.Reference,
 						AllowUnidentified: true,
@@ -378,7 +396,10 @@ func (a *App) wireEnrollment(ctx context.Context, mux *http.ServeMux) ([]service
 	if err := a.wireOIDC(e, mux); err != nil {
 		return nil, err
 	}
-	hooks := []service.Hook{&accountdriven.CheckinHook{Tokens: e.tokens, Auth: auth}}
+	hooks := []service.Hook{
+		replacementAdmission{app: a},
+		&accountdriven.CheckinHook{Tokens: e.tokens, Auth: auth},
+	}
 	a.enroll = e
 	if err := a.wireOTA(mux); err != nil {
 		return nil, err
@@ -441,13 +462,28 @@ func (e *enrollment) complete(
 	}
 }
 
-// profile is the enrollment profile every flow serves: SCEP identity from
-// the app CA with a challenge, this CA as the trusted root.
 // profile builds the enrollment profile for one device. The binding says
 // what the server knows about that device, which becomes the certificate
 // subject and, for an ACME identity, the device the client identifier is
 // issued for.
-func (e *enrollment) profile(b acme.Binding) (*enroll.Profile, error) {
+func (e *enrollment) profile(ctx context.Context, b acme.Binding) (*enroll.Profile, error) {
+	return e.profileWithIdentity(ctx, b, e.cfg.Identity)
+}
+
+func (e *enrollment) profileWithIdentity(
+	ctx context.Context,
+	b acme.Binding,
+	identity string,
+) (*enroll.Profile, error) {
+	if identity == "" {
+		identity = IdentitySCEP
+	}
+	if identity != IdentitySCEP && identity != IdentityACME {
+		return nil, fmt.Errorf("%w: identity must be scep or acme", ErrConfig)
+	}
+	if identity == IdentitySCEP && e.cfg.SCEPChallenge == "" && len(e.cfg.SCEPHMACKey) == 0 {
+		return nil, fmt.Errorf("%w: SCEP is not configured", ErrConfig)
+	}
 	subjectCN := b.CommonName
 	challenge := e.cfg.SCEPChallenge
 	if h, ok := e.challenge.(*scep.HMACChallenge); ok {
@@ -462,15 +498,19 @@ func (e *enrollment) profile(b acme.Binding) (*enroll.Profile, error) {
 		org = "go-apple-dm"
 	}
 	out := &enroll.Profile{
-		Identifier:   id,
-		DisplayName:  org + " MDM enrollment",
-		Organization: org,
-		Topic:        e.cfg.Topic,
-		ServerURL:    e.base + PathMDM,
-		CheckInURL:   e.base + PathMDM,
-		Roots:        []*x509.Certificate{e.caCert},
+		Identifier:         id,
+		DisplayName:        org + " MDM enrollment",
+		Organization:       org,
+		Topic:              e.cfg.Topic,
+		ServerURL:          e.base + PathMDM,
+		CheckInURL:         e.base + PathMDM,
+		Roots:              e.trust,
+		ServerCapabilities: []string{enroll.CapabilityPerUserConnections},
 	}
-	if e.cfg.Identity == IdentityACME {
+	if err := e.stabilizeProfile(ctx, b, out); err != nil {
+		return nil, err
+	}
+	if identity == IdentityACME {
 		b.CommonName, b.Organization = subjectCN, []string{org}
 		payload, err := e.acme.acmePayload(b, e.acme.server.DirectoryURL())
 		if err != nil {

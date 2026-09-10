@@ -7,6 +7,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 
@@ -39,7 +40,7 @@ func TestScenarios(t *testing.T) {
 			defer e.Close()
 			var results []bench.Result
 			for _, s := range bench.Catalogue() {
-				if s.ID == "LIVE-001" {
+				if strings.HasPrefix(s.ID, "LIVE-") {
 					continue
 				}
 				if topology == "all" && s.ID == "E2E-010" {

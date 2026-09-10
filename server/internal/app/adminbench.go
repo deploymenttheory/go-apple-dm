@@ -61,6 +61,30 @@ func (a *App) enrollmentAdminRoutes() []adminRoute {
 	}
 	return []adminRoute{
 		{
+			Pattern: "GET /enrollments/{channel}/{id}/enrollment-evidence",
+			Action:  ActionReadEnrollment,
+			Family:  "mdm",
+			Handler: http.HandlerFunc(a.enrollmentEvidence),
+		},
+		{
+			Pattern: "POST /enrollments/{channel}/{id}/replacement",
+			Action:  ActionReplaceEnrollment,
+			Family:  "mdm",
+			Handler: http.HandlerFunc(a.replaceEnrollment),
+		},
+		{
+			Pattern: "GET /enrollments/{channel}/{id}/replacement",
+			Action:  ActionReadEnrollment,
+			Family:  "mdm",
+			Handler: http.HandlerFunc(a.replaceEnrollment),
+		},
+		{
+			Pattern: "DELETE /enrollments/{channel}/{id}/replacement/{attempt}",
+			Action:  ActionReplaceEnrollment,
+			Family:  "mdm",
+			Handler: http.HandlerFunc(a.replaceEnrollment),
+		},
+		{
 			Pattern: "POST /enrollment-profiles",
 			Action:  ActionIssueEnrollmentProfile,
 			Family:  "enrollment",
@@ -72,6 +96,7 @@ func (a *App) enrollmentAdminRoutes() []adminRoute {
 func (a *App) issueEnrollmentProfile(w http.ResponseWriter, r *http.Request) {
 	var req struct {
 		DeviceID, Serial string
+		Identity         string
 		AccessRights     enroll.AccessRights
 	}
 	body, err := io.ReadAll(io.LimitReader(r.Body, MaxAdminBody+1))
@@ -83,8 +108,13 @@ func (a *App) issueEnrollmentProfile(w http.ResponseWriter, r *http.Request) {
 		writeError(w, 400, fmt.Errorf("%w: DeviceID is required", errOperation))
 		return
 	}
-	p, err := a.enroll.profile(
+	if req.Identity == "" {
+		req.Identity = a.enroll.cfg.Identity
+	}
+	p, err := a.enroll.profileWithIdentity(
+		r.Context(),
 		acme.Binding{UDID: req.DeviceID, Serial: req.Serial, CommonName: req.DeviceID},
+		req.Identity,
 	)
 	if err != nil {
 		writeError(w, 400, err)
@@ -98,6 +128,10 @@ func (a *App) issueEnrollmentProfile(w http.ResponseWriter, r *http.Request) {
 	b, err := p.Marshal()
 	if err != nil {
 		writeError(w, 500, fmt.Errorf("%w: profile generation failed", errOperation))
+		return
+	}
+	if err := a.enroll.recordProfile(r.Context(), acme.Binding{UDID: req.DeviceID}, p); err != nil {
+		writeError(w, 500, err)
 		return
 	}
 	w.Header().Set("Content-Type", "application/x-apple-aspen-config")

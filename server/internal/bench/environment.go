@@ -6,6 +6,7 @@ import (
 	"crypto/ecdsa"
 	"crypto/elliptic"
 	"crypto/rand"
+	"crypto/sha256"
 	"crypto/x509"
 	"encoding/hex"
 	"encoding/json"
@@ -133,16 +134,17 @@ func Start(ctx context.Context, w *Workspace, binary string, out io.Writer) (*En
 			"mdm",
 			"ca.pem",
 		),
-		"DM_ENROLL_CA_CERT_FILE": w.path("mdm", "ca.pem"),
-		"DM_ENROLL_CA_KEY_FILE":  w.path("mdm", "ca.key"),
-		"DM_ADMIN_TOKEN":         token,
-		"DM_STORAGE_KEYS":        "bench,lab",
-		"DM_PUBLIC_URL":          e.URL,
-		"DM_PUSH_SOURCE":         "store",
-		"DM_PUSH_COALESCE":       "-1s",
-		"DM_AUDIT_STORE":         "true",
-		"DM_DISCOVERY":           "Mac=mdm-adde,iPhone=mdm-byod",
-		"DM_ADMIN_STORE":         "true",
+		"DM_ENROLL_CA_CERT_FILE":    w.path("mdm", "ca.pem"),
+		"DM_ENROLL_TLS_ANCHOR_FILE": w.path("mdm", "ca.pem"),
+		"DM_ENROLL_CA_KEY_FILE":     w.path("mdm", "ca.key"),
+		"DM_ADMIN_TOKEN":            token,
+		"DM_STORAGE_KEYS":           "bench,lab",
+		"DM_PUBLIC_URL":             e.URL,
+		"DM_PUSH_SOURCE":            "store",
+		"DM_PUSH_COALESCE":          "-1s",
+		"DM_AUDIT_STORE":            "true",
+		"DM_DISCOVERY":              "Mac=mdm-adde,iPhone=mdm-byod",
+		"DM_ADMIN_STORE":            "true",
 	}
 	for k, v := range w.Settings {
 		env[k] = v
@@ -164,6 +166,7 @@ func Start(ctx context.Context, w *Workspace, binary string, out io.Writer) (*En
 		env[key] = strings.TrimSpace(string(b))
 	}
 	env["DM_STORAGE_KEY_LAB"] = env["DM_STORAGE_KEY_BENCH"]
+	configureACMEIdentifierKey(env)
 	var cert, key []byte
 	if w.Mode == "simulated" {
 		cert, key, err = e.providerFixtures(env)
@@ -720,4 +723,12 @@ func (e *Environment) seed(ctx context.Context, topic string, cert, key []byte) 
 		}
 	}
 	return nil
+}
+
+func configureACMEIdentifierKey(env map[string]string) {
+	if env["DM_ACME_HMAC_KEY"] == "" {
+		// A separate derivation keeps issued identifiers usable after a bench restart.
+		key := sha256.Sum256([]byte("bench ACME identifiers\x00" + env["DM_STORAGE_KEY_BENCH"]))
+		env["DM_ACME_HMAC_KEY"] = hex.EncodeToString(key[:])
+	}
 }

@@ -90,7 +90,13 @@ CREATE TABLE user_auth (
 );
 CREATE INDEX idx_user_auth_parent ON user_auth (parent_id);
 
+CREATE TABLE enrollment_replacements (
+    enrollment_id TEXT NOT NULL PRIMARY KEY REFERENCES enrollments(id),
+    state_blob BLOB NOT NULL
+);
+
 -- +down
+DROP TABLE enrollment_replacements;
 DROP TABLE user_auth;
 DROP TABLE push_certs;
 DROP TABLE cert_associations;

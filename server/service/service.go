@@ -155,6 +155,9 @@ type Hook = dmhook.Hook
 // Config builds a Core.
 type Config struct {
 	Store storage.Store
+	// EnableReplacements enables authorized profile updates on stores implementing
+	// storage.ReplacementStore. Ordinary re-enrollment policy remains independent.
+	EnableReplacements bool
 	// Bus receives events; nil disables publishing.
 	Bus *event.Bus
 	// Clock defaults to the real clock.
@@ -207,6 +210,7 @@ func DenyReenroll(context.Context, *mdm.Request, *storage.Enrollment) error { re
 // Core is the service implementation.
 type Core struct {
 	store             storage.Store
+	replacements      storage.ReplacementStore
 	bus               *event.Bus
 	clock             clock.Clock
 	hooks             []Hook
@@ -228,8 +232,16 @@ func New(cfg Config) (*Core, error) {
 	if cfg.Store == nil {
 		return nil, errors.New("service: Config.Store is required")
 	}
+	var replacements storage.ReplacementStore
+	if cfg.EnableReplacements {
+		replacements, _ = cfg.Store.(storage.ReplacementStore)
+		if replacements == nil {
+			return nil, errors.New("service: replacement store is required")
+		}
+	}
 	c := &Core{
-		store: cfg.Store, bus: cfg.Bus, clock: cfg.Clock, hooks: cfg.Hooks, log: cfg.Logger,
+		replacements: replacements,
+		store:        cfg.Store, bus: cfg.Bus, clock: cfg.Clock, hooks: cfg.Hooks, log: cfg.Logger,
 		certificateStatus: cfg.CertificateStatus,
 		pinning:           cfg.Pinning, reenroll: cfg.Reenroll, reuse: cfg.CertReuse,
 		dm: cfg.DeclarativeManagement, getToken: cfg.GetToken, userAuth: cfg.UserAuthenticate,

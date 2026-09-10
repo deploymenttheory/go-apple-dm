@@ -2,6 +2,7 @@ SHELL := /bin/bash
 .DEFAULT_GOAL := help
 
 GO ?= go
+GOLANGCI_LINT ?= golangci-lint
 COVERAGE_MIN ?= 95
 COVER_DIR := cover
 PKGS := ./...
@@ -45,8 +46,8 @@ verify: submodule
 
 ## lint: run golangci-lint with the repository configuration
 lint:
-	golangci-lint run --config=.golangci.yml ./...
-	cd $(SERVER_DIR) && golangci-lint run --config=../.golangci.yml ./...
+	$(GOLANGCI_LINT) run --config=.golangci.yml ./...
+	cd $(SERVER_DIR) && $(GOLANGCI_LINT) run --config=../.golangci.yml ./...
 
 ## test: unit tests with race detector, coverage written to cover/unit
 test:
@@ -61,7 +62,8 @@ test-storage: test-contract
 test-contract:
 	$(GO) test -race ./storage/... ./state/...
 	@rm -rf $(COVER_DIR)/storage && mkdir -p $(COVER_DIR)/storage
-	cd $(SERVER_DIR) && $(GO) test -race -count=1 -tags integration -cover -coverpkg=$(ALL_PKGS) $(INTEGRATION_PKGS) -args -test.gocoverdir=$(PWD)/$(COVER_DIR)/storage
+	# Integration packages share test databases; serialize their schema resets.
+	cd $(SERVER_DIR) && $(GO) test -p 1 -race -count=1 -tags integration -cover -coverpkg=$(ALL_PKGS) $(INTEGRATION_PKGS) -args -test.gocoverdir=$(PWD)/$(COVER_DIR)/storage
 
 ## test-storage-perf: the 100k-row Clear timing gate on PostgreSQL, without the race detector (needs TEST_POSTGRES_DSN)
 test-storage-perf:
@@ -140,6 +142,9 @@ BENCH_TOPOLOGY ?= all
 BENCH_LISTEN ?= 127.0.0.1:8443
 BENCH_SCENARIO ?= all
 BENCH_DEVICE_ID ?=
+BENCH_IDENTITY ?= acme
+BENCH_PROFILE_FILE ?= $(BENCH_WORKSPACE)/enrollment.mobileconfig
+BENCH_TRUST_FILE ?= $(BENCH_WORKSPACE)/trust.mobileconfig
 BENCH_REPORT_DIR ?= cover/acceptance
 BENCH_REVISION := $(shell git describe --always --dirty)
 BENCH_BIN_DIR := test-lab/local/bin
@@ -177,6 +182,23 @@ bench-run: bench-build
 ## bench-status: query the workspace supervisor
 bench-status:
 	"$(BENCH_BIN_DIR)/dmctl" bench status -workspace "$(BENCH_WORKSPACE)"
+
+.PHONY: bench-enrollment-preflight bench-trust bench-profile bench-replace
+## bench-enrollment-preflight: check enrollment credentials, HTTPS trust and identity method
+bench-enrollment-preflight: bench-build
+	"$(BENCH_BIN_DIR)/dmctl" bench enrollment-preflight -workspace "$(BENCH_WORKSPACE)" -identity "$(BENCH_IDENTITY)"
+
+## bench-trust: export the local HTTPS trust profile before enrollment
+bench-trust: bench-build
+	"$(BENCH_BIN_DIR)/dmctl" bench trust -workspace "$(BENCH_WORKSPACE)" -file "$(BENCH_TRUST_FILE)"
+
+## bench-profile: export an ACME or SCEP enrollment profile for BENCH_DEVICE_ID
+bench-profile: bench-build
+	"$(BENCH_BIN_DIR)/dmctl" bench profile -workspace "$(BENCH_WORKSPACE)" -device-id "$(BENCH_DEVICE_ID)" -identity "$(BENCH_IDENTITY)" -file "$(BENCH_PROFILE_FILE)"
+
+## bench-replace: start an authorized profile replacement and wake the enrolled device
+bench-replace: bench-build
+	"$(BENCH_BIN_DIR)/dmctl" bench replace -workspace "$(BENCH_WORKSPACE)" -device-id "$(BENCH_DEVICE_ID)" -identity "$(BENCH_IDENTITY)"
 
 ## test-acceptance: shared scenarios against built dmserver processes, including split topology
 # Absolute paths survive go test's package working directory.

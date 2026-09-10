@@ -189,7 +189,7 @@ func TestBenchReportsRetainFailureAndBlockedStatus(t *testing.T) {
 		t.Fatal("unknown selection accepted")
 	}
 	selected, err := SelectMode("live", "all")
-	if err != nil || len(selected) != 3 {
+	if err != nil || len(selected) != 6 {
 		t.Fatalf("live selection: %v %v", selected, err)
 	}
 	selected, err = Select("apns")

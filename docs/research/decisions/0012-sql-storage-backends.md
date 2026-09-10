@@ -12,6 +12,10 @@ Command state is indexed by enrollment, state and sequence. `Next` reads open-st
 
 Each domain owns a migration set with up and down sections. Declaration JSON is stored as bytes to preserve the content used for tokens.
 
+The application is pre-release and has no existing database upgrade requirement.
+The enrollment-replacement table therefore belongs in each MDM backend's
+`0001_init.sql`; it does not introduce a separate upgrade migration.
+
 ## Rationale
 
 Shared queries and contract suites limit behavioral differences between drivers. Separate migration sets allow the declaration engine and satellite stores to operate without the complete MDM schema.

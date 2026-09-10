@@ -5,8 +5,10 @@ with acceptance and end-to-end testing. Scenario functions are Go code independe
 of `testing.T`; [the catalogue](bench-catalogue.md) is generated from those functions'
 metadata. Configuration-specific scenarios start isolated server instances.
 
-The [implementation validation record](bench-validation.md) records tested adapters,
-the outstanding coverage gate and live prerequisites as of 9 September 2026.
+The [enrollment validation record](enrollment-validation.md) records automated and
+live status for the enrollment-alignment branch. The earlier
+[PR #12 validation record](bench-validation.md) describes the preceding APNs and
+reference-bench implementation.
 
 | Layer | Entry point | What it proves |
 |---|---|---|
@@ -37,8 +39,9 @@ runs both. Contract tests remain direct interface tests, without a server wrappe
 The shared automated catalogue covers all existing scenario families and ordinary
 app alert/background pushes. Reserved E2E-015/E2E-022 are not advertised as
 implemented scenarios. Hardware-specific flows remain simulated unless a live
-adapter is explicitly listed. Live execution currently covers the host app and
-a previously enrolled device's DeviceInformation response.
+adapter is explicitly listed. Live execution covers the host app, service discovery and an enrolled device's
+DeviceInformation response. LIVE-002 and LIVE-003 additionally require recorded
+ACME/SCEP issuance and the installing Mac user's enabled management channel.
 
 Reports include stable scenario ID, mode, adapter, revision, status, start and
 duration. Private JSON and JUnit files are written together. JUnit marks blocked
@@ -69,3 +72,16 @@ tokens and bootstrap tokens are excluded from result reports.
 
 Do not add another daemon or script that assembles a competing server. Fixture
 controllers belong to the bench supervisor, never to normal server routes.
+
+## Enrollment alignment
+
+E2E-027 checks service discovery and trust. E2E-028 through E2E-031 exercise
+successful and failed SCEP/ACME replacement against the shared runtime. The
+storage contract tests cover commit ordering, expiry, cancellation and concurrent
+creation while checking queue, escrow and user-state preservation. Pre-release
+SQL fixtures build all tables from each backend's initial schema.
+
+Use `make bench-enrollment-preflight`, `bench-trust`, `bench-profile` and
+`bench-replace` for operator preparation. Follow the [Mac enrollment runbook](../operations/mac-enrollment-testing.md)
+for device installation and live acceptance. Simulator failures validate server
+recovery; device-side rollback and ADE activation need their own live evidence.
