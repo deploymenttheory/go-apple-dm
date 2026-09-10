@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.3.1](https://github.com/deploymenttheory/go-apple-dm/compare/v0.3.0...v0.3.1) (2026-09-10)
+
+
+### Documentation
+
+* adopt interactive purpose legends across diagrams ([bdb4e6b](https://github.com/deploymenttheory/go-apple-dm/commit/bdb4e6bb58904944822cc9ec380c576a08043cf6))
+* align diagrams and add interactive purpose legends ([7552b87](https://github.com/deploymenttheory/go-apple-dm/commit/7552b87e02d5b02d2159860cfb17f1a7de880341))
+* align diagrams with implementation and purpose colours ([5d9b59b](https://github.com/deploymenttheory/go-apple-dm/commit/5d9b59b08e0045db26fd094b67fd56245260ff13))
+* open rendered diagrams from catalogue links ([e7e768f](https://github.com/deploymenttheory/go-apple-dm/commit/e7e768faabc90b730178896bb88488221de722ff))
+* open rendered diagrams from catalogue links ([7484d07](https://github.com/deploymenttheory/go-apple-dm/commit/7484d078fbd5427ee7f5f3b65309f20f645934c0))
+
 ## [0.3.0](https://github.com/deploymenttheory/go-apple-dm/compare/v0.2.0...v0.3.0) (2026-09-10)
 
 
