@@ -2,9 +2,18 @@ name: Go Test
 
 on:
   pull_request:
+    paths-ignore:
+      - '.release-please-manifest.json'
+      - 'docs/**'
+      - '**/*.md'
   push:
     branches:
       - main
+    # Documentation and release metadata do not change executable code.
+    paths-ignore:
+      - '.release-please-manifest.json'
+      - 'docs/**'
+      - '**/*.md'
 
 permissions:
   contents: read
@@ -14,6 +23,11 @@ env:
 
 jobs:
   unit:
+    # Release-please PRs only prepare release metadata; normal changes retain CI.
+    if: >-
+      ${{ github.event_name != 'pull_request' ||
+          github.event.pull_request.head.repo.full_name != github.repository ||
+          github.head_ref != 'release-please--branches--main' }}
     name: '🧪 Unit (${{ matrix.os }})'
     runs-on: ${{ matrix.os }}
     timeout-minutes: 30
@@ -46,6 +60,11 @@ jobs:
           if-no-files-found: error
 
   generate-check:
+    # Release-please PRs only prepare release metadata; normal changes retain CI.
+    if: >-
+      ${{ github.event_name != 'pull_request' ||
+          github.event.pull_request.head.repo.full_name != github.repository ||
+          github.head_ref != 'release-please--branches--main' }}
     name: '🧬 Generate check'
     runs-on: ubuntu-latest
     timeout-minutes: 20
@@ -70,6 +89,11 @@ jobs:
           make verify
 
   storage-integration:
+    # Release-please PRs only prepare release metadata; normal changes retain CI.
+    if: >-
+      ${{ github.event_name != 'pull_request' ||
+          github.event.pull_request.head.repo.full_name != github.repository ||
+          github.head_ref != 'release-please--branches--main' }}
     name: '🗄️ Storage integration'
     runs-on: ubuntu-latest
     timeout-minutes: 30
@@ -127,6 +151,11 @@ jobs:
           if-no-files-found: ignore
 
   e2e:
+    # Release-please PRs only prepare release metadata; normal changes retain CI.
+    if: >-
+      ${{ github.event_name != 'pull_request' ||
+          github.event.pull_request.head.repo.full_name != github.repository ||
+          github.head_ref != 'release-please--branches--main' }}
     name: '🔁 End to end (${{ matrix.store }})'
     runs-on: ubuntu-latest
     timeout-minutes: 30
@@ -179,6 +208,11 @@ jobs:
           if-no-files-found: ignore
 
   acceptance:
+    # Release-please PRs only prepare release metadata; normal changes retain CI.
+    if: >-
+      ${{ github.event_name != 'pull_request' ||
+          github.event.pull_request.head.repo.full_name != github.repository ||
+          github.head_ref != 'release-please--branches--main' }}
     name: 'Reference server acceptance'
     runs-on: ubuntu-latest
     timeout-minutes: 15
@@ -203,6 +237,11 @@ jobs:
           if-no-files-found: error
 
   coverage-gate:
+    # Release-please PRs only prepare release metadata; normal changes retain CI.
+    if: >-
+      ${{ github.event_name != 'pull_request' ||
+          github.event.pull_request.head.repo.full_name != github.repository ||
+          github.head_ref != 'release-please--branches--main' }}
     name: '📊 Coverage gate'
     runs-on: ubuntu-latest
     timeout-minutes: 15
@@ -244,6 +283,11 @@ jobs:
           if-no-files-found: ignore
 
   fuzz-smoke:
+    # Release-please PRs only prepare release metadata; normal changes retain CI.
+    if: >-
+      ${{ github.event_name != 'pull_request' ||
+          github.event.pull_request.head.repo.full_name != github.repository ||
+          github.head_ref != 'release-please--branches--main' }}
     name: '🎲 Fuzz smoke'
     runs-on: ubuntu-latest
     timeout-minutes: 30

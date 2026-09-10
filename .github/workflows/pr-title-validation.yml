@@ -10,6 +10,11 @@ permissions:
 
 jobs:
   validate-pr-title:
+    # Release-please PRs only prepare release metadata; normal changes retain CI.
+    if: >-
+      ${{ github.event_name != 'pull_request' ||
+          github.event.pull_request.head.repo.full_name != github.repository ||
+          github.head_ref != 'release-please--branches--main' }}
     name: '✅ Validate PR Title'
     runs-on: ubuntu-latest
     steps:
