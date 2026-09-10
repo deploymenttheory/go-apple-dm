@@ -42,7 +42,7 @@ dark themes use different shades with the same meanings; SVG and image exports p
 - Labels and role symbols remain essential. Never rely on colour alone to explain a
   distinction, especially between neighbouring blue, indigo, and violet shades.
 
-In [SCEP issuance](flow-scep-issuance.html), the SCEP server is blue, issuance policy is
+In [SCEP issuance](https://htmlpreview.github.io/?https://raw.githubusercontent.com/deploymenttheory/go-apple-dm/main/docs/diagrams/flow-scep-issuance.html), the SCEP server is blue, issuance policy is
 magenta, the identity CA is violet, and challenge-password validation is indigo. The signed
 failure CertRep is red; the successful CertRep is green.
 
