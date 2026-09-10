@@ -2,34 +2,41 @@
   "schema_version": 1,
   "diagram_type": "dataflow",
   "meta": {
-    "title": "Request Decode Pipeline",
+    "title": "Device Request Decoding and Identity Authorization",
     "quality_profile": "showcase",
     "viewBox": [
-      1080,
-      620
+      1280,
+      700
     ],
     "views": [
       {
         "id": "body",
-        "label": "Body",
+        "label": "Decode the device message",
         "focus": [
           "body",
           "plist",
           "checkin"
         ],
-        "note": "A bounded plist decode, then a typed check-in message."
+        "note": "A bounded property-list decoder produces a typed check-in message or command response."
       },
       {
         "id": "identity",
-        "label": "Identity",
+        "label": "Extract and authorize identity",
         "focus": [
+          "tls",
+          "proxy",
           "signature",
           "cms",
-          "cert"
+          "cert",
+          "authorize"
         ],
-        "note": "The identity certificate is recovered from the detached CMS signature."
+        "note": "TLS, a trusted proxy, or a verified Mdm-Signature supplies the certificate. Service policy then authorizes it."
       }
-    ]
+    ],
+    "colour_profile": "purpose-v1",
+    "legend": {
+      "mode": "hidden"
+    }
   },
   "stages": [
     {
@@ -40,73 +47,134 @@
     },
     {
       "label": "Typed"
+    },
+    {
+      "label": "Service policy"
     }
   ],
   "nodes": [
     {
       "id": "body",
       "type": "external",
-      "label": "PUT body",
-      "sublabel": "XML or binary plist",
+      "label": "Device request body",
+      "sublabel": "XML or binary property list",
       "stage": 0,
       "row": 0,
       "tag": "untrusted",
-      "width": 130
+      "width": 190,
+      "height": 58,
+      "purpose": "transport"
     },
     {
       "id": "signature",
       "type": "security",
       "label": "Mdm-Signature",
-      "sublabel": "detached CMS",
+      "sublabel": "Detached CMS signature",
       "stage": 0,
       "row": 1,
       "tag": "untrusted",
-      "width": 130
+      "width": 190,
+      "height": 58,
+      "purpose": "authentication"
     },
     {
       "id": "plist",
       "type": "backend",
-      "label": "plist.Decoder",
-      "sublabel": "bytes; XML depth bound",
+      "label": "Property-list decoder",
+      "sublabel": "Bound size and XML nesting",
       "stage": 1,
       "row": 0,
-      "width": 130
+      "width": 190,
+      "height": 58,
+      "purpose": "service"
     },
     {
       "id": "cms",
       "type": "security",
-      "label": "cms.VerifyHeader",
-      "sublabel": "skew tolerance",
+      "label": "Verify signed body",
+      "sublabel": "Signature and signing time",
       "stage": 1,
       "row": 1,
-      "width": 130
+      "width": 190,
+      "height": 58,
+      "purpose": "authentication"
     },
     {
       "id": "checkin",
       "type": "backend",
-      "label": "mdm.Checkin",
-      "sublabel": "one of nine messages",
+      "label": "Typed check-in",
+      "sublabel": "Structure from MessageType",
       "stage": 2,
       "row": 0,
-      "width": 130
+      "width": 190,
+      "height": 58,
+      "purpose": "transport"
     },
     {
       "id": "response",
       "type": "backend",
-      "label": "mdm.Response",
-      "sublabel": "command result",
+      "label": "Command response",
+      "sublabel": "Idle or CommandUUID result",
       "stage": 2,
       "row": 1,
-      "width": 130
+      "width": 190,
+      "height": 58,
+      "purpose": "transport"
     },
     {
       "id": "cert",
       "type": "security",
-      "label": "identity certificate",
-      "sublabel": "pinned per enrollment",
+      "label": "Device certificate",
+      "sublabel": "Identity for authorization",
       "stage": 2,
       "row": 2,
-      "width": 130
+      "width": 190,
+      "height": 58,
+      "purpose": "authentication"
+    },
+    {
+      "id": "tls",
+      "type": "security",
+      "label": "TLS client certificate",
+      "sublabel": "From the TLS connection",
+      "stage": 0,
+      "row": 2,
+      "width": 190,
+      "height": 58,
+      "purpose": "authentication"
+    },
+    {
+      "id": "proxy",
+      "type": "security",
+      "label": "Trusted proxy header",
+      "sublabel": "Configured Client-Cert trust",
+      "stage": 0,
+      "row": 3,
+      "width": 190,
+      "height": 58,
+      "purpose": "authentication"
+    },
+    {
+      "id": "identity",
+      "type": "security",
+      "label": "Identity extraction",
+      "sublabel": "Configured certificate source",
+      "stage": 1,
+      "row": 2,
+      "width": 190,
+      "height": 58,
+      "purpose": "authentication"
+    },
+    {
+      "id": "authorize",
+      "type": "security",
+      "label": "Service authorization",
+      "sublabel": "Status, pin, and replacement",
+      "stage": 3,
+      "row": 2,
+      "width": 190,
+      "height": 58,
+      "purpose": "policy"
     }
   ],
   "flows": [
@@ -116,7 +184,9 @@
       "label": "decode",
       "classification": "untrusted input",
       "variant": "emphasis",
-      "route": "straight"
+      "route": "straight",
+      "id": "decode-0",
+      "purpose": "service"
     },
     {
       "from": "signature",
@@ -124,52 +194,157 @@
       "label": "verify",
       "classification": "untrusted input",
       "variant": "security",
-      "route": "straight"
+      "route": "straight",
+      "id": "decode-1",
+      "purpose": "authentication"
     },
     {
       "from": "plist",
       "to": "checkin",
       "label": "check-in",
       "variant": "emphasis",
-      "route": "straight"
+      "route": "straight",
+      "id": "decode-2",
+      "purpose": "service"
     },
     {
       "from": "plist",
       "to": "response",
       "label": "response",
-      "variant": "default"
+      "variant": "default",
+      "id": "decode-3",
+      "purpose": "service"
     },
     {
       "from": "cms",
       "to": "cert",
       "label": "signer",
-      "classification": "pinned",
-      "variant": "security"
+      "classification": "verified signer",
+      "variant": "security",
+      "id": "decode-4",
+      "purpose": "authentication"
+    },
+    {
+      "id": "signed-body",
+      "from": "body",
+      "to": "cms",
+      "label": "Signed bytes",
+      "fromSide": "bottom",
+      "toSide": "top",
+      "via": [
+        [
+          150,
+          214
+        ],
+        [
+          460,
+          214
+        ]
+      ],
+      "labelAt": [
+        315,
+        204
+      ],
+      "purpose": "transport"
+    },
+    {
+      "id": "tls-cert",
+      "from": "tls",
+      "to": "identity",
+      "label": "TLS peer identity",
+      "route": "straight",
+      "fromSide": "right",
+      "toSide": "left",
+      "purpose": "authentication"
+    },
+    {
+      "id": "proxy-cert",
+      "from": "proxy",
+      "to": "identity",
+      "label": "Trusted forwarded identity",
+      "purpose": "authentication"
+    },
+    {
+      "id": "selected-cert",
+      "from": "identity",
+      "to": "cert",
+      "label": "Extract certificate",
+      "route": "straight",
+      "fromSide": "right",
+      "toSide": "left",
+      "labelAt": [
+        615,
+        428
+      ],
+      "purpose": "authentication"
+    },
+    {
+      "id": "cert-auth",
+      "from": "cert",
+      "to": "authorize",
+      "label": "Apply identity policy",
+      "labelAt": [
+        925,
+        428
+      ],
+      "purpose": "policy"
+    },
+    {
+      "id": "checkin-auth",
+      "from": "checkin",
+      "to": "authorize",
+      "label": "Check-in policy",
+      "fromSide": "right",
+      "toSide": "top",
+      "via": [
+        [
+          1080,
+          157
+        ]
+      ],
+      "purpose": "policy"
+    },
+    {
+      "id": "response-auth",
+      "from": "response",
+      "to": "authorize",
+      "label": "Command-channel policy",
+      "fromSide": "right",
+      "toSide": "left",
+      "purpose": "policy"
     }
   ],
   "cards": [
     {
-      "dot": "cyan",
-      "title": "One codec boundary",
+      "dot": "transport",
+      "title": "Two outputs from the transport",
       "items": [
-        "plist is the library's only point of contact with property lists",
-        "Input has a byte bound; XML decoding also limits nesting depth"
+        "The transport decodes a check-in message or command response and extracts the device certificate from an enabled identity source.",
+        "Decoding is not enrollment authorization. The service then applies certificate status, identity, account, and replacement policy."
       ]
     },
     {
-      "dot": "rose",
-      "title": "Identity",
+      "dot": "authentication",
+      "title": "Identity sources",
       "items": [
-        "The certificate comes from TLS, a proxy header, or the detached Mdm-Signature",
-        "Whichever the source, it is pinned to the enrollment and checked on every later message"
+        "Native TLS, a trusted proxy header, and Mdm-Signature are separate certificate sources. Header trust depends on the deployment boundary.",
+        "The signature verifier needs the original body bytes. Size limits apply before untrusted input reaches deeper processing."
       ]
     },
     {
-      "dot": "amber",
+      "dot": "service",
       "title": "Outbound validation",
       "items": [
-        "schema/support screens outbound commands, not decoded check-ins",
-        "That screen is in flow-command-delivery, on service.Core.Enqueue"
+        "Command platform and channel checks run when service.Core enqueues a command. They do not validate incoming check-in messages."
+      ]
+    },
+    {
+      "dot": "transport",
+      "title": "Public documentation",
+      "items": [
+        "Check-in — https://developer.apple.com/documentation/devicemanagement/check-in",
+        "RFC 9440 — Client-Cert HTTP Header Field — https://www.rfc-editor.org/rfc/rfc9440",
+        "MDM payload — https://developer.apple.com/documentation/devicemanagement/mdm"
       ]
     }
   ]

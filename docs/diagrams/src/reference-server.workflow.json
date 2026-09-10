@@ -2,149 +2,126 @@
   "schema_version": 2,
   "diagram_type": "workflow",
   "meta": {
-    "title": "Reference Server: Build and Serve",
+    "title": "Reference Server: Configure, Serve, and Shut Down",
     "quality_profile": "showcase",
-    "views": [
-      {
-        "id": "build",
-        "label": "Build",
-        "focus": [
-          "env",
-          "role",
-          "openstorage",
-          "wire"
-        ],
-        "note": "Validate the configuration, open one database, then wire the graph."
-      },
-      {
-        "id": "serve",
-        "label": "Serve",
-        "focus": [
-          "wire",
-          "mux",
-          "workers"
-        ],
-        "note": "The mux and workers depend on the configured role and enabled services."
-      }
-    ],
     "legend": {
-      "mode": "auto",
-      "entries": {
-        "backend": {
-          "label": "build step"
-        },
-        "security": {
-          "label": "role or refusal"
-        },
-        "database": {
-          "label": "storage"
-        }
-      }
-    }
+      "mode": "hidden"
+    },
+    "colour_profile": "purpose-v1"
   },
   "lanes": [
     {
-      "id": "config",
-      "label": "Configuration"
+      "id": "startup",
+      "label": "Configure and build"
     },
     {
-      "id": "build",
-      "label": "Build"
+      "id": "runtime",
+      "label": "Shared runtime"
     },
     {
-      "id": "run",
-      "label": "Run"
-    },
-    {
-      "id": "gate",
-      "label": "Refused",
-      "variant": "exception"
+      "id": "shutdown",
+      "label": "Orderly shutdown"
     }
-  ],
-  "phases": [
-    {
-      "id": "p1",
-      "label": "Build",
-      "fromCol": 0,
-      "toCol": 3
-    },
-    {
-      "id": "p2",
-      "label": "Serve",
-      "fromCol": 4,
-      "toCol": 4
-    }
-  ],
-  "mainPath": [
-    "env",
-    "role",
-    "openstorage",
-    "wire",
-    "mux"
   ],
   "nodes": [
     {
       "id": "env",
-      "lane": "config",
+      "lane": "startup",
       "col": 0,
+      "label": "Load configuration",
+      "sublabel": "Environment, then CLI overrides",
       "type": "backend",
-      "label": "ParseEnv",
-      "sublabel": "then flags override",
-      "width": 150
+      "width": 225,
+      "height": 68,
+      "purpose": "artifact"
     },
     {
       "id": "role",
-      "lane": "config",
+      "lane": "startup",
       "col": 1,
+      "label": "Validate server role",
+      "sublabel": "mdm, ddm, or all",
       "type": "security",
-      "label": "Role",
-      "sublabel": "mdm · ddm · all",
-      "width": 140
+      "width": 225,
+      "height": 68,
+      "purpose": "artifact"
     },
     {
       "id": "openstorage",
-      "lane": "build",
+      "lane": "startup",
       "col": 2,
+      "label": "Open configured stores",
+      "sublabel": "Memory or shared SQL pool",
       "type": "database",
-      "label": "openStorage",
-      "sublabel": "one *sql.DB",
-      "width": 150
+      "width": 225,
+      "height": 68,
+      "purpose": "storage"
     },
     {
       "id": "wire",
-      "lane": "build",
+      "lane": "startup",
       "col": 3,
+      "label": "Build application",
+      "sublabel": "Wire services and register routes",
       "type": "backend",
-      "label": "App.wire",
-      "sublabel": "engine, push, service",
-      "width": 160
+      "width": 225,
+      "height": 68,
+      "purpose": "service"
     },
     {
-      "id": "mux",
-      "lane": "build",
-      "col": 4,
+      "id": "listen",
+      "lane": "runtime",
+      "col": 3,
+      "label": "Open listener",
+      "sublabel": "HTTP or configured native TLS",
       "type": "backend",
-      "label": "http.ServeMux",
-      "sublabel": "routes for this role",
-      "width": 160
+      "width": 225,
+      "height": 68,
+      "purpose": "transport"
     },
     {
       "id": "workers",
-      "lane": "run",
+      "lane": "runtime",
       "col": 4,
+      "label": "Serve and run workers",
+      "sublabel": "Runtime starts worker loops",
       "type": "backend",
-      "label": "App.Run",
-      "sublabel": "configured workers",
-      "width": 150
+      "width": 225,
+      "height": 68,
+      "purpose": "service"
     },
     {
-      "id": "configerr",
-      "lane": "gate",
+      "id": "drain",
+      "lane": "shutdown",
+      "col": 4,
+      "label": "Drain HTTP requests",
+      "sublabel": "Stop accepting new traffic",
+      "type": "backend",
+      "width": 225,
+      "height": 68,
+      "purpose": "transport"
+    },
+    {
+      "id": "stopworkers",
+      "lane": "shutdown",
+      "col": 3,
+      "label": "Stop background work",
+      "sublabel": "Drain accepted audit events",
+      "type": "backend",
+      "width": 225,
+      "height": 68,
+      "purpose": "service"
+    },
+    {
+      "id": "close",
+      "lane": "shutdown",
       "col": 2,
-      "type": "security",
-      "label": "ErrConfig",
-      "sublabel": "fails at build",
-      "width": 140
+      "label": "Close application",
+      "sublabel": "Release clients and stores",
+      "type": "backend",
+      "width": 225,
+      "height": 68,
+      "purpose": "service"
     }
   ],
   "edges": [
@@ -152,61 +129,98 @@
       "id": "r1",
       "from": "env",
       "to": "role",
-      "label": "one Config",
-      "role": "main"
+      "label": "Parse Config",
+      "role": "main",
+      "purpose": "artifact"
     },
     {
       "id": "r2",
       "from": "role",
       "to": "openstorage",
-      "label": "backend",
-      "role": "main"
+      "label": "Valid configuration",
+      "role": "main",
+      "purpose": "success"
     },
     {
       "id": "r3",
       "from": "openstorage",
       "to": "wire",
-      "label": "shared pool",
-      "role": "main"
+      "label": "Provide stores",
+      "role": "main",
+      "purpose": "storage"
     },
     {
       "id": "r4",
       "from": "wire",
-      "to": "mux",
-      "label": "register",
-      "role": "main"
+      "to": "listen",
+      "label": "Application built",
+      "role": "branch",
+      "purpose": "success"
     },
     {
       "id": "r5",
-      "from": "wire",
+      "from": "listen",
       "to": "workers",
-      "label": "start",
-      "role": "branch"
+      "label": "Listener ready",
+      "role": "main",
+      "purpose": "success"
     },
     {
       "id": "r6",
-      "from": "role",
-      "to": "configerr",
-      "label": "bad combination",
-      "role": "error"
+      "from": "workers",
+      "to": "drain",
+      "label": "Shutdown signal",
+      "role": "branch",
+      "purpose": "neutral"
+    },
+    {
+      "id": "r7",
+      "from": "drain",
+      "to": "stopworkers",
+      "label": "HTTP drained",
+      "role": "main",
+      "purpose": "success"
+    },
+    {
+      "id": "r8",
+      "from": "stopworkers",
+      "to": "close",
+      "label": "Workers stopped",
+      "role": "main",
+      "purpose": "success"
     }
   ],
   "cards": [
     {
-      "dot": "cyan",
-      "title": "Roles decide what mounts",
+      "dot": "service",
+      "title": "Shared runtime",
       "items": [
-        "mdm serves devices and forwards DDM check-ins when DM_DDM_URL is set",
-        "ddm mounts no /mdm; all runs everything in one process",
-        "Every role builds the engine and runs the notifier"
+        "dmserver and embedded bench scenarios use server/internal/runtime. The runtime builds the application, opens the listener, and starts configured workers.",
+        "TLS is optional for the listener; reverse-proxy deployments remain supported. Readiness is exposed for supervisors and acceptance checks."
       ]
     },
     {
-      "dot": "rose",
-      "title": "Optional security services",
+      "dot": "service",
+      "title": "Role-specific services",
       "items": [
-        "Revocation requires persistent CA keys and explicit CRL/OCSP lifetimes",
-        "DM_RATE_LIMITS enables selected route quotas; both controls default off"
+        "mdm and all expose device enrollment and /mdm. A remote declarative URL selects forwarding; ddm exposes the internal declarative adapter.",
+        "Enrollment discovery and trust routes are mounted only when enrollment is configured. App push uses its own clients and credential store."
+      ]
+    },
+    {
+      "dot": "neutral",
+      "title": "Ordered shutdown",
+      "items": [
+        "Stop accepting requests and drain in-flight HTTP work, then stop and await workers. Close application resources and APNs clients afterward.",
+        "The runtime preserves the first failure and bounds shutdown time."
+      ]
+    },
+    {
+      "dot": "transport",
+      "title": "Public documentation",
+      "items": [
+        "Go command: Test packages — https://pkg.go.dev/cmd/go#hdr-Test_packages",
+        "Go Modules Reference — https://go.dev/ref/mod"
       ]
     }
   ]

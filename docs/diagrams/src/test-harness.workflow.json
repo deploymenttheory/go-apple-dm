@@ -2,205 +2,212 @@
   "schema_version": 2,
   "diagram_type": "workflow",
   "meta": {
-    "title": "Test Pipeline and the Coverage Gate",
+    "title": "Test Coverage and Validation Evidence",
     "quality_profile": "showcase",
-    "views": [
-      {
-        "id": "contract",
-        "label": "Storage contract",
-        "focus": [
-          "unit",
-          "contract",
-          "backends",
-          "coverage"
-        ],
-        "note": "One suite runs against every backend, including an error-injecting wrapper."
-      },
-      {
-        "id": "scenarios",
-        "label": "Scenarios",
-        "focus": [
-          "simulator",
-          "e2e",
-          "coverage"
-        ],
-        "note": "A real server, the device simulator as the client, and fakes for every Apple service."
-      }
-    ],
     "legend": {
-      "mode": "auto",
-      "entries": {
-        "backend": {
-          "label": "test stage"
-        },
-        "security": {
-          "label": "coverage gate"
-        },
-        "database": {
-          "label": "backend under test"
-        }
-      }
-    }
+      "mode": "hidden"
+    },
+    "colour_profile": "purpose-v1"
   },
   "lanes": [
     {
-      "id": "unit",
-      "label": "Unit and fuzz"
+      "id": "local",
+      "label": "Unit, fuzz, and storage contracts"
     },
     {
-      "id": "storage",
-      "label": "Storage contract"
+      "id": "embedded",
+      "label": "Embedded scenarios"
     },
     {
-      "id": "scenario",
-      "label": "End-to-end scenarios"
+      "id": "process",
+      "label": "Process acceptance"
+    },
+    {
+      "id": "live",
+      "label": "Live device and app checks"
     }
-  ],
-  "phases": [
-    {
-      "id": "p1",
-      "label": "Run",
-      "fromCol": 0,
-      "toCol": 3
-    },
-    {
-      "id": "p2",
-      "label": "Gate",
-      "fromCol": 4,
-      "toCol": 4
-    }
-  ],
-  "mainPath": [
-    "unit",
-    "fuzz",
-    "contract",
-    "backends",
-    "coverage"
   ],
   "nodes": [
     {
-      "id": "unit",
-      "lane": "unit",
-      "col": 0,
-      "type": "backend",
-      "label": "make test",
-      "sublabel": "race detector",
-      "width": 140
-    },
-    {
       "id": "fuzz",
-      "lane": "unit",
+      "lane": "local",
+      "col": 0,
+      "label": "Fuzz smoke tests",
+      "sublabel": "Independent parser input checks",
+      "type": "backend",
+      "width": 245,
+      "height": 68,
+      "purpose": "service"
+    },
+    {
+      "id": "unit",
+      "lane": "local",
       "col": 1,
+      "label": "Unit and contract tests",
+      "sublabel": "Memory and SQL backend suites",
       "type": "backend",
-      "label": "fuzz smoke",
-      "sublabel": "cbor · plist · jose",
-      "width": 150
-    },
-    {
-      "id": "contract",
-      "lane": "storage",
-      "col": 2,
-      "type": "backend",
-      "label": "contract suites",
-      "sublabel": "storagetest · ddmtest",
-      "width": 160
-    },
-    {
-      "id": "backends",
-      "lane": "storage",
-      "col": 3,
-      "type": "database",
-      "label": "every backend",
-      "sublabel": "inmem · sqlite · pg · mysql",
-      "width": 170
-    },
-    {
-      "id": "simulator",
-      "lane": "scenario",
-      "col": 2,
-      "type": "backend",
-      "label": "simulator.Device",
-      "sublabel": "no hardware",
-      "width": 150
-    },
-    {
-      "id": "e2e",
-      "lane": "scenario",
-      "col": 3,
-      "type": "backend",
-      "label": "e2e scenarios",
-      "sublabel": "sqlite, postgres or inmem",
-      "width": 160
+      "width": 245,
+      "height": 68,
+      "purpose": "service"
     },
     {
       "id": "coverage",
-      "lane": "scenario",
-      "col": 4,
-      "type": "security",
-      "label": "95% gate",
-      "sublabel": "overall and per package",
-      "width": 160
+      "lane": "local",
+      "col": 2,
+      "label": "Coverage policy",
+      "sublabel": "95% overall and per package",
+      "type": "backend",
+      "width": 245,
+      "height": 68,
+      "purpose": "policy"
+    },
+    {
+      "id": "catalogue",
+      "lane": "embedded",
+      "col": 0,
+      "label": "Shared scenario catalogue",
+      "sublabel": "Choose a supported execution mode",
+      "type": "backend",
+      "width": 245,
+      "height": 68,
+      "purpose": "artifact"
+    },
+    {
+      "id": "e2e",
+      "lane": "embedded",
+      "col": 1,
+      "label": "Embedded runtime",
+      "sublabel": "Shared cases and regressions",
+      "type": "backend",
+      "width": 245,
+      "height": 68,
+      "purpose": "service"
+    },
+    {
+      "id": "process",
+      "lane": "process",
+      "col": 1,
+      "label": "Process acceptance",
+      "sublabel": "Built server and CLI executables",
+      "type": "backend",
+      "width": 245,
+      "height": 68,
+      "purpose": "service"
+    },
+    {
+      "id": "acceptance",
+      "lane": "process",
+      "col": 2,
+      "label": "Process evidence",
+      "sublabel": "Exit status and protocol outcomes",
+      "type": "backend",
+      "width": 245,
+      "height": 68,
+      "purpose": "artifact"
+    },
+    {
+      "id": "live",
+      "lane": "live",
+      "col": 1,
+      "label": "Real device or app",
+      "sublabel": "Credentials and registration",
+      "type": "backend",
+      "width": 245,
+      "height": 68,
+      "purpose": "neutral"
+    },
+    {
+      "id": "liveproof",
+      "lane": "live",
+      "col": 2,
+      "label": "Live evidence",
+      "sublabel": "Correlated device or app results",
+      "type": "backend",
+      "width": 245,
+      "height": 68,
+      "purpose": "artifact"
     }
   ],
   "edges": [
     {
-      "id": "t1",
+      "id": "unitcoverage",
       "from": "unit",
-      "to": "fuzz",
-      "label": "then",
-      "role": "main"
-    },
-    {
-      "id": "t2",
-      "from": "fuzz",
-      "to": "contract",
-      "label": "then",
-      "role": "main"
-    },
-    {
-      "id": "t3",
-      "from": "contract",
-      "to": "backends",
-      "label": "one suite each",
-      "role": "main"
-    },
-    {
-      "id": "t4",
-      "from": "backends",
       "to": "coverage",
-      "label": "profiles",
-      "role": "main"
+      "label": "Coverage profiles",
+      "purpose": "artifact"
     },
     {
-      "id": "t5",
-      "from": "simulator",
-      "to": "e2e",
-      "label": "drives",
-      "role": "branch"
-    },
-    {
-      "id": "t6",
+      "id": "embeddedcoverage",
       "from": "e2e",
       "to": "coverage",
-      "label": "profiles",
-      "role": "branch"
+      "label": "Coverage profiles",
+      "purpose": "artifact"
+    },
+    {
+      "id": "sharedembedded",
+      "from": "catalogue",
+      "to": "e2e",
+      "label": "Embedded mode",
+      "purpose": "artifact"
+    },
+    {
+      "id": "sharedprocess",
+      "from": "catalogue",
+      "to": "process",
+      "label": "Process mode",
+      "purpose": "artifact"
+    },
+    {
+      "id": "sharedlive",
+      "from": "catalogue",
+      "to": "live",
+      "label": "Supported live mode",
+      "purpose": "artifact"
+    },
+    {
+      "id": "processresult",
+      "from": "process",
+      "to": "acceptance",
+      "label": "Record outcomes",
+      "purpose": "artifact"
+    },
+    {
+      "id": "liveresult",
+      "from": "live",
+      "to": "liveproof",
+      "label": "Verify actual receipt",
+      "purpose": "artifact"
     }
   ],
   "cards": [
     {
-      "dot": "cyan",
-      "title": "Simulator coverage",
+      "dot": "service",
+      "title": "Different kinds of evidence",
       "items": [
-        "The simulator speaks MDM, DDM, ADE, account-driven, user channel and ACME",
-        "Simulator assertions verify modeled exchanges; hardware compatibility needs device testing"
+        "Unit and backend-contract tests check code behaviour. Embedded and process scenarios exercise the maintained reference server and shared catalogue.",
+        "Simulated scenarios use local fixtures. Live app receipt and device inventory checks require real registration, credentials, and hardware."
       ]
     },
     {
-      "dot": "rose",
-      "title": "The gate",
+      "dot": "policy",
+      "title": "Coverage is a threshold",
       "items": [
-        "95% overall and per non-exempt package; every exported function has a failing-path test",
-        "A Failing wrapper injects an error by method name so refusal paths are covered too"
+        "The gate merges emitted profiles and requires 95% overall and per non-exempt package. Fuzz smoke is a separate check.",
+        "A diagram cannot establish a passing coverage result. PR 14’s validation record reports remaining per-package failures; use a fresh report for current status."
+      ]
+    },
+    {
+      "dot": "artifact",
+      "title": "Catalogue consistency",
+      "items": [
+        "The executable scenario catalogue defines supported modes. bench-docs-check verifies that the documentation matches it."
+      ]
+    },
+    {
+      "dot": "transport",
+      "title": "Public documentation",
+      "items": [
+        "Go command: Test packages — https://pkg.go.dev/cmd/go#hdr-Test_packages"
       ]
     }
   ]

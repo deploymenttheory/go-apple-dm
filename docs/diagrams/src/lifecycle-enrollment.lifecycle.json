@@ -2,33 +2,16 @@
   "schema_version": 1,
   "diagram_type": "lifecycle",
   "meta": {
-    "title": "Enrollment Lifecycle",
+    "title": "Device-channel Enrollment Lifecycle",
     "quality_profile": "showcase",
     "viewBox": [
-      1080,
-      630
+      1280,
+      700
     ],
-    "views": [
-      {
-        "id": "enroll",
-        "label": "Enrollment activation",
-        "focus": [
-          "unknown",
-          "authenticated",
-          "enabled"
-        ],
-        "note": "Authenticate pins the identity; only TokenUpdate makes the enrollment usable."
-      },
-      {
-        "id": "recover",
-        "label": "Re-enrollment",
-        "focus": [
-          "authenticated",
-          "reenrolled"
-        ],
-        "note": "A new identity clears tokens and the pending queue, then re-pins."
-      }
-    ]
+    "legend": {
+      "mode": "hidden"
+    },
+    "colour_profile": "purpose-v1"
   },
   "lanes": [
     {
@@ -37,67 +20,71 @@
     },
     {
       "id": "rotation",
-      "label": "Rotation"
+      "label": "Ordinary reset"
     },
     {
       "id": "terminal",
-      "label": "Exits"
+      "label": "Disabled channel"
     }
   ],
   "states": [
     {
       "id": "unknown",
       "type": "start",
-      "label": "Unknown",
-      "sublabel": "no enrollment row",
+      "label": "Not enrolled",
+      "sublabel": "No device record",
       "lane": "main",
       "col": 0,
-      "step": "01"
+      "step": "01",
+      "width": 220,
+      "height": 52,
+      "purpose": "neutral"
     },
     {
       "id": "authenticated",
-      "type": "active",
-      "label": "Authenticated",
-      "sublabel": "certificate pinned",
+      "type": "waiting",
+      "label": "Awaiting push details",
+      "sublabel": "Identity associated",
       "lane": "main",
       "col": 2,
-      "step": "02"
+      "step": "02",
+      "width": 220,
+      "height": 52,
+      "purpose": "service"
     },
     {
       "id": "enabled",
       "type": "success",
       "label": "Enabled",
-      "sublabel": "push token stored",
+      "sublabel": "Usable push details stored",
       "lane": "main",
       "col": 4,
-      "step": "03"
+      "step": "03",
+      "width": 220,
+      "height": 52,
+      "purpose": "success"
     },
     {
       "id": "reenrolled",
-      "type": "failure",
-      "label": "Re-enrolled",
-      "sublabel": "tokens and queue cleared",
+      "type": "neutral",
+      "label": "Enrollment reset",
+      "sublabel": "Tokens and queue cleared",
       "lane": "rotation",
       "col": 0,
-      "tag": "recoverable"
-    },
-    {
-      "id": "denied",
-      "type": "failure",
-      "label": "Reuse denied",
-      "sublabel": "held by another enrollment",
-      "lane": "terminal",
-      "col": 1,
-      "tag": "refused"
+      "width": 220,
+      "height": 52,
+      "purpose": "neutral"
     },
     {
       "id": "checkedout",
-      "type": "failure",
-      "label": "Checked out",
-      "sublabel": "DDM state cleared",
+      "type": "neutral",
+      "label": "Disabled",
+      "sublabel": "CheckOut; record retained",
       "lane": "terminal",
       "col": 2,
-      "tag": "terminal"
+      "width": 220,
+      "height": 52,
+      "purpose": "neutral"
     }
   ],
   "transitions": [
@@ -107,7 +94,14 @@
       "to": "authenticated",
       "label": "Authenticate",
       "variant": "emphasis",
-      "route": "straight"
+      "fromSide": "right",
+      "toSide": "left",
+      "via": [],
+      "labelAt": [
+        385,
+        138
+      ],
+      "purpose": "authentication"
     },
     {
       "id": "token",
@@ -115,41 +109,53 @@
       "to": "enabled",
       "label": "TokenUpdate",
       "variant": "emphasis",
-      "route": "straight"
+      "fromSide": "right",
+      "toSide": "left",
+      "via": [],
+      "labelAt": [
+        855,
+        138
+      ],
+      "purpose": "success"
     },
     {
       "id": "rotate",
       "from": "authenticated",
       "to": "reenrolled",
-      "label": "new identity",
+      "label": "Accepted Authenticate",
       "variant": "default",
       "fromSide": "bottom",
       "toSide": "top",
-      "route": "straight",
+      "via": [],
       "labelAt": [
-        402,
+        635,
         228
-      ]
+      ],
+      "purpose": "neutral"
     },
     {
       "id": "repin",
       "from": "reenrolled",
       "to": "authenticated",
-      "label": "re-pinned",
+      "label": "Associate identity",
       "variant": "emphasis",
-      "route": "left-channel"
-    },
-    {
-      "id": "reuse",
-      "from": "authenticated",
-      "to": "denied",
-      "label": "held elsewhere",
-      "variant": "security",
-      "channelX": 479,
+      "fromSide": "left",
+      "toSide": "left",
+      "via": [
+        [
+          440,
+          304
+        ],
+        [
+          440,
+          152
+        ]
+      ],
       "labelAt": [
-        479.0,
-        350.0
-      ]
+        440,
+        218
+      ],
+      "purpose": "authentication"
     },
     {
       "id": "checkout",
@@ -157,27 +163,126 @@
       "to": "checkedout",
       "label": "CheckOut",
       "variant": "security",
+      "fromSide": "bottom",
+      "toSide": "top",
+      "via": [],
       "labelAt": [
-        710.0,
-        202.0
-      ]
+        1090,
+        365
+      ],
+      "purpose": "neutral"
+    },
+    {
+      "id": "reset-enabled",
+      "from": "enabled",
+      "to": "reenrolled",
+      "label": "Accepted Authenticate",
+      "fromSide": "left",
+      "toSide": "right",
+      "via": [
+        [
+          855,
+          152
+        ],
+        [
+          855,
+          304
+        ]
+      ],
+      "labelAt": [
+        855,
+        240
+      ],
+      "purpose": "neutral"
+    },
+    {
+      "id": "resume",
+      "from": "checkedout",
+      "to": "authenticated",
+      "label": "Accepted Authenticate",
+      "fromSide": "bottom",
+      "toSide": "left",
+      "via": [
+        [
+          1090,
+          575
+        ],
+        [
+          330,
+          575
+        ],
+        [
+          330,
+          152
+        ]
+      ],
+      "labelAt": [
+        680,
+        564
+      ],
+      "purpose": "authentication"
+    },
+    {
+      "id": "replace",
+      "from": "enabled",
+      "to": "enabled",
+      "label": "Replacement committed",
+      "fromSide": "top",
+      "toSide": "right",
+      "via": [
+        [
+          1090,
+          76
+        ],
+        [
+          1240,
+          76
+        ],
+        [
+          1240,
+          152
+        ]
+      ],
+      "labelAt": [
+        1150,
+        66
+      ],
+      "purpose": "success"
     }
   ],
   "cards": [
     {
-      "dot": "emerald",
-      "title": "Enrollment activation",
+      "dot": "service",
+      "title": "Initial activation and ordinary reset",
       "items": [
-        "Authenticate upserts the enrollment and pins the certificate fingerprint",
-        "TokenUpdate stores the push token and is what actually enables the enrollment"
+        "An accepted ordinary Authenticate creates or resets the device-channel record, even when its certificate is unchanged. TokenUpdate then enables it.",
+        "Changed certificates require re-enrollment policy approval: the library allows by default and the reference server denies ordinary rotation.",
+        "A rejected request does not create a new enrollment state or reset an existing working enrollment."
       ]
     },
     {
-      "dot": "amber",
-      "title": "Re-enrollment",
+      "dot": "service",
+      "title": "Controlled profile replacement",
       "items": [
-        "Changed certificates require policy: library allows by default; reference server denies",
-        "The upsert clears push info, unlock and bootstrap tokens, the pin, and the pending queue"
+        "An authorized replacement retains the active identity while collecting the candidate’s Authenticate, device TokenUpdate, and InstallProfile acknowledgement.",
+        "Only successful completion promotes the candidate atomically. Failed, cancelled, and expired attempts keep the working enrollment, queue, escrow, and user channels."
+      ]
+    },
+    {
+      "dot": "neutral",
+      "title": "Checkout and user channels",
+      "items": [
+        "CheckOut disables the enrollment while retaining its record; a later accepted enrollment can reactivate it. Declarative cleanup runs through the service hook.",
+        "User channels are created by TokenUpdate under an existing device enrollment, with UserAuthenticate when required. They do not send device-channel Authenticate."
+      ]
+    },
+    {
+      "dot": "transport",
+      "title": "Public documentation",
+      "items": [
+        "Check-in — https://developer.apple.com/documentation/devicemanagement/check-in",
+        "Deploying device management enrollment profiles — https://developer.apple.com/documentation/devicemanagement/deploying-device-management-enrollment-profiles",
+        "MDM payload — https://developer.apple.com/documentation/devicemanagement/mdm"
       ]
     }
   ]

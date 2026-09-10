@@ -76,7 +76,7 @@ Use `make bench-init`, `make bench-up`, and `make bench-run`; see the [testing g
 </picture>
 
 The [architecture guide](docs/architecture.md) describes implemented capabilities, module
-boundaries and limitations. The [27 interactive diagrams](docs/diagrams/README.md) show
+boundaries and limitations. The [31 interactive diagrams](docs/diagrams/README.md) show
 component relationships, protocol exchanges and lifecycle transitions.
 
 ## Capabilities

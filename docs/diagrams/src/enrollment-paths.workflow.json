@@ -2,56 +2,12 @@
   "schema_version": 2,
   "diagram_type": "workflow",
   "meta": {
-    "title": "Enrollment Paths and Their Gates",
+    "title": "Enrollment Methods and the Shared Identity Flow",
     "quality_profile": "showcase",
-    "views": [
-      {
-        "id": "ade",
-        "label": "Automated Device Enrollment",
-        "focus": [
-          "adedevice",
-          "machineinfo",
-          "updategate",
-          "adeprofile"
-        ],
-        "note": "Signed MachineInfo, then a software update gate, then a personalised profile."
-      },
-      {
-        "id": "account",
-        "label": "Account-driven",
-        "focus": [
-          "byoddevice",
-          "discovery",
-          "challenge",
-          "adprofile"
-        ],
-        "note": "Discovery selects an endpoint; an unauthenticated POST receives an authentication challenge."
-      },
-      {
-        "id": "refused",
-        "label": "Refused",
-        "focus": [
-          "updategate",
-          "discovery",
-          "refused"
-        ],
-        "note": "An old OS and an unrouted model family are both refused before any profile is built."
-      }
-    ],
     "legend": {
-      "mode": "auto",
-      "entries": {
-        "backend": {
-          "label": "enrollment step"
-        },
-        "security": {
-          "label": "gate"
-        },
-        "external": {
-          "label": "device"
-        }
-      }
-    }
+      "mode": "hidden"
+    },
+    "colour_profile": "purpose-v1"
   },
   "lanes": [
     {
@@ -60,216 +16,284 @@
     },
     {
       "id": "account",
-      "label": "Account-driven"
+      "label": "Account-driven enrollment"
     },
     {
-      "id": "out",
-      "label": "Profile"
+      "id": "profile",
+      "label": "Profile-based enrollment"
     },
     {
-      "id": "gate",
-      "label": "Refused",
-      "variant": "exception"
+      "id": "identity",
+      "label": "Common identity and check-in"
     }
-  ],
-  "phases": [
-    {
-      "id": "p1",
-      "label": "Identify",
-      "fromCol": 0,
-      "toCol": 1
-    },
-    {
-      "id": "p2",
-      "label": "Gate",
-      "fromCol": 2,
-      "toCol": 2
-    },
-    {
-      "id": "p3",
-      "label": "Issue",
-      "fromCol": 3,
-      "toCol": 4
-    }
-  ],
-  "mainPath": [
-    "adedevice",
-    "machineinfo",
-    "updategate",
-    "adeprofile",
-    "profile"
   ],
   "nodes": [
     {
       "id": "adedevice",
       "lane": "ade",
       "col": 0,
+      "label": "Assigned Apple device",
+      "sublabel": "Starts with signed MachineInfo",
       "type": "external",
-      "label": "ADE device",
-      "sublabel": "assigned by DEP",
-      "width": 140
-    },
-    {
-      "id": "machineinfo",
-      "lane": "ade",
-      "col": 1,
-      "type": "security",
-      "label": "MachineInfo",
-      "sublabel": "CMS verified",
-      "width": 140
+      "width": 225,
+      "height": 68,
+      "purpose": "neutral"
     },
     {
       "id": "updategate",
       "lane": "ade",
-      "col": 2,
+      "col": 1,
+      "label": "Verify and admit device",
+      "sublabel": "Apply trust and OS policy",
       "type": "security",
-      "label": "Update gate",
-      "sublabel": "configured minimum OS",
-      "width": 160
+      "width": 225,
+      "height": 68,
+      "purpose": "policy"
     },
     {
       "id": "adeprofile",
       "lane": "ade",
-      "col": 3,
+      "col": 2,
+      "label": "ADE authentication",
+      "sublabel": "Direct profile or web sign-in",
       "type": "backend",
-      "label": "web view or token",
-      "sublabel": "OIDC, then finish",
-      "width": 160
+      "width": 225,
+      "height": 68,
+      "purpose": "authentication"
     },
     {
       "id": "byoddevice",
       "lane": "account",
       "col": 0,
+      "label": "Managed Apple Account",
+      "sublabel": "User starts account enrollment",
       "type": "external",
-      "label": "Account enrollment",
-      "sublabel": "Managed Apple Account",
-      "width": 150
+      "width": 225,
+      "height": 68,
+      "purpose": "neutral"
     },
     {
       "id": "discovery",
       "lane": "account",
       "col": 1,
+      "label": "Discover service",
+      "sublabel": "Select User or Device Enrollment",
       "type": "backend",
-      "label": "discovery",
-      "sublabel": "model-family route",
-      "width": 140
-    },
-    {
-      "id": "challenge",
-      "lane": "account",
-      "col": 2,
-      "type": "security",
-      "label": "401 challenge",
-      "sublabel": "as-web or oauth2",
-      "width": 150
+      "width": 225,
+      "height": 68,
+      "purpose": "transport"
     },
     {
       "id": "adprofile",
       "lane": "account",
-      "col": 3,
+      "col": 2,
+      "label": "Authenticate account",
+      "sublabel": "Challenge, then validate token",
+      "type": "security",
+      "width": 225,
+      "height": 68,
+      "purpose": "authentication"
+    },
+    {
+      "id": "manual",
+      "lane": "profile",
+      "col": 0,
+      "label": "Choose profile delivery",
+      "sublabel": "Admin export or OTA discovery",
+      "type": "frontend",
+      "width": 225,
+      "height": 68,
+      "purpose": "artifact"
+    },
+    {
+      "id": "ota",
+      "lane": "profile",
+      "col": 1,
+      "label": "OTA identity phase",
+      "sublabel": "Explicit SCEP challenge and trust",
+      "type": "security",
+      "width": 225,
+      "height": 68,
+      "purpose": "certificate"
+    },
+    {
+      "id": "otafinal",
+      "lane": "profile",
+      "col": 2,
+      "label": "OTA management phase",
+      "sublabel": "Identity-signed request for MDM",
       "type": "backend",
-      "label": "bearer accepted",
-      "sublabel": "reusable access token",
-      "width": 150
+      "width": 225,
+      "height": 68,
+      "purpose": "artifact"
     },
     {
       "id": "profile",
-      "lane": "out",
-      "col": 4,
+      "lane": "identity",
+      "col": 3,
+      "label": "Enrollment profile",
+      "sublabel": "Stable MDM metadata and trust",
       "type": "backend",
-      "label": "enroll.Profile",
-      "sublabel": "signed by the CA",
-      "width": 150
+      "width": 225,
+      "height": 68,
+      "purpose": "artifact"
     },
     {
-      "id": "refused",
-      "lane": "gate",
+      "id": "issuer",
+      "lane": "identity",
       "col": 2,
+      "label": "Enrollment identity",
+      "sublabel": "Obtain or reuse a certificate",
       "type": "security",
-      "label": "Refused",
-      "sublabel": "403, before any profile",
-      "width": 160
+      "width": 225,
+      "height": 68,
+      "purpose": "certificate"
+    },
+    {
+      "id": "checkin",
+      "lane": "identity",
+      "col": 1,
+      "label": "Authenticate + TokenUpdate",
+      "sublabel": "Associate identity; enable channel",
+      "type": "backend",
+      "width": 225,
+      "height": 68,
+      "purpose": "service"
     }
   ],
   "edges": [
     {
       "id": "p1",
       "from": "adedevice",
-      "to": "machineinfo",
-      "label": "POST",
-      "role": "main"
+      "to": "updategate",
+      "label": "Signed request",
+      "role": "main",
+      "purpose": "authentication"
     },
     {
       "id": "p2",
-      "from": "machineinfo",
-      "to": "updategate",
-      "label": "verified",
-      "role": "main"
-    },
-    {
-      "id": "p3",
       "from": "updategate",
       "to": "adeprofile",
-      "label": "proceed",
-      "role": "main"
+      "label": "Admitted",
+      "role": "main",
+      "purpose": "success"
     },
     {
       "id": "p4",
       "from": "adeprofile",
       "to": "profile",
-      "label": "personalised",
-      "role": "main"
+      "label": "Authorized profile",
+      "role": "branch",
+      "purpose": "artifact"
     },
     {
       "id": "p5",
       "from": "byoddevice",
       "to": "discovery",
-      "label": "well-known",
-      "role": "branch"
+      "label": "Well-known lookup",
+      "role": "main",
+      "purpose": "transport"
     },
     {
       "id": "p6",
       "from": "discovery",
-      "to": "challenge",
-      "label": "routed",
-      "role": "branch"
-    },
-    {
-      "id": "p7",
-      "from": "challenge",
       "to": "adprofile",
-      "label": "authenticated",
-      "role": "branch"
+      "label": "Enrollment URL",
+      "role": "main",
+      "purpose": "transport"
     },
     {
       "id": "p8",
       "from": "adprofile",
       "to": "profile",
-      "label": "finalized",
-      "role": "branch"
+      "label": "Authorized profile",
+      "role": "branch",
+      "purpose": "artifact"
     },
     {
-      "id": "p9",
-      "from": "updategate",
-      "to": "refused",
-      "label": "OS too old",
-      "role": "error"
+      "id": "ota1",
+      "from": "manual",
+      "to": "ota",
+      "label": "OTA only",
+      "role": "main",
+      "purpose": "transport"
     },
     {
-      "id": "p10",
-      "from": "discovery",
-      "to": "refused",
-      "label": "no route",
-      "role": "error"
+      "id": "ota2",
+      "from": "ota",
+      "to": "otafinal",
+      "label": "Identity obtained",
+      "role": "main",
+      "purpose": "certificate"
+    },
+    {
+      "id": "ota3",
+      "from": "otafinal",
+      "to": "profile",
+      "label": "MDM profile",
+      "role": "branch",
+      "purpose": "artifact"
+    },
+    {
+      "id": "manual-export",
+      "from": "manual",
+      "to": "profile",
+      "label": "Admin export",
+      "role": "branch",
+      "fromSide": "bottom",
+      "toSide": "bottom",
+      "purpose": "artifact"
+    },
+    {
+      "id": "identity",
+      "from": "profile",
+      "to": "issuer",
+      "label": "Install identity payload",
+      "role": "main",
+      "purpose": "artifact"
+    },
+    {
+      "id": "checkin",
+      "from": "issuer",
+      "to": "checkin",
+      "label": "Use device certificate",
+      "role": "main",
+      "purpose": "authentication"
     }
   ],
   "cards": [
     {
-      "dot": "cyan",
-      "title": "Enrollment profile issuance",
+      "dot": "certificate",
+      "title": "Enrollment type and identity method",
       "items": [
-        "Both end at the same enroll.Profile, signed by the enrollment CA",
-        "An old OS and an unrouted model family are refused before any profile is built"
+        "Automated Device Enrollment, account-driven enrollment, and profile-based enrollment describe how enrollment begins. SCEP and ACME describe how the device obtains its identity.",
+        "Account-driven discovery selects User Enrollment (mdm-byod) or Device Enrollment (mdm-adde). The reference server’s OTA delivery supports SCEP only and separates identity bootstrap from MDM profile delivery."
+      ]
+    },
+    {
+      "dot": "authentication",
+      "title": "Discovery and trust",
+      "items": [
+        "/MDMServiceConfig advertises the ADE URL and trust-anchor URL. A trust-profile URL is included only when HTTPS anchors are configured.",
+        "Account-driven discovery uses /.well-known/com.apple.remotemanagement. HTTPS trust anchors are configured independently of identity issuers."
+      ]
+    },
+    {
+      "dot": "success",
+      "title": "Common outcome",
+      "items": [
+        "Profiles use stable stored identifiers and advertise per-user connections. The device obtains its certificate, then checks in and supplies push details.",
+        "Controlled replacement updates an existing enrollment through a separate authorized handshake; see the companion sequence."
+      ]
+    },
+    {
+      "dot": "transport",
+      "title": "Public documentation",
+      "items": [
+        "Deploying device management enrollment profiles — https://developer.apple.com/documentation/devicemanagement/deploying-device-management-enrollment-profiles",
+        "MDM payload — https://developer.apple.com/documentation/devicemanagement/mdm",
+        "Onboarding users with account-driven enrollment — https://developer.apple.com/documentation/devicemanagement/onboarding-users-with-account-driven-enrollment",
+        "MachineInfo — https://developer.apple.com/documentation/devicemanagement/machineinfo"
       ]
     }
   ]

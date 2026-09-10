@@ -2,45 +2,35 @@
   "schema_version": 2,
   "diagram_type": "workflow",
   "meta": {
-    "title": "DEP Token Exchange, Sync and Assignment",
+    "title": "Automated Device Enrollment: Token Setup and Profile Assignment",
     "quality_profile": "showcase",
     "views": [
       {
         "id": "onboard",
-        "label": "Onboarding",
+        "label": "Set up API credentials",
         "focus": [
           "keypair",
           "portal",
           "importtoken"
         ],
-        "note": "The token PKI exchange is the only step that needs a human at the portal."
+        "note": "Upload the server’s public certificate to the Apple portal, then import the encrypted server token."
       },
       {
         "id": "steady",
-        "label": "Steady state",
+        "label": "Reconcile inventory and profiles",
         "focus": [
           "sync",
           "assign",
           "depapi",
           "assignapi"
         ],
-        "note": "The DEP worker syncs device state and reconciles profile assignments."
+        "note": "The dep workers synchronize Apple inventory and reconcile enrollment-profile assignments on repeated runs."
       }
     ],
     "legend": {
-      "mode": "auto",
-      "entries": {
-        "backend": {
-          "label": "worker"
-        },
-        "security": {
-          "label": "credential step or retry"
-        },
-        "external": {
-          "label": "Apple service"
-        }
-      }
-    }
+      "mode": "hidden"
+    },
+    "colour_profile": "purpose-v1"
   },
   "lanes": [
     {
@@ -53,7 +43,7 @@
     },
     {
       "id": "apple",
-      "label": "Apple DEP service"
+      "label": "Apple device-assignment services"
     },
     {
       "id": "retry",
@@ -61,100 +51,94 @@
       "variant": "exception"
     }
   ],
-  "phases": [
-    {
-      "id": "onboarding",
-      "label": "Token exchange",
-      "fromCol": 0,
-      "toCol": 2
-    },
-    {
-      "id": "background",
-      "label": "Background workers",
-      "fromCol": 3,
-      "toCol": 4
-    }
-  ],
-  "mainPath": [
-    "keypair",
-    "portal",
-    "importtoken",
-    "sync",
-    "assign"
-  ],
   "nodes": [
     {
       "id": "keypair",
       "lane": "operator",
       "col": 0,
       "type": "security",
-      "label": "Token PKI",
-      "sublabel": "keypair generated",
-      "width": 150
+      "label": "Create server-token key",
+      "sublabel": "Export its public certificate",
+      "width": 225,
+      "height": 68,
+      "purpose": "certificate"
     },
     {
       "id": "portal",
       "lane": "operator",
       "col": 1,
       "type": "external",
-      "label": "Portal upload",
-      "sublabel": "returns a .p7m",
-      "width": 150
+      "label": "Apple management portal",
+      "sublabel": "Exchange certificate for token",
+      "width": 225,
+      "height": 68,
+      "purpose": "neutral"
     },
     {
       "id": "importtoken",
       "lane": "server",
       "col": 2,
       "type": "security",
-      "label": "Import token",
-      "sublabel": "sealed at rest",
-      "width": 150
+      "label": "Import server token",
+      "sublabel": "Decrypt API credentials",
+      "width": 225,
+      "height": 68,
+      "purpose": "certificate"
     },
     {
       "id": "sync",
       "lane": "server",
       "col": 3,
       "type": "backend",
-      "label": "dep.Syncer",
-      "sublabel": "RunOnce",
-      "width": 150
+      "label": "Synchronize inventory",
+      "sublabel": "Fetch, then follow change cursors",
+      "width": 225,
+      "height": 68,
+      "purpose": "service"
     },
     {
       "id": "assign",
       "lane": "server",
       "col": 4,
       "type": "backend",
-      "label": "dep.Assigner",
-      "sublabel": "RunOnce",
-      "width": 150
+      "label": "Reconcile assignments",
+      "sublabel": "Compare desired and saved state",
+      "width": 225,
+      "height": 68,
+      "purpose": "service"
     },
     {
       "id": "depapi",
       "lane": "apple",
-      "col": 3,
+      "col": 2,
       "type": "external",
-      "label": "Device sync",
-      "sublabel": "cursor paging",
-      "width": 150,
-      "tag": "EXPIRED_CURSOR refetches"
+      "label": "Device inventory API",
+      "sublabel": "Fetch and incremental sync",
+      "width": 225,
+      "height": 68,
+      "purpose": "neutral"
     },
     {
       "id": "assignapi",
       "lane": "apple",
       "col": 4,
       "type": "external",
-      "label": "Assign profile",
-      "sublabel": "POST or PUT",
-      "width": 150
+      "label": "Profile-assignment API",
+      "sublabel": "Assign and read back state",
+      "width": 225,
+      "height": 68,
+      "purpose": "neutral"
     },
     {
       "id": "backoff",
       "lane": "retry",
       "col": 4,
       "type": "security",
-      "label": "429 ErrBackoff",
-      "sublabel": "the account waits",
-      "width": 150
+      "label": "API rate limit",
+      "sublabel": "Delay retries after HTTP 429",
+      "width": 225,
+      "height": 68,
+      "purpose": "warning"
     }
   ],
   "edges": [
@@ -163,66 +147,82 @@
       "from": "keypair",
       "to": "portal",
       "label": "public certificate",
-      "role": "main"
+      "role": "main",
+      "purpose": "certificate"
     },
     {
       "id": "e2",
       "from": "portal",
       "to": "importtoken",
       "label": "encrypted token",
-      "role": "main"
+      "role": "main",
+      "purpose": "certificate"
     },
     {
       "id": "e3",
       "from": "importtoken",
       "to": "sync",
       "label": "OAuth 1.0a session",
-      "role": "main"
+      "role": "main",
+      "purpose": "authentication"
     },
     {
       "id": "e4",
       "from": "sync",
       "to": "assign",
       "label": "devices in the store",
-      "role": "main"
+      "role": "main",
+      "purpose": "storage"
     },
     {
       "id": "e6",
       "from": "sync",
       "to": "depapi",
       "label": "fetch, then cursor",
-      "role": "branch"
+      "role": "branch",
+      "fromSide": "bottom",
+      "toSide": "right",
+      "purpose": "transport"
     },
     {
       "id": "e7",
       "from": "assign",
       "to": "assignapi",
       "label": "AssignProfile",
-      "role": "branch"
+      "role": "branch",
+      "purpose": "transport"
     },
     {
       "id": "e10",
       "from": "assignapi",
       "to": "backoff",
       "label": "rate limited",
-      "role": "error"
+      "role": "error",
+      "purpose": "warning"
     }
   ],
   "cards": [
     {
-      "dot": "cyan",
-      "title": "Token exchange",
+      "dot": "certificate",
+      "title": "Server-token setup",
       "items": [
-        "The server generates a keypair and hands out a certificate",
-        "The operator uploads it at the portal and downloads an encrypted .p7m"
+        "The operator uploads the server’s public certificate to the Apple management portal and imports the encrypted .p7m server token.",
+        "The dep client uses the resulting OAuth 1.0a credentials; this token is unrelated to an MDM push certificate."
       ]
     },
     {
-      "dot": "emerald",
-      "title": "Syncing",
+      "dot": "service",
+      "title": "Recurring reconciliation",
       "items": [
-        "The first pass fetches; later passes sync by cursor",
-        "An EXPIRED_CURSOR is handled by refetching rather than failing"
+        "Inventory starts with a full fetch, then follows incremental cursors. An expired cursor starts a new full fetch.",
+        "Profile assignment configures what enrollment profile Apple directs the device to use; the device must still complete enrollment."
+      ]
+    },
+    {
+      "dot": "transport",
+      "title": "Public documentation",
+      "items": [
+        "Device assignment — https://developer.apple.com/documentation/devicemanagement/device-assignment"
       ]
     }
   ]

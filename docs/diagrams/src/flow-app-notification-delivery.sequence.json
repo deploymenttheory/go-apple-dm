@@ -1,0 +1,203 @@
+{
+  "schema_version": 1,
+  "diagram_type": "sequence",
+  "meta": {
+    "title": "App Notifications: APNs Acceptance and Receipt Evidence",
+    "quality_profile": "showcase",
+    "column_fit": "spread",
+    "viewBox": [
+      1320,
+      646
+    ],
+    "colour_profile": "purpose-v1",
+    "legend": {
+      "mode": "hidden"
+    }
+  },
+  "participants": [
+    {
+      "id": "caller",
+      "label": "Caller or bench",
+      "sublabel": "Supply app registration",
+      "type": "external",
+      "purpose": "neutral"
+    },
+    {
+      "id": "api",
+      "label": "App push admin",
+      "sublabel": "Authorize and validate",
+      "type": "backend",
+      "purpose": "transport"
+    },
+    {
+      "id": "store",
+      "label": "App credentials",
+      "sublabel": "Certificate for app topic",
+      "type": "database",
+      "purpose": "storage"
+    },
+    {
+      "id": "client",
+      "label": "App APNs client",
+      "sublabel": "Explicit dev/prod host",
+      "type": "backend",
+      "purpose": "transport"
+    },
+    {
+      "id": "apns",
+      "label": "APNs",
+      "sublabel": "Accept or reject send",
+      "type": "cloud",
+      "purpose": "neutral"
+    },
+    {
+      "id": "app",
+      "label": "Registered app",
+      "sublabel": "May receive notification",
+      "type": "external",
+      "purpose": "neutral"
+    },
+    {
+      "id": "evidence",
+      "label": "Bench evidence",
+      "sublabel": "Match a correlated receipt",
+      "type": "backend",
+      "purpose": "storage"
+    }
+  ],
+  "cards": [
+    {
+      "title": "Required send inputs",
+      "items": [
+        "Supply the registered app token, app topic, explicit environment, push type, and aps payload. This implementation supports alert and background pushes.",
+        "The app client validates payload shape and APNs request constraints before sending. These credentials never pass through the MDM wake notifier."
+      ],
+      "dot": "artifact"
+    },
+    {
+      "title": "Two different success signals",
+      "items": [
+        "Accepted reports provider acceptance by APNs. It does not establish device delivery or app processing.",
+        "The live bench separately requires a receipt matching labCorrelationID, topic, and environment; its current receipt wait is bounded to 30 seconds."
+      ],
+      "dot": "success"
+    },
+    {
+      "title": "Failure outcomes",
+      "items": [
+        "Invalid input is rejected locally. APNs may reject the request or a transport error may prevent submission.",
+        "Missing receipt evidence leaves live delivery unverified even after acceptance. The receipt mechanism is test-lab behaviour, not a general server delivery guarantee."
+      ],
+      "dot": "failure"
+    },
+    {
+      "title": "Public documentation",
+      "items": [
+        "Sending notification requests to APNs — https://developer.apple.com/documentation/usernotifications/sending-notification-requests-to-apns",
+        "Establishing a certificate-based connection to APNs — https://developer.apple.com/documentation/usernotifications/establishing-a-certificate-based-connection-to-apns"
+      ],
+      "dot": "transport"
+    }
+  ],
+  "messages": [
+    {
+      "id": "send",
+      "from": "caller",
+      "to": "api",
+      "label": "POST /admin/v1/apppush/send",
+      "y": 175,
+      "variant": "default",
+      "purpose": "transport"
+    },
+    {
+      "id": "select",
+      "from": "api",
+      "to": "client",
+      "label": "Select explicit environment and validate payload",
+      "y": 211,
+      "variant": "default",
+      "purpose": "service"
+    },
+    {
+      "id": "credential",
+      "from": "client",
+      "to": "store",
+      "label": "Load app credential by topic",
+      "y": 247,
+      "variant": "default",
+      "purpose": "storage"
+    },
+    {
+      "id": "cert",
+      "from": "store",
+      "to": "client",
+      "label": "Return validated certificate and private key",
+      "y": 283,
+      "variant": "default",
+      "purpose": "certificate"
+    },
+    {
+      "id": "post",
+      "from": "client",
+      "to": "apns",
+      "label": "POST payload to the registered device token",
+      "y": 319,
+      "variant": "default",
+      "purpose": "transport"
+    },
+    {
+      "id": "accepted",
+      "from": "apns",
+      "to": "client",
+      "label": "Return status, reason, and APNs identifier",
+      "y": 355,
+      "variant": "default",
+      "purpose": "transport"
+    },
+    {
+      "id": "result",
+      "from": "client",
+      "to": "api",
+      "label": "Report APNs send outcome",
+      "y": 391,
+      "variant": "default",
+      "purpose": "transport"
+    },
+    {
+      "id": "response",
+      "from": "api",
+      "to": "caller",
+      "label": "Return Accepted, Outcome, Status, Reason, APNSID",
+      "y": 427,
+      "variant": "default",
+      "purpose": "transport"
+    },
+    {
+      "id": "delivery",
+      "from": "apns",
+      "to": "app",
+      "label": "Asynchronously deliver if permitted by the device",
+      "y": 463,
+      "variant": "dashed",
+      "purpose": "transport"
+    },
+    {
+      "id": "receipt",
+      "from": "app",
+      "to": "evidence",
+      "label": "Record labCorrelationID, topic, and environment",
+      "y": 499,
+      "variant": "dashed",
+      "purpose": "storage"
+    },
+    {
+      "id": "verify",
+      "from": "caller",
+      "to": "evidence",
+      "label": "Wait for the matching receipt in a live scenario",
+      "y": 535,
+      "variant": "default",
+      "purpose": "service"
+    }
+  ]
+}

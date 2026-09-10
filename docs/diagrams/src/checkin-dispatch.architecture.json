@@ -1,0 +1,289 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "MDM Check-in Messages and Their Effects",
+    "quality_profile": "showcase",
+    "viewBox": [
+      1140,
+      620
+    ],
+    "repository": {
+      "url": "https://github.com/deploymenttheory/go-apple-dm",
+      "revision": "ff85958196cb013e8e14c1055f067319b07e3299"
+    },
+    "colour_profile": "purpose-v1",
+    "legend": {
+      "mode": "hidden"
+    }
+  },
+  "components": [
+    {
+      "id": "dispatch",
+      "label": "Check-in service",
+      "sublabel": "Status checks, hooks, and replacement handling",
+      "type": "backend",
+      "pos": [
+        440,
+        260
+      ],
+      "size": [
+        260,
+        100
+      ],
+      "sources": [
+        {
+          "path": "server/service/checkin.go"
+        },
+        {
+          "path": "server/service/replacement.go"
+        }
+      ],
+      "purpose": "service"
+    },
+    {
+      "id": "authenticate",
+      "label": "Authenticate",
+      "sublabel": "Create enrollment and associate identity",
+      "type": "backend",
+      "pos": [
+        40,
+        60
+      ],
+      "size": [
+        260,
+        80
+      ],
+      "purpose": "authentication"
+    },
+    {
+      "id": "tokenupdate",
+      "label": "TokenUpdate",
+      "sublabel": "Store push details and enable channel",
+      "type": "backend",
+      "pos": [
+        40,
+        168
+      ],
+      "size": [
+        260,
+        80
+      ],
+      "purpose": "service"
+    },
+    {
+      "id": "setbootstrap",
+      "label": "SetBootstrapToken",
+      "sublabel": "Escrow the device’s bootstrap token",
+      "type": "backend",
+      "pos": [
+        40,
+        276
+      ],
+      "size": [
+        260,
+        80
+      ],
+      "purpose": "storage"
+    },
+    {
+      "id": "checkout",
+      "label": "CheckOut",
+      "sublabel": "Disable enrollment; retain its record",
+      "type": "backend",
+      "pos": [
+        40,
+        384
+      ],
+      "size": [
+        260,
+        80
+      ],
+      "purpose": "service"
+    },
+    {
+      "id": "getbootstrap",
+      "label": "GetBootstrapToken",
+      "sublabel": "Return the stored bootstrap token",
+      "type": "backend",
+      "pos": [
+        40,
+        492
+      ],
+      "size": [
+        260,
+        80
+      ],
+      "purpose": "storage"
+    },
+    {
+      "id": "gettoken",
+      "label": "GetToken",
+      "sublabel": "Ask the configured token provider",
+      "type": "backend",
+      "pos": [
+        840,
+        60
+      ],
+      "size": [
+        260,
+        80
+      ],
+      "purpose": "authentication"
+    },
+    {
+      "id": "userauthenticate",
+      "label": "UserAuthenticate",
+      "sublabel": "Authenticate a macOS user channel",
+      "type": "backend",
+      "pos": [
+        840,
+        168
+      ],
+      "size": [
+        260,
+        80
+      ],
+      "purpose": "authentication"
+    },
+    {
+      "id": "declarative",
+      "label": "DeclarativeManagement",
+      "sublabel": "Synchronize declarations or report status",
+      "type": "backend",
+      "pos": [
+        840,
+        276
+      ],
+      "size": [
+        260,
+        80
+      ],
+      "purpose": "service"
+    },
+    {
+      "id": "returntoservice",
+      "label": "ReturnToService",
+      "sublabel": "Ask whether erasure and re-enrollment are allowed",
+      "type": "backend",
+      "pos": [
+        840,
+        384
+      ],
+      "size": [
+        260,
+        80
+      ],
+      "purpose": "policy"
+    }
+  ],
+  "connections": [
+    {
+      "id": "dispatch-authenticate",
+      "from": "dispatch",
+      "to": "authenticate",
+      "fromSide": "left",
+      "toSide": "right",
+      "purpose": "authentication"
+    },
+    {
+      "id": "dispatch-tokenupdate",
+      "from": "dispatch",
+      "to": "tokenupdate",
+      "fromSide": "left",
+      "toSide": "right",
+      "purpose": "service"
+    },
+    {
+      "id": "dispatch-setbootstrap",
+      "from": "dispatch",
+      "to": "setbootstrap",
+      "fromSide": "left",
+      "toSide": "right",
+      "purpose": "storage"
+    },
+    {
+      "id": "dispatch-checkout",
+      "from": "dispatch",
+      "to": "checkout",
+      "fromSide": "left",
+      "toSide": "right",
+      "purpose": "service"
+    },
+    {
+      "id": "dispatch-getbootstrap",
+      "from": "dispatch",
+      "to": "getbootstrap",
+      "fromSide": "left",
+      "toSide": "right",
+      "purpose": "storage"
+    },
+    {
+      "id": "dispatch-gettoken",
+      "from": "dispatch",
+      "to": "gettoken",
+      "fromSide": "right",
+      "toSide": "left",
+      "purpose": "authentication"
+    },
+    {
+      "id": "dispatch-userauthenticate",
+      "from": "dispatch",
+      "to": "userauthenticate",
+      "fromSide": "right",
+      "toSide": "left",
+      "purpose": "authentication"
+    },
+    {
+      "id": "dispatch-declarative",
+      "from": "dispatch",
+      "to": "declarative",
+      "fromSide": "right",
+      "toSide": "left",
+      "purpose": "service"
+    },
+    {
+      "id": "dispatch-returntoservice",
+      "from": "dispatch",
+      "to": "returntoservice",
+      "fromSide": "right",
+      "toSide": "left",
+      "purpose": "policy"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "service",
+      "title": "Independent message handlers",
+      "items": [
+        "Every arrow means dispatch by MessageType. The branches are alternatives, not consecutive steps.",
+        "Authenticate, TokenUpdate, SetBootstrapToken, and CheckOut normally return an empty successful response. Their order is not a universal workflow.",
+        "GetBootstrapToken, GetToken, UserAuthenticate, and ReturnToService return property lists. DeclarativeManagement returns JSON or an empty status acknowledgement."
+      ]
+    },
+    {
+      "dot": "policy",
+      "title": "Identity and refusal",
+      "items": [
+        "Ordinary messages enforce the configured identity policy. Account authentication may request reauthentication with HTTP 401.",
+        "A missing ReturnToService policy returns Enabled=false. Unsupported optional handlers and invalid requests follow their specific service error mappings."
+      ]
+    },
+    {
+      "dot": "service",
+      "title": "Controlled replacement",
+      "items": [
+        "A pending replacement accepts only the permitted candidate exchanges and preserves working enrollment state. See the replacement sequence for promotion conditions."
+      ]
+    },
+    {
+      "dot": "transport",
+      "title": "Public documentation",
+      "items": [
+        "Check-in — https://developer.apple.com/documentation/devicemanagement/check-in",
+        "Set Bootstrap Token — https://developer.apple.com/documentation/devicemanagement/set-bootstrap-token",
+        "Declarative Management check-in — https://developer.apple.com/documentation/devicemanagement/declarative-management"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,78 @@
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { spawnSync } from 'node:child_process';
+import { test, after } from 'node:test';
+import { configureColours, colourLegendHtml } from './colours.mjs';
+
+const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
+const temporary = fs.mkdtempSync(path.join(os.tmpdir(), 'dm-purpose-check-'));
+after(() => fs.rmSync(temporary, { recursive: true, force: true }));
+const source = JSON.parse(fs.readFileSync(path.join(root, 'docs/diagrams/src/flow-scep-issuance.sequence.json'), 'utf8'));
+
+function validate(change) {
+  const candidate = structuredClone(source);
+  change(candidate);
+  const file = path.join(temporary, 'candidate.sequence.json');
+  fs.writeFileSync(file, JSON.stringify(candidate));
+  const result = spawnSync(process.execPath, [path.join(root, 'scripts/diagrams/archify.mjs'), 'validate', 'sequence', file, '--quality', 'showcase', '--json'], { encoding: 'utf8' });
+  assert.equal(result.error, undefined);
+  return { status: result.status, receipt: JSON.parse(result.stdout) };
+}
+
+test('purpose extension keeps all nine artifact checks enabled', () => {
+  const result = validate(() => {});
+  assert.equal(result.status, 0);
+  assert.equal(result.receipt.checks.length, 9);
+  assert.ok(result.receipt.checks.every(check => check.ok));
+});
+
+for (const [name, change] of [
+  ['missing node purpose', d => { delete d.participants[0].purpose; }],
+  ['invalid relationship purpose', d => { d.messages[0].purpose = 'green-means-security'; }],
+  ['missing relationship identity', d => { delete d.messages[0].id; }],
+  ['legacy card colour', d => { d.cards[0].dot = 'rose'; }],
+  ['unknown profile', d => { d.meta.colour_profile = 'anything'; }],
+  ['unknown core property', d => { d.participants[0].unexpected = true; }],
+  ['invalid relationship target', d => { d.messages[0].to = 'nonexistent'; }],
+  ['wrongly nested purpose', d => { d.meta.purpose = 'service'; }],
+]) {
+  test(`rejects ${name}`, () => {
+    const result = validate(change);
+    assert.notEqual(result.status, 0);
+    assert.equal(result.receipt.ok, false);
+  });
+}
+
+test('a connection-only outcome appears in the key with its authored explanation', () => {
+  configureColours('sequence', source);
+  const html = colourLegendHtml();
+  const data = JSON.parse(html.match(/<script[^>]+>([\s\S]*?)<\/script>/)[1]);
+  const failure = data.entries.find(entry => entry.key === 'failure');
+  assert.equal(failure.nodes.length, 0);
+  assert.deepEqual(failure.connections, source.messages.filter(message => message.purpose === 'failure').map(message => message.label));
+  assert.ok(failure.connections.length > 0);
+  assert.ok(html.includes('>Legend</h2>'));
+  assert.ok(html.includes('>All Components</button>'));
+});
+
+test('authored labels cannot close the key data script or inject markup', () => {
+  const candidate = structuredClone(source);
+  const label = '</script><img src=x onerror=alert(1)> & "quoted"';
+  candidate.participants[0].label = label;
+  configureColours('sequence', candidate);
+  const html = colourLegendHtml();
+  assert.equal((html.match(/<\/script>/g) || []).length, 1);
+  assert.ok(!html.includes('<img'));
+  const data = JSON.parse(html.match(/<script[^>]+>([\s\S]*?)<\/script>/)[1]);
+  assert.ok(data.entries.some(entry => entry.nodes.includes(label)));
+});
+
+test('a diagram without the purpose profile does not inherit the previous key', () => {
+  configureColours('sequence', source);
+  assert.ok(colourLegendHtml());
+  configureColours('sequence', {meta: {}});
+  assert.equal(colourLegendHtml(), '');
+});

@@ -2,199 +2,141 @@
   "schema_version": 2,
   "diagram_type": "workflow",
   "meta": {
-    "title": "DDM Endpoint Dispatch and Refusal",
+    "title": "Declarative Management Requests and Responses",
     "quality_profile": "showcase",
-    "views": [
-      {
-        "id": "serve",
-        "label": "Tokens",
-        "focus": [
-          "checkin",
-          "parse",
-          "tokens",
-          "canonjson",
-          "response"
-        ],
-        "note": "The main path: parse the endpoint, render the token, answer 200."
-      },
-      {
-        "id": "manifest",
-        "label": "Declarations",
-        "focus": [
-          "parse",
-          "declitems",
-          "declaration",
-          "notfound"
-        ],
-        "note": "declaration-items is served from the enrollment's snapshot; a declaration outside it is a 404."
-      },
-      {
-        "id": "refused",
-        "label": "Refused",
-        "focus": [
-          "parse",
-          "badendpoint",
-          "declaration",
-          "notfound",
-          "statusbad"
-        ],
-        "note": "A bad endpoint is a 400; a declaration outside the manifest is a 404, which tells the device to remove it."
-      }
-    ],
     "legend": {
-      "mode": "auto",
-      "entries": {
-        "backend": {
-          "label": "endpoint"
-        },
-        "security": {
-          "label": "refusal"
-        },
-        "external": {
-          "label": "device"
-        }
-      }
-    }
+      "mode": "hidden"
+    },
+    "colour_profile": "purpose-v1"
   },
   "lanes": [
     {
       "id": "endpoint",
-      "label": "Endpoint"
+      "label": "Dispatch and synchronization token"
     },
     {
       "id": "manifest",
-      "label": "Declarations"
+      "label": "Declaration manifest"
     },
     {
       "id": "single",
-      "label": "Status"
+      "label": "One advertised declaration"
     },
     {
-      "id": "gate",
-      "label": "Refused",
-      "variant": "exception"
+      "id": "status",
+      "label": "Device status report"
     }
-  ],
-  "phases": [
-    {
-      "id": "parse",
-      "label": "Parse",
-      "fromCol": 0,
-      "toCol": 1
-    },
-    {
-      "id": "serve",
-      "label": "Serve",
-      "fromCol": 2,
-      "toCol": 4
-    }
-  ],
-  "mainPath": [
-    "checkin",
-    "parse",
-    "tokens",
-    "canonjson",
-    "response"
   ],
   "nodes": [
     {
       "id": "checkin",
       "lane": "endpoint",
       "col": 0,
-      "type": "external",
       "label": "DeclarativeManagement",
-      "sublabel": "one Endpoint string",
-      "width": 150
+      "sublabel": "Endpoint carried inside check-in",
+      "type": "backend",
+      "width": 235,
+      "height": 68,
+      "purpose": "transport"
     },
     {
       "id": "parse",
       "lane": "endpoint",
       "col": 1,
+      "label": "Parse Endpoint",
+      "sublabel": "Reject invalid operation or ID",
       "type": "backend",
-      "label": "ParseEndpoint",
-      "sublabel": "four operations",
-      "width": 140
+      "width": 235,
+      "height": 68,
+      "purpose": "service"
     },
     {
       "id": "tokens",
       "lane": "endpoint",
       "col": 2,
-      "type": "backend",
       "label": "tokens",
-      "sublabel": "DeclarationsToken",
-      "width": 140
-    },
-    {
-      "id": "canonjson",
-      "lane": "endpoint",
-      "col": 3,
+      "sublabel": "Refresh snapshot and sync token",
       "type": "backend",
-      "label": "canonjson",
-      "sublabel": "RFC 8785",
-      "width": 140
+      "width": 235,
+      "height": 68,
+      "purpose": "service"
     },
     {
       "id": "response",
       "lane": "endpoint",
-      "col": 4,
+      "col": 3,
+      "label": "HTTP 200",
+      "sublabel": "Canonical SyncTokens JSON",
       "type": "backend",
-      "label": "200 JSON",
-      "sublabel": "empty for status",
-      "width": 140
+      "width": 235,
+      "height": 68,
+      "purpose": "success"
     },
     {
       "id": "declitems",
       "lane": "manifest",
       "col": 2,
-      "type": "backend",
       "label": "declaration-items",
-      "sublabel": "from the snapshot",
-      "width": 140
+      "sublabel": "Refresh declaration manifest",
+      "type": "backend",
+      "width": 235,
+      "height": 68,
+      "purpose": "service"
+    },
+    {
+      "id": "manifest-response",
+      "lane": "manifest",
+      "col": 3,
+      "label": "HTTP 200",
+      "sublabel": "Return the declaration manifest",
+      "type": "backend",
+      "width": 235,
+      "height": 68,
+      "purpose": "success"
     },
     {
       "id": "declaration",
-      "lane": "manifest",
-      "col": 3,
+      "lane": "single",
+      "col": 2,
+      "label": "Fetch declaration",
+      "sublabel": "Read advertised snapshot version",
       "type": "backend",
-      "label": "declaration/{kind}",
-      "sublabel": "four standalone kinds",
-      "width": 150
+      "width": 235,
+      "height": 68,
+      "purpose": "service"
+    },
+    {
+      "id": "declaration-response",
+      "lane": "single",
+      "col": 3,
+      "label": "HTTP 200 or 404",
+      "sublabel": "Declaration JSON, or unavailable",
+      "type": "backend",
+      "width": 235,
+      "height": 68,
+      "purpose": "transport"
     },
     {
       "id": "status",
-      "lane": "single",
+      "lane": "status",
       "col": 2,
-      "type": "backend",
       "label": "status",
-      "sublabel": "StatusReport in",
-      "width": 140
+      "sublabel": "Validate and store device report",
+      "type": "backend",
+      "width": 235,
+      "height": 68,
+      "purpose": "service"
     },
     {
-      "id": "badendpoint",
-      "lane": "gate",
-      "col": 1,
-      "type": "security",
-      "label": "ErrBadEndpoint",
-      "sublabel": "bad kind, too long, no data",
-      "width": 150
-    },
-    {
-      "id": "notfound",
-      "lane": "gate",
+      "id": "status-response",
+      "lane": "status",
       "col": 3,
-      "type": "security",
-      "label": "404",
-      "sublabel": "device removes it",
-      "width": 140
-    },
-    {
-      "id": "statusbad",
-      "lane": "gate",
-      "col": 2,
-      "type": "security",
-      "label": "400",
-      "sublabel": "empty, too big, malformed",
-      "width": 150
+      "label": "Acknowledge or reject",
+      "sublabel": "Empty 200, or invalid status data",
+      "type": "backend",
+      "width": 235,
+      "height": 68,
+      "purpose": "transport"
     }
   ],
   "edges": [
@@ -202,88 +144,90 @@
       "id": "w1",
       "from": "checkin",
       "to": "parse",
-      "label": "one string",
-      "role": "main"
+      "label": "Read Endpoint",
+      "purpose": "transport"
     },
     {
       "id": "w2",
       "from": "parse",
       "to": "tokens",
       "label": "tokens",
-      "role": "main"
-    },
-    {
-      "id": "w3",
-      "from": "tokens",
-      "to": "canonjson",
-      "label": "hash it",
-      "role": "main"
+      "purpose": "transport"
     },
     {
       "id": "w4",
-      "from": "canonjson",
+      "from": "tokens",
       "to": "response",
-      "label": "answer",
-      "role": "main"
+      "label": "Serialize JSON",
+      "purpose": "artifact"
     },
     {
       "id": "w5",
       "from": "parse",
       "to": "declitems",
       "label": "declaration-items",
-      "role": "branch"
+      "purpose": "transport"
+    },
+    {
+      "id": "manifest-success",
+      "from": "declitems",
+      "to": "manifest-response",
+      "label": "Return manifest",
+      "purpose": "artifact"
     },
     {
       "id": "w7",
       "from": "parse",
       "to": "declaration",
-      "label": "declaration",
-      "role": "branch"
+      "label": "declaration/{kind}/{identifier}",
+      "purpose": "transport"
+    },
+    {
+      "id": "declaration-success",
+      "from": "declaration",
+      "to": "declaration-response",
+      "label": "Return version",
+      "purpose": "transport"
     },
     {
       "id": "w8",
       "from": "parse",
       "to": "status",
       "label": "status",
-      "role": "branch"
+      "purpose": "transport"
     },
     {
-      "id": "w9",
-      "from": "parse",
-      "to": "badendpoint",
-      "label": "unparseable",
-      "role": "error"
-    },
-    {
-      "id": "w11",
-      "from": "declaration",
-      "to": "notfound",
-      "label": "not in manifest",
-      "role": "error"
-    },
-    {
-      "id": "w12",
+      "id": "status-success",
       "from": "status",
-      "to": "statusbad",
-      "label": "refused",
-      "role": "error"
+      "to": "status-response",
+      "label": "Validate data",
+      "purpose": "service"
     }
   ],
   "cards": [
     {
-      "dot": "cyan",
-      "title": "Four operations, one string",
+      "dot": "transport",
+      "title": "Four operations inside check-in",
       "items": [
-        "tokens, declaration-items, status, and declaration/{kind}/{identifier}",
-        "The kind is activation, asset, configuration or management; anything else is ErrBadEndpoint"
+        "Endpoint selects tokens, declaration-items, declaration/{kind}/{identifier}, or status. These are message values, not four public server routes.",
+        "The first three return JSON; accepted status reports receive an empty HTTP 200 response."
       ]
     },
     {
-      "dot": "rose",
-      "title": "404 means remove",
+      "dot": "service",
+      "title": "Snapshots and errors",
       "items": [
-        "Each enrollment gets a snapshot, so it fetches exactly what its manifest advertised",
-        "A declaration absent from the enrollment's manifest returns 404, and the device removes it"
+        "Manifest retrieval refreshes the enrollment snapshot. Declaration retrieval uses the version advertised by that snapshot.",
+        "Invalid endpoint syntax and invalid status data are rejected at different stages. HTTP 404 for a declaration tells the device to remove its local copy."
+      ]
+    },
+    {
+      "dot": "transport",
+      "title": "Public documentation",
+      "items": [
+        "Declarative Management check-in — https://developer.apple.com/documentation/devicemanagement/declarative-management",
+        "Declarations — https://developer.apple.com/documentation/devicemanagement/devicemanagement-declarations",
+        "RFC 8785 — JSON Canonicalization Scheme — https://www.rfc-editor.org/rfc/rfc8785"
       ]
     }
   ]

@@ -1,0 +1,380 @@
+{
+  "status": "historical-preview-superseded",
+  "date": "2026-09-10",
+  "reviewed_revision": "ff85958196cb013e8e14c1055f067319b07e3299",
+  "rendered_preview_count": 10,
+  "planned_total": 31,
+  "delivery_receipts": [
+    {
+      "schemaVersion": 1,
+      "ok": true,
+      "command": "deliver",
+      "type": "architecture",
+      "input": "/Users/dafyddwatkins/GitHub/deploymenttheory/go-apple-dm/docs/diagrams/src/checkin-dispatch.architecture.json",
+      "output": "/Users/dafyddwatkins/GitHub/deploymenttheory/go-apple-dm/docs/diagrams/checkin-dispatch.html",
+      "specification": {
+        "sha256": "32ae2f972a8f20033e0a50b4401c04f77874096fa1320ba6b59c4cf801385b3e",
+        "bytes": 6176
+      },
+      "artifact": {
+        "sha256": "a6eb1d590f04460374951b1f740bff6e79a382dc727b75222c579d48bf0078ad",
+        "bytes": 711433
+      },
+      "validation": {
+        "checksPassed": 9,
+        "checkCount": 9,
+        "compositionProfile": "showcase",
+        "compositionStatus": "pass",
+        "errors": 0,
+        "warnings": 0
+      },
+      "evidence": {
+        "verified": true,
+        "repository": "https://github.com/deploymenttheory/go-apple-dm",
+        "revision": "ff85958196cb013e8e14c1055f067319b07e3299",
+        "references": 2
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "ok": true,
+      "command": "deliver",
+      "type": "sequence",
+      "input": "/Users/dafyddwatkins/GitHub/deploymenttheory/go-apple-dm/docs/diagrams/src/flow-account-driven-enrollment.sequence.json",
+      "output": "/Users/dafyddwatkins/GitHub/deploymenttheory/go-apple-dm/docs/diagrams/flow-account-driven-enrollment.html",
+      "specification": {
+        "sha256": "fcfeb021d25c6a85ac309d79867a7fc10bce4877a8e6a16c282f2f8fc140977d",
+        "bytes": 5823
+      },
+      "artifact": {
+        "sha256": "4fb8e98cd0f10d3d0b770726ef5ac97cadbde06fcce17764f68f31c57c78f6c6",
+        "bytes": 715654
+      },
+      "validation": {
+        "checksPassed": 9,
+        "checkCount": 9,
+        "compositionProfile": "showcase",
+        "compositionStatus": "pass",
+        "errors": 0,
+        "warnings": 0
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "ok": true,
+      "command": "deliver",
+      "type": "sequence",
+      "input": "/Users/dafyddwatkins/GitHub/deploymenttheory/go-apple-dm/docs/diagrams/src/flow-acme-attestation.sequence.json",
+      "output": "/Users/dafyddwatkins/GitHub/deploymenttheory/go-apple-dm/docs/diagrams/flow-acme-attestation.html",
+      "specification": {
+        "sha256": "426429bbeb7cb22a756257570d121bc956b3d5899e499fe74e6822d5734c5d5c",
+        "bytes": 5191
+      },
+      "artifact": {
+        "sha256": "0e7bc86b3253bf5f297a16f576b536465d1a2179f5f6f54b3e8b080e5dfe3963",
+        "bytes": 714549
+      },
+      "validation": {
+        "checksPassed": 9,
+        "checkCount": 9,
+        "compositionProfile": "showcase",
+        "compositionStatus": "pass",
+        "errors": 0,
+        "warnings": 0
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "ok": true,
+      "command": "deliver",
+      "type": "sequence",
+      "input": "/Users/dafyddwatkins/GitHub/deploymenttheory/go-apple-dm/docs/diagrams/src/flow-ade-enrollment.sequence.json",
+      "output": "/Users/dafyddwatkins/GitHub/deploymenttheory/go-apple-dm/docs/diagrams/flow-ade-enrollment.html",
+      "specification": {
+        "sha256": "e7f3a27ef83c9c98485cf53ccefb6355977c8ed2634ad5d8683bdb92f995b602",
+        "bytes": 6157
+      },
+      "artifact": {
+        "sha256": "6370ec919733d8542910d7cb4a67d0cc521349bd6e30065628b1167dcd3309e0",
+        "bytes": 716545
+      },
+      "validation": {
+        "checksPassed": 9,
+        "checkCount": 9,
+        "compositionProfile": "showcase",
+        "compositionStatus": "pass",
+        "errors": 0,
+        "warnings": 0
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "ok": true,
+      "command": "deliver",
+      "type": "sequence",
+      "input": "/Users/dafyddwatkins/GitHub/deploymenttheory/go-apple-dm/docs/diagrams/src/flow-command-delivery.sequence.json",
+      "output": "/Users/dafyddwatkins/GitHub/deploymenttheory/go-apple-dm/docs/diagrams/flow-command-delivery.html",
+      "specification": {
+        "sha256": "1da7a8254e498e09811904cbda7f405658aea754ff1f29cb447ceb6636430155",
+        "bytes": 5629
+      },
+      "artifact": {
+        "sha256": "7b767339a9a1aa9cd08bc7c075707bf626ab3c68f3eba9986831bc17d3e6fe17",
+        "bytes": 714659
+      },
+      "validation": {
+        "checksPassed": 9,
+        "checkCount": 9,
+        "compositionProfile": "showcase",
+        "compositionStatus": "pass",
+        "errors": 0,
+        "warnings": 0
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "ok": true,
+      "command": "deliver",
+      "type": "sequence",
+      "input": "/Users/dafyddwatkins/GitHub/deploymenttheory/go-apple-dm/docs/diagrams/src/flow-ddm-sync.sequence.json",
+      "output": "/Users/dafyddwatkins/GitHub/deploymenttheory/go-apple-dm/docs/diagrams/flow-ddm-sync.html",
+      "specification": {
+        "sha256": "92a6555a3ad8e5dce2d466798e72579c3b485520117584e6fc3e3907ad5fe31f",
+        "bytes": 6883
+      },
+      "artifact": {
+        "sha256": "24a328ad5f06bc88376b1c238bf264fbce032006b6c0b51df4428f64b48b0d74",
+        "bytes": 719877
+      },
+      "validation": {
+        "checksPassed": 9,
+        "checkCount": 9,
+        "compositionProfile": "showcase",
+        "compositionStatus": "pass",
+        "errors": 0,
+        "warnings": 0
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "ok": true,
+      "command": "deliver",
+      "type": "sequence",
+      "input": "/Users/dafyddwatkins/GitHub/deploymenttheory/go-apple-dm/docs/diagrams/src/flow-enrollment-profile-replacement.sequence.json",
+      "output": "/Users/dafyddwatkins/GitHub/deploymenttheory/go-apple-dm/docs/diagrams/flow-enrollment-profile-replacement.html",
+      "specification": {
+        "sha256": "630e8a433f3141ac0ca8d2a29079b7ea75df6d11ee6745ce5671ee864f0acc64",
+        "bytes": 6402
+      },
+      "artifact": {
+        "sha256": "d046861102ef4546ceaa18429ff0f9a5be76fe7c24606a847e184828790d4b42",
+        "bytes": 717583
+      },
+      "validation": {
+        "checksPassed": 9,
+        "checkCount": 9,
+        "compositionProfile": "showcase",
+        "compositionStatus": "pass",
+        "errors": 0,
+        "warnings": 0
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "ok": true,
+      "command": "deliver",
+      "type": "sequence",
+      "input": "/Users/dafyddwatkins/GitHub/deploymenttheory/go-apple-dm/docs/diagrams/src/flow-scep-issuance.sequence.json",
+      "output": "/Users/dafyddwatkins/GitHub/deploymenttheory/go-apple-dm/docs/diagrams/flow-scep-issuance.html",
+      "specification": {
+        "sha256": "db98043e93aa2d4de5b508e9bd09f1cfc4eac2afe87530f3cfd63743735c0abf",
+        "bytes": 4815
+      },
+      "artifact": {
+        "sha256": "7ce68b463df4165d42d637d12c7614fd454024817eb23eb2fa3d3d0cff724a3e",
+        "bytes": 711061
+      },
+      "validation": {
+        "checksPassed": 9,
+        "checkCount": 9,
+        "compositionProfile": "showcase",
+        "compositionStatus": "pass",
+        "errors": 0,
+        "warnings": 0
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "ok": true,
+      "command": "deliver",
+      "type": "architecture",
+      "input": "/Users/dafyddwatkins/GitHub/deploymenttheory/go-apple-dm/docs/diagrams/src/storage-backends.architecture.json",
+      "output": "/Users/dafyddwatkins/GitHub/deploymenttheory/go-apple-dm/docs/diagrams/storage-backends.html",
+      "specification": {
+        "sha256": "61a7add2d7f49b29232e68fc60e3f25e2a7ca7674eedae7d18bde255b7550e10",
+        "bytes": 9328
+      },
+      "artifact": {
+        "sha256": "f097fa9597aa655b849b01799cfe2f0a6bfbf96d060008b8b0a4442324e5cbff",
+        "bytes": 722392
+      },
+      "validation": {
+        "checksPassed": 9,
+        "checkCount": 9,
+        "compositionProfile": "showcase",
+        "compositionStatus": "pass",
+        "errors": 0,
+        "warnings": 0
+      },
+      "evidence": {
+        "verified": true,
+        "repository": "https://github.com/deploymenttheory/go-apple-dm",
+        "revision": "ff85958196cb013e8e14c1055f067319b07e3299",
+        "references": 12
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "ok": true,
+      "command": "deliver",
+      "type": "architecture",
+      "input": "/Users/dafyddwatkins/GitHub/deploymenttheory/go-apple-dm/docs/diagrams/src/storage-contract.architecture.json",
+      "output": "/Users/dafyddwatkins/GitHub/deploymenttheory/go-apple-dm/docs/diagrams/storage-contract.html",
+      "specification": {
+        "sha256": "c3351229aa117a36d150d1311add0aa10742e2f1cafc7c8827cdda6a3389835a",
+        "bytes": 9782
+      },
+      "artifact": {
+        "sha256": "69150c68cc068d7663456bbfed381c056f96ffe958fea5d39ed85bddfe3fb567",
+        "bytes": 723281
+      },
+      "validation": {
+        "checksPassed": 9,
+        "checkCount": 9,
+        "compositionProfile": "showcase",
+        "compositionStatus": "pass",
+        "errors": 0,
+        "warnings": 0
+      },
+      "evidence": {
+        "verified": true,
+        "repository": "https://github.com/deploymenttheory/go-apple-dm",
+        "revision": "ff85958196cb013e8e14c1055f067319b07e3299",
+        "references": 8
+      }
+    }
+  ],
+  "browser_evidence": {
+    "kind": "supplementary-desktop-preview",
+    "viewport": [
+      1440,
+      900
+    ],
+    "theme": "light",
+    "measurements": [
+      {
+        "name": "checkin-dispatch",
+        "sha256": "a6eb1d590f04460374951b1f740bff6e79a382dc727b75222c579d48bf0078ad",
+        "measurement": {
+          "innerWidth": 1440,
+          "innerHeight": 900,
+          "scrollWidth": 1440,
+          "scrollHeight": 1201,
+          "resolvedTheme": "light",
+          "readerWidth": 960,
+          "diagramWidth": 930,
+          "viewBoxWidth": 1140,
+          "minimumProjectedNodeTextPx": 6.934210526315789,
+          "minimumProjectedNodeText": "Ask whether erasure and re-enrollment are allowed",
+          "minimumProjectedNodeTextDetail": "context",
+          "hasLegend": false,
+          "hasNavigationDock": true,
+          "legendDockIntersectionArea": 0,
+          "dockStageIntersectionArea": 0,
+          "dockStageGap": 10.21875,
+          "viewerChromeRequiredGap": 10,
+          "viewerChromeReserve": 51,
+          "viewerChromeActive": true
+        }
+      },
+      {
+        "name": "flow-ade-enrollment",
+        "sha256": "6370ec919733d8542910d7cb4a67d0cc521349bd6e30065628b1167dcd3309e0",
+        "measurement": {
+          "innerWidth": 1440,
+          "innerHeight": 900,
+          "scrollWidth": 1741,
+          "scrollHeight": 1327,
+          "resolvedTheme": "light",
+          "readerWidth": 1376,
+          "diagramWidth": 1346,
+          "viewBoxWidth": 1080,
+          "minimumProjectedNodeTextPx": 7,
+          "minimumProjectedNodeText": "Setup Assistant",
+          "minimumProjectedNodeTextDetail": "context",
+          "hasLegend": true,
+          "hasNavigationDock": true,
+          "legendDockIntersectionArea": 0,
+          "dockStageIntersectionArea": 0,
+          "dockStageGap": 10.21875,
+          "viewerChromeRequiredGap": 10,
+          "viewerChromeReserve": 51,
+          "viewerChromeActive": true
+        }
+      },
+      {
+        "name": "flow-enrollment-profile-replacement",
+        "sha256": "d046861102ef4546ceaa18429ff0f9a5be76fe7c24606a847e184828790d4b42",
+        "measurement": {
+          "innerWidth": 1440,
+          "innerHeight": 900,
+          "scrollWidth": 1626,
+          "scrollHeight": 1324,
+          "resolvedTheme": "light",
+          "readerWidth": 1376,
+          "diagramWidth": 1346,
+          "viewBoxWidth": 1080,
+          "minimumProjectedNodeTextPx": 7,
+          "minimumProjectedNodeText": "Prepare and request wake",
+          "minimumProjectedNodeTextDetail": "context",
+          "hasLegend": true,
+          "hasNavigationDock": true,
+          "legendDockIntersectionArea": 0,
+          "dockStageIntersectionArea": 0,
+          "dockStageGap": 10.21875,
+          "viewerChromeRequiredGap": 10,
+          "viewerChromeReserve": 51,
+          "viewerChromeActive": true
+        }
+      },
+      {
+        "name": "storage-backends",
+        "sha256": "f097fa9597aa655b849b01799cfe2f0a6bfbf96d060008b8b0a4442324e5cbff",
+        "measurement": {
+          "innerWidth": 1440,
+          "innerHeight": 900,
+          "scrollWidth": 1440,
+          "scrollHeight": 1094,
+          "resolvedTheme": "light",
+          "readerWidth": 960,
+          "diagramWidth": 930,
+          "viewBoxWidth": 1300,
+          "minimumProjectedNodeTextPx": 6.438461538461539,
+          "minimumProjectedNodeText": "eight interfaces",
+          "minimumProjectedNodeTextDetail": "context",
+          "hasLegend": true,
+          "hasNavigationDock": true,
+          "legendDockIntersectionArea": 0,
+          "dockStageIntersectionArea": 0,
+          "dockStageGap": 10.21875,
+          "viewerChromeRequiredGap": 10,
+          "viewerChromeReserve": 51,
+          "viewerChromeActive": true
+        }
+      }
+    ],
+    "visual_review": "Inspected all four captured screenshots. Vertical overflow affects all four; both sequence previews also have horizontal overflow. These previews are not accepted final layouts."
+  },
+  "remaining": "21 sources require further layout work before successful delivery. Existing HTML for those diagrams remains the previous version. Catalogue and README images have not been regenerated.",
+  "superseded_by": "docs/reviews/diagram-implementation-2026-09-10.json"
+}

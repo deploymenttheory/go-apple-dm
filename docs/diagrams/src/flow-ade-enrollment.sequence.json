@@ -5,86 +5,79 @@
     "title": "Automated Device Enrollment",
     "quality_profile": "showcase",
     "viewBox": [
-      1080,
-      566
+      1320,
+      826
     ],
     "column_fit": "spread",
     "views": [
       {
         "id": "verify",
-        "label": "Verify the device",
+        "label": "Verify device information",
         "focus": [
           "device",
           "ade",
           "gdmf"
         ],
-        "note": "MachineInfo is CMS-signed by Apple; the update gate refuses an old OS."
+        "note": "The handler verifies signed MachineInfo and applies the configured admission and software-update policy."
       },
       {
         "id": "authenticate",
-        "label": "Authenticate the user",
+        "label": "Optional web authentication",
         "focus": [
           "ade",
           "idp",
           "profile"
         ],
-        "note": "The web view resumes the enrollment and personalises the profile."
+        "note": "Only the configured web-view path signs the user in before resuming enrollment; direct POST returns the profile after admission."
       }
-    ]
+    ],
+    "colour_profile": "purpose-v1",
+    "legend": {
+      "mode": "hidden"
+    }
   },
   "participants": [
     {
       "id": "device",
       "type": "external",
-      "label": "Device",
-      "sublabel": "assigned by DEP"
+      "label": "Apple device",
+      "sublabel": "Setup Assistant",
+      "purpose": "neutral"
     },
     {
       "id": "ade",
       "type": "backend",
-      "label": "enroll/ade",
-      "sublabel": "/enroll/ade"
+      "label": "ADE endpoint",
+      "sublabel": "Check admission policy",
+      "purpose": "transport"
     },
     {
       "id": "gdmf",
       "type": "external",
-      "label": "gdmf",
-      "sublabel": "software lookup"
+      "label": "Software data",
+      "sublabel": "Return version data",
+      "purpose": "neutral"
     },
     {
       "id": "idp",
       "type": "security",
       "label": "Identity provider",
-      "sublabel": "OIDC"
+      "sublabel": "OpenID Connect sign-in",
+      "purpose": "authentication"
     },
     {
       "id": "profile",
       "type": "backend",
-      "label": "enroll.Profile",
-      "sublabel": "built and signed"
+      "label": "Profile / issuer",
+      "sublabel": "SCEP or ACME identity",
+      "purpose": "certificate"
     },
     {
       "id": "core",
       "type": "backend",
-      "label": "service.Core",
-      "sublabel": "check-in"
-    }
-  ],
-  "segments": [
-    {
-      "from": 161.0,
-      "to": 250.0,
-      "label": "MachineInfo"
-    },
-    {
-      "from": 252.5,
-      "to": 372.0,
-      "label": "Web view"
-    },
-    {
-      "from": 374.5,
-      "to": 494.0,
-      "label": "Profile and check-in"
+      "label": "MDM service",
+      "sublabel": "Check-in and commands",
+      "purpose": "service"
     }
   ],
   "messages": [
@@ -92,130 +85,179 @@
       "id": "post",
       "from": "device",
       "to": "ade",
-      "y": 175.0,
-      "label": "signed MachineInfo",
+      "label": "POST or GET: signed MachineInfo",
+      "y": 175,
       "variant": "emphasis",
-      "note": "CMS-verified against Apple's device CAs before anything else runs"
+      "purpose": "authentication"
     },
     {
       "id": "gate",
       "from": "ade",
       "to": "gdmf",
-      "y": 205.5,
-      "label": "latest version for this model",
-      "variant": "default"
+      "label": "If needed: latest-version lookup",
+      "y": 211,
+      "variant": "default",
+      "purpose": "transport"
     },
     {
       "id": "gate-back",
       "from": "gdmf",
       "to": "ade",
-      "y": 236.0,
-      "label": "proceed, or 403 update required",
+      "label": "Available software version",
+      "y": 247,
       "variant": "return",
-      "note": "refused with ErrorCodeCodeSoftwareUpdateRequired (com.apple.softwareupdate.required)"
+      "purpose": "transport"
+    },
+    {
+      "id": "reject",
+      "from": "ade",
+      "to": "device",
+      "label": "If update required: HTTP 403; stop",
+      "y": 283,
+      "variant": "security",
+      "purpose": "failure"
     },
     {
       "id": "begin",
       "from": "ade",
       "to": "device",
-      "y": 266.5,
-      "label": "302 to the web view",
-      "variant": "default"
+      "label": "GET + WebAuth only: sign-in redirect",
+      "y": 319,
+      "variant": "default",
+      "purpose": "authentication"
     },
     {
       "id": "auth",
       "from": "device",
       "to": "idp",
-      "y": 297.0,
-      "label": "authorization code, PKCE, nonce",
-      "variant": "security"
+      "label": "Browser sign-in",
+      "y": 355,
+      "variant": "security",
+      "purpose": "authentication"
     },
     {
       "id": "callback",
-      "from": "idp",
+      "from": "device",
       "to": "ade",
-      "y": 327.5,
-      "label": "/enroll/oidc/callback",
+      "label": "Browser callback: authorization code",
+      "y": 391,
       "variant": "default",
-      "note": "id_token verified, then Resume(serial) picks the enrollment back up"
+      "purpose": "authentication"
+    },
+    {
+      "id": "exchange",
+      "from": "ade",
+      "to": "idp",
+      "label": "Exchange code; verify ID token",
+      "y": 427,
+      "variant": "security",
+      "purpose": "authentication"
     },
     {
       "id": "build",
       "from": "ade",
       "to": "profile",
-      "y": 358.0,
-      "label": "email/SERIAL as the subject",
-      "variant": "default"
+      "label": "Admitted: build enrollment profile",
+      "y": 463,
+      "variant": "default",
+      "purpose": "artifact"
     },
     {
       "id": "signed",
+      "from": "ade",
+      "to": "device",
+      "label": "Return signed enrollment profile",
+      "y": 499,
+      "variant": "return",
+      "purpose": "artifact"
+    },
+    {
+      "id": "identity",
+      "from": "device",
+      "to": "profile",
+      "label": "Request SCEP or ACME identity",
+      "y": 535,
+      "variant": "default",
+      "purpose": "certificate"
+    },
+    {
+      "id": "certificate",
       "from": "profile",
       "to": "device",
-      "y": 388.5,
-      "label": "x-apple-aspen-config",
-      "variant": "emphasis",
-      "note": "carries a SCEP or ACME payload; the device obtains its identity before check-in"
+      "label": "Issue device identity certificate",
+      "y": 571,
+      "variant": "return",
+      "purpose": "certificate"
     },
     {
       "id": "authenticate",
       "from": "device",
       "to": "core",
-      "y": 419.0,
-      "label": "Authenticate",
-      "variant": "emphasis"
+      "label": "Authenticate with identity certificate",
+      "y": 607,
+      "variant": "emphasis",
+      "purpose": "authentication"
     },
     {
       "id": "pinned",
       "from": "core",
       "to": "device",
-      "y": 449.5,
-      "label": "certificate pinned",
-      "variant": "return"
+      "label": "HTTP 200; identity recorded",
+      "y": 643,
+      "variant": "return",
+      "purpose": "success"
     },
     {
       "id": "tokenupdate",
       "from": "device",
       "to": "core",
-      "y": 480.0,
-      "label": "TokenUpdate enables the enrollment",
-      "variant": "emphasis"
-    }
-  ],
-  "activations": [
-    {
-      "participant": "ade",
-      "from": 169.0,
-      "to": 366.0,
-      "type": "backend"
+      "label": "TokenUpdate: token, topic, PushMagic",
+      "y": 679,
+      "variant": "emphasis",
+      "purpose": "transport"
     },
     {
-      "participant": "device",
-      "from": 169.0,
-      "to": 488.0,
-      "type": "external"
-    },
-    {
-      "participant": "core",
-      "from": 413.0,
-      "to": 488.0,
-      "type": "backend"
+      "id": "enabled",
+      "from": "core",
+      "to": "device",
+      "label": "HTTP 200; enrollment enabled",
+      "y": 715,
+      "variant": "return",
+      "purpose": "success"
     }
   ],
   "cards": [
     {
-      "dot": "cyan",
-      "title": "ADE entry points",
+      "dot": "transport",
+      "title": "Alternative entry paths",
       "items": [
-        "POST is the token lane and finishes immediately",
-        "GET is the configuration_web_url lane and resumes after OIDC"
+        "The direct POST returns an enrollment profile after admission. GET enters web authentication only when WebAuth is configured.",
+        "The identity provider redirects the device’s browser back; the server verifies the authentication result before issuing the profile."
       ]
     },
     {
-      "dot": "emerald",
-      "title": "The update gate",
+      "dot": "authentication",
+      "title": "Trust and activation",
       "items": [
-        "An old OS is refused with ErrorCodeCodeSoftwareUpdateRequired",
-        "The catalogue is cached with a TTL and serves last-good on a refresh failure"
+        "The profile’s HTTPS anchors are independent of its SCEP or ACME identity issuer. Stable identifiers support later controlled replacement.",
+        "The device obtains its identity certificate before Authenticate. TokenUpdate supplies push details and enables the enrollment."
+      ]
+    },
+    {
+      "dot": "failure",
+      "title": "Update-required outcome",
+      "items": [
+        "The ADE handler applies its configured policy and may return Apple’s software-update-required error. The catalogue supplies version data only."
+      ]
+    },
+    {
+      "dot": "transport",
+      "title": "Public documentation",
+      "items": [
+        "MachineInfo — https://developer.apple.com/documentation/devicemanagement/machineinfo",
+        "Authenticating through web views — https://developer.apple.com/documentation/devicemanagement/authenticating-through-web-views",
+        "ErrorCodeSoftwareUpdateRequired — https://developer.apple.com/documentation/devicemanagement/errorcodesoftwareupdaterequired",
+        "Deploying device management enrollment profiles — https://developer.apple.com/documentation/devicemanagement/deploying-device-management-enrollment-profiles"
       ]
     }
   ]

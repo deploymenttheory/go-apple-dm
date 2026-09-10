@@ -1,0 +1,479 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "Shared Reference-server Bench and Validation Evidence",
+    "quality_profile": "showcase",
+    "viewBox": [
+      1340,
+      1210
+    ],
+    "repository": {
+      "url": "https://github.com/deploymenttheory/go-apple-dm",
+      "revision": "ff85958196cb013e8e14c1055f067319b07e3299"
+    },
+    "colour_profile": "purpose-v1",
+    "legend": {
+      "mode": "hidden"
+    }
+  },
+  "components": [
+    {
+      "id": "cli",
+      "label": "dmctl bench",
+      "sublabel": "Control a selected workspace",
+      "type": "external",
+      "pos": [
+        40,
+        160
+      ],
+      "size": [
+        220,
+        70
+      ],
+      "purpose": "neutral"
+    },
+    {
+      "id": "workspace",
+      "label": "Bench workspace",
+      "sublabel": "Config, identities, evidence",
+      "type": "database",
+      "pos": [
+        40,
+        40
+      ],
+      "size": [
+        220,
+        70
+      ],
+      "purpose": "artifact"
+    },
+    {
+      "id": "supervisor",
+      "label": "Bench supervisor",
+      "sublabel": "Start, await readiness, stop",
+      "type": "backend",
+      "pos": [
+        360,
+        160
+      ],
+      "size": [
+        220,
+        70
+      ],
+      "purpose": "service"
+    },
+    {
+      "id": "runtime",
+      "label": "Shared server runtime",
+      "sublabel": "Serve HTTP/TLS; drain work",
+      "type": "backend",
+      "pos": [
+        700,
+        160
+      ],
+      "size": [
+        220,
+        70
+      ],
+      "sources": [
+        {
+          "path": "server/internal/runtime/runtime.go"
+        }
+      ],
+      "purpose": "service"
+    },
+    {
+      "id": "server",
+      "label": "Reference application",
+      "sublabel": "Normal device and admin APIs",
+      "type": "backend",
+      "pos": [
+        700,
+        350
+      ],
+      "size": [
+        220,
+        70
+      ],
+      "purpose": "service"
+    },
+    {
+      "id": "catalogue",
+      "label": "Scenario catalogue",
+      "sublabel": "Supported scenario IDs/modes",
+      "type": "backend",
+      "pos": [
+        700,
+        930
+      ],
+      "size": [
+        220,
+        70
+      ],
+      "sources": [
+        {
+          "path": "server/internal/bench/catalog.go"
+        }
+      ],
+      "purpose": "artifact"
+    },
+    {
+      "id": "simulator",
+      "label": "Simulator and fixtures",
+      "sublabel": "Synthetic protocol exchanges",
+      "type": "backend",
+      "pos": [
+        360,
+        560
+      ],
+      "size": [
+        220,
+        70
+      ],
+      "purpose": "service"
+    },
+    {
+      "id": "process",
+      "label": "Process acceptance",
+      "sublabel": "Built server and CLI",
+      "type": "backend",
+      "pos": [
+        360,
+        40
+      ],
+      "size": [
+        220,
+        70
+      ],
+      "purpose": "service"
+    },
+    {
+      "id": "live",
+      "label": "Real device or app",
+      "sublabel": "Real credentials and identity",
+      "type": "external",
+      "pos": [
+        1040,
+        560
+      ],
+      "size": [
+        220,
+        70
+      ],
+      "purpose": "neutral"
+    },
+    {
+      "id": "evidence",
+      "label": "Validation evidence",
+      "sublabel": "Results and correlated receipts",
+      "type": "database",
+      "pos": [
+        700,
+        560
+      ],
+      "size": [
+        220,
+        70
+      ],
+      "purpose": "storage"
+    },
+    {
+      "id": "contracts",
+      "label": "Backend contract suites",
+      "sublabel": "Verify persistence separately",
+      "type": "backend",
+      "pos": [
+        700,
+        730
+      ],
+      "size": [
+        220,
+        70
+      ],
+      "purpose": "service"
+    }
+  ],
+  "connections": [
+    {
+      "id": "b1",
+      "from": "cli",
+      "to": "workspace",
+      "label": "Select workspace",
+      "labelAt": [
+        150,
+        144
+      ],
+      "purpose": "artifact"
+    },
+    {
+      "id": "b2",
+      "from": "cli",
+      "to": "supervisor",
+      "label": "Start / stop",
+      "labelAt": [
+        310,
+        150
+      ],
+      "purpose": "service"
+    },
+    {
+      "id": "b3",
+      "from": "supervisor",
+      "to": "runtime",
+      "label": "Embedded / process",
+      "labelAt": [
+        650,
+        244
+      ],
+      "purpose": "service"
+    },
+    {
+      "id": "b4",
+      "from": "runtime",
+      "to": "server",
+      "label": "Build and serve",
+      "labelAt": [
+        810,
+        302
+      ],
+      "purpose": "service"
+    },
+    {
+      "id": "b5",
+      "from": "cli",
+      "to": "catalogue",
+      "label": "Choose scenario",
+      "fromSide": "bottom",
+      "toSide": "bottom",
+      "via": [
+        [
+          150,
+          1100
+        ],
+        [
+          810,
+          1100
+        ]
+      ],
+      "labelAt": [
+        500,
+        1088
+      ],
+      "purpose": "artifact"
+    },
+    {
+      "id": "b6",
+      "from": "catalogue",
+      "to": "simulator",
+      "label": "Drive simulation",
+      "fromSide": "left",
+      "toSide": "bottom",
+      "via": [
+        [
+          640,
+          965
+        ],
+        [
+          640,
+          680
+        ],
+        [
+          470,
+          680
+        ]
+      ],
+      "labelAt": [
+        640,
+        860
+      ],
+      "purpose": "service"
+    },
+    {
+      "id": "b7",
+      "from": "simulator",
+      "to": "server",
+      "label": "Device and admin APIs",
+      "fromSide": "top",
+      "toSide": "left",
+      "via": [
+        [
+          470,
+          385
+        ]
+      ],
+      "labelAt": [
+        595,
+        373
+      ],
+      "purpose": "transport"
+    },
+    {
+      "id": "b8",
+      "from": "process",
+      "to": "supervisor",
+      "label": "Run built processes",
+      "labelAt": [
+        470,
+        144
+      ],
+      "purpose": "service"
+    },
+    {
+      "id": "b9",
+      "from": "catalogue",
+      "to": "live",
+      "label": "Run live checks",
+      "fromSide": "right",
+      "toSide": "bottom",
+      "via": [
+        [
+          980,
+          965
+        ],
+        [
+          980,
+          680
+        ],
+        [
+          1150,
+          680
+        ]
+      ],
+      "labelAt": [
+        980,
+        860
+      ],
+      "purpose": "service"
+    },
+    {
+      "id": "b10",
+      "from": "live",
+      "to": "server",
+      "label": "Real protocol flows",
+      "fromSide": "top",
+      "toSide": "right",
+      "via": [
+        [
+          1150,
+          385
+        ]
+      ],
+      "labelAt": [
+        1035,
+        373
+      ],
+      "purpose": "transport"
+    },
+    {
+      "id": "b11",
+      "from": "server",
+      "to": "evidence",
+      "label": "Expose results",
+      "labelAt": [
+        810,
+        500
+      ],
+      "purpose": "storage"
+    },
+    {
+      "id": "b12",
+      "from": "simulator",
+      "to": "evidence",
+      "label": "Record outcomes",
+      "labelAt": [
+        640,
+        542
+      ],
+      "purpose": "storage"
+    },
+    {
+      "id": "b13",
+      "from": "live",
+      "to": "evidence",
+      "label": "Correlate receipt",
+      "labelAt": [
+        980,
+        542
+      ],
+      "purpose": "storage"
+    },
+    {
+      "id": "b14",
+      "from": "contracts",
+      "to": "evidence",
+      "label": "Contract results",
+      "labelAt": [
+        810,
+        698
+      ],
+      "purpose": "storage"
+    }
+  ],
+  "cards": [
+    {
+      "title": "One maintained runtime",
+      "items": [
+        "Bench scenarios and dmserver share the reference-server runtime. Process acceptance tests built executables, while retained detailed regressions also inspect lower-level composition.",
+        "The supervisor waits for readiness and stops runtimes before closing local fixtures."
+      ],
+      "dot": "service"
+    },
+    {
+      "title": "Simulated and live modes",
+      "items": [
+        "Simulated scenarios use synthetic identities, a device simulator, and local service fixtures. Fixture controllers stay outside production administration.",
+        "Live scenarios need real credentials, app registration or an enrolled device, and correlated outcome evidence. Simulated success does not establish Apple hardware compatibility."
+      ],
+      "dot": "neutral"
+    },
+    {
+      "title": "Independent checks",
+      "items": [
+        "Storage contract suites verify persistence across supported backends. The executable catalogue and bench-docs-check keep scenario documentation aligned.",
+        "Coverage policy and live validation status are separate from the existence of a scenario. PR 14 records outstanding real-device verification."
+      ],
+      "dot": "service"
+    },
+    {
+      "title": "Public documentation",
+      "items": [
+        "Go command: Test packages — https://pkg.go.dev/cmd/go#hdr-Test_packages",
+        "Sending MDM commands to a device — https://developer.apple.com/documentation/devicemanagement/sending-mdm-commands-to-a-device",
+        "Sending notification requests to APNs — https://developer.apple.com/documentation/usernotifications/sending-notification-requests-to-apns"
+      ],
+      "dot": "transport"
+    }
+  ],
+  "boundaries": [
+    {
+      "kind": "region",
+      "label": "Bench control",
+      "wraps": [
+        "cli",
+        "workspace",
+        "process",
+        "supervisor"
+      ]
+    },
+    {
+      "kind": "region",
+      "label": "Reference-server runtime",
+      "wraps": [
+        "runtime",
+        "server"
+      ]
+    },
+    {
+      "kind": "region",
+      "label": "Test drivers and evidence",
+      "wraps": [
+        "catalogue",
+        "simulator",
+        "live",
+        "contracts",
+        "evidence"
+      ]
+    }
+  ]
+}
