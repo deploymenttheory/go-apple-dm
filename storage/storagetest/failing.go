@@ -255,3 +255,11 @@ func (f *Failing) Import(ctx context.Context, rec storage.EnrollmentExport) erro
 	}
 	return f.Store.Import(ctx, rec)
 }
+
+// AuthenticateEnrollment implements storage.EnrollmentStore.
+func (f *Failing) AuthenticateEnrollment(ctx context.Context, id mdm.EnrollmentID, c storage.AuthenticateChange) error {
+	if err := f.fail("AuthenticateEnrollment"); err != nil {
+		return err
+	}
+	return f.Store.AuthenticateEnrollment(ctx, id, c)
+}

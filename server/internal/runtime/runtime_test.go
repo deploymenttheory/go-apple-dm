@@ -136,3 +136,16 @@ func TestServeStartupFailures(t *testing.T) {
 		t.Fatal("closed listener accepted")
 	}
 }
+
+func TestServeRejectsUnprotectedSecurityBoundaries(t *testing.T) {
+	for _, cfg := range []app.Config{
+		{Role: app.RoleAll, CertHeader: "Client-Cert", Listen: "0.0.0.0:8443"},
+		{Role: app.RoleAll, CertHeader: "Client-Cert", Listen: "localhost:8443"},
+		{Role: app.RoleDDM, Listen: "127.0.0.1:8443"},
+		{Role: app.RoleDDM, Listen: "0.0.0.0:8443", DDMAllowInsecureForTests: true},
+	} {
+		if err := Serve(t.Context(), cfg); !errors.Is(err, app.ErrConfig) {
+			t.Fatal("unsafe listener accepted", cfg.Listen, err)
+		}
+	}
+}

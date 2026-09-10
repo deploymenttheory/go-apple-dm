@@ -27,8 +27,10 @@ func TestDEP(t *testing.T) {
 		clk := clock.NewFake(time.Date(2026, 9, 1, 12, 0, 0, 0, time.UTC))
 		fake := deptest.NewServer(deptest.Options{Clock: clk})
 		t.Cleanup(fake.Close)
-		a := build(t, app.Config{Role: app.RoleDDM, Storage: "inmem", AdminToken: "t", Clock: clk,
-			DEP: app.DEPConfig{BaseURL: fake.URL(), ProfileURL: "https://mdm.example/enroll/ade"}})
+		a := build(t, app.Config{
+			Role: app.RoleDDM, Storage: "inmem", AdminToken: "t", Clock: clk,
+			DEP: app.DEPConfig{BaseURL: fake.URL(), ProfileURL: "https://mdm.example/enroll/ade"},
+		})
 		srv := serve(t, a)
 		if a.DEP == nil {
 			t.Fatal("DEP client missing")
@@ -39,7 +41,8 @@ func TestDEP(t *testing.T) {
 		// Keypair for the portal, then the .p7m the portal produces.
 		res := do(t, srv, "PUT", "/admin/v1/dep/accounts/abm/keypair", "t", nil)
 		certPEM, _ := io.ReadAll(res.Body)
-		if res.StatusCode != http.StatusOK || res.Header.Get("Content-Type") != "application/x-pem-file" {
+		if res.StatusCode != http.StatusOK ||
+			res.Header.Get("Content-Type") != "application/x-pem-file" {
 			t.Fatalf("keypair = %d %s", res.StatusCode, certPEM)
 		}
 		block, _ := pem.Decode(certPEM)
@@ -55,11 +58,23 @@ func TestDEP(t *testing.T) {
 			t.Fatal(err)
 		}
 		var detail dep.AccountDetail
-		decode(t, do(t, srv, "PUT", "/admin/v1/dep/accounts/abm/token", "t", p7m), http.StatusOK, &detail)
+		decode(
+			t,
+			do(t, srv, "PUT", "/admin/v1/dep/accounts/abm/token", "t", p7m),
+			http.StatusOK,
+			&detail,
+		)
 		if detail.ServerUUID == "" {
 			t.Fatalf("detail = %+v", detail)
 		}
-		if res := do(t, srv, "PUT", "/admin/v1/dep/accounts/abm/token", "t", nil); res.StatusCode != http.StatusBadRequest {
+		if res := do(
+			t,
+			srv,
+			"PUT",
+			"/admin/v1/dep/accounts/abm/token",
+			"t",
+			nil,
+		); res.StatusCode != http.StatusBadRequest {
 			t.Fatalf("empty token body = %d", res.StatusCode)
 		}
 		var accounts struct {
@@ -69,13 +84,29 @@ func TestDEP(t *testing.T) {
 			}
 		}
 		decode(t, do(t, srv, "GET", "/admin/v1/dep/accounts", "t", nil), http.StatusOK, &accounts)
-		if len(accounts.Items) != 1 || accounts.Items[0].Name != "abm" || !accounts.Items[0].HasTokens {
+		if len(accounts.Items) != 1 || accounts.Items[0].Name != "abm" ||
+			!accounts.Items[0].HasTokens {
 			t.Fatalf("accounts = %+v", accounts)
 		}
 		// Devices arrive through sync; the profile is defined and assigned.
-		fake.AddDevices(dep.Device{SerialNumber: "SER1", DeviceFamily: "Mac"}, dep.Device{SerialNumber: "SER2", DeviceFamily: "iPad"})
+		fake.AddDevices(
+			dep.Device{SerialNumber: "SER1", DeviceFamily: "Mac"},
+			dep.Device{SerialNumber: "SER2", DeviceFamily: "iPad"},
+		)
 		var resp dep.ProfileResponse
-		decode(t, do(t, srv, "PUT", "/admin/v1/dep/accounts/abm/profile", "t", []byte(`{"profile_name":"Corp","org_magic":"m","is_supervised":true}`)), http.StatusOK, &resp)
+		decode(
+			t,
+			do(
+				t,
+				srv,
+				"PUT",
+				"/admin/v1/dep/accounts/abm/profile",
+				"t",
+				[]byte(`{"profile_name":"Corp","org_magic":"m","is_supervised":true}`),
+			),
+			http.StatusOK,
+			&resp,
+		)
 		if resp.ProfileUUID == "" {
 			t.Fatalf("profile = %+v", resp)
 		}
@@ -86,7 +117,12 @@ func TestDEP(t *testing.T) {
 			Sync   dep.SyncResult
 			Assign dep.AssignResult
 		}
-		decode(t, do(t, srv, "POST", "/admin/v1/dep/accounts/abm/sync", "t", nil), http.StatusOK, &run)
+		decode(
+			t,
+			do(t, srv, "POST", "/admin/v1/dep/accounts/abm/sync", "t", nil),
+			http.StatusOK,
+			&run,
+		)
 		if run.Sync.Added != 2 || run.Assign.Assigned != 2 {
 			t.Fatalf("sync and assign = %+v", run)
 		}
@@ -98,44 +134,118 @@ func TestDEP(t *testing.T) {
 		var devices struct {
 			Items []struct{ SerialNumber string }
 		}
-		decode(t, do(t, srv, "GET", "/admin/v1/dep/accounts/abm/devices?limit=1", "t", nil), http.StatusOK, &devices)
+		decode(
+			t,
+			do(t, srv, "GET", "/admin/v1/dep/accounts/abm/devices?limit=1", "t", nil),
+			http.StatusOK,
+			&devices,
+		)
 		if len(devices.Items) != 1 {
 			t.Fatalf("devices page = %+v", devices)
 		}
 		// Error mapping.
-		if res := do(t, srv, "POST", "/admin/v1/dep/accounts/nobody/sync", "t", nil); res.StatusCode != http.StatusNotFound {
+		if res := do(
+			t,
+			srv,
+			"POST",
+			"/admin/v1/dep/accounts/nobody/sync",
+			"t",
+			nil,
+		); res.StatusCode != http.StatusNotFound {
 			t.Fatalf("unknown account sync = %d", res.StatusCode)
 		}
-		if res := do(t, srv, "PUT", "/admin/v1/dep/accounts/abm/profile", "t", []byte(`{`)); res.StatusCode != http.StatusBadRequest {
+		if res := do(
+			t,
+			srv,
+			"PUT",
+			"/admin/v1/dep/accounts/abm/profile",
+			"t",
+			[]byte(`{`),
+		); res.StatusCode != http.StatusBadRequest {
 			t.Fatalf("bad profile body = %d", res.StatusCode)
 		}
-		if res := do(t, srv, "PUT", "/admin/v1/dep/accounts/abm/profile", "t", []byte(`{"profile_name":"","is_mdm_removable":false,"is_supervised":false}`)); res.StatusCode != http.StatusBadRequest {
+		if res := do(
+			t,
+			srv,
+			"PUT",
+			"/admin/v1/dep/accounts/abm/profile",
+			"t",
+			[]byte(`{"profile_name":"","is_mdm_removable":false,"is_supervised":false}`),
+		); res.StatusCode != http.StatusBadRequest {
 			t.Fatalf("invalid profile = %d", res.StatusCode)
 		}
-		if res := do(t, srv, "PUT", "/admin/v1/dep/accounts/abm/tokens", "t", []byte(`{`)); res.StatusCode != http.StatusBadRequest {
+		if res := do(
+			t,
+			srv,
+			"PUT",
+			"/admin/v1/dep/accounts/abm/tokens",
+			"t",
+			[]byte(`{`),
+		); res.StatusCode != http.StatusBadRequest {
 			t.Fatalf("bad tokens body = %d", res.StatusCode)
 		}
-		if res := do(t, srv, "GET", "/admin/v1/dep/accounts/nobody/devices", "t", nil); res.StatusCode != http.StatusOK && res.StatusCode != http.StatusNotFound {
+		if res := do(
+			t,
+			srv,
+			"GET",
+			"/admin/v1/dep/accounts/nobody/devices",
+			"t",
+			nil,
+		); res.StatusCode != http.StatusOK &&
+			res.StatusCode != http.StatusNotFound {
 			t.Fatalf("unknown account devices = %d", res.StatusCode)
 		}
 		fake.SetTermsNotSigned(true)
 		body, _ := json.Marshal(fake.Tokens())
-		if res := do(t, srv, "PUT", "/admin/v1/dep/accounts/other/tokens", "t", body); res.StatusCode != http.StatusBadRequest {
+		if res := do(
+			t,
+			srv,
+			"PUT",
+			"/admin/v1/dep/accounts/other/tokens",
+			"t",
+			body,
+		); res.StatusCode != http.StatusBadRequest {
 			t.Fatalf("terms not signed = %d", res.StatusCode)
 		}
 		fake.SetTermsNotSigned(false)
-		decode(t, do(t, srv, "PUT", "/admin/v1/dep/accounts/other/tokens", "t", body), http.StatusOK, &detail)
+		decode(
+			t,
+			do(t, srv, "PUT", "/admin/v1/dep/accounts/other/tokens", "t", body),
+			http.StatusOK,
+			&detail,
+		)
 		// Bodies that are not what the route expects.
-		if res := do(t, srv, "PUT", "/admin/v1/dep/accounts/abm/token", "t", []byte("not a p7m")); res.StatusCode < http.StatusBadRequest {
+		if res := do(
+			t,
+			srv,
+			"PUT",
+			"/admin/v1/dep/accounts/abm/token",
+			"t",
+			[]byte("not a p7m"),
+		); res.StatusCode < http.StatusBadRequest {
 			t.Fatalf("garbage p7m = %d", res.StatusCode)
 		}
 		big := bytes.Repeat([]byte("x"), app.MaxAdminBody+1)
 		for _, route := range []string{"tokens", "profile"} {
-			if res := do(t, srv, "PUT", "/admin/v1/dep/accounts/abm/"+route, "t", big); res.StatusCode != http.StatusRequestEntityTooLarge {
+			if res := do(
+				t,
+				srv,
+				"PUT",
+				"/admin/v1/dep/accounts/abm/"+route,
+				"t",
+				big,
+			); res.StatusCode != http.StatusRequestEntityTooLarge {
 				t.Fatalf("%s oversized = %d", route, res.StatusCode)
 			}
 		}
-		if res := do(t, srv, "PUT", "/admin/v1/dep/accounts/abm/token", "t", big); res.StatusCode != http.StatusBadRequest {
+		if res := do(
+			t,
+			srv,
+			"PUT",
+			"/admin/v1/dep/accounts/abm/token",
+			"t",
+			big,
+		); res.StatusCode != http.StatusBadRequest {
 			t.Fatalf("token oversized = %d", res.StatusCode)
 		}
 	})
@@ -145,12 +255,27 @@ func TestDEP(t *testing.T) {
 		fake := deptest.NewServer(deptest.Options{Clock: clk})
 		t.Cleanup(fake.Close)
 		failing := &deptest.Failing{Store: depinmem.New()}
-		a := build(t, app.Config{Role: app.RoleDDM, Storage: "inmem", AdminToken: "t", Clock: clk,
-			DEP: app.DEPConfig{BaseURL: fake.URL(), SyncInterval: time.Minute, ProfileURL: "https://mdm.example/enroll/ade", Store: failing}})
+		a := build(t, app.Config{
+			Role:       app.RoleDDM,
+			Storage:    "inmem",
+			AdminToken: "t",
+			Clock:      clk,
+			DEP: app.DEPConfig{
+				BaseURL:      fake.URL(),
+				SyncInterval: time.Minute,
+				ProfileURL:   "https://mdm.example/enroll/ade",
+				Store:        failing,
+			},
+		})
 		srv := serve(t, a)
 		body, _ := json.Marshal(fake.Tokens())
 		var detail dep.AccountDetail
-		decode(t, do(t, srv, "PUT", "/admin/v1/dep/accounts/abm/tokens", "t", body), http.StatusOK, &detail)
+		decode(
+			t,
+			do(t, srv, "PUT", "/admin/v1/dep/accounts/abm/tokens", "t", body),
+			http.StatusOK,
+			&detail,
+		)
 		profile := []byte(`{"profile_name":"Corp","org_magic":"m","is_supervised":true}`)
 		for _, c := range []struct {
 			method, path, fails string
@@ -163,7 +288,14 @@ func TestDEP(t *testing.T) {
 			{"PUT", "/admin/v1/dep/accounts/abm/profile", "PutAccount", profile},
 		} {
 			failing.SetFail(map[string]error{c.fails: boom})
-			if res := do(t, srv, c.method, c.path, "t", c.body); res.StatusCode != http.StatusInternalServerError {
+			if res := do(
+				t,
+				srv,
+				c.method,
+				c.path,
+				"t",
+				c.body,
+			); res.StatusCode != http.StatusInternalServerError {
 				t.Fatalf("%s %s with %s failing = %d", c.method, c.path, c.fails, res.StatusCode)
 			}
 		}
@@ -190,9 +322,14 @@ func TestDEP(t *testing.T) {
 	})
 	t.Run("BadBaseURL", func(t *testing.T) {
 		_, err := app.Build(ctx, app.Config{
-			Role: app.RoleDDM, Storage: "inmem", AdminToken: "t",
-			DDMSendKey: []byte("hop-send-key"), DDMRecvKey: []byte("hop-recv-key"),
-			DEP: app.DEPConfig{BaseURL: "not a url"},
+			Role:       app.RoleDDM,
+			Storage:    "inmem",
+			AdminToken: "t",
+			DDMSendKey: []byte(
+				"hop-send-key-0123456789012345678901",
+			),
+			DDMRecvKey: []byte("hop-recv-key-0123456789012345678901"),
+			DEP:        app.DEPConfig{BaseURL: "not a url"},
 		})
 		if err == nil || !strings.Contains(err.Error(), "DEP client") {
 			t.Fatalf("Build = %v", err)
@@ -223,7 +360,9 @@ func TestDEP(t *testing.T) {
 		if _, err := app.CertificateFromPEM([]byte("nope")); err == nil {
 			t.Fatal("no PEM accepted")
 		}
-		if _, err := app.CertificateFromPEM(pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: []byte{1}})); err == nil {
+		if _, err := app.CertificateFromPEM(
+			pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: []byte{1}}),
+		); err == nil {
 			t.Fatal("garbage certificate accepted")
 		}
 	})
@@ -231,12 +370,26 @@ func TestDEP(t *testing.T) {
 		clk := clock.NewFake(time.Date(2026, 9, 1, 12, 0, 0, 0, time.UTC))
 		fake := deptest.NewServer(deptest.Options{Clock: clk})
 		t.Cleanup(fake.Close)
-		a := build(t, app.Config{Role: app.RoleDDM, Storage: "inmem", AdminToken: "t", Clock: clk,
-			DEP: app.DEPConfig{BaseURL: fake.URL(), SyncInterval: time.Minute, ProfileURL: "https://mdm.example/enroll/ade"}})
+		a := build(t, app.Config{
+			Role:       app.RoleDDM,
+			Storage:    "inmem",
+			AdminToken: "t",
+			Clock:      clk,
+			DEP: app.DEPConfig{
+				BaseURL:      fake.URL(),
+				SyncInterval: time.Minute,
+				ProfileURL:   "https://mdm.example/enroll/ade",
+			},
+		})
 		srv := serve(t, a)
 		body, _ := json.Marshal(fake.Tokens())
 		var detail dep.AccountDetail
-		decode(t, do(t, srv, "PUT", "/admin/v1/dep/accounts/abm/tokens", "t", body), http.StatusOK, &detail)
+		decode(
+			t,
+			do(t, srv, "PUT", "/admin/v1/dep/accounts/abm/tokens", "t", body),
+			http.StatusOK,
+			&detail,
+		)
 		fake.AddDevices(dep.Device{SerialNumber: "SERW"})
 		// An account without tokens is skipped by the worker.
 		if err := a.DEPStoreForTests().PutAccount(ctx, &dep.Account{Name: "pending"}); err != nil {
@@ -285,30 +438,71 @@ func TestDEP(t *testing.T) {
 				return m[k]
 			}
 		}
-		cfg, err := app.ParseEnv(env(map[string]string{app.EnvDEPBaseURL: "https://dep.example", app.EnvDEPSyncInterval: "15m", app.EnvDEPUsePUT: "true"}))
-		if err != nil || cfg.DEP.BaseURL != "https://dep.example" || cfg.DEP.SyncInterval != 15*time.Minute || !cfg.DEP.UsePUT {
+		cfg, err := app.ParseEnv(
+			env(
+				map[string]string{
+					app.EnvDEPBaseURL:      "https://dep.example",
+					app.EnvDEPSyncInterval: "15m",
+					app.EnvDEPUsePUT:       "true",
+				},
+			),
+		)
+		if err != nil || cfg.DEP.BaseURL != "https://dep.example" ||
+			cfg.DEP.SyncInterval != 15*time.Minute ||
+			!cfg.DEP.UsePUT {
 			t.Fatalf("env = %+v %v", cfg.DEP, err)
 		}
-		if _, err := app.ParseEnv(env(map[string]string{app.EnvDEPSyncInterval: "soon"})); !errors.Is(err, app.ErrConfig) {
+		if _, err := app.ParseEnv(
+			env(map[string]string{app.EnvDEPSyncInterval: "soon"}),
+		); !errors.Is(
+			err,
+			app.ErrConfig,
+		) {
 			t.Fatal(err)
 		}
-		if _, err := app.ParseEnv(env(map[string]string{app.EnvDEPUsePUT: "maybe"})); !errors.Is(err, app.ErrConfig) {
+		if _, err := app.ParseEnv(
+			env(map[string]string{app.EnvDEPUsePUT: "maybe"}),
+		); !errors.Is(
+			err,
+			app.ErrConfig,
+		) {
 			t.Fatal(err)
 		}
 	})
 	t.Run("SQLiteStore", func(t *testing.T) {
 		fake := deptest.NewServer(deptest.Options{})
 		t.Cleanup(fake.Close)
-		a := build(t, app.Config{Role: app.RoleAll, Storage: "sqlite", DSN: t.TempDir() + "/dep.db", AdminToken: "t", DEP: app.DEPConfig{BaseURL: fake.URL()}})
+		a := build(
+			t,
+			app.Config{
+				Role:       app.RoleAll,
+				Storage:    "sqlite",
+				DSN:        t.TempDir() + "/dep.db",
+				AdminToken: "t",
+				DEP:        app.DEPConfig{BaseURL: fake.URL()},
+			},
+		)
 		srv := serve(t, a)
 		body, _ := json.Marshal(fake.Tokens())
 		var detail dep.AccountDetail
-		decode(t, do(t, srv, "PUT", "/admin/v1/dep/accounts/abm/tokens", "t", body), http.StatusOK, &detail)
+		decode(
+			t,
+			do(t, srv, "PUT", "/admin/v1/dep/accounts/abm/tokens", "t", body),
+			http.StatusOK,
+			&detail,
+		)
 		if !strings.Contains(detail.OrgName, "Deployment") {
 			t.Fatalf("detail = %+v", detail)
 		}
 		// Without a profile url the server's own ADE path is used.
-		if res := do(t, srv, "PUT", "/admin/v1/dep/accounts/abm/profile", "t", []byte(`{"org_magic":"m","is_supervised":true}`)); res.StatusCode == http.StatusInternalServerError {
+		if res := do(
+			t,
+			srv,
+			"PUT",
+			"/admin/v1/dep/accounts/abm/profile",
+			"t",
+			[]byte(`{"org_magic":"m","is_supervised":true}`),
+		); res.StatusCode == http.StatusInternalServerError {
 			t.Fatalf("default profile = %d", res.StatusCode)
 		}
 		// The worker is disabled at interval zero and stops cleanly.

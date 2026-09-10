@@ -59,6 +59,7 @@ func (f CSRVerifierFunc) VerifyCSR(ctx context.Context, csr *x509.CertificateReq
 // Server implements the SCEP operations. The RA (the certificate and key
 // devices encrypt the envelope to) must be RSA.
 type Server struct {
+	issuer            IssuanceFunc
 	signer            ca.Signer
 	raCert            *x509.Certificate
 	raKey             crypto.Signer
@@ -73,7 +74,7 @@ type Server struct {
 // Option configures the Server.
 type Option func(*Server)
 
-// WithChallenge sets the challenge provider (default: NoChallenge).
+// WithChallenge sets the required initial-issuance authorization policy.
 func WithChallenge(c Challenge) Option { return func(s *Server) { s.challenge = c } }
 
 // WithCSRVerifier sets the CSR verifier hook.
@@ -106,9 +107,12 @@ func NewServer(signer ca.Signer, raCert *x509.Certificate, raKey crypto.Signer, 
 	if _, ok := raKey.Public().(*rsa.PublicKey); !ok {
 		return nil, fmt.Errorf("%w: RA key must be RSA (devices encrypt the envelope to it)", ErrRA)
 	}
-	s := &Server{signer: signer, raCert: raCert, raKey: raKey, challenge: NoChallenge{}, log: slog.Default()}
+	s := &Server{signer: signer, raCert: raCert, raKey: raKey, log: slog.Default()}
 	for _, o := range opts {
 		o(s)
+	}
+	if s.challenge == nil {
+		return nil, fmt.Errorf("%w: explicit issuance policy required", ErrChallenge)
 	}
 	return s, nil
 }
@@ -159,10 +163,14 @@ func (s *Server) PKIOperation(ctx context.Context, body []byte) ([]byte, error) 
 			}
 		}
 	}
+	if err := ca.ValidateCSR(req.CSR, s.policy); err != nil {
+		return s.fail(msg, smallscep.BadRequest, err)
+	}
 	// A renewal is signed by the enrollment's current certificate for the
 	// same subject, so the challenge is skipped: that identity already proves
 	// possession. Every other request needs the challenge.
-	if !s.isRenewal(msg, p7.GetOnlySigner(), req.CSR) {
+	renewal := s.isRenewal(msg, p7.GetOnlySigner(), req.CSR)
+	if !renewal {
 		if err := s.challenge.Verify(ctx, req.ChallengePassword, req.CSR); err != nil {
 			return s.fail(msg, smallscep.BadRequest, err)
 		}
@@ -172,7 +180,15 @@ func (s *Server) PKIOperation(ctx context.Context, body []byte) ([]byte, error) 
 			return s.fail(msg, smallscep.BadRequest, fmt.Errorf("%w: %w", ErrCSR, err))
 		}
 	}
-	cert, err := s.signer.Sign(ctx, req.CSR, s.policy)
+	var cert *x509.Certificate
+	if renewal {
+		ctx = context.WithValue(ctx, renewalCertificateKey{}, p7.GetOnlySigner())
+	}
+	if s.issuer != nil {
+		cert, err = s.issuer(ctx, req.CSR, s.policy, req.ChallengePassword, renewal)
+	} else {
+		cert, err = s.signer.Sign(ctx, req.CSR, s.policy)
+	}
 	if err != nil {
 		return s.fail(msg, smallscep.BadRequest, fmt.Errorf("%w: %w", ErrIssue, err))
 	}
@@ -292,4 +308,19 @@ func decodeBase64(s string) ([]byte, error) {
 		return nil, fmt.Errorf("%w: %w", ErrOperation, err)
 	}
 	return b, nil
+}
+
+// IssuanceFunc performs durable issuance after CSR and credential verification.
+// renewal distinguishes an existing verified identity from a challenge grant.
+type IssuanceFunc func(context.Context, *x509.CertificateRequest, ca.Policy, string, bool) (*x509.Certificate, error)
+
+// WithIssuance configures durable, idempotent certificate issuance.
+func WithIssuance(f IssuanceFunc) Option { return func(s *Server) { s.issuer = f } }
+
+type renewalCertificateKey struct{}
+
+// RenewalCertificate returns the verified existing identity for a renewal issuer.
+func RenewalCertificate(ctx context.Context) *x509.Certificate {
+	c, _ := ctx.Value(renewalCertificateKey{}).(*x509.Certificate)
+	return c
 }

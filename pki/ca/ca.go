@@ -1,6 +1,7 @@
 package ca
 
 import (
+	"bytes"
 	"context"
 	"crypto"
 	"crypto/ecdsa"
@@ -177,8 +178,16 @@ func NewLocal(cert *x509.Certificate, key crypto.Signer, opts ...Option) (*Local
 	if cert == nil || key == nil {
 		return nil, errors.New("ca: certificate and key are required")
 	}
-	if !cert.IsCA {
+	if !cert.IsCA || !cert.BasicConstraintsValid || cert.KeyUsage&x509.KeyUsageCertSign == 0 {
 		return nil, errors.New("ca: certificate is not a CA")
+	}
+	certKey, err := x509.MarshalPKIXPublicKey(cert.PublicKey)
+	if err != nil {
+		return nil, fmt.Errorf("ca: public key: %w", err)
+	}
+	signerKey, err := x509.MarshalPKIXPublicKey(key.Public())
+	if err != nil || !bytes.Equal(certKey, signerKey) {
+		return nil, errors.New("ca: private key does not match certificate")
 	}
 	l := &Local{cert: cert, key: key, clock: clock.Real{}, random: rand.Reader}
 	for _, o := range opts {
@@ -197,38 +206,11 @@ func (l *Local) Chain() []*x509.Certificate {
 
 // Sign implements Signer.
 func (l *Local) Sign(ctx context.Context, csr *x509.CertificateRequest, p Policy) (*x509.Certificate, error) {
-	if csr == nil {
-		return nil, fmt.Errorf("%w: nil", ErrCSR)
-	}
-	if err := csr.CheckSignature(); err != nil {
-		return nil, fmt.Errorf("%w: %w", ErrCSR, err)
+	keyUsage, err := validateCSR(csr, p)
+	if err != nil {
+		return nil, err
 	}
 	p = p.withDefaults()
-	keyUsage := p.KeyUsage
-	switch pub := csr.PublicKey.(type) {
-	case *rsa.PublicKey:
-		if pub.N.BitLen() < p.MinRSABits {
-			return nil, fmt.Errorf("%w: RSA key is %d bits, minimum %d", ErrPolicy, pub.N.BitLen(), p.MinRSABits)
-		}
-		if keyUsage == 0 {
-			keyUsage = x509.KeyUsageDigitalSignature | x509.KeyUsageKeyEncipherment
-		}
-	case *ecdsa.PublicKey:
-		if keyUsage == 0 {
-			keyUsage = x509.KeyUsageDigitalSignature
-		}
-	default:
-		return nil, fmt.Errorf("%w: unsupported key type %T", ErrPolicy, csr.PublicKey)
-	}
-	if len(p.AllowedKeys) > 0 {
-		kind, known := KindOf(csr.PublicKey)
-		if !known || !slices.Contains(p.AllowedKeys, kind) {
-			return nil, fmt.Errorf("%w: key %q is not among the allowed kinds %v", ErrPolicy, kind, p.AllowedKeys)
-		}
-	}
-	if !p.AllowSANs && (len(csr.DNSNames) > 0 || len(csr.EmailAddresses) > 0 || len(csr.IPAddresses) > 0 || len(csr.URIs) > 0) {
-		return nil, fmt.Errorf("%w: subject alternative names not allowed", ErrPolicy)
-	}
 	serial, err := SerialFrom(l.random)
 	if err != nil {
 		return nil, err
@@ -241,6 +223,12 @@ func (l *Local) Sign(ctx context.Context, csr *x509.CertificateRequest, p Policy
 	notAfter := now.Add(p.Validity)
 	if !p.NotAfter.IsZero() && p.NotAfter.Before(notAfter) {
 		notAfter = p.NotAfter
+	}
+	if now.Before(l.cert.NotBefore) || !now.Before(l.cert.NotAfter) {
+		return nil, fmt.Errorf("%w: issuer outside validity", ErrPolicy)
+	}
+	if notAfter.After(l.cert.NotAfter) {
+		notAfter = l.cert.NotAfter
 	}
 	if !notAfter.After(now) {
 		return nil, fmt.Errorf("%w: NotAfter %s has already passed", ErrPolicy, p.NotAfter.UTC())
@@ -255,6 +243,9 @@ func (l *Local) Sign(ctx context.Context, csr *x509.CertificateRequest, p Policy
 		BasicConstraintsValid: true,
 		CRLDistributionPoints: slices.Clone(p.CRLDistributionPoints),
 		OCSPServer:            slices.Clone(p.OCSPServer),
+	}
+	if tmpl.NotBefore.Before(l.cert.NotBefore) {
+		tmpl.NotBefore = l.cert.NotBefore
 	}
 	switch {
 	case len(p.OtherNames) > 0:
@@ -400,4 +391,46 @@ func NewSelfSigned(o SelfSignedOptions) (*x509.Certificate, *rsa.PrivateKey, err
 		return nil, nil, fmt.Errorf("ca: parse certificate: %w", err)
 	}
 	return cert, key, nil
+}
+
+// ValidateCSR checks the CSR signature and key/subject policy before consuming authorization.
+func ValidateCSR(csr *x509.CertificateRequest, p Policy) error {
+	_, err := validateCSR(csr, p)
+	return err
+}
+
+func validateCSR(csr *x509.CertificateRequest, p Policy) (x509.KeyUsage, error) {
+	if csr == nil {
+		return 0, fmt.Errorf("%w: nil", ErrCSR)
+	}
+	if err := csr.CheckSignature(); err != nil {
+		return 0, fmt.Errorf("%w: %w", ErrCSR, err)
+	}
+	p = p.withDefaults()
+	keyUsage := p.KeyUsage
+	switch pub := csr.PublicKey.(type) {
+	case *rsa.PublicKey:
+		if pub.N.BitLen() < p.MinRSABits {
+			return 0, fmt.Errorf("%w: RSA key is %d bits, minimum %d", ErrPolicy, pub.N.BitLen(), p.MinRSABits)
+		}
+		if keyUsage == 0 {
+			keyUsage = x509.KeyUsageDigitalSignature | x509.KeyUsageKeyEncipherment
+		}
+	case *ecdsa.PublicKey:
+		if keyUsage == 0 {
+			keyUsage = x509.KeyUsageDigitalSignature
+		}
+	default:
+		return 0, fmt.Errorf("%w: unsupported key type %T", ErrPolicy, csr.PublicKey)
+	}
+	if len(p.AllowedKeys) > 0 {
+		kind, known := KindOf(csr.PublicKey)
+		if !known || !slices.Contains(p.AllowedKeys, kind) {
+			return 0, fmt.Errorf("%w: key %q is not among the allowed kinds %v", ErrPolicy, kind, p.AllowedKeys)
+		}
+	}
+	if !p.AllowSANs && (len(csr.DNSNames) > 0 || len(csr.EmailAddresses) > 0 || len(csr.IPAddresses) > 0 || len(csr.URIs) > 0) {
+		return 0, fmt.Errorf("%w: subject alternative names not allowed", ErrPolicy)
+	}
+	return keyUsage, nil
 }

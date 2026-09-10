@@ -43,6 +43,7 @@ func (e *Environment) acmeDevice(
 		simulator.WithClient(e.Client),
 		simulator.WithACME(simulator.ACMEOptions{Attestation: authority, Faults: faults}),
 	)
+	d.SerialNumber = benchSerial
 	req, _ := json.Marshal(map[string]string{"DeviceID": d.UDID, "Serial": d.SerialNumber})
 	raw, _, err := HTTP(
 		ctx,
@@ -280,15 +281,35 @@ func userChannels(ctx context.Context, e *Environment, _ string) error {
 }
 
 func sharedIPad(ctx context.Context, e *Environment, _ string) error {
-	d, err := e.device(ctx)
+	d, err := e.device(ctx, func(d *simulator.Device) {
+		d.Model, d.ModelName, d.ProductName, d.OSVersion = "iPad", "iPad Pro", "iPad14,1", "18.4"
+	})
 	if err != nil {
+		return err
+	}
+	d.Responder = func(cmd *mdm.Command) simulator.Reply {
+		reply := simulator.AcknowledgeAll(cmd)
+		if cmd.RequestType == "DeviceInformation" {
+			reply.Payload = &commands.DeviceInformationResponse{
+				QueryResponses: commands.DeviceInformationResponseQueryResponses{
+					IsSupervised: new(true),
+				},
+			}
+		}
+		return reply
+	}
+	if _, err = enqueue(
+		ctx,
+		e,
+		d,
+		&commands.DeviceInformation{Queries: []string{"IsSupervised"}},
+	); err != nil {
+		return err
+	}
+	if _, err = d.Connect(ctx); err != nil {
 		return wrapError(err)
 	}
-	// Authenticate again with the same identity to report the iPad inventory.
-	d.Model, d.ModelName, d.ProductName, d.OSVersion = "iPad", "iPad Pro", "iPad14,1", "18.4"
-	if err = d.Enroll(ctx); err != nil {
-		return wrapError(err)
-	}
+
 	user := d.SharedIPadUser("student1", "Student One")
 	if err = user.TokenUpdate(ctx); err != nil {
 		return wrapError(err)

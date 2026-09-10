@@ -53,7 +53,7 @@ func (s *Store) get(id mdm.EnrollmentID) (*record, error) {
 		return nil, fmt.Errorf("%w: %w", storage.ErrInvalid, err)
 	}
 	r, ok := s.enrollments[id.ID]
-	if !ok {
+	if !ok || r.ID != id {
 		return nil, fmt.Errorf("%w: enrollment %s", storage.ErrNotFound, id.ID)
 	}
 	return r, nil
@@ -67,10 +67,26 @@ func (s *Store) UpsertAuthenticate(_ context.Context, id mdm.EnrollmentID, msg *
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	r, ok := s.enrollments[id.ID]
+	if ok && r.ID != id {
+		return storage.ErrConflict
+	}
+	if id.Channel.IsUser() {
+		parent, err := s.deviceRecordLocked(id)
+		if err != nil {
+			return err
+		}
+		if !parent.DisabledAt.IsZero() {
+			return storage.ErrDisabled
+		}
+	}
 	if !ok {
 		r = &record{}
 		s.enrollments[id.ID] = r
 	}
+	return s.resetAuthenticateLocked(r, id, msg, raw, at)
+}
+
+func (s *Store) resetAuthenticateLocked(r *record, id mdm.EnrollmentID, msg *checkin.Authenticate, raw []byte, at time.Time) error {
 	// Reset everything the previous identity owned.
 	for _, q := range r.queue {
 		if !q.State.Terminal() {
@@ -99,9 +115,10 @@ func (s *Store) UpsertAuthenticate(_ context.Context, id mdm.EnrollmentID, msg *
 // disableChildrenLocked disables every enabled user channel of a device.
 func (s *Store) disableChildrenLocked(deviceID string, at time.Time) {
 	for _, child := range s.enrollments {
-		if child.ID.ParentID == deviceID && child.Enabled {
+		if child.ID.ParentID == deviceID {
 			child.Enabled = false
 			child.DisabledAt = at
+			clearPendingLocked(child, at)
 		}
 	}
 }
@@ -124,6 +141,18 @@ func (s *Store) StoreTokenUpdate(_ context.Context, id mdm.EnrollmentID, push md
 	r, err := s.get(id)
 	if err != nil {
 		return err
+	}
+	if !r.DisabledAt.IsZero() {
+		return storage.ErrDisabled
+	}
+	if id.Channel.IsUser() {
+		parent, err := s.deviceRecordLocked(id)
+		if err != nil {
+			return err
+		}
+		if !parent.DisabledAt.IsZero() {
+			return storage.ErrDisabled
+		}
 	}
 	r.Push = mdm.Push{Topic: push.Topic, Token: append([]byte(nil), push.Token...), Magic: push.Magic}
 	if len(raw) > 0 {
@@ -161,6 +190,7 @@ func (s *Store) Disable(_ context.Context, id mdm.EnrollmentID, at time.Time) er
 	}
 	r.Enabled = false
 	r.DisabledAt = at
+	clearPendingLocked(r, at)
 	if !id.Channel.IsUser() {
 		s.disableChildrenLocked(id.ID, at)
 	}
@@ -255,9 +285,20 @@ func (s *Store) Enqueue(_ context.Context, ids []mdm.EnrollmentID, cmd *mdm.Comm
 			res.Skipped[id] = err
 			continue
 		}
-		if !r.Enabled {
+		if !r.Enabled || !r.DisabledAt.IsZero() {
 			res.Skipped[id] = fmt.Errorf("%w: %s", storage.ErrDisabled, id.ID)
 			continue
+		}
+		if id.Channel.IsUser() {
+			parent, err := s.get(id.Device())
+			if err != nil {
+				res.Skipped[id] = err
+				continue
+			}
+			if !parent.Enabled || !parent.DisabledAt.IsZero() {
+				res.Skipped[id] = storage.ErrDisabled
+				continue
+			}
 		}
 		if o.DedupeKey != "" && hasPendingKey(r, o.DedupeKey) {
 			res.Skipped[id] = fmt.Errorf("%w: pending command with dedupe key %q", storage.ErrConflict, o.DedupeKey)
@@ -287,6 +328,18 @@ func (s *Store) Next(_ context.Context, id mdm.EnrollmentID, skipNotNow bool, no
 	r, err := s.get(id)
 	if err != nil {
 		return nil, err
+	}
+	if !r.Enabled || !r.DisabledAt.IsZero() {
+		return nil, storage.ErrDisabled
+	}
+	if id.Channel.IsUser() {
+		parent, err := s.get(id.Device())
+		if err != nil {
+			return nil, err
+		}
+		if !parent.Enabled || !parent.DisabledAt.IsZero() {
+			return nil, storage.ErrDisabled
+		}
 	}
 	for _, q := range r.queue {
 		switch q.State {
@@ -319,6 +372,18 @@ func (s *Store) StoreResult(_ context.Context, id mdm.EnrollmentID, resp *mdm.Re
 	if err != nil {
 		return err
 	}
+	if !r.Enabled || !r.DisabledAt.IsZero() {
+		return storage.ErrDisabled
+	}
+	if id.Channel.IsUser() {
+		parent, err := s.get(id.Device())
+		if err != nil {
+			return err
+		}
+		if !parent.Enabled || !parent.DisabledAt.IsZero() {
+			return storage.ErrDisabled
+		}
+	}
 	for _, q := range r.queue {
 		if q.Command.UUID != resp.CommandUUID || q.State.Terminal() {
 			continue
@@ -337,6 +402,7 @@ func (s *Store) StoreResult(_ context.Context, id mdm.EnrollmentID, resp *mdm.Re
 			q.State = storage.StateError
 			q.CompletedAt = now
 		}
+		r.Capabilities = storage.CapabilitiesFromResult(r.Capabilities, id, q.Command.RequestType, resp, now)
 		return nil
 	}
 	return fmt.Errorf("%w: no open command %s", storage.ErrNotFound, resp.CommandUUID)
@@ -426,7 +492,7 @@ func (s *Store) PushInfo(_ context.Context, ids []mdm.EnrollmentID) (map[mdm.Enr
 	out := map[mdm.EnrollmentID]mdm.Push{}
 	for _, id := range ids {
 		r, ok := s.enrollments[id.ID]
-		if !ok || !r.Enabled || !r.Push.Valid() {
+		if !ok || r.ID != id || !r.Enabled || !r.Push.Valid() {
 			continue
 		}
 		out[id] = mdm.Push{Topic: r.Push.Topic, Token: append([]byte(nil), r.Push.Token...), Magic: r.Push.Magic}
@@ -442,7 +508,7 @@ func (s *Store) AssociateCert(_ context.Context, id mdm.EnrollmentID, hash strin
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	dev := id.Device()
-	r, err := s.get(dev)
+	r, err := s.deviceRecordLocked(id)
 	if err != nil {
 		return err
 	}
@@ -492,7 +558,7 @@ func (s *Store) CertHistory(_ context.Context, id mdm.EnrollmentID) ([]storage.C
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	dev := id.Device()
-	if _, err := s.get(dev); err != nil {
+	if _, err := s.deviceRecordLocked(id); err != nil {
 		return nil, err
 	}
 	return s.historyLocked(func(a storage.CertAssociation) bool { return a.ID.ID == dev.ID }), nil
@@ -512,7 +578,7 @@ func (s *Store) CertHashHistory(_ context.Context, hash string) ([]storage.CertA
 func (s *Store) CertHash(_ context.Context, id mdm.EnrollmentID) (string, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	r, err := s.get(id.Device())
+	r, err := s.deviceRecordLocked(id)
 	if err != nil {
 		return "", err
 	}
@@ -538,9 +604,12 @@ func (s *Store) StoreBootstrapToken(_ context.Context, id mdm.EnrollmentID, toke
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	dev := id.Device()
-	r, err := s.get(dev)
+	r, err := s.deviceRecordLocked(id)
 	if err != nil {
 		return err
+	}
+	if !r.DisabledAt.IsZero() {
+		return storage.ErrDisabled
 	}
 	s.bootstrap[dev.ID] = append([]byte(nil), token...)
 	r.BootstrapTokenAt = at
@@ -552,8 +621,12 @@ func (s *Store) BootstrapToken(_ context.Context, id mdm.EnrollmentID) ([]byte, 
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	dev := id.Device()
-	if _, err := s.get(dev); err != nil {
+	r, err := s.deviceRecordLocked(id)
+	if err != nil {
 		return nil, err
+	}
+	if !r.DisabledAt.IsZero() {
+		return nil, storage.ErrDisabled
 	}
 	tok, ok := s.bootstrap[dev.ID]
 	if !ok {

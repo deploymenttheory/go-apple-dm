@@ -1,7 +1,6 @@
 package bench
 
 import (
-	"bytes"
 	"context"
 	"crypto"
 	"crypto/tls"
@@ -111,7 +110,9 @@ func appSend(ctx context.Context, e *Environment, kind string) error {
 				return wrapError(err)
 			}
 			for _, file := range files {
-				b, err := os.ReadFile(file)
+				b, err := os.ReadFile(
+					file,
+				) // #nosec G304 -- Receipt glob is confined to the operator-owned bench workspace.
 				if err != nil {
 					continue
 				}
@@ -298,24 +299,5 @@ func liveMDM(ctx context.Context, e *Environment, device string) error {
 
 // Profile requests the actual configured enrollment service and writes a new file.
 func Profile(ctx context.Context, e *Environment, device, destination string) error {
-	if device == "" {
-		return fmt.Errorf("%w: -device-id is required", errOperation)
-	}
-	b, err := json.Marshal(map[string]string{"DeviceID": device})
-	if err != nil {
-		return wrapError(err)
-	}
-	profile, _, err := HTTP(
-		ctx,
-		e.Client,
-		e.URL,
-		e.Token,
-		"POST",
-		"/enrollment-profiles",
-		bytes.NewReader(b),
-	)
-	if err != nil {
-		return wrapError(err)
-	}
-	return privateFile(destination, profile)
+	return ProfileWithIdentity(ctx, e, device, "", destination)
 }

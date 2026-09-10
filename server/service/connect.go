@@ -14,13 +14,21 @@ import (
 // response (unless Idle) and returns the next command to deliver, or nil
 // when the queue is empty. A NotNow response skips other NotNow commands
 // for this connection, as Apple recommends.
-func (c *Core) Connect(ctx context.Context, r *mdm.Request, resp *mdm.Response) (*mdm.Command, error) {
+func (c *Core) Connect(
+	ctx context.Context,
+	r *mdm.Request,
+	resp *mdm.Response,
+) (*mdm.Command, error) {
 	if r == nil || resp == nil {
-		return nil, wrapCode(CodeBadRequest, fmt.Errorf("%w: nil request or response", ErrInvalidMessage))
+		return nil, wrapCode(
+			CodeBadRequest,
+			fmt.Errorf("%w: nil request or response", ErrInvalidMessage),
+		)
 	}
 	r.ID = resp.ID
 	if c.certificateStatus != nil {
 		if err := c.certificateStatus(ctx, r.Certificate); err != nil {
+			c.publish(ctx, event.CertificateStatusRejected, r.ID, "device", nil)
 			return nil, wrapCode(CodeForbidden, err)
 		}
 	}

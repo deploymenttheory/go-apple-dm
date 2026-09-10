@@ -6,9 +6,9 @@ The current identity pin and the record of previously used certificates serve di
 
 ## Decision
 
-`AssociateCert` writes the active pin and an append-only history row in one transaction. History survives re-enrollment and can be queried by enrollment or certificate hash. User channels resolve certificate history through their parent device.
+`AuthenticateEnrollment` validates the expected pin, checks history/reuse and commits reset, active pin and history in one transaction. Identical-certificate retries preserve state. `AssociateCert` is a trusted storage API which also records history atomically. History survives re-enrollment and can be queried by enrollment or certificate hash. User channels resolve certificate history through their parent device.
 
-`CertReusePolicy` governs certificates found in another enrollment's history. `DenyCertReuse` is the default; `AllowCertReuse` permits historical reuse but cannot override another enrollment's live pin. Retroactive pinning accepts only hashes unseen on other enrollments. Conflicting live pins return a typed storage conflict mapped to a forbidden service response.
+`CertReusePolicy` governs certificates found in another enrollment's history. `DenyCertReuse` is the default; `AllowCertReuse` permits historical reuse but cannot override another enrollment's live pin. Polling cannot retroactively pin an unassociated identity. Both the service and reference server deny changed-certificate reenrollment by default. Conflicting live pins return a typed storage conflict mapped to a forbidden service response.
 
 ## Rationale
 
@@ -16,11 +16,11 @@ Separate historical and active associations allow explicit rotation/reuse policy
 
 ## Constraints
 
-`PinOff` skips the service's reuse policy. Certificate history does not itself revoke certificates or establish a Managed Apple Account association. Account-driven issuance associations and optional status enforcement are separate controls (record 0047).
+`PinOff` skips the service's reuse policy. Certificate history does not itself revoke certificates or establish a Managed Apple Account association. Account-driven issuance associations and default reference status enforcement are separate controls (record 0047).
 
 ## Verification
 
-Storage suites cover history ordering, reverse lookup, user-channel resolution and competing pin writes. Service tests cover denied/allowed reuse, retroactive pins, pin modes and storage errors.
+Storage suites cover history ordering, reverse lookup, user-channel resolution and competing pin writes. Service tests cover denied/allowed reuse, rejected unpinned requests, pin modes and storage errors.
 
 ## References
 

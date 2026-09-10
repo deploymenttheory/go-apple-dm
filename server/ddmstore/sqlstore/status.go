@@ -47,16 +47,27 @@ func validStatusUpdate(u ddm.StatusUpdate) error {
 
 // PutStatus implements ddm.StatusStore. Every error row takes the report's
 // ReceivedAt.
-func (t *txStore) PutStatus(ctx context.Context, id mdm.EnrollmentID, u ddm.StatusUpdate) (ddm.StatusOutcome, error) {
-	if err := validID(id); err != nil {
+func (t *txStore) PutStatus(
+	ctx context.Context,
+	id mdm.EnrollmentID,
+	u ddm.StatusUpdate,
+) (ddm.StatusOutcome, error) {
+	if err := t.validID(ctx, id); err != nil {
 		return ddm.StatusOutcome{}, err
 	}
 	if err := validStatusUpdate(u); err != nil {
 		return ddm.StatusOutcome{}, err
 	}
 	at := utc(u.ReceivedAt)
-	seq, err := t.insertSeq(ctx, "insert status report", "INSERT INTO ddm_status_reports (enrollment_id, full_report, raw, received_at) VALUES (?, ?, ?, ?)",
-		id.ID, u.FullReport, nullBytes(u.Raw), at)
+	seq, err := t.insertSeq(
+		ctx,
+		"insert status report",
+		"INSERT INTO ddm_status_reports (enrollment_id, full_report, raw, received_at) VALUES (?, ?, ?, ?)",
+		id.ID,
+		u.FullReport,
+		nullBytes(u.Raw),
+		at,
+	)
 	if err != nil {
 		return ddm.StatusOutcome{}, err
 	}
@@ -68,8 +79,15 @@ func (t *txStore) PutStatus(ctx context.Context, id mdm.EnrollmentID, u ddm.Stat
 		return ddm.StatusOutcome{}, err
 	}
 	for _, e := range u.Errors {
-		if _, err := t.exec(ctx, "insert status error", "INSERT INTO ddm_status_errors (enrollment_id, status_item, reasons, received_at) VALUES (?, ?, ?, ?)",
-			id.ID, e.StatusItem, nullBytes(e.Reasons), at); err != nil {
+		if _, err := t.exec(
+			ctx,
+			"insert status error",
+			"INSERT INTO ddm_status_errors (enrollment_id, status_item, reasons, received_at) VALUES (?, ?, ?, ?)",
+			id.ID,
+			e.StatusItem,
+			nullBytes(e.Reasons),
+			at,
+		); err != nil {
 			return ddm.StatusOutcome{}, err
 		}
 	}
@@ -172,19 +190,28 @@ func (t *txStore) pruneReports(ctx context.Context, key string, keep int) (int64
 }
 
 // DeclarationStatus implements ddm.StatusStore.
-func (t *txStore) DeclarationStatus(ctx context.Context, id mdm.EnrollmentID) ([]ddm.DeclarationStatus, error) {
-	if err := validID(id); err != nil {
+func (t *txStore) DeclarationStatus(
+	ctx context.Context,
+	id mdm.EnrollmentID,
+) ([]ddm.DeclarationStatus, error) {
+	if err := t.validID(ctx, id); err != nil {
 		return nil, err
 	}
 	out := make([]ddm.DeclarationStatus, 0)
-	err := t.each(ctx, "declaration status", "SELECT "+statusCols+" FROM ddm_status_declarations WHERE enrollment_id = ? ORDER BY kind, identifier", []any{id.ID}, func(rows *sql.Rows) error {
-		var d ddm.DeclarationStatus
-		if err := scanStatus(rows, &d); err != nil {
-			return err
-		}
-		out = append(out, d)
-		return nil
-	})
+	err := t.each(
+		ctx,
+		"declaration status",
+		"SELECT "+statusCols+" FROM ddm_status_declarations WHERE enrollment_id = ? ORDER BY kind, identifier",
+		[]any{id.ID},
+		func(rows *sql.Rows) error {
+			var d ddm.DeclarationStatus
+			if err := scanStatus(rows, &d); err != nil {
+				return err
+			}
+			out = append(out, d)
+			return nil
+		},
+	)
 	return out, err
 }
 
@@ -213,16 +240,37 @@ func (t *txStore) DeclarationStatusByIdentifier(ctx context.Context, identifier 
 // StatusValues implements ddm.StatusStore. PathPrefix is a plain string
 // prefix (compared by SUBSTR, so pattern characters mean nothing) and the
 // cursor is the last path of the previous page.
-func (t *txStore) StatusValues(ctx context.Context, id mdm.EnrollmentID, q ddm.StatusValueQuery, p paging.Page) (paging.Result[ddm.StatusValue], error) {
-	if err := validID(id); err != nil {
+func (t *txStore) StatusValues(
+	ctx context.Context,
+	id mdm.EnrollmentID,
+	q ddm.StatusValueQuery,
+	p paging.Page,
+) (paging.Result[ddm.StatusValue], error) {
+	if err := t.validID(ctx, id); err != nil {
 		return paging.Result[ddm.StatusValue]{}, err
 	}
 	where, args := []string{"enrollment_id = ?"}, []any{id.ID}
 	if q.PathPrefix != "" {
-		where, args = append(where, "SUBSTR(path, 1, ?) = ?"), append(args, utf8.RuneCountInString(q.PathPrefix), q.PathPrefix)
+		where, args = append(
+			where,
+			"SUBSTR(path, 1, ?) = ?",
+		), append(
+			args,
+			utf8.RuneCountInString(q.PathPrefix),
+			q.PathPrefix,
+		)
 	}
 	where, args = after(where, args, "path", p)
-	return keyset(ctx, t, "status values", "SELECT path, value, first_seen, last_seen FROM ddm_status_values WHERE "+strings.Join(where, " AND ")+" ORDER BY path", args, p,
+	return keyset(
+		ctx,
+		t,
+		"status values",
+		"SELECT path, value, first_seen, last_seen FROM ddm_status_values WHERE "+strings.Join(
+			where,
+			" AND ",
+		)+" ORDER BY path",
+		args,
+		p,
 		func(rows *sql.Rows) (ddm.StatusValue, string, error) {
 			var v ddm.StatusValue
 			if err := rows.Scan(&v.Path, &v.Value, &v.FirstSeen, &v.LastSeen); err != nil {
@@ -230,12 +278,20 @@ func (t *txStore) StatusValues(ctx context.Context, id mdm.EnrollmentID, q ddm.S
 			}
 			v.FirstSeen, v.LastSeen = v.FirstSeen.UTC(), v.LastSeen.UTC()
 			return v, v.Path, nil
-		})
+		},
+	)
 }
 
 // bySeq pages an enrollment's rows newest first.
-func bySeq[T any](ctx context.Context, t *txStore, op, table, cols string, id mdm.EnrollmentID, p paging.Page, scan func(*sql.Rows) (T, int64, error)) (paging.Result[T], error) {
-	if err := validID(id); err != nil {
+func bySeq[T any](
+	ctx context.Context,
+	t *txStore,
+	op, table, cols string,
+	id mdm.EnrollmentID,
+	p paging.Page,
+	scan func(*sql.Rows) (T, int64, error),
+) (paging.Result[T], error) {
+	if err := t.validID(ctx, id); err != nil {
 		return paging.Result[T]{}, err
 	}
 	where, args := []string{"enrollment_id = ?"}, []any{id.ID}
@@ -246,11 +302,18 @@ func bySeq[T any](ctx context.Context, t *txStore, op, table, cols string, id md
 	if ok {
 		where, args = append(where, "seq < ?"), append(args, before)
 	}
-	return keyset(ctx, t, op, "SELECT "+cols+" FROM "+table+" WHERE "+strings.Join(where, " AND ")+" ORDER BY seq DESC", args, p, // #nosec G202 -- table and column names are literals
+	return keyset(
+		ctx,
+		t,
+		op,
+		"SELECT "+cols+" FROM "+table+" WHERE "+strings.Join(where, " AND ")+" ORDER BY seq DESC",
+		args,
+		p, // #nosec G202 -- table and column names are literals
 		func(rows *sql.Rows) (T, string, error) {
 			item, seq, err := scan(rows)
 			return item, strconv.FormatInt(seq, 10), err
-		})
+		},
+	)
 }
 
 // StatusErrors implements ddm.StatusStore.

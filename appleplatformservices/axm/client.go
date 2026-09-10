@@ -186,6 +186,12 @@ func New(ctx context.Context, cfg Config) (*Client, error) {
 		cfg.UserAgent = DefaultUserAgent
 	}
 	cfg.PrivateKey, cfg.PrivateKeyPEM = nil, nil
+	clone := *cfg.HTTPClient
+	clone.CheckRedirect = func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }
+	if clone.Timeout <= 0 {
+		clone.Timeout = 60 * time.Second
+	}
+	cfg.HTTPClient = &clone
 	return &Client{cfg: cfg, key: key, base: base, http: cfg.HTTPClient, clock: cfg.Clock, log: cfg.Logger}, nil
 }
 

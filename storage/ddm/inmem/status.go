@@ -55,7 +55,7 @@ func validStatusUpdate(u ddm.StatusUpdate) error {
 // PutStatus implements ddm.StatusStore. Every error row takes the report's
 // ReceivedAt.
 func (t *tx) PutStatus(_ context.Context, id mdm.EnrollmentID, u ddm.StatusUpdate) (ddm.StatusOutcome, error) {
-	if err := validID(id); err != nil {
+	if err := t.validID(id); err != nil {
 		return ddm.StatusOutcome{}, err
 	}
 	if err := validStatusUpdate(u); err != nil {
@@ -159,7 +159,7 @@ func (t *tx) pruneReports(key string, keep int) int64 {
 
 // DeclarationStatus implements ddm.StatusStore.
 func (t *tx) DeclarationStatus(_ context.Context, id mdm.EnrollmentID) ([]ddm.DeclarationStatus, error) {
-	if err := validID(id); err != nil {
+	if err := t.validID(id); err != nil {
 		return nil, err
 	}
 	rows := t.st.statusDecls[id.ID]
@@ -207,7 +207,7 @@ func (t *tx) DeclarationStatusByIdentifier(_ context.Context, identifier string,
 // StatusValues implements ddm.StatusStore. PathPrefix is a plain string
 // prefix and the cursor is the last path of the previous page.
 func (t *tx) StatusValues(_ context.Context, id mdm.EnrollmentID, q ddm.StatusValueQuery, p paging.Page) (paging.Result[ddm.StatusValue], error) {
-	if err := validID(id); err != nil {
+	if err := t.validID(id); err != nil {
 		return paging.Result[ddm.StatusValue]{}, err
 	}
 	rows := t.st.statusValues[id.ID]
@@ -222,7 +222,7 @@ func (t *tx) StatusValues(_ context.Context, id mdm.EnrollmentID, q ddm.StatusVa
 
 // StatusErrors implements ddm.StatusStore.
 func (t *tx) StatusErrors(_ context.Context, id mdm.EnrollmentID, p paging.Page) (paging.Result[ddm.StatusError], error) {
-	if err := validID(id); err != nil {
+	if err := t.validID(id); err != nil {
 		return paging.Result[ddm.StatusError]{}, err
 	}
 	bySeq := map[int64]ddm.StatusError{}
@@ -234,7 +234,7 @@ func (t *tx) StatusErrors(_ context.Context, id mdm.EnrollmentID, p paging.Page)
 
 // StatusReports implements ddm.StatusStore.
 func (t *tx) StatusReports(_ context.Context, id mdm.EnrollmentID, p paging.Page) (paging.Result[ddm.StatusReportRecord], error) {
-	if err := validID(id); err != nil {
+	if err := t.validID(id); err != nil {
 		return paging.Result[ddm.StatusReportRecord]{}, err
 	}
 	bySeq := map[int64]ddm.StatusReportRecord{}

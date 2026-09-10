@@ -12,14 +12,17 @@ import (
 	"strings"
 	"time"
 
+	"github.com/deploymenttheory/go-apple-dm/appleplatformservices/dep"
 	"github.com/deploymenttheory/go-apple-dm/mdmprotocol/cms"
 	"github.com/deploymenttheory/go-apple-dm/mdmprotocol/enroll"
+	"github.com/deploymenttheory/go-apple-dm/mdmprotocol/enroll/webauth"
 	"github.com/deploymenttheory/go-apple-dm/paging"
 	"github.com/deploymenttheory/go-apple-dm/pki/acme"
 	"github.com/deploymenttheory/go-apple-dm/pki/acme/attest"
 	"github.com/deploymenttheory/go-apple-dm/schema/ddm"
 	acmesql "github.com/deploymenttheory/go-apple-dm/server/acmestore/sqlstore"
 	"github.com/deploymenttheory/go-apple-dm/server/httpapi"
+	"github.com/deploymenttheory/go-apple-dm/storage"
 	acmeinmem "github.com/deploymenttheory/go-apple-dm/storage/acme/inmem"
 )
 
@@ -135,7 +138,16 @@ func (a *App) newACME(ctx context.Context, e *enrollment) (*acmeService, error) 
 		CAPolicy:    a.issuancePolicy(e),
 		Revocations: a.acmeRevocations(),
 		Identifiers: identifiers,
-		Authorize:   policy,
+		Authorize: acme.Chain(
+			policy,
+			acme.PolicyFunc(func(ctx context.Context, d *acme.Decision) error {
+				_, err := e.admit(ctx, d.Binding)
+				if errors.Is(err, webauth.ErrDenied) {
+					return acme.ErrUnauthorized
+				}
+				return err
+			}),
+		),
 		// A device that cannot attest is worth knowing about, so the
 		// default refuses it rather than quietly issuing on the strength of
 		// a client identifier alone.
@@ -208,16 +220,32 @@ func (s *acmeService) policy() (acme.Policy, error) {
 // depLookup asks the device enrollment service store whether a serial
 // number belongs to this organisation.
 func (s *acmeService) depLookup(ctx context.Context, serial string) (bool, error) {
-	res, err := s.app.dep.store.ListAccounts(ctx, paging.Page{Limit: 1000})
-	if err != nil {
-		return false, fmt.Errorf("app: DEP accounts: %w", err)
+	if s.app.dep == nil {
+		return false, errDEPAdmissionUnavailable
 	}
-	for _, account := range res.Items {
-		if _, err := s.app.dep.store.GetDevice(ctx, account.Name, serial); err == nil {
-			return true, nil
+	page := paging.Page{Limit: 1000}
+	for {
+		res, err := s.app.dep.store.ListAccounts(ctx, page)
+		if err != nil {
+			return false, fmt.Errorf("app: DEP accounts: %w", err)
 		}
+		for _, account := range res.Items {
+			d, err := s.app.dep.store.GetDevice(ctx, account.Name, serial)
+			if errors.Is(err, dep.ErrNotFound) {
+				continue
+			}
+			if err != nil {
+				return false, fmt.Errorf("app: DEP device ownership: %w", err)
+			}
+			if admittedDEPDevice(d, &account) {
+				return true, nil
+			}
+		}
+		if res.NextCursor == "" {
+			return false, nil
+		}
+		page.Cursor = res.NextCursor
 	}
-	return false, nil
 }
 
 // acmePayload builds the ACME payload for one device.
@@ -290,6 +318,10 @@ func (s *acmeService) credentialHandler() http.Handler {
 		enrollment, err := s.app.Store.Get(r.Context(), id)
 		if err != nil {
 			writeError(w, http.StatusInternalServerError, err)
+			return
+		}
+		if !enrollment.Enabled || !enrollment.DisabledAt.IsZero() {
+			writeError(w, http.StatusForbidden, storage.ErrDisabled)
 			return
 		}
 		binding := acme.Binding{

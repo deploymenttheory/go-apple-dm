@@ -5,3 +5,18 @@ cover
 *.md
 docs
 .github
+
+# Local credentials and runtime state never enter the build context.
+.agents
+.codex
+.env
+.env.*
+**/.env
+**/.env.*
+test-lab/local
+**/*.key
+**/*.p12
+**/*.pfx
+**/*private*.pem
+**/*.db-*
+**/*.log

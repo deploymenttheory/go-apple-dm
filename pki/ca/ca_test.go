@@ -182,13 +182,8 @@ func TestMismatchedCAKey(t *testing.T) {
 	t.Parallel()
 	cert, _, _ := ca.NewSelfSigned(ca.SelfSignedOptions{})
 	other, _ := rsa.GenerateKey(rand.Reader, 2048)
-	signer, err := ca.NewLocal(cert, other)
-	if err != nil {
-		t.Fatal(err)
-	}
-	k, _ := rsa.GenerateKey(rand.Reader, 2048)
-	if _, err := signer.Sign(context.Background(), csr(t, k, "d", false), ca.Policy{}); err == nil {
-		t.Fatal("signing with a key that does not match the CA certificate should fail")
+	if _, err := ca.NewLocal(cert, other); err == nil {
+		t.Fatal("mismatched issuer key accepted")
 	}
 }
 
@@ -230,7 +225,7 @@ func TestPolicyNotAfterIsAbsolute(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	now := time.Date(2026, 9, 1, 0, 0, 0, 0, time.UTC)
+	now := cert.NotBefore.Add(5 * time.Minute)
 	fake := clock.NewFake(now)
 	signer, err := ca.NewLocal(cert, key, ca.WithClock(fake))
 	if err != nil {

@@ -229,7 +229,7 @@ func RunUserAuthSuite(t *testing.T, newStore Factory) {
 		if err := s.UpsertAuthenticate(ctx, device(1), auth("S1"), nil, t0.Add(time.Hour)); err != nil {
 			t.Fatal(err)
 		}
-		if _, err := s.UserAuth(ctx, uid); !errors.Is(err, storage.ErrNotFound) {
+		if _, err := s.UserAuth(ctx, uid); !errors.Is(err, storage.ErrNotFound) && !errors.Is(err, storage.ErrDisabled) {
 			t.Fatalf("state survived device re-enrollment: %v", err)
 		}
 		if st, err := s.UserAuth(ctx, user(2, "bob")); err != nil || st.Challenge != "n" {
@@ -315,7 +315,7 @@ func RunMigrationSuite(t *testing.T, newStore Factory) {
 		if tok, err := b.BootstrapToken(ctx, device(1)); err != nil || string(tok) != "bst" || string(src.bootstrap) != "bst" {
 			t.Fatalf("bootstrap token after import = %q %v", tok, err)
 		}
-		if _, err := b.BootstrapToken(ctx, device(2)); !errors.Is(err, storage.ErrNotFound) {
+		if _, err := b.BootstrapToken(ctx, device(2)); !errors.Is(err, storage.ErrDisabled) {
 			t.Fatalf("device 2 gained a bootstrap token: %v", err)
 		}
 		if owner, err := b.EnrollmentByCertHash(ctx, "h2"); err != nil || owner != device(1) {

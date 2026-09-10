@@ -82,16 +82,9 @@ func validID(id mdm.EnrollmentID) error {
 }
 
 // exists reports whether the enrollment row is present.
-func (s *Store) exists(ctx context.Context, q querier, id string) error {
-	var one int
-	err := q.QueryRowContext(ctx, s.q("SELECT 1 FROM enrollments WHERE id = ?"), id).Scan(&one)
-	if errors.Is(err, sql.ErrNoRows) {
-		return fmt.Errorf("%w: enrollment %s", storage.ErrNotFound, id)
-	}
-	if err != nil {
-		return wrap("lookup enrollment", err)
-	}
-	return nil
+func (s *Store) exists(ctx context.Context, q querier, id mdm.EnrollmentID) error {
+	_, err := s.identity(ctx, q, id, false)
+	return err
 }
 
 func nullTime(t time.Time) sql.NullTime { return sql.NullTime{Time: t.UTC(), Valid: !t.IsZero()} }
@@ -116,20 +109,50 @@ func nullBytes(b []byte) []byte {
 // UpsertAuthenticate and the scan in scanEnrollment are positional and
 // must be kept in the same order.
 var enrollmentCols = []string{
-	"id", "channel", "parent_id", "enabled", "topic", "push_magic", "push_token",
-	"serial_number", "model", "model_name", "device_name", "product_name", "os_version", "build_version", "imei", "meid", "device_topic",
-	"user_short_name", "user_long_name", "not_on_console", "enrollment_user_id", "unlock_token", "authenticate_raw", "token_update_raw", "cert_hash", "cert_hash_at", "bootstrap_token", "bootstrap_token_at",
-	"enrolled_at", "token_updated_at", "last_seen_at", "disabled_at",
+	"id",
+	"channel",
+	"parent_id",
+	"enabled",
+	"topic",
+	"push_magic",
+	"push_token",
+	"serial_number",
+	"model",
+	"model_name",
+	"device_name",
+	"product_name",
+	"os_version",
+	"build_version",
+	"imei",
+	"meid",
+	"device_topic",
+	"user_short_name",
+	"user_long_name",
+	"not_on_console",
+	"enrollment_user_id",
+	"unlock_token",
+	"authenticate_raw",
+	"token_update_raw",
+	"cert_hash",
+	"cert_hash_at",
+	"bootstrap_token",
+	"bootstrap_token_at",
+	"enrolled_at",
+	"token_updated_at",
+	"last_seen_at",
+	"disabled_at",
+	"capabilities",
 }
 
 const selectEnrollment = "SELECT id, channel, parent_id, enabled, topic, push_magic, push_token, " +
 	"serial_number, model, model_name, device_name, product_name, os_version, build_version, imei, meid, device_topic, " +
 	"user_short_name, user_long_name, not_on_console, enrollment_user_id, unlock_token, authenticate_raw, token_update_raw, cert_hash, cert_hash_at, bootstrap_token_at, " +
-	"enrolled_at, token_updated_at, last_seen_at, disabled_at FROM enrollments"
+	"enrolled_at, token_updated_at, last_seen_at, disabled_at, capabilities FROM enrollments"
 
 type scanner interface{ Scan(dest ...any) error }
 
 func scanEnrollment(row scanner) (*storage.Enrollment, error) {
+	var capabilities []byte
 	var (
 		e                                                   storage.Enrollment
 		channel                                             int
@@ -138,13 +161,47 @@ func scanEnrollment(row scanner) (*storage.Enrollment, error) {
 		enrolledAt, lastSeenAt                              time.Time
 		pushToken, unlockToken, authenticate, tokenUpdate   []byte
 	)
-	err := row.Scan(&e.ID.ID, &channel, &e.ID.ParentID, &e.Enabled, &e.Push.Topic, &e.Push.Magic, &pushToken,
-		&e.Device.SerialNumber, &e.Device.Model, &e.Device.ModelName, &e.Device.DeviceName, &e.Device.ProductName,
-		&e.Device.OSVersion, &e.Device.BuildVersion, &e.Device.IMEI, &e.Device.MEID, &e.Device.Topic,
-		&e.UserShortName, &e.UserLongName, &e.NotOnConsole, &e.EnrollmentUserID, &unlockToken, &authenticate, &tokenUpdate, &certHash, &certHashAt, &bootstrapAt,
-		&enrolledAt, &tokenUpdatedAt, &lastSeenAt, &disabledAt)
+	err := row.Scan(
+		&e.ID.ID,
+		&channel,
+		&e.ID.ParentID,
+		&e.Enabled,
+		&e.Push.Topic,
+		&e.Push.Magic,
+		&pushToken,
+		&e.Device.SerialNumber,
+		&e.Device.Model,
+		&e.Device.ModelName,
+		&e.Device.DeviceName,
+		&e.Device.ProductName,
+		&e.Device.OSVersion,
+		&e.Device.BuildVersion,
+		&e.Device.IMEI,
+		&e.Device.MEID,
+		&e.Device.Topic,
+		&e.UserShortName,
+		&e.UserLongName,
+		&e.NotOnConsole,
+		&e.EnrollmentUserID,
+		&unlockToken,
+		&authenticate,
+		&tokenUpdate,
+		&certHash,
+		&certHashAt,
+		&bootstrapAt,
+		&enrolledAt,
+		&tokenUpdatedAt,
+		&lastSeenAt,
+		&disabledAt,
+		&capabilities,
+	)
 	if err != nil {
 		return nil, err
+	}
+	if len(capabilities) > 0 {
+		if err := json.Unmarshal(capabilities, &e.Capabilities); err != nil {
+			return nil, err
+		}
 	}
 	e.ID.Channel = mdm.Channel(channel) // #nosec G115 -- stored from a uint8
 	e.Push.Token = append([]byte(nil), pushToken...)
@@ -159,53 +216,158 @@ func scanEnrollment(row scanner) (*storage.Enrollment, error) {
 }
 
 // UpsertAuthenticate implements storage.EnrollmentStore.
-func (s *Store) UpsertAuthenticate(ctx context.Context, id mdm.EnrollmentID, msg *checkin.Authenticate, raw []byte, at time.Time) error {
+func (s *Store) UpsertAuthenticate(
+	ctx context.Context,
+	id mdm.EnrollmentID,
+	msg *checkin.Authenticate,
+	raw []byte,
+	at time.Time,
+) error {
 	if err := validID(id); err != nil {
+		return err
+	}
+	return s.tx(ctx, func(q querier) error {
+		if _, err := s.ensureEnrollment(ctx, q, id, at); err != nil {
+			return err
+		}
+		return s.resetAuthenticate(ctx, q, id, msg, raw, at)
+	})
+}
+
+func (s *Store) resetAuthenticate(
+	ctx context.Context,
+	q querier,
+	id mdm.EnrollmentID,
+	msg *checkin.Authenticate,
+	raw []byte,
+	at time.Time,
+) error {
+	sealedRaw, err := s.seal(purposeAuthenticate, id.ID, raw)
+	if err != nil {
 		return err
 	}
 	d := storage.DeviceInfoFromAuthenticate(msg)
 	at = at.UTC()
-	return s.tx(ctx, func(q querier) error {
-		// Reset everything the previous identity owned.
-		_, err := q.ExecContext(ctx, s.q(s.d.Upsert("enrollments", enrollmentCols, []string{"id"})),
-			id.ID, int(id.Channel), id.ParentID, false, "", "", nil,
-			d.SerialNumber, d.Model, d.ModelName, d.DeviceName, d.ProductName, d.OSVersion, d.BuildVersion, d.IMEI, d.MEID, d.Topic,
-			"", "", false, "", nil, nullBytes(raw), nil, nil, nil, nil, nil,
-			at, nil, at, nil)
-		if err != nil {
-			return wrap("upsert enrollment", err)
+	// Reset everything the previous identity owned.
+	_, err = q.ExecContext(
+		ctx,
+		s.q(s.d.Upsert("enrollments", enrollmentCols, []string{"id"})),
+		id.ID,
+		int(id.Channel),
+		id.ParentID,
+		false,
+		"",
+		"",
+		nil,
+		d.SerialNumber,
+		d.Model,
+		d.ModelName,
+		d.DeviceName,
+		d.ProductName,
+		d.OSVersion,
+		d.BuildVersion,
+		d.IMEI,
+		d.MEID,
+		d.Topic,
+		"",
+		"",
+		false,
+		"",
+		nil,
+		sealedRaw,
+		nil,
+		nil,
+		nil,
+		nil,
+		nil,
+		at,
+		nil,
+		at,
+		nil,
+		nil,
+	)
+	if err != nil {
+		return wrap("upsert enrollment", err)
+	}
+	if _, err := q.ExecContext(
+		ctx,
+		s.q(
+			"UPDATE commands SET state = ?, completed_at = ? WHERE enrollment_id = ? AND state IN ("+placeholders(
+				3,
+			)+")",
+		),
+		storage.StateCleared,
+		at,
+		id.ID,
+		storage.StatePending,
+		storage.StateSent,
+		storage.StateNotNow,
+	); err != nil {
+		return wrap("clear queue", err)
+	}
+	if !id.Channel.IsUser() {
+		// User channels of this device are stale once it re-enrolls, and
+		// so are their UserAuthenticate sessions.
+		if _, err := q.ExecContext(
+			ctx,
+			s.q("DELETE FROM user_auth WHERE parent_id = ?"),
+			id.ID,
+		); err != nil {
+			return wrap("clear user auth", err)
 		}
-		if _, err := q.ExecContext(ctx, s.q("UPDATE commands SET state = ?, completed_at = ? WHERE enrollment_id = ? AND state IN ("+placeholders(3)+")"),
-			storage.StateCleared, at, id.ID, storage.StatePending, storage.StateSent, storage.StateNotNow); err != nil {
-			return wrap("clear queue", err)
-		}
-		if !id.Channel.IsUser() {
-			// User channels of this device are stale once it re-enrolls, and
-			// so are their UserAuthenticate sessions.
-			if _, err := q.ExecContext(ctx, s.q("DELETE FROM user_auth WHERE parent_id = ?"), id.ID); err != nil {
-				return wrap("clear user auth", err)
-			}
-			return s.disableChildren(ctx, q, id.ID, at)
-		}
-		return nil
-	})
-}
-
-// disableChildren disables every enabled user channel of a device.
-func (s *Store) disableChildren(ctx context.Context, q querier, deviceID string, at time.Time) error {
-	if _, err := q.ExecContext(ctx, s.q("UPDATE enrollments SET enabled = ?, disabled_at = ? WHERE parent_id = ? AND enabled = ?"),
-		false, at.UTC(), deviceID, true); err != nil {
-		return wrap("disable user channels", err)
+		return s.disableChildren(ctx, q, id.ID, at)
 	}
 	return nil
 }
 
+// disableChildren disables every enabled user channel of a device.
+func (s *Store) disableChildren(
+	ctx context.Context,
+	q querier,
+	deviceID string,
+	at time.Time,
+) error {
+	if _, err := q.ExecContext(
+		ctx,
+		s.q("UPDATE enrollments SET enabled = ?, disabled_at = ? WHERE parent_id = ?"),
+		false,
+		at.UTC(),
+		deviceID,
+	); err != nil {
+		return wrap("disable user channels", err)
+	}
+	_, err := q.ExecContext(
+		ctx,
+		s.q(
+			"UPDATE commands SET state = ?, completed_at = ? WHERE enrollment_id IN (SELECT id FROM enrollments WHERE parent_id = ?) AND state IN (?, ?, ?)",
+		),
+		storage.StateCleared,
+		at.UTC(),
+		deviceID,
+		storage.StatePending,
+		storage.StateSent,
+		storage.StateNotNow,
+	)
+	return err
+}
+
 // StoreTokenUpdate implements storage.EnrollmentStore.
-func (s *Store) StoreTokenUpdate(ctx context.Context, id mdm.EnrollmentID, push mdm.Push, msg *checkin.TokenUpdate, raw []byte, at time.Time) error {
+func (s *Store) StoreTokenUpdate(
+	ctx context.Context,
+	id mdm.EnrollmentID,
+	push mdm.Push,
+	msg *checkin.TokenUpdate,
+	raw []byte,
+	at time.Time,
+) error {
 	if !push.Valid() {
 		return fmt.Errorf("%w: incomplete push info", storage.ErrInvalid)
 	}
 	if err := validID(id); err != nil {
+		return err
+	}
+	sealedRaw, err := s.seal(purposeTokenUpdate, id.ID, raw)
+	if err != nil {
 		return err
 	}
 	var unlock []byte
@@ -223,16 +385,36 @@ func (s *Store) StoreTokenUpdate(ctx context.Context, id mdm.EnrollmentID, push 
 		enrollmentUser = nullString(msg.EnrollmentUserID)
 		notOnConsole = sql.NullBool{Bool: msg.NotOnConsole, Valid: true}
 	}
-	res, err := s.db.ExecContext(ctx, s.q("UPDATE enrollments SET topic = ?, push_magic = ?, push_token = ?, enabled = ?, "+
-		"token_updated_at = ?, last_seen_at = ?, disabled_at = NULL, token_update_raw = COALESCE(?, token_update_raw), "+
-		"unlock_token = COALESCE(?, unlock_token), user_short_name = COALESCE(?, user_short_name), user_long_name = COALESCE(?, user_long_name), "+
-		"not_on_console = COALESCE(?, not_on_console), enrollment_user_id = COALESCE(?, enrollment_user_id) "+
-		"WHERE id = ?"),
-		push.Topic, push.Magic, push.Token, true, at.UTC(), at.UTC(), nullBytes(raw), unlock, short, long, notOnConsole, enrollmentUser, id.ID)
-	if err != nil {
-		return wrap("token update", err)
-	}
-	return notFoundIfNoRows(res, id.ID)
+	return s.tx(ctx, func(q querier) error {
+		if err := s.usable(ctx, q, id, false); err != nil {
+			return err
+		}
+		res, err := q.ExecContext(
+			ctx,
+			s.q("UPDATE enrollments SET topic = ?, push_magic = ?, push_token = ?, enabled = ?, "+
+				"token_updated_at = ?, last_seen_at = ?, disabled_at = NULL, token_update_raw = COALESCE(?, token_update_raw), "+
+				"unlock_token = COALESCE(?, unlock_token), user_short_name = COALESCE(?, user_short_name), user_long_name = COALESCE(?, user_long_name), "+
+				"not_on_console = COALESCE(?, not_on_console), enrollment_user_id = COALESCE(?, enrollment_user_id) "+
+				"WHERE id = ?"),
+			push.Topic,
+			push.Magic,
+			push.Token,
+			true,
+			at.UTC(),
+			at.UTC(),
+			sealedRaw,
+			unlock,
+			short,
+			long,
+			notOnConsole,
+			enrollmentUser,
+			id.ID,
+		)
+		if err != nil {
+			return wrap("token update", err)
+		}
+		return notFoundIfNoRows(res, id.ID)
+	})
 }
 
 // notFoundIfNoRows turns an UPDATE that matched no row into ErrNotFound.
@@ -257,12 +439,35 @@ func (s *Store) Disable(ctx context.Context, id mdm.EnrollmentID, at time.Time) 
 	}
 	at = at.UTC()
 	return s.tx(ctx, func(q querier) error {
-		res, err := q.ExecContext(ctx, s.q("UPDATE enrollments SET enabled = ?, disabled_at = ? WHERE id = ?"), false, at, id.ID)
+		if _, err := s.identity(ctx, q, id, true); err != nil {
+			return err
+		}
+		res, err := q.ExecContext(
+			ctx,
+			s.q("UPDATE enrollments SET enabled = ?, disabled_at = ? WHERE id = ?"),
+			false,
+			at,
+			id.ID,
+		)
 		if err != nil {
 			return wrap("disable", err)
 		}
 		if err := notFoundIfNoRows(res, id.ID); err != nil {
 			return err
+		}
+		if _, err := q.ExecContext(
+			ctx,
+			s.q(
+				"UPDATE commands SET state = ?, completed_at = ? WHERE enrollment_id = ? AND state IN (?, ?, ?)",
+			),
+			storage.StateCleared,
+			at,
+			id.ID,
+			storage.StatePending,
+			storage.StateSent,
+			storage.StateNotNow,
+		); err != nil {
+			return wrap("disable queue", err)
 		}
 		if !id.Channel.IsUser() {
 			return s.disableChildren(ctx, q, id.ID, at)
@@ -276,7 +481,7 @@ func (s *Store) Get(ctx context.Context, id mdm.EnrollmentID) (*storage.Enrollme
 	if err := validID(id); err != nil {
 		return nil, err
 	}
-	e, err := scanEnrollment(s.db.QueryRowContext(ctx, s.q(selectEnrollment+" WHERE id = ?"), id.ID))
+	e, err := s.identity(ctx, s.db, id, false)
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil, fmt.Errorf("%w: enrollment %s", storage.ErrNotFound, id.ID)
 	}
@@ -296,6 +501,14 @@ func (s *Store) openEnrollment(e *storage.Enrollment) error {
 		return err
 	}
 	e.UnlockToken = unlock
+	e.AuthenticateRaw, err = s.open(purposeAuthenticate, e.ID.ID, e.AuthenticateRaw)
+	if err != nil {
+		return err
+	}
+	e.TokenUpdateRaw, err = s.open(purposeTokenUpdate, e.ID.ID, e.TokenUpdateRaw)
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -361,8 +574,19 @@ func (s *Store) TouchLastSeen(ctx context.Context, id mdm.EnrollmentID, at time.
 	if err := validID(id); err != nil {
 		return err
 	}
+	if err := s.exists(ctx, s.db, id); err != nil {
+		return err
+	}
 	at = at.UTC()
-	res, err := s.db.ExecContext(ctx, s.q("UPDATE enrollments SET last_seen_at = CASE WHEN last_seen_at < ? THEN ? ELSE last_seen_at END WHERE id = ?"), at, at, id.ID)
+	res, err := s.db.ExecContext(
+		ctx,
+		s.q(
+			"UPDATE enrollments SET last_seen_at = CASE WHEN last_seen_at < ? THEN ? ELSE last_seen_at END WHERE id = ?",
+		),
+		at,
+		at,
+		id.ID,
+	)
 	if err != nil {
 		return wrap("touch last seen", err)
 	}
@@ -372,10 +596,18 @@ func (s *Store) TouchLastSeen(ctx context.Context, id mdm.EnrollmentID, at time.
 var nonTerminal = []any{storage.StatePending, storage.StateSent, storage.StateNotNow}
 
 // Enqueue implements storage.CommandQueue.
-func (s *Store) Enqueue(ctx context.Context, ids []mdm.EnrollmentID, cmd *mdm.Command, o storage.EnqueueOptions) (storage.EnqueueResult, error) {
+func (s *Store) Enqueue(
+	ctx context.Context,
+	ids []mdm.EnrollmentID,
+	cmd *mdm.Command,
+	o storage.EnqueueOptions,
+) (storage.EnqueueResult, error) {
 	res := storage.EnqueueResult{Skipped: map[mdm.EnrollmentID]error{}}
 	if cmd == nil || cmd.UUID == "" || cmd.RequestType == "" {
-		return storage.EnqueueResult{}, fmt.Errorf("%w: command needs a UUID and RequestType", storage.ErrInvalid)
+		return storage.EnqueueResult{}, fmt.Errorf(
+			"%w: command needs a UUID and RequestType",
+			storage.ErrInvalid,
+		)
 	}
 	now := o.Now
 	if now.IsZero() {
@@ -388,23 +620,23 @@ func (s *Store) Enqueue(ctx context.Context, ids []mdm.EnrollmentID, cmd *mdm.Co
 				res.Skipped[id] = err
 				continue
 			}
-			var enabled bool
-			err := q.QueryRowContext(ctx, s.q("SELECT enabled FROM enrollments WHERE id = ?"), id.ID).Scan(&enabled)
-			if errors.Is(err, sql.ErrNoRows) {
-				res.Skipped[id] = fmt.Errorf("%w: enrollment %s", storage.ErrNotFound, id.ID)
-				continue
-			}
-			if err != nil {
-				return wrap("lookup enrollment", err)
-			}
-			if !enabled {
-				res.Skipped[id] = fmt.Errorf("%w: %s", storage.ErrDisabled, id.ID)
-				continue
+			if err := s.usable(ctx, q, id, true); err != nil {
+				if errors.Is(err, storage.ErrNotFound) || errors.Is(err, storage.ErrDisabled) {
+					res.Skipped[id] = err
+					continue
+				}
+				return err
 			}
 			var one int
-			err = q.QueryRowContext(ctx, s.q("SELECT 1 FROM commands WHERE enrollment_id = ? AND command_uuid = ?"), id.ID, cmd.UUID).Scan(&one)
+			err := q.QueryRowContext(ctx, s.q("SELECT 1 FROM commands WHERE enrollment_id = ? AND command_uuid = ?"), id.ID, cmd.UUID).
+				Scan(&one)
 			if err == nil {
-				res.Skipped[id] = fmt.Errorf("%w: command %s already queued for %s", storage.ErrConflict, cmd.UUID, id.ID)
+				res.Skipped[id] = fmt.Errorf(
+					"%w: command %s already queued for %s",
+					storage.ErrConflict,
+					cmd.UUID,
+					id.ID,
+				)
 				continue
 			}
 			if !errors.Is(err, sql.ErrNoRows) {
@@ -412,18 +644,39 @@ func (s *Store) Enqueue(ctx context.Context, ids []mdm.EnrollmentID, cmd *mdm.Co
 			}
 			if o.DedupeKey != "" {
 				err = q.QueryRowContext(ctx, s.q("SELECT 1 FROM commands WHERE enrollment_id = ? AND dedupe_key = ? AND state IN ("+placeholders(3)+") LIMIT 1"),
-					append([]any{id.ID, o.DedupeKey}, nonTerminal...)...).Scan(&one)
+					append([]any{id.ID, o.DedupeKey}, nonTerminal...)...).
+					Scan(&one)
 				if err == nil {
-					res.Skipped[id] = fmt.Errorf("%w: pending command with dedupe key %q", storage.ErrConflict, o.DedupeKey)
+					res.Skipped[id] = fmt.Errorf(
+						"%w: pending command with dedupe key %q",
+						storage.ErrConflict,
+						o.DedupeKey,
+					)
 					continue
 				}
 				if !errors.Is(err, sql.ErrNoRows) {
 					return wrap("lookup dedupe key", err)
 				}
 			}
-			if _, err := q.ExecContext(ctx, s.q("INSERT INTO commands (enrollment_id, command_uuid, request_type, raw, dedupe_key, state, enqueued_at, attempts, not_now_count) "+
-				"VALUES (?, ?, ?, ?, ?, ?, ?, 0, 0)"),
-				id.ID, cmd.UUID, cmd.RequestType, nullBytes(cmd.Raw), o.DedupeKey, storage.StatePending, now); err != nil {
+			sealedRaw, err := s.seal(purposeCommand, commandRowID(id.ID, cmd.UUID), cmd.Raw)
+			if err != nil {
+				return err
+			}
+			if _, err := q.ExecContext(
+				ctx,
+				s.q(
+					"INSERT INTO commands (enrollment_id, command_uuid, request_type, raw, seal_id, dedupe_key, state, enqueued_at, attempts, not_now_count) "+
+						"VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0, 0)",
+				),
+				id.ID,
+				cmd.UUID,
+				cmd.RequestType,
+				sealedRaw,
+				commandRowID(id.ID, cmd.UUID),
+				o.DedupeKey,
+				storage.StatePending,
+				now,
+			); err != nil {
 				return wrap("insert command", err)
 			}
 			res.Queued = append(res.Queued, id)
@@ -437,21 +690,33 @@ func (s *Store) Enqueue(ctx context.Context, ids []mdm.EnrollmentID, cmd *mdm.Co
 }
 
 // Next implements storage.CommandQueue.
-func (s *Store) Next(ctx context.Context, id mdm.EnrollmentID, skipNotNow bool, now time.Time) (*mdm.Command, error) {
+func (s *Store) Next(
+	ctx context.Context,
+	id mdm.EnrollmentID,
+	skipNotNow bool,
+	now time.Time,
+) (*mdm.Command, error) {
 	if err := validID(id); err != nil {
 		return nil, err
 	}
 	now = now.UTC()
 	var out *mdm.Command
 	err := s.tx(ctx, func(q querier) error {
-		if err := s.exists(ctx, q, id.ID); err != nil {
+		if err := s.usable(ctx, q, id, true); err != nil {
 			return err
 		}
 		// Every state term is an equality on the (enrollment_id, state, seq)
 		// index, so the planner reads at most three short ranges and merges
 		// them by seq; not_now_until is the only residual filter.
 		where := "enrollment_id = ? AND state IN (?, ?, ?) AND (state <> ? OR not_now_until <= ?)"
-		args := []any{id.ID, storage.StatePending, storage.StateSent, storage.StateNotNow, storage.StateNotNow, now}
+		args := []any{
+			id.ID,
+			storage.StatePending,
+			storage.StateSent,
+			storage.StateNotNow,
+			storage.StateNotNow,
+			now,
+		}
 		if skipNotNow {
 			where = "enrollment_id = ? AND state IN (?, ?)"
 			args = []any{id.ID, storage.StatePending, storage.StateSent}
@@ -469,8 +734,20 @@ func (s *Store) Next(ctx context.Context, id mdm.EnrollmentID, skipNotNow bool, 
 		if err != nil {
 			return wrap("next command", err)
 		}
-		if _, err := q.ExecContext(ctx, s.q("UPDATE commands SET state = ?, last_sent_at = ?, attempts = attempts + 1 WHERE seq = ?"), storage.StateSent, now, seq); err != nil {
+		if _, err := q.ExecContext(
+			ctx,
+			s.q(
+				"UPDATE commands SET state = ?, last_sent_at = ?, attempts = attempts + 1 WHERE seq = ?",
+			),
+			storage.StateSent,
+			now,
+			seq,
+		); err != nil {
 			return wrap("mark sent", err)
+		}
+		raw, err = s.open(purposeCommand, commandRowID(id.ID, uuid), raw)
+		if err != nil {
+			return err
 		}
 		out = &mdm.Command{UUID: uuid, RequestType: requestType, Raw: append([]byte(nil), raw...)}
 		return nil
@@ -482,9 +759,17 @@ func (s *Store) Next(ctx context.Context, id mdm.EnrollmentID, skipNotNow bool, 
 }
 
 // StoreResult implements storage.CommandQueue.
-func (s *Store) StoreResult(ctx context.Context, id mdm.EnrollmentID, resp *mdm.Response, now time.Time) error {
+func (s *Store) StoreResult(
+	ctx context.Context,
+	id mdm.EnrollmentID,
+	resp *mdm.Response,
+	now time.Time,
+) error {
 	if resp == nil || resp.IsIdle() || resp.CommandUUID == "" {
-		return fmt.Errorf("%w: result needs a CommandUUID and a non-Idle status", storage.ErrInvalid)
+		return fmt.Errorf(
+			"%w: result needs a CommandUUID and a non-Idle status",
+			storage.ErrInvalid,
+		)
 	}
 	if err := validID(id); err != nil {
 		return err
@@ -494,14 +779,26 @@ func (s *Store) StoreResult(ctx context.Context, id mdm.EnrollmentID, resp *mdm.
 	if err != nil {
 		return wrap("encode error chain", err)
 	}
+	sealedRaw, err := s.seal(purposeResult, commandRowID(id.ID, resp.CommandUUID), resp.Raw)
+	if err != nil {
+		return err
+	}
+	sealedChain, err := s.seal(purposeResultErrors, commandRowID(id.ID, resp.CommandUUID), chain)
+	if err != nil {
+		return err
+	}
 	return s.tx(ctx, func(q querier) error {
-		if err := s.exists(ctx, q, id.ID); err != nil {
+		if err := s.usable(ctx, q, id, true); err != nil {
 			return err
 		}
 		var seq int64
 		var notNowCount int
-		err := q.QueryRowContext(ctx, s.q("SELECT seq, not_now_count FROM commands WHERE enrollment_id = ? AND command_uuid = ? AND state IN ("+placeholders(3)+") "+s.d.ForUpdate),
-			append([]any{id.ID, resp.CommandUUID}, nonTerminal...)...).Scan(&seq, &notNowCount)
+		var requestType string
+		err := q.QueryRowContext(ctx, s.q("SELECT seq, not_now_count, request_type FROM commands WHERE enrollment_id = ? AND command_uuid = ? AND state IN ("+placeholders(3)+") "+s.d.ForUpdate),
+			append(
+				[]any{id.ID, resp.CommandUUID},
+				nonTerminal...)...).
+			Scan(&seq, &notNowCount, &requestType)
 		if errors.Is(err, sql.ErrNoRows) {
 			return fmt.Errorf("%w: no open command %s", storage.ErrNotFound, resp.CommandUUID)
 		}
@@ -519,10 +816,41 @@ func (s *Store) StoreResult(ctx context.Context, id mdm.EnrollmentID, resp *mdm.
 		default:
 			// Error and CommandFormatError are terminal; the result is kept.
 		}
-		if _, err := q.ExecContext(ctx, s.q("UPDATE commands SET state = ?, completed_at = ?, not_now_until = ?, not_now_count = ?, "+
-			"result_status = ?, result_raw = ?, result_error_chain = ? WHERE seq = ?"),
-			state, completed, until, notNowCount, string(resp.Status), nullBytes(resp.Raw), string(chain), seq); err != nil {
+		if _, err := q.ExecContext(
+			ctx,
+			s.q(
+				"UPDATE commands SET state = ?, completed_at = ?, not_now_until = ?, not_now_count = ?, "+
+					"result_status = ?, result_raw = ?, result_error_chain = ? WHERE seq = ?",
+			),
+			state,
+			completed,
+			until,
+			notNowCount,
+			string(resp.Status),
+			sealedRaw,
+			sealedChain,
+			seq,
+		); err != nil {
 			return wrap("store result", err)
+		}
+		e, err := s.identity(ctx, q, id, false)
+		if err != nil {
+			return err
+		}
+		caps := storage.CapabilitiesFromResult(e.Capabilities, id, requestType, resp, now)
+		if caps != e.Capabilities {
+			b, err := json.Marshal(caps)
+			if err != nil {
+				return err
+			}
+			if _, err = q.ExecContext(
+				ctx,
+				s.q("UPDATE enrollments SET capabilities = ? WHERE id = ?"),
+				b,
+				id.ID,
+			); err != nil {
+				return err
+			}
 		}
 		return nil
 	})
@@ -531,29 +859,72 @@ func (s *Store) StoreResult(ctx context.Context, id mdm.EnrollmentID, resp *mdm.
 const selectCommand = "SELECT seq, command_uuid, request_type, raw, dedupe_key, state, enqueued_at, last_sent_at, not_now_until, " +
 	"attempts, not_now_count, completed_at, result_status, result_raw, result_error_chain FROM commands"
 
-func scanCommand(row scanner, id mdm.EnrollmentID) (int64, storage.QueuedCommand, error) {
+func (s *Store) scanCommand(
+	row scanner,
+	id mdm.EnrollmentID,
+) (int64, storage.QueuedCommand, error) {
 	var (
 		seq                              int64
 		c                                storage.QueuedCommand
 		raw, resultRaw                   []byte
 		lastSent, notNowUntil, completed sql.NullTime
-		resultStatus, resultChain        sql.NullString
+		resultStatus                     sql.NullString
+		resultChain                      []byte
 		state                            string
 		enqueued                         time.Time
 	)
-	err := row.Scan(&seq, &c.Command.UUID, &c.Command.RequestType, &raw, &c.DedupeKey, &state, &enqueued, &lastSent, &notNowUntil,
-		&c.Attempts, &c.NotNowCount, &completed, &resultStatus, &resultRaw, &resultChain)
+	err := row.Scan(
+		&seq,
+		&c.Command.UUID,
+		&c.Command.RequestType,
+		&raw,
+		&c.DedupeKey,
+		&state,
+		&enqueued,
+		&lastSent,
+		&notNowUntil,
+		&c.Attempts,
+		&c.NotNowCount,
+		&completed,
+		&resultStatus,
+		&resultRaw,
+		&resultChain,
+	)
+	if err != nil {
+		return 0, c, err
+	}
+	rowID := commandRowID(id.ID, c.Command.UUID)
+	raw, err = s.open(purposeCommand, rowID, raw)
+	if err != nil {
+		return 0, c, err
+	}
+	resultRaw, err = s.open(purposeResult, rowID, resultRaw)
+	if err != nil {
+		return 0, c, err
+	}
+	resultChain, err = s.open(purposeResultErrors, rowID, resultChain)
 	if err != nil {
 		return 0, c, err
 	}
 	c.Command.Raw = append([]byte(nil), raw...)
 	c.State = storage.State(state)
 	c.EnqueuedAt = enqueued.UTC()
-	c.LastSentAt, c.NotNowUntil, c.CompletedAt = fromNull(lastSent), fromNull(notNowUntil), fromNull(completed)
+	c.LastSentAt, c.NotNowUntil, c.CompletedAt = fromNull(
+		lastSent,
+	), fromNull(
+		notNowUntil,
+	), fromNull(
+		completed,
+	)
 	if resultStatus.Valid {
-		r := &mdm.Response{ID: id, CommandUUID: c.Command.UUID, Status: mdm.Status(resultStatus.String), Raw: append([]byte(nil), resultRaw...)}
-		if resultChain.Valid && resultChain.String != "" && resultChain.String != "null" {
-			if err := json.Unmarshal([]byte(resultChain.String), &r.ErrorChain); err != nil {
+		r := &mdm.Response{
+			ID:          id,
+			CommandUUID: c.Command.UUID,
+			Status:      mdm.Status(resultStatus.String),
+			Raw:         append([]byte(nil), resultRaw...),
+		}
+		if len(resultChain) > 0 && string(resultChain) != "null" {
+			if err := json.Unmarshal(resultChain, &r.ErrorChain); err != nil {
 				return 0, c, fmt.Errorf("decode error chain: %w", err)
 			}
 		}
@@ -564,7 +935,12 @@ func scanCommand(row scanner, id mdm.EnrollmentID) (int64, storage.QueuedCommand
 
 // Commands implements storage.CommandQueue with a keyset cursor on the
 // sequence number, newest first.
-func (s *Store) Commands(ctx context.Context, id mdm.EnrollmentID, q storage.CommandQuery, p paging.Page) (paging.Result[storage.QueuedCommand], error) {
+func (s *Store) Commands(
+	ctx context.Context,
+	id mdm.EnrollmentID,
+	q storage.CommandQuery,
+	p paging.Page,
+) (paging.Result[storage.QueuedCommand], error) {
 	var out paging.Result[storage.QueuedCommand]
 	if err := validID(id); err != nil {
 		return out, err
@@ -572,7 +948,7 @@ func (s *Store) Commands(ctx context.Context, id mdm.EnrollmentID, q storage.Com
 	// Nothing deletes enrollment rows, so this read-only check cannot race
 	// with the query below; it only distinguishes ErrNotFound from an empty
 	// queue.
-	if err := s.exists(ctx, s.db, id.ID); err != nil {
+	if err := s.exists(ctx, s.db, id); err != nil {
 		return out, err
 	}
 	where := []string{"enrollment_id = ?"}
@@ -597,14 +973,17 @@ func (s *Store) Commands(ctx context.Context, id mdm.EnrollmentID, q storage.Com
 	}
 	limit := pageLimit(p)
 	args = append(args, limit+1)
-	rows, err := s.db.QueryContext(ctx, s.q(selectCommand+" WHERE "+strings.Join(where, " AND ")+" ORDER BY seq DESC LIMIT ?"), args...)
+	rows, err := s.db.QueryContext(
+		ctx,
+		s.q(selectCommand+" WHERE "+strings.Join(where, " AND ")+" ORDER BY seq DESC LIMIT ?"),
+		args...)
 	if err != nil {
 		return out, wrap("list commands", err)
 	}
 	defer rows.Close()
 	seqs := make([]int64, 0, limit+1)
 	for rows.Next() {
-		seq, c, err := scanCommand(rows, id)
+		seq, c, err := s.scanCommand(rows, id)
 		if err != nil {
 			return out, wrap("scan command", err)
 		}
@@ -625,12 +1004,16 @@ func (s *Store) Commands(ctx context.Context, id mdm.EnrollmentID, q storage.Com
 // Clear implements storage.CommandQueue in indexed batches of
 // ClearBatchSize rows. Each batch is its own statement, so a failure part
 // way through returns the count applied so far; callers may simply retry.
-func (s *Store) Clear(ctx context.Context, id mdm.EnrollmentID, f storage.ClearFilter) (int64, error) {
+func (s *Store) Clear(
+	ctx context.Context,
+	id mdm.EnrollmentID,
+	f storage.ClearFilter,
+) (int64, error) {
 	if err := validID(id); err != nil {
 		return 0, err
 	}
 	// Read-only check; enrollment rows are never deleted (see Commands).
-	if err := s.exists(ctx, s.db, id.ID); err != nil {
+	if err := s.exists(ctx, s.db, id); err != nil {
 		return 0, err
 	}
 	states := f.States
@@ -656,11 +1039,19 @@ func (s *Store) Clear(ctx context.Context, id mdm.EnrollmentID, f storage.ClearF
 		args = append(args, f.Before.UTC())
 	}
 	now := time.Now().UTC()
-	query := s.q("UPDATE commands SET state = ?, completed_at = ? WHERE seq IN (SELECT seq FROM (SELECT seq FROM commands WHERE " +
-		strings.Join(where, " AND ") + " ORDER BY seq LIMIT ?) AS batch)")
+	query := s.q(
+		"UPDATE commands SET state = ?, completed_at = ? WHERE seq IN (SELECT seq FROM (SELECT seq FROM commands WHERE " +
+			strings.Join(
+				where,
+				" AND ",
+			) + " ORDER BY seq LIMIT ?) AS batch)",
+	)
 	var total int64
 	for {
-		res, err := s.db.ExecContext(ctx, query, append([]any{storage.StateCleared, now}, append(args, ClearBatchSize)...)...)
+		res, err := s.db.ExecContext(
+			ctx,
+			query,
+			append([]any{storage.StateCleared, now}, append(args, ClearBatchSize)...)...)
 		if err != nil {
 			return total, wrap("clear commands", err)
 		}
@@ -676,7 +1067,10 @@ func (s *Store) Clear(ctx context.Context, id mdm.EnrollmentID, f storage.ClearF
 }
 
 // PushInfo implements storage.PushStore.
-func (s *Store) PushInfo(ctx context.Context, ids []mdm.EnrollmentID) (map[mdm.EnrollmentID]mdm.Push, error) {
+func (s *Store) PushInfo(
+	ctx context.Context,
+	ids []mdm.EnrollmentID,
+) (map[mdm.EnrollmentID]mdm.Push, error) {
 	out := map[mdm.EnrollmentID]mdm.Push{}
 	if len(ids) == 0 {
 		return out, nil
@@ -688,18 +1082,26 @@ func (s *Store) PushInfo(ctx context.Context, ids []mdm.EnrollmentID) (map[mdm.E
 		args = append(args, id.ID)
 	}
 	args = append(args, true)
-	rows, err := s.db.QueryContext(ctx, s.q("SELECT id, topic, push_magic, push_token FROM enrollments WHERE id IN ("+placeholders(len(ids))+") AND enabled = ?"), args...)
+	rows, err := s.db.QueryContext(
+		ctx,
+		s.q(
+			"SELECT id, channel, parent_id, topic, push_magic, push_token FROM enrollments WHERE id IN ("+placeholders(
+				len(ids),
+			)+") AND enabled = ?",
+		),
+		args...)
 	if err != nil {
 		return nil, wrap("push info", err)
 	}
 	defer rows.Close()
 	for rows.Next() {
-		var idStr string
+		var idStr, parent string
+		var channel int
 		var p mdm.Push
-		if err := rows.Scan(&idStr, &p.Topic, &p.Magic, &p.Token); err != nil {
+		if err := rows.Scan(&idStr, &channel, &parent, &p.Topic, &p.Magic, &p.Token); err != nil {
 			return nil, wrap("scan push info", err)
 		}
-		if !p.Valid() {
+		if !p.Valid() || int(byID[idStr].Channel) != channel || byID[idStr].ParentID != parent {
 			continue
 		}
 		p.Token = append([]byte(nil), p.Token...)
@@ -712,23 +1114,42 @@ func (s *Store) PushInfo(ctx context.Context, ids []mdm.EnrollmentID) (map[mdm.E
 }
 
 // StoreBootstrapToken implements storage.BootstrapTokenStore.
-func (s *Store) StoreBootstrapToken(ctx context.Context, id mdm.EnrollmentID, token []byte, at time.Time) error {
+func (s *Store) StoreBootstrapToken(
+	ctx context.Context,
+	id mdm.EnrollmentID,
+	token []byte,
+	at time.Time,
+) error {
 	if len(token) == 0 {
-		return fmt.Errorf("%w: empty bootstrap token", storage.ErrInvalid)
+		return storage.ErrInvalid
 	}
 	if err := validID(id); err != nil {
 		return err
 	}
-	dev := id.Device()
-	sealed, err := s.seal(purposeBootstrapToken, dev.ID, token)
+	sealed, err := s.seal(purposeBootstrapToken, id.Device().ID, token)
 	if err != nil {
 		return err
 	}
-	res, err := s.db.ExecContext(ctx, s.q("UPDATE enrollments SET bootstrap_token = ?, bootstrap_token_at = ? WHERE id = ?"), sealed, at.UTC(), dev.ID)
-	if err != nil {
-		return wrap("store bootstrap token", err)
-	}
-	return notFoundIfNoRows(res, dev.ID)
+	return s.tx(ctx, func(q querier) error {
+		if err := s.deviceIdentity(ctx, q, id); err != nil {
+			return err
+		}
+		e, err := s.identity(ctx, q, id.Device(), true)
+		if err != nil {
+			return err
+		}
+		if !e.DisabledAt.IsZero() {
+			return storage.ErrDisabled
+		}
+		_, err = q.ExecContext(
+			ctx,
+			s.q("UPDATE enrollments SET bootstrap_token = ?, bootstrap_token_at = ? WHERE id = ?"),
+			sealed,
+			at.UTC(),
+			id.Device().ID,
+		)
+		return err
+	})
 }
 
 // BootstrapToken implements storage.BootstrapTokenStore.
@@ -736,14 +1157,22 @@ func (s *Store) BootstrapToken(ctx context.Context, id mdm.EnrollmentID) ([]byte
 	if err := validID(id); err != nil {
 		return nil, err
 	}
+	if err := s.deviceIdentity(ctx, s.db, id); err != nil {
+		return nil, err
+	}
 	dev := id.Device()
 	var tok []byte
-	err := s.db.QueryRowContext(ctx, s.q("SELECT bootstrap_token FROM enrollments WHERE id = ?"), dev.ID).Scan(&tok)
+	var disabled sql.NullTime
+	err := s.db.QueryRowContext(ctx, s.q("SELECT bootstrap_token, disabled_at FROM enrollments WHERE id = ?"), dev.ID).
+		Scan(&tok, &disabled)
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil, fmt.Errorf("%w: enrollment %s", storage.ErrNotFound, dev.ID)
 	}
 	if err != nil {
 		return nil, wrap("bootstrap token", err)
+	}
+	if disabled.Valid {
+		return nil, storage.ErrDisabled
 	}
 	if len(tok) == 0 {
 		return nil, fmt.Errorf("%w: bootstrap token for %s", storage.ErrNotFound, dev.ID)

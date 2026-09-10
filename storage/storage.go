@@ -34,7 +34,8 @@ type DeviceInfo struct {
 
 // Enrollment is one channel of one enrollment as the server knows it.
 type Enrollment struct {
-	ID mdm.EnrollmentID
+	Capabilities Capabilities
+	ID           mdm.EnrollmentID
 	// Enabled becomes true on TokenUpdate and false on CheckOut or a new
 	// Authenticate; only enabled enrollments receive commands and pushes.
 	Enabled bool
@@ -79,6 +80,9 @@ type EnrollmentQuery struct {
 
 // EnrollmentStore persists enrollment records.
 type EnrollmentStore interface {
+	// AuthenticateEnrollment atomically commits authentication, pinning, history,
+	// and enrollment reset. Same-certificate retries preserve existing state.
+	AuthenticateEnrollment(ctx context.Context, id mdm.EnrollmentID, change AuthenticateChange) error
 	// UpsertAuthenticate records an Authenticate message. It creates the
 	// record or resets an existing one: push info, unlock token, bootstrap
 	// token, certificate association, and the pending command queue are
@@ -95,6 +99,9 @@ type EnrollmentStore interface {
 	Disable(ctx context.Context, id mdm.EnrollmentID, at time.Time) error
 	// Get returns the record or ErrNotFound.
 	Get(ctx context.Context, id mdm.EnrollmentID) (*Enrollment, error)
+	// EnrollmentByID resolves a globally unique raw ID to its stored identity.
+	// Authorization must use the returned identity, never the caller's channel.
+	EnrollmentByID(ctx context.Context, id string) (*Enrollment, error)
 	// List pages through enrollments ordered by id.
 	List(ctx context.Context, q EnrollmentQuery, p paging.Page) (paging.Result[Enrollment], error)
 	// TouchLastSeen records device activity.

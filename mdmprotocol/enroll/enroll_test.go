@@ -31,7 +31,8 @@ func TestEnrollmentProfile(t *testing.T) {
 	}
 	in := base()
 	in.Roots = append(in.Roots, root)
-	in.SCEP = &enroll.SCEP{URL: "https://mdm.example.com/scep", Name: "example", Challenge: "one-time", Subject: pkix.Name{CommonName: "UDID-1", Organization: []string{"Example"}, Country: []string{"GB"}}, Retries: 3, RetryDelay: 10, CAFingerprint: []byte{1, 2}}
+	no := false
+	in.SCEP = &enroll.SCEP{KeyIsExtractable: &no, AllowAllAppsAccess: &no, URL: "https://mdm.example.com/scep", Name: "example", Challenge: "one-time", Subject: pkix.Name{CommonName: "UDID-1", Organization: []string{"Example"}, Country: []string{"GB"}}, Retries: 3, RetryDelay: 10, CAFingerprint: []byte{1, 2}}
 	in.AccessRights = enroll.RightInspectProfiles | enroll.RightInstallProfiles | enroll.RightQueryDeviceInfo
 	in.CheckOutWhenRemoved = true
 	in.UseDevelopmentAPNS = true
@@ -71,6 +72,10 @@ func TestEnrollmentProfile(t *testing.T) {
 	if back.Topic != in.Topic || back.ServerURL != in.ServerURL || back.CheckInURL != in.CheckInURL || back.AccessRights != in.AccessRights || !back.CheckOutWhenRemoved || !back.UseDevelopmentAPNS {
 		t.Fatalf("parsed: %+v", back)
 	}
+	if back.SCEP == nil || back.SCEP.KeyIsExtractable == nil || *back.SCEP.KeyIsExtractable || back.SCEP.AllowAllAppsAccess == nil || *back.SCEP.AllowAllAppsAccess {
+		t.Fatalf("SCEP private key restrictions lost: %+v", back.SCEP)
+	}
+
 	if back.SCEP == nil || back.SCEP.URL != in.SCEP.URL || back.SCEP.Challenge != "one-time" || back.SCEP.Subject.CommonName != "UDID-1" || back.SCEP.Subject.Organization[0] != "Example" || back.SCEP.KeySize != 2048 || back.SCEP.Retries != 3 || back.SCEP.RetryDelay != 10 {
 		t.Fatalf("scep parsed: %+v", back.SCEP)
 	}

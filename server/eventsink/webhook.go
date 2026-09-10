@@ -115,6 +115,12 @@ func Webhook(cfg WebhookConfig) (event.Handler, error) {
 	if cfg.Client == nil {
 		cfg.Client = &http.Client{Timeout: DefaultTimeout}
 	}
+	clone := *cfg.Client
+	clone.CheckRedirect = func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }
+	if clone.Timeout <= 0 {
+		clone.Timeout = DefaultTimeout
+	}
+	cfg.Client = &clone
 	if cfg.Clock == nil {
 		cfg.Clock = clock.Real{}
 	}
@@ -201,9 +207,9 @@ func post(ctx context.Context, cfg WebhookConfig, body []byte) error {
 	defer resp.Body.Close()
 	// Read a bounded amount so the receiver's complaint reaches the log
 	// without letting it stream at us.
-	msg, _ := io.ReadAll(io.LimitReader(resp.Body, DefaultMaxResponse))
+	_, _ = io.Copy(io.Discard, io.LimitReader(resp.Body, DefaultMaxResponse))
 	if resp.StatusCode >= 300 {
-		return fmt.Errorf("%w: %s: %s", errStatus, resp.Status, bytes.TrimSpace(msg))
+		return fmt.Errorf("%w: HTTP %d", errStatus, resp.StatusCode)
 	}
 	return nil
 }

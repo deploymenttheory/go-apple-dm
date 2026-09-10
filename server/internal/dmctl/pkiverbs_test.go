@@ -18,7 +18,7 @@ func TestCertificateAdministration(t *testing.T) {
 		t.Fatal("help requires server configuration", err)
 	}
 	path := filepath.Join(t.TempDir(), "leaf.der")
-	if err := os.WriteFile(path, []byte("certificate DER"), 0600); err != nil {
+	if err := os.WriteFile(path, []byte("certificate DER"), 0o600); err != nil {
 		t.Fatal(err)
 	}
 	f := &fakeAdmin{}
@@ -50,11 +50,25 @@ func TestCertificateAdministration(t *testing.T) {
 		}
 	}
 	for _, args := range [][]string{nil, {"bogus"}, {"status"}, {"revoke", "issuer"}, {"import", "issuer"}, {"status", "-bogus"}} {
-		if _, _, err := run(t, env, append([]string{"certificates"}, args...)...); !errors.Is(err, dmctl.ErrUsage) {
+		if _, _, err := run(
+			t,
+			env,
+			append([]string{"certificates"}, args...)...); !errors.Is(
+			err,
+			dmctl.ErrUsage,
+		) {
 			t.Fatal(args, err)
 		}
 	}
-	if _, _, err := run(t, env, "certificates", "import", "issuer", "-file", "/no/such/cert"); err == nil {
+	if _, _, err := run(
+		t,
+		env,
+		"certificates",
+		"import",
+		"issuer",
+		"-file",
+		"/no/such/cert",
+	); err == nil {
 		t.Fatal("missing file accepted")
 	}
 	status = 500

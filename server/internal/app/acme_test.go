@@ -156,7 +156,7 @@ func TestACME(t *testing.T) {
 			t.Fatal(err)
 		}
 		defer res.Body.Close()
-		if res.StatusCode != http.StatusUnauthorized {
+		if res.StatusCode != http.StatusForbidden {
 			t.Fatalf("without a device identity = %d", res.StatusCode)
 		}
 		// An enrolled device gets a credential bound to itself.
@@ -215,14 +215,24 @@ func TestACME(t *testing.T) {
 		}
 		// A serial that issued nothing lists nothing.
 		listed.Items = nil
-		if err := getJSON(t, f, f.publicURL+"/admin/v1/acme/certificates?serial=NOBODY", &listed); err != nil {
+		if err := getJSON(
+			t,
+			f,
+			f.publicURL+"/admin/v1/acme/certificates?serial=NOBODY",
+			&listed,
+		); err != nil {
 			t.Fatal(err)
 		}
 		if len(listed.Items) != 0 {
 			t.Fatalf("listed %d certificates for an unknown serial", len(listed.Items))
 		}
 		// The orders endpoint needs an account.
-		req, _ := http.NewRequestWithContext(ctx, http.MethodGet, f.publicURL+"/admin/v1/acme/orders", nil)
+		req, _ := http.NewRequestWithContext(
+			ctx,
+			http.MethodGet,
+			f.publicURL+"/admin/v1/acme/orders",
+			nil,
+		)
 		req.Header.Set("Authorization", "Bearer t")
 		res, err := f.client().Do(req)
 		if err != nil {
@@ -288,7 +298,7 @@ func TestACME(t *testing.T) {
 			want bool
 		}{
 			{map[string]string{app.EnvIdentity: app.IdentityACME}, true},
-			{map[string]string{app.EnvIdentity: app.IdentitySCEP}, false},
+			{map[string]string{app.EnvIdentity: app.IdentitySCEP}, true},
 		} {
 			m := map[string]string{
 				app.EnvPublicURL: "https://mdm.example",
@@ -445,14 +455,23 @@ func TestACMEWiring(t *testing.T) {
 		// An operator keeps a key in a file rather than in the process
 		// environment, exactly as the SCEP HMAC key allows.
 		path := filepath.Join(t.TempDir(), "key")
-		if err := os.WriteFile(path, []byte("a key of quite sufficient length"), 0o600); err != nil {
+		if err := os.WriteFile(
+			path,
+			[]byte("a key of quite sufficient length"),
+			0o600,
+		); err != nil {
 			t.Fatal(err)
 		}
 		got, err := app.ACMEKeyFromEnvForTests("@" + path)
 		if err != nil || string(got) != "a key of quite sufficient length" {
 			t.Fatalf("key = %q %v", got, err)
 		}
-		if _, err := app.ACMEKeyFromEnvForTests("@" + path + ".missing"); !errors.Is(err, app.ErrConfig) {
+		if _, err := app.ACMEKeyFromEnvForTests(
+			"@" + path + ".missing",
+		); !errors.Is(
+			err,
+			app.ErrConfig,
+		) {
 			t.Fatalf("missing file = %v", err)
 		}
 		if got, err := app.ACMEKeyFromEnvForTests(""); err != nil || got != nil {
@@ -491,6 +510,7 @@ func TestACMEWiring(t *testing.T) {
 	})
 
 	t.Run("SQLiteStoreAndGeneratedKey", func(t *testing.T) {
+		certFile, keyFile, _ := writeCA(t)
 		// With no identifier key configured the server generates one and
 		// says so, because a generated key works for one process and fails
 		// the moment a second has to verify what the first minted.
@@ -498,7 +518,7 @@ func TestACMEWiring(t *testing.T) {
 			Role: app.RoleAll, Storage: "sqlite", DSN: t.TempDir() + "/acme.db", Logger: quiet,
 			Enroll: app.EnrollConfig{
 				PublicURL: "https://mdm.example", Topic: "com.apple.mgmt.External.x",
-				Identity: app.IdentityACME,
+				Identity: app.IdentityACME, CACertFile: certFile, CAKeyFile: keyFile,
 			},
 		})
 		store := a.ACMEStoreForTests()
@@ -525,16 +545,32 @@ func TestACMEWiring(t *testing.T) {
 		// Once the device is in the store it enrols.
 		assigned := f.acmeDevice(t, "ACME-DEP-2", "Mac16,1")
 		depStore := f.app.DEPStoreForTests()
-		if err := depStore.PutAccount(ctx, &dep.Account{Name: "abm"}); err != nil {
+		if err := depStore.PutAccount(
+			ctx,
+			&dep.Account{Name: "abm", ProfileUUID: "approved-profile"},
+		); err != nil {
 			t.Fatal(err)
 		}
 		err = depStore.PutDevices(
-			ctx, "abm", []dep.Device{{SerialNumber: assigned.SerialNumber}}, time.Now(),
+			ctx,
+			"abm",
+			[]dep.Device{
+				{
+					SerialNumber:  assigned.SerialNumber,
+					ProfileUUID:   "approved-profile",
+					ProfileStatus: dep.ProfileStatusAssigned,
+				},
+			},
+			time.Now(),
 		)
 		if err != nil {
 			t.Fatal(err)
 		}
-		if err := assigned.ADEEnroll(ctx, f.publicURL+app.PathADE, simulator.ADEOptions{}); err != nil {
+		if err := assigned.ADEEnroll(
+			ctx,
+			f.publicURL+app.PathADE,
+			simulator.ADEOptions{},
+		); err != nil {
 			t.Fatal(err)
 		}
 	})
@@ -545,10 +581,24 @@ func TestACMEWiring(t *testing.T) {
 		})
 		d := f.acmeDevice(t, "ACME-SIP-1", "Mac16,1")
 		depStore := f.app.DEPStoreForTests()
-		if err := depStore.PutAccount(ctx, &dep.Account{Name: "abm"}); err != nil {
+		if err := depStore.PutAccount(
+			ctx,
+			&dep.Account{Name: "abm", ProfileUUID: "approved-profile"},
+		); err != nil {
 			t.Fatal(err)
 		}
-		if err := depStore.PutDevices(ctx, "abm", []dep.Device{{SerialNumber: d.SerialNumber}}, time.Now()); err != nil {
+		if err := depStore.PutDevices(
+			ctx,
+			"abm",
+			[]dep.Device{
+				{
+					SerialNumber:  d.SerialNumber,
+					ProfileUUID:   "approved-profile",
+					ProfileStatus: dep.ProfileStatusAssigned,
+				},
+			},
+			time.Now(),
+		); err != nil {
 			t.Fatal(err)
 		}
 		// The device is assigned but reports no System Integrity Protection
@@ -692,10 +742,24 @@ func TestACMEPolicyFaultIsNotARefusal(t *testing.T) {
 		cfg.DEP.Store = failing
 	})
 	d := f.acmeDevice(t, "ACME-FAULT-1", "Mac16,1")
-	if err := failing.PutAccount(ctx, &dep.Account{Name: "abm"}); err != nil {
+	if err := failing.PutAccount(
+		ctx,
+		&dep.Account{Name: "abm", ProfileUUID: "approved-profile"},
+	); err != nil {
 		t.Fatal(err)
 	}
-	err := failing.PutDevices(ctx, "abm", []dep.Device{{SerialNumber: d.SerialNumber}}, time.Now())
+	err := failing.PutDevices(
+		ctx,
+		"abm",
+		[]dep.Device{
+			{
+				SerialNumber:  d.SerialNumber,
+				ProfileUUID:   "approved-profile",
+				ProfileStatus: dep.ProfileStatusAssigned,
+			},
+		},
+		time.Now(),
+	)
 	if err != nil {
 		t.Fatal(err)
 	}

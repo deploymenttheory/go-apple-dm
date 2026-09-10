@@ -1,5 +1,6 @@
 -- +up
 CREATE TABLE enrollments (
+ capabilities BLOB NULL,
     id               VARCHAR(255) NOT NULL PRIMARY KEY,
     channel          SMALLINT     NOT NULL,
     parent_id        VARCHAR(255) NOT NULL DEFAULT '',
@@ -42,6 +43,7 @@ CREATE TABLE commands (
     seq                BIGINT       NOT NULL AUTO_INCREMENT PRIMARY KEY,
     enrollment_id      VARCHAR(255) NOT NULL,
     command_uuid       VARCHAR(255) NOT NULL,
+    seal_id VARCHAR(1024) NOT NULL DEFAULT '',
     request_type       VARCHAR(255) NOT NULL,
     raw                MEDIUMBLOB   NULL,
     dedupe_key         VARCHAR(255) NOT NULL DEFAULT '',
@@ -54,7 +56,7 @@ CREATE TABLE commands (
     completed_at       DATETIME(6)  NULL,
     result_status      VARCHAR(32)  NULL,
     result_raw         MEDIUMBLOB   NULL,
-    result_error_chain TEXT         NULL,
+    result_error_chain MEDIUMBLOB         NULL,
     UNIQUE INDEX idx_commands_uuid (enrollment_id, command_uuid),
     INDEX idx_commands_queue (enrollment_id, state, seq),
     INDEX idx_commands_dedupe (enrollment_id, dedupe_key, state),
@@ -80,6 +82,7 @@ CREATE TABLE push_certs (
 ) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin;
 
 CREATE TABLE user_auth (
+ channel INTEGER NOT NULL,
     enrollment_id    VARCHAR(255) NOT NULL PRIMARY KEY,
     parent_id        VARCHAR(255) NOT NULL,
     challenge        VARCHAR(512) NULL,

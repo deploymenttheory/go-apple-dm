@@ -10,6 +10,7 @@ import (
 	"encoding/pem"
 	"net/http"
 	"net/http/httptest"
+	"net/netip"
 	"os"
 	"path/filepath"
 	"strings"
@@ -28,7 +29,12 @@ import (
 func TestPKIAndAccountStatePersistAcrossInstances(t *testing.T) {
 	var config app.Config
 	f := newEnrollFixture(t, "", func(c *app.Config) {
-		c.PKI = app.PKIConfig{Enabled: true, CRLTTL: time.Hour, CRLRefresh: time.Minute, OCSPTTL: time.Minute}
+		c.PKI = app.PKIConfig{
+			Enabled:    true,
+			CRLTTL:     time.Hour,
+			CRLRefresh: time.Minute,
+			OCSPTTL:    time.Minute,
+		}
 		c.AdminToken = "admin"
 		c.Storage = "sqlite"
 		c.DSN = filepath.Join(t.TempDir(), "security.db")
@@ -37,12 +43,27 @@ func TestPKIAndAccountStatePersistAcrossInstances(t *testing.T) {
 		config = *c
 	})
 	d := f.device(t, "account-device", "iPhone17,2")
-	if _, err := d.AccountDrivenEnroll(t.Context(), simulator.AccountDrivenOptions{UserIdentifier: "alice@example.com", DiscoveryURL: f.publicURL, Authenticate: f.signIn(t)}); err != nil {
+	if _, err := d.AccountDrivenEnroll(
+		t.Context(),
+		simulator.AccountDrivenOptions{
+			UserIdentifier: "alice@example.com",
+			DiscoveryURL:   f.publicURL,
+			Authenticate:   f.signIn(t),
+		},
+	); err != nil {
 		t.Fatal(err)
 	}
 	second := build(t, config)
 	access, _ := d.AccountTokens()
-	body, err := plist.Marshal(map[string]any{"MessageType": "TokenUpdate", "EnrollmentID": d.EnrollmentID, "Topic": d.Topic, "PushMagic": "magic", "Token": []byte{1, 2, 3}})
+	body, err := plist.Marshal(
+		map[string]any{
+			"MessageType":  "TokenUpdate",
+			"EnrollmentID": d.EnrollmentID,
+			"Topic":        d.Topic,
+			"PushMagic":    "magic",
+			"Token":        []byte{1, 2, 3},
+		},
+	)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -75,7 +96,13 @@ func TestPKIAndAccountStatePersistAcrossInstances(t *testing.T) {
 		return w
 	}
 	path := "/pki/certificates/" + issuer + "/" + serial
-	if w := admin("GET", path, "admin", nil); w.Code != 200 || !strings.Contains(w.Body.String(), "issued") {
+	if w := admin(
+		"GET",
+		path,
+		"admin",
+		nil,
+	); w.Code != 200 ||
+		!strings.Contains(w.Body.String(), "issued") {
 		t.Fatal(w.Code, w.Body.String())
 	}
 	if w := admin("POST", path+"/revoke", "wrong", map[string]int{"reason": 1}); w.Code == 200 {
@@ -88,10 +115,21 @@ func TestPKIAndAccountStatePersistAcrossInstances(t *testing.T) {
 		t.Fatal(w.Code)
 	}
 	// Reimport cannot undo a revocation.
-	if w := admin("POST", "/pki/certificates/import", "admin", map[string]any{"issuer": issuer, "certificate": d.Identity.Cert.Raw}); w.Code != 200 {
+	if w := admin(
+		"POST",
+		"/pki/certificates/import",
+		"admin",
+		map[string]any{"issuer": issuer, "certificate": d.Identity.Cert.Raw},
+	); w.Code != 200 {
 		t.Fatal(w.Code, w.Body.String())
 	}
-	if w := admin("GET", path, "admin", nil); w.Code != 200 || !strings.Contains(w.Body.String(), "revoked") {
+	if w := admin(
+		"GET",
+		path,
+		"admin",
+		nil,
+	); w.Code != 200 ||
+		!strings.Contains(w.Body.String(), "revoked") {
 		t.Fatal(w.Code, w.Body.String())
 	}
 
@@ -123,11 +161,23 @@ func TestPKIAndAccountStatePersistAcrossInstances(t *testing.T) {
 		case "cms":
 			h = httpapi.CertFromMdmSignature(cms.VerifyOptions{Roots: config.CARoots}, 0)(api)
 		case "tls":
-			r.TLS = &tls.ConnectionState{PeerCertificates: []*x509.Certificate{d.Identity.Cert}}
+			r.TLS = &tls.ConnectionState{
+				PeerCertificates: []*x509.Certificate{d.Identity.Cert},
+				VerifiedChains:   [][]*x509.Certificate{{d.Identity.Cert, f.appCA}},
+			}
 			h = httpapi.CertFromTLS(api)
 		case "proxy":
-			r.Header.Set("X-Client-Cert", ":"+base64.StdEncoding.EncodeToString(d.Identity.Cert.Raw)+":")
-			h = httpapi.CertFromHeader("X-Client-Cert", httpapi.WithHeaderRoots(config.CARoots))(api)
+			r.Header.Set(
+				"X-Client-Cert",
+				":"+base64.StdEncoding.EncodeToString(d.Identity.Cert.Raw)+":",
+			)
+			h = httpapi.CertFromHeader(
+				"X-Client-Cert",
+				httpapi.WithHeaderRoots(config.CARoots),
+				httpapi.WithHeaderPeers(netip.MustParsePrefix("192.0.2.0/24")),
+			)(
+				api,
+			)
 		}
 		w := httptest.NewRecorder()
 		h.ServeHTTP(w, r)
@@ -141,7 +191,8 @@ func TestPKIAndAccountStatePersistAcrossInstances(t *testing.T) {
 		t.Fatal(w.Code, w.Body.String())
 	}
 	crl, err := x509.ParseRevocationList(w.Body.Bytes())
-	if err != nil || crl.CheckSignatureFrom(f.appCA) != nil || len(crl.RevokedCertificateEntries) != 1 {
+	if err != nil || crl.CheckSignatureFrom(f.appCA) != nil ||
+		len(crl.RevokedCertificateEntries) != 1 {
 		t.Fatal(crl, err)
 	}
 	// A credential document cannot be issued using a revoked identity.
@@ -159,7 +210,6 @@ func TestPKIAndAccountStatePersistAcrossInstances(t *testing.T) {
 	if w := admin("GET", path, "admin", nil); w.Code != 500 {
 		t.Fatal("closed registry", w.Code)
 	}
-
 }
 
 func TestExplicitRateLimitsAndSecurityEnvironment(t *testing.T) {
@@ -241,22 +291,33 @@ func TestRetiredIssuerConfiguration(t *testing.T) {
 	certFile, keyFile, retired := writeCA(t)
 	var config app.Config
 	f := newEnrollFixture(t, "", func(c *app.Config) {
-		c.PKI = app.PKIConfig{Enabled: true, CRLTTL: time.Hour, CRLRefresh: time.Minute, OCSPTTL: time.Minute, Retired: []app.IssuerFiles{{Certificate: certFile, Key: keyFile}}}
+		c.PKI = app.PKIConfig{
+			Enabled:    true,
+			CRLTTL:     time.Hour,
+			CRLRefresh: time.Minute,
+			OCSPTTL:    time.Minute,
+			Retired:    []app.IssuerFiles{{Certificate: certFile, Key: keyFile}},
+		}
 		config = *c
 	})
 	w := httptest.NewRecorder()
-	f.app.Handler.ServeHTTP(w, httptest.NewRequest("GET", "/pki/crl/"+cms.Fingerprint(retired), nil))
+	f.app.Handler.ServeHTTP(
+		w,
+		httptest.NewRequest("GET", "/pki/crl/"+cms.Fingerprint(retired), nil),
+	)
 	crl, err := x509.ParseRevocationList(w.Body.Bytes())
 	if w.Code != 200 || err != nil || crl.CheckSignatureFrom(retired) != nil {
 		t.Fatal(w.Code, err)
 	}
 	invalid := filepath.Join(t.TempDir(), "invalid.key")
-	if err := os.WriteFile(invalid, []byte("invalid key"), 0600); err != nil {
+	if err := os.WriteFile(invalid, []byte("invalid key"), 0o600); err != nil {
 		t.Fatal(err)
 	}
 	for _, files := range []app.IssuerFiles{
-		{Certificate: "/missing", Key: keyFile}, {Certificate: certFile, Key: "/missing"},
-		{Certificate: certFile, Key: invalid}, {Certificate: certFile, Key: config.Enroll.CAKeyFile},
+		{Certificate: "/missing", Key: keyFile},
+		{Certificate: certFile, Key: "/missing"},
+		{Certificate: certFile, Key: invalid},
+		{Certificate: certFile, Key: config.Enroll.CAKeyFile},
 	} {
 		cfg := config
 		cfg.PKI.Retired = []app.IssuerFiles{files}
@@ -270,11 +331,20 @@ func TestRetiredIssuerConfiguration(t *testing.T) {
 func TestRateLimitFamiliesCapacityAndConfiguration(t *testing.T) {
 	quotas := map[string]app.RouteQuota{}
 	for _, name := range []string{"enroll", "auth", "scep", "admin", "pki", "mdm", "acme"} {
-		quotas[name] = app.RouteQuota{Interval: time.Hour, Burst: 1, GlobalInterval: time.Hour, GlobalBurst: 10}
+		quotas[name] = app.RouteQuota{
+			Interval:       time.Hour,
+			Burst:          1,
+			GlobalInterval: time.Hour,
+			GlobalBurst:    10,
+		}
 	}
-	cfg := app.Config{Role: app.RoleAll, Storage: "inmem", RateLimits: app.RateLimitConfig{Routes: quotas}}
+	cfg := app.Config{
+		Role:       app.RoleAll,
+		Storage:    "inmem",
+		RateLimits: app.RateLimitConfig{Routes: quotas},
+	}
 	a := build(t, cfg)
-	for _, path := range []string{"/enroll/ade", app.PathAuthenticate, "/scep", "/admin/v1/config", "/pki/crl/unknown", "/mdm", "/acme/new-account"} {
+	for _, path := range []string{"/enroll/ade", app.PathAuthenticate, "/scep", "/admin/v1/config", "/pki/crl/unknown", "/mdm", "/acme/new-account", "/ota", "/ota/start", "/ddm/v1/declarative-management"} {
 		for i := range 2 {
 			w := httptest.NewRecorder()
 			a.Handler.ServeHTTP(w, httptest.NewRequest("POST", path, nil))
@@ -303,7 +373,8 @@ func TestRateLimitFamiliesCapacityAndConfiguration(t *testing.T) {
 		if w.Code != 503 {
 			t.Fatal("capacity did not fail closed", w.Code)
 		}
-		if strings.HasPrefix(path, "/acme/") && !strings.Contains(w.Body.String(), "serverInternal") {
+		if strings.HasPrefix(path, "/acme/") &&
+			!strings.Contains(w.Body.String(), "serverInternal") {
 			t.Fatal(w.Body.String())
 		}
 	}

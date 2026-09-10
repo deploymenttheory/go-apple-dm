@@ -6,7 +6,6 @@ on:
       - '.release-please-manifest.json'
       - 'docs/**'
       - '**/*.md'
-      - '.github/workflows/**'
   push:
     branches:
       - main
@@ -15,7 +14,6 @@ on:
       - '.release-please-manifest.json'
       - 'docs/**'
       - '**/*.md'
-      - '.github/workflows/**'
 
 permissions:
   contents: read

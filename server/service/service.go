@@ -71,7 +71,7 @@ var (
 	ErrInvalidMessage    = errors.New("service: invalid message")
 	ErrHookVeto          = errors.New("service: rejected by hook")
 	// ErrCertReused is returned when an identity certificate presented on
-	// Authenticate, or on a retroactive pin, appears in another
+	// Authenticate appears in another
 	// enrollment's certificate history (decision record 0014).
 	ErrCertReused = errors.New("service: identity certificate already used by another enrollment")
 )
@@ -170,7 +170,7 @@ type Config struct {
 	Logger *slog.Logger
 	// Pinning defaults to PinEnforce.
 	Pinning PinMode
-	// Reenroll defaults to AllowReenroll.
+	// Reenroll defaults to DenyReenroll.
 	Reenroll ReenrollPolicy
 	// CertReuse defaults to DenyCertReuse. It is consulted when an
 	// Authenticate presents a certificate whose hash appears in another
@@ -205,7 +205,13 @@ type Config struct {
 func AllowReenroll(context.Context, *mdm.Request, *storage.Enrollment) error { return nil }
 
 // DenyReenroll rejects re-enrollment with a new identity.
-func DenyReenroll(context.Context, *mdm.Request, *storage.Enrollment) error { return ErrReenrollDenied }
+func DenyReenroll(
+	context.Context,
+	*mdm.Request,
+	*storage.Enrollment,
+) error {
+	return ErrReenrollDenied
+}
 
 // Core is the service implementation.
 type Core struct {
@@ -240,13 +246,22 @@ func New(cfg Config) (*Core, error) {
 		}
 	}
 	c := &Core{
-		replacements: replacements,
-		store:        cfg.Store, bus: cfg.Bus, clock: cfg.Clock, hooks: cfg.Hooks, log: cfg.Logger,
+		replacements:      replacements,
+		store:             cfg.Store,
+		bus:               cfg.Bus,
+		clock:             cfg.Clock,
+		hooks:             cfg.Hooks,
+		log:               cfg.Logger,
 		certificateStatus: cfg.CertificateStatus,
-		pinning:           cfg.Pinning, reenroll: cfg.Reenroll, reuse: cfg.CertReuse,
-		dm: cfg.DeclarativeManagement, getToken: cfg.GetToken, userAuth: cfg.UserAuthenticate,
-		returnToService: cfg.ReturnToService,
-		requireUserAuth: cfg.RequireUserAuth, validateTargets: cfg.ValidateTargets == nil || *cfg.ValidateTargets,
+		pinning:           cfg.Pinning,
+		reenroll:          cfg.Reenroll,
+		reuse:             cfg.CertReuse,
+		dm:                cfg.DeclarativeManagement,
+		getToken:          cfg.GetToken,
+		userAuth:          cfg.UserAuthenticate,
+		returnToService:   cfg.ReturnToService,
+		requireUserAuth:   cfg.RequireUserAuth,
+		validateTargets:   cfg.ValidateTargets == nil || *cfg.ValidateTargets,
 	}
 	if c.clock == nil {
 		c.clock = clock.Real{}
@@ -255,7 +270,7 @@ func New(cfg Config) (*Core, error) {
 		c.log = slog.Default()
 	}
 	if c.reenroll == nil {
-		c.reenroll = AllowReenroll
+		c.reenroll = DenyReenroll
 	}
 	if c.reuse == nil {
 		c.reuse = DenyCertReuse
@@ -343,7 +358,7 @@ func codeForStorage(err error) Code {
 		return CodeUnknownEnrollment
 	case errors.Is(err, storage.ErrInvalid):
 		return CodeBadRequest
-	case errors.Is(err, storage.ErrConflict):
+	case errors.Is(err, storage.ErrConflict), errors.Is(err, storage.ErrDisabled):
 		return CodeForbidden
 	}
 	return CodeInternal
@@ -389,17 +404,28 @@ func (c *Core) checkTargets(ctx context.Context, ids []mdm.EnrollmentID, cmd *md
 // from the product, the version, the channel, and the Shared iPad and User
 // Enrollment modes from the channel kind. A user channel's OS comes from
 // its device.
-func targetFor(ctx context.Context, st storage.EnrollmentStore, e *storage.Enrollment) support.Target {
+func targetFor(
+	ctx context.Context,
+	st storage.EnrollmentStore,
+	e *storage.Enrollment,
+) support.Target {
 	device := e
 	if e.ID.Channel.IsUser() {
-		if parent, err := st.Get(ctx, mdm.EnrollmentID{Channel: deviceChannelOf(e.ID.Channel), ID: e.ID.ParentID}); err == nil {
+		if parent, err := st.Get(
+			ctx,
+			mdm.EnrollmentID{Channel: deviceChannelOf(e.ID.Channel), ID: e.ID.ParentID},
+		); err == nil {
 			device = parent
 		}
 	}
-	// Supervision, DEP, and user-approved MDM are not tracked on the
-	// enrollment record, so they are assumed rather than enforced; only the
-	// channel and mode rules bite here.
-	t := support.Target{OS: support.OSFromProduct(device.Device.ProductName), Channel: support.ChannelDevice, Supervised: true, DEP: true, UserApproved: true}
+	// Unknown management properties never satisfy a command requirement.
+	t := support.Target{
+		OS:           support.OSFromProduct(device.Device.ProductName),
+		Channel:      support.ChannelDevice,
+		Supervised:   device.Capabilities.Supervised == storage.CapabilityTrue,
+		DEP:          device.Capabilities.DEP == storage.CapabilityTrue,
+		UserApproved: device.Capabilities.UserApproved == storage.CapabilityTrue,
+	}
 	if v, err := support.ParseVersion(device.Device.OSVersion); err == nil {
 		t.Version = v
 	}
@@ -407,7 +433,11 @@ func targetFor(ctx context.Context, st storage.EnrollmentStore, e *storage.Enrol
 	case mdm.ChannelDevice:
 		if t.OS == support.IOS {
 			// A Shared iPad is recognised by its logged-in user channel.
-			res, err := st.List(ctx, storage.EnrollmentQuery{ParentID: e.ID.ID, Channel: mdm.ChannelSharedIPadUser}, paging.Page{Limit: 1})
+			res, err := st.List(
+				ctx,
+				storage.EnrollmentQuery{ParentID: e.ID.ID, Channel: mdm.ChannelSharedIPadUser},
+				paging.Page{Limit: 1},
+			)
 			t.SharedIPad = err == nil && len(res.Items) > 0
 		}
 	case mdm.ChannelUser:

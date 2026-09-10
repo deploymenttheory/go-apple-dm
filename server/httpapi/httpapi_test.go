@@ -10,17 +10,18 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"net/netip"
 	"net/url"
 	"strings"
 	"testing"
 	"time"
 
-	"github.com/deploymenttheory/go-apple-dm/server/httpapi"
-	"github.com/deploymenttheory/go-apple-dm/server/service"
 	"github.com/deploymenttheory/go-apple-dm/mdmprotocol/cms"
 	"github.com/deploymenttheory/go-apple-dm/mdmprotocol/mdm"
 	"github.com/deploymenttheory/go-apple-dm/mdmprotocol/plist"
 	"github.com/deploymenttheory/go-apple-dm/schema/commands"
+	"github.com/deploymenttheory/go-apple-dm/server/httpapi"
+	"github.com/deploymenttheory/go-apple-dm/server/service"
 	"github.com/deploymenttheory/go-apple-dm/testpki"
 )
 
@@ -190,38 +191,105 @@ func TestCertMiddlewares(t *testing.T) {
 	inner, seen := certCapture()
 	h := httpapi.CertFromMdmSignature(cms.VerifyOptions{Roots: ca.Pool()}, 0)(inner)
 	sig, _ := cms.Sign(body, id.Cert, id.Key)
-	rec := do(t, h, http.MethodPut, "", string(body), map[string]string{cms.HeaderName: cms.EncodeHeader(sig)})
-	if rec.Code != 200 || rec.Body.String() != "body" || len(*seen) != 1 || (*seen)[0] == nil || !(*seen)[0].Equal(id.Cert) {
+	rec := do(
+		t,
+		h,
+		http.MethodPut,
+		"",
+		string(body),
+		map[string]string{cms.HeaderName: cms.EncodeHeader(sig)},
+	)
+	if rec.Code != 200 || rec.Body.String() != "body" || len(*seen) != 1 || (*seen)[0] == nil ||
+		!(*seen)[0].Equal(id.Cert) {
 		t.Fatalf("signature middleware: %d %q %v", rec.Code, rec.Body.String(), *seen)
 	}
-	if rec = do(t, h, http.MethodPut, "", "tampered", map[string]string{cms.HeaderName: cms.EncodeHeader(sig)}); rec.Code != 400 {
+	if rec = do(
+		t,
+		h,
+		http.MethodPut,
+		"",
+		"tampered",
+		map[string]string{cms.HeaderName: cms.EncodeHeader(sig)},
+	); rec.Code != 400 {
 		t.Fatalf("tampered: %d", rec.Code)
 	}
-	if rec = do(t, h, http.MethodPut, "", string(body), nil); rec.Code != 200 || (*seen)[len(*seen)-1] != nil {
+	if rec = do(
+		t,
+		h,
+		http.MethodPut,
+		"",
+		string(body),
+		nil,
+	); rec.Code != 200 ||
+		(*seen)[len(*seen)-1] != nil {
 		t.Fatalf("no header should pass through without a cert: %d", rec.Code)
 	}
 	tiny := httpapi.CertFromMdmSignature(cms.VerifyOptions{}, 2)(inner)
-	if rec = do(t, tiny, http.MethodPut, "", string(body), map[string]string{cms.HeaderName: cms.EncodeHeader(sig)}); rec.Code != 400 {
+	if rec = do(
+		t,
+		tiny,
+		http.MethodPut,
+		"",
+		string(body),
+		map[string]string{cms.HeaderName: cms.EncodeHeader(sig)},
+	); rec.Code != 400 {
 		t.Fatalf("oversized signed body: %d", rec.Code)
 	}
 
 	// Header: RFC 9440 and URL-escaped PEM.
 	inner, seen = certCapture()
-	hh := httpapi.CertFromHeader("X-Client-Cert")(inner)
+	hh := httpapi.CertFromHeader(
+		"X-Client-Cert",
+		httpapi.WithHeaderRoots(ca.Pool()),
+		httpapi.WithHeaderPeers(netip.MustParsePrefix("192.0.2.0/24")),
+	)(
+		inner,
+	)
 	rfc := ":" + base64.StdEncoding.EncodeToString(id.Cert.Raw) + ":"
-	if rec = do(t, hh, http.MethodPut, "", "", map[string]string{"X-Client-Cert": rfc}); rec.Code != 200 || !(*seen)[0].Equal(id.Cert) {
+	if rec = do(
+		t,
+		hh,
+		http.MethodPut,
+		"",
+		"",
+		map[string]string{"X-Client-Cert": rfc},
+	); rec.Code != 200 ||
+		!(*seen)[0].Equal(id.Cert) {
 		t.Fatalf("rfc9440: %d", rec.Code)
 	}
 	pemStr := string(pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: id.Cert.Raw}))
-	if rec = do(t, hh, http.MethodPut, "", "", map[string]string{"X-Client-Cert": url.PathEscape(pemStr)}); rec.Code != 200 || !(*seen)[1].Equal(id.Cert) {
+	if rec = do(
+		t,
+		hh,
+		http.MethodPut,
+		"",
+		"",
+		map[string]string{"X-Client-Cert": url.PathEscape(pemStr)},
+	); rec.Code != 200 ||
+		!(*seen)[1].Equal(id.Cert) {
 		t.Fatalf("pem: %d", rec.Code)
 	}
 	for _, bad := range []string{":!!!:", ":AAAA:", "%zz", "not a cert", url.PathEscape("-----BEGIN CERTIFICATE-----\nAAAA\n-----END CERTIFICATE-----\n")} {
-		if rec = do(t, hh, http.MethodPut, "", "", map[string]string{"X-Client-Cert": bad}); rec.Code != 400 {
+		if rec = do(
+			t,
+			hh,
+			http.MethodPut,
+			"",
+			"",
+			map[string]string{"X-Client-Cert": bad},
+		); rec.Code != 400 {
 			t.Errorf("bad header %q: %d", bad, rec.Code)
 		}
 	}
-	if rec = do(t, hh, http.MethodPut, "", "", nil); rec.Code != 200 || (*seen)[len(*seen)-1] != nil {
+	if rec = do(
+		t,
+		hh,
+		http.MethodPut,
+		"",
+		"",
+		nil,
+	); rec.Code != 200 ||
+		(*seen)[len(*seen)-1] != nil {
 		t.Fatalf("absent header: %d", rec.Code)
 	}
 
@@ -229,8 +297,22 @@ func TestCertMiddlewares(t *testing.T) {
 	// must separately verify key possession and prevent direct access or forged
 	// headers.
 	inner, seen = certCapture()
-	vh := httpapi.CertFromHeader("X-Client-Cert", httpapi.WithHeaderRoots(ca.Pool()))(inner)
-	if rec = do(t, vh, http.MethodPut, "", "", map[string]string{"X-Client-Cert": rfc}); rec.Code != 200 || !(*seen)[0].Equal(id.Cert) {
+	vh := httpapi.CertFromHeader(
+		"X-Client-Cert",
+		httpapi.WithHeaderRoots(ca.Pool()),
+		httpapi.WithHeaderPeers(netip.MustParsePrefix("192.0.2.0/24")),
+	)(
+		inner,
+	)
+	if rec = do(
+		t,
+		vh,
+		http.MethodPut,
+		"",
+		"",
+		map[string]string{"X-Client-Cert": rfc},
+	); rec.Code != 200 ||
+		!(*seen)[0].Equal(id.Cert) {
 		t.Fatalf("verified header: %d", rec.Code)
 	}
 	other, err := testpki.NewCA("other")
@@ -239,13 +321,28 @@ func TestCertMiddlewares(t *testing.T) {
 	}
 	foreign, _ := other.Issue("dev", time.Now().Add(-time.Minute))
 	foreignHdr := ":" + base64.StdEncoding.EncodeToString(foreign.Cert.Raw) + ":"
-	if rec = do(t, vh, http.MethodPut, "", "", map[string]string{"X-Client-Cert": foreignHdr}); rec.Code != 400 {
+	if rec = do(
+		t,
+		vh,
+		http.MethodPut,
+		"",
+		"",
+		map[string]string{"X-Client-Cert": foreignHdr},
+	); rec.Code != 400 {
 		t.Fatalf("foreign certificate accepted: %d", rec.Code)
 	}
-	// Without a pool the same certificate is taken at face value.
+	// An unconfigured proxy assertion is rejected.
 	unverified, useen := certCapture()
 	uh := httpapi.CertFromHeader("X-Client-Cert")(unverified)
-	if rec = do(t, uh, http.MethodPut, "", "", map[string]string{"X-Client-Cert": foreignHdr}); rec.Code != 200 || !(*useen)[0].Equal(foreign.Cert) {
+	if rec = do(
+		t,
+		uh,
+		http.MethodPut,
+		"",
+		"",
+		map[string]string{"X-Client-Cert": foreignHdr},
+	); rec.Code != 403 ||
+		len(*useen) != 0 {
 		t.Fatalf("unverified header: %d", rec.Code)
 	}
 
@@ -253,7 +350,10 @@ func TestCertMiddlewares(t *testing.T) {
 	inner, seen = certCapture()
 	th := httpapi.CertFromTLS(inner)
 	req := httptest.NewRequest(http.MethodPut, "/", nil)
-	req.TLS = &tls.ConnectionState{PeerCertificates: []*x509.Certificate{id.Cert}}
+	req.TLS = &tls.ConnectionState{
+		PeerCertificates: []*x509.Certificate{id.Cert},
+		VerifiedChains:   [][]*x509.Certificate{{id.Cert, ca.Cert}},
+	}
 	rec = httptest.NewRecorder()
 	th.ServeHTTP(rec, req)
 	if (*seen)[0] == nil || !(*seen)[0].Equal(id.Cert) {
@@ -265,7 +365,8 @@ func TestCertMiddlewares(t *testing.T) {
 	if (*seen)[1] != nil {
 		t.Fatal("no tls should give nil cert")
 	}
-	if httpapi.CertFromContext(context.Background()) != nil || !httpapi.IsCertMissing(errors.Join(errors.New("x"))) == true {
+	if httpapi.CertFromContext(context.Background()) != nil ||
+		!httpapi.IsCertMissing(errors.Join(errors.New("x"))) == true {
 		t.Log("helper checks")
 	}
 }

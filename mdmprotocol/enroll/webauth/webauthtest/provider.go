@@ -16,6 +16,7 @@ import (
 	"fmt"
 	"math/big"
 	"net/http"
+	"net/http/cookiejar"
 	"net/http/httptest"
 	"net/url"
 	"strconv"
@@ -546,7 +547,8 @@ func (p *Provider) Client(trust ...*x509.Certificate) *WebView {
 	transport := &http.Transport{
 		TLSClientConfig: &tls.Config{RootCAs: pool, MinVersion: tls.VersionTLS12},
 	}
-	client := &http.Client{
+	jar, _ := cookiejar.New(nil)
+	client := &http.Client{Jar: jar,
 		Transport:     transport,
 		CheckRedirect: func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse },
 	}

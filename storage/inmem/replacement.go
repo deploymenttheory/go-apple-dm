@@ -29,6 +29,11 @@ func (s *Store) TransitionReplacement(ctx context.Context, id mdm.EnrollmentID, 
 		return nil, err
 	}
 	if commit {
+		for _, token := range r.Tokens {
+			if row := s.enrollments[token.ID.ID]; row != nil && row.ID != token.ID {
+				return nil, storage.ErrConflict
+			}
+		}
 		for _, h := range s.history {
 			if h.Hash == r.CandidateHash && h.ID != id {
 				return nil, fmt.Errorf("%w: candidate certificate reused", storage.ErrConflict)

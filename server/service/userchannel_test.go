@@ -6,10 +6,11 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/deploymenttheory/go-apple-dm/server/service"
 	"github.com/deploymenttheory/go-apple-dm/mdmprotocol/mdm"
+	"github.com/deploymenttheory/go-apple-dm/mdmprotocol/plist"
 	"github.com/deploymenttheory/go-apple-dm/schema/checkin"
 	"github.com/deploymenttheory/go-apple-dm/schema/commands"
+	"github.com/deploymenttheory/go-apple-dm/server/service"
 	"github.com/deploymenttheory/go-apple-dm/storage"
 )
 
@@ -51,7 +52,12 @@ func TestEnqueue(t *testing.T) {
 		h := newHarness(t, service.Config{})
 		enrollMac(t, h, "D1", "alice")
 		dev, usr := mdm.EnrollmentID{Channel: mdm.ChannelDevice, ID: "D1"}, userID("D1", "alice")
-		res, err := h.core.Enqueue(ctx, []mdm.EnrollmentID{dev, usr}, newCmd(t, &commands.ProfileList{}), storage.EnqueueOptions{})
+		res, err := h.core.Enqueue(
+			ctx,
+			[]mdm.EnrollmentID{dev, usr},
+			newCmd(t, &commands.ProfileList{}),
+			storage.EnqueueOptions{},
+		)
 		if err != nil || len(res.Queued) != 2 || len(res.Skipped) != 0 {
 			t.Fatalf("ProfileList to both channels: %+v %v", res, err)
 		}
@@ -60,22 +66,57 @@ func TestEnqueue(t *testing.T) {
 		h := newHarness(t, service.Config{})
 		enrollMac(t, h, "D1", "alice")
 		dev, usr := mdm.EnrollmentID{Channel: mdm.ChannelDevice, ID: "D1"}, userID("D1", "alice")
+		// A tracked SecurityInfo response establishes ADE before eligibility.
+		security := newCmd(t, &commands.SecurityInfo{})
+		if _, err := h.store.Enqueue(
+			ctx,
+			[]mdm.EnrollmentID{dev},
+			security,
+			storage.EnqueueOptions{},
+		); err != nil {
+			t.Fatal(err)
+		}
+		raw, _ := plist.Marshal(
+			map[string]any{
+				"UDID":        dev.ID,
+				"Status":      "Acknowledged",
+				"CommandUUID": security.UUID,
+				"SecurityInfo": map[string]any{
+					"ManagementStatus": map[string]any{"EnrolledViaDEP": true},
+				},
+			},
+		)
+		response, _ := mdm.DecodeResponse(raw, "")
+		if err := h.store.StoreResult(ctx, dev, response, h.clock.Now()); err != nil {
+			t.Fatal(err)
+		}
 		// DeviceConfigured is a device channel command on macOS.
-		res, err := h.core.Enqueue(ctx, []mdm.EnrollmentID{dev, usr}, newCmd(t, &commands.DeviceConfigured{}), storage.EnqueueOptions{})
+		res, err := h.core.Enqueue(
+			ctx,
+			[]mdm.EnrollmentID{dev, usr},
+			newCmd(t, &commands.DeviceConfigured{}),
+			storage.EnqueueOptions{},
+		)
 		if err != nil {
 			t.Fatal(err)
 		}
 		if len(res.Queued) != 1 || res.Queued[0] != dev {
 			t.Fatalf("queued = %v, want the device only", res.Queued)
 		}
-		if serr := res.Skipped[usr]; !errors.Is(serr, service.ErrUnsupportedTarget) || !strings.Contains(serr.Error(), "user channel") {
+		if serr := res.Skipped[usr]; !errors.Is(serr, service.ErrUnsupportedTarget) ||
+			!strings.Contains(serr.Error(), "user channel") {
 			t.Fatalf("user skip = %v", serr)
 		}
 		if next, _ := h.store.Next(ctx, usr, false, h.clock.Now()); next != nil {
 			t.Fatal("device-only command reached the user channel")
 		}
 		// Every target unsupported: nothing is queued and the store is not asked.
-		res, err = h.core.Enqueue(ctx, []mdm.EnrollmentID{usr}, newCmd(t, &commands.DeviceConfigured{}), storage.EnqueueOptions{})
+		res, err = h.core.Enqueue(
+			ctx,
+			[]mdm.EnrollmentID{usr},
+			newCmd(t, &commands.DeviceConfigured{}),
+			storage.EnqueueOptions{},
+		)
 		if err != nil || len(res.Queued) != 0 || len(res.Skipped) != 1 {
 			t.Fatalf("all unsupported: %+v %v", res, err)
 		}
@@ -83,13 +124,32 @@ func TestEnqueue(t *testing.T) {
 		off := false
 		h2 := newHarness(t, service.Config{ValidateTargets: &off})
 		enrollMac(t, h2, "D1", "alice")
-		if res, err := h2.core.Enqueue(ctx, []mdm.EnrollmentID{usr}, newCmd(t, &commands.DeviceConfigured{}), storage.EnqueueOptions{}); err != nil || len(res.Queued) != 1 {
+		if res, err := h2.core.Enqueue(
+			ctx,
+			[]mdm.EnrollmentID{usr},
+			newCmd(t, &commands.DeviceConfigured{}),
+			storage.EnqueueOptions{},
+		); err != nil ||
+			len(res.Queued) != 1 {
 			t.Fatalf("validation off: %+v %v", res, err)
 		}
 	})
 	t.Run("SharedIPadOnly", func(t *testing.T) {
 		h := newHarness(t, service.Config{})
-		ipad := checkinPlist(t, map[string]any{"MessageType": "Authenticate", "Topic": "com.apple.mgmt.t", "UDID": "P1", "Model": "iPad", "ModelName": "iPad", "DeviceName": "d", "SerialNumber": "S2", "ProductName": "iPad14,1", "OSVersion": "18.0"})
+		ipad := checkinPlist(
+			t,
+			map[string]any{
+				"MessageType":  "Authenticate",
+				"Topic":        "com.apple.mgmt.t",
+				"UDID":         "P1",
+				"Model":        "iPad",
+				"ModelName":    "iPad",
+				"DeviceName":   "d",
+				"SerialNumber": "S2",
+				"ProductName":  "iPad14,1",
+				"OSVersion":    "18.0",
+			},
+		)
 		if _, err := h.core.Checkin(ctx, req(h.cert), ipad); err != nil {
 			t.Fatal(err)
 		}
@@ -98,15 +158,38 @@ func TestEnqueue(t *testing.T) {
 		}
 		dev := mdm.EnrollmentID{Channel: mdm.ChannelDevice, ID: "P1"}
 		// Not a Shared iPad yet: LogOutUser only applies to Shared iPad.
-		res, err := h.core.Enqueue(ctx, []mdm.EnrollmentID{dev}, newCmd(t, &commands.LogOutUser{}), storage.EnqueueOptions{})
-		if err != nil || len(res.Queued) != 0 || !errors.Is(res.Skipped[dev], service.ErrUnsupportedTarget) {
+		res, err := h.core.Enqueue(
+			ctx,
+			[]mdm.EnrollmentID{dev},
+			newCmd(t, &commands.LogOutUser{}),
+			storage.EnqueueOptions{},
+		)
+		if err != nil || len(res.Queued) != 0 ||
+			!errors.Is(res.Skipped[dev], service.ErrUnsupportedTarget) {
 			t.Fatalf("LogOutUser on a plain iPad: %+v %v", res, err)
 		}
 		// The logged-in user channel makes it a Shared iPad.
-		if _, err := h.core.Checkin(ctx, req(h.cert), tokenUpdate(t, "P1", map[string]any{"UserID": mdm.SharedIPadUserID, "UserShortName": "student", "UserLongName": "Student"})); err != nil {
+		if _, err := h.core.Checkin(
+			ctx,
+			req(h.cert),
+			tokenUpdate(
+				t,
+				"P1",
+				map[string]any{
+					"UserID":        mdm.SharedIPadUserID,
+					"UserShortName": "student",
+					"UserLongName":  "Student",
+				},
+			),
+		); err != nil {
 			t.Fatal(err)
 		}
-		res, err = h.core.Enqueue(ctx, []mdm.EnrollmentID{dev}, newCmd(t, &commands.LogOutUser{}), storage.EnqueueOptions{})
+		res, err = h.core.Enqueue(
+			ctx,
+			[]mdm.EnrollmentID{dev},
+			newCmd(t, &commands.LogOutUser{}),
+			storage.EnqueueOptions{},
+		)
 		if err != nil || len(res.Queued) != 1 {
 			t.Fatalf("LogOutUser on a Shared iPad: %+v %v", res, err)
 		}

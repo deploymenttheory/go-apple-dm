@@ -7,11 +7,12 @@ import (
 	"encoding/base64"
 	"errors"
 	"net/http"
+	"net/netip"
 	"testing"
 	"time"
 
-	"github.com/deploymenttheory/go-apple-dm/server/internal/app"
 	"github.com/deploymenttheory/go-apple-dm/mdmprotocol/plist"
+	"github.com/deploymenttheory/go-apple-dm/server/internal/app"
 	"github.com/deploymenttheory/go-apple-dm/testpki"
 )
 
@@ -70,8 +71,11 @@ func TestCertHeaderIsVerifiedAgainstCARoots(t *testing.T) {
 	}
 
 	a := build(t, app.Config{
-		Role: app.RoleMDM, Storage: "inmem",
-		CertHeader: "X-Client-Cert", CARoots: ours.Pool(),
+		Role:           app.RoleMDM,
+		Storage:        "inmem",
+		CertHeader:     "X-Client-Cert",
+		CARoots:        ours.Pool(),
+		TrustedProxies: []netip.Prefix{netip.MustParsePrefix("127.0.0.0/8")},
 	})
 	srv := serve(t, a)
 	checkin := func(t *testing.T, cert *x509.Certificate) int {

@@ -55,6 +55,7 @@ The [architecture guide](../../architecture.md) summarizes how the decisions fit
 | 0044 | [Repository layout — layered tiers and a separate reference-server module](0044-repository-layout.md) |
 | 0045 | [Return to Service](0045-return-to-service.md) |
 | 0046 | [Generated schema provenance](0046-generated-from-is-generated.md) |
-| 0047 | [Enrollment authentication and optional security services](0047-enrollment-authentication-and-optional-security-services.md) |
+| 0047 | [Enrollment authentication and security services](0047-enrollment-authentication-and-optional-security-services.md) |
 | 0048 | [Reference server as a maintained test bench](0048-reference-server-bench.md) |
 | 0049 | [Server-managed app push credentials and sending](0049-server-managed-app-push.md) |
+| 0050 | [Enrollment security boundaries](0050-enrollment-security-boundaries.md) |

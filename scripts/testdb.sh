@@ -17,8 +17,9 @@ DDM=dm-test-ddm
 DDM_IMAGE=go-apple-dm:test
 DDM_PORT="${TEST_DDM_PORT:-8090}"
 # Shared secrets for the test hop between the roles; CI sets the same values.
-DDM_SEND_KEY="${TEST_DDM_SEND_KEY:-mdm-to-ddm-test-key}"
-DDM_RECV_KEY="${TEST_DDM_RECV_KEY:-ddm-to-mdm-test-key}"
+DDM_SEND_KEY="${TEST_DDM_SEND_KEY:-mdm-to-ddm-test-key-32-bytes-long!!}"
+DDM_RECV_KEY="${TEST_DDM_RECV_KEY:-ddm-to-mdm-test-key-32-bytes-long!!}"
+DDM_TLS_DIR="${TEST_DDM_TLS_DIR:-/tmp/go-apple-dm-test-ddm-tls}"
 DDM_ADMIN_TOKEN="${TEST_DDM_ADMIN_TOKEN:-admin-test-token}"
 # The container writes a persistent sqlite store, which seals its secret columns
 # and so needs a key. Test material, never a deployment value.
@@ -26,7 +27,8 @@ DDM_STORAGE_KEY_NAME="${TEST_DDM_STORAGE_KEY_NAME:-e2e}"
 DDM_STORAGE_KEY="${TEST_DDM_STORAGE_KEY:-e2e-storage-key-of-sufficient-length}"
 
 print_ddm_env() {
-  echo "export TEST_DDM_URL='http://127.0.0.1:${DDM_PORT}'"
+  echo "export TEST_DDM_URL='https://127.0.0.1:${DDM_PORT}'"
+  echo "export TEST_DDM_CA_FILE='${DDM_TLS_DIR}/mount/server.crt'"
   echo "export TEST_DDM_SEND_KEY='${DDM_SEND_KEY}'"
   echo "export TEST_DDM_RECV_KEY='${DDM_RECV_KEY}'"
   echo "export TEST_DDM_ADMIN_TOKEN='${DDM_ADMIN_TOKEN}'"
@@ -84,17 +86,27 @@ case "${1:-}" in
     print_env
     ;;
   ddm-up)
+    mkdir -p "$DDM_TLS_DIR/mount"
+    chmod 700 "$DDM_TLS_DIR"
+    chmod 755 "$DDM_TLS_DIR/mount"
+    openssl req -x509 -newkey rsa:2048 -nodes -days 2 \
+      -subj /CN=localhost -addext 'subjectAltName=DNS:localhost,IP:127.0.0.1' \
+      -keyout "$DDM_TLS_DIR/mount/server.key" -out "$DDM_TLS_DIR/mount/server.crt" >/dev/null 2>&1
+    # The non-root container reads this mount; its host parent remains private.
+    chmod 644 "$DDM_TLS_DIR/mount/server.key" "$DDM_TLS_DIR/mount/server.crt"
     docker build -t "$DDM_IMAGE" "$(cd "$(dirname "$0")/.." && pwd)" >&2
     docker rm -f "$DDM" >/dev/null 2>&1 || true
     # The mdm role signs with SEND and verifies with RECV, so the ddm role receives
     # with the mdm role's SEND key and signs with its RECV key.
-    docker run -d --name "$DDM" -p "${DDM_PORT}:8080" \
+    docker run -d --name "$DDM" --no-healthcheck -p "127.0.0.1:${DDM_PORT}:8080" \
+      -v "$DDM_TLS_DIR/mount:/test-tls:ro" \
+      -e DM_TLS_CERT_FILE=/test-tls/server.crt -e DM_TLS_KEY_FILE=/test-tls/server.key \
       -e DM_ROLE=ddm -e DM_LISTEN=:8080 -e DM_STORAGE=sqlite -e DM_DSN=/data/ddm.db \
       -e DM_DDM_RECV_KEY="$DDM_SEND_KEY" -e DM_DDM_SEND_KEY="$DDM_RECV_KEY" \
       -e DM_STORAGE_KEYS="$DDM_STORAGE_KEY_NAME" \
       -e "DM_STORAGE_KEY_$(printf '%s' "$DDM_STORAGE_KEY_NAME" | tr '[:lower:].-' '[:upper:]__')=$DDM_STORAGE_KEY" \
       -e DM_ADMIN_TOKEN="$DDM_ADMIN_TOKEN" "$DDM_IMAGE" >/dev/null
-    wait_for "$DDM" curl -fsS "http://127.0.0.1:${DDM_PORT}/healthz"
+    wait_for "$DDM" curl -fsS --cacert "$DDM_TLS_DIR/mount/server.crt" "https://127.0.0.1:${DDM_PORT}/healthz"
     print_ddm_env
     ;;
   ddm-down)

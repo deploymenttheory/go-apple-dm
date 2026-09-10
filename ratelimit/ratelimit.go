@@ -7,6 +7,7 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"math"
 	"time"
 
 	"github.com/deploymenttheory/go-apple-dm/state"
@@ -103,7 +104,11 @@ func (l *Limiter) Check(ctx context.Context, buckets []Bucket) (Decision, error)
 				if len(r.Value) != 8 {
 					return errors.New("ratelimit: corrupt state")
 				}
-				tat = time.UnixMicro(int64(binary.BigEndian.Uint64(r.Value)))
+				stored := binary.BigEndian.Uint64(r.Value)
+				if stored > math.MaxInt64 {
+					return errors.New("ratelimit: corrupt timestamp")
+				}
+				tat = time.UnixMicro(int64(stored))
 			}
 			allowAt := tat.Add(-time.Duration(b.Burst-1) * b.Interval)
 			if allowAt.After(now) {

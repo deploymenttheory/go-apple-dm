@@ -351,21 +351,46 @@ func TestWriteFailuresSurface(t *testing.T) {
 	s := open(t)
 	id := mdm.EnrollmentID{Channel: mdm.ChannelDevice, ID: "w"}
 	t0 := time.Date(2026, 9, 1, 12, 0, 0, 0, time.UTC)
-	if err := s.UpsertAuthenticate(ctx, id, &checkin.Authenticate{Topic: "t"}, nil, t0); err != nil {
+	if err := s.UpsertAuthenticate(
+		ctx,
+		id,
+		&checkin.Authenticate{Topic: "t"},
+		nil,
+		t0,
+	); err != nil {
 		t.Fatal(err)
 	}
-	if err := s.StoreTokenUpdate(ctx, id, mdm.Push{Topic: "t", Token: []byte{1}, Magic: "m"}, nil, nil, t0); err != nil {
+	if err := s.StoreTokenUpdate(
+		ctx,
+		id,
+		mdm.Push{Topic: "t", Token: []byte{1}, Magic: "m"},
+		nil,
+		nil,
+		t0,
+	); err != nil {
 		t.Fatal(err)
 	}
 	cmd := &mdm.Command{UUID: "W1", RequestType: "ProfileList", Raw: []byte("<plist/>")}
-	if _, err := s.Enqueue(ctx, []mdm.EnrollmentID{id}, cmd, storage.EnqueueOptions{Now: t0}); err != nil {
+	if _, err := s.Enqueue(
+		ctx,
+		[]mdm.EnrollmentID{id},
+		cmd,
+		storage.EnqueueOptions{Now: t0},
+	); err != nil {
 		t.Fatal(err)
 	}
 	// A history insert that fails must roll the pin back too.
-	if _, err := s.DB().ExecContext(ctx, "CREATE TRIGGER no_insert_cert_associations BEFORE INSERT ON cert_associations BEGIN SELECT RAISE(FAIL, 'history disabled'); END"); err != nil {
+	if _, err := s.DB().
+		ExecContext(ctx, "CREATE TRIGGER no_insert_cert_associations BEFORE INSERT ON cert_associations BEGIN SELECT RAISE(FAIL, 'history disabled'); END"); err != nil {
 		t.Fatal(err)
 	}
-	if err := s.AssociateCert(ctx, id, "h-new", t0); err == nil || !strings.Contains(err.Error(), "history disabled") {
+	if err := s.AssociateCert(
+		ctx,
+		id,
+		"h-new",
+		t0,
+	); err == nil ||
+		!strings.Contains(err.Error(), "history disabled") {
 		t.Fatalf("AssociateCert with history disabled: %v", err)
 	}
 	if h, _ := s.CertHash(ctx, id); h != "" {
@@ -374,18 +399,18 @@ func TestWriteFailuresSurface(t *testing.T) {
 	if _, err := s.DB().ExecContext(ctx, "DROP TRIGGER no_insert_cert_associations"); err != nil {
 		t.Fatal(err)
 	}
+	uid := mdm.EnrollmentID{Channel: mdm.ChannelUser, ID: "w:u", ParentID: "w"}
+	if err := s.StoreUserAuthChallenge(ctx, uid, "c", nil, t0); err != nil {
+		t.Fatal(err)
+	}
 	for _, stmt := range []string{
-		"CREATE TRIGGER no_update_enrollments BEFORE UPDATE ON enrollments BEGIN SELECT RAISE(FAIL, 'writes disabled'); END",
+		"CREATE TRIGGER no_update_enrollments BEFORE UPDATE OF enabled, cert_hash, token, magic, topic, unlock_token, bootstrap_token, last_seen_at, device_name ON enrollments BEGIN SELECT RAISE(FAIL, 'writes disabled'); END",
 		"CREATE TRIGGER no_update_commands BEFORE UPDATE ON commands BEGIN SELECT RAISE(FAIL, 'writes disabled'); END",
 		"CREATE TRIGGER no_insert_commands BEFORE INSERT ON commands BEGIN SELECT RAISE(FAIL, 'writes disabled'); END",
 	} {
 		if _, err := s.DB().ExecContext(ctx, stmt); err != nil {
 			t.Fatal(err)
 		}
-	}
-	uid := mdm.EnrollmentID{Channel: mdm.ChannelUser, ID: "w:u", ParentID: "w"}
-	if err := s.StoreUserAuthChallenge(ctx, uid, "c", nil, t0); err != nil {
-		t.Fatal(err)
 	}
 	pushCertPEM, pushKeyPEM := pushPair(t, t0)
 	if _, err := s.StorePushCert(ctx, "", pushCertPEM, pushKeyPEM, t0); err != nil {
@@ -417,12 +442,24 @@ func TestWriteFailuresSurface(t *testing.T) {
 			return s.Import(ctx, storage.EnrollmentExport{ID: id, EnrolledAt: t0, LastSeenAt: t0})
 		},
 		"StoreTokenUpdate": func() error {
-			return s.StoreTokenUpdate(ctx, id, mdm.Push{Topic: "t", Token: []byte{1}, Magic: "m"}, nil, nil, t0)
+			return s.StoreTokenUpdate(
+				ctx,
+				id,
+				mdm.Push{Topic: "t", Token: []byte{1}, Magic: "m"},
+				nil,
+				nil,
+				t0,
+			)
 		},
 		"Disable":       func() error { return s.Disable(ctx, id, t0) },
 		"TouchLastSeen": func() error { return s.TouchLastSeen(ctx, id, t0.Add(time.Hour)) },
 		"Enqueue": func() error {
-			_, err := s.Enqueue(ctx, []mdm.EnrollmentID{id}, &mdm.Command{UUID: "W2", RequestType: "ProfileList"}, storage.EnqueueOptions{})
+			_, err := s.Enqueue(
+				ctx,
+				[]mdm.EnrollmentID{id},
+				&mdm.Command{UUID: "W2", RequestType: "ProfileList"},
+				storage.EnqueueOptions{},
+			)
 			return err
 		},
 		"Next":           func() error { _, err := s.Next(ctx, id, false, t0); return err },
@@ -434,7 +471,9 @@ func TestWriteFailuresSurface(t *testing.T) {
 	}
 	for name, call := range calls {
 		err := call()
-		if err == nil || errors.Is(err, storage.ErrNotFound) || errors.Is(err, storage.ErrInvalid) || !strings.Contains(err.Error(), "writes disabled") {
+		if err == nil || errors.Is(err, storage.ErrNotFound) ||
+			errors.Is(err, storage.ErrInvalid) ||
+			!strings.Contains(err.Error(), "writes disabled") {
 			t.Errorf("%s: %v", name, err)
 		}
 	}

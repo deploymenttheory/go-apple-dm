@@ -1,4 +1,10 @@
 -- +up
+CREATE TABLE ddm_identities (
+    enrollment_id VARCHAR(255) NOT NULL PRIMARY KEY,
+    channel SMALLINT NOT NULL,
+    parent_id VARCHAR(255) NOT NULL
+) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin;
+
 CREATE TABLE ddm_declarations (
     identifier   VARCHAR(255) NOT NULL PRIMARY KEY,
     type         VARCHAR(255) NOT NULL,
@@ -153,3 +159,4 @@ DROP TABLE ddm_set_declarations;
 DROP TABLE ddm_sets;
 DROP TABLE ddm_declaration_versions;
 DROP TABLE ddm_declarations;
+DROP TABLE ddm_identities;

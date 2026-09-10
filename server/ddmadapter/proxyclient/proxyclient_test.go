@@ -13,14 +13,15 @@ import (
 	"testing"
 	"time"
 
-	"github.com/deploymenttheory/go-apple-dm/server/ddmadapter/internal/proxywire"
-	"github.com/deploymenttheory/go-apple-dm/server/ddmadapter/proxyclient"
-	"github.com/deploymenttheory/go-apple-dm/server/ddmadapter/proxyserver"
-	"github.com/deploymenttheory/go-apple-dm/server/service"
 	"github.com/deploymenttheory/go-apple-dm/mdmprotocol/ddm"
 	"github.com/deploymenttheory/go-apple-dm/mdmprotocol/mdm"
 	"github.com/deploymenttheory/go-apple-dm/mdmprotocol/plist"
 	"github.com/deploymenttheory/go-apple-dm/schema/checkin"
+	"github.com/deploymenttheory/go-apple-dm/server/ddmadapter/internal/proxywire"
+	"github.com/deploymenttheory/go-apple-dm/server/ddmadapter/proxyclient"
+	"github.com/deploymenttheory/go-apple-dm/server/ddmadapter/proxyserver"
+	"github.com/deploymenttheory/go-apple-dm/server/service"
+	"github.com/deploymenttheory/go-apple-dm/state"
 	ddminmem "github.com/deploymenttheory/go-apple-dm/storage/ddm/inmem"
 	"github.com/deploymenttheory/go-apple-dm/storage/inmem"
 )
@@ -45,13 +46,19 @@ func dmCheckin(t *testing.T, udid, endpoint string, data []byte) (*mdm.Checkin, 
 }
 
 // capture is a fake ddm role that records the request and answers as told.
+var (
+	sendKey = []byte("send-000000000000000000000000000")
+	recvKey = []byte("recv-000000000000000000000000000")
+)
+
 type capture struct {
-	status  int
-	body    []byte
-	headers map[string]string
-	mu      sync.Mutex
-	req     *http.Request
-	raw     []byte
+	unsigned bool
+	status   int
+	body     []byte
+	headers  map[string]string
+	mu       sync.Mutex
+	req      *http.Request
+	raw      []byte
 }
 
 func (c *capture) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -61,6 +68,15 @@ func (c *capture) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	c.mu.Unlock()
 	for k, v := range c.headers {
 		w.Header().Set(k, v)
+	}
+	if !c.unsigned && w.Header().Get(proxywire.HeaderSignature) == "" {
+		ct := w.Header().Get("Content-Type")
+		if ct == "" && len(c.body) > 0 {
+			ct = http.DetectContentType(c.body)
+			w.Header().Set("Content-Type", ct)
+		}
+		w.Header().
+			Set(proxywire.HeaderSignature, proxywire.SignBoundResponse(recvKey, r.Header.Get(proxywire.HeaderSignature), c.status, ct, c.body))
 	}
 	w.WriteHeader(c.status)
 	_, _ = w.Write(c.body)
@@ -81,6 +97,13 @@ func serve(t *testing.T, h http.Handler) *httptest.Server {
 
 func mustHandler(t *testing.T, cfg proxyclient.Config) service.DMHandler {
 	t.Helper()
+	cfg.AllowInsecureForTests = true
+	if cfg.SendKey == nil {
+		cfg.SendKey = sendKey
+	}
+	if cfg.RecvKey == nil {
+		cfg.RecvKey = recvKey
+	}
 	h, err := proxyclient.Handler(cfg)
 	if err != nil {
 		t.Fatal(err)
@@ -92,22 +115,34 @@ func TestHandler(t *testing.T) {
 	t.Parallel()
 	t.Run("EmptyURL", func(t *testing.T) {
 		t.Parallel()
-		if _, err := proxyclient.Handler(proxyclient.Config{}); !errors.Is(err, proxyclient.ErrBadURL) {
+		if _, err := proxyclient.Handler(
+			proxyclient.Config{},
+		); !errors.Is(
+			err,
+			proxyclient.ErrBadURL,
+		) {
 			t.Fatalf("empty URL: %v", err)
 		}
 	})
 	t.Run("BadURL", func(t *testing.T) {
 		t.Parallel()
 		for _, u := range []string{"://nope", "ftp://ddm.example", "ddm.example", "/v1", "http://", "http://ddm.example/%zz"} {
-			if _, err := proxyclient.Handler(proxyclient.Config{URL: u}); !errors.Is(err, proxyclient.ErrBadURL) {
+			if _, err := proxyclient.Handler(
+				proxyclient.Config{URL: u},
+			); !errors.Is(
+				err,
+				proxyclient.ErrBadURL,
+			) {
 				t.Errorf("%q: %v", u, err)
 			}
 		}
 	})
 	t.Run("OK", func(t *testing.T) {
 		t.Parallel()
-		for _, u := range []string{"http://ddm.example", "https://ddm.example:8443/prefix/", "http://127.0.0.1:1"} {
-			if _, err := proxyclient.Handler(proxyclient.Config{URL: u}); err != nil {
+		for _, u := range []string{"https://ddm.example", "https://ddm.example:8443/prefix/", "https://127.0.0.1:1"} {
+			if _, err := proxyclient.Handler(
+				proxyclient.Config{URL: u, SendKey: sendKey, RecvKey: recvKey},
+			); err != nil {
 				t.Errorf("%q: %v", u, err)
 			}
 		}
@@ -134,7 +169,8 @@ func TestForward(t *testing.T) {
 		if req.Method != http.MethodPost || req.URL.Path != "/ddm"+proxywire.Path {
 			t.Fatalf("%s %s", req.Method, req.URL.Path)
 		}
-		if req.Header.Get(proxywire.HeaderSignature) != "" || req.Header.Get("Authorization") != "" {
+		if req.Header.Get(proxywire.HeaderSignature) == "" ||
+			req.Header.Get("Authorization") != "" {
 			t.Fatalf("unexpected headers: %v", req.Header)
 		}
 		// The server can decode what it received exactly as the device path does.
@@ -147,14 +183,22 @@ func TestForward(t *testing.T) {
 		t.Parallel()
 		c := &capture{status: 200, body: []byte(`{}`)}
 		srv := serve(t, c)
-		key := []byte("send")
-		h := mustHandler(t, proxyclient.Config{URL: srv.URL, SendKey: key, Client: srv.Client()})
+		key := []byte("send-000000000000000000000000000")
+		h := mustHandler(
+			t,
+			proxyclient.Config{
+				AllowInsecureForTests: true,
+				URL:                   srv.URL,
+				SendKey:               key,
+				Client:                srv.Client(),
+			},
+		)
 		ck, m := dmCheckin(t, "D1", "tokens", nil)
 		if _, err := h(ctx, &mdm.Request{}, ck, m); err != nil {
 			t.Fatal(err)
 		}
 		req, raw := c.seen()
-		if err := proxywire.Verify(key, req.Header.Get(proxywire.HeaderSignature), raw); err != nil {
+		if err := proxywire.VerifyRequest(ctx, state.NewMemory(), key, req, raw); err != nil {
 			t.Fatalf("request signature: %v", err)
 		}
 	})
@@ -176,7 +220,13 @@ func TestForward(t *testing.T) {
 		t.Parallel()
 		c := &capture{status: 200, body: []byte(`{}`)}
 		srv := serve(t, c)
-		h := mustHandler(t, proxyclient.Config{URL: srv.URL, Auth: func(r *http.Request) { r.Header.Set("Authorization", "Bearer tok") }})
+		h := mustHandler(
+			t,
+			proxyclient.Config{
+				URL:  srv.URL,
+				Auth: func(r *http.Request) { r.Header.Set("Authorization", "Bearer tok") },
+			},
+		)
 		ck, m := dmCheckin(t, "D1", "tokens", nil)
 		if _, err := h(ctx, &mdm.Request{}, ck, m); err != nil {
 			t.Fatal(err)
@@ -192,10 +242,23 @@ func TestForward(t *testing.T) {
 		srv := serve(t, c)
 		h := mustHandler(t, proxyclient.Config{URL: srv.URL})
 		_, m := dmCheckin(t, "D1", "tokens", nil)
-		if _, err := h(ctx, &mdm.Request{}, nil, m); service.CodeOf(err) != service.CodeBadRequest || !errors.Is(err, service.ErrInvalidMessage) {
+		if _, err := h(
+			ctx,
+			&mdm.Request{},
+			nil,
+			m,
+		); service.CodeOf(err) != service.CodeBadRequest ||
+			!errors.Is(err, service.ErrInvalidMessage) {
 			t.Fatalf("nil check-in: %v", err)
 		}
-		if _, err := h(ctx, &mdm.Request{}, &mdm.Checkin{Message: m}, m); service.CodeOf(err) != service.CodeBadRequest {
+		if _, err := h(
+			ctx,
+			&mdm.Request{},
+			&mdm.Checkin{Message: m},
+			m,
+		); service.CodeOf(
+			err,
+		) != service.CodeBadRequest {
 			t.Fatalf("check-in without raw bytes: %v", err)
 		}
 		if req, _ := c.seen(); req != nil {
@@ -265,11 +328,18 @@ func TestRelay(t *testing.T) {
 func TestSignature(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
-	key := []byte("recv")
+	key := []byte("recv-000000000000000000000000000")
 	body := []byte(`{"SyncTokens":{}}`)
 	t.Run("ResponseVerified", func(t *testing.T) {
 		t.Parallel()
-		srv := serve(t, &capture{status: 200, body: body, headers: map[string]string{proxywire.HeaderSignature: proxywire.SignResponse(key, 200, body)}})
+		srv := serve(
+			t,
+			&capture{
+				status:  200,
+				body:    body,
+				headers: map[string]string{"Content-Type": "application/json"},
+			},
+		)
 		h := mustHandler(t, proxyclient.Config{URL: srv.URL, RecvKey: key})
 		ck, m := dmCheckin(t, "D1", "tokens", nil)
 		got, err := h(ctx, &mdm.Request{}, ck, m)
@@ -277,7 +347,7 @@ func TestSignature(t *testing.T) {
 			t.Fatalf("%+v %v", got, err)
 		}
 		// Signed 404 verifies over the empty body.
-		srv404 := serve(t, &capture{status: 404, headers: map[string]string{proxywire.HeaderSignature: proxywire.SignResponse(key, 404, nil)}})
+		srv404 := serve(t, &capture{status: 404})
 		h404 := mustHandler(t, proxyclient.Config{URL: srv404.URL, RecvKey: key})
 		if got, err := h404(ctx, &mdm.Request{}, ck, m); err != nil || got.Status != 404 {
 			t.Fatalf("signed 404: %+v %v", got, err)
@@ -292,7 +362,10 @@ func TestSignature(t *testing.T) {
 		ck, m := dmCheckin(t, "D1", "tokens", nil)
 		// The signature the ddm role emits for an empty 500, replayed on a 404.
 		lifted := proxywire.SignResponse(key, 500, nil)
-		srv := serve(t, &capture{status: 404, headers: map[string]string{proxywire.HeaderSignature: lifted}})
+		srv := serve(
+			t,
+			&capture{status: 404, headers: map[string]string{proxywire.HeaderSignature: lifted}},
+		)
 		h := mustHandler(t, proxyclient.Config{URL: srv.URL, RecvKey: key})
 		if _, err := h(ctx, &mdm.Request{}, ck, m); !errors.Is(err, proxywire.ErrBadSignature) {
 			t.Fatalf("replayed signature accepted under another status: %v", err)
@@ -314,17 +387,32 @@ func TestSignature(t *testing.T) {
 			"other body": proxywire.SignResponse(key, 200, []byte("{}")),
 			"garbage":    "!!",
 		} {
-			srv := serve(t, &capture{status: 200, body: body, headers: map[string]string{proxywire.HeaderSignature: hdr}})
+			srv := serve(
+				t,
+				&capture{
+					status:  200,
+					body:    body,
+					headers: map[string]string{proxywire.HeaderSignature: hdr},
+				},
+			)
 			h := mustHandler(t, proxyclient.Config{URL: srv.URL, RecvKey: key})
 			_, err := h(ctx, &mdm.Request{}, ck, m)
-			if service.CodeOf(err) != service.CodeInternal || !errors.Is(err, proxywire.ErrBadSignature) || !errors.Is(err, proxyclient.ErrUpstream) {
+			if service.CodeOf(err) != service.CodeInternal ||
+				!errors.Is(err, proxywire.ErrBadSignature) ||
+				!errors.Is(err, proxyclient.ErrUpstream) {
 				t.Errorf("%s: %v", name, err)
 			}
 		}
 		// Missing is a failure too, even on a status the device would accept.
-		srv := serve(t, &capture{status: 404})
+		srv := serve(t, &capture{status: 404, unsigned: true})
 		h := mustHandler(t, proxyclient.Config{URL: srv.URL, RecvKey: key})
-		if _, err := h(ctx, &mdm.Request{}, ck, m); service.CodeOf(err) != service.CodeInternal || !errors.Is(err, proxywire.ErrMissingSignature) {
+		if _, err := h(
+			ctx,
+			&mdm.Request{},
+			ck,
+			m,
+		); service.CodeOf(err) != service.CodeInternal ||
+			!errors.Is(err, proxywire.ErrBadSignature) {
 			t.Fatalf("missing: %v", err)
 		}
 	})
@@ -407,15 +495,25 @@ func TestRoundTripThroughProxyServer(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, _, err := engine.PutDeclaration(ctx, []byte(`{"Type":"com.apple.management.organization-info","Identifier":"org","Payload":{"Name":"Acme"}}`)); err != nil {
+	if _, _, err := engine.PutDeclaration(
+		ctx,
+		[]byte(
+			`{"Type":"com.apple.management.organization-info","Identifier":"org","Payload":{"Name":"Acme"}}`,
+		),
+	); err != nil {
 		t.Fatal(err)
 	}
 	dev := mdm.EnrollmentID{Channel: mdm.ChannelDevice, ID: "D1"}
 	if _, err := engine.AssignDeclaration(ctx, dev, "org"); err != nil {
 		t.Fatal(err)
 	}
-	mdmToDDM, ddmToMDM := []byte("mdm->ddm"), []byte("ddm->mdm")
+	mdmToDDM, ddmToMDM := []byte(
+		"mdm->ddm-00000000000000000000000",
+	), []byte(
+		"ddm->mdm-00000000000000000000000",
+	)
 	ingress, err := proxyserver.Handler(proxyserver.Config{
+		ReplayStore: state.NewMemory(), AllowInsecureForTests: true,
 		Backend: engine, RecvKey: mdmToDDM, SendKey: ddmToMDM,
 		Auth:   proxyserver.BearerAuth("tok"),
 		Logger: slog.New(slog.NewTextHandler(io.Discard, nil)),
@@ -425,11 +523,21 @@ func TestRoundTripThroughProxyServer(t *testing.T) {
 	}
 	srv := serve(t, ingress)
 	bearer := func(r *http.Request) { r.Header.Set("Authorization", "Bearer tok") }
-	egress, err := proxyclient.Handler(proxyclient.Config{URL: srv.URL, SendKey: mdmToDDM, RecvKey: ddmToMDM, Auth: bearer})
+	egress, err := proxyclient.Handler(
+		proxyclient.Config{
+			AllowInsecureForTests: true,
+			URL:                   srv.URL,
+			SendKey:               mdmToDDM,
+			RecvKey:               ddmToMDM,
+			Auth:                  bearer,
+		},
+	)
 	if err != nil {
 		t.Fatal(err)
 	}
-	core, err := service.New(service.Config{Store: inmem.New(), Pinning: service.PinOff, DeclarativeManagement: egress})
+	core, err := service.New(
+		service.Config{Store: inmem.New(), Pinning: service.PinOff, DeclarativeManagement: egress},
+	)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -444,14 +552,39 @@ func TestRoundTripThroughProxyServer(t *testing.T) {
 		}
 		return core.Checkin(ctx, &mdm.Request{}, ck)
 	}
-	if _, err := send(map[string]any{"MessageType": "Authenticate", "Topic": "com.apple.mgmt.t", "UDID": "D1", "Model": "Mac", "ModelName": "MacBook", "DeviceName": "d", "SerialNumber": "S1"}); err != nil {
+	if _, err := send(
+		map[string]any{
+			"MessageType":  "Authenticate",
+			"Topic":        "com.apple.mgmt.t",
+			"UDID":         "D1",
+			"Model":        "Mac",
+			"ModelName":    "MacBook",
+			"DeviceName":   "d",
+			"SerialNumber": "S1",
+		},
+	); err != nil {
 		t.Fatalf("Authenticate: %v", err)
 	}
-	if _, err := send(map[string]any{"MessageType": "TokenUpdate", "Topic": "com.apple.mgmt.t", "UDID": "D1", "PushMagic": "magic", "Token": []byte{1, 2, 3}}); err != nil {
+	if _, err := send(
+		map[string]any{
+			"MessageType": "TokenUpdate",
+			"Topic":       "com.apple.mgmt.t",
+			"UDID":        "D1",
+			"PushMagic":   "magic",
+			"Token":       []byte{1, 2, 3},
+		},
+	); err != nil {
 		t.Fatalf("TokenUpdate: %v", err)
 	}
 	dm := func(endpoint string, data []byte) (*service.CheckinResult, error) {
-		raw, err := plist.Marshal(checkin.DeclarativeManagement{MessageType: "DeclarativeManagement", UDID: "D1", Endpoint: endpoint, Data: data})
+		raw, err := plist.Marshal(
+			checkin.DeclarativeManagement{
+				MessageType: "DeclarativeManagement",
+				UDID:        "D1",
+				Endpoint:    endpoint,
+				Data:        data,
+			},
+		)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -494,20 +627,70 @@ func TestRoundTripThroughProxyServer(t *testing.T) {
 	}
 	// The ddm role checks the request signature: a client with the wrong
 	// key is refused and the device sees an internal error, never a 401.
-	wrong, err := proxyclient.Handler(proxyclient.Config{URL: srv.URL, SendKey: []byte("wrong"), RecvKey: ddmToMDM, Auth: bearer})
+	wrong, err := proxyclient.Handler(
+		proxyclient.Config{
+			AllowInsecureForTests: true,
+			URL:                   srv.URL,
+			SendKey:               []byte("wrong-00000000000000000000000000"),
+			RecvKey:               ddmToMDM,
+			Auth:                  bearer,
+		},
+	)
 	if err != nil {
 		t.Fatal(err)
 	}
 	ck, m := dmCheckin(t, "D1", "tokens", nil)
-	if _, err := wrong(ctx, &mdm.Request{}, ck, m); service.CodeOf(err) != service.CodeInternal || !errors.Is(err, proxyclient.ErrUpstream) {
+	if _, err := wrong(
+		ctx,
+		&mdm.Request{},
+		ck,
+		m,
+	); service.CodeOf(err) != service.CodeInternal ||
+		!errors.Is(err, proxyclient.ErrUpstream) {
 		t.Fatalf("wrong key: %v", err)
 	}
 	// And the mdm role checks the response signature.
-	wrongRecv, err := proxyclient.Handler(proxyclient.Config{URL: srv.URL, SendKey: mdmToDDM, RecvKey: []byte("wrong"), Auth: bearer})
+	wrongRecv, err := proxyclient.Handler(
+		proxyclient.Config{
+			AllowInsecureForTests: true,
+			URL:                   srv.URL,
+			SendKey:               mdmToDDM,
+			RecvKey:               []byte("wrong-00000000000000000000000000"),
+			Auth:                  bearer,
+		},
+	)
 	if err != nil {
 		t.Fatal(err)
 	}
 	if _, err := wrongRecv(ctx, &mdm.Request{}, ck, m); !errors.Is(err, proxywire.ErrBadSignature) {
 		t.Fatalf("wrong receive key: %v", err)
+	}
+}
+
+func TestHandlerRequiresTLSAndIndependentKeys(t *testing.T) {
+	for _, u := range []string{"http://ddm.example", "http://localhost", "https://user:password@ddm.example", "https://ddm.example?secret=value", "https://ddm.example#fragment"} {
+		if _, err := proxyclient.Handler(
+			proxyclient.Config{
+				URL:                   u,
+				SendKey:               sendKey,
+				RecvKey:               recvKey,
+				AllowInsecureForTests: true,
+			},
+		); !errors.Is(
+			err,
+			proxyclient.ErrBadURL,
+		) {
+			t.Fatal(u, err)
+		}
+	}
+	for _, keys := range [][2][]byte{{nil, recvKey}, {sendKey, nil}, {sendKey, sendKey}, {[]byte("short"), recvKey}} {
+		if _, err := proxyclient.Handler(
+			proxyclient.Config{URL: "https://ddm.example", SendKey: keys[0], RecvKey: keys[1]},
+		); !errors.Is(
+			err,
+			proxyclient.ErrUpstream,
+		) {
+			t.Fatal(err)
+		}
 	}
 }

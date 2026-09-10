@@ -12,6 +12,13 @@ with its matching private key. The ordinary app-push certificate for
 `com.weaveplatform.deviceweave` cannot authenticate MDM pushes. See the existing
 [bench runbook](../../test-lab/README.md) for certificate acquisition/import.
 
+Create a private admission policy file naming the Mac's hardware UUID, then set
+`Settings.DM_ENROLLMENT_POLICY_FILE` in the workspace's `bench.json` to its
+absolute path before starting the server. For a manual profile requested by UUID,
+use `{"devices":[{"udid":"<hardware UUID>"}]}`. The simulated bench supplies its
+own restricted fixture policy; a live workspace requires operator configuration.
+See [enrollment security](enrollment-security.md) for device/account rules.
+
 ```sh
 make bench-enrollment-preflight BENCH_IDENTITY=acme
 make bench-trust BENCH_TRUST_FILE=test-lab/local/trust.mobileconfig

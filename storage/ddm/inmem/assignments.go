@@ -13,7 +13,7 @@ import (
 
 // AssignSet implements ddm.AssignmentStore.
 func (t *tx) AssignSet(_ context.Context, id mdm.EnrollmentID, set string, _ time.Time) (bool, error) {
-	if err := validID(id); err != nil {
+	if err := t.validID(id); err != nil {
 		return false, err
 	}
 	if err := validName("set name", set); err != nil {
@@ -29,7 +29,7 @@ func (t *tx) AssignSet(_ context.Context, id mdm.EnrollmentID, set string, _ tim
 // UnassignSet implements ddm.AssignmentStore. An unknown set is simply not
 // assigned.
 func (t *tx) UnassignSet(_ context.Context, id mdm.EnrollmentID, set string) (bool, error) {
-	if err := validID(id); err != nil {
+	if err := t.validID(id); err != nil {
 		return false, err
 	}
 	if err := validName("set name", set); err != nil {
@@ -40,7 +40,7 @@ func (t *tx) UnassignSet(_ context.Context, id mdm.EnrollmentID, set string) (bo
 
 // EnrollmentSets implements ddm.AssignmentStore.
 func (t *tx) EnrollmentSets(_ context.Context, id mdm.EnrollmentID) ([]string, error) {
-	if err := validID(id); err != nil {
+	if err := t.validID(id); err != nil {
 		return nil, err
 	}
 	return sortedKeys(t.st.enrollSets[id.ID]), nil
@@ -66,7 +66,7 @@ func (t *tx) SetEnrollments(_ context.Context, set string, p paging.Page) (pagin
 
 // AssignDeclaration implements ddm.AssignmentStore.
 func (t *tx) AssignDeclaration(_ context.Context, id mdm.EnrollmentID, identifier string, _ time.Time) (bool, error) {
-	if err := validID(id); err != nil {
+	if err := t.validID(id); err != nil {
 		return false, err
 	}
 	if err := validName("identifier", identifier); err != nil {
@@ -81,7 +81,7 @@ func (t *tx) AssignDeclaration(_ context.Context, id mdm.EnrollmentID, identifie
 
 // UnassignDeclaration implements ddm.AssignmentStore.
 func (t *tx) UnassignDeclaration(_ context.Context, id mdm.EnrollmentID, identifier string) (bool, error) {
-	if err := validID(id); err != nil {
+	if err := t.validID(id); err != nil {
 		return false, err
 	}
 	if err := validName("identifier", identifier); err != nil {
@@ -92,7 +92,7 @@ func (t *tx) UnassignDeclaration(_ context.Context, id mdm.EnrollmentID, identif
 
 // EnrollmentDeclarations implements ddm.AssignmentStore.
 func (t *tx) EnrollmentDeclarations(_ context.Context, id mdm.EnrollmentID) ([]string, error) {
-	if err := validID(id); err != nil {
+	if err := t.validID(id); err != nil {
 		return nil, err
 	}
 	return sortedKeys(t.st.enrollDecls[id.ID]), nil
@@ -100,7 +100,7 @@ func (t *tx) EnrollmentDeclarations(_ context.Context, id mdm.EnrollmentID) ([]s
 
 // StaticDeclarations implements ddm.AssignmentStore.
 func (t *tx) StaticDeclarations(_ context.Context, id mdm.EnrollmentID) ([]ddm.Declaration, error) {
-	if err := validID(id); err != nil {
+	if err := t.validID(id); err != nil {
 		return nil, err
 	}
 	return t.declarationsByIdentifier(t.staticIdentifiers(id.ID)), nil

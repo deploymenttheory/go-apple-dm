@@ -65,13 +65,14 @@ func TestEnrollmentPreflightAndTrustExport(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(p.Profile.Payloads) != 1 || p.Profile.Payloads[0].Content.PayloadTypeName() != "com.apple.security.root" {
+	if len(p.Profile.Payloads) != 1 ||
+		p.Profile.Payloads[0].Content.PayloadTypeName() != "com.apple.security.root" {
 		t.Fatal("trust profile contents")
 	}
 	if err := ExportTrust(w, file); err == nil {
 		t.Fatal("existing profile overwritten")
 	}
-	if err := os.WriteFile(w.path("mdm", "ca.pem"), []byte("broken"), 0600); err != nil {
+	if err := os.WriteFile(w.path("mdm", "ca.pem"), []byte("broken"), 0o600); err != nil {
 		t.Fatal(err)
 	}
 	if err := ExportTrust(w, filepath.Join(t.TempDir(), "bad.mobileconfig")); err == nil {

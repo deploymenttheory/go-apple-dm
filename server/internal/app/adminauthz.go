@@ -1,6 +1,7 @@
 package app
 
 import (
+	"context"
 	"crypto/subtle"
 	"errors"
 	"fmt"
@@ -9,9 +10,11 @@ import (
 
 	"github.com/cedar-policy/cedar-go/types"
 
+	"github.com/deploymenttheory/go-apple-dm/mdmprotocol/ddm"
 	"github.com/deploymenttheory/go-apple-dm/mdmprotocol/event"
 	"github.com/deploymenttheory/go-apple-dm/mdmprotocol/mdm"
 	"github.com/deploymenttheory/go-apple-dm/server/adminauth"
+	"github.com/deploymenttheory/go-apple-dm/storage"
 )
 
 // Administrative action IDs form the registry used to validate stored policy
@@ -309,6 +312,31 @@ func (a *App) authorized(rt adminRoute) http.Handler {
 			writeError(w, http.StatusUnauthorized, ErrUnauthorized)
 			return
 		}
+		if r.PathValue("channel") != "" && r.PathValue("id") != "" {
+			channel, err := channelFromName(r.PathValue("channel"))
+			if err != nil {
+				writeError(w, http.StatusBadRequest, err)
+				return
+			}
+			canonical, err := a.resolveAdminEnrollment(r, rt.Family)
+			if err != nil {
+				status := http.StatusInternalServerError
+				if errors.Is(err, storage.ErrNotFound) || errors.Is(err, ddm.ErrNotFound) {
+					status = http.StatusNotFound
+				}
+				if errors.Is(err, mdm.ErrInvalidEnrollment) {
+					status = http.StatusBadRequest
+				}
+				writeError(w, status, err)
+				return
+			}
+			if canonical.Channel != channel ||
+				(r.URL.Query().Get("parent") != "" && r.URL.Query().Get("parent") != canonical.ParentID) {
+				writeError(w, http.StatusNotFound, storage.ErrNotFound)
+				return
+			}
+			r = r.WithContext(context.WithValue(r.Context(), canonicalEnrollmentKey{}, canonical))
+		}
 		if !bypass && !rt.Introspection {
 			if err := a.checkPolicy(r, p, rt); err != nil {
 				a.auditDenied(r, p, rt, err)
@@ -516,4 +544,24 @@ func (a *App) publishAdmin(
 // short-circuiting on the first differing byte.
 func constantTimeEqual(got, want string) bool {
 	return subtle.ConstantTimeCompare([]byte(got), []byte(want)) == 1
+}
+
+func (a *App) resolveAdminEnrollment(r *http.Request, family string) (mdm.EnrollmentID, error) {
+	e, err := a.Store.EnrollmentByID(r.Context(), r.PathValue("id"))
+	if err == nil {
+		return e.ID, nil
+	}
+	if !errors.Is(err, storage.ErrNotFound) || family != "ddm" {
+		return mdm.EnrollmentID{}, fmt.Errorf("app: resolve MDM identity: %w", err)
+	}
+	id, err := a.Engine.EnrollmentIdentity(r.Context(), r.PathValue("id"))
+	if err == nil {
+		return id, nil
+	}
+	if !errors.Is(err, ddm.ErrNotFound) {
+		return mdm.EnrollmentID{}, fmt.Errorf("app: resolve DDM identity: %w", err)
+	}
+	// A split DDM deployment supports preassignments before the MDM row exists.
+	// The first authorized assignment establishes an immutable DDM identity.
+	return enrollmentFromPath(r)
 }

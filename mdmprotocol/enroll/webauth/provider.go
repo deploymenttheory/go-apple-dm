@@ -46,6 +46,7 @@ type tokenResponse struct {
 
 // jwksMinRefresh bounds how often an unknown key id triggers a refetch.
 const jwksMinRefresh = time.Minute
+const jwksMaxAge = 15 * time.Minute
 
 // discoveryPath is appended to the issuer.
 const discoveryPath = "/.well-known/openid-configuration"
@@ -127,7 +128,7 @@ func (f *Flow) requireHTTPS(raw string) error {
 	if err != nil {
 		return fmt.Errorf("%w: %w", ErrNotHTTPS, err)
 	}
-	if u.Host == "" || (u.Scheme != "https" && !(f.cfg.AllowInsecureForTests && u.Scheme == "http")) {
+	if u.Host == "" || u.User != nil || u.Fragment != "" || (u.Scheme != "https" && !(f.cfg.AllowInsecureForTests && u.Scheme == "http")) {
 		return fmt.Errorf("%w: %q", ErrNotHTTPS, raw)
 	}
 	return nil
@@ -138,7 +139,7 @@ func (f *Flow) requireHTTPS(raw string) error {
 func (f *Flow) keysFor(ctx context.Context, jwksURL, kid, alg string) []verificationKey {
 	f.mu.Lock()
 	defer f.mu.Unlock()
-	if f.keys == nil {
+	if f.keys == nil || f.clock.Now().Sub(f.keysFetched) >= jwksMaxAge {
 		if err := f.refreshKeysLocked(ctx, jwksURL); err != nil {
 			f.log.WarnContext(ctx, "webauth: jwks fetch failed", "error", err)
 			return nil
@@ -214,7 +215,12 @@ func (f *Flow) exchange(ctx context.Context, tokenURL, code, verifier string) (s
 		return "", fmt.Errorf("%w: token response: %w", ErrProvider, jerr)
 	}
 	if status != http.StatusOK {
-		return "", fmt.Errorf("%w: token endpoint: status %d error %q: %s", ErrProvider, status, tr.Error, tr.ErrorDescription)
+		code := "provider_error"
+		switch tr.Error {
+		case "invalid_request", "invalid_client", "invalid_grant", "unauthorized_client", "unsupported_grant_type", "invalid_scope", "server_error", "temporarily_unavailable":
+			code = tr.Error
+		}
+		return "", fmt.Errorf("%w: token endpoint: status %d: %s", ErrProvider, status, code)
 	}
 	if tr.IDToken == "" {
 		return "", fmt.Errorf("%w: token response has no id_token", ErrProvider)

@@ -20,6 +20,7 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/mdmprotocol/enroll/ade"
 	"github.com/deploymenttheory/go-apple-dm/mdmprotocol/enroll/discovery"
 	"github.com/deploymenttheory/go-apple-dm/mdmprotocol/enroll/webauth"
+	"github.com/deploymenttheory/go-apple-dm/mdmprotocol/event"
 	"github.com/deploymenttheory/go-apple-dm/mdmprotocol/mdm"
 	"github.com/deploymenttheory/go-apple-dm/mdmprotocol/plist"
 	"github.com/deploymenttheory/go-apple-dm/pki/acme"
@@ -50,6 +51,8 @@ const (
 // EnrollConfig turns the enrollment routes on. It is inactive until
 // PublicURL and Topic are set.
 type EnrollConfig struct {
+	Admission                   EnrollmentAdmission
+	AdmissionFile               string
 	UserAuthHA1File             string
 	OTAAnchorFile, OTAChallenge string
 	// PublicURL is the https base devices reach (profiles, discovery,
@@ -65,8 +68,8 @@ type EnrollConfig struct {
 	// enrollment endpoints. Empty means publicly trusted HTTPS. It is independent
 	// of the identity issuer and the incoming ADE/OTA signing anchors.
 	TLSAnchorFile string
-	// SCEPChallenge is the shared SCEP challenge (development); an HMAC
-	// challenge derives one-time passwords when SCEPHMACKey is set instead.
+	// SCEPChallenge does not authorize reference-server certificate issuance.
+	// SCEPHMACKey also supplies the fallback key for ACME client identifiers.
 	SCEPChallenge     string
 	SCEPHMACKey       []byte
 	ProfileIdentifier string
@@ -125,11 +128,6 @@ func (e EnrollConfig) validate() error {
 	}
 	switch e.Identity {
 	case "", IdentitySCEP:
-		// A SCEP identity is only as good as its challenge, so there has to
-		// be one.
-		if e.SCEPChallenge == "" && len(e.SCEPHMACKey) == 0 {
-			return fmt.Errorf("%w: a SCEP challenge or HMAC key is required", ErrConfig)
-		}
 	case IdentityACME:
 	default:
 		return fmt.Errorf(
@@ -172,6 +170,10 @@ func ParseDiscovery(s string) (map[discovery.ModelFamily]string, error) {
 
 // enrollment holds what the routes share.
 type enrollment struct {
+	depot     *enrollmentDepot
+	admission EnrollmentAdmission
+	now       func() time.Time
+	app       *App
 	cfg       EnrollConfig
 	base      string
 	caCert    *x509.Certificate
@@ -194,7 +196,17 @@ func (a *App) wireEnrollment(ctx context.Context, mux *http.ServeMux) ([]service
 	if !cfg.Enabled() {
 		return nil, nil
 	}
-	e := &enrollment{cfg: cfg, base: strings.TrimSuffix(cfg.PublicURL, "/")}
+	e := &enrollment{
+		cfg:  cfg,
+		app:  a,
+		now:  a.cfg.Clock.Now,
+		base: strings.TrimSuffix(cfg.PublicURL, "/"),
+	}
+	var admissionErr error
+	e.admission, admissionErr = a.enrollmentAdmission(e)
+	if admissionErr != nil {
+		return nil, admissionErr
+	}
 	if err := e.loadCA(a); err != nil {
 		return nil, err
 	}
@@ -213,19 +225,15 @@ func (a *App) wireEnrollment(ctx context.Context, mux *http.ServeMux) ([]service
 	if err := a.wirePKI(ctx, e, mux); err != nil {
 		return nil, err
 	}
-	if e.local, err = ca.NewLocal(
-		e.caCert,
-		e.caKey,
-		ca.WithDepot(
-			&enrollmentDepot{
-				app:          a,
-				Depot:        ca.NewMemoryDepot(),
-				associations: e.tokens.AssociationStore(),
-				registry:     a.revocations,
-				issuer:       cms.Fingerprint(e.caCert),
-			},
-		),
-	); err != nil {
+	e.depot = &enrollmentDepot{
+		app:          a,
+		Depot:        ca.NewMemoryDepot(),
+		associations: e.tokens.AssociationStore(),
+		registry:     a.revocations,
+		issuer:       cms.Fingerprint(e.caCert),
+	}
+	e.local, err = ca.NewLocal(e.caCert, e.caKey, ca.WithDepot(e.depot), ca.WithClock(a.cfg.Clock))
+	if err != nil {
 		return nil, fmt.Errorf("app: enrollment CA: %w", err)
 	}
 	if len(cfg.SCEPHMACKey) > 0 {
@@ -251,6 +259,7 @@ func (a *App) wireEnrollment(ctx context.Context, mux *http.ServeMux) ([]service
 			},
 		),
 		scep.WithPolicy(a.issuancePolicy(e)),
+		scep.WithIssuance(e.issueSCEP),
 		scep.WithCertificateStatus(a.certificateStatus()),
 		scep.WithLogger(a.cfg.Logger),
 	)
@@ -397,6 +406,7 @@ func (a *App) wireEnrollment(ctx context.Context, mux *http.ServeMux) ([]service
 		return nil, err
 	}
 	hooks := []service.Hook{
+		issuanceAdmission{app: a},
 		replacementAdmission{app: a},
 		&accountdriven.CheckinHook{Tokens: e.tokens, Auth: auth},
 	}
@@ -412,13 +422,13 @@ func (e *enrollment) complete(
 	ctx context.Context,
 	bound webauth.Bound,
 	claims webauth.Claims,
-	_ webauth.Decision,
+	decision webauth.Decision,
 	w http.ResponseWriter,
 	r *http.Request,
 ) {
 	identity := accountdriven.Identity{
 		UserIdentifier:      bound.LoginHint,
-		ManagedAppleAccount: claims.Email,
+		ManagedAppleAccount: decision.Profile,
 		Subject:             claims.Subject,
 		Issuer:              e.cfg.OIDC.Issuer,
 		Claims:              claims.Raw,
@@ -481,13 +491,17 @@ func (e *enrollment) profileWithIdentity(
 	if identity != IdentitySCEP && identity != IdentityACME {
 		return nil, fmt.Errorf("%w: identity must be scep or acme", ErrConfig)
 	}
-	if identity == IdentitySCEP && e.cfg.SCEPChallenge == "" && len(e.cfg.SCEPHMACKey) == 0 {
-		return nil, fmt.Errorf("%w: SCEP is not configured", ErrConfig)
+	grant, err := e.admit(ctx, b)
+	if err != nil {
+		return nil, err
 	}
 	subjectCN := b.CommonName
-	challenge := e.cfg.SCEPChallenge
-	if h, ok := e.challenge.(*scep.HMACChallenge); ok {
-		challenge = h.Issue(subjectCN)
+	challenge := ""
+	if identity == IdentitySCEP {
+		challenge, err = e.issueSCEPGrant(ctx, b, grant)
+		if err != nil {
+			return nil, err
+		}
 	}
 	id := e.cfg.ProfileIdentifier
 	if id == "" {
@@ -520,6 +534,7 @@ func (e *enrollment) profileWithIdentity(
 		return out, nil
 	}
 	out.SCEP = &enroll.SCEP{
+		KeyIsExtractable: new(false), AllowAllAppsAccess: new(false),
 		URL:       e.base + PathSCEP,
 		Challenge: challenge,
 		Subject:   pkix.Name{CommonName: subjectCN, Organization: []string{org}},
@@ -703,15 +718,31 @@ func (a *App) wireOIDC(e *enrollment, mux *http.ServeMux) error {
 			ClientID:     cfg.OIDC.ClientID,
 			ClientSecret: cfg.OIDC.ClientSecret,
 			RedirectURL:  e.base + PathOIDCCallback,
-			StateStore:   webauth.NewMemoryStore(),
+			StateStore:   &webauth.SharedStore{Backend: e.state},
 			HTTPClient:   cfg.OIDC.HTTPClient,
 			Clock:        a.cfg.Clock,
 			Logger:       a.cfg.Logger,
-			Authorizer: func(_ context.Context, _ webauth.Bound, c webauth.Claims) (webauth.Decision, error) {
-				if c.Email == "" {
-					return webauth.Decision{}, fmt.Errorf("%w: no email claim", webauth.ErrDenied)
+			Authorizer: func(ctx context.Context, _ webauth.Bound, c webauth.Claims) (webauth.Decision, error) {
+				g, err := e.admission(
+					ctx,
+					AdmissionRequest{
+						Issuer:        cfg.OIDC.Issuer,
+						Subject:       c.Subject,
+						Email:         c.Email,
+						EmailVerified: c.EmailVerified,
+						Groups:        c.Groups,
+					},
+				)
+				if err != nil {
+					a.securityEvent(ctx, event.EnrollmentDenied)
+					return webauth.Decision{}, err
 				}
-				return webauth.Decision{Profile: "default"}, nil
+				if g.Account == "" || g.ExpiresAt.IsZero() ||
+					!a.cfg.Clock.Now().Before(g.ExpiresAt) {
+					a.securityEvent(ctx, event.EnrollmentDenied)
+					return webauth.Decision{}, webauth.ErrDenied
+				}
+				return webauth.Decision{Profile: g.Account}, nil
 			},
 			Complete: e.complete,
 		})

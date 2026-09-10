@@ -10,6 +10,13 @@ Enrollment profiles can request an identity certificate through SCEP. Issuance a
 
 A renewal can skip the challenge only after verifying the existing signer against the CA and the CSR subject. When status enforcement is configured, a revoked, expired or unknown signer cannot bypass it with a challenge. Trusted issuance callbacks register certificates before returning them to the client.
 
+
+Reference issuance requires an expiry-bearing admission grant and a random
+one-CSR credential. SCEP constructors require an explicit challenge policy;
+`RenewalOnly` rejects initial issuance. CA construction verifies authority and
+key agreement, and signing bounds leaf validity by issuer expiry. See
+[enrollment security operations](../../operations/enrollment-security.md).
+
 ## Rationale
 
 Policy hooks support different enrollment admission rules without coupling the protocol implementation to a CA deployment. A shared client exercises issuance from the device side.

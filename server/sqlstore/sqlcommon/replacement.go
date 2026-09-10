@@ -16,7 +16,11 @@ const purposeReplacement = "enrollment_replacements.state_blob"
 
 var _ storage.ReplacementStore = (*Store)(nil)
 
-func (s *Store) TransitionReplacement(ctx context.Context, id mdm.EnrollmentID, change storage.ReplacementChange) (*storage.Replacement, error) {
+func (s *Store) TransitionReplacement(
+	ctx context.Context,
+	id mdm.EnrollmentID,
+	change storage.ReplacementChange,
+) (*storage.Replacement, error) {
 	if err := validID(id); err != nil {
 		return nil, err
 	}
@@ -34,12 +38,13 @@ func (s *Store) TransitionReplacement(ctx context.Context, id mdm.EnrollmentID, 
 		if err = notFoundIfNoRows(res, id.ID); err != nil {
 			return err
 		}
-		e, err := scanEnrollment(q.QueryRowContext(ctx, s.q(selectEnrollment+" WHERE id = ?"), id.ID))
+		e, err := s.identity(ctx, q, id, false)
 		if err != nil {
 			return wrap("read replacement enrollment", err)
 		}
 		var blob []byte
-		err = q.QueryRowContext(ctx, s.q("SELECT state_blob FROM enrollment_replacements WHERE enrollment_id = ?"), id.ID).Scan(&blob)
+		err = q.QueryRowContext(ctx, s.q("SELECT state_blob FROM enrollment_replacements WHERE enrollment_id = ?"), id.ID).
+			Scan(&blob)
 		if err == nil {
 			blob, err = s.open(purposeReplacement, id.ID, blob)
 			if err != nil {
@@ -71,7 +76,18 @@ func (s *Store) TransitionReplacement(ctx context.Context, id mdm.EnrollmentID, 
 		if err != nil {
 			return err
 		}
-		_, err = q.ExecContext(ctx, s.q(s.d.Upsert("enrollment_replacements", []string{"enrollment_id", "state_blob"}, []string{"enrollment_id"})), id.ID, blob)
+		_, err = q.ExecContext(
+			ctx,
+			s.q(
+				s.d.Upsert(
+					"enrollment_replacements",
+					[]string{"enrollment_id", "state_blob"},
+					[]string{"enrollment_id"},
+				),
+			),
+			id.ID,
+			blob,
+		)
 		if err != nil {
 			return wrap("write replacement", err)
 		}
@@ -83,15 +99,35 @@ func (s *Store) TransitionReplacement(ctx context.Context, id mdm.EnrollmentID, 
 	return storage.CloneReplacement(r), nil
 }
 
-func (s *Store) commitReplacement(ctx context.Context, q querier, id mdm.EnrollmentID, r *storage.Replacement, at time.Time) error {
+func (s *Store) commitReplacement(
+	ctx context.Context,
+	q querier,
+	id mdm.EnrollmentID,
+	r *storage.Replacement,
+	at time.Time,
+) error {
 	var n int
-	if err := q.QueryRowContext(ctx, s.q("SELECT COUNT(*) FROM cert_associations WHERE cert_hash = ? AND enrollment_id <> ?"), r.CandidateHash, id.ID).Scan(&n); err != nil {
+	if err := q.QueryRowContext(ctx, s.q("SELECT COUNT(*) FROM cert_associations WHERE cert_hash = ? AND enrollment_id <> ?"), r.CandidateHash, id.ID).
+		Scan(&n); err != nil {
 		return wrap("candidate history", err)
 	}
 	if n != 0 {
 		return fmt.Errorf("%w: candidate certificate reused", storage.ErrConflict)
 	}
-	_, err := q.ExecContext(ctx, s.q("UPDATE enrollments SET cert_hash = ?, cert_hash_at = ?, authenticate_raw = ? WHERE id = ?"), r.CandidateHash, at.UTC(), r.AuthenticateRaw, id.ID)
+	raw, err := s.seal(purposeAuthenticate, id.ID, r.AuthenticateRaw)
+	if err != nil {
+		return err
+	}
+	_, err = q.ExecContext(
+		ctx,
+		s.q(
+			"UPDATE enrollments SET cert_hash = ?, cert_hash_at = ?, authenticate_raw = ? WHERE id = ?",
+		),
+		r.CandidateHash,
+		at.UTC(),
+		raw,
+		id.ID,
+	)
 	if s.d.uniqueViolation(err) {
 		return fmt.Errorf("%w: candidate certificate reused", storage.ErrConflict)
 	}
@@ -109,18 +145,64 @@ func (s *Store) commitReplacement(ctx context.Context, q querier, id mdm.Enrollm
 	return nil
 }
 
-func (s *Store) replacementToken(ctx context.Context, q querier, t storage.ReplacementToken, at time.Time) error {
+func (s *Store) replacementToken(
+	ctx context.Context,
+	q querier,
+	t storage.ReplacementToken,
+	at time.Time,
+) error {
 	e, err := scanEnrollment(q.QueryRowContext(ctx, s.q(selectEnrollment+" WHERE id = ?"), t.ID.ID))
 	if errors.Is(err, sql.ErrNoRows) {
 		e = &storage.Enrollment{ID: t.ID, EnrolledAt: at}
 		// Insert the user channel with defaults; never upsert/reset an existing row.
-		_, err = q.ExecContext(ctx, s.q(s.d.InsertIgnore("enrollments", enrollmentCols, []string{"id"})),
-			t.ID.ID, int(t.ID.Channel), t.ID.ParentID, false, "", "", nil,
-			"", "", "", "", "", "", "", "", "", "",
-			"", "", false, "", nil, nil, nil, nil, nil, nil, nil, at.UTC(), nil, at.UTC(), nil)
+		_, err = q.ExecContext(
+			ctx,
+			s.q(s.d.InsertIgnore("enrollments", enrollmentCols, []string{"id"})),
+			t.ID.ID,
+			int(t.ID.Channel),
+			t.ID.ParentID,
+			false,
+			"",
+			"",
+			nil,
+			"",
+			"",
+			"",
+			"",
+			"",
+			"",
+			"",
+			"",
+			"",
+			"",
+			"",
+			"",
+			false,
+			"",
+			nil,
+			nil,
+			nil,
+			nil,
+			nil,
+			nil,
+			nil,
+			at.UTC(),
+			nil,
+			at.UTC(),
+			nil,
+			nil,
+		)
 	}
 	if err != nil {
 		return wrap("read replacement token channel", err)
+	}
+	stored, identityErr := s.identity(ctx, q, t.ID, false)
+	if identityErr != nil {
+		return identityErr
+	}
+	e = stored
+	if e.ID != t.ID {
+		return storage.ErrConflict
 	}
 	if err = s.openEnrollment(e); err != nil {
 		return err
@@ -130,8 +212,29 @@ func (s *Store) replacementToken(ctx context.Context, q querier, t storage.Repla
 	if err != nil {
 		return err
 	}
-	_, err = q.ExecContext(ctx, s.q("UPDATE enrollments SET topic = ?, push_magic = ?, push_token = ?, enabled = ?, token_updated_at = ?, last_seen_at = ?, disabled_at = NULL, token_update_raw = ?, unlock_token = ?, user_short_name = ?, user_long_name = ?, not_on_console = ?, enrollment_user_id = ? WHERE id = ?"),
-		e.Push.Topic, e.Push.Magic, e.Push.Token, true, at.UTC(), at.UTC(), e.TokenUpdateRaw, unlock, e.UserShortName, e.UserLongName, e.NotOnConsole, e.EnrollmentUserID, e.ID.ID)
+	raw, err := s.seal(purposeTokenUpdate, e.ID.ID, e.TokenUpdateRaw)
+	if err != nil {
+		return err
+	}
+	_, err = q.ExecContext(
+		ctx,
+		s.q(
+			"UPDATE enrollments SET topic = ?, push_magic = ?, push_token = ?, enabled = ?, token_updated_at = ?, last_seen_at = ?, disabled_at = NULL, token_update_raw = ?, unlock_token = ?, user_short_name = ?, user_long_name = ?, not_on_console = ?, enrollment_user_id = ? WHERE id = ?",
+		),
+		e.Push.Topic,
+		e.Push.Magic,
+		e.Push.Token,
+		true,
+		at.UTC(),
+		at.UTC(),
+		raw,
+		unlock,
+		e.UserShortName,
+		e.UserLongName,
+		e.NotOnConsole,
+		e.EnrollmentUserID,
+		e.ID.ID,
+	)
 	if err != nil {
 		return wrap("commit replacement token", err)
 	}

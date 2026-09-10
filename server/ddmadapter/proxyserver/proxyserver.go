@@ -9,14 +9,18 @@ import (
 	"fmt"
 	"log/slog"
 	"mime"
+	"net"
 	"net/http"
 	"strings"
+	"time"
 
-	"github.com/deploymenttheory/go-apple-dm/server/ddmadapter/internal/proxywire"
 	"github.com/deploymenttheory/go-apple-dm/mdmprotocol/ddm"
+	"github.com/deploymenttheory/go-apple-dm/mdmprotocol/event"
 	"github.com/deploymenttheory/go-apple-dm/mdmprotocol/mdm"
 	"github.com/deploymenttheory/go-apple-dm/mdmprotocol/plist"
 	"github.com/deploymenttheory/go-apple-dm/schema/checkin"
+	"github.com/deploymenttheory/go-apple-dm/server/ddmadapter/internal/proxywire"
+	"github.com/deploymenttheory/go-apple-dm/state"
 )
 
 // Backend serves one DeclarativeManagement check-in; *ddm.Engine
@@ -37,11 +41,17 @@ var (
 
 // Config builds a Handler.
 type Config struct {
+	// Bus receives metadata-only security rejection events.
+	Bus *event.Bus
+	// ReplayStore coordinates nonce consumption across replicas. Required.
+	ReplayStore state.Store
+	// AllowInsecureForTests permits cleartext only from loopback peers.
+	AllowInsecureForTests bool
 	// Backend is required.
 	Backend Backend
-	// RecvKey, when set, must sign every request (X-MDM-Signature).
+	// RecvKey must sign every request (X-MDM-Signature).
 	RecvKey []byte
-	// SendKey, when set, signs every response body, including empty ones
+	// SendKey signs every response body, including empty ones
 	// and error statuses.
 	SendKey []byte
 	// MaxBody bounds the request body; default proxywire.DefaultMaxBody.
@@ -98,6 +108,9 @@ func Handler(cfg Config) (http.Handler, error) {
 	if cfg.Backend == nil {
 		return nil, ErrNoBackend
 	}
+	if !proxywire.ValidKeys(cfg.SendKey, cfg.RecvKey) || cfg.ReplayStore == nil {
+		return nil, ErrUnauthorized
+	}
 	s := &server{cfg: cfg, log: cfg.Logger}
 	if s.log == nil {
 		s.log = slog.Default()
@@ -116,6 +129,13 @@ func Handler(cfg Config) (http.Handler, error) {
 // authenticate runs the caller checks that do not need the body: Auth
 // and the client certificate.
 func (s *server) authenticate(r *http.Request) error {
+	if r.TLS == nil {
+		host, _, err := net.SplitHostPort(r.RemoteAddr)
+		ip := net.ParseIP(host)
+		if !s.cfg.AllowInsecureForTests || err != nil || ip == nil || !ip.IsLoopback() {
+			return ErrUnauthorized
+		}
+	}
 	if s.cfg.Auth != nil {
 		if err := s.cfg.Auth(r); err != nil {
 			return fmt.Errorf("%w: %w", ErrUnauthorized, err)
@@ -138,8 +158,16 @@ func (s *server) authenticate(r *http.Request) error {
 }
 
 func (s *server) serve(w http.ResponseWriter, r *http.Request) {
-	if ct, _, err := mime.ParseMediaType(r.Header.Get("Content-Type")); err != nil || ct != proxywire.ContentType {
-		s.reject(w, r, http.StatusUnsupportedMediaType, fmt.Errorf("%w: %q", proxywire.ErrContentType, r.Header.Get("Content-Type")))
+	if ct, _, err := mime.ParseMediaType(
+		r.Header.Get("Content-Type"),
+	); err != nil ||
+		ct != proxywire.ContentType {
+		s.reject(
+			w,
+			r,
+			http.StatusUnsupportedMediaType,
+			fmt.Errorf("%w: %q", proxywire.ErrContentType, r.Header.Get("Content-Type")),
+		)
 		return
 	}
 	body, err := proxywire.ReadBody(r.Body, s.cfg.MaxBody)
@@ -152,7 +180,25 @@ func (s *server) serve(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if s.cfg.RecvKey != nil {
-		if err := proxywire.Verify(s.cfg.RecvKey, r.Header.Get(proxywire.HeaderSignature), body); err != nil {
+		if err := proxywire.VerifyRequest(
+			r.Context(),
+			s.cfg.ReplayStore,
+			s.cfg.RecvKey,
+			r,
+			body,
+		); err != nil {
+			if s.cfg.Bus != nil {
+				if pubErr := s.cfg.Bus.Publish(
+					r.Context(),
+					event.Event{
+						Type:  event.PrivateHopRejected,
+						At:    time.Now(),
+						Actor: "private-hop",
+					},
+				); pubErr != nil {
+					s.log.WarnContext(r.Context(), "private hop rejection event delivery failed")
+				}
+			}
 			s.reject(w, r, http.StatusUnauthorized, err)
 			return
 		}
@@ -169,12 +215,23 @@ func (s *server) serve(w http.ResponseWriter, r *http.Request) {
 	}
 	resp, err := s.cfg.Backend.Handle(r.Context(), ck.ID, m.Endpoint, m.Data)
 	switch {
-	case errors.Is(err, ddm.ErrBadEndpoint), errors.Is(err, ddm.ErrStatusTooLarge), errors.Is(err, ddm.ErrStatusMalformed):
+	case errors.Is(err, ddm.ErrBadEndpoint),
+		errors.Is(err, ddm.ErrStatusTooLarge),
+		errors.Is(err, ddm.ErrStatusMalformed):
 		s.reject(w, r, http.StatusBadRequest, err)
 		return
 	case err != nil:
-		s.log.ErrorContext(r.Context(), "ddm backend failed", "enrollment", ck.ID.ID, "endpoint", m.Endpoint, "err", err)
-		s.write(w, http.StatusInternalServerError, nil)
+		s.log.ErrorContext(
+			r.Context(),
+			"ddm backend failed",
+			"enrollment",
+			ck.ID.ID,
+			"endpoint",
+			m.Endpoint,
+			"err",
+			err,
+		)
+		s.write(w, r, http.StatusInternalServerError, nil)
 		return
 	}
 	status := resp.Status
@@ -184,27 +241,47 @@ func (s *server) serve(w http.ResponseWriter, r *http.Request) {
 	if status == http.StatusNotFound {
 		resp.Body = nil
 	}
-	s.write(w, status, resp.Body)
+	s.write(w, r, status, resp.Body)
 }
 
 // reject answers a request the ingress refused, with no body so nothing
 // about the failure reaches the caller beyond the status.
 func (s *server) reject(w http.ResponseWriter, r *http.Request, status int, err error) {
-	s.log.InfoContext(r.Context(), "declarative management request rejected", "status", status, "remote", r.RemoteAddr, "err", err)
-	s.write(w, status, nil)
+	s.log.InfoContext(
+		r.Context(),
+		"declarative management request rejected",
+		"status",
+		status,
+		"remote",
+		r.RemoteAddr,
+		"err",
+		err,
+	)
+	s.write(w, r, status, nil)
 }
 
 // write sends status and body, signing the exact bytes written when a
 // SendKey is configured. Bodies are JSON and never sniffed.
-func (s *server) write(w http.ResponseWriter, status int, body []byte) {
+func (s *server) write(w http.ResponseWriter, r *http.Request, status int, body []byte) {
 	h := w.Header()
 	if len(body) > 0 {
 		h.Set("Content-Type", "application/json")
 	}
 	h.Set("X-Content-Type-Options", "nosniff")
 	if s.cfg.SendKey != nil {
-		h.Set(proxywire.HeaderSignature, proxywire.SignResponse(s.cfg.SendKey, status, body))
+		h.Set(
+			proxywire.HeaderSignature,
+			proxywire.SignBoundResponse(
+				s.cfg.SendKey,
+				r.Header.Get(proxywire.HeaderSignature),
+				status,
+				h.Get("Content-Type"),
+				body,
+			),
+		)
 	}
 	w.WriteHeader(status)
-	_, _ = w.Write(body) // #nosec G705 -- machine-readable JSON with an explicit non-HTML content type
+	_, _ = w.Write(
+		body,
+	) // #nosec G705 -- machine-readable JSON with an explicit non-HTML content type
 }

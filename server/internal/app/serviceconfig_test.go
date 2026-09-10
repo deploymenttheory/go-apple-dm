@@ -25,11 +25,18 @@ func TestServiceConfigTrustIsIndependentFromIdentity(t *testing.T) {
 	identity, _ := testpki.NewCA("identity CA")
 	for _, private := range []bool{false, true} {
 		t.Run(map[bool]string{false: "public", true: "private"}[private], func(t *testing.T) {
-			e := &enrollment{cfg: EnrollConfig{SCEPChallenge: "secret", Topic: "com.apple.mgmt.test"}, base: "https://mdm.example", caCert: identity.Cert}
+			e := &enrollment{
+				admission: allowTestAdmission,
+				now:       time.Now,
+				state:     state.NewMemory(),
+				cfg:       EnrollConfig{SCEPChallenge: "secret", Topic: "com.apple.mgmt.test"},
+				base:      "https://mdm.example",
+				caCert:    identity.Cert,
+			}
 			if private {
 				file := filepath.Join(t.TempDir(), "ca.pem")
 				data := pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: ca.Cert.Raw})
-				if err := os.WriteFile(file, append(data, data...), 0600); err != nil {
+				if err := os.WriteFile(file, append(data, data...), 0o600); err != nil {
 					t.Fatal(err)
 				}
 				e.cfg.TLSAnchorFile = file
@@ -49,7 +56,10 @@ func TestServiceConfigTrustIsIndependentFromIdentity(t *testing.T) {
 			if err := json.Unmarshal(w.Body.Bytes(), &config); err != nil {
 				t.Fatal(err)
 			}
-			if w.Code != 200 || w.Header().Get("Content-Type") != "application/json; charset=UTF8" || config["dep_enrollment_url"] != "https://ade.example/enroll" || config["dep_anchor_certs_url"] != "https://mdm.example"+PathTrustAnchors {
+			if w.Code != 200 ||
+				w.Header().Get("Content-Type") != "application/json; charset=UTF8" ||
+				config["dep_enrollment_url"] != "https://ade.example/enroll" ||
+				config["dep_anchor_certs_url"] != "https://mdm.example"+PathTrustAnchors {
 				t.Fatal(config, w.Code)
 			}
 			var anchors [][]byte
@@ -60,14 +70,20 @@ func TestServiceConfigTrustIsIndependentFromIdentity(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			if len(p.ServerCapabilities) != 1 || p.ServerCapabilities[0] != enroll.CapabilityPerUserConnections {
+			if len(p.ServerCapabilities) != 1 ||
+				p.ServerCapabilities[0] != enroll.CapabilityPerUserConnections {
 				t.Fatal("macOS capability missing")
 			}
 			if private {
-				if len(anchors) != 1 || string(anchors[0]) != string(ca.Cert.Raw) || len(p.Roots) != 1 || p.Roots[0].Subject.CommonName != "HTTPS CA" {
+				if len(anchors) != 1 || string(anchors[0]) != string(ca.Cert.Raw) ||
+					len(p.Roots) != 1 ||
+					p.Roots[0].Subject.CommonName != "HTTPS CA" {
 					t.Fatal("identity issuer substituted for HTTPS trust")
 				}
-				parsed, err := profile.Parse(get(PathTrustProfile).Body.Bytes(), profile.ParseOptions{})
+				parsed, err := profile.Parse(
+					get(PathTrustProfile).Body.Bytes(),
+					profile.ParseOptions{},
+				)
 				if err != nil {
 					t.Fatal(err)
 				}
@@ -93,7 +109,11 @@ func TestServiceConfigRejectsInvalidTrustAndURL(t *testing.T) {
 	ca, _ := testpki.NewCA("ca")
 	leaf, _ := ca.Issue("leaf", time.Now().Add(-time.Minute))
 	f := filepath.Join(t.TempDir(), "leaf.pem")
-	_ = os.WriteFile(f, pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: leaf.Cert.Raw}), 0600)
+	_ = os.WriteFile(
+		f,
+		pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: leaf.Cert.Raw}),
+		0o600,
+	)
 	for _, tc := range []struct{ anchor, url string }{{"missing", "https://mdm.example"}, {f, "https://mdm.example"}, {"", "http://mdm.example"}, {"", "https://user:secret@mdm.example"}, {"", "https://"}, {"", ":bad"}} {
 		a := &App{}
 		e := &enrollment{base: tc.url, cfg: EnrollConfig{TLSAnchorFile: tc.anchor}}
@@ -118,7 +138,14 @@ func TestServiceConfigRejectsInvalidTrustAndURL(t *testing.T) {
 func TestProfileMetadataPersistsAndRedactsAuthorization(t *testing.T) {
 	ca, _ := testpki.NewCA("ca")
 	st := state.NewMemory()
-	e := &enrollment{cfg: EnrollConfig{SCEPChallenge: "secret", Topic: "com.apple.mgmt.test"}, base: "https://mdm.example", trust: []*x509.Certificate{ca.Cert}, state: st}
+	e := &enrollment{
+		admission: allowTestAdmission,
+		now:       time.Now,
+		cfg:       EnrollConfig{SCEPChallenge: "secret", Topic: "com.apple.mgmt.test"},
+		base:      "https://mdm.example",
+		trust:     []*x509.Certificate{ca.Cert},
+		state:     st,
+	}
 	b := acme.Binding{UDID: "mac", CommonName: "mac"}
 	p, err := e.profile(t.Context(), b)
 	if err != nil {
@@ -133,7 +160,8 @@ func TestProfileMetadataPersistsAndRedactsAuthorization(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if p.UUID != q.UUID || p.MDMUUID != q.MDMUUID || p.IdentityUUID != q.IdentityUUID || p.RootUUIDs[0] != q.RootUUIDs[0] {
+	if p.UUID != q.UUID || p.MDMUUID != q.MDMUUID || p.IdentityUUID != q.IdentityUUID ||
+		p.RootUUIDs[0] != q.RootUUIDs[0] {
 		t.Fatal("profile UUIDs changed")
 	}
 	rec, _ := st.Get(context.Background(), profileMetadataKey(b, p.Identifier))
@@ -149,11 +177,21 @@ func TestProfileMetadataPersistsAndRedactsAuthorization(t *testing.T) {
 	if _, err := e.profileWithIdentity(t.Context(), b, "invalid"); err == nil {
 		t.Fatal("invalid identity accepted")
 	}
-	e.cfg.SCEPChallenge = ""
+	e.admission = nil
 	if _, err := e.profileWithIdentity(t.Context(), b, "scep"); err == nil {
-		t.Fatal("unconfigured SCEP accepted")
+		t.Fatal("missing admission accepted")
 	}
-	if profileMetadataKey(acme.Binding{Serial: "s"}, "i") == profileMetadataKey(acme.Binding{CommonName: "c"}, "i") {
+	if profileMetadataKey(
+		acme.Binding{Serial: "s"},
+		"i",
+	) == profileMetadataKey(
+		acme.Binding{CommonName: "c"},
+		"i",
+	) {
 		t.Fatal("profile bindings collide")
 	}
+}
+
+func allowTestAdmission(context.Context, AdmissionRequest) (AdmissionGrant, error) {
+	return AdmissionGrant{ExpiresAt: time.Now().Add(time.Hour)}, nil
 }

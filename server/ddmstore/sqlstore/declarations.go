@@ -16,13 +16,28 @@ const declarationCols = "identifier, type, kind, server_token, canonical, create
 
 var versionCols = []string{"identifier", "server_token", "type", "canonical", "created_at"}
 
-func scanDeclaration(row scanner) (ddm.Declaration, error) {
+func (t *txStore) scanDeclaration(row scanner) (ddm.Declaration, error) {
 	var d ddm.Declaration
-	if err := row.Scan(&d.Identifier, &d.Type, &d.Kind, &d.ServerToken, &d.Canonical, &d.CreatedAt, &d.UpdatedAt); err != nil {
+	if err := row.Scan(
+		&d.Identifier,
+		&d.Type,
+		&d.Kind,
+		&d.ServerToken,
+		&d.Canonical,
+		&d.CreatedAt,
+		&d.UpdatedAt,
+	); err != nil {
 		return ddm.Declaration{}, wrap("scan declaration", err)
 	}
 	d.CreatedAt, d.UpdatedAt = d.CreatedAt.UTC(), d.UpdatedAt.UTC()
-	return d, nil
+	var err error
+	d.Canonical, err = t.s.open(
+		"ddm_declarations.canonical",
+		d.Canonical,
+		d.Identifier,
+		d.ServerToken,
+	)
+	return d, err
 }
 
 // PutDeclaration implements ddm.DeclarationStore. A create stores every
@@ -39,29 +54,81 @@ func (t *txStore) PutDeclaration(ctx context.Context, d *ddm.Declaration) (bool,
 	if err := validName("server token", d.ServerToken); err != nil {
 		return false, err
 	}
+	sealed, err := t.s.seal("ddm_declarations.canonical", d.Canonical, d.Identifier, d.ServerToken)
+	if err != nil {
+		return false, err
+	}
+	version, err := t.s.seal(
+		"ddm_declaration_versions.canonical",
+		d.Canonical,
+		d.Identifier,
+		d.ServerToken,
+	)
+	if err != nil {
+		return false, err
+	}
 	var kind, token string
-	found, err := t.row(ctx, "lookup declaration", "SELECT kind, server_token FROM ddm_declarations WHERE identifier = ?", []any{d.Identifier}, &kind, &token)
+	found, err := t.row(
+		ctx,
+		"lookup declaration",
+		"SELECT kind, server_token FROM ddm_declarations WHERE identifier = ?",
+		[]any{d.Identifier},
+		&kind,
+		&token,
+	)
 	if err != nil {
 		return false, err
 	}
 	switch {
 	case !found:
-		if _, err := t.exec(ctx, "insert declaration", "INSERT INTO ddm_declarations ("+declarationCols+") VALUES (?, ?, ?, ?, ?, ?, ?)",
-			d.Identifier, d.Type, string(d.Kind), d.ServerToken, nonNil(d.Canonical), utc(d.CreatedAt), utc(d.UpdatedAt)); err != nil {
+		if _, err := t.exec(
+			ctx,
+			"insert declaration",
+			"INSERT INTO ddm_declarations ("+declarationCols+") VALUES (?, ?, ?, ?, ?, ?, ?)",
+			d.Identifier,
+			d.Type,
+			string(d.Kind),
+			d.ServerToken,
+			nonNil(sealed),
+			utc(d.CreatedAt),
+			utc(d.UpdatedAt),
+		); err != nil {
 			return false, err
 		}
 	case kind != string(d.Kind):
-		return false, fmt.Errorf("%w: declaration %q is kind %q, not %q", ddm.ErrConflict, d.Identifier, kind, d.Kind)
+		return false, fmt.Errorf(
+			"%w: declaration %q is kind %q, not %q",
+			ddm.ErrConflict,
+			d.Identifier,
+			kind,
+			d.Kind,
+		)
 	case token == d.ServerToken:
 		return false, nil
 	default:
-		if _, err := t.exec(ctx, "update declaration", "UPDATE ddm_declarations SET type = ?, server_token = ?, canonical = ?, updated_at = ? WHERE identifier = ?",
-			d.Type, d.ServerToken, nonNil(d.Canonical), utc(d.UpdatedAt), d.Identifier); err != nil {
+		if _, err := t.exec(
+			ctx,
+			"update declaration",
+			"UPDATE ddm_declarations SET type = ?, server_token = ?, canonical = ?, updated_at = ? WHERE identifier = ?",
+			d.Type,
+			d.ServerToken,
+			nonNil(sealed),
+			utc(d.UpdatedAt),
+			d.Identifier,
+		); err != nil {
 			return false, err
 		}
 	}
-	if _, err := t.exec(ctx, "insert declaration version", t.s.d.InsertIgnore("ddm_declaration_versions", versionCols, versionCols[:2]),
-		d.Identifier, d.ServerToken, d.Type, nonNil(d.Canonical), utc(d.UpdatedAt)); err != nil {
+	if _, err := t.exec(
+		ctx,
+		"insert declaration version",
+		t.s.d.InsertIgnore("ddm_declaration_versions", versionCols, versionCols[:2]),
+		d.Identifier,
+		d.ServerToken,
+		d.Type,
+		nonNil(version),
+		utc(d.UpdatedAt),
+	); err != nil {
 		return false, err
 	}
 	return true, nil
@@ -72,7 +139,13 @@ func (t *txStore) GetDeclaration(ctx context.Context, identifier string) (*ddm.D
 	if err := validName("identifier", identifier); err != nil {
 		return nil, err
 	}
-	d, err := scanDeclaration(t.q.QueryRowContext(ctx, t.s.d.Rebind("SELECT "+declarationCols+" FROM ddm_declarations WHERE identifier = ?"), identifier))
+	d, err := t.scanDeclaration(
+		t.q.QueryRowContext(
+			ctx,
+			t.s.d.Rebind("SELECT "+declarationCols+" FROM ddm_declarations WHERE identifier = ?"),
+			identifier,
+		),
+	)
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil, notFound("declaration", identifier)
 	}
@@ -83,7 +156,10 @@ func (t *txStore) GetDeclaration(ctx context.Context, identifier string) (*ddm.D
 }
 
 // GetDeclarationVersion implements ddm.DeclarationStore.
-func (t *txStore) GetDeclarationVersion(ctx context.Context, identifier, serverToken string) (*ddm.DeclarationVersion, error) {
+func (t *txStore) GetDeclarationVersion(
+	ctx context.Context,
+	identifier, serverToken string,
+) (*ddm.DeclarationVersion, error) {
 	if err := validName("identifier", identifier); err != nil {
 		return nil, err
 	}
@@ -91,15 +167,36 @@ func (t *txStore) GetDeclarationVersion(ctx context.Context, identifier, serverT
 		return nil, err
 	}
 	v := ddm.DeclarationVersion{Identifier: identifier, ServerToken: serverToken}
-	found, err := t.row(ctx, "get declaration version", "SELECT type, canonical, created_at FROM ddm_declaration_versions WHERE identifier = ? AND server_token = ?",
-		[]any{identifier, serverToken}, &v.Type, &v.Canonical, &v.CreatedAt)
+	found, err := t.row(
+		ctx,
+		"get declaration version",
+		"SELECT type, canonical, created_at FROM ddm_declaration_versions WHERE identifier = ? AND server_token = ?",
+		[]any{identifier, serverToken},
+		&v.Type,
+		&v.Canonical,
+		&v.CreatedAt,
+	)
 	if err != nil {
 		return nil, err
 	}
 	if !found {
-		return nil, fmt.Errorf("%w: declaration %q version %q", ddm.ErrNotFound, identifier, serverToken)
+		return nil, fmt.Errorf(
+			"%w: declaration %q version %q",
+			ddm.ErrNotFound,
+			identifier,
+			serverToken,
+		)
 	}
 	v.CreatedAt = v.CreatedAt.UTC()
+	v.Canonical, err = t.s.open(
+		"ddm_declaration_versions.canonical",
+		v.Canonical,
+		identifier,
+		serverToken,
+	)
+	if err != nil {
+		return nil, err
+	}
 	return &v, nil
 }
 
@@ -130,7 +227,11 @@ func (t *txStore) DeleteDeclaration(ctx context.Context, identifier string) erro
 
 // ListDeclarations implements ddm.DeclarationStore. The cursor is the last
 // identifier of the previous page. An unknown InSet yields an empty page.
-func (t *txStore) ListDeclarations(ctx context.Context, q ddm.DeclarationQuery, p paging.Page) (paging.Result[ddm.Declaration], error) {
+func (t *txStore) ListDeclarations(
+	ctx context.Context,
+	q ddm.DeclarationQuery,
+	p paging.Page,
+) (paging.Result[ddm.Declaration], error) {
 	where, args := []string{"1 = 1"}, []any{}
 	if q.Kind != "" {
 		where, args = append(where, "kind = ?"), append(args, string(q.Kind))
@@ -139,14 +240,30 @@ func (t *txStore) ListDeclarations(ctx context.Context, q ddm.DeclarationQuery, 
 		where, args = append(where, "type = ?"), append(args, q.Type)
 	}
 	if q.InSet != "" {
-		where, args = append(where, "identifier IN (SELECT identifier FROM ddm_set_declarations WHERE set_name = ?)"), append(args, q.InSet)
+		where, args = append(
+			where,
+			"identifier IN (SELECT identifier FROM ddm_set_declarations WHERE set_name = ?)",
+		), append(
+			args,
+			q.InSet,
+		)
 	}
 	where, args = after(where, args, "identifier", p)
-	return keyset(ctx, t, "list declarations", "SELECT "+declarationCols+" FROM ddm_declarations WHERE "+strings.Join(where, " AND ")+" ORDER BY identifier", args, p,
+	return keyset(
+		ctx,
+		t,
+		"list declarations",
+		"SELECT "+declarationCols+" FROM ddm_declarations WHERE "+strings.Join(
+			where,
+			" AND ",
+		)+" ORDER BY identifier",
+		args,
+		p,
 		func(rows *sql.Rows) (ddm.Declaration, string, error) {
-			d, err := scanDeclaration(rows)
+			d, err := t.scanDeclaration(rows)
 			return d, d.Identifier, err
-		})
+		},
+	)
 }
 
 // PruneVersions implements ddm.DeclarationStore.

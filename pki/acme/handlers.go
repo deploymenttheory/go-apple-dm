@@ -657,7 +657,7 @@ func (s *Server) checkAttestedKey(e *exchange, o *Order, csr *x509.CertificateRe
 				ProblemUnauthorized, "the order was authorized without an attestation",
 			)
 		}
-		return nil
+		return s.authorize(e, o, nil)
 	}
 	if err != nil {
 		return WrapProblem(
@@ -681,7 +681,7 @@ func (s *Server) checkAttestedKey(e *exchange, o *Order, csr *x509.CertificateRe
 			ProblemBadAttestationStatement, err, "the attestation no longer verifies",
 		)
 	}
-	return nil
+	return s.authorize(e, o, a)
 }
 
 func (s *Server) challengeOf(e *exchange, o *Order) (*Challenge, error) {
@@ -737,7 +737,7 @@ func (s *Server) issue(e *exchange, o *Order, csr *x509.CertificateRequest) (*is
 		}
 		policy.NotAfter = o.Binding.NotAfter
 	}
-	provenance := revocation.Provenance{Source: "acme", AccountID: o.AccountID, Identifiers: []string{o.Identifier.Type + ":" + o.Identifier.Value}}
+	provenance := revocation.Provenance{Source: "acme", EnrollmentID: o.Binding.EnrollmentID, AccountID: o.AccountID, UDID: o.Binding.UDID, Serial: o.Binding.Serial, Identifiers: []string{o.Identifier.Type + ":" + o.Identifier.Value}}
 	cert, err := s.cfg.Signer.Sign(revocation.WithProvenance(e.ctx(), provenance), csr, policy)
 	if err != nil {
 		if errors.Is(err, ca.ErrPolicy) || errors.Is(err, ca.ErrCSR) {

@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"log/slog"
 	"net/http"
+	"net/netip"
 	"os"
 	"sync"
 	"time"
@@ -77,6 +78,10 @@ type Config struct {
 	// DDMURL, on the mdm role, forwards DeclarativeManagement check-ins to
 	// a ddm role through proxyclient; empty means the local engine.
 	DDMURL string
+	// DDMRootCAFile configures HTTPS trust for the private DDM server.
+	DDMRootCAFile string
+	// DDMAllowInsecureForTests enables loopback-only cleartext adapters.
+	DDMAllowInsecureForTests bool
 	// DDMSendKey signs what this role sends across the hop; DDMRecvKey
 	// verifies what it receives.
 	DDMSendKey, DDMRecvKey []byte
@@ -144,6 +149,8 @@ type Config struct {
 	// configured. With neither, the certificate must come from TLS on
 	// this process (httpapi.CertFromTLS).
 	CertHeader string
+	// TrustedProxies are socket peers allowed to assert client certificates and IPs.
+	TrustedProxies []netip.Prefix
 	// Subscriptions enables the synthesised status-subscriptions
 	// declaration (decision record 0021).
 	Subscriptions bool
@@ -297,11 +304,33 @@ func (a *App) Workers() []WorkerState {
 
 // Build validates cfg, opens storage, and wires the role.
 func Build(ctx context.Context, cfg Config) (*App, error) {
+	if cfg.Enroll.Enabled() && !cfg.PKI.Disabled {
+		cfg.PKI.Enabled = true
+		if cfg.PKI.CRLTTL == 0 {
+			cfg.PKI.CRLTTL = 24 * time.Hour
+		}
+		if cfg.PKI.CRLRefresh == 0 {
+			cfg.PKI.CRLRefresh = time.Hour
+		}
+		if cfg.PKI.OCSPTTL == 0 {
+			cfg.PKI.OCSPTTL = 15 * time.Minute
+		}
+	}
+	if cfg.Enroll.Enabled() && cfg.Storage != "inmem" && cfg.Enroll.CACertFile == "" {
+		return nil, fmt.Errorf("%w: persistent enrollment requires CA files", ErrConfig)
+	}
+
 	if err := cfg.validate(); err != nil {
 		return nil, err
 	}
+	if cfg.CertHeader != "" && len(cfg.TrustedProxies) == 0 {
+		return nil, fmt.Errorf("%w: certificate headers require trusted proxy networks", ErrConfig)
+	}
 	if err := cfg.roots(); err != nil {
 		return nil, err
+	}
+	if cfg.CertHeader != "" && cfg.CARoots == nil && !cfg.Enroll.Enabled() {
+		return nil, fmt.Errorf("%w: certificate headers require client CA roots", ErrConfig)
 	}
 	if cfg.Logger == nil {
 		cfg.Logger = slog.Default()
@@ -380,7 +409,7 @@ func (c Config) validate() error {
 	// The hop forwards a check-in verbatim and the ddm role resolves the
 	// enrollment from that body, so an unauthenticated hop hands any caller
 	// every enrollment's declarations and its status reports. proxyserver
-	// treats each of its caller checks as optional, which makes requiring one
+	// requires MAC keys and shared replay state; validation of the same keys is
 	// this package's job: the ddm role exists to serve the hop, and an mdm
 	// role forwarding to it is the other end of the same trust boundary.
 	if c.Storage != "inmem" && len(c.StorageKeys) == 0 {
@@ -390,7 +419,8 @@ func (c Config) validate() error {
 		)
 	}
 	if c.Role == RoleDDM || c.DDMURL != "" {
-		if len(c.DDMSendKey) == 0 || len(c.DDMRecvKey) == 0 {
+		if len(c.DDMSendKey) < 32 || len(c.DDMRecvKey) < 32 ||
+			string(c.DDMSendKey) == string(c.DDMRecvKey) {
 			return fmt.Errorf(
 				"%w: the declarative management hop needs %s and %s on both roles",
 				ErrConfig, EnvDDMSendKey, EnvDDMRecvKey,
@@ -425,35 +455,38 @@ func (c *Config) roots() error {
 
 // certSource picks how the mdm role learns the device certificate.
 func (a *App) certSource() func(http.Handler) http.Handler {
-	switch {
-	// A configured header names where certificates come from, so it is
-	// honoured ahead of the signature: an mTLS-only enrollment profile sends
-	// no Mdm-Signature, and the signature source would leave those requests
-	// with no identity at all. CARoots, when present, verifies the chain.
-	case a.cfg.CertHeader != "":
-		if a.cfg.CARoots == nil {
-			a.cfg.Logger.Warn(
-				"app: certificate header trusted without a CA to verify it; "+
-					"set DM_CA_FILE, and keep this listener reachable only through the proxy",
-				"header", a.cfg.CertHeader,
+	return func(next http.Handler) http.Handler {
+		signed := next
+		if a.cfg.CARoots != nil {
+			signed = httpapi.CertFromMdmSignature(
+				cms.VerifyOptions{
+					Roots:     a.cfg.CARoots,
+					ClockSkew: 5 * time.Minute,
+					Now:       a.cfg.Clock.Now,
+				},
+				0,
+			)(
+				signed,
 			)
-			return httpapi.CertFromHeader(a.cfg.CertHeader)
 		}
-		return httpapi.CertFromHeader(a.cfg.CertHeader, httpapi.WithHeaderRoots(a.cfg.CARoots))
-	case a.cfg.CARoots != nil:
-		return httpapi.CertFromMdmSignature(
-			cms.VerifyOptions{
-				Roots:     a.cfg.CARoots,
-				ClockSkew: 5 * time.Minute,
-				Now:       a.cfg.Clock.Now,
-			},
-			0,
+		direct := httpapi.CertFromTLS(signed)
+		if a.cfg.CertHeader == "" {
+			return direct
+		}
+		forwarded := httpapi.CertFromHeader(
+			a.cfg.CertHeader,
+			httpapi.WithHeaderRoots(a.cfg.CARoots),
+			httpapi.WithHeaderPeers(a.cfg.TrustedProxies...),
+		)(
+			signed,
 		)
-	default:
-		a.cfg.Logger.Warn(
-			"app: no CA or certificate header configured; device certificates must arrive over TLS on this process",
-		)
-		return httpapi.CertFromTLS
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			if r.Header.Get(a.cfg.CertHeader) != "" {
+				forwarded.ServeHTTP(w, r)
+			} else {
+				direct.ServeHTTP(w, r)
+			}
+		})
 	}
 }
 
@@ -534,7 +567,7 @@ func (a *App) ddmStore(ctx context.Context) (ddm.Store, error) {
 	if a.db == nil {
 		return ddminmem.New(), nil
 	}
-	st, err := sqlstore.Open(ctx, a.db, a.dialect, sqlstore.Options{})
+	st, err := sqlstore.Open(ctx, a.db, a.dialect, sqlstore.Options{Keyring: a.keyring})
 	if err != nil {
 		return nil, fmt.Errorf("app: ddm store: %w", err)
 	}
@@ -572,11 +605,20 @@ func (a *App) wire(ctx context.Context) error {
 	if cfg.Role == RoleMDM || cfg.Role == RoleAll {
 		dm := inproc.Handler(engine)
 		if cfg.DDMURL != "" {
+			var client *http.Client
+			if cfg.DDMRootCAFile != "" {
+				client, err = trustedHTTPClient(cfg.DDMRootCAFile)
+				if err != nil {
+					return err
+				}
+			}
 			dm, err = proxyclient.Handler(
 				proxyclient.Config{
-					URL:     cfg.DDMURL,
-					SendKey: cfg.DDMSendKey,
-					RecvKey: cfg.DDMRecvKey,
+					URL:                   cfg.DDMURL,
+					Client:                client,
+					AllowInsecureForTests: cfg.DDMAllowInsecureForTests,
+					SendKey:               cfg.DDMSendKey,
+					RecvKey:               cfg.DDMRecvKey,
 				},
 			)
 			if err != nil {
@@ -630,12 +672,18 @@ func (a *App) wire(ctx context.Context) error {
 		) // check-in is PUT, connect is PUT; httpapi enforces methods
 	}
 	if cfg.Role == RoleDDM {
+		replay, err := a.protocolState(ctx)
+		if err != nil {
+			return err
+		}
 		ps, err := proxyserver.Handler(
 			proxyserver.Config{
-				Backend: engine,
-				RecvKey: cfg.DDMRecvKey,
-				SendKey: cfg.DDMSendKey,
-				Logger:  cfg.Logger,
+				Bus: cfg.Bus, Backend: engine,
+				ReplayStore:           replay,
+				AllowInsecureForTests: cfg.DDMAllowInsecureForTests,
+				RecvKey:               cfg.DDMRecvKey,
+				SendKey:               cfg.DDMSendKey,
+				Logger:                cfg.Logger,
 			},
 		)
 		if err != nil {

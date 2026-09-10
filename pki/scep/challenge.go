@@ -38,11 +38,14 @@ func (s StaticChallenge) Verify(_ context.Context, password string, _ *x509.Cert
 	return nil
 }
 
-// NoChallenge accepts everything; for renewal-only endpoints or labs.
-type NoChallenge struct{}
+// RenewalOnly rejects initial issuance. A valid renewal still has to prove
+// possession of a currently trusted certificate for the same subject.
+type RenewalOnly struct{}
 
-// Verify implements Challenge.
-func (NoChallenge) Verify(context.Context, string, *x509.CertificateRequest) error { return nil }
+// Verify refuses every initial issuance request.
+func (RenewalOnly) Verify(context.Context, string, *x509.CertificateRequest) error {
+	return ErrChallenge
+}
 
 // OneTimeChallenges issues random single-use challenges with a lifetime;
 // each is consumed by the first successful verification.
@@ -106,8 +109,8 @@ func (o *OneTimeChallenges) Live() int {
 }
 
 // HMACChallenge derives challenges from a secret, the CSR subject common
-// name, and an expiry, so the server needs no state and a challenge issued
-// for one device cannot be replayed by another. The challenge is
+// name, and an expiry. It is reusable with another key using the same common
+// name; it does not prove hardware identity or provide single-use issuance. The challenge is
 // "<unix expiry>.<base64url(HMAC-SHA256(key, expiry || cn))>".
 type HMACChallenge struct {
 	key   []byte

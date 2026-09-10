@@ -6,7 +6,6 @@ on:
       - '.release-please-manifest.json'
       - 'docs/**'
       - '**/*.md'
-      - '.github/workflows/**'
   push:
     branches:
       - main
@@ -15,13 +14,11 @@ on:
       - '.release-please-manifest.json'
       - 'docs/**'
       - '**/*.md'
-      - '.github/workflows/**'
   schedule:
     - cron: '17 4 * * 1'
 
 permissions:
   contents: read
-  security-events: write
 
 jobs:
   govulncheck:
@@ -33,6 +30,17 @@ jobs:
     name: '🛡️ govulncheck'
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        module: [library, server]
+        include:
+          - module: library
+            dir: '.'
+          - module: server
+            dir: server
+    env:
+      GOWORK: 'off'
     steps:
       - name: Harden Runner
         uses: step-security/harden-runner@e14015d583714f6e62063499dc959a02595150a1 # v2.21.1
@@ -48,6 +56,7 @@ jobs:
       - name: Run govulncheck
         run: |
           go install golang.org/x/vuln/cmd/govulncheck@v1.7.0
+          cd "${{ matrix.dir }}"
           govulncheck ./...
 
   gosec:
@@ -57,8 +66,22 @@ jobs:
           github.event.pull_request.head.repo.full_name != github.repository ||
           github.head_ref != 'release-please--branches--main' }}
     name: '🔍 gosec SARIF'
+    permissions:
+      contents: read
+      security-events: write
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        module: [library, server]
+        include:
+          - module: library
+            dir: '.'
+          - module: server
+            dir: server
+    env:
+      GOWORK: 'off'
     steps:
       - name: Harden Runner
         uses: step-security/harden-runner@e14015d583714f6e62063499dc959a02595150a1 # v2.21.1
@@ -66,11 +89,28 @@ jobs:
           egress-policy: audit
       - name: Checkout Code
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - name: Run gosec
-        uses: securego/gosec@deb54465fea23d19a77f037e11e6589021f8501d # v2.29.0
+      - name: Setup Go
+        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:
-          args: '-no-fail -fmt sarif -out gosec.sarif ./...'
+          go-version-file: '${{ matrix.dir }}/go.mod'
+          cache-dependency-path: '**/go.sum'
+      - name: Run gosec
+        run: |
+          go install github.com/securego/gosec/v2/cmd/gosec@v2.29.0
+          cd "${{ matrix.dir }}"
+          gosec -fmt sarif -out "$GITHUB_WORKSPACE/gosec-${{ matrix.module }}.sarif" ./...
       - name: Upload SARIF
+        if: always()
         uses: github/codeql-action/upload-sarif@6f5948dfacef28e207b48d0905cf90c03365536d # v3
         with:
-          sarif_file: gosec.sarif
+          sarif_file: gosec-${{ matrix.module }}.sarif
+          category: gosec-${{ matrix.module }}
+
+  docker-context:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Verify local credentials are excluded from Docker context
+        run: scripts/check-docker-context.sh

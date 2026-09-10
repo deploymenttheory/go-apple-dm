@@ -165,7 +165,17 @@ func enrollments(t *testing.T) *storeinmem.Store {
 func TestServiceHook(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
-	dev, u1, u2, other := ddmtest.Device(1), ddmtest.User(1, "u1"), ddmtest.User(1, "u2"), ddmtest.Device(2)
+	dev, u1, u2, other := ddmtest.Device(
+		1,
+	), ddmtest.User(
+		1,
+		"u1",
+	), ddmtest.User(
+		1,
+		"u2",
+	), ddmtest.Device(
+		2,
+	)
 	all := []mdm.EnrollmentID{dev, u1, u2, other}
 	call := func(op string, id mdm.EnrollmentID) *service.Call {
 		return &service.Call{Op: op, Request: &mdm.Request{ID: id}}
@@ -190,13 +200,21 @@ func TestServiceHook(t *testing.T) {
 		t.Parallel()
 		h, hook := setup(t, enrollments(t))
 		hook.After(ctx, call("checkin:CheckOut", dev), nil)
-		expect(t, h, map[mdm.EnrollmentID]string{dev: cleared, u1: cleared, u2: cleared, other: seeded})
+		expect(
+			t,
+			h,
+			map[mdm.EnrollmentID]string{dev: cleared, u1: cleared, u2: cleared, other: seeded},
+		)
 	})
 	t.Run("ReauthenticateClearsUserChannels", func(t *testing.T) {
 		t.Parallel()
 		h, hook := setup(t, enrollments(t))
 		hook.After(ctx, call("checkin:Authenticate", dev), nil)
-		expect(t, h, map[mdm.EnrollmentID]string{dev: cleared, u1: cleared, u2: cleared, other: seeded})
+		expect(
+			t,
+			h,
+			map[mdm.EnrollmentID]string{dev: cleared, u1: cleared, u2: cleared, other: seeded},
+		)
 		if got := h.logs.String(); strings.Contains(got, "WARN") {
 			t.Fatalf("unexpected warnings: %s", got)
 		}
@@ -205,16 +223,28 @@ func TestServiceHook(t *testing.T) {
 		t.Parallel()
 		h, hook := setup(t, enrollments(t))
 		hook.After(ctx, call("checkin:CheckOut", u1), nil)
-		expect(t, h, map[mdm.EnrollmentID]string{dev: seeded, u1: cleared, u2: seeded, other: seeded})
+		expect(
+			t,
+			h,
+			map[mdm.EnrollmentID]string{dev: seeded, u1: cleared, u2: seeded, other: seeded},
+		)
 		hook.After(ctx, call("checkin:Authenticate", u2), nil)
-		expect(t, h, map[mdm.EnrollmentID]string{dev: seeded, u1: cleared, u2: cleared, other: seeded})
+		expect(
+			t,
+			h,
+			map[mdm.EnrollmentID]string{dev: seeded, u1: cleared, u2: cleared, other: seeded},
+		)
 	})
 	t.Run("IgnoresErrors", func(t *testing.T) {
 		t.Parallel()
 		h, hook := setup(t, enrollments(t))
 		hook.After(ctx, call("checkin:CheckOut", dev), errBoom)
 		hook.After(ctx, call("checkin:Authenticate", dev), errBoom)
-		expect(t, h, map[mdm.EnrollmentID]string{dev: seeded, u1: seeded, u2: seeded, other: seeded})
+		expect(
+			t,
+			h,
+			map[mdm.EnrollmentID]string{dev: seeded, u1: seeded, u2: seeded, other: seeded},
+		)
 	})
 	t.Run("IgnoresOtherOps", func(t *testing.T) {
 		t.Parallel()
@@ -227,11 +257,18 @@ func TestServiceHook(t *testing.T) {
 		if got, err := hook.Before(ctx, call("checkin:CheckOut", dev)); err != nil || got != ctx {
 			t.Fatalf("Before = %v, %v", got, err)
 		}
-		expect(t, h, map[mdm.EnrollmentID]string{dev: seeded, u1: seeded, u2: seeded, other: seeded})
+		expect(
+			t,
+			h,
+			map[mdm.EnrollmentID]string{dev: seeded, u1: seeded, u2: seeded, other: seeded},
+		)
 	})
 	t.Run("ListFailureLogged", func(t *testing.T) {
 		t.Parallel()
-		failing := &storagetest.Failing{Store: enrollments(t), Fail: map[string]error{"List": errBoom}}
+		failing := &storagetest.Failing{
+			Store: enrollments(t),
+			Fail:  map[string]error{"List": errBoom},
+		}
 		h := clearHarness(t)
 		for _, id := range all {
 			seed(t, h, id)
@@ -240,8 +277,13 @@ func TestServiceHook(t *testing.T) {
 		hook := ddmsync.NewServiceHook(h.engine, failing, slog.New(slog.NewTextHandler(&logs, nil)))
 		hook.After(ctx, call("checkin:CheckOut", dev), nil)
 		// The device is still cleared; its user channels could not be found.
-		expect(t, h, map[mdm.EnrollmentID]string{dev: cleared, u1: seeded, u2: seeded, other: seeded})
-		if got := logs.String(); !strings.Contains(got, "list user channels") || !strings.Contains(got, "boom") {
+		expect(
+			t,
+			h,
+			map[mdm.EnrollmentID]string{dev: cleared, u1: seeded, u2: seeded, other: seeded},
+		)
+		if got := logs.String(); !strings.Contains(got, "list user channels") ||
+			!strings.Contains(got, "boom") {
 			t.Fatalf("log %q", got)
 		}
 		// With no logger the engine's own is used.
@@ -258,7 +300,8 @@ func TestServiceHook(t *testing.T) {
 		failing.Fail["ClearEnrollment"] = errBoom
 		hook := ddmsync.NewServiceHook(h.engine, nil, nil)
 		hook.After(ctx, call("checkin:CheckOut", dev), nil)
-		if got := h.logs.String(); !strings.Contains(got, "clear enrollment") || !strings.Contains(got, "boom") {
+		if got := h.logs.String(); !strings.Contains(got, "clear enrollment") ||
+			!strings.Contains(got, "boom") {
 			t.Fatalf("log %q", got)
 		}
 	})
@@ -266,7 +309,11 @@ func TestServiceHook(t *testing.T) {
 		t.Parallel()
 		h, hook := setup(t, nil)
 		hook.After(ctx, call("checkin:CheckOut", dev), nil)
-		expect(t, h, map[mdm.EnrollmentID]string{dev: cleared, u1: seeded, u2: seeded, other: seeded})
+		expect(
+			t,
+			h,
+			map[mdm.EnrollmentID]string{dev: cleared, u1: seeded, u2: seeded, other: seeded},
+		)
 	})
 	t.Run("PagesUserChannels", func(t *testing.T) {
 		t.Parallel()
@@ -278,16 +325,23 @@ func TestServiceHook(t *testing.T) {
 		for i := range paging.DefaultPageSize + 3 {
 			users = append(users, ddmtest.User(3, "u"+itoa3(i)))
 		}
-		for _, id := range append(users, ddmtest.Device(3)) {
-			if err := st.UpsertAuthenticate(ctx, id, &checkin.Authenticate{MessageType: "Authenticate"}, nil, t0); err != nil {
+		for _, id := range append([]mdm.EnrollmentID{ddmtest.Device(3)}, users...) {
+			if err := st.UpsertAuthenticate(
+				ctx,
+				id,
+				&checkin.Authenticate{MessageType: "Authenticate"},
+				nil,
+				t0,
+			); err != nil {
 				t.Fatal(err)
 			}
 			if _, err := h.engine.AssignSet(ctx, id, "lab"); err != nil {
 				t.Fatal(err)
 			}
 		}
-		ddmsync.NewServiceHook(h.engine, st, nil).After(ctx, call("checkin:CheckOut", ddmtest.Device(3)), nil)
-		for _, id := range append(users, ddmtest.Device(3)) {
+		ddmsync.NewServiceHook(h.engine, st, nil).
+			After(ctx, call("checkin:CheckOut", ddmtest.Device(3)), nil)
+		for _, id := range append([]mdm.EnrollmentID{ddmtest.Device(3)}, users...) {
 			if sets, err := h.engine.EnrollmentSets(ctx, id); err != nil || len(sets) != 0 {
 				t.Fatalf("%s not cleared: %v %v", id.ID, sets, err)
 			}

@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"math/big"
 	"net/http"
-	"net/netip"
 	"os"
 	"strings"
 	"time"
@@ -28,6 +27,8 @@ import (
 // All lifetimes are required when enabled. Existing DER must be imported before
 // enabling enforcement on devices issued before the registry existed.
 type PKIConfig struct {
+	// Disabled explicitly opts out of issuer status enforcement.
+	Disabled                    bool
 	Enabled                     bool
 	CRLTTL, CRLRefresh, OCSPTTL time.Duration
 	// Retired holds old issuer keys while their issued certificates remain valid.
@@ -50,9 +51,8 @@ type RouteQuota struct {
 
 // RateLimitConfig is off when Routes is empty. TrustedProxies is opt-in.
 type RateLimitConfig struct {
-	Routes         map[string]RouteQuota
-	TrustedProxies []netip.Prefix
-	MaxEntries     int
+	Routes     map[string]RouteQuota
+	MaxEntries int
 }
 
 func (a *App) protocolState(ctx context.Context) (state.Store, error) {
@@ -64,7 +64,7 @@ func (a *App) protocolState(ctx context.Context) (state.Store, error) {
 		m.Now = a.cfg.Clock.Now
 		a.protocol = m
 	} else {
-		s, err := statestore.Open(ctx, a.db, a.dialect)
+		s, err := statestore.Open(ctx, a.db, a.dialect, a.keyring)
 		if err != nil {
 			return nil, fmt.Errorf("app: open protocol state: %w", err)
 		}
@@ -134,10 +134,21 @@ func (c enrollmentChallenge) Verify(
 	}
 	if csr != nil &&
 		strings.HasPrefix(csr.Subject.CommonName, accountdriven.CertificateSubjectPrefix) {
+		if c.app != nil && c.app.enroll != nil {
+			if _, err := c.app.enroll.admit(
+				ctx,
+				acme.Binding{CommonName: csr.Subject.CommonName},
+			); err != nil {
+				return err
+			}
+		}
 		if err := c.associations.VerifySCEPChallenge(ctx, password, csr); err != nil {
 			return fmt.Errorf("app: account SCEP challenge: %w", err)
 		}
 		return nil
+	}
+	if c.app != nil && c.app.enroll != nil {
+		return c.app.enroll.verifySCEPGrant(ctx, password, csr)
 	}
 	if err := c.base.Verify(ctx, password, csr); err != nil {
 		return fmt.Errorf("app: SCEP challenge: %w", err)
@@ -244,9 +255,9 @@ func routeFamily(path string) string {
 		return "pki"
 	case path == PathAuthenticate || strings.HasPrefix(path, "/enroll/oauth2/") || path == PathOIDCCallback:
 		return "auth"
-	case strings.HasPrefix(path, PathEnroll) || path == PathWellKnown:
+	case strings.HasPrefix(path, PathEnroll) || path == PathWellKnown || path == "/ota" || strings.HasPrefix(path, "/ota/"):
 		return "enroll"
-	case path == PathMDM:
+	case path == PathMDM || path == "/v1/declarative-management" || path == PathDDM+"/v1/declarative-management":
 		return "mdm"
 	}
 	return ""
@@ -276,7 +287,7 @@ func (a *App) withRateLimits(ctx context.Context, next http.Handler) (http.Handl
 			return []ratelimit.Bucket{
 				{Key: family + "/global", Interval: q.GlobalInterval, Burst: q.GlobalBurst},
 				{
-					Key:      family + "/peer/" + ratelimit.PeerKey(r, cfg.TrustedProxies),
+					Key:      family + "/peer/" + ratelimit.PeerKey(r, a.cfg.TrustedProxies),
 					Interval: q.Interval,
 					Burst:    q.Burst,
 				},

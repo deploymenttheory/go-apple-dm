@@ -4,6 +4,7 @@ import (
 	"context"
 	"log/slog"
 
+	"github.com/deploymenttheory/go-apple-dm/mdmprotocol/cms"
 	"github.com/deploymenttheory/go-apple-dm/mdmprotocol/ddm"
 	"github.com/deploymenttheory/go-apple-dm/mdmprotocol/dmhook"
 	"github.com/deploymenttheory/go-apple-dm/mdmprotocol/mdm"
@@ -30,7 +31,17 @@ func NewServiceHook(e *ddm.Engine, enrollments storage.EnrollmentStore, log *slo
 }
 
 // Before implements dmhook.Hook.
-func (h *ServiceHook) Before(ctx context.Context, _ *dmhook.Call) (context.Context, error) {
+type retryKey struct{}
+
+func (h *ServiceHook) Before(ctx context.Context, c *dmhook.Call) (context.Context, error) {
+	if c != nil && c.Op == "checkin:Authenticate" && c.Request != nil &&
+		c.Request.Certificate != nil &&
+		h.enrollments != nil {
+		e, err := h.enrollments.Get(ctx, c.Request.ID)
+		if err == nil && e.CertHash == cms.Fingerprint(c.Request.Certificate) {
+			ctx = context.WithValue(ctx, retryKey{}, true)
+		}
+	}
 	return ctx, nil
 }
 
@@ -40,6 +51,9 @@ func (h *ServiceHook) After(ctx context.Context, c *dmhook.Call, err error) {
 		return
 	}
 	if c.Op != "checkin:CheckOut" && c.Op != "checkin:Authenticate" {
+		return
+	}
+	if retry, _ := ctx.Value(retryKey{}).(bool); retry && c.Op == "checkin:Authenticate" {
 		return
 	}
 	h.clear(ctx, c.Request.ID)

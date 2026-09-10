@@ -71,6 +71,16 @@ func seed100k(tb testing.TB, s *postgres.Store) mdm.EnrollmentID {
 func TestClear100kUnderOneSecond(t *testing.T) {
 	s := openFresh(t)
 	id := seed100k(t, s)
+	if err := s.StoreTokenUpdate(
+		t.Context(),
+		id,
+		mdm.Push{Topic: "topic", Magic: "magic", Token: []byte{1}},
+		nil,
+		nil,
+		time.Now(),
+	); err != nil {
+		t.Fatal(err)
+	}
 	ctx := context.Background()
 	start := time.Now()
 	n, err := s.Clear(ctx, id, storage.ClearFilter{})
@@ -80,7 +90,10 @@ func TestClear100kUnderOneSecond(t *testing.T) {
 	}
 	t.Logf("Clear of 100k commands took %s", elapsed)
 	if elapsed > time.Second && !raceEnabled && os.Getenv("STORAGE_TIMING") != "off" {
-		t.Fatalf("Clear of 100k commands took %s, want under 1s (set STORAGE_TIMING=off on slow machines)", elapsed)
+		t.Fatalf(
+			"Clear of 100k commands took %s, want under 1s (set STORAGE_TIMING=off on slow machines)",
+			elapsed,
+		)
 	}
 	if next, err := s.Next(ctx, id, false, time.Now()); err != nil || next != nil {
 		t.Fatalf("queue not empty after Clear: %v %v", next, err)

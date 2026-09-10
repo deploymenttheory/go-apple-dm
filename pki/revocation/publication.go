@@ -165,7 +165,8 @@ func (r *Registry) Handler(prefix string) http.Handler {
 		}
 		w.Header().Set("Content-Type", "application/pkix-crl")
 		w.Header().Set("Cache-Control", "no-cache")
-		_, _ = w.Write(der)
+		w.Header().Set("X-Content-Type-Options", "nosniff")
+		_, _ = w.Write(der) // #nosec G705 -- Signed binary OCSP/CRL, explicit non-HTML media type and nosniff.
 	})
 	handle := func(w http.ResponseWriter, q *http.Request) {
 		var raw []byte
@@ -196,7 +197,8 @@ func (r *Registry) Handler(prefix string) http.Handler {
 		w.Header().Set("Content-Type", "application/ocsp-response")
 		w.Header().Set("Cache-Control", "no-cache")
 		w.Header().Set("Content-Length", strconv.Itoa(len(der)))
-		_, _ = w.Write(der)
+		w.Header().Set("X-Content-Type-Options", "nosniff")
+		_, _ = w.Write(der) // #nosec G705 -- Signed binary OCSP/CRL, explicit non-HTML media type and nosniff.
 	}
 	mux.HandleFunc("POST "+prefix+"/ocsp/{issuer}", handle)
 	mux.HandleFunc("GET "+prefix+"/ocsp/{issuer}/{request...}", handle)

@@ -2,13 +2,14 @@ package service_test
 
 import (
 	"context"
+	"crypto/x509"
 	"errors"
 	"strings"
 	"testing"
 
-	"github.com/deploymenttheory/go-apple-dm/server/service"
 	"github.com/deploymenttheory/go-apple-dm/mdmprotocol/mdm"
 	"github.com/deploymenttheory/go-apple-dm/schema/checkin"
+	"github.com/deploymenttheory/go-apple-dm/server/service"
 	"github.com/deploymenttheory/go-apple-dm/storage"
 )
 
@@ -82,7 +83,10 @@ func TestCertReuseAllowedByPolicy(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
 	// (a) D1 rotated from A to C, so A is history only.
-	h := newHarness(t, service.Config{CertReuse: service.AllowCertReuse})
+	h := newHarness(
+		t,
+		service.Config{CertReuse: service.AllowCertReuse, Reenroll: service.AllowReenroll},
+	)
 	enroll(t, h, "D1")
 	hashA := certHashOf(t, h, "D1")
 	if _, err := h.core.Checkin(ctx, req(h.cert2), authenticate(t, "D1")); err != nil {
@@ -105,12 +109,16 @@ func TestCertReuseAllowedByPolicy(t *testing.T) {
 		t.Fatalf("events = %v", got)
 	}
 	// (b) A is still pinned by D1: the live pin wins regardless of policy.
-	live := newHarness(t, service.Config{CertReuse: service.AllowCertReuse})
+	live := newHarness(
+		t,
+		service.Config{CertReuse: service.AllowCertReuse, Reenroll: service.AllowReenroll},
+	)
 	enroll(t, live, "D1")
 	liveHash := certHashOf(t, live, "D1")
 	live.events = nil
 	_, err := live.core.Checkin(ctx, req(live.cert), authenticate(t, "D2"))
-	if service.CodeOf(err) != service.CodeForbidden || !errors.Is(err, service.ErrCertMismatch) || !errors.Is(err, storage.ErrConflict) {
+	if service.CodeOf(err) != service.CodeForbidden || !errors.Is(err, service.ErrCertMismatch) ||
+		!errors.Is(err, storage.ErrConflict) {
 		t.Fatalf("D2 with a live pin: code=%d err=%v", service.CodeOf(err), err)
 	}
 	if errors.Is(err, service.ErrCertReused) {
@@ -150,48 +158,37 @@ func seedWithoutPin(t *testing.T, h *harness, udid string) {
 	}
 }
 
-// TestRetroactivePinOnlyIfUnseen proves decision record 0014 claim 3: the
-// retroactive pin in authorize only takes a hash no other enrollment has
-// presented; otherwise PinEnforce refuses and PinWarn allows without
-// writing.
-func TestRetroactivePinOnlyIfUnseen(t *testing.T) {
+// TestUnpinnedEnrollmentCannotBeClaimed requires Authenticate to establish identity.
+func TestUnpinnedEnrollmentCannotBeClaimed(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
 	h := newHarness(t, service.Config{})
 	seedWithoutPin(t, h, "D1")
-	if _, err := h.core.Connect(ctx, req(h.cert), response("D1", "", mdm.StatusIdle)); err != nil {
-		t.Fatalf("D1 first connect: %v", err)
+	for _, cert := range []*x509.Certificate{h.cert, h.cert2} {
+		if _, err := h.core.Connect(
+			ctx,
+			req(cert),
+			response("D1", "", mdm.StatusIdle),
+		); !errors.Is(
+			err,
+			service.ErrCertMismatch,
+		) {
+			t.Fatalf("unpinned access: %v", err)
+		}
+		if certHashOf(t, h, "D1") != "" {
+			t.Fatal("request pinned an identity")
+		}
 	}
-	hashA := certHashOf(t, h, "D1")
-	if hashA == "" {
-		t.Fatal("D1 not pinned retroactively")
-	}
-	seedWithoutPin(t, h, "D2")
-	_, err := h.core.Connect(ctx, req(h.cert), response("D2", "", mdm.StatusIdle))
-	if service.CodeOf(err) != service.CodeForbidden || !errors.Is(err, service.ErrCertReused) {
-		t.Fatalf("D2 retroactive with D1's certificate: code=%d err=%v", service.CodeOf(err), err)
-	}
-	if certHashOf(t, h, "D2") != "" {
-		t.Fatal("D2 pinned a certificate seen on D1")
-	}
-	// A never-seen certificate is pinned.
-	if _, err := h.core.Connect(ctx, req(h.cert2), response("D2", "", mdm.StatusIdle)); err != nil {
-		t.Fatalf("D2 retroactive with a fresh certificate: %v", err)
-	}
-	if certHashOf(t, h, "D2") == "" || certHashOf(t, h, "D2") == hashA {
-		t.Fatal("D2 not pinned to its own certificate")
-	}
-	// PinWarn allows the request and writes nothing.
 	warn := newHarness(t, service.Config{Pinning: service.PinWarn})
 	seedWithoutPin(t, warn, "D1")
-	if _, err := warn.core.Connect(ctx, req(warn.cert), response("D1", "", mdm.StatusIdle)); err != nil {
+	if _, err := warn.core.Connect(
+		ctx,
+		req(warn.cert),
+		response("D1", "", mdm.StatusIdle),
+	); err != nil {
 		t.Fatal(err)
 	}
-	seedWithoutPin(t, warn, "D2")
-	if _, err := warn.core.Connect(ctx, req(warn.cert), response("D2", "", mdm.StatusIdle)); err != nil {
-		t.Fatalf("PinWarn retroactive reuse: %v", err)
-	}
-	if certHashOf(t, warn, "D2") != "" {
-		t.Fatal("PinWarn wrote a pin for a seen certificate")
+	if certHashOf(t, warn, "D1") != "" {
+		t.Fatal("warning mode established a pin")
 	}
 }

@@ -3,6 +3,7 @@ package sqlcommon
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"strings"
@@ -18,14 +19,26 @@ func exportCursor(parentID, id string) string { return parentID + "\x00" + id }
 // order is (parent_id, id) and device rows have an empty parent. Each
 // device row costs two extra reads (bootstrap token and history); this is
 // an administrative operation, not a hot path.
-func (s *Store) Export(ctx context.Context, p paging.Page) (paging.Result[storage.EnrollmentExport], error) {
+func (s *Store) Export(
+	ctx context.Context,
+	p paging.Page,
+) (paging.Result[storage.EnrollmentExport], error) {
 	var out paging.Result[storage.EnrollmentExport]
 	parent, id, hasCursor := strings.Cut(p.Cursor, "\x00")
 	if p.Cursor != "" && !hasCursor {
 		return out, fmt.Errorf("%w: bad cursor %q", storage.ErrInvalid, p.Cursor)
 	}
 	limit := pageLimit(p)
-	rows, err := s.db.QueryContext(ctx, s.q(selectEnrollment+" WHERE parent_id > ? OR (parent_id = ? AND id > ?) ORDER BY parent_id, id LIMIT ?"), parent, parent, id, limit+1)
+	rows, err := s.db.QueryContext(
+		ctx,
+		s.q(
+			selectEnrollment+" WHERE parent_id > ? OR (parent_id = ? AND id > ?) ORDER BY parent_id, id LIMIT ?",
+		),
+		parent,
+		parent,
+		id,
+		limit+1,
+	)
 	if err != nil {
 		return out, wrap("export enrollments", err)
 	}
@@ -51,12 +64,21 @@ func (s *Store) Export(ctx context.Context, p paging.Page) (paging.Result[storag
 	for _, e := range items {
 		x := storage.EnrollmentExport{Enrollment: e}
 		if !e.ID.Channel.IsUser() {
-			tok, err := s.BootstrapToken(ctx, e.ID)
-			if err != nil && !errors.Is(err, storage.ErrNotFound) {
+			var sealed []byte
+			if err := s.db.QueryRowContext(ctx, s.q("SELECT bootstrap_token FROM enrollments WHERE id = ?"), e.ID.ID).
+				Scan(&sealed); err != nil {
+				return out, err
+			}
+			tok, err := s.open(purposeBootstrapToken, e.ID.ID, sealed)
+			if err != nil {
 				return out, err
 			}
 			x.BootstrapToken = tok
-			if x.CertHistory, err = s.associations(ctx, "ca.enrollment_id = ?", e.ID.ID); err != nil {
+			if x.CertHistory, err = s.associations(
+				ctx,
+				"ca.enrollment_id = ?",
+				e.ID.ID,
+			); err != nil {
 				return out, err
 			}
 		}
@@ -72,11 +94,17 @@ func (s *Store) Import(ctx context.Context, rec storage.EnrollmentExport) error 
 		return err
 	}
 	for _, a := range rec.CertHistory {
-		if a.ID.ID != id.ID || a.Hash == "" {
-			return fmt.Errorf("%w: history row for %s in record %s", storage.ErrInvalid, a.ID.ID, id.ID)
+		if a.ID != id || a.Hash == "" {
+			return fmt.Errorf(
+				"%w: history row for %s in record %s",
+				storage.ErrInvalid,
+				a.ID.ID,
+				id.ID,
+			)
 		}
 	}
-	if id.Channel.IsUser() && (rec.CertHash != "" || len(rec.BootstrapToken) != 0 || len(rec.CertHistory) != 0) {
+	if id.Channel.IsUser() &&
+		(rec.CertHash != "" || len(rec.BootstrapToken) != 0 || len(rec.CertHistory) != 0) {
 		return fmt.Errorf("%w: user channel %s carries device state", storage.ErrInvalid, id.ID)
 	}
 	unlock, err := s.seal(purposeUnlockToken, id.ID, rec.UnlockToken)
@@ -87,31 +115,92 @@ func (s *Store) Import(ctx context.Context, rec storage.EnrollmentExport) error 
 	if err != nil {
 		return err
 	}
+	authRaw, err := s.seal(purposeAuthenticate, id.ID, rec.AuthenticateRaw)
+	if err != nil {
+		return err
+	}
+	tokenRaw, err := s.seal(purposeTokenUpdate, id.ID, rec.TokenUpdateRaw)
+	if err != nil {
+		return err
+	}
 	d := rec.Device
 	return s.tx(ctx, func(q querier) error {
 		if id.Channel.IsUser() {
-			if err := s.exists(ctx, q, id.ParentID); err != nil {
-				return fmt.Errorf("%w: parent %s of %s is absent", storage.ErrInvalid, id.ParentID, id.ID)
+			if err := s.exists(ctx, q, id.Device()); err != nil {
+				return fmt.Errorf(
+					"%w: parent %s of %s is absent",
+					storage.ErrInvalid,
+					id.ParentID,
+					id.ID,
+				)
 			}
+		}
+		if _, err := s.ensureEnrollment(ctx, q, id, rec.EnrolledAt); err != nil {
+			return err
 		}
 		if rec.CertHash != "" {
 			var owner string
-			err := q.QueryRowContext(ctx, s.q("SELECT id FROM enrollments WHERE cert_hash = ? AND id <> ?"), rec.CertHash, id.ID).Scan(&owner)
+			err := q.QueryRowContext(ctx, s.q("SELECT id FROM enrollments WHERE cert_hash = ? AND id <> ?"), rec.CertHash, id.ID).
+				Scan(&owner)
 			if err == nil {
-				return fmt.Errorf("%w: certificate already associated with %s", storage.ErrConflict, owner)
+				return fmt.Errorf(
+					"%w: certificate already associated with %s",
+					storage.ErrConflict,
+					owner,
+				)
 			}
 			if !errors.Is(err, sql.ErrNoRows) {
 				return wrap("lookup certificate", err)
 			}
 		}
-		_, err := q.ExecContext(ctx, s.q(s.d.Upsert("enrollments", enrollmentCols, []string{"id"})),
-			id.ID, int(id.Channel), id.ParentID, rec.Enabled, rec.Push.Topic, rec.Push.Magic, nullBytes(rec.Push.Token),
-			d.SerialNumber, d.Model, d.ModelName, d.DeviceName, d.ProductName, d.OSVersion, d.BuildVersion, d.IMEI, d.MEID, d.Topic,
-			rec.UserShortName, rec.UserLongName, rec.NotOnConsole, rec.EnrollmentUserID, unlock, nullBytes(rec.AuthenticateRaw), nullBytes(rec.TokenUpdateRaw),
-			nullString(rec.CertHash), nullTime(rec.CertHashAt), bootstrap, nullTime(rec.BootstrapTokenAt),
-			rec.EnrolledAt.UTC(), nullTime(rec.TokenUpdatedAt), rec.LastSeenAt.UTC(), nullTime(rec.DisabledAt))
+		capabilities, err := json.Marshal(rec.Capabilities)
+		if err != nil {
+			return err
+		}
+		_, err = q.ExecContext(
+			ctx,
+			s.q(s.d.Upsert("enrollments", enrollmentCols, []string{"id"})),
+			id.ID,
+			int(id.Channel),
+			id.ParentID,
+			rec.Enabled,
+			rec.Push.Topic,
+			rec.Push.Magic,
+			nullBytes(rec.Push.Token),
+			d.SerialNumber,
+			d.Model,
+			d.ModelName,
+			d.DeviceName,
+			d.ProductName,
+			d.OSVersion,
+			d.BuildVersion,
+			d.IMEI,
+			d.MEID,
+			d.Topic,
+			rec.UserShortName,
+			rec.UserLongName,
+			rec.NotOnConsole,
+			rec.EnrollmentUserID,
+			unlock,
+			authRaw,
+			tokenRaw,
+			nullString(
+				rec.CertHash,
+			),
+			nullTime(rec.CertHashAt),
+			bootstrap,
+			nullTime(rec.BootstrapTokenAt),
+			rec.EnrolledAt.UTC(),
+			nullTime(rec.TokenUpdatedAt),
+			rec.LastSeenAt.UTC(),
+			nullTime(rec.DisabledAt),
+			capabilities,
+		)
 		if s.d.uniqueViolation(err) {
-			return fmt.Errorf("%w: certificate already associated with another enrollment", storage.ErrConflict)
+			return fmt.Errorf(
+				"%w: certificate already associated with another enrollment",
+				storage.ErrConflict,
+			)
 		}
 		if err != nil {
 			return wrap("import enrollment", err)

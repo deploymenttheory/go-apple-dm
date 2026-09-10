@@ -44,25 +44,52 @@ func TestStorageFailuresAreInternal(t *testing.T) {
 	}
 	lock, _ := mdm.NewCommand(&commands.DeviceLock{}, mdm.WithUUID("C1"))
 	dev := mdm.EnrollmentID{Channel: mdm.ChannelDevice, ID: "D1"}
-	if _, err := core.Enqueue(ctx, []mdm.EnrollmentID{dev}, lock, storage.EnqueueOptions{}); err != nil {
+	if _, err := core.Enqueue(
+		ctx,
+		[]mdm.EnrollmentID{dev},
+		lock,
+		storage.EnqueueOptions{},
+	); err != nil {
 		t.Fatal(err)
 	}
 	cases := []struct {
 		method string
 		run    func() error
 	}{
-		{"Get", func() error { _, err := core.Checkin(ctx, req(id.Cert), authenticate(t, "D1")); return err }},
-		{"UpsertAuthenticate", func() error { _, err := core.Checkin(ctx, req(id.Cert), authenticate(t, "D1")); return err }},
-		{"AssociateCert", func() error { _, err := core.Checkin(ctx, req(id.Cert), authenticate(t, "D1")); return err }},
-		{"CertHashHistory", func() error { _, err := core.Checkin(ctx, req(id.Cert), authenticate(t, "D1")); return err }},
+		{
+			"Get",
+			func() error { _, err := core.Checkin(ctx, req(id.Cert), authenticate(t, "D1")); return err },
+		},
+		{
+			"AuthenticateEnrollment",
+			func() error { _, err := core.Checkin(ctx, req(id.Cert), authenticate(t, "D1")); return err },
+		},
+		{
+			"AuthenticateEnrollment",
+			func() error { _, err := core.Checkin(ctx, req(id.Cert), authenticate(t, "D1")); return err },
+		},
+		{
+			"CertHashHistory",
+			func() error { _, err := core.Checkin(ctx, req(id.Cert), authenticate(t, "D1")); return err },
+		},
 		{"CertHash", func() error {
 			_, err := core.Connect(ctx, req(id.Cert), response("D1", "", mdm.StatusIdle))
 			return err
 		}},
-		{"StoreTokenUpdate", func() error { _, err := core.Checkin(ctx, req(id.Cert), tokenUpdate(t, "D1", nil)); return err }},
-		{"Disable", func() error { _, err := core.Checkin(ctx, req(id.Cert), simple(t, "CheckOut", "D1", nil)); return err }},
+		{
+			"StoreTokenUpdate",
+			func() error { _, err := core.Checkin(ctx, req(id.Cert), tokenUpdate(t, "D1", nil)); return err },
+		},
+		{
+			"Disable",
+			func() error { _, err := core.Checkin(ctx, req(id.Cert), simple(t, "CheckOut", "D1", nil)); return err },
+		},
 		{"StoreBootstrapToken", func() error {
-			_, err := core.Checkin(ctx, req(id.Cert), simple(t, "SetBootstrapToken", "D1", map[string]any{"BootstrapToken": []byte("x")}))
+			_, err := core.Checkin(
+				ctx,
+				req(id.Cert),
+				simple(t, "SetBootstrapToken", "D1", map[string]any{"BootstrapToken": []byte("x")}),
+			)
 			return err
 		}},
 		{"BootstrapToken", func() error {
@@ -85,7 +112,10 @@ func TestStorageFailuresAreInternal(t *testing.T) {
 			_, err := core.Enqueue(ctx, []mdm.EnrollmentID{dev}, lock, storage.EnqueueOptions{})
 			return err
 		}},
-		{"Export", func() error { _, err := core.ExportEnrollments(ctx, paging.Page{}); return err }},
+		{
+			"Export",
+			func() error { _, err := core.ExportEnrollments(ctx, paging.Page{}); return err },
+		},
 		{"Import", func() error {
 			return core.ImportEnrollment(ctx, storage.EnrollmentExport{ID: dev})
 		}},
@@ -100,38 +130,38 @@ func TestStorageFailuresAreInternal(t *testing.T) {
 	// Get failing on a user-channel TokenUpdate and AssociateCert failing on
 	// retroactive pinning.
 	failing.Fail = map[string]error{}
-	if _, err := core.Checkin(ctx, req(id.Cert), tokenUpdate(t, "D1", map[string]any{"UserID": "U"})); err != nil {
+	if _, err := core.Checkin(
+		ctx,
+		req(id.Cert),
+		tokenUpdate(t, "D1", map[string]any{"UserID": "U"}),
+	); err != nil {
 		t.Fatal(err)
 	}
 	failing.Fail = map[string]error{"Get": errDB}
 	if err := errors.Unwrap(func() error {
-		_, err := core.Checkin(ctx, req(id.Cert), tokenUpdate(t, "D1", map[string]any{"UserID": "U2"}))
+		_, err := core.Checkin(
+			ctx,
+			req(id.Cert),
+			tokenUpdate(t, "D1", map[string]any{"UserID": "U2"}),
+		)
 		return err
 	}()); !errors.Is(err, errDB) {
 		t.Errorf("user channel Get failure: %v", err)
 	}
 	retro := &storagetest.Failing{Store: inmem.New(), Fail: map[string]error{}}
-	core2, _ := service.New(service.Config{Store: retro, Pinning: service.PinWarn, Clock: clock.NewFake(t0)})
+	core2, _ := service.New(
+		service.Config{Store: retro, Pinning: service.PinWarn, Clock: clock.NewFake(t0)},
+	)
 	if _, err := core2.Checkin(ctx, req(nil), authenticate(t, "D1")); err != nil {
 		t.Fatal(err)
 	}
-	retro.Fail = map[string]error{"CertHashHistory": errDB}
-	if _, err := core2.Checkin(ctx, req(id.Cert), tokenUpdate(t, "D1", nil)); service.CodeOf(err) != service.CodeInternal || !errors.Is(err, errDB) {
-		t.Errorf("retroactive CertHashHistory failure: %v", err)
-	}
-	retro.Fail = map[string]error{"AssociateCert": errDB}
-	if _, err := core2.Checkin(ctx, req(id.Cert), tokenUpdate(t, "D1", nil)); service.CodeOf(err) != service.CodeInternal {
-		t.Errorf("retroactive AssociateCert failure: %v", err)
-	}
-	// A pin race lost after the history check surfaces as a mismatch.
-	retro.Fail = map[string]error{"AssociateCert": storage.ErrConflict}
-	if _, err := core2.Checkin(ctx, req(id.Cert), tokenUpdate(t, "D1", nil)); service.CodeOf(err) != service.CodeForbidden || !errors.Is(err, service.ErrCertMismatch) {
-		t.Errorf("retroactive AssociateCert conflict: %v", err)
-	}
-	// A storage.ErrInvalid from the store maps to CodeBadRequest.
-	retro.Fail = map[string]error{"UpsertAuthenticate": storage.ErrInvalid}
-	if _, err := core2.Checkin(ctx, req(nil), authenticate(t, "D2")); service.CodeOf(err) != service.CodeBadRequest {
-		t.Errorf("ErrInvalid mapping: %v", err)
+	// Storage failures in the atomic transition never become successful authentication.
+	for _, injected := range []error{errDB, storage.ErrConflict, storage.ErrInvalid} {
+		retro.Fail = map[string]error{"AuthenticateEnrollment": injected}
+		_, err := core2.Checkin(ctx, req(id.Cert), authenticate(t, "D2"))
+		if !errors.Is(err, injected) {
+			t.Fatalf("authentication failure: %v", err)
+		}
 	}
 }
 

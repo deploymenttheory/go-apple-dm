@@ -1,6 +1,7 @@
 package schemagen
 
 import (
+	"context"
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
@@ -69,7 +70,7 @@ func yamlSHA256(root string) (string, error) {
 		if ext := filepath.Ext(path); ext == ".yaml" || ext == ".yml" {
 			rel, relErr := filepath.Rel(root, path)
 			if relErr != nil {
-				return relErr
+				return fmt.Errorf("schemagen: relative input path: %w", relErr)
 			}
 			paths = append(paths, filepath.ToSlash(rel))
 		}
@@ -81,7 +82,9 @@ func yamlSHA256(root string) (string, error) {
 	sort.Strings(paths)
 	h := sha256.New()
 	for _, rel := range paths {
-		data, readErr := os.ReadFile(filepath.Join(root, filepath.FromSlash(rel)))
+		data, readErr := os.ReadFile(
+			filepath.Join(root, filepath.FromSlash(rel)),
+		) // #nosec G304 -- rel comes from WalkDir of the operator-selected schema root.
 		if readErr != nil {
 			return "", fmt.Errorf("schemagen: hashing %s: %w", rel, readErr)
 		}
@@ -160,7 +163,15 @@ func compareVersions(a, b string) int {
 // gitCommitDate returns the committer date of HEAD in the checkout, as
 // YYYY-MM-DD, or "" when the directory is not a git checkout.
 func gitCommitDate(schemaRoot string) string {
-	cmd := exec.Command("git", "-C", schemaRoot, "show", "-s", "--format=%cs", "HEAD") // #nosec G204 -- operator-supplied checkout path
+	cmd := exec.CommandContext(context.Background(),
+		"git",
+		"-C",
+		schemaRoot,
+		"show",
+		"-s",
+		"--format=%cs",
+		"HEAD",
+	) // #nosec G204 -- operator-supplied checkout path
 	out, err := cmd.Output()
 	if err != nil {
 		return ""
@@ -171,7 +182,13 @@ func gitCommitDate(schemaRoot string) string {
 // gitHEAD returns the commit checked out in schemaRoot, or "" when the
 // directory is not a git checkout.
 func gitHEAD(schemaRoot string) string {
-	cmd := exec.Command("git", "-C", schemaRoot, "rev-parse", "HEAD") // #nosec G204 -- operator-supplied checkout path
+	cmd := exec.CommandContext(context.Background(),
+		"git",
+		"-C",
+		schemaRoot,
+		"rev-parse",
+		"HEAD",
+	) // #nosec G204 -- operator-supplied checkout path
 	out, err := cmd.Output()
 	if err != nil {
 		return ""

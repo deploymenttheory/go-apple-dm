@@ -1,6 +1,7 @@
 package layout
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"os/exec"
@@ -113,7 +114,10 @@ func Load(dir string) (*Graph, error) {
 }
 
 func run(dir string, args ...string) (string, error) {
-	cmd := exec.Command("go", args...)
+	cmd := exec.CommandContext(
+		context.Background(),
+		"go",
+		args...) // #nosec G204 -- Fixed Go executable and internal layout-check arguments; no request input or shell.
 	cmd.Dir = dir
 	// Each module is read on its own terms. A workspace would merge them and
 	// hide which module a package belongs to, which is the question here.
