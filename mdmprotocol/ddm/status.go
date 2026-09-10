@@ -1,9 +1,13 @@
 package ddm
 
 import (
+	"bytes"
 	"context"
+	"encoding/json/jsontext"
 	json "encoding/json/v2"
+	"errors"
 	"fmt"
+	"io"
 	"sort"
 	"time"
 
@@ -49,6 +53,9 @@ func (e *Engine) Status(ctx context.Context, id mdm.EnrollmentID, body []byte) (
 // parseStatus decodes strictly (duplicate names and invalid UTF-8 are
 // errors) and flattens the report.
 func (e *Engine) parseStatus(ctx context.Context, id mdm.EnrollmentID, body []byte) (*StatusUpdate, error) {
+	if err := e.checkStatusStructure(body); err != nil {
+		return nil, err
+	}
 	var report ddmproto.StatusReport
 	if err := json.Unmarshal(body, &report); err != nil {
 		return nil, fmt.Errorf("%w: %w", ErrStatusMalformed, err)
@@ -205,4 +212,25 @@ func (w *statusWalker) value(path string, v any) error {
 	}
 	w.values = append(w.values, StatusValue{Path: path, Value: b, FirstSeen: w.now, LastSeen: w.now})
 	return nil
+}
+
+// checkStatusStructure bounds work before decoding maps or constructing dotted paths.
+func (e *Engine) checkStatusStructure(body []byte) error {
+	dec := jsontext.NewDecoder(bytes.NewReader(body))
+	items := 0
+	for {
+		tok, err := dec.ReadToken()
+		if errors.Is(err, io.EOF) {
+			return nil
+		}
+		if err != nil {
+			return fmt.Errorf("%w: %w", ErrStatusMalformed, err)
+		}
+		if tok.Kind() != '}' && tok.Kind() != ']' {
+			items++
+		}
+		if dec.StackDepth() > e.maxStatusDepth || len(dec.StackPointer()) > e.maxStatusPath || items > e.maxStatusItems {
+			return fmt.Errorf("%w: status structure exceeds depth, path, or item limit", ErrStatusTooLarge)
+		}
+	}
 }

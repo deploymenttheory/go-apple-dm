@@ -9,10 +9,11 @@ import (
 	"strings"
 	"time"
 
-	"github.com/deploymenttheory/go-apple-dm/server/sqlstore/sqlcommon"
 	"github.com/deploymenttheory/go-apple-dm/mdmprotocol/ddm"
 	"github.com/deploymenttheory/go-apple-dm/mdmprotocol/mdm"
 	"github.com/deploymenttheory/go-apple-dm/paging"
+	"github.com/deploymenttheory/go-apple-dm/server/sqlstore/sqlcommon"
+	"github.com/deploymenttheory/go-apple-dm/storage/crypt"
 )
 
 //go:embed migrations/*/*.sql
@@ -77,6 +78,8 @@ func Version(ctx context.Context, db *sql.DB, d sqlcommon.Dialect) (int, error) 
 
 // Options tune Open.
 type Options struct {
+	// Keyring encrypts retained declaration and snapshot bodies.
+	Keyring *crypt.Keyring
 	// SkipMigrate leaves the schema alone; the caller has run Migrate.
 	SkipMigrate bool
 }
@@ -84,8 +87,9 @@ type Options struct {
 // Store implements ddm.Store over a *sql.DB it does not own: closing the
 // pool is the caller's job.
 type Store struct {
-	db *sql.DB
-	d  sqlcommon.Dialect
+	keyring *crypt.Keyring
+	db      *sql.DB
+	d       sqlcommon.Dialect
 	// mysql selects the syntax MySQL lacks in common with the others: the
 	// upsert clause and RETURNING.
 	mysql bool
@@ -111,7 +115,7 @@ func Open(ctx context.Context, db *sql.DB, d sqlcommon.Dialect, o Options) (*Sto
 			return nil, wrap("migrate", err)
 		}
 	}
-	return &Store{db: db, d: d, mysql: d.Name == "mysql"}, nil
+	return &Store{db: db, d: d, mysql: d.Name == "mysql", keyring: o.Keyring}, nil
 }
 
 // DB exposes the pool for health checks and tests.

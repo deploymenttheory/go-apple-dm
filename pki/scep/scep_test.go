@@ -2,6 +2,7 @@ package scep_test
 
 import (
 	"context"
+	"crypto"
 	"crypto/rand"
 	"crypto/rsa"
 	"crypto/x509"
@@ -63,7 +64,7 @@ func rsaKey(t *testing.T) *rsa.PrivateKey {
 func TestClientEnrolls(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t)
-	s, err := scep.NewServer(f.signer, f.caCert, f.caKey,
+	s, err := newTestServer(f.signer, f.caCert, f.caKey,
 		scep.WithChallenge(scep.StaticChallenge("secret")),
 		scep.WithPolicy(ca.Policy{Validity: time.Hour}),
 		scep.WithLogger(slog.New(slog.NewTextHandler(io.Discard, nil))))
@@ -125,7 +126,7 @@ func TestClientEnrolls(t *testing.T) {
 func TestCSRVerifierVeto(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t)
-	s, _ := scep.NewServer(f.signer, f.caCert, f.caKey,
+	s, _ := newTestServer(f.signer, f.caCert, f.caKey,
 		scep.WithCSRVerifier(scep.CSRVerifierFunc(func(_ context.Context, csr *x509.CertificateRequest) error {
 			if !strings.HasPrefix(csr.Subject.CommonName, "UDID-") {
 				return errors.New("subject must be a UDID")
@@ -149,7 +150,7 @@ func TestCACertBundleAndHandlerErrors(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t)
 	inter, _, _ := ca.NewSelfSigned(ca.SelfSignedOptions{Subject: pkix.Name{CommonName: "intermediate"}})
-	s, _ := scep.NewServer(f.signer, f.caCert, f.caKey, scep.WithExtraCerts(inter),
+	s, _ := newTestServer(f.signer, f.caCert, f.caKey, scep.WithExtraCerts(inter),
 		scep.WithLogger(slog.New(slog.NewTextHandler(io.Discard, nil))))
 	c := serve(t, s)
 	ctx := context.Background()
@@ -243,11 +244,17 @@ func b64(b []byte) string {
 func TestNewServerErrors(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t)
-	if _, err := scep.NewServer(nil, f.caCert, f.caKey); !errors.Is(err, scep.ErrRA) {
+	if _, err := scep.NewServer(f.signer, f.caCert, f.caKey); !errors.Is(err, scep.ErrChallenge) {
+		t.Fatal("implicit unauthenticated issuance", err)
+	}
+	if err := (scep.RenewalOnly{}).Verify(t.Context(), "password", nil); !errors.Is(err, scep.ErrChallenge) {
+		t.Fatal(err)
+	}
+	if _, err := newTestServer(nil, f.caCert, f.caKey); !errors.Is(err, scep.ErrRA) {
 		t.Fatal("nil signer")
 	}
 	ecCert, ecKey := ecIdentity(t)
-	if _, err := scep.NewServer(f.signer, ecCert, ecKey); !errors.Is(err, scep.ErrRA) {
+	if _, err := newTestServer(f.signer, ecCert, ecKey); !errors.Is(err, scep.ErrRA) {
 		t.Fatal("EC RA accepted")
 	}
 }
@@ -321,7 +328,7 @@ func TestClientUndecryptableCertRep(t *testing.T) {
 	t.Parallel()
 	// Return a CertRep for another request to exercise client decryption failure.
 	f := newFixture(t)
-	s, _ := scep.NewServer(f.signer, f.caCert, f.caKey)
+	s, _ := newTestServer(f.signer, f.caCert, f.caKey)
 	real := httptest.NewServer(s.Handler())
 	defer real.Close()
 	var stored []byte
@@ -364,7 +371,7 @@ func TestChallenges(t *testing.T) {
 	ctx := context.Background()
 	csr := &x509.CertificateRequest{Subject: pkix.Name{CommonName: "UDID-9"}}
 
-	if err := (scep.NoChallenge{}).Verify(ctx, "", nil); err != nil {
+	if err := (allowTestChallenge{}).Verify(ctx, "", nil); err != nil {
 		t.Fatal(err)
 	}
 	if err := scep.StaticChallenge("s").Verify(ctx, "s", csr); err != nil {
@@ -443,7 +450,7 @@ func TestChallenges(t *testing.T) {
 func TestPKIOperationSignerFailure(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t)
-	s, _ := scep.NewServer(&failSigner{Local: f.signer}, f.caCert, f.caKey)
+	s, _ := newTestServer(&failSigner{Local: f.signer}, f.caCert, f.caKey)
 	c := serve(t, s)
 	if _, err := c.Enroll(context.Background(), rsaKey(t), scep.EnrollOptions{Subject: pkix.Name{CommonName: "u"}}); !errors.Is(err, scep.ErrRejected) {
 		t.Fatalf("signer failure: %v", err)
@@ -455,3 +462,11 @@ type failSigner struct{ *ca.Local }
 func (failSigner) Sign(context.Context, *x509.CertificateRequest, ca.Policy) (*x509.Certificate, error) {
 	return nil, errors.New("hsm offline")
 }
+
+func newTestServer(signer ca.Signer, cert *x509.Certificate, key crypto.Signer, opts ...scep.Option) (*scep.Server, error) {
+	return scep.NewServer(signer, cert, key, append([]scep.Option{scep.WithChallenge(allowTestChallenge{})}, opts...)...)
+}
+
+type allowTestChallenge struct{}
+
+func (allowTestChallenge) Verify(context.Context, string, *x509.CertificateRequest) error { return nil }

@@ -208,7 +208,12 @@ func (a *App) ddmAdminRoutes() []adminRoute {
 	return routes
 }
 
+type canonicalEnrollmentKey struct{}
+
 func enrollmentFromPath(r *http.Request) (mdm.EnrollmentID, error) {
+	if id, ok := r.Context().Value(canonicalEnrollmentKey{}).(mdm.EnrollmentID); ok {
+		return id, nil
+	}
 	id := mdm.EnrollmentID{ID: r.PathValue("id")}
 	channel, err := channelFromName(r.PathValue("channel"))
 	if err != nil {

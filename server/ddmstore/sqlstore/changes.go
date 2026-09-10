@@ -15,15 +15,29 @@ const defaultPendingLimit = 500
 
 // RecordChanges implements ddm.ChangeStore. Every id is validated before
 // any row is written.
-func (t *txStore) RecordChanges(ctx context.Context, ids []mdm.EnrollmentID, reason string, at time.Time) error {
+func (t *txStore) RecordChanges(
+	ctx context.Context,
+	ids []mdm.EnrollmentID,
+	reason string,
+	at time.Time,
+) error {
 	for _, id := range ids {
-		if err := validID(id); err != nil {
+		if err := t.validID(ctx, id); err != nil {
 			return err
 		}
 	}
 	for _, id := range ids {
-		if _, err := t.exec(ctx, "insert change", "INSERT INTO ddm_changes ("+enrollmentIDCols+", reason, created_at, attempts, last_error, next_attempt_at) VALUES (?, ?, ?, ?, ?, 0, '', ?)",
-			id.ID, int(id.Channel), id.ParentID, reason, utc(at), utc(at)); err != nil {
+		if _, err := t.exec(
+			ctx,
+			"insert change",
+			"INSERT INTO ddm_changes ("+enrollmentIDCols+", reason, created_at, attempts, last_error, next_attempt_at) VALUES (?, ?, ?, ?, ?, 0, '', ?)",
+			id.ID,
+			int(id.Channel),
+			id.ParentID,
+			reason,
+			utc(at),
+			utc(at),
+		); err != nil {
 			return err
 		}
 	}

@@ -51,15 +51,15 @@ include migration requirements for persistent or protocol state. Release-please 
 versions and changelogs; ordinary documentation changes do not change release metadata.
 
 The repository-owned `release-please--branches--main` PR prepares release metadata
-and skips test, lint, security, dependency-review and title-validation jobs. Normal
-PRs retain their existing checks. Go Test and Security skip PRs and pushes to
-`main` when every changed path matches `docs/**`, `**/*.md`,
-`.release-please-manifest.json` or `.github/workflows/**`. Dependency Review uses
-the same exclusions for PRs. This includes root and server changelogs. Mixed
-changes that include application code or dependency files retain normal CI.
-Go lint runs for Go sources or `.golangci.yml`, or by manual dispatch; edits to
-its workflow alone do not trigger it. PR title validation remains enabled for
-ordinary documentation and workflow PRs. Validate workflow edits locally with
-`actionlint` before submitting them.
+and skips test, security, dependency-review and title-validation jobs. Go Test
+and Security skip ordinary PRs and pushes to `main` when every changed path
+matches `docs/**`, `**/*.md` or `.release-please-manifest.json`; workflow changes
+run these checks. Dependency Review additionally excludes workflow-only changes.
+These documentation exclusions include root and server changelogs. Mixed changes
+that include application code or dependency files retain normal CI.
+Go lint runs for Go sources, module files, `.golangci.yml` or workflow changes,
+and supports manual dispatch. It checks both modules without modifying files.
+PR title validation remains enabled for ordinary documentation and workflow PRs.
+Validate workflow edits locally with `actionlint` before submitting them.
 Release-please still runs on `main` pushes to manage releases and tags, and the
 scheduled security scan remains enabled.

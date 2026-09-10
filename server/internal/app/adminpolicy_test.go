@@ -7,10 +7,11 @@ import (
 	"testing"
 	"time"
 
+	"github.com/deploymenttheory/go-apple-dm/mdmprotocol/event"
+	"github.com/deploymenttheory/go-apple-dm/mdmprotocol/mdm"
 	"github.com/deploymenttheory/go-apple-dm/server/adminauth"
 	"github.com/deploymenttheory/go-apple-dm/server/adminauth/inmem"
 	"github.com/deploymenttheory/go-apple-dm/server/internal/app"
-	"github.com/deploymenttheory/go-apple-dm/mdmprotocol/event"
 )
 
 // policyApp builds a server whose admin API authenticates against a principal
@@ -266,5 +267,33 @@ func TestAdminPolicyAdministrationNeedsRoot(t *testing.T) {
 	}
 	if _, err := m.PutPolicy(ctx, p, adminauth.Policy{Name: "x", Source: `permit (principal, action, resource);`}); err == nil {
 		t.Fatal("a permit-all policy granted policy administration")
+	}
+}
+
+func TestStoredChannelPrecedesScopedCedarAuthorization(t *testing.T) {
+	a, m, _ := policyApp(t, event.New())
+	ctx := t.Context()
+	srv := serve(t, a).URL
+	id := mdm.EnrollmentID{Channel: mdm.ChannelDevice, ID: "victim"}
+	if err := a.Store.UpsertAuthenticate(ctx, id, nil, nil, time.Now()); err != nil {
+		t.Fatal(err)
+	}
+	token := mintPrincipal(t, m, adminauth.Principal{Name: "scoped", Roles: []string{"scoped"}})
+	if _, err := m.PutPolicy(
+		ctx,
+		adminauth.Root,
+		adminauth.Policy{
+			Name:   "scoped",
+			Source: `permit(principal in MDM::Role::"scoped",action == MDM::Action::"readEnrollment",resource == MDM::Enrollment::"user/victim");`,
+		},
+	); err != nil {
+		t.Fatal(err)
+	}
+	for _, path := range []string{"/admin/v1/enrollments/user/victim?parent=victim", "/admin/v1/enrollments/device/victim"} {
+		resp := adminReq(t, srv, "GET", path, token, "")
+		resp.Body.Close()
+		if resp.StatusCode != 403 && resp.StatusCode != 404 {
+			t.Fatal("scoped policy bypass", path, resp.StatusCode)
+		}
 	}
 }

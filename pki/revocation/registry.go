@@ -33,6 +33,9 @@ const (
 
 // Provenance records authorization context at issuance; never include credentials.
 type Provenance struct {
+	// Device identifiers are authorization evidence, never issuance credentials.
+	UDID, Serial        string
+	EnrollmentID        string
 	Source              string
 	AccountID           string
 	Identifiers         []string

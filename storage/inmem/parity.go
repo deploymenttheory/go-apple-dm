@@ -85,8 +85,18 @@ func (s *Store) userAuthTargetLocked(id mdm.EnrollmentID) error {
 	if !id.Channel.IsUser() {
 		return fmt.Errorf("%w: %w: %s", storage.ErrInvalid, storage.ErrUserChannelRequired, id.ID)
 	}
-	if _, err := s.get(id.Device()); err != nil {
+	if child := s.enrollments[id.ID]; child != nil && !child.DisabledAt.IsZero() {
+		return storage.ErrDisabled
+	}
+	if existing := s.userAuth[id.ID]; existing != nil && existing.ID != id {
+		return storage.ErrNotFound
+	}
+	parent, err := s.deviceRecordLocked(id)
+	if err != nil {
 		return err
+	}
+	if !parent.DisabledAt.IsZero() {
+		return storage.ErrDisabled
 	}
 	return nil
 }
@@ -100,6 +110,9 @@ func (s *Store) StoreUserAuthChallenge(_ context.Context, id mdm.EnrollmentID, c
 	defer s.mu.Unlock()
 	if err := s.userAuthTargetLocked(id); err != nil {
 		return err
+	}
+	if s.enrollments[id.ID] == nil {
+		s.enrollments[id.ID] = &record{Enrollment: storage.Enrollment{ID: id, EnrolledAt: at.UTC(), LastSeenAt: at.UTC()}}
 	}
 	s.userAuth[id.ID] = &storage.UserAuthState{ID: id, Challenge: challenge, ChallengeAt: at, AuthenticateRaw: append([]byte(nil), raw...)}
 	return nil
@@ -215,7 +228,7 @@ func (s *Store) Import(_ context.Context, rec storage.EnrollmentExport) error {
 		return fmt.Errorf("%w: %w", storage.ErrInvalid, err)
 	}
 	for _, a := range rec.CertHistory {
-		if a.ID.ID != id.ID || a.Hash == "" {
+		if a.ID != id || a.Hash == "" {
 			return fmt.Errorf("%w: history row for %s in record %s", storage.ErrInvalid, a.ID.ID, id.ID)
 		}
 	}
@@ -225,7 +238,7 @@ func (s *Store) Import(_ context.Context, rec storage.EnrollmentExport) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	if id.Channel.IsUser() {
-		if _, ok := s.enrollments[id.ParentID]; !ok {
+		if _, err := s.get(id.Device()); err != nil {
 			return fmt.Errorf("%w: parent %s of %s is absent", storage.ErrInvalid, id.ParentID, id.ID)
 		}
 	}
@@ -235,6 +248,9 @@ func (s *Store) Import(_ context.Context, rec storage.EnrollmentExport) error {
 		}
 	}
 	r, ok := s.enrollments[id.ID]
+	if ok && r.ID != id {
+		return storage.ErrConflict
+	}
 	if !ok {
 		r = &record{}
 		s.enrollments[id.ID] = r

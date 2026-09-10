@@ -11,6 +11,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"net/http/cookiejar"
 	"net/url"
 	"os"
 	"time"
@@ -54,12 +55,14 @@ func (e *Environment) issuedDevice(certPath, keyPath string) (*simulator.Device,
 	if err != nil {
 		return nil, wrapError(err)
 	}
-	return simulator.New(
+	d := simulator.New(
 		id,
 		simulator.WithClient(e.Client),
 		simulator.WithURLs(e.URL+"/mdm", e.URL+"/mdm"),
 		simulator.WithIdentity(&simulator.Identity{Cert: cert, Key: key}),
-	), nil
+	)
+	d.SerialNumber = benchSerial
+	return d, nil
 }
 
 func adeEnroll(ctx context.Context, e *Environment, _ string) error {
@@ -78,6 +81,7 @@ func adeEnroll(ctx context.Context, e *Environment, _ string) error {
 
 func browser(ctx context.Context, e *Environment, raw string) (string, error) {
 	c := *e.Client
+	c.Jar, _ = cookiejar.New(nil)
 	c.CheckRedirect = func(req *http.Request, via []*http.Request) error {
 		if req.URL.Scheme != "https" && req.URL.Scheme != "http" {
 			return http.ErrUseLastResponse

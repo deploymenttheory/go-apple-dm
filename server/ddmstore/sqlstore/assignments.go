@@ -41,8 +41,13 @@ func (t *txStore) unassign(ctx context.Context, table, column string, id mdm.Enr
 }
 
 // AssignSet implements ddm.AssignmentStore.
-func (t *txStore) AssignSet(ctx context.Context, id mdm.EnrollmentID, set string, at time.Time) (bool, error) {
-	if err := validID(id); err != nil {
+func (t *txStore) AssignSet(
+	ctx context.Context,
+	id mdm.EnrollmentID,
+	set string,
+	at time.Time,
+) (bool, error) {
+	if err := t.validID(ctx, id); err != nil {
 		return false, err
 	}
 	if err := validName("set name", set); err != nil {
@@ -57,7 +62,7 @@ func (t *txStore) AssignSet(ctx context.Context, id mdm.EnrollmentID, set string
 // UnassignSet implements ddm.AssignmentStore. An unknown set is simply not
 // assigned.
 func (t *txStore) UnassignSet(ctx context.Context, id mdm.EnrollmentID, set string) (bool, error) {
-	if err := validID(id); err != nil {
+	if err := t.validID(ctx, id); err != nil {
 		return false, err
 	}
 	if err := validName("set name", set); err != nil {
@@ -68,10 +73,15 @@ func (t *txStore) UnassignSet(ctx context.Context, id mdm.EnrollmentID, set stri
 
 // EnrollmentSets implements ddm.AssignmentStore.
 func (t *txStore) EnrollmentSets(ctx context.Context, id mdm.EnrollmentID) ([]string, error) {
-	if err := validID(id); err != nil {
+	if err := t.validID(ctx, id); err != nil {
 		return nil, err
 	}
-	return t.column(ctx, "enrollment sets", "SELECT set_name FROM ddm_enrollment_sets WHERE enrollment_id = ? ORDER BY set_name", id.ID)
+	return t.column(
+		ctx,
+		"enrollment sets",
+		"SELECT set_name FROM ddm_enrollment_sets WHERE enrollment_id = ? ORDER BY set_name",
+		id.ID,
+	)
 }
 
 // SetEnrollments implements ddm.AssignmentStore. The cursor is the last
@@ -93,8 +103,13 @@ func (t *txStore) SetEnrollments(ctx context.Context, set string, p paging.Page)
 }
 
 // AssignDeclaration implements ddm.AssignmentStore.
-func (t *txStore) AssignDeclaration(ctx context.Context, id mdm.EnrollmentID, identifier string, at time.Time) (bool, error) {
-	if err := validID(id); err != nil {
+func (t *txStore) AssignDeclaration(
+	ctx context.Context,
+	id mdm.EnrollmentID,
+	identifier string,
+	at time.Time,
+) (bool, error) {
+	if err := t.validID(ctx, id); err != nil {
 		return false, err
 	}
 	if err := validName("identifier", identifier); err != nil {
@@ -107,8 +122,12 @@ func (t *txStore) AssignDeclaration(ctx context.Context, id mdm.EnrollmentID, id
 }
 
 // UnassignDeclaration implements ddm.AssignmentStore.
-func (t *txStore) UnassignDeclaration(ctx context.Context, id mdm.EnrollmentID, identifier string) (bool, error) {
-	if err := validID(id); err != nil {
+func (t *txStore) UnassignDeclaration(
+	ctx context.Context,
+	id mdm.EnrollmentID,
+	identifier string,
+) (bool, error) {
+	if err := t.validID(ctx, id); err != nil {
 		return false, err
 	}
 	if err := validName("identifier", identifier); err != nil {
@@ -118,32 +137,48 @@ func (t *txStore) UnassignDeclaration(ctx context.Context, id mdm.EnrollmentID, 
 }
 
 // EnrollmentDeclarations implements ddm.AssignmentStore.
-func (t *txStore) EnrollmentDeclarations(ctx context.Context, id mdm.EnrollmentID) ([]string, error) {
-	if err := validID(id); err != nil {
+func (t *txStore) EnrollmentDeclarations(
+	ctx context.Context,
+	id mdm.EnrollmentID,
+) ([]string, error) {
+	if err := t.validID(ctx, id); err != nil {
 		return nil, err
 	}
-	return t.column(ctx, "enrollment declarations", "SELECT identifier FROM ddm_enrollment_declarations WHERE enrollment_id = ? ORDER BY identifier", id.ID)
+	return t.column(
+		ctx,
+		"enrollment declarations",
+		"SELECT identifier FROM ddm_enrollment_declarations WHERE enrollment_id = ? ORDER BY identifier",
+		id.ID,
+	)
 }
 
 // StaticDeclarations implements ddm.AssignmentStore: the direct
 // assignments and the members of the assigned sets, once each, by
 // identifier.
-func (t *txStore) StaticDeclarations(ctx context.Context, id mdm.EnrollmentID) ([]ddm.Declaration, error) {
-	if err := validID(id); err != nil {
+func (t *txStore) StaticDeclarations(
+	ctx context.Context,
+	id mdm.EnrollmentID,
+) ([]ddm.Declaration, error) {
+	if err := t.validID(ctx, id); err != nil {
 		return nil, err
 	}
 	var out []ddm.Declaration
-	err := t.each(ctx, "static declarations", "SELECT "+declarationCols+" FROM ddm_declarations WHERE identifier IN ("+
-		"SELECT identifier FROM ddm_enrollment_declarations WHERE enrollment_id = ? UNION "+
-		"SELECT sd.identifier FROM ddm_set_declarations sd JOIN ddm_enrollment_sets es ON es.set_name = sd.set_name WHERE es.enrollment_id = ?) ORDER BY identifier",
-		[]any{id.ID, id.ID}, func(rows *sql.Rows) error {
-			d, err := scanDeclaration(rows)
+	err := t.each(
+		ctx,
+		"static declarations",
+		"SELECT "+declarationCols+" FROM ddm_declarations WHERE identifier IN ("+
+			"SELECT identifier FROM ddm_enrollment_declarations WHERE enrollment_id = ? UNION "+
+			"SELECT sd.identifier FROM ddm_set_declarations sd JOIN ddm_enrollment_sets es ON es.set_name = sd.set_name WHERE es.enrollment_id = ?) ORDER BY identifier",
+		[]any{id.ID, id.ID},
+		func(rows *sql.Rows) error {
+			d, err := t.scanDeclaration(rows)
 			if err != nil {
 				return err
 			}
 			out = append(out, d)
 			return nil
-		})
+		},
+	)
 	return out, err
 }
 

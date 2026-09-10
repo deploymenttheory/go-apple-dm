@@ -9,17 +9,18 @@ import (
 	"crypto/x509/pkix"
 	"errors"
 	"net/http"
+	"net/http/cookiejar"
 	"strings"
 	"sync"
 	"testing"
 	"time"
 
-	"github.com/deploymenttheory/go-apple-dm/server/service"
 	"github.com/deploymenttheory/go-apple-dm/mdmprotocol/enroll"
 	"github.com/deploymenttheory/go-apple-dm/mdmprotocol/enroll/ade"
 	"github.com/deploymenttheory/go-apple-dm/mdmprotocol/enroll/webauth"
 	"github.com/deploymenttheory/go-apple-dm/mdmprotocol/enroll/webauth/webauthtest"
 	"github.com/deploymenttheory/go-apple-dm/mdmprotocol/mdm"
+	"github.com/deploymenttheory/go-apple-dm/server/service"
 	"github.com/deploymenttheory/go-apple-dm/simulator"
 )
 
@@ -126,7 +127,13 @@ func (f *adeFixture) trustBoth() *http.Client {
 	pool := x509.NewCertPool()
 	pool.AddCert(f.server.Certificate())
 	pool.AddCert(f.idp.Certificate())
-	return &http.Client{Transport: &http.Transport{TLSClientConfig: &tls.Config{RootCAs: pool, MinVersion: tls.VersionTLS12}}}
+	jar, _ := cookiejar.New(nil)
+	return &http.Client{
+		Jar: jar,
+		Transport: &http.Transport{
+			TLSClientConfig: &tls.Config{RootCAs: pool, MinVersion: tls.VersionTLS12},
+		},
+	}
 }
 
 // TestE2E_ADEWebViewAuth is E2E-018: configuration_web_url receives the

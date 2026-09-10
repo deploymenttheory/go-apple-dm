@@ -96,7 +96,7 @@ func TestBenchCommandsUseMaintainedRuntime(t *testing.T) {
 	if _, err := call("run", "-scenario", "LIVE-001"); err == nil {
 		t.Fatal("unsupported live scenario passed")
 	}
-	for _, args := range [][]string{{"unknown"}, {"profile"}, {"profile", "-file", filepath.Join(dir, "new.mobileconfig")}, {"run", "-scenario", "no-such-scenario"}, {"up", "-dmserver", "missing"}, {"list", "extra"}, {"list", "-invalid"}} {
+	for _, args := range [][]string{{"replace"}, {"replace", "-device-id", "absent"}, {"unknown"}, {"profile"}, {"profile", "-file", filepath.Join(dir, "new.mobileconfig")}, {"run", "-scenario", "no-such-scenario"}, {"up", "-dmserver", "missing"}, {"list", "extra"}, {"list", "-invalid"}} {
 		if _, err := call(args...); err == nil {
 			t.Errorf("invalid command accepted: %v", args)
 		}

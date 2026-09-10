@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"net/http"
+	"slices"
 	"strings"
 	"testing"
 	"time"
@@ -211,6 +212,14 @@ func TestActivities(t *testing.T) {
 	t.Run("WaitForActivityTerminal", func(t *testing.T) {
 		t.Parallel()
 		f := newFixture(t)
+		wantDelays := []time.Duration{time.Millisecond, 2 * time.Millisecond, 4 * time.Millisecond, 4 * time.Millisecond}
+		// Keep the activity pending until polling reaches and repeats the cap.
+		// Completion must not depend on HTTP requests racing a wall-clock ticker.
+		f.clock.onAfter = func() {
+			if len(f.clock.recorded()) == len(wantDelays) {
+				f.srv.Complete()
+			}
+		}
 		id := f.srv.AddMDMServer("m", nil)
 		f.srv.AddOrgDevice("S1", nil)
 		f.srv.AddOrgDevice("S2", nil)
@@ -220,7 +229,6 @@ func TestActivities(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		f.srv.AutoAdvance(2 * time.Millisecond)
 		done, err := c.WaitForActivity(context.Background(), act.ID, WaitOptions{Interval: time.Millisecond, Timeout: 5 * time.Second, Backoff: 2, MaxInterval: 4 * time.Millisecond})
 		if err != nil || !done.Terminal() || done.Attributes.Status != ActivityCompleted || done.Attributes.SubStatus != ActivityCompletedWithError {
 			t.Fatalf("%+v %v", done, err)
@@ -229,13 +237,8 @@ func TestActivities(t *testing.T) {
 			t.Fatalf("%+v", done.Attributes)
 		}
 		delays := f.clock.recorded()
-		if len(delays) == 0 || delays[0] != time.Millisecond {
-			t.Fatalf("delays %v", delays)
-		}
-		for _, d := range delays {
-			if d > 4*time.Millisecond {
-				t.Fatalf("interval above MaxInterval: %v", delays)
-			}
+		if !slices.Equal(delays, wantDelays) {
+			t.Fatalf("delays %v, want %v", delays, wantDelays)
 		}
 		if f.srv.AssignedServer("S1") != id || f.srv.AssignedServer("S2") != "" {
 			t.Fatal("per-serial outcome not applied")

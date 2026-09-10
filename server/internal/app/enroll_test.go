@@ -11,7 +11,9 @@ import (
 	"io"
 	"net"
 	"net/http"
+	"net/http/cookiejar"
 	"net/http/httptest"
+	"net/netip"
 	"os"
 	"path/filepath"
 	"strings"
@@ -72,12 +74,36 @@ func newEnrollFixture(t *testing.T, method string, mutate func(*app.Config)) *en
 	f.publicURL = "https://" + l.Addr().String()
 	roots := x509.NewCertPool()
 	roots.AddCert(appCA)
-	cfg := app.Config{Role: app.RoleAll, Storage: "inmem", CARoots: roots, Logger: quiet, Enroll: app.EnrollConfig{
-		PublicURL: f.publicURL, Topic: "com.apple.mgmt.External.simulator", CACertFile: certFile, CAKeyFile: keyFile, SCEPChallenge: "secret",
-		Discovery:           map[discovery.ModelFamily]string{discovery.ModelFamilyMac: discovery.VersionADDE, discovery.ModelFamilyIPhone: discovery.VersionBYOD},
-		AccountDrivenMethod: method, Anchors: []*x509.Certificate{f.deviceCA.Cert},
-		OIDC: app.OIDCConfig{Issuer: f.idp.Issuer(), ClientID: "mdm-webview", HTTPClient: f.idp.HTTPClient()},
-	}}
+	cfg := app.Config{
+		Role:    app.RoleAll,
+		Storage: "inmem",
+		CARoots: roots,
+		Logger:  quiet,
+		Enroll: app.EnrollConfig{
+			Admission: func(_ context.Context, r app.AdmissionRequest) (app.AdmissionGrant, error) {
+				return app.AdmissionGrant{
+					Account:   r.Email,
+					ExpiresAt: time.Now().Add(time.Hour),
+				}, nil
+			},
+			PublicURL:     f.publicURL,
+			Topic:         "com.apple.mgmt.External.simulator",
+			CACertFile:    certFile,
+			CAKeyFile:     keyFile,
+			SCEPChallenge: "secret",
+			Discovery: map[discovery.ModelFamily]string{
+				discovery.ModelFamilyMac:    discovery.VersionADDE,
+				discovery.ModelFamilyIPhone: discovery.VersionBYOD,
+			},
+			AccountDrivenMethod: method,
+			Anchors:             []*x509.Certificate{f.deviceCA.Cert},
+			OIDC: app.OIDCConfig{
+				Issuer:     f.idp.Issuer(),
+				ClientID:   "mdm-webview",
+				HTTPClient: f.idp.HTTPClient(),
+			},
+		},
+	}
 	if mutate != nil {
 		mutate(&cfg)
 	}
@@ -99,8 +125,12 @@ func (f *enrollFixture) client() *http.Client {
 	pool := x509.NewCertPool()
 	pool.AddCert(f.srv.Certificate())
 	pool.AddCert(f.idp.Certificate())
+	jar, _ := cookiejar.New(nil)
 	return &http.Client{
-		Transport: &http.Transport{TLSClientConfig: &tls.Config{RootCAs: pool, MinVersion: tls.VersionTLS12}},
+		Jar: jar,
+		Transport: &http.Transport{
+			TLSClientConfig: &tls.Config{RootCAs: pool, MinVersion: tls.VersionTLS12},
+		},
 		CheckRedirect: func(req *http.Request, _ []*http.Request) error {
 			if req.URL.Scheme == accountdriven.CallbackScheme {
 				return http.ErrUseLastResponse
@@ -151,17 +181,29 @@ func TestEnrollment(t *testing.T) {
 	})
 	t.Run("Discovery", func(t *testing.T) {
 		f := newEnrollFixture(t, "", nil)
-		req, _ := http.NewRequestWithContext(ctx, http.MethodGet, f.publicURL+app.PathWellKnown+"?model-family=Mac&user-identifier=a%40b", nil)
+		req, _ := http.NewRequestWithContext(
+			ctx,
+			http.MethodGet,
+			f.publicURL+app.PathWellKnown+"?model-family=Mac&user-identifier=a%40b",
+			nil,
+		)
 		res, err := f.client().Do(req)
 		if err != nil {
 			t.Fatal(err)
 		}
 		body, _ := io.ReadAll(res.Body)
 		res.Body.Close()
-		if res.StatusCode != http.StatusOK || !strings.Contains(string(body), `"Version":"mdm-adde"`) || !strings.Contains(string(body), f.publicURL+"/enroll/mdm-adde") {
+		if res.StatusCode != http.StatusOK ||
+			!strings.Contains(string(body), `"Version":"mdm-adde"`) ||
+			!strings.Contains(string(body), f.publicURL+"/enroll/mdm-adde") {
 			t.Fatalf("discovery = %d %s", res.StatusCode, body)
 		}
-		req, _ = http.NewRequestWithContext(ctx, http.MethodGet, f.publicURL+app.PathWellKnown+"?model-family=Watch", nil)
+		req, _ = http.NewRequestWithContext(
+			ctx,
+			http.MethodGet,
+			f.publicURL+app.PathWellKnown+"?model-family=Watch",
+			nil,
+		)
 		res, _ = f.client().Do(req)
 		res.Body.Close()
 		if res.StatusCode != http.StatusForbidden {
@@ -177,7 +219,10 @@ func TestEnrollment(t *testing.T) {
 		if d.Identity.Cert.Issuer.CommonName != f.appCA.Subject.CommonName {
 			t.Fatalf("identity issued by %q, want the app CA", d.Identity.Cert.Issuer.CommonName)
 		}
-		e, err := f.app.Store.Get(ctx, mdm.EnrollmentID{Channel: mdm.ChannelDevice, ID: "UDID-APP-ADE"})
+		e, err := f.app.Store.Get(
+			ctx,
+			mdm.EnrollmentID{Channel: mdm.ChannelDevice, ID: "UDID-APP-ADE"},
+		)
 		if err != nil || !e.Enabled {
 			t.Fatalf("enrollment = %+v %v", e, err)
 		}
@@ -188,7 +233,13 @@ func TestEnrollment(t *testing.T) {
 	t.Run("ADEWebView", func(t *testing.T) {
 		f := newEnrollFixture(t, "", nil)
 		d := f.device(t, "UDID-APP-WEB", "Mac16,1")
-		err := d.ADEEnroll(ctx, f.publicURL+app.PathADE, simulator.ADEOptions{WebView: func(_ context.Context, first *http.Response) (*http.Response, error) { return first, nil }})
+		err := d.ADEEnroll(
+			ctx,
+			f.publicURL+app.PathADE,
+			simulator.ADEOptions{
+				WebView: func(_ context.Context, first *http.Response) (*http.Response, error) { return first, nil },
+			},
+		)
 		if err != nil {
 			t.Fatalf("ADE web view through the app: %v", err)
 		}
@@ -199,14 +250,26 @@ func TestEnrollment(t *testing.T) {
 	t.Run("AccountDrivenAsWeb", func(t *testing.T) {
 		f := newEnrollFixture(t, "", nil)
 		d := f.device(t, "UDID-APP-BYOD", "iPhone17,2")
-		res, err := d.AccountDrivenEnroll(ctx, simulator.AccountDrivenOptions{UserIdentifier: "alice@example.com", DiscoveryURL: f.publicURL, Authenticate: f.signIn(t)})
+		res, err := d.AccountDrivenEnroll(
+			ctx,
+			simulator.AccountDrivenOptions{
+				UserIdentifier: "alice@example.com",
+				DiscoveryURL:   f.publicURL,
+				Authenticate:   f.signIn(t),
+			},
+		)
 		if err != nil {
 			t.Fatalf("account-driven through the app: %v", err)
 		}
-		if res.Chosen.Version != discovery.VersionBYOD || res.Challenge.Method != accountdriven.MethodAppleAsWeb {
+		if res.Chosen.Version != discovery.VersionBYOD ||
+			res.Challenge.Method != accountdriven.MethodAppleAsWeb {
 			t.Fatalf("result = %+v", res)
 		}
-		if e, err := f.app.Store.Get(ctx, mdm.EnrollmentID{Channel: mdm.ChannelUserEnrollmentDevice, ID: d.EnrollmentID}); err != nil || !e.Enabled {
+		if e, err := f.app.Store.Get(
+			ctx,
+			mdm.EnrollmentID{Channel: mdm.ChannelUserEnrollmentDevice, ID: d.EnrollmentID},
+		); err != nil ||
+			!e.Enabled {
 			t.Fatalf("enrollment = %+v %v", e, err)
 		}
 		// Apple's bearer authorizes ongoing requests; profile URLs contain no credential.
@@ -216,34 +279,56 @@ func TestEnrollment(t *testing.T) {
 		if err := d.TokenUpdate(ctx); err != nil {
 			t.Fatal(err)
 		}
-		impostor := simulator.New("unused", simulator.WithClient(d.Client), simulator.WithIdentity(d.Identity), simulator.WithURLs(d.CheckinURL, d.ServerURL), simulator.WithTopic(d.Topic))
+		impostor := simulator.New(
+			"unused",
+			simulator.WithClient(d.Client),
+			simulator.WithIdentity(d.Identity),
+			simulator.WithURLs(d.CheckinURL, d.ServerURL),
+			simulator.WithTopic(d.Topic),
+		)
 		impostor.EnrollmentID = d.EnrollmentID
 		var herr *simulator.HTTPError
-		if err := impostor.TokenUpdate(ctx); !errors.As(err, &herr) || herr.Status != http.StatusUnauthorized {
+		if err := impostor.TokenUpdate(
+			ctx,
+		); !errors.As(err, &herr) ||
+			herr.Status != http.StatusUnauthorized {
 			t.Fatalf("missing bearer: %v", err)
 		}
-
 	})
 	t.Run("AccountDrivenOAuth2", func(t *testing.T) {
 		f := newEnrollFixture(t, accountdriven.MethodAppleOAuth2, nil)
 		d := f.device(t, "UDID-APP-OAUTH", "iPhone17,2")
-		_, err := d.AccountDrivenEnroll(ctx, simulator.AccountDrivenOptions{UserIdentifier: "alice@example.com", DiscoveryURL: f.publicURL,
+		_, err := d.AccountDrivenEnroll(ctx, simulator.AccountDrivenOptions{
+			UserIdentifier: "alice@example.com", DiscoveryURL: f.publicURL,
 			Authenticate: func(ctx context.Context, c simulator.AuthChallenge) (string, error) {
-				return d.OAuth2CodeFlow(ctx, c, "alice@example.com", func(ctx context.Context, authorizationURL string) (string, error) {
-					// The authorization page delegates to the provider and completes with a 308
-					// redirect.
-					req, _ := http.NewRequestWithContext(ctx, http.MethodGet, authorizationURL, nil)
-					res, err := f.client().Do(req)
-					if err != nil {
-						return "", err
-					}
-					res.Body.Close()
-					if res.StatusCode != http.StatusPermanentRedirect {
-						return "", errors.New("authorization did not end in the 308: " + res.Status)
-					}
-					return res.Header.Get("Location"), nil
-				})
-			}})
+				return d.OAuth2CodeFlow(
+					ctx,
+					c,
+					"alice@example.com",
+					func(ctx context.Context, authorizationURL string) (string, error) {
+						// The authorization page delegates to the provider and completes with a 308
+						// redirect.
+						req, _ := http.NewRequestWithContext(
+							ctx,
+							http.MethodGet,
+							authorizationURL,
+							nil,
+						)
+						res, err := f.client().Do(req)
+						if err != nil {
+							return "", err
+						}
+						res.Body.Close()
+						if res.StatusCode != http.StatusPermanentRedirect {
+							return "", errors.New(
+								"authorization did not end in the 308: " + res.Status,
+							)
+						}
+						return res.Header.Get("Location"), nil
+					},
+				)
+			},
+		})
 		if err != nil {
 			t.Fatalf("oauth2 through the app: %v", err)
 		}
@@ -252,7 +337,11 @@ func TestEnrollment(t *testing.T) {
 		var anchorFile string
 		f := newEnrollFixture(t, "", func(c *app.Config) {
 			anchorFile = filepath.Join(t.TempDir(), "anchors.pem")
-			if err := os.WriteFile(anchorFile, pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: c.Enroll.Anchors[0].Raw}), 0o600); err != nil {
+			if err := os.WriteFile(
+				anchorFile,
+				pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: c.Enroll.Anchors[0].Raw}),
+				0o600,
+			); err != nil {
 				t.Fatal(err)
 			}
 			c.Enroll.Anchors, c.Enroll.ADEAnchorFile = nil, anchorFile
@@ -264,7 +353,12 @@ func TestEnrollment(t *testing.T) {
 	})
 	t.Run("OAuth2AuthorizeRejectsBadRequest", func(t *testing.T) {
 		f := newEnrollFixture(t, accountdriven.MethodAppleOAuth2, nil)
-		req, _ := http.NewRequestWithContext(ctx, http.MethodGet, f.publicURL+app.PathOAuth2Authorize+"?response_type=token", nil)
+		req, _ := http.NewRequestWithContext(
+			ctx,
+			http.MethodGet,
+			f.publicURL+app.PathOAuth2Authorize+"?response_type=token",
+			nil,
+		)
 		res, err := f.client().Do(req)
 		if err != nil {
 			t.Fatal(err)
@@ -276,10 +370,13 @@ func TestEnrollment(t *testing.T) {
 	})
 	t.Run("SelfSignedCAAndHMAC", func(t *testing.T) {
 		f := newEnrollFixture(t, "", func(c *app.Config) {
-			c.Enroll.CACertFile, c.Enroll.CAKeyFile, c.Enroll.SCEPChallenge, c.Enroll.SCEPHMACKey = "", "", "", []byte("hmac-key-of-at-least-sixteen-bytes")
+			c.Enroll.CACertFile, c.Enroll.CAKeyFile, c.Enroll.SCEPChallenge, c.Enroll.SCEPHMACKey = "", "", "", []byte(
+				"hmac-key-of-at-least-sixteen-bytes",
+			)
 			c.Enroll.OIDC = app.OIDCConfig{}
 			c.CARoots = nil
-			c.CertHeader = "X-Client-Cert" // check-in identity is not exercised here
+			c.CertHeader = "X-Client-Cert"
+			c.TrustedProxies = []netip.Prefix{netip.MustParsePrefix("127.0.0.0/8")}
 		})
 		d := f.device(t, "UDID-APP-HMAC", "Mac16,1")
 		// Enrolment itself needs a check-in identity source; the profile
@@ -288,7 +385,12 @@ func TestEnrollment(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		req, _ := http.NewRequestWithContext(ctx, http.MethodPost, f.publicURL+app.PathADE, strings.NewReader(string(signed)))
+		req, _ := http.NewRequestWithContext(
+			ctx,
+			http.MethodPost,
+			f.publicURL+app.PathADE,
+			strings.NewReader(string(signed)),
+		)
 		req.Header.Set("Content-Type", "application/pkcs7-signature")
 		res, err := f.client().Do(req)
 		if err != nil {
@@ -296,7 +398,9 @@ func TestEnrollment(t *testing.T) {
 		}
 		body, _ := io.ReadAll(res.Body)
 		res.Body.Close()
-		if res.StatusCode != http.StatusOK || res.Header.Get("Content-Type") != "application/x-apple-aspen-config" || len(body) == 0 {
+		if res.StatusCode != http.StatusOK ||
+			res.Header.Get("Content-Type") != "application/x-apple-aspen-config" ||
+			len(body) == 0 {
 			t.Fatalf("profile = %d %s", res.StatusCode, res.Header.Get("Content-Type"))
 		}
 		// No OIDC: the web view lane answers 501.
@@ -310,12 +414,17 @@ func TestEnrollment(t *testing.T) {
 	})
 	t.Run("BadConfig", func(t *testing.T) {
 		certFile, keyFile, _ := writeCA(t)
-		base := app.EnrollConfig{PublicURL: "https://mdm.example", Topic: "t", CACertFile: certFile, CAKeyFile: keyFile, SCEPChallenge: "c"}
+		base := app.EnrollConfig{
+			PublicURL:     "https://mdm.example",
+			Topic:         "t",
+			CACertFile:    certFile,
+			CAKeyFile:     keyFile,
+			SCEPChallenge: "c",
+		}
 		cases := map[string]func(*app.EnrollConfig){
-			"http":         func(e *app.EnrollConfig) { e.PublicURL = "http://mdm.example" },
-			"half ca":      func(e *app.EnrollConfig) { e.CAKeyFile = "" },
-			"no challenge": func(e *app.EnrollConfig) { e.SCEPChallenge = "" },
-			"method":       func(e *app.EnrollConfig) { e.AccountDrivenMethod = "saml" },
+			"http":    func(e *app.EnrollConfig) { e.PublicURL = "http://mdm.example" },
+			"half ca": func(e *app.EnrollConfig) { e.CAKeyFile = "" },
+			"method":  func(e *app.EnrollConfig) { e.AccountDrivenMethod = "saml" },
 			"family": func(e *app.EnrollConfig) {
 				e.Discovery = map[discovery.ModelFamily]string{"Toaster": discovery.VersionBYOD}
 			},
@@ -330,14 +439,18 @@ func TestEnrollment(t *testing.T) {
 		for name, mutate := range cases {
 			e := base
 			mutate(&e)
-			if _, err := app.Build(ctx, app.Config{Role: app.RoleAll, Storage: "inmem", Logger: quiet, Enroll: e}); err == nil {
+			if _, err := app.Build(
+				ctx,
+				app.Config{Role: app.RoleAll, Storage: "inmem", Logger: quiet, Enroll: e},
+			); err == nil {
 				t.Errorf("%s: no error", name)
 			}
 		}
 	})
 	t.Run("ParseDiscovery", func(t *testing.T) {
 		d, err := app.ParseDiscovery(" Mac=mdm-adde, iPhone = mdm-byod ,")
-		if err != nil || d[discovery.ModelFamilyMac] != discovery.VersionADDE || d[discovery.ModelFamilyIPhone] != discovery.VersionBYOD {
+		if err != nil || d[discovery.ModelFamilyMac] != discovery.VersionADDE ||
+			d[discovery.ModelFamilyIPhone] != discovery.VersionBYOD {
 			t.Fatalf("%v %v", d, err)
 		}
 		if _, err := app.ParseDiscovery("Mac"); !errors.Is(err, app.ErrConfig) {
@@ -353,14 +466,37 @@ func TestEnrollment(t *testing.T) {
 				return m[k]
 			}
 		}
-		cfg, err := app.ParseEnv(env(map[string]string{app.EnvDiscovery: "Mac=mdm-adde", app.EnvPublicURL: "https://x", app.EnvPushTopic: "t", app.EnvSCEPChallenge: "c", app.EnvADEAudit: "true", app.EnvRequireUserAuth: "1"}))
-		if err != nil || cfg.Enroll.Discovery[discovery.ModelFamilyMac] != discovery.VersionADDE || !cfg.Enroll.ADEAudit || !cfg.Enroll.RequireUserAuth {
+		cfg, err := app.ParseEnv(
+			env(
+				map[string]string{
+					app.EnvDiscovery:       "Mac=mdm-adde",
+					app.EnvPublicURL:       "https://x",
+					app.EnvPushTopic:       "t",
+					app.EnvSCEPChallenge:   "c",
+					app.EnvADEAudit:        "true",
+					app.EnvRequireUserAuth: "1",
+				},
+			),
+		)
+		if err != nil || cfg.Enroll.Discovery[discovery.ModelFamilyMac] != discovery.VersionADDE ||
+			!cfg.Enroll.ADEAudit ||
+			!cfg.Enroll.RequireUserAuth {
 			t.Fatalf("env = %+v %v", cfg.Enroll, err)
 		}
-		if _, err := app.ParseEnv(env(map[string]string{app.EnvDiscovery: "Mac"})); !errors.Is(err, app.ErrConfig) {
+		if _, err := app.ParseEnv(
+			env(map[string]string{app.EnvDiscovery: "Mac"}),
+		); !errors.Is(
+			err,
+			app.ErrConfig,
+		) {
 			t.Fatal(err)
 		}
-		if _, err := app.ParseEnv(env(map[string]string{app.EnvADEAudit: "maybe"})); !errors.Is(err, app.ErrConfig) {
+		if _, err := app.ParseEnv(
+			env(map[string]string{app.EnvADEAudit: "maybe"}),
+		); !errors.Is(
+			err,
+			app.ErrConfig,
+		) {
 			t.Fatal(err)
 		}
 	})

@@ -18,7 +18,7 @@ const defaultPendingLimit = 500
 // any row is written.
 func (t *tx) RecordChanges(_ context.Context, ids []mdm.EnrollmentID, reason string, at time.Time) error {
 	for _, id := range ids {
-		if err := validID(id); err != nil {
+		if err := t.validID(id); err != nil {
 			return err
 		}
 	}

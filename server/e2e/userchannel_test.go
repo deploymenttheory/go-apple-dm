@@ -6,11 +6,12 @@ import (
 	"context"
 	"errors"
 	"testing"
+	"time"
 
-	"github.com/deploymenttheory/go-apple-dm/server/service"
 	"github.com/deploymenttheory/go-apple-dm/mdmprotocol/mdm"
 	"github.com/deploymenttheory/go-apple-dm/mdmprotocol/plist"
 	"github.com/deploymenttheory/go-apple-dm/schema/commands"
+	"github.com/deploymenttheory/go-apple-dm/server/service"
 	"github.com/deploymenttheory/go-apple-dm/simulator"
 	"github.com/deploymenttheory/go-apple-dm/storage"
 )
@@ -74,8 +75,16 @@ func TestE2E_UserChannel(t *testing.T) {
 	}
 	enrolUser(t, alice)
 	enrolUser(t, bob)
-	aliceID := mdm.EnrollmentID{Channel: mdm.ChannelUser, ID: "UDID-USER-1:alice", ParentID: "UDID-USER-1"}
-	bobID := mdm.EnrollmentID{Channel: mdm.ChannelUser, ID: "UDID-USER-1:bob", ParentID: "UDID-USER-1"}
+	aliceID := mdm.EnrollmentID{
+		Channel:  mdm.ChannelUser,
+		ID:       "UDID-USER-1:alice",
+		ParentID: "UDID-USER-1",
+	}
+	bobID := mdm.EnrollmentID{
+		Channel:  mdm.ChannelUser,
+		ID:       "UDID-USER-1:bob",
+		ParentID: "UDID-USER-1",
+	}
 	for _, id := range []mdm.EnrollmentID{aliceID, bobID} {
 		if e, err := h.store.Get(ctx, id); err != nil || !e.Enabled {
 			t.Fatalf("%s: %+v %v", id.ID, e, err)
@@ -108,13 +117,44 @@ func TestE2E_UserChannel(t *testing.T) {
 		t.Fatalf("device received the user command: %+v", got)
 	}
 
+	// Both channel and known ADE eligibility are required.
+	security, _ := mdm.NewCommand(&commands.SecurityInfo{})
+	id := deviceID("UDID-USER-1")
+	if _, err := h.store.Enqueue(
+		ctx,
+		[]mdm.EnrollmentID{id},
+		security,
+		storage.EnqueueOptions{},
+	); err != nil {
+		t.Fatal(err)
+	}
+	raw, _ := plist.Marshal(
+		map[string]any{
+			"UDID":        id.ID,
+			"Status":      "Acknowledged",
+			"CommandUUID": security.UUID,
+			"SecurityInfo": map[string]any{
+				"ManagementStatus": map[string]any{"EnrolledViaDEP": true},
+			},
+		},
+	)
+	response, _ := mdm.DecodeResponse(raw, "")
+	if err := h.store.StoreResult(ctx, id, response, time.Now()); err != nil {
+		t.Fatal(err)
+	}
 	// A device-only command addressed to a user is refused at enqueue.
 	dc, _ := mdm.NewCommand(&commands.DeviceConfigured{})
-	res, err = h.core.Enqueue(ctx, []mdm.EnrollmentID{aliceID, deviceID("UDID-USER-1")}, dc, storage.EnqueueOptions{})
+	res, err = h.core.Enqueue(
+		ctx,
+		[]mdm.EnrollmentID{aliceID, deviceID("UDID-USER-1")},
+		dc,
+		storage.EnqueueOptions{},
+	)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(res.Queued) != 1 || res.Queued[0] != deviceID("UDID-USER-1") || !errors.Is(res.Skipped[aliceID], service.ErrUnsupportedTarget) {
+	if len(res.Queued) != 1 || res.Queued[0] != deviceID("UDID-USER-1") ||
+		!errors.Is(res.Skipped[aliceID], service.ErrUnsupportedTarget) {
 		t.Fatalf("device-only to user: %+v", res)
 	}
 	if got, _ := alice.Connect(ctx); len(got) != 0 {

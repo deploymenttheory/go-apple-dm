@@ -18,7 +18,7 @@ func (t *txStore) PutSnapshot(ctx context.Context, s *ddm.Snapshot) error {
 	if s == nil {
 		return fmt.Errorf("%w: nil snapshot", ddm.ErrInvalid)
 	}
-	if err := validID(s.ID); err != nil {
+	if err := t.validID(ctx, s.ID); err != nil {
 		return err
 	}
 	for _, it := range s.Items {
@@ -26,16 +26,50 @@ func (t *txStore) PutSnapshot(ctx context.Context, s *ddm.Snapshot) error {
 			return err
 		}
 	}
-	if _, err := t.exec(ctx, "upsert snapshot", t.upsert("ddm_snapshots", snapshotCols, snapshotCols[:1], nil),
-		s.ID.ID, int(s.ID.Channel), s.ID.ParentID, s.DeclarationsToken, utc(s.TokenChangedAt), utc(s.RefreshedAt)); err != nil {
+	if _, err := t.exec(
+		ctx,
+		"upsert snapshot",
+		t.upsert("ddm_snapshots", snapshotCols, snapshotCols[:1], nil),
+		s.ID.ID,
+		int(s.ID.Channel),
+		s.ID.ParentID,
+		s.DeclarationsToken,
+		utc(s.TokenChangedAt),
+		utc(s.RefreshedAt),
+	); err != nil {
 		return err
 	}
-	if _, err := t.exec(ctx, "delete snapshot items", "DELETE FROM ddm_snapshot_items WHERE enrollment_id = ?", s.ID.ID); err != nil {
+	if _, err := t.exec(
+		ctx,
+		"delete snapshot items",
+		"DELETE FROM ddm_snapshot_items WHERE enrollment_id = ?",
+		s.ID.ID,
+	); err != nil {
 		return err
 	}
 	for i, it := range s.Items {
-		if _, err := t.exec(ctx, "insert snapshot item", "INSERT INTO ddm_snapshot_items (enrollment_id, kind, identifier, server_token, base_token, expanded, pos) VALUES (?, ?, ?, ?, ?, ?, ?)",
-			s.ID.ID, string(it.Kind), it.Identifier, it.ServerToken, it.BaseToken, nullBytes(it.Expanded), i); err != nil {
+		sealed, err := t.s.seal(
+			"ddm_snapshot_items.expanded",
+			it.Expanded,
+			s.ID.ID,
+			string(it.Kind),
+			it.Identifier,
+		)
+		if err != nil {
+			return err
+		}
+		if _, err := t.exec(
+			ctx,
+			"insert snapshot item",
+			"INSERT INTO ddm_snapshot_items (enrollment_id, kind, identifier, server_token, base_token, expanded, pos) VALUES (?, ?, ?, ?, ?, ?, ?)",
+			s.ID.ID,
+			string(it.Kind),
+			it.Identifier,
+			it.ServerToken,
+			it.BaseToken,
+			nullBytes(sealed),
+			i,
+		); err != nil {
 			return err
 		}
 	}
@@ -44,13 +78,24 @@ func (t *txStore) PutSnapshot(ctx context.Context, s *ddm.Snapshot) error {
 
 // Snapshot implements ddm.SnapshotStore.
 func (t *txStore) Snapshot(ctx context.Context, id mdm.EnrollmentID) (*ddm.Snapshot, error) {
-	if err := validID(id); err != nil {
+	if err := t.validID(ctx, id); err != nil {
 		return nil, err
 	}
 	snap := ddm.Snapshot{ID: id}
 	var channel int
-	found, err := t.row(ctx, "get snapshot", "SELECT channel, parent_id, declarations_token, token_changed_at, refreshed_at FROM ddm_snapshots WHERE enrollment_id = ?",
-		[]any{id.ID}, &channel, &snap.ID.ParentID, &snap.DeclarationsToken, &snap.TokenChangedAt, &snap.RefreshedAt)
+	found, err := t.row(
+		ctx,
+		"get snapshot",
+		"SELECT channel, parent_id, declarations_token, token_changed_at, refreshed_at FROM ddm_snapshots WHERE enrollment_id = ?",
+		[]any{
+			id.ID,
+		},
+		&channel,
+		&snap.ID.ParentID,
+		&snap.DeclarationsToken,
+		&snap.TokenChangedAt,
+		&snap.RefreshedAt,
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -59,15 +104,37 @@ func (t *txStore) Snapshot(ctx context.Context, id mdm.EnrollmentID) (*ddm.Snaps
 	}
 	snap.ID.Channel = mdm.Channel(channel) // #nosec G115 -- stored from a uint8
 	snap.TokenChangedAt, snap.RefreshedAt = snap.TokenChangedAt.UTC(), snap.RefreshedAt.UTC()
-	err = t.each(ctx, "get snapshot items", "SELECT kind, identifier, server_token, base_token, expanded FROM ddm_snapshot_items WHERE enrollment_id = ? ORDER BY pos",
-		[]any{id.ID}, func(rows *sql.Rows) error {
+	err = t.each(
+		ctx,
+		"get snapshot items",
+		"SELECT kind, identifier, server_token, base_token, expanded FROM ddm_snapshot_items WHERE enrollment_id = ? ORDER BY pos",
+		[]any{id.ID},
+		func(rows *sql.Rows) error {
 			var it ddm.SnapshotItem
-			if err := rows.Scan(&it.Kind, &it.Identifier, &it.ServerToken, &it.BaseToken, &it.Expanded); err != nil {
+			if err := rows.Scan(
+				&it.Kind,
+				&it.Identifier,
+				&it.ServerToken,
+				&it.BaseToken,
+				&it.Expanded,
+			); err != nil {
 				return wrap("scan snapshot item", err)
+			}
+			var err error
+			it.Expanded, err = t.s.open(
+				"ddm_snapshot_items.expanded",
+				it.Expanded,
+				id.ID,
+				string(it.Kind),
+				it.Identifier,
+			)
+			if err != nil {
+				return err
 			}
 			snap.Items = append(snap.Items, it)
 			return nil
-		})
+		},
+	)
 	if err != nil {
 		return nil, err
 	}

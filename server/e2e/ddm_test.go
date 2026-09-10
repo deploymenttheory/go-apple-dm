@@ -284,7 +284,10 @@ func TestE2E_DDMCheckOutClears(t *testing.T) {
 		t.Fatalf("stale push after checkout: %+v", res)
 	}
 	// Re-enroll: the manifest is empty apart from the synthesised subscriptions.
-	fresh := h.ddmDevice("UDID-OUT", map[string]any{})
+	if err := dev.Enroll(ctx); err == nil {
+		t.Fatal("checkout reactivated a disabled enrollment")
+	}
+	fresh := h.ddmDevice("UDID-OUT-FRESH", map[string]any{})
 	sync, err := fresh.SyncDDM(ctx)
 	if err != nil {
 		t.Fatal(err)

@@ -28,7 +28,7 @@ broader deployment behavior.
 | E2E-002 | Three commands queued, delivered in order, acknowledged with typed responses | Commands and queries | `TestE2E_CommandsInOrder` |
 | E2E-003 | Device answers NotNow, command is retried after backoff | Handling NotNow status responses | `TestE2E_NotNowBackoff` |
 | E2E-004 | Device answers Error with ErrorChain, result stored, event emitted | Commands and queries | `TestE2E_CommandError` |
-| E2E-005 | Re-enrollment with a new identity clears tokens and pending queue | Check-in | `TestE2E_Reenroll` |
+| E2E-005 | Re-enrollment enforces the configured identity replacement policy | Check-in | `TestE2E_Reenroll` |
 | E2E-006 | SCEP enrollment from an unsigned profile, push, command | Device management essentials | `TestE2E_SCEPEnrollPush` |
 | E2E-007 | APNs 410 marks token invalid and emits PushTokenInvalid | Dealing with inactive managed devices and invalid push tokens | `TestE2E_PushInvalidToken` |
 | E2E-008 | Declaration change: push, tokens, declaration-items, fetch, status verified | Integrating declarative management | `TestE2E_DDMRoundTrip` |

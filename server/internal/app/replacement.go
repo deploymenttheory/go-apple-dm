@@ -30,8 +30,11 @@ import (
 const replacementSubjectPrefix = "dm-replace:"
 
 type identityEvidence struct {
-	Method   string    `json:"method"`
-	NotAfter time.Time `json:"notAfter"`
+	EnrollmentID string    `json:"enrollmentId,omitempty"`
+	UDID         string    `json:"udid,omitempty"`
+	Serial       string    `json:"serial,omitempty"`
+	Method       string    `json:"method"`
+	NotAfter     time.Time `json:"notAfter"`
 }
 
 func (a *App) recordIssuedIdentity(ctx context.Context, c *x509.Certificate) error {
@@ -39,7 +42,23 @@ func (a *App) recordIssuedIdentity(ctx context.Context, c *x509.Certificate) err
 	if method == "" {
 		method = IdentitySCEP
 	}
-	b, err := json.Marshal(identityEvidence{Method: method, NotAfter: c.NotAfter})
+	binding, _ := ctx.Value(issuanceBindingKey{}).(acme.Binding)
+	provenance := revocation.ProvenanceFromContext(ctx)
+	if binding.UDID == "" {
+		binding.UDID = provenance.UDID
+	}
+	if binding.Serial == "" {
+		binding.Serial = provenance.Serial
+	}
+	b, err := json.Marshal(
+		identityEvidence{
+			Method:       method,
+			EnrollmentID: provenance.EnrollmentID,
+			NotAfter:     c.NotAfter,
+			UDID:         binding.UDID,
+			Serial:       binding.Serial,
+		},
+	)
 	if err != nil {
 		return fmt.Errorf("app: identity evidence: %w", err)
 	}

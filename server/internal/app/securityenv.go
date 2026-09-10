@@ -11,6 +11,7 @@ import (
 
 // Optional security service environment variables. Empty leaves the feature off.
 const (
+	EnvEnrollmentPolicy    = "DM_ENROLLMENT_POLICY_FILE"
 	EnvPKIRevocation       = "DM_PKI_REVOCATION"
 	EnvPKICRLTTL           = "DM_PKI_CRL_TTL"
 	EnvPKICRLRefresh       = "DM_PKI_CRL_REFRESH"
@@ -22,12 +23,14 @@ const (
 )
 
 func parseSecurityEnv(get func(string) string, c *Config) error {
+	c.Enroll.AdmissionFile = get(EnvEnrollmentPolicy)
 	if raw := get(EnvPKIRevocation); raw != "" {
 		v, err := strconv.ParseBool(raw)
 		if err != nil {
 			return fmt.Errorf("%w: %s: %w", ErrConfig, EnvPKIRevocation, err)
 		}
 		c.PKI.Enabled = v
+		c.PKI.Disabled = !v
 	}
 	for name, dst := range map[string]*time.Duration{EnvPKICRLTTL: &c.PKI.CRLTTL, EnvPKICRLRefresh: &c.PKI.CRLRefresh, EnvPKIOCSPTTL: &c.PKI.OCSPTTL} {
 		if raw := get(name); raw != "" {
@@ -60,7 +63,7 @@ func parseSecurityEnv(get func(string) string, c *Config) error {
 			if err != nil {
 				return fmt.Errorf("%w: %s: %w", ErrConfig, EnvTrustedProxies, err)
 			}
-			c.RateLimits.TrustedProxies = append(c.RateLimits.TrustedProxies, p)
+			c.TrustedProxies = append(c.TrustedProxies, p)
 		}
 	}
 	if raw := get(EnvRateLimits); raw != "" {

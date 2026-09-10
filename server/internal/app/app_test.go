@@ -11,18 +11,19 @@ import (
 	"log/slog"
 	"net/http"
 	"net/http/httptest"
+	"net/netip"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
 	"time"
 
-	"github.com/deploymenttheory/go-apple-dm/server/ddmsync"
-	"github.com/deploymenttheory/go-apple-dm/server/internal/app"
 	"github.com/deploymenttheory/go-apple-dm/clock"
 	"github.com/deploymenttheory/go-apple-dm/mdmprotocol/ddm"
 	"github.com/deploymenttheory/go-apple-dm/mdmprotocol/mdm"
 	"github.com/deploymenttheory/go-apple-dm/secrets"
+	"github.com/deploymenttheory/go-apple-dm/server/ddmsync"
+	"github.com/deploymenttheory/go-apple-dm/server/internal/app"
 	"github.com/deploymenttheory/go-apple-dm/simulator"
 	"github.com/deploymenttheory/go-apple-dm/testpki"
 )
@@ -50,12 +51,13 @@ func build(t *testing.T, cfg app.Config) *app.App {
 	}
 	// The hop refuses to run unauthenticated, so a role that serves or calls
 	// it needs a credential even when the test is about something else.
+	cfg.DDMAllowInsecureForTests = true
 	if cfg.Role == app.RoleDDM || cfg.DDMURL != "" {
 		if len(cfg.DDMSendKey) == 0 {
-			cfg.DDMSendKey = []byte("hop-send-key")
+			cfg.DDMSendKey = []byte("hop-send-key-0123456789012345678901")
 		}
 		if len(cfg.DDMRecvKey) == 0 {
-			cfg.DDMRecvKey = []byte("hop-recv-key")
+			cfg.DDMRecvKey = []byte("hop-recv-key-0123456789012345678901")
 		}
 	}
 	a, err := app.Build(context.Background(), cfg)
@@ -89,21 +91,33 @@ func TestParseEnv(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		if cfg.Role != app.RoleAll || cfg.Listen != ":8080" || cfg.Storage != "sqlite" || cfg.DSN != "dm.db" || !cfg.Subscriptions {
+		if cfg.Role != app.RoleAll || cfg.Listen != ":8080" || cfg.Storage != "sqlite" ||
+			cfg.DSN != "dm.db" ||
+			!cfg.Subscriptions {
 			t.Fatalf("cfg = %+v", cfg)
 		}
 	})
 	t.Run("Overrides", func(t *testing.T) {
 		cfg, err := app.ParseEnv(env(map[string]string{
-			app.EnvRole: "mdm", app.EnvListen: ":9", app.EnvStorage: "postgres", app.EnvDSN: "postgres://x",
-			app.EnvDDMURL: "http://ddm", app.EnvDDMSendKey: "s", app.EnvDDMRecvKey: "r", app.EnvAdminToken: "t",
-			app.EnvSubscriptions: "false", app.EnvCAFile: "ca.pem", app.EnvCertHeader: "X-Cert",
+			app.EnvRole:          "mdm",
+			app.EnvListen:        ":9",
+			app.EnvStorage:       "postgres",
+			app.EnvDSN:           "postgres://x",
+			app.EnvDDMURL:        "https://ddm",
+			app.EnvDDMSendKey:    "ssssssssssssssssssssssssssssssss",
+			app.EnvDDMRecvKey:    "rrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrr",
+			app.EnvAdminToken:    "t",
+			app.EnvSubscriptions: "false",
+			app.EnvCAFile:        "ca.pem",
+			app.EnvCertHeader:    "X-Cert",
 		}))
 		if err != nil {
 			t.Fatal(err)
 		}
-		if cfg.Role != app.RoleMDM || cfg.DDMURL != "http://ddm" || string(cfg.DDMSendKey) != "s" || string(cfg.DDMRecvKey) != "r" ||
-			cfg.AdminToken != "t" || cfg.Subscriptions || cfg.CAFile != "ca.pem" || cfg.CertHeader != "X-Cert" {
+		if cfg.Role != app.RoleMDM || cfg.DDMURL != "https://ddm" || string(cfg.DDMSendKey) != "ssssssssssssssssssssssssssssssss" || string(cfg.DDMRecvKey) != "rrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrr" ||
+			cfg.AdminToken != "t" || cfg.Subscriptions ||
+			cfg.CAFile != "ca.pem" ||
+			cfg.CertHeader != "X-Cert" {
 			t.Fatalf("cfg = %+v", cfg)
 		}
 	})
@@ -116,7 +130,12 @@ func TestParseEnv(t *testing.T) {
 		if err != nil || !cfg.AdminStoreEnabled {
 			t.Fatalf("cfg = %+v, err = %v", cfg, err)
 		}
-		if _, err := app.ParseEnv(env(map[string]string{app.EnvAdminStore: "maybe"})); !errors.Is(err, app.ErrConfig) {
+		if _, err := app.ParseEnv(
+			env(map[string]string{app.EnvAdminStore: "maybe"}),
+		); !errors.Is(
+			err,
+			app.ErrConfig,
+		) {
 			t.Fatalf("err = %v", err)
 		}
 	})
@@ -127,12 +146,22 @@ func TestParseEnv(t *testing.T) {
 		}
 	})
 	t.Run("BadBool", func(t *testing.T) {
-		if _, err := app.ParseEnv(env(map[string]string{app.EnvSubscriptions: "maybe"})); !errors.Is(err, app.ErrConfig) {
+		if _, err := app.ParseEnv(
+			env(map[string]string{app.EnvSubscriptions: "maybe"}),
+		); !errors.Is(
+			err,
+			app.ErrConfig,
+		) {
 			t.Fatalf("err = %v", err)
 		}
 	})
 	t.Run("Invalid", func(t *testing.T) {
-		if _, err := app.ParseEnv(env(map[string]string{app.EnvRole: "proxy"})); !errors.Is(err, app.ErrConfig) {
+		if _, err := app.ParseEnv(
+			env(map[string]string{app.EnvRole: "proxy"}),
+		); !errors.Is(
+			err,
+			app.ErrConfig,
+		) {
 			t.Fatalf("err = %v", err)
 		}
 	})
@@ -464,14 +493,44 @@ func TestSplitRoundTrip(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	send, recv := []byte("mdm-to-ddm"), []byte("ddm-to-mdm")
-	ddmApp := build(t, app.Config{Role: app.RoleDDM, Storage: "inmem", AdminToken: "t", DDMRecvKey: send, DDMSendKey: recv})
+	send, recv := []byte(
+		"mdm-to-ddm-000000000000000000000",
+	), []byte(
+		"ddm-to-mdm-000000000000000000000",
+	)
+	ddmApp := build(
+		t,
+		app.Config{
+			Role:       app.RoleDDM,
+			Storage:    "inmem",
+			AdminToken: "t",
+			DDMRecvKey: send,
+			DDMSendKey: recv,
+		},
+	)
 	ddmSrv := serve(t, ddmApp)
-	mdmApp := build(t, app.Config{Role: app.RoleMDM, Storage: "inmem", DDMURL: ddmSrv.URL + "/ddm", DDMSendKey: send, DDMRecvKey: recv, CARoots: ca.Pool()})
+	mdmApp := build(
+		t,
+		app.Config{
+			Role:       app.RoleMDM,
+			Storage:    "inmem",
+			DDMURL:     ddmSrv.URL + "/ddm",
+			DDMSendKey: send,
+			DDMRecvKey: recv,
+			CARoots:    ca.Pool(),
+		},
+	)
 	mdmSrv := serve(t, mdmApp)
 
 	do(t, ddmSrv, "PUT", "/admin/v1/declarations", "t", propsDecl("com.example.split"))
-	do(t, ddmSrv, "PUT", "/admin/v1/enrollments/device/UDID-1/declarations/com.example.split", "t", nil)
+	do(
+		t,
+		ddmSrv,
+		"PUT",
+		"/admin/v1/enrollments/device/UDID-1/declarations/com.example.split",
+		"t",
+		nil,
+	)
 	do(t, ddmSrv, "PUT", "/admin/v1/sets/set1/declarations/com.example.split", "t", nil)
 	do(t, ddmSrv, "PUT", "/admin/v1/enrollments/device/UDID-1/sets/set1", "t", nil)
 
@@ -492,7 +551,11 @@ func TestSplitRoundTrip(t *testing.T) {
 	var tokens struct {
 		SyncTokens struct{ DeclarationsToken string }
 	}
-	if err := json.Unmarshal(body, &tokens); err != nil || len(tokens.SyncTokens.DeclarationsToken) != 64 {
+	if err := json.Unmarshal(
+		body,
+		&tokens,
+	); err != nil ||
+		len(tokens.SyncTokens.DeclarationsToken) != 64 {
 		t.Fatalf("tokens body %s: %v", body, err)
 	}
 	body, err = dev.DeclarativeManagement(ctx, "declaration-items", nil)
@@ -505,7 +568,11 @@ func TestSplitRoundTrip(t *testing.T) {
 		}
 		DeclarationsToken string
 	}
-	if err := json.Unmarshal(body, &items); err != nil || len(items.Declarations.Management) != 1 || items.DeclarationsToken != tokens.SyncTokens.DeclarationsToken {
+	if err := json.Unmarshal(
+		body,
+		&items,
+	); err != nil || len(items.Declarations.Management) != 1 ||
+		items.DeclarationsToken != tokens.SyncTokens.DeclarationsToken {
 		t.Fatalf("items body %s: %v", body, err)
 	}
 	body, err = dev.DeclarativeManagement(ctx, "declaration/management/com.example.split", nil)
@@ -513,28 +580,65 @@ func TestSplitRoundTrip(t *testing.T) {
 		t.Fatalf("declaration: %v", err)
 	}
 	var decl struct{ Identifier, ServerToken string }
-	if err := json.Unmarshal(body, &decl); err != nil || decl.ServerToken != items.Declarations.Management[0].ServerToken {
+	if err := json.Unmarshal(
+		body,
+		&decl,
+	); err != nil ||
+		decl.ServerToken != items.Declarations.Management[0].ServerToken {
 		t.Fatalf("declaration body %s: %v", body, err)
 	}
 	var herr *simulator.HTTPError
-	if _, err := dev.DeclarativeManagement(ctx, "declaration/management/com.example.absent", nil); !errors.As(err, &herr) || herr.Status != http.StatusNotFound {
+	if _, err := dev.DeclarativeManagement(
+		ctx,
+		"declaration/management/com.example.absent",
+		nil,
+	); !errors.As(err, &herr) ||
+		herr.Status != http.StatusNotFound {
 		t.Fatalf("absent declaration: %v, want 404 relayed", err)
 	}
-	if _, err := dev.DeclarativeManagement(ctx, "declaration/../x", nil); !errors.As(err, &herr) || herr.Status != http.StatusBadRequest {
+	if _, err := dev.DeclarativeManagement(
+		ctx,
+		"declaration/../x",
+		nil,
+	); !errors.As(err, &herr) ||
+		herr.Status != http.StatusBadRequest {
 		t.Fatalf("bad endpoint: %v, want 400 relayed", err)
 	}
-	report := fmt.Sprintf(`{"StatusItems":{"management":{"declarations":{"activations":[],"configurations":[],"assets":[],"management":[{"identifier":"com.example.split","server-token":%q,"active":false,"valid":"valid","reasons":[]}]}}},"Errors":[],"FullReport":true}`, decl.ServerToken)
-	if body, err := dev.DeclarativeManagement(ctx, "status", []byte(report)); err != nil || len(body) != 0 {
+	report := fmt.Sprintf(
+		`{"StatusItems":{"management":{"declarations":{"activations":[],"configurations":[],"assets":[],"management":[{"identifier":"com.example.split","server-token":%q,"active":false,"valid":"valid","reasons":[]}]}}},"Errors":[],"FullReport":true}`,
+		decl.ServerToken,
+	)
+	if body, err := dev.DeclarativeManagement(
+		ctx,
+		"status",
+		[]byte(report),
+	); err != nil ||
+		len(body) != 0 {
 		t.Fatalf("status: body %q err %v", body, err)
 	}
 	var rows []struct{ Identifier string }
-	decode(t, do(t, ddmSrv, "GET", "/admin/v1/enrollments/device/UDID-1/status", "t", nil), http.StatusOK, &rows)
+	decode(
+		t,
+		do(t, ddmSrv, "GET", "/admin/v1/enrollments/device/UDID-1/status", "t", nil),
+		http.StatusOK,
+		&rows,
+	)
 	if len(rows) != 1 || rows[0].Identifier != "com.example.split" {
 		t.Fatalf("status rows on the ddm role = %+v", rows)
 	}
 
 	// Wrong send key: the ddm role answers 401 and the device sees an internal error, never a 404.
-	badApp := build(t, app.Config{Role: app.RoleMDM, Storage: "inmem", DDMURL: ddmSrv.URL + "/ddm", DDMSendKey: []byte("wrong"), DDMRecvKey: recv, CARoots: ca.Pool()})
+	badApp := build(
+		t,
+		app.Config{
+			Role:       app.RoleMDM,
+			Storage:    "inmem",
+			DDMURL:     ddmSrv.URL + "/ddm",
+			DDMSendKey: []byte("wrong-00000000000000000000000000"),
+			DDMRecvKey: recv,
+			CARoots:    ca.Pool(),
+		},
+	)
 	badSrv := serve(t, badApp)
 	bad := simulator.New("UDID-1",
 		simulator.WithURLs(badSrv.URL+"/mdm", badSrv.URL+"/mdm"),
@@ -542,23 +646,51 @@ func TestSplitRoundTrip(t *testing.T) {
 	if err := bad.Enroll(ctx); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := bad.DeclarativeManagement(ctx, "tokens", nil); !errors.As(err, &herr) || herr.Status != http.StatusInternalServerError {
+	if _, err := bad.DeclarativeManagement(
+		ctx,
+		"tokens",
+		nil,
+	); !errors.As(err, &herr) ||
+		herr.Status != http.StatusInternalServerError {
 		t.Fatalf("wrong key: %v, want 500", err)
 	}
 }
 
 func TestCertSources(t *testing.T) {
 	t.Run("Header", func(t *testing.T) {
-		a := build(t, app.Config{Role: app.RoleMDM, Storage: "inmem", CertHeader: "X-Client-Cert"})
+		ca, err := testpki.NewCA("proxy roots")
+		if err != nil {
+			t.Fatal(err)
+		}
+		a := build(
+			t,
+			app.Config{
+				Role:           app.RoleMDM,
+				Storage:        "inmem",
+				CertHeader:     "X-Client-Cert",
+				CARoots:        ca.Pool(),
+				TrustedProxies: []netip.Prefix{netip.MustParsePrefix("127.0.0.0/8")},
+			},
+		)
 		srv := serve(t, a)
-		if got := put(t, srv.URL+"/mdm", "application/x-apple-aspen-mdm-checkin", []byte("<plist/>")); got != http.StatusBadRequest {
+		if got := put(
+			t,
+			srv.URL+"/mdm",
+			"application/x-apple-aspen-mdm-checkin",
+			[]byte("<plist/>"),
+		); got != http.StatusBadRequest {
 			t.Fatalf("no header = %d", got)
 		}
 	})
 	t.Run("TLSDefault", func(t *testing.T) {
 		a := build(t, app.Config{Role: app.RoleMDM, Storage: "inmem"})
 		srv := serve(t, a)
-		if got := put(t, srv.URL+"/mdm", "application/x-apple-aspen-mdm-checkin", []byte("<plist/>")); got != http.StatusBadRequest {
+		if got := put(
+			t,
+			srv.URL+"/mdm",
+			"application/x-apple-aspen-mdm-checkin",
+			[]byte("<plist/>"),
+		); got != http.StatusBadRequest {
 			t.Fatalf("no TLS cert = %d", got)
 		}
 	})

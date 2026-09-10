@@ -17,7 +17,9 @@ func (a *App) userAuthenticator() (service.UserAuthenticateHandler, error) {
 	if file == "" {
 		return nil, nil //nolint:nilnil // Unconfigured optional integration has no handler.
 	}
-	raw, err := os.ReadFile(file)
+	raw, err := os.ReadFile(
+		file,
+	) // #nosec G304 -- HA1 file is explicit operator configuration; no remote path input.
 	if err != nil {
 		return nil, fmt.Errorf("%w: user HA1 file: %w", ErrConfig, err)
 	}

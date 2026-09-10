@@ -1,5 +1,6 @@
 -- +up
 CREATE TABLE enrollments (
+ capabilities BLOB NULL,
     id               TEXT      NOT NULL PRIMARY KEY,
     channel          INTEGER   NOT NULL,
     parent_id        TEXT      NOT NULL DEFAULT '',
@@ -42,6 +43,7 @@ CREATE TABLE commands (
     seq                INTEGER   NOT NULL PRIMARY KEY AUTOINCREMENT,
     enrollment_id      TEXT      NOT NULL REFERENCES enrollments (id) ON DELETE CASCADE,
     command_uuid       TEXT      NOT NULL,
+    seal_id TEXT NOT NULL DEFAULT '',
     request_type       TEXT      NOT NULL,
     raw                BLOB      NULL,
     dedupe_key         TEXT      NOT NULL DEFAULT '',
@@ -54,7 +56,7 @@ CREATE TABLE commands (
     completed_at       TIMESTAMP NULL,
     result_status      TEXT      NULL,
     result_raw         BLOB      NULL,
-    result_error_chain TEXT      NULL,
+    result_error_chain BLOB      NULL,
     UNIQUE (enrollment_id, command_uuid)
 );
 CREATE INDEX idx_commands_queue ON commands (enrollment_id, state, seq);
@@ -78,6 +80,7 @@ CREATE TABLE push_certs (
 );
 
 CREATE TABLE user_auth (
+ channel INTEGER NOT NULL,
     enrollment_id    TEXT      NOT NULL PRIMARY KEY,
     parent_id        TEXT      NOT NULL REFERENCES enrollments (id) ON DELETE CASCADE,
     challenge        TEXT      NULL,

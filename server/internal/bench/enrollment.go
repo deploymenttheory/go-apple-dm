@@ -49,14 +49,6 @@ func EnrollmentPreflight(w *Workspace, identity string) map[string]any {
 	if _, err := tls.LoadX509KeyPair(w.path("mdm", "ca.pem"), w.path("mdm", "ca.key")); err != nil {
 		missing = append(missing, "identity issuer certificate and matching key")
 	}
-	if identity == "scep" || identity == "" {
-		if b, err := os.ReadFile(
-			w.path("mdm", "scep-challenge"),
-		); err != nil ||
-			len(bytes.TrimSpace(b)) == 0 {
-			missing = append(missing, "SCEP enrollment challenge")
-		}
-	}
 	if w.Mode == "live" {
 		pem, err := os.ReadFile(w.path("mdm", "push.pem"))
 		info, inspectErr := pushcert.Inspect(pem)
@@ -214,6 +206,9 @@ func requestEnrollmentProfile(
 	e *Environment,
 	device, serial, identity string,
 ) ([]byte, error) {
+	if serial == "" && e.Workspace != nil && e.Workspace.Mode == "simulated" {
+		serial = benchSerial
+	}
 	b, _ := json.Marshal(
 		map[string]any{
 			"DeviceID":     device,
@@ -277,6 +272,7 @@ func replacementScenario(
 			simulator.WithClient(e.Client),
 			simulator.WithACME(simulator.ACMEOptions{Attestation: authority}),
 		)
+		d.SerialNumber = benchSerial
 		raw, err := requestEnrollmentProfile(ctx, e, d.UDID, d.SerialNumber, method)
 		if err != nil {
 			return err

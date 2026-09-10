@@ -8,7 +8,7 @@ Database records contain escrowed tokens and private keys. Those values need pro
 
 `crypt.Keyring` loads named keys through `secrets.Provider` and derives AES-256 keys with HKDF-SHA256. Provider material shorter than 16 bytes is rejected. Ciphertext includes a format marker, key name, nonce and authenticated body. Additional authenticated data binds the value to its purpose and row identifier.
 
-The MDM store seals unlock tokens, bootstrap tokens, push private keys and user-authentication tokens. Satellite stores also use the keyring for their credential records. `Rewrap` pages through rows and replaces old ciphertext with an old-bytes guard, allowing concurrent writes. The active key seals new data; accepted keys open existing data.
+The MDM store seals unlock tokens, bootstrap tokens, push private keys, user-authentication tokens and raw Authenticate, TokenUpdate, user-authentication, command and result/error-chain records. DDM declaration versions and snapshots and protocol-state records use the same keyring with purpose/row authentication. Satellite stores also use the keyring for their credential records. `Rewrap` pages through rows and replaces old ciphertext with an old-bytes guard, allowing concurrent writes. The active key seals new data; accepted keys open existing data.
 
 ## Rationale
 
@@ -16,11 +16,11 @@ Named keys support rotation, and row-bound authentication prevents copying ciphe
 
 ## Constraints
 
-Without strict mode, a keyring can read legacy plaintext during migration. Enable strict mode only after sealing existing rows. Raw check-in plists remain plaintext and can contain sensitive fields; sealing selected columns does not encrypt the full database, exports or backups. In-memory backends do not seal process memory.
+Persistent reference storage requires a keyring. Strict mode rejects plaintext in sealed columns; library callers choose their own keyring configuration. Sealing sensitive records does not encrypt metadata, raw DDM status, audit records, privileged exports or backups. In-memory backends do not seal process memory.
 
 ## Verification
 
-Cryptography tests cover round trips, wrong AAD, tampering, unknown keys and weak material. SQL tests inspect sealed columns, exercise plaintext migration and strict mode, and verify rotation and concurrent-write failure handling.
+Cryptography tests cover round trips, wrong AAD, tampering, unknown keys and weak material. SQL tests inspect sealed columns, exercise strict mode, and verify rotation and concurrent-write failure handling.
 
 ## References
 

@@ -2,6 +2,7 @@ package webauth
 
 import (
 	"context"
+	"crypto/subtle"
 	"errors"
 	"fmt"
 	"sync"
@@ -25,10 +26,11 @@ type Bound struct {
 
 // State is one pending authorization, stored under its state parameter.
 type State struct {
-	Bound     Bound
-	Verifier  string
-	Nonce     string
-	ExpiresAt time.Time
+	BrowserHash string
+	Bound       Bound
+	Verifier    string
+	Nonce       string
+	ExpiresAt   time.Time
 }
 
 // StateStore persists pending authorizations. Implementations must make
@@ -38,15 +40,16 @@ type StateStore interface {
 	// Put stores st under key. An existing key is an error.
 	Put(ctx context.Context, key string, st State) error
 	// Take returns and removes the entry, or ErrStateNotFound.
-	Take(ctx context.Context, key string) (State, error)
+	Take(ctx context.Context, key, browserHash string) (State, error)
 }
 
 // Store errors.
 var (
-	ErrStateNotFound = errors.New("webauth: state not found")
-	ErrStateExists   = errors.New("webauth: state already stored")
-	ErrStoreFull     = errors.New("webauth: state store full")
-	ErrStateKey      = errors.New("webauth: empty state key")
+	ErrBrowserBinding = errors.New("webauth: browser binding mismatch")
+	ErrStateNotFound  = errors.New("webauth: state not found")
+	ErrStateExists    = errors.New("webauth: state already stored")
+	ErrStoreFull      = errors.New("webauth: state store full")
+	ErrStateKey       = errors.New("webauth: empty state key")
 )
 
 // MemoryStore keeps states in memory with a periodic sweep of expired
@@ -110,12 +113,15 @@ func (m *MemoryStore) Put(_ context.Context, key string, st State) error {
 }
 
 // Take implements StateStore.
-func (m *MemoryStore) Take(_ context.Context, key string) (State, error) {
+func (m *MemoryStore) Take(_ context.Context, key, browserHash string) (State, error) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	st, ok := m.states[key]
 	if !ok {
 		return State{}, ErrStateNotFound
+	}
+	if subtle.ConstantTimeCompare([]byte(st.BrowserHash), []byte(browserHash)) != 1 {
+		return State{}, ErrBrowserBinding
 	}
 	delete(m.states, key)
 	return st, nil

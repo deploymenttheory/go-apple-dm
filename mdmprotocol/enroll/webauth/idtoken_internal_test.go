@@ -137,12 +137,27 @@ func TestVerifyIDToken(t *testing.T) {
 	// aud as an array and iat within skew; groups with a non-string entry.
 	c := base()
 	c["aud"] = []any{"other", "client"}
+	c["azp"] = "client"
 	c["iat"] = now.Add(30 * time.Second).Unix()
 	c["groups"] = []any{"a", 1, "b"}
 	c["email_verified"] = "yes"
 	claims, err = verifyIDToken(signES256(t, ec, header, c), lookup, checks)
 	if err != nil || len(claims.Groups) != 2 || claims.EmailVerified {
 		t.Fatalf("aud array: %+v %v", claims, err)
+	}
+	for _, change := range []func(map[string]any){
+		func(c map[string]any) { c["aud"] = []any{"client", 1} },
+		func(c map[string]any) { c["aud"] = []any{"client", "other"} },
+		func(c map[string]any) { c["azp"] = "other" },
+		func(c map[string]any) { c["azp"] = 123 },
+		func(c map[string]any) { c["nbf"] = now.Add(2 * time.Minute).Unix() },
+		func(c map[string]any) { c["nbf"] = "tomorrow" },
+	} {
+		c := base()
+		change(c)
+		if _, err := verifyIDToken(signES256(t, ec, header, c), lookup, checks); err == nil {
+			t.Fatal("malformed claims accepted", c)
+		}
 	}
 	// A token without a kid matches any key of its algorithm.
 	if _, err := verifyIDToken(signES256(t, ec, map[string]any{"alg": algES256}, base()), lookup, checks); err != nil {

@@ -38,13 +38,20 @@ func (e *Environment) api(ctx context.Context, method, path string, in, out any)
 	return nil
 }
 
-func (e *Environment) device(ctx context.Context) (*simulator.Device, error) {
+func (e *Environment) device(
+	ctx context.Context,
+	opts ...simulator.Option,
+) (*simulator.Device, error) {
 	d := simulator.New(
 		"BENCH-"+randomID(),
 		simulator.WithClient(e.Client),
 		simulator.WithDDM(map[string]any{}),
 	)
-	req, _ := json.Marshal(map[string]string{"DeviceID": d.UDID})
+	for _, option := range opts {
+		option(d)
+	}
+	d.SerialNumber = benchSerial
+	req, _ := json.Marshal(map[string]string{"DeviceID": d.UDID, "Serial": d.SerialNumber})
 	b, _, err := HTTP(
 		ctx,
 		e.Client,
@@ -67,7 +74,7 @@ func (e *Environment) device(ctx context.Context) (*simulator.Device, error) {
 }
 func pathOf(d *simulator.Device) string { return "/enrollments/device/" + url.PathEscape(d.UDID) }
 func enrollIdle(ctx context.Context, e *Environment, _ string) error {
-	d, err := e.issuedDevice("mdm/ca.pem", "mdm/ca.key")
+	d, err := e.device(ctx)
 	if err != nil {
 		return wrapError(err)
 	}
@@ -244,40 +251,36 @@ func commandError(ctx context.Context, e *Environment, _ string) error {
 func reenroll(ctx context.Context, e *Environment, _ string) error {
 	d, err := e.device(ctx)
 	if err != nil {
-		return wrapError(err)
+		return err
 	}
-	if _, err = enqueue(ctx, e, d, &commands.DeviceInformation{}); err != nil {
-		return wrapError(err)
-	}
-	req, _ := json.Marshal(map[string]string{"DeviceID": d.UDID})
-	raw, _, err := HTTP(
-		ctx,
-		e.Client,
-		e.URL,
-		e.Token,
-		"POST",
-		"/enrollment-profiles",
-		bytes.NewReader(req),
-	)
+	cmd, err := enqueue(ctx, e, d, &commands.DeviceInformation{})
 	if err != nil {
-		return wrapError(err)
+		return err
 	}
-	previous := d.Identity.Cert.Raw
+	raw, err := requestEnrollmentProfile(ctx, e, d.UDID, d.SerialNumber, "")
+	if err != nil {
+		return err
+	}
+	old := d.Identity
 	if err = d.ApplyProfile(ctx, raw, profile.ParseOptions{}); err != nil {
 		return wrapError(err)
 	}
-	if bytes.Equal(previous, d.Identity.Cert.Raw) {
-		return fmt.Errorf("%w: identity did not rotate", errOperation)
+	if bytes.Equal(old.Cert.Raw, d.Identity.Cert.Raw) {
+		return fmt.Errorf("%w: second grant reused identity", errOperation)
 	}
-	if err = d.Enroll(ctx); err != nil {
-		return wrapError(err)
+	if err = d.Enroll(ctx); err == nil {
+		return fmt.Errorf("%w: unauthorized new identity reenrollment accepted", errOperation)
 	}
+	if err = expectedRejection(err); err != nil {
+		return err
+	}
+	d.Identity = old
 	got, err := d.Connect(ctx)
 	if err != nil {
 		return wrapError(err)
 	}
-	if len(got) != 0 {
-		return fmt.Errorf("%w: old queue survived new-identity re-enrollment", errOperation)
+	if len(got) != 1 || got[0].UUID != cmd.UUID {
+		return fmt.Errorf("%w: denied reenrollment changed old queue", errOperation)
 	}
 	return nil
 }
@@ -428,8 +431,11 @@ func ddmScenario(ctx context.Context, e *Environment, predicate, checkout bool) 
 		if err = d.CheckOut(ctx); err != nil {
 			return wrapError(err)
 		}
-		if err = d.Enroll(ctx); err != nil {
-			return wrapError(err)
+		if err = d.Enroll(ctx); err == nil {
+			return fmt.Errorf("%w: disabled enrollment reactivated", errOperation)
+		}
+		if err = expectedRejection(err); err != nil {
+			return err
 		}
 		if err = admin.api(ctx, "GET", pathOf(d)+"/status", nil, &status); err != nil {
 			return wrapError(err)

@@ -86,6 +86,12 @@ func NewClient(cfg ClientConfig) (*Client, error) {
 	if cfg.HTTPClient == nil {
 		cfg.HTTPClient = &http.Client{Timeout: 60 * time.Second}
 	}
+	clone := *cfg.HTTPClient
+	clone.CheckRedirect = func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }
+	if clone.Timeout <= 0 {
+		clone.Timeout = 60 * time.Second
+	}
+	cfg.HTTPClient = &clone
 	if cfg.BaseURL == "" {
 		cfg.BaseURL = DefaultBaseURL
 	}
@@ -158,6 +164,9 @@ func (c *Client) NewRequest(ctx context.Context, method, path string, query url.
 // for any other non-2xx answer. ErrTokenExpired is returned before any
 // HTTP call when the account's token has expired.
 func (c *Client) Do(ctx context.Context, account string, req *http.Request, out any) error {
+	if req == nil || req.URL == nil || req.URL.Scheme != c.base.Scheme || req.URL.Host != c.base.Host || req.URL.User != nil {
+		return ErrInvalid
+	}
 	acct, err := c.account(ctx, account)
 	if err != nil {
 		return err

@@ -240,6 +240,29 @@ func checkClaims(c map[string]any, checks idTokenChecks) error {
 	if !audienceContains(c["aud"], checks.clientID) {
 		return fmt.Errorf("%w: aud does not contain the client id", ErrIDToken)
 	}
+	if audiences, ok := c["aud"].([]any); ok {
+		for _, audience := range audiences {
+			if v, ok := audience.(string); !ok || v == "" {
+				return fmt.Errorf("%w: invalid audience", ErrIDToken)
+			}
+		}
+		if len(audiences) > 1 {
+			if azp, ok := c["azp"].(string); !ok || azp != checks.clientID {
+				return fmt.Errorf("%w: azp required for multiple audiences", ErrIDToken)
+			}
+		}
+	}
+	if azp, present := c["azp"]; present {
+		if v, ok := azp.(string); !ok || v != checks.clientID {
+			return fmt.Errorf("%w: invalid azp", ErrIDToken)
+		}
+	}
+	if value, present := c["nbf"]; present {
+		nbf, ok := numericDate(value)
+		if !ok || nbf.After(checks.now.Add(checks.skew)) {
+			return fmt.Errorf("%w: token not yet valid", ErrIDToken)
+		}
+	}
 	exp, ok := numericDate(c["exp"])
 	if !ok {
 		return fmt.Errorf("%w: exp missing", ErrIDToken)

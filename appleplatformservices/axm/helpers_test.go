@@ -56,6 +56,9 @@ func pkcs8PEM(t *testing.T, key any) []byte {
 type instantClock struct {
 	mu     sync.Mutex
 	delays []time.Duration
+	// onAfter runs after recording a delay and before the timer fires.
+	// Set it before using the clock.
+	onAfter func()
 }
 
 func (c *instantClock) Now() time.Time                  { return time.Now() }
@@ -64,6 +67,9 @@ func (c *instantClock) After(d time.Duration) <-chan time.Time {
 	c.mu.Lock()
 	c.delays = append(c.delays, d)
 	c.mu.Unlock()
+	if c.onAfter != nil {
+		c.onAfter()
+	}
 	ch := make(chan time.Time, 1)
 	ch <- time.Now()
 	return ch

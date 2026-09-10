@@ -66,8 +66,7 @@ func Catalogue() []Scenario {
 		},
 		{
 			ID:         "E2E-005",
-			Settings:   map[string]string{"DM_ALLOW_REENROLL": "true"},
-			Name:       "Re-enrollment with a new identity clears the pending command queue",
+			Name:       "Re-enrollment denies an unauthorized new identity and preserves the pending queue",
 			Family:     "mdm",
 			Regression: "TestE2E_Reenroll",
 			Modes:      []string{"simulated"},
@@ -158,7 +157,7 @@ func Catalogue() []Scenario {
 		},
 		{
 			ID:         "E2E-017",
-			Name:       "CheckOut and re-enrollment clear persisted DDM status",
+			Name:       "CheckOut clears persisted DDM status and prevents reactivation",
 			Family:     "ddm",
 			Regression: "TestE2E_DDMCheckOutClears",
 			Modes:      []string{"simulated"},

@@ -8,17 +8,19 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/deploymenttheory/go-apple-dm/mdmprotocol/event"
+	"github.com/deploymenttheory/go-apple-dm/mdmprotocol/mdm"
 	"github.com/deploymenttheory/go-apple-dm/server/audit"
 	auditinmem "github.com/deploymenttheory/go-apple-dm/server/audit/inmem"
 	auditsql "github.com/deploymenttheory/go-apple-dm/server/audit/sqlstore"
 	"github.com/deploymenttheory/go-apple-dm/server/eventsink"
-	"github.com/deploymenttheory/go-apple-dm/mdmprotocol/event"
-	"github.com/deploymenttheory/go-apple-dm/mdmprotocol/mdm"
 )
 
 // DefaultAuditRetention is how long records are kept when a retention is
 // configured without a window. Long enough to investigate an incident
 // reported weeks late, short enough that the table is not a liability.
+var errAuditUnavailable = errors.New("app: audit unavailable")
+
 const DefaultAuditRetention = 90 * 24 * time.Hour
 
 // DefaultAuditPruneInterval is how often the retention worker runs.
@@ -32,7 +34,7 @@ func (a *App) auditStore(ctx context.Context) (audit.Store, error) {
 	case a.cfg.Sinks.AuditStore != nil:
 		return a.cfg.Sinks.AuditStore, nil
 	case !a.cfg.Sinks.Persist:
-		return nil, nil
+		return nil, nil //nolint:nilnil // No audit store is requested when persistence is disabled.
 	case a.db == nil:
 		return auditinmem.New(), nil
 	default:
@@ -127,20 +129,32 @@ func (a *App) listAudit(w http.ResponseWriter, r *http.Request) {
 		}
 		limit = n
 	}
-	res, err := a.audit.List(r.Context(), q, audit.Page{Cursor: r.URL.Query().Get("cursor"), Limit: limit})
+	res, err := a.audit.List(
+		r.Context(),
+		q,
+		audit.Page{Cursor: r.URL.Query().Get("cursor"), Limit: limit},
+	)
 	if err != nil {
 		a.writeAuditError(w, r, err)
 		return
 	}
 	// Items and NextCursor are the page shape every other listing uses, so
 	// dmctl reads it with the client's existing paging helper.
-	writeJSON(w, http.StatusOK, map[string]any{"Items": auditViews(res.Items), "NextCursor": res.NextCursor})
+	writeJSON(
+		w,
+		http.StatusOK,
+		map[string]any{"Items": auditViews(res.Items), "NextCursor": res.NextCursor},
+	)
 }
 
 func (a *App) getAudit(w http.ResponseWriter, r *http.Request) {
 	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
 	if err != nil {
-		writeError(w, http.StatusBadRequest, fmt.Errorf("%w: id %q", audit.ErrInvalid, r.PathValue("id")))
+		writeError(
+			w,
+			http.StatusBadRequest,
+			fmt.Errorf("%w: id %q", audit.ErrInvalid, r.PathValue("id")),
+		)
 		return
 	}
 	rec, err := a.audit.Get(r.Context(), id)
@@ -161,7 +175,7 @@ func (a *App) writeAuditError(w http.ResponseWriter, r *http.Request, err error)
 		writeError(w, http.StatusBadRequest, err)
 	default:
 		a.cfg.Logger.WarnContext(r.Context(), "app: audit", "error", err)
-		writeError(w, http.StatusInternalServerError, errors.New("app: audit unavailable"))
+		writeError(w, http.StatusInternalServerError, errAuditUnavailable)
 	}
 }
 
@@ -184,7 +198,12 @@ func auditQuery(r *http.Request) (audit.Query, error) {
 		}
 		ts, err := time.Parse(time.RFC3339, raw)
 		if err != nil {
-			return audit.Query{}, fmt.Errorf("%w: %s must be RFC 3339: %q", audit.ErrInvalid, f.key, raw)
+			return audit.Query{}, fmt.Errorf(
+				"%w: %s must be RFC 3339: %q",
+				audit.ErrInvalid,
+				f.key,
+				raw,
+			)
 		}
 		*f.dst = ts
 	}
@@ -198,10 +217,10 @@ type auditRecordView struct {
 	At         time.Time
 	Type       string
 	Actor      string
-	Channel    string         `json:",omitempty"`
-	Enrollment string         `json:",omitempty"`
-	Parent     string         `json:",omitempty"`
-	Fields     map[string]any `json:",omitempty"`
+	Channel    string         `json:"Channel,omitempty"`    //nolint:tagliatelle // Admin API uses exported Go field names.
+	Enrollment string         `json:"Enrollment,omitempty"` //nolint:tagliatelle // Admin API uses exported Go field names.
+	Parent     string         `json:"Parent,omitempty"`     //nolint:tagliatelle // Admin API uses exported Go field names.
+	Fields     map[string]any `json:"Fields,omitempty"`     //nolint:tagliatelle // Admin API uses exported Go field names.
 }
 
 func auditView(rec audit.Record) auditRecordView {

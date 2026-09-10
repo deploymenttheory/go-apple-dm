@@ -185,8 +185,14 @@ func New(cfg Config) (*Flow, error) {
 		f.onError = defaultErrorWriter
 	}
 	if f.http == nil {
-		f.http = &http.Client{Timeout: 15 * time.Second, CheckRedirect: f.checkRedirect}
+		f.http = &http.Client{}
 	}
+	client := *f.http
+	if client.Timeout <= 0 || client.Timeout > 15*time.Second {
+		client.Timeout = 15 * time.Second
+	}
+	client.CheckRedirect = f.checkRedirect
+	f.http = &client
 	scopes := []string{"openid"}
 	for _, s := range cfg.Scopes {
 		if s != "" && !slices.Contains(scopes, s) {
@@ -197,12 +203,23 @@ func New(cfg Config) (*Flow, error) {
 	return f, nil
 }
 
-// checkRedirect keeps provider fetches on https.
-func (f *Flow) checkRedirect(req *http.Request, via []*http.Request) error {
-	if len(via) >= 5 {
-		return fmt.Errorf("%w: too many redirects", ErrProvider)
+// checkRedirect prevents forwarding authorization headers or credential bodies.
+func (f *Flow) checkRedirect(_ *http.Request, _ []*http.Request) error {
+	return http.ErrUseLastResponse
+}
+
+func browserDigest(value string) string {
+	sum := sha256.Sum256([]byte(value))
+	return fmt.Sprintf("%x", sum)
+}
+
+func (f *Flow) browserCookie(stateKey, value string, maxAge int) *http.Cookie {
+	prefix := "__Host-dm-oidc-"
+	if f.cfg.AllowInsecureForTests {
+		prefix = "dm-oidc-"
 	}
-	return f.requireHTTPS(req.URL.String())
+	// #nosec G124 -- Secure is required except the explicit programmatic HTTP test option; HttpOnly and SameSite are unconditional.
+	return &http.Cookie{Name: prefix + browserDigest(stateKey)[:32], Value: value, Path: "/", Secure: !f.cfg.AllowInsecureForTests, HttpOnly: true, SameSite: http.SameSiteLaxMode, MaxAge: maxAge}
 }
 
 func defaultErrorWriter(w http.ResponseWriter, _ *http.Request, status int, _ error) {
@@ -252,11 +269,13 @@ func (f *Flow) Begin(w http.ResponseWriter, r *http.Request, bound Bound) error 
 		return err
 	}
 	state, verifier, nonce := random(16), random(32), random(16)
-	st := State{Bound: bound, Verifier: verifier, Nonce: nonce, ExpiresAt: f.clock.Now().Add(f.ttl)}
+	browser := random(32)
+	st := State{BrowserHash: browserDigest(browser), Bound: bound, Verifier: verifier, Nonce: nonce, ExpiresAt: f.clock.Now().Add(f.ttl)}
 	if err := f.store.Put(ctx, state, st); err != nil {
 		f.fail(w, r, http.StatusInternalServerError, err)
 		return err
 	}
+	http.SetCookie(w, f.browserCookie(state, browser, int(f.ttl.Seconds())))
 	challenge := sha256.Sum256([]byte(verifier))
 	q := url.Values{
 		"response_type":         {"code"},
@@ -282,6 +301,7 @@ func (f *Flow) Begin(w http.ResponseWriter, r *http.Request, bound Bound) error 
 	}
 	target.RawQuery = existing.Encode()
 	w.Header().Set("Cache-Control", "no-store")
+	w.Header().Set("Referrer-Policy", "no-referrer")
 	http.Redirect(w, r, target.String(), http.StatusFound)
 	return nil
 }
@@ -289,12 +309,13 @@ func (f *Flow) Begin(w http.ResponseWriter, r *http.Request, bound Bound) error 
 // Callback returns the handler for RedirectURL.
 func (f *Flow) Callback() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.Method != http.MethodGet && r.Method != http.MethodHead {
-			w.Header().Set("Allow", "GET, HEAD")
+		if r.Method != http.MethodGet {
+			w.Header().Set("Allow", "GET")
 			http.Error(w, http.StatusText(http.StatusMethodNotAllowed), http.StatusMethodNotAllowed)
 			return
 		}
 		w.Header().Set("Cache-Control", "no-store")
+		w.Header().Set("Referrer-Policy", "no-referrer")
 		f.callback(w, r)
 	})
 }
@@ -307,15 +328,21 @@ func (f *Flow) callback(w http.ResponseWriter, r *http.Request) {
 		f.fail(w, r, http.StatusBadRequest, fmt.Errorf("%w: state missing", ErrCallback))
 		return
 	}
-	st, err := f.store.Take(ctx, stateKey)
+	cookie, err := r.Cookie(f.browserCookie(stateKey, "", 0).Name)
+	if err != nil {
+		f.fail(w, r, http.StatusBadRequest, fmt.Errorf("%w: %w", ErrCallback, ErrBrowserBinding))
+		return
+	}
+	st, err := f.store.Take(ctx, stateKey, browserDigest(cookie.Value))
 	if err != nil {
 		status := http.StatusBadRequest
-		if !errors.Is(err, ErrStateNotFound) {
+		if !errors.Is(err, ErrStateNotFound) && !errors.Is(err, ErrBrowserBinding) {
 			status = http.StatusInternalServerError
 		}
 		f.fail(w, r, status, fmt.Errorf("%w: state: %w", ErrCallback, err))
 		return
 	}
+	http.SetCookie(w, f.browserCookie(stateKey, "", -1))
 	if !f.clock.Now().Before(st.ExpiresAt) {
 		f.fail(w, r, http.StatusBadRequest, fmt.Errorf("%w: %w", ErrCallback, ErrStateExpired))
 		return
@@ -362,18 +389,18 @@ func (f *Flow) callback(w http.ResponseWriter, r *http.Request) {
 }
 
 // providerError maps an OAuth error response (RFC 6749 section 4.1.2.1).
-func (f *Flow) providerError(w http.ResponseWriter, r *http.Request, code, description, uri string) {
+func (f *Flow) providerError(w http.ResponseWriter, r *http.Request, code, _, _ string) {
+	switch code {
+	case "access_denied", "temporarily_unavailable", "server_error", "invalid_request", "unauthorized_client", "unsupported_response_type", "invalid_scope":
+	default:
+		code = "provider_error"
+	}
+
 	err := fmt.Errorf("%w: %s", ErrProvider, code)
 	status := http.StatusBadGateway
 	if code == "access_denied" {
 		err = fmt.Errorf("%w: %s", ErrAccessDenied, code)
 		status = http.StatusForbidden
-	}
-	if description != "" {
-		err = fmt.Errorf("%w: %s", err, description)
-	}
-	if uri != "" {
-		err = fmt.Errorf("%w (see %s)", err, uri)
 	}
 	f.fail(w, r, status, err)
 }

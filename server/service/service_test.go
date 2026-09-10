@@ -190,21 +190,46 @@ func TestEnrollAndCommandFlow(t *testing.T) {
 
 func TestPinningAndReenroll(t *testing.T) {
 	t.Parallel()
-	h := newHarness(t, service.Config{})
+	h := newHarness(t, service.Config{Reenroll: service.AllowReenroll})
 	ctx := context.Background()
 	enroll(t, h, "D1")
 	// A different certificate is rejected on the command channel and check-in.
-	if _, err := h.core.Connect(ctx, req(h.cert2), response("D1", "", mdm.StatusIdle)); service.CodeOf(err) != service.CodeForbidden || !errors.Is(err, service.ErrCertMismatch) {
+	if _, err := h.core.Connect(
+		ctx,
+		req(h.cert2),
+		response("D1", "", mdm.StatusIdle),
+	); service.CodeOf(err) != service.CodeForbidden ||
+		!errors.Is(err, service.ErrCertMismatch) {
 		t.Fatalf("mismatch: %v", err)
 	}
-	if _, err := h.core.Checkin(ctx, req(h.cert2), tokenUpdate(t, "D1", nil)); !errors.Is(err, service.ErrCertMismatch) {
+	if _, err := h.core.Checkin(
+		ctx,
+		req(h.cert2),
+		tokenUpdate(t, "D1", nil),
+	); !errors.Is(
+		err,
+		service.ErrCertMismatch,
+	) {
 		t.Fatalf("mismatch token update: %v", err)
 	}
-	if _, err := h.core.Connect(ctx, req(nil), response("D1", "", mdm.StatusIdle)); !errors.Is(err, service.ErrCertRequired) {
+	if _, err := h.core.Connect(
+		ctx,
+		req(nil),
+		response("D1", "", mdm.StatusIdle),
+	); !errors.Is(
+		err,
+		service.ErrCertRequired,
+	) {
 		t.Fatalf("no cert on connect: %v", err)
 	}
 	// Unknown enrollment.
-	if _, err := h.core.Connect(ctx, req(h.cert), response("D9", "", mdm.StatusIdle)); service.CodeOf(err) != service.CodeUnknownEnrollment {
+	if _, err := h.core.Connect(
+		ctx,
+		req(h.cert),
+		response("D9", "", mdm.StatusIdle),
+	); service.CodeOf(
+		err,
+	) != service.CodeUnknownEnrollment {
 		t.Fatalf("unknown: %v", err)
 	}
 	// Re-enrollment with a new identity rotates the pin and resets state.
@@ -215,7 +240,14 @@ func TestPinningAndReenroll(t *testing.T) {
 	if got := h.eventTypes(); strings.Join(got, ",") != "cert-rotated,reenrolled" {
 		t.Fatalf("events = %v", got)
 	}
-	if _, err := h.core.Checkin(ctx, req(h.cert), tokenUpdate(t, "D1", nil)); !errors.Is(err, service.ErrCertMismatch) {
+	if _, err := h.core.Checkin(
+		ctx,
+		req(h.cert),
+		tokenUpdate(t, "D1", nil),
+	); !errors.Is(
+		err,
+		service.ErrCertMismatch,
+	) {
 		t.Fatalf("old cert after rotation: %v", err)
 	}
 	if _, err := h.core.Checkin(ctx, req(h.cert2), tokenUpdate(t, "D1", nil)); err != nil {
@@ -230,7 +262,24 @@ func TestPinningAndReenroll(t *testing.T) {
 		t.Fatalf("events = %v", got)
 	}
 	// Authenticate on a user channel is invalid.
-	if _, err := h.core.Checkin(ctx, req(h.cert2), checkinPlist(t, map[string]any{"MessageType": "Authenticate", "Topic": "t", "UDID": "D1", "UserID": "U", "Model": "m", "ModelName": "mn", "DeviceName": "d"})); service.CodeOf(err) != service.CodeBadRequest {
+	if _, err := h.core.Checkin(
+		ctx,
+		req(h.cert2),
+		checkinPlist(
+			t,
+			map[string]any{
+				"MessageType": "Authenticate",
+				"Topic":       "t",
+				"UDID":        "D1",
+				"UserID":      "U",
+				"Model":       "m",
+				"ModelName":   "mn",
+				"DeviceName":  "d",
+			},
+		),
+	); service.CodeOf(
+		err,
+	) != service.CodeBadRequest {
 		t.Fatalf("user channel authenticate: %v", err)
 	}
 }
@@ -240,12 +289,21 @@ func TestDenyReenrollAndPinModes(t *testing.T) {
 	deny := newHarness(t, service.Config{Reenroll: service.DenyReenroll})
 	ctx := context.Background()
 	enroll(t, deny, "D1")
-	if _, err := deny.core.Checkin(ctx, req(deny.cert2), authenticate(t, "D1")); !errors.Is(err, service.ErrReenrollDenied) || service.CodeOf(err) != service.CodeForbidden {
+	if _, err := deny.core.Checkin(
+		ctx,
+		req(deny.cert2),
+		authenticate(t, "D1"),
+	); !errors.Is(err, service.ErrReenrollDenied) ||
+		service.CodeOf(err) != service.CodeForbidden {
 		t.Fatalf("deny: %v", err)
 	}
 	warn := newHarness(t, service.Config{Pinning: service.PinWarn})
 	enroll(t, warn, "D1")
-	if _, err := warn.core.Connect(ctx, req(warn.cert2), response("D1", "", mdm.StatusIdle)); err != nil {
+	if _, err := warn.core.Connect(
+		ctx,
+		req(warn.cert2),
+		response("D1", "", mdm.StatusIdle),
+	); err != nil {
 		t.Fatalf("warn mode should allow: %v", err)
 	}
 	if _, err := warn.core.Connect(ctx, req(nil), response("D1", "", mdm.StatusIdle)); err != nil {
@@ -258,8 +316,7 @@ func TestDenyReenrollAndPinModes(t *testing.T) {
 	if _, err := off.core.Checkin(ctx, req(nil), tokenUpdate(t, "D1", nil)); err != nil {
 		t.Fatalf("off mode token update: %v", err)
 	}
-	// Retroactive pinning: enrollment created without a certificate under
-	// PinWarn gets pinned by the first request that carries one.
+	// PinWarn permits observation without silently establishing a pin.
 	retro := newHarness(t, service.Config{Pinning: service.PinWarn})
 	if _, err := retro.core.Checkin(ctx, req(nil), authenticate(t, "D1")); err != nil {
 		t.Fatal(err)
@@ -267,12 +324,25 @@ func TestDenyReenrollAndPinModes(t *testing.T) {
 	if _, err := retro.core.Checkin(ctx, req(retro.cert), tokenUpdate(t, "D1", nil)); err != nil {
 		t.Fatal(err)
 	}
-	if e, _ := retro.store.Get(ctx, mdm.EnrollmentID{Channel: mdm.ChannelDevice, ID: "D1"}); e.CertHash == "" {
-		t.Fatal("retroactive pin not recorded")
+	if e, _ := retro.store.Get(
+		ctx,
+		mdm.EnrollmentID{Channel: mdm.ChannelDevice, ID: "D1"},
+	); e.CertHash != "" {
+		t.Fatal("retroactive pin recorded")
+	}
+	if _, err := retro.core.Checkin(ctx, req(retro.cert), authenticate(t, "D1")); err != nil {
+		t.Fatal(err)
 	}
 	// A certificate another device already presented cannot enrol a second
 	// one under the default reuse policy.
-	if _, err := retro.core.Checkin(ctx, req(retro.cert), authenticate(t, "D2")); !errors.Is(err, service.ErrCertReused) {
+	if _, err := retro.core.Checkin(
+		ctx,
+		req(retro.cert),
+		authenticate(t, "D2"),
+	); !errors.Is(
+		err,
+		service.ErrCertReused,
+	) {
 		t.Fatalf("cert reuse across devices: %v", err)
 	}
 	// Presented retroactively by another enrollment under PinWarn, the
@@ -283,7 +353,10 @@ func TestDenyReenrollAndPinModes(t *testing.T) {
 	if _, err := retro.core.Checkin(ctx, req(retro.cert), tokenUpdate(t, "D3", nil)); err != nil {
 		t.Fatalf("retroactive reuse under PinWarn: %v", err)
 	}
-	if e, _ := retro.store.Get(ctx, mdm.EnrollmentID{Channel: mdm.ChannelDevice, ID: "D3"}); e.CertHash != "" {
+	if e, _ := retro.store.Get(
+		ctx,
+		mdm.EnrollmentID{Channel: mdm.ChannelDevice, ID: "D3"},
+	); e.CertHash != "" {
 		t.Fatalf("retroactive pin written for a seen certificate: %q", e.CertHash)
 	}
 }

@@ -24,7 +24,7 @@ func (t *tx) PutSnapshot(_ context.Context, s *ddm.Snapshot) error {
 	if s == nil {
 		return fmt.Errorf("%w: nil snapshot", ddm.ErrInvalid)
 	}
-	if err := validID(s.ID); err != nil {
+	if err := t.validID(s.ID); err != nil {
 		return err
 	}
 	for _, it := range s.Items {
@@ -39,7 +39,7 @@ func (t *tx) PutSnapshot(_ context.Context, s *ddm.Snapshot) error {
 
 // Snapshot implements ddm.SnapshotStore.
 func (t *tx) Snapshot(_ context.Context, id mdm.EnrollmentID) (*ddm.Snapshot, error) {
-	if err := validID(id); err != nil {
+	if err := t.validID(id); err != nil {
 		return nil, err
 	}
 	s, ok := t.st.snapshots[id.ID]

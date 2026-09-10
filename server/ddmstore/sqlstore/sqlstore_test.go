@@ -265,14 +265,36 @@ func TestMigrationsAgreeAcrossDialects(t *testing.T) {
 		}
 		for i := range ref {
 			if ms[i].Version != ref[i].Version || ms[i].Name != ref[i].Name {
-				t.Fatalf("%s migration %d is %d_%s, sqlite has %d_%s", d.Name, i, ms[i].Version, ms[i].Name, ref[i].Version, ref[i].Name)
+				t.Fatalf(
+					"%s migration %d is %d_%s, sqlite has %d_%s",
+					d.Name,
+					i,
+					ms[i].Version,
+					ms[i].Name,
+					ref[i].Version,
+					ref[i].Name,
+				)
 			}
 			if len(ms[i].Down) == 0 {
 				t.Fatalf("%s %d_%s has no down section", d.Name, ms[i].Version, ms[i].Name)
 			}
-			// Every dialect creates and drops the same thirteen tables.
-			if up, down := countStatements(ms[i].Up, "CREATE TABLE"), countStatements(ms[i].Down, "DROP TABLE"); up != 13 || down != 13 {
-				t.Fatalf("%s %d_%s creates %d tables and drops %d, want 13", d.Name, ms[i].Version, ms[i].Name, up, down)
+			// Every dialect creates and drops the same fourteen tables.
+			if up, down := countStatements(
+				ms[i].Up,
+				"CREATE TABLE",
+			), countStatements(
+				ms[i].Down,
+				"DROP TABLE",
+			); up != 14 ||
+				down != 14 {
+				t.Fatalf(
+					"%s %d_%s creates %d tables and drops %d, want 14",
+					d.Name,
+					ms[i].Version,
+					ms[i].Name,
+					up,
+					down,
+				)
 			}
 		}
 	}
@@ -853,18 +875,31 @@ func TestMySQLDialectPaths(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
 	base := open(t)
-	s, err := sqlstore.Open(ctx, base.DB(), mysql.Dialect, sqlstore.Options{SkipMigrate: true})
+	dialect := mysql.Dialect
+	dialect.InsertIgnore = sqlite.Dialect.InsertIgnore
+	s, err := sqlstore.Open(ctx, base.DB(), dialect, sqlstore.Options{SkipMigrate: true})
 	if err != nil {
 		t.Fatal(err)
 	}
-	out, err := s.PutStatus(ctx, dev, ddm.StatusUpdate{ReceivedAt: t0, Errors: []ddm.StatusError{{StatusItem: "x"}}})
+	out, err := s.PutStatus(
+		ctx,
+		dev,
+		ddm.StatusUpdate{ReceivedAt: t0, Errors: []ddm.StatusError{{StatusItem: "x"}}},
+	)
 	if err != nil || out.Seq != 1 {
 		t.Fatalf("report seq via LAST_INSERT_ID: %+v %v", out, err)
 	}
-	if err := s.PutSnapshot(ctx, &ddm.Snapshot{ID: dev, DeclarationsToken: "t", TokenChangedAt: t0, RefreshedAt: t0}); err == nil {
+	if err := s.PutSnapshot(
+		ctx,
+		&ddm.Snapshot{ID: dev, DeclarationsToken: "t", TokenChangedAt: t0, RefreshedAt: t0},
+	); err == nil {
 		t.Fatal("MySQL upsert accepted by SQLite")
 	}
-	if _, err := s.PutStatus(ctx, dev, ddm.StatusUpdate{Values: []ddm.StatusValue{{Path: "p", Value: []byte("1")}}}); err == nil {
+	if _, err := s.PutStatus(
+		ctx,
+		dev,
+		ddm.StatusUpdate{Values: []ddm.StatusValue{{Path: "p", Value: []byte("1")}}},
+	); err == nil {
 		t.Fatal("MySQL upsert accepted by SQLite")
 	}
 }

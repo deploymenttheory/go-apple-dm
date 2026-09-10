@@ -134,15 +134,24 @@ func TestRawColumnIsNotPlaintext(t *testing.T) {
 	if tok, _ := s.BootstrapToken(ctx, id); string(tok) != "bootstrap-secret" {
 		t.Fatalf("bootstrap = %q", tok)
 	}
-	st, _ := s.UserAuth(ctx, mdm.EnrollmentID{Channel: mdm.ChannelUser, ID: "sealed:u", ParentID: "sealed"})
+	st, _ := s.UserAuth(
+		ctx,
+		mdm.EnrollmentID{Channel: mdm.ChannelUser, ID: "sealed:u", ParentID: "sealed"},
+	)
 	if st.AuthToken != "auth-token-secret" {
 		t.Fatalf("auth token = %q", st.AuthToken)
 	}
-	if pc, _ := s.PushCert(ctx, "com.apple.mgmt.parity"); !bytes.Contains(pc.KeyPEM, []byte("PRIVATE KEY")) {
+	if pc, _ := s.PushCert(
+		ctx,
+		"com.apple.mgmt.parity",
+	); !bytes.Contains(
+		pc.KeyPEM,
+		[]byte("PRIVATE KEY"),
+	) {
 		t.Fatal("push key not decrypted")
 	}
 	list, _ := s.List(ctx, storage.EnrollmentQuery{}, paging.Page{})
-	if len(list.Items) != 1 || string(list.Items[0].UnlockToken) != "unlock-secret" {
+	if len(list.Items) != 2 || string(list.Items[0].UnlockToken) != "unlock-secret" {
 		t.Fatalf("List did not open unlock tokens: %+v", list.Items)
 	}
 }

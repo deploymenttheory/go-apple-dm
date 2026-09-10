@@ -17,6 +17,7 @@ type Factory func(t *testing.T) ddm.Store
 // RunAll runs every suite.
 func RunAll(t *testing.T, newStore Factory) {
 	t.Helper()
+	t.Run("Identity", func(t *testing.T) { RunIdentitySuite(t, newStore) })
 	t.Run("Declarations", func(t *testing.T) { RunDeclarationSuite(t, newStore) })
 	t.Run("Sets", func(t *testing.T) { RunSetSuite(t, newStore) })
 	t.Run("Assignments", func(t *testing.T) { RunAssignmentSuite(t, newStore) })

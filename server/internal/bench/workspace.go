@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/http/cookiejar"
 	"os"
 	"path/filepath"
 	"strings"
@@ -92,7 +93,9 @@ func Load(dir string) (*Workspace, error) {
 	if err != nil {
 		return nil, wrapError(err)
 	}
-	b, err := os.ReadFile(filepath.Join(root, "bench.json"))
+	b, err := os.ReadFile(
+		filepath.Join(root, "bench.json"),
+	) // #nosec G304 -- Operator-selected local CLI workspace, not HTTP input.
 	if err != nil {
 		return nil, wrapError(err)
 	}
@@ -121,7 +124,9 @@ func (w *Workspace) client() (*http.Client, error) {
 	if !roots.AppendCertsFromPEM(b) {
 		return nil, fmt.Errorf("%w: invalid workspace CA", errOperation)
 	}
+	jar, _ := cookiejar.New(nil)
 	return &http.Client{
+		Jar:     jar,
 		Timeout: 30 * time.Second,
 		Transport: &http.Transport{
 			TLSClientConfig: &tls.Config{MinVersion: tls.VersionTLS12, RootCAs: roots},

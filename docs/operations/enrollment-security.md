@@ -2,11 +2,11 @@
 
 Account-driven enrollment binds a reusable access token's Managed Apple
 Account, subject and issuer to an issued identity certificate and enrollment.
-Optional certificate status enforcement and inbound rate limits remain disabled
-until configured. The design and supporting references are in
+Certificate revocation is enabled by default. Enrollment requires explicit
+admission; inbound rate limits are configured separately. The design and supporting references are in
 [decision 0047](../research/decisions/0047-enrollment-authentication-and-optional-security-services.md).
 
-## Account-driven enrollment and migration
+## Account-driven enrollment
 
 The profile response creates a random enrollment reference. The reference server
 uses it in the certificate subject and gives SCEP a profile-specific credential
@@ -37,21 +37,67 @@ the documented invalid-token errors initiate reauthentication. Apple-facing OAut
 does not require additional undocumented PKCE parameters. Upstream OIDC retains
 its own protocol protections.
 
-Legacy query-string enrollment credentials are rejected. Existing account-driven
-profiles issued without a registered association need re-enrollment; importing a
-certificate into the revocation registry does not create an account association.
+Query-string enrollment credentials are rejected. A certificate registry import
+does not create an account association.
 
-With SQL storage, completed token grants, certificate associations, revocations
-and quotas share the `protocol_state` schema, including its separate migrations.
-Replicas must share that database, issuer keys and security configuration. The
-reference browser OIDC handoff still uses an in-memory `webauth.StateStore`:
-use session affinity for that handoff or inject a shared implementation when
-embedding the library. The in-memory storage mode loses security state on restart
-and is appropriate for development only.
+With SQL storage, token grants, browser handoffs, issuance grants, associations,
+revocations, private-hop replay records and quotas use encrypted `protocol_state`.
+Replicas share this database, issuer keys, encryption keys and policy. Browser
+handoffs use per-flow `__Host-` cookies with Secure, HttpOnly and SameSite=Lax;
+the stored cookie digest must match before GET callbacks consume state. HEAD
+cannot consume a flow. Parallel tabs have separate cookies. OIDC validates
+nonce, PKCE, issuer, typed audience, authorized party and validity. Known JWKS
+keys expire after 15 minutes; a failed refresh cannot extend their trust. Unknown
+key refreshes are limited to once per minute. HTTP requests have a 15-second
+bound and cannot follow redirects carrying credentials.
 
-## Optional certificate revocation
+## Enrollment admission and issuance
 
-Enable publication and enforcement with explicit lifetimes, for example:
+Set `DM_ENROLLMENT_POLICY_FILE` to a protected JSON file, for example:
+
+```json
+{
+  "devices": [{"serial": "APPROVED-SERIAL", "udid": "APPROVED-UDID"}],
+  "depAccounts": ["managed-dep-account"],
+  "accounts": [{
+    "issuer": "https://idp.example.com",
+    "subject": "stable-subject",
+    "managedAppleAccount": "person@managed.example.com",
+    "groups": ["device-enrollers"]
+  }]
+}
+```
+
+Every supplied device identifier must match. DEP admission requires a device in
+an explicitly listed account, an assigned or pushed profile matching that
+account's configured profile, and no deletion tombstone. Synchronize inventory to keep that decision current. Account rules
+require an exact issuer and subject or email; email rules require
+`email_verified=true`. Configured groups require at least one membership.
+An empty policy denies everyone. Administrative profile issuance also passes
+admission. An embedded deployment may supply `EnrollConfig.Admission` with an
+expiry-bearing grant; infrastructure failures must remain errors. Policy files
+are loaded at startup; change the file and restart every replica to apply it.
+
+Admission runs before profile delivery and again before SCEP issuance or ACME
+finalization. A reference SCEP profile contains a random credential, stored only
+as a hash, expiring within one hour and the admission grant lifetime. The first
+valid CSR atomically reserves it; another key is rejected and the same CSR gets
+the same certificate. Issued provenance is checked against Authenticate's
+platform identifiers. Account-driven enrollment uses its registered account
+association when hardware identifiers are unavailable. SCEP grants remain
+bearer credentials before first use; hardware identity requires supported ACME
+attestation plus organizational admission.
+
+The library SCEP constructor requires an explicit challenge policy. `RenewalOnly`
+rejects initial issuance. Reference profiles use RSA-2048 or stronger and set
+`KeyIsExtractable=false` and `AllowAllAppsAccess=false`. Persistent enrollment
+servers require `DM_ENROLL_CA_CERT_FILE` and `DM_ENROLL_CA_KEY_FILE`; the issuer
+must be a valid CA with its matching private key. Leaf validity cannot exceed
+issuer expiry. Only memory-backed development can use an ephemeral CA.
+
+## Certificate revocation
+
+Publication and enforcement are enabled by default, with these lifetimes:
 
 ```sh
 export DM_PKI_REVOCATION=true
@@ -67,17 +113,17 @@ the status gate for CMS, mTLS and trusted-proxy certificate transports regardles
 of pin mode. Status checking supplements certificate chain verification. SCEP
 renewal cannot bypass a failed status check with a shared challenge password.
 
-For an existing deployment, pause enrollment and device traffic during migration,
-enable the registry on an isolated administration instance sharing the database,
-and import existing leaf certificates before exposing enforcement to devices.
-Retain every old CA certificate and signing key needed for status publication:
+Retain every retired issuer certificate and signing key needed for status
+publication. Administrative operations include:
 
 ```sh
 export DM_PKI_RETIRED_ISSUERS='[{"certificate":"/etc/dm/old-ca.pem","key":"/etc/dm/old-ca-key.pem"}]'
-dmctl certificates import -file device.pem ISSUER
 dmctl certificates status ISSUER HEX-SERIAL
 dmctl certificates revoke -reason 1 ISSUER HEX-SERIAL
 ```
+
+`DM_PKI_REVOCATION=false` explicitly disables publication and status enforcement;
+certificate chain validation, admission and enrollment pinning remain required.
 
 `ISSUER` is the SHA-256 fingerprint of the issuer certificate, in the same format
 as registry records; serials are hexadecimal. Import accepts PEM or DER. Re-import
@@ -110,7 +156,8 @@ export DM_RATE_LIMIT_MAX_ENTRIES=4096
 ```
 
 Families are `enroll`, `auth`, `scep`, `acme`, `admin`, `pki` and `mdm`. Health
-checks are exempt. An interval is the sustained spacing between accepted
+checks are exempt. `enroll` includes OTA routes, and `mdm` includes the private
+DDM ingress. An interval is the sustained spacing between accepted
 requests, with a burst allowance; both quota buckets commit or neither does.
 Intervals must be whole microseconds. SQL accounting samples database time after
 locking, so replica clock differences cannot create extra quota. State keys are
@@ -128,15 +175,62 @@ comma-separated list of explicitly trusted CIDRs only when needed. Forwarded
 addresses are walked from the trusted peer toward the first untrusted hop;
 malformed headers fall back to the socket address.
 
-## ADE policy and device validation
+## Identity, transport and storage
 
-The reusable ADE hook remains available for deployments that require a DEP/ABM
-ownership lookup. The reference server does not impose that policy universally;
-configure a hook and its denial/audit behavior when ownership admission is part
-of the deployment's threat model.
+Raw enrollment IDs have one immutable channel and parent. Storage rejects
+mismatches, including pending user-authentication reservations. Administrative
+Cedar authorization resolves the stored identity first. Authenticate commits
+reset, certificate history and pinning atomically; the same certificate retry
+preserves queues and escrow. Both the reusable service and reference server deny
+changed-certificate reenrollment by default. Explicit replacement authorizes a
+change. Unpinned records cannot acquire a pin through polling. Disabled records
+cannot reactivate via TokenUpdate, obtain queued commands or access device
+secrets, DDM or assets; a disabled parent gates its user channels.
+
+Direct mTLS requires verified client chains. CMS and certificate evidence must
+agree when more than one source is supplied. `DM_CERT_HEADER` requires
+`DM_CA_FILE` and explicit `DM_TRUSTED_PROXIES` CIDRs. Trust is based on the actual
+socket peer, never an asserted forwarding header. The proxy must verify client
+certificate possession, remove inbound certificate headers and set exactly one
+validated value. Protect its backend with TLS or a loopback connection; the
+runtime rejects a plaintext header backend on a non-loopback listener.
+
+Persistent stores require `DM_STORAGE_KEYS`. Encryption covers raw Authenticate,
+TokenUpdate, UserAuthenticate, commands, results and error chains, existing
+escrow and private-key columns, protocol state, and declaration/version/snapshot
+blobs. Ciphertext is authenticated against its purpose and row identity. Rewrap
+all applicable MDM, DDM and protocol-state stores when rotating keys. Exports are
+plaintext privileged material; protect them and backups separately. Database
+metadata and status/audit records are not whole-database encrypted.
+
+The private DDM connection requires HTTPS and two independent random keys of at
+least 32 bytes. Set `DM_DDM_ROOT_CA_FILE` for private server trust and configure
+`DM_TLS_CERT_FILE`/`DM_TLS_KEY_FILE` on the DDM role. Requests authenticate method,
+request target, content type, timestamp, nonce and body; responses bind to that
+request, status, content type and body. Five-minute freshness and shared atomic
+nonce records retained ten minutes reject replay across replicas. Both adapters
+refuse redirects. `AllowInsecureForTests` is a programmatic literal-loopback test
+exception; there is no environment switch. `scripts/testdb.sh ddm-up` exercises
+TLS with a generated test CA. When native TLS is enabled, replace the image's
+HTTP healthcheck with a probe that trusts the configured CA.
+
+Command eligibility uses recorded device capability observations. Unknown
+supervision, ADE or user approval cannot satisfy a command requirement. Query
+DeviceInformation and SecurityInfo before enqueueing commands requiring those
+capabilities. DDM status processing rejects excessive nesting (64), key paths
+(1024 bytes) or JSON item count (4096) before storage writes, in addition to body
+byte limits.
+
+Metadata-only security events identify admission denial, identity rejection,
+certificate status rejection and private-hop rejection. Enable an event sink or
+persistent audit to retain them. Events contain no credential or remote error
+text. DEP, AxM, APNs and webhook clients reject redirects; use trusted HTTPS
+endpoints for production outbound credentials.
+
+## Device validation
 
 Automated tests cover protocol behavior, shared database concurrency and parsed,
-signature-verified CRL/OCSP output. They cannot establish physical Apple device
-compatibility. Before rollout, exercise the supported OS versions and enrollment
-modes, including macOS device/user channels, token expiry during an interrupted
-command response, certificate renewal and revocation, and proxy transport.
+signature-verified CRL/OCSP output. Before rollout, exercise supported Apple OS
+versions and enrollment modes on physical devices, including ADE, account-driven
+macOS device/user channels, token expiry during an interrupted response,
+SCEP/ACME renewal and revocation, DDM synchronization and proxy transport.

@@ -123,7 +123,9 @@ func (h *harness) get(path string) (int, string) {
 // callback URL the provider redirected to, without fetching it.
 func (h *harness) callbackURL(path string) string {
 	h.t.Helper()
-	v := h.idp.Client(h.rp.Certificate())
+	v := h.view
+	oldHops := v.MaxHops
+	defer func() { v.MaxHops = oldHops }()
 	v.MaxHops = 1
 	resp, err := v.Get(context.Background(), h.rp.URL+path)
 	if err != nil {
@@ -230,7 +232,7 @@ func TestFlow(t *testing.T) {
 		if second.StatusCode != http.StatusBadRequest {
 			t.Fatalf("replay: %d", second.StatusCode)
 		}
-		if f := h.lastFailure(); !errors.Is(f.err, webauth.ErrStateNotFound) || !errors.Is(f.err, webauth.ErrCallback) {
+		if f := h.lastFailure(); (!errors.Is(f.err, webauth.ErrStateNotFound) && !errors.Is(f.err, webauth.ErrBrowserBinding)) || !errors.Is(f.err, webauth.ErrCallback) {
 			t.Fatalf("replay error %v", f.err)
 		}
 		// A state the provider never saw is rejected the same way.
@@ -436,7 +438,7 @@ func TestFlow(t *testing.T) {
 		}
 	})
 
-	t.Run("ErrorDescriptionParsed", func(t *testing.T) {
+	t.Run("ProviderDetailsExcluded", func(t *testing.T) {
 		t.Parallel()
 		h := newHarness(t, nil)
 		h.idp.Set(func(o *webauthtest.Options) {
@@ -447,14 +449,14 @@ func TestFlow(t *testing.T) {
 		}
 		f := h.lastFailure()
 		msg := f.err.Error()
-		if !strings.Contains(msg, "access_denied") || !strings.Contains(msg, "User is not in the enrollment group") || !strings.Contains(msg, "https://idp.example.com/help/denied") {
+		if !strings.Contains(msg, "access_denied") || strings.Contains(msg, "User is not in the enrollment group") || strings.Contains(msg, "https://idp.example.com/help/denied") {
 			t.Fatalf("error %q", msg)
 		}
 		h.idp.Set(func(o *webauthtest.Options) { o.AuthorizeError = "temporarily_unavailable"; o.AuthorizeErrorURI = "" })
 		if status, _ := h.get("/begin?serial=S1"); status != http.StatusBadGateway {
 			t.Fatalf("status %d", status)
 		}
-		if msg := h.lastFailure().err.Error(); !strings.Contains(msg, "temporarily_unavailable: User is not in the enrollment group") {
+		if msg := h.lastFailure().err.Error(); !strings.Contains(msg, "temporarily_unavailable") || strings.Contains(msg, "User is not in the enrollment group") {
 			t.Fatalf("error %q", msg)
 		}
 	})
@@ -593,7 +595,7 @@ func TestFlow(t *testing.T) {
 			t.Fatal(err)
 		}
 		post.Body.Close()
-		if post.StatusCode != http.StatusMethodNotAllowed || post.Header.Get("Allow") != "GET, HEAD" {
+		if post.StatusCode != http.StatusMethodNotAllowed || post.Header.Get("Allow") != "GET" {
 			t.Fatalf("POST: %d %q", post.StatusCode, post.Header.Get("Allow"))
 		}
 	})
@@ -607,8 +609,8 @@ func TestFlow(t *testing.T) {
 		if f := h.lastFailure(); !errors.Is(f.err, errBoom) {
 			t.Fatalf("error %v", f.err)
 		}
-		if status, _ := h.get("/callback?state=x&code=y"); status != http.StatusInternalServerError {
-			t.Fatalf("Take failure: %d", status)
+		if status, _ := h.get("/callback?state=x&code=y"); status != http.StatusBadRequest {
+			t.Fatalf("unbound callback: %d", status)
 		}
 	})
 
@@ -797,11 +799,11 @@ func TestMemoryStore(t *testing.T) {
 	if err := store.Put(ctx, "c", st); !errors.Is(err, webauth.ErrStoreFull) {
 		t.Fatalf("full: %v", err)
 	}
-	got, err := store.Take(ctx, "a")
+	got, err := store.Take(ctx, "a", "")
 	if err != nil || got.Bound.Serial != "S" || got.Verifier != "v" || got.Nonce != "n" {
 		t.Fatalf("take: %+v %v", got, err)
 	}
-	if _, err := store.Take(ctx, "a"); !errors.Is(err, webauth.ErrStateNotFound) {
+	if _, err := store.Take(ctx, "a", ""); !errors.Is(err, webauth.ErrStateNotFound) {
 		t.Fatalf("second take: %v", err)
 	}
 	if store.Len() != 1 {
@@ -815,7 +817,7 @@ func TestMemoryStore(t *testing.T) {
 	if err := store.Put(ctx, "d", webauth.State{ExpiresAt: fake.Now().Add(time.Minute)}); err != nil {
 		t.Fatalf("d: %v", err)
 	}
-	if _, err := store.Take(ctx, "b"); !errors.Is(err, webauth.ErrStateNotFound) {
+	if _, err := store.Take(ctx, "b", ""); !errors.Is(err, webauth.ErrStateNotFound) {
 		t.Fatalf("expired b: %v", err)
 	}
 	fake.Advance(2 * time.Minute)
@@ -832,7 +834,7 @@ func TestMemoryStore(t *testing.T) {
 type failingStore struct{}
 
 func (failingStore) Put(context.Context, string, webauth.State) error { return errBoom }
-func (failingStore) Take(context.Context, string) (webauth.State, error) {
+func (failingStore) Take(context.Context, string, string) (webauth.State, error) {
 	return webauth.State{}, errBoom
 }
 

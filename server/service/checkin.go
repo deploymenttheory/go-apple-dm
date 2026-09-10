@@ -26,13 +26,21 @@ type CheckinResult struct {
 const ContentTypePlist = "application/xml; charset=utf-8"
 
 // Checkin handles one check-in message.
-func (c *Core) Checkin(ctx context.Context, r *mdm.Request, ck *mdm.Checkin) (*CheckinResult, error) {
+func (c *Core) Checkin(
+	ctx context.Context,
+	r *mdm.Request,
+	ck *mdm.Checkin,
+) (*CheckinResult, error) {
 	if r == nil || ck == nil || ck.Message == nil {
-		return nil, wrapCode(CodeBadRequest, fmt.Errorf("%w: nil request or message", ErrInvalidMessage))
+		return nil, wrapCode(
+			CodeBadRequest,
+			fmt.Errorf("%w: nil request or message", ErrInvalidMessage),
+		)
 	}
 	r.ID = ck.ID
 	if c.certificateStatus != nil {
 		if err := c.certificateStatus(ctx, r.Certificate); err != nil {
+			c.publish(ctx, event.CertificateStatusRejected, r.ID, "device", nil)
 			return nil, wrapCode(CodeForbidden, err)
 		}
 	}
@@ -100,6 +108,27 @@ func (c *Core) dispatchCheckin(ctx context.Context, r *mdm.Request, ck *mdm.Chec
 // Authenticate. Unknown enrollments are reported as such so the transport
 // can answer with Apple's unrecognized-device body.
 func (c *Core) authorize(ctx context.Context, r *mdm.Request) error {
+	return c.authorizeRequest(ctx, r, false)
+}
+
+func (c *Core) authorizeRequest(ctx context.Context, r *mdm.Request, checkout bool) error {
+	e, err := c.store.Get(ctx, r.ID.Device())
+	if err != nil {
+		return wrapCode(codeForStorage(err), err)
+	}
+	if !checkout && !e.DisabledAt.IsZero() {
+		return wrapCode(CodeForbidden, storage.ErrDisabled)
+	}
+	if r.ID.Channel.IsUser() {
+		child, err := c.store.Get(ctx, r.ID)
+		if err != nil && !errors.Is(err, storage.ErrNotFound) {
+			return wrapCode(CodeInternal, err)
+		}
+		if child != nil && !checkout && !child.DisabledAt.IsZero() {
+			return wrapCode(CodeForbidden, storage.ErrDisabled)
+		}
+	}
+
 	if c.pinning == PinOff {
 		return nil
 	}
@@ -113,37 +142,27 @@ func (c *Core) authorize(ctx context.Context, r *mdm.Request) error {
 	pinned, err := c.store.CertHash(ctx, r.ID)
 	if err != nil {
 		if errors.Is(err, storage.ErrNotFound) {
-			return wrapCode(CodeUnknownEnrollment, fmt.Errorf("%w: %s", ErrUnknownEnrollment, r.ID.ID))
+			return wrapCode(
+				CodeUnknownEnrollment,
+				fmt.Errorf("%w: %s", ErrUnknownEnrollment, r.ID.ID),
+			)
 		}
 		return wrapCode(CodeInternal, err)
 	}
 	switch {
 	case pinned == "":
-		// Enrollment created without a certificate (migration or a
-		// transport that could not extract one): pin retroactively, but
-		// only a hash no other enrollment has ever presented.
-		others, err := c.otherHolders(ctx, r.ID, hash)
-		if err != nil {
-			return wrapCode(CodeInternal, err)
+		if c.pinning == PinWarn {
+			c.log.WarnContext(ctx, "unassociated identity certificate", "enrollment", r.ID.ID)
+			return nil
 		}
-		if len(others) > 0 {
-			if c.pinning == PinWarn {
-				c.log.WarnContext(ctx, "identity certificate seen on another enrollment; not pinning", "enrollment", r.ID.ID, "previous", others[0].ID.ID)
-				return nil
-			}
-			return wrapCode(CodeForbidden, fmt.Errorf("%w: previously pinned by %s", ErrCertReused, others[0].ID.ID))
-		}
-		if err := c.store.AssociateCert(ctx, r.ID, hash, c.clock.Now()); err != nil {
-			if errors.Is(err, storage.ErrConflict) {
-				return wrapCode(CodeForbidden, fmt.Errorf("%w: %w", ErrCertMismatch, err))
-			}
-			return wrapCode(CodeInternal, err)
-		}
+		c.publish(ctx, event.IdentityRejected, r.ID, "device", nil)
+		return wrapCode(CodeForbidden, ErrCertMismatch)
 	case pinned != hash:
 		if c.pinning == PinWarn {
 			c.log.WarnContext(ctx, "identity certificate mismatch", "enrollment", r.ID.ID)
 			return nil
 		}
+		c.publish(ctx, event.IdentityRejected, r.ID, "device", nil)
 		return wrapCode(CodeForbidden, ErrCertMismatch)
 	}
 	return nil
@@ -166,9 +185,17 @@ func (c *Core) otherHolders(ctx context.Context, id mdm.EnrollmentID, hash strin
 	return others, nil
 }
 
-func (c *Core) authenticate(ctx context.Context, r *mdm.Request, ck *mdm.Checkin, m *checkin.Authenticate) error {
+func (c *Core) authenticate(
+	ctx context.Context,
+	r *mdm.Request,
+	ck *mdm.Checkin,
+	m *checkin.Authenticate,
+) error {
 	if r.ID.Channel.IsUser() {
-		return wrapCode(CodeBadRequest, fmt.Errorf("%w: Authenticate on a user channel", ErrInvalidMessage))
+		return wrapCode(
+			CodeBadRequest,
+			fmt.Errorf("%w: Authenticate on a user channel", ErrInvalidMessage),
+		)
 	}
 	if r.Certificate == nil && c.pinning == PinEnforce {
 		return wrapCode(CodeForbidden, ErrCertRequired)
@@ -183,7 +210,9 @@ func (c *Core) authenticate(ctx context.Context, r *mdm.Request, ck *mdm.Checkin
 		hash = cms.Fingerprint(r.Certificate)
 	}
 	rotated := false
-	if existing != nil && existing.CertHash != "" && hash != "" && existing.CertHash != hash && c.pinning != PinOff {
+	allowReuse := false
+	if existing != nil && existing.CertHash != "" && hash != "" && existing.CertHash != hash &&
+		c.pinning != PinOff {
 		if perr := c.reenroll(ctx, r, existing); perr != nil {
 			return wrapCode(CodeForbidden, fmt.Errorf("%w: %w", ErrReenrollDenied, perr))
 		}
@@ -195,6 +224,7 @@ func (c *Core) authenticate(ctx context.Context, r *mdm.Request, ck *mdm.Checkin
 			return wrapCode(CodeInternal, err)
 		}
 		if len(others) > 0 {
+			allowReuse = true
 			if perr := c.reuse(ctx, r, others); perr != nil {
 				c.publish(ctx, event.CertReuseDenied, r.ID, "device", others)
 				if !errors.Is(perr, ErrCertReused) {
@@ -204,16 +234,18 @@ func (c *Core) authenticate(ctx context.Context, r *mdm.Request, ck *mdm.Checkin
 			}
 		}
 	}
-	if err := c.store.UpsertAuthenticate(ctx, r.ID, m, ck.Raw, now); err != nil {
-		return wrapCode(codeForStorage(err), err)
+	expected := ""
+	if existing != nil {
+		expected = existing.CertHash
 	}
-	if hash != "" {
-		if err := c.store.AssociateCert(ctx, r.ID, hash, now); err != nil {
-			if errors.Is(err, storage.ErrConflict) {
-				return wrapCode(CodeForbidden, fmt.Errorf("%w: %w", ErrCertMismatch, err))
-			}
-			return wrapCode(CodeInternal, err)
+	if err := c.store.AuthenticateEnrollment(ctx, r.ID, storage.AuthenticateChange{
+		ExpectedHash: expected, Hash: hash, AllowReuse: allowReuse,
+		Message: m, Raw: ck.Raw, At: now,
+	}); err != nil {
+		if errors.Is(err, storage.ErrConflict) {
+			return wrapCode(CodeForbidden, fmt.Errorf("%w: %w", ErrCertMismatch, err))
 		}
+		return wrapCode(codeForStorage(err), err)
 	}
 	if rotated {
 		c.publish(ctx, event.CertRotated, r.ID, "device", existing.CertHash)
@@ -266,7 +298,7 @@ func (c *Core) tokenUpdate(ctx context.Context, r *mdm.Request, ck *mdm.Checkin,
 }
 
 func (c *Core) checkOut(ctx context.Context, r *mdm.Request) error {
-	if err := c.authorize(ctx, r); err != nil {
+	if err := c.authorizeRequest(ctx, r, true); err != nil {
 		return err
 	}
 	if err := c.store.Disable(ctx, r.ID, c.clock.Now()); err != nil {

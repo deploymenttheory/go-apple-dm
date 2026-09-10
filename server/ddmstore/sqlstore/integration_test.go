@@ -23,9 +23,20 @@ import (
 // ddmTables lists every table of the schema, dependants first, so the
 // list serves both DROP and DELETE.
 var ddmTables = []string{
-	"ddm_changes", "ddm_status_reports", "ddm_status_errors", "ddm_status_values", "ddm_status_declarations",
-	"ddm_snapshot_items", "ddm_snapshots", "ddm_enrollment_declarations", "ddm_enrollment_sets",
-	"ddm_set_declarations", "ddm_sets", "ddm_declaration_versions", "ddm_declarations",
+	"ddm_identities",
+	"ddm_changes",
+	"ddm_status_reports",
+	"ddm_status_errors",
+	"ddm_status_values",
+	"ddm_status_declarations",
+	"ddm_snapshot_items",
+	"ddm_snapshots",
+	"ddm_enrollment_declarations",
+	"ddm_enrollment_sets",
+	"ddm_set_declarations",
+	"ddm_sets",
+	"ddm_declaration_versions",
+	"ddm_declarations",
 }
 
 // runShared runs the contract suite on one server-backed store, emptying

@@ -173,7 +173,7 @@ func Start(ctx context.Context, w *Workspace, binary string, out io.Writer) (*En
 		if err != nil {
 			return nil, err
 		}
-		for _, setup := range []func(map[string]string) error{e.oidcFixture, e.identityFixtures, e.depFixture, e.abmFixture} {
+		for _, setup := range []func(map[string]string) error{e.oidcFixture, e.identityFixtures, e.depFixture, e.abmFixture, e.admissionFixture} {
 			if err = setup(env); err != nil {
 				return nil, err
 			}
@@ -211,17 +211,13 @@ func Start(ctx context.Context, w *Workspace, binary string, out io.Writer) (*En
 			return nil, wrapError(err)
 		}
 		e.DDMURL = "https://" + ddmAddr
-		// The hop uses the server's ordinary proxy configuration. Loopback HTTP
-		// avoids imposing device-facing TLS on the authenticated internal hop.
+		// Both roles use the workspace TLS identity and trust anchor.
 		ddmEnv := map[string]string{}
 		for k, v := range env {
 			ddmEnv[k] = v
 		}
 		ddmEnv["DM_ROLE"] = "ddm"
 		ddmEnv["DM_LISTEN"] = ddmAddr
-		ddmEnv["DM_TLS_CERT_FILE"] = ""
-		ddmEnv["DM_TLS_KEY_FILE"] = ""
-		e.DDMURL = "http://" + ddmAddr
 		send, recv := randomID(), randomID()
 		ddmEnv["DM_DDM_RECV_KEY"] = send
 		ddmEnv["DM_DDM_SEND_KEY"] = recv
@@ -233,6 +229,7 @@ func Start(ctx context.Context, w *Workspace, binary string, out io.Writer) (*En
 		}
 		env["DM_ROLE"] = "mdm"
 		env["DM_DDM_URL"] = e.DDMURL + app.PathDDM
+		env["DM_DDM_ROOT_CA_FILE"] = w.path("mdm", "ca.pem")
 		env["DM_DDM_SEND_KEY"] = send
 		env["DM_DDM_RECV_KEY"] = recv
 	}
@@ -325,7 +322,7 @@ func (e *Environment) ready(ctx context.Context, base string) error {
 			}
 			resp, err := e.Client.Do(req)
 			if err == nil {
-				resp.Body.Close()
+				_ = resp.Body.Close()
 				if resp.StatusCode == 200 {
 					return nil
 				}
@@ -732,3 +729,30 @@ func configureACMEIdentifierKey(env map[string]string) {
 		env["DM_ACME_HMAC_KEY"] = hex.EncodeToString(key[:])
 	}
 }
+
+// Simulated fixtures admit only the fixed synthetic serial and local provider
+// subject. Live workspaces require their own explicit admission policy.
+func (e *Environment) admissionFixture(env map[string]string) error {
+	policy := app.AdmissionPolicy{
+		Devices: []app.DeviceAdmissionRule{{Serial: benchSerial}},
+		Accounts: []app.AccountAdmissionRule{
+			{
+				Issuer:              e.Provider.Issuer(),
+				Subject:             "user-1",
+				ManagedAppleAccount: "user@example.com",
+			},
+		},
+	}
+	b, err := json.Marshal(policy)
+	if err != nil {
+		return wrapError(err)
+	}
+	file := e.Workspace.path("fixtures", "admission.json")
+	if err = os.WriteFile(file, b, 0o600); err != nil {
+		return wrapError(err)
+	}
+	env["DM_ENROLLMENT_POLICY_FILE"] = file
+	return nil
+}
+
+const benchSerial = "BENCH-APPROVED-SYNTHETIC"

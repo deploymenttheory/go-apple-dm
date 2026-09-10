@@ -11,7 +11,7 @@ import (
 // ClearEnrollment implements ddm.Tx. Declarations and sets themselves are
 // left alone; only this enrollment's rows go.
 func (t *tx) ClearEnrollment(_ context.Context, id mdm.EnrollmentID) error {
-	if err := validID(id); err != nil {
+	if err := t.validID(id); err != nil {
 		return err
 	}
 	key := id.ID
@@ -23,7 +23,6 @@ func (t *tx) ClearEnrollment(_ context.Context, id mdm.EnrollmentID) error {
 	delete(t.st.statusErrors, key)
 	delete(t.st.statusReports, key)
 	maps.DeleteFunc(t.st.changes, func(_ int64, c ddm.Change) bool { return c.ID.ID == key })
-	delete(t.st.ids, key)
 	return nil
 }
 

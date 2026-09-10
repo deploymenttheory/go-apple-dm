@@ -21,6 +21,7 @@ type Factory func(t *testing.T) storage.Store
 // RunAll runs every suite.
 func RunAll(t *testing.T, newStore Factory) {
 	t.Helper()
+	t.Run("Security", func(t *testing.T) { RunSecuritySuite(t, newStore) })
 	t.Run("Enrollment", func(t *testing.T) { RunEnrollmentSuite(t, newStore) })
 	t.Run("CommandQueue", func(t *testing.T) { RunCommandQueueSuite(t, newStore) })
 	t.Run("Push", func(t *testing.T) { RunPushSuite(t, newStore) })
@@ -144,12 +145,12 @@ func RunEnrollmentSuite(t *testing.T, newStore Factory) {
 		if e.Enabled || !e.DisabledAt.Equal(t0.Add(4*time.Minute)) {
 			t.Fatalf("after Disable: %+v", e)
 		}
-		// Re-enable by TokenUpdate.
-		if err := s.StoreTokenUpdate(ctx, id, push(1), nil, nil, t0.Add(5*time.Minute)); err != nil {
-			t.Fatal(err)
+		// TokenUpdate cannot reverse an explicit disable.
+		if err := s.StoreTokenUpdate(ctx, id, push(1), nil, nil, t0.Add(5*time.Minute)); !errors.Is(err, storage.ErrDisabled) {
+			t.Fatalf("disabled token update: %v", err)
 		}
-		if e, _ = s.Get(ctx, id); !e.Enabled || !e.DisabledAt.IsZero() {
-			t.Fatalf("after re-enable: %+v", e)
+		if e, _ = s.Get(ctx, id); e.Enabled || e.DisabledAt.IsZero() {
+			t.Fatalf("reactivated: %+v", e)
 		}
 		// Invalid ids are rejected.
 		bad := mdm.EnrollmentID{}
@@ -336,12 +337,12 @@ func RunEnrollmentSuite(t *testing.T, newStore Factory) {
 		if c, _ := s.Get(ctx, user(2, "carol")); !c.Enabled {
 			t.Fatal("other device's user channel disabled")
 		}
-		// TokenUpdate on the user channel re-enables it independently.
-		if err := s.StoreTokenUpdate(ctx, user(1, "alice"), push(2), nil, nil, at.Add(time.Second)); err != nil {
-			t.Fatal(err)
+		// A disabled parent cannot carry a reactivated user channel.
+		if err := s.StoreTokenUpdate(ctx, user(1, "alice"), push(2), nil, nil, at.Add(time.Second)); !errors.Is(err, storage.ErrDisabled) {
+			t.Fatalf("reactivation: %v", err)
 		}
-		if a, _ := s.Get(ctx, user(1, "alice")); !a.Enabled {
-			t.Fatal("user channel did not re-enable")
+		if a, _ := s.Get(ctx, user(1, "alice")); a.Enabled {
+			t.Fatal("disabled user reactivated")
 		}
 		if d, _ := s.Get(ctx, device(1)); d.Enabled {
 			t.Fatal("device re-enabled by its user channel")

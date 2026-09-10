@@ -53,7 +53,11 @@ func (a *App) wireOTA(mux *http.ServeMux) error {
 		Profile: func(ctx context.Context, r *enroll.OTARequest) ([]byte, error) {
 			p, err := e.profile(
 				ctx,
-				acme.Binding{UDID: r.Attributes.UDID, CommonName: r.Attributes.UDID},
+				acme.Binding{
+					UDID:       r.Attributes.UDID,
+					Serial:     r.Attributes.Serial,
+					CommonName: r.Attributes.UDID,
+				},
 			)
 			if err != nil {
 				return nil, wrapError(err)

@@ -17,7 +17,12 @@ var certAssociationCols = []string{"enrollment_id", "cert_hash", "associated_at"
 // cert_hash is the arbiter: a race between two enrollments for one hash
 // ends with one winner and ErrConflict for the rest. The pin and its
 // history row are written in one transaction (decision record 0014).
-func (s *Store) AssociateCert(ctx context.Context, id mdm.EnrollmentID, hash string, at time.Time) error {
+func (s *Store) AssociateCert(
+	ctx context.Context,
+	id mdm.EnrollmentID,
+	hash string,
+	at time.Time,
+) error {
 	if hash == "" {
 		return fmt.Errorf("%w: empty certificate hash", storage.ErrInvalid)
 	}
@@ -27,9 +32,21 @@ func (s *Store) AssociateCert(ctx context.Context, id mdm.EnrollmentID, hash str
 	dev := id.Device()
 	at = at.UTC()
 	return s.tx(ctx, func(q querier) error {
-		res, err := q.ExecContext(ctx, s.q("UPDATE enrollments SET cert_hash = ?, cert_hash_at = ? WHERE id = ?"), hash, at, dev.ID)
+		if err := s.deviceIdentity(ctx, q, id); err != nil {
+			return err
+		}
+		res, err := q.ExecContext(
+			ctx,
+			s.q("UPDATE enrollments SET cert_hash = ?, cert_hash_at = ? WHERE id = ?"),
+			hash,
+			at,
+			dev.ID,
+		)
 		if s.d.uniqueViolation(err) {
-			return fmt.Errorf("%w: certificate already associated with another enrollment", storage.ErrConflict)
+			return fmt.Errorf(
+				"%w: certificate already associated with another enrollment",
+				storage.ErrConflict,
+			)
 		}
 		if err != nil {
 			return wrap("associate certificate", err)
@@ -78,12 +95,15 @@ func (s *Store) associations(ctx context.Context, where string, arg any) ([]stor
 }
 
 // CertHistory implements storage.CertAuthStore.
-func (s *Store) CertHistory(ctx context.Context, id mdm.EnrollmentID) ([]storage.CertAssociation, error) {
+func (s *Store) CertHistory(
+	ctx context.Context,
+	id mdm.EnrollmentID,
+) ([]storage.CertAssociation, error) {
 	if err := validID(id); err != nil {
 		return nil, err
 	}
 	dev := id.Device()
-	if err := s.exists(ctx, s.db, dev.ID); err != nil {
+	if err := s.deviceIdentity(ctx, s.db, id); err != nil {
 		return nil, err
 	}
 	return s.associations(ctx, "ca.enrollment_id = ?", dev.ID)
@@ -102,8 +122,12 @@ func (s *Store) CertHash(ctx context.Context, id mdm.EnrollmentID) (string, erro
 	if err := validID(id); err != nil {
 		return "", err
 	}
+	if err := s.deviceIdentity(ctx, s.db, id); err != nil {
+		return "", err
+	}
 	var h sql.NullString
-	err := s.db.QueryRowContext(ctx, s.q("SELECT cert_hash FROM enrollments WHERE id = ?"), id.Device().ID).Scan(&h)
+	err := s.db.QueryRowContext(ctx, s.q("SELECT cert_hash FROM enrollments WHERE id = ?"), id.Device().ID).
+		Scan(&h)
 	if errors.Is(err, sql.ErrNoRows) {
 		return "", fmt.Errorf("%w: enrollment %s", storage.ErrNotFound, id.Device().ID)
 	}

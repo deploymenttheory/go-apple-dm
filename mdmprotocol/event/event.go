@@ -14,15 +14,20 @@ type Type string
 
 // Event types published by the service layer.
 const (
-	Enrolled          Type = "enrolled"       // Authenticate accepted for a new enrollment
-	Reenrolled        Type = "reenrolled"     // Authenticate accepted for an existing enrollment
-	TokenUpdated      Type = "token-updated"  // TokenUpdate stored
-	CheckedOut        Type = "checked-out"    // CheckOut received
-	CertRotated       Type = "cert-rotated"   // enrollment identity certificate changed
-	CommandQueued     Type = "command-queued" // command enqueued for an enrollment
-	CommandSent       Type = "command-sent"   // command delivered to the device
-	CommandResult     Type = "command-result" // Acknowledged, Error, CommandFormatError, or NotNow
-	BootstrapTokenSet Type = "bootstrap-token-set"
+	// Security rejections carry metadata only; never attach credentials or remote errors.
+	EnrollmentDenied          Type = "enrollment-denied"
+	IdentityRejected          Type = "identity-rejected"
+	CertificateStatusRejected Type = "certificate-status-rejected"
+	PrivateHopRejected        Type = "private-hop-rejected"
+	Enrolled                  Type = "enrolled"       // Authenticate accepted for a new enrollment
+	Reenrolled                Type = "reenrolled"     // Authenticate accepted for an existing enrollment
+	TokenUpdated              Type = "token-updated"  // TokenUpdate stored
+	CheckedOut                Type = "checked-out"    // CheckOut received
+	CertRotated               Type = "cert-rotated"   // enrollment identity certificate changed
+	CommandQueued             Type = "command-queued" // command enqueued for an enrollment
+	CommandSent               Type = "command-sent"   // command delivered to the device
+	CommandResult             Type = "command-result" // Acknowledged, Error, CommandFormatError, or NotNow
+	BootstrapTokenSet         Type = "bootstrap-token-set"
 	// PushTokenInvalid is a token APNs says will never work again (410).
 	// The enrollment is gone until it re-registers.
 	PushTokenInvalid Type = "push-token-invalid"

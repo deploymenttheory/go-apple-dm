@@ -189,7 +189,7 @@ func TestE2E_CommandError(t *testing.T) {
 // identity is refused afterwards.
 func TestE2E_Reenroll(t *testing.T) {
 	t.Parallel()
-	h := newHarness(t, service.Config{})
+	h := newHarness(t, service.Config{Reenroll: service.AllowReenroll})
 	ctx := context.Background()
 	d := h.device("E2E-005")
 	if err := d.Enroll(ctx); err != nil {
@@ -200,7 +200,12 @@ func TestE2E_Reenroll(t *testing.T) {
 		t.Fatal(err)
 	}
 	pending, _ := mdm.NewCommand(&commands.ProfileList{})
-	if _, err := h.core.Enqueue(ctx, []mdm.EnrollmentID{id}, pending, storage.EnqueueOptions{}); err != nil {
+	if _, err := h.core.Enqueue(
+		ctx,
+		[]mdm.EnrollmentID{id},
+		pending,
+		storage.EnqueueOptions{},
+	); err != nil {
 		t.Fatal(err)
 	}
 	old := d.Identity
@@ -218,7 +223,12 @@ func TestE2E_Reenroll(t *testing.T) {
 		t.Fatalf("bootstrap token survived re-enrollment: %q %v", tok, err)
 	}
 	// The old identity is refused.
-	stale := simulator.New("E2E-005", simulator.WithURLs(h.server.URL+"/mdm", h.server.URL+"/mdm"), simulator.WithClient(h.server.Client()), simulator.WithIdentity(old))
+	stale := simulator.New(
+		"E2E-005",
+		simulator.WithURLs(h.server.URL+"/mdm", h.server.URL+"/mdm"),
+		simulator.WithClient(h.server.Client()),
+		simulator.WithIdentity(old),
+	)
 	var he *simulator.HTTPError
 	if _, err := stale.Connect(ctx); !errors.As(err, &he) || he.Status != 403 {
 		t.Fatalf("old identity: %v", err)
@@ -238,7 +248,11 @@ func TestE2E_Reenroll(t *testing.T) {
 	if err := sd.Enroll(ctx); err != nil {
 		t.Fatal(err)
 	}
-	if err := sd.Reenroll(ctx, strict.identity("intruder")); !errors.As(err, &he) || he.Status != 403 {
+	if err := sd.Reenroll(
+		ctx,
+		strict.identity("intruder"),
+	); !errors.As(err, &he) ||
+		he.Status != 403 {
 		t.Fatalf("deny reenroll: %v", err)
 	}
 }

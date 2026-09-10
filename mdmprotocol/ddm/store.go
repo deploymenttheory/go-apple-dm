@@ -194,6 +194,8 @@ type SetStore interface {
 
 // AssignmentStore binds enrollments to sets and to single declarations.
 type AssignmentStore interface {
+	// EnrollmentIdentity resolves a previously stored raw ID to its immutable identity.
+	EnrollmentIdentity(ctx context.Context, rawID string) (mdm.EnrollmentID, error)
 	AssignSet(ctx context.Context, id mdm.EnrollmentID, set string, at time.Time) (changed bool, err error)
 	UnassignSet(ctx context.Context, id mdm.EnrollmentID, set string) (changed bool, err error)
 	EnrollmentSets(ctx context.Context, id mdm.EnrollmentID) ([]string, error)

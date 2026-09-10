@@ -16,11 +16,16 @@ var enrollmentTables = []string{
 // ClearEnrollment implements ddm.Tx. Only this enrollment's rows go; a
 // device's user channels are separate enrollments and keep theirs.
 func (t *txStore) ClearEnrollment(ctx context.Context, id mdm.EnrollmentID) error {
-	if err := validID(id); err != nil {
+	if err := t.validID(ctx, id); err != nil {
 		return err
 	}
 	for _, table := range enrollmentTables {
-		if _, err := t.exec(ctx, "clear "+table, "DELETE FROM "+table+" WHERE enrollment_id = ?", id.ID); err != nil { // #nosec G202 -- table names are literals
+		if _, err := t.exec(
+			ctx,
+			"clear "+table,
+			"DELETE FROM "+table+" WHERE enrollment_id = ?",
+			id.ID,
+		); err != nil { // #nosec G202 -- table names are literals
 			return err
 		}
 	}

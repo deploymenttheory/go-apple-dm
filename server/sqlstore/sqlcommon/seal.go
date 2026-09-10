@@ -10,10 +10,17 @@ import (
 // Purposes name the sealed columns; each becomes the AAD prefix that binds
 // a ciphertext to its column (decision record 0013).
 const (
-	purposeUnlockToken    = "enrollments.unlock_token"    // #nosec G101 -- a column name, not a credential
-	purposeBootstrapToken = "enrollments.bootstrap_token" // #nosec G101 -- a column name, not a credential
-	purposePushKey        = "push_certs.key_pem"          // #nosec G101 -- a column name, not a credential
-	purposeUserAuthToken  = "user_auth.auth_token"        // #nosec G101 -- a column name, not a credential
+	purposeAuthenticate     = "enrollments.authenticate_raw"
+	purposeTokenUpdate      = "enrollments.token_update_raw"
+	purposeCommand          = "commands.raw"
+	purposeResult           = "commands.result_raw"
+	purposeResultErrors     = "commands.result_error_chain"
+	purposeUserAuthenticate = "user_auth.authenticate_raw"
+	purposeUserDigest       = "user_auth.digest_raw"
+	purposeUnlockToken      = "enrollments.unlock_token"    // #nosec G101 -- a column name, not a credential
+	purposeBootstrapToken   = "enrollments.bootstrap_token" // #nosec G101 -- a column name, not a credential
+	purposePushKey          = "push_certs.key_pem"          // #nosec G101 -- a column name, not a credential
+	purposeUserAuthToken    = "user_auth.auth_token"        // #nosec G101 -- a column name, not a credential
 )
 
 // Option configures New.
@@ -68,6 +75,13 @@ type sealedColumn struct {
 }
 
 var sealedColumns = []sealedColumn{
+	{"enrollments", "authenticate_raw", "id", purposeAuthenticate},
+	{"enrollments", "token_update_raw", "id", purposeTokenUpdate},
+	{"commands", "raw", "seal_id", purposeCommand},
+	{"commands", "result_raw", "seal_id", purposeResult},
+	{"commands", "result_error_chain", "seal_id", purposeResultErrors},
+	{"user_auth", "authenticate_raw", "enrollment_id", purposeUserAuthenticate},
+	{"user_auth", "digest_raw", "enrollment_id", purposeUserDigest},
 	{"enrollment_replacements", "state_blob", "enrollment_id", purposeReplacement},
 	{"enrollments", "unlock_token", "id", purposeUnlockToken},
 	{"enrollments", "bootstrap_token", "id", purposeBootstrapToken},
@@ -165,3 +179,5 @@ func (s *Store) rewrapPage(ctx context.Context, c sealedColumn, cursor string) (
 	}
 	return out, nil
 }
+
+func commandRowID(id, uuid string) string { return fmt.Sprintf("%d:%s%s", len(id), id, uuid) }

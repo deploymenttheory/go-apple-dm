@@ -52,6 +52,10 @@ type Config struct {
 	Target func(ctx context.Context) support.Target
 	// MaxStatusBytes bounds a status report; default 1 MiB.
 	MaxStatusBytes int
+	// Structural limits apply before decoding or storing a status report.
+	MaxStatusDepth     int
+	MaxStatusPathBytes int
+	MaxStatusItems     int
 	// KeepReports bounds raw status reports kept per enrollment; default 10.
 	KeepReports   int
 	Subscriptions Subscriptions
@@ -68,16 +72,17 @@ var ErrNoStore = errors.New("ddm: store is required")
 
 // Engine serves declarative management for enrollments.
 type Engine struct {
-	store     Store
-	resolvers []Resolver
-	expander  Expander
-	bus       *event.Bus
-	clock     clock.Clock
-	log       *slog.Logger
-	target    func(ctx context.Context) support.Target
-	maxStatus int
-	keep      int
-	subs      Subscriptions
+	store                                         Store
+	resolvers                                     []Resolver
+	expander                                      Expander
+	bus                                           *event.Bus
+	clock                                         clock.Clock
+	log                                           *slog.Logger
+	target                                        func(ctx context.Context) support.Target
+	maxStatus                                     int
+	maxStatusDepth, maxStatusPath, maxStatusItems int
+	keep                                          int
+	subs                                          Subscriptions
 }
 
 // New validates cfg and returns an Engine.
@@ -101,6 +106,16 @@ func New(cfg Config) (*Engine, error) {
 	}
 	if e.maxStatus <= 0 {
 		e.maxStatus = DefaultMaxStatusBytes
+	}
+	e.maxStatusDepth, e.maxStatusPath, e.maxStatusItems = cfg.MaxStatusDepth, cfg.MaxStatusPathBytes, cfg.MaxStatusItems
+	if e.maxStatusDepth <= 0 {
+		e.maxStatusDepth = 64
+	}
+	if e.maxStatusPath <= 0 {
+		e.maxStatusPath = 1024
+	}
+	if e.maxStatusItems <= 0 {
+		e.maxStatusItems = 4096
 	}
 	if e.keep <= 0 {
 		e.keep = DefaultKeepReports
@@ -128,4 +143,9 @@ func (e *Engine) publish(ctx context.Context, t event.Type, id mdm.EnrollmentID,
 	if err := e.bus.Publish(ctx, event.Event{Type: t, At: e.clock.Now(), Enrollment: id, Actor: "ddm", Data: data}); err != nil {
 		e.log.WarnContext(ctx, "ddm: publish", "type", string(t), "error", err)
 	}
+}
+
+// EnrollmentIdentity resolves the identity used by assignments and snapshots.
+func (e *Engine) EnrollmentIdentity(ctx context.Context, rawID string) (mdm.EnrollmentID, error) {
+	return e.store.EnrollmentIdentity(ctx, rawID)
 }

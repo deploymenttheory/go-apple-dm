@@ -137,6 +137,7 @@ func (c *Client) clientFor(ctx context.Context, topic string, mdmPush bool) (*ht
 		closeClient(old.client)
 	}
 	httpClient := *c.transport(cert)
+	httpClient.CheckRedirect = func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }
 	httpClient.Transport = newManagedTransport(httpClient.Transport)
 	tc := &topicClient{client: &httpClient, leaf: leaf}
 	c.clients[topic] = tc

@@ -51,10 +51,12 @@ const (
 
 // SCEP describes the SCEP identity payload.
 type SCEP struct {
-	URL       string
-	Name      string
-	Challenge string
-	Subject   pkix.Name
+	KeyIsExtractable   *bool
+	AllowAllAppsAccess *bool
+	URL                string
+	Name               string
+	Challenge          string
+	Subject            pkix.Name
 	// KeySize default 2048; KeyUsage default 5 (signing and encryption).
 	KeySize       int64
 	KeyUsage      int64
@@ -376,7 +378,8 @@ func (s *SCEP) payload() *profiles.SCEP {
 	c := profiles.SCEPPayloadContent{
 		URL: s.URL, Name: nonEmpty(s.Name), Challenge: nonEmpty(s.Challenge),
 		Subject: SubjectFromName(s.Subject), Keysize: &keySize, KeyType: new("RSA"), KeyUsage: &keyUsage,
-		CAFingerprint: s.CAFingerprint,
+		CAFingerprint:    s.CAFingerprint,
+		KeyIsExtractable: s.KeyIsExtractable, AllowAllAppsAccess: s.AllowAllAppsAccess,
 	}
 	if s.Retries > 0 {
 		c.Retries = new(s.Retries)
@@ -477,7 +480,7 @@ func Parse(data []byte, o profile.ParseOptions) (*Profile, error) {
 	}
 	switch c := id.Content.(type) {
 	case *profiles.SCEP:
-		out.SCEP = &SCEP{
+		out.SCEP = &SCEP{KeyIsExtractable: c.PayloadContent.KeyIsExtractable, AllowAllAppsAccess: c.PayloadContent.AllowAllAppsAccess,
 			URL: c.PayloadContent.URL, Name: deref(c.PayloadContent.Name), Challenge: deref(c.PayloadContent.Challenge),
 			Subject: NameFromSubject(c.PayloadContent.Subject), CAFingerprint: c.PayloadContent.CAFingerprint,
 		}

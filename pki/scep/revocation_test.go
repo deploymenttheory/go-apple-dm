@@ -19,7 +19,7 @@ func TestRevokedRenewalCannotUseChallengeFallback(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	s, err := scep.NewServer(f.signer, f.caCert, f.caKey, scep.WithChallenge(scep.StaticChallenge("known-challenge")), scep.WithCertificateStatus(registry.Check))
+	s, err := newTestServer(f.signer, f.caCert, f.caKey, scep.WithChallenge(scep.StaticChallenge("known-challenge")), scep.WithCertificateStatus(registry.Check))
 	if err != nil {
 		t.Fatal(err)
 	}
