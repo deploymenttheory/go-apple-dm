@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.4.0](https://github.com/deploymenttheory/go-apple-dm/compare/server-v0.3.0...server-v0.4.0) (2026-09-10)
+
+
+### Features
+
+* align enrollment profiles and add controlled replacement ([91fd45e](https://github.com/deploymenttheory/go-apple-dm/commit/91fd45e2ced1405728284b6d1c9a3f3e7cf1fce2))
+* align enrollment profiles and add controlled replacement ([eee03b3](https://github.com/deploymenttheory/go-apple-dm/commit/eee03b3799769977a9f13c9259b9dee57864a156))
+* unify the reference-server bench and APNs certificate workflows ([9c3f4b1](https://github.com/deploymenttheory/go-apple-dm/commit/9c3f4b1717ff938cfa2a44ec7c2601b347d549c0))
+* unify the reference-server bench and APNs certificate workflows ([6c7c452](https://github.com/deploymenttheory/go-apple-dm/commit/6c7c45290906efe12f0cf1c47a0c027627bf7647))
+
 ## [0.3.0](https://github.com/deploymenttheory/go-apple-dm/compare/server-v0.2.0...server-v0.3.0) (2026-09-07)
 
 
