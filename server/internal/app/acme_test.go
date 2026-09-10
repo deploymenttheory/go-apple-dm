@@ -14,7 +14,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/deploymenttheory/go-apple-dm/server/internal/app"
 	"github.com/deploymenttheory/go-apple-dm/appleplatformservices/dep"
 	"github.com/deploymenttheory/go-apple-dm/appleplatformservices/dep/deptest"
 	"github.com/deploymenttheory/go-apple-dm/mdmprotocol/cms"
@@ -22,8 +21,11 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/mdmprotocol/profile"
 	"github.com/deploymenttheory/go-apple-dm/paging"
 	"github.com/deploymenttheory/go-apple-dm/pki/acme"
+	"github.com/deploymenttheory/go-apple-dm/pki/acme/attest"
 	"github.com/deploymenttheory/go-apple-dm/pki/acme/attest/attesttest"
 	"github.com/deploymenttheory/go-apple-dm/schema/ddm"
+	"github.com/deploymenttheory/go-apple-dm/schema/support"
+	"github.com/deploymenttheory/go-apple-dm/server/internal/app"
 	"github.com/deploymenttheory/go-apple-dm/simulator"
 	"github.com/deploymenttheory/go-apple-dm/storage/acme/acmetest"
 	acmeinmem "github.com/deploymenttheory/go-apple-dm/storage/acme/inmem"
@@ -71,6 +73,42 @@ func newACMEAppFixtureWith(
 
 func TestACME(t *testing.T) {
 	ctx := context.Background()
+	t.Run("MacDeclarativeCredentialUsesExistingEnrollment", func(t *testing.T) {
+		f := newACMEAppFixture(t, nil)
+		d := f.acmeDevice(t, "MAC-DDM-CREDENTIAL", "Mac16,1")
+		if err := d.ADEEnroll(ctx, f.publicURL+app.PathADE, simulator.ADEOptions{}); err != nil {
+			t.Fatal(err)
+		}
+		if err := d.Authenticate(ctx); err != nil {
+			t.Fatal(err)
+		}
+		if err := d.TokenUpdate(ctx); err != nil {
+			t.Fatal(err)
+		}
+		credential := fetchCredential(t, f, d)
+		if credential.HardwareBound || (credential.Attest != nil && *credential.Attest) {
+			t.Fatal("Mac credential requested unsupported attestation")
+		}
+		payload := &enroll.ACME{
+			DirectoryURL: credential.DirectoryURL, ClientIdentifier: credential.ClientIdentifier,
+			KeyType: credential.KeyType, KeySize: credential.KeySize, Subject: enroll.NameFromSubject(credential.Subject),
+		}
+		if err := d.ACMEEnroll(ctx, payload, simulator.ACMEOptions{}); err != nil {
+			t.Fatalf("Mac credential issuance: %v", err)
+		}
+		if err := d.ACMEEnroll(ctx, payload, simulator.ACMEOptions{}); err == nil {
+			t.Fatal("single-use credential code replayed")
+		}
+		// Initial enrollment still cannot use an unattested challenge.
+		other := f.device(t, "MAC-INITIAL-REQUIRES-ATTESTATION", "Mac16,1")
+		initial, err := enroll.Parse(adeProfile(t, f, other), profile.ParseOptions{})
+		if err != nil {
+			t.Fatal(err)
+		}
+		if err := other.ACMEEnroll(ctx, initial.ACME, simulator.ACMEOptions{}); err == nil {
+			t.Fatal("initial enrollment bypassed attestation")
+		}
+	})
 
 	t.Run("ProfileBindsTheDevice", func(t *testing.T) {
 		// The client identifier in an automated enrollment profile carries
@@ -160,7 +198,7 @@ func TestACME(t *testing.T) {
 			t.Fatalf("without a device identity = %d", res.StatusCode)
 		}
 		// An enrolled device gets a credential bound to itself.
-		d := f.acmeDevice(t, "ACME-APP-2", "Mac16,1")
+		d := f.acmeDevice(t, "ACME-APP-2", "iPad14,1")
 		if err := d.ADEEnroll(ctx, f.publicURL+app.PathADE, simulator.ADEOptions{}); err != nil {
 			t.Fatal(err)
 		}
@@ -335,7 +373,11 @@ func TestACME(t *testing.T) {
 func (f *acmeAppFixture) acmeDevice(t *testing.T, udid, product string) *simulator.Device {
 	t.Helper()
 	d := f.device(t, udid, product)
-	simulator.WithACME(simulator.ACMEOptions{Attestation: f.attestation})(d)
+	props := attest.Properties{}
+	if support.OSFromProduct(product) == support.MacOS {
+		props.UDID = "provisioning-" + udid
+	}
+	simulator.WithACME(simulator.ACMEOptions{Attestation: f.attestation, Properties: props})(d)
 	return d
 }
 

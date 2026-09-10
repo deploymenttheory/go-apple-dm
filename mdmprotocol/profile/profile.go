@@ -21,7 +21,7 @@ var (
 	ErrParse   = errors.New("profile: parse")
 )
 
-// PayloadTypeConfiguration is the top-level PayloadType of every profile.
+// PayloadTypeConfiguration is the top-level type of configuration profiles.
 const PayloadTypeConfiguration = "Configuration"
 
 // Scope values for PayloadScope.
@@ -46,7 +46,7 @@ type Payload struct {
 	Content profiles.Payload
 }
 
-// Profile is a configuration profile.
+// Profile is a configuration profile or an OTA Profile Service profile.
 type Profile struct {
 	Identifier        string
 	UUID              string
@@ -57,6 +57,9 @@ type Profile struct {
 	Scope             string
 	RemovalDisallowed bool
 	Payloads          []Payload
+	// Service selects a top-level Profile Service dictionary instead of a
+	// Configuration payload array. Payloads must be empty when Service is set.
+	Service *ProfileService
 	// Extra top-level keys emitted verbatim (ConsentText, RemovalDate...).
 	// Reserved keys set by the builder are ignored here.
 	Extra map[string]any
@@ -106,6 +109,18 @@ func (p *Profile) Validate(t support.Target) error {
 	if p.Scope != "" && p.Scope != ScopeSystem && p.Scope != ScopeUser {
 		errs = append(errs, fmt.Errorf("%w: PayloadScope %q", ErrInvalid, p.Scope))
 	}
+	if p.Service != nil {
+		if len(p.Payloads) != 0 || p.Scope != "" || p.RemovalDisallowed {
+			errs = append(
+				errs,
+				fmt.Errorf(
+					"%w: Profile Service cannot contain configuration payloads or policies",
+					ErrInvalid,
+				),
+			)
+		}
+		errs = append(errs, p.Service.validate())
+	}
 	seen := map[string]string{}
 	for i, pl := range p.Payloads {
 		where := fmt.Sprintf("PayloadContent[%d]", i)
@@ -145,6 +160,14 @@ func (p *Profile) Map() (map[string]any, error) {
 	setIf(top, "PayloadScope", p.Scope)
 	if p.RemovalDisallowed {
 		top["PayloadRemovalDisallowed"] = true
+	}
+	if p.Service != nil {
+		if err := p.Validate(support.Target{}); err != nil {
+			return nil, err
+		}
+		top["PayloadType"] = PayloadTypeProfileService
+		top["PayloadContent"] = p.Service.content()
+		return top, nil
 	}
 	content := make([]any, 0, len(p.Payloads))
 	for i, pl := range p.Payloads {
@@ -267,7 +290,8 @@ func Parse(data []byte, o ParseOptions) (*Parsed, error) {
 	if err := (plist.Decoder{MaxBytes: o.MaxBytes}).Unmarshal(out.Plist, &top); err != nil {
 		return nil, fmt.Errorf("%w: %w", ErrParse, err)
 	}
-	if t, _ := top["PayloadType"].(string); t != PayloadTypeConfiguration {
+	if t, _ := top["PayloadType"].(string); t != PayloadTypeConfiguration &&
+		t != PayloadTypeProfileService {
 		return nil, fmt.Errorf("%w: top-level PayloadType %q, want %q", ErrParse, t, PayloadTypeConfiguration)
 	}
 	resolve := o.Resolve
@@ -292,7 +316,22 @@ func Parse(data []byte, o ParseOptions) (*Parsed, error) {
 			p.Extra[k] = v
 		}
 	}
-	items, _ := top["PayloadContent"].([]any)
+	if top["PayloadType"] == PayloadTypeProfileService {
+		service, err := parseService(top["PayloadContent"])
+		if err != nil {
+			return nil, err
+		}
+		p.Service = service
+		if err := p.Validate(support.Target{}); err != nil {
+			return nil, fmt.Errorf("%w: %w", ErrParse, err)
+		}
+		out.Profile = p
+		return out, nil
+	}
+	items, ok := top["PayloadContent"].([]any)
+	if !ok {
+		return nil, fmt.Errorf("%w: Configuration PayloadContent must be an array", ErrParse)
+	}
 	for i, it := range items {
 		keys, ok := it.(map[string]any)
 		if !ok {

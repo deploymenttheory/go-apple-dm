@@ -441,13 +441,7 @@ func (s *Server) validate(e *exchange, c *Challenge, o *Order, raw []byte) error
 		// The device produced no attestation. Apple does this when the
 		// profile did not ask for one or the hardware cannot. Whether that
 		// is acceptable is a deployment's decision, not a protocol one.
-		if !s.cfg.AllowUnattested {
-			return WrapProblem(
-				ProblemBadAttestationStatement, err,
-				"this server requires an attestation, and the device sent none",
-			)
-		}
-		return s.authorize(e, o, nil)
+		return s.authorizeUnattested(e, o)
 	case err != nil:
 		return WrapProblem(
 			ProblemBadAttestationStatement, err, "the attestation object could not be read",
@@ -528,6 +522,22 @@ func (s *Server) authorize(e *exchange, o *Order, a *attest.Attestation) error {
 		return p
 	}
 	return nil
+}
+
+func (s *Server) authorizeUnattested(e *exchange, o *Order) error {
+	if !s.cfg.AllowUnattested {
+		if s.cfg.AuthorizeUnattested == nil {
+			return NewProblem(
+				ProblemBadAttestationStatement,
+				"this server requires an attestation, and the device sent none",
+			)
+		}
+		d := &Decision{Account: e.account, Order: o, Binding: o.Binding, Identifier: o.Identifier}
+		if err := s.cfg.AuthorizeUnattested.Authorize(e.ctx(), d); err != nil {
+			return AsProblem(err)
+		}
+	}
+	return s.authorize(e, o, nil)
 }
 
 // settleChallenge marks client validation failures invalid across the challenge,
@@ -652,12 +662,10 @@ func (s *Server) checkAttestedKey(e *exchange, o *Order, csr *x509.CertificateRe
 		// The challenge was answered without an attestation, which only
 		// reached this point because the deployment allows it. There is no
 		// attested key, so there is nothing to bind the request's key to.
-		if !s.cfg.AllowUnattested {
-			return NewProblem(
-				ProblemUnauthorized, "the order was authorized without an attestation",
-			)
+		if !s.cfg.AllowUnattested && s.cfg.AuthorizeUnattested == nil {
+			return NewProblem(ProblemUnauthorized, "the order was authorized without an attestation")
 		}
-		return s.authorize(e, o, nil)
+		return s.authorizeUnattested(e, o)
 	}
 	if err != nil {
 		return WrapProblem(
@@ -737,7 +745,7 @@ func (s *Server) issue(e *exchange, o *Order, csr *x509.CertificateRequest) (*is
 		}
 		policy.NotAfter = o.Binding.NotAfter
 	}
-	provenance := revocation.Provenance{Source: "acme", EnrollmentID: o.Binding.EnrollmentID, AccountID: o.AccountID, UDID: o.Binding.UDID, Serial: o.Binding.Serial, Identifiers: []string{o.Identifier.Type + ":" + o.Identifier.Value}}
+	provenance := revocation.Provenance{Source: "acme", EnrollmentID: o.Binding.EnrollmentID, AccountID: o.AccountID, UDID: o.Binding.EnrollmentUDID(), Serial: o.Binding.Serial, Identifiers: []string{o.Identifier.Type + ":" + o.Identifier.Value}}
 	cert, err := s.cfg.Signer.Sign(revocation.WithProvenance(e.ctx(), provenance), csr, policy)
 	if err != nil {
 		if errors.Is(err, ca.ErrPolicy) || errors.Is(err, ca.ErrCSR) {

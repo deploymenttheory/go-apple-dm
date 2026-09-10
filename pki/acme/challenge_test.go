@@ -21,6 +21,26 @@ import (
 // TestChallenge covers the device-attest-01 challenge: the whole of the
 // trust decision, and what happens to the order when it goes wrong.
 func TestChallenge(t *testing.T) {
+	t.Run("ScopedUnattestedAuthorizationRechecked", func(t *testing.T) {
+		var allowed atomic.Bool
+		allowed.Store(true)
+		f := newFixture(t, func(c *acme.Config) {
+			c.AuthorizeUnattested = acme.PolicyFunc(func(context.Context, *acme.Decision) error {
+				if !allowed.Load() {
+					return acme.ErrUnauthorized
+				}
+				return nil
+			})
+		})
+		empty, err := attesttest.Object(nil)
+		if err != nil {
+			t.Fatal(err)
+		}
+		fl := f.begin(testIdentifier)
+		requireStatus(t, fl.answer(empty), http.StatusOK)
+		allowed.Store(false)
+		requireProblem(t, fl.finalizeWith(fl.key, pkix.Name{}), acme.ProblemUnauthorized)
+	})
 	t.Run("Succeeds", func(t *testing.T) {
 		f := newFixture(t)
 		fl := f.begin(testIdentifier)

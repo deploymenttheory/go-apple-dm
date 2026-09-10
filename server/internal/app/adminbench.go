@@ -113,7 +113,7 @@ func (a *App) issueEnrollmentProfile(w http.ResponseWriter, r *http.Request) {
 	}
 	p, err := a.enroll.profileWithIdentity(
 		r.Context(),
-		acme.Binding{UDID: req.DeviceID, Serial: req.Serial, CommonName: req.DeviceID},
+		acme.Binding{MDMUDID: req.DeviceID, Serial: req.Serial, CommonName: req.DeviceID},
 		req.Identity,
 	)
 	if err != nil {
@@ -130,7 +130,11 @@ func (a *App) issueEnrollmentProfile(w http.ResponseWriter, r *http.Request) {
 		writeError(w, 500, fmt.Errorf("%w: profile generation failed", errOperation))
 		return
 	}
-	if err := a.enroll.recordProfile(r.Context(), acme.Binding{UDID: req.DeviceID}, p); err != nil {
+	if err := a.enroll.recordProfile(
+		r.Context(),
+		acme.Binding{MDMUDID: req.DeviceID},
+		p,
+	); err != nil {
 		writeError(w, 500, err)
 		return
 	}

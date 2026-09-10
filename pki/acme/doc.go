@@ -11,6 +11,12 @@
 // verified properties authorize enrollment; verification alone does not
 // establish ownership.
 //
+// Binding.UDID denotes the attested identifier (ProvisioningUDID on macOS).
+// Binding.MDMUDID separately records the MDM identifier for admission and
+// provenance. AuthorizeUnattested is an optional alternative authorization
+// boundary, checked at challenge validation and finalization; it never skips
+// the ordinary authorization policy.
+//
 // An optional registry provides revokeCert with certificate-key, issuing-account
 // or all-identifier authorization. Account key rollover is not implemented.
 // Store interfaces isolate persistence, and caller-supplied public URLs define

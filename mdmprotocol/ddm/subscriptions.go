@@ -88,7 +88,6 @@ func (e *Engine) subscriptionItem(ctx context.Context, tx Tx, id mdm.EnrollmentI
 	}
 	return SnapshotItem{
 		DeclarationRef: DeclarationRef{Kind: d.Kind, Identifier: d.Identifier, ServerToken: d.ServerToken},
-		BaseToken:      d.ServerToken,
 		Expanded:       d.Canonical,
 	}, nil
 }

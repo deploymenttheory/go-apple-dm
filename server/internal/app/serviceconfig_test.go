@@ -70,8 +70,8 @@ func TestServiceConfigTrustIsIndependentFromIdentity(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			if len(p.ServerCapabilities) != 1 ||
-				p.ServerCapabilities[0] != enroll.CapabilityPerUserConnections {
+			if len(p.ServerCapabilities) != 2 ||
+				p.ServerCapabilities[0] != enroll.CapabilityPerUserConnections || p.ServerCapabilities[1] != enroll.CapabilityBootstrapToken {
 				t.Fatal("macOS capability missing")
 			}
 			if private {

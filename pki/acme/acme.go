@@ -44,6 +44,10 @@ type Binding struct {
 	// set, the attestation must agree.
 	Serial string `json:"serial,omitempty"`
 	UDID   string `json:"udid,omitempty"`
+	// MDMUDID is the MDM protocol identifier, which differs from the
+	// attested UDID (ProvisioningUDID) on a Mac. It binds enrollment admission
+	// and issuance provenance; it is never compared to an attestation.
+	MDMUDID string `json:"mdm_udid,omitempty"`
 	// EnrollmentID ties the order to an existing enrollment, for a
 	// certificate that renews an identity rather than establishing one.
 	EnrollmentID string `json:"enrollment_id,omitempty"`
@@ -63,6 +67,15 @@ type Binding struct {
 
 // Identified reports whether the binding names a device.
 func (b Binding) Identified() bool { return b.Serial != "" || b.UDID != "" }
+
+// EnrollmentUDID returns the MDM identifier. Bindings created before MDMUDID
+// was introduced retain their original UDID interpretation.
+func (b Binding) EnrollmentUDID() string {
+	if b.MDMUDID != "" {
+		return b.MDMUDID
+	}
+	return b.UDID
+}
 
 // Account is an ACME account: a public key and the orders made with it.
 type Account struct {

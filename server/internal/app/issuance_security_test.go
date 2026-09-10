@@ -363,7 +363,7 @@ func TestSCEPRenewalPreservesAdmissionAndRejectsRemovedOwnership(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	srv := httptest.NewServer(endpoint.Handler())
+	srv := httptest.NewTLSServer(endpoint.Handler())
 	defer srv.Close()
 	client := scep.NewClient(srv.URL, srv.Client())
 	password, err := e.issueSCEPGrant(

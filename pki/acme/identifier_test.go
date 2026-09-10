@@ -34,7 +34,8 @@ func TestHMACIdentifiers(t *testing.T) {
 			t.Fatal(err)
 		}
 		want := acme.Binding{
-			Serial: testSerial, UDID: testUDID, EnrollmentID: "enrollment-1",
+			Serial: testSerial, UDID: testUDID,
+			MDMUDID: "distinct-mdm-id", EnrollmentID: "enrollment-1",
 			CommonName: testCommonName, Organization: []string{"Deployment Theory"},
 			AllowUnidentified: true, NotAfter: fake.Now().Add(24 * time.Hour).UTC().Truncate(time.Second),
 		}
@@ -46,7 +47,7 @@ func TestHMACIdentifiers(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		if got.Serial != want.Serial || got.UDID != want.UDID ||
+		if got.Serial != want.Serial || got.UDID != want.UDID || got.MDMUDID != want.MDMUDID ||
 			got.EnrollmentID != want.EnrollmentID || got.CommonName != want.CommonName ||
 			got.AllowUnidentified != want.AllowUnidentified ||
 			!got.NotAfter.Equal(want.NotAfter) ||

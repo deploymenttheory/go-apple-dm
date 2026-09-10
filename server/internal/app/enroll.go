@@ -319,11 +319,7 @@ func (a *App) wireEnrollment(ctx context.Context, mux *http.ServeMux) ([]service
 			if email, _ := id.Claims["email"].(string); email != "" {
 				cn = email + "/" + p.SERIAL
 			}
-			return e.profile(ctx, acme.Binding{
-				Serial:     p.SERIAL,
-				UDID:       p.UDID,
-				CommonName: cn,
-			})
+			return e.profile(ctx, deviceBinding(p.UDID, p.SERIAL, p.PRODUCT, cn))
 		},
 		WebAuth: ade.WebAuthFunc(func(w http.ResponseWriter, r *http.Request, b ade.Bound) {
 			if e.flow == nil {
@@ -512,14 +508,17 @@ func (e *enrollment) profileWithIdentity(
 		org = "go-apple-dm"
 	}
 	out := &enroll.Profile{
-		Identifier:         id,
-		DisplayName:        org + " MDM enrollment",
-		Organization:       org,
-		Topic:              e.cfg.Topic,
-		ServerURL:          e.base + PathMDM,
-		CheckInURL:         e.base + PathMDM,
-		Roots:              e.trust,
-		ServerCapabilities: []string{enroll.CapabilityPerUserConnections},
+		Identifier:   id,
+		DisplayName:  org + " MDM enrollment",
+		Organization: org,
+		Topic:        e.cfg.Topic,
+		ServerURL:    e.base + PathMDM,
+		CheckInURL:   e.base + PathMDM,
+		Roots:        e.trust,
+		ServerCapabilities: []string{
+			enroll.CapabilityPerUserConnections,
+			enroll.CapabilityBootstrapToken,
+		},
 	}
 	if err := e.stabilizeProfile(ctx, b, out); err != nil {
 		return nil, err

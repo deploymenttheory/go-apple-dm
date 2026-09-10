@@ -17,6 +17,7 @@ import (
 	"github.com/smallstep/pkcs7"
 	smallscep "github.com/smallstep/scep"
 
+	"github.com/deploymenttheory/go-apple-dm/internal/scepwire"
 	"github.com/deploymenttheory/go-apple-dm/pki/ca"
 )
 
@@ -37,7 +38,7 @@ const (
 
 // caps is the CACaps advertised. POSTPKIOperation lets the device POST the
 // PKCS#7 rather than base64 it into the query.
-const caps = "POSTPKIOperation\nSHA-256\nSHA-1\nAES\nDES3\nRenewal\nSCEPStandard"
+const caps = "POSTPKIOperation\nSHA-256\nSHA-1\nAES\nRenewal\nSCEPStandard"
 
 // maxMessage bounds a PKIOperation body; a CSR envelope is a few KB.
 const maxMessage = 1 << 20
@@ -148,6 +149,15 @@ func (s *Server) PKIOperation(ctx context.Context, body []byte) ([]byte, error) 
 	if err != nil {
 		return nil, fmt.Errorf("%w: %w", ErrCSR, err)
 	}
+	if p7.GetOnlySigner() == nil {
+		return nil, fmt.Errorf("%w: exactly one signer is required", ErrCSR)
+	}
+	if msg.MessageType != smallscep.PKCSReq && msg.MessageType != smallscep.RenewalReq {
+		return nil, fmt.Errorf("%w: expected PKCSReq or RenewalReq", ErrOperation)
+	}
+	if err := scepwire.CheckEnvelope(p7.Content); err != nil {
+		return nil, fmt.Errorf("%w: %w", ErrCSR, err)
+	}
 	if err := msg.DecryptPKIEnvelope(s.raCert, s.raKey); err != nil {
 		return nil, fmt.Errorf("%w: decrypt: %w", ErrCSR, err)
 	}
@@ -192,11 +202,11 @@ func (s *Server) PKIOperation(ctx context.Context, body []byte) ([]byte, error) 
 	if err != nil {
 		return s.fail(msg, smallscep.BadRequest, fmt.Errorf("%w: %w", ErrIssue, err))
 	}
-	rep, err := msg.Success(s.raCert, s.raKey, cert)
+	rep, err := scepwire.Reply(msg, s.raCert, s.raKey, p7.GetOnlySigner(), cert, "")
 	if err != nil {
 		return nil, fmt.Errorf("scep: build CertRep: %w", err)
 	}
-	return rep.Raw, nil
+	return rep, nil
 }
 
 // isRenewal accepts a RenewalReq signer only when it chains to the configured CA
@@ -224,11 +234,11 @@ func (s *Server) isRenewal(msg *smallscep.PKIMessage, signer *x509.Certificate, 
 // fail builds a signed failure CertRep, returning the original error so the
 // caller can log it while still handing the device a valid response.
 func (s *Server) fail(msg *smallscep.PKIMessage, info smallscep.FailInfo, cause error) ([]byte, error) {
-	rep, err := msg.Fail(s.raCert, s.raKey, info)
+	rep, err := scepwire.Reply(msg, s.raCert, s.raKey, nil, nil, info)
 	if err != nil {
 		return nil, fmt.Errorf("scep: build failure CertRep: %w", err)
 	}
-	return rep.Raw, cause
+	return rep, cause
 }
 
 // Handler serves the SCEP endpoint: GET operation=GetCACaps, GET

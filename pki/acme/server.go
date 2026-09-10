@@ -76,9 +76,15 @@ type Config struct {
 	Authorize Policy
 	// AllowUnattested issues to a device that produced no attestation, on
 	// the strength of the client identifier alone. The zero value requires
-	// an attestation, which is the setting a deployment should keep: Apple
-	// hardware that cannot attest is old enough to be worth knowing about.
+	// an attestation unless AuthorizeUnattested grants a scoped exception.
+	// Prefer that policy seam when only an authenticated existing enrollment
+	// should be allowed to request a non-attested secondary credential.
 	AllowUnattested bool
+	// AuthorizeUnattested permits a narrowly scoped alternative proof when
+	// AllowUnattested is false. Nil keeps attestation mandatory. It runs at
+	// challenge validation and finalization; Authorize still runs afterward.
+	// The policy must authenticate the proof independently of the CSR.
+	AuthorizeUnattested Policy
 	// Anchors are the attestation trust anchors. Empty means Apple's root,
 	// which is what a deployment facing real devices wants.
 	Anchors []*x509.Certificate

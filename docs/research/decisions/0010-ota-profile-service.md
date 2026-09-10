@@ -8,6 +8,8 @@ Apple's over-the-air Profile Service protocol distinguishes requests signed by a
 
 `OTAService` verifies attached CMS and classifies the signer as `PhaseDevice` or `PhaseIdentity` according to its trusted CA. `Authorize` and `Profile` callbacks receive the phase, attributes and signer. The handler bounds the body, checks methods and serves the returned profile with the appropriate content type.
 
+`OTAProfile.Build` produces a top-level `Profile Service` envelope whose `PayloadContent` is a dictionary. `profile.Profile.Service` represents this content separately from a Configuration payload array, and parsing, marshaling and signing preserve that distinction. `OTAProfile.PayloadUUID` is deprecated; the service has only its top-level `UUID`.
+
 ## Rationale
 
 Protocol-phase classification lets callers apply the device challenge during the first stage and the issued identity during the second. Keeping profile selection and admission in callbacks supports deployment-specific policy.

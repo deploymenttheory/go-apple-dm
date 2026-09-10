@@ -196,7 +196,7 @@ func (e *enrollment) admit(
 			e.app.securityEvent(ctx, event.EnrollmentDenied)
 		}
 	}()
-	r := AdmissionRequest{Serial: b.Serial, UDID: b.UDID}
+	r := AdmissionRequest{Serial: b.Serial, UDID: b.EnrollmentUDID()}
 	assoc, account := accountdriven.AssociationFromContext(ctx)
 	if ref, ok := strings.CutPrefix(
 		b.CommonName,

@@ -118,7 +118,7 @@ type profileMetadata struct {
 }
 
 func profileMetadataKey(b acme.Binding, identifier string) string {
-	id := b.UDID
+	id := b.EnrollmentUDID()
 	if id == "" {
 		id = b.Serial
 	}
