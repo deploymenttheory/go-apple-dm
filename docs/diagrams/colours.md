@@ -1,8 +1,11 @@
 # Diagram colour legend
 
 Every diagram uses the same eight purpose colours and three outcome colours. Its legend
-shows the colours used in that diagram. Light and dark themes use different shades with the
-same meanings; SVG and image exports preserve them.
+shows the colours used in that diagram. The interactive **Legend** above the diagram lets
+you highlight one colour, with counts and named examples; **All Components** restores the
+complete view. The buttons support Tab, Enter/Space, arrow keys, Home/End, and Escape.
+Selecting a node or another exploration mode returns the legend to All Components. Light and
+dark themes use different shades with the same meanings; SVG and image exports preserve them.
 
 | Colour | Meaning | Examples |
 |---|---|---|
@@ -52,8 +55,10 @@ in `dot`. Allowed values are `service`, `transport`, `storage`, `authentication`
 
 Component `type` still describes the component or lifecycle state. It no longer determines
 colour. Set `meta.legend.mode` to `hidden` to replace the upstream type legend with the
-shared purpose legend. The repository renderer generates that legend before validation and
-delivery, including it in canonical exports.
+shared purpose legend. The repository renderer generates the interactive key and a static
+SVG fallback before validation and delivery. Canonical exports and printing show the complete
+diagram and static key, regardless of the highlighted category. With JavaScript disabled,
+the static key remains visible.
 
 Use the [repository reading profile](../../scripts/diagrams/README.md) for regeneration.
 The palette and its paired theme shades live in

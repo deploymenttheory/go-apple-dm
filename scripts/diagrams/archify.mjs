@@ -12,7 +12,8 @@ const here=path.dirname(fileURLToPath(import.meta.url));
 const skill=path.resolve(process.env.ARCHIFY_SKILL_DIR || path.join(os.homedir(),'.agents/skills/archify'));
 const version=JSON.parse(fs.readFileSync(path.join(skill,'package.json'),'utf8')).version;
 if (!version.startsWith('2.17.')) throw new Error(`Reading profile requires Archify 2.17; found ${version}. Review the patch anchors before upgrading.`);
-const css=fs.readFileSync(path.join(here,'reading.css'),'utf8')+'\n'+colourStyles();
+const css=fs.readFileSync(path.join(here,'reading.css'),'utf8')+'\n'+colourStyles()+'\n'+fs.readFileSync(path.join(here,'legend.css'),'utf8');
+const legendRuntime=fs.readFileSync(path.join(here,'legend.js'),'utf8');
 const colourProfile=fs.readFileSync(path.join(here,'colours.mjs'),'utf8');
 const upstreamEntries = ['assets', 'bin', 'renderers', 'scripts', 'schemas', 'package.json'];
 const upstreamHasher = createHash('sha256');
@@ -29,7 +30,7 @@ upstreamEntries.forEach(fingerprint);
 const upstreamSha256 = upstreamHasher.digest('hex');
 const hash = createHash('sha256')
   .update(fs.readFileSync(fileURLToPath(import.meta.url)))
-  .update(css).update(colourProfile).update(upstreamSha256).digest('hex');
+  .update(css).update(colourProfile).update(legendRuntime).update(upstreamSha256).digest('hex');
 const cache=path.join(os.tmpdir(),'go-apple-dm-archify-'+hash.slice(0,16));
 let root=cache;
 if (!fs.existsSync(path.join(root,'.ready'))) {
@@ -38,6 +39,22 @@ if (!fs.existsSync(path.join(root,'.ready'))) {
   function edit(file,from,to){const p=path.join(root,file),old=fs.readFileSync(p,'utf8');if(!(typeof from === 'string' ? old.includes(from) : old.match(from)))throw new Error(`Missing Archify patch anchor in ${file}: ${from}`);fs.writeFileSync(p,old.replace(from,to));}
   edit('renderers/shared/utils.mjs', /<html lang="\$\{esc\(resolvedLocale\)\}"/, '<html data-reading-layout="scroll" lang="${esc(resolvedLocale)}"');
   edit('assets/template.html',/    <\/style>|  <\/style>/,`\n${css}\n  </style>`);
+  edit('assets/template.html', '<div class="diagram-container"', '<!-- PROJECT:LEGEND -->\n    <div class="diagram-container"');
+  edit('assets/template.html', 'var Archify =', () => legendRuntime+'\n    var Archify =');
+  edit('renderers/shared/utils.mjs', '.replace(SVG_SLOT_RE, () => svg)', '.replace(SVG_SLOT_RE, () => svg)\n    .replace("<!-- PROJECT:LEGEND -->", () => colourLegendHtml())');
+  // Canonical exports always restore the complete SVG and its static key,
+  // even while a reader is highlighting one purpose in the HTML viewer.
+  edit('assets/template.html', 'var clone = svg.cloneNode(true);', `var clone = svg.cloneNode(true);
+        if (clone.hasAttribute('data-purpose-canonical-view-box')) {
+          clone.setAttribute('viewBox', clone.getAttribute('data-purpose-canonical-view-box'));
+        }
+        ['data-purpose-canonical-view-box', 'data-purpose-diagram-view-box', 'data-purpose-interactive', 'data-purpose-filter'].forEach(function (name) { clone.removeAttribute(name); });
+        clone.querySelectorAll('[data-purpose-muted], [data-purpose-highlight]').forEach(function (element) {
+          element.removeAttribute('data-purpose-muted');
+          element.removeAttribute('data-purpose-highlight');
+        });`);
+  edit('assets/template.html', 'var vb = svg.viewBox.baseVal;\n        var finiteSvgDimensions', 'var vb = clone.viewBox.baseVal;\n        var finiteSvgDimensions');
+  edit('assets/template.html', "var canonicalStateClean = !clone.hasAttribute('data-view-scale')", "var canonicalStateClean = !clone.hasAttribute('data-purpose-filter') && !clone.hasAttribute('data-purpose-interactive') && !clone.querySelector('[data-purpose-muted], [data-purpose-highlight]') && !clone.hasAttribute('data-view-scale')");
   edit('assets/template.html',/shell && diagram && svg && ratio >= WIDE_RATIO &&/,'html.getAttribute("data-reading-layout") !== "scroll" && shell && diagram && svg && ratio >= WIDE_RATIO &&');
   // Match the full-width desktop reader when calculating projected text sizes.
   edit('renderers/shared/desktop-readability.mjs',/DESKTOP_READER_MIN_WIDTH = 960/,'DESKTOP_READER_MIN_WIDTH = 1376');
@@ -101,7 +118,7 @@ export function renderCards(cards) {`);
   edit('renderers/shared/cli.mjs', /    svg,\n    cards: renderCards/, '    svg: withColourLegend(svg, meta),\n    cards: renderCards');
   edit('renderers/shared/cli.mjs', 'aria-pressed="false"${optional}', 'aria-pressed="false"${optional} ${colourAttrs(\'node\', id)}');
   edit('renderers/shared/cli.mjs', '${named}${keyed}${identified}', '${named}${keyed}${identified} ${colourAttrs(\'edge\', id)}');
-  edit('renderers/shared/utils.mjs', /^import \{/, "import { colourDefinitions } from './project-colours.mjs';\nimport {");
+  edit('renderers/shared/utils.mjs', /^import \{/, "import { colourDefinitions, colourLegendHtml } from './project-colours.mjs';\nimport {");
   edit('renderers/shared/utils.mjs', /        <defs>/, '        <defs>\n${colourDefinitions()}');
   for (const [file, item, map] of [
     ['architecture/render-architecture.mjs','conn','arrowClassMap'],

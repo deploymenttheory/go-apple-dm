@@ -14,6 +14,21 @@ export const palette = {
   failure: { label: 'Failed, rejected, or invalid', light: '#c62828', dark: '#ff7373' },
 };
 
+const meanings = {
+  service: 'Services and processing steps that perform the work shown in the diagram.',
+  transport: 'Communication between components, including endpoints, protocol exchanges, and notifications.',
+  storage: 'Records and persistence: where the system stores or retrieves information.',
+  authentication: 'Checks that establish or verify an identity or credential.',
+  certificate: 'Certificate issuance and cryptographic work, including signing, encryption, and keys.',
+  policy: 'Authorization and policy decisions that determine whether an action is allowed.',
+  artifact: 'Configuration and artifacts that the system consumes or produces.',
+  neutral: 'Actors, structural boundaries, and states that do not imply success, warning, or failure.',
+  success: 'An explicitly successful or accepted result.',
+  warning: 'A warning, deferred action, or condition that requires a retry.',
+  failure: 'An explicitly failed, rejected, or invalid result.',
+};
+const escapeHtml = value => String(value).replace(/[&<>"']/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
+
 const collections = {
   architecture: ['components', 'connections'], workflow: ['nodes', 'edges'],
   sequence: ['participants', 'messages'], dataflow: ['nodes', 'flows'],
@@ -50,7 +65,7 @@ export function configureColours(type, diagram) {
   if (diagram.meta.colour_profile !== 'purpose-v1') throw new Error('Unknown diagram colour profile');
   if (diagram.meta.legend?.mode !== 'hidden') throw new Error('Purpose colours require the shared purpose legend');
   const [nodes, edges] = collections[type];
-  current = { nodes: new Map(), edges: new Map(), used: new Set() };
+  current = { nodes: new Map(), edges: new Map(), used: new Set(), groups: {} };
   for (const [collection, target] of [[nodes, current.nodes], [edges, current.edges]]) {
     for (const item of diagram[collection] || []) {
       if (!item.id || !Object.hasOwn(palette, item.purpose)) {
@@ -58,6 +73,8 @@ export function configureColours(type, diagram) {
       }
       target.set(item.id, item.purpose);
       current.used.add(item.purpose);
+      const group = current.groups[item.purpose] ||= { nodes: [], connections: [] };
+      group[collection === nodes ? 'nodes' : 'connections'].push(item.label || item.id);
     }
   }
   for (const card of diagram.cards || []) {
@@ -98,16 +115,35 @@ export function withColourLegend(svg, meta) {
   const rows = Math.ceil(entries.length / columns);
   const base = height + 28, footer = base + 36 + rows * 30;
   const caption = 'Colour identifies purpose or outcome; line style does not imply success or failure.';
-  const legend = `<g data-graph-role="legend" data-purpose-legend="" aria-label="Colour legend">
+  const legend = `<g data-graph-role="legend" data-purpose-legend="" aria-label="Legend">
     <path d="M 40 ${height + 8} H ${width - 40}" class="purpose-legend-rule"/>
-    <text x="40" y="${base}" class="t-primary" font-size="14" font-weight="600">Colour legend</text>
+    <text x="40" y="${base}" class="t-primary" font-size="14" font-weight="600">Legend</text>
     ${entries.map(([key, entry], index) => {
       const x = 40 + index % columns * cellWidth, y = base + 30 + Math.floor(index / columns) * 30;
       return `<g data-purpose-legend-entry="${key}"><rect x="${x}" y="${y - 11}" width="13" height="13" rx="3" class="purpose-swatch purpose-${key}"/><text x="${x + 22}" y="${y}" class="t-primary" font-size="13">${entry.label}</text></g>`;
     }).join('\n')}
     <text x="40" y="${footer}" class="t-muted" font-size="12">${caption}</text>
   </g>`;
-  return svg.replace(match[0], `viewBox="0 0 ${width} ${footer + 24}"`).replace(/\s*<\/svg>\s*$/, `\n${legend}\n      </svg>`);
+  return svg.replace(match[0], `viewBox="0 0 ${width} ${footer + 24}" data-purpose-diagram-view-box="0 0 ${width} ${height}"`).replace(/\s*<\/svg>\s*$/, `\n${legend}\n      </svg>`);
+}
+
+// Authored labels supply the examples and counts for every diagram type. The
+// HTML key is outside the SVG; the SVG key remains the no-JS/export fallback.
+export function colourLegendHtml() {
+  if (!current) return '';
+  const entries = Object.entries(palette).filter(([key]) => current.used.has(key)).map(([key, value]) => ({
+    key, label: value.label, meaning: meanings[key], ...current.groups[key],
+  }));
+  const data = JSON.stringify({ entries, nodes: current.nodes.size, connections: current.edges.size }).replace(/</g, '\\u003c');
+  return `<section class="purpose-key" id="purpose-key" aria-labelledby="purpose-key-title" hidden>
+    <div class="purpose-key-heading"><h2 id="purpose-key-title">Legend</h2><p>Choose a colour to highlight its components and connections.</p></div>
+    <div class="purpose-key-chips" role="group" aria-label="Highlight by colour">
+      <button type="button" data-purpose-filter-button="all" aria-pressed="true">All Components</button>
+      ${entries.map(entry => `<button type="button" data-purpose-filter-button="${entry.key}" aria-pressed="false" style="--entry:var(--purpose-${entry.key})"><span class="purpose-key-dot" aria-hidden="true"></span>${escapeHtml(entry.label)}</button>`).join('\n')}
+    </div>
+    <div class="purpose-key-detail" aria-live="polite" aria-atomic="true"><div><strong id="purpose-key-selection"></strong><span id="purpose-key-counts"></span></div><p id="purpose-key-description"></p></div>
+    <script id="purpose-key-data" type="application/json">${data}</script>
+  </section>`;
 }
 
 // CSS is generated from the same palette as the SVG legend and markers.

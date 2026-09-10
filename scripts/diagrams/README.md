@@ -26,6 +26,16 @@ with only the validated extension removed and purpose card dots represented as a
 neutral dot. The authored source is unchanged. Unknown core fields and invalid relationships
 still fail; the delivered receipt binds the complete source, including its colour assignments.
 The purpose legend is added during rendering, before all nine artifact checks and delivery.
+`legend.css` and `legend.js` implement the selected interactive key above the SVG. Its labelled
+buttons highlight matching components and relationships, with counts and examples derived
+from the source. Connection-only categories remain selectable. Native focus, guided views,
+and semantic lenses clear purpose highlighting when they take over.
+
+The SVG retains a static fallback key. On initialization the viewer displays the authored
+diagram viewBox without that footer; the camera initializes against this viewBox. Canonical
+export restores the footer and full viewBox on its clone and removes all purpose-filter state.
+The print lifecycle similarly restores the static key, then returns to the selected view.
+The cache fingerprint includes both legend files.
 
 The default skill location is `~/.agents/skills/archify`. Set `ARCHIFY_SKILL_DIR` to use another
 installation. No npm dependencies are needed. The temporary copy is cached using the profile
@@ -57,3 +67,9 @@ Run the colour-extension checks with `node --test scripts/diagrams/colours.test.
 Browser review must also check node borders, arrows and arrowheads, used-colour legends, and
 both themes of canonical SVG/PNG exports. A successful export download alone does not prove
 that its colours survived serialization.
+
+Run `node scripts/diagrams/verify-viewer.mjs` for browser interaction and export checks
+(requires Chrome and the Archify installation). Use `--only=acme-internals` for one diagram
+and `--output=/tmp/diagram-viewer-checks.json` to choose the receipt path. This checks every
+used colour in both themes, counts against source JSON, keyboard focus, native exploration
+handoffs, print restoration, and complete SVG/PNG exports while a category is highlighted.

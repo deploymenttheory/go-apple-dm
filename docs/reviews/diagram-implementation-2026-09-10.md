@@ -65,9 +65,22 @@ NotNow is orange, Acknowledged is green, and Cleared is neutral. Checkout and en
 are also neutral. Mixed outcomes, including APNs responses that may accept or reject a send,
 retain a purpose colour rather than implying success.
 
-The purpose legend is added below the authored diagram, retaining detailed labels and the
-user-selected vertical scrolling. Geometry and explanations are preserved; the lifecycle
-role symbols for NotNow and Cleared now identify waiting and neutral states rather than errors.
+The user selected option 5 from the [five-option ACME review](../diagrams/acme-legend-options.html):
+an interactive key above each diagram, headed **Legend**, with **All Components** to restore
+the full view. Only colours used in that diagram appear. Selecting a colour highlights its
+components and connections, with source-derived counts, a short meaning, and named examples.
+Connection-only outcomes remain selectable. The selected state is exposed through labelled
+buttons and a live description; arrow keys, Home/End, Enter/Space, and Escape support keyboard use.
+
+Native node focus, guided views, and component-type filters take over cleanly from colour
+highlighting. Printing and canonical exports retain the complete SVG and a static key, even
+when a category is selected. The static key also serves embedded and JavaScript-disabled views.
+The comparison page retains all five layouts as review evidence, with the selected labels updated.
+
+The key retains the detailed labels and user-selected vertical scrolling. The component and
+relationship SVG content is unchanged in all 31 diagrams; the diagram JSON sources are also
+unchanged by this legend update. Lifecycle role symbols for NotNow and Cleared continue to
+identify waiting and neutral states rather than errors.
 
 ## Verification
 
@@ -79,9 +92,10 @@ role symbols for NotNow and Cleared now identify waiting and neutral states rath
   links match the authored URLs.
 - **Colour checks:** all 186 observations confirm node, arrow, and arrowhead colours and
   legends matching the purposes used. All 31 light/dark renders were visually reviewed.
-  Nine integration checks also confirm that the colour extension accepts valid sources while
+  Twelve integration checks also confirm that the colour extension accepts valid sources while
   rejecting missing purposes, invalid values, missing relationship IDs, unknown core fields,
-  and invalid relationships.
+  and invalid relationships. They also cover connection-only legend entries, safe label
+  serialization, and isolation between diagrams with and without the colour profile.
 - **Upstream browser status:** `failed` for intentional vertical scrolling. Readability,
   viewer-control placement, and capture checks passed. This raw status is retained separately
   from the supplemental assessment under the user-selected scrolling policy.
@@ -89,10 +103,15 @@ role symbols for NotNow and Cleared now identify waiting and neutral states rath
   additional inspection of dense diagrams at 1440px. Explanatory cards and references were
   included in that review.
 - **Interaction checks:** theme switching, node search, focus/clear, and every available guided
-  view passed across the set. Six representatives cover all five diagram types plus the SCEP
-  example, with SVG and PNG exports in both themes: 24 export checks. Exported SVG node and
-  edge colours were measured in both explicit themes; PNG pixels were checked for each used
-  palette colour. SVG exports contained no active viewer controls or focus state.
+  view passed across the set. Seven representatives cover all five diagram types plus SCEP
+  and ACME, with SVG and PNG exports in both themes: 28 checks while a colour is highlighted.
+  Exported SVG node and edge colours were measured in both explicit themes; PNG pixels were
+  checked for each used palette colour. SVG exports contained no active viewer controls,
+  focus, or colour-filter state and retained
+  the complete static legend. Every used colour was selected and restored in both themes
+  across all 31 diagrams, including source-derived counts and native exploration handoffs.
+  ACME additionally passed real Enter/Space activation, presentation layout, a 390px-wide
+  legend layout, embedded fallback, and JavaScript-disabled fallback checks.
 - **README assets:** both architecture images were regenerated through the viewer's canonical
   full-diagram PNG export, excluding viewer controls. The root README now links to 31 diagrams.
 

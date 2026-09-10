@@ -14,7 +14,9 @@ Following a documentation link requires a connection.
 All diagrams include search, focus, relationship tracing, available guided views, light/dark
 themes, and exports. They share an [eight-purpose colour legend](colours.md), with green,
 orange, and red reserved for success, warnings or deferral, and failure. Each diagram displays
-the relevant legend entries.
+the relevant legend entries in an interactive **Legend** above the diagram. Select a colour
+to highlight matching components and connections and see their counts and examples. Select
+**All Components** to restore the complete diagram. Exports and printing include a static key.
 
 ## Where to start
 

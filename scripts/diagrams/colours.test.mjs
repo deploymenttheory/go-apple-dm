@@ -5,6 +5,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { spawnSync } from 'node:child_process';
 import { test, after } from 'node:test';
+import { configureColours, colourLegendHtml } from './colours.mjs';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const temporary = fs.mkdtempSync(path.join(os.tmpdir(), 'dm-purpose-check-'));
@@ -44,3 +45,34 @@ for (const [name, change] of [
     assert.equal(result.receipt.ok, false);
   });
 }
+
+test('a connection-only outcome appears in the key with its authored explanation', () => {
+  configureColours('sequence', source);
+  const html = colourLegendHtml();
+  const data = JSON.parse(html.match(/<script[^>]+>([\s\S]*?)<\/script>/)[1]);
+  const failure = data.entries.find(entry => entry.key === 'failure');
+  assert.equal(failure.nodes.length, 0);
+  assert.deepEqual(failure.connections, source.messages.filter(message => message.purpose === 'failure').map(message => message.label));
+  assert.ok(failure.connections.length > 0);
+  assert.ok(html.includes('>Legend</h2>'));
+  assert.ok(html.includes('>All Components</button>'));
+});
+
+test('authored labels cannot close the key data script or inject markup', () => {
+  const candidate = structuredClone(source);
+  const label = '</script><img src=x onerror=alert(1)> & "quoted"';
+  candidate.participants[0].label = label;
+  configureColours('sequence', candidate);
+  const html = colourLegendHtml();
+  assert.equal((html.match(/<\/script>/g) || []).length, 1);
+  assert.ok(!html.includes('<img'));
+  const data = JSON.parse(html.match(/<script[^>]+>([\s\S]*?)<\/script>/)[1]);
+  assert.ok(data.entries.some(entry => entry.nodes.includes(label)));
+});
+
+test('a diagram without the purpose profile does not inherit the previous key', () => {
+  configureColours('sequence', source);
+  assert.ok(colourLegendHtml());
+  configureColours('sequence', {meta: {}});
+  assert.equal(colourLegendHtml(), '');
+});

@@ -4949,6 +4949,39 @@ svg [data-boundary-label] { fill: var(--purpose-neutral); }
   --external-stroke: var(--purpose-neutral); --arrow-emphasis: var(--purpose-service);
 }
 
+/* Option 5: an interactive key in the reading flow, above the diagram. */
+.purpose-key { margin: 0 0 18px; padding: 18px 20px; border: 1px solid var(--lane-stroke); border-radius: 12px; background: var(--panel); }
+.purpose-key[hidden] { display: none; }
+.purpose-key-heading { display: flex; justify-content: space-between; align-items: baseline; gap: 12px 24px; margin-bottom: 14px; flex-wrap: wrap; }
+.purpose-key-heading h2 { margin: 0; font-size: 18px; font-weight: 600; color: var(--text); }
+.purpose-key-heading p { margin: 0; font-size: 14px; color: var(--text-muted); }
+.purpose-key-chips { display: flex; flex-wrap: wrap; gap: 10px; }
+.purpose-key-chips button { --entry: var(--text); display: inline-flex; align-items: center; gap: 8px; max-width: 100%; padding: 10px 12px; border: 1px solid var(--lane-stroke); border-radius: 7px; background: var(--bg); color: var(--text); font: inherit; font-size: 14px; font-weight: 600; text-align: left; cursor: pointer; }
+.purpose-key-chips button:hover { border-color: var(--entry); }
+.purpose-key-chips button[aria-pressed="true"] { border-color: var(--entry); box-shadow: 0 0 0 1px var(--entry); }
+.purpose-key-chips button:focus-visible { outline: 2px solid var(--text); outline-offset: 4px; }
+.purpose-key-dot { flex: 0 0 12px; width: 12px; height: 12px; border-radius: 3px; background: var(--entry); }
+.purpose-key-detail { display: grid; grid-template-columns: minmax(220px, .8fr) minmax(0, 2fr); gap: 20px; margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--lane-stroke); color: var(--text-muted); line-height: 1.55; }
+.purpose-key-detail strong { display: block; color: var(--text); font-size: 15px; font-weight: 600; }
+.purpose-key-detail span { display: block; margin-top: 3px; font-size: 13px; }
+.purpose-key-detail p { margin: 0; font-size: 14px; overflow-wrap: anywhere; }
+svg[data-purpose-interactive] [data-purpose-legend] { display: none; }
+svg[data-purpose-filter] [data-purpose-muted] { opacity: .13; }
+/* Structural lifecycle rails are context, not selected relationships. */
+svg[data-purpose-filter] > path[marker-end]:not([data-edge-from]) { opacity: .13; }
+svg[data-purpose-filter] [data-purpose-highlight] { opacity: 1; }
+svg[data-purpose-filter] [data-purpose-highlight] > rect:not(.c-mask),
+svg[data-purpose-filter] path[data-purpose-highlight],
+svg[data-purpose-filter] g[data-purpose-highlight] > path { stroke-width: 2.4; }
+@media (max-width: 760px) {
+  .purpose-key { padding: 16px; }
+  .purpose-key-detail { grid-template-columns: 1fr; gap: 8px; }
+}
+@media print {
+  .purpose-key { display: none !important; }
+  svg[data-purpose-filter] [data-purpose-muted] { opacity: 1; }
+}
+
   </style>
 </head>
 <body>
@@ -5105,9 +5138,23 @@ svg [data-boundary-label] { fill: var(--purpose-neutral); }
     </div>
 
     <!-- Main Diagram -->
+    <section class="purpose-key" id="purpose-key" aria-labelledby="purpose-key-title" hidden>
+    <div class="purpose-key-heading"><h2 id="purpose-key-title">Legend</h2><p>Choose a colour to highlight its components and connections.</p></div>
+    <div class="purpose-key-chips" role="group" aria-label="Highlight by colour">
+      <button type="button" data-purpose-filter-button="all" aria-pressed="true">All Components</button>
+      <button type="button" data-purpose-filter-button="service" aria-pressed="false" style="--entry:var(--purpose-service)"><span class="purpose-key-dot" aria-hidden="true"></span>Services and processing</button>
+<button type="button" data-purpose-filter-button="transport" aria-pressed="false" style="--entry:var(--purpose-transport)"><span class="purpose-key-dot" aria-hidden="true"></span>Communication and transport</button>
+<button type="button" data-purpose-filter-button="storage" aria-pressed="false" style="--entry:var(--purpose-storage)"><span class="purpose-key-dot" aria-hidden="true"></span>Storage and persistence</button>
+<button type="button" data-purpose-filter-button="artifact" aria-pressed="false" style="--entry:var(--purpose-artifact)"><span class="purpose-key-dot" aria-hidden="true"></span>Configuration and artifacts</button>
+<button type="button" data-purpose-filter-button="neutral" aria-pressed="false" style="--entry:var(--purpose-neutral)"><span class="purpose-key-dot" aria-hidden="true"></span>Actors, structure, neutral states</button>
+<button type="button" data-purpose-filter-button="success" aria-pressed="false" style="--entry:var(--purpose-success)"><span class="purpose-key-dot" aria-hidden="true"></span>Successful or accepted</button>
+    </div>
+    <div class="purpose-key-detail" aria-live="polite" aria-atomic="true"><div><strong id="purpose-key-selection"></strong><span id="purpose-key-counts"></span></div><p id="purpose-key-description"></p></div>
+    <script id="purpose-key-data" type="application/json">{"entries":[{"key":"service","label":"Services and processing","meaning":"Services and processing steps that perform the work shown in the diagram.","nodes":["DDM engine","MDM and adapters"],"connections":["Build current sync tokens","Queue DeclarativeManagement command","Refresh snapshot and sync token","Refresh and read manifest"]},{"key":"transport","label":"Communication and transport","meaning":"Communication between components, including endpoints, protocol exchanges, and notifications.","nodes":["Change notifier"],"connections":["Wake notifier; periodic poll also runs","APNs wake via MDM push notifier","Poll for command","Return DeclarativeManagement","Check-in: tokens","Check-in: declaration-items","Check-in: declaration/{kind}/{identifier}","Check-in: status report"]},{"key":"storage","label":"Storage and persistence","meaning":"Records and persistence: where the system stores or retrieves information.","nodes":["Declarative store"],"connections":["Commit state and change records","Read committed enrollment changes","Read advertised declaration version","Validate and persist status"]},{"key":"artifact","label":"Configuration and artifacts","meaning":"Configuration and artifacts that the system consumes or produces.","nodes":[],"connections":["Update an assigned declaration","Return SyncTokens JSON","Return declaration manifest","Return declaration JSON"]},{"key":"neutral","label":"Actors, structure, neutral states","meaning":"Actors, structural boundaries, and states that do not imply success, warning, or failure.","nodes":["Admin API","Apple device"],"connections":[]},{"key":"success","label":"Successful or accepted","meaning":"An explicitly successful or accepted result.","nodes":[],"connections":["Empty HTTP 200 acknowledgement"]}],"nodes":6,"connections":21}</script>
+  </section>
     <div class="diagram-container" data-detail-level="read"
          data-preset-badge-editorial-plate="ARCHIFY / PLATE 04">
-      <svg viewBox="0 0 1320 1154" role="img" lang="en" aria-labelledby="archify-diagram-title archify-diagram-description" data-preset="classic" data-quality-profile="showcase">
+      <svg viewBox="0 0 1320 1154" data-purpose-diagram-view-box="0 0 1320 1006" role="img" lang="en" aria-labelledby="archify-diagram-title archify-diagram-description" data-preset="classic" data-quality-profile="showcase">
         <title id="archify-diagram-title">Declarative Device Management: Change, Synchronize, Report</title>
         <desc id="archify-diagram-description">A sequence diagram generated by Archify.</desc>
         <!-- Definitions -->
@@ -5400,9 +5447,9 @@ svg [data-boundary-label] { fill: var(--purpose-neutral); }
         </g>
 
         <!-- Legend -->
-<g data-graph-role="legend" data-purpose-legend="" aria-label="Colour legend">
+<g data-graph-role="legend" data-purpose-legend="" aria-label="Legend">
     <path d="M 40 1014 H 1280" class="purpose-legend-rule"/>
-    <text x="40" y="1034" class="t-primary" font-size="14" font-weight="600">Colour legend</text>
+    <text x="40" y="1034" class="t-primary" font-size="14" font-weight="600">Legend</text>
     <g data-purpose-legend-entry="service"><rect x="40" y="1053" width="13" height="13" rx="3" class="purpose-swatch purpose-service"/><text x="62" y="1064" class="t-primary" font-size="13">Services and processing</text></g>
 <g data-purpose-legend-entry="transport"><rect x="350" y="1053" width="13" height="13" rx="3" class="purpose-swatch purpose-transport"/><text x="372" y="1064" class="t-primary" font-size="13">Communication and transport</text></g>
 <g data-purpose-legend-entry="storage"><rect x="660" y="1053" width="13" height="13" rx="3" class="purpose-swatch purpose-storage"/><text x="682" y="1064" class="t-primary" font-size="13">Storage and persistence</text></g>
@@ -5645,6 +5692,95 @@ svg [data-boundary-label] { fill: var(--purpose-neutral); }
   </div>
 
   <script>
+    // Runs before Archify initializes its camera, so its viewport is the authored
+// diagram without the static export key. No node or route geometry is changed.
+(function () {
+  const key = document.getElementById('purpose-key');
+  const svg = document.querySelector('.diagram-container svg');
+  if (!key || !svg) return;
+  // Embed mode is a diagram-only surface; keep its complete static SVG key.
+  if (document.documentElement.getAttribute('data-embed') === 'true') return;
+  const data = JSON.parse(document.getElementById('purpose-key-data').textContent);
+  const diagramViewBox = svg.getAttribute('data-purpose-diagram-view-box');
+  if (!diagramViewBox) return;
+  const canonicalViewBox = svg.getAttribute('viewBox');
+  svg.setAttribute('data-purpose-canonical-view-box', canonicalViewBox);
+  svg.setAttribute('data-purpose-interactive', '');
+  svg.setAttribute('viewBox', diagramViewBox);
+  key.hidden = false;
+  const buttons = [...key.querySelectorAll('[data-purpose-filter-button]')];
+  const items = [...svg.querySelectorAll('[data-node-id][data-purpose], [data-edge-from][data-purpose]')];
+  let selected = 'all';
+  const count = (n, label) => n + ' ' + label + (n === 1 ? '' : 's');
+
+  function clearExploration() {
+    const viewer = window.Archify;
+    viewer?.semanticLens?.clear?.({ updateUrl: false, preserveView: true, closePanel: true });
+    viewer?.routeProbe?.clear?.({ updateUrl: false, preserveView: true, restoreFocus: false });
+    viewer?.guidedViews?.showAll?.({ clearFocus: false, updateUrl: false, resetView: false });
+    viewer?.focus?.clear?.({ preserveView: true });
+  }
+  function select(value, userAction = false) {
+    const entry = data.entries.find(entry => entry.key === value);
+    if (value !== 'all' && !entry) return;
+    if (userAction) clearExploration();
+    selected = value;
+    buttons.forEach(button => button.setAttribute('aria-pressed', String(button.dataset.purposeFilterButton === value)));
+    if (entry) svg.setAttribute('data-purpose-filter', value);
+    else svg.removeAttribute('data-purpose-filter');
+    // Native story/lens overlays may clone a currently highlighted route.
+    // Remove inherited filter state from those temporary shapes as well.
+    svg.querySelectorAll('[data-purpose-muted], [data-purpose-highlight]').forEach(item => {
+      item.removeAttribute('data-purpose-muted');
+      item.removeAttribute('data-purpose-highlight');
+    });
+    items.forEach(item => {
+      item.toggleAttribute('data-purpose-muted', !!entry && item.dataset.purpose !== value);
+      item.toggleAttribute('data-purpose-highlight', !!entry && item.dataset.purpose === value);
+    });
+    document.getElementById('purpose-key-selection').textContent = entry ? entry.label : 'All Components';
+    document.getElementById('purpose-key-counts').textContent = count(entry ? entry.nodes.length : data.nodes, 'component') + ' · ' + count(entry ? entry.connections.length : data.connections, 'connection');
+    const examples = entry ? (entry.nodes.length
+      ? ' Highlighted components: ' + entry.nodes.join('; ') + '.'
+      : ' Highlighted connections: ' + entry.connections.join('; ') + '.') : '';
+    document.getElementById('purpose-key-description').textContent = entry
+      ? entry.meaning + examples
+      : 'The complete diagram is shown. Select a colour to explore its role, or choose All Components to restore every component and connection. Colour identifies purpose or outcome; line style is independent.';
+  }
+  key.addEventListener('click', event => {
+    const button = event.target.closest('[data-purpose-filter-button]');
+    if (button) select(button.dataset.purposeFilterButton, true);
+  });
+  key.addEventListener('keydown', event => {
+    const index = buttons.indexOf(document.activeElement);
+    if (index < 0) return;
+    let next;
+    if (event.key === 'ArrowRight' || event.key === 'ArrowDown') next = (index + 1) % buttons.length;
+    if (event.key === 'ArrowLeft' || event.key === 'ArrowUp') next = (index + buttons.length - 1) % buttons.length;
+    if (event.key === 'Home') next = 0;
+    if (event.key === 'End') next = buttons.length - 1;
+    if (event.key === 'Escape') { event.preventDefault(); event.stopPropagation(); select('all', true); buttons[0].focus(); }
+    if (next !== undefined) { event.preventDefault(); buttons[next].focus(); }
+  });
+  // Persistent native exploration takes over cleanly, including direct links,
+  // node search, guided views, semantic lenses, and route selection.
+  const nativeStates = ['data-focus-active', 'data-lens-active', 'data-route-active', 'data-route-picking', 'data-story-active', 'data-relationship-pin-active', 'data-intent-trace-active'];
+  new MutationObserver(() => {
+    if (selected !== 'all' && nativeStates.some(name => svg.hasAttribute(name))) select('all');
+  }).observe(svg, { attributes: true, attributeFilter: nativeStates });
+  window.addEventListener('beforeprint', () => {
+    svg.removeAttribute('data-purpose-interactive');
+    svg.removeAttribute('data-purpose-filter');
+    svg.setAttribute('viewBox', canonicalViewBox);
+  });
+  window.addEventListener('afterprint', () => {
+    svg.setAttribute('data-purpose-interactive', '');
+    svg.setAttribute('viewBox', diagramViewBox);
+    select(selected);
+  });
+  select('all');
+})();
+
     var Archify = {};
     var archifyI18nData = (function () {
       var node = document.getElementById('archify-i18n-data');
@@ -6111,6 +6247,14 @@ svg [data-boundary-label] { fill: var(--purpose-neutral); }
         var autoTheme = opts.autoTheme === true;
         var svg = document.querySelector('.diagram-container svg');
         var clone = svg.cloneNode(true);
+        if (clone.hasAttribute('data-purpose-canonical-view-box')) {
+          clone.setAttribute('viewBox', clone.getAttribute('data-purpose-canonical-view-box'));
+        }
+        ['data-purpose-canonical-view-box', 'data-purpose-diagram-view-box', 'data-purpose-interactive', 'data-purpose-filter'].forEach(function (name) { clone.removeAttribute(name); });
+        clone.querySelectorAll('[data-purpose-muted], [data-purpose-highlight]').forEach(function (element) {
+          element.removeAttribute('data-purpose-muted');
+          element.removeAttribute('data-purpose-highlight');
+        });
 
         // View transforms and neighborhood focus are HTML exploration state,
         // never part of a downloaded full-diagram artifact.
@@ -6266,7 +6410,7 @@ svg [data-boundary-label] { fill: var(--purpose-neutral); }
         Array.prototype.forEach.call(clone.querySelectorAll('[data-node-id][aria-pressed]'), function (el) {
           el.setAttribute('aria-pressed', 'false');
         });
-        var canonicalStateClean = !clone.hasAttribute('data-view-scale') &&
+        var canonicalStateClean = !clone.hasAttribute('data-purpose-filter') && !clone.hasAttribute('data-purpose-interactive') && !clone.querySelector('[data-purpose-muted], [data-purpose-highlight]') && !clone.hasAttribute('data-view-scale') &&
           !clone.hasAttribute('data-focus-active') &&
           !clone.hasAttribute('data-reach-active') &&
           !clone.hasAttribute('data-lens-active') &&
@@ -6293,7 +6437,7 @@ svg [data-boundary-label] { fill: var(--purpose-neutral); }
           !clone.style.getPropertyValue('clip-path') &&
           clone.querySelectorAll('[data-story-overlay], [data-story-carrier-overlay], [data-story-carrier-token], [data-story-step], [data-story-beat-state], [data-story-beat-step], [data-chapter-handoff-overlay], [data-chapter-role], [data-chapter-preview-role], [data-focus-match], [data-focus-selected], [data-reach-match], [data-reach-origin], [data-reach-depth], [data-semantic-lens-overlay], [data-lens-match], [data-lens-selected], [data-lens-peer], [data-legend-bridge], [data-legend-kind], [data-legend-bridge-runtime], [data-legend-count], [data-legend-zero], [data-legend-selected], [data-legend-preview-match], [data-legend-preview-selected], [data-legend-preview-peer], [data-relationship-hit-overlay], [data-relationship-pulse-overlay], [data-relationship-preview], [data-relationship-preview-node], [data-relationship-preview-source], [data-relationship-preview-target], [data-intent-trace-overlay], [data-intent-trace-match], [data-intent-trace-selected], [data-route-probe-overlay], [data-route-journey-overlay], [data-route-match], [data-route-start], [data-route-end], [data-route-step], [data-route-candidate], [data-route-journey-state], [data-route-journey-current], [data-share-route-match], [data-share-route-step], [data-share-route-start], [data-share-route-end], [data-share-route-middle], [data-share-reach-match], [data-share-reach-origin], [data-share-reach-depth], [data-source-evidence-beacon], [data-source-evidence-count], [data-source-evidence-original-label], [data-detail], [data-detail-anchor]').length === 0;
 
-        var vb = svg.viewBox.baseVal;
+        var vb = clone.viewBox.baseVal;
         var finiteSvgDimensions = Number.isFinite(vb.x) && Number.isFinite(vb.y) &&
           Number.isFinite(vb.width) && Number.isFinite(vb.height) && vb.width > 0 && vb.height > 0;
         var routeStateClean = opts.routeSnapshot

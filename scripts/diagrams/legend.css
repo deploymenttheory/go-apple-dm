@@ -1,0 +1,32 @@
+/* Option 5: an interactive key in the reading flow, above the diagram. */
+.purpose-key { margin: 0 0 18px; padding: 18px 20px; border: 1px solid var(--lane-stroke); border-radius: 12px; background: var(--panel); }
+.purpose-key[hidden] { display: none; }
+.purpose-key-heading { display: flex; justify-content: space-between; align-items: baseline; gap: 12px 24px; margin-bottom: 14px; flex-wrap: wrap; }
+.purpose-key-heading h2 { margin: 0; font-size: 18px; font-weight: 600; color: var(--text); }
+.purpose-key-heading p { margin: 0; font-size: 14px; color: var(--text-muted); }
+.purpose-key-chips { display: flex; flex-wrap: wrap; gap: 10px; }
+.purpose-key-chips button { --entry: var(--text); display: inline-flex; align-items: center; gap: 8px; max-width: 100%; padding: 10px 12px; border: 1px solid var(--lane-stroke); border-radius: 7px; background: var(--bg); color: var(--text); font: inherit; font-size: 14px; font-weight: 600; text-align: left; cursor: pointer; }
+.purpose-key-chips button:hover { border-color: var(--entry); }
+.purpose-key-chips button[aria-pressed="true"] { border-color: var(--entry); box-shadow: 0 0 0 1px var(--entry); }
+.purpose-key-chips button:focus-visible { outline: 2px solid var(--text); outline-offset: 4px; }
+.purpose-key-dot { flex: 0 0 12px; width: 12px; height: 12px; border-radius: 3px; background: var(--entry); }
+.purpose-key-detail { display: grid; grid-template-columns: minmax(220px, .8fr) minmax(0, 2fr); gap: 20px; margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--lane-stroke); color: var(--text-muted); line-height: 1.55; }
+.purpose-key-detail strong { display: block; color: var(--text); font-size: 15px; font-weight: 600; }
+.purpose-key-detail span { display: block; margin-top: 3px; font-size: 13px; }
+.purpose-key-detail p { margin: 0; font-size: 14px; overflow-wrap: anywhere; }
+svg[data-purpose-interactive] [data-purpose-legend] { display: none; }
+svg[data-purpose-filter] [data-purpose-muted] { opacity: .13; }
+/* Structural lifecycle rails are context, not selected relationships. */
+svg[data-purpose-filter] > path[marker-end]:not([data-edge-from]) { opacity: .13; }
+svg[data-purpose-filter] [data-purpose-highlight] { opacity: 1; }
+svg[data-purpose-filter] [data-purpose-highlight] > rect:not(.c-mask),
+svg[data-purpose-filter] path[data-purpose-highlight],
+svg[data-purpose-filter] g[data-purpose-highlight] > path { stroke-width: 2.4; }
+@media (max-width: 760px) {
+  .purpose-key { padding: 16px; }
+  .purpose-key-detail { grid-template-columns: 1fr; gap: 8px; }
+}
+@media print {
+  .purpose-key { display: none !important; }
+  svg[data-purpose-filter] [data-purpose-muted] { opacity: 1; }
+}
