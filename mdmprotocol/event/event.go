@@ -96,6 +96,15 @@ type Bus struct {
 	nextID  int
 	closed  bool
 	closeMu sync.Mutex
+	cond    *sync.Cond
+	queue   []delivery
+	head    int
+	size    int
+	config  AsyncConfig
+	stats   Stats
+	done    chan struct{}
+	abort   context.Context
+	cancel  context.CancelFunc
 }
 
 type subscription struct {
@@ -106,17 +115,29 @@ type subscription struct {
 // Option configures a Bus.
 type Option func(*Bus)
 
-// WithAsync dispatches each Publish on its own goroutine; Close waits for
-// in-flight deliveries. The default is synchronous delivery in
-// subscription order, which keeps tests and audit ordering deterministic.
+// WithAsync selects bounded asynchronous delivery with the default limits.
+// Use NewAsync to configure those limits. The default is synchronous delivery
+// in subscription order.
 func WithAsync() Option { return func(b *Bus) { b.async = true } }
 
-// WithErrorHandler receives handler errors. The default drops them.
+// WithErrorHandler receives handler errors, delivery expiry and queue rejection.
+// It runs outside bus locks and must be concurrency-safe and return promptly.
+// The default drops reports; Stats still counts asynchronous outcomes.
 func WithErrorHandler(f func(Event, error)) Option { return func(b *Bus) { b.onError = f } }
 
 // New creates a bus.
 func New(opts ...Option) *Bus {
-	b := &Bus{subs: map[Type][]*subscription{}}
+	b := newBus(opts)
+	if b.async {
+		b.start(defaultAsyncConfig())
+	} else {
+		close(b.done)
+	}
+	return b
+}
+
+func newBus(opts []Option) *Bus {
+	b := &Bus{subs: map[Type][]*subscription{}, done: make(chan struct{})}
 	for _, o := range opts {
 		o(b)
 	}
@@ -149,8 +170,11 @@ func (b *Bus) Subscribe(t Type, h Handler) func() {
 
 // Publish delivers e to subscribers of e.Type and of All. In synchronous
 // mode it returns the joined handler errors; in asynchronous mode it
-// returns immediately and errors go to the error handler. Async delivery retains
-// context values but outlives request cancellation; Close drains accepted events.
+// returns ErrQueueFull when saturated and otherwise accepts without waiting for
+// delivery. Async delivery retains context values, including from cancelled
+// requests, but has its own deadline starting at acceptance. Callers must not
+// mutate referenced event data until delivery finishes. Close drains accepted
+// events within its deadline. Queue rejection also reaches the error handler.
 func (b *Bus) Publish(ctx context.Context, e Event) error {
 	b.closeMu.Lock()
 	if b.closed {
@@ -158,13 +182,23 @@ func (b *Bus) Publish(ctx context.Context, e Event) error {
 		return ErrClosed
 	}
 	if b.async {
-		b.wg.Add(1)
+		if b.size == len(b.queue) {
+			b.stats.Rejected++
+			b.closeMu.Unlock()
+			b.report(e, ErrQueueFull)
+			return ErrQueueFull
+		}
+		now := time.Now()
+		if e.At.IsZero() {
+			e.At = now
+		}
+		b.queue[(b.head+b.size)%len(b.queue)] = delivery{
+			ctx: context.WithoutCancel(ctx), event: e, deadline: now.Add(b.config.DeliveryTimeout),
+		}
+		b.size++
+		b.stats.Accepted++
+		b.cond.Signal()
 		b.closeMu.Unlock()
-		ctx = context.WithoutCancel(ctx)
-		go func() {
-			defer b.wg.Done()
-			_ = b.deliver(ctx, e)
-		}()
 		return nil
 	}
 	b.closeMu.Unlock()
@@ -186,31 +220,50 @@ func (b *Bus) deliver(ctx context.Context, e Event) error {
 	b.mu.RUnlock()
 	var errs []error
 	for _, h := range handlers {
+		if b.async && ctx.Err() != nil {
+			b.report(e, ctx.Err())
+			return errors.Join(append(errs, ctx.Err())...)
+		}
 		if err := h(ctx, e); err != nil {
 			errs = append(errs, err)
-			if b.onError != nil {
-				b.onError(e, err)
-			}
+			b.report(e, err)
 		}
 	}
 	return errors.Join(errs...)
 }
 
 // Close stops accepting events and waits for asynchronous deliveries, or
-// until ctx is done.
+// until ctx is done. On timeout it cancels active delivery contexts and discards
+// queued events. Handlers must honor cancellation: a stuck handler retains its
+// worker, and subsequent Close calls can wait for it, without creating workers.
 func (b *Bus) Close(ctx context.Context) error {
 	b.closeMu.Lock()
-	b.closed = true
+	if !b.closed {
+		b.closed = true
+		if b.async {
+			b.cond.Broadcast()
+		}
+	}
 	b.closeMu.Unlock()
-	done := make(chan struct{})
-	go func() {
-		b.wg.Wait()
-		close(done)
-	}()
 	select {
-	case <-done:
+	case <-b.done:
 		return nil
 	case <-ctx.Done():
+		if b.async {
+			b.closeMu.Lock()
+			b.cancel()
+			b.stats.Abandoned += uint64(b.size)
+			clear(b.queue)
+			b.size = 0
+			b.cond.Broadcast()
+			b.closeMu.Unlock()
+		}
 		return ctx.Err()
+	}
+}
+
+func (b *Bus) report(e Event, err error) {
+	if b.onError != nil {
+		b.onError(e, err)
 	}
 }

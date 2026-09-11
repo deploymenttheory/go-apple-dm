@@ -140,7 +140,11 @@ func (e *Engine) publish(ctx context.Context, t event.Type, id mdm.EnrollmentID,
 	if e.bus == nil {
 		return
 	}
-	if err := e.bus.Publish(ctx, event.Event{Type: t, At: e.clock.Now(), Enrollment: id, Actor: "ddm", Data: data}); err != nil {
+	if err := e.bus.Publish(
+		ctx,
+		event.Event{Type: t, At: e.clock.Now(), Enrollment: id, Actor: "ddm", Data: data},
+	); err != nil &&
+		!errors.Is(err, event.ErrQueueFull) {
 		e.log.WarnContext(ctx, "ddm: publish", "type", string(t), "error", err)
 	}
 }

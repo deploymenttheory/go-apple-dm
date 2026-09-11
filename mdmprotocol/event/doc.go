@@ -5,8 +5,24 @@
 //
 // Subscribers can observe lifecycle and command outcomes without being coupled
 // to the service implementation. The bus supports synchronous and asynchronous
-// dispatch and configurable handler-error reporting. Close drains queued
-// asynchronous work. The bus itself has no durable storage.
+// dispatch and configurable error reporting. WithAsync uses eight workers, a
+// 1,024-event pending queue and a 30-second lifetime from acceptance. NewAsync
+// accepts explicit limits. Publish rejects excess events with ErrQueueFull;
+// rejection is counted and reported even if the caller ignores the error.
+// Stats exposes backlog and cumulative outcomes without event contents.
+//
+// Accepted events retain context values and survive request cancellation, but
+// expire on the bus-owned deadline. Subscribers run in registration order for
+// each event; concurrent events have no delivery-order guarantee. Handlers and
+// error callbacks must return promptly and handlers must honor cancellation.
+// A non-cooperating handler occupies a worker; it does not trigger another one.
+//
+// Always Close an asynchronous bus. Close stops acceptance and drains within
+// its context deadline, then cancels active contexts and abandons queued events.
+// Subsequent Close calls may wait for handlers that have not returned. The bus
+// has no durable storage or replay; audit and webhook delivery can have gaps
+// after overload, expiry, sink failure or abrupt termination. Queue limits bound
+// event counts rather than payload byte sizes; producers must bound payloads.
 //
 // Events may contain sensitive protocol data. External sinks in server/eventsink
 // apply an explicit projection, and server/audit persists that projection when
