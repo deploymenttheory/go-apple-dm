@@ -45,8 +45,8 @@ modeled schema constraints; protocol rules documented only in prose belong in th
 The deployment must establish certificate trust and proof of possession for its transport.
 `server/service` applies certificate status checks when configured, hooks, pinning and enrollment
 policy before dispatch. Its default certificate reuse policy denies association with a second
-enrollment. The reference server denies replacement identities during re-enrollment by default;
-the reusable service permits them unless configured otherwise.
+enrollment. Both the reusable service and reference server deny changed identities during
+re-enrollment by default; authorized profile replacement follows its own policy and state.
 
 Profile-based enrollment supports SCEP, ACME or supplied PKCS#12 identities and OTA profile
 delivery. Automated Device Enrollment parses signed `MachineInfo`, supports an OS update gate
@@ -62,8 +62,8 @@ rules. See [enrollment security operations](operations/enrollment-security.md) f
 
 Commands are checked against available target metadata, queued with deduplication options and
 delivered through the MDM connect exchange. Responses persist results and drive retry behavior.
-The stored target does not track all supervision/ADE/user-approval facts: support checks currently
-assume these flags are true. They cannot replace deployment eligibility policy. The optional user
+Support checks use recorded supervision/ADE/user-approval observations; unknown capabilities
+cannot satisfy a command requirement. They cannot replace deployment eligibility policy. The optional user
 authentication gate checks for a stored user token on eligible `TokenUpdate` requests; it does not
 validate a token supplied with that request.
 
@@ -106,9 +106,10 @@ on shared protocol state when multiple processes serve the same deployment.
 
 Memory storage is for development and loses state on restart. SQL implementations share domain
 contract suites and use separate migration sets. Selected secret columns use AES-256-GCM with
-row-bound additional authenticated data and named keys. Raw check-in records can also contain
-secrets, including unlock tokens, and are not covered by column sealing. Protect the database,
-backups, profiles and declarations accordingly.
+row-bound additional authenticated data and named keys. Sealing includes raw check-in records,
+commands/results, protocol state and credential-bearing declaration data. Metadata and
+status/audit records are not whole-database encrypted. Protect the database, backups, profiles
+and privileged plaintext exports accordingly.
 
 The `all`, `mdm` and `ddm` roles compose services from environment configuration. Admin routes
 use either an unrestricted bootstrap token or stored principals with Cedar policies. Event sinks
@@ -116,8 +117,8 @@ project permitted fields; raw event payloads remain inside the process. Audit pe
 retention require configuration and do not provide tamper resistance against database operators.
 
 Replicas must share the relevant database, issuer keys and configuration. Completed account
-credentials and certificate associations persist in SQL, but the reference OIDC browser handoff
-uses process-local state and requires session affinity or an injected shared store. Trust roots,
+credentials, certificate associations and OIDC browser handoffs persist in shared SQL protocol
+state in the reference composition. Trust roots,
 public HTTPS, Apple credentials, network admission, backup protection and physical-device
 validation remain deployment responsibilities. The [threat model](security/threat-model.md) and
 [configuration guide](../README.md#reference-server) describe these boundaries.
