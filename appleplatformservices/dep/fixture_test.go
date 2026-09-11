@@ -71,7 +71,7 @@ func newFixture(t *testing.T, mutate ...func(*fixtureOptions)) *fixture {
 	f.srv = deptest.NewServer(o.server)
 	// A private transport: connections opened inside a synctest bubble
 	// must be closed there, not by another test through the default one.
-	transport := &http.Transport{}
+	transport := f.srv.Client().Transport.(*http.Transport).Clone()
 	t.Cleanup(f.srv.Close)
 	t.Cleanup(transport.CloseIdleConnections)
 	f.bus.Subscribe(event.All, func(_ context.Context, e event.Event) error {
@@ -80,7 +80,13 @@ func newFixture(t *testing.T, mutate ...func(*fixtureOptions)) *fixture {
 		f.events = append(f.events, e)
 		return nil
 	})
-	cfg := dep.ClientConfig{Store: f.store, BaseURL: f.srv.URL(), Clock: f.clk, Bus: f.bus, HTTPClient: &http.Client{Transport: transport, Timeout: 10 * time.Second}}
+	cfg := dep.ClientConfig{
+		Store:      f.store,
+		BaseURL:    f.srv.URL(),
+		Clock:      f.clk,
+		Bus:        f.bus,
+		HTTPClient: &http.Client{Transport: transport, Timeout: 10 * time.Second},
+	}
 	if o.client != nil {
 		o.client(&cfg)
 	}
@@ -139,5 +145,11 @@ func (f *fixture) account() *dep.Account {
 
 // device returns a device fixture with the serial.
 func device(serial string) dep.Device {
-	return dep.Device{SerialNumber: serial, Model: "iPad", DeviceFamily: "iPad", OS: "iPadOS", Description: "test " + serial}
+	return dep.Device{
+		SerialNumber: serial,
+		Model:        "iPad",
+		DeviceFamily: "iPad",
+		OS:           "iPadOS",
+		Description:  "test " + serial,
+	}
 }

@@ -227,6 +227,7 @@ func (a *App) replacementChallenge(
 		Op:            "claim",
 		ID:            attempt,
 		SecretHash:    digest([]byte(password)),
+		CSRHash:       digest(csr.Raw),
 		PublicKeyHash: digest(csr.RawSubjectPublicKeyInfo),
 		At:            a.cfg.Clock.Now(),
 	})
@@ -234,6 +235,7 @@ func (a *App) replacementChallenge(
 }
 
 func (a *App) replaceEnrollment(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Cache-Control", "no-store")
 	id, err := enrollmentFromPath(r)
 	if err != nil {
 		a.storageStatus(w, r, err)
@@ -326,7 +328,18 @@ func (a *App) prepareReplacement(
 		e.Device.ProductName,
 		replacementSubject(id, attempt),
 	)
-	fresh, err := a.enroll.profileWithIdentity(ctx, b, method)
+	hardware := enroll.MacHardwareUnknown
+	if e.Capabilities.AppleSilicon == storage.CapabilityTrue {
+		hardware = enroll.MacAppleSilicon
+	}
+	fresh, err := a.enroll.profileForDevice(
+		ctx,
+		b,
+		method,
+		e.Device.ProductName,
+		e.Device.OSVersion,
+		hardware,
+	)
 	if err != nil {
 		return nil, fmt.Errorf("%w: %w", storage.ErrInvalid, err)
 	}

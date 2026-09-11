@@ -27,6 +27,14 @@ TokenUpdate and acknowledgment of the delivered command, in either order.
 Cancellation, expiry and device-reported failure preserve the working enrollment.
 Ordinary re-enrollment remains governed by its existing policy.
 
+Identity builders default to nonextractable keys where Apple supports the
+option; application-wide access defaults to false on supported Mac targets.
+ACME emits an explicit Attest boolean and validates known OS/hardware context.
+Current Apple documentation defines false as nonextractable for ACME, despite
+the inverse description in the pinned YAML. Upstream generated descriptions
+remain verbatim. The [source comparison](../../wip/apple-enterprise-hardening-2026-09-11.md)
+records platform minima and interoperability limits.
+
 ## Rationale
 
 Explicit UUIDs allow callers to retain payload identity across content changes. Generated payloads keep structure and validation tied to the schema. A common builder applies enrollment options consistently.

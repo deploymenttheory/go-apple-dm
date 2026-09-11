@@ -40,6 +40,9 @@ type Identifier struct {
 // with User Enrollment. AllowUnidentified controls whether policy accepts that
 // case.
 type Binding struct {
+	// RequireAttestation binds issuance to an attested payload, even when the
+	// server permits other identifiers to obtain unattested certificates.
+	RequireAttestation bool `json:"requireAttestation,omitempty"`
 	// Serial and UDID are the device the identifier was issued for. When
 	// set, the attestation must agree.
 	Serial string `json:"serial,omitempty"`

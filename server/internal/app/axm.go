@@ -27,6 +27,8 @@ type AxMConfig struct {
 	// client id (tests point them at a fake).
 	Scope, BaseURL, TokenURL string
 	HTTPClient               *http.Client
+	// RootCAFile supplies private HTTPS trust instead of HTTPClient.
+	RootCAFile string
 }
 
 // Enabled reports whether the client is configured.
@@ -52,6 +54,10 @@ func (a *App) newAxM(ctx context.Context) (*axm.Client, error) {
 			return nil, fmt.Errorf("%w: AxM key file: %w", ErrConfig, err)
 		}
 	}
+	httpClient, err := outboundClient(c.HTTPClient, c.RootCAFile)
+	if err != nil {
+		return nil, err
+	}
 	client, err := axm.New(ctx, axm.Config{
 		ClientID:      c.ClientID,
 		KeyID:         c.KeyID,
@@ -59,7 +65,7 @@ func (a *App) newAxM(ctx context.Context) (*axm.Client, error) {
 		Scope:         c.Scope,
 		BaseURL:       c.BaseURL,
 		TokenURL:      c.TokenURL,
-		HTTPClient:    c.HTTPClient,
+		HTTPClient:    httpClient,
 		Clock:         a.cfg.Clock,
 		Logger:        a.cfg.Logger,
 	})

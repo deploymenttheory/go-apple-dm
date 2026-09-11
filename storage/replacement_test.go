@@ -24,7 +24,10 @@ func TestReplacementAdmissionRejectsInvalidTransitions(t *testing.T) {
 		{"pin changed", storage.ReplacementChange{Op: "cancel"}, func(_ *storage.Replacement, e *storage.Enrollment) { e.CertHash = "different" }},
 		{"terminal attempt", storage.ReplacementChange{Op: "cancel"}, func(r *storage.Replacement, _ *storage.Enrollment) { r.State = storage.ReplacementFailed }},
 		{"wrong claim secret", storage.ReplacementChange{Op: "claim", SecretHash: "wrong", PublicKeyHash: "key"}, nil},
-		{"replayed claim", storage.ReplacementChange{Op: "claim", SecretHash: "secret", PublicKeyHash: "key"}, func(r *storage.Replacement, _ *storage.Enrollment) { r.PublicKeyHash = "key" }},
+		{"different CSR replay", storage.ReplacementChange{Op: "claim", SecretHash: "secret", PublicKeyHash: "key", CSRHash: "csr"}, func(r *storage.Replacement, _ *storage.Enrollment) {
+			r.PublicKeyHash = "key"
+			r.CSRHash = "another CSR"
+		}},
 		{"wrong issuance method", storage.ReplacementChange{Op: "issue", Method: "acme", Hash: "new"}, nil},
 		{"replayed certificate", storage.ReplacementChange{Op: "issue", Method: "scep", Hash: "new", PublicKeyHash: "key"}, func(r *storage.Replacement, _ *storage.Enrollment) {
 			r.CandidateHash = "already-issued"
@@ -43,7 +46,18 @@ func TestReplacementAdmissionRejectsInvalidTransitions(t *testing.T) {
 		{"invalid result", storage.ReplacementChange{Op: "result", Hash: "old", Response: &mdm.Response{CommandUUID: "attempt", Status: mdm.StatusIdle}}, nil},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
-			r := &storage.Replacement{ID: "attempt", State: storage.ReplacementPending, OldHash: "old", Method: "scep", SecretHash: "secret", CandidateHash: "new", ExpiresAt: now.Add(time.Minute), Authenticated: true, Delivered: true, Command: mdm.Command{UUID: "attempt"}}
+			r := &storage.Replacement{
+				ID:            "attempt",
+				State:         storage.ReplacementPending,
+				OldHash:       "old",
+				Method:        "scep",
+				SecretHash:    "secret",
+				CandidateHash: "new",
+				ExpiresAt:     now.Add(time.Minute),
+				Authenticated: true,
+				Delivered:     true,
+				Command:       mdm.Command{UUID: "attempt"},
+			}
 			e := &storage.Enrollment{ID: id, Enabled: true, CertHash: "old"}
 			if tc.mutate != nil {
 				tc.mutate(r, e)
@@ -61,16 +75,41 @@ func TestReplacementAdmissionRejectsInvalidTransitions(t *testing.T) {
 		})
 	}
 	for _, status := range []mdm.Status{mdm.StatusNotNow, mdm.StatusCommandFormatError} {
-		r := &storage.Replacement{ID: "attempt", State: storage.ReplacementPending, OldHash: "old", ExpiresAt: now.Add(time.Minute), Delivered: true, Command: mdm.Command{UUID: "attempt"}}
-		if _, err := storage.AdvanceReplacement(&r, &storage.Enrollment{ID: id, Enabled: true, CertHash: "old"}, storage.ReplacementChange{Op: "result", ID: "attempt", Hash: "old", At: now, Response: &mdm.Response{CommandUUID: "attempt", Status: status}}); err != nil {
+		r := &storage.Replacement{
+			ID:        "attempt",
+			State:     storage.ReplacementPending,
+			OldHash:   "old",
+			ExpiresAt: now.Add(time.Minute),
+			Delivered: true,
+			Command:   mdm.Command{UUID: "attempt"},
+		}
+		if _, err := storage.AdvanceReplacement(
+			&r,
+			&storage.Enrollment{ID: id, Enabled: true, CertHash: "old"},
+			storage.ReplacementChange{
+				Op:       "result",
+				ID:       "attempt",
+				Hash:     "old",
+				At:       now,
+				Response: &mdm.Response{CommandUUID: "attempt", Status: status},
+			},
+		); err != nil {
 			t.Fatal(err)
 		}
 	}
 	var none *storage.Replacement
-	if _, err := storage.AdvanceReplacement(&none, &storage.Enrollment{}, storage.ReplacementChange{Op: "cancel", At: now}); err == nil {
+	if _, err := storage.AdvanceReplacement(
+		&none,
+		&storage.Enrollment{},
+		storage.ReplacementChange{Op: "cancel", At: now},
+	); err == nil {
 		t.Fatal("absent attempt accepted")
 	}
-	if _, err := storage.AdvanceReplacement(&none, &storage.Enrollment{}, storage.ReplacementChange{Op: "begin", At: now}); err == nil {
+	if _, err := storage.AdvanceReplacement(
+		&none,
+		&storage.Enrollment{},
+		storage.ReplacementChange{Op: "begin", At: now},
+	); err == nil {
 		t.Fatal("nil begin accepted")
 	}
 }

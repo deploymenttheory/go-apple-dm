@@ -23,7 +23,9 @@ func TestServer(t *testing.T) {
 	newClient := func(t *testing.T, srv *deptest.Server, clk clock.Clock) (*dep.Client, *inmem.Store) {
 		t.Helper()
 		st := inmem.New()
-		c, err := dep.NewClient(dep.ClientConfig{Store: st, BaseURL: srv.URL(), Clock: clk})
+		c, err := dep.NewClient(
+			dep.ClientConfig{Store: st, BaseURL: srv.URL(), HTTPClient: srv.Client(), Clock: clk},
+		)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -38,7 +40,7 @@ func TestServer(t *testing.T) {
 		defer srv.Close()
 		// No credentials at all.
 		req, _ := http.NewRequestWithContext(ctx, http.MethodGet, srv.URL()+"/session", http.NoBody)
-		res, err := http.DefaultClient.Do(req)
+		res, err := srv.Client().Do(req)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -50,13 +52,15 @@ func TestServer(t *testing.T) {
 		bad := srv.Tokens()
 		bad.ConsumerSecret = "wrong"
 		st := inmem.New()
-		c, _ := dep.NewClient(dep.ClientConfig{Store: st, BaseURL: srv.URL(), Clock: clk})
+		c, _ := dep.NewClient(
+			dep.ClientConfig{Store: st, BaseURL: srv.URL(), HTTPClient: srv.Client(), Clock: clk},
+		)
 		if _, err := c.StoreTokens(ctx, "acct", bad); !errors.Is(err, dep.ErrTokenInvalid) {
 			t.Fatalf("wrong secret = %v", err)
 		}
 		// A request without a session is refused; with one it works.
 		req, _ = http.NewRequestWithContext(ctx, http.MethodGet, srv.URL()+"/account", http.NoBody)
-		res, _ = http.DefaultClient.Do(req)
+		res, _ = srv.Client().Do(req)
 		res.Body.Close()
 		if res.StatusCode != http.StatusUnauthorized {
 			t.Fatalf("no session = %d", res.StatusCode)
@@ -92,10 +96,22 @@ func TestServer(t *testing.T) {
 		}
 		clk.Advance(8 * 24 * time.Hour)
 		var derr *dep.Error
-		if _, err := c.SyncDevices(ctx, "acct", page.Cursor, 0); !errors.As(err, &derr) || derr.Code != dep.CodeExpiredCursor {
+		if _, err := c.SyncDevices(
+			ctx,
+			"acct",
+			page.Cursor,
+			0,
+		); !errors.As(err, &derr) ||
+			derr.Code != dep.CodeExpiredCursor {
 			t.Fatalf("aged cursor = %v", err)
 		}
-		if _, err := c.SyncDevices(ctx, "acct", "nope", 0); !errors.As(err, &derr) || derr.Code != dep.CodeInvalidCursor {
+		if _, err := c.SyncDevices(
+			ctx,
+			"acct",
+			"nope",
+			0,
+		); !errors.As(err, &derr) ||
+			derr.Code != dep.CodeInvalidCursor {
 			t.Fatalf("unknown cursor = %v", err)
 		}
 	})
@@ -104,12 +120,24 @@ func TestServer(t *testing.T) {
 		srv := deptest.NewServer(deptest.Options{Clock: clk, QuotedErrors: true})
 		defer srv.Close()
 		c, _ := newClient(t, srv, clk)
-		srv.Script(dep.PathAccount, deptest.Scripted{Status: 429, RetryAfter: "7"}, deptest.Scripted{Status: 400, Code: dep.CodeUserAgentInvalid})
+		srv.Script(
+			dep.PathAccount,
+			deptest.Scripted{Status: 429, RetryAfter: "7"},
+			deptest.Scripted{Status: 400, Code: dep.CodeUserAgentInvalid},
+		)
 		var derr *dep.Error
-		if _, err := c.Account(ctx, "acct"); !errors.As(err, &derr) || derr.Status != http.StatusTooManyRequests || derr.RetryAfter != 7*time.Second {
+		if _, err := c.Account(
+			ctx,
+			"acct",
+		); !errors.As(err, &derr) || derr.Status != http.StatusTooManyRequests ||
+			derr.RetryAfter != 7*time.Second {
 			t.Fatalf("429 = %v", err)
 		}
-		if _, err := c.Account(ctx, "acct"); !errors.As(err, &derr) || derr.Code != dep.CodeUserAgentInvalid {
+		if _, err := c.Account(
+			ctx,
+			"acct",
+		); !errors.As(err, &derr) ||
+			derr.Code != dep.CodeUserAgentInvalid {
 			t.Fatalf("quoted code = %v", err)
 		}
 		if _, err := c.Account(ctx, "acct"); err != nil {
@@ -120,7 +148,8 @@ func TestServer(t *testing.T) {
 		}
 		found := false
 		for _, r := range srv.Requests() {
-			if r.Path == dep.PathAccount && strings.Contains(r.Header.Get("User-Agent"), "go-apple-dm") {
+			if r.Path == dep.PathAccount &&
+				strings.Contains(r.Header.Get("User-Agent"), "go-apple-dm") {
 				found = true
 			}
 		}

@@ -85,7 +85,8 @@ func (o OTAProfile) Build() (*profile.Profile, error) {
 			URL:              o.URL,
 			Challenge:        o.Challenge,
 			DeviceAttributes: append([]string(nil), attrs...),
-		}}
+		},
+	}
 	if _, err := p.Map(); err != nil {
 		return nil, fmt.Errorf("%w: %w", ErrOTA, err)
 	}
@@ -173,8 +174,32 @@ func (s *OTAService) Verify(body []byte) (*OTARequest, error) {
 		return nil, fmt.Errorf("%w: attributes: %w", ErrOTA, err)
 	}
 	a := DeviceAttributes{Raw: raw}
-	a.UDID, a.Version, a.Product, a.Serial = str(raw, AttrUDID), str(raw, AttrVersion), str(raw, AttrProduct), str(raw, AttrSerial)
-	a.IMEI, a.MEID, a.ICCID, a.Challenge = str(raw, AttrIMEI), str(raw, AttrMEID), str(raw, AttrICCID), str(raw, AttrChallenge)
+	a.UDID, a.Version, a.Product, a.Serial = str(
+		raw,
+		AttrUDID,
+	), str(
+		raw,
+		AttrVersion,
+	), str(
+		raw,
+		AttrProduct,
+	), str(
+		raw,
+		AttrSerial,
+	)
+	a.IMEI, a.MEID, a.ICCID, a.Challenge = str(
+		raw,
+		AttrIMEI,
+	), str(
+		raw,
+		AttrMEID,
+	), str(
+		raw,
+		AttrICCID,
+	), str(
+		raw,
+		AttrChallenge,
+	)
 	if a.UDID == "" {
 		return nil, fmt.Errorf("%w: UDID missing from attributes", ErrOTA)
 	}
@@ -192,6 +217,7 @@ func (s *OTAService) Handler() http.Handler {
 		limit = 64 << 10
 	}
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Cache-Control", "no-store")
 		if r.Method != http.MethodPost {
 			http.Error(w, http.StatusText(http.StatusMethodNotAllowed), http.StatusMethodNotAllowed)
 			return
@@ -203,13 +229,29 @@ func (s *OTAService) Handler() http.Handler {
 		}
 		req, err := s.Verify(body)
 		if err != nil {
-			logger.WarnContext(r.Context(), "ota: request rejected", "error", err, "remote", r.RemoteAddr)
+			logger.WarnContext(
+				r.Context(),
+				"ota: request rejected",
+				"error",
+				err,
+				"remote",
+				r.RemoteAddr,
+			)
 			http.Error(w, http.StatusText(http.StatusForbidden), http.StatusForbidden)
 			return
 		}
 		if s.Authorize != nil {
 			if err := s.Authorize(r.Context(), req); err != nil {
-				logger.WarnContext(r.Context(), "ota: request not authorized", "error", err, "udid", req.Attributes.UDID, "phase", int(req.Phase))
+				logger.WarnContext(
+					r.Context(),
+					"ota: request not authorized",
+					"error",
+					err,
+					"udid",
+					req.Attributes.UDID,
+					"phase",
+					int(req.Phase),
+				)
 				http.Error(w, http.StatusText(http.StatusForbidden), http.StatusForbidden)
 				return
 			}
@@ -220,8 +262,21 @@ func (s *OTAService) Handler() http.Handler {
 		}
 		out, err := s.Profile(r.Context(), req)
 		if err != nil {
-			logger.ErrorContext(r.Context(), "ota: profile", "error", err, "udid", req.Attributes.UDID, "phase", int(req.Phase))
-			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			logger.ErrorContext(
+				r.Context(),
+				"ota: profile",
+				"error",
+				err,
+				"udid",
+				req.Attributes.UDID,
+				"phase",
+				int(req.Phase),
+			)
+			http.Error(
+				w,
+				http.StatusText(http.StatusInternalServerError),
+				http.StatusInternalServerError,
+			)
 			return
 		}
 		w.Header().Set("Content-Type", ContentTypeProfile)

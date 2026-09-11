@@ -33,7 +33,7 @@ const (
 	// a challenge password.
 	IdentitySCEP = "scep"
 	// IdentityACME issues the identity through ACME with Managed Device
-	// Attestation, which needs no secret in the profile.
+	// Attestation and an issuance identifier bound to the requested assurance.
 	IdentityACME = "acme"
 )
 
@@ -54,6 +54,10 @@ var ErrBadACMERequest = errors.New("app: invalid ACME request")
 
 // ACMEConfig configures the ACME server and the identities it issues.
 type ACMEConfig struct {
+	// MacHardware resolves trusted inventory capabilities. Unknown leaves initial
+	// profile flags explicit; secondary credentials use software keys until known.
+	// T2 supports hardware keys, but only Apple silicon supports attestation.
+	MacHardware func(context.Context, acme.Binding) (enroll.MacHardware, error)
 	// Policy is which devices may enroll: ACMEPolicyAny, ACMEPolicyDEP, or
 	// ACMEPolicySIP. Empty means ACMEPolicyAny.
 	Policy string
@@ -276,16 +280,16 @@ func deviceBinding(udid, serial, product, cn string) acme.Binding {
 }
 
 // acmePayload builds the ACME enrollment payload for one device.
-func (s *acmeService) acmePayload(b acme.Binding, directoryURL string) (*enroll.ACME, error) {
+func (s *acmeService) acmePayload(
+	b acme.Binding,
+	directoryURL string,
+	targets ...acmeTarget,
+) (*enroll.ACME, error) {
 	if !b.Identified() && !b.AllowUnidentified {
 		return nil, fmt.Errorf(
 			"%w: ACME needs a serial number or attestation UDID",
 			ErrBadACMERequest,
 		)
-	}
-	identifier, err := s.identifiers.Issue(b)
-	if err != nil {
-		return nil, fmt.Errorf("app: ACME identifier: %w", err)
 	}
 	keyType, keySize := s.cfg.KeyType, s.cfg.KeySize
 	if keyType == "" {
@@ -308,15 +312,27 @@ func (s *acmeService) acmePayload(b acme.Binding, directoryURL string) (*enroll.
 		// refuses.
 		subject.CommonName = b.EnrollmentID
 	}
-	return &enroll.ACME{
+	payload := &enroll.ACME{
 		DirectoryURL:     directoryURL,
-		ClientIdentifier: identifier,
+		ClientIdentifier: "pending",
 		KeyType:          keyType,
 		KeySize:          keySize,
 		HardwareBound:    attested,
 		Attest:           attested,
 		Subject:          subject,
-	}, nil
+	}
+	if len(targets) > 0 {
+		if err := targets[0].apply(payload); err != nil {
+			return nil, err
+		}
+	}
+	b.RequireAttestation = payload.Attest
+	identifier, err := s.identifiers.Issue(b)
+	if err != nil {
+		return nil, fmt.Errorf("app: ACME identifier: %w", err)
+	}
+	payload.ClientIdentifier = identifier
+	return payload, nil
 }
 
 // credentialHandler serves the com.apple.credential.acme document that a
@@ -330,6 +346,7 @@ func (s *acmeService) acmePayload(b acme.Binding, directoryURL string) (*enroll.
 // client identifier it mints should be bound to.
 func (s *acmeService) credentialHandler() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Cache-Control", "no-store")
 		cert := httpapi.CertFromContext(r.Context())
 		if cert == nil {
 			writeError(
@@ -379,7 +396,22 @@ func (s *acmeService) credentialHandler() http.Handler {
 			// A user channel has no hardware of its own to attest.
 			AllowUnidentified: enrollment.Device.SerialNumber == "",
 		}
-		payload, err := s.acmePayload(binding, s.server.DirectoryURL())
+		hardware := enroll.MacHardwareUnknown
+		if enrollment.Capabilities.AppleSilicon == storage.CapabilityTrue {
+			hardware = enroll.MacAppleSilicon
+		}
+		if target.OS == support.MacOS {
+			hardware, err = s.resolveMac(r.Context(), binding, hardware)
+			if err != nil {
+				writeError(w, http.StatusInternalServerError, err)
+				return
+			}
+		}
+		payload, err := s.acmePayload(
+			binding,
+			s.server.DirectoryURL(),
+			acmeTarget{target: target, hardware: hardware, credential: true},
+		)
 		if err != nil {
 			writeError(w, http.StatusInternalServerError, err)
 			return
@@ -392,13 +424,7 @@ func (s *acmeService) credentialHandler() http.Handler {
 			HardwareBound:    payload.HardwareBound,
 			Subject:          enroll.SubjectFromName(payload.Subject),
 		}
-		if target.OS == support.MacOS {
-			credential.HardwareBound = false
-			credential.Attest = new(false)
-		} else if payload.Attest {
-			attestFlag := true
-			credential.Attest = &attestFlag
-		}
+		credential.Attest = new(payload.Attest)
 		if err := credential.Validate(target); err != nil {
 			writeError(
 				w,
@@ -412,6 +438,7 @@ func (s *acmeService) credentialHandler() http.Handler {
 			credential.ClientIdentifier,
 			id,
 			cert,
+			payload.Attest,
 		); err != nil {
 			writeError(w, http.StatusInternalServerError, err)
 			return

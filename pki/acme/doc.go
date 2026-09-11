@@ -15,7 +15,8 @@
 // Binding.MDMUDID separately records the MDM identifier for admission and
 // provenance. AuthorizeUnattested is an optional alternative authorization
 // boundary, checked at challenge validation and finalization; it never skips
-// the ordinary authorization policy.
+// the ordinary authorization policy. Binding.RequireAttestation forbids a
+// downgrade even when AllowUnattested permits other identifiers.
 //
 // An optional registry provides revokeCert with certificate-key, issuing-account
 // or all-identifier authorization. Account key rollover is not implemented.

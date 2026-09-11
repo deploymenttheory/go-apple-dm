@@ -2,12 +2,9 @@ package app
 
 import (
 	"context"
-	"crypto/rand"
 	"crypto/sha256"
 	"crypto/x509"
-	"encoding/base64"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"strings"
 	"time"
@@ -19,7 +16,6 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/pki/scep"
 	"github.com/deploymenttheory/go-apple-dm/schema/checkin"
 	"github.com/deploymenttheory/go-apple-dm/server/service"
-	"github.com/deploymenttheory/go-apple-dm/state"
 )
 
 type (
@@ -40,29 +36,38 @@ func (e *enrollment) issueSCEPGrant(
 	b acme.Binding,
 	g AdmissionGrant,
 ) (string, error) {
-	secret := make([]byte, 32)
-	if _, err := rand.Read(secret); err != nil {
-		return "", fmt.Errorf("app: issuance grant: %w", err)
-	}
-	password := base64.RawURLEncoding.EncodeToString(secret)
-	expires := e.now().Add(time.Hour)
-	if g.ExpiresAt.Before(expires) {
-		expires = g.ExpiresAt
-	}
-	raw, err := json.Marshal(scepGrant{Binding: b, Admission: g, ExpiresAt: expires})
+	binding, err := json.Marshal(b)
 	if err != nil {
-		return "", fmt.Errorf("app: issuance grant: %w", err)
+		return "", fmt.Errorf("app: encode SCEP binding: %w", err)
 	}
-	k := scepGrantKey(password)
-	err = e.state.Update(
-		ctx,
-		[]string{k},
-		func(tx state.Tx) error { return tx.Put(ctx, state.Record{Key: k, Value: raw, ExpiresAt: expires}) },
-	)
+	admission, err := json.Marshal(g)
 	if err != nil {
-		return "", fmt.Errorf("app: persist issuance grant: %w", err)
+		return "", fmt.Errorf("app: encode SCEP admission: %w", err)
+	}
+	password, err := e.scepGrants().
+		Issue(ctx, scep.Grant{Binding: binding, Admission: admission, ExpiresAt: g.ExpiresAt})
+	if err != nil {
+		return "", fmt.Errorf("app: SCEP grant: %w", err)
 	}
 	return password, nil
+}
+
+func (e *enrollment) scepGrants() scep.Grants {
+	return scep.Grants{
+		Store:  e.state,
+		Policy: ca.Policy{},
+		Authorize: func(ctx context.Context, grant scep.Grant, csr *x509.CertificateRequest) error {
+			var binding acme.Binding
+			if err := json.Unmarshal(grant.Binding, &binding); err != nil {
+				return fmt.Errorf("app: decode SCEP binding: %w", err)
+			}
+			if binding.CommonName != csr.Subject.CommonName {
+				return scep.ErrChallenge
+			}
+			_, err := e.admit(ctx, binding)
+			return err
+		},
+	}
 }
 
 func (e *enrollment) verifySCEPGrant(
@@ -70,52 +75,8 @@ func (e *enrollment) verifySCEPGrant(
 	password string,
 	csr *x509.CertificateRequest,
 ) error {
-	if csr == nil || password == "" {
-		return scep.ErrChallenge
-	}
-	k := scepGrantKey(password)
-	record, err := e.state.Get(ctx, k)
-	if errors.Is(err, state.ErrNotFound) {
-		return scep.ErrChallenge
-	}
-	if err != nil {
-		return fmt.Errorf("app: issuance state: %w", err)
-	}
-	var grant scepGrant
-	if err = json.Unmarshal(record.Value, &grant); err != nil {
-		return fmt.Errorf("app: issuance state: %w", err)
-	}
-	if _, err = e.admit(ctx, grant.Binding); err != nil {
-		return fmt.Errorf("app: issuance state: %w", err)
-	}
-	err = e.state.Update(ctx, []string{k}, func(tx state.Tx) error {
-		r, err := tx.Get(ctx, k)
-		if errors.Is(err, state.ErrNotFound) {
-			return scep.ErrChallenge
-		}
-		if err != nil {
-			return fmt.Errorf("app: issuance state: %w", err)
-		}
-		var g scepGrant
-		if err := json.Unmarshal(r.Value, &g); err != nil {
-			return fmt.Errorf("app: issuance state: %w", err)
-		}
-		if !tx.Now().Before(g.ExpiresAt) || csr.Subject.CommonName != g.Binding.CommonName {
-			return scep.ErrChallenge
-		}
-		hash := issuanceHash(csr.Raw)
-		if g.CSRHash != "" && g.CSRHash != hash {
-			return scep.ErrChallenge
-		}
-		g.CSRHash = hash
-		r.Value, err = json.Marshal(g)
-		if err != nil {
-			return fmt.Errorf("app: issuance state: %w", err)
-		}
-		return tx.Put(ctx, r)
-	})
-	if err != nil {
-		return fmt.Errorf("app: reserve issuance grant: %w", err)
+	if err := e.scepGrants().Verify(ctx, password, csr); err != nil {
+		return fmt.Errorf("app: SCEP grant: %w", err)
 	}
 	return nil
 }
@@ -198,31 +159,24 @@ func (e *enrollment) issueSCEP(
 	if err != nil {
 		return nil, fmt.Errorf("app: issue certificate: %w", err)
 	}
-	k := "scep/certificate/" + issuanceHash([]byte(password)) + "/" + issuanceHash(csr.Raw)
-	var cert *x509.Certificate
-	err = e.state.Update(ctx, []string{k}, func(tx state.Tx) error {
-		if r, err := tx.Get(ctx, k); err == nil {
-			cert, err = x509.ParseCertificate(r.Value)
-			if err != nil {
-				return fmt.Errorf("app: cached certificate: %w", err)
-			}
-			return nil
-		} else if !errors.Is(err, state.ErrNotFound) {
-			return fmt.Errorf("app: issuance state: %w", err)
-		}
-		var err error
-		cert, err = pure.Sign(ctx, csr, p)
-		if err != nil {
-			return fmt.Errorf("app: issuance state: %w", err)
-		}
-		return tx.Put(ctx, state.Record{Key: k, Value: cert.Raw, ExpiresAt: cert.NotAfter})
-	})
-	if err != nil {
-		return nil, fmt.Errorf("app: issue certificate: %w", err)
-	}
 	ctx = context.WithValue(ctx, issuanceBindingKey{}, binding)
-	if err := e.depot.Put(ctx, cert); err != nil {
-		return nil, fmt.Errorf("app: issue certificate: %w", err)
+	issuer := scep.CertificateIssuer{
+		Store: e.state, Signer: pure, Register: e.depot.Put,
+		Authorize: func(ctx context.Context, password string, csr *x509.CertificateRequest) error {
+			if err := (enrollmentChallenge{app: e.app, associations: e.depot.associations}).Verify(
+				ctx,
+				password,
+				csr,
+			); err != nil {
+				return err
+			}
+			_, err := e.admit(ctx, binding)
+			return err
+		},
+	}
+	cert, err := issuer.Issue(ctx, password, csr, p)
+	if err != nil {
+		return nil, fmt.Errorf("app: issue SCEP: %w", err)
 	}
 	return cert, nil
 }

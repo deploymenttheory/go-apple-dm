@@ -42,7 +42,10 @@ func TestSession(t *testing.T) {
 			}
 		}
 		if got := f.srv.SessionCalls(); got != 2 {
-			t.Fatalf("N concurrent 401s produced %d /session calls, want exactly one refresh (2 total)", got)
+			t.Fatalf(
+				"N concurrent 401s produced %d /session calls, want exactly one refresh (2 total)",
+				got,
+			)
 		}
 		// The refreshed session is what the store holds.
 		tok, err := f.store.Session(ctx, acct)
@@ -63,7 +66,10 @@ func TestSession(t *testing.T) {
 		// the response header, persisted, and used by the next call without
 		// another /session.
 		if f.srv.SessionCalls() != 1 {
-			t.Fatalf("session calls = %d, want 1 (rotations adopted, never re-authenticated)", f.srv.SessionCalls())
+			t.Fatalf(
+				"session calls = %d, want 1 (rotations adopted, never re-authenticated)",
+				f.srv.SessionCalls(),
+			)
 		}
 		tok, _ := f.store.Session(ctx, acct)
 		if tok != "SESSION-0003" {
@@ -75,12 +81,22 @@ func TestSession(t *testing.T) {
 				sessions = append(sessions, r.Session)
 			}
 		}
-		if strings.Join(sessions, ",") != "SESSION-0001,SESSION-0001,SESSION-0002,SESSION-0002,SESSION-0003" {
+		if strings.Join(
+			sessions,
+			",",
+		) != "SESSION-0001,SESSION-0001,SESSION-0002,SESSION-0002,SESSION-0003" {
 			t.Fatalf("sessions used: %v", sessions)
 		}
 		// A second process sharing the store picks the rotated session up
 		// without authenticating.
-		other, err := dep.NewClient(dep.ClientConfig{Store: f.store, BaseURL: f.srv.URL(), Clock: f.clk})
+		other, err := dep.NewClient(
+			dep.ClientConfig{
+				Store:      f.store,
+				BaseURL:    f.srv.URL(),
+				HTTPClient: f.srv.Client(),
+				Clock:      f.clk,
+			},
+		)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -102,7 +118,10 @@ func TestSession(t *testing.T) {
 			t.Fatalf("err = %v, want *dep.Error 401", err)
 		}
 		if f.srv.SessionCalls() != 2 {
-			t.Fatalf("session calls = %d, want the initial one plus exactly one retry", f.srv.SessionCalls())
+			t.Fatalf(
+				"session calls = %d, want the initial one plus exactly one retry",
+				f.srv.SessionCalls(),
+			)
 		}
 		// 403 FORBIDDEN and EXPIRED_TOKEN also re-authenticate once and then
 		// succeed when the second answer is good.
@@ -120,7 +139,8 @@ func TestSession(t *testing.T) {
 		// A 403 with another code is not a session problem: no retry.
 		f.srv.Script(dep.PathAccount, deptest.Scripted{Status: 403, Code: "ORG_NOT_SUPPORTED"})
 		_, err = f.client.Account(ctx, acct)
-		if !errors.As(err, &derr) || derr.Status != 403 || derr.Code != "ORG_NOT_SUPPORTED" || f.srv.SessionCalls() != 4 {
+		if !errors.As(err, &derr) || derr.Status != 403 || derr.Code != "ORG_NOT_SUPPORTED" ||
+			f.srv.SessionCalls() != 4 {
 			t.Fatalf("other 403: %v sessions=%d", err, f.srv.SessionCalls())
 		}
 		// A refresh that itself fails surfaces the session error.
@@ -135,8 +155,18 @@ func TestSession(t *testing.T) {
 	t.Run("SessionStoreFailures", func(t *testing.T) {
 		t.Parallel()
 		f := newFixture(t)
-		failing := &deptest.Failing{Store: f.store, Fail: map[string]error{"Session": errors.New("db down")}}
-		c, err := dep.NewClient(dep.ClientConfig{Store: failing, BaseURL: f.srv.URL(), Clock: f.clk})
+		failing := &deptest.Failing{
+			Store: f.store,
+			Fail:  map[string]error{"Session": errors.New("db down")},
+		}
+		c, err := dep.NewClient(
+			dep.ClientConfig{
+				Store:      failing,
+				BaseURL:    f.srv.URL(),
+				HTTPClient: f.srv.Client(),
+				Clock:      f.clk,
+			},
+		)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -144,14 +174,33 @@ func TestSession(t *testing.T) {
 			t.Fatalf("Session failure: %v", err)
 		}
 		failing.Fail = map[string]error{"SetSession": errors.New("readonly")}
-		if _, err := c.Account(ctx, acct); err == nil || !strings.Contains(err.Error(), "readonly") {
+		if _, err := c.Account(
+			ctx,
+			acct,
+		); err == nil ||
+			!strings.Contains(err.Error(), "readonly") {
 			t.Fatalf("SetSession failure: %v", err)
 		}
 		// A rotated session that cannot be persisted is an error too.
 		f2 := newFixture(t, withServer(func(o *deptest.Options) { o.RotateEvery = 1 }))
-		failing2 := &deptest.Failing{Store: f2.store, Fail: map[string]error{"SetSession": errors.New("readonly")}, After: map[string]int{"SetSession": 2}}
-		c2, _ := dep.NewClient(dep.ClientConfig{Store: failing2, BaseURL: f2.srv.URL(), Clock: f2.clk})
-		if _, err := c2.Account(ctx, acct); err == nil || !strings.Contains(err.Error(), "readonly") {
+		failing2 := &deptest.Failing{
+			Store: f2.store,
+			Fail:  map[string]error{"SetSession": errors.New("readonly")},
+			After: map[string]int{"SetSession": 2},
+		}
+		c2, _ := dep.NewClient(
+			dep.ClientConfig{
+				Store:      failing2,
+				BaseURL:    f2.srv.URL(),
+				HTTPClient: f2.srv.Client(),
+				Clock:      f2.clk,
+			},
+		)
+		if _, err := c2.Account(
+			ctx,
+			acct,
+		); err == nil ||
+			!strings.Contains(err.Error(), "readonly") {
 			t.Fatalf("rotation persist failure: %v", err)
 		}
 		// The session response must carry a token.
@@ -170,8 +219,17 @@ func TestSession(t *testing.T) {
 			t.Fatalf("session 500: %v", err)
 		}
 		// A nonce source that fails surfaces.
-		f4 := newFixture(t, withClient(func(c *dep.ClientConfig) { c.Nonce = func() (string, error) { return "", errors.New("entropy") } }))
-		if _, err := f4.client.Account(ctx, acct); err == nil || !strings.Contains(err.Error(), "entropy") {
+		f4 := newFixture(
+			t,
+			withClient(
+				func(c *dep.ClientConfig) { c.Nonce = func() (string, error) { return "", errors.New("entropy") } },
+			),
+		)
+		if _, err := f4.client.Account(
+			ctx,
+			acct,
+		); err == nil ||
+			!strings.Contains(err.Error(), "entropy") {
 			t.Fatalf("nonce failure: %v", err)
 		}
 	})
@@ -212,7 +270,8 @@ func TestError(t *testing.T) {
 			f := newFixture(t, withServer(func(o *deptest.Options) { o.QuotedErrors = quoted }))
 			_, err := f.client.SyncDevices(ctx, acct, "bogus", 0)
 			var derr *dep.Error
-			if !errors.As(err, &derr) || derr.Code != dep.CodeInvalidCursor || derr.Status != 400 || len(derr.Body) == 0 {
+			if !errors.As(err, &derr) || derr.Code != dep.CodeInvalidCursor || derr.Status != 400 ||
+				len(derr.Body) == 0 {
 				t.Fatalf("quoted=%v: %v", quoted, err)
 			}
 			if derr.Error() != "dep: HTTP 400 INVALID_CURSOR" {
@@ -220,15 +279,31 @@ func TestError(t *testing.T) {
 			}
 			f.srv.Script(dep.PathAccount, deptest.Scripted{Status: 429, RetryAfter: "7"})
 			_, err = f.client.Account(ctx, acct)
-			if !errors.As(err, &derr) || derr.Status != 429 || derr.RetryAfter != 7*time.Second || derr.Code != "" || derr.Error() != "dep: HTTP 429" {
+			if !errors.As(err, &derr) || derr.Status != 429 || derr.RetryAfter != 7*time.Second ||
+				derr.Code != "" ||
+				derr.Error() != "dep: HTTP 429" {
 				t.Fatalf("429: %+v %v", derr, err)
 			}
-			f.srv.Script(dep.PathAccount, deptest.Scripted{Status: 503, RetryAfter: t0.Add(90 * time.Second).UTC().Format(http.TimeFormat)})
+			f.srv.Script(
+				dep.PathAccount,
+				deptest.Scripted{
+					Status:     503,
+					RetryAfter: t0.Add(90 * time.Second).UTC().Format(http.TimeFormat),
+				},
+			)
 			_, err = f.client.Account(ctx, acct)
 			if !errors.As(err, &derr) || derr.RetryAfter != 90*time.Second {
 				t.Fatalf("http-date Retry-After: %+v %v", derr, err)
 			}
-			f.srv.Script(dep.PathAccount, deptest.Scripted{Status: 503, RetryAfter: "garbage"}, deptest.Scripted{Status: 503, RetryAfter: "-4"}, deptest.Scripted{Status: 503, RetryAfter: t0.Add(-time.Hour).UTC().Format(http.TimeFormat)})
+			f.srv.Script(
+				dep.PathAccount,
+				deptest.Scripted{Status: 503, RetryAfter: "garbage"},
+				deptest.Scripted{Status: 503, RetryAfter: "-4"},
+				deptest.Scripted{
+					Status:     503,
+					RetryAfter: t0.Add(-time.Hour).UTC().Format(http.TimeFormat),
+				},
+			)
 			for range 3 {
 				_, err = f.client.Account(ctx, acct)
 				if !errors.As(err, &derr) || derr.RetryAfter != 0 {
@@ -242,7 +317,9 @@ func TestError(t *testing.T) {
 		t.Parallel()
 		err := (&dep.Profile{}).Validate()
 		var pe *dep.ProfileError
-		if !errors.As(err, &pe) || !errors.Is(err, dep.ErrProfileInvalid) || pe.Code != dep.CodeConfigNameInvalid || !strings.Contains(err.Error(), pe.Code) {
+		if !errors.As(err, &pe) || !errors.Is(err, dep.ErrProfileInvalid) ||
+			pe.Code != dep.CodeConfigNameInvalid ||
+			!strings.Contains(err.Error(), pe.Code) {
 			t.Fatalf("%v", err)
 		}
 	})
@@ -264,7 +341,12 @@ func TestTransport(t *testing.T) {
 		body := `{"devices":["C1"]}`
 		// A body reader without GetBody and an unknown length is what a
 		// streaming caller hands over; nanodep's make([]byte, 0, -1) panics here.
-		req, err := http.NewRequestWithContext(ctx, http.MethodPost, f.client.URL(dep.PathDeviceDetails, nil), io.NopCloser(strings.NewReader(body)))
+		req, err := http.NewRequestWithContext(
+			ctx,
+			http.MethodPost,
+			f.client.URL(dep.PathDeviceDetails, nil),
+			io.NopCloser(strings.NewReader(body)),
+		)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -287,20 +369,48 @@ func TestTransport(t *testing.T) {
 			t.Fatalf("replayed bodies: %q", bodies)
 		}
 		// GetBody is used when present, and a body over the bound is refused.
-		small, _ := dep.NewClient(dep.ClientConfig{Store: f.store, BaseURL: f.srv.URL(), Clock: f.clk, MaxBodyBytes: 4})
-		req, _ = http.NewRequestWithContext(ctx, http.MethodPost, f.client.URL(dep.PathDeviceDetails, nil), io.NopCloser(strings.NewReader(body)))
+		small, _ := dep.NewClient(
+			dep.ClientConfig{
+				Store:        f.store,
+				BaseURL:      f.srv.URL(),
+				HTTPClient:   f.srv.Client(),
+				Clock:        f.clk,
+				MaxBodyBytes: 4,
+			},
+		)
+		req, _ = http.NewRequestWithContext(
+			ctx,
+			http.MethodPost,
+			f.client.URL(dep.PathDeviceDetails, nil),
+			io.NopCloser(strings.NewReader(body)),
+		)
 		if err := small.Do(ctx, acct, req, nil); !errors.Is(err, dep.ErrBodyTooLarge) {
 			t.Fatalf("over bound: %v", err)
 		}
-		req, _ = http.NewRequestWithContext(ctx, http.MethodPost, f.client.URL(dep.PathDeviceDetails, nil), strings.NewReader(body))
+		req, _ = http.NewRequestWithContext(
+			ctx,
+			http.MethodPost,
+			f.client.URL(dep.PathDeviceDetails, nil),
+			strings.NewReader(body),
+		)
 		if err := small.Do(ctx, acct, req, &out); err != nil {
 			t.Fatalf("GetBody path over the bound: %v", err)
 		}
-		req, _ = http.NewRequestWithContext(ctx, http.MethodPost, f.client.URL(dep.PathDeviceDetails, nil), io.NopCloser(iotest{}))
+		req, _ = http.NewRequestWithContext(
+			ctx,
+			http.MethodPost,
+			f.client.URL(dep.PathDeviceDetails, nil),
+			io.NopCloser(iotest{}),
+		)
 		if err := f.client.Do(ctx, acct, req, nil); !errors.Is(err, dep.ErrInvalid) {
 			t.Fatalf("unreadable body: %v", err)
 		}
-		req, _ = http.NewRequestWithContext(ctx, http.MethodPost, f.client.URL(dep.PathDeviceDetails, nil), strings.NewReader(body))
+		req, _ = http.NewRequestWithContext(
+			ctx,
+			http.MethodPost,
+			f.client.URL(dep.PathDeviceDetails, nil),
+			strings.NewReader(body),
+		)
 		req.GetBody = func() (io.ReadCloser, error) { return nil, errors.New("gone") }
 		if err := f.client.Do(ctx, acct, req, nil); !errors.Is(err, dep.ErrInvalid) {
 			t.Fatalf("GetBody failure: %v", err)
@@ -348,7 +458,8 @@ func TestTransport(t *testing.T) {
 			if r.Header.Get("Accept") != "application/json;charset=UTF8" || r.Session == "" {
 				t.Errorf("%s: headers %v", r, r.Header)
 			}
-			if r.Method == http.MethodPost && r.Header.Get("Content-Type") != "application/json;charset=UTF8" {
+			if r.Method == http.MethodPost &&
+				r.Header.Get("Content-Type") != "application/json;charset=UTF8" {
 				t.Errorf("%s: Content-Type %q", r, r.Header.Get("Content-Type"))
 			}
 		}
@@ -368,10 +479,20 @@ func TestTransport(t *testing.T) {
 		if _, err := dep.NewClient(dep.ClientConfig{}); !errors.Is(err, dep.ErrConfig) {
 			t.Fatalf("nil store: %v", err)
 		}
-		if _, err := dep.NewClient(dep.ClientConfig{Store: inmem.New(), BaseURL: "::not a url"}); !errors.Is(err, dep.ErrConfig) {
+		if _, err := dep.NewClient(
+			dep.ClientConfig{Store: inmem.New(), BaseURL: "::not a url"},
+		); !errors.Is(
+			err,
+			dep.ErrConfig,
+		) {
 			t.Fatalf("bad URL: %v", err)
 		}
-		if _, err := dep.NewClient(dep.ClientConfig{Store: inmem.New(), BaseURL: "relative/path"}); !errors.Is(err, dep.ErrConfig) {
+		if _, err := dep.NewClient(
+			dep.ClientConfig{Store: inmem.New(), BaseURL: "relative/path"},
+		); !errors.Is(
+			err,
+			dep.ErrConfig,
+		) {
 			t.Fatalf("relative URL: %v", err)
 		}
 		f := newFixture(t)
@@ -400,10 +521,28 @@ func TestTransport(t *testing.T) {
 			t.Fatalf("empty body: %v", err)
 		}
 		// A request that cannot be built or sent surfaces.
-		if _, err := f.client.NewRequest(ctx, "BAD METHOD", "/x", nil, nil); !errors.Is(err, dep.ErrInvalid) {
+		if _, err := f.client.NewRequest(
+			ctx,
+			"BAD METHOD",
+			"/x",
+			nil,
+			nil,
+		); !errors.Is(
+			err,
+			dep.ErrInvalid,
+		) {
 			t.Fatalf("bad method: %v", err)
 		}
-		if _, err := f.client.NewRequest(ctx, http.MethodPost, "/x", nil, make(chan int)); !errors.Is(err, dep.ErrInvalid) {
+		if _, err := f.client.NewRequest(
+			ctx,
+			http.MethodPost,
+			"/x",
+			nil,
+			make(chan int),
+		); !errors.Is(
+			err,
+			dep.ErrInvalid,
+		) {
 			t.Fatalf("unmarshalable body: %v", err)
 		}
 		dead := newFixture(t)
@@ -421,8 +560,18 @@ func TestTransport(t *testing.T) {
 			t.Fatal("closed server after session: no error")
 		}
 		// GetAccount failures propagate.
-		failing := &deptest.Failing{Store: f.store, Fail: map[string]error{"GetAccount": errors.New("db down")}}
-		c, _ := dep.NewClient(dep.ClientConfig{Store: failing, BaseURL: f.srv.URL(), Clock: f.clk})
+		failing := &deptest.Failing{
+			Store: f.store,
+			Fail:  map[string]error{"GetAccount": errors.New("db down")},
+		}
+		c, _ := dep.NewClient(
+			dep.ClientConfig{
+				Store:      failing,
+				BaseURL:    f.srv.URL(),
+				HTTPClient: f.srv.Client(),
+				Clock:      f.clk,
+			},
+		)
 		if _, err := c.Account(ctx, acct); err == nil || !strings.Contains(err.Error(), "db down") {
 			t.Fatalf("GetAccount failure: %v", err)
 		}

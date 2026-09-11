@@ -279,7 +279,10 @@ func (a *App) wireEnrollment(ctx context.Context, mux *http.ServeMux) ([]service
 	// The credential document identifies the device by the certificate it
 	// presents, so it goes behind the same certificate source as the MDM
 	// endpoints rather than being readable by anyone with the URL.
-	mux.Handle(PathACMECredential, a.certSource()(a.credentialSecurity(e.acme.credentialHandler())))
+	mux.Handle(
+		PathACMECredential,
+		noStore(a.certSource()(a.credentialSecurity(e.acme.credentialHandler()))),
+	)
 
 	e.asweb = &accountdriven.AppleAsWeb{URL: e.base + PathAuthenticate, Tokens: e.tokens}
 	e.oauth = &accountdriven.OAuth2{
@@ -319,7 +322,14 @@ func (a *App) wireEnrollment(ctx context.Context, mux *http.ServeMux) ([]service
 			if email, _ := id.Claims["email"].(string); email != "" {
 				cn = email + "/" + p.SERIAL
 			}
-			return e.profile(ctx, deviceBinding(p.UDID, p.SERIAL, p.PRODUCT, cn))
+			return e.profileForDevice(
+				ctx,
+				deviceBinding(p.UDID, p.SERIAL, p.PRODUCT, cn),
+				e.cfg.Identity,
+				p.PRODUCT,
+				p.OSVERSION,
+				enroll.MacHardwareUnknown,
+			)
 		},
 		WebAuth: ade.WebAuthFunc(func(w http.ResponseWriter, r *http.Request, b ade.Bound) {
 			if e.flow == nil {
@@ -369,12 +379,13 @@ func (a *App) wireEnrollment(ctx context.Context, mux *http.ServeMux) ([]service
 				if !ok {
 					return nil, accountdriven.ErrAssociation
 				}
-				p, err := e.profile(
+				p, err := e.profileForDevice(
 					ctx,
 					acme.Binding{
 						CommonName:        accountdriven.CertificateSubjectPrefix + association.Reference,
 						AllowUnidentified: true,
 					},
+					e.cfg.Identity, info.Product, info.OSVersion, enroll.MacHardwareUnknown,
 				)
 				if err != nil {
 					return nil, err
@@ -480,6 +491,7 @@ func (e *enrollment) profileWithIdentity(
 	ctx context.Context,
 	b acme.Binding,
 	identity string,
+	targets ...acmeTarget,
 ) (*enroll.Profile, error) {
 	if identity == "" {
 		identity = IdentitySCEP
@@ -520,14 +532,24 @@ func (e *enrollment) profileWithIdentity(
 			enroll.CapabilityBootstrapToken,
 		},
 	}
+	if len(targets) > 0 {
+		out.Target = targets[0].target
+		out.MacHardware = targets[0].hardware
+	}
 	if err := e.stabilizeProfile(ctx, b, out); err != nil {
 		return nil, err
 	}
 	if identity == IdentityACME {
 		b.CommonName, b.Organization = subjectCN, []string{org}
-		payload, err := e.acme.acmePayload(b, e.acme.server.DirectoryURL())
+		payload, err := e.acme.acmePayload(b, e.acme.server.DirectoryURL(), targets...)
 		if err != nil {
 			return nil, err
+		}
+		if !payload.Attest && !e.acme.cfg.AllowUnattested {
+			return nil, fmt.Errorf(
+				"%w: this ACME enrollment requires attestation; use SCEP or explicitly authorize unattested enrollment",
+				ErrBadACMERequest,
+			)
 		}
 		out.ACME = payload
 		return out, nil

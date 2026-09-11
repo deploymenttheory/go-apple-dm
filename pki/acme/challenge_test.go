@@ -4,7 +4,6 @@ import (
 	"context"
 	"crypto/x509/pkix"
 	"encoding/base64"
-
 	"net/http"
 	"strings"
 	"sync/atomic"
@@ -191,7 +190,11 @@ func TestChallenge(t *testing.T) {
 			CommonName: "A User Enrollment", AllowUnidentified: true,
 		}
 		fl = allowed.begin(identifier)
-		requireStatus(t, fl.answer(fl.attestation(attest.Properties{OSVersion: "26.0"})), http.StatusOK)
+		requireStatus(
+			t,
+			fl.answer(fl.attestation(attest.Properties{OSVersion: "26.0"})),
+			http.StatusOK,
+		)
 	})
 
 	// NoAttestationRequiresOptIn: Apple sends a statement with no chain
@@ -444,4 +447,17 @@ func TestEventsAreOptional(t *testing.T) {
 		requireStatus(t, fl.answer(fl.attestation(deviceProperties())), http.StatusOK)
 		requireStatus(t, fl.finalizeWith(fl.key, pkix.Name{}), http.StatusOK)
 	})
+}
+
+func TestRequiredAttestationCannotBeDowngraded(t *testing.T) {
+	f := newFixture(t, func(c *acme.Config) { c.AllowUnattested = true })
+	binding := f.ids[testIdentifier]
+	binding.RequireAttestation = true
+	f.ids[testIdentifier] = binding
+	fl := f.begin(testIdentifier)
+	empty, err := attesttest.Object(nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	requireProblem(t, fl.answer(empty), acme.ProblemBadAttestationStatement)
 }

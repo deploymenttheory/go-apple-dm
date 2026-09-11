@@ -190,7 +190,9 @@ func (s *Server) newOrder(e *exchange) error {
 	// is refused rather than accepted and left to rot.
 	if len(req.Identifiers) != 1 {
 		return NewProblem(
-			ProblemMalformed, "an order must carry exactly one identifier, got %d", len(req.Identifiers),
+			ProblemMalformed,
+			"an order must carry exactly one identifier, got %d",
+			len(req.Identifiers),
 		)
 	}
 	id := req.Identifiers[0]
@@ -420,7 +422,10 @@ func (s *Server) attestationFrom(e *exchange) ([]byte, error) {
 		return nil, err
 	}
 	if req.AttObj == "" {
-		return nil, NewProblem(ProblemMalformed, "the challenge response carries no attestation object")
+		return nil, NewProblem(
+			ProblemMalformed,
+			"the challenge response carries no attestation object",
+		)
 	}
 	raw, err := base64.RawURLEncoding.DecodeString(req.AttObj)
 	if err != nil {
@@ -504,6 +509,9 @@ func (s *Server) matchBinding(o *Order, a *attest.Attestation) error {
 
 // authorize runs the deployment's policy.
 func (s *Server) authorize(e *exchange, o *Order, a *attest.Attestation) error {
+	if o.Binding.RequireAttestation && a == nil {
+		return NewProblem(ProblemBadAttestationStatement, "this identifier requires attestation")
+	}
 	d := &Decision{
 		Account:     e.account,
 		Order:       o,
@@ -663,7 +671,10 @@ func (s *Server) checkAttestedKey(e *exchange, o *Order, csr *x509.CertificateRe
 		// reached this point because the deployment allows it. There is no
 		// attested key, so there is nothing to bind the request's key to.
 		if !s.cfg.AllowUnattested && s.cfg.AuthorizeUnattested == nil {
-			return NewProblem(ProblemUnauthorized, "the order was authorized without an attestation")
+			return NewProblem(
+				ProblemUnauthorized,
+				"the order was authorized without an attestation",
+			)
 		}
 		return s.authorizeUnattested(e, o)
 	}
@@ -745,7 +756,14 @@ func (s *Server) issue(e *exchange, o *Order, csr *x509.CertificateRequest) (*is
 		}
 		policy.NotAfter = o.Binding.NotAfter
 	}
-	provenance := revocation.Provenance{Source: "acme", EnrollmentID: o.Binding.EnrollmentID, AccountID: o.AccountID, UDID: o.Binding.EnrollmentUDID(), Serial: o.Binding.Serial, Identifiers: []string{o.Identifier.Type + ":" + o.Identifier.Value}}
+	provenance := revocation.Provenance{
+		Source:       "acme",
+		EnrollmentID: o.Binding.EnrollmentID,
+		AccountID:    o.AccountID,
+		UDID:         o.Binding.EnrollmentUDID(),
+		Serial:       o.Binding.Serial,
+		Identifiers:  []string{o.Identifier.Type + ":" + o.Identifier.Value},
+	}
 	cert, err := s.cfg.Signer.Sign(revocation.WithProvenance(e.ctx(), provenance), csr, policy)
 	if err != nil {
 		if errors.Is(err, ca.ErrPolicy) || errors.Is(err, ca.ErrCSR) {
@@ -755,7 +773,12 @@ func (s *Server) issue(e *exchange, o *Order, csr *x509.CertificateRequest) (*is
 	}
 	chain := encodeChain(cert, s.cfg.Signer.Chain())
 	if s.cfg.Revocations != nil {
-		if err := s.cfg.Revocations.Register(e.ctx(), cms.Fingerprint(s.cfg.Signer.Certificate()), cert, provenance); err != nil {
+		if err := s.cfg.Revocations.Register(
+			e.ctx(),
+			cms.Fingerprint(s.cfg.Signer.Certificate()),
+			cert,
+			provenance,
+		); err != nil {
 			return nil, WrapProblem(ProblemServerInternal, err, "certificate registry unavailable")
 		}
 	}
@@ -820,7 +843,10 @@ func (s *Server) settleOrder(e *exchange, o *Order, cause error) error {
 	}
 	o.Status = StatusInvalid
 	o.Error = p
-	if err := s.cfg.Store.Update(e.ctx(), func(tx Tx) error { return tx.PutOrder(e.ctx(), o) }); err != nil {
+	if err := s.cfg.Store.Update(
+		e.ctx(),
+		func(tx Tx) error { return tx.PutOrder(e.ctx(), o) },
+	); err != nil {
 		return WrapProblem(ProblemServerInternal, err, "the order could not be stored")
 	}
 	return p

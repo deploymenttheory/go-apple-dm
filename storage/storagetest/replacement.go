@@ -33,11 +33,26 @@ func RunReplacementSuite(t *testing.T, factory Factory) {
 				if err := s.StoreBootstrapToken(ctx, id, []byte("escrow"), t0); err != nil {
 					t.Fatal(err)
 				}
-				if _, err := s.Enqueue(ctx, []mdm.EnrollmentID{id}, cmd(t, "queued"), storage.EnqueueOptions{Now: t0}); err != nil {
+				if _, err := s.Enqueue(
+					ctx,
+					[]mdm.EnrollmentID{id},
+					cmd(t, "queued"),
+					storage.EnqueueOptions{Now: t0},
+				); err != nil {
 					t.Fatal(err)
 				}
-				command, _ := mdm.NewCommand(&commands.InstallProfile{Payload: []byte("profile")}, mdm.WithUUID("attempt"))
-				x := &storage.Replacement{ID: "attempt", Method: method, OldHash: "old", SecretHash: "secret", ExpiresAt: t0.Add(30 * time.Minute), Command: *command}
+				command, _ := mdm.NewCommand(
+					&commands.InstallProfile{Payload: []byte("profile")},
+					mdm.WithUUID("attempt"),
+				)
+				x := &storage.Replacement{
+					ID:         "attempt",
+					Method:     method,
+					OldHash:    "old",
+					SecretHash: "secret",
+					ExpiresAt:  t0.Add(30 * time.Minute),
+					Command:    *command,
+				}
 				step := func(c storage.ReplacementChange) *storage.Replacement {
 					t.Helper()
 					if c.At.IsZero() {
@@ -53,27 +68,90 @@ func RunReplacementSuite(t *testing.T, factory Factory) {
 					return r
 				}
 				step(storage.ReplacementChange{Op: "begin", Begin: x})
-				if _, err := rs.TransitionReplacement(ctx, id, storage.ReplacementChange{Op: "begin", Begin: x, At: t0}); !errors.Is(err, storage.ErrConflict) {
+				if _, err := rs.TransitionReplacement(
+					ctx,
+					id,
+					storage.ReplacementChange{Op: "begin", Begin: x, At: t0},
+				); !errors.Is(
+					err,
+					storage.ErrConflict,
+				) {
 					t.Fatal("concurrent attempt", err)
 				}
 				if method == "scep" {
-					step(storage.ReplacementChange{Op: "claim", SecretHash: "secret", PublicKeyHash: "key"})
+					step(
+						storage.ReplacementChange{
+							Op:            "claim",
+							SecretHash:    "secret",
+							PublicKeyHash: "key",
+							CSRHash:       "csr",
+						},
+					)
+					step(
+						storage.ReplacementChange{
+							Op:            "claim",
+							SecretHash:    "secret",
+							PublicKeyHash: "key",
+							CSRHash:       "csr",
+						},
+					)
 				}
-				step(storage.ReplacementChange{Op: "issue", Method: method, Hash: "new", PublicKeyHash: "key"})
+				step(
+					storage.ReplacementChange{
+						Op:            "issue",
+						Method:        method,
+						Hash:          "new",
+						PublicKeyHash: "key",
+					},
+				)
+				step(
+					storage.ReplacementChange{
+						Op:            "issue",
+						Method:        method,
+						Hash:          "new",
+						PublicKeyHash: "key",
+					},
+				)
 				step(storage.ReplacementChange{Op: "deliver", Hash: "old"})
-				step(storage.ReplacementChange{Op: "authenticate", Hash: "new", Raw: []byte("new-auth")})
+				step(
+					storage.ReplacementChange{
+						Op:   "authenticate",
+						Hash: "new",
+						Raw:  []byte("new-auth"),
+					},
+				)
 				before, _ := s.Get(ctx, id)
 				if before.CertHash != "old" || !before.Enabled {
 					t.Fatal("Authenticate changed active enrollment")
 				}
 				token := func(id mdm.EnrollmentID) storage.ReplacementChange {
-					return storage.ReplacementChange{Op: "token", Hash: "new", Token: &storage.ReplacementToken{ID: id, Raw: []byte("new-token"), Message: &checkin.TokenUpdate{Topic: "com.apple.mgmt.test", Token: []byte{9, 8}, PushMagic: "new-magic", UserShortName: new("updated"), UserLongName: "Updated", EnrollmentUserID: "enrollment-user", UnlockToken: []byte("new-unlock")}}}
+					return storage.ReplacementChange{
+						Op:   "token",
+						Hash: "new",
+						Token: &storage.ReplacementToken{
+							ID:  id,
+							Raw: []byte("new-token"),
+							Message: &checkin.TokenUpdate{
+								Topic:            "com.apple.mgmt.test",
+								Token:            []byte{9, 8},
+								PushMagic:        "new-magic",
+								UserShortName:    new("updated"),
+								UserLongName:     "Updated",
+								EnrollmentUserID: "enrollment-user",
+								UnlockToken:      []byte("new-unlock"),
+							},
+						},
+					}
 				}
 				// Include existing and newly created user channels in the transaction.
 				step(token(user(1, "alice")))
 				step(token(user(1, "bob")))
 				step(token(user(1, "alice")))
-				ack := storage.ReplacementChange{Op: "result", Hash: "new", Response: &mdm.Response{CommandUUID: "attempt", Status: mdm.StatusAcknowledged}}
+				ack := storage.ReplacementChange{
+					Op:       "result",
+					Hash:     "new",
+					Response: &mdm.Response{CommandUUID: "attempt", Status: mdm.StatusAcknowledged},
+				}
 				var final *storage.Replacement
 				switch terminal {
 				case "commit-token-first":
@@ -91,11 +169,15 @@ func RunReplacementSuite(t *testing.T, factory Factory) {
 					final = step(ack)
 				case "expire":
 					step(token(id))
-					final = step(storage.ReplacementChange{Op: "read", At: t0.Add(30 * time.Minute)})
+					final = step(
+						storage.ReplacementChange{Op: "read", At: t0.Add(30 * time.Minute)},
+					)
 				}
 				current, _ := s.Get(ctx, id)
 				if terminal == "commit-token-first" || terminal == "commit-ack-first" {
-					if final.State != storage.ReplacementCommitted || current.CertHash != "new" || current.Push.Magic != "new-magic" || string(current.AuthenticateRaw) != "new-auth" {
+					if final.State != storage.ReplacementCommitted || current.CertHash != "new" ||
+						current.Push.Magic != "new-magic" ||
+						string(current.AuthenticateRaw) != "new-auth" {
 						t.Fatal("candidate not committed", final.State, current)
 					}
 					for _, uid := range []mdm.EnrollmentID{user(1, "alice"), user(1, "bob")} {
@@ -141,8 +223,21 @@ func RunReplacementSuite(t *testing.T, factory Factory) {
 		id := device(1)
 		enroll(t, s, id, 1)
 		_ = s.AssociateCert(ctx, id, "old", t0)
-		command, _ := mdm.NewCommand(&commands.InstallProfile{Payload: []byte("p")}, mdm.WithUUID("attempt"))
-		ch := storage.ReplacementChange{Op: "begin", At: t0, Begin: &storage.Replacement{ID: "attempt", Method: "acme", OldHash: "old", ExpiresAt: t0.Add(time.Minute), Command: *command}}
+		command, _ := mdm.NewCommand(
+			&commands.InstallProfile{Payload: []byte("p")},
+			mdm.WithUUID("attempt"),
+		)
+		ch := storage.ReplacementChange{
+			Op: "begin",
+			At: t0,
+			Begin: &storage.Replacement{
+				ID:        "attempt",
+				Method:    "acme",
+				OldHash:   "old",
+				ExpiresAt: t0.Add(time.Minute),
+				Command:   *command,
+			},
+		}
 		var wg sync.WaitGroup
 		results := make(chan error, 2)
 		for range 2 {

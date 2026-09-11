@@ -252,10 +252,7 @@ func TestIssuanceFailsClosedOnStateFaults(t *testing.T) {
 	}
 	a.enroll = e
 	e.depot = &enrollmentDepot{app: a, Depot: ca.NewMemoryDepot()}
-	csr := &x509.CertificateRequest{
-		Subject: pkix.Name{CommonName: "device"},
-		Raw:     []byte("request"),
-	}
+	csr := hardeningCSR(t, "device")
 	password, err := e.issueSCEPGrant(
 		t.Context(),
 		acme.Binding{CommonName: "device", UDID: "device"},

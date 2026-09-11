@@ -92,6 +92,36 @@ func RunSecuritySuite(t *testing.T, factory Factory) {
 			e.Capabilities.Source != "device:SecurityInfo" {
 			t.Fatal(e.Capabilities)
 		}
+
+		hardware := &mdm.Command{UUID: "hardware", RequestType: "DeviceInformation"}
+		if _, err := s.Enqueue(
+			ctx,
+			[]mdm.EnrollmentID{id},
+			hardware,
+			storage.EnqueueOptions{Now: t0},
+		); err != nil {
+			t.Fatal(err)
+		}
+		hardwareRaw, _ := plist.Marshal(
+			map[string]any{
+				"UDID":           id.ID,
+				"CommandUUID":    hardware.UUID,
+				"Status":         "Acknowledged",
+				"QueryResponses": map[string]any{"IsAppleSilicon": true},
+			},
+		)
+		hardwareResponse, err := mdm.DecodeResponse(hardwareRaw, "")
+		if err != nil {
+			t.Fatal(err)
+		}
+		if err := s.StoreResult(ctx, id, hardwareResponse, t0); err != nil {
+			t.Fatal(err)
+		}
+		e, err = s.Get(ctx, id)
+		if err != nil || e.Capabilities.AppleSilicon != storage.CapabilityTrue ||
+			e.Capabilities.DEP != storage.CapabilityTrue {
+			t.Fatal("lost hardware or management evidence", e, err)
+		}
 		resp.CommandUUID = "unknown"
 		if err = s.StoreResult(ctx, id, resp, t0); !errors.Is(err, storage.ErrNotFound) {
 			t.Fatal(err)

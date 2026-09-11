@@ -614,6 +614,14 @@ func (e *Environment) depFixture(env map[string]string) error {
 	w := e.Workspace
 	e.DEP = deptest.NewServer(deptest.Options{})
 	env["DM_DEP_BASE_URL"] = e.DEP.URL()
+	if err := os.WriteFile(
+		w.path("fixtures", "dep-tls.pem"),
+		pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: e.DEP.Certificate().Raw}),
+		0o600,
+	); err != nil {
+		return wrapError(err)
+	}
+	env["DM_DEP_ROOT_CA_FILE"] = w.path("fixtures", "dep-tls.pem")
 	e.DEP.AddDevices(
 		dep.Device{
 			SerialNumber: "BENCH-DEP-1",
@@ -638,6 +646,14 @@ func (e *Environment) abmFixture(env map[string]string) error {
 	w := e.Workspace
 	var err error
 	e.ABM = axmtest.NewServer()
+	if err := os.WriteFile(
+		w.path("fixtures", "abm-tls.pem"),
+		pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: e.ABM.Certificate().Raw}),
+		0o600,
+	); err != nil {
+		return wrapError(err)
+	}
+	env["DM_AXM_ROOT_CA_FILE"] = w.path("fixtures", "abm-tls.pem")
 	abmKey, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
 	if err != nil {
 		return wrapError(err)

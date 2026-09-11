@@ -126,10 +126,14 @@ func stub(t *testing.T, handler http.HandlerFunc) *httptest.Server {
 	mux := http.NewServeMux()
 	mux.HandleFunc("POST /auth/oauth2/token", func(w http.ResponseWriter, _ *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		_, _ = w.Write([]byte(`{"access_token":"stub-token","token_type":"Bearer","expires_in":3600,"scope":"business.api"}`))
+		_, _ = w.Write(
+			[]byte(
+				`{"access_token":"stub-token","token_type":"Bearer","expires_in":3600,"scope":"business.api"}`,
+			),
+		)
 	})
 	mux.HandleFunc("/", handler)
-	srv := httptest.NewServer(mux)
+	srv := httptest.NewTLSServer(mux)
 	t.Cleanup(srv.Close)
 	return srv
 }
@@ -138,9 +142,14 @@ func stub(t *testing.T, handler http.HandlerFunc) *httptest.Server {
 func stubClient(t *testing.T, srv *httptest.Server, mod func(*Config)) *Client {
 	t.Helper()
 	cfg := Config{
-		ClientID: testClientID, KeyID: testKeyID, PrivateKey: newKey(t),
-		BaseURL: srv.URL, TokenURL: srv.URL + "/auth/oauth2/token", HTTPClient: srv.Client(), Clock: &instantClock{},
-		Retry: Retry{Max: 0, Base: time.Millisecond, Cap: time.Millisecond},
+		ClientID:   testClientID,
+		KeyID:      testKeyID,
+		PrivateKey: newKey(t),
+		BaseURL:    srv.URL,
+		TokenURL:   srv.URL + "/auth/oauth2/token",
+		HTTPClient: srv.Client(),
+		Clock:      &instantClock{},
+		Retry:      Retry{Max: 0, Base: time.Millisecond, Cap: time.Millisecond},
 	}
 	if mod != nil {
 		mod(&cfg)

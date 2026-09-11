@@ -22,9 +22,10 @@ import (
 const credentialGrantTTL = 5 * time.Minute
 
 type credentialGrant struct {
-	Enrollment  mdm.EnrollmentID `json:"enrollment"`
-	Certificate []byte           `json:"certificate"`
-	ExpiresAt   time.Time        `json:"expiresAt"`
+	RequireAttestation bool             `json:"requireAttestation,omitempty"`
+	Enrollment         mdm.EnrollmentID `json:"enrollment"`
+	Certificate        []byte           `json:"certificate"`
+	ExpiresAt          time.Time        `json:"expiresAt"`
 }
 
 func credentialGrantKey(identifier string) string {
@@ -39,6 +40,7 @@ func (s *acmeService) recordCredentialGrant(
 	identifier string,
 	id mdm.EnrollmentID,
 	cert *x509.Certificate,
+	requireAttestation bool,
 ) error {
 	expires := s.app.cfg.Clock.Now().Add(credentialGrantTTL)
 	if cert.NotAfter.Before(expires) {
@@ -47,7 +49,12 @@ func (s *acmeService) recordCredentialGrant(
 	if !s.app.cfg.Clock.Now().Before(expires) {
 		return fmt.Errorf("%w: expired credential identity", ErrBadACMERequest)
 	}
-	grant := credentialGrant{Enrollment: id, Certificate: cert.Raw, ExpiresAt: expires}
+	grant := credentialGrant{
+		RequireAttestation: requireAttestation,
+		Enrollment:         id,
+		Certificate:        cert.Raw,
+		ExpiresAt:          expires,
+	}
 	value, err := json.Marshal(grant)
 	if err != nil {
 		return fmt.Errorf("app: credential grant: %w", err)
@@ -83,7 +90,8 @@ func (s *acmeService) authorizeCredential(
 	if err := json.Unmarshal(record.Value, &grant); err != nil {
 		return fmt.Errorf("app: decode credential grant: %w", err)
 	}
-	if grant.Enrollment.ID != d.Binding.EnrollmentID ||
+	if (grant.RequireAttestation && d.Attestation == nil) ||
+		grant.Enrollment.ID != d.Binding.EnrollmentID ||
 		!s.app.cfg.Clock.Now().Before(grant.ExpiresAt) {
 		return acme.ErrUnauthorized
 	}

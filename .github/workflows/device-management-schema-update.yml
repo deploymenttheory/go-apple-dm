@@ -39,7 +39,7 @@ jobs:
 
       # Use the release-please App so the resulting pull request triggers CI,
       # including conformance, coverage and module-boundary checks.
-      - uses: actions/create-github-app-token@v3
+      - uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3
         id: app-token
         if: ${{ vars.RP_APP_ID != '' }}
         continue-on-error: true

@@ -30,7 +30,9 @@ func TestE2E_DEPAssign(t *testing.T) {
 	fake := deptest.NewServer(deptest.Options{Clock: clk})
 	t.Cleanup(fake.Close)
 	store := depinmem.New()
-	client, err := dep.NewClient(dep.ClientConfig{Store: store, BaseURL: fake.URL(), Clock: clk})
+	client, err := dep.NewClient(
+		dep.ClientConfig{Store: store, BaseURL: fake.URL(), HTTPClient: fake.Client(), Clock: clk},
+	)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -50,9 +52,11 @@ func TestE2E_DEPAssign(t *testing.T) {
 			joined = append(joined, serial)
 			return d, true, nil
 		})
-		c.SoftwareUpdate = ade.PolicyFunc(func(context.Context, *ade.Parsed) (ade.Target, bool, error) {
-			return ade.Target{OSVersion: "26.0"}, true, nil
-		})
+		c.SoftwareUpdate = ade.PolicyFunc(
+			func(context.Context, *ade.Parsed) (ade.Target, bool, error) {
+				return ade.Target{OSVersion: "26.0"}, true, nil
+			},
+		)
 		c.GDMF = gdmftest.NewFake("Mac16,1")
 	})
 
@@ -86,8 +90,18 @@ func TestE2E_DEPAssign(t *testing.T) {
 	}
 
 	// Fetch, then sync with changes.
-	fake.AddDevices(dep.Device{SerialNumber: "C02DEP0001", Model: "MacBook Pro", DeviceFamily: "Mac", OS: "OSX"}, dep.Device{SerialNumber: "C02DEP0002", Model: "iPad", DeviceFamily: "iPad", OS: "iOS"})
-	syncer, err := dep.NewSyncer(dep.SyncerConfig{Client: client, Store: store, Account: account, Clock: clk})
+	fake.AddDevices(
+		dep.Device{
+			SerialNumber: "C02DEP0001",
+			Model:        "MacBook Pro",
+			DeviceFamily: "Mac",
+			OS:           "OSX",
+		},
+		dep.Device{SerialNumber: "C02DEP0002", Model: "iPad", DeviceFamily: "iPad", OS: "iOS"},
+	)
+	syncer, err := dep.NewSyncer(
+		dep.SyncerConfig{Client: client, Store: store, Account: account, Clock: clk},
+	)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -95,7 +109,14 @@ func TestE2E_DEPAssign(t *testing.T) {
 	if err != nil || res.Added != 2 {
 		t.Fatalf("fetch = %+v %v", res, err)
 	}
-	fake.AddDevices(dep.Device{SerialNumber: "C02DEP0003", Model: "MacBook Air", DeviceFamily: "Mac", OS: "OSX"})
+	fake.AddDevices(
+		dep.Device{
+			SerialNumber: "C02DEP0003",
+			Model:        "MacBook Air",
+			DeviceFamily: "Mac",
+			OS:           "OSX",
+		},
+	)
 	res, err = syncer.RunOnce(ctx)
 	if err != nil || res.Added != 1 || res.Phase != dep.PhaseSync {
 		t.Fatalf("sync = %+v %v", res, err)
@@ -108,7 +129,14 @@ func TestE2E_DEPAssign(t *testing.T) {
 	}
 
 	// Define and assign a profile pointing at the test ADE endpoint.
-	profile := &dep.Profile{ProfileName: "go-apple-dm e2e", URL: f.server.URL + "/ade", OrgMagic: "e2e", AwaitDeviceConfigured: new(true), IsSupervised: new(true), IsMDMRemovable: new(false)}
+	profile := &dep.Profile{
+		ProfileName:           "go-apple-dm e2e",
+		URL:                   f.server.URL + "/ade",
+		OrgMagic:              "e2e",
+		AwaitDeviceConfigured: new(true),
+		IsSupervised:          new(true),
+		IsMDMRemovable:        new(false),
+	}
 	resp, err := client.DefineProfile(ctx, account, profile)
 	if err != nil {
 		t.Fatalf("define profile: %v", err)
@@ -124,7 +152,15 @@ func TestE2E_DEPAssign(t *testing.T) {
 	if err := store.PutAccount(ctx, acct); err != nil {
 		t.Fatal(err)
 	}
-	assigner, err := dep.NewAssigner(dep.AssignerConfig{Client: client, Store: store, Account: account, Clock: clk, ReadBack: true})
+	assigner, err := dep.NewAssigner(
+		dep.AssignerConfig{
+			Client:   client,
+			Store:    store,
+			Account:  account,
+			Clock:    clk,
+			ReadBack: true,
+		},
+	)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -133,7 +169,10 @@ func TestE2E_DEPAssign(t *testing.T) {
 		t.Fatalf("assign = %+v %v", ares, err)
 	}
 	for _, serial := range []string{"C02DEP0001", "C02DEP0002", "C02DEP0003"} {
-		if d, ok := fake.Device(serial); !ok || d.ProfileUUID != resp.ProfileUUID || d.ProfileStatus != dep.ProfileStatusAssigned {
+		if d, ok := fake.Device(
+			serial,
+		); !ok || d.ProfileUUID != resp.ProfileUUID ||
+			d.ProfileStatus != dep.ProfileStatusAssigned {
 			t.Fatalf("%s at the service = %+v", serial, d)
 		}
 	}
@@ -145,20 +184,33 @@ func TestE2E_DEPAssign(t *testing.T) {
 	// The Mac enrols through ADE; its MachineInfo is joined to the DEP record.
 	mac := f.device("UDID-DEP-1")
 	mac.SerialNumber, mac.ProductName, mac.OSVersion = "C02DEP0001", "Mac16,1", "26.0"
-	if err := mac.ADEEnroll(ctx, f.server.URL+"/ade", simulator.ADEOptions{CanRequestSoftwareUpdate: true}); err != nil {
+	if err := mac.ADEEnroll(
+		ctx,
+		f.server.URL+"/ade",
+		simulator.ADEOptions{CanRequestSoftwareUpdate: true},
+	); err != nil {
 		t.Fatalf("ADE enrol: %v", err)
 	}
 	if len(joined) != 1 || joined[0] != "C02DEP0001" {
 		t.Fatalf("DEP join = %v", joined)
 	}
-	if e, err := f.store.Get(ctx, mdm.EnrollmentID{Channel: mdm.ChannelDevice, ID: "UDID-DEP-1"}); err != nil || !e.Enabled {
+	if e, err := f.store.Get(
+		ctx,
+		mdm.EnrollmentID{Channel: mdm.ChannelDevice, ID: "UDID-DEP-1"},
+	); err != nil ||
+		!e.Enabled {
 		t.Fatalf("enrollment = %+v %v", e, err)
 	}
 	// An old OS that can request updates is told to update first.
 	old := f.device("UDID-DEP-3")
 	old.SerialNumber, old.ProductName, old.OSVersion = "C02DEP0003", "Mac16,1", "15.0"
 	var sur *simulator.SoftwareUpdateRequired
-	if err := old.ADEEnroll(ctx, f.server.URL+"/ade", simulator.ADEOptions{CanRequestSoftwareUpdate: true}); !errors.As(err, &sur) || sur.OSVersion != "26.0" {
+	if err := old.ADEEnroll(
+		ctx,
+		f.server.URL+"/ade",
+		simulator.ADEOptions{CanRequestSoftwareUpdate: true},
+	); !errors.As(err, &sur) ||
+		sur.OSVersion != "26.0" {
 		t.Fatalf("software update gate = %v", err)
 	}
 	// One that cannot request updates enrols regardless.
