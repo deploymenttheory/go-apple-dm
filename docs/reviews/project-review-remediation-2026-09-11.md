@@ -89,6 +89,13 @@ passed. The renamed installation command passed against candidate
 `v0.0.0-review.a332c9dca02603ab` and the declared library version above.
 Local logs and coverage are retained under `cover/remediation-20260911/`.
 
+The draft PR's standalone gosec scan identified two additional diagnostics: a
+signed-to-unsigned conversion in shutdown accounting and a configured certificate
+file read. Shutdown now checks the pending count before conversion. The file read
+has a line-specific G304 justification because its path comes from operator TLS
+configuration, with no remote request input. Standalone gosec v2.29.0 passes for
+both modules with `GOWORK=off`; targeted event and probe race tests also pass.
+
 Historical database upgrades, physical-device interoperability, representative
 fleet load and durable audit delivery remain outside these five fixes. The original
 review scores have not been recalculated from this remediation run.

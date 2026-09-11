@@ -252,7 +252,9 @@ func (b *Bus) Close(ctx context.Context) error {
 		if b.async {
 			b.closeMu.Lock()
 			b.cancel()
-			b.stats.Abandoned += uint64(b.size)
+			if queued := b.size; queued > 0 {
+				b.stats.Abandoned += uint64(queued)
+			}
 			clear(b.queue)
 			b.size = 0
 			b.cond.Broadcast()

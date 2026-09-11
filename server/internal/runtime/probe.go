@@ -130,7 +130,7 @@ func automaticProbe(cfg ProbeConfig) (string, *tls.Config, error) {
 }
 
 func probeCertificate(path string) (*x509.Certificate, error) {
-	data, err := os.ReadFile(path)
+	data, err := os.ReadFile(path) // #nosec G304 -- Operator TLS path; no remote input.
 	if err != nil {
 		return nil, fmt.Errorf("%w: TLS certificate: %w", ErrProbe, err)
 	}
