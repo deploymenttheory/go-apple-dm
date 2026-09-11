@@ -10,11 +10,10 @@
 // DeclarativeManagement and ReturnToService.
 //
 // Certificate status checking, when configured, precedes hooks and device side
-// effects independently of pin mode. Both the reusable service and reference
-// server deny changed identities during re-enrollment by default.
-// Command-target checks use available OS/channel metadata and recorded
-// capability observations; unknown supervision, ADE and user-approved MDM state
-// cannot satisfy a command requirement.
+// effects independently of pin mode. The library permits re-enrollment by
+// default; the reference server denies changed identities unless enabled.
+// Command-target checks use available OS/channel metadata but assume unrecorded
+// supervision, ADE and user-approved MDM state.
 //
 // An unconfigured ReturnToService handler answers disabled. An enabled response
 // receives the stored bootstrap token if available and not supplied by policy;

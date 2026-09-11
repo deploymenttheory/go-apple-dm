@@ -18,10 +18,6 @@ change between minor versions.
 
 ## Quick start
 
-Read the [getting-started guide](docs/getting-started/getting-started.md) for a
-complete walkthrough of prerequisites, local simulation, persistent storage,
-administrator setup, real-device enrollment, and library integration.
-
 Install the library in your own module:
 
 ```sh

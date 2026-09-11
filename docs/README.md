@@ -1,6 +1,5 @@
 # Documentation
 
-- [Getting started](getting-started/getting-started.md): prerequisites, reference-server setup, first-device enrollment, and library integration.
 - [Architecture](architecture.md): implemented capabilities, module boundaries and limitations.
 - [Design decisions](research/decisions/README.md): current design and supporting evidence.
 - [Diagrams](diagrams/README.md): interactive architecture, protocol and lifecycle views.
