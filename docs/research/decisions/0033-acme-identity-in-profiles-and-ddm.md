@@ -16,7 +16,19 @@ A common identifier and verifier path ties issuance to its authorization context
 
 ## Constraints
 
-Mac declarative credentials follow the pinned schema: `HardwareBound=false` and `Attest=false`. Their issuance uses a five-minute grant bound to the existing authenticated enrollment certificate, checked again at challenge and finalization; initial enrollment retains its attestation requirement. The new key has no hardware-attestation assurance, and policies requiring attested properties still apply. Enrollment-profile ACME flags remain distinct from declarative credential flags. Persistent CA, protocol state and identifier keys are deployment requirements. Validate interoperability on target hardware; simulator tests do not establish physical-device compatibility.
+Mac credential flags follow current Apple documentation: macOS 14+ Apple
+silicon supports hardware binding and attestation; T2 supports hardware binding
+without attestation; other Intel hardware requires software keys. Known target
+context controls selection. Unknown secondary Mac hardware uses software keys
+until capabilities are established. A five-minute grant binds the existing
+identity and the requested attestation; challenge and finalization recheck it.
+`Binding.RequireAttestation` also binds the signed client identifier and prevents
+an unattested policy from overriding that request. Initial enrollment retains
+its attestation requirement unless the deployment explicitly authorizes software
+identities. See [operations](../../operations/enrollment-security.md) and the
+[current Apple source comparison](../../wip/apple-enterprise-hardening-2026-09-11.md).
+Persistent CA, protocol state and identifier keys are deployment requirements.
+Simulator tests do not establish physical-device compatibility.
 
 ## Verification
 

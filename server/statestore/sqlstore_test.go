@@ -29,7 +29,10 @@ import (
 
 func sqliteDB(t *testing.T) *sql.DB {
 	t.Helper()
-	db, err := sql.Open("sqlite", sqlite.DSN(filepath.Join(t.TempDir(), "state.db"), sqlite.Options{}))
+	db, err := sql.Open(
+		"sqlite",
+		sqlite.DSN(filepath.Join(t.TempDir(), "state.db"), sqlite.Options{}),
+	)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -50,13 +53,17 @@ func exercise(t *testing.T, db *sql.DB, dialect sqlcommon.Dialect) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	exerciseSCEPGrants(t, a, b)
 	key := fmt.Sprintf("test/%d/", time.Now().UnixNano())
 	if err := a.Update(ctx, []string{key}, func(tx state.Tx) error {
 		if time.Since(tx.Now()) > time.Second || tx.Now().After(time.Now().Add(time.Second)) {
 			t.Fatal("database time", tx.Now())
 		}
 		for _, suffix := range []string{"a", "a%", "a_", "b"} {
-			if err := tx.Put(ctx, state.Record{Key: key + suffix, Value: []byte(suffix)}); err != nil {
+			if err := tx.Put(
+				ctx,
+				state.Record{Key: key + suffix, Value: []byte(suffix)},
+			); err != nil {
 				return err
 			}
 		}
@@ -99,7 +106,13 @@ func exercise(t *testing.T, db *sql.DB, dialect sqlcommon.Dialect) {
 	var wg sync.WaitGroup
 	for i := range 32 {
 		wg.Go(func() {
-			dec, err := limits[i%2].Check(ctx, []ratelimit.Bucket{{Key: "global", Interval: time.Hour, Burst: 7}, {Key: "peer", Interval: time.Hour, Burst: 20}})
+			dec, err := limits[i%2].Check(
+				ctx,
+				[]ratelimit.Bucket{
+					{Key: "global", Interval: time.Hour, Burst: 7},
+					{Key: "peer", Interval: time.Hour, Burst: 20},
+				},
+			)
 			if err != nil {
 				t.Error(err)
 			}
@@ -116,13 +129,27 @@ func exercise(t *testing.T, db *sql.DB, dialect sqlcommon.Dialect) {
 	stores := []*accountdriven.StateTokenStore{{Backend: a}, {Backend: b}}
 	now := time.Now()
 	token := key + "code"
-	if err := stores[0].Put(ctx, token, accountdriven.Record{Kind: accountdriven.KindCode, IssuedAt: now, ExpiresAt: now.Add(time.Hour)}); err != nil {
+	if err := stores[0].Put(
+		ctx,
+		token,
+		accountdriven.Record{
+			Kind:      accountdriven.KindCode,
+			IssuedAt:  now,
+			ExpiresAt: now.Add(time.Hour),
+		},
+	); err != nil {
 		t.Fatal(err)
 	}
 	accepted.Store(0)
 	for i := range 20 {
 		wg.Go(func() {
-			err := stores[i%2].Exchange(ctx, token, now, func(accountdriven.Record) error { return nil }, nil)
+			err := stores[i%2].Exchange(
+				ctx,
+				token,
+				now,
+				func(accountdriven.Record) error { return nil },
+				nil,
+			)
 			if err == nil {
 				accepted.Add(1)
 			} else if !errors.Is(err, accountdriven.ErrTokenUsed) {
@@ -136,10 +163,23 @@ func exercise(t *testing.T, db *sql.DB, dialect sqlcommon.Dialect) {
 	}
 	exerciseCertificateState(t, a, b)
 	// Rejecting metadata leaves the token available for its rightful client.
-	if err := stores[0].Put(ctx, token+"2", accountdriven.Record{Kind: accountdriven.KindCode, ExpiresAt: now.Add(time.Hour)}); err != nil {
+	if err := stores[0].Put(
+		ctx,
+		token+"2",
+		accountdriven.Record{Kind: accountdriven.KindCode, ExpiresAt: now.Add(time.Hour)},
+	); err != nil {
 		t.Fatal(err)
 	}
-	if err := stores[0].Exchange(ctx, token+"2", now, func(accountdriven.Record) error { return boom }, nil); !errors.Is(err, boom) {
+	if err := stores[0].Exchange(
+		ctx,
+		token+"2",
+		now,
+		func(accountdriven.Record) error { return boom },
+		nil,
+	); !errors.Is(
+		err,
+		boom,
+	) {
 		t.Fatal(err)
 	}
 	if err := stores[1].MarkUsed(ctx, token+"2", now); err != nil {
@@ -153,7 +193,11 @@ func TestInvalidAndDatabaseFailures(t *testing.T) {
 	if _, err := statestore.Open(ctx, nil, sqlite.Dialect); err == nil {
 		t.Fatal("nil db")
 	}
-	if _, err := statestore.Open(ctx, db, sqlcommon.Dialect{Name: "oracle", Upsert: sqlcommon.UpsertOnConflict}); err == nil {
+	if _, err := statestore.Open(
+		ctx,
+		db,
+		sqlcommon.Dialect{Name: "oracle", Upsert: sqlcommon.UpsertOnConflict},
+	); err == nil {
 		t.Fatal("unknown dialect")
 	}
 	s, err := statestore.Open(ctx, db, sqlite.Dialect)
@@ -161,7 +205,14 @@ func TestInvalidAndDatabaseFailures(t *testing.T) {
 		t.Fatal(err)
 	}
 	for _, keys := range [][]string{nil, {""}} {
-		if err := s.Update(ctx, keys, func(state.Tx) error { return nil }); !errors.Is(err, state.ErrInvalid) {
+		if err := s.Update(
+			ctx,
+			keys,
+			func(state.Tx) error { return nil },
+		); !errors.Is(
+			err,
+			state.ErrInvalid,
+		) {
 			t.Fatal(err)
 		}
 	}
@@ -226,7 +277,10 @@ func TestMalformedRowsAndFailedPruning(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		if _, err := db.ExecContext(ctx, "INSERT INTO protocol_state VALUES ('corrupt', X'00', 'not a timestamp')"); err != nil {
+		if _, err := db.ExecContext(
+			ctx,
+			"INSERT INTO protocol_state VALUES ('corrupt', X'00', 'not a timestamp')",
+		); err != nil {
 			t.Fatal(err)
 		}
 		if _, err := s.List(ctx, "", "", 10); err == nil {
@@ -242,7 +296,10 @@ func TestMalformedRowsAndFailedPruning(t *testing.T) {
 		}
 		// SQLite permits NULL in a non-integer PRIMARY KEY. State writers never
 		// create one, but an out-of-band damaged row must be reported by pruning.
-		if _, err := db.ExecContext(ctx, "INSERT INTO protocol_state VALUES (NULL, X'00', 1)"); err != nil {
+		if _, err := db.ExecContext(
+			ctx,
+			"INSERT INTO protocol_state VALUES (NULL, X'00', 1)",
+		); err != nil {
 			t.Fatal(err)
 		}
 		if n, err := s.Prune(ctx, 10); err == nil || n != 0 {
@@ -258,7 +315,10 @@ func TestMalformedRowsAndFailedPruning(t *testing.T) {
 		}
 		if err := s.Update(ctx, []string{"a", "b"}, func(tx state.Tx) error {
 			for _, key := range []string{"a", "b"} {
-				if err := tx.Put(ctx, state.Record{Key: key, ExpiresAt: tx.Now().Add(-time.Hour)}); err != nil {
+				if err := tx.Put(
+					ctx,
+					state.Record{Key: key, ExpiresAt: tx.Now().Add(-time.Hour)},
+				); err != nil {
 					return err
 				}
 			}
@@ -266,7 +326,10 @@ func TestMalformedRowsAndFailedPruning(t *testing.T) {
 		}); err != nil {
 			t.Fatal(err)
 		}
-		if _, err := db.ExecContext(ctx, "CREATE TRIGGER prevent_delete BEFORE DELETE ON protocol_state WHEN OLD.record_key = 'b' BEGIN SELECT RAISE(ABORT, 'injected delete failure'); END"); err != nil {
+		if _, err := db.ExecContext(
+			ctx,
+			"CREATE TRIGGER prevent_delete BEFORE DELETE ON protocol_state WHEN OLD.record_key = 'b' BEGIN SELECT RAISE(ABORT, 'injected delete failure'); END",
+		); err != nil {
 			t.Fatal(err)
 		}
 		if n, err := s.Prune(ctx, 10); err == nil || n != 0 {
@@ -304,7 +367,16 @@ func exerciseCertificateState(t *testing.T, a, b state.Store) {
 	t.Helper()
 	ctx := t.Context()
 	assocs := []*accountdriven.Associations{{Store: a}, {Store: b}}
-	record, err := assocs[0].Create(ctx, accountdriven.Identity{ManagedAppleAccount: "alice@example.com", Subject: "alice", Issuer: "idp"}, accountdriven.VersionBYOD, "iPhone17,2")
+	record, err := assocs[0].Create(
+		ctx,
+		accountdriven.Identity{
+			ManagedAppleAccount: "alice@example.com",
+			Subject:             "alice",
+			Issuer:              "idp",
+		},
+		accountdriven.VersionBYOD,
+		"iPhone17,2",
+	)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -312,7 +384,10 @@ func exerciseCertificateState(t *testing.T, a, b state.Store) {
 	var wg sync.WaitGroup
 	for i := range 16 {
 		wg.Go(func() {
-			id := mdm.EnrollmentID{Channel: mdm.ChannelUserEnrollmentDevice, ID: fmt.Sprintf("device-%d", i)}
+			id := mdm.EnrollmentID{
+				Channel: mdm.ChannelUserEnrollmentDevice,
+				ID:      fmt.Sprintf("device-%d", i),
+			}
 			err := assocs[i%2].Bind(ctx, record.Reference, id, false)
 			if err == nil {
 				winners.Add(1)
@@ -339,7 +414,13 @@ func exerciseCertificateState(t *testing.T, a, b state.Store) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	issuer := revocation.Issuer{Certificate: root, Signer: key, CRLTTL: time.Hour, CRLRefresh: time.Minute, OCSPTTL: time.Minute}
+	issuer := revocation.Issuer{
+		Certificate: root,
+		Signer:      key,
+		CRLTTL:      time.Hour,
+		CRLRefresh:  time.Minute,
+		OCSPTTL:     time.Minute,
+	}
 	r1, err := revocation.New(a, issuer)
 	if err != nil {
 		t.Fatal(err)
@@ -350,7 +431,12 @@ func exerciseCertificateState(t *testing.T, a, b state.Store) {
 	}
 	registries := []*revocation.Registry{r1, r2}
 	id := cms.Fingerprint(root)
-	template := &x509.Certificate{SerialNumber: big.NewInt(1), NotBefore: time.Now().Add(-time.Minute), NotAfter: time.Now().Add(time.Hour), KeyUsage: x509.KeyUsageDigitalSignature}
+	template := &x509.Certificate{
+		SerialNumber: big.NewInt(1),
+		NotBefore:    time.Now().Add(-time.Minute),
+		NotAfter:     time.Now().Add(time.Hour),
+		KeyUsage:     x509.KeyUsageDigitalSignature,
+	}
 	der, err := x509.CreateCertificate(rand.Reader, template, root, key.Public(), key)
 	if err != nil {
 		t.Fatal(err)
@@ -399,7 +485,8 @@ func exerciseCertificateState(t *testing.T, a, b state.Store) {
 			t.Fatal(err)
 		}
 		crl, err := x509.ParseRevocationList(der)
-		if err != nil || crl.CheckSignatureFrom(root) != nil || crl.Number.Int64() != 2 || len(crl.RevokedCertificateEntries) != 1 {
+		if err != nil || crl.CheckSignatureFrom(root) != nil || crl.Number.Int64() != 2 ||
+			len(crl.RevokedCertificateEntries) != 1 {
 			t.Fatal(crl, err)
 		}
 	}

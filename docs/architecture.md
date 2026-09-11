@@ -88,10 +88,15 @@ SCEP challenges and ACME client identifiers control issuance. ACME validates acc
 nonces, orders and optional `device-attest-01` evidence. The attestation verifier checks the
 configured trust chain, freshness, device properties and requested key binding. Unattested
 issuance requires explicit policy. Simulator certificates do not establish Apple hardware
-compatibility; the pinned declarative ACME `HardwareBound` guidance has a documented macOS
-limitation in [decision 0033](research/decisions/0033-acme-identity-in-profiles-and-ddm.md).
+compatibility. Hardware-aware profile and credential composition follows current Apple
+Developer documentation; differences from pinned YAML are recorded in
+[decision 0033](research/decisions/0033-acme-identity-in-profiles-and-ddm.md).
+Attestation requirements bind each issuance identifier and cannot be overridden
+by a global unattested policy. Library `scep.Grants` and `CertificateIssuer`
+reserve verified CSRs and persist exact certificates before required registration.
+Shared stores serialize retries across replicas; callbacks recheck admission.
 
-Revocation and inbound rate limiting are optional and disabled by default. Enabled revocation
+Reference certificate revocation is enabled by default; inbound rate limiting is separately configured. Enabled revocation
 registers issuance before returning certificates and enforces status independently of pin mode;
 CRL and OCSP publication require persistent issuer keys. Quotas use atomic per-peer and aggregate
 buckets with bounded state. SQL accounting uses database time after locking. Both controls depend

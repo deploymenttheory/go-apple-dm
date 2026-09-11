@@ -13,11 +13,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/deploymenttheory/go-apple-dm/server/internal/app"
 	"github.com/deploymenttheory/go-apple-dm/appleplatformservices/axm"
 	"github.com/deploymenttheory/go-apple-dm/appleplatformservices/dep"
 	"github.com/deploymenttheory/go-apple-dm/appleplatformservices/dep/deptest"
 	"github.com/deploymenttheory/go-apple-dm/clock"
+	"github.com/deploymenttheory/go-apple-dm/server/internal/app"
 	depinmem "github.com/deploymenttheory/go-apple-dm/storage/dep/inmem"
 )
 
@@ -28,8 +28,15 @@ func TestDEP(t *testing.T) {
 		fake := deptest.NewServer(deptest.Options{Clock: clk})
 		t.Cleanup(fake.Close)
 		a := build(t, app.Config{
-			Role: app.RoleDDM, Storage: "inmem", AdminToken: "t", Clock: clk,
-			DEP: app.DEPConfig{BaseURL: fake.URL(), ProfileURL: "https://mdm.example/enroll/ade"},
+			Role:       app.RoleDDM,
+			Storage:    "inmem",
+			AdminToken: "t",
+			Clock:      clk,
+			DEP: app.DEPConfig{
+				BaseURL:    fake.URL(),
+				HTTPClient: fake.Client(),
+				ProfileURL: "https://mdm.example/enroll/ade",
+			},
 		})
 		srv := serve(t, a)
 		if a.DEP == nil {
@@ -262,6 +269,7 @@ func TestDEP(t *testing.T) {
 			Clock:      clk,
 			DEP: app.DEPConfig{
 				BaseURL:      fake.URL(),
+				HTTPClient:   fake.Client(),
 				SyncInterval: time.Minute,
 				ProfileURL:   "https://mdm.example/enroll/ade",
 				Store:        failing,
@@ -377,6 +385,7 @@ func TestDEP(t *testing.T) {
 			Clock:      clk,
 			DEP: app.DEPConfig{
 				BaseURL:      fake.URL(),
+				HTTPClient:   fake.Client(),
 				SyncInterval: time.Minute,
 				ProfileURL:   "https://mdm.example/enroll/ade",
 			},
@@ -479,7 +488,7 @@ func TestDEP(t *testing.T) {
 				Storage:    "sqlite",
 				DSN:        t.TempDir() + "/dep.db",
 				AdminToken: "t",
-				DEP:        app.DEPConfig{BaseURL: fake.URL()},
+				DEP:        app.DEPConfig{BaseURL: fake.URL(), HTTPClient: fake.Client()},
 			},
 		)
 		srv := serve(t, a)

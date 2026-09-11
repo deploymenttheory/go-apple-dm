@@ -62,13 +62,15 @@ const (
 	EnvRequireUserAuth     = "DM_REQUIRE_USER_AUTH"
 	EnvReturnToService     = "DM_RETURN_TO_SERVICE"
 	// Apple Business Manager (AxMConfig).
-	EnvAxMClientID = "DM_AXM_CLIENT_ID"
-	EnvAxMKeyID    = "DM_AXM_KEY_ID"
-	EnvAxMKeyFile  = "DM_AXM_KEY_FILE"
-	EnvAxMScope    = "DM_AXM_SCOPE"
-	EnvAxMBaseURL  = "DM_AXM_BASE_URL"
-	EnvAxMTokenURL = "DM_AXM_TOKEN_URL" // #nosec G101 -- the variable name, not a credential
+	EnvAxMClientID   = "DM_AXM_CLIENT_ID"
+	EnvAxMKeyID      = "DM_AXM_KEY_ID"
+	EnvAxMKeyFile    = "DM_AXM_KEY_FILE"
+	EnvAxMScope      = "DM_AXM_SCOPE"
+	EnvAxMRootCAFile = "DM_AXM_ROOT_CA_FILE"
+	EnvAxMBaseURL    = "DM_AXM_BASE_URL"
+	EnvAxMTokenURL   = "DM_AXM_TOKEN_URL" // #nosec G101 -- the variable name, not a credential
 	// Device enrollment service (DEPConfig).
+	EnvDEPRootCAFile     = "DM_DEP_ROOT_CA_FILE"
 	EnvDEPBaseURL        = "DM_DEP_BASE_URL"
 	EnvDEPSyncInterval   = "DM_DEP_SYNC_INTERVAL"
 	EnvDEPAssignInterval = "DM_DEP_ASSIGN_INTERVAL" // #nosec G101 -- the variable name, not a credential
@@ -230,7 +232,11 @@ func ParseEnv(get func(string) string) (Config, error) {
 		}
 		cfg.Enroll.Discovery = d
 	}
-	cfg.DEP = DEPConfig{BaseURL: get(EnvDEPBaseURL), ProfileURL: get(EnvDEPProfileURL)}
+	cfg.DEP = DEPConfig{
+		BaseURL:    get(EnvDEPBaseURL),
+		ProfileURL: get(EnvDEPProfileURL),
+		RootCAFile: get(EnvDEPRootCAFile),
+	}
 	for key, dst := range map[string]*time.Duration{EnvDEPSyncInterval: &cfg.DEP.SyncInterval, EnvDEPAssignInterval: &cfg.DEP.AssignInterval} {
 		if v := get(key); v != "" {
 			d, err := time.ParseDuration(v)
@@ -248,12 +254,13 @@ func ParseEnv(get func(string) string) (Config, error) {
 		cfg.DEP.UsePUT = b
 	}
 	cfg.AxM = AxMConfig{
-		ClientID: get(EnvAxMClientID),
-		KeyID:    get(EnvAxMKeyID),
-		KeyFile:  get(EnvAxMKeyFile),
-		Scope:    get(EnvAxMScope),
-		BaseURL:  get(EnvAxMBaseURL),
-		TokenURL: get(EnvAxMTokenURL),
+		ClientID:   get(EnvAxMClientID),
+		RootCAFile: get(EnvAxMRootCAFile),
+		KeyID:      get(EnvAxMKeyID),
+		KeyFile:    get(EnvAxMKeyFile),
+		Scope:      get(EnvAxMScope),
+		BaseURL:    get(EnvAxMBaseURL),
+		TokenURL:   get(EnvAxMTokenURL),
 	}
 	cfg.Enroll.Identity = get(EnvIdentity)
 	cfg.Enroll.ACME.Policy = get(EnvACMEPolicy)

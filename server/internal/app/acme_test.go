@@ -73,7 +73,7 @@ func newACMEAppFixtureWith(
 
 func TestACME(t *testing.T) {
 	ctx := context.Background()
-	t.Run("MacDeclarativeCredentialUsesExistingEnrollment", func(t *testing.T) {
+	t.Run("UnknownMacHardwareCredentialUsesExistingEnrollment", func(t *testing.T) {
 		f := newACMEAppFixture(t, nil)
 		d := f.acmeDevice(t, "MAC-DDM-CREDENTIAL", "Mac16,1")
 		if err := d.ADEEnroll(ctx, f.publicURL+app.PathADE, simulator.ADEOptions{}); err != nil {
@@ -87,11 +87,14 @@ func TestACME(t *testing.T) {
 		}
 		credential := fetchCredential(t, f, d)
 		if credential.HardwareBound || (credential.Attest != nil && *credential.Attest) {
-			t.Fatal("Mac credential requested unsupported attestation")
+			t.Fatal("unknown Mac hardware requested attestation")
 		}
 		payload := &enroll.ACME{
-			DirectoryURL: credential.DirectoryURL, ClientIdentifier: credential.ClientIdentifier,
-			KeyType: credential.KeyType, KeySize: credential.KeySize, Subject: enroll.NameFromSubject(credential.Subject),
+			DirectoryURL:     credential.DirectoryURL,
+			ClientIdentifier: credential.ClientIdentifier,
+			KeyType:          credential.KeyType,
+			KeySize:          credential.KeySize,
+			Subject:          enroll.NameFromSubject(credential.Subject),
 		}
 		if err := d.ACMEEnroll(ctx, payload, simulator.ACMEOptions{}); err != nil {
 			t.Fatalf("Mac credential issuance: %v", err)
@@ -194,8 +197,8 @@ func TestACME(t *testing.T) {
 			t.Fatal(err)
 		}
 		defer res.Body.Close()
-		if res.StatusCode != http.StatusForbidden {
-			t.Fatalf("without a device identity = %d", res.StatusCode)
+		if res.StatusCode != http.StatusForbidden || res.Header.Get("Cache-Control") != "no-store" {
+			t.Fatalf("unauthenticated credential: %d %v", res.StatusCode, res.Header)
 		}
 		// An enrolled device gets a credential bound to itself.
 		d := f.acmeDevice(t, "ACME-APP-2", "iPad14,1")
@@ -366,6 +369,58 @@ func TestACME(t *testing.T) {
 			t.Fatalf("Build = %v", err)
 		}
 	})
+}
+
+func TestMacCredentialHardwareIssuance(t *testing.T) {
+	for _, hardware := range []enroll.MacHardware{enroll.MacAppleSilicon, enroll.MacT2} {
+		t.Run(string(hardware), func(t *testing.T) {
+			f := newACMEAppFixture(t, func(cfg *app.Config) {
+				cfg.Enroll.Identity = app.IdentitySCEP
+				cfg.Enroll.ACME.AllowUnattested = true
+				cfg.Enroll.ACME.MacHardware = func(context.Context, acme.Binding) (enroll.MacHardware, error) { return hardware, nil }
+			})
+			d := f.device(t, "MAC-CREDENTIAL-"+string(hardware), "Mac16,1")
+			ctx := t.Context()
+			if err := d.ADEEnroll(
+				ctx,
+				f.publicURL+app.PathADE,
+				simulator.ADEOptions{},
+			); err != nil {
+				t.Fatal(err)
+			}
+			if err := d.Authenticate(ctx); err != nil {
+				t.Fatal(err)
+			}
+			if err := d.TokenUpdate(ctx); err != nil {
+				t.Fatal(err)
+			}
+			payload := func() *enroll.ACME {
+				c := fetchCredential(t, f, d)
+				return &enroll.ACME{
+					DirectoryURL:     c.DirectoryURL,
+					ClientIdentifier: c.ClientIdentifier,
+					KeyType:          c.KeyType,
+					KeySize:          c.KeySize,
+					HardwareBound:    c.HardwareBound,
+					Attest:           c.Attest != nil && *c.Attest,
+					Subject:          enroll.NameFromSubject(c.Subject),
+				}
+			}
+			p := payload()
+			options := simulator.ACMEOptions{}
+			if hardware == enroll.MacAppleSilicon {
+				if err := d.ACMEEnroll(ctx, p, options); err == nil {
+					t.Fatal("attested credential downgraded under AllowUnattested")
+				}
+				p = payload()
+				options.Attestation = f.attestation
+				options.Properties.UDID = "provisioning-" + d.UDID
+			}
+			if err := d.ACMEEnroll(ctx, p, options); err != nil {
+				t.Fatal("Mac secondary issuance", err)
+			}
+		})
+	}
 }
 
 // device builds a simulated device that attests under the fixture's
@@ -655,6 +710,7 @@ func TestACMEWiring(t *testing.T) {
 	t.Run("ConfiguredKeyType", func(t *testing.T) {
 		f := newACMEAppFixture(t, func(cfg *app.Config) {
 			cfg.Enroll.ACME.KeyType, cfg.Enroll.ACME.KeySize = enroll.KeyTypeRSA, 2048
+			cfg.Enroll.ACME.AllowUnattested = true
 		})
 		d := f.acmeDevice(t, "ACME-KEY-1", "Mac16,1")
 		p, err := enroll.Parse(adeProfile(t, f, d), profile.ParseOptions{})
@@ -726,7 +782,12 @@ func TestACMEAdminFailures(t *testing.T) {
 		Items      []struct{ Serial string }
 		NextCursor string
 	}
-	if err := getJSON(t, f, f.publicURL+"/admin/v1/acme/certificates?limit=1", &listed); err != nil {
+	if err := getJSON(
+		t,
+		f,
+		f.publicURL+"/admin/v1/acme/certificates?limit=1",
+		&listed,
+	); err != nil {
 		t.Fatal(err)
 	}
 	if len(listed.Items) != 1 {
@@ -739,7 +800,12 @@ func TestACMEAdminFailures(t *testing.T) {
 		t.Fatal(err)
 	}
 	account := res.Items[0].AccountID
-	if err := getJSON(t, f, f.publicURL+"/admin/v1/acme/orders?account="+account, &orders); err != nil {
+	if err := getJSON(
+		t,
+		f,
+		f.publicURL+"/admin/v1/acme/orders?account="+account,
+		&orders,
+	); err != nil {
 		t.Fatal(err)
 	}
 	if len(orders.Items) != 1 {

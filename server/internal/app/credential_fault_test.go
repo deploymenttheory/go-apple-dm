@@ -28,10 +28,7 @@ func TestSCEPFinalizationRejectsInvalidStateAndSigner(t *testing.T) {
 	e := a.enroll
 	ctx := t.Context()
 	backend := e.state
-	csr := &x509.CertificateRequest{
-		Subject: pkix.Name{CommonName: id.ID},
-		Raw:     []byte("invalid CSR signature"),
-	}
+	csr := hardeningCSR(t, id.ID)
 	password, err := e.issueSCEPGrant(
 		ctx,
 		acme.Binding{CommonName: id.ID, UDID: id.ID},
@@ -53,7 +50,9 @@ func TestSCEPFinalizationRejectsInvalidStateAndSigner(t *testing.T) {
 	if err = e.verifySCEPGrant(ctx, password, csr); err != nil {
 		t.Fatal(err)
 	}
-	if _, err = e.issueSCEP(ctx, csr, ca.Policy{}, password, false); err == nil {
+	invalid := *csr
+	invalid.Signature = []byte("invalid")
+	if _, err = e.issueSCEP(ctx, &invalid, ca.Policy{}, password, false); err == nil {
 		t.Fatal("invalid CSR signature accepted")
 	}
 	originalCA := e.caCert

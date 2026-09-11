@@ -134,6 +134,7 @@ func (h *Handler) now() time.Time {
 
 // ServeHTTP serves the token-based POST and the web view GET.
 func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Cache-Control", "no-store")
 	if r.Method != http.MethodGet && r.Method != http.MethodPost {
 		w.Header().Set("Allow", "GET, POST")
 		http.Error(w, http.StatusText(http.StatusMethodNotAllowed), http.StatusMethodNotAllowed)
@@ -159,14 +160,27 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if decision.Action != Proceed {
-		h.logger.InfoContext(r.Context(), "ade: enrollment gated", "serial", p.SERIAL, "action", decision.Action.String(), "reason", decision.Reason)
+		h.logger.InfoContext(
+			r.Context(),
+			"ade: enrollment gated",
+			"serial",
+			p.SERIAL,
+			"action",
+			decision.Action.String(),
+			"reason",
+			decision.Reason,
+		)
 		if err := decision.Write(w, r); err != nil {
 			h.fail(w, r, err)
 		}
 		return
 	}
 	if r.Method == http.MethodGet && h.cfg.WebAuth != nil {
-		h.cfg.WebAuth.Begin(w, r, Bound{Serial: p.SERIAL, UDID: p.UDID, Product: p.PRODUCT, OSVersion: p.OSVERSION})
+		h.cfg.WebAuth.Begin(
+			w,
+			r,
+			Bound{Serial: p.SERIAL, UDID: p.UDID, Product: p.PRODUCT, OSVersion: p.OSVERSION},
+		)
 		return
 	}
 	h.Finish(w, r, p, id)
@@ -199,15 +213,26 @@ func (h *Handler) Resume(ctx context.Context, serial string) (*Parsed, Identity,
 		return nil, Identity{}, fmt.Errorf("%w: %w", ErrStore, err)
 	}
 	if !ok {
-		return nil, Identity{}, fmt.Errorf("%w: no MachineInfo for serial %q", ErrNoMachineInfo, serial)
+		return nil, Identity{}, fmt.Errorf(
+			"%w: no MachineInfo for serial %q",
+			ErrNoMachineInfo,
+			serial,
+		)
 	}
 	p := rec.Parsed
-	return p, Identity{Serial: p.SERIAL, UDID: p.UDID, Platform: p.Platform, Verified: p.Verified, DEP: rec.DEP}, nil
+	return p, Identity{
+		Serial:   p.SERIAL,
+		UDID:     p.UDID,
+		Platform: p.Platform,
+		Verified: p.Verified,
+		DEP:      rec.DEP,
+	}, nil
 }
 
 // Finish builds, signs, and serves the profile for an admitted device.
 // The web view authenticator calls it once the user is authenticated.
 func (h *Handler) Finish(w http.ResponseWriter, r *http.Request, p *Parsed, id Identity) {
+	w.Header().Set("Cache-Control", "no-store")
 	if h.cfg.Profile == nil {
 		http.Error(w, http.StatusText(http.StatusNotImplemented), http.StatusNotImplemented)
 		return
@@ -215,7 +240,14 @@ func (h *Handler) Finish(w http.ResponseWriter, r *http.Request, p *Parsed, id I
 	prof, err := h.cfg.Profile(r.Context(), p, id)
 	if err != nil {
 		if errors.Is(err, ErrRejected) {
-			h.logger.InfoContext(r.Context(), "ade: profile hook rejected enrollment", "serial", p.SERIAL, "error", err)
+			h.logger.InfoContext(
+				r.Context(),
+				"ade: profile hook rejected enrollment",
+				"serial",
+				p.SERIAL,
+				"error",
+				err,
+			)
 			http.Error(w, http.StatusText(http.StatusForbidden), http.StatusForbidden)
 			return
 		}
@@ -237,12 +269,27 @@ func (h *Handler) Finish(w http.ResponseWriter, r *http.Request, p *Parsed, id I
 		h.fail(w, r, err)
 		return
 	}
-	h.logger.InfoContext(r.Context(), "ade: profile served", "serial", p.SERIAL, "udid", p.UDID, "origin", string(p.Origin), "verified", p.Verified, "subject", id.Subject)
+	h.logger.InfoContext(
+		r.Context(),
+		"ade: profile served",
+		"serial",
+		p.SERIAL,
+		"udid",
+		p.UDID,
+		"origin",
+		string(p.Origin),
+		"verified",
+		p.Verified,
+		"subject",
+		id.Subject,
+	)
 	w.Header().Set("Content-Type", ContentTypeProfile)
 	w.Header().Set("X-Content-Type-Options", "nosniff")
 	w.Header().Set("Content-Length", strconv.Itoa(len(out)))
 	w.WriteHeader(http.StatusOK)
-	_, _ = w.Write(out) // #nosec G705 -- a configuration profile with an explicit non-HTML content type
+	_, _ = w.Write(
+		out,
+	) // #nosec G705 -- a configuration profile with an explicit non-HTML content type
 }
 
 // reject maps a parse or presence error to its status. Decode errors are
@@ -257,15 +304,34 @@ func (h *Handler) reject(w http.ResponseWriter, r *http.Request, err error) {
 	case errors.Is(err, ErrUnknownSigner):
 		status = http.StatusUnauthorized
 		if h.cfg.UnrecognizedDevice {
-			h.logger.InfoContext(r.Context(), "ade: unknown signer, answering unrecognized device", "error", err, "remote", r.RemoteAddr)
-			body := &schemaerrors.UnrecognizedDevice{Code: schemaerrors.ErrorCodeUnrecognizedDevice, Description: new("MachineInfo signer is not trusted by this server")}
+			h.logger.InfoContext(
+				r.Context(),
+				"ade: unknown signer, answering unrecognized device",
+				"error",
+				err,
+				"remote",
+				r.RemoteAddr,
+			)
+			body := &schemaerrors.UnrecognizedDevice{
+				Code:        schemaerrors.ErrorCodeUnrecognizedDevice,
+				Description: new("MachineInfo signer is not trusted by this server"),
+			}
 			if werr := WriteError(w, r, http.StatusForbidden, body); werr != nil {
 				h.fail(w, r, werr)
 			}
 			return
 		}
 	}
-	h.logger.InfoContext(r.Context(), "ade: request rejected", "status", status, "error", err, "remote", r.RemoteAddr)
+	h.logger.InfoContext(
+		r.Context(),
+		"ade: request rejected",
+		"status",
+		status,
+		"error",
+		err,
+		"remote",
+		r.RemoteAddr,
+	)
 	http.Error(w, http.StatusText(status), status)
 }
 

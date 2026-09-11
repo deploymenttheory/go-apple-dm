@@ -6,13 +6,13 @@ import (
 	"crypto/x509"
 	"errors"
 	"fmt"
-	"github.com/deploymenttheory/go-apple-dm/secrets"
 	"log/slog"
 	"net/http"
 	"net/url"
 	"strings"
 
 	"github.com/deploymenttheory/go-apple-dm/mdmprotocol/enroll"
+	"github.com/deploymenttheory/go-apple-dm/secrets"
 )
 
 // Versions from service discovery and the EnrollmentMode they imply.
@@ -34,7 +34,9 @@ const (
 var (
 	ErrConfig              = errors.New("accountdriven: invalid configuration")
 	ErrManagedAppleAccount = errors.New("accountdriven: identity has no Managed Apple Account")
-	ErrMode                = errors.New("accountdriven: enrollment mode does not match the discovery version")
+	ErrMode                = errors.New(
+		"accountdriven: enrollment mode does not match the discovery version",
+	)
 )
 
 // DeviceInfo is the verified first-POST body: Apple documents LANGUAGE,
@@ -134,6 +136,7 @@ func Mode(version string) (string, error) {
 
 // ServeHTTP handles the enrollment POST.
 func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Cache-Control", "no-store")
 	if r.Method != http.MethodPost {
 		w.Header().Set("Allow", http.MethodPost)
 		http.Error(w, http.StatusText(http.StatusMethodNotAllowed), http.StatusMethodNotAllowed)
@@ -153,7 +156,8 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	id, err := h.cfg.Verifier.Verify(r.Context(), bearer)
 	if err != nil {
 		// Storage/IdP failures must not masquerade as expired authentication.
-		if !errors.Is(err, ErrTokenNotFound) && !errors.Is(err, ErrTokenExpired) && !errors.Is(err, ErrTokenUsed) {
+		if !errors.Is(err, ErrTokenNotFound) && !errors.Is(err, ErrTokenExpired) &&
+			!errors.Is(err, ErrTokenUsed) {
 			h.fail(w, r, err, http.StatusInternalServerError)
 			return
 		}
@@ -180,7 +184,12 @@ func (h *Handler) challenge(w http.ResponseWriter, r *http.Request, info *Device
 }
 
 // serveProfile finalises, signs, and writes the profile.
-func (h *Handler) serveProfile(w http.ResponseWriter, r *http.Request, id Identity, info *DeviceInfo) {
+func (h *Handler) serveProfile(
+	w http.ResponseWriter,
+	r *http.Request,
+	id Identity,
+	info *DeviceInfo,
+) {
 	ctx := r.Context()
 	a, err := h.cfg.Associations.Create(ctx, id, h.cfg.Version, info.Product)
 	if err != nil {
@@ -248,7 +257,8 @@ func Finalize(p *enroll.Profile, version string, id Identity, _ string) error {
 // accepts multiple credentials or whitespace inside a token.
 func Bearer(header string) secrets.Secret {
 	scheme, value, ok := strings.Cut(header, " ")
-	if !ok || !strings.EqualFold(scheme, "Bearer") || value == "" || strings.ContainsAny(value, " \t\r\n,") {
+	if !ok || !strings.EqualFold(scheme, "Bearer") || value == "" ||
+		strings.ContainsAny(value, " \t\r\n,") {
 		return secrets.Secret{}
 	}
 	return secrets.New([]byte(value))

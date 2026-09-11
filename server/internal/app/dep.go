@@ -11,9 +11,9 @@ import (
 	"net/http"
 	"time"
 
-	depsql "github.com/deploymenttheory/go-apple-dm/server/depstore/sqlstore"
 	"github.com/deploymenttheory/go-apple-dm/appleplatformservices/dep"
 	"github.com/deploymenttheory/go-apple-dm/paging"
+	depsql "github.com/deploymenttheory/go-apple-dm/server/depstore/sqlstore"
 	depinmem "github.com/deploymenttheory/go-apple-dm/storage/dep/inmem"
 )
 
@@ -32,6 +32,8 @@ type DEPConfig struct {
 	// UsePUT sends PUT for profile assignment (simulators).
 	UsePUT     bool
 	HTTPClient *http.Client
+	// RootCAFile supplies private HTTPS trust instead of HTTPClient.
+	RootCAFile string
 	// Store overrides the DEP store (embedders with their own backend,
 	// tests with a failing one); default follows Storage.
 	Store dep.Store
@@ -63,11 +65,15 @@ func (a *App) newDEP(ctx context.Context) (*depService, error) {
 		}
 		st = s
 	}
+	httpClient, err := outboundClient(a.cfg.DEP.HTTPClient, a.cfg.DEP.RootCAFile)
+	if err != nil {
+		return nil, err
+	}
 	client, err := dep.NewClient(
 		dep.ClientConfig{
 			Store:      st,
 			BaseURL:    a.cfg.DEP.BaseURL,
-			HTTPClient: a.cfg.DEP.HTTPClient,
+			HTTPClient: httpClient,
 			Clock:      a.cfg.Clock,
 			Bus:        a.cfg.Bus,
 			Logger:     a.cfg.Logger,

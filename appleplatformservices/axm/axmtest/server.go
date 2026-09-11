@@ -3,6 +3,7 @@ package axmtest
 import (
 	"crypto/ecdsa"
 	"crypto/rand"
+	"crypto/x509"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
@@ -101,7 +102,7 @@ func NewServer() *Server {
 		store:    newStore(),
 		acts:     map[string]*activity{},
 	}
-	s.srv = httptest.NewServer(s.handler())
+	s.srv = httptest.NewTLSServer(s.handler())
 	s.URL = s.srv.URL
 	s.TokenURL = s.srv.URL + TokenPath
 	return s
@@ -277,7 +278,17 @@ func (s *Server) middleware(next http.Handler) http.Handler {
 		rec := &recorder{ResponseWriter: w, status: http.StatusOK}
 		defer func() {
 			s.mu.Lock()
-			s.requests = append(s.requests, Request{Method: r.Method, Path: r.URL.Path, Query: r.URL.Query(), Header: r.Header.Clone(), Body: body, Status: rec.status})
+			s.requests = append(
+				s.requests,
+				Request{
+					Method: r.Method,
+					Path:   r.URL.Path,
+					Query:  r.URL.Query(),
+					Header: r.Header.Clone(),
+					Body:   body,
+					Status: rec.status,
+				},
+			)
 			s.mu.Unlock()
 		}()
 		if r.URL.Path == TokenPath {
@@ -285,13 +296,26 @@ func (s *Server) middleware(next http.Handler) http.Handler {
 			return
 		}
 		accept := r.Header.Get("Accept")
-		download := strings.HasSuffix(r.URL.Path, "/download") && strings.Contains(accept, "text/csv")
+		download := strings.HasSuffix(r.URL.Path, "/download") &&
+			strings.Contains(accept, "text/csv")
 		if !acceptsJSON(accept) && !download {
-			s.apiError(rec, http.StatusNotAcceptable, "NOT_ACCEPTABLE", "Accept must allow application/json", nil)
+			s.apiError(
+				rec,
+				http.StatusNotAcceptable,
+				"NOT_ACCEPTABLE",
+				"Accept must allow application/json",
+				nil,
+			)
 			return
 		}
 		if !s.authorized(r.Header.Get("Authorization")) {
-			s.apiError(rec, http.StatusUnauthorized, "UNAUTHORIZED", "The access token is missing, expired, or invalid", nil)
+			s.apiError(
+				rec,
+				http.StatusUnauthorized,
+				"UNAUTHORIZED",
+				"The access token is missing, expired, or invalid",
+				nil,
+			)
 			return
 		}
 		if status, header := s.fault(); status != 0 {
@@ -356,7 +380,12 @@ func (s *Server) fault() (int, string) {
 
 // handleToken is the OAuth token endpoint.
 func (s *Server) handleToken(w http.ResponseWriter, r *http.Request) {
-	if ct := r.Header.Get("Content-Type"); !strings.HasPrefix(ct, "application/x-www-form-urlencoded") {
+	if ct := r.Header.Get(
+		"Content-Type",
+	); !strings.HasPrefix(
+		ct,
+		"application/x-www-form-urlencoded",
+	) {
 		s.oauthError(w, "invalid_request", "Content-Type must be application/x-www-form-urlencoded")
 		return
 	}
@@ -434,7 +463,11 @@ func (s *Server) handleToken(w http.ResponseWriter, r *http.Request) {
 
 // oauthError writes an RFC 6749 error.
 func (s *Server) oauthError(w http.ResponseWriter, code, description string) {
-	writeJSON(w, http.StatusBadRequest, map[string]any{"error": code, "error_description": description})
+	writeJSON(
+		w,
+		http.StatusBadRequest,
+		map[string]any{"error": code, "error_description": description},
+	)
 }
 
 // errorItem is one entry of Apple's error document.
@@ -449,18 +482,43 @@ type errorItem struct {
 
 // apiError writes Apple's error document; source is nil, or
 // {"parameter": name} / {"pointer": path}.
-func (s *Server) apiError(w http.ResponseWriter, status int, code, detail string, source map[string]any) {
-	writeJSON(w, status, map[string]any{"errors": []errorItem{{
-		ID: uuid.New().String(), Status: strconv.Itoa(status), Code: code, Title: http.StatusText(status), Detail: detail, Source: source,
-	}}})
+func (s *Server) apiError(
+	w http.ResponseWriter,
+	status int,
+	code, detail string,
+	source map[string]any,
+) {
+	writeJSON(w, status, map[string]any{"errors": []errorItem{
+		{
+			ID: uuid.New().
+				String(),
+			Status: strconv.Itoa(status),
+			Code:   code,
+			Title:  http.StatusText(status),
+			Detail: detail,
+			Source: source,
+		},
+	}})
 }
 
 func (s *Server) notFound(w http.ResponseWriter, typ, id string) {
-	s.apiError(w, http.StatusNotFound, "RESOURCE_NOT_FOUND", fmt.Sprintf("There is no resource of type '%s' with id '%s'", typ, id), nil)
+	s.apiError(
+		w,
+		http.StatusNotFound,
+		"RESOURCE_NOT_FOUND",
+		fmt.Sprintf("There is no resource of type '%s' with id '%s'", typ, id),
+		nil,
+	)
 }
 
 func (s *Server) badParameter(w http.ResponseWriter, name, detail string) {
-	s.apiError(w, http.StatusBadRequest, "PARAMETER_ERROR.INVALID", detail, map[string]any{"parameter": name})
+	s.apiError(
+		w,
+		http.StatusBadRequest,
+		"PARAMETER_ERROR.INVALID",
+		detail,
+		map[string]any{"parameter": name},
+	)
 }
 
 func (s *Server) conflict(w http.ResponseWriter, code, detail, pointer string) {
@@ -526,7 +584,13 @@ func (s *Server) paging(w http.ResponseWriter, r *http.Request) (limit, offset i
 // writePage slices items and writes a paged document with meta.paging
 // and links.self/next; the next link carries every query parameter of the
 // request with cursor replaced.
-func (s *Server) writePage(w http.ResponseWriter, r *http.Request, items []any, limit, offset int, included []any) {
+func (s *Server) writePage(
+	w http.ResponseWriter,
+	r *http.Request,
+	items []any,
+	limit, offset int,
+	included []any,
+) {
 	total := len(items)
 	if offset > total {
 		offset = total
@@ -543,9 +607,16 @@ func (s *Server) writePage(w http.ResponseWriter, r *http.Request, items []any, 
 		links["next"] = s.URL + next.RequestURI()
 		paging["nextCursor"] = strconv.Itoa(end)
 	}
-	doc := map[string]any{"data": items[offset:end], "links": links, "meta": map[string]any{"paging": paging}}
+	doc := map[string]any{
+		"data":  items[offset:end],
+		"links": links,
+		"meta":  map[string]any{"paging": paging},
+	}
 	if included != nil {
 		doc["included"] = included
 	}
 	writeJSON(w, http.StatusOK, doc)
 }
+
+// Certificate returns the public TLS certificate for subprocess fixtures.
+func (s *Server) Certificate() *x509.Certificate { return s.srv.Certificate() }

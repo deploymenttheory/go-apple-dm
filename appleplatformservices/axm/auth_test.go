@@ -36,20 +36,32 @@ func TestScope(t *testing.T) {
 		if got := ScopeFor("OTHER.x"); got != "" {
 			t.Fatalf("other: %q", got)
 		}
-		c, err := New(context.Background(), Config{ClientID: "BUSINESSAPI.x", KeyID: "k", PrivateKey: newKey(t)})
+		c, err := New(
+			context.Background(),
+			Config{ClientID: "BUSINESSAPI.x", KeyID: "k", PrivateKey: newKey(t)},
+		)
 		if err != nil {
 			t.Fatal(err)
 		}
 		if c.Scope() != ScopeBusiness || c.BaseURL() != BusinessBaseURL {
 			t.Fatalf("scope %q base %q", c.Scope(), c.BaseURL())
 		}
-		if _, err := New(context.Background(), Config{ClientID: "OTHER.x", KeyID: "k", PrivateKey: newKey(t)}); !errors.Is(err, ErrConfig) {
+		if _, err := New(
+			context.Background(),
+			Config{ClientID: "OTHER.x", KeyID: "k", PrivateKey: newKey(t)},
+		); !errors.Is(
+			err,
+			ErrConfig,
+		) {
 			t.Fatalf("underivable scope: %v", err)
 		}
 	})
 	t.Run("Override", func(t *testing.T) {
 		t.Parallel()
-		c, err := New(context.Background(), Config{ClientID: "OTHER.x", KeyID: "k", PrivateKey: newKey(t), Scope: ScopeSchool})
+		c, err := New(
+			context.Background(),
+			Config{ClientID: "OTHER.x", KeyID: "k", PrivateKey: newKey(t), Scope: ScopeSchool},
+		)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -59,7 +71,10 @@ func TestScope(t *testing.T) {
 	})
 	t.Run("SchoolHost", func(t *testing.T) {
 		t.Parallel()
-		c, err := New(context.Background(), Config{ClientID: "SCHOOLAPI.x", KeyID: "k", PrivateKey: newKey(t)})
+		c, err := New(
+			context.Background(),
+			Config{ClientID: "SCHOOLAPI.x", KeyID: "k", PrivateKey: newKey(t)},
+		)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -70,7 +85,17 @@ func TestScope(t *testing.T) {
 		defer srv.Close()
 		key := newKey(t)
 		srv.RegisterKey("SCHOOLAPI.x", "k", &key.PublicKey)
-		c, err = New(context.Background(), Config{ClientID: "SCHOOLAPI.x", KeyID: "k", PrivateKey: key, BaseURL: srv.URL, TokenURL: srv.TokenURL, HTTPClient: srv.Client()})
+		c, err = New(
+			context.Background(),
+			Config{
+				ClientID:   "SCHOOLAPI.x",
+				KeyID:      "k",
+				PrivateKey: key,
+				BaseURL:    srv.URL,
+				TokenURL:   srv.TokenURL,
+				HTTPClient: srv.Client(),
+			},
+		)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -128,20 +153,52 @@ func TestAssertion(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		if _, err := Assertion(p384, testClientID, testKeyID, now, 0, 0); !errors.Is(err, ErrKeyType) {
+		if _, err := Assertion(
+			p384,
+			testClientID,
+			testKeyID,
+			now,
+			0,
+			0,
+		); !errors.Is(
+			err,
+			ErrKeyType,
+		) {
 			t.Fatalf("P-384: %v", err)
 		}
-		if _, err := Assertion(nil, testClientID, testKeyID, now, 0, 0); !errors.Is(err, ErrKeyType) {
+		if _, err := Assertion(
+			nil,
+			testClientID,
+			testKeyID,
+			now,
+			0,
+			0,
+		); !errors.Is(
+			err,
+			ErrKeyType,
+		) {
 			t.Fatalf("nil: %v", err)
 		}
-		if _, err := New(context.Background(), Config{ClientID: testClientID, KeyID: testKeyID, PrivateKey: p384}); !errors.Is(err, ErrKeyType) {
+		if _, err := New(
+			context.Background(),
+			Config{ClientID: testClientID, KeyID: testKeyID, PrivateKey: p384},
+		); !errors.Is(
+			err,
+			ErrKeyType,
+		) {
 			t.Fatalf("New with P-384: %v", err)
 		}
 		rsaKey, err := rsa.GenerateKey(rand.Reader, 2048)
 		if err != nil {
 			t.Fatal(err)
 		}
-		if _, err := New(context.Background(), Config{ClientID: testClientID, KeyID: testKeyID, PrivateKeyPEM: pkcs8PEM(t, rsaKey)}); !errors.Is(err, ErrKeyType) {
+		if _, err := New(
+			context.Background(),
+			Config{ClientID: testClientID, KeyID: testKeyID, PrivateKeyPEM: pkcs8PEM(t, rsaKey)},
+		); !errors.Is(
+			err,
+			ErrKeyType,
+		) {
 			t.Fatalf("New with RSA: %v", err)
 		}
 	})
@@ -206,7 +263,10 @@ func TestKeyLoading(t *testing.T) {
 		if err != nil || !got.Equal(key) {
 			t.Fatalf("ParseKey PKCS8: %v", err)
 		}
-		c, err := New(context.Background(), Config{ClientID: testClientID, KeyID: testKeyID, PrivateKeyPEM: pkcs8PEM(t, key)})
+		c, err := New(
+			context.Background(),
+			Config{ClientID: testClientID, KeyID: testKeyID, PrivateKeyPEM: pkcs8PEM(t, key)},
+		)
 		if err != nil || !c.key.Equal(key) {
 			t.Fatalf("New with PEM: %v", err)
 		}
@@ -221,7 +281,12 @@ func TestKeyLoading(t *testing.T) {
 		if err != nil || !got.Equal(key) {
 			t.Fatalf("LoadKeyFile: %v", err)
 		}
-		if _, err := LoadKeyFile(filepath.Join(t.TempDir(), "missing.pem")); !errors.Is(err, ErrKey) {
+		if _, err := LoadKeyFile(
+			filepath.Join(t.TempDir(), "missing.pem"),
+		); !errors.Is(
+			err,
+			ErrKey,
+		) {
 			t.Fatalf("missing file: %v", err)
 		}
 	})
@@ -232,17 +297,31 @@ func TestKeyLoading(t *testing.T) {
 		if err != nil || !got.Equal(key) {
 			t.Fatalf("LoadKey: %v", err)
 		}
-		if _, err := LoadKey(context.Background(), p, "other"); !errors.Is(err, ErrKey) || !errors.Is(err, secrets.ErrNotFound) {
+		if _, err := LoadKey(
+			context.Background(),
+			p,
+			"other",
+		); !errors.Is(err, ErrKey) ||
+			!errors.Is(err, secrets.ErrNotFound) {
 			t.Fatalf("missing secret: %v", err)
 		}
 		if _, err := LoadKey(context.Background(), nil, "x"); !errors.Is(err, ErrKey) {
 			t.Fatalf("nil provider: %v", err)
 		}
-		c, err := New(context.Background(), Config{ClientID: testClientID, KeyID: testKeyID, Keys: p, KeyName: "axm.key"})
+		c, err := New(
+			context.Background(),
+			Config{ClientID: testClientID, KeyID: testKeyID, Keys: p, KeyName: "axm.key"},
+		)
 		if err != nil || !c.key.Equal(key) {
 			t.Fatalf("New with provider: %v", err)
 		}
-		if _, err := New(context.Background(), Config{ClientID: testClientID, KeyID: testKeyID, Keys: p, KeyName: "other"}); !errors.Is(err, ErrKey) {
+		if _, err := New(
+			context.Background(),
+			Config{ClientID: testClientID, KeyID: testKeyID, Keys: p, KeyName: "other"},
+		); !errors.Is(
+			err,
+			ErrKey,
+		) {
 			t.Fatalf("New with missing secret: %v", err)
 		}
 	})
@@ -260,12 +339,18 @@ func TestKeyLoading(t *testing.T) {
 			pem  []byte
 			want error
 		}{
-			"empty":       {nil, ErrKey},
-			"garbage":     {[]byte("not pem"), ErrKey},
-			"wrong block": {[]byte("-----BEGIN CERTIFICATE-----\nAAAA\n-----END CERTIFICATE-----\n"), ErrKey},
-			"bad der":     {[]byte("-----BEGIN EC PRIVATE KEY-----\nAAAA\n-----END EC PRIVATE KEY-----\n"), ErrKey},
-			"rsa pkcs8":   {pkcs8PEM(t, rsaKey), ErrKeyType},
-			"p384 sec1":   {sec1PEM(t, p384), ErrKeyType},
+			"empty":   {nil, ErrKey},
+			"garbage": {[]byte("not pem"), ErrKey},
+			"wrong block": {
+				[]byte("-----BEGIN CERTIFICATE-----\nAAAA\n-----END CERTIFICATE-----\n"),
+				ErrKey,
+			},
+			"bad der": {
+				[]byte("-----BEGIN EC PRIVATE KEY-----\nAAAA\n-----END EC PRIVATE KEY-----\n"),
+				ErrKey,
+			},
+			"rsa pkcs8": {pkcs8PEM(t, rsaKey), ErrKeyType},
+			"p384 sec1": {sec1PEM(t, p384), ErrKeyType},
 		}
 		for name, tc := range cases {
 			if _, err := ParseKey(tc.pem); !errors.Is(err, tc.want) {
@@ -319,7 +404,8 @@ func TestTokenExchange(t *testing.T) {
 		c := f.client(t, func(cfg *Config) { cfg.Scope = ScopeSchool })
 		_, err := c.Token(context.Background())
 		var ae *AuthError
-		if !errors.As(err, &ae) || ae.Code != "invalid_scope" || ae.Status != http.StatusBadRequest {
+		if !errors.As(err, &ae) || ae.Code != "invalid_scope" ||
+			ae.Status != http.StatusBadRequest {
 			t.Fatalf("wrong scope: %v", err)
 		}
 		if !strings.Contains(string(f.srv.Requests()[0].Body), "scope=school.api") {
@@ -333,12 +419,16 @@ func TestTokenExchange(t *testing.T) {
 		t.Parallel()
 		var hit int32
 		var mu sync.Mutex
-		tokenSrv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
-			mu.Lock()
-			hit++
-			mu.Unlock()
-			_, _ = w.Write([]byte(`{"access_token":"t","token_type":"Bearer","expires_in":3600}`))
-		}))
+		tokenSrv := httptest.NewTLSServer(
+			http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+				mu.Lock()
+				hit++
+				mu.Unlock()
+				_, _ = w.Write(
+					[]byte(`{"access_token":"t","token_type":"Bearer","expires_in":3600}`),
+				)
+			}),
+		)
 		defer tokenSrv.Close()
 		f := newFixture(t)
 		c := f.client(t, func(cfg *Config) { cfg.TokenURL = tokenSrv.URL + "/token" })
@@ -380,7 +470,8 @@ func TestTokenExchange(t *testing.T) {
 		c := f.client(t, nil)
 		_, err := c.Token(context.Background())
 		var ae *AuthError
-		if !errors.As(err, &ae) || ae.Code != "invalid_client" || ae.Description == "" || !strings.Contains(ae.Error(), "invalid_client") {
+		if !errors.As(err, &ae) || ae.Code != "invalid_client" || ae.Description == "" ||
+			!strings.Contains(ae.Error(), "invalid_client") {
 			t.Fatalf("rejected: %v", err)
 		}
 		if _, err := c.Token(context.Background()); err != nil {
@@ -388,21 +479,37 @@ func TestTokenExchange(t *testing.T) {
 		}
 		other := newKey(t)
 		c = f.client(t, func(cfg *Config) { cfg.PrivateKey = other })
-		if _, err := c.Token(context.Background()); !errors.As(err, &ae) || ae.Status != http.StatusBadRequest {
+		if _, err := c.Token(
+			context.Background(),
+		); !errors.As(err, &ae) ||
+			ae.Status != http.StatusBadRequest {
 			t.Fatalf("wrong key: %v", err)
 		}
 		c = f.client(t, func(cfg *Config) { cfg.KeyID = "other-kid" })
 		if _, err := c.Token(context.Background()); !errors.As(err, &ae) {
 			t.Fatalf("wrong kid: %v", err)
 		}
-		c = f.client(t, func(cfg *Config) { cfg.TokenURL = "http://127.0.0.1:1/token" })
-		if _, err := c.Token(context.Background()); !errors.As(err, &ae) || !errors.Is(err, ErrTransport) {
+		c = f.client(t, func(cfg *Config) { cfg.TokenURL = "https://127.0.0.1:1/token" })
+		if _, err := c.Token(
+			context.Background(),
+		); !errors.As(err, &ae) ||
+			!errors.Is(err, ErrTransport) {
 			t.Fatalf("unreachable: %v", err)
 		}
 		for name, body := range map[string]string{"nonjson": "<html>", "empty": `{"access_token":""}`} {
-			srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) { _, _ = w.Write([]byte(body)) }))
-			c = f.client(t, func(cfg *Config) { cfg.TokenURL = srv.URL })
-			if _, err := c.Token(context.Background()); !errors.As(err, &ae) || !errors.Is(err, ErrDecode) {
+			srv := httptest.NewTLSServer(
+				http.HandlerFunc(
+					func(w http.ResponseWriter, _ *http.Request) { _, _ = w.Write([]byte(body)) },
+				),
+			)
+			c = f.client(
+				t,
+				func(cfg *Config) { cfg.TokenURL = srv.URL; cfg.HTTPClient = srv.Client() },
+			)
+			if _, err := c.Token(
+				context.Background(),
+			); !errors.As(err, &ae) ||
+				!errors.Is(err, ErrDecode) {
 				t.Errorf("%s: %v", name, err)
 			}
 			srv.Close()
@@ -437,7 +544,10 @@ func TestTokenCache(t *testing.T) {
 		f := newFixture(t)
 		fake := clock.NewFake(time.Now())
 		f.srv.SetNow(fake.Now)
-		c := f.client(t, func(cfg *Config) { cfg.Clock = fake; cfg.RefreshMargin = 5 * time.Minute })
+		c := f.client(
+			t,
+			func(cfg *Config) { cfg.Clock = fake; cfg.RefreshMargin = 5 * time.Minute },
+		)
 		first, err := c.Token(context.Background())
 		if err != nil {
 			t.Fatal(err)
@@ -574,7 +684,9 @@ func TestUnauthorized(t *testing.T) {
 			t.Fatalf("replay: %v", err)
 		}
 		reqs := f.srv.Requests()
-		if len(reqs) != 3 || reqs[0].Status != http.StatusUnauthorized || reqs[1].Path != axmtest.TokenPath || reqs[2].Status != http.StatusOK {
+		if len(reqs) != 3 || reqs[0].Status != http.StatusUnauthorized ||
+			reqs[1].Path != axmtest.TokenPath ||
+			reqs[2].Status != http.StatusOK {
 			for _, r := range reqs {
 				t.Logf("%s %s -> %d", r.Method, r.Path, r.Status)
 			}
@@ -595,7 +707,8 @@ func TestUnauthorized(t *testing.T) {
 			t.Fatalf("second 401: %v", err)
 		}
 		var apiErr *Error
-		if !errors.As(err, &apiErr) || apiErr.Status != http.StatusUnauthorized || apiErr.Code() != "UNAUTHORIZED" {
+		if !errors.As(err, &apiErr) || apiErr.Status != http.StatusUnauthorized ||
+			apiErr.Code() != "UNAUTHORIZED" {
 			t.Fatalf("wrapped API error: %v", err)
 		}
 		if n := len(apiRequests(f.srv)); n != 2 {
@@ -608,14 +721,34 @@ func TestConfig(t *testing.T) {
 	t.Parallel()
 	key := newKey(t)
 	cases := map[string]Config{
-		"no client id":    {KeyID: "k", PrivateKey: key},
-		"no key id":       {ClientID: testClientID, PrivateKey: key},
-		"no key":          {ClientID: testClientID, KeyID: "k"},
-		"bad base url":    {ClientID: testClientID, KeyID: "k", PrivateKey: key, BaseURL: "ftp://x"},
-		"unparsable base": {ClientID: testClientID, KeyID: "k", PrivateKey: key, BaseURL: "http://[::1]:x"},
-		"bad token url":   {ClientID: testClientID, KeyID: "k", PrivateKey: key, TokenURL: "http://[::1]:x"},
-		"negative skew":   {ClientID: testClientID, KeyID: "k", PrivateKey: key, ClockSkew: -1},
-		"negative retry":  {ClientID: testClientID, KeyID: "k", PrivateKey: key, Retry: Retry{Max: -1, Base: 1}},
+		"no client id": {KeyID: "k", PrivateKey: key},
+		"no key id":    {ClientID: testClientID, PrivateKey: key},
+		"no key":       {ClientID: testClientID, KeyID: "k"},
+		"bad base url": {
+			ClientID:   testClientID,
+			KeyID:      "k",
+			PrivateKey: key,
+			BaseURL:    "ftp://x",
+		},
+		"unparsable base": {
+			ClientID:   testClientID,
+			KeyID:      "k",
+			PrivateKey: key,
+			BaseURL:    "http://[::1]:x",
+		},
+		"bad token url": {
+			ClientID:   testClientID,
+			KeyID:      "k",
+			PrivateKey: key,
+			TokenURL:   "http://[::1]:x",
+		},
+		"negative skew": {ClientID: testClientID, KeyID: "k", PrivateKey: key, ClockSkew: -1},
+		"negative retry": {
+			ClientID:   testClientID,
+			KeyID:      "k",
+			PrivateKey: key,
+			Retry:      Retry{Max: -1, Base: 1},
+		},
 	}
 	for name, cfg := range cases {
 		t.Run(name, func(t *testing.T) {
@@ -627,13 +760,24 @@ func TestConfig(t *testing.T) {
 	}
 	t.Run("Defaults", func(t *testing.T) {
 		t.Parallel()
-		c, err := New(context.Background(), Config{ClientID: testClientID, KeyID: "k", PrivateKey: key, AssertionTTL: 400 * 24 * time.Hour, Retry: Retry{Max: 2}})
+		c, err := New(
+			context.Background(),
+			Config{
+				ClientID:     testClientID,
+				KeyID:        "k",
+				PrivateKey:   key,
+				AssertionTTL: 400 * 24 * time.Hour,
+				Retry:        Retry{Max: 2},
+			},
+		)
 		if err != nil {
 			t.Fatal(err)
 		}
 		if c.cfg.AssertionTTL != MaxAssertionTTL || c.cfg.ClockSkew != DefaultClockSkew || c.cfg.RefreshMargin != DefaultRefreshMargin ||
 			c.cfg.PageCap != DefaultPageCap || c.cfg.Retry.Base != DefaultRetry.Base || c.cfg.Retry.Cap != DefaultRetry.Base ||
-			c.cfg.TokenURL != DefaultTokenURL || c.cfg.HTTPClient.Timeout != DefaultTimeout || c.cfg.PrivateKey != nil {
+			c.cfg.TokenURL != DefaultTokenURL ||
+			c.cfg.HTTPClient.Timeout != DefaultTimeout ||
+			c.cfg.PrivateKey != nil {
 			t.Fatalf("defaults not applied: %+v", c.cfg)
 		}
 	})
@@ -641,13 +785,30 @@ func TestConfig(t *testing.T) {
 		t.Parallel()
 		f := newFixture(t)
 		c := f.client(t, nil)
-		if _, err := c.roundTrip(context.Background(), request{method: "BAD METHOD", path: "/v1/x"}); !errors.Is(err, ErrArgument) && !errors.Is(err, ErrTransport) {
+		if _, err := c.roundTrip(
+			context.Background(),
+			request{method: "BAD METHOD", path: "/v1/x"},
+		); !errors.Is(err, ErrArgument) &&
+			!errors.Is(err, ErrTransport) {
 			t.Fatalf("bad method: %v", err)
 		}
-		if _, err := c.roundTrip(context.Background(), request{method: http.MethodPost, path: "/v1/x", body: make(chan int)}); !errors.Is(err, ErrArgument) {
+		if _, err := c.roundTrip(
+			context.Background(),
+			request{method: http.MethodPost, path: "/v1/x", body: make(chan int)},
+		); !errors.Is(
+			err,
+			ErrArgument,
+		) {
 			t.Fatalf("unencodable body: %v", err)
 		}
-		if err := c.do(context.Background(), request{method: http.MethodGet, path: "/v1/orgDevices"}, new(chan int)); !errors.Is(err, ErrDecode) {
+		if err := c.do(
+			context.Background(),
+			request{method: http.MethodGet, path: "/v1/orgDevices"},
+			new(chan int),
+		); !errors.Is(
+			err,
+			ErrDecode,
+		) {
 			t.Fatalf("undecodable response: %v", err)
 		}
 		hung := stub(t, func(w http.ResponseWriter, _ *http.Request) {
@@ -655,7 +816,13 @@ func TestConfig(t *testing.T) {
 			_, _ = w.Write([]byte("{"))
 		})
 		sc := stubClient(t, hung, nil)
-		if _, err := sc.ListOrgDevices(context.Background(), ListOptions{}); !errors.Is(err, ErrTransport) {
+		if _, err := sc.ListOrgDevices(
+			context.Background(),
+			ListOptions{},
+		); !errors.Is(
+			err,
+			ErrTransport,
+		) {
 			t.Fatalf("truncated body: %v", err)
 		}
 	})

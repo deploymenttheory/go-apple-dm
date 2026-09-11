@@ -22,6 +22,12 @@
 // transaction, nonce, key and certificate chain. Redirects are refused and an
 // unset HTTP timeout defaults to 30 seconds.
 //
+// Grants uses shared state to reserve one verified CSR under a random, expiring
+// challenge. CertificateIssuer persists the resulting DER before required,
+// idempotent registration and returns it on authorized retries. All replicas
+// share the store, issuer and policy. Authorization and registration callbacks
+// are mandatory; a certificate subject alone never establishes admission.
+//
 // # References
 //
 //   - Decision record 0008: https://github.com/deploymenttheory/go-apple-dm/blob/main/docs/research/decisions/0008-scep-and-ca.md

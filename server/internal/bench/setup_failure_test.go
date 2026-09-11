@@ -19,7 +19,7 @@ import (
 
 func TestFixtureSetupRefusesUnwritableOutputs(t *testing.T) {
 	t.Parallel()
-	for _, name := range []string{"fixtures", "fixtures/apns-root.pem", "fixtures/app.pem", "fixtures/app.key", "fixtures/oidc-root.pem", "fixtures/device-root.pem", "fixtures/user-ha1.json", "fixtures/attestation.json", "fixtures/attestation-root.pem", "fixtures/device-root.key", "fixtures/dep-tokens.json", "fixtures/abm.key"} {
+	for _, name := range []string{"fixtures", "fixtures/apns-root.pem", "fixtures/app.pem", "fixtures/app.key", "fixtures/oidc-root.pem", "fixtures/device-root.pem", "fixtures/user-ha1.json", "fixtures/attestation.json", "fixtures/attestation-root.pem", "fixtures/device-root.key", "fixtures/dep-tls.pem", "fixtures/dep-tokens.json", "fixtures/abm-tls.pem", "fixtures/abm.key"} {
 		t.Run(name, func(t *testing.T) {
 			w := testWorkspace(t, "simulated")
 			if name == "fixtures" {

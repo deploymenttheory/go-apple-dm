@@ -62,13 +62,14 @@ The client also refuses redirects, bounds oversized responses explicitly, and su
 
 ### CONF-02: macOS declarative ACME credentials
 
-**Evidence and impact.** The credential handler omitted the required Subject and reused enrollment-profile flags. For a Mac declarative credential, Apple requires `HardwareBound=false` and, when present, `Attest=false`. Simply changing those flags while retaining a blanket attestation gate would make the endpoint unusable. These restrictions apply to the declarative credential document; enrollment profiles have separate attestation support. See Apple's [ACME credential schema](https://github.com/apple/device-management/blob/67045e2fa06f528b196c01edee6a8bf88b844beb/declarative/declarations/assets/credentials/acme.yaml).
-
-**Fix.** The [credential handler](../../server/internal/app/acme.go) includes Subject, identifies the authenticated enrollment's platform/version, validates support, and emits both false flags on macOS. Other supported platforms retain flags appropriate to attestable keys. A [credential grant](../../server/internal/app/acmecredential.go) ties the code to the existing enrollment certificate for five minutes, capped by that certificate's expiry. Existing atomic identifier claiming restricts it to one ACME order. Challenge and finalization recheck the enrollment, current certificate, expiry and configured revocation registry. Disabled, deleted, revoked or replaced identities cannot continue using the code. Responses carry `Cache-Control: no-store`.
-
-The library's optional `AuthorizeUnattested` policy hook permits this scoped alternative proof. Its default is absent. The reference server grants the exception only for Mac secondary credentials; initial enrollment still requires attestation by default. Normal authorization and enrollment admission run as well. A separately configured ACME policy requiring fresh attested properties, including the current DEP/SIP policies, will still deny a non-attested credential.
-
-**Verification.** [Platform and grant tests](../../server/internal/app/conformance_security_test.go) exercise supported and unsupported targets and expired, missing, mismatched, revoked, replaced, disabled and deleted identities. The [Mac issuance test](../../server/internal/app/acme_test.go) completes attested enrollment, fetches a conforming declarative credential, obtains its certificate without attestation, rejects code replay and rejects an unattested initial enrollment. A [library regression](../../pki/acme/challenge_test.go) verifies that withdrawing authorization after challenge prevents finalization.
+The original assessment used the pinned YAML's blanket Mac restriction. Apple's
+current [ACME credential documentation](https://developer.apple.com/documentation/devicemanagement/acmecredential)
+permits hardware-bound keys on Apple silicon and T2; Apple silicon also supports
+attestation. The handler uses hardware-aware selection and a short-lived grant
+bound to the existing enrolled identity and requested assurance. Required Subject,
+platform/version validation, current-identity checks, revocation, expiry and
+single-order claiming remain enforced. The [hardening record](apple-enterprise-hardening-2026-09-11.md)
+contains the source comparison, implementation and validation details.
 
 ### CONF-03: Mac MDM and attestation identifiers were conflated
 
@@ -111,7 +112,7 @@ Detailed command logs for this local run use `/tmp/dm-remediation-*-final.log`, 
 - HTTP SCEP clients must now supply trusted recipients explicitly. RA-only pins also need issuer roots. Automatic discovery with TLS verification disabled, redirect-based SCEP endpoints, non-AES envelopes and RSA recipients below 2048 bits are rejected. SCEP pending enrollment/polling remains unsupported by this client; it returns an error rather than an identity.
 - The bootstrap-token storage contract now treats nil and empty values as removal. Third-party storage implementations should run the shared contract suite and implement the same semantics. Existing issued MDM profiles acquire the advertised capability when regenerated and installed through the deployment's normal profile lifecycle.
 - The new ACME binding field and credential grants require no SQL schema migration. Upgrade every server replica together so the same identity and authorization rules apply. Previously minted Mac identifiers retain their original binding; reissue affected profiles/codes to obtain corrected bindings. A credential document must be fetched again after its five-minute code expires.
-- A Mac secondary credential obtained through the scoped exception has no hardware-attestation assurance. Its code remains a bearer capability during its short lifetime. Protect transport and the existing device identity; deployments requiring fresh hardware properties for every issued key must retain that stronger policy and cannot satisfy it with this Mac declarative flow.
+- A Mac secondary credential obtained through the scoped exception has no hardware-attestation assurance. Its code remains a bearer capability during its short lifetime. Protect transport and the existing device identity; deployments requiring fresh hardware properties for every issued key must retain that stronger policy and require an Apple silicon credential that requests and proves attestation.
 - Bootstrap-token clearing removes the active stored value. Database backup retention, snapshots and physical data erasure remain deployment responsibilities. Declaration deletion prevents subsequent serving; it cannot withdraw bytes a device already obtained.
 - Validate the changed flows on supported physical Apple hardware before release: Mac attested ADE enrollment with distinct provisioning identity, declarative secondary certificate issuance and renewal, bootstrap-token escrow/removal, and OTA profile installation. Automated tests use synthetic attestations and protocol clients and do not prove Apple's OS accepts every interaction.
 

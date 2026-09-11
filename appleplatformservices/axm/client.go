@@ -16,6 +16,7 @@ import (
 	"time"
 
 	"github.com/deploymenttheory/go-apple-dm/clock"
+	"github.com/deploymenttheory/go-apple-dm/internal/httpsurl"
 	"github.com/deploymenttheory/go-apple-dm/secrets"
 )
 
@@ -123,7 +124,11 @@ func New(ctx context.Context, cfg Config) (*Client, error) {
 		cfg.Scope = ScopeFor(cfg.ClientID)
 	}
 	if cfg.Scope == "" {
-		return nil, fmt.Errorf("%w: Scope cannot be derived from ClientID %q", ErrConfig, cfg.ClientID)
+		return nil, fmt.Errorf(
+			"%w: Scope cannot be derived from ClientID %q",
+			ErrConfig,
+			cfg.ClientID,
+		)
 	}
 	if cfg.BaseURL == "" {
 		cfg.BaseURL = BusinessBaseURL
@@ -131,16 +136,16 @@ func New(ctx context.Context, cfg Config) (*Client, error) {
 			cfg.BaseURL = SchoolBaseURL
 		}
 	}
-	base, err := url.Parse(cfg.BaseURL)
-	if err != nil || (base.Scheme != "http" && base.Scheme != "https") || base.Host == "" {
-		return nil, fmt.Errorf("%w: BaseURL %q needs an http or https scheme and a host", ErrConfig, cfg.BaseURL)
+	base, err := httpsurl.Parse(cfg.BaseURL)
+	if err != nil {
+		return nil, fmt.Errorf("%w: BaseURL: %w", ErrConfig, err)
 	}
 	base.Path = strings.TrimSuffix(base.Path, "/")
 	base.RawQuery, base.Fragment = "", ""
 	if cfg.TokenURL == "" {
 		cfg.TokenURL = DefaultTokenURL
 	}
-	if _, err := url.Parse(cfg.TokenURL); err != nil {
+	if _, err := httpsurl.Parse(cfg.TokenURL); err != nil {
 		return nil, fmt.Errorf("%w: TokenURL: %w", ErrConfig, err)
 	}
 	if cfg.HTTPClient == nil {
@@ -192,7 +197,14 @@ func New(ctx context.Context, cfg Config) (*Client, error) {
 		clone.Timeout = 60 * time.Second
 	}
 	cfg.HTTPClient = &clone
-	return &Client{cfg: cfg, key: key, base: base, http: cfg.HTTPClient, clock: cfg.Clock, log: cfg.Logger}, nil
+	return &Client{
+		cfg:   cfg,
+		key:   key,
+		base:  base,
+		http:  cfg.HTTPClient,
+		clock: cfg.Clock,
+		log:   cfg.Logger,
+	}, nil
 }
 
 // resolveKey picks the configured key source.
@@ -208,7 +220,10 @@ func resolveKey(ctx context.Context, cfg Config) (*ecdsa.PrivateKey, error) {
 	case cfg.Keys != nil && cfg.KeyName != "":
 		return LoadKey(ctx, cfg.Keys, cfg.KeyName)
 	}
-	return nil, fmt.Errorf("%w: one of PrivateKey, PrivateKeyPEM, or Keys with KeyName is required", ErrConfig)
+	return nil, fmt.Errorf(
+		"%w: one of PrivateKey, PrivateKeyPEM, or Keys with KeyName is required",
+		ErrConfig,
+	)
 }
 
 // Scope returns the scope in use.
@@ -323,7 +338,14 @@ func (c *Client) roundTrip(ctx context.Context, r request) (*http.Response, erro
 			if !replayed {
 				replayed = true
 				c.invalidate(tok)
-				c.log.DebugContext(ctx, "axm: 401, replaying with a fresh token", "method", r.method, "url", target)
+				c.log.DebugContext(
+					ctx,
+					"axm: 401, replaying with a fresh token",
+					"method",
+					r.method,
+					"url",
+					target,
+				)
 				continue
 			}
 			return nil, &AuthError{Status: resp.StatusCode, Body: body, Err: apiErr}
@@ -354,7 +376,13 @@ func (c *Client) roundTrip(ctx context.Context, r request) (*http.Response, erro
 }
 
 // send performs one HTTP exchange.
-func (c *Client) send(ctx context.Context, r request, target string, payload []byte, tok string) (*http.Response, error) {
+func (c *Client) send(
+	ctx context.Context,
+	r request,
+	target string,
+	payload []byte,
+	tok string,
+) (*http.Response, error) {
 	var body io.Reader
 	if payload != nil {
 		body = bytes.NewReader(payload)

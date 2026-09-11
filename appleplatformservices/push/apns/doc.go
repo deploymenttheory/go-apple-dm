@@ -16,6 +16,9 @@
 // caching and event publication belong to server/pushnotify. APNs acceptance
 // does not establish device delivery or command execution.
 //
+// Host overrides require absolute HTTPS URLs with no user information or
+// fragment, checked before loading push credentials.
+//
 // # References
 //
 //   - Decision record 0007: https://github.com/deploymenttheory/go-apple-dm/blob/main/docs/research/decisions/0007-apns-push.md

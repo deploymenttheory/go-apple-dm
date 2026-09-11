@@ -1,6 +1,7 @@
 package app
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"net/http"
@@ -10,6 +11,7 @@ import (
 
 	"github.com/deploymenttheory/go-apple-dm/clock"
 	"github.com/deploymenttheory/go-apple-dm/mdmprotocol/cms"
+	"github.com/deploymenttheory/go-apple-dm/mdmprotocol/enroll"
 	"github.com/deploymenttheory/go-apple-dm/pki/acme"
 	"github.com/deploymenttheory/go-apple-dm/pki/ca"
 	"github.com/deploymenttheory/go-apple-dm/pki/revocation"
@@ -27,13 +29,21 @@ func TestCredentialPlatformConformance(t *testing.T) {
 		name, product, version string
 		unattested             bool
 		status                 int
+		hardware               enroll.MacHardware
+		bound, attest          bool
 	}{
-		{"iPad", "iPad14,1", "26.0", false, 200},
-		{"MacDefaultPolicy", "Mac16,1", "26.0", false, 200},
-		{"MacExplicitUnattested", "Mac16,1", "26.0", true, 200},
-		{"UnknownPlatform", "unknown", "26.0", true, 403},
-		{"MissingVersion", "iPad14,1", "", false, 403},
-		{"UnsupportedVersion", "iPad14,1", "16.0", false, 403},
+		{"iPad", "iPad14,1", "26.0", false, 200, "", true, true},
+		{"AppleSilicon", "Mac16,1", "14.0", false, 200, enroll.MacAppleSilicon, true, true},
+		{"AppleSiliconObserved", "Mac16,1", "14.0", false, 200, enroll.MacAppleSilicon, true, true},
+		{"T2", "MacBookPro15,1", "14.0", false, 200, enroll.MacT2, true, false},
+		{"Intel", "MacBookPro12,1", "14.0", false, 200, enroll.MacIntel, false, false},
+		{"OldMac", "Mac16,1", "13.6", false, 403, enroll.MacAppleSilicon, false, false},
+		{"InvalidHardware", "Mac16,1", "14.0", false, 500, "bad", false, false},
+		{"MacDefaultPolicy", "Mac16,1", "26.0", false, 200, "", false, false},
+		{"MacExplicitUnattested", "Mac16,1", "26.0", true, 200, "", false, false},
+		{"UnknownPlatform", "unknown", "26.0", true, 403, "", false, false},
+		{"MissingVersion", "iPad14,1", "", false, 403, "", false, false},
+		{"UnsupportedVersion", "iPad14,1", "16.0", false, 403, "", false, false},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			a, id := replacementSecurityApp(t)
@@ -52,6 +62,12 @@ func TestCredentialPlatformConformance(t *testing.T) {
 				ID:       id,
 				Enabled:  true,
 				CertHash: cms.Fingerprint(cert),
+				Capabilities: func() storage.Capabilities {
+					if tc.name == "AppleSiliconObserved" {
+						return storage.Capabilities{AppleSilicon: storage.CapabilityTrue}
+					}
+					return storage.Capabilities{}
+				}(),
 				Device: storage.DeviceInfo{
 					SerialNumber: "serial",
 					ProductName:  tc.product,
@@ -63,6 +79,12 @@ func TestCredentialPlatformConformance(t *testing.T) {
 			}
 			a.Store = store
 			a.enroll.acme.cfg.AllowUnattested = tc.unattested
+			a.enroll.acme.cfg.MacHardware = func(context.Context, acme.Binding) (enroll.MacHardware, error) {
+				if tc.name == "AppleSiliconObserved" {
+					return "", errors.New("inventory must not be needed")
+				}
+				return tc.hardware, nil
+			}
 			r := httptest.NewRequest(http.MethodGet, "https://mdm.example/credential", nil)
 			r = r.WithContext(httpapi.WithCert(t.Context(), cert))
 			w := httptest.NewRecorder()
@@ -88,11 +110,38 @@ func TestCredentialPlatformConformance(t *testing.T) {
 				t.Fatal("missing Subject or cache protection")
 			}
 			attest := credential.Attest != nil && *credential.Attest
-			if target.OS == support.MacOS && (attest || credential.HardwareBound) {
-				t.Fatal("invalid Mac credential flags")
+			if attest != tc.attest || credential.HardwareBound != tc.bound {
+				t.Fatal("incorrect hardware flags", credential)
 			}
-			if target.OS == support.IOS && (!attest || !credential.HardwareBound) {
-				t.Fatal("iPad attestation weakened")
+			record, err := a.protocol.Get(
+				t.Context(),
+				credentialGrantKey(credential.ClientIdentifier),
+			)
+			if err != nil {
+				t.Fatal(err)
+			}
+			var grant credentialGrant
+			if err := json.Unmarshal(record.Value, &grant); err != nil {
+				t.Fatal(err)
+			}
+			if grant.RequireAttestation != tc.attest {
+				t.Fatal("attestation expectation missing from grant")
+			}
+			if tc.attest {
+				d := &acme.Decision{
+					Binding:    acme.Binding{EnrollmentID: id.ID, Serial: "serial"},
+					Identifier: acme.Identifier{Value: credential.ClientIdentifier},
+				}
+				if err := a.enroll.acme.authorizeCredential(
+					t.Context(),
+					d,
+					false,
+				); !errors.Is(
+					err,
+					acme.ErrUnauthorized,
+				) {
+					t.Fatal("grant downgraded", err)
+				}
 			}
 		})
 	}
@@ -122,13 +171,24 @@ func TestCredentialGrantTracksEnrollmentAndIdentity(t *testing.T) {
 			}
 			reg.Now = fake.Now
 			issuer := cms.Fingerprint(authority.Cert)
-			if err := reg.Register(t.Context(), issuer, identity.Cert, revocation.Provenance{}); err != nil {
+			if err := reg.Register(
+				t.Context(),
+				issuer,
+				identity.Cert,
+				revocation.Provenance{},
+			); err != nil {
 				t.Fatal(err)
 			}
 			a.revocations = reg
 			record := storage.EnrollmentExport{Enrollment: storage.Enrollment{
-				ID: id, Enabled: true, CertHash: cms.Fingerprint(identity.Cert),
-				Device: storage.DeviceInfo{SerialNumber: "serial", ProductName: "Mac16,1", OSVersion: "26.0"},
+				ID:       id,
+				Enabled:  true,
+				CertHash: cms.Fingerprint(identity.Cert),
+				Device: storage.DeviceInfo{
+					SerialNumber: "serial",
+					ProductName:  "Mac16,1",
+					OSVersion:    "26.0",
+				},
 			}}
 			if mode == "not-mac" {
 				record.Device.ProductName = "iPad14,1"
@@ -139,10 +199,19 @@ func TestCredentialGrantTracksEnrollmentAndIdentity(t *testing.T) {
 			}
 			svc := a.enroll.acme
 			identifier := "synthetic-credential-code"
-			if err := svc.recordCredentialGrant(t.Context(), identifier, id, identity.Cert); err != nil {
+			if err := svc.recordCredentialGrant(
+				t.Context(),
+				identifier,
+				id,
+				identity.Cert,
+				false,
+			); err != nil {
 				t.Fatal(err)
 			}
-			decision := &acme.Decision{Binding: acme.Binding{EnrollmentID: id.ID, Serial: "serial"}, Identifier: acme.Identifier{Type: acme.IdentifierPermanent, Value: identifier}}
+			decision := &acme.Decision{
+				Binding:    acme.Binding{EnrollmentID: id.ID, Serial: "serial"},
+				Identifier: acme.Identifier{Type: acme.IdentifierPermanent, Value: identifier},
+			}
 			switch mode {
 			case "missing":
 				decision.Identifier.Value = "another-code"
@@ -153,7 +222,12 @@ func TestCredentialGrantTracksEnrollmentAndIdentity(t *testing.T) {
 			case "expired":
 				fake.Advance(credentialGrantTTL + time.Second)
 			case "revoked":
-				if err := reg.Revoke(t.Context(), issuer, identity.Cert.SerialNumber, 1); err != nil {
+				if err := reg.Revoke(
+					t.Context(),
+					issuer,
+					identity.Cert.SerialNumber,
+					1,
+				); err != nil {
 					t.Fatal(err)
 				}
 			case "replaced":

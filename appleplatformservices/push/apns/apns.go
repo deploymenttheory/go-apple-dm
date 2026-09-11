@@ -18,6 +18,7 @@ import (
 
 	"github.com/deploymenttheory/go-apple-dm/appleplatformservices/push"
 	"github.com/deploymenttheory/go-apple-dm/clock"
+	"github.com/deploymenttheory/go-apple-dm/internal/httpsurl"
 	"github.com/deploymenttheory/go-apple-dm/mdmprotocol/mdm"
 	"github.com/deploymenttheory/go-apple-dm/pki/pushcert"
 )
@@ -199,6 +200,9 @@ type notification struct {
 }
 
 func (c *Client) send(ctx context.Context, n notification, mdmPush bool) push.Result {
+	if _, err := httpsurl.Parse(c.host); err != nil {
+		return push.Result{Outcome: push.OutcomeRejected, Err: fmt.Errorf("push: %w", err)}
+	}
 	client, err := c.clientFor(ctx, n.topic, mdmPush)
 	if err != nil {
 		return push.Result{Outcome: push.OutcomeRejected, Err: err}

@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"github.com/deploymenttheory/go-apple-dm/clock"
+	"github.com/deploymenttheory/go-apple-dm/internal/httpsurl"
 	"github.com/deploymenttheory/go-apple-dm/mdmprotocol/event"
 )
 
@@ -95,9 +96,9 @@ func NewClient(cfg ClientConfig) (*Client, error) {
 	if cfg.BaseURL == "" {
 		cfg.BaseURL = DefaultBaseURL
 	}
-	base, err := url.Parse(cfg.BaseURL)
-	if err != nil || base.Scheme == "" || base.Host == "" {
-		return nil, fmt.Errorf("%w: base URL %q", ErrConfig, cfg.BaseURL)
+	base, err := httpsurl.Parse(cfg.BaseURL)
+	if err != nil {
+		return nil, fmt.Errorf("%w: base URL: %w", ErrConfig, err)
 	}
 	if cfg.UserAgent == "" {
 		cfg.UserAgent = DefaultUserAgent
@@ -120,7 +121,12 @@ func NewClient(cfg ClientConfig) (*Client, error) {
 	if cfg.MaxBodyBytes <= 0 {
 		cfg.MaxBodyBytes = DefaultMaxBodyBytes
 	}
-	return &Client{cfg: cfg, base: base, sessions: map[string]*accountSession{}, warned: map[string]time.Time{}}, nil
+	return &Client{
+		cfg:      cfg,
+		base:     base,
+		sessions: map[string]*accountSession{},
+		warned:   map[string]time.Time{},
+	}, nil
 }
 
 // Store returns the store the client was built with.
@@ -137,7 +143,12 @@ func (c *Client) URL(path string, query url.Values) string {
 // NewRequest builds a request for path with body encoded as JSON (nil
 // sends no body). The body is a bytes.Reader, so GetBody is set and Do can
 // replay it after a re-authentication.
-func (c *Client) NewRequest(ctx context.Context, method, path string, query url.Values, body any) (*http.Request, error) {
+func (c *Client) NewRequest(
+	ctx context.Context,
+	method, path string,
+	query url.Values,
+	body any,
+) (*http.Request, error) {
 	var r io.Reader
 	if body != nil {
 		raw, err := Marshal(body)
@@ -164,7 +175,9 @@ func (c *Client) NewRequest(ctx context.Context, method, path string, query url.
 // for any other non-2xx answer. ErrTokenExpired is returned before any
 // HTTP call when the account's token has expired.
 func (c *Client) Do(ctx context.Context, account string, req *http.Request, out any) error {
-	if req == nil || req.URL == nil || req.URL.Scheme != c.base.Scheme || req.URL.Host != c.base.Host || req.URL.User != nil {
+	if req == nil || req.URL == nil || req.URL.Scheme != c.base.Scheme ||
+		req.URL.Host != c.base.Host ||
+		req.URL.User != nil {
 		return ErrInvalid
 	}
 	acct, err := c.account(ctx, account)
@@ -206,7 +219,16 @@ func (c *Client) Do(ctx context.Context, account string, req *http.Request, out 
 		}
 		derr := newError(status, body, header.Get("Retry-After"), c.cfg.Clock.Now())
 		if attempt == 0 && needsReauth(derr) {
-			c.cfg.Logger.DebugContext(ctx, "dep: session rejected, re-authenticating", "account", acct.Name, "status", status, "code", derr.Code)
+			c.cfg.Logger.DebugContext(
+				ctx,
+				"dep: session rejected, re-authenticating",
+				"account",
+				acct.Name,
+				"status",
+				status,
+				"code",
+				derr.Code,
+			)
 			if token, err = c.sessionToken(ctx, acct, token); err != nil {
 				return err
 			}
@@ -219,11 +241,20 @@ func (c *Client) Do(ctx context.Context, account string, req *http.Request, out 
 
 // needsReauth reports whether the answer means the session is gone.
 func needsReauth(e *Error) bool {
-	return e.Status == http.StatusUnauthorized || (e.Status == http.StatusForbidden && e.Code == CodeForbidden) || e.Code == CodeExpiredToken
+	return e.Status == http.StatusUnauthorized ||
+		(e.Status == http.StatusForbidden && e.Code == CodeForbidden) ||
+		e.Code == CodeExpiredToken
 }
 
 // send performs one attempt and returns the status, headers, and body.
-func (c *Client) send(ctx context.Context, acct *Account, req *http.Request, replay func() (io.ReadCloser, error), length int64, token string) (int, http.Header, []byte, error) {
+func (c *Client) send(
+	ctx context.Context,
+	acct *Account,
+	req *http.Request,
+	replay func() (io.ReadCloser, error),
+	length int64,
+	token string,
+) (int, http.Header, []byte, error) {
 	r := req.Clone(ctx)
 	body, err := replay()
 	if err != nil {
@@ -268,7 +299,9 @@ func replayable(req *http.Request, maxBytes int64) (func() (io.ReadCloser, error
 	if int64(len(buf)) > maxBytes {
 		return nil, 0, fmt.Errorf("%w: %d bytes over %d", ErrBodyTooLarge, len(buf), maxBytes)
 	}
-	return func() (io.ReadCloser, error) { return io.NopCloser(bytes.NewReader(buf)), nil }, int64(len(buf)), nil
+	return func() (io.ReadCloser, error) { return io.NopCloser(bytes.NewReader(buf)), nil }, int64(
+		len(buf),
+	), nil
 }
 
 // account loads the account and fails fast on missing or expired tokens.
@@ -297,7 +330,12 @@ func (c *Client) checkExpiry(ctx context.Context, name string, expiry *time.Time
 	}
 	now := c.cfg.Clock.Now()
 	if !now.Before(*expiry) {
-		return fmt.Errorf("%w: %s expired at %s", ErrTokenExpired, name, expiry.UTC().Format(time.RFC3339))
+		return fmt.Errorf(
+			"%w: %s expired at %s",
+			ErrTokenExpired,
+			name,
+			expiry.UTC().Format(time.RFC3339),
+		)
 	}
 	if c.cfg.Bus == nil || expiry.Sub(now) > c.cfg.ExpiryWarning {
 		return nil
@@ -310,9 +348,21 @@ func (c *Client) checkExpiry(ctx context.Context, name string, expiry *time.Time
 	}
 	c.warned[name] = now
 	c.mu.Unlock()
-	ev := event.Event{Type: EventTokenExpiring, At: now, Actor: Actor, Data: TokenExpiringEvent{Account: name, Expiry: *expiry}}
+	ev := event.Event{
+		Type:  EventTokenExpiring,
+		At:    now,
+		Actor: Actor,
+		Data:  TokenExpiringEvent{Account: name, Expiry: *expiry},
+	}
 	if err := c.cfg.Bus.Publish(ctx, ev); err != nil {
-		c.cfg.Logger.WarnContext(ctx, "dep: publish", "type", string(EventTokenExpiring), "error", err)
+		c.cfg.Logger.WarnContext(
+			ctx,
+			"dep: publish",
+			"type",
+			string(EventTokenExpiring),
+			"error",
+			err,
+		)
 	}
 	return nil
 }
@@ -389,9 +439,19 @@ func (c *Client) authenticate(ctx context.Context, acct *Account) (string, error
 		}
 		return token, nil
 	case errors.Is(err, ErrTokenInvalid):
-		return "", c.markState(ctx, acct, err, AccountState{TermsExpired: acct.State.TermsExpired, TokenInvalid: true})
+		return "", c.markState(
+			ctx,
+			acct,
+			err,
+			AccountState{TermsExpired: acct.State.TermsExpired, TokenInvalid: true},
+		)
 	case errors.Is(err, ErrTermsNotSigned):
-		return "", c.markState(ctx, acct, err, AccountState{TermsExpired: true, TokenInvalid: acct.State.TokenInvalid})
+		return "", c.markState(
+			ctx,
+			acct,
+			err,
+			AccountState{TermsExpired: true, TokenInvalid: acct.State.TokenInvalid},
+		)
 	default:
 		return "", err
 	}
@@ -420,7 +480,16 @@ func (c *Client) session(ctx context.Context, t Tokens, protocol int) (string, e
 	if err != nil {
 		return "", fmt.Errorf("%w: session request: %w", ErrInvalid, err)
 	}
-	o := OAuth1{ConsumerKey: t.ConsumerKey, ConsumerSecret: t.ConsumerSecret, Token: t.AccessToken, TokenSecret: t.AccessSecret, Timestamp: c.cfg.Clock.Now().Unix(), Nonce: nonce, Realm: OAuth1Realm, Version: true}
+	o := OAuth1{
+		ConsumerKey:    t.ConsumerKey,
+		ConsumerSecret: t.ConsumerSecret,
+		Token:          t.AccessToken,
+		TokenSecret:    t.AccessSecret,
+		Timestamp:      c.cfg.Clock.Now().Unix(),
+		Nonce:          nonce,
+		Realm:          OAuth1Realm,
+		Version:        true,
+	}
 	req.Header.Set("Authorization", o.Header(req.Method, req.URL))
 	req.Header.Set("User-Agent", c.cfg.UserAgent)
 	req.Header.Set("Accept", contentType)

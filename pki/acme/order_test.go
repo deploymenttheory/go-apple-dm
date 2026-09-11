@@ -64,7 +64,11 @@ func TestNewOrder(t *testing.T) {
 	t.Run("IdentifierIsOneTime", func(t *testing.T) {
 		f := newFixture(t)
 		acct := f.register()
-		requireStatus(t, acct.post(f.url("/new-order"), orderRequest(testIdentifier)), http.StatusCreated)
+		requireStatus(
+			t,
+			acct.post(f.url("/new-order"), orderRequest(testIdentifier)),
+			http.StatusCreated,
+		)
 
 		second := acct.post(f.url("/new-order"), orderRequest(testIdentifier))
 		p := requireProblem(t, second, acme.ProblemRejectedIdentifier)
@@ -174,12 +178,16 @@ func TestNewOrder(t *testing.T) {
 			// The validity of a device identity is the server's decision,
 			// not something a device may ask for.
 			"NotBefore": map[string]any{
-				"identifiers": []acme.Identifier{{Type: acme.IdentifierPermanent, Value: testIdentifier}},
-				"notBefore":   "2026-01-01T00:00:00Z",
+				"identifiers": []acme.Identifier{
+					{Type: acme.IdentifierPermanent, Value: testIdentifier},
+				},
+				"notBefore": "2026-01-01T00:00:00Z",
 			},
 			"NotAfter": map[string]any{
-				"identifiers": []acme.Identifier{{Type: acme.IdentifierPermanent, Value: testIdentifier}},
-				"notAfter":    "2036-01-01T00:00:00Z",
+				"identifiers": []acme.Identifier{
+					{Type: acme.IdentifierPermanent, Value: testIdentifier},
+				},
+				"notAfter": "2036-01-01T00:00:00Z",
 			},
 		}
 		for name, payload := range cases {
@@ -217,7 +225,10 @@ func TestNewOrder(t *testing.T) {
 
 	t.Run("StoreFailure", func(t *testing.T) {
 		f := newFixture(t, func(c *acme.Config) {
-			c.Store = &acmetest.Failing{Store: c.Store, Fail: map[string]error{"PutOrder": errStore}}
+			c.Store = &acmetest.Failing{
+				Store: c.Store,
+				Fail:  map[string]error{"PutOrder": errStore},
+			}
 		})
 		acct := f.register()
 		res := acct.post(f.url("/new-order"), orderRequest(testIdentifier))
@@ -259,9 +270,18 @@ func TestOrderEndpoint(t *testing.T) {
 			path string
 			fail map[string]error
 		}{
-			"Order":         {"/order/" + idOf(fl.orderURL), map[string]error{"GetOrder": errStore}},
-			"Authorization": {"/authz/" + idOf(fl.authzURL), map[string]error{"GetAuthorization": errStore}},
-			"Challenge":     {"/challenge/" + idOf(fl.chalURL), map[string]error{"GetChallenge": errStore}},
+			"Order": {
+				"/order/" + idOf(fl.orderURL),
+				map[string]error{"GetOrder": errStore},
+			},
+			"Authorization": {
+				"/authz/" + idOf(fl.authzURL),
+				map[string]error{"GetAuthorization": errStore},
+			},
+			"Challenge": {
+				"/challenge/" + idOf(fl.chalURL),
+				map[string]error{"GetChallenge": errStore},
+			},
 			// Failure to read an existing authorization's challenge returns an internal
 			// error.
 			"ChallengeOfAuthorization": {
@@ -389,7 +409,11 @@ func TestFinalize(t *testing.T) {
 		requireStatus(t, second, http.StatusOK)
 		body := decode[orderJSON](t, second)
 		if body.Certificate != first.Certificate {
-			t.Fatalf("certificate = %q, want the one already issued %q", body.Certificate, first.Certificate)
+			t.Fatalf(
+				"certificate = %q, want the one already issued %q",
+				body.Certificate,
+				first.Certificate,
+			)
 		}
 		if n := f.events.count(event.ACMEIssued); n != 1 {
 			t.Errorf("published %d issuance events, want 1", n)
@@ -599,4 +623,16 @@ func putChallenge(t *testing.T, f *fixture, c *acme.Challenge) {
 	}); err != nil {
 		t.Fatal(err)
 	}
+}
+
+func TestRequiredAttestationRecheckedAtFinalization(t *testing.T) {
+	f := newFixture(t, func(c *acme.Config) { c.AllowUnattested = true })
+	binding := f.ids[testIdentifier]
+	binding.RequireAttestation = true
+	f.ids[testIdentifier] = binding
+	fl := f.begin(testIdentifier).pass()
+	record := challengeRecord(t, f, fl)
+	record.Attestation = nil
+	putChallenge(t, f, record)
+	requireProblem(t, fl.finalizeWith(fl.key, pkix.Name{}), acme.ProblemBadAttestationStatement)
 }

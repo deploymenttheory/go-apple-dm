@@ -90,7 +90,7 @@ attestation plus organizational admission.
 
 The library SCEP constructor requires an explicit challenge policy. `RenewalOnly`
 rejects initial issuance. Reference profiles use RSA-2048 or stronger and set
-`KeyIsExtractable=false` and `AllowAllAppsAccess=false`. Persistent enrollment
+`KeyIsExtractable=false` and `AllowAllAppsAccess=false` where the target supports those keys. The library builder applies these defaults to known Mac ACME and PKCS#12 targets and supported SCEP targets; explicit overrides remain available. Persistent enrollment
 servers require `DM_ENROLL_CA_CERT_FILE` and `DM_ENROLL_CA_KEY_FILE`; the issuer
 must be a valid CA with its matching private key. Leaf validity cannot exceed
 issuer expiry. Only memory-backed development can use an ephemeral CA.
@@ -105,31 +105,82 @@ nonce, public key and certificate chain. An unset HTTP timeout becomes 30 second
 
 ### macOS ACME credentials
 
-The enrollment profile and the declarative credential document have different
-Apple requirements. Mac enrollment profiles can request hardware-bound keys and
-attestation. Mac declarative credentials instead emit `HardwareBound=false` and
-`Attest=false`, with the required Subject. Other supported platforms retain
-attestation flags for attestable keys. The endpoint requires a known platform and
-OS version from the authenticated enrollment.
+The current Apple [ACME profile documentation](https://developer.apple.com/documentation/devicemanagement/acmecertificate)
+and [declarative credential documentation](https://developer.apple.com/documentation/devicemanagement/acmecredential)
+define separate availability and hardware requirements. macOS 13.1–13.x ACME
+profiles require `HardwareBound=false` and explicit `Attest=false`. macOS 14+
+supports hardware-bound EC keys on Apple silicon and T2; only Apple silicon
+supports Mac attestation. DDM ACME credentials require macOS 14 or later. T2
+credentials can request hardware binding with `Attest=false`. Other Intel Macs
+use software keys.
+
+`enroll.Profile.Target` and `MacHardware` validate known device context. The
+reference server passes platform/version information from ADE, account-driven
+requests and stored enrollments into profile composition. Administrative profile
+requests accept `Product`, `OSVersion` and `MacHardware` (`apple-silicon`, `t2`,
+`intel`). `ACMEConfig.MacHardware` resolves capabilities from trusted inventory;
+it must return an error if that lookup fails. A tracked, authenticated
+`DeviceInformation` response with `IsAppleSilicon=true` supplies the hardware
+context for secondary credentials and replacements. This report selects the
+payload; the ACME verifier still verifies hardware claims cryptographically.
+`IsAppleSilicon=false` alone does not establish T2 capability.
+
+Unknown Mac hardware is not inferred from the product string. Initial ACME
+requests retain the explicitly configured key request when hardware is unknown;
+operators must supply known capabilities for heterogeneous Mac fleets. Secondary
+credentials with unknown hardware use software keys under the existing enrolled
+identity authorization. Once Apple silicon is known, they request hardware
+binding and attestation. Initial software-key ACME profiles are refused unless
+`DM_ACME_ALLOW_UNATTESTED` explicitly permits that enrollment policy; SCEP remains
+available. There is no optional Apple-conformance mode.
 
 A declarative credential code is bound to the currently enrolled certificate,
 expires after five minutes (or certificate expiry, whichever comes first), and
-is claimed by a single ACME order. The server rechecks the grant, enrollment,
-current certificate and revocation state at challenge and finalization. This
-permits Mac secondary credentials with `DM_ACME_ALLOW_UNATTESTED` left disabled;
-initial enrollment still requires attestation. Ordinary ACME authorization and
-admission policies continue to apply: a policy requiring fresh attested device
-properties, such as the ACME DEP/SIP policies, cannot be satisfied by this
-non-attested credential. Fetch a new credential document after a code expires.
+is claimed by one ACME order. The server rechecks the grant, enrollment,
+current certificate and revocation state at challenge and finalization. Mac
+secondary software/T2 credentials may use that scoped authorization with
+`DM_ACME_ALLOW_UNATTESTED` disabled. Policies requiring fresh attested properties
+still apply. Both the signed identifier and stored grant bind any requested
+attestation; enabling general unattested issuance cannot downgrade that code.
 
-The Mac secondary key has no hardware-attestation assurance. Protect the HTTPS
-response and its bearer code. `Cache-Control: no-store` prevents compliant clients
-and intermediaries from retaining it. A Mac's MDM UDID is kept separately from
-its attested ProvisioningUDID; initial ADE and identity replacement bind hardware
-by serial number when the provisioning identifier is unavailable.
+Protect credential responses and their bearer identifiers. `Cache-Control:
+no-store` covers profile and credential responses, including authentication and
+handler errors. A Mac's MDM UDID remains separate from its attested
+ProvisioningUDID. Initial ADE and replacement use the serial number as the
+available hardware binding.
 
-Apple's declarative restrictions are documented in the
-[ACME credential schema](https://github.com/apple/device-management/blob/67045e2fa06f528b196c01edee6a8bf88b844beb/declarative/declarations/assets/credentials/acme.yaml).
+The pinned Apple YAML contains older Mac DDM restrictions and an ACME
+extractability description that differ from Apple's live documentation.
+Project-authored policy follows the live documentation; generated upstream
+comments remain verbatim. See the [source comparison and validation record](../wip/apple-enterprise-hardening-2026-09-11.md).
+
+### Library issuance and transport configuration
+
+Library consumers can combine `scep.Grants.Verify` with
+`scep.CertificateIssuer`. Configure a shared `state.Store`, current admission
+callback, a pure `ca.Signer` that never re-enters the state transaction, and an
+idempotent registration callback. Registration must establish the deployment's
+certificate registry and enrollment associations before returning success.
+A persistence or registration error returns no certificate. The persisted
+receipt lets the next authorized retry complete registration with the same DER.
+Use the same issuer and certificate policy on all replicas.
+
+Existing reference `scep/grant/` and `scep/certificate/` keys and values remain
+readable. Replacement records add `CSRHash` in their existing JSON state. A
+legacy pending claim with only a public-key hash binds the next matching-key
+request's CSR; an already recorded candidate certificate still cannot change.
+Deploy the same version across replicas before relying on idempotent replacement
+claims. Cancel and recreate pending replacement attempts during a mixed-version
+rollout. New callers of `ReplacementChange{Op: "claim"}` must supply `CSRHash`.
+
+AxM API/token URLs, DEP API URLs and APNs hosts require absolute HTTPS URLs with
+no user information or fragment. Invalid endpoints are rejected before requests
+send credentials, and URL errors omit the configured value. Custom transports
+remain the embedding application's trust boundary. The HTTPS fixtures expose a
+trusted client. Embedded reference servers can use `RootCAFile`; process-based
+fixtures use `DM_AXM_ROOT_CA_FILE` and `DM_DEP_ROOT_CA_FILE`. These PEM bundles
+replace the client's trust roots, preserve certificate/hostname verification,
+and cannot be combined with an injected HTTP client.
 
 ## Certificate revocation
 

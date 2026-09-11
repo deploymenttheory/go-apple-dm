@@ -94,10 +94,13 @@ func (a *App) enrollmentAdminRoutes() []adminRoute {
 }
 
 func (a *App) issueEnrollmentProfile(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Cache-Control", "no-store")
 	var req struct {
-		DeviceID, Serial string
-		Identity         string
-		AccessRights     enroll.AccessRights
+		DeviceID, Serial   string
+		Product, OSVersion string
+		MacHardware        enroll.MacHardware
+		Identity           string
+		AccessRights       enroll.AccessRights
 	}
 	body, err := io.ReadAll(io.LimitReader(r.Body, MaxAdminBody+1))
 	if err != nil || len(body) > MaxAdminBody {
@@ -111,10 +114,10 @@ func (a *App) issueEnrollmentProfile(w http.ResponseWriter, r *http.Request) {
 	if req.Identity == "" {
 		req.Identity = a.enroll.cfg.Identity
 	}
-	p, err := a.enroll.profileWithIdentity(
+	p, err := a.enroll.profileForDevice(
 		r.Context(),
 		acme.Binding{MDMUDID: req.DeviceID, Serial: req.Serial, CommonName: req.DeviceID},
-		req.Identity,
+		req.Identity, req.Product, req.OSVersion, req.MacHardware,
 	)
 	if err != nil {
 		writeError(w, 400, err)

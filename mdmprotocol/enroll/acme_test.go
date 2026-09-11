@@ -41,7 +41,8 @@ func TestACMEProfileRoundTrip(t *testing.T) {
 	if !ok {
 		t.Fatal("no ACME payload")
 	}
-	if acme.DirectoryURL != p.ACME.DirectoryURL || acme.ClientIdentifier != p.ACME.ClientIdentifier {
+	if acme.DirectoryURL != p.ACME.DirectoryURL ||
+		acme.ClientIdentifier != p.ACME.ClientIdentifier {
 		t.Fatalf("payload = %+v", acme)
 	}
 	if acme.Attest == nil || !*acme.Attest || !acme.HardwareBound {
@@ -96,8 +97,16 @@ func TestACMEProfileValidation(t *testing.T) {
 		want   string
 	}{
 		{"no directory", func(a *enroll.ACME) { a.DirectoryURL = "" }, "DirectoryURL is required"},
-		{"http directory", func(a *enroll.ACME) { a.DirectoryURL = "http://mdm.example/acme" }, "must use https"},
-		{"no client identifier", func(a *enroll.ACME) { a.ClientIdentifier = "" }, "ClientIdentifier is required"},
+		{
+			"http directory",
+			func(a *enroll.ACME) { a.DirectoryURL = "http://mdm.example/acme" },
+			"absolute HTTPS URL",
+		},
+		{
+			"no client identifier",
+			func(a *enroll.ACME) { a.ClientIdentifier = "" },
+			"ClientIdentifier is required",
+		},
 		{"unknown key type", func(a *enroll.ACME) { a.KeyType = "Ed25519" }, "KeyType must be"},
 		{"hardware bound RSA", func(a *enroll.ACME) {
 			a.KeyType, a.KeySize = enroll.KeyTypeRSA, 2048
@@ -108,7 +117,11 @@ func TestACMEProfileValidation(t *testing.T) {
 		{"RSA not a multiple of eight", func(a *enroll.ACME) {
 			a.KeyType, a.KeySize, a.HardwareBound, a.Attest = enroll.KeyTypeRSA, 2049, false, false
 		}, "multiple of 8 between 1024 and 4096"},
-		{"unknown curve", func(a *enroll.ACME) { a.KeySize = 512 }, "must be 192, 256, 384, or 521"},
+		{
+			"unknown curve",
+			func(a *enroll.ACME) { a.KeySize = 512 },
+			"must be 192, 256, 384, or 521",
+		},
 		{"hardware bound P-521", func(a *enroll.ACME) { a.KeySize = 521 }, "must be 256 or 384"},
 		{"attest without hardware binding", func(a *enroll.ACME) {
 			a.HardwareBound, a.KeySize = false, 256

@@ -42,7 +42,8 @@ func TestTokenPKI(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		if cert.Subject.CommonName != "go-apple-dm test" || cert.PublicKeyAlgorithm != x509.RSA || !cert.NotAfter.Equal(t0.Add(24*time.Hour)) {
+		if cert.Subject.CommonName != "go-apple-dm test" || cert.PublicKeyAlgorithm != x509.RSA ||
+			!cert.NotAfter.Equal(t0.Add(24*time.Hour)) {
 			t.Fatalf("certificate: %+v", cert.Subject)
 		}
 		key, err := kp.PrivateKey()
@@ -61,7 +62,10 @@ func TestTokenPKI(t *testing.T) {
 			t.Fatal(err)
 		}
 		want := f.srv.Tokens()
-		if got.ConsumerKey != want.ConsumerKey || got.ConsumerSecret != want.ConsumerSecret || got.AccessToken != want.AccessToken || got.AccessSecret != want.AccessSecret || !got.AccessTokenExpiry.Equal(*want.AccessTokenExpiry) {
+		if got.ConsumerKey != want.ConsumerKey || got.ConsumerSecret != want.ConsumerSecret ||
+			got.AccessToken != want.AccessToken ||
+			got.AccessSecret != want.AccessSecret ||
+			!got.AccessTokenExpiry.Equal(*want.AccessTokenExpiry) {
 			t.Fatalf("unwrapped %+v, want %+v", got, want)
 		}
 		// The full exchange: stage, import, upstage, and a validated account.
@@ -76,7 +80,8 @@ func TestTokenPKI(t *testing.T) {
 			t.Fatalf("detail: %+v", detail)
 		}
 		a := f.account()
-		if a.Tokens() != want && (a.ConsumerKey != want.ConsumerKey || a.AccessSecret != want.AccessSecret) {
+		if a.Tokens() != want &&
+			(a.ConsumerKey != want.ConsumerKey || a.AccessSecret != want.AccessSecret) {
 			t.Fatalf("account tokens: %+v", a.Tokens())
 		}
 		if a.ServerUUID != "SERVER-UUID-DEPTEST" || a.State != (dep.AccountState{}) {
@@ -108,7 +113,10 @@ func TestTokenPKI(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		pk8 := &dep.Keypair{CertPEM: kp.CertPEM, KeyPEM: pem.EncodeToMemory(&pem.Block{Type: "PRIVATE KEY", Bytes: der})}
+		pk8 := &dep.Keypair{
+			CertPEM: kp.CertPEM,
+			KeyPEM:  pem.EncodeToMemory(&pem.Block{Type: "PRIVATE KEY", Bytes: der}),
+		}
 		if _, err := dep.Unwrap(p7m, pk8); err != nil {
 			t.Fatalf("PKCS#8: %v", err)
 		}
@@ -140,7 +148,15 @@ func TestTokenPKI(t *testing.T) {
 			"corrupt payload": corrupt,
 			"too large":       bytes.Repeat([]byte("A"), 2<<20),
 		} {
-			if _, err := f.client.ImportToken(ctx, acct, p7m, dep.ImportOptions{}); !errors.Is(err, dep.ErrInvalid) {
+			if _, err := f.client.ImportToken(
+				ctx,
+				acct,
+				p7m,
+				dep.ImportOptions{},
+			); !errors.Is(
+				err,
+				dep.ErrInvalid,
+			) {
 				t.Errorf("%s: %v", name, err)
 			}
 		}
@@ -150,7 +166,15 @@ func TestTokenPKI(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		if _, err := f.client.ImportToken(ctx, acct, wrongKey, dep.ImportOptions{}); !errors.Is(err, dep.ErrInvalid) {
+		if _, err := f.client.ImportToken(
+			ctx,
+			acct,
+			wrongKey,
+			dep.ImportOptions{},
+		); !errors.Is(
+			err,
+			dep.ErrInvalid,
+		) {
 			t.Fatalf("wrong key: %v", err)
 		}
 		// Valid envelope, bad contents: no framing, empty message, bad JSON,
@@ -166,8 +190,20 @@ func TestTokenPKI(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			p7m := []byte("Content-Type: application/pkcs7-mime\r\n\r\n" + base64.StdEncoding.EncodeToString(enveloped) + "\r\n")
-			if _, err := f.client.ImportToken(ctx, acct, p7m, dep.ImportOptions{}); !errors.Is(err, dep.ErrInvalid) {
+			p7m := []byte(
+				"Content-Type: application/pkcs7-mime\r\n\r\n" + base64.StdEncoding.EncodeToString(
+					enveloped,
+				) + "\r\n",
+			)
+			if _, err := f.client.ImportToken(
+				ctx,
+				acct,
+				p7m,
+				dep.ImportOptions{},
+			); !errors.Is(
+				err,
+				dep.ErrInvalid,
+			) {
 				t.Errorf("%s: %v", name, err)
 			}
 		}
@@ -180,7 +216,8 @@ func TestTokenPKI(t *testing.T) {
 		if err != nil || !bytes.Equal(stg.KeyPEM, staged.KeyPEM) {
 			t.Fatalf("staged keypair changed: %v", err)
 		}
-		if after := f.account(); after.UpdatedAt != before.UpdatedAt || after.ConsumerKey != before.ConsumerKey {
+		if after := f.account(); after.UpdatedAt != before.UpdatedAt ||
+			after.ConsumerKey != before.ConsumerKey {
 			t.Fatal("account changed by a corrupt token")
 		}
 		if len(f.srv.Requests()) != 0 {
@@ -188,7 +225,15 @@ func TestTokenPKI(t *testing.T) {
 		}
 		// Validation failures after a good unwrap also leave the keypairs.
 		f.srv.SetTermsNotSigned(true)
-		if _, err := f.client.ImportToken(ctx, acct, good, dep.ImportOptions{}); !errors.Is(err, dep.ErrTermsNotSigned) {
+		if _, err := f.client.ImportToken(
+			ctx,
+			acct,
+			good,
+			dep.ImportOptions{},
+		); !errors.Is(
+			err,
+			dep.ErrTermsNotSigned,
+		) {
 			t.Fatalf("terms: %v", err)
 		}
 		if _, err := f.store.Keypair(ctx, acct, dep.StageStaged); err != nil {
@@ -197,9 +242,25 @@ func TestTokenPKI(t *testing.T) {
 		f.srv.SetTermsNotSigned(false)
 		// A store failure during the final transaction leaves the staged
 		// pair for a retry.
-		failing := &deptest.Failing{Store: f.store, Fail: map[string]error{"UpstageKeypair": errors.New("readonly")}}
-		c, _ := dep.NewClient(dep.ClientConfig{Store: failing, BaseURL: f.srv.URL(), Clock: f.clk})
-		if _, err := c.ImportToken(ctx, acct, good, dep.ImportOptions{}); err == nil || !strings.Contains(err.Error(), "readonly") {
+		failing := &deptest.Failing{
+			Store: f.store,
+			Fail:  map[string]error{"UpstageKeypair": errors.New("readonly")},
+		}
+		c, _ := dep.NewClient(
+			dep.ClientConfig{
+				Store:      failing,
+				BaseURL:    f.srv.URL(),
+				HTTPClient: f.srv.Client(),
+				Clock:      f.clk,
+			},
+		)
+		if _, err := c.ImportToken(
+			ctx,
+			acct,
+			good,
+			dep.ImportOptions{},
+		); err == nil ||
+			!strings.Contains(err.Error(), "readonly") {
 			t.Fatalf("upstage failure: %v", err)
 		}
 		if _, err := f.store.Keypair(ctx, acct, dep.StageStaged); err != nil {
@@ -207,14 +268,36 @@ func TestTokenPKI(t *testing.T) {
 		}
 		for _, method := range []string{"PutAccount", "SetSession", "GetAccount", "Keypair"} {
 			failing.Fail = map[string]error{method: errors.New("readonly")}
-			if _, err := c.ImportToken(ctx, acct, good, dep.ImportOptions{}); err == nil || !strings.Contains(err.Error(), "readonly") {
+			if _, err := c.ImportToken(
+				ctx,
+				acct,
+				good,
+				dep.ImportOptions{},
+			); err == nil ||
+				!strings.Contains(err.Error(), "readonly") {
 				t.Fatalf("%s failure: %v", method, err)
 			}
 		}
-		if _, err := f.client.ImportToken(ctx, "", good, dep.ImportOptions{}); !errors.Is(err, dep.ErrInvalid) {
+		if _, err := f.client.ImportToken(
+			ctx,
+			"",
+			good,
+			dep.ImportOptions{},
+		); !errors.Is(
+			err,
+			dep.ErrInvalid,
+		) {
 			t.Fatalf("empty name: %v", err)
 		}
-		if _, err := f.client.ImportToken(ctx, "nokeys", good, dep.ImportOptions{}); !errors.Is(err, dep.ErrNotFound) {
+		if _, err := f.client.ImportToken(
+			ctx,
+			"nokeys",
+			good,
+			dep.ImportOptions{},
+		); !errors.Is(
+			err,
+			dep.ErrNotFound,
+		) {
 			t.Fatalf("no keypair: %v", err)
 		}
 	})
@@ -232,13 +315,26 @@ func TestTokenPKI(t *testing.T) {
 		if err := f.store.PutKeypair(ctx, acct, dep.StageStaged, kp); err != nil {
 			t.Fatal(err)
 		}
-		if _, err := f.client.ImportToken(ctx, acct, p7m, dep.ImportOptions{}); !errors.Is(err, dep.ErrConsumerKeyMismatch) {
+		if _, err := f.client.ImportToken(
+			ctx,
+			acct,
+			p7m,
+			dep.ImportOptions{},
+		); !errors.Is(
+			err,
+			dep.ErrConsumerKeyMismatch,
+		) {
 			t.Fatalf("err = %v", err)
 		}
 		if f.account().ConsumerKey != "CK_previous" || len(f.srv.Requests()) != 0 {
 			t.Fatal("mismatch changed the account or reached the service")
 		}
-		if _, err := f.client.ImportToken(ctx, acct, p7m, dep.ImportOptions{Force: true}); err != nil {
+		if _, err := f.client.ImportToken(
+			ctx,
+			acct,
+			p7m,
+			dep.ImportOptions{Force: true},
+		); err != nil {
 			t.Fatalf("forced: %v", err)
 		}
 		if f.account().ConsumerKey != f.srv.Tokens().ConsumerKey {
@@ -266,7 +362,9 @@ func TestTokenPKI(t *testing.T) {
 		if _, err := dep.Unwrap([]byte("x"), bad); !errors.Is(err, dep.ErrInvalid) {
 			t.Fatalf("unwrap with bad cert: %v", err)
 		}
-		badDER := &dep.Keypair{CertPEM: pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: []byte{1, 2, 3}})}
+		badDER := &dep.Keypair{
+			CertPEM: pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: []byte{1, 2, 3}}),
+		}
 		if _, err := badDER.Certificate(); !errors.Is(err, dep.ErrInvalid) {
 			t.Fatalf("bad cert DER: %v", err)
 		}
@@ -283,13 +381,27 @@ func TestTokenPKI(t *testing.T) {
 				t.Errorf("unwrap %s: %v", name, err)
 			}
 		}
-		if _, err := dep.Wrap([]byte(`{"consumer_key":"a","consumer_secret":"b","access_token":"c","access_secret":"d"}`), nil); !errors.Is(err, dep.ErrInvalid) {
+		if _, err := dep.Wrap(
+			[]byte(
+				`{"consumer_key":"a","consumer_secret":"b","access_token":"c","access_secret":"d"}`,
+			),
+			nil,
+		); !errors.Is(
+			err,
+			dep.ErrInvalid,
+		) {
 			t.Fatalf("nil cert: %v", err)
 		}
 		if _, err := dep.Wrap([]byte(`{bad`), cert); !errors.Is(err, dep.ErrInvalid) {
 			t.Fatalf("bad JSON: %v", err)
 		}
-		if _, err := dep.Wrap([]byte(`{"consumer_key":"a"}`), cert); !errors.Is(err, dep.ErrInvalid) {
+		if _, err := dep.Wrap(
+			[]byte(`{"consumer_key":"a"}`),
+			cert,
+		); !errors.Is(
+			err,
+			dep.ErrInvalid,
+		) {
 			t.Fatalf("incomplete tokens: %v", err)
 		}
 		// Tokens.Validate names each missing field.
@@ -327,7 +439,12 @@ func FuzzUnwrap(f *testing.F) {
 		f.Fatal(err)
 	}
 	cert, _ := kp.Certificate()
-	good, err := dep.Wrap([]byte(`{"consumer_key":"a","consumer_secret":"b","access_token":"c","access_secret":"d","access_token_expiry":"2030-01-01T00:00:00Z"}`), cert)
+	good, err := dep.Wrap(
+		[]byte(
+			`{"consumer_key":"a","consumer_secret":"b","access_token":"c","access_secret":"d","access_token_expiry":"2030-01-01T00:00:00Z"}`,
+		),
+		cert,
+	)
 	if err != nil {
 		f.Fatal(err)
 	}

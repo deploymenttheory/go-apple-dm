@@ -132,7 +132,13 @@ func NewServer(o Options) *Server {
 	}
 	if o.Tokens.Validate() != nil {
 		exp := o.Clock.Now().Add(365 * 24 * time.Hour)
-		o.Tokens = dep.Tokens{ConsumerKey: "CK_deptest", ConsumerSecret: "CS_deptest", AccessToken: "AT_deptest", AccessSecret: "AS_deptest", AccessTokenExpiry: &exp} // #nosec G101 -- fixture credentials for the fake service
+		o.Tokens = dep.Tokens{
+			ConsumerKey:       "CK_deptest",
+			ConsumerSecret:    "CS_deptest",
+			AccessToken:       "AT_deptest",
+			AccessSecret:      "AS_deptest",
+			AccessTokenExpiry: &exp,
+		} // #nosec G101 -- fixture credentials for the fake service
 	}
 	s := &Server{
 		o:         o,
@@ -146,21 +152,49 @@ func NewServer(o Options) *Server {
 		notAccess: map[string]bool{},
 		failed:    map[string]bool{},
 		account: dep.AccountDetail{
-			ServerName: "deptest", ServerUUID: "SERVER-UUID-DEPTEST", AdminID: "admin@example.com", OrgName: "Deployment Theory", OrgID: "ORG-1", OrgType: "org", OrgVersion: "v2",
+			ServerName: "deptest",
+			ServerUUID: "SERVER-UUID-DEPTEST",
+			AdminID:    "admin@example.com",
+			OrgName:    "Deployment Theory",
+			OrgID:      "ORG-1",
+			OrgType:    "org",
+			OrgVersion: "v2",
 			URLs: []dep.URL{
-				{URI: dep.PathFetchDevices, HTTPMethod: []string{"POST"}, Limit: &dep.Limit{Default: DefaultPageLimit, Maximum: MaxPageLimit}},
-				{URI: dep.PathSyncDevices, HTTPMethod: []string{"POST"}, Limit: &dep.Limit{Default: DefaultPageLimit, Maximum: MaxPageLimit}},
-				{URI: dep.PathDeviceDetails, HTTPMethod: []string{"POST"}, Limit: &dep.Limit{Default: DefaultPageLimit, Maximum: MaxPageLimit}},
-				{URI: dep.PathProfileDevs, HTTPMethod: []string{"POST", "PUT", "DELETE"}, Limit: &dep.Limit{Default: DefaultPageLimit, Maximum: MaxPageLimit}},
+				{
+					URI:        dep.PathFetchDevices,
+					HTTPMethod: []string{"POST"},
+					Limit:      &dep.Limit{Default: DefaultPageLimit, Maximum: MaxPageLimit},
+				},
+				{
+					URI:        dep.PathSyncDevices,
+					HTTPMethod: []string{"POST"},
+					Limit:      &dep.Limit{Default: DefaultPageLimit, Maximum: MaxPageLimit},
+				},
+				{
+					URI:        dep.PathDeviceDetails,
+					HTTPMethod: []string{"POST"},
+					Limit:      &dep.Limit{Default: DefaultPageLimit, Maximum: MaxPageLimit},
+				},
+				{
+					URI:        dep.PathProfileDevs,
+					HTTPMethod: []string{"POST", "PUT", "DELETE"},
+					Limit:      &dep.Limit{Default: DefaultPageLimit, Maximum: MaxPageLimit},
+				},
 			},
 		},
 	}
-	s.srv = httptest.NewServer(http.HandlerFunc(s.handle))
+	s.srv = httptest.NewTLSServer(http.HandlerFunc(s.handle))
 	return s
 }
 
 // URL is the base URL for dep.ClientConfig.BaseURL.
 func (s *Server) URL() string { return s.srv.URL }
+
+// Client returns an HTTP client that trusts the fixture's TLS certificate.
+func (s *Server) Client() *http.Client { return s.srv.Client() }
+
+// Certificate returns the public certificate to configure subprocess fixtures.
+func (s *Server) Certificate() *x509.Certificate { return s.srv.Certificate() }
 
 // Close stops the server.
 func (s *Server) Close() { s.srv.Close() }
@@ -200,7 +234,11 @@ func (s *Server) SetRepeatCursor(v bool) { s.set(func() { s.repeatCursor = v }) 
 func (s *Server) SetSeedForITOff(v bool) { s.set(func() { s.seedOff = v }) }
 
 // SetBetaTokens sets what the beta tokens endpoint lists.
-func (s *Server) SetBetaTokens(t []dep.BetaToken) { s.set(func() { s.betaTokens = slices.Clone(t) }) }
+func (s *Server) SetBetaTokens(
+	t []dep.BetaToken,
+) {
+	s.set(func() { s.betaTokens = slices.Clone(t) })
+}
 
 // SetAccount replaces the account detail.
 func (s *Server) SetAccount(a dep.AccountDetail) { s.set(func() { s.account = a }) }
@@ -348,7 +386,17 @@ func (s *Server) handle(w http.ResponseWriter, r *http.Request) {
 	body, _ := io.ReadAll(io.LimitReader(r.Body, 8<<20))
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	s.requests = append(s.requests, Request{Method: r.Method, Path: r.URL.Path, Query: r.URL.Query(), Header: r.Header.Clone(), Body: body, Session: r.Header.Get(dep.HeaderSession)})
+	s.requests = append(
+		s.requests,
+		Request{
+			Method:  r.Method,
+			Path:    r.URL.Path,
+			Query:   r.URL.Query(),
+			Header:  r.Header.Clone(),
+			Body:    body,
+			Session: r.Header.Get(dep.HeaderSession),
+		},
+	)
 	if r.Header.Get("User-Agent") == "" {
 		s.fail(w, http.StatusBadRequest, dep.CodeUserAgentMissing)
 		return
@@ -476,7 +524,10 @@ func (s *Server) handleSession(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
 		w.Header().Set("X-Content-Type-Options", "nosniff")
 		w.WriteHeader(http.StatusUnauthorized)
-		_, _ = io.WriteString(w, "oauth: "+err.Error()) // #nosec G705 -- the fake's own verification message, plain text with nosniff
+		_, _ = io.WriteString(
+			w,
+			"oauth: "+err.Error(),
+		) // #nosec G705 -- the fake's own verification message, plain text with nosniff
 		return
 	}
 	switch {
@@ -502,7 +553,8 @@ func (s *Server) verifyOAuth(r *http.Request) error {
 	if p["oauth_signature_method"] != "HMAC-SHA1" {
 		return fmt.Errorf("%w: signature method %q", dep.ErrInvalid, p["oauth_signature_method"])
 	}
-	if p["oauth_consumer_key"] != s.o.Tokens.ConsumerKey || p["oauth_token"] != s.o.Tokens.AccessToken {
+	if p["oauth_consumer_key"] != s.o.Tokens.ConsumerKey ||
+		p["oauth_token"] != s.o.Tokens.AccessToken {
 		return fmt.Errorf("%w: unknown consumer key or token", dep.ErrTokenInvalid)
 	}
 	ts, err := strconv.ParseInt(p["oauth_timestamp"], 10, 64)
@@ -521,8 +573,16 @@ func (s *Server) verifyOAuth(r *http.Request) error {
 		return fmt.Errorf("%w: nonce replayed", dep.ErrInvalid)
 	}
 	u := *r.URL
-	u.Scheme, u.Host = "http", r.Host
-	o := dep.OAuth1{ConsumerKey: s.o.Tokens.ConsumerKey, ConsumerSecret: s.o.Tokens.ConsumerSecret, Token: s.o.Tokens.AccessToken, TokenSecret: s.o.Tokens.AccessSecret, Timestamp: ts, Nonce: p["oauth_nonce"], Version: p["oauth_version"] != ""}
+	u.Scheme, u.Host = "https", r.Host
+	o := dep.OAuth1{
+		ConsumerKey:    s.o.Tokens.ConsumerKey,
+		ConsumerSecret: s.o.Tokens.ConsumerSecret,
+		Token:          s.o.Tokens.AccessToken,
+		TokenSecret:    s.o.Tokens.AccessSecret,
+		Timestamp:      ts,
+		Nonce:          p["oauth_nonce"],
+		Version:        p["oauth_version"] != "",
+	}
 	if subtle.ConstantTimeCompare([]byte(o.Sign(r.Method, &u)), []byte(p["oauth_signature"])) != 1 {
 		return fmt.Errorf("%w: bad signature", dep.ErrTokenInvalid)
 	}
@@ -601,7 +661,15 @@ func (s *Server) handleFetch(w http.ResponseWriter, body []byte) {
 	if more {
 		next = cursor{kind: dep.PhaseFetch, offset: end, seq: c.seq}
 	}
-	s.writeJSON(w, dep.DevicePage{Cursor: s.issueCursor(next), Devices: devs, FetchedUntil: dep.Time(s.o.Clock.Now()), MoreToFollow: more})
+	s.writeJSON(
+		w,
+		dep.DevicePage{
+			Cursor:       s.issueCursor(next),
+			Devices:      devs,
+			FetchedUntil: dep.Time(s.o.Clock.Now()),
+			MoreToFollow: more,
+		},
+	)
 }
 
 func (s *Server) handleSync(w http.ResponseWriter, body []byte) {
@@ -633,7 +701,15 @@ func (s *Server) handleSync(w http.ResponseWriter, body []byte) {
 		devs = append(devs, d)
 	}
 	next := s.issueCursor(cursor{kind: dep.PhaseSync, seq: end})
-	s.writeJSON(w, dep.DevicePage{Cursor: next, Devices: devs, FetchedUntil: dep.Time(s.o.Clock.Now()), MoreToFollow: end < len(s.ops)})
+	s.writeJSON(
+		w,
+		dep.DevicePage{
+			Cursor:       next,
+			Devices:      devs,
+			FetchedUntil: dep.Time(s.o.Clock.Now()),
+			MoreToFollow: end < len(s.ops),
+		},
+	)
 }
 
 type serialsBody struct {
@@ -718,7 +794,9 @@ func (s *Server) assign(uuid string, serials []string) (map[string]string, int) 
 		case s.failed[serial]:
 			out[serial] = dep.StatusFailed
 		default:
-			d.ProfileUUID, d.ProfileStatus, d.ProfileAssignTime = uuid, dep.ProfileStatusAssigned, dep.Time(s.o.Clock.Now())
+			d.ProfileUUID, d.ProfileStatus, d.ProfileAssignTime = uuid, dep.ProfileStatusAssigned, dep.Time(
+				s.o.Clock.Now(),
+			)
 			s.devices[serial] = d
 			s.record(dep.OpModified, d)
 			out[serial] = dep.StatusSuccess
@@ -784,7 +862,10 @@ func (s *Server) handleAssign(w http.ResponseWriter, body []byte) {
 		return
 	}
 	out, retry := s.assign(req.ProfileUUID, req.Devices)
-	s.writeJSON(w, dep.AssignResponse{ProfileUUID: req.ProfileUUID, Devices: out, RetryAfterSeconds: retry})
+	s.writeJSON(
+		w,
+		dep.AssignResponse{ProfileUUID: req.ProfileUUID, Devices: out, RetryAfterSeconds: retry},
+	)
 }
 
 func (s *Server) handleRemove(w http.ResponseWriter, body []byte) {

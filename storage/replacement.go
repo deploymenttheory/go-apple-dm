@@ -16,12 +16,18 @@ import (
 // commits the candidate pin, token and certificate history in the same transaction;
 // it never resets the enrollment, user channels, escrow or command queue.
 type ReplacementStore interface {
-	TransitionReplacement(context.Context, mdm.EnrollmentID, ReplacementChange) (*Replacement, error)
+	TransitionReplacement(
+		context.Context,
+		mdm.EnrollmentID,
+		ReplacementChange,
+	) (*Replacement, error)
 }
 
 // Replacement contains private handshake state. Administrative APIs must expose
 // a redacted view, not this record (the command contains issuance credentials).
 type Replacement struct {
+	// CSRHash binds SCEP retries to the exact signed request.
+	CSRHash                                                       string
 	ID, Method, OldHash, CandidateHash, SecretHash, PublicKeyHash string
 	State                                                         string
 	ExpiresAt, CompletedAt                                        time.Time
@@ -38,6 +44,7 @@ type ReplacementToken struct {
 }
 
 type ReplacementChange struct {
+	CSRHash                                         string
 	Op, ID, Hash, Method, SecretHash, PublicKeyHash string
 	At                                              time.Time
 	Begin                                           *Replacement
@@ -85,7 +92,8 @@ func AdvanceReplacement(r **Replacement, e *Enrollment, c ReplacementChange) (bo
 		n := CloneReplacement(c.Begin)
 		if n == nil || n.ID == "" || n.Command.UUID != n.ID || n.Command.RequestType != "InstallProfile" ||
 			(n.Method != "scep" && n.Method != "acme") || n.OldHash == "" || n.OldHash != e.CertHash || !e.Enabled ||
-			!n.ExpiresAt.After(c.At) || n.ExpiresAt.After(c.At.Add(30*time.Minute)) {
+			!n.ExpiresAt.After(c.At) ||
+			n.ExpiresAt.After(c.At.Add(30*time.Minute)) {
 			return bad("cannot start")
 		}
 		n.State = ReplacementPending
@@ -105,13 +113,16 @@ func AdvanceReplacement(r **Replacement, e *Enrollment, c ReplacementChange) (bo
 	case "cancel":
 		current.State, current.CompletedAt = ReplacementCancelled, c.At
 	case "claim":
-		if current.Method != "scep" || current.PublicKeyHash != "" || c.PublicKeyHash == "" ||
+		if current.Method != "scep" || c.PublicKeyHash == "" || c.CSRHash == "" ||
+			(current.PublicKeyHash != "" && current.PublicKeyHash != c.PublicKeyHash) ||
+			(current.CSRHash != "" && current.CSRHash != c.CSRHash) ||
 			current.SecretHash == "" || subtle.ConstantTimeCompare([]byte(current.SecretHash), []byte(c.SecretHash)) != 1 {
 			return bad("issuance authorization refused")
 		}
-		current.PublicKeyHash = c.PublicKeyHash
+		current.PublicKeyHash, current.CSRHash = c.PublicKeyHash, c.CSRHash
 	case "issue":
-		if current.Method != c.Method || c.Hash == "" || current.CandidateHash != "" ||
+		if current.Method != c.Method || c.Hash == "" ||
+			(current.CandidateHash != "" && current.CandidateHash != c.Hash) ||
 			(current.Method == "scep" && (current.PublicKeyHash == "" || current.PublicKeyHash != c.PublicKeyHash)) {
 			return bad("certificate issuance refused")
 		}
@@ -123,7 +134,8 @@ func AdvanceReplacement(r **Replacement, e *Enrollment, c ReplacementChange) (bo
 		current.Authenticated = true
 		current.AuthenticateRaw = append([]byte(nil), c.Raw...)
 	case "token":
-		if !current.Authenticated || c.Hash != current.CandidateHash || c.Token == nil || c.Token.Message == nil {
+		if !current.Authenticated || c.Hash != current.CandidateHash || c.Token == nil ||
+			c.Token.Message == nil {
 			return bad("token before authentication")
 		}
 		if _, err := mdm.PushFromTokenUpdate(c.Token.Message); err != nil {
@@ -144,7 +156,8 @@ func AdvanceReplacement(r **Replacement, e *Enrollment, c ReplacementChange) (bo
 			current.Tokens = append(current.Tokens, *c.Token)
 		}
 	case "deliver", "result":
-		if c.Hash != current.OldHash && (current.CandidateHash == "" || c.Hash != current.CandidateHash) {
+		if c.Hash != current.OldHash &&
+			(current.CandidateHash == "" || c.Hash != current.CandidateHash) {
 			return bad("command identity refused")
 		}
 		if c.Op == "deliver" {
@@ -154,7 +167,8 @@ func AdvanceReplacement(r **Replacement, e *Enrollment, c ReplacementChange) (bo
 			}
 			current.Delivered = true
 		} else {
-			if !current.Delivered || c.Response == nil || c.Response.CommandUUID != current.Command.UUID {
+			if !current.Delivered || c.Response == nil ||
+				c.Response.CommandUUID != current.Command.UUID {
 				return bad("command result does not match")
 			}
 			switch c.Response.Status {

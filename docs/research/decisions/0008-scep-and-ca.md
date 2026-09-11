@@ -17,6 +17,14 @@ one-CSR credential. SCEP constructors require an explicit challenge policy;
 key agreement, and signing bounds leaf validity by issuer expiry. See
 [enrollment security operations](../../operations/enrollment-security.md).
 
+`scep.Grants` provides the state-backed one-CSR challenge contract to library
+consumers. `CertificateIssuer` commits an exact DER receipt before idempotent
+registration, permitting authorized retries after an interrupted response or
+registration failure. Authorization is rechecked on every call. Reference
+replacement claims bind the exact CSR and permit only the same candidate
+certificate to be registered again. This is an issuance reliability policy;
+Apple's SCEP `Retries` and `RetryDelay` specifically concern PENDING responses.
+
 ## Rationale
 
 Policy hooks support different enrollment admission rules without coupling the protocol implementation to a CA deployment. A shared client exercises issuance from the device side.

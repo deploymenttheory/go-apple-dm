@@ -14,6 +14,9 @@
 // server. The axmtest package provides an independent fake for modeled endpoints
 // and failures.
 //
+// API and token endpoint overrides require absolute HTTPS URLs with no user
+// information or fragment. Custom transports own TLS verification policy.
+//
 // # References
 //
 //   - Decision record 0030: https://github.com/deploymenttheory/go-apple-dm/blob/main/docs/research/decisions/0030-apple-business-manager-api-client.md

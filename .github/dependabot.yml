@@ -18,7 +18,9 @@ updates:
 
   # Maintain dependencies for Go modules
   - package-ecosystem: "gomod"
-    directory: "/"
+    directories:
+      - "/"
+      - "/server"
     schedule:
       # Check for updates to Go modules every week
       interval: "weekly"

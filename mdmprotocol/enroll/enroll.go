@@ -8,6 +8,7 @@ import (
 	"slices"
 	"strings"
 
+	"github.com/deploymenttheory/go-apple-dm/internal/httpsurl"
 	"github.com/deploymenttheory/go-apple-dm/mdmprotocol/profile"
 	"github.com/deploymenttheory/go-apple-dm/schema/profiles"
 	"github.com/deploymenttheory/go-apple-dm/schema/support"
@@ -108,7 +109,9 @@ type ACME struct {
 	SubjectAltName   *profiles.ACMECertificateSubjectAltName
 	UsageFlags       *int64
 	ExtendedKeyUsage []string
-	// KeyIsExtractable and AllowAllAppsAccess are macOS only.
+	// KeyIsExtractable and AllowAllAppsAccess are macOS only. A known
+	// supported Mac Target defaults both to false. Explicit values override
+	// those defaults. False disables extraction (Apple Developer documentation).
 	KeyIsExtractable   *bool
 	AllowAllAppsAccess *bool
 }
@@ -121,8 +124,8 @@ func (a *ACME) validate() error {
 	if a.DirectoryURL == "" {
 		return fmt.Errorf("%w: ACME DirectoryURL is required", ErrProfile)
 	}
-	if !strings.HasPrefix(a.DirectoryURL, "https://") {
-		return fmt.Errorf("%w: ACME DirectoryURL %q must use https", ErrProfile, a.DirectoryURL)
+	if _, err := httpsurl.Parse(a.DirectoryURL); err != nil {
+		return fmt.Errorf("%w: ACME DirectoryURL: %w", ErrProfile, err)
 	}
 	if a.ClientIdentifier == "" {
 		return fmt.Errorf("%w: ACME ClientIdentifier is required", ErrProfile)
@@ -185,10 +188,7 @@ func (a *ACME) payload() *profiles.ACMECertificate {
 		KeyIsExtractable:   a.KeyIsExtractable,
 		AllowAllAppsAccess: a.AllowAllAppsAccess,
 	}
-	if a.Attest {
-		attest := true
-		out.Attest = &attest
-	}
+	out.Attest = new(a.Attest)
 	if subject := SubjectFromName(a.Subject); len(subject) > 0 {
 		out.Subject = subject
 	}
@@ -196,9 +196,11 @@ func (a *ACME) payload() *profiles.ACMECertificate {
 }
 
 type PKCS12 struct {
-	Data     []byte
-	Password string
-	FileName string
+	KeyIsExtractable   *bool
+	AllowAllAppsAccess *bool
+	Data               []byte
+	Password           string
+	FileName           string
 }
 
 // Profile is the input to Build.
@@ -244,6 +246,8 @@ type Profile struct {
 
 	// Target for schema validation; the zero value skips OS checks.
 	Target support.Target
+	// MacHardware supplies known hardware capabilities for ACME validation.
+	MacHardware MacHardware
 }
 
 // Build assembles and validates the profile.
@@ -295,16 +299,20 @@ func (p Profile) Build() (*profile.Profile, error) {
 			return nil, fmt.Errorf("%w: SCEP URL is required", ErrProfile)
 		}
 		out.Payloads = append(out.Payloads, profile.Payload{
-			Identifier: p.Identifier + ".scep", UUID: identityUUID, DisplayName: "MDM identity (SCEP)",
-			Content: p.SCEP.payload(),
+			Identifier:  p.Identifier + ".scep",
+			UUID:        identityUUID,
+			DisplayName: "MDM identity (SCEP)",
+			Content:     p.SCEP.payloadForTarget(p.Target),
 		})
 	case p.ACME != nil:
-		if err := p.ACME.validate(); err != nil {
+		if err := p.ACME.ValidateTarget(p.Target, p.MacHardware); err != nil {
 			return nil, err
 		}
 		out.Payloads = append(out.Payloads, profile.Payload{
-			Identifier: p.Identifier + ".acme", UUID: identityUUID, DisplayName: "MDM identity (ACME)",
-			Content: p.ACME.payload(),
+			Identifier:  p.Identifier + ".acme",
+			UUID:        identityUUID,
+			DisplayName: "MDM identity (ACME)",
+			Content:     p.ACME.payloadForTarget(p.Target),
 		})
 	default:
 		if len(p.PKCS12.Data) == 0 {
@@ -317,7 +325,19 @@ func (p Profile) Build() (*profile.Profile, error) {
 		out.Payloads = append(out.Payloads, profile.Payload{
 			Identifier: p.Identifier + ".identity", UUID: identityUUID, DisplayName: "MDM identity",
 			Content: &profiles.CertificatePKCS12{
-				PayloadCertificateFileName: &fn, PayloadContent: p.PKCS12.Data, Password: nonEmpty(p.PKCS12.Password),
+				PayloadCertificateFileName: &fn,
+				PayloadContent:             p.PKCS12.Data,
+				Password:                   nonEmpty(p.PKCS12.Password),
+				KeyIsExtractable: macDefaultFalse(
+					p.PKCS12.KeyIsExtractable,
+					p.Target,
+					support.V(10, 15, 0),
+				),
+				AllowAllAppsAccess: macDefaultFalse(
+					p.PKCS12.AllowAllAppsAccess,
+					p.Target,
+					support.V(10, 10, 0),
+				),
 			},
 		})
 	}
@@ -340,8 +360,12 @@ func (p Profile) Build() (*profile.Profile, error) {
 		AssignedManagedAppleID:  nonEmpty(p.AssignedManagedAppleID),
 		EnrollmentMode:          nonEmpty(p.EnrollmentMode),
 	}
-	if p.SharedIPad && !slices.Contains(mdmPayload.ServerCapabilities, CapabilityPerUserConnections) {
-		mdmPayload.ServerCapabilities = append(slices.Clone(mdmPayload.ServerCapabilities), CapabilityPerUserConnections)
+	if p.SharedIPad &&
+		!slices.Contains(mdmPayload.ServerCapabilities, CapabilityPerUserConnections) {
+		mdmPayload.ServerCapabilities = append(
+			slices.Clone(mdmPayload.ServerCapabilities),
+			CapabilityPerUserConnections,
+		)
 	}
 	if p.CheckOutWhenRemoved {
 		mdmPayload.CheckOutWhenRemoved = new(true)
@@ -350,7 +374,10 @@ func (p Profile) Build() (*profile.Profile, error) {
 		mdmPayload.UseDevelopmentAPNS = new(true)
 	}
 	out.Payloads = append(out.Payloads, profile.Payload{
-		Identifier: p.Identifier + ".mdm", UUID: orUUID(p.MDMUUID), DisplayName: "MDM", Content: mdmPayload,
+		Identifier:  p.Identifier + ".mdm",
+		UUID:        orUUID(p.MDMUUID),
+		DisplayName: "MDM",
+		Content:     mdmPayload,
 	})
 	if err := out.Validate(p.Target); err != nil {
 		return nil, fmt.Errorf("%w: %w", ErrProfile, err)
@@ -376,10 +403,18 @@ func (s *SCEP) payload() *profiles.SCEP {
 		keyUsage = 5
 	}
 	c := profiles.SCEPPayloadContent{
-		URL: s.URL, Name: nonEmpty(s.Name), Challenge: nonEmpty(s.Challenge),
-		Subject: SubjectFromName(s.Subject), Keysize: &keySize, KeyType: new("RSA"), KeyUsage: &keyUsage,
-		CAFingerprint:    s.CAFingerprint,
-		KeyIsExtractable: s.KeyIsExtractable, AllowAllAppsAccess: s.AllowAllAppsAccess,
+		URL:       s.URL,
+		Name:      nonEmpty(s.Name),
+		Challenge: nonEmpty(s.Challenge),
+		Subject: SubjectFromName(
+			s.Subject,
+		),
+		Keysize:            &keySize,
+		KeyType:            new("RSA"),
+		KeyUsage:           &keyUsage,
+		CAFingerprint:      s.CAFingerprint,
+		KeyIsExtractable:   s.KeyIsExtractable,
+		AllowAllAppsAccess: s.AllowAllAppsAccess,
 	}
 	if s.Retries > 0 {
 		c.Retries = new(s.Retries)
@@ -450,11 +485,21 @@ func Parse(data []byte, o profile.ParseOptions) (*Profile, error) {
 		return nil, fmt.Errorf("%w: no com.apple.mdm payload", ErrProfile)
 	}
 	out := &Profile{
-		Identifier: pr.Identifier, DisplayName: pr.DisplayName, Description: pr.Description, Organization: pr.Organization,
-		UUID: pr.UUID, Topic: m.Topic, ServerURL: m.ServerURL, CheckInURL: deref(m.CheckInURL),
-		ServerCapabilities: m.ServerCapabilities, SignMessage: m.SignMessage,
-		AssignedManagedAppleID: deref(m.AssignedManagedAppleID), EnrollmentMode: deref(m.EnrollmentMode),
-		IdentityUUID: m.IdentityCertificateUUID,
+		Identifier:         pr.Identifier,
+		DisplayName:        pr.DisplayName,
+		Description:        pr.Description,
+		Organization:       pr.Organization,
+		UUID:               pr.UUID,
+		Topic:              m.Topic,
+		ServerURL:          m.ServerURL,
+		CheckInURL:         deref(m.CheckInURL),
+		ServerCapabilities: m.ServerCapabilities,
+		SignMessage:        m.SignMessage,
+		AssignedManagedAppleID: deref(
+			m.AssignedManagedAppleID,
+		),
+		EnrollmentMode: deref(m.EnrollmentMode),
+		IdentityUUID:   m.IdentityCertificateUUID,
 	}
 	if m.AccessRights != nil {
 		out.AccessRights = AccessRights(*m.AccessRights)
@@ -476,13 +521,24 @@ func Parse(data []byte, o profile.ParseOptions) (*Profile, error) {
 	}
 	id, ok := pr.FindUUID(m.IdentityCertificateUUID)
 	if !ok {
-		return nil, fmt.Errorf("%w: IdentityCertificateUUID %s not found", ErrProfile, m.IdentityCertificateUUID)
+		return nil, fmt.Errorf(
+			"%w: IdentityCertificateUUID %s not found",
+			ErrProfile,
+			m.IdentityCertificateUUID,
+		)
 	}
 	switch c := id.Content.(type) {
 	case *profiles.SCEP:
-		out.SCEP = &SCEP{KeyIsExtractable: c.PayloadContent.KeyIsExtractable, AllowAllAppsAccess: c.PayloadContent.AllowAllAppsAccess,
-			URL: c.PayloadContent.URL, Name: deref(c.PayloadContent.Name), Challenge: deref(c.PayloadContent.Challenge),
-			Subject: NameFromSubject(c.PayloadContent.Subject), CAFingerprint: c.PayloadContent.CAFingerprint,
+		out.SCEP = &SCEP{
+			KeyIsExtractable:   c.PayloadContent.KeyIsExtractable,
+			AllowAllAppsAccess: c.PayloadContent.AllowAllAppsAccess,
+			URL:                c.PayloadContent.URL,
+			Name:               deref(c.PayloadContent.Name),
+			Challenge:          deref(c.PayloadContent.Challenge),
+			Subject: NameFromSubject(
+				c.PayloadContent.Subject,
+			),
+			CAFingerprint: c.PayloadContent.CAFingerprint,
 		}
 		if c.PayloadContent.Keysize != nil {
 			out.SCEP.KeySize = *c.PayloadContent.Keysize
@@ -508,9 +564,20 @@ func Parse(data []byte, o profile.ParseOptions) (*Profile, error) {
 			out.ACME.Attest = *c.Attest
 		}
 	case *profiles.CertificatePKCS12:
-		out.PKCS12 = &PKCS12{Data: c.PayloadContent, Password: deref(c.Password), FileName: deref(c.PayloadCertificateFileName)}
+		out.PKCS12 = &PKCS12{
+			KeyIsExtractable:   c.KeyIsExtractable,
+			AllowAllAppsAccess: c.AllowAllAppsAccess,
+			Data:               c.PayloadContent,
+			Password:           deref(c.Password),
+			FileName:           deref(c.PayloadCertificateFileName),
+		}
 	default:
-		return nil, fmt.Errorf("%w: identity payload %s has type %s", ErrProfile, id.Identifier, id.Content.PayloadTypeName())
+		return nil, fmt.Errorf(
+			"%w: identity payload %s has type %s",
+			ErrProfile,
+			id.Identifier,
+			id.Content.PayloadTypeName(),
+		)
 	}
 	return out, nil
 }

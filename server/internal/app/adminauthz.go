@@ -305,6 +305,7 @@ var breakGlassPrincipal = adminauth.Principal{Name: BreakGlassActor, Root: true,
 // be added without it.
 func (a *App) authorized(rt adminRoute) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Cache-Control", "no-store")
 		p, bypass, err := a.principal(r)
 		if err != nil {
 			w.Header().Set("WWW-Authenticate", `Bearer realm="mdm-admin"`)

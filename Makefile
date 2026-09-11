@@ -42,6 +42,7 @@ generate: submodule
 
 ## verify: fail if regeneration changes anything or removes an exported identifier
 verify: submodule
+	$(GO) test ./internal/layout -run TestWorkflowSecurity
 	@if [ -d cmd/admgen ]; then $(GO) run ./cmd/admgen verify; else echo "schema generator directory is missing"; fi
 
 ## lint: run golangci-lint with the repository configuration

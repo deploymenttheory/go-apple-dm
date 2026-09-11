@@ -11,11 +11,11 @@ import (
 
 func TestCredentialRequestsNeverFollowRedirects(t *testing.T) {
 	var leaked atomic.Int64
-	destination := httptest.NewServer(
+	destination := httptest.NewTLSServer(
 		http.HandlerFunc(func(http.ResponseWriter, *http.Request) { leaked.Add(1) }),
 	)
 	defer destination.Close()
-	source := httptest.NewServer(
+	source := httptest.NewTLSServer(
 		http.HandlerFunc(
 			func(w http.ResponseWriter, r *http.Request) { http.Redirect(w, r, destination.URL, 307) },
 		),

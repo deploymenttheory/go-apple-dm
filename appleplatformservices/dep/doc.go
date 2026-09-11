@@ -15,6 +15,9 @@
 // Device Enrollment exchange. DEP remains the package/API identifier for
 // compatibility.
 //
+// Endpoint overrides require absolute HTTPS URLs with no user information
+// or fragment. Test fixtures supply verified HTTPS clients.
+//
 // # References
 //
 //   - Decision record 0026: https://github.com/deploymenttheory/go-apple-dm/blob/main/docs/research/decisions/0026-dep-client-sync-and-assignment.md

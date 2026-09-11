@@ -20,8 +20,10 @@ const (
 // Capabilities records device-reported management properties, distinct from ownership admission.
 type Capabilities struct {
 	Supervised, DEP, UserApproved Capability
-	Source                        string
-	ObservedAt                    time.Time
+	// AppleSilicon comes from an authenticated DeviceInformation response.
+	AppleSilicon Capability
+	Source       string
+	ObservedAt   time.Time
 }
 
 func observed(p *bool) Capability {
@@ -61,6 +63,7 @@ func CapabilitiesFromResult(
 	switch p := decoded.Payload.(type) {
 	case *commands.DeviceInformationResponse:
 		set(&old.Supervised, p.QueryResponses.IsSupervised)
+		set(&old.AppleSilicon, p.QueryResponses.IsAppleSilicon)
 	case *commands.SecurityInfoResponse:
 		if m := p.SecurityInfo.ManagementStatus; m != nil {
 			set(&old.DEP, m.EnrolledViaDEP)
