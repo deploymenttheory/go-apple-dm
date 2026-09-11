@@ -177,13 +177,14 @@ type Config struct {
 	Sinks SinkConfig
 }
 
-// SinkConfig turns on the event sinks. Both are off by default: an audit log
-// and a webhook are deployment choices, and a library consumer supplies its
-// own subscribers.
+// SinkConfig enables event logging, webhooks and audit storage. All are off by
+// default. The enabled sinks share the bus's delivery capacity and failure modes.
 type SinkConfig struct {
-	// Audit writes a projected slog record for every event. It is the
-	// cheapest form of the threat model's repudiation control: attributable,
-	// but only as persistent as the log stream it is shipped to.
+	// Dispatch bounds the application-owned audit/webhook event bus.
+	// It does not configure DDM synchronization or device command workers.
+	Dispatch event.AsyncConfig
+	// Audit writes a projected slog record for each event delivered to the sink.
+	// Retention depends on the configured log destination.
 	Audit bool
 	// WebhookURL receives projected events in a MicroMDM-compatible envelope without
 	// raw_payload.
@@ -192,11 +193,8 @@ type SinkConfig struct {
 	WebhookRootCAFile string
 	// WebhookHMACKey signs the webhook body when set.
 	WebhookHMACKey []byte
-	// Persist writes every event to the audit trail on the process's own
-	// database. This is what makes the threat model's repudiation control
-	// real: an slog record is only as persistent as the log stream someone
-	// remembered to ship, and proving who erased a device three weeks ago
-	// needs a table.
+	// Persist stores projected events delivered to the sink in the process's
+	// database. Delivery or storage failures can leave gaps in the audit trail.
 	Persist bool
 	// AuditStore overrides Persist with a caller's own trail.
 	AuditStore audit.Store
@@ -346,16 +344,26 @@ func Build(ctx context.Context, cfg Config) (*App, error) {
 	// receiver would delay every device.
 	ownBus := false
 	if cfg.Bus == nil && cfg.Sinks.Enabled() {
-		log := cfg.Logger
-		cfg.Bus = event.New(
-			event.WithAsync(),
-			event.WithErrorHandler(func(e event.Event, err error) {
-				log.Warn("app: event sink failed", "event", string(e.Type), "error", err)
-			}),
+		var err error
+		//nolint:contextcheck // the bus owns a lifetime independent of the construction/request context
+		cfg.Bus, err = event.NewAsync(
+			cfg.Sinks.Dispatch,
+			event.WithErrorHandler(eventReporter(cfg.Logger, cfg.Clock)),
 		)
+		if err != nil {
+			return nil, fmt.Errorf("%w: %w", ErrConfig, err)
+		}
 		ownBus = true
 	}
 	a := &App{cfg: cfg, ownBus: ownBus}
+	built := false
+	//nolint:contextcheck // failure cleanup owns its bounded drain context
+	defer func() {
+		if !built {
+			//nolint:contextcheck // Close owns bounded teardown after construction fails.
+			_ = a.Close()
+		}
+	}()
 	if err := a.openStorage(ctx); err != nil {
 		return nil, err
 	}
@@ -363,11 +371,9 @@ func Build(ctx context.Context, cfg Config) (*App, error) {
 		return nil, err
 	}
 	if err := a.wire(ctx); err != nil {
-		//nolint:contextcheck // teardown of a half-built App; Close releases
-		// resources already opened and takes no context.
-		_ = a.Close()
 		return nil, err
 	}
+	built = true
 	return a, nil
 }
 
@@ -381,6 +387,9 @@ func reenrollPolicy(allow bool) service.ReenrollPolicy {
 }
 
 func (c Config) validate() error {
+	if d := c.Sinks.Dispatch; d.Workers < 0 || d.QueueCapacity < 0 || d.DeliveryTimeout < 0 {
+		return fmt.Errorf("%w: event dispatch limits must be non-negative", ErrConfig)
+	}
 	if (c.TLSCertFile == "") != (c.TLSKeyFile == "") {
 		return fmt.Errorf("%w: TLS certificate and key must be configured together", ErrConfig)
 	}
@@ -777,8 +786,8 @@ func (a *App) Run(ctx context.Context) error {
 	return <-errc
 }
 
-// Close releases storage, draining the event bus first when Build created
-// it, so an asynchronous sink finishes delivering before the process exits.
+// Close releases storage after a bounded drain of a bus created by Build.
+// A drain timeout cancels active deliveries and abandons queued events.
 func (a *App) Close() error {
 	var errs []error
 	if a.ownBus && a.cfg.Bus != nil {

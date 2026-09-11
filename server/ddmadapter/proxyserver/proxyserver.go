@@ -26,7 +26,12 @@ import (
 // Backend serves one DeclarativeManagement check-in; *ddm.Engine
 // satisfies it.
 type Backend interface {
-	Handle(ctx context.Context, id mdm.EnrollmentID, endpoint string, data []byte) (ddm.Response, error)
+	Handle(
+		ctx context.Context,
+		id mdm.EnrollmentID,
+		endpoint string,
+		data []byte,
+	) (ddm.Response, error)
 }
 
 var _ Backend = (*ddm.Engine)(nil)
@@ -195,7 +200,7 @@ func (s *server) serve(w http.ResponseWriter, r *http.Request) {
 						At:    time.Now(),
 						Actor: "private-hop",
 					},
-				); pubErr != nil {
+				); pubErr != nil && !errors.Is(pubErr, event.ErrQueueFull) {
 					s.log.WarnContext(r.Context(), "private hop rejection event delivery failed")
 				}
 			}

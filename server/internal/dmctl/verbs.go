@@ -13,6 +13,7 @@ import (
 	"text/tabwriter"
 	"time"
 
+	"github.com/deploymenttheory/go-apple-dm/mdmprotocol/event"
 	"github.com/deploymenttheory/go-apple-dm/server/internal/dmctl/explain"
 )
 
@@ -22,10 +23,14 @@ func runExplain(_ context.Context, e *env, args []string) error {
 	fs := e.verbFlags("explain")
 	var (
 		family = fs.String("family", "", "restrict to one schema family")
-		target = fs.String("target", "", "grade against a target, e.g. macos:15.0,channel=device,supervised")
-		list   = fs.Bool("list", false, "list families, or ids when a family is given")
-		paths  = fs.Bool("paths", false, "with -list and -family, list key paths instead of ids")
-		first  = fs.Bool("first", false, "print only the first match of an ambiguous identifier")
+		target = fs.String(
+			"target",
+			"",
+			"grade against a target, e.g. macos:15.0,channel=device,supervised",
+		)
+		list  = fs.Bool("list", false, "list families, or ids when a family is given")
+		paths = fs.Bool("paths", false, "with -list and -family, list key paths instead of ids")
+		first = fs.Bool("first", false, "print only the first match of an ambiguous identifier")
 	)
 	rest, err := e.parseVerb(fs, args)
 	if err != nil || rest == nil && len(args) > 0 && args[0] == "-h" {
@@ -106,7 +111,7 @@ func runStatus(ctx context.Context, e *env, args []string) error {
 	}
 	resp, err := c.Do(ctx, http.MethodGet, "/config", nil, nil)
 	if err != nil {
-		return err
+		return fmt.Errorf("dmctl: request: %w", err)
 	}
 	return e.emit(resp, func(w *tabwriter.Writer) {
 		var cfg struct {
@@ -114,6 +119,10 @@ func runStatus(ctx context.Context, e *env, args []string) error {
 			Families      []string
 			Policy        bool
 			BreakGlass    bool
+			EventDelivery *struct {
+				event.Stats
+				DeliveryTimeout string
+			}
 		}
 		if err := json.Unmarshal(resp.Body, &cfg); err != nil {
 			fmt.Fprintln(w, string(resp.Body))
@@ -124,6 +133,28 @@ func runStatus(ctx context.Context, e *env, args []string) error {
 		fmt.Fprintf(w, "Families:\t%s\n", strings.Join(cfg.Families, ", "))
 		fmt.Fprintf(w, "Authorization:\t%s\n", policyMode(cfg.Policy))
 		fmt.Fprintf(w, "Break-glass:\t%s\n", breakGlassMode(cfg.Policy, cfg.BreakGlass))
+		if stats := cfg.EventDelivery; stats != nil {
+			fmt.Fprintf(
+				w,
+				"Event delivery:\tasync=%t workers=%d queue=%d/%d timeout=%s\n",
+				stats.Async,
+				stats.Workers,
+				stats.Queued,
+				stats.QueueCapacity,
+				stats.DeliveryTimeout,
+			)
+			fmt.Fprintf(
+				w,
+				"Events:\tactive=%d accepted=%d delivered=%d failed=%d timed-out=%d rejected=%d abandoned=%d\n",
+				stats.InFlight,
+				stats.Accepted,
+				stats.Delivered,
+				stats.Failed,
+				stats.TimedOut,
+				stats.Rejected,
+				stats.Abandoned,
+			)
+		}
 	})
 }
 
@@ -161,7 +192,7 @@ func runRoutes(ctx context.Context, e *env, args []string) error {
 	}
 	resp, err := c.Do(ctx, http.MethodGet, "/routes", nil, nil)
 	if err != nil {
-		return err
+		return fmt.Errorf("dmctl: request: %w", err)
 	}
 	return e.emit(resp, func(w *tabwriter.Writer) {
 		var body struct {
@@ -209,7 +240,10 @@ func runActions(ctx context.Context, e *env, args []string) error {
 // runPrincipals administers credentials.
 func runPrincipals(ctx context.Context, e *env, args []string) error {
 	if len(args) == 0 {
-		return fmt.Errorf("%w: principals needs a subcommand: list, get, create, rotate, revoke, delete, set-roles", ErrUsage)
+		return fmt.Errorf(
+			"%w: principals needs a subcommand: list, get, create, rotate, revoke, delete, set-roles",
+			ErrUsage,
+		)
 	}
 	sub, rest := args[0], args[1:]
 	c, err := e.client()
@@ -226,8 +260,14 @@ func runPrincipals(ctx context.Context, e *env, args []string) error {
 			[]string{"NAME", "ROLES", "ROOT", "TOKEN", "EXPIRES"},
 			func(item jsontext.Value) []string {
 				return []string{
-					field(item, "Name"), dash(fields(item, "Roles")),
-					field(item, "Root"), dash(field(item, "TokenID")), dash(field(item, "ExpiresAt")),
+					field(item, "Name"),
+					dash(fields(item, "Roles")),
+					field(
+						item,
+						"Root",
+					),
+					dash(field(item, "TokenID")),
+					dash(field(item, "ExpiresAt")),
 				}
 			})
 		return e.explainNotFound(ctx, c, "principals", err)
@@ -239,7 +279,7 @@ func runPrincipals(ctx context.Context, e *env, args []string) error {
 		_ = rest2
 		resp, err := c.Do(ctx, http.MethodGet, "/principals/"+url.PathEscape(name), nil, nil)
 		if err != nil {
-			return err
+			return fmt.Errorf("dmctl: request: %w", err)
 		}
 		return e.emit(resp, nil)
 	case "create":
@@ -249,9 +289,15 @@ func runPrincipals(ctx context.Context, e *env, args []string) error {
 		if err != nil {
 			return err
 		}
-		resp, err := c.Do(ctx, http.MethodPost, "/principals/"+url.PathEscape(name)+"/rotate", nil, nil)
+		resp, err := c.Do(
+			ctx,
+			http.MethodPost,
+			"/principals/"+url.PathEscape(name)+"/rotate",
+			nil,
+			nil,
+		)
 		if err != nil {
-			return err
+			return fmt.Errorf("dmctl: request: %w", err)
 		}
 		return e.emitToken(resp)
 	case "revoke":
@@ -260,14 +306,20 @@ func runPrincipals(ctx context.Context, e *env, args []string) error {
 			return err
 		}
 		_, err = c.Do(ctx, http.MethodPost, "/principals/"+url.PathEscape(name)+"/revoke", nil, nil)
-		return err
+		if err != nil {
+			return fmt.Errorf("dmctl: revoke: %w", err)
+		}
+		return nil
 	case "delete":
 		name, _, err := needName(e, "principals delete", rest)
 		if err != nil {
 			return err
 		}
 		_, err = c.Do(ctx, http.MethodDelete, "/principals/"+url.PathEscape(name), nil, nil)
-		return err
+		if err != nil {
+			return fmt.Errorf("dmctl: delete principals: %w", err)
+		}
+		return nil
 	case "set-roles":
 		return e.setRoles(ctx, c, rest)
 	default:
@@ -292,7 +344,7 @@ func (e *env) createPrincipal(ctx context.Context, c clientDoer, args []string) 
 	}
 	resp, err := c.Do(ctx, http.MethodPost, "/principals", nil, body)
 	if err != nil {
-		return err
+		return fmt.Errorf("dmctl: request: %w", err)
 	}
 	return e.emitToken(resp)
 }
@@ -314,7 +366,7 @@ func (e *env) setRoles(ctx context.Context, c clientDoer, args []string) error {
 	}
 	resp, err := c.Do(ctx, http.MethodPatch, "/principals/"+url.PathEscape(rest[0]), nil, body)
 	if err != nil {
-		return err
+		return fmt.Errorf("dmctl: request: %w", err)
 	}
 	return e.emit(resp, nil)
 }
@@ -333,7 +385,11 @@ func (e *env) emitToken(resp *adminResponse) error {
 		return e.emit(resp, nil)
 	}
 	fmt.Fprintln(e.stdout, body.Token)
-	fmt.Fprintf(e.stderr, "dmctl: token for %q; it is not stored and cannot be shown again\n", body.Principal.Name)
+	fmt.Fprintf(
+		e.stderr,
+		"dmctl: token for %q; it is not stored and cannot be shown again\n",
+		body.Principal.Name,
+	)
 	return nil
 }
 
@@ -373,7 +429,7 @@ func runPolicies(ctx context.Context, e *env, args []string) error {
 		}
 		resp, err := c.Do(ctx, http.MethodGet, "/policies/"+url.PathEscape(name), nil, nil)
 		if err != nil {
-			return err
+			return fmt.Errorf("dmctl: request: %w", err)
 		}
 		if e.opts.output == outputHuman {
 			var doc struct{ Source string }
@@ -396,7 +452,10 @@ func runPolicies(ctx context.Context, e *env, args []string) error {
 			return err
 		}
 		_, err = c.Do(ctx, http.MethodDelete, "/policies/"+url.PathEscape(name), nil, nil)
-		return err
+		if err != nil {
+			return fmt.Errorf("dmctl: delete policies: %w", err)
+		}
+		return nil
 	default:
 		return fmt.Errorf("%w: unknown policies subcommand %q", ErrUsage, sub)
 	}
@@ -420,7 +479,7 @@ func (e *env) putPolicy(ctx context.Context, c clientDoer, args []string) error 
 	resp, err := c.Do(ctx, http.MethodPut, "/policies/"+url.PathEscape(rest[0]), nil,
 		map[string]any{"Source": src, "Description": *desc})
 	if err != nil {
-		return err
+		return fmt.Errorf("dmctl: put policy: %w", err)
 	}
 	return e.emit(resp, nil)
 }
@@ -491,7 +550,10 @@ func runDeclarations(ctx context.Context, e *env, args []string) error {
 			return err
 		}
 		_, err = c.Do(ctx, http.MethodDelete, "/declarations/"+url.PathEscape(name), nil, nil)
-		return err
+		if err != nil {
+			return fmt.Errorf("dmctl: delete declarations: %w", err)
+		}
+		return nil
 	default:
 		return fmt.Errorf("%w: unknown declarations subcommand %q", ErrUsage, sub)
 	}

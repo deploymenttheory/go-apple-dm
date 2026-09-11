@@ -51,6 +51,8 @@ func (r *Registry) Register(t event.Type, p Projection) {
 	r.known[t] = true
 	if p != nil {
 		r.entries[t] = p
+	} else {
+		delete(r.entries, t)
 	}
 }
 

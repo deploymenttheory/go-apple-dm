@@ -22,6 +22,27 @@ env:
   COVERAGE_MIN: "95"
 
 jobs:
+  server-module-installation:
+    if: >-
+      ${{ github.event_name != 'pull_request' ||
+          github.event.pull_request.head.repo.full_name != github.repository ||
+          github.head_ref != 'release-please--branches--main' }}
+    name: Server module dependencies, builds and command installation
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@e14015d583714f6e62063499dc959a02595150a1 # v2.21.1
+        with:
+          egress-policy: audit
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: go.mod
+          cache-dependency-path: server/go.sum
+      - name: Verify candidate server dependencies, package builds and command installation
+        run: make verify-server-module-installation
+
   unit:
     # Release-please PRs only prepare release metadata; normal changes retain CI.
     if: >-

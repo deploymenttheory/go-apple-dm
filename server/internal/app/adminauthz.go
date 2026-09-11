@@ -538,7 +538,7 @@ func (a *App) publishAdmin(
 		Enrollment: mdm.EnrollmentID{},
 		Actor:      actor,
 		Data:       data,
-	}); err != nil {
+	}); err != nil && !errors.Is(err, event.ErrQueueFull) {
 		a.cfg.Logger.WarnContext(r.Context(), "app: publish admin event", "type", t, "error", err)
 	}
 }

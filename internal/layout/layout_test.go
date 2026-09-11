@@ -103,9 +103,8 @@ var knownTierExceptions = map[string][]string{
 // and the reason the tree is arranged this way at all. A caller who wants a
 // declaration type must not acquire a database driver with it.
 //
-// golangci-lint cannot enforce this: the workflow runs it with
-// --issues-exit-code=0 and only-new-issues, so a depguard rule would report
-// a violation without failing the build. Tests fail the build.
+// This test enforces the repository-specific tier graph independently of the
+// full-baseline lint gate, including imports in tests and explicit exceptions.
 func TestTiersOnlyImportDownwards(t *testing.T) {
 	t.Parallel()
 	g := load(t)
@@ -164,7 +163,10 @@ func TestNoUnitCycles(t *testing.T) {
 	t.Parallel()
 	g := load(t)
 	for _, c := range layout.Cycles(g.UnitGraph()) {
-		t.Errorf("directory-level cycle, so these cannot be assigned to tiers: %s", strings.Join(c, " -> "))
+		t.Errorf(
+			"directory-level cycle, so these cannot be assigned to tiers: %s",
+			strings.Join(c, " -> "),
+		)
 	}
 }
 
@@ -175,8 +177,11 @@ func TestPushcertImportsOnlyTheStandardLibrary(t *testing.T) {
 	t.Parallel()
 	g := load(t)
 	if got := g.Imports["pki/pushcert"]; len(got) > 0 {
-		t.Errorf("pki/pushcert must import nothing in this module so server/storage can validate a "+
-			"certificate without depending on push; it imports %s", strings.Join(got, ", "))
+		t.Errorf(
+			"pki/pushcert must import nothing in this module so server/storage can validate a "+
+				"certificate without depending on push; it imports %s",
+			strings.Join(got, ", "),
+		)
 	}
 }
 
@@ -188,6 +193,9 @@ func TestEventDependsOnlyOnTheProtocolCore(t *testing.T) {
 	g := load(t)
 	want := []string{"mdmprotocol/mdm"}
 	if got := g.Imports["mdmprotocol/event"]; fmt.Sprint(got) != fmt.Sprint(want) {
-		t.Errorf("event must depend only on mdm, so every domain can publish to it; it imports %v", got)
+		t.Errorf(
+			"event must depend only on mdm, so every domain can publish to it; it imports %v",
+			got,
+		)
 	}
 }

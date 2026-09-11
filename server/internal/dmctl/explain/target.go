@@ -36,7 +36,12 @@ func ParseTarget(s string) (support.Target, error) {
 		}
 	}
 	if !matched {
-		return support.Target{}, fmt.Errorf("%w: OS %q (want one of %s)", ErrTarget, osName, osNames())
+		return support.Target{}, fmt.Errorf(
+			"%w: OS %q (want one of %s)",
+			ErrTarget,
+			osName,
+			osNames(),
+		)
 	}
 	if version != "" {
 		v, err := support.ParseVersion(version)
@@ -58,7 +63,11 @@ func ParseTarget(s string) (support.Target, error) {
 			case "user":
 				t.Channel = support.ChannelUser
 			default:
-				return support.Target{}, fmt.Errorf("%w: channel %q (want device or user)", ErrTarget, ch)
+				return support.Target{}, fmt.Errorf(
+					"%w: channel %q (want device or user)",
+					ErrTarget,
+					ch,
+				)
 			}
 			continue
 		}

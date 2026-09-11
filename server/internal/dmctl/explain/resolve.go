@@ -54,7 +54,16 @@ type entry struct {
 
 // families is the fixed search order. commands first because a RequestType is
 // what an operator asks about most, then declarations and profiles.
-var families = []string{"commands", "ddm", "profiles", "status", "checkin", "ddmproto", "errors", "other"}
+var families = []string{
+	"commands",
+	"ddm",
+	"profiles",
+	"status",
+	"checkin",
+	"ddmproto",
+	"errors",
+	"other",
+}
 
 // index loads all generated family registries once, registering their support
 // metadata for offline lookup.
@@ -237,7 +246,13 @@ func Suggest(arg, family string, limit int) []string {
 		}
 		// Rank longer shared prefixes first, using alphabetical order for ties.
 		sort.Slice(out, func(i, j int) bool {
-			pi, pj := sharedPrefix(strings.ToLower(out[i]), needle), sharedPrefix(strings.ToLower(out[j]), needle)
+			pi, pj := sharedPrefix(
+				strings.ToLower(out[i]),
+				needle,
+			), sharedPrefix(
+				strings.ToLower(out[j]),
+				needle,
+			)
 			if pi != pj {
 				return pi > pj
 			}

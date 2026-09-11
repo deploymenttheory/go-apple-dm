@@ -88,7 +88,10 @@ func renderTable(w io.Writer, m Match) {
 		return
 	}
 	fmt.Fprint(w, "\nSupport\n")
-	fmt.Fprint(w, "  OS\tintro\tdeprec\tremoved\tdevice\tuser\tsuperv\tDEP\tUAMDM\tsharediPad\tuserEnrol\n")
+	fmt.Fprint(
+		w,
+		"  OS\tintro\tdeprec\tremoved\tdevice\tuser\tsuperv\tDEP\tUAMDM\tsharediPad\tuserEnrol\n",
+	)
 	for _, os := range support.AllOS {
 		s := e.OS[os]
 		if s == nil {

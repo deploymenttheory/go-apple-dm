@@ -959,19 +959,28 @@ go get "github.com/deploymenttheory/go-apple-dm@$DM_REV"
 go get "github.com/deploymenttheory/go-apple-dm/server@$DM_REV"
 ```
 
+The server declares the minimum published library version required by its APIs;
+installing the server alone resolves that dependency. Local development uses
+`go.work` rather than replacement directives in the released module. Maintainers
+run `make verify-server-module-installation` to verify dependency resolution with
+workspaces disabled, build the candidate server packages, and install `dmserver`
+and `dmctl` into a temporary directory using that exact declared library version.
+The command reports build and installation compatibility; runtime behavior has
+separate test suites.
+
 The two modules have independent module tags. For an exact source snapshot,
 using the same repository commit for both avoids accidentally pairing a new
 server with an older released root library. Check both selected versions in
 your `go.mod`; pin and review updates because the API is pre-1.0.
 
-For development against a local checkout, use a **separate consumer workspace**
+For development against a local checkout, use a **separate application workspace**
 that includes your application directory, this repository, and its `server/`
 directory. The repository's own `go.work` applies when working in this checkout;
 it does not automatically govern another application elsewhere on disk.
 
 ### Build a typed command without a running server
 
-Save this as `main.go` in the consumer module. The example validates a query
+Save this as `main.go` in your application module. The example validates a query
 for a specified Mac target and writes a complete MDM command plist to stdout.
 It makes no network requests and does not queue the command.
 

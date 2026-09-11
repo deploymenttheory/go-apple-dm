@@ -18,8 +18,25 @@ tests. `make help` describes the database, end-to-end, fuzz and coverage targets
 floor is 95% overall and per non-exempt package; exemptions are listed in
 [scripts/coverage-exempt.txt](scripts/coverage-exempt.txt).
 
-For a review that must preserve formatting, run golangci-lint with `--fix=false` in each module.
-The checked-in configuration otherwise enables automatic fixes.
+`make lint` checks the complete baseline in both modules without changing files.
+Use `golangci-lint fmt` explicitly when formatting changes are intended.
+`make verify-server-module-installation` verifies that the server can be used
+outside this repository with the root library version declared in `server/go.mod`.
+It packages the current server sources in a temporary module proxy, disables Go
+workspaces, rejects replacement directives, and checks that dependency resolution
+selects exactly the declared root library version. It builds a separate application
+importing public server packages, builds all server packages, and runs `go install`
+for `dmserver` and `dmctl` into a temporary directory. The root library and other
+dependencies resolve through the configured Go proxy with public checksum
+verification; the locally packaged candidate server is exempt from checksum lookup.
+The output reports these four stages and the versions used. This is a build and
+installation compatibility check; runtime behavior has separate test suites.
+Publish library API additions before raising the server requirement to the version
+containing them. To verify an already published server module, run:
+
+```sh
+python3 scripts/verify-server-module-installation.py --server-version vX.Y.Z
+```
 
 ## Documentation and design
 
@@ -59,6 +76,13 @@ These documentation exclusions include root and server changelogs. Mixed changes
 that include application code or dependency files retain normal CI.
 Go lint runs for Go sources, module files, `.golangci.yml` or workflow changes,
 and supports manual dispatch. It checks both modules without modifying files.
+Server tags use `server/vX.Y.Z`. The **go | Published server module installation**
+workflow downloads that published server version and verifies dependency resolution,
+package builds and command installation. It also accepts a version through manual
+dispatch. This workflow reports installation failures after publication; it does
+not block tag creation. The Go Test workflow runs the same verification on candidate
+server sources before merge. Release-please owns normal tags and changelogs. A published Go
+pseudo-version can pin an independently reviewed library commit before its next tag.
 PR title validation remains enabled for ordinary documentation and workflow PRs.
 Validate workflow edits locally with `actionlint` before submitting them.
 Release-please still runs on `main` pushes to manage releases and tags, and the

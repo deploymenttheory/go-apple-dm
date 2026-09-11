@@ -25,7 +25,10 @@ const ActionReadConfig = "readConfig"
 func (a *App) introspectionRoutes() []adminRoute {
 	return []adminRoute{
 		{
-			Pattern: "GET /config", Action: ActionReadConfig, Family: "introspection", Introspection: true,
+			Pattern:       "GET /config",
+			Action:        ActionReadConfig,
+			Family:        "introspection",
+			Introspection: true,
 			Handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				writeJSON(w, http.StatusOK, map[string]any{
 					"Role":     string(a.cfg.Role),
@@ -35,12 +38,16 @@ func (a *App) introspectionRoutes() []adminRoute {
 					// Reported so an operator can see the standing root
 					// credential without reading logs, and so dmctl can say
 					// it out loud after bootstrap.
-					"BreakGlass": a.cfg.AdminToken != "",
+					"BreakGlass":    a.cfg.AdminToken != "",
+					"EventDelivery": a.eventStats(),
 				})
 			}),
 		},
 		{
-			Pattern: "GET /routes", Action: ActionReadConfig, Family: "introspection", Introspection: true,
+			Pattern:       "GET /routes",
+			Action:        ActionReadConfig,
+			Family:        "introspection",
+			Introspection: true,
 			Handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				type view struct{ Method, Pattern, Action, Family string }
 				out := make([]view, 0, len(a.adminTable))

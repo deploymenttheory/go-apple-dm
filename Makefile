@@ -50,6 +50,10 @@ lint:
 	$(GOLANGCI_LINT) run --fix=false --config=.golangci.yml ./...
 	cd $(SERVER_DIR) && $(GOLANGCI_LINT) run --fix=false --config=../.golangci.yml ./...
 
+## verify-server-module-installation: resolve declared dependencies, build server packages and install dmserver/dmctl with GOWORK=off
+verify-server-module-installation:
+	python3 scripts/verify-server-module-installation.py
+
 ## test: unit tests with race detector, coverage written to cover/unit
 test:
 	@rm -rf $(COVER_DIR)/unit && mkdir -p $(COVER_DIR)/unit
@@ -127,13 +131,13 @@ refs-activity:
 	@scripts/refs-activity.sh
 
 ## ci: everything CI runs, in order
-ci: lint verify test test-storage test-storage-perf test-e2e test-acceptance bench-docs-check fuzz-smoke coverage
+ci: lint verify verify-server-module-installation test test-storage test-storage-perf test-e2e test-acceptance bench-docs-check fuzz-smoke coverage
 
 ## clean: remove coverage output
 clean:
 	rm -rf $(COVER_DIR)
 
-.PHONY: help tools submodule generate verify lint test test-storage test-storage-perf test-conformance test-e2e testdb-up testdb-down docker-build testdb-ddm-up testdb-ddm-down fuzz-smoke fuzz coverage vuln refs refs-activity ci clean
+.PHONY: help tools submodule generate verify verify-server-module-installation lint test test-storage test-storage-perf test-conformance test-e2e testdb-up testdb-down docker-build testdb-ddm-up testdb-ddm-down fuzz-smoke fuzz coverage vuln refs refs-activity ci clean
 
 # Bench recipes delegate to dmctl; Go owns workspace and scenario behavior.
 BENCH_WORKSPACE ?= test-lab/local

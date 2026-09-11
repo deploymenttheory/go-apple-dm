@@ -42,7 +42,11 @@ func (e *env) emit(resp *adminclient.Response, human func(w *tabwriter.Writer)) 
 		}
 		return nil
 	default:
-		return fmt.Errorf("%w: unknown -output %q (want human, json, or ndjson)", ErrUsage, e.opts.output)
+		return fmt.Errorf(
+			"%w: unknown -output %q (want human, json, or ndjson)",
+			ErrUsage,
+			e.opts.output,
+		)
 	}
 }
 
@@ -51,7 +55,14 @@ func (e *env) emit(resp *adminclient.Response, human func(w *tabwriter.Writer)) 
 // With -all the cursor is followed to the end. Without it, one page is printed
 // and the next cursor goes to stderr, so stdout stays machine-clean and a
 // caller piping to jq is never handed a pagination hint mixed into the data.
-func (e *env) list(ctx context.Context, c *adminclient.Client, path string, q url.Values, header []string, row func(jsontext.Value) []string) error {
+func (e *env) list(
+	ctx context.Context,
+	c *adminclient.Client,
+	path string,
+	q url.Values,
+	header []string,
+	row func(jsontext.Value) []string,
+) error {
 	if q == nil {
 		q = url.Values{}
 	}
@@ -66,7 +77,7 @@ func (e *env) list(ctx context.Context, c *adminclient.Client, path string, q ur
 		if !e.opts.all {
 			resp, err := c.Do(ctx, "GET", path, q, nil)
 			if err != nil {
-				return err
+				return fmt.Errorf("dmctl: request: %w", err)
 			}
 			return e.emit(resp, nil)
 		}
@@ -93,12 +104,16 @@ func (e *env) list(ctx context.Context, c *adminclient.Client, path string, q ur
 				_ = emitRow(it)
 			}
 			if next != "" {
-				defer fmt.Fprintf(e.stderr, "dmctl: more results; next cursor %s (use -all to follow)\n", next)
+				defer fmt.Fprintf(
+					e.stderr,
+					"dmctl: more results; next cursor %s (use -all to follow)\n",
+					next,
+				)
 			}
 		}
 	}
 	if err != nil {
-		return err
+		return fmt.Errorf("dmctl: list: %w", err)
 	}
 	if ferr := tw.Flush(); ferr != nil {
 		return fmt.Errorf("dmctl: write: %w", ferr)
@@ -107,14 +122,23 @@ func (e *env) list(ctx context.Context, c *adminclient.Client, path string, q ur
 }
 
 // streamNDJSON writes one item per line, following cursors.
-func (e *env) streamNDJSON(ctx context.Context, c *adminclient.Client, path string, q url.Values) error {
-	return c.Each(ctx, path, q, func(item jsontext.Value) error {
+func (e *env) streamNDJSON(
+	ctx context.Context,
+	c *adminclient.Client,
+	path string,
+	q url.Values,
+) error {
+	err := c.Each(ctx, path, q, func(item jsontext.Value) error {
 		if _, err := e.stdout.Write(item); err != nil {
 			return fmt.Errorf("dmctl: write: %w", err)
 		}
 		_, _ = fmt.Fprintln(e.stdout)
 		return nil
 	})
+	if err != nil {
+		return fmt.Errorf("dmctl: stream: %w", err)
+	}
+	return nil
 }
 
 // field reads one string field out of a raw JSON object, for table rows.
