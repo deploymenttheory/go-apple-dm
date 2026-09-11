@@ -139,6 +139,10 @@ func TestServeStartupFailures(t *testing.T) {
 
 func TestServeRejectsUnprotectedSecurityBoundaries(t *testing.T) {
 	for _, cfg := range []app.Config{
+		{Role: app.RoleAll, Listen: ":8080"},
+		{Role: app.RoleMDM, Listen: "0.0.0.0:8080"},
+		{Role: app.RoleAll, Listen: "[::]:8080"},
+		{Role: app.RoleAll, Listen: "localhost:8080"},
 		{Role: app.RoleAll, CertHeader: "Client-Cert", Listen: "0.0.0.0:8443"},
 		{Role: app.RoleAll, CertHeader: "Client-Cert", Listen: "localhost:8443"},
 		{Role: app.RoleDDM, Listen: "127.0.0.1:8443"},

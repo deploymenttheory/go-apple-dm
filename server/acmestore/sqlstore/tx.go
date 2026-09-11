@@ -38,6 +38,29 @@ func (s *Store) Update(ctx context.Context, fn func(acme.Tx) error) error {
 	return s.runInTx(ctx, func(t *txStore) error { return fn(t) })
 }
 
+// UpdateOrder implements acme.Store. The no-op update takes a write lock before
+// the first snapshot read, on SQLite as well as PostgreSQL and MySQL. No callback
+// is retried, since it may perform pure certificate signing.
+func (s *Store) UpdateOrder(ctx context.Context, id string, fn func(acme.Tx) error) error {
+	if err := validID("order id", id); err != nil {
+		return err
+	}
+	if fn == nil {
+		return fmt.Errorf("%w: nil UpdateOrder callback", acme.ErrInvalid)
+	}
+	return s.runInTx(ctx, func(tx *txStore) error {
+		if _, err := tx.exec(ctx, "lock order", "UPDATE acme_orders SET status = status WHERE id = ?", id); err != nil {
+			return err
+		}
+		// MySQL may report zero changed rows for the no-op; existence is
+		// determined by the read, rather than by RowsAffected.
+		if _, err := tx.GetOrder(ctx, id); err != nil {
+			return err
+		}
+		return fn(tx)
+	})
+}
+
 func (s *Store) runInTx(ctx context.Context, fn func(*txStore) error) error {
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {

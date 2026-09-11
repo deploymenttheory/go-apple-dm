@@ -94,6 +94,8 @@ type Account struct {
 
 // Order is one certificate request.
 type Order struct {
+	// CSRHash binds a persisted issuance receipt to the accepted CSR DER.
+	CSRHash       string     `json:"csr_hash,omitempty"`
 	ID            string     `json:"id"`
 	AccountID     string     `json:"account_id"`
 	Identifier    Identifier `json:"identifier"`
@@ -140,15 +142,18 @@ type Challenge struct {
 // Certificate records an issued identity and the device properties verified
 // during attestation.
 type Certificate struct {
-	ID        string            `json:"id"`
-	OrderID   string            `json:"order_id"`
-	AccountID string            `json:"account_id"`
-	Serial    string            `json:"serial"`
-	ChainPEM  []byte            `json:"chain_pem"`
-	Device    attest.Properties `json:"device"`
-	Binding   Binding           `json:"binding"`
-	NotAfter  time.Time         `json:"not_after"`
-	IssuedAt  time.Time         `json:"issued_at"`
+	// PendingRegistration withholds a receipt from the device until every
+	// registration callback has succeeded. Older issued records default false.
+	PendingRegistration bool              `json:"pending_registration,omitempty"`
+	ID                  string            `json:"id"`
+	OrderID             string            `json:"order_id"`
+	AccountID           string            `json:"account_id"`
+	Serial              string            `json:"serial"`
+	ChainPEM            []byte            `json:"chain_pem"`
+	Device              attest.Properties `json:"device"`
+	Binding             Binding           `json:"binding"`
+	NotAfter            time.Time         `json:"not_after"`
+	IssuedAt            time.Time         `json:"issued_at"`
 }
 
 // Nonce is one anti-replay value. A nonce is single use: taking it removes

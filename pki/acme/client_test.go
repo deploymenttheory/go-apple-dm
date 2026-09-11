@@ -1,10 +1,13 @@
 package acme_test
 
 import (
+	"context"
+	"crypto/x509"
 	"crypto/x509/pkix"
 	"encoding/base64"
 	"encoding/pem"
 	"net/http"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -20,7 +23,26 @@ import (
 // golang.org/x/crypto/acme. The test supplies Apple's attestation extension
 // separately, so the server is exercised by an independent ACME client.
 func TestEnrollmentWithAnIndependentClient(t *testing.T) {
-	f := newFixture(t)
+	for _, recoverRegistration := range []bool{false, true} {
+		t.Run(
+			map[bool]string{false: "normal", true: "registration-retry"}[recoverRegistration],
+			func(t *testing.T) {
+				testIndependentClient(t, recoverRegistration)
+			},
+		)
+	}
+}
+
+func testIndependentClient(t *testing.T, recoverRegistration bool) {
+	var attempts atomic.Int32
+	f := newFixture(t, func(c *acme.Config) {
+		c.Register = func(context.Context, *x509.Certificate) error {
+			if attempts.Add(1) == 1 && recoverRegistration {
+				return errStore
+			}
+			return nil
+		}
+	})
 	ctx := t.Context()
 
 	client := &xacme.Client{
@@ -135,7 +157,11 @@ func TestEnrollmentWithAnIndependentClient(t *testing.T) {
 		t.Errorf("recorded binding = %+v, want the one the order was made under", record.Binding)
 	}
 	if record.Serial != leaf.SerialNumber.String() {
-		t.Errorf("recorded serial = %q, want the certificate's %q", record.Serial, leaf.SerialNumber)
+		t.Errorf(
+			"recorded serial = %q, want the certificate's %q",
+			record.Serial,
+			leaf.SerialNumber,
+		)
 	}
 	if !record.NotAfter.Equal(leaf.NotAfter) {
 		t.Errorf("recorded expiry = %v, want the certificate's %v", record.NotAfter, leaf.NotAfter)

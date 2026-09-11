@@ -15,6 +15,7 @@ import (
 	"time"
 
 	"github.com/deploymenttheory/go-apple-dm/clock"
+	"github.com/deploymenttheory/go-apple-dm/internal/httpsurl"
 	"github.com/deploymenttheory/go-apple-dm/mdmprotocol/event"
 	"github.com/deploymenttheory/go-apple-dm/pki/acme/jose"
 	"github.com/deploymenttheory/go-apple-dm/pki/ca"
@@ -62,8 +63,15 @@ type Config struct {
 	// Store holds accounts, orders, challenges, nonces, and issued
 	// certificates.
 	Store Store
-	// Signer issues the certificate.
+	// Signer performs pure signing inside an order transaction. It must not
+	// persist certificates or re-enter a store. Use Register for those effects.
 	Signer ca.Signer
+	// Register records issuance after the receipt commits and before the
+	// certificate becomes downloadable. It must be idempotent for the same
+	// DER and concurrency-safe; order polls and finalize retries reuse the receipt.
+	// The callback context carries revocation provenance.
+	// Nil needs no additional registration.
+	Register func(context.Context, *x509.Certificate) error
 	// CAPolicy is the issuance policy: validity, key usage, and the key
 	// types accepted. The subject and the subject alternative name are set
 	// per order from the binding.
@@ -116,8 +124,9 @@ func New(cfg Config) (*Server, error) {
 	case cfg.Identifiers == nil:
 		return nil, fmt.Errorf("%w: an identifier verifier is required", ErrConfig)
 	}
-	if !strings.HasPrefix(cfg.BaseURL, "https://") && !strings.HasPrefix(cfg.BaseURL, "http://") {
-		return nil, fmt.Errorf("%w: base URL %q has no scheme", ErrConfig, cfg.BaseURL)
+	base, err := httpsurl.Parse(cfg.BaseURL)
+	if err != nil || base.RawQuery != "" || base.ForceQuery {
+		return nil, fmt.Errorf("%w: base URL must be absolute HTTPS without credentials, query or fragment", ErrConfig)
 	}
 	cfg.BaseURL = strings.TrimSuffix(cfg.BaseURL, "/")
 	if cfg.Prefix == "" {

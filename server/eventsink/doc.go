@@ -9,7 +9,11 @@
 // structures containing escrowed tokens or other sensitive fields.
 //
 // The webhook uses a MicroMDM-compatible envelope without raw_payload. It
-// supports bounded replies, retries and optional body HMAC signing. The
+// requires HTTPS without URL credentials or fragments, refuses redirects and
+// supports bounded replies, retries and optional body HMAC signing. Custom
+// clients configure private trust and remain the caller's security boundary.
+// Transport error strings omit URLs; unwrapped causes can contain sensitive
+// path/query values and should not be logged. The
 // reference application runs delivery through the asynchronous bus; the queue is
 // not durable across process failure. Direct bus subscribers must apply their
 // own disclosure policy.

@@ -165,6 +165,39 @@ A persistence or registration error returns no certificate. The persisted
 receipt lets the next authorized retry complete registration with the same DER.
 Use the same issuer and certificate policy on all replicas.
 
+ACME now uses the same separation: `acme.Config.Signer` must be pure signing,
+with no depot/registry writes or reentry into the order store. Move those writes
+to `acme.Config.Register`, which must be idempotent and safe for concurrent calls.
+The reference server supplies both. Custom ACME stores must implement
+`UpdateOrder` with a cross-instance lock acquired before reading order state;
+use `storage/acme/acmetest` to verify the contract.
+
+Finalization records one certificate and the hash of the exact CSR in the order
+transaction. Until registration succeeds, the order remains `processing` and
+the certificate cannot be downloaded. After a transient registration failure,
+poll the order with POST-as-GET, as a standard ACME client does, or resubmit the
+same CSR to finalize. Another instance using the same store can finish with the
+recorded DER. A different CSR is rejected once a receipt exists.
+Corrected CSRs remain accepted for a `ready` order that has no receipt. Admission,
+attestation and deadlines are rechecked during recovery. Signing before a failed
+transaction may be repeated, but no uncommitted certificate is registered or
+returned. Do not use a signing callback that exposes the certificate itself.
+
+No SQL migration is needed: the receipt flags and CSR hash live in existing JSON
+records. Older completed certificates remain readable. Stop older writers before
+deploying this version across replicas; mixed-version writers cannot preserve
+the locking contract. Keep issuer keys and policy consistent during recovery.
+Expired incomplete orders are pruned by the normal order cleanup; pending
+receipts stay unavailable and their identifiers cannot be recycled for issuance.
+Recovery runs during order polling and finalize retries. Monitor persistent
+`processing` orders and registration errors; there is no background registration
+worker. The administrative ACME certificate listing exposes
+`PendingRegistration` so operators can distinguish incomplete receipts.
+
+`acme.Config.BaseURL` must be absolute HTTPS with a host and no user information,
+query or fragment. Apple requires an HTTPS ACME directory. TLS can terminate at
+a proxy, with the public HTTPS URL retained for ACME JWS URL verification.
+
 Existing reference `scep/grant/` and `scep/certificate/` keys and values remain
 readable. Replacement records add `CSRHash` in their existing JSON state. A
 legacy pending claim with only a public-key hash binds the next matching-key
@@ -280,7 +313,32 @@ agree when more than one source is supplied. `DM_CERT_HEADER` requires
 socket peer, never an asserted forwarding header. The proxy must verify client
 certificate possession, remove inbound certificate headers and set exactly one
 validated value. Protect its backend with TLS or a loopback connection; the
-runtime rejects a plaintext header backend on a non-loopback listener.
+runtime rejects every plaintext backend on a non-loopback listener. The default
+is `127.0.0.1:8080`; HTTP requires a literal loopback address, including when
+using a container. For a remote or container-network listener, set `DM_LISTEN`,
+`DM_TLS_CERT_FILE` and `DM_TLS_KEY_FILE`. Native TLS still requests and verifies
+client certificates only when supplied; preidentity enrollment and CMS identity
+remain supported. Configure the public certificate chain devices trust, and
+replace enrollment profiles before relevant certificates expire.
+
+`dmctl` requires verified HTTPS for remote administration. HTTP is accepted only
+for a literal loopback IP (`127.0.0.1` or `[::1]`, not `localhost`). Use
+`dmctl -ca-file /path/to/ca.pem` or `DMCTL_CA_FILE` for a private server CA. The
+former `-insecure` flag and `adminclient.Config.Insecure=true` return errors.
+Embedded applications supplying custom HTTP transports own their trust policy.
+
+Principal creation, updates, token rotation (including self-rotation), revocation
+and deletion require a root administrator independently of Cedar. Stored root
+principals also need a policy permitting the action. Scoped principals retain
+policy-authorized reads and device operations. Role membership alone cannot
+prove equivalent authority under arbitrary Cedar policies. The store atomically
+rejects removing the last active root credential; revoked and expired roots do
+not count. Custom admin stores must implement `ApplyPrincipal` and pass
+`adminauthtest`. Legacy low-level storage writes are for trusted import tooling,
+not authenticated administration. Rotate root tokens before natural expiry;
+the guard does not prevent all remaining tokens expiring later or a policy
+change denying their access. Remove the static break-glass token after bootstrap
+as described in the README.
 
 Persistent stores require `DM_STORAGE_KEYS`. Encryption covers raw Authenticate,
 TokenUpdate, UserAuthenticate, commands, results and error chains, existing
@@ -311,8 +369,13 @@ byte limits.
 Metadata-only security events identify admission denial, identity rejection,
 certificate status rejection and private-hop rejection. Enable an event sink or
 persistent audit to retain them. Events contain no credential or remote error
-text. DEP, AxM, APNs and webhook clients reject redirects; use trusted HTTPS
-endpoints for production outbound credentials.
+text. DEP, AxM, APNs and webhook clients reject redirects and require HTTPS.
+`DM_WEBHOOK_URL` now rejects HTTP even on loopback, URL credentials and fragments.
+Set `DM_WEBHOOK_ROOT_CA_FILE` to a PEM bundle for a private webhook CA; it replaces
+system roots for that sink and preserves hostname verification. Webhook transport
+errors omit the configured URL, including secret path/query components. Wrapped
+causes remain available to trusted callers through `errors.Is`; avoid logging
+unwrapped transport errors. HMAC remains optional and does not replace TLS.
 
 ## Device validation
 
@@ -321,3 +384,4 @@ signature-verified CRL/OCSP output. Before rollout, exercise supported Apple OS
 versions and enrollment modes on physical devices, including ADE, account-driven
 macOS device/user channels, token expiry during an interrupted response,
 SCEP/ACME renewal and revocation, DDM synchronization and proxy transport.
+Use the [physical-device checklist and Apple reconciliation](../wip/apple-conformant-security-hardening-2026-09-11.md).

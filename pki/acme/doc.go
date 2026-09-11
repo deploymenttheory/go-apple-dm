@@ -22,6 +22,16 @@
 // or all-identifier authorization. Account key rollover is not implemented.
 // Store interfaces isolate persistence, and caller-supplied public URLs define
 // JWS URL binding behind proxies.
+// Public URLs require HTTPS, including in test fixtures.
+//
+// Store.UpdateOrder serializes existing-order transitions before reading state.
+// Config.Signer must perform pure signing inside that transaction. A CSR-bound
+// receipt commits before Config.Register or the optional revocation registry
+// runs. Registration must be idempotent and concurrency-safe. Until it completes,
+// the order is processing and certificate download is denied. POST-as-GET order
+// polling and same-CSR finalize retries can recover the receipt after restart,
+// rechecking authorization without signing again. Replicas must share durable
+// state, issuer material and policy; memory storage cannot recover after restart.
 //
 // # References
 //

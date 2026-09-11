@@ -19,6 +19,7 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/paging"
 	"github.com/deploymenttheory/go-apple-dm/pki/acme"
 	"github.com/deploymenttheory/go-apple-dm/pki/acme/attest"
+	"github.com/deploymenttheory/go-apple-dm/pki/ca"
 	"github.com/deploymenttheory/go-apple-dm/schema/ddm"
 	"github.com/deploymenttheory/go-apple-dm/schema/support"
 	acmesql "github.com/deploymenttheory/go-apple-dm/server/acmestore/sqlstore"
@@ -135,11 +136,16 @@ func (a *App) newACME(ctx context.Context, e *enrollment) (*acmeService, error) 
 	if err != nil {
 		return nil, err
 	}
+	pure, err := ca.NewLocal(e.caCert, e.caKey, ca.WithClock(a.cfg.Clock))
+	if err != nil {
+		return nil, fmt.Errorf("app: ACME signer: %w", err)
+	}
 	server, err := acme.New(acme.Config{
 		BaseURL:     e.base,
 		Prefix:      PathACME,
 		Store:       store,
-		Signer:      e.local,
+		Signer:      pure,
+		Register:    e.depot.Put,
 		CAPolicy:    a.issuancePolicy(e),
 		Revocations: a.acmeRevocations(),
 		Identifiers: identifiers,
@@ -475,12 +481,14 @@ func (s *acmeService) handler() http.Handler {
 			ID, Serial, Identifier string
 			Device                 attest.Properties
 			NotAfter, IssuedAt     time.Time
+			PendingRegistration    bool
 		}
 		rows := make([]row, 0, len(res.Items))
 		for _, c := range res.Items {
 			rows = append(rows, row{
 				ID: c.ID, Serial: c.Serial, Identifier: c.Binding.EnrollmentID,
 				Device: c.Device, NotAfter: c.NotAfter, IssuedAt: c.IssuedAt,
+				PendingRegistration: c.PendingRegistration,
 			})
 		}
 		writeJSON(w, http.StatusOK, map[string]any{"Items": rows, "NextCursor": res.NextCursor})

@@ -18,7 +18,8 @@ COPY --from=build /out/dmserver /dmserver
 COPY --from=build --chown=nonroot:nonroot /out/data /data
 VOLUME ["/data"]
 EXPOSE 8080
-ENV DM_LISTEN=:8080 DM_STORAGE=sqlite DM_DSN=/data/dm.db
+# Remote container listeners require DM_LISTEN plus a configured TLS certificate/key.
+ENV DM_LISTEN=127.0.0.1:8080 DM_STORAGE=sqlite DM_DSN=/data/dm.db
 HEALTHCHECK --interval=5s --timeout=3s --retries=10 CMD ["/dmserver", "-check", "http://127.0.0.1:8080/healthz"]
 USER nonroot:nonroot
 ENTRYPOINT ["/dmserver"]

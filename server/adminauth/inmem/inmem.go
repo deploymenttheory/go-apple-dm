@@ -37,6 +37,45 @@ func New() *Store {
 	}
 }
 
+// ApplyPrincipal commits a mutation and the last-active-root check under one lock.
+func (s *Store) ApplyPrincipal(_ context.Context, name string, change adminauth.PrincipalChange, now time.Time) (adminauth.Principal, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	r, ok := s.principals[name]
+	if !ok {
+		return adminauth.Principal{}, adminauth.ErrNotFound
+	}
+	p, err := change.Apply(r.p, now)
+	if err != nil {
+		return adminauth.Principal{}, err
+	}
+	if r.p.Root && r.p.Active(now) == nil && (!p.Root || p.Active(now) != nil) {
+		survivor := false
+		for key, other := range s.principals {
+			if key != name && other.p.Root && other.p.Active(now) == nil && other.digest != "" {
+				survivor = true
+				break
+			}
+		}
+		if !survivor {
+			return adminauth.Principal{}, adminauth.ErrLastRoot
+		}
+	}
+	if change.Op == "delete" {
+		delete(s.principals, name)
+		return p, nil
+	}
+	if change.Op == "rotate" {
+		r.digest = change.Digest
+	}
+	if change.Op == "revoke" {
+		r.digest = ""
+	}
+	r.p = p
+	s.principals[name] = r
+	return clone(p), nil
+}
+
 // CreatePrincipal implements adminauth.Store.
 func (s *Store) CreatePrincipal(_ context.Context, p adminauth.Principal, digest string, now time.Time) (adminauth.Principal, error) {
 	s.mu.Lock()

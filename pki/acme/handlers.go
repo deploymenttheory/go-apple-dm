@@ -2,20 +2,15 @@ package acme
 
 import (
 	"crypto/x509"
-	"crypto/x509/pkix"
 	"encoding/base64"
 	json "encoding/json/v2"
-	"encoding/pem"
 	"errors"
 	"net/http"
 	"time"
 
-	"github.com/deploymenttheory/go-apple-dm/mdmprotocol/cms"
 	"github.com/deploymenttheory/go-apple-dm/mdmprotocol/event"
 	"github.com/deploymenttheory/go-apple-dm/paging"
 	"github.com/deploymenttheory/go-apple-dm/pki/acme/attest"
-	"github.com/deploymenttheory/go-apple-dm/pki/ca"
-	"github.com/deploymenttheory/go-apple-dm/pki/revocation"
 )
 
 // directoryBody advertises only implemented endpoints; revocation is optional.
@@ -279,7 +274,7 @@ func (s *Server) orderBody(o *Order) orderBody {
 		Finalize:       s.url(pathOrder, o.ID, "/finalize"),
 		Error:          o.Error,
 	}
-	if o.CertificateID != "" {
+	if o.Status == StatusValid && o.CertificateID != "" {
 		body.Certificate = s.url(pathCert, o.CertificateID)
 	}
 	return body
@@ -290,6 +285,20 @@ func (s *Server) order(e *exchange) error {
 	o, err := s.loadOrder(e)
 	if err != nil {
 		return err
+	}
+	// RFC 8555 clients poll a processing order; recovery cannot depend on
+	// resubmitting finalize. A receipt already contains the signed public key.
+	if o.Status == StatusProcessing && o.CertificateID != "" {
+		record, err := s.cfg.Store.GetCertificate(e.ctx(), o.CertificateID)
+		if err != nil {
+			return WrapProblem(ProblemServerInternal, err, "the issuance receipt could not be read")
+		}
+		r := &issued{order: o, cert: record}
+		if err := s.completeReceipt(e, r); err != nil {
+			e.w.Header().Set("Retry-After", "5")
+			return err
+		}
+		o = r.order
 	}
 	return s.write(e, http.StatusOK, s.orderBody(o))
 }
@@ -404,13 +413,16 @@ func (s *Server) challenge(e *exchange) error {
 	challenge.Error = nil
 	authz.Status = StatusValid
 	order.Status = StatusReady
-	if err := s.saveTriple(e, challenge, authz, order); err != nil {
+	changed, err := s.saveTriple(e, challenge, authz, order)
+	if err != nil {
 		return err
 	}
-	s.publish(e.ctx(), event.ACMEChallengeValid, map[string]any{
-		"identifier": order.Identifier.Value,
-		"serial":     order.Binding.Serial,
-	})
+	if changed {
+		s.publish(e.ctx(), event.ACMEChallengeValid, map[string]any{
+			"identifier": order.Identifier.Value,
+			"serial":     order.Binding.Serial,
+		})
+	}
 	return s.write(e, http.StatusOK, s.challengeBody(challenge))
 }
 
@@ -567,26 +579,48 @@ func (s *Server) settleChallenge(
 	a.Status = StatusInvalid
 	o.Status = StatusInvalid
 	o.Error = p
-	if err := s.saveTriple(e, c, a, o); err != nil {
+	if _, err := s.saveTriple(e, c, a, o); err != nil {
 		return err
 	}
 	return p
 }
 
-func (s *Server) saveTriple(e *exchange, c *Challenge, a *Authorization, o *Order) error {
-	err := s.cfg.Store.Update(e.ctx(), func(tx Tx) error {
+func (s *Server) saveTriple(e *exchange, c *Challenge, a *Authorization, o *Order) (bool, error) {
+	changed := false
+	err := s.cfg.Store.UpdateOrder(e.ctx(), o.ID, func(tx Tx) error {
+		current, err := tx.GetOrder(e.ctx(), o.ID)
+		if err != nil {
+			return err
+		}
+		currentAuthz, err := tx.GetAuthorization(e.ctx(), current.AuthzID)
+		if err != nil {
+			return err
+		}
+		currentChallenge, err := tx.GetChallenge(e.ctx(), currentAuthz.ChallengeID)
+		if err != nil {
+			return err
+		}
+		if current.Status != StatusPending || currentAuthz.Status != StatusPending ||
+			currentChallenge.Status != StatusPending {
+			*c, *a, *o = *currentChallenge, *currentAuthz, *current
+			return nil
+		}
 		if err := tx.PutChallenge(e.ctx(), c); err != nil {
 			return err
 		}
 		if err := tx.PutAuthorization(e.ctx(), a); err != nil {
 			return err
 		}
-		return tx.PutOrder(e.ctx(), o)
+		if err := tx.PutOrder(e.ctx(), o); err != nil {
+			return err
+		}
+		changed = true
+		return nil
 	})
 	if err != nil {
-		return WrapProblem(ProblemServerInternal, err, "the challenge could not be stored")
+		return false, WrapProblem(ProblemServerInternal, err, "the challenge could not be stored")
 	}
-	return nil
+	return changed, nil
 }
 
 // finalizeRequest is RFC 8555 section 7.4.
@@ -609,6 +643,10 @@ func (s *Server) finalize(e *exchange) error {
 	case StatusPending:
 		return NewProblem(ProblemOrderNotReady, "the authorization is not yet valid")
 	case StatusReady:
+	case StatusProcessing:
+		if o.CertificateID == "" || o.CSRHash == "" {
+			return NewProblem(ProblemOrderNotReady, "the order is processing")
+		}
 	default:
 		return NewProblem(ProblemOrderNotReady, "the order is %s", o.Status)
 	}
@@ -661,6 +699,12 @@ func parseCSR(encoded string) (*x509.CertificateRequest, error) {
 // was not known when the challenge was answered and a decoded copy would
 // not prove anything.
 func (s *Server) checkAttestedKey(e *exchange, o *Order, csr *x509.CertificateRequest) error {
+	return s.checkKey(e, o, csr.PublicKey)
+}
+
+// checkKey also revalidates the immutable signed key when an order poll recovers
+// registration. It never treats an unverified decoded attestation as evidence.
+func (s *Server) checkKey(e *exchange, o *Order, key any) error {
 	challenge, err := s.challengeOf(e, o)
 	if err != nil {
 		return err
@@ -687,7 +731,7 @@ func (s *Server) checkAttestedKey(e *exchange, o *Order, csr *x509.CertificateRe
 		Anchors:   s.cfg.Anchors,
 		Now:       s.cfg.Clock.Now,
 		Freshness: attest.FreshnessForToken(challenge.Token),
-		PublicKey: csr.PublicKey,
+		PublicKey: key,
 	})
 	if errors.Is(err, attest.ErrKeyMismatch) {
 		return WrapProblem(
@@ -715,124 +759,6 @@ func (s *Server) challengeOf(e *exchange, o *Order) (*Challenge, error) {
 	return challenge, nil
 }
 
-// issued carries what issuance produced.
-type issued struct {
-	order *Order
-	cert  *Certificate
-}
-
-// issue signs the certificate and records it. The subject and the subject
-// alternative name come from the binding the server decided at order time,
-// never from the request: Apple's documentation says the server may
-// override the Subject the profile asked for, and a subject a device chose
-// for itself is not evidence of anything.
-func (s *Server) issue(e *exchange, o *Order, csr *x509.CertificateRequest) (*issued, error) {
-	otherName, err := ca.PermanentIdentifier(o.Identifier.Value)
-	if err != nil {
-		return nil, WrapProblem(ProblemServerInternal, err, "the identifier could not be encoded")
-	}
-	policy := s.cfg.CAPolicy
-	policy.OtherNames = append(append([]ca.OtherName(nil), policy.OtherNames...), otherName)
-	subject := pkix.Name{
-		CommonName:   o.Binding.CommonName,
-		Organization: o.Binding.Organization,
-	}
-	if subject.CommonName == "" {
-		subject.CommonName = o.Binding.Serial
-	}
-	if subject.CommonName == "" {
-		subject.CommonName = o.Identifier.Value
-	}
-	policy.Subject = &subject
-	// The binding's deadline is absolute, so it is handed to the authority
-	// as one. Turning it into a duration here would let the certificate
-	// outlive it by however long signing took.
-	if !o.Binding.NotAfter.IsZero() {
-		if !o.Binding.NotAfter.After(s.cfg.Clock.Now()) {
-			return nil, NewProblem(
-				ProblemRejectedIdentifier,
-				"the identifier's certificate deadline has already passed",
-			)
-		}
-		policy.NotAfter = o.Binding.NotAfter
-	}
-	provenance := revocation.Provenance{
-		Source:       "acme",
-		EnrollmentID: o.Binding.EnrollmentID,
-		AccountID:    o.AccountID,
-		UDID:         o.Binding.EnrollmentUDID(),
-		Serial:       o.Binding.Serial,
-		Identifiers:  []string{o.Identifier.Type + ":" + o.Identifier.Value},
-	}
-	cert, err := s.cfg.Signer.Sign(revocation.WithProvenance(e.ctx(), provenance), csr, policy)
-	if err != nil {
-		if errors.Is(err, ca.ErrPolicy) || errors.Is(err, ca.ErrCSR) {
-			return nil, WrapProblem(ProblemBadCSR, err, "the certificate request was refused")
-		}
-		return nil, WrapProblem(ProblemServerInternal, err, "the certificate could not be signed")
-	}
-	chain := encodeChain(cert, s.cfg.Signer.Chain())
-	if s.cfg.Revocations != nil {
-		if err := s.cfg.Revocations.Register(
-			e.ctx(),
-			cms.Fingerprint(s.cfg.Signer.Certificate()),
-			cert,
-			provenance,
-		); err != nil {
-			return nil, WrapProblem(ProblemServerInternal, err, "certificate registry unavailable")
-		}
-	}
-	challenge, err := s.challengeOf(e, o)
-	if err != nil {
-		return nil, err
-	}
-	var device attest.Properties
-	if len(challenge.Attestation) > 0 {
-		if a, err := attest.ParseObject(challenge.Attestation); err == nil {
-			device = a.Properties
-		}
-	}
-	certID, err := newID()
-	if err != nil {
-		return nil, WrapProblem(ProblemServerInternal, err, "the certificate could not be recorded")
-	}
-	record := &Certificate{
-		ID: certID, OrderID: o.ID, AccountID: o.AccountID,
-		Serial: cert.SerialNumber.String(), ChainPEM: chain, Device: device,
-		Binding: o.Binding, NotAfter: cert.NotAfter, IssuedAt: s.cfg.Clock.Now(),
-	}
-	o.Status = StatusValid
-	o.CertificateID = certID
-	o.Error = nil
-	err = s.cfg.Store.Update(e.ctx(), func(tx Tx) error {
-		if err := tx.PutCertificate(e.ctx(), record); err != nil {
-			return err
-		}
-		return tx.PutOrder(e.ctx(), o)
-	})
-	if err != nil {
-		return nil, WrapProblem(ProblemServerInternal, err, "the certificate could not be stored")
-	}
-	s.publish(e.ctx(), event.ACMEIssued, map[string]any{
-		"serial":      record.Serial,
-		"identifier":  o.Identifier.Value,
-		"device":      device.SerialNumber,
-		"udid":        device.UDID,
-		"enrollment":  o.Binding.EnrollmentID,
-		"not_after":   record.NotAfter,
-		"certificate": certID,
-	})
-	return &issued{order: o, cert: record}, nil
-}
-
-func encodeChain(leaf *x509.Certificate, issuers []*x509.Certificate) []byte {
-	var out []byte
-	for _, c := range append([]*x509.Certificate{leaf}, issuers...) {
-		out = append(out, pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: c.Raw})...)
-	}
-	return out
-}
-
 // settleOrder records a failed finalize. A bad certificate request leaves
 // the order ready, as RFC 8555 section 7.4 requires, so an amended request
 // can still finalize it; anything else terminal makes the order invalid.
@@ -841,11 +767,22 @@ func (s *Server) settleOrder(e *exchange, o *Order, cause error) error {
 	if !p.Terminal() || errors.Is(p, ErrBadCSR) {
 		return p
 	}
-	o.Status = StatusInvalid
-	o.Error = p
-	if err := s.cfg.Store.Update(
+	if err := s.cfg.Store.UpdateOrder(
 		e.ctx(),
-		func(tx Tx) error { return tx.PutOrder(e.ctx(), o) },
+		o.ID,
+		func(tx Tx) error {
+			current, err := tx.GetOrder(e.ctx(), o.ID)
+			if err != nil {
+				return err
+			}
+			// A stale rejection must not discard an issuance receipt or a
+			// successful concurrent finalization.
+			if current.Status != o.Status || current.CertificateID != "" {
+				return nil
+			}
+			current.Status, current.Error = StatusInvalid, p
+			return tx.PutOrder(e.ctx(), current)
+		},
 	); err != nil {
 		return WrapProblem(ProblemServerInternal, err, "the order could not be stored")
 	}
@@ -862,6 +799,9 @@ func (s *Server) certificate(e *exchange) error {
 	}
 	if record.AccountID != e.account.ID {
 		return NewProblem(ProblemUnauthorized, "the certificate belongs to another account")
+	}
+	if record.PendingRegistration {
+		return NewProblem(ProblemOrderNotReady, "certificate registration is incomplete")
 	}
 	e.w.Header().Set("Content-Type", ContentTypePEMChain)
 	e.w.Header().Set("X-Content-Type-Options", "nosniff")

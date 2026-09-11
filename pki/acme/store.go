@@ -91,6 +91,13 @@ type Store interface {
 	// must do all its work through the Tx it is given; reaching back into
 	// the Store from inside it is not supported and a backend may deadlock.
 	Update(ctx context.Context, fn func(Tx) error) error
+	// UpdateOrder locks an existing order before running fn in a transaction.
+	// Concurrent callbacks for that order observe the preceding committed
+	// state. Missing orders return ErrNotFound without calling fn. Callbacks
+	// must use only tx for persistence and must not have external side effects.
+	// All protocol changes to an existing order and its challenge or
+	// authorization must use this method, including failure transitions.
+	UpdateOrder(ctx context.Context, id string, fn func(Tx) error) error
 	// PutNonce stores a freshly minted nonce. Values are random and
 	// therefore unique in practice; a backend may either overwrite a
 	// duplicate or report ErrConflict, and no caller relies on which.

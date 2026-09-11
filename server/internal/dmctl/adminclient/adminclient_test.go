@@ -28,11 +28,16 @@ func newClient(t *testing.T, h http.Handler) (*adminclient.Client, *httptest.Ser
 
 func TestNew(t *testing.T) {
 	for name, url := range map[string]string{
-		"empty":     "",
-		"spaces":    "   ",
-		"no scheme": "example.com/admin",
-		"ftp":       "ftp://example.com",
-		"no host":   "http://",
+		"empty":       "",
+		"spaces":      "   ",
+		"no scheme":   "example.com/admin",
+		"ftp":         "ftp://example.com",
+		"no host":     "http://",
+		"remote HTTP": "http://mdm.example",
+		"named HTTP":  "http://localhost:8080",
+		"credentials": "https://user:secret@mdm.example",
+		"fragment":    "https://mdm.example/#secret",
+		"query":       "https://mdm.example/?token=secret",
 	} {
 		if _, err := adminclient.New(adminclient.Config{BaseURL: url}); !errors.Is(err, adminclient.ErrConfig) {
 			t.Errorf("%s: err = %v, want ErrConfig", name, err)
@@ -346,52 +351,33 @@ func TestServerConfig(t *testing.T) {
 	}
 }
 
-// -insecure was declared on Config and never acted on, so an operator
-// testing against a self-signed lab certificate got the verification failure
-// they had already opted out of.
-func TestInsecureSkipsVerification(t *testing.T) {
+// Private certificates require explicit trust; there is no verification bypass.
+func TestTLSRequiresVerification(t *testing.T) {
 	srv := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
-		_, _ = w.Write([]byte(`{"ok":true}`))
+		w.WriteHeader(http.StatusNoContent)
 	}))
 	defer srv.Close()
-
-	t.Run("RefusedWithoutIt", func(t *testing.T) {
-		c, err := adminclient.New(adminclient.Config{BaseURL: srv.URL, Token: "t"})
-		if err != nil {
-			t.Fatal(err)
+	c, err := adminclient.New(adminclient.Config{BaseURL: srv.URL, Token: "t"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := c.Do(t.Context(), http.MethodGet, "/config", nil, nil); err == nil {
+		t.Fatal("untrusted certificate accepted")
+	}
+	for _, client := range []*http.Client{nil, srv.Client()} {
+		if _, err := adminclient.New(adminclient.Config{BaseURL: srv.URL, Insecure: true, HTTPClient: client}); !errors.Is(err, adminclient.ErrConfig) {
+			t.Fatalf("verification bypass accepted: %v", err)
 		}
-		if _, err := c.Do(context.Background(), http.MethodGet, "/config", nil, nil); err == nil {
-			t.Fatal("an untrusted certificate was accepted without -insecure")
-		}
-	})
-
-	t.Run("AcceptedWithIt", func(t *testing.T) {
-		c, err := adminclient.New(adminclient.Config{BaseURL: srv.URL, Token: "t", Insecure: true})
-		if err != nil {
-			t.Fatal(err)
-		}
-		resp, err := c.Do(context.Background(), http.MethodGet, "/config", nil, nil)
-		if err != nil {
-			t.Fatalf("-insecure did not skip verification: %v", err)
-		}
-		if resp.Status != http.StatusOK {
-			t.Fatalf("status = %d", resp.Status)
-		}
-	})
-
-	// A caller that supplied its own client keeps its own transport: taking
-	// it over would be surprising, and the tests that inject srv.Client()
-	// rely on it.
-	t.Run("DoesNotOverrideACallersClient", func(t *testing.T) {
-		c, err := adminclient.New(adminclient.Config{
-			BaseURL: srv.URL, Token: "t", Insecure: true, HTTPClient: srv.Client(),
-		})
-		if err != nil {
-			t.Fatal(err)
-		}
-		if _, err := c.Do(context.Background(), http.MethodGet, "/config", nil, nil); err != nil {
-			t.Fatal(err)
-		}
-	})
+	}
+	trusted := srv.Client()
+	c, err = adminclient.New(adminclient.Config{BaseURL: srv.URL, HTTPClient: trusted})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := c.Do(t.Context(), http.MethodGet, "/config", nil, nil); err != nil {
+		t.Fatal(err)
+	}
+	if trusted.Timeout != 0 || trusted.CheckRedirect != nil {
+		t.Fatal("caller HTTP client was mutated")
+	}
 }

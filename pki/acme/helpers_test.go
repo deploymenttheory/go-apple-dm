@@ -110,7 +110,7 @@ func newFixture(t *testing.T, tweak ...func(*acme.Config)) *fixture {
 	// the handler is attached before it is served.
 	ts := httptest.NewUnstartedServer(nil)
 	t.Cleanup(ts.Close)
-	f.base = "http://" + ts.Listener.Addr().String()
+	f.base = "https://" + ts.Listener.Addr().String()
 	cfg := acme.Config{
 		BaseURL:     f.base,
 		Store:       f.store,
@@ -131,7 +131,7 @@ func newFixture(t *testing.T, tweak ...func(*acme.Config)) *fixture {
 	}
 	f.server = srv
 	ts.Config.Handler = srv.Handler()
-	ts.Start()
+	ts.StartTLS()
 	f.ts = ts
 	return f
 }

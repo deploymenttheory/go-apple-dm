@@ -3,7 +3,6 @@ package adminauth
 import (
 	"context"
 	"fmt"
-	"strings"
 	"sync"
 	"time"
 
@@ -15,12 +14,12 @@ import (
 // Manager authenticates admin callers, answers authorization decisions from
 // the stored Cedar policies, and administers principals and policies.
 //
-// Two things sit outside Cedar on purpose. Policy administration is gated by
-// Principal.Root, because a policy that can edit policies can grant itself
-// anything, so it cannot be the thing that bounds itself. And the last root
-// principal cannot be removed, demoted, or revoked, so an operator cannot
-// lock themselves out. Credential administration is an ordinary action a
-// policy may grant, bounded by Covers.
+// Principal, credential and policy mutations require Principal.Root independently
+// of Cedar. Callers authenticate the actor and authorize the route action before
+// invoking these methods. A role-subset comparison cannot bound arbitrary Cedar
+// authority. Stores atomically protect the last active root from removal,
+// demotion, revocation and immediate expiry; later expiry and policy lockout
+// remain operational responsibilities.
 type Manager struct {
 	store Store
 	reg   *Registry
@@ -126,11 +125,12 @@ func (m *Manager) policySet(ctx context.Context) (*PolicySet, error) {
 
 // CreatePrincipal adds a principal and mints its first token.
 //
-// actor must already hold every role it grants, so a credential can never
-// mint one more privileged than itself. Whether the caller may administer
-// principals at all is the ActionManagePrincipals decision, made by the
-// caller before it gets here.
+// actor must be Root. The caller additionally authorizes its administrative
+// action before entering this manager.
 func (m *Manager) CreatePrincipal(ctx context.Context, actor Principal, p Principal, expires time.Time) (Principal, Token, error) {
+	if err := m.canAdminister(actor); err != nil {
+		return Principal{}, "", err
+	}
 	if !ValidName(p.Name) {
 		return Principal{}, "", fmt.Errorf("%w: principal name %q", ErrInvalid, p.Name)
 	}
@@ -139,9 +139,7 @@ func (m *Manager) CreatePrincipal(ctx context.Context, actor Principal, p Princi
 			return Principal{}, "", fmt.Errorf("%w: role %q", ErrInvalid, r)
 		}
 	}
-	if !actor.Covers(p) {
-		return Principal{}, "", fmt.Errorf("%w: %s cannot grant %v", ErrEscalation, actor.Name, p.Roles)
-	}
+
 	tok, id, err := mint()
 	if err != nil {
 		return Principal{}, "", err
@@ -165,7 +163,7 @@ func (m *Manager) Rotate(ctx context.Context, actor Principal, name string, expi
 	if err != nil {
 		return Principal{}, "", err
 	}
-	out, err := m.store.SetToken(ctx, target.Name, Digest(tok), id, expires, m.clock.Now())
+	out, err := m.store.ApplyPrincipal(ctx, target.Name, PrincipalChange{Op: "rotate", Digest: Digest(tok), TokenID: id, ExpiresAt: expires}, m.clock.Now())
 	if err != nil {
 		return Principal{}, "", err
 	}
@@ -178,15 +176,12 @@ func (m *Manager) UpdatePrincipal(ctx context.Context, actor Principal, name str
 	if err != nil {
 		return Principal{}, err
 	}
-	if !actor.Covers(Principal{Roles: roles, Root: root}) {
-		return Principal{}, fmt.Errorf("%w: %s cannot grant %v", ErrEscalation, actor.Name, roles)
-	}
-	if target.Root && !root {
-		if err := m.guardLastRoot(ctx, name); err != nil {
-			return Principal{}, err
+	for _, role := range roles {
+		if !ValidName(role) {
+			return Principal{}, fmt.Errorf("%w: role name", ErrInvalid)
 		}
 	}
-	return m.store.UpdatePrincipal(ctx, name, roles, root, m.clock.Now())
+	return m.store.ApplyPrincipal(ctx, target.Name, PrincipalChange{Op: "update", Roles: roles, Root: root}, m.clock.Now())
 }
 
 // Revoke clears a principal's token, leaving the principal in place so its
@@ -196,14 +191,8 @@ func (m *Manager) Revoke(ctx context.Context, actor Principal, name string) erro
 	if err != nil {
 		return err
 	}
-	// Revoking the last root credential locks everyone out of policy
-	// administration just as deleting it would.
-	if target.Root {
-		if err := m.guardLastRoot(ctx, name); err != nil {
-			return err
-		}
-	}
-	return m.store.RevokeToken(ctx, name, m.clock.Now())
+	_, err = m.store.ApplyPrincipal(ctx, target.Name, PrincipalChange{Op: "revoke"}, m.clock.Now())
+	return err
 }
 
 // DeletePrincipal removes a principal.
@@ -212,12 +201,8 @@ func (m *Manager) DeletePrincipal(ctx context.Context, actor Principal, name str
 	if err != nil {
 		return err
 	}
-	if target.Root {
-		if err := m.guardLastRoot(ctx, name); err != nil {
-			return err
-		}
-	}
-	return m.store.DeletePrincipal(ctx, name)
+	_, err = m.store.ApplyPrincipal(ctx, target.Name, PrincipalChange{Op: "delete"}, m.clock.Now())
+	return err
 }
 
 // Principal returns one principal.
@@ -266,9 +251,7 @@ func (m *Manager) DeletePolicy(ctx context.Context, actor Principal, name string
 	return m.store.DeletePolicy(ctx, name)
 }
 
-// canAdminister requires Root for policy administration so a policy cannot grant
-// authority to edit itself. Credential administration uses ordinary action
-// authorization with Covers restrictions on the target's authority.
+// canAdminister keeps credential and policy mutations outside policy delegation.
 func (m *Manager) canAdminister(actor Principal) error {
 	if !actor.Root {
 		return fmt.Errorf("%w: %s is not a root principal", ErrDenied, actor.Name)
@@ -276,58 +259,12 @@ func (m *Manager) canAdminister(actor Principal) error {
 	return nil
 }
 
-// mayIssueFor reports whether actor may act on the credential of name.
-//
-// Two conditions, both from Zentral's can_issue_credentials_for: the actor
-// must hold every role the target holds, and the target must not be named
-// directly by a policy. A principal a policy names by name no longer derives
-// its authority from its roles, so the role subset test would not bound it.
+// mayIssueFor requires Root before reading or changing another credential.
 func (m *Manager) mayIssueFor(ctx context.Context, actor Principal, name string) (Principal, error) {
-	target, err := m.store.Principal(ctx, name)
-	if err != nil {
+	if err := m.canAdminister(actor); err != nil {
 		return Principal{}, err
 	}
-	if !actor.Covers(target) {
-		return Principal{}, fmt.Errorf("%w: %s does not hold every role of %s", ErrEscalation, actor.Name, name)
-	}
-	if actor.Name != name {
-		named, err := m.namedByPolicy(ctx, name)
-		if err != nil {
-			return Principal{}, err
-		}
-		if named {
-			return Principal{}, fmt.Errorf("%w: %s is named directly by a policy", ErrEscalation, name)
-		}
-	}
-	return target, nil
-}
-
-// namedByPolicy reports whether any stored policy references the principal by
-// name rather than through a role.
-func (m *Manager) namedByPolicy(ctx context.Context, name string) (bool, error) {
-	docs, err := m.store.Policies(ctx)
-	if err != nil {
-		return false, err
-	}
-	needle := string(EntityPrincipal) + `::"` + name + `"`
-	for _, d := range docs {
-		if strings.Contains(d.Source, needle) {
-			return true, nil
-		}
-	}
-	return false, nil
-}
-
-// guardLastRoot refuses when name is the only root principal.
-func (m *Manager) guardLastRoot(ctx context.Context, name string) error {
-	n, err := m.store.CountRoot(ctx)
-	if err != nil {
-		return err
-	}
-	if n <= 1 {
-		return fmt.Errorf("%w: %s", ErrLastRoot, name)
-	}
-	return nil
+	return m.store.Principal(ctx, name)
 }
 
 // Root is the implicit actor for bootstrap, before any principal exists.

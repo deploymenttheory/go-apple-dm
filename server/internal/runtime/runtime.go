@@ -33,13 +33,13 @@ const (
 var errWorkersStuck = errors.New("dmserver: workers did not stop before the shutdown deadline")
 
 func Serve(ctx context.Context, cfg app.Config) error {
-	if cfg.TLSCertFile == "" && (cfg.CertHeader != "" || cfg.Role == app.RoleDDM) {
+	if cfg.TLSCertFile == "" {
 		host, _, err := net.SplitHostPort(cfg.Listen)
 		ip := net.ParseIP(host)
 		if err != nil || ip == nil || !ip.IsLoopback() ||
 			(cfg.Role == app.RoleDDM && !cfg.DDMAllowInsecureForTests) {
 			return fmt.Errorf(
-				"%w: certificate proxy backends require loopback or TLS; private DDM requires TLS",
+				"%w: HTTP listeners require a literal loopback address; remote listeners and private DDM require TLS",
 				app.ErrConfig,
 			)
 		}
