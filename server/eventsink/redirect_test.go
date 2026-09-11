@@ -12,18 +12,18 @@ import (
 
 func TestWebhookRedirectDoesNotForwardSignedBody(t *testing.T) {
 	var calls atomic.Int64
-	dest := httptest.NewServer(
+	dest := httptest.NewTLSServer(
 		http.HandlerFunc(func(http.ResponseWriter, *http.Request) { calls.Add(1) }),
 	)
 	defer dest.Close()
-	source := httptest.NewServer(
+	source := httptest.NewTLSServer(
 		http.HandlerFunc(
 			func(w http.ResponseWriter, r *http.Request) { http.Redirect(w, r, dest.URL, 307) },
 		),
 	)
 	defer source.Close()
 	h, err := eventsink.Webhook(
-		eventsink.WebhookConfig{URL: source.URL, HMACKey: []byte("test-key"), Retries: -1},
+		eventsink.WebhookConfig{URL: source.URL, Client: source.Client(), HMACKey: []byte("test-key"), Retries: -1},
 	)
 	if err != nil {
 		t.Fatal(err)

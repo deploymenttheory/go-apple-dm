@@ -439,10 +439,13 @@ func (a *App) principal(r *http.Request) (adminauth.Principal, bool, error) {
 
 // checkPolicy evaluates one route's action for the principal.
 func (a *App) checkPolicy(r *http.Request, p adminauth.Principal, rt adminRoute) error {
-	// Policy administration is gated by Root in Go, outside the policy system,
-	// because a policy that can edit policies can grant itself anything.
-	// Credential administration is an ordinary action a policy may grant; the
-	// escalation guard in adminauth bounds what it can hand out (record 0034).
+	// Credential mutations require Root as well as their Cedar action. A
+	// policy may grant read access, but cannot delegate issuance of authority.
+	if rt.Action == ActionManagePrincipals && r.Method != http.MethodGet &&
+		r.Method != http.MethodHead &&
+		!p.Root {
+		return fmt.Errorf("%w: credential mutations require a root principal", adminauth.ErrDenied)
+	}
 	if rt.Action == ActionManagePolicies {
 		if !p.Root {
 			return fmt.Errorf("%w: %s is not a root principal", adminauth.ErrDenied, p.Name)

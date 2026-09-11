@@ -8,6 +8,8 @@
 // machine-readable CLI output. Redirects are refused to keep credentials bound
 // to the selected destination. Callers choose whether to fetch one page or
 // iterate, and cancellation propagates through requests.
+// Remote URLs require verified HTTPS. Plain HTTP is limited to literal loopback
+// addresses; CAFile adds private trust and Insecure=true is rejected.
 //
 // # References
 //

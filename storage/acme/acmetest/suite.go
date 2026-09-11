@@ -145,6 +145,7 @@ func RunAll(t *testing.T, newStore Factory) {
 	t.Run("IdentifierClaims", func(t *testing.T) { runClaims(t, newStore) })
 	t.Run("NonceSingleUse", func(t *testing.T) { runNonces(t, newStore) })
 	t.Run("Update", func(t *testing.T) { runUpdate(t, newStore) })
+	t.Run("OrderTransactions", func(t *testing.T) { runOrderTransactions(t, newStore) })
 	t.Run("Prune", func(t *testing.T) { runPrune(t, newStore) })
 	t.Run("InvalidArguments", func(t *testing.T) { runInvalid(t, newStore) })
 	t.Run("Concurrency", func(t *testing.T) { runConcurrency(t, newStore) })

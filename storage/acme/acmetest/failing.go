@@ -72,6 +72,19 @@ func (f *Failing) Update(ctx context.Context, fn func(acme.Tx) error) error {
 	return f.Store.Update(ctx, func(tx acme.Tx) error { return fn(&txView{f: f, tx: tx}) })
 }
 
+// UpdateOrder applies the same transaction fault injection as Update.
+func (f *Failing) UpdateOrder(ctx context.Context, id string, fn func(acme.Tx) error) error {
+	if err := f.fail("UpdateOrder"); err != nil {
+		return err
+	}
+	if err := f.fail("Update"); err != nil {
+		return err
+	}
+	return f.Store.UpdateOrder(ctx, id, func(tx acme.Tx) error {
+		return fn(&txView{f: f, tx: tx})
+	})
+}
+
 // GetAccount implements acme.Reader.
 func (f *Failing) GetAccount(ctx context.Context, id string) (*acme.Account, error) {
 	if err := f.fail("GetAccount"); err != nil {

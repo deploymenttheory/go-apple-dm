@@ -10,7 +10,7 @@ The normal authorization model also applies to enrollment-profile issuance, enro
 
 Routes declare Cedar actions in the same table used to build the mux. Requests are evaluated with principal, action, resource and context under default-deny policies. Stored API credentials contain a checksum and are retained only as SHA-256 digests. Rotation and revocation invalidate stored tokens.
 
-Root authority is a principal property checked outside Cedar for sensitive principal/policy administration. Credential issuance applies role-subset and directly-named-principal restrictions, and the last root cannot be removed, demoted or revoked. Policy writes validate referenced action names. Routine read responses project fields rather than expose complete stored records.
+Root authority is a principal property checked outside Cedar for principal and credential mutations (including self-rotation) and policy administration. A role-subset test cannot bound arbitrary Cedar authority, so delegated credential mutation is denied. Stores atomically prevent deleting, demoting, revoking or immediately expiring the last active root credential; expired or revoked roots cannot satisfy the guard. Policy writes validate referenced action names. Routine read responses project fields rather than expose complete stored records.
 
 `DM_ADMIN_STORE` opens the principal/policy store on the process database, or memory when appropriate, and is disabled by default. `DM_ADMIN_TOKEN` remains accepted alongside it: a constant-time checked root credential that bypasses policy and is audited as `break-glass`.
 

@@ -118,7 +118,11 @@ func Run(
 		return fmt.Errorf("%w: unknown command %q", ErrUsage, verb)
 	}
 	if e.opts.insecure {
-		fmt.Fprintln(stderr, "dmctl: warning: -insecure disables TLS verification")
+		fmt.Fprintln(
+			stderr,
+			"dmctl: -insecure is no longer supported; use -ca-file to configure trust",
+		)
+		return fmt.Errorf("%w: -insecure is no longer supported", ErrUsage)
 	}
 	return cmd.run(ctx, e, rest)
 }
@@ -250,7 +254,12 @@ func (o *options) bind(fs *flag.FlagSet, def options) {
 	fs.IntVar(&o.limit, "limit", def.limit, "page size (0 uses the server default)")
 	fs.BoolVar(&o.all, "all", def.all, "follow cursors to the end of a listing")
 	fs.DurationVar(&o.timeout, "timeout", def.timeout, "per-request timeout")
-	fs.BoolVar(&o.insecure, "insecure", def.insecure, "skip TLS verification (warns on every use)")
+	fs.BoolVar(
+		&o.insecure,
+		"insecure",
+		def.insecure,
+		"removed: use -ca-file to configure trusted certificates",
+	)
 	fs.BoolVar(&o.verbose, "v", def.verbose, "trace requests to stderr")
 }
 

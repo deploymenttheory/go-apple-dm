@@ -16,10 +16,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/deploymenttheory/go-apple-dm/server/eventsink"
 	"github.com/deploymenttheory/go-apple-dm/clock"
 	"github.com/deploymenttheory/go-apple-dm/mdmprotocol/event"
 	"github.com/deploymenttheory/go-apple-dm/mdmprotocol/mdm"
+	"github.com/deploymenttheory/go-apple-dm/server/eventsink"
 )
 
 func quiet() *slog.Logger { return slog.New(slog.NewTextHandler(io.Discard, nil)) }
@@ -62,7 +62,7 @@ func (r *receiver) sent() []string {
 func newWebhook(t *testing.T, cfg eventsink.WebhookConfig) (event.Handler, *receiver) {
 	t.Helper()
 	rec := &receiver{}
-	srv := httptest.NewServer(rec.handler())
+	srv := httptest.NewTLSServer(rec.handler())
 	t.Cleanup(srv.Close)
 	cfg.URL = srv.URL
 	if cfg.Logger == nil {
@@ -178,7 +178,7 @@ func TestWebhookSignsTheBody(t *testing.T) {
 // Retry transient receiver failures within the configured attempt limit.
 func TestWebhookRetriesThenSucceeds(t *testing.T) {
 	rec := &receiver{fail: 2}
-	srv := httptest.NewServer(rec.handler())
+	srv := httptest.NewTLSServer(rec.handler())
 	defer srv.Close()
 	h, err := eventsink.Webhook(eventsink.WebhookConfig{
 		URL: srv.URL, Client: srv.Client(), Logger: quiet(),
@@ -197,7 +197,7 @@ func TestWebhookRetriesThenSucceeds(t *testing.T) {
 
 func TestWebhookReportsAPersistentFailure(t *testing.T) {
 	rec := &receiver{fail: 99}
-	srv := httptest.NewServer(rec.handler())
+	srv := httptest.NewTLSServer(rec.handler())
 	defer srv.Close()
 	h, err := eventsink.Webhook(eventsink.WebhookConfig{
 		URL: srv.URL, Client: srv.Client(), Logger: quiet(),
@@ -220,7 +220,7 @@ func TestWebhookReportsAPersistentFailure(t *testing.T) {
 
 func TestWebhookStopsOnCancellation(t *testing.T) {
 	rec := &receiver{fail: 99}
-	srv := httptest.NewServer(rec.handler())
+	srv := httptest.NewTLSServer(rec.handler())
 	defer srv.Close()
 	h, err := eventsink.Webhook(eventsink.WebhookConfig{
 		URL: srv.URL, Client: srv.Client(), Logger: quiet(),
@@ -245,7 +245,7 @@ func TestWebhookNeedsAURL(t *testing.T) {
 // An unreachable receiver is an error, not a panic.
 func TestWebhookReportsATransportFailure(t *testing.T) {
 	h, err := eventsink.Webhook(eventsink.WebhookConfig{
-		URL: "http://127.0.0.1:1", Logger: quiet(), Retries: -1, Clock: clock.Real{},
+		URL: "https://127.0.0.1:1", Logger: quiet(), Retries: -1, Clock: clock.Real{},
 	})
 	if err != nil {
 		t.Fatal(err)

@@ -1,5 +1,10 @@
 # Apple enterprise hardening — source and validation record
 
+This records the earlier payload and enrollment hardening. The later
+[ACME, administration and transport record](apple-conformant-security-hardening-2026-09-11.md)
+adds issuance recovery and breaking configuration changes. Its findings supplement
+the Apple capability reconciliation below.
+
 This implementation treats Apple MDM/DDM interoperability as a requirement.
 Apple protocol requirements and project security policy are distinguished below.
 The Apple Developer documentation was checked on 11 September 2026, including

@@ -28,6 +28,35 @@ func decodeBody(t *testing.T, resp *http.Response, v any) {
 	}
 }
 
+func TestPolicyCannotDelegateCredentialMutations(t *testing.T) {
+	a, m, _ := policyApp(t, nil)
+	token := mintPrincipal(t, m, adminauth.Principal{Name: "delegate"})
+	if _, err := m.PutPolicy(t.Context(), adminauth.Root, adminauth.Policy{
+		Name: "everything", Source: `permit(principal, action, resource);`,
+	}); err != nil {
+		t.Fatal(err)
+	}
+	url := serve(t, a).URL
+	for _, request := range []struct{ method, path, body string }{
+		{http.MethodPost, "/principals", `{"Name":"reserved"}`},
+		{http.MethodPatch, "/principals/delegate", `{"Roles":["admin"]}`},
+		{http.MethodPost, "/principals/delegate/rotate", ""},
+		{http.MethodPost, "/principals/delegate/revoke", ""},
+		{http.MethodDelete, "/principals/delegate", ""},
+	} {
+		response := adminReq(t, url, request.method, "/admin/v1"+request.path, token, request.body)
+		response.Body.Close()
+		if response.StatusCode != http.StatusForbidden {
+			t.Fatalf("%s %s returned %d", request.method, request.path, response.StatusCode)
+		}
+	}
+	response := adminReq(t, url, http.MethodGet, "/admin/v1/principals", token, "")
+	response.Body.Close()
+	if response.StatusCode != http.StatusOK {
+		t.Fatal("policy-authorized principal listing was refused")
+	}
+}
+
 // The credential lifecycle an operator drives: create, use, rotate, revoke.
 func TestAdminPrincipalRoutes(t *testing.T) {
 	ctx := context.Background()

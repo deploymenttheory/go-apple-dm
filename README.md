@@ -39,18 +39,24 @@ DM_ROLE=all DM_STORAGE=inmem DM_ADMIN_TOKEN=dev-token go run ./server/cmd/dmserv
 In another terminal:
 
 ```sh
-curl http://localhost:8080/healthz
-go run ./server/cmd/dmctl -server http://localhost:8080 -token dev-token status
+curl http://127.0.0.1:8080/healthz
+go run ./server/cmd/dmctl -server http://127.0.0.1:8080 -token dev-token status
 ```
 
 This configuration loses state on restart. Device enrollment additionally requires a public
 HTTPS endpoint, a matching push topic and certificate, and a configured enrollment identity
 issuer. Read [enrollment security operations](docs/operations/enrollment-security.md) before
 enabling enrollment. Behind a TLS proxy, restrict certificate-header trust to that proxy.
+The listener defaults to `127.0.0.1:8080`. Remote listeners require
+`DM_TLS_CERT_FILE` and `DM_TLS_KEY_FILE`; this also applies to container networks.
+Remote `dmctl` connections require HTTPS with verified trust. Use `-ca-file`
+or `DMCTL_CA_FILE` for a private CA. The former `-insecure` flag is rejected.
 
 `DM_ADMIN_TOKEN` grants unrestricted administrative access and bypasses policy. To use scoped
 credentials, enable the principal store, create principals and policies, then remove the
 bootstrap token and restart. `dmctl status` reports accepted authorization modes.
+Principal and credential mutations require root, including token rotation.
+Scoped principals retain their policy-authorized device operations and reads.
 
 The schema can also be inspected offline:
 
@@ -115,7 +121,8 @@ Configuration is read from `DM_*` environment variables. This table groups the m
 
 | Variables | Purpose |
 |---|---|
-| `DM_ROLE`, `DM_LISTEN`, `DM_STORAGE`, `DM_DSN` | Role, listen address, backend (`sqlite`, `postgres`, `mysql`, `inmem`), and DSN |
+| `DM_ROLE`, `DM_LISTEN`, `DM_STORAGE`, `DM_DSN` | Role, listen address (default `127.0.0.1:8080`), backend (`sqlite`, `postgres`, `mysql`, `inmem`), and DSN |
+| `DM_TLS_CERT_FILE`, `DM_TLS_KEY_FILE` | Server TLS certificate and private key; required for a non-loopback listener |
 | `DM_ADMIN_STORE` | Open the admin principal and Cedar policy store on this process's database, so `dmctl principals` and `dmctl policies` work. Disabled by default; enables principal and policy management routes |
 | `DM_ADMIN_TOKEN` | Break-glass bearer token for `/admin/v1/`. Authenticates as root and **bypasses policy**, has no expiry, and cannot be revoked without a restart. It exists because an empty principal store authenticates nobody: set it to create the first principals, then unset it and restart. Its use is audited under the actor `break-glass`, and `dmctl status` reports whether it is still accepted |
 | `DM_STORAGE_KEYS`, `DM_STORAGE_KEY_<NAME>`, `DM_SECRETS_DIR`, `DM_STORAGE_KEYS_STRICT` | Keys sealing the secret columns of a persistent store: escrow and private keys, raw check-ins and command/results, protocol state and credential-bearing declarations. `DM_STORAGE_KEYS` lists key names active-first, and the material comes from `DM_STORAGE_KEY_<NAME>` or from files in `DM_SECRETS_DIR`. A rotation prepends a name and runs `Rewrap`; `DM_STORAGE_KEYS_STRICT` then refuses any row still in clear. A persistent backend will not start without this |
@@ -133,7 +140,7 @@ Configuration is read from `DM_*` environment variables. This table groups the m
 | `DM_RETURN_TO_SERVICE` | Enable the `ReturnToService` response that authorizes erasure and re-enrollment. Disabled by default; device eligibility follows Apple's protocol requirements |
 | `DM_AXM_CLIENT_ID`, `DM_AXM_KEY_ID`, `DM_AXM_KEY_FILE`, `DM_AXM_SCOPE`, `DM_AXM_BASE_URL`, `DM_AXM_TOKEN_URL` | Apple Business Manager API credentials; enables `/admin/v1/axm/` |
 | `DM_AUDIT_STORE`, `DM_AUDIT_RETENTION` | Persist projected events to the audit trail on this process's database, and how long to keep records (unset keeps them forever). Read it at `GET /admin/v1/audit` or with `dmctl audit list --since 1h` |
-| `DM_AUDIT_LOG`, `DM_WEBHOOK_URL`, `DM_WEBHOOK_HMAC_KEY` | Event sinks: a projected slog record per state change, and a MicroMDM-compatible webhook with an optional SHA-256 body signature. Both off by default. The webhook envelope matches MicroMDM and NanoMDM except that it carries no `raw_payload`, because theirs is the raw check-in body and a `TokenUpdate` body contains the device unlock token |
+| `DM_AUDIT_LOG`, `DM_WEBHOOK_URL`, `DM_WEBHOOK_HMAC_KEY`, `DM_WEBHOOK_ROOT_CA_FILE` | Event sinks: projected slog records and an HTTPS-only MicroMDM-compatible webhook with optional SHA-256 body signatures. Both off by default. A PEM root bundle configures private webhook trust. The envelope omits `raw_payload`, which can contain a device unlock token |
 | `DM_DEP_BASE_URL`, `DM_DEP_SYNC_INTERVAL`, `DM_DEP_ASSIGN_INTERVAL`, `DM_DEP_PROFILE_URL`, `DM_DEP_USE_PUT` | Device enrollment service endpoint, the background sync worker, and the DEP profile URL (defaults to this server) |
 | `DM_PUSH_SOURCE`, `DM_PUSH_CERT_FILE`, `DM_PUSH_KEY_FILE`, `DM_PUSH_HOST`, `DM_PUSH_COALESCE`, `DM_PUSH_CERT_TTL` | Where APNs credentials come from and how pushes are shaped: `off`, `file` (the PEM pair, selected implicitly when a certificate file is configured) or `store` (the push certificate store). The APNs topic is derived from the push certificate; `DM_PUSH_TOPIC` separately configures the enrollment profile topic; `DM_PUSH_HOST` overrides the APNs endpoint for a lab, `DM_PUSH_COALESCE` is the window repeated pushes collapse into (negative disables it), and `DM_PUSH_CERT_TTL` how long a store-backed certificate is cached before its version is rechecked |
 | `DM_PKI_REVOCATION`, `DM_RATE_LIMITS` | Certificate revocation is enabled by default; inbound rate limiting requires configuration. See [enrollment security operations](docs/operations/enrollment-security.md) for their configuration and operational requirements. |

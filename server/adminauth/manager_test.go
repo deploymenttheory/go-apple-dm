@@ -6,10 +6,10 @@ import (
 	"testing"
 	"time"
 
+	"github.com/deploymenttheory/go-apple-dm/clock"
 	"github.com/deploymenttheory/go-apple-dm/server/adminauth"
 	"github.com/deploymenttheory/go-apple-dm/server/adminauth/adminauthtest"
 	"github.com/deploymenttheory/go-apple-dm/server/adminauth/inmem"
-	"github.com/deploymenttheory/go-apple-dm/clock"
 )
 
 // newRoot creates the first root principal, as a deployment's bootstrap does.
@@ -177,68 +177,36 @@ func TestAdministration(t *testing.T) {
 		}
 	})
 
-	// Ported from Zentral's can_issue_credentials_for.
-	t.Run("SubsetOnlyIssuance", func(t *testing.T) {
+	t.Run("CredentialMutationsRequireRoot", func(t *testing.T) {
 		m, _, _ := manager(t)
-		newRoot(t, m, "root")
-		root, _ := m.Principal(ctx, "root")
-		if _, _, err := m.CreatePrincipal(ctx, root, adminauth.Principal{Name: "ops", Roles: []string{"a", "b"}}, time.Time{}); err != nil {
+		root, _ := newRoot(t, m, "root")
+		ops, _, err := m.CreatePrincipal(ctx, root, adminauth.Principal{Name: "ops", Roles: []string{"a", "b"}}, time.Time{})
+		if err != nil {
 			t.Fatal(err)
 		}
-		ops, _ := m.Principal(ctx, "ops")
-		// ops holds a and b, so it may create a principal with a subset.
-		if _, _, err := m.CreatePrincipal(ctx, ops, adminauth.Principal{Name: "sub", Roles: []string{"a"}}, time.Time{}); err != nil {
-			t.Fatalf("subset grant refused: %v", err)
+		for _, p := range []adminauth.Principal{{Name: "sub", Roles: []string{"a"}}, {Name: "up", Roles: []string{"c"}}, {Name: "up2", Root: true}} {
+			if _, _, err := m.CreatePrincipal(ctx, ops, p, time.Time{}); !errors.Is(err, adminauth.ErrDenied) {
+				t.Fatalf("delegated issuance: %v", err)
+			}
 		}
-		// It may not grant a role it does not hold.
-		if _, _, err := m.CreatePrincipal(ctx, ops, adminauth.Principal{Name: "up", Roles: []string{"c"}}, time.Time{}); !errors.Is(err, adminauth.ErrEscalation) {
-			t.Fatalf("granting an unheld role: %v, want ErrEscalation", err)
+		if _, _, err := m.Rotate(ctx, ops, "ops", time.Time{}); !errors.Is(err, adminauth.ErrDenied) {
+			t.Fatalf("delegated rotation: %v", err)
 		}
-		// Nor may it make anyone root, which would hand over policy editing.
-		if _, _, err := m.CreatePrincipal(ctx, ops, adminauth.Principal{Name: "up2", Root: true}, time.Time{}); !errors.Is(err, adminauth.ErrEscalation) {
-			t.Fatalf("granting root: %v, want ErrEscalation", err)
+		if err := m.Revoke(ctx, ops, "ops"); !errors.Is(err, adminauth.ErrDenied) {
+			t.Fatalf("delegated revoke: %v", err)
 		}
-		// Nor act on a credential more privileged than its own.
-		sub, _ := m.Principal(ctx, "sub")
-		if _, _, err := m.Rotate(ctx, sub, "ops", time.Time{}); !errors.Is(err, adminauth.ErrEscalation) {
-			t.Fatalf("rotating a superior credential: %v, want ErrEscalation", err)
+		if err := m.DeletePrincipal(ctx, ops, "ops"); !errors.Is(err, adminauth.ErrDenied) {
+			t.Fatalf("delegated delete: %v", err)
 		}
-		if err := m.Revoke(ctx, sub, "ops"); !errors.Is(err, adminauth.ErrEscalation) {
-			t.Fatalf("revoking a superior credential: %v", err)
+		if _, err := m.UpdatePrincipal(ctx, ops, "ops", []string{"a"}, false); !errors.Is(err, adminauth.ErrDenied) {
+			t.Fatalf("delegated update: %v", err)
 		}
-		if err := m.DeletePrincipal(ctx, sub, "ops"); !errors.Is(err, adminauth.ErrEscalation) {
-			t.Fatalf("deleting a superior credential: %v", err)
-		}
-		if _, err := m.UpdatePrincipal(ctx, sub, "ops", []string{"a", "b"}, false); !errors.Is(err, adminauth.ErrEscalation) {
-			t.Fatalf("updating a superior credential: %v", err)
-		}
-	})
-
-	// A principal a policy names directly no longer derives its authority
-	// from its roles, so the role subset test cannot bound it.
-	t.Run("PrincipalNamedByPolicyIsRefused", func(t *testing.T) {
-		m, _, _ := manager(t)
-		newRoot(t, m, "root")
-		root, _ := m.Principal(ctx, "root")
+		put(t, m, "special", `permit (principal == MDM::Principal::"special", action, resource);`)
 		if _, _, err := m.CreatePrincipal(ctx, root, adminauth.Principal{Name: "special"}, time.Time{}); err != nil {
 			t.Fatal(err)
 		}
-		if _, _, err := m.CreatePrincipal(ctx, root, adminauth.Principal{Name: "peer"}, time.Time{}); err != nil {
-			t.Fatal(err)
-		}
-		peer, _ := m.Principal(ctx, "peer")
-		// Before any policy names it, a peer may rotate it.
-		if _, _, err := m.Rotate(ctx, peer, "special", time.Time{}); err != nil {
-			t.Fatalf("rotate before the policy: %v", err)
-		}
-		put(t, m, "special", `permit (principal == MDM::Principal::"special", action == MDM::Action::"enqueueCommand", resource);`)
-		if _, _, err := m.Rotate(ctx, peer, "special", time.Time{}); !errors.Is(err, adminauth.ErrEscalation) {
-			t.Fatalf("rotate after the policy names it: %v, want ErrEscalation", err)
-		}
-		// The principal may still rotate its own credential.
-		special, _ := m.Principal(ctx, "special")
-		if _, _, err := m.Rotate(ctx, special, "special", time.Time{}); err != nil {
-			t.Fatalf("self rotation refused: %v", err)
+		if _, _, err := m.Rotate(ctx, root, "special", time.Time{}); err != nil {
+			t.Fatalf("root rotation refused: %v", err)
 		}
 	})
 

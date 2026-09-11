@@ -12,10 +12,10 @@ import (
 	"io"
 	"log/slog"
 	"net/http"
-	"net/url"
 	"time"
 
 	"github.com/deploymenttheory/go-apple-dm/clock"
+	"github.com/deploymenttheory/go-apple-dm/internal/httpsurl"
 	"github.com/deploymenttheory/go-apple-dm/mdmprotocol/event"
 )
 
@@ -42,7 +42,7 @@ var errStatus = errors.New("sink: webhook rejected")
 
 // WebhookConfig configures Webhook. URL is required.
 type WebhookConfig struct {
-	// URL receives the POST.
+	// URL receives the POST over verified HTTPS.
 	URL string
 	// Registry decides what each event may publish. Default applies when nil.
 	Registry *Registry
@@ -99,15 +99,9 @@ func Webhook(cfg WebhookConfig) (event.Handler, error) {
 	// Parsed here rather than at delivery, so an unusable URL fails the
 	// build instead of failing every event quietly for the life of the
 	// process.
-	u, err := url.Parse(cfg.URL)
+	_, err := httpsurl.Parse(cfg.URL)
 	if err != nil {
 		return nil, fmt.Errorf("%w: %w", ErrWebhookConfig, err)
-	}
-	if u.Scheme != "http" && u.Scheme != "https" {
-		return nil, fmt.Errorf("%w: scheme %q is not http or https", ErrWebhookConfig, u.Scheme)
-	}
-	if u.Host == "" {
-		return nil, fmt.Errorf("%w: no host in %q", ErrWebhookConfig, cfg.URL)
 	}
 	if cfg.Registry == nil {
 		cfg.Registry = Default()
@@ -192,7 +186,7 @@ func deliver(ctx context.Context, cfg WebhookConfig, body []byte) error {
 func post(ctx context.Context, cfg WebhookConfig, body []byte) error {
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, cfg.URL, bytes.NewReader(body))
 	if err != nil {
-		return fmt.Errorf("sink: webhook request: %w", err)
+		return &deliveryError{cause: err}
 	}
 	req.Header.Set("Content-Type", ContentType)
 	if len(cfg.HMACKey) > 0 {
@@ -202,14 +196,21 @@ func post(ctx context.Context, cfg WebhookConfig, body []byte) error {
 	}
 	resp, err := cfg.Client.Do(req)
 	if err != nil {
-		return fmt.Errorf("sink: webhook post: %w", err)
+		return &deliveryError{cause: err}
 	}
 	defer resp.Body.Close()
-	// Read a bounded amount so the receiver's complaint reaches the log
-	// without letting it stream at us.
+	// Drain a bounded amount for connection reuse. Receiver body content
+	// is discarded, so it cannot put secrets or unbounded text in logs.
 	_, _ = io.Copy(io.Discard, io.LimitReader(resp.Body, DefaultMaxResponse))
 	if resp.StatusCode >= 300 {
 		return fmt.Errorf("%w: HTTP %d", errStatus, resp.StatusCode)
 	}
 	return nil
 }
+
+// net/http errors can contain the complete URL, including query credentials.
+// Keep their identity available to callers without serializing them into logs.
+type deliveryError struct{ cause error }
+
+func (*deliveryError) Error() string   { return "sink: webhook transport failed" }
+func (e *deliveryError) Unwrap() error { return e.cause }

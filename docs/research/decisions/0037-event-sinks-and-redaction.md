@@ -8,7 +8,7 @@ Events can contain protocol messages with escrowed secrets and private device da
 
 A projection registry selects fields for each event type. Unknown types emit metadata only. The slog sink, webhook and persisted audit trail consume projected records. Webhooks use the MicroMDM-compatible envelope while omitting `raw_payload`.
 
-Webhook delivery runs through the reference server's asynchronous event bus, with bounded response reads and retries. Construction validates the destination URL. Closing the application drains the bus.
+Webhook delivery runs through the reference server's asynchronous event bus, with bounded response reads and retries. Construction requires HTTPS and rejects URL credentials and fragments. Redirects are refused. `DM_WEBHOOK_ROOT_CA_FILE` supplies a private CA bundle without disabling hostname verification. Transport error strings omit the configured URL, including sensitive path/query values; trusted callers can still inspect wrapped causes. Closing the application drains the bus.
 
 ## Rationale
 

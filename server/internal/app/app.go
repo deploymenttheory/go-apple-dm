@@ -188,6 +188,8 @@ type SinkConfig struct {
 	// WebhookURL receives projected events in a MicroMDM-compatible envelope without
 	// raw_payload.
 	WebhookURL string
+	// WebhookRootCAFile configures private HTTPS trust for the receiver.
+	WebhookRootCAFile string
 	// WebhookHMACKey signs the webhook body when set.
 	WebhookHMACKey []byte
 	// Persist writes every event to the audit trail on the process's own
@@ -831,7 +833,12 @@ func (a *App) wireSinks(ctx context.Context) error {
 		a.cfg.Bus.Subscribe(event.All, auditSink(store, reg))
 	}
 	if a.cfg.Sinks.WebhookURL != "" {
+		client, err := outboundClient(nil, a.cfg.Sinks.WebhookRootCAFile)
+		if err != nil {
+			return fmt.Errorf("app: webhook trust: %w", err)
+		}
 		h, err := eventsink.Webhook(eventsink.WebhookConfig{
+			Client:   client,
 			URL:      a.cfg.Sinks.WebhookURL,
 			Registry: reg,
 			HMACKey:  a.cfg.Sinks.WebhookHMACKey,

@@ -2,16 +2,19 @@ package app_test
 
 import (
 	"context"
+	"encoding/pem"
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"os"
+	"path/filepath"
 	"strings"
 	"sync"
 	"testing"
 	"time"
 
-	"github.com/deploymenttheory/go-apple-dm/server/internal/app"
 	"github.com/deploymenttheory/go-apple-dm/mdmprotocol/mdm"
+	"github.com/deploymenttheory/go-apple-dm/server/internal/app"
 	"github.com/deploymenttheory/go-apple-dm/storage"
 )
 
@@ -24,9 +27,18 @@ type collector struct {
 
 func newCollector() *collector { return &collector{got: make(chan struct{}, 64)} }
 
+func webhookRoot(t *testing.T, srv *httptest.Server) string {
+	t.Helper()
+	path := filepath.Join(t.TempDir(), "webhook-root.pem")
+	if err := os.WriteFile(path, pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: srv.Certificate().Raw}), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	return path
+}
+
 func (c *collector) server(t *testing.T) *httptest.Server {
 	t.Helper()
-	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	srv := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		body, _ := io.ReadAll(r.Body)
 		c.mu.Lock()
 		c.bodies = append(c.bodies, string(body))
@@ -77,7 +89,7 @@ func TestWebhookSinkReceivesEnrollmentEvents(t *testing.T) {
 	srv := c.server(t)
 	a := build(t, app.Config{
 		Role: app.RoleAll, Storage: "inmem", Listen: ":0",
-		Sinks: app.SinkConfig{Audit: true, WebhookURL: srv.URL},
+		Sinks: app.SinkConfig{Audit: true, WebhookURL: srv.URL, WebhookRootCAFile: webhookRoot(t, srv)},
 	})
 	if a.Core == nil {
 		t.Fatal("core missing")
@@ -98,7 +110,7 @@ func TestCloseDrainsTheEventBus(t *testing.T) {
 	srv := c.server(t)
 	a, err := app.Build(context.Background(), app.Config{
 		Role: app.RoleAll, Storage: "inmem", Listen: ":0", Logger: quiet,
-		Sinks: app.SinkConfig{WebhookURL: srv.URL},
+		Sinks: app.SinkConfig{WebhookURL: srv.URL, WebhookRootCAFile: webhookRoot(t, srv)},
 	})
 	if err != nil {
 		t.Fatal(err)

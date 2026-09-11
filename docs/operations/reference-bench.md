@@ -6,9 +6,11 @@ for workspace commands and the [testing guide](../testing/bench.md) for test lay
 
 ## Runtime and configuration
 
-`dmserver` uses the shared HTTP/worker lifecycle. Native TLS is optional; existing
-HTTP-behind-a-proxy deployments retain their behavior. On shutdown, requests drain
-before workers stop and connections/storage close. `/healthz` checks storage;
+`dmserver` uses the shared HTTP/worker lifecycle. Native TLS is required for
+remote listeners. A TLS proxy can forward over literal-loopback HTTP or verified
+TLS to a remote backend. The default listener is `127.0.0.1:8080`, including in
+the container image. On shutdown, requests drain before workers stop and
+connections/storage close. `/healthz` checks storage;
 `/readyz` additionally requires configured workers to be running.
 
 | Setting | Behavior |
@@ -24,6 +26,7 @@ before workers stop and connections/storage close. `/healthz` checks storage;
 | `DM_REQUIRE_USER_AUTH` | Existing switch requiring successful authentication before user TokenUpdate |
 | `DM_OTA_ANCHOR_FILE`, `DM_OTA_CHALLENGE` | Explicit bootstrap-device roots and admission challenge for `/ota`; requires SCEP identity mode |
 | `DMCTL_CA_FILE` / `dmctl -ca-file` | Additional server trust roots for administration without disabling TLS verification |
+| `DM_WEBHOOK_ROOT_CA_FILE` | Private CA bundle for the HTTPS-only event webhook |
 
 User HA1 values are password-equivalent credentials: store the file with private
 permissions. OTA phase two additionally verifies the issued identity's subject

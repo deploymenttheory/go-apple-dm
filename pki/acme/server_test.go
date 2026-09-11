@@ -151,16 +151,13 @@ func TestNew(t *testing.T) {
 		}
 	})
 
-	t.Run("HTTPBaseIsAccepted", func(t *testing.T) {
-		// A deployment behind a TLS-terminating proxy publishes https, but
-		// a lab or a test harness serves plain HTTP, and the scheme check
-		// exists to catch a missing one rather than to demand TLS.
+	for _, endpoint := range []string{"http://127.0.0.1:8080", "https://", "https://user:secret@mdm.example", "https://mdm.example/#secret", "https://mdm.example/?token=secret"} {
 		cfg := valid()
-		cfg.BaseURL = "http://localhost:8080"
-		if _, err := acme.New(cfg); err != nil {
-			t.Fatal(err)
+		cfg.BaseURL = endpoint
+		if _, err := acme.New(cfg); !errors.Is(err, acme.ErrConfig) || strings.Contains(err.Error(), "secret") {
+			t.Fatalf("invalid endpoint accepted or disclosed: %v", err)
 		}
-	})
+	}
 }
 
 // TestSignedRequest covers RFC 8555 section 6: everything the server checks

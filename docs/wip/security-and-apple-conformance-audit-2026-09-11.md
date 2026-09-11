@@ -1,5 +1,10 @@
 # Security and Apple device-management conformance audit
 
+This records an earlier remediation baseline. The later
+[ACME, administration and transport hardening record](apple-conformant-security-hardening-2026-09-11.md)
+documents subsequent changes; current user expectations are in the
+[operations guide](../operations/enrollment-security.md).
+
 Date: 11 September 2026. Scope: the Go library and reference server, including shared storage contracts and protocol adapters. Reviewed baseline: `bbb779a29d99adddf36c95de8db698afa125ea26`; remediation is in the accompanying change set. Apple's device-management schema remains pinned to `67045e2fa06f528b196c01edee6a8bf88b844beb`. No schema or dependency upgrade is part of this change.
 
 Seven findings were corrected: three security defects and four protocol/conformance defects. The most consequential security changes authenticate SCEP responses and replace single-DES message encryption. The macOS correction provides usable declarative ACME credentials with Apple's required flags, using authorization from an existing enrollment. Initial ACME enrollment continues to require attestation by default.

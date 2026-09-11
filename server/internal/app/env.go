@@ -34,6 +34,8 @@ const (
 	EnvAudit = "DM_AUDIT_LOG"
 	// EnvWebhookURL receives an event per POST in the MicroMDM envelope.
 	EnvWebhookURL = "DM_WEBHOOK_URL"
+	// EnvWebhookRootCAFile supplies a private trust bundle for HTTPS webhooks.
+	EnvWebhookRootCAFile = "DM_WEBHOOK_ROOT_CA_FILE"
 	// EnvAuditStore persists every event to the audit trail.
 	EnvAuditStore = "DM_AUDIT_STORE"
 	// EnvAuditRetention is how long audit records are kept.
@@ -99,7 +101,7 @@ const (
 // Defaults applied by ParseEnv when a variable is unset.
 const (
 	DefaultRole    = RoleAll
-	DefaultListen  = ":8080"
+	DefaultListen  = "127.0.0.1:8080"
 	DefaultStorage = "sqlite"
 	DefaultDSN     = "dm.db"
 )
@@ -142,8 +144,9 @@ func ParseEnv(get func(string) string) (Config, error) {
 		SecretsDir:    get(EnvSecretsDir),
 		AdminToken:    get(EnvAdminToken),
 		Sinks: SinkConfig{
-			WebhookURL:     get(EnvWebhookURL),
-			WebhookHMACKey: []byte(get(EnvWebhookHMACKey)),
+			WebhookURL:        get(EnvWebhookURL),
+			WebhookRootCAFile: get(EnvWebhookRootCAFile),
+			WebhookHMACKey:    []byte(get(EnvWebhookHMACKey)),
 		},
 		CAFile:        get(EnvCAFile),
 		CertHeader:    get(EnvCertHeader),

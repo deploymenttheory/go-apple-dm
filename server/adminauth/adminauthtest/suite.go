@@ -22,6 +22,7 @@ func RunSuite(t *testing.T, newStore NewStore) {
 	t.Run("Principals", func(t *testing.T) { runPrincipals(t, newStore) })
 	t.Run("Tokens", func(t *testing.T) { runTokens(t, newStore) })
 	t.Run("Policies", func(t *testing.T) { runPolicies(t, newStore) })
+	t.Run("ActiveRoot", func(t *testing.T) { runActiveRoot(t, newStore) })
 }
 
 func principal(name string, roles ...string) adminauth.Principal {

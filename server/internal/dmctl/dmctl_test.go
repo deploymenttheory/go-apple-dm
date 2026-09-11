@@ -311,10 +311,10 @@ func TestServerVerbs(t *testing.T) {
 		}
 	})
 
-	t.Run("InsecureWarns", func(t *testing.T) {
-		_, errOut, _ := run(t, env, "-insecure", "status")
-		if !strings.Contains(errOut, "insecure") {
-			t.Fatalf("no warning printed:\n%s", errOut)
+	t.Run("InsecureRejected", func(t *testing.T) {
+		_, errOut, err := run(t, env, "-insecure", "status")
+		if !errors.Is(err, dmctl.ErrUsage) || !strings.Contains(errOut, "-ca-file") {
+			t.Fatalf("want rejection and trust migration advice: %v\n%s", err, errOut)
 		}
 	})
 

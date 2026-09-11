@@ -91,7 +91,7 @@ func TestParseEnv(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		if cfg.Role != app.RoleAll || cfg.Listen != ":8080" || cfg.Storage != "sqlite" ||
+		if cfg.Role != app.RoleAll || cfg.Listen != app.DefaultListen || cfg.Storage != "sqlite" ||
 			cfg.DSN != "dm.db" ||
 			!cfg.Subscriptions {
 			t.Fatalf("cfg = %+v", cfg)

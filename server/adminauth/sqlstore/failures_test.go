@@ -28,10 +28,19 @@ func TestWriteFailuresSurface(t *testing.T) {
 	}
 	// Seed one of each so the read paths have something to find before the
 	// pool goes away.
-	if _, err := s.CreatePrincipal(ctx, adminauth.Principal{Name: "alice"}, "d", time.Now()); err != nil {
+	if _, err := s.CreatePrincipal(
+		ctx,
+		adminauth.Principal{Name: "alice"},
+		"d",
+		time.Now(),
+	); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := s.PutPolicy(ctx, adminauth.Policy{Name: "p", Source: "permit (principal, action, resource);"}, time.Now()); err != nil {
+	if _, err := s.PutPolicy(
+		ctx,
+		adminauth.Policy{Name: "p", Source: "permit (principal, action, resource);"},
+		time.Now(),
+	); err != nil {
 		t.Fatal(err)
 	}
 	if err := db.Close(); err != nil {
@@ -40,6 +49,10 @@ func TestWriteFailuresSurface(t *testing.T) {
 
 	now := time.Now()
 	for name, call := range map[string]func() error{
+		"ApplyPrincipal": func() error {
+			_, err := s.ApplyPrincipal(ctx, "alice", adminauth.PrincipalChange{Op: "revoke"}, now)
+			return err
+		},
 		"CreatePrincipal": func() error {
 			_, err := s.CreatePrincipal(ctx, adminauth.Principal{Name: "bob"}, "d2", now)
 			return err
@@ -123,7 +136,15 @@ func TestMigrationFailuresSurface(t *testing.T) {
 	if _, err := sqlstore.Migrate(ctx, db, bad); !errors.Is(err, sqlstore.ErrUnsupportedDialect) {
 		t.Fatalf("Migrate: %v", err)
 	}
-	if _, err := sqlstore.Rollback(ctx, db, bad, 0); !errors.Is(err, sqlstore.ErrUnsupportedDialect) {
+	if _, err := sqlstore.Rollback(
+		ctx,
+		db,
+		bad,
+		0,
+	); !errors.Is(
+		err,
+		sqlstore.ErrUnsupportedDialect,
+	) {
 		t.Fatalf("Rollback: %v", err)
 	}
 }

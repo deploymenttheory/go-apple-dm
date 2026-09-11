@@ -7,6 +7,10 @@
 // as digests, and revocable. Route actions and request context are evaluated
 // under default-deny Cedar policies. Root administration, credential-issuance
 // restrictions and last-root protection are enforced outside policy grants.
+// Only root may mutate principals or credentials, including self-rotation;
+// role subsets do not establish equivalent authority under arbitrary Cedar.
+// Store.ApplyPrincipal atomically preserves an active root under concurrent
+// credential changes. Natural expiry and policy lockout remain operator concerns.
 //
 // The reference server separately accepts DM_ADMIN_TOKEN as a root credential
 // that bypasses policy, including when a principal store is configured. Its use

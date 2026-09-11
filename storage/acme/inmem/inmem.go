@@ -100,6 +100,19 @@ func (s *Store) Update(_ context.Context, fn func(acme.Tx) error) error {
 	return nil
 }
 
+// UpdateOrder implements acme.Store using the same transaction lock as Update.
+func (s *Store) UpdateOrder(ctx context.Context, id string, fn func(acme.Tx) error) error {
+	if fn == nil {
+		return fmt.Errorf("%w: nil UpdateOrder callback", acme.ErrInvalid)
+	}
+	return s.Update(ctx, func(tx acme.Tx) error {
+		if _, err := tx.GetOrder(ctx, id); err != nil {
+			return err
+		}
+		return fn(tx)
+	})
+}
+
 // view runs a read against the live state under the lock.
 func (s *Store) view() (*tx, func()) {
 	s.mu.Lock()

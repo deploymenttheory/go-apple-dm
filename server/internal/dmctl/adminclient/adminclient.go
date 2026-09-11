@@ -11,6 +11,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/netip"
 	"net/url"
 	"os"
 	"strings"
@@ -48,7 +49,8 @@ type Config struct {
 	Token string
 	// Timeout bounds one request; zero uses DefaultTimeout.
 	Timeout time.Duration
-	// Insecure skips TLS verification. The CLI warns on every use.
+	// Insecure is retained to report a configuration error to older callers.
+	// TLS verification cannot be disabled; configure CAFile for private trust.
 	Insecure bool
 	// HTTPClient overrides the transport, for tests.
 	HTTPClient *http.Client
@@ -74,7 +76,7 @@ func New(cfg Config) (*Client, error) {
 	}
 	u, err := url.Parse(strings.TrimRight(cfg.BaseURL, "/"))
 	if err != nil {
-		return nil, fmt.Errorf("%w: server URL: %w", ErrConfig, err)
+		return nil, fmt.Errorf("%w: malformed server URL", ErrConfig)
 	}
 	if u.Scheme != "http" && u.Scheme != "https" {
 		return nil, fmt.Errorf("%w: server URL scheme %q (want http or https)", ErrConfig, u.Scheme)
@@ -82,12 +84,34 @@ func New(cfg Config) (*Client, error) {
 	if u.Host == "" {
 		return nil, fmt.Errorf("%w: server URL has no host", ErrConfig)
 	}
+	if u.User != nil || u.Fragment != "" || u.RawQuery != "" || u.ForceQuery || u.Opaque != "" {
+		return nil, fmt.Errorf(
+			"%w: server URL must not contain credentials, query or fragment",
+			ErrConfig,
+		)
+	}
+	if u.Scheme == "http" {
+		ip, err := netip.ParseAddr(u.Hostname())
+		if err != nil || !ip.IsLoopback() {
+			return nil, fmt.Errorf(
+				"%w: remote administration requires HTTPS; local HTTP requires a literal loopback address",
+				ErrConfig,
+			)
+		}
+	}
+	if cfg.Insecure {
+		return nil, fmt.Errorf(
+			"%w: TLS verification cannot be disabled; configure a trusted CA file",
+			ErrConfig,
+		)
+	}
 	hc := cfg.HTTPClient
 	if hc == nil {
 		hc = &http.Client{}
+	} else {
+		clone := *hc
+		hc = &clone
 	}
-	// Insecure affects only an HTTP client constructed here. A supplied client
-	// retains its transport and TLS policy.
 	if cfg.CAFile != "" && cfg.HTTPClient == nil {
 		b, err := os.ReadFile(cfg.CAFile)
 		if err != nil {
@@ -102,13 +126,6 @@ func New(cfg Config) (*Client, error) {
 		}
 		hc.Transport = &http.Transport{
 			TLSClientConfig: &tls.Config{MinVersion: tls.VersionTLS12, RootCAs: roots},
-		}
-	}
-	if cfg.Insecure && cfg.HTTPClient == nil {
-		hc.Transport = &http.Transport{
-			// #nosec G402 -- the operator asked for this explicitly with
-			// -insecure, and it is refused for anything but a lab above.
-			TLSClientConfig: &tls.Config{InsecureSkipVerify: true, MinVersion: tls.VersionTLS12},
 		}
 	}
 	if cfg.Timeout > 0 {

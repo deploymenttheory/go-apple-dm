@@ -21,6 +21,15 @@ type Failing struct {
 
 func (f *Failing) fails(name string) bool { return f.Fail == name }
 
+// ApplyPrincipal implements adminauth.Store, including lifecycle fault injection.
+func (f *Failing) ApplyPrincipal(ctx context.Context, name string, change adminauth.PrincipalChange, now time.Time) (adminauth.Principal, error) {
+	method := map[string]string{"update": "UpdatePrincipal", "rotate": "SetToken", "revoke": "RevokeToken", "delete": "DeletePrincipal"}[change.Op]
+	if f.fails("ApplyPrincipal") || f.fails("CountRoot") || f.fails(method) {
+		return adminauth.Principal{}, ErrFailing
+	}
+	return f.Store.ApplyPrincipal(ctx, name, change, now)
+}
+
 // CreatePrincipal implements adminauth.Store.
 func (f *Failing) CreatePrincipal(ctx context.Context, p adminauth.Principal, digest string, now time.Time) (adminauth.Principal, error) {
 	if f.fails("CreatePrincipal") {

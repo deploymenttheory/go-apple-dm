@@ -67,9 +67,9 @@ var (
 	ErrExpired = errors.New("adminauth: token expired")
 	// ErrDenied is an authorization decision of deny.
 	ErrDenied = errors.New("adminauth: denied")
-	// ErrLastRoot guards the last root principal against deletion, demotion,
-	// or revocation, so an operator cannot lock themselves out of policy
-	// administration. step-ca protects its last super admin the same way.
+	// ErrLastRoot guards the last active root credential against deletion,
+	// demotion, revocation or immediate expiry. Natural expiry still requires
+	// operational rotation before all root credentials expire.
 	ErrLastRoot = errors.New("adminauth: last root principal")
 	// ErrEscalation is an attempt to issue a credential for a principal whose
 	// authority the caller does not already hold.
@@ -113,15 +113,10 @@ func (p Principal) Entity() types.Entity {
 	return types.Entity{UID: p.UID(), Parents: types.NewEntityUIDSet(parents...)}
 }
 
-// Covers reports whether p may issue a credential for other: it must hold
-// every role other does, and be root if other is. This is the subset test
-// that stops a principal issuing a credential more privileged than its own,
-// ported from Zentral's can_issue_credentials_for.
-//
-// A root principal covers everything, as Zentral's superuser does. Requiring
-// root to hold every role it grants would make the first grant of a new role
-// impossible, since a role exists only by being named on a principal or in a
-// policy.
+// Covers compares role membership and the root flag. It does not compare Cedar
+// authority: policies can grant permissions directly to a named principal or
+// distinguish otherwise identical roles using context and forbid clauses.
+// Credential administration therefore requires root independently of Covers.
 func (p Principal) Covers(other Principal) bool {
 	if p.Root {
 		return true
@@ -224,6 +219,11 @@ type Result[T any] struct {
 // A store never sees a plaintext token: the caller mints one, hands the store
 // its digest, and shows the value to the operator once.
 type Store interface {
+	// ApplyPrincipal serializes mutations across instances and refuses removal,
+	// revocation, expiry or demotion of the last active root credential. Older
+	// low-level write methods below are intended for import/storage tooling;
+	// authenticated administration must use this method.
+	ApplyPrincipal(ctx context.Context, name string, change PrincipalChange, now time.Time) (Principal, error)
 	// CreatePrincipal adds a principal with its first token digest. An
 	// existing name is ErrConflict.
 	CreatePrincipal(ctx context.Context, p Principal, digest string, now time.Time) (Principal, error)

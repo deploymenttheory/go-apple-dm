@@ -10,13 +10,23 @@ The server implements directory, nonce, account, order, authorization, challenge
 
 Client validation failures settle the challenge/order as appropriate; infrastructure or policy lookup errors leave retryable state. A bad CSR leaves the order ready. Optional revocation support advertises `revokeCert` only when configured. `keyChange` is not implemented.
 
+Public ACME URLs require HTTPS. Existing order transitions use `Store.UpdateOrder`
+to lock before reading. Pure signing commits a CSR-bound certificate receipt and
+`processing` state before idempotent registry/depot callbacks. A successful
+registration commits `valid` and enables certificate download. Order polling and
+same-CSR finalize retries can complete a persisted receipt after a restart;
+admission and attested key checks apply again. Delayed challenge results cannot
+overwrite completed issuance. This implements the project's one-order issuance
+policy, which Apple permits through `ClientIdentifier`; Apple does not mandate
+this particular locking or receipt design. See the [evidence record](../../wip/apple-conformant-security-hardening-2026-09-11.md).
+
 ## Rationale
 
 Bound identifiers authorize a specific enrollment attempt without relying on a public serial number. Transactional state prevents competing requests from consuming the same grant. Distinct client and server errors preserve recoverable orders.
 
 ## Constraints
 
-Supported identifiers and JWS forms are intentionally bounded. Revocation requires issuance provenance and the registry described in record 0047. Certificate issuance, protocol state and external policy calls do not form a distributed transaction.
+Supported identifiers and JWS forms are intentionally bounded. Revocation requires issuance provenance and the registry described in record 0047. Protocol state and external registration calls do not form a distributed transaction: callers must supply a pure signer and idempotent registration, and all replicas must share issuer material and policy. Stop older writers before deploying the changed store contract. Completed legacy records remain readable without a SQL migration.
 
 ## Verification
 
