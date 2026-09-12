@@ -183,7 +183,9 @@ func notNow(ctx context.Context, e *Environment, _ string) error {
 		}
 		return simulator.AcknowledgeAll(c)
 	}
-	if _, err = enqueue(ctx, e, d, &commands.DeviceInformation{}); err != nil {
+	if _, err = enqueue(ctx, e, d, &commands.DeviceInformation{
+		Queries: []string{"OSVersion"},
+	}); err != nil {
 		return wrapError(err)
 	}
 	got, err := d.Connect(ctx)
@@ -222,7 +224,7 @@ func commandError(ctx context.Context, e *Environment, _ string) error {
 			ErrorChain: []mdm.ErrorChainItem{{ErrorCode: 12001, ErrorDomain: "Bench"}},
 		}
 	}
-	cmd, err := enqueue(ctx, e, d, &commands.DeviceInformation{})
+	cmd, err := enqueue(ctx, e, d, &commands.DeviceInformation{Queries: []string{"OSVersion"}})
 	if err != nil {
 		return wrapError(err)
 	}
@@ -253,7 +255,7 @@ func reenroll(ctx context.Context, e *Environment, _ string) error {
 	if err != nil {
 		return err
 	}
-	cmd, err := enqueue(ctx, e, d, &commands.DeviceInformation{})
+	cmd, err := enqueue(ctx, e, d, &commands.DeviceInformation{Queries: []string{"OSVersion"}})
 	if err != nil {
 		return err
 	}
@@ -290,7 +292,9 @@ func scepPush(ctx context.Context, e *Environment, _ string) error {
 	if err != nil {
 		return wrapError(err)
 	}
-	if _, err = enqueue(ctx, e, d, &commands.DeviceInformation{}); err != nil {
+	if _, err = enqueue(ctx, e, d, &commands.DeviceInformation{
+		Queries: []string{"OSVersion"},
+	}); err != nil {
 		return wrapError(err)
 	}
 	var res struct{ Sent bool }

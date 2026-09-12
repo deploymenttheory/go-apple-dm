@@ -21,8 +21,10 @@ func TestAuthorizedReplacementPreservesEnrollment(t *testing.T) {
 			id := mdm.EnrollmentID{Channel: mdm.ChannelDevice, ID: "D1"}
 			enroll(t, h, id.ID)
 			_ = h.store.StoreBootstrapToken(ctx, id, []byte("escrow"), t0)
-			cmd, _ := mdm.NewCommand(&commands.DeviceInformation{}, mdm.WithUUID("inventory"))
-			_, _ = h.core.Enqueue(ctx, []mdm.EnrollmentID{id}, cmd, storage.EnqueueOptions{})
+			cmd, _ := mdm.NewCommand(&commands.DeviceInformation{Queries: []string{"OSVersion"}}, mdm.WithUUID("inventory"))
+			if _, err := h.core.Enqueue(ctx, []mdm.EnrollmentID{id}, cmd, storage.EnqueueOptions{}); err != nil {
+				t.Fatal(err)
+			}
 			install, _ := mdm.NewCommand(&commands.InstallProfile{Payload: []byte("p")}, mdm.WithUUID("update"))
 			_, err := h.store.TransitionReplacement(ctx, id, storage.ReplacementChange{Op: "begin", At: t0, Begin: &storage.Replacement{ID: "update", Method: "acme", OldHash: cms.Fingerprint(h.cert), ExpiresAt: t0.Add(time.Minute), Command: *install}})
 			if err != nil {

@@ -5208,8 +5208,8 @@ svg[data-purpose-filter] g[data-purpose-highlight] > path { stroke-width: 2.4; }
         <path data-edge-from="yaml" data-edge-to="generatedfrom" data-edge-label="commit · digest" data-edge-key="5" data-edge-id="flow-6" data-purpose="artifact" data-composition-points="245,157;305,157;305,385;365,385" d="M 245 157 L 305 157 L 305 385 L 365 385" class="a-default purpose-arrow purpose-artifact" stroke-width="1.4" marker-end="url(#purpose-arrowhead-artifact)"/>
 
         <!-- Nodes -->
-        <g id="node-yaml" data-node-id="yaml" data-node-label="Apple schema repository" tabindex="0" role="button" aria-label="Focus Apple schema repository, Pinned upstream revision, 01 / Source" aria-pressed="false" data-node-kind="external" data-node-sublabel="Pinned upstream revision" data-node-tag="third_party" data-node-context="01 / Source" data-purpose="artifact">
-          <title>Apple schema repository · Pinned upstream revision · 01 / Source · third_party</title>
+        <g id="node-yaml" data-node-id="yaml" data-node-label="Apple schema repository" tabindex="0" role="button" aria-label="Focus Apple schema repository, OS 27 and historical release, 01 / Source" aria-pressed="false" data-node-kind="external" data-node-sublabel="OS 27 and historical release" data-node-tag="third_party" data-node-context="01 / Source" data-purpose="artifact">
+          <title>Apple schema repository · OS 27 and historical release · 01 / Source · third_party</title>
           <rect x="55" y="128" width="190" height="58" rx="6" class="c-mask"/>
           <rect x="55" y="128" width="190" height="58" rx="6" class="c-external" stroke-width="1.5"/>
           <g aria-hidden="true" data-semantic-sigil="external" class="semantic-sigil s-external" transform="translate(61 134) scale(0.6875)">
@@ -5217,19 +5217,19 @@ svg[data-purpose-filter] g[data-purpose-highlight] > path { stroke-width: 2.4; }
             <path d="M8 2.5h5.5V8M13.5 2.5 7.5 8.5"/>
           </g>
           <text data-node-label="" data-detail-anchor="" x="150" y="149" class="t-primary" font-size="13.1" font-weight="600" text-anchor="middle">Apple schema repository</text>
-          <text data-detail="context" x="150" y="165" class="t-muted" font-size="11" text-anchor="middle">Pinned upstream revision</text>
+          <text data-detail="context" x="150" y="165" class="t-muted" font-size="10.8" text-anchor="middle">OS 27 and historical release</text>
         <text data-detail="fine" x="150" y="175" class="t-external" font-size="7" text-anchor="middle">third_party</text>
         </g>
 
-        <g id="node-loader" data-node-id="loader" data-node-label="Schema generator" tabindex="0" role="button" aria-label="Focus Schema generator, Load and validate YAML, 02 / Load" aria-pressed="false" data-node-kind="backend" data-node-sublabel="Load and validate YAML" data-node-context="02 / Load" data-purpose="service">
-          <title>Schema generator · Load and validate YAML · 02 / Load</title>
+        <g id="node-loader" data-node-id="loader" data-node-label="Schema generator" tabindex="0" role="button" aria-label="Focus Schema generator, Merge and validate YAML, 02 / Load" aria-pressed="false" data-node-kind="backend" data-node-sublabel="Merge and validate YAML" data-node-context="02 / Load" data-purpose="service">
+          <title>Schema generator · Merge and validate YAML · 02 / Load</title>
           <rect x="365" y="128" width="190" height="58" rx="6" class="c-mask"/>
           <rect x="365" y="128" width="190" height="58" rx="6" class="c-backend" stroke-width="1.5"/>
           <g aria-hidden="true" data-semantic-sigil="backend" class="semantic-sigil s-backend" transform="translate(371 134) scale(0.6875)">
             <path d="M6 3 3 8l3 5M10 3l3 5-3 5"/>
           </g>
           <text data-node-label="" data-detail-anchor="" x="460" y="149" class="t-primary" font-size="14" font-weight="600" text-anchor="middle">Schema generator</text>
-          <text data-detail="context" x="460" y="165" class="t-muted" font-size="11" text-anchor="middle">Load and validate YAML</text>
+          <text data-detail="context" x="460" y="165" class="t-muted" font-size="11" text-anchor="middle">Merge and validate YAML</text>
         </g>
 
         <g id="node-types" data-node-id="types" data-node-label="Generated Go types" tabindex="0" role="button" aria-label="Focus Generated Go types, Apple messages and payloads, 03 / Emit" aria-pressed="false" data-node-kind="backend" data-node-sublabel="Apple messages and payloads" data-node-context="03 / Emit" data-purpose="artifact">
@@ -5519,7 +5519,7 @@ svg[data-purpose-filter] g[data-purpose-highlight] > path { stroke-width: 2.4; }
           <h3>Generated and handwritten responsibilities</h3>
         </div>
         <ul>
-          <li>&bull; make generate emits Go types, registries, support tables, tests, and source provenance from the pinned Apple schemas.</li>
+          <li>&bull; make generate combines the pinned OS 27 source with the pinned historical release, preserving published fields and older-device wire contracts while adding current availability rules.</li>
           <li>&bull; Handwritten code applies runtime policy and wraps generated data. Generation does not establish device compatibility by itself.</li>
         </ul>
       </div>
@@ -5531,7 +5531,7 @@ svg[data-purpose-filter] g[data-purpose-highlight] > path { stroke-width: 2.4; }
         </div>
         <ul>
           <li>&bull; make verify regenerates the outputs and detects changes against the checked-in files. EXPORTED_IDENTIFIERS.lock guards public naming stability.</li>
-          <li>&bull; GENERATED_FROM.json records the Apple revision and schema digest used for generation.</li>
+          <li>&bull; GENERATED_FROM.json records both Apple revisions and their schema digests. make test requires all eight OS 27 runtime contracts.</li>
         </ul>
       </div>
 

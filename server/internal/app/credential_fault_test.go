@@ -138,7 +138,7 @@ func TestAdminQueueRejectsMalformedTargetsAndLookupFailure(t *testing.T) {
 		t.Fatal(err)
 	}
 	a.Core = core
-	command, err := mdm.NewCommand(&commands.DeviceInformation{}, mdm.WithUUID("blocked"))
+	command, err := mdm.NewCommand(&commands.DeviceInformation{Queries: []string{"OSVersion"}}, mdm.WithUUID("blocked"))
 	if err != nil {
 		t.Fatal(err)
 	}

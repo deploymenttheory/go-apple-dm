@@ -41,12 +41,12 @@ func TestAuditGroupsParserErrorsAndKeepsIndependentDiff(t *testing.T) {
 	t.Parallel()
 	before := auditFixture(t, map[string]string{"mdm/commands/a.yaml": auditSchema})
 	after := auditFixture(t, map[string]string{
-		"mdm/commands/a.yaml": auditSchema + "examples: []\n",
+		"mdm/commands/a.yaml": auditSchema + "future-metadata: []\n",
 		"mdm/commands/b.yaml": strings.ReplaceAll(
 			auditSchema,
 			"Example",
 			"Another",
-		) + "examples: []\n",
+		) + "future-metadata: []\n",
 		"declarative/status/reasons.yaml": "title: Reasons\nreasons:\n- value: failure\n  details:\n  - key: When\n    type: <string>\n    valuetype: timestamp\n",
 		"openapi/service/definition.json": "{}",
 		"docs/new.yaml":                   "ignored: true",
@@ -61,10 +61,10 @@ func TestAuditGroupsParserErrorsAndKeepsIndependentDiff(t *testing.T) {
 	}
 	grouped := 0
 	for _, f := range report.Findings {
-		if strings.Contains(f.Key, "schemagen.Schema:examples") {
+		if strings.Contains(f.Key, "schemagen.Schema:future-metadata") {
 			grouped++
 			if len(f.Evidence) != 2 {
-				t.Fatalf("examples evidence %+v", f)
+				t.Fatalf("unknown metadata evidence %+v", f)
 			}
 		}
 		if len(f.Fingerprint) != 64 {
@@ -74,8 +74,8 @@ func TestAuditGroupsParserErrorsAndKeepsIndependentDiff(t *testing.T) {
 	if grouped != 1 {
 		t.Fatalf("findings %+v", report.Findings)
 	}
-	if len(report.Changes) != 2 {
-		t.Fatalf("metadata was treated as a semantic change: %+v", report.Changes)
+	if len(report.Changes) != 3 {
+		t.Fatalf("unknown metadata must remain review evidence: %+v", report.Changes)
 	}
 	again, err := Audit(before, after, "seed_OS_27_0")
 	if err != nil {

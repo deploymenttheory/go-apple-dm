@@ -513,7 +513,11 @@ func (s *Store) openEnrollment(e *storage.Enrollment) error {
 }
 
 // List implements storage.EnrollmentStore with a keyset cursor on id.
-func (s *Store) List(ctx context.Context, q storage.EnrollmentQuery, p paging.Page) (paging.Result[storage.Enrollment], error) {
+func (s *Store) List(
+	ctx context.Context,
+	q storage.EnrollmentQuery,
+	p paging.Page,
+) (paging.Result[storage.Enrollment], error) {
 	var out paging.Result[storage.Enrollment]
 	where := []string{"1 = 1"}
 	var args []any
@@ -539,7 +543,10 @@ func (s *Store) List(ctx context.Context, q storage.EnrollmentQuery, p paging.Pa
 	}
 	limit := pageLimit(p)
 	args = append(args, limit+1)
-	rows, err := s.db.QueryContext(ctx, s.q(selectEnrollment+" WHERE "+strings.Join(where, " AND ")+" ORDER BY id LIMIT ?"), args...)
+	rows, err := s.db.QueryContext(
+		ctx,
+		s.q(selectEnrollment+" WHERE "+strings.Join(where, " AND ")+" ORDER BY id LIMIT ?"),
+		args...)
 	if err != nil {
 		return out, wrap("list enrollments", err)
 	}
@@ -838,6 +845,21 @@ func (s *Store) StoreResult(
 			return err
 		}
 		caps := storage.CapabilitiesFromResult(e.Capabilities, id, requestType, resp, now)
+		device := storage.DeviceInfoFromResult(e.Device, id, requestType, resp)
+		if device != e.Device {
+			if _, err := q.ExecContext(
+				ctx,
+				s.q(
+					"UPDATE enrollments SET product_name = ?, os_version = ?, build_version = ? WHERE id = ?",
+				),
+				device.ProductName,
+				device.OSVersion,
+				device.BuildVersion,
+				id.ID,
+			); err != nil {
+				return err
+			}
+		}
 		if caps != e.Capabilities {
 			b, err := json.Marshal(caps)
 			if err != nil {
@@ -1001,6 +1023,14 @@ func (s *Store) Commands(
 	return out, nil
 }
 
+// ClearCommand implements storage.CommandClearer.
+func (s *Store) ClearCommand(ctx context.Context, id mdm.EnrollmentID, uuid string) (int64, error) {
+	if uuid == "" {
+		return 0, storage.ErrInvalid
+	}
+	return s.Clear(ctx, id, storage.ClearFilter{CommandUUID: uuid})
+}
+
 // Clear implements storage.CommandQueue in indexed batches of
 // ClearBatchSize rows. Each batch is its own statement, so a failure part
 // way through returns the count applied so far; callers may simply retry.
@@ -1030,6 +1060,10 @@ func (s *Store) Clear(
 		return 0, nil
 	}
 	where := []string{"enrollment_id = ?", "state IN (" + placeholders(len(args)-1) + ")"}
+	if f.CommandUUID != "" {
+		where = append(where, "command_uuid = ?")
+		args = append(args, f.CommandUUID)
+	}
 	if f.RequestType != "" {
 		where = append(where, "request_type = ?")
 		args = append(args, f.RequestType)

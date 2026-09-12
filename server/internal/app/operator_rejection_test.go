@@ -69,7 +69,7 @@ func TestCommandResultPagesUntilMatchingPendingCommand(t *testing.T) {
 	var last string
 	for i := range 101 {
 		cmd, err := mdm.NewCommand(
-			&commands.DeviceInformation{},
+			&commands.DeviceInformation{Queries: []string{"OSVersion"}},
 			mdm.WithUUID(fmt.Sprintf("CMD-%03d", i)),
 		)
 		if err != nil {

@@ -37,6 +37,7 @@ func Default() *Registry {
 	// left behind; the identifiers and the outcome are the audit record.
 	r.Register(event.CommandQueued, command)
 	r.Register(event.CommandSent, command)
+	r.Register(event.CommandRejected, passthrough("command_uuid", "request_type", "reason"))
 	r.Register(event.CommandResult, response)
 
 	r.Register(event.PushTokenInvalid, pushResult)

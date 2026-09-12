@@ -27,8 +27,9 @@ type GeneratedFrom struct {
 	// when Apple published the change rather than when the generator ran, so the
 	// file stays a function of the checkout and make verify can hold it to
 	// the same determinism as the generated Go.
-	CommitDate string `json:"commit_date"`
-	Generator  string `json:"generator"`
+	CommitDate string         `json:"commit_date"`
+	Generator  string         `json:"generator"`
+	History    *GeneratedFrom `json:"history,omitempty"`
 }
 
 // ReadGeneratedFrom loads devicemanagement/schema/GENERATED_FROM.json.
@@ -58,6 +59,17 @@ func Run(schemaRoot string, opts Options) (Files, error) {
 	if opts.Commit == "" {
 		opts.Commit = gitHEAD(schemaRoot)
 	}
+	var history *Tree
+	if opts.History != "" {
+		history, err = Load(opts.History)
+		if err != nil {
+			return nil, err
+		}
+		tree, err = MergeHistory(tree, history)
+		if err != nil {
+			return nil, err
+		}
+	}
 	pkgs, err := Build(tree)
 	if err != nil {
 		return nil, err
@@ -69,6 +81,25 @@ func Run(schemaRoot string, opts Options) (Files, error) {
 	record, err := describe(schemaRoot, tree, opts.Commit, opts.Ref)
 	if err != nil {
 		return nil, err
+	}
+	if history != nil {
+		oldRecord, historyErr := describe(opts.History, history, gitHEAD(opts.History))
+		if historyErr != nil {
+			return nil, historyErr
+		}
+		var provenance, oldProvenance GeneratedFrom
+		if err := json.Unmarshal(record, &provenance); err != nil {
+			return nil, fmt.Errorf("provenance: %w", err)
+		}
+		if err := json.Unmarshal(oldRecord, &oldProvenance); err != nil {
+			return nil, fmt.Errorf("historical provenance: %w", err)
+		}
+		provenance.History = &oldProvenance
+		record, err = json.MarshalIndent(provenance, "", "  ")
+		if err != nil {
+			return nil, fmt.Errorf("provenance: %w", err)
+		}
+		record = append(record, '\n')
 	}
 	files[generatedFromFile] = record
 	return files, nil

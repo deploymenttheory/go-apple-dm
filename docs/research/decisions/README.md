@@ -59,3 +59,5 @@ The [architecture guide](../../architecture.md) summarizes how the decisions fit
 | 0048 | [Reference server as a maintained test bench](0048-reference-server-bench.md) |
 | 0049 | [Server-managed app push credentials and sending](0049-server-managed-app-push.md) |
 | 0050 | [Enrollment security boundaries](0050-enrollment-security-boundaries.md) |
+| 0051 | [Content-cache metrics as an embeddable library](0051-content-cache-metrics.md) |
+| 0052 | [Preserve mixed-OS fleet support across schema updates](0052-mixed-os-fleets.md) |

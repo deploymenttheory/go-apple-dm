@@ -125,6 +125,11 @@ func overlay(dst *support.OSSupport, src *OSSupport) error {
 		if dst.Removed, err = support.ParseVersion(src.Removed); err != nil {
 			return fmt.Errorf("removed: %w", err)
 		}
+		// Apple uses removed: '0' for withdrawn properties. Version's zero
+		// value otherwise means no removal boundary, which would enable them.
+		if dst.Removed.IsZero() {
+			dst.NotAvailable = true
+		}
 	}
 	if src.AccessRights != "" {
 		dst.AccessRights = src.AccessRights

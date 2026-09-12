@@ -522,6 +522,57 @@ func TestUserAuthRejectsCorruptIdentityAndDisabledChild(t *testing.T) {
 	}
 }
 
+func TestInventoryPersistenceFailureRollsBackAcknowledgment(t *testing.T) {
+	t.Parallel()
+	ctx, now := t.Context(), time.Now()
+	s := openWith(t, filepath.Join(t.TempDir(), "inventory.db"), keyring(t, "storage-key-v1"))
+	id := mdm.EnrollmentID{Channel: mdm.ChannelDevice, ID: "device"}
+	seedSecrets(t, s, id)
+	before, err := s.Get(ctx, id)
+	if err != nil {
+		t.Fatal(err)
+	}
+	command := &mdm.Command{UUID: "inventory", RequestType: "DeviceInformation"}
+	if _, err := s.Enqueue(ctx, []mdm.EnrollmentID{id}, command, storage.EnqueueOptions{}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := s.DB().ExecContext(ctx, "CREATE TRIGGER deny_inventory BEFORE UPDATE OF os_version ON enrollments BEGIN SELECT RAISE(FAIL,'inventory update failed'); END"); err != nil {
+		t.Fatal(err)
+	}
+	raw, err := plist.Marshal(map[string]any{
+		"UDID": id.ID, "CommandUUID": command.UUID, "Status": "Acknowledged",
+		"QueryResponses": map[string]any{"OSVersion": "27.0", "BuildVersion": "new", "ProductName": "Mac16,1"},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	response, err := mdm.DecodeResponse(raw, command.RequestType)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := s.StoreResult(ctx, id, response, now); err == nil {
+		t.Fatal("failed inventory update reported success")
+	}
+	after, err := s.Get(ctx, id)
+	if err != nil || after.Device != before.Device {
+		t.Fatal("failed inventory update changed routing facts", after, err)
+	}
+	queued, err := s.Commands(ctx, id, storage.CommandQuery{}, paging.Page{})
+	if err != nil || len(queued.Items) != 1 || queued.Items[0].State != storage.StatePending || queued.Items[0].Result != nil {
+		t.Fatal("failed inventory update committed acknowledgment", queued, err)
+	}
+	if _, err := s.DB().ExecContext(ctx, "DROP TRIGGER deny_inventory"); err != nil {
+		t.Fatal(err)
+	}
+	if err := s.StoreResult(ctx, id, response, now); err != nil {
+		t.Fatal("inventory retry failed", err)
+	}
+	after, err = s.Get(ctx, id)
+	if err != nil || after.Device.OSVersion != "27.0" || after.Device.BuildVersion != "new" || after.Device.ProductName != "Mac16,1" {
+		t.Fatal("successful retry did not persist inventory", after, err)
+	}
+}
+
 func TestCapabilityPersistenceFailureRollsBackAcknowledgment(t *testing.T) {
 	ctx, now := t.Context(), time.Now()
 	s := openWith(t, filepath.Join(t.TempDir(), "capabilities.db"), keyring(t, "storage-key-v1"))

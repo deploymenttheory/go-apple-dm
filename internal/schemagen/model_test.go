@@ -36,8 +36,8 @@ func TestLoadAllYAMLNoUnknownKeys(t *testing.T) {
 	// Counts from the pinned commit in devicemanagement/schema/GENERATED_FROM.json. A change here
 	// means Apple added or removed files: update GENERATED_FROM and this table.
 	want := map[Family]int{
-		FamilyCommands: 65, FamilyCheckin: 9, FamilyErrors: 5, FamilyProfiles: 127,
-		FamilyDDM: 52, FamilyDDMProto: 3, FamilyStatus: 48, FamilyOther: 5,
+		FamilyCommands: 67, FamilyCheckin: 9, FamilyErrors: 5, FamilyProfiles: 127,
+		FamilyDDM: 64, FamilyDDMProto: 3, FamilyStatus: 63, FamilyOther: 5,
 	}
 	for f, n := range want {
 		if counts[f] != n {

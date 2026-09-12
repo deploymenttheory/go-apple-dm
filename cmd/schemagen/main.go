@@ -30,6 +30,7 @@ func run(args []string, out *os.File) error {
 	)
 	outDir := fs.String("out", "devicemanagement/schema", "output directory")
 	baseline := fs.String("baseline", "", "baseline schema directory for audit or api-diff")
+	history := fs.String("history", "", "older Apple checkout to retain for mixed-OS fleets")
 	ref := fs.String("ref", "", "upstream branch (defaults to the configured submodule branch)")
 	reportDir := fs.String("report", "", "write audit.json and audit.md to this directory")
 	if err := fs.Parse(args); err != nil {
@@ -39,6 +40,18 @@ func run(args []string, out *os.File) error {
 		return fmt.Errorf(
 			"usage: schemagen [-schema dir] [-out dir] [-ref branch] [-baseline dir] [-report dir] generate|verify|identifiers|versions|audit|api-diff|boundaries",
 		)
+	}
+	historyExplicit := false
+	fs.Visit(func(f *flag.Flag) {
+		if f.Name == "history" {
+			historyExplicit = true
+		}
+	})
+	if !historyExplicit {
+		if data, err := exec.CommandContext(context.Background(), "git", "config", "--file", ".gitmodules", "--get", "submodule.third_party/device-management-history.path").
+			Output(); err == nil {
+			*history = strings.TrimSpace(string(data))
+		}
 	}
 	// Commit is left empty: schemagen reads it from the checkout. Reading it
 	// from the output directory made a submodule bump stamp the old commit.
@@ -50,13 +63,13 @@ func run(args []string, out *os.File) error {
 		}
 		*ref = strings.TrimSpace(string(data))
 	}
-	opts := schemagen.Options{Ref: *ref}
+	opts := schemagen.Options{Ref: *ref, History: *history}
 	switch fs.Arg(0) {
 	case "boundaries":
 		if *baseline == "" {
 			return fmt.Errorf("boundaries requires -baseline")
 		}
-		cases, err := schemagen.BoundaryProbes(*baseline, *schemaRoot)
+		cases, err := schemagen.BoundaryProbes(*baseline, *schemaRoot, *history)
 		if err != nil {
 			return err
 		}

@@ -27,7 +27,8 @@ func enrolled(t *testing.T, a *app.App, udid string) mdm.EnrollmentID {
 	err := a.Core.ImportEnrollment(context.Background(), storage.EnrollmentExport{
 		Enrollment: storage.Enrollment{
 			ID: id, Enabled: true,
-			Push: mdm.Push{Topic: "com.apple.mgmt.External.test", Token: []byte("tok"), Magic: "magic"},
+			Device: storage.DeviceInfo{ProductName: "Mac16,1", OSVersion: "26.4"},
+			Push:   mdm.Push{Topic: "com.apple.mgmt.External.test", Token: []byte("tok"), Magic: "magic"},
 		},
 	})
 	if err != nil {
@@ -174,7 +175,7 @@ func TestOperatorCommandsAreNeverSuppressed(t *testing.T) {
 	cmd := `<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0"><dict>
-<key>Command</key><dict><key>RequestType</key><string>DeviceInformation</string></dict>
+<key>Command</key><dict><key>RequestType</key><string>DeviceInformation</string><key>Queries</key><array><string>OSVersion</string></array></dict>
 <key>CommandUUID</key><string>%s</string>
 </dict></plist>`
 

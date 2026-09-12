@@ -156,6 +156,81 @@ class IssueLifecycleTests(unittest.TestCase):
 
 
 class AssessmentTests(unittest.TestCase):
+    def test_promoted_sources_retain_history_and_compare_older_release(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            provenance = {"commit": "b" * 40, "ref": "seed_OS_27_0",
+                          "history": {"commit": "a" * 40}}
+            m.write_json(root / m.SCHEMA / "GENERATED_FROM.json", provenance)
+
+            def source(args, *unused):
+                return "a" * 40 if args[-1] == "HEAD:" + m.HISTORY_SUBMODULE else "b" * 40
+
+            with patch.object(m, "run", side_effect=source), patch.object(m, "is_ancestor", return_value=False):
+                seed = m.assessment_sources(root, root, branch())
+                self.assertEqual("a" * 40, seed["historyCommit"])
+                self.assertFalse(seed["comparisonOnly"])
+                self.assertTrue(seed["adoptedOS27"])
+                stable = m.assessment_sources(root, root, branch("release", "stable"))
+                self.assertTrue(stable["comparisonOnly"])
+                self.assertEqual("a" * 40, stable["auditBaseline"])
+                self.assertFalse(stable["adoptedOS27"])
+            with patch.object(m, "run", side_effect=source), patch.object(m, "is_ancestor", return_value=True):
+                stable = m.assessment_sources(root, root, branch("release", "stable"))
+                self.assertFalse(stable["comparisonOnly"])
+                self.assertTrue(stable["adoptedOS27"])
+                self.assertEqual("a" * 40, stable["historyCommit"])
+            with patch.object(m, "run", return_value="b" * 40):
+                with self.assertRaisesRegex(ValueError, "historical provenance"):
+                    m.assessment_sources(root, root, branch())
+            provenance.pop("history")
+            m.write_json(root / m.SCHEMA / "GENERATED_FROM.json", provenance)
+            with patch.object(m, "run", return_value="b" * 40):
+                self.assertEqual("b" * 40, m.assessment_sources(root, root, branch())["historyCommit"])
+
+    def test_ancestry_errors_are_not_treated_as_older_stable(self):
+        with patch.object(m, "run", return_value=""):
+            self.assertTrue(m.is_ancestor(Path("/tmp"), "a", "b"))
+        with patch.object(m, "run", side_effect=subprocess.CalledProcessError(1, "git")):
+            self.assertFalse(m.is_ancestor(Path("/tmp"), "a", "b"))
+        with patch.object(m, "run", side_effect=subprocess.CalledProcessError(128, "git")):
+            with self.assertRaises(subprocess.CalledProcessError):
+                m.is_ancestor(Path("/tmp"), "a", "b")
+
+    def test_release_issue_evidence_names_the_actual_comparison_baseline(self):
+        result = report("release")
+        result.update(comparisonOnly=True, auditBaseline="d" * 40)
+        body = m.evidence_section(incident(), result, "url")
+        self.assertIn("Baseline: ` " + "d" * 40 + " `", body)
+        self.assertNotIn("Baseline: ` " + result["branch"]["baseline"] + " `", body)
+
+    def test_routine_contract_gate_rejects_missing_skipped_and_failed_tests(self):
+        events = "\n".join(json.dumps({"Action": "pass", "Package": test.rsplit("/", 1)[0],
+                                     "Test": test.rsplit("/", 1)[1]}) for test in m.OS27_TESTS)
+        for ok, output, expected in [(True, events, True), (True, "", False),
+                                      (True, events.replace('"pass"', '"skip"'), False),
+                                      (False, events, False)]:
+            with self.subTest(ok=ok, expected=expected), tempfile.TemporaryDirectory() as tmp:
+                with patch.object(m, "command_stage", return_value=(ok, output)), patch("builtins.print"):
+                    self.assertEqual(expected, m.verify_contracts(Path(tmp), Path(tmp)))
+                self.assertEqual(expected, json.loads((Path(tmp) / "result.json").read_text())["passed"])
+
+    def test_seed_contract_requires_executed_tests(self):
+        tags, required = m.assessment_test_contract({"kind": "seed", "ref": "seed_OS_27_0"})
+        self.assertEqual(["-tags", "schema_seed_os_27"], tags)
+        self.assertEqual(8, len(required))
+        self.assertEqual(sorted(required), m.missing_test_evidence("", required))
+        lines = []
+        for test in required:
+            package, name = test.rsplit("/", 1)
+            lines.append(json.dumps({"Action": "pass", "Package": package, "Test": name}))
+        self.assertEqual([], m.missing_test_evidence("\n".join(lines), required))
+        self.assertEqual(sorted(required), m.missing_test_evidence("\n".join(lines).replace('"pass"', '"skip"'), required))
+        self.assertEqual(sorted(required), m.missing_test_evidence('garbled\nnull\n[]', required))
+        self.assertEqual(([], set()), m.assessment_test_contract({"kind": "stable", "ref": "release"}))
+        self.assertEqual(([], set()), m.assessment_test_contract({"kind": "seed", "ref": "seed_future"}))
+        self.assertEqual((tags, required), m.assessment_test_contract({"kind": "stable", "ref": "release"}, True))
+
     def test_snapshot_guard_rejects_wrong_candidate_and_project(self):
         with patch.object(m, "run", return_value="wrong"):
             with self.assertRaises(ValueError):
@@ -165,7 +240,7 @@ class AssessmentTests(unittest.TestCase):
                 m.assert_snapshot(Path("/tmp/project"), "a" * 40, "c" * 40)
 
     def test_paths_allow_generated_code_but_not_removal_allowances_or_logs(self):
-        for name in (".gitmodules", m.SUBMODULE, m.SCHEMA + "/commands/types.gen.go", m.SCHEMA + "/commands/conformance_gen_test.go", m.SCHEMA + "/GENERATED_FROM.json"):
+        for name in (".gitmodules", m.SUBMODULE, m.HISTORY_SUBMODULE, m.SCHEMA + "/commands/types.gen.go", m.SCHEMA + "/commands/conformance_gen_test.go", m.SCHEMA + "/GENERATED_FROM.json"):
             self.assertTrue(m.allowed_path(name), name)
         for name in ("seeds.md", "run.log", "server/go.mod", ".github/workflows/test.yml", m.SCHEMA + "/ALLOWED_REMOVALS.md", m.SCHEMA + "/support/support.go"):
             self.assertFalse(m.allowed_path(name), name)
@@ -230,6 +305,8 @@ class AssessmentTests(unittest.TestCase):
 
             def stage(result, name, args, cwd, directory, env=None):
                 text = '{"added":[],"removed":[],"changed":[]}' if name == "api" else "fixture outcome"
+                if name == "tests":
+                    text = "\n".join(json.dumps({"Action": "pass", "Package": test.rsplit("/", 1)[0], "Test": test.rsplit("/", 1)[1]}) for test in m.OS27_TESTS)
                 result["stages"][name] = {"state": "failed" if name == "boundaries" else "passed"}
                 (directory / (name + ".log")).write_text(text)
                 return name != "boundaries", text
@@ -244,6 +321,24 @@ class AssessmentTests(unittest.TestCase):
 
 
 class PublicationTests(unittest.TestCase):
+    def test_comparison_only_cannot_publish_a_downgrade(self):
+        result = report("release")
+        result.update(comparisonOnly=True, patch=True)
+        for current in ([], [{"number": 3, "body": "<!-- schema-monitor-pr --> old"}]):
+            api = FakeGitHub(current)
+            with patch.object(m, "run", side_effect=AssertionError("No git mutation expected")):
+                self.assertEqual("not-applicable", m.publish_patch(Path("/tmp"), Path("/tmp"), result, api, "token", "url"))
+            if current:
+                self.assertEqual("closed", api.calls[-1][2]["state"])
+                self.assertIn("Comparison only", api.calls[-1][2]["body"])
+
+    def test_release_comparison_cannot_close_published_api_failures(self):
+        result = report("release")
+        result["comparisonOnly"] = True
+        item = incident(stage="api")
+        existing = stored_issue(result, item)
+        self.assertEqual([], m.issue_actions([existing], [result], manifest(result), "url"))
+
     def test_report_only_never_accesses_github_or_pushes(self):
         result = report()
         result["findings"] = [incident()]

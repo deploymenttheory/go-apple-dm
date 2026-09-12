@@ -147,7 +147,9 @@ func build(cfg WebhookConfig, e event.Event) envelope {
 	if env.CreatedAt.IsZero() {
 		env.CreatedAt = cfg.Clock.Now()
 	}
-	if e.Type == event.CommandResult || e.Type == event.CommandSent || e.Type == event.CommandQueued {
+	if e.Type == event.CommandResult || e.Type == event.CommandSent ||
+		e.Type == event.CommandQueued ||
+		e.Type == event.CommandRejected {
 		ack := &ackEv{UDID: rec.ID, Fields: rec.Fields}
 		if v, ok := rec.Fields["command_uuid"].(string); ok {
 			ack.CommandUUID = v
@@ -178,7 +180,14 @@ func deliver(ctx context.Context, cfg WebhookConfig, body []byte) error {
 		if last == nil {
 			return nil
 		}
-		cfg.Logger.WarnContext(ctx, "sink: webhook delivery failed", "attempt", attempt+1, "error", last)
+		cfg.Logger.WarnContext(
+			ctx,
+			"sink: webhook delivery failed",
+			"attempt",
+			attempt+1,
+			"error",
+			last,
+		)
 	}
 	return last
 }

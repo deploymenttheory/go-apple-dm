@@ -23,6 +23,7 @@ including the explicit dependency from the ADE software update gate to the GDMF 
 | Protocol | `devicemanagement/mdmprotocol` | Plist/CMS, MDM messages, enrollment profiles and handlers, DDM engine, predicates, hooks and events |
 | PKI | `devicemanagement/pki` | CA abstraction, SCEP, ACME, attestation, push certificate parsing and optional revocation |
 | Apple clients | `devicemanagement/appleplatformservices` | APNs, device enrollment service, software lookup, Business Manager and School Manager APIs |
+| Content-cache metrics | `devicemanagement/contentcache` | Opt-in OS 27 report contract and receiver; consumers supply authentication, TLS and persistence |
 | Persistence | `devicemanagement/storage`, `server/sqlstore`, `server/*store`, `server/statestore` | Domain contracts, memory implementations and SQL persistence |
 | Service | `server/service`, `server/httpapi`, `server/ddmsync`, `server/ddmadapter`, `server/pushnotify` | Enrollment authorization, command delivery, DDM synchronization and transport |
 | Administration | `server/adminauth`, `server/audit`, `server/eventsink`, `server/axmcreds` | Principals, policy, credential storage, projected audit and webhook output |
@@ -31,9 +32,15 @@ including the explicit dependency from the ADE software update gate to the GDMF 
 The table groups responsibilities; the exact enforced tiers and test-only exceptions are in
 [internal/layout/layout_test.go](../internal/layout/layout_test.go).
 
+The [content-cache receiver](research/decisions/0051-content-cache-metrics.md) is
+an embeddable library at the service-client tier. It installs no reference-server
+route. Its reviewed OS 27 OpenAPI fixture is checked against the pinned Apple source.
+
 ## Generated protocol types
 
-The pinned `third_party/device-management` submodule supplies Apple's YAML definitions.
+The pinned `third_party/device-management` submodule supplies Apple's OS 27 YAML definitions.
+`third_party/device-management-history` retains the release source needed for older-device
+contracts; both inputs and their content hashes are recorded in generated provenance.
 `schemagen` generates request and response types, registries, validation, platform support metadata
 and conformance fixtures. `devicemanagement/schema/GENERATED_FROM.json` records source provenance;
 `devicemanagement/schema/EXPORTED_IDENTIFIERS.lock` guards exported names. `make verify` regenerates into a
@@ -43,7 +50,8 @@ modeled schema constraints; protocol rules documented only in prose belong in th
 The [Apple schema monitor](schema-monitor.md) discovers Apple's stable default
 and `seed*` branches, assesses immutable commits in isolated workspaces, then
 publishes grouped engineering issues and generated update PRs. Stable updates
-target the project default branch; seed updates stay in separate draft previews.
+that contain the adopted seed can target the project default branch; older stable
+snapshots are comparison-only. Seed updates stay in separate draft previews.
 Parsing failures retain raw schema findings and block dependent generation and
 runtime checks. Server tests explicitly resolve the candidate library through
 the workspace, without changing the server's published dependency requirement.
@@ -52,6 +60,22 @@ the workspace, without changing the server's published dependency requirement.
 
 `server/httpapi` extracts a certificate through CMS, mutual TLS or an explicitly trusted proxy.
 The deployment must establish certificate trust and proof of possession for its transport.
+
+Command enqueueing validates the actual wire envelope and known payloads before
+storage. Required fields and value constraints always apply. With target validation
+enabled, both command and populated-field availability are checked per enrollment;
+unsupported targets appear in the enqueue result's skipped entries. Unknown command
+types retain their wire bytes for caller-supplied extensions. Callers that previously
+queued incomplete known commands must now provide valid required input.
+
+Fleet eligibility requires known OS and version inventory; inventory commands
+remain available to establish it. A tracked inventory acknowledgment refreshes
+the device's product, OS and build version. Dispatch rechecks queued work after
+that refresh and individually clears ineligible commands through the optional
+`storage.CommandClearer` extension, retaining audit rows and valid queued work.
+Generation retains a pinned historical schema so adopting new definitions
+does not remove management support for older devices. See
+[decision 0052](research/decisions/0052-mixed-os-fleets.md).
 `server/service` applies certificate status checks when configured, hooks, pinning and enrollment
 policy before dispatch. Its default certificate reuse policy denies association with a second
 enrollment. Both the reusable service and reference server deny changed identities during

@@ -16,23 +16,35 @@ failure requiring investigation.
 1. Record the project commit, Apple default branch and commit, project submodule
    pin, and all seed names and commits in `discovery.json`.
 2. Assess stable against the project pin, and each seed against that same stable
-   snapshot. Matrix jobs run independently with at most two assessments in parallel.
+   snapshot. If stable does not yet contain the adopted seed, use the retained
+   release baseline for a comparison-only assessment. Matrix jobs run independently
+   with at most two assessments in parallel.
 3. Compare raw schema structure and collect strict parsing failures across all
    files. Group repeated causes and retain independent protocol/support changes.
-4. If parsing succeeds, generate the complete candidate, verify deterministic
+4. If parsing succeeds, retain the project's pinned historical schema for all
+   candidates, generate the combined API, verify deterministic
    output and exported-name removals, and compare generated public declarations,
-   signatures and serialization tags against the project API.
+   signatures and serialization tags against the project API. Comparison-only
+   stable assessments instead compare against freshly generated retained-release
+   types and their identifier lock; they do not certify published API compatibility.
 5. Build both Go modules; verify the server resolves the candidate library through
    `go.work`. Compare source-derived support cases with the compiled tables and run
    generated conformance, MDM protocol, server service and DDM adapter tests with
    the race detector. Changed support cases include stable and candidate OS
    boundaries and device/user, supervision, ADE, user approval, shared iPad and
    user enrollment contexts.
-6. Reconcile engineering issues and publish generated changes. Stable uses one
+6. Reconcile engineering issues and publish generated changes. Adoptable stable uses one
    normal PR on `schema/update-stable`; each seed uses one draft on
    `schema/preview/<Apple branch>`. A parsing/generation failure creates issues
    without an empty or partially generated PR. Existing previews explain when
    their content represents an older candidate.
+
+When stable predates the adopted seed, publication is not applicable: the monitor
+produces no downgrade patch and closes any existing monitor-owned stable update
+PR. Its report identifies the release baseline used. Such a comparison cannot
+close an existing published-API or identifier-verification incident. Once stable
+contains the adopted seed, normal published-API checks and update PRs resume.
+The historical gitlink remains pinned through both paths.
 
 Every report distinguishes `passed`, `failed`, `blocked` and, for publication,
 `not-applicable`. An assessment can complete while reporting an incompatibility.
@@ -43,6 +55,19 @@ make the workflow fail. Blocked runtime checks are never presented as passing.
 Passing tests establish those scenarios. They do not certify every Apple behavior
 or replace testing on real devices. Protocol prose and new server responsibilities
 require an engineer's review even when compilation and conformance tests pass.
+
+For `seed_OS_27_0` and candidates assessed against the adopted OS 27 API, the tests
+stage also enables `schema_seed_os_27` and requires
+explicit passing JSON test events for enhanced-log commands and status, software
+update removal, Return to Service retry, the reviewed content-cache contract,
+mixed-fleet dispatch, queued commands after an upgrade, and legacy-profile wire
+compatibility. All eight contracts must pass.
+Missing or skipped tests fail the stage. Comparison-only older stable assessments
+do not compile these types. Content-cache tests run in both assessments; OS 27 additionally
+checks its OpenAPI file against the reviewed library fixture.
+
+`make test` also runs `make test-schema-contracts`, using the same eight-test
+evidence check. Its JSON test log and result are retained in `cover/schema-contracts`.
 
 ## Engineering issues
 
@@ -123,7 +148,9 @@ The runner checks candidate and project SHAs before and after generation/tests.
 It invokes `schemagen` directly. `make generate` and `make verify` initialize the
 committed submodule pin and would reset a manually selected candidate checkout.
 Preview patches update `.gitmodules` so subsequent local generation records the
-correct Apple ref. They never update `ALLOWED_REMOVALS.md`, handwritten Go files,
+correct Apple ref and initializes the pinned historical input. The history
+gitlink is checked before assessment completes and again before publication.
+They never update `ALLOWED_REMOVALS.md`, handwritten Go files,
 server dependency requirements or release metadata.
 
 For a raw source comparison without running candidate code:
@@ -151,9 +178,16 @@ needed library changes before deliberately updating the server module dependency
 
 At implementation, Apple `release` was `67045e2fa06f528b196c01edee6a8bf88b844beb`
 and `seed_OS_27_0` was `b0180185a5e4077070710033341b71d0cbe1a18a`.
-The unmodified comparison contains 314 → 343 schema files: 29 additions and one
-filename correction. Strict decoding rejects top-level `examples` in 304 files
-and `ReasonDetail.valuetype` in two files. These remain compatibility findings;
-this monitoring change does not implement their parser support. Raw comparison
-also identifies platform/enrollment changes, new commands, Return to Service
-changes, protocol wording and a new `openapi` input area for engineering review.
+The original comparison contains 314 → 343 schema files: 29 additions and one
+filename correction. Parser support now includes the top-level `examples` in 304
+files and `ReasonDetail.valuetype` in two files. Example references remain audited;
+the timestamp annotation preserves the underlying string type. Apple's recorded
+meta-schema defines the example structure but omits `valuetype`, so the latter is
+an explicit compatibility annotation based on the source files.
+
+The compatibility work retains the stable submodule pin. Seed generation can
+expose additional upstream API removals or type changes; runtime compatibility
+tests do not authorize those changes. API and exported-name guards continue to
+report them independently, and any seed adoption needs a separate migration
+decision. The content-cache library supports its reviewed OpenAPI separately;
+other new input areas still require an engineering support decision.

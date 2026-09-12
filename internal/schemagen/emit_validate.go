@@ -68,6 +68,19 @@ func (e *emitter) validateType(b *bytes.Buffer, td *TypeDef, patterns *[]string)
 	}
 	top := topName(td)
 	for _, f := range td.Fields {
+		if f.Src.LegacyRequired {
+			alternative := legacyOptionalAlternatives[td.Schema.Path+"."+f.Key]
+			fmt.Fprintf(
+				b,
+				"\tc.Required(%q, x.%s != \"\" || (x.%s != nil && *x.%s != \"\"))\n",
+				f.Key+" or "+alternative,
+				f.Name,
+				GoName(alternative),
+				GoName(alternative),
+			)
+		}
+	}
+	for _, f := range td.Fields {
 		present, value := presenceExpr(f)
 		key := f.Key
 		if td.Leaf {

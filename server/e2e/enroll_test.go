@@ -48,7 +48,7 @@ func TestE2E_SCEPEnrollPush(t *testing.T) {
 	}
 
 	id := deviceID(udid)
-	cmd, err := mdm.NewCommand(&commands.DeviceInformation{})
+	cmd, err := mdm.NewCommand(&commands.DeviceInformation{Queries: []string{"OSVersion"}})
 	if err != nil {
 		t.Fatal(err)
 	}

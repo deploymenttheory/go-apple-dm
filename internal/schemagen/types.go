@@ -379,7 +379,7 @@ func (b *builder) resolveType(f *Field, parent *TypeDef, k *Key, path string, st
 		f.Kind = KindScalar
 		f.Base = s
 		f.GoType = s
-		if f.Optional && pointerable(s) {
+		if f.Optional && !k.LegacyRequired && pointerable(s) {
 			f.GoType = "*" + s
 			f.Pointer = true
 		}

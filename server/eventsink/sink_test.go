@@ -181,7 +181,7 @@ func TestEveryEventTypeIsProjected(t *testing.T) {
 	reg := eventsink.Default()
 	declared := []event.Type{
 		event.Enrolled, event.Reenrolled, event.TokenUpdated, event.CheckedOut,
-		event.CertRotated, event.CommandQueued, event.CommandSent, event.CommandResult,
+		event.CertRotated, event.CommandQueued, event.CommandSent, event.CommandRejected, event.CommandResult,
 		event.BootstrapTokenSet, event.PushTokenInvalid, event.PushRejected, event.DDMChanged,
 		event.DDMStatusReceived, event.CertReuseDenied, event.EnrollmentImported,
 		event.UserAuthenticated, event.UserAuthFailed,

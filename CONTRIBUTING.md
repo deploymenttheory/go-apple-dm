@@ -13,7 +13,8 @@ the server, including in tests. The package import constraints are documented in
 [architecture.md](docs/architecture.md) and enforced by `internal/layout`.
 
 Run checks appropriate to the change. `make verify` checks generated output; `make test` runs
-both modules with the race detector. Storage changes require the shared contract suite and
+both modules with the race detector and requires all eight OS 27 contracts through
+`make test-schema-contracts`. Storage changes require the shared contract suite and
 SQL integration tests. Protocol changes require relevant simulator scenarios and failure-path
 tests. `make help` describes the database, end-to-end, fuzz and coverage targets. The coverage
 floor is 95% overall and per non-exempt package; exemptions are listed in
