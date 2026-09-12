@@ -46,6 +46,21 @@ require an engineer's review even when compilation and conformance tests pass.
 
 ## Engineering issues
 
+Each ticket starts with what changed and the observed project impact, followed by
+a required-work checklist, completion criteria, blockers and links to relevant
+code and Apple inputs. Confirmed parsing/check failures, compatibility verification
+and support decisions are identified explicitly. An optional new capability is
+not presented as a demonstrated runtime regression. Candidate-dependent reviews
+link to parser or generation blockers by finding identity, including on the first
+publication cycle.
+
+Raw source evidence and reproduction details are collapsed. Long protocol prose
+is displayed around the changed clauses, so a requirement near the end of a
+paragraph remains visible. Known equivalent edits to Markdown, contractions and
+requirement phrasing do not create reviews. Availability prose is suppressed only
+when the affected structured availability is unchanged. Other prose changes remain
+review evidence; the full comparison remains in `audit.json`.
+
 All managed issues carry `schema-monitor` and one of the labels below. Identity is
 the Apple branch plus a normalized cause; hundreds of identical metadata failures
 produce one issue, with affected paths in the retained evidence.
@@ -59,9 +74,14 @@ produce one issue, with affected paths in the retained evidence.
 | Upstream input/scope | `schema-review` or `schema-gap` | New input area needs a support decision; missing/invalid referenced JSON examples need investigation. |
 | Automation failure | `schema-automation` | Discovery, missing matrix results, snapshot mismatch or PR publication failed. Repair the workflow or credential and rerun. |
 
-Open issues update only when evidence, project/candidate identity or status changes.
-The bot updates its marked evidence block and preserves engineer notes. It does not
-add daily comments. Reproducible failures close only when the relevant stage
+Issues update when evidence, project/candidate identity, status or the versioned
+presentation changes. The bot refreshes managed titles and its marked evidence
+block, preserving comments, engineer notes outside the block and checked tasks
+whose instruction text is unchanged. Formatting changes do not reopen a
+maintainer-closed issue. Repeating the same scan and presentation produces no writes
+or daily comments. Migrating review evidence for an unchanged Apple snapshot also
+preserves a maintainer's closure, including when editorial filtering changes the
+evidence fingerprint. Reproducible failures close only when the relevant stage
 actually passes in a completed later assessment. Behavior reviews require an
 engineer to close them. An automatically verified failure reopens if it recurs;
 an unchanged finding closed by a maintainer remains acknowledged. New evidence
@@ -96,6 +116,8 @@ an automation finding. For an exact historical reproduction, download the origin
 `schema-discovery` artifact and check out its `projectCommit`; a new discovery may
 select newer Apple commits. The workflow retains discovery, per-branch reports,
 logs, support cases and any candidate patch for 30 days.
+Report-only publication also retains one Markdown preview per proposed issue in
+the `schema-monitor-summary` artifact, alongside `proposed-issues.json`.
 
 The runner checks candidate and project SHAs before and after generation/tests.
 It invokes `schemagen` directly. `make generate` and `make verify` initialize the

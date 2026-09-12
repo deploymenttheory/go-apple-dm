@@ -17,8 +17,11 @@ import (
 
 // Evidence identifies a source location and the observation requiring attention.
 type Evidence struct {
-	Path   string `json:"path"`
-	Detail string `json:"detail"`
+	Path    string `json:"path"`
+	Detail  string `json:"detail"`
+	Before  string `json:"before,omitempty"`
+	After   string `json:"after,omitempty"`
+	Context string `json:"context,omitempty"`
 }
 
 // Finding is a grouped failure or engineering review, independent of run time.
@@ -68,6 +71,7 @@ type auditTree struct {
 	docs        map[string]auditDocument
 	findings    map[string]*Finding
 	areas       map[string]bool
+	inputs      map[string][]string
 	parsePassed bool
 }
 
@@ -90,16 +94,22 @@ func Audit(baseline, candidate, ref string) (*AuditReport, error) {
 	}
 	for area := range after.areas {
 		if !before.areas[area] {
-			after.add(
-				"upstream-input",
-				"review",
-				"audit",
-				"area:"+area,
-				"Assess new Apple input area: "+area,
-				"Decide whether this input area belongs in the library or server and record the support decision.",
-				area,
-				"New upstream input area; no handler or generator support is assumed.",
-			)
+			files := after.inputs[area]
+			if len(files) == 0 {
+				files = []string{area}
+			}
+			for _, file := range files {
+				after.add(
+					"upstream-input",
+					"review",
+					"audit",
+					"area:"+area,
+					"Assess new Apple input area: "+area,
+					"Decide whether this input area belongs in the library or server and record the support decision.",
+					file,
+					"New upstream input area; no handler or generator support is assumed.",
+				)
+			}
 		}
 	}
 	for _, pair := range matchAuditDocuments(before.docs, after.docs) {
@@ -126,6 +136,7 @@ func Audit(baseline, candidate, ref string) (*AuditReport, error) {
 					continue
 				}
 				change.Kind = "documentation"
+				change.Fields = compareFields(old.prose, current.prose)
 			}
 		}
 		report.Changes = append(report.Changes, change)
@@ -138,7 +149,13 @@ func Audit(baseline, candidate, ref string) (*AuditReport, error) {
 			}
 			return f.Evidence[i].Path < f.Evidence[j].Path
 		})
-		data, _ := json.Marshal(f.Evidence)
+		// Presentation context is not part of incident identity. Preserve the
+		// original path/detail fingerprint contract when adding richer evidence.
+		identity := make([]Evidence, len(f.Evidence))
+		for i, evidence := range f.Evidence {
+			identity[i] = Evidence{Path: evidence.Path, Detail: evidence.Detail}
+		}
+		data, _ := json.Marshal(identity)
 		sum := sha256.Sum256(data)
 		f.Fingerprint = hex.EncodeToString(sum[:])
 		report.Findings = append(report.Findings, *f)
@@ -264,6 +281,7 @@ func readAuditTree(directory string, strict bool) (*auditTree, error) {
 		docs:        map[string]auditDocument{},
 		findings:    map[string]*Finding{},
 		areas:       map[string]bool{},
+		inputs:      map[string][]string{},
 		parsePassed: true,
 	}
 	err = fs.WalkDir(root.FS(), ".", func(file string, entry fs.DirEntry, walkErr error) error {
@@ -282,6 +300,10 @@ func readAuditTree(directory string, strict bool) (*auditTree, error) {
 				}
 			}
 			return nil
+		}
+		area := strings.Split(file, "/")[0]
+		if tree.areas[area] {
+			tree.inputs[area] = append(tree.inputs[area], file)
 		}
 		if strings.HasPrefix(file, "docs/") || strings.HasPrefix(file, "examples/") ||
 			!strings.HasSuffix(file, ".yaml") {
@@ -390,7 +412,11 @@ func flattenAudit(
 			switch key {
 			case "examples", "title":
 			case "description", "content", "notes":
-				flattenAudit(value, name, prose, prose, seen)
+				if value.Kind == yaml.ScalarNode {
+					prose[name] = strings.TrimSpace(value.Value)
+				} else {
+					flattenAudit(value, name, prose, prose, seen)
+				}
 			default:
 				flattenAudit(value, name, fields, prose, seen)
 			}
@@ -435,7 +461,10 @@ func compareFields(before, after map[string]string) []Evidence {
 		if !currentOK {
 			current = "<absent>"
 		}
-		changes = append(changes, Evidence{Path: key, Detail: old + " → " + current})
+		changes = append(
+			changes,
+			Evidence{Path: key, Detail: old + " → " + current, Before: old, After: current},
+		)
 	}
 	sort.Slice(changes, func(i, j int) bool { return changes[i].Path < changes[j].Path })
 	return changes
@@ -452,20 +481,23 @@ func (t *auditTree) reviewChange(change SchemaChange, old, current auditDocument
 	protocol := strings.HasPrefix(file, "mdm/checkin/") ||
 		strings.HasPrefix(file, "declarative/protocol/")
 	if protocol {
-		if change.Kind == "documentation" {
-			for _, field := range compareFields(old.prose, current.prose) {
-				t.add(
-					"behavior-review",
-					"review",
-					"audit",
-					"protocol-wording",
-					"Review changed Apple protocol descriptions",
-					"Assess whether these wording changes alter server obligations. Record the assessment; wording alone is not a demonstrated incompatibility.",
-					file+"#"+field.Path,
-					field.Detail,
-				)
+		for _, field := range substantiveProse(old, current) {
+			if change.Kind != "documentation" && old.prose[field.Path] == "" {
+				continue // New-field descriptions accompany the structural evidence.
 			}
-		} else {
+			t.add(
+				"behavior-review",
+				"review",
+				"audit",
+				"protocol-wording",
+				"Review changed Apple protocol descriptions",
+				"Assess whether these wording changes alter server obligations. Record the assessment; wording alone is not a demonstrated incompatibility.",
+				file+"#"+field.Path,
+				field.Detail,
+			)
+			t.enrichEvidence("behavior-review:protocol-wording", file+"#"+field.Path, field, "")
+		}
+		if change.Kind != "documentation" {
 			details := change.Fields
 			if len(details) == 0 {
 				details = []Evidence{{Path: "schema", Detail: change.Kind}}
@@ -480,6 +512,12 @@ func (t *auditTree) reviewChange(change SchemaChange, old, current auditDocument
 					"Assess request/response behavior and server responsibilities; link a regression test or record why existing handling is sufficient.",
 					file+"#"+field.Path,
 					field.Detail,
+				)
+				t.enrichEvidence(
+					"behavior-review:protocol:"+change.Identifier,
+					file+"#"+field.Path,
+					field,
+					fieldContext(current.prose, field.Path),
 				)
 			}
 		}
@@ -508,6 +546,7 @@ func (t *auditTree) reviewChange(change SchemaChange, old, current auditDocument
 				file,
 				field.Path+": "+field.Detail,
 			)
+			t.enrichEvidence("behavior-review:availability", file, field, "")
 		}
 	}
 	// New commands can imply work beyond generic plist generation (for example,
