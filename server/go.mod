@@ -4,7 +4,7 @@ go 1.27.0
 
 require (
 	github.com/cedar-policy/cedar-go v1.8.0
-	github.com/deploymenttheory/go-apple-dm v0.5.1-0.20260912211704-3ea1fb4208db
+	github.com/deploymenttheory/go-apple-dm v0.5.1-0.20260912215028-6601f08e3682
 	github.com/go-sql-driver/mysql v1.10.1
 	github.com/jackc/pgx/v5 v5.11.0
 	golang.org/x/crypto v0.56.0

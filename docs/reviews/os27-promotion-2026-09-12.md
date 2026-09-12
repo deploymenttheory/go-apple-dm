@@ -44,13 +44,39 @@ eight OS 27 contracts, including explicit passing events for every test.
 ## Validation record
 
 Fresh logs and machine-readable evidence are retained locally under
-`cover/os27-promotion/`. Generated-output verification, the public API comparison,
-all eight OS 27 contracts, 50 monitor tests, and the inventory rollback regression
-passed during promotion. Full integration, coverage and independent installation
-results are recorded when the final validation completes.
+`cover/os27-promotion/`. The immutable final monitor manifest records project
+commit `6601f08e3682430efc8a39e9dffc5c0ebc9e61bb`, which contains the promoted
+library and monitor implementation. The server requires its published
+pseudo-version `v0.5.1-0.20260912215028-6601f08e3682`. The final dependency and
+report commit changes no library or server runtime code.
 
-The schema-generation diagram was regenerated with all nine artifact checks
-passing, without errors or warnings. Browser interaction checks passed.
+| Check | Result |
+|---|---|
+| Deterministic generation and API comparison | Passed; 813 additions, zero removals and zero changed declarations against `3b66660`. |
+| Unit tests | Both modules passed with race detection and shuffle; all eight required OS 27 contracts emitted passing events. |
+| Database integration | Passed against disposable PostgreSQL and MySQL, plus SQLite and in-memory storage contracts. |
+| E2E | Passed with SQLite, PostgreSQL and in-memory stores, including the separate DDM server container. |
+| Process acceptance and bench documentation | Passed; actual `dmserver` and `dmctl` processes exercised. |
+| Storage performance | Cleared 100,000 PostgreSQL commands in 873 ms, within the existing one-second gate. |
+| Fresh combined coverage | **95.85%** overall; every non-exempt package meets the existing 95% floor. `sqlcommon`: **95.07%**; content-cache: **98.17%**. |
+| Lint | Both modules passed with zero issues. |
+| Monitor Python tests | All **51** passed. |
+| Immutable stable and OS 27 assessments | Every stage passed. Older stable is comparison-only; neither result produces a patch. The historical pin is retained. |
+| Source-derived availability | All **45,288** probes passed against the combined generated tables. |
+| Publication preview | Report-only mode retained the five engineer-review findings and zero failure findings; no GitHub writes. These reviews are addressed by the linked incident resolutions above. |
+| Decoder fuzzing | Passed **2,039,229** executions in the 20-second fuzz run. |
+| Independent server installation | With `GOWORK=off` and no replacements, resolved the exact declared library, built public consumer/server packages and installed both commands. |
+| Independent runtime contracts | Service and in-process DDM adapter tests passed with the OS 27 tag and `GOWORK=off`, using the published library dependency. |
+
+Coverage combines only this run's unit, storage, and three E2E layers. No coverage
+exemptions or thresholds changed. Earlier failed runs were replaced before the
+successful gate; API comparison sources are excluded from Go package discovery.
+
+The schema-generation diagram passed all nine artifact checks with zero errors
+or warnings, plus browser interaction checks. Browser measurements at all four
+required viewport sizes and both boundary themes found no horizontal overflow.
+The visual checker reports the vertical scrolling allowed by the repository's
+reading policy; the captured light/dark layouts were inspected.
 
 These tests establish the listed contracts. No physical-device or Apple account
 registration verification is claimed.
