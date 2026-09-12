@@ -200,6 +200,10 @@ type Key struct {
 	// the key name of the enclosing key whose subkeys are
 	// referenced; Subkeys is left empty. See expand.
 	RecursiveTo string `yaml:"x-recursive"`
+
+	// LegacyRequired preserves the scalar representation of a formerly required
+	// field when a newer schema makes it optional. It is never read from YAML.
+	LegacyRequired bool `yaml:"-"`
 }
 
 // Required reports whether presence is "required". Apple's schema treats

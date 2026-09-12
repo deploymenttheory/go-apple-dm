@@ -438,6 +438,16 @@ func (c *Core) checkTargets(
 			return nil, nil, err
 		}
 		target := targetFor(ctx, c.store, e)
+		// Unspecified Target is useful for schema-only validation, but cannot
+		// establish fleet eligibility. Inventory commands bootstrap these facts.
+		if (target.OS == "" || target.Version.IsZero()) && cmd.RequestType != "DeviceInformation" &&
+			cmd.RequestType != "SecurityInfo" {
+			unsupported[id] = fmt.Errorf(
+				"%w: device OS and version inventory are required",
+				ErrUnsupportedTarget,
+			)
+			continue
+		}
 		if r := entry.Check(target); !r.Supported {
 			unsupported[id] = fmt.Errorf("%w: %s", ErrUnsupportedTarget, r.Reason)
 			continue

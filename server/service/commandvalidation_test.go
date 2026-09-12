@@ -94,3 +94,42 @@ func TestEnqueueRetainsUnknownCommandExtensions(t *testing.T) {
 		t.Fatalf("unknown bytes changed: %v %v", got, err)
 	}
 }
+
+func TestEnqueueRequiresInventoryForAdvancedCommands(t *testing.T) {
+	t.Parallel()
+	for _, device := range []storage.DeviceInfo{
+		{}, {ProductName: "Mac16,1"}, {ProductName: "Mac16,1", OSVersion: "invalid"},
+	} {
+		h := newHarness(t, service.Config{})
+		id := mdm.EnrollmentID{Channel: mdm.ChannelDevice, ID: "unknown"}
+		if err := h.store.Import(
+			t.Context(),
+			storage.EnrollmentExport{
+				Enrollment: storage.Enrollment{ID: id, Enabled: true, Device: device},
+			},
+		); err != nil {
+			t.Fatal(err)
+		}
+		res, err := h.core.Enqueue(
+			t.Context(),
+			[]mdm.EnrollmentID{id},
+			newCmd(t, &commands.ProfileList{}),
+			storage.EnqueueOptions{},
+		)
+		if err != nil || len(res.Queued) != 0 ||
+			!errors.Is(res.Skipped[id], service.ErrUnsupportedTarget) {
+			t.Fatalf("unknown inventory authorized command: %+v %v", res, err)
+		}
+		for _, payload := range []commands.Command{&commands.DeviceInformation{Queries: []string{"OSVersion", "ProductName"}}, &commands.SecurityInfo{}} {
+			res, err := h.core.Enqueue(
+				t.Context(),
+				[]mdm.EnrollmentID{id},
+				newCmd(t, payload),
+				storage.EnqueueOptions{},
+			)
+			if err != nil || len(res.Queued) != 1 {
+				t.Fatalf("inventory bootstrap blocked: %+v %v", res, err)
+			}
+		}
+	}
+}

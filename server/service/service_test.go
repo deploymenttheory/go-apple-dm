@@ -82,7 +82,11 @@ func checkinPlist(t *testing.T, fields map[string]any) *mdm.Checkin {
 
 func authenticate(t *testing.T, udid string) *mdm.Checkin {
 	t.Helper()
-	return checkinPlist(t, map[string]any{"MessageType": "Authenticate", "Topic": "com.apple.mgmt.t", "UDID": udid, "Model": "Mac", "ModelName": "MacBook", "DeviceName": "d", "SerialNumber": "S1"})
+	return checkinPlist(t, map[string]any{
+		"MessageType": "Authenticate", "Topic": "com.apple.mgmt.t", "UDID": udid,
+		"Model": "Mac", "ModelName": "MacBook", "DeviceName": "d", "SerialNumber": "S1",
+		"ProductName": "Mac16,1", "OSVersion": "26.4",
+	})
 }
 
 func tokenUpdate(t *testing.T, udid string, extra map[string]any) *mdm.Checkin {

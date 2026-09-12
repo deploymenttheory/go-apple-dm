@@ -2,6 +2,10 @@
 
 Branch: `fix/apple-schema-incidents-40-46`.
 
+The subsequent [mixed-fleet follow-up](mixed-os-fleet-2026-09-12.md) supersedes
+the seed API blockers recorded in this initial assessment. It preserves older
+wire contracts while adding OS 27 compatibility.
+
 This change prepares compatibility with Apple's OS 27 seed and adds an opt-in
 content-cache library. The stable submodule pin and stable generated API remain
 at `67045e2fa06f528b196c01edee6a8bf88b844beb`. The assessed seed is

@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
 
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/event"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/mdm"
@@ -44,7 +45,11 @@ func (c *Core) Connect(
 	return cmd, err
 }
 
-func (c *Core) connect(ctx context.Context, r *mdm.Request, resp *mdm.Response) (*mdm.Command, error) {
+func (c *Core) connect(
+	ctx context.Context,
+	r *mdm.Request,
+	resp *mdm.Response,
+) (*mdm.Command, error) {
 	if cmd, handled, err := c.replacementConnect(ctx, r, resp); handled || err != nil {
 		return cmd, err
 	}
@@ -60,13 +65,22 @@ func (c *Core) connect(ctx context.Context, r *mdm.Request, resp *mdm.Response) 
 			// A result for a command this server no longer tracks (cleared,
 			// migrated, or duplicate): log and carry on so the device is not
 			// stuck.
-			c.log.InfoContext(ctx, "result for unknown command", "enrollment", r.ID.ID, "command", resp.CommandUUID, "status", resp.Status)
+			c.log.InfoContext(
+				ctx,
+				"result for unknown command",
+				"enrollment",
+				r.ID.ID,
+				"command",
+				resp.CommandUUID,
+				"status",
+				resp.Status,
+			)
 		default:
 			return nil, wrapCode(codeForStorage(err), err)
 		}
 		c.publish(ctx, event.CommandResult, r.ID, "device", resp)
 	}
-	cmd, err := c.store.Next(ctx, r.ID, resp.Status == mdm.StatusNotNow, now)
+	cmd, err := c.nextEligible(ctx, r.ID, resp.Status == mdm.StatusNotNow, now)
 	if err != nil {
 		return nil, wrapCode(codeForStorage(err), err)
 	}
@@ -77,4 +91,58 @@ func (c *Core) connect(ctx context.Context, r *mdm.Request, resp *mdm.Response) 
 		c.publish(ctx, event.CommandSent, r.ID, "server", cmd)
 	}
 	return cmd, nil
+}
+
+// Recheck queued work using the latest inventory: an OS upgrade can make a
+// previously eligible command unavailable before the device asks for it.
+// Clear only that command, retain its audit row, then continue draining.
+func (c *Core) nextEligible(
+	ctx context.Context,
+	id mdm.EnrollmentID,
+	skipNotNow bool,
+	now time.Time,
+) (*mdm.Command, error) {
+	for {
+		cmd, err := c.store.Next(ctx, id, skipNotNow, now)
+		if err != nil || cmd == nil {
+			return cmd, err
+		}
+		decoded, invalid := validatedCommand(cmd)
+		reason := "invalid-command"
+		if invalid == nil {
+			_, skipped, checkErr := c.checkTargets(ctx, []mdm.EnrollmentID{id}, decoded)
+			if checkErr != nil {
+				return nil, checkErr
+			}
+			invalid = skipped[id]
+			reason = "unsupported-target"
+		}
+		if invalid == nil {
+			return cmd, nil
+		}
+		clearer, ok := c.store.(storage.CommandClearer)
+		if !ok {
+			return nil, fmt.Errorf(
+				"%w: store needs CommandClearer to discard ineligible queued work",
+				ErrUnsupportedTarget,
+			)
+		}
+		if _, err := clearer.ClearCommand(ctx, id, cmd.UUID); err != nil {
+			return nil, err
+		}
+		c.publish(
+			ctx,
+			event.CommandRejected,
+			id,
+			"server",
+			map[string]any{
+				"command_uuid": cmd.UUID,
+				"request_type": cmd.RequestType,
+				"reason":       reason,
+			},
+		)
+		if err := ctx.Err(); err != nil {
+			return nil, err
+		}
+	}
 }

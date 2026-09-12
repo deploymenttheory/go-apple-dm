@@ -64,6 +64,15 @@ enabled, both command and populated-field availability are checked per enrollmen
 unsupported targets appear in the enqueue result's skipped entries. Unknown command
 types retain their wire bytes for caller-supplied extensions. Callers that previously
 queued incomplete known commands must now provide valid required input.
+
+Fleet eligibility requires known OS and version inventory; inventory commands
+remain available to establish it. A tracked inventory acknowledgment refreshes
+the device's product, OS and build version. Dispatch rechecks queued work after
+that refresh and individually clears ineligible commands through the optional
+`storage.CommandClearer` extension, retaining audit rows and valid queued work.
+Seed generation retains a pinned historical schema so adopting new definitions
+does not remove management support for older devices. See
+[decision 0052](research/decisions/0052-mixed-os-fleets.md).
 `server/service` applies certificate status checks when configured, hooks, pinning and enrollment
 policy before dispatch. Its default certificate reuse policy denies association with a second
 enrollment. Both the reusable service and reference server deny changed identities during

@@ -82,17 +82,34 @@ type EnrollmentQuery struct {
 type EnrollmentStore interface {
 	// AuthenticateEnrollment atomically commits authentication, pinning, history,
 	// and enrollment reset. Same-certificate retries preserve existing state.
-	AuthenticateEnrollment(ctx context.Context, id mdm.EnrollmentID, change AuthenticateChange) error
+	AuthenticateEnrollment(
+		ctx context.Context,
+		id mdm.EnrollmentID,
+		change AuthenticateChange,
+	) error
 	// UpsertAuthenticate records an Authenticate message. It creates the
 	// record or resets an existing one: push info, unlock token, bootstrap
 	// token, certificate association, and the pending command queue are
 	// cleared so a re-enrollment never inherits the previous identity's
 	// state. The enrollment stays disabled until TokenUpdate.
-	UpsertAuthenticate(ctx context.Context, id mdm.EnrollmentID, msg *checkin.Authenticate, raw []byte, at time.Time) error
+	UpsertAuthenticate(
+		ctx context.Context,
+		id mdm.EnrollmentID,
+		msg *checkin.Authenticate,
+		raw []byte,
+		at time.Time,
+	) error
 	// StoreTokenUpdate records push info, the raw plist, and enables the
 	// enrollment. An unlock token in msg replaces the stored one; a missing
 	// one keeps it.
-	StoreTokenUpdate(ctx context.Context, id mdm.EnrollmentID, push mdm.Push, msg *checkin.TokenUpdate, raw []byte, at time.Time) error
+	StoreTokenUpdate(
+		ctx context.Context,
+		id mdm.EnrollmentID,
+		push mdm.Push,
+		msg *checkin.TokenUpdate,
+		raw []byte,
+		at time.Time,
+	) error
 	// Disable marks the enrollment as checked out. Disabling a device
 	// channel also disables the user channels whose parent it is, because a
 	// checked-out device cannot carry a user channel. Records are kept.
@@ -159,6 +176,7 @@ type EnqueueResult struct {
 
 // ClearFilter selects commands for Clear. Zero values mean "any".
 type ClearFilter struct {
+	CommandUUID string  // optional exact command; other filters still apply
 	States      []State // default: every non-terminal state
 	RequestType string
 	Before      time.Time // enqueued before this time
@@ -190,22 +208,45 @@ func NotNowBackoff(attempt int) time.Duration {
 type CommandQueue interface {
 	// Enqueue queues cmd for each enrollment. Disabled or unknown
 	// enrollments are reported in Skipped, not as an error.
-	Enqueue(ctx context.Context, ids []mdm.EnrollmentID, cmd *mdm.Command, o EnqueueOptions) (EnqueueResult, error)
+	Enqueue(
+		ctx context.Context,
+		ids []mdm.EnrollmentID,
+		cmd *mdm.Command,
+		o EnqueueOptions,
+	) (EnqueueResult, error)
 	// Next returns the next command to deliver, in enqueue order: pending
 	// and sent commands, plus NotNow commands whose backoff elapsed unless
 	// skipNotNow is set (the device just said NotNow). It marks the command
 	// sent. nil, nil when the queue is empty.
-	Next(ctx context.Context, id mdm.EnrollmentID, skipNotNow bool, now time.Time) (*mdm.Command, error)
+	Next(
+		ctx context.Context,
+		id mdm.EnrollmentID,
+		skipNotNow bool,
+		now time.Time,
+	) (*mdm.Command, error)
 	// StoreResult records the device's response for the command it names.
 	// Unknown CommandUUIDs return ErrNotFound.
 	StoreResult(ctx context.Context, id mdm.EnrollmentID, resp *mdm.Response, now time.Time) error
 	// Commands pages through an enrollment's commands, newest first.
-	Commands(ctx context.Context, id mdm.EnrollmentID, q CommandQuery, p paging.Page) (paging.Result[QueuedCommand], error)
+	Commands(
+		ctx context.Context,
+		id mdm.EnrollmentID,
+		q CommandQuery,
+		p paging.Page,
+	) (paging.Result[QueuedCommand], error)
 	// Clear marks matching non-terminal commands cleared and returns how
 	// many. Backends may apply it in batches without one enclosing
 	// transaction: on error the count is what was applied so far and the
 	// caller may simply retry.
 	Clear(ctx context.Context, id mdm.EnrollmentID, f ClearFilter) (int64, error)
+}
+
+// CommandClearer optionally clears one queued command without affecting other
+// entries. Stores implement this extension to let the service discard work
+// made ineligible by a device upgrade. The service never assumes that a custom
+// backend understands a newly added ClearFilter field.
+type CommandClearer interface {
+	ClearCommand(ctx context.Context, id mdm.EnrollmentID, uuid string) (int64, error)
 }
 
 // PushStore returns what the push layer needs.
@@ -276,7 +317,12 @@ type PushCertStore interface {
 	// An empty topic accepts the certificate's own topic; otherwise the two
 	// must match. ErrInvalid for anything that fails validation. The
 	// returned record carries the new Version and no KeyPEM.
-	StorePushCert(ctx context.Context, topic string, certPEM, keyPEM []byte, at time.Time) (PushCert, error)
+	StorePushCert(
+		ctx context.Context,
+		topic string,
+		certPEM, keyPEM []byte,
+		at time.Time,
+	) (PushCert, error)
 	// PushCert returns the certificate and key for topic, or ErrNotFound.
 	PushCert(ctx context.Context, topic string) (*PushCert, error)
 	// PushCerts lists every stored certificate by topic, without keys.
@@ -309,10 +355,22 @@ type UserAuthState struct {
 // is removed when the device re-enrolls.
 type UserAuthStore interface {
 	// StoreUserAuthChallenge records a new challenge and clears any token.
-	StoreUserAuthChallenge(ctx context.Context, id mdm.EnrollmentID, challenge string, raw []byte, at time.Time) error
+	StoreUserAuthChallenge(
+		ctx context.Context,
+		id mdm.EnrollmentID,
+		challenge string,
+		raw []byte,
+		at time.Time,
+	) error
 	// StoreUserAuthToken records the issued token and clears the challenge.
 	// ErrNotFound when no challenge was issued for the user.
-	StoreUserAuthToken(ctx context.Context, id mdm.EnrollmentID, token string, raw []byte, at time.Time) error
+	StoreUserAuthToken(
+		ctx context.Context,
+		id mdm.EnrollmentID,
+		token string,
+		raw []byte,
+		at time.Time,
+	) error
 	// UserAuth returns the state or ErrNotFound.
 	UserAuth(ctx context.Context, id mdm.EnrollmentID) (*UserAuthState, error)
 	// ClearUserAuth removes the state; absent state is not an error.
@@ -357,7 +415,12 @@ func DeviceInfoFromAuthenticate(m *checkin.Authenticate) DeviceInfo {
 	if m == nil {
 		return DeviceInfo{}
 	}
-	d := DeviceInfo{Topic: m.Topic, Model: m.Model, ModelName: m.ModelName, DeviceName: m.DeviceName}
+	d := DeviceInfo{
+		Topic:      m.Topic,
+		Model:      m.Model,
+		ModelName:  m.ModelName,
+		DeviceName: m.DeviceName,
+	}
 	set := func(dst *string, src *string) {
 		if src != nil {
 			*dst = *src

@@ -20,10 +20,26 @@ type BoundaryCase struct {
 	Deprecated bool   `json:"deprecated"`
 }
 
-func sourceSupport(root string) (map[string]map[string]*support.Entry, *Tree, error) {
+func sourceSupport(
+	root string,
+	histories ...string,
+) (map[string]map[string]*support.Entry, *Tree, error) {
 	tree, err := Load(root)
 	if err != nil {
 		return nil, nil, err
+	}
+	for _, historyRoot := range histories {
+		if historyRoot == "" {
+			continue
+		}
+		history, err := Load(historyRoot)
+		if err != nil {
+			return nil, nil, err
+		}
+		tree, err = MergeHistory(tree, history)
+		if err != nil {
+			return nil, nil, err
+		}
 	}
 	pkgs, err := Build(tree)
 	if err != nil {
@@ -49,12 +65,12 @@ func sourceSupport(root string) (map[string]map[string]*support.Entry, *Tree, er
 // BoundaryProbes includes changed source entries on stable and candidate OS
 // boundaries, and device/user enrollment contexts. No generated table is used
 // to calculate the expected result.
-func BoundaryProbes(baseline, candidate string) ([]BoundaryCase, error) {
+func BoundaryProbes(baseline, candidate string, histories ...string) ([]BoundaryCase, error) {
 	before, oldTree, err := sourceSupport(baseline)
 	if err != nil {
 		return nil, err
 	}
-	after, _, err := sourceSupport(candidate)
+	after, _, err := sourceSupport(candidate, histories...)
 	if err != nil {
 		return nil, err
 	}

@@ -35,8 +35,11 @@ type record struct {
 // New returns an empty store.
 func New() *Store {
 	return &Store{
-		enrollments: map[string]*record{}, certs: map[string]mdm.EnrollmentID{}, bootstrap: map[string][]byte{},
-		pushCerts: map[string]*storage.PushCert{}, userAuth: map[string]*storage.UserAuthState{},
+		enrollments:  map[string]*record{},
+		certs:        map[string]mdm.EnrollmentID{},
+		bootstrap:    map[string][]byte{},
+		pushCerts:    map[string]*storage.PushCert{},
+		userAuth:     map[string]*storage.UserAuthState{},
 		replacements: map[string]*storage.Replacement{},
 	}
 }
@@ -60,7 +63,13 @@ func (s *Store) get(id mdm.EnrollmentID) (*record, error) {
 }
 
 // UpsertAuthenticate implements storage.EnrollmentStore.
-func (s *Store) UpsertAuthenticate(_ context.Context, id mdm.EnrollmentID, msg *checkin.Authenticate, raw []byte, at time.Time) error {
+func (s *Store) UpsertAuthenticate(
+	_ context.Context,
+	id mdm.EnrollmentID,
+	msg *checkin.Authenticate,
+	raw []byte,
+	at time.Time,
+) error {
 	if err := id.Validate(); err != nil {
 		return fmt.Errorf("%w: %w", storage.ErrInvalid, err)
 	}
@@ -86,7 +95,13 @@ func (s *Store) UpsertAuthenticate(_ context.Context, id mdm.EnrollmentID, msg *
 	return s.resetAuthenticateLocked(r, id, msg, raw, at)
 }
 
-func (s *Store) resetAuthenticateLocked(r *record, id mdm.EnrollmentID, msg *checkin.Authenticate, raw []byte, at time.Time) error {
+func (s *Store) resetAuthenticateLocked(
+	r *record,
+	id mdm.EnrollmentID,
+	msg *checkin.Authenticate,
+	raw []byte,
+	at time.Time,
+) error {
 	// Reset everything the previous identity owned.
 	for _, q := range r.queue {
 		if !q.State.Terminal() {
@@ -132,7 +147,14 @@ func (s *Store) dropCertLocked(deviceID string) {
 }
 
 // StoreTokenUpdate implements storage.EnrollmentStore.
-func (s *Store) StoreTokenUpdate(_ context.Context, id mdm.EnrollmentID, push mdm.Push, msg *checkin.TokenUpdate, raw []byte, at time.Time) error {
+func (s *Store) StoreTokenUpdate(
+	_ context.Context,
+	id mdm.EnrollmentID,
+	push mdm.Push,
+	msg *checkin.TokenUpdate,
+	raw []byte,
+	at time.Time,
+) error {
 	if !push.Valid() {
 		return fmt.Errorf("%w: incomplete push info", storage.ErrInvalid)
 	}
@@ -154,7 +176,11 @@ func (s *Store) StoreTokenUpdate(_ context.Context, id mdm.EnrollmentID, push md
 			return storage.ErrDisabled
 		}
 	}
-	r.Push = mdm.Push{Topic: push.Topic, Token: append([]byte(nil), push.Token...), Magic: push.Magic}
+	r.Push = mdm.Push{
+		Topic: push.Topic,
+		Token: append([]byte(nil), push.Token...),
+		Magic: push.Magic,
+	}
 	if len(raw) > 0 {
 		r.TokenUpdateRaw = append([]byte(nil), raw...)
 	}
@@ -215,7 +241,11 @@ func (s *Store) Get(_ context.Context, id mdm.EnrollmentID) (*storage.Enrollment
 
 // List implements storage.EnrollmentStore. The cursor is the last id of
 // the previous page.
-func (s *Store) List(_ context.Context, q storage.EnrollmentQuery, p paging.Page) (paging.Result[storage.Enrollment], error) {
+func (s *Store) List(
+	_ context.Context,
+	q storage.EnrollmentQuery,
+	p paging.Page,
+) (paging.Result[storage.Enrollment], error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	ids := make([]string, 0, len(s.enrollments))
@@ -268,9 +298,17 @@ func (s *Store) TouchLastSeen(_ context.Context, id mdm.EnrollmentID, at time.Ti
 }
 
 // Enqueue implements storage.CommandQueue.
-func (s *Store) Enqueue(_ context.Context, ids []mdm.EnrollmentID, cmd *mdm.Command, o storage.EnqueueOptions) (storage.EnqueueResult, error) {
+func (s *Store) Enqueue(
+	_ context.Context,
+	ids []mdm.EnrollmentID,
+	cmd *mdm.Command,
+	o storage.EnqueueOptions,
+) (storage.EnqueueResult, error) {
 	if cmd == nil || cmd.UUID == "" || cmd.RequestType == "" {
-		return storage.EnqueueResult{}, fmt.Errorf("%w: command needs a UUID and RequestType", storage.ErrInvalid)
+		return storage.EnqueueResult{}, fmt.Errorf(
+			"%w: command needs a UUID and RequestType",
+			storage.ErrInvalid,
+		)
 	}
 	now := o.Now
 	if now.IsZero() {
@@ -301,12 +339,24 @@ func (s *Store) Enqueue(_ context.Context, ids []mdm.EnrollmentID, cmd *mdm.Comm
 			}
 		}
 		if o.DedupeKey != "" && hasPendingKey(r, o.DedupeKey) {
-			res.Skipped[id] = fmt.Errorf("%w: pending command with dedupe key %q", storage.ErrConflict, o.DedupeKey)
+			res.Skipped[id] = fmt.Errorf(
+				"%w: pending command with dedupe key %q",
+				storage.ErrConflict,
+				o.DedupeKey,
+			)
 			continue
 		}
 		c := *cmd
 		c.Raw = append([]byte(nil), cmd.Raw...)
-		r.queue = append(r.queue, &storage.QueuedCommand{Command: c, State: storage.StatePending, DedupeKey: o.DedupeKey, EnqueuedAt: now})
+		r.queue = append(
+			r.queue,
+			&storage.QueuedCommand{
+				Command:    c,
+				State:      storage.StatePending,
+				DedupeKey:  o.DedupeKey,
+				EnqueuedAt: now,
+			},
+		)
 		res.Queued = append(res.Queued, id)
 	}
 	return res, nil
@@ -322,7 +372,12 @@ func hasPendingKey(r *record, key string) bool {
 }
 
 // Next implements storage.CommandQueue.
-func (s *Store) Next(_ context.Context, id mdm.EnrollmentID, skipNotNow bool, now time.Time) (*mdm.Command, error) {
+func (s *Store) Next(
+	_ context.Context,
+	id mdm.EnrollmentID,
+	skipNotNow bool,
+	now time.Time,
+) (*mdm.Command, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	r, err := s.get(id)
@@ -362,9 +417,17 @@ func (s *Store) Next(_ context.Context, id mdm.EnrollmentID, skipNotNow bool, no
 }
 
 // StoreResult implements storage.CommandQueue.
-func (s *Store) StoreResult(_ context.Context, id mdm.EnrollmentID, resp *mdm.Response, now time.Time) error {
+func (s *Store) StoreResult(
+	_ context.Context,
+	id mdm.EnrollmentID,
+	resp *mdm.Response,
+	now time.Time,
+) error {
 	if resp == nil || resp.IsIdle() || resp.CommandUUID == "" {
-		return fmt.Errorf("%w: result needs a CommandUUID and a non-Idle status", storage.ErrInvalid)
+		return fmt.Errorf(
+			"%w: result needs a CommandUUID and a non-Idle status",
+			storage.ErrInvalid,
+		)
 	}
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -402,14 +465,26 @@ func (s *Store) StoreResult(_ context.Context, id mdm.EnrollmentID, resp *mdm.Re
 			q.State = storage.StateError
 			q.CompletedAt = now
 		}
-		r.Capabilities = storage.CapabilitiesFromResult(r.Capabilities, id, q.Command.RequestType, resp, now)
+		r.Capabilities = storage.CapabilitiesFromResult(
+			r.Capabilities,
+			id,
+			q.Command.RequestType,
+			resp,
+			now,
+		)
+		r.Device = storage.DeviceInfoFromResult(r.Device, id, q.Command.RequestType, resp)
 		return nil
 	}
 	return fmt.Errorf("%w: no open command %s", storage.ErrNotFound, resp.CommandUUID)
 }
 
 // Commands implements storage.CommandQueue with offset cursors.
-func (s *Store) Commands(_ context.Context, id mdm.EnrollmentID, q storage.CommandQuery, p paging.Page) (paging.Result[storage.QueuedCommand], error) {
+func (s *Store) Commands(
+	_ context.Context,
+	id mdm.EnrollmentID,
+	q storage.CommandQuery,
+	p paging.Page,
+) (paging.Result[storage.QueuedCommand], error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	r, err := s.get(id)
@@ -431,7 +506,11 @@ func (s *Store) Commands(_ context.Context, id mdm.EnrollmentID, q storage.Comma
 	if p.Cursor != "" {
 		n, err := strconv.Atoi(p.Cursor)
 		if err != nil || n < 0 {
-			return paging.Result[storage.QueuedCommand]{}, fmt.Errorf("%w: bad cursor %q", storage.ErrInvalid, p.Cursor)
+			return paging.Result[storage.QueuedCommand]{}, fmt.Errorf(
+				"%w: bad cursor %q",
+				storage.ErrInvalid,
+				p.Cursor,
+			)
 		}
 		offset = n
 	}
@@ -455,8 +534,20 @@ func containsState(states []storage.State, s storage.State) bool {
 	return slices.Contains(states, s)
 }
 
+// ClearCommand implements storage.CommandClearer.
+func (s *Store) ClearCommand(ctx context.Context, id mdm.EnrollmentID, uuid string) (int64, error) {
+	if uuid == "" {
+		return 0, storage.ErrInvalid
+	}
+	return s.Clear(ctx, id, storage.ClearFilter{CommandUUID: uuid})
+}
+
 // Clear implements storage.CommandQueue.
-func (s *Store) Clear(_ context.Context, id mdm.EnrollmentID, f storage.ClearFilter) (int64, error) {
+func (s *Store) Clear(
+	_ context.Context,
+	id mdm.EnrollmentID,
+	f storage.ClearFilter,
+) (int64, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	r, err := s.get(id)
@@ -475,6 +566,9 @@ func (s *Store) Clear(_ context.Context, id mdm.EnrollmentID, f storage.ClearFil
 		if f.RequestType != "" && q.Command.RequestType != f.RequestType {
 			continue
 		}
+		if f.CommandUUID != "" && q.Command.UUID != f.CommandUUID {
+			continue
+		}
 		if !f.Before.IsZero() && !q.EnqueuedAt.Before(f.Before) {
 			continue
 		}
@@ -486,7 +580,10 @@ func (s *Store) Clear(_ context.Context, id mdm.EnrollmentID, f storage.ClearFil
 }
 
 // PushInfo implements storage.PushStore.
-func (s *Store) PushInfo(_ context.Context, ids []mdm.EnrollmentID) (map[mdm.EnrollmentID]mdm.Push, error) {
+func (s *Store) PushInfo(
+	_ context.Context,
+	ids []mdm.EnrollmentID,
+) (map[mdm.EnrollmentID]mdm.Push, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	out := map[mdm.EnrollmentID]mdm.Push{}
@@ -495,13 +592,22 @@ func (s *Store) PushInfo(_ context.Context, ids []mdm.EnrollmentID) (map[mdm.Enr
 		if !ok || r.ID != id || !r.Enabled || !r.Push.Valid() {
 			continue
 		}
-		out[id] = mdm.Push{Topic: r.Push.Topic, Token: append([]byte(nil), r.Push.Token...), Magic: r.Push.Magic}
+		out[id] = mdm.Push{
+			Topic: r.Push.Topic,
+			Token: append([]byte(nil), r.Push.Token...),
+			Magic: r.Push.Magic,
+		}
 	}
 	return out, nil
 }
 
 // AssociateCert implements storage.CertAuthStore.
-func (s *Store) AssociateCert(_ context.Context, id mdm.EnrollmentID, hash string, at time.Time) error {
+func (s *Store) AssociateCert(
+	_ context.Context,
+	id mdm.EnrollmentID,
+	hash string,
+	at time.Time,
+) error {
 	if hash == "" {
 		return fmt.Errorf("%w: empty certificate hash", storage.ErrInvalid)
 	}
@@ -513,7 +619,11 @@ func (s *Store) AssociateCert(_ context.Context, id mdm.EnrollmentID, hash strin
 		return err
 	}
 	if owner, ok := s.certs[hash]; ok && owner.ID != dev.ID {
-		return fmt.Errorf("%w: certificate already associated with %s", storage.ErrConflict, owner.ID)
+		return fmt.Errorf(
+			"%w: certificate already associated with %s",
+			storage.ErrConflict,
+			owner.ID,
+		)
 	}
 	s.dropCertLocked(dev.ID)
 	s.certs[hash] = dev
@@ -554,7 +664,10 @@ func (s *Store) historyLocked(match func(storage.CertAssociation) bool) []storag
 }
 
 // CertHistory implements storage.CertAuthStore.
-func (s *Store) CertHistory(_ context.Context, id mdm.EnrollmentID) ([]storage.CertAssociation, error) {
+func (s *Store) CertHistory(
+	_ context.Context,
+	id mdm.EnrollmentID,
+) ([]storage.CertAssociation, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	dev := id.Device()
@@ -597,7 +710,12 @@ func (s *Store) EnrollmentByCertHash(_ context.Context, hash string) (mdm.Enroll
 }
 
 // StoreBootstrapToken implements storage.BootstrapTokenStore.
-func (s *Store) StoreBootstrapToken(_ context.Context, id mdm.EnrollmentID, token []byte, at time.Time) error {
+func (s *Store) StoreBootstrapToken(
+	_ context.Context,
+	id mdm.EnrollmentID,
+	token []byte,
+	at time.Time,
+) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	dev := id.Device()

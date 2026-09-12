@@ -23,6 +23,7 @@ UPSTREAM = "https://github.com/apple/device-management.git"
 LIBRARY = "github.com/deploymenttheory/go-apple-dm"
 SCHEMA = "devicemanagement/schema"
 SUBMODULE = "third_party/device-management"
+HISTORY_SUBMODULE = "third_party/device-management-history"
 STAGES = ("snapshot", "audit", "parse", "generate", "verify", "api", "build", "boundaries", "tests")
 SHA = re.compile(r"^[0-9a-f]{40}$")
 MARKER = re.compile(r"<!-- schema-monitor (\{.*?\}) -->")
@@ -38,6 +39,9 @@ OS27_TESTS = {
     LIBRARY + "/server/service/TestSeedOS27ReturnToServiceRetry",
     LIBRARY + "/server/ddmadapter/inproc/TestSeedOS27EnhancedLoggingStatus",
     LIBRARY + "/devicemanagement/contentcache/TestSeedOS27ContentCacheContract",
+    LIBRARY + "/server/service/TestSeedOS27MixedFleet",
+    LIBRARY + "/server/service/TestSeedOS27UpgradeRechecksQueuedCommands",
+    LIBRARY + "/devicemanagement/schema/ddm/TestSeedOS27LegacyProfileCompatibility",
 }
 
 
@@ -173,6 +177,17 @@ def assess(repo, manifest, branch, directory):
             run(["git", "checkout", "--quiet", "--detach", branch["baseline"]], baseline)
             run(["git", "clone", "--quiet", "--shared", apple, root / SUBMODULE])
             run(["git", "checkout", "--quiet", "--detach", branch["commit"]], root / SUBMODULE)
+            if branch["kind"] == "seed":
+                # Keep the project's published source as a pinned historical
+                # input. Schema deletions must not strand older fleet members.
+                pinned = run(["git", "rev-parse", "HEAD:" + SUBMODULE], root).strip()
+                if not SHA.fullmatch(pinned):
+                    raise ValueError("Historical schema requires a full commit SHA")
+                run(["git", "clone", "--quiet", "--shared", apple, root / HISTORY_SUBMODULE])
+                run(["git", "checkout", "--quiet", "--detach", pinned], root / HISTORY_SUBMODULE)
+                for key, value in {"path": HISTORY_SUBMODULE, "url": UPSTREAM, "branch": manifest["stableRef"]}.items():
+                    run(["git", "config", "--file", ".gitmodules", "submodule." + HISTORY_SUBMODULE + "." + key, value], root)
+                result["historyCommit"] = pinned
             assert_snapshot(root, branch["commit"], manifest["projectCommit"])
             result["stages"]["snapshot"] = {"state": "passed"}
             result["projectContext"] = project_context(root)
@@ -256,7 +271,12 @@ def assess_generated(result, base_args, baseline, old_api, tool, root, directory
                 "Apple candidate fails " + stage + " checks", "Reproduce the failing check using the recorded source commits and log; repair or explicitly review the incompatibility.",
                 stage_evidence(stage, (directory / (stage + ".log")).read_text())))
     assert_snapshot(root, result["branch"]["commit"], result["projectCommit"])
-    run(["git", "add", "--", ".gitmodules", SUBMODULE, SCHEMA], root)
+    paths = [".gitmodules", SUBMODULE, SCHEMA]
+    if result.get("historyCommit"):
+        if run(["git", "rev-parse", "HEAD"], root / HISTORY_SUBMODULE).strip() != result["historyCommit"]:
+            raise ValueError("Historical schema changed during assessment")
+        paths.append(HISTORY_SUBMODULE)
+    run(["git", "add", "--", *paths], root)
     names = run(["git", "diff", "--cached", "--name-only"], root).splitlines()
     if any(not allowed_path(name) for name in names):
         raise ValueError("Candidate patch contains unexpected paths")
@@ -283,7 +303,7 @@ def stage_evidence(stage, text):
     return [{"path": stage + ".log", "detail": text[-5000:]}]
 
 def allowed_path(name):
-    return name in (".gitmodules", SUBMODULE) or (name.startswith(SCHEMA + "/") and
+    return name in (".gitmodules", SUBMODULE, HISTORY_SUBMODULE) or (name.startswith(SCHEMA + "/") and
         (name.endswith(".gen.go") or name.endswith("conformance_gen_test.go") or
          name in (SCHEMA + "/GENERATED_FROM.json", SCHEMA + "/EXPORTED_IDENTIFIERS.lock")))
 
@@ -605,6 +625,8 @@ def publish_patch(repo, directory, result, github, token, run_url):
             raise ValueError("Publication rejected unexpected patch paths")
         if run(["git", "rev-parse", ":" + SUBMODULE], root).strip() != branch["commit"]:
             raise ValueError("Patch gitlink is not the assessed candidate")
+        if result.get("historyCommit") and run(["git", "rev-parse", ":" + HISTORY_SUBMODULE], root).strip() != result["historyCommit"]:
+            raise ValueError("Patch history gitlink is not the assessed historical source")
         run(["git", "remote", "set-url", "origin", "https://github.com/" + github.repository + ".git"], root)
         env = os.environ.copy()
         env["GH_TOKEN"] = token

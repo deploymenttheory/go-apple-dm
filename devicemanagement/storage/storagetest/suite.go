@@ -24,6 +24,7 @@ func RunAll(t *testing.T, newStore Factory) {
 	t.Run("Security", func(t *testing.T) { RunSecuritySuite(t, newStore) })
 	t.Run("Enrollment", func(t *testing.T) { RunEnrollmentSuite(t, newStore) })
 	t.Run("CommandQueue", func(t *testing.T) { RunCommandQueueSuite(t, newStore) })
+	t.Run("FleetUpgrade", func(t *testing.T) { runFleetUpgrade(t, newStore) })
 	t.Run("Push", func(t *testing.T) { RunPushSuite(t, newStore) })
 	t.Run("CertAuth", func(t *testing.T) { RunCertAuthSuite(t, newStore) })
 	t.Run("BootstrapToken", func(t *testing.T) { RunBootstrapTokenSuite(t, newStore) })
@@ -47,22 +48,50 @@ func user(n int, u string) mdm.EnrollmentID {
 
 func auth(serial string) *checkin.Authenticate {
 	s := serial
-	return &checkin.Authenticate{Topic: "com.apple.mgmt.test", Model: "Mac", ModelName: "MacBook", DeviceName: "dev", SerialNumber: &s}
+	return &checkin.Authenticate{
+		Topic:        "com.apple.mgmt.test",
+		Model:        "Mac",
+		ModelName:    "MacBook",
+		DeviceName:   "dev",
+		SerialNumber: &s,
+	}
 }
 
 func push(n int) mdm.Push {
-	return mdm.Push{Topic: "com.apple.mgmt.test", Token: []byte{byte(n % 256), 2, 3}, Magic: fmt.Sprintf("magic-%d", n)} // #nosec G115 -- bounded by the modulo
+	return mdm.Push{
+		Topic: "com.apple.mgmt.test",
+		Token: []byte{byte(n % 256), 2, 3},
+		Magic: fmt.Sprintf("magic-%d", n),
+	} // #nosec G115 -- bounded by the modulo
 }
 
 // enroll performs Authenticate and TokenUpdate for id.
 func enroll(t *testing.T, s storage.Store, id mdm.EnrollmentID, n int) {
 	t.Helper()
 	ctx := context.Background()
-	if err := s.UpsertAuthenticate(ctx, id, auth(fmt.Sprintf("S%d", n)), []byte("<plist/>"), t0); err != nil {
+	if err := s.UpsertAuthenticate(
+		ctx,
+		id,
+		auth(fmt.Sprintf("S%d", n)),
+		[]byte("<plist/>"),
+		t0,
+	); err != nil {
 		t.Fatalf("UpsertAuthenticate: %v", err)
 	}
 	short := "alice"
-	if err := s.StoreTokenUpdate(ctx, id, push(n), &checkin.TokenUpdate{Topic: "com.apple.mgmt.test", UnlockToken: []byte{9}, UserShortName: &short, UserLongName: "Alice"}, nil, t0.Add(time.Second)); err != nil {
+	if err := s.StoreTokenUpdate(
+		ctx,
+		id,
+		push(n),
+		&checkin.TokenUpdate{
+			Topic:         "com.apple.mgmt.test",
+			UnlockToken:   []byte{9},
+			UserShortName: &short,
+			UserLongName:  "Alice",
+		},
+		nil,
+		t0.Add(time.Second),
+	); err != nil {
 		t.Fatalf("StoreTokenUpdate: %v", err)
 	}
 }
@@ -77,7 +106,11 @@ func cmd(t *testing.T, id string) *mdm.Command {
 }
 
 func result(uuid string, status mdm.Status) *mdm.Response {
-	return &mdm.Response{Enrollment: mdm.Enrollment{UDID: "DEVICE-01"}, CommandUUID: uuid, Status: status}
+	return &mdm.Response{
+		Enrollment:  mdm.Enrollment{UDID: "DEVICE-01"},
+		CommandUUID: uuid,
+		Status:      status,
+	}
 }
 
 // RunEnrollmentSuite covers EnrollmentStore.
@@ -91,7 +124,17 @@ func RunEnrollmentSuite(t *testing.T, newStore Factory) {
 		if _, err := s.Get(ctx, id); !errors.Is(err, storage.ErrNotFound) {
 			t.Fatalf("Get unknown: %v", err)
 		}
-		if err := s.StoreTokenUpdate(ctx, id, push(1), nil, nil, t0); !errors.Is(err, storage.ErrNotFound) {
+		if err := s.StoreTokenUpdate(
+			ctx,
+			id,
+			push(1),
+			nil,
+			nil,
+			t0,
+		); !errors.Is(
+			err,
+			storage.ErrNotFound,
+		) {
 			t.Fatalf("TokenUpdate before Authenticate: %v", err)
 		}
 		if err := s.Disable(ctx, id, t0); !errors.Is(err, storage.ErrNotFound) {
@@ -104,18 +147,45 @@ func RunEnrollmentSuite(t *testing.T, newStore Factory) {
 			t.Fatal(err)
 		}
 		e, err := s.Get(ctx, id)
-		if err != nil || e.Enabled || e.Device.SerialNumber != "S1" || string(e.AuthenticateRaw) != "<a/>" || !e.EnrolledAt.Equal(t0) {
+		if err != nil || e.Enabled || e.Device.SerialNumber != "S1" ||
+			string(e.AuthenticateRaw) != "<a/>" ||
+			!e.EnrolledAt.Equal(t0) {
 			t.Fatalf("after Authenticate: %+v %v", e, err)
 		}
-		if err := s.StoreTokenUpdate(ctx, id, mdm.Push{}, nil, nil, t0); !errors.Is(err, storage.ErrInvalid) {
+		if err := s.StoreTokenUpdate(
+			ctx,
+			id,
+			mdm.Push{},
+			nil,
+			nil,
+			t0,
+		); !errors.Is(
+			err,
+			storage.ErrInvalid,
+		) {
 			t.Fatalf("incomplete push: %v", err)
 		}
 		short := "bob"
-		if err := s.StoreTokenUpdate(ctx, id, push(1), &checkin.TokenUpdate{UnlockToken: []byte{7}, UserShortName: &short, UserLongName: "Bob"}, nil, t0.Add(time.Minute)); err != nil {
+		if err := s.StoreTokenUpdate(
+			ctx,
+			id,
+			push(1),
+			&checkin.TokenUpdate{
+				UnlockToken:   []byte{7},
+				UserShortName: &short,
+				UserLongName:  "Bob",
+			},
+			nil,
+			t0.Add(time.Minute),
+		); err != nil {
 			t.Fatal(err)
 		}
 		e, _ = s.Get(ctx, id)
-		if !e.Enabled || !e.Push.Valid() || e.Push.Magic != "magic-1" || string(e.UnlockToken) != "\x07" || e.UserShortName != "bob" || e.UserLongName != "Bob" || !e.TokenUpdatedAt.Equal(t0.Add(time.Minute)) {
+		if !e.Enabled || !e.Push.Valid() || e.Push.Magic != "magic-1" ||
+			string(e.UnlockToken) != "\x07" ||
+			e.UserShortName != "bob" ||
+			e.UserLongName != "Bob" ||
+			!e.TokenUpdatedAt.Equal(t0.Add(time.Minute)) {
 			t.Fatalf("after TokenUpdate: %+v", e)
 		}
 		// Returned copies do not alias store state.
@@ -125,7 +195,14 @@ func RunEnrollmentSuite(t *testing.T, newStore Factory) {
 			t.Fatal("Get returned aliased push token")
 		}
 		// Idempotent TokenUpdate.
-		if err := s.StoreTokenUpdate(ctx, id, push(1), nil, nil, t0.Add(2*time.Minute)); err != nil {
+		if err := s.StoreTokenUpdate(
+			ctx,
+			id,
+			push(1),
+			nil,
+			nil,
+			t0.Add(2*time.Minute),
+		); err != nil {
 			t.Fatal(err)
 		}
 		if err := s.TouchLastSeen(ctx, id, t0.Add(3*time.Minute)); err != nil {
@@ -146,7 +223,17 @@ func RunEnrollmentSuite(t *testing.T, newStore Factory) {
 			t.Fatalf("after Disable: %+v", e)
 		}
 		// TokenUpdate cannot reverse an explicit disable.
-		if err := s.StoreTokenUpdate(ctx, id, push(1), nil, nil, t0.Add(5*time.Minute)); !errors.Is(err, storage.ErrDisabled) {
+		if err := s.StoreTokenUpdate(
+			ctx,
+			id,
+			push(1),
+			nil,
+			nil,
+			t0.Add(5*time.Minute),
+		); !errors.Is(
+			err,
+			storage.ErrDisabled,
+		) {
 			t.Fatalf("disabled token update: %v", err)
 		}
 		if e, _ = s.Get(ctx, id); e.Enabled || e.DisabledAt.IsZero() {
@@ -154,7 +241,16 @@ func RunEnrollmentSuite(t *testing.T, newStore Factory) {
 		}
 		// Invalid ids are rejected.
 		bad := mdm.EnrollmentID{}
-		if err := s.UpsertAuthenticate(ctx, bad, nil, nil, t0); !errors.Is(err, storage.ErrInvalid) {
+		if err := s.UpsertAuthenticate(
+			ctx,
+			bad,
+			nil,
+			nil,
+			t0,
+		); !errors.Is(
+			err,
+			storage.ErrInvalid,
+		) {
 			t.Fatalf("invalid id: %v", err)
 		}
 		if _, err := s.Get(ctx, bad); !errors.Is(err, storage.ErrInvalid) {
@@ -168,7 +264,12 @@ func RunEnrollmentSuite(t *testing.T, newStore Factory) {
 		enroll(t, s, id, 1)
 		uid := user(1, "alice")
 		enroll(t, s, uid, 2)
-		if _, err := s.Enqueue(ctx, []mdm.EnrollmentID{id}, cmd(t, "C1"), storage.EnqueueOptions{Now: t0}); err != nil {
+		if _, err := s.Enqueue(
+			ctx,
+			[]mdm.EnrollmentID{id},
+			cmd(t, "C1"),
+			storage.EnqueueOptions{Now: t0},
+		); err != nil {
 			t.Fatal(err)
 		}
 		if err := s.AssociateCert(ctx, id, "hash-1", t0); err != nil {
@@ -178,12 +279,20 @@ func RunEnrollmentSuite(t *testing.T, newStore Factory) {
 			t.Fatal(err)
 		}
 		// Re-enrollment with a new identity.
-		if err := s.UpsertAuthenticate(ctx, id, auth("S1"), []byte("<b/>"), t0.Add(time.Hour)); err != nil {
+		if err := s.UpsertAuthenticate(
+			ctx,
+			id,
+			auth("S1"),
+			[]byte("<b/>"),
+			t0.Add(time.Hour),
+		); err != nil {
 			t.Fatal(err)
 		}
 		e, _ := s.Get(ctx, id)
-		if e.Enabled || e.Push.Valid() || e.CertHash != "" || len(e.UnlockToken) != 0 || string(e.AuthenticateRaw) != "<b/>" ||
-			!e.CertHashAt.IsZero() || !e.BootstrapTokenAt.IsZero() {
+		if e.Enabled || e.Push.Valid() || e.CertHash != "" || len(e.UnlockToken) != 0 ||
+			string(e.AuthenticateRaw) != "<b/>" ||
+			!e.CertHashAt.IsZero() ||
+			!e.BootstrapTokenAt.IsZero() {
 			t.Fatalf("re-enrolled record keeps state: %+v", e)
 		}
 		if _, err := s.EnrollmentByCertHash(ctx, "hash-1"); !errors.Is(err, storage.ErrNotFound) {
@@ -201,7 +310,12 @@ func RunEnrollmentSuite(t *testing.T, newStore Factory) {
 		if u, _ := s.Get(ctx, uid); u.Enabled {
 			t.Fatal("user channel stayed enabled after device re-enrollment")
 		}
-		cleared, _ := s.Commands(ctx, id, storage.CommandQuery{States: []storage.State{storage.StateCleared}}, paging.Page{})
+		cleared, _ := s.Commands(
+			ctx,
+			id,
+			storage.CommandQuery{States: []storage.State{storage.StateCleared}},
+			paging.Page{},
+		)
 		if len(cleared.Items) != 1 {
 			t.Fatalf("expected the old command to be cleared, got %d", len(cleared.Items))
 		}
@@ -219,7 +333,14 @@ func RunEnrollmentSuite(t *testing.T, newStore Factory) {
 				t.Fatal(err)
 			}
 			short := u
-			if err := s.StoreTokenUpdate(ctx, id, push(10+i), &checkin.TokenUpdate{Topic: "t", UserShortName: &short, UserLongName: u}, nil, t0); err != nil {
+			if err := s.StoreTokenUpdate(
+				ctx,
+				id,
+				push(10+i),
+				&checkin.TokenUpdate{Topic: "t", UserShortName: &short, UserLongName: u},
+				nil,
+				t0,
+			); err != nil {
 				t.Fatal(err)
 			}
 		}
@@ -236,7 +357,13 @@ func RunEnrollmentSuite(t *testing.T, newStore Factory) {
 	t.Run("ReusedUserIDOnOtherDevice", func(t *testing.T) {
 		s := newStore(t)
 		for _, n := range []int{8, 9} {
-			if err := s.UpsertAuthenticate(ctx, device(n), auth(fmt.Sprintf("S%d", n)), nil, t0); err != nil {
+			if err := s.UpsertAuthenticate(
+				ctx,
+				device(n),
+				auth(fmt.Sprintf("S%d", n)),
+				nil,
+				t0,
+			); err != nil {
 				t.Fatal(err)
 			}
 			if err := s.UpsertAuthenticate(ctx, user(n, "shared-uid"), nil, nil, t0); err != nil {
@@ -289,20 +416,36 @@ func RunEnrollmentSuite(t *testing.T, newStore Factory) {
 			t.Fatal(err)
 		}
 		short := "dana"
-		msg := &checkin.TokenUpdate{Topic: "t", UserShortName: &short, UserLongName: "Dana D", NotOnConsole: true, EnrollmentUserID: "EU-1"}
+		msg := &checkin.TokenUpdate{
+			Topic:            "t",
+			UserShortName:    &short,
+			UserLongName:     "Dana D",
+			NotOnConsole:     true,
+			EnrollmentUserID: "EU-1",
+		}
 		if err := s.StoreTokenUpdate(ctx, id, push(30), msg, nil, t0); err != nil {
 			t.Fatal(err)
 		}
 		e, err := s.Get(ctx, id)
-		if err != nil || e.UserShortName != "dana" || e.UserLongName != "Dana D" || !e.NotOnConsole || e.EnrollmentUserID != "EU-1" {
+		if err != nil || e.UserShortName != "dana" || e.UserLongName != "Dana D" ||
+			!e.NotOnConsole ||
+			e.EnrollmentUserID != "EU-1" {
 			t.Fatalf("user fields = %+v %v", e, err)
 		}
 		// A later TokenUpdate that omits the names keeps them and updates the console flag.
-		if err := s.StoreTokenUpdate(ctx, id, push(30), &checkin.TokenUpdate{Topic: "t"}, nil, t0.Add(time.Second)); err != nil {
+		if err := s.StoreTokenUpdate(
+			ctx,
+			id,
+			push(30),
+			&checkin.TokenUpdate{Topic: "t"},
+			nil,
+			t0.Add(time.Second),
+		); err != nil {
 			t.Fatal(err)
 		}
 		e, err = s.Get(ctx, id)
-		if err != nil || e.UserShortName != "dana" || e.NotOnConsole || e.EnrollmentUserID != "EU-1" {
+		if err != nil || e.UserShortName != "dana" || e.NotOnConsole ||
+			e.EnrollmentUserID != "EU-1" {
 			t.Fatalf("after second TokenUpdate = %+v %v", e, err)
 		}
 	})
@@ -338,7 +481,17 @@ func RunEnrollmentSuite(t *testing.T, newStore Factory) {
 			t.Fatal("other device's user channel disabled")
 		}
 		// A disabled parent cannot carry a reactivated user channel.
-		if err := s.StoreTokenUpdate(ctx, user(1, "alice"), push(2), nil, nil, at.Add(time.Second)); !errors.Is(err, storage.ErrDisabled) {
+		if err := s.StoreTokenUpdate(
+			ctx,
+			user(1, "alice"),
+			push(2),
+			nil,
+			nil,
+			at.Add(time.Second),
+		); !errors.Is(
+			err,
+			storage.ErrDisabled,
+		) {
 			t.Fatalf("reactivation: %v", err)
 		}
 		if a, _ := s.Get(ctx, user(1, "alice")); a.Enabled {
@@ -354,7 +507,12 @@ func RunEnrollmentSuite(t *testing.T, newStore Factory) {
 		id := device(1)
 		enroll(t, s, id, 1)
 		short := "alice"
-		msg := &checkin.TokenUpdate{Topic: "com.apple.mgmt.test", UnlockToken: []byte{9}, UserShortName: &short, UserLongName: "Alice"}
+		msg := &checkin.TokenUpdate{
+			Topic:         "com.apple.mgmt.test",
+			UnlockToken:   []byte{9},
+			UserShortName: &short,
+			UserLongName:  "Alice",
+		}
 		// A byte-identical re-send at the same instant changes no column;
 		// backends that count changed rows instead of matched rows would
 		// report the enrollment as missing.
@@ -400,7 +558,11 @@ func RunEnrollmentSuite(t *testing.T, newStore Factory) {
 		cursor := ""
 		pages := 0
 		for {
-			res, err := s.List(ctx, storage.EnrollmentQuery{Channel: mdm.ChannelDevice}, paging.Page{Cursor: cursor, Limit: 2})
+			res, err := s.List(
+				ctx,
+				storage.EnrollmentQuery{Channel: mdm.ChannelDevice},
+				paging.Page{Cursor: cursor, Limit: 2},
+			)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -417,7 +579,11 @@ func RunEnrollmentSuite(t *testing.T, newStore Factory) {
 			t.Fatalf("pages=%d ids=%v", pages, all)
 		}
 		enabled := true
-		res, _ := s.List(ctx, storage.EnrollmentQuery{Channel: mdm.ChannelDevice, Enabled: &enabled}, paging.Page{})
+		res, _ := s.List(
+			ctx,
+			storage.EnrollmentQuery{Channel: mdm.ChannelDevice, Enabled: &enabled},
+			paging.Page{},
+		)
 		if len(res.Items) != 4 {
 			t.Fatalf("enabled devices = %d", len(res.Items))
 		}
@@ -453,7 +619,11 @@ func RunEnrollmentSuite(t *testing.T, newStore Factory) {
 			t.Fatalf("unknown serial = %+v err=%v", res.Items, err)
 		}
 		// Serial composes with the other filters rather than replacing them.
-		res, _ = s.List(ctx, storage.EnrollmentQuery{Serial: "S2", Channel: mdm.ChannelUser}, paging.Page{})
+		res, _ = s.List(
+			ctx,
+			storage.EnrollmentQuery{Serial: "S2", Channel: mdm.ChannelUser},
+			paging.Page{},
+		)
 		if len(res.Items) != 0 {
 			t.Fatalf("serial S2 on the user channel = %+v", res.Items)
 		}
@@ -473,7 +643,12 @@ func RunCommandQueueSuite(t *testing.T, newStore Factory) {
 			t.Fatalf("empty queue: %v %v", next, err)
 		}
 		for i := 1; i <= 3; i++ {
-			res, err := s.Enqueue(ctx, []mdm.EnrollmentID{id}, cmd(t, fmt.Sprintf("C%d", i)), storage.EnqueueOptions{Now: t0.Add(time.Duration(i) * time.Second)})
+			res, err := s.Enqueue(
+				ctx,
+				[]mdm.EnrollmentID{id},
+				cmd(t, fmt.Sprintf("C%d", i)),
+				storage.EnqueueOptions{Now: t0.Add(time.Duration(i) * time.Second)},
+			)
 			if err != nil || len(res.Queued) != 1 {
 				t.Fatalf("Enqueue %d: %+v %v", i, res, err)
 			}
@@ -489,13 +664,37 @@ func RunCommandQueueSuite(t *testing.T, newStore Factory) {
 		if err := s.StoreResult(ctx, id, result("C1", mdm.StatusAcknowledged), t0); err != nil {
 			t.Fatal(err)
 		}
-		if err := s.StoreResult(ctx, id, result("C1", mdm.StatusAcknowledged), t0); !errors.Is(err, storage.ErrNotFound) {
+		if err := s.StoreResult(
+			ctx,
+			id,
+			result("C1", mdm.StatusAcknowledged),
+			t0,
+		); !errors.Is(
+			err,
+			storage.ErrNotFound,
+		) {
 			t.Fatalf("second result for a closed command: %v", err)
 		}
-		if err := s.StoreResult(ctx, id, result("NOPE", mdm.StatusAcknowledged), t0); !errors.Is(err, storage.ErrNotFound) {
+		if err := s.StoreResult(
+			ctx,
+			id,
+			result("NOPE", mdm.StatusAcknowledged),
+			t0,
+		); !errors.Is(
+			err,
+			storage.ErrNotFound,
+		) {
 			t.Fatalf("unknown command result: %v", err)
 		}
-		if err := s.StoreResult(ctx, id, &mdm.Response{Status: mdm.StatusIdle}, t0); !errors.Is(err, storage.ErrInvalid) {
+		if err := s.StoreResult(
+			ctx,
+			id,
+			&mdm.Response{Status: mdm.StatusIdle},
+			t0,
+		); !errors.Is(
+			err,
+			storage.ErrInvalid,
+		) {
 			t.Fatalf("idle as result: %v", err)
 		}
 		n2, _ := s.Next(ctx, id, false, t0)
@@ -516,7 +715,12 @@ func RunCommandQueueSuite(t *testing.T, newStore Factory) {
 			t.Fatalf("after backoff = %+v", n)
 		}
 		// Second NotNow doubles the backoff.
-		if err := s.StoreResult(ctx, id, result("C2", mdm.StatusNotNow), t0.Add(31*time.Second)); err != nil {
+		if err := s.StoreResult(
+			ctx,
+			id,
+			result("C2", mdm.StatusNotNow),
+			t0.Add(31*time.Second),
+		); err != nil {
 			t.Fatal(err)
 		}
 		if n, _ := s.Next(ctx, id, false, t0.Add(80*time.Second)); n == nil || n.UUID != "C3" {
@@ -531,7 +735,12 @@ func RunCommandQueueSuite(t *testing.T, newStore Factory) {
 		if err := s.StoreResult(ctx, id, errResp, t0.Add(2*time.Minute)); err != nil {
 			t.Fatal(err)
 		}
-		if err := s.StoreResult(ctx, id, result("C3", mdm.StatusCommandFormatError), t0.Add(2*time.Minute)); err != nil {
+		if err := s.StoreResult(
+			ctx,
+			id,
+			result("C3", mdm.StatusCommandFormatError),
+			t0.Add(2*time.Minute),
+		); err != nil {
 			t.Fatal(err)
 		}
 		if n, _ := s.Next(ctx, id, false, t0.Add(time.Hour)); n != nil {
@@ -547,10 +756,18 @@ func RunCommandQueueSuite(t *testing.T, newStore Factory) {
 				c2 = c
 			}
 		}
-		if c2.State != storage.StateError || c2.NotNowCount != 2 || c2.Attempts != 3 || c2.Result == nil || len(c2.Result.ErrorChain) != 1 || c2.CompletedAt.IsZero() {
+		if c2.State != storage.StateError || c2.NotNowCount != 2 || c2.Attempts != 3 ||
+			c2.Result == nil ||
+			len(c2.Result.ErrorChain) != 1 ||
+			c2.CompletedAt.IsZero() {
 			t.Fatalf("C2 = %+v", c2)
 		}
-		res, _ = s.Commands(ctx, id, storage.CommandQuery{States: []storage.State{storage.StateAcknowledged}}, paging.Page{})
+		res, _ = s.Commands(
+			ctx,
+			id,
+			storage.CommandQuery{States: []storage.State{storage.StateAcknowledged}},
+			paging.Page{},
+		)
 		if len(res.Items) != 1 || res.Items[0].Command.UUID != "C1" {
 			t.Fatalf("filtered = %+v", res.Items)
 		}
@@ -563,14 +780,35 @@ func RunCommandQueueSuite(t *testing.T, newStore Factory) {
 		if len(first.Items) != 2 || first.NextCursor == "" {
 			t.Fatalf("page 1 = %+v", first)
 		}
-		second, _ := s.Commands(ctx, id, storage.CommandQuery{}, paging.Page{Limit: 2, Cursor: first.NextCursor})
+		second, _ := s.Commands(
+			ctx,
+			id,
+			storage.CommandQuery{},
+			paging.Page{Limit: 2, Cursor: first.NextCursor},
+		)
 		if len(second.Items) != 1 || second.NextCursor != "" {
 			t.Fatalf("page 2 = %+v", second)
 		}
-		if _, err := s.Commands(ctx, id, storage.CommandQuery{}, paging.Page{Cursor: "bogus"}); !errors.Is(err, storage.ErrInvalid) {
+		if _, err := s.Commands(
+			ctx,
+			id,
+			storage.CommandQuery{},
+			paging.Page{Cursor: "bogus"},
+		); !errors.Is(
+			err,
+			storage.ErrInvalid,
+		) {
 			t.Fatalf("bad cursor: %v", err)
 		}
-		if _, err := s.Commands(ctx, device(9), storage.CommandQuery{}, paging.Page{}); !errors.Is(err, storage.ErrNotFound) {
+		if _, err := s.Commands(
+			ctx,
+			device(9),
+			storage.CommandQuery{},
+			paging.Page{},
+		); !errors.Is(
+			err,
+			storage.ErrNotFound,
+		) {
 			t.Fatalf("unknown enrollment: %v", err)
 		}
 	})
@@ -581,34 +819,71 @@ func RunCommandQueueSuite(t *testing.T, newStore Factory) {
 		if err := s.UpsertAuthenticate(ctx, device(2), auth("S2"), nil, t0); err != nil {
 			t.Fatal(err)
 		}
-		res, err := s.Enqueue(ctx, []mdm.EnrollmentID{device(1), device(2), device(3)}, cmd(t, "C1"), storage.EnqueueOptions{DedupeKey: "k", Now: t0})
+		res, err := s.Enqueue(
+			ctx,
+			[]mdm.EnrollmentID{device(1), device(2), device(3)},
+			cmd(t, "C1"),
+			storage.EnqueueOptions{DedupeKey: "k", Now: t0},
+		)
 		if err != nil {
 			t.Fatal(err)
 		}
-		if len(res.Queued) != 1 || !errors.Is(res.Skipped[device(2)], storage.ErrDisabled) || !errors.Is(res.Skipped[device(3)], storage.ErrNotFound) {
+		if len(res.Queued) != 1 || !errors.Is(res.Skipped[device(2)], storage.ErrDisabled) ||
+			!errors.Is(res.Skipped[device(3)], storage.ErrNotFound) {
 			t.Fatalf("Enqueue = %+v", res)
 		}
-		res, _ = s.Enqueue(ctx, []mdm.EnrollmentID{device(1)}, cmd(t, "C2"), storage.EnqueueOptions{DedupeKey: "k", Now: t0})
+		res, _ = s.Enqueue(
+			ctx,
+			[]mdm.EnrollmentID{device(1)},
+			cmd(t, "C2"),
+			storage.EnqueueOptions{DedupeKey: "k", Now: t0},
+		)
 		if len(res.Queued) != 0 || !errors.Is(res.Skipped[device(1)], storage.ErrConflict) {
 			t.Fatalf("dedupe = %+v", res)
 		}
 		if _, err := s.Next(ctx, device(1), false, t0); err != nil {
 			t.Fatal(err)
 		}
-		if err := s.StoreResult(ctx, device(1), result("C1", mdm.StatusAcknowledged), t0); err != nil {
+		if err := s.StoreResult(
+			ctx,
+			device(1),
+			result("C1", mdm.StatusAcknowledged),
+			t0,
+		); err != nil {
 			t.Fatal(err)
 		}
-		res, _ = s.Enqueue(ctx, []mdm.EnrollmentID{device(1)}, cmd(t, "C2"), storage.EnqueueOptions{DedupeKey: "k"})
+		res, _ = s.Enqueue(
+			ctx,
+			[]mdm.EnrollmentID{device(1)},
+			cmd(t, "C2"),
+			storage.EnqueueOptions{DedupeKey: "k"},
+		)
 		if len(res.Queued) != 1 {
 			t.Fatalf("dedupe after completion = %+v", res)
 		}
-		if _, err := s.Enqueue(ctx, []mdm.EnrollmentID{device(1)}, &mdm.Command{}, storage.EnqueueOptions{}); !errors.Is(err, storage.ErrInvalid) {
+		if _, err := s.Enqueue(
+			ctx,
+			[]mdm.EnrollmentID{device(1)},
+			&mdm.Command{},
+			storage.EnqueueOptions{},
+		); !errors.Is(
+			err,
+			storage.ErrInvalid,
+		) {
 			t.Fatalf("invalid command: %v", err)
 		}
 		if _, err := s.Next(ctx, device(9), false, t0); !errors.Is(err, storage.ErrNotFound) {
 			t.Fatalf("Next unknown: %v", err)
 		}
-		if err := s.StoreResult(ctx, device(9), result("C1", mdm.StatusAcknowledged), t0); !errors.Is(err, storage.ErrNotFound) {
+		if err := s.StoreResult(
+			ctx,
+			device(9),
+			result("C1", mdm.StatusAcknowledged),
+			t0,
+		); !errors.Is(
+			err,
+			storage.ErrNotFound,
+		) {
 			t.Fatalf("StoreResult unknown: %v", err)
 		}
 	})
@@ -619,7 +894,12 @@ func RunCommandQueueSuite(t *testing.T, newStore Factory) {
 		enroll(t, s, id, 1)
 		lock, _ := mdm.NewCommand(&commands.DeviceLock{}, mdm.WithUUID("L1"))
 		for i, c := range []*mdm.Command{cmd(t, "C1"), cmd(t, "C2"), lock, cmd(t, "C4")} {
-			if _, err := s.Enqueue(ctx, []mdm.EnrollmentID{id}, c, storage.EnqueueOptions{Now: t0.Add(time.Duration(i) * time.Minute)}); err != nil {
+			if _, err := s.Enqueue(
+				ctx,
+				[]mdm.EnrollmentID{id},
+				c,
+				storage.EnqueueOptions{Now: t0.Add(time.Duration(i) * time.Minute)},
+			); err != nil {
 				t.Fatal(err)
 			}
 		}
@@ -648,7 +928,14 @@ func RunCommandQueueSuite(t *testing.T, newStore Factory) {
 		if next, _ := s.Next(ctx, id, false, t0.Add(time.Hour)); next != nil {
 			t.Fatalf("cleared command delivered: %+v", next)
 		}
-		if _, err := s.Clear(ctx, device(9), storage.ClearFilter{}); !errors.Is(err, storage.ErrNotFound) {
+		if _, err := s.Clear(
+			ctx,
+			device(9),
+			storage.ClearFilter{},
+		); !errors.Is(
+			err,
+			storage.ErrNotFound,
+		) {
 			t.Fatalf("Clear unknown: %v", err)
 		}
 	})
@@ -749,11 +1036,20 @@ func RunCertAuthSuite(t *testing.T, newStore Factory) {
 			t.Fatal(err)
 		}
 		h, err := s.CertHistory(ctx, device(1))
-		if err != nil || len(h) != 2 || h[0].Hash != "h1" || !h[0].At.Equal(t0) || h[1].Hash != "h2" || !h[1].At.Equal(t0.Add(time.Minute)) || h[0].ID != device(1) {
+		if err != nil || len(h) != 2 || h[0].Hash != "h1" || !h[0].At.Equal(t0) ||
+			h[1].Hash != "h2" ||
+			!h[1].At.Equal(t0.Add(time.Minute)) ||
+			h[0].ID != device(1) {
 			t.Fatalf("history = %+v %v", h, err)
 		}
 		// Re-enrollment clears the pin but keeps the history.
-		if err := s.UpsertAuthenticate(ctx, device(1), auth("S1"), nil, t0.Add(2*time.Hour)); err != nil {
+		if err := s.UpsertAuthenticate(
+			ctx,
+			device(1),
+			auth("S1"),
+			nil,
+			t0.Add(2*time.Hour),
+		); err != nil {
 			t.Fatal(err)
 		}
 		if hash, _ := s.CertHash(ctx, device(1)); hash != "" {
@@ -780,7 +1076,8 @@ func RunCertAuthSuite(t *testing.T, newStore Factory) {
 			t.Fatalf("reuse of an unpinned hash: %v", err)
 		}
 		h, err := s.CertHashHistory(ctx, "h1")
-		if err != nil || len(h) != 2 || h[0].ID != device(1) || h[1].ID != device(2) || !h[1].At.Equal(t0.Add(2*time.Minute)) {
+		if err != nil || len(h) != 2 || h[0].ID != device(1) || h[1].ID != device(2) ||
+			!h[1].At.Equal(t0.Add(2*time.Minute)) {
 			t.Fatalf("hash history = %+v %v", h, err)
 		}
 	})
@@ -827,7 +1124,15 @@ func RunBootstrapTokenSuite(t *testing.T, newStore Factory) {
 	if _, err := s.BootstrapToken(ctx, device(1)); !errors.Is(err, storage.ErrNotFound) {
 		t.Fatalf("before store: %v", err)
 	}
-	if err := s.StoreBootstrapToken(ctx, device(9), []byte("x"), t0); !errors.Is(err, storage.ErrNotFound) {
+	if err := s.StoreBootstrapToken(
+		ctx,
+		device(9),
+		[]byte("x"),
+		t0,
+	); !errors.Is(
+		err,
+		storage.ErrNotFound,
+	) {
 		t.Fatalf("unknown: %v", err)
 	}
 	if _, err := s.BootstrapToken(ctx, device(9)); !errors.Is(err, storage.ErrNotFound) {
@@ -902,7 +1207,12 @@ func RunConcurrencySuite(t *testing.T, newStore Factory) {
 		for i := range 20 {
 			wg.Go(func() {
 				c := cmd(t, fmt.Sprintf("P%02d", i))
-				if _, err := s.Enqueue(ctx, []mdm.EnrollmentID{id}, c, storage.EnqueueOptions{Now: t0}); err != nil {
+				if _, err := s.Enqueue(
+					ctx,
+					[]mdm.EnrollmentID{id},
+					c,
+					storage.EnqueueOptions{Now: t0},
+				); err != nil {
 					t.Error(err)
 				}
 				if _, err := s.Next(ctx, id, false, t0); err != nil {
@@ -923,7 +1233,12 @@ func RunConcurrencySuite(t *testing.T, newStore Factory) {
 			if n == nil {
 				break
 			}
-			if err := s.StoreResult(ctx, id, result(n.UUID, mdm.StatusAcknowledged), t0); err != nil {
+			if err := s.StoreResult(
+				ctx,
+				id,
+				result(n.UUID, mdm.StatusAcknowledged),
+				t0,
+			); err != nil {
 				t.Fatal(err)
 			}
 			acked++

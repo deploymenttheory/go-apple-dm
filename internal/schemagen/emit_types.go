@@ -15,6 +15,9 @@ func (e *emitter) typesFile() []byte {
 			needJSON = true
 		}
 		for _, f := range td.Fields {
+			if f.Src.LegacyRequired {
+				needJSON = true
+			}
 			if strings.Contains(f.GoType, "time.Time") {
 				needTime = true
 			}
@@ -66,7 +69,8 @@ func (e *emitter) typeDecl(b *bytes.Buffer, td *TypeDef) {
 			continue
 		}
 		omit := ",omitempty"
-		if !f.Optional && f.Kind == KindScalar && !f.Pointer && f.GoType != "[]byte" &&
+		if (!f.Optional || f.Src.LegacyRequired) && f.Kind == KindScalar && !f.Pointer &&
+			f.GoType != "[]byte" &&
 			f.GoType != "any" {
 			omit = ""
 		}
@@ -82,6 +86,7 @@ func (e *emitter) typeDecl(b *bytes.Buffer, td *TypeDef) {
 		)
 	}
 	b.WriteString("}\n\n")
+	e.legacyMarshal(b, td)
 	if td.Leaf {
 		f := td.Fields[0]
 		fmt.Fprintf(
@@ -105,4 +110,50 @@ func (e *emitter) typeDecl(b *bytes.Buffer, td *TypeDef) {
 			td.Schema.Path,
 		)
 	}
+}
+
+// legacyMarshal keeps published Go fields and tags while omitting an absent
+// formerly required value on the wire. Existing non-empty values serialize
+// exactly as before; both JSON and plist honor the newer optional contract.
+func (e *emitter) legacyMarshal(b *bytes.Buffer, td *TypeDef) {
+	needed := false
+	for _, f := range td.Fields {
+		needed = needed || f.Src.LegacyRequired
+	}
+	if !needed {
+		return
+	}
+	fmt.Fprintf(b, "func (x %s) wireValue() any {\n\treturn struct {\n", td.Name)
+	for _, f := range td.Fields {
+		omit := ",omitempty"
+		if !f.Optional && f.Kind == KindScalar && !f.Pointer && f.GoType != "[]byte" &&
+			f.GoType != "any" {
+			omit = ""
+		}
+		fmt.Fprintf(
+			b,
+			"\t\t%s %s `plist:\"%s%s\" json:\"%s%s\"`\n",
+			f.Name,
+			f.GoType,
+			f.Key,
+			omit,
+			f.Key,
+			omit,
+		)
+	}
+	b.WriteString("\t}{\n")
+	for _, f := range td.Fields {
+		fmt.Fprintf(b, "\t\t%s: x.%s,\n", f.Name, f.Name)
+	}
+	b.WriteString("\t}\n}\n\n")
+	fmt.Fprintf(
+		b,
+		"// MarshalJSON omits absent optional values while preserving the published Go representation.\nfunc (x %s) MarshalJSON() ([]byte, error) { return json.Marshal(x.wireValue()) }\n\n",
+		td.Name,
+	)
+	fmt.Fprintf(
+		b,
+		"// MarshalPlist omits absent optional values while preserving the published Go representation.\nfunc (x %s) MarshalPlist() (any, error) { return x.wireValue(), nil }\n\n",
+		td.Name,
+	)
 }

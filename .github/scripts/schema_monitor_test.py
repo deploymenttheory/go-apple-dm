@@ -159,7 +159,7 @@ class AssessmentTests(unittest.TestCase):
     def test_seed_contract_requires_executed_tests(self):
         tags, required = m.assessment_test_contract({"kind": "seed", "ref": "seed_OS_27_0"})
         self.assertEqual(["-tags", "schema_seed_os_27"], tags)
-        self.assertEqual(5, len(required))
+        self.assertEqual(8, len(required))
         self.assertEqual(sorted(required), m.missing_test_evidence("", required))
         lines = []
         for test in required:
@@ -180,7 +180,7 @@ class AssessmentTests(unittest.TestCase):
                 m.assert_snapshot(Path("/tmp/project"), "a" * 40, "c" * 40)
 
     def test_paths_allow_generated_code_but_not_removal_allowances_or_logs(self):
-        for name in (".gitmodules", m.SUBMODULE, m.SCHEMA + "/commands/types.gen.go", m.SCHEMA + "/commands/conformance_gen_test.go", m.SCHEMA + "/GENERATED_FROM.json"):
+        for name in (".gitmodules", m.SUBMODULE, m.HISTORY_SUBMODULE, m.SCHEMA + "/commands/types.gen.go", m.SCHEMA + "/commands/conformance_gen_test.go", m.SCHEMA + "/GENERATED_FROM.json"):
             self.assertTrue(m.allowed_path(name), name)
         for name in ("seeds.md", "run.log", "server/go.mod", ".github/workflows/test.yml", m.SCHEMA + "/ALLOWED_REMOVALS.md", m.SCHEMA + "/support/support.go"):
             self.assertFalse(m.allowed_path(name), name)

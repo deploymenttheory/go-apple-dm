@@ -19,7 +19,8 @@ failure requiring investigation.
    snapshot. Matrix jobs run independently with at most two assessments in parallel.
 3. Compare raw schema structure and collect strict parsing failures across all
    files. Group repeated causes and retain independent protocol/support changes.
-4. If parsing succeeds, generate the complete candidate, verify deterministic
+4. If parsing succeeds, retain the project's pinned historical schema for seed
+   candidates, generate the combined API, verify deterministic
    output and exported-name removals, and compare generated public declarations,
    signatures and serialization tags against the project API.
 5. Build both Go modules; verify the server resolves the candidate library through
@@ -46,7 +47,9 @@ require an engineer's review even when compilation and conformance tests pass.
 
 For `seed_OS_27_0`, the tests stage also enables `schema_seed_os_27` and requires
 explicit passing JSON test events for enhanced-log commands and status, software
-update removal, Return to Service retry and the reviewed content-cache contract.
+update removal, Return to Service retry, the reviewed content-cache contract,
+mixed-fleet dispatch, queued commands after an upgrade, and legacy-profile wire
+compatibility. All eight contracts must pass.
 Missing or skipped tests fail the stage. Stable assessments do not compile these
 seed-only types. Content-cache tests run in both assessments; the seed additionally
 checks its OpenAPI file against the reviewed library fixture.
@@ -130,7 +133,9 @@ The runner checks candidate and project SHAs before and after generation/tests.
 It invokes `schemagen` directly. `make generate` and `make verify` initialize the
 committed submodule pin and would reset a manually selected candidate checkout.
 Preview patches update `.gitmodules` so subsequent local generation records the
-correct Apple ref. They never update `ALLOWED_REMOVALS.md`, handwritten Go files,
+correct Apple ref and initializes the pinned historical input. The history
+gitlink is checked before assessment completes and again before publication.
+They never update `ALLOWED_REMOVALS.md`, handwritten Go files,
 server dependency requirements or release metadata.
 
 For a raw source comparison without running candidate code:

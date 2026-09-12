@@ -27,7 +27,8 @@ func enrolled(t *testing.T, a *app.App, udid string) mdm.EnrollmentID {
 	err := a.Core.ImportEnrollment(context.Background(), storage.EnrollmentExport{
 		Enrollment: storage.Enrollment{
 			ID: id, Enabled: true,
-			Push: mdm.Push{Topic: "com.apple.mgmt.External.test", Token: []byte("tok"), Magic: "magic"},
+			Device: storage.DeviceInfo{ProductName: "Mac16,1", OSVersion: "26.4"},
+			Push:   mdm.Push{Topic: "com.apple.mgmt.External.test", Token: []byte("tok"), Magic: "magic"},
 		},
 	})
 	if err != nil {
