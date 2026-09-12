@@ -553,7 +553,7 @@ def evidence_section(item, result, run_url, status="observed", issue_links=None,
         text += ["", "Showing " + str(shown) + " of " + str(total) + " locations. Full evidence is in `audit.json` in the assessment artifacts."]
     text += ["", "</details>", "", "<details>", "<summary>Assessment and reproduction</summary>", "",
              "Apple branch: " + inline_code(branch["ref"]) + ".", "",
-             "Baseline: " + inline_code(branch["baseline"]) + "; candidate: " + inline_code(branch["commit"]) + ".", "",
+             "Baseline: " + inline_code(result.get("auditBaseline", branch["baseline"])) + "; candidate: " + inline_code(branch["commit"]) + ".", "",
              "Project: " + inline_code(result["projectCommit"]) + ".", "",
              "| Stage | Result |", "|---|---|"]
     text += ["| " + stage + " | " + result["stages"][stage]["state"] + " |" for stage in STAGES]

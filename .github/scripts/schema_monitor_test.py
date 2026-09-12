@@ -197,6 +197,13 @@ class AssessmentTests(unittest.TestCase):
             with self.assertRaises(subprocess.CalledProcessError):
                 m.is_ancestor(Path("/tmp"), "a", "b")
 
+    def test_release_issue_evidence_names_the_actual_comparison_baseline(self):
+        result = report("release")
+        result.update(comparisonOnly=True, auditBaseline="d" * 40)
+        body = m.evidence_section(incident(), result, "url")
+        self.assertIn("Baseline: ` " + "d" * 40 + " `", body)
+        self.assertNotIn("Baseline: ` " + result["branch"]["baseline"] + " `", body)
+
     def test_routine_contract_gate_rejects_missing_skipped_and_failed_tests(self):
         events = "\n".join(json.dumps({"Action": "pass", "Package": test.rsplit("/", 1)[0],
                                      "Test": test.rsplit("/", 1)[1]}) for test in m.OS27_TESTS)

@@ -4,5 +4,5 @@
 	branch = seed_OS_27_0
 [submodule "third_party/device-management-history"]
 	path = third_party/device-management-history
-	url = https://github.com/apple/device-management
+	url = https://github.com/apple/device-management.git
 	branch = release
