@@ -1,9 +1,58 @@
 package schemagen
 
 import (
+	"bytes"
 	"strings"
 	"testing"
 )
+
+func TestDocumentationMetadataDoesNotChangeGeneratedAPI(t *testing.T) {
+	t.Parallel()
+	const doc = "title: Test\npayload:\n  statusitemtype: test.status\npayloadkeys:\n- key: test.status\n  type: <string>\nreasons:\n- value: Error.Failed\n  details:\n  - key: Timestamp\n    type: <string>\n"
+	baseline, err := Parse([]byte(doc))
+	if err != nil {
+		t.Fatal(err)
+	}
+	candidate, err := Parse([]byte(doc + "    valuetype: timestamp\nexamples: []\n"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	var outputs []Files
+	for _, s := range []*Schema{baseline, candidate} {
+		s.Path, s.Family = "declarative/status/test.yaml", FamilyStatus
+		pkgs, err := Build(&Tree{Schemas: []*Schema{s}})
+		if err != nil {
+			t.Fatal(err)
+		}
+		files, err := Generate(pkgs, Options{Commit: "fixture"})
+		if err != nil {
+			t.Fatal(err)
+		}
+		outputs = append(outputs, files)
+	}
+	if len(outputs[0]) != len(outputs[1]) {
+		t.Fatal("metadata changed generated file set")
+	}
+	for name, before := range outputs[0] {
+		if !bytes.Equal(before, outputs[1][name]) {
+			t.Fatalf("metadata changed %s", name)
+		}
+	}
+}
+
+func TestProfileTitleChangePreservesPublicName(t *testing.T) {
+	t.Parallel()
+	for _, title := range []string{"Content Caching", "Content Caching Service"} {
+		s := &Schema{Title: title, Path: "mdm/profiles/com.apple.AssetCache.managed.yaml", Family: FamilyProfiles}
+		pkgs, err := Build(&Tree{Schemas: []*Schema{s}})
+		if err != nil {
+			t.Fatal(err)
+		}
+		if pkgs[0].Schemas[0].Name != "ContentCaching" {
+			t.Fatal("editorial title renamed the API")
+		}
+	}
+}
 
 func TestSeedMetadataStrictParsing(t *testing.T) {
 	t.Parallel()
