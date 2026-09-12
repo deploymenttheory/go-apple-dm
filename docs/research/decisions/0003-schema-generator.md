@@ -10,6 +10,15 @@ The in-repository generator uses `gopkg.in/yaml.v3` nodes to emit commands and r
 
 Generated conformance tests exercise XML plist, binary plist and JSON round trips. `devicemanagement/schema/EXPORTED_IDENTIFIERS.lock` tracks exported names, and approved removals belong in `devicemanagement/schema/ALLOWED_REMOVALS.md`. Provenance is generated from the checked-out schema as described in record 0046.
 
+The schema monitor follows Apple's advertised stable default branch and discovers
+every branch whose name starts with `seed`. It compares the project pin to stable,
+and stable to each seed, using recorded commit SHAs. Raw YAML comparison and strict
+parsing are independent; parser failures do not suppress engineering review evidence.
+Complete generated changes can produce a stable update PR or a draft seed preview.
+Neither the removal allowance nor the server dependency requirement is edited by
+automation. Engineering issues distinguish executable failures from behavior reviews;
+blocked checks cannot establish a fix. See the [monitor guide](../../schema-monitor.md).
+
 ## Rationale
 
 One loader and emitter set keeps type generation, validation, metadata and provenance consistent. The identifier lock makes removals reviewable when the schema changes.

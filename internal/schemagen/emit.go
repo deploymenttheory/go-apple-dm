@@ -16,6 +16,8 @@ const LibraryImportRoot = "github.com/deploymenttheory/go-apple-dm/devicemanagem
 type Options struct {
 	// Commit of apple/device-management the tree came from, for headers.
 	Commit string
+	// Ref names the upstream branch selected by the caller.
+	Ref string
 }
 
 // Files maps a path relative to devicemanagement/schema/ to file contents.

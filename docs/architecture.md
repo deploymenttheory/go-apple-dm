@@ -40,6 +40,14 @@ and conformance fixtures. `devicemanagement/schema/GENERATED_FROM.json` records 
 temporary directory and checks the output and removal guard. Generated validation covers the
 modeled schema constraints; protocol rules documented only in prose belong in the calling code.
 
+The [Apple schema monitor](schema-monitor.md) discovers Apple's stable default
+and `seed*` branches, assesses immutable commits in isolated workspaces, then
+publishes grouped engineering issues and generated update PRs. Stable updates
+target the project default branch; seed updates stay in separate draft previews.
+Parsing failures retain raw schema findings and block dependent generation and
+runtime checks. Server tests explicitly resolve the candidate library through
+the workspace, without changing the server's published dependency requirement.
+
 ## Enrollment and command service
 
 `server/httpapi` extracts a certificate through CMS, mutual TLS or an explicitly trusted proxy.

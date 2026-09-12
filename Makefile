@@ -43,6 +43,7 @@ generate: submodule
 ## verify: fail if regeneration changes anything or removes an exported identifier
 verify: submodule
 	$(GO) test ./internal/layout -run TestWorkflowSecurity
+	python3 -m unittest discover -s .github/scripts -p '*_test.py'
 	@if [ -d cmd/schemagen ]; then $(GO) run ./cmd/schemagen verify; else echo "schema generator directory is missing"; fi
 
 ## lint: run golangci-lint with the repository configuration

@@ -1,197 +1,158 @@
-name: Device Management Schema Update
-
-# Weekly, and on demand: keep the generated schema current with Apple's
-# apple/device-management repository. Compares the pinned submodule against the
-# upstream release branch, regenerates against it, and opens a pull request
-# with the result when anything changed.
-#
-# The pull request contains regenerated output and validation results for review.
-# Weekly scheduling follows release-branch changes; workflow_dispatch supports
-# an explicit update between scheduled runs.
+name: Apple Schema Compatibility Monitor
 
 on:
   schedule:
-    # 03:23 UTC on Mondays.
-    - cron: '23 3 * * 1'
+    # Daily at 03:23 UTC. Seed discovery is independent of stable updates.
+    - cron: '23 3 * * *'
   workflow_dispatch:
+    inputs:
+      report_only:
+        description: 'Assess branches and retain proposed issues without publishing'
+        type: boolean
+        default: true
 
-# A manual run during the scheduled one would race to push the same branch.
 concurrency:
-  group: device-management-schema-update
+  group: apple-schema-monitor
   cancel-in-progress: false
 
 permissions:
   contents: read
 
 jobs:
-  schema-update:
-    name: '🍎 Device management schema update'
+  discover:
+    name: Discover stable and seed schema commits
     runs-on: ubuntu-latest
-    timeout-minutes: 30
-    permissions:
-      contents: write
-      pull-requests: write
+    timeout-minutes: 10
+    outputs:
+      matrix: ${{ steps.discover.outputs.matrix }}
+      has_branches: ${{ steps.discover.outputs.has_branches }}
     steps:
       - name: Harden Runner
         uses: step-security/harden-runner@e14015d583714f6e62063499dc959a02595150a1 # v2.21.1
         with:
           egress-policy: audit
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Discover immutable source commits
+        id: discover
+        run: python3 .github/scripts/schema_monitor.py discover --output "${RUNNER_TEMP}/schema-discovery/discovery.json"
+      - name: Retain discovery even when upstream access fails
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: schema-discovery
+          path: ${{ runner.temp }}/schema-discovery/
+          if-no-files-found: error
+          retention-days: 30
 
-      # Use the release-please App so the resulting pull request triggers CI,
-      # including conformance, coverage and module-boundary checks.
-      - uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3
-        id: app-token
-        if: ${{ vars.RP_APP_ID != '' }}
+  assess:
+    name: Assess ${{ matrix.ref }}
+    needs: discover
+    if: ${{ needs.discover.outputs.has_branches == 'true' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      max-parallel: 2
+      matrix:
+        include: ${{ fromJSON(needs.discover.outputs.matrix) }}
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@e14015d583714f6e62063499dc959a02595150a1 # v2.21.1
+        with:
+          egress-policy: audit
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: go.mod
+          cache-dependency-path: |
+            go.sum
+            server/go.sum
+      - uses: actions/download-artifact@018cc2cf5baa6db3ef3c5f8a56943fffe632ef53 # v6
+        with:
+          name: schema-discovery
+          path: ${{ runner.temp }}/schema-discovery/
+      - name: Compare and test the selected candidate
+        env:
+          SCHEMA_BRANCH_KEY: ${{ matrix.key }}
+        run: >-
+          python3 .github/scripts/schema_monitor.py assess
+          --manifest "${RUNNER_TEMP}/schema-discovery/discovery.json"
+          --key "$SCHEMA_BRANCH_KEY" --output "${RUNNER_TEMP}/schema-assessments"
+      - name: Retain findings and every completed check
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: schema-assessment-${{ matrix.key }}
+          path: ${{ runner.temp }}/schema-assessments/
+          if-no-files-found: error
+          retention-days: 30
+
+  publish:
+    name: Publish schema reports, engineering issues and previews
+    needs: [discover, assess]
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: write
+      pull-requests: write
+      issues: write
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@e14015d583714f6e62063499dc959a02595150a1 # v2.21.1
+        with:
+          egress-policy: audit
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@018cc2cf5baa6db3ef3c5f8a56943fffe632ef53 # v6
         continue-on-error: true
+        with:
+          name: schema-discovery
+          path: ${{ runner.temp }}/schema-discovery/
+      - uses: actions/download-artifact@018cc2cf5baa6db3ef3c5f8a56943fffe632ef53 # v6
+        continue-on-error: true
+        with:
+          pattern: schema-assessment-*
+          merge-multiple: true
+          path: ${{ runner.temp }}/schema-assessments/
+      - name: Obtain PR credential so preview CI runs automatically
+        if: ${{ vars.RP_APP_ID != '' && !(github.event_name == 'workflow_dispatch' && inputs.report_only) }}
+        id: app-token
+        continue-on-error: true
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3
         with:
           app-id: ${{ vars.RP_APP_ID }}
           private-key: ${{ secrets.RP_APP_PRIVATE_KEY }}
-
-      - name: Which credential
-        run: |
-          if [ -n "${{ steps.app-token.outputs.token }}" ]; then
-            echo "using the org App; the pull request will run CI"
-          else
-            echo "::warning::App token unavailable (RP_APP_ID/RP_APP_PRIVATE_KEY unset, or the App is not installed here) — falling back to the repo PAT"
-          fi
-
-      - name: Checkout Code
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          submodules: recursive
-          token: ${{ steps.app-token.outputs.token || secrets.RELEASE_PLEASE_PAT || github.token }}
-
-      - name: Setup Go
-        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
-        with:
-          go-version-file: 'go.mod'
-          cache: true
-
-      - name: Compare the pin against upstream
-        id: compare
-        run: |
-          set -euo pipefail
-          sub=third_party/device-management
-          pinned="$(git -C "$sub" rev-parse HEAD)"
-          git -C "$sub" fetch -q origin 'refs/heads/*:refs/remotes/origin/*'
-          release="$(git -C "$sub" rev-parse origin/release)"
-          {
-            echo "pinned=$pinned"
-            echo "release=$release"
-            echo "short=$(git -C "$sub" rev-parse --short "$release")"
-            echo "changed=$([ "$pinned" != "$release" ] && echo true || echo false)"
-          } >> "$GITHUB_OUTPUT"
-
-          # Report seed-branch differences for review. Only the release branch
-          # is eligible for the schema pin.
-          : > seeds.md
-          for seed in $(git -C "$sub" branch -r --list 'origin/seed_*' | sed 's#origin/##'); do
-            head="$(git -C "$sub" rev-parse "origin/$seed")"
-            n="$(git -C "$sub" diff --name-only "$release" "$head" -- '*.yaml' | wc -l | tr -d ' ')"
-            [ "$n" -gt 0 ] && echo "| \`$seed\` | $n |" >> seeds.md
-          done
-
-      - name: Record the current schema
-        if: steps.compare.outputs.changed == 'true'
-        run: |
-          set -euo pipefail
-          go run ./cmd/schemagen versions > /tmp/versions.before
-          sort devicemanagement/schema/EXPORTED_IDENTIFIERS.lock > /tmp/identifiers.before
-
-      - name: Regenerate against upstream
-        if: steps.compare.outputs.changed == 'true'
-        run: |
-          set -euo pipefail
-          git -C third_party/device-management checkout -q "${{ steps.compare.outputs.release }}"
-          make generate
-          go run ./cmd/schemagen versions > /tmp/versions.after
-          go run ./cmd/schemagen identifiers | sort > /tmp/identifiers.after
-
-      # Run every check and include failures in the pull request for review.
-      # Failed checks do not suppress creation of the update pull request.
-      - name: Check the regenerated tree
-        if: steps.compare.outputs.changed == 'true'
-        id: checks
-        continue-on-error: true
-        run: |
-          set +e
-          make test-conformance > /tmp/conformance.log 2>&1; echo "conformance=$?" >> "$GITHUB_OUTPUT"
-          make verify           > /tmp/verify.log      2>&1; echo "verify=$?"      >> "$GITHUB_OUTPUT"
-          (cd server && go test ./service/ -run TestEveryCheckinMessageIsHandled) \
-                                > /tmp/handled.log     2>&1; echo "handled=$?"     >> "$GITHUB_OUTPUT"
-          exit 0
-
-      - name: Describe the update
-        if: steps.compare.outputs.changed == 'true'
-        id: describe
-        run: |
-          set -euo pipefail
-          sub=third_party/device-management
-
-          # Compare maximum schema versions by OS family.
-          : > versions.md
-          join -a1 -a2 -e '-' -o '0,1.2,2.2' -t "$(printf '\t')" \
-            /tmp/versions.before /tmp/versions.after 2>/dev/null |
-            while IFS="$(printf '\t')" read -r os before after; do
-              [ "$before" = "$after" ] && continue
-              echo "| $os | $before | **$after** |" >> versions.md
-            done
-          newest="$(cut -f2 /tmp/versions.after | sort -V | tail -1)"
-          echo "newest=$newest" >> "$GITHUB_OUTPUT"
-          if [ -s versions.md ]; then
-            echo "title=chore(schema): Apple device management $newest" >> "$GITHUB_OUTPUT"
-          else
-            echo "title=chore(schema): Apple device management ${{ steps.compare.outputs.short }}" >> "$GITHUB_OUTPUT"
-          fi
-
-          # An identifier absent from regenerated output needs an entry in
-          # ALLOWED_REMOVALS.md before verify will pass.
-          comm -23 /tmp/identifiers.before /tmp/identifiers.after > /tmp/removed || true
-          comm -13 /tmp/identifiers.before /tmp/identifiers.after > /tmp/added   || true
-          {
-            echo "added=$(wc -l < /tmp/added | tr -d ' ')"
-            echo "removed=$(wc -l < /tmp/removed | tr -d ' ')"
-          } >> "$GITHUB_OUTPUT"
-          git -C "$sub" log --oneline "${{ steps.compare.outputs.pinned }}..${{ steps.compare.outputs.release }}" > /tmp/commits.log
-
-      - name: Open or update the pull request
-        if: steps.compare.outputs.changed == 'true'
+      - name: Reconcile reports and publish only complete generated changes
         env:
-          GH_TOKEN: ${{ steps.app-token.outputs.token || secrets.RELEASE_PLEASE_PAT || github.token }}
-          PINNED: ${{ steps.compare.outputs.pinned }}
-          RELEASE: ${{ steps.compare.outputs.release }}
-          SHORT: ${{ steps.compare.outputs.short }}
-          NEWEST: ${{ steps.describe.outputs.newest }}
-          ADDED: ${{ steps.describe.outputs.added }}
-          REMOVED: ${{ steps.describe.outputs.removed }}
-          CONFORMANCE: ${{ steps.checks.outputs.conformance }}
-          VERIFY: ${{ steps.checks.outputs.verify }}
-          HANDLED: ${{ steps.checks.outputs.handled }}
+          GH_TOKEN: ${{ github.token }}
+          SCHEMA_PR_TOKEN: ${{ steps.app-token.outputs.token || secrets.RELEASE_PLEASE_PAT }}
+          SCHEMA_REPORT_ONLY: ${{ github.event_name == 'workflow_dispatch' && inputs.report_only }}
+          SCHEMA_RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
         run: |
-          set -euo pipefail
-          if git diff --quiet && git diff --quiet --cached; then
-            echo "upstream moved but the generated tree is identical; nothing to open"
-            exit 0
+          args=()
+          if [ "$SCHEMA_REPORT_ONLY" = "true" ]; then args+=(--report-only); fi
+          python3 .github/scripts/schema_monitor.py publish \
+            --manifest "${RUNNER_TEMP}/schema-discovery/discovery.json" \
+            --output "${RUNNER_TEMP}/schema-assessments" \
+            --run-url "$SCHEMA_RUN_URL" "${args[@]}"
+      - name: Show final branch outcomes
+        if: always()
+        run: |
+          if [ -f "${RUNNER_TEMP}/schema-assessments/summary.md" ]; then
+            cat "${RUNNER_TEMP}/schema-assessments/summary.md" >> "$GITHUB_STEP_SUMMARY"
           fi
-          # One branch per upstream commit, so re-running updates the same pull
-          # request instead of opening another.
-          branch="schema/update-${{ steps.compare.outputs.short }}"
-          git config user.name  "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git checkout -b "$branch"
-          git add -A
-          git commit -q -m "chore(schema): regenerate from apple/device-management ${{ steps.compare.outputs.short }}" \
-            -m "Pin moves to ${{ steps.compare.outputs.release }}. Opened by the Device Management Schema Update workflow."
-          git push -f -q origin "$branch"
-
-          bash .github/scripts/schema-update-body.sh > /tmp/body.md
-
-          if pr="$(gh pr list --head "$branch" --state open --json number -q '.[0].number')" && [ -n "$pr" ]; then
-            gh pr edit "$pr" --title "${{ steps.describe.outputs.title }}" --body-file /tmp/body.md
-            echo "updated pull request #$pr"
-          else
-            gh pr create --base "${{ github.event.repository.default_branch }}" --head "$branch" \
-              --title "${{ steps.describe.outputs.title }}" --body-file /tmp/body.md \
-              --label schema-update
-            echo "opened a pull request for $branch"
-          fi
+      - name: Retain publication summary
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: schema-monitor-summary
+          path: |
+            ${{ runner.temp }}/schema-assessments/summary.md
+            ${{ runner.temp }}/schema-assessments/proposed-issues.json
+          retention-days: 30

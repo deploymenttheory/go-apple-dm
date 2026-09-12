@@ -7,6 +7,10 @@
 // checkout. Emitters produce deterministic Go and provenance. Verify compares
 // regenerated output and rejects exported-name removals unless the removal
 // allowlist permits them.
+// Audit compares raw YAML independently of strict decoding so unsupported
+// metadata does not hide protocol changes. CompareAPI checks generated types,
+// signatures and wire tags. BoundaryProbes derives changed support cases from
+// source data for comparison with compiled candidate tables.
 //
 // Apple's descriptions are retained verbatim; project-authored generated
 // documentation is maintained in the emitters. Protocol behavior described

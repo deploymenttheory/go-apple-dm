@@ -66,7 +66,7 @@ func Run(schemaRoot string, opts Options) (Files, error) {
 	if err != nil {
 		return nil, err
 	}
-	record, err := describe(schemaRoot, tree, opts.Commit)
+	record, err := describe(schemaRoot, tree, opts.Commit, opts.Ref)
 	if err != nil {
 		return nil, err
 	}

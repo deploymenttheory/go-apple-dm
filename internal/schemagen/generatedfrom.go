@@ -33,14 +33,18 @@ var osFamilies = []string{"iOS", "macOS", "tvOS", "visionOS", "watchOS"}
 // describe builds deterministic GENERATED_FROM.json bytes from the schema
 // checkout. The commit's own date is recorded so identical inputs produce
 // identical output regardless of generation time.
-func describe(schemaRoot string, t *Tree, commit string) ([]byte, error) {
+func describe(schemaRoot string, t *Tree, commit string, refs ...string) ([]byte, error) {
+	ref := upstreamRef
+	if len(refs) > 0 && refs[0] != "" {
+		ref = refs[0]
+	}
 	sum, err := yamlSHA256(schemaRoot)
 	if err != nil {
 		return nil, err
 	}
 	g := GeneratedFrom{
 		Source:     upstreamSource,
-		Ref:        upstreamRef,
+		Ref:        ref,
 		Commit:     commit,
 		YAMLSHA256: sum,
 		OSVersions: NewestOSVersion(t),
