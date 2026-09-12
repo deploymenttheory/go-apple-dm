@@ -7,7 +7,6 @@
 
 * @ShocOne
 
-.azuredevops/** @ShocOne
 .github/** @ShocOne
-.pipelines/** @ShocOne
-workload/** @ShocOne
+devicemanagement/** @ShocOne
+server/** @ShocOne
