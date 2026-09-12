@@ -1,5 +1,31 @@
 # Changelog
 
+## [0.5.0](https://github.com/deploymenttheory/go-apple-dm/compare/v0.4.0...v0.5.0) (2026-09-12)
+
+
+### ⚠ BREAKING CHANGES
+
+* move library packages under devicemanagement
+
+### Features
+
+* **schemagen:** monitor Apple stable and seed compatibility ([5b35e09](https://github.com/deploymenttheory/go-apple-dm/commit/5b35e099f49461c3cdb4bdc14ee9f7cc5f3256d5))
+* **schemagen:** monitor stable and seed compatibility ([ac5561d](https://github.com/deploymenttheory/go-apple-dm/commit/ac5561d5551935a7a01d78a1350e78d1dccdda05))
+
+
+### Bug Fixes
+
+* **schemagen:** resolve candidate workspace paths before testing ([164db9d](https://github.com/deploymenttheory/go-apple-dm/commit/164db9dbc2d0cd03dd77336ef6d41255b0323c69))
+* **schemagen:** retain independent protocol test evidence ([63c5458](https://github.com/deploymenttheory/go-apple-dm/commit/63c54586d0111b4bd92b47ad329aa5f78cb061f1))
+
+
+### Refactoring
+
+* move library packages under devicemanagement ([3014128](https://github.com/deploymenttheory/go-apple-dm/commit/30141285a2a50d6dbaf6d003973e41acc52ab13a))
+* move library packages under devicemanagement ([bb9e5bb](https://github.com/deploymenttheory/go-apple-dm/commit/bb9e5bb3af89683a960a326e309be409bb0dc40f))
+* rename schema generator command to schemagen ([9c5bd3f](https://github.com/deploymenttheory/go-apple-dm/commit/9c5bd3f90af69312da1c719638bf80c2f320ab00))
+* **server:** adopt devicemanagement library imports ([e519b28](https://github.com/deploymenttheory/go-apple-dm/commit/e519b286bc1b66e498d104743cf7581e68588d88))
+
 ## [0.4.0](https://github.com/deploymenttheory/go-apple-dm/compare/v0.3.3...v0.4.0) (2026-09-12)
 
 
