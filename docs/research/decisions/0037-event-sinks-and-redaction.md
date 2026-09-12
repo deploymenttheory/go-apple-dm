@@ -47,7 +47,7 @@ Projection tests seed payloads with sentinel secrets, cover every event type and
 ## References
 
 - [server/eventsink](../../../server/eventsink)
-- [mdmprotocol/event](../../../mdmprotocol/event)
+- [mdmprotocol/event](../../../devicemanagement/mdmprotocol/event)
 - [server/internal/app/app.go](../../../server/internal/app/app.go)
 - <https://developer.apple.com/documentation/devicemanagement/check-in>
 - <https://developer.apple.com/documentation/devicemanagement/tokenupdate>

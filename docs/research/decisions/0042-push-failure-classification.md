@@ -24,8 +24,8 @@ APNs tests cover every documented reason and unknown status values. Notifier tes
 
 ## References
 
-- [appleplatformservices/push](../../../appleplatformservices/push)
-- [appleplatformservices/push/apns](../../../appleplatformservices/push/apns)
+- [appleplatformservices/push](../../../devicemanagement/appleplatformservices/push)
+- [appleplatformservices/push/apns](../../../devicemanagement/appleplatformservices/push/apns)
 - [server/pushnotify](../../../server/pushnotify)
 - [server/ddmsync](../../../server/ddmsync)
 - <https://developer.apple.com/documentation/usernotifications/handling-notification-responses-from-apns>

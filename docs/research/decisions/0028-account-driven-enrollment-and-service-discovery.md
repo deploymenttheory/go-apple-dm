@@ -24,8 +24,8 @@ Tests cover wrong-account and cross-certificate replay, channel rules, associati
 
 ## References
 
-- [mdmprotocol/enroll/accountdriven](../../../mdmprotocol/enroll/accountdriven)
-- [mdmprotocol/enroll/discovery](../../../mdmprotocol/enroll/discovery)
+- [mdmprotocol/enroll/accountdriven](../../../devicemanagement/mdmprotocol/enroll/accountdriven)
+- [mdmprotocol/enroll/discovery](../../../devicemanagement/mdmprotocol/enroll/discovery)
 - [server/internal/app/enroll.go](../../../server/internal/app/enroll.go)
 - <https://developer.apple.com/documentation/devicemanagement/onboarding-users-with-account-driven-enrollment>
 - <https://developer.apple.com/documentation/devicemanagement/get-.well-known-com.apple.remotemanagement>

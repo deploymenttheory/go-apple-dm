@@ -4,12 +4,12 @@ import (
 	"context"
 	"log/slog"
 
-	"github.com/deploymenttheory/go-apple-dm/mdmprotocol/cms"
-	"github.com/deploymenttheory/go-apple-dm/mdmprotocol/ddm"
-	"github.com/deploymenttheory/go-apple-dm/mdmprotocol/dmhook"
-	"github.com/deploymenttheory/go-apple-dm/mdmprotocol/mdm"
-	"github.com/deploymenttheory/go-apple-dm/paging"
-	"github.com/deploymenttheory/go-apple-dm/storage"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/cms"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/ddm"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/dmhook"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/mdm"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/paging"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/storage"
 )
 
 // ServiceHook clears DDM state after successful checkout or authentication,

@@ -17,13 +17,13 @@ import (
 	"testing"
 	"time"
 
-	"github.com/deploymenttheory/go-apple-dm/clock"
-	"github.com/deploymenttheory/go-apple-dm/mdmprotocol/cms"
-	"github.com/deploymenttheory/go-apple-dm/mdmprotocol/plist"
-	"github.com/deploymenttheory/go-apple-dm/secrets"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/clock"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/cms"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/plist"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/secrets"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/simulator"
 	"github.com/deploymenttheory/go-apple-dm/server/httpapi"
 	"github.com/deploymenttheory/go-apple-dm/server/internal/app"
-	"github.com/deploymenttheory/go-apple-dm/simulator"
 )
 
 func TestPKIAndAccountStatePersistAcrossInstances(t *testing.T) {

@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/deploymenttheory/go-apple-dm/pki/acme"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/pki/acme"
 )
 
 // accountCols are the indexed copies beside the record: the thumbprint is

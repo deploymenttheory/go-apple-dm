@@ -7,8 +7,8 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/state"
 	"github.com/deploymenttheory/go-apple-dm/server/apppush"
-	"github.com/deploymenttheory/go-apple-dm/state"
 )
 
 type unavailableAppState struct {

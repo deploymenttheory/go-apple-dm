@@ -8,7 +8,7 @@ import (
 
 	"github.com/cedar-policy/cedar-go/types"
 
-	"github.com/deploymenttheory/go-apple-dm/clock"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/clock"
 )
 
 // Manager authenticates admin callers, answers authorization decisions from

@@ -8,15 +8,15 @@ import (
 	"testing"
 	"time"
 
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/mdm"
 	"github.com/deploymenttheory/go-apple-dm/server/pushnotify"
-	"github.com/deploymenttheory/go-apple-dm/mdmprotocol/mdm"
 
-	"github.com/deploymenttheory/go-apple-dm/appleplatformservices/push"
-	"github.com/deploymenttheory/go-apple-dm/appleplatformservices/push/apns"
-	"github.com/deploymenttheory/go-apple-dm/appleplatformservices/push/pushtest"
-	"github.com/deploymenttheory/go-apple-dm/clock"
-	"github.com/deploymenttheory/go-apple-dm/storage/inmem"
-	"github.com/deploymenttheory/go-apple-dm/testpki"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/appleplatformservices/push"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/appleplatformservices/push/apns"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/appleplatformservices/push/pushtest"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/clock"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/storage/inmem"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/testpki"
 )
 
 // TestPushWithStoreCertStore pushes through a StoreCertStore backed by the

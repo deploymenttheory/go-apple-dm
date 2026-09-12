@@ -24,8 +24,8 @@ Predicate parse/evaluation tables and fuzz targets cover accepted and rejected s
 
 ## References
 
-- [simulator](../../../simulator)
-- [mdmprotocol/ddm/predicate](../../../mdmprotocol/ddm/predicate)
+- [simulator](../../../devicemanagement/simulator)
+- [mdmprotocol/ddm/predicate](../../../devicemanagement/mdmprotocol/ddm/predicate)
 - <https://developer.apple.com/documentation/devicemanagement/leveraging-the-declarative-management-data-model-to-scale-devices>
 - <https://developer.apple.com/documentation/devicemanagement/declarativemanagementrequest>
 - <https://developer.apple.com/documentation/devicemanagement/status-items>

@@ -22,16 +22,18 @@ Read the [getting-started guide](docs/getting-started/getting-started.md) for a
 complete walkthrough of prerequisites, local simulation, persistent storage,
 administrator setup, real-device enrollment, and library integration.
 
-Install the library in your own module:
+Install the library in your own module. Select a reviewed tag or commit containing
+the `devicemanagement/` packages; older releases use the previous import paths:
 
 ```sh
-go get github.com/deploymenttheory/go-apple-dm
+export DM_REV='REPLACE-WITH-REVIEWED-TAG-OR-COMMIT'
+go get "github.com/deploymenttheory/go-apple-dm@$DM_REV"
 ```
 
 Applications using the service layer or SQL backends also import the server module:
 
 ```sh
-go get github.com/deploymenttheory/go-apple-dm/server
+go get "github.com/deploymenttheory/go-apple-dm/server@$DM_REV"
 ```
 
 From a repository checkout, run a local development server:

@@ -10,7 +10,7 @@
     ],
     "repository": {
       "url": "https://github.com/deploymenttheory/go-apple-dm",
-      "revision": "ff85958196cb013e8e14c1055f067319b07e3299"
+      "revision": "bb9e5bb3af89683a960a326e309be409bb0dc40f"
     },
     "views": [
       {
@@ -78,7 +78,7 @@
       ],
       "sources": [
         {
-          "path": "storage/storage.go",
+          "path": "devicemanagement/storage/storage.go",
           "line": 351,
           "end_line": 360,
           "label": "composed Store"
@@ -101,7 +101,7 @@
       ],
       "sources": [
         {
-          "path": "secrets/secrets.go",
+          "path": "devicemanagement/secrets/secrets.go",
           "label": "providers"
         }
       ],
@@ -122,7 +122,7 @@
       ],
       "sources": [
         {
-          "path": "storage/inmem/inmem.go",
+          "path": "devicemanagement/storage/inmem/inmem.go",
           "label": "map store"
         }
       ],
@@ -164,7 +164,7 @@
       ],
       "sources": [
         {
-          "path": "storage/crypt/crypt.go",
+          "path": "devicemanagement/storage/crypt/crypt.go",
           "label": "seal and open"
         }
       ],
@@ -200,11 +200,11 @@
       ],
       "sources": [
         {
-          "path": "storage/storagetest/suite.go",
+          "path": "devicemanagement/storage/storagetest/suite.go",
           "label": "contract suite"
         },
         {
-          "path": "storage/storagetest/failing.go",
+          "path": "devicemanagement/storage/storagetest/failing.go",
           "label": "error injection"
         }
       ],

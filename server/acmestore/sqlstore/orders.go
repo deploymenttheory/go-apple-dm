@@ -7,8 +7,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/deploymenttheory/go-apple-dm/paging"
-	"github.com/deploymenttheory/go-apple-dm/pki/acme"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/paging"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/pki/acme"
 )
 
 // orderCols carry the account the order belongs to, the authorization it

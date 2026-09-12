@@ -3,7 +3,7 @@ package sqlstore
 import (
 	"context"
 
-	"github.com/deploymenttheory/go-apple-dm/mdmprotocol/mdm"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/mdm"
 )
 
 // enrollmentTables lists every table keyed by enrollment_id, dependants

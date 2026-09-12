@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/deploymenttheory/go-apple-dm/storage/crypt"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/storage/crypt"
 )
 
 // BlobAAD binds a value to a purpose and unambiguous composite primary key.

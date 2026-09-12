@@ -6,8 +6,8 @@ import (
 	"errors"
 	"time"
 
-	"github.com/deploymenttheory/go-apple-dm/mdmprotocol/mdm"
-	"github.com/deploymenttheory/go-apple-dm/storage"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/mdm"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/storage"
 )
 
 // EnrollmentByID implements storage.EnrollmentStore.

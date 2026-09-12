@@ -14,9 +14,9 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/deploymenttheory/go-apple-dm/clock"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/clock"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/event"
 	"github.com/deploymenttheory/go-apple-dm/internal/httpsurl"
-	"github.com/deploymenttheory/go-apple-dm/mdmprotocol/event"
 )
 
 // Webhook wire constants identify the MicroMDM-compatible event envelope.

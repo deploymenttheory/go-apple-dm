@@ -9,12 +9,12 @@ import (
 
 	"github.com/deploymenttheory/go-apple-dm/server/pushnotify"
 
-	"github.com/deploymenttheory/go-apple-dm/appleplatformservices/push"
-	"github.com/deploymenttheory/go-apple-dm/clock"
-	"github.com/deploymenttheory/go-apple-dm/pki/pushcert"
-	"github.com/deploymenttheory/go-apple-dm/storage"
-	"github.com/deploymenttheory/go-apple-dm/storage/inmem"
-	"github.com/deploymenttheory/go-apple-dm/testpki"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/appleplatformservices/push"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/clock"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/pki/pushcert"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/storage"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/storage/inmem"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/testpki"
 )
 
 const testTopic = "com.apple.mgmt.External.store-test"

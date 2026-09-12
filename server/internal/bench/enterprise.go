@@ -16,10 +16,10 @@ import (
 	"os"
 	"time"
 
-	"github.com/deploymenttheory/go-apple-dm/appleplatformservices/axm"
-	"github.com/deploymenttheory/go-apple-dm/appleplatformservices/dep"
-	"github.com/deploymenttheory/go-apple-dm/pki/ca"
-	"github.com/deploymenttheory/go-apple-dm/simulator"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/appleplatformservices/axm"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/appleplatformservices/dep"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/pki/ca"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/simulator"
 )
 
 func (e *Environment) issuedDevice(certPath, keyPath string) (*simulator.Device, error) {

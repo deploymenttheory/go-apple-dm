@@ -7,8 +7,8 @@ import (
 	"errors"
 	"net/http"
 
-	"github.com/deploymenttheory/go-apple-dm/mdmprotocol/event"
-	"github.com/deploymenttheory/go-apple-dm/pki/revocation"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/event"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/pki/revocation"
 )
 
 const (

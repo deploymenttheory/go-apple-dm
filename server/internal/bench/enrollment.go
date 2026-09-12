@@ -15,14 +15,14 @@ import (
 	"os"
 	"time"
 
-	"github.com/deploymenttheory/go-apple-dm/mdmprotocol/cms"
-	"github.com/deploymenttheory/go-apple-dm/mdmprotocol/enroll"
-	"github.com/deploymenttheory/go-apple-dm/mdmprotocol/mdm"
-	"github.com/deploymenttheory/go-apple-dm/mdmprotocol/profile"
-	"github.com/deploymenttheory/go-apple-dm/pki/pushcert"
-	"github.com/deploymenttheory/go-apple-dm/schema/commands"
-	"github.com/deploymenttheory/go-apple-dm/schema/profiles"
-	"github.com/deploymenttheory/go-apple-dm/simulator"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/cms"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/enroll"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/mdm"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/profile"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/pki/pushcert"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/schema/commands"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/schema/profiles"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/simulator"
 )
 
 // EnrollmentPreflight checks local prerequisites without installing profiles or

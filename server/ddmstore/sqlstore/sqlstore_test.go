@@ -10,16 +10,16 @@ import (
 	"testing"
 	"time"
 
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/ddm"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/mdm"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/paging"
+	schemaddm "github.com/deploymenttheory/go-apple-dm/devicemanagement/schema/ddm"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/storage/ddm/ddmtest"
 	sqlstore "github.com/deploymenttheory/go-apple-dm/server/ddmstore/sqlstore"
 	"github.com/deploymenttheory/go-apple-dm/server/sqlstore/mysql"
 	"github.com/deploymenttheory/go-apple-dm/server/sqlstore/postgres"
 	"github.com/deploymenttheory/go-apple-dm/server/sqlstore/sqlcommon"
 	"github.com/deploymenttheory/go-apple-dm/server/sqlstore/sqlite"
-	"github.com/deploymenttheory/go-apple-dm/mdmprotocol/ddm"
-	"github.com/deploymenttheory/go-apple-dm/mdmprotocol/mdm"
-	"github.com/deploymenttheory/go-apple-dm/paging"
-	schemaddm "github.com/deploymenttheory/go-apple-dm/schema/ddm"
-	"github.com/deploymenttheory/go-apple-dm/storage/ddm/ddmtest"
 )
 
 var (

@@ -1,4 +1,4 @@
-# 0036: `dmctl explain` over `schema/support`
+# 0036: `dmctl explain` over `devicemanagement/schema/support`
 
 ## Context
 
@@ -6,7 +6,7 @@ Operators need to inspect generated schema support without a running server or a
 
 ## Decision
 
-`dmctl explain` resolves Go type names, wire identifiers and dotted support paths through the generated registries and `schema/support` APIs. Ambiguous identifiers return every match unless explicitly limited. Suggestions rank case-insensitive substring and shared-prefix matches.
+`dmctl explain` resolves Go type names, wire identifiers and dotted support paths through the generated registries and `devicemanagement/schema/support` APIs. Ambiguous identifiers return every match unless explicitly limited. Suggestions rank case-insensitive substring and shared-prefix matches.
 
 Tri-state metadata preserves unspecified values. Missing support data or a missing target OS is rendered as unknown. Output reports the registry title/schema path and the support result reason without inventing per-key descriptions.
 
@@ -25,7 +25,7 @@ Explanation tests cover all families, ambiguity, suggestions, tri-state renderin
 ## References
 
 - [server/internal/dmctl/explain](../../../server/internal/dmctl/explain)
-- [schema/support](../../../schema/support)
+- [schema/support](../../../devicemanagement/schema/support)
 - <https://developer.apple.com/documentation/devicemanagement/commands-and-queries>
 - <https://developer.apple.com/documentation/devicemanagement/profile-specific-payload-keys>
 - <https://developer.apple.com/documentation/devicemanagement/devicemanagement-declarations>

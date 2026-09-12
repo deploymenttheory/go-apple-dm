@@ -5,17 +5,17 @@ import (
 	"errors"
 	"testing"
 
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/clock"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/event"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/mdm"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/paging"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/schema/checkin"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/schema/commands"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/storage"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/storage/inmem"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/storage/storagetest"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/testpki"
 	"github.com/deploymenttheory/go-apple-dm/server/service"
-	"github.com/deploymenttheory/go-apple-dm/clock"
-	"github.com/deploymenttheory/go-apple-dm/mdmprotocol/event"
-	"github.com/deploymenttheory/go-apple-dm/mdmprotocol/mdm"
-	"github.com/deploymenttheory/go-apple-dm/paging"
-	"github.com/deploymenttheory/go-apple-dm/schema/checkin"
-	"github.com/deploymenttheory/go-apple-dm/schema/commands"
-	"github.com/deploymenttheory/go-apple-dm/storage"
-	"github.com/deploymenttheory/go-apple-dm/storage/inmem"
-	"github.com/deploymenttheory/go-apple-dm/storage/storagetest"
-	"github.com/deploymenttheory/go-apple-dm/testpki"
 )
 
 var errDB = errors.New("database on fire")

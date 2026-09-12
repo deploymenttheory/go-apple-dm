@@ -9,15 +9,15 @@ import (
 	"maps"
 	"slices"
 
-	"github.com/deploymenttheory/go-apple-dm/clock"
-	"github.com/deploymenttheory/go-apple-dm/mdmprotocol/dmhook"
-	"github.com/deploymenttheory/go-apple-dm/mdmprotocol/event"
-	"github.com/deploymenttheory/go-apple-dm/mdmprotocol/mdm"
-	"github.com/deploymenttheory/go-apple-dm/paging"
-	"github.com/deploymenttheory/go-apple-dm/schema/checkin"
-	"github.com/deploymenttheory/go-apple-dm/schema/commands"
-	"github.com/deploymenttheory/go-apple-dm/schema/support"
-	"github.com/deploymenttheory/go-apple-dm/storage"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/clock"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/dmhook"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/event"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/mdm"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/paging"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/schema/checkin"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/schema/commands"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/schema/support"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/storage"
 )
 
 // Code classifies service errors so transports can map them to responses

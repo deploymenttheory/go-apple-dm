@@ -8,13 +8,13 @@ import (
 	"testing"
 	"time"
 
-	"github.com/deploymenttheory/go-apple-dm/secrets"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/secrets"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/state"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/storage/crypt"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/testpki"
 	"github.com/deploymenttheory/go-apple-dm/server/apppush"
 	"github.com/deploymenttheory/go-apple-dm/server/sqlstore/sqlite"
 	"github.com/deploymenttheory/go-apple-dm/server/statestore"
-	"github.com/deploymenttheory/go-apple-dm/state"
-	"github.com/deploymenttheory/go-apple-dm/storage/crypt"
-	"github.com/deploymenttheory/go-apple-dm/testpki"
 )
 
 func TestCredentialContract(t *testing.T) {

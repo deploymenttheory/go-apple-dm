@@ -26,8 +26,8 @@ The DDM SQL schema has no foreign key to the MDM enrollment tables so the engine
 
 ## References
 
-- [mdmprotocol/ddm](../../../mdmprotocol/ddm)
-- [storage/ddm](../../../storage/ddm)
+- [mdmprotocol/ddm](../../../devicemanagement/mdmprotocol/ddm)
+- [storage/ddm](../../../devicemanagement/storage/ddm)
 - [server/ddmstore](../../../server/ddmstore)
 - [server/ddmsync](../../../server/ddmsync)
 - <https://developer.apple.com/documentation/devicemanagement/declarativemanagementrequest>

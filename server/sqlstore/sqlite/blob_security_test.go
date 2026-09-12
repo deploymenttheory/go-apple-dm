@@ -5,9 +5,9 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/storage/crypt"
 	"github.com/deploymenttheory/go-apple-dm/server/sqlstore/sqlcommon"
 	"github.com/deploymenttheory/go-apple-dm/server/sqlstore/sqlite"
-	"github.com/deploymenttheory/go-apple-dm/storage/crypt"
 )
 
 func TestBlobRotationEnforcesKeysAndPreservesFailedWrites(t *testing.T) {

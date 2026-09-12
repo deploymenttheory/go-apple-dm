@@ -36,8 +36,8 @@ Enrollment tests cover valid/invalid ACME payload combinations and profile round
 
 ## References
 
-- [mdmprotocol/enroll/enroll.go](../../../mdmprotocol/enroll/enroll.go)
-- [pki/acme](../../../pki/acme)
+- [mdmprotocol/enroll/enroll.go](../../../devicemanagement/mdmprotocol/enroll/enroll.go)
+- [pki/acme](../../../devicemanagement/pki/acme)
 - [server/internal/app/acme.go](../../../server/internal/app/acme.go)
 - <https://developer.apple.com/documentation/devicemanagement/acmecertificate>
 - <https://developer.apple.com/documentation/devicemanagement/assetcredentialacme>

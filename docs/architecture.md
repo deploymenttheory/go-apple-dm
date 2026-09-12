@@ -12,20 +12,21 @@ contracts and rationale; [diagrams](diagrams/README.md) show component and proto
 | `github.com/deploymenttheory/go-apple-dm/server` | SQL stores, service orchestration, HTTP adapters, admin authorization, event sinks, reference server and CLI | Root module, SQLite/PostgreSQL/MySQL drivers and Cedar; exact versions in `server/go.mod` |
 
 Both modules use Go 1.27. `go.work` joins them for local development. Library code and tests
+live under `devicemanagement/`, which introduces a package-path prefix without creating a module. They
 cannot import the server module. `internal/layout` checks the import graph and tier ordering,
 including the explicit dependency from the ADE software update gate to the GDMF client.
 
 | Area | Paths | Responsibility |
 |---|---|---|
-| Foundation | `paging`, `clock`, `secrets`, `telemetry`, `state`, `ratelimit`, `testpki` | Shared interfaces, bounded state and test utilities |
-| Schema | `schema`, `internal/schemagen`, `cmd/admgen` | Deterministic generation and schema-derived validation/support metadata |
-| Protocol | `mdmprotocol` | Plist/CMS, MDM messages, enrollment profiles and handlers, DDM engine, predicates, hooks and events |
-| PKI | `pki` | CA abstraction, SCEP, ACME, attestation, push certificate parsing and optional revocation |
-| Apple clients | `appleplatformservices` | APNs, device enrollment service, software lookup, Business Manager and School Manager APIs |
-| Persistence | `storage`, `server/sqlstore`, `server/*store`, `server/statestore` | Domain contracts, memory implementations and SQL persistence |
+| Foundation | `devicemanagement/paging`, `devicemanagement/clock`, `devicemanagement/secrets`, `devicemanagement/telemetry`, `devicemanagement/state`, `devicemanagement/ratelimit`, `devicemanagement/testpki` | Shared interfaces, bounded state and test utilities |
+| Schema | `devicemanagement/schema`, `internal/schemagen`, `cmd/admgen` | Deterministic generation and schema-derived validation/support metadata |
+| Protocol | `devicemanagement/mdmprotocol` | Plist/CMS, MDM messages, enrollment profiles and handlers, DDM engine, predicates, hooks and events |
+| PKI | `devicemanagement/pki` | CA abstraction, SCEP, ACME, attestation, push certificate parsing and optional revocation |
+| Apple clients | `devicemanagement/appleplatformservices` | APNs, device enrollment service, software lookup, Business Manager and School Manager APIs |
+| Persistence | `devicemanagement/storage`, `server/sqlstore`, `server/*store`, `server/statestore` | Domain contracts, memory implementations and SQL persistence |
 | Service | `server/service`, `server/httpapi`, `server/ddmsync`, `server/ddmadapter`, `server/pushnotify` | Enrollment authorization, command delivery, DDM synchronization and transport |
 | Administration | `server/adminauth`, `server/audit`, `server/eventsink`, `server/axmcreds` | Principals, policy, credential storage, projected audit and webhook output |
-| Composition and testing | `server/internal/app`, `server/internal/dmctl`, `server/cmd`, `server/e2e`, `simulator` | Application wiring, CLI and executable scenarios |
+| Composition and testing | `server/internal/app`, `server/internal/dmctl`, `server/cmd`, `server/e2e`, `devicemanagement/simulator` | Application wiring, CLI and executable scenarios |
 
 The table groups responsibilities; the exact enforced tiers and test-only exceptions are in
 [internal/layout/layout_test.go](../internal/layout/layout_test.go).
@@ -34,8 +35,8 @@ The table groups responsibilities; the exact enforced tiers and test-only except
 
 The pinned `third_party/device-management` submodule supplies Apple's YAML definitions.
 `admgen` generates request and response types, registries, validation, platform support metadata
-and conformance fixtures. `schema/GENERATED_FROM.json` records source provenance;
-`schema/EXPORTED_IDENTIFIERS.lock` guards exported names. `make verify` regenerates into a
+and conformance fixtures. `devicemanagement/schema/GENERATED_FROM.json` records source provenance;
+`devicemanagement/schema/EXPORTED_IDENTIFIERS.lock` guards exported names. `make verify` regenerates into a
 temporary directory and checks the output and removal guard. Generated validation covers the
 modeled schema constraints; protocol rules documented only in prose belong in the calling code.
 
@@ -73,7 +74,7 @@ DDM extends an existing MDM enrollment. The engine stores declarations, sets and
 builds per-enrollment snapshots and serves the versions advertised by those snapshots. Canonical
 JSON determines content tokens. Status reports update stored items; subscriptions can be
 synthesized. Predicates use the documented subset in
-[mdmprotocol/ddm/predicate](../mdmprotocol/ddm/predicate/doc.go), not the full NSPredicate language.
+[mdmprotocol/ddm/predicate](../devicemanagement/mdmprotocol/ddm/predicate/doc.go), not the full NSPredicate language.
 
 `server/ddmsync` converts pending changes into `DeclarativeManagement` commands and pushes.
 The engine can run in process or behind the project's private `POST /v1/declarative-management`

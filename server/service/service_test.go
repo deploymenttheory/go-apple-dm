@@ -10,16 +10,16 @@ import (
 	"testing"
 	"time"
 
-	"github.com/deploymenttheory/go-apple-dm/clock"
-	"github.com/deploymenttheory/go-apple-dm/mdmprotocol/event"
-	"github.com/deploymenttheory/go-apple-dm/mdmprotocol/mdm"
-	"github.com/deploymenttheory/go-apple-dm/mdmprotocol/plist"
-	"github.com/deploymenttheory/go-apple-dm/schema/checkin"
-	"github.com/deploymenttheory/go-apple-dm/schema/commands"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/clock"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/event"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/mdm"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/plist"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/schema/checkin"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/schema/commands"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/storage"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/storage/inmem"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/testpki"
 	"github.com/deploymenttheory/go-apple-dm/server/service"
-	"github.com/deploymenttheory/go-apple-dm/storage"
-	"github.com/deploymenttheory/go-apple-dm/storage/inmem"
-	"github.com/deploymenttheory/go-apple-dm/testpki"
 )
 
 var t0 = time.Date(2026, 9, 1, 12, 0, 0, 0, time.UTC)

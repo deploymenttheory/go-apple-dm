@@ -10,9 +10,9 @@ import (
 	"strings"
 	"time"
 
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/paging"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/pki/acme"
 	"github.com/deploymenttheory/go-apple-dm/server/sqlstore/sqlcommon"
-	"github.com/deploymenttheory/go-apple-dm/paging"
-	"github.com/deploymenttheory/go-apple-dm/pki/acme"
 )
 
 //go:embed migrations/*/*.sql

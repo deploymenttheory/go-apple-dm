@@ -60,8 +60,8 @@ for actual installation, replacement and rollback verification.
 
 ## References
 
-- [mdmprotocol/profile](../../../mdmprotocol/profile)
-- [mdmprotocol/enroll](../../../mdmprotocol/enroll)
+- [mdmprotocol/profile](../../../devicemanagement/mdmprotocol/profile)
+- [mdmprotocol/enroll](../../../devicemanagement/mdmprotocol/enroll)
 - <https://developer.apple.com/documentation/devicemanagement/profile-specific-payload-keys>
 - <https://developer.apple.com/documentation/devicemanagement/mdm>
 - <https://developer.apple.com/documentation/devicemanagement/deploying-device-management-enrollment-profiles>

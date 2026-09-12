@@ -13,9 +13,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/deploymenttheory/go-apple-dm/pki/ca"
-	"github.com/deploymenttheory/go-apple-dm/pki/scep"
-	"github.com/deploymenttheory/go-apple-dm/state"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/pki/ca"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/pki/scep"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/state"
 )
 
 func exerciseSCEPGrants(t *testing.T, a, b state.Store) {

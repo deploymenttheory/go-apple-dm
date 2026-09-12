@@ -24,9 +24,9 @@ Tests cover foreign/expired chains, missing intermediates, absent/wrong freshnes
 
 ## References
 
-- [pki/acme/attest](../../../pki/acme/attest)
-- [pki/acme/attest/attesttest](../../../pki/acme/attest/attesttest)
-- [internal/cbor](../../../internal/cbor)
+- [pki/acme/attest](../../../devicemanagement/pki/acme/attest)
+- [pki/acme/attest/attesttest](../../../devicemanagement/pki/acme/attest/attesttest)
+- [internal/cbor](../../../devicemanagement/internal/cbor)
 - <https://developer.apple.com/documentation/devicemanagement/acmecertificate>
 - <https://developer.apple.com/documentation/devicemanagement/deviceinformationresponse>
 - <https://support.apple.com/guide/deployment/managed-device-attestation-dep28afbde6a/web>

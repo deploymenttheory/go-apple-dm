@@ -24,8 +24,8 @@ APNs tests cover status/reason mapping, per-topic clients and certificate expiry
 
 ## References
 
-- [appleplatformservices/push](../../../appleplatformservices/push)
-- [appleplatformservices/push/apns](../../../appleplatformservices/push/apns)
+- [appleplatformservices/push](../../../devicemanagement/appleplatformservices/push)
+- [appleplatformservices/push/apns](../../../devicemanagement/appleplatformservices/push/apns)
 - [server/pushnotify](../../../server/pushnotify)
 - <https://developer.apple.com/documentation/devicemanagement/setting-up-push-notifications-for-your-device-management-customers>
 - <https://developer.apple.com/documentation/devicemanagement/dealing-with-inactive-managed-devices-and-invalid-push-tokens>

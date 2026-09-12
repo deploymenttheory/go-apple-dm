@@ -10,16 +10,16 @@ import (
 	"testing"
 	"time"
 
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/appleplatformservices/push"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/appleplatformservices/push/apns"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/event"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/mdm"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/schema/commands"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/storage"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/testpki"
 	"github.com/deploymenttheory/go-apple-dm/server/adminauth"
 	"github.com/deploymenttheory/go-apple-dm/server/adminauth/inmem"
 	"github.com/deploymenttheory/go-apple-dm/server/internal/app"
-	"github.com/deploymenttheory/go-apple-dm/appleplatformservices/push"
-	"github.com/deploymenttheory/go-apple-dm/appleplatformservices/push/apns"
-	"github.com/deploymenttheory/go-apple-dm/mdmprotocol/event"
-	"github.com/deploymenttheory/go-apple-dm/mdmprotocol/mdm"
-	"github.com/deploymenttheory/go-apple-dm/schema/commands"
-	"github.com/deploymenttheory/go-apple-dm/storage"
-	"github.com/deploymenttheory/go-apple-dm/testpki"
 )
 
 // mdmAdminApp builds a server with the mdm admin family mounted and a

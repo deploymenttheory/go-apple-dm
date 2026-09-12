@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/deploymenttheory/go-apple-dm/clock"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/clock"
 	"github.com/deploymenttheory/go-apple-dm/server/adminauth"
 	"github.com/deploymenttheory/go-apple-dm/server/adminauth/adminauthtest"
 	"github.com/deploymenttheory/go-apple-dm/server/adminauth/inmem"

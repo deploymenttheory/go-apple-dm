@@ -14,15 +14,15 @@ import (
 	"testing"
 	"time"
 
-	"github.com/deploymenttheory/go-apple-dm/mdmprotocol/cms"
-	"github.com/deploymenttheory/go-apple-dm/mdmprotocol/enroll"
-	"github.com/deploymenttheory/go-apple-dm/mdmprotocol/enroll/accountdriven"
-	"github.com/deploymenttheory/go-apple-dm/mdmprotocol/enroll/discovery"
-	"github.com/deploymenttheory/go-apple-dm/mdmprotocol/mdm"
-	"github.com/deploymenttheory/go-apple-dm/mdmprotocol/plist"
-	"github.com/deploymenttheory/go-apple-dm/mdmprotocol/profile"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/cms"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/enroll"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/enroll/accountdriven"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/enroll/discovery"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/mdm"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/plist"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/profile"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/simulator"
 	"github.com/deploymenttheory/go-apple-dm/server/service"
-	"github.com/deploymenttheory/go-apple-dm/simulator"
 )
 
 // adFixture is the account-driven side of a harness: discovery, one

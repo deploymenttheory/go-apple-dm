@@ -14,7 +14,7 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/deploymenttheory/go-apple-dm/pki/ca"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/pki/ca"
 )
 
 var errLab = errors.New("bench")

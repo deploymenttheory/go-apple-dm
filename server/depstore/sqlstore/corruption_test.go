@@ -5,12 +5,12 @@ import (
 	"testing"
 	"time"
 
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/appleplatformservices/dep"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/paging"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/secrets"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/storage/crypt"
 	sqlstore "github.com/deploymenttheory/go-apple-dm/server/depstore/sqlstore"
 	"github.com/deploymenttheory/go-apple-dm/server/sqlstore/sqlite"
-	"github.com/deploymenttheory/go-apple-dm/appleplatformservices/dep"
-	"github.com/deploymenttheory/go-apple-dm/paging"
-	"github.com/deploymenttheory/go-apple-dm/secrets"
-	"github.com/deploymenttheory/go-apple-dm/storage/crypt"
 )
 
 // seed writes one of everything for account "a".

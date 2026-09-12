@@ -24,7 +24,7 @@ The fake service verifies assertions and token scopes and exercises typed endpoi
 
 ## References
 
-- [appleplatformservices/axm](../../../appleplatformservices/axm)
+- [appleplatformservices/axm](../../../devicemanagement/appleplatformservices/axm)
 - [server/axmcreds](../../../server/axmcreds)
 - [server/internal/app/axm.go](../../../server/internal/app/axm.go)
 - <https://developer.apple.com/documentation/apple-school-and-business-manager-api>

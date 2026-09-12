@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/deploymenttheory/go-apple-dm/paging"
-	"github.com/deploymenttheory/go-apple-dm/pki/acme"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/paging"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/pki/acme"
 )
 
 // certificateCols index what CertificateQuery filters on plus the two

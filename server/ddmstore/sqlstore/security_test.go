@@ -4,11 +4,11 @@ import (
 	"bytes"
 	"testing"
 
-	"github.com/deploymenttheory/go-apple-dm/mdmprotocol/ddm"
-	"github.com/deploymenttheory/go-apple-dm/secrets"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/ddm"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/secrets"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/storage/crypt"
 	"github.com/deploymenttheory/go-apple-dm/server/ddmstore/sqlstore"
 	"github.com/deploymenttheory/go-apple-dm/server/sqlstore/sqlite"
-	"github.com/deploymenttheory/go-apple-dm/storage/crypt"
 )
 
 func TestDeclarationSecretsEncryptedAndRotated(t *testing.T) {

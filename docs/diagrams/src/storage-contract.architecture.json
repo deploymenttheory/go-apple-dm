@@ -10,7 +10,7 @@
     ],
     "repository": {
       "url": "https://github.com/deploymenttheory/go-apple-dm",
-      "revision": "ff85958196cb013e8e14c1055f067319b07e3299"
+      "revision": "bb9e5bb3af89683a960a326e309be409bb0dc40f"
     },
     "views": [
       {
@@ -139,7 +139,7 @@
       ],
       "sources": [
         {
-          "path": "storage/storage.go",
+          "path": "devicemanagement/storage/storage.go",
           "line": 97,
           "end_line": 118,
           "label": "EnrollmentStore"
@@ -162,7 +162,7 @@
       ],
       "sources": [
         {
-          "path": "storage/storage.go",
+          "path": "devicemanagement/storage/storage.go",
           "line": 199,
           "end_line": 218,
           "label": "CommandQueue"
@@ -185,7 +185,7 @@
       ],
       "sources": [
         {
-          "path": "storage/storage.go",
+          "path": "devicemanagement/storage/storage.go",
           "line": 258,
           "end_line": 264,
           "label": "BootstrapTokenStore"
@@ -208,7 +208,7 @@
       ],
       "sources": [
         {
-          "path": "storage/storage.go",
+          "path": "devicemanagement/storage/storage.go",
           "line": 338,
           "end_line": 348,
           "label": "MigrationStore"
@@ -231,7 +231,7 @@
       ],
       "sources": [
         {
-          "path": "storage/storage.go",
+          "path": "devicemanagement/storage/storage.go",
           "line": 236,
           "end_line": 255,
           "label": "CertAuthStore"
@@ -254,7 +254,7 @@
       ],
       "sources": [
         {
-          "path": "storage/storage.go",
+          "path": "devicemanagement/storage/storage.go",
           "line": 221,
           "end_line": 224,
           "label": "PushStore"
@@ -277,7 +277,7 @@
       ],
       "sources": [
         {
-          "path": "storage/storage.go",
+          "path": "devicemanagement/storage/storage.go",
           "line": 317,
           "end_line": 327,
           "label": "UserAuthStore"
@@ -300,7 +300,7 @@
       ],
       "sources": [
         {
-          "path": "storage/storage.go",
+          "path": "devicemanagement/storage/storage.go",
           "line": 280,
           "end_line": 293,
           "label": "PushCertStore"

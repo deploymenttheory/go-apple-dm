@@ -11,9 +11,9 @@ import (
 	"strings"
 	"time"
 
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/mdm"
 	"github.com/deploymenttheory/go-apple-dm/server/audit"
 	"github.com/deploymenttheory/go-apple-dm/server/sqlstore/sqlcommon"
-	"github.com/deploymenttheory/go-apple-dm/mdmprotocol/mdm"
 )
 
 //go:embed migrations/*/*.sql

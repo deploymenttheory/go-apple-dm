@@ -24,7 +24,7 @@ Cryptography tests cover round trips, wrong AAD, tampering, unknown keys and wea
 
 ## References
 
-- [storage/crypt](../../../storage/crypt)
+- [storage/crypt](../../../devicemanagement/storage/crypt)
 - [server/sqlstore/sqlcommon](../../../server/sqlstore/sqlcommon)
 - [server/sqlstore/sqlite](../../../server/sqlstore/sqlite)
 - <https://developer.apple.com/documentation/devicemanagement/check-in>

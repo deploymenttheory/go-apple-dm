@@ -18,7 +18,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/deploymenttheory/go-apple-dm/secrets"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/secrets"
 	"github.com/deploymenttheory/go-apple-dm/server/internal/app"
 )
 

@@ -24,8 +24,8 @@ Telemetry tests cover zero configuration, transport behavior, method/error bound
 
 ## References
 
-- [telemetry](../../../telemetry)
-- [telemetry/telemetrytest](../../../telemetry/telemetrytest)
+- [telemetry](../../../devicemanagement/telemetry)
+- [telemetry/telemetrytest](../../../devicemanagement/telemetry/telemetrytest)
 - [go.mod](../../../go.mod)
 - <https://developer.apple.com/documentation/usernotifications/sending-notification-requests-to-apns>
 - <https://developer.apple.com/documentation/devicemanagement/check-in>

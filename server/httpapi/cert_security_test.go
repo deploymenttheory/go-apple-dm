@@ -10,9 +10,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/deploymenttheory/go-apple-dm/mdmprotocol/cms"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/cms"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/testpki"
 	"github.com/deploymenttheory/go-apple-dm/server/httpapi"
-	"github.com/deploymenttheory/go-apple-dm/testpki"
 )
 
 func TestCertificateTrustBoundaries(t *testing.T) {

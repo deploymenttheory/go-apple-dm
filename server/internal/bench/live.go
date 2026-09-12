@@ -12,10 +12,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/deploymenttheory/go-apple-dm/mdmprotocol/mdm"
-	"github.com/deploymenttheory/go-apple-dm/mdmprotocol/plist"
-	"github.com/deploymenttheory/go-apple-dm/schema/commands"
-	"github.com/deploymenttheory/go-apple-dm/testpki"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/mdm"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/plist"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/schema/commands"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/testpki"
 )
 
 func appAlert(

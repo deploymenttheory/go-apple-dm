@@ -9,9 +9,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/deploymenttheory/go-apple-dm/pki/acme"
-	"github.com/deploymenttheory/go-apple-dm/pki/scep"
-	"github.com/deploymenttheory/go-apple-dm/state"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/pki/acme"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/pki/scep"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/state"
 )
 
 func TestSCEPGrantRejectsInvalidBindingWithoutReservation(t *testing.T) {

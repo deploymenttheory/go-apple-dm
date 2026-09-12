@@ -24,8 +24,8 @@ Storage suites cover history ordering, reverse lookup, user-channel resolution a
 
 ## References
 
-- [storage](../../../storage)
-- [storage/storagetest](../../../storage/storagetest)
+- [storage](../../../devicemanagement/storage)
+- [storage/storagetest](../../../devicemanagement/storage/storagetest)
 - [server/service](../../../server/service)
 - [server/sqlstore/sqlcommon](../../../server/sqlstore/sqlcommon)
 - <https://developer.apple.com/documentation/devicemanagement/check-in>

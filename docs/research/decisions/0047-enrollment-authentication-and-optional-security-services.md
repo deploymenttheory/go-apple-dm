@@ -28,10 +28,10 @@ Tests cover account/certificate replay, channel exceptions, association and toke
 
 ## References
 
-- [mdmprotocol/enroll/accountdriven](../../../mdmprotocol/enroll/accountdriven)
-- [pki/revocation](../../../pki/revocation)
-- [ratelimit](../../../ratelimit)
-- [state](../../../state)
+- [mdmprotocol/enroll/accountdriven](../../../devicemanagement/mdmprotocol/enroll/accountdriven)
+- [pki/revocation](../../../devicemanagement/pki/revocation)
+- [ratelimit](../../../devicemanagement/ratelimit)
+- [state](../../../devicemanagement/state)
 - [server/statestore](../../../server/statestore)
 - [server/internal/app/security.go](../../../server/internal/app/security.go)
 - <https://developer.apple.com/documentation/devicemanagement/onboarding-users-with-account-driven-enrollment>

@@ -24,8 +24,8 @@ Migration suites cover complete round trips, parent-first pagination, disabled e
 
 ## References
 
-- [storage](../../../storage)
-- [storage/storagetest](../../../storage/storagetest)
+- [storage](../../../devicemanagement/storage)
+- [storage/storagetest](../../../devicemanagement/storage/storagetest)
 - [server/service/migrate.go](../../../server/service/migrate.go)
 - [server/sqlstore/sqlite](../../../server/sqlstore/sqlite)
 - <https://developer.apple.com/documentation/devicemanagement/check-in>

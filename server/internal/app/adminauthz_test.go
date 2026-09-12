@@ -7,8 +7,8 @@ import (
 	"sync"
 	"testing"
 
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/event"
 	"github.com/deploymenttheory/go-apple-dm/server/internal/app"
-	"github.com/deploymenttheory/go-apple-dm/mdmprotocol/event"
 )
 
 // pathFor turns a route pattern into a request path a mux can resolve,

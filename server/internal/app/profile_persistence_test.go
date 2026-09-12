@@ -8,9 +8,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/deploymenttheory/go-apple-dm/pki/acme"
-	"github.com/deploymenttheory/go-apple-dm/state"
-	"github.com/deploymenttheory/go-apple-dm/storage/storagetest"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/pki/acme"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/state"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/storage/storagetest"
 )
 
 type rejectProfileTemplateStore struct {

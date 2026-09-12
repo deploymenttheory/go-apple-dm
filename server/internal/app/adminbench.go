@@ -6,10 +6,10 @@ import (
 	"io"
 	"net/http"
 
-	"github.com/deploymenttheory/go-apple-dm/mdmprotocol/enroll"
-	"github.com/deploymenttheory/go-apple-dm/paging"
-	"github.com/deploymenttheory/go-apple-dm/pki/acme"
-	"github.com/deploymenttheory/go-apple-dm/storage"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/enroll"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/paging"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/pki/acme"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/storage"
 )
 
 // getCommandResult exposes one enrollment-scoped response, without queue secrets.

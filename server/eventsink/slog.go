@@ -5,7 +5,7 @@ import (
 	"log/slog"
 	"sort"
 
-	"github.com/deploymenttheory/go-apple-dm/mdmprotocol/event"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/event"
 )
 
 // Slog returns a handler that writes one projected record per event with sorted

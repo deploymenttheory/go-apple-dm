@@ -24,9 +24,9 @@ Status tests cover limits, strict JSON errors, duplicate identifiers, full/parti
 
 ## References
 
-- [mdmprotocol/ddm/status.go](../../../mdmprotocol/ddm/status.go)
-- [mdmprotocol/ddm/subscriptions.go](../../../mdmprotocol/ddm/subscriptions.go)
-- [storage/ddm](../../../storage/ddm)
+- [mdmprotocol/ddm/status.go](../../../devicemanagement/mdmprotocol/ddm/status.go)
+- [mdmprotocol/ddm/subscriptions.go](../../../devicemanagement/mdmprotocol/ddm/subscriptions.go)
+- [storage/ddm](../../../devicemanagement/storage/ddm)
 - <https://developer.apple.com/documentation/devicemanagement/status-items>
 - <https://developer.apple.com/documentation/devicemanagement/declarativemanagementrequest>
 

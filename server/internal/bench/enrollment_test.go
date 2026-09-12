@@ -8,7 +8,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/deploymenttheory/go-apple-dm/mdmprotocol/profile"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/profile"
 )
 
 func TestEnrollmentReplacementCatalogue(t *testing.T) {

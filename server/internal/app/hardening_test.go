@@ -15,8 +15,8 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/deploymenttheory/go-apple-dm/mdmprotocol/enroll"
-	"github.com/deploymenttheory/go-apple-dm/pki/acme"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/enroll"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/pki/acme"
 )
 
 func hardeningCSR(t *testing.T, cn string) *x509.CertificateRequest {

@@ -9,12 +9,12 @@ import (
 	"strings"
 	"time"
 
-	"github.com/deploymenttheory/go-apple-dm/mdmprotocol/cms"
-	"github.com/deploymenttheory/go-apple-dm/mdmprotocol/enroll/accountdriven"
-	"github.com/deploymenttheory/go-apple-dm/pki/acme"
-	"github.com/deploymenttheory/go-apple-dm/pki/ca"
-	"github.com/deploymenttheory/go-apple-dm/pki/scep"
-	"github.com/deploymenttheory/go-apple-dm/schema/checkin"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/cms"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/enroll/accountdriven"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/pki/acme"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/pki/ca"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/pki/scep"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/schema/checkin"
 	"github.com/deploymenttheory/go-apple-dm/server/service"
 )
 

@@ -6,15 +6,15 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/deploymenttheory/go-apple-dm/schema/checkin"
-	"github.com/deploymenttheory/go-apple-dm/schema/commands"
-	"github.com/deploymenttheory/go-apple-dm/schema/ddm"
-	"github.com/deploymenttheory/go-apple-dm/schema/ddmproto"
-	schemaerrors "github.com/deploymenttheory/go-apple-dm/schema/errors"
-	"github.com/deploymenttheory/go-apple-dm/schema/other"
-	"github.com/deploymenttheory/go-apple-dm/schema/profiles"
-	"github.com/deploymenttheory/go-apple-dm/schema/status"
-	"github.com/deploymenttheory/go-apple-dm/schema/support"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/schema/checkin"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/schema/commands"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/schema/ddm"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/schema/ddmproto"
+	schemaerrors "github.com/deploymenttheory/go-apple-dm/devicemanagement/schema/errors"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/schema/other"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/schema/profiles"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/schema/status"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/schema/support"
 )
 
 // Errors.

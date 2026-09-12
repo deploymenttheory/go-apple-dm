@@ -170,7 +170,7 @@ with no depot/registry writes or reentry into the order store. Move those writes
 to `acme.Config.Register`, which must be idempotent and safe for concurrent calls.
 The reference server supplies both. Custom ACME stores must implement
 `UpdateOrder` with a cross-instance lock acquired before reading order state;
-use `storage/acme/acmetest` to verify the contract.
+use `devicemanagement/storage/acme/acmetest` to verify the contract.
 
 Finalization records one certificate and the hash of the exact CSR in the order
 transaction. Until registration succeeds, the order remains `processing` and

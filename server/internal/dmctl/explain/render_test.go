@@ -4,8 +4,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/schema/support"
 	"github.com/deploymenttheory/go-apple-dm/server/internal/dmctl/explain"
-	"github.com/deploymenttheory/go-apple-dm/schema/support"
 )
 
 // A key match renders the key as its heading rather than the type, and grades

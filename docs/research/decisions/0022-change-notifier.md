@@ -25,7 +25,7 @@ Notifier tests cover coalescing, per-enrollment tokens, dedupe, disabled enrollm
 ## References
 
 - [server/ddmsync](../../../server/ddmsync)
-- [storage/ddm](../../../storage/ddm)
+- [storage/ddm](../../../devicemanagement/storage/ddm)
 - <https://developer.apple.com/documentation/devicemanagement/integrating-declarative-management>
 - <https://developer.apple.com/documentation/devicemanagement/sending-mdm-commands-to-a-device>
 

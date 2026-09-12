@@ -20,14 +20,14 @@ import (
 	"testing"
 	"time"
 
-	"github.com/deploymenttheory/go-apple-dm/mdmprotocol/enroll/accountdriven"
-	"github.com/deploymenttheory/go-apple-dm/mdmprotocol/enroll/discovery"
-	"github.com/deploymenttheory/go-apple-dm/mdmprotocol/enroll/webauth/webauthtest"
-	"github.com/deploymenttheory/go-apple-dm/mdmprotocol/mdm"
-	"github.com/deploymenttheory/go-apple-dm/pki/ca"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/enroll/accountdriven"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/enroll/discovery"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/enroll/webauth/webauthtest"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/mdm"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/pki/ca"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/simulator"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/testpki"
 	"github.com/deploymenttheory/go-apple-dm/server/internal/app"
-	"github.com/deploymenttheory/go-apple-dm/simulator"
-	"github.com/deploymenttheory/go-apple-dm/testpki"
 )
 
 // enrollFixture is an app with the enrollment routes on, served over TLS

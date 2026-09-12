@@ -15,6 +15,10 @@ import (
 	"testing"
 	"time"
 
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/appleplatformservices/push"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/mdm"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/secrets"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/storage"
 	"github.com/deploymenttheory/go-apple-dm/server/adminauth"
 	adminsql "github.com/deploymenttheory/go-apple-dm/server/adminauth/sqlstore"
 	"github.com/deploymenttheory/go-apple-dm/server/audit"
@@ -22,10 +26,6 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/server/internal/app"
 	"github.com/deploymenttheory/go-apple-dm/server/internal/dmctl"
 	"github.com/deploymenttheory/go-apple-dm/server/sqlstore/sqlite"
-	"github.com/deploymenttheory/go-apple-dm/appleplatformservices/push"
-	"github.com/deploymenttheory/go-apple-dm/mdmprotocol/mdm"
-	"github.com/deploymenttheory/go-apple-dm/secrets"
-	"github.com/deploymenttheory/go-apple-dm/storage"
 )
 
 // adminHarness is the reference server with a real principal store on its own

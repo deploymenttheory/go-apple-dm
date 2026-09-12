@@ -22,8 +22,8 @@ Secret tests exercise formatting and serialization redaction, provider fallback,
 
 ## References
 
-- [secrets](../../../secrets)
-- [storage/crypt](../../../storage/crypt)
+- [secrets](../../../devicemanagement/secrets)
+- [storage/crypt](../../../devicemanagement/storage/crypt)
 - <https://developer.apple.com/documentation/devicemanagement/managing-certificates-for-device-management-services-and-devices>
 
 Reference source identifiers and paths (relative to the named project):

@@ -6,14 +6,14 @@ import (
 	"context"
 	"testing"
 
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/appleplatformservices/push/pushtest"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/event"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/mdm"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/profile"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/schema/commands"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/simulator"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/storage"
 	"github.com/deploymenttheory/go-apple-dm/server/service"
-	"github.com/deploymenttheory/go-apple-dm/appleplatformservices/push/pushtest"
-	"github.com/deploymenttheory/go-apple-dm/mdmprotocol/event"
-	"github.com/deploymenttheory/go-apple-dm/mdmprotocol/mdm"
-	"github.com/deploymenttheory/go-apple-dm/mdmprotocol/profile"
-	"github.com/deploymenttheory/go-apple-dm/schema/commands"
-	"github.com/deploymenttheory/go-apple-dm/simulator"
-	"github.com/deploymenttheory/go-apple-dm/storage"
 )
 
 // E2E-006: a device follows an unsigned enrollment profile, enrolls its

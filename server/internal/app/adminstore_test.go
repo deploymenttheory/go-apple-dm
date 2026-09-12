@@ -9,12 +9,12 @@ import (
 	"testing"
 	"time"
 
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/event"
 	"github.com/deploymenttheory/go-apple-dm/server/adminauth"
 	"github.com/deploymenttheory/go-apple-dm/server/adminauth/inmem"
 	adminsql "github.com/deploymenttheory/go-apple-dm/server/adminauth/sqlstore"
 	"github.com/deploymenttheory/go-apple-dm/server/internal/app"
 	"github.com/deploymenttheory/go-apple-dm/server/sqlstore/sqlite"
-	"github.com/deploymenttheory/go-apple-dm/mdmprotocol/event"
 )
 
 // Build from a database DSN and DM_ADMIN_STORE, without an injected store, then

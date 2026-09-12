@@ -14,7 +14,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/deploymenttheory/go-apple-dm/testpki"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/testpki"
 )
 
 func TestFixtureSetupRefusesUnwritableOutputs(t *testing.T) {

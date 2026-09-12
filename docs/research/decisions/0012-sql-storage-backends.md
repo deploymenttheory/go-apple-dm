@@ -31,7 +31,7 @@ All four backends run `storagetest`. SQL tests cover migrations, rollback, write
 ## References
 
 - [server/sqlstore](../../../server/sqlstore)
-- [storage/storagetest](../../../storage/storagetest)
+- [storage/storagetest](../../../devicemanagement/storage/storagetest)
 - <https://developer.apple.com/documentation/devicemanagement/check-in>
 - <https://developer.apple.com/documentation/devicemanagement/handling-notnow-status-responses>
 

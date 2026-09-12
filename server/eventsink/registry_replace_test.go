@@ -4,7 +4,7 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/deploymenttheory/go-apple-dm/mdmprotocol/event"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/event"
 	"github.com/deploymenttheory/go-apple-dm/server/eventsink"
 )
 

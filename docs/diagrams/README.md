@@ -2,9 +2,9 @@
 
 Thirty-one interactive diagrams explain the library and reference server. They are generated
 with [Archify](https://github.com/tt-a1i/archify) from the JSON sources in [`src/`](src/).
-The latest revision: September 2026 revision incorporates PRs [12](https://github.com/deploymenttheory/go-apple-dm/pull/12)
-and [14](https://github.com/deploymenttheory/go-apple-dm/pull/14), checked against commit
-`ff85958196cb013e8e14c1055f067319b07e3299`.
+Each diagram records its own repository revision. Its code-source links resolve
+against that revision, including the library's `devicemanagement/` package prefix
+in diagrams whose sources have been updated for the current layout.
 
 Click a diagram name below to open its interactive HTML preview from `main`. These previews
 require an internet connection and reflect changes after they are merged. The **HTML source**

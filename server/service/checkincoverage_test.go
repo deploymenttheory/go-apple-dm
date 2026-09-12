@@ -5,8 +5,8 @@ import (
 	"errors"
 	"testing"
 
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/schema/checkin"
 	"github.com/deploymenttheory/go-apple-dm/server/service"
-	"github.com/deploymenttheory/go-apple-dm/schema/checkin"
 )
 
 // knownUnhandledCheckin records generated messages intentionally unsupported by

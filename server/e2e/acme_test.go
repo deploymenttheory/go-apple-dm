@@ -15,17 +15,17 @@ import (
 	"testing"
 	"time"
 
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/enroll"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/event"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/profile"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/paging"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/pki/acme"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/pki/acme/attest"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/pki/acme/attest/attesttest"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/pki/ca"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/simulator"
+	acmeinmem "github.com/deploymenttheory/go-apple-dm/devicemanagement/storage/acme/inmem"
 	"github.com/deploymenttheory/go-apple-dm/server/service"
-	"github.com/deploymenttheory/go-apple-dm/mdmprotocol/enroll"
-	"github.com/deploymenttheory/go-apple-dm/mdmprotocol/event"
-	"github.com/deploymenttheory/go-apple-dm/mdmprotocol/profile"
-	"github.com/deploymenttheory/go-apple-dm/paging"
-	"github.com/deploymenttheory/go-apple-dm/pki/acme"
-	"github.com/deploymenttheory/go-apple-dm/pki/acme/attest"
-	"github.com/deploymenttheory/go-apple-dm/pki/acme/attest/attesttest"
-	"github.com/deploymenttheory/go-apple-dm/pki/ca"
-	"github.com/deploymenttheory/go-apple-dm/simulator"
-	acmeinmem "github.com/deploymenttheory/go-apple-dm/storage/acme/inmem"
 )
 
 // acmeFixture is a harness with an ACME server mounted on the enrollment

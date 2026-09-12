@@ -6,9 +6,9 @@ Apple's pinned YAML schema describes multiple protocol families, nested dictiona
 
 ## Decision
 
-The in-repository generator uses `gopkg.in/yaml.v3` nodes to emit commands and responses, check-in messages, errors, profiles, declarations, declarative protocol messages, status items and other types. Nested dictionaries receive named types. Support metadata remains data in `schema/support`; callers use `Check`, `Lookup`, `Families` and `Paths`.
+The in-repository generator uses `gopkg.in/yaml.v3` nodes to emit commands and responses, check-in messages, errors, profiles, declarations, declarative protocol messages, status items and other types. Nested dictionaries receive named types. Support metadata remains data in `devicemanagement/schema/support`; callers use `Check`, `Lookup`, `Families` and `Paths`.
 
-Generated conformance tests exercise XML plist, binary plist and JSON round trips. `schema/EXPORTED_IDENTIFIERS.lock` tracks exported names, and approved removals belong in `schema/ALLOWED_REMOVALS.md`. Provenance is generated from the checked-out schema as described in record 0046.
+Generated conformance tests exercise XML plist, binary plist and JSON round trips. `devicemanagement/schema/EXPORTED_IDENTIFIERS.lock` tracks exported names, and approved removals belong in `devicemanagement/schema/ALLOWED_REMOVALS.md`. Provenance is generated from the checked-out schema as described in record 0046.
 
 ## Rationale
 
@@ -26,7 +26,7 @@ Generator tests cover complete-tree generation, schema coverage, nested types, r
 
 - [internal/schemagen](../../../internal/schemagen)
 - [cmd/admgen](../../../cmd/admgen)
-- [schema](../../../schema)
+- [schema](../../../devicemanagement/schema)
 - <https://github.com/apple/device-management/blob/release/docs/schema.md>
 
 Reference source identifiers and paths (relative to the named project):

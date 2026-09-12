@@ -10,13 +10,13 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/deploymenttheory/go-apple-dm/mdmprotocol/cms"
-	"github.com/deploymenttheory/go-apple-dm/mdmprotocol/mdm"
-	"github.com/deploymenttheory/go-apple-dm/pki/acme"
-	"github.com/deploymenttheory/go-apple-dm/pki/revocation"
-	"github.com/deploymenttheory/go-apple-dm/schema/support"
-	"github.com/deploymenttheory/go-apple-dm/state"
-	"github.com/deploymenttheory/go-apple-dm/storage"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/cms"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/mdm"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/pki/acme"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/pki/revocation"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/schema/support"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/state"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/storage"
 )
 
 const credentialGrantTTL = 5 * time.Minute

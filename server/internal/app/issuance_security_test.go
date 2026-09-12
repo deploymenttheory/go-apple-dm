@@ -19,15 +19,15 @@ import (
 	"testing"
 	"time"
 
-	"github.com/deploymenttheory/go-apple-dm/appleplatformservices/dep"
-	"github.com/deploymenttheory/go-apple-dm/clock"
-	"github.com/deploymenttheory/go-apple-dm/mdmprotocol/cms"
-	"github.com/deploymenttheory/go-apple-dm/mdmprotocol/enroll/webauth"
-	"github.com/deploymenttheory/go-apple-dm/paging"
-	"github.com/deploymenttheory/go-apple-dm/pki/acme"
-	"github.com/deploymenttheory/go-apple-dm/pki/ca"
-	"github.com/deploymenttheory/go-apple-dm/pki/scep"
-	"github.com/deploymenttheory/go-apple-dm/state"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/appleplatformservices/dep"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/clock"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/cms"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/enroll/webauth"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/paging"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/pki/acme"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/pki/ca"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/pki/scep"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/state"
 )
 
 func TestAdmissionPolicyDeniesUnlistedAndUnverifiedIdentities(t *testing.T) {

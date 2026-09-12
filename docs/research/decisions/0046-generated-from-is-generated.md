@@ -24,7 +24,7 @@ Generator tests check checkout-derived provenance, path/content/location sensiti
 
 - [internal/schemagen/generatedfrom.go](../../../internal/schemagen/generatedfrom.go)
 - [cmd/admgen](../../../cmd/admgen)
-- [schema/GENERATED_FROM.json](../../../schema/GENERATED_FROM.json)
+- [schema/GENERATED_FROM.json](../../../devicemanagement/schema/GENERATED_FROM.json)
 - <https://developer.apple.com/documentation/devicemanagement>
 
 Reference source identifiers and paths (relative to the named project):

@@ -32,7 +32,7 @@ CMS tests cover skew, chains, multiple signers, tampered content and malformed i
 
 ## References
 
-- [mdmprotocol/cms](../../../mdmprotocol/cms)
+- [mdmprotocol/cms](../../../devicemanagement/mdmprotocol/cms)
 - [server/httpapi](../../../server/httpapi)
 - [server/service](../../../server/service)
 - <https://developer.apple.com/documentation/devicemanagement/check-in>

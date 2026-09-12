@@ -6,10 +6,10 @@ import (
 	"testing"
 	"time"
 
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/appleplatformservices/dep"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/paging"
 	sqlstore "github.com/deploymenttheory/go-apple-dm/server/depstore/sqlstore"
 	"github.com/deploymenttheory/go-apple-dm/server/sqlstore/sqlite"
-	"github.com/deploymenttheory/go-apple-dm/appleplatformservices/dep"
-	"github.com/deploymenttheory/go-apple-dm/paging"
 )
 
 // TestClosedDatabaseSurfaces proves every method reports a driver

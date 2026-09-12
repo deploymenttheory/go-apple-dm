@@ -8,8 +8,8 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/deploymenttheory/go-apple-dm/paging"
-	"github.com/deploymenttheory/go-apple-dm/storage"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/paging"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/storage"
 )
 
 func exportCursor(parentID, id string) string { return parentID + "\x00" + id }

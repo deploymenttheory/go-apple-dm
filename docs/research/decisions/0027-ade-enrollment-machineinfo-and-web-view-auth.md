@@ -39,9 +39,9 @@ Apple School Manager.
 
 ## References
 
-- [mdmprotocol/enroll/ade](../../../mdmprotocol/enroll/ade)
-- [mdmprotocol/enroll/webauth](../../../mdmprotocol/enroll/webauth)
-- [appleplatformservices/gdmf](../../../appleplatformservices/gdmf)
+- [mdmprotocol/enroll/ade](../../../devicemanagement/mdmprotocol/enroll/ade)
+- [mdmprotocol/enroll/webauth](../../../devicemanagement/mdmprotocol/enroll/webauth)
+- [appleplatformservices/gdmf](../../../devicemanagement/appleplatformservices/gdmf)
 - [server/internal/app/enroll.go](../../../server/internal/app/enroll.go)
 - <https://developer.apple.com/documentation/devicemanagement/machineinfo>
 - <https://developer.apple.com/documentation/devicemanagement/authenticating-through-web-views>
