@@ -487,8 +487,14 @@ def issue_actions(existing, reports, manifest, run_url, repository="deploymentth
             presentation_changed = old.get("presentation") != desired["presentation"] or old.get("presentationVersion") != PRESENTATION_VERSION
             title_changed = issue.get("title", title) != title
             if issue["state"] == "closed":
-                if not changed and old.get("status") != "verified":
-                    if presentation_changed or title_changed:
+                # A review-evidence migration can filter editorial clauses or
+                # replace a directory with precise file links without Apple
+                # changing the snapshot a maintainer already dismissed.
+                same_source_migration = (old.get("presentationVersion", 1) < PRESENTATION_VERSION
+                                         and old.get("candidate") == desired["candidate"]
+                                         and item["kind"] == "review" and item["stage"] == "audit")
+                if (not changed or same_source_migration) and old.get("status") != "verified":
+                    if changed or presentation_changed or title_changed:
                         actions.append(("PATCH", "issues/" + str(issue["number"]), {
                             "title": title, "body": replace_section(issue["body"], section)}))
                     continue  # A maintainer acknowledged this exact finding.

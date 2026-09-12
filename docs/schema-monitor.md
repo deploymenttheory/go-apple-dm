@@ -79,7 +79,9 @@ presentation changes. The bot refreshes managed titles and its marked evidence
 block, preserving comments, engineer notes outside the block and checked tasks
 whose instruction text is unchanged. Formatting changes do not reopen a
 maintainer-closed issue. Repeating the same scan and presentation produces no writes
-or daily comments. Reproducible failures close only when the relevant stage
+or daily comments. Migrating review evidence for an unchanged Apple snapshot also
+preserves a maintainer's closure, including when editorial filtering changes the
+evidence fingerprint. Reproducible failures close only when the relevant stage
 actually passes in a completed later assessment. Behavior reviews require an
 engineer to close them. An automatically verified failure reopens if it recurs;
 an unchanged finding closed by a maintainer remains acknowledged. New evidence

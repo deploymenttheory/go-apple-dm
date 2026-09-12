@@ -129,6 +129,24 @@ class PresentationMigrationTests(unittest.TestCase):
         self.assertNotIn("state", actions[0][2])
         self.assertIn("Clearer wording", actions[0][2]["title"])
 
+    def test_review_evidence_migration_preserves_closure_for_same_apple_snapshot(self):
+        result, item = report(), retry_finding()
+        result["findings"] = [item]
+        issue = stored_issue(result, item, state="closed")
+        old = m.metadata(issue["body"])
+        old.pop("presentationVersion")
+        old.pop("presentation")
+        old["fingerprint"] = "legacy-evidence-format"
+        issue["body"] = m.MARKER.sub("<!-- schema-monitor " + json.dumps(old) + " -->", issue["body"], count=1)
+        actions = m.issue_actions([issue], [result], manifest(result), "url")
+        self.assertEqual(1, len(actions))
+        self.assertNotIn("state", actions[0][2])
+        updated = dict(issue, **actions[0][2])
+        self.assertEqual([], m.issue_actions([updated], [result], manifest(result), "another-run"))
+        result["branch"]["commit"] = "new-apple-snapshot"
+        actions = m.issue_actions([issue], [result], manifest(result), "url")
+        self.assertEqual("open", actions[0][2]["state"])
+
     def test_checked_tasks_and_notes_survive_body_refresh(self):
         body = "Notes before\n" + m.START + "\n- [x] Verify plist output\n" + m.END + "\nNotes after"
         section = m.START + "\n- [ ] Verify plist output\n- [ ] New task\n" + m.END
