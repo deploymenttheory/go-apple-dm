@@ -129,7 +129,9 @@ def assess(repo, manifest, branch, directory):
             if not SHA.fullmatch(value):
                 raise ValueError("Assessment requires full commit SHAs")
         with tempfile.TemporaryDirectory(prefix="dm-schema-assessment-") as scratch:
-            scratch = Path(scratch)
+            # Go workspace matching requires one physical spelling of the path
+            # (macOS /var and /private/var can otherwise refer to the same tree).
+            scratch = Path(scratch).resolve()
             root, apple, baseline = scratch / "project", scratch / "apple", scratch / "baseline"
             run(["git", "clone", "--quiet", "--shared", repo, root])
             run(["git", "checkout", "--quiet", "--detach", manifest["projectCommit"]], root)
