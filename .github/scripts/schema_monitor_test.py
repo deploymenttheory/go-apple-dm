@@ -223,6 +223,25 @@ class AssessmentTests(unittest.TestCase):
         self.assertEqual(before, m.stage_evidence("tests", json.dumps(events[0])))
         self.assertIn("$ASSESSMENT", m.stage_evidence("build", "/tmp/dm-schema-assessment-abc/project/error")[0]["detail"])
 
+    def test_boundary_generation_failure_does_not_suppress_protocol_tests(self):
+        result = report()
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp).resolve()
+
+            def stage(result, name, args, cwd, directory, env=None):
+                text = '{"added":[],"removed":[],"changed":[]}' if name == "api" else "fixture outcome"
+                result["stages"][name] = {"state": "failed" if name == "boundaries" else "passed"}
+                (directory / (name + ".log")).write_text(text)
+                return name != "boundaries", text
+
+            def run(args, *unused):
+                return json.dumps({"Dir": str(root)}) if args[:3] == ["go", "list", "-m"] else ""
+
+            with patch.object(m, "command_stage", side_effect=stage), patch.object(m, "run", side_effect=run), patch.object(m, "assert_snapshot"):
+                m.assess_generated(result, ["tool"], root, root, "tool", root, root)
+        self.assertEqual("passed", result["stages"]["tests"]["state"])
+        self.assertEqual("boundaries", result["findings"][0]["stage"])
+
 
 class PublicationTests(unittest.TestCase):
     def test_report_only_never_accesses_github_or_pushes(self):

@@ -197,14 +197,15 @@ def assess_generated(result, base_args, baseline, old_api, tool, root, directory
         raise ValueError("Server tests do not resolve the candidate library")
     ok, _ = command_stage(result, "build", ["go", "build", "./...", "./server/..."], root, directory, env)
     if ok:
-        probe_cases = run(base_args + ["-baseline", baseline, "boundaries"], root)
-        (directory / "boundaries.json").write_text(probe_cases)
-        # Go ignores .txt in source discovery; compile the probe only here.
-        probe = directory / "support-probe.go.txt"
-        shutil.copyfile(ROOT / ".github/scripts/schema_support_probe.go.txt", probe)
-        source = root.parent / "support-probe.go"
-        shutil.copyfile(probe, source)
-        command_stage(result, "boundaries", ["go", "run", source, directory / "boundaries.json"], root, directory, env)
+        cases_ok, probe_cases = command_stage(result, "boundaries", base_args + ["-baseline", baseline, "boundaries"], root, directory)
+        if cases_ok:
+            (directory / "boundaries.json").write_text(probe_cases)
+            # Go ignores .txt in source discovery; compile the probe only here.
+            probe = directory / "support-probe.go.txt"
+            shutil.copyfile(root / ".github/scripts/schema_support_probe.go.txt", probe)
+            source = root.parent / "support-probe.go"
+            shutil.copyfile(probe, source)
+            command_stage(result, "boundaries", ["go", "run", source, directory / "boundaries.json"], root, directory, env)
         command_stage(result, "tests", ["go", "test", "-race", "-count=1", "./devicemanagement/schema/...", "./devicemanagement/mdmprotocol/...", "./server/service", "./server/ddmadapter/...", "-json"], root, directory, env)
     for stage in ("verify", "api", "build", "boundaries", "tests"):
         if result["stages"][stage]["state"] == "failed" and not any(f["stage"] == stage for f in result["findings"]):
