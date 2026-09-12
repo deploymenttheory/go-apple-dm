@@ -6,7 +6,6 @@ import (
 	"flag"
 	"fmt"
 	"log/slog"
-	"net/http"
 	"os"
 	"os/signal"
 	"strings"
@@ -31,7 +30,7 @@ func run(ctx context.Context, args []string, getenv func(string) string, out *os
 	}
 	fs := flag.NewFlagSet("dmserver", flag.ContinueOnError)
 	fs.SetOutput(out)
-	var check, sendKey, recvKey, storageKeys string
+	var check, checkCA, sendKey, recvKey, storageKeys string
 	role := fs.String("role", string(cfg.Role), "mdm, ddm, or all ("+app.EnvRole+")")
 	fs.StringVar(
 		&cfg.TLSCertFile,
@@ -107,12 +106,26 @@ func run(ctx context.Context, args []string, getenv func(string) string, out *os
 		cfg.Subscriptions,
 		"synthesise status subscriptions ("+app.EnvSubscriptions+")",
 	)
-	fs.StringVar(&check, "check", "", "GET this URL and exit 0 on 200 (container health probe)")
+	fs.StringVar(
+		&check,
+		"check",
+		"",
+		"GET a URL or use auto for configured listener health; exit 0 on 200",
+	)
+	fs.StringVar(
+		&checkCA,
+		"check-ca-file",
+		"",
+		"private CA bundle for an explicit health-check URL",
+	)
 	if err := fs.Parse(args); err != nil {
 		return err
 	}
 	if check != "" {
-		return probe(ctx, check)
+		return runtime.Probe(ctx, runtime.ProbeConfig{
+			URL: check, Listen: cfg.Listen, TLSCertFile: cfg.TLSCertFile,
+			TLSKeyFile: cfg.TLSKeyFile, CAFile: checkCA,
+		})
 	}
 	cfg.Role = app.Role(*role)
 	cfg.DDMSendKey, cfg.DDMRecvKey = keyBytes(sendKey), keyBytes(recvKey)
@@ -133,24 +146,6 @@ func keyBytes(s string) []byte {
 		return nil
 	}
 	return []byte(s)
-}
-
-func probe(ctx context.Context, url string) error {
-	ctx, cancel := context.WithTimeout(ctx, 3*time.Second)
-	defer cancel()
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
-	if err != nil {
-		return err
-	}
-	resp, err := http.DefaultClient.Do(req)
-	if err != nil {
-		return err
-	}
-	defer resp.Body.Close()
-	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("check: %s", resp.Status)
-	}
-	return nil
 }
 
 // serve attaches process signals; runtime owns startup and ordered shutdown.

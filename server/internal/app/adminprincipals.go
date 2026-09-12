@@ -29,11 +29,17 @@ import (
 func (a *App) principalRoutes() []adminRoute {
 	var routes []adminRoute
 	add := func(action, pattern string, fn http.HandlerFunc) {
-		routes = append(routes, adminRoute{Pattern: pattern, Action: action, Family: "principals", Handler: fn})
+		routes = append(
+			routes,
+			adminRoute{Pattern: pattern, Action: action, Family: "principals", Handler: fn},
+		)
 	}
 
 	add(ActionManagePrincipals, "GET /principals", func(w http.ResponseWriter, r *http.Request) {
-		res, err := a.admin.Principals(r.Context(), adminauth.Page{Cursor: r.URL.Query().Get("cursor")})
+		res, err := a.admin.Principals(
+			r.Context(),
+			adminauth.Page{Cursor: r.URL.Query().Get("cursor")},
+		)
 		if err != nil {
 			writeError(w, adminStatus(err), err)
 			return
@@ -45,14 +51,18 @@ func (a *App) principalRoutes() []adminRoute {
 		writeJSON(w, http.StatusOK, map[string]any{"Items": items, "NextCursor": res.NextCursor})
 	})
 
-	add(ActionManagePrincipals, "GET /principals/{name}", func(w http.ResponseWriter, r *http.Request) {
-		p, err := a.admin.Principal(r.Context(), r.PathValue("name"))
-		if err != nil {
-			writeError(w, adminStatus(err), err)
-			return
-		}
-		writeJSON(w, http.StatusOK, viewOf(p))
-	})
+	add(
+		ActionManagePrincipals,
+		"GET /principals/{name}",
+		func(w http.ResponseWriter, r *http.Request) {
+			p, err := a.admin.Principal(r.Context(), r.PathValue("name"))
+			if err != nil {
+				writeError(w, adminStatus(err), err)
+				return
+			}
+			writeJSON(w, http.StatusOK, viewOf(p))
+		},
+	)
 
 	add(ActionManagePrincipals, "POST /principals", func(w http.ResponseWriter, r *http.Request) {
 		var body struct {
@@ -65,61 +75,108 @@ func (a *App) principalRoutes() []adminRoute {
 			return
 		}
 		actor := a.actor(r)
-		p, tok, err := a.admin.CreatePrincipal(r.Context(), actor,
-			adminauth.Principal{Name: body.Name, Roles: body.Roles, Root: body.Root}, body.ExpiresAt)
+		p, tok, err := a.admin.CreatePrincipal(
+			r.Context(),
+			actor,
+			adminauth.Principal{
+				Name:  body.Name,
+				Roles: body.Roles,
+				Root:  body.Root,
+			},
+			body.ExpiresAt,
+		)
 		if err != nil {
 			writeError(w, adminStatus(err), err)
 			return
 		}
 		// The only time the token is ever readable. It is not stored, and no
 		// later route can return it.
-		writeJSON(w, http.StatusCreated, map[string]any{"Principal": viewOf(p), "Token": string(tok)})
+		writeJSON(
+			w,
+			http.StatusCreated,
+			map[string]any{"Principal": viewOf(p), "Token": string(tok)},
+		)
 	})
 
-	add(ActionManagePrincipals, "PATCH /principals/{name}", func(w http.ResponseWriter, r *http.Request) {
-		var body struct {
-			Roles []string
-			Root  bool
-		}
-		if !decodeAdmin(w, r, &body) {
-			return
-		}
-		p, err := a.admin.UpdatePrincipal(r.Context(), a.actor(r), r.PathValue("name"), body.Roles, body.Root)
-		if err != nil {
-			writeError(w, adminStatus(err), err)
-			return
-		}
-		writeJSON(w, http.StatusOK, viewOf(p))
-	})
+	add(
+		ActionManagePrincipals,
+		"PATCH /principals/{name}",
+		func(w http.ResponseWriter, r *http.Request) {
+			var body struct {
+				Roles []string
+				Root  bool
+			}
+			if !decodeAdmin(w, r, &body) {
+				return
+			}
+			p, err := a.admin.UpdatePrincipal(
+				r.Context(),
+				a.actor(r),
+				r.PathValue("name"),
+				body.Roles,
+				body.Root,
+			)
+			if err != nil {
+				writeError(w, adminStatus(err), err)
+				return
+			}
+			writeJSON(w, http.StatusOK, viewOf(p))
+		},
+	)
 
-	add(ActionManagePrincipals, "DELETE /principals/{name}", func(w http.ResponseWriter, r *http.Request) {
-		if err := a.admin.DeletePrincipal(r.Context(), a.actor(r), r.PathValue("name")); err != nil {
-			writeError(w, adminStatus(err), err)
-			return
-		}
-		w.WriteHeader(http.StatusNoContent)
-	})
+	add(
+		ActionManagePrincipals,
+		"DELETE /principals/{name}",
+		func(w http.ResponseWriter, r *http.Request) {
+			if err := a.admin.DeletePrincipal(
+				r.Context(),
+				a.actor(r),
+				r.PathValue("name"),
+			); err != nil {
+				writeError(w, adminStatus(err), err)
+				return
+			}
+			w.WriteHeader(http.StatusNoContent)
+		},
+	)
 
-	add(ActionManagePrincipals, "POST /principals/{name}/rotate", func(w http.ResponseWriter, r *http.Request) {
-		var body struct{ ExpiresAt time.Time }
-		if r.ContentLength > 0 && !decodeAdmin(w, r, &body) {
-			return
-		}
-		p, tok, err := a.admin.Rotate(r.Context(), a.actor(r), r.PathValue("name"), body.ExpiresAt)
-		if err != nil {
-			writeError(w, adminStatus(err), err)
-			return
-		}
-		writeJSON(w, http.StatusOK, map[string]any{"Principal": viewOf(p), "Token": string(tok)})
-	})
+	add(
+		ActionManagePrincipals,
+		"POST /principals/{name}/rotate",
+		func(w http.ResponseWriter, r *http.Request) {
+			var body struct{ ExpiresAt time.Time }
+			if r.ContentLength > 0 && !decodeAdmin(w, r, &body) {
+				return
+			}
+			p, tok, err := a.admin.Rotate(
+				r.Context(),
+				a.actor(r),
+				r.PathValue("name"),
+				body.ExpiresAt,
+			)
+			if err != nil {
+				writeError(w, adminStatus(err), err)
+				return
+			}
+			writeJSON(
+				w,
+				http.StatusOK,
+				map[string]any{"Principal": viewOf(p), "Token": string(tok)},
+			)
+		},
+	)
 
-	add(ActionManagePrincipals, "POST /principals/{name}/revoke", func(w http.ResponseWriter, r *http.Request) {
-		if err := a.admin.Revoke(r.Context(), a.actor(r), r.PathValue("name")); err != nil {
-			writeError(w, adminStatus(err), err)
-			return
-		}
-		w.WriteHeader(http.StatusNoContent)
-	})
+	add(
+		ActionManagePrincipals,
+		"POST /principals/{name}/revoke",
+		func(w http.ResponseWriter, r *http.Request) {
+			if err := a.admin.Revoke(r.Context(), a.actor(r), r.PathValue("name")); err != nil {
+				writeError(w, adminStatus(err), err)
+				return
+			}
+			w.WriteHeader(http.StatusNoContent)
+		},
+	)
 
 	add(ActionManagePolicies, "GET /policies", func(w http.ResponseWriter, r *http.Request) {
 		docs, err := a.admin.Policies(r.Context(), a.actor(r))
@@ -154,13 +211,21 @@ func (a *App) principalRoutes() []adminRoute {
 		writeJSON(w, http.StatusOK, doc)
 	})
 
-	add(ActionManagePolicies, "DELETE /policies/{name}", func(w http.ResponseWriter, r *http.Request) {
-		if err := a.admin.DeletePolicy(r.Context(), a.actor(r), r.PathValue("name")); err != nil {
-			writeError(w, adminStatus(err), err)
-			return
-		}
-		w.WriteHeader(http.StatusNoContent)
-	})
+	add(
+		ActionManagePolicies,
+		"DELETE /policies/{name}",
+		func(w http.ResponseWriter, r *http.Request) {
+			if err := a.admin.DeletePolicy(
+				r.Context(),
+				a.actor(r),
+				r.PathValue("name"),
+			); err != nil {
+				writeError(w, adminStatus(err), err)
+				return
+			}
+			w.WriteHeader(http.StatusNoContent)
+		},
+	)
 
 	// The action catalogue an operator writes policies against, with the
 	// prose that says what granting each one means.

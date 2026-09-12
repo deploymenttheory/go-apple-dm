@@ -18,7 +18,16 @@ A reusable application builder lets tests exercise the same composition as the b
 
 ## Constraints
 
-The reference server is an example composition, not a complete fleet management product. Persistent deployments require stable CA material, keyring configuration, trusted public TLS and appropriate admission policy. The split hop requires HTTPS and both HMAC keys. The container integration scenario skips when its explicit environment is absent. When native TLS is configured, replace the image's HTTP healthcheck with a probe that trusts its server CA.
+The reference server is an example composition, not a complete fleet management product. Persistent deployments require stable CA material, keyring configuration, trusted public TLS and appropriate admission policy. The split hop requires HTTPS and both HMAC keys. The container integration scenario skips when its explicit environment is absent. The image runs `dmserver -check auto`. It derives the scheme and port from
+`DM_LISTEN` and `DM_TLS_CERT_FILE`/`DM_TLS_KEY_FILE`, using loopback for wildcard
+listeners. Automatic HTTPS probes pin the configured server certificate and use
+its SANs for normal hostname verification, so private and DNS-only certificates
+work without public DNS or disabled verification. This checks the local listener
+and storage, not public ingress trust or reachability. Replacing certificate files
+requires restarting the server. The two-second probe refuses redirects and requires
+HTTP 200. `-check URL -check-ca-file roots.pem` supports explicit private-CA probes.
+Container listener/TLS settings should use environment variables; command-only
+server overrides require the same flags in an overridden Docker health command.
 
 ## Verification
 

@@ -98,7 +98,7 @@ case "${1:-}" in
     docker rm -f "$DDM" >/dev/null 2>&1 || true
     # The mdm role signs with SEND and verifies with RECV, so the ddm role receives
     # with the mdm role's SEND key and signs with its RECV key.
-    docker run -d --name "$DDM" --no-healthcheck -p "127.0.0.1:${DDM_PORT}:8080" \
+    docker run -d --name "$DDM" -p "127.0.0.1:${DDM_PORT}:8080" \
       -v "$DDM_TLS_DIR/mount:/test-tls:ro" \
       -e DM_TLS_CERT_FILE=/test-tls/server.crt -e DM_TLS_KEY_FILE=/test-tls/server.key \
       -e DM_ROLE=ddm -e DM_LISTEN=:8080 -e DM_STORAGE=sqlite -e DM_DSN=/data/ddm.db \
@@ -107,6 +107,7 @@ case "${1:-}" in
       -e "DM_STORAGE_KEY_$(printf '%s' "$DDM_STORAGE_KEY_NAME" | tr '[:lower:].-' '[:upper:]__')=$DDM_STORAGE_KEY" \
       -e DM_ADMIN_TOKEN="$DDM_ADMIN_TOKEN" "$DDM_IMAGE" >/dev/null
     wait_for "$DDM" curl -fsS --cacert "$DDM_TLS_DIR/mount/server.crt" "https://127.0.0.1:${DDM_PORT}/healthz"
+    wait_for "$DDM" sh -c 'test "$(docker inspect --format="{{.State.Health.Status}}" "$1")" = healthy' sh "$DDM"
     print_ddm_env
     ;;
   ddm-down)

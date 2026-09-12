@@ -82,7 +82,9 @@ func (e *emitter) reasonsFile() []byte {
 			"reason. The keys a reason carries depend on the reason.", width))
 	b.WriteString("type ReasonDetail struct {\n")
 	b.WriteString("\t// Key is the wire key inside the details dictionary.\n\tKey string\n")
-	b.WriteString("\t// Type is Apple's declared type for the value, such as \"<string>\".\n\tType string\n")
+	b.WriteString(
+		"\t// Type is Apple's declared type for the value, such as \"<string>\".\n\tType string\n",
+	)
 	b.WriteString("\t// Description is Apple's prose for the key.\n\tDescription string\n}\n\n")
 
 	b.WriteString(wrap("// ",
@@ -90,10 +92,18 @@ func (e *emitter) reasonsFile() []byte {
 			"scopes the vocabulary to the schema, so a code that two schemas declare "+
 			"has one entry per schema and the prose differs between them.", width))
 	b.WriteString("type ReasonEntry struct {\n")
-	b.WriteString("\t// Code is the wire value, matching the Code field of a status report reason.\n\tCode string\n")
-	b.WriteString("\t// Description is Apple's prose for the code in this schema.\n\tDescription string\n")
-	b.WriteString("\t// Schema is the YAML path in apple/device-management that declares it.\n\tSchema string\n")
-	b.WriteString("\t// Details are the keys Apple documents in the reason's details dictionary.\n\tDetails []ReasonDetail\n}\n\n")
+	b.WriteString(
+		"\t// Code is the wire value, matching the Code field of a status report reason.\n\tCode string\n",
+	)
+	b.WriteString(
+		"\t// Description is Apple's prose for the code in this schema.\n\tDescription string\n",
+	)
+	b.WriteString(
+		"\t// Schema is the YAML path in apple/device-management that declares it.\n\tSchema string\n",
+	)
+	b.WriteString(
+		"\t// Details are the keys Apple documents in the reason's details dictionary.\n\tDetails []ReasonDetail\n}\n\n",
+	)
 
 	codes := reasonCodes(decls)
 	b.WriteString("// Reason codes.\nconst (\n")
@@ -128,8 +138,15 @@ func (e *emitter) reasonsFile() []byte {
 			if len(d.reason.Details) > 0 {
 				b.WriteString(", Details: []ReasonDetail{\n")
 				for _, det := range d.reason.Details {
-					fmt.Fprintf(b, "\t\t\t{Key: %s, Type: %s, Description: %s},\n",
-						strconv.Quote(det.Key), strconv.Quote(det.Type), strconv.Quote(det.Description))
+					fmt.Fprintf(
+						b,
+						"\t\t\t{Key: %s, Type: %s, Description: %s},\n",
+						strconv.Quote(
+							det.Key,
+						),
+						strconv.Quote(det.Type),
+						strconv.Quote(det.Description),
+					)
 				}
 				b.WriteString("\t\t}")
 			}

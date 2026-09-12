@@ -7,8 +7,9 @@ Operators need retained, attributable records of device and administrative activ
 ## Decision
 
 Accepted asynchronous events retain request context values but are delivered independently
-of request cancellation. Shutdown drains them before closing the audit store, so a
-completed HTTP response does not cancel its pending audit write.
+of request cancellation. Shutdown attempts to drain them before closing the audit store, so a completed
+HTTP response does not cancel its pending audit write. The bus has a bounded queue
+and event lifetime; overload rejects new events and records rejection statistics.
 
 `audit.Store` exposes append, query and age-based prune operations. Records contain projected fields from the event registry, event metadata and an actor string captured at the time. There is no update or delete-by-ID operation. IDs are not reused after pruning.
 
@@ -20,7 +21,7 @@ A shared contract defines ordering and cursor behavior across backends. Actor st
 
 ## Constraints
 
-The API is append-and-prune; it is not a cryptographically tamper-evident log and cannot prevent a database administrator from editing rows. Event persistence errors are logged without failing a device operation. In-memory storage is lost on restart, and asynchronous delivery can lose events on abrupt termination. Operators select retention and backup policy.
+The API is append-and-prune; it is not a cryptographically tamper-evident log and cannot prevent a database administrator from editing rows. Event persistence errors are logged without failing a device operation. In-memory storage is lost on restart, and asynchronous delivery can lose events on overload, expiry, drain timeout or abrupt termination. Operators select retention and backup policy.
 
 ## Verification
 

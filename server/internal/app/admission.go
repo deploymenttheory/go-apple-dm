@@ -243,7 +243,7 @@ func (a *App) securityEvent(ctx context.Context, kind event.Type) {
 	if err := a.cfg.Bus.Publish(
 		ctx,
 		event.Event{Type: kind, At: a.cfg.Clock.Now(), Actor: "security"},
-	); err != nil &&
+	); err != nil && !errors.Is(err, event.ErrQueueFull) &&
 		a.cfg.Logger != nil {
 		a.cfg.Logger.WarnContext(ctx, "security event delivery failed", "type", kind)
 	}

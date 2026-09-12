@@ -281,16 +281,30 @@ func New(cfg Config) (*Core, error) {
 	return c, nil
 }
 
-func acceptAllUsers(context.Context, *mdm.Request, *checkin.UserAuthenticate) (*mdm.UserAuthenticateResponse, error) {
+func acceptAllUsers(
+	context.Context,
+	*mdm.Request,
+	*checkin.UserAuthenticate,
+) (*mdm.UserAuthenticateResponse, error) {
 	return &mdm.UserAuthenticateResponse{DigestChallenge: new("")}, nil
 }
 
 // publish sends an event when a bus is configured.
-func (c *Core) publish(ctx context.Context, t event.Type, id mdm.EnrollmentID, actor string, data any) {
+func (c *Core) publish(
+	ctx context.Context,
+	t event.Type,
+	id mdm.EnrollmentID,
+	actor string,
+	data any,
+) {
 	if c.bus == nil {
 		return
 	}
-	if err := c.bus.Publish(ctx, event.Event{Type: t, At: c.clock.Now(), Enrollment: id, Actor: actor, Data: data}); err != nil {
+	if err := c.bus.Publish(
+		ctx,
+		event.Event{Type: t, At: c.clock.Now(), Enrollment: id, Actor: actor, Data: data},
+	); err != nil &&
+		!errors.Is(err, event.ErrQueueFull) {
 		c.log.WarnContext(ctx, "event handler failed", "type", t, "enrollment", id.ID, "err", err)
 	}
 }
@@ -300,7 +314,10 @@ func (c *Core) runHooks(ctx context.Context, call *Call) (context.Context, func(
 	for _, h := range c.hooks {
 		next, err := h.Before(ctx, call)
 		if err != nil {
-			return ctx, func(error) {}, wrapCode(CodeForbidden, fmt.Errorf("%w: %w", ErrHookVeto, err))
+			return ctx, func(error) {}, wrapCode(
+				CodeForbidden,
+				fmt.Errorf("%w: %w", ErrHookVeto, err),
+			)
 		}
 		if next != nil {
 			ctx = next
@@ -315,7 +332,12 @@ func (c *Core) runHooks(ctx context.Context, call *Call) (context.Context, func(
 
 // Enqueue queues a command for enrollments and publishes CommandQueued for
 // each that accepted it.
-func (c *Core) Enqueue(ctx context.Context, ids []mdm.EnrollmentID, cmd *mdm.Command, o storage.EnqueueOptions) (storage.EnqueueResult, error) {
+func (c *Core) Enqueue(
+	ctx context.Context,
+	ids []mdm.EnrollmentID,
+	cmd *mdm.Command,
+	o storage.EnqueueOptions,
+) (storage.EnqueueResult, error) {
 	call := &Call{Op: "enqueue", Command: cmd}
 	ctx, after, err := c.runHooks(ctx, call)
 	if err != nil {
@@ -371,7 +393,11 @@ var ErrUnsupportedTarget = errors.New("service: request type not supported on th
 // checkTargets splits ids into supported targets and unsupported ones with
 // the reason (decision record 0029). Unknown enrollments pass through so
 // the store reports them as it always has.
-func (c *Core) checkTargets(ctx context.Context, ids []mdm.EnrollmentID, cmd *mdm.Command) ([]mdm.EnrollmentID, map[mdm.EnrollmentID]error, error) {
+func (c *Core) checkTargets(
+	ctx context.Context,
+	ids []mdm.EnrollmentID,
+	cmd *mdm.Command,
+) ([]mdm.EnrollmentID, map[mdm.EnrollmentID]error, error) {
 	if !c.validateTargets || cmd == nil {
 		return ids, nil, nil
 	}

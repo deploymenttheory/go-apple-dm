@@ -11,7 +11,7 @@
 // # Usage
 //
 //	dmserver -role all -storage inmem -admin-token dev-token
-//	dmserver -check http://127.0.0.1:8080/healthz
+//	dmserver -check auto
 //
 // Use -help for current flags. The -check mode supports container health probes
 // without a shell. Persistent storage, enrollment, authentication and optional

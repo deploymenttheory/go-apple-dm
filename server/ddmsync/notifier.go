@@ -7,10 +7,9 @@ import (
 	"log/slog"
 	"time"
 
-	"github.com/deploymenttheory/go-apple-dm/mdmprotocol/ddm"
-
 	"github.com/deploymenttheory/go-apple-dm/appleplatformservices/push"
 	"github.com/deploymenttheory/go-apple-dm/clock"
+	"github.com/deploymenttheory/go-apple-dm/mdmprotocol/ddm"
 	"github.com/deploymenttheory/go-apple-dm/mdmprotocol/event"
 	"github.com/deploymenttheory/go-apple-dm/mdmprotocol/mdm"
 	"github.com/deploymenttheory/go-apple-dm/schema/commands"
@@ -38,7 +37,12 @@ const (
 
 // Enqueuer queues a command for enrollments; *service.Core satisfies it.
 type Enqueuer interface {
-	Enqueue(ctx context.Context, ids []mdm.EnrollmentID, cmd *mdm.Command, o storage.EnqueueOptions) (storage.EnqueueResult, error)
+	Enqueue(
+		ctx context.Context,
+		ids []mdm.EnrollmentID,
+		cmd *mdm.Command,
+		o storage.EnqueueOptions,
+	) (storage.EnqueueResult, error)
 }
 
 // Pusher sends APNs wake-ups; *pushnotify.Notifier satisfies it.
@@ -265,7 +269,11 @@ const (
 
 // command enqueues one DeclarativeManagement command carrying the
 // enrollment's current tokens.
-func (n *Notifier) command(ctx context.Context, g *changeGroup, now time.Time) (commandOutcome, error) {
+func (n *Notifier) command(
+	ctx context.Context,
+	g *changeGroup,
+	now time.Time,
+) (commandOutcome, error) {
 	tokens, err := n.cfg.Tokens.Tokens(ctx, g.id)
 	if err != nil {
 		return 0, fmt.Errorf("tokens: %w", err)
@@ -283,7 +291,14 @@ func (n *Notifier) command(ctx context.Context, g *changeGroup, now time.Time) (
 		if errors.Is(skip, storage.ErrConflict) {
 			return outcomeDeduped, nil
 		}
-		n.cfg.Logger.InfoContext(ctx, "ddm: change dropped, enrollment cannot be commanded", "enrollment", g.id.ID, "reason", skip.Error())
+		n.cfg.Logger.InfoContext(
+			ctx,
+			"ddm: change dropped, enrollment cannot be commanded",
+			"enrollment",
+			g.id.ID,
+			"reason",
+			skip.Error(),
+		)
 		return outcomeSkipped, nil
 	}
 	return outcomeQueued, nil
@@ -298,7 +313,11 @@ func (n *Notifier) command(ctx context.Context, g *changeGroup, now time.Time) (
 // reason shared by the whole topic, so it retries with back-off and leaves
 // the cause on the change. Treating it as delivered would mark a fleet's
 // worth of changes done that no device was ever woken for.
-func (n *Notifier) push(ctx context.Context, groups []*changeGroup, now time.Time) (pushed []*changeGroup, failed int, err error) {
+func (n *Notifier) push(
+	ctx context.Context,
+	groups []*changeGroup,
+	now time.Time,
+) (pushed []*changeGroup, failed int, err error) {
 	if len(groups) == 0 {
 		return nil, 0, nil
 	}
@@ -333,7 +352,18 @@ func (n *Notifier) push(ctx context.Context, groups []*changeGroup, now time.Tim
 func (n *Notifier) fail(ctx context.Context, g *changeGroup, cause error, now time.Time) error {
 	attempt := g.tries + 1
 	next := now.Add(n.cfg.Backoff(attempt))
-	n.cfg.Logger.WarnContext(ctx, "ddm: notify failed", "enrollment", g.id.ID, "attempt", attempt, "next", next, "error", cause)
+	n.cfg.Logger.WarnContext(
+		ctx,
+		"ddm: notify failed",
+		"enrollment",
+		g.id.ID,
+		"attempt",
+		attempt,
+		"next",
+		next,
+		"error",
+		cause,
+	)
 	if err := n.cfg.Store.FailChanges(ctx, g.seqs, cause.Error(), next); err != nil {
 		return fmt.Errorf("%w: fail: %w", ddm.ErrNotifier, err)
 	}
@@ -355,9 +385,22 @@ func (n *Notifier) complete(ctx context.Context, groups []*changeGroup) error {
 		return nil
 	}
 	for _, g := range groups {
-		ev := event.Event{Type: event.DDMChanged, At: n.cfg.Clock.Now(), Enrollment: g.id, Actor: "ddm", Data: g.rows}
-		if err := n.cfg.Bus.Publish(ctx, ev); err != nil {
-			n.cfg.Logger.WarnContext(ctx, "ddm: publish", "type", string(event.DDMChanged), "error", err)
+		ev := event.Event{
+			Type:       event.DDMChanged,
+			At:         n.cfg.Clock.Now(),
+			Enrollment: g.id,
+			Actor:      "ddm",
+			Data:       g.rows,
+		}
+		if err := n.cfg.Bus.Publish(ctx, ev); err != nil && !errors.Is(err, event.ErrQueueFull) {
+			n.cfg.Logger.WarnContext(
+				ctx,
+				"ddm: publish",
+				"type",
+				string(event.DDMChanged),
+				"error",
+				err,
+			)
 		}
 	}
 	return nil
