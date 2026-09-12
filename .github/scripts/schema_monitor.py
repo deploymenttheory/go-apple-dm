@@ -6,6 +6,7 @@ reports and restricted patches; it never executes generated candidate code.
 """
 import argparse
 import hashlib
+import html
 import json
 import os
 from pathlib import Path
@@ -13,7 +14,9 @@ import re
 import shutil
 import subprocess
 import tempfile
-from urllib.parse import urlencode
+from urllib.parse import quote, urlencode
+
+from schema_issue_content import changed_fragments, enrich_findings, evidence_values, finding_brief, project_context
 
 ROOT = Path(__file__).resolve().parents[2]
 UPSTREAM = "https://github.com/apple/device-management.git"
@@ -24,6 +27,7 @@ STAGES = ("snapshot", "audit", "parse", "generate", "verify", "api", "build", "b
 SHA = re.compile(r"^[0-9a-f]{40}$")
 MARKER = re.compile(r"<!-- schema-monitor (\{.*?\}) -->")
 START, END = "<!-- schema-monitor:evidence:start -->", "<!-- schema-monitor:evidence:end -->"
+PRESENTATION_VERSION = 2
 
 
 def run(args, cwd=None, env=None, timeout=1800):
@@ -142,6 +146,7 @@ def assess(repo, manifest, branch, directory):
             run(["git", "checkout", "--quiet", "--detach", branch["commit"]], root / SUBMODULE)
             assert_snapshot(root, branch["commit"], manifest["projectCommit"])
             result["stages"]["snapshot"] = {"state": "passed"}
+            result["projectContext"] = project_context(root)
             old_api = scratch / "published-api"
             shutil.copytree(root / SCHEMA, old_api)
             tool = scratch / "schemagen"
@@ -166,6 +171,7 @@ def assess(repo, manifest, branch, directory):
             "Apple schema assessment could not complete", "Repair the reported workflow failure and rerun this immutable snapshot.",
             [{"path": branch["ref"], "detail": failure_text(exc)}]))
         result["stages"]["snapshot"] = {"state": "failed"}
+    enrich_findings(result)
     write_json(directory / "result.json", result)
     (directory / "summary.md").write_text(render_report(result))
     return result
@@ -315,33 +321,133 @@ def metadata(body):
         return None
 
 
-def evidence_section(item, result, run_url, status="observed"):
-    branch = result["branch"]
+def inline_code(value):
+    value = str(value).replace("\n", " ")
+    fence = "`" * (max((len(m[0]) for m in re.finditer(r"`+", value)), default=0) + 1)
+    return fence + " " + value + " " + fence
+
+
+def reference_link(reference, result, repository):
+    apple = reference.get("source") == "apple"
+    commit = result["branch"]["commit"] if apple else result["projectCommit"]
+    repo = "apple/device-management" if apple else repository
+    path = reference["path"].split("#", 1)[0]
+    url = "https://github.com/" + repo + "/blob/" + quote(commit, safe="") + "/" + quote(path, safe="/")
+    label = reference.get("label", path).replace("[", "\\[").replace("]", "\\]")
+    return "[" + html.escape(label, quote=False) + "](" + url + ")"
+
+
+def issue_title(item, result):
+    content = item.get("brief") or finding_brief(item, result.get("projectContext", {}))
+    return "[Apple " + result["branch"]["ref"] + "] " + content["title"]
+
+
+def evidence_section(item, result, run_url, status="observed", issue_links=None, repository="deploymenttheory/go-apple-dm"):
+    content = item.get("brief") or finding_brief(item, result.get("projectContext", {}))
+    branch, issue_links = result["branch"], issue_links or {}
+    blockers = []
+    if content["needsCandidate"]:
+        for other in result["findings"]:
+            if other["kind"] == "failure" and other["stage"] in ("parse", "generate"):
+                key = branch["ref"] + ":" + other["key"]
+                label = other.get("brief", {}).get("title", other["title"])
+                number = issue_links.get(key)
+                blockers.append("[#" + str(number) + "](https://github.com/" + repository + "/issues/" + str(number) + ") — " + label if number else label)
+    blocked = content["needsCandidate"] and any(result["stages"].get(s, {}).get("state") == "blocked" for s in ("generate", "build", "tests"))
+    state = "Candidate verification blocked" if blocked else ("Check failed" if item["kind"] == "failure" else "Engineer assessment required")
+    if status != "observed":
+        state = {"verified": "Relevant check passed", "inactive": "Apple branch retired; not verified fixed"}.get(status, status)
     meta = {"key": branch["ref"] + ":" + item["key"], "branch": branch["ref"],
             "fingerprint": item["fingerprint"], "stage": item["stage"], "kind": item["kind"],
-            "status": status, "project": result["projectCommit"], "candidate": branch["commit"]}
+            "status": status, "project": result["projectCommit"], "candidate": branch["commit"],
+            "presentationVersion": PRESENTATION_VERSION,
+            "presentation": digest({"version": PRESENTATION_VERSION, "content": content, "blockers": blockers, "blocked": blocked})}
     text = [START, "<!-- schema-monitor " + json.dumps(meta, sort_keys=True) + " -->", "",
-            "**" + item["kind"].capitalize() + ":** " + item["title"], "", item["action"], "",
-            "Apple branch: `" + branch["ref"] + "`; commit: `" + branch["commit"] + "`.", "",
-            "Project commit: `" + result["projectCommit"] + "`. Assessment status: **" + status + "**.", "",
-            "Reproduce with the report-only schema workflow at these commits, or run:", "",
-            "```", "python3 .github/scripts/schema_monitor.py discover --output /tmp/schema-discovery.json",
-            "python3 .github/scripts/schema_monitor.py assess --manifest /tmp/schema-discovery.json --key " + branch["key"] + " --output /tmp/schema-report",
-            "```", "", "Use the retained discovery.json artifact for an exact historical reproduction.", ""]
-    size = 0
-    for evidence in item["evidence"][:40]:
-        line = "- `" + evidence["path"].replace("`", "'") + "`: " + evidence["detail"][:1200]
-        size += len(line)
-        if size > 16000:
+            "**Type:** " + content["classification"], "", "**Status:** " + state, "",
+            "## What changed", "", content["summary"], "", "## Project impact", "", content["impact"], "",
+            "## Required work", ""]
+    text += ["- [ ] " + task for task in content["requiredWork"]]
+    text += ["", "## Completion criteria", ""]
+    text += ["- " + criterion for criterion in content["completionCriteria"]]
+    if blocked:
+        text += ["", "## Blockers", "", "Build and runtime checks have not run against the unmodified candidate.", ""]
+        text += ["- " + blocker for blocker in blockers] or ["- Complete the blocked assessment stages before claiming candidate compatibility."]
+    if content.get("changes"):
+        text += ["", "## Relevant change", "", "| Setting | Baseline | Candidate |", "|---|---|---|"]
+        for change in content["changes"]:
+            text.append("| " + " | ".join(html.escape(change[k]).replace("|", "\\|") for k in ("subject", "before", "after")) + " |")
+    if content.get("groups"):
+        text += ["", "## Changes to check", "", "Counts are distinct schema objects per group, not individual YAML properties.", "",
+                 "| Group | Objects | Files |", "|---|---:|---:|"]
+        for group in content["groups"]:
+            text.append("| " + group["category"] + " | " + str(group["objects"]) + " | " + str(len(group["files"])) + " |")
+        for group in content["groups"]:
+            if group["category"] in ("Removal boundaries", "Deprecation boundaries"):
+                text += ["", "**" + group["category"] + " — start here:**", ""]
+                text += ["- " + reference_link({"source": "apple", "path": path}, result, repository) for path in group["files"]]
+    # Prose evidence shows the changed clauses before ancillary metadata. Never
+    # crop the beginning of a paragraph and discard its new requirement.
+    if item["key"] == "behavior-review:protocol-wording":
+        text += ["", "## Changed requirement", ""]
+        for evidence in item["evidence"]:
+            before, after = evidence_values(evidence)
+            text += [reference_link({"source": "apple", "path": evidence["path"]}, result, repository), ""]
+            for old, new in changed_fragments(before, after):
+                text += ["- **Before:** " + html.escape(old), "- **After:** " + html.escape(new)]
+            text.append("")
+    text += ["", "## Where to work", ""]
+    text += ["- " + reference_link(reference, result, repository) for reference in content["references"]]
+    source_files = sorted({e["path"].split("#", 1)[0] for e in item["evidence"] if e["path"].split("#", 1)[0].endswith((".yaml", ".json"))})
+    if len(source_files) <= 3:
+        text += ["- " + reference_link({"source": "apple", "path": path, "label": "Apple: " + path}, result, repository) for path in source_files]
+    if not content["references"]:
+        text += ["- Use the failing check and source locations in the evidence below."]
+    total = len(item["evidence"])
+    text += ["", "<details>", "<summary>Source evidence (" + str(total) + " locations)</summary>", ""]
+    size, shown = 0, 0
+    for evidence in item["evidence"]:
+        location = evidence["path"]
+        file = location.split("#", 1)[0]
+        link = reference_link({"source": "apple", "path": file}, result, repository) if file.endswith((".yaml", ".json")) else inline_code(location)
+        lines = ["- " + link]
+        if "#" in location:
+            lines.append("  - Field: " + inline_code(location.split("#", 1)[1]))
+        elif "before" in evidence and ": " in evidence["detail"]:
+            lines.append("  - Field: " + inline_code(evidence["detail"].split(": ", 1)[0]))
+        before, after = evidence_values(evidence)
+        if before:
+            for old, new in changed_fragments(before, after):
+                lines += ["  - Before: " + html.escape(old), "  - After: " + html.escape(new)]
+        else:
+            lines += ["  - " + html.escape(after)]
+        if evidence.get("context"):
+            lines += ["  - Meaning: " + html.escape(evidence["context"])]
+        entry = "\n".join(lines)
+        if size + len(entry) > 20000:
             break
-        text.append(line)
-    text += ["", "Full evidence and logs: " + (run_url or "retained schema assessment artifacts") + ".", "",
-             "Completion: " + ("the relevant checks must execute successfully on a later scan." if item["kind"] == "failure" else
-                                "an engineer records the compatibility assessment, relevant tests or deliberate support limitation, then closes this issue."), "", END]
+        size += len(entry)
+        shown += 1
+        text.append(entry)
+    if shown < total:
+        text += ["", "Showing " + str(shown) + " of " + str(total) + " locations. Full evidence is in `audit.json` in the assessment artifacts."]
+    text += ["", "</details>", "", "<details>", "<summary>Assessment and reproduction</summary>", "",
+             "Apple branch: " + inline_code(branch["ref"]) + ".", "",
+             "Baseline: " + inline_code(branch["baseline"]) + "; candidate: " + inline_code(branch["commit"]) + ".", "",
+             "Project: " + inline_code(result["projectCommit"]) + ".", "",
+             "| Stage | Result |", "|---|---|"]
+    text += ["| " + stage + " | " + result["stages"][stage]["state"] + " |" for stage in STAGES]
+    text += ["", "[Assessment run and artifacts](" + run_url + ")." if run_url else "Full evidence is in the retained assessment artifacts.", "",
+             "For the same historical inputs, check out the recorded project commit and download this run's `schema-discovery` artifact. Use that discovery.json; running discovery again selects current Apple commits.", "",
+             "```sh", "python3 .github/scripts/schema_monitor.py assess \\",
+             "  --manifest /path/to/downloaded/discovery.json \\",
+             "  --key " + branch["key"] + " --output /tmp/schema-report", "```", "", "</details>", "", END]
     return "\n".join(text)
 
 
 def replace_section(body, section):
+    # Keep checked tasks when their instruction text is unchanged.
+    for task in re.findall(r"(?m)^- \[[xX]\] (.+)$", body):
+        section = section.replace("- [ ] " + task + "\n", "- [x] " + task + "\n")
     if START in body and END in body:
         left = body.index(START)
         right = body.index(END, left) + len(END)
@@ -349,7 +455,7 @@ def replace_section(body, section):
     return body.rstrip() + "\n\n" + section
 
 
-def issue_actions(existing, reports, manifest, run_url):
+def issue_actions(existing, reports, manifest, run_url, repository="deploymenttheory/go-apple-dm"):
     """Pure reconciliation: a blocked stage can never resolve its failures."""
     indexed = {}
     for issue in existing:
@@ -357,29 +463,39 @@ def issue_actions(existing, reports, manifest, run_url):
         if meta:
             indexed[meta["key"]] = (issue, meta)
     actions, observed = [], set()
+    issue_links = {key: issue["number"] for key, (issue, _) in indexed.items()}
     by_branch = {r["branch"]["ref"]: r for r in reports}
     active = {b["ref"] for b in manifest.get("branches", [])}
     for result in reports:
         for item in result["findings"]:
             key = result["branch"]["ref"] + ":" + item["key"]
             observed.add(key)
-            section = evidence_section(item, result, run_url)
+            section = evidence_section(item, result, run_url, issue_links=issue_links, repository=repository)
+            desired = metadata(section)
+            title = issue_title(item, result)
             if key not in indexed:
                 label = "schema-review" if item["kind"] == "review" else "schema-gap"
                 if item["category"] == "automation":
                     label = "schema-automation"
-                actions.append(("POST", "issues", {"title": "[Apple " + result["branch"]["ref"] + "] " + item["title"],
-                    "body": section + "\n\nEngineer notes:\n", "labels": ["schema-monitor", label]}))
+                actions.append(("POST", "issues", {"title": title,
+                    "body": section + "\n\n## Engineer notes\n", "labels": ["schema-monitor", label]}))
                 continue
             issue, old = indexed[key]
+            if old.get("presentationVersion", 1) > PRESENTATION_VERSION:
+                continue  # An older publisher must not downgrade a newer brief.
             changed = old["fingerprint"] != item["fingerprint"]
+            presentation_changed = old.get("presentation") != desired["presentation"] or old.get("presentationVersion") != PRESENTATION_VERSION
+            title_changed = issue.get("title", title) != title
             if issue["state"] == "closed":
                 if not changed and old.get("status") != "verified":
+                    if presentation_changed or title_changed:
+                        actions.append(("PATCH", "issues/" + str(issue["number"]), {
+                            "title": title, "body": replace_section(issue["body"], section)}))
                     continue  # A maintainer acknowledged this exact finding.
                 actions.append(("PATCH", "issues/" + str(issue["number"]), {
-                    "state": "open", "body": replace_section(issue["body"], section)}))
-            elif changed or old.get("status") != "observed" or old.get("project") != result["projectCommit"] or old.get("candidate") != result["branch"]["commit"]:
-                actions.append(("PATCH", "issues/" + str(issue["number"]), {"body": replace_section(issue["body"], section)}))
+                    "state": "open", "title": title, "body": replace_section(issue["body"], section)}))
+            elif changed or presentation_changed or title_changed or old.get("status") != "observed" or old.get("project") != result["projectCommit"] or old.get("candidate") != result["branch"]["commit"]:
+                actions.append(("PATCH", "issues/" + str(issue["number"]), {"title": title, "body": replace_section(issue["body"], section)}))
     for key, (issue, old) in indexed.items():
         if key in observed or issue["state"] != "open":
             continue
@@ -396,6 +512,7 @@ def issue_actions(existing, reports, manifest, run_url):
             if result:
                 updated.update(project=result["projectCommit"], candidate=result["branch"]["commit"])
             body = MARKER.sub("<!-- schema-monitor " + json.dumps(updated, sort_keys=True) + " -->", issue["body"], count=1)
+            body = re.sub(r"(?m)^\*\*Status:\*\* .*$", "**Status:** " + ("Relevant check passed" if status == "verified" else "Apple branch retired; not verified fixed"), body, count=1)
             note = "\n\nLatest scan: **" + status + "**. " + (run_url or "See retained assessment artifacts.")
             body = body.replace(END, note + "\n" + END, 1)
             values = {"body": body}
@@ -501,8 +618,13 @@ def publish(repo, manifest, directory, repository, report_only, run_url):
     reports = collect_reports(manifest, directory)
     (directory / "summary.md").write_text("\n\n".join(render_report(r) for r in reports))
     if report_only:
-        actions = issue_actions([], reports, manifest, run_url)
+        actions = issue_actions([], reports, manifest, run_url, repository)
         write_json(directory / "proposed-issues.json", actions)
+        previews = directory / "issue-previews"
+        previews.mkdir(exist_ok=True)
+        for _, _, values in actions:
+            key = metadata(values["body"])["key"]
+            (previews / (digest(key)[:16] + ".md")).write_text("# " + values["title"] + "\n\n" + values["body"])
         print("Report only: " + str(len(actions)) + " proposed issues; no GitHub writes.")
         return all(r["complete"] for r in reports)
     github = GitHub(repository)
@@ -523,7 +645,16 @@ def publish(repo, manifest, directory, repository, report_only, run_url):
             result["findings"].append(finding("automation", "failure", "publication", "publication",
                 "Schema PR publication failed", "Repair the App/PAT or publication error and rerun the workflow. Assessment evidence remains available.",
                 [{"path": result["branch"]["ref"], "detail": message}]))
-    for method, endpoint, body in issue_actions(github.issues(), reports, manifest, run_url):
+    existing = github.issues()
+    # Create missing parser/generation blockers first so review issues link to
+    # their real numbers on the first publication cycle as well as later runs.
+    initial = issue_actions(existing, reports, manifest, run_url, repository)
+    for method, endpoint, body in initial:
+        meta = metadata(body.get("body", ""))
+        if method == "POST" and meta and meta["kind"] == "failure" and meta["stage"] in ("parse", "generate"):
+            created = github.request(method, endpoint, body)
+            existing.append(created)
+    for method, endpoint, body in issue_actions(existing, reports, manifest, run_url, repository):
         github.request(method, endpoint, body)
     if manifest.get("complete"):
         retire_previews(pull_api, manifest)

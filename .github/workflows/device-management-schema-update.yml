@@ -155,4 +155,5 @@ jobs:
           path: |
             ${{ runner.temp }}/schema-assessments/summary.md
             ${{ runner.temp }}/schema-assessments/proposed-issues.json
+            ${{ runner.temp }}/schema-assessments/issue-previews/
           retention-days: 30
