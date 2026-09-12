@@ -60,7 +60,7 @@ func TestE2E_CommandsInOrder(t *testing.T) {
 	}
 	id := deviceID("E2E-002")
 	var uuids []string
-	for _, payload := range []commands.Command{&commands.DeviceInformation{}, &commands.ProfileList{}, &commands.DeviceLock{PIN: new("123456")}} {
+	for _, payload := range []commands.Command{&commands.DeviceInformation{Queries: []string{"OSVersion"}}, &commands.ProfileList{}, &commands.DeviceLock{PIN: new("123456")}} {
 		cmd, err := mdm.NewCommand(payload)
 		if err != nil {
 			t.Fatal(err)
@@ -109,7 +109,7 @@ func TestE2E_NotNowBackoff(t *testing.T) {
 		t.Fatal(err)
 	}
 	id := deviceID("E2E-003")
-	cmd, _ := mdm.NewCommand(&commands.DeviceInformation{})
+	cmd, _ := mdm.NewCommand(&commands.DeviceInformation{Queries: []string{"OSVersion"}})
 	other, _ := mdm.NewCommand(&commands.ProfileList{})
 	for _, c := range []*mdm.Command{cmd, other} {
 		if _, err := h.core.Enqueue(ctx, []mdm.EnrollmentID{id}, c, storage.EnqueueOptions{}); err != nil {

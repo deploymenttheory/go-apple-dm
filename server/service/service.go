@@ -105,7 +105,12 @@ type DMResponse struct {
 // (decision record 0023); m is the typed message inside ck.
 type DMHandler func(ctx context.Context, r *mdm.Request, ck *mdm.Checkin, m *checkin.DeclarativeManagement) (DMResponse, error)
 
-// GetTokenHandler serves GetToken requests.
+// GetTokenHandler supplies tokens for GetToken requests. For com.apple.maid,
+// TokenData must contain a UTF-8 JWT signed with RS256 by the RSA private key
+// corresponding to the certificate registered with Apple Business Manager or
+// Apple School Manager. The caller supplies iss (the AccountDetail server_uuid),
+// iat, a unique jti, and service_type="com.apple.maid". The service transports the
+// token unchanged; it neither issues tokens nor verifies registration with Apple.
 type GetTokenHandler func(ctx context.Context, r *mdm.Request, m *checkin.GetToken) (*checkin.GetTokenResponse, error)
 
 // UserAuthenticateHandler serves UserAuthenticate. Returning a response
@@ -121,6 +126,11 @@ type UserAuthenticateHandler func(ctx context.Context, r *mdm.Request, m *checki
 // storage when available and preserves a supplied token. Without a token, Apple
 // devices can erase fully without app preservation. A nil response is treated as
 // disabled.
+//
+// With OS 27 seed-generated check-in types, policy can set the optional
+// ShouldRetryEnrollment field for iOS 27 or later. Nil omits the option and
+// retains Apple's false default; explicit true requests a retry after failure.
+// The caller selects eligible targets. The stable schema does not expose it.
 type ReturnToServiceHandler func(ctx context.Context, r *mdm.Request, m *checkin.ReturnToService) (*checkin.ReturnToServiceResponse, error)
 
 // ReenrollPolicy decides whether an Authenticate from an enrollment whose
@@ -187,9 +197,10 @@ type Config struct {
 	// Apple never sends UserAuthenticate for them.
 	RequireUserAuth bool
 	// ValidateTargets checks every Enqueue target against the request
-	// type's support metadata (channel, Shared iPad, User Enrollment) from
-	// schema/commands and reports unsupported targets in
+	// type and populated fields' support metadata (channel, Shared iPad,
+	// User Enrollment) from schema/commands and reports unsupported targets in
 	// EnqueueResult.Skipped instead of queuing them. Default true.
+	// Required fields and value constraints are checked even when false.
 	ValidateTargets *bool
 	// Optional message handlers.
 	DeclarativeManagement DMHandler
@@ -331,7 +342,11 @@ func (c *Core) runHooks(ctx context.Context, call *Call) (context.Context, func(
 }
 
 // Enqueue queues a command for enrollments and publishes CommandQueued for
-// each that accepted it.
+// each that accepted it. Raw is the source of truth: its envelope must match
+// UUID and RequestType, and known payloads must pass generated validation.
+// Invalid input returns CodeBadRequest before any target is queued. With target
+// validation enabled, unsupported commands or populated fields skip that target.
+// Unknown command types retain their original bytes for protocol extensions.
 func (c *Core) Enqueue(
 	ctx context.Context,
 	ids []mdm.EnrollmentID,
@@ -341,6 +356,12 @@ func (c *Core) Enqueue(
 	call := &Call{Op: "enqueue", Command: cmd}
 	ctx, after, err := c.runHooks(ctx, call)
 	if err != nil {
+		return storage.EnqueueResult{}, err
+	}
+	cmd, err = validatedCommand(cmd)
+	if err != nil {
+		err = wrapCode(CodeBadRequest, err)
+		after(err)
 		return storage.EnqueueResult{}, err
 	}
 	if o.Now.IsZero() {
@@ -420,6 +441,12 @@ func (c *Core) checkTargets(
 		if r := entry.Check(target); !r.Supported {
 			unsupported[id] = fmt.Errorf("%w: %s", ErrUnsupportedTarget, r.Reason)
 			continue
+		}
+		if cmd.Payload != nil {
+			if err := cmd.Payload.Validate(target); err != nil {
+				unsupported[id] = fmt.Errorf("%w: %w", ErrUnsupportedTarget, err)
+				continue
+			}
 		}
 		keep = append(keep, id)
 	}

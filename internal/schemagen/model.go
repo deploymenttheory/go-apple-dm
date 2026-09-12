@@ -60,6 +60,7 @@ type Schema struct {
 	Reasons            []Reason            `yaml:"reasons"`
 	Notes              []Note              `yaml:"notes"`
 	RelatedStatusItems []RelatedStatusItem `yaml:"related-status-items"`
+	Examples           []Example           `yaml:"examples"`
 
 	// Derived, not from YAML.
 	Path   string `yaml:"-"` // path relative to the schema root, forward slashes
@@ -229,6 +230,27 @@ type ReasonDetail struct {
 	Key         string `yaml:"key"`
 	Description string `yaml:"description"`
 	Type        string `yaml:"type"`
+	// ValueType is an annotation, not a replacement for Type. The OS 27 seed
+	// annotates RFC 3339 strings with "timestamp", although its meta-schema
+	// has not yet documented this key. It does not change the wire type.
+	ValueType string `yaml:"valuetype"`
+}
+
+// Example describes documentation examples, never protocol payload fields.
+type Example struct {
+	Title string        `yaml:"title"`
+	Files []ExampleFile `yaml:"files"`
+}
+
+// ExampleFile references data relative to the Apple schema repository root.
+//
+//nolint:tagliatelle // tags mirror Apple's YAML keys exactly
+type ExampleFile struct {
+	Tab          string `yaml:"tab"`
+	Description  string `yaml:"description"`
+	File         string `yaml:"file"`
+	RequestFile  string `yaml:"request-file"`
+	ResponseFile string `yaml:"response-file"`
 }
 
 // Note is free-form markdown attached to a schema.

@@ -156,6 +156,21 @@ class IssueLifecycleTests(unittest.TestCase):
 
 
 class AssessmentTests(unittest.TestCase):
+    def test_seed_contract_requires_executed_tests(self):
+        tags, required = m.assessment_test_contract({"kind": "seed", "ref": "seed_OS_27_0"})
+        self.assertEqual(["-tags", "schema_seed_os_27"], tags)
+        self.assertEqual(5, len(required))
+        self.assertEqual(sorted(required), m.missing_test_evidence("", required))
+        lines = []
+        for test in required:
+            package, name = test.rsplit("/", 1)
+            lines.append(json.dumps({"Action": "pass", "Package": package, "Test": name}))
+        self.assertEqual([], m.missing_test_evidence("\n".join(lines), required))
+        self.assertEqual(sorted(required), m.missing_test_evidence("\n".join(lines).replace('"pass"', '"skip"'), required))
+        self.assertEqual(sorted(required), m.missing_test_evidence('garbled\nnull\n[]', required))
+        self.assertEqual(([], set()), m.assessment_test_contract({"kind": "stable", "ref": "release"}))
+        self.assertEqual(([], set()), m.assessment_test_contract({"kind": "seed", "ref": "seed_future"}))
+
     def test_snapshot_guard_rejects_wrong_candidate_and_project(self):
         with patch.object(m, "run", return_value="wrong"):
             with self.assertRaises(ValueError):
@@ -230,6 +245,8 @@ class AssessmentTests(unittest.TestCase):
 
             def stage(result, name, args, cwd, directory, env=None):
                 text = '{"added":[],"removed":[],"changed":[]}' if name == "api" else "fixture outcome"
+                if name == "tests":
+                    text = "\n".join(json.dumps({"Action": "pass", "Package": test.rsplit("/", 1)[0], "Test": test.rsplit("/", 1)[1]}) for test in m.OS27_TESTS)
                 result["stages"][name] = {"state": "failed" if name == "boundaries" else "passed"}
                 (directory / (name + ".log")).write_text(text)
                 return name != "boundaries", text

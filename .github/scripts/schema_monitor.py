@@ -29,6 +29,35 @@ MARKER = re.compile(r"<!-- schema-monitor (\{.*?\}) -->")
 START, END = "<!-- schema-monitor:evidence:start -->", "<!-- schema-monitor:evidence:end -->"
 PRESENTATION_VERSION = 2
 
+# These typed tests require the OS 27 generated API. Stable assessments continue
+# to compile against the stable pin; seed assessments must prove every contract
+# actually ran, rather than succeeding with missing or skipped tests.
+OS27_TESTS = {
+    LIBRARY + "/server/service/TestSeedOS27EnhancedLogCommands",
+    LIBRARY + "/server/service/TestSeedOS27SoftwareUpdateRemoval",
+    LIBRARY + "/server/service/TestSeedOS27ReturnToServiceRetry",
+    LIBRARY + "/server/ddmadapter/inproc/TestSeedOS27EnhancedLoggingStatus",
+    LIBRARY + "/devicemanagement/contentcache/TestSeedOS27ContentCacheContract",
+}
+
+
+def assessment_test_contract(branch):
+    if branch["kind"] == "seed" and branch["ref"] == "seed_OS_27_0":
+        return ["-tags", "schema_seed_os_27"], OS27_TESTS
+    return [], set()
+
+
+def missing_test_evidence(output, required):
+    passed = set()
+    for line in output.splitlines():
+        try:
+            event = json.loads(line)
+        except ValueError:
+            continue
+        if isinstance(event, dict) and event.get("Action") == "pass" and event.get("Test"):
+            passed.add(event.get("Package", "") + "/" + event["Test"])
+    return sorted(required - passed)
+
 
 def run(args, cwd=None, env=None, timeout=1800):
     return subprocess.run([str(a) for a in args], cwd=cwd, env=env, timeout=timeout,
@@ -212,7 +241,15 @@ def assess_generated(result, base_args, baseline, old_api, tool, root, directory
             source = root.parent / "support-probe.go"
             shutil.copyfile(probe, source)
             command_stage(result, "boundaries", ["go", "run", source, directory / "boundaries.json"], root, directory, env)
-        command_stage(result, "tests", ["go", "test", "-race", "-count=1", "./devicemanagement/schema/...", "./devicemanagement/mdmprotocol/...", "./server/service", "./server/ddmadapter/...", "-json"], root, directory, env)
+        tags, required = assessment_test_contract(result["branch"])
+        tests_ok, output = command_stage(result, "tests", ["go", "test", "-race", "-count=1", *tags, "./devicemanagement/schema/...", "./devicemanagement/mdmprotocol/...", "./devicemanagement/contentcache", "./server/service", "./server/ddmadapter/...", "-json"], root, directory, env)
+        missing = missing_test_evidence(output, required)
+        result["stages"]["tests"]["requiredTests"] = sorted(required)
+        result["stages"]["tests"]["missingTests"] = missing
+        if tests_ok and missing:
+            result["stages"]["tests"].update(state="failed", exitCode=1)
+            with (directory / "tests.log").open("a") as log:
+                log.write("\nRequired candidate tests did not pass: " + ", ".join(missing) + "\n")
     for stage in ("verify", "api", "build", "boundaries", "tests"):
         if result["stages"][stage]["state"] == "failed" and not any(f["stage"] == stage for f in result["findings"]):
             result["findings"].append(finding("runtime" if stage in ("build", "boundaries", "tests") else "public-api", "failure", stage, stage,

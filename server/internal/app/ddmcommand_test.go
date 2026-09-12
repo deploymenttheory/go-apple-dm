@@ -174,7 +174,7 @@ func TestOperatorCommandsAreNeverSuppressed(t *testing.T) {
 	cmd := `<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0"><dict>
-<key>Command</key><dict><key>RequestType</key><string>DeviceInformation</string></dict>
+<key>Command</key><dict><key>RequestType</key><string>DeviceInformation</string><key>Queries</key><array><string>OSVersion</string></array></dict>
 <key>CommandUUID</key><string>%s</string>
 </dict></plist>`
 

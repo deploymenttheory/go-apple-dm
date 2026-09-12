@@ -44,6 +44,13 @@ Passing tests establish those scenarios. They do not certify every Apple behavio
 or replace testing on real devices. Protocol prose and new server responsibilities
 require an engineer's review even when compilation and conformance tests pass.
 
+For `seed_OS_27_0`, the tests stage also enables `schema_seed_os_27` and requires
+explicit passing JSON test events for enhanced-log commands and status, software
+update removal, Return to Service retry and the reviewed content-cache contract.
+Missing or skipped tests fail the stage. Stable assessments do not compile these
+seed-only types. Content-cache tests run in both assessments; the seed additionally
+checks its OpenAPI file against the reviewed library fixture.
+
 ## Engineering issues
 
 Each ticket starts with what changed and the observed project impact, followed by
@@ -151,9 +158,16 @@ needed library changes before deliberately updating the server module dependency
 
 At implementation, Apple `release` was `67045e2fa06f528b196c01edee6a8bf88b844beb`
 and `seed_OS_27_0` was `b0180185a5e4077070710033341b71d0cbe1a18a`.
-The unmodified comparison contains 314 → 343 schema files: 29 additions and one
-filename correction. Strict decoding rejects top-level `examples` in 304 files
-and `ReasonDetail.valuetype` in two files. These remain compatibility findings;
-this monitoring change does not implement their parser support. Raw comparison
-also identifies platform/enrollment changes, new commands, Return to Service
-changes, protocol wording and a new `openapi` input area for engineering review.
+The original comparison contains 314 → 343 schema files: 29 additions and one
+filename correction. Parser support now includes the top-level `examples` in 304
+files and `ReasonDetail.valuetype` in two files. Example references remain audited;
+the timestamp annotation preserves the underlying string type. Apple's recorded
+meta-schema defines the example structure but omits `valuetype`, so the latter is
+an explicit compatibility annotation based on the source files.
+
+The compatibility work retains the stable submodule pin. Seed generation can
+expose additional upstream API removals or type changes; runtime compatibility
+tests do not authorize those changes. API and exported-name guards continue to
+report them independently, and any seed adoption needs a separate migration
+decision. The content-cache library supports its reviewed OpenAPI separately;
+other new input areas still require an engineering support decision.

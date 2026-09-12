@@ -67,6 +67,8 @@ func tierOf(pkg string) int {
 		return tierStorage
 	case strings.HasPrefix(pkg, "appleplatformservices/"):
 		return tierServices
+	case pkg == "contentcache":
+		return tierServices
 	case strings.HasPrefix(pkg, "pki/"):
 		return tierPKI
 	case strings.HasPrefix(pkg, "mdmprotocol/"):
@@ -228,6 +230,7 @@ func TestLibraryTierClassification(t *testing.T) {
 		"devicemanagement/mdmprotocol/ddm":           tierProtocol,
 		"devicemanagement/pki/acme":                  tierPKI,
 		"devicemanagement/appleplatformservices/axm": tierServices,
+		"devicemanagement/contentcache":              tierServices,
 		"devicemanagement/storage/inmem":             tierStorage,
 		"devicemanagement/simulator":                 tierClient,
 		"server/service":                             tierServer,

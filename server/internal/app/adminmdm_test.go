@@ -154,7 +154,7 @@ func TestMDMAdminRoutes(t *testing.T) {
 		cmd := `<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0"><dict>
-<key>Command</key><dict><key>RequestType</key><string>DeviceInformation</string></dict>
+<key>Command</key><dict><key>RequestType</key><string>DeviceInformation</string><key>Queries</key><array><string>OSVersion</string></array></dict>
 <key>CommandUUID</key><string>CMD-2</string>
 </dict></plist>`
 		resp := adminReq(t, srv, http.MethodPost, "/admin/v1/enrollments/device/UDID-OLD/commands", "t", cmd)
@@ -305,7 +305,7 @@ func TestMDMAdminRoutesAreGoverned(t *testing.T) {
 		cmd := `<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0"><dict>
-<key>Command</key><dict><key>RequestType</key><string>DeviceInformation</string></dict>
+<key>Command</key><dict><key>RequestType</key><string>DeviceInformation</string><key>Queries</key><array><string>OSVersion</string></array></dict>
 <key>CommandUUID</key><string>CMD-GOV</string>
 </dict></plist>`
 		resp := adminReq(t, srv, http.MethodPost, "/admin/v1/enrollments/device/UDID-GOV/commands", root, cmd)
@@ -361,7 +361,7 @@ func TestMDMAdminRoutesHideStorageFailures(t *testing.T) {
 	cmd := `<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0"><dict>
-<key>Command</key><dict><key>RequestType</key><string>DeviceInformation</string></dict>
+<key>Command</key><dict><key>RequestType</key><string>DeviceInformation</string><key>Queries</key><array><string>OSVersion</string></array></dict>
 <key>CommandUUID</key><string>CMD-X</string>
 </dict></plist>`
 	for _, c := range []struct{ method, path, body string }{
@@ -428,7 +428,7 @@ func TestCommandListingShowsResults(t *testing.T) {
 	a, srv, _ := mdmAdminApp(t)
 	id := seed(t, a, "UDID-RESULT")
 	ctx := context.Background()
-	cmd, err := mdm.NewCommand(&commands.DeviceInformation{}, mdm.WithUUID("CMD-R"))
+	cmd, err := mdm.NewCommand(&commands.DeviceInformation{Queries: []string{"OSVersion"}}, mdm.WithUUID("CMD-R"))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -516,7 +516,7 @@ func TestMDMAdminRoutesRejectBadPathsAndPages(t *testing.T) {
 	cmd := `<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0"><dict>
-<key>Command</key><dict><key>RequestType</key><string>DeviceInformation</string></dict>
+<key>Command</key><dict><key>RequestType</key><string>DeviceInformation</string><key>Queries</key><array><string>OSVersion</string></array></dict>
 <key>CommandUUID</key><string>CMD-D</string>
 </dict></plist>`
 	resp := adminReq(t, srv, http.MethodPost, "/admin/v1/enrollments/device/UDID-P/commands", "t", cmd)

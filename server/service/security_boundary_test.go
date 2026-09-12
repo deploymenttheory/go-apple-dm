@@ -72,7 +72,7 @@ func TestTargetLookupFailureDoesNotQueueCommands(t *testing.T) {
 	if _, err = core.Enqueue(
 		t.Context(),
 		[]mdm.EnrollmentID{id},
-		newCmd(t, &commands.DeviceInformation{}),
+		newCmd(t, &commands.DeviceInformation{Queries: []string{"OSVersion"}}),
 		storage.EnqueueOptions{},
 	); !errors.Is(
 		err,

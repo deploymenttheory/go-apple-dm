@@ -111,6 +111,9 @@ component relationships, protocol exchanges and lifecycle transitions.
   selected secrets; optional shared security state and inbound rate limits.
 - A device simulator, an admin API with scoped credentials and Cedar policies, and projected
   event sinks and audit records.
+- An opt-in [content-cache metrics library](devicemanagement/contentcache/) based on
+  Apple's OS 27 seed OpenAPI, with an embeddable receiver and caller-owned authentication
+  and storage. The stable MDM schema pin is independent of this extension.
 
 Simulator tests verify the modeled protocol exchanges. Physical-device interoperability,
 hardware attestation and deployment-specific trust configuration require separate validation.

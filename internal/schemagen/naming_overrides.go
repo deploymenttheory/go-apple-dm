@@ -4,7 +4,11 @@ package schemagen
 // name would collide or read badly. Keys are schema paths relative to the
 // Apple repository root. Adding an entry here is the only way to change an
 // existing generated name; see devicemanagement/schema/ALLOWED_REMOVALS.md.
-var typeNameOverrides = map[string]string{}
+var typeNameOverrides = map[string]string{
+	// Apple changed this title to Content Caching Service in the OS 27 seed.
+	// Its profile identifier and wire contract still name the same payload.
+	"mdm/profiles/com.apple.AssetCache.managed.yaml": "ContentCaching",
+}
 
 // fieldNameOverrides pins field names by "SchemaPath#KeyPath" where KeyPath is
 // the dotted wire key path within the schema (response keys are prefixed
