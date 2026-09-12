@@ -10,9 +10,9 @@ import (
 
 	gomysql "github.com/go-sql-driver/mysql"
 
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/storage"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/storage/crypt"
 	"github.com/deploymenttheory/go-apple-dm/server/sqlstore/sqlcommon"
-	"github.com/deploymenttheory/go-apple-dm/storage"
-	"github.com/deploymenttheory/go-apple-dm/storage/crypt"
 )
 
 //go:embed migrations/*.sql

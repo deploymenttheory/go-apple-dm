@@ -8,7 +8,7 @@ import (
 	"flag"
 	"fmt"
 
-	"github.com/deploymenttheory/go-apple-dm/pki/pushcert"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/pki/pushcert"
 )
 
 func runAppPush(ctx context.Context, e *env, args []string) error {

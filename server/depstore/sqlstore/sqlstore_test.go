@@ -7,12 +7,12 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/appleplatformservices/dep"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/appleplatformservices/dep/deptest"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/storage/crypt"
 	sqlstore "github.com/deploymenttheory/go-apple-dm/server/depstore/sqlstore"
 	"github.com/deploymenttheory/go-apple-dm/server/sqlstore/sqlcommon"
 	"github.com/deploymenttheory/go-apple-dm/server/sqlstore/sqlite"
-	"github.com/deploymenttheory/go-apple-dm/appleplatformservices/dep"
-	"github.com/deploymenttheory/go-apple-dm/appleplatformservices/dep/deptest"
-	"github.com/deploymenttheory/go-apple-dm/storage/crypt"
 )
 
 func openDB(t *testing.T) *sql.DB {

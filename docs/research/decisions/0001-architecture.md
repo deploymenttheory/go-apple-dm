@@ -24,10 +24,10 @@ The import-layout tests enforce module and tier boundaries. Service tests cover 
 
 ## References
 
-- [mdmprotocol/mdm](../../../mdmprotocol/mdm)
-- [mdmprotocol/ddm](../../../mdmprotocol/ddm)
+- [mdmprotocol/mdm](../../../devicemanagement/mdmprotocol/mdm)
+- [mdmprotocol/ddm](../../../devicemanagement/mdmprotocol/ddm)
 - [server/service](../../../server/service)
-- [storage](../../../storage)
+- [storage](../../../devicemanagement/storage)
 - [internal/layout](../../../internal/layout)
 - <https://developer.apple.com/documentation/devicemanagement>
 - <https://developer.apple.com/documentation/devicemanagement/integrating-declarative-management>

@@ -34,7 +34,7 @@
     ],
     "repository": {
       "url": "https://github.com/deploymenttheory/go-apple-dm",
-      "revision": "ff85958196cb013e8e14c1055f067319b07e3299"
+      "revision": "bb9e5bb3af89683a960a326e309be409bb0dc40f"
     },
     "colour_profile": "purpose-v1",
     "legend": {
@@ -102,11 +102,11 @@
       ],
       "sources": [
         {
-          "path": "appleplatformservices/dep/client.go",
+          "path": "devicemanagement/appleplatformservices/dep/client.go",
           "label": "client"
         },
         {
-          "path": "appleplatformservices/dep/oauth1.go",
+          "path": "devicemanagement/appleplatformservices/dep/oauth1.go",
           "label": "OAuth 1.0a"
         }
       ],
@@ -127,7 +127,7 @@
       ],
       "sources": [
         {
-          "path": "appleplatformservices/axm/auth.go",
+          "path": "devicemanagement/appleplatformservices/axm/auth.go",
           "label": "ES256 assertion"
         }
       ],
@@ -148,7 +148,7 @@
       ],
       "sources": [
         {
-          "path": "appleplatformservices/gdmf/gdmf.go",
+          "path": "devicemanagement/appleplatformservices/gdmf/gdmf.go",
           "label": "catalogue"
         }
       ],
@@ -169,7 +169,7 @@
       ],
       "sources": [
         {
-          "path": "appleplatformservices/dep/syncer.go",
+          "path": "devicemanagement/appleplatformservices/dep/syncer.go",
           "label": "cursor sync"
         }
       ],
@@ -190,7 +190,7 @@
       ],
       "sources": [
         {
-          "path": "appleplatformservices/dep/assigner.go",
+          "path": "devicemanagement/appleplatformservices/dep/assigner.go",
           "label": "assignment"
         }
       ],

@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/deploymenttheory/go-apple-dm/appleplatformservices/dep"
-	"github.com/deploymenttheory/go-apple-dm/paging"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/appleplatformservices/dep"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/paging"
 )
 
 var accountCols = []string{

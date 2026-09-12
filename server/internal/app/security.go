@@ -11,16 +11,16 @@ import (
 	"strings"
 	"time"
 
-	"github.com/deploymenttheory/go-apple-dm/mdmprotocol/cms"
-	"github.com/deploymenttheory/go-apple-dm/mdmprotocol/enroll/accountdriven"
-	"github.com/deploymenttheory/go-apple-dm/pki/acme"
-	"github.com/deploymenttheory/go-apple-dm/pki/ca"
-	"github.com/deploymenttheory/go-apple-dm/pki/revocation"
-	"github.com/deploymenttheory/go-apple-dm/pki/scep"
-	"github.com/deploymenttheory/go-apple-dm/ratelimit"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/cms"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/enroll/accountdriven"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/pki/acme"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/pki/ca"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/pki/revocation"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/pki/scep"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/ratelimit"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/state"
 	"github.com/deploymenttheory/go-apple-dm/server/httpapi"
 	"github.com/deploymenttheory/go-apple-dm/server/statestore"
-	"github.com/deploymenttheory/go-apple-dm/state"
 )
 
 // PKIConfig enables issuer status registration, enforcement and publication.

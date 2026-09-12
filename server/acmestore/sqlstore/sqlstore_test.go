@@ -13,15 +13,15 @@ import (
 	"testing"
 	"time"
 
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/paging"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/pki/acme"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/pki/acme/attest"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/storage/acme/acmetest"
 	sqlstore "github.com/deploymenttheory/go-apple-dm/server/acmestore/sqlstore"
 	"github.com/deploymenttheory/go-apple-dm/server/sqlstore/mysql"
 	"github.com/deploymenttheory/go-apple-dm/server/sqlstore/postgres"
 	"github.com/deploymenttheory/go-apple-dm/server/sqlstore/sqlcommon"
 	"github.com/deploymenttheory/go-apple-dm/server/sqlstore/sqlite"
-	"github.com/deploymenttheory/go-apple-dm/paging"
-	"github.com/deploymenttheory/go-apple-dm/pki/acme"
-	"github.com/deploymenttheory/go-apple-dm/pki/acme/attest"
-	"github.com/deploymenttheory/go-apple-dm/storage/acme/acmetest"
 )
 
 func openDB(t *testing.T) *sql.DB {

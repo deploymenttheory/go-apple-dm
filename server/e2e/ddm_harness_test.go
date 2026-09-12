@@ -10,6 +10,16 @@ import (
 	"testing"
 	"time"
 
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/clock"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/ddm"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/event"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/mdm"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/plist"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/schema/commands"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/simulator"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/storage"
+	ddminmem "github.com/deploymenttheory/go-apple-dm/devicemanagement/storage/ddm/inmem"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/storage/inmem"
 	"github.com/deploymenttheory/go-apple-dm/server/ddmadapter/inproc"
 	sqlstore "github.com/deploymenttheory/go-apple-dm/server/ddmstore/sqlstore"
 	"github.com/deploymenttheory/go-apple-dm/server/ddmsync"
@@ -17,16 +27,6 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/server/sqlstore/postgres"
 	"github.com/deploymenttheory/go-apple-dm/server/sqlstore/sqlcommon"
 	"github.com/deploymenttheory/go-apple-dm/server/sqlstore/sqlite"
-	"github.com/deploymenttheory/go-apple-dm/clock"
-	"github.com/deploymenttheory/go-apple-dm/mdmprotocol/ddm"
-	"github.com/deploymenttheory/go-apple-dm/mdmprotocol/event"
-	"github.com/deploymenttheory/go-apple-dm/mdmprotocol/mdm"
-	"github.com/deploymenttheory/go-apple-dm/mdmprotocol/plist"
-	"github.com/deploymenttheory/go-apple-dm/schema/commands"
-	"github.com/deploymenttheory/go-apple-dm/simulator"
-	"github.com/deploymenttheory/go-apple-dm/storage"
-	ddminmem "github.com/deploymenttheory/go-apple-dm/storage/ddm/inmem"
-	"github.com/deploymenttheory/go-apple-dm/storage/inmem"
 )
 
 // ddmHarness is a harness with the DDM engine wired in-process: the

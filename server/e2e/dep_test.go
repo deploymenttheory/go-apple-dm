@@ -10,14 +10,14 @@ import (
 	"testing"
 	"time"
 
-	"github.com/deploymenttheory/go-apple-dm/appleplatformservices/dep"
-	"github.com/deploymenttheory/go-apple-dm/appleplatformservices/dep/deptest"
-	"github.com/deploymenttheory/go-apple-dm/appleplatformservices/gdmf/gdmftest"
-	"github.com/deploymenttheory/go-apple-dm/clock"
-	"github.com/deploymenttheory/go-apple-dm/mdmprotocol/enroll/ade"
-	"github.com/deploymenttheory/go-apple-dm/mdmprotocol/mdm"
-	"github.com/deploymenttheory/go-apple-dm/simulator"
-	depinmem "github.com/deploymenttheory/go-apple-dm/storage/dep/inmem"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/appleplatformservices/dep"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/appleplatformservices/dep/deptest"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/appleplatformservices/gdmf/gdmftest"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/clock"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/enroll/ade"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/mdm"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/simulator"
+	depinmem "github.com/deploymenttheory/go-apple-dm/devicemanagement/storage/dep/inmem"
 )
 
 // TestE2E_DEPAssign covers E2E-011: token PKI exchange, fetch/sync with cursor

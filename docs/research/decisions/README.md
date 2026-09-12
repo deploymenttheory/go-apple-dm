@@ -44,7 +44,7 @@ The [architecture guide](../../architecture.md) summarizes how the decisions fit
 | 0033 | [ACME identity in enrollment profiles, declarative credentials, and the reference server](0033-acme-identity-in-profiles-and-ddm.md) |
 | 0034 | [Admin API surface and authorization](0034-admin-api-and-authorization.md) |
 | 0035 | [`dmctl` structure, output, and credential handling](0035-dmctl-structure-and-credentials.md) |
-| 0036 | [`dmctl explain` over `schema/support`](0036-dmctl-explain-over-schema-support.md) |
+| 0036 | [`dmctl explain` over `devicemanagement/schema/support`](0036-dmctl-explain-over-schema-support.md) |
 | 0037 | [Event sinks and default-deny redaction](0037-event-sinks-and-redaction.md) |
 | 0038 | [The persisted audit trail](0038-persisted-audit-trail.md) |
 | 0039 | [Declarative device management within the MDM enrollment](0039-ddm-is-an-extension-of-mdm.md) |

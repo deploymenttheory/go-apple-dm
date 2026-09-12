@@ -11,8 +11,8 @@ Go packages for Apple's MDM protocol, declarative device management (DDM), enrol
 certificate issuance and Apple service clients. The repository also contains a reference
 server and an admin CLI. It does not provide an inventory UI or a fleet management product.
 
-The root module contains protocol libraries, generated schema types, storage contracts and
-in-memory implementations. The `server` module adds SQL stores, the service layer, HTTP
+The root module groups protocol libraries, generated schema types, storage contracts and
+in-memory implementations under [devicemanagement/](devicemanagement/). The `server` module adds SQL stores, the service layer, HTTP
 adapters and application wiring. Both modules require Go 1.27. The API is pre-1.0 and may
 change between minor versions.
 
@@ -22,16 +22,18 @@ Read the [getting-started guide](docs/getting-started/getting-started.md) for a
 complete walkthrough of prerequisites, local simulation, persistent storage,
 administrator setup, real-device enrollment, and library integration.
 
-Install the library in your own module:
+Install the library in your own module. Select a reviewed tag or commit containing
+the `devicemanagement/` packages; older releases use the previous import paths:
 
 ```sh
-go get github.com/deploymenttheory/go-apple-dm
+export DM_REV='REPLACE-WITH-REVIEWED-TAG-OR-COMMIT'
+go get "github.com/deploymenttheory/go-apple-dm@$DM_REV"
 ```
 
 Applications using the service layer or SQL backends also import the server module:
 
 ```sh
-go get github.com/deploymenttheory/go-apple-dm/server
+go get "github.com/deploymenttheory/go-apple-dm/server@$DM_REV"
 ```
 
 From a repository checkout, run a local development server:
@@ -71,7 +73,7 @@ go run ./server/cmd/dmctl explain com.apple.configuration.softwareupdate.enforce
 ```
 
 For embedding examples, see the package documentation and the executable scenarios in
-[server/e2e](server/e2e/) and [simulator](simulator/).
+[server/e2e](server/e2e/) and [simulator](devicemanagement/simulator/).
 
 The [reference-server bench](test-lab/README.md) combines simulated scenarios, process acceptance, and live-device testing. It covers certificate inspection,
 app alert/background pushes, MDM vendor CSR signing, and testing both paths on a Mac.

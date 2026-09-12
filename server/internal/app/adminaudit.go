@@ -8,8 +8,8 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/deploymenttheory/go-apple-dm/mdmprotocol/event"
-	"github.com/deploymenttheory/go-apple-dm/mdmprotocol/mdm"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/event"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/mdm"
 	"github.com/deploymenttheory/go-apple-dm/server/audit"
 	auditinmem "github.com/deploymenttheory/go-apple-dm/server/audit/inmem"
 	auditsql "github.com/deploymenttheory/go-apple-dm/server/audit/sqlstore"

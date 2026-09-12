@@ -13,8 +13,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/testpki"
 	"github.com/deploymenttheory/go-apple-dm/server/internal/dmctl"
-	"github.com/deploymenttheory/go-apple-dm/testpki"
 )
 
 func TestOfflineAPNSCommands(t *testing.T) {

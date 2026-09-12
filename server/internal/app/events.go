@@ -8,8 +8,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/deploymenttheory/go-apple-dm/clock"
-	"github.com/deploymenttheory/go-apple-dm/mdmprotocol/event"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/clock"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/event"
 )
 
 // Environment controls for the audit/webhook bus. Unset or zero uses defaults.

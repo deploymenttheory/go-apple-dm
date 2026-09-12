@@ -37,8 +37,22 @@ func TestTypeNameForSchema(t *testing.T) {
 		s    Schema
 		want string
 	}{
-		{Schema{Family: FamilyCommands, Title: "Device Lock Command", Payload: Payload{RequestType: "DeviceLock"}}, "DeviceLock"},
-		{Schema{Family: FamilyCheckin, Title: "Token Update", Payload: Payload{RequestType: "TokenUpdate"}}, "TokenUpdate"},
+		{
+			Schema{
+				Family:  FamilyCommands,
+				Title:   "Device Lock Command",
+				Payload: Payload{RequestType: "DeviceLock"},
+			},
+			"DeviceLock",
+		},
+		{
+			Schema{
+				Family:  FamilyCheckin,
+				Title:   "Token Update",
+				Payload: Payload{RequestType: "TokenUpdate"},
+			},
+			"TokenUpdate",
+		},
 		{Schema{Family: FamilyCommands, Title: "No Request Type"}, "NoRequestType"},
 		{Schema{Family: FamilyStatus, Title: "Status Device Model Family"}, "DeviceModelFamily"},
 		{Schema{Family: FamilyErrors, Title: "Error Unrecognized Device"}, "UnrecognizedDevice"},

@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/deploymenttheory/go-apple-dm/storage"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/storage"
 )
 
 // StorePushCert implements storage.PushCertStore (decision record 0015).

@@ -10,7 +10,7 @@
     ],
     "repository": {
       "url": "https://github.com/deploymenttheory/go-apple-dm",
-      "revision": "ff85958196cb013e8e14c1055f067319b07e3299"
+      "revision": "bb9e5bb3af89683a960a326e309be409bb0dc40f"
     },
     "views": [
       {
@@ -156,7 +156,7 @@
       ],
       "sources": [
         {
-          "path": "mdmprotocol/event/event.go",
+          "path": "devicemanagement/mdmprotocol/event/event.go",
           "label": "Publish"
         }
       ],
@@ -308,7 +308,7 @@
       ],
       "sources": [
         {
-          "path": "storage/replacement.go"
+          "path": "devicemanagement/storage/replacement.go"
         }
       ],
       "purpose": "storage"

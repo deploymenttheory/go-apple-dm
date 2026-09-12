@@ -6,7 +6,7 @@ A declaration's token must describe its served content, and an enrollment's aggr
 
 ## Decision
 
-`internal/canonjson` implements RFC 8785 canonical JSON with UTF-16 key ordering, canonical number/string formatting, depth limits and strict input validation. `ServerToken` is the hexadecimal SHA-256 digest of canonical `Identifier`, `Payload` and `Type` content. Uploaded tokens are ignored.
+`devicemanagement/internal/canonjson` implements RFC 8785 canonical JSON with UTF-16 key ordering, canonical number/string formatting, depth limits and strict input validation. `ServerToken` is the hexadecimal SHA-256 digest of canonical `Identifier`, `Payload` and `Type` content. Uploaded tokens are ignored.
 
 `DeclarationsToken` hashes sorted declaration references with length-prefixed strings. Snapshot timestamps change only when the token changes and are rendered with whole-second precision.
 
@@ -24,9 +24,9 @@ Canonicalization tests cover RFC vectors, ordering, numeric forms, idempotency a
 
 ## References
 
-- [internal/canonjson](../../../internal/canonjson)
-- [mdmprotocol/ddm/token.go](../../../mdmprotocol/ddm/token.go)
-- [mdmprotocol/ddm/token_test.go](../../../mdmprotocol/ddm/token_test.go)
+- [internal/canonjson](../../../devicemanagement/internal/canonjson)
+- [mdmprotocol/ddm/token.go](../../../devicemanagement/mdmprotocol/ddm/token.go)
+- [mdmprotocol/ddm/token_test.go](../../../devicemanagement/mdmprotocol/ddm/token_test.go)
 - <https://developer.apple.com/documentation/devicemanagement/declarativemanagementrequest>
 - <https://developer.apple.com/documentation/devicemanagement/integrating-declarative-management>
 

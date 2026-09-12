@@ -12,7 +12,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/deploymenttheory/go-apple-dm/mdmprotocol/plist"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/plist"
 )
 
 func TestLiveMDMRequiresDeviceEvidence(t *testing.T) {

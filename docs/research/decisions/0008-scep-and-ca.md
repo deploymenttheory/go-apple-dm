@@ -39,9 +39,9 @@ CA and SCEP tests cover policy, serial generation, challenge consumption/expiry,
 
 ## References
 
-- [pki/ca](../../../pki/ca)
-- [pki/scep](../../../pki/scep)
-- [pki/revocation](../../../pki/revocation)
+- [pki/ca](../../../devicemanagement/pki/ca)
+- [pki/scep](../../../devicemanagement/pki/scep)
+- [pki/revocation](../../../devicemanagement/pki/revocation)
 - <https://developer.apple.com/documentation/devicemanagement/scep>
 - <https://developer.apple.com/documentation/devicemanagement/managing-certificates-for-device-management-services-and-devices>
 

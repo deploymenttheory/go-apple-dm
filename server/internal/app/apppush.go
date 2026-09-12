@@ -11,9 +11,9 @@ import (
 	"io"
 	"net/http"
 
-	"github.com/deploymenttheory/go-apple-dm/appleplatformservices/push/apns"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/appleplatformservices/push/apns"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/state"
 	"github.com/deploymenttheory/go-apple-dm/server/apppush"
-	"github.com/deploymenttheory/go-apple-dm/state"
 )
 
 // AppPushConfig configures provider trust and optional alternative endpoints.

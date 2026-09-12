@@ -10,9 +10,9 @@ import (
 	"slices"
 	"time"
 
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/state"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/storage/crypt"
 	"github.com/deploymenttheory/go-apple-dm/server/sqlstore/sqlcommon"
-	"github.com/deploymenttheory/go-apple-dm/state"
-	"github.com/deploymenttheory/go-apple-dm/storage/crypt"
 )
 
 //go:embed migrations/*/*.sql

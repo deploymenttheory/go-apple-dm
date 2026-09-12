@@ -9,7 +9,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/deploymenttheory/go-apple-dm/state"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/state"
 )
 
 func TestEnvelopeBindsRequestAndRejectsReplay(t *testing.T) {

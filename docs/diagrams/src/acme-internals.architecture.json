@@ -10,7 +10,7 @@
     ],
     "repository": {
       "url": "https://github.com/deploymenttheory/go-apple-dm",
-      "revision": "ff85958196cb013e8e14c1055f067319b07e3299"
+      "revision": "bb9e5bb3af89683a960a326e309be409bb0dc40f"
     },
     "views": [
       {
@@ -108,11 +108,11 @@
       ],
       "sources": [
         {
-          "path": "pki/acme/jose/jws.go",
+          "path": "devicemanagement/pki/acme/jose/jws.go",
           "label": "JWS"
         },
         {
-          "path": "pki/acme/jose/jwk.go",
+          "path": "devicemanagement/pki/acme/jose/jwk.go",
           "label": "JWK"
         }
       ],
@@ -133,11 +133,11 @@
       ],
       "sources": [
         {
-          "path": "pki/acme/server.go",
+          "path": "devicemanagement/pki/acme/server.go",
           "label": "routes"
         },
         {
-          "path": "pki/acme/handlers.go",
+          "path": "devicemanagement/pki/acme/handlers.go",
           "label": "handlers"
         }
       ],
@@ -158,11 +158,11 @@
       ],
       "sources": [
         {
-          "path": "pki/acme/attest/attest.go",
+          "path": "devicemanagement/pki/acme/attest/attest.go",
           "label": "verify"
         },
         {
-          "path": "pki/acme/attest/anchors.go",
+          "path": "devicemanagement/pki/acme/attest/anchors.go",
           "label": "anchors"
         }
       ],
@@ -183,7 +183,7 @@
       ],
       "sources": [
         {
-          "path": "pki/acme/problem.go",
+          "path": "devicemanagement/pki/acme/problem.go",
           "label": "problem"
         }
       ],
@@ -219,7 +219,7 @@
       ],
       "sources": [
         {
-          "path": "pki/acme/acme.go",
+          "path": "devicemanagement/pki/acme/acme.go",
           "label": "order model"
         }
       ],
@@ -240,7 +240,7 @@
       ],
       "sources": [
         {
-          "path": "pki/acme/store.go",
+          "path": "devicemanagement/pki/acme/store.go",
           "label": "store contract"
         }
       ],
@@ -261,7 +261,7 @@
       ],
       "sources": [
         {
-          "path": "pki/acme/policy.go",
+          "path": "devicemanagement/pki/acme/policy.go",
           "label": "decisions"
         }
       ],
@@ -282,7 +282,7 @@
       ],
       "sources": [
         {
-          "path": "pki/acme/identifier.go",
+          "path": "devicemanagement/pki/acme/identifier.go",
           "label": "claim once"
         }
       ],
@@ -318,11 +318,11 @@
       ],
       "sources": [
         {
-          "path": "pki/ca/ca.go",
+          "path": "devicemanagement/pki/ca/ca.go",
           "label": "signer"
         },
         {
-          "path": "pki/ca/othername.go",
+          "path": "devicemanagement/pki/ca/othername.go",
           "label": "PermanentIdentifier"
         }
       ],

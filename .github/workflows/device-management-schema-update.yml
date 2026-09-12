@@ -95,8 +95,8 @@ jobs:
         if: steps.compare.outputs.changed == 'true'
         run: |
           set -euo pipefail
-          go run ./cmd/admgen versions > /tmp/versions.before
-          sort schema/EXPORTED_IDENTIFIERS.lock > /tmp/identifiers.before
+          go run ./cmd/schemagen versions > /tmp/versions.before
+          sort devicemanagement/schema/EXPORTED_IDENTIFIERS.lock > /tmp/identifiers.before
 
       - name: Regenerate against upstream
         if: steps.compare.outputs.changed == 'true'
@@ -104,8 +104,8 @@ jobs:
           set -euo pipefail
           git -C third_party/device-management checkout -q "${{ steps.compare.outputs.release }}"
           make generate
-          go run ./cmd/admgen versions > /tmp/versions.after
-          go run ./cmd/admgen identifiers | sort > /tmp/identifiers.after
+          go run ./cmd/schemagen versions > /tmp/versions.after
+          go run ./cmd/schemagen identifiers | sort > /tmp/identifiers.after
 
       # Run every check and include failures in the pull request for review.
       # Failed checks do not suppress creation of the update pull request.

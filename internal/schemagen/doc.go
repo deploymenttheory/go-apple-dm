@@ -10,7 +10,7 @@
 //
 // Apple's descriptions are retained verbatim; project-authored generated
 // documentation is maintained in the emitters. Protocol behavior described
-// outside the schema belongs to hand-written protocol packages. cmd/admgen
+// outside the schema belongs to hand-written protocol packages. cmd/schemagen
 // provides the command-line interface.
 //
 // # References
@@ -23,5 +23,5 @@
 //   - Apple: https://github.com/apple/device-management
 //   - Schema: third_party/device-management/docs/schema.yaml (meta-schema)
 //   - Schema: third_party/device-management/mdm/**, declarative/**, other/**
-//   - GeneratedFrom: schema/GENERATED_FROM.json, schema/EXPORTED_IDENTIFIERS.lock, schema/ALLOWED_REMOVALS.md
+//   - GeneratedFrom: devicemanagement/schema/GENERATED_FROM.json, devicemanagement/schema/EXPORTED_IDENTIFIERS.lock, devicemanagement/schema/ALLOWED_REMOVALS.md
 package schemagen

@@ -24,8 +24,8 @@ Layout tests enforce import direction. Application tests verify that DDM command
 
 ## References
 
-- [mdmprotocol/mdm](../../../mdmprotocol/mdm)
-- [mdmprotocol/ddm](../../../mdmprotocol/ddm)
+- [mdmprotocol/mdm](../../../devicemanagement/mdmprotocol/mdm)
+- [mdmprotocol/ddm](../../../devicemanagement/mdmprotocol/ddm)
 - [server/ddmsync](../../../server/ddmsync)
 - [server/ddmadapter](../../../server/ddmadapter)
 - <https://developer.apple.com/documentation/devicemanagement/leveraging-the-declarative-management-data-model-to-scale-devices>

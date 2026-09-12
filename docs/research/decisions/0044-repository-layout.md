@@ -6,9 +6,14 @@ Package paths describe dependency responsibilities, and library consumers should
 
 ## Decision
 
-The root module contains protocol packages, certificate services, Apple service clients, foundational utilities, storage contracts and in-memory backends. The server module contains SQL implementations, service orchestration, HTTP adapters, sinks, administration and binaries. Production and test imports cannot create a library dependency on the server module.
+The root module contains protocol packages, certificate services, Apple service clients, foundational utilities, storage contracts and in-memory backends beneath `devicemanagement/`. This directory is a package namespace within the existing module. The server module contains SQL implementations, service orchestration, HTTP adapters, sinks, administration and binaries. Production and test imports cannot create a library dependency on the server module.
 
-Tier tests check downward imports across foundation, schema, protocol, PKI, Apple clients, storage, simulator and server layers, with composition/generator packages handled explicitly. Test scaffolding is exempt. `paging` provides shared cursor types without domain storage dependencies; `pki/pushcert` is a standard-library leaf.
+Library-only JSON, CBOR and SCEP helpers live under `devicemanagement/internal/`.
+The shared `internal/httpsurl` remains at the repository root so both modules can
+import it. Generator and architecture tooling also remain at the root. The schema
+output lives under `devicemanagement/schema/`, including its provenance and exported-name lock.
+
+Tier tests check downward imports across foundation, schema, protocol, PKI, Apple clients, storage, simulator and server layers, with composition/generator packages handled explicitly. Test scaffolding is exempt. `devicemanagement/paging` provides shared cursor types without domain storage dependencies; `devicemanagement/pki/pushcert` is a standard-library leaf.
 
 ## Rationale
 
@@ -16,7 +21,7 @@ The module boundary separates embedding costs from runnable composition. Moving 
 
 ## Constraints
 
-One exact upward exception remains: `mdmprotocol/enroll/ade` imports `appleplatformservices/gdmf` for its lookup vocabulary and version comparison. The test records this edge explicitly. Workspace builds use `go.work`; the server's local `replace` resolves the sibling library checkout.
+One exact upward exception remains: `devicemanagement/mdmprotocol/enroll/ade` imports `devicemanagement/appleplatformservices/gdmf` for its lookup vocabulary and version comparison. The test records this edge explicitly. Workspace builds use `go.work`; the server's declared dependency resolves a published root library revision without a replacement directive.
 
 ## Verification
 

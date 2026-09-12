@@ -38,12 +38,12 @@ submodule:
 ## generate: regenerate schema packages from the vendored Apple YAML
 generate: submodule
 	$(GO) generate ./...
-	$(GO) run ./cmd/admgen generate
+	$(GO) run ./cmd/schemagen generate
 
 ## verify: fail if regeneration changes anything or removes an exported identifier
 verify: submodule
 	$(GO) test ./internal/layout -run TestWorkflowSecurity
-	@if [ -d cmd/admgen ]; then $(GO) run ./cmd/admgen verify; else echo "schema generator directory is missing"; fi
+	@if [ -d cmd/schemagen ]; then $(GO) run ./cmd/schemagen verify; else echo "schema generator directory is missing"; fi
 
 ## lint: run golangci-lint with the repository configuration
 lint:
@@ -65,7 +65,7 @@ test-storage: test-contract
 
 ## test-contract: storage and interface contract suites across configured SQL backends
 test-contract:
-	$(GO) test -race ./storage/... ./state/...
+	$(GO) test -race ./devicemanagement/storage/... ./devicemanagement/state/...
 	@rm -rf $(COVER_DIR)/storage && mkdir -p $(COVER_DIR)/storage
 	# Integration packages share test databases; serialize their schema resets.
 	cd $(SERVER_DIR) && $(GO) test -p 1 -race -count=1 -tags integration -cover -coverpkg=$(ALL_PKGS) $(INTEGRATION_PKGS) -args -test.gocoverdir=$(PWD)/$(COVER_DIR)/storage
@@ -76,8 +76,8 @@ test-storage-perf:
 
 ## test-conformance: generated schema conformance tests only
 test-conformance:
-	@if $(GO) list ./schema/... >/dev/null 2>&1; then \
-		$(GO) test -count=1 -run 'Conformance' ./schema/...; \
+	@if $(GO) list ./devicemanagement/schema/... >/dev/null 2>&1; then \
+		$(GO) test -count=1 -run 'Conformance' ./devicemanagement/schema/...; \
 	else echo "no schema packages yet"; fi
 
 ## test-e2e: reference server plus simulator scenarios on E2E_STORE (sqlite, postgres, inmem)

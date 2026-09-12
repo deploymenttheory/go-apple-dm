@@ -12,13 +12,13 @@ import (
 
 	xacme "golang.org/x/crypto/acme"
 
-	"github.com/deploymenttheory/go-apple-dm/mdmprotocol/mdm"
-	"github.com/deploymenttheory/go-apple-dm/mdmprotocol/plist"
-	"github.com/deploymenttheory/go-apple-dm/mdmprotocol/profile"
-	"github.com/deploymenttheory/go-apple-dm/pki/acme/attest"
-	"github.com/deploymenttheory/go-apple-dm/pki/acme/attest/attesttest"
-	"github.com/deploymenttheory/go-apple-dm/schema/commands"
-	"github.com/deploymenttheory/go-apple-dm/simulator"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/mdm"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/plist"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/profile"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/pki/acme/attest"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/pki/acme/attest/attesttest"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/schema/commands"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/simulator"
 )
 
 func (e *Environment) attestation() (*attesttest.CA, error) {

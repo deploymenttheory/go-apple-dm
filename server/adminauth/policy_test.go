@@ -9,9 +9,9 @@ import (
 
 	"github.com/cedar-policy/cedar-go/types"
 
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/clock"
 	"github.com/deploymenttheory/go-apple-dm/server/adminauth"
 	"github.com/deploymenttheory/go-apple-dm/server/adminauth/inmem"
-	"github.com/deploymenttheory/go-apple-dm/clock"
 )
 
 var t0 = time.Date(2026, 9, 2, 12, 0, 0, 0, time.UTC)

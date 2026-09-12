@@ -6,7 +6,7 @@ MDM requests and responses use property lists. Untrusted input requires format d
 
 ## Decision
 
-`mdmprotocol/plist` wraps `github.com/micromdm/plist` for XML and binary encoding and decoding. The wrapper provides format detection and byte and XML nesting limits. Protocol decoding dispatches on message type and retains the original request bytes.
+`devicemanagement/mdmprotocol/plist` wraps `github.com/micromdm/plist` for XML and binary encoding and decoding. The wrapper provides format detection and byte and XML nesting limits. Protocol decoding dispatches on message type and retains the original request bytes.
 
 ## Rationale
 
@@ -22,8 +22,8 @@ Plist tests cover format detection, malformed input and limits. Protocol fuzz ta
 
 ## References
 
-- [mdmprotocol/plist](../../../mdmprotocol/plist)
-- [mdmprotocol/mdm](../../../mdmprotocol/mdm)
+- [mdmprotocol/plist](../../../devicemanagement/mdmprotocol/plist)
+- [mdmprotocol/mdm](../../../devicemanagement/mdmprotocol/mdm)
 - <https://developer.apple.com/documentation/devicemanagement/check-in>
 - <https://developer.apple.com/documentation/devicemanagement/commands-and-queries>
 

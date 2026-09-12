@@ -9,9 +9,9 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/deploymenttheory/go-apple-dm/pki/pushcert"
-	"github.com/deploymenttheory/go-apple-dm/state"
-	"github.com/deploymenttheory/go-apple-dm/storage/crypt"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/pki/pushcert"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/state"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/storage/crypt"
 )
 
 const prefix = "apppush/v1/"

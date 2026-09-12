@@ -28,7 +28,11 @@ func TestLoadReportsADirectoryThatIsNotAModule(t *testing.T) {
 func TestLoadReportsAModuleWithNoPackages(t *testing.T) {
 	t.Parallel()
 	dir := t.TempDir()
-	if err := os.WriteFile(filepath.Join(dir, "go.mod"), []byte("module example.test\n\ngo 1.27\n"), 0o600); err != nil {
+	if err := os.WriteFile(
+		filepath.Join(dir, "go.mod"),
+		[]byte("module example.test\n\ngo 1.27\n"),
+		0o600,
+	); err != nil {
 		t.Fatalf("write go.mod: %v", err)
 	}
 	if _, err := layout.Load(dir); !errors.Is(err, layout.ErrGoList) {
@@ -89,17 +93,36 @@ func TestCyclesFindsAComponent(t *testing.T) {
 func TestUnitNamespacesInternalAndSchema(t *testing.T) {
 	t.Parallel()
 	for pkg, want := range map[string]string{
-		"mdm":                    "mdm",
-		"ddm/predicate":          "ddm",
-		"internal/clock":         "internal/clock",
-		"internal/app":           "internal/app",
-		"schema/commands":        "schema/commands",
-		"schema/support":         "schema/support",
-		"acme/attest/attesttest": "acme",
+		"mdm":                              "mdm",
+		"ddm/predicate":                    "ddm",
+		"internal/clock":                   "internal/clock",
+		"internal/app":                     "internal/app",
+		"schema/commands":                  "schema/commands",
+		"schema/support":                   "schema/support",
+		"acme/attest/attesttest":           "acme",
+		"devicemanagement/clock":           "devicemanagement/clock",
+		"devicemanagement/internal/cbor":   "devicemanagement/internal/cbor",
+		"devicemanagement/schema/commands": "devicemanagement/schema/commands",
+		"devicemanagement/mdmprotocol/ddm/predicate": "devicemanagement/mdmprotocol/ddm",
+		"devicemanagement/pki/acme/attest":           "devicemanagement/pki/acme",
+		"devicemanagement/storage/ddm/inmem":         "devicemanagement/storage/ddm",
 	} {
 		if got := layout.Unit(pkg); got != want {
 			t.Errorf("Unit(%q) = %q, want %q", pkg, got, want)
 		}
+	}
+}
+
+func TestLibraryContainerPreservesUnitCycles(t *testing.T) {
+	t.Parallel()
+	const ddm = "devicemanagement/mdmprotocol/ddm"
+	const mdm = "devicemanagement/mdmprotocol/mdm"
+	g := &layout.Graph{Imports: map[string][]string{
+		ddm: {mdm}, mdm: {ddm + "/predicate"}, ddm + "/predicate": nil,
+	}}
+	cycles := layout.Cycles(g.UnitGraph())
+	if len(cycles) != 1 || !slices.Equal(cycles[0], []string{ddm, mdm}) {
+		t.Fatalf("library namespace hid a unit cycle: %v", cycles)
 	}
 }
 

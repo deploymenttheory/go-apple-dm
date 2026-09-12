@@ -5,7 +5,7 @@ import (
 	"database/sql"
 	"time"
 
-	"github.com/deploymenttheory/go-apple-dm/pki/acme"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/pki/acme"
 )
 
 var nonceCols = []string{"value", "issued_at"}

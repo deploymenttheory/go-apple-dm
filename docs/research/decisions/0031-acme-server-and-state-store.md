@@ -34,8 +34,8 @@ ACME tests cover identifiers, competing orders, nonce replay/expiry, published U
 
 ## References
 
-- [pki/acme](../../../pki/acme)
-- [storage/acme](../../../storage/acme)
+- [pki/acme](../../../devicemanagement/pki/acme)
+- [storage/acme](../../../devicemanagement/storage/acme)
 - [server/acmestore](../../../server/acmestore)
 - <https://developer.apple.com/documentation/devicemanagement/acmecertificate>
 - <https://developer.apple.com/documentation/devicemanagement/identity-management>

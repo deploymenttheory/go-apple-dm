@@ -8,12 +8,12 @@ import (
 	"os"
 	"testing"
 
-	"github.com/deploymenttheory/go-apple-dm/secrets"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/secrets"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/storage"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/storage/crypt"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/storage/storagetest"
 	"github.com/deploymenttheory/go-apple-dm/server/sqlstore/mysql"
 	"github.com/deploymenttheory/go-apple-dm/server/sqlstore/sqlcommon"
-	"github.com/deploymenttheory/go-apple-dm/storage"
-	"github.com/deploymenttheory/go-apple-dm/storage/crypt"
-	"github.com/deploymenttheory/go-apple-dm/storage/storagetest"
 )
 
 func TestContract(t *testing.T) {

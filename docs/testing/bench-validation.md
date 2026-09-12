@@ -40,8 +40,8 @@ below the gate now report:
 
 | Package | Coverage |
 |---|---:|
-| `appleplatformservices/push/apns` | 96.07% |
-| `pki/pushcert` | 95.31% |
+| `devicemanagement/appleplatformservices/push/apns` | 96.07% |
+| `devicemanagement/pki/pushcert` | 95.31% |
 | `server/apppush` | 95.00% |
 | `server/internal/app` | 95.25% |
 | `server/internal/bench` | 95.18% |

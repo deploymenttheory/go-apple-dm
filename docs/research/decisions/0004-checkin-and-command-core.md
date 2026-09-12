@@ -6,7 +6,7 @@ Device and user channels share the check-in and command transport but use differ
 
 ## Decision
 
-Check-in decoding resolves generated `schema/checkin` messages in a single pass and retains raw bytes. `NewCommand` wraps typed payloads with `RequestType` and an uppercase UUIDv7 `CommandUUID`. Response decoding uses the command registry when the request type is known.
+Check-in decoding resolves generated `devicemanagement/schema/checkin` messages in a single pass and retains raw bytes. `NewCommand` wraps typed payloads with `RequestType` and an uppercase UUIDv7 `CommandUUID`. Response decoding uses the command registry when the request type is known.
 
 `Enrollment.Resolve` represents device, user, Shared iPad user, User Enrollment device, and User Enrollment user channels. Shared iPad uses Apple's all-`F` `UserID` sentinel and `UserShortName`; User Enrollment uses `EnrollmentID` and `EnrollmentUserID`. Invalid combinations and missing identifiers return errors.
 
@@ -24,7 +24,7 @@ Protocol tests cover generated message dispatch, channel resolution, typed comma
 
 ## References
 
-- [mdmprotocol/mdm](../../../mdmprotocol/mdm)
+- [mdmprotocol/mdm](../../../devicemanagement/mdmprotocol/mdm)
 - [server/service](../../../server/service)
 - <https://developer.apple.com/documentation/devicemanagement/check-in>
 - <https://developer.apple.com/documentation/devicemanagement/commands-and-queries>

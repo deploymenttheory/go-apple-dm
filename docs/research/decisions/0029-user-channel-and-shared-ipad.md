@@ -24,10 +24,10 @@ Service and storage tests cover multiple users, reused user identifiers on diffe
 
 ## References
 
-- [mdmprotocol/mdm](../../../mdmprotocol/mdm)
+- [mdmprotocol/mdm](../../../devicemanagement/mdmprotocol/mdm)
 - [server/service/userchannel_test.go](../../../server/service/userchannel_test.go)
 - [server/service/checkin.go](../../../server/service/checkin.go)
-- [simulator](../../../simulator)
+- [simulator](../../../devicemanagement/simulator)
 - <https://developer.apple.com/documentation/devicemanagement/check-in>
 - <https://developer.apple.com/documentation/devicemanagement/implementing-device-management>
 - <https://developer.apple.com/documentation/devicemanagement/profile>

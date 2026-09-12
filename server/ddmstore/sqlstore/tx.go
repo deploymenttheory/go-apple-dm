@@ -8,8 +8,8 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/deploymenttheory/go-apple-dm/mdmprotocol/ddm"
-	"github.com/deploymenttheory/go-apple-dm/paging"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/ddm"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/paging"
 )
 
 // querier is *sql.DB or *sql.Tx.

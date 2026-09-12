@@ -8,7 +8,7 @@ APNs credentials are selected by topic and can be renewed while the server is ru
 
 This store remains MDM-only. Ordinary app provider identities use a separate encrypted state namespace and separate API actions, as described in [0049](0049-server-managed-app-push.md).
 
-`pki/pushcert` parses standard-library-supported PEM key formats, verifies key/certificate pairing and derives the topic from the certificate UID. Store writes validate the topic and validity period and increment a version under a lock. Lists expose certificate metadata without private keys; SQL private-key columns are sealed.
+`devicemanagement/pki/pushcert` parses standard-library-supported PEM key formats, verifies key/certificate pairing and derives the topic from the certificate UID. Store writes validate the topic and validity period and increment a version under a lock. Lists expose certificate metadata without private keys; SQL private-key columns are sealed.
 
 `server/pushnotify` caches certificates per topic. A stale cache entry checks the stored version and reloads when it changes. A failed reload returns an error. The default cache TTL is 30 seconds; a zero TTL checks each time. `ExpiringCerts` supports scheduled expiry checks.
 
@@ -26,8 +26,8 @@ Parser and storage tests cover key formats, chain retention, mismatches, validit
 
 ## References
 
-- [pki/pushcert](../../../pki/pushcert)
-- [storage/pushcert.go](../../../storage/pushcert.go)
+- [pki/pushcert](../../../devicemanagement/pki/pushcert)
+- [storage/pushcert.go](../../../devicemanagement/storage/pushcert.go)
 - [server/pushnotify](../../../server/pushnotify)
 - <https://developer.apple.com/documentation/devicemanagement/setting-up-push-notifications-for-your-device-management-customers>
 - <https://developer.apple.com/documentation/devicemanagement/managing-certificates-for-device-management-services-and-devices>

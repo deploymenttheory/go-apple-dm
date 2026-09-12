@@ -24,8 +24,8 @@ Client, PKI, syncer and assigner tests use the independent fake service for sign
 
 ## References
 
-- [appleplatformservices/dep](../../../appleplatformservices/dep)
-- [storage/dep](../../../storage/dep)
+- [appleplatformservices/dep](../../../devicemanagement/appleplatformservices/dep)
+- [storage/dep](../../../devicemanagement/storage/dep)
 - [server/depstore](../../../server/depstore)
 - <https://developer.apple.com/documentation/devicemanagement/device-assignment>
 - <https://developer.apple.com/documentation/devicemanagement/authenticating-for-automated-device-enrollment>

@@ -24,18 +24,18 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/deploymenttheory/go-apple-dm/appleplatformservices/axm/axmtest"
-	"github.com/deploymenttheory/go-apple-dm/appleplatformservices/dep"
-	"github.com/deploymenttheory/go-apple-dm/appleplatformservices/dep/deptest"
-	"github.com/deploymenttheory/go-apple-dm/appleplatformservices/push/pushtest"
-	"github.com/deploymenttheory/go-apple-dm/mdmprotocol/enroll/webauth/webauthtest"
-	"github.com/deploymenttheory/go-apple-dm/pki/acme/attest/attesttest"
-	"github.com/deploymenttheory/go-apple-dm/pki/pushcert"
-	"github.com/deploymenttheory/go-apple-dm/secrets"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/appleplatformservices/axm/axmtest"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/appleplatformservices/dep"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/appleplatformservices/dep/deptest"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/appleplatformservices/push/pushtest"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/enroll/webauth/webauthtest"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/pki/acme/attest/attesttest"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/pki/pushcert"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/secrets"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/simulator"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/testpki"
 	"github.com/deploymenttheory/go-apple-dm/server/internal/app"
 	serverruntime "github.com/deploymenttheory/go-apple-dm/server/internal/runtime"
-	"github.com/deploymenttheory/go-apple-dm/simulator"
-	"github.com/deploymenttheory/go-apple-dm/testpki"
 )
 
 // Instance describes the running workspace. The control credential stays private.

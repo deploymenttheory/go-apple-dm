@@ -27,7 +27,7 @@ Certificate history is distinct from the live pin and from account-driven certif
 
 ## Verification
 
-`storage/storagetest` covers lifecycle, pagination, idempotency, queue outcomes, certificate races, token storage and export/import. SQL backends run the same suites.
+`devicemanagement/storage/storagetest` covers lifecycle, pagination, idempotency, queue outcomes, certificate races, token storage and export/import. SQL backends run the same suites.
 
 Replacement contracts cover commit ordering, concurrent creation, user tokens,
 queue and escrow preservation, cancellation, expiry and device-reported failure.
@@ -35,9 +35,9 @@ PostgreSQL and MySQL also run these contracts with encryption enabled.
 
 ## References
 
-- [storage](../../../storage)
-- [storage/inmem](../../../storage/inmem)
-- [storage/storagetest](../../../storage/storagetest)
+- [storage](../../../devicemanagement/storage)
+- [storage/inmem](../../../devicemanagement/storage/inmem)
+- [storage/storagetest](../../../devicemanagement/storage/storagetest)
 - <https://developer.apple.com/documentation/devicemanagement/check-in>
 - <https://developer.apple.com/documentation/devicemanagement/sending-mdm-commands-to-a-device>
 

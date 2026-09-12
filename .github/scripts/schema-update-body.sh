@@ -49,7 +49,7 @@ if [ "${REMOVED:-0}" != "0" ]; then
   echo
   echo "## :warning: Identifiers are no longer generated"
   echo
-  echo "These identifiers are absent from regenerated output. \`make verify\` fails until each has a line in \`schema/ALLOWED_REMOVALS.md\` documenting an intentional removal:"
+  echo "These identifiers are absent from regenerated output. \`make verify\` fails until each has a line in \`devicemanagement/schema/ALLOWED_REMOVALS.md\` documenting an intentional removal:"
   echo
   block /tmp/removed
 fi

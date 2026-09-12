@@ -7,19 +7,19 @@
 ^github.com/deploymenttheory/go-apple-dm/server/cmd/
 
 # Test helpers are exercised by the suites they serve.
-^github.com/deploymenttheory/go-apple-dm/storage/storagetest$
-^github.com/deploymenttheory/go-apple-dm/appleplatformservices/push/pushtest$
-^github.com/deploymenttheory/go-apple-dm/simulator$
-^github.com/deploymenttheory/go-apple-dm/schema/internal/conformance$
-^github.com/deploymenttheory/go-apple-dm/testpki$
+^github.com/deploymenttheory/go-apple-dm/devicemanagement/storage/storagetest$
+^github.com/deploymenttheory/go-apple-dm/devicemanagement/appleplatformservices/push/pushtest$
+^github.com/deploymenttheory/go-apple-dm/devicemanagement/simulator$
+^github.com/deploymenttheory/go-apple-dm/devicemanagement/schema/internal/conformance$
+^github.com/deploymenttheory/go-apple-dm/devicemanagement/testpki$
 ^github.com/deploymenttheory/go-apple-dm/server/sqlstore/sqltest$  # benchmark seed helper, exercised by integration benchmarks
-^github.com/deploymenttheory/go-apple-dm/storage/ddm/ddmtest$
-^github.com/deploymenttheory/go-apple-dm/mdmprotocol/enroll/webauth/webauthtest$  # fake OIDC provider, exercised by the webauth, ADE, and simulator suites
-^github.com/deploymenttheory/go-apple-dm/mdmprotocol/enroll/adetest$  # MachineInfo signing helper, exercised by the enroll/ade, simulator, and e2e suites
-^github.com/deploymenttheory/go-apple-dm/appleplatformservices/gdmf/gdmftest$  # software lookup fake, exercised by the gdmf and enroll/ade suites
-^github.com/deploymenttheory/go-apple-dm/appleplatformservices/axm/axmtest$  # fake Apple Business Manager API, exercised by the axm suite and e2e
-^github.com/deploymenttheory/go-apple-dm/appleplatformservices/dep/deptest$  # fake device enrollment service and failing store, exercised by the dep, internal/app, and e2e suites
-^github.com/deploymenttheory/go-apple-dm/storage/acme/acmetest$  # ACME store contract suite and failing store, exercised by the acme/inmem and acme/sqlstore suites
-^github.com/deploymenttheory/go-apple-dm/pki/acme/attest/attesttest$  # fake Apple attestation authority, exercised by the acme/attest, acme, simulator, and e2e suites
+^github.com/deploymenttheory/go-apple-dm/devicemanagement/storage/ddm/ddmtest$
+^github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/enroll/webauth/webauthtest$  # fake OIDC provider, exercised by the webauth, ADE, and simulator suites
+^github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/enroll/adetest$  # MachineInfo signing helper, exercised by the enroll/ade, simulator, and e2e suites
+^github.com/deploymenttheory/go-apple-dm/devicemanagement/appleplatformservices/gdmf/gdmftest$  # software lookup fake, exercised by the gdmf and enroll/ade suites
+^github.com/deploymenttheory/go-apple-dm/devicemanagement/appleplatformservices/axm/axmtest$  # fake Apple Business Manager API, exercised by the axm suite and e2e
+^github.com/deploymenttheory/go-apple-dm/devicemanagement/appleplatformservices/dep/deptest$  # fake device enrollment service and failing store, exercised by the dep, internal/app, and e2e suites
+^github.com/deploymenttheory/go-apple-dm/devicemanagement/storage/acme/acmetest$  # ACME store contract suite and failing store, exercised by the acme/inmem and acme/sqlstore suites
+^github.com/deploymenttheory/go-apple-dm/devicemanagement/pki/acme/attest/attesttest$  # fake Apple attestation authority, exercised by the acme/attest, acme, simulator, and e2e suites
 ^github.com/deploymenttheory/go-apple-dm/server/adminauth/adminauthtest$  # admin principal and policy store contract suite, exercised by adminauth/inmem and adminauth/sqlstore
 ^github.com/deploymenttheory/go-apple-dm/server/audit/audittest$  # audit trail contract suite and failing store, exercised by audit/inmem and audit/sqlstore

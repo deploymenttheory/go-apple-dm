@@ -12,7 +12,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/deploymenttheory/go-apple-dm/state"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/state"
 )
 
 // ValidKeys requires independent keys with at least 256 bits of key material.

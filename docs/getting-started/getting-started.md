@@ -949,7 +949,8 @@ DDM/push adapters. `server/internal/app`, `server/internal/runtime`, and
 by an external module.
 
 In your application's directory, outside this repository, initialize its module
-if needed. Set `DM_REV` to the reviewed tag or commit you intend to consume:
+if needed. Set `DM_REV` to a reviewed tag or commit containing the
+`devicemanagement/` package paths used below; older releases use the previous paths:
 
 ```sh
 go mod init example.com/my-device-service
@@ -991,9 +992,9 @@ import (
     "log"
     "os"
 
-    "github.com/deploymenttheory/go-apple-dm/mdmprotocol/mdm"
-    "github.com/deploymenttheory/go-apple-dm/schema/commands"
-    "github.com/deploymenttheory/go-apple-dm/schema/support"
+    "github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/mdm"
+    "github.com/deploymenttheory/go-apple-dm/devicemanagement/schema/commands"
+    "github.com/deploymenttheory/go-apple-dm/devicemanagement/schema/support"
 )
 
 func main() {
@@ -1031,20 +1032,20 @@ in section 8.
 
 | Need | Public packages and next example |
 |---|---|
-| Read/write Apple messages | `mdmprotocol/mdm`, `mdmprotocol/plist`, `schema/commands`, `schema/checkin`, `schema/profiles`, `schema/ddm`, `schema/support` |
-| Build enrollment profiles and authentication flows | `mdmprotocol/enroll`, its `ade`, `accountdriven`, `discovery`, and `webauth` packages |
-| Issue and validate device identities | `pki/ca`, `pki/scep`, `pki/acme`, `pki/acme/attest`, `pki/revocation` |
+| Read/write Apple messages | `devicemanagement/mdmprotocol/mdm`, `devicemanagement/mdmprotocol/plist`, `devicemanagement/schema/commands`, `devicemanagement/schema/checkin`, `devicemanagement/schema/profiles`, `devicemanagement/schema/ddm`, `devicemanagement/schema/support` |
+| Build enrollment profiles and authentication flows | `devicemanagement/mdmprotocol/enroll`, its `ade`, `accountdriven`, `discovery`, and `webauth` packages |
+| Issue and validate device identities | `devicemanagement/pki/ca`, `devicemanagement/pki/scep`, `devicemanagement/pki/acme`, `devicemanagement/pki/acme/attest`, `devicemanagement/pki/revocation` |
 | Persist MDM and protocol state | `storage`, `state`, memory implementations; `server/sqlstore/{sqlite,postgres,mysql}`, `server/statestore`, and the other domain stores |
 | Serve MDM HTTP traffic | `server/service` and `server/httpapi`; see [the harness](../../server/e2e/harness_test.go) and [reference composition](../../server/internal/app/app.go) |
-| Send MDM push notifications | `appleplatformservices/push`, its `apns` implementation, and `server/pushnotify` |
-| Add DDM | `mdmprotocol/ddm`, `storage/ddm`, `server/ddmadapter`, `server/ddmsync`; see [DDM scenarios](../../server/e2e/ddm_test.go) |
-| Call Apple services | `appleplatformservices/dep`, `axm`, `gdmf`; configure their separate credentials, trust, and stores |
+| Send MDM push notifications | `devicemanagement/appleplatformservices/push`, its `apns` implementation, and `server/pushnotify` |
+| Add DDM | `devicemanagement/mdmprotocol/ddm`, `devicemanagement/storage/ddm`, `server/ddmadapter`, `server/ddmsync`; see [DDM scenarios](../../server/e2e/ddm_test.go) |
+| Call Apple services | `devicemanagement/appleplatformservices/dep`, `axm`, `gdmf`; configure their separate credentials, trust, and stores |
 | Test protocol integration | `simulator`, `testpki`, service fakes, and backend contract suites; never install fixture trust in a live deployment |
 
 For an embedded MDM service, follow this construction and request sequence:
 
 1. Open the selected domain stores and shared transactional protocol state.
-   Configure `storage/crypt` and a `secrets.Provider` explicitly for persistent
+   Configure `devicemanagement/storage/crypt` and a `secrets.Provider` explicitly for persistent
    secrets. Low-level SQL constructors can accept a nil keyring; the reference
    executable's requirement is not automatically applied to your application.
 2. Configure trusted issuer material, admission, issuance registration, and
@@ -1082,7 +1083,7 @@ must be idempotent and safe under concurrent recovery calls. A receipt and CSR
 hash commit before registration; only completed registration makes the
 certificate downloadable. Custom `acme.Store` implementations must acquire the
 cross-instance `UpdateOrder` lock before reading state and pass
-`storage/acme/acmetest`.
+`devicemanagement/storage/acme/acmetest`.
 
 For SCEP grant issuance, provide an explicit challenge policy, shared grant
 state, pure signer, and idempotent registration. `RenewalOnly` does not authorize

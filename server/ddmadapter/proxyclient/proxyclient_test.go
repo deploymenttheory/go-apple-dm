@@ -13,17 +13,17 @@ import (
 	"testing"
 	"time"
 
-	"github.com/deploymenttheory/go-apple-dm/mdmprotocol/ddm"
-	"github.com/deploymenttheory/go-apple-dm/mdmprotocol/mdm"
-	"github.com/deploymenttheory/go-apple-dm/mdmprotocol/plist"
-	"github.com/deploymenttheory/go-apple-dm/schema/checkin"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/ddm"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/mdm"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/plist"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/schema/checkin"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/state"
+	ddminmem "github.com/deploymenttheory/go-apple-dm/devicemanagement/storage/ddm/inmem"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/storage/inmem"
 	"github.com/deploymenttheory/go-apple-dm/server/ddmadapter/internal/proxywire"
 	"github.com/deploymenttheory/go-apple-dm/server/ddmadapter/proxyclient"
 	"github.com/deploymenttheory/go-apple-dm/server/ddmadapter/proxyserver"
 	"github.com/deploymenttheory/go-apple-dm/server/service"
-	"github.com/deploymenttheory/go-apple-dm/state"
-	ddminmem "github.com/deploymenttheory/go-apple-dm/storage/ddm/inmem"
-	"github.com/deploymenttheory/go-apple-dm/storage/inmem"
 )
 
 // dmCheckin builds a DeclarativeManagement check-in from the schema type

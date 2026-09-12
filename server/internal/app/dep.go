@@ -11,10 +11,10 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/deploymenttheory/go-apple-dm/appleplatformservices/dep"
-	"github.com/deploymenttheory/go-apple-dm/paging"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/appleplatformservices/dep"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/paging"
+	depinmem "github.com/deploymenttheory/go-apple-dm/devicemanagement/storage/dep/inmem"
 	depsql "github.com/deploymenttheory/go-apple-dm/server/depstore/sqlstore"
-	depinmem "github.com/deploymenttheory/go-apple-dm/storage/dep/inmem"
 )
 
 // DEPConfig connects the reference server to Apple's device enrollment

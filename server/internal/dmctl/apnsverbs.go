@@ -14,9 +14,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/deploymenttheory/go-apple-dm/appleplatformservices/push"
-	"github.com/deploymenttheory/go-apple-dm/appleplatformservices/push/apns"
-	"github.com/deploymenttheory/go-apple-dm/pki/pushcert"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/appleplatformservices/push"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/appleplatformservices/push/apns"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/pki/pushcert"
 )
 
 func runAPNS(ctx context.Context, e *env, args []string) error {

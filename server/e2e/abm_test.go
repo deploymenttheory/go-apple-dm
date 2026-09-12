@@ -13,8 +13,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/deploymenttheory/go-apple-dm/appleplatformservices/axm"
-	"github.com/deploymenttheory/go-apple-dm/appleplatformservices/axm/axmtest"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/appleplatformservices/axm"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/appleplatformservices/axm/axmtest"
 )
 
 // TestE2E_ABMAssignDevices covers E2E-021: paged resource reads, assignment

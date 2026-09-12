@@ -16,7 +16,7 @@ dependencies. Design decisions record how particular sources relate to this impl
 | [Integrating declarative management](https://developer.apple.com/documentation/devicemanagement/integrating-declarative-management) | DDM within an MDM enrollment |
 | [Device assignment](https://developer.apple.com/documentation/devicemanagement/device-assignment) | Device enrollment service APIs and `MachineInfo` |
 | [Apple School and Business Manager APIs](https://developer.apple.com/documentation/apple-school-and-business-manager-api) | Service API documentation |
-| [Device management schema](../../third_party/device-management/) | Pinned machine-readable wire definitions; provenance in `schema/GENERATED_FROM.json` |
+| [Device management schema](../../third_party/device-management/) | Pinned machine-readable wire definitions; provenance in `devicemanagement/schema/GENERATED_FROM.json` |
 | [RFC 8785](https://www.rfc-editor.org/rfc/rfc8785) | Canonical JSON |
 | [RFC 8555](https://www.rfc-editor.org/rfc/rfc8555), [RFC 8894](https://www.rfc-editor.org/rfc/rfc8894) | ACME and SCEP |
 | [RFC 5280](https://www.rfc-editor.org/rfc/rfc5280), [RFC 6960](https://www.rfc-editor.org/rfc/rfc6960) | Certificates, CRLs and OCSP |

@@ -25,9 +25,9 @@ Generator tests cover absent vocabularies, shared codes with distinct meanings a
 ## References
 
 - [internal/schemagen/emit_reasons.go](../../../internal/schemagen/emit_reasons.go)
-- [schema/ddm](../../../schema/ddm)
-- [schema/status](../../../schema/status)
-- [appleplatformservices/push/apns](../../../appleplatformservices/push/apns)
+- [schema/ddm](../../../devicemanagement/schema/ddm)
+- [schema/status](../../../devicemanagement/schema/status)
+- [appleplatformservices/push/apns](../../../devicemanagement/appleplatformservices/push/apns)
 - <https://developer.apple.com/documentation/devicemanagement/statusreport>
 - <https://developer.apple.com/documentation/devicemanagement/status-items>
 - <https://developer.apple.com/documentation/usernotifications/handling-notification-responses-from-apns>

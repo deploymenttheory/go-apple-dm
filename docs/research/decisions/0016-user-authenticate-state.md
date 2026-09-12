@@ -24,8 +24,8 @@ Service tests cover successful, malformed, expired and rejected responses, verif
 
 - [server/service/userauth.go](../../../server/service/userauth.go)
 - [server/service/userauth_test.go](../../../server/service/userauth_test.go)
-- [storage/storagetest](../../../storage/storagetest)
-- [simulator/digest.go](../../../simulator/digest.go)
+- [storage/storagetest](../../../devicemanagement/storage/storagetest)
+- [simulator/digest.go](../../../devicemanagement/simulator/digest.go)
 - <https://developer.apple.com/documentation/devicemanagement/check-in>
 
 Reference source identifiers and paths (relative to the named project):

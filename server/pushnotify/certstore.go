@@ -8,11 +8,11 @@ import (
 	"sync"
 	"time"
 
-	"github.com/deploymenttheory/go-apple-dm/appleplatformservices/push"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/appleplatformservices/push"
 
-	"github.com/deploymenttheory/go-apple-dm/clock"
-	"github.com/deploymenttheory/go-apple-dm/pki/pushcert"
-	"github.com/deploymenttheory/go-apple-dm/storage"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/clock"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/pki/pushcert"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/storage"
 )
 
 // DefaultCertTTL is how long a StoreCertStore trusts a cached certificate

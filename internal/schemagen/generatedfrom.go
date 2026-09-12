@@ -24,7 +24,7 @@ const upstreamRef = "release"
 const upstreamSource = "https://github.com/apple/device-management"
 
 // generatorName identifies what produced the tree.
-const generatorName = "admgen (cmd/admgen, internal/schemagen)"
+const generatorName = "schemagen (cmd/schemagen, internal/schemagen)"
 
 // osFamilies is the order OS versions are reported in, which is Apple's own
 // order in every supportedOS block.

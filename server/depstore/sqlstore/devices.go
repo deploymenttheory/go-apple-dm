@@ -7,8 +7,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/deploymenttheory/go-apple-dm/appleplatformservices/dep"
-	"github.com/deploymenttheory/go-apple-dm/paging"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/appleplatformservices/dep"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/paging"
 )
 
 var deviceCols = []string{"account", "serial_number", "record", "profile_uuid", "profile_status", "op_type", "op_date", "deleted", "first_seen", "updated_at"}
