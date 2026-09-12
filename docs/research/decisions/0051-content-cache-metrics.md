@@ -6,7 +6,7 @@ Apple's OS 27 seed adds an OpenAPI contract for reports produced by Content Cach
 
 ## Decision
 
-`devicemanagement/contentcache` provides the report model, decoding, validation and an HTTP receiver. Its source contract is `openapi/content-cache/metrics_report.json` at Apple commit `b0180185a5e4077070710033341b71d0cbe1a18a`, retained with its license in package testdata. The package is an explicit opt-in seed extension; the repository's stable MDM schema pin does not move.
+`devicemanagement/contentcache` provides the report model, decoding, validation and an HTTP receiver. Its source contract is `openapi/content-cache/metrics_report.json` at Apple commit `b0180185a5e4077070710033341b71d0cbe1a18a`, retained with its license in package testdata. The package is opt-in; its reviewed fixture is verified against the adopted OS 27 source.
 
 Consumers mount the receiver, configure TLS and provide authorization and acceptance callbacks. Authorization runs before the body is read. Acceptance returns success only once the consumer has stored or taken responsibility for the report. The package provides no queue, persistence, authentication scheme or `dmserver` route. An authenticated identity can be carried by middleware in the request context; report hostname and server GUID are not identity credentials.
 

@@ -56,7 +56,7 @@
       "id": "yaml",
       "type": "external",
       "label": "Apple schema repository",
-      "sublabel": "Pinned upstream revision",
+      "sublabel": "OS 27 and historical release",
       "stage": 0,
       "row": 0,
       "tag": "third_party",
@@ -68,7 +68,7 @@
       "id": "loader",
       "type": "backend",
       "label": "Schema generator",
-      "sublabel": "Load and validate YAML",
+      "sublabel": "Merge and validate YAML",
       "stage": 1,
       "row": 0,
       "width": 190,
@@ -188,7 +188,7 @@
       "from": "yaml",
       "to": "generatedfrom",
       "variant": "default",
-      "label": "commit · digest",
+      "label": "commit \u00b7 digest",
       "classification": "provenance",
       "id": "flow-6",
       "purpose": "artifact"
@@ -199,7 +199,7 @@
       "dot": "artifact",
       "title": "Generated and handwritten responsibilities",
       "items": [
-        "make generate emits Go types, registries, support tables, tests, and source provenance from the pinned Apple schemas.",
+        "make generate combines the pinned OS 27 source with the pinned historical release, preserving published fields and older-device wire contracts while adding current availability rules.",
         "Handwritten code applies runtime policy and wraps generated data. Generation does not establish device compatibility by itself."
       ]
     },
@@ -208,15 +208,15 @@
       "title": "Verification",
       "items": [
         "make verify regenerates the outputs and detects changes against the checked-in files. EXPORTED_IDENTIFIERS.lock guards public naming stability.",
-        "GENERATED_FROM.json records the Apple revision and schema digest used for generation."
+        "GENERATED_FROM.json records both Apple revisions and their schema digests. make test requires all eight OS 27 runtime contracts."
       ]
     },
     {
       "dot": "transport",
       "title": "Public documentation",
       "items": [
-        "Apple device-management schema repository — https://github.com/apple/device-management",
-        "Go Modules Reference — https://go.dev/ref/mod"
+        "Apple device-management schema repository \u2014 https://github.com/apple/device-management",
+        "Go Modules Reference \u2014 https://go.dev/ref/mod"
       ]
     }
   ]

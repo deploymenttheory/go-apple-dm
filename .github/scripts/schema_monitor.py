@@ -45,8 +45,8 @@ OS27_TESTS = {
 }
 
 
-def assessment_test_contract(branch):
-    if branch["kind"] == "seed" and branch["ref"] == "seed_OS_27_0":
+def assessment_test_contract(branch, adopted_os27=False):
+    if adopted_os27 or (branch["kind"] == "seed" and branch["ref"] == "seed_OS_27_0"):
         return ["-tags", "schema_seed_os_27"], OS27_TESTS
     return [], set()
 
@@ -61,6 +61,25 @@ def missing_test_evidence(output, required):
         if isinstance(event, dict) and event.get("Action") == "pass" and event.get("Test"):
             passed.add(event.get("Package", "") + "/" + event["Test"])
     return sorted(required - passed)
+
+
+def verify_contracts(repo, directory):
+    """Run the published OS 27 contracts without accepting missing Go tests."""
+    directory.mkdir(parents=True, exist_ok=True)
+    result = {"stages": {}}
+    tags, required = assessment_test_contract({}, adopted_os27=True)
+    packages = sorted({"./" + test.removeprefix(LIBRARY + "/").rsplit("/", 1)[0] for test in required})
+    ok, output = command_stage(result, "tests", ["go", "test", "-race", "-count=1", *tags,
+                              "-run", "^TestSeedOS27", "-json", *packages], repo, directory)
+    missing = missing_test_evidence(output, required)
+    write_json(directory / "result.json", {"passed": ok and not missing,
+               "requiredTests": sorted(required), "missingTests": missing})
+    if not ok or missing:
+        print(output[-6000:])
+        print("Required contracts did not pass: " + ", ".join(missing))
+        return False
+    print(f"PASS: all {len(required)} OS 27 contracts; evidence: {directory}")
+    return True
 
 
 def run(args, cwd=None, env=None, timeout=1800):
@@ -143,6 +162,42 @@ def assert_snapshot(root, expected, project):
         raise ValueError("Candidate or project SHA changed during assessment")
 
 
+def is_ancestor(root, older, newer):
+    try:
+        run(["git", "merge-base", "--is-ancestor", older, newer], root)
+        return True
+    except subprocess.CalledProcessError as exc:
+        if exc.returncode == 1:
+            return False
+        raise
+
+
+def assessment_sources(root, apple, branch):
+    """Keep the published history; an older stable branch is comparison-only."""
+    provenance = json.loads((root / SCHEMA / "GENERATED_FROM.json").read_text())
+    pinned = run(["git", "rev-parse", "HEAD:" + SUBMODULE], root).strip()
+    if provenance["commit"] != pinned:
+        raise ValueError("Published provenance does not match the project gitlink")
+    history = provenance.get("history", {}).get("commit")
+    if history:
+        if run(["git", "rev-parse", "HEAD:" + HISTORY_SUBMODULE], root).strip() != history:
+            raise ValueError("Published historical provenance does not match its gitlink")
+    elif branch["kind"] == "seed":
+        history = pinned
+    if history and not SHA.fullmatch(history):
+        raise ValueError("Historical schema requires a full commit SHA")
+    comparison = (branch["kind"] == "stable" and provenance["ref"].startswith("seed")
+                  and not is_ancestor(apple, pinned, branch["commit"]))
+    if comparison and not history:
+        raise ValueError("Stable comparison requires the retained release baseline")
+    # Once this contract is published, candidates containing that source must
+    # keep executing it, including when Apple's release branch catches up.
+    adopted_os27 = (provenance["ref"] == "seed_OS_27_0" or provenance.get("os_versions", "").split(".")[0] == "27")
+    return {"historyCommit": history, "comparisonOnly": comparison,
+            "auditBaseline": history if comparison else branch["baseline"],
+            "adoptedOS27": adopted_os27 and not comparison}
+
+
 def api_findings(report):
     groups = {}
     for name in report["removed"]:
@@ -173,21 +228,16 @@ def assess(repo, manifest, branch, directory):
             run(["git", "clone", "--quiet", "--shared", repo, root])
             run(["git", "checkout", "--quiet", "--detach", manifest["projectCommit"]], root)
             run(["git", "clone", "--quiet", "--no-checkout", manifest["upstream"], apple])
+            result.update(assessment_sources(root, apple, branch))
             run(["git", "clone", "--quiet", "--shared", apple, baseline])
-            run(["git", "checkout", "--quiet", "--detach", branch["baseline"]], baseline)
+            run(["git", "checkout", "--quiet", "--detach", result["auditBaseline"]], baseline)
             run(["git", "clone", "--quiet", "--shared", apple, root / SUBMODULE])
             run(["git", "checkout", "--quiet", "--detach", branch["commit"]], root / SUBMODULE)
-            if branch["kind"] == "seed":
-                # Keep the project's published source as a pinned historical
-                # input. Schema deletions must not strand older fleet members.
-                pinned = run(["git", "rev-parse", "HEAD:" + SUBMODULE], root).strip()
-                if not SHA.fullmatch(pinned):
-                    raise ValueError("Historical schema requires a full commit SHA")
+            if result["historyCommit"]:
                 run(["git", "clone", "--quiet", "--shared", apple, root / HISTORY_SUBMODULE])
-                run(["git", "checkout", "--quiet", "--detach", pinned], root / HISTORY_SUBMODULE)
+                run(["git", "checkout", "--quiet", "--detach", result["historyCommit"]], root / HISTORY_SUBMODULE)
                 for key, value in {"path": HISTORY_SUBMODULE, "url": UPSTREAM, "branch": manifest["stableRef"]}.items():
                     run(["git", "config", "--file", ".gitmodules", "submodule." + HISTORY_SUBMODULE + "." + key, value], root)
-                result["historyCommit"] = pinned
             assert_snapshot(root, branch["commit"], manifest["projectCommit"])
             result["stages"]["snapshot"] = {"state": "passed"}
             result["projectContext"] = project_context(root)
@@ -195,12 +245,22 @@ def assess(repo, manifest, branch, directory):
             shutil.copytree(root / SCHEMA, old_api)
             tool = scratch / "schemagen"
             run(["go", "build", "-o", tool, "./cmd/schemagen"], root)
+            if result["comparisonOnly"]:
+                # This result cannot be adopted. Compare release evolution
+                # against its retained release baseline, not the newer seed API.
+                (old_api / "EXPORTED_IDENTIFIERS.lock").unlink()
+                run([tool, "-schema", baseline, "-history", "", "-ref", manifest["stableRef"],
+                     "-out", old_api, "generate"], root)
+                shutil.copyfile(old_api / "EXPORTED_IDENTIFIERS.lock", root / SCHEMA / "EXPORTED_IDENTIFIERS.lock")
+                result["apiBaseline"] = "retained-release"
+            else:
+                result["apiBaseline"] = "published-project"
             base_args = [tool, "-schema", root / SUBMODULE, "-ref", branch["ref"]]
             ok, text = command_stage(result, "audit", base_args + ["-baseline", baseline, "-report", directory, "audit"], root, directory)
             if not ok:
                 raise ValueError("The schema audit did not produce a complete report")
             audit = json.loads(text)
-            if audit["candidateCommit"] != branch["commit"] or audit["baselineCommit"] != branch["baseline"]:
+            if audit["candidateCommit"] != branch["commit"] or audit["baselineCommit"] != result["auditBaseline"]:
                 raise ValueError("Audit provenance does not match discovered commits")
             result["findings"].extend(audit["findings"])
             result["changes"] = audit["changes"]
@@ -256,7 +316,7 @@ def assess_generated(result, base_args, baseline, old_api, tool, root, directory
             source = root.parent / "support-probe.go"
             shutil.copyfile(probe, source)
             command_stage(result, "boundaries", ["go", "run", source, directory / "boundaries.json"], root, directory, env)
-        tags, required = assessment_test_contract(result["branch"])
+        tags, required = assessment_test_contract(result["branch"], result.get("adoptedOS27", False))
         tests_ok, output = command_stage(result, "tests", ["go", "test", "-race", "-count=1", *tags, "./devicemanagement/schema/...", "./devicemanagement/mdmprotocol/...", "./devicemanagement/contentcache", "./server/service", "./server/ddmadapter/...", "-json"], root, directory, env)
         missing = missing_test_evidence(output, required)
         result["stages"]["tests"]["requiredTests"] = sorted(required)
@@ -276,6 +336,8 @@ def assess_generated(result, base_args, baseline, old_api, tool, root, directory
         if run(["git", "rev-parse", "HEAD"], root / HISTORY_SUBMODULE).strip() != result["historyCommit"]:
             raise ValueError("Historical schema changed during assessment")
         paths.append(HISTORY_SUBMODULE)
+    if result.get("comparisonOnly"):
+        return
     run(["git", "add", "--", *paths], root)
     names = run(["git", "diff", "--cached", "--name-only"], root).splitlines()
     if any(not allowed_path(name) for name in names):
@@ -295,7 +357,7 @@ def stage_evidence(stage, text):
                 event = json.loads(line)
             except ValueError:
                 continue
-            if event.get("Action") == "fail":
+            if isinstance(event, dict) and event.get("Action") == "fail":
                 failures.append({"path": event.get("Package", "") + "/" + event.get("Test", "package"), "detail": "Go reports failure; see tests.log for the complete output."})
     if failures:
         return sorted(failures, key=lambda item: item["path"])
@@ -312,11 +374,13 @@ def render_report(result):
     branch = result["branch"]
     text = ["Apple schema " + branch["kind"] + " assessment: `" + branch["ref"] + "`", "",
             "Project: `" + result["projectCommit"] + "`", "",
-            "Apple baseline: `" + branch["baseline"] + "`; candidate: `" + branch["commit"] + "`.", "",
+            "Apple baseline: `" + result.get("auditBaseline", branch["baseline"]) + "`; candidate: `" + branch["commit"] + "`.", "",
             "| Stage | Result |", "|---|---|"]
     names = list(STAGES) + [name for name in result["stages"] if name not in STAGES]
     text += ["| " + name + " | " + result["stages"][name]["state"] + " |" for name in names]
     text += ["", "Passing checks establish the listed scenarios, not complete OS or real-device support.", ""]
+    if result.get("comparisonOnly"):
+        text += ["**Comparison only:** Apple stable does not contain the adopted seed. API checks use the retained release baseline; this report does not authorize replacing the published API. No downgrade PR is produced.", ""]
     for item in result["findings"]:
         text += ["- **" + item["title"] + "** (" + item["kind"] + "): " + item["action"]]
     text += ["", "Generated preview available: **" + str(result["patch"]).lower() + "**.", ""]
@@ -564,7 +628,9 @@ def issue_actions(existing, reports, manifest, run_url, repository="deploymentth
             continue
         result = by_branch.get(old["branch"])
         status = None
-        if result and result["complete"] and old["kind"] == "failure" and result["stages"].get(old["stage"], {}).get("state") == "passed":
+        if (result and result["complete"] and old["kind"] == "failure"
+                and not (result.get("comparisonOnly") and old["stage"] in ("verify", "api"))
+                and result["stages"].get(old["stage"], {}).get("state") == "passed"):
             status = "verified"
         elif manifest.get("complete") and old["branch"] == "discovery":
             status = "verified"
@@ -598,6 +664,10 @@ def publish_patch(repo, directory, result, github, token, run_url):
         raise ValueError("The schema branch has a PR without the monitor ownership marker")
     body = "<!-- schema-monitor-pr -->\n" + render_report(result) + "\nFull evidence: " + run_url + "\n"
     body += "\nEngineering issues: https://github.com/" + github.repository + "/issues?q=is%3Aissue+label%3Aschema-monitor\n"
+    if result.get("comparisonOnly"):
+        if current:
+            github.request("PATCH", "pulls/" + str(current["number"]), {"state": "closed", "body": body})
+        return "not-applicable"
     if branch["kind"] == "seed":
         body += "\nThis draft is a preview. Stable adoption, server dependency updates and compatibility fixes require separate review.\n"
     if current and branch["kind"] == "seed" and branch["commit"] == branch["baseline"]:
@@ -746,7 +816,7 @@ def retire_previews(github, manifest):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("action", choices=("discover", "assess", "publish"))
+    parser.add_argument("action", choices=("discover", "assess", "publish", "contracts"))
     parser.add_argument("--repo", type=Path, default=ROOT)
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--manifest", type=Path)
@@ -756,6 +826,8 @@ def main():
     parser.add_argument("--report-only", action="store_true")
     parser.add_argument("--run-url", default="")
     args = parser.parse_args()
+    if args.action == "contracts":
+        return 0 if verify_contracts(args.repo.resolve(), args.output.resolve()) else 1
     if args.action == "discover":
         manifest = discover(args.repo, args.output, args.upstream)
         if os.environ.get("GITHUB_OUTPUT"):

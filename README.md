@@ -16,6 +16,10 @@ in-memory implementations under [devicemanagement/](devicemanagement/). The `ser
 adapters and application wiring. Both modules require Go 1.27. The API is pre-1.0 and may
 change between minor versions.
 
+The generated API combines Apple’s OS 27 seed with a pinned historical release,
+preserving management of older devices. Availability checks use each device’s OS,
+version, channel and enrollment context.
+
 ## Quick start
 
 Read the [getting-started guide](docs/getting-started/getting-started.md) for a
@@ -113,7 +117,7 @@ component relationships, protocol exchanges and lifecycle transitions.
   event sinks and audit records.
 - An opt-in [content-cache metrics library](devicemanagement/contentcache/) based on
   Apple's OS 27 seed OpenAPI, with an embeddable receiver and caller-owned authentication
-  and storage. The stable MDM schema pin is independent of this extension.
+  and storage. Consumers mount the receiver and provide authorization and acceptance callbacks.
 
 Simulator tests verify the modeled protocol exchanges. Physical-device interoperability,
 hardware attestation and deployment-specific trust configuration require separate validation.

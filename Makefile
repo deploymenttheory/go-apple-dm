@@ -60,6 +60,13 @@ test:
 	@rm -rf $(COVER_DIR)/unit && mkdir -p $(COVER_DIR)/unit
 	$(GO) test -race -shuffle=on -count=1 -cover -coverpkg=$(LIB_MOD)/... $(PKGS) -args -test.gocoverdir=$(PWD)/$(COVER_DIR)/unit
 	cd $(SERVER_DIR) && $(GO) test -race -shuffle=on -count=1 -cover -coverpkg=$(ALL_PKGS) ./... -args -test.gocoverdir=$(PWD)/$(COVER_DIR)/unit
+	$(MAKE) test-schema-contracts
+
+## test-schema-contracts: require passing evidence for every published OS 27 contract
+test-schema-contracts:
+	python3 .github/scripts/schema_monitor.py contracts --output $(COVER_DIR)/schema-contracts
+
+.PHONY: test-schema-contracts
 
 ## test-storage: storage contract suites against SQL backends (needs TEST_POSTGRES_DSN / TEST_MYSQL_DSN; `make testdb-up` starts both in Docker and prints the exports)
 test-storage: test-contract

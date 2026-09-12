@@ -1023,9 +1023,6 @@ func (s *Store) Commands(
 	return out, nil
 }
 
-// Clear implements storage.CommandQueue in indexed batches of
-// ClearBatchSize rows. Each batch is its own statement, so a failure part
-// way through returns the count applied so far; callers may simply retry.
 // ClearCommand implements storage.CommandClearer.
 func (s *Store) ClearCommand(ctx context.Context, id mdm.EnrollmentID, uuid string) (int64, error) {
 	if uuid == "" {
@@ -1034,6 +1031,9 @@ func (s *Store) ClearCommand(ctx context.Context, id mdm.EnrollmentID, uuid stri
 	return s.Clear(ctx, id, storage.ClearFilter{CommandUUID: uuid})
 }
 
+// Clear implements storage.CommandQueue in indexed batches of
+// ClearBatchSize rows. Each batch is its own statement, so a failure part
+// way through returns the count applied so far; callers may simply retry.
 func (s *Store) Clear(
 	ctx context.Context,
 	id mdm.EnrollmentID,

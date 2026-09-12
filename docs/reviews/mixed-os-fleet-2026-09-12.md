@@ -47,17 +47,16 @@ needs clearing; the service does not risk clearing unrelated commands.
 
 ## Reproducibility and release selection
 
-Seed previews now include a pinned `third_party/device-management-history`
+The normal library and seed previews include a pinned `third_party/device-management-history`
 gitlink, both source records in `GENERATED_FROM.json`, and eight mandatory runtime
-contracts. Normal generation and verification on the preview discover that
+contracts. Normal generation and verification discover that
 historical input from `.gitmodules`. Snapshot and publication checks verify the
 historical pin as well as the candidate pin.
 
-The working branch retains the previously selected stable source pin. Its
-runtime inventory/dispatch fixes are active; the combined OS 27 generated API is
-verified in an isolated candidate and is prepared as a reproducible preview.
-Promoting that candidate into the normal library is a separate release-selection
-choice, pending the question raised after the mixed-fleet clarification.
+The combined OS 27 API is promoted into the normal library with the historical
+release pin retained. Runtime inventory and dispatch fixes apply to all supported
+fleet versions. `make test` requires all eight OS 27 contracts. See the
+[completion report](os27-promotion-2026-09-12.md) for fresh promotion validation.
 
 See [decision 0052](../research/decisions/0052-mixed-os-fleets.md) for the interface,
 compatibility and custom-store contracts. Local validation artifacts are retained

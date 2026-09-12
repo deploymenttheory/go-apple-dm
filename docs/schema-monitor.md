@@ -16,24 +16,35 @@ failure requiring investigation.
 1. Record the project commit, Apple default branch and commit, project submodule
    pin, and all seed names and commits in `discovery.json`.
 2. Assess stable against the project pin, and each seed against that same stable
-   snapshot. Matrix jobs run independently with at most two assessments in parallel.
+   snapshot. If stable does not yet contain the adopted seed, use the retained
+   release baseline for a comparison-only assessment. Matrix jobs run independently
+   with at most two assessments in parallel.
 3. Compare raw schema structure and collect strict parsing failures across all
    files. Group repeated causes and retain independent protocol/support changes.
-4. If parsing succeeds, retain the project's pinned historical schema for seed
+4. If parsing succeeds, retain the project's pinned historical schema for all
    candidates, generate the combined API, verify deterministic
    output and exported-name removals, and compare generated public declarations,
-   signatures and serialization tags against the project API.
+   signatures and serialization tags against the project API. Comparison-only
+   stable assessments instead compare against freshly generated retained-release
+   types and their identifier lock; they do not certify published API compatibility.
 5. Build both Go modules; verify the server resolves the candidate library through
    `go.work`. Compare source-derived support cases with the compiled tables and run
    generated conformance, MDM protocol, server service and DDM adapter tests with
    the race detector. Changed support cases include stable and candidate OS
    boundaries and device/user, supervision, ADE, user approval, shared iPad and
    user enrollment contexts.
-6. Reconcile engineering issues and publish generated changes. Stable uses one
+6. Reconcile engineering issues and publish generated changes. Adoptable stable uses one
    normal PR on `schema/update-stable`; each seed uses one draft on
    `schema/preview/<Apple branch>`. A parsing/generation failure creates issues
    without an empty or partially generated PR. Existing previews explain when
    their content represents an older candidate.
+
+When stable predates the adopted seed, publication is not applicable: the monitor
+produces no downgrade patch and closes any existing monitor-owned stable update
+PR. Its report identifies the release baseline used. Such a comparison cannot
+close an existing published-API or identifier-verification incident. Once stable
+contains the adopted seed, normal published-API checks and update PRs resume.
+The historical gitlink remains pinned through both paths.
 
 Every report distinguishes `passed`, `failed`, `blocked` and, for publication,
 `not-applicable`. An assessment can complete while reporting an incompatibility.
@@ -45,14 +56,18 @@ Passing tests establish those scenarios. They do not certify every Apple behavio
 or replace testing on real devices. Protocol prose and new server responsibilities
 require an engineer's review even when compilation and conformance tests pass.
 
-For `seed_OS_27_0`, the tests stage also enables `schema_seed_os_27` and requires
+For `seed_OS_27_0` and candidates assessed against the adopted OS 27 API, the tests
+stage also enables `schema_seed_os_27` and requires
 explicit passing JSON test events for enhanced-log commands and status, software
 update removal, Return to Service retry, the reviewed content-cache contract,
 mixed-fleet dispatch, queued commands after an upgrade, and legacy-profile wire
 compatibility. All eight contracts must pass.
-Missing or skipped tests fail the stage. Stable assessments do not compile these
-seed-only types. Content-cache tests run in both assessments; the seed additionally
+Missing or skipped tests fail the stage. Comparison-only older stable assessments
+do not compile these types. Content-cache tests run in both assessments; OS 27 additionally
 checks its OpenAPI file against the reviewed library fixture.
+
+`make test` also runs `make test-schema-contracts`, using the same eight-test
+evidence check. Its JSON test log and result are retained in `cover/schema-contracts`.
 
 ## Engineering issues
 

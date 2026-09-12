@@ -127,10 +127,10 @@ type UserAuthenticateHandler func(ctx context.Context, r *mdm.Request, m *checki
 // devices can erase fully without app preservation. A nil response is treated as
 // disabled.
 //
-// With OS 27 seed-generated check-in types, policy can set the optional
+// Policy can set the optional
 // ShouldRetryEnrollment field for iOS 27 or later. Nil omits the option and
 // retains Apple's false default; explicit true requests a retry after failure.
-// The caller selects eligible targets. The stable schema does not expose it.
+// The caller selects eligible targets.
 type ReturnToServiceHandler func(ctx context.Context, r *mdm.Request, m *checkin.ReturnToService) (*checkin.ReturnToServiceResponse, error)
 
 // ReenrollPolicy decides whether an Authenticate from an enrollment whose

@@ -2,6 +2,8 @@
 
 Branch: `fix/apple-schema-incidents-40-46`.
 
+This is the historical pre-promotion assessment. The [completion report](os27-promotion-2026-09-12.md) records the adopted OS 27 API and final validation.
+
 The subsequent [mixed-fleet follow-up](mixed-os-fleet-2026-09-12.md) supersedes
 the seed API blockers recorded in this initial assessment. It preserves older
 wire contracts while adding OS 27 compatibility.

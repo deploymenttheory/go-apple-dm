@@ -36,7 +36,7 @@ func TestBuildWholeTree(t *testing.T) {
 		}
 	}
 	cmds := byName["commands"]
-	if len(cmds.Schemas) != 65 {
+	if len(cmds.Schemas) != 67 {
 		t.Fatalf("commands: %d schemas", len(cmds.Schemas))
 	}
 	for _, st := range cmds.Schemas {
