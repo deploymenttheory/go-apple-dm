@@ -61,6 +61,11 @@ Edit project-authored generated comments in `internal/schemagen`, then run `make
 `devicemanagement/schema/GENERATED_FROM.json`. Record intentional exported-name removals in
 [schema/ALLOWED_REMOVALS.md](devicemanagement/schema/ALLOWED_REMOVALS.md).
 
+The [Apple schema monitor](docs/schema-monitor.md) checks Apple's stable default
+and every `seed*` branch independently. Use its report-only mode to reproduce a
+compatibility assessment. Seed previews remain drafts; fix generator and server
+compatibility findings in separate reviewed changes.
+
 ## Pull requests
 
 Use Conventional Commit titles. Explain the problem, resulting behavior, relevant tradeoffs

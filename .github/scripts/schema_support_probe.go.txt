@@ -1,0 +1,91 @@
+// This probe is copied outside the module and compiled against the candidate
+// workspace by schema_monitor.py. Keeping it as .txt avoids creating a package.
+package main
+
+import (
+	"encoding/json"
+	"fmt"
+	"os"
+
+	_ "github.com/deploymenttheory/go-apple-dm/devicemanagement/schema/checkin"
+	_ "github.com/deploymenttheory/go-apple-dm/devicemanagement/schema/commands"
+	_ "github.com/deploymenttheory/go-apple-dm/devicemanagement/schema/ddm"
+	_ "github.com/deploymenttheory/go-apple-dm/devicemanagement/schema/ddmproto"
+	_ "github.com/deploymenttheory/go-apple-dm/devicemanagement/schema/errors"
+	_ "github.com/deploymenttheory/go-apple-dm/devicemanagement/schema/other"
+	_ "github.com/deploymenttheory/go-apple-dm/devicemanagement/schema/profiles"
+	_ "github.com/deploymenttheory/go-apple-dm/devicemanagement/schema/status"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/schema/support"
+)
+
+type probe struct {
+	Family     string `json:"family"`
+	Path       string `json:"path"`
+	OS         string `json:"os"`
+	Version    string `json:"version"`
+	Context    string `json:"context"`
+	Supported  bool   `json:"supported"`
+	Deprecated bool   `json:"deprecated"`
+}
+
+func main() {
+	if err := check(); err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(1)
+	}
+}
+
+func check() error {
+	if len(os.Args) != 2 {
+		return fmt.Errorf("usage: support-probe cases.json")
+	}
+	data, err := os.ReadFile(os.Args[1])
+	if err != nil {
+		return err
+	}
+	var cases []probe
+	if err := json.Unmarshal(data, &cases); err != nil {
+		return err
+	}
+	failed := 0
+	for _, p := range cases {
+		entry := support.Lookup(p.Family, p.Path)
+		if entry == nil {
+			fmt.Printf("missing support entry %s/%s\n", p.Family, p.Path)
+			failed++
+			continue
+		}
+		version, err := support.ParseVersion(p.Version)
+		if err != nil {
+			return err
+		}
+		target := support.Target{OS: support.OS(p.OS), Version: version, Channel: support.ChannelDevice, Supervised: true, DEP: true, UserApproved: true}
+		switch p.Context {
+		case "user":
+			target.Channel = support.ChannelUser
+		case "unsupervised":
+			target.Supervised = false
+		case "non-dep":
+			target.DEP = false
+		case "not-user-approved":
+			target.UserApproved = false
+		case "shared-device":
+			target.SharedIPad = true
+		case "shared-user":
+			target.SharedIPad = true
+			target.Channel = support.ChannelUser
+		case "user-enrollment":
+			target.UserEnrollment = true
+		}
+		got := entry.Check(target)
+		if got.Supported != p.Supported || got.Deprecated != p.Deprecated {
+			fmt.Printf("%s/%s %s %s %s: supported=%t deprecated=%t, expected %t/%t: %s\n", p.Family, p.Path, p.OS, p.Version, p.Context, got.Supported, got.Deprecated, p.Supported, p.Deprecated, got.Reason)
+			failed++
+		}
+	}
+	if failed > 0 {
+		return fmt.Errorf("%d of %d source-derived support probes failed", failed, len(cases))
+	}
+	fmt.Printf("Passed %d source-derived support boundary/context probes\n", len(cases))
+	return nil
+}

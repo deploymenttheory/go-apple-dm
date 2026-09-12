@@ -8,11 +8,19 @@
 //	schemagen verify       compare output and check exported identifiers
 //	schemagen identifiers  list generated exported names
 //	schemagen versions     report newest introduced OS versions in the schema
+//	schemagen audit        compare raw schemas and collect strict parsing failures
+//	schemagen api-diff     compare generated declarations and wire tags
+//	schemagen boundaries   derive changed support cases from source schemas
 //
 // The -schema and -out options select source and output directories. make
 // generate and make verify initialize the pinned submodule before running the
 // command. Generated provenance derives from the schema checkout's commit, date
 // and contents; it does not use the generator's execution time.
+// The -ref option selects provenance explicitly, otherwise the command reads
+// the submodule's configured branch. Audit and boundaries take a -baseline
+// source tree; api-diff takes baseline and candidate generated directories.
+// The compatibility monitor uses immutable checkouts and invokes the command
+// directly, because make's submodule prerequisite restores the committed pin.
 //
 // # References
 //
