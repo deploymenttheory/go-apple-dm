@@ -13,7 +13,7 @@ import (
 	"strings"
 )
 
-// GeneratedFrom mirrors schema/GENERATED_FROM.json: the Apple source this
+// GeneratedFrom mirrors devicemanagement/schema/GENERATED_FROM.json: the Apple source this
 // tree was generated from.
 //
 //nolint:tagliatelle // keys match the GENERATED_FROM.json file format
@@ -31,7 +31,7 @@ type GeneratedFrom struct {
 	Generator  string `json:"generator"`
 }
 
-// ReadGeneratedFrom loads schema/GENERATED_FROM.json.
+// ReadGeneratedFrom loads devicemanagement/schema/GENERATED_FROM.json.
 func ReadGeneratedFrom(path string) (*GeneratedFrom, error) {
 	data, err := os.ReadFile(filepath.Clean(path))
 	if err != nil {

@@ -9,8 +9,8 @@ import (
 	"strings"
 )
 
-// ModulePath is the import path root of generated packages.
-const ModulePath = "github.com/deploymenttheory/go-apple-dm"
+// LibraryImportRoot is the import path root of generated packages.
+const LibraryImportRoot = "github.com/deploymenttheory/go-apple-dm/devicemanagement"
 
 // Options control generation.
 type Options struct {
@@ -18,7 +18,7 @@ type Options struct {
 	Commit string
 }
 
-// Files maps a path relative to schema/ to file contents.
+// Files maps a path relative to devicemanagement/schema/ to file contents.
 type Files map[string][]byte
 
 // Generate emits every package from a built tree.
@@ -126,13 +126,13 @@ func (e *emitter) docFile() []byte {
 			"types, validation, and support metadata from Apple's schema (decision record 0003). "+
 			"Every type carries plist and json struct tags with Apple's wire keys, a Validate method driven "+
 			"by the schema's constraints, and support metadata queryable through Support(path) or the "+
-			"schema/support package.",
+			"devicemanagement/schema/support package.",
 		what,
 	), width))
 	sb.WriteString("//\n")
 	sb.WriteString(wrap("// ",
 		"Edit the generator to change this package. admgen verify fails when "+
-			"regeneration would change it or drop an exported name (schema/EXPORTED_IDENTIFIERS.lock). Protocol semantics "+
+			"regeneration would change it or drop an exported name (devicemanagement/schema/EXPORTED_IDENTIFIERS.lock). Protocol semantics "+
 			"that Apple documents only in prose live in the hand-written packages that import this one.",
 		width))
 	sb.WriteString("//\n// # References\n//\n")
@@ -152,7 +152,7 @@ func (e *emitter) docFile() []byte {
 	fmt.Fprintf(&sb, "//   - Schema: third_party/device-management/%s/**\n", dir)
 	fmt.Fprintf(
 		&sb,
-		"//   - Upstream: https://github.com/apple/device-management at commit %s (schema/GENERATED_FROM.json)\n",
+		"//   - Upstream: https://github.com/apple/device-management at commit %s (devicemanagement/schema/GENERATED_FROM.json)\n",
 		e.opts.Commit,
 	)
 	fmt.Fprintf(&sb, "package %s\n", e.pkg.Name)

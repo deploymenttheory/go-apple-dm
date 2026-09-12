@@ -29,8 +29,8 @@ func (e *emitter) conformanceFile() []byte {
 	fmt.Fprintf(
 		b,
 		"\n\t\"%s/schema/internal/conformance\"\n\t\"%s/schema/%s\"\n)\n\n",
-		ModulePath,
-		ModulePath,
+		LibraryImportRoot,
+		LibraryImportRoot,
 		e.pkg.Name,
 	)
 	if needTime {

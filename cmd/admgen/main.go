@@ -18,13 +18,19 @@ func main() {
 
 func run(args []string, out *os.File) error {
 	fs := flag.NewFlagSet("admgen", flag.ContinueOnError)
-	schemaRoot := fs.String("schema", "third_party/device-management", "path to apple/device-management checkout")
-	outDir := fs.String("out", "schema", "output directory")
+	schemaRoot := fs.String(
+		"schema",
+		"third_party/device-management",
+		"path to apple/device-management checkout",
+	)
+	outDir := fs.String("out", "devicemanagement/schema", "output directory")
 	if err := fs.Parse(args); err != nil {
 		return err
 	}
 	if fs.NArg() != 1 {
-		return fmt.Errorf("usage: admgen [-schema dir] [-out dir] generate|verify|identifiers|versions")
+		return fmt.Errorf(
+			"usage: admgen [-schema dir] [-out dir] generate|verify|identifiers|versions",
+		)
 	}
 	// Commit is left empty: schemagen reads it from the checkout. Reading it
 	// from the output directory made a submodule bump stamp the old commit.

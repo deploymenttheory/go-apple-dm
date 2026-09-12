@@ -33,7 +33,7 @@ func TestLoadAllYAMLNoUnknownKeys(t *testing.T) {
 			t.Errorf("schema without path or title: %+v", s)
 		}
 	}
-	// Counts from the pinned commit in schema/GENERATED_FROM.json. A change here
+	// Counts from the pinned commit in devicemanagement/schema/GENERATED_FROM.json. A change here
 	// means Apple added or removed files: update GENERATED_FROM and this table.
 	want := map[Family]int{
 		FamilyCommands: 65, FamilyCheckin: 9, FamilyErrors: 5, FamilyProfiles: 127,
@@ -70,7 +70,12 @@ func TestClassify(t *testing.T) {
 		{"declarative/declarations/activations/simple.yaml", FamilyDDM, KindActivation, false},
 		{"declarative/declarations/assets/data.yaml", FamilyDDM, KindAsset, false},
 		{"declarative/declarations/assets/credentials/scep.yaml", FamilyDDM, KindCredential, false},
-		{"declarative/declarations/configurations/legacy.yaml", FamilyDDM, KindConfiguration, false},
+		{
+			"declarative/declarations/configurations/legacy.yaml",
+			FamilyDDM,
+			KindConfiguration,
+			false,
+		},
 		{"declarative/declarations/management/properties.yaml", FamilyDDM, KindManagement, false},
 		{"declarative/protocol/statusreport.yaml", FamilyDDMProto, KindDefault, false},
 		{"declarative/status/device.model.family.yaml", FamilyStatus, KindDefault, false},
@@ -139,7 +144,10 @@ payloadkeys:
 	item := s.PayloadKeys[0].Subkeys[0]
 	children := item.Subkeys[1]
 	if children.RecursiveTo != "Groups" {
-		t.Fatalf("RecursiveTo = %q, want Groups (owner of the aliased subkeys)", children.RecursiveTo)
+		t.Fatalf(
+			"RecursiveTo = %q, want Groups (owner of the aliased subkeys)",
+			children.RecursiveTo,
+		)
 	}
 	if len(children.Subkeys) != 0 {
 		t.Fatalf("recursive subkeys should be empty, got %d", len(children.Subkeys))
@@ -160,7 +168,8 @@ payloadkeys:
 	if err != nil {
 		t.Fatalf("Parse shared: %v", err)
 	}
-	if len(s.PayloadKeys[1].Subkeys) != 1 || s.PayloadKeys[1].Subkeys[0].Key != "X" || s.PayloadKeys[1].RecursiveTo != "" {
+	if len(s.PayloadKeys[1].Subkeys) != 1 || s.PayloadKeys[1].Subkeys[0].Key != "X" ||
+		s.PayloadKeys[1].RecursiveTo != "" {
 		t.Fatalf("shared alias not expanded: %+v", s.PayloadKeys[1])
 	}
 	// Recursive alias where the owner has no subkeytype falls back to key name.
@@ -183,7 +192,8 @@ payloadkeys:
 	if got := s.PayloadKeys[0].Subkeys[0].Subkeys[0].RecursiveTo; got != "Tree" {
 		t.Fatalf("RecursiveTo = %q, want Tree", got)
 	}
-	if ownerName(nil) != "" || ownerName(&yaml.Node{Kind: yaml.ScalarNode}) != "" || ownerName(&yaml.Node{Kind: yaml.MappingNode}) != "" {
+	if ownerName(nil) != "" || ownerName(&yaml.Node{Kind: yaml.ScalarNode}) != "" ||
+		ownerName(&yaml.Node{Kind: yaml.MappingNode}) != "" {
 		t.Fatal("ownerName of non-mapping or keyless mapping should be empty")
 	}
 }
@@ -223,16 +233,28 @@ func TestLoadErrors(t *testing.T) {
 	if err := os.MkdirAll(filepath.Join(dir, "mdm", "commands"), 0o750); err != nil {
 		t.Fatal(err)
 	}
-	if err := os.WriteFile(filepath.Join(dir, "mdm", "commands", "bad.yaml"), []byte("title: [\n"), 0o600); err != nil {
+	if err := os.WriteFile(
+		filepath.Join(dir, "mdm", "commands", "bad.yaml"),
+		[]byte("title: [\n"),
+		0o600,
+	); err != nil {
 		t.Fatal(err)
 	}
 	if _, err := Load(dir); err == nil {
 		t.Fatal("expected decode error")
 	}
-	if err := os.WriteFile(filepath.Join(dir, "mdm", "commands", "bad.yaml"), []byte("title: ok\n"), 0o600); err != nil {
+	if err := os.WriteFile(
+		filepath.Join(dir, "mdm", "commands", "bad.yaml"),
+		[]byte("title: ok\n"),
+		0o600,
+	); err != nil {
 		t.Fatal(err)
 	}
-	if err := os.WriteFile(filepath.Join(dir, "stray.yaml"), []byte("title: stray\n"), 0o600); err != nil {
+	if err := os.WriteFile(
+		filepath.Join(dir, "stray.yaml"),
+		[]byte("title: stray\n"),
+		0o600,
+	); err != nil {
 		t.Fatal(err)
 	}
 	if _, err := Load(dir); !errors.Is(err, ErrUnknownFamily) {

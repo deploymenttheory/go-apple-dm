@@ -53,6 +53,7 @@ var tierNames = map[int]string{
 // layout: the import path states the tier, so this function is a reading of
 // the tree rather than a list to maintain.
 func tierOf(pkg string) int {
+	pkg = strings.TrimPrefix(pkg, "devicemanagement/")
 	switch {
 	case strings.HasPrefix(pkg, "cmd/"), strings.HasPrefix(pkg, "e2e"),
 		pkg == "internal/app", strings.HasPrefix(pkg, "internal/dmctl"),
@@ -83,6 +84,7 @@ func tierOf(pkg string) int {
 // these are the packages scripts/coverage-exempt.txt exempts, for the same
 // reason.
 func isScaffolding(pkg string) bool {
+	pkg = strings.TrimPrefix(pkg, "devicemanagement/")
 	return strings.HasSuffix(path.Base(pkg), "test") ||
 		pkg == "testpki" ||
 		pkg == "schema/internal/conformance"
@@ -96,7 +98,7 @@ func isScaffolding(pkg string) bool {
 // choice; the test rejects additions to or unrecorded removals from this
 // exception set.
 var knownTierExceptions = map[string][]string{
-	"mdmprotocol/enroll/ade": {"appleplatformservices/gdmf"},
+	"devicemanagement/mdmprotocol/enroll/ade": {"devicemanagement/appleplatformservices/gdmf"},
 }
 
 // TestTiersOnlyImportDownwards is the boundary decision record 0044 claims,
@@ -176,7 +178,7 @@ func TestNoUnitCycles(t *testing.T) {
 func TestPushcertImportsOnlyTheStandardLibrary(t *testing.T) {
 	t.Parallel()
 	g := load(t)
-	if got := g.Imports["pki/pushcert"]; len(got) > 0 {
+	if got := g.Imports["devicemanagement/pki/pushcert"]; len(got) > 0 {
 		t.Errorf(
 			"pki/pushcert must import nothing in this module so server/storage can validate a "+
 				"certificate without depending on push; it imports %s",
@@ -191,11 +193,48 @@ func TestPushcertImportsOnlyTheStandardLibrary(t *testing.T) {
 func TestEventDependsOnlyOnTheProtocolCore(t *testing.T) {
 	t.Parallel()
 	g := load(t)
-	want := []string{"mdmprotocol/mdm"}
-	if got := g.Imports["mdmprotocol/event"]; fmt.Sprint(got) != fmt.Sprint(want) {
+	want := []string{"devicemanagement/mdmprotocol/mdm"}
+	if got := g.Imports["devicemanagement/mdmprotocol/event"]; fmt.Sprint(got) != fmt.Sprint(want) {
 		t.Errorf(
 			"event must depend only on mdm, so every domain can publish to it; it imports %v",
 			got,
 		)
+	}
+}
+
+// Library packages belong under devicemanagement. The remaining root packages
+// provide shared URL validation, generation and repository checks.
+func TestLibraryPackageLocations(t *testing.T) {
+	t.Parallel()
+	for _, pkg := range load(t).Packages() {
+		switch {
+		case strings.HasPrefix(pkg, "devicemanagement/"), strings.HasPrefix(pkg, "server/"):
+		case pkg == "internal/httpsurl", pkg == "internal/layout",
+			pkg == "internal/schemagen", pkg == "cmd/admgen":
+		default:
+			t.Errorf("library package %s must live under devicemanagement", pkg)
+		}
+	}
+}
+
+// A new container directory must not make protocol packages fall through to
+// the foundation tier, which would hide upward dependencies.
+func TestLibraryTierClassification(t *testing.T) {
+	t.Parallel()
+	for pkg, want := range map[string]int{
+		"devicemanagement/clock":                     tierFoundation,
+		"devicemanagement/internal/cbor":             tierFoundation,
+		"devicemanagement/schema/commands":           tierSchema,
+		"devicemanagement/mdmprotocol/ddm":           tierProtocol,
+		"devicemanagement/pki/acme":                  tierPKI,
+		"devicemanagement/appleplatformservices/axm": tierServices,
+		"devicemanagement/storage/inmem":             tierStorage,
+		"devicemanagement/simulator":                 tierClient,
+		"server/service":                             tierServer,
+		"internal/schemagen":                         tierApp,
+	} {
+		if got := tierOf(pkg); got != want {
+			t.Errorf("tierOf(%q) = %d, want %d", pkg, got, want)
+		}
 	}
 }

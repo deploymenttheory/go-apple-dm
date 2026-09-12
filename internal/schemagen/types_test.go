@@ -57,7 +57,11 @@ func TestBuildWholeTree(t *testing.T) {
 	if got := fieldByKey(lock.Request, "Message"); got == nil || got.GoType != "*string" {
 		t.Errorf("DeviceLock.Message = %+v, want *string", got)
 	}
-	if got := fieldByKey(lock.Response, "MessageResult"); got == nil || !strings.HasPrefix(got.Path, "response:") {
+	if got := fieldByKey(
+		lock.Response,
+		"MessageResult",
+	); got == nil ||
+		!strings.HasPrefix(got.Path, "response:") {
 		t.Errorf("DeviceLockResponse.MessageResult = %+v", got)
 	}
 	status := byName["status"]
@@ -76,7 +80,8 @@ func TestBuildWholeTree(t *testing.T) {
 	for _, p := range pkgs {
 		for _, td := range p.Types {
 			for _, f := range td.Fields {
-				if strings.Contains(f.GoType, "recursive:") || (f.Elem != nil && strings.Contains(f.Elem.GoType, "recursive:")) {
+				if strings.Contains(f.GoType, "recursive:") ||
+					(f.Elem != nil && strings.Contains(f.Elem.GoType, "recursive:")) {
 					t.Errorf("%s.%s.%s: unresolved recursion %s", p.Name, td.Name, f.Name, f.GoType)
 				}
 			}
@@ -105,7 +110,12 @@ func TestBuildWholeTree(t *testing.T) {
 			}
 			found = true
 			if !strings.HasPrefix(f.GoType, "[]") || !byName["ddm"].used[f.Base] {
-				t.Errorf("recursive field %s.%s has type %s, want slice of a generated struct", td.Name, f.Name, f.GoType)
+				t.Errorf(
+					"recursive field %s.%s has type %s, want slice of a generated struct",
+					td.Name,
+					f.Name,
+					f.GoType,
+				)
 			}
 		}
 	}
@@ -263,7 +273,14 @@ func TestBuildErrors(t *testing.T) {
 		}
 	}
 	// Status items must have exactly one key.
-	if _, err := buildOne(t, "declarative/status/x.yaml", "title: Status X\npayload:\n  statusitemtype: x\npayloadkeys:\n- key: a\n  type: <string>\n- key: b\n  type: <string>\n"); !errors.Is(err, ErrNaming) {
+	if _, err := buildOne(
+		t,
+		"declarative/status/x.yaml",
+		"title: Status X\npayload:\n  statusitemtype: x\npayloadkeys:\n- key: a\n  type: <string>\n- key: b\n  type: <string>\n",
+	); !errors.Is(
+		err,
+		ErrNaming,
+	) {
 		t.Errorf("status multi-key: %v", err)
 	}
 	// Type collision across two schemas.
@@ -275,8 +292,13 @@ func TestBuildErrors(t *testing.T) {
 		t.Errorf("type collision: %v", err)
 	}
 	// Recursive reference with no matching ancestor.
-	bad := &Schema{Title: "R", Path: "mdm/commands/r.yaml", Family: FamilyCommands, Payload: Payload{RequestType: "R"},
-		PayloadKeys: []Key{{Key: "A", Type: "<array>", RecursiveTo: "Nope"}}}
+	bad := &Schema{
+		Title:       "R",
+		Path:        "mdm/commands/r.yaml",
+		Family:      FamilyCommands,
+		Payload:     Payload{RequestType: "R"},
+		PayloadKeys: []Key{{Key: "A", Type: "<array>", RecursiveTo: "Nope"}},
+	}
 	if _, err := Build(&Tree{Schemas: []*Schema{bad}}); !errors.Is(err, ErrNaming) {
 		t.Errorf("dangling recursive: %v", err)
 	}
@@ -316,7 +338,8 @@ func TestStatusLeafShapes(t *testing.T) {
 		t.Fatal(err)
 	}
 	td := p.Schemas[0].Request
-	if td.Name != "DeviceModelFamily" || td.Fields[0].GoType != "string" || td.Fields[0].Key != "device.model.family" {
+	if td.Name != "DeviceModelFamily" || td.Fields[0].GoType != "string" ||
+		td.Fields[0].Key != "device.model.family" {
 		t.Errorf("scalar leaf: %+v %+v", td, td.Fields[0])
 	}
 	dict := "title: Status Management Declarations\npayload:\n  statusitemtype: management.declarations\npayloadkeys:\n- key: management.declarations\n  type: <dictionary>\n  presence: optional\n  subkeys:\n  - key: activations\n    type: <array>\n    subkeys:\n    - key: item\n      type: <dictionary>\n      subkeys:\n      - key: identifier\n        type: <string>\n        presence: required\n"
@@ -325,7 +348,8 @@ func TestStatusLeafShapes(t *testing.T) {
 		t.Fatal(err)
 	}
 	td = p.Schemas[0].Request
-	if td.Fields[0].GoType != "ManagementDeclarationsManagementDeclarations" || td.Fields[0].Pointer {
+	if td.Fields[0].GoType != "ManagementDeclarationsManagementDeclarations" ||
+		td.Fields[0].Pointer {
 		t.Logf("types: %v", func() []string {
 			var n []string
 			for _, x := range p.Types {

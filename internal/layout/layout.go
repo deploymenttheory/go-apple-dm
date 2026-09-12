@@ -173,8 +173,12 @@ var namespaces = []string{
 }
 
 // Unit is the directory a tier is assigned to: the first path element,
-// except under a namespace, where it is the first two.
+// except under a namespace, where it is the first two. The devicemanagement
+// container preserves that granularity within the library.
 func Unit(pkg string) string {
+	if rest, ok := strings.CutPrefix(pkg, "devicemanagement/"); ok {
+		return "devicemanagement/" + Unit(rest)
+	}
 	parts := strings.Split(pkg, "/")
 	if len(parts) > 1 && slices.Contains(namespaces, parts[0]) {
 		return parts[0] + "/" + parts[1]

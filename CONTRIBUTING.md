@@ -7,7 +7,8 @@ Follow the [code of conduct](CODE_OF_CONDUCT.md). Report vulnerabilities through
 ## Development and validation
 
 Use Go 1.27 and initialize the pinned Apple schema with `git submodule update --init`.
-The workspace contains two modules: the root library and `server`. The library must not import
+The workspace contains two modules: the root library and `server`. Reusable library packages
+live under `devicemanagement/`; their imports include that prefix. The library must not import
 the server, including in tests. The package import constraints are documented in
 [architecture.md](docs/architecture.md) and enforced by `internal/layout`.
 
@@ -56,9 +57,9 @@ Integrate amendments into the current decision and preserve its number and filen
 Diagram JSON sources and regeneration instructions are in [docs/diagrams](docs/diagrams/README.md).
 
 Edit project-authored generated comments in `internal/schemagen`, then run `make generate` and
-`make verify`. Do not hand-edit `*.gen.go`, `schema/EXPORTED_IDENTIFIERS.lock` or
-`schema/GENERATED_FROM.json`. Record intentional exported-name removals in
-[schema/ALLOWED_REMOVALS.md](schema/ALLOWED_REMOVALS.md).
+`make verify`. Do not hand-edit `*.gen.go`, `devicemanagement/schema/EXPORTED_IDENTIFIERS.lock` or
+`devicemanagement/schema/GENERATED_FROM.json`. Record intentional exported-name removals in
+[schema/ALLOWED_REMOVALS.md](devicemanagement/schema/ALLOWED_REMOVALS.md).
 
 ## Pull requests
 

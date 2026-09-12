@@ -96,7 +96,7 @@ jobs:
         run: |
           set -euo pipefail
           go run ./cmd/admgen versions > /tmp/versions.before
-          sort schema/EXPORTED_IDENTIFIERS.lock > /tmp/identifiers.before
+          sort devicemanagement/schema/EXPORTED_IDENTIFIERS.lock > /tmp/identifiers.before
 
       - name: Regenerate against upstream
         if: steps.compare.outputs.changed == 'true'

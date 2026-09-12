@@ -8,7 +8,8 @@ Read [CONTRIBUTING.md](CONTRIBUTING.md) for editorial and validation requirement
 
 The root module is `github.com/deploymenttheory/go-apple-dm`; `server/` is
 `github.com/deploymenttheory/go-apple-dm/server`. Both use Go 1.27. The server depends on the
-library. Library code and tests must not import the server. `go.work` supports local development.
+library. Reusable library packages live under `devicemanagement/`, within the existing root module.
+Library code and tests must not import the server. `go.work` supports local development.
 `internal/layout` enforces the tier constraints and explicit exceptions.
 
 Do not add a dependency on `deploymenttheory/go-sdk-appleservices`. NanoMDM, MicroMDM and
@@ -19,7 +20,7 @@ implementation references when evaluating protocol behavior. Do not copy third-p
 ## Generated files
 
 `make generate` uses the pinned `third_party/device-management` submodule. Never hand-edit
-`*.gen.go`, `schema/EXPORTED_IDENTIFIERS.lock` or `schema/GENERATED_FROM.json`; `make verify`
+`*.gen.go`, `devicemanagement/schema/EXPORTED_IDENTIFIERS.lock` or `devicemanagement/schema/GENERATED_FROM.json`; `make verify`
 checks deterministic regeneration and exported-name removals. Edit generator documentation
 at its source. Preserve Apple's verbatim descriptions and exact protocol identifiers.
 
