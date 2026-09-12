@@ -10,7 +10,7 @@
 //
 // Apple's descriptions are retained verbatim; project-authored generated
 // documentation is maintained in the emitters. Protocol behavior described
-// outside the schema belongs to hand-written protocol packages. cmd/admgen
+// outside the schema belongs to hand-written protocol packages. cmd/schemagen
 // provides the command-line interface.
 //
 // # References

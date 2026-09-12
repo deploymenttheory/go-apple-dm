@@ -19,7 +19,7 @@ There is no separate `devicemanagement` module. The reference server remains in
 
 Shared URL validation remains in `../internal/httpsurl/` because both the library
 and server use it. Schema generation and repository checks remain in the root
-`cmd/admgen/`, `internal/schemagen/` and `internal/layout/` directories.
+`cmd/schemagen/`, `internal/schemagen/` and `internal/layout/` directories.
 
 ## Updating existing imports
 

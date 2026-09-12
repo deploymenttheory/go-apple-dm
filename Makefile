@@ -38,12 +38,12 @@ submodule:
 ## generate: regenerate schema packages from the vendored Apple YAML
 generate: submodule
 	$(GO) generate ./...
-	$(GO) run ./cmd/admgen generate
+	$(GO) run ./cmd/schemagen generate
 
 ## verify: fail if regeneration changes anything or removes an exported identifier
 verify: submodule
 	$(GO) test ./internal/layout -run TestWorkflowSecurity
-	@if [ -d cmd/admgen ]; then $(GO) run ./cmd/admgen verify; else echo "schema generator directory is missing"; fi
+	@if [ -d cmd/schemagen ]; then $(GO) run ./cmd/schemagen verify; else echo "schema generator directory is missing"; fi
 
 ## lint: run golangci-lint with the repository configuration
 lint:

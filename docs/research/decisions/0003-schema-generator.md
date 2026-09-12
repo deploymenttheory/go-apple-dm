@@ -25,7 +25,7 @@ Generator tests cover complete-tree generation, schema coverage, nested types, r
 ## References
 
 - [internal/schemagen](../../../internal/schemagen)
-- [cmd/admgen](../../../cmd/admgen)
+- [cmd/schemagen](../../../cmd/schemagen)
 - [schema](../../../devicemanagement/schema)
 - <https://github.com/apple/device-management/blob/release/docs/schema.md>
 

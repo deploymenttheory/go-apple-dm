@@ -210,7 +210,7 @@ func TestLibraryPackageLocations(t *testing.T) {
 		switch {
 		case strings.HasPrefix(pkg, "devicemanagement/"), strings.HasPrefix(pkg, "server/"):
 		case pkg == "internal/httpsurl", pkg == "internal/layout",
-			pkg == "internal/schemagen", pkg == "cmd/admgen":
+			pkg == "internal/schemagen", pkg == "cmd/schemagen":
 		default:
 			t.Errorf("library package %s must live under devicemanagement", pkg)
 		}

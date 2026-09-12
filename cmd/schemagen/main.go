@@ -11,13 +11,13 @@ import (
 
 func main() {
 	if err := run(os.Args[1:], os.Stdout); err != nil {
-		fmt.Fprintln(os.Stderr, "admgen:", err)
+		fmt.Fprintln(os.Stderr, "schemagen:", err)
 		os.Exit(1)
 	}
 }
 
 func run(args []string, out *os.File) error {
-	fs := flag.NewFlagSet("admgen", flag.ContinueOnError)
+	fs := flag.NewFlagSet("schemagen", flag.ContinueOnError)
 	schemaRoot := fs.String(
 		"schema",
 		"third_party/device-management",
@@ -29,7 +29,7 @@ func run(args []string, out *os.File) error {
 	}
 	if fs.NArg() != 1 {
 		return fmt.Errorf(
-			"usage: admgen [-schema dir] [-out dir] generate|verify|identifiers|versions",
+			"usage: schemagen [-schema dir] [-out dir] generate|verify|identifiers|versions",
 		)
 	}
 	// Commit is left empty: schemagen reads it from the checkout. Reading it

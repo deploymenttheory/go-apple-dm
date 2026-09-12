@@ -19,7 +19,7 @@ including the explicit dependency from the ADE software update gate to the GDMF 
 | Area | Paths | Responsibility |
 |---|---|---|
 | Foundation | `devicemanagement/paging`, `devicemanagement/clock`, `devicemanagement/secrets`, `devicemanagement/telemetry`, `devicemanagement/state`, `devicemanagement/ratelimit`, `devicemanagement/testpki` | Shared interfaces, bounded state and test utilities |
-| Schema | `devicemanagement/schema`, `internal/schemagen`, `cmd/admgen` | Deterministic generation and schema-derived validation/support metadata |
+| Schema | `devicemanagement/schema`, `internal/schemagen`, `cmd/schemagen` | Deterministic generation and schema-derived validation/support metadata |
 | Protocol | `devicemanagement/mdmprotocol` | Plist/CMS, MDM messages, enrollment profiles and handlers, DDM engine, predicates, hooks and events |
 | PKI | `devicemanagement/pki` | CA abstraction, SCEP, ACME, attestation, push certificate parsing and optional revocation |
 | Apple clients | `devicemanagement/appleplatformservices` | APNs, device enrollment service, software lookup, Business Manager and School Manager APIs |
@@ -34,7 +34,7 @@ The table groups responsibilities; the exact enforced tiers and test-only except
 ## Generated protocol types
 
 The pinned `third_party/device-management` submodule supplies Apple's YAML definitions.
-`admgen` generates request and response types, registries, validation, platform support metadata
+`schemagen` generates request and response types, registries, validation, platform support metadata
 and conformance fixtures. `devicemanagement/schema/GENERATED_FROM.json` records source provenance;
 `devicemanagement/schema/EXPORTED_IDENTIFIERS.lock` guards exported names. `make verify` regenerates into a
 temporary directory and checks the output and removal guard. Generated validation covers the

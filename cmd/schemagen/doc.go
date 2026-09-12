@@ -1,13 +1,13 @@
-// Package main implements the admgen schema-generation command.
+// Package main implements the schemagen schema-generation command.
 //
 // # Design
 //
 // The command delegates loading and emission to internal/schemagen:
 //
-//	admgen generate     regenerate schema packages
-//	admgen verify       compare output and check exported identifiers
-//	admgen identifiers  list generated exported names
-//	admgen versions     report newest introduced OS versions in the schema
+//	schemagen generate     regenerate schema packages
+//	schemagen verify       compare output and check exported identifiers
+//	schemagen identifiers  list generated exported names
+//	schemagen versions     report newest introduced OS versions in the schema
 //
 // The -schema and -out options select source and output directories. make
 // generate and make verify initialize the pinned submodule before running the
