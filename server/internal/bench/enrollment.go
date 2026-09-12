@@ -335,7 +335,9 @@ func replacementScenario(
 		if fail && cms.Fingerprint(d.Identity.Cert) != result.OldCertificate {
 			return fmt.Errorf("%w: simulator did not restore previous identity", errOperation)
 		}
-		if _, err = enqueue(ctx, e, d, &commands.DeviceInformation{Queries: []string{"OSVersion"}}); err != nil {
+		if _, err = enqueue(ctx, e, d, &commands.DeviceInformation{
+			Queries: []string{"OSVersion"},
+		}); err != nil {
 			return err
 		}
 		got, err = d.Connect(ctx)
