@@ -445,7 +445,7 @@ func (a *App) progressMigration(
 			return nil
 		}
 		x, err = a.replacementStore().
-			TransitionReplacement(ctx, e.ID, storage.ReplacementChange{Op: "begin", Begin: x, At: now})
+			TransitionReplacement(ctx, e.ID, storage.ReplacementChange{Op: "begin", Begin: x, At: a.cfg.Clock.Now()})
 		if err != nil {
 			return wrapError(err)
 		}

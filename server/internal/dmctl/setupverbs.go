@@ -1,7 +1,6 @@
 package dmctl
 
 import (
-	"bytes"
 	"context"
 	"crypto/x509/pkix"
 	"encoding/json"
@@ -261,7 +260,7 @@ func runSetup(ctx context.Context, e *env, args []string) error {
 					return wrapError(err)
 				}
 			}
-			resp, e2 := c.Do(ctx, method, path, nil, bytes.NewReader(body))
+			resp, e2 := c.Do(ctx, method, path, nil, body)
 			err = e2
 			if err == nil {
 				data = resp.Body
@@ -451,7 +450,7 @@ func runSetup(ctx context.Context, e *env, args []string) error {
 			"POST",
 			"/setup/"+url.PathEscape(group)+"/"+url.PathEscape(operation),
 			nil,
-			bytes.NewReader(body),
+			body,
 		)
 		err = e2
 		if err == nil {
