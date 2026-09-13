@@ -209,6 +209,11 @@ type Profile struct {
 	DisplayName  string
 	Description  string
 	Organization string
+	// Scope selects the installation context (profile.ScopeSystem or
+	// profile.ScopeUser). Empty defaults to System. Manual macOS enrollment
+	// can use User to retain the installing user's association when macOS
+	// promotes the enrollment to a device profile.
+	Scope string
 
 	Topic      string
 	ServerURL  string
@@ -272,10 +277,17 @@ func (p Profile) Build() (*profile.Profile, error) {
 			return nil, fmt.Errorf("%w: %q must use https", ErrProfile, u)
 		}
 	}
+	scope := p.Scope
+	if scope == "" {
+		scope = profile.ScopeSystem
+	}
+	if scope != profile.ScopeSystem && scope != profile.ScopeUser {
+		return nil, fmt.Errorf("%w: Scope must be System or User", ErrProfile)
+	}
 	out := &profile.Profile{
 		Identifier: p.Identifier, UUID: orUUID(p.UUID),
 		DisplayName: p.DisplayName, Description: p.Description, Organization: p.Organization,
-		Scope: profile.ScopeSystem,
+		Scope: scope,
 	}
 	for i, root := range p.Roots {
 		u := ""
@@ -489,6 +501,7 @@ func Parse(data []byte, o profile.ParseOptions) (*Profile, error) {
 		DisplayName:        pr.DisplayName,
 		Description:        pr.Description,
 		Organization:       pr.Organization,
+		Scope:              pr.Scope,
 		UUID:               pr.UUID,
 		Topic:              m.Topic,
 		ServerURL:          m.ServerURL,

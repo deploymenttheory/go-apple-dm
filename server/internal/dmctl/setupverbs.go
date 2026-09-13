@@ -98,6 +98,7 @@ func runSetup(ctx context.Context, e *env, args []string) error {
 	hardware := fs.String("hardware", "", "Mac hardware: apple-silicon, t2 or unknown")
 	identity := fs.String("identity", "acme", "device identity method: acme or scep")
 	rights := fs.Int("access-rights", 19, "enrollment access rights")
+	scope := fs.String("scope", "", "installation scope: User or System (manual macOS defaults to User)")
 	pos, err := e.parseVerb(fs, rest)
 	if err != nil {
 		return wrapError(err)
@@ -228,6 +229,7 @@ func runSetup(ctx context.Context, e *env, args []string) error {
 			MacHardware:  enroll.MacHardware(*hardware),
 			Identity:     *identity,
 			AccessRights: enroll.AccessRights(*rights),
+			Scope:        *scope,
 		}
 		var data []byte
 		if local != nil {

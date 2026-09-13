@@ -8,10 +8,44 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/enroll"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/profile"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/pki/acme"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/state"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/storage/storagetest"
 )
+
+func TestManualEnrollmentInstallationScope(t *testing.T) {
+	for _, tc := range []struct{ product, scope, want string }{
+		{"Mac", "", profile.ScopeUser},
+		{"Mac", profile.ScopeSystem, profile.ScopeSystem},
+		{"iPhone", "", profile.ScopeSystem},
+		{"Mac", "invalid", ""},
+	} {
+		t.Run(tc.product+tc.scope, func(t *testing.T) {
+			a, id := replacementSecurityApp(t)
+			data, err := a.ExportEnrollmentProfile(t.Context(), EnrollmentProfileRequest{
+				DeviceID: id.ID, Product: tc.product, Identity: "scep", Scope: tc.scope,
+			})
+			if tc.want == "" {
+				if err == nil || data != nil {
+					t.Fatal("invalid scope delivered a profile")
+				}
+				return
+			}
+			if err != nil {
+				t.Fatal(err)
+			}
+			p, err := enroll.Parse(data, profile.ParseOptions{})
+			if err != nil {
+				t.Fatal(err)
+			}
+			if p.Scope != tc.want {
+				t.Fatalf("scope = %q, want %q", p.Scope, tc.want)
+			}
+		})
+	}
+}
 
 type rejectProfileTemplateStore struct {
 	state.Store

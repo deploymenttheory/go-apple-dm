@@ -53,10 +53,13 @@ type Instance struct {
 
 // Environment owns fixture services and the ordinary server runtime(s).
 type Environment struct {
-	DEP       *deptest.Server
-	ABM       *axmtest.Server
-	Provider  *webauthtest.Provider
-	Authority *testpki.CA
+	// InstallingUserID is the local user's GeneratedUID, supplied by the operator
+	// for live enrollment acceptance. It is not inferred from an arbitrary child.
+	InstallingUserID string
+	DEP              *deptest.Server
+	ABM              *axmtest.Server
+	Provider         *webauthtest.Provider
+	Authority        *testpki.CA
 	Instance
 	Client    *http.Client
 	Token     string

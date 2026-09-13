@@ -36,6 +36,7 @@ func runBench(ctx context.Context, e *env, args []string) error {
 	)
 	scenario := fs.String("scenario", "all", "stable scenario ID, family, or all (run)")
 	device := fs.String("device-id", "", "target device ID (live run/profile)")
+	user := fs.String("user-id", "", "installing user's GeneratedUID (live enrollment acceptance)")
 	identity := fs.String("identity", "", "acme or scep; empty uses server default")
 	destination := fs.String("file", "", "new profile output path (profile)")
 	format := fs.String("format", "json", "json or markdown (list)")
@@ -76,6 +77,7 @@ func runBench(ctx context.Context, e *env, args []string) error {
 		return wrapError(err)
 	}
 	defer instance.Client.CloseIdleConnections()
+	instance.InstallingUserID = *user
 	switch sub {
 	case "replace":
 		return benchReplace(ctx, e, instance, *device, *identity)

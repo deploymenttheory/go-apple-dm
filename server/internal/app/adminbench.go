@@ -9,8 +9,10 @@ import (
 	"net/http"
 
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/enroll"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/profile"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/paging"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/pki/acme"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/schema/support"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/storage"
 )
 
@@ -136,6 +138,7 @@ type EnrollmentProfileRequest struct {
 	MacHardware  enroll.MacHardware  `json:"MacHardware"`
 	Identity     string              `json:"Identity"`
 	AccessRights enroll.AccessRights `json:"AccessRights"`
+	Scope        string              `json:"Scope"`
 }
 
 // ExportEnrollmentProfile issues and records the same profile used by the API.
@@ -152,6 +155,9 @@ func (a *App) ExportEnrollmentProfile(
 	if req.Identity == "" {
 		req.Identity = a.enroll.cfg.Identity
 	}
+	if req.Scope != "" && req.Scope != profile.ScopeSystem && req.Scope != profile.ScopeUser {
+		return nil, fmt.Errorf("%w: Scope must be System or User", errOperation)
+	}
 	p, err := a.enroll.profileForDevice(
 		ctx,
 		acme.Binding{MDMUDID: req.DeviceID, Serial: req.Serial, CommonName: req.DeviceID},
@@ -161,6 +167,10 @@ func (a *App) ExportEnrollmentProfile(
 		return nil, err
 	}
 	p.CheckOutWhenRemoved = true
+	p.Scope = req.Scope
+	if p.Scope == "" && p.Target.OS == support.OS("macOS") {
+		p.Scope = profile.ScopeUser
+	}
 	p.AccessRights = req.AccessRights
 	if p.AccessRights == 0 {
 		p.AccessRights = enroll.RightQueryDeviceInfo
