@@ -11,9 +11,16 @@ import (
 // admin credential. It does not start a supervisor, replace state or migrate SQL.
 func AttachURL(w *Workspace, address string) (*Environment, error) {
 	u, err := url.Parse(address)
-	if err != nil || w == nil || w.Mode != "live" || u.Scheme != "https" || u.Host == "" || u.User != nil ||
-		(u.Path != "" && u.Path != "/") || u.RawQuery != "" || u.Fragment != "" || u.ForceQuery {
-		return nil, fmt.Errorf("%w: direct attachment requires a live workspace and HTTPS server origin", errOperation)
+	if err != nil || w == nil || w.Mode != "live" || u.Scheme != "https" || u.Host == "" ||
+		u.User != nil ||
+		(u.Path != "" && u.Path != "/") ||
+		u.RawQuery != "" ||
+		u.Fragment != "" ||
+		u.ForceQuery {
+		return nil, fmt.Errorf(
+			"%w: direct attachment requires a live workspace and HTTPS server origin",
+			errOperation,
+		)
 	}
 	c, err := w.client()
 	if err != nil {
@@ -30,5 +37,14 @@ func AttachURL(w *Workspace, address string) (*Environment, error) {
 	}
 	// Keep credentials and requests on the operator-selected origin.
 	c.CheckRedirect = func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }
-	return &Environment{Instance: Instance{URL: strings.TrimSuffix(address, "/"), Mode: w.Mode, Topology: w.Topology}, Client: c, Token: token, Workspace: w}, nil
+	return &Environment{
+		Instance: Instance{
+			URL:      strings.TrimSuffix(address, "/"),
+			Mode:     w.Mode,
+			Topology: w.Topology,
+		},
+		Client:    c,
+		Token:     token,
+		Workspace: w,
+	}, nil
 }

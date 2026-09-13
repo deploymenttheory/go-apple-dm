@@ -289,8 +289,17 @@ func Catalogue() []Scenario {
 			Run:    appRenewal,
 		},
 		{
-			ID: "LIVE-004", Name: "DDM subscriptions report OS/build and remove temporary declarations", Family: "ddm",
-			Modes: []string{"live"}, Prerequisites: []string{"completed enrollment", "MDM push identity", "automatic status subscriptions enabled"},
+			ID:     "LIVE-004",
+			Name:   "DDM subscriptions report OS/build and remove temporary declarations",
+			Family: "ddm",
+			Modes: []string{
+				"live",
+			},
+			Prerequisites: []string{
+				"completed enrollment",
+				"MDM push identity",
+				"automatic status subscriptions enabled",
+			},
 			Run: liveDDM,
 		},
 		{

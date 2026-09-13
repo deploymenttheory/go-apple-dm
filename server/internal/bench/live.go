@@ -249,7 +249,12 @@ func liveInventory(ctx context.Context, e *Environment, device string) (map[stri
 
 // liveCommand requires a wake and a response from the exact enrollment channel
 // on which the command was queued.
-func liveCommand(ctx context.Context, e *Environment, path string, cmd *mdm.Command) ([]byte, error) {
+func liveCommand(
+	ctx context.Context,
+	e *Environment,
+	path string,
+	cmd *mdm.Command,
+) ([]byte, error) {
 	var queued struct{ Queued int }
 	if err := e.api(ctx, "POST", path+"/commands", cmd.Raw, &queued); err != nil {
 		return nil, wrapError(err)
@@ -273,7 +278,11 @@ func liveCommand(ctx context.Context, e *Environment, path string, cmd *mdm.Comm
 		case <-ctx.Done():
 			return nil, wrapError(ctx.Err())
 		case <-deadline.C:
-			return nil, fmt.Errorf("%w: %s acknowledgement timed out", errOperation, cmd.RequestType)
+			return nil, fmt.Errorf(
+				"%w: %s acknowledgement timed out",
+				errOperation,
+				cmd.RequestType,
+			)
 		case <-tick.C:
 			b, status, err := HTTP(
 				ctx,

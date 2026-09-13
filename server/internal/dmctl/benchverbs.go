@@ -15,6 +15,7 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/server/internal/bench"
 )
 
+//nolint:gocyclo // One dispatch path keeps the shared live-target flags consistent across bench commands.
 func runBench(ctx context.Context, e *env, args []string) error {
 	if len(args) == 0 {
 		return fmt.Errorf(
@@ -42,7 +43,11 @@ func runBench(ctx context.Context, e *env, args []string) error {
 	format := fs.String("format", "json", "json or markdown (list)")
 	revision := fs.String("revision", version(), "source revision recorded in evidence")
 	report := fs.String("report-dir", "", "evidence directory (run)")
-	attachURL := fs.String("attach-url", "", "existing HTTPS server origin for a live run, profile, or replace")
+	attachURL := fs.String(
+		"attach-url",
+		"",
+		"existing HTTPS server origin for a live run, profile, or replace",
+	)
 	if err := fs.Parse(reorder(fs, args[1:])); err != nil {
 		if errors.Is(err, flag.ErrHelp) {
 			return nil

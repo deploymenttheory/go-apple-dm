@@ -58,7 +58,7 @@ func runEvents(ctx context.Context, e *env, args []string) error {
 		method, path = http.MethodPost, "/events/"+url.PathEscape(*id)+"/retry"
 		body, err = json.Marshal(map[string]string{"destination": *dest})
 		if err != nil {
-			return err
+			return wrapError(err)
 		}
 	}
 	c, err := e.client()
@@ -67,7 +67,7 @@ func runEvents(ctx context.Context, e *env, args []string) error {
 	}
 	resp, err := c.Do(ctx, method, path, query, body)
 	if err != nil {
-		return err
+		return wrapError(err)
 	}
 	if len(resp.Body) == 0 {
 		return nil

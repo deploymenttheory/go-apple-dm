@@ -380,10 +380,7 @@ func TestMDMAdminRoutesHideStorageFailures(t *testing.T) {
 		resp := adminReq(t, srv, c.method, c.path, "t", c.body)
 		body, _ := io.ReadAll(resp.Body)
 		_ = resp.Body.Close()
-		want := http.StatusInternalServerError
-		if c.path == "/admin/v1/import" {
-			want = http.StatusServiceUnavailable
-		}
+		want := http.StatusServiceUnavailable
 		if resp.StatusCode != want {
 			t.Errorf("%s %s = %d, want %d", c.method, c.path, resp.StatusCode, want)
 		}

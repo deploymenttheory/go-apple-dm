@@ -181,6 +181,7 @@ func Verbs() []string {
 // function.
 func commands() map[string]command {
 	cmds := []command{
+		{"recovery", "pause, back up, verify and restore a persistent server", runRecovery},
 		{"setup", "manage certificate setup and renewal with persistent state", runSetup},
 		{"bench", "prepare and run maintained reference-server scenarios", runBench},
 		{"apppush", "manage server app push credentials and send notifications", runAppPush},

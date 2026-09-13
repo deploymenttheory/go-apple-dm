@@ -41,6 +41,7 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/server/eventsink"
 	"github.com/deploymenttheory/go-apple-dm/server/eventstore"
 	"github.com/deploymenttheory/go-apple-dm/server/httpapi"
+	"github.com/deploymenttheory/go-apple-dm/server/maintenance"
 	"github.com/deploymenttheory/go-apple-dm/server/pushnotify"
 	"github.com/deploymenttheory/go-apple-dm/server/service"
 	"github.com/deploymenttheory/go-apple-dm/server/sqlstore/mysql"
@@ -252,6 +253,7 @@ type App struct {
 	enroll      *enrollment
 	db          *sql.DB
 	dialect     sqlcommon.Dialect
+	maintenance *maintenance.Participant
 	protocol    state.Store
 	revocations *revocation.Registry
 	closers     []func() error
@@ -586,21 +588,25 @@ func (a *App) openStorage(ctx context.Context) error {
 		a.Store = inmem.New()
 		return nil
 	case "sqlite":
-		s, err := sqlite.Open(ctx, a.cfg.DSN, sqlite.Options{Keyring: a.keyring})
+		s, err := sqlite.Open(ctx, a.cfg.DSN, sqlite.Options{Keyring: a.keyring, SkipMigrate: true})
 		if err != nil {
 			return fmt.Errorf("app: sqlite: %w", err)
 		}
 		a.Store, db, dialect = s, s.DB(), sqlite.Dialect
 		a.closers = append(a.closers, s.Close)
 	case "postgres":
-		s, err := postgres.Open(ctx, a.cfg.DSN, postgres.Options{Keyring: a.keyring})
+		s, err := postgres.Open(
+			ctx,
+			a.cfg.DSN,
+			postgres.Options{Keyring: a.keyring, SkipMigrate: true},
+		)
 		if err != nil {
 			return fmt.Errorf("app: postgres: %w", err)
 		}
 		a.Store, db, dialect = s, s.DB(), postgres.Dialect
 		a.closers = append(a.closers, s.Close)
 	default:
-		s, err := mysql.Open(ctx, a.cfg.DSN, mysql.Options{Keyring: a.keyring})
+		s, err := mysql.Open(ctx, a.cfg.DSN, mysql.Options{Keyring: a.keyring, SkipMigrate: true})
 		if err != nil {
 			return fmt.Errorf("app: mysql: %w", err)
 		}
@@ -609,6 +615,17 @@ func (a *App) openStorage(ctx context.Context) error {
 	}
 	a.db = db
 	a.dialect = dialect
+	control, err := maintenance.Open(ctx, db, dialect, true)
+	if err != nil {
+		return wrapError(err)
+	}
+	a.maintenance, err = control.Register(ctx, string(a.cfg.Role))
+	if err != nil {
+		return wrapError(err)
+	}
+	if _, err := sqlcommon.Migrate(ctx, db, dialect); err != nil {
+		return wrapError(err)
+	}
 	return nil
 }
 
@@ -787,6 +804,9 @@ func (a *App) wire(ctx context.Context) error {
 		return err
 	}
 	a.Handler, err = a.withRateLimits(ctx, mux)
+	if err == nil && a.maintenance != nil {
+		a.Handler = a.maintenance.Wrap(a.Handler)
+	}
 	return err
 }
 
@@ -800,6 +820,17 @@ func (a *App) wire(ctx context.Context) error {
 // how they say so -- ddmsync.Notifier.Run returns ctx.Err(), depService.Run
 // returns nil -- so cancellation is normalised here rather than in each loop.
 func (a *App) Run(ctx context.Context) error {
+	if a.maintenance != nil {
+		err := a.maintenance.Run(ctx, a.runWorkers)
+		if errors.Is(err, context.Canceled) {
+			return nil
+		}
+		return wrapError(err)
+	}
+	return a.runWorkers(ctx)
+}
+
+func (a *App) runWorkers(ctx context.Context) error {
 	if len(a.workers) == 0 {
 		<-ctx.Done()
 		return nil
@@ -836,6 +867,13 @@ func (a *App) Close() error {
 		defer cancel()
 		if err := a.cfg.Bus.Close(ctx); err != nil {
 			errs = append(errs, fmt.Errorf("app: drain events: %w", err))
+		}
+	}
+	if a.maintenance != nil {
+		ctx, cancel := context.WithTimeout(context.Background(), busDrainTimeout)
+		defer cancel()
+		if err := a.maintenance.Close(ctx); err != nil {
+			errs = append(errs, wrapError(err))
 		}
 	}
 	for _, c := range a.closers {

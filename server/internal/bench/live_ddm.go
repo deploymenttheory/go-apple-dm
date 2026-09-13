@@ -29,21 +29,40 @@ func liveDDM(ctx context.Context, e *Environment, device string) (err error) {
 		err = errors.Join(err, cleanupLiveDDM(cleanup, e, path, set, configuration, activation))
 	}()
 	names := []string{"device.operating-system.version", "device.operating-system.build-version"}
-	expected := map[string]string{names[0]: inventory["OSVersion"], names[1]: inventory["BuildVersion"]}
+	expected := map[string]string{
+		names[0]: inventory["OSVersion"],
+		names[1]: inventory["BuildVersion"],
+	}
 	declarations := []struct {
-		Identifier string `json:"Identifier"`
-		Type       string `json:"Type"`
-		Payload    any    `json:"Payload"`
+		Identifier string `json:"Identifier"` //nolint:tagliatelle // Apple declaration wire keys.
+		Type       string `json:"Type"`       //nolint:tagliatelle // Apple declaration wire keys.
+		Payload    any    `json:"Payload"`    //nolint:tagliatelle // Apple declaration wire keys.
 	}{
-		{configuration, schemaddm.DeclarationTypeManagementStatusSubscriptions, map[string]any{"StatusItems": []map[string]string{{"Name": names[0]}, {"Name": names[1]}}}},
-		{activation, schemaddm.DeclarationTypeActivationSimple, map[string]any{"StandardConfigurations": []string{configuration}}},
+		{
+			configuration,
+			schemaddm.DeclarationTypeManagementStatusSubscriptions,
+			map[string]any{
+				"StatusItems": []map[string]string{{"Name": names[0]}, {"Name": names[1]}},
+			},
+		},
+		{
+			activation,
+			schemaddm.DeclarationTypeActivationSimple,
+			map[string]any{"StandardConfigurations": []string{configuration}},
+		},
 	}
 	started := time.Now().UTC()
 	for _, declaration := range declarations {
 		if err := e.api(ctx, "PUT", "/declarations", declaration, nil); err != nil {
 			return err
 		}
-		if err := e.api(ctx, "PUT", "/sets/"+set+"/declarations/"+declaration.Identifier, nil, nil); err != nil {
+		if err := e.api(
+			ctx,
+			"PUT",
+			"/sets/"+set+"/declarations/"+declaration.Identifier,
+			nil,
+			nil,
+		); err != nil {
 			return err
 		}
 	}
@@ -60,13 +79,15 @@ func liveDDM(ctx context.Context, e *Environment, device string) (err error) {
 		}
 		active := map[string]bool{}
 		for _, row := range rows {
-			active[row.Identifier] = row.Active && row.Valid == "valid" && !row.LastSeen.Before(started)
+			active[row.Identifier] = row.Active && row.Valid == "valid" &&
+				!row.LastSeen.Before(started)
 		}
-		if !active[configuration] || !active[activation] || !active[ddm.SubscriptionIdentifier] || !active[ddm.SubscriptionActivationIdentifier] {
+		if !active[configuration] || !active[activation] || !active[ddm.SubscriptionIdentifier] ||
+			!active[ddm.SubscriptionActivationIdentifier] {
 			return false, nil
 		}
 		var values struct {
-			Items []ddm.StatusValue `json:"Items"`
+			Items []ddm.StatusValue `json:"Items"` //nolint:tagliatelle // Existing admin API response key.
 		}
 		if err := e.api(ctx, "GET", path+"/status/values", nil, &values); err != nil {
 			return false, err
@@ -74,13 +95,20 @@ func liveDDM(ctx context.Context, e *Environment, device string) (err error) {
 		matching := map[string]bool{}
 		for _, row := range values.Items {
 			var value string
-			matching[row.Path] = !row.LastSeen.IsZero() && json.Unmarshal(row.Value, &value) == nil && value != "" && value == expected[row.Path]
+			matching[row.Path] = !row.LastSeen.IsZero() &&
+				json.Unmarshal(row.Value, &value) == nil &&
+				value != "" &&
+				value == expected[row.Path]
 		}
 		return matching[names[0]] && matching[names[1]], nil
 	})
 }
 
-func cleanupLiveDDM(ctx context.Context, e *Environment, path, set, configuration, activation string) error {
+func cleanupLiveDDM(
+	ctx context.Context,
+	e *Environment,
+	path, set, configuration, activation string,
+) error {
 	var failures []error
 	for _, target := range []string{path + "/sets/" + set, "/declarations/" + activation, "/declarations/" + configuration} {
 		_, status, err := HTTP(ctx, e.Client, e.URL, e.Token, "DELETE", target, nil)

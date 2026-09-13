@@ -378,7 +378,11 @@ func liveEnrollment(method string) func(context.Context, *Environment, string) e
 		if err := liveMDM(ctx, e, device); err != nil {
 			return err
 		}
-		id := mdm.EnrollmentID{Channel: mdm.ChannelUser, ID: device + ":" + e.InstallingUserID, ParentID: device}
+		id := mdm.EnrollmentID{
+			Channel:  mdm.ChannelUser,
+			ID:       device + ":" + e.InstallingUserID,
+			ParentID: device,
+		}
 		path := "/enrollments/user/" + url.PathEscape(id.ID)
 		var user struct {
 			Channel        string
@@ -395,8 +399,12 @@ func liveEnrollment(method string) func(context.Context, *Environment, string) e
 		); err != nil {
 			return fmt.Errorf("%w: installing user's management channel is unavailable", ErrBlocked)
 		}
-		if !user.Enabled || user.Channel != "user" || user.ID != id.ID || user.ParentID != device || user.TokenUpdatedAt.IsZero() {
-			return fmt.Errorf("%w: installing user's management channel has not completed TokenUpdate", ErrBlocked)
+		if !user.Enabled || user.Channel != "user" || user.ID != id.ID || user.ParentID != device ||
+			user.TokenUpdatedAt.IsZero() {
+			return fmt.Errorf(
+				"%w: installing user's management channel has not completed TokenUpdate",
+				ErrBlocked,
+			)
 		}
 		cmd, err := mdm.NewCommand(&commands.ProfileList{})
 		if err != nil {

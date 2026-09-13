@@ -230,6 +230,9 @@ func writeNewPrivateFile(name string, data []byte) error {
 		return fmt.Errorf("dmctl: create %s: %w", name, err)
 	}
 	_, writeErr := f.Write(data)
+	if writeErr == nil {
+		writeErr = f.Sync()
+	}
 	closeErr := f.Close()
 	if writeErr != nil {
 		return fmt.Errorf("dmctl: write %s: %w", name, writeErr)

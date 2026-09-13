@@ -283,7 +283,7 @@ func TestHealthz(t *testing.T) {
 	if got := get(t, srv.URL+"/healthz", ""); got != http.StatusServiceUnavailable {
 		t.Fatalf("healthz after close = %d, want 503", got)
 	}
-	if got := get(t, srv.URL+"/nope", ""); got != http.StatusNotFound {
+	if got := get(t, srv.URL+"/nope", ""); got != http.StatusServiceUnavailable {
 		t.Fatalf("unknown path = %d", got)
 	}
 }
@@ -305,7 +305,7 @@ func TestRun(t *testing.T) {
 }
 
 // TestAdminInternalErrors closes the database under a running app: every
-// admin route answers 500 without leaking the cause.
+// admin route fails closed at the maintenance gate without leaking the cause.
 func TestAdminInternalErrors(t *testing.T) {
 	a := build(t, app.Config{Role: app.RoleDDM, Storage: "sqlite", DSN: filepath.Join(t.TempDir(), "i.db"), AdminToken: "t"})
 	srv := serve(t, a)
@@ -333,11 +333,7 @@ func TestAdminInternalErrors(t *testing.T) {
 		body := propsDecl("com.example.closed")
 		res := do(t, srv, c.method, c.path, "t", body)
 		data, _ := io.ReadAll(res.Body)
-		message := "internal error"
-		if c.status == 503 {
-			message = "required capture failed"
-		}
-		if res.StatusCode != c.status || !strings.Contains(string(data), message) || strings.Contains(string(data), "sql") {
+		if res.StatusCode != http.StatusServiceUnavailable || !strings.Contains(string(data), "server maintenance") || strings.Contains(string(data), "sql") {
 			t.Errorf("%s %s = %d %s", c.method, c.path, res.StatusCode, data)
 		}
 	}

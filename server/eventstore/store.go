@@ -32,6 +32,19 @@ type Store struct {
 	unit sqlcommon.UnitOfWork
 }
 
+// MigrationSet exposes the schema to coordinated backup and restore tools.
+func MigrationSet(d sqlcommon.Dialect) (sqlcommon.MigrationSet, error) {
+	switch d.Name {
+	case "sqlite", "postgres", "mysql":
+		return sqlcommon.MigrationSet{
+			Table: "event_schema_migrations",
+			FS:    sqlcommon.MustSub(migrations, "migrations/"+d.Name),
+		}, nil
+	default:
+		return sqlcommon.MigrationSet{}, ErrInvalid
+	}
+}
+
 // Open applies the event schema without changing existing domain migrations.
 func Open(ctx context.Context, db *sql.DB, d sqlcommon.Dialect) (*Store, error) {
 	if db == nil {
@@ -42,7 +55,10 @@ func Open(ctx context.Context, db *sql.DB, d sqlcommon.Dialect) (*Store, error) 
 	default:
 		return nil, ErrInvalid
 	}
-	set := sqlcommon.MigrationSet{Table: "event_schema_migrations", FS: sqlcommon.MustSub(migrations, "migrations/"+d.Name)}
+	set, err := MigrationSet(d)
+	if err != nil {
+		return nil, err
+	}
 	if _, err := sqlcommon.MigrateSet(ctx, db, d, set); err != nil {
 		return nil, err
 	}
@@ -57,7 +73,8 @@ func (s *Store) Run(ctx context.Context, fn func(context.Context) error) error {
 // Capture inserts only the projected record and snapshots its destinations.
 // An existing event ID is an error; delivery retries read the original record.
 func (s *Store) Capture(ctx context.Context, rec eventsink.Record, destinations []string) error {
-	if rec.EventID == "" || len(rec.EventID) > 64 || rec.Type == "" || len(rec.Type) > 128 || rec.At.IsZero() {
+	if rec.EventID == "" || len(rec.EventID) > 64 || rec.Type == "" || len(rec.Type) > 128 ||
+		rec.At.IsZero() {
 		return sqlcommon.Fail(ctx, ErrInvalid)
 	}
 	destinations = slices.Clone(destinations)
@@ -74,11 +91,27 @@ func (s *Store) Capture(ctx context.Context, rec eventsink.Record, destinations 
 	}
 	return s.Run(ctx, func(ctx context.Context) error {
 		q := sqlcommon.Query(ctx, s.db)
-		if _, err := q.ExecContext(ctx, s.d.Rebind("INSERT INTO event_records (event_id, type, occurred_at, payload) VALUES (?, ?, ?, ?)"), rec.EventID, rec.Type, rec.At.UnixMicro(), string(data)); err != nil {
+		if _, err := q.ExecContext(
+			ctx,
+			s.d.Rebind(
+				"INSERT INTO event_records (event_id, type, occurred_at, payload) VALUES (?, ?, ?, ?)",
+			),
+			rec.EventID,
+			rec.Type,
+			rec.At.UnixMicro(),
+			string(data),
+		); err != nil {
 			return err
 		}
 		for _, dest := range destinations {
-			if _, err := q.ExecContext(ctx, s.d.Rebind("INSERT INTO event_deliveries (event_id, destination, state, attempts, next_attempt, lease_token, lease_until, last_code) VALUES (?, ?, 'pending', 0, 0, '', 0, '')"), rec.EventID, dest); err != nil {
+			if _, err := q.ExecContext(
+				ctx,
+				s.d.Rebind(
+					"INSERT INTO event_deliveries (event_id, destination, state, attempts, next_attempt, lease_token, lease_until, last_code) VALUES (?, ?, 'pending', 0, 0, '', 0, '')",
+				),
+				rec.EventID,
+				dest,
+			); err != nil {
 				return err
 			}
 		}
@@ -125,7 +158,8 @@ func (s *Store) Claim(ctx context.Context, lease time.Duration) (Delivery, error
 			query += " FOR UPDATE SKIP LOCKED"
 		}
 		var raw []byte
-		err = q.QueryRowContext(ctx, s.d.Rebind(query), now.UnixMicro(), now.UnixMicro()).Scan(&raw, &out.Destination, &out.Attempts)
+		err = q.QueryRowContext(ctx, s.d.Rebind(query), now.UnixMicro(), now.UnixMicro()).
+			Scan(&raw, &out.Destination, &out.Attempts)
 		if errors.Is(err, sql.ErrNoRows) {
 			return ErrEmpty
 		}
@@ -137,7 +171,16 @@ func (s *Store) Claim(ctx context.Context, lease time.Duration) (Delivery, error
 		}
 		out.Token = rand.Text()
 		out.Attempts++
-		_, err = q.ExecContext(ctx, s.d.Rebind("UPDATE event_deliveries SET lease_token = ?, lease_until = ?, attempts = attempts + 1 WHERE event_id = ? AND destination = ?"), out.Token, now.Add(lease).UnixMicro(), out.Record.EventID, out.Destination)
+		_, err = q.ExecContext(
+			ctx,
+			s.d.Rebind(
+				"UPDATE event_deliveries SET lease_token = ?, lease_until = ?, attempts = attempts + 1 WHERE event_id = ? AND destination = ?",
+			),
+			out.Token,
+			now.Add(lease).UnixMicro(),
+			out.Record.EventID,
+			out.Destination,
+		)
 		return err
 	})
 	if err != nil {
@@ -148,7 +191,12 @@ func (s *Store) Claim(ctx context.Context, lease time.Duration) (Delivery, error
 
 // Finish acknowledges, blocks, or schedules another attempt using the lease
 // token. Codes must be fixed local categories, never remote response text.
-func (s *Store) Finish(ctx context.Context, delivery Delivery, code string, retryAfter time.Duration) error {
+func (s *Store) Finish(
+	ctx context.Context,
+	delivery Delivery,
+	code string,
+	retryAfter time.Duration,
+) error {
 	state := "delivered"
 	switch code {
 	case "":
@@ -168,7 +216,19 @@ func (s *Store) Finish(ctx context.Context, delivery Delivery, code string, retr
 		if err != nil {
 			return err
 		}
-		res, err := q.ExecContext(ctx, s.d.Rebind("UPDATE event_deliveries SET state = ?, next_attempt = ?, lease_token = '', lease_until = 0, last_code = ? WHERE event_id = ? AND destination = ? AND lease_token = ? AND lease_until > ? AND state = 'pending'"), state, now.Add(retryAfter).UnixMicro(), code, delivery.Record.EventID, delivery.Destination, delivery.Token, now.UnixMicro())
+		res, err := q.ExecContext(
+			ctx,
+			s.d.Rebind(
+				"UPDATE event_deliveries SET state = ?, next_attempt = ?, lease_token = '', lease_until = 0, last_code = ? WHERE event_id = ? AND destination = ? AND lease_token = ? AND lease_until > ? AND state = 'pending'",
+			),
+			state,
+			now.Add(retryAfter).UnixMicro(),
+			code,
+			delivery.Record.EventID,
+			delivery.Destination,
+			delivery.Token,
+			now.UnixMicro(),
+		)
 		if err != nil {
 			return err
 		}

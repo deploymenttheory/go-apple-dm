@@ -210,7 +210,7 @@ func TestPKIAndAccountStatePersistAcrossInstances(t *testing.T) {
 	if err := second.Close(); err != nil {
 		t.Fatal(err)
 	}
-	if w := admin("GET", path, "admin", nil); w.Code != 500 {
+	if w := admin("GET", path, "admin", nil); w.Code != 503 {
 		t.Fatal("closed registry", w.Code)
 	}
 }

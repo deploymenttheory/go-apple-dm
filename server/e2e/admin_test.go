@@ -42,7 +42,10 @@ type adminHarness struct {
 // countingPusher stands in for APNs and records who was woken.
 type countingPusher struct{ woke []mdm.EnrollmentID }
 
-func (p *countingPusher) Push(_ context.Context, targets []push.Target) (map[mdm.EnrollmentID]push.Result, error) {
+func (p *countingPusher) Push(
+	_ context.Context,
+	targets []push.Target,
+) (map[mdm.EnrollmentID]push.Result, error) {
 	out := make(map[mdm.EnrollmentID]push.Result, len(targets))
 	for _, tgt := range targets {
 		p.woke = append(p.woke, tgt.ID)
@@ -142,9 +145,18 @@ func TestE2E_AdminCLI(t *testing.T) {
 	dev := mdm.EnrollmentID{Channel: mdm.ChannelDevice, ID: "UDID-E2E"}
 	err := h.app.Core.ImportEnrollment(context.Background(), storage.EnrollmentExport{
 		Enrollment: storage.Enrollment{
-			ID: dev, Enabled: true,
-			Push:   mdm.Push{Topic: "com.apple.mgmt.External.simulator", Token: []byte("tok"), Magic: "magic"},
-			Device: storage.DeviceInfo{SerialNumber: "S-E2E", ProductName: "Mac15,3", OSVersion: "26.0"},
+			ID:      dev,
+			Enabled: true,
+			Push: mdm.Push{
+				Topic: "com.apple.mgmt.External.simulator",
+				Token: []byte("tok"),
+				Magic: "magic",
+			},
+			Device: storage.DeviceInfo{
+				SerialNumber: "S-E2E",
+				ProductName:  "Mac15,3",
+				OSVersion:    "26.0",
+			},
 		},
 	})
 	if err != nil {
@@ -172,8 +184,13 @@ func TestE2E_AdminCLI(t *testing.T) {
 		scratch := mdm.EnrollmentID{Channel: mdm.ChannelDevice, ID: scratchEnrollment}
 		err = h.app.Core.ImportEnrollment(context.Background(), storage.EnrollmentExport{
 			Enrollment: storage.Enrollment{
-				ID: scratch, Enabled: true,
-				Push: mdm.Push{Topic: "com.apple.mgmt.External.simulator", Token: []byte("tok"), Magic: "magic"},
+				ID:      scratch,
+				Enabled: true,
+				Push: mdm.Push{
+					Topic: "com.apple.mgmt.External.simulator",
+					Token: []byte("tok"),
+					Magic: "magic",
+				},
 			},
 		})
 		if err != nil {
@@ -207,8 +224,11 @@ func TestE2E_AdminCLI(t *testing.T) {
 
 	t.Run("TypedVerbsCoverTheModelledFamilies", func(t *testing.T) {
 		for _, args := range [][]string{
-			{"status"}, {"routes"}, {"actions"},
-			{"principals", "list"}, {"policies", "list"},
+			{"status"},
+			{"routes"},
+			{"actions"},
+			{"principals", "list"},
+			{"policies", "list"},
 			{"enrollments", "list"},
 			{"enrollments", "get", "device", "UDID-E2E"},
 			{"commands", "list", "device", "UDID-E2E"},
@@ -228,7 +248,12 @@ func TestE2E_AdminCLI(t *testing.T) {
 		if _, err := h.ctl(t, rotating, "", "status"); err != nil {
 			t.Fatalf("the fresh token was refused: %v", err)
 		}
-		if _, _, err := h.manager.Rotate(context.Background(), adminauth.Root, "rotating", time.Time{}); err != nil {
+		if _, _, err := h.manager.Rotate(
+			context.Background(),
+			adminauth.Root,
+			"rotating",
+			time.Time{},
+		); err != nil {
 			t.Fatal(err)
 		}
 		if _, err := h.ctl(t, rotating, "", "status"); err == nil {
@@ -251,13 +276,47 @@ func TestE2E_AdminCLI(t *testing.T) {
 	})
 
 	t.Run("ReadOnlyPrincipalIsRefusedAndAudited", func(t *testing.T) {
-		if _, err := h.ctl(t, reader, "", "enrollments", "disable", "device", "UDID-E2E"); err == nil {
+		if _, err := h.ctl(
+			t,
+			reader,
+			"",
+			"enrollments",
+			"disable",
+			"device",
+			"UDID-E2E",
+		); err == nil {
 			t.Fatal("a principal with no policy was allowed to disable an enrollment")
 		}
-		if err := h.app.Close(); err != nil {
-			t.Fatal(err)
+		// Persistent delivery is supervised by Run; an HTTP response only
+		// guarantees capture. Wait for the configured audit destination.
+		ctx, cancel := context.WithCancel(context.Background())
+		done := make(chan error, 1)
+		go func() { done <- h.app.Run(ctx) }()
+		defer func() {
+			cancel()
+			if err := <-done; err != nil {
+				t.Error(err)
+			}
+		}()
+		deadline := time.Now().Add(5 * time.Second)
+		for {
+			rows, err := h.trail.List(ctx, audit.Query{Type: "admin-denied"}, audit.Page{})
+			if err != nil {
+				t.Fatal(err)
+			}
+			if len(rows.Items) != 0 {
+				break
+			}
+			if time.Now().After(deadline) {
+				t.Fatal("persistent audit delivery did not finish")
+			}
+			time.Sleep(10 * time.Millisecond)
 		}
-		res, err := h.trail.List(context.Background(), audit.Query{Type: "admin-denied"}, audit.Page{})
+		res, err := h.trail.List(
+			context.Background(),
+			audit.Query{Type: "admin-denied"},
+			audit.Page{},
+		)
 		if err != nil {
 			t.Fatal(err)
 		}

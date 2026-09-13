@@ -307,7 +307,7 @@ func Verify(
 		return nil, ErrInvalid
 	}
 	limits = limits.defaults()
-	f, err := os.Open(source)
+	f, err := openLocal(source, os.O_RDONLY, 0)
 	if err != nil {
 		return nil, wrap(err)
 	}
@@ -407,7 +407,7 @@ func extract(ctx context.Context, archive *tar.Reader, v *Verified) error {
 		if err = os.MkdirAll(filepath.Dir(name), 0o700); err != nil {
 			return wrap(err)
 		}
-		out, err := os.OpenFile(name, os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0o600)
+		out, err := openLocal(name, os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0o600)
 		if err != nil {
 			return wrap(err)
 		}
@@ -460,12 +460,12 @@ func (v *Verified) RestoreFiles(destination string) error {
 }
 
 func copyVerified(source, destination string, entry Entry) error {
-	f, err := os.Open(source)
+	f, err := openLocal(source, os.O_RDONLY, 0)
 	if err != nil {
 		return wrap(err)
 	}
 	defer f.Close()
-	out, err := os.OpenFile(destination, os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0o600)
+	out, err := openLocal(destination, os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0o600)
 	if err != nil {
 		return wrap(err)
 	}
@@ -482,6 +482,7 @@ func copyVerified(source, destination string, entry Entry) error {
 }
 
 func syncDirectory(directory string) error {
+	// #nosec G304 -- Operator-selected publication directory; sync does not read its contents.
 	f, err := os.Open(directory)
 	if err != nil {
 		return wrap(err)
