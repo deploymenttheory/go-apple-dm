@@ -35,7 +35,7 @@ func (s *Store) TakeNonce(ctx context.Context, value string) (*acme.Nonce, error
 	// no window between reading the nonce and consuming it.
 	var n acme.Nonce
 	var issued sql.NullTime
-	found, err := s.view().row(ctx, "take nonce",
+	found, err := s.view(ctx).row(ctx, "take nonce",
 		"DELETE FROM acme_nonces WHERE value = ? RETURNING value, issued_at", []any{value}, &n.Value, &issued)
 	if err != nil {
 		return nil, err

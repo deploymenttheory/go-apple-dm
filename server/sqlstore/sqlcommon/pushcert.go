@@ -60,7 +60,7 @@ func (s *Store) PushCert(ctx context.Context, topic string) (*storage.PushCert, 
 	var c storage.PushCert
 	var key []byte
 	var notAfter, updated time.Time
-	err := s.db.QueryRowContext(ctx, s.q("SELECT topic, cert_pem, key_pem, not_after, version, updated_at FROM push_certs WHERE topic = ?"), topic).
+	err := Query(ctx, s.db).QueryRowContext(ctx, s.q("SELECT topic, cert_pem, key_pem, not_after, version, updated_at FROM push_certs WHERE topic = ?"), topic).
 		Scan(&c.Topic, &c.CertPEM, &key, &notAfter, &c.Version, &updated)
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil, fmt.Errorf("%w: push certificate for %q", storage.ErrNotFound, topic)
@@ -77,7 +77,7 @@ func (s *Store) PushCert(ctx context.Context, topic string) (*storage.PushCert, 
 
 // PushCerts implements storage.PushCertStore.
 func (s *Store) PushCerts(ctx context.Context) ([]storage.PushCert, error) {
-	rows, err := s.db.QueryContext(ctx, s.q("SELECT topic, cert_pem, not_after, version, updated_at FROM push_certs ORDER BY topic"))
+	rows, err := Query(ctx, s.db).QueryContext(ctx, s.q("SELECT topic, cert_pem, not_after, version, updated_at FROM push_certs ORDER BY topic"))
 	if err != nil {
 		return nil, wrap("list push certificates", err)
 	}
@@ -101,7 +101,7 @@ func (s *Store) PushCerts(ctx context.Context) ([]storage.PushCert, error) {
 // PushCertVersion implements storage.PushCertStore.
 func (s *Store) PushCertVersion(ctx context.Context, topic string) (int64, error) {
 	var v int64
-	err := s.db.QueryRowContext(ctx, s.q("SELECT version FROM push_certs WHERE topic = ?"), topic).Scan(&v)
+	err := Query(ctx, s.db).QueryRowContext(ctx, s.q("SELECT version FROM push_certs WHERE topic = ?"), topic).Scan(&v)
 	if errors.Is(err, sql.ErrNoRows) {
 		return 0, fmt.Errorf("%w: push certificate for %q", storage.ErrNotFound, topic)
 	}

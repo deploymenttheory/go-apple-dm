@@ -155,6 +155,8 @@ BENCH_TOPOLOGY ?= all
 BENCH_LISTEN ?= 127.0.0.1:8443
 BENCH_SCENARIO ?= all
 BENCH_DEVICE_ID ?=
+BENCH_USER_ID ?=
+BENCH_ATTACH_URL ?=
 BENCH_IDENTITY ?= acme
 BENCH_PROFILE_FILE ?= $(BENCH_WORKSPACE)/enrollment.mobileconfig
 BENCH_TRUST_FILE ?= $(BENCH_WORKSPACE)/trust.mobileconfig
@@ -190,7 +192,7 @@ bench-list: bench-build
 
 ## bench-run: run BENCH_SCENARIO against the workspace; BENCH_DEVICE_ID selects a live MDM device
 bench-run: bench-build
-	"$(BENCH_BIN_DIR)/dmctl" bench run -workspace "$(BENCH_WORKSPACE)" -scenario "$(BENCH_SCENARIO)" -device-id "$(BENCH_DEVICE_ID)" -revision "$(BENCH_REVISION)"
+	"$(BENCH_BIN_DIR)/dmctl" bench run -workspace "$(BENCH_WORKSPACE)" -scenario "$(BENCH_SCENARIO)" -device-id "$(BENCH_DEVICE_ID)" -user-id "$(BENCH_USER_ID)" -attach-url "$(BENCH_ATTACH_URL)" -revision "$(BENCH_REVISION)"
 
 ## bench-status: query the workspace supervisor
 bench-status:
@@ -207,11 +209,11 @@ bench-trust: bench-build
 
 ## bench-profile: export an ACME or SCEP enrollment profile for BENCH_DEVICE_ID
 bench-profile: bench-build
-	"$(BENCH_BIN_DIR)/dmctl" bench profile -workspace "$(BENCH_WORKSPACE)" -device-id "$(BENCH_DEVICE_ID)" -identity "$(BENCH_IDENTITY)" -file "$(BENCH_PROFILE_FILE)"
+	"$(BENCH_BIN_DIR)/dmctl" bench profile -workspace "$(BENCH_WORKSPACE)" -device-id "$(BENCH_DEVICE_ID)" -identity "$(BENCH_IDENTITY)" -attach-url "$(BENCH_ATTACH_URL)" -file "$(BENCH_PROFILE_FILE)"
 
 ## bench-replace: start an authorized profile replacement and wake the enrolled device
 bench-replace: bench-build
-	"$(BENCH_BIN_DIR)/dmctl" bench replace -workspace "$(BENCH_WORKSPACE)" -device-id "$(BENCH_DEVICE_ID)" -identity "$(BENCH_IDENTITY)"
+	"$(BENCH_BIN_DIR)/dmctl" bench replace -workspace "$(BENCH_WORKSPACE)" -device-id "$(BENCH_DEVICE_ID)" -identity "$(BENCH_IDENTITY)" -attach-url "$(BENCH_ATTACH_URL)"
 
 ## test-acceptance: shared scenarios against built dmserver processes, including split topology
 # Absolute paths survive go test's package working directory.

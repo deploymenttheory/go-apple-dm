@@ -25,11 +25,18 @@ func New() *Store { return &Store{next: 1} }
 
 // Append implements audit.Store.
 func (s *Store) Append(_ context.Context, rec audit.Record) (audit.Record, error) {
-	if rec.Type == "" {
+	if rec.Type == "" || len(rec.EventID) > 64 {
 		return audit.Record{}, audit.ErrInvalid
 	}
 	s.mu.Lock()
 	defer s.mu.Unlock()
+	if rec.EventID != "" {
+		for _, stored := range s.records {
+			if stored.EventID == rec.EventID {
+				return clone(stored), nil
+			}
+		}
+	}
 	if s.next == 0 {
 		s.next = 1
 	}

@@ -15,7 +15,7 @@ import (
 // response (unless Idle) and returns the next command to deliver, or nil
 // when the queue is empty. A NotNow response skips other NotNow commands
 // for this connection, as Apple recommends.
-func (c *Core) Connect(
+func (c *Core) handleConnect(
 	ctx context.Context,
 	r *mdm.Request,
 	resp *mdm.Response,

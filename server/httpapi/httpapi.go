@@ -250,6 +250,9 @@ func (c Config) serviceError(w http.ResponseWriter, r *http.Request, err error) 
 		c.fail(w, r, http.StatusNotImplemented, err)
 	case service.CodeGone:
 		c.fail(w, r, http.StatusGone, err)
+	case service.CodeUnavailable:
+		w.Header().Set("Retry-After", "5")
+		c.fail(w, r, http.StatusServiceUnavailable, err)
 	case service.CodeUnknownEnrollment:
 		if !c.UnenrollUnknown {
 			c.fail(w, r, http.StatusForbidden, err)

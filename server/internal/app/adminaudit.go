@@ -53,6 +53,7 @@ func auditSink(store audit.Store, reg *eventsink.Registry) event.Handler {
 	return func(ctx context.Context, e event.Event) error {
 		rec := reg.Project(e)
 		_, err := store.Append(ctx, audit.Record{
+			EventID:    rec.EventID,
 			At:         rec.At,
 			Type:       rec.Type,
 			Actor:      rec.Actor,
@@ -213,6 +214,7 @@ func auditQuery(r *http.Request) (audit.Query, error) {
 // auditRecordView is the wire shape: the enrollment is flattened so a reader
 // does not have to know how mdm.EnrollmentID is spelled.
 type auditRecordView struct {
+	EventID    string
 	ID         int64
 	At         time.Time
 	Type       string
@@ -225,7 +227,8 @@ type auditRecordView struct {
 
 func auditView(rec audit.Record) auditRecordView {
 	v := auditRecordView{
-		ID: rec.ID, At: rec.At, Type: rec.Type, Actor: rec.Actor,
+		EventID: rec.EventID,
+		ID:      rec.ID, At: rec.At, Type: rec.Type, Actor: rec.Actor,
 		Enrollment: rec.Enrollment.ID, Parent: rec.Enrollment.ParentID, Fields: rec.Fields,
 	}
 	if rec.Enrollment.ID != "" || rec.Enrollment.Channel != mdm.ChannelUnknown {

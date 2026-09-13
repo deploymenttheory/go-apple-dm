@@ -91,8 +91,23 @@ type ackEv struct {
 //
 // Use event.WithAsync to keep receiver latency off device requests. The
 // reference application configures this mode. Delivery has bounded replies and
-// retries but is not durable across process failure.
+// retries but does not retain pending delivery across process failure.
 func Webhook(cfg WebhookConfig) (event.Handler, error) {
+	if cfg.Registry == nil {
+		cfg.Registry = Default()
+	}
+	send, err := RecordWebhook(cfg)
+	if err != nil {
+		return nil, err
+	}
+	return func(ctx context.Context, e event.Event) error {
+		return send(ctx, cfg.Registry.Project(e))
+	}, nil
+}
+
+// RecordWebhook delivers an already projected record. Persistent delivery
+// workers set Retries to -1 and schedule subsequent attempts in their store.
+func RecordWebhook(cfg WebhookConfig) (func(context.Context, Record) error, error) {
 	if cfg.URL == "" {
 		return nil, fmt.Errorf("%w: no URL", ErrWebhookConfig)
 	}
@@ -130,8 +145,11 @@ func Webhook(cfg WebhookConfig) (event.Handler, error) {
 	if cfg.Backoff <= 0 {
 		cfg.Backoff = 100 * time.Millisecond
 	}
-	return func(ctx context.Context, e event.Event) error {
-		body, err := json.Marshal(build(cfg, e))
+	return func(ctx context.Context, rec Record) error {
+		if rec.At.IsZero() {
+			rec.At = cfg.Clock.Now()
+		}
+		body, err := json.Marshal(buildRecord(rec))
 		if err != nil {
 			return fmt.Errorf("sink: encode webhook event: %w", err)
 		}
@@ -143,13 +161,17 @@ func Webhook(cfg WebhookConfig) (event.Handler, error) {
 // checkin_event.
 func build(cfg WebhookConfig, e event.Event) envelope {
 	rec := cfg.Registry.Project(e)
-	env := envelope{Topic: "mdm." + rec.Type, CreatedAt: rec.At}
-	if env.CreatedAt.IsZero() {
-		env.CreatedAt = cfg.Clock.Now()
+	if rec.At.IsZero() {
+		rec.At = cfg.Clock.Now()
 	}
-	if e.Type == event.CommandResult || e.Type == event.CommandSent ||
-		e.Type == event.CommandQueued ||
-		e.Type == event.CommandRejected {
+	return buildRecord(rec)
+}
+
+func buildRecord(rec Record) envelope {
+	env := envelope{Topic: "mdm." + rec.Type, EventID: rec.EventID, CreatedAt: rec.At}
+	t := event.Type(rec.Type)
+	if t == event.CommandResult || t == event.CommandSent ||
+		t == event.CommandQueued || t == event.CommandRejected {
 		ack := &ackEv{UDID: rec.ID, Fields: rec.Fields}
 		if v, ok := rec.Fields["command_uuid"].(string); ok {
 			ack.CommandUUID = v
@@ -211,10 +233,36 @@ func post(ctx context.Context, cfg WebhookConfig, body []byte) error {
 	// Drain a bounded amount for connection reuse. Receiver body content
 	// is discarded, so it cannot put secrets or unbounded text in logs.
 	_, _ = io.Copy(io.Discard, io.LimitReader(resp.Body, DefaultMaxResponse))
-	if resp.StatusCode >= 300 {
-		return fmt.Errorf("%w: HTTP %d", errStatus, resp.StatusCode)
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		return &HTTPError{Status: resp.StatusCode, RetryAfter: retryAfter(resp.Header.Get("Retry-After"), cfg.Clock.Now())}
 	}
 	return nil
+}
+
+// HTTPError contains only the status and bounded retry guidance; response bodies
+// and request URLs cannot enter event state or logs through this error.
+type HTTPError struct {
+	Status     int
+	RetryAfter time.Duration
+}
+
+func (e *HTTPError) Error() string { return fmt.Sprintf("sink: webhook rejected: HTTP %d", e.Status) }
+func (*HTTPError) Unwrap() error   { return errStatus }
+
+func retryAfter(value string, now time.Time) time.Duration {
+	d, err := time.ParseDuration(value + "s")
+	if err != nil {
+		if at, err := http.ParseTime(value); err == nil {
+			d = at.Sub(now)
+		}
+	}
+	if d < 0 {
+		return 0
+	}
+	if d > 24*time.Hour {
+		return 24 * time.Hour
+	}
+	return d
 }
 
 // net/http errors can contain the complete URL, including query credentials.

@@ -42,6 +42,7 @@ func runBench(ctx context.Context, e *env, args []string) error {
 	format := fs.String("format", "json", "json or markdown (list)")
 	revision := fs.String("revision", version(), "source revision recorded in evidence")
 	report := fs.String("report-dir", "", "evidence directory (run)")
+	attachURL := fs.String("attach-url", "", "existing HTTPS server origin for a live run, profile, or replace")
 	if err := fs.Parse(reorder(fs, args[1:])); err != nil {
 		if errors.Is(err, flag.ErrHelp) {
 			return nil
@@ -50,6 +51,9 @@ func runBench(ctx context.Context, e *env, args []string) error {
 	}
 	if fs.NArg() != 0 {
 		return fmt.Errorf("%w: unexpected arguments", ErrUsage)
+	}
+	if *attachURL != "" && sub != "run" && sub != "profile" && sub != "replace" {
+		return fmt.Errorf("%w: -attach-url supports run, profile, and replace", ErrUsage)
 	}
 	if sub == "init" {
 		return wrapError(bench.Init(*dir, *mode, *storage, *topology, *listen))
@@ -72,7 +76,12 @@ func runBench(ctx context.Context, e *env, args []string) error {
 		return benchUp(ctx, e, w, *binary)
 	}
 
-	instance, err := bench.Attach(w)
+	var instance *bench.Environment
+	if *attachURL != "" {
+		instance, err = bench.AttachURL(w, *attachURL)
+	} else {
+		instance, err = bench.Attach(w)
+	}
 	if err != nil {
 		return wrapError(err)
 	}

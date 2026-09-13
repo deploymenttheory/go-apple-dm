@@ -62,7 +62,7 @@ type NotifierConfig struct {
 	Tokens   TokenSource
 	Enqueuer Enqueuer
 	Pusher   Pusher
-	Bus      *event.Bus
+	Bus      event.Publisher
 	Clock    clock.Clock
 	Logger   *slog.Logger
 	// Window defers an enrollment while its newest change is younger than
@@ -371,6 +371,12 @@ func (n *Notifier) fail(ctx context.Context, g *changeGroup, cause error, now ti
 }
 
 func (n *Notifier) complete(ctx context.Context, groups []*changeGroup) error {
+	return event.Run(ctx, n.cfg.Bus, func(ctx context.Context) error {
+		return n.completeRecorded(ctx, groups)
+	})
+}
+
+func (n *Notifier) completeRecorded(ctx context.Context, groups []*changeGroup) error {
 	if len(groups) == 0 {
 		return nil
 	}

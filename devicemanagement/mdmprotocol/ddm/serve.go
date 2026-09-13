@@ -139,14 +139,17 @@ func (e *Engine) Declaration(ctx context.Context, id mdm.EnrollmentID, kind sche
 		if item.Identifier != identifier || item.Kind != kind {
 			continue
 		}
-		generated := item.Identifier == SubscriptionIdentifier &&
-			item.Kind == schemaddm.KindConfiguration &&
-			e.subs.Enabled
-		if generated && item.BaseToken == "" && item.Expanded != nil {
-			return RenderDeclaration(item.Expanded, item.ServerToken)
+		generated := subscriptionReference(item.DeclarationRef)
+		if generated && item.BaseToken == "" {
+			if !e.subs.Enabled {
+				return nil, fmt.Errorf("%w: automatic subscriptions disabled", ErrNotFound)
+			}
+			if item.Expanded != nil {
+				return RenderDeclaration(item.Expanded, item.ServerToken)
+			}
 		}
 		v, err := e.store.GetDeclarationVersion(ctx, identifier, item.BaseToken)
-		if errors.Is(err, ErrNotFound) && generated {
+		if errors.Is(err, ErrNotFound) && generated && e.subs.Enabled {
 			// Older snapshots assigned a base token to synthetic subscriptions.
 			// Rebuild from current authoritative state; never serve the stale
 			// bytes of a deleted administrator override of this identifier.

@@ -41,7 +41,25 @@ app alert/background pushes. Reserved E2E-015/E2E-022 are not advertised as
 implemented scenarios. Hardware-specific flows remain simulated unless a live
 adapter is explicitly listed. Live execution covers the host app, service discovery and an enrolled device's
 DeviceInformation response. LIVE-002 and LIVE-003 additionally require recorded
-ACME/SCEP issuance and the installing Mac user's enabled management channel.
+ACME/SCEP issuance and an acknowledged ProfileList on the installing Mac user's
+exact channel, selected with `-user-id` (`BENCH_USER_ID` in make). LIVE-004 assigns
+a unique OS/build subscription and activation, requires a fresh report showing
+active, valid declarations and DDM values matching fresh DeviceInformation, then
+removes its assignment and declarations and
+waits for the device's status to reflect removal. Obtain operator approval before
+running this live declaration test.
+
+The Mac can omit unchanged OS/build values from repeated status reports: status
+subscriptions combine as a set union and reports are incremental. LIVE-004 checks
+retained values against current inventory; it does not claim that every repetition
+produced new OS/build status items. Initial receipt is recorded separately.
+
+For a live server started directly, `dmctl bench run`, `profile` and `replace`
+accept `-attach-url https://127.0.0.1:8443` (`BENCH_ATTACH_URL` in make). This uses
+the existing workspace's CA and admin credential without supervisor state.
+It requires an HTTPS origin and rejects redirects. Record the running server's
+source and binary hashes alongside reports; the CLI's revision alone cannot
+identify an independently started server.
 
 Reports include stable scenario ID, mode, adapter, revision, status, start and
 duration. Private JSON and JUnit files are written together. JUnit marks blocked

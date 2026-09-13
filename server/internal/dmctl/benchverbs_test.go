@@ -92,3 +92,18 @@ func TestBenchOfflineCommands(t *testing.T) {
 		}
 	}
 }
+
+func TestBenchDirectAttachmentRejectsUnsupportedActions(t *testing.T) {
+	for _, sub := range []string{"init", "list", "doctor", "enrollment-preflight", "trust", "up", "status", "down"} {
+		t.Run(sub, func(t *testing.T) {
+			dir := filepath.Join(t.TempDir(), "workspace")
+			_, _, err := run(t, noConfig(t), "bench", sub, "-workspace", dir, "-attach-url", "https://localhost:8443")
+			if err == nil || !strings.Contains(err.Error(), "-attach-url supports") {
+				t.Fatalf("unsupported attachment: %v", err)
+			}
+			if _, err := os.Stat(dir); !os.IsNotExist(err) {
+				t.Fatal("invalid attachment changed the workspace")
+			}
+		})
+	}
+}

@@ -175,12 +175,12 @@ func (t *transaction) Delete(ctx context.Context, k string) error {
 
 // Get implements state.Reader.
 func (s *Store) Get(ctx context.Context, k string) (state.Record, error) {
-	return (&transaction{q: s.db, d: s.d, keyring: s.keyring}).Get(ctx, k)
+	return (&transaction{q: sqlcommon.Query(ctx, s.db), d: s.d, keyring: s.keyring}).Get(ctx, k)
 }
 
 // List implements state.Reader.
 func (s *Store) List(ctx context.Context, prefix, after string, limit int) ([]state.Record, error) {
-	return (&transaction{q: s.db, d: s.d, keyring: s.keyring}).List(ctx, prefix, after, limit)
+	return (&transaction{q: sqlcommon.Query(ctx, s.db), d: s.d, keyring: s.keyring}).List(ctx, prefix, after, limit)
 }
 
 func databaseTime(ctx context.Context, q queryer, d sqlcommon.Dialect) (time.Time, error) {
@@ -213,6 +213,9 @@ func (s *Store) Update(ctx context.Context, keys []string, fn func(state.Tx) err
 	}
 	slices.Sort(shards)
 	shards = slices.Compact(shards)
+	if _, ok := sqlcommon.CurrentTransaction(ctx, s.db); ok {
+		return sqlcommon.Savepoint(ctx, s.db, func(ctx context.Context, tx *sql.Tx) error { return s.update(ctx, tx, shards, fn) })
+	}
 	opts := &sql.TxOptions{Isolation: sql.LevelReadCommitted}
 	if s.d.Name == "sqlite" {
 		opts = nil
@@ -222,6 +225,13 @@ func (s *Store) Update(ctx context.Context, keys []string, fn func(state.Tx) err
 		return err
 	}
 	defer func() { _ = tx.Rollback() }()
+	if err := s.update(ctx, tx, shards, fn); err != nil {
+		return err
+	}
+	return tx.Commit()
+}
+
+func (s *Store) update(ctx context.Context, tx *sql.Tx, shards []int, fn func(state.Tx) error) error {
 	for _, shard := range shards {
 		if _, err := tx.ExecContext(
 			ctx,
@@ -235,10 +245,7 @@ func (s *Store) Update(ctx context.Context, keys []string, fn func(state.Tx) err
 	if err != nil {
 		return err
 	}
-	if err := fn(&transaction{q: tx, d: s.d, now: now, keyring: s.keyring}); err != nil {
-		return err
-	}
-	return tx.Commit()
+	return fn(&transaction{q: tx, d: s.d, now: now, keyring: s.keyring})
 }
 
 // Prune uses the same shard locks as writers and rechecks expiry after locking.

@@ -159,10 +159,15 @@ func encrypt(content []byte, recipients []*x509.Certificate) ([]byte, error) {
 	return out, nil
 }
 
-// CheckEnvelope rejects single DES and unsupported content before decryption.
+// CheckEnvelope accepts CMS BER and rejects unsupported content encryption.
+// Callers must authenticate the original signed bytes before this check.
 func CheckEnvelope(raw []byte) error {
+	der, err := envelopeDER(raw)
+	if err != nil {
+		return fmt.Errorf("%w: malformed envelope encoding", ErrWire)
+	}
 	var outer contentInfo
-	rest, err := asn1.Unmarshal(raw, &outer)
+	rest, err := asn1.Unmarshal(der, &outer)
 	if err != nil || len(rest) != 0 || !outer.Type.Equal(pkcs7.OIDEnvelopedData) {
 		return ErrWire
 	}

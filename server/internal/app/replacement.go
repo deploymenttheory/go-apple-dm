@@ -14,6 +14,7 @@ import (
 	"net/http"
 	"strings"
 	"time"
+	"uuid"
 
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/cms"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/enroll"
@@ -125,7 +126,10 @@ func (h replacementAdmission) Before(
 		!strings.HasPrefix(call.Request.Certificate.Subject.CommonName, replacementSubjectPrefix) {
 		return ctx, nil
 	}
-	id, attempt, err := parseReplacementSubject(call.Request.Certificate.Subject.CommonName)
+	id, attempt, err := h.app.resolveReplacementSubject(
+		ctx,
+		call.Request.Certificate.Subject.CommonName,
+	)
 	if err != nil || id != call.Request.ID.Device() {
 		return ctx, fmt.Errorf(
 			"%w: replacement identity belongs to another device",
@@ -187,13 +191,71 @@ func parseReplacementSubject(subject string) (mdm.EnrollmentID, string, error) {
 	return device, attempt, nil
 }
 
+// New profiles use a 46-byte common name. The macOS profile installer truncates
+// SCEP common names at 64 bytes, so embedding both device and attempt IDs loses
+// the end of the attempt. The binding is identity history, not an issuance grant:
+// challenge, CSR, active attempt and certificate checks still authorize use.
+func (a *App) bindReplacementSubject(
+	ctx context.Context,
+	id mdm.EnrollmentID,
+	attempt string,
+) error {
+	key := "replacement-subject:" + attempt
+	err := a.protocol.Update(ctx, []string{key}, func(tx state.Tx) error {
+		r, err := tx.Get(ctx, key)
+		if err == nil {
+			if string(r.Value) != id.ID {
+				return fmt.Errorf("%w: replacement subject already bound", storage.ErrConflict)
+			}
+			return nil
+		}
+		if !errors.Is(err, state.ErrNotFound) {
+			return wrapError(err)
+		}
+		// Retain across later replacements and restarts for certificates already
+		// installed. This record alone can never authorize certificate issuance.
+		return tx.Put(ctx, state.Record{Key: key, Value: []byte(id.ID)})
+	})
+	return wrapError(err)
+}
+
+func (a *App) resolveReplacementSubject(
+	ctx context.Context,
+	subject string,
+) (mdm.EnrollmentID, string, error) {
+	ref, ok := strings.CutPrefix(subject, replacementSubjectPrefix)
+	if ok && strings.Contains(ref, ":") {
+		// Continue accepting previously issued identities with the legacy subject.
+		return parseReplacementSubject(subject)
+	}
+	parsed, err := uuid.Parse(ref)
+	if !ok || err != nil || strings.ToUpper(parsed.String()) != ref || a.protocol == nil {
+		return mdm.EnrollmentID{}, "", fmt.Errorf(
+			"%w: malformed replacement subject",
+			storage.ErrInvalid,
+		)
+	}
+	r, err := a.protocol.Get(ctx, "replacement-subject:"+ref)
+	if err != nil {
+		return mdm.EnrollmentID{}, "", fmt.Errorf("app: replacement subject binding: %w", err)
+	}
+	id := mdm.EnrollmentID{Channel: mdm.ChannelDevice, ID: string(r.Value)}
+	if err := id.Validate(); err != nil {
+		return mdm.EnrollmentID{}, "", fmt.Errorf(
+			"%w: invalid replacement subject binding",
+			storage.ErrInvalid,
+		)
+	}
+	return id, ref, nil
+}
+
 func digest(b []byte) string { h := sha256.Sum256(b); return hex.EncodeToString(h[:]) }
 
 func (a *App) replacementIssuance(ctx context.Context, cert *x509.Certificate) error {
 	if !strings.HasPrefix(cert.Subject.CommonName, replacementSubjectPrefix) {
 		return nil
 	}
-	id, attempt, err := parseReplacementSubject(cert.Subject.CommonName)
+	id, attempt, err := a.resolveReplacementSubject(ctx, cert.Subject.CommonName)
 	if err != nil {
 		return wrapError(err)
 	}
@@ -223,7 +285,7 @@ func (a *App) replacementChallenge(
 	password string,
 	csr *x509.CertificateRequest,
 ) error {
-	id, attempt, err := parseReplacementSubject(csr.Subject.CommonName)
+	id, attempt, err := a.resolveReplacementSubject(ctx, csr.Subject.CommonName)
 	if err != nil {
 		return wrapError(err)
 	}
@@ -334,7 +396,7 @@ func (a *App) prepareReplacement(
 		id.ID,
 		e.Device.SerialNumber,
 		e.Device.ProductName,
-		replacementSubject(id, attempt),
+		replacementSubjectPrefix+attempt,
 	)
 	hardware := enroll.MacHardwareUnknown
 	if e.Capabilities.AppleSilicon == storage.CapabilityTrue {
@@ -410,6 +472,9 @@ func (a *App) prepareReplacement(
 		return nil, fmt.Errorf("app: replacement command: %w", err)
 	}
 	cmd.Payload = nil
+	if err := a.bindReplacementSubject(ctx, id, attempt); err != nil {
+		return nil, fmt.Errorf("app: bind replacement subject: %w", err)
+	}
 	return &storage.Replacement{
 		ID:         attempt,
 		Issuer:     targetIssuer,

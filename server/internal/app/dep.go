@@ -75,7 +75,7 @@ func (a *App) newDEP(ctx context.Context) (*depService, error) {
 			BaseURL:    a.cfg.DEP.BaseURL,
 			HTTPClient: httpClient,
 			Clock:      a.cfg.Clock,
-			Bus:        a.cfg.Bus,
+			Bus:        a.cfg.publisher(),
 			Logger:     a.cfg.Logger,
 		},
 	)
@@ -92,7 +92,7 @@ func (d *depService) syncer(account string) (*dep.Syncer, error) {
 			Store:   d.store,
 			Account: account,
 			Clock:   d.app.cfg.Clock,
-			Bus:     d.app.cfg.Bus,
+			Bus:     d.app.cfg.publisher(),
 			Logger:  d.app.cfg.Logger,
 		},
 	)
@@ -109,7 +109,7 @@ func (d *depService) assigner(account string) (*dep.Assigner, error) {
 			Store:    d.store,
 			Account:  account,
 			Clock:    d.app.cfg.Clock,
-			Bus:      d.app.cfg.Bus,
+			Bus:      d.app.cfg.publisher(),
 			Logger:   d.app.cfg.Logger,
 			ReadBack: true,
 			UsePUT:   d.app.cfg.DEP.UsePUT,

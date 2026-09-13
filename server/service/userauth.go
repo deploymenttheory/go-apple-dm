@@ -202,7 +202,7 @@ type DigestUserAuth struct {
 	// Clock defaults to the real clock.
 	Clock clock.Clock
 	// Bus receives UserAuthenticated and UserAuthFailed; nil disables it.
-	Bus *event.Bus
+	Bus event.Publisher
 	// Rand defaults to crypto/rand.
 	Rand io.Reader
 }

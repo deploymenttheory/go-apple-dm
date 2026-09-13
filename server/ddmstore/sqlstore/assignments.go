@@ -242,17 +242,17 @@ func (s *Store) AssignSet(ctx context.Context, id mdm.EnrollmentID, set string, 
 
 // UnassignSet implements ddm.AssignmentStore.
 func (s *Store) UnassignSet(ctx context.Context, id mdm.EnrollmentID, set string) (bool, error) {
-	return s.view().UnassignSet(ctx, id, set)
+	return s.view(ctx).UnassignSet(ctx, id, set)
 }
 
 // EnrollmentSets implements ddm.AssignmentStore.
 func (s *Store) EnrollmentSets(ctx context.Context, id mdm.EnrollmentID) ([]string, error) {
-	return s.view().EnrollmentSets(ctx, id)
+	return s.view(ctx).EnrollmentSets(ctx, id)
 }
 
 // SetEnrollments implements ddm.AssignmentStore.
 func (s *Store) SetEnrollments(ctx context.Context, set string, p paging.Page) (paging.Result[mdm.EnrollmentID], error) {
-	return s.view().SetEnrollments(ctx, set, p)
+	return s.view(ctx).SetEnrollments(ctx, set, p)
 }
 
 // AssignDeclaration implements ddm.AssignmentStore.
@@ -266,20 +266,20 @@ func (s *Store) AssignDeclaration(ctx context.Context, id mdm.EnrollmentID, iden
 
 // UnassignDeclaration implements ddm.AssignmentStore.
 func (s *Store) UnassignDeclaration(ctx context.Context, id mdm.EnrollmentID, identifier string) (bool, error) {
-	return s.view().UnassignDeclaration(ctx, id, identifier)
+	return s.view(ctx).UnassignDeclaration(ctx, id, identifier)
 }
 
 // EnrollmentDeclarations implements ddm.AssignmentStore.
 func (s *Store) EnrollmentDeclarations(ctx context.Context, id mdm.EnrollmentID) ([]string, error) {
-	return s.view().EnrollmentDeclarations(ctx, id)
+	return s.view(ctx).EnrollmentDeclarations(ctx, id)
 }
 
 // StaticDeclarations implements ddm.AssignmentStore.
 func (s *Store) StaticDeclarations(ctx context.Context, id mdm.EnrollmentID) ([]ddm.Declaration, error) {
-	return s.view().StaticDeclarations(ctx, id)
+	return s.view(ctx).StaticDeclarations(ctx, id)
 }
 
 // AffectedEnrollments implements ddm.AssignmentStore.
 func (s *Store) AffectedEnrollments(ctx context.Context, identifiers, sets []string) ([]mdm.EnrollmentID, error) {
-	return s.view().AffectedEnrollments(ctx, identifiers, sets)
+	return s.view(ctx).AffectedEnrollments(ctx, identifiers, sets)
 }

@@ -76,14 +76,19 @@ func (s *Server) revokeCertificate(e *exchange) error {
 			return err
 		}
 	}
-	err = s.cfg.Revocations.Revoke(e.ctx(), record.Issuer, cert.SerialNumber, body.Reason)
+	err = event.Run(e.ctx(), s.cfg.Bus, func(ctx context.Context) error {
+		if err := s.cfg.Revocations.Revoke(ctx, record.Issuer, cert.SerialNumber, body.Reason); err != nil {
+			return err
+		}
+		s.publish(ctx, event.CertificateRevoked, map[string]any{"issuer": record.Issuer, "serial": record.Serial, "reason": body.Reason})
+		return nil
+	})
 	if errors.Is(err, revocation.ErrRevoked) {
 		return NewProblem(ProblemAlreadyRevoked, "certificate is already revoked")
 	}
 	if err != nil {
 		return WrapProblem(ProblemServerInternal, err, "revocation could not be recorded")
 	}
-	s.publish(e.ctx(), event.CertificateRevoked, map[string]any{"issuer": record.Issuer, "serial": record.Serial, "reason": body.Reason})
 	e.w.WriteHeader(http.StatusOK)
 	return nil
 }

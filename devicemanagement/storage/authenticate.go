@@ -16,9 +16,13 @@ type AuthenticateChange struct {
 	ExpectedHash string
 	Hash         string
 	AllowReuse   bool
-	Message      *checkin.Authenticate
-	Raw          []byte
-	At           time.Time
+	// AllowReenroll permits a disabled device to start a new enrollment after
+	// policy approval. It requires a different, nonempty identity certificate;
+	// replaying the old identity can never reactivate a disabled enrollment.
+	AllowReenroll bool
+	Message       *checkin.Authenticate
+	Raw           []byte
+	At            time.Time
 }
 
 // CheckAuthenticate checks an enrollment under the backend's write lock. A true
@@ -39,7 +43,7 @@ func CheckAuthenticate(id mdm.EnrollmentID, e *Enrollment, c AuthenticateChange)
 	if e.ID != id {
 		return false, ErrConflict
 	}
-	if !e.DisabledAt.IsZero() {
+	if !e.DisabledAt.IsZero() && (!c.AllowReenroll || c.Hash == "" || c.Hash == e.CertHash) {
 		return false, ErrDisabled
 	}
 	if c.Hash != "" && e.CertHash == c.Hash {

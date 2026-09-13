@@ -27,8 +27,8 @@ type Expander interface {
 	Expand(ctx context.Context, id mdm.EnrollmentID, d *Declaration) ([]byte, error)
 }
 
-// Subscriptions configures the synthesised status-subscriptions declaration
-// (decision record 0021).
+// Subscriptions configures the synthesised status-subscriptions declaration and
+// its unconditional companion activation (decision record 0021).
 type Subscriptions struct {
 	Enabled bool
 	// Baseline is used until a device reports its capabilities; nil means
@@ -44,7 +44,7 @@ type Config struct {
 	Store     Store
 	Resolvers []Resolver
 	Expander  Expander
-	Bus       *event.Bus
+	Bus       event.Publisher
 	Clock     clock.Clock
 	Logger    *slog.Logger
 	// Target supplies the validation target for uploads; nil validates for
@@ -75,7 +75,7 @@ type Engine struct {
 	store                                         Store
 	resolvers                                     []Resolver
 	expander                                      Expander
-	bus                                           *event.Bus
+	bus                                           event.Publisher
 	clock                                         clock.Clock
 	log                                           *slog.Logger
 	target                                        func(ctx context.Context) support.Target

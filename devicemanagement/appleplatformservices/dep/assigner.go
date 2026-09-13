@@ -35,7 +35,7 @@ type AssignerConfig struct {
 	Store   Store
 	Account string
 	Clock   clock.Clock
-	Bus     *event.Bus
+	Bus     event.Publisher
 	Logger  *slog.Logger
 	// Filter keeps a device eligible when it returns true; nil keeps all.
 	Filter func(Device) bool
@@ -279,6 +279,22 @@ func (a *Assigner) state(ctx context.Context, sd *StoredDevice, profileUUID stri
 // record writes the per-serial outcome of one batch, schedules retries,
 // reads successes back when configured, and publishes EventDeviceAssigned.
 func (a *Assigner) record(ctx context.Context, profileUUID string, batch []string, resp *AssignResponse, res *AssignResult) error {
+	updated := *res
+	err := event.Run(ctx, a.cfg.Bus, func(ctx context.Context) error {
+		return a.recordBatch(ctx, profileUUID, batch, resp, &updated)
+	})
+	if err != nil {
+		return err
+	}
+	*res = updated
+	if a.cfg.ReadBack {
+		// Remote inspection happens only after the local outcome commits.
+		return a.readBack(ctx, batch)
+	}
+	return nil
+}
+
+func (a *Assigner) recordBatch(ctx context.Context, profileUUID string, batch []string, resp *AssignResponse, res *AssignResult) error {
 	now := a.cfg.Clock.Now()
 	var success []string
 	var events []event.Event
@@ -313,11 +329,6 @@ func (a *Assigner) record(ctx context.Context, profileUUID string, batch []strin
 		if err := a.cfg.Bus.Publish(ctx, ev); err != nil {
 			a.cfg.Logger.WarnContext(ctx, "dep: publish", "type", string(ev.Type), "error", err)
 		}
-	}
-	if a.cfg.ReadBack {
-		// Inspect every serial: profile_status also applies to NOT_ACCESSIBLE and
-		// FAILED outcomes.
-		return a.readBack(ctx, batch)
 	}
 	return nil
 }

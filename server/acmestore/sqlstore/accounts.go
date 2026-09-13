@@ -69,10 +69,10 @@ func (t *txStore) AccountByThumbprint(ctx context.Context, thumbprint string) (*
 
 // GetAccount implements acme.Reader.
 func (s *Store) GetAccount(ctx context.Context, id string) (*acme.Account, error) {
-	return s.view().GetAccount(ctx, id)
+	return s.view(ctx).GetAccount(ctx, id)
 }
 
 // AccountByThumbprint implements acme.Reader.
 func (s *Store) AccountByThumbprint(ctx context.Context, thumbprint string) (*acme.Account, error) {
-	return s.view().AccountByThumbprint(ctx, thumbprint)
+	return s.view(ctx).AccountByThumbprint(ctx, thumbprint)
 }

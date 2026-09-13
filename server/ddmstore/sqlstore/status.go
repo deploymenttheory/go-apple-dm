@@ -98,12 +98,12 @@ func (t *txStore) PutStatus(
 }
 
 // putStatusDeclarations upserts u.Declarations (FirstSeen kept, LastSeen
-// bumped) and, for a full report that carried the declarations item,
-// deletes the rows the report no longer mentions, returning them sorted.
+// bumped) and, whenever the report carries the declarations item, deletes
+// the rows that item no longer mentions, returning them sorted.
 func (t *txStore) putStatusDeclarations(ctx context.Context, id mdm.EnrollmentID, u ddm.StatusUpdate, at time.Time) ([]ddm.DeclarationRef, error) {
 	key := id.ID
 	var stale []ddm.DeclarationRef
-	if u.FullReport && u.HasDeclarations {
+	if u.HasDeclarations {
 		seen := map[ddm.DeclarationRef]bool{}
 		for _, d := range u.Declarations {
 			seen[ddm.DeclarationRef{Kind: d.Kind, Identifier: d.Identifier}] = true
@@ -351,25 +351,25 @@ func (s *Store) PutStatus(ctx context.Context, id mdm.EnrollmentID, u ddm.Status
 
 // DeclarationStatus implements ddm.StatusStore.
 func (s *Store) DeclarationStatus(ctx context.Context, id mdm.EnrollmentID) ([]ddm.DeclarationStatus, error) {
-	return s.view().DeclarationStatus(ctx, id)
+	return s.view(ctx).DeclarationStatus(ctx, id)
 }
 
 // DeclarationStatusByIdentifier implements ddm.StatusStore.
 func (s *Store) DeclarationStatusByIdentifier(ctx context.Context, identifier string, p paging.Page) (paging.Result[ddm.EnrollmentDeclarationStatus], error) {
-	return s.view().DeclarationStatusByIdentifier(ctx, identifier, p)
+	return s.view(ctx).DeclarationStatusByIdentifier(ctx, identifier, p)
 }
 
 // StatusValues implements ddm.StatusStore.
 func (s *Store) StatusValues(ctx context.Context, id mdm.EnrollmentID, q ddm.StatusValueQuery, p paging.Page) (paging.Result[ddm.StatusValue], error) {
-	return s.view().StatusValues(ctx, id, q, p)
+	return s.view(ctx).StatusValues(ctx, id, q, p)
 }
 
 // StatusErrors implements ddm.StatusStore.
 func (s *Store) StatusErrors(ctx context.Context, id mdm.EnrollmentID, p paging.Page) (paging.Result[ddm.StatusError], error) {
-	return s.view().StatusErrors(ctx, id, p)
+	return s.view(ctx).StatusErrors(ctx, id, p)
 }
 
 // StatusReports implements ddm.StatusStore.
 func (s *Store) StatusReports(ctx context.Context, id mdm.EnrollmentID, p paging.Page) (paging.Result[ddm.StatusReportRecord], error) {
-	return s.view().StatusReports(ctx, id, p)
+	return s.view(ctx).StatusReports(ctx, id, p)
 }

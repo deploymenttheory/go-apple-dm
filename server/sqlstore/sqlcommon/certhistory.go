@@ -71,7 +71,7 @@ const selectAssociation = "SELECT ca.enrollment_id, e.channel, e.parent_id, ca.c
 	"FROM cert_associations ca JOIN enrollments e ON e.id = ca.enrollment_id"
 
 func (s *Store) associations(ctx context.Context, where string, arg any) ([]storage.CertAssociation, error) {
-	rows, err := s.db.QueryContext(ctx, s.q(selectAssociation+" WHERE "+where+" ORDER BY ca.associated_at, ca.cert_hash, ca.enrollment_id"), arg)
+	rows, err := Query(ctx, s.db).QueryContext(ctx, s.q(selectAssociation+" WHERE "+where+" ORDER BY ca.associated_at, ca.cert_hash, ca.enrollment_id"), arg)
 	if err != nil {
 		return nil, wrap("certificate history", err)
 	}
@@ -103,7 +103,7 @@ func (s *Store) CertHistory(
 		return nil, err
 	}
 	dev := id.Device()
-	if err := s.deviceIdentity(ctx, s.db, id); err != nil {
+	if err := s.deviceIdentity(ctx, Query(ctx, s.db), id); err != nil {
 		return nil, err
 	}
 	return s.associations(ctx, "ca.enrollment_id = ?", dev.ID)
@@ -122,11 +122,11 @@ func (s *Store) CertHash(ctx context.Context, id mdm.EnrollmentID) (string, erro
 	if err := validID(id); err != nil {
 		return "", err
 	}
-	if err := s.deviceIdentity(ctx, s.db, id); err != nil {
+	if err := s.deviceIdentity(ctx, Query(ctx, s.db), id); err != nil {
 		return "", err
 	}
 	var h sql.NullString
-	err := s.db.QueryRowContext(ctx, s.q("SELECT cert_hash FROM enrollments WHERE id = ?"), id.Device().ID).
+	err := Query(ctx, s.db).QueryRowContext(ctx, s.q("SELECT cert_hash FROM enrollments WHERE id = ?"), id.Device().ID).
 		Scan(&h)
 	if errors.Is(err, sql.ErrNoRows) {
 		return "", fmt.Errorf("%w: enrollment %s", storage.ErrNotFound, id.Device().ID)
@@ -141,7 +141,7 @@ func (s *Store) CertHash(ctx context.Context, id mdm.EnrollmentID) (string, erro
 func (s *Store) EnrollmentByCertHash(ctx context.Context, hash string) (mdm.EnrollmentID, error) {
 	var id mdm.EnrollmentID
 	var channel int
-	err := s.db.QueryRowContext(ctx, s.q("SELECT id, channel, parent_id FROM enrollments WHERE cert_hash = ?"), hash).Scan(&id.ID, &channel, &id.ParentID)
+	err := Query(ctx, s.db).QueryRowContext(ctx, s.q("SELECT id, channel, parent_id FROM enrollments WHERE cert_hash = ?"), hash).Scan(&id.ID, &channel, &id.ParentID)
 	if errors.Is(err, sql.ErrNoRows) {
 		return mdm.EnrollmentID{}, fmt.Errorf("%w: certificate hash", storage.ErrNotFound)
 	}

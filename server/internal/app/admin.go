@@ -45,7 +45,7 @@ func (a *App) ddmAdminRoutes() []adminRoute {
 	add := func(action, pattern string, fn http.HandlerFunc) {
 		routes = append(
 			routes,
-			adminRoute{Pattern: pattern, Action: action, Family: "ddm", Handler: fn},
+			adminRoute{Pattern: pattern, Action: action, Family: "ddm", LocalMutation: action != ActionNotify, Handler: fn},
 		)
 	}
 	e := a.Engine

@@ -198,6 +198,7 @@ func commands() map[string]command {
 		{"actions", "list the actions a policy can grant", runActions},
 		{"declarations", "manage declarations", runDeclarations},
 		{"audit", "read the audit trail", runAudit},
+		{"events", "inspect persistent event delivery and retry a destination", runEvents},
 		{"enrollments", "list, read, and disable enrollments", runEnrollments},
 		{"commands", "send, read, and clear queued MDM commands", runCommands},
 		{"push", "wake a device now without queueing anything", runPush},

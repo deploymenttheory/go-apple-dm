@@ -13,7 +13,7 @@ import (
 
 // manifestFor computes the manifest an enrollment should see right now:
 // static membership, resolver additions, the synthesised subscriptions
-// declaration, then per-enrollment expansion. Items come back sorted by
+// declaration and activation, then per-enrollment expansion. Items come back sorted by
 // (kind, identifier) with the DeclarationsToken over them.
 func (e *Engine) manifestFor(ctx context.Context, tx Tx, id mdm.EnrollmentID) (string, []SnapshotItem, error) {
 	decls, err := tx.StaticDeclarations(ctx, id)
@@ -45,7 +45,7 @@ func (e *Engine) manifestFor(ctx context.Context, tx Tx, id mdm.EnrollmentID) (s
 			seen[identifier] = true
 		}
 	}
-	items := make([]SnapshotItem, 0, len(decls)+1)
+	items := make([]SnapshotItem, 0, len(decls)+2)
 	for i := range decls {
 		item, err := e.expand(ctx, id, &decls[i])
 		if err != nil {
@@ -59,6 +59,13 @@ func (e *Engine) manifestFor(ctx context.Context, tx Tx, id mdm.EnrollmentID) (s
 			return "", nil, err
 		}
 		items = append(items, item)
+		if !seen[SubscriptionActivationIdentifier] {
+			activation, err := e.subscriptionActivation(ctx)
+			if err != nil {
+				return "", nil, err
+			}
+			items = append(items, activation)
+		}
 	}
 	slices.SortFunc(items, func(a, b SnapshotItem) int { return compareRefs(a.DeclarationRef, b.DeclarationRef) })
 	refs := make([]DeclarationRef, len(items))

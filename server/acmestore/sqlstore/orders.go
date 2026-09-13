@@ -153,7 +153,7 @@ func scanRecord(rows *sql.Rows, table string, v any) (string, error) {
 
 // GetOrder implements acme.Reader.
 func (s *Store) GetOrder(ctx context.Context, id string) (*acme.Order, error) {
-	return s.view().GetOrder(ctx, id)
+	return s.view(ctx).GetOrder(ctx, id)
 }
 
 // ListOrders implements acme.Reader.
@@ -162,15 +162,15 @@ func (s *Store) ListOrders(
 	accountID string,
 	p paging.Page,
 ) (paging.Result[acme.Order], error) {
-	return s.view().ListOrders(ctx, accountID, p)
+	return s.view(ctx).ListOrders(ctx, accountID, p)
 }
 
 // GetAuthorization implements acme.Reader.
 func (s *Store) GetAuthorization(ctx context.Context, id string) (*acme.Authorization, error) {
-	return s.view().GetAuthorization(ctx, id)
+	return s.view(ctx).GetAuthorization(ctx, id)
 }
 
 // GetChallenge implements acme.Reader.
 func (s *Store) GetChallenge(ctx context.Context, id string) (*acme.Challenge, error) {
-	return s.view().GetChallenge(ctx, id)
+	return s.view(ctx).GetChallenge(ctx, id)
 }

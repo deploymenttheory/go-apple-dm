@@ -312,25 +312,32 @@ func TestAdminInternalErrors(t *testing.T) {
 	if err := a.Close(); err != nil {
 		t.Fatal(err)
 	}
-	calls := []struct{ method, path string }{
-		{"PUT", "/admin/v1/declarations"},
-		{"GET", "/admin/v1/declarations/x"},
-		{"DELETE", "/admin/v1/declarations/x"},
-		{"PUT", "/admin/v1/sets/s/declarations/x"},
-		{"DELETE", "/admin/v1/sets/s/declarations/x"},
-		{"PUT", "/admin/v1/enrollments/device/D/sets/s"},
-		{"DELETE", "/admin/v1/enrollments/device/D/sets/s"},
-		{"GET", "/admin/v1/enrollments/device/D/declarations"},
-		{"GET", "/admin/v1/enrollments/device/D/status"},
-		{"GET", "/admin/v1/enrollments/device/D/status/values"},
-		{"GET", "/admin/v1/enrollments/device/D/tokens"},
-		{"POST", "/admin/v1/notify"},
+	calls := []struct {
+		method, path string
+		status       int
+	}{
+		{"PUT", "/admin/v1/declarations", 503},
+		{"GET", "/admin/v1/declarations/x", 500},
+		{"DELETE", "/admin/v1/declarations/x", 503},
+		{"PUT", "/admin/v1/sets/s/declarations/x", 503},
+		{"DELETE", "/admin/v1/sets/s/declarations/x", 503},
+		{"PUT", "/admin/v1/enrollments/device/D/sets/s", 500},
+		{"DELETE", "/admin/v1/enrollments/device/D/sets/s", 500},
+		{"GET", "/admin/v1/enrollments/device/D/declarations", 500},
+		{"GET", "/admin/v1/enrollments/device/D/status", 500},
+		{"GET", "/admin/v1/enrollments/device/D/status/values", 500},
+		{"GET", "/admin/v1/enrollments/device/D/tokens", 500},
+		{"POST", "/admin/v1/notify", 503},
 	}
 	for _, c := range calls {
 		body := propsDecl("com.example.closed")
 		res := do(t, srv, c.method, c.path, "t", body)
 		data, _ := io.ReadAll(res.Body)
-		if res.StatusCode != http.StatusInternalServerError || !strings.Contains(string(data), "internal error") || strings.Contains(string(data), "sql") {
+		message := "internal error"
+		if c.status == 503 {
+			message = "required capture failed"
+		}
+		if res.StatusCode != c.status || !strings.Contains(string(data), message) || strings.Contains(string(data), "sql") {
 			t.Errorf("%s %s = %d %s", c.method, c.path, res.StatusCode, data)
 		}
 	}

@@ -259,8 +259,10 @@ dmctl setup issuer retry -device-id DEVICE-UUID
 dmctl setup issuer retire -revision 1
 ```
 
-Retirement closes the old issuing routes and removes its device trust, while
-keeping material needed for certificate status publication until issuer expiry.
+Retirement closes the old issuing routes and removes the issuer from the server's
+accepted device CAs, while keeping material needed for certificate status
+publication until issuer expiry. It does not remove root payloads already
+installed in device profiles.
 An offline enabled device blocks retirement. Resolve or explicitly disable its
 enrollment through the existing administrative controls; elapsed time is not
 migration confirmation. Complete and retire one issuer transition before starting
@@ -274,6 +276,22 @@ HTTPS trust. An exported profile alone is not confirmation. Inspect or control
 this workflow with `issuer status`, `issuer rollover`, `issuer retry`, and `issuer
 retire` using `-id https-ca`. Public HTTPS with a system-trusted CA avoids this lab
 trust distribution step.
+
+Administrative clients also need the pending lab HTTPS CA before leaf activation.
+Export its public certificate over the currently verified connection, check its
+fingerprint against workflow metadata, and add it to the client's existing trust
+bundle. Keep the old CA in that bundle during overlap. Verify the new HTTPS leaf
+and fresh device/user command acknowledgements before retiring the old CA.
+
+For a recovery drill, preserve the latest confirmed device identity together with
+the database, external encryption keys and their IDs, setup file, secret references,
+and admission policy. Stop all writers before taking the recovery checkpoint.
+Verify the authenticated backup and server configuration in isolation, then restore
+into an empty location with the same public URL and identities. Confirm fresh
+commands on both channels and DDM status after restart. A checkpoint predating a
+completed device identity replacement cannot establish continuity for that new
+identity. The current private SQLite drill is separate from the planned public
+backup, verification and restore commands.
 
 ## Adopt an existing lab
 

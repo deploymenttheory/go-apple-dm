@@ -315,7 +315,42 @@ func (s *Store) resetAuthenticate(
 		); err != nil {
 			return wrap("clear user auth", err)
 		}
-		return s.disableChildren(ctx, q, id.ID, at)
+		return s.resetChildren(ctx, q, id.ID, at)
+	}
+	return nil
+}
+
+// resetChildren preserves user identities and command history while requiring
+// new tokens after an approved device re-enrollment. The parent is already locked.
+func (s *Store) resetChildren(ctx context.Context, q querier, deviceID string, at time.Time) error {
+	rows, err := q.QueryContext(ctx, s.q("SELECT id, channel FROM enrollments WHERE parent_id = ? ORDER BY id"), deviceID)
+	if err != nil {
+		return wrap("list returning users", err)
+	}
+	var ids []mdm.EnrollmentID
+	for rows.Next() {
+		id := mdm.EnrollmentID{ParentID: deviceID}
+		if err := rows.Scan(&id.ID, &id.Channel); err != nil {
+			_ = rows.Close()
+			return wrap("read returning user", err)
+		}
+		if !id.Channel.IsUser() || validID(id) != nil {
+			_ = rows.Close()
+			return storage.ErrInvalid
+		}
+		ids = append(ids, id)
+	}
+	if err := rows.Err(); err != nil {
+		_ = rows.Close()
+		return wrap("list returning users", err)
+	}
+	if err := rows.Close(); err != nil {
+		return wrap("close returning users", err)
+	}
+	for _, id := range ids {
+		if err := s.resetAuthenticate(ctx, q, id, nil, nil, at); err != nil {
+			return err
+		}
 	}
 	return nil
 }
@@ -481,7 +516,7 @@ func (s *Store) Get(ctx context.Context, id mdm.EnrollmentID) (*storage.Enrollme
 	if err := validID(id); err != nil {
 		return nil, err
 	}
-	e, err := s.identity(ctx, s.db, id, false)
+	e, err := s.identity(ctx, Query(ctx, s.db), id, false)
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil, fmt.Errorf("%w: enrollment %s", storage.ErrNotFound, id.ID)
 	}
@@ -543,7 +578,7 @@ func (s *Store) List(
 	}
 	limit := pageLimit(p)
 	args = append(args, limit+1)
-	rows, err := s.db.QueryContext(
+	rows, err := Query(ctx, s.db).QueryContext(
 		ctx,
 		s.q(selectEnrollment+" WHERE "+strings.Join(where, " AND ")+" ORDER BY id LIMIT ?"),
 		args...)
@@ -581,11 +616,11 @@ func (s *Store) TouchLastSeen(ctx context.Context, id mdm.EnrollmentID, at time.
 	if err := validID(id); err != nil {
 		return err
 	}
-	if err := s.exists(ctx, s.db, id); err != nil {
+	if err := s.exists(ctx, Query(ctx, s.db), id); err != nil {
 		return err
 	}
 	at = at.UTC()
-	res, err := s.db.ExecContext(
+	res, err := Query(ctx, s.db).ExecContext(
 		ctx,
 		s.q(
 			"UPDATE enrollments SET last_seen_at = CASE WHEN last_seen_at < ? THEN ? ELSE last_seen_at END WHERE id = ?",
@@ -970,7 +1005,7 @@ func (s *Store) Commands(
 	// Nothing deletes enrollment rows, so this read-only check cannot race
 	// with the query below; it only distinguishes ErrNotFound from an empty
 	// queue.
-	if err := s.exists(ctx, s.db, id); err != nil {
+	if err := s.exists(ctx, Query(ctx, s.db), id); err != nil {
 		return out, err
 	}
 	where := []string{"enrollment_id = ?"}
@@ -995,7 +1030,7 @@ func (s *Store) Commands(
 	}
 	limit := pageLimit(p)
 	args = append(args, limit+1)
-	rows, err := s.db.QueryContext(
+	rows, err := Query(ctx, s.db).QueryContext(
 		ctx,
 		s.q(selectCommand+" WHERE "+strings.Join(where, " AND ")+" ORDER BY seq DESC LIMIT ?"),
 		args...)
@@ -1043,7 +1078,7 @@ func (s *Store) Clear(
 		return 0, err
 	}
 	// Read-only check; enrollment rows are never deleted (see Commands).
-	if err := s.exists(ctx, s.db, id); err != nil {
+	if err := s.exists(ctx, Query(ctx, s.db), id); err != nil {
 		return 0, err
 	}
 	states := f.States
@@ -1082,7 +1117,7 @@ func (s *Store) Clear(
 	)
 	var total int64
 	for {
-		res, err := s.db.ExecContext(
+		res, err := Query(ctx, s.db).ExecContext(
 			ctx,
 			query,
 			append([]any{storage.StateCleared, now}, append(args, ClearBatchSize)...)...)
@@ -1116,7 +1151,7 @@ func (s *Store) PushInfo(
 		args = append(args, id.ID)
 	}
 	args = append(args, true)
-	rows, err := s.db.QueryContext(
+	rows, err := Query(ctx, s.db).QueryContext(
 		ctx,
 		s.q(
 			"SELECT id, channel, parent_id, topic, push_magic, push_token FROM enrollments WHERE id IN ("+placeholders(
@@ -1188,13 +1223,13 @@ func (s *Store) BootstrapToken(ctx context.Context, id mdm.EnrollmentID) ([]byte
 	if err := validID(id); err != nil {
 		return nil, err
 	}
-	if err := s.deviceIdentity(ctx, s.db, id); err != nil {
+	if err := s.deviceIdentity(ctx, Query(ctx, s.db), id); err != nil {
 		return nil, err
 	}
 	dev := id.Device()
 	var tok []byte
 	var disabled sql.NullTime
-	err := s.db.QueryRowContext(ctx, s.q("SELECT bootstrap_token, disabled_at FROM enrollments WHERE id = ?"), dev.ID).
+	err := Query(ctx, s.db).QueryRowContext(ctx, s.q("SELECT bootstrap_token, disabled_at FROM enrollments WHERE id = ?"), dev.ID).
 		Scan(&tok, &disabled)
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil, fmt.Errorf("%w: enrollment %s", storage.ErrNotFound, dev.ID)

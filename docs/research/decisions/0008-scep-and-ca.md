@@ -25,6 +25,13 @@ replacement claims bind the exact CSR and permit only the same candidate
 certificate to be registered again. This is an issuance reliability policy;
 Apple's SCEP `Retries` and `RetryDelay` specifically concern PENDING responses.
 
+The CMS encryption-policy check accepts BER indefinite lengths and constructed
+ciphertext chunks. It verifies algorithms through a bounded definite-length view
+after the original CMS signature has passed. It does not alter signed bytes or
+relax the AES requirement. This follows RFC 5652 section 2 and supports Apple's
+native SecSCEP encoder; requiring DER for the envelope rejected a real Mac's
+request before admission or certificate issuance.
+
 ## Rationale
 
 Policy hooks support different enrollment admission rules without coupling the protocol implementation to a CA deployment. A shared client exercises issuance from the device side.
@@ -44,6 +51,8 @@ CA and SCEP tests cover policy, serial generation, challenge consumption/expiry,
 - [pki/revocation](../../../devicemanagement/pki/revocation)
 - <https://developer.apple.com/documentation/devicemanagement/scep>
 - <https://developer.apple.com/documentation/devicemanagement/managing-certificates-for-device-management-services-and-devices>
+- [RFC 5652, CMS encoding](https://www.rfc-editor.org/rfc/rfc5652.html#section-2)
+- [Apple's native SCEP implementation](https://github.com/apple-oss-distributions/Security/blob/main/OSX/sec/Security/SecSCEP.c)
 
 Reference source identifiers and paths (relative to the named project):
 

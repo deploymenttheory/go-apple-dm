@@ -1,6 +1,7 @@
 package acme
 
 import (
+	"context"
 	"crypto/x509"
 	"encoding/base64"
 	json "encoding/json/v2"
@@ -413,15 +414,23 @@ func (s *Server) challenge(e *exchange) error {
 	challenge.Error = nil
 	authz.Status = StatusValid
 	order.Status = StatusReady
-	changed, err := s.saveTriple(e, challenge, authz, order)
+	err = event.Run(e.ctx(), s.cfg.Bus, func(ctx context.Context) error {
+		inside := *e
+		inside.r = e.r.WithContext(ctx)
+		changed, err := s.saveTriple(&inside, challenge, authz, order)
+		if err != nil {
+			return err
+		}
+		if changed {
+			s.publish(ctx, event.ACMEChallengeValid, map[string]any{
+				"identifier": order.Identifier.Value,
+				"serial":     order.Binding.Serial,
+			})
+		}
+		return nil
+	})
 	if err != nil {
 		return err
-	}
-	if changed {
-		s.publish(e.ctx(), event.ACMEChallengeValid, map[string]any{
-			"identifier": order.Identifier.Value,
-			"serial":     order.Binding.Serial,
-		})
 	}
 	return s.write(e, http.StatusOK, s.challengeBody(challenge))
 }

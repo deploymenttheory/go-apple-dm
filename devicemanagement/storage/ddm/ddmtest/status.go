@@ -128,11 +128,18 @@ func RunStatusSuite(t *testing.T, newStore Factory) {
 		if len(rows) != 1 || rows[0].Identifier != "a" {
 			t.Fatalf("rows after full report: %+v", rows)
 		}
-		// A partial report never deletes.
+		// A partial report still replaces the entire declarations item.
 		putStatus(t, s, dev, report(true, t0, []ddm.DeclarationStatus{status(conf, "a", "ta", true, "valid"), status(conf, "b", "tb", true, "valid")}, nil))
 		out = putStatus(t, s, dev, report(false, t0.Add(2*time.Minute), []ddm.DeclarationStatus{status(conf, "a", "ta", true, "valid")}, nil))
-		if len(out.Removed) != 0 || len(declStatus(t, s, dev)) != 2 {
-			t.Fatalf("partial report removed rows: %+v", out)
+		if len(out.Removed) != 1 || out.Removed[0].Identifier != "b" || len(declStatus(t, s, dev)) != 1 {
+			t.Fatalf("partial report retained absent declaration rows: %+v", out)
+		}
+		// An explicitly empty item clears this enrollment alone.
+		other := Device(2)
+		putStatus(t, s, other, report(false, t0, []ddm.DeclarationStatus{status(conf, "a", "ta", true, "valid")}, nil))
+		out = putStatus(t, s, dev, report(false, t0.Add(3*time.Minute), []ddm.DeclarationStatus{}, nil))
+		if len(out.Removed) != 1 || len(declStatus(t, s, dev)) != 0 || len(declStatus(t, s, other)) != 1 {
+			t.Fatalf("empty declaration item did not clear only its enrollment: %+v", out)
 		}
 	})
 
@@ -177,7 +184,9 @@ func RunStatusSuite(t *testing.T, newStore Factory) {
 		dev := Device(1)
 		putStatus(t, s, dev, report(false, t0, []ddm.DeclarationStatus{status(conf, "a", "t1", true, "valid")}, nil))
 		putStatus(t, s, dev, report(false, t0.Add(time.Minute), []ddm.DeclarationStatus{status(conf, "a", "t2", true, "valid")}, nil))
-		putStatus(t, s, dev, report(false, t0.Add(time.Minute), []ddm.DeclarationStatus{status(schemaddm.KindActivation, "a", "t3", true, "valid")}, nil))
+		putStatus(t, s, dev, report(false, t0.Add(time.Minute), []ddm.DeclarationStatus{
+			status(schemaddm.KindActivation, "a", "t3", true, "valid"), status(conf, "a", "t2", true, "valid"),
+		}, nil))
 		rows := declStatus(t, s, dev)
 		if len(rows) != 2 {
 			t.Fatalf("rows: %+v", rows)

@@ -143,7 +143,7 @@ func (s *Store) rewrapColumn(ctx context.Context, c sealedColumn) (int, error) {
 			}
 			// The old bytes guard the write so a concurrent update is never
 			// overwritten with stale plaintext.
-			res, err := s.db.ExecContext(ctx, s.q("UPDATE "+c.table+" SET "+c.col+" = ? WHERE "+c.idCol+" = ? AND "+c.col+" = ?"), sealed, r.id, r.value)
+			res, err := Query(ctx, s.db).ExecContext(ctx, s.q("UPDATE "+c.table+" SET "+c.col+" = ? WHERE "+c.idCol+" = ? AND "+c.col+" = ?"), sealed, r.id, r.value)
 			if err != nil {
 				return total, wrap("rewrap "+c.purpose, err)
 			}
@@ -158,7 +158,7 @@ func (s *Store) rewrapColumn(ctx context.Context, c sealedColumn) (int, error) {
 }
 
 func (s *Store) rewrapPage(ctx context.Context, c sealedColumn, cursor string) ([]rewrapRow, error) {
-	rows, err := s.db.QueryContext(ctx, s.q("SELECT "+c.idCol+", "+c.col+" FROM "+c.table+" WHERE "+c.col+" IS NOT NULL AND "+c.idCol+" > ? ORDER BY "+c.idCol+" LIMIT ?"), cursor, RewrapBatchSize)
+	rows, err := Query(ctx, s.db).QueryContext(ctx, s.q("SELECT "+c.idCol+", "+c.col+" FROM "+c.table+" WHERE "+c.col+" IS NOT NULL AND "+c.idCol+" > ? ORDER BY "+c.idCol+" LIMIT ?"), cursor, RewrapBatchSize)
 	if err != nil {
 		return nil, wrap("rewrap scan "+c.purpose, err)
 	}

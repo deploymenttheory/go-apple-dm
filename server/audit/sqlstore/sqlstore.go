@@ -118,14 +118,14 @@ func (s *Store) q(query string) string { return s.d.Rebind(query) }
 
 func wrap(op string, err error) error { return fmt.Errorf("sqlstore: %s: %w", op, err) }
 
-const recordCols = "id, at, type, actor, channel, enrollment_id, parent_id, fields"
+const recordCols = "id, at, type, actor, channel, enrollment_id, parent_id, fields, event_id"
 
 // Append implements audit.Store.
 //
 // The id is read back rather than assumed, because the three dialects assign
 // it differently and the value is the pagination cursor.
 func (s *Store) Append(ctx context.Context, rec audit.Record) (audit.Record, error) {
-	if rec.Type == "" {
+	if rec.Type == "" || len(rec.EventID) > 64 {
 		return audit.Record{}, audit.ErrInvalid
 	}
 	fields, err := encodeFields(rec.Fields)
@@ -133,6 +133,14 @@ func (s *Store) Append(ctx context.Context, rec audit.Record) (audit.Record, err
 		return audit.Record{}, err
 	}
 	at := rec.At.UTC()
+	if rec.EventID != "" {
+		cols := []string{"event_id", "at", "type", "actor", "channel", "enrollment_id", "parent_id", "fields"}
+		query := s.d.InsertIgnore("audit_records", cols, []string{"event_id"})
+		if _, err := sqlcommon.Query(ctx, s.db).ExecContext(ctx, s.q(query), rec.EventID, at, rec.Type, rec.Actor, channelOf(rec.Enrollment), rec.Enrollment.ID, rec.Enrollment.ParentID, fields); err != nil {
+			return audit.Record{}, wrap("append", err)
+		}
+		return scanRecord(sqlcommon.Query(ctx, s.db).QueryRowContext(ctx, s.q("SELECT "+recordCols+" FROM audit_records WHERE event_id = ?"), rec.EventID))
+	}
 	args := []any{at, rec.Type, rec.Actor, channelOf(rec.Enrollment), rec.Enrollment.ID, rec.Enrollment.ParentID, fields}
 	const insert = `INSERT INTO audit_records (at, type, actor, channel, enrollment_id, parent_id, fields) VALUES (?, ?, ?, ?, ?, ?, ?)`
 
@@ -140,11 +148,11 @@ func (s *Store) Append(ctx context.Context, rec audit.Record) (audit.Record, err
 	if s.d.Dollar {
 		// PostgreSQL has no LastInsertId; RETURNING is the portable-enough
 		// alternative and keeps this to one round trip.
-		if err := s.db.QueryRowContext(ctx, s.q(insert+" RETURNING id"), args...).Scan(&id); err != nil {
+		if err := sqlcommon.Query(ctx, s.db).QueryRowContext(ctx, s.q(insert+" RETURNING id"), args...).Scan(&id); err != nil {
 			return audit.Record{}, wrap("append", err)
 		}
 	} else {
-		res, err := s.db.ExecContext(ctx, s.q(insert), args...)
+		res, err := sqlcommon.Query(ctx, s.db).ExecContext(ctx, s.q(insert), args...)
 		if err != nil {
 			return audit.Record{}, wrap("append", err)
 		}
@@ -194,7 +202,7 @@ func (s *Store) List(ctx context.Context, q audit.Query, p audit.Page) (audit.Re
 	query += " ORDER BY id DESC LIMIT ?"
 	args = append(args, limit+1)
 
-	rows, err := s.db.QueryContext(ctx, s.q(query), args...)
+	rows, err := sqlcommon.Query(ctx, s.db).QueryContext(ctx, s.q(query), args...)
 	if err != nil {
 		return audit.Result[audit.Record]{}, wrap("list", err)
 	}
@@ -220,7 +228,7 @@ func (s *Store) List(ctx context.Context, q audit.Query, p audit.Page) (audit.Re
 
 // Get implements audit.Store.
 func (s *Store) Get(ctx context.Context, id int64) (audit.Record, error) {
-	row := s.db.QueryRowContext(ctx, s.q("SELECT "+recordCols+" FROM audit_records WHERE id = ?"), id)
+	row := sqlcommon.Query(ctx, s.db).QueryRowContext(ctx, s.q("SELECT "+recordCols+" FROM audit_records WHERE id = ?"), id)
 	rec, err := scanRecord(row)
 	if errors.Is(err, sql.ErrNoRows) {
 		return audit.Record{}, audit.ErrNotFound
@@ -234,7 +242,7 @@ func (s *Store) Get(ctx context.Context, id int64) (audit.Record, error) {
 // Prune implements audit.Store. Retention is the only way a record leaves the
 // trail, so this is one statement with no filter but age.
 func (s *Store) Prune(ctx context.Context, before time.Time) (int, error) {
-	res, err := s.db.ExecContext(ctx, s.q("DELETE FROM audit_records WHERE at < ?"), before.UTC())
+	res, err := sqlcommon.Query(ctx, s.db).ExecContext(ctx, s.q("DELETE FROM audit_records WHERE at < ?"), before.UTC())
 	if err != nil {
 		return 0, wrap("prune", err)
 	}
@@ -255,11 +263,13 @@ func scanRecord(sc scanner) (audit.Record, error) {
 		id               int64
 		at               time.Time
 		enrollID, parent string
+		eventID          sql.NullString
 	)
-	if err := sc.Scan(&id, &at, &rec.Type, &rec.Actor, &channel, &enrollID, &parent, &fields); err != nil {
+	if err := sc.Scan(&id, &at, &rec.Type, &rec.Actor, &channel, &enrollID, &parent, &fields, &eventID); err != nil {
 		return audit.Record{}, err
 	}
 	rec.ID, rec.At = id, at.UTC()
+	rec.EventID = eventID.String
 	rec.Enrollment = mdm.EnrollmentID{Channel: channelFrom(channel), ID: enrollID, ParentID: parent}
 	decoded, err := decodeFields(fields)
 	if err != nil {

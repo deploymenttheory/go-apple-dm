@@ -34,7 +34,7 @@ type SyncerConfig struct {
 	Store   Store
 	Account string
 	Clock   clock.Clock
-	Bus     *event.Bus
+	Bus     event.Publisher
 	Logger  *slog.Logger
 	// Interval is how often Run syncs without a SyncNow. Default 30m.
 	Interval time.Duration
@@ -274,10 +274,20 @@ func retryAfter(err error) time.Duration {
 }
 
 // commit deduplicates the page, writes it with the next cursor in one
-// transaction, and publishes one event per device afterwards, so a page
-// that fails to commit is re-requested with the same cursor and produces
-// no duplicate events.
+// transaction with required event capture. A failed capture leaves the cursor
+// unchanged, so the next sync can request the same page.
 func (s *Syncer) commit(ctx context.Context, phase Phase, page *DevicePage, next Cursor) (added, modified, deleted int, err error) {
+	err = event.Run(ctx, s.cfg.Bus, func(ctx context.Context) error {
+		added, modified, deleted, err = s.commitPage(ctx, phase, page, next)
+		return err
+	})
+	if err != nil {
+		return 0, 0, 0, err
+	}
+	return added, modified, deleted, nil
+}
+
+func (s *Syncer) commitPage(ctx context.Context, phase Phase, page *DevicePage, next Cursor) (added, modified, deleted int, err error) {
 	devs := Dedupe(page.Devices)
 	now := s.cfg.Clock.Now()
 	var evs []event.Event

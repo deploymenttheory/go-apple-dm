@@ -126,7 +126,7 @@ func (a *App) wirePush() (*pushnotify.Notifier, error) {
 	return &pushnotify.Notifier{
 		Store:  a.Store,
 		Pusher: pusher,
-		Bus:    a.cfg.Bus,
+		Bus:    a.cfg.publisher(),
 		Clock:  a.cfg.Clock,
 	}, nil
 }

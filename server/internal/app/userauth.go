@@ -36,7 +36,7 @@ func (a *App) userAuthenticator() (service.UserAuthenticateHandler, error) {
 	d := &service.DigestUserAuth{
 		Store: a.Store,
 		Clock: a.cfg.Clock,
-		Bus:   a.cfg.Bus,
+		Bus:   a.cfg.publisher(),
 		Verifier: service.HA1Verifier(
 			func(_ context.Context, username, realm string) (string, error) {
 				if realm != service.DefaultUserAuthRealm {

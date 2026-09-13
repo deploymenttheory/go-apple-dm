@@ -99,7 +99,7 @@ type Config struct {
 	// Clock, Bus, and Logger default to the real clock, no bus, and the
 	// default logger.
 	Clock  clock.Clock
-	Bus    *event.Bus
+	Bus    event.Publisher
 	Logger *slog.Logger
 	// NonceTTL, OrderTTL, and MaxBody default to the constants above.
 	NonceTTL time.Duration
