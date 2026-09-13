@@ -360,7 +360,8 @@ func (a *App) authorized(rt adminRoute) http.Handler {
 			}
 		}
 		r = r.WithContext(context.WithValue(r.Context(), setupActorKey{}, p.Name))
-		if rt.LocalMutation && a.eventPublisher != nil && r.Method != http.MethodGet && r.Method != http.MethodHead {
+		if rt.LocalMutation && a.eventPublisher != nil && r.Method != http.MethodGet &&
+			r.Method != http.MethodHead {
 			a.localAdmin(w, r, p, rt)
 			return
 		}
@@ -528,7 +529,14 @@ func (a *App) auditDenied(r *http.Request, p adminauth.Principal, rt adminRoute,
 	if a.cfg.publisher() == nil {
 		return
 	}
-	a.publishAdmin(r, event.AdminDenied, p, rt, cause)
+	if err := a.publishAdmin(r, event.AdminDenied, p, rt, cause); err != nil {
+		a.cfg.Logger.ErrorContext(
+			r.Context(),
+			"app: admin denial could not be recorded",
+			"error",
+			err,
+		)
+	}
 }
 
 func (a *App) publishAdmin(
@@ -561,7 +569,7 @@ func (a *App) publishAdmin(
 	if err != nil && !errors.Is(err, event.ErrQueueFull) {
 		a.cfg.Logger.WarnContext(r.Context(), "app: publish admin event", "type", t, "error", err)
 	}
-	return err
+	return wrapError(err)
 }
 
 // constantTimeEqual compares two strings in constant time. Length mismatch is

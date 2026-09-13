@@ -46,8 +46,22 @@ func (a *App) wirePersistentSinks(ctx context.Context) error {
 					break
 				}
 			}
-			_, err := store.Append(ctx, audit.Record{EventID: rec.EventID, At: rec.At, Type: rec.Type, Actor: rec.Actor, Enrollment: mdm.EnrollmentID{Channel: channel, ID: rec.ID, ParentID: rec.Parent}, Fields: rec.Fields})
-			return err
+			_, err := store.Append(
+				ctx,
+				audit.Record{
+					EventID: rec.EventID,
+					At:      rec.At,
+					Type:    rec.Type,
+					Actor:   rec.Actor,
+					Enrollment: mdm.EnrollmentID{
+						Channel:  channel,
+						ID:       rec.ID,
+						ParentID: rec.Parent,
+					},
+					Fields: rec.Fields,
+				},
+			)
+			return wrapError(err)
 		}
 		if a.cfg.Sinks.AuditStore == nil {
 			// auditStore opened the native store using a.db. Retention cannot
@@ -62,21 +76,40 @@ func (a *App) wirePersistentSinks(ctx context.Context) error {
 		if err != nil {
 			return fmt.Errorf("app: webhook trust: %w", err)
 		}
-		send, err := eventsink.RecordWebhook(eventsink.WebhookConfig{URL: a.cfg.Sinks.WebhookURL, Client: client, HMACKey: a.cfg.Sinks.WebhookHMACKey, Clock: a.cfg.Clock, Logger: a.cfg.Logger, Retries: -1})
+		send, err := eventsink.RecordWebhook(
+			eventsink.WebhookConfig{
+				URL:     a.cfg.Sinks.WebhookURL,
+				Client:  client,
+				HMACKey: a.cfg.Sinks.WebhookHMACKey,
+				Clock:   a.cfg.Clock,
+				Logger:  a.cfg.Logger,
+				Retries: -1,
+			},
+		)
 		if err != nil {
-			return err
+			return wrapError(err)
 		}
 		id := fmt.Sprintf("webhook:%x", sha256.Sum256([]byte(a.cfg.Sinks.WebhookURL)))
 		destinations = append(destinations, id)
 		senders[id] = send
 	}
-	p := &eventstore.Publisher{Store: s, Registry: reg, Destinations: destinations, Subscribers: a.cfg.publisher(), Report: func(err error) { a.cfg.Logger.Error("app: event recording or notification failed", "error", err) }}
+	p := &eventstore.Publisher{
+		Store:        s,
+		Registry:     reg,
+		Destinations: destinations,
+		Subscribers:  a.cfg.publisher(),
+		Report:       func(err error) { a.cfg.Logger.Error("app: event recording or notification failed", "error", err) },
+	}
 	a.eventStore, a.eventPublisher = s, p
 	a.cfg.persistentEvents = p
 	if a.cfg.Sinks.Audit && a.cfg.Bus != nil {
 		a.cfg.Bus.Subscribe(event.All, eventsink.Slog(a.cfg.Logger, reg))
 	}
-	w := &eventstore.Worker{Store: s, Destinations: senders, TransactionalDestinations: transactional}
+	w := &eventstore.Worker{
+		Store:                     s,
+		Destinations:              senders,
+		TransactionalDestinations: transactional,
+	}
 	a.addWorker("event-delivery", w.Run)
 	return nil
 }

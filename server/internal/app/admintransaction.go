@@ -12,7 +12,12 @@ import (
 
 var errAdminResponse = errors.New("app: local administrative operation failed")
 
-func (a *App) localAdmin(w http.ResponseWriter, r *http.Request, p adminauth.Principal, rt adminRoute) {
+func (a *App) localAdmin(
+	w http.ResponseWriter,
+	r *http.Request,
+	p adminauth.Principal,
+	rt adminRoute,
+) {
 	buffer := &adminResponse{header: make(http.Header)}
 	err := a.eventPublisher.Run(r.Context(), func(ctx context.Context) error {
 		inside := r.WithContext(ctx)
@@ -42,7 +47,9 @@ func (a *App) localAdmin(w http.ResponseWriter, r *http.Request, p adminauth.Pri
 		w.WriteHeader(buffer.status)
 	}
 	// The handler already encoded this body and supplied its content type.
-	_, _ = w.Write(buffer.body.Bytes()) // #nosec G705 -- bounded response encoded by an existing admin handler
+	_, _ = w.Write(
+		buffer.body.Bytes(),
+	) // #nosec G705 -- bounded response encoded by an existing admin handler
 	a.kickNotifier(rt, r, buffer.status)
 }
 
@@ -61,6 +68,7 @@ func (w *adminResponse) WriteHeader(code int) {
 		w.status = code
 	}
 }
+
 func (w *adminResponse) Write(b []byte) (int, error) {
 	if w.body.Len()+len(b) > MaxAdminBody {
 		w.err = ErrBodyTooLarge
@@ -69,5 +77,6 @@ func (w *adminResponse) Write(b []byte) (int, error) {
 	if w.status == 0 {
 		w.status = http.StatusOK
 	}
-	return w.body.Write(b)
+	n, err := w.body.Write(b)
+	return n, wrapError(err)
 }

@@ -15,11 +15,37 @@ func (a *App) eventRoutes() []adminRoute {
 		return nil
 	}
 	return []adminRoute{
-		{Pattern: "GET /events/status", Action: ActionReadAudit, Family: "events", Handler: http.HandlerFunc(a.eventStatus)},
-		{Pattern: "GET /events", Action: ActionReadAudit, Family: "events", Handler: http.HandlerFunc(a.listEvents)},
-		{Pattern: "GET /events/deliveries", Action: ActionReadAudit, Family: "events", Handler: http.HandlerFunc(a.listEvents)},
-		{Pattern: "GET /events/{event}", Action: ActionReadAudit, Family: "events", Handler: http.HandlerFunc(a.getEvent)},
-		{Pattern: "POST /events/{event}/retry", Action: ActionRetryEvents, Family: "events", LocalMutation: true, Handler: http.HandlerFunc(a.retryEvent)},
+		{
+			Pattern: "GET /events/status",
+			Action:  ActionReadAudit,
+			Family:  "events",
+			Handler: http.HandlerFunc(a.eventStatus),
+		},
+		{
+			Pattern: "GET /events",
+			Action:  ActionReadAudit,
+			Family:  "events",
+			Handler: http.HandlerFunc(a.listEvents),
+		},
+		{
+			Pattern: "GET /events/deliveries",
+			Action:  ActionReadAudit,
+			Family:  "events",
+			Handler: http.HandlerFunc(a.listEvents),
+		},
+		{
+			Pattern: "GET /events/{event}",
+			Action:  ActionReadAudit,
+			Family:  "events",
+			Handler: http.HandlerFunc(a.getEvent),
+		},
+		{
+			Pattern:       "POST /events/{event}/retry",
+			Action:        ActionRetryEvents,
+			Family:        "events",
+			LocalMutation: true,
+			Handler:       http.HandlerFunc(a.retryEvent),
+		},
 	}
 }
 
@@ -29,7 +55,11 @@ func (a *App) eventStatus(w http.ResponseWriter, r *http.Request) {
 		a.eventError(w, err)
 		return
 	}
-	writeJSON(w, http.StatusOK, map[string]any{"Delivery": s, "Capture": a.eventPublisher.Health(), "Workers": a.Workers()})
+	writeJSON(
+		w,
+		http.StatusOK,
+		map[string]any{"Delivery": s, "Capture": a.eventPublisher.Health(), "Workers": a.Workers()},
+	)
 }
 
 func (a *App) listEvents(w http.ResponseWriter, r *http.Request) {
@@ -46,7 +76,13 @@ func (a *App) listEvents(w http.ResponseWriter, r *http.Request) {
 	var items any
 	var err error
 	if r.URL.Path == "/events/deliveries" {
-		items, err = a.eventStore.List(r.Context(), q.Get("state"), q.Get("after_event"), q.Get("after_destination"), limit)
+		items, err = a.eventStore.List(
+			r.Context(),
+			q.Get("state"),
+			q.Get("after_event"),
+			q.Get("after_destination"),
+			limit,
+		)
 	} else {
 		items, err = a.eventStore.Records(r.Context(), q.Get("type"), q.Get("after_event"), limit)
 	}

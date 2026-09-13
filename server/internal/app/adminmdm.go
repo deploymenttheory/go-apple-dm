@@ -38,7 +38,13 @@ func (a *App) mdmAdminRoutes() []adminRoute {
 	add := func(action, pattern string, fn http.HandlerFunc) {
 		routes = append(
 			routes,
-			adminRoute{Pattern: pattern, Action: action, Family: "mdm", LocalMutation: action != ActionPushEnrollment, Handler: fn},
+			adminRoute{
+				Pattern:       pattern,
+				Action:        action,
+				Family:        "mdm",
+				LocalMutation: action != ActionPushEnrollment,
+				Handler:       fn,
+			},
 		)
 	}
 

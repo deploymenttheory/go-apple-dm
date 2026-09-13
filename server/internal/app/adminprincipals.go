@@ -31,7 +31,13 @@ func (a *App) principalRoutes() []adminRoute {
 	add := func(action, pattern string, fn http.HandlerFunc) {
 		routes = append(
 			routes,
-			adminRoute{Pattern: pattern, Action: action, Family: "principals", LocalMutation: true, Handler: fn},
+			adminRoute{
+				Pattern:       pattern,
+				Action:        action,
+				Family:        "principals",
+				LocalMutation: true,
+				Handler:       fn,
+			},
 		)
 	}
 
