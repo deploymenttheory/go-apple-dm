@@ -158,6 +158,10 @@ Configuration is read from `DM_*` environment variables. This table groups the m
 | `DM_PUSH_SOURCE`, `DM_PUSH_CERT_FILE`, `DM_PUSH_KEY_FILE`, `DM_PUSH_HOST`, `DM_PUSH_COALESCE`, `DM_PUSH_CERT_TTL` | Where APNs credentials come from and how pushes are shaped: `off`, `file` (the PEM pair, selected implicitly when a certificate file is configured) or `store` (the push certificate store). The APNs topic is derived from the push certificate; `DM_PUSH_TOPIC` separately configures the enrollment profile topic; `DM_PUSH_HOST` overrides the APNs endpoint for a lab, `DM_PUSH_COALESCE` is the window repeated pushes collapse into (negative disables it), and `DM_PUSH_CERT_TTL` how long a store-backed certificate is cached before its version is rechecked |
 | `DM_PKI_REVOCATION`, `DM_RATE_LIMITS` | Certificate revocation is enabled by default; inbound rate limiting requires configuration. See [enrollment security operations](docs/operations/enrollment-security.md) for their configuration and operational requirements. |
 
+[Certificate setup and renewal](docs/operations/certificate-lifecycle.md) documents `dmctl setup`,
+encrypted persistent state, Apple portal handoffs, HTTPS renewal, and enrollment CA migration.
+Use `dmserver --setup-file path/to/setup.json` to load managed identities.
+
 `server/cmd/dmctl` provides typed commands for enrollments, queued commands, push certificates,
 declarations, sets, notifications, principals, policies and audit records. `dmctl routes`
 lists the active server routes; `dmctl api <METHOD> <path>` accesses routes without a typed

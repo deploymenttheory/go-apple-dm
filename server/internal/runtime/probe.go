@@ -22,6 +22,7 @@ var ErrProbe = errors.New("health probe failed")
 // Automatic TLS checks trust and pin the configured certificate, independently
 // of public DNS or the device-identity CA. CAFile is for explicit URL probes.
 type ProbeConfig struct {
+	Certificate *x509.Certificate
 	URL         string
 	Listen      string
 	TLSCertFile string
@@ -100,10 +101,13 @@ func automaticProbe(cfg ProbeConfig) (string, *tls.Config, error) {
 			ErrProbe,
 		)
 	}
-	if cfg.TLSCertFile == "" {
+	if cfg.TLSCertFile == "" && cfg.Certificate == nil {
 		return "http://" + address, nil, nil
 	}
-	cert, err := probeCertificate(cfg.TLSCertFile)
+	cert := cfg.Certificate
+	if cert == nil {
+		cert, err = probeCertificate(cfg.TLSCertFile)
+	}
 	if err != nil {
 		return "", nil, err
 	}

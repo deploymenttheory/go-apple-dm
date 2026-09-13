@@ -1,7 +1,9 @@
 package app
 
 import (
+	"context"
 	json "encoding/json/v2"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -95,13 +97,7 @@ func (a *App) enrollmentAdminRoutes() []adminRoute {
 
 func (a *App) issueEnrollmentProfile(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Cache-Control", "no-store")
-	var req struct {
-		DeviceID, Serial   string
-		Product, OSVersion string
-		MacHardware        enroll.MacHardware
-		Identity           string
-		AccessRights       enroll.AccessRights
-	}
+	var req EnrollmentProfileRequest
 	body, err := io.ReadAll(io.LimitReader(r.Body, MaxAdminBody+1))
 	if err != nil || len(body) > MaxAdminBody {
 		writeError(w, 413, ErrBodyTooLarge)
@@ -111,17 +107,58 @@ func (a *App) issueEnrollmentProfile(w http.ResponseWriter, r *http.Request) {
 		writeError(w, 400, fmt.Errorf("%w: DeviceID is required", errOperation))
 		return
 	}
+	b, err := a.ExportEnrollmentProfile(r.Context(), req)
+	if err != nil {
+		status := 400
+		if errors.Is(err, errProfileExport) {
+			status = 500
+		}
+		writeError(w, status, err)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/x-apple-aspen-config")
+	w.Header().Set("Cache-Control", "no-store")
+	w.Header().Set("X-Content-Type-Options", "nosniff")
+	_, _ = w.Write(b)
+}
+
+var errProfileExport = errors.New("app: enrollment profile export failed")
+
+// EnrollmentProfileRequest selects the device and enrollment identity method.
+//
+//nolint:tagliatelle // Preserve the existing enrollment profile API field names.
+type EnrollmentProfileRequest struct {
+	DeviceID     string              `json:"DeviceID"`
+	Serial       string              `json:"Serial"`
+	Product      string              `json:"Product"`
+	OSVersion    string              `json:"OSVersion"`
+	MacHardware  enroll.MacHardware  `json:"MacHardware"`
+	Identity     string              `json:"Identity"`
+	AccessRights enroll.AccessRights `json:"AccessRights"`
+}
+
+// ExportEnrollmentProfile issues and records the same profile used by the API.
+func (a *App) ExportEnrollmentProfile(
+	ctx context.Context,
+	req EnrollmentProfileRequest,
+) ([]byte, error) {
+	if a.enroll == nil || req.DeviceID == "" {
+		return nil, fmt.Errorf(
+			"%w: enrollment must be configured and DeviceID supplied",
+			errOperation,
+		)
+	}
 	if req.Identity == "" {
 		req.Identity = a.enroll.cfg.Identity
 	}
 	p, err := a.enroll.profileForDevice(
-		r.Context(),
+		ctx,
 		acme.Binding{MDMUDID: req.DeviceID, Serial: req.Serial, CommonName: req.DeviceID},
 		req.Identity, req.Product, req.OSVersion, req.MacHardware,
 	)
 	if err != nil {
-		writeError(w, 400, err)
-		return
+		return nil, err
 	}
 	p.CheckOutWhenRemoved = true
 	p.AccessRights = req.AccessRights
@@ -130,19 +167,14 @@ func (a *App) issueEnrollmentProfile(w http.ResponseWriter, r *http.Request) {
 	}
 	b, err := p.Marshal()
 	if err != nil {
-		writeError(w, 500, fmt.Errorf("%w: profile generation failed", errOperation))
-		return
+		return nil, fmt.Errorf("%w: profile generation failed", errProfileExport)
 	}
 	if err := a.enroll.recordProfile(
-		r.Context(),
+		ctx,
 		acme.Binding{MDMUDID: req.DeviceID},
 		p,
 	); err != nil {
-		writeError(w, 500, err)
-		return
+		return nil, fmt.Errorf("%w: %w", errProfileExport, err)
 	}
-	w.Header().Set("Content-Type", "application/x-apple-aspen-config")
-	w.Header().Set("Cache-Control", "no-store")
-	w.Header().Set("X-Content-Type-Options", "nosniff")
-	_, _ = w.Write(b)
+	return b, nil
 }

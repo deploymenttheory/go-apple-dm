@@ -20,6 +20,7 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/cms"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/ddm"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/event"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/pki/lifecycle"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/pki/revocation"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/secrets"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/state"
@@ -68,6 +69,8 @@ const (
 // Config is the process configuration; see ParseEnv for the DM_*
 // variables and cmd/dmserver for the flags.
 type Config struct {
+	Setup *SetupConfig
+
 	PKI                     PKIConfig
 	RateLimits              RateLimitConfig
 	Role                    Role
@@ -215,6 +218,10 @@ var ErrConfig = errors.New("app: invalid configuration")
 
 // App is a built process.
 type App struct {
+	issuerMu       sync.Mutex
+	issuerServices map[string]*managedIssuerService
+	Certificates   *lifecycle.Manager
+
 	appPushStore   *apppush.Store
 	appPushClients map[string]*apns.AppClient
 	Handler        http.Handler
@@ -316,7 +323,8 @@ func Build(ctx context.Context, cfg Config) (*App, error) {
 			cfg.PKI.OCSPTTL = 15 * time.Minute
 		}
 	}
-	if cfg.Enroll.Enabled() && cfg.Storage != "inmem" && cfg.Enroll.CACertFile == "" {
+	if cfg.Enroll.Enabled() && cfg.Storage != "inmem" && cfg.Enroll.CACertFile == "" &&
+		cfg.Setup == nil {
 		return nil, fmt.Errorf("%w: persistent enrollment requires CA files", ErrConfig)
 	}
 
@@ -329,7 +337,7 @@ func Build(ctx context.Context, cfg Config) (*App, error) {
 	if err := cfg.roots(); err != nil {
 		return nil, err
 	}
-	if cfg.CertHeader != "" && cfg.CARoots == nil && !cfg.Enroll.Enabled() {
+	if cfg.CertHeader != "" && cfg.CARoots == nil && !cfg.Enroll.Enabled() && cfg.Setup == nil {
 		return nil, fmt.Errorf("%w: certificate headers require client CA roots", ErrConfig)
 	}
 	if cfg.Logger == nil {
@@ -366,6 +374,16 @@ func Build(ctx context.Context, cfg Config) (*App, error) {
 	}()
 	if err := a.openStorage(ctx); err != nil {
 		return nil, err
+	}
+	if err := a.openCertificates(ctx); err != nil {
+		return nil, err
+	}
+	if err := a.configureManagedIdentities(ctx); err != nil {
+		return nil, err
+	}
+	if a.Certificates != nil {
+		a.addWorker("certificate-renewal", a.renewCertificates)
+		a.addWorker("device-identity-renewal", a.renewDeviceIdentities)
 	}
 	if err := a.wireSinks(ctx); err != nil {
 		return nil, err
@@ -466,12 +484,28 @@ func (c *Config) roots() error {
 
 // certSource picks how the mdm role learns the device certificate.
 func (a *App) certSource() func(http.Handler) http.Handler {
+	if a.Certificates != nil {
+		return func(next http.Handler) http.Handler {
+			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				roots, err := a.managedRoots(r.Context())
+				if err != nil {
+					http.Error(w, "certificate trust unavailable", http.StatusServiceUnavailable)
+					return
+				}
+				a.certSourceWithRoots(roots)(next).ServeHTTP(w, r)
+			})
+		}
+	}
+	return a.certSourceWithRoots(a.cfg.CARoots)
+}
+
+func (a *App) certSourceWithRoots(roots *x509.CertPool) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		signed := next
-		if a.cfg.CARoots != nil {
+		if roots != nil {
 			signed = httpapi.CertFromMdmSignature(
 				cms.VerifyOptions{
-					Roots:     a.cfg.CARoots,
+					Roots:     roots,
 					ClockSkew: 5 * time.Minute,
 					Now:       a.cfg.Clock.Now,
 				},
@@ -486,7 +520,7 @@ func (a *App) certSource() func(http.Handler) http.Handler {
 		}
 		forwarded := httpapi.CertFromHeader(
 			a.cfg.CertHeader,
-			httpapi.WithHeaderRoots(a.cfg.CARoots),
+			httpapi.WithHeaderRoots(roots),
 			httpapi.WithHeaderPeers(a.cfg.TrustedProxies...),
 		)(
 			signed,
@@ -611,6 +645,9 @@ func (a *App) wire(ctx context.Context) error {
 		pusher = a.Push
 	}
 	mux := http.NewServeMux()
+	if a.Certificates != nil {
+		mux.Handle("/.well-known/acme-challenge/", a.Certificates.HTTP01Handler())
+	}
 	mux.HandleFunc("GET "+PathHealthz, a.healthz)
 	mux.HandleFunc("GET /readyz", a.readyz)
 	if cfg.Role == RoleMDM || cfg.Role == RoleAll {
@@ -938,6 +975,7 @@ func (a *App) wireAdmin(ctx context.Context, mux *http.ServeMux) error {
 	}
 	var routes []adminRoute
 	routes = append(routes, a.introspectionRoutes()...)
+	routes = append(routes, a.setupRoutes()...)
 	routes = append(routes, a.ddmAdminRoutes()...)
 	routes = append(routes, a.mdmAdminRoutes()...)
 	extras, err := a.operatorRoutes(ctx)

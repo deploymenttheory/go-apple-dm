@@ -8,46 +8,50 @@ import (
 	"time"
 
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/storage"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/storage/crypt"
 )
 
 // StorePushCert implements storage.PushCertStore (decision record 0015).
 // The private key is sealed when a keyring is configured.
 func (s *Store) StorePushCert(ctx context.Context, topic string, certPEM, keyPEM []byte, at time.Time) (storage.PushCert, error) {
+	var rec storage.PushCert
+	err := s.tx(ctx, func(q querier) error {
+		var err error
+		rec, err = PutPushCertTx(ctx, q, s.d, s.keyring, topic, certPEM, keyPEM, at)
+		return err
+	})
+	return rec, err
+}
+
+// PutPushCertTx publishes an identity in the caller's transaction. It allows
+// certificate workflow state and the runtime push record to commit together.
+func PutPushCertTx(ctx context.Context, q interface {
+	ExecContext(context.Context, string, ...any) (sql.Result, error)
+	QueryRowContext(context.Context, string, ...any) *sql.Row
+}, d Dialect, keys *crypt.Keyring, topic string, certPEM, keyPEM []byte, at time.Time) (storage.PushCert, error) {
 	rec, err := storage.ValidatePushCert(topic, certPEM, keyPEM, at)
 	if err != nil {
 		return storage.PushCert{}, err
 	}
-	sealed, err := s.seal(purposePushKey, rec.Topic, rec.KeyPEM)
+	sealer := &Store{d: d, keyring: keys}
+	sealed, err := sealer.seal(purposePushKey, rec.Topic, rec.KeyPEM)
 	if err != nil {
 		return storage.PushCert{}, err
 	}
-	at = at.UTC()
-	err = s.tx(ctx, func(q querier) error {
-		var version int64
-		err := q.QueryRowContext(ctx, s.q("SELECT version FROM push_certs WHERE topic = ? "+s.d.ForUpdate), rec.Topic).Scan(&version)
-		switch {
-		case errors.Is(err, sql.ErrNoRows):
-			version = 1
-			if _, err := q.ExecContext(ctx, s.q("INSERT INTO push_certs (topic, cert_pem, key_pem, not_after, version, updated_at) VALUES (?, ?, ?, ?, ?, ?)"),
-				rec.Topic, rec.CertPEM, sealed, rec.NotAfter, version, at); err != nil {
-				return wrap("insert push certificate", err)
-			}
-		case err != nil:
-			return wrap("lookup push certificate", err)
-		default:
-			version++
-			if _, err := q.ExecContext(ctx, s.q("UPDATE push_certs SET cert_pem = ?, key_pem = ?, not_after = ?, version = ?, updated_at = ? WHERE topic = ?"),
-				rec.CertPEM, sealed, rec.NotAfter, version, at, rec.Topic); err != nil {
-				return wrap("update push certificate", err)
-			}
-		}
-		rec.Version, rec.UpdatedAt = version, at
-		return nil
-	})
-	if err != nil {
-		return storage.PushCert{}, err
+	var version int64
+	err = q.QueryRowContext(ctx, d.Rebind("SELECT version FROM push_certs WHERE topic = ? "+d.ForUpdate), rec.Topic).Scan(&version)
+	switch {
+	case errors.Is(err, sql.ErrNoRows):
+		version = 1
+		_, err = q.ExecContext(ctx, d.Rebind("INSERT INTO push_certs (topic, cert_pem, key_pem, not_after, version, updated_at) VALUES (?, ?, ?, ?, ?, ?)"), rec.Topic, rec.CertPEM, sealed, rec.NotAfter, version, at.UTC())
+	case err == nil:
+		version++
+		_, err = q.ExecContext(ctx, d.Rebind("UPDATE push_certs SET cert_pem = ?, key_pem = ?, not_after = ?, version = ?, updated_at = ? WHERE topic = ?"), rec.CertPEM, sealed, rec.NotAfter, version, at.UTC(), rec.Topic)
 	}
-	rec.KeyPEM = nil
+	if err != nil {
+		return storage.PushCert{}, wrap("publish push certificate", err)
+	}
+	rec.Version, rec.UpdatedAt, rec.KeyPEM = version, at.UTC(), nil
 	return rec, nil
 }
 

@@ -3,6 +3,7 @@ package app
 import (
 	"context"
 	"crypto"
+	"crypto/tls"
 	"crypto/x509"
 	"crypto/x509/pkix"
 	"encoding/pem"
@@ -170,24 +171,27 @@ func ParseDiscovery(s string) (map[discovery.ModelFamily]string, error) {
 
 // enrollment holds what the routes share.
 type enrollment struct {
-	depot     *enrollmentDepot
-	admission EnrollmentAdmission
-	now       func() time.Time
-	app       *App
-	cfg       EnrollConfig
-	base      string
-	caCert    *x509.Certificate
-	caKey     crypto.Signer
-	local     *ca.Local
-	tokens    *accountdriven.Tokens
-	asweb     *accountdriven.AppleAsWeb
-	oauth     *accountdriven.OAuth2
-	acme      *acmeService
-	ade       *ade.Handler
-	flow      *webauth.Flow
-	challenge scep.Challenge
-	trust     []*x509.Certificate
-	state     state.Store
+	issuerRevision string
+	scepRoute      string
+	acmeRoute      string
+	depot          *enrollmentDepot
+	admission      EnrollmentAdmission
+	now            func() time.Time
+	app            *App
+	cfg            EnrollConfig
+	base           string
+	caCert         *x509.Certificate
+	caKey          crypto.Signer
+	local          *ca.Local
+	tokens         *accountdriven.Tokens
+	asweb          *accountdriven.AppleAsWeb
+	oauth          *accountdriven.OAuth2
+	acme           *acmeService
+	ade            *ade.Handler
+	flow           *webauth.Flow
+	challenge      scep.Challenge
+	trust          []*x509.Certificate
+	state          state.Store
 }
 
 // wireEnrollment mounts the routes; it returns the hooks the core needs.
@@ -207,7 +211,7 @@ func (a *App) wireEnrollment(ctx context.Context, mux *http.ServeMux) ([]service
 	if admissionErr != nil {
 		return nil, admissionErr
 	}
-	if err := e.loadCA(a); err != nil {
+	if err := e.loadCA(ctx, a); err != nil {
 		return nil, err
 	}
 	st, err := a.protocolState(ctx)
@@ -215,7 +219,7 @@ func (a *App) wireEnrollment(ctx context.Context, mux *http.ServeMux) ([]service
 		return nil, err
 	}
 	e.state = st
-	if err := a.wireServiceConfig(e, mux); err != nil {
+	if err := a.wireServiceConfig(ctx, e, mux); err != nil {
 		return nil, err
 	}
 	e.tokens = &accountdriven.Tokens{
@@ -266,7 +270,11 @@ func (a *App) wireEnrollment(ctx context.Context, mux *http.ServeMux) ([]service
 	if err != nil {
 		return nil, fmt.Errorf("app: SCEP: %w", err)
 	}
-	mux.Handle(PathSCEP, scepServer.Handler())
+	mux.Handle(PathSCEP, a.legacyIssuance(scepServer.Handler()))
+	if a.Certificates != nil {
+		mux.Handle(PathSCEP+"/issuers/", a.managedIssuanceHandler(false))
+		mux.Handle(PathACME+"/issuers/", a.managedIssuanceHandler(true))
+	}
 
 	// ACME is mounted whether or not enrollment profiles use it, because a
 	// declarative credential can ask an enrolled device to obtain a second
@@ -275,7 +283,7 @@ func (a *App) wireEnrollment(ctx context.Context, mux *http.ServeMux) ([]service
 		return nil, err
 	}
 	a.acme = e.acme
-	mux.Handle(PathACME+"/", e.acme.server.Handler())
+	mux.Handle(PathACME+"/", a.legacyIssuance(e.acme.server.Handler()))
 	// The credential document identifies the device by the certificate it
 	// presents, so it goes behind the same certificate source as the MDM
 	// endpoints rather than being readable by anyone with the URL.
@@ -315,8 +323,13 @@ func (a *App) wireEnrollment(ctx context.Context, mux *http.ServeMux) ([]service
 		}
 	}
 	e.ade = ade.New(ade.Config{
-		Parse:  ade.ParseOptions{Anchors: anchors, Audit: cfg.ADEAudit, Logger: a.cfg.Logger},
-		Signer: ade.Signer{Cert: e.caCert, Key: e.caKey},
+		Parse: ade.ParseOptions{
+			Anchors: anchors,
+			Audit:   cfg.ADEAudit,
+			Logger:  a.cfg.Logger,
+		},
+		Signer:          ade.Signer{Cert: e.caCert, Key: e.caKey},
+		SigningIdentity: a.profileSigningIdentity(e),
 		Profile: func(ctx context.Context, p *ade.Parsed, id ade.Identity) (*enroll.Profile, error) {
 			cn := p.SERIAL
 			if email, _ := id.Claims["email"].(string); email != "" {
@@ -399,9 +412,10 @@ func (a *App) wireEnrollment(ctx context.Context, mux *http.ServeMux) ([]service
 				}
 				return p, nil
 			},
-			SignCert: e.caCert,
-			SignKey:  e.caKey,
-			Logger:   a.cfg.Logger,
+			SignCert:        e.caCert,
+			SignKey:         e.caKey,
+			SigningIdentity: a.profileSigningIdentity(e),
+			Logger:          a.cfg.Logger,
 		})
 		if err != nil {
 			return nil, fmt.Errorf("app: account-driven %s: %w", version, err)
@@ -493,6 +507,13 @@ func (e *enrollment) profileWithIdentity(
 	identity string,
 	targets ...acmeTarget,
 ) (*enroll.Profile, error) {
+	if e.app != nil && e.app.Certificates != nil && e == e.app.enroll {
+		target, err := e.app.profileIssuer(ctx)
+		if err != nil {
+			return nil, err
+		}
+		return target.enrollment.profileWithIdentity(ctx, b, identity, targets...)
+	}
 	if identity == "" {
 		identity = IdentitySCEP
 	}
@@ -519,6 +540,13 @@ func (e *enrollment) profileWithIdentity(
 	if org == "" {
 		org = "go-apple-dm"
 	}
+	trust := e.trust
+	if e.app != nil && e.app.Certificates != nil {
+		trust, err = e.app.managedProfileTrust(ctx)
+		if err != nil {
+			return nil, wrapError(err)
+		}
+	}
 	out := &enroll.Profile{
 		Identifier:   id,
 		DisplayName:  org + " MDM enrollment",
@@ -526,7 +554,7 @@ func (e *enrollment) profileWithIdentity(
 		Topic:        e.cfg.Topic,
 		ServerURL:    e.base + PathMDM,
 		CheckInURL:   e.base + PathMDM,
-		Roots:        e.trust,
+		Roots:        trust,
 		ServerCapabilities: []string{
 			enroll.CapabilityPerUserConnections,
 			enroll.CapabilityBootstrapToken,
@@ -556,7 +584,7 @@ func (e *enrollment) profileWithIdentity(
 	}
 	out.SCEP = &enroll.SCEP{
 		KeyIsExtractable: new(false), AllowAllAppsAccess: new(false),
-		URL:       e.base + PathSCEP,
+		URL:       e.base + e.scepPath(),
 		Challenge: challenge,
 		Subject:   pkix.Name{CommonName: subjectCN, Organization: []string{org}},
 	}
@@ -598,7 +626,20 @@ func (e *enrollment) parseDeviceInfo(anchors []*x509.Certificate) accountdriven.
 }
 
 // loadCA reads the CA files or generates a self-signed CA.
-func (e *enrollment) loadCA(a *App) error {
+func (e *enrollment) loadCA(ctx context.Context, a *App) error {
+	if a.Certificates != nil {
+		material, err := a.Certificates.LoadMaterial(ctx, a.cfg.Setup.IssuerID, "1")
+		if err != nil {
+			return wrapError(err)
+		}
+		pair, err := tls.X509KeyPair(material.Certificate, material.Key)
+		if err != nil {
+			return wrapError(err)
+		}
+		e.caCert, e.caKey = pair.Leaf, pair.PrivateKey.(crypto.Signer)
+		return nil
+	}
+
 	if e.cfg.CACertFile == "" {
 		cert, key, err := ca.NewSelfSigned(
 			ca.SelfSignedOptions{
@@ -732,7 +773,7 @@ func (a *App) wireOIDC(e *enrollment, mux *http.ServeMux) error {
 	if cfg.OIDC.Issuer != "" {
 		cfg.OIDC.HTTPClient, err = cfg.OIDC.client()
 		if err != nil {
-			return err
+			return wrapError(err)
 		}
 		e.flow, err = webauth.New(webauth.Config{
 			Issuer:       cfg.OIDC.Issuer,

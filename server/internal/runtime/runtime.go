@@ -33,7 +33,7 @@ const (
 var errWorkersStuck = errors.New("dmserver: workers did not stop before the shutdown deadline")
 
 func Serve(ctx context.Context, cfg app.Config) error {
-	if cfg.TLSCertFile == "" {
+	if cfg.TLSCertFile == "" && cfg.Setup == nil {
 		host, _, err := net.SplitHostPort(cfg.Listen)
 		ip := net.ParseIP(host)
 		if err != nil || ip == nil || !ip.IsLoopback() ||
@@ -50,11 +50,43 @@ func Serve(ctx context.Context, cfg app.Config) error {
 		return wrapError(err)
 	}
 	defer a.Close() //nolint:contextcheck // Close owns a bounded drain after the request context is canceled.
+	if cfg.Setup != nil {
+		if _, err := a.LoadTLSCertificate(ctx); err != nil {
+			return fmt.Errorf(
+				"dmserver: activate the managed HTTPS identity before starting: %w",
+				err,
+			)
+		}
+	}
 	listener, err := (&net.ListenConfig{}).Listen(ctx, "tcp", cfg.Listen)
 	if err != nil {
 		return wrapError(err)
 	}
 	defer listener.Close()
+	serving := make(chan error, 2)
+	if cfg.Setup != nil && cfg.Setup.HTTP01Listen != "" {
+		challengeListener, err := (&net.ListenConfig{}).Listen(ctx, "tcp", cfg.Setup.HTTP01Listen)
+		if err != nil {
+			return wrapError(err)
+		}
+		challengeServer := &http.Server{
+			Handler:           a.Certificates.HTTP01Handler(),
+			ReadHeaderTimeout: readHeaderTimeout,
+			ReadTimeout:       readTimeout,
+			WriteTimeout:      writeTimeout,
+		}
+		defer challengeServer.Close()
+		go func() {
+			if err := challengeServer.Serve(
+				challengeListener,
+			); !errors.Is(
+				err,
+				http.ErrServerClosed,
+			) {
+				serving <- fmt.Errorf("dmserver: HTTP-01 listener: %w", err)
+			}
+		}()
+	}
 
 	// The workers get their own context so shutdown can stop accepting new
 	// requests before the loops are told to finish. Sharing ctx with the
@@ -77,9 +109,12 @@ func Serve(ctx context.Context, cfg app.Config) error {
 		IdleTimeout:       idleTimeout,
 		MaxHeaderBytes:    maxHeaderBytes,
 	}
+	if cfg.Setup != nil {
+		srv.TLSConfig.GetCertificate = a.TLSCertificate
+		srv.TLSConfig.GetConfigForClient = a.ManagedTLSConfig
+	}
 	workers := make(chan error, 1)
 	go func() { workers <- a.Run(workerCtx) }()
-	serving := make(chan error, 1)
 	logger := cfg.Logger
 	if logger == nil {
 		logger = slog.Default()
@@ -150,6 +185,9 @@ func supervise(
 }
 
 func serveHTTP(srv *http.Server, listener net.Listener, cfg app.Config) error {
+	if cfg.Setup != nil {
+		return wrapError(srv.ServeTLS(listener, "", ""))
+	}
 	if cfg.TLSCertFile != "" {
 		return fmt.Errorf(
 			"runtime TLS: %w",

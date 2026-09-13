@@ -26,6 +26,8 @@ type ReplacementStore interface {
 // Replacement contains private handshake state. Administrative APIs must expose
 // a redacted view, not this record (the command contains issuance credentials).
 type Replacement struct {
+	Issuer         string
+	ReconcileUntil time.Time
 	// CSRHash binds SCEP retries to the exact signed request.
 	CSRHash                                                       string
 	ID, Method, OldHash, CandidateHash, SecretHash, PublicKeyHash string
@@ -44,6 +46,8 @@ type ReplacementToken struct {
 }
 
 type ReplacementChange struct {
+	Issuer                                          string
+	ReconcileUntil                                  time.Time
 	CSRHash                                         string
 	Op, ID, Hash, Method, SecretHash, PublicKeyHash string
 	At                                              time.Time
@@ -67,7 +71,7 @@ func CloneReplacement(r *Replacement) *Replacement {
 		return nil
 	}
 	copy := *r
-	copy.Command.Payload = nil // Raw is the canonical, durable command encoding.
+	copy.Command.Payload = nil // Raw is the canonical, persistent command encoding.
 	b, _ := json.Marshal(copy)
 	var out Replacement
 	_ = json.Unmarshal(b, &out)
@@ -82,7 +86,14 @@ func AdvanceReplacement(r **Replacement, e *Enrollment, c ReplacementChange) (bo
 		return false, fmt.Errorf("%w: replacement time is required", ErrInvalid)
 	}
 	current := *r
-	if current != nil && current.State == ReplacementPending && !c.At.Before(current.ExpiresAt) {
+	expiry := time.Time{}
+	if current != nil {
+		expiry = current.ExpiresAt
+		if current.CandidateHash != "" && current.ReconcileUntil.After(expiry) {
+			expiry = current.ReconcileUntil
+		}
+	}
+	if current != nil && current.State == ReplacementPending && !c.At.Before(expiry) {
 		current.State, current.CompletedAt = ReplacementExpired, c.At
 	}
 	if c.Op == "begin" {
@@ -113,7 +124,7 @@ func AdvanceReplacement(r **Replacement, e *Enrollment, c ReplacementChange) (bo
 	case "cancel":
 		current.State, current.CompletedAt = ReplacementCancelled, c.At
 	case "claim":
-		if current.Method != "scep" || c.PublicKeyHash == "" || c.CSRHash == "" ||
+		if !c.At.Before(current.ExpiresAt) || current.Method != "scep" || c.PublicKeyHash == "" || c.CSRHash == "" ||
 			(current.PublicKeyHash != "" && current.PublicKeyHash != c.PublicKeyHash) ||
 			(current.CSRHash != "" && current.CSRHash != c.CSRHash) ||
 			current.SecretHash == "" || subtle.ConstantTimeCompare([]byte(current.SecretHash), []byte(c.SecretHash)) != 1 {
@@ -121,12 +132,15 @@ func AdvanceReplacement(r **Replacement, e *Enrollment, c ReplacementChange) (bo
 		}
 		current.PublicKeyHash, current.CSRHash = c.PublicKeyHash, c.CSRHash
 	case "issue":
-		if current.Method != c.Method || c.Hash == "" ||
+		if (current.Issuer != "" && current.Issuer != c.Issuer) ||
+			(!c.At.Before(current.ExpiresAt) && current.CandidateHash != c.Hash) ||
+			current.Method != c.Method || c.Hash == "" ||
 			(current.CandidateHash != "" && current.CandidateHash != c.Hash) ||
 			(current.Method == "scep" && (current.PublicKeyHash == "" || current.PublicKeyHash != c.PublicKeyHash)) {
 			return bad("certificate issuance refused")
 		}
 		current.CandidateHash = c.Hash
+		current.ReconcileUntil = c.ReconcileUntil
 	case "authenticate":
 		if current.CandidateHash == "" || current.CandidateHash != c.Hash {
 			return bad("identity refused")

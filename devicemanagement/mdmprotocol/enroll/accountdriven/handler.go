@@ -90,7 +90,9 @@ type Config struct {
 	// SignCert and SignKey sign the profile (CMS attached).
 	SignCert *x509.Certificate
 	SignKey  crypto.Signer
-	Logger   *slog.Logger
+	// SigningIdentity overrides the static signer for each issued profile.
+	SigningIdentity func(context.Context) (*x509.Certificate, crypto.Signer, error)
+	Logger          *slog.Logger
 }
 
 // Handler serves the enrollment URL named by service discovery.
@@ -105,7 +107,7 @@ func New(cfg Config) (*Handler, error) {
 		return nil, fmt.Errorf("%w: Version must be %s or %s", ErrConfig, VersionBYOD, VersionADDE)
 	case cfg.Parse == nil || cfg.Auth == nil || (cfg.Tokens == nil && cfg.Verifier == nil) || cfg.Profile == nil:
 		return nil, fmt.Errorf("%w: Parse, Auth, Tokens, and Profile are required", ErrConfig)
-	case cfg.SignCert == nil || cfg.SignKey == nil:
+	case cfg.SigningIdentity == nil && (cfg.SignCert == nil || cfg.SignKey == nil):
 		return nil, fmt.Errorf("%w: SignCert and SignKey are required", ErrConfig)
 	}
 	if cfg.Verifier == nil {
@@ -211,7 +213,19 @@ func (h *Handler) serveProfile(
 		h.fail(w, r, err, http.StatusInternalServerError)
 		return
 	}
-	signed, err := built.Sign(h.cfg.SignCert, h.cfg.SignKey)
+	cert, key := h.cfg.SignCert, h.cfg.SignKey
+	if h.cfg.SigningIdentity != nil {
+		cert, key, err = h.cfg.SigningIdentity(ctx)
+		if err != nil {
+			h.fail(w, r, err, http.StatusInternalServerError)
+			return
+		}
+		if cert == nil || key == nil {
+			h.fail(w, r, ErrConfig, http.StatusInternalServerError)
+			return
+		}
+	}
+	signed, err := built.Sign(cert, key)
 	if err != nil {
 		h.fail(w, r, err, http.StatusInternalServerError)
 		return

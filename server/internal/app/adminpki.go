@@ -27,12 +27,17 @@ func (a *App) pkiAdminRoutes() []adminRoute {
 			Action:  ActionReadCertificates,
 			Family:  "pki",
 			Handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				registry, err := a.certificateRegistry(r.Context())
+				if err != nil {
+					pkiError(w, err)
+					return
+				}
 				serial, err := serialFromPath(r)
 				if err != nil {
 					pkiError(w, err)
 					return
 				}
-				c, err := a.revocations.Lookup(r.Context(), r.PathValue("issuer"), serial)
+				c, err := registry.Lookup(r.Context(), r.PathValue("issuer"), serial)
 				if err != nil {
 					pkiError(w, err)
 					return
@@ -46,6 +51,11 @@ func (a *App) pkiAdminRoutes() []adminRoute {
 			Action:  ActionImportCertificates,
 			Family:  "pki",
 			Handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				registry, err := a.certificateRegistry(r.Context())
+				if err != nil {
+					pkiError(w, err)
+					return
+				}
 				var body struct {
 					Issuer      string `json:"issuer"`
 					Certificate []byte `json:"certificate"`
@@ -65,7 +75,7 @@ func (a *App) pkiAdminRoutes() []adminRoute {
 					pkiError(w, revocation.ErrInvalid)
 					return
 				}
-				if err := a.revocations.Register(
+				if err := registry.Register(
 					r.Context(),
 					body.Issuer,
 					cert,
@@ -86,6 +96,11 @@ func (a *App) pkiAdminRoutes() []adminRoute {
 			Action:  ActionRevokeCertificates,
 			Family:  "pki",
 			Handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				registry, err := a.certificateRegistry(r.Context())
+				if err != nil {
+					pkiError(w, err)
+					return
+				}
 				serial, err := serialFromPath(r)
 				if err != nil {
 					pkiError(w, err)
@@ -102,7 +117,7 @@ func (a *App) pkiAdminRoutes() []adminRoute {
 					return
 				}
 				issuer := r.PathValue("issuer")
-				if err := a.revocations.Revoke(
+				if err := registry.Revoke(
 					r.Context(),
 					issuer,
 					serial,

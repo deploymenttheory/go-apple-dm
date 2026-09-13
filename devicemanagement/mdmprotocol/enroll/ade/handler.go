@@ -87,6 +87,8 @@ type Config struct {
 	Profile ProfileHook
 	// Signer signs the profile; optional.
 	Signer Signer
+	// SigningIdentity selects the current profile signer when supplied.
+	SigningIdentity func(context.Context) (*x509.Certificate, crypto.Signer, error)
 	// SoftwareUpdate is the gate policy; optional.
 	SoftwareUpdate Policy
 	// GDMF resolves "latest" targets; optional.
@@ -260,8 +262,20 @@ func (h *Handler) Finish(w http.ResponseWriter, r *http.Request, p *Parsed, id I
 		return
 	}
 	var out []byte
-	if h.cfg.Signer.Cert != nil && h.cfg.Signer.Key != nil {
-		out, err = built.Sign(h.cfg.Signer.Cert, h.cfg.Signer.Key)
+	signer := h.cfg.Signer
+	if h.cfg.SigningIdentity != nil {
+		signer.Cert, signer.Key, err = h.cfg.SigningIdentity(r.Context())
+		if err != nil {
+			h.fail(w, r, err)
+			return
+		}
+		if signer.Cert == nil || signer.Key == nil {
+			h.fail(w, r, fmt.Errorf("ade: signing identity unavailable"))
+			return
+		}
+	}
+	if signer.Cert != nil && signer.Key != nil {
+		out, err = built.Sign(signer.Cert, signer.Key)
 	} else {
 		out, err = built.Marshal()
 	}

@@ -79,6 +79,19 @@ func (a *App) wireOTA(mux *http.ServeMux) error {
 			return built.Marshal()
 		},
 	}
-	mux.Handle("/ota", ota.Handler())
+	if a.Certificates != nil {
+		mux.Handle("/ota", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			roots, err := a.managedRoots(r.Context())
+			if err != nil {
+				http.Error(w, "enrollment trust unavailable", http.StatusServiceUnavailable)
+				return
+			}
+			current := *ota
+			current.IdentityRoots = roots
+			current.Handler().ServeHTTP(w, r)
+		}))
+	} else {
+		mux.Handle("/ota", ota.Handler())
+	}
 	return nil
 }

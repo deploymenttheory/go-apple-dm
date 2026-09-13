@@ -51,7 +51,7 @@ const (
 // consequence. `dmctl policy actions` prints these, so an operator granting
 // an action knows what they are granting rather than guessing from its name.
 func AdminActions() []adminauth.Action {
-	return []adminauth.Action{
+	return append(setupActions(), []adminauth.Action{
 		{
 			ID:       ActionReplaceEnrollment,
 			Help:     "Replace an enrolled device's MDM profile and rotate its identity, or cancel a pending replacement.",
@@ -197,7 +197,7 @@ func AdminActions() []adminauth.Action {
 			Help:     "Read the server's role and route table. Authenticated callers always may; a policy does not gate it.",
 			Resource: adminauth.EntitySystem,
 		},
-	}
+	}...)
 }
 
 // adminRoute is one entry of the route table the admin mux is built from.
@@ -351,7 +351,10 @@ func (a *App) authorized(rt adminRoute) http.Handler {
 		}
 		a.auditAction(r, p, rt)
 		rec := &statusRecorder{ResponseWriter: w}
-		rt.Handler.ServeHTTP(rec, r)
+		rt.Handler.ServeHTTP(
+			rec,
+			r.WithContext(context.WithValue(r.Context(), setupActorKey{}, p.Name)),
+		)
 		a.kickNotifier(rt, r, rec.status)
 	})
 }

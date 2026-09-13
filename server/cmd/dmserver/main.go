@@ -2,6 +2,8 @@ package main
 
 import (
 	"context"
+	"crypto/x509"
+	"encoding/pem"
 	"errors"
 	"flag"
 	"fmt"
@@ -24,12 +26,31 @@ func main() {
 }
 
 func run(ctx context.Context, args []string, getenv func(string) string, out *os.File) error {
+	setupPath := getenv("DM_SETUP_FILE")
+	for i, arg := range args {
+		if (arg == "--setup-file" || arg == "-setup-file") && i+1 < len(args) {
+			setupPath = args[i+1]
+		}
+		if value, ok := strings.CutPrefix(arg, "--setup-file="); ok {
+			setupPath = value
+		}
+		if value, ok := strings.CutPrefix(arg, "-setup-file="); ok {
+			setupPath = value
+		}
+	}
 	cfg, err := app.ParseEnv(getenv)
+	if setupPath != "" {
+		cfg, err = app.LoadSetupFile(setupPath, getenv)
+		if err != nil {
+			return err
+		}
+	}
 	if err != nil && !errors.Is(err, app.ErrConfig) {
 		return err
 	}
 	fs := flag.NewFlagSet("dmserver", flag.ContinueOnError)
 	fs.SetOutput(out)
+	fs.StringVar(&setupPath, "setup-file", setupPath, "persistent certificate setup configuration (DM_SETUP_FILE)")
 	var check, checkCA, sendKey, recvKey, storageKeys string
 	role := fs.String("role", string(cfg.Role), "mdm, ddm, or all ("+app.EnvRole+")")
 	fs.StringVar(
@@ -122,8 +143,28 @@ func run(ctx context.Context, args []string, getenv func(string) string, out *os
 		return err
 	}
 	if check != "" {
+		var managedCertificate *x509.Certificate
+		if cfg.Setup != nil && check == "auto" {
+			a, err := app.OpenSetup(ctx, cfg)
+			if err != nil {
+				return err
+			}
+			defer a.Close()
+			material, err := a.Certificates.LoadMaterial(ctx, cfg.Setup.HTTPSID, "")
+			if err != nil {
+				return err
+			}
+			block, _ := pem.Decode(material.Certificate)
+			if block == nil {
+				return app.ErrConfig
+			}
+			managedCertificate, err = x509.ParseCertificate(block.Bytes)
+			if err != nil {
+				return err
+			}
+		}
 		return runtime.Probe(ctx, runtime.ProbeConfig{
-			URL: check, Listen: cfg.Listen, TLSCertFile: cfg.TLSCertFile,
+			URL: check, Listen: cfg.Listen, TLSCertFile: cfg.TLSCertFile, Certificate: managedCertificate,
 			TLSKeyFile: cfg.TLSKeyFile, CAFile: checkCA,
 		})
 	}
