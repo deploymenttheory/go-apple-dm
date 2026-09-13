@@ -7,7 +7,7 @@ require (
 	github.com/deploymenttheory/go-apple-dm v0.5.1-0.20260912215028-6601f08e3682
 	github.com/go-sql-driver/mysql v1.10.1
 	github.com/jackc/pgx/v5 v5.11.0
-	golang.org/x/crypto v0.56.0
+	golang.org/x/crypto v0.57.0
 	modernc.org/sqlite v1.58.0
 )
 
@@ -26,9 +26,9 @@ require (
 	github.com/smallstep/scep v0.0.0-20260331191114-261f960a40d1 // indirect
 	github.com/stretchr/testify v1.12.1 // indirect
 	golang.org/x/exp v0.0.0-20251023183803-a4bb9ffd2546 // indirect
-	golang.org/x/sync v0.22.0 // indirect
-	golang.org/x/sys v0.47.0 // indirect
-	golang.org/x/text v0.41.0 // indirect
+	golang.org/x/sync v0.23.0 // indirect
+	golang.org/x/sys v0.48.0 // indirect
+	golang.org/x/text v0.42.0 // indirect
 	howett.net/plist v1.0.1 // indirect
 	modernc.org/libc v1.75.6 // indirect
 	modernc.org/mathutil v1.7.1 // indirect
