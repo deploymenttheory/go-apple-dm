@@ -27,9 +27,23 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/storage"
 )
 
+func managedRolloverApp(t *testing.T) (*App, mdm.EnrollmentID) {
+	t.Helper()
+	a, id := replacementSecurityApp(t)
+	e, err := a.Store.Get(t.Context(), id)
+	if err != nil {
+		t.Fatal(err)
+	}
+	e.Device = storage.DeviceInfo{ProductName: "Mac15,3", OSVersion: "26.0"}
+	if err := a.Store.Import(t.Context(), storage.EnrollmentExport{Enrollment: *e}); err != nil {
+		t.Fatal(err)
+	}
+	return a, id
+}
+
 func TestManagedIssuerRolloverKeepsOfflineDeviceAndRetiresLegacyRoute(t *testing.T) {
 	ctx := t.Context()
-	a, id := replacementSecurityApp(t)
+	a, id := managedRolloverApp(t)
 	a.cfg.Setup = &SetupConfig{Role: "combined", IssuerID: "issuer"}
 	a.Certificates = &lifecycle.Manager{Store: a.protocol}
 	key, err := x509.MarshalPKCS8PrivateKey(a.enroll.caKey)
@@ -359,7 +373,7 @@ func TestBootstrapKeepsImportedSecretsAndRejectsDifferentDatabaseKey(t *testing.
 
 func TestHTTPSCARolloverWaitsForTrustBeforeChangingTLS(t *testing.T) {
 	ctx := t.Context()
-	a, id := replacementSecurityApp(t)
+	a, id := managedRolloverApp(t)
 	a.cfg.Setup = &SetupConfig{
 		Role:      "combined",
 		IssuerID:  "issuer",
