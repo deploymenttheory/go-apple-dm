@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.7.0](https://github.com/deploymenttheory/go-apple-dm/compare/v0.6.0...v0.7.0) (2026-09-13)
+
+
+### Features
+
+* **pki:** add managed certificate setup and renewal ([6fd5a46](https://github.com/deploymenttheory/go-apple-dm/commit/6fd5a46be7b806eab0dd7ec6423d2320a66224a6))
+* **pki:** manage certificate setup and renewal with persistent state ([5d23ceb](https://github.com/deploymenttheory/go-apple-dm/commit/5d23ceb13acb96e27a29b1a8075360a45375329b))
+
+
+### Bug Fixes
+
+* **server:** address certificate setup security scan findings ([c5b7eb4](https://github.com/deploymenttheory/go-apple-dm/commit/c5b7eb4819effa9ee670b4d76a97b1aa65ab1557))
+* **server:** pin published certificate lifecycle library ([bcbae9a](https://github.com/deploymenttheory/go-apple-dm/commit/bcbae9ac67789214b631abdde3947f793d4f7903))
+* **server:** verify certificate workflows and restore coverage gate ([9dba169](https://github.com/deploymenttheory/go-apple-dm/commit/9dba169e546f0f858b048483931703c5c145b10d))
+
 ## [0.6.0](https://github.com/deploymenttheory/go-apple-dm/compare/v0.5.0...v0.6.0) (2026-09-12)
 
 
