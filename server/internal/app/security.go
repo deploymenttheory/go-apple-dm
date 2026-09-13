@@ -85,6 +85,7 @@ type enrollmentDepot struct {
 }
 
 func (d *enrollmentDepot) Put(ctx context.Context, c *x509.Certificate) error {
+	ctx = context.WithValue(ctx, issuedByKey{}, d.issuer)
 	if d.app != nil {
 		if err := d.app.replacementIssuance(ctx, c); err != nil {
 			return err
@@ -200,7 +201,18 @@ func (a *App) wirePKI(ctx context.Context, e *enrollment, mux *http.ServeMux) er
 	}
 	reg.Now = a.cfg.Clock.Now
 	a.revocations = reg
-	mux.Handle("/pki/", reg.Handler("/pki"))
+	if a.Certificates != nil {
+		mux.Handle("/pki/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			current, err := a.managedRegistry(r.Context())
+			if err != nil {
+				http.Error(w, "issuer unavailable", http.StatusServiceUnavailable)
+				return
+			}
+			current.Handler("/pki").ServeHTTP(w, r)
+		}))
+	} else {
+		mux.Handle("/pki/", reg.Handler("/pki"))
+	}
 	return nil
 }
 
@@ -221,7 +233,10 @@ func (a *App) issuancePolicy(e *enrollment) ca.Policy {
 	return p
 }
 
-func (a *App) acmeRevocations() acme.Revocations {
+func (a *App) acmeRevocations(e *enrollment) acme.Revocations {
+	if e.depot != nil && e.depot.registry != nil {
+		return e.depot.registry
+	}
 	if a.revocations == nil {
 		return nil
 	}

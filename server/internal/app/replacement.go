@@ -30,6 +30,7 @@ import (
 const replacementSubjectPrefix = "dm-replace:"
 
 type identityEvidence struct {
+	Issuer       string    `json:"issuer,omitempty"`
 	EnrollmentID string    `json:"enrollmentId,omitempty"`
 	UDID         string    `json:"udid,omitempty"`
 	Serial       string    `json:"serial,omitempty"`
@@ -53,6 +54,7 @@ func (a *App) recordIssuedIdentity(ctx context.Context, c *x509.Certificate) err
 	}
 	b, err := json.Marshal(
 		identityEvidence{
+			Issuer:       issuerFromContext(ctx),
 			Method:       method,
 			EnrollmentID: provenance.EnrollmentID,
 			NotAfter:     c.NotAfter,
@@ -204,8 +206,14 @@ func (a *App) replacementIssuance(ctx context.Context, cert *x509.Certificate) e
 		method = IdentitySCEP
 	}
 	_, err = s.TransitionReplacement(ctx, id, storage.ReplacementChange{
-		Op: "issue", ID: attempt, Hash: cms.Fingerprint(cert), Method: method,
-		PublicKeyHash: digest(cert.RawSubjectPublicKeyInfo), At: a.cfg.Clock.Now(),
+		Op:             "issue",
+		ID:             attempt,
+		Hash:           cms.Fingerprint(cert),
+		Method:         method,
+		Issuer:         issuerFromContext(ctx),
+		ReconcileUntil: cert.NotAfter,
+		PublicKeyHash:  digest(cert.RawSubjectPublicKeyInfo),
+		At:             a.cfg.Clock.Now(),
 	})
 	return wrapError(err)
 }
@@ -376,6 +384,15 @@ func (a *App) prepareReplacement(
 		)
 	}
 	p.SCEP, p.ACME, p.PKCS12, p.IdentityUUID = fresh.SCEP, fresh.ACME, nil, profile.NewUUID()
+	targetIssuer := ""
+	if a.Certificates != nil {
+		target, err := a.profileIssuer(ctx)
+		if err != nil {
+			return nil, err
+		}
+		targetIssuer = cms.Fingerprint(target.enrollment.caCert)
+		p.Roots, p.RootUUIDs = fresh.Roots, fresh.RootUUIDs
+	}
 	secret := make([]byte, 32)
 	if _, err := rand.Read(secret); err != nil {
 		return nil, fmt.Errorf("app: replacement authorization: %w", err)
@@ -395,6 +412,7 @@ func (a *App) prepareReplacement(
 	cmd.Payload = nil
 	return &storage.Replacement{
 		ID:         attempt,
+		Issuer:     targetIssuer,
 		Method:     method,
 		OldHash:    e.CertHash,
 		SecretHash: digest([]byte(password)),

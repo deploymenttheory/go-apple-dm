@@ -7,6 +7,7 @@ import (
 	"encoding/base64"
 	"encoding/hex"
 	"encoding/json"
+	"encoding/pem"
 	"errors"
 	"fmt"
 	"net/http"
@@ -26,7 +27,27 @@ const (
 	PathTrustProfile  = "/enroll/trust/profile"
 )
 
-func (a *App) wireServiceConfig(e *enrollment, mux *http.ServeMux) error {
+func (a *App) wireServiceConfig(ctx context.Context, e *enrollment, mux *http.ServeMux) error {
+	if a.Certificates != nil && a.cfg.Setup.HTTPSCAID != "" {
+		material, err := a.Certificates.LoadMaterial(ctx, a.cfg.Setup.HTTPSCAID, "")
+		if err == nil {
+			rest := material.Certificate
+			for len(rest) > 0 {
+				block, next := pem.Decode(rest)
+				if block == nil {
+					break
+				}
+				c, err := x509.ParseCertificate(block.Bytes)
+				if err != nil {
+					return wrapError(err)
+				}
+				e.trust = append(e.trust, c)
+				rest = next
+			}
+		} else if !errors.Is(err, state.ErrNotFound) {
+			return wrapError(err)
+		}
+	}
 	if e.cfg.TLSAnchorFile != "" {
 		certs, err := readCertsPEM(e.cfg.TLSAnchorFile)
 		if err != nil {
@@ -70,19 +91,33 @@ func (a *App) wireServiceConfig(e *enrollment, mux *http.ServeMux) error {
 		w.Header().Set("Content-Type", "application/json; charset=UTF8")
 		_ = json.NewEncoder(w).Encode(config)
 	})
-	mux.HandleFunc("GET "+PathTrustAnchors, func(w http.ResponseWriter, _ *http.Request) {
+	mux.HandleFunc("GET "+PathTrustAnchors, func(w http.ResponseWriter, r *http.Request) {
+		current, err := a.currentTrustAnchors(r.Context(), anchors)
+		if err != nil {
+			http.Error(w, "trust unavailable", http.StatusServiceUnavailable)
+			return
+		}
 		w.Header().Set("Content-Type", "application/json; charset=UTF8")
-		_ = json.NewEncoder(w).Encode(anchors)
+		_ = json.NewEncoder(w).Encode(current)
 	})
 	if len(e.trust) > 0 {
 		b, err := trustProfile(e.trust)
 		if err != nil {
 			return wrapError(err)
 		}
-		mux.HandleFunc("GET "+PathTrustProfile, func(w http.ResponseWriter, _ *http.Request) {
+		mux.HandleFunc("GET "+PathTrustProfile, func(w http.ResponseWriter, r *http.Request) {
+			data := b
+			if a.Certificates != nil {
+				var err error
+				data, err = a.SetupTrustProfile(r.Context())
+				if err != nil {
+					http.Error(w, "trust unavailable", http.StatusServiceUnavailable)
+					return
+				}
+			}
 			w.Header().Set("Content-Type", "application/x-apple-aspen-config")
 			w.Header().Set("X-Content-Type-Options", "nosniff")
-			_, _ = w.Write(b)
+			_, _ = w.Write(data)
 		})
 	}
 	return nil
@@ -171,4 +206,19 @@ func (e *enrollment) stabilizeProfile(
 		return fmt.Errorf("app: enrollment profile metadata: %w", err)
 	}
 	return nil
+}
+
+func (a *App) currentTrustAnchors(ctx context.Context, fallback []string) ([]string, error) {
+	if a.Certificates == nil {
+		return fallback, nil
+	}
+	certificates, err := a.managedProfileTrust(ctx)
+	if err != nil {
+		return nil, err
+	}
+	out := make([]string, 0, len(certificates))
+	for _, certificate := range certificates {
+		out = append(out, base64.StdEncoding.EncodeToString(certificate.Raw))
+	}
+	return out, nil
 }

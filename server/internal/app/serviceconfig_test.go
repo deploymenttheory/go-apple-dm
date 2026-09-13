@@ -43,7 +43,7 @@ func TestServiceConfigTrustIsIndependentFromIdentity(t *testing.T) {
 			}
 			a := &App{cfg: Config{DEP: DEPConfig{ProfileURL: "https://ade.example/enroll"}}}
 			mux := http.NewServeMux()
-			if err := a.wireServiceConfig(e, mux); err != nil {
+			if err := a.wireServiceConfig(t.Context(), e, mux); err != nil {
 				t.Fatal(err)
 			}
 			get := func(path string) *httptest.ResponseRecorder {
@@ -117,13 +117,13 @@ func TestServiceConfigRejectsInvalidTrustAndURL(t *testing.T) {
 	for _, tc := range []struct{ anchor, url string }{{"missing", "https://mdm.example"}, {f, "https://mdm.example"}, {"", "http://mdm.example"}, {"", "https://user:secret@mdm.example"}, {"", "https://"}, {"", ":bad"}} {
 		a := &App{}
 		e := &enrollment{base: tc.url, cfg: EnrollConfig{TLSAnchorFile: tc.anchor}}
-		if err := a.wireServiceConfig(e, http.NewServeMux()); err == nil {
+		if err := a.wireServiceConfig(t.Context(), e, http.NewServeMux()); err == nil {
 			t.Fatal("invalid discovery accepted", tc)
 		}
 	}
 	e := &enrollment{base: "https://mdm.example"}
 	mux := http.NewServeMux()
-	if err := (&App{}).wireServiceConfig(e, mux); err != nil {
+	if err := (&App{}).wireServiceConfig(t.Context(), e, mux); err != nil {
 		t.Fatal(err)
 	}
 	w := httptest.NewRecorder()

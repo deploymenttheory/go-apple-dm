@@ -113,3 +113,34 @@ func TestReplacementAdmissionRejectsInvalidTransitions(t *testing.T) {
 		t.Fatal("nil begin accepted")
 	}
 }
+
+func TestReplacementConfirmationOutlivesIssuanceGrant(t *testing.T) {
+	now := time.Now()
+	id := mdm.EnrollmentID{Channel: mdm.ChannelDevice, ID: "device"}
+	r := &storage.Replacement{ID: "attempt", State: storage.ReplacementPending, OldHash: "old", Method: "scep", SecretHash: "secret", PublicKeyHash: "key", CSRHash: "csr", Issuer: "issuer", ExpiresAt: now.Add(time.Minute), Delivered: true, Command: mdm.Command{UUID: "attempt"}}
+	e := &storage.Enrollment{ID: id, Enabled: true, CertHash: "old"}
+	issue := storage.ReplacementChange{Op: "issue", At: now, ID: "attempt", Method: "scep", Hash: "new", PublicKeyHash: "key", Issuer: "wrong", ReconcileUntil: now.Add(365 * 24 * time.Hour)}
+	if _, err := storage.AdvanceReplacement(&r, e, issue); err == nil {
+		t.Fatal("accepted certificate from wrong issuer")
+	}
+	issue.Issuer = "issuer"
+	if _, err := storage.AdvanceReplacement(&r, e, issue); err != nil {
+		t.Fatal(err)
+	}
+	later := now.Add(2 * time.Hour)
+	if _, err := storage.AdvanceReplacement(&r, e, storage.ReplacementChange{Op: "claim", At: later, ID: "attempt", SecretHash: "secret", PublicKeyHash: "key", CSRHash: "csr"}); err == nil {
+		t.Fatal("expired issuance grant was reused")
+	}
+	if _, err := storage.AdvanceReplacement(&r, e, storage.ReplacementChange{Op: "authenticate", At: later, ID: "attempt", Hash: "new"}); err != nil {
+		t.Fatal("issued candidate lost at grant expiry", err)
+	}
+	if _, err := storage.AdvanceReplacement(&r, e, storage.ReplacementChange{Op: "token", At: later, ID: "attempt", Hash: "new", Token: &storage.ReplacementToken{ID: id, Message: &checkin.TokenUpdate{Topic: "topic", Token: []byte{1}, PushMagic: "magic"}}}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := storage.AdvanceReplacement(&r, e, storage.ReplacementChange{Op: "result", At: later, ID: "attempt", Hash: "old", Response: &mdm.Response{CommandUUID: "attempt", Status: mdm.StatusAcknowledged}}); err != nil {
+		t.Fatal(err)
+	}
+	if r.State != storage.ReplacementCommitted || r.CandidateHash != "new" {
+		t.Fatal("late confirmation did not commit candidate", r.State, e.CertHash)
+	}
+}

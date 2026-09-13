@@ -1,6 +1,7 @@
 package pushcert
 
 import (
+	"bytes"
 	"crypto"
 	"crypto/rand"
 	"crypto/rsa"
@@ -125,21 +126,31 @@ func verifyVendorChain(chain [][]byte, roots *x509.CertPool, at time.Time) error
 		}
 	}
 	root := certs[len(certs)-1]
-	if err := root.CheckSignatureFrom(root); err != nil {
-		return fmt.Errorf("%w: last certificate must be a self-signed root: %w", ErrInvalid, err)
+	// A configured trust anchor does not need its self-signature verified.
+	// Apple's legacy root uses SHA-1, which Go correctly rejects on issued
+	// certificates. Verify below still authenticates every issued certificate
+	// and requires the supplied chain to end at the configured anchor.
+	if !root.IsCA || !bytes.Equal(root.RawSubject, root.RawIssuer) {
+		return fmt.Errorf("%w: last certificate must be a root CA", ErrInvalid)
 	}
 	if certs[0].IsCA || certs[0].KeyUsage&x509.KeyUsageDigitalSignature == 0 {
 		return fmt.Errorf("%w: vendor leaf cannot sign", ErrInvalid)
 	}
-	if _, err := certs[0].Verify(
+	verified, err := certs[0].Verify(
 		x509.VerifyOptions{
 			Roots:         roots,
 			Intermediates: intermediates,
 			CurrentTime:   at,
 			KeyUsages:     []x509.ExtKeyUsage{x509.ExtKeyUsageAny},
 		},
-	); err != nil {
+	)
+	if err != nil {
 		return fmt.Errorf("%w: untrusted vendor chain: %w", ErrInvalid, err)
 	}
-	return nil
+	for _, path := range verified {
+		if bytes.Equal(path[len(path)-1].Raw, root.Raw) {
+			return nil
+		}
+	}
+	return fmt.Errorf("%w: supplied root is not the verified trust anchor", ErrInvalid)
 }

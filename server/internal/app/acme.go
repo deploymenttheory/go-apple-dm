@@ -142,12 +142,12 @@ func (a *App) newACME(ctx context.Context, e *enrollment) (*acmeService, error) 
 	}
 	server, err := acme.New(acme.Config{
 		BaseURL:     e.base,
-		Prefix:      PathACME,
+		Prefix:      e.acmePath(),
 		Store:       store,
 		Signer:      pure,
 		Register:    e.depot.Put,
 		CAPolicy:    a.issuancePolicy(e),
-		Revocations: a.acmeRevocations(),
+		Revocations: a.acmeRevocations(e),
 		Identifiers: identifiers,
 		Authorize: acme.Chain(
 			acme.PolicyFunc(func(ctx context.Context, d *acme.Decision) error {

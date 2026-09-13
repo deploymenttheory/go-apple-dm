@@ -69,16 +69,26 @@ func LoadRepo(root string) (*Graph, error) {
 
 // Load runs go list in dir and returns the in-module import graph.
 func Load(dir string) (*Graph, error) {
-	mod, err := run(dir, "list", "-m")
+	absolute, err := filepath.Abs(dir)
+	if err != nil {
+		return nil, fmt.Errorf("%w: module directory: %w", ErrGoList, err)
+	}
+	mod, err := run(dir, "list", "-m", "-f", "{{.Path}}|{{.Dir}}")
 	if err != nil {
 		return nil, err
 	}
-	// In workspace mode go list -m prints every module in the workspace, so
-	// take the first line: the main module of dir.
-	module := strings.TrimSpace(mod)
-	if i := strings.IndexByte(module, '\n'); i >= 0 {
-		module = strings.TrimSpace(module[:i])
+	// A workspace lists all main modules. Select this directory explicitly so
+	// new library packages are resolved from the checkout while server packages
+	// retain their own module identity in the graph.
+	module := ""
+	for _, line := range strings.Split(mod, "\n") {
+		name, moduleDir, ok := strings.Cut(line, "|")
+		if ok && filepath.Clean(moduleDir) == filepath.Clean(absolute) {
+			module = name
+			break
+		}
 	}
+
 	if module == "" {
 		return nil, fmt.Errorf("%w: empty module path", ErrGoList)
 	}
@@ -119,9 +129,9 @@ func run(dir string, args ...string) (string, error) {
 		"go",
 		args...) // #nosec G204 -- Fixed Go executable and internal layout-check arguments; no request input or shell.
 	cmd.Dir = dir
-	// Each module is read on its own terms. A workspace would merge them and
-	// hide which module a package belongs to, which is the question here.
-	cmd.Env = append(os.Environ(), "GOWORK=off")
+	// Honor the repository workspace so unreleased library additions resolve.
+	// Load selects the module by directory instead of relying on output order.
+	cmd.Env = append(os.Environ(), "GOWORK=auto")
 	out, err := cmd.Output()
 	if err != nil {
 		return "", fmt.Errorf("%w: go %s: %w", ErrGoList, strings.Join(args, " "), err)
