@@ -398,6 +398,7 @@ func runSetup(ctx context.Context, e *env, args []string) error {
 	}{{*certFile, &req.Certificate}, {*keyFile, &req.Key}, {*csrFile, &req.CSR}, {*signedFile, &req.SignedRequest}} {
 		file, destination := source.file, source.destination
 		if file != "" {
+			// #nosec G304 -- Local certificate/key/CSR file selected by a CLI flag.
 			data, err := os.ReadFile(file)
 			if err != nil {
 				return wrapError(err)
@@ -470,6 +471,7 @@ func runSetup(ctx context.Context, e *env, args []string) error {
 }
 
 func writeSetupArtifact(path string, data []byte) error {
+	// #nosec G304 -- Explicit CLI output path; exclusive creation prevents replacing an existing file.
 	f, err := os.OpenFile(path, os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0o600)
 	if err != nil {
 		return wrapError(err)

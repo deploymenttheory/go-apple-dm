@@ -302,6 +302,20 @@ func TestSetupAPIAuthRolesAndPublicHistory(t *testing.T) {
 		strings.Contains(response.Body.String(), "SignedRequest") {
 		t.Fatal("history leaked material")
 	}
+	response = request("GET", "/admin/v1/setup/workflow/push/export?artifact=csr", "", cfg.AdminToken)
+	if response.Code != http.StatusOK || !strings.Contains(response.Body.String(), "BEGIN CERTIFICATE REQUEST") {
+		t.Fatal("public CSR export failed", response.Code, response.Body.String())
+	}
+	for name, want := range map[string]string{
+		"Content-Type":           "application/octet-stream",
+		"Content-Disposition":    `attachment; filename="certificate-artifact.bin"`,
+		"X-Content-Type-Options": "nosniff",
+		"Cache-Control":          "no-store",
+	} {
+		if got := response.Header().Get(name); got != want {
+			t.Errorf("unsafe artifact response header %s: got %q, want %q", name, got, want)
+		}
+	}
 	response = request(
 		"GET",
 		"/admin/v1/setup/workflow/push/export?artifact=key",

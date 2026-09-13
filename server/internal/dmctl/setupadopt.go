@@ -30,6 +30,7 @@ func runSetupBenchAdoption(ctx context.Context, e *env, source, destination, rol
 		)
 	}
 	mdmDir := filepath.Join(w.Directory, "mdm")
+	// #nosec G304 -- Fixed filename in the operator-selected local bench workspace.
 	key, err := os.ReadFile(filepath.Join(mdmDir, "storage-key"))
 	if err != nil {
 		return wrapError(err)
@@ -58,6 +59,7 @@ func runSetupBenchAdoption(ctx context.Context, e *env, source, destination, rol
 		hash := sha256.Sum256([]byte("bench ACME identifiers\x00" + strings.TrimSpace(string(key))))
 		settings[app.EnvACMEHMACKey] = []byte(hex.EncodeToString(hash[:]))
 	}
+	// #nosec G304 -- Fixed filename in the operator-selected local bench workspace.
 	challenge, err := os.ReadFile(filepath.Join(mdmDir, "scep-challenge"))
 	if err != nil {
 		return wrapError(err)
@@ -107,10 +109,12 @@ func runSetupBenchAdoption(ctx context.Context, e *env, source, destination, rol
 		{cfg.Setup.HTTPSID, lifecycle.HTTPS, "tls.pem", "tls.key"},
 		{cfg.Setup.PushID, lifecycle.Push, "push.pem", "push.key"},
 	} {
+		// #nosec G304 -- Constant certificate names above, under the local operator-selected workspace.
 		cert, err := os.ReadFile(filepath.Join(mdmDir, identity.cert))
 		if err != nil {
 			return wrapError(err)
 		}
+		// #nosec G304 -- Constant key names above, under the local operator-selected workspace.
 		key, err := os.ReadFile(filepath.Join(mdmDir, identity.key))
 		if err != nil {
 			return wrapError(err)

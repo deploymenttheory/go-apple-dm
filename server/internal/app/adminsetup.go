@@ -190,7 +190,6 @@ func (a *App) setupWorkflow(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, 200, item)
 }
 
-//nolint:gosec // Exports are public application/octet-stream bytes with nosniff, never HTML.
 func (a *App) setupExport(w http.ResponseWriter, r *http.Request) {
 	b, err := a.Certificates.Export(
 		r.Context(),
@@ -204,10 +203,11 @@ func (a *App) setupExport(w http.ResponseWriter, r *http.Request) {
 	}
 	w.Header().Set("Cache-Control", "no-store")
 	w.Header().Set("Content-Type", "application/octet-stream")
+	w.Header().Set("Content-Disposition", `attachment; filename="certificate-artifact.bin"`)
 	w.Header().Set("X-Content-Type-Options", "nosniff")
 	_, _ = w.Write(
 		b,
-	)
+	) // #nosec G705 -- Public artifact download, served as an octet-stream attachment with nosniff.
 }
 
 func (a *App) setupOperation(w http.ResponseWriter, r *http.Request, kind lifecycle.Kind) {

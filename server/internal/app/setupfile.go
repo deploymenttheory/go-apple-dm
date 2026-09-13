@@ -23,6 +23,7 @@ type SetupFile struct {
 
 // LoadSetupFile combines file settings with explicit environment overrides.
 func LoadSetupFile(path string, getenv func(string) string) (Config, error) {
+	// #nosec G304 -- Local bootstrap configuration selected by the operator.
 	b, err := os.ReadFile(path)
 	if err != nil {
 		return Config{}, wrapError(err)
@@ -42,6 +43,7 @@ func LoadSetupFile(path string, getenv func(string) string) (Config, error) {
 		if getenv != nil && getenv(name) != "" {
 			continue
 		}
+		// #nosec G304 -- Secret reference from trusted local setup configuration.
 		b, err := os.ReadFile(file)
 		if err != nil {
 			return Config{}, fmt.Errorf("app: read secret reference %s: %w", name, err)
@@ -138,6 +140,7 @@ func InitSetupFile(o SetupInitOptions) (string, error) {
 		b = []byte(hex.EncodeToString(b))
 		source := map[string]string{storageKeyName: o.StorageKeyFile, "admin": o.AdminTokenFile, "issuance": o.IssuanceKeyFile}[name]
 		if source != "" {
+			// #nosec G304 -- Existing key file explicitly selected for local adoption.
 			b, err = os.ReadFile(source)
 			if err != nil {
 				return "", wrapError(err)
@@ -193,6 +196,7 @@ func InitSetupFile(o SetupInitOptions) (string, error) {
 			alias == ".." {
 			return "", fmt.Errorf("%w: storage key alias", ErrConfig)
 		}
+		// #nosec G304 -- Operator bootstrap directory and validated key name; no remote path input.
 		material, err := os.ReadFile(filepath.Join(dir, "secrets", storageKeyName))
 		if err != nil {
 			return "", wrapError(err)
@@ -263,6 +267,7 @@ func installSetupSecret(path string, data []byte, mustMatch bool) error {
 		)
 	}
 	if mustMatch {
+		// #nosec G304 -- Protected secret in the operator's bootstrap directory.
 		existing, err := os.ReadFile(path)
 		if err != nil {
 			return wrapError(err)
@@ -301,6 +306,7 @@ func writeSetupFile(path string, data []byte) error {
 	if err = os.Link(temp, path); err != nil {
 		return wrapError(err)
 	}
+	// #nosec G304 -- Sync the parent of the operator-selected output file.
 	directory, err := os.Open(dir)
 	if err != nil {
 		return wrapError(err)
