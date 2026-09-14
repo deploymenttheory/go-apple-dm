@@ -6,6 +6,7 @@ import (
 	"context"
 	"crypto/sha256"
 	"encoding/hex"
+	"encoding/json"
 	"errors"
 	"io"
 	"os"
@@ -63,6 +64,77 @@ func TestArchivePublicationFailuresNeverPublish(t *testing.T) {
 	}
 	if _, err := inventory(t.Context(), t.TempDir(), Limits{}.defaults()); err == nil {
 		t.Fatal("accepted empty stage")
+	}
+}
+
+func TestAuthenticatedArchiveRequiresOneLeadingManifest(t *testing.T) {
+	_, _, identity, _ := archiveFixture(t)
+	for _, tc := range []struct {
+		name string
+		kind byte
+		body string
+	}{
+		{"", 0, ""}, {"database.json", tar.TypeReg, "{}"}, {"manifest.json", tar.TypeDir, ""}, {"manifest.json", tar.TypeReg, "{} {}"},
+	} {
+		var raw bytes.Buffer
+		encrypted, err := age.Encrypt(&raw, identity.Recipient())
+		if err != nil {
+			t.Fatal(err)
+		}
+		archive := tar.NewWriter(encrypted)
+		if tc.name != "" {
+			if err := archive.WriteHeader(&tar.Header{Name: tc.name, Typeflag: tc.kind, Size: int64(len(tc.body))}); err != nil {
+				t.Fatal(err)
+			}
+			if _, err := io.WriteString(archive, tc.body); err != nil {
+				t.Fatal(err)
+			}
+		}
+		if err := archive.Close(); err != nil {
+			t.Fatal(err)
+		}
+		if err := encrypted.Close(); err != nil {
+			t.Fatal(err)
+		}
+		path := filepath.Join(t.TempDir(), "malformed.age")
+		if err := writePrivate(path, raw.Bytes()); err != nil {
+			t.Fatal(err)
+		}
+		if v, err := Verify(t.Context(), path, t.TempDir(), []age.Identity{identity}, Limits{}); err == nil {
+			_ = v.Close()
+			t.Fatal("accepted missing or ambiguous manifest")
+		}
+	}
+}
+
+func TestArchiveAuthenticatesFinalChunkAfterCompleteTar(t *testing.T) {
+	_, _, key, m := archiveFixture(t)
+	payload := bytes.Repeat([]byte("x"), 62976)
+	sum := sha256.Sum256(payload)
+	m.Entries = []Entry{{Name: "state", Size: int64(len(payload)), SHA256: hex.EncodeToString(sum[:])}}
+	raw, err := json.Marshal(m)
+	if err != nil || len(raw) > 512 {
+		t.Fatal("fixture no longer fills one encrypted chunk", err)
+	}
+	path := craftedArchive(t, key, m, []*tar.Header{{Name: "state", Mode: 0o600, Size: int64(len(payload))}}, [][]byte{payload}, nil)
+	v, err := Verify(t.Context(), path, t.TempDir(), []age.Identity{key}, Limits{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := v.Close(); err != nil {
+		t.Fatal(err)
+	}
+	ciphertext, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	ciphertext[len(ciphertext)-1] ^= 1
+	if err := os.WriteFile(path, ciphertext, 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if v, err := Verify(t.Context(), path, t.TempDir(), []age.Identity{key}, Limits{}); err == nil {
+		_ = v.Close()
+		t.Fatal("accepted damaged final authentication tag")
 	}
 }
 

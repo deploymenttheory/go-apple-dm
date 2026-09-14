@@ -186,3 +186,50 @@ func TestUnitOfWorkRejectsDifferentPoolsAndRollsBackPanic(t *testing.T) {
 		t.Fatal(err)
 	}
 }
+
+func TestLostSavepointPoisonsOuterTransactionAndSuppressesNotification(t *testing.T) {
+	for _, cancelBefore := range []bool{false, true} {
+		db := openRaw(t)
+		for _, query := range []string{
+			"CREATE TABLE lost_savepoint (id INTEGER PRIMARY KEY)",
+			"CREATE TRIGGER abort_operation BEFORE INSERT ON lost_savepoint WHEN NEW.id = 2 BEGIN SELECT RAISE(ROLLBACK, 'transaction terminated'); END",
+		} {
+			if _, err := db.ExecContext(t.Context(), query); err != nil {
+				t.Fatal(err)
+			}
+		}
+		u := sqlcommon.UnitOfWork{DB: db, Dialect: sqlite.Dialect}
+		notified, completed := false, false
+		err := u.Run(t.Context(), func(ctx context.Context) error {
+			if _, err := sqlcommon.Query(ctx, db).ExecContext(ctx, "INSERT INTO lost_savepoint VALUES (1)"); err != nil {
+				return err
+			}
+			sqlcommon.AfterCommit(ctx, func(context.Context) { notified = true })
+			sqlcommon.AfterCompletion(ctx, func(_ context.Context, committed bool) {
+				completed = true
+				if committed {
+					t.Error("lost transaction reported committed")
+				}
+			})
+			nested, cancel := context.WithCancel(ctx)
+			defer cancel()
+			if cancelBefore {
+				cancel()
+			}
+			_ = sqlcommon.Savepoint(nested, db, func(ctx context.Context, tx *sql.Tx) error {
+				_, err := tx.ExecContext(ctx, "INSERT INTO lost_savepoint VALUES (2)")
+				return err
+			})
+			// Even if a caller handles this failure, failed savepoint creation,
+			// rollback or release must prevent the enclosing operation committing.
+			return nil
+		})
+		if !errors.Is(err, sqlcommon.ErrTransaction) || notified || !completed {
+			t.Fatal("transaction loss was hidden", err, notified, completed)
+		}
+		var count int
+		if err := db.QueryRowContext(t.Context(), "SELECT COUNT(*) FROM lost_savepoint").Scan(&count); err != nil || count != 0 {
+			t.Fatal("partial work survived", count, err)
+		}
+	}
+}

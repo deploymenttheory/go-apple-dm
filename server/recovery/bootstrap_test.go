@@ -180,3 +180,43 @@ func TestBootstrapInstallRejectsEscapingReferences(t *testing.T) {
 		t.Fatal("accepted missing keyring")
 	}
 }
+
+func TestBootstrapUsesOriginalEnvironmentAndRefusesInvalidKeyMaterial(t *testing.T) {
+	for _, fault := range []string{"", "duplicate environment key", "short key"} {
+		t.Run(fault, func(t *testing.T) {
+			source, b := bootstrapFixture(t)
+			b.SecretFiles = nil
+			b.Environment["DM_SECRETS_DIR"] = ""
+			b.Environment["DM_STORAGE_KEYS"] = "original-key.v1"
+			b.Environment["DM_STORAGE_KEY_ORIGINAL_KEY_V1"] = strings.Repeat("k", 32)
+			if fault == "duplicate environment key" {
+				b.Environment["DM_STORAGE_KEYS"] += ",original-key.v1"
+			}
+			if fault == "short key" {
+				b.Environment["DM_STORAGE_KEY_ORIGINAL_KEY_V1"] = "short"
+			}
+			raw, err := json.Marshal(b)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if err := os.WriteFile(source, raw, 0o600); err != nil {
+				t.Fatal(err)
+			}
+			dir := filepath.Join(t.TempDir(), "capture")
+			captured, err := CaptureBootstrap(t.Context(), source, dir, nil)
+			if fault != "" {
+				if err == nil {
+					t.Fatal("accepted invalid storage keys")
+				}
+				return
+			}
+			if err != nil {
+				t.Fatal(err)
+			}
+			captured.SecretFiles["DM_DSN"] = "previous-database-reference"
+			if _, err := captured.Install(dir, "restored.sqlite"); err != nil {
+				t.Fatal("failed to replace source DSN", err)
+			}
+		})
+	}
+}

@@ -217,6 +217,91 @@ func TestCatalogAndSequenceFailuresRefuseRecovery(t *testing.T) {
 	if err := (SQL{Dialect: mysql.Dialect}).restoreSequences(t.Context(), &failingQueryer{db: db}, []sequenceSnapshot{{Table: "bad-name", Column: "seq"}}); err == nil {
 		t.Fatal("accepted unsafe sequence table")
 	}
+	for _, seq := range []sequenceSnapshot{{Table: "bad-name", Column: "seq"}, {Table: "commands", Column: "bad-column"}, {Table: "commands", Column: "seq"}} {
+		if err := (SQL{Dialect: sqlite.Dialect}).checkSequenceHighWater(t.Context(), &failingQueryer{db: db}, []sequenceSnapshot{seq}); err == nil {
+			t.Fatal("accepted unavailable or unsafe cursor", seq)
+		}
+	}
+}
+
+func TestSnapshotRejectsBrokenCompiledAndStoredSchemas(t *testing.T) {
+	for _, fault := range []string{"missing migration files", "wrong version", "corrupt cursor", "wrong backend"} {
+		t.Run(fault, func(t *testing.T) {
+			s := sqlFixture(t, emptySQLite(t), sqlite.Dialect)
+			switch fault {
+			case "missing migration files":
+				s.Schema[0].FS = nil
+			case "wrong version":
+				if _, err := s.DB.ExecContext(t.Context(), "UPDATE schema_migrations SET version = 99"); err != nil {
+					t.Fatal(err)
+				}
+			case "corrupt cursor":
+				if _, err := s.DB.ExecContext(t.Context(), "INSERT INTO sqlite_sequence(name, seq) VALUES ('commands', 'invalid')"); err != nil {
+					t.Fatal(err)
+				}
+			case "wrong backend":
+				s.Dialect = mysql.Dialect
+			}
+			if err := s.Snapshot(t.Context(), filepath.Join(t.TempDir(), "snapshot")); err == nil {
+				t.Fatal("accepted inconsistent snapshot source")
+			}
+		})
+	}
+}
+
+func TestRestoreRejectsAmbiguousSnapshotCatalog(t *testing.T) {
+	s := sqlFixture(t, emptySQLite(t), sqlite.Dialect)
+	dir := filepath.Join(t.TempDir(), "snapshot")
+	if err := s.Snapshot(t.Context(), dir); err != nil {
+		t.Fatal(err)
+	}
+	for _, fault := range []string{"unknown schema", "duplicate schema", "missing table", "duplicate column", "missing cursor", "missing compiled files"} {
+		t.Run(fault, func(t *testing.T) {
+			var info databaseSnapshot
+			if err := readJSONFile(filepath.Join(dir, "database.json"), &info); err != nil {
+				t.Fatal(err)
+			}
+			candidate := s
+			candidate.Schema = append([]sqlcommon.MigrationSet{}, s.Schema...)
+			switch fault {
+			case "unknown schema":
+				info.Schemas[0].Name = "unregistered"
+			case "duplicate schema":
+				info.Schemas = append(info.Schemas, info.Schemas[0])
+			case "missing table":
+				info.Tables = info.Tables[1:]
+			case "duplicate column":
+				info.Tables[0].Columns = append(info.Tables[0].Columns, info.Tables[0].Columns[0])
+			case "missing cursor":
+				info.Sequences = nil
+			case "missing compiled files":
+				candidate.Schema[0].FS = nil
+			}
+			if _, err := candidate.validateSnapshot(info); err == nil {
+				t.Fatal("accepted ambiguous catalog")
+			}
+		})
+	}
+}
+
+func TestRestoreTableRefusesUnavailableOrUnsafeDestinationSchema(t *testing.T) {
+	s := SQL{DB: emptySQLite(t), Dialect: sqlite.Dialect}
+	for _, query := range []string{`CREATE TABLE invalid_column ("bad-column" TEXT)`, `CREATE VIEW unwriteable AS SELECT 'value' AS column_name`} {
+		if _, err := s.DB.ExecContext(t.Context(), query); err != nil {
+			t.Fatal(err)
+		}
+	}
+	for _, tab := range []tableSnapshot{{Name: "bad-name"}, {Name: "missing"}, {Name: "invalid_column", Columns: []string{"bad-column"}}, {Name: "unwriteable", Columns: []string{"column_name"}}} {
+		tx, err := s.DB.BeginTx(t.Context(), nil)
+		if err != nil {
+			t.Fatal(err)
+		}
+		err = s.restoreTable(t.Context(), tx, t.TempDir(), tab)
+		_ = tx.Rollback()
+		if err == nil {
+			t.Fatal("accepted unsafe restore schema", tab.Name)
+		}
+	}
 }
 
 func TestRestoreRequiresReadableSchemaAndEmptyConnection(t *testing.T) {

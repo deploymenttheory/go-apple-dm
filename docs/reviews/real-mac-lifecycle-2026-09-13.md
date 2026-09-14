@@ -319,6 +319,38 @@ in installed profiles; retirement closes server trust and issuance, and does not
 perform device profile cleanup. The private SQLite drill does not replace the
 planned public backup/verify/restore commands or their three-backend acceptance.
 
+## Public recovery validation — 14 September
+
+The public workflow is documented in [server recovery](../operations/recovery.md).
+`dmctl recovery` now provides key generation, pause/status/resume, stopped-process
+cleanup, backup, verification and restore. Maintenance ownership and process drain
+acknowledgements use persistent state; a timeout retains the fence and its ticket.
+
+The native SQLite, PostgreSQL and MySQL recovery contracts exercise authenticated
+archives, original storage keys and row bindings, enrollment pins and push tokens,
+empty-target checks, paused restoration, and explicit resume. The PostgreSQL and
+MySQL tests also exercise the complete public deployment API. Restoration retains
+cursor high-water marks after pruning and rejects a cursor behind a restored row
+before committing data. The CLI round trip additionally compares issuer material.
+
+Failure tests cover malformed or incomplete authenticated archives, a damaged final
+encryption tag, wrong keys, swapped row/column bindings, unsafe paths, competing
+maintenance ownership, transaction loss and rollback, failed webhook delivery,
+and cleanup of plaintext verification staging. Tests use synthetic temporary data.
+
+The local validation checkpoint passed the 95% overall and per-package coverage
+gate at 95.77%, full unit/race tests, all eight OS 27 schema contracts, generation
+verification, lint, gosec SARIF, reachable-vulnerability checks, independent server
+module builds and command installation, end-to-end suites on SQLite/PostgreSQL/
+in-memory storage, and reference-server acceptance. Final CI and backend rerun
+results are recorded on draft PR #55.
+
+The live Mac continues to use its existing recovered deployment. Public recovery
+tests do not establish a new physical-Mac or off-machine recovery result. The
+remaining event/remote-operation work, public certificate orchestration, external
+runtime example, patch release verification and final Mac acceptance remain on
+the combined PR's checklist.
+
 ## Acceptance and operator boundaries
 
 This is a preproduction schema. At the operator's request, the audit occurrence
