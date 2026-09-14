@@ -111,11 +111,8 @@ jobs:
         with:
           go-version-file: 'go.mod'
           cache: true
-      - name: Regenerate and verify
-        run: |
-          make generate
-          git diff --exit-code
-          make verify
+      - name: Verify generated output and workflow contracts
+        run: make verify
 
   storage-integration:
     # Release-please PRs only prepare release metadata; normal changes retain CI.

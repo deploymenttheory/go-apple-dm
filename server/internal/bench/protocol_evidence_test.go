@@ -161,7 +161,7 @@ func TestBenchRejectsMissingScenarioScratchDirectory(t *testing.T) {
 
 func TestFixedListenerAndUnavailableScriptControl(t *testing.T) {
 	t.Parallel()
-	if addr, err := address(t.Context(), "127.0.0.1:8443"); err != nil || addr != "127.0.0.1:8443" {
+	if addr, _, err := address(t.Context(), "127.0.0.1:8443", false); err != nil || addr != "127.0.0.1:8443" {
 		t.Fatalf("fixed listener: %s %v", addr, err)
 	}
 	w := testWorkspace(t, "simulated")

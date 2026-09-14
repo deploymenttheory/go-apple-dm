@@ -70,7 +70,11 @@ as sensitive.
 Event sinks publish explicit projections instead of serializing raw event payloads. Unknown
 event types expose metadata only. Persistent audit is optional and supports append and retention
 pruning; it does not prevent a privileged database operator from changing records. Audit delivery
-and storage failures need operational monitoring. See [event sinks](../../server/eventsink/),
+and storage failures need operational monitoring. SQL event capture participates in local
+mutation transactions; a capture failure can roll back the operation. Persistent destination
+workers retain pending deliveries across restart, while slog and in-memory subscribers can
+lose events. External delivery can duplicate and requires EventID deduplication. Audit retention
+does not prune the event store. See [event delivery](../operations/event-delivery.md), [event sinks](../../server/eventsink/),
 [audit storage](../../server/audit/) and [column sealing](../../devicemanagement/storage/crypt/).
 
 Memory storage loses credentials and security state on restart. Replicas need shared SQL state,
@@ -84,6 +88,6 @@ model. Revocation is enabled by default; quotas require explicit configuration. 
 policy and cached DEP inventory must remain current on every replica. Follow
 [enrollment security operations](../operations/enrollment-security.md).
 
-The [2026-09-11 hardening record](../wip/apple-conformant-security-hardening-2026-09-11.md)
+The [2026-09-11 hardening record](https://github.com/deploymenttheory/go-apple-dm/blob/c4cb96f6b5a7d6ad7cbb18b66e7e3368e1bc1d9c/docs/wip/apple-conformant-security-hardening-2026-09-11.md)
 separates Apple requirements, Apple-permitted issuance policy and infrastructure
 controls, with reproducible regressions and a physical-device checklist.

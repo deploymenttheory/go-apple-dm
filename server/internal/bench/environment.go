@@ -67,36 +67,39 @@ type Environment struct {
 	cancel    context.CancelFunc
 	wg        sync.WaitGroup
 	errs      chan error
+	listeners []net.Listener
 }
 
 func randomID() string { var b [16]byte; _, _ = rand.Read(b[:]); return hex.EncodeToString(b[:]) }
-func address(ctx context.Context, listen string) (string, error) {
+
+// address retains the bound socket for embedded runtimes. Child processes still
+// bind their own listeners; a fixed workspace address avoids port discovery there.
+func address(ctx context.Context, listen string, retain bool) (string, net.Listener, error) {
 	host, port, err := net.SplitHostPort(listen)
 	if err != nil {
-		return "", wrapError(err)
+		return "", nil, wrapError(err)
 	}
 	if host != "127.0.0.1" && host != "localhost" && host != "::1" {
-		return "", fmt.Errorf("%w: bench listener must be loopback", errOperation)
+		return "", nil, fmt.Errorf("%w: bench listener must be loopback", errOperation)
 	}
-	if port != "0" {
-		return listen, nil
+	if port != "0" && !retain {
+		return listen, nil, nil
 	}
 	l, err := (&net.ListenConfig{}).Listen(ctx, "tcp", listen)
 	if err != nil {
-		return "", wrapError(err)
+		return "", nil, wrapError(err)
 	}
 	addr := l.Addr().String()
+	if retain {
+		return addr, l, nil
+	}
 	err = l.Close()
-	return addr, wrapError(err)
+	return addr, nil, wrapError(err)
 }
 
 // Start uses the same configuration and runtime in both adapters. A nonempty
-// binary launches dmserver; an empty binary embeds runtime.Serve for E2E tests.
+// binary launches dmserver; an empty binary embeds runtime.ServeListener for E2E tests.
 func Start(ctx context.Context, w *Workspace, binary string, out io.Writer) (*Environment, error) {
-	addr, err := address(ctx, w.Listen)
-	if err != nil {
-		return nil, wrapError(err)
-	}
 	client, err := w.client()
 	if err != nil {
 		return nil, wrapError(err)
@@ -109,7 +112,6 @@ func Start(ctx context.Context, w *Workspace, binary string, out io.Writer) (*En
 	e := &Environment{
 		Instance: Instance{
 			Binary:   binary,
-			URL:      "https://" + addr,
 			Mode:     w.Mode,
 			Topology: w.Topology,
 		},
@@ -125,6 +127,12 @@ func Start(ctx context.Context, w *Workspace, binary string, out io.Writer) (*En
 			e.Close()
 		}
 	}()
+	addr, listener, err := address(ctx, w.Listen, binary == "")
+	if err != nil {
+		return nil, wrapError(err)
+	}
+	e.listeners = append(e.listeners, listener)
+	e.URL = "https://" + addr
 	env := map[string]string{
 		"DM_LISTEN":        addr,
 		"DM_STORAGE":       w.Storage,
@@ -208,10 +216,11 @@ func Start(ctx context.Context, w *Workspace, binary string, out io.Writer) (*En
 				errOperation,
 			)
 		}
-		ddmAddr, err := address(ctx, "127.0.0.1:0")
+		ddmAddr, ddmListener, err := address(ctx, "127.0.0.1:0", binary == "")
 		if err != nil {
 			return nil, wrapError(err)
 		}
+		e.listeners = append(e.listeners, ddmListener)
 		e.DDMURL = "https://" + ddmAddr
 		// Both roles use the workspace TLS identity and trust anchor.
 		ddmEnv := map[string]string{}
@@ -223,7 +232,7 @@ func Start(ctx context.Context, w *Workspace, binary string, out io.Writer) (*En
 		send, recv := randomID(), randomID()
 		ddmEnv["DM_DDM_RECV_KEY"] = send
 		ddmEnv["DM_DDM_SEND_KEY"] = recv
-		if err = e.launch(ctx, ddmEnv, binary, out); err != nil {
+		if err = e.launch(ctx, ddmEnv, binary, out, ddmListener); err != nil {
 			return nil, wrapError(err)
 		}
 		if err = e.ready(ctx, e.DDMURL); err != nil {
@@ -235,7 +244,7 @@ func Start(ctx context.Context, w *Workspace, binary string, out io.Writer) (*En
 		env["DM_DDM_SEND_KEY"] = send
 		env["DM_DDM_RECV_KEY"] = recv
 	}
-	if err = e.launch(ctx, env, binary, out); err != nil {
+	if err = e.launch(ctx, env, binary, out, listener); err != nil {
 		return nil, wrapError(err)
 	}
 	if err = e.ready(ctx, e.URL); err != nil {
@@ -264,6 +273,7 @@ func (e *Environment) launch(
 	env map[string]string,
 	binary string,
 	out io.Writer,
+	listener net.Listener,
 ) error {
 	if binary == "" {
 		cfg, err := app.ParseEnv(func(k string) string { return env[k] })
@@ -276,7 +286,7 @@ func (e *Environment) launch(
 			"lab":   []byte(env["DM_STORAGE_KEY_LAB"]),
 		}
 		e.wg.Add(1)
-		go func() { defer e.wg.Done(); e.errs <- serverruntime.Serve(ctx, cfg) }()
+		go func() { defer e.wg.Done(); e.errs <- serverruntime.ServeListener(ctx, cfg, listener) }()
 		return nil
 	}
 	cmd := exec.CommandContext(ctx, binary)
@@ -337,6 +347,13 @@ func (e *Environment) ready(ctx context.Context, base string) error {
 func (e *Environment) Close() {
 	e.cancel()
 	e.wg.Wait()
+	// A fixture/configuration failure may leave a reserved listener that never
+	// reached the runtime. Close it after joining any runtimes that did start.
+	for _, listener := range e.listeners {
+		if listener != nil {
+			_ = listener.Close()
+		}
+	}
 	if e.APNS != nil {
 		e.APNS.Close()
 	}
@@ -377,10 +394,17 @@ func Up(ctx context.Context, w *Workspace, binary string, out io.Writer) error {
 	defer control.Close()
 	e.ControlURL = "http://" + control.Addr().String()
 	e.ControlToken = randomID()
+	stop := make(chan struct{}, 1)
 	mux := http.NewServeMux()
 	mux.HandleFunc(
 		"POST /stop",
-		func(w http.ResponseWriter, r *http.Request) { w.WriteHeader(204); cancel() },
+		func(w http.ResponseWriter, r *http.Request) {
+			w.WriteHeader(http.StatusNoContent)
+			select {
+			case stop <- struct{}{}:
+			default:
+			}
+		},
 	)
 	mux.HandleFunc(
 		"GET /status",
@@ -414,8 +438,22 @@ func Up(ctx context.Context, w *Workspace, binary string, out io.Writer) error {
 			mux.ServeHTTP(w, r)
 		}),
 	}
-	defer srv.Close()
-	go func() { _ = srv.Serve(control) }()
+	controlDone := make(chan struct{})
+	controlErr := make(chan error, 1)
+	go func() {
+		defer close(controlDone)
+		controlErr <- srv.Serve(control)
+	}()
+	defer func() {
+		// Drain the stop handler before closing its connection or the runtimes.
+		// Request cancellation must not cancel this cleanup context.
+		drain, drainCancel := context.WithTimeout(context.WithoutCancel(ctx), 5*time.Second)
+		defer drainCancel()
+		if err := srv.Shutdown(drain); err != nil {
+			_ = srv.Close()
+		}
+		<-controlDone
+	}()
 	b, err := json.MarshalIndent(e.Instance, "", "  ")
 	if err != nil {
 		return wrapError(err)
@@ -426,8 +464,12 @@ func Up(ctx context.Context, w *Workspace, binary string, out io.Writer) error {
 	defer os.Remove(w.path("running.json"))
 	fmt.Fprintln(out, "Bench ready:", e.URL, "mode="+w.Mode, "topology="+w.Topology)
 	select {
+	case <-stop:
+		return nil
 	case <-ctx.Done():
 		return nil
+	case err := <-controlErr:
+		return wrapError(err)
 	case err := <-e.errs:
 		if err == nil {
 			return fmt.Errorf("%w: server exited unexpectedly", errOperation)

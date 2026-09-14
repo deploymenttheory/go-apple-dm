@@ -13,10 +13,15 @@
 // supports bounded replies, retries and optional body HMAC signing. Custom
 // clients configure private trust and remain the caller's security boundary.
 // Transport error strings omit URLs; unwrapped causes can contain sensitive
-// path/query values and should not be logged. The
-// reference application runs delivery through the asynchronous bus; the queue is
-// not durable across process failure. Direct bus subscribers must apply their
-// own disclosure policy.
+// path/query values and should not be logged.
+//
+// SQL-backed reference applications capture projections in server/eventstore
+// and deliver audit/webhook records with persistent leases and retries.
+// RecordWebhook sends a projected record without re-projecting it. External
+// delivery is at least once; receivers deduplicate using EventID. In-memory
+// applications use the ephemeral asynchronous bus. Slog and direct bus
+// subscribers remain ephemeral; direct subscribers must apply their own
+// disclosure policy.
 //
 // # References
 //

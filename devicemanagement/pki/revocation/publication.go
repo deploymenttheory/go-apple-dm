@@ -152,7 +152,9 @@ func (r *Registry) OCSP(ctx context.Context, issuer string, request []byte) ([]b
 }
 
 // Handler exposes GET <prefix>/crl/{issuer} and GET/POST
-// <prefix>/ocsp/{issuer}[/base64-request]. Configure these exact URLs in ca.Policy.
+// <prefix>/ocsp/{issuer}[/base64-request]. GET requests must URL-escape the base64
+// request as specified by RFC 6960 Appendix A.1. Configure the issuer URL without
+// the request suffix in ca.Policy.
 // Certificate administration is intentionally a separate authenticated API.
 func (r *Registry) Handler(prefix string) http.Handler {
 	prefix = strings.TrimSuffix(prefix, "/")

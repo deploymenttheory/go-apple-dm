@@ -39,7 +39,7 @@ to highlight matching components and connections and see their counts and exampl
 | [package-layering](https://htmlpreview.github.io/?https://raw.githubusercontent.com/deploymenttheory/go-apple-dm/main/docs/diagrams/package-layering.html) · [HTML source](package-layering.html) | Conceptual package tiers, the module boundary, and the specific ADE software-catalogue import exception. |
 | [storage-contract](https://htmlpreview.github.io/?https://raw.githubusercontent.com/deploymenttheory/go-apple-dm/main/docs/diagrams/storage-contract.html) · [HTML source](storage-contract.html) | The eight interfaces composed by storage.Store, their callers, and the optional ReplacementStore extension. |
 | [storage-backends](https://htmlpreview.github.io/?https://raw.githubusercontent.com/deploymenttheory/go-apple-dm/main/docs/diagrams/storage-backends.html) · [HTML source](storage-backends.html) | Memory and SQL backends, shared pools, conditional encryption, and the separate app-push state namespace. |
-| [service-layer](https://htmlpreview.github.io/?https://raw.githubusercontent.com/deploymenttheory/go-apple-dm/main/docs/diagrams/service-layer.html) · [HTML source](service-layer.html) | How transport, identity checks, hooks, replacement handling, declarative management, and asynchronous audit fit together. |
+| [service-layer](https://htmlpreview.github.io/?https://raw.githubusercontent.com/deploymenttheory/go-apple-dm/main/docs/diagrams/service-layer.html) · [HTML source](service-layer.html) | How transport, identity checks, hooks, replacement handling, declarative management, SQL event capture, and event delivery fit together. |
 | [checkin-dispatch](https://htmlpreview.github.io/?https://raw.githubusercontent.com/deploymenttheory/go-apple-dm/main/docs/diagrams/checkin-dispatch.html) · [HTML source](checkin-dispatch.html) | Nine independent check-in handlers and their responsibilities; arrows select a handler rather than prescribe a message sequence. |
 | [ddm-engine](https://htmlpreview.github.io/?https://raw.githubusercontent.com/deploymenttheory/go-apple-dm/main/docs/diagrams/ddm-engine.html) · [HTML source](ddm-engine.html) | Desired declarations, snapshots, change records, and notifications, with device-side activation and replacement-safe cleanup explained. |
 | [ddm-serve](https://htmlpreview.github.io/?https://raw.githubusercontent.com/deploymenttheory/go-apple-dm/main/docs/diagrams/ddm-serve.html) · [HTML source](ddm-serve.html) | The four declarative operations carried inside check-in, including successful responses and the point at which each error is detected. |
@@ -91,7 +91,7 @@ node scripts/diagrams/archify.mjs visual-check docs/diagrams/<name>.html --json
 The type is `architecture`, `workflow`, `sequence`, `dataflow`, or `lifecycle`. Add
 `--repo-root .` to architecture validation and delivery: those sources pin component paths to
 a Git revision. Other diagram types use the code evidence in the
-[review](../reviews/diagram-review-2026-09-10.md).
+[review](https://github.com/deploymenttheory/go-apple-dm/blob/c4cb96f6b5a7d6ad7cbb18b66e7e3368e1bc1d9c/docs/reviews/diagram-review-2026-09-10.md).
 
 Require all nine showcase artifact checks, with zero errors and warnings. Inspect the exact
 delivered HTML at 1440×900, 1600×1000, 1920×1080, and 2048×1320, including light and dark
@@ -101,9 +101,10 @@ Upstream `visual-check` still treats vertical scrolling as a containment failure
 raw result and assess it against this reading policy rather than claiming an upstream pass.
 Source validation, browser measurements, and visual inspection are separate evidence.
 
-The [implementation record](../reviews/diagram-implementation-2026-09-10.md) records the final
-artifact hashes, validation, browser measurements, and visual review. The earlier review and
-preview records are historical evidence, not regeneration inputs.
+The [implementation record](https://github.com/deploymenttheory/go-apple-dm/blob/c4cb96f6b5a7d6ad7cbb18b66e7e3368e1bc1d9c/docs/reviews/diagram-implementation-2026-09-10.md) records the final
+artifact hashes, validation, browser measurements, and visual review. The [14 September scope correction](../reviews/scope-docs-ci-2026-09-14.md) records
+the newer service-layer and reference-server artifacts. Earlier review and preview records
+are historical evidence, not regeneration inputs.
 
 The two `system-architecture.*.png` files are the images embedded by the root
 [README](../../README.md). After changing the overview, use the viewer's full-diagram PNG

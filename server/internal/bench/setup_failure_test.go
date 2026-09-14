@@ -197,6 +197,7 @@ func TestReadinessDetectsExitedOrCancelledRuntime(t *testing.T) {
 			map[string]string{"DM_STORAGE": "inmem", "BENCH_CHILD": mode},
 			binary,
 			io.Discard,
+			nil,
 		); err != nil {
 			t.Fatal(err)
 		}

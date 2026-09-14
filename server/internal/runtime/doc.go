@@ -6,6 +6,10 @@
 // files and managed HTTPS identities. Plain HTTP is restricted to loopback;
 // the DDM role additionally requires an explicit test option.
 //
+// ServeListener uses the same lifecycle with a caller-bound listener, retaining
+// an ephemeral port throughout application setup. It owns closing the listener,
+// including on startup failure, and validates the actual bound address.
+//
 // Shutdown stops HTTP admission and drains active requests before cancelling
 // workers. A shared deadline bounds that drain, and workers that fail to stop
 // are reported as an error. Serve closes the application resources it owns.

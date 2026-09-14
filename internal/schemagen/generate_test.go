@@ -92,6 +92,22 @@ func TestWriteAndVerify(t *testing.T) {
 	if err := Verify(root, out, Options{Commit: "test"}); err != nil {
 		t.Fatalf("Verify after Write: %v", err)
 	}
+	for _, name := range []string{"gone.gen.go", "conformance_gen_test.go"} {
+		path := filepath.Join(out, "old", name)
+		if err := os.WriteFile(path, []byte("package old\n"), 0o600); err != nil {
+			t.Fatal(err)
+		}
+		err := Verify(root, out, Options{Commit: "test"})
+		if !errors.Is(err, ErrVerify) || !strings.Contains(err.Error(), "old/"+name+": stale generated file") {
+			t.Fatalf("Verify with stale file: %v", err)
+		}
+		if _, err := os.Stat(path); err != nil {
+			t.Fatalf("Verify changed the stale file: %v", err)
+		}
+		if err := os.Remove(path); err != nil {
+			t.Fatal(err)
+		}
+	}
 	// Different commit changes headers: verify must fail.
 	if err := Verify(root, out, Options{Commit: "other"}); !errors.Is(err, ErrVerify) {
 		t.Fatalf("Verify with other commit: %v", err)

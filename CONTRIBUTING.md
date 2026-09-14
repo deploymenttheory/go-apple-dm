@@ -91,6 +91,11 @@ not block tag creation. The Go Test workflow runs the same verification on candi
 server sources before merge. Release-please owns normal tags and changelogs. A published Go
 pseudo-version can pin an independently reviewed library commit before its next tag.
 PR title validation remains enabled for ordinary documentation and workflow PRs.
-Validate workflow edits locally with `actionlint` before submitting them.
+Validate workflow edits locally with `actionlint` and `make verify` before submitting them.
+The [CI responsibility matrix](docs/testing/ci.md) records which checks cover source,
+modules, backends and release archives. Release archive previews exclude server Markdown
+and manifest-only updates but retain changes to packaging code and its operational guide.
+Every feature change must update the affected current documentation, examples and diagrams;
+dated device evidence remains a historical record.
 Release-please still runs on `main` pushes to manage releases and tags, and the
 scheduled security scan remains enabled.

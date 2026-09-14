@@ -8,7 +8,7 @@ Applications need reusable Apple device management protocol components and an ex
 
 The root Go module provides generated schema types, protocol handling, certificate services, Apple service clients, storage contracts, in-memory implementations, and a simulator. The `server` module depends on the library and supplies SQL backends, orchestration, HTTP adapters, and administrative tools. Library code and tests do not import the server module.
 
-Service methods take explicit contexts. Hooks wrap operations, and a typed event bus supports subscribers such as audit and webhook sinks. Declarative device management uses the MDM transport and enrollment identity. The declaration engine can run in-process or through the authenticated internal adapter described in record 0023.
+Service methods take explicit contexts. Hooks wrap operations. Typed publisher/coordinator contracts support transactional event capture; SQL reference applications use a durable event store for audit/webhook delivery. The in-process bus supports ephemeral subscribers. Declarative device management uses the MDM transport and enrollment identity. The declaration engine can run in-process or through the authenticated internal adapter described in record 0023.
 
 ## Rationale
 

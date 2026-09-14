@@ -1,5 +1,5 @@
-// Package event provides an in-process bus for typed events with enrollment,
-// actor and timestamp metadata.
+// Package event provides typed events, publisher/coordinator contracts and an
+// in-process bus with enrollment, actor and timestamp metadata.
 //
 // # Design
 //
@@ -20,9 +20,15 @@
 // Always Close an asynchronous bus. Close stops acceptance and drains within
 // its context deadline, then cancels active contexts and abandons queued events.
 // Subsequent Close calls may wait for handlers that have not returned. The bus
-// has no durable storage or replay; audit and webhook delivery can have gaps
-// after overload, expiry, sink failure or abrupt termination. Queue limits bound
+// has no durable storage or replay; its subscribers can miss events after
+// overload, expiry, sink failure or abrupt termination. Queue limits bound
 // event counts rather than payload byte sizes; producers must bound payloads.
+//
+// Publisher and Coordinator allow persistent implementations without importing
+// server code. Run coordinates participating local mutations and event capture;
+// the reference server supplies server/eventstore for SQL-backed applications.
+// Durable audit/webhook delivery then runs independently of this bus, while
+// after-commit bus notifications and slog remain ephemeral.
 //
 // Events may contain sensitive protocol data. External sinks in server/eventsink
 // apply an explicit projection, and server/audit persists that projection when

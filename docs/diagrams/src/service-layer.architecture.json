@@ -10,7 +10,7 @@
     ],
     "repository": {
       "url": "https://github.com/deploymenttheory/go-apple-dm",
-      "revision": "bb9e5bb3af89683a960a326e309be409bb0dc40f"
+      "revision": "80ea482c29044503c953dd30044aeb49825245ed"
     },
     "views": [
       {
@@ -54,7 +54,7 @@
           "bus",
           "sinks"
         ],
-        "note": "server/eventsink provides projected webhook and slog output; audit persistence is optional."
+        "note": "SQL event capture and persistent audit/webhook delivery; slog and in-process subscribers remain ephemeral."
       }
     ],
     "colour_profile": "purpose-v1",
@@ -144,8 +144,8 @@
     {
       "id": "bus",
       "type": "messagebus",
-      "label": "Event bus",
-      "sublabel": "Publishes service outcomes",
+      "label": "Event publisher",
+      "sublabel": "SQL capture or in-process",
       "pos": [
         355.0,
         410
@@ -156,8 +156,12 @@
       ],
       "sources": [
         {
-          "path": "devicemanagement/mdmprotocol/event/event.go",
-          "label": "Publish"
+          "path": "devicemanagement/mdmprotocol/event/publisher.go",
+          "label": "Publisher / Coordinator"
+        },
+        {
+          "path": "server/eventstore/publisher.go",
+          "label": "SQL capture"
         }
       ],
       "purpose": "transport"
@@ -183,6 +187,10 @@
         {
           "path": "server/eventsink/slog.go",
           "label": "slog"
+        },
+        {
+          "path": "server/internal/app/eventstore.go",
+          "label": "Persistent delivery wiring"
         }
       ],
       "purpose": "service"
@@ -267,7 +275,7 @@
       "id": "storepkg",
       "type": "database",
       "label": "storage.Store",
-      "sublabel": "pins · queue · tokens",
+      "sublabel": "pins \u00b7 queue \u00b7 tokens",
       "pos": [
         995.0,
         260
@@ -427,14 +435,14 @@
       "id": "e9",
       "from": "core",
       "to": "bus",
-      "label": "state change",
+      "label": "capture outcome",
       "purpose": "transport"
     },
     {
       "id": "e10",
       "from": "bus",
       "to": "sinks",
-      "label": "dispatch by type",
+      "label": "deliver / notify",
       "labelAt": [
         465.0,
         494.0
@@ -480,16 +488,16 @@
       "title": "Extension points",
       "items": [
         "DMHandler connects the service to declarative management without importing the engine. UserVerifier supplies user-channel authentication policy.",
-        "Events report completed operations. Asynchronous subscribers preserve accepted work after request cancellation, within their configured drain lifecycle."
+        "SQL capture commits with participating local mutations; workers retry audit/webhook delivery. Slog and in-memory subscribers remain ephemeral."
       ]
     },
     {
       "dot": "transport",
       "title": "Public documentation",
       "items": [
-        "Check-in — https://developer.apple.com/documentation/devicemanagement/check-in",
-        "Sending MDM commands to a device — https://developer.apple.com/documentation/devicemanagement/sending-mdm-commands-to-a-device",
-        "Declarative Management check-in — https://developer.apple.com/documentation/devicemanagement/declarative-management"
+        "Check-in \u2014 https://developer.apple.com/documentation/devicemanagement/check-in",
+        "Sending MDM commands to a device \u2014 https://developer.apple.com/documentation/devicemanagement/sending-mdm-commands-to-a-device",
+        "Declarative Management check-in \u2014 https://developer.apple.com/documentation/devicemanagement/declarative-management"
       ]
     }
   ]

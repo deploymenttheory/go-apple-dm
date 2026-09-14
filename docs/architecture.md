@@ -26,7 +26,7 @@ including the explicit dependency from the ADE software update gate to the GDMF 
 | Content-cache metrics | `devicemanagement/contentcache` | Opt-in OS 27 report contract and receiver; consumers supply authentication, TLS and persistence |
 | Persistence | `devicemanagement/storage`, `server/sqlstore`, `server/*store`, `server/statestore` | Domain contracts, memory implementations and SQL persistence |
 | Service | `server/service`, `server/httpapi`, `server/ddmsync`, `server/ddmadapter`, `server/pushnotify` | Enrollment authorization, command delivery, DDM synchronization and transport |
-| Administration | `server/adminauth`, `server/audit`, `server/eventsink`, `server/axmcreds` | Principals, policy, credential storage, projected audit and webhook output |
+| Administration | `server/adminauth`, `server/audit`, `server/eventstore`, `server/eventsink`, `server/axmcreds` | Principals, policy, credential storage, projected audit and webhook output |
 | Composition and testing | `server/internal/app`, `server/internal/dmctl`, `server/cmd`, `server/e2e`, `devicemanagement/simulator` | Application wiring, CLI and executable scenarios |
 
 The table groups responsibilities; the exact enforced tiers and test-only exceptions are in
@@ -108,12 +108,20 @@ JSON determines content tokens. Status reports update stored items; subscription
 synthesized. Predicates use the documented subset in
 [mdmprotocol/ddm/predicate](../devicemanagement/mdmprotocol/ddm/predicate/doc.go), not the full NSPredicate language.
 
+The engine queries status values by prefix with pagination, and returns errors and
+retained raw reports newest first. Admin tooling exposes part of that query surface.
+`Manifest`, `Tokens` and `DeclarationItems` refresh persisted snapshots; they are
+delivery operations and must not be treated as side-effect-free previews.
+
 `server/ddmsync` converts pending changes into `DeclarativeManagement` commands and pushes.
 The engine can run in process or behind the project's private `POST /v1/declarative-management`
-proxy. The reference composition requires HMAC keys in both directions. Request signatures
-cover the body; response signatures cover status and body. TLS supplies confidentiality. The
-adapter library also exposes mutual TLS and bearer options; these are not reference-server
-environment settings. The proxy has no replay nonce store.
+proxy. Both adapters require HTTPS and independent HMAC keys in both directions.
+Request signatures bind method, target, content type, timestamp, nonce and body;
+response signatures bind the request envelope, status, content type and body.
+The receiving adapter requires shared atomic replay state; the reference server
+supplies its SQL protocol store. Mutual TLS and bearer checks are additional library
+options. See [decision 0023](research/decisions/0023-ddm-adapters-and-wire-contract.md)
+for freshness limits and the explicit loopback-only test exception.
 
 ## Certificates and admission controls
 
@@ -146,8 +154,18 @@ and privileged plaintext exports accordingly.
 
 The `all`, `mdm` and `ddm` roles compose services from environment configuration. Admin routes
 use either an unrestricted bootstrap token or stored principals with Cedar policies. Event sinks
-project permitted fields; raw event payloads remain inside the process. Audit persistence and
-retention require configuration and do not provide tamper resistance against database operators.
+project permitted fields; raw event payloads remain inside the process. SQL applications always
+capture projected events in `server/eventstore`, including events with no configured delivery
+destination. Participating local mutations and event capture share one SQL transaction through
+`event.Run`; capture failure rolls back that operation. This is not a transaction spanning Apple
+services, remote sinks or independently supplied stores.
+
+Persistent workers deliver audit/webhook records per destination with leases and retries.
+Native audit append and delivery acknowledgment commit together on the shared SQL pool;
+external sinks are at least once and must deduplicate EventID. Slog and in-process bus
+subscribers remain ephemeral. Audit persistence/retention are separately configured and do not
+provide tamper resistance against database operators. `dmctl events` inspects captures,
+delivery status and manual retry; see [event delivery](operations/event-delivery.md).
 
 Replicas must share the relevant database, issuer keys and configuration. Completed account
 credentials, certificate associations and OIDC browser handoffs persist in shared SQL protocol
