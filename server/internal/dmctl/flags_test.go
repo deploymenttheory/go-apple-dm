@@ -1,6 +1,7 @@
 package dmctl_test
 
 import (
+	json "encoding/json/v2"
 	"errors"
 	"net/http"
 	"net/http/httptest"
@@ -85,7 +86,16 @@ func TestConfigTokenSources(t *testing.T) {
 		if err := os.WriteFile(tok, []byte("from-config\n"), 0o600); err != nil {
 			t.Fatal(err)
 		}
-		path := write(t, `{"current":"lab","contexts":{"lab":{"server":"`+srv.URL+`","token_file":"`+tok+`"}}}`)
+		body, err := json.Marshal(dmctl.Config{
+			Current: "lab",
+			Contexts: map[string]dmctl.Context{
+				"lab": {Server: srv.URL, TokenFile: tok},
+			},
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+		path := write(t, string(body))
 		if _, _, err := run(t, map[string]string{"DMCTL_CONFIG": path, "DMCTL_SERVER": srv.URL}, "status"); err != nil {
 			t.Fatalf("token_file: %v", err)
 		}
