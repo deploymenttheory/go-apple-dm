@@ -25,8 +25,23 @@ const StatusItemDeclarations = status.StatusItemTypeManagementDeclarations
 // Status stores a device's status report (decision record 0021): the raw
 // report, every status item as canonical JSON keyed by its nested path, the
 // typed management.declarations rows, and the Errors array. A full report
-// replaces the enrollment's status; declarations absent from it are removed.
+// replaces the enrollment's status. Whenever management.declarations is present,
+// its entire collection replaces the previous declaration rows, even in a partial
+// report; omitted status items remain untouched in a partial report.
 func (e *Engine) Status(ctx context.Context, id mdm.EnrollmentID, body []byte) (*StatusOutcome, error) {
+	var out *StatusOutcome
+	err := event.Run(ctx, e.bus, func(ctx context.Context) error {
+		var err error
+		out, err = e.storeStatus(ctx, id, body)
+		return err
+	})
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (e *Engine) storeStatus(ctx context.Context, id mdm.EnrollmentID, body []byte) (*StatusOutcome, error) {
 	if err := id.Validate(); err != nil {
 		return nil, fmt.Errorf("%w: %w", ErrInvalid, err)
 	}

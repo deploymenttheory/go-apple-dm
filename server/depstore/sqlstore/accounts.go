@@ -315,7 +315,7 @@ func (s *Store) PutAccount(ctx context.Context, a *dep.Account) error {
 
 // GetAccount implements dep.AccountStore.
 func (s *Store) GetAccount(ctx context.Context, name string) (*dep.Account, error) {
-	return s.view().GetAccount(ctx, name)
+	return s.view(ctx).GetAccount(ctx, name)
 }
 
 // DeleteAccount implements dep.AccountStore.
@@ -325,12 +325,12 @@ func (s *Store) DeleteAccount(ctx context.Context, name string) error {
 
 // ListAccounts implements dep.AccountStore.
 func (s *Store) ListAccounts(ctx context.Context, p paging.Page) (paging.Result[dep.Account], error) {
-	return s.view().ListAccounts(ctx, p)
+	return s.view(ctx).ListAccounts(ctx, p)
 }
 
 // SetAccountState implements dep.AccountStore.
 func (s *Store) SetAccountState(ctx context.Context, name string, st dep.AccountState) error {
-	return s.view().SetAccountState(ctx, name, st)
+	return s.view(ctx).SetAccountState(ctx, name, st)
 }
 
 // PutKeypair implements dep.AccountStore.
@@ -340,7 +340,7 @@ func (s *Store) PutKeypair(ctx context.Context, name string, stage dep.Stage, kp
 
 // Keypair implements dep.AccountStore.
 func (s *Store) Keypair(ctx context.Context, name string, stage dep.Stage) (*dep.Keypair, error) {
-	return s.view().Keypair(ctx, name, stage)
+	return s.view(ctx).Keypair(ctx, name, stage)
 }
 
 // UpstageKeypair implements dep.AccountStore atomically.
@@ -350,7 +350,7 @@ func (s *Store) UpstageKeypair(ctx context.Context, name string) error {
 
 // Session implements dep.SessionStore.
 func (s *Store) Session(ctx context.Context, name string) (string, error) {
-	return s.view().Session(ctx, name)
+	return s.view(ctx).Session(ctx, name)
 }
 
 // SetSession implements dep.SessionStore.
@@ -360,7 +360,7 @@ func (s *Store) SetSession(ctx context.Context, name, token string) error {
 
 // Cursor implements dep.CursorStore.
 func (s *Store) Cursor(ctx context.Context, name string) (dep.Cursor, error) {
-	return s.view().Cursor(ctx, name)
+	return s.view(ctx).Cursor(ctx, name)
 }
 
 // SetCursor implements dep.CursorStore.

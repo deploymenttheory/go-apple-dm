@@ -122,7 +122,7 @@ func (e *enrollment) issueSCEP(
 	var binding acme.Binding
 	switch {
 	case strings.HasPrefix(csr.Subject.CommonName, replacementSubjectPrefix):
-		id, _, err := parseReplacementSubject(csr.Subject.CommonName)
+		id, _, err := e.app.resolveReplacementSubject(ctx, csr.Subject.CommonName)
 		if err != nil {
 			return nil, err
 		}

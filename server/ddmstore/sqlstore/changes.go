@@ -107,20 +107,20 @@ func (s *Store) RecordChanges(ctx context.Context, ids []mdm.EnrollmentID, reaso
 
 // PendingChanges implements ddm.ChangeStore.
 func (s *Store) PendingChanges(ctx context.Context, now time.Time, limit int) ([]ddm.Change, error) {
-	return s.view().PendingChanges(ctx, now, limit)
+	return s.view(ctx).PendingChanges(ctx, now, limit)
 }
 
 // CompleteChanges implements ddm.ChangeStore.
 func (s *Store) CompleteChanges(ctx context.Context, seqs []int64) error {
-	return s.view().CompleteChanges(ctx, seqs)
+	return s.view(ctx).CompleteChanges(ctx, seqs)
 }
 
 // FailChanges implements ddm.ChangeStore.
 func (s *Store) FailChanges(ctx context.Context, seqs []int64, msg string, nextAttempt time.Time) error {
-	return s.view().FailChanges(ctx, seqs, msg, nextAttempt)
+	return s.view(ctx).FailChanges(ctx, seqs, msg, nextAttempt)
 }
 
 // ChangeStats implements ddm.ChangeStore.
 func (s *Store) ChangeStats(ctx context.Context, now time.Time) (pending, failed int64, err error) {
-	return s.view().ChangeStats(ctx, now)
+	return s.view(ctx).ChangeStats(ctx, now)
 }

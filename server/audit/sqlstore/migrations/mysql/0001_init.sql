@@ -1,6 +1,7 @@
 -- +up
 CREATE TABLE audit_records (
     id            BIGINT       NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    event_id      VARCHAR(64),
     at            DATETIME(6)  NOT NULL,
     type          VARCHAR(64)  NOT NULL,
     actor         VARCHAR(64)  NOT NULL DEFAULT '',
@@ -11,7 +12,8 @@ CREATE TABLE audit_records (
     INDEX idx_audit_records_at (at DESC, id DESC),
     INDEX idx_audit_records_enrollment (enrollment_id, id DESC),
     INDEX idx_audit_records_actor (actor, id DESC),
-    INDEX idx_audit_records_type (type, id DESC)
+    INDEX idx_audit_records_type (type, id DESC),
+    UNIQUE INDEX audit_records_event_id (event_id)
 ) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin;
 
 -- +down

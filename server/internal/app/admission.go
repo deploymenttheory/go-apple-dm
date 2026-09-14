@@ -237,10 +237,10 @@ func (e *enrollment) admit(
 }
 
 func (a *App) securityEvent(ctx context.Context, kind event.Type) {
-	if a.cfg.Bus == nil {
+	if a.cfg.publisher() == nil {
 		return
 	}
-	if err := a.cfg.Bus.Publish(
+	if err := a.cfg.publisher().Publish(
 		ctx,
 		event.Event{Type: kind, At: a.cfg.Clock.Now(), Actor: "security"},
 	); err != nil && !errors.Is(err, event.ErrQueueFull) &&

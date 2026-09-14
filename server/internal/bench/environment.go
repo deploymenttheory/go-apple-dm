@@ -21,7 +21,6 @@ import (
 	"os/exec"
 	"strings"
 	"sync"
-	"syscall"
 	"time"
 
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/appleplatformservices/axm/axmtest"
@@ -53,10 +52,13 @@ type Instance struct {
 
 // Environment owns fixture services and the ordinary server runtime(s).
 type Environment struct {
-	DEP       *deptest.Server
-	ABM       *axmtest.Server
-	Provider  *webauthtest.Provider
-	Authority *testpki.CA
+	// InstallingUserID is the local user's GeneratedUID, supplied by the operator
+	// for live enrollment acceptance. It is not inferred from an arbitrary child.
+	InstallingUserID string
+	DEP              *deptest.Server
+	ABM              *axmtest.Server
+	Provider         *webauthtest.Provider
+	Authority        *testpki.CA
 	Instance
 	Client    *http.Client
 	Token     string
@@ -289,7 +291,7 @@ func (e *Environment) launch(
 	}
 	cmd.Stdout = out
 	cmd.Stderr = out
-	cmd.Cancel = func() error { return cmd.Process.Signal(syscall.SIGTERM) }
+	configureChild(cmd)
 	cmd.WaitDelay = 12 * time.Second
 	if err := cmd.Start(); err != nil {
 		return wrapError(err)
@@ -358,10 +360,9 @@ func Up(ctx context.Context, w *Workspace, binary string, out io.Writer) error {
 		return wrapError(err)
 	}
 	defer lock.Close()
-	if err = syscall.Flock(int(lock.Fd()), syscall.LOCK_EX|syscall.LOCK_NB); err != nil {
+	if err = lockWorkspace(lock); err != nil {
 		return fmt.Errorf("%w: workspace already running", errOperation)
 	}
-	defer func() { _ = syscall.Flock(int(lock.Fd()), syscall.LOCK_UN) }()
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 	e, err := Start(ctx, w, binary, out)

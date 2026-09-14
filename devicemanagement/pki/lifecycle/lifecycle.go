@@ -1,7 +1,3 @@
-// Package lifecycle manages certificate setup and renewal with persistent state.
-// Applications supply storage, trust policy and scheduling; no background work
-// starts merely by constructing a Manager. Repository values contain secrets and
-// must be encrypted by a persistent storage adapter.
 package lifecycle
 
 import (

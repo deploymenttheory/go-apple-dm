@@ -5,18 +5,28 @@ import (
 	"io"
 	"net/http"
 	"os"
-	"path/filepath"
 	"strconv"
 	"testing"
 	"time"
 )
 
-// TestBenchChild is a subprocess fixture that becomes ready, accepts seeding,
-// then exits when the parent requests it. The supervisor must observe the exit.
-func TestBenchChild(t *testing.T) {
-	if os.Getenv("BENCH_CHILD") != "1" {
-		return
+// Native child fixtures avoid depending on a shell or executable script support.
+func TestMain(m *testing.M) {
+	switch os.Getenv("BENCH_CHILD") {
+	case "1":
+		runBenchChild()
+	case "exit":
+		os.Exit(3)
+	case "wait":
+		for {
+			time.Sleep(time.Second)
+		}
 	}
+	os.Exit(m.Run())
+}
+
+// runBenchChild becomes ready, accepts seeding, then exits at the parent's request.
+func runBenchChild() {
 	srv := &http.Server{
 		Addr:              os.Getenv("DM_LISTEN"),
 		ReadHeaderTimeout: time.Second,
@@ -50,20 +60,10 @@ func TestSupervisorReportsUnexpectedProcessExit(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			// The test binary only runs its child fixture; no other tests recurse.
-			script := w.path("child")
-			writeFixture(
-				t,
-				script,
-				[]byte("#!/bin/sh\nexec '"+executable+"' -test.run '^TestBenchChild$'\n"),
-			)
-			if err := os.Chmod(script, 0o700); err != nil {
-				t.Fatal(err)
-			}
 			ctx, cancel := context.WithTimeout(t.Context(), 10*time.Second)
 			defer cancel()
 			done := make(chan error, 1)
-			go func() { done <- Up(ctx, w, script, io.Discard) }()
+			go func() { done <- Up(ctx, w, executable, io.Discard) }()
 			tick := time.NewTicker(20 * time.Millisecond)
 			defer tick.Stop()
 			for {
@@ -115,11 +115,12 @@ func TestStartupFailureLeavesNoSupervisor(t *testing.T) {
 			case "split child exit":
 				w.Storage = "sqlite"
 				w.Topology = "split"
-				binary = filepath.Join(t.TempDir(), "exit")
-				writeFixture(t, binary, []byte("#!/bin/sh\nexit 1\n"))
-				if err := os.Chmod(binary, 0o700); err != nil {
+				var err error
+				binary, err = os.Executable()
+				if err != nil {
 					t.Fatal(err)
 				}
+				w.Settings = map[string]string{"BENCH_CHILD": "exit"}
 			}
 			if err := Up(ctx, w, binary, io.Discard); err == nil {
 				t.Fatal("invalid startup succeeded")

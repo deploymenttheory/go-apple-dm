@@ -74,6 +74,9 @@ const (
 
 // Event is one occurrence.
 type Event struct {
+	// ID identifies this occurrence, independently of the enrollment identifier.
+	// A persistent publisher assigns it before capture when empty.
+	ID         string
 	Type       Type
 	At         time.Time
 	Enrollment mdm.EnrollmentID

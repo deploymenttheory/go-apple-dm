@@ -5,20 +5,23 @@
 [![Go Reference](https://pkg.go.dev/badge/github.com/deploymenttheory/go-apple-dm.svg)](https://pkg.go.dev/github.com/deploymenttheory/go-apple-dm)
 [![Go Version](https://img.shields.io/github/go-mod/go-version/deploymenttheory/go-apple-dm)](https://go.dev/)
 [![License](https://img.shields.io/github/license/deploymenttheory/go-apple-dm)](LICENSE)
-![Status: Preview](https://img.shields.io/badge/status-preview-58A6FF)
+![Status: Beta](https://img.shields.io/badge/status-preview-58A6FF)
 
-Go packages for Apple's MDM protocol, declarative device management (DDM), enrollment,
+This project provides Go packages for Apple's MDM protocol, declarative device management (DDM), enrollment,
 certificate issuance and Apple service clients. The repository also contains a reference
-server and an admin CLI. It does not provide an inventory UI or a fleet management product.
+server and an admin CLI to demonstrate how an implementation of the library could look like, additionally there is a simulator for test purposes. By design this project does not provide an opinionated: UI nor a full apple device management product, rather, the focus is on providing a consumable library upon which those types project could adopt.
 
-The root module groups protocol libraries, generated schema types, storage contracts and
-in-memory implementations under [devicemanagement/](devicemanagement/). The `server` module adds SQL stores, the service layer, HTTP
-adapters and application wiring. Both modules require Go 1.27. The API is pre-1.0 and may
-change between minor versions.
+The `devicemanagement` library go module groups protocol libraries, generated schema types, storage contracts and
+in-memory implementations under [devicemanagement/](devicemanagement/). The `server` module adds SQL stores, the service layer, HTTP adapters and application wiring. Both modules require Go 1.27. 
 
-The generated API combines Apple’s OS 27 seed with a pinned historical release,
-preserving management of older devices. Availability checks use each device’s OS,
-version, channel and enrollment context.
+> [!WARNING]
+> This project is in beta. While it has been tested extensively, please thoroughly test in non-production environments before production use. Features may contain bugs or undergo changes based on community feedback. Use at your own risk. No guarantees or official support is provided. By using this provider, you acknowledge and agree to these conditions. For questions or issues, please consult the documentation or contact the maintainer.
+
+> [!TIP]
+> This is a community-driven project and is not officially supported by Apple.
+
+This project generates it's mdm and ddm functionality by parsing the schema from Apple's [Device Management](https://github.com/apple/device-management) project.
+
 
 ## Quick start
 

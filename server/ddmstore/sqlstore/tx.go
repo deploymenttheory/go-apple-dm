@@ -10,6 +10,7 @@ import (
 
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/ddm"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/paging"
+	"github.com/deploymenttheory/go-apple-dm/server/sqlstore/sqlcommon"
 )
 
 // querier is *sql.DB or *sql.Tx.
@@ -46,6 +47,9 @@ func (s *Store) Update(ctx context.Context, fn func(ddm.Tx) error) error {
 }
 
 func (s *Store) runInTx(ctx context.Context, fn func(*txStore) error) error {
+	if _, ok := sqlcommon.CurrentTransaction(ctx, s.db); ok {
+		return sqlcommon.Savepoint(ctx, s.db, func(_ context.Context, tx *sql.Tx) error { return fn(&txStore{s: s, q: tx}) })
+	}
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return wrap("begin", err)
@@ -69,6 +73,9 @@ const writeAttempts = 3
 // membership, assignment) produce a unique violation on one side; that
 // side retries and reports the row as already present.
 func (s *Store) write(ctx context.Context, fn func(*txStore) error) error {
+	if _, ok := sqlcommon.CurrentTransaction(ctx, s.db); ok {
+		return s.runInTx(ctx, fn)
+	}
 	var err error
 	for range writeAttempts {
 		if err = s.runInTx(ctx, fn); !s.raced(err) {
@@ -84,7 +91,9 @@ func (s *Store) raced(err error) bool {
 }
 
 // view is the pool-backed view for reads and single-statement writes.
-func (s *Store) view() *txStore { return &txStore{s: s, q: s.db} }
+func (s *Store) view(ctx context.Context) *txStore {
+	return &txStore{s: s, q: sqlcommon.Query(ctx, s.db)}
+}
 
 // exec runs one statement. A unique violation is reported as
 // ddm.ErrConflict, still wrapping the driver error so write can retry.

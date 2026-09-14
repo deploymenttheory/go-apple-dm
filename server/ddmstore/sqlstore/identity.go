@@ -63,5 +63,5 @@ func (t *txStore) EnrollmentIdentity(ctx context.Context, rawID string) (mdm.Enr
 
 // EnrollmentIdentity implements ddm.AssignmentStore.
 func (s *Store) EnrollmentIdentity(ctx context.Context, rawID string) (mdm.EnrollmentID, error) {
-	return s.view().EnrollmentIdentity(ctx, rawID)
+	return s.view(ctx).EnrollmentIdentity(ctx, rawID)
 }

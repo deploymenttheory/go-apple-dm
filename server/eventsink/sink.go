@@ -20,6 +20,7 @@ type Projection func(data any) map[string]any
 // every event has, plus whatever its projection allowed through. Event.Data
 // itself never appears here.
 type Record struct {
+	EventID string         `json:"event_id,omitempty"`
 	Type    string         `json:"type"`
 	At      time.Time      `json:"at"`
 	Actor   string         `json:"actor,omitempty"`
@@ -79,11 +80,12 @@ func (r *Registry) Types() []event.Type {
 // Project reduces an event to its publishable Record.
 func (r *Registry) Project(e event.Event) Record {
 	rec := Record{
-		Type:   string(e.Type),
-		At:     e.At,
-		Actor:  e.Actor,
-		ID:     e.Enrollment.ID,
-		Parent: e.Enrollment.ParentID,
+		EventID: e.ID,
+		Type:    string(e.Type),
+		At:      e.At,
+		Actor:   e.Actor,
+		ID:      e.Enrollment.ID,
+		Parent:  e.Enrollment.ParentID,
 	}
 	if e.Enrollment.ID != "" || e.Enrollment.Channel != 0 {
 		rec.Channel = e.Enrollment.Channel.String()

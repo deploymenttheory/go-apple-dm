@@ -17,6 +17,11 @@ import (
 // the synthesised one.
 const SubscriptionIdentifier = "com.deploymenttheory.mdm.status-subscriptions"
 
+// SubscriptionActivationIdentifier names the activation for the generated
+// subscription. An assigned declaration with this identifier takes precedence.
+// An administrator overriding SubscriptionIdentifier manages its activation too.
+const SubscriptionActivationIdentifier = "com.deploymenttheory.mdm.status-subscriptions.activation"
+
 // DefaultSubscriptionBaseline is used until a device reports which status
 // items it supports.
 var DefaultSubscriptionBaseline = []string{
@@ -74,11 +79,17 @@ func (e *Engine) subscriptionItem(ctx context.Context, tx Tx, id mdm.EnrollmentI
 	for _, n := range names {
 		items = append(items, map[string]string{"Name": n})
 	}
-	raw, err := json.Marshal(map[string]any{
-		"Type":       schemaddm.DeclarationTypeManagementStatusSubscriptions,
-		"Identifier": SubscriptionIdentifier,
-		"Payload":    map[string]any{"StatusItems": items},
-	})
+	return e.generatedSubscriptionItem(ctx, SubscriptionIdentifier,
+		schemaddm.DeclarationTypeManagementStatusSubscriptions, map[string]any{"StatusItems": items})
+}
+
+func (e *Engine) subscriptionActivation(ctx context.Context) (SnapshotItem, error) {
+	return e.generatedSubscriptionItem(ctx, SubscriptionActivationIdentifier,
+		schemaddm.DeclarationTypeActivationSimple, map[string]any{"StandardConfigurations": []string{SubscriptionIdentifier}})
+}
+
+func (e *Engine) generatedSubscriptionItem(ctx context.Context, identifier, typ string, payload any) (SnapshotItem, error) {
+	raw, err := json.Marshal(map[string]any{"Type": typ, "Identifier": identifier, "Payload": payload})
 	if err != nil {
 		return SnapshotItem{}, fmt.Errorf("ddm: subscriptions: %w", err)
 	}
@@ -90,4 +101,9 @@ func (e *Engine) subscriptionItem(ctx context.Context, tx Tx, id mdm.EnrollmentI
 		DeclarationRef: DeclarationRef{Kind: d.Kind, Identifier: d.Identifier, ServerToken: d.ServerToken},
 		Expanded:       d.Canonical,
 	}, nil
+}
+
+func subscriptionReference(ref DeclarationRef) bool {
+	return (ref.Identifier == SubscriptionIdentifier && ref.Kind == schemaddm.KindConfiguration) ||
+		(ref.Identifier == SubscriptionActivationIdentifier && ref.Kind == schemaddm.KindActivation)
 }

@@ -133,6 +133,38 @@ func TestMigrations(t *testing.T) {
 	})
 }
 
+func TestInitialSchemaAllowsMissingEventIDAndDeduplicatesOccurrences(t *testing.T) {
+	ctx := t.Context()
+	db := openDB(t)
+	if _, err := sqlstore.Migrate(ctx, db, sqlite.Dialect); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := db.ExecContext(ctx, "INSERT INTO audit_records (at, type, actor, channel, enrollment_id, parent_id, fields) VALUES (?, 'enrolled', '', '', '', '', '')", audittest.T0); err != nil {
+		t.Fatal(err)
+	}
+	s, err := sqlstore.Open(ctx, db, sqlite.Dialect, sqlstore.Options{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	old, err := s.Get(ctx, 1)
+	if err != nil || old.Type != "enrolled" || old.EventID != "" {
+		t.Fatal(old, err)
+	}
+	input := audit.Record{EventID: "occurrence", Type: "command-queued", At: audittest.T0}
+	one, err := s.Append(ctx, input)
+	if err != nil {
+		t.Fatal(err)
+	}
+	two, err := s.Append(ctx, input)
+	if err != nil || one.ID != two.ID || two.EventID != input.EventID {
+		t.Fatal(one, two, err)
+	}
+	var count int
+	if err := db.QueryRowContext(ctx, "SELECT COUNT(*) FROM audit_records").Scan(&count); err != nil || count != 2 {
+		t.Fatal(count, err)
+	}
+}
+
 // Fields are stored as JSON, so a payload that cannot be encoded is a caller
 // error rather than a corrupt row.
 func TestAppendRejectsUnencodableFields(t *testing.T) {

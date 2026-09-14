@@ -171,23 +171,24 @@ func (g *Graph) Reaches(from string) []string {
 	return out
 }
 
-// namespaces hold unrelated packages rather than one cohesive unit, so a
-// unit under them is two path elements deep: "internal/clock" is a
-// foundation and "internal/app" is the composition root, and collapsing
-// them would invent a cycle between what everything imports and what
-// imports everything. The tier directories are namespaces for the same
-// reason.
+// Namespace directories group independent packages. The layout checker treats
+// each child as a separate unit. For example, server/internal/privatefile
+// provides file helpers, while server/internal/app wires the application
+// together. Grouping them into one unit would make valid dependencies look
+// cyclic. Tier directories follow the same rule.
 var namespaces = []string{
 	"internal", "schema",
-	"mdmprotocol", "pki", "appleplatformservices", "storage", "server",
+	"mdmprotocol", "pki", "appleplatformservices", "storage",
 }
 
 // Unit is the directory a tier is assigned to: the first path element,
-// except under a namespace, where it is the first two. The devicemanagement
-// container preserves that granularity within the library.
+// except under a namespace, where it is the first two. The library and server
+// containers preserve that granularity within each module.
 func Unit(pkg string) string {
-	if rest, ok := strings.CutPrefix(pkg, "devicemanagement/"); ok {
-		return "devicemanagement/" + Unit(rest)
+	for _, container := range []string{"devicemanagement/", "server/"} {
+		if rest, ok := strings.CutPrefix(pkg, container); ok {
+			return container + Unit(rest)
+		}
 	}
 	parts := strings.Split(pkg, "/")
 	if len(parts) > 1 && slices.Contains(namespaces, parts[0]) {
@@ -196,7 +197,8 @@ func Unit(pkg string) string {
 	return parts[0]
 }
 
-// UnitGraph collapses the package graph onto units, dropping self edges.
+// UnitGraph shows which directory units depend on each other. It omits imports
+// between packages that belong to the same unit.
 func (g *Graph) UnitGraph() map[string][]string {
 	set := map[string]map[string]bool{}
 	for from, edges := range g.Imports {
@@ -222,10 +224,10 @@ func (g *Graph) UnitGraph() map[string][]string {
 	return out
 }
 
-// Cycles returns the strongly connected components of size greater than one
-// in the unit graph, each sorted, outermost sorted for a stable message. A
-// unit in such a component cannot be assigned to a tier, because part of it
-// sits above another part.
+// Cycles finds groups of directory units whose dependencies form a loop.
+// These units cannot be placed in a consistent dependency order. Each group
+// contains at least two units. Names within each group are sorted, and groups
+// are sorted by their first name so diagnostics remain consistent.
 func Cycles(g map[string][]string) [][]string {
 	var (
 		index = map[string]int{}

@@ -293,6 +293,52 @@ func TestAtomicAuthenticateRejectsReuseAndRollsBackStorageFailure(t *testing.T) 
 	}
 }
 
+func TestReauthenticationRejectsCorruptReturningUserWithoutChangingParent(t *testing.T) {
+	for _, channel := range []any{"not-a-channel", int(mdm.ChannelDevice)} {
+		s := openWith(t, filepath.Join(t.TempDir(), "returning.db"), nil)
+		id := mdm.EnrollmentID{Channel: mdm.ChannelDevice, ID: "parent"}
+		seedSecrets(t, s, id)
+		at := time.Now()
+		if err := s.AssociateCert(t.Context(), id, "old", at); err != nil {
+			t.Fatal(err)
+		}
+		if _, err := s.DB().ExecContext(t.Context(), "UPDATE enrollments SET channel = ? WHERE parent_id = ?", channel, id.ID); err != nil {
+			t.Fatal(err)
+		}
+		if err := s.AuthenticateEnrollment(t.Context(), id, storage.AuthenticateChange{ExpectedHash: "old", Hash: "new", At: at.Add(time.Minute)}); err == nil || errors.Is(err, storage.ErrConflict) {
+			t.Fatal("reset corrupt returning user")
+		}
+		parent, err := s.Get(t.Context(), id)
+		if err != nil || parent.CertHash != "old" || string(parent.Push.Token) != string([]byte{1}) {
+			t.Fatal("parent state escaped rollback", err)
+		}
+	}
+}
+
+func TestIdentityReadsDistinguishMissingDeviceFromDatabaseFailure(t *testing.T) {
+	s := openWith(t, filepath.Join(t.TempDir(), "missing.db"), nil)
+	id := mdm.EnrollmentID{Channel: mdm.ChannelDevice, ID: "missing"}
+	for name, read := range map[string]func() error{
+		"certificate": func() error { _, err := s.CertHash(t.Context(), id); return err },
+		"bootstrap":   func() error { _, err := s.BootstrapToken(t.Context(), id); return err },
+	} {
+		if err := read(); !errors.Is(err, storage.ErrNotFound) {
+			t.Fatal(name, err)
+		}
+	}
+	if err := s.Close(); err != nil {
+		t.Fatal(err)
+	}
+	for name, read := range map[string]func() error{
+		"certificate": func() error { _, err := s.CertHash(t.Context(), id); return err },
+		"bootstrap":   func() error { _, err := s.BootstrapToken(t.Context(), id); return err },
+	} {
+		if err := read(); err == nil || errors.Is(err, storage.ErrNotFound) {
+			t.Fatal(name, "database failure treated as missing", err)
+		}
+	}
+}
+
 func TestCorruptCapabilityAndReplacementRecordsAreRejected(t *testing.T) {
 	ctx := t.Context()
 	now := time.Now()

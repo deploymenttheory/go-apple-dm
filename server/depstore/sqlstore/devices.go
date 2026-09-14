@@ -263,12 +263,12 @@ func (s *Store) PutDevices(ctx context.Context, account string, devs []dep.Devic
 
 // GetDevice implements dep.DeviceStore.
 func (s *Store) GetDevice(ctx context.Context, account, serial string) (*dep.StoredDevice, error) {
-	return s.view().GetDevice(ctx, account, serial)
+	return s.view(ctx).GetDevice(ctx, account, serial)
 }
 
 // ListDevices implements dep.DeviceStore.
 func (s *Store) ListDevices(ctx context.Context, account string, q dep.DeviceQuery, p paging.Page) (paging.Result[dep.StoredDevice], error) {
-	return s.view().ListDevices(ctx, account, q, p)
+	return s.view(ctx).ListDevices(ctx, account, q, p)
 }
 
 // PutProfile implements dep.ProfileStore.
@@ -278,17 +278,17 @@ func (s *Store) PutProfile(ctx context.Context, account string, p *dep.Profile) 
 
 // GetProfile implements dep.ProfileStore.
 func (s *Store) GetProfile(ctx context.Context, account, uuid string) (*dep.Profile, error) {
-	return s.view().GetProfile(ctx, account, uuid)
+	return s.view(ctx).GetProfile(ctx, account, uuid)
 }
 
 // DeleteProfile implements dep.ProfileStore.
 func (s *Store) DeleteProfile(ctx context.Context, account, uuid string) error {
-	return s.view().DeleteProfile(ctx, account, uuid)
+	return s.view(ctx).DeleteProfile(ctx, account, uuid)
 }
 
 // ListProfiles implements dep.ProfileStore.
 func (s *Store) ListProfiles(ctx context.Context, account string, p paging.Page) (paging.Result[dep.Profile], error) {
-	return s.view().ListProfiles(ctx, account, p)
+	return s.view(ctx).ListProfiles(ctx, account, p)
 }
 
 // PutAssignment implements dep.AssignmentStore.
@@ -298,10 +298,10 @@ func (s *Store) PutAssignment(ctx context.Context, a *dep.Assignment) error {
 
 // GetAssignment implements dep.AssignmentStore.
 func (s *Store) GetAssignment(ctx context.Context, account, serial string) (*dep.Assignment, error) {
-	return s.view().GetAssignment(ctx, account, serial)
+	return s.view(ctx).GetAssignment(ctx, account, serial)
 }
 
 // ListAssignments implements dep.AssignmentStore.
 func (s *Store) ListAssignments(ctx context.Context, account string, q dep.AssignmentQuery, p paging.Page) (paging.Result[dep.Assignment], error) {
-	return s.view().ListAssignments(ctx, account, q, p)
+	return s.view(ctx).ListAssignments(ctx, account, q, p)
 }

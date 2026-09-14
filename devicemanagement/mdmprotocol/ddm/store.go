@@ -125,9 +125,9 @@ type StatusUpdate struct {
 	Raw        []byte
 	ReceivedAt time.Time
 	FullReport bool
-	// HasDeclarations is false when the report carried no
-	// management.declarations item, in which case declaration rows are
-	// left untouched even for a full report.
+	// HasDeclarations indicates that the report carries management.declarations.
+	// That item replaces the entire declaration collection independently of
+	// FullReport. When absent, existing declaration rows remain untouched.
 	HasDeclarations bool
 	Declarations    []DeclarationStatus
 	Values          []StatusValue
@@ -225,9 +225,9 @@ type SnapshotStore interface {
 type StatusStore interface {
 	// PutStatus applies one report atomically: appends the raw report,
 	// upserts declaration rows and values (LastSeen bumped, FirstSeen kept),
-	// appends errors, and for a full report deletes declaration rows and
-	// values absent from the update. It prunes raw reports beyond
-	// KeepReports, oldest first.
+	// appends errors, and deletes absent declaration rows whenever
+	// HasDeclarations is true. FullReport also deletes absent status values.
+	// It prunes raw reports beyond KeepReports, oldest first.
 	PutStatus(ctx context.Context, id mdm.EnrollmentID, u StatusUpdate) (StatusOutcome, error)
 	// DeclarationStatus lists rows sorted by (kind, identifier).
 	DeclarationStatus(ctx context.Context, id mdm.EnrollmentID) ([]DeclarationStatus, error)

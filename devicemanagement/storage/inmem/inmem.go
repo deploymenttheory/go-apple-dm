@@ -112,9 +112,14 @@ func (s *Store) resetAuthenticateLocked(
 	if !id.Channel.IsUser() {
 		s.dropCertLocked(id.ID)
 		delete(s.bootstrap, id.ID)
-		// User channels of this device are stale once it re-enrolls, and
-		// so are their UserAuthenticate sessions.
-		s.disableChildrenLocked(id.ID, at)
+		// Returning users must provide new tokens under the new device identity.
+		// Keep their rows pending, clearing all state from the previous enrollment.
+		for _, child := range s.enrollments {
+			if child.ID.ParentID == id.ID {
+				clearPendingLocked(child, at)
+				child.Enrollment = storage.Enrollment{ID: child.ID, EnrolledAt: at, LastSeenAt: at}
+			}
+		}
 		s.clearUserAuthOfDeviceLocked(id.ID)
 	}
 	r.Enrollment = storage.Enrollment{

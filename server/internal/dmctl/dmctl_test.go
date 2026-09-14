@@ -368,6 +368,7 @@ func TestConfig(t *testing.T) {
 		if err := os.WriteFile(path, []byte(`{"current":"lab","contexts":{"lab":{"server":"http://x"}}}`), 0o644); err != nil {
 			t.Fatal(err)
 		}
+		makeWorldReadable(t, path)
 		_, _, err := run(t, map[string]string{"DMCTL_CONFIG": path}, "status")
 		if !errors.Is(err, dmctl.ErrConfigPermissions) {
 			t.Fatalf("err = %v, want ErrConfigPermissions", err)

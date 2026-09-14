@@ -39,7 +39,9 @@ import (
 	sqlstore "github.com/deploymenttheory/go-apple-dm/server/ddmstore/sqlstore"
 	"github.com/deploymenttheory/go-apple-dm/server/ddmsync"
 	"github.com/deploymenttheory/go-apple-dm/server/eventsink"
+	"github.com/deploymenttheory/go-apple-dm/server/eventstore"
 	"github.com/deploymenttheory/go-apple-dm/server/httpapi"
+	"github.com/deploymenttheory/go-apple-dm/server/maintenance"
 	"github.com/deploymenttheory/go-apple-dm/server/pushnotify"
 	"github.com/deploymenttheory/go-apple-dm/server/service"
 	"github.com/deploymenttheory/go-apple-dm/server/sqlstore/mysql"
@@ -69,7 +71,8 @@ const (
 // Config is the process configuration; see ParseEnv for the DM_*
 // variables and cmd/dmserver for the flags.
 type Config struct {
-	Setup *SetupConfig
+	persistentEvents event.Publisher
+	Setup            *SetupConfig
 
 	PKI                     PKIConfig
 	RateLimits              RateLimitConfig
@@ -180,10 +183,10 @@ type Config struct {
 	Sinks SinkConfig
 }
 
-// SinkConfig enables event logging, webhooks and audit storage. All are off by
-// default. The enabled sinks share the bus's delivery capacity and failure modes.
+// SinkConfig enables event logging, webhooks and audit delivery. SQL deployments
+// always capture projected occurrences, with independent destination retries.
 type SinkConfig struct {
-	// Dispatch bounds the application-owned audit/webhook event bus.
+	// Dispatch bounds the application-owned in-process event bus.
 	// It does not configure DDM synchronization or device command workers.
 	Dispatch event.AsyncConfig
 	// Audit writes a projected slog record for each event delivered to the sink.
@@ -196,8 +199,8 @@ type SinkConfig struct {
 	WebhookRootCAFile string
 	// WebhookHMACKey signs the webhook body when set.
 	WebhookHMACKey []byte
-	// Persist stores projected events delivered to the sink in the process's
-	// database. Delivery or storage failures can leave gaps in the audit trail.
+	// Persist delivers captured occurrences to the SQL audit trail. The event
+	// store retains pending deliveries until this destination acknowledges them.
 	Persist bool
 	// AuditStore overrides Persist with a caller's own trail.
 	AuditStore audit.Store
@@ -218,6 +221,8 @@ var ErrConfig = errors.New("app: invalid configuration")
 
 // App is a built process.
 type App struct {
+	eventStore     *eventstore.Store
+	eventPublisher *eventstore.Publisher
 	issuerMu       sync.Mutex
 	issuerServices map[string]*managedIssuerService
 	Certificates   *lifecycle.Manager
@@ -248,6 +253,7 @@ type App struct {
 	enroll      *enrollment
 	db          *sql.DB
 	dialect     sqlcommon.Dialect
+	maintenance *maintenance.Participant
 	protocol    state.Store
 	revocations *revocation.Registry
 	closers     []func() error
@@ -582,21 +588,25 @@ func (a *App) openStorage(ctx context.Context) error {
 		a.Store = inmem.New()
 		return nil
 	case "sqlite":
-		s, err := sqlite.Open(ctx, a.cfg.DSN, sqlite.Options{Keyring: a.keyring})
+		s, err := sqlite.Open(ctx, a.cfg.DSN, sqlite.Options{Keyring: a.keyring, SkipMigrate: true})
 		if err != nil {
 			return fmt.Errorf("app: sqlite: %w", err)
 		}
 		a.Store, db, dialect = s, s.DB(), sqlite.Dialect
 		a.closers = append(a.closers, s.Close)
 	case "postgres":
-		s, err := postgres.Open(ctx, a.cfg.DSN, postgres.Options{Keyring: a.keyring})
+		s, err := postgres.Open(
+			ctx,
+			a.cfg.DSN,
+			postgres.Options{Keyring: a.keyring, SkipMigrate: true},
+		)
 		if err != nil {
 			return fmt.Errorf("app: postgres: %w", err)
 		}
 		a.Store, db, dialect = s, s.DB(), postgres.Dialect
 		a.closers = append(a.closers, s.Close)
 	default:
-		s, err := mysql.Open(ctx, a.cfg.DSN, mysql.Options{Keyring: a.keyring})
+		s, err := mysql.Open(ctx, a.cfg.DSN, mysql.Options{Keyring: a.keyring, SkipMigrate: true})
 		if err != nil {
 			return fmt.Errorf("app: mysql: %w", err)
 		}
@@ -605,6 +615,17 @@ func (a *App) openStorage(ctx context.Context) error {
 	}
 	a.db = db
 	a.dialect = dialect
+	control, err := maintenance.Open(ctx, db, dialect, true)
+	if err != nil {
+		return wrapError(err)
+	}
+	a.maintenance, err = control.Register(ctx, string(a.cfg.Role))
+	if err != nil {
+		return wrapError(err)
+	}
+	if _, err := sqlcommon.Migrate(ctx, db, dialect); err != nil {
+		return wrapError(err)
+	}
 	return nil
 }
 
@@ -627,7 +648,7 @@ func (a *App) wire(ctx context.Context) error {
 		return err
 	}
 	engine, err := ddm.New(ddm.Config{
-		Store: st, Bus: cfg.Bus, Clock: cfg.Clock, Logger: cfg.Logger,
+		Store: st, Bus: cfg.publisher(), Clock: cfg.Clock, Logger: cfg.Logger,
 		Subscriptions: ddm.Subscriptions{Enabled: cfg.Subscriptions},
 	})
 	if err != nil {
@@ -694,7 +715,7 @@ func (a *App) wire(ctx context.Context) error {
 		core, err := service.New(service.Config{
 			Store:              a.Store,
 			EnableReplacements: a.replacementStore() != nil && a.enroll != nil,
-			Bus:                cfg.Bus,
+			Bus:                cfg.publisher(),
 			Clock:              cfg.Clock,
 			Logger:             cfg.Logger,
 			CertificateStatus:  a.certificateStatus(),
@@ -726,7 +747,7 @@ func (a *App) wire(ctx context.Context) error {
 		}
 		ps, err := proxyserver.Handler(
 			proxyserver.Config{
-				Bus: cfg.Bus, Backend: engine,
+				Bus: cfg.publisher(), Backend: engine,
 				ReplayStore:           replay,
 				AllowInsecureForTests: cfg.DDMAllowInsecureForTests,
 				RecvKey:               cfg.DDMRecvKey,
@@ -743,7 +764,7 @@ func (a *App) wire(ctx context.Context) error {
 		// the mdm role delivers from. Building a core here means those
 		// commands are screened, hooked and audited on this role too.
 		core, err := service.New(service.Config{
-			Store: a.Store, Bus: cfg.Bus, Clock: cfg.Clock, Logger: cfg.Logger,
+			Store: a.Store, Bus: cfg.publisher(), Clock: cfg.Clock, Logger: cfg.Logger,
 		})
 		if err != nil {
 			return fmt.Errorf("app: core: %w", err)
@@ -765,7 +786,7 @@ func (a *App) wire(ctx context.Context) error {
 			Tokens:    engine,
 			Enqueuer:  a.Core,
 			Pusher:    pusher,
-			Bus:       cfg.Bus,
+			Bus:       cfg.publisher(),
 			Clock:     cfg.Clock,
 			Logger:    cfg.Logger,
 			DedupeKey: &dedupe,
@@ -783,6 +804,9 @@ func (a *App) wire(ctx context.Context) error {
 		return err
 	}
 	a.Handler, err = a.withRateLimits(ctx, mux)
+	if err == nil && a.maintenance != nil {
+		a.Handler = a.maintenance.Wrap(a.Handler)
+	}
 	return err
 }
 
@@ -796,6 +820,17 @@ func (a *App) wire(ctx context.Context) error {
 // how they say so -- ddmsync.Notifier.Run returns ctx.Err(), depService.Run
 // returns nil -- so cancellation is normalised here rather than in each loop.
 func (a *App) Run(ctx context.Context) error {
+	if a.maintenance != nil {
+		err := a.maintenance.Run(ctx, a.runWorkers)
+		if errors.Is(err, context.Canceled) {
+			return nil
+		}
+		return wrapError(err)
+	}
+	return a.runWorkers(ctx)
+}
+
+func (a *App) runWorkers(ctx context.Context) error {
 	if len(a.workers) == 0 {
 		<-ctx.Done()
 		return nil
@@ -834,6 +869,13 @@ func (a *App) Close() error {
 			errs = append(errs, fmt.Errorf("app: drain events: %w", err))
 		}
 	}
+	if a.maintenance != nil {
+		ctx, cancel := context.WithTimeout(context.Background(), busDrainTimeout)
+		defer cancel()
+		if err := a.maintenance.Close(ctx); err != nil {
+			errs = append(errs, wrapError(err))
+		}
+	}
 	for _, c := range a.closers {
 		if err := c(); err != nil {
 			errs = append(errs, err)
@@ -863,6 +905,9 @@ const busDrainTimeout = 5 * time.Second
 // asked for: an audit log and a webhook are deployment choices, and a library
 // consumer subscribes its own handlers instead.
 func (a *App) wireSinks(ctx context.Context) error {
+	if a.db != nil {
+		return a.wirePersistentSinks(ctx)
+	}
 	if !a.cfg.Sinks.Enabled() || a.cfg.Bus == nil {
 		return nil
 	}
@@ -948,6 +993,13 @@ func (a *App) TLSClientRoots() *x509.CertPool { return a.cfg.CARoots }
 
 // readyz requires storage and all configured background loops to be running.
 func (a *App) readyz(w http.ResponseWriter, r *http.Request) {
+	if a.eventPublisher != nil {
+		health := a.eventPublisher.Health()
+		if health.LastFailure.After(health.LastSuccess) {
+			http.Error(w, "event recording unavailable", http.StatusServiceUnavailable)
+			return
+		}
+	}
 	for _, worker := range a.Workers() {
 		if !worker.Running {
 			http.Error(w, "worker unavailable", http.StatusServiceUnavailable)
@@ -975,6 +1027,7 @@ func (a *App) wireAdmin(ctx context.Context, mux *http.ServeMux) error {
 	}
 	var routes []adminRoute
 	routes = append(routes, a.introspectionRoutes()...)
+	routes = append(routes, a.eventRoutes()...)
 	routes = append(routes, a.setupRoutes()...)
 	routes = append(routes, a.ddmAdminRoutes()...)
 	routes = append(routes, a.mdmAdminRoutes()...)

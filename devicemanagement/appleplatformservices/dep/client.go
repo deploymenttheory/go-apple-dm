@@ -50,7 +50,7 @@ type ClientConfig struct {
 	Clock     clock.Clock
 	// Nonce supplies the OAuth nonce; the default is 16 random bytes.
 	Nonce  func() (string, error)
-	Bus    *event.Bus
+	Bus    event.Publisher
 	Logger *slog.Logger
 	// ExpiryWarning is the window before access_token_expiry inside which
 	// EventTokenExpiring is published, at most once per

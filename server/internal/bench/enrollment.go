@@ -353,8 +353,8 @@ func replacementScenario(
 
 func liveEnrollment(method string) func(context.Context, *Environment, string) error {
 	return func(ctx context.Context, e *Environment, device string) error {
-		if device == "" {
-			return fmt.Errorf("%w: -device-id is required", ErrBlocked)
+		if device == "" || e.InstallingUserID == "" {
+			return fmt.Errorf("%w: -device-id and -user-id are required", ErrBlocked)
 		}
 		var evidence struct {
 			Identity, Certificate           string
@@ -378,26 +378,39 @@ func liveEnrollment(method string) func(context.Context, *Environment, string) e
 		if err := liveMDM(ctx, e, device); err != nil {
 			return err
 		}
-		var users struct {
-			Items []struct {
-				Enabled  bool
-				ParentID string
-			}
+		id := mdm.EnrollmentID{
+			Channel:  mdm.ChannelUser,
+			ID:       device + ":" + e.InstallingUserID,
+			ParentID: device,
+		}
+		path := "/enrollments/user/" + url.PathEscape(id.ID)
+		var user struct {
+			Channel        string
+			ID, ParentID   string
+			Enabled        bool
+			TokenUpdatedAt time.Time
 		}
 		if err := e.api(
 			ctx,
 			"GET",
-			"/enrollments?parent="+url.QueryEscape(device),
+			path,
 			nil,
-			&users,
+			&user,
 		); err != nil {
-			return err
+			return fmt.Errorf("%w: installing user's management channel is unavailable", ErrBlocked)
 		}
-		for _, user := range users.Items {
-			if user.Enabled && user.ParentID == device {
-				return nil
-			}
+		if !user.Enabled || user.Channel != "user" || user.ID != id.ID || user.ParentID != device ||
+			user.TokenUpdatedAt.IsZero() {
+			return fmt.Errorf(
+				"%w: installing user's management channel has not completed TokenUpdate",
+				ErrBlocked,
+			)
 		}
-		return fmt.Errorf("%w: installing user's management channel has not enrolled", ErrBlocked)
+		cmd, err := mdm.NewCommand(&commands.ProfileList{})
+		if err != nil {
+			return wrapError(err)
+		}
+		_, err = liveCommand(ctx, e, path, cmd)
+		return err
 	}
 }

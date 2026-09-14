@@ -9,6 +9,7 @@ import (
 
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/paging"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/pki/acme"
+	"github.com/deploymenttheory/go-apple-dm/server/sqlstore/sqlcommon"
 )
 
 // querier is *sql.DB or *sql.Tx.
@@ -62,6 +63,9 @@ func (s *Store) UpdateOrder(ctx context.Context, id string, fn func(acme.Tx) err
 }
 
 func (s *Store) runInTx(ctx context.Context, fn func(*txStore) error) error {
+	if _, ok := sqlcommon.CurrentTransaction(ctx, s.db); ok {
+		return sqlcommon.Savepoint(ctx, s.db, func(_ context.Context, tx *sql.Tx) error { return fn(&txStore{s: s, q: tx}) })
+	}
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return wrap("begin", err)
@@ -77,7 +81,9 @@ func (s *Store) runInTx(ctx context.Context, fn func(*txStore) error) error {
 }
 
 // view is the pool-backed view for reads outside a transaction.
-func (s *Store) view() *txStore { return &txStore{s: s, q: s.db} }
+func (s *Store) view(ctx context.Context) *txStore {
+	return &txStore{s: s, q: sqlcommon.Query(ctx, s.db)}
+}
 
 // raced reports whether err is the engine's unique-key violation.
 func (s *Store) raced(err error) bool {

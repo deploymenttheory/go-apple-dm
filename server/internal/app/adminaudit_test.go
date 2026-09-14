@@ -274,7 +274,7 @@ func TestAuditStoreSelection(t *testing.T) {
 		// whole point of persisting rather than logging.
 		resp := adminReq(t, srv.URL, http.MethodGet, "/admin/v1/audit", "t", "")
 		defer resp.Body.Close()
-		if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusInternalServerError {
+		if resp.StatusCode != http.StatusServiceUnavailable {
 			t.Fatalf("status = %d", resp.StatusCode)
 		}
 	})

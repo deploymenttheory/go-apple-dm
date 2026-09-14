@@ -6,11 +6,39 @@ import (
 	"io"
 	"log/slog"
 	"net"
+	"os"
+	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 
 	"github.com/deploymenttheory/go-apple-dm/server/internal/app"
+	"github.com/deploymenttheory/go-apple-dm/server/internal/buildinfo"
 )
+
+func TestVersionWithoutSetup(t *testing.T) {
+	for _, flag := range []string{"--version", "-version"} {
+		t.Run(flag, func(t *testing.T) {
+			path := filepath.Join(t.TempDir(), "version")
+			out, err := os.Create(path)
+			if err != nil {
+				t.Fatal(err)
+			}
+			t.Cleanup(func() { _ = out.Close() })
+			getenv := func(string) string {
+				t.Fatal("version inspection attempted to load configuration")
+				return ""
+			}
+			if err := run(t.Context(), []string{flag}, getenv, out); err != nil {
+				t.Fatal(err)
+			}
+			raw, err := os.ReadFile(path)
+			if err != nil || strings.TrimSpace(string(raw)) != buildinfo.Version() {
+				t.Fatalf("version = %q, error = %v", raw, err)
+			}
+		})
+	}
+}
 
 // quiet keeps the listening line out of the test log. serve dereferences
 // cfg.Logger directly, so it is never optional.

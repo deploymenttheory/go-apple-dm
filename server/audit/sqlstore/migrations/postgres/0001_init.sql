@@ -1,6 +1,7 @@
 -- +up
 CREATE TABLE audit_records (
     id            BIGSERIAL   NOT NULL PRIMARY KEY,
+    event_id      VARCHAR(64),
     at            TIMESTAMPTZ NOT NULL,
     type          VARCHAR(64) NOT NULL,
     actor         VARCHAR(64) NOT NULL DEFAULT '',
@@ -19,6 +20,7 @@ CREATE INDEX idx_audit_records_at ON audit_records (at DESC, id DESC);
 CREATE INDEX idx_audit_records_enrollment ON audit_records (enrollment_id, id DESC);
 CREATE INDEX idx_audit_records_actor ON audit_records (actor, id DESC);
 CREATE INDEX idx_audit_records_type ON audit_records (type, id DESC);
+CREATE UNIQUE INDEX audit_records_event_id ON audit_records (event_id);
 
 -- +down
 DROP TABLE audit_records;

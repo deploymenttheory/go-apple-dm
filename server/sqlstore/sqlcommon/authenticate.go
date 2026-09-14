@@ -12,7 +12,7 @@ import (
 
 // EnrollmentByID implements storage.EnrollmentStore.
 func (s *Store) EnrollmentByID(ctx context.Context, id string) (*storage.Enrollment, error) {
-	e, err := scanEnrollment(s.db.QueryRowContext(ctx, s.q(selectEnrollment+" WHERE id = ?"), id))
+	e, err := scanEnrollment(Query(ctx, s.db).QueryRowContext(ctx, s.q(selectEnrollment+" WHERE id = ?"), id))
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil, storage.ErrNotFound
 	}

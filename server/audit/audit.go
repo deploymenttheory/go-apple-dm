@@ -57,6 +57,9 @@ type Query struct {
 // a TokenUpdate's payload carries the device unlock token, so the trail
 // stores what the projection allowed and nothing else.
 type Record struct {
+	// EventID identifies the source occurrence. Nonempty IDs are deduplicated
+	// by Append, independently of the numeric audit cursor.
+	EventID string
 	// ID orders the trail and is the pagination cursor. It is assigned by
 	// the store, ascending, so the newest record has the highest id.
 	ID int64

@@ -158,7 +158,7 @@ func (s *Store) StoreUserAuthToken(
 
 // UserAuth implements storage.UserAuthStore.
 func (s *Store) UserAuth(ctx context.Context, id mdm.EnrollmentID) (*storage.UserAuthState, error) {
-	if err := s.userAuthTarget(ctx, s.db, id); err != nil {
+	if err := s.userAuthTarget(ctx, Query(ctx, s.db), id); err != nil {
 		return nil, err
 	}
 	var (
@@ -167,7 +167,7 @@ func (s *Store) UserAuth(ctx context.Context, id mdm.EnrollmentID) (*storage.Use
 		challengeAt, tokenAt   sql.NullTime
 		token, authRaw, digest []byte
 	)
-	err := s.db.QueryRowContext(ctx, s.q("SELECT challenge, challenge_at, auth_token, token_at, authenticate_raw, digest_raw FROM user_auth WHERE enrollment_id = ?"), id.ID).
+	err := Query(ctx, s.db).QueryRowContext(ctx, s.q("SELECT challenge, challenge_at, auth_token, token_at, authenticate_raw, digest_raw FROM user_auth WHERE enrollment_id = ?"), id.ID).
 		Scan(&challenge, &challengeAt, &token, &tokenAt, &authRaw, &digest)
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil, fmt.Errorf("%w: user auth state for %s", storage.ErrNotFound, id.ID)
@@ -195,10 +195,10 @@ func (s *Store) UserAuth(ctx context.Context, id mdm.EnrollmentID) (*storage.Use
 
 // ClearUserAuth implements storage.UserAuthStore.
 func (s *Store) ClearUserAuth(ctx context.Context, id mdm.EnrollmentID) error {
-	if err := s.userAuthTarget(ctx, s.db, id); err != nil {
+	if err := s.userAuthTarget(ctx, Query(ctx, s.db), id); err != nil {
 		return err
 	}
-	if _, err := s.db.ExecContext(ctx, s.q("DELETE FROM user_auth WHERE enrollment_id = ?"), id.ID); err != nil {
+	if _, err := Query(ctx, s.db).ExecContext(ctx, s.q("DELETE FROM user_auth WHERE enrollment_id = ?"), id.ID); err != nil {
 		return wrap("clear user auth", err)
 	}
 	return nil

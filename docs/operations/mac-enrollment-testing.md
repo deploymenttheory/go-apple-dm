@@ -2,8 +2,9 @@
 
 The first device milestone uses an Apple silicon Mac and the maintained reference
 server. Run ACME and SCEP separately, removing the enrollment between runs. Manual
-installation requires the Mac user's action in System Settings. No command below
-installs profiles, changes system trust or erases the Mac automatically.
+installation requires the Mac user's action in System Settings. The replacement
+command later requests an MDM profile installation; run it only after the
+operator approves that test. No test in this runbook erases the Mac.
 
 ## Prepare
 
@@ -31,14 +32,17 @@ through macOS before fetching profiles from the private HTTPS endpoint. Native
 TLS, the identity issuer and public service discovery use the workspace's configured
 certificates; `DM_ENROLL_TLS_ANCHOR_FILE` controls the HTTPS anchors in the server.
 
-Keep `DM_ALLOW_REENROLL` disabled. Live ACME uses Apple's attestation anchors and
+Keep `DM_ALLOW_REENROLL` disabled outside the explicit re-enrollment handoff below.
+Live ACME uses Apple's attestation anchors and
 requires hardware-bound, attested EC identities. Simulator anchors and unattested
 fallback are for explicitly configured fixtures, not live acceptance.
 
 ## First enrollment
 
 Use the Mac's hardware UUID as `BENCH_DEVICE_ID` (`ioreg -rd1 -c IOPlatformExpertDevice`
-shows `IOPlatformUUID`). In another terminal:
+shows `IOPlatformUUID`). Obtain the installing user's GeneratedUID with
+`dscl . -read /Users/<local-account> GeneratedUID`; use that exact value as
+`BENCH_USER_ID`. In another terminal:
 
 ```sh
 make bench-run BENCH_SCENARIO=E2E-027
@@ -54,12 +58,14 @@ actual certificate issuance separately from profile generation.
 After installation, run:
 
 ```sh
-make bench-run BENCH_SCENARIO=LIVE-002 BENCH_DEVICE_ID='<hardware UUID>'
+make bench-run BENCH_SCENARIO=LIVE-002 BENCH_DEVICE_ID='<hardware UUID>' \
+  BENCH_USER_ID='<installing user GeneratedUID>'
 ```
 
 This requires a pinned ACME-issued identity, Authenticate, TokenUpdate, an accepted
 APNs wake, an acknowledged DeviceInformation response containing OSVersion and
-BuildVersion, and the installing user's enabled management channel. Other local
+BuildVersion, and an independently acknowledged ProfileList on the exact
+installing user's management channel. Other local
 users are not automatically considered managed. Results remain blocked until
 the required device evidence exists.
 
@@ -90,8 +96,24 @@ use simulator behavior; they must not be reported as a real-device rollback pass
 
 ## Repeat with SCEP
 
-Remove the enrollment through System Settings and confirm the Mac is no longer
-managed. Export a new file with `BENCH_IDENTITY=scep`, install it, and run LIVE-003.
+Prepare a fresh SCEP profile and a private state/configuration backup before the
+handoff. Keep the admission policy restricted to the test Mac. Temporarily enable
+`DM_ALLOW_REENROLL` and restart the server with the same database, URL and identities;
+this permits a new certificate to restart the removed enrollment. It does not
+permit the old certificate to reactivate it.
+
+The operator then removes the enrollment through System Settings, confirms that
+the Mac is no longer managed, and installs the fresh SCEP file. Enrollment grants
+expire after their configured lifetime (one hour by default). Generate a new
+profile after a failed or expired attempt instead of reusing a consumed credential.
+
+After the device and returning user's fresh TokenUpdate arrive, disable
+`DM_ALLOW_REENROLL` again and restart the server before running LIVE-003 with both
+`BENCH_DEVICE_ID` and `BENCH_USER_ID`. The returning user must receive fresh tokens;
+old queued commands and push credentials must not survive the removed enrollment.
+If installation fails, preserve the server/device evidence and generate a new ACME
+profile for recovery using the same controlled handoff.
+
 Repeat replacement with `BENCH_IDENTITY=scep`. Record separate result directories
 using `dmctl bench run -report-dir ...` so the two identity runs remain distinguishable.
 

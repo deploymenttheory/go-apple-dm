@@ -17,6 +17,7 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/appleplatformservices/push"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/appleplatformservices/push/apns"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/pki/pushcert"
+	"github.com/deploymenttheory/go-apple-dm/server/internal/privatefile"
 )
 
 func runAPNS(ctx context.Context, e *env, args []string) error {
@@ -221,7 +222,7 @@ func (e *env) localJSON(value any) error {
 
 // writeNewPrivateFile refuses to truncate existing keys, requests or profiles.
 func writeNewPrivateFile(name string, data []byte) error {
-	f, err := os.OpenFile(
+	f, err := privatefile.OpenFile(
 		name,
 		os.O_CREATE|os.O_EXCL|os.O_WRONLY,
 		0o600,
@@ -230,6 +231,9 @@ func writeNewPrivateFile(name string, data []byte) error {
 		return fmt.Errorf("dmctl: create %s: %w", name, err)
 	}
 	_, writeErr := f.Write(data)
+	if writeErr == nil {
+		writeErr = f.Sync()
+	}
 	closeErr := f.Close()
 	if writeErr != nil {
 		return fmt.Errorf("dmctl: write %s: %w", name, writeErr)

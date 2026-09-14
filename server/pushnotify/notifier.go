@@ -19,7 +19,7 @@ import (
 type Notifier struct {
 	Store  storage.PushStore
 	Pusher push.Pusher
-	Bus    *event.Bus
+	Bus    event.Publisher
 	Clock  clock.Clock
 }
 

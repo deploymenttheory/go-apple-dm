@@ -191,12 +191,12 @@ func (s *Store) DeleteSet(ctx context.Context, name string) error {
 
 // GetSet implements ddm.SetStore.
 func (s *Store) GetSet(ctx context.Context, name string) (*ddm.Set, error) {
-	return s.view().GetSet(ctx, name)
+	return s.view(ctx).GetSet(ctx, name)
 }
 
 // ListSets implements ddm.SetStore.
 func (s *Store) ListSets(ctx context.Context, p paging.Page) (paging.Result[ddm.Set], error) {
-	return s.view().ListSets(ctx, p)
+	return s.view(ctx).ListSets(ctx, p)
 }
 
 // AddSetDeclaration implements ddm.SetStore.
@@ -219,10 +219,10 @@ func (s *Store) RemoveSetDeclaration(ctx context.Context, set, identifier string
 
 // SetDeclarations implements ddm.SetStore.
 func (s *Store) SetDeclarations(ctx context.Context, set string) ([]string, error) {
-	return s.view().SetDeclarations(ctx, set)
+	return s.view(ctx).SetDeclarations(ctx, set)
 }
 
 // DeclarationSets implements ddm.SetStore.
 func (s *Store) DeclarationSets(ctx context.Context, identifier string) ([]string, error) {
-	return s.view().DeclarationSets(ctx, identifier)
+	return s.view(ctx).DeclarationSets(ctx, identifier)
 }

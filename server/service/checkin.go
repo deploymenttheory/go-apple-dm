@@ -26,7 +26,7 @@ type CheckinResult struct {
 const ContentTypePlist = "application/xml; charset=utf-8"
 
 // Checkin handles one check-in message.
-func (c *Core) Checkin(
+func (c *Core) checkin(
 	ctx context.Context,
 	r *mdm.Request,
 	ck *mdm.Checkin,
@@ -240,7 +240,8 @@ func (c *Core) authenticate(
 	}
 	if err := c.store.AuthenticateEnrollment(ctx, r.ID, storage.AuthenticateChange{
 		ExpectedHash: expected, Hash: hash, AllowReuse: allowReuse,
-		Message: m, Raw: ck.Raw, At: now,
+		AllowReenroll: rotated,
+		Message:       m, Raw: ck.Raw, At: now,
 	}); err != nil {
 		if errors.Is(err, storage.ErrConflict) {
 			return wrapCode(CodeForbidden, fmt.Errorf("%w: %w", ErrCertMismatch, err))

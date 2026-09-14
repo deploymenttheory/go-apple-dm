@@ -79,8 +79,8 @@ func (t *tx) PutStatus(_ context.Context, id mdm.EnrollmentID, u ddm.StatusUpdat
 }
 
 // upsertStatusDeclarations applies u.Declarations to the enrollment's rows
-// and, for a full report that carried the declarations item, deletes the
-// rows the report no longer mentions, returning them sorted.
+// and, whenever the report carries the declarations item, deletes the rows
+// that item no longer mentions, returning them sorted.
 func (t *tx) upsertStatusDeclarations(key string, u ddm.StatusUpdate) []ddm.DeclarationRef {
 	rows := t.st.statusDecls[key]
 	if rows == nil {
@@ -98,7 +98,7 @@ func (t *tx) upsertStatusDeclarations(key string, u ddm.StatusUpdate) []ddm.Decl
 		}
 		rows[k] = row
 	}
-	if !u.FullReport || !u.HasDeclarations {
+	if !u.HasDeclarations {
 		return nil
 	}
 	var removed []ddm.DeclarationRef

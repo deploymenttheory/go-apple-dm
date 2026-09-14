@@ -141,6 +141,7 @@ func TestServiceErrorMapping(t *testing.T) {
 		{service.CodeForbidden, 403, ""},
 		{service.CodeNotImplemented, 501, ""},
 		{service.CodeGone, 410, ""},
+		{service.CodeUnavailable, 503, ""},
 		{service.CodeUnknownEnrollment, 403, ""},
 		{service.CodeInternal, 500, ""},
 		{service.Code(99), 500, ""},
@@ -154,6 +155,14 @@ func TestServiceErrorMapping(t *testing.T) {
 		if rec := do(t, h, http.MethodPut, httpapi.ContentTypeConnect, idle, nil); rec.Code != c.status || rec.Code == 401 {
 			t.Errorf("code %d connect: got %d, want %d", c.code, rec.Code, c.status)
 		}
+		if c.code == service.CodeUnavailable {
+			for _, body := range []struct{ contentType, value string }{{httpapi.ContentTypeCheckin, tokenUpdate}, {httpapi.ContentTypeConnect, idle}} {
+				rec := do(t, h, http.MethodPut, body.contentType, body.value, nil)
+				if rec.Header().Get("Retry-After") != "5" {
+					t.Fatal("capture failure omitted retry guidance")
+				}
+			}
+		}
 	}
 	// Unknown enrollment with unenroll opt-in returns Apple's body.
 	fs := &fakeService{connectErr: &service.Error{Code: service.CodeUnknownEnrollment, Err: errors.New("x")}}
@@ -166,6 +175,25 @@ func TestServiceErrorMapping(t *testing.T) {
 	plain := &fakeService{checkinErr: errors.New("plain")}
 	if rec := do(t, httpapi.CheckinHandler(httpapi.Config{Checkin: plain}), http.MethodPut, httpapi.ContentTypeCheckin, tokenUpdate, nil); rec.Code != 500 {
 		t.Fatalf("plain error: %d", rec.Code)
+	}
+}
+
+type disconnectedBody struct{}
+
+func (disconnectedBody) Read([]byte) (int, error) { return 0, io.ErrUnexpectedEOF }
+func (disconnectedBody) Close() error             { return nil }
+
+func TestIncompleteBodyDoesNotReachProtocolService(t *testing.T) {
+	fs := &fakeService{}
+	h := httpapi.Handler(httpapi.Config{Checkin: fs, Connect: fs})
+	for _, ct := range []string{httpapi.ContentTypeCheckin, httpapi.ContentTypeConnect} {
+		req := httptest.NewRequest(http.MethodPut, "/mdm", disconnectedBody{})
+		req.Header.Set("Content-Type", ct)
+		rec := httptest.NewRecorder()
+		h.ServeHTTP(rec, req)
+		if rec.Code != http.StatusBadRequest || fs.lastReq != nil {
+			t.Fatal("incomplete transport body reached protocol service", rec.Code)
+		}
 	}
 }
 

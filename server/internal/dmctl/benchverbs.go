@@ -15,6 +15,7 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/server/internal/bench"
 )
 
+//nolint:gocyclo // One dispatch path keeps the shared live-target flags consistent across bench commands.
 func runBench(ctx context.Context, e *env, args []string) error {
 	if len(args) == 0 {
 		return fmt.Errorf(
@@ -36,11 +37,17 @@ func runBench(ctx context.Context, e *env, args []string) error {
 	)
 	scenario := fs.String("scenario", "all", "stable scenario ID, family, or all (run)")
 	device := fs.String("device-id", "", "target device ID (live run/profile)")
+	user := fs.String("user-id", "", "installing user's GeneratedUID (live enrollment acceptance)")
 	identity := fs.String("identity", "", "acme or scep; empty uses server default")
 	destination := fs.String("file", "", "new profile output path (profile)")
 	format := fs.String("format", "json", "json or markdown (list)")
 	revision := fs.String("revision", version(), "source revision recorded in evidence")
 	report := fs.String("report-dir", "", "evidence directory (run)")
+	attachURL := fs.String(
+		"attach-url",
+		"",
+		"existing HTTPS server origin for a live run, profile, or replace",
+	)
 	if err := fs.Parse(reorder(fs, args[1:])); err != nil {
 		if errors.Is(err, flag.ErrHelp) {
 			return nil
@@ -49,6 +56,9 @@ func runBench(ctx context.Context, e *env, args []string) error {
 	}
 	if fs.NArg() != 0 {
 		return fmt.Errorf("%w: unexpected arguments", ErrUsage)
+	}
+	if *attachURL != "" && sub != "run" && sub != "profile" && sub != "replace" {
+		return fmt.Errorf("%w: -attach-url supports run, profile, and replace", ErrUsage)
 	}
 	if sub == "init" {
 		return wrapError(bench.Init(*dir, *mode, *storage, *topology, *listen))
@@ -71,11 +81,17 @@ func runBench(ctx context.Context, e *env, args []string) error {
 		return benchUp(ctx, e, w, *binary)
 	}
 
-	instance, err := bench.Attach(w)
+	var instance *bench.Environment
+	if *attachURL != "" {
+		instance, err = bench.AttachURL(w, *attachURL)
+	} else {
+		instance, err = bench.Attach(w)
+	}
 	if err != nil {
 		return wrapError(err)
 	}
 	defer instance.Client.CloseIdleConnections()
+	instance.InstallingUserID = *user
 	switch sub {
 	case "replace":
 		return benchReplace(ctx, e, instance, *device, *identity)

@@ -148,5 +148,5 @@ func (s *Store) PutSnapshot(ctx context.Context, snap *ddm.Snapshot) error {
 
 // Snapshot implements ddm.SnapshotStore.
 func (s *Store) Snapshot(ctx context.Context, id mdm.EnrollmentID) (*ddm.Snapshot, error) {
-	return s.view().Snapshot(ctx, id)
+	return s.view(ctx).Snapshot(ctx, id)
 }

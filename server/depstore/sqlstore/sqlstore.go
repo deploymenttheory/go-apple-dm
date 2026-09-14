@@ -178,7 +178,7 @@ func (s *Store) RawSecrets(ctx context.Context, name string) (map[string][]byte,
 		return nil, err
 	}
 	out := map[string][]byte{}
-	v := s.view()
+	v := s.view(ctx)
 	var cs, at, as []byte
 	found, err := v.row(ctx, "raw account", "SELECT consumer_secret, access_token, access_secret FROM dep_accounts WHERE name = ?", []any{name}, &cs, &at, &as)
 	if err != nil {

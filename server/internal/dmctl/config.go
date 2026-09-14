@@ -6,8 +6,10 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"runtime/debug"
 	"strings"
+
+	"github.com/deploymenttheory/go-apple-dm/server/internal/buildinfo"
+	"github.com/deploymenttheory/go-apple-dm/server/internal/privatefile"
 )
 
 // ErrEmptyCredential identifies an empty environment-backed credential.
@@ -90,7 +92,7 @@ func (e *env) loadConfig() (*Context, error) {
 	if path == "" {
 		return nil, nil
 	}
-	info, err := os.Stat(path)
+	_, err := os.Stat(path)
 	if errors.Is(err, os.ErrNotExist) {
 		return nil, nil
 	}
@@ -99,8 +101,8 @@ func (e *env) loadConfig() (*Context, error) {
 	}
 	// A credential-adjacent file that other users can read is refused rather
 	// than used, because reading it is what makes the leak matter.
-	if mode := info.Mode().Perm(); mode&0o077 != 0 {
-		return nil, fmt.Errorf("%w: %s is %#o, want 0600", ErrConfigPermissions, path, mode)
+	if err := privatefile.Check(path); err != nil {
+		return nil, fmt.Errorf("%w: %s: %w", ErrConfigPermissions, path, err)
 	}
 	raw, err := os.ReadFile(path) // #nosec G304 -- an operator's own config path
 	if err != nil {
@@ -126,9 +128,5 @@ func (e *env) loadConfig() (*Context, error) {
 
 // version reports the module version the binary was built from.
 func version() string {
-	info, ok := debug.ReadBuildInfo()
-	if !ok || info.Main.Version == "" {
-		return "devel"
-	}
-	return info.Main.Version
+	return buildinfo.Version()
 }

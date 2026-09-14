@@ -1,0 +1,56 @@
+# Run from the repository root. Release Please owns both module tags and notes.
+version: 2
+project_name: go-apple-dm-server
+
+builds:
+  - id: dmserver
+    dir: server
+    main: ./cmd/dmserver
+    binary: dmserver
+    env: &build_env
+      - CGO_ENABLED=0
+      - GOWORK=off
+    goos: &platforms [linux, darwin, windows]
+    goarch: &architectures [amd64, arm64]
+    flags: &build_flags [-trimpath, -mod=readonly]
+    ldflags: &build_ldflags
+      - -s -w
+      - -X github.com/deploymenttheory/go-apple-dm/server/internal/buildinfo.releaseVersion={{ .Version }}
+    mod_timestamp: "{{ .CommitTimestamp }}"
+  - id: dmctl
+    dir: server
+    main: ./cmd/dmctl
+    binary: dmctl
+    env: *build_env
+    goos: *platforms
+    goarch: *architectures
+    flags: *build_flags
+    ldflags: *build_ldflags
+    mod_timestamp: "{{ .CommitTimestamp }}"
+
+archives:
+  - id: server
+    ids: [dmserver, dmctl]
+    name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+    formats: [tar.gz]
+    format_overrides:
+      - goos: windows
+        formats: [zip]
+    files:
+      - LICENSE
+      - src: docs/operations/server-releases.md
+        strip_parent: true
+
+checksum:
+  name_template: "{{ .ProjectName }}_{{ .Version }}_checksums.txt"
+  algorithm: sha256
+
+# OSS GoReleaser does not support the nested module's server/v... tag prefix.
+# Package in snapshot mode with the validated tag's exact version (no suffix).
+# release.yml then signs and uploads only the verified assets to that release.
+snapshot:
+  version_template: "{{ .Env.SERVER_VERSION }}"
+changelog:
+  disable: true
+release:
+  disable: true

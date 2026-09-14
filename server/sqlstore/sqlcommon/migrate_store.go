@@ -29,7 +29,7 @@ func (s *Store) Export(
 		return out, fmt.Errorf("%w: bad cursor %q", storage.ErrInvalid, p.Cursor)
 	}
 	limit := pageLimit(p)
-	rows, err := s.db.QueryContext(
+	rows, err := Query(ctx, s.db).QueryContext(
 		ctx,
 		s.q(
 			selectEnrollment+" WHERE parent_id > ? OR (parent_id = ? AND id > ?) ORDER BY parent_id, id LIMIT ?",
@@ -65,7 +65,7 @@ func (s *Store) Export(
 		x := storage.EnrollmentExport{Enrollment: e}
 		if !e.ID.Channel.IsUser() {
 			var sealed []byte
-			if err := s.db.QueryRowContext(ctx, s.q("SELECT bootstrap_token FROM enrollments WHERE id = ?"), e.ID.ID).
+			if err := Query(ctx, s.db).QueryRowContext(ctx, s.q("SELECT bootstrap_token FROM enrollments WHERE id = ?"), e.ID.ID).
 				Scan(&sealed); err != nil {
 				return out, err
 			}

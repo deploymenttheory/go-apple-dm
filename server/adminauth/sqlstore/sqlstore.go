@@ -126,7 +126,7 @@ func (s *Store) CreatePrincipal(ctx context.Context, p adminauth.Principal, dige
 	}
 	p.Roles = sortedRoles(p.Roles)
 	p.CreatedAt, p.UpdatedAt, p.TokenAt = now.UTC(), now.UTC(), now.UTC()
-	_, err := s.db.ExecContext(ctx, s.q(
+	_, err := sqlcommon.Query(ctx, s.db).ExecContext(ctx, s.q(
 		`INSERT INTO admin_principals (name, roles, root, token_digest, token_id, token_at, expires_at, created_at, updated_at)
 		 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`),
 		p.Name, strings.Join(p.Roles, ","), p.Root, nullString(digest), p.TokenID,
@@ -142,7 +142,7 @@ func (s *Store) CreatePrincipal(ctx context.Context, p adminauth.Principal, dige
 
 // Principal implements adminauth.Store.
 func (s *Store) Principal(ctx context.Context, name string) (adminauth.Principal, error) {
-	row := s.db.QueryRowContext(ctx, s.q("SELECT "+principalCols+" FROM admin_principals WHERE name = ?"), name)
+	row := sqlcommon.Query(ctx, s.db).QueryRowContext(ctx, s.q("SELECT "+principalCols+" FROM admin_principals WHERE name = ?"), name)
 	p, err := scanPrincipal(row)
 	if errors.Is(err, sql.ErrNoRows) {
 		return adminauth.Principal{}, fmt.Errorf("%w: principal %q", adminauth.ErrNotFound, name)
@@ -160,7 +160,7 @@ func (s *Store) PrincipalByDigest(ctx context.Context, digest string) (adminauth
 	if digest == "" {
 		return adminauth.Principal{}, fmt.Errorf("%w: token", adminauth.ErrNotFound)
 	}
-	row := s.db.QueryRowContext(ctx, s.q("SELECT "+principalCols+" FROM admin_principals WHERE token_digest = ?"), digest)
+	row := sqlcommon.Query(ctx, s.db).QueryRowContext(ctx, s.q("SELECT "+principalCols+" FROM admin_principals WHERE token_digest = ?"), digest)
 	p, err := scanPrincipal(row)
 	if errors.Is(err, sql.ErrNoRows) {
 		return adminauth.Principal{}, fmt.Errorf("%w: token", adminauth.ErrNotFound)
@@ -186,7 +186,7 @@ func (s *Store) Principals(ctx context.Context, p adminauth.Page) (adminauth.Res
 	}
 	query += " ORDER BY name LIMIT ?"
 	args = append(args, limit+1)
-	rows, err := s.db.QueryContext(ctx, s.q(query), args...)
+	rows, err := sqlcommon.Query(ctx, s.db).QueryContext(ctx, s.q(query), args...)
 	if err != nil {
 		return out, wrap("list principals", err)
 	}
@@ -210,7 +210,7 @@ func (s *Store) Principals(ctx context.Context, p adminauth.Page) (adminauth.Res
 
 // UpdatePrincipal implements adminauth.Store.
 func (s *Store) UpdatePrincipal(ctx context.Context, name string, roles []string, root bool, now time.Time) (adminauth.Principal, error) {
-	res, err := s.db.ExecContext(ctx, s.q(
+	res, err := sqlcommon.Query(ctx, s.db).ExecContext(ctx, s.q(
 		"UPDATE admin_principals SET roles = ?, root = ?, updated_at = ? WHERE name = ?"),
 		strings.Join(sortedRoles(roles), ","), root, now.UTC(), name)
 	if err != nil {
@@ -225,7 +225,7 @@ func (s *Store) UpdatePrincipal(ctx context.Context, name string, roles []string
 // SetToken implements adminauth.Store, replacing the current digest so the
 // previous token stops working at once.
 func (s *Store) SetToken(ctx context.Context, name, digest, tokenID string, expires, now time.Time) (adminauth.Principal, error) {
-	res, err := s.db.ExecContext(ctx, s.q(
+	res, err := sqlcommon.Query(ctx, s.db).ExecContext(ctx, s.q(
 		`UPDATE admin_principals SET token_digest = ?, token_id = ?, token_at = ?, expires_at = ?, updated_at = ?
 		 WHERE name = ?`),
 		nullString(digest), tokenID, nullTime(now.UTC()), nullTime(expires), now.UTC(), name)
@@ -244,7 +244,7 @@ func (s *Store) SetToken(ctx context.Context, name, digest, tokenID string, expi
 // RevokeToken implements adminauth.Store. The digest becomes NULL rather than
 // an empty string, so the unique index still admits many revoked rows.
 func (s *Store) RevokeToken(ctx context.Context, name string, now time.Time) error {
-	res, err := s.db.ExecContext(ctx, s.q(
+	res, err := sqlcommon.Query(ctx, s.db).ExecContext(ctx, s.q(
 		`UPDATE admin_principals SET token_digest = NULL, token_id = '', token_at = NULL, expires_at = NULL, updated_at = ?
 		 WHERE name = ?`), now.UTC(), name)
 	if err != nil {
@@ -255,7 +255,7 @@ func (s *Store) RevokeToken(ctx context.Context, name string, now time.Time) err
 
 // DeletePrincipal implements adminauth.Store.
 func (s *Store) DeletePrincipal(ctx context.Context, name string) error {
-	res, err := s.db.ExecContext(ctx, s.q("DELETE FROM admin_principals WHERE name = ?"), name)
+	res, err := sqlcommon.Query(ctx, s.db).ExecContext(ctx, s.q("DELETE FROM admin_principals WHERE name = ?"), name)
 	if err != nil {
 		return wrap("delete principal", err)
 	}
@@ -265,7 +265,7 @@ func (s *Store) DeletePrincipal(ctx context.Context, name string) error {
 // CountRoot implements adminauth.Store.
 func (s *Store) CountRoot(ctx context.Context) (int, error) {
 	var n int
-	if err := s.db.QueryRowContext(ctx, s.q("SELECT COUNT(*) FROM admin_principals WHERE root = ?"), true).Scan(&n); err != nil {
+	if err := sqlcommon.Query(ctx, s.db).QueryRowContext(ctx, s.q("SELECT COUNT(*) FROM admin_principals WHERE root = ?"), true).Scan(&n); err != nil {
 		return 0, wrap("count root", err)
 	}
 	return n, nil
@@ -278,14 +278,21 @@ func (s *Store) PutPolicy(ctx context.Context, p adminauth.Policy, now time.Time
 	if !adminauth.ValidName(p.Name) {
 		return adminauth.Policy{}, fmt.Errorf("%w: policy name %q", adminauth.ErrInvalid, p.Name)
 	}
-	tx, err := s.db.BeginTx(ctx, nil)
+	var out adminauth.Policy
+	err := s.runInTx(ctx, func(ctx context.Context, tx *sql.Tx) error {
+		var err error
+		out, err = s.putPolicy(ctx, tx, p, now)
+		return err
+	})
 	if err != nil {
-		return adminauth.Policy{}, wrap("put policy", err)
+		return adminauth.Policy{}, err
 	}
-	defer func() { _ = tx.Rollback() }()
+	return out, nil
+}
 
+func (s *Store) putPolicy(ctx context.Context, tx *sql.Tx, p adminauth.Policy, now time.Time) (adminauth.Policy, error) {
 	var created time.Time
-	err = tx.QueryRowContext(ctx, s.q("SELECT created_at FROM admin_policies WHERE name = ?"), p.Name).Scan(&created)
+	err := tx.QueryRowContext(ctx, s.q("SELECT created_at FROM admin_policies WHERE name = ?"), p.Name).Scan(&created)
 	switch {
 	case errors.Is(err, sql.ErrNoRows):
 		created = now.UTC()
@@ -306,9 +313,6 @@ func (s *Store) PutPolicy(ctx context.Context, p adminauth.Policy, now time.Time
 	if err := bumpVersion(ctx, tx, s.d); err != nil {
 		return adminauth.Policy{}, err
 	}
-	if err := tx.Commit(); err != nil {
-		return adminauth.Policy{}, wrap("put policy", err)
-	}
 	p.CreatedAt, p.UpdatedAt = created.UTC(), now.UTC()
 	return p, nil
 }
@@ -316,7 +320,7 @@ func (s *Store) PutPolicy(ctx context.Context, p adminauth.Policy, now time.Time
 // GetPolicy implements adminauth.Store.
 func (s *Store) GetPolicy(ctx context.Context, name string) (adminauth.Policy, error) {
 	var p adminauth.Policy
-	err := s.db.QueryRowContext(ctx, s.q(
+	err := sqlcommon.Query(ctx, s.db).QueryRowContext(ctx, s.q(
 		"SELECT name, source, description, created_at, updated_at FROM admin_policies WHERE name = ?"), name).
 		Scan(&p.Name, &p.Source, &p.Description, &p.CreatedAt, &p.UpdatedAt)
 	if errors.Is(err, sql.ErrNoRows) {
@@ -331,7 +335,7 @@ func (s *Store) GetPolicy(ctx context.Context, name string) (adminauth.Policy, e
 
 // Policies implements adminauth.Store, ordered by name.
 func (s *Store) Policies(ctx context.Context) ([]adminauth.Policy, error) {
-	rows, err := s.db.QueryContext(ctx, s.q(
+	rows, err := sqlcommon.Query(ctx, s.db).QueryContext(ctx, s.q(
 		"SELECT name, source, description, created_at, updated_at FROM admin_policies ORDER BY name"))
 	if err != nil {
 		return nil, wrap("list policies", err)
@@ -354,11 +358,12 @@ func (s *Store) Policies(ctx context.Context) ([]adminauth.Policy, error) {
 
 // DeletePolicy implements adminauth.Store.
 func (s *Store) DeletePolicy(ctx context.Context, name string) error {
-	tx, err := s.db.BeginTx(ctx, nil)
-	if err != nil {
-		return wrap("delete policy", err)
-	}
-	defer func() { _ = tx.Rollback() }()
+	return s.runInTx(ctx, func(ctx context.Context, tx *sql.Tx) error {
+		return s.deletePolicy(ctx, tx, name)
+	})
+}
+
+func (s *Store) deletePolicy(ctx context.Context, tx *sql.Tx, name string) error {
 	res, err := tx.ExecContext(ctx, s.q("DELETE FROM admin_policies WHERE name = ?"), name)
 	if err != nil {
 		return wrap("delete policy", err)
@@ -369,16 +374,13 @@ func (s *Store) DeletePolicy(ctx context.Context, name string) error {
 	if err := bumpVersion(ctx, tx, s.d); err != nil {
 		return err
 	}
-	if err := tx.Commit(); err != nil {
-		return wrap("delete policy", err)
-	}
 	return nil
 }
 
 // PolicyVersion implements adminauth.Store.
 func (s *Store) PolicyVersion(ctx context.Context) (int64, error) {
 	var v int64
-	if err := s.db.QueryRowContext(ctx, s.q("SELECT version FROM admin_policy_version WHERE id = 1")).Scan(&v); err != nil {
+	if err := sqlcommon.Query(ctx, s.db).QueryRowContext(ctx, s.q("SELECT version FROM admin_policy_version WHERE id = 1")).Scan(&v); err != nil {
 		return 0, wrap("policy version", err)
 	}
 	return v, nil

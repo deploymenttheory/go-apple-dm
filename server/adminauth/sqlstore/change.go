@@ -18,11 +18,19 @@ func (s *Store) ApplyPrincipal(
 	change adminauth.PrincipalChange,
 	now time.Time,
 ) (adminauth.Principal, error) {
-	tx, err := s.db.BeginTx(ctx, nil)
+	var out adminauth.Principal
+	err := s.runInTx(ctx, func(ctx context.Context, tx *sql.Tx) error {
+		var err error
+		out, err = s.applyPrincipal(ctx, tx, name, change, now)
+		return err
+	})
 	if err != nil {
-		return adminauth.Principal{}, wrap("principal transaction", err)
+		return adminauth.Principal{}, err
 	}
-	defer func() { _ = tx.Rollback() }()
+	return out, nil
+}
+
+func (s *Store) applyPrincipal(ctx context.Context, tx *sql.Tx, name string, change adminauth.PrincipalChange, now time.Time) (adminauth.Principal, error) {
 	if _, err := tx.ExecContext(
 		ctx,
 		"UPDATE admin_policy_version SET version = version WHERE id = 1",
@@ -88,9 +96,6 @@ func (s *Store) ApplyPrincipal(
 			return adminauth.Principal{}, adminauth.ErrConflict
 		}
 		return adminauth.Principal{}, wrap("change principal", err)
-	}
-	if err := tx.Commit(); err != nil {
-		return adminauth.Principal{}, wrap("commit principal", err)
 	}
 	return p, nil
 }

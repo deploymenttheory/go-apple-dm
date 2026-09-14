@@ -288,12 +288,12 @@ func (s *Store) PutDeclaration(ctx context.Context, d *ddm.Declaration) (changed
 
 // GetDeclaration implements ddm.DeclarationStore.
 func (s *Store) GetDeclaration(ctx context.Context, identifier string) (*ddm.Declaration, error) {
-	return s.view().GetDeclaration(ctx, identifier)
+	return s.view(ctx).GetDeclaration(ctx, identifier)
 }
 
 // GetDeclarationVersion implements ddm.DeclarationStore.
 func (s *Store) GetDeclarationVersion(ctx context.Context, identifier, serverToken string) (*ddm.DeclarationVersion, error) {
-	return s.view().GetDeclarationVersion(ctx, identifier, serverToken)
+	return s.view(ctx).GetDeclarationVersion(ctx, identifier, serverToken)
 }
 
 // DeleteDeclaration implements ddm.DeclarationStore.
@@ -303,10 +303,10 @@ func (s *Store) DeleteDeclaration(ctx context.Context, identifier string) error 
 
 // ListDeclarations implements ddm.DeclarationStore.
 func (s *Store) ListDeclarations(ctx context.Context, q ddm.DeclarationQuery, p paging.Page) (paging.Result[ddm.Declaration], error) {
-	return s.view().ListDeclarations(ctx, q, p)
+	return s.view(ctx).ListDeclarations(ctx, q, p)
 }
 
 // PruneVersions implements ddm.DeclarationStore.
 func (s *Store) PruneVersions(ctx context.Context) (int64, error) {
-	return s.view().PruneVersions(ctx)
+	return s.view(ctx).PruneVersions(ctx)
 }

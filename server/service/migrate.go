@@ -30,6 +30,12 @@ func (c *Core) ExportEnrollments(ctx context.Context, p paging.Page) (paging.Res
 // given: a disabled enrollment stays disabled and the command queue is not
 // touched.
 func (c *Core) ImportEnrollment(ctx context.Context, rec storage.EnrollmentExport) error {
+	return event.Run(ctx, c.bus, func(ctx context.Context) error {
+		return c.importEnrollment(ctx, rec)
+	})
+}
+
+func (c *Core) importEnrollment(ctx context.Context, rec storage.EnrollmentExport) error {
 	ctx, after, err := c.runHooks(ctx, &Call{Op: "import"})
 	if err != nil {
 		return err

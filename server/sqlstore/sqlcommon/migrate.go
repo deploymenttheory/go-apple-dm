@@ -307,6 +307,9 @@ func appliedVersions(ctx context.Context, db *sql.DB, table string) (map[int]boo
 }
 
 func runInTx(ctx context.Context, db *sql.DB, fn func(*sql.Tx) error) error {
+	if _, ok := CurrentTransaction(ctx, db); ok {
+		return Savepoint(ctx, db, func(_ context.Context, tx *sql.Tx) error { return fn(tx) })
+	}
 	tx, err := db.BeginTx(ctx, nil)
 	if err != nil {
 		return fmt.Errorf("sqlcommon: begin: %w", err)

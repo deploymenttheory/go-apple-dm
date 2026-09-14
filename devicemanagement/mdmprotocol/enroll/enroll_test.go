@@ -120,6 +120,42 @@ func TestPKCS12AndDefaults(t *testing.T) {
 	}
 }
 
+func TestInstallationScopeRoundTrip(t *testing.T) {
+	t.Parallel()
+	for _, scope := range []string{"", profile.ScopeSystem, profile.ScopeUser} {
+		t.Run(scope, func(t *testing.T) {
+			p := base()
+			p.Scope = scope
+			p.SCEP = &enroll.SCEP{URL: "https://mdm.example.com/scep"}
+			data, err := p.Marshal()
+			if err != nil {
+				t.Fatal(err)
+			}
+			parsed, err := enroll.Parse(data, profile.ParseOptions{})
+			if err != nil {
+				t.Fatal(err)
+			}
+			want := scope
+			if want == "" {
+				want = profile.ScopeSystem
+			}
+			if parsed.Scope != want {
+				t.Fatalf("scope = %q, want %q", parsed.Scope, want)
+			}
+			rebuilt, err := parsed.Marshal()
+			if err != nil || string(rebuilt) != string(data) {
+				t.Fatalf("scope or payload identity changed on rebuild: %v", err)
+			}
+		})
+	}
+	p := base()
+	p.Scope = "Invalid"
+	p.SCEP = &enroll.SCEP{URL: "https://mdm.example.com/scep"}
+	if _, err := p.Build(); !errors.Is(err, enroll.ErrProfile) {
+		t.Fatalf("invalid scope: %v", err)
+	}
+}
+
 func TestBuildErrors(t *testing.T) {
 	t.Parallel()
 	cases := map[string]func(p *enroll.Profile){

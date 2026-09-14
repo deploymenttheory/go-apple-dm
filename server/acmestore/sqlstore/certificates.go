@@ -76,7 +76,7 @@ func (t *txStore) ListCertificates(
 
 // GetCertificate implements acme.Reader.
 func (s *Store) GetCertificate(ctx context.Context, id string) (*acme.Certificate, error) {
-	return s.view().GetCertificate(ctx, id)
+	return s.view(ctx).GetCertificate(ctx, id)
 }
 
 // ListCertificates implements acme.Reader.
@@ -85,5 +85,5 @@ func (s *Store) ListCertificates(
 	q acme.CertificateQuery,
 	p paging.Page,
 ) (paging.Result[acme.Certificate], error) {
-	return s.view().ListCertificates(ctx, q, p)
+	return s.view(ctx).ListCertificates(ctx, q, p)
 }

@@ -82,11 +82,13 @@ func TestE2E_DDMRoundTrip(t *testing.T) {
 	}
 	act := st.Declarations["activation/com.example.act"]
 	cfg := st.Declarations["configuration/com.example.config"]
-	if act == nil || cfg == nil || !act.Active || !cfg.Active || act.Valid != "valid" || cfg.Valid != "valid" {
+	if act == nil || cfg == nil || !act.Active || !cfg.Active || act.Valid != "valid" ||
+		cfg.Valid != "valid" {
 		t.Fatalf("activation %+v configuration %+v", act, cfg)
 	}
 	status := h.status(id)
-	if row, ok := status["com.example.act"]; !ok || !row.Active || row.Valid != "valid" || row.ServerToken != act.ServerToken {
+	if row, ok := status["com.example.act"]; !ok || !row.Active || row.Valid != "valid" ||
+		row.ServerToken != act.ServerToken {
 		t.Fatalf("status rows = %+v", status)
 	}
 	if h.countEvents(event.DDMChanged) != 1 || h.countEvents(event.DDMStatusReceived) != 1 {
@@ -94,7 +96,9 @@ func TestE2E_DDMRoundTrip(t *testing.T) {
 	}
 
 	// An equivalent re-upload changes nothing: no command, no push.
-	h.put(`{"Identifier":"com.example.config","Payload":{"Echo":"hello"},"Type":"com.apple.configuration.management.test"}`)
+	h.put(
+		`{"Identifier":"com.example.config","Payload":{"Echo":"hello"},"Type":"com.apple.configuration.management.test"}`,
+	)
 	if res := h.drain(); res.Queued != 0 || res.Pushed != 0 {
 		t.Fatalf("no-op drain = %+v", res)
 	}
@@ -127,7 +131,12 @@ func TestE2E_DDMRoundTrip(t *testing.T) {
 		t.Fatalf("delete drain = %+v", res)
 	}
 	var herr *simulator.HTTPError
-	if _, err := dev.DeclarativeManagement(ctx, "declaration/configuration/com.example.config", nil); !errors.As(err, &herr) || herr.Status != http.StatusNotFound {
+	if _, err := dev.DeclarativeManagement(
+		ctx,
+		"declaration/configuration/com.example.config",
+		nil,
+	); !errors.As(err, &herr) ||
+		herr.Status != http.StatusNotFound {
 		t.Fatalf("fetch after delete: %v, want 404", err)
 	}
 	if _, err := dev.Connect(ctx); err != nil {
@@ -141,11 +150,11 @@ func TestE2E_DDMRoundTrip(t *testing.T) {
 	if !hasCode(codes, "Error.MissingConfigurations") {
 		t.Fatalf("activation reasons = %v", codes)
 	}
-	// The incremental report carried only the changed activation: the
-	// removed configuration stays until a full report says it is gone.
+	// Declaration status is the device's current declaration set. A deleted
+	// configuration must disappear when the device reports the updated set.
 	status = h.status(id)
-	if _, kept := status["com.example.config"]; !kept {
-		t.Fatal("incremental report must not remove absent declarations")
+	if _, kept := status["com.example.config"]; kept {
+		t.Fatal("updated declaration set retained the deleted configuration")
 	}
 	if row := status["com.example.act"]; row.Valid == "valid" {
 		t.Fatalf("activation should report invalid after the delete: %+v", row)
@@ -181,8 +190,12 @@ func TestE2E_DDMPredicate(t *testing.T) {
 	h.assign(lowID, "all", "com.example.config", "com.example.act")
 	h.assign(highID, "all")
 	// Per-device properties through direct assignment of distinct declarations.
-	h.put(`{"Type":"com.apple.management.properties","Identifier":"com.example.props.low","Payload":{"shard":10}}`)
-	h.put(`{"Type":"com.apple.management.properties","Identifier":"com.example.props.high","Payload":{"shard":90}}`)
+	h.put(
+		`{"Type":"com.apple.management.properties","Identifier":"com.example.props.low","Payload":{"shard":10}}`,
+	)
+	h.put(
+		`{"Type":"com.apple.management.properties","Identifier":"com.example.props.high","Payload":{"shard":90}}`,
+	)
 	if _, err := h.engine.AssignDeclaration(ctx, lowID, "com.example.props.low"); err != nil {
 		t.Fatal(err)
 	}
@@ -199,13 +212,15 @@ func TestE2E_DDMPredicate(t *testing.T) {
 	}
 	lowAct := low.DDM().Declarations["activation/com.example.act"]
 	highAct := high.DDM().Declarations["activation/com.example.act"]
-	if lowAct == nil || !lowAct.Active || !low.DDM().Declarations["configuration/com.example.config"].Active {
+	if lowAct == nil || !lowAct.Active ||
+		!low.DDM().Declarations["configuration/com.example.config"].Active {
 		t.Fatalf("low device: %+v", lowAct)
 	}
 	if highAct == nil || highAct.Active || !hasCode(reasonCodes(highAct), "Info.Predicate") {
 		t.Fatalf("high device activation: %+v", highAct)
 	}
-	if hc := high.DDM().Declarations["configuration/com.example.config"]; hc == nil || hc.Active || !hasCode(reasonCodes(hc), "Error.ActivationFailed") {
+	if hc := high.DDM().Declarations["configuration/com.example.config"]; hc == nil || hc.Active ||
+		!hasCode(reasonCodes(hc), "Error.ActivationFailed") {
 		t.Fatalf("high device configuration: %+v", hc)
 	}
 	// The server stored the reasons.
@@ -218,7 +233,9 @@ func TestE2E_DDMPredicate(t *testing.T) {
 
 	// Flipping the property re-notifies only that device.
 	before := len(h.apns.Requests())
-	h.put(`{"Type":"com.apple.management.properties","Identifier":"com.example.props.high","Payload":{"shard":20}}`)
+	h.put(
+		`{"Type":"com.apple.management.properties","Identifier":"com.example.props.high","Payload":{"shard":20}}`,
+	)
 	if res := h.drain(); res.Queued != 1 {
 		t.Fatalf("flip drain = %+v", res)
 	}
@@ -239,12 +256,17 @@ func TestE2E_DDMPredicate(t *testing.T) {
 	events := len(h.eventTypes())
 	pushes := len(h.apns.Requests())
 	for _, pred := range []string{`"@property(shard) <="`, `"shard MATCHES 'x'"`} {
-		_, _, err := h.engine.PutDeclaration(ctx, []byte(fmt.Sprintf(declAct, ",\"Predicate\":"+pred)))
-		if !errors.Is(err, ddm.ErrInvalidDeclaration) || (!errors.Is(err, predicate.ErrSyntax) && !errors.Is(err, predicate.ErrUnsupported)) {
+		_, _, err := h.engine.PutDeclaration(
+			ctx,
+			[]byte(fmt.Sprintf(declAct, ",\"Predicate\":"+pred)),
+		)
+		if !errors.Is(err, ddm.ErrInvalidDeclaration) ||
+			(!errors.Is(err, predicate.ErrSyntax) && !errors.Is(err, predicate.ErrUnsupported)) {
 			t.Fatalf("predicate %s: err = %v", pred, err)
 		}
 	}
-	if res := h.drain(); res.Queued != 0 || len(h.eventTypes()) != events || len(h.apns.Requests()) != pushes {
+	if res := h.drain(); res.Queued != 0 || len(h.eventTypes()) != events ||
+		len(h.apns.Requests()) != pushes {
 		t.Fatalf("rejected upload had side effects: %+v", res)
 	}
 }
@@ -293,11 +315,12 @@ func TestE2E_DDMCheckOutClears(t *testing.T) {
 		t.Fatal(err)
 	}
 	for _, key := range sync.Fetched {
-		if key != "configuration/"+ddm.SubscriptionIdentifier {
+		if key != "configuration/"+ddm.SubscriptionIdentifier &&
+			key != "activation/"+ddm.SubscriptionActivationIdentifier {
 			t.Fatalf("re-enrolled device fetched %s", key)
 		}
 	}
-	if len(fresh.DDM().Declarations) > 1 {
+	if len(fresh.DDM().Declarations) != 2 {
 		t.Fatalf("re-enrolled device inherited declarations: %v", sync.Fetched)
 	}
 }

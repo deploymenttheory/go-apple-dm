@@ -15,6 +15,7 @@ import (
 
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/testpki"
 	"github.com/deploymenttheory/go-apple-dm/server/internal/dmctl"
+	"github.com/deploymenttheory/go-apple-dm/server/internal/privatefile"
 )
 
 func TestOfflineAPNSCommands(t *testing.T) {
@@ -146,8 +147,7 @@ func TestCSRCommandPreservesKeys(t *testing.T) {
 	if err != nil || string(before) != string(after) {
 		t.Fatal("key changed")
 	}
-	info, err := os.Stat(key)
-	if err != nil || info.Mode().Perm() != 0o600 {
+	if err := privatefile.Check(key); err != nil {
 		t.Fatal("key permissions")
 	}
 }

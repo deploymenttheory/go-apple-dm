@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"github.com/deploymenttheory/go-apple-dm/server/internal/app"
+	"github.com/deploymenttheory/go-apple-dm/server/internal/privatefile"
 )
 
 func TestSetupBootstrapResumesAndExportsOnlyPublicArtifacts(t *testing.T) {
@@ -89,8 +90,7 @@ func TestSetupBootstrapResumesAndExportsOnlyPublicArtifacts(t *testing.T) {
 		t.Fatal("status leaked private key")
 	}
 	for _, p := range []string{setup, csr, filepath.Join(dir, "secrets", "storage"), filepath.Join(dir, "secrets", "admin")} {
-		info, err := os.Stat(p)
-		if err != nil || info.Mode().Perm() != 0o600 {
+		if err := privatefile.Check(p); err != nil {
 			t.Fatal("unprotected setup artifact", p, err)
 		}
 	}

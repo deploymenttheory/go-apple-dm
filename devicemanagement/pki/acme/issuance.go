@@ -2,6 +2,7 @@ package acme
 
 import (
 	"bytes"
+	"context"
 	"crypto/sha256"
 	"crypto/x509"
 	"crypto/x509/pkix"
@@ -187,6 +188,14 @@ func (s *Server) signReceipt(
 }
 
 func (s *Server) registerReceipt(e *exchange, r *issued, cert *x509.Certificate) error {
+	return event.Run(e.ctx(), s.cfg.Bus, func(ctx context.Context) error {
+		inside := *e
+		inside.r = e.r.WithContext(ctx)
+		return s.storeReceipt(&inside, r, cert)
+	})
+}
+
+func (s *Server) storeReceipt(e *exchange, r *issued, cert *x509.Certificate) error {
 	provenance := issuanceProvenance(r.order)
 	ctx := revocation.WithProvenance(e.ctx(), provenance)
 	if s.cfg.Register != nil {

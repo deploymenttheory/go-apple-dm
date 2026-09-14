@@ -27,6 +27,7 @@ func TestEnrollmentEvidenceRequiresCompletedIdentityAndUserChannel(t *testing.T)
 		t.Fatal(err)
 	}
 	defer e.Close()
+	e.InstallingUserID = "alice"
 	d, err := e.device(t.Context(), simulator.WithResponder(func(cmd *mdm.Command) simulator.Reply {
 		if cmd.RequestType == "DeviceInformation" {
 			return simulator.Reply{
@@ -51,6 +52,7 @@ func TestEnrollmentEvidenceRequiresCompletedIdentityAndUserChannel(t *testing.T)
 		t.Fatal("unknown enrollment accepted", err)
 	}
 	ctx, cancel := context.WithCancel(t.Context())
+	user := d.User("alice", "alice", "Alice")
 	stopped := make(chan struct{})
 	go func() {
 		defer close(stopped)
@@ -62,6 +64,7 @@ func TestEnrollmentEvidenceRequiresCompletedIdentityAndUserChannel(t *testing.T)
 				return
 			case <-tick.C:
 				_, _ = d.Connect(ctx)
+				_, _ = user.Connect(ctx)
 			}
 		}
 	}()
@@ -69,10 +72,18 @@ func TestEnrollmentEvidenceRequiresCompletedIdentityAndUserChannel(t *testing.T)
 	if err = liveEnrollment("scep")(t.Context(), e, d.UDID); !errors.Is(err, ErrBlocked) {
 		t.Fatal("missing user channel accepted", err)
 	}
-	user := d.User("alice", "alice", "Alice")
 	if err = authenticateUser(t.Context(), user); err != nil {
 		t.Fatal(err)
 	}
+	e.InstallingUserID = "someone-else"
+	if err = liveEnrollment("scep")(t.Context(), e, d.UDID); !errors.Is(err, ErrBlocked) {
+		t.Fatal("different user's channel accepted", err)
+	}
+	e.InstallingUserID = ""
+	if err = liveEnrollment("scep")(t.Context(), e, d.UDID); !errors.Is(err, ErrBlocked) {
+		t.Fatal("unspecified installing user accepted", err)
+	}
+	e.InstallingUserID = "alice"
 	if err = liveEnrollment("scep")(t.Context(), e, d.UDID); err != nil {
 		t.Fatal(err)
 	}

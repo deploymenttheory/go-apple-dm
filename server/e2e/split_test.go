@@ -152,7 +152,8 @@ func TestE2E_DDMSplitDeployment(t *testing.T) {
 	}
 	if !fetched["management/"+udid+".props"] ||
 		!fetched["configuration/"+ddm.SubscriptionIdentifier] ||
-		len(sync.Fetched) != 2 ||
+		!fetched["activation/"+ddm.SubscriptionActivationIdentifier] ||
+		len(sync.Fetched) != 3 ||
 		len(sync.Token) != 64 {
 		t.Fatalf("sync = %+v", sync)
 	}

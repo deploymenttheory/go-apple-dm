@@ -36,6 +36,7 @@ const (
 	ActionReadACME               = "readACME"
 	ActionManagePrincipals       = "managePrincipals"
 	ActionReadAudit              = "readAudit"
+	ActionRetryEvents            = "retryEvents"
 	ActionDisableEnrollment      = "disableEnrollment"
 	ActionEnqueueCommand         = "enqueueCommand"
 	ActionReadCommands           = "readCommands"
@@ -193,6 +194,11 @@ func AdminActions() []adminauth.Action {
 			Resource: adminauth.EntitySystem,
 		},
 		{
+			ID:       ActionRetryEvents,
+			Help:     "Retry a blocked or waiting event destination.",
+			Resource: adminauth.EntitySystem,
+		},
+		{
 			ID:       ActionReadConfig,
 			Help:     "Read the server's role and route table. Authenticated callers always may; a policy does not gate it.",
 			Resource: adminauth.EntitySystem,
@@ -216,6 +222,10 @@ type adminRoute struct {
 	// Family names the group a role must be able to back, so a role that did
 	// not build the dependency does not register the route.
 	Family string
+	// LocalMutation means the handler's mutations use the shared SQL pool and
+	// perform no remote calls. Its response is withheld until event capture and
+	// the mutation commit together.
+	LocalMutation bool
 	// Introspection routes expose role and route metadata without fleet data. They
 	// require authentication but bypass policy evaluation so authenticated clients
 	// can determine which families the process serves.
@@ -349,12 +359,19 @@ func (a *App) authorized(rt adminRoute) http.Handler {
 				return
 			}
 		}
-		a.auditAction(r, p, rt)
+		r = r.WithContext(context.WithValue(r.Context(), setupActorKey{}, p.Name))
+		if rt.LocalMutation && a.eventPublisher != nil && r.Method != http.MethodGet &&
+			r.Method != http.MethodHead {
+			a.localAdmin(w, r, p, rt)
+			return
+		}
+		if err := a.auditAction(r, p, rt); errors.Is(err, event.ErrCapture) {
+			w.Header().Set("Retry-After", "5")
+			writeError(w, http.StatusServiceUnavailable, event.ErrCapture)
+			return
+		}
 		rec := &statusRecorder{ResponseWriter: w}
-		rt.Handler.ServeHTTP(
-			rec,
-			r.WithContext(context.WithValue(r.Context(), setupActorKey{}, p.Name)),
-		)
+		rt.Handler.ServeHTTP(rec, r)
 		a.kickNotifier(rt, r, rec.status)
 	})
 }
@@ -498,21 +515,28 @@ func adminContext(r *http.Request) map[string]types.Value {
 
 // auditAction records an allowed mutating request. Reads are not audited:
 // they are the bulk of admin traffic and carry no change to attribute.
-func (a *App) auditAction(r *http.Request, p adminauth.Principal, rt adminRoute) {
-	if a.cfg.Bus == nil || r.Method == http.MethodGet || r.Method == http.MethodHead {
-		return
+func (a *App) auditAction(r *http.Request, p adminauth.Principal, rt adminRoute) error {
+	if a.cfg.publisher() == nil || r.Method == http.MethodGet || r.Method == http.MethodHead {
+		return nil
 	}
-	a.publishAdmin(r, event.AdminAction, p, rt, nil)
+	return a.publishAdmin(r, event.AdminAction, p, rt, nil)
 }
 
 // auditDenied records a refusal. A denial is evidence: it is what shows an
 // operator that a credential is reaching for something it should not have
 // (decision record 0034).
 func (a *App) auditDenied(r *http.Request, p adminauth.Principal, rt adminRoute, cause error) {
-	if a.cfg.Bus == nil {
+	if a.cfg.publisher() == nil {
 		return
 	}
-	a.publishAdmin(r, event.AdminDenied, p, rt, cause)
+	if err := a.publishAdmin(r, event.AdminDenied, p, rt, cause); err != nil {
+		a.cfg.Logger.ErrorContext(
+			r.Context(),
+			"app: admin denial could not be recorded",
+			"error",
+			err,
+		)
+	}
 }
 
 func (a *App) publishAdmin(
@@ -521,7 +545,7 @@ func (a *App) publishAdmin(
 	p adminauth.Principal,
 	rt adminRoute,
 	cause error,
-) {
+) error {
 	data := map[string]any{
 		"Action":  rt.Action,
 		"Method":  r.Method,
@@ -535,15 +559,17 @@ func (a *App) publishAdmin(
 	if actor == "" {
 		actor = "unauthenticated"
 	}
-	if err := a.cfg.Bus.Publish(r.Context(), event.Event{
+	err := a.cfg.publisher().Publish(r.Context(), event.Event{
 		Type:       t,
 		At:         a.cfg.Clock.Now(),
 		Enrollment: mdm.EnrollmentID{},
 		Actor:      actor,
 		Data:       data,
-	}); err != nil && !errors.Is(err, event.ErrQueueFull) {
+	})
+	if err != nil && !errors.Is(err, event.ErrQueueFull) {
 		a.cfg.Logger.WarnContext(r.Context(), "app: publish admin event", "type", t, "error", err)
 	}
+	return wrapError(err)
 }
 
 // constantTimeEqual compares two strings in constant time. Length mismatch is

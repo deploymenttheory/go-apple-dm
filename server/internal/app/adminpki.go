@@ -23,9 +23,10 @@ func (a *App) pkiAdminRoutes() []adminRoute {
 	}
 	return []adminRoute{
 		{
-			Pattern: "GET /pki/certificates/{issuer}/{serial}",
-			Action:  ActionReadCertificates,
-			Family:  "pki",
+			Pattern:       "GET /pki/certificates/{issuer}/{serial}",
+			Action:        ActionReadCertificates,
+			Family:        "pki",
+			LocalMutation: true,
 			Handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				registry, err := a.certificateRegistry(r.Context())
 				if err != nil {
@@ -47,9 +48,10 @@ func (a *App) pkiAdminRoutes() []adminRoute {
 			}),
 		},
 		{
-			Pattern: "POST /pki/certificates/import",
-			Action:  ActionImportCertificates,
-			Family:  "pki",
+			Pattern:       "POST /pki/certificates/import",
+			Action:        ActionImportCertificates,
+			Family:        "pki",
+			LocalMutation: true,
 			Handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				registry, err := a.certificateRegistry(r.Context())
 				if err != nil {
@@ -92,9 +94,10 @@ func (a *App) pkiAdminRoutes() []adminRoute {
 			}),
 		},
 		{
-			Pattern: "POST /pki/certificates/{issuer}/{serial}/revoke",
-			Action:  ActionRevokeCertificates,
-			Family:  "pki",
+			Pattern:       "POST /pki/certificates/{issuer}/{serial}/revoke",
+			Action:        ActionRevokeCertificates,
+			Family:        "pki",
+			LocalMutation: true,
 			Handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				registry, err := a.certificateRegistry(r.Context())
 				if err != nil {
@@ -126,8 +129,8 @@ func (a *App) pkiAdminRoutes() []adminRoute {
 					pkiError(w, err)
 					return
 				}
-				if a.cfg.Bus != nil {
-					_ = a.cfg.Bus.Publish(
+				if a.cfg.publisher() != nil {
+					_ = a.cfg.publisher().Publish(
 						r.Context(),
 						event.Event{
 							Type:  event.CertificateRevoked,

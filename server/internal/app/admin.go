@@ -45,7 +45,13 @@ func (a *App) ddmAdminRoutes() []adminRoute {
 	add := func(action, pattern string, fn http.HandlerFunc) {
 		routes = append(
 			routes,
-			adminRoute{Pattern: pattern, Action: action, Family: "ddm", Handler: fn},
+			adminRoute{
+				Pattern:       pattern,
+				Action:        action,
+				Family:        "ddm",
+				LocalMutation: action != ActionNotify,
+				Handler:       fn,
+			},
 		)
 	}
 	e := a.Engine
@@ -272,7 +278,7 @@ func writeJSON(w http.ResponseWriter, status int, v any) {
 
 func writeError(w http.ResponseWriter, status int, err error) {
 	msg := err.Error()
-	if status == http.StatusInternalServerError {
+	if status >= http.StatusInternalServerError {
 		msg = "internal error"
 	}
 	writeJSON(w, status, map[string]string{"Error": msg})

@@ -47,7 +47,7 @@ var (
 // Config builds a Handler.
 type Config struct {
 	// Bus receives metadata-only security rejection events.
-	Bus *event.Bus
+	Bus event.Publisher
 	// ReplayStore coordinates nonce consumption across replicas. Required.
 	ReplayStore state.Store
 	// AllowInsecureForTests permits cleartext only from loopback peers.

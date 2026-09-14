@@ -259,26 +259,26 @@ func TestStatus(t *testing.T) {
 			t.Fatalf("event data %#v", evs[1].Data)
 		}
 	})
-	t.Run("PartialKeeps", func(t *testing.T) {
+	t.Run("PartialReplacesDeclarationsItemKeepsOtherItems", func(t *testing.T) {
 		t.Parallel()
-		h := newHarness(t)
 		both := declarationsItem([]map[string]any{row("com.example.act", "t1", true, "valid")}, []map[string]any{row("com.example.cfg", "t2", true, "valid")})
 		both["device"] = map[string]any{"model": map[string]any{"family": "Mac"}}
-		if _, err := h.engine.Status(ctx, dev, report(t, boolp(true), both, nil)); err != nil {
-			t.Fatal(err)
-		}
-		h.clock.Advance(time.Hour)
 		for _, full := range []*bool{nil, boolp(false)} {
+			h := newHarness(t)
+			if _, err := h.engine.Status(ctx, dev, report(t, boolp(true), both, nil)); err != nil {
+				t.Fatal(err)
+			}
+			h.clock.Advance(time.Hour)
 			only := declarationsItem(nil, []map[string]any{row("com.example.cfg", "t3", true, "valid")})
 			out, err := h.engine.Status(ctx, dev, report(t, full, only, nil))
 			if err != nil {
 				t.Fatal(err)
 			}
-			if len(out.Removed) != 0 || len(out.RemovedValues) != 0 {
-				t.Fatalf("partial report removed %+v", out)
+			if len(out.Removed) != 1 || out.Removed[0].Identifier != "com.example.act" || len(out.RemovedValues) != 0 {
+				t.Fatalf("replacement declarations item: %+v", out)
 			}
 			rows := declarationRows(t, h, dev)
-			if len(rows) != 2 || rows["activation/com.example.act"].ServerToken != "t1" || rows["configuration/com.example.cfg"].ServerToken != "t3" {
+			if len(rows) != 1 || rows["configuration/com.example.cfg"].ServerToken != "t3" {
 				t.Fatalf("rows %+v", rows)
 			}
 			if rows["configuration/com.example.cfg"].FirstSeen != t0 || rows["configuration/com.example.cfg"].LastSeen != t0.Add(time.Hour) {
@@ -286,6 +286,10 @@ func TestStatus(t *testing.T) {
 			}
 			if got := values(t, h, dev, "device."); got["device.model.family"] != `"Mac"` {
 				t.Fatalf("value dropped by a partial report: %v", got)
+			}
+			out, err = h.engine.Status(ctx, dev, report(t, full, declarationsItem(nil, nil), nil))
+			if err != nil || len(out.Removed) != 1 || len(declarationRows(t, h, dev)) != 0 {
+				t.Fatalf("empty declaration arrays did not clear previous state: %+v, %v", out, err)
 			}
 		}
 	})

@@ -8,6 +8,7 @@ import (
 	"encoding/base64"
 	json "encoding/json/v2"
 	"encoding/pem"
+	"log/slog"
 	"net/http"
 	"net/http/httptest"
 	"net/netip"
@@ -28,7 +29,9 @@ import (
 
 func TestPKIAndAccountStatePersistAcrossInstances(t *testing.T) {
 	var config app.Config
+	var diagnostics bytes.Buffer
 	f := newEnrollFixture(t, "", func(c *app.Config) {
+		c.Logger = slog.New(slog.NewTextHandler(&diagnostics, nil))
 		c.PKI = app.PKIConfig{
 			Enabled:    true,
 			CRLTTL:     time.Hour,
@@ -51,7 +54,7 @@ func TestPKIAndAccountStatePersistAcrossInstances(t *testing.T) {
 			Authenticate:   f.signIn(t),
 		},
 	); err != nil {
-		t.Fatal(err)
+		t.Fatalf("%v\n%s", err, diagnostics.String())
 	}
 	second := build(t, config)
 	access, _ := d.AccountTokens()
@@ -207,7 +210,7 @@ func TestPKIAndAccountStatePersistAcrossInstances(t *testing.T) {
 	if err := second.Close(); err != nil {
 		t.Fatal(err)
 	}
-	if w := admin("GET", path, "admin", nil); w.Code != 500 {
+	if w := admin("GET", path, "admin", nil); w.Code != 503 {
 		t.Fatal("closed registry", w.Code)
 	}
 }

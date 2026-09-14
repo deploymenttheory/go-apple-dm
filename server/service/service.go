@@ -32,6 +32,7 @@ const (
 	CodeUnknownEnrollment             // no enrollment for the identity presented
 	CodeNotImplemented                // no handler configured for the message
 	CodeGone                          // the server declines to manage this user or enrollment (HTTP 410)
+	CodeUnavailable                   // required recording is unavailable; no local mutation committed
 )
 
 // Error is the typed error every service method returns.
@@ -48,6 +49,9 @@ func (e *Error) Unwrap() error { return e.Err }
 
 // CodeOf returns the Code of err, or CodeInternal for other errors.
 func CodeOf(err error) Code {
+	if errors.Is(err, event.ErrCapture) {
+		return CodeUnavailable
+	}
 	if se, ok := errors.AsType[*Error](err); ok {
 		return se.Code
 	}
@@ -169,7 +173,7 @@ type Config struct {
 	// storage.ReplacementStore. Ordinary re-enrollment policy remains independent.
 	EnableReplacements bool
 	// Bus receives events; nil disables publishing.
-	Bus *event.Bus
+	Bus event.Publisher
 	// Clock defaults to the real clock.
 	Clock clock.Clock
 	Hooks []Hook
@@ -228,7 +232,7 @@ func DenyReenroll(
 type Core struct {
 	store             storage.Store
 	replacements      storage.ReplacementStore
-	bus               *event.Bus
+	bus               event.Publisher
 	clock             clock.Clock
 	hooks             []Hook
 	log               *slog.Logger
@@ -347,7 +351,7 @@ func (c *Core) runHooks(ctx context.Context, call *Call) (context.Context, func(
 // Invalid input returns CodeBadRequest before any target is queued. With target
 // validation enabled, unsupported commands or populated fields skip that target.
 // Unknown command types retain their original bytes for protocol extensions.
-func (c *Core) Enqueue(
+func (c *Core) enqueue(
 	ctx context.Context,
 	ids []mdm.EnrollmentID,
 	cmd *mdm.Command,

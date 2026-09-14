@@ -181,6 +181,7 @@ func Verbs() []string {
 // function.
 func commands() map[string]command {
 	cmds := []command{
+		{"recovery", "pause, back up, verify and restore a persistent server", runRecovery},
 		{"setup", "manage certificate setup and renewal with persistent state", runSetup},
 		{"bench", "prepare and run maintained reference-server scenarios", runBench},
 		{"apppush", "manage server app push credentials and send notifications", runAppPush},
@@ -198,6 +199,7 @@ func commands() map[string]command {
 		{"actions", "list the actions a policy can grant", runActions},
 		{"declarations", "manage declarations", runDeclarations},
 		{"audit", "read the audit trail", runAudit},
+		{"events", "inspect persistent event delivery and retry a destination", runEvents},
 		{"enrollments", "list, read, and disable enrollments", runEnrollments},
 		{"commands", "send, read, and clear queued MDM commands", runCommands},
 		{"push", "wake a device now without queueing anything", runPush},

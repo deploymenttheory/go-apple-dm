@@ -180,7 +180,7 @@ func (a *App) newACME(ctx context.Context, e *enrollment) (*acmeService, error) 
 		}),
 		Anchors:  anchors,
 		Clock:    a.cfg.Clock,
-		Bus:      a.cfg.Bus,
+		Bus:      a.cfg.publisher(),
 		Logger:   a.cfg.Logger,
 		NonceTTL: cfg.NonceTTL,
 		OrderTTL: cfg.OrderTTL,

@@ -208,8 +208,13 @@ func appRenewal(ctx context.Context, e *Environment, _ string) error {
 }
 
 func liveMDM(ctx context.Context, e *Environment, device string) error {
+	_, err := liveInventory(ctx, e, device)
+	return err
+}
+
+func liveInventory(ctx context.Context, e *Environment, device string) (map[string]string, error) {
 	if strings.TrimSpace(device) == "" {
-		return fmt.Errorf("%w: -device-id is required", ErrBlocked)
+		return nil, fmt.Errorf("%w: -device-id is required", ErrBlocked)
 	}
 	path := "/enrollments/device/" + url.PathEscape(device)
 	var enrolled struct {
@@ -217,30 +222,52 @@ func liveMDM(ctx context.Context, e *Environment, device string) error {
 		TokenUpdatedAt time.Time
 	}
 	if err := e.api(ctx, "GET", path, nil, &enrolled); err != nil {
-		return fmt.Errorf("%w: enrollment unavailable", ErrBlocked)
+		return nil, fmt.Errorf("%w: enrollment unavailable", ErrBlocked)
 	}
 	if !enrolled.Enabled || enrolled.TokenUpdatedAt.IsZero() {
-		return fmt.Errorf("%w: enrollment has not completed TokenUpdate", ErrBlocked)
+		return nil, fmt.Errorf("%w: enrollment has not completed TokenUpdate", ErrBlocked)
 	}
 	cmd, err := mdm.NewCommand(
 		&commands.DeviceInformation{Queries: []string{"OSVersion", "BuildVersion"}},
 	)
 	if err != nil {
-		return wrapError(err)
+		return nil, wrapError(err)
 	}
+	response, err := liveCommand(ctx, e, path, cmd)
+	if err != nil {
+		return nil, err
+	}
+	var answer struct{ QueryResponses map[string]string }
+	if err = plist.Unmarshal(response, &answer); err != nil {
+		return nil, wrapError(err)
+	}
+	if answer.QueryResponses["OSVersion"] == "" || answer.QueryResponses["BuildVersion"] == "" {
+		return nil, fmt.Errorf("%w: acknowledgement missing requested inventory", errOperation)
+	}
+	return answer.QueryResponses, nil
+}
+
+// liveCommand requires a wake and a response from the exact enrollment channel
+// on which the command was queued.
+func liveCommand(
+	ctx context.Context,
+	e *Environment,
+	path string,
+	cmd *mdm.Command,
+) ([]byte, error) {
 	var queued struct{ Queued int }
-	if err = e.api(ctx, "POST", path+"/commands", cmd.Raw, &queued); err != nil {
-		return wrapError(err)
+	if err := e.api(ctx, "POST", path+"/commands", cmd.Raw, &queued); err != nil {
+		return nil, wrapError(err)
 	}
 	if queued.Queued != 1 {
-		return fmt.Errorf("%w: DeviceInformation was not queued", errOperation)
+		return nil, fmt.Errorf("%w: %s was not queued", errOperation, cmd.RequestType)
 	}
 	var push struct{ Sent bool }
-	if err = e.api(ctx, "POST", path+"/push", nil, &push); err != nil {
-		return wrapError(err)
+	if err := e.api(ctx, "POST", path+"/push", nil, &push); err != nil {
+		return nil, wrapError(err)
 	}
 	if !push.Sent {
-		return fmt.Errorf("%w: APNs did not accept the wake", errOperation)
+		return nil, fmt.Errorf("%w: APNs did not accept the wake", errOperation)
 	}
 	deadline := time.NewTimer(45 * time.Second)
 	defer deadline.Stop()
@@ -249,9 +276,13 @@ func liveMDM(ctx context.Context, e *Environment, device string) error {
 	for {
 		select {
 		case <-ctx.Done():
-			return wrapError(ctx.Err())
+			return nil, wrapError(ctx.Err())
 		case <-deadline.C:
-			return fmt.Errorf("%w: DeviceInformation acknowledgement timed out", errOperation)
+			return nil, fmt.Errorf(
+				"%w: %s acknowledgement timed out",
+				errOperation,
+				cmd.RequestType,
+			)
 		case <-tick.C:
 			b, status, err := HTTP(
 				ctx,
@@ -263,10 +294,13 @@ func liveMDM(ctx context.Context, e *Environment, device string) error {
 				nil,
 			)
 			if err != nil {
-				return wrapError(err)
+				return nil, wrapError(err)
 			}
 			if status == 204 {
 				continue
+			}
+			if status != 200 {
+				return nil, fmt.Errorf("%w: command result HTTP %d", errOperation, status)
 			}
 			//nolint:tagliatelle // Administration wire names.
 			var res struct {
@@ -274,24 +308,13 @@ func liveMDM(ctx context.Context, e *Environment, device string) error {
 				Response []byte `json:"Response"`
 			}
 			if err = json.Unmarshal(b, &res); err != nil {
-				return wrapError(err)
+				return nil, wrapError(err)
 			}
 			if res.Status == "Error" {
-				return fmt.Errorf("%w: device returned Error", errOperation)
+				return nil, fmt.Errorf("%w: device returned Error", errOperation)
 			}
 			if res.Status == "Acknowledged" {
-				var answer struct{ QueryResponses map[string]any }
-				if err = plist.Unmarshal(res.Response, &answer); err != nil {
-					return wrapError(err)
-				}
-				if answer.QueryResponses["OSVersion"] == nil ||
-					answer.QueryResponses["BuildVersion"] == nil {
-					return fmt.Errorf(
-						"%w: acknowledgement missing requested inventory",
-						errOperation,
-					)
-				}
-				return nil
+				return res.Response, nil
 			}
 		}
 	}

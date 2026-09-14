@@ -314,4 +314,65 @@ func RunSecuritySuite(t *testing.T, factory Factory) {
 			t.Fatalf("disable queue: %+v %v", q, err)
 		}
 	})
+	t.Run("ApprovedReenrollmentAfterDisable", func(t *testing.T) {
+		s := factory(t)
+		id := device(1)
+		ctx := t.Context()
+		if err := s.AuthenticateEnrollment(ctx, id, storage.AuthenticateChange{Hash: "old", At: t0}); err != nil {
+			t.Fatal(err)
+		}
+		if err := s.StoreTokenUpdate(ctx, id, push(1), nil, nil, t0); err != nil {
+			t.Fatal(err)
+		}
+		uid := user(1, "returning")
+		enroll(t, s, uid, 3)
+		if _, err := s.Enqueue(ctx, []mdm.EnrollmentID{uid}, cmd(t, "old-user-command"), storage.EnqueueOptions{Now: t0}); err != nil {
+			t.Fatal(err)
+		}
+		if err := s.Disable(ctx, id, t0.Add(time.Minute)); err != nil {
+			t.Fatal(err)
+		}
+		for _, c := range []storage.AuthenticateChange{
+			{ExpectedHash: "old", Hash: "new"},
+			{ExpectedHash: "old", Hash: "old", AllowReenroll: true},
+			{ExpectedHash: "old", AllowReenroll: true},
+		} {
+			c.At = t0.Add(2 * time.Minute)
+			if err := s.AuthenticateEnrollment(ctx, id, c); !errors.Is(err, storage.ErrDisabled) {
+				t.Fatalf("disabled enrollment accepted without an approved new identity: %v", err)
+			}
+		}
+		change := storage.AuthenticateChange{ExpectedHash: "stale", Hash: "new", AllowReenroll: true, At: t0.Add(2 * time.Minute)}
+		if err := s.AuthenticateEnrollment(ctx, id, change); !errors.Is(err, storage.ErrConflict) {
+			t.Fatalf("stale policy decision accepted: %v", err)
+		}
+		change.ExpectedHash = "old"
+		if err := s.AuthenticateEnrollment(ctx, id, change); err != nil {
+			t.Fatal(err)
+		}
+		e, err := s.Get(ctx, id)
+		if err != nil || e.Enabled || !e.DisabledAt.IsZero() || e.CertHash != "new" || e.Push.Valid() {
+			t.Fatalf("new enrollment state: %+v %v", e, err)
+		}
+		u, err := s.Get(ctx, uid)
+		if err != nil || u.Enabled || !u.DisabledAt.IsZero() || u.Push.Valid() || !u.TokenUpdatedAt.IsZero() || len(u.TokenUpdateRaw) != 0 {
+			t.Fatalf("returning user retained credentials or cannot re-enroll: %+v, %v", u, err)
+		}
+		if _, err := s.Next(ctx, uid, false, change.At); !errors.Is(err, storage.ErrDisabled) {
+			t.Fatalf("pending user received commands: %v", err)
+		}
+		if err := s.StoreTokenUpdate(ctx, id, push(2), nil, nil, change.At); err != nil {
+			t.Fatal(err)
+		}
+		if err := s.StoreTokenUpdate(ctx, uid, push(4), nil, nil, change.At); err != nil {
+			t.Fatalf("returning user cannot submit fresh tokens: %v", err)
+		}
+		if next, err := s.Next(ctx, uid, false, change.At); err != nil || next != nil {
+			t.Fatalf("old user command was replayed: %+v, %v", next, err)
+		}
+		associations, err := s.CertHashHistory(ctx, "old")
+		if err != nil || len(associations) != 1 || associations[0].ID != id {
+			t.Fatalf("previous certificate history lost: %+v %v", associations, err)
+		}
+	})
 }
