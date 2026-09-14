@@ -1,6 +1,3 @@
-// Package scepwire builds SCEP CMS messages with per-message algorithms.
-// The upstream encoder's process-global defaults are DES and SHA-1; changing
-// those globals would affect unrelated callers and race with their requests.
 package scepwire
 
 import (

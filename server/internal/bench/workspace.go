@@ -1,4 +1,3 @@
-// Package bench drives the reference server through maintained scenarios.
 package bench
 
 import (

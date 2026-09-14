@@ -1,4 +1,3 @@
-// Package apppush persists app APNs identities separately from MDM credentials.
 package apppush
 
 import (

@@ -1,5 +1,3 @@
-// Package privatefile creates and checks files containing local credentials.
-// Unix uses owner-only modes; Windows uses an explicit access control list.
 package privatefile
 
 import (

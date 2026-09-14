@@ -1,4 +1,3 @@
-// Package httpsurl validates credential-bearing Apple service endpoints.
 package httpsurl
 
 import (

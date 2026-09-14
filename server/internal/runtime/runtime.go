@@ -1,4 +1,3 @@
-// Package runtime owns the reference server HTTP and worker lifecycle.
 package runtime
 
 import (

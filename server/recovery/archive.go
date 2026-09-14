@@ -1,5 +1,3 @@
-// Package recovery creates authenticated, encrypted server checkpoints and
-// verifies them in isolated directories before an empty-target restore.
 package recovery
 
 import (

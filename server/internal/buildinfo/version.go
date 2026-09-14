@@ -1,4 +1,3 @@
-// Package buildinfo reports the reference server module's build version.
 package buildinfo
 
 import "runtime/debug"

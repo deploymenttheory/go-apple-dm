@@ -1,6 +1,3 @@
-// Package maintenance coordinates an explicit write pause across server processes.
-// Participants never expire: a missed heartbeat cannot prove a process stopped
-// writing. Operators must stop a crashed or unreachable process before forgetting it.
 package maintenance
 
 import (
