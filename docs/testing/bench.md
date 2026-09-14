@@ -36,6 +36,11 @@ runs both. Contract tests remain direct interface tests, without a server wrappe
 
 ## Coverage and evidence
 
+Embedded runtimes retain their bound listeners while constructing fixtures and
+applications. They serve those same sockets, so ephemeral port allocation does not
+leave a close/rebind gap. Process adapters launch the ordinary binary, which binds
+its own listener; use an explicit workspace address when a stable port is required.
+
 The shared automated catalogue covers all existing scenario families and ordinary
 app alert/background pushes. Reserved E2E-015/E2E-022 are not advertised as
 implemented scenarios. Hardware-specific flows remain simulated unless a live

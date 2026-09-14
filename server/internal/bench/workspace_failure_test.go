@@ -58,7 +58,7 @@ func TestWorkspaceRejectsIncompleteOrInvalidState(t *testing.T) {
 		}
 	}
 	for _, addr := range []string{"invalid", "0.0.0.0:0", "example.com:0"} {
-		if _, err := address(t.Context(), addr); err == nil {
+		if _, _, err := address(t.Context(), addr, true); err == nil {
 			t.Fatalf("invalid listener accepted: %s", addr)
 		}
 	}

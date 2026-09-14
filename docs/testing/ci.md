@@ -67,6 +67,13 @@ retains a bounded startup deadline and cancels/joins on every failure path befor
 its temporary workspace is removed. Increasing a timeout alone would not fix the
 held Windows lock.
 
+A subsequent Linux unit run exposed a separate embedded-bench port race in
+`TestScenariosRejectInterruptedExchanges/E2E-029`: port discovery closed its socket
+before fixture setup and runtime binding. Embedded MDM/DDM runtimes now receive the
+original bound listener through `runtime.ServeListener`; startup failures release
+unclaimed listeners. Process adapters still bind their own sockets and report bind
+failures normally. No port-change or scenario retry hides a failed exchange.
+
 For workflow edits run `actionlint`, `make verify` and the affected Go tests. For
 supervisor changes include repeated race-enabled restart tests and native Windows
 CI. For backend selection changes require SQL contracts and both E2E jobs. Keep

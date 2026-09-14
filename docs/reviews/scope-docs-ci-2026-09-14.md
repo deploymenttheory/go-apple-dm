@@ -27,6 +27,15 @@ The pre-existing local edits to `docs/testing/enrollment-validation.md` are excl
   process acceptance and coverage requirements remain distinct.
 - Standard Go dependency resolution/cache behavior is retained. The observed proxy
   transport failures do not justify a separate downloader or shared retry action.
+- The first PR CI run passed native Windows tests, SQL contracts, both backend E2E
+  suites, process acceptance and archive checks. Linux unit tests exposed an
+  embedded listener close/rebind race in E2E-029. Embedded runtimes now serve the
+  original reserved socket, including the split DDM role. Runtime tests cover
+  socket adoption, startup-failure closure and security checks on the actual bound
+  address; E2E-029 passed ten repeated race-enabled runs. The complete runtime and
+  bench suites then passed with race detection and shuffled order. The Linux ARM linter
+  failed while fetching checksum data from `sum.golang.org`, before linting;
+  ordinary CI re-execution retains checksum verification.
 
 Local checks passed: `actionlint`, `make verify` (55 Python tests, workflow security
 and schema verification), root and server `golangci-lint`, and race-enabled suites
