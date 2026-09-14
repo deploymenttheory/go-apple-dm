@@ -6,8 +6,9 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"runtime/debug"
 	"strings"
+
+	"github.com/deploymenttheory/go-apple-dm/server/internal/buildinfo"
 )
 
 // ErrEmptyCredential identifies an empty environment-backed credential.
@@ -126,9 +127,5 @@ func (e *env) loadConfig() (*Context, error) {
 
 // version reports the module version the binary was built from.
 func version() string {
-	info, ok := debug.ReadBuildInfo()
-	if !ok || info.Main.Version == "" {
-		return "devel"
-	}
-	return info.Main.Version
+	return buildinfo.Version()
 }

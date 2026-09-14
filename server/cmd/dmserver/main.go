@@ -9,12 +9,10 @@ import (
 	"fmt"
 	"log/slog"
 	"os"
-	"os/signal"
 	"strings"
-	"syscall"
-	"time"
 
 	"github.com/deploymenttheory/go-apple-dm/server/internal/app"
+	"github.com/deploymenttheory/go-apple-dm/server/internal/buildinfo"
 	"github.com/deploymenttheory/go-apple-dm/server/internal/runtime"
 )
 
@@ -26,6 +24,11 @@ func main() {
 }
 
 func run(ctx context.Context, args []string, getenv func(string) string, out *os.File) error {
+	// Version inspection must work even when setup files are unavailable.
+	if len(args) == 1 && (args[0] == "--version" || args[0] == "-version") {
+		_, err := fmt.Fprintln(out, buildinfo.Version())
+		return err
+	}
 	setupPath := getenv("DM_SETUP_FILE")
 	for i, arg := range args {
 		if (arg == "--setup-file" || arg == "-setup-file") && i+1 < len(args) {
@@ -50,6 +53,7 @@ func run(ctx context.Context, args []string, getenv func(string) string, out *os
 	}
 	fs := flag.NewFlagSet("dmserver", flag.ContinueOnError)
 	fs.SetOutput(out)
+	showVersion := fs.Bool("version", false, "print the build version and exit")
 	fs.StringVar(&setupPath, "setup-file", setupPath, "persistent certificate setup configuration (DM_SETUP_FILE)")
 	var check, checkCA, sendKey, recvKey, storageKeys string
 	role := fs.String("role", string(cfg.Role), "mdm, ddm, or all ("+app.EnvRole+")")
@@ -142,6 +146,10 @@ func run(ctx context.Context, args []string, getenv func(string) string, out *os
 	if err := fs.Parse(args); err != nil {
 		return err
 	}
+	if *showVersion {
+		_, err := fmt.Fprintln(out, buildinfo.Version())
+		return err
+	}
 	if check != "" {
 		var managedCertificate *x509.Certificate
 		if cfg.Setup != nil && check == "auto" {
@@ -188,12 +196,3 @@ func keyBytes(s string) []byte {
 	}
 	return []byte(s)
 }
-
-// serve attaches process signals; runtime owns startup and ordered shutdown.
-func serve(ctx context.Context, cfg app.Config) error {
-	ctx, stop := signal.NotifyContext(ctx, os.Interrupt, syscall.SIGTERM)
-	defer stop()
-	return runtime.Serve(ctx, cfg)
-}
-
-const shutdownTimeout = 10 * time.Second

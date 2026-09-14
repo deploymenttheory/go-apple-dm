@@ -361,10 +361,9 @@ func Up(ctx context.Context, w *Workspace, binary string, out io.Writer) error {
 		return wrapError(err)
 	}
 	defer lock.Close()
-	if err = syscall.Flock(int(lock.Fd()), syscall.LOCK_EX|syscall.LOCK_NB); err != nil {
+	if err = lockWorkspace(lock); err != nil {
 		return fmt.Errorf("%w: workspace already running", errOperation)
 	}
-	defer func() { _ = syscall.Flock(int(lock.Fd()), syscall.LOCK_UN) }()
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 	e, err := Start(ctx, w, binary, out)

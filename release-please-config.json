@@ -3,7 +3,7 @@
   "release-type": "go",
   "include-component-in-tag": true,
   "bump-minor-pre-major": true,
-  "bump-patch-for-minor-pre-major": false,
+  "bump-patch-for-minor-pre-major": true,
   "changelog-sections": [
     {
       "type": "feat",
@@ -49,5 +49,5 @@
       "component": "server"
     }
   },
-  "separator": "/"
+  "tag-separator": "/"
 }

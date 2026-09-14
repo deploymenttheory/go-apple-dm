@@ -2,9 +2,10 @@ package app
 
 import (
 	"net/http"
-	"runtime/debug"
 	"sort"
 	"strings"
+
+	"github.com/deploymenttheory/go-apple-dm/server/internal/buildinfo"
 )
 
 // ActionReadConfig is declared by the introspection routes. They are
@@ -84,13 +85,7 @@ func (a *App) adminFamilies() []string {
 	return out
 }
 
-// buildVersion reports the module version the binary was built from, or
-// "devel" outside a build. It is read once from the build info rather than
-// stamped, so nothing needs to be passed at link time for it to be truthful.
+// buildVersion reports the packaged release or go install module version.
 func buildVersion() string {
-	info, ok := debug.ReadBuildInfo()
-	if !ok || info.Main.Version == "" {
-		return "devel"
-	}
-	return info.Main.Version
+	return buildinfo.Version()
 }
