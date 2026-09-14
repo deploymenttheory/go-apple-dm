@@ -355,6 +355,9 @@ func (s SQL) Restore(ctx context.Context, directory string) error {
 			return err
 		}
 	}
+	if err := s.checkSequenceHighWater(ctx, tx, info.Sequences); err != nil {
+		return err
+	}
 	if s.Dialect.Name != "mysql" {
 		if err := s.restoreSequences(ctx, tx, info.Sequences); err != nil {
 			return err

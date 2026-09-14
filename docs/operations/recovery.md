@@ -84,6 +84,9 @@ dmctl recovery resume \
 Verification authenticates the entire ciphertext, manifest and file hashes,
 checks every encrypted SQL value with its column and row binding, then exercises
 schema, row, constraint and sequence restoration in an isolated database.
+Sequence values must be at least as high as every restored row, while retaining
+higher values left by pruned rows. A checkpoint that would reuse a cursor is refused
+before restored rows commit.
 SQLite uses a private temporary file. PostgreSQL/MySQL require
 `-verify-dsn-env RECOVERY_VERIFY_DSN` pointing to a dedicated empty database/schema.
 That verification database remains an isolated, paused copy; remove it through

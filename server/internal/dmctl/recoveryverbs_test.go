@@ -12,6 +12,7 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/mdm"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/storage"
 	"github.com/deploymenttheory/go-apple-dm/server/internal/app"
+	"github.com/deploymenttheory/go-apple-dm/server/maintenance"
 	"github.com/deploymenttheory/go-apple-dm/server/recovery"
 )
 
@@ -63,6 +64,24 @@ func TestRecoveryCommandsPreserveEnrollmentAndIssuer(t *testing.T) {
 	}
 	call("recovery", "backup", "-setup-file", setup, "-ticket-file", ticket, "-archive", archive, "-recipient", generated["recipient"], "-revision", "reviewed-test", "-staging-dir", dir)
 	call("recovery", "verify", "-archive", archive, "-identity-file", identity, "-staging-dir", dir)
+	env["RECOVERY_VERIFY_DSN"] = filepath.Join(dir, "missing", "verify.sqlite")
+	for _, args := range [][]string{
+		{"keygen", "-identity-file", identity},
+		{"pause", "-setup-file", setup, "-ticket-file", ticket},
+		{"resume", "-setup-file", setup},
+		{"resume", "-setup-file", setup, "-ticket-file", "missing"},
+		{"backup", "-setup-file", setup, "-ticket-file", ticket},
+		{"backup", "-setup-file", setup, "-ticket-file", ticket, "-archive", archive, "-revision", "test", "-recipient", "invalid"},
+		{"verify", "-archive", archive, "-identity-file", "missing"},
+		{"verify", "-archive", archive, "-identity-file", ticket},
+		{"verify", "-archive", "missing", "-identity-file", identity, "-staging-dir", dir},
+		{"verify", "-archive", archive, "-identity-file", identity, "-staging-dir", dir, "-verify-dsn-env", "RECOVERY_VERIFY_DSN"},
+		{"restore", "-archive", archive, "-identity-file", identity, "-staging-dir", dir},
+	} {
+		if _, _, err := run(t, env, append([]string{"recovery"}, args...)...); err == nil {
+			t.Fatal("accepted invalid recovery operation", args)
+		}
+	}
 	if _, _, err := run(t, env, "recovery", "backup", "-setup-file", setup, "-ticket-file", ticket, "-archive", archive, "-recipient", generated["recipient"], "-revision", "reviewed-test", "-staging-dir", dir); err == nil {
 		t.Fatal("overwrote existing archive")
 	}
@@ -115,6 +134,93 @@ func TestRecoveryCommandsPreserveEnrollmentAndIssuer(t *testing.T) {
 	for _, entry := range entries {
 		if strings.HasPrefix(entry.Name(), ".recovery-") {
 			t.Fatal("plaintext staging leaked", entry.Name())
+		}
+	}
+}
+
+func TestRecoveryPauseRetainsOwnershipAfterTimeout(t *testing.T) {
+	dir, env := t.TempDir(), noConfig(t)
+	source := filepath.Join(dir, "source")
+	if _, _, err := run(t, env, "setup", "init", "-dir", source, "-role", "combined"); err != nil {
+		t.Fatal(err)
+	}
+	setup := filepath.Join(source, "setup.json")
+	cfg, err := app.LoadSetupFile(setup, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	a, err := app.OpenSetup(t.Context(), cfg)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer a.Close()
+	s, err := recovery.OpenDatabase(t.Context(), cfg.Storage, cfg.DSN)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer s.DB.Close()
+	control, err := maintenance.Open(t.Context(), s.DB, s.Dialect, false)
+	if err != nil {
+		t.Fatal(err)
+	}
+	stopped, err := control.Register(t.Context(), "stopped-fixture")
+	if err != nil {
+		t.Fatal(err)
+	}
+	ticket := filepath.Join(dir, "owner")
+	if _, _, err := run(t, env, "recovery", "pause", "-setup-file", setup, "-ticket-file", ticket, "-wait", "1ms"); err == nil || !strings.Contains(err.Error(), "remains paused") {
+		t.Fatal("lost timed-out fence", err)
+	}
+	var status struct {
+		Token   string
+		Members []struct{ ID string }
+	}
+	out, _, err := run(t, env, "recovery", "status", "-setup-file", setup)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := json.Unmarshal([]byte(out), &status); err != nil {
+		t.Fatal(err)
+	}
+	if status.Token == "" || len(status.Members) != 2 {
+		t.Fatal("missing persistent ownership", out)
+	}
+	wrong := filepath.Join(dir, "wrong")
+	if err := os.WriteFile(wrong, []byte(strings.Repeat("x", 32)), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	for _, args := range [][]string{
+		{"pause", "-ticket-file", filepath.Join(dir, "competing")},
+		{"resume", "-ticket-file", wrong},
+		{"forget", "-ticket-file", ticket, "-member", status.Members[0].ID},
+	} {
+		if _, _, err := run(t, env, append([]string{"recovery"}, append(args, "-setup-file", setup)...)...); err == nil {
+			t.Fatal("stole maintenance ownership", args)
+		}
+	}
+	// OpenSetup has no background Run; closing it ends its finite operations.
+	if err := a.Close(); err != nil {
+		t.Fatal(err)
+	}
+	if _, _, err := run(t, env, "recovery", "forget", "-setup-file", setup, "-ticket-file", ticket, "-member", stopped.ID(), "-process-stopped"); err != nil {
+		t.Fatal(err)
+	}
+	if _, _, err := run(t, env, "recovery", "resume", "-setup-file", setup, "-ticket-file", ticket); err != nil {
+		t.Fatal(err)
+	}
+	for _, tc := range []struct {
+		setup     string
+		overrides map[string]string
+	}{
+		{"missing", nil},
+		{setup, map[string]string{"DM_DSN": filepath.Join(dir, "missing", "db.sqlite")}},
+		{setup, map[string]string{"DM_DSN": filepath.Join(dir, "empty.sqlite")}},
+	} {
+		for k, v := range tc.overrides {
+			env[k] = v
+		}
+		if _, _, err := run(t, env, "recovery", "status", "-setup-file", tc.setup); err == nil {
+			t.Fatal("accepted unavailable control database")
 		}
 	}
 }

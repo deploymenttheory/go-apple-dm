@@ -215,6 +215,28 @@ func exerciseSQLRecovery(t *testing.T, source SQL, target func() *sql.DB) {
 	if err := destination.Restore(ctx, directory); !errors.Is(err, ErrOccupied) {
 		t.Fatal("overwrote recovered deployment", err)
 	}
+	// A checkpoint can authenticate correctly yet contain inconsistent cursor
+	// metadata. Refuse it before committing rows or allowing cursor reuse.
+	for i := range snapshot.Sequences {
+		if snapshot.Sequences[i].Table == "audit_records" {
+			snapshot.Sequences[i].Value = 0
+		}
+	}
+	corrupt, err := json.Marshal(snapshot)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(directory, "database.json"), corrupt, 0o600); err != nil {
+		t.Fatal(err)
+	}
+	invalid := SQL{DB: target(), Dialect: source.Dialect, Schema: source.Schema}
+	if err := invalid.Restore(ctx, directory); !errors.Is(err, ErrInvalid) {
+		t.Fatal("accepted regressed cursor", err)
+	}
+	var rows int
+	if err := invalid.DB.QueryRowContext(ctx, "SELECT COUNT(*) FROM audit_records").Scan(&rows); err != nil || rows != 0 {
+		t.Fatal("rows escaped failed cursor validation", rows, err)
+	}
 }
 
 func fenceForSnapshot(t *testing.T, s SQL) func() {

@@ -48,7 +48,7 @@ type schemaDescription struct {
 
 func describe(set sqlcommon.MigrationSet) (schemaDescription, error) {
 	out := schemaDescription{Name: set.Table, Tables: []string{set.Table}}
-	if !identifier.MatchString(set.Table) {
+	if set.FS == nil || !identifier.MatchString(set.Table) {
 		return out, ErrInvalid
 	}
 	migrations, err := sqlcommon.LoadMigrations(set.FS)

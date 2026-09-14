@@ -14,7 +14,7 @@ import (
 )
 
 func TestLiveDDMRequiresReportsAndCleansUp(t *testing.T) {
-	for _, failure := range []string{"", "unchanged values", "mismatched values", "stale declarations", "missing automatic activation", "invalid configuration", "upload", "cleanup"} {
+	for _, failure := range []string{"", "unchanged values", "mismatched values", "stale declarations", "missing automatic activation", "invalid configuration", "upload", "cleanup", "inventory", "set", "assignment", "notify", "status", "values", "cleanup notify", "cleanup status"} {
 		t.Run(failure, func(t *testing.T) {
 			t.Parallel()
 			ctx, cancel := context.WithCancel(t.Context())
@@ -27,6 +27,17 @@ func TestLiveDDMRequiresReportsAndCleansUp(t *testing.T) {
 			}
 			srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				w.Header().Set("Content-Type", "application/json")
+				if (failure == "inventory" && strings.HasSuffix(r.URL.Path, "/commands")) ||
+					(failure == "set" && r.Method == "PUT" && strings.Contains(r.URL.Path, "/sets/") && !strings.Contains(r.URL.Path, "/enrollments/")) ||
+					(failure == "assignment" && r.Method == "PUT" && strings.Contains(r.URL.Path, "/enrollments/")) ||
+					(failure == "notify" && assigned && strings.HasSuffix(r.URL.Path, "/notify")) ||
+					(failure == "status" && assigned && strings.HasSuffix(r.URL.Path, "/status")) ||
+					(failure == "values" && strings.HasSuffix(r.URL.Path, "/status/values")) ||
+					(failure == "cleanup notify" && deletes > 0 && strings.HasSuffix(r.URL.Path, "/notify")) ||
+					(failure == "cleanup status" && deletes > 0 && strings.HasSuffix(r.URL.Path, "/status")) {
+					w.WriteHeader(http.StatusServiceUnavailable)
+					return
+				}
 				switch {
 				case r.Method == "DELETE":
 					deletes++
@@ -103,9 +114,41 @@ func TestLiveDDMRequiresReportsAndCleansUp(t *testing.T) {
 			if (failure == "" || failure == "unchanged values") != (err == nil) {
 				t.Fatalf("live result: %v", err)
 			}
-			if assigned || deletes != 3 {
+			wantDeletes := 3
+			if failure == "inventory" {
+				wantDeletes = 0
+			}
+			if assigned || deletes != wantDeletes {
 				t.Fatalf("cleanup incomplete: assigned=%v, deletes=%d", assigned, deletes)
 			}
 		})
+	}
+}
+
+func TestDDMCleanupWaitsForDeviceToRemoveDeclarations(t *testing.T) {
+	reads := 0
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != "GET" {
+			w.WriteHeader(http.StatusNoContent)
+			return
+		}
+		reads++
+		rows := []ddm.DeclarationStatus{}
+		if reads == 1 {
+			rows = append(rows, ddm.DeclarationStatus{Identifier: "temporary"})
+		}
+		if err := json.NewEncoder(w).Encode(rows); err != nil {
+			t.Error(err)
+		}
+	}))
+	defer srv.Close()
+	e := &Environment{Instance: Instance{URL: srv.URL}, Client: srv.Client()}
+	ctx, cancel := context.WithTimeout(t.Context(), 5*time.Second)
+	defer cancel()
+	if err := cleanupLiveDDM(ctx, e, "/enrollments/device/test", "set", "temporary", "activation"); err != nil {
+		t.Fatal(err)
+	}
+	if reads != 2 {
+		t.Fatal("cleanup finished before device confirmation", reads)
 	}
 }

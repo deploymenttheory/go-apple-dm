@@ -159,3 +159,27 @@ func (s SQL) restoreSequences(
 	}
 	return nil
 }
+
+// Validate against restored rows before resetting any cursor, including before
+// MySQL's implicit-commit ALTER TABLE. PostgreSQL setval can otherwise move the
+// next value behind an existing row in a malformed checkpoint.
+func (s SQL) checkSequenceHighWater(ctx context.Context, q sqlcommon.Queryer, sequences []sequenceSnapshot) error {
+	for _, sequence := range sequences {
+		table, err := quoted(s.Dialect, sequence.Table)
+		if err != nil {
+			return err
+		}
+		column, err := quoted(s.Dialect, sequence.Column)
+		if err != nil {
+			return err
+		}
+		var high sql.NullInt64
+		if err := q.QueryRowContext(ctx, "SELECT MAX("+column+") FROM "+table).Scan(&high); err != nil {
+			return wrap(err)
+		} // #nosec G202 -- identifiers are validated and quoted; callers validate the compiled sequence allowlist.
+		if high.Valid && high.Int64 > sequence.Value {
+			return fmt.Errorf("%w: sequence precedes restored rows in %s", ErrInvalid, sequence.Table)
+		}
+	}
+	return nil
+}

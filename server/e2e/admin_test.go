@@ -304,7 +304,11 @@ func TestE2E_AdminCLI(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			if len(rows.Items) != 0 {
+			matched := false
+			for _, row := range rows.Items {
+				matched = matched || (row.Actor == "reader" && row.Fields["Action"] == app.ActionDisableEnrollment)
+			}
+			if matched {
 				break
 			}
 			if time.Now().After(deadline) {

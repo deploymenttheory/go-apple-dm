@@ -31,6 +31,25 @@ func TestSQLiteCertificateActivationAndWorkflowAreAtomic(t *testing.T) {
 	exerciseCertificateActivation(t, db, sqlite.Dialect)
 }
 
+func TestCertificatePublicationRequiresEncryptedSQLTransaction(t *testing.T) {
+	if err := statestore.PublishCertificate(t.Context(), nil, lifecycle.Identity{Kind: lifecycle.Push}, lifecycle.Material{}); err == nil {
+		t.Fatal("published without a SQL transaction")
+	}
+	st, err := statestore.Open(t.Context(), sqliteDB(t), sqlite.Dialect, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = st.Update(t.Context(), []string{"certificate"}, func(tx state.Tx) error {
+		return statestore.PublishCertificate(t.Context(), tx, lifecycle.Identity{Kind: lifecycle.Push}, lifecycle.Material{})
+	})
+	if err == nil {
+		t.Fatal("published private key without encryption")
+	}
+	if _, err := statestore.MigrationSet(sqlcommon.Dialect{Name: "unsupported"}); err == nil {
+		t.Fatal("accepted unsupported backend")
+	}
+}
+
 func exerciseCertificateActivation(t *testing.T, db *sql.DB, dialect sqlcommon.Dialect) {
 	t.Helper()
 	ctx := t.Context()
