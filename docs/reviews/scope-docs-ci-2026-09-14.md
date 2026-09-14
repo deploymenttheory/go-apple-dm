@@ -35,7 +35,17 @@ The pre-existing local edits to `docs/testing/enrollment-validation.md` are excl
   address; E2E-029 passed ten repeated race-enabled runs. The complete runtime and
   bench suites then passed with race detection and shuffled order. The Linux ARM linter
   failed while fetching checksum data from `sum.golang.org`, before linting;
-  ordinary CI re-execution retains checksum verification.
+  the next CI run passed all four lint jobs using ordinary Go dependency resolution
+  with checksum verification intact.
+- Subsequent unit CI exposed two test defects: unescaped OCSP GET base64 could
+  contain `//` and trigger a path-normalization redirect, while an AXM activity
+  assertion assumed a busy runner would read within a 20 ms consistency lag.
+  OCSP requests now use the required URL escaping, with a deterministic regression
+  checking the signed response for a serial that produces consecutive slashes.
+  The AXM test uses its existing clock hook and the shared fake clock to assert
+  visibility immediately before and at the lag boundary. Both failing cases and
+  the OCSP regression passed 50 race-enabled repetitions, followed by both full
+  affected packages with race detection and shuffled test order.
 
 Local checks passed: `actionlint`, `make verify` (55 Python tests, workflow security
 and schema verification), root and server `golangci-lint`, and race-enabled suites

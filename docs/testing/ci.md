@@ -74,6 +74,15 @@ original bound listener through `runtime.ServeListener`; startup failures releas
 unclaimed listeners. Process adapters still bind their own sockets and report bind
 failures normally. No port-change or scenario retry hides a failed exchange.
 
+Two further unit failures came from test inputs and timing. The OCSP GET test now
+URL-escapes its base64 request as required by
+[RFC 6960 Appendix A.1](https://www.rfc-editor.org/rfc/rfc6960#appendix-A.1).
+A deterministic serial produces consecutive base64 slashes and checks that the
+escaped request returns the correct signed OCSP response without a redirect.
+The AXM activity test uses the existing fake clock and `SetNow` to check visibility
+immediately before and at the consistency-lag boundary. Runner delays can no
+longer expire that lag before the assertion.
+
 For workflow edits run `actionlint`, `make verify` and the affected Go tests. For
 supervisor changes include repeated race-enabled restart tests and native Windows
 CI. For backend selection changes require SQL contracts and both E2E jobs. Keep

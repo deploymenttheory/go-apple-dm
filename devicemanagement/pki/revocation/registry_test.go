@@ -13,6 +13,8 @@ import (
 	"errors"
 	"math/big"
 	"net/http/httptest"
+	"net/url"
+	"strings"
 	"sync"
 	"testing"
 	"time"
@@ -275,7 +277,7 @@ func TestConfigAndHTTP(t *testing.T) {
 	}{
 		{"GET", "/pki/crl/" + f.id, "", nil, 200}, {"GET", "/pki/crl/unknown", "", nil, 404},
 		{"POST", "/pki/ocsp/" + f.id, "application/ocsp-request", request, 200},
-		{"GET", "/pki/ocsp/" + f.id + "/" + base64.StdEncoding.EncodeToString(request), "", nil, 200},
+		{"GET", "/pki/ocsp/" + f.id + "/" + url.PathEscape(base64.StdEncoding.EncodeToString(request)), "", nil, 200},
 		{"GET", "/pki/ocsp/" + f.id + "/invalid", "", nil, 400},
 		{"POST", "/pki/ocsp/" + f.id, "text/plain", nil, 415},
 		{"POST", "/pki/ocsp/" + f.id, "application/ocsp-request", make([]byte, 5000), 400},
@@ -296,5 +298,33 @@ func TestConfigAndHTTP(t *testing.T) {
 	h.ServeHTTP(w, req)
 	if w.Code != 503 {
 		t.Fatal(w.Code)
+	}
+}
+
+func TestOCSPGETEscapedRequest(t *testing.T) {
+	f := setup(t)
+	// Force consecutive slashes in base64 rather than depending on random keys
+	// or serials. RFC 6960 Appendix A.1 requires URL encoding the GET request.
+	serial := big.NewInt(0xffffff)
+	request, err := ocsp.CreateRequest(&x509.Certificate{SerialNumber: serial}, f.issuer.Certificate, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	encoded := base64.StdEncoding.EncodeToString(request)
+	if !strings.Contains(encoded, "//") {
+		t.Fatalf("request does not exercise consecutive slashes: %s", encoded)
+	}
+	w := httptest.NewRecorder()
+	req := httptest.NewRequest("GET", "/pki/ocsp/"+f.id+"/"+url.PathEscape(encoded), nil)
+	f.reg.Handler("/pki/").ServeHTTP(w, req)
+	if w.Code != 200 {
+		t.Fatalf("GET returned %d: %s", w.Code, w.Body.String())
+	}
+	response, err := ocsp.ParseResponse(w.Body.Bytes(), f.issuer.Certificate)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if response.SerialNumber.Cmp(serial) != 0 || response.Status != ocsp.Unknown {
+		t.Fatalf("unexpected OCSP response: %+v", response)
 	}
 }

@@ -18,6 +18,7 @@ import (
 
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/appleplatformservices/axm"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/appleplatformservices/axm/axmtest"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/clock"
 )
 
 const clientID = "BUSINESSAPI.11111111-2222-3333-4444-555555555555"
@@ -400,6 +401,8 @@ func TestServer(t *testing.T) {
 	t.Run("Activities", func(t *testing.T) {
 		t.Parallel()
 		h := newHarness(t)
+		clk := clock.NewFake(time.Now())
+		h.srv.SetNow(clk.Now)
 		serverID := h.srv.AddMDMServer("Prod", nil)
 		h.srv.AddOrgDevice("S1", nil)
 		h.srv.AddOrgDevice("S2", nil)
@@ -445,7 +448,8 @@ func TestServer(t *testing.T) {
 		if _, _, ok := h.srv.Activity("nope"); ok {
 			t.Fatal("unknown activity")
 		}
-		h.srv.SetConsistencyLag(20 * time.Millisecond)
+		const lag = 20 * time.Millisecond
+		h.srv.SetConsistencyLag(lag)
 		if n := h.srv.Advance(); n != 1 {
 			t.Fatalf("advanced %d", n)
 		}
@@ -462,7 +466,11 @@ func TestServer(t *testing.T) {
 		if got := h.srv.AssignedServer("S1"); got != "" {
 			t.Fatalf("visible before the lag: %q", got)
 		}
-		time.Sleep(30 * time.Millisecond)
+		clk.Advance(lag - time.Nanosecond)
+		if got := h.srv.AssignedServer("S1"); got != "" {
+			t.Fatalf("visible just before the lag: %q", got)
+		}
+		clk.Advance(time.Nanosecond)
 		if got := h.srv.AssignedServer("S1"); got != serverID {
 			t.Fatalf("after the lag: %q", got)
 		}
@@ -497,8 +505,8 @@ func TestServer(t *testing.T) {
 		if doc["data"].(map[string]any)["attributes"].(map[string]any)["status"] != "ASSIGNED" {
 			t.Fatalf("%v", doc)
 		}
-		start := time.Now().Add(-time.Hour).UTC().Format(time.RFC3339)
-		end := time.Now().Add(time.Hour).UTC().Format(time.RFC3339)
+		start := clk.Now().Add(-time.Hour).UTC().Format(time.RFC3339)
+		end := clk.Now().Add(time.Hour).UTC().Format(time.RFC3339)
 		_, doc = h.call(t, http.MethodGet, "/v1/auditEvents?filter%5BstartTimestamp%5D="+start+"&filter%5BendTimestamp%5D="+end+"&filter%5Btype%5D=DEVICE_ASSIGNED_TO_SERVER&filter%5BsubjectId%5D=S1&filter%5BactorId%5D=api", tok, "application/json", "")
 		events := doc["data"].([]any)
 		if len(events) != 1 || events[0].(map[string]any)["attributes"].(map[string]any)["eventDataPropertyKey"] != "eventDataDeviceAssignedToServer" {
@@ -568,7 +576,7 @@ func TestServer(t *testing.T) {
 		// one that is not.
 		h.srv.AddOrgDevice("M1", nil)
 		m := `"devices":{"data":[{"type":"orgDevices","id":"M1"}]}`
-		soon := time.Now().Add(24 * time.Hour).UTC().Format(time.RFC3339)
+		soon := clk.Now().Add(24 * time.Hour).UTC().Format(time.RFC3339)
 		resp, _ = post(`{"data":{"type":"orgDeviceActivities","attributes":{"activityType":"ASSIGN_DEVICES_WITH_MDM_MIGRATION_DEADLINE","activityTypeMetadata":{"mdmMigrationDeadlineDateTime":"` + soon + `"}},"relationships":{` + m + `,` + server + `}}}`)
 		if resp.StatusCode != http.StatusCreated {
 			t.Fatal(resp.StatusCode)

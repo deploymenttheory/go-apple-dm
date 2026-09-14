@@ -124,7 +124,7 @@ func (s *Server) Close() {
 func (s *Server) Client() *http.Client { return s.srv.Client() }
 
 // SetNow replaces the server's clock (assertion windows, token expiry,
-// timestamps).
+// timestamps and consistency lag).
 func (s *Server) SetNow(now func() time.Time) {
 	s.mu.Lock()
 	s.now = now
@@ -195,8 +195,9 @@ func (s *Server) SetOutcome(serial, reason string) {
 	s.mu.Unlock()
 }
 
-// SetConsistencyLag delays, by d of wall-clock time, when a completed
-// activity's assignment shows in the linkage endpoints.
+// SetConsistencyLag delays, by d on the server's clock, when a completed
+// activity's assignment shows in the linkage endpoints. The default clock is
+// wall time; SetNow can supply a manually advanced clock to test the boundary.
 //
 // Prefer SetConsistencyReads for a test that asserts a client polled: a
 // wall-clock lag can elapse before the client's first read on a slow
