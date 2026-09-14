@@ -10,12 +10,13 @@
     ],
     "repository": {
       "url": "https://github.com/deploymenttheory/go-apple-dm",
-      "revision": "ff85958196cb013e8e14c1055f067319b07e3299"
+      "revision": "80599ddc35778bcc88fa2ac77bb1dc68a51cf089"
     },
     "colour_profile": "purpose-v1",
     "legend": {
       "mode": "hidden"
-    }
+    },
+    "locale": "en"
   },
   "components": [
     {
@@ -423,15 +424,15 @@
       "title": "Simulated and live modes",
       "items": [
         "Simulated scenarios use synthetic identities, a device simulator, and local service fixtures. Fixture controllers stay outside production administration.",
-        "Live scenarios need real credentials, app registration or an enrolled device, and correlated outcome evidence. Simulated success does not establish Apple hardware compatibility."
+        "Live scenarios require real credentials, registration or an enrolled device and correlated evidence. The 13 September 2026 record reports ACME/SCEP enrollment, device and installing-user commands, DDM, replacement, trust rollover and SQLite recovery on the recorded Mac candidates."
       ],
       "dot": "neutral"
     },
     {
       "title": "Independent checks",
       "items": [
-        "Storage contract suites verify persistence across supported backends. The executable catalogue and bench-docs-check keep scenario documentation aligned.",
-        "Coverage policy and live validation status are separate from the existence of a scenario. PR 14 records outstanding real-device verification."
+        "Storage contracts cover supported backends; the executable catalogue and bench-docs-check keep scenario documentation aligned. A scenario’s existence does not establish passing coverage or device compatibility.",
+        "The live record identifies tested candidates and dates. Its offline retirement blocker used a synthetic enrollment. The private SQLite recovery drill and automated public recovery contracts are separate evidence; neither establishes off-machine recovery or acceptance of a later revision."
       ],
       "dot": "service"
     },
@@ -440,7 +441,9 @@
       "items": [
         "Go command: Test packages — https://pkg.go.dev/cmd/go#hdr-Test_packages",
         "Sending MDM commands to a device — https://developer.apple.com/documentation/devicemanagement/sending-mdm-commands-to-a-device",
-        "Sending notification requests to APNs — https://developer.apple.com/documentation/usernotifications/sending-notification-requests-to-apns"
+        "Sending notification requests to APNs — https://developer.apple.com/documentation/usernotifications/sending-notification-requests-to-apns",
+        "Mac candidate observations, 13–14 September 2026 — https://github.com/deploymenttheory/go-apple-dm/blob/80599ddc35778bcc88fa2ac77bb1dc68a51cf089/docs/reviews/real-mac-lifecycle-2026-09-13.md",
+        "Automated runtime validation, 14 September 2026 — https://github.com/deploymenttheory/go-apple-dm/blob/80599ddc35778bcc88fa2ac77bb1dc68a51cf089/docs/reviews/scope-docs-ci-2026-09-14.md"
       ],
       "dot": "transport"
     }

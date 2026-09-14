@@ -5,7 +5,7 @@
     "title": "Split Deployment: mdm and ddm Roles",
     "quality_profile": "showcase",
     "viewBox": [
-      1170,
+      1480,
       540
     ],
     "views": [
@@ -16,9 +16,10 @@
           "mdmrole",
           "proxyclient",
           "hop",
-          "proxyserver"
+          "proxyserver",
+          "replay"
         ],
-        "note": "The check-in body crosses the hop unchanged, signed both ways."
+        "note": "HTTPS carries signed requests and request-bound responses. DDM replicas share atomic replay state."
       },
       {
         "id": "single",
@@ -33,12 +34,13 @@
     ],
     "repository": {
       "url": "https://github.com/deploymenttheory/go-apple-dm",
-      "revision": "ff85958196cb013e8e14c1055f067319b07e3299"
+      "revision": "80599ddc35778bcc88fa2ac77bb1dc68a51cf089"
     },
     "colour_profile": "purpose-v1",
     "legend": {
       "mode": "hidden"
-    }
+    },
+    "locale": "en"
   },
   "components": [
     {
@@ -60,7 +62,7 @@
       "id": "proxyclient",
       "type": "backend",
       "label": "Forwarding client",
-      "sublabel": "Preserve check-in body",
+      "sublabel": "Sign; verify bound response",
       "pos": [
         315.0,
         110.0
@@ -95,8 +97,8 @@
     {
       "id": "hop",
       "type": "security",
-      "label": "Signed internal HTTP",
-      "sublabel": "HMAC request and response",
+      "label": "Signed internal HTTPS",
+      "sublabel": "Independent HMAC keys",
       "pos": [
         615.0,
         110.0
@@ -107,7 +109,7 @@
       ],
       "sources": [
         {
-          "path": "server/ddmadapter/internal/proxywire/proxywire.go",
+          "path": "server/ddmadapter/internal/proxywire/envelope.go",
           "label": "Sign · Verify"
         }
       ],
@@ -138,7 +140,7 @@
       "id": "proxyserver",
       "type": "backend",
       "label": "Forwarding endpoint",
-      "sublabel": "Verify signature and decode",
+      "sublabel": "Verify freshness and signature",
       "pos": [
         915.0,
         110.0
@@ -182,6 +184,31 @@
       "size": [
         220,
         70
+      ],
+      "purpose": "storage"
+    },
+    {
+      "id": "replay",
+      "type": "database",
+      "label": "Shared replay store",
+      "sublabel": "Atomic one-use nonce claims",
+      "pos": [
+        1215,
+        110
+      ],
+      "size": [
+        220,
+        70
+      ],
+      "sources": [
+        {
+          "path": "server/ddmadapter/internal/proxywire/envelope.go",
+          "label": "Freshness and nonce claim"
+        },
+        {
+          "path": "server/statestore/sqlstore.go",
+          "label": "Shared protocol state"
+        }
       ],
       "purpose": "storage"
     }
@@ -268,6 +295,13 @@
         376
       ],
       "purpose": "storage"
+    },
+    {
+      "id": "server-replay",
+      "from": "proxyserver",
+      "to": "replay",
+      "label": "Claim nonce",
+      "purpose": "storage"
     }
   ],
   "cards": [
@@ -281,10 +315,18 @@
     },
     {
       "dot": "authentication",
-      "title": "Internal transport and runtime",
+      "title": "HTTPS and directional signatures",
       "items": [
-        "The reference server requires request and response HMAC keys. A custom library HTTP client can add mutual TLS; that is not automatic server configuration.",
-        "The shared runtime supports HTTP or native TLS and drains requests before workers. Process acceptance includes split-role scenarios."
+        "The adapters require HTTPS and independent request and response HMAC keys. Only explicit test configuration permits literal-loopback HTTP. Mutual TLS is an additional library option.",
+        "Request signatures bind method, target, content type, timestamp, nonce and body. Response signatures bind that request envelope plus response status, content type and body."
+      ]
+    },
+    {
+      "dot": "storage",
+      "title": "Shared replay protection",
+      "items": [
+        "The receiving adapter checks five-minute freshness and atomically claims each nonce for ten minutes. All receiving replicas must share replay state; the reference server supplies its SQL protocol store.",
+        "A failed signature, stale request or repeated nonce is rejected before the engine runs. HMAC authenticates the exchange; HTTPS provides transport encryption."
       ]
     },
     {
@@ -299,7 +341,8 @@
       "title": "Public documentation",
       "items": [
         "Declarative Management check-in — https://developer.apple.com/documentation/devicemanagement/declarative-management",
-        "RFC 9440 — Client-Cert HTTP Header Field — https://www.rfc-editor.org/rfc/rfc9440"
+        "RFC 9440 — Client-Cert HTTP Header Field — https://www.rfc-editor.org/rfc/rfc9440",
+        "Private DDM adapter contract — https://github.com/deploymenttheory/go-apple-dm/blob/80599ddc35778bcc88fa2ac77bb1dc68a51cf089/server/ddmadapter/internal/proxywire/doc.go"
       ]
     }
   ]

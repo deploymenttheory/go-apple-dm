@@ -1,535 +1,359 @@
-# Extension proposals — scope review, 14 September 2026
+# Feature implementation plan
 
-This is a review of the original eighteen proposals, not approval to implement
-those features. IDs are preserved so that each disposition can be traced to the
-original draft. **Maintenance is approved scope; retained feature candidates need
-an individual design and the acceptance evidence below before adoption.**
+Implement the tasks below in order. All listed tasks fit the project's library
+and reference-server scope. Task IDs belong to this plan; the earlier proposal
+numbers are retired. All tasks start **not implemented**; mark them complete only
+after their acceptance checks pass.
 
-## The boundary used for this review
+## Execution rules
 
-The [README](../../README.md) and
-[architecture decision 0001](decisions/0001-architecture.md) define a reusable Apple
-device-management library and a reference server. Protocol codecs, Apple service
-clients, storage contracts, narrowly specified helpers, diagnostics and executable
-examples fit. Fleet inventory, compliance policy, generic workflow execution,
-targeting and a multitenant management product do not. Putting a policy engine in
-`server/` or behind an interface does not make it part of this charter.
+- Put reusable codecs, helpers and Apple clients in `devicemanagement/`.
+  Put HTTP/admin adapters, CLI commands and SQL implementations in `server/`.
+  Root-module code and tests must remain independent of the server module.
+- Extend existing parsers, generated types, queries and storage contracts.
+  Check the current checkout before adding an API; reuse equivalent work and
+  record its tests instead of implementing it twice.
+- Keep target selection, rollout timing, account policy and operational decisions
+  in caller code. Helpers take explicit inputs and return protocol data or results.
+- Use the pinned `third_party/device-management` schemas and examples for wire
+  contracts. For external APIs, record the official documentation URL, retrieval
+  date and sanitized fixtures. Resolve undocumented fields before implementing
+  the affected operation; never fill a protocol gap by guessing.
+- Preserve platform, OS-version, supervision and device/user-channel restrictions.
+  Keep supported older-OS paths. Change generated output through the generator.
+- Reuse existing authorization, secret sealing and event redaction. Diagnostic
+  output must exclude credentials, tokens, recovery keys and location data.
+- Complete one numbered task with its tests and documentation before moving on.
+  Record changed APIs, validation commands and remaining limitations in its PR.
+  Preserve unrelated working-tree edits.
 
-The root module owns reusable protocol code and contracts. The server module owns
-SQL implementations, HTTP/admin adapters and reference composition. New root
-packages must not import the server module. Consumers retain decisions about whom
-to target, what to enforce, when to retry a business operation, and how to operate
-an organization. See the [module boundary](../architecture.md#modules-and-dependency-direction).
+The documentation and CI repairs in [PR #57](https://github.com/deploymenttheory/go-apple-dm/pull/57)
+are the baseline. Existing event delivery, identity renewal, subscriptions and
+migration storage are dependencies to reuse. The
+[architecture decision](decisions/0001-architecture.md) defines module ownership.
 
-Documentation corrections, examples that match the implementation, generated
-reference verification, and repairs to broken or redundant pipelines are in scope.
-They precede new features because inaccurate descriptions currently make existing
-capabilities look like missing infrastructure.
-
-## Evidence baseline and corrections
-
-Code was reviewed at `80ea482` (the main-branch application code on 14 September
-2026). The subsequent `c2770c2` release commit changes release metadata, not that
-code. Local links below identify implementation evidence; Apple schema links refer
-to the vendored input pinned at `b0180185a5e4077070710033341b71d0cbe1a18a`
-(`seed_OS_27_0`, 2 September 2026). The historical schema retains earlier contracts.
-These are seed contracts, not a claim of validation on every released device OS.
-
-Three assertions in the draft need correction:
-
-- Legacy software-update commands are removed **on OS 27**. Earlier OS contracts
-  remain supported. There is no `softwareupdates` evidence package in this checkout;
-  an unmerged package needs an identified revision before it can be a dependency.
-- Status querying, capability-derived subscriptions, certificate renewal, push
-  topic guards and a durable event outbox already exist. They are not foundations
-  that must first be built for this proposal list.
-- `ProfileAssetReference` and new network declarations add declarative options.
-  They do not establish that every legacy profile has been removed. Availability,
-  deprecation and removal must be checked per payload, key, platform and OS version.
-
-The [Apple device-management update guide](https://support.apple.com/guide/deployment/device-management-updates-depd638aa061/web)
-and [pinned schemas](../../third_party/device-management) support version-specific
-claims. The original unpinned survey cannot support “every product”, “absent from
-open source” or “primary inventory feed” assertions. Those claims are removed.
-Other implementations can motivate a use case; they cannot establish this
-project's scope or Apple's protocol requirements.
-
-## Dispositions
-
-| ID | Decision | Candidate that remains |
+| Phase | Deliverable | Dependencies |
 |---|---|---|
-| P1 | Narrow | Typed access to existing observations |
-| P2 | Narrow | Explicit-target update declaration helpers |
-| P3 | Split and narrow | Independent Apple secret codecs and sealed-storage gaps |
-| P4 | Remove | Documentation of existing replacement/renewal only |
-| P5 | Narrow | Validated declaration and asset composition |
-| P6 | Narrow | Setup protocol helpers and an explicit example |
-| P7 | Remove | Consumer orchestration examples only |
-| P8 | Split and narrow | Trusted offline migration conversion and protocol examples |
-| P9 | Already implemented; correct docs | Verify existing delivery guarantees |
-| P10 | Mostly implemented; narrow | Redacted status-versus-push diagnostics |
-| P11 | Retain narrowly | Apps and Books client and shared manifest helper |
-| P12 | Retain with corrected key model | Managed Apple Account JWT helper |
-| P13 | Retain narrowly | File-oriented profile lint using existing validation |
-| P14 | Defer | A separately justified provider adapter, if needed |
-| P15 | Retain narrowly | Missing admin query surfaces and a true read-only preview |
-| P16 | Fold into P15/P17 | Diagnostics, examples and missing contract cases |
-| P17 | Retain after coverage inventory | Missing simulator behavior and sanitized fixtures |
-| P18 | Remove | Existing enrollment-resource authorization remains |
-
-### P1. Typed access to observations, not an inventory product
-
-**Present state and evidence.**
-[`storage.DeviceInfo`](../../devicemanagement/storage/storage.go) already stores ten
-fields populated from tracked acknowledgments.
-[`ddm/status_query.go`](../../devicemanagement/mdmprotocol/ddm/status_query.go)
-already offers prefix-filtered, paginated values, status errors and report history.
-[`ddm/status.go`](../../devicemanagement/mdmprotocol/ddm/status.go) handles full and
-partial reports; generated status types already supply the wire shapes.
-
-**Decision and argument.** Keep a small typed observation adapter if it removes
-repeated decoding for consumers. Remove the new inventory database, universal fact
-model, compliance evaluator and inventory change feed. Those would introduce
-product semantics and duplicate existing storage before demonstrating a gap.
-Push discrepancies belong to P10; P4 is not a justification for P1.
-
-**Retained boundary.** Decode selected known status values or command responses
-with source, channel and observation time. Reuse existing queries and generated
-types. An absent report is not proof that a setting is false or compliant.
-
-**Acceptance before adoption.** Tests must distinguish full replacement from partial
-updates, omitted from explicit null, device from user channel, and unknown fields
-from invalid known fields. Preserve raw unknown values and provenance. Demonstrate
-a caller that becomes simpler without adding a second authoritative device store.
-
-### P2. Explicit software-update declaration helpers
-
-**Present state and evidence.** Generated declarations and status types, the
-[GDMF client](../../devicemanagement/appleplatformservices/gdmf), and the
-[ADE software-update gate](../../devicemanagement/mdmprotocol/enroll/ade/softwareupdate.go)
-already exist. The draft's in-progress package is not present. The pinned
-[enforcement schema](../../third_party/device-management/declarative/declarations/configurations/softwareupdate.enforcement.specific.yaml)
-defines target version/build and local deadline semantics.
-
-**Decision and argument.** Keep pure helpers that build an explicitly selected
-update declaration and interpret its reported progress. Remove rings, shards,
-“latest minus N days”, sliding deadlines and an enforcement controller. Selecting
-an organization's rollout policy belongs to the consumer.
-
-**Retained boundary.** Validate the caller's target version/build and
-`TargetLocalDateTime`; it is a local date-time without a timezone offset. GDMF
-availability is evidence of a published asset, not proof of device readiness or
-installation success. Settings and beta fields must use their own version gates.
-
-**Acceptance before adoption.** Round-trip generated types, invalid/missing target
-cases, local deadline cases, supported and removed contracts, and pending/failure
-status examples. Preserve pre-27 command support. Any proposed admin deadline view
-must describe advertised intent separately from device-reported state and reuse
-P15 instead of creating an update-policy service.
-
-### P3. Separate protocol codecs from secret lifecycle policy
-
-**Present state and evidence.** Bootstrap and unlock tokens are sealed; raw command
-queues and results are also sealed in persistent stores. Generated commands already
-cover FileVault, Activation Lock and Recovery Lock. The
-[FileVault rotation schema](../../third_party/device-management/mdm/commands/rotate.file.vault.key.yaml)
-and [admin-password schema](../../third_party/device-management/mdm/commands/set.auto.admin.password.yaml)
-constrain what helpers may promise.
-
-**Decision and argument.** Split this into independently reviewable candidates:
-FileVault CMS decoding, Activation Lock representations, and the
-`SALTED-SHA512-PBKDF2` account-password hash format. Add sealed storage only for a
-specific Apple escrow artifact not already represented. Remove reveal-triggered
-rotation, rotation schedules, static per-fleet passwords, break-glass workflows and
-an all-purpose escrow subsystem. These are policy and secret-management products.
-
-**Retained boundary.** `SetAutoAdminPassword` targets the GUID of an administrator
-created by ADE `AccountConfiguration`; it is not arbitrary local-account LAPS.
-FileVault ciphertext must be decoded against the appropriate certificate/private
-key, which must remain available across retry and delayed response. Do not impose
-a fresh per-attempt certificate or delivery-time command subtype as a prerequisite.
-
-**Acceptance before adoption.** Apple-format fixtures and independent cryptographic
-vectors, malformed CMS and wrong-key cases, account GUID restrictions, bounded
-hash parameters, secret-safe errors/projections, and persistence round trips for any
-new stored value. Recovery Lock sequencing remains caller-owned and requires its
-own design if a concrete gap is found.
-
-### P4. Remove the desired-state reconciler
-
-**Present state and evidence.** The queue already implements command delivery and
-retry behavior. Controlled profile replacement and
-[automatic identity renewal](../../server/internal/app/renewidentities.go) already
-exist; renewal is triggered within sixty days of expiry. DDM has its own membership
-[`Resolver` and `Expander`](../../devicemanagement/mdmprotocol/ddm/membership.go).
-
-**Decision and argument.** Remove this proposal. Labels, shards, dependencies,
-verification states, reapply-on-build-change and secret expansion together form a
-fleet policy engine. Moving it into a library package would not change that.
-A server-side preparation failure must not be fabricated as a device's MDM error
-response.
-
-**Maintenance acceptance.** Document the actual renewal/replacement behavior and
-extension seams. If a consumer demonstrates a missing queue primitive, review that
-primitive separately with protocol evidence; do not reintroduce this controller as
-a dependency of other retained candidates.
-
-### P5. Focus declaration composition on actual gaps
-
-**Present state and evidence.** Generated declarations, predicate validation and
-[capability-derived subscriptions](../../devicemanagement/mdmprotocol/ddm/subscriptions.go)
-already exist. The [legacy configuration schema](../../third_party/device-management/declarative/declarations/configurations/legacy.yaml)
-allows `ProfileURL` or `ProfileAssetReference` under their respective contracts.
-
-**Decision and argument.** Retain helpers for declaration/asset references and
-cross-document validation where generated single-object validation cannot express
-the relationship. Remove duplicate subscription synthesis, a second predicate
-validator, generic canary rollout and `plan/apply` deployment management.
-
-**Retained boundary.** Validate profile and credential-asset references, identifier
-forms and supported `app.settings` combinations against the pinned schema. Report
-PPPC requirements only where documented. Profile takeover must preserve required
-profile/payload identifiers, UUIDs, counts and ordering, with the documented MDM and
-declaration-payload exclusions. Do not require CMS-signed profile assets unless the
-specific Apple contract supports that representation. Keep older-OS delivery paths.
-
-**Acceptance before adoption.** Valid/invalid reference graphs, missing or wrong
-asset types, version-gated keys, takeover identity fixtures and generated-type
-round trips. Treat the supported predicate subset explicitly; do not imply every
-Apple predicate expression is evaluated by the server.
-
-### P6. Setup protocol helpers and an example
-
-**Present state and evidence.** ADE, `MachineInfo`, authenticated web views,
-`AwaitingConfiguration`, `AccountConfiguration` and `DeviceConfigured` are already
-represented. The [enterprise-install command](../../third_party/device-management/mdm/commands/application.install.enterprise.yaml)
-acknowledges before package download/installation and does not later return an
-installation-error command response.
-
-**Decision and argument.** Keep an example that deliberately holds and releases
-Setup Assistant using existing primitives, plus specific missing helpers. Remove
-the setup workflow product, signed-package hosting route, default hidden admin and
-automatic release on timeout. An acknowledgment is insufficient evidence to
-release a device that must finish an installation first.
-
-**Retained boundary.** Share the account hash codec with P3 and manifest helper with
-P11. Let the caller decide prerequisites, installation evidence, failure handling
-and explicit release. Keep migration-specific ordering in the migration example.
-
-**Acceptance before adoption.** Awaiting and non-awaiting states, duplicate or late
-messages, failure before completion, and an explicit `DeviceConfigured` decision.
-The example must state which observations establish readiness and which merely
-acknowledge command receipt. No dependency on P7.
-
-### P7. Remove the generic workflow engine
-
-**Present state and evidence.** Hooks, events, UUID-associated command results and
-DDM notifications already permit callers to coordinate exchanges. The
-[bench decision](decisions/0048-reference-server-bench.md) uses ordinary Go scenarios
-and explicitly avoids a separate workflow language.
-
-**Decision and argument.** Remove persistent steps, scheduling, exclusivity,
-workflow context and event-triggered starts. They introduce a new execution model,
-recovery contract and policy surface unrelated to implementing an Apple protocol.
-The fact that consumers need orchestration does not require the library to own it.
-
-**Maintenance acceptance.** Show bounded consumer examples through existing APIs
-and tests where the protocol interaction is otherwise unclear. Keep bench scenarios
-as test/example code, not a production scheduler.
-
-### P8. Split migration compatibility from enrollment policy
-
-**Present state and evidence.** Native-format export/import, replacement policy,
-Return to Service and Apple Business migration calls already exist.
-[Migration decision 0017](decisions/0017-enrollment-export-import.md) defines the import
-boundary. `ShouldRetryEnrollment`, language and region are already represented and
-have tests; they are not new implementation items.
-
-**Decision and argument.** Retain a separately designed, offline converter for
-trusted NanoMDM records into the existing migration contract, and examples of
-Apple's native MDM migration sequence. Remove a permissive raw-check-in import HTTP
-route, retroactive certificate trust changes, blocked-device lists, quota tokens,
-label assignment and a general `Reenroll` policy operation.
-
-**Retained boundary.** Source formats need pinned fixtures, explicit identity/topic
-checks and a report of unsupported fields. Do not claim NanoMDM conversion also
-covers every MicroMDM/Fleet deployment. Preserve the existing exclusions for command
-queues, account associations and revocation state. Apple's MDM migration and Mac
-Migration Assistant are different features; a generated Migration Assistant setting
-does not implement MDM migration.
-
-**Acceptance before adoption.** Idempotent import, collision/rejection cases, no
-silent certificate repinning and a pushability check that does not send an
-unauthorized wake. The native migration example must follow
-[Apple's migration requirements](https://support.apple.com/guide/deployment/migrate-managed-devices-dep4acb2aa44/web):
-Await Device Configured, required app licensing/reinstallation before release,
-conditional Activation Lock handling and documented platform/exclusion rules.
-Do not promise preservation for Shared iPad or Return to Service outside those
-rules. Live-device evidence must be separate from simulated success.
-
-### P9. The durable event outbox already exists
-
-**Present state and evidence.** [`server/eventstore`](../../server/eventstore)
-persists projected `event_records` and destination-specific `event_deliveries`, with
-leases, retry, terminal failures and manual retry. Its publisher coordinates local
-SQL mutations and event capture in one transaction through `event.Run`. The
-[reference composition](../../server/internal/app/eventstore.go) wires this whenever
-it uses SQL. [`adminevents.go`](../../server/internal/app/adminevents.go) and
-[`dmctl events`](../../server/internal/dmctl/eventverbs.go) already expose inspection
-and retry.
-
-**Decision and argument.** Remove “build an outbox” from the feature backlog and
-correct the stale bus-only documentation now. Kafka, NATS, Splunk, CloudEvents and
-label filters require individual demonstrated use cases; they are not needed to
-make the existing implementation durable.
-
-**Actual boundary.** Destinations are captured with each event. This is not
-arbitrary historical replay into newly configured sinks. Webhooks/custom external
-sinks are at least once and need EventID deduplication; native audit append and
-acknowledgment share a transaction when using the same SQL pool. Slog and in-memory
-bus subscribers remain ephemeral. Transactional event-capture failure can roll
-back a participating local operation; the old universal “persistence errors never
-fail device operations” statement is wrong. Denial records are captured separately
-after rollback, and failure to capture one cannot authorize the request.
-
-**Maintenance acceptance.** Document inspection, retry, destination changes,
-retention boundaries and failure guarantees; exercise existing restart, lease,
-rollback, redaction and destination-isolation tests on supported SQL backends.
-See the [event-delivery guide](../operations/event-delivery.md).
-
-### P10. Narrow push work to discrepancy diagnostics
-
-**Present state and evidence.** Push coalescing, failure classification, invalid-token
-events and certificate version rechecks exist. The
-[certificate lifecycle implementation](../../devicemanagement/pki/lifecycle/certificates.go)
-already rejects a renewed push certificate with a different topic. Push certificate
-validation and enrollment setup also enforce topic identity.
-
-**Decision and argument.** Remove the duplicate topic guard and silent-enrollment
-sweep worker. A periodic wake policy needs consumer-defined expectations about
-activity and is not an APNs protocol requirement. Retain a diagnostic comparing
-reported `mdm.push-token`/`mdm.push-magic` with stored routing state if a concrete
-troubleshooting case warrants it.
-
-**Acceptance before adoption.** Missing, stale, malformed and channel-specific
-reports must not silently overwrite authoritative push state. Return a bounded,
-redacted mismatch result with source/time; never emit raw token or magic values to
-logs/events. Confirm existing topic-mismatch tests before adding coverage.
-
-### P11. Apps and Books client; no app policy engine
-
-**Present state and evidence.** Commands/declarations and Apple Business app/package
-listings exist. The [Apple Business Get Apps documentation](https://developer.apple.com/documentation/applebusinessapi/get-apps)
-explicitly distinguishes built-in management from external MDM and directs external
-MDM developers to Apps and Books. It does not establish that these listing endpoints
-replace external-MDM licensing.
-
-**Decision and argument.** Retain a protocol client for the documented Apps and Books
-management API in `appleplatformservices`, plus an independent manifest helper. This
-fills an Apple-service client gap within the charter. Remove install polling policy,
-a package lifecycle controller and declarative app reconciliation.
-
-**Retained boundary.** Follow [management API setup](https://developer.apple.com/documentation/devicemanagement/getting-started-with-the-management-api)
-and [service configuration](https://developer.apple.com/documentation/devicemanagement/service-config):
-location server tokens, service discovery/configuration, asset/assignment operations
-and authenticated notifications as documented. Do not invent a token-exchange flow
-or hard-code a legacy service solely from another implementation. Token custody and
-licensing decisions stay with the caller. A licence-before-install example may
-compose this with existing commands.
-
-**Acceptance before adoption.** Pinned request/response fixtures, token/location
-isolation, pagination, rate-limit/retry and notification authentication cases. The
-manifest helper needs fixtures matching [Apple's asset contract](https://developer.apple.com/documentation/devicemanagement/manifesturl/itemsitem/assetsitem),
-including chunk sizes/hashes and malformed package input; it must not add hosting.
-P6 consumes the same helper.
-
-### P12. Managed Apple Account token helper with the right key
-
-**Present state and evidence.** [`GetTokenHandler`](../../server/service/service.go)
-already documents the `com.apple.maid` claims and delegates policy to the caller.
-The [DEP client](../../devicemanagement/appleplatformservices/dep) exposes account
-details; the [AXM client](../../devicemanagement/appleplatformservices/axm) uses a
-different authentication key model.
-
-**Decision and argument.** Retain a small RS256 JWT helper. Correct the draft's
-ambiguous “stored DEP or ABM key”: the RSA private key must correspond to the MDM
-server certificate registered with Apple, with `AccountDetail.server_uuid` as
-issuer. The AXM API's ES256/P-256 credentials are not interchangeable.
-
-**Acceptance before adoption.** An independently verified signature, exact
-handler-documented claims, UTF-8 TokenData encoding, issuer, issued-at clock cases, and
-rejection of wrong key types. Leave the decision to answer/refuse with the caller.
-A bench refusal case must identify the applicable account-driven enrollment mode;
-refusal must not be documented as universally causing self-unenrollment.
-`watch.enrollment` remains a distinct handler/contract.
-
-### P13. File-oriented profile lint
-
-**Present state and evidence.** [`profile`](../../devicemanagement/mdmprotocol/profile)
-already parses and validates profiles, and [`dmctl`](../../server/internal/dmctl)
-already explains registered profile schemas. The gap is convenient validation of
-an arbitrary `.mobileconfig` with useful file/key diagnostics.
-
-**Decision and argument.** Retain a thin command over those existing facilities.
-Do not create another schema registry, parser or automatic profile-to-declaration
-converter. This improves the usability of existing protocol support.
-
-**Acceptance before adoption.** Unsigned and supported signed input, nested payload
-errors, unknown payloads preserved as unvalidated, platform/version-specific
-support and distinct deprecation/removal diagnostics. Declaration alternatives must
-cite a real Apple mapping with its limitations; do not infer equivalence merely
-from similar names. Include exit-status and human-readable error examples.
-
-### P14. Defer vendor CA adapters until a concrete gap exists
-
-**Present state and evidence.** [`ca.Signer`](../../devicemanagement/pki/ca/ca.go)
-already abstracts signing, including external implementations. The
-[SCEP client](../../devicemanagement/pki/scep/client.go) already enrolls and renews.
-The draft's “local abstraction” and missing “generic SCEP” premise is incorrect.
-
-**Decision and argument.** Defer NDES/step-ca adapters. First distinguish a
-server-side signer from a device profile that enrolls directly with an external
-SCEP service. Those have different authentication, challenge and renewal contracts.
-[Smallstep provisioner documentation](https://smallstep.com/docs/step-ca/provisioners/)
-is provider-specific evidence, not a universal challenge-URL convention.
-
-**Acceptance to reopen.** Name one supported provider/version, its missing operation,
-credential ownership and an integration fixture. Prove it cannot be composed with
-the current signer/client. Do not impose one-time challenges in profile URLs,
-subject conventions or CertificateList-driven renewal on all CAs.
-
-### P15. Complete DDM inspection without mutating delivery state
-
-**Present state and evidence.** The DDM engine already queries values, errors and
-reverse-chronological reports. Admin tooling already exposes status, values, tokens
-and stored declarations. The current values route is capped at the first 1,000
-values; library pagination/error/history capabilities are not all exposed.
-The engine's `Manifest`, `Tokens` and `DeclarationItems` refresh persisted snapshots.
-
-**Decision and argument.** Retain paginated admin/CLI error and history access and a
-true read-only per-enrollment preview. Reusing the current delivery methods unchanged
-would violate the proposed read-only contract. Share this surface with P1/P10/P16.
-
-**Retained boundary.** Distinguish the last advertised snapshot from a computation
-of current intent. A preview must not save snapshots, advance tokens/change rows or
-send notifications. Apply existing resource authorization and redact credentials in
-expanded declaration/asset data.
-
-**Acceptance before adoption.** Multi-page queries with stable order/cursors,
-unknown enrollment, device/user channels, scoped authorization, secret redaction
-and before/after store assertions proving that preview has no write or push side
-effects. State clearly when the device's observed state is unavailable.
-
-### P16. Fold log and Lost Mode work into diagnostics and tests
-
-**Present state and evidence.** Enhanced-log and Lost Mode command types already
-exist, and service tests exercise seeded enhanced-log contracts. Lost Mode predates
-OS 27; neither its novelty nor absence from all surveyed projects is established.
-The [pinned command schemas](../../third_party/device-management/mdm/commands)
-define platform, supervision and state restrictions.
-
-**Decision and argument.** Remove this as a standalone feature. Add missing status
-visibility through P15 and specific examples/behavior tests through P17. An AppleCare
-logging token is supplied by Apple and collection uploads to Apple; this is not a
-general-purpose log-upload host. Do not add a location inventory feed or an automatic
-Lost Mode sequence with potentially disruptive state changes.
-
-**Acceptance for folded work.** Exercise unsupported/unsupervised cases, reported
-errors and cancellation; distinguish command acknowledgment from collection
-completion. Redact logging tokens and location data from ordinary output. Require
-explicit caller actions for enable, locate, sound and disable.
-
-### P17. Add only missing protocol behavior coverage
-
-**Present state and evidence.** Generated conformance and seeded service tests
-already cover OS 27 fields, mandatory software-update/PSSO gates and retry behavior.
-The [bench catalogue](../testing/bench-catalogue.md) records executable scenarios;
-field presence and a successful simulator exchange do not prove physical-device
-compatibility.
-
-**Decision and argument.** Retain a coverage audit followed by named missing cases
-for watch pairing, tvOS, visionOS and new status behavior. Do not duplicate generated
-field tests or market this as universal platform support. Watch enrollment is
-configured on the paired iPhone (iOS 17+), not by directly enrolling the watch with
-the iPhone profile.
-
-**Acceptance before adoption.** Map each new case to an Apple contract and an
-existing test gap, including wrong platform/channel, invalid prerequisites and
-retry/error behavior. A transcript recorder is optional separate work: scrub
-identities, tokens, credentials, private keys and location before fixtures enter
-version control. Record OS/build and provenance. Keep simulated, replayed and live
-results visibly separate and preserve dated live-device evidence.
-
-### P18. Remove labels-as-tenancy
-
-**Present state and evidence.** Named Apple credentials and enrollment-resource
-Cedar authorization already exist in
-[`adminauthz.go`](../../server/internal/app/adminauthz.go). They do not establish
-organization-wide isolation for every store or bulk operation.
-
-**Decision and argument.** Remove targeting labels and tenant scoping from this
-backlog. A label attribute alone cannot isolate declarations, bulk queries, events,
-credentials, migrations and all other state. This would expand the project into a
-multitenant management product without designing that product's boundaries.
-
-**Maintenance acceptance.** Describe the existing scoped authorization accurately.
-Use explicit enrollment-resource policy examples; never describe them as full
-tenant isolation. Consumers needing tenancy must provide and validate it outside
-this project's promised contract.
-
-## Implementation phases
-
-### Phase 1 — documentation and evidence repair (maintenance)
-
-Rewrite this review; align README, architecture, package docs, operational guides,
-ADRs and affected diagrams with existing code. In particular, explain durable event
-capture versus ephemeral bus delivery, existing DDM queries and existing renewal.
-Preserve dated research/live-device records; add corrections to current guidance
-instead of rewriting past observations. Preserve unrelated working-tree edits.
-
-Acceptance: every P1–P18 has a disposition and evidence; current links/commands
-resolve; docs describe present behavior rather than retained proposals. Verify
-changed diagrams from their JSON sources with artifact and browser evidence.
-
-### Phase 2 — pipeline and test repairs (maintenance)
-
-The [14 September main run](https://github.com/deploymenttheory/go-apple-dm/actions/runs/34856317612)
-shows a Linux supervisor-stop race and transient Go proxy HTTP/2 download failures
-in Windows candidate installation and PostgreSQL E2E setup. The latter is not a
-PostgreSQL behavior failure. The [server release run](https://github.com/deploymenttheory/go-apple-dm/actions/runs/34856662154)
-shows a native Windows startup timeout followed by a held workspace lock during
-failed-test cleanup. Release assets were consequently skipped.
-
-Repair control-response shutdown and failed-test cleanup; allow measured startup
-headroom while retaining deadlines. Keep standard Go dependency commands and cache
-behavior; transient proxy failures can be rerun at the failed-job level. A new
-download script or cross-workflow retry layer is not justified by these two failures.
-Keep checksum/authentication/module errors and build/test failures fatal. Verify
-generated output once and detect stale
-as well as changed/missing files and removed locked public names.
-
-Remove the repeated SQLite-only embedded acceptance catalogue from the PostgreSQL
-E2E invocation. Retain backend-specific E2E and separate process acceptance. Avoid
-rebuilding release archives for changelog-only updates, while retaining executable,
-dependency, packaging and relevant workflow triggers. Document the
-[CI responsibility matrix](../testing/ci.md). Similar-looking checks over candidate
-modules, published modules and packaged binaries cover different inputs and remain.
-
-Acceptance: workflow lint/security and behavioral script tests; targeted race tests;
-schema verification; normal cross-platform CI including native Windows; SQL contract
-and backend E2E suites, process acceptance and the unchanged coverage gate. Validate
-future release gates without rewriting tags or republishing an existing release.
-
-### Phase 3 — independently designed feature candidates (not implemented here)
-
-Start with P13/P15's bounded tooling gaps and P12's corrected signing helper, then
-P11's Apple-service client. P1/P2/P3/P5 require small protocol-focused designs and
-fixtures. P6/P8 are examples or compatibility helpers with explicit trust/ordering
-contracts. P10/P16 feed shared diagnostics; P17 supplies identified coverage gaps.
-P14 remains deferred. P4/P7/P18 are removed; P9 is maintenance of existing code.
-
-No retained item depends on a new inventory store, workflow engine, reconciler or
-label model. Each future implementation must update its API/package documentation,
-examples, operations guidance and applicable generated references/diagrams in the
-same phase, with evidence for its acceptance criteria. Review any change to this
-boundary as an explicit charter change rather than slipping it into a helper.
+| 1 | Profile lint and DDM inspection | Existing profile, DDM and admin APIs |
+| 2 | Reusable protocol helpers and diagnostics | 1.2 for diagnostic integration |
+| 3 | App manifest helper and Apps and Books client | Existing Apple-client conventions |
+| 4 | Setup and migration tools/examples | Dependencies specified per task |
+| 5 | Missing simulator and bench behavior | Features exercised by each scenario |
+| 6 | Documentation and CI completion | All implemented tasks |
+
+## Phase 1 — inspection tools
+
+### 1.1 Profile file lint
+
+**Work in:** [profile](../../devicemanagement/mdmprotocol/profile),
+[schema support](../../devicemanagement/schema/support) and
+[dmctl](../../server/internal/dmctl).
+
+- Add an offline `dmctl` command that reads a `.mobileconfig`, calls
+  `profile.Parse` and validates it for an explicit target.
+- Report the file, payload index/type and failing key. Distinguish invalid,
+  unsupported, deprecated and removed fields. Mark unknown or ambiguous payload
+  types as unvalidated; preserve their content.
+- Handle unsigned and supported CMS-signed input through existing parse options.
+  Report signature verification and certificate trust separately.
+
+**Done when:** CLI tests cover valid, malformed, signed, nested-invalid, unknown
+and version-gated profiles, with documented exit codes and example output.
+
+### 1.2 Paginated DDM status queries
+
+**Work in:** [status queries](../../devicemanagement/mdmprotocol/ddm/status_query.go),
+[admin wiring](../../server/internal/app/admin.go) and
+[dmctl](../../server/internal/dmctl).
+
+- Expose `StatusValues`, `StatusErrors` and `StatusReports` through authenticated
+  admin routes and typed CLI commands. Replace the values route's fixed
+  `Limit: 1000` with the existing paging contract and prefix filter.
+- Preserve device/user enrollment identity, ordering and cursors. Apply existing
+  enrollment-resource authorization and safe projections to retained reports.
+- Keep existing route consumers compatible; add fields or routes deliberately
+  and document any unavoidable compatibility change.
+
+**Done when:** tests traverse more than 1,000 records without loss/duplication and
+cover empty results, invalid cursors, unknown enrollments, both channels,
+unauthorized access and secret redaction.
+
+### 1.3 Read-only DDM preview
+
+**Depends on:** 1.2.
+
+**Work in:** [DDM engine](../../devicemanagement/mdmprotocol/ddm),
+[server admin](../../server/internal/app) and [dmctl](../../server/internal/dmctl).
+
+- Add a read-only path for computing an enrollment's current declaration intent.
+  Reuse membership, expansion and token calculation without persisting a snapshot.
+- Return the stored delivery snapshot, computed intent and available reported
+  state as distinct results. A stored snapshot does not prove device receipt.
+- Expose the result through the admin API and CLI with authorization and redaction.
+  Existing `Manifest`, `Tokens` and `DeclarationItems` refresh snapshots;
+  calling them unchanged does not meet this task's contract.
+
+**Done when:** before/after assertions show no snapshot, token timestamp, change
+row or notification writes. Cover membership changes, missing observations,
+both channels, authorization and credential-bearing declarations.
+
+## Phase 2 — protocol helpers
+
+### 2.1 Managed Apple Account JWT
+
+**Work in:** a small helper under
+[enrollment](../../devicemanagement/mdmprotocol/enroll), integrated through
+[GetTokenHandler](../../server/service/service.go).
+
+- Build UTF-8 JWT TokenData for `com.apple.maid` with RS256.
+- Take an RSA signing key matching the registered MDM server certificate,
+  `AccountDetail.server_uuid` as issuer, issued-at time and unique JWT ID.
+  Emit the handler-documented claims, including `service_type`.
+- Add a handler example where caller code chooses whether to issue the token.
+  Keep AXM ES256 credentials and `watch.enrollment` on their existing contracts.
+
+**Done when:** independent signature verification, exact claims/encoding,
+invalid-key and clock tests pass; the example covers issuance and refusal for
+its specified enrollment mode.
+
+### 2.2 ADE account password hash
+
+**Work in:** [ADE helpers](../../devicemanagement/mdmprotocol/enroll/ade).
+
+- Implement the `SALTED-SHA512-PBKDF2` binary-plist representation from the
+  [password-hash schema](../../third_party/device-management/other/passwordhash.yaml).
+- Accept the password and explicit bounded derivation parameters; generate salt
+  with cryptographic randomness. Reuse the existing plist and generated types.
+- Show use with `AccountConfiguration` and `SetAutoAdminPassword`; the latter
+  requires the GUID of the administrator created through ADE.
+
+**Done when:** independent derivation vectors and decoded plist fixtures match,
+invalid parameters fail safely, and errors/output contain no password material.
+
+### 2.3 FileVault recovery-key decoding
+
+**Work in:** a focused helper under
+[mdmprotocol](../../devicemanagement/mdmprotocol), reusing
+[CMS](../../devicemanagement/mdmprotocol/cms).
+
+- Decode `RotateResult.EncryptedNewRecoveryKey` using the matching reply
+  certificate/private key and the
+  [rotation contract](../../third_party/device-management/mdm/commands/rotate.file.vault.key.yaml).
+- Return the decoded result to the caller. Document retaining the matching key
+  across retries and delayed replies; reuse existing sealed command/result storage.
+
+**Done when:** independent CMS fixtures cover successful decoding, malformed
+envelopes, unsupported algorithms, wrong keys and delayed-response key selection.
+Errors and diagnostic projections must never contain the recovery key.
+
+### 2.4 Activation Lock bypass-code helper
+
+**Work in:** a focused helper under
+[mdmprotocol](../../devicemanagement/mdmprotocol).
+
+- Implement the missing bypass-code representation/conversion operations from
+  Apple's “Creating and using bypass codes” contract. Record the exact supported
+  format and official source beside independent fixtures before writing the codec.
+- Reuse generated Activation Lock request/response types and their target checks.
+  Keep retrieved codes and caller-generated codes distinguishable; preserve opaque
+  device-returned values where Apple specifies no conversion.
+
+**Done when:** independent vectors verify each supported representation, malformed
+input fails safely, and command examples preserve platform/channel restrictions
+and redact code values. Command execution remains an explicit caller action.
+
+### 2.5 Typed status observations
+
+**Work in:** [DDM status queries](../../devicemanagement/mdmprotocol/ddm/status_query.go)
+and [generated status types](../../devicemanagement/schema/status).
+
+- Add typed accessors for software-update progress/failure and MDM push status,
+  the values consumed by 2.6 and 2.7. Follow the existing `ClientCapabilities`
+  accessor pattern; read the current status store.
+- Return source path, enrollment/channel, observation time and decoding outcome.
+  Preserve unknown values and distinguish absent, explicit null and malformed data.
+- Add a consumer example using the accessors without creating another device store.
+
+**Done when:** tests cover full replacement, partial updates, null/omitted fields,
+unknown fields, invalid known values and channel isolation.
+
+### 2.6 Push-state discrepancy diagnostics
+
+**Depends on:** 1.2 and 2.5.
+
+**Work in:** [reference-server admin](../../server/internal/app) and
+[dmctl](../../server/internal/dmctl).
+
+- Compare reported `mdm.push-token`/`mdm.push-magic` observations with stored
+  routing state for one explicitly selected enrollment and channel.
+- Return match, mismatch, missing or invalid observations with timestamps.
+  Let callers interpret age using those timestamps; comparisons never update
+  routing state or send a wake.
+- Expose only redacted comparison results through existing diagnostic surfaces.
+
+**Done when:** missing, old, malformed and cross-channel cases are covered;
+store/push assertions prove no side effects and output contains no token or magic.
+
+### 2.7 Explicit software-update declarations
+
+**Depends on:** 2.5 for progress interpretation.
+
+**Work in:** [DDM helpers](../../devicemanagement/mdmprotocol/ddm), reusing
+[GDMF](../../devicemanagement/appleplatformservices/gdmf) and generated declarations.
+
+- Build and validate an enforcement declaration from a caller-selected target
+  version/build and `TargetLocalDateTime`.
+- Validate the deadline as a local date-time without a timezone offset.
+  Apply the pinned enforcement/settings schemas' field and version gates.
+- Interpret progress/failure through 2.5. Keep selected intent, published asset
+  availability and device-reported installation state distinct.
+
+**Done when:** generated-type round trips, invalid targets/deadlines, support
+gates and pending/failure observations pass. Existing pre-27 command tests stay green.
+
+### 2.8 Declaration and asset composition
+
+**Work in:** [DDM helpers](../../devicemanagement/mdmprotocol/ddm), using the pinned
+`legacy`, credential-asset and `app.settings` declaration schemas.
+
+- Add cross-document validation for profile/credential references, identifiers,
+  required asset types and supported combinations. Reuse single-object validation,
+  predicates and subscription synthesis.
+- Add profile-takeover composition fixtures preserving required profile/payload
+  identifiers, UUIDs, counts and ordering, including documented exclusions.
+- Validate target-specific `ProfileURL`/`ProfileAssetReference` and asset
+  representations against the pinned contracts.
+
+**Done when:** valid graphs, dangling/wrong-type references, unsupported keys,
+takeover identity and round-trip tests pass, with a small composition example.
+
+## Phase 3 — app distribution primitives
+
+### 3.1 App/package manifest helper
+
+**Work in:** a reusable package under
+[mdmprotocol](../../devicemanagement/mdmprotocol).
+
+- Build and validate Apple's documented enterprise-install manifest from explicit
+  package metadata and asset URLs, using existing schema types where available.
+- Implement required size, chunk and hash calculations for the supported format.
+  Record the official manifest contract and sanitized fixtures with the helper.
+- Keep package hosting and installation decisions with the caller.
+
+**Done when:** independent manifest fixtures, chunk boundaries, hash/size mismatch,
+malformed input and bounded-reader tests pass; a command-building example compiles.
+
+### 3.2 Apps and Books client
+
+**Work in:** a new package under
+[appleplatformservices](../../devicemanagement/appleplatformservices), following
+existing client and test-server conventions.
+
+- Implement documented service configuration/discovery, assets and assignment
+  operations using location server tokens.
+- Implement the documented notification verification contract and typed payloads.
+  Use caller-supplied credentials, context, HTTP transport and retry settings.
+- Add a simulated service and a licence-before-install example using existing
+  install commands. AXM built-in-management app listings remain a separate API.
+
+**Done when:** official request/response fixtures cover pagination, location/token
+isolation, rate limits, retry/cancellation, API errors and invalid notifications.
+The example obtains licensing success before issuing an install command.
+
+## Phase 4 — setup and migration
+
+### 4.1 Explicit ADE setup example
+
+**Depends on:** 2.2 and 3.1; use 3.2 when the example installs licensed apps.
+
+**Work in:** [server examples/tests](../../server/e2e) and
+[ADE helpers](../../devicemanagement/mdmprotocol/enroll/ade).
+
+- Compose existing enrollment, `AwaitingConfiguration`, account configuration,
+  app commands and `DeviceConfigured` in ordinary Go.
+- Make prerequisites, installation observations and the release decision explicit
+  inputs. An install-command acknowledgment alone does not establish installation.
+- Add only helpers needed to express this exchange through existing APIs.
+
+**Done when:** scenarios cover awaiting/non-awaiting state, duplicates, late
+messages, installation failure and deliberate release. The guide names the
+observations required to proceed and explains how callers handle failure.
+
+### 4.2 Offline NanoMDM conversion
+
+**Work in:** a converter over
+[EnrollmentExport](../../devicemanagement/storage), wired to a local
+[dmctl](../../server/internal/dmctl) operation.
+
+- Pin one NanoMDM revision and source export format. Convert trusted offline
+  records to the existing migration format with a mapping/unsupported-field report.
+- Validate identity, parent/channel relationships, certificate pins and push topic.
+  Output device records before their user records.
+- Use existing import validation and target-store sealing. Preserve the exclusions
+  in [decision 0017](decisions/0017-enrollment-export-import.md).
+  Conversion itself performs no import or APNs request.
+
+**Done when:** sanitized fixtures cover idempotent conversion/import, disabled
+devices, collisions, missing parents, mismatched topics and certificate conflicts.
+The guide describes protected handling of exported secrets and a pre-import check.
+
+### 4.3 Native Apple MDM migration example
+
+**Depends on:** 4.1 and 3.2 for setup/licensing; use 2.4 where bypass-code conversion
+is required. This is independent of the offline converter.
+
+**Work in:** [server E2E](../../server/e2e) and
+[AXM](../../devicemanagement/appleplatformservices/axm) examples.
+
+- Compose existing Apple migration calls and enrollment primitives for a stated
+  platform/OS and enrollment mode.
+- Follow Apple's documented ordering for Await Device Configured, app licensing
+  and reinstallation, conditional Activation Lock handling and explicit release.
+- Document eligibility, preserved state, exclusions and recovery from interruption.
+
+**Done when:** scenarios cover the supported sequence, invalid prerequisites and
+interruption. Record simulator evidence separately from any physical-device results.
+
+## Phase 5 — simulator and bench coverage
+
+**Work in:** [simulator](../../devicemanagement/simulator),
+[bench](../../server/internal/bench) and [E2E](../../server/e2e).
+
+- Map watch pairing, tvOS, visionOS, new status behavior, enhanced logging and
+  Lost Mode to existing generated, service and scenario tests. List only missing
+  behavioral exchanges in the bench catalogue, with their Apple contract.
+- Implement each identified gap, including wrong platform/channel, supervision,
+  invalid prerequisites and applicable retry/error/cancellation paths.
+- Keep watch pairing on its documented paired-iPhone enrollment flow. Model
+  logging acknowledgment separately from completion. Lost Mode enable, locate,
+  sound and disable remain individually initiated actions.
+- Use sanitized fixtures with source revision and OS/build. Label results as
+  simulated, replayed or live; preserve existing dated live records.
+
+**Done when:** each added scenario closes a named gap, appears in the executable
+catalogue and passes deterministically. Shared scenarios pass embedded/process
+adapters where applicable; fixtures and output contain no sensitive material.
+
+## Phase 6 — documentation and CI completion
+
+Documentation belongs in each task's change. Finish with a repository-wide
+consistency pass and validation of the combined implementation.
+
+- Update README capabilities, package docs, CLI help, admin API examples,
+  operations guides and applicable ADRs to describe the implemented behavior.
+  Update affected diagram sources and regenerate/validate their artifacts.
+- Verify examples, local links, target-version statements and the bench catalogue.
+  Keep unimplemented work in this plan rather than capability documentation.
+- Repair broken workflows and reproducible test failures. Remove overlapping steps
+  only when their inputs and tested contracts are equivalent; update the
+  [CI responsibility matrix](../testing/ci.md).
+- Retain normal Go dependency resolution and existing caches. Keep the current
+  platform/backend matrix, checksum verification and coverage requirements.
+
+**Done when:** affected race-enabled tests and both module linters pass;
+`make verify` passes; workflow changes pass `actionlint`; full CI passes native
+Linux/macOS/Windows tests, SQL contracts, both E2E backends, process acceptance
+and the coverage gate. Run applicable package/release checks without publishing.
+
+Record test commands/results, documentation changes and any unverified live-device
+claims in the final implementation review. Mark completed tasks in this file.

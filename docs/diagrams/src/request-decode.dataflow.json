@@ -5,19 +5,20 @@
     "title": "Device Request Decoding and Identity Authorization",
     "quality_profile": "showcase",
     "viewBox": [
-      1280,
-      700
+      1590,
+      760
     ],
     "views": [
       {
         "id": "body",
         "label": "Decode the device message",
         "focus": [
+          "quotas",
           "body",
           "plist",
           "checkin"
         ],
-        "note": "A bounded property-list decoder produces a typed check-in message or command response."
+        "note": "Configured HTTP quotas run before route dispatch and body decoding; admitted requests then produce typed messages."
       },
       {
         "id": "identity",
@@ -31,16 +32,31 @@
           "authorize"
         ],
         "note": "TLS, a trusted proxy, or a verified Mdm-Signature supplies the certificate. Service policy then authorizes it."
+      },
+      {
+        "id": "refusals",
+        "label": "Quota and certificate refusals",
+        "focus": [
+          "quotas",
+          "quota-refusal",
+          "authorize",
+          "status-refusal"
+        ],
+        "note": "Quota refusals precede decoding. Core checks certificate status before hooks, replacement handling and ordinary dispatch."
       }
     ],
     "colour_profile": "purpose-v1",
     "legend": {
       "mode": "hidden"
-    }
+    },
+    "locale": "en"
   },
   "stages": [
     {
-      "label": "Wire"
+      "label": "HTTP admission"
+    },
+    {
+      "label": "Admitted request"
     },
     {
       "label": "Decode"
@@ -56,9 +72,9 @@
     {
       "id": "body",
       "type": "external",
-      "label": "Device request body",
+      "label": "Request body",
       "sublabel": "XML or binary property list",
-      "stage": 0,
+      "stage": 1,
       "row": 0,
       "tag": "untrusted",
       "width": 190,
@@ -70,7 +86,7 @@
       "type": "security",
       "label": "Mdm-Signature",
       "sublabel": "Detached CMS signature",
-      "stage": 0,
+      "stage": 1,
       "row": 1,
       "tag": "untrusted",
       "width": 190,
@@ -80,9 +96,9 @@
     {
       "id": "plist",
       "type": "backend",
-      "label": "Property-list decoder",
+      "label": "Plist decoder",
       "sublabel": "Bound size and XML nesting",
-      "stage": 1,
+      "stage": 2,
       "row": 0,
       "width": 190,
       "height": 58,
@@ -93,7 +109,7 @@
       "type": "security",
       "label": "Verify signed body",
       "sublabel": "Signature and signing time",
-      "stage": 1,
+      "stage": 2,
       "row": 1,
       "width": 190,
       "height": 58,
@@ -104,7 +120,7 @@
       "type": "backend",
       "label": "Typed check-in",
       "sublabel": "Structure from MessageType",
-      "stage": 2,
+      "stage": 3,
       "row": 0,
       "width": 190,
       "height": 58,
@@ -115,7 +131,7 @@
       "type": "backend",
       "label": "Command response",
       "sublabel": "Idle or CommandUUID result",
-      "stage": 2,
+      "stage": 3,
       "row": 1,
       "width": 190,
       "height": 58,
@@ -126,7 +142,7 @@
       "type": "security",
       "label": "Device certificate",
       "sublabel": "Identity for authorization",
-      "stage": 2,
+      "stage": 3,
       "row": 2,
       "width": 190,
       "height": 58,
@@ -135,9 +151,9 @@
     {
       "id": "tls",
       "type": "security",
-      "label": "TLS client certificate",
+      "label": "TLS certificate",
       "sublabel": "From the TLS connection",
-      "stage": 0,
+      "stage": 1,
       "row": 2,
       "width": 190,
       "height": 58,
@@ -146,9 +162,9 @@
     {
       "id": "proxy",
       "type": "security",
-      "label": "Trusted proxy header",
+      "label": "Trusted proxy",
       "sublabel": "Configured Client-Cert trust",
-      "stage": 0,
+      "stage": 1,
       "row": 3,
       "width": 190,
       "height": 58,
@@ -157,9 +173,9 @@
     {
       "id": "identity",
       "type": "security",
-      "label": "Identity extraction",
+      "label": "Extract identity",
       "sublabel": "Configured certificate source",
-      "stage": 1,
+      "stage": 2,
       "row": 2,
       "width": 190,
       "height": 58,
@@ -168,13 +184,46 @@
     {
       "id": "authorize",
       "type": "security",
-      "label": "Service authorization",
-      "sublabel": "Status, pin, and replacement",
-      "stage": 3,
+      "label": "Core authorization",
+      "sublabel": "Status before hooks / dispatch",
+      "stage": 4,
       "row": 2,
       "width": 190,
       "height": 58,
       "purpose": "policy"
+    },
+    {
+      "id": "quotas",
+      "stage": 0,
+      "row": 0,
+      "label": "HTTP quota gate",
+      "sublabel": "Before MDM routing",
+      "type": "security",
+      "width": 190,
+      "height": 58,
+      "purpose": "policy"
+    },
+    {
+      "id": "quota-refusal",
+      "stage": 0,
+      "row": 1,
+      "label": "Quota refusal",
+      "sublabel": "429 limit / 503 unavailable",
+      "type": "security",
+      "width": 190,
+      "height": 58,
+      "purpose": "failure"
+    },
+    {
+      "id": "status-refusal",
+      "stage": 4,
+      "row": 3,
+      "label": "Status rejected",
+      "sublabel": "HTTP 403; no dispatch",
+      "type": "security",
+      "width": 190,
+      "height": 58,
+      "purpose": "failure"
     }
   ],
   "flows": [
@@ -233,16 +282,16 @@
       "toSide": "top",
       "via": [
         [
-          150,
+          460,
           214
         ],
         [
-          460,
+          770,
           214
         ]
       ],
       "labelAt": [
-        315,
+        625,
         204
       ],
       "purpose": "transport"
@@ -273,7 +322,7 @@
       "fromSide": "right",
       "toSide": "left",
       "labelAt": [
-        615,
+        925,
         428
       ],
       "purpose": "authentication"
@@ -284,7 +333,7 @@
       "to": "authorize",
       "label": "Apply identity policy",
       "labelAt": [
-        925,
+        1235,
         428
       ],
       "purpose": "policy"
@@ -298,7 +347,7 @@
       "toSide": "top",
       "via": [
         [
-          1080,
+          1390,
           157
         ]
       ],
@@ -312,15 +361,52 @@
       "fromSide": "right",
       "toSide": "left",
       "purpose": "policy"
+    },
+    {
+      "id": "quota-admit",
+      "from": "quotas",
+      "to": "body",
+      "label": "Admit",
+      "purpose": "transport"
+    },
+    {
+      "id": "quota-refuse",
+      "from": "quotas",
+      "to": "quota-refusal",
+      "label": "Refuse",
+      "purpose": "failure",
+      "labelAt": [
+        150,
+        200
+      ]
+    },
+    {
+      "id": "status-refuse",
+      "from": "authorize",
+      "to": "status-refusal",
+      "label": "Status failure",
+      "purpose": "failure",
+      "labelAt": [
+        1390,
+        428
+      ]
     }
   ],
   "cards": [
+    {
+      "dot": "policy",
+      "title": "Configured quotas before routing",
+      "items": [
+        "Reference-application middleware checks atomic per-peer and aggregate quotas in shared protocol state before routing, body decoding or certificate extraction. Routes without configured quotas pass through.",
+        "Quota exhaustion returns 429 with Retry-After; unavailable quota state returns 503. Every request carrier shown in the next stage belongs to an admitted request. The TLS handshake itself precedes HTTP middleware."
+      ]
+    },
     {
       "dot": "transport",
       "title": "Two outputs from the transport",
       "items": [
         "The transport decodes a check-in message or command response and extracts the device certificate from an enabled identity source.",
-        "Decoding is not enrollment authorization. The service then applies certificate status, identity, account, and replacement policy."
+        "Both check-in and command traffic reach Core with a decoded message and extracted identity. Configured certificate-status rejection returns 403 before hooks, replacement handling or ordinary dispatch."
       ]
     },
     {
@@ -328,14 +414,14 @@
       "title": "Identity sources",
       "items": [
         "Native TLS, a trusted proxy header, and Mdm-Signature are separate certificate sources. Header trust depends on the deployment boundary.",
-        "The signature verifier needs the original body bytes. Size limits apply before untrusted input reaches deeper processing."
+        "The signature verifier uses the original body bytes. Status enforcement is separate from transport trust, proof of possession, pinning and account/enrollment authorization."
       ]
     },
     {
       "dot": "service",
       "title": "Outbound validation",
       "items": [
-        "Command platform and channel checks run when service.Core enqueues a command. They do not validate incoming check-in messages."
+        "Wire payload validation and target support checks apply to commands at enqueue and dispatch. They are separate from incoming check-in decoding."
       ]
     },
     {
@@ -344,7 +430,9 @@
       "items": [
         "Check-in — https://developer.apple.com/documentation/devicemanagement/check-in",
         "RFC 9440 — Client-Cert HTTP Header Field — https://www.rfc-editor.org/rfc/rfc9440",
-        "MDM payload — https://developer.apple.com/documentation/devicemanagement/mdm"
+        "MDM payload — https://developer.apple.com/documentation/devicemanagement/mdm",
+        "Quota wrapper and shared state — https://github.com/deploymenttheory/go-apple-dm/blob/80599ddc35778bcc88fa2ac77bb1dc68a51cf089/server/internal/app/security.go",
+        "Certificate status before service hooks — https://github.com/deploymenttheory/go-apple-dm/blob/80599ddc35778bcc88fa2ac77bb1dc68a51cf089/server/service/checkin.go"
       ]
     }
   ]

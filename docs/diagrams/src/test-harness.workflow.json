@@ -7,7 +7,8 @@
     "legend": {
       "mode": "hidden"
     },
-    "colour_profile": "purpose-v1"
+    "colour_profile": "purpose-v1",
+    "locale": "en"
   },
   "lanes": [
     {
@@ -185,7 +186,7 @@
       "title": "Different kinds of evidence",
       "items": [
         "Unit and backend-contract tests check code behaviour. Embedded and process scenarios exercise the maintained reference server and shared catalogue.",
-        "Simulated scenarios use local fixtures. Live app receipt and device inventory checks require real registration, credentials, and hardware."
+        "Simulated scenarios use fixtures. The retained 13 September 2026 Mac observations identify physical-device candidates; synthetic offline enrollments and public SQL recovery tests remain separate evidence."
       ]
     },
     {
@@ -193,7 +194,7 @@
       "title": "Coverage is a threshold",
       "items": [
         "The gate merges emitted profiles and requires 95% overall and per non-exempt package. Fuzz smoke is a separate check.",
-        "A diagram cannot establish a passing coverage result. PR 14’s validation record reports remaining per-package failures; use a fresh report for current status."
+        "The 14 September 2026 local validation checkpoint records a passing gate at 95.77%. That is a dated measurement for its tested source, not a current result or proof of physical-device compatibility."
       ]
     },
     {
@@ -207,7 +208,9 @@
       "dot": "transport",
       "title": "Public documentation",
       "items": [
-        "Go command: Test packages — https://pkg.go.dev/cmd/go#hdr-Test_packages"
+        "Go command: Test packages — https://pkg.go.dev/cmd/go#hdr-Test_packages",
+        "Dated validation checkpoint and Mac observations — https://github.com/deploymenttheory/go-apple-dm/blob/80599ddc35778bcc88fa2ac77bb1dc68a51cf089/docs/reviews/real-mac-lifecycle-2026-09-13.md",
+        "Automated runtime checks, 14 September 2026 — https://github.com/deploymenttheory/go-apple-dm/blob/80599ddc35778bcc88fa2ac77bb1dc68a51cf089/docs/reviews/scope-docs-ci-2026-09-14.md"
       ]
     }
   ]

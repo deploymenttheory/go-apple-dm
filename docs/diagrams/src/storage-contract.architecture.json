@@ -10,7 +10,7 @@
     ],
     "repository": {
       "url": "https://github.com/deploymenttheory/go-apple-dm",
-      "revision": "bb9e5bb3af89683a960a326e309be409bb0dc40f"
+      "revision": "80599ddc35778bcc88fa2ac77bb1dc68a51cf089"
     },
     "views": [
       {
@@ -61,7 +61,8 @@
     "colour_profile": "purpose-v1",
     "legend": {
       "mode": "hidden"
-    }
+    },
+    "locale": "en"
   },
   "components": [
     {
@@ -140,8 +141,7 @@
       "sources": [
         {
           "path": "devicemanagement/storage/storage.go",
-          "line": 97,
-          "end_line": 118,
+          "line": 82,
           "label": "EnrollmentStore"
         }
       ],
@@ -163,8 +163,7 @@
       "sources": [
         {
           "path": "devicemanagement/storage/storage.go",
-          "line": 199,
-          "end_line": 218,
+          "line": 208,
           "label": "CommandQueue"
         }
       ],
@@ -186,8 +185,7 @@
       "sources": [
         {
           "path": "devicemanagement/storage/storage.go",
-          "line": 258,
-          "end_line": 264,
+          "line": 290,
           "label": "BootstrapTokenStore"
         }
       ],
@@ -209,8 +207,7 @@
       "sources": [
         {
           "path": "devicemanagement/storage/storage.go",
-          "line": 338,
-          "end_line": 348,
+          "line": 389,
           "label": "MigrationStore"
         }
       ],
@@ -232,8 +229,7 @@
       "sources": [
         {
           "path": "devicemanagement/storage/storage.go",
-          "line": 236,
-          "end_line": 255,
+          "line": 268,
           "label": "CertAuthStore"
         }
       ],
@@ -255,8 +251,7 @@
       "sources": [
         {
           "path": "devicemanagement/storage/storage.go",
-          "line": 221,
-          "end_line": 224,
+          "line": 253,
           "label": "PushStore"
         }
       ],
@@ -278,8 +273,7 @@
       "sources": [
         {
           "path": "devicemanagement/storage/storage.go",
-          "line": 317,
-          "end_line": 327,
+          "line": 356,
           "label": "UserAuthStore"
         }
       ],
@@ -301,8 +295,7 @@
       "sources": [
         {
           "path": "devicemanagement/storage/storage.go",
-          "line": 280,
-          "end_line": 293,
+          "line": 314,
           "label": "PushCertStore"
         }
       ],
@@ -466,8 +459,16 @@
       "dot": "storage",
       "title": "Optional replacement contract",
       "items": [
-        "ReplacementStore atomically tracks the candidate identity and promotes it only after successful check-in and command acknowledgement.",
+        "ReplacementStore is a separate optional extension. It atomically tracks the candidate identity and promotes it only after successful check-in and command acknowledgement.",
         "The transition preserves the enrollment, user channels, escrow, and ordinary command queue. Shared tests exercise the memory and SQL implementations."
+      ]
+    },
+    {
+      "dot": "storage",
+      "title": "Optional command clearing",
+      "items": [
+        "CommandClearer.ClearCommand clears one non-terminal command, retaining its record and all other queued work. It is an optional extension, separate from the eight interfaces in storage.Store.",
+        "Dispatch revalidates stored commands against current inventory. An invalid or unsupported command needs this extension to be discarded; without it, dispatch returns an unsupported-target error instead of delivering the command."
       ]
     },
     {
@@ -483,7 +484,10 @@
       "items": [
         "Check-in — https://developer.apple.com/documentation/devicemanagement/check-in",
         "Set Bootstrap Token — https://developer.apple.com/documentation/devicemanagement/set-bootstrap-token",
-        "Go cipher.NewGCM — https://pkg.go.dev/crypto/cipher#NewGCM"
+        "Go cipher.NewGCM — https://pkg.go.dev/crypto/cipher#NewGCM",
+        "CommandClearer contract — https://github.com/deploymenttheory/go-apple-dm/blob/80599ddc35778bcc88fa2ac77bb1dc68a51cf089/devicemanagement/storage/storage.go#L248",
+        "Dispatch revalidation — https://github.com/deploymenttheory/go-apple-dm/blob/80599ddc35778bcc88fa2ac77bb1dc68a51cf089/server/service/connect.go#L109",
+        "ReplacementStore contract — https://github.com/deploymenttheory/go-apple-dm/blob/80599ddc35778bcc88fa2ac77bb1dc68a51cf089/devicemanagement/storage/replacement.go#L18"
       ]
     }
   ]

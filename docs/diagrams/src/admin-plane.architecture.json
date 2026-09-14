@@ -34,12 +34,13 @@
     ],
     "repository": {
       "url": "https://github.com/deploymenttheory/go-apple-dm",
-      "revision": "ff85958196cb013e8e14c1055f067319b07e3299"
+      "revision": "80599ddc35778bcc88fa2ac77bb1dc68a51cf089"
     },
     "colour_profile": "purpose-v1",
     "legend": {
       "mode": "hidden"
-    }
+    },
+    "locale": "en"
   },
   "components": [
     {
@@ -103,7 +104,7 @@
       "id": "config",
       "type": "database",
       "label": "CLI credentials",
-      "sublabel": "Reject group or other access",
+      "sublabel": "Protected file or environment",
       "pos": [
         315.0,
         410.0
@@ -115,7 +116,15 @@
       "sources": [
         {
           "path": "server/internal/dmctl/config.go",
-          "label": "Private permission bits"
+          "label": "Credential references"
+        },
+        {
+          "path": "server/internal/privatefile/permissions_unix.go",
+          "label": "Unix owner permissions"
+        },
+        {
+          "path": "server/internal/privatefile/permissions_windows.go",
+          "label": "Windows ACL checks"
         }
       ],
       "purpose": "artifact"
@@ -160,7 +169,7 @@
       "id": "routes",
       "type": "backend",
       "label": "Authorized route handler",
-      "sublabel": "Manage enabled capabilities",
+      "sublabel": "Setup · events · management",
       "pos": [
         625.0,
         410.0
@@ -172,11 +181,15 @@
       "sources": [
         {
           "path": "server/internal/app/adminmdm.go",
-          "label": "mdm family"
+          "label": "Commands and enrollment"
         },
         {
-          "path": "server/internal/app/admin.go",
-          "label": "ddm family"
+          "path": "server/internal/app/adminsetup.go",
+          "label": "Certificate setup"
+        },
+        {
+          "path": "server/internal/app/adminevents.go",
+          "label": "Events and delivery retry"
         }
       ],
       "purpose": "service"
@@ -305,16 +318,16 @@
       "dot": "transport",
       "title": "Current route coverage",
       "items": [
-        "Routes include MDM commands and results, declarative state, Apple service clients, certificates, audit, and principal administration.",
-        "PRs 12 and 14 add app push credentials and sends, enrollment-profile issuance, enrollment evidence, and controlled replacement."
+        "Routes manage MDM commands/results, declarative state, Apple service clients, certificates, audit and principals. App-push credentials/sends, profile issuance, enrollment evidence and controlled replacement are enabled capabilities.",
+        "Certificate setup exposes workflow status, history, public exports and authorized vendor, push, HTTPS and issuer operations. Event administration exposes captured events, recording health, destination delivery status and manual retry."
       ]
     },
     {
       "dot": "authentication",
       "title": "CLI credentials",
       "items": [
-        "Reference tokens through a protected file or environment variable. The config rejects group and other permission bits.",
-        "Offline explanation and local bench supervision do not follow this HTTP request path."
+        "Reference tokens through a protected file or environment variable. Unix checks reject group/other access. Windows uses explicit ACL protection for the current user, LocalSystem and administrators.",
+        "Remote setup and event commands use route authorization. Local setup requires the setup file and its secret references; offline explanation, local setup and bench supervision do not use this HTTP request path."
       ]
     },
     {
@@ -323,7 +336,10 @@
       "items": [
         "Cedar authorization overview — https://docs.cedarpolicy.com/",
         "Sending MDM commands to a device — https://developer.apple.com/documentation/devicemanagement/sending-mdm-commands-to-a-device",
-        "Deploying device management enrollment profiles — https://developer.apple.com/documentation/devicemanagement/deploying-device-management-enrollment-profiles"
+        "Deploying device management enrollment profiles — https://developer.apple.com/documentation/devicemanagement/deploying-device-management-enrollment-profiles",
+        "Setup authorization — https://github.com/deploymenttheory/go-apple-dm/blob/80599ddc35778bcc88fa2ac77bb1dc68a51cf089/server/internal/app/adminsetup.go",
+        "Event administration — https://github.com/deploymenttheory/go-apple-dm/blob/80599ddc35778bcc88fa2ac77bb1dc68a51cf089/server/internal/app/adminevents.go",
+        "Cross-platform credential files — https://github.com/deploymenttheory/go-apple-dm/blob/80599ddc35778bcc88fa2ac77bb1dc68a51cf089/server/internal/privatefile/doc.go"
       ]
     }
   ]
