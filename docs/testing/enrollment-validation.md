@@ -3,7 +3,7 @@
 Implementation branch: `feat/enrollment-profile-alignment`, based on merged PR #12.
 This historical report covers service discovery, enrollment profiles and controlled
 identity replacement as tested on 10 September. For subsequent physical-device
-results, see the [13 September real Mac lifecycle record](../reviews/real-mac-lifecycle-2026-09-13.md).
+results, see the [13 September real Mac lifecycle record](https://github.com/deploymenttheory/go-apple-dm/blob/80599ddc35778bcc88fa2ac77bb1dc68a51cf089/docs/reviews/real-mac-lifecycle-2026-09-13.md).
 That record establishes ACME and SCEP enrollment, APNs-triggered inventory,
 installing-user commands, DDM, identity replacement, trust rollover and SQLite
 recovery on the tested candidates, with their acceptance boundaries recorded there.
@@ -49,7 +49,7 @@ pre-release and has no existing database upgrade requirement.
 ## Subsequent real Mac validation
 
 The enrollment and push-certificate gaps recorded on 10 September were superseded
-by physical-Mac testing on 13 September. The [lifecycle record](../reviews/real-mac-lifecycle-2026-09-13.md)
+by physical-Mac testing on 13 September. The [lifecycle record](https://github.com/deploymenttheory/go-apple-dm/blob/80599ddc35778bcc88fa2ac77bb1dc68a51cf089/docs/reviews/real-mac-lifecycle-2026-09-13.md)
 reports LIVE-002 passing for ACME and LIVE-003 passing for SCEP, including
 APNs-triggered DeviceInformation and ProfileList on the exact installing-user
 channel. It also records LIVE-004, successful identity replacement, controlled

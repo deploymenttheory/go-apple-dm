@@ -101,13 +101,11 @@ Upstream `visual-check` still treats vertical scrolling as a containment failure
 raw result and assess it against this reading policy rather than claiming an upstream pass.
 Source validation, browser measurements, and visual inspection are separate evidence.
 
-The [14 September expansion record](../reviews/diagram-expansion-2026-09-14.md) records
-the nine expanded diagrams, code and retained-evidence references, artifact hashes,
-validation, browser measurements, and visual review. Diagram descriptions name current
-capabilities; code links use repository revisions, and validation observations retain their
-dates and scope. Diagrams do not use pull-request numbers or merge status as architecture.
+Diagram descriptions name current capabilities. Code links use repository revisions,
+and validation observations retain their dates and scope. Diagrams do not use pull-request
+numbers or merge status as architecture.
 The [original implementation record](https://github.com/deploymenttheory/go-apple-dm/blob/c4cb96f6b5a7d6ad7cbb18b66e7e3368e1bc1d9c/docs/reviews/diagram-implementation-2026-09-10.md)
-and [earlier scope correction](../reviews/scope-docs-ci-2026-09-14.md) are historical evidence,
+and [earlier scope correction](https://github.com/deploymenttheory/go-apple-dm/blob/80599ddc35778bcc88fa2ac77bb1dc68a51cf089/docs/reviews/scope-docs-ci-2026-09-14.md) are historical evidence,
 not regeneration inputs.
 
 The two `system-architecture.*.png` files are the images embedded by the root
