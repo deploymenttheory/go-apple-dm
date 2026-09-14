@@ -5095,7 +5095,7 @@ svg[data-purpose-filter] g[data-purpose-highlight] > path { stroke-width: 2.4; }
       </div>
     </div>
 
-    <script id="archify-guided-views-data" type="application/json">[{"id":"body","label":"Decode the device message","focus":["body","plist","checkin"],"note":"A bounded property-list decoder produces a typed check-in message or command response."},{"id":"identity","label":"Extract and authorize identity","focus":["tls","proxy","signature","cms","cert","authorize"],"note":"TLS, a trusted proxy, or a verified Mdm-Signature supplies the certificate. Service policy then authorizes it."}]</script>
+    <script id="archify-guided-views-data" type="application/json">[{"id":"body","label":"Decode the device message","focus":["quotas","body","plist","checkin"],"note":"Configured HTTP quotas run before route dispatch and body decoding; admitted requests then produce typed messages."},{"id":"identity","label":"Extract and authorize identity","focus":["tls","proxy","signature","cms","cert","authorize"],"note":"TLS, a trusted proxy, or a verified Mdm-Signature supplies the certificate. Service policy then authorizes it."},{"id":"refusals","label":"Quota and certificate refusals","focus":["quotas","quota-refusal","authorize","status-refusal"],"note":"Quota refusals precede decoding. Core checks certificate status before hooks, replacement handling and ordinary dispatch."}]</script>
 
     <script id="archify-i18n-data" type="application/json">{"locale":"en","messages":{"viewer.kind.frontend":"Frontend","viewer.kind.backend":"Backend","viewer.kind.database":"Database","viewer.kind.cloud":"Cloud","viewer.kind.security":"Security","viewer.kind.messagebus":"Message bus","viewer.kind.external":"External","viewer.kind.neutral":"Neutral","viewer.kind.node":"Node","viewer.kind.start":"Start","viewer.kind.active":"Active","viewer.kind.waiting":"Waiting","viewer.kind.decision":"Decision","viewer.kind.success":"Success","viewer.kind.failure":"Failure","viewer.toolbar.actions":"Diagram actions","viewer.theme.toggle.title":"Toggle theme (T)","viewer.theme.toggle":"Toggle color theme","viewer.theme.dark":"Dark","viewer.theme.light":"Light","viewer.preset.choose.title":"Choose visual style (S cycles)","viewer.preset.choose":"Choose visual style","viewer.preset.style":"Style","viewer.preset.menu":"Visual style","viewer.preset.identity":"Visual identity","viewer.preset.cycles":"S cycles","viewer.preset.classic":"Classic","viewer.preset.classic.short":"Classic","viewer.preset.classic.hint":"Stable technical default","viewer.preset.flow":"Signal Flow","viewer.preset.flow.short":"Flow","viewer.preset.flow.hint":"Motion-forward presentation","viewer.preset.blueprint":"Blueprint","viewer.preset.blueprint.hint":"Engineering review","viewer.preset.editorial":"Editorial","viewer.preset.editorial.hint":"Publication and launch notes","viewer.preset.badge.signalFlow":"SIGNAL FLOW","viewer.preset.badge.blueprint":"BLUEPRINT / REV 01","viewer.preset.badge.editorial":"EDITORIAL / FIELD NOTE","viewer.preset.badge.editorialPlate":"ARCHIFY / PLATE 04","viewer.preset.current":"Visual style: {style}. Choose visual style","viewer.motion.live":"Live","viewer.motion.still":"Still","viewer.motion.pause":"Pause motion","viewer.motion.resume":"Resume motion","viewer.motion.reduced":"Motion paused by reduced-motion preference","viewer.motion.hidden":"Motion paused while this page is hidden","viewer.motion.yielding":"Pause motion; currently yielding to {owner}","viewer.motion.yielding.title":"Live preview enabled · yielding to {owner}","viewer.owner.story":"the guided story","viewer.owner.chapter":"the active chapter","viewer.owner.chapterPreview":"the chapter delta preview","viewer.owner.handoff":"the chapter handoff","viewer.owner.route":"Route Probe","viewer.owner.lens":"Semantic Lens","viewer.owner.relationship":"Relationship Preview","viewer.owner.intent":"Intent Trace","viewer.owner.focus":"semantic focus","viewer.owner.legend":"legend preview","viewer.owner.reader":"reader interaction","viewer.present.enter":"Enter presentation stage","viewer.present.enter.title":"Presentation stage (F)","viewer.present.exit":"Exit presentation stage","viewer.present.exit.title":"Exit presentation stage (F or Escape)","viewer.present.present":"Present","viewer.present.exit.label":"Exit","viewer.export.button":"Export","viewer.export.button.title":"Export diagram (E)","viewer.export.diagram":"Export diagram","viewer.export.menu":"Export","viewer.export.subtitle":"Portable, clean outputs","viewer.export.share":"Share","viewer.export.shareCard":"Share Card","viewer.export.routeShareCard":"Route Share Card","viewer.export.reachShareCard":"Reach Share Card","viewer.export.copyShareCard":"Copy Share Card","viewer.export.copyDiagram":"Copy diagram","viewer.export.clipboardPng":"PNG to clipboard","viewer.export.raster":"Raster images","viewer.export.image":"Image","viewer.export.lossless":"Lossless image","viewer.export.compact":"Compact image","viewer.export.modern":"Modern image","viewer.export.vectorMotion":"Vector and motion","viewer.export.vectorMotion.heading":"Vector \u0026 motion","viewer.export.editable":"Editable vector","viewer.export.motion6s":"6s motion","viewer.export.unsupported":"Not supported by this browser","viewer.export.clipboardUnsupported":"Clipboard image write not supported by this browser","viewer.export.clipboardUnsupported.period":"Clipboard image write not supported by this browser.","viewer.export.clipboardUnsupported.short":"Clipboard image write not supported in this browser.","viewer.export.motionUnavailable":"Motion capture unavailable in this browser","viewer.export.webmUnavailable":"WebM unavailable in this browser","viewer.export.failed":"Export failed: {message}","viewer.export.unknownVariant":"Unknown Share Card variant: {variant}","viewer.export.routeRequired":"Trace a route before exporting a Route Share Card","viewer.export.reachRequired":"Trace authored reach before exporting a Reach Share Card","viewer.export.unknown":"unknown","viewer.export.routeFailed":"Route Share Card export failed: {message}","viewer.export.reachFailed":"Reach Share Card export failed: {message}","viewer.export.copyFailed":"Copy failed: {message}","viewer.export.copiedPng":"Copied PNG to clipboard","viewer.export.copiedShare":"Copied Share Card","viewer.export.downloadedShare":"Downloaded Share Card","viewer.export.downloadedRoute":"Downloaded Route Share Card","viewer.export.downloadedReach":"Downloaded Reach Share Card","viewer.export.downloadedWebm":"Downloaded WebM","viewer.export.recording":"Recording 6 seconds of motion…","viewer.export.card.routeSummary.one":"Route: {source} → {target} · {count} directed hop","viewer.export.card.routeSummary.other":"Route: {source} → {target} · {count} directed hops","viewer.export.card.reachSummary":"Authored {direction} from {origin} · {nodes} · {links} · max {hops}","viewer.export.card.node.one":"{count} node","viewer.export.card.node.other":"{count} nodes","viewer.export.card.link.one":"{count} link","viewer.export.card.link.other":"{count} links","viewer.export.card.hop.one":"{count} hop","viewer.export.card.hop.other":"{count} hops","viewer.export.card.routeBadge":"ARCHIFY · ROUTE · {hops}","viewer.export.card.reachBadge":"ARCHIFY · {direction} REACH","viewer.export.card.defaultBadge":"ARCHIFY · {preset} · {theme}","viewer.export.direction.upstream":"Upstream","viewer.export.direction.downstream":"Downstream","viewer.export.error.canvasUnavailable":"Canvas unavailable for {label}","viewer.export.error.contextUnavailable":"2D canvas context unavailable for {label}","viewer.export.error.toBlobUnavailable":"canvas.toBlob unavailable for {label}","viewer.export.error.toBlobNull":"canvas.toBlob returned no data for {label}","viewer.export.error.variantsCombined":"Share Card variants cannot be combined","viewer.export.error.viewerState":"Share Card export could not remove temporary viewer state","viewer.export.error.routeState":"Route Card export could not preserve the resolved route safely","viewer.export.error.reachState":"Reach Card export could not preserve authored reach safely","viewer.export.error.webmRequirements":"WebM motion export requires a trace animation and browser MediaRecorder support","viewer.export.error.mediaRecorder":"MediaRecorder failed","viewer.export.error.emptyWebm":"MediaRecorder produced an empty WebM","viewer.export.error.webmBackground":"SVG background could not be loaded for WebM export","viewer.guided.region":"Guided diagram views","viewer.guided.previous":"Previous guided view","viewer.guided.previous.title":"Previous guided view ([)","viewer.guided.next":"Next guided view","viewer.guided.next.title":"Next guided view (])","viewer.guided.views":"Guided views","viewer.guided.explore":"Explore this system","viewer.guided.intro":"Step through curated paths without changing the source diagram.","viewer.guided.trail":"Story trail","viewer.guided.beat":"Beat","viewer.guided.nextBeat":"Next","viewer.guided.play":"Play guided story","viewer.guided.play.title":"Play guided story (P)","viewer.guided.pause":"Pause guided story","viewer.guided.pause.title":"Pause guided story (P)","viewer.guided.replay":"Replay guided story","viewer.guided.replay.title":"Replay guided story (P)","viewer.guided.playStory":"Play story","viewer.guided.pauseStory":"Pause","viewer.guided.replayStory":"Replay story","viewer.guided.motionUnavailable":"Story playback unavailable while motion is Still","viewer.guided.enableMotion":"Switch motion to Live to play the guided story","viewer.guided.selectBeatLink":"Select a Story Beat to copy its exact link","viewer.guided.copyMoment":"Copy moment","viewer.guided.momentCopied":"Moment link copied","viewer.guided.momentCopyFailed":"Could not copy story moment link","viewer.guided.copied":"Copied","viewer.guided.copyFailed":"Copy failed","viewer.guided.showAll":"Show all","viewer.guided.showAll.aria":"Show entire diagram","viewer.guided.chapters":"Story chapters","viewer.guided.storyTrail":"Story trail for {label}: {count} beats","viewer.guided.chapter.open":"Open chapter {index} of {total}: {label}, {count} stops","viewer.guided.chapter.current":"Current chapter {index} of {total}: {label}, {count} stops","viewer.guided.chapter.selectedNodes":"{count} selected nodes","viewer.guided.chapter.stops":"{count} stops","viewer.guided.chapter.stop.one":"{count} stop","viewer.guided.chapter.stop.other":"{count} stops","viewer.guided.chapter.current.title":"{label} — current chapter, {count} stops","viewer.guided.chapter.delta.expanded":"{stay} stay, {enter} enter, {leave} leave","viewer.guided.chapter.delta.aria":"Open chapter {index} of {total}: {label}. Chapter focus delta: {delta}","viewer.guided.chapter.delta.title":"{label} — {delta} chapter focus","viewer.guided.handoff":"{from} → {to} · via {label}","viewer.guided.share.chapter":"Chapter {index} / {total}","viewer.guided.share.initial":"Chapter 01 / 01","viewer.guided.share.default":"Guided chapter","viewer.guided.state.ready":"Ready","viewer.guided.state.playing":"Playing","viewer.guided.state.settled":"Settled","viewer.guided.state.paused":"Paused","viewer.guided.state.pinned":"Pinned","viewer.guided.state.still":"Still","viewer.guided.share.step":"Step {index} / {total} · {label}","viewer.guided.share.staticMoment":"{step} · Static moment","viewer.guided.share.complete":"{count} steps complete · {note}","viewer.guided.share.settled":"Path settled for reading.","viewer.guided.share.staticPath":"{count} steps · Static path","viewer.guided.share.ready":"{count} steps · Ready","viewer.guided.share.aria":"{state} chapter {index} of {total}: {label}. {beat}. {route}","viewer.guided.beat.start":"Beat {index} / {total} · {label} · starting point","viewer.guided.beat.forward":"Beat {index} / {total} · {from} → {to}","viewer.guided.beat.reverse":"Beat {index} / {total} · {from} → {to} · reverse authored link","viewer.guided.beat.multiple":"Beat {index} / {total} · {from} ⇄ {to} · {count} authored links","viewer.guided.beat.group":"Beat {index} / {total} · {from} · {to} · grouped · no direct link","viewer.guided.beat.aria.prefix":"Story beat {index} of {total}: {label}. ","viewer.guided.beat.aria.start":"Starting point.","viewer.guided.beat.aria.forward":"From {from} through one authored forward relationship.","viewer.guided.beat.aria.reverse":"From {from}; the authored relationship points from {to} to {from}.","viewer.guided.beat.aria.multiple":"From {from} through {count} authored relationships; shown without arbitrary motion.","viewer.guided.beat.aria.group":"Grouped from {from} with no direct authored relationship.","viewer.guided.caption.start":"Starting point","viewer.guided.caption.grouped":"Grouped transition · no direct authored link","viewer.guided.caption.more":" +{count} more","viewer.guided.caption.reverse":"Reverse authored relationship","viewer.guided.caption.relationships":"{count} authored relationships","viewer.guided.caption.relationship":"Authored relationship","viewer.guided.caption.direction":"authored direction: {from} → {to}","viewer.guided.caption.starting":"Authored starting point","viewer.guided.beatLink":"Copy link to current story moment: Beat {index} of {total}: {label}","viewer.guided.noStory":"This diagram has no authored guided story.","viewer.guide.eyebrow":"Diagram guide","viewer.guide.close":"Close diagram guide","viewer.guide.inspecting":"Inspecting compiled semantics","viewer.guide.actions":"Diagram exploration actions","viewer.guide.find":"Find any node","viewer.guide.find.hint":"Search labels, responsibilities, kinds, and stable IDs.","viewer.guide.route":"Trace a route","viewer.guide.route.aria":"Trace a directed route","viewer.guide.route.hint":"Ask how two semantic nodes connect in authored direction.","viewer.guide.map":"See the whole system","viewer.guide.map.hint":"Open Semantic Radar with a live viewport and stable nodes.","viewer.guide.lens":"Compare semantic kinds","viewer.guide.lens.hint":"Count roles, reveal their traffic, and compare direct authored links.","viewer.guide.story":"Play the guided story","viewer.guide.story.hint":"Walk the authored chapters and real relationships.","viewer.guide.present":"Enter Presentation Stage","viewer.guide.present.hint":"Give the live diagram the viewport without changing export.","viewer.guide.shortcuts":"Additional keyboard shortcuts","viewer.guide.shortcut.export":"Export","viewer.guide.shortcut.theme":"Theme","viewer.guide.shortcut.style":"Style","viewer.guide.shortcut.reset":"Reset","viewer.guide.shortcut.zoomIn":"Zoom in","viewer.guide.shortcut.zoomOut":"Zoom out","viewer.guide.shortcut.close":"Close","viewer.guide.facts":"{nodes} · {relationships} · {views}","viewer.guide.fact.node.one":"{count} semantic node","viewer.guide.fact.node.other":"{count} semantic nodes","viewer.guide.fact.relationship.one":"{count} relationship","viewer.guide.fact.relationship.other":"{count} relationships","viewer.guide.fact.view.one":"{count} guided view","viewer.guide.fact.view.other":"{count} guided views","viewer.guide.story.available.one":"Walk {count} authored chapter and its real relationships.","viewer.guide.story.available.other":"Walk {count} authored chapters and their real relationships.","viewer.guide.story.unavailable":"No authored guided story in this diagram.","viewer.guide.open":"Open diagram guide","viewer.guide.noStory":"This diagram has no authored guided story.","viewer.finder.title":"Find a node","viewer.finder.close":"Close node finder","viewer.finder.placeholder":"Search labels or IDs","viewer.finder.search":"Search diagram nodes","viewer.finder.results":"Diagram nodes","viewer.finder.empty":"No matching nodes","viewer.finder.result.focus":"Focus {label}","viewer.finder.result.routeStart":"Choose {label} as route start","viewer.finder.result.routeTarget":"Choose {label} as route destination, {links}","viewer.finder.status.empty":"No matching nodes","viewer.finder.status.count.one":"{count} matching node","viewer.finder.status.count.other":"{count} matching nodes","viewer.finder.noun.nodes":"nodes","viewer.finder.link.one":"{count} link","viewer.finder.link.other":"{count} links","viewer.finder.result.focus.one":"Focus {label}, {count} related connection","viewer.finder.result.focus.other":"Focus {label}, {count} related connections","viewer.finder.status.filtered":"{visible} of {available} {noun}","viewer.finder.status.all":"{available} {noun}","viewer.passport.eyebrow":"Semantic passport","viewer.passport.metadata":"Node metadata","viewer.passport.evidence":"Verified source evidence","viewer.passport.verified":"Verified source","viewer.passport.reach":"Authored reach","viewer.passport.reach.trace":"Trace authored reachability","viewer.passport.upstream":"Upstream","viewer.passport.downstream":"Downstream","viewer.passport.upstream.trace":"Trace upstream authored reachability","viewer.passport.downstream.trace":"Trace downstream authored reachability","viewer.passport.close":"Close semantic passport","viewer.passport.copy":"Copy link","viewer.passport.copy.focus":"Copy link to focused node","viewer.passport.relations":"Relations","viewer.passport.relations.show":"Show connected relationships","viewer.passport.relations.hide":"Hide connected relationships","viewer.passport.relations.list":"Connected relationships","viewer.passport.copyRelation":"Copy relation","viewer.passport.copyNode":"Copy node","viewer.passport.copyPinned":"Copy link to pinned relationship","viewer.passport.copySource":"Copy link to source node","viewer.passport.copy.focused.success":"Focused node link copied","viewer.passport.copy.pinned.success":"Pinned relationship link copied","viewer.passport.copy.focused.failed":"Could not copy focused node link","viewer.passport.copy.pinned.failed":"Could not copy pinned relationship link","viewer.passport.relationship.none":"No connected relationships","viewer.passport.relationship.count.one":"{count} relation","viewer.passport.relationship.count.other":"{count} relations","viewer.passport.relationship.show.one":"Show {count} connected relationship","viewer.passport.relationship.show.other":"Show {count} connected relationships","viewer.passport.relationship.summary":"{out} outgoing · {in} incoming{loops}","viewer.passport.relationship.loops":" · {count} loop","viewer.passport.relationship.explorer":"Direct relationship explorer","viewer.passport.relationship.help":"Use arrow keys to explore relationships. Press Enter or Space to pin details; Escape clears.","viewer.passport.relationship.loopsBack":"loops back","viewer.passport.relationship.connectsTo":"connects to","viewer.passport.relationship.connectsFrom":"connects from","viewer.passport.relationship.pinned":"Pinned relationship · {from} → {to} · {label}","viewer.passport.relationship.inspect":"Inspect relationship {index} of {total}: {from} to {to}, {label}. Press Enter for details.","viewer.passport.relationship.group.out":"Outgoing","viewer.passport.relationship.group.in":"Incoming","viewer.passport.relationship.group.loop":"Self loops","viewer.passport.relationship.row":"{group}: {relationship}, {neighbor}","viewer.passport.relationship.direction.out":"OUT →","viewer.passport.relationship.direction.in":"← IN","viewer.passport.relationship.direction.loop":"LOOP","viewer.passport.sourceCount.one":"{count} verified source reference","viewer.passport.sourceCount.other":"{count} verified source references","viewer.passport.sourceMarker":"SRC","viewer.passport.beacon.one":"{count} verified source; focus this node to inspect","viewer.passport.beacon.other":"{count} verified sources; focus this node to inspect","viewer.passport.repository.open":"Open verified repository revision {revision}","viewer.passport.source.open":"Open verified source {path} at revision {revision}","viewer.passport.source.openLink":"Open ↗","viewer.passport.reach.upstream.one":"Trace {count} upstream authored node","viewer.passport.reach.upstream.other":"Trace {count} upstream authored nodes","viewer.passport.reach.downstream.one":"Trace {count} downstream authored node","viewer.passport.reach.downstream.other":"Trace {count} downstream authored nodes","viewer.passport.reach.noUpstream":"No upstream authored nodes","viewer.passport.reach.noDownstream":"No downstream authored nodes","viewer.passport.reach.status":"{direction} · {nodes} nodes · {links} links · max {hops} hops","viewer.route.eyebrow":"Route probe","viewer.route.start":"Choose a start node","viewer.route.start.find":"Find start","viewer.route.start.find.aria":"Find a route start","viewer.route.copy":"Copy link","viewer.route.copy.aria":"Copy link to traced route","viewer.route.clear":"Clear","viewer.route.clear.aria":"Clear route probe","viewer.route.traced":"Traced route","viewer.route.pickTwo":"Pick two semantic nodes on the diagram","viewer.route.pickOne":"Pick a semantic node on the diagram","viewer.route.controls":"Route journey controls","viewer.route.previous":"Previous route position","viewer.route.play":"Play route journey","viewer.route.pause":"Pause route journey","viewer.route.replay":"Replay route journey","viewer.route.next":"Next route position","viewer.route.journey":"Journey","viewer.route.pause.label":"Pause","viewer.route.replay.label":"Replay","viewer.route.overview":"Overview","viewer.route.overview.aria":"Show complete route overview","viewer.route.instructions":"Choose the source, then the destination. Direction matters.","viewer.route.destination":"Choose a destination from {label}","viewer.route.destination.find":"Find target","viewer.route.destination.find.aria":"Find a reachable route destination","viewer.route.differentDestination":"Choose a different destination","viewer.route.distinct":"A route needs two distinct semantic nodes.","viewer.route.unreachable":"No directed route to {label}","viewer.route.unreachable.detail":"{target} is not reachable from {source}. Pick a highlighted destination.","viewer.route.start.instructions":"Select the source. The next step will reveal only directed destinations.","viewer.route.copy.success":"Traced route link copied","viewer.route.copy.failed":"Could not copy traced route link","viewer.route.position":"Route position {index} of {total}: {label}","viewer.route.step":"Step {index} of {total} · {phase} · {label}","viewer.route.motionRequired":"Automatic journey requires Live motion","viewer.route.trigger.clear":"Clear traced route","viewer.route.overview.status":"{nodes} · {hops} · shortest authored route","viewer.route.overview.node.one":"{count} node","viewer.route.overview.node.other":"{count} nodes","viewer.route.overview.hop.one":"{count} directed hop","viewer.route.overview.hop.other":"{count} directed hops","viewer.route.phase.playing":"Playing","viewer.route.phase.complete":"Complete","viewer.route.phase.inspecting":"Inspecting","viewer.route.destination.count.one":"{count} directed destination available. Pick a highlighted node.","viewer.route.destination.count.other":"{count} directed destinations available. Pick a highlighted node.","viewer.route.noOutgoing":"No outgoing route starts here. Clear and choose another source.","viewer.route.result.title":"{source} to {target}","viewer.route.finder.source.title":"Choose route start","viewer.route.finder.source.placeholder":"Search route sources","viewer.route.finder.source.empty":"No matching route sources","viewer.route.finder.source.results":"Nodes that can start a route","viewer.route.finder.source.noun":"route sources","viewer.route.finder.source.badge":"start","viewer.route.finder.target.title":"Destination from {label}","viewer.route.finder.target.placeholder":"Search reachable destinations","viewer.route.finder.target.empty":"No matching reachable destinations","viewer.route.finder.target.results":"Reachable route destinations","viewer.route.finder.target.noun":"reachable destinations","viewer.route.hop.one":"{count} hop","viewer.route.hop.other":"{count} hops","viewer.lens.eyebrow":"Semantic lens","viewer.lens.title":"Compare system roles","viewer.lens.close":"Close semantic lens","viewer.lens.instruction":"Choose up to two semantic kinds. One reveals its real traffic; two compare only direct authored relationships.","viewer.lens.kinds":"Semantic kinds","viewer.lens.choose":"Choose a kind to inspect its nodes and touching relationships.","viewer.lens.copy":"Copy link to semantic lens","viewer.lens.clear":"Clear semantic lens","viewer.lens.open":"Open semantic lens","viewer.lens.openActive":"Open active semantic lens","viewer.lens.legend":"Semantic legend","viewer.lens.legend.inspect.one":"Inspect {label}, {count} node","viewer.lens.legend.inspect.other":"Inspect {label}, {count} nodes","viewer.lens.kind.count.one":"{label}, {count} node","viewer.lens.kind.count.other":"{label}, {count} nodes","viewer.lens.compare.one":"{first} → {second}: {forward} · {second} → {first}: {reverse} · {count} direct relationship","viewer.lens.compare.other":"{first} → {second}: {forward} · {second} → {first}: {reverse} · {count} direct relationships","viewer.lens.single":"{nodes} · {relationships} · connected peers remain visible","viewer.lens.node.one":"{count} {label} node","viewer.lens.node.other":"{count} {label} nodes","viewer.lens.relationship.one":"{count} touching relationship","viewer.lens.relationship.other":"{count} touching relationships","viewer.radar.title":"Semantic radar","viewer.radar.building":"Building overview","viewer.radar.openFull":"Open full semantic radar","viewer.radar.open":"Open radar","viewer.radar.close":"Close semantic radar","viewer.radar.surface":"Diagram overview. Click a node to focus it, or use arrow keys to pan.","viewer.radar.click":"Click node","viewer.radar.drag":"Drag to pan","viewer.radar.space":"Semantic radar needs more MAP space.","viewer.radar.nodes":"Semantic diagram radar nodes","viewer.radar.focus":"Focus {label} from Semantic Radar","viewer.radar.status":"{count} nodes · {viewport}","viewer.radar.fullMap":"{count} nodes · full map","viewer.radar.compacted":"Radar compacted to avoid covering the Semantic Passport or MAP controls.","viewer.radar.cancelWaiting":"Cancel semantic radar waiting for more MAP space","viewer.radar.needsSpace":"Semantic radar needs more visible MAP space","viewer.radar.viewport.full":"full map","viewer.radar.viewport.width":"{percent}% width","viewer.radar.viewport.scale":"{percent}% viewport","viewer.nav.controls":"Diagram view controls","viewer.nav.route":"Trace a directed route","viewer.nav.route.title":"Trace route (R)","viewer.nav.route.short":"PATH","viewer.nav.radar":"Open semantic radar","viewer.nav.radar.title":"Semantic radar (M)","viewer.nav.radar.short":"MAP","viewer.nav.lens":"Open semantic lens","viewer.nav.lens.title":"Semantic lens (L)","viewer.nav.lens.short":"LENS","viewer.nav.find":"Find a node","viewer.nav.find.title":"Find a node (/)","viewer.nav.guide":"Open diagram guide","viewer.nav.guide.title":"Diagram guide (?)","viewer.nav.zoomOut":"Zoom out","viewer.nav.zoomOut.title":"Zoom out (-)","viewer.nav.reset":"Reset diagram view","viewer.nav.reset.title":"Reset view (0)","viewer.nav.read":"READ","viewer.nav.zoomIn":"Zoom in","viewer.nav.zoomIn.title":"Zoom in (+)","viewer.nav.camera":"{hint}. Reset diagram view","viewer.nav.camera.title":"{semantic}{hint} · reset view (0)","viewer.nav.camera.semantic":"Semantic camera active · ","viewer.nav.level.map":"MAP","viewer.nav.level.read":"READ","viewer.nav.level.full":"FULL","viewer.nav.level.auto":"AUTO","viewer.nav.detail.map":"Zoom in to reveal relationship labels and node context","viewer.nav.detail.read":"Zoom in again to reveal tags and annotations","viewer.nav.detail.full":"Full diagram detail","viewer.intent.summary":"{label}. {out} outgoing, {in} incoming{loops}. {total} connections. Press Enter for details.","viewer.intent.loops":", {count} self loop","viewer.common.copied":"Copied","viewer.common.copyFailed":"Copy failed","viewer.common.copyLink":"Copy link","viewer.common.clear":"Clear","viewer.common.close":"Close"}}</script>
     <div class="guided-views no-print" id="guided-views" hidden aria-label="Guided diagram views">
@@ -5146,13 +5146,14 @@ svg[data-purpose-filter] g[data-purpose-highlight] > path { stroke-width: 2.4; }
 <button type="button" data-purpose-filter-button="transport" aria-pressed="false" style="--entry:var(--purpose-transport)"><span class="purpose-key-dot" aria-hidden="true"></span>Communication and transport</button>
 <button type="button" data-purpose-filter-button="authentication" aria-pressed="false" style="--entry:var(--purpose-authentication)"><span class="purpose-key-dot" aria-hidden="true"></span>Authentication and identity</button>
 <button type="button" data-purpose-filter-button="policy" aria-pressed="false" style="--entry:var(--purpose-policy)"><span class="purpose-key-dot" aria-hidden="true"></span>Authorization and policy</button>
+<button type="button" data-purpose-filter-button="failure" aria-pressed="false" style="--entry:var(--purpose-failure)"><span class="purpose-key-dot" aria-hidden="true"></span>Failed, rejected, or invalid</button>
     </div>
     <div class="purpose-key-detail" aria-live="polite" aria-atomic="true"><div><strong id="purpose-key-selection"></strong><span id="purpose-key-counts"></span></div><p id="purpose-key-description"></p></div>
-    <script id="purpose-key-data" type="application/json">{"entries":[{"key":"service","label":"Services and processing","meaning":"Services and processing steps that perform the work shown in the diagram.","nodes":["Property-list decoder"],"connections":["decode","check-in","response"]},{"key":"transport","label":"Communication and transport","meaning":"Communication between components, including endpoints, protocol exchanges, and notifications.","nodes":["Device request body","Typed check-in","Command response"],"connections":["Signed bytes"]},{"key":"authentication","label":"Authentication and identity","meaning":"Checks that establish or verify an identity or credential.","nodes":["Mdm-Signature","Verify signed body","Device certificate","TLS client certificate","Trusted proxy header","Identity extraction"],"connections":["verify","signer","TLS peer identity","Trusted forwarded identity","Extract certificate"]},{"key":"policy","label":"Authorization and policy","meaning":"Authorization and policy decisions that determine whether an action is allowed.","nodes":["Service authorization"],"connections":["Apply identity policy","Check-in policy","Command-channel policy"]}],"nodes":11,"connections":12}</script>
+    <script id="purpose-key-data" type="application/json">{"entries":[{"key":"service","label":"Services and processing","meaning":"Services and processing steps that perform the work shown in the diagram.","nodes":["Plist decoder"],"connections":["decode","check-in","response"]},{"key":"transport","label":"Communication and transport","meaning":"Communication between components, including endpoints, protocol exchanges, and notifications.","nodes":["Request body","Typed check-in","Command response"],"connections":["Signed bytes","Admit"]},{"key":"authentication","label":"Authentication and identity","meaning":"Checks that establish or verify an identity or credential.","nodes":["Mdm-Signature","Verify signed body","Device certificate","TLS certificate","Trusted proxy","Extract identity"],"connections":["verify","signer","TLS peer identity","Trusted forwarded identity","Extract certificate"]},{"key":"policy","label":"Authorization and policy","meaning":"Authorization and policy decisions that determine whether an action is allowed.","nodes":["Core authorization","HTTP quota gate"],"connections":["Apply identity policy","Check-in policy","Command-channel policy"]},{"key":"failure","label":"Failed, rejected, or invalid","meaning":"An explicitly failed, rejected, or invalid result.","nodes":["Quota refusal","Status rejected"],"connections":["Refuse","Status failure"]}],"nodes":14,"connections":15}</script>
   </section>
     <div class="diagram-container" data-detail-level="read"
          data-preset-badge-editorial-plate="ARCHIFY / PLATE 04">
-      <svg viewBox="0 0 1280 848" data-purpose-diagram-view-box="0 0 1280 700" role="img" lang="en" aria-labelledby="archify-diagram-title archify-diagram-description" data-preset="classic" data-quality-profile="showcase">
+      <svg viewBox="0 0 1590 908" data-purpose-diagram-view-box="0 0 1590 760" role="img" lang="en" aria-labelledby="archify-diagram-title archify-diagram-description" data-preset="classic" data-quality-profile="showcase">
         <title id="archify-diagram-title">Device Request Decoding and Identity Authorization</title>
         <desc id="archify-diagram-description">A data-flow diagram generated by Archify.</desc>
         <!-- Definitions -->
@@ -5189,226 +5190,281 @@ svg[data-purpose-filter] g[data-purpose-highlight] > path { stroke-width: 2.4; }
         <rect width="100%" height="100%" fill="url(#grid)" />
 
         <!-- Data Stages -->
-        <rect data-graph-role="structural-frame" data-composition-frame-kind="stage" data-composition-frame-id="0" x="22.5" y="46" width="255" height="580" rx="10" class="c-lane" stroke-width="1"/>
-        <text x="150" y="68" class="t-dim" font-size="9" font-weight="600" text-anchor="middle">01 / Wire</text>
+        <rect data-graph-role="structural-frame" data-composition-frame-kind="stage" data-composition-frame-id="0" x="22.5" y="46" width="255" height="640" rx="10" class="c-lane" stroke-width="1"/>
+        <text x="150" y="68" class="t-dim" font-size="9" font-weight="600" text-anchor="middle">01 / HTTP admission</text>
 
-        <rect data-graph-role="structural-frame" data-composition-frame-kind="stage" data-composition-frame-id="1" x="332.5" y="46" width="255" height="580" rx="10" class="c-lane" stroke-width="1"/>
-        <text x="460" y="68" class="t-dim" font-size="9" font-weight="600" text-anchor="middle">02 / Decode</text>
+        <rect data-graph-role="structural-frame" data-composition-frame-kind="stage" data-composition-frame-id="1" x="332.5" y="46" width="255" height="640" rx="10" class="c-lane" stroke-width="1"/>
+        <text x="460" y="68" class="t-dim" font-size="9" font-weight="600" text-anchor="middle">02 / Admitted request</text>
 
-        <rect data-graph-role="structural-frame" data-composition-frame-kind="stage" data-composition-frame-id="2" x="642.5" y="46" width="255" height="580" rx="10" class="c-lane" stroke-width="1"/>
-        <text x="770" y="68" class="t-dim" font-size="9" font-weight="600" text-anchor="middle">03 / Typed</text>
+        <rect data-graph-role="structural-frame" data-composition-frame-kind="stage" data-composition-frame-id="2" x="642.5" y="46" width="255" height="640" rx="10" class="c-lane" stroke-width="1"/>
+        <text x="770" y="68" class="t-dim" font-size="9" font-weight="600" text-anchor="middle">03 / Decode</text>
 
-        <rect data-graph-role="structural-frame" data-composition-frame-kind="stage" data-composition-frame-id="3" x="952.5" y="46" width="255" height="580" rx="10" class="c-lane" stroke-width="1"/>
-        <text x="1080" y="68" class="t-dim" font-size="9" font-weight="600" text-anchor="middle">04 / Service policy</text>
+        <rect data-graph-role="structural-frame" data-composition-frame-kind="stage" data-composition-frame-id="3" x="952.5" y="46" width="255" height="640" rx="10" class="c-lane" stroke-width="1"/>
+        <text x="1080" y="68" class="t-dim" font-size="9" font-weight="600" text-anchor="middle">04 / Typed</text>
+
+        <rect data-graph-role="structural-frame" data-composition-frame-kind="stage" data-composition-frame-id="4" x="1262.5" y="46" width="255" height="640" rx="10" class="c-lane" stroke-width="1"/>
+        <text x="1390" y="68" class="t-dim" font-size="9" font-weight="600" text-anchor="middle">05 / Service policy</text>
 
         <!-- Flow paths -->
-        <path data-edge-from="body" data-edge-to="plist" data-edge-label="decode" data-edge-key="0" data-edge-id="decode-0" data-purpose="service" data-composition-points="245,157;365,157" d="M 245 157 L 365 157" class="a-emphasis purpose-arrow purpose-service" stroke-width="1.8" marker-end="url(#purpose-arrowhead-service)"/>
-        <path data-edge-from="signature" data-edge-to="cms" data-edge-label="verify" data-edge-key="1" data-edge-id="decode-1" data-purpose="authentication" data-composition-points="245,271;365,271" d="M 245 271 L 365 271" class="a-default purpose-arrow purpose-authentication" stroke-width="1.4" marker-end="url(#purpose-arrowhead-authentication)"/>
-        <path data-edge-from="plist" data-edge-to="checkin" data-edge-label="check-in" data-edge-key="2" data-edge-id="decode-2" data-purpose="service" data-composition-points="555,157;675,157" d="M 555 157 L 675 157" class="a-emphasis purpose-arrow purpose-service" stroke-width="1.8" marker-end="url(#purpose-arrowhead-service)"/>
-        <path data-edge-from="plist" data-edge-to="response" data-edge-label="response" data-edge-key="3" data-edge-id="decode-3" data-purpose="service" data-composition-points="555,157;615,157;615,271;675,271" d="M 555 157 L 615 157 L 615 271 L 675 271" class="a-default purpose-arrow purpose-service" stroke-width="1.4" marker-end="url(#purpose-arrowhead-service)"/>
-        <path data-edge-from="cms" data-edge-to="cert" data-edge-label="signer" data-edge-key="4" data-edge-id="decode-4" data-purpose="authentication" data-composition-points="555,271;615,271;615,385;675,385" d="M 555 271 L 615 271 L 615 385 L 675 385" class="a-default purpose-arrow purpose-authentication" stroke-width="1.4" marker-end="url(#purpose-arrowhead-authentication)"/>
-        <path data-edge-from="body" data-edge-to="cms" data-edge-label="Signed bytes" data-edge-key="5" data-edge-id="signed-body" data-purpose="transport" data-composition-points="150,186;150,214;460,214;460,242" d="M 150 186 L 150 214 L 460 214 L 460 242" class="a-default purpose-arrow purpose-transport" stroke-width="1.4" marker-end="url(#purpose-arrowhead-transport)"/>
-        <path data-edge-from="tls" data-edge-to="identity" data-edge-label="TLS peer identity" data-edge-key="6" data-edge-id="tls-cert" data-purpose="authentication" data-composition-points="245,385;365,385" d="M 245 385 L 365 385" class="a-default purpose-arrow purpose-authentication" stroke-width="1.4" marker-end="url(#purpose-arrowhead-authentication)"/>
-        <path data-edge-from="proxy" data-edge-to="identity" data-edge-label="Trusted forwarded identity" data-edge-key="7" data-edge-id="proxy-cert" data-purpose="authentication" data-composition-points="245,499;305,499;305,385;365,385" d="M 245 499 L 305 499 L 305 385 L 365 385" class="a-default purpose-arrow purpose-authentication" stroke-width="1.4" marker-end="url(#purpose-arrowhead-authentication)"/>
-        <path data-edge-from="identity" data-edge-to="cert" data-edge-label="Extract certificate" data-edge-key="8" data-edge-id="selected-cert" data-purpose="authentication" data-composition-points="555,385;675,385" d="M 555 385 L 675 385" class="a-default purpose-arrow purpose-authentication" stroke-width="1.4" marker-end="url(#purpose-arrowhead-authentication)"/>
-        <path data-edge-from="cert" data-edge-to="authorize" data-edge-label="Apply identity policy" data-edge-key="9" data-edge-id="cert-auth" data-purpose="policy" data-composition-points="865,385;985,385" d="M 865 385 L 985 385" class="a-default purpose-arrow purpose-policy" stroke-width="1.4" marker-end="url(#purpose-arrowhead-policy)"/>
-        <path data-edge-from="checkin" data-edge-to="authorize" data-edge-label="Check-in policy" data-edge-key="10" data-edge-id="checkin-auth" data-purpose="policy" data-composition-points="865,157;1080,157;1080,356" d="M 865 157 L 1080 157 L 1080 356" class="a-default purpose-arrow purpose-policy" stroke-width="1.4" marker-end="url(#purpose-arrowhead-policy)"/>
-        <path data-edge-from="response" data-edge-to="authorize" data-edge-label="Command-channel policy" data-edge-key="11" data-edge-id="response-auth" data-purpose="policy" data-composition-points="865,271;925,271;925,385;985,385" d="M 865 271 L 925 271 L 925 385 L 985 385" class="a-default purpose-arrow purpose-policy" stroke-width="1.4" marker-end="url(#purpose-arrowhead-policy)"/>
+        <path data-edge-from="body" data-edge-to="plist" data-edge-label="decode" data-edge-key="0" data-edge-id="decode-0" data-purpose="service" data-composition-points="555,157;675,157" d="M 555 157 L 675 157" class="a-emphasis purpose-arrow purpose-service" stroke-width="1.8" marker-end="url(#purpose-arrowhead-service)"/>
+        <path data-edge-from="signature" data-edge-to="cms" data-edge-label="verify" data-edge-key="1" data-edge-id="decode-1" data-purpose="authentication" data-composition-points="555,271;675,271" d="M 555 271 L 675 271" class="a-default purpose-arrow purpose-authentication" stroke-width="1.4" marker-end="url(#purpose-arrowhead-authentication)"/>
+        <path data-edge-from="plist" data-edge-to="checkin" data-edge-label="check-in" data-edge-key="2" data-edge-id="decode-2" data-purpose="service" data-composition-points="865,157;985,157" d="M 865 157 L 985 157" class="a-emphasis purpose-arrow purpose-service" stroke-width="1.8" marker-end="url(#purpose-arrowhead-service)"/>
+        <path data-edge-from="plist" data-edge-to="response" data-edge-label="response" data-edge-key="3" data-edge-id="decode-3" data-purpose="service" data-composition-points="865,157;925,157;925,271;985,271" d="M 865 157 L 925 157 L 925 271 L 985 271" class="a-default purpose-arrow purpose-service" stroke-width="1.4" marker-end="url(#purpose-arrowhead-service)"/>
+        <path data-edge-from="cms" data-edge-to="cert" data-edge-label="signer" data-edge-key="4" data-edge-id="decode-4" data-purpose="authentication" data-composition-points="865,271;925,271;925,385;985,385" d="M 865 271 L 925 271 L 925 385 L 985 385" class="a-default purpose-arrow purpose-authentication" stroke-width="1.4" marker-end="url(#purpose-arrowhead-authentication)"/>
+        <path data-edge-from="body" data-edge-to="cms" data-edge-label="Signed bytes" data-edge-key="5" data-edge-id="signed-body" data-purpose="transport" data-composition-points="460,186;460,214;770,214;770,242" d="M 460 186 L 460 214 L 770 214 L 770 242" class="a-default purpose-arrow purpose-transport" stroke-width="1.4" marker-end="url(#purpose-arrowhead-transport)"/>
+        <path data-edge-from="tls" data-edge-to="identity" data-edge-label="TLS peer identity" data-edge-key="6" data-edge-id="tls-cert" data-purpose="authentication" data-composition-points="555,385;675,385" d="M 555 385 L 675 385" class="a-default purpose-arrow purpose-authentication" stroke-width="1.4" marker-end="url(#purpose-arrowhead-authentication)"/>
+        <path data-edge-from="proxy" data-edge-to="identity" data-edge-label="Trusted forwarded identity" data-edge-key="7" data-edge-id="proxy-cert" data-purpose="authentication" data-composition-points="555,499;615,499;615,385;675,385" d="M 555 499 L 615 499 L 615 385 L 675 385" class="a-default purpose-arrow purpose-authentication" stroke-width="1.4" marker-end="url(#purpose-arrowhead-authentication)"/>
+        <path data-edge-from="identity" data-edge-to="cert" data-edge-label="Extract certificate" data-edge-key="8" data-edge-id="selected-cert" data-purpose="authentication" data-composition-points="865,385;985,385" d="M 865 385 L 985 385" class="a-default purpose-arrow purpose-authentication" stroke-width="1.4" marker-end="url(#purpose-arrowhead-authentication)"/>
+        <path data-edge-from="cert" data-edge-to="authorize" data-edge-label="Apply identity policy" data-edge-key="9" data-edge-id="cert-auth" data-purpose="policy" data-composition-points="1175,385;1295,385" d="M 1175 385 L 1295 385" class="a-default purpose-arrow purpose-policy" stroke-width="1.4" marker-end="url(#purpose-arrowhead-policy)"/>
+        <path data-edge-from="checkin" data-edge-to="authorize" data-edge-label="Check-in policy" data-edge-key="10" data-edge-id="checkin-auth" data-purpose="policy" data-composition-points="1175,157;1390,157;1390,356" d="M 1175 157 L 1390 157 L 1390 356" class="a-default purpose-arrow purpose-policy" stroke-width="1.4" marker-end="url(#purpose-arrowhead-policy)"/>
+        <path data-edge-from="response" data-edge-to="authorize" data-edge-label="Command-channel policy" data-edge-key="11" data-edge-id="response-auth" data-purpose="policy" data-composition-points="1175,271;1235,271;1235,385;1295,385" d="M 1175 271 L 1235 271 L 1235 385 L 1295 385" class="a-default purpose-arrow purpose-policy" stroke-width="1.4" marker-end="url(#purpose-arrowhead-policy)"/>
+        <path data-edge-from="quotas" data-edge-to="body" data-edge-label="Admit" data-edge-key="12" data-edge-id="quota-admit" data-purpose="transport" data-composition-points="245,157;365,157" d="M 245 157 L 365 157" class="a-default purpose-arrow purpose-transport" stroke-width="1.4" marker-end="url(#purpose-arrowhead-transport)"/>
+        <path data-edge-from="quotas" data-edge-to="quota-refusal" data-edge-label="Refuse" data-edge-key="13" data-edge-id="quota-refuse" data-purpose="failure" data-composition-points="150,186;150,242" d="M 150 186 L 150 242" class="a-default purpose-arrow purpose-failure" stroke-width="1.4" marker-end="url(#purpose-arrowhead-failure)"/>
+        <path data-edge-from="authorize" data-edge-to="status-refusal" data-edge-label="Status failure" data-edge-key="14" data-edge-id="status-refuse" data-purpose="failure" data-composition-points="1390,414;1390,470" d="M 1390 414 L 1390 470" class="a-default purpose-arrow purpose-failure" stroke-width="1.4" marker-end="url(#purpose-arrowhead-failure)"/>
 
         <!-- Nodes -->
-        <g id="node-body" data-node-id="body" data-node-label="Device request body" tabindex="0" role="button" aria-label="Focus Device request body, XML or binary property list, 01 / Wire" aria-pressed="false" data-node-kind="external" data-node-sublabel="XML or binary property list" data-node-tag="untrusted" data-node-context="01 / Wire" data-purpose="transport">
-          <title>Device request body · XML or binary property list · 01 / Wire · untrusted</title>
-          <rect x="55" y="128" width="190" height="58" rx="6" class="c-mask"/>
-          <rect x="55" y="128" width="190" height="58" rx="6" class="c-external" stroke-width="1.5"/>
-          <g aria-hidden="true" data-semantic-sigil="external" class="semantic-sigil s-external" transform="translate(61 134) scale(0.6875)">
+        <g id="node-body" data-node-id="body" data-node-label="Request body" tabindex="0" role="button" aria-label="Focus Request body, XML or binary property list, 02 / Admitted request" aria-pressed="false" data-node-kind="external" data-node-sublabel="XML or binary property list" data-node-tag="untrusted" data-node-context="02 / Admitted request" data-purpose="transport">
+          <title>Request body · XML or binary property list · 02 / Admitted request · untrusted</title>
+          <rect x="365" y="128" width="190" height="58" rx="6" class="c-mask"/>
+          <rect x="365" y="128" width="190" height="58" rx="6" class="c-external" stroke-width="1.5"/>
+          <g aria-hidden="true" data-semantic-sigil="external" class="semantic-sigil s-external" transform="translate(371 134) scale(0.6875)">
             <rect x="2.5" y="5" width="8.5" height="8" rx="1.5"/>
             <path d="M8 2.5h5.5V8M13.5 2.5 7.5 8.5"/>
           </g>
-          <text data-node-label="" data-detail-anchor="" x="150" y="149" class="t-primary" font-size="14" font-weight="600" text-anchor="middle">Device request body</text>
-          <text data-detail="context" x="150" y="165" class="t-muted" font-size="11" text-anchor="middle">XML or binary property list</text>
-        <text data-detail="fine" x="150" y="175" class="t-external" font-size="7" text-anchor="middle">untrusted</text>
+          <text data-node-label="" data-detail-anchor="" x="460" y="149" class="t-primary" font-size="14" font-weight="600" text-anchor="middle">Request body</text>
+          <text data-detail="context" x="460" y="165" class="t-muted" font-size="11" text-anchor="middle">XML or binary property list</text>
+        <text data-detail="fine" x="460" y="175" class="t-external" font-size="7" text-anchor="middle">untrusted</text>
         </g>
 
-        <g id="node-signature" data-node-id="signature" data-node-label="Mdm-Signature" tabindex="0" role="button" aria-label="Focus Mdm-Signature, Detached CMS signature, 01 / Wire" aria-pressed="false" data-node-kind="security" data-node-sublabel="Detached CMS signature" data-node-tag="untrusted" data-node-context="01 / Wire" data-purpose="authentication">
-          <title>Mdm-Signature · Detached CMS signature · 01 / Wire · untrusted</title>
-          <rect x="55" y="242" width="190" height="58" rx="6" class="c-mask"/>
-          <rect x="55" y="242" width="190" height="58" rx="6" class="c-security" stroke-width="1.5"/>
-          <g aria-hidden="true" data-semantic-sigil="security" class="semantic-sigil s-security" transform="translate(61 248) scale(0.6875)">
-            <path d="M8 2.2 13 4v3.5c0 3.1-1.8 5.4-5 6.5-3.2-1.1-5-3.4-5-6.5V4Z"/>
-            <path d="m5.8 8 1.5 1.5 3-3"/>
-          </g>
-          <text data-node-label="" data-detail-anchor="" x="150" y="263" class="t-primary" font-size="14" font-weight="600" text-anchor="middle">Mdm-Signature</text>
-          <text data-detail="context" x="150" y="279" class="t-muted" font-size="11" text-anchor="middle">Detached CMS signature</text>
-        <text data-detail="fine" x="150" y="289" class="t-security" font-size="7" text-anchor="middle">untrusted</text>
-        </g>
-
-        <g id="node-plist" data-node-id="plist" data-node-label="Property-list decoder" tabindex="0" role="button" aria-label="Focus Property-list decoder, Bound size and XML nesting, 02 / Decode" aria-pressed="false" data-node-kind="backend" data-node-sublabel="Bound size and XML nesting" data-node-context="02 / Decode" data-purpose="service">
-          <title>Property-list decoder · Bound size and XML nesting · 02 / Decode</title>
-          <rect x="365" y="128" width="190" height="58" rx="6" class="c-mask"/>
-          <rect x="365" y="128" width="190" height="58" rx="6" class="c-backend" stroke-width="1.5"/>
-          <g aria-hidden="true" data-semantic-sigil="backend" class="semantic-sigil s-backend" transform="translate(371 134) scale(0.6875)">
-            <path d="M6 3 3 8l3 5M10 3l3 5-3 5"/>
-          </g>
-          <text data-node-label="" data-detail-anchor="" x="460" y="149" class="t-primary" font-size="14" font-weight="600" text-anchor="middle">Property-list decoder</text>
-          <text data-detail="context" x="460" y="165" class="t-muted" font-size="11" text-anchor="middle">Bound size and XML nesting</text>
-        </g>
-
-        <g id="node-cms" data-node-id="cms" data-node-label="Verify signed body" tabindex="0" role="button" aria-label="Focus Verify signed body, Signature and signing time, 02 / Decode" aria-pressed="false" data-node-kind="security" data-node-sublabel="Signature and signing time" data-node-context="02 / Decode" data-purpose="authentication">
-          <title>Verify signed body · Signature and signing time · 02 / Decode</title>
+        <g id="node-signature" data-node-id="signature" data-node-label="Mdm-Signature" tabindex="0" role="button" aria-label="Focus Mdm-Signature, Detached CMS signature, 02 / Admitted request" aria-pressed="false" data-node-kind="security" data-node-sublabel="Detached CMS signature" data-node-tag="untrusted" data-node-context="02 / Admitted request" data-purpose="authentication">
+          <title>Mdm-Signature · Detached CMS signature · 02 / Admitted request · untrusted</title>
           <rect x="365" y="242" width="190" height="58" rx="6" class="c-mask"/>
           <rect x="365" y="242" width="190" height="58" rx="6" class="c-security" stroke-width="1.5"/>
           <g aria-hidden="true" data-semantic-sigil="security" class="semantic-sigil s-security" transform="translate(371 248) scale(0.6875)">
             <path d="M8 2.2 13 4v3.5c0 3.1-1.8 5.4-5 6.5-3.2-1.1-5-3.4-5-6.5V4Z"/>
             <path d="m5.8 8 1.5 1.5 3-3"/>
           </g>
-          <text data-node-label="" data-detail-anchor="" x="460" y="263" class="t-primary" font-size="14" font-weight="600" text-anchor="middle">Verify signed body</text>
-          <text data-detail="context" x="460" y="279" class="t-muted" font-size="11" text-anchor="middle">Signature and signing time</text>
+          <text data-node-label="" data-detail-anchor="" x="460" y="263" class="t-primary" font-size="14" font-weight="600" text-anchor="middle">Mdm-Signature</text>
+          <text data-detail="context" x="460" y="279" class="t-muted" font-size="11" text-anchor="middle">Detached CMS signature</text>
+        <text data-detail="fine" x="460" y="289" class="t-security" font-size="7" text-anchor="middle">untrusted</text>
         </g>
 
-        <g id="node-checkin" data-node-id="checkin" data-node-label="Typed check-in" tabindex="0" role="button" aria-label="Focus Typed check-in, Structure from MessageType, 03 / Typed" aria-pressed="false" data-node-kind="backend" data-node-sublabel="Structure from MessageType" data-node-context="03 / Typed" data-purpose="transport">
-          <title>Typed check-in · Structure from MessageType · 03 / Typed</title>
+        <g id="node-plist" data-node-id="plist" data-node-label="Plist decoder" tabindex="0" role="button" aria-label="Focus Plist decoder, Bound size and XML nesting, 03 / Decode" aria-pressed="false" data-node-kind="backend" data-node-sublabel="Bound size and XML nesting" data-node-context="03 / Decode" data-purpose="service">
+          <title>Plist decoder · Bound size and XML nesting · 03 / Decode</title>
           <rect x="675" y="128" width="190" height="58" rx="6" class="c-mask"/>
           <rect x="675" y="128" width="190" height="58" rx="6" class="c-backend" stroke-width="1.5"/>
           <g aria-hidden="true" data-semantic-sigil="backend" class="semantic-sigil s-backend" transform="translate(681 134) scale(0.6875)">
             <path d="M6 3 3 8l3 5M10 3l3 5-3 5"/>
           </g>
-          <text data-node-label="" data-detail-anchor="" x="770" y="149" class="t-primary" font-size="14" font-weight="600" text-anchor="middle">Typed check-in</text>
-          <text data-detail="context" x="770" y="165" class="t-muted" font-size="11" text-anchor="middle">Structure from MessageType</text>
+          <text data-node-label="" data-detail-anchor="" x="770" y="149" class="t-primary" font-size="14" font-weight="600" text-anchor="middle">Plist decoder</text>
+          <text data-detail="context" x="770" y="165" class="t-muted" font-size="11" text-anchor="middle">Bound size and XML nesting</text>
         </g>
 
-        <g id="node-response" data-node-id="response" data-node-label="Command response" tabindex="0" role="button" aria-label="Focus Command response, Idle or CommandUUID result, 03 / Typed" aria-pressed="false" data-node-kind="backend" data-node-sublabel="Idle or CommandUUID result" data-node-context="03 / Typed" data-purpose="transport">
-          <title>Command response · Idle or CommandUUID result · 03 / Typed</title>
+        <g id="node-cms" data-node-id="cms" data-node-label="Verify signed body" tabindex="0" role="button" aria-label="Focus Verify signed body, Signature and signing time, 03 / Decode" aria-pressed="false" data-node-kind="security" data-node-sublabel="Signature and signing time" data-node-context="03 / Decode" data-purpose="authentication">
+          <title>Verify signed body · Signature and signing time · 03 / Decode</title>
           <rect x="675" y="242" width="190" height="58" rx="6" class="c-mask"/>
-          <rect x="675" y="242" width="190" height="58" rx="6" class="c-backend" stroke-width="1.5"/>
-          <g aria-hidden="true" data-semantic-sigil="backend" class="semantic-sigil s-backend" transform="translate(681 248) scale(0.6875)">
+          <rect x="675" y="242" width="190" height="58" rx="6" class="c-security" stroke-width="1.5"/>
+          <g aria-hidden="true" data-semantic-sigil="security" class="semantic-sigil s-security" transform="translate(681 248) scale(0.6875)">
+            <path d="M8 2.2 13 4v3.5c0 3.1-1.8 5.4-5 6.5-3.2-1.1-5-3.4-5-6.5V4Z"/>
+            <path d="m5.8 8 1.5 1.5 3-3"/>
+          </g>
+          <text data-node-label="" data-detail-anchor="" x="770" y="263" class="t-primary" font-size="14" font-weight="600" text-anchor="middle">Verify signed body</text>
+          <text data-detail="context" x="770" y="279" class="t-muted" font-size="11" text-anchor="middle">Signature and signing time</text>
+        </g>
+
+        <g id="node-checkin" data-node-id="checkin" data-node-label="Typed check-in" tabindex="0" role="button" aria-label="Focus Typed check-in, Structure from MessageType, 04 / Typed" aria-pressed="false" data-node-kind="backend" data-node-sublabel="Structure from MessageType" data-node-context="04 / Typed" data-purpose="transport">
+          <title>Typed check-in · Structure from MessageType · 04 / Typed</title>
+          <rect x="985" y="128" width="190" height="58" rx="6" class="c-mask"/>
+          <rect x="985" y="128" width="190" height="58" rx="6" class="c-backend" stroke-width="1.5"/>
+          <g aria-hidden="true" data-semantic-sigil="backend" class="semantic-sigil s-backend" transform="translate(991 134) scale(0.6875)">
             <path d="M6 3 3 8l3 5M10 3l3 5-3 5"/>
           </g>
-          <text data-node-label="" data-detail-anchor="" x="770" y="263" class="t-primary" font-size="14" font-weight="600" text-anchor="middle">Command response</text>
-          <text data-detail="context" x="770" y="279" class="t-muted" font-size="11" text-anchor="middle">Idle or CommandUUID result</text>
+          <text data-node-label="" data-detail-anchor="" x="1080" y="149" class="t-primary" font-size="14" font-weight="600" text-anchor="middle">Typed check-in</text>
+          <text data-detail="context" x="1080" y="165" class="t-muted" font-size="11" text-anchor="middle">Structure from MessageType</text>
         </g>
 
-        <g id="node-cert" data-node-id="cert" data-node-label="Device certificate" tabindex="0" role="button" aria-label="Focus Device certificate, Identity for authorization, 03 / Typed" aria-pressed="false" data-node-kind="security" data-node-sublabel="Identity for authorization" data-node-context="03 / Typed" data-purpose="authentication">
-          <title>Device certificate · Identity for authorization · 03 / Typed</title>
-          <rect x="675" y="356" width="190" height="58" rx="6" class="c-mask"/>
-          <rect x="675" y="356" width="190" height="58" rx="6" class="c-security" stroke-width="1.5"/>
-          <g aria-hidden="true" data-semantic-sigil="security" class="semantic-sigil s-security" transform="translate(681 362) scale(0.6875)">
-            <path d="M8 2.2 13 4v3.5c0 3.1-1.8 5.4-5 6.5-3.2-1.1-5-3.4-5-6.5V4Z"/>
-            <path d="m5.8 8 1.5 1.5 3-3"/>
+        <g id="node-response" data-node-id="response" data-node-label="Command response" tabindex="0" role="button" aria-label="Focus Command response, Idle or CommandUUID result, 04 / Typed" aria-pressed="false" data-node-kind="backend" data-node-sublabel="Idle or CommandUUID result" data-node-context="04 / Typed" data-purpose="transport">
+          <title>Command response · Idle or CommandUUID result · 04 / Typed</title>
+          <rect x="985" y="242" width="190" height="58" rx="6" class="c-mask"/>
+          <rect x="985" y="242" width="190" height="58" rx="6" class="c-backend" stroke-width="1.5"/>
+          <g aria-hidden="true" data-semantic-sigil="backend" class="semantic-sigil s-backend" transform="translate(991 248) scale(0.6875)">
+            <path d="M6 3 3 8l3 5M10 3l3 5-3 5"/>
           </g>
-          <text data-node-label="" data-detail-anchor="" x="770" y="377" class="t-primary" font-size="14" font-weight="600" text-anchor="middle">Device certificate</text>
-          <text data-detail="context" x="770" y="393" class="t-muted" font-size="11" text-anchor="middle">Identity for authorization</text>
+          <text data-node-label="" data-detail-anchor="" x="1080" y="263" class="t-primary" font-size="14" font-weight="600" text-anchor="middle">Command response</text>
+          <text data-detail="context" x="1080" y="279" class="t-muted" font-size="11" text-anchor="middle">Idle or CommandUUID result</text>
         </g>
 
-        <g id="node-tls" data-node-id="tls" data-node-label="TLS client certificate" tabindex="0" role="button" aria-label="Focus TLS client certificate, From the TLS connection, 01 / Wire" aria-pressed="false" data-node-kind="security" data-node-sublabel="From the TLS connection" data-node-context="01 / Wire" data-purpose="authentication">
-          <title>TLS client certificate · From the TLS connection · 01 / Wire</title>
-          <rect x="55" y="356" width="190" height="58" rx="6" class="c-mask"/>
-          <rect x="55" y="356" width="190" height="58" rx="6" class="c-security" stroke-width="1.5"/>
-          <g aria-hidden="true" data-semantic-sigil="security" class="semantic-sigil s-security" transform="translate(61 362) scale(0.6875)">
-            <path d="M8 2.2 13 4v3.5c0 3.1-1.8 5.4-5 6.5-3.2-1.1-5-3.4-5-6.5V4Z"/>
-            <path d="m5.8 8 1.5 1.5 3-3"/>
-          </g>
-          <text data-node-label="" data-detail-anchor="" x="150" y="377" class="t-primary" font-size="13.7" font-weight="600" text-anchor="middle">TLS client certificate</text>
-          <text data-detail="context" x="150" y="393" class="t-muted" font-size="11" text-anchor="middle">From the TLS connection</text>
-        </g>
-
-        <g id="node-proxy" data-node-id="proxy" data-node-label="Trusted proxy header" tabindex="0" role="button" aria-label="Focus Trusted proxy header, Configured Client-Cert trust, 01 / Wire" aria-pressed="false" data-node-kind="security" data-node-sublabel="Configured Client-Cert trust" data-node-context="01 / Wire" data-purpose="authentication">
-          <title>Trusted proxy header · Configured Client-Cert trust · 01 / Wire</title>
-          <rect x="55" y="470" width="190" height="58" rx="6" class="c-mask"/>
-          <rect x="55" y="470" width="190" height="58" rx="6" class="c-security" stroke-width="1.5"/>
-          <g aria-hidden="true" data-semantic-sigil="security" class="semantic-sigil s-security" transform="translate(61 476) scale(0.6875)">
-            <path d="M8 2.2 13 4v3.5c0 3.1-1.8 5.4-5 6.5-3.2-1.1-5-3.4-5-6.5V4Z"/>
-            <path d="m5.8 8 1.5 1.5 3-3"/>
-          </g>
-          <text data-node-label="" data-detail-anchor="" x="150" y="491" class="t-primary" font-size="14" font-weight="600" text-anchor="middle">Trusted proxy header</text>
-          <text data-detail="context" x="150" y="507" class="t-muted" font-size="10.8" text-anchor="middle">Configured Client-Cert trust</text>
-        </g>
-
-        <g id="node-identity" data-node-id="identity" data-node-label="Identity extraction" tabindex="0" role="button" aria-label="Focus Identity extraction, Configured certificate source, 02 / Decode" aria-pressed="false" data-node-kind="security" data-node-sublabel="Configured certificate source" data-node-context="02 / Decode" data-purpose="authentication">
-          <title>Identity extraction · Configured certificate source · 02 / Decode</title>
-          <rect x="365" y="356" width="190" height="58" rx="6" class="c-mask"/>
-          <rect x="365" y="356" width="190" height="58" rx="6" class="c-security" stroke-width="1.5"/>
-          <g aria-hidden="true" data-semantic-sigil="security" class="semantic-sigil s-security" transform="translate(371 362) scale(0.6875)">
-            <path d="M8 2.2 13 4v3.5c0 3.1-1.8 5.4-5 6.5-3.2-1.1-5-3.4-5-6.5V4Z"/>
-            <path d="m5.8 8 1.5 1.5 3-3"/>
-          </g>
-          <text data-node-label="" data-detail-anchor="" x="460" y="377" class="t-primary" font-size="14" font-weight="600" text-anchor="middle">Identity extraction</text>
-          <text data-detail="context" x="460" y="393" class="t-muted" font-size="10.4" text-anchor="middle">Configured certificate source</text>
-        </g>
-
-        <g id="node-authorize" data-node-id="authorize" data-node-label="Service authorization" tabindex="0" role="button" aria-label="Focus Service authorization, Status, pin, and replacement, 04 / Service policy" aria-pressed="false" data-node-kind="security" data-node-sublabel="Status, pin, and replacement" data-node-context="04 / Service policy" data-purpose="policy">
-          <title>Service authorization · Status, pin, and replacement · 04 / Service policy</title>
+        <g id="node-cert" data-node-id="cert" data-node-label="Device certificate" tabindex="0" role="button" aria-label="Focus Device certificate, Identity for authorization, 04 / Typed" aria-pressed="false" data-node-kind="security" data-node-sublabel="Identity for authorization" data-node-context="04 / Typed" data-purpose="authentication">
+          <title>Device certificate · Identity for authorization · 04 / Typed</title>
           <rect x="985" y="356" width="190" height="58" rx="6" class="c-mask"/>
           <rect x="985" y="356" width="190" height="58" rx="6" class="c-security" stroke-width="1.5"/>
           <g aria-hidden="true" data-semantic-sigil="security" class="semantic-sigil s-security" transform="translate(991 362) scale(0.6875)">
             <path d="M8 2.2 13 4v3.5c0 3.1-1.8 5.4-5 6.5-3.2-1.1-5-3.4-5-6.5V4Z"/>
             <path d="m5.8 8 1.5 1.5 3-3"/>
           </g>
-          <text data-node-label="" data-detail-anchor="" x="1080" y="377" class="t-primary" font-size="14" font-weight="600" text-anchor="middle">Service authorization</text>
-          <text data-detail="context" x="1080" y="393" class="t-muted" font-size="10.8" text-anchor="middle">Status, pin, and replacement</text>
+          <text data-node-label="" data-detail-anchor="" x="1080" y="377" class="t-primary" font-size="14" font-weight="600" text-anchor="middle">Device certificate</text>
+          <text data-detail="context" x="1080" y="393" class="t-muted" font-size="11" text-anchor="middle">Identity for authorization</text>
+        </g>
+
+        <g id="node-tls" data-node-id="tls" data-node-label="TLS certificate" tabindex="0" role="button" aria-label="Focus TLS certificate, From the TLS connection, 02 / Admitted request" aria-pressed="false" data-node-kind="security" data-node-sublabel="From the TLS connection" data-node-context="02 / Admitted request" data-purpose="authentication">
+          <title>TLS certificate · From the TLS connection · 02 / Admitted request</title>
+          <rect x="365" y="356" width="190" height="58" rx="6" class="c-mask"/>
+          <rect x="365" y="356" width="190" height="58" rx="6" class="c-security" stroke-width="1.5"/>
+          <g aria-hidden="true" data-semantic-sigil="security" class="semantic-sigil s-security" transform="translate(371 362) scale(0.6875)">
+            <path d="M8 2.2 13 4v3.5c0 3.1-1.8 5.4-5 6.5-3.2-1.1-5-3.4-5-6.5V4Z"/>
+            <path d="m5.8 8 1.5 1.5 3-3"/>
+          </g>
+          <text data-node-label="" data-detail-anchor="" x="460" y="377" class="t-primary" font-size="14" font-weight="600" text-anchor="middle">TLS certificate</text>
+          <text data-detail="context" x="460" y="393" class="t-muted" font-size="11" text-anchor="middle">From the TLS connection</text>
+        </g>
+
+        <g id="node-proxy" data-node-id="proxy" data-node-label="Trusted proxy" tabindex="0" role="button" aria-label="Focus Trusted proxy, Configured Client-Cert trust, 02 / Admitted request" aria-pressed="false" data-node-kind="security" data-node-sublabel="Configured Client-Cert trust" data-node-context="02 / Admitted request" data-purpose="authentication">
+          <title>Trusted proxy · Configured Client-Cert trust · 02 / Admitted request</title>
+          <rect x="365" y="470" width="190" height="58" rx="6" class="c-mask"/>
+          <rect x="365" y="470" width="190" height="58" rx="6" class="c-security" stroke-width="1.5"/>
+          <g aria-hidden="true" data-semantic-sigil="security" class="semantic-sigil s-security" transform="translate(371 476) scale(0.6875)">
+            <path d="M8 2.2 13 4v3.5c0 3.1-1.8 5.4-5 6.5-3.2-1.1-5-3.4-5-6.5V4Z"/>
+            <path d="m5.8 8 1.5 1.5 3-3"/>
+          </g>
+          <text data-node-label="" data-detail-anchor="" x="460" y="491" class="t-primary" font-size="14" font-weight="600" text-anchor="middle">Trusted proxy</text>
+          <text data-detail="context" x="460" y="507" class="t-muted" font-size="10.8" text-anchor="middle">Configured Client-Cert trust</text>
+        </g>
+
+        <g id="node-identity" data-node-id="identity" data-node-label="Extract identity" tabindex="0" role="button" aria-label="Focus Extract identity, Configured certificate source, 03 / Decode" aria-pressed="false" data-node-kind="security" data-node-sublabel="Configured certificate source" data-node-context="03 / Decode" data-purpose="authentication">
+          <title>Extract identity · Configured certificate source · 03 / Decode</title>
+          <rect x="675" y="356" width="190" height="58" rx="6" class="c-mask"/>
+          <rect x="675" y="356" width="190" height="58" rx="6" class="c-security" stroke-width="1.5"/>
+          <g aria-hidden="true" data-semantic-sigil="security" class="semantic-sigil s-security" transform="translate(681 362) scale(0.6875)">
+            <path d="M8 2.2 13 4v3.5c0 3.1-1.8 5.4-5 6.5-3.2-1.1-5-3.4-5-6.5V4Z"/>
+            <path d="m5.8 8 1.5 1.5 3-3"/>
+          </g>
+          <text data-node-label="" data-detail-anchor="" x="770" y="377" class="t-primary" font-size="14" font-weight="600" text-anchor="middle">Extract identity</text>
+          <text data-detail="context" x="770" y="393" class="t-muted" font-size="10.4" text-anchor="middle">Configured certificate source</text>
+        </g>
+
+        <g id="node-authorize" data-node-id="authorize" data-node-label="Core authorization" tabindex="0" role="button" aria-label="Focus Core authorization, Status before hooks / dispatch, 05 / Service policy" aria-pressed="false" data-node-kind="security" data-node-sublabel="Status before hooks / dispatch" data-node-context="05 / Service policy" data-purpose="policy">
+          <title>Core authorization · Status before hooks / dispatch · 05 / Service policy</title>
+          <rect x="1295" y="356" width="190" height="58" rx="6" class="c-mask"/>
+          <rect x="1295" y="356" width="190" height="58" rx="6" class="c-security" stroke-width="1.5"/>
+          <g aria-hidden="true" data-semantic-sigil="security" class="semantic-sigil s-security" transform="translate(1301 362) scale(0.6875)">
+            <path d="M8 2.2 13 4v3.5c0 3.1-1.8 5.4-5 6.5-3.2-1.1-5-3.4-5-6.5V4Z"/>
+            <path d="m5.8 8 1.5 1.5 3-3"/>
+          </g>
+          <text data-node-label="" data-detail-anchor="" x="1390" y="377" class="t-primary" font-size="14" font-weight="600" text-anchor="middle">Core authorization</text>
+          <text data-detail="context" x="1390" y="393" class="t-muted" font-size="10.1" text-anchor="middle">Status before hooks / dispatch</text>
+        </g>
+
+        <g id="node-quotas" data-node-id="quotas" data-node-label="HTTP quota gate" tabindex="0" role="button" aria-label="Focus HTTP quota gate, Before MDM routing, 01 / HTTP admission" aria-pressed="false" data-node-kind="security" data-node-sublabel="Before MDM routing" data-node-context="01 / HTTP admission" data-purpose="policy">
+          <title>HTTP quota gate · Before MDM routing · 01 / HTTP admission</title>
+          <rect x="55" y="128" width="190" height="58" rx="6" class="c-mask"/>
+          <rect x="55" y="128" width="190" height="58" rx="6" class="c-security" stroke-width="1.5"/>
+          <g aria-hidden="true" data-semantic-sigil="security" class="semantic-sigil s-security" transform="translate(61 134) scale(0.6875)">
+            <path d="M8 2.2 13 4v3.5c0 3.1-1.8 5.4-5 6.5-3.2-1.1-5-3.4-5-6.5V4Z"/>
+            <path d="m5.8 8 1.5 1.5 3-3"/>
+          </g>
+          <text data-node-label="" data-detail-anchor="" x="150" y="149" class="t-primary" font-size="14" font-weight="600" text-anchor="middle">HTTP quota gate</text>
+          <text data-detail="context" x="150" y="165" class="t-muted" font-size="11" text-anchor="middle">Before MDM routing</text>
+        </g>
+
+        <g id="node-quota-refusal" data-node-id="quota-refusal" data-node-label="Quota refusal" tabindex="0" role="button" aria-label="Focus Quota refusal, 429 limit / 503 unavailable, 01 / HTTP admission" aria-pressed="false" data-node-kind="security" data-node-sublabel="429 limit / 503 unavailable" data-node-context="01 / HTTP admission" data-purpose="failure">
+          <title>Quota refusal · 429 limit / 503 unavailable · 01 / HTTP admission</title>
+          <rect x="55" y="242" width="190" height="58" rx="6" class="c-mask"/>
+          <rect x="55" y="242" width="190" height="58" rx="6" class="c-security" stroke-width="1.5"/>
+          <g aria-hidden="true" data-semantic-sigil="security" class="semantic-sigil s-security" transform="translate(61 248) scale(0.6875)">
+            <path d="M8 2.2 13 4v3.5c0 3.1-1.8 5.4-5 6.5-3.2-1.1-5-3.4-5-6.5V4Z"/>
+            <path d="m5.8 8 1.5 1.5 3-3"/>
+          </g>
+          <text data-node-label="" data-detail-anchor="" x="150" y="263" class="t-primary" font-size="14" font-weight="600" text-anchor="middle">Quota refusal</text>
+          <text data-detail="context" x="150" y="279" class="t-muted" font-size="11" text-anchor="middle">429 limit / 503 unavailable</text>
+        </g>
+
+        <g id="node-status-refusal" data-node-id="status-refusal" data-node-label="Status rejected" tabindex="0" role="button" aria-label="Focus Status rejected, HTTP 403; no dispatch, 05 / Service policy" aria-pressed="false" data-node-kind="security" data-node-sublabel="HTTP 403; no dispatch" data-node-context="05 / Service policy" data-purpose="failure">
+          <title>Status rejected · HTTP 403; no dispatch · 05 / Service policy</title>
+          <rect x="1295" y="470" width="190" height="58" rx="6" class="c-mask"/>
+          <rect x="1295" y="470" width="190" height="58" rx="6" class="c-security" stroke-width="1.5"/>
+          <g aria-hidden="true" data-semantic-sigil="security" class="semantic-sigil s-security" transform="translate(1301 476) scale(0.6875)">
+            <path d="M8 2.2 13 4v3.5c0 3.1-1.8 5.4-5 6.5-3.2-1.1-5-3.4-5-6.5V4Z"/>
+            <path d="m5.8 8 1.5 1.5 3-3"/>
+          </g>
+          <text data-node-label="" data-detail-anchor="" x="1390" y="491" class="t-primary" font-size="14" font-weight="600" text-anchor="middle">Status rejected</text>
+          <text data-detail="context" x="1390" y="507" class="t-muted" font-size="11" text-anchor="middle">HTTP 403; no dispatch</text>
         </g>
 
         <!-- Flow labels -->
         <g data-detail="context" data-edge-from="body" data-edge-to="plist" data-edge-label="decode" data-edge-key="0" data-edge-id="decode-0" data-purpose="service">
-          <rect x="254" y="136" width="102" height="27" rx="4" class="c-mask"/>
-          <text x="305" y="147" class="t-backend" font-size="10" text-anchor="middle">decode</text>
-        <text data-detail="fine" x="305" y="158" class="t-dim" font-size="7" text-anchor="middle">untrusted input</text>
+          <rect x="564" y="136" width="102" height="27" rx="4" class="c-mask"/>
+          <text x="615" y="147" class="t-backend" font-size="10" text-anchor="middle">decode</text>
+        <text data-detail="fine" x="615" y="158" class="t-dim" font-size="7" text-anchor="middle">untrusted input</text>
         </g>
         <g data-detail="context" data-edge-from="signature" data-edge-to="cms" data-edge-label="verify" data-edge-key="1" data-edge-id="decode-1" data-purpose="authentication">
-          <rect x="254" y="250" width="102" height="27" rx="4" class="c-mask"/>
-          <text x="305" y="261" class="t-security" font-size="10" text-anchor="middle">verify</text>
-        <text data-detail="fine" x="305" y="272" class="t-dim" font-size="7" text-anchor="middle">untrusted input</text>
+          <rect x="564" y="250" width="102" height="27" rx="4" class="c-mask"/>
+          <text x="615" y="261" class="t-security" font-size="10" text-anchor="middle">verify</text>
+        <text data-detail="fine" x="615" y="272" class="t-dim" font-size="7" text-anchor="middle">untrusted input</text>
         </g>
         <g data-detail="context" data-edge-from="plist" data-edge-to="checkin" data-edge-label="check-in" data-edge-key="2" data-edge-id="decode-2" data-purpose="service">
-          <rect x="585" y="136" width="60" height="16" rx="4" class="c-mask"/>
-          <text x="615" y="147" class="t-backend" font-size="10" text-anchor="middle">check-in</text>
+          <rect x="895" y="136" width="60" height="16" rx="4" class="c-mask"/>
+          <text x="925" y="147" class="t-backend" font-size="10" text-anchor="middle">check-in</text>
         </g>
         <g data-detail="context" data-edge-from="plist" data-edge-to="response" data-edge-label="response" data-edge-key="3" data-edge-id="decode-3" data-purpose="service">
-          <rect x="585" y="193" width="60" height="16" rx="4" class="c-mask"/>
-          <text x="615" y="204" class="t-muted" font-size="10" text-anchor="middle">response</text>
+          <rect x="895" y="193" width="60" height="16" rx="4" class="c-mask"/>
+          <text x="925" y="204" class="t-muted" font-size="10" text-anchor="middle">response</text>
         </g>
         <g data-detail="context" data-edge-from="cms" data-edge-to="cert" data-edge-label="signer" data-edge-key="4" data-edge-id="decode-4" data-purpose="authentication">
-          <rect x="564" y="307" width="102" height="27" rx="4" class="c-mask"/>
-          <text x="615" y="318" class="t-security" font-size="10" text-anchor="middle">signer</text>
-        <text data-detail="fine" x="615" y="329" class="t-dim" font-size="7" text-anchor="middle">verified signer</text>
+          <rect x="874" y="307" width="102" height="27" rx="4" class="c-mask"/>
+          <text x="925" y="318" class="t-security" font-size="10" text-anchor="middle">signer</text>
+        <text data-detail="fine" x="925" y="329" class="t-dim" font-size="7" text-anchor="middle">verified signer</text>
         </g>
         <g data-detail="context" data-edge-from="body" data-edge-to="cms" data-edge-label="Signed bytes" data-edge-key="5" data-edge-id="signed-body" data-purpose="transport">
-          <rect x="273" y="193" width="84" height="16" rx="4" class="c-mask"/>
-          <text x="315" y="204" class="t-muted" font-size="10" text-anchor="middle">Signed bytes</text>
+          <rect x="583" y="193" width="84" height="16" rx="4" class="c-mask"/>
+          <text x="625" y="204" class="t-muted" font-size="10" text-anchor="middle">Signed bytes</text>
         </g>
         <g data-detail="context" data-edge-from="tls" data-edge-to="identity" data-edge-label="TLS peer identity" data-edge-key="6" data-edge-id="tls-cert" data-purpose="authentication">
-          <rect x="248" y="364" width="114" height="16" rx="4" class="c-mask"/>
-          <text x="305" y="375" class="t-muted" font-size="10" text-anchor="middle">TLS peer identity</text>
+          <rect x="558" y="364" width="114" height="16" rx="4" class="c-mask"/>
+          <text x="615" y="375" class="t-muted" font-size="10" text-anchor="middle">TLS peer identity</text>
         </g>
         <g data-detail="context" data-edge-from="proxy" data-edge-to="identity" data-edge-label="Trusted forwarded identity" data-edge-key="7" data-edge-id="proxy-cert" data-purpose="authentication">
-          <rect x="221" y="421" width="168" height="16" rx="4" class="c-mask"/>
-          <text x="305" y="432" class="t-muted" font-size="10" text-anchor="middle">Trusted forwarded identity</text>
+          <rect x="531" y="421" width="168" height="16" rx="4" class="c-mask"/>
+          <text x="615" y="432" class="t-muted" font-size="10" text-anchor="middle">Trusted forwarded identity</text>
         </g>
         <g data-detail="context" data-edge-from="identity" data-edge-to="cert" data-edge-label="Extract certificate" data-edge-key="8" data-edge-id="selected-cert" data-purpose="authentication">
-          <rect x="552" y="417" width="126" height="16" rx="4" class="c-mask"/>
-          <text x="615" y="428" class="t-muted" font-size="10" text-anchor="middle">Extract certificate</text>
+          <rect x="862" y="417" width="126" height="16" rx="4" class="c-mask"/>
+          <text x="925" y="428" class="t-muted" font-size="10" text-anchor="middle">Extract certificate</text>
         </g>
         <g data-detail="context" data-edge-from="cert" data-edge-to="authorize" data-edge-label="Apply identity policy" data-edge-key="9" data-edge-id="cert-auth" data-purpose="policy">
-          <rect x="856" y="417" width="138" height="16" rx="4" class="c-mask"/>
-          <text x="925" y="428" class="t-muted" font-size="10" text-anchor="middle">Apply identity policy</text>
+          <rect x="1166" y="417" width="138" height="16" rx="4" class="c-mask"/>
+          <text x="1235" y="428" class="t-muted" font-size="10" text-anchor="middle">Apply identity policy</text>
         </g>
         <g data-detail="context" data-edge-from="checkin" data-edge-to="authorize" data-edge-label="Check-in policy" data-edge-key="10" data-edge-id="checkin-auth" data-purpose="policy">
-          <rect x="1029" y="235.5" width="102" height="16" rx="4" class="c-mask"/>
-          <text x="1080" y="246.5" class="t-muted" font-size="10" text-anchor="middle">Check-in policy</text>
+          <rect x="1339" y="235.5" width="102" height="16" rx="4" class="c-mask"/>
+          <text x="1390" y="246.5" class="t-muted" font-size="10" text-anchor="middle">Check-in policy</text>
         </g>
         <g data-detail="context" data-edge-from="response" data-edge-to="authorize" data-edge-label="Command-channel policy" data-edge-key="11" data-edge-id="response-auth" data-purpose="policy">
-          <rect x="853" y="307" width="144" height="16" rx="4" class="c-mask"/>
-          <text x="925" y="318" class="t-muted" font-size="10" text-anchor="middle">Command-channel policy</text>
+          <rect x="1163" y="307" width="144" height="16" rx="4" class="c-mask"/>
+          <text x="1235" y="318" class="t-muted" font-size="10" text-anchor="middle">Command-channel policy</text>
+        </g>
+        <g data-detail="context" data-edge-from="quotas" data-edge-to="body" data-edge-label="Admit" data-edge-key="12" data-edge-id="quota-admit" data-purpose="transport">
+          <rect x="284" y="136" width="42" height="16" rx="4" class="c-mask"/>
+          <text x="305" y="147" class="t-muted" font-size="10" text-anchor="middle">Admit</text>
+        </g>
+        <g data-detail="context" data-edge-from="quotas" data-edge-to="quota-refusal" data-edge-label="Refuse" data-edge-key="13" data-edge-id="quota-refuse" data-purpose="failure">
+          <rect x="126" y="189" width="48" height="16" rx="4" class="c-mask"/>
+          <text x="150" y="200" class="t-muted" font-size="10" text-anchor="middle">Refuse</text>
+        </g>
+        <g data-detail="context" data-edge-from="authorize" data-edge-to="status-refusal" data-edge-label="Status failure" data-edge-key="14" data-edge-id="status-refuse" data-purpose="failure">
+          <rect x="1342" y="417" width="96" height="16" rx="4" class="c-mask"/>
+          <text x="1390" y="428" class="t-muted" font-size="10" text-anchor="middle">Status failure</text>
         </g>
 
         <!-- Legend -->
 <g data-graph-role="legend" data-purpose-legend="" aria-label="Legend">
-    <path d="M 40 708 H 1240" class="purpose-legend-rule"/>
-    <text x="40" y="728" class="t-primary" font-size="14" font-weight="600">Legend</text>
-    <g data-purpose-legend-entry="service"><rect x="40" y="747" width="13" height="13" rx="3" class="purpose-swatch purpose-service"/><text x="62" y="758" class="t-primary" font-size="13">Services and processing</text></g>
-<g data-purpose-legend-entry="transport"><rect x="440" y="747" width="13" height="13" rx="3" class="purpose-swatch purpose-transport"/><text x="462" y="758" class="t-primary" font-size="13">Communication and transport</text></g>
-<g data-purpose-legend-entry="authentication"><rect x="840" y="747" width="13" height="13" rx="3" class="purpose-swatch purpose-authentication"/><text x="862" y="758" class="t-primary" font-size="13">Authentication and identity</text></g>
-<g data-purpose-legend-entry="policy"><rect x="40" y="777" width="13" height="13" rx="3" class="purpose-swatch purpose-policy"/><text x="62" y="788" class="t-primary" font-size="13">Authorization and policy</text></g>
-    <text x="40" y="824" class="t-muted" font-size="12">Colour identifies purpose or outcome; line style does not imply success or failure.</text>
+    <path d="M 40 768 H 1550" class="purpose-legend-rule"/>
+    <text x="40" y="788" class="t-primary" font-size="14" font-weight="600">Legend</text>
+    <g data-purpose-legend-entry="service"><rect x="40" y="807" width="13" height="13" rx="3" class="purpose-swatch purpose-service"/><text x="62" y="818" class="t-primary" font-size="13">Services and processing</text></g>
+<g data-purpose-legend-entry="transport"><rect x="417.5" y="807" width="13" height="13" rx="3" class="purpose-swatch purpose-transport"/><text x="439.5" y="818" class="t-primary" font-size="13">Communication and transport</text></g>
+<g data-purpose-legend-entry="authentication"><rect x="795" y="807" width="13" height="13" rx="3" class="purpose-swatch purpose-authentication"/><text x="817" y="818" class="t-primary" font-size="13">Authentication and identity</text></g>
+<g data-purpose-legend-entry="policy"><rect x="1172.5" y="807" width="13" height="13" rx="3" class="purpose-swatch purpose-policy"/><text x="1194.5" y="818" class="t-primary" font-size="13">Authorization and policy</text></g>
+<g data-purpose-legend-entry="failure"><rect x="40" y="837" width="13" height="13" rx="3" class="purpose-swatch purpose-failure"/><text x="62" y="848" class="t-primary" font-size="13">Failed, rejected, or invalid</text></g>
+    <text x="40" y="884" class="t-muted" font-size="12">Colour identifies purpose or outcome; line style does not imply success or failure.</text>
   </g>
       </svg>
       <p class="intent-trace-status no-print" id="intent-trace-status" role="status" aria-live="polite" aria-atomic="true"></p>
@@ -5598,12 +5654,23 @@ svg[data-purpose-filter] g[data-purpose-highlight] > path { stroke-width: 2.4; }
     <div class="cards">
       <div class="card">
         <div class="card-header">
+          <div class="card-dot policy"></div>
+          <h3>Configured quotas before routing</h3>
+        </div>
+        <ul>
+          <li>&bull; Reference-application middleware checks atomic per-peer and aggregate quotas in shared protocol state before routing, body decoding or certificate extraction. Routes without configured quotas pass through.</li>
+          <li>&bull; Quota exhaustion returns 429 with Retry-After; unavailable quota state returns 503. Every request carrier shown in the next stage belongs to an admitted request. The TLS handshake itself precedes HTTP middleware.</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
           <div class="card-dot transport"></div>
           <h3>Two outputs from the transport</h3>
         </div>
         <ul>
           <li>&bull; The transport decodes a check-in message or command response and extracts the device certificate from an enabled identity source.</li>
-          <li>&bull; Decoding is not enrollment authorization. The service then applies certificate status, identity, account, and replacement policy.</li>
+          <li>&bull; Both check-in and command traffic reach Core with a decoded message and extracted identity. Configured certificate-status rejection returns 403 before hooks, replacement handling or ordinary dispatch.</li>
         </ul>
       </div>
 
@@ -5614,7 +5681,7 @@ svg[data-purpose-filter] g[data-purpose-highlight] > path { stroke-width: 2.4; }
         </div>
         <ul>
           <li>&bull; Native TLS, a trusted proxy header, and Mdm-Signature are separate certificate sources. Header trust depends on the deployment boundary.</li>
-          <li>&bull; The signature verifier needs the original body bytes. Size limits apply before untrusted input reaches deeper processing.</li>
+          <li>&bull; The signature verifier uses the original body bytes. Status enforcement is separate from transport trust, proof of possession, pinning and account/enrollment authorization.</li>
         </ul>
       </div>
 
@@ -5624,7 +5691,7 @@ svg[data-purpose-filter] g[data-purpose-highlight] > path { stroke-width: 2.4; }
           <h3>Outbound validation</h3>
         </div>
         <ul>
-          <li>&bull; Command platform and channel checks run when service.Core enqueues a command. They do not validate incoming check-in messages.</li>
+          <li>&bull; Wire payload validation and target support checks apply to commands at enqueue and dispatch. They are separate from incoming check-in decoding.</li>
         </ul>
       </div>
 
@@ -5637,6 +5704,8 @@ svg[data-purpose-filter] g[data-purpose-highlight] > path { stroke-width: 2.4; }
           <li>&bull; <a href="https://developer.apple.com/documentation/devicemanagement/check-in" target="_blank" rel="noopener noreferrer">Check-in</a></li>
           <li>&bull; <a href="https://www.rfc-editor.org/rfc/rfc9440" target="_blank" rel="noopener noreferrer">RFC 9440 — Client-Cert HTTP Header Field</a></li>
           <li>&bull; <a href="https://developer.apple.com/documentation/devicemanagement/mdm" target="_blank" rel="noopener noreferrer">MDM payload</a></li>
+          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/80599ddc35778bcc88fa2ac77bb1dc68a51cf089/server/internal/app/security.go" target="_blank" rel="noopener noreferrer">Quota wrapper and shared state</a></li>
+          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/80599ddc35778bcc88fa2ac77bb1dc68a51cf089/server/service/checkin.go" target="_blank" rel="noopener noreferrer">Certificate status before service hooks</a></li>
         </ul>
       </div>
     </div>

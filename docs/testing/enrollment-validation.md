@@ -1,8 +1,12 @@
 # Enrollment alignment validation — 10 September 2026
 
 Implementation branch: `feat/enrollment-profile-alignment`, based on merged PR #12.
-This report covers service discovery, enrollment profiles and controlled identity
-replacement in the reference server. It does not establish real Mac enrollment.
+This historical report covers service discovery, enrollment profiles and controlled
+identity replacement as tested on 10 September. For subsequent physical-device
+results, see the [13 September real Mac lifecycle record](https://github.com/deploymenttheory/go-apple-dm/blob/80599ddc35778bcc88fa2ac77bb1dc68a51cf089/docs/reviews/real-mac-lifecycle-2026-09-13.md).
+That record establishes ACME and SCEP enrollment, APNs-triggered inventory,
+installing-user commands, DDM, identity replacement, trust rollover and SQLite
+recovery on the tested candidates, with their acceptance boundaries recorded there.
 
 ## Automated checks
 
@@ -42,26 +46,18 @@ serially to prevent concurrent schema resets.
 Replacement storage is part of each backend's `0001_init.sql`. The application is
 pre-release and has no existing database upgrade requirement.
 
-## Real Mac status
+## Subsequent real Mac validation
 
-The development Mac reports `MDM enrollment: No` and `Enrolled via DEP: No`.
-No real Mac has completed enrollment, replacement or an APNs-triggered inventory
-query against this implementation.
+The enrollment and push-certificate gaps recorded on 10 September were superseded
+by physical-Mac testing on 13 September. The [lifecycle record](https://github.com/deploymenttheory/go-apple-dm/blob/80599ddc35778bcc88fa2ac77bb1dc68a51cf089/docs/reviews/real-mac-lifecycle-2026-09-13.md)
+reports LIVE-002 passing for ACME and LIVE-003 passing for SCEP, including
+APNs-triggered DeviceInformation and ProfileList on the exact installing-user
+channel. It also records LIVE-004, successful identity replacement, controlled
+issuance refusal, issuer/HTTPS trust rollover and recovery of the enrolled Mac
+from a consistent SQLite checkpoint.
 
-The supplied certificate is an ordinary app-push certificate for
-`com.weaveplatform.deviceweave`. The lab still needs an MDM push certificate
-matching its retained private key. Its customer CSR and vendor-signing CSR have
-valid self-signatures and match their respective local keys. Neither is the
-vendor-signed request accepted by Apple's Push Certificates Portal.
-
-The Apple-issued MDM Vendor CSR Signing Certificate was not found in the lab,
-Desktop, Downloads or the keychain search. Obtaining it enables signing the
-customer CSR and requesting the MDM push certificate. No private key, CSR,
-issued certificate, device profile or local database is included in this change.
-
-After certificate issuance, follow the [manual Mac enrollment runbook](../operations/mac-enrollment-testing.md).
-LIVE-002 requires ACME issuance evidence and LIVE-003 requires SCEP issuance
-evidence; both also require real check-ins, an APNs wake, an acknowledged inventory
-query and an enabled installing-user channel. Simulator results do not satisfy
-these live milestones. Device-side replacement rollback and ADE Setup Assistant
-activation remain separate live tests.
+Those results apply to the candidates identified in that record; its requirement
+to repeat final acceptance on the reviewed commit remains explicit. They do not
+establish ADE Setup Assistant activation or make the automated results above
+current. Use the [manual Mac enrollment runbook](../operations/mac-enrollment-testing.md)
+for the live acceptance procedure.

@@ -94,4 +94,4 @@ Sources: [Go Test](../../.github/workflows/go-test.yml),
 [release workflow](../../.github/workflows/release.yml),
 [published-module verification](../../.github/workflows/go-server-module-installation.yml),
 [lint](../../.github/workflows/go-lint.yml), [security](../../.github/workflows/security.yml)
-and [scope review evidence](../research/extension-proposals-2026-09-14.md#phase-2--pipeline-and-test-repairs-maintenance).
+and [maintenance validation evidence](https://github.com/deploymenttheory/go-apple-dm/blob/80599ddc35778bcc88fa2ac77bb1dc68a51cf089/docs/reviews/scope-docs-ci-2026-09-14.md#repairs-and-local-evidence).

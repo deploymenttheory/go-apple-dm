@@ -12,7 +12,8 @@
     "colour_profile": "purpose-v1",
     "legend": {
       "mode": "hidden"
-    }
+    },
+    "locale": "en"
   },
   "participants": [
     {
@@ -80,10 +81,18 @@
       "title": "Unsuccessful attempts",
       "items": [
         "Error or CommandFormatError fails the attempt; cancellation and expiry also end it without promoting the candidate. NotNow leaves the attempt pending.",
-        "The server keeps its working enrollment, queue, escrow, and user channels. This is server-side preservation; real-device rollback remains unverified in PR 14.",
+        "The server keeps its working enrollment, queue, escrow and user channels. Server-side preservation does not by itself establish how a physical device recovers from every failure.",
         "The attempt expires after 30 minutes. Storage evaluates expiry during transitions, including reads; there is no background expiry worker."
       ],
       "dot": "failure"
+    },
+    {
+      "dot": "neutral",
+      "title": "Recorded device observations",
+      "items": [
+        "On 13 September 2026, the recorded Mac candidates completed identity replacement and fresh device/user commands before and after restart. A controlled SCEP issuance refusal left the previous identity pinned and management working after restart.",
+        "Those dated observations cover the recorded candidates and refusal stage. They do not establish every rollback path or acceptance of a later source revision; automated state-transition tests remain separate evidence."
+      ]
     },
     {
       "title": "Public documentation",
@@ -91,7 +100,8 @@
         "Deploying device management enrollment profiles — https://developer.apple.com/documentation/devicemanagement/deploying-device-management-enrollment-profiles",
         "MDM payload — https://developer.apple.com/documentation/devicemanagement/mdm",
         "ACMECertificate — https://developer.apple.com/documentation/devicemanagement/acmecertificate",
-        "SCEP — https://developer.apple.com/documentation/devicemanagement/scep"
+        "SCEP — https://developer.apple.com/documentation/devicemanagement/scep",
+        "Mac candidate observations, 13 September 2026 — https://github.com/deploymenttheory/go-apple-dm/blob/80599ddc35778bcc88fa2ac77bb1dc68a51cf089/docs/reviews/real-mac-lifecycle-2026-09-13.md"
       ],
       "dot": "transport"
     }

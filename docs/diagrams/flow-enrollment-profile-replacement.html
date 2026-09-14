@@ -5655,8 +5655,19 @@ svg[data-purpose-filter] g[data-purpose-highlight] > path { stroke-width: 2.4; }
         </div>
         <ul>
           <li>&bull; Error or CommandFormatError fails the attempt; cancellation and expiry also end it without promoting the candidate. NotNow leaves the attempt pending.</li>
-          <li>&bull; The server keeps its working enrollment, queue, escrow, and user channels. This is server-side preservation; real-device rollback remains unverified in PR 14.</li>
+          <li>&bull; The server keeps its working enrollment, queue, escrow and user channels. Server-side preservation does not by itself establish how a physical device recovers from every failure.</li>
           <li>&bull; The attempt expires after 30 minutes. Storage evaluates expiry during transitions, including reads; there is no background expiry worker.</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-dot neutral"></div>
+          <h3>Recorded device observations</h3>
+        </div>
+        <ul>
+          <li>&bull; On 13 September 2026, the recorded Mac candidates completed identity replacement and fresh device/user commands before and after restart. A controlled SCEP issuance refusal left the previous identity pinned and management working after restart.</li>
+          <li>&bull; Those dated observations cover the recorded candidates and refusal stage. They do not establish every rollback path or acceptance of a later source revision; automated state-transition tests remain separate evidence.</li>
         </ul>
       </div>
 
@@ -5670,6 +5681,7 @@ svg[data-purpose-filter] g[data-purpose-highlight] > path { stroke-width: 2.4; }
           <li>&bull; <a href="https://developer.apple.com/documentation/devicemanagement/mdm" target="_blank" rel="noopener noreferrer">MDM payload</a></li>
           <li>&bull; <a href="https://developer.apple.com/documentation/devicemanagement/acmecertificate" target="_blank" rel="noopener noreferrer">ACMECertificate</a></li>
           <li>&bull; <a href="https://developer.apple.com/documentation/devicemanagement/scep" target="_blank" rel="noopener noreferrer">SCEP</a></li>
+          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/80599ddc35778bcc88fa2ac77bb1dc68a51cf089/docs/reviews/real-mac-lifecycle-2026-09-13.md" target="_blank" rel="noopener noreferrer">Mac candidate observations, 13 September 2026</a></li>
         </ul>
       </div>
     </div>

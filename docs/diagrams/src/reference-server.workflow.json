@@ -7,7 +7,8 @@
     "legend": {
       "mode": "hidden"
     },
-    "colour_profile": "purpose-v1"
+    "colour_profile": "purpose-v1",
+    "locale": "en"
   },
   "lanes": [
     {
@@ -17,6 +18,10 @@
     {
       "id": "runtime",
       "label": "Shared runtime"
+    },
+    {
+      "id": "maintenance",
+      "label": "Persistent maintenance pause"
     },
     {
       "id": "shutdown",
@@ -71,9 +76,9 @@
     {
       "id": "listen",
       "lane": "runtime",
-      "col": 3,
+      "col": 2,
       "label": "Open listener",
-      "sublabel": "HTTP or configured native TLS",
+      "sublabel": "Native TLS or loopback HTTP",
       "type": "backend",
       "width": 225,
       "height": 68,
@@ -82,9 +87,9 @@
     {
       "id": "workers",
       "lane": "runtime",
-      "col": 4,
-      "label": "Serve and run workers",
-      "sublabel": "Runtime starts worker loops",
+      "col": 3,
+      "label": "Supervise workers",
+      "sublabel": "Certificates · events · DDM",
       "type": "backend",
       "width": 225,
       "height": 68,
@@ -93,7 +98,7 @@
     {
       "id": "drain",
       "lane": "shutdown",
-      "col": 4,
+      "col": 3,
       "label": "Drain HTTP requests",
       "sublabel": "Stop accepting new traffic",
       "type": "backend",
@@ -104,7 +109,7 @@
     {
       "id": "stopworkers",
       "lane": "shutdown",
-      "col": 3,
+      "col": 2,
       "label": "Stop background work",
       "sublabel": "Retain pending SQL deliveries",
       "type": "backend",
@@ -115,13 +120,46 @@
     {
       "id": "close",
       "lane": "shutdown",
-      "col": 2,
+      "col": 1,
       "label": "Close application",
       "sublabel": "Release clients and stores",
       "type": "backend",
       "width": 225,
       "height": 68,
       "purpose": "service"
+    },
+    {
+      "id": "pause",
+      "lane": "maintenance",
+      "col": 0,
+      "label": "Close admission",
+      "sublabel": "Cancel background workers",
+      "type": "backend",
+      "width": 225,
+      "height": 68,
+      "purpose": "warning"
+    },
+    {
+      "id": "wait",
+      "lane": "maintenance",
+      "col": 1,
+      "label": "Drain admitted work",
+      "sublabel": "Await HTTP and worker writes",
+      "type": "backend",
+      "width": 225,
+      "height": 68,
+      "purpose": "service"
+    },
+    {
+      "id": "paused",
+      "lane": "maintenance",
+      "col": 2,
+      "label": "Acknowledge pause",
+      "sublabel": "Retain fence until owner resumes",
+      "type": "backend",
+      "width": 225,
+      "height": 68,
+      "purpose": "storage"
     }
   ],
   "edges": [
@@ -169,7 +207,7 @@
       "id": "r6",
       "from": "workers",
       "to": "drain",
-      "label": "Shutdown signal",
+      "label": "Stop or runtime failure",
       "role": "branch",
       "purpose": "neutral"
     },
@@ -188,6 +226,38 @@
       "label": "Workers stopped",
       "role": "main",
       "purpose": "success"
+    },
+    {
+      "id": "maintenance-request",
+      "from": "workers",
+      "to": "pause",
+      "label": "Maintenance request",
+      "role": "branch",
+      "purpose": "warning"
+    },
+    {
+      "id": "maintenance-drain",
+      "from": "pause",
+      "to": "wait",
+      "label": "Admission closed",
+      "role": "main",
+      "purpose": "warning"
+    },
+    {
+      "id": "maintenance-ack",
+      "from": "wait",
+      "to": "paused",
+      "label": "Writes stopped",
+      "role": "main",
+      "purpose": "success"
+    },
+    {
+      "id": "maintenance-resume",
+      "from": "paused",
+      "to": "workers",
+      "label": "Owner resumes",
+      "role": "return",
+      "purpose": "service"
     }
   ],
   "cards": [
@@ -195,32 +265,41 @@
       "dot": "service",
       "title": "Shared runtime",
       "items": [
-        "dmserver and embedded bench scenarios use server/internal/runtime. The runtime builds the application, opens the listener, and starts configured workers.",
-        "TLS is optional for the listener; reverse-proxy deployments remain supported. Readiness is exposed for supervisors and acceptance checks."
+        "dmserver and embedded bench scenarios share server/internal/runtime. Remote listeners require TLS; plain HTTP is limited to literal loopback. Private DDM forwarding requires HTTPS.",
+        "The application registers workers for supervision and readiness. A worker failure cancels sibling loops and reaches the runtime supervisor; a shutdown signal follows the ordered HTTP drain path."
       ]
     },
     {
       "dot": "service",
-      "title": "Role-specific services",
+      "title": "Configured services and workers",
       "items": [
-        "mdm and all expose device enrollment and /mdm. A remote declarative URL selects forwarding; ddm exposes the internal declarative adapter.",
-        "Enrollment discovery and trust routes are mounted only when enrollment is configured. App push uses its own clients and credential store."
+        "Managed setup registers certificate-renewal and device-identity-renewal workers. SQL applications register persistent event-delivery; DDM, retention and Apple inventory workers follow configured capabilities.",
+        "mdm and all expose configured enrollment and /mdm. ddm serves the internal adapter. Enrollment discovery, trust routes and app-push clients are conditional capabilities."
       ]
     },
     {
       "dot": "neutral",
       "title": "Ordered shutdown",
       "items": [
-        "Stop accepting requests and drain in-flight HTTP work, then stop and await workers. Close application resources and APNs clients afterward.",
-        "Shutdown is bounded and preserves the first failure. Pending SQL deliveries survive restart; the in-memory bus drains within its deadline."
+        "On normal shutdown, stop accepting HTTP requests and drain them before stopping and awaiting workers. Then close clients, stores and application resources.",
+        "A worker failure may already have cancelled its siblings when HTTP draining begins. Shutdown is bounded, preserves the first failure and retains pending SQL deliveries."
+      ]
+    },
+    {
+      "dot": "warning",
+      "title": "Maintenance is a resumable pause",
+      "items": [
+        "Shared SQL maintenance state gates request admission. A pause closes admission, cancels workers and waits for admitted HTTP requests and all worker writes before the participant acknowledges.",
+        "New requests receive 503 during the pause or a control-store failure. The fence persists across timeout and restart; only the matching ownership ticket resumes work. Every registered writer must acknowledge."
       ]
     },
     {
       "dot": "transport",
-      "title": "Public documentation",
+      "title": "Implementation references",
       "items": [
-        "Go command: Test packages \u2014 https://pkg.go.dev/cmd/go#hdr-Test_packages",
-        "Go Modules Reference \u2014 https://go.dev/ref/mod"
+        "Runtime supervision — https://github.com/deploymenttheory/go-apple-dm/blob/80599ddc35778bcc88fa2ac77bb1dc68a51cf089/server/internal/runtime/runtime.go",
+        "Worker registration — https://github.com/deploymenttheory/go-apple-dm/blob/80599ddc35778bcc88fa2ac77bb1dc68a51cf089/server/internal/app/app.go",
+        "Maintenance participant — https://github.com/deploymenttheory/go-apple-dm/blob/80599ddc35778bcc88fa2ac77bb1dc68a51cf089/server/maintenance/participant.go"
       ]
     }
   ]

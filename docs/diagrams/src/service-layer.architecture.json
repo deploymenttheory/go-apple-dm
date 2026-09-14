@@ -6,11 +6,11 @@
     "quality_profile": "showcase",
     "viewBox": [
       1300,
-      690
+      840
     ],
     "repository": {
       "url": "https://github.com/deploymenttheory/go-apple-dm",
-      "revision": "80ea482c29044503c953dd30044aeb49825245ed"
+      "revision": "80599ddc35778bcc88fa2ac77bb1dc68a51cf089"
     },
     "views": [
       {
@@ -18,11 +18,12 @@
         "label": "Request path",
         "focus": [
           "device",
+          "quotas",
           "certmw",
           "httpapi",
           "core"
         ],
-        "note": "One /mdm URL, forked on Content-Type, with the certificate already in context."
+        "note": "Configured quotas run before MDM routing. The service checks certificate status before hooks and dispatch."
       },
       {
         "id": "refusal",
@@ -30,9 +31,10 @@
         "focus": [
           "httpapi",
           "errors",
-          "core"
+          "core",
+          "quotas"
         ],
-        "note": "Unknown enrollment returns 403; known account sessions can request reauthentication with 401."
+        "note": "Quotas refuse requests before routing. Service certificate-status rejection maps to HTTP 403 before hooks run."
       },
       {
         "id": "seams",
@@ -60,7 +62,8 @@
     "colour_profile": "purpose-v1",
     "legend": {
       "mode": "hidden"
-    }
+    },
+    "locale": "en"
   },
   "components": [
     {
@@ -69,8 +72,8 @@
       "label": "Identity extraction",
       "sublabel": "TLS, proxy, or signed body",
       "pos": [
-        15.0,
-        110
+        15,
+        410
       ],
       "size": [
         220,
@@ -90,8 +93,8 @@
       "label": "Enrolled device",
       "sublabel": "PUT plist",
       "pos": [
-        15.0,
-        260
+        15,
+        110
       ],
       "size": [
         220,
@@ -106,7 +109,7 @@
       "sublabel": "Map service failures",
       "pos": [
         15.0,
-        410
+        560
       ],
       "size": [
         220,
@@ -127,7 +130,7 @@
       "sublabel": "Check-in or command traffic",
       "pos": [
         355.0,
-        260
+        410
       ],
       "size": [
         220,
@@ -148,7 +151,7 @@
       "sublabel": "SQL capture or in-process",
       "pos": [
         355.0,
-        410
+        560
       ],
       "size": [
         220,
@@ -173,7 +176,7 @@
       "sublabel": "Audit, logs, and webhooks",
       "pos": [
         355.0,
-        560
+        710
       ],
       "size": [
         220,
@@ -202,7 +205,7 @@
       "sublabel": "Policy and completion",
       "pos": [
         355,
-        110
+        260
       ],
       "size": [
         220,
@@ -220,10 +223,10 @@
       "id": "core",
       "type": "backend",
       "label": "MDM service core",
-      "sublabel": "Check-in and command queue",
+      "sublabel": "Certificate status; dispatch",
       "pos": [
         675.0,
-        260
+        410
       ],
       "size": [
         220,
@@ -237,6 +240,10 @@
         {
           "path": "server/service/connect.go",
           "label": "Connect"
+        },
+        {
+          "path": "server/service/checkin.go",
+          "label": "Status before hooks"
         }
       ],
       "purpose": "service"
@@ -248,7 +255,7 @@
       "sublabel": "In-process or signed HTTP",
       "pos": [
         675.0,
-        410
+        560
       ],
       "size": [
         220,
@@ -263,7 +270,7 @@
       "sublabel": "Check authentication digest",
       "pos": [
         995.0,
-        110
+        260
       ],
       "size": [
         220,
@@ -275,10 +282,10 @@
       "id": "storepkg",
       "type": "database",
       "label": "storage.Store",
-      "sublabel": "pins \u00b7 queue \u00b7 tokens",
+      "sublabel": "pins · queue · tokens",
       "pos": [
         995.0,
-        260
+        410
       ],
       "size": [
         220,
@@ -293,7 +300,7 @@
       "sublabel": "service never imports ddm",
       "pos": [
         995.0,
-        410
+        560
       ],
       "size": [
         220,
@@ -308,7 +315,7 @@
       "type": "database",
       "pos": [
         675,
-        110
+        260
       ],
       "size": [
         220,
@@ -320,44 +327,49 @@
         }
       ],
       "purpose": "storage"
+    },
+    {
+      "id": "quotas",
+      "type": "security",
+      "label": "Configured HTTP quotas",
+      "sublabel": "Reference application middleware",
+      "pos": [
+        15,
+        260
+      ],
+      "size": [
+        220,
+        70
+      ],
+      "sources": [
+        {
+          "path": "server/internal/app/security.go",
+          "label": "Peer and aggregate quotas"
+        },
+        {
+          "path": "server/internal/app/app.go",
+          "label": "Wrap before route dispatch"
+        },
+        {
+          "path": "devicemanagement/ratelimit/http.go",
+          "label": "429 and 503 responses"
+        }
+      ],
+      "purpose": "policy"
     }
   ],
   "connections": [
     {
-      "id": "e1",
-      "from": "device",
-      "to": "httpapi",
-      "label": "check-in or connect",
-      "variant": "emphasis",
-      "labelAt": [
-        295,
-        245
-      ],
-      "purpose": "transport"
-    },
-    {
       "id": "e2",
       "from": "certmw",
       "to": "httpapi",
-      "label": "identity certificate",
+      "label": "Request and certificate",
       "variant": "security",
-      "fromSide": "bottom",
-      "toSide": "top",
-      "via": [
-        [
-          125,
-          220
-        ],
-        [
-          465,
-          220
-        ]
-      ],
+      "purpose": "authentication",
       "labelAt": [
         295,
-        208
-      ],
-      "purpose": "authentication"
+        406
+      ]
     },
     {
       "id": "e3",
@@ -366,7 +378,7 @@
       "label": "decoded message",
       "labelAt": [
         625,
-        248
+        398
       ],
       "purpose": "transport"
     },
@@ -382,22 +394,22 @@
       "id": "e5",
       "from": "core",
       "to": "hooks",
-      "label": "Run service hooks",
+      "label": "Status accepted: hooks",
       "fromSide": "top",
       "toSide": "bottom",
       "via": [
         [
           785,
-          220
+          370
         ],
         [
           465,
-          220
+          370
         ]
       ],
       "labelAt": [
         625,
-        208
+        358
       ],
       "purpose": "policy"
     },
@@ -408,7 +420,7 @@
       "label": "read and write",
       "labelAt": [
         945,
-        312
+        462
       ],
       "purpose": "storage"
     },
@@ -419,7 +431,7 @@
       "label": "Declarative check-in",
       "labelAt": [
         785.0,
-        344.0
+        494.0
       ],
       "purpose": "transport"
     },
@@ -445,7 +457,7 @@
       "label": "deliver / notify",
       "labelAt": [
         465.0,
-        494.0
+        644.0
       ],
       "purpose": "transport"
     },
@@ -456,7 +468,7 @@
       "label": "Handle(endpoint)",
       "labelAt": [
         945.0,
-        494.0
+        644.0
       ],
       "purpose": "transport"
     },
@@ -469,9 +481,39 @@
       "toSide": "bottom",
       "labelAt": [
         785,
-        200
+        350
       ],
       "purpose": "storage"
+    },
+    {
+      "id": "device-quotas",
+      "from": "device",
+      "to": "quotas",
+      "label": "HTTP request",
+      "purpose": "transport",
+      "labelAt": [
+        125,
+        194
+      ]
+    },
+    {
+      "id": "quotas-identity",
+      "from": "quotas",
+      "to": "certmw",
+      "label": "Admit to MDM route",
+      "purpose": "transport",
+      "labelAt": [
+        125,
+        344
+      ]
+    },
+    {
+      "id": "status-rejected",
+      "from": "core",
+      "to": "httpapi",
+      "label": "Status: 403",
+      "purpose": "failure",
+      "variant": "dashed"
     }
   ],
   "cards": [
@@ -479,8 +521,16 @@
       "dot": "service",
       "title": "Request processing",
       "items": [
-        "The HTTP handler distinguishes check-in from command traffic by Content-Type. The service checks configured certificate status before running hooks.",
-        "A pending profile replacement handles its permitted candidate exchanges before ordinary dispatch; unrelated requests still require the appropriate identity checks."
+        "Reference-application quotas wrap the route mux and run before certificate extraction and body decoding. Configured route families use atomic per-peer and aggregate buckets in shared protocol state.",
+        "Quota exhaustion returns 429 with Retry-After; unavailable quota state returns 503. The reusable service does not install this middleware."
+      ]
+    },
+    {
+      "dot": "failure",
+      "title": "Certificate status before service hooks",
+      "items": [
+        "Both check-in and command connections check the configured certificate-status callback inside Core before hooks, replacement handling or ordinary dispatch. A rejection publishes CertificateStatusRejected and maps to HTTP 403.",
+        "The reference composition enables revocation enforcement by default. Transport certificate extraction, status checks, pinning and enrollment/account authorization remain separate responsibilities."
       ]
     },
     {
@@ -488,6 +538,7 @@
       "title": "Extension points",
       "items": [
         "DMHandler connects the service to declarative management without importing the engine. UserVerifier supplies user-channel authentication policy.",
+        "After the status gate and hooks, a pending replacement handles permitted candidate traffic before ordinary dispatch; unrelated traffic still needs the appropriate identity authorization.",
         "SQL capture commits with participating local mutations; workers retry audit/webhook delivery. Slog and in-memory subscribers remain ephemeral."
       ]
     },
@@ -495,9 +546,9 @@
       "dot": "transport",
       "title": "Public documentation",
       "items": [
-        "Check-in \u2014 https://developer.apple.com/documentation/devicemanagement/check-in",
-        "Sending MDM commands to a device \u2014 https://developer.apple.com/documentation/devicemanagement/sending-mdm-commands-to-a-device",
-        "Declarative Management check-in \u2014 https://developer.apple.com/documentation/devicemanagement/declarative-management"
+        "Check-in — https://developer.apple.com/documentation/devicemanagement/check-in",
+        "Sending MDM commands to a device — https://developer.apple.com/documentation/devicemanagement/sending-mdm-commands-to-a-device",
+        "Declarative Management check-in — https://developer.apple.com/documentation/devicemanagement/declarative-management"
       ]
     }
   ]
