@@ -147,7 +147,7 @@ func TestBootstrapRejectsInvalidReferencesAndPartialSecrets(t *testing.T) {
 				}
 				setupRequire(t, os.WriteFile(path, data, 0o600), nil)
 				if mode == "permissions" {
-					setupRequire(t, os.Chmod(path, 0o644), nil)
+					makeWorldReadable(t, path)
 				}
 			}
 			wanted := []byte("original")

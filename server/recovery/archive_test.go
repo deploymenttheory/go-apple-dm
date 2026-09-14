@@ -15,6 +15,7 @@ import (
 	"time"
 
 	"filippo.io/age"
+	"github.com/deploymenttheory/go-apple-dm/server/internal/privatefile"
 )
 
 func archiveFixture(t *testing.T) (string, string, *age.X25519Identity, Manifest) {
@@ -82,9 +83,8 @@ func TestArchiveRoundTripAndOccupiedTarget(t *testing.T) {
 		if err != nil || !bytes.Equal(got, want) {
 			t.Fatal("restored bytes changed", entry.Name, err)
 		}
-		info, _ := os.Stat(filepath.Join(target, entry.Name))
-		if info.Mode().Perm() != 0o600 {
-			t.Fatal("private file permissions", info.Mode())
+		if err := privatefile.Check(filepath.Join(target, entry.Name)); err != nil {
+			t.Fatal("private file permissions", err)
 		}
 	}
 	if err := v.RestoreFiles(target); !errors.Is(err, ErrOccupied) {

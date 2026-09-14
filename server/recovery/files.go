@@ -5,6 +5,8 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+
+	"github.com/deploymenttheory/go-apple-dm/server/internal/privatefile"
 )
 
 func openLocal(path string, flags int, mode os.FileMode) (*os.File, error) {
@@ -13,7 +15,7 @@ func openLocal(path string, flags int, mode os.FileMode) (*os.File, error) {
 		return nil, wrap(err)
 	}
 	defer root.Close()
-	f, err := root.OpenFile(filepath.Base(path), flags, mode)
+	f, err := privatefile.OpenRootFile(root, filepath.Base(path), flags, mode)
 	return f, wrap(err)
 }
 
@@ -55,7 +57,7 @@ func writePrivate(path string, raw []byte) error {
 		return wrap(err)
 	}
 	defer root.Close()
-	f, err := root.OpenFile(filepath.Base(path), os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0o600)
+	f, err := privatefile.OpenRootFile(root, filepath.Base(path), os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0o600)
 	if err != nil {
 		return wrap(err)
 	}

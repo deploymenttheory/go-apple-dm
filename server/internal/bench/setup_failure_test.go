@@ -9,7 +9,6 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
-	"path/filepath"
 	"strings"
 	"testing"
 	"time"
@@ -186,23 +185,22 @@ func TestReadinessDetectsExitedOrCancelledRuntime(t *testing.T) {
 		})
 	}
 	// A process adapter must collect a child exit and stop a running child on cancellation.
-	for _, script := range []string{"#!/bin/sh\nexit 3\n", "#!/bin/sh\ntrap 'exit 0' TERM\nwhile :; do sleep 0.1; done\n"} {
+	for _, mode := range []string{"exit", "wait"} {
 		ctx, cancel := context.WithCancel(t.Context())
 		e := &Environment{errs: make(chan error, 2), Client: &http.Client{}, cancel: cancel}
-		binary := filepath.Join(t.TempDir(), "server")
-		writeFixture(t, binary, []byte(script))
-		if err := os.Chmod(binary, 0o700); err != nil {
+		binary, err := os.Executable()
+		if err != nil {
 			t.Fatal(err)
 		}
 		if err := e.launch(
 			ctx,
-			map[string]string{"DM_STORAGE": "inmem"},
+			map[string]string{"DM_STORAGE": "inmem", "BENCH_CHILD": mode},
 			binary,
 			io.Discard,
 		); err != nil {
 			t.Fatal(err)
 		}
-		if strings.Contains(script, "exit 3") {
+		if mode == "exit" {
 			if err := e.ready(ctx, "http://127.0.0.1:1"); err == nil {
 				t.Fatal("failed child accepted")
 			}

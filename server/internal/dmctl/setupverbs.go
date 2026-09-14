@@ -15,6 +15,7 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/enroll"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/pki/lifecycle"
 	"github.com/deploymenttheory/go-apple-dm/server/internal/app"
+	"github.com/deploymenttheory/go-apple-dm/server/internal/privatefile"
 )
 
 //nolint:gocyclo // Keep the ordered workflow transitions and their failure handling together.
@@ -477,7 +478,7 @@ func runSetup(ctx context.Context, e *env, args []string) error {
 
 func writeSetupArtifact(path string, data []byte) error {
 	// #nosec G304 -- Explicit CLI output path; exclusive creation prevents replacing an existing file.
-	f, err := os.OpenFile(path, os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0o600)
+	f, err := privatefile.OpenFile(path, os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0o600)
 	if err != nil {
 		return wrapError(err)
 	}

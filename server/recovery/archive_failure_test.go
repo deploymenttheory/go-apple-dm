@@ -171,13 +171,7 @@ func TestArchiveDetectsChangedAndUnreadableSource(t *testing.T) {
 					t.Fatal(err)
 				}
 			case "unreadable":
-				if os.Geteuid() == 0 {
-					t.Skip("permission contract requires an unprivileged process")
-				}
-				if err := os.Chmod(file, 0); err != nil {
-					t.Fatal(err)
-				}
-				defer os.Chmod(file, 0o600)
+				makeUnreadable(t, file)
 				if _, err := inventory(t.Context(), dir, Limits{}.defaults()); err == nil {
 					t.Fatal("inventoried unreadable file")
 				}

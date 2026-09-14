@@ -138,7 +138,10 @@ func TestBenchFailsWhenReadinessNeverArrives(t *testing.T) {
 }
 
 func TestBenchRejectsMissingScenarioScratchDirectory(t *testing.T) {
-	t.Setenv("TMPDIR", t.TempDir()+"/absent")
+	missing := t.TempDir() + "/absent"
+	for _, name := range []string{"TMPDIR", "TMP", "TEMP"} {
+		t.Setenv(name, missing)
+	}
 	result := Run(
 		t.Context(),
 		&Environment{Instance: Instance{Mode: "simulated", Topology: "all"}},

@@ -21,7 +21,6 @@ import (
 	"os/exec"
 	"strings"
 	"sync"
-	"syscall"
 	"time"
 
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/appleplatformservices/axm/axmtest"
@@ -292,7 +291,7 @@ func (e *Environment) launch(
 	}
 	cmd.Stdout = out
 	cmd.Stderr = out
-	cmd.Cancel = func() error { return cmd.Process.Signal(syscall.SIGTERM) }
+	configureChild(cmd)
 	cmd.WaitDelay = 12 * time.Second
 	if err := cmd.Start(); err != nil {
 		return wrapError(err)

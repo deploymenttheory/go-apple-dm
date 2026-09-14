@@ -12,6 +12,7 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/mdm"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/storage"
 	"github.com/deploymenttheory/go-apple-dm/server/internal/app"
+	"github.com/deploymenttheory/go-apple-dm/server/internal/privatefile"
 	"github.com/deploymenttheory/go-apple-dm/server/maintenance"
 	"github.com/deploymenttheory/go-apple-dm/server/recovery"
 )
@@ -122,8 +123,7 @@ func TestRecoveryCommandsPreserveEnrollmentAndIssuer(t *testing.T) {
 		t.Fatal("issuer identity changed", err)
 	}
 	for _, path := range []string{identity, archive, ticket, restored.SetupFile, restored.TicketFile} {
-		info, err := os.Stat(path)
-		if err != nil || info.Mode().Perm() != 0o600 {
+		if err := privatefile.Check(path); err != nil {
 			t.Fatal("unprotected recovery artifact", path, err)
 		}
 	}

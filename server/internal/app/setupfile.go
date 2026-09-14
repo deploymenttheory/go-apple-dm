@@ -10,6 +10,8 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+
+	"github.com/deploymenttheory/go-apple-dm/server/internal/privatefile"
 )
 
 // SetupFile is a versioned bootstrap document. Secret values live in the
@@ -260,7 +262,7 @@ func installSetupSecret(path string, data []byte, mustMatch bool) error {
 	if err != nil {
 		return wrapError(err)
 	}
-	if !info.Mode().IsRegular() || info.Mode().Perm()&0o077 != 0 || info.Size() == 0 {
+	if !info.Mode().IsRegular() || privatefile.Check(path) != nil || info.Size() == 0 {
 		return fmt.Errorf(
 			"%w: existing secret must be a nonempty protected regular file",
 			ErrConfig,
@@ -286,7 +288,7 @@ func installSetupSecret(path string, data []byte, mustMatch bool) error {
 // A process interrupted before publication leaves no partial destination.
 func writeSetupFile(path string, data []byte) error {
 	dir := filepath.Dir(path)
-	f, err := os.CreateTemp(dir, ".setup-*")
+	f, err := privatefile.CreateTemp(dir, ".setup-*")
 	if err != nil {
 		return wrapError(err)
 	}
@@ -312,5 +314,5 @@ func writeSetupFile(path string, data []byte) error {
 		return wrapError(err)
 	}
 	defer directory.Close()
-	return wrapError(directory.Sync())
+	return wrapError(privatefile.SyncDirectory(directory))
 }

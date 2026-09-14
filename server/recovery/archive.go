@@ -20,6 +20,8 @@ import (
 	"time"
 
 	"filippo.io/age"
+
+	"github.com/deploymenttheory/go-apple-dm/server/internal/privatefile"
 )
 
 var (
@@ -129,7 +131,7 @@ func Create(
 	if len(raw) > 4<<20 {
 		return manifest, ErrLimit
 	}
-	out, err := os.CreateTemp(filepath.Dir(destination), ".recovery-*.age")
+	out, err := privatefile.CreateTemp(filepath.Dir(destination), ".recovery-*.age")
 	if err != nil {
 		return manifest, fmt.Errorf("recovery: temporary archive: %w", err)
 	}
@@ -488,7 +490,7 @@ func syncDirectory(directory string) error {
 		return wrap(err)
 	}
 	defer f.Close()
-	return wrap(f.Sync())
+	return wrap(privatefile.SyncDirectory(f))
 }
 
 func wrap(err error) error {

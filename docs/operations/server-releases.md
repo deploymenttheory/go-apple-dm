@@ -19,6 +19,12 @@ state, follow the [getting started guide](https://github.com/deploymenttheory/go
 and [certificate lifecycle guide](https://github.com/deploymenttheory/go-apple-dm/blob/main/docs/operations/certificate-lifecycle.md).
 Certificates, credentials, databases and local lab files are never packaged.
 
+The main CI matrix runs both modules' race-enabled tests on Linux, macOS and
+Windows. Windows also checks independent module installation and runs the
+packaged executables. Private output files use owner-only Unix modes or Windows
+ACLs limited to the current user, LocalSystem and administrators. Files are
+synced before publication on every platform; Unix also syncs directory metadata.
+
 ## Verify a download
 
 Download the archive, `go-apple-dm-server_<version>_checksums.txt`, and its
