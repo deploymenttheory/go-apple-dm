@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.9.2](https://github.com/deploymenttheory/go-apple-dm/compare/server/v0.9.1...server/v0.9.2) (2026-09-14)
+
+
+### Bug Fixes
+
+* align scope documentation and stabilize CI ([5a658aa](https://github.com/deploymenttheory/go-apple-dm/commit/5a658aa0bcfbdf24e2261ff8f9931f9dc955ba63))
+* drain bench supervisor and remove duplicate CI work ([f061877](https://github.com/deploymenttheory/go-apple-dm/commit/f0618775dd3261c25781d746ad75b8efeb3052eb))
+* retain embedded bench listeners through runtime startup ([3440eb0](https://github.com/deploymenttheory/go-apple-dm/commit/3440eb0a34c90464241853dedfb2d27f807dc115))
+
+
+### Documentation
+
+* align private proxy and identity renewal contracts ([6142fa2](https://github.com/deploymenttheory/go-apple-dm/commit/6142fa24974bfea1625f0a6f6104b5bf5cd9bf97))
+* constrain extension proposals and align implementation guides ([d76488e](https://github.com/deploymenttheory/go-apple-dm/commit/d76488e0bb64e657c1bef95f90e534472e29331c))
+
 ## [0.9.1](https://github.com/deploymenttheory/go-apple-dm/compare/server-v0.9.0...server/v0.9.1) (2026-09-14)
 
 

@@ -1,5 +1,23 @@
 # Changelog
 
+## [0.7.2](https://github.com/deploymenttheory/go-apple-dm/compare/v0.7.1...v0.7.2) (2026-09-14)
+
+
+### Bug Fixes
+
+* align scope documentation and stabilize CI ([5a658aa](https://github.com/deploymenttheory/go-apple-dm/commit/5a658aa0bcfbdf24e2261ff8f9931f9dc955ba63))
+* drain bench supervisor and remove duplicate CI work ([f061877](https://github.com/deploymenttheory/go-apple-dm/commit/f0618775dd3261c25781d746ad75b8efeb3052eb))
+* retain embedded bench listeners through runtime startup ([3440eb0](https://github.com/deploymenttheory/go-apple-dm/commit/3440eb0a34c90464241853dedfb2d27f807dc115))
+
+
+### Documentation
+
+* align private proxy and identity renewal contracts ([6142fa2](https://github.com/deploymenttheory/go-apple-dm/commit/6142fa24974bfea1625f0a6f6104b5bf5cd9bf97))
+* constrain extension proposals and align implementation guides ([d76488e](https://github.com/deploymenttheory/go-apple-dm/commit/d76488e0bb64e657c1bef95f90e534472e29331c))
+* expand diagram coverage and refresh validation guidance ([263ba3d](https://github.com/deploymenttheory/go-apple-dm/commit/263ba3de5540206ddb295d52625737c4651cf0fa))
+* preserve links to historical validation evidence ([0317981](https://github.com/deploymenttheory/go-apple-dm/commit/0317981799b756d4d588e53f95c1e264837fb72d))
+* tidy event delivery guidance ([458033e](https://github.com/deploymenttheory/go-apple-dm/commit/458033e0c08743a61e5eb3cac1bc3f53120ed79f))
+
 ## [0.7.1](https://github.com/deploymenttheory/go-apple-dm/compare/v0.7.0...v0.7.1) (2026-09-14)
 
 
