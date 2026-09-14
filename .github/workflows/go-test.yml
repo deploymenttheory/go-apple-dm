@@ -77,29 +77,9 @@ jobs:
       - name: Unit tests
         if: runner.os != 'Windows'
         run: make test
-      - name: Windows library unit tests
+      - name: Windows unit tests and schema contracts
         if: runner.os == 'Windows'
-        shell: pwsh
-        env:
-          CGO_ENABLED: '1'
-        run: |
-          New-Item -ItemType Directory -Force cover/unit | Out-Null
-          $coverageDirectory = Join-Path $env:GITHUB_WORKSPACE 'cover/unit'
-          go test -race -shuffle=on -count=1 -cover -coverpkg=github.com/deploymenttheory/go-apple-dm/... ./... -args "-test.gocoverdir=$coverageDirectory"
-          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-      - name: Windows server unit tests
-        if: ${{ !cancelled() && runner.os == 'Windows' }}
-        working-directory: server
-        shell: pwsh
-        env:
-          CGO_ENABLED: '1'
-        run: |
-          $coverageDirectory = Join-Path $env:GITHUB_WORKSPACE 'cover/unit'
-          go test -race -shuffle=on -count=1 -cover '-coverpkg=github.com/deploymenttheory/go-apple-dm/...,github.com/deploymenttheory/go-apple-dm/server/...' ./... -args "-test.gocoverdir=$coverageDirectory"
-          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-      - name: Windows schema contracts
-        if: ${{ !cancelled() && runner.os == 'Windows' }}
-        run: python .github/scripts/schema_monitor.py contracts --output cover/schema-contracts
+        uses: ./.github/actions/windows-tests
       - name: Upload unit coverage
         if: matrix.os == 'ubuntu-latest'
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1

@@ -59,7 +59,8 @@ pre-1.0 changes advance the patch version; breaking changes advance the minor
 version. The organization App token (or the configured Release Please PAT)
 allows the resulting release event to trigger the asset workflow.
 
-The **Release server** workflow runs after a server release is published. It
+The **Release server** workflow runs after a server release is published. Its
+asset job waits for the full Windows test suite to pass on that release tag. It
 checks the tag against the server manifest, checks out that exact tag, builds
 both commands with `GOWORK=off`, verifies all archive contents and checksums,
 signs the checksum file with GitHub OIDC, and uploads those eight assets to the

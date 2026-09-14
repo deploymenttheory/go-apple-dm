@@ -33,7 +33,7 @@ func protectFile(file *os.File) error {
 	if windows.Handle(handle) == windows.InvalidHandle {
 		return wrap(callErr)
 	}
-	defer windows.CloseHandle(windows.Handle(handle))
+	defer func() { _ = windows.CloseHandle(windows.Handle(handle)) }()
 	return wrap(windows.SetSecurityInfo(windows.Handle(handle), windows.SE_FILE_OBJECT,
 		windows.DACL_SECURITY_INFORMATION|windows.PROTECTED_DACL_SECURITY_INFORMATION,
 		nil, nil, acl, nil))
@@ -67,7 +67,9 @@ func Check(path string) error {
 	if err != nil {
 		return wrap(err)
 	}
-	descriptor, err := windows.GetNamedSecurityInfo(path, windows.SE_FILE_OBJECT, windows.DACL_SECURITY_INFORMATION)
+	descriptor, err := windows.GetNamedSecurityInfo(
+		path, windows.SE_FILE_OBJECT, windows.DACL_SECURITY_INFORMATION,
+	)
 	if err != nil {
 		return wrap(err)
 	}
@@ -83,7 +85,8 @@ func Check(path string) error {
 		if err := windows.GetAce(acl, i, &ace); err != nil {
 			return wrap(err)
 		}
-		if ace.Header.AceFlags&windows.INHERIT_ONLY_ACE != 0 || ace.Header.AceType == windows.ACCESS_DENIED_ACE_TYPE {
+		if ace.Header.AceFlags&windows.INHERIT_ONLY_ACE != 0 ||
+			ace.Header.AceType == windows.ACCESS_DENIED_ACE_TYPE {
 			continue
 		}
 		if ace.Header.AceType != windows.ACCESS_ALLOWED_ACE_TYPE {

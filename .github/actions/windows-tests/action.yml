@@ -1,0 +1,28 @@
+name: Windows unit tests
+description: Run both modules with the race detector and verify schema contracts on Windows.
+runs:
+  using: composite
+  steps:
+    - name: Windows library unit tests
+      shell: pwsh
+      env:
+        CGO_ENABLED: '1'
+      run: |
+        New-Item -ItemType Directory -Force cover/unit | Out-Null
+        $coverageDirectory = Join-Path $env:GITHUB_WORKSPACE 'cover/unit'
+        go test -race -shuffle=on -count=1 -cover -coverpkg=github.com/deploymenttheory/go-apple-dm/... ./... -args "-test.gocoverdir=$coverageDirectory"
+        if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+    - name: Windows server unit tests
+      if: ${{ !cancelled() }}
+      working-directory: server
+      shell: pwsh
+      env:
+        CGO_ENABLED: '1'
+      run: |
+        $coverageDirectory = Join-Path $env:GITHUB_WORKSPACE 'cover/unit'
+        go test -race -shuffle=on -count=1 -cover '-coverpkg=github.com/deploymenttheory/go-apple-dm/...,github.com/deploymenttheory/go-apple-dm/server/...' ./... -args "-test.gocoverdir=$coverageDirectory"
+        if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+    - name: Windows schema contracts
+      if: ${{ !cancelled() }}
+      shell: pwsh
+      run: python .github/scripts/schema_monitor.py contracts --output cover/schema-contracts
