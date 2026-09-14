@@ -225,6 +225,14 @@ phases, time, and actor attribution. Pagination uses `-cursor` and `-page-size`.
 
 ## Device identities and enrollment CA rollover
 
+When certificate lifecycle and enrollment are configured, the reference worker
+scans enabled device enrollments every minute. It starts ordinary identity renewal
+within sixty days of the recorded certificate's expiry, using retained issuance
+evidence and the original enrollment profile. Active issuer rollover takes priority;
+blocked renewal attempts require inspection and explicit retry. This worker already
+exists independently of any proposed fleet reconciler. See
+[`renewidentities.go`](../../server/internal/app/renewidentities.go).
+
 Device identities nearing expiry use the authenticated enrollment replacement
 handshake. The server retains the original management endpoint, topic, profile
 identity and access rights. It tracks issuance, candidate authentication,

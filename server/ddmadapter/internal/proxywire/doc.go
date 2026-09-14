@@ -4,14 +4,17 @@
 // # Design
 //
 // POST /v1/declarative-management carries the original DeclarativeManagement
-// check-in plist. Request HMACs cover the body; response HMACs cover status and
-// body. Shared helpers apply body limits and signature encoding. Proxyserver can
-// additionally require mutual TLS or another authorization check.
+// check-in plist. Versioned request HMACs bind method, target, content type,
+// timestamp, nonce and body. Response HMACs bind the request envelope, status,
+// content type and body. Verification checks five-minute freshness and atomically
+// claims nonces in a caller-supplied shared store for ten minutes. Shared helpers
+// apply body limits and signature encoding. Proxyserver can additionally require
+// mutual TLS or another authorization check.
 //
 // This is a project-specific deployment protocol, not an Apple or NanoMDM
 // transport contract. The adapters resolve enrollment from the forwarded
-// message. HMAC does not encrypt data, and this protocol does not maintain a
-// replay nonce store.
+// message. HMAC does not encrypt data; the adapters require HTTPS, with an explicit
+// literal-loopback exception for tests. Replicas must share replay state.
 //
 // # References
 //

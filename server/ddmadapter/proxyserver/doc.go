@@ -3,14 +3,16 @@
 // # Design
 //
 // The handler serves POST /v1/declarative-management, decodes the original plist
-// and resolves enrollment from its fields. Configured RecvKey, ClientCAs and
-// Auth checks authenticate the caller. SendKey signs status and body for every
-// response. The returned body and status retain Apple's device-facing semantics.
+// and resolves enrollment from its fields. Independent RecvKey/SendKey and shared
+// ReplayStore are required. Request authentication binds the versioned envelope;
+// response authentication binds that request to the status, content type and body.
+// ClientCAs and Auth provide additional checks. Returned status/body retain Apple's
+// device-facing semantics.
 //
-// Authentication options are explicit library settings; configure the controls
-// required at the deployment boundary. The reference server mounts this handler
-// under /ddm/ and requires HMAC keys. The hop is an internal deployment choice,
-// not a separate enrollment protocol.
+// HTTPS is required, except for the explicit literal-loopback test option. The
+// reference server mounts this handler under /ddm/ with shared SQL replay state
+// and native TLS on the DDM role. The hop is an internal deployment choice, not a
+// separate enrollment protocol.
 //
 // # References
 //

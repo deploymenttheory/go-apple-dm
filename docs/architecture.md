@@ -108,12 +108,20 @@ JSON determines content tokens. Status reports update stored items; subscription
 synthesized. Predicates use the documented subset in
 [mdmprotocol/ddm/predicate](../devicemanagement/mdmprotocol/ddm/predicate/doc.go), not the full NSPredicate language.
 
+The engine queries status values by prefix with pagination, and returns errors and
+retained raw reports newest first. Admin tooling exposes part of that query surface.
+`Manifest`, `Tokens` and `DeclarationItems` refresh persisted snapshots; they are
+delivery operations and must not be treated as side-effect-free previews.
+
 `server/ddmsync` converts pending changes into `DeclarativeManagement` commands and pushes.
 The engine can run in process or behind the project's private `POST /v1/declarative-management`
-proxy. The reference composition requires HMAC keys in both directions. Request signatures
-cover the body; response signatures cover status and body. TLS supplies confidentiality. The
-adapter library also exposes mutual TLS and bearer options; these are not reference-server
-environment settings. The proxy has no replay nonce store.
+proxy. Both adapters require HTTPS and independent HMAC keys in both directions.
+Request signatures bind method, target, content type, timestamp, nonce and body;
+response signatures bind the request envelope, status, content type and body.
+The receiving adapter requires shared atomic replay state; the reference server
+supplies its SQL protocol store. Mutual TLS and bearer checks are additional library
+options. See [decision 0023](research/decisions/0023-ddm-adapters-and-wire-contract.md)
+for freshness limits and the explicit loopback-only test exception.
 
 ## Certificates and admission controls
 

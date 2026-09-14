@@ -4,7 +4,9 @@ The [extension review](../research/extension-proposals-2026-09-14.md) retains P1
 and separates bounded future protocol candidates from current maintenance. No
 proposed feature is implemented by this maintenance change. Current README,
 architecture, package docs, decisions, event operations and CI guidance now describe
-the existing SQL outbox, DDM queries and relevant scope boundaries. Broken links to
+the existing SQL outbox, DDM queries, identity renewal and relevant scope boundaries.
+Architecture and proxy package docs also match the implemented versioned HMAC
+envelope and shared replay store. Broken links to
 removed historical documents now point to their last retained Git revisions.
 The pre-existing local edits to `docs/testing/enrollment-validation.md` are excluded.
 

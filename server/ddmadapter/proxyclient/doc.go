@@ -10,8 +10,11 @@
 // internal service errors rather than declaration-removal responses. URL joining
 // preserves a configured path prefix.
 //
-// Callers configure authentication and transport protection. The reference
-// server requires both request and response HMAC keys for the split hop.
+// Callers supply HTTPS and independent request/response HMAC keys. The request
+// envelope binds method, target, content type, timestamp, nonce and body; replies
+// bind that envelope to their status, content type and body. The receiving adapter
+// requires shared replay state. Insecure transport is an explicit literal-loopback
+// test option, not a reference-server deployment setting.
 //
 // # References
 //
