@@ -10,6 +10,12 @@ The engine bounds and strictly decodes status JSON. Registry paths identify know
 
 A full report atomically removes absent status. Optional synthesized subscriptions request reported capabilities, filtered by configured exclusions, or a baseline when capabilities are unknown. A synthesized unconditional activation references the generated subscription so devices process it. An explicitly assigned subscription takes precedence and owns its activation; an explicitly assigned companion activation also takes precedence. Both generated declarations participate in snapshots and token comparison. Successful status submission returns 200 with an empty body.
 
+The engine exposes `StatusValues` with prefix filtering/pagination, `StatusErrors`
+and reverse-chronological `StatusReports`. Admin routes currently expose only part
+of this query surface. Values are observations, not a normalized fleet inventory
+or compliance result. `Manifest`, `Tokens` and `DeclarationItems` refresh persisted
+snapshots; callers must not assume these delivery methods are read-only previews.
+
 ## Rationale
 
 Preserving typed item boundaries and canonical values avoids data loss from flattening. Snapshot-aware outcome selection keeps status tied to served content. Capability-derived subscriptions converge through the same token mechanism as other declarations.
@@ -24,6 +30,7 @@ Status tests cover limits, strict JSON errors, duplicate identifiers, full/parti
 
 ## References
 
+- [mdmprotocol/ddm/status_query.go](../../../devicemanagement/mdmprotocol/ddm/status_query.go)
 - [mdmprotocol/ddm/status.go](../../../devicemanagement/mdmprotocol/ddm/status.go)
 - [mdmprotocol/ddm/subscriptions.go](../../../devicemanagement/mdmprotocol/ddm/subscriptions.go)
 - [storage/ddm](../../../devicemanagement/storage/ddm)

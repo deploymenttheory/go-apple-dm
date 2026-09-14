@@ -5296,15 +5296,15 @@ svg[data-purpose-filter] g[data-purpose-highlight] > path { stroke-width: 2.4; }
           <text data-detail="context" x="836.5" y="376" class="t-muted" font-size="11" text-anchor="middle">Release clients and stores</text>
         </g>
 
-        <g id="node-stopworkers" data-node-id="stopworkers" data-node-label="Stop background work" tabindex="0" role="button" aria-label="Focus Stop background work, Drain accepted audit events, Orderly shutdown" aria-pressed="false" data-node-kind="backend" data-node-sublabel="Drain accepted audit events" data-node-context="Orderly shutdown" data-purpose="service">
-          <title>Stop background work · Drain accepted audit events · Orderly shutdown</title>
+        <g id="node-stopworkers" data-node-id="stopworkers" data-node-label="Stop background work" tabindex="0" role="button" aria-label="Focus Stop background work, Retain pending SQL deliveries, Orderly shutdown" aria-pressed="false" data-node-kind="backend" data-node-sublabel="Retain pending SQL deliveries" data-node-context="Orderly shutdown" data-purpose="service">
+          <title>Stop background work · Retain pending SQL deliveries · Orderly shutdown</title>
           <rect x="1059" y="338" width="225" height="68" rx="6" class="c-mask"/>
           <rect x="1059" y="338" width="225" height="68" rx="6" class="c-backend" stroke-width="1.5"/>
           <g aria-hidden="true" data-semantic-sigil="backend" class="semantic-sigil s-backend" transform="translate(1065 344) scale(0.6875)">
             <path d="M6 3 3 8l3 5M10 3l3 5-3 5"/>
           </g>
           <text data-node-label="" data-detail-anchor="" x="1171.5" y="359" class="t-primary" font-size="14" font-weight="600" text-anchor="middle">Stop background work</text>
-          <text data-detail="context" x="1171.5" y="376" class="t-muted" font-size="11" text-anchor="middle">Drain accepted audit events</text>
+          <text data-detail="context" x="1171.5" y="376" class="t-muted" font-size="11" text-anchor="middle">Retain pending SQL deliveries</text>
         </g>
 
         <g id="node-drain" data-node-id="drain" data-node-label="Drain HTTP requests" tabindex="0" role="button" aria-label="Focus Drain HTTP requests, Stop accepting new traffic, Orderly shutdown" aria-pressed="false" data-node-kind="backend" data-node-sublabel="Stop accepting new traffic" data-node-context="Orderly shutdown" data-purpose="transport">
@@ -5579,7 +5579,7 @@ svg[data-purpose-filter] g[data-purpose-highlight] > path { stroke-width: 2.4; }
         </div>
         <ul>
           <li>&bull; Stop accepting requests and drain in-flight HTTP work, then stop and await workers. Close application resources and APNs clients afterward.</li>
-          <li>&bull; The runtime preserves the first failure and bounds shutdown time.</li>
+          <li>&bull; Shutdown is bounded and preserves the first failure. Pending SQL deliveries survive restart; the in-memory bus drains within its deadline.</li>
         </ul>
       </div>
 

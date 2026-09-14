@@ -106,7 +106,7 @@
       "lane": "shutdown",
       "col": 3,
       "label": "Stop background work",
-      "sublabel": "Drain accepted audit events",
+      "sublabel": "Retain pending SQL deliveries",
       "type": "backend",
       "width": 225,
       "height": 68,
@@ -212,15 +212,15 @@
       "title": "Ordered shutdown",
       "items": [
         "Stop accepting requests and drain in-flight HTTP work, then stop and await workers. Close application resources and APNs clients afterward.",
-        "The runtime preserves the first failure and bounds shutdown time."
+        "Shutdown is bounded and preserves the first failure. Pending SQL deliveries survive restart; the in-memory bus drains within its deadline."
       ]
     },
     {
       "dot": "transport",
       "title": "Public documentation",
       "items": [
-        "Go command: Test packages — https://pkg.go.dev/cmd/go#hdr-Test_packages",
-        "Go Modules Reference — https://go.dev/ref/mod"
+        "Go command: Test packages \u2014 https://pkg.go.dev/cmd/go#hdr-Test_packages",
+        "Go Modules Reference \u2014 https://go.dev/ref/mod"
       ]
     }
   ]

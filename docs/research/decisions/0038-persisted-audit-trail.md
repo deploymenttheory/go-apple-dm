@@ -6,10 +6,17 @@ Operators need retained, attributable records of device and administrative activ
 
 ## Decision
 
-Accepted asynchronous events retain request context values but are delivered independently
-of request cancellation. Shutdown attempts to drain them before closing the audit store, so a completed
-HTTP response does not cancel its pending audit write. The bus has a bounded queue
-and event lifetime; overload rejects new events and records rejection statistics.
+In SQL-backed reference applications, the event store captures projected occurrences
+before asynchronous delivery. Participating local mutations and capture share a
+transaction; native audit append and delivery acknowledgment share another
+transaction on the same SQL pool. This makes audit delivery independent of the
+in-memory bus's queue capacity and preserves pending work across restart. A custom
+audit store using another pool is an external, at-least-once destination.
+
+In-memory applications still use bounded asynchronous delivery: accepted events
+retain context values independently of request cancellation, but can be lost on
+overload, expiry or shutdown. See [event delivery](../../operations/event-delivery.md)
+for status and retry operations.
 
 `audit.Store` exposes append, query and age-based prune operations. Records contain projected fields from the event registry, event metadata and an actor string captured at the time. There is no update or delete-by-ID operation. IDs are not reused after pruning.
 
@@ -21,7 +28,13 @@ A shared contract defines ordering and cursor behavior across backends. Actor st
 
 ## Constraints
 
-The API is append-and-prune; it is not a cryptographically tamper-evident log and cannot prevent a database administrator from editing rows. Event persistence errors are logged without failing a device operation. In-memory storage is lost on restart, and asynchronous delivery can lose events on overload, expiry, drain timeout or abrupt termination. Operators select retention and backup policy.
+The API is append-and-prune; it is not a cryptographically tamper-evident log and cannot prevent a database administrator from editing rows. A failure to capture an event can roll back a participating local operation. Later
+destination failures leave persistent delivery state for retry or operator action;
+they do not roll back an already committed device operation. Denials are captured
+separately after rollback, and capture failure cannot turn a denial into approval.
+In-memory storage is lost on restart. Operators select audit retention and backup
+policy. Audit pruning does not prune the separate event-record/delivery tables;
+there is currently no event-store pruning API or retention worker.
 
 ## Verification
 
@@ -29,6 +42,8 @@ Audit suites cover append, filtered pagination, prune and non-reused IDs on all 
 
 ## References
 
+- [server/eventstore](../../../server/eventstore)
+- [server/internal/app/eventstore.go](../../../server/internal/app/eventstore.go)
 - [server/audit](../../../server/audit)
 - [server/internal/app/adminaudit.go](../../../server/internal/app/adminaudit.go)
 - <https://developer.apple.com/documentation/devicemanagement/check-in>

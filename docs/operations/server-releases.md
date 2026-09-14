@@ -80,8 +80,12 @@ an existing, published release whose server manifest matches the tag. It does
 not backfill the old `server-v…` naming scheme.
 
 Pull requests run **Check server release assets** with read-only permissions.
-This builds all targets, verifies each archive and runs the Linux binaries'
-version commands. Unsigned preview archives are retained as CI artifacts for
+This builds all targets, verifies each archive, runs the Linux binaries'
+version commands, and checks the packaged Windows executables on a native runner.
+Server Markdown and release-manifest-only changes skip this preview; server code,
+dependencies, packaging inputs and this guide retain it. The [CI responsibility
+matrix](../testing/ci.md) explains the separate candidate, published-module and
+release gates. Unsigned preview archives are retained as CI artifacts for
 seven days. To perform the same packaging check locally with GoReleaser 2.18.1:
 
 ```sh
