@@ -216,8 +216,9 @@ func mergeLock(
 }
 
 // Verify regenerates in memory and compares with outDir: every generated
-// file must be byte-identical, and every name in EXPORTED_IDENTIFIERS.lock must still be
-// generated unless listed in ALLOWED_REMOVALS.md.
+// file must be byte-identical and stale generated files must be absent. Every
+// name in EXPORTED_IDENTIFIERS.lock must still be generated unless listed in
+// ALLOWED_REMOVALS.md.
 func Verify(schemaRoot, outDir string, opts Options) error {
 	files, err := Run(schemaRoot, opts)
 	if err != nil {
@@ -239,6 +240,22 @@ func Verify(schemaRoot, outDir string, opts Options) error {
 	}
 	files = cloneFiles(files)
 	files["EXPORTED_IDENTIFIERS.lock"] = merged
+	if err := fs.WalkDir(root.FS(), ".", func(path string, entry fs.DirEntry, walkErr error) error {
+		if walkErr != nil {
+			return walkErr
+		}
+		if entry.IsDir() {
+			return nil
+		}
+		if strings.HasSuffix(entry.Name(), ".gen.go") || entry.Name() == "conformance_gen_test.go" {
+			if _, expected := files[path]; !expected {
+				problems = append(problems, path+": stale generated file")
+			}
+		}
+		return nil
+	}); err != nil {
+		return fmt.Errorf("schemagen: inspect generated files: %w", err)
+	}
 	for rel, want := range files {
 		got, err := root.ReadFile(filepath.FromSlash(rel))
 		if err != nil {

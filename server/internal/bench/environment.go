@@ -377,10 +377,17 @@ func Up(ctx context.Context, w *Workspace, binary string, out io.Writer) error {
 	defer control.Close()
 	e.ControlURL = "http://" + control.Addr().String()
 	e.ControlToken = randomID()
+	stop := make(chan struct{}, 1)
 	mux := http.NewServeMux()
 	mux.HandleFunc(
 		"POST /stop",
-		func(w http.ResponseWriter, r *http.Request) { w.WriteHeader(204); cancel() },
+		func(w http.ResponseWriter, r *http.Request) {
+			w.WriteHeader(http.StatusNoContent)
+			select {
+			case stop <- struct{}{}:
+			default:
+			}
+		},
 	)
 	mux.HandleFunc(
 		"GET /status",
@@ -414,8 +421,22 @@ func Up(ctx context.Context, w *Workspace, binary string, out io.Writer) error {
 			mux.ServeHTTP(w, r)
 		}),
 	}
-	defer srv.Close()
-	go func() { _ = srv.Serve(control) }()
+	controlDone := make(chan struct{})
+	controlErr := make(chan error, 1)
+	go func() {
+		defer close(controlDone)
+		controlErr <- srv.Serve(control)
+	}()
+	defer func() {
+		// Drain the stop handler before closing its connection or the runtimes.
+		// Request cancellation must not cancel this cleanup context.
+		drain, drainCancel := context.WithTimeout(context.WithoutCancel(ctx), 5*time.Second)
+		defer drainCancel()
+		if err := srv.Shutdown(drain); err != nil {
+			_ = srv.Close()
+		}
+		<-controlDone
+	}()
 	b, err := json.MarshalIndent(e.Instance, "", "  ")
 	if err != nil {
 		return wrapError(err)
@@ -426,8 +447,12 @@ func Up(ctx context.Context, w *Workspace, binary string, out io.Writer) error {
 	defer os.Remove(w.path("running.json"))
 	fmt.Fprintln(out, "Bench ready:", e.URL, "mode="+w.Mode, "topology="+w.Topology)
 	select {
+	case <-stop:
+		return nil
 	case <-ctx.Done():
 		return nil
+	case err := <-controlErr:
+		return wrapError(err)
 	case err := <-e.errs:
 		if err == nil {
 			return fmt.Errorf("%w: server exited unexpectedly", errOperation)

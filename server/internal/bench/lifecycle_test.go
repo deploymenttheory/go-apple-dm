@@ -23,12 +23,22 @@ func TestWorkspaceSupervisorRestart(t *testing.T) {
 		t.Fatal(err)
 	}
 	for range 2 {
-		ctx, cancel := context.WithCancel(context.Background())
+		ctx, cancel := context.WithCancel(t.Context())
 		done := make(chan error, 1)
 		go func() { done <- Up(ctx, w, "", io.Discard) }()
 		func() {
-			defer cancel()
-			deadline := time.NewTimer(10 * time.Second)
+			finished := false
+			defer func() {
+				cancel()
+				if !finished {
+					select {
+					case <-done:
+					case <-time.After(30 * time.Second):
+						t.Error("supervisor cleanup did not drain")
+					}
+				}
+			}()
+			deadline := time.NewTimer(60 * time.Second)
 			defer deadline.Stop()
 			tick := time.NewTicker(50 * time.Millisecond)
 			defer tick.Stop()
@@ -36,11 +46,19 @@ func TestWorkspaceSupervisorRestart(t *testing.T) {
 			for e == nil {
 				select {
 				case err := <-done:
+					finished = true
 					t.Fatalf("supervisor exited: %v", err)
 				case <-deadline.C:
 					t.Fatal("supervisor did not become ready")
 				case <-tick.C:
-					e, _ = Attach(w)
+					candidate, attachErr := Attach(w)
+					if attachErr == nil {
+						if _, statusErr := candidate.Control(ctx, "GET", "/status", nil); statusErr == nil {
+							e = candidate
+						} else {
+							candidate.Client.CloseIdleConnections()
+						}
+					}
 				}
 			}
 			defer e.Client.CloseIdleConnections()
@@ -52,10 +70,11 @@ func TestWorkspaceSupervisorRestart(t *testing.T) {
 			}
 			select {
 			case err := <-done:
+				finished = true
 				if err != nil {
 					t.Fatal(err)
 				}
-			case <-time.After(15 * time.Second):
+			case <-time.After(30 * time.Second):
 				t.Fatal("supervisor did not drain")
 			}
 		}()

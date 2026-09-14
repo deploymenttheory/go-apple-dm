@@ -13,8 +13,12 @@ LIB_MOD := github.com/deploymenttheory/go-apple-dm
 SRV_MOD := github.com/deploymenttheory/go-apple-dm/server
 ALL_PKGS := $(LIB_MOD)/...,$(SRV_MOD)/...
 INTEGRATION_PKGS := ./apppush/... ./statestore/... ./sqlstore/... ./ddmstore/... ./depstore/... ./acmestore/... ./adminauth/... ./audit/... ./eventstore/... ./maintenance/... ./recovery/... ./internal/app/...
-E2E_PKGS := ./e2e/... ./acceptance/...
 E2E_STORE ?= sqlite
+# The embedded catalogue uses SQLite regardless of E2E_STORE; run it once.
+E2E_PKGS := ./e2e/...
+ifeq ($(E2E_STORE),sqlite)
+E2E_PKGS += ./acceptance/...
+endif
 FUZZ_SMOKE_TIME ?= 20s
 FUZZ_TIME ?= 10m
 SCHEMA_DIR := third_party/device-management
@@ -44,7 +48,7 @@ generate: submodule
 verify: submodule
 	$(GO) test ./internal/layout -run TestWorkflowSecurity
 	python3 -m unittest discover -s .github/scripts -p '*_test.py'
-	@if [ -d cmd/schemagen ]; then $(GO) run ./cmd/schemagen verify; else echo "schema generator directory is missing"; fi
+	$(GO) run ./cmd/schemagen verify
 
 ## lint: run golangci-lint with the repository configuration
 lint:
