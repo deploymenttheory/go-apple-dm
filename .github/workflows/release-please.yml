@@ -2,17 +2,28 @@ on:
   push:
     branches:
     - main
+  workflow_dispatch:
 
 permissions:
-  contents: write
-  pull-requests: write
+  contents: read
 
 name: release-please
+
+concurrency:
+  group: release-please-main
+  cancel-in-progress: false
 
 jobs:
   release-please:
     name: '🔖 Release Please'
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      issues: write
+      pull-requests: write
+    outputs:
+      server_release_created: ${{ steps.release.outputs['server--release_created'] }}
+      server_tag: ${{ steps.release.outputs['server--tag_name'] }}
     steps:
 
     - name: Harden Runner
@@ -20,31 +31,28 @@ jobs:
       with:
         egress-policy: audit
 
-    # The organization's release-please GitHub App mints a token per run,
-    # avoiding dependence on an individual PAT owner's continued access.
-    #
-    # App credentials allow tag pushes to trigger release workflows.
-    # If the App is unavailable, the next step uses the configured PAT.
     - uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3
       id: app-token
-      if: ${{ vars.RP_APP_ID != '' }}
-      continue-on-error: true
       with:
         app-id: ${{ vars.RP_APP_ID }}
         private-key: ${{ secrets.RP_APP_PRIVATE_KEY }}
 
-    - name: Which credential
-      run: |
-        if [ -n "${{ steps.app-token.outputs.token }}" ]; then
-          echo "release-please is using the org's release-please App"
-        else
-          echo "::warning::App token unavailable (RP_APP_ID/RP_APP_PRIVATE_KEY unset, or the App is not installed here) — falling back to the repo PAT"
-        fi
-
     - uses: googleapis/release-please-action@45996ed1f6d02564a971a2fa1b5860e934307cf7 # v5.0.0
+      id: release
       with:
-        # Omit release-type to use manifest mode for both modules. Setting it
-        # here selects single-package mode and bypasses the manifest's version
-        # and pre-1.0 settings. Release types belong in release-please-config.json;
-        # config-file and manifest-file use the default repository paths.
-        token: ${{ steps.app-token.outputs.token || secrets.RELEASE_PLEASE_PAT }}
+        # Manifest mode releases the root library and server independently.
+        token: ${{ steps.app-token.outputs.token }}
+        config-file: release-please-config.json
+        manifest-file: .release-please-manifest.json
+        target-branch: main
+
+  server-binaries:
+    needs: release-please
+    # https://github.com/googleapis/release-please-action#path-outputs
+    if: needs.release-please.outputs.server_release_created == 'true'
+    uses: ./.github/workflows/release.yml
+    with:
+      tag: ${{ needs.release-please.outputs.server_tag }}
+    permissions:
+      contents: write
+      id-token: write

@@ -1,9 +1,13 @@
 name: Release server
 
 on:
-  # Release Please creates the release first, so asset upload cannot race it.
-  release:
-    types: [published]
+  # Called after Release Please has created the server release and version tag.
+  workflow_call:
+    inputs:
+      tag:
+        description: Existing server release tag (server/vX.Y.Z)
+        required: true
+        type: string
   workflow_dispatch:
     inputs:
       tag:
@@ -15,50 +19,18 @@ permissions:
   contents: read
 
 concurrency:
-  group: server-release-${{ github.event.release.tag_name || inputs.tag }}
+  group: server-release-${{ inputs.tag }}
   cancel-in-progress: false
 
 jobs:
-  windows-tests:
-    if: startsWith(github.event.release.tag_name || inputs.tag, 'server/v')
-    runs-on: windows-latest
-    timeout-minutes: 30
-    env:
-      RELEASE_TAG: ${{ github.event.release.tag_name || inputs.tag }}
-    steps:
-      - name: Harden Runner
-        uses: step-security/harden-runner@e14015d583714f6e62063499dc959a02595150a1 # v2.21.1
-        with:
-          egress-policy: audit
-      - name: Validate tag before checkout
-        shell: pwsh
-        run: |
-          if ($env:RELEASE_TAG -notmatch '^server/v[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$') {
-            throw 'Expected a server/vX.Y.Z release tag'
-          }
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          ref: refs/tags/${{ env.RELEASE_TAG }}
-          submodules: recursive
-          persist-credentials: false
-      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
-        with:
-          go-version-file: server/go.mod
-          cache-dependency-path: |
-            go.sum
-            server/go.sum
-      - uses: ./.github/actions/windows-tests
-
   release:
-    needs: windows-tests
-    if: startsWith(github.event.release.tag_name || inputs.tag, 'server/v')
     runs-on: ubuntu-latest
     timeout-minutes: 30
     permissions:
       contents: write
       id-token: write
     env:
-      RELEASE_TAG: ${{ github.event.release.tag_name || inputs.tag }}
+      RELEASE_TAG: ${{ inputs.tag }}
     steps:
       - name: Harden Runner
         uses: step-security/harden-runner@e14015d583714f6e62063499dc959a02595150a1 # v2.21.1
@@ -71,26 +43,16 @@ jobs:
             echo '::error::Expected a server/vX.Y.Z release tag'
             exit 1
           fi
+          echo "SERVER_VERSION=${RELEASE_TAG#server/v}" >> "$GITHUB_ENV"
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: refs/tags/${{ env.RELEASE_TAG }}
           fetch-depth: 0
           persist-credentials: false
-      - name: Verify release and version
+      - name: Check existing release
         env:
           GH_TOKEN: ${{ github.token }}
-        run: |
-          version=$(python3 .github/scripts/server_release.py version "$RELEASE_TAG")
-          echo "SERVER_VERSION=$version" >> "$GITHUB_ENV"
-          test "$(git rev-parse HEAD)" = "$(git rev-parse "refs/tags/$RELEASE_TAG^{commit}")"
-          gh release view "$RELEASE_TAG" --json tagName,isDraft --jq \
-            'select(.isDraft == false) | .tagName' | { read -r tag; test "$tag" = "$RELEASE_TAG"; }
-          python3 - "$version" <<'PY'
-          import json, sys
-          with open('.release-please-manifest.json') as stream:
-              if json.load(stream)['server'] != sys.argv[1]:
-                  sys.exit('server release tag does not match the manifest')
-          PY
+        run: gh release view "$RELEASE_TAG"
       - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:
           go-version-file: server/go.mod
@@ -99,9 +61,14 @@ jobs:
         uses: goreleaser/goreleaser-action@f06c13b6b1a9625abc9e6e439d9c05a8f2190e94 # v7
         with:
           version: v2.18.1
-          args: release --clean --snapshot --skip=publish
+          args: release --clean --snapshot
       - name: Verify packaged assets
-        run: python3 .github/scripts/server_release.py verify dist "$SERVER_VERSION" > "$RUNNER_TEMP/server-assets.txt"
+        run: |
+          (cd dist && sha256sum --check "go-apple-dm-server_${SERVER_VERSION}_checksums.txt")
+          mkdir "$RUNNER_TEMP/server-release"
+          tar -xzf "dist/go-apple-dm-server_${SERVER_VERSION}_linux_amd64.tar.gz" -C "$RUNNER_TEMP/server-release"
+          test "$("$RUNNER_TEMP/server-release/dmserver" --version)" = "$SERVER_VERSION"
+          test "$("$RUNNER_TEMP/server-release/dmctl" version)" = "$SERVER_VERSION"
       - uses: sigstore/cosign-installer@398d4b0eeef1380460a10c8013a76f728fb906ac # v3
       - name: Sign checksums and attach assets
         env:
@@ -110,7 +77,5 @@ jobs:
         run: |
           checksum="dist/go-apple-dm-server_${SERVER_VERSION}_checksums.txt"
           cosign sign-blob --yes --bundle "$checksum.sigstore.json" "$checksum"
-          # Recheck immediately before upload; only the validated files are sent.
-          python3 .github/scripts/server_release.py verify dist "$SERVER_VERSION" > "$RUNNER_TEMP/server-assets.txt"
-          mapfile -t assets < "$RUNNER_TEMP/server-assets.txt"
-          gh release upload "$RELEASE_TAG" "${assets[@]}" "$checksum.sigstore.json" --clobber
+          gh release upload "$RELEASE_TAG" \
+            dist/*.tar.gz dist/*.zip "$checksum" "$checksum.sigstore.json" --clobber

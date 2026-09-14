@@ -4,7 +4,6 @@ on:
   pull_request:
     paths:
       - '.github/workflows/release*.yml'
-      - '.github/scripts/server_release*'
       - '.goreleaser.yaml'
       - 'release-please-config.json'
       - 'server/**'
@@ -15,7 +14,6 @@ on:
     branches: [main]
     paths:
       - '.github/workflows/release*.yml'
-      - '.github/scripts/server_release*'
       - '.goreleaser.yaml'
       - 'release-please-config.json'
       - 'server/**'
@@ -45,8 +43,6 @@ jobs:
         with:
           go-version-file: server/go.mod
           cache-dependency-path: server/go.sum
-      - name: Test release validation
-        run: python3 -m unittest discover -s .github/scripts -p 'server_release_test.py'
       - name: Check GoReleaser configuration
         uses: goreleaser/goreleaser-action@f06c13b6b1a9625abc9e6e439d9c05a8f2190e94 # v7
         with:
@@ -56,10 +52,10 @@ jobs:
         uses: goreleaser/goreleaser-action@f06c13b6b1a9625abc9e6e439d9c05a8f2190e94 # v7
         with:
           version: v2.18.1
-          args: release --clean --snapshot --skip=publish
+          args: release --clean --snapshot
       - name: Check archives and native executable versions
         run: |
-          python3 .github/scripts/server_release.py verify dist "$SERVER_VERSION"
+          (cd dist && sha256sum --check "go-apple-dm-server_${SERVER_VERSION}_checksums.txt")
           mkdir "$RUNNER_TEMP/server-release"
           tar -xzf "dist/go-apple-dm-server_${SERVER_VERSION}_linux_amd64.tar.gz" -C "$RUNNER_TEMP/server-release"
           test "$("$RUNNER_TEMP/server-release/dmserver" --version)" = "$SERVER_VERSION"

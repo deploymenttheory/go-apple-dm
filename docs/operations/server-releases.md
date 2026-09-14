@@ -36,7 +36,7 @@ verify the checksum signature before checking the archive's hash. For example:
 version=0.9.1
 cosign verify-blob \
   --bundle "go-apple-dm-server_${version}_checksums.txt.sigstore.json" \
-  --certificate-identity-regexp '^https://github\.com/deploymenttheory/go-apple-dm/\.github/workflows/release\.yml@refs/(tags/server/v[0-9A-Za-z.-]+|heads/main)$' \
+  --certificate-identity-regexp '^https://github\.com/deploymenttheory/go-apple-dm/\.github/workflows/(release|release-please)\.yml@refs/(tags/server/v[0-9A-Za-z.-]+|heads/main)$' \
   --certificate-oidc-issuer https://token.actions.githubusercontent.com \
   "go-apple-dm-server_${version}_checksums.txt"
 
@@ -53,46 +53,43 @@ signatures; the macOS executables are not Apple notarized applications.
 
 ## Release maintenance
 
-Release Please owns versions, changelogs, tags and GitHub releases. The device management Go
-library uses `vX.Y.Z`; the separate server module uses `server/vX.Y.Z`. Nonbreaking
-pre-1.0 changes advance the patch version; breaking changes advance the minor
-version. The organization App token (or the configured Release Please PAT)
-allows the resulting release event to trigger the asset workflow.
+Release Please manages both modules in manifest mode. Merging its release PR
+creates a GitHub release and version tag for each changed module: `vX.Y.Z` for
+the library, `server/vX.Y.Z` for the server. Nonbreaking pre-1.0 changes advance
+the patch version; breaking changes advance the minor version. Authentication
+uses the organization GitHub App (`RP_APP_ID` and `RP_APP_PRIVATE_KEY`).
 
-The **Release server** workflow runs after a server release is published. Its
-asset job waits for the full Windows test suite to pass on that release tag. It
-checks the tag against the server manifest, checks out that exact tag, builds
-both commands with `GOWORK=off`, verifies all archive contents and checksums,
-signs the checksum file with GitHub OIDC, and uploads those eight assets to the
-existing release. The library release receives no server binaries. Release
-notes remain owned by Release Please.
+The release-please workflow passes its documented `server--tag_name` output to
+**Release server** when `server--release_created` is true. That job checks out the
+tag, builds both commands for all six targets with `GOWORK=off`, checks the
+archive hashes and Linux executable versions, signs the checksums, and attaches
+the eight files to the existing server release. The full test suite runs in
+application CI; release previews also execute the packaged Windows binaries.
 
-The configuration uses OSS GoReleaser's snapshot packaging mode because its
-[module tag prefix support requires Pro](https://goreleaser.com/customization/monorepo/).
-`SERVER_VERSION` supplies the validated tag's exact version, with no snapshot
-suffix. GoReleaser publication is disabled; the workflow uploads the verified
-files to the original `server/v…` release without creating alternate tags.
+GoReleaser OSS builds the archives in snapshot mode with `SERVER_VERSION` set to
+the tag's exact version. Native support for the `server/` tag prefix requires
+GoReleaser Pro, so `gh release upload` attaches the files. Release Please keeps
+ownership of the tags and release notes.
 
-To retry an interrupted upload, rerun the release job, or dispatch **Release
-server** from `main` with the existing server tag. Only the six versioned archives,
-their checksum file and signature bundle are replaced. The workflow requires
-an existing, published release whose server manifest matches the tag. It does
-not backfill the old `server-v…` naming scheme.
+To retry an upload, dispatch **Release server** with the existing `server/vX.Y.Z`
+tag. It checks out that tag and replaces its binary archives, checksums and
+signature. Library releases have no server assets.
 
-Pull requests run **Check server release assets** with read-only permissions.
-This builds all targets, verifies each archive, runs the Linux binaries'
-version commands, and checks the packaged Windows executables on a native runner.
-Server Markdown and release-manifest-only changes skip this preview; server code,
-dependencies, packaging inputs and this guide retain it. The [CI responsibility
-matrix](../testing/ci.md) explains the separate candidate, published-module and
-release gates. Unsigned preview archives are retained as CI artifacts for
-seven days. To perform the same packaging check locally with GoReleaser 2.18.1:
+**Check server release assets** builds and checks the same packages on pull
+requests without publishing. It retains unsigned previews for seven days. Run
+the packaging check locally with GoReleaser 2.18.1 from the repository root:
 
 ```sh
 export SERVER_VERSION=0.0.0-local
 goreleaser check
-goreleaser release --clean --snapshot --skip=publish
-python3 .github/scripts/server_release.py verify dist "$SERVER_VERSION"
+goreleaser release --clean --snapshot
+(cd dist && shasum -a 256 --check "go-apple-dm-server_${SERVER_VERSION}_checksums.txt")
 ```
 
-Run these commands from the repository root; `dist/` is ignored by Git.
+Upstream documentation:
+
+- [Release Please manifest configuration](https://github.com/googleapis/release-please/blob/main/docs/manifest-releaser.md)
+- [Release Please path outputs](https://github.com/googleapis/release-please-action#path-outputs)
+- [Attaching files to a Release Please release](https://github.com/googleapis/release-please-action#attaching-files-to-the-github-release)
+- [GoReleaser snapshots](https://goreleaser.com/customization/snapshots/)
+- [GoReleaser module tag prefixes](https://goreleaser.com/customization/monorepo/)

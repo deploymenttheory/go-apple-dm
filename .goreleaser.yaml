@@ -46,7 +46,9 @@ checksum:
   algorithm: sha256
 
 # OSS GoReleaser does not support the nested module's server/v... tag prefix.
+# https://goreleaser.com/customization/monorepo/
 # Package in snapshot mode with the validated tag's exact version (no suffix).
+# Snapshot mode skips publication: https://goreleaser.com/customization/snapshots/
 # release.yml then signs and uploads only the verified assets to that release.
 snapshot:
   version_template: "{{ .Env.SERVER_VERSION }}"

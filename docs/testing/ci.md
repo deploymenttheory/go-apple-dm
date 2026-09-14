@@ -17,9 +17,9 @@ packaged executable are different inputs.
 | Go Linter | Go/module files, linter settings or workflow PR changes; manual dispatch | Both modules on Linux ARM and Windows, including platform-specific code. Does not rewrite source. |
 | Security | Application PR/main changes and weekly schedule | Both modules' vulnerability checks and gosec SARIF, plus the Docker build-context exclusion check. |
 | Dependency Review | PRs other than docs/metadata/workflow-only changes | Dependency diff against the base revision. |
-| Check server release assets | Server implementation/dependencies, packaging/workflow inputs, LICENSE or release operations guide | Build all six archives, verify their contents and Linux versions; execute the packaged Windows binaries and native workspace-lock test. Does not publish. |
+| Check server release assets | Server implementation/dependencies, packaging/workflow inputs, LICENSE or release operations guide | Build all six archives, check hashes and Linux versions; execute the packaged Windows binaries and native workspace-lock test. Does not publish. |
 | Published server module installation | `server/v*` tag push or explicit version dispatch | Retrieve the actual published module and verify requirements, builds and command installation with `GOWORK=off`. This reports after publication; it cannot prevent tag creation. |
-| Release server | Published server release or tag-specific dispatch | Full native Windows suite gates versioned archive construction, verification, signing and upload to that existing release. |
+| Release server | Release Please server output or tag-specific dispatch | Build the tagged sources, check hashes and Linux executable versions, sign checksums and upload assets to the existing release. |
 | Apple Schema Compatibility Monitor | Daily schedule or manual dispatch | Discover immutable upstream revisions, assess changes and retain evidence; report-only dispatch avoids publishing. Distinct from checking generated files at the current pin. |
 | PR title / Release Please | Ordinary PR title changes / main pushes | Conventional Commit titles / managed release metadata and tags. |
 
@@ -46,8 +46,9 @@ same suite under `E2E_STORE=postgres` did not add PostgreSQL coverage; it is now
 selected only for SQLite. `server/e2e` still runs against both stores, and process
 acceptance still covers binary startup, supervision and split topology.
 
-Keep candidate installation, published installation, archive smoke tests and the
-release Windows suite: each checks a different artifact or publication boundary.
+Candidate installation, published installation and archive smoke tests check
+different inputs. Native Windows unit tests run in application CI; release
+publication builds and checks the binaries without repeating that full suite.
 Keep linter gosec and scheduled gosec SARIF: their platforms, exclusions, reporting
 and schedule differ. Consolidating either would require preserving those contracts.
 
