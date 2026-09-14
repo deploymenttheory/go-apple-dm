@@ -13,7 +13,7 @@ SQL-backed reference applications capture projected records and destination IDs 
 workers deliver audit/webhook records using persistent leases and retries. Native
 audit append/acknowledgment shares the same SQL transaction. External delivery is
 at least once and receivers deduplicate EventID. Slog and direct bus subscribers
-remain ephemeral. 
+remain ephemeral.
 
 Webhook construction requires HTTPS and rejects URL credentials and fragments.
 Redirects are refused and response reads are bounded. `DM_WEBHOOK_ROOT_CA_FILE`
