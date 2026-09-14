@@ -4,6 +4,8 @@
 # and leave all files detected as binary untouched.
 * text=auto
 
+# Go formatters require LF when Windows enables core.autocrlf.
+*.go text eol=lf
 *.json text eol=lf
 
 # Generated diagrams (archify); sources live in docs/diagrams/src

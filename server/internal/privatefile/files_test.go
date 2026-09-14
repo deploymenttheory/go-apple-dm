@@ -105,7 +105,14 @@ func TestPrivateFileFailures(t *testing.T) {
 func TestProtectionFollowsOpenedFile(t *testing.T) {
 	dir := t.TempDir()
 	original, moved := filepath.Join(dir, "original"), filepath.Join(dir, "moved")
-	file, err := os.OpenFile(original, os.O_CREATE|os.O_EXCL|os.O_WRONLY, 0o600)
+	root, err := os.OpenRoot(dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer root.Close()
+	// Root.OpenFile permits renaming an open file on Windows. os.OpenFile
+	// omits FILE_SHARE_DELETE, which would prevent this test's path replacement.
+	file, err := root.OpenFile("original", os.O_CREATE|os.O_EXCL|os.O_WRONLY, 0o600)
 	if err != nil {
 		t.Fatal(err)
 	}

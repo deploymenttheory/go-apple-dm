@@ -126,6 +126,38 @@ func TestLibraryContainerPreservesUnitCycles(t *testing.T) {
 	}
 }
 
+func TestServerContainerPreservesUnitBoundaries(t *testing.T) {
+	t.Parallel()
+	const dmctl = "server/internal/dmctl"
+	const privatefile = "server/internal/privatefile"
+	const recovery = "server/recovery"
+	for name, tc := range map[string]struct {
+		imports map[string][]string
+		want    [][]string
+	}{
+		"composition depends on recovery and a shared helper": {
+			imports: map[string][]string{
+				dmctl: {recovery, privatefile}, recovery: {privatefile}, privatefile: nil,
+			},
+		},
+		"recovery depends on a composition subpackage": {
+			imports: map[string][]string{
+				dmctl: {recovery}, recovery: {dmctl + "/adminclient"}, dmctl + "/adminclient": nil,
+			},
+			want: [][]string{{dmctl, recovery}},
+		},
+	} {
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+			g := &layout.Graph{Imports: tc.imports}
+			got := layout.Cycles(g.UnitGraph())
+			if !slices.EqualFunc(got, tc.want, slices.Equal[[]string]) {
+				t.Fatalf("server unit cycles = %v, want %v", got, tc.want)
+			}
+		})
+	}
+}
+
 // TestReachesIsTransitive covers the walk on a graph small enough to read.
 func TestReachesIsTransitive(t *testing.T) {
 	t.Parallel()

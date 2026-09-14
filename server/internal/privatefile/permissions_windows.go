@@ -1,6 +1,7 @@
 package privatefile
 
 import (
+	"fmt"
 	"os"
 	"unsafe"
 
@@ -26,17 +27,21 @@ func protectFile(file *os.File) error {
 	if err != nil {
 		return err
 	}
-	// ReOpenFile requests WRITE_DAC on the same file, preserving os.Root's
-	// traversal boundary even if someone renames a path after creation.
-	handle, _, callErr := reopenFile.Call(file.Fd(), windows.WRITE_DAC,
+	// SetSecurityInfo reads the current descriptor before replacing the DACL,
+	// so the handle needs READ_CONTROL as well as WRITE_DAC. Reopen the same
+	// file to preserve os.Root's boundary if its path changes after creation.
+	handle, _, callErr := reopenFile.Call(file.Fd(), windows.READ_CONTROL|windows.WRITE_DAC,
 		windows.FILE_SHARE_READ|windows.FILE_SHARE_WRITE|windows.FILE_SHARE_DELETE, 0)
 	if windows.Handle(handle) == windows.InvalidHandle {
-		return wrap(callErr)
+		return fmt.Errorf("private file: reopen for access control: %w", callErr)
 	}
 	defer func() { _ = windows.CloseHandle(windows.Handle(handle)) }()
-	return wrap(windows.SetSecurityInfo(windows.Handle(handle), windows.SE_FILE_OBJECT,
+	if err := windows.SetSecurityInfo(windows.Handle(handle), windows.SE_FILE_OBJECT,
 		windows.DACL_SECURITY_INFORMATION|windows.PROTECTED_DACL_SECURITY_INFORMATION,
-		nil, nil, acl, nil))
+		nil, nil, acl, nil); err != nil {
+		return fmt.Errorf("private file: set access control: %w", err)
+	}
+	return nil
 }
 
 func privateACL() (*windows.ACL, error) {

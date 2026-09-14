@@ -5,6 +5,7 @@ on:
   pull_request:
     types: [opened, synchronize]
     paths:
+      - '.gitattributes'
       - '.golangci.yml'
       - '**/*.go'
       - '**/go.mod'
