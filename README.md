@@ -15,7 +15,7 @@ The `devicemanagement` library go module groups protocol libraries, generated sc
 in-memory implementations under [devicemanagement/](devicemanagement/). The `server` module adds SQL stores, the service layer, HTTP adapters and application wiring. Both modules require Go 1.27. 
 
 > [!WARNING]
-> This project is in beta. While it has been tested extensively, please thoroughly test in non-production environments before production use. Features may contain bugs or undergo changes based on community feedback. Use at your own risk. No guarantees or official support is provided. By using this provider, you acknowledge and agree to these conditions. For questions or issues, please consult the documentation or contact the maintainer.
+> This project is in beta. While it has been tested extensively, please thoroughly test in non-production environments before production use. Features may contain bugs or undergo changes based on community feedback. No guarantees or official support is provided. Use at your own risk. By using this project, you acknowledge and agree to these conditions. For questions or issues, please consult the documentation or contact the maintainer.
 
 > [!TIP]
 > This is a community-driven project and is not officially supported by Apple.
