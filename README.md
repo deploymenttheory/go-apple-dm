@@ -7,9 +7,22 @@
 [![License](https://img.shields.io/github/license/deploymenttheory/go-apple-dm)](LICENSE)
 ![Status: Beta](https://img.shields.io/badge/status-preview-58A6FF)
 
-This project provides Go packages for Apple's MDM protocol, declarative device management (DDM), enrollment,
-certificate issuance and Apple service clients. The repository also contains a reference
-server and an admin CLI to demonstrate how an implementation of the library could look like, additionally there is a simulator for test purposes. By design this project does not provide an opinionated: UI nor a full apple device management product, rather, the focus is on providing a consumable library upon which those types project could adopt.
+This project provides a go(lang) implementation for Apple's MDM protocol, declarative device management (DDM), enrollment, certificate issuance and Apple service clients. The repository also contains a reference
+server and an admin CLI to demonstrate how an implementation of the library could look like, additionally there is a simulator for test purposes. By design this project does not provide an opinionated: UI nor a full apple device management product, rather, the focus is on providing a consumable library upon which those types project could adopt with the reference server to show what's possible.
+
+## Why
+
+## Design Goals
+- Support for macOS 26 onwards. At the time of build, macOS 27 is on the cusp of public prelease.
+- Support for ddm and mdm
+- 
+
+ - The `devicemanagement` library go module groups protocol libraries, generated schema types, storage contracts and
+in-memory implementations under [devicemanagement/](devicemanagement/). 
+
+- The reference `server` module adds SQL stores, the service layer, HTTP adapters and application wiring. 
+
+Both modules require Go 1.27. 
 
 The `devicemanagement` library go module groups protocol libraries, generated schema types, storage contracts and
 in-memory implementations under [devicemanagement/](devicemanagement/). The `server` module adds SQL stores, the service layer, HTTP adapters and application wiring. Both modules require Go 1.27. 
@@ -21,7 +34,6 @@ in-memory implementations under [devicemanagement/](devicemanagement/). The `ser
 > This is a community-driven project and is not officially supported by Apple.
 
 This project generates it's mdm and ddm functionality by parsing the schema from Apple's [Device Management](https://github.com/apple/device-management) project.
-
 
 ## Quick start
 
@@ -114,6 +126,13 @@ component relationships, protocol exchanges and lifecycle transitions.
   status reports, subscriptions and synchronization notifications.
 - APNs, device enrollment service (`dep`), software lookup (`gdmf`) and Apple Business Manager
   and Apple School Manager API (`axm`) clients, with test servers.
+- [Apps and Books licensing](docs/operations/apps-and-books.md) for device/user apps and
+  user books, including user lifecycle, asynchronous outcomes and authenticated notifications.
+- [Protocol helpers](docs/operations/protocol-helpers.md) for Managed Apple Account JWTs,
+  ADE password hashes, FileVault CMS decryption, Activation Lock codes and SHA-256 manifests.
+  FileVault command encryption certificates are generated automatically in Go and stored encrypted.
+- [Offline profile lint and paginated DDM inspection](docs/operations/status-and-profile-inspection.md)
+  through `dmctl`, using generated schema metadata and existing status storage.
 - In-memory, SQLite, PostgreSQL and MySQL persistence; column sealing and key rotation for
   selected secrets; optional shared security state and inbound rate limits.
 - A device simulator, an admin API with scoped credentials and Cedar policies, and projected
