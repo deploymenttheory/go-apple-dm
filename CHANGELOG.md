@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.7.3](https://github.com/deploymenttheory/go-apple-dm/compare/v0.7.2...v0.7.3) (2026-09-15)
+
+
+### Bug Fixes
+
+* release please ([6da7312](https://github.com/deploymenttheory/go-apple-dm/commit/6da7312b17b4452dc77530f59499760780a6637f))
+
 ## [0.7.2](https://github.com/deploymenttheory/go-apple-dm/compare/v0.7.1...v0.7.2) (2026-09-14)
 
 
