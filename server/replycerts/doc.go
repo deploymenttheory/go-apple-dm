@@ -24,9 +24,15 @@
 //
 // # References
 //
+//   - Design decision: docs/research/decisions/0054-filevault-encryption-identities.md (relative to repository root)
+//
 //   - Apple rotation certificate fields: https://developer.apple.com/documentation/devicemanagement/rotatefilevaultkeycommand/command-data.dictionary
+//
 //   - Apple encrypted result: https://developer.apple.com/documentation/devicemanagement/rotatefilevaultkeyresponse/rotateresult-data.dictionary
+//
 //   - Apple escrow payload: https://developer.apple.com/documentation/devicemanagement/fderecoverykeyescrow
+//
 //   - macOS 26 bootstrap-token rotation: https://support.apple.com/en-us/124963
+//
 //   - Protocol helpers: docs/operations/protocol-helpers.md (relative to repository root)
 package replycerts

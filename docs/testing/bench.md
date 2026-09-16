@@ -5,10 +5,9 @@ with acceptance and end-to-end testing. Scenario functions are Go code independe
 of `testing.T`; [the catalogue](bench-catalogue.md) is generated from those functions'
 metadata. Configuration-specific scenarios start isolated server instances.
 
-The [enrollment validation record](enrollment-validation.md) records automated and
-live status for the enrollment-alignment branch. The earlier
-[PR #12 validation record](bench-validation.md) describes the preceding APNs and
-reference-bench implementation.
+Record results against the exact source revision, configuration and device/OS
+in the PR. Automated checks and a successful run on one device establish only
+their tested scope. Keep private evidence and credentials outside source control.
 
 | Layer | Entry point | What it proves |
 |---|---|---|
@@ -80,6 +79,67 @@ container-based split regression remains packaging coverage in the existing CI j
 `make bench-docs` regenerates the catalogue. `make bench-docs-check` detects drift.
 GitHub Actions uploads acceptance evidence even on failure. Credentials, raw APNs
 tokens and bootstrap tokens are excluded from result reports.
+
+## Reproducing checks
+
+Initialize the pinned submodules and use the declared Go toolchain. Start the SQL
+fixtures with `make testdb-up`, export the printed PostgreSQL/MySQL DSNs, then run:
+
+```sh
+make verify
+make test
+make test-contract
+make test-e2e
+E2E_STORE=postgres make test-e2e
+make test-acceptance
+make bench-docs-check
+make coverage
+```
+
+SQL packages that reset shared integration databases run serially through the
+Makefile. The container-based split regression additionally needs
+`make testdb-ddm-up` and its printed `TEST_DDM_*` settings. A skipped dependency
+is a limit on evidence, not a pass. Coverage merges emitted profiles; remove stale
+profiles before assembling a measurement and inspect `cover/packages.txt` and
+`cover/merged.html`. The gate remains 95% overall and per non-exempt package.
+
+Live app push needs a matching app certificate/key, signing/provisioning and a
+registration exported by the host app. MDM enrollment needs the separate customer
+MDM push certificate and retained key. Vendor CSR signing needs the vendor chain.
+Use the [lab runbook](../../test-lab/README.md) for the respective file layouts;
+APNs acceptance alone does not prove device or app receipt.
+
+## Apple management feature checks
+
+Run focused helper, admin and CLI suites without Apple credentials:
+
+```sh
+go test -race ./devicemanagement/mdmprotocol/... ./devicemanagement/appleplatformservices/appsbooks/...
+go test -race ./server/replycerts/... ./server/internal/app/... ./server/internal/dmctl/...
+```
+
+The tests check independent JWT signatures, PBKDF2 and bypass-code vectors,
+pre-generated CMS fixtures, manifest digests, pagination above 1,000 records,
+authorization, channel isolation and encrypted identity retention across restart.
+Apps and Books tests use controlled HTTP services. These establish local contracts,
+not acceptance by Apple services or every device family.
+
+| Live check | Prerequisites and acceptance boundary |
+|---|---|
+| DDM inspection | Enrolled device and current inventory. Traverse values/errors/reports with `-limit 1 -all`, compare against a large page and test a prefix. An empty errors page does not establish nonempty error pagination. |
+| Profile lint/install/remove | A benign profile and an eligible target. Lint, install, confirm its identifier with ProfileList, remove, and confirm absence. Acceptance applies to that payload and target only. |
+| Managed Apple Account JWT | Apple-registered ADE identity and supported GetToken exchange; local signature verification cannot prove registration. |
+| ADE password hashes | An ADE-created administrator and its GUID; verify AccountConfiguration and SetAutoAdminPassword separately. |
+| FileVault escrow | FileVault enabled, an existing personal recovery key, bootstrap token and no conflicting escrow ownership. Follow the [escrow workflow](../operations/protocol-helpers.md#automatic-filevault-encryption-certificates); check acknowledgement, recover the CMS output with the retained recipient, persist the secret encrypted, and repeat decryption after restart. |
+| FileVault retrieval/rotation/unlock | SecurityInfo needs its enrollment access right. Local `/var/db/FileVaultPRK.dat` extraction does not prove remote retrieval. Explicit RotateFileVaultKey needs unlock credentials; disk unlock is a separate test. Removing the escrow profile does not reverse rotation. Retain the replacement key and recipient in a verified post-rotation backup. |
+| Activation Lock | Eligible organization/device and retained bypass code; enabling with a hash and unlocking with the code require separate acceptance. |
+| Package/app manifests | Distributable signed assets hosted at the hashed HTTPS URL and eligible macOS/iOS/iPadOS targets; local digest checks do not establish installation. |
+| Apps and Books | Location token, ownership, licenses, suitable devices/users and an authenticated notification receiver. Verify user association where required, asynchronous completion and installation separately. |
+
+Record the running source and binary hashes, OS/hardware/enrollment mode, command
+results, cleanup and untested operations in the PR. Keep device identifiers,
+credentials and recovery material in private artifacts. Repeat acceptance for the
+revision being deployed; no previous observation establishes universal compatibility.
 
 ## Graduating a spike
 

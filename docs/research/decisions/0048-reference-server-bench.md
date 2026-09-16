@@ -2,10 +2,9 @@
 
 ## Context
 
-The local APNs spike added a `dmlab` executable and Python orchestration while
-existing E2E fixtures separately composed protocol services. This duplicated
-startup, identity setup, profile generation and observation. Passing those tests
-could leave the shipped server's wiring unexercised.
+Protocol fixtures can validate individual services without exercising the shipped
+server's startup, identity setup, profile generation and observation. The test
+bench must also exercise that composition and expose reproducible operator workflows.
 
 ## Decision
 
@@ -24,8 +23,7 @@ Local workspaces persist; automated acceptance creates disposable workspaces.
 Reusable operator capabilities belong in the reference server: service discovery,
 enrollment-profile issuance and replacement, issuance evidence, enrollment-scoped
 command-result retrieval, configured OTA and user identity verification, and app
-notification administration. The old `dmlab` and Python runner are removed; the
-native host app remains a device-side fixture.
+notification administration. The native host app is a device-side fixture.
 
 Contract suites continue to exercise interfaces directly. Detailed E2E regressions
 retain timing, storage and fault assertions that need component access. Their IDs
@@ -42,7 +40,7 @@ a separate workflow language or production test-control API is unnecessary.
 
 Combining every test into subprocess acceptance would sacrifice deterministic
 clocks and useful interface assertions. Maintaining a second lab daemon would
-retain the original divergence. The chosen boundaries share implementation and
+duplicate runtime composition. The chosen boundaries share implementation and
 workflows while preserving each test layer's observation points.
 
 ## Constraints

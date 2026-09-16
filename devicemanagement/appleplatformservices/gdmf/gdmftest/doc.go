@@ -11,5 +11,5 @@
 // # References
 //
 //   - Decision record 0027: https://github.com/deploymenttheory/go-apple-dm/blob/main/docs/research/decisions/0027-ade-enrollment-machineinfo-and-web-view-auth.md
-//   - Apple: https://support.apple.com/guide/deployment/use-mdm-to-deploy-software-updates-depafd2fad80/web
+//   - Apple: https://developer.apple.com/documentation/devicemanagement/deploying-software-updates-using-declarative-management
 package gdmftest

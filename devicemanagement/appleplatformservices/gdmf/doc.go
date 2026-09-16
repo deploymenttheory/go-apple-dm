@@ -18,6 +18,6 @@
 //   - End-to-end scenarios: https://github.com/deploymenttheory/go-apple-dm/blob/main/docs/testing/e2e-scenarios.md (E2E-011)
 //   - Apple: https://developer.apple.com/documentation/devicemanagement/machineinfo (SOFTWARE_UPDATE_DEVICE_ID)
 //   - Apple: https://developer.apple.com/documentation/devicemanagement/errorcodesoftwareupdaterequired
-//   - Apple: https://support.apple.com/guide/deployment/use-mdm-to-deploy-software-updates-depafd2fad80/web
+//   - Apple: https://developer.apple.com/documentation/devicemanagement/deploying-software-updates-using-declarative-management
 //   - Schema: third_party/device-management/mdm/errors/softwareupdate.required.yaml
 package gdmf

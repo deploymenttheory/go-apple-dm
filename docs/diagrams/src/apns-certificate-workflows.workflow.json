@@ -214,7 +214,8 @@
       "title": "Public documentation",
       "items": [
         "Setting up push notifications for your device management customers — https://developer.apple.com/documentation/devicemanagement/setting-up-push-notifications-for-your-device-management-customers",
-        "Establishing a certificate-based connection to APNs — https://developer.apple.com/documentation/usernotifications/establishing-a-certificate-based-connection-to-apns"
+        "Establishing a certificate-based connection to APNs — https://developer.apple.com/documentation/usernotifications/establishing-a-certificate-based-connection-to-apns",
+        "Implementation — https://github.com/deploymenttheory/go-apple-dm/blob/7500eb25e50a2913338339d5fced18dc7f41fdc3/devicemanagement/pki/pushcert"
       ],
       "dot": "transport"
     }

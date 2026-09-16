@@ -2,9 +2,9 @@
 
 Thirty-one interactive diagrams explain the library and reference server. They are generated
 with [Archify](https://github.com/tt-a1i/archify) from the JSON sources in [`src/`](src/).
-Each diagram records its own repository revision. Its code-source links resolve
-against that revision, including the library's `devicemanagement/` package prefix
-in diagrams whose sources have been updated for the current layout.
+Architecture diagrams pin component paths to a repository revision. Other diagram
+types include a pinned implementation reference in their explanatory cards.
+Library source paths include the `devicemanagement/` package prefix.
 
 Click a diagram name below to open its interactive HTML preview from `main`. These previews
 require an internet connection and reflect changes after they are merged. The **HTML source**
@@ -27,7 +27,7 @@ to highlight matching components and connections and see their counts and exampl
    [declarative synchronization](https://htmlpreview.github.io/?https://raw.githubusercontent.com/deploymenttheory/go-apple-dm/main/docs/diagrams/flow-ddm-sync.html) for ongoing management.
 3. Use [profile replacement](https://htmlpreview.github.io/?https://raw.githubusercontent.com/deploymenttheory/go-apple-dm/main/docs/diagrams/flow-enrollment-profile-replacement.html),
    [APNs credentials](https://htmlpreview.github.io/?https://raw.githubusercontent.com/deploymenttheory/go-apple-dm/main/docs/diagrams/apns-certificate-workflows.html), and
-   [app notifications](https://htmlpreview.github.io/?https://raw.githubusercontent.com/deploymenttheory/go-apple-dm/main/docs/diagrams/flow-app-notification-delivery.html) for the newer capabilities.
+   [app notifications](https://htmlpreview.github.io/?https://raw.githubusercontent.com/deploymenttheory/go-apple-dm/main/docs/diagrams/flow-app-notification-delivery.html) for identity and push operations.
 4. Read the [server runtime](https://htmlpreview.github.io/?https://raw.githubusercontent.com/deploymenttheory/go-apple-dm/main/docs/diagrams/reference-server.html) and [bench](https://htmlpreview.github.io/?https://raw.githubusercontent.com/deploymenttheory/go-apple-dm/main/docs/diagrams/reference-server-bench.html)
    before working on integration scenarios or live-device evidence.
 
@@ -48,7 +48,7 @@ to highlight matching components and connections and see their counts and exampl
 | [apple-service-clients](https://htmlpreview.github.io/?https://raw.githubusercontent.com/deploymenttheory/go-apple-dm/main/docs/diagrams/apple-service-clients.html) · [HTML source](apple-service-clients.html) | Device-assignment, Apple Business Manager, software-catalogue, and Apps and Books clients, with their distinct authentication and completion behavior. |
 | [admin-plane](https://htmlpreview.github.io/?https://raw.githubusercontent.com/deploymenttheory/go-apple-dm/main/docs/diagrams/admin-plane.html) · [HTML source](admin-plane.html) | Static-root and stored-principal authorization, setup and event administration, and Unix/Windows protection for CLI credential files. |
 | [split-deployment](https://htmlpreview.github.io/?https://raw.githubusercontent.com/deploymenttheory/go-apple-dm/main/docs/diagrams/split-deployment.html) · [HTML source](split-deployment.html) | In-process declarative management or split roles using HTTPS, independent signing keys, request-bound responses, and shared atomic replay storage. |
-| [reference-server-bench](https://htmlpreview.github.io/?https://raw.githubusercontent.com/deploymenttheory/go-apple-dm/main/docs/diagrams/reference-server-bench.html) · [HTML source](reference-server-bench.html) | Shared runtime supervision, embedded and process scenarios, fixture boundaries, and dated device observations kept distinct from automated validation. |
+| [reference-server-bench](https://htmlpreview.github.io/?https://raw.githubusercontent.com/deploymenttheory/go-apple-dm/main/docs/diagrams/reference-server-bench.html) · [HTML source](reference-server-bench.html) | Shared runtime supervision, embedded and process scenarios, fixture boundaries, and explicit live prerequisites and validation limits. |
 
 ## Flows and lifecycles
 
@@ -59,7 +59,7 @@ to highlight matching components and connections and see their counts and exampl
 | [reference-server](https://htmlpreview.github.io/?https://raw.githubusercontent.com/deploymenttheory/go-apple-dm/main/docs/diagrams/reference-server.html) · [HTML source](reference-server.html) | Configuration, serving, supervised certificate and event workers, resumable maintenance admission/draining, and ordered shutdown. |
 | [enrollment-paths](https://htmlpreview.github.io/?https://raw.githubusercontent.com/deploymenttheory/go-apple-dm/main/docs/diagrams/enrollment-paths.html) · [HTML source](enrollment-paths.html) | Automated Device Enrollment, account-driven enrollment, and profile-based/OTA delivery converging on identity and check-in. |
 | [apns-certificate-workflows](https://htmlpreview.github.io/?https://raw.githubusercontent.com/deploymenttheory/go-apple-dm/main/docs/diagrams/apns-certificate-workflows.html) · [HTML source](apns-certificate-workflows.html) | Separate operator workflows for MDM push certificates and app notification credentials, including import and connection retirement. |
-| [test-harness](https://htmlpreview.github.io/?https://raw.githubusercontent.com/deploymenttheory/go-apple-dm/main/docs/diagrams/test-harness.html) · [HTML source](test-harness.html) | Independent unit, contract, fuzz, embedded, process, and live checks; dated coverage checkpoints and the limits of retained device evidence. |
+| [test-harness](https://htmlpreview.github.io/?https://raw.githubusercontent.com/deploymenttheory/go-apple-dm/main/docs/diagrams/test-harness.html) · [HTML source](test-harness.html) | Independent unit, contract, fuzz, embedded, process, and live checks; the coverage gate and separate requirements for device acceptance. |
 | [flow-dep-sync-assign](https://htmlpreview.github.io/?https://raw.githubusercontent.com/deploymenttheory/go-apple-dm/main/docs/diagrams/flow-dep-sync-assign.html) · [HTML source](flow-dep-sync-assign.html) | Device-assignment server-token setup followed by recurring inventory synchronization, assignment, and readback. |
 | [flow-ade-enrollment](https://htmlpreview.github.io/?https://raw.githubusercontent.com/deploymenttheory/go-apple-dm/main/docs/diagrams/flow-ade-enrollment.html) · [HTML source](flow-ade-enrollment.html) | Conditional admission and web authentication, profile delivery, identity issuance, Authenticate, and TokenUpdate. |
 | [flow-account-driven-enrollment](https://htmlpreview.github.io/?https://raw.githubusercontent.com/deploymenttheory/go-apple-dm/main/docs/diagrams/flow-account-driven-enrollment.html) · [HTML source](flow-account-driven-enrollment.html) | Discovery, alternative authentication methods, profile delivery, certificate association, and completed check-in. |
@@ -67,7 +67,7 @@ to highlight matching components and connections and see their counts and exampl
 | [flow-ddm-sync](https://htmlpreview.github.io/?https://raw.githubusercontent.com/deploymenttheory/go-apple-dm/main/docs/diagrams/flow-ddm-sync.html) · [HTML source](flow-ddm-sync.html) | Change notification and device polling followed by declarative operations through the MDM service and its adapters. |
 | [flow-acme-attestation](https://htmlpreview.github.io/?https://raw.githubusercontent.com/deploymenttheory/go-apple-dm/main/docs/diagrams/flow-acme-attestation.html) · [HTML source](flow-acme-attestation.html) | Replay nonce acquisition, device attestation, identifier binding, CSR key matching, and explicit certificate retrieval. |
 | [flow-scep-issuance](https://htmlpreview.github.io/?https://raw.githubusercontent.com/deploymenttheory/go-apple-dm/main/docs/diagrams/flow-scep-issuance.html) · [HTML source](flow-scep-issuance.html) | Initial SCEP issuance with mutually exclusive success and failure outcomes, plus renewal and enrollment-association notes. |
-| [flow-enrollment-profile-replacement](https://htmlpreview.github.io/?https://raw.githubusercontent.com/deploymenttheory/go-apple-dm/main/docs/diagrams/flow-enrollment-profile-replacement.html) · [HTML source](flow-enrollment-profile-replacement.html) | Prepare and deliver a controlled replacement, stage candidate identity, commit on required evidence, and distinguish automated transitions from dated device observations. |
+| [flow-enrollment-profile-replacement](https://htmlpreview.github.io/?https://raw.githubusercontent.com/deploymenttheory/go-apple-dm/main/docs/diagrams/flow-enrollment-profile-replacement.html) · [HTML source](flow-enrollment-profile-replacement.html) | Prepare and deliver a controlled replacement, stage candidate identity, commit on required evidence, and verify device behavior separately from automated transitions. |
 | [flow-app-notification-delivery](https://htmlpreview.github.io/?https://raw.githubusercontent.com/deploymenttheory/go-apple-dm/main/docs/diagrams/flow-app-notification-delivery.html) · [HTML source](flow-app-notification-delivery.html) | Explicit app topic, environment, and token inputs; APNs acceptance versus app receipt; optional bench correlation. |
 | [lifecycle-command](https://htmlpreview.github.io/?https://raw.githubusercontent.com/deploymenttheory/go-apple-dm/main/docs/diagrams/lifecycle-command.html) · [HTML source](lifecycle-command.html) | Pending, sent, deferred, failed, acknowledged, and cleared commands, including redelivery and NotNow polling rules. |
 | [lifecycle-enrollment](https://htmlpreview.github.io/?https://raw.githubusercontent.com/deploymenttheory/go-apple-dm/main/docs/diagrams/lifecycle-enrollment.html) · [HTML source](lifecycle-enrollment.html) | Device-channel activation, ordinary reset, checkout, and controlled replacement without disrupting the working enrollment. |
@@ -90,8 +90,8 @@ node scripts/diagrams/archify.mjs visual-check docs/diagrams/<name>.html --json
 
 The type is `architecture`, `workflow`, `sequence`, `dataflow`, or `lifecycle`. Add
 `--repo-root .` to architecture validation and delivery: those sources pin component paths to
-a Git revision. Other diagram types use the code evidence in the
-[review](https://github.com/deploymenttheory/go-apple-dm/blob/c4cb96f6b5a7d6ad7cbb18b66e7e3368e1bc1d9c/docs/reviews/diagram-review-2026-09-10.md).
+a Git revision. Other diagram types cite implementation paths in their cards.
+Review behavior against those sources and refresh the pins when implementations change.
 
 Require all nine showcase artifact checks, with zero errors and warnings. Inspect the exact
 delivered HTML at 1440×900, 1600×1000, 1920×1080, and 2048×1320, including light and dark
@@ -101,12 +101,9 @@ Upstream `visual-check` still treats vertical scrolling as a containment failure
 raw result and assess it against this reading policy rather than claiming an upstream pass.
 Source validation, browser measurements, and visual inspection are separate evidence.
 
-Diagram descriptions name current capabilities. Code links use repository revisions,
-and validation observations retain their dates and scope. Diagrams do not use pull-request
-numbers or merge status as architecture.
-The [original implementation record](https://github.com/deploymenttheory/go-apple-dm/blob/c4cb96f6b5a7d6ad7cbb18b66e7e3368e1bc1d9c/docs/reviews/diagram-implementation-2026-09-10.md)
-and [earlier scope correction](https://github.com/deploymenttheory/go-apple-dm/blob/80599ddc35778bcc88fa2ac77bb1dc68a51cf089/docs/reviews/scope-docs-ci-2026-09-14.md) are historical evidence,
-not regeneration inputs.
+Diagram descriptions name current capabilities and operational limits. Keep
+validation results, tested revisions and device scope in the PR. A diagram or
+automated check does not establish universal device compatibility.
 
 The two `system-architecture.*.png` files are the images embedded by the root
 [README](../../README.md). After changing the overview, use the viewer's full-diagram PNG

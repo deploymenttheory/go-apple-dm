@@ -25,8 +25,9 @@ identity and the requested attestation; challenge and finalization recheck it.
 `Binding.RequireAttestation` also binds the signed client identifier and prevents
 an unattested policy from overriding that request. Initial enrollment retains
 its attestation requirement unless the deployment explicitly authorizes software
-identities. See [operations](../../operations/enrollment-security.md) and the
-[current Apple source comparison](../../wip/apple-enterprise-hardening-2026-09-11.md).
+identities. See [operations](../../operations/enrollment-security.md), Apple's
+[ACME payload](https://developer.apple.com/documentation/devicemanagement/acmecertificate)
+and [declarative credential](https://developer.apple.com/documentation/devicemanagement/assetcredentialacme).
 Persistent CA, protocol state and identifier keys are deployment requirements.
 Simulator tests do not establish physical-device compatibility.
 

@@ -198,7 +198,8 @@
       "items": [
         "SCEP — https://developer.apple.com/documentation/devicemanagement/scep",
         "RFC 8894 — SCEP — https://www.rfc-editor.org/rfc/rfc8894",
-        "Deploying device management enrollment profiles — https://developer.apple.com/documentation/devicemanagement/deploying-device-management-enrollment-profiles"
+        "Deploying device management enrollment profiles — https://developer.apple.com/documentation/devicemanagement/deploying-device-management-enrollment-profiles",
+        "Implementation — https://github.com/deploymenttheory/go-apple-dm/blob/7500eb25e50a2913338339d5fced18dc7f41fdc3/devicemanagement/pki/scep"
       ]
     }
   ]

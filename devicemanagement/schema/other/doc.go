@@ -8,11 +8,12 @@
 //
 // Apple publishes the wire format of the other device management data
 // formats as YAML in https://github.com/apple/device-management, pinned here
-// as a git submodule. Generating this package from that pinned commit
-// derives the wire types, validation, and support metadata from Apple's
-// schema (decision record 0003). Every type carries plist and json struct
-// tags with Apple's wire keys, a Validate method driven by the schema's
-// constraints, and support metadata queryable through Support(path) or the
+// alongside a historical release input for older-device contracts.
+// Generating this package from those inputs derives the wire types,
+// validation, and support metadata from Apple's schema (decision record
+// 0003). Every type carries plist and json struct tags with Apple's wire
+// keys, a Validate method driven by the schema's constraints, and support
+// metadata queryable through Support(path) or the
 // devicemanagement/schema/support package.
 //
 // Edit the generator to change this package. schemagen verify fails when

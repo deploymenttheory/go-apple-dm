@@ -188,7 +188,7 @@
       "from": "yaml",
       "to": "generatedfrom",
       "variant": "default",
-      "label": "commit \u00b7 digest",
+      "label": "commit · digest",
       "classification": "provenance",
       "id": "flow-6",
       "purpose": "artifact"
@@ -215,8 +215,9 @@
       "dot": "transport",
       "title": "Public documentation",
       "items": [
-        "Apple device-management schema repository \u2014 https://github.com/apple/device-management",
-        "Go Modules Reference \u2014 https://go.dev/ref/mod"
+        "Apple device-management schema repository — https://github.com/apple/device-management",
+        "Go Modules Reference — https://go.dev/ref/mod",
+        "Implementation — https://github.com/deploymenttheory/go-apple-dm/blob/7500eb25e50a2913338339d5fced18dc7f41fdc3/internal/schemagen/generate.go"
       ]
     }
   ]

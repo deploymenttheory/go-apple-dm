@@ -257,7 +257,8 @@
         "MachineInfo — https://developer.apple.com/documentation/devicemanagement/machineinfo",
         "Authenticating through web views — https://developer.apple.com/documentation/devicemanagement/authenticating-through-web-views",
         "ErrorCodeSoftwareUpdateRequired — https://developer.apple.com/documentation/devicemanagement/errorcodesoftwareupdaterequired",
-        "Deploying device management enrollment profiles — https://developer.apple.com/documentation/devicemanagement/deploying-device-management-enrollment-profiles"
+        "Deploying device management enrollment profiles — https://developer.apple.com/documentation/devicemanagement/deploying-device-management-enrollment-profiles",
+        "Implementation — https://github.com/deploymenttheory/go-apple-dm/blob/7500eb25e50a2913338339d5fced18dc7f41fdc3/devicemanagement/mdmprotocol/enroll/ade/handler.go"
       ]
     }
   ]

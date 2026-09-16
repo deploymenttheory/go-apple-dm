@@ -29,7 +29,7 @@
 //   - Apple: https://developer.apple.com/documentation/devicemanagement/mdm
 //   - Apple: https://developer.apple.com/documentation/devicemanagement/scep
 //   - Apple: https://developer.apple.com/documentation/devicemanagement/deploying-device-management-enrollment-profiles
-//   - Apple: https://developer.apple.com/library/archive/documentation/NetworkingInternet/Conceptual/iPhoneOTAConfiguration/
+//   - Apple: https://developer.apple.com/library/archive/documentation/NetworkingInternet/Conceptual/iPhoneOTAConfiguration/Introduction/Introduction.html
 //   - Schema: third_party/device-management/mdm/profiles/TopLevel.yaml, CommonPayloadKeys.yaml
 //   - Schema: third_party/device-management/mdm/profiles/com.apple.mdm.yaml, com.apple.security.scep.yaml, com.apple.security.root.yaml
 package enroll

@@ -12,8 +12,7 @@ There is no fleet inventory UI or administrative username/password sign-in.
 
 The instructions describe the source in this checkout. Earlier releases may
 have different APIs and defaults. Use the documentation shipped with the
-revision you deploy. Apple-specific requirements were checked on 2026-09-11;
-linked Apple pages remain the authority for platform availability and account
+revision you deploy. Linked Apple pages remain the authority for platform availability and account
 requirements.
 
 ## Contents

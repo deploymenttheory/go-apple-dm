@@ -10,6 +10,13 @@ Operators need to inspect generated schema support without a running server or a
 
 Tri-state metadata preserves unspecified values. Missing support data or a missing target OS is rendered as unknown. Output reports the registry title/schema path and the support result reason without inventing per-key descriptions.
 
+The offline `profile lint` command also uses this support layer. Raw input inspection
+retains diagnostics for unknown payloads and keys that typed decoding would omit.
+Malformed/schema-invalid/unsupported content fails validation; unknown or encrypted
+content remains explicitly unvalidated. A signature's mathematical validity and
+trust in its signer are separate results. Neither command contacts a device or
+establishes successful installation.
+
 ## Rationale
 
 Using compiled metadata gives the CLI and command validation the same source of support information. Returning ambiguity and unknown values explicitly avoids selecting an unsupported answer.

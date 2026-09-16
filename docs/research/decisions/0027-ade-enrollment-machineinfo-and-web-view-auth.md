@@ -19,13 +19,26 @@ trusted HTTPS publishes an empty anchor array and omits the trust-profile URL.
 This implements Apple's service-configuration contract alongside the separate
 [account-driven discovery flow](0028-account-driven-enrollment-and-service-discovery.md).
 
+`enroll.MAIDToken` signs the GetToken reply with the ADE server's registered RSA
+certificate/key and server UUID. It uses RS256, explicit issuance time, a fresh
+UUID `jti`, and `service_type=com.apple.maid`; the caller authenticates the request
+and advertises `com.apple.mdm.token`. Registration and Apple acceptance cannot be
+established by local signature verification.
+
+`ade.PasswordHash` returns generated password-hash plist data for
+AccountConfiguration or SetAutoAdminPassword. It uses PBKDF2-HMAC-SHA512, 32 random
+salt bytes and a positive caller-selected iteration count. The 128-byte derived
+value follows Apple's example, not a normative length requirement. Password
+changes require the GUID of the administrator created during ADE. Callers choose
+iteration policy and protect credentials; the helper does not create accounts.
+
 ## Rationale
 
 Separating cryptographic verification, device enrichment, admission and profile composition lets consumers select their own ownership rules. Bound state connects the browser result with the enrollment request.
 
 ## Constraints
 
-Signed `MachineInfo` is not Managed Device Attestation or proof of organizational ownership. Audit mode permits unverified input. A GDMF lookup failure is logged and enrollment proceeds. The reference composition stores MachineInfo and browser handoff state in memory; replicas need affinity or injected shared stores. SAML is not implemented.
+Signed `MachineInfo` is not Managed Device Attestation or proof of organizational ownership. Audit mode permits unverified input. A GDMF lookup failure is logged and enrollment proceeds. The reference composition retains MachineInfo in memory but stores browser handoff state in its shared protocol store. Replicas need the same state backend, issuer configuration and admission policy. SAML is not implemented.
 
 ## Verification
 
@@ -39,6 +52,10 @@ Apple School Manager.
 
 ## References
 
+- [GetToken contract](https://developer.apple.com/documentation/devicemanagement/get-token)
+- [AccountConfiguration example](https://developer.apple.com/documentation/devicemanagement/account-configuration-command)
+- [Password hash fields](https://developer.apple.com/documentation/devicemanagement/passwordhash/salted-sha512-pbkdf2-data.dictionary)
+- [SetAutoAdminPassword fields](https://developer.apple.com/documentation/devicemanagement/setautoadminpasswordcommand/command-data.dictionary)
 - [mdmprotocol/enroll/ade](../../../devicemanagement/mdmprotocol/enroll/ade)
 - [mdmprotocol/enroll/webauth](../../../devicemanagement/mdmprotocol/enroll/webauth)
 - [appleplatformservices/gdmf](../../../devicemanagement/appleplatformservices/gdmf)

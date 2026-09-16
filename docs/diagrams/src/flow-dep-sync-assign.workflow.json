@@ -222,7 +222,8 @@
       "dot": "transport",
       "title": "Public documentation",
       "items": [
-        "Device assignment — https://developer.apple.com/documentation/devicemanagement/device-assignment"
+        "Device assignment — https://developer.apple.com/documentation/devicemanagement/device-assignment",
+        "Implementation — https://github.com/deploymenttheory/go-apple-dm/blob/7500eb25e50a2913338339d5fced18dc7f41fdc3/devicemanagement/appleplatformservices/dep/assigner.go"
       ]
     }
   ]

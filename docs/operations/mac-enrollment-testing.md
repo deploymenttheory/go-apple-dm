@@ -1,6 +1,6 @@
 # Manual Mac enrollment with ACME and SCEP
 
-The first device milestone uses an Apple silicon Mac and the maintained reference
+This procedure tests manual enrollment on an Apple silicon Mac using the reference
 server. Run ACME and SCEP separately, removing the enrollment between runs. Manual
 installation requires the Mac user's action in System Settings. The replacement
 command later requests an MDM profile installation; run it only after the
@@ -117,7 +117,7 @@ profile for recovery using the same controlled handoff.
 Repeat replacement with `BENCH_IDENTITY=scep`. Record separate result directories
 using `dmctl bench run -report-dir ...` so the two identity runs remain distinguishable.
 
-ADE Setup Assistant activation is a subsequent test involving an assigned device
+ADE Setup Assistant activation requires a separate test involving an assigned device
 and Apple Business Manager/School Manager. Manual enrollment does not prove that
-path. VPP user invitations and license assignment concern later app distribution;
-they are not prerequisites for this enrollment and inventory milestone.
+path. Apps and Books user invitations and licensing concern app distribution;
+they are not prerequisites for manual enrollment and inventory.

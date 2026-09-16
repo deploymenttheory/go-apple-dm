@@ -15,5 +15,5 @@
 //   - Decision record 0013: https://github.com/deploymenttheory/go-apple-dm/blob/main/docs/research/decisions/0013-secrets-at-rest.md
 //   - Decision record 0044: https://github.com/deploymenttheory/go-apple-dm/blob/main/docs/research/decisions/0044-repository-layout.md
 //   - Threat model: https://github.com/deploymenttheory/go-apple-dm/blob/main/docs/security/threat-model.md (secrets at rest)
-//   - Apple: https://developer.apple.com/documentation/applebusinessmanagerapi
+//   - Apple: https://developer.apple.com/documentation/applebusinessapi
 package axmcreds

@@ -174,7 +174,8 @@ func TestNoUnitCycles(t *testing.T) {
 	}
 }
 
-// TestPushcertImportsOnlyTheStandardLibrary keeps the invariant that stops
+// TestPushcertImportsOnlyTheStandardLibrary checks repository imports, allowing
+// external dependencies such as the plist encoder. This boundary stops
 // server/storage -> pki/pushcert -> appleplatformservices/push ->
 // server/storage from becoming a real import cycle.
 func TestPushcertImportsOnlyTheStandardLibrary(t *testing.T) {

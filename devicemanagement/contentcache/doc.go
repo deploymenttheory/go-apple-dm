@@ -5,7 +5,7 @@
 //
 // This package follows openapi/content-cache/metrics_report.json from
 // apple/device-management commit b0180185a5e4077070710033341b71d0cbe1a18a.
-// It is an opt-in seed contract, independent of the stable MDM schema pin.
+// It is an opt-in contract checked against the adopted OS 27 schema pin.
 // The upstream contract and license are retained in testdata.
 //
 // # Deployment

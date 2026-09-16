@@ -35,7 +35,7 @@
     ],
     "repository": {
       "url": "https://github.com/deploymenttheory/go-apple-dm",
-      "revision": "bb9e5bb3af89683a960a326e309be409bb0dc40f"
+      "revision": "7500eb25e50a2913338339d5fced18dc7f41fdc3"
     },
     "colour_profile": "purpose-v1",
     "legend": {
@@ -382,17 +382,17 @@
       "dot": "policy",
       "title": "Software updates",
       "items": [
-        "The enrollment handler applies its configured update policy. Software lookup supplies available versions; it does not itself send the device\u2019s HTTP rejection."
+        "The enrollment handler applies its configured update policy. Software lookup supplies available versions; it does not itself send the device’s HTTP rejection."
       ]
     },
     {
       "dot": "transport",
       "title": "Public documentation",
       "items": [
-        "Device assignment \u2014 https://developer.apple.com/documentation/devicemanagement/device-assignment",
-        "Implementing OAuth for the Apple School Manager and Apple Business APIs \u2014 https://developer.apple.com/documentation/apple-school-and-business-manager-api/implementing-oauth-for-the-apple-school-manager-and-apple-business-api",
-        "ErrorCodeSoftwareUpdateRequired \u2014 https://developer.apple.com/documentation/devicemanagement/errorcodesoftwareupdaterequired",
-        "Apps and Books \u2014 https://developer.apple.com/documentation/devicemanagement/getting-started-with-the-management-api"
+        "Device assignment — https://developer.apple.com/documentation/devicemanagement/device-assignment",
+        "Implementing OAuth for the Apple School Manager and Apple Business APIs — https://developer.apple.com/documentation/apple-school-and-business-manager-api/implementing-oauth-for-the-apple-school-manager-and-apple-business-api",
+        "ErrorCodeSoftwareUpdateRequired — https://developer.apple.com/documentation/devicemanagement/errorcodesoftwareupdaterequired",
+        "Apps and Books — https://developer.apple.com/documentation/devicemanagement/getting-started-with-the-management-api"
       ]
     }
   ]

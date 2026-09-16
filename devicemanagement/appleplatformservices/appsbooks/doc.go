@@ -20,11 +20,19 @@
 //
 // # References
 //
+//   - Design decision: docs/research/decisions/0053-apps-and-books-licensing.md (relative to repository root)
+//
 //   - Apple management API: https://developer.apple.com/documentation/devicemanagement/getting-started-with-the-management-api
+//
 //   - Asset assignment and book restrictions: https://developer.apple.com/documentation/devicemanagement/managing-assets
+//
 //   - User registration and association: https://developer.apple.com/documentation/devicemanagement/managing-users
+//
 //   - Pagination and incremental queries: https://developer.apple.com/documentation/devicemanagement/using-paginated-endpoints
+//
 //   - Dynamic service limits: https://developer.apple.com/documentation/devicemanagement/service-config
+//
 //   - Notification authentication and delivery: https://developer.apple.com/documentation/devicemanagement/subscribing-to-notifications
+//
 //   - Repository guide: docs/operations/apps-and-books.md (relative to repository root)
 package appsbooks

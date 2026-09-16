@@ -10,8 +10,9 @@
 // making the engine depend on dispatch.
 //
 // ServiceHook uses enrollment storage to find dependent user channels and calls
-// Engine.ClearEnrollment on Authenticate and CheckOut. Cleanup across MDM and
-// DDM stores is not a distributed transaction.
+// Engine.ClearEnrollment on initial or changed-identity Authenticate and on
+// CheckOut. Same-certificate retries and controlled replacement preserve DDM
+// state. Cleanup across MDM and DDM stores is not a distributed transaction.
 //
 // # References
 //

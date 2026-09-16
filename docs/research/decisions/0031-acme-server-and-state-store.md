@@ -18,7 +18,9 @@ same-CSR finalize retries can complete a persisted receipt after a restart;
 admission and attested key checks apply again. Delayed challenge results cannot
 overwrite completed issuance. This implements the project's one-order issuance
 policy, which Apple permits through `ClientIdentifier`; Apple does not mandate
-this particular locking or receipt design. See the [evidence record](../../wip/apple-conformant-security-hardening-2026-09-11.md).
+this particular locking or receipt design. The [issuance regressions](../../../devicemanagement/pki/acme/issuance_security_test.go)
+and [shared store contract](../../../devicemanagement/storage/acme/acmetest/order_security.go)
+check concurrency and recovery.
 
 ## Rationale
 

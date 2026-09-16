@@ -36,15 +36,13 @@ Release archive previews exclude `server/**/*.md` and manifest-only changes.
 the packaging/verification procedure. Root library changes alone do not change the
 standalone server archive's declared dependency; a change to `server/go.mod` does.
 
-The generated-output job invokes `make verify` once. Running `make generate`,
-`git diff`, then `make verify` regenerated the same tree twice. Verification now
-also rejects unexpected `.gen.go` and `conformance_gen_test.go` files under the
-configured generated-output root, so stale output is covered without rewriting it.
+The generated-output job invokes `make verify` once. It compares expected output
+without rewriting the tree and rejects unexpected `.gen.go` and
+`conformance_gen_test.go` files under the configured generated-output root.
 
-The embedded `server/acceptance` E2E suite configures SQLite itself. Running that
-same suite under `E2E_STORE=postgres` did not add PostgreSQL coverage; it is now
-selected only for SQLite. `server/e2e` still runs against both stores, and process
-acceptance still covers binary startup, supervision and split topology.
+The embedded `server/acceptance` suite configures SQLite itself and runs only in
+the SQLite E2E job. `server/e2e` runs against both stores; process acceptance
+covers binary startup, supervision and split topology with local fixtures.
 
 Candidate installation, published installation and archive smoke tests check
 different inputs. Native Windows unit tests run in application CI; release
@@ -55,34 +53,26 @@ and schedule differ. Consolidating either would require preserving those contrac
 ## Dependency and failure handling
 
 Use Go's normal dependency resolution and the existing `actions/setup-go` cache.
-There is no repository-specific dependency downloader or global retry layer. The
-14 September Windows candidate-install and PostgreSQL E2E setup failures were
-Go proxy HTTP/2 `INTERNAL_ERROR` responses, not test assertions. A failed-job rerun
-can resolve a transient proxy outage. It must not disable checksum verification,
-change the required module version or hide a reproducible build/test failure.
+There is no repository-specific dependency downloader or global retry layer.
+Distinguish proxy/network setup failures from assertions. A failed-job rerun can
+resolve a transient Go proxy outage; preserve checksum verification and required
+module versions, and investigate reproducible build or test failures.
 
-The supervisor failure was different: `/stop` could close its connection before
-its HTTP response completed. Shutdown now drains the control server before closing
-the runtimes and joins its serving goroutine. The restart test probes readiness,
-retains a bounded startup deadline and cancels/joins on every failure path before
-its temporary workspace is removed. Increasing a timeout alone would not fix the
-held Windows lock.
+Supervisor shutdown must drain the control HTTP response before closing runtimes
+and join its serving goroutine. Restart tests probe readiness with a bounded
+startup deadline and cancel/join every failure path before removing workspaces.
+A held Windows lock requires lifecycle investigation, not only a longer timeout.
 
-A subsequent Linux unit run exposed a separate embedded-bench port race in
-`TestScenariosRejectInterruptedExchanges/E2E-029`: port discovery closed its socket
-before fixture setup and runtime binding. Embedded MDM/DDM runtimes now receive the
-original bound listener through `runtime.ServeListener`; startup failures release
-unclaimed listeners. Process adapters still bind their own sockets and report bind
-failures normally. No port-change or scenario retry hides a failed exchange.
+Embedded runtimes receive the original bound listener through `ServeListener`;
+startup failure releases unclaimed listeners. Process adapters bind their own
+sockets and report failures. Do not hide failed exchanges with port changes or
+scenario retries. Negative protocol tests require the expected rejection, not an
+unrelated transport error.
 
-Two further unit failures came from test inputs and timing. The OCSP GET test now
-URL-escapes its base64 request as required by
+Use escaped base64 paths for OCSP GET as specified by
 [RFC 6960 Appendix A.1](https://www.rfc-editor.org/rfc/rfc6960#appendix-A.1).
-A deterministic serial produces consecutive base64 slashes and checks that the
-escaped request returns the correct signed OCSP response without a redirect.
-The AXM activity test uses the existing fake clock and `SetNow` to check visibility
-immediately before and at the consistency-lag boundary. Runner delays can no
-longer expire that lag before the assertion.
+Use fake clocks for consistency-lag and backoff boundaries so scheduling delays
+cannot substitute for the intended state transition.
 
 For workflow edits run `actionlint`, `make verify` and the affected Go tests. For
 supervisor changes include repeated race-enabled restart tests and native Windows
@@ -94,5 +84,4 @@ Sources: [Go Test](../../.github/workflows/go-test.yml),
 [Makefile](../../Makefile), [release previews](../../.github/workflows/release-check.yml),
 [release workflow](../../.github/workflows/release.yml),
 [published-module verification](../../.github/workflows/go-server-module-installation.yml),
-[lint](../../.github/workflows/go-lint.yml), [security](../../.github/workflows/security.yml)
-and [maintenance validation evidence](https://github.com/deploymenttheory/go-apple-dm/blob/80599ddc35778bcc88fa2ac77bb1dc68a51cf089/docs/reviews/scope-docs-ci-2026-09-14.md#repairs-and-local-evidence).
+[lint](../../.github/workflows/go-lint.yml) and [security](../../.github/workflows/security.yml).

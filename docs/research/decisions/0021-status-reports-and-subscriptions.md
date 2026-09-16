@@ -11,9 +11,17 @@ The engine bounds and strictly decodes status JSON. Registry paths identify know
 A full report atomically removes absent status. Optional synthesized subscriptions request reported capabilities, filtered by configured exclusions, or a baseline when capabilities are unknown. A synthesized unconditional activation references the generated subscription so devices process it. An explicitly assigned subscription takes precedence and owns its activation; an explicitly assigned companion activation also takes precedence. Both generated declarations participate in snapshots and token comparison. Successful status submission returns 200 with an empty body.
 
 The engine exposes `StatusValues` with prefix filtering/pagination, `StatusErrors`
-and reverse-chronological `StatusReports`. Admin routes currently expose only part
-of this query surface. Values are observations, not a normalized fleet inventory
-or compliance result. `Manifest`, `Tokens` and `DeclarationItems` refresh persisted
+and reverse-chronological `StatusReports`. The admin API and
+`dmctl enrollments status values|errors|reports` expose all three under
+`ReadEnrollmentStatus`, scoped to the full enrollment channel and parent identity.
+With no `limit` query parameter, the admin values route returns up to 1,000 items
+per page; errors and reports default to 100. Built-in stores cap each page at
+1,000 through `paging.Page.Size`; this is not a total-record limit. Follow
+`NextCursor`, or use CLI `-all`, to retrieve subsequent pages. Direct library
+queries with a nonpositive limit use the shared 100-item default. Cursors are
+opaque. Admin projections redact credential-bearing paths
+and free-form diagnostic text without modifying stored evidence. Values are
+observations, not a normalized fleet inventory or compliance result. `Manifest`, `Tokens` and `DeclarationItems` refresh persisted
 snapshots; callers must not assume these delivery methods are read-only previews.
 
 ## Rationale
@@ -22,14 +30,18 @@ Preserving typed item boundaries and canonical values avoids data loss from flat
 
 ## Constraints
 
-The default report limit is 1 MiB. Capability parsing is defensive and yields an empty set for missing or malformed subkeys. An absent item in a partial report is not evidence of removal. A present `management.declarations` item replaces its complete collection even when `FullReport` is false or omitted; declaration entries absent from that collection are removed. This keeps the parsed declaration rows consistent with the stored item. The September 13, 2026 Mac test demonstrated removal through such a partial report.
+The default report limit is 1 MiB. Capability parsing is defensive and yields an empty set for missing or malformed subkeys. An absent item in a partial report is not evidence of removal. A present `management.declarations` item replaces its complete collection even when `FullReport` is false or omitted; declaration entries absent from that collection are removed. This keeps the parsed declaration rows consistent with the stored item.
 
 ## Verification
 
-Status tests cover limits, strict JSON errors, duplicate identifiers, full/partial reports, errors, unknown paths and event publication. Store suites cover arrays/nulls and retention; subscription tests cover convergence, exclusions and explicit overrides.
+Status tests cover limits, strict JSON errors, duplicate identifiers, full/partial reports, errors, unknown paths and event publication. Store suites cover arrays/nulls and retention; subscription tests cover convergence, exclusions and explicit overrides. `TestStatusPages` checks the 1,000-item default page and complete traversal of 1,005 matching values on memory and SQLite stores.
 
 ## References
 
+- [Inspection guide](../../operations/status-and-profile-inspection.md)
+- [Admin queries and redaction](../../../server/internal/app/adminstatus.go)
+- [Shared page sizing](../../../devicemanagement/paging/paging.go)
+- [Admin pagination regression](../../../server/internal/app/adminstatus_test.go)
 - [mdmprotocol/ddm/status_query.go](../../../devicemanagement/mdmprotocol/ddm/status_query.go)
 - [mdmprotocol/ddm/status.go](../../../devicemanagement/mdmprotocol/ddm/status.go)
 - [mdmprotocol/ddm/subscriptions.go](../../../devicemanagement/mdmprotocol/ddm/subscriptions.go)

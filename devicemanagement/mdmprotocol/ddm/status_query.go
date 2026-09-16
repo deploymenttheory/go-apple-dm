@@ -42,7 +42,7 @@ const StatusItemClientCapabilities = status.StatusItemTypeManagementClientCapabi
 
 // ClientCapabilities decodes the last reported management.client-capabilities
 // item, or ErrNotFound when the device never reported it. The item is read
-// defensively (decision record 0021, claim 7): a member that does not fit
+// defensively (decision record 0021): a member that does not fit
 // Apple's schema is logged and left empty rather than failing the caller,
 // because devices have sent partial or oddly shaped capabilities and the
 // check-in path must keep serving them.

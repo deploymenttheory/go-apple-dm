@@ -5,9 +5,10 @@
 //
 // server/cmd/dmctl delegates to Run so behavior is testable without a
 // subprocess. Configuration stores credential references by default; explicit
-// inline storage requires an option and warning. JSON output preserves server
-// bytes, while human and NDJSON modes provide table and streaming output. HTTP
-// handling and offline schema explanation live in subpackages. Exit codes
+// inline storage requires an option and warning. Single-page JSON preserves
+// server bytes; paginated -all JSON and NDJSON stream one item per line. Human
+// output uses tables. HTTP handling and offline schema explanation live in
+// subpackages. Exit codes
 // distinguish usage, authorization, request failure and partial success.
 //
 // # References

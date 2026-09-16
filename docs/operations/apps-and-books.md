@@ -77,7 +77,7 @@ sensitive. Pass context deadlines to bound waits and network calls.
 
 ## Sources
 
-Wire models were checked against Apple DocC field tables and examples on 2026-09-15:
+The client models the field tables and examples in these Apple contracts:
 [authentication and ownership](https://developer.apple.com/documentation/devicemanagement/getting-started-with-the-management-api),
 [assets](https://developer.apple.com/documentation/devicemanagement/managing-assets),
 [users](https://developer.apple.com/documentation/devicemanagement/managing-users),

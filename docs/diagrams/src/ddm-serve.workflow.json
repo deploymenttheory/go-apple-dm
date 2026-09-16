@@ -227,7 +227,8 @@
       "items": [
         "Declarative Management check-in — https://developer.apple.com/documentation/devicemanagement/declarative-management",
         "Declarations — https://developer.apple.com/documentation/devicemanagement/devicemanagement-declarations",
-        "RFC 8785 — JSON Canonicalization Scheme — https://www.rfc-editor.org/rfc/rfc8785"
+        "RFC 8785 — JSON Canonicalization Scheme — https://www.rfc-editor.org/rfc/rfc8785",
+        "Implementation — https://github.com/deploymenttheory/go-apple-dm/blob/7500eb25e50a2913338339d5fced18dc7f41fdc3/devicemanagement/mdmprotocol/ddm/serve.go"
       ]
     }
   ]

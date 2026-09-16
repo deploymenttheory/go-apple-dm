@@ -15,7 +15,14 @@ loopback IPs. `-insecure` is rejected with guidance to use `-ca-file`. Server UR
 cannot contain user information, query strings or fragments, and redirects are
 refused before credentials can be forwarded.
 
-JSON output preserves the response body; NDJSON streams items. `-all` follows cursors, while single-page output sends the next cursor to stderr. Exit codes distinguish success (0), request failure (1), usage (2), partial success (3), and authentication/authorization failure (4). `commands send -dry-run` builds a validated plist locally.
+Single-page JSON output preserves the response body. Paginated `-all -output json` and NDJSON output follow cursors and stream one item per line. `-all` follows cursors, while single-page output sends the next cursor to stderr. Exit codes distinguish success (0), request failure (1), usage (2), partial success (3), and authentication/authorization failure (4). `commands send -dry-run` builds a validated plist locally.
+
+`enrollments status values|errors|reports` uses the ordinary authenticated client
+and output modes. `profile lint` is offline, bounded to 4 MiB and shares generated
+validation/support metadata with `explain`. It reports unknown or encrypted content
+as unvalidated and checks signature integrity separately from certificate trust.
+Lint exit 3 means incomplete validation; lint does not establish installation.
+See the [inspection guide](../../operations/status-and-profile-inspection.md).
 
 ## Rationale
 

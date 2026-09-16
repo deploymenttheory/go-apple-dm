@@ -26,7 +26,10 @@ The corresponding authenticated routes are:
 
 All use `ReadEnrollmentStatus` authorization, the existing enrollment identity
 rules and `Items`/`NextCursor` response shape. The shared paging contract clamps
-positive limits to 1,000. Treat cursors as opaque and preserve filters and parent
+positive limits to 1,000 per page, without imposing a total-record limit. Follow
+`NextCursor` or use `-all` to read subsequent pages. The values route's 1,000-item
+default applies when `limit` is absent; an explicit nonpositive API limit uses
+the shared 100-item default. Treat cursors as opaque and preserve filters and parent
 identity when resuming. Reports only exist within configured retention.
 
 `Value`, `Reasons` and `Raw` remain byte fields, represented as base64 in JSON.

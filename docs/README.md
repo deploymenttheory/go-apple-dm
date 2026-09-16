@@ -11,11 +11,10 @@
 - [Protocol helpers](operations/protocol-helpers.md): JWTs, password hashes, automatic encryption certificates, recovery-key decryption, bypass codes and installation manifests.
 - [Apps and Books](operations/apps-and-books.md): location setup, device/user licensing, user association, notifications and completion checks.
 - [CI responsibilities](testing/ci.md): triggers, distinct checks, dependency retries and release gates.
-- [Feature implementation plan](research/extension-proposals-2026-09-14.md): scoped tasks, code locations, dependencies and acceptance checks, including documentation and CI completion.
-- [Feature validation results](testing/selected-features-2026-09-15.md): test-Mac evidence, automated checks and remaining live-service limits.
+- [Certificate lifecycle](operations/certificate-lifecycle.md): provisioning, renewal, issuer rollover and retained encryption identities.
+- [Backup and recovery](operations/recovery.md): maintenance fences, authenticated backups, verification and isolated restore.
 - [Threat model](security/threat-model.md): assets, trust boundaries, controls and residual risks.
 - [Reference-server bench](testing/bench.md): shared scenarios, acceptance, contracts and live execution.
 - [Bench API and configuration](operations/reference-bench.md): runtime, enrollment and app push additions.
 - [Test scenarios](testing/e2e-scenarios.md): executable simulator scenarios and their limits.
-- [Reference catalogue](research/reference_projects.md): Apple documentation and external implementation references.
-- [v0.1.0 documentation review](https://github.com/deploymenttheory/go-apple-dm/blob/c4cb96f6b5a7d6ad7cbb18b66e7e3368e1bc1d9c/docs/reviews/v0.1.0-documentation.md): review coverage, validation and diagram artifact receipts.
+- [Mac enrollment testing](operations/mac-enrollment-testing.md): physical-device prerequisites, installation and acceptance checks.

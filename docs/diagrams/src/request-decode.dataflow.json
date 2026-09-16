@@ -432,7 +432,8 @@
         "RFC 9440 — Client-Cert HTTP Header Field — https://www.rfc-editor.org/rfc/rfc9440",
         "MDM payload — https://developer.apple.com/documentation/devicemanagement/mdm",
         "Quota wrapper and shared state — https://github.com/deploymenttheory/go-apple-dm/blob/80599ddc35778bcc88fa2ac77bb1dc68a51cf089/server/internal/app/security.go",
-        "Certificate status before service hooks — https://github.com/deploymenttheory/go-apple-dm/blob/80599ddc35778bcc88fa2ac77bb1dc68a51cf089/server/service/checkin.go"
+        "Certificate status before service hooks — https://github.com/deploymenttheory/go-apple-dm/blob/80599ddc35778bcc88fa2ac77bb1dc68a51cf089/server/service/checkin.go",
+        "Implementation — https://github.com/deploymenttheory/go-apple-dm/blob/7500eb25e50a2913338339d5fced18dc7f41fdc3/server/httpapi/httpapi.go"
       ]
     }
   ]

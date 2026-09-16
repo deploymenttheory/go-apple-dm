@@ -79,10 +79,10 @@ command-UUID conflict semantics. Keep the private key while the profile or any
 encrypted recovery keys depend on it. Removing the profile does not restore the
 previous recovery key.
 
-This workflow was [verified on the test Mac](../testing/selected-features-2026-09-15.md):
-the Mac accepted the generated certificate and its CMS output decrypted through
-the new Go helper. The test used the documented local file because this enrollment
-does not grant the `SecurityInfo` right.
+Validate remote `SecurityInfo` retrieval separately from local-file extraction;
+the enrollment must grant that command's access right. Neither profile acceptance
+nor CMS decryption establishes that the recovered key can unlock the disk. See
+the [live acceptance checks](../testing/bench.md#apple-management-feature-checks).
 
 ### Explicit rotation command
 
@@ -143,7 +143,7 @@ archives, host files, emit new MD5 values or emit removed manifest fields. Publi
 exactly the bytes hashed. Use InstallEnterpriseApplication for macOS packages and
 InstallApplication with a hosted manifest for enterprise iOS/iPadOS apps.
 
-Independent vectors and fixtures establish the other helpers' encoding and local
-interoperability. The [validation record](../testing/selected-features-2026-09-15.md)
-distinguishes those checks from the FileVault escrow test on physical hardware;
-the legacy password-based rotation command and disk unlock were not exercised.
+Independent vectors and fixtures check encoding and local interoperability.
+Live acceptance needs Apple-registered credentials, eligible enrollment and actual
+installation assets. Follow the [feature checks](../testing/bench.md#apple-management-feature-checks)
+and record any untested operations explicitly.

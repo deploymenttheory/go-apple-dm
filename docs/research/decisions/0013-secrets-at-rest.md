@@ -16,7 +16,7 @@ Named keys support rotation, and row-bound authentication prevents copying ciphe
 
 ## Constraints
 
-Persistent reference storage requires a keyring. Strict mode rejects plaintext in sealed columns; library callers choose their own keyring configuration. Sealing sensitive records does not encrypt metadata, raw DDM status, audit records, privileged exports or backups. In-memory backends do not seal process memory.
+Persistent reference storage requires a keyring. Strict mode rejects plaintext in sealed columns; library callers choose their own keyring configuration. Sealing sensitive records does not encrypt metadata, raw DDM status, audit records, privileged exports or backups. It does not protect plaintext while in use in process memory.
 
 ## Verification
 

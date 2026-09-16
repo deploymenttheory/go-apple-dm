@@ -94,7 +94,8 @@
       "title": "Public documentation",
       "items": [
         "Sending notification requests to APNs — https://developer.apple.com/documentation/usernotifications/sending-notification-requests-to-apns",
-        "Establishing a certificate-based connection to APNs — https://developer.apple.com/documentation/usernotifications/establishing-a-certificate-based-connection-to-apns"
+        "Establishing a certificate-based connection to APNs — https://developer.apple.com/documentation/usernotifications/establishing-a-certificate-based-connection-to-apns",
+        "Implementation — https://github.com/deploymenttheory/go-apple-dm/blob/7500eb25e50a2913338339d5fced18dc7f41fdc3/server/internal/app/apppush.go"
       ],
       "dot": "transport"
     }

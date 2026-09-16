@@ -72,7 +72,7 @@ Projection tests seed payloads with sentinel secrets, cover every event type and
 - [mdmprotocol/event](../../../devicemanagement/mdmprotocol/event)
 - [server/internal/app/app.go](../../../server/internal/app/app.go)
 - <https://developer.apple.com/documentation/devicemanagement/check-in>
-- <https://developer.apple.com/documentation/devicemanagement/tokenupdate>
+- <https://developer.apple.com/documentation/devicemanagement/tokenupdaterequest>
 
 Reference source identifiers and paths (relative to the named project):
 

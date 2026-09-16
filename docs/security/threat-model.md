@@ -88,6 +88,7 @@ model. Revocation is enabled by default; quotas require explicit configuration. 
 policy and cached DEP inventory must remain current on every replica. Follow
 [enrollment security operations](../operations/enrollment-security.md).
 
-The [2026-09-11 hardening record](https://github.com/deploymenttheory/go-apple-dm/blob/c4cb96f6b5a7d6ad7cbb18b66e7e3368e1bc1d9c/docs/wip/apple-conformant-security-hardening-2026-09-11.md)
-separates Apple requirements, Apple-permitted issuance policy and infrastructure
-controls, with reproducible regressions and a physical-device checklist.
+[Decision 0050](../research/decisions/0050-enrollment-security-boundaries.md)
+defines enrollment admission and identity boundaries. Use the
+[testing guide](../testing/bench.md) for reproducible checks and the
+[Mac enrollment runbook](../operations/mac-enrollment-testing.md) for device acceptance.

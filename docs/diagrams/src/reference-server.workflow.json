@@ -297,9 +297,9 @@
       "dot": "transport",
       "title": "Implementation references",
       "items": [
-        "Runtime supervision — https://github.com/deploymenttheory/go-apple-dm/blob/80599ddc35778bcc88fa2ac77bb1dc68a51cf089/server/internal/runtime/runtime.go",
-        "Worker registration — https://github.com/deploymenttheory/go-apple-dm/blob/80599ddc35778bcc88fa2ac77bb1dc68a51cf089/server/internal/app/app.go",
-        "Maintenance participant — https://github.com/deploymenttheory/go-apple-dm/blob/80599ddc35778bcc88fa2ac77bb1dc68a51cf089/server/maintenance/participant.go"
+        "Runtime supervision — https://github.com/deploymenttheory/go-apple-dm/blob/7500eb25e50a2913338339d5fced18dc7f41fdc3/server/internal/runtime/runtime.go",
+        "Worker registration — https://github.com/deploymenttheory/go-apple-dm/blob/7500eb25e50a2913338339d5fced18dc7f41fdc3/server/internal/app/app.go",
+        "Maintenance participant — https://github.com/deploymenttheory/go-apple-dm/blob/7500eb25e50a2913338339d5fced18dc7f41fdc3/server/maintenance/participant.go"
       ]
     }
   ]

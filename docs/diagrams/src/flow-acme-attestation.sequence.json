@@ -232,7 +232,8 @@
       "items": [
         "ACMECertificate — https://developer.apple.com/documentation/devicemanagement/acmecertificate",
         "Deploy Managed Device Attestation — https://support.apple.com/en-gb/guide/deployment/dep54e5ac1fd/web",
-        "RFC 8555 — ACME — https://www.rfc-editor.org/rfc/rfc8555"
+        "RFC 8555 — ACME — https://www.rfc-editor.org/rfc/rfc8555",
+        "Implementation — https://github.com/deploymenttheory/go-apple-dm/blob/7500eb25e50a2913338339d5fced18dc7f41fdc3/devicemanagement/pki/acme/issuance.go"
       ]
     }
   ]

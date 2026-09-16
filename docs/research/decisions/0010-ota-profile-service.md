@@ -27,7 +27,7 @@ OTA tests cover signer classification, untrusted CAs, failed challenges and call
 - [mdmprotocol/enroll](../../../devicemanagement/mdmprotocol/enroll)
 - [simulator](../../../devicemanagement/simulator)
 - <https://developer.apple.com/documentation/devicemanagement/deploying-device-management-enrollment-profiles>
-- <https://developer.apple.com/library/archive/documentation/NetworkingInternet/Conceptual/iPhoneOTAConfiguration/>
+- <https://developer.apple.com/library/archive/documentation/NetworkingInternet/Conceptual/iPhoneOTAConfiguration/Introduction/Introduction.html>
 
 Reference source identifiers and paths (relative to the named project):
 

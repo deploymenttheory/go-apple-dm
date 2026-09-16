@@ -13,7 +13,7 @@ The shared `internal/httpsurl` remains at the repository root so both modules ca
 import it. Generator and architecture tooling also remain at the root. The schema
 output lives under `devicemanagement/schema/`, including its provenance and exported-name lock.
 
-Tier tests check downward imports across foundation, schema, protocol, PKI, Apple clients, storage, simulator and server layers, with composition/generator packages handled explicitly. Test scaffolding is exempt. `devicemanagement/paging` provides shared cursor types without domain storage dependencies; `devicemanagement/pki/pushcert` is a standard-library leaf.
+Tier tests check downward imports across foundation, schema, protocol, PKI, Apple clients, storage, simulator and server layers, with composition/generator packages handled explicitly. Test scaffolding is exempt. `devicemanagement/paging` provides shared cursor types without domain storage dependencies. `devicemanagement/pki/pushcert` has no dependencies on other repository packages; it uses `howett.net/plist` for vendor CSR envelopes and remains independent of the push client.
 
 ## Rationale
 

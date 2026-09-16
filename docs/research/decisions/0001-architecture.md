@@ -10,6 +10,20 @@ The root Go module provides generated schema types, protocol handling, certifica
 
 Service methods take explicit contexts. Hooks wrap operations. Typed publisher/coordinator contracts support transactional event capture; SQL reference applications use a persistent event store for audit/webhook delivery. The in-process bus supports ephemeral subscribers. Declarative device management uses the MDM transport and enrollment identity. The declaration engine can run in-process or through the authenticated internal adapter described in record 0023.
 
+Protocol helpers stay in the root library: Managed Apple Account JWTs and ADE
+password hashes under `mdmprotocol/enroll`, CMS recovery-key decryption under `cms`,
+server bypass codes under `activationlock`, and SHA-256 installation manifests under
+`manifest`. They return protocol values; callers own authentication, secret storage
+and side effects. Apps and Books HTTP licensing is a library client; notification
+hosting, reconciliation and installation remain caller responsibilities.
+
+The server owns administrative status projection, CLI profile inspection and
+FileVault encryption-identity persistence before enqueueing. These boundaries keep
+SQL drivers, Cedar and CLI behavior out of reusable helpers. See the
+[helper guide](../../operations/protocol-helpers.md),
+[licensing decision](0053-apps-and-books-licensing.md) and
+[encryption-identity decision](0054-filevault-encryption-identities.md).
+
 ## Rationale
 
 Separate modules let consumers use protocol packages without the server's database drivers and authorization dependencies. Generated types and runtime support metadata keep protocol modeling tied to the pinned Apple schema. Shared storage contract suites define backend behavior.

@@ -11,8 +11,8 @@
 // resources.
 //
 // Enrollment, push, principal/policy storage, audit, certificate revocation and
-// quotas are configured here. Library defaults can differ from this composition,
-// including re-enrollment policy. TLS termination, storage of CA/secret material,
+// quotas are configured here. Both this composition and service.Core deny
+// changed-certificate re-enrollment by default. TLS termination, CA/secret storage,
 // admission policy and replica routing belong to the deployment.
 //
 // # References

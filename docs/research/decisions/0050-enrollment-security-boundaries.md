@@ -60,8 +60,9 @@ Shared memory/SQLite/PostgreSQL/MySQL contracts cover identity collisions,
 competing authentication, lifecycle gates and capability provenance. Regressions
 cover browser transfer, cookie/state replay, private-hop substitution and replay,
 raw SQL ciphertext inspection/rotation, issuance admission and CSR competition,
-TLS/proxy evidence and credential redirects. See the
-[validation record](../../wip/security-audit-implementation-plan.md).
+TLS/proxy evidence and credential redirects. Run the shared suites through
+`make test-contract` with PostgreSQL/MySQL configured and `make test-e2e`; see
+the [testing guide](../../testing/bench.md).
 
 ## References
 
