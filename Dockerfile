@@ -9,12 +9,22 @@ COPY server/go.mod server/go.sum ./server/
 RUN go mod download all
 COPY . .
 RUN CGO_ENABLED=0 go build -trimpath -ldflags="-s -w" -o /out/dmserver ./server/cmd/dmserver
+RUN CGO_ENABLED=0 go build -trimpath -ldflags="-s -w" -o /out/dmctl ./server/cmd/dmctl
 # The runtime image has no shell, so the data directory is prepared here and
 # copied in with the runtime user's ownership.
 RUN mkdir -p /out/data
 
-FROM gcr.io/distroless/static-debian12:nonroot
+# Only the one-shot quick-start helper needs Python; the server stays distroless.
+FROM python:3.13-slim AS quickstart
+COPY --from=build /out/dmctl /usr/local/bin/dmctl
+COPY deploy/quickstart/bootstrap.py /bootstrap.py
+RUN mkdir /data && chown 65532:65532 /data
+USER 65532:65532
+ENTRYPOINT ["python3", "/bootstrap.py"]
+
+FROM gcr.io/distroless/static-debian12:nonroot AS runtime
 COPY --from=build /out/dmserver /dmserver
+COPY --from=build /out/dmctl /dmctl
 COPY --from=build --chown=nonroot:nonroot /out/data /data
 VOLUME ["/data"]
 EXPOSE 8080

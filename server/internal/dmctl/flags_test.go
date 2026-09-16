@@ -8,6 +8,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync/atomic"
 	"testing"
 
 	"github.com/deploymenttheory/go-apple-dm/server/internal/dmctl"
@@ -46,6 +47,36 @@ func TestHelpFlags(t *testing.T) {
 	}
 	if _, _, err := run(t, noConfig(t), "explain", "-h"); err != nil {
 		t.Fatalf("verb -h: %v", err)
+	}
+}
+
+func TestHelpDoesNotPerformOperations(t *testing.T) {
+	var requests atomic.Int32
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		requests.Add(1)
+		w.WriteHeader(http.StatusInternalServerError)
+	}))
+	t.Cleanup(srv.Close)
+	env := noConfig(t)
+	env["DMCTL_SERVER"], env["DMCTL_TOKEN"] = srv.URL, "test-token"
+	dir := filepath.Join(t.TempDir(), "must-not-exist")
+	for _, args := range [][]string{
+		{"setup", "init", "-dir", dir, "-h"},
+		{"setup", "status", "-h"},
+		{"principals", "create", "operator", "-h"},
+		{"commands", "clear", "device", "test-device", "-h"},
+		{"recovery", "backup", "-h"},
+	} {
+		out, help, err := run(t, env, args...)
+		if err != nil || out != "" || !strings.Contains(help, "Usage of") {
+			t.Fatalf("%v: stdout=%q stderr=%q err=%v", args, out, help, err)
+		}
+	}
+	if _, err := os.Stat(dir); !errors.Is(err, os.ErrNotExist) {
+		t.Fatal("help initialized a workspace", err)
+	}
+	if requests.Load() != 0 {
+		t.Fatal("help contacted the server", requests.Load())
 	}
 }
 
