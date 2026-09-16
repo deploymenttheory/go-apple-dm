@@ -13,19 +13,21 @@ server and an admin CLI to demonstrate how an implementation of the library coul
 ## Why
 
 ## Design Goals
-- Support for macOS 26 onwards. At the time of build, macOS 27 is on the cusp of public prelease.
-- Support for ddm and mdm
-- 
+- Support for macOS 26 onwards. (At the time of build, macOS 27 is on the cusp of public release.)
+- Provide the best golang oss library for future apple device management products to be built upon.
+- Support for multiple database types
+- Support for both ddm and mdm from day 1.
+- Provide the
 
  - The `devicemanagement` library go module groups protocol libraries, generated schema types, storage contracts and
-in-memory implementations under [devicemanagement/](devicemanagement/). 
+in-memory implementations under [devicemanagement/](devicemanagement/).
 
-- The reference `server` module adds SQL stores, the service layer, HTTP adapters and application wiring. 
+- The reference `server` module adds SQL stores, the service layer, HTTP adapters and application wiring.
 
-Both modules require Go 1.27. 
+Both modules require Go 1.27.
 
 The `devicemanagement` library go module groups protocol libraries, generated schema types, storage contracts and
-in-memory implementations under [devicemanagement/](devicemanagement/). The `server` module adds SQL stores, the service layer, HTTP adapters and application wiring. Both modules require Go 1.27. 
+in-memory implementations under [devicemanagement/](devicemanagement/). The `server` module adds SQL stores, the service layer, HTTP adapters and application wiring. Both modules require Go 1.27.
 
 > [!WARNING]
 > This project is in beta. While it has been tested extensively, please thoroughly test in non-production environments before production use. Features may contain bugs or undergo changes based on community feedback. No guarantees or official support is provided. Use at your own risk. By using this project, you acknowledge and agree to these conditions. For questions or issues, please consult the documentation or contact the maintainer.
@@ -130,13 +132,13 @@ component relationships, protocol exchanges and lifecycle transitions.
   user books, including user lifecycle, asynchronous outcomes and authenticated notifications.
 - [Protocol helpers](docs/operations/protocol-helpers.md) for Managed Apple Account JWTs,
   ADE password hashes, FileVault CMS decryption, Activation Lock codes and SHA-256 manifests.
-  FileVault command encryption certificates are generated automatically in Go and stored encrypted.
+  FileVault encryption certificates are generated automatically in Go and stored encrypted.
 - [Offline profile lint and paginated DDM inspection](docs/operations/status-and-profile-inspection.md)
   through `dmctl`, using generated schema metadata and existing status storage.
 - In-memory, SQLite, PostgreSQL and MySQL persistence; column sealing and key rotation for
   selected secrets; optional shared security state and inbound rate limits.
 - A device simulator, an admin API with scoped credentials and Cedar policies, and projected
-  event sinks, durable SQL event delivery and audit records.
+  event sinks, SQL event delivery and audit records.
 - An opt-in [content-cache metrics library](devicemanagement/contentcache/) based on
   Apple's OS 27 seed OpenAPI, with an embeddable receiver and caller-owned authentication
   and storage. Consumers mount the receiver and provide authorization and acceptance callbacks.

@@ -1,5 +1,7 @@
 // Package privatefile creates and checks files containing local credentials.
 //
+// # Design
+//
 // Creation helpers restrict access before returning a writable file. On Unix,
 // files receive owner-only permissions. On Windows, an explicit access control
 // list grants access to the current user, LocalSystem and administrators.
@@ -10,4 +12,9 @@
 // the caller's os.Root boundary. SyncDirectory flushes directory metadata on
 // Unix and validates the handle on Windows, where directory flushing is not
 // supported. Callers must sync file contents separately.
+//
+// # References
+//
+//   - Recovery: https://github.com/deploymenttheory/go-apple-dm/blob/main/docs/operations/recovery.md
+//   - Threat model: https://github.com/deploymenttheory/go-apple-dm/blob/main/docs/security/threat-model.md
 package privatefile

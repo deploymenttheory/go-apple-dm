@@ -301,6 +301,26 @@ completed device identity replacement cannot establish continuity for that new
 identity. The current private SQLite drill is separate from the planned public
 backup, verification and restore commands.
 
+## FileVault encryption identities
+
+The reference server generates and retains a distinct RSA-2048 encryption identity
+before queueing a `RotateFileVaultKey` command or an escrow profile through
+`POST /admin/v1/enrollments/device/DEVICE-ID/filevault/escrow`. The key and self-signed
+certificate are generated entirely in Go and committed to encrypted SQL state.
+No manual certificate preparation or OS certificate tool is required.
+
+The escrow profile supports Apple's macOS 26 bootstrap-token rotation flow. The
+explicit rotation command still requires Apple's unlock credentials. See the
+[workflow and prerequisites](protocol-helpers.md#automatic-filevault-encryption-certificates)
+and [physical-Mac results](../testing/selected-features-2026-09-15.md).
+
+These identities are separate from the enrollment issuer and HTTPS/APNs identities.
+Retain the exact private key after certificate expiry for delayed encrypted replies.
+An escrow profile can keep producing material for its certificate, so completing
+`InstallProfile` does not make its key disposable. Keep the database, storage-key
+names and storage-key material together in recoverable backups. A backup predating
+a FileVault rotation does not contain the newly escrowed recovery key.
+
 ## Adopt an existing lab
 
 Back up the existing database and its secret files first. For a live SQLite bench:

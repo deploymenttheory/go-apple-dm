@@ -56,6 +56,9 @@ func OpenSetup(ctx context.Context, cfg Config) (*App, error) {
 }
 
 func (a *App) openCertificates(ctx context.Context) error {
+	if err := a.openReplyCertificates(ctx); err != nil {
+		return err
+	}
 	if a.cfg.Setup == nil {
 		return nil
 	}

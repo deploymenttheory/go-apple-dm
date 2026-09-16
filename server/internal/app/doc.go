@@ -12,7 +12,7 @@
 //
 // Enrollment, push, principal/policy storage, audit, certificate revocation and
 // quotas are configured here. Library defaults can differ from this composition,
-// including re-enrollment policy. TLS termination, durable CA/secret material,
+// including re-enrollment policy. TLS termination, storage of CA/secret material,
 // admission policy and replica routing belong to the deployment.
 //
 // # References

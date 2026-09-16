@@ -6,7 +6,7 @@
     "quality_profile": "showcase",
     "viewBox": [
       1200,
-      540
+      690
     ],
     "views": [
       {
@@ -27,9 +27,10 @@
         "focus": [
           "depclient",
           "axmclient",
-          "gdmfclient"
+          "gdmfclient",
+          "appsbooksclient"
         ],
-        "note": "dep uses OAuth 1.0a; axm exchanges an ES256 assertion for a bearer access token; software lookup requires no credentials."
+        "note": "dep uses OAuth 1.0a; axm uses OAuth access tokens; Apps and Books uses a location sToken; software lookup is public."
       }
     ],
     "repository": {
@@ -225,6 +226,36 @@
         70
       ],
       "purpose": "storage"
+    },
+    {
+      "id": "appsbookssvc",
+      "type": "external",
+      "label": "Apps and Books API",
+      "sublabel": "Location licensing and users",
+      "pos": [
+        45,
+        560
+      ],
+      "size": [
+        220,
+        70
+      ],
+      "purpose": "neutral"
+    },
+    {
+      "id": "appsbooksclient",
+      "type": "backend",
+      "label": "appsbooks.Client",
+      "sublabel": "Licenses, users and event status",
+      "pos": [
+        345,
+        560
+      ],
+      "size": [
+        220,
+        70
+      ],
+      "purpose": "service"
     }
   ],
   "boundaries": [
@@ -234,7 +265,8 @@
       "wraps": [
         "depsvc",
         "abm",
-        "gdmfsvc"
+        "gdmfsvc",
+        "appsbookssvc"
       ]
     }
   ],
@@ -312,16 +344,29 @@
         494.0
       ],
       "purpose": "transport"
+    },
+    {
+      "id": "appsbooks-auth",
+      "from": "appsbooksclient",
+      "to": "appsbookssvc",
+      "label": "Bearer sToken",
+      "variant": "security",
+      "purpose": "authentication",
+      "labelAt": [
+        305,
+        644
+      ]
     }
   ],
   "cards": [
     {
       "dot": "authentication",
-      "title": "Three authentication models",
+      "title": "Service authentication",
       "items": [
         "The device-assignment client uses OAuth 1.0a credentials from the server-token exchange. The package retains the name dep.",
         "axm exchanges an ES256-signed client assertion for an OAuth access token, then uses that token as Bearer authentication on API calls.",
-        "Software catalogue lookup uses public HTTPS requests; it does not use the device-assignment or business API credentials."
+        "Software catalogue lookup uses public HTTPS requests; it does not use the device-assignment or business API credentials.",
+        "Apps and Books sends the original location sToken as a bearer credential and checks the returned library UID and MDM identity."
       ]
     },
     {
@@ -329,23 +374,25 @@
       "title": "Inventory and assignments",
       "items": [
         "The synchronizer starts with a full fetch and follows incremental cursors; an expired cursor causes a new full fetch.",
-        "The reconciler compares desired profile assignment with stored devices and calls Apple. Readback is configurable in the library and enabled by the reference server."
+        "The reconciler compares desired profile assignment with stored devices and calls Apple. Readback is configurable in the library and enabled by the reference server.",
+        "Apps and Books returns asynchronous event IDs. The caller persists progress, authenticates notifications and checks event completion before installation."
       ]
     },
     {
       "dot": "policy",
       "title": "Software updates",
       "items": [
-        "The enrollment handler applies its configured update policy. Software lookup supplies available versions; it does not itself send the device’s HTTP rejection."
+        "The enrollment handler applies its configured update policy. Software lookup supplies available versions; it does not itself send the device\u2019s HTTP rejection."
       ]
     },
     {
       "dot": "transport",
       "title": "Public documentation",
       "items": [
-        "Device assignment — https://developer.apple.com/documentation/devicemanagement/device-assignment",
-        "Implementing OAuth for the Apple School Manager and Apple Business APIs — https://developer.apple.com/documentation/apple-school-and-business-manager-api/implementing-oauth-for-the-apple-school-manager-and-apple-business-api",
-        "ErrorCodeSoftwareUpdateRequired — https://developer.apple.com/documentation/devicemanagement/errorcodesoftwareupdaterequired"
+        "Device assignment \u2014 https://developer.apple.com/documentation/devicemanagement/device-assignment",
+        "Implementing OAuth for the Apple School Manager and Apple Business APIs \u2014 https://developer.apple.com/documentation/apple-school-and-business-manager-api/implementing-oauth-for-the-apple-school-manager-and-apple-business-api",
+        "ErrorCodeSoftwareUpdateRequired \u2014 https://developer.apple.com/documentation/devicemanagement/errorcodesoftwareupdaterequired",
+        "Apps and Books \u2014 https://developer.apple.com/documentation/devicemanagement/getting-started-with-the-management-api"
       ]
     }
   ]

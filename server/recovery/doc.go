@@ -1,6 +1,8 @@
 // Package recovery creates encrypted server checkpoints and verifies them
 // before restoring into an empty deployment.
 //
+// # Design
+//
 // Backup requires a maintenance pause acknowledged by every writer. Checkpoints
 // combine a consistent SQL snapshot, setup configuration and the original
 // storage keys in an authenticated age archive. Verification checks the archive,
@@ -13,6 +15,7 @@
 // automatically. Operators must stop the original processes before using the
 // restored deployment and explicitly resume writes when checks are complete.
 //
-// See the recovery guide for backup, verification and restore procedures:
-// https://github.com/deploymenttheory/go-apple-dm/blob/main/docs/operations/recovery.md
+// # References
+//
+//   - https://github.com/deploymenttheory/go-apple-dm/blob/main/docs/operations/recovery.md
 package recovery

@@ -6,7 +6,7 @@
 // Principals, token digests and policies follow the shared adminauthtest
 // contract. Data lasts only for the process lifetime and is not sealed. The
 // reference server selects this backend when configured without persistent
-// storage; deployments requiring durable credentials and policy use
+// storage; deployments requiring persistent credentials and policy use
 // server/adminauth/sqlstore.
 //
 // # References

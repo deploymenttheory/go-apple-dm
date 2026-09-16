@@ -58,7 +58,7 @@ Integrate amendments into the current decision and preserve its number and filen
 Diagram JSON sources and regeneration instructions are in [docs/diagrams](docs/diagrams/README.md).
 
 Edit project-authored generated comments in `internal/schemagen`, then run `make generate` and
-`make verify`. Do not hand-edit `*.gen.go`, `devicemanagement/schema/EXPORTED_IDENTIFIERS.lock` or
+`make verify`. Do not hand-edit generated `doc.go` files, `*.gen.go`, `devicemanagement/schema/EXPORTED_IDENTIFIERS.lock` or
 `devicemanagement/schema/GENERATED_FROM.json`. Record intentional exported-name removals in
 [schema/ALLOWED_REMOVALS.md](devicemanagement/schema/ALLOWED_REMOVALS.md).
 

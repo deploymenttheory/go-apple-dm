@@ -43,6 +43,7 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/server/httpapi"
 	"github.com/deploymenttheory/go-apple-dm/server/maintenance"
 	"github.com/deploymenttheory/go-apple-dm/server/pushnotify"
+	"github.com/deploymenttheory/go-apple-dm/server/replycerts"
 	"github.com/deploymenttheory/go-apple-dm/server/service"
 	"github.com/deploymenttheory/go-apple-dm/server/sqlstore/mysql"
 	"github.com/deploymenttheory/go-apple-dm/server/sqlstore/postgres"
@@ -221,11 +222,12 @@ var ErrConfig = errors.New("app: invalid configuration")
 
 // App is a built process.
 type App struct {
-	eventStore     *eventstore.Store
-	eventPublisher *eventstore.Publisher
-	issuerMu       sync.Mutex
-	issuerServices map[string]*managedIssuerService
-	Certificates   *lifecycle.Manager
+	eventStore        *eventstore.Store
+	eventPublisher    *eventstore.Publisher
+	issuerMu          sync.Mutex
+	issuerServices    map[string]*managedIssuerService
+	Certificates      *lifecycle.Manager
+	ReplyCertificates *replycerts.Manager
 
 	appPushStore   *apppush.Store
 	appPushClients map[string]*apns.AppClient
@@ -963,7 +965,7 @@ func (a *App) adminStore(ctx context.Context) (adminauth.Store, error) {
 		// answer, not a failure: the static token stays the only credential.
 		return nil, nil
 	case a.db == nil:
-		// The in-memory principal store supports administration without durable state.
+		// The in-memory principal store supports administration without persisted state.
 		return admininmem.New(), nil
 	default:
 		s, err := adminsql.Open(ctx, a.db, a.dialect, adminsql.Options{})

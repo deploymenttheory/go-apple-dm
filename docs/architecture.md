@@ -22,7 +22,7 @@ including the explicit dependency from the ADE software update gate to the GDMF 
 | Schema | `devicemanagement/schema`, `internal/schemagen`, `cmd/schemagen` | Deterministic generation and schema-derived validation/support metadata |
 | Protocol | `devicemanagement/mdmprotocol` | Plist/CMS, MDM messages, enrollment profiles and handlers, DDM engine, predicates, hooks and events |
 | PKI | `devicemanagement/pki` | CA abstraction, SCEP, ACME, attestation, push certificate parsing and optional revocation |
-| Apple clients | `devicemanagement/appleplatformservices` | APNs, device enrollment service, software lookup, Business Manager and School Manager APIs |
+| Apple clients | `devicemanagement/appleplatformservices` | APNs, device enrollment service, software lookup, Business Manager, School Manager and Apps and Books licensing APIs |
 | Content-cache metrics | `devicemanagement/contentcache` | Opt-in OS 27 report contract and receiver; consumers supply authentication, TLS and persistence |
 | Persistence | `devicemanagement/storage`, `server/sqlstore`, `server/*store`, `server/statestore` | Domain contracts, memory implementations and SQL persistence |
 | Service | `server/service`, `server/httpapi`, `server/ddmsync`, `server/ddmadapter`, `server/pushnotify` | Enrollment authorization, command delivery, DDM synchronization and transport |
@@ -109,7 +109,9 @@ synthesized. Predicates use the documented subset in
 [mdmprotocol/ddm/predicate](../devicemanagement/mdmprotocol/ddm/predicate/doc.go), not the full NSPredicate language.
 
 The engine queries status values by prefix with pagination, and returns errors and
-retained raw reports newest first. Admin tooling exposes part of that query surface.
+retained raw reports newest first. The admin API and `dmctl enrollments status`
+expose all three queries with pagination. Admin responses redact credential-bearing
+diagnostics while retaining the stored evidence. See [inspection](operations/status-and-profile-inspection.md).
 `Manifest`, `Tokens` and `DeclarationItems` refresh persisted snapshots; they are
 delivery operations and must not be treated as side-effect-free previews.
 

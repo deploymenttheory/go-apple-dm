@@ -14,8 +14,14 @@
 // packages. Callers provide admission policy, trust roots and stable profile
 // identifiers.
 //
+// MAIDToken signs the Managed Apple Account GetToken reply with the registered
+// ADE server RSA identity, server UUID and explicit issuance time. It generates
+// a fresh JWT identifier and verifies the returned RS256 signature. Applications
+// own credential registration and the authenticated GetToken handler.
+//
 // # References
 //
+//   - Managed Apple Account GetToken: https://developer.apple.com/documentation/devicemanagement/get-token
 //   - Decision record 0009: https://github.com/deploymenttheory/go-apple-dm/blob/main/docs/research/decisions/0009-enrollment-profiles.md
 //   - Decision record 0010: https://github.com/deploymenttheory/go-apple-dm/blob/main/docs/research/decisions/0010-ota-profile-service.md
 //   - Threat model: https://github.com/deploymenttheory/go-apple-dm/blob/main/docs/security/threat-model.md (OTA profile-service and Enrollment profile rows)

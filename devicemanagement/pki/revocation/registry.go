@@ -55,7 +55,7 @@ func ProvenanceFromContext(ctx context.Context) Provenance {
 	return p
 }
 
-// Certificate is the durable record of an issuance. DER permits later status
+// Certificate is the stored record of an issuance. DER permits later status
 // publication and import without relying on a live certificate pin.
 type Certificate struct {
 	Issuer              string

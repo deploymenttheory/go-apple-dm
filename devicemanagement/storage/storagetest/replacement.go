@@ -204,7 +204,7 @@ func RunReplacementSuite(t *testing.T, factory Factory) {
 				if err != nil || next == nil || next.UUID != "queued" {
 					t.Fatal("queue lost", next, err)
 				}
-				// Returned values cannot mutate the durable attempt.
+				// Returned values cannot mutate the stored attempt.
 				final.State = "corrupt"
 				final.Command.Raw[0] = '!'
 				saved := step(storage.ReplacementChange{Op: "read"})

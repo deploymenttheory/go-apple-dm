@@ -74,7 +74,7 @@ func (e *emitter) header(extra ...string) string {
 
 func (e *emitter) files() map[string][]byte {
 	out := map[string][]byte{
-		"doc.gen.go":              e.docFile(),
+		"doc.go":                  e.docFile(),
 		"types.gen.go":            e.typesFile(),
 		"registry.gen.go":         e.registryFile(),
 		"validate.gen.go":         e.validateFile(),

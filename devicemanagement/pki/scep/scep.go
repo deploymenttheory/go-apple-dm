@@ -320,11 +320,12 @@ func decodeBase64(s string) ([]byte, error) {
 	return b, nil
 }
 
-// IssuanceFunc performs durable issuance after CSR and credential verification.
+// IssuanceFunc issues certificates and persists issuance state after CSR and
+// credential verification.
 // renewal distinguishes an existing verified identity from a challenge grant.
 type IssuanceFunc func(context.Context, *x509.CertificateRequest, ca.Policy, string, bool) (*x509.Certificate, error)
 
-// WithIssuance configures durable, idempotent certificate issuance.
+// WithIssuance configures idempotent certificate issuance with persistent state.
 func WithIssuance(f IssuanceFunc) Option { return func(s *Server) { s.issuer = f } }
 
 type renewalCertificateKey struct{}

@@ -7,7 +7,7 @@
 // cannot mutate issuance state through returned slices. The acmetest suite
 // defines atomicity, nonce consumption and identifier-claim behavior.
 //
-// All accounts, orders, certificates and nonces are lost on restart. Durable
+// All accounts, orders, certificates and nonces are lost on restart. Persistent
 // deployments use server/acmestore/sqlstore or another implementation of the
 // contract.
 //

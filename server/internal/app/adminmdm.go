@@ -12,6 +12,7 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/mdm"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/paging"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/storage"
+	"github.com/deploymenttheory/go-apple-dm/server/replycerts"
 )
 
 // mdmAdminRoutes are the classic-MDM admin routes: the enrollments the
@@ -52,6 +53,11 @@ func (a *App) mdmAdminRoutes() []adminRoute {
 	add(ActionReadEnrollment, "GET /enrollments/{channel}/{id}", a.getEnrollment)
 	add(ActionDisableEnrollment, "DELETE /enrollments/{channel}/{id}", a.disableEnrollment)
 	add(ActionEnqueueCommand, "POST /enrollments/{channel}/{id}/commands", a.enqueueCommand)
+	add(
+		ActionEnqueueCommand,
+		"POST /enrollments/{channel}/{id}/filevault/escrow",
+		a.enqueueFileVaultEscrow,
+	)
 	add(ActionReadCommands, "GET /enrollments/{channel}/{id}/commands", a.listCommands)
 	add(
 		ActionReadCommands,
@@ -171,9 +177,8 @@ func (a *App) disableEnrollment(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNoContent)
 }
 
-// enqueueCommand takes the command's plist exactly as it would go to the
-// device, so an operator can send anything the schema describes without this
-// package growing a case per RequestType.
+// enqueueCommand accepts the command plist. The FileVault workflow provisions
+// and persists its encryption certificate before the completed command is queued.
 func (a *App) enqueueCommand(w http.ResponseWriter, r *http.Request) {
 	id, err := enrollmentFromPath(r)
 	if err != nil {
@@ -188,6 +193,15 @@ func (a *App) enqueueCommand(w http.ResponseWriter, r *http.Request) {
 	cmd, err := mdm.DecodeCommand(body)
 	if err != nil {
 		writeError(w, http.StatusBadRequest, fmt.Errorf("app: command: %w", err))
+		return
+	}
+	cmd, err = a.prepareCommandEncryption(r.Context(), id, cmd)
+	if err != nil {
+		status := http.StatusInternalServerError
+		if errors.Is(err, replycerts.ErrInvalid) || errors.Is(err, replycerts.ErrConflict) {
+			status = http.StatusBadRequest
+		}
+		writeError(w, status, err)
 		return
 	}
 	res, err := a.Core.Enqueue(r.Context(), []mdm.EnrollmentID{id}, cmd, storage.EnqueueOptions{})

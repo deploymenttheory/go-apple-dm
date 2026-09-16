@@ -1,5 +1,5 @@
 // Package cms signs and verifies attached and detached CMS signatures used by
-// Apple device management.
+// Apple device management, and decrypts CMS envelopes.
 //
 // # Design
 //
@@ -12,6 +12,11 @@
 // A valid signature proves key possession, not authorization for an enrollment.
 // HTTP certificate extraction and service pinning apply that separate policy.
 // Callers select trust roots and whether profile parsing requires a signature.
+//
+// DecryptEnvelope handles BER/DER EnvelopedData with a matching RSA recipient.
+// The caller authenticates the enclosing MDM response and retains the original
+// reply key for delayed FileVault results. Certificate expiry does not prevent
+// decrypting an older envelope; decryption alone does not prove its sender.
 //
 // # References
 //

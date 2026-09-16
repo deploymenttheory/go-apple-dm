@@ -96,7 +96,7 @@ func TestRegistryFailuresAreAtomic(t *testing.T) {
 			}
 			after, err := f.st.List(ctx, "pki/", "", 100)
 			if err != nil || !reflect.DeepEqual(before, after) {
-				t.Fatal("failed operation changed durable state", err)
+				t.Fatal("failed operation changed stored state", err)
 			}
 		})
 	}

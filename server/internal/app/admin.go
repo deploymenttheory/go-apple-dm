@@ -10,7 +10,6 @@ import (
 
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/ddm"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/mdm"
-	"github.com/deploymenttheory/go-apple-dm/devicemanagement/paging"
 )
 
 // MaxAdminBody bounds admin request bodies.
@@ -38,6 +37,8 @@ var (
 //	GET    /enrollments/{channel}/{id}/declarations
 //	GET    /enrollments/{channel}/{id}/status
 //	GET    /enrollments/{channel}/{id}/status/values
+//	GET    /enrollments/{channel}/{id}/status/errors
+//	GET    /enrollments/{channel}/{id}/status/reports
 //	GET    /enrollments/{channel}/{id}/tokens
 //	POST   /notify
 func (a *App) ddmAdminRoutes() []adminRoute {
@@ -181,13 +182,10 @@ func (a *App) ddmAdminRoutes() []adminRoute {
 		"status",
 		func(ctx context.Context, id mdm.EnrollmentID) (any, error) { return e.DeclarationStatus(ctx, id) },
 	)
-	enrollmentGet(
-		ActionReadEnrollmentStatus,
-		"status/values",
-		func(ctx context.Context, id mdm.EnrollmentID) (any, error) {
-			return e.StatusValues(ctx, id, ddm.StatusValueQuery{}, paging.Page{Limit: 1000})
-		},
-	)
+	for _, kind := range []string{"values", "errors", "reports"} {
+		add(ActionReadEnrollmentStatus, "GET /enrollments/{channel}/{id}/status/"+kind,
+			a.statusPage(kind))
+	}
 	enrollmentGet(
 		ActionReadEnrollment,
 		"tokens",

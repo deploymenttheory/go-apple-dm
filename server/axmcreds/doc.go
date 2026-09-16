@@ -6,7 +6,7 @@
 // Store implements axm.CredentialStore while keeping encryption dependencies
 // outside the API client. Records are held in memory as ciphertext with their
 // name in associated data. Sealed exposes bytes for an application's persistence
-// layer. The package does not write to a database or file; durable storage and
+// layer. The package does not write to a database or file; persistent storage and
 // keyring lifetime belong to the caller.
 //
 // # References

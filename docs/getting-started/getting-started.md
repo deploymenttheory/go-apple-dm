@@ -842,7 +842,7 @@ own contracts; see the [architecture guide](../architecture.md#declarative-devic
 | SQLite | `DM_STORAGE=sqlite`, `DM_DSN=/absolute/path/dm.sqlite`; writable local directory, keyring, and backups that include consistent WAL state |
 | PostgreSQL | `DM_STORAGE=postgres`, `DM_DSN` in pgx format; provision the database/user, verified database transport as appropriate, schema privileges for startup migrations, and the same application keyring |
 | MySQL | `DM_STORAGE=mysql`, driver DSN such as `user:password@tcp(db.example.com:3306)/dm?tls=true`; MySQL 8.0.19+ syntax is required, with database/user provisioned and keyring configured |
-| Memory | `DM_STORAGE=inmem`; temporary development state with no restart durability |
+| Memory | `DM_STORAGE=inmem`; temporary development state that is lost on restart |
 
 The code normalizes MySQL time parsing and UTC handling. Protect DSNs as
 credentials. The integration database scripts create test databases, not a
@@ -933,9 +933,9 @@ is no background registration worker. Optional webhooks require HTTPS and
 support `DM_WEBHOOK_ROOT_CA_FILE` and `DM_WEBHOOK_HMAC_KEY`. Audit records and
 webhooks are projected events, not raw device-message archives.
 
-Before broader use, run the [physical-device checklist](../wip/apple-conformant-security-hardening-2026-09-11.md#physical-device-checklist--not-executed)
-for your actual OS/hardware/modes, including replacement, failure recovery, and
-proxy identity. Keep results distinct from simulator results.
+Before broader use, run the [live-device scenarios](../testing/bench.md#coverage-and-evidence)
+for your actual OS/hardware/modes. Also exercise replacement, failure recovery and
+proxy identity for your deployment. Keep results distinct from simulator results.
 
 ## 11. Use the library in your application
 
@@ -1039,7 +1039,9 @@ in section 8.
 | Serve MDM HTTP traffic | `server/service` and `server/httpapi`; see [the harness](../../server/e2e/harness_test.go) and [reference composition](../../server/internal/app/app.go) |
 | Send MDM push notifications | `devicemanagement/appleplatformservices/push`, its `apns` implementation, and `server/pushnotify` |
 | Add DDM | `devicemanagement/mdmprotocol/ddm`, `devicemanagement/storage/ddm`, `server/ddmadapter`, `server/ddmsync`; see [DDM scenarios](../../server/e2e/ddm_test.go) |
-| Call Apple services | `devicemanagement/appleplatformservices/dep`, `axm`, `gdmf`; configure their separate credentials, trust, and stores |
+| Call Apple services | `devicemanagement/appleplatformservices/dep`, `axm`, `gdmf`, `appsbooks`; configure their separate credentials, trust, and stores |
+| Build enrollment and recovery helpers | `mdmprotocol/enroll`, `enroll/ade`, `cms`, `activationlock`, `manifest` below `devicemanagement`; see [protocol helpers](../operations/protocol-helpers.md) |
+| Provision FileVault encryption certificates | `server/replycerts`; generate and persist Go certificate/key material before queueing a rotation or escrow profile; see [certificate workflow](../operations/protocol-helpers.md#automatic-filevault-encryption-certificates) |
 | Test protocol integration | `simulator`, `testpki`, service fakes, and backend contract suites; never install fixture trust in a live deployment |
 
 For an embedded MDM service, follow this construction and request sequence:
@@ -1074,6 +1076,12 @@ package does not read those variables or enable that behavior. The
 [architecture guide](../architecture.md) explains module boundaries. The e2e
 harness contains deliberate test shortcuts and fake services; copy the relevant
 contracts rather than treating its complete setup as deployment configuration.
+
+Use [status and profile inspection](../operations/status-and-profile-inspection.md)
+for paginated enrollment diagnostics and offline `dmctl profile lint`. For licensed
+app or book distribution, follow [Apps and Books](../operations/apps-and-books.md):
+confirm assignment completion before requesting installation. Package and app
+manifest generation is covered by the protocol-helper examples above.
 
 ### Preserve issuance and storage contracts
 

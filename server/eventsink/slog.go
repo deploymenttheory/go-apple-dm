@@ -9,7 +9,7 @@ import (
 )
 
 // Slog returns a handler that writes one projected record per event with sorted
-// fields. Durability and retention depend on the deployment's log collection;
+// fields. Persistence and retention depend on the deployment's log collection;
 // the handler does not persist records itself.
 func Slog(log *slog.Logger, reg *Registry) event.Handler {
 	if log == nil {
