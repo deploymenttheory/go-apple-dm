@@ -1,0 +1,48 @@
+name: apple-dm-quickstart
+
+services:
+  bootstrap:
+    build:
+      context: ../..
+      target: quickstart
+    volumes:
+      - state:/data
+    restart: "no"
+
+  dmserver:
+    build:
+      context: ../..
+      target: runtime
+    # Clear the generic image's environment defaults: setup.json owns these.
+    environment:
+      DM_SETUP_FILE: /data/setup.json
+      DM_LISTEN: ""
+      DM_STORAGE: ""
+      DM_DSN: ""
+    ports:
+      - "127.0.0.1:${QUICKSTART_PORT:-8443}:8443"
+    volumes:
+      - state:/data
+    depends_on:
+      bootstrap:
+        condition: service_completed_successfully
+    restart: unless-stopped
+
+  dmctl:
+    build:
+      context: ../..
+      target: runtime
+    entrypoint: ["/dmctl"]
+    environment:
+      DMCTL_SERVER: https://dmserver:8443
+      DMCTL_TOKEN: "@/data/secrets/admin"
+      DMCTL_CA_FILE: /data/https-ca.pem
+      DM_LISTEN: ""
+      DM_STORAGE: ""
+      DM_DSN: ""
+    volumes:
+      - state:/data
+    profiles: [tools]
+
+volumes:
+  state:

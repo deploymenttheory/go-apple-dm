@@ -18,6 +18,6 @@
 //
 // # References
 //
-//   - Reference server: https://github.com/deploymenttheory/go-apple-dm/blob/main/docs/getting-started/getting-started.md
+//   - Reference server: https://github.com/deploymenttheory/go-apple-dm/blob/main/docs/getting-started/reference-server.md
 //   - Certificate lifecycle: https://github.com/deploymenttheory/go-apple-dm/blob/main/docs/operations/certificate-lifecycle.md
 package runtime

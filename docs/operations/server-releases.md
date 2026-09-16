@@ -15,7 +15,7 @@ The binaries are built with CGO disabled, including SQLite support. They do not
 require a Go installation. After verifying and extracting your archive, put the
 binaries on your PATH and run `dmserver --version` and `dmctl version` to identify
 the release. For enrollment, certificates, server configuration and persistent
-state, follow the [getting started guide](https://github.com/deploymenttheory/go-apple-dm/blob/main/docs/getting-started/getting-started.md)
+state, follow the [reference-server walkthrough](https://github.com/deploymenttheory/go-apple-dm/blob/main/docs/getting-started/reference-server.md)
 and [certificate lifecycle guide](https://github.com/deploymenttheory/go-apple-dm/blob/main/docs/operations/certificate-lifecycle.md).
 Certificates, credentials, databases and local lab files are never packaged.
 

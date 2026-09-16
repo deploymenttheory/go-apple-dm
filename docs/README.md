@@ -1,6 +1,9 @@
 # Documentation
 
-- [Getting started](getting-started/getting-started.md): prerequisites, reference-server setup, first-device enrollment, and library integration.
+- [Getting started](getting-started/getting-started.md): choose the reference-server or custom-server path.
+- [Run the reference server](getting-started/reference-server.md): Compose startup, CLI checks, stored administration and first-device enrollment.
+- [Build your own server](getting-started/build-your-own-apple-dm-server.md): runnable Go examples, composition choices and caller responsibilities.
+- [Configuration explained](getting-started/configuration.md): server JSON, secret/path precedence, CLI contexts and bench configuration.
 - [Server release downloads](operations/server-releases.md): platform archives, signature verification and release maintenance.
 - [Architecture](architecture.md): implemented capabilities, module boundaries and limitations.
 - [Design decisions](research/decisions/README.md): current design and supporting evidence.

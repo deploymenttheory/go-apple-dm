@@ -108,6 +108,15 @@ test-e2e:
 docker-build:
 	docker build -t go-apple-dm:test .
 
+## test-quickstart: validate onboarding examples and isolated Compose startup, admin handoff and persistence (needs Docker)
+test-quickstart:
+	$(GO) build -o cover/quickstart/bin/dmctl ./server/cmd/dmctl
+	DM_QUICKSTART_DMCTL="$(PWD)/cover/quickstart/bin/dmctl" python3 -m unittest discover -s deploy/quickstart -v
+	python3 scripts/check-onboarding.py
+	python3 scripts/quickstart-smoke.py
+
+.PHONY: test-quickstart
+
 ## testdb-ddm-up: build the image and run the ddm role in Docker for TestE2E_DDMSplitDeployment; prints the exports
 testdb-ddm-up:
 	scripts/testdb.sh ddm-up

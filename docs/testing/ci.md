@@ -14,6 +14,7 @@ packaged executable are different inputs.
 | Go Test: process acceptance | Same application changes | Shared scenarios against built `dmserver` processes, including split topology; executable bench catalogue matches its documentation. |
 | Go Test: fuzz smoke | Same application changes | Brief execution of each fuzz target. |
 | Go Test: coverage | Successful unit, storage and E2E jobs | Merge Linux unit, SQL contract and both E2E profiles; retain the 95% package and overall gate. Process acceptance is separate evidence. |
+| Onboarding quickstart | Onboarding docs, Compose/helper scripts, Docker/build inputs and Go/module changes; manual dispatch | Offline documentation examples, JSON/local links, bootstrap failure/resume contracts and isolated Compose HTTPS/admin-handoff/restart checks. No Apple services or physical enrollment. |
 | Go Linter | Go/module/workspace files, lint configuration/tooling or workflow PR changes; manual dispatch | Both workspace modules on Linux ARM and Windows. Compiles tagged tests before full-baseline analysis; retains module/platform reports and does not rewrite source. |
 | Security | Application PR/main changes and weekly schedule | Both modules' vulnerability checks and gosec SARIF, plus the Docker build-context exclusion check. |
 | Dependency Review | PRs other than docs/metadata/workflow-only changes | Dependency diff against the base revision. |
@@ -93,3 +94,9 @@ Sources: [Go Test](../../.github/workflows/go-test.yml),
 [release workflow](../../.github/workflows/release.yml),
 [published-module verification](../../.github/workflows/go-server-module-installation.yml),
 [lint](../../.github/workflows/go-lint.yml) and [security](../../.github/workflows/security.yml).
+
+The [onboarding workflow](../../.github/workflows/onboarding.yml) runs
+`make test-quickstart` independently of the documentation exclusions above.
+Its smoke test uses a unique Compose project and ephemeral host port, and removes
+only that test project's volume. Failures in local startup or persistence block
+the check; simulator success does not substitute for physical-device evidence.

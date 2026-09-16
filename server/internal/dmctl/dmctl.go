@@ -124,7 +124,11 @@ func Run(
 		)
 		return fmt.Errorf("%w: -insecure is no longer supported", ErrUsage)
 	}
-	return cmd.run(ctx, e, rest)
+	err := cmd.run(ctx, e, rest)
+	if errors.Is(err, flag.ErrHelp) {
+		return nil
+	}
+	return err
 }
 
 // ExitCode maps an error to a process exit status.
@@ -332,7 +336,8 @@ func reorder(fs *flag.FlagSet, args []string) []string {
 func (e *env) parseVerb(fs *flag.FlagSet, args []string) ([]string, error) {
 	if err := fs.Parse(reorder(fs, args)); err != nil {
 		if errors.Is(err, flag.ErrHelp) {
-			return nil, nil
+			// Stop the handler before it can initialize files or call a server.
+			return nil, flag.ErrHelp
 		}
 		return nil, fmt.Errorf("%w: %w", ErrUsage, err)
 	}
