@@ -14,10 +14,11 @@ import (
 	"testing"
 	"time"
 
+	"golang.org/x/crypto/ocsp"
+
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/cms"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/pki/revocation"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/state"
-	"golang.org/x/crypto/ocsp"
 )
 
 var errStorage = errors.New("injected storage failure")
@@ -34,6 +35,7 @@ func (s faultStore) Get(ctx context.Context, key string) (state.Record, error) {
 	}
 	return s.Store.Get(ctx, key)
 }
+
 func (s faultStore) Update(ctx context.Context, keys []string, fn func(state.Tx) error) error {
 	return s.Store.Update(ctx, keys, func(tx state.Tx) error { return fn(faultTx{Tx: tx, op: s.op, prefix: s.prefix}) })
 }
@@ -49,12 +51,14 @@ func (tx faultTx) Get(ctx context.Context, key string) (state.Record, error) {
 	}
 	return tx.Tx.Get(ctx, key)
 }
+
 func (tx faultTx) Put(ctx context.Context, r state.Record) error {
 	if tx.op == "put" && strings.HasPrefix(r.Key, tx.prefix) {
 		return errStorage
 	}
 	return tx.Tx.Put(ctx, r)
 }
+
 func (tx faultTx) List(ctx context.Context, prefix, after string, n int) ([]state.Record, error) {
 	if tx.op == "list" {
 		return nil, errStorage
@@ -64,11 +68,17 @@ func (tx faultTx) List(ctx context.Context, prefix, after string, n int) ([]stat
 
 func TestRegistryFailuresAreAtomic(t *testing.T) {
 	for _, tc := range []struct{ action, op, prefix string }{
-		{"register", "get", "pki/cert/"}, {"register", "get", "pki/fingerprint/"},
-		{"register", "put", "pki/cert/"}, {"register", "put", "pki/fingerprint/"},
-		{"revoke", "get", "pki/cert/"}, {"revoke", "put", "pki/cert/"},
-		{"revoke", "get", "pki/crl/"}, {"revoke", "put", "pki/crl/"},
-		{"crl", "get", "pki/crl/"}, {"crl", "list", ""}, {"crl", "put", "pki/crl/"},
+		{"register", "get", "pki/cert/"},
+		{"register", "get", "pki/fingerprint/"},
+		{"register", "put", "pki/cert/"},
+		{"register", "put", "pki/fingerprint/"},
+		{"revoke", "get", "pki/cert/"},
+		{"revoke", "put", "pki/cert/"},
+		{"revoke", "get", "pki/crl/"},
+		{"revoke", "put", "pki/crl/"},
+		{"crl", "get", "pki/crl/"},
+		{"crl", "list", ""},
+		{"crl", "put", "pki/crl/"},
 	} {
 		t.Run(tc.action+tc.op+tc.prefix, func(t *testing.T) {
 			f := setup(t)
@@ -249,7 +259,7 @@ func TestConflictingAndCorruptCertificateRecordsFailClosed(t *testing.T) {
 		t.Fatal(err)
 	}
 	w := httptest.NewRecorder()
-	f.reg.Handler("/pki").ServeHTTP(w, httptest.NewRequest("GET", "/pki/ocsp/"+f.id+"/"+strings.Repeat("A", 8193), nil))
+	f.reg.Handler("/pki").ServeHTTP(w, httptest.NewRequestWithContext(t.Context(), "GET", "/pki/ocsp/"+f.id+"/"+strings.Repeat("A", 8193), nil))
 	if w.Code != 400 {
 		t.Fatal(w.Code)
 	}

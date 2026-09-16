@@ -170,7 +170,7 @@ func TestCACertBundleAndHandlerErrors(t *testing.T) {
 	h := s.Handler()
 	get := func(q string) *httptest.ResponseRecorder {
 		rec := httptest.NewRecorder()
-		h.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/scep?"+q, nil))
+		h.ServeHTTP(rec, httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/scep?"+q, nil))
 		return rec
 	}
 	if rec := get("operation=Bogus"); rec.Code != http.StatusBadRequest {
@@ -196,13 +196,13 @@ func TestCACertBundleAndHandlerErrors(t *testing.T) {
 	}
 	enc := strings.TrimRight(b64(msg.Raw), "=")
 	rec := httptest.NewRecorder()
-	h.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/scep?operation=PKIOperation&message="+url.QueryEscape(enc), nil))
+	h.ServeHTTP(rec, httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/scep?operation=PKIOperation&message="+url.QueryEscape(enc), nil))
 	if rec.Code != http.StatusOK || rec.Header().Get("Content-Type") != scep.ContentTypePKIMessage {
 		t.Fatalf("GET PKIOperation: %d %s", rec.Code, rec.Body.String())
 	}
 	// Oversized POST.
 	rec = httptest.NewRecorder()
-	h.ServeHTTP(rec, httptest.NewRequest(http.MethodPost, "/scep?operation=PKIOperation", strings.NewReader(strings.Repeat("x", 1<<20+1))))
+	h.ServeHTTP(rec, httptest.NewRequestWithContext(t.Context(), http.MethodPost, "/scep?operation=PKIOperation", strings.NewReader(strings.Repeat("x", 1<<20+1))))
 	if rec.Code != http.StatusBadRequest {
 		t.Fatalf("oversized: %d", rec.Code)
 	}
@@ -210,7 +210,7 @@ func TestCACertBundleAndHandlerErrors(t *testing.T) {
 	other, _, _ := ca.NewSelfSigned(ca.SelfSignedOptions{})
 	msg2, _ := scepwire.Request(csr, &smallscep.PKIMessage{MessageType: smallscep.PKCSReq, Recipients: []*x509.Certificate{other}, SignerCert: self, SignerKey: key})
 	rec = httptest.NewRecorder()
-	h.ServeHTTP(rec, httptest.NewRequest(http.MethodPost, "/scep?operation=PKIOperation", strings.NewReader(string(msg2.Raw))))
+	h.ServeHTTP(rec, httptest.NewRequestWithContext(t.Context(), http.MethodPost, "/scep?operation=PKIOperation", strings.NewReader(string(msg2.Raw))))
 	if rec.Code != http.StatusBadRequest {
 		t.Fatalf("foreign recipient: %d", rec.Code)
 	}
@@ -335,11 +335,12 @@ func TestClientUndecryptableCertRep(t *testing.T) {
 	var stored []byte
 	proxy := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Query().Get("operation") != "PKIOperation" {
+			// #nosec G704 -- Forward only to the local httptest server; the request contributes query parameters.
 			resp, err := http.Get(real.URL + "?" + r.URL.RawQuery) //nolint:noctx // test helper
 			if err != nil {
 				panic(err)
 			}
-			defer resp.Body.Close()
+			defer func(body io.Closer) { _ = body.Close() }(resp.Body)
 			w.Header().Set("Content-Type", resp.Header.Get("Content-Type"))
 			_, _ = io.Copy(w, resp.Body)
 			return
@@ -350,7 +351,7 @@ func TestClientUndecryptableCertRep(t *testing.T) {
 			if err != nil {
 				panic(err)
 			}
-			defer resp.Body.Close()
+			defer func(body io.Closer) { _ = body.Close() }(resp.Body)
 			stored, _ = io.ReadAll(resp.Body)
 		}
 		w.Header().Set("Content-Type", scep.ContentTypePKIMessage)

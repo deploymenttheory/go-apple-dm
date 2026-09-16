@@ -45,10 +45,10 @@ func (d Dialect) set() MigrationSet {
 
 // Migration is one parsed migration file.
 type Migration struct {
-	Version int
-	Name    string
-	Up      []string
-	Down    []string
+	Version int      `json:"Version"`
+	Name    string   `json:"Name"`
+	Up      []string `json:"Up"`
+	Down    []string `json:"Down"`
 }
 
 // LoadMigrations parses every NNNN_name.sql file in fsys, sorted by version.
@@ -291,7 +291,7 @@ func appliedVersions(ctx context.Context, db *sql.DB, table string) (map[int]boo
 	if err != nil {
 		return nil, fmt.Errorf("%w: read versions: %w", ErrMigration, err)
 	}
-	defer rows.Close()
+	defer func(rows *sql.Rows) { _ = rows.Close() }(rows)
 	out := map[int]bool{}
 	for rows.Next() {
 		var v int

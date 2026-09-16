@@ -172,6 +172,7 @@ func (t *memoryTx) Get(ctx context.Context, k string) (Record, error) {
 	}
 	return clone(r), nil
 }
+
 func (t *memoryTx) List(ctx context.Context, prefix, after string, limit int) ([]Record, error) {
 	if err := ctx.Err(); err != nil {
 		return nil, err
@@ -203,6 +204,7 @@ func (t *memoryTx) List(ctx context.Context, prefix, after string, limit int) ([
 	}
 	return out, nil
 }
+
 func (t *memoryTx) Put(ctx context.Context, r Record) error {
 	if err := ctx.Err(); err != nil {
 		return err
@@ -214,6 +216,7 @@ func (t *memoryTx) Put(ctx context.Context, r Record) error {
 	t.writes[r.Key] = &r
 	return nil
 }
+
 func (t *memoryTx) Delete(ctx context.Context, k string) error {
 	if err := ctx.Err(); err != nil {
 		return err

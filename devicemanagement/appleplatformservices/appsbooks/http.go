@@ -84,7 +84,7 @@ func (c *Client) attempt(
 	if err != nil {
 		return &TransportError{cause: err}
 	}
-	defer res.Body.Close()
+	defer func(body io.Closer) { _ = body.Close() }(res.Body)
 	data, err := io.ReadAll(io.LimitReader(res.Body, maxBody+1))
 	if err != nil {
 		return &TransportError{cause: err}

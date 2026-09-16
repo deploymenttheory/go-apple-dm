@@ -32,9 +32,9 @@ func TestLiveMDMRequiresDeviceEvidence(t *testing.T) {
 						case "result unavailable":
 							w.WriteHeader(503)
 						case "malformed result":
-							w.Write([]byte("{"))
+							_, _ = w.Write([]byte("{"))
 						case "device error":
-							w.Write([]byte(`{"Status":"Error"}`))
+							_, _ = w.Write([]byte(`{"Status":"Error"}`))
 						case "timeout":
 							w.WriteHeader(204)
 						default:
@@ -43,7 +43,7 @@ func TestLiveMDMRequiresDeviceEvidence(t *testing.T) {
 								return
 							}
 							if count == 2 {
-								w.Write([]byte(`{"Status":"NotNow"}`))
+								_, _ = w.Write([]byte(`{"Status":"NotNow"}`))
 								return
 							}
 							answer, err := plist.Marshal(
@@ -72,8 +72,9 @@ func TestLiveMDMRequiresDeviceEvidence(t *testing.T) {
 									return
 								}
 							}
-							json.NewEncoder(w).
-								Encode(map[string]any{"Status": "Acknowledged", "Response": answer})
+							if err := json.NewEncoder(w).Encode(map[string]any{"Status": "Acknowledged", "Response": answer}); err != nil {
+								t.Error(err)
+							}
 						}
 					case strings.HasSuffix(r.URL.Path, "/commands"):
 						if name == "queue unavailable" {
@@ -81,20 +82,20 @@ func TestLiveMDMRequiresDeviceEvidence(t *testing.T) {
 							return
 						}
 						if name == "queue refused" {
-							w.Write([]byte(`{"Queued":0}`))
+							_, _ = w.Write([]byte(`{"Queued":0}`))
 							return
 						}
-						w.Write([]byte(`{"Queued":1}`))
+						_, _ = w.Write([]byte(`{"Queued":1}`))
 					case strings.HasSuffix(r.URL.Path, "/push"):
 						if name == "push unavailable" {
 							w.WriteHeader(503)
 							return
 						}
 						if name == "push rejected" {
-							w.Write([]byte(`{"Sent":false}`))
+							_, _ = w.Write([]byte(`{"Sent":false}`))
 							return
 						}
-						w.Write([]byte(`{"Sent":true}`))
+						_, _ = w.Write([]byte(`{"Sent":true}`))
 						if name == "cancelled" {
 							cancel()
 						}
@@ -104,11 +105,12 @@ func TestLiveMDMRequiresDeviceEvidence(t *testing.T) {
 							return
 						}
 						if name == "incomplete enrollment" {
-							w.Write([]byte(`{"Enabled":true}`))
+							_, _ = w.Write([]byte(`{"Enabled":true}`))
 							return
 						}
-						json.NewEncoder(w).
-							Encode(map[string]any{"Enabled": true, "TokenUpdatedAt": time.Now()})
+						if err := json.NewEncoder(w).Encode(map[string]any{"Enabled": true, "TokenUpdatedAt": time.Now()}); err != nil {
+							t.Error(err)
+						}
 					}
 				}),
 			)

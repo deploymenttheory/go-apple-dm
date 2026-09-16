@@ -68,9 +68,9 @@ type Enrollment struct {
 // ID is the UDID or EnrollmentID for device channels and "<device>:<user>"
 // for user channels; ParentID is the device channel id for user channels.
 type EnrollmentID struct {
-	Channel  Channel
-	ID       string
-	ParentID string
+	Channel  Channel `json:"Channel"`
+	ID       string  `json:"ID"`
+	ParentID string  `json:"ParentID"`
 }
 
 // Errors returned when resolving identities.

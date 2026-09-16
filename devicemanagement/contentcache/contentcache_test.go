@@ -111,9 +111,9 @@ func TestReportMatchesAppleContract(t *testing.T) {
 			}
 		}
 	}
-	full := sample(s).(map[string]any)
+	full := requireType[map[string]any](t, sample(s))
 	full["future"] = map[string]any{"value": nil}
-	full["parents"].([]any)[0].(map[string]any)["future"] = true
+	requireType[map[string]any](t, requireType[[]any](t, full["parents"])[0])["future"] = true
 	r, err := contentcache.Decode(encode(t, full))
 	if err != nil {
 		t.Fatal(err)
@@ -139,14 +139,14 @@ func TestReportMatchesAppleContract(t *testing.T) {
 		t.Fatal("missing values were populated")
 	}
 	for _, key := range s.Required {
-		m := sample(s).(map[string]any)
+		m := requireType[map[string]any](t, sample(s))
 		delete(m, key)
 		if _, err := contentcache.Decode(encode(t, m)); !errors.Is(err, contentcache.ErrInvalidReport) {
 			t.Fatalf("missing %s: %v", key, err)
 		}
 	}
 	for key, prop := range s.Properties {
-		m := sample(s).(map[string]any)
+		m := requireType[map[string]any](t, sample(s))
 		m[key] = nil
 		if _, err := contentcache.Decode(encode(t, m)); !errors.Is(err, contentcache.ErrInvalidReport) {
 			t.Fatalf("null %s: %v", key, err)
@@ -163,13 +163,13 @@ func TestReportMatchesAppleContract(t *testing.T) {
 	}
 	for _, key := range []string{"parents", "peers"} {
 		for _, bad := range []any{nil, map[string]any{"guid": "bad"}, map[string]any{"guid": nil}} {
-			m := sample(s).(map[string]any)
+			m := requireType[map[string]any](t, sample(s))
 			m[key] = []any{bad}
 			if _, err := contentcache.Decode(encode(t, m)); !errors.Is(err, contentcache.ErrInvalidReport) {
 				t.Fatalf("invalid %s entry: %v", key, err)
 			}
 		}
-		m := sample(s).(map[string]any)
+		m := requireType[map[string]any](t, sample(s))
 		m[key] = []any{map[string]any{}}
 		if _, err := contentcache.Decode(encode(t, m)); err != nil {
 			t.Fatal(err)
@@ -240,7 +240,7 @@ func TestReceiver(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			r := httptest.NewRequest(tc.method, "https://cache.example/metrics", strings.NewReader(tc.body))
+			r := httptest.NewRequestWithContext(t.Context(), tc.method, "https://cache.example/metrics", strings.NewReader(tc.body))
 			r.Header.Set("Content-Type", tc.media)
 			if tc.readFail {
 				r.Body = io.NopCloser(brokenReader{})

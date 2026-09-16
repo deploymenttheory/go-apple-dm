@@ -119,9 +119,7 @@ func TestUnmarshalScalars(t *testing.T) {
 
 func TestUnmarshalPointerAndNull(t *testing.T) {
 	// {"nested": {"x5c": [h'ff']}} fills the pointer; null leaves it nil.
-	raw := hex(t, "a1 66 6e657374656420 a1 63 783563 81 41ff")
-	// The key above is "nested " with a trailing space; build it properly.
-	raw = hex(t, "a1 66 6e6573746564 a1 63 783563 81 41ff")
+	raw := hex(t, "a1 66 6e6573746564 a1 63 783563 81 41ff")
 	var got attestation
 	if err := cbor.Unmarshal(raw, &got); err != nil {
 		t.Fatal(err)

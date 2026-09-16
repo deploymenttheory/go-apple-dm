@@ -55,7 +55,7 @@ func Render(w io.Writer, m Match, t support.Target) error {
 	} else {
 		renderTarget(tw, m, t)
 	}
-	return tw.Flush() //nolint:wrapcheck // the caller's writer error, unchanged
+	return tw.Flush() // the caller's writer error, unchanged
 }
 
 func header(w io.Writer, m Match) {
@@ -63,20 +63,20 @@ func header(w io.Writer, m Match) {
 	if m.Key {
 		name = m.Path
 	}
-	fmt.Fprintf(w, "%s\t(%s)\n", name, m.Family)
+	_, _ = fmt.Fprintf(w, "%s\t(%s)\n", name, m.Family)
 	if m.ID != "" && m.ID != m.TypeName {
-		fmt.Fprintf(w, "Id:\t%s\n", m.ID)
+		_, _ = fmt.Fprintf(w, "Id:\t%s\n", m.ID)
 	}
 	if m.Kind != "" {
-		fmt.Fprintf(w, "Kind:\t%s\n", m.Kind)
+		_, _ = fmt.Fprintf(w, "Kind:\t%s\n", m.Kind)
 	}
 	if m.Title != "" {
-		fmt.Fprintf(w, "Title:\t%s\n", m.Title)
+		_, _ = fmt.Fprintf(w, "Title:\t%s\n", m.Title)
 	}
 	// The schema path is a citation, not a paraphrase: the generated packages
 	// carry no per-key prose, so nothing here is invented.
 	if m.Schema != "" {
-		fmt.Fprintf(w, "Schema:\tthird_party/device-management/%s\n", m.Schema)
+		_, _ = fmt.Fprintf(w, "Schema:\tthird_party/device-management/%s\n", m.Schema)
 	}
 }
 
@@ -84,25 +84,25 @@ func header(w io.Writer, m Match) {
 func renderTable(w io.Writer, m Match) {
 	e := support.Lookup(m.Family, m.Path)
 	if e == nil {
-		fmt.Fprintf(w, "\nNo support data for %s.\n", m.Path)
+		_, _ = fmt.Fprintf(w, "\nNo support data for %s.\n", m.Path)
 		return
 	}
-	fmt.Fprint(w, "\nSupport\n")
-	fmt.Fprint(
+	_, _ = fmt.Fprint(w, "\nSupport\n")
+	_, _ = fmt.Fprint(
 		w,
 		"  OS\tintro\tdeprec\tremoved\tdevice\tuser\tsuperv\tDEP\tUAMDM\tsharediPad\tuserEnrol\n",
 	)
 	for _, os := range support.AllOS {
 		s := e.OS[os]
 		if s == nil {
-			fmt.Fprintf(w, "  %s\t-\t\t\t\t\t\t\t\t\t\n", os)
+			_, _ = fmt.Fprintf(w, "  %s\t-\t\t\t\t\t\t\t\t\t\n", os)
 			continue
 		}
 		if s.NotAvailable {
-			fmt.Fprintf(w, "  %s\tn/a\t\t\t\t\t\t\t\t\t\n", os)
+			_, _ = fmt.Fprintf(w, "  %s\tn/a\t\t\t\t\t\t\t\t\t\n", os)
 			continue
 		}
-		fmt.Fprintf(w, "  %s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n",
+		_, _ = fmt.Fprintf(w, "  %s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n",
 			os, version(s.Introduced), version(s.Deprecated), version(s.Removed),
 			tri(s.DeviceChannel), tri(s.UserChannel), tri(s.Supervised),
 			tri(s.RequiresDEP), tri(s.UserApprovedMDM),
@@ -112,19 +112,19 @@ func renderTable(w io.Writer, m Match) {
 	if len(keys) == 0 {
 		return
 	}
-	fmt.Fprintf(w, "\nKeys (%d)\n", len(keys))
+	_, _ = fmt.Fprintf(w, "\nKeys (%d)\n", len(keys))
 	for _, k := range keys {
-		fmt.Fprintf(w, "  %s\t%s\n", k, availability(m.Family, k))
+		_, _ = fmt.Fprintf(w, "  %s\t%s\n", k, availability(m.Family, k))
 	}
 }
 
 // renderTarget grades the type and its keys for one target.
 func renderTarget(w io.Writer, m Match, t support.Target) {
-	fmt.Fprintf(w, "\nTarget\t%s\n\n", describe(t))
+	_, _ = fmt.Fprintf(w, "\nTarget\t%s\n\n", describe(t))
 	row := func(path string) {
 		e := support.Lookup(m.Family, path)
 		v, reason := verdictFor(e, t)
-		fmt.Fprintf(w, "  %s\t%s\t%s\n", v, path, reason)
+		_, _ = fmt.Fprintf(w, "  %s\t%s\t%s\n", v, path, reason)
 	}
 	row(m.Path)
 	for _, k := range Keys(m) {

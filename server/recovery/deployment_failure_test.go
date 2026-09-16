@@ -93,7 +93,7 @@ func TestPrepareRejectsAuthenticatedButIncompleteDeployment(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			defer v.Close()
+			defer func(cleanup func() error) { _ = cleanup() }(v.Close)
 			path := filepath.Join(v.Directory(), "config", "bootstrap.json")
 			var b Bootstrap
 			if err := readJSONFile(path, &b); err != nil {
@@ -168,7 +168,7 @@ func TestRestoreRefusesUnsafeTargetsAndUnpausedSnapshots(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer p.Close()
+	defer func(cleanup func() error) { _ = cleanup() }(p.Close)
 	if err := p.CheckDatabase(t.Context(), filepath.Join(t.TempDir(), "missing", "verify.sqlite")); err == nil {
 		t.Fatal("verified inaccessible target")
 	}
@@ -217,7 +217,7 @@ func TestRestoreRefusesUnsafeTargetsAndUnpausedSnapshots(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer unpaused.Close()
+	defer func(cleanup func() error) { _ = cleanup() }(unpaused.Close)
 	dest := filepath.Join(t.TempDir(), "restored")
 	if _, err := unpaused.Restore(t.Context(), dest, "", true); !errors.Is(err, ErrInvalid) {
 		t.Fatal("activated unpaused checkpoint", err)

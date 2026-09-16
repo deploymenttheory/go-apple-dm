@@ -67,7 +67,7 @@ func newEnrollFixture(t *testing.T, method string, mutate func(*app.Config)) *en
 	}
 	certFile, keyFile, appCA := writeCA(t)
 	f.appCA = appCA
-	l, err := net.Listen("tcp", "127.0.0.1:0")
+	l, err := (&net.ListenConfig{}).Listen(t.Context(), "tcp", "127.0.0.1:0")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -154,13 +154,14 @@ func (f *enrollFixture) device(t *testing.T, udid, product string) *simulator.De
 // signIn plays the person in the apple-as-web page: GET the web-auth URL
 // (Begin, the provider, the callback, Finish) and read the 308.
 func (f *enrollFixture) signIn(t *testing.T) func(context.Context, simulator.AuthChallenge) (string, error) {
+	t.Helper()
 	return func(ctx context.Context, c simulator.AuthChallenge) (string, error) {
 		req, _ := http.NewRequestWithContext(ctx, http.MethodGet, c.URL+"?user-identifier=alice%40example.com", nil)
 		res, err := f.client().Do(req)
 		if err != nil {
 			return "", err
 		}
-		res.Body.Close()
+		_ = res.Body.Close()
 		if res.StatusCode != http.StatusPermanentRedirect {
 			return "", errors.New("sign-in did not end in the 308: " + res.Status)
 		}
@@ -192,7 +193,7 @@ func TestEnrollment(t *testing.T) {
 			t.Fatal(err)
 		}
 		body, _ := io.ReadAll(res.Body)
-		res.Body.Close()
+		_ = res.Body.Close()
 		if res.StatusCode != http.StatusOK ||
 			!strings.Contains(string(body), `"Version":"mdm-adde"`) ||
 			!strings.Contains(string(body), f.publicURL+"/enroll/mdm-adde") {
@@ -205,7 +206,7 @@ func TestEnrollment(t *testing.T) {
 			nil,
 		)
 		res, _ = f.client().Do(req)
-		res.Body.Close()
+		_ = res.Body.Close()
 		if res.StatusCode != http.StatusForbidden {
 			t.Fatalf("unrouted family = %d", res.StatusCode)
 		}
@@ -318,7 +319,7 @@ func TestEnrollment(t *testing.T) {
 						if err != nil {
 							return "", err
 						}
-						res.Body.Close()
+						_ = res.Body.Close()
 						if res.StatusCode != http.StatusPermanentRedirect {
 							return "", errors.New(
 								"authorization did not end in the 308: " + res.Status,
@@ -363,7 +364,7 @@ func TestEnrollment(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		res.Body.Close()
+		_ = res.Body.Close()
 		if res.StatusCode != http.StatusBadRequest {
 			t.Fatalf("bad authorization request = %d", res.StatusCode)
 		}
@@ -397,7 +398,7 @@ func TestEnrollment(t *testing.T) {
 			t.Fatal(err)
 		}
 		body, _ := io.ReadAll(res.Body)
-		res.Body.Close()
+		_ = res.Body.Close()
 		if res.StatusCode != http.StatusOK ||
 			res.Header.Get("Content-Type") != "application/x-apple-aspen-config" ||
 			len(body) == 0 {
@@ -407,7 +408,7 @@ func TestEnrollment(t *testing.T) {
 		req, _ = http.NewRequestWithContext(ctx, http.MethodGet, f.publicURL+app.PathADE, nil)
 		req.Header.Set("x-apple-aspen-deviceinfo", base64.StdEncoding.EncodeToString(signed))
 		res, _ = f.client().Do(req)
-		res.Body.Close()
+		_ = res.Body.Close()
 		if res.StatusCode != http.StatusNotImplemented {
 			t.Fatalf("web view without OIDC = %d", res.StatusCode)
 		}

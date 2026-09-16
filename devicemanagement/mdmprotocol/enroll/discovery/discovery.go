@@ -72,7 +72,7 @@ const (
 
 // Server is one entry of the Servers array in the response.
 //
-//nolint:tagliatelle // keys are Apple's WellKnown.AvailableServer names
+// keys are Apple's WellKnown.AvailableServer names
 type Server struct {
 	Version string `json:"Version"`
 	BaseURL string `json:"BaseURL"`
@@ -80,7 +80,7 @@ type Server struct {
 
 // wellKnown is the response document.
 //
-//nolint:tagliatelle // key is Apple's WellKnown name
+// key is Apple's WellKnown name
 type wellKnown struct {
 	Servers []Server `json:"Servers"`
 }

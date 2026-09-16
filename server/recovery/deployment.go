@@ -89,7 +89,7 @@ func (s SQL) Backup(ctx context.Context, o BackupOptions) (Manifest, error) {
 	if err != nil {
 		return manifest, wrap(err)
 	}
-	defer os.RemoveAll(stage)
+	defer func() { _ = os.RemoveAll(stage) }()
 	b, err := CaptureBootstrap(ctx, o.SetupFile, filepath.Join(stage, "config"), o.Overrides)
 	if err != nil {
 		return manifest, err
@@ -183,7 +183,7 @@ func (p *Prepared) CheckDatabase(ctx context.Context, dsn string) error {
 	if err != nil {
 		return err
 	}
-	defer s.DB.Close()
+	defer func(cleanup func() error) { _ = cleanup() }(s.DB.Close)
 	return s.Restore(ctx, filepath.Join(p.Directory(), "database"))
 }
 
@@ -230,7 +230,7 @@ func (p *Prepared) Restore(
 	if err != nil {
 		return out, err
 	}
-	defer s.DB.Close()
+	defer func(cleanup func() error) { _ = cleanup() }(s.DB.Close)
 	if err := s.Restore(ctx, filepath.Join(destination, "database")); err != nil {
 		return out, err
 	}

@@ -92,11 +92,12 @@ func TestPrivateFileFailures(t *testing.T) {
 	if err := SyncDirectory(file); err == nil {
 		t.Fatal("closed handle accepted")
 	}
+	// #nosec G304 -- The test controls this fixture path within its private workspace.
 	directory, err := os.Open(dir)
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer directory.Close()
+	defer func(cleanup func() error) { _ = cleanup() }(directory.Close)
 	if err := SyncDirectory(directory); err != nil {
 		t.Fatal(err)
 	}
@@ -109,17 +110,18 @@ func TestProtectionFollowsOpenedFile(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer root.Close()
+	defer func(cleanup func() error) { _ = cleanup() }(root.Close)
 	// Root.OpenFile permits renaming an open file on Windows. os.OpenFile
 	// omits FILE_SHARE_DELETE, which would prevent this test's path replacement.
 	file, err := root.OpenFile("original", os.O_CREATE|os.O_EXCL|os.O_WRONLY, 0o600)
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer file.Close()
+	defer func(cleanup func() error) { _ = cleanup() }(file.Close)
 	if err := os.Rename(original, moved); err != nil {
 		t.Fatal(err)
 	}
+	// #nosec G306 -- Deliberately public permissions exercise file permission handling.
 	if err := os.WriteFile(original, []byte("unrelated replacement"), 0o644); err != nil {
 		t.Fatal(err)
 	}

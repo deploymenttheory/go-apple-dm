@@ -25,7 +25,8 @@ func bootstrapFixture(t *testing.T) (string, Bootstrap) {
 	if err := writePrivate(filepath.Join(keys, "policy-reference"), []byte(filepath.Join(keys, "policy"))); err != nil {
 		t.Fatal(err)
 	}
-	b := Bootstrap{Version: 1,
+	b := Bootstrap{
+		Version:     1,
 		Environment: map[string]string{"DM_STORAGE": "sqlite", "DM_DSN": filepath.Join(dir, "database.sqlite"), "DM_PUBLIC_URL": "https://mdm.example.test", "DM_STORAGE_KEYS": "original-key.v1,retired-key.v0", "DM_SECRETS_DIR": keys, "DM_STORAGE_KEYS_STRICT": "true", "DM_CA_FILE": filepath.Join(keys, "trust")},
 		SecretFiles: map[string]string{"DM_ADMIN_TOKEN": "secrets/admin", "DM_ENROLLMENT_POLICY_FILE": "secrets/policy-reference"},
 		Setup:       map[string]json.RawMessage{"role": json.RawMessage(`"combined"`), "vendorTokenFile": json.RawMessage(`"secrets/vendor-token"`)},

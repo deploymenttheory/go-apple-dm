@@ -28,7 +28,8 @@ func (s *Store) StorePushCert(ctx context.Context, topic string, certPEM, keyPEM
 func PutPushCertTx(ctx context.Context, q interface {
 	ExecContext(context.Context, string, ...any) (sql.Result, error)
 	QueryRowContext(context.Context, string, ...any) *sql.Row
-}, d Dialect, keys *crypt.Keyring, topic string, certPEM, keyPEM []byte, at time.Time) (storage.PushCert, error) {
+}, d Dialect, keys *crypt.Keyring, topic string, certPEM, keyPEM []byte, at time.Time,
+) (storage.PushCert, error) {
 	rec, err := storage.ValidatePushCert(topic, certPEM, keyPEM, at)
 	if err != nil {
 		return storage.PushCert{}, err
@@ -81,7 +82,7 @@ func (s *Store) PushCerts(ctx context.Context) ([]storage.PushCert, error) {
 	if err != nil {
 		return nil, wrap("list push certificates", err)
 	}
-	defer rows.Close()
+	defer func(rows *sql.Rows) { _ = rows.Close() }(rows)
 	out := []storage.PushCert{}
 	for rows.Next() {
 		var c storage.PushCert

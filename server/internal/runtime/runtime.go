@@ -47,7 +47,7 @@ func ServeListener(ctx context.Context, cfg app.Config, listener net.Listener) e
 
 func serve(ctx context.Context, cfg app.Config, listener net.Listener) error {
 	if listener != nil {
-		defer listener.Close()
+		defer func(cleanup func() error) { _ = cleanup() }(listener.Close)
 		cfg.Listen = listener.Addr().String()
 	}
 	if cfg.TLSCertFile == "" && cfg.Setup == nil {
@@ -66,7 +66,7 @@ func serve(ctx context.Context, cfg app.Config, listener net.Listener) error {
 	if err != nil {
 		return wrapError(err)
 	}
-	defer a.Close() //nolint:contextcheck // Close owns a bounded drain after the request context is canceled.
+	defer func(cleanup func() error) { _ = cleanup() }(a.Close) // Close owns a bounded drain after the request context is canceled.
 	if cfg.Setup != nil {
 		if _, err := a.LoadTLSCertificate(ctx); err != nil {
 			return fmt.Errorf(
@@ -80,7 +80,7 @@ func serve(ctx context.Context, cfg app.Config, listener net.Listener) error {
 		if err != nil {
 			return wrapError(err)
 		}
-		defer listener.Close()
+		defer func(cleanup func() error) { _ = cleanup() }(listener.Close)
 	}
 	serving := make(chan error, 2)
 	if cfg.Setup != nil && cfg.Setup.HTTP01Listen != "" {
@@ -94,7 +94,7 @@ func serve(ctx context.Context, cfg app.Config, listener net.Listener) error {
 			ReadTimeout:       readTimeout,
 			WriteTimeout:      writeTimeout,
 		}
-		defer challengeServer.Close()
+		defer func(cleanup func() error) { _ = cleanup() }(challengeServer.Close)
 		go func() {
 			if err := challengeServer.Serve(
 				challengeListener,

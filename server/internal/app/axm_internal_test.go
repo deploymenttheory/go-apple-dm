@@ -29,11 +29,11 @@ func TestAxMStatus(t *testing.T) {
 }
 
 func TestListOptions(t *testing.T) {
-	r := httptest.NewRequest(http.MethodGet, "/x?limit=abc&cursor=c1", nil)
+	r := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/x?limit=abc&cursor=c1", nil)
 	if o := listOptions(r); o.Limit != 0 || o.Cursor != "c1" {
 		t.Fatalf("%+v", o)
 	}
-	r = httptest.NewRequest(http.MethodGet, "/x?limit=7", nil)
+	r = httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/x?limit=7", nil)
 	if o := listOptions(r); o.Limit != 7 {
 		t.Fatalf("%+v", o)
 	}

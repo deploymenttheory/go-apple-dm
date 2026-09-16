@@ -47,7 +47,10 @@ func openStore(t *testing.T) *sqlstore.Store {
 // TestStore runs the contract every acme.Store must satisfy against
 // SQLite; the integration suite runs the same one on PostgreSQL and MySQL.
 func TestStore(t *testing.T) {
-	acmetest.RunAll(t, func(t *testing.T) acme.Store { return openStore(t) })
+	acmetest.RunAll(t, func(t *testing.T) acme.Store {
+		t.Helper()
+		return openStore(t)
+	})
 }
 
 func TestOpenAndMigrations(t *testing.T) {
@@ -518,9 +521,9 @@ func TestAttestationRoundTripsExactly(t *testing.T) {
 	s := openStore(t)
 	// Bytes no text encoding would survive: a NUL, invalid UTF-8, and the
 	// whole range.
-	raw := make([]byte, 256)
-	for i := range raw {
-		raw[i] = byte(i)
+	raw := make([]byte, 0, 260)
+	for i := range 256 {
+		raw = append(raw, byte(i))
 	}
 	raw = append(raw, 0xC3, 0x28, 0x00, 0xFF)
 	ch := &acme.Challenge{

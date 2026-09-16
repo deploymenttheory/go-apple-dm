@@ -171,6 +171,7 @@ type failingQueryer struct {
 func (f *failingQueryer) QueryContext(context.Context, string, ...any) (*sql.Rows, error) {
 	return nil, errors.New("query failed")
 }
+
 func (f *failingQueryer) ExecContext(context.Context, string, ...any) (sql.Result, error) {
 	f.exec++
 	if f.exec == f.failAt {
@@ -178,6 +179,7 @@ func (f *failingQueryer) ExecContext(context.Context, string, ...any) (sql.Resul
 	}
 	return nil, nil
 }
+
 func (f *failingQueryer) QueryRowContext(ctx context.Context, _ string, _ ...any) *sql.Row {
 	if len(f.rows) == 0 {
 		return f.db.QueryRowContext(ctx, "SELECT missing FROM missing_table")

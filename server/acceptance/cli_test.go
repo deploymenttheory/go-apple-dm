@@ -25,6 +25,7 @@ func TestBenchCLI(t *testing.T) {
 		t.Helper()
 		ctx, cancel := context.WithTimeout(t.Context(), time.Minute)
 		defer cancel()
+		// #nosec G204 G702 -- Execute the explicitly configured test binary with argument separation; no shell.
 		cmd := exec.CommandContext(ctx, cli, append([]string{"bench"}, args...)...)
 		out, err := cmd.CombinedOutput()
 		if err != nil {
@@ -33,6 +34,7 @@ func TestBenchCLI(t *testing.T) {
 		return out
 	}
 	run("init", "-workspace", dir, "-listen", "127.0.0.1:0")
+	// #nosec G304 -- The test controls this fixture path within its private workspace.
 	original, err := os.ReadFile(filepath.Join(dir, "mdm", "ca.pem"))
 	if err != nil {
 		t.Fatal(err)
@@ -41,6 +43,7 @@ func TestBenchCLI(t *testing.T) {
 		func() {
 			ctx, cancel := context.WithTimeout(t.Context(), 2*time.Minute)
 			defer cancel()
+			// #nosec G204 G702 -- Execute the explicitly configured test binary with argument separation; no shell.
 			cmd := exec.CommandContext(
 				ctx,
 				cli,
@@ -80,6 +83,7 @@ func TestBenchCLI(t *testing.T) {
 				case <-deadline.C:
 					t.Fatal("bench did not become ready")
 				case <-tick.C:
+					// #nosec G204 G702 -- Execute the explicitly configured test binary with argument separation; no shell.
 					status := exec.CommandContext(ctx, cli, "bench", "status", "-workspace", dir)
 					ready = status.Run() == nil
 				}
@@ -112,6 +116,7 @@ func TestBenchCLI(t *testing.T) {
 			t.Fatal("shutdown retained the running descriptor")
 		}
 	}
+	// #nosec G304 -- The test controls this fixture path within its private workspace.
 	after, err := os.ReadFile(filepath.Join(dir, "mdm", "ca.pem"))
 	if err != nil || !bytes.Equal(original, after) {
 		t.Fatal("restart changed the workspace identity")

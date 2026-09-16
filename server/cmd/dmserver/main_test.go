@@ -20,6 +20,7 @@ func TestVersionWithoutSetup(t *testing.T) {
 	for _, flag := range []string{"--version", "-version"} {
 		t.Run(flag, func(t *testing.T) {
 			path := filepath.Join(t.TempDir(), "version")
+			// #nosec G304 -- The test controls this fixture path within its private workspace.
 			out, err := os.Create(path)
 			if err != nil {
 				t.Fatal(err)
@@ -32,6 +33,7 @@ func TestVersionWithoutSetup(t *testing.T) {
 			if err := run(t.Context(), []string{flag}, getenv, out); err != nil {
 				t.Fatal(err)
 			}
+			// #nosec G304 -- The test controls this fixture path within its private workspace.
 			raw, err := os.ReadFile(path)
 			if err != nil || strings.TrimSpace(string(raw)) != buildinfo.Version() {
 				t.Fatalf("version = %q, error = %v", raw, err)
@@ -68,11 +70,11 @@ func TestServeStopsOnContextCancel(t *testing.T) {
 
 // A listener that cannot bind is reported rather than silently ignored.
 func TestServeReportsListenError(t *testing.T) {
-	held, err := net.Listen("tcp", "127.0.0.1:0")
+	held, err := (&net.ListenConfig{}).Listen(t.Context(), "tcp", "127.0.0.1:0")
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer held.Close()
+	defer func(cleanup func() error) { _ = cleanup() }(held.Close)
 
 	cfg := app.Config{Role: app.RoleAll, Storage: "inmem", Listen: held.Addr().String(), Logger: quiet()}
 	ctx, cancel := context.WithCancel(context.Background())

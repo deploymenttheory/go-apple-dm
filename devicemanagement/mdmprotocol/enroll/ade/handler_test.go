@@ -211,7 +211,7 @@ func TestHandler(t *testing.T) {
 		t.Parallel()
 		h := ade.New(ade.Config{Parse: chain.Options(), Profile: okHook, Logger: quietLogger})
 		cases := map[string]*http.Request{
-			"garbage body":   httptest.NewRequest(http.MethodPost, target, strings.NewReader("garbage")),
+			"garbage body":   httptest.NewRequestWithContext(t.Context(), http.MethodPost, target, strings.NewReader("garbage")),
 			"bad base64":     getWithHeader(t, "%%%"),
 			"DER not CMS":    getWithHeader(t, adetest.Header([]byte{0x30, 0x03, 0x02, 0x01, 0x01})),
 			"not a plist":    adetest.Request(t, target, adetest.Sign(t, chain, info, adetest.SignOptions{Content: []byte("nope")}), adetest.LaneBody),
@@ -226,11 +226,11 @@ func TestHandler(t *testing.T) {
 		if rec := serve(t, small, post(t)); rec.Code != http.StatusRequestEntityTooLarge {
 			t.Fatalf("too large: %d", rec.Code)
 		}
-		if rec := serve(t, h, httptest.NewRequest(http.MethodDelete, target, http.NoBody)); rec.Code != http.StatusMethodNotAllowed || rec.Header().Get("Allow") != "GET, POST" {
+		if rec := serve(t, h, httptest.NewRequestWithContext(t.Context(), http.MethodDelete, target, http.NoBody)); rec.Code != http.StatusMethodNotAllowed || rec.Header().Get("Allow") != "GET, POST" {
 			t.Fatalf("method: %d", rec.Code)
 		}
 		// The default logger and store are used when none are configured.
-		if rec := serve(t, ade.New(ade.Config{}), httptest.NewRequest(http.MethodDelete, target, http.NoBody)); rec.Code != http.StatusMethodNotAllowed {
+		if rec := serve(t, ade.New(ade.Config{}), httptest.NewRequestWithContext(t.Context(), http.MethodDelete, target, http.NoBody)); rec.Code != http.StatusMethodNotAllowed {
 			t.Fatalf("defaults: %d", rec.Code)
 		}
 	})
@@ -273,9 +273,9 @@ func TestHandler(t *testing.T) {
 		t.Parallel()
 		h := ade.New(ade.Config{Parse: chain.Options(), Profile: okHook, Logger: quietLogger})
 		for _, req := range []*http.Request{
-			httptest.NewRequest(http.MethodGet, target, http.NoBody),
-			httptest.NewRequest(http.MethodPost, target, http.NoBody),
-			httptest.NewRequest(http.MethodGet, target+"?deviceinfo=", http.NoBody),
+			httptest.NewRequestWithContext(t.Context(), http.MethodGet, target, http.NoBody),
+			httptest.NewRequestWithContext(t.Context(), http.MethodPost, target, http.NoBody),
+			httptest.NewRequestWithContext(t.Context(), http.MethodGet, target+"?deviceinfo=", http.NoBody),
 		} {
 			rec := serve(t, h, req)
 			if rec.Code != http.StatusBadRequest || rec.Header().Get("Content-Type") == ade.ContentTypeProfile {
@@ -307,7 +307,7 @@ func TestHandler(t *testing.T) {
 		}
 		id.Subject, id.Claims = "jane@example.com", map[string]any{"sub": "jane@example.com"}
 		fin := httptest.NewRecorder()
-		h.Finish(fin, httptest.NewRequest(http.MethodGet, target+"/callback", http.NoBody), p, id)
+		h.Finish(fin, httptest.NewRequestWithContext(t.Context(), http.MethodGet, target+"/callback", http.NoBody), p, id)
 		if prof := parseProfile(t, fin); prof.AssignedManagedAppleID != "jane@example.com" {
 			t.Fatalf("%+v", prof)
 		}

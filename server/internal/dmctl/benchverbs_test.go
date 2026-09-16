@@ -67,6 +67,7 @@ func TestBenchOfflineCommands(t *testing.T) {
 	if !strings.Contains(out, "LivePrerequisites") {
 		t.Fatal("prerequisites omitted")
 	}
+	// #nosec G304 -- The test controls this fixture path within its private workspace.
 	key, err := os.ReadFile(filepath.Join(dir, "mdm", "storage-key"))
 	if err != nil {
 		t.Fatal(err)

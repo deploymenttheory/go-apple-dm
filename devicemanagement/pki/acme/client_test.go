@@ -34,6 +34,7 @@ func TestEnrollmentWithAnIndependentClient(t *testing.T) {
 }
 
 func testIndependentClient(t *testing.T, recoverRegistration bool) {
+	t.Helper()
 	var attempts atomic.Int32
 	f := newFixture(t, func(c *acme.Config) {
 		c.Register = func(context.Context, *x509.Certificate) error {

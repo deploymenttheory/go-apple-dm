@@ -127,7 +127,7 @@ func withHeader(k, v string) reqOpt { return func(r *http.Request) { r.Header.Se
 
 // post sends body to h as the mdm role would, with overrides.
 func post(h http.Handler, body []byte, opts ...reqOpt) *httptest.ResponseRecorder {
-	r := httptest.NewRequest(http.MethodPost, proxywire.Path, bytes.NewReader(body))
+	r := httptest.NewRequestWithContext(context.Background(), http.MethodPost, proxywire.Path, bytes.NewReader(body))
 	r.Header.Set("Content-Type", proxywire.ContentType)
 	for _, o := range opts {
 		o(r)
@@ -173,7 +173,7 @@ func TestRoutes(t *testing.T) {
 	t.Run("OnlyPost", func(t *testing.T) {
 		t.Parallel()
 		for _, method := range []string{http.MethodGet, http.MethodPut, http.MethodDelete, http.MethodHead} {
-			r := httptest.NewRequest(method, proxywire.Path, nil)
+			r := httptest.NewRequestWithContext(t.Context(), method, proxywire.Path, nil)
 			r.Header.Set("Content-Type", proxywire.ContentType)
 			r.RemoteAddr = "127.0.0.1:12345"
 			w := httptest.NewRecorder()
@@ -193,7 +193,7 @@ func TestRoutes(t *testing.T) {
 	t.Run("WrongPath404", func(t *testing.T) {
 		t.Parallel()
 		for _, p := range []string{"/", "/v1", "/v1/declarative-management/tokens", "/v2/declarative-management", "/declaration/configuration/x"} {
-			r := httptest.NewRequest(http.MethodPost, p, bytes.NewReader(dmPlist(t, nil)))
+			r := httptest.NewRequestWithContext(t.Context(), http.MethodPost, p, bytes.NewReader(dmPlist(t, nil)))
 			r.Header.Set("Content-Type", proxywire.ContentType)
 			r.RemoteAddr = "127.0.0.1:12345"
 			w := httptest.NewRecorder()
@@ -255,7 +255,7 @@ func TestSignature(t *testing.T) {
 	}
 	a, _ := proxyserver.Handler(cfg)
 	b, _ := proxyserver.Handler(cfg)
-	r := httptest.NewRequest("POST", proxywire.Path, bytes.NewReader(body))
+	r := httptest.NewRequestWithContext(t.Context(), "POST", proxywire.Path, bytes.NewReader(body))
 	r.Header.Set("Content-Type", proxywire.ContentType)
 	signature, _ := proxywire.SignRequest(recvKey, r, body)
 	if got := post(a, body, withHeader(proxywire.HeaderSignature, signature)); got.Code != 200 {
@@ -316,7 +316,7 @@ func tlsServer(t *testing.T, h http.Handler, cfg *tls.Config) *httptest.Server {
 	return srv
 }
 
-func send(t *testing.T, c *http.Client, url string, body []byte, opts ...reqOpt) *http.Response {
+func send(t *testing.T, c *http.Client, url string, body []byte, opts ...reqOpt) testResponse {
 	t.Helper()
 	req, err := http.NewRequestWithContext(
 		context.Background(),
@@ -338,7 +338,7 @@ func send(t *testing.T, c *http.Client, url string, body []byte, opts ...reqOpt)
 		t.Fatalf("%s: %v", url, err)
 	}
 	t.Cleanup(func() { _ = resp.Body.Close() })
-	return resp
+	return testResponse{resp}
 }
 
 // handshakeFails reports whether c cannot even complete a request to url.
@@ -384,7 +384,7 @@ func TestAuth(t *testing.T) {
 			}
 		}
 		// Auth runs before routing: a wrong path with a bad token is 401.
-		r := httptest.NewRequest(http.MethodGet, "/nope", nil)
+		r := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/nope", nil)
 		r.RemoteAddr = "127.0.0.1:12345"
 		w := httptest.NewRecorder()
 		h.ServeHTTP(w, r)
@@ -627,7 +627,7 @@ func TestCheckin(t *testing.T) {
 			t.Fatalf("over MaxBody: %d", w.Code)
 		}
 		// Reads that fail for another reason are 400.
-		r := httptest.NewRequest(http.MethodPost, proxywire.Path, failingReader{})
+		r := httptest.NewRequestWithContext(t.Context(), http.MethodPost, proxywire.Path, failingReader{})
 		r.Header.Set("Content-Type", proxywire.ContentType)
 		r.RemoteAddr = "127.0.0.1:12345"
 		w := httptest.NewRecorder()
@@ -759,7 +759,7 @@ func TestHandlerRequiresReplayStateAndIndependentKeys(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	r := httptest.NewRequest("POST", "http://ddm.example/v1/declarative-management", nil)
+	r := httptest.NewRequestWithContext(t.Context(), "POST", "http://ddm.example/v1/declarative-management", nil)
 	r.RemoteAddr = "127.0.0.1:1234"
 	w := httptest.NewRecorder()
 	h.ServeHTTP(w, r)
@@ -767,3 +767,6 @@ func TestHandlerRequiresReplayStateAndIndependentKeys(t *testing.T) {
 		t.Fatal("cleartext accepted", w.Code)
 	}
 }
+
+// testResponse belongs to the test; the request helper registers body cleanup.
+type testResponse struct{ *http.Response }

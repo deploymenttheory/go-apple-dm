@@ -11,6 +11,7 @@ import (
 // constraints, invalid formats, repetition, variants, errors without codes.
 func syntheticTree(t *testing.T) *Tree {
 	t.Helper()
+	// #nosec G101 -- Synthetic protocol fixtures and invalid URLs; no live credentials.
 	docs := map[string]string{
 		"mdm/commands/shapes.yaml": `title: Shapes
 payload:

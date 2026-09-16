@@ -98,7 +98,7 @@ func runSetupBenchAdoption(ctx context.Context, e *env, source, destination, rol
 	if err != nil {
 		return wrapError(err)
 	}
-	defer a.Close() //nolint:contextcheck // Close owns a bounded drain after cancellation.
+	defer func(cleanup func() error) { _ = cleanup() }(a.Close) // Close owns a bounded drain after cancellation.
 	for _, identity := range []struct {
 		id        string
 		kind      lifecycle.Kind

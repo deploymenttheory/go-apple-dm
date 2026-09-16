@@ -35,8 +35,10 @@ type CaptureHealth struct {
 	FailedDenials uint64    `json:"failed_denials"`
 }
 
-var _ event.Publisher = (*Publisher)(nil)
-var _ event.Coordinator = (*Publisher)(nil)
+var (
+	_ event.Publisher   = (*Publisher)(nil)
+	_ event.Coordinator = (*Publisher)(nil)
+)
 
 // Run groups required capture and the caller's local database mutations.
 func (p *Publisher) Run(ctx context.Context, fn func(context.Context) error) error {

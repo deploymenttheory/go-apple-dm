@@ -73,7 +73,7 @@ func (s SQL) ValidateKeys(ctx context.Context, directory string, ring *crypt.Key
 	if err != nil {
 		return wrap(err)
 	}
-	defer root.Close()
+	defer func(cleanup func() error) { _ = cleanup() }(root.Close)
 	for _, table := range info.Tables {
 		if err := validateTableKeys(ctx, root, table, ring); err != nil {
 			return err
@@ -92,7 +92,7 @@ func validateTableKeys(
 	if err != nil {
 		return wrap(err)
 	}
-	defer f.Close()
+	defer func(cleanup func() error) { _ = cleanup() }(f.Close)
 	decoder := json.NewDecoder(f)
 	bindings := sealedBindings()
 	for i := int64(0); i < table.Rows; i++ {

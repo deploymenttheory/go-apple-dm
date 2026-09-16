@@ -165,6 +165,8 @@ func (f *uaFixture) rejected(t *testing.T, challenge, password string) {
 }
 
 func emptyToken(t *testing.T, o outcome) {
+	t.Helper()
+
 	resp, err := o.resp, o.err
 	t.Helper()
 	if err != nil || resp == nil || resp.AuthToken == nil || *resp.AuthToken != "" || resp.DigestChallenge != nil {

@@ -58,7 +58,7 @@ func NewReceiver(cfg Config) (http.Handler, error) {
 			return
 		}
 		body := http.MaxBytesReader(w, r.Body, cfg.MaxBodyBytes)
-		defer body.Close()
+		defer func(cleanup func() error) { _ = cleanup() }(body.Close)
 		data, err := io.ReadAll(body)
 		if err != nil {
 			code := http.StatusBadRequest

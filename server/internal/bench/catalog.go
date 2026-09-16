@@ -16,7 +16,7 @@ import (
 // Scenario is the maintained inventory; implementations never depend on testing.T.
 // Regression names retain the original detailed assertions during migration.
 //
-//nolint:tagliatelle // Catalogue JSON uses the administration PascalCase convention.
+// Catalogue JSON uses the administration PascalCase convention.
 type Scenario struct {
 	Settings      map[string]string                                 `json:"Settings,omitempty"`
 	Topology      string                                            `json:"Topology,omitempty"`
@@ -343,7 +343,7 @@ func Catalogue() []Scenario {
 
 // Result distinguishes unavailable prerequisites from an assertion failure.
 //
-//nolint:tagliatelle // Evidence JSON uses the administration PascalCase convention.
+// Evidence JSON uses the administration PascalCase convention.
 type Result struct {
 	ID       string        `json:"ID"`
 	Name     string        `json:"Name"`
@@ -385,7 +385,7 @@ func Run(ctx context.Context, e *Environment, s Scenario, adapter, revision, dev
 		if merr != nil {
 			err = merr
 		} else {
-			defer os.RemoveAll(dir)
+			defer func() { _ = os.RemoveAll(dir) }()
 			topology := s.Topology
 			if topology == "" {
 				topology = e.Topology

@@ -55,13 +55,14 @@ func (f *fakeService) Connect(_ context.Context, r *mdm.Request, resp *mdm.Respo
 	return f.command, nil
 }
 
+// #nosec G101 -- Synthetic protocol fixtures and invalid URLs; no live credentials.
 const tokenUpdate = `<plist version="1.0"><dict><key>MessageType</key><string>TokenUpdate</string><key>Topic</key><string>t</string><key>UDID</key><string>D1</string><key>PushMagic</key><string>m</string><key>Token</key><data>AQ==</data><key>UserLongName</key><string></string></dict></plist>`
 
 const idle = `<plist version="1.0"><dict><key>Status</key><string>Idle</string><key>UDID</key><string>D1</string></dict></plist>`
 
 func do(t *testing.T, h http.Handler, method, ct, body string, hdr map[string]string) *httptest.ResponseRecorder {
 	t.Helper()
-	req := httptest.NewRequest(method, "/mdm?tag=x&tag=y", strings.NewReader(body))
+	req := httptest.NewRequestWithContext(t.Context(), method, "/mdm?tag=x&tag=y", strings.NewReader(body))
 	if ct != "" {
 		req.Header.Set("Content-Type", ct)
 	}
@@ -187,7 +188,7 @@ func TestIncompleteBodyDoesNotReachProtocolService(t *testing.T) {
 	fs := &fakeService{}
 	h := httpapi.Handler(httpapi.Config{Checkin: fs, Connect: fs})
 	for _, ct := range []string{httpapi.ContentTypeCheckin, httpapi.ContentTypeConnect} {
-		req := httptest.NewRequest(http.MethodPut, "/mdm", disconnectedBody{})
+		req := httptest.NewRequestWithContext(t.Context(), http.MethodPut, "/mdm", disconnectedBody{})
 		req.Header.Set("Content-Type", ct)
 		rec := httptest.NewRecorder()
 		h.ServeHTTP(rec, req)
@@ -377,7 +378,7 @@ func TestCertMiddlewares(t *testing.T) {
 	// TLS peer certificate.
 	inner, seen = certCapture()
 	th := httpapi.CertFromTLS(inner)
-	req := httptest.NewRequest(http.MethodPut, "/", nil)
+	req := httptest.NewRequestWithContext(t.Context(), http.MethodPut, "/", nil)
 	req.TLS = &tls.ConnectionState{
 		PeerCertificates: []*x509.Certificate{id.Cert},
 		VerifiedChains:   [][]*x509.Certificate{{id.Cert, ca.Cert}},
@@ -387,7 +388,7 @@ func TestCertMiddlewares(t *testing.T) {
 	if (*seen)[0] == nil || !(*seen)[0].Equal(id.Cert) {
 		t.Fatal("tls cert not extracted")
 	}
-	req = httptest.NewRequest(http.MethodPut, "/", nil)
+	req = httptest.NewRequestWithContext(t.Context(), http.MethodPut, "/", nil)
 	rec = httptest.NewRecorder()
 	th.ServeHTTP(rec, req)
 	if (*seen)[1] != nil {

@@ -32,13 +32,14 @@ func runBenchChild() {
 		ReadHeaderTimeout: time.Second,
 		Handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			w.Header().Set("Content-Type", "application/json")
-			io.WriteString(w, `{"Items":[]}`)
+			_, _ = io.WriteString(w, `{"Items":[]}`)
 		}),
 	}
 	go func() { _ = srv.ListenAndServeTLS(os.Getenv("DM_TLS_CERT_FILE"), os.Getenv("DM_TLS_KEY_FILE")) }()
 	tick := time.NewTicker(20 * time.Millisecond)
 	defer tick.Stop()
 	for range tick.C {
+		// #nosec G703 -- The test controls this fixture path within its private workspace.
 		b, err := os.ReadFile(os.Getenv("BENCH_EXIT_FILE"))
 		if err == nil {
 			code, err := strconv.Atoi(string(b))

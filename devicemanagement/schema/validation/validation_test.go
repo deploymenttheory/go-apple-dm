@@ -10,9 +10,6 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/schema/validation"
 )
 
-//go:fix inline
-func f(v float64) *float64 { return new(v) }
-
 func TestCollectorRules(t *testing.T) {
 	t.Parallel()
 	c := validation.New(support.Target{})
@@ -24,10 +21,10 @@ func TestCollectorRules(t *testing.T) {
 	c.Enum("F", true, 2.5, []any{1, 2})
 	c.Enum("G", false, "ignored", []any{"x"})
 	c.Enum("H", true, "anything", nil)
-	c.Range("I", true, 5, f(0), f(10))
-	c.Range("J", true, -1, f(0), nil)
-	c.Range("K", true, 11, nil, f(10))
-	c.Range("L", false, 99, f(0), f(1))
+	c.Range("I", true, 5, new(float64(0)), new(float64(10)))
+	c.Range("J", true, -1, new(float64(0)), nil)
+	c.Range("K", true, 11, nil, new(float64(10)))
+	c.Range("L", false, 99, new(float64(0)), new(float64(1)))
 	c.Pattern("M", true, "abc", regexp.MustCompile(`^a`))
 	c.Pattern("N", true, "xyz", regexp.MustCompile(`^a`))
 	c.Pattern("O", true, "xyz", nil)

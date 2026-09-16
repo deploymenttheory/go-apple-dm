@@ -53,7 +53,7 @@ func runProfile(_ context.Context, e *env, args []string) error {
 		if openErr != nil {
 			return fmt.Errorf("dmctl: open profile: %w", openErr)
 		}
-		defer f.Close()
+		defer func(cleanup func() error) { _ = cleanup() }(f.Close)
 		reader = f
 	}
 	data, err := io.ReadAll(io.LimitReader(reader, plist.DefaultMaxBytes+1))

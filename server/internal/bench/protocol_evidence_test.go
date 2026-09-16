@@ -53,7 +53,7 @@ func TestScenarioRejectsIncorrectDeviceBehavior(t *testing.T) {
 					if err != nil {
 						return nil, err
 					}
-					r.Body.Close()
+					_ = r.Body.Close()
 					r.Body = io.NopCloser(bytes.NewReader(raw))
 					var message map[string]any
 					if err := plist.Unmarshal(raw, &message); err != nil {

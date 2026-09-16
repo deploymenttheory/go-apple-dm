@@ -74,7 +74,7 @@ func TestSecretsAreSealedByTheAssembledServer(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer db.Close()
+	defer func(cleanup func() error) { _ = cleanup() }(db.Close)
 	var raw []byte
 	if err := db.QueryRowContext(
 		ctx, "SELECT bootstrap_token FROM enrollments WHERE id = ?", id.ID,

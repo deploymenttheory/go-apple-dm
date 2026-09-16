@@ -17,6 +17,7 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/pki/acme/attest/attesttest"
 )
 
+// #nosec G101 -- Synthetic protocol fixtures and invalid URLs; no live credentials.
 const token = "9tXmyH1t3fFQ0zPzr3aUqKq0Q7RmAcXvIcQ5cdKZ3wA"
 
 func key(t *testing.T) *ecdsa.PrivateKey {
@@ -509,7 +510,7 @@ func TestAppleAnchors(t *testing.T) {
 	}
 	// A caller that appends its own anchors must not reach the next caller.
 	got = append(got, got[0])
-	if len(attest.AppleAnchors()) != 1 {
+	if len(got) != 2 || len(attest.AppleAnchors()) != 1 {
 		t.Fatal("the anchor list is shared")
 	}
 }

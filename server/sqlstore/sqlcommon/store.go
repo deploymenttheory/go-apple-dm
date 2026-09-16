@@ -331,7 +331,7 @@ func (s *Store) resetChildren(ctx context.Context, q querier, deviceID string, a
 	for rows.Next() {
 		id := mdm.EnrollmentID{ParentID: deviceID}
 		if err := rows.Scan(&id.ID, &id.Channel); err != nil {
-			_ = rows.Close()
+			_ = rows.Close() //nolint:sqlclosecheck // Close the read cursor before issuing writes on the same connection.
 			return wrap("read returning user", err)
 		}
 		if !id.Channel.IsUser() || validID(id) != nil {
@@ -585,7 +585,7 @@ func (s *Store) List(
 	if err != nil {
 		return out, wrap("list enrollments", err)
 	}
-	defer rows.Close()
+	defer func(rows *sql.Rows) { _ = rows.Close() }(rows)
 	for rows.Next() {
 		e, err := scanEnrollment(rows)
 		if err != nil {
@@ -1037,7 +1037,7 @@ func (s *Store) Commands(
 	if err != nil {
 		return out, wrap("list commands", err)
 	}
-	defer rows.Close()
+	defer func(rows *sql.Rows) { _ = rows.Close() }(rows)
 	seqs := make([]int64, 0, limit+1)
 	for rows.Next() {
 		seq, c, err := s.scanCommand(rows, id)
@@ -1162,7 +1162,7 @@ func (s *Store) PushInfo(
 	if err != nil {
 		return nil, wrap("push info", err)
 	}
-	defer rows.Close()
+	defer func(rows *sql.Rows) { _ = rows.Close() }(rows)
 	for rows.Next() {
 		var idStr, parent string
 		var channel int

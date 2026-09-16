@@ -84,7 +84,7 @@ func TestCompleteBranches(t *testing.T) {
 		"oauth2 bad redir": {"oauth2", http.StatusInternalServerError},
 	} {
 		rec := httptest.NewRecorder()
-		e.complete(context.Background(), webauth.Bound{Extra: map[string]string{"flow": tc.flow, "state": "s"}}, claims, webauth.Decision{}, rec, httptest.NewRequest(http.MethodGet, "/cb", nil))
+		e.complete(context.Background(), webauth.Bound{Extra: map[string]string{"flow": tc.flow, "state": "s"}}, claims, webauth.Decision{}, rec, httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/cb", nil))
 		if rec.Code != tc.want {
 			t.Errorf("%s: %d", name, rec.Code)
 		}
@@ -94,7 +94,7 @@ func TestCompleteBranches(t *testing.T) {
 func TestCompleteADEUnknownSerial(t *testing.T) {
 	e := &enrollment{ade: ade.New(ade.Config{})}
 	rec := httptest.NewRecorder()
-	e.complete(context.Background(), webauth.Bound{Serial: "nope", Extra: map[string]string{"flow": "ade"}}, webauth.Claims{Email: "a@b"}, webauth.Decision{}, rec, httptest.NewRequest(http.MethodGet, "/cb", nil))
+	e.complete(context.Background(), webauth.Bound{Serial: "nope", Extra: map[string]string{"flow": "ade"}}, webauth.Claims{Email: "a@b"}, webauth.Decision{}, rec, httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/cb", nil))
 	if rec.Code != http.StatusBadRequest {
 		t.Fatalf("unknown serial = %d", rec.Code)
 	}
@@ -112,13 +112,13 @@ func TestParseDeviceInfoErrors(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := parse(httptest.NewRequest(http.MethodPost, "/e", bytes.NewReader(signed))); err == nil || !strings.Contains(err.Error(), "plist") {
+	if _, err := parse(httptest.NewRequestWithContext(t.Context(), http.MethodPost, "/e", bytes.NewReader(signed))); err == nil || !strings.Contains(err.Error(), "plist") {
 		t.Fatalf("signed non-plist = %v", err)
 	}
-	if _, err := parse(httptest.NewRequest(http.MethodPost, "/e", strings.NewReader("garbage"))); err == nil {
+	if _, err := parse(httptest.NewRequestWithContext(t.Context(), http.MethodPost, "/e", strings.NewReader("garbage"))); err == nil {
 		t.Fatal("garbage accepted")
 	}
-	if _, err := parse(httptest.NewRequest(http.MethodPost, "/e", errReader{})); err == nil {
+	if _, err := parse(httptest.NewRequestWithContext(t.Context(), http.MethodPost, "/e", errReader{})); err == nil {
 		t.Fatal("read error swallowed")
 	}
 }

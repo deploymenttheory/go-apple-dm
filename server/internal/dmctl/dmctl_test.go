@@ -365,6 +365,7 @@ func TestConfig(t *testing.T) {
 	t.Run("RefusesWorldReadable", func(t *testing.T) {
 		dir := t.TempDir()
 		path := filepath.Join(dir, "dmctl.json")
+		// #nosec G306 -- Deliberately public permissions exercise file permission handling.
 		if err := os.WriteFile(path, []byte(`{"current":"lab","contexts":{"lab":{"server":"http://x"}}}`), 0o644); err != nil {
 			t.Fatal(err)
 		}

@@ -15,7 +15,7 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/server/internal/bench"
 )
 
-//nolint:gocyclo // One dispatch path keeps the shared live-target flags consistent across bench commands.
+// One dispatch path keeps the shared live-target flags consistent across bench commands.
 func runBench(ctx context.Context, e *env, args []string) error {
 	if len(args) == 0 {
 		return fmt.Errorf(
@@ -126,7 +126,7 @@ func runBench(ctx context.Context, e *env, args []string) error {
 		results := make([]bench.Result, 0, len(selected))
 		failed := false
 		for _, s := range selected {
-			fmt.Fprintln(e.stderr, "bench:", s.ID, s.Name)
+			_, _ = fmt.Fprintln(e.stderr, "bench:", s.ID, s.Name)
 			runCtx, cancel := context.WithTimeout(ctx, 2*time.Minute)
 			r := bench.Run(runCtx, instance, s, "process", *revision, *device)
 			cancel()

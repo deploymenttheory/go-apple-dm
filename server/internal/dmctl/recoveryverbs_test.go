@@ -113,7 +113,7 @@ func TestRecoveryCommandsPreserveEnrollmentAndIssuer(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer target.Close()
+	defer func(cleanup func() error) { _ = cleanup() }(target.Close)
 	got, err := target.Store.Get(t.Context(), id)
 	if err != nil || got.CertHash != "original-certificate" || got.Push.Topic != "original-push-topic" || string(got.Push.Token) != "original-token" || !got.TokenUpdatedAt.Equal(at) {
 		t.Fatal("enrollment changed", got, err)
@@ -153,12 +153,12 @@ func TestRecoveryPauseRetainsOwnershipAfterTimeout(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer a.Close()
+	defer func(cleanup func() error) { _ = cleanup() }(a.Close)
 	s, err := recovery.OpenDatabase(t.Context(), cfg.Storage, cfg.DSN)
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer s.DB.Close()
+	defer func(cleanup func() error) { _ = cleanup() }(s.DB.Close)
 	control, err := maintenance.Open(t.Context(), s.DB, s.Dialect, false)
 	if err != nil {
 		t.Fatal(err)
@@ -172,8 +172,10 @@ func TestRecoveryPauseRetainsOwnershipAfterTimeout(t *testing.T) {
 		t.Fatal("lost timed-out fence", err)
 	}
 	var status struct {
-		Token   string
-		Members []struct{ ID string }
+		Token   string `json:"Token"`
+		Members []struct {
+			ID string `json:"ID"`
+		} `json:"Members"`
 	}
 	out, _, err := run(t, env, "recovery", "status", "-setup-file", setup)
 	if err != nil {

@@ -98,9 +98,9 @@ func TestSeedingPropagatesImportFailures(t *testing.T) {
 				http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 					if r.Method == "GET" {
 						if name == "malformed listing" {
-							io.WriteString(w, "{")
+							_, _ = io.WriteString(w, "{")
 						} else {
-							io.WriteString(w, `{"Items":[]}`)
+							_, _ = io.WriteString(w, `{"Items":[]}`)
 						}
 						return
 					}

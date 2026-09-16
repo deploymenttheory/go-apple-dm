@@ -61,7 +61,7 @@ func TestSetupCheckBuildsReadyManagedServer(t *testing.T) {
 		cert,
 		key,
 	)
-	a.Close()
+	_ = a.Close()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -249,6 +249,7 @@ func TestSetupLocalValidationAndArtifactProtection(t *testing.T) {
 	if err := call("profile", "trust", "-out", filepath.Join(dir, "trust")); err != nil {
 		t.Fatal(err)
 	}
+	// #nosec G304 -- The test controls this fixture path within its private workspace.
 	before, err := os.ReadFile(filepath.Join(dir, "trust"))
 	if err != nil {
 		t.Fatal(err)
@@ -256,6 +257,7 @@ func TestSetupLocalValidationAndArtifactProtection(t *testing.T) {
 	if err := call("profile", "trust", "-out", filepath.Join(dir, "trust")); err == nil {
 		t.Fatal("existing artifact overwritten")
 	}
+	// #nosec G304 -- The test controls this fixture path within its private workspace.
 	after, err := os.ReadFile(filepath.Join(dir, "trust"))
 	if err != nil || !bytes.Equal(before, after) {
 		t.Fatal("artifact changed", err)
@@ -269,7 +271,7 @@ func TestSetupLocalValidationAndArtifactProtection(t *testing.T) {
 		t.Fatal(err)
 	}
 	material, err := a.Certificates.LoadMaterial(t.Context(), "https-ca", "")
-	a.Close()
+	_ = a.Close()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -382,10 +384,12 @@ func TestSetupBenchAdoptionPreservesDatabaseAndImportedIdentities(t *testing.T) 
 				}
 				if mode == "untrusted push" {
 					for target, original := range map[string]string{"push.pem": "tls.pem", "push.key": "tls.key"} {
+						// #nosec G304 -- The test controls this fixture path within its private workspace.
 						data, err := os.ReadFile(filepath.Join(mdm, original))
 						if err != nil {
 							t.Fatal(err)
 						}
+						// #nosec G703 -- The test controls this fixture path within its private workspace.
 						if err := os.WriteFile(
 							filepath.Join(mdm, target),
 							data,
@@ -426,7 +430,7 @@ func TestSetupBenchAdoptionPreservesDatabaseAndImportedIdentities(t *testing.T) 
 				if err != nil {
 					t.Fatal(err)
 				}
-				defer a.Close()
+				defer func(cleanup func() error) { _ = cleanup() }(a.Close)
 				for _, name := range []string{"issuer", "https-ca", "https"} {
 					v, err := a.Certificates.Get(t.Context(), name)
 					if err != nil || v.Active != "1" {
@@ -434,10 +438,12 @@ func TestSetupBenchAdoptionPreservesDatabaseAndImportedIdentities(t *testing.T) 
 					}
 				}
 				for _, name := range []string{"bench", "lab"} {
+					// #nosec G304 -- The test controls this fixture path within its private workspace.
 					got, err := os.ReadFile(filepath.Join(destination, "secrets", name))
 					if err != nil {
 						t.Fatal(err)
 					}
+					// #nosec G304 -- The test controls this fixture path within its private workspace.
 					want, err := os.ReadFile(filepath.Join(source, "mdm", "storage-key"))
 					if err != nil || !bytes.Equal(got, want) {
 						t.Fatal("storage key changed", err)

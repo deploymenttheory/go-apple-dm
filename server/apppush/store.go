@@ -17,13 +17,15 @@ const prefix = "apppush/v1/"
 
 // Metadata is safe to return through the admin API; it never contains a key.
 type Metadata struct {
-	Topic               string
-	NotBefore, NotAfter time.Time
-	Version             int64
+	Topic     string    `json:"Topic"`
+	NotBefore time.Time `json:"NotBefore"`
+	NotAfter  time.Time `json:"NotAfter"`
+	Version   int64     `json:"Version"`
 }
 type record struct {
 	Metadata
-	Cert, Key []byte
+	Cert []byte `json:"Cert"`
+	Key  []byte `json:"Key"`
 }
 
 // Store uses the server's transactional state backend. Persistent backends must

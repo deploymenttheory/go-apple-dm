@@ -19,7 +19,7 @@ func TestCallbackRequiresOriginalBrowser(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	r.Body.Close()
+	_ = r.Body.Close()
 	if r.StatusCode != http.StatusBadRequest {
 		t.Fatalf("transferred callback: %d", r.StatusCode)
 	}
@@ -30,7 +30,7 @@ func TestCallbackRequiresOriginalBrowser(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	r.Body.Close()
+	_ = r.Body.Close()
 	if r.StatusCode != http.StatusOK || len(h.completed) != 1 {
 		t.Fatalf("original browser lost state: %d", r.StatusCode)
 	}
@@ -40,11 +40,15 @@ func TestParallelBrowserFlowsAndHEAD(t *testing.T) {
 	h := newHarness(t, nil)
 	a := h.callbackURL("/begin?serial=a")
 	b := h.callbackURL("/begin?serial=b")
-	r, err := h.rp.Client().Head(a)
+	rRequest, err := http.NewRequestWithContext(t.Context(), "HEAD", a, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
-	r.Body.Close()
+	r, err := h.rp.Client().Do(rRequest)
+	if err != nil {
+		t.Fatal(err)
+	}
+	_ = r.Body.Close()
 	if r.StatusCode != http.StatusMethodNotAllowed {
 		t.Fatalf("HEAD accepted: %d", r.StatusCode)
 	}
@@ -53,7 +57,7 @@ func TestParallelBrowserFlowsAndHEAD(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		r.Body.Close()
+		_ = r.Body.Close()
 		if r.StatusCode != http.StatusOK {
 			t.Fatalf("parallel callback: %d", r.StatusCode)
 		}

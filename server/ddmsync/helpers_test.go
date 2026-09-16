@@ -149,19 +149,5 @@ func (h *harness) pending() []ddm.Change {
 }
 
 // drain completes every pending change row so later assertions start clean.
-func (h *harness) drain() {
-	h.t.Helper()
-	rows := h.pending()
-	seqs := make([]int64, 0, len(rows))
-	for _, r := range rows {
-		seqs = append(seqs, r.Seq)
-	}
-	if len(seqs) == 0 {
-		return
-	}
-	if err := h.store.CompleteChanges(context.Background(), seqs); err != nil {
-		h.t.Fatalf("CompleteChanges: %v", err)
-	}
-}
 
 var errBoom = errors.New("boom")

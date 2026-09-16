@@ -22,7 +22,7 @@ var errBoom = errors.New("boom")
 
 func do(t *testing.T, h http.Handler, method, target string, headers map[string]string) *httptest.ResponseRecorder {
 	t.Helper()
-	req := httptest.NewRequest(method, target, nil)
+	req := httptest.NewRequestWithContext(t.Context(), method, target, nil)
 	for k, v := range headers {
 		req.Header.Set(k, v)
 	}

@@ -31,7 +31,7 @@ func parse(t *testing.T, req *http.Request, o ade.ParseOptions) (*ade.Parsed, er
 
 func getWithHeader(t *testing.T, value string) *http.Request {
 	t.Helper()
-	req := httptest.NewRequest(http.MethodGet, "https://mdm.example.com/enroll", http.NoBody)
+	req := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "https://mdm.example.com/enroll", http.NoBody)
 	req.Header.Set(ade.HeaderName, value)
 	return req
 }
@@ -93,7 +93,7 @@ func TestParseMachineInfo(t *testing.T) {
 		}
 		// Standard alphabet in a query: '+' arrives as a space after decoding.
 		raw := "https://mdm.example.com/enroll?deviceinfo=" + strings.ReplaceAll(base64.StdEncoding.EncodeToString(blob), "+", "%20")
-		p, err = parse(t, httptest.NewRequest(http.MethodGet, raw, http.NoBody), opts)
+		p, err = parse(t, httptest.NewRequestWithContext(t.Context(), http.MethodGet, raw, http.NoBody), opts)
 		if err != nil || p.Origin != ade.OriginQuery {
 			t.Fatalf("std alphabet in query: %v", err)
 		}
@@ -110,24 +110,24 @@ func TestParseMachineInfo(t *testing.T) {
 		if err != nil || p.Origin != ade.OriginBody || p.SERIAL != "C02PARSE" {
 			t.Fatalf("%+v %v", p, err)
 		}
-		put := httptest.NewRequest(http.MethodPut, "https://mdm.example.com/enroll", bytes.NewReader(blob))
+		put := httptest.NewRequestWithContext(t.Context(), http.MethodPut, "https://mdm.example.com/enroll", bytes.NewReader(blob))
 		if p, err := parse(t, put, opts); err != nil || p.Origin != ade.OriginBody {
 			t.Fatalf("put: %v", err)
 		}
 		// A GET without header or query never reads a body.
-		get := httptest.NewRequest(http.MethodGet, "https://mdm.example.com/enroll", bytes.NewReader(blob))
+		get := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "https://mdm.example.com/enroll", bytes.NewReader(blob))
 		if _, err := parse(t, get, opts); !errors.Is(err, ade.ErrNoMachineInfo) {
 			t.Fatalf("get with body: %v", err)
 		}
-		empty := httptest.NewRequest(http.MethodPost, "https://mdm.example.com/enroll", http.NoBody)
+		empty := httptest.NewRequestWithContext(t.Context(), http.MethodPost, "https://mdm.example.com/enroll", http.NoBody)
 		if _, err := parse(t, empty, opts); !errors.Is(err, ade.ErrNoMachineInfo) {
 			t.Fatalf("empty post: %v", err)
 		}
-		text := httptest.NewRequest(http.MethodPost, "https://mdm.example.com/enroll", strings.NewReader("<plist/>"))
+		text := httptest.NewRequestWithContext(t.Context(), http.MethodPost, "https://mdm.example.com/enroll", strings.NewReader("<plist/>"))
 		if _, err := parse(t, text, opts); !errors.Is(err, ade.ErrMalformed) {
 			t.Fatalf("plain body: %v", err)
 		}
-		broken := httptest.NewRequest(http.MethodPost, "https://mdm.example.com/enroll", failingReader{})
+		broken := httptest.NewRequestWithContext(t.Context(), http.MethodPost, "https://mdm.example.com/enroll", failingReader{})
 		if _, err := parse(t, broken, opts); !errors.Is(err, ade.ErrMalformed) {
 			t.Fatalf("read failure: %v", err)
 		}
@@ -166,7 +166,7 @@ func TestParseMachineInfo(t *testing.T) {
 		if _, err := parse(t, getWithHeader(t, adetest.Header(notPlist)), opts); !errors.Is(err, ade.ErrMalformed) {
 			t.Fatalf("plist: %v", err)
 		}
-		if _, err := parse(t, httptest.NewRequest(http.MethodGet, "https://mdm.example.com/enroll", http.NoBody), opts); !errors.Is(err, ade.ErrNoMachineInfo) {
+		if _, err := parse(t, httptest.NewRequestWithContext(t.Context(), http.MethodGet, "https://mdm.example.com/enroll", http.NoBody), opts); !errors.Is(err, ade.ErrNoMachineInfo) {
 			t.Fatalf("nothing: %v", err)
 		}
 	})

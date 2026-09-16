@@ -313,7 +313,7 @@ func TestStorageStatusMapping(t *testing.T) {
 	for name, tc := range cases {
 		t.Run(name, func(t *testing.T) {
 			rec := httptest.NewRecorder()
-			r := httptest.NewRequest(http.MethodGet, "/admin/v1/enrollments", nil)
+			r := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/admin/v1/enrollments", nil)
 			a.storageStatus(rec, r, fmt.Errorf("wrapped: %w", tc.err))
 			if rec.Code != tc.want {
 				t.Fatalf("code = %d, want %d", rec.Code, tc.want)

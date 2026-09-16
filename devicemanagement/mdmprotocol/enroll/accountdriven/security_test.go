@@ -233,7 +233,7 @@ func TestOAuthMetadataBeforeConsumeAndConcurrentRotation(t *testing.T) {
 	code, _ := tokens.Issue(ctx, accountdriven.KindCode, alice, meta)
 	post := func(form url.Values) *httptest.ResponseRecorder {
 		w := httptest.NewRecorder()
-		r := httptest.NewRequest("POST", "/token", strings.NewReader(form.Encode()))
+		r := httptest.NewRequestWithContext(t.Context(), "POST", "/token", strings.NewReader(form.Encode()))
 		r.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 		o.TokenHandler().ServeHTTP(w, r)
 		return w
@@ -287,10 +287,10 @@ func TestOAuthMetadataBeforeConsumeAndConcurrentRotation(t *testing.T) {
 	}
 	// Apple-shaped authorization has no PKCE parameters and remains accepted.
 	u := "/authorize?" + url.Values{"response_type": {"code"}, "client_id": {o.ClientID}, "redirect_uri": {o.RedirectURL}, "state": {"s"}}.Encode()
-	if _, err := o.ParseAuthorization(httptest.NewRequest("GET", u, nil)); err != nil {
+	if _, err := o.ParseAuthorization(httptest.NewRequestWithContext(t.Context(), "GET", u, nil)); err != nil {
 		t.Fatal(err)
 	}
-	if err := o.Grant(httptest.NewRecorder(), httptest.NewRequest("GET", u, nil), nil, alice); err == nil {
+	if err := o.Grant(httptest.NewRecorder(), httptest.NewRequestWithContext(t.Context(), "GET", u, nil), nil, alice); err == nil {
 		t.Fatal("nil authorization")
 	}
 }

@@ -30,7 +30,7 @@ func TestCertificateTrustBoundaries(t *testing.T) {
 		}
 		w.WriteHeader(204)
 	})
-	r := httptest.NewRequest("GET", "https://mdm.example/mdm", nil)
+	r := httptest.NewRequestWithContext(t.Context(), "GET", "https://mdm.example/mdm", nil)
 	r.TLS = &tls.ConnectionState{PeerCertificates: []*x509.Certificate{leaf.Cert}}
 	w := httptest.NewRecorder()
 	httpapi.CertFromTLS(next).ServeHTTP(w, r)
@@ -50,7 +50,7 @@ func TestCertificateTrustBoundaries(t *testing.T) {
 	)(
 		next,
 	)
-	r = httptest.NewRequest("GET", "https://mdm.example/mdm", nil)
+	r = httptest.NewRequestWithContext(t.Context(), "GET", "https://mdm.example/mdm", nil)
 	r.Header.Set("Client-Cert", ":"+base64.StdEncoding.EncodeToString(leaf.Cert.Raw)+":")
 	r.RemoteAddr = "198.51.100.1:1234"
 	r.Header.Set("X-Forwarded-For", "192.0.2.1")
@@ -96,7 +96,7 @@ func TestDuplicateEmptyCertificateEvidenceRejected(t *testing.T) {
 		"Client-Cert":  httpapi.CertFromHeader("Client-Cert")(next),
 		cms.HeaderName: httpapi.CertFromMdmSignature(cms.VerifyOptions{}, 0)(next),
 	} {
-		r := httptest.NewRequest("PUT", "https://mdm.example/mdm", nil)
+		r := httptest.NewRequestWithContext(t.Context(), "PUT", "https://mdm.example/mdm", nil)
 		r.Header.Add(name, "")
 		r.Header.Add(name, "second credential")
 		w := httptest.NewRecorder()

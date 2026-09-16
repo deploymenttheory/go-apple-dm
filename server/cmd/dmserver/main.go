@@ -157,7 +157,7 @@ func run(ctx context.Context, args []string, getenv func(string) string, out *os
 			if err != nil {
 				return err
 			}
-			defer a.Close()
+			defer func(cleanup func() error) { _ = cleanup() }(a.Close)
 			material, err := a.Certificates.LoadMaterial(ctx, cfg.Setup.HTTPSID, "")
 			if err != nil {
 				return err

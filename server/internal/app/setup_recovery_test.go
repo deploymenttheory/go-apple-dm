@@ -100,7 +100,7 @@ func TestSetupRolloverOperationsAndManagedCertificateSource(t *testing.T) {
 		),
 	)
 	w := httptest.NewRecorder()
-	handler.ServeHTTP(w, httptest.NewRequest("GET", "/mdm", nil))
+	handler.ServeHTTP(w, httptest.NewRequestWithContext(t.Context(), "GET", "/mdm", nil))
 	if !called || w.Code != 204 {
 		t.Fatal("managed source did not delegate", w.Code)
 	}
@@ -110,14 +110,14 @@ func TestSetupRolloverOperationsAndManagedCertificateSource(t *testing.T) {
 		txReadErr: io.ErrUnexpectedEOF,
 	}
 	w = httptest.NewRecorder()
-	handler.ServeHTTP(w, httptest.NewRequest("GET", "/mdm", nil))
+	handler.ServeHTTP(w, httptest.NewRequestWithContext(t.Context(), "GET", "/mdm", nil))
 	if w.Code != 503 {
 		t.Fatal("unavailable certificate roots accepted", w.Code)
 	}
 	setupRequire(t, a.enroll.loadCA(ctx, a), io.ErrUnexpectedEOF)
 	a.Certificates.Store = a.protocol
 	editSetupIdentity(t, a.protocol, "issuer", func(r map[string]any) {
-		r["Revisions"].([]any)[0].(map[string]any)["Key"] = base64.StdEncoding.EncodeToString(
+		requireType[map[string]any](t, requireType[[]any](t, r["Revisions"])[0])["Key"] = base64.StdEncoding.EncodeToString(
 			[]byte("corrupt"),
 		)
 	})
@@ -142,7 +142,7 @@ func TestCertificateNoticeAndIssuerFailuresRemainRetryable(t *testing.T) {
 						bad = pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: bad})
 					}
 					editSetupIdentity(t, a.protocol, "issuer", func(r map[string]any) {
-						r["Revisions"].([]any)[1].(map[string]any)["Certificate"] = base64.StdEncoding.EncodeToString(
+						requireType[map[string]any](t, requireType[[]any](t, r["Revisions"])[1])["Certificate"] = base64.StdEncoding.EncodeToString(
 							bad,
 						)
 					})
@@ -170,7 +170,7 @@ func TestCertificateNoticeAndIssuerFailuresRemainRetryable(t *testing.T) {
 				return
 			}
 			c := clock.NewFake(a.cfg.Clock.Now().Add(10*365*24*time.Hour - time.Hour))
-			a.cfg.Clock, a.protocol.(*state.Memory).Now = c, c.Now
+			a.cfg.Clock, requireType[*state.Memory](t, a.protocol).Now = c, c.Now
 			if phase == "notice" {
 				item, err := a.Certificates.Get(t.Context(), "https-ca")
 				setupRequire(t, err, nil)

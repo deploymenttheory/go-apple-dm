@@ -41,7 +41,11 @@ func TestAsyncConfiguration(t *testing.T) {
 func assertAccounting(t *testing.T, b *event.Bus) {
 	t.Helper()
 	s := b.Stats()
-	if s.Accepted != s.Delivered+s.Failed+s.Abandoned+uint64(s.Queued+s.InFlight) {
+	if s.Queued < 0 || s.InFlight < 0 {
+		t.Fatalf("negative counts: %+v", s)
+	}
+	// #nosec G115 -- Counts were checked nonnegative above; int values fit uint64.
+	if s.Accepted != s.Delivered+s.Failed+s.Abandoned+uint64(s.Queued)+uint64(s.InFlight) {
 		t.Fatalf("unbalanced stats: %+v", s)
 	}
 	if s.InFlight > s.Workers || s.Queued > s.QueueCapacity {

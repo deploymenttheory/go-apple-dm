@@ -94,7 +94,7 @@ func (c *Client) accountWith(ctx context.Context, session string, protocol int) 
 	if err != nil {
 		return nil, fmt.Errorf("dep: GET /account: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func(body io.Closer) { _ = body.Close() }(resp.Body)
 	body, err := io.ReadAll(io.LimitReader(resp.Body, maxResponseBytes))
 	if err != nil {
 		return nil, fmt.Errorf("dep: read /account: %w", err)

@@ -399,7 +399,7 @@ func TestRetriesCancellationAndIdentity(t *testing.T) {
 func TestNotification(t *testing.T) {
 	const data = `{"notification":{"eventId":"E","result":"SUCCESS","type":"ASSOCIATE","assignments":[{"adamId":"1","pricingParam":"STDQ","clientUserId":"U"}]},"notificationId":"N","notificationType":"ASSET_MANAGEMENT","uId":"L"}`
 	request := func(body, auth string) *http.Request {
-		r := httptest.NewRequest(
+		r := httptest.NewRequestWithContext(t.Context(),
 			http.MethodPost,
 			"https://example.com/notifications",
 			strings.NewReader(body),
@@ -466,9 +466,9 @@ func TestConfigurationOwnershipAndRedirects(t *testing.T) {
 				if r.Method == "GET" {
 					gets++
 					if owner == "" {
-						fmt.Fprint(w, `{"uId":"L"}`)
+						_, _ = fmt.Fprint(w, `{"uId":"L"}`)
 					} else {
-						fmt.Fprintf(w, `{"uId":"L","mdmInfo":{"id":%q}}`, owner)
+						_, _ = fmt.Fprintf(w, `{"uId":"L","mdmInfo":{"id":%q}}`, owner)
 					}
 				} else {
 					posts++
@@ -481,7 +481,7 @@ func TestConfigurationOwnershipAndRedirects(t *testing.T) {
 						body.NotificationURL != "https://notify.example.com/vpp" {
 						t.Error("configuration body", err)
 					}
-					fmt.Fprint(w, `{"uId":"L","mdmInfo":{"id":"ours"}}`)
+					_, _ = fmt.Fprint(w, `{"uId":"L","mdmInfo":{"id":"ours"}}`)
 				}
 				return w.Result(), nil
 			})
@@ -530,11 +530,11 @@ func TestConcurrentConfigurationAndTokenIsolation(t *testing.T) {
 	fixtures := []*fixture{
 		newFixture(
 			t,
-			func(w http.ResponseWriter, r *http.Request) { fmt.Fprint(w, `{"uId":"L"}`) },
+			func(w http.ResponseWriter, r *http.Request) { _, _ = fmt.Fprint(w, `{"uId":"L"}`) },
 		),
 		newFixture(
 			t,
-			func(w http.ResponseWriter, r *http.Request) { fmt.Fprint(w, `{"uId":"L"}`) },
+			func(w http.ResponseWriter, r *http.Request) { _, _ = fmt.Fprint(w, `{"uId":"L"}`) },
 		),
 	}
 	var wg sync.WaitGroup

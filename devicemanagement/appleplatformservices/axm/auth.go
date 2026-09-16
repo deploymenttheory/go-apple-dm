@@ -170,7 +170,7 @@ func Assertion(key *ecdsa.PrivateKey, clientID, keyID string, now time.Time, ttl
 
 // TokenResponse is the token endpoint's success body.
 //
-//nolint:tagliatelle // OAuth 2.0 member names
+// OAuth 2.0 member names
 type TokenResponse struct {
 	AccessToken string `json:"access_token"`
 	TokenType   string `json:"token_type"`
@@ -180,7 +180,7 @@ type TokenResponse struct {
 
 // oauthError is the token endpoint's RFC 6749 error body.
 //
-//nolint:tagliatelle // OAuth 2.0 member names
+// OAuth 2.0 member names
 type oauthError struct {
 	Error       string `json:"error"`
 	Description string `json:"error_description"`
@@ -213,7 +213,7 @@ func (c *Client) exchange(ctx context.Context) (TokenResponse, error) {
 	if err != nil {
 		return TokenResponse{}, &AuthError{Err: fmt.Errorf("%w: %w", ErrTransport, err)}
 	}
-	defer func() { _ = resp.Body.Close() }()
+	defer func(body io.Closer) { _ = body.Close() }(resp.Body)
 	body, err := io.ReadAll(io.LimitReader(resp.Body, maxErrorBody))
 	if err != nil {
 		return TokenResponse{}, &AuthError{Status: resp.StatusCode, Err: fmt.Errorf("%w: %w", ErrTransport, err)}

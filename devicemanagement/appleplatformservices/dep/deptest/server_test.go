@@ -44,7 +44,7 @@ func TestServer(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		res.Body.Close()
+		_ = res.Body.Close()
 		if res.StatusCode != http.StatusUnauthorized {
 			t.Fatalf("no auth = %d", res.StatusCode)
 		}
@@ -61,7 +61,7 @@ func TestServer(t *testing.T) {
 		// A request without a session is refused; with one it works.
 		req, _ = http.NewRequestWithContext(ctx, http.MethodGet, srv.URL()+"/account", http.NoBody)
 		res, _ = srv.Client().Do(req)
-		res.Body.Close()
+		_ = res.Body.Close()
 		if res.StatusCode != http.StatusUnauthorized {
 			t.Fatalf("no session = %d", res.StatusCode)
 		}

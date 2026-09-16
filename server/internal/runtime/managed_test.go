@@ -37,7 +37,7 @@ func managedRuntimeConfig(t *testing.T) (app.Config, *x509.CertPool) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer a.Close()
+	defer func(cleanup func() error) { _ = cleanup() }(a.Close)
 	request := app.SetupRequest{
 		Request: lifecycle.Request{
 			Subject:  pkix.Name{CommonName: "localhost"},
@@ -65,7 +65,7 @@ func managedRuntimeConfig(t *testing.T) (app.Config, *x509.CertPool) {
 
 func runtimeAddress(t *testing.T) string {
 	t.Helper()
-	l, err := net.Listen("tcp", "127.0.0.1:0")
+	l, err := (&net.ListenConfig{}).Listen(t.Context(), "tcp", "127.0.0.1:0")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -90,9 +90,13 @@ func TestManagedRuntimeTLSHTTP01AndShutdown(t *testing.T) {
 	client := &http.Client{Transport: transport, Timeout: time.Second}
 	deadline := time.Now().Add(5 * time.Second)
 	for {
-		response, err := client.Get("https://" + cfg.Listen + "/healthz")
+		responseRequest, err := http.NewRequestWithContext(t.Context(), "GET", "https://"+cfg.Listen+"/healthz", nil)
+		if err != nil {
+			t.Fatal(err)
+		}
+		response, err := client.Do(responseRequest)
 		if err == nil {
-			response.Body.Close()
+			_ = response.Body.Close()
 			break
 		}
 		select {
@@ -105,13 +109,16 @@ func TestManagedRuntimeTLSHTTP01AndShutdown(t *testing.T) {
 		}
 		time.Sleep(10 * time.Millisecond)
 	}
-	response, err := client.Get(
-		"http://" + cfg.Setup.HTTP01Listen + "/.well-known/acme-challenge/missing",
-	)
+	responseRequest, err := http.NewRequestWithContext(t.Context(), "GET",
+		"http://"+cfg.Setup.HTTP01Listen+"/.well-known/acme-challenge/missing", nil)
 	if err != nil {
 		t.Fatal(err)
 	}
-	response.Body.Close()
+	response, err := client.Do(responseRequest)
+	if err != nil {
+		t.Fatal(err)
+	}
+	_ = response.Body.Close()
 	if response.StatusCode != http.StatusNotFound {
 		t.Fatal("unissued challenge exposed", response.StatusCode)
 	}
@@ -134,11 +141,11 @@ func TestManagedRuntimeRejectsMissingIdentityAndOccupiedListeners(t *testing.T) 
 		t.Fatal("missing active HTTPS accepted", err)
 	}
 	cfg.Setup.HTTPSID = validHTTPS
-	listener, err := net.Listen("tcp", "127.0.0.1:0")
+	listener, err := (&net.ListenConfig{}).Listen(t.Context(), "tcp", "127.0.0.1:0")
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer listener.Close()
+	defer func(cleanup func() error) { _ = cleanup() }(listener.Close)
 	cfg.Listen = listener.Addr().String()
 	if err := Serve(t.Context(), cfg); err == nil {
 		t.Fatal("occupied HTTPS listener accepted")

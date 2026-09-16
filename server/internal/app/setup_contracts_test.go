@@ -261,14 +261,14 @@ func TestSetupHTTPFailuresAndPublicResponses(t *testing.T) {
 		{"POST", "/setup/push/request", strings.Repeat("x", MaxAdminBody+1), 413},
 	} {
 		w := httptest.NewRecorder()
-		mux.ServeHTTP(w, httptest.NewRequest(tc.method, tc.path, strings.NewReader(tc.body)))
+		mux.ServeHTTP(w, httptest.NewRequestWithContext(t.Context(), tc.method, tc.path, strings.NewReader(tc.body)))
 		if w.Code != tc.code {
 			t.Fatal(tc.method, tc.path, w.Code, w.Body.String())
 		}
 	}
 	setupExecute(t, a, lifecycle.HTTPS, "lab", setupRequest("https", lifecycle.HTTPS))
 	w := httptest.NewRecorder()
-	mux.ServeHTTP(w, httptest.NewRequest("GET", "/setup/trust", nil))
+	mux.ServeHTTP(w, httptest.NewRequestWithContext(t.Context(), "GET", "/setup/trust", nil))
 	if w.Code != 200 || w.Header().Get("Content-Type") != "application/x-apple-aspen-config" {
 		t.Fatal(w.Code)
 	}
@@ -276,7 +276,7 @@ func TestSetupHTTPFailuresAndPublicResponses(t *testing.T) {
 	a.Certificates.Store = unavailableAppState{Store: backing, failure: io.ErrUnexpectedEOF}
 	for _, path := range []string{"/setup", "/setup/workflow/push/history"} {
 		w := httptest.NewRecorder()
-		mux.ServeHTTP(w, httptest.NewRequest("GET", path, nil))
+		mux.ServeHTTP(w, httptest.NewRequestWithContext(t.Context(), "GET", path, nil))
 		if w.Code != 500 || strings.Contains(w.Body.String(), "unexpected EOF") {
 			t.Fatal("storage failure disclosed", w.Code, w.Body.String())
 		}
@@ -422,7 +422,9 @@ func TestManagedConfigurationAndTLSValidation(t *testing.T) {
 		t,
 		a.protocol,
 		"https",
-		func(v map[string]any) { v["Revisions"].([]any)[0].(map[string]any)["Key"] = "Y29ycnVwdA==" },
+		func(v map[string]any) {
+			requireType[map[string]any](t, requireType[[]any](t, v["Revisions"])[0])["Key"] = "Y29ycnVwdA=="
+		},
 	)
 	if _, err = a.LoadTLSCertificate(ctx); err == nil {
 		t.Fatal("corrupt key served")

@@ -129,7 +129,7 @@ var errProfileExport = errors.New("app: enrollment profile export failed")
 
 // EnrollmentProfileRequest selects the device and enrollment identity method.
 //
-//nolint:tagliatelle // Preserve the existing enrollment profile API field names.
+// Preserve the existing enrollment profile API field names.
 type EnrollmentProfileRequest struct {
 	DeviceID     string              `json:"DeviceID"`
 	Serial       string              `json:"Serial"`

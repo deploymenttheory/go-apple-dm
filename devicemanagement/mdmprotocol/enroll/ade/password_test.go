@@ -41,7 +41,7 @@ func TestPasswordHashVector(t *testing.T) {
 		}
 		inner, ok := raw["passwordHash"].([]byte)
 		if !ok {
-			inner = raw["AutoSetupAdminAccounts"].([]any)[0].(map[string]any)["passwordHash"].([]byte)
+			inner = requireType[[]byte](t, requireType[map[string]any](t, requireType[[]any](t, raw["AutoSetupAdminAccounts"])[0])["passwordHash"])
 		}
 		if !bytes.Equal(inner, data) {
 			t.Fatal("inner plist was not embedded as data")

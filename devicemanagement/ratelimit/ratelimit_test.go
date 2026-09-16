@@ -113,11 +113,15 @@ func TestConcurrentCapacityAndFailures(t *testing.T) {
 func TestHTTPAndProxyTrust(t *testing.T) {
 	trusted := []netip.Prefix{netip.MustParsePrefix("10.0.0.0/8")}
 	for _, tc := range []struct{ peer, forward, want string }{
-		{"192.0.2.1:1", "1.1.1.1", "192.0.2.1"}, {"10.0.0.1:1", "8.8.8.8, 192.0.2.5, 10.0.0.2", "192.0.2.5"},
-		{"10.0.0.1:1", "garbage", "10.0.0.1"}, {"bad", "", "unknown"}, {"::ffff:192.0.2.1", "", "192.0.2.1"},
-		{"10.0.0.1:1", strings.Repeat("1.1.1.1,", 40), "10.0.0.1"}, {"10.0.0.1:1", "10.0.0.2", "10.0.0.2"},
+		{"192.0.2.1:1", "1.1.1.1", "192.0.2.1"},
+		{"10.0.0.1:1", "8.8.8.8, 192.0.2.5, 10.0.0.2", "192.0.2.5"},
+		{"10.0.0.1:1", "garbage", "10.0.0.1"},
+		{"bad", "", "unknown"},
+		{"::ffff:192.0.2.1", "", "192.0.2.1"},
+		{"10.0.0.1:1", strings.Repeat("1.1.1.1,", 40), "10.0.0.1"},
+		{"10.0.0.1:1", "10.0.0.2", "10.0.0.2"},
 	} {
-		r := httptest.NewRequest("GET", "/", nil)
+		r := httptest.NewRequestWithContext(t.Context(), "GET", "/", nil)
 		r.RemoteAddr = tc.peer
 		r.Header.Set("X-Forwarded-For", tc.forward)
 		if got := ratelimit.PeerKey(r, trusted); got != tc.want {
@@ -135,7 +139,7 @@ func TestHTTPAndProxyTrust(t *testing.T) {
 	h := ratelimit.Middleware(cfg, next)
 	for _, want := range []int{204, 429} {
 		w := httptest.NewRecorder()
-		h.ServeHTTP(w, httptest.NewRequest("GET", "/", nil))
+		h.ServeHTTP(w, httptest.NewRequestWithContext(t.Context(), "GET", "/", nil))
 		if w.Code != want {
 			t.Fatal(w.Code)
 		}
@@ -144,13 +148,13 @@ func TestHTTPAndProxyTrust(t *testing.T) {
 		}
 	}
 	w := httptest.NewRecorder()
-	h.ServeHTTP(w, httptest.NewRequest("GET", "/healthz", nil))
+	h.ServeHTTP(w, httptest.NewRequestWithContext(t.Context(), "GET", "/healthz", nil))
 	if w.Code != 204 {
 		t.Fatal(w.Code)
 	}
 	for _, empty := range []ratelimit.HTTPConfig{{}, {Limiter: cfg.Limiter}} {
 		w := httptest.NewRecorder()
-		ratelimit.Middleware(empty, next).ServeHTTP(w, httptest.NewRequest("GET", "/", nil))
+		ratelimit.Middleware(empty, next).ServeHTTP(w, httptest.NewRequestWithContext(t.Context(), "GET", "/", nil))
 		if w.Code != 204 {
 			t.Fatal(w.Code)
 		}
@@ -158,7 +162,7 @@ func TestHTTPAndProxyTrust(t *testing.T) {
 	cfg.Limiter = &ratelimit.Limiter{}
 	cfg.Reject = func(w http.ResponseWriter, r *http.Request, status int) { w.WriteHeader(status) }
 	w = httptest.NewRecorder()
-	ratelimit.Middleware(cfg, next).ServeHTTP(w, httptest.NewRequest("GET", "/", nil))
+	ratelimit.Middleware(cfg, next).ServeHTTP(w, httptest.NewRequestWithContext(t.Context(), "GET", "/", nil))
 	if w.Code != 503 {
 		t.Fatal(w.Code)
 	}

@@ -67,6 +67,7 @@ func TestBenchCommandsUseMaintainedRuntime(t *testing.T) {
 	if _, err := call("profile", "-device-id", "test-device", "-file", profile); err != nil {
 		t.Fatal(err)
 	}
+	// #nosec G304 -- The test controls this fixture path within its private workspace.
 	if b, err := os.ReadFile(profile); err != nil || !strings.Contains(string(b), "com.apple.mdm") {
 		t.Fatalf("profile: %v", err)
 	}

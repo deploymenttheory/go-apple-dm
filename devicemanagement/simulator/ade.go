@@ -124,6 +124,8 @@ func (d *Device) ADEEnroll(ctx context.Context, profileURL string, opts ADEOptio
 		if err != nil {
 			return fmt.Errorf("%w: web view: %w", ErrADE, err)
 		}
+		// The callback may fail before consuming the first response.
+		defer func(body io.Closer) { _ = body.Close() }(first.Body)
 		if resp, err = opts.WebView(ctx, first); err != nil {
 			return fmt.Errorf("%w: web view: %w", ErrADE, err)
 		}
@@ -138,7 +140,7 @@ func (d *Device) ADEEnroll(ctx context.Context, profileURL string, opts ADEOptio
 			return fmt.Errorf("%w: enroll: %w", ErrADE, err)
 		}
 	}
-	defer resp.Body.Close()
+	defer func(body io.Closer) { _ = body.Close() }(resp.Body)
 	data, _ := io.ReadAll(io.LimitReader(resp.Body, accountDrivenMaxBody))
 	if resp.StatusCode == http.StatusForbidden {
 		if sur := parseSoftwareUpdateRequired(resp.Header.Get("Content-Type"), data); sur != nil {
@@ -174,7 +176,7 @@ func parseSoftwareUpdateRequired(contentType string, body []byte) *SoftwareUpdat
 		err = plist.Unmarshal(body, &doc)
 	}
 	if err != nil || doc.Code != ErrorCodeSoftwareUpdateRequired {
-		return nil
+		return nil //nolint:nilerr // Malformed or unrelated bodies are not software-update requirements.
 	}
 	return &SoftwareUpdateRequired{OSVersion: doc.Details.OSVersion, BuildVersion: doc.Details.BuildVersion, Message: doc.Message}
 }

@@ -33,6 +33,7 @@ func readToken(ctx context.Context, r state.Reader, hash string) (Record, error)
 	err = json.Unmarshal(v.Value, &rec)
 	return rec, err
 }
+
 func putToken(ctx context.Context, tx state.Tx, hash string, rec Record) error {
 	data, err := json.Marshal(rec)
 	if err != nil {

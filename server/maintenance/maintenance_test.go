@@ -37,7 +37,7 @@ func TestFenceDrainsHTTPAndWorkers(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer p.Close(t.Context())
+	defer func() { _ = p.Close(t.Context()) }()
 	ctx, cancel := context.WithCancel(t.Context())
 	done := make(chan error, 1)
 	started, stopping, releaseWorker := make(
@@ -74,7 +74,7 @@ func TestFenceDrainsHTTPAndWorkers(t *testing.T) {
 	}))
 	go func() {
 		w := httptest.NewRecorder()
-		h.ServeHTTP(w, httptest.NewRequest("POST", "/mutate", nil))
+		h.ServeHTTP(w, httptest.NewRequestWithContext(t.Context(), "POST", "/mutate", nil))
 		response <- w
 	}()
 	<-entered
@@ -87,7 +87,7 @@ func TestFenceDrainsHTTPAndWorkers(t *testing.T) {
 		t.Fatal(st, err)
 	}
 	w := httptest.NewRecorder()
-	h.ServeHTTP(w, httptest.NewRequest("POST", "/mutate", nil))
+	h.ServeHTTP(w, httptest.NewRequestWithContext(t.Context(), "POST", "/mutate", nil))
 	if w.Code != http.StatusServiceUnavailable {
 		t.Fatal(w.Code)
 	}
@@ -120,7 +120,7 @@ func TestFenceDrainsHTTPAndWorkers(t *testing.T) {
 	}
 	served := httptest.NewRecorder()
 	p.Wrap(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) { w.WriteHeader(204) })).
-		ServeHTTP(served, httptest.NewRequest("GET", "/", nil))
+		ServeHTTP(served, httptest.NewRequestWithContext(t.Context(), "GET", "/", nil))
 	if served.Code != 204 {
 		t.Fatal(served.Code)
 	}
@@ -184,7 +184,7 @@ func TestMaintenanceFailureIsClosed(t *testing.T) {
 	}
 	w := httptest.NewRecorder()
 	p.Wrap(http.HandlerFunc(func(http.ResponseWriter, *http.Request) { t.Error("handler admitted with unavailable control store") })).
-		ServeHTTP(w, httptest.NewRequest("GET", "/", nil))
+		ServeHTTP(w, httptest.NewRequestWithContext(t.Context(), "GET", "/", nil))
 	if w.Code != 503 {
 		t.Fatal(w.Code)
 	}

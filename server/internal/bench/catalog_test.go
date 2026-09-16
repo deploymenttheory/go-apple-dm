@@ -44,6 +44,7 @@ func TestCatalogueAndReports(t *testing.T) {
 	if err := WriteReports(dir, []Result{r}); err != nil {
 		t.Fatal(err)
 	}
+	// #nosec G304 -- The test controls this fixture path within its private workspace.
 	b, err := os.ReadFile(filepath.Join(dir, "junit.xml"))
 	if err != nil {
 		t.Fatal(err)
@@ -58,6 +59,7 @@ func TestInitPreservesIdentities(t *testing.T) {
 	if err := Init(dir, "simulated", "sqlite", "all", "127.0.0.1:0"); err != nil {
 		t.Fatal(err)
 	}
+	// #nosec G304 -- The test controls this fixture path within its private workspace.
 	before, err := os.ReadFile(filepath.Join(dir, "mdm", "ca.key"))
 	if err != nil {
 		t.Fatal(err)
@@ -65,6 +67,7 @@ func TestInitPreservesIdentities(t *testing.T) {
 	if err := Init(dir, "live", "sqlite", "all", "127.0.0.1:0"); err == nil {
 		t.Fatal("existing workspace replaced")
 	}
+	// #nosec G304 -- The test controls this fixture path within its private workspace.
 	after, err := os.ReadFile(filepath.Join(dir, "mdm", "ca.key"))
 	if err != nil {
 		t.Fatal(err)

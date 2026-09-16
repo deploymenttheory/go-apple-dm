@@ -107,7 +107,7 @@ func (c *Core) replacementConnect(ctx context.Context, r *mdm.Request, resp *mdm
 				return nil, true, wrapCode(codeForStorage(err), err)
 			}
 		} else {
-			x, err = c.transitionReplacement(ctx, r, storage.ReplacementChange{Op: "result", ID: x.ID, Hash: hash, Response: resp})
+			_, err = c.transitionReplacement(ctx, r, storage.ReplacementChange{Op: "result", ID: x.ID, Hash: hash, Response: resp})
 			if err != nil {
 				return nil, true, err
 			}

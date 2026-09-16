@@ -12,7 +12,7 @@ import (
 func TestEnrollmentErrorsAreNotCacheable(t *testing.T) {
 	w := httptest.NewRecorder()
 	ade.New(ade.Config{}).
-		ServeHTTP(w, httptest.NewRequest(http.MethodPost, "https://mdm.example/enroll", strings.NewReader("invalid")))
+		ServeHTTP(w, httptest.NewRequestWithContext(t.Context(), http.MethodPost, "https://mdm.example/enroll", strings.NewReader("invalid")))
 	if w.Code < 400 || w.Header().Get("Cache-Control") != "no-store" {
 		t.Fatal("cacheable enrollment error", w.Code, w.Header())
 	}

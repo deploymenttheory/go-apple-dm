@@ -75,7 +75,7 @@ func (s *Store) associations(ctx context.Context, where string, arg any) ([]stor
 	if err != nil {
 		return nil, wrap("certificate history", err)
 	}
-	defer rows.Close()
+	defer func(rows *sql.Rows) { _ = rows.Close() }(rows)
 	out := []storage.CertAssociation{}
 	for rows.Next() {
 		var a storage.CertAssociation

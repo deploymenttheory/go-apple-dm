@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/x509"
 	"errors"
+	"strconv"
 	"testing"
 
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/event"
@@ -15,7 +16,7 @@ import (
 
 func TestCertificateStatusPrecedesAllSideEffectsAndPinModes(t *testing.T) {
 	for _, pin := range []service.PinMode{service.PinEnforce, service.PinWarn, service.PinOff} {
-		t.Run(string(rune('0'+pin)), func(t *testing.T) {
+		t.Run(strconv.Itoa(int(pin)), func(t *testing.T) {
 			h := newHarness(
 				t,
 				service.Config{

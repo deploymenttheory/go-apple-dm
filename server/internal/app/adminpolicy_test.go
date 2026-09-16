@@ -2,6 +2,7 @@ package app_test
 
 import (
 	"context"
+	"io"
 	"net/http"
 	"strings"
 	"testing"
@@ -95,7 +96,7 @@ func TestAdminPolicy(t *testing.T) {
 
 	t.Run("GrantedActionIsAllowed", func(t *testing.T) {
 		resp := adminReq(t, srv, http.MethodPut, "/admin/v1/declarations", writer, decl)
-		defer resp.Body.Close()
+		defer func(body io.Closer) { _ = body.Close() }(resp.Body)
 		if resp.StatusCode != http.StatusOK {
 			t.Fatalf("writer PUT = %d, want 200", resp.StatusCode)
 		}
@@ -103,7 +104,7 @@ func TestAdminPolicy(t *testing.T) {
 
 	t.Run("UngrantedActionIsForbidden", func(t *testing.T) {
 		resp := adminReq(t, srv, http.MethodPut, "/admin/v1/declarations", reader, decl)
-		defer resp.Body.Close()
+		defer func(body io.Closer) { _ = body.Close() }(resp.Body)
 		if resp.StatusCode != http.StatusForbidden {
 			t.Fatalf("reader PUT = %d, want 403", resp.StatusCode)
 		}
@@ -113,7 +114,7 @@ func TestAdminPolicy(t *testing.T) {
 	// that no single shared secret can express.
 	t.Run("ReadStillWorksForTheReader", func(t *testing.T) {
 		resp := adminReq(t, srv, http.MethodGet, "/admin/v1/declarations/com.example.a", reader, "")
-		defer resp.Body.Close()
+		defer func(body io.Closer) { _ = body.Close() }(resp.Body)
 		if resp.StatusCode != http.StatusOK {
 			t.Fatalf("reader GET = %d, want 200", resp.StatusCode)
 		}
@@ -122,7 +123,7 @@ func TestAdminPolicy(t *testing.T) {
 	// An action no policy names is denied by default, not allowed.
 	t.Run("UnnamedActionIsDeniedByDefault", func(t *testing.T) {
 		resp := adminReq(t, srv, http.MethodPost, "/admin/v1/notify", writer, "")
-		defer resp.Body.Close()
+		defer func(body io.Closer) { _ = body.Close() }(resp.Body)
 		if resp.StatusCode != http.StatusForbidden {
 			t.Fatalf("notify with no policy = %d, want 403", resp.StatusCode)
 		}
@@ -130,7 +131,7 @@ func TestAdminPolicy(t *testing.T) {
 
 	t.Run("UnknownTokenIsUnauthorized", func(t *testing.T) {
 		resp := adminReq(t, srv, http.MethodGet, "/admin/v1/declarations/com.example.a", "mdmt_totally-not-a-real-token", "")
-		defer resp.Body.Close()
+		defer func(body io.Closer) { _ = body.Close() }(resp.Body)
 		if resp.StatusCode != http.StatusUnauthorized {
 			t.Fatalf("bad token = %d, want 401", resp.StatusCode)
 		}
@@ -149,7 +150,7 @@ func TestAdminPolicy(t *testing.T) {
 			t.Fatalf("Revoke: %v", err)
 		}
 		resp = adminReq(t, srv, http.MethodGet, "/admin/v1/declarations/com.example.a", tok, "")
-		defer resp.Body.Close()
+		defer func(body io.Closer) { _ = body.Close() }(resp.Body)
 		if resp.StatusCode != http.StatusUnauthorized {
 			t.Fatalf("after revoke = %d, want 401", resp.StatusCode)
 		}
@@ -168,7 +169,7 @@ func TestAdminPolicy(t *testing.T) {
 			t.Fatalf("old token after rotate = %d, want 401", resp.StatusCode)
 		}
 		resp = adminReq(t, srv, http.MethodGet, "/admin/v1/declarations/com.example.a", string(fresh), "")
-		defer resp.Body.Close()
+		defer func(body io.Closer) { _ = body.Close() }(resp.Body)
 		if resp.StatusCode != http.StatusOK {
 			t.Fatalf("new token = %d, want 200", resp.StatusCode)
 		}
@@ -222,7 +223,7 @@ func TestAdminPolicy(t *testing.T) {
 		for _, e := range denied {
 			if e.Actor == "reader" {
 				found = true
-				data := e.Data.(map[string]any)
+				data := requireType[map[string]any](t, e.Data)
 				if data["Action"] != app.ActionPutDeclaration {
 					t.Fatalf("denied action = %v", data["Action"])
 				}
@@ -291,7 +292,7 @@ func TestStoredChannelPrecedesScopedCedarAuthorization(t *testing.T) {
 	}
 	for _, path := range []string{"/admin/v1/enrollments/user/victim?parent=victim", "/admin/v1/enrollments/device/victim"} {
 		resp := adminReq(t, srv, "GET", path, token, "")
-		resp.Body.Close()
+		_ = resp.Body.Close()
 		if resp.StatusCode != 403 && resp.StatusCode != 404 {
 			t.Fatal("scoped policy bypass", path, resp.StatusCode)
 		}

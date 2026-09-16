@@ -2,6 +2,7 @@ package sqlcommon
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/storage/crypt"
@@ -162,7 +163,7 @@ func (s *Store) rewrapPage(ctx context.Context, c sealedColumn, cursor string) (
 	if err != nil {
 		return nil, wrap("rewrap scan "+c.purpose, err)
 	}
-	defer rows.Close()
+	defer func(rows *sql.Rows) { _ = rows.Close() }(rows)
 	var out []rewrapRow
 	for rows.Next() {
 		var r rewrapRow

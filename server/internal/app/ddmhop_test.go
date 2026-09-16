@@ -6,6 +6,7 @@ import (
 	"crypto/x509"
 	"encoding/base64"
 	"errors"
+	"io"
 	"net/http"
 	"net/netip"
 	"testing"
@@ -96,7 +97,7 @@ func TestCertHeaderIsVerifiedAgainstCARoots(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		defer res.Body.Close()
+		defer func(body io.Closer) { _ = body.Close() }(res.Body)
 		return res.StatusCode
 	}
 

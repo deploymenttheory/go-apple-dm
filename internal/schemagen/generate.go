@@ -16,7 +16,7 @@ import (
 // GeneratedFrom mirrors devicemanagement/schema/GENERATED_FROM.json: the Apple source this
 // tree was generated from.
 //
-//nolint:tagliatelle // keys match the GENERATED_FROM.json file format
+// keys match the GENERATED_FROM.json file format
 type GeneratedFrom struct {
 	Source     string `json:"source"`
 	Ref        string `json:"ref"`
@@ -116,7 +116,7 @@ func Write(outDir string, files Files) error {
 	if err != nil {
 		return fmt.Errorf("schemagen: %w", err)
 	}
-	defer root.Close()
+	defer func(cleanup func() error) { _ = cleanup() }(root.Close)
 	written := map[string]bool{}
 	if generated, ok := files["EXPORTED_IDENTIFIERS.lock"]; ok {
 		existing, _ := root.ReadFile("EXPORTED_IDENTIFIERS.lock")
@@ -248,7 +248,7 @@ func Verify(schemaRoot, outDir string, opts Options) error {
 	if err != nil {
 		return fmt.Errorf("schemagen: %w", err)
 	}
-	defer root.Close()
+	defer func(cleanup func() error) { _ = cleanup() }(root.Close)
 	var problems []string
 	onDisk, _ := root.ReadFile("EXPORTED_IDENTIFIERS.lock")
 	merged, stale := mergeLock(onDisk, files["EXPORTED_IDENTIFIERS.lock"], allowedRemovals(outDir))

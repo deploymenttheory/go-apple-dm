@@ -12,13 +12,13 @@ import (
 // Command is a queued MDM command: the envelope Apple documents as
 // {CommandUUID, Command: {RequestType, ...}} plus the typed payload.
 type Command struct {
-	UUID        string
-	RequestType string
+	UUID        string `json:"UUID"`
+	RequestType string `json:"RequestType"`
 	// Payload is the typed command when known; nil after decoding a command
 	// whose RequestType is not in the schema registry.
-	Payload commands.Command
+	Payload commands.Command `json:"Payload"`
 	// Raw is the complete command plist sent to the device.
-	Raw []byte
+	Raw []byte `json:"Raw"`
 }
 
 // CommandOption configures NewCommand.

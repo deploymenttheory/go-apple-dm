@@ -42,7 +42,7 @@ func (s *Store) Export(
 	if err != nil {
 		return out, wrap("export enrollments", err)
 	}
-	defer rows.Close()
+	defer func(rows *sql.Rows) { _ = rows.Close() }(rows)
 	var items []storage.Enrollment
 	for rows.Next() {
 		e, err := scanEnrollment(rows)

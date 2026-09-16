@@ -90,7 +90,7 @@ func TestSoftwareUpdate(t *testing.T) {
 			t.Fatalf("%v", err)
 		}
 		// Writing a Proceed decision is an error.
-		if err := (&ade.Decision{Action: ade.Proceed}).Write(httptest.NewRecorder(), httptest.NewRequest(http.MethodGet, "/", http.NoBody)); !errors.Is(err, ade.ErrGate) {
+		if err := (&ade.Decision{Action: ade.Proceed}).Write(httptest.NewRecorder(), httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/", http.NoBody)); !errors.Is(err, ade.ErrGate) {
 			t.Fatalf("write proceed: %v", err)
 		}
 		if ade.Action(9).String() != "Action(9)" || ade.Proceed.String() != "proceed" || ade.PSSORequired.String() != "psso-required" || ade.SoftwareUpdateRequired.String() != "software-update-required" {
@@ -104,7 +104,7 @@ func TestSoftwareUpdate(t *testing.T) {
 			t.Fatalf("%+v %v", d, err)
 		}
 		for _, accept := range []string{"", "*/*", "application/json", "text/html;q=0.9, application/json", "application/xml;q=0.1"} {
-			req := httptest.NewRequest(http.MethodPost, "/enroll", http.NoBody)
+			req := httptest.NewRequestWithContext(t.Context(), http.MethodPost, "/enroll", http.NoBody)
 			if accept != "" {
 				req.Header.Set("Accept", accept)
 			}
@@ -126,7 +126,7 @@ func TestSoftwareUpdate(t *testing.T) {
 			if err := json.Unmarshal(rec.Body.Bytes(), &body); err != nil {
 				t.Fatal(err)
 			}
-			if body["code"] != "com.apple.softwareupdate.required" || body["details"].(map[string]any)["OSVersion"] != "18.0" {
+			if body["code"] != "com.apple.softwareupdate.required" || requireType[map[string]any](t, body["details"])["OSVersion"] != "18.0" {
 				t.Fatalf("%q: %s", accept, rec.Body.String())
 			}
 		}
@@ -137,7 +137,7 @@ func TestSoftwareUpdate(t *testing.T) {
 			return ade.Target{OSVersion: "18.0", BuildVersion: "22A3354"}, true, nil
 		}), nil, quiet)
 		for _, accept := range []string{"application/xml", "text/xml", "application/x-plist", "application/xml, application/json"} {
-			req := httptest.NewRequest(http.MethodPost, "/enroll", http.NoBody)
+			req := httptest.NewRequestWithContext(t.Context(), http.MethodPost, "/enroll", http.NoBody)
 			req.Header.Set("Accept", accept)
 			rec := httptest.NewRecorder()
 			if err := d.Write(rec, req); err != nil {
@@ -242,7 +242,7 @@ func TestSoftwareUpdate(t *testing.T) {
 		if err := d.PSSO.Validate(support.Target{OS: support.MacOS, Version: support.V(26, 0, 0)}); err != nil {
 			t.Fatal(err)
 		}
-		req := httptest.NewRequest(http.MethodPost, "/enroll", http.NoBody)
+		req := httptest.NewRequestWithContext(t.Context(), http.MethodPost, "/enroll", http.NoBody)
 		rec := httptest.NewRecorder()
 		if err := d.Write(rec, req); err != nil || rec.Code != http.StatusForbidden || !strings.Contains(rec.Body.String(), "com.apple.psso.required") {
 			t.Fatalf("%v %d %s", err, rec.Code, rec.Body.String())
@@ -269,7 +269,7 @@ func TestSoftwareUpdate(t *testing.T) {
 	})
 	t.Run("WriteErrorEncoding", func(t *testing.T) {
 		t.Parallel()
-		req := httptest.NewRequest(http.MethodGet, "/", http.NoBody)
+		req := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/", http.NoBody)
 		if err := ade.WriteError(httptest.NewRecorder(), req, http.StatusForbidden, make(chan int)); !errors.Is(err, ade.ErrGate) {
 			t.Fatalf("json: %v", err)
 		}

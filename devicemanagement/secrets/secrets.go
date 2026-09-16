@@ -134,7 +134,7 @@ func (d *Dir) Get(_ context.Context, name string) (Secret, error) {
 		}
 		return Secret{}, fmt.Errorf("secrets: open %s: %w", name, err)
 	}
-	defer f.Close()
+	defer func(cleanup func() error) { _ = cleanup() }(f.Close)
 	b, err := io.ReadAll(io.LimitReader(f, maxSize+1))
 	if err != nil {
 		return Secret{}, fmt.Errorf("secrets: read %s: %w", name, err)

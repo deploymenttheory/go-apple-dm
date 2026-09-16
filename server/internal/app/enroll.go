@@ -26,6 +26,7 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/plist"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/pki/acme"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/pki/ca"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/pki/lifecycle"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/pki/scep"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/schema/checkin"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/state"
@@ -636,7 +637,11 @@ func (e *enrollment) loadCA(ctx context.Context, a *App) error {
 		if err != nil {
 			return wrapError(err)
 		}
-		e.caCert, e.caKey = pair.Leaf, pair.PrivateKey.(crypto.Signer)
+		signer, ok := pair.PrivateKey.(crypto.Signer)
+		if !ok {
+			return lifecycle.ErrInvalid
+		}
+		e.caCert, e.caKey = pair.Leaf, signer
 		return nil
 	}
 

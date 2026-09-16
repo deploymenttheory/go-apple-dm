@@ -85,7 +85,7 @@ func TestCredentialPlatformConformance(t *testing.T) {
 				}
 				return tc.hardware, nil
 			}
-			r := httptest.NewRequest(http.MethodGet, "https://mdm.example/credential", nil)
+			r := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "https://mdm.example/credential", nil)
 			r = r.WithContext(httpapi.WithCert(t.Context(), cert))
 			w := httptest.NewRecorder()
 			a.enroll.acme.credentialHandler().ServeHTTP(w, r)

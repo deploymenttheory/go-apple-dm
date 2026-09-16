@@ -52,6 +52,7 @@ func TestParseJWKS(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	// #nosec G403 -- Deliberately weak key exercises minimum RSA size rejection.
 	short, err := rsa.GenerateKey(rand.Reader, 1024)
 	if err != nil {
 		t.Fatal(err)

@@ -13,6 +13,7 @@ import (
 
 func fixtureRecipient(t *testing.T, name string) (*x509.Certificate, crypto.Decrypter) {
 	t.Helper()
+	// #nosec G304 -- The test controls this fixture path within its private workspace.
 	data, err := os.ReadFile("testdata/envelopes/" + name + ".cert.pem")
 	if err != nil {
 		t.Fatal(err)
@@ -22,6 +23,7 @@ func fixtureRecipient(t *testing.T, name string) (*x509.Certificate, crypto.Decr
 	if err != nil {
 		t.Fatal(err)
 	}
+	// #nosec G304 -- The test controls this fixture path within its private workspace.
 	data, err = os.ReadFile("testdata/envelopes/" + name + ".key.pem")
 	if err != nil {
 		t.Fatal(err)
@@ -31,7 +33,7 @@ func fixtureRecipient(t *testing.T, name string) (*x509.Certificate, crypto.Decr
 	if err != nil {
 		t.Fatal(err)
 	}
-	return cert, key.(crypto.Decrypter)
+	return cert, requireType[crypto.Decrypter](t, key)
 }
 
 func TestDecryptEnvelope(t *testing.T) {
@@ -39,6 +41,7 @@ func TestDecryptEnvelope(t *testing.T) {
 	other, otherKey := fixtureRecipient(t, "other")
 	for _, name := range []string{"aes256.der", "aes128.ber", "des3.der", "oaep.der"} {
 		t.Run(name, func(t *testing.T) {
+			// #nosec G304 -- The test controls this fixture path within its private workspace.
 			data, err := os.ReadFile("testdata/envelopes/" + name)
 			if err != nil {
 				t.Fatal(err)

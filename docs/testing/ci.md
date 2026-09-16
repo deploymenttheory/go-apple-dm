@@ -14,7 +14,7 @@ packaged executable are different inputs.
 | Go Test: process acceptance | Same application changes | Shared scenarios against built `dmserver` processes, including split topology; executable bench catalogue matches its documentation. |
 | Go Test: fuzz smoke | Same application changes | Brief execution of each fuzz target. |
 | Go Test: coverage | Successful unit, storage and E2E jobs | Merge Linux unit, SQL contract and both E2E profiles; retain the 95% package and overall gate. Process acceptance is separate evidence. |
-| Go Linter | Go/module files, linter settings or workflow PR changes; manual dispatch | Both modules on Linux ARM and Windows, including platform-specific code. Does not rewrite source. |
+| Go Linter | Go/module/workspace files, lint configuration/tooling or workflow PR changes; manual dispatch | Both workspace modules on Linux ARM and Windows. Compiles tagged tests before full-baseline analysis; retains module/platform reports and does not rewrite source. |
 | Security | Application PR/main changes and weekly schedule | Both modules' vulnerability checks and gosec SARIF, plus the Docker build-context exclusion check. |
 | Dependency Review | PRs other than docs/metadata/workflow-only changes | Dependency diff against the base revision. |
 | Check server release assets | Server implementation/dependencies, packaging/workflow inputs, LICENSE or release operations guide | Build all six archives, check hashes and Linux versions; execute the packaged Windows binaries and native workspace-lock test. Does not publish. |
@@ -49,6 +49,14 @@ different inputs. Native Windows unit tests run in application CI; release
 publication builds and checks the binaries without repeating that full suite.
 Keep linter gosec and scheduled gosec SARIF: their platforms, exclusions, reporting
 and schedule differ. Consolidating either would require preserving those contracts.
+
+The linter version is pinned in `.golangci-version` and shared by local installation
+and CI. `scripts/lint.py` selects this checkout's workspace explicitly; server
+tests can therefore exercise library APIs introduced in the same change. The
+independent candidate/published installation checks retain `GOWORK=off` and the
+server's declared library dependency. Lint cannot replace those consumer checks.
+A compilation error stops analysis even if a tool prints "0 issues". Investigate
+the selected module version and build tags before changing exclusions.
 
 ## Dependency and failure handling
 

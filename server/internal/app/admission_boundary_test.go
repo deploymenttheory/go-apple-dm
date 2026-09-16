@@ -385,7 +385,7 @@ func TestAdminHandlersHandlePostAuthorizationStorageFailure(t *testing.T) {
 	for name, h := range map[string]http.HandlerFunc{"get": a.getEnrollment, "disable": a.disableEnrollment, "commands": a.listCommands, "clear": a.clearCommands, "evidence": a.enrollmentEvidence} {
 		t.Run(name, func(t *testing.T) {
 			for _, valid := range []bool{false, true} {
-				r := httptest.NewRequest("GET", "https://admin.example/resource", nil)
+				r := httptest.NewRequestWithContext(t.Context(), "GET", "https://admin.example/resource", nil)
 				if valid {
 					r.SetPathValue("id", "device")
 					r.SetPathValue("channel", "device")

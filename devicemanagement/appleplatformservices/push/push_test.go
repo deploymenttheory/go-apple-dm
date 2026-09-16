@@ -11,28 +11,11 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/appleplatformservices/push/pushtest"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/clock"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/mdm"
-	"github.com/deploymenttheory/go-apple-dm/devicemanagement/schema/checkin"
-	"github.com/deploymenttheory/go-apple-dm/devicemanagement/storage/inmem"
 )
 
 var t0 = time.Date(2026, 9, 1, 12, 0, 0, 0, time.UTC)
 
 func dev(n string) mdm.EnrollmentID { return mdm.EnrollmentID{Channel: mdm.ChannelDevice, ID: n} }
-
-func enrolledStore(t *testing.T, ids ...string) *inmem.Store {
-	t.Helper()
-	s := inmem.New()
-	ctx := context.Background()
-	for i, id := range ids {
-		if err := s.UpsertAuthenticate(ctx, dev(id), &checkin.Authenticate{Topic: "t"}, nil, t0); err != nil {
-			t.Fatal(err)
-		}
-		if err := s.StoreTokenUpdate(ctx, dev(id), mdm.Push{Topic: "t", Token: []byte{byte(i + 1)}, Magic: "m-" + id}, nil, nil, t0); err != nil {
-			t.Fatal(err)
-		}
-	}
-	return s
-}
 
 func TestCoalesce(t *testing.T) {
 	t.Parallel()

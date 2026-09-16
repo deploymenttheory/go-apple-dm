@@ -75,7 +75,7 @@ func tableNames(ctx context.Context, q sqlcommon.Queryer, backend string) ([]str
 	if err != nil {
 		return nil, wrap(err)
 	}
-	defer rows.Close()
+	defer func(rows *sql.Rows) { _ = rows.Close() }(rows)
 	names := []string{}
 	for rows.Next() {
 		var name string
@@ -107,7 +107,7 @@ func (s SQL) Snapshot(ctx context.Context, destination string) error {
 	if err != nil {
 		return wrap(err)
 	}
-	defer tx.Rollback()
+	defer func(cleanup func() error) { _ = cleanup() }(tx.Rollback)
 	names, err := tableNames(ctx, tx, s.Dialect.Name)
 	if err != nil {
 		return err
@@ -171,7 +171,7 @@ func (s SQL) checkVersions(ctx context.Context, q sqlcommon.Queryer, desc schema
 	if err != nil {
 		return wrap(err)
 	}
-	defer rows.Close()
+	defer func(rows *sql.Rows) { _ = rows.Close() }(rows)
 	versions := []int{}
 	for rows.Next() {
 		var v int
@@ -206,7 +206,7 @@ func (s SQL) snapshotTable(
 	if err != nil {
 		return result, wrap(err)
 	}
-	defer rows.Close()
+	defer func(rows *sql.Rows) { _ = rows.Close() }(rows)
 	result.Columns, err = rows.Columns()
 	if err != nil {
 		return result, wrap(err)
@@ -223,7 +223,7 @@ func (s SQL) snapshotTable(
 	if err != nil {
 		return result, wrap(err)
 	}
-	defer f.Close()
+	defer func(cleanup func() error) { _ = cleanup() }(f.Close)
 	encoder := json.NewEncoder(f)
 	for rows.Next() {
 		values := make([]any, len(types))
@@ -338,7 +338,7 @@ func (s SQL) Restore(ctx context.Context, directory string) error {
 	if err != nil {
 		return wrap(err)
 	}
-	defer tx.Rollback()
+	defer func(cleanup func() error) { _ = cleanup() }(tx.Rollback)
 	// Only rows produced by the just-completed initialization exist here.
 	// Delete seeds and migration timestamps before restoring their exact values.
 	for i := len(info.Tables) - 1; i >= 0; i-- {
@@ -438,9 +438,10 @@ func (s SQL) restoreTable(
 		return wrap(err)
 	}
 	columns, err := rows.Columns()
-	closeErr := rows.Close()
-	if err != nil || closeErr != nil {
-		return wrap(errors.Join(err, closeErr))
+	rowsErr := rows.Err()
+	closeErr := rows.Close() //nolint:sqlclosecheck // Close the read cursor before issuing writes on the same connection.
+	if err != nil || rowsErr != nil || closeErr != nil {
+		return wrap(errors.Join(err, rowsErr, closeErr))
 	}
 	if !slices.Equal(columns, table.Columns) {
 		return fmt.Errorf("%w: columns differ for %s", ErrInvalid, table.Name)
@@ -461,12 +462,12 @@ func (s SQL) restoreTable(
 	if err != nil {
 		return wrap(err)
 	}
-	defer statement.Close()
+	defer func(statement *sql.Stmt) { _ = statement.Close() }(statement)
 	f, err := openLocal(filepath.Join(directory, table.Name+".jsonl"), os.O_RDONLY, 0)
 	if err != nil {
 		return wrap(err)
 	}
-	defer f.Close()
+	defer func(cleanup func() error) { _ = cleanup() }(f.Close)
 	decoder := json.NewDecoder(contextReader{ctx, f})
 	decoder.DisallowUnknownFields()
 	for i := int64(0); i < table.Rows; i++ {
@@ -499,7 +500,7 @@ func writeJSONFile(name string, value any) error {
 	if err != nil {
 		return wrap(err)
 	}
-	defer f.Close()
+	defer func(cleanup func() error) { _ = cleanup() }(f.Close)
 	if err := json.NewEncoder(f).Encode(value); err != nil {
 		return wrap(err)
 	}
@@ -511,7 +512,7 @@ func readJSONFile(name string, value any) error {
 	if err != nil {
 		return wrap(err)
 	}
-	defer f.Close()
+	defer func(cleanup func() error) { _ = cleanup() }(f.Close)
 	info, err := f.Stat()
 	if err != nil {
 		return wrap(err)

@@ -141,11 +141,11 @@ func seedWithoutPin(t *testing.T, h *harness, udid string) {
 	t.Helper()
 	ctx := context.Background()
 	auth := authenticate(t, udid)
-	if err := h.store.UpsertAuthenticate(ctx, deviceID(udid), auth.Message.(*checkin.Authenticate), auth.Raw, t0); err != nil {
+	if err := h.store.UpsertAuthenticate(ctx, deviceID(udid), requireType[*checkin.Authenticate](t, auth.Message), auth.Raw, t0); err != nil {
 		t.Fatal(err)
 	}
 	tu := tokenUpdate(t, udid, nil)
-	msg := tu.Message.(*checkin.TokenUpdate)
+	msg := requireType[*checkin.TokenUpdate](t, tu.Message)
 	push, err := mdm.PushFromTokenUpdate(msg)
 	if err != nil {
 		t.Fatal(err)

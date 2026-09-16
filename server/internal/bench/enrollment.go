@@ -129,7 +129,7 @@ func publicEnrollmentGET(ctx context.Context, e *Environment, path string) ([]by
 	if err != nil {
 		return nil, wrapError(err)
 	}
-	defer r.Body.Close()
+	defer func(body io.Closer) { _ = body.Close() }(r.Body)
 	if r.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf("%w: enrollment endpoint returned HTTP %d", ErrBlocked, r.StatusCode)
 	}

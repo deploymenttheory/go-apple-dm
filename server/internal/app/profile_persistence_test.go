@@ -59,6 +59,7 @@ type rejectProfileTemplateTx struct {
 func (s rejectProfileTemplateStore) Update(ctx context.Context, keys []string, fn func(state.Tx) error) error {
 	return s.Store.Update(ctx, keys, func(tx state.Tx) error { return fn(rejectProfileTemplateTx{Tx: tx, fault: s.fault}) })
 }
+
 func (tx rejectProfileTemplateTx) Put(ctx context.Context, r state.Record) error {
 	var metadata profileMetadata
 	if json.Unmarshal(r.Value, &metadata) == nil && len(metadata.Template) > 0 {
@@ -112,7 +113,7 @@ func TestProfilePersistenceFailureNeverDeliversCredentialProfile(t *testing.T) {
 				e.state = rejectProfileTemplateStore{Store: backing, fault: fault}
 				want = 500
 			}
-			r := httptest.NewRequest("POST", "https://mdm.example/enrollment-profiles", strings.NewReader(`{"DeviceID":"device"}`))
+			r := httptest.NewRequestWithContext(t.Context(), "POST", "https://mdm.example/enrollment-profiles", strings.NewReader(`{"DeviceID":"device"}`))
 			w := httptest.NewRecorder()
 			a.issueEnrollmentProfile(w, r)
 			if w.Code != want {
@@ -129,7 +130,7 @@ func TestCommandEvidenceRejectsInvalidTargetAndStorageFailure(t *testing.T) {
 	a, id := replacementSecurityApp(t)
 	a.Store = &storagetest.Failing{Store: a.Store, Fail: map[string]error{"Commands": errors.New("evidence unavailable")}}
 	for _, valid := range []bool{false, true} {
-		r := httptest.NewRequest("GET", "https://mdm.example/result", nil)
+		r := httptest.NewRequestWithContext(t.Context(), "GET", "https://mdm.example/result", nil)
 		want := 400
 		if valid {
 			r.SetPathValue("channel", "device")

@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/x509"
 	"encoding/pem"
+	"errors"
 	"fmt"
 	"io"
 	"testing"
@@ -109,7 +110,11 @@ func (s renewalReplacementStore) TransitionReplacement(
 	if s.beginErr != nil {
 		return nil, s.beginErr
 	}
-	return s.Store.(storage.ReplacementStore).TransitionReplacement(ctx, id, change)
+	store, ok := s.Store.(storage.ReplacementStore)
+	if !ok {
+		return nil, errors.New("fixture store does not implement ReplacementStore")
+	}
+	return store.TransitionReplacement(ctx, id, change)
 }
 
 func queueRenewalTrust(

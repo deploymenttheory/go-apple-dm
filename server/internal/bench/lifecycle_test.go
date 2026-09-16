@@ -18,6 +18,7 @@ func TestWorkspaceSupervisorRestart(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	// #nosec G304 -- The test controls this fixture path within its private workspace.
 	original, err := os.ReadFile(filepath.Join(dir, "mdm", "ca.pem"))
 	if err != nil {
 		t.Fatal(err)
@@ -82,6 +83,7 @@ func TestWorkspaceSupervisorRestart(t *testing.T) {
 			t.Fatal("stale process descriptor")
 		}
 	}
+	// #nosec G304 -- The test controls this fixture path within its private workspace.
 	after, err := os.ReadFile(filepath.Join(dir, "mdm", "ca.pem"))
 	if err != nil {
 		t.Fatal(err)

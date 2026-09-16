@@ -47,7 +47,7 @@ func TestFileVaultCertificateWorkflow(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer db.Close()
+	defer func(cleanup func() error) { _ = cleanup() }(db.Close)
 	var count int
 	if err := db.QueryRowContext(ctx, "SELECT COUNT(*) FROM protocol_state WHERE record_key LIKE 'pki/command-encryption/%'").
 		Scan(&count); err != nil ||
@@ -77,7 +77,7 @@ func TestFileVaultCertificateWorkflow(t *testing.T) {
 	if err != nil ||
 		!bytes.Equal(
 			cert.Raw,
-			queued.Payload.(*commands.RotateFileVaultKey).ReplyEncryptionCertificate,
+			requireType[*commands.RotateFileVaultKey](t, queued.Payload).ReplyEncryptionCertificate,
 		) {
 		t.Fatal("queued certificate", err)
 	}
@@ -96,7 +96,7 @@ func TestFileVaultCertificateWorkflow(t *testing.T) {
 	restarted := build(t, cfg)
 	retained, retainedKey, err := restarted.ReplyCertificates.Recipient(ctx, id, original.UUID)
 	if err != nil || !bytes.Equal(cert.Raw, retained.Raw) ||
-		!key.Public().(*rsa.PublicKey).Equal(retainedKey.Public()) {
+		!requireType[*rsa.PublicKey](t, key.Public()).Equal(retainedKey.Public()) {
 		t.Fatal("restart lost encryption identity", err)
 	}
 }

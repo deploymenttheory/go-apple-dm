@@ -138,6 +138,7 @@ func TestTrustExportRejectsEmptyAndNonCACertificates(t *testing.T) {
 		t.Fatal(err)
 	}
 	for _, data := range [][]byte{nil, leaf, []byte("-----BEGIN CERTIFICATE-----\nAA==\n-----END CERTIFICATE-----\n")} {
+		// #nosec G703 -- The test controls this fixture path within its private workspace.
 		if err = os.WriteFile(w.path("mdm", "ca.pem"), data, 0o600); err != nil {
 			t.Fatal(err)
 		}

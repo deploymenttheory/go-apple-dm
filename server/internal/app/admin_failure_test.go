@@ -38,7 +38,7 @@ func TestDDMHandlersReportFailedStoreReadsAndInvalidChannels(t *testing.T) {
 				mux.Handle(route.Pattern, route.Handler)
 			}
 			w := httptest.NewRecorder()
-			mux.ServeHTTP(w, httptest.NewRequest(tc.method, tc.path, nil))
+			mux.ServeHTTP(w, httptest.NewRequestWithContext(t.Context(), tc.method, tc.path, nil))
 			if w.Code != tc.status || strings.Contains(w.Body.String(), failure.Error()) {
 				t.Fatal(w.Code, w.Body.String())
 			}

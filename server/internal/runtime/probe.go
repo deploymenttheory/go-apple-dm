@@ -8,6 +8,7 @@ import (
 	"encoding/pem"
 	"errors"
 	"fmt"
+	"io"
 	"net"
 	"net/http"
 	"os"
@@ -34,7 +35,11 @@ type ProbeConfig struct {
 // Automatic probes do not use HTTP proxies. Certificate changes require the
 // serving process to restart before its local certificate pin matches again.
 func Probe(ctx context.Context, cfg ProbeConfig) error {
-	transport := http.DefaultTransport.(*http.Transport).Clone()
+	base, ok := http.DefaultTransport.(*http.Transport)
+	if !ok {
+		return fmt.Errorf("%w: default HTTP transport %T cannot be cloned", ErrProbe, http.DefaultTransport)
+	}
+	transport := base.Clone()
 	transport.DisableKeepAlives = true
 	defer transport.CloseIdleConnections()
 	address := cfg.URL
@@ -73,7 +78,7 @@ func Probe(ctx context.Context, cfg ProbeConfig) error {
 	if err != nil {
 		return fmt.Errorf("%w: request: %w", ErrProbe, err)
 	}
-	defer resp.Body.Close()
+	defer func(body io.Closer) { _ = body.Close() }(resp.Body)
 	if resp.StatusCode != http.StatusOK {
 		return fmt.Errorf("%w: %s", ErrProbe, resp.Status)
 	}

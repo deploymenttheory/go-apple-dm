@@ -26,12 +26,9 @@ func TestStatusPages(t *testing.T) {
 			a := build(t, cfg)
 			srv := serve(t, a)
 			id := enrollment("D")
-			values := make([]ddm.StatusValue, 1005)
-			for i := range values {
-				values[i] = ddm.StatusValue{
-					Path:  fmt.Sprintf("test.%04d", i),
-					Value: []byte("true"),
-				}
+			values := make([]ddm.StatusValue, 0, 1006)
+			for i := range 1005 {
+				values = append(values, ddm.StatusValue{Path: fmt.Sprintf("test.%04d", i), Value: []byte("true")})
 			}
 			values = append(
 				values,

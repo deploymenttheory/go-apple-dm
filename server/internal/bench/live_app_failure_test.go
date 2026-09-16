@@ -43,13 +43,13 @@ func TestLiveAppFailuresAndCredentialPagination(t *testing.T) {
 							return
 						}
 						if name == "paginated credential" && r.URL.RawQuery == "" {
-							io.WriteString(
+							_, _ = io.WriteString(
 								w,
 								`{"Items":[{"Topic":"com.other"}],"NextCursor":"next/page"}`,
 							)
 							return
 						}
-						io.WriteString(w, `{"Items":[{"Topic":"com.example.app"}]}`)
+						_, _ = io.WriteString(w, `{"Items":[{"Topic":"com.example.app"}]}`)
 						return
 					}
 					if name == "unreadable receipt" {
@@ -61,7 +61,9 @@ func TestLiveAppFailuresAndCredentialPagination(t *testing.T) {
 						}
 					}
 					if name == "paginated credential" {
-						var req struct{ Payload map[string]any }
+						var req struct {
+							Payload map[string]any `json:"Payload"`
+						}
 						if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 							t.Error(err)
 							return
@@ -85,7 +87,7 @@ func TestLiveAppFailuresAndCredentialPagination(t *testing.T) {
 							t.Error(err)
 						}
 					}
-					io.WriteString(w, `{"Accepted":true}`)
+					_, _ = io.WriteString(w, `{"Accepted":true}`)
 				}),
 			)
 			defer srv.Close()

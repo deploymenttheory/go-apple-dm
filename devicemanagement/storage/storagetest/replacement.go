@@ -15,6 +15,7 @@ import (
 
 // RunReplacementSuite verifies the same atomic transition contract on every backend.
 func RunReplacementSuite(t *testing.T, factory Factory) {
+	t.Helper()
 	ctx := context.Background()
 	for _, method := range []string{"scep", "acme"} {
 		for _, terminal := range []string{"commit-token-first", "commit-ack-first", "cancel", "error", "expire"} {

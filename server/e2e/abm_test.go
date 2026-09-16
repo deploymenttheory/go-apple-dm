@@ -78,7 +78,7 @@ func TestE2E_ABMAssignDevices(t *testing.T) {
 		t.Fatal(err)
 	}
 	csv, _ := io.ReadAll(log)
-	log.Close()
+	_ = log.Close()
 	if len(csv) == 0 {
 		t.Fatal("empty activity log")
 	}

@@ -86,7 +86,7 @@ func TestAssigner(t *testing.T) {
 		if asg.Status != dep.StatusSuccess || asg.ProfileUUID != f.profile || !asg.NextAttemptAt.IsZero() || !asg.AttemptedAt.Equal(t0) {
 			t.Fatalf("assignment %+v", asg)
 		}
-		if evs := f.eventsOf(dep.EventDeviceAssigned); len(evs) != 1 || evs[0].Data.(dep.AssignmentEvent).Assignment.SerialNumber != "A" {
+		if evs := f.eventsOf(dep.EventDeviceAssigned); len(evs) != 1 || requireType[dep.AssignmentEvent](t, evs[0].Data).Assignment.SerialNumber != "A" {
 			t.Fatalf("events %+v", evs)
 		}
 		// Until Apple reports the device again the success is trusted: the

@@ -106,6 +106,7 @@ func TestEndpoints(t *testing.T) {
 			}
 			return err
 		}, method: "POST", path: "/v1/mdmServers", body: func(t *testing.T, m map[string]any) {
+			t.Helper()
 			if dig(t, m, "data", "type") != "mdmServers" || dig(t, m, "data", "attributes", "serverCertificate", "data") != "Q0VSVA==" {
 				t.Errorf("body %v", m)
 			}
@@ -118,6 +119,7 @@ func TestEndpoints(t *testing.T) {
 			}
 			return err
 		}, method: "PATCH", path: "/v1/mdmServers/" + serverID, body: func(t *testing.T, m map[string]any) {
+			t.Helper()
 			if dig(t, m, "data", "id") != serverID || dig(t, m, "data", "attributes", "enableMdmDisownFlag") != true {
 				t.Errorf("body %v", m)
 			}
@@ -155,6 +157,7 @@ func TestEndpoints(t *testing.T) {
 			}
 			return err
 		}, method: "POST", path: "/v1/orgDeviceActivities", body: func(t *testing.T, m map[string]any) {
+			t.Helper()
 			if dig(t, m, "data", "type") != "orgDeviceActivities" {
 				t.Errorf("body %v", m)
 			}
@@ -275,6 +278,7 @@ func TestEndpoints(t *testing.T) {
 			}
 			return err
 		}, method: "POST", path: "/v1/configurations", body: func(t *testing.T, m map[string]any) {
+			t.Helper()
 			if dig(t, m, "data", "attributes", "type") != "CUSTOM_SETTING" || dig(t, m, "data", "attributes", "customSettingsValues", "configurationProfile") != profile {
 				t.Errorf("body %v", m)
 			}
@@ -286,6 +290,7 @@ func TestEndpoints(t *testing.T) {
 			}
 			return err
 		}, method: "PATCH", path: "/v1/configurations/cfg1", body: func(t *testing.T, m map[string]any) {
+			t.Helper()
 			if dig(t, m, "data", "id") != "cfg1" || dig(t, m, "data", "attributes", "name") != "Renamed" {
 				t.Errorf("body %v", m)
 			}
@@ -311,7 +316,8 @@ func TestEndpoints(t *testing.T) {
 			}
 			return err
 		}, method: "POST", path: "/v1/blueprints", body: func(t *testing.T, m map[string]any) {
-			if dig(t, m, "data", "attributes", "name") != "Onboarding" || len(dig(t, m, "data", "relationships", "apps", "data").([]any)) != 2 {
+			t.Helper()
+			if dig(t, m, "data", "attributes", "name") != "Onboarding" || len(requireType[[]any](t, dig(t, m, "data", "relationships", "apps", "data"))) != 2 {
 				t.Errorf("body %v", m)
 			}
 		}},
@@ -322,6 +328,7 @@ func TestEndpoints(t *testing.T) {
 			}
 			return err
 		}, method: "PATCH", path: "/v1/blueprints/bp1", body: func(t *testing.T, m map[string]any) {
+			t.Helper()
 			if dig(t, m, "data", "id") != "bp1" || dig(t, m, "data", "attributes", "name") != "Renamed" {
 				t.Errorf("body %v", m)
 			}
@@ -336,7 +343,8 @@ func TestEndpoints(t *testing.T) {
 		{name: "AddBlueprintUsers", call: func() error {
 			return c.AddToBlueprint(ctx, "bp1", BlueprintUsers, []string{"u1", "u2"})
 		}, method: "POST", path: "/v1/blueprints/bp1/relationships/users", body: func(t *testing.T, m map[string]any) {
-			data := m["data"].([]any)
+			t.Helper()
+			data := requireType[[]any](t, m["data"])
 			if len(data) != 2 || dig(t, data[0], "type") != "users" || dig(t, data[1], "id") != "u2" {
 				t.Errorf("body %v", m)
 			}
@@ -350,7 +358,8 @@ func TestEndpoints(t *testing.T) {
 			}
 			return nil
 		}, method: "DELETE", path: "/v1/blueprints/bp1/relationships/users", body: func(t *testing.T, m map[string]any) {
-			if len(m["data"].([]any)) != 1 {
+			t.Helper()
+			if len(requireType[[]any](t, m["data"])) != 1 {
 				t.Errorf("body %v", m)
 			}
 		}},
@@ -420,10 +429,11 @@ func TestEndpoints(t *testing.T) {
 			_, err := c.AssignWithMigrationDeadline(ctx, serverID, []string{"SERIAL1"}, deadline)
 			return err
 		}, method: "POST", path: "/v1/orgDeviceActivities", body: func(t *testing.T, m map[string]any) {
+			t.Helper()
 			if dig(t, m, "data", "attributes", "activityType") != "ASSIGN_DEVICES_WITH_MDM_MIGRATION_DEADLINE" {
 				t.Errorf("body %v", m)
 			}
-			got := dig(t, m, "data", "attributes", "activityTypeMetadata", "mdmMigrationDeadlineDateTime").(string)
+			got := requireType[string](t, dig(t, m, "data", "attributes", "activityTypeMetadata", "mdmMigrationDeadlineDateTime"))
 			if !strings.HasPrefix(got, deadline.UTC().Format("2006-01-02T15:04")) {
 				t.Errorf("deadline %s", got)
 			}
@@ -432,10 +442,11 @@ func TestEndpoints(t *testing.T) {
 			_, err := c.UpdateMigrationDeadline(ctx, []string{"SERIAL1"}, deadline)
 			return err
 		}, method: "POST", path: "/v1/orgDeviceActivities", body: func(t *testing.T, m map[string]any) {
+			t.Helper()
 			if dig(t, m, "data", "attributes", "activityType") != "UPDATE_MDM_MIGRATION_DEADLINE" {
 				t.Errorf("body %v", m)
 			}
-			if _, has := dig(t, m, "data", "relationships").(map[string]any)["mdmServer"]; has {
+			if _, has := requireType[map[string]any](t, dig(t, m, "data", "relationships"))["mdmServer"]; has {
 				t.Errorf("mdmServer must be absent: %v", m)
 			}
 		}},
@@ -443,10 +454,11 @@ func TestEndpoints(t *testing.T) {
 			_, err := c.CancelMigration(ctx, []string{"SERIAL1"})
 			return err
 		}, method: "POST", path: "/v1/orgDeviceActivities", body: func(t *testing.T, m map[string]any) {
+			t.Helper()
 			if dig(t, m, "data", "attributes", "activityType") != "CANCEL_MDM_MIGRATION" {
 				t.Errorf("body %v", m)
 			}
-			if _, has := dig(t, m, "data", "attributes").(map[string]any)["activityTypeMetadata"]; has {
+			if _, has := requireType[map[string]any](t, dig(t, m, "data", "attributes"))["activityTypeMetadata"]; has {
 				t.Errorf("metadata must be absent: %v", m)
 			}
 		}},

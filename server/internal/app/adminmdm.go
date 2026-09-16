@@ -392,7 +392,7 @@ func channelFromName(s string) (mdm.Channel, error) {
 // token and no raw check-in plists: those are secrets and evidence, not
 // inventory.
 //
-//nolint:tagliatelle // Preserve the established PascalCase administration API.
+// Preserve the established PascalCase administration API.
 type enrollmentView struct {
 	Channel        string
 	ID             string
@@ -426,7 +426,7 @@ func viewEnrollment(e storage.Enrollment) enrollmentView {
 // queuedView omits the command plist and the device's raw response: the
 // identifiers and the outcome are what a queue listing is for.
 //
-//nolint:tagliatelle // Preserve the established PascalCase administration API.
+// Preserve the established PascalCase administration API.
 type queuedView struct {
 	CommandUUID string
 	RequestType string

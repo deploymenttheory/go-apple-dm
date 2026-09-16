@@ -37,7 +37,7 @@ func TestSupervisePreservesFirstFailure(t *testing.T) {
 			stopped := false
 			got := supervise(
 				ctx,
-				&http.Server{},
+				&http.Server{ReadHeaderTimeout: time.Second},
 				serving,
 				workers,
 				func() { stopped = true },
@@ -62,11 +62,15 @@ func TestSuperviseDrainsHTTPBeforeWorkers(t *testing.T) {
 				),
 			)
 			defer srv.Close()
+			resRequest, err := http.NewRequestWithContext(t.Context(), "GET", srv.URL, nil)
+			if err != nil {
+				t.Fatal(err)
+			}
 			response := make(chan error, 1)
 			go func() {
-				res, err := srv.Client().Get(srv.URL)
+				res, err := srv.Client().Do(resRequest)
 				if err == nil {
-					res.Body.Close()
+					_ = res.Body.Close()
 				}
 				response <- err
 			}()
@@ -91,7 +95,7 @@ func TestSuperviseDrainsHTTPBeforeWorkers(t *testing.T) {
 				}
 				close(release)
 			}
-			err := <-done
+			err = <-done
 			if expire {
 				close(release)
 				if !errors.Is(err, context.DeadlineExceeded) {
@@ -127,12 +131,12 @@ func TestServeStartupFailures(t *testing.T) {
 	if err := Serve(t.Context(), cfg); err == nil {
 		t.Fatal("invalid configuration accepted")
 	}
-	listener, err := net.Listen("tcp", "127.0.0.1:0")
+	listener, err := (&net.ListenConfig{}).Listen(t.Context(), "tcp", "127.0.0.1:0")
 	if err != nil {
 		t.Fatal(err)
 	}
-	listener.Close()
-	if err := serveHTTP(&http.Server{}, listener, app.Config{}); err == nil {
+	_ = listener.Close()
+	if err := serveHTTP(&http.Server{ReadHeaderTimeout: time.Second}, listener, app.Config{}); err == nil {
 		t.Fatal("closed listener accepted")
 	}
 }

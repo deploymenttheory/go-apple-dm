@@ -66,7 +66,7 @@ func (t *txStore) GetDevice(ctx context.Context, account, serial string) (*dep.S
 	if err != nil {
 		return nil, wrap("get device", err)
 	}
-	defer rows.Close()
+	defer func(rows *sql.Rows) { _ = rows.Close() }(rows)
 	if !rows.Next() {
 		if err := rows.Err(); err != nil {
 			return nil, wrap("get device", err)
@@ -225,7 +225,7 @@ func (t *txStore) GetAssignment(ctx context.Context, account, serial string) (*d
 	if err != nil {
 		return nil, wrap("get assignment", err)
 	}
-	defer rows.Close()
+	defer func(rows *sql.Rows) { _ = rows.Close() }(rows)
 	if !rows.Next() {
 		if err := rows.Err(); err != nil {
 			return nil, wrap("get assignment", err)

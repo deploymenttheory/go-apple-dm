@@ -161,7 +161,7 @@ func TestCLICompletesVendorSigningAndMDMImport(t *testing.T) {
 			t.Errorf("import: %v", err)
 		}
 		w.Header().Set("Content-Type", "application/json")
-		io.WriteString(w, `{}`)
+		_, _ = io.WriteString(w, `{}`)
 	}))
 	defer srv.Close()
 	base := []string{"-server", srv.URL, "-token", "operator", "pushcerts", "put"}

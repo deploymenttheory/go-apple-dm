@@ -3,6 +3,7 @@ SHELL := /bin/bash
 
 GO ?= go
 GOLANGCI_LINT ?= golangci-lint
+GOLANGCI_LINT_VERSION := $(shell cat .golangci-version)
 COVERAGE_MIN ?= 95
 COVER_DIR := cover
 PKGS := ./...
@@ -33,7 +34,7 @@ tools:
 	GOTOOLCHAIN=go$(GO_VERSION) $(GO) install gotest.tools/gotestsum@latest
 	GOTOOLCHAIN=go$(GO_VERSION) $(GO) install mvdan.cc/gofumpt@latest
 	GOTOOLCHAIN=go$(GO_VERSION) $(GO) install golang.org/x/vuln/cmd/govulncheck@latest
-	GOTOOLCHAIN=go$(GO_VERSION) $(GO) install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@latest
+	GOTOOLCHAIN=go$(GO_VERSION) $(GO) install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@$(GOLANGCI_LINT_VERSION)
 
 ## submodule: initialise the pinned Apple schema submodule
 submodule:
@@ -50,10 +51,15 @@ verify: submodule
 	python3 -m unittest discover -s .github/scripts -p '*_test.py'
 	$(GO) run ./cmd/schemagen verify
 
-## lint: run golangci-lint with the repository configuration
+## lint: compile and lint both workspace modules, including tagged tests, without rewriting
 lint:
-	$(GOLANGCI_LINT) run --fix=false --config=.golangci.yml ./...
-	cd $(SERVER_DIR) && $(GOLANGCI_LINT) run --fix=false --config=../.golangci.yml ./...
+	python3 scripts/lint.py --go "$(GO)" --linter "$(GOLANGCI_LINT)"
+
+## fmt: explicitly format authored Go files in both modules
+fmt:
+	python3 scripts/lint.py --format --go "$(GO)" --linter "$(GOLANGCI_LINT)"
+
+.PHONY: fmt
 
 ## verify-server-module-installation: resolve declared dependencies, build server packages and install dmserver/dmctl with GOWORK=off
 verify-server-module-installation:

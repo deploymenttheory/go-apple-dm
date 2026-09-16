@@ -229,7 +229,7 @@ func TestManagedIssuerRolloverKeepsOfflineDeviceAndRetiresLegacyRoute(t *testing
 		http.HandlerFunc(func(http.ResponseWriter, *http.Request) { called = true }),
 	)
 	response := httptest.NewRecorder()
-	h.ServeHTTP(response, httptest.NewRequest("GET", "/scep", nil))
+	h.ServeHTTP(response, httptest.NewRequestWithContext(t.Context(), "GET", "/scep", nil))
 	if response.Code != http.StatusGone || called {
 		t.Fatal("legacy issuer still serves issuance")
 	}
@@ -267,9 +267,9 @@ func TestSetupAPIAuthRolesAndPublicHistory(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer a.Close()
+	defer func(cleanup func() error) { _ = cleanup() }(a.Close)
 	request := func(method, path, body, token string) *httptest.ResponseRecorder {
-		req := httptest.NewRequest(method, path, strings.NewReader(body))
+		req := httptest.NewRequestWithContext(t.Context(), method, path, strings.NewReader(body))
 		if token != "" {
 			req.Header.Set("Authorization", "Bearer "+token)
 		}
@@ -357,10 +357,11 @@ func TestBootstrapKeepsImportedSecretsAndRejectsDifferentDatabaseKey(t *testing.
 	}
 	cfg.DSN = ":memory:"
 	if opened, err := OpenSetup(t.Context(), cfg); err == nil {
-		opened.Close()
+		_ = opened.Close()
 		t.Fatal("managed setup accepted volatile SQLite state")
 	}
 	for _, name := range []string{"old", "legacy"} {
+		// #nosec G304 -- The test controls this fixture path within its private workspace.
 		actual, err := os.ReadFile(filepath.Join(filepath.Dir(path), "secrets", name))
 		if err != nil || !bytes.Equal(actual, material) {
 			t.Fatal("changed encryption key", name, err)

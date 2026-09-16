@@ -2,6 +2,7 @@ package app_test
 
 import (
 	"fmt"
+	"io"
 	"net/http/httptest"
 	"os"
 	"path/filepath"
@@ -38,7 +39,7 @@ func TestOperatorAPIsRejectInvalidInput(t *testing.T) {
 		{"invalid channel", "GET", "/enrollments/invalid/absent/commands/absent/result", "", 400},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
-			req := httptest.NewRequest(tc.method, "/admin/v1"+tc.path, strings.NewReader(tc.body))
+			req := httptest.NewRequestWithContext(t.Context(), tc.method, "/admin/v1"+tc.path, strings.NewReader(tc.body))
 			req.Header.Set("Authorization", "Bearer operator")
 			rec := httptest.NewRecorder()
 			f.app.Handler.ServeHTTP(rec, req)
@@ -58,7 +59,7 @@ func TestOperatorAPIsRejectInvalidInput(t *testing.T) {
 		AppPush:    app.AppPushConfig{RootCAFile: "missing.pem"},
 	}
 	if a, err := app.Build(t.Context(), cfg); err == nil {
-		a.Close()
+		_ = a.Close()
 		t.Fatal("missing APNs trust roots accepted")
 	}
 }
@@ -93,7 +94,7 @@ func TestCommandResultPagesUntilMatchingPendingCommand(t *testing.T) {
 		"t",
 		"",
 	)
-	defer resp.Body.Close()
+	defer func(body io.Closer) { _ = body.Close() }(resp.Body)
 	if resp.StatusCode != 204 {
 		t.Fatalf("pending command on second page: HTTP %d", resp.StatusCode)
 	}
@@ -115,7 +116,7 @@ func TestOperatorSecurityConfigurationRejectsIncompleteCredentials(t *testing.T)
 			Enroll:  app.EnrollConfig{UserAuthHA1File: file},
 		}
 		if a, err := app.Build(t.Context(), cfg); err == nil {
-			a.Close()
+			_ = a.Close()
 			t.Fatal("invalid user authentication data accepted")
 		}
 	}
@@ -128,7 +129,7 @@ func TestOperatorSecurityConfigurationRejectsIncompleteCredentials(t *testing.T)
 			TLSCertFile: "certificate.pem",
 		},
 	); err == nil {
-		a.Close()
+		_ = a.Close()
 		t.Fatal("TLS certificate without key accepted")
 	}
 }

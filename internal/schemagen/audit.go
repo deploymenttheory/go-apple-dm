@@ -276,7 +276,7 @@ func readAuditTree(directory string, strict bool) (*auditTree, error) {
 	if err != nil {
 		return nil, fmt.Errorf("audit: %w", err)
 	}
-	defer root.Close()
+	defer func(cleanup func() error) { _ = cleanup() }(root.Close)
 	tree := &auditTree{
 		docs:        map[string]auditDocument{},
 		findings:    map[string]*Finding{},

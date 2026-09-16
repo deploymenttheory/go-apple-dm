@@ -15,7 +15,7 @@ import (
 func (a *App) userAuthenticator() (service.UserAuthenticateHandler, error) {
 	file := a.cfg.Enroll.UserAuthHA1File
 	if file == "" {
-		return nil, nil //nolint:nilnil // Unconfigured optional integration has no handler.
+		return nil, nil // Unconfigured optional integration has no handler.
 	}
 	raw, err := os.ReadFile(
 		file,

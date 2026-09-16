@@ -52,9 +52,9 @@ func runExplain(_ context.Context, e *env, args []string) error {
 	matches, err := explain.Resolve(rest[0], *family)
 	if err != nil {
 		if suggestions := explain.Suggest(rest[0], *family, 10); len(suggestions) > 0 {
-			fmt.Fprintf(e.stderr, "dmctl: %v\ndid you mean:\n", err)
+			_, _ = fmt.Fprintf(e.stderr, "dmctl: %v\ndid you mean:\n", err)
 			for _, s := range suggestions {
-				fmt.Fprintf(e.stderr, "  %s\n", s)
+				_, _ = fmt.Fprintf(e.stderr, "  %s\n", s)
 			}
 		}
 		return fmt.Errorf("%w: %w", ErrUsage, err)
@@ -64,7 +64,7 @@ func runExplain(_ context.Context, e *env, args []string) error {
 	}
 	for i, m := range matches {
 		if i > 0 {
-			fmt.Fprintln(e.stdout)
+			_, _ = fmt.Fprintln(e.stdout)
 		}
 		if err := explain.Render(e.stdout, m, tgt); err != nil {
 			return fmt.Errorf("dmctl: explain: %w", err)
@@ -76,7 +76,7 @@ func runExplain(_ context.Context, e *env, args []string) error {
 func (e *env) explainList(family string, paths bool) error {
 	if family == "" {
 		for _, f := range explain.Families() {
-			fmt.Fprintln(e.stdout, f)
+			_, _ = fmt.Fprintln(e.stdout, f)
 		}
 		return nil
 	}
@@ -93,7 +93,7 @@ func (e *env) explainList(family string, paths bool) error {
 		return fmt.Errorf("%w: %w", ErrUsage, err)
 	}
 	for _, s := range out {
-		fmt.Fprintln(e.stdout, s)
+		_, _ = fmt.Fprintln(e.stdout, s)
 	}
 	return nil
 }
@@ -125,16 +125,16 @@ func runStatus(ctx context.Context, e *env, args []string) error {
 			}
 		}
 		if err := json.Unmarshal(resp.Body, &cfg); err != nil {
-			fmt.Fprintln(w, string(resp.Body))
+			_, _ = fmt.Fprintln(w, string(resp.Body))
 			return
 		}
-		fmt.Fprintf(w, "Role:\t%s\n", cfg.Role)
-		fmt.Fprintf(w, "Version:\t%s\n", cfg.Version)
-		fmt.Fprintf(w, "Families:\t%s\n", strings.Join(cfg.Families, ", "))
-		fmt.Fprintf(w, "Authorization:\t%s\n", policyMode(cfg.Policy))
-		fmt.Fprintf(w, "Break-glass:\t%s\n", breakGlassMode(cfg.Policy, cfg.BreakGlass))
+		_, _ = fmt.Fprintf(w, "Role:\t%s\n", cfg.Role)
+		_, _ = fmt.Fprintf(w, "Version:\t%s\n", cfg.Version)
+		_, _ = fmt.Fprintf(w, "Families:\t%s\n", strings.Join(cfg.Families, ", "))
+		_, _ = fmt.Fprintf(w, "Authorization:\t%s\n", policyMode(cfg.Policy))
+		_, _ = fmt.Fprintf(w, "Break-glass:\t%s\n", breakGlassMode(cfg.Policy, cfg.BreakGlass))
 		if stats := cfg.EventDelivery; stats != nil {
-			fmt.Fprintf(
+			_, _ = fmt.Fprintf(
 				w,
 				"Event delivery:\tasync=%t workers=%d queue=%d/%d timeout=%s\n",
 				stats.Async,
@@ -143,7 +143,7 @@ func runStatus(ctx context.Context, e *env, args []string) error {
 				stats.QueueCapacity,
 				stats.DeliveryTimeout,
 			)
-			fmt.Fprintf(
+			_, _ = fmt.Fprintf(
 				w,
 				"Events:\tactive=%d accepted=%d delivered=%d failed=%d timed-out=%d rejected=%d abandoned=%d\n",
 				stats.InFlight,
@@ -199,12 +199,12 @@ func runRoutes(ctx context.Context, e *env, args []string) error {
 			Routes []struct{ Method, Pattern, Action, Family string }
 		}
 		if err := json.Unmarshal(resp.Body, &body); err != nil {
-			fmt.Fprintln(w, string(resp.Body))
+			_, _ = fmt.Fprintln(w, string(resp.Body))
 			return
 		}
-		fmt.Fprintln(w, "METHOD\tPATTERN\tACTION\tFAMILY")
+		_, _ = fmt.Fprintln(w, "METHOD\tPATTERN\tACTION\tFAMILY")
 		for _, r := range body.Routes {
-			fmt.Fprintf(w, "%s\t%s\t%s\t%s\n", dash(r.Method), r.Pattern, r.Action, r.Family)
+			_, _ = fmt.Fprintf(w, "%s\t%s\t%s\t%s\n", dash(r.Method), r.Pattern, r.Action, r.Family)
 		}
 	})
 }
@@ -227,12 +227,12 @@ func runActions(ctx context.Context, e *env, args []string) error {
 			Items []struct{ ID, Help string }
 		}
 		if err := json.Unmarshal(resp.Body, &body); err != nil {
-			fmt.Fprintln(w, string(resp.Body))
+			_, _ = fmt.Fprintln(w, string(resp.Body))
 			return
 		}
-		fmt.Fprintln(w, "ACTION\tWHAT GRANTING IT MEANS")
+		_, _ = fmt.Fprintln(w, "ACTION\tWHAT GRANTING IT MEANS")
 		for _, a := range body.Items {
-			fmt.Fprintf(w, "%s\t%s\n", a.ID, a.Help)
+			_, _ = fmt.Fprintf(w, "%s\t%s\n", a.ID, a.Help)
 		}
 	})
 }
@@ -384,8 +384,8 @@ func (e *env) emitToken(resp *adminResponse) error {
 	if err := json.Unmarshal(resp.Body, &body); err != nil {
 		return e.emit(resp, nil)
 	}
-	fmt.Fprintln(e.stdout, body.Token)
-	fmt.Fprintf(
+	_, _ = fmt.Fprintln(e.stdout, body.Token)
+	_, _ = fmt.Fprintf(
 		e.stderr,
 		"dmctl: token for %q; it is not stored and cannot be shown again\n",
 		body.Principal.Name,
@@ -414,12 +414,12 @@ func runPolicies(ctx context.Context, e *env, args []string) error {
 				Items []struct{ Name, Description string }
 			}
 			if err := json.Unmarshal(resp.Body, &body); err != nil {
-				fmt.Fprintln(w, string(resp.Body))
+				_, _ = fmt.Fprintln(w, string(resp.Body))
 				return
 			}
-			fmt.Fprintln(w, "NAME\tDESCRIPTION")
+			_, _ = fmt.Fprintln(w, "NAME\tDESCRIPTION")
 			for _, p := range body.Items {
-				fmt.Fprintf(w, "%s\t%s\n", p.Name, dash(p.Description))
+				_, _ = fmt.Fprintf(w, "%s\t%s\n", p.Name, dash(p.Description))
 			}
 		})
 	case "get":
@@ -436,9 +436,9 @@ func runPolicies(ctx context.Context, e *env, args []string) error {
 			if json.Unmarshal(resp.Body, &doc) == nil {
 				// The source is printed exactly as stored, so an operator
 				// edits what they wrote.
-				fmt.Fprint(e.stdout, doc.Source)
+				_, _ = fmt.Fprint(e.stdout, doc.Source)
 				if !strings.HasSuffix(doc.Source, "\n") {
-					fmt.Fprintln(e.stdout)
+					_, _ = fmt.Fprintln(e.stdout)
 				}
 				return nil
 			}

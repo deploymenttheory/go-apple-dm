@@ -72,7 +72,10 @@ func hardError(t *testing.T, name string, err error) {
 
 func TestContract(t *testing.T) {
 	t.Parallel()
-	ddmtest.RunAll(t, func(t *testing.T) ddm.Store { return open(t) })
+	ddmtest.RunAll(t, func(t *testing.T) ddm.Store {
+		t.Helper()
+		return open(t)
+	})
 }
 
 func TestOpenMigrates(t *testing.T) {
@@ -219,6 +222,7 @@ func TestMigrateRollbackVersion(t *testing.T) {
 		t.Fatalf("rollback over a missing table: %v", err)
 	}
 	// An up statement that fails surfaces.
+	// #nosec G202 -- Table names come from the fixed migration table list in this test.
 	if _, err := db.ExecContext(ctx, "DELETE FROM "+sqlstore.MigrationsTable); err != nil {
 		t.Fatal(err)
 	}
@@ -314,10 +318,12 @@ func countStatements(stmts []string, prefix string) int {
 func calls(s ddm.Tx) map[string]func(context.Context) error {
 	d := ddmtest.Decl("a", conf, `{}`)
 	snap := &ddm.Snapshot{ID: dev, DeclarationsToken: "t", TokenChangedAt: t0, RefreshedAt: t0, Items: []ddm.SnapshotItem{{DeclarationRef: ddm.DeclarationRef{Kind: conf, Identifier: "a", ServerToken: "t"}, BaseToken: "t"}}}
-	update := ddm.StatusUpdate{Raw: []byte("{}"), ReceivedAt: t0, FullReport: true, HasDeclarations: true,
+	update := ddm.StatusUpdate{
+		Raw: []byte("{}"), ReceivedAt: t0, FullReport: true, HasDeclarations: true,
 		Declarations: []ddm.DeclarationStatus{{Kind: conf, Identifier: "a", ServerToken: "t", Valid: "valid"}},
 		Values:       []ddm.StatusValue{{Path: "p", Value: []byte("1")}},
-		Errors:       []ddm.StatusError{{StatusItem: "x"}}, KeepReports: 1}
+		Errors:       []ddm.StatusError{{StatusItem: "x"}}, KeepReports: 1,
+	}
 	return map[string]func(context.Context) error{
 		"PutDeclaration":        func(ctx context.Context) error { _, err := s.PutDeclaration(ctx, d); return err },
 		"GetDeclaration":        func(ctx context.Context) error { _, err := s.GetDeclaration(ctx, "a"); return err },
@@ -398,7 +404,9 @@ func TestQueriesFailWithoutSchema(t *testing.T) {
 	if err := s.Update(ctx, nil); !errors.Is(err, ddm.ErrInvalid) {
 		t.Fatalf("nil callback: %v", err)
 	}
-	if err := s.Update(ctx, func(tx ddm.Tx) error { return tx.(ddm.Store).Update(ctx, func(ddm.Tx) error { return nil }) }); !errors.Is(err, ddm.ErrInvalid) {
+	if err := s.Update(ctx, func(tx ddm.Tx) error {
+		return requireType[ddm.Store](t, tx).Update(ctx, func(ddm.Tx) error { return nil })
+	}); !errors.Is(err, ddm.ErrInvalid) {
 		t.Fatalf("nested Update: %v", err)
 	}
 	// Later statements of the multi-step writes, one dropped table each.
@@ -474,9 +482,11 @@ func seed(t *testing.T, s ddm.Tx) int64 {
 	if err := s.PutSnapshot(ctx, snap); err != nil {
 		t.Fatal(err)
 	}
-	u := ddm.StatusUpdate{Raw: []byte("{}"), ReceivedAt: t0, FullReport: true, HasDeclarations: true,
+	u := ddm.StatusUpdate{
+		Raw: []byte("{}"), ReceivedAt: t0, FullReport: true, HasDeclarations: true,
 		Declarations: []ddm.DeclarationStatus{{Kind: conf, Identifier: "a", ServerToken: "t", Valid: "valid"}},
-		Values:       []ddm.StatusValue{{Path: "p", Value: []byte("1")}}}
+		Values:       []ddm.StatusValue{{Path: "p", Value: []byte("1")}},
+	}
 	for range 2 {
 		if _, err := s.PutStatus(ctx, dev, u); err != nil {
 			t.Fatal(err)
@@ -647,10 +657,12 @@ func TestCanonicalBytesRoundTripExactly(t *testing.T) {
 	if err != nil || !bytes.Equal(gotSnap.Items[0].Expanded, raw) || gotSnap.Items[1].Expanded != nil {
 		t.Fatalf("Snapshot: %v %+v", err, gotSnap)
 	}
-	u := ddm.StatusUpdate{Raw: bytes.Clone(raw), ReceivedAt: t0,
+	u := ddm.StatusUpdate{
+		Raw: bytes.Clone(raw), ReceivedAt: t0,
 		Declarations: []ddm.DeclarationStatus{{Kind: conf, Identifier: "a", Reasons: bytes.Clone(raw)}, {Kind: conf, Identifier: "b", Reasons: []byte{}}},
 		Values:       []ddm.StatusValue{{Path: "p", Value: bytes.Clone(raw)}, {Path: "q"}},
-		Errors:       []ddm.StatusError{{StatusItem: "x", Reasons: bytes.Clone(raw)}, {StatusItem: "y"}}}
+		Errors:       []ddm.StatusError{{StatusItem: "x", Reasons: bytes.Clone(raw)}, {StatusItem: "y"}},
+	}
 	if _, err := s.PutStatus(ctx, dev, u); err != nil {
 		t.Fatal(err)
 	}

@@ -46,6 +46,7 @@ func splitEnvFromOS(t *testing.T) splitEnv {
 		t.Fatal(err)
 	}
 	if file := os.Getenv("TEST_DDM_CA_FILE"); file != "" {
+		// #nosec G304 G703 -- The test controls this fixture path within its private workspace.
 		pem, err := os.ReadFile(file)
 		if err != nil {
 			t.Fatal(err)
@@ -54,7 +55,7 @@ func splitEnvFromOS(t *testing.T) splitEnv {
 			t.Fatal("invalid TEST_DDM_CA_FILE")
 		}
 	}
-	transport := http.DefaultTransport.(*http.Transport).Clone()
+	transport := requireType[*http.Transport](t, http.DefaultTransport).Clone()
 	transport.TLSClientConfig = &tls.Config{MinVersion: tls.VersionTLS12, RootCAs: roots}
 	e.client = &http.Client{
 		Transport:     transport,
@@ -83,7 +84,7 @@ func (e splitEnv) admin(t *testing.T, method, path string, body []byte) (int, []
 	if err != nil {
 		t.Fatalf("%s %s: %v", method, path, err)
 	}
-	defer res.Body.Close()
+	defer func(body io.Closer) { _ = body.Close() }(res.Body)
 	data, _ := io.ReadAll(res.Body)
 	return res.StatusCode, data
 }
@@ -251,7 +252,7 @@ func TestE2E_DDMSplitDeployment(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		res.Body.Close()
+		_ = res.Body.Close()
 		if res.StatusCode != http.StatusRequestEntityTooLarge {
 			t.Fatalf("oversized = %d, want 413", res.StatusCode)
 		}
@@ -267,7 +268,7 @@ func TestE2E_DDMSplitDeployment(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		res.Body.Close()
+		_ = res.Body.Close()
 		if res.StatusCode != http.StatusUnauthorized {
 			t.Fatalf("admin without token = %d", res.StatusCode)
 		}

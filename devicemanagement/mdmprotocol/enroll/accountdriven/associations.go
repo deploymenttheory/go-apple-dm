@@ -64,6 +64,7 @@ func readAssociation(ctx context.Context, r state.Reader, ref string) (Associati
 	err = json.Unmarshal(v.Value, &a)
 	return a, err
 }
+
 func writeAssociation(ctx context.Context, tx state.Tx, a Association) error {
 	b, err := json.Marshal(a)
 	if err != nil {

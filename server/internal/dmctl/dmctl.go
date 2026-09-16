@@ -118,7 +118,7 @@ func Run(
 		return fmt.Errorf("%w: unknown command %q", ErrUsage, verb)
 	}
 	if e.opts.insecure {
-		fmt.Fprintln(
+		_, _ = fmt.Fprintln(
 			stderr,
 			"dmctl: -insecure is no longer supported; use -ca-file to configure trust",
 		)
@@ -341,9 +341,9 @@ func (e *env) parseVerb(fs *flag.FlagSet, args []string) ([]string, error) {
 
 // usage prints the verb list and the global flags.
 func usage(w io.Writer, fs *flag.FlagSet) {
-	fmt.Fprintln(w, "dmctl administers a go-apple-dm reference server.")
-	fmt.Fprintln(w, "\nUsage:\n  dmctl [flags] <command> [flags] [arguments]")
-	fmt.Fprintln(w, "\nCommands:")
+	_, _ = fmt.Fprintln(w, "dmctl administers a go-apple-dm reference server.")
+	_, _ = fmt.Fprintln(w, "\nUsage:\n  dmctl [flags] <command> [flags] [arguments]")
+	_, _ = fmt.Fprintln(w, "\nCommands:")
 	cmds := commands()
 	names := make([]string, 0, len(cmds))
 	for n := range cmds {
@@ -351,18 +351,18 @@ func usage(w io.Writer, fs *flag.FlagSet) {
 	}
 	sort.Strings(names)
 	for _, n := range names {
-		fmt.Fprintf(w, "  %-14s %s\n", n, cmds[n].summary)
+		_, _ = fmt.Fprintf(w, "  %-14s %s\n", n, cmds[n].summary)
 	}
-	fmt.Fprintln(w, "\nFlags:")
+	_, _ = fmt.Fprintln(w, "\nFlags:")
 	fs.PrintDefaults()
-	fmt.Fprintln(
+	_, _ = fmt.Fprintln(
 		w,
 		"\nexplain and certificate preparation work offline. bench manages its own workspace; administration reads -server and -token.",
 	)
 }
 
 func runVersion(_ context.Context, e *env, _ []string) error {
-	fmt.Fprintln(e.stdout, version())
+	_, _ = fmt.Fprintln(e.stdout, version())
 	return nil
 }
 
@@ -433,7 +433,7 @@ func (e *env) client() (*adminclient.Client, error) {
 	}
 	var trace func(string)
 	if e.opts.verbose {
-		trace = func(s string) { fmt.Fprintln(e.stderr, "dmctl:", s) }
+		trace = func(s string) { _, _ = fmt.Fprintln(e.stderr, "dmctl:", s) }
 	}
 	c, err := adminclient.New(adminclient.Config{
 		BaseURL: server, Token: tok, Timeout: e.opts.timeout,

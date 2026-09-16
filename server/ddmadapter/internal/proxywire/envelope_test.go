@@ -15,7 +15,7 @@ import (
 func TestEnvelopeBindsRequestAndRejectsReplay(t *testing.T) {
 	key := []byte(strings.Repeat("k", 32))
 	body := []byte("signed body")
-	original := httptest.NewRequest(
+	original := httptest.NewRequestWithContext(t.Context(),
 		http.MethodPost,
 		"https://ddm.example/ddm/v1/declarative-management",
 		nil,
@@ -76,7 +76,7 @@ func TestEnvelopeBindsRequestAndRejectsReplay(t *testing.T) {
 
 func TestEnvelopeFreshnessAndBoundResponse(t *testing.T) {
 	key := []byte(strings.Repeat("k", 32))
-	req := httptest.NewRequest(
+	req := httptest.NewRequestWithContext(t.Context(),
 		http.MethodPost,
 		"https://ddm.example/ddm/v1/declarative-management",
 		nil,
@@ -137,7 +137,7 @@ func TestEnvelopeFreshnessAndBoundResponse(t *testing.T) {
 
 func TestEnvelopeRejectsMalformedMetadataAndMissingReplayStore(t *testing.T) {
 	key := []byte(strings.Repeat("k", 32))
-	r := httptest.NewRequest("POST", "https://ddm.example/v1/declarative-management", nil)
+	r := httptest.NewRequestWithContext(t.Context(), "POST", "https://ddm.example/v1/declarative-management", nil)
 	sig, err := SignRequest(key, r, nil)
 	if err != nil {
 		t.Fatal(err)

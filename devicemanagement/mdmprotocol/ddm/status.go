@@ -196,8 +196,10 @@ func (w *statusWalker) declaration(kind schemaddm.Kind, row status.ManagementDec
 		}
 	}
 	key := string(kind) + "/" + row.Identifier
-	ds := DeclarationStatus{Kind: kind, Identifier: row.Identifier, ServerToken: row.ServerToken, Active: row.Active,
-		Valid: row.Valid, Reasons: reasons, FirstSeen: w.now, LastSeen: w.now}
+	ds := DeclarationStatus{
+		Kind: kind, Identifier: row.Identifier, ServerToken: row.ServerToken, Active: row.Active,
+		Valid: row.Valid, Reasons: reasons, FirstSeen: w.now, LastSeen: w.now,
+	}
 	if prev, ok := w.decls[key]; ok {
 		if want, known := w.snapshot[key]; known && prev.ServerToken == want && row.ServerToken != want {
 			return nil

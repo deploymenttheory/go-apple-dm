@@ -245,7 +245,7 @@ func (a *App) setupError(w http.ResponseWriter, err error) {
 
 // ExecuteSetup keeps CLI bootstrap and remote operations on the same workflow.
 //
-//nolint:gocyclo // Keep the ordered workflow transitions and their failure handling together.
+// Keep the ordered workflow transitions and their failure handling together.
 func (a *App) ExecuteSetup(
 	ctx context.Context,
 	kind lifecycle.Kind,
@@ -563,7 +563,7 @@ func (a *App) remoteVendorSignature(
 	if err != nil {
 		return nil, fmt.Errorf("app: vendor signing request: %w", err)
 	}
-	defer response.Body.Close()
+	defer func(body io.Closer) { _ = body.Close() }(response.Body)
 	if response.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf(
 			"%w: vendor signing service returned HTTP %d",

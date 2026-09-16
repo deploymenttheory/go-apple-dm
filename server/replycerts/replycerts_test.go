@@ -65,15 +65,15 @@ func TestAutomaticCertificates(t *testing.T) {
 					t.Fatal("concurrent preparation selected different identities")
 				}
 			}
-			cert, key, err := manager.Recipient(ctx, id, original.UUID)
+			cert, _, err := manager.Recipient(ctx, id, original.UUID)
 			if err != nil {
 				t.Fatal(err)
 			}
-			public := cert.PublicKey.(*rsa.PublicKey)
+			public := requireType[*rsa.PublicKey](t, cert.PublicKey)
 			if public.N.BitLen() < 2048 || cert.NotAfter.Sub(cert.NotBefore) < 364*24*time.Hour {
 				t.Fatal("invalid generated certificate")
 			}
-			body := outputs[0].Payload.(*commands.RotateFileVaultKey)
+			body := requireType[*commands.RotateFileVaultKey](t, outputs[0].Payload)
 			der := body.ReplyEncryptionCertificate
 			if kind == "institutional" {
 				der = body.NewCertificate
@@ -82,9 +82,9 @@ func TestAutomaticCertificates(t *testing.T) {
 				t.Fatal("queued certificate differs from retained recipient")
 			}
 			if len(
-				original.Payload.(*commands.RotateFileVaultKey).ReplyEncryptionCertificate,
+				requireType[*commands.RotateFileVaultKey](t, original.Payload).ReplyEncryptionCertificate,
 			) != 0 ||
-				len(original.Payload.(*commands.RotateFileVaultKey).NewCertificate) != 0 {
+				len(requireType[*commands.RotateFileVaultKey](t, original.Payload).NewCertificate) != 0 {
 				t.Fatal("modified caller command")
 			}
 			// Exercise CMS with the generated recipient. The retained Go-generated
@@ -99,7 +99,7 @@ func TestAutomaticCertificates(t *testing.T) {
 				t.Fatal("reply key expired", n, err)
 			}
 			restarted := &replycerts.Manager{Store: st}
-			cert, key, err = restarted.Recipient(ctx, id, original.UUID)
+			cert, key, err := restarted.Recipient(ctx, id, original.UUID)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -187,7 +187,7 @@ func TestCertificatePreparationRejectsConflictsAndStorageFailures(t *testing.T) 
 	) {
 		t.Fatal("different command accepted", err)
 	}
-	supplied := prepared.Payload.(*commands.RotateFileVaultKey)
+	supplied := requireType[*commands.RotateFileVaultKey](t, prepared.Payload)
 	manual, err := mdm.NewCommand(supplied, mdm.WithUUID("manual"))
 	if err != nil {
 		t.Fatal(err)
@@ -235,7 +235,7 @@ func TestEscrowProfileRetainsIdentity(t *testing.T) {
 		t.Fatal("escrow retry changed profile or recipient", err)
 	}
 	parsed, err := profile.Parse(
-		first.Payload.(*commands.InstallProfile).Payload,
+		requireType[*commands.InstallProfile](t, first.Payload).Payload,
 		profile.ParseOptions{},
 	)
 	if err != nil {
@@ -245,8 +245,8 @@ func TestEscrowProfileRetainsIdentity(t *testing.T) {
 	if p.Scope != profile.ScopeSystem || len(p.Payloads) != 2 {
 		t.Fatal("escrow profile structure")
 	}
-	certificate := p.Payloads[0].Content.(*profiles.CertificatePKCS1)
-	escrow := p.Payloads[1].Content.(*profiles.FDERecoveryKeyEscrow)
+	certificate := requireType[*profiles.CertificatePKCS1](t, p.Payloads[0].Content)
+	escrow := requireType[*profiles.FDERecoveryKeyEscrow](t, p.Payloads[1].Content)
 	if escrow.EncryptCertPayloadUUID != p.Payloads[0].UUID {
 		t.Fatal("escrow certificate reference")
 	}

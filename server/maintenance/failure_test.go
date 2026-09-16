@@ -76,7 +76,7 @@ func TestWorkerFailureClosesAdmission(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			defer p.Close(t.Context())
+			defer func() { _ = p.Close(t.Context()) }()
 			ctx, cancel := context.WithTimeout(t.Context(), time.Second)
 			defer cancel()
 			err = p.Run(ctx, func(context.Context) error { return workerError })

@@ -70,8 +70,8 @@ func parseSecurityEnv(get func(string) string, c *Config) error {
 		var quotas map[string]struct {
 			Interval       string `json:"interval"`
 			Burst          int    `json:"burst"`
-			GlobalInterval string `json:"global_interval"` //nolint:tagliatelle // Environment configuration uses snake_case.
-			GlobalBurst    int    `json:"global_burst"`    //nolint:tagliatelle // Environment configuration uses snake_case.
+			GlobalInterval string `json:"global_interval"` // Environment configuration uses snake_case.
+			GlobalBurst    int    `json:"global_burst"`    // Environment configuration uses snake_case.
 		}
 		if err := json.Unmarshal(
 			[]byte(raw),

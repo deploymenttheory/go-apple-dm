@@ -103,7 +103,7 @@ func TestReplacementProfileClaimsItsPendingAttempt(t *testing.T) {
 				t.Fatal(err)
 			}
 			p, err := enroll.Parse(
-				cmd.Payload.(*commands.InstallProfile).Payload,
+				requireType[*commands.InstallProfile](t, cmd.Payload).Payload,
 				profile.ParseOptions{},
 			)
 			if err != nil {

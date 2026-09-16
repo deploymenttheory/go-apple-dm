@@ -40,6 +40,7 @@ func IdentityFromContext(ctx context.Context) (Identity, bool) {
 	id, ok := ctx.Value(identityKey{}).(Identity)
 	return id, ok
 }
+
 func (h *CheckinHook) associations() *Associations {
 	if h.Associations != nil {
 		return h.Associations

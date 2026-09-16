@@ -39,7 +39,7 @@ import (
 
 // Instance describes the running workspace. The control credential stays private.
 //
-//nolint:tagliatelle // Private bench documents use the same PascalCase convention as admin responses.
+// Private bench documents use the same PascalCase convention as admin responses.
 type Instance struct {
 	Binary       string `json:"Binary"`
 	URL          string `json:"URL"`
@@ -376,7 +376,7 @@ func Up(ctx context.Context, w *Workspace, binary string, out io.Writer) error {
 	if err != nil {
 		return wrapError(err)
 	}
-	defer lock.Close()
+	defer func(cleanup func() error) { _ = cleanup() }(lock.Close)
 	if err = lockWorkspace(lock); err != nil {
 		return fmt.Errorf("%w: workspace already running", errOperation)
 	}
@@ -391,7 +391,7 @@ func Up(ctx context.Context, w *Workspace, binary string, out io.Writer) error {
 	if err != nil {
 		return wrapError(err)
 	}
-	defer control.Close()
+	defer func(cleanup func() error) { _ = cleanup() }(control.Close)
 	e.ControlURL = "http://" + control.Addr().String()
 	e.ControlToken = randomID()
 	stop := make(chan struct{}, 1)
@@ -461,8 +461,8 @@ func Up(ctx context.Context, w *Workspace, binary string, out io.Writer) error {
 	if err = os.WriteFile(w.path("running.json"), b, 0o600); err != nil {
 		return wrapError(err)
 	}
-	defer os.Remove(w.path("running.json"))
-	fmt.Fprintln(out, "Bench ready:", e.URL, "mode="+w.Mode, "topology="+w.Topology)
+	defer func() { _ = os.Remove(w.path("running.json")) }()
+	_, _ = fmt.Fprintln(out, "Bench ready:", e.URL, "mode="+w.Mode, "topology="+w.Topology)
 	select {
 	case <-stop:
 		return nil
@@ -513,7 +513,7 @@ func (e *Environment) Control(
 	if err != nil {
 		return nil, fmt.Errorf("%w: bench supervisor is unavailable", errOperation)
 	}
-	defer resp.Body.Close()
+	defer func(body io.Closer) { _ = body.Close() }(resp.Body)
 	if resp.StatusCode >= 400 {
 		return nil, fmt.Errorf("%w: control returned HTTP %d", errOperation, resp.StatusCode)
 	}
@@ -595,7 +595,11 @@ func (e *Environment) oidcFixture(env map[string]string) error {
 	env["DM_OIDC_ISSUER"] = e.Provider.Issuer()
 	env["DM_OIDC_CLIENT_ID"] = "bench-enroll"
 	env["DM_OIDC_ROOT_CA_FILE"] = w.path("fixtures", "oidc-root.pem")
-	e.Client.Transport.(*http.Transport).TLSClientConfig.RootCAs.AddCert(
+	transport, ok := e.Client.Transport.(*http.Transport)
+	if !ok {
+		return fmt.Errorf("bench transport %T does not support fixture trust", e.Client.Transport)
+	}
+	transport.TLSClientConfig.RootCAs.AddCert(
 		e.Provider.Certificate(),
 	)
 	return nil
@@ -733,7 +737,7 @@ func (e *Environment) seed(ctx context.Context, topic string, cert, key []byte) 
 	if err != nil {
 		return wrapError(err)
 	}
-	//nolint:tagliatelle // Administration wire names.
+	// Administration wire names.
 	var listed struct {
 		Items []struct {
 			Topic string `json:"Topic"`

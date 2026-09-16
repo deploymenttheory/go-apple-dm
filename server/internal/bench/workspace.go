@@ -18,7 +18,7 @@ import (
 
 // Workspace contains non-secret settings. Existing local identities stay in mdm/.
 //
-//nolint:tagliatelle // Preserve the private workspace document schema.
+// Preserve the private workspace document schema.
 type Workspace struct {
 	Settings  map[string]string `json:"Settings,omitempty"`
 	Version   int               `json:"Version"`
@@ -180,7 +180,7 @@ func HTTP(
 	if err != nil {
 		return nil, 0, fmt.Errorf("%w: bench: server request failed", errOperation)
 	}
-	defer resp.Body.Close()
+	defer func(body io.Closer) { _ = body.Close() }(resp.Body)
 	b, err := io.ReadAll(io.LimitReader(resp.Body, 2<<20))
 	if err != nil {
 		return nil, resp.StatusCode, wrapError(err)

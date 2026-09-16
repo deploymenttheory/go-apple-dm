@@ -31,11 +31,11 @@ func TestActivities(t *testing.T) {
 		if dig(t, body, "data", "relationships", "mdmServer", "data", "type") != "mdmServers" || dig(t, body, "data", "relationships", "mdmServer", "data", "id") != id {
 			t.Fatalf("%v", body)
 		}
-		devices := dig(t, body, "data", "relationships", "devices", "data").([]any)
+		devices := requireType[[]any](t, dig(t, body, "data", "relationships", "devices", "data"))
 		if len(devices) != 2 || dig(t, devices[0], "type") != "orgDevices" || dig(t, devices[1], "id") != "S2" {
 			t.Fatalf("%v", devices)
 		}
-		if _, has := dig(t, body, "data", "attributes").(map[string]any)["activityTypeMetadata"]; has {
+		if _, has := requireType[map[string]any](t, dig(t, body, "data", "attributes"))["activityTypeMetadata"]; has {
 			t.Fatal("metadata must be absent")
 		}
 	})
@@ -51,7 +51,7 @@ func TestActivities(t *testing.T) {
 		if dig(t, body, "data", "attributes", "activityType") != "UNASSIGN_DEVICES" {
 			t.Fatalf("%v", body)
 		}
-		if _, has := dig(t, body, "data", "relationships").(map[string]any)["mdmServer"]; has {
+		if _, has := requireType[map[string]any](t, dig(t, body, "data", "relationships"))["mdmServer"]; has {
 			t.Fatal("mdmServer must be absent")
 		}
 	})
@@ -68,7 +68,7 @@ func TestActivities(t *testing.T) {
 		if dig(t, body, "data", "attributes", "activityType") != "RELEASE_DEVICES" {
 			t.Fatalf("%v", body)
 		}
-		if _, has := dig(t, body, "data", "relationships").(map[string]any)["mdmServer"]; has {
+		if _, has := requireType[map[string]any](t, dig(t, body, "data", "relationships"))["mdmServer"]; has {
 			t.Fatal("mdmServer must be absent")
 		}
 		f.srv.Complete()

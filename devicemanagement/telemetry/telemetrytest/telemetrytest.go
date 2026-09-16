@@ -120,7 +120,7 @@ func (r *Recorder) Instrument(name string) []Measurement {
 func (r *Recorder) add(scope, name string, value float64, set attribute.Set) {
 	attrs := make([]string, 0, set.Len())
 	for _, kv := range set.ToSlice() {
-		attrs = append(attrs, string(kv.Key)+"="+kv.Value.Emit())
+		attrs = append(attrs, string(kv.Key)+"="+kv.Value.String())
 	}
 	sort.Strings(attrs)
 	r.mu.Lock()

@@ -1,8 +1,9 @@
 package dmctl_test
 
 import (
-	"golang.org/x/sys/windows"
 	"testing"
+
+	"golang.org/x/sys/windows"
 )
 
 func makeWorldReadable(t *testing.T, path string) {

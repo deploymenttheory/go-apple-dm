@@ -361,7 +361,7 @@ func Build(ctx context.Context, cfg Config) (*App, error) {
 	ownBus := false
 	if cfg.Bus == nil && cfg.Sinks.Enabled() {
 		var err error
-		//nolint:contextcheck // the bus owns a lifetime independent of the construction/request context
+		// the bus owns a lifetime independent of the construction/request context
 		cfg.Bus, err = event.NewAsync(
 			cfg.Sinks.Dispatch,
 			event.WithErrorHandler(eventReporter(cfg.Logger, cfg.Clock)),
@@ -373,10 +373,10 @@ func Build(ctx context.Context, cfg Config) (*App, error) {
 	}
 	a := &App{cfg: cfg, ownBus: ownBus}
 	built := false
-	//nolint:contextcheck // failure cleanup owns its bounded drain context
+	// failure cleanup owns its bounded drain context
 	defer func() {
 		if !built {
-			//nolint:contextcheck // Close owns bounded teardown after construction fails.
+			// Close owns bounded teardown after construction fails.
 			_ = a.Close()
 		}
 	}()
@@ -961,7 +961,7 @@ func (a *App) adminStore(ctx context.Context) (adminauth.Store, error) {
 	case a.cfg.AdminStore != nil:
 		return a.cfg.AdminStore, nil
 	case !a.cfg.AdminStoreEnabled:
-		//nolint:nilnil // a nil store is the documented "no principal store"
+		// a nil store is the documented "no principal store"
 		// answer, not a failure: the static token stays the only credential.
 		return nil, nil
 	case a.db == nil:

@@ -183,7 +183,9 @@ func TestManagedConfigurationPropagatesCorruptIdentityRecords(t *testing.T) {
 		t,
 		a.protocol,
 		"issuer",
-		func(r map[string]any) { r["Revisions"].([]any)[1].(map[string]any)["Key"] = "" },
+		func(r map[string]any) {
+			requireType[map[string]any](t, requireType[[]any](t, r["Revisions"])[1])["Key"] = ""
+		},
 	)
 	if _, err := a.certificatePairs(t.Context(), "issuer", false); err == nil {
 		t.Fatal("issuer without key accepted")

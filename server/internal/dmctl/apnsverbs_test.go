@@ -136,6 +136,7 @@ func TestCSRCommandPreservesKeys(t *testing.T) {
 	if err := json.Unmarshal([]byte(out), &paths); err != nil || paths["keyFile"] != key {
 		t.Fatal("output paths")
 	}
+	// #nosec G304 -- The test controls this fixture path within its private workspace.
 	before, err := os.ReadFile(key)
 	if err != nil {
 		t.Fatal(err)
@@ -143,6 +144,7 @@ func TestCSRCommandPreservesKeys(t *testing.T) {
 	if _, _, err := run(t, env, args...); err == nil {
 		t.Fatal("overwrote key")
 	}
+	// #nosec G304 -- The test controls this fixture path within its private workspace.
 	after, err := os.ReadFile(key)
 	if err != nil || string(before) != string(after) {
 		t.Fatal("key changed")

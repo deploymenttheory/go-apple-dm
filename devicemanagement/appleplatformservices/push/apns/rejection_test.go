@@ -11,7 +11,7 @@ import (
 func TestAppInvalidAlertRejectedBeforeCredentialLookup(t *testing.T) {
 	t.Parallel()
 	client := apns.NewApp(nil)
-	defer client.Close()
+	defer func(cleanup func() error) { _ = cleanup() }(client.Close)
 	for _, tc := range []struct {
 		name, payload string
 		priority      int

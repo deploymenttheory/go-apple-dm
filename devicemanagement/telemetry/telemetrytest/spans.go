@@ -104,7 +104,7 @@ type recordingSpan struct {
 func (s *recordingSpan) SetAttributes(attrs ...attribute.KeyValue) {
 	s.rec.mu.Lock()
 	for _, kv := range attrs {
-		s.out.Attrs = append(s.out.Attrs, string(kv.Key)+"="+kv.Value.Emit())
+		s.out.Attrs = append(s.out.Attrs, string(kv.Key)+"="+kv.Value.String())
 	}
 	sort.Strings(s.out.Attrs)
 	s.rec.mu.Unlock()

@@ -16,21 +16,21 @@ import (
 // account-driven handler may only know the user identifier and puts it in
 // LoginHint and Extra.
 type Bound struct {
-	Serial string
-	UDID   string
+	Serial string `json:"Serial"`
+	UDID   string `json:"UDID"`
 	// LoginHint, when set, is sent to the provider as login_hint.
-	LoginHint string
+	LoginHint string `json:"LoginHint"`
 	// Extra carries any other values the caller wants back at Complete.
-	Extra map[string]string
+	Extra map[string]string `json:"Extra"`
 }
 
 // State is one pending authorization, stored under its state parameter.
 type State struct {
-	BrowserHash string
-	Bound       Bound
-	Verifier    string
-	Nonce       string
-	ExpiresAt   time.Time
+	BrowserHash string    `json:"BrowserHash"`
+	Bound       Bound     `json:"Bound"`
+	Verifier    string    `json:"Verifier"`
+	Nonce       string    `json:"Nonce"`
+	ExpiresAt   time.Time `json:"ExpiresAt"`
 }
 
 // StateStore persists pending authorizations. Implementations must make

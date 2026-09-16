@@ -31,6 +31,7 @@ func TestIssuanceReceiptSurvivesRegistrationFailureAndRestart(t *testing.T) {
 }
 
 func testReceiptRecovery(t *testing.T, recovery string) {
+	t.Helper()
 	var signer *countingSigner
 	var seen []byte
 	f := newFixture(t, func(c *acme.Config) {

@@ -28,15 +28,17 @@ type UnitOfWork struct {
 
 var ErrTransaction = errors.New("sqlcommon: transaction coordination failed")
 
-type unitKey struct{}
-type unit struct {
-	db       *sql.DB
-	tx       *sql.Tx
-	mu       sync.Mutex
-	err      error
-	commit   []func(context.Context)
-	complete []func(context.Context, bool)
-}
+type (
+	unitKey struct{}
+	unit    struct {
+		db       *sql.DB
+		tx       *sql.Tx
+		mu       sync.Mutex
+		err      error
+		commit   []func(context.Context)
+		complete []func(context.Context, bool)
+	}
+)
 
 func currentUnit(ctx context.Context) *unit {
 	u, _ := ctx.Value(unitKey{}).(*unit)

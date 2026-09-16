@@ -50,6 +50,7 @@ func openWith(t *testing.T, path string, k *crypt.Keyring) *sqlite.Store {
 func TestContractEncrypted(t *testing.T) {
 	t.Parallel()
 	storagetest.RunAll(t, func(t *testing.T) storage.Store {
+		t.Helper()
 		return openWith(t, filepath.Join(t.TempDir(), "enc.db"), keyring(t, "storage-key-v1"))
 	})
 }

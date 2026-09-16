@@ -20,8 +20,38 @@ tests. `make help` describes the database, end-to-end, fuzz and coverage targets
 floor is 95% overall and per non-exempt package; exemptions are listed in
 [scripts/coverage-exempt.txt](scripts/coverage-exempt.txt).
 
-`make lint` checks the complete baseline in both modules without changing files.
-Use `golangci-lint fmt` explicitly when formatting changes are intended.
+`make lint` checks the complete baseline in both workspace modules without changing
+files. `make tools` installs the version in `.golangci-version` with the declared
+Go toolchain; `make fmt` explicitly formats authored Go files. The shared lint
+runner selects the committed workspace even if the shell has `GOWORK=off`,
+validates configuration, and compiles tests before analysis. Integration, E2E,
+acceptance and OS 27 schema test tags are included without running those tests or
+contacting their services. Reports are written beneath `cover/lint/`.
+
+The blocking rules cover correctness, security, error handling, HTTP/SQL resource
+ownership, serialization tags, logging, compiler directives and test helpers.
+Staticcheck runs its `SA*` checks. `gofumpt` and `goimports` provide formatting;
+project imports use the full repository module prefix. Complexity thresholds,
+allocation suggestions, tag-casing mandates and mandatory error wrapping are not
+part of the policy. Context propagation through request/exchange objects is
+reviewed with lifecycle tests; `contextcheck` cannot reliably follow those paths.
+Optional `(nil, nil)` contracts and compile-only examples are permitted.
+
+Authored tests, examples and tools receive the same analysis as production code.
+Strict generated-file markers exclude diagnostic/formatting reports, not
+compilation. Never hand-edit generated sources to fix a finding. Preserve Apple's
+wire keys and existing stored JSON names when adding explicit tags. Existing
+module and tier constraints remain enforced by `internal/layout`.
+
+Fix findings at their cause. A deliberate best-effort cleanup or reporting error
+may be explicitly discarded, but setup, persistence and validation errors must be
+handled. Test response bodies and database cursors still have owners; explicit
+early SQL closure must not become an accumulating defer inside a loop. Narrow
+`//nolint:linter // reason` directives require the named check, a concrete reason
+and an actual finding. Security exceptions use `#nosec Gxxx -- reason` for the
+specific protocol requirement or controlled fixture. Do not exclude a whole test
+file or disable security analysis merely because it contains a negative fixture.
+Remove obsolete suppressions and keep useful protocol explanations as comments.
 `make verify-server-module-installation` verifies that the server can be used
 outside this repository with the root library version declared in `server/go.mod`.
 It packages the current server sources in a temporary module proxy, disables Go
@@ -81,8 +111,11 @@ matches `docs/**`, `**/*.md` or `.release-please-manifest.json`; workflow change
 run these checks. Dependency Review additionally excludes workflow-only changes.
 These documentation exclusions include root and server changelogs. Mixed changes
 that include application code or dependency files retain normal CI.
-Go lint runs for Go sources, module files, `.golangci.yml` or workflow changes,
-and supports manual dispatch. It checks both modules without modifying files.
+Go lint runs for Go sources, module/workspace files, lint configuration/tooling or
+workflow changes, and supports manual dispatch. It checks both workspace modules
+on native Linux ARM and Windows without modifying files. Compilation, analysis
+and standalone installation are separate checks; a typechecking failure is not
+a successful zero-finding run.
 Server tags use `server/vX.Y.Z`. The **go | Published server module installation**
 workflow downloads that published server version and verifies dependency resolution,
 package builds and command installation. It also accepts a version through manual

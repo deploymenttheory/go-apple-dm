@@ -30,6 +30,7 @@ func principal(name string, roles ...string) adminauth.Principal {
 }
 
 func runPrincipals(t *testing.T, newStore NewStore) {
+	t.Helper()
 	ctx := context.Background()
 
 	t.Run("RoundTrip", func(t *testing.T) {
@@ -160,6 +161,7 @@ func runPrincipals(t *testing.T, newStore NewStore) {
 }
 
 func runTokens(t *testing.T, newStore NewStore) {
+	t.Helper()
 	ctx := context.Background()
 
 	t.Run("ByDigest", func(t *testing.T) {
@@ -271,6 +273,7 @@ func runTokens(t *testing.T, newStore NewStore) {
 }
 
 func runPolicies(t *testing.T, newStore NewStore) {
+	t.Helper()
 	ctx := context.Background()
 	const src = `permit (principal, action == MDM::Action::"listEnrollments", resource);`
 

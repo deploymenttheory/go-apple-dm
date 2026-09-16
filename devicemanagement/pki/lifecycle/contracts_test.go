@@ -169,7 +169,7 @@ func privateSigner(t *testing.T, data []byte) crypto.Signer {
 	}
 	k, err := x509.ParsePKCS8PrivateKey(b.Bytes)
 	requireError(t, err, nil)
-	return k.(crypto.Signer)
+	return requireType[crypto.Signer](t, k)
 }
 
 func issueCertificate(

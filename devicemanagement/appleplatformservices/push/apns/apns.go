@@ -228,7 +228,7 @@ func (c *Client) send(ctx context.Context, n notification, mdmPush bool) push.Re
 			Err:     fmt.Errorf("%w: %w", push.ErrUpstream, err),
 		}
 	}
-	defer resp.Body.Close()
+	defer func(body io.Closer) { _ = body.Close() }(resp.Body)
 	r := push.Result{Status: resp.StatusCode, APNSID: resp.Header.Get("apns-id")}
 	if resp.StatusCode == http.StatusOK {
 		r.Outcome = push.OutcomeSent

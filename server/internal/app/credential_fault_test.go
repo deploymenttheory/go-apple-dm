@@ -96,7 +96,7 @@ func TestACMECredentialRejectsMissingIdentityFailedLookupAndDisable(t *testing.T
 	a.Store = st
 	handler := a.enroll.acme.credentialHandler()
 	for _, mode := range []string{"missing", "lookup failed", "disabled"} {
-		r := httptest.NewRequest("GET", "https://mdm.example/credential", nil)
+		r := httptest.NewRequestWithContext(t.Context(), "GET", "https://mdm.example/credential", nil)
 		want := http.StatusUnauthorized
 		if mode != "missing" {
 			r = r.WithContext(httpapi.WithCert(ctx, cert))
@@ -124,7 +124,7 @@ func TestAdminQueueRejectsMalformedTargetsAndLookupFailure(t *testing.T) {
 	a, id := replacementSecurityApp(t)
 	for _, handler := range []http.HandlerFunc{a.enqueueCommand, a.pushEnrollment} {
 		w := httptest.NewRecorder()
-		handler(w, httptest.NewRequest("POST", "https://mdm.example/admin", nil))
+		handler(w, httptest.NewRequestWithContext(t.Context(), "POST", "https://mdm.example/admin", nil))
 		if w.Code != http.StatusBadRequest {
 			t.Fatal(w.Code)
 		}
@@ -142,7 +142,7 @@ func TestAdminQueueRejectsMalformedTargetsAndLookupFailure(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	r := httptest.NewRequest("POST", "https://mdm.example/admin", bytes.NewReader(command.Raw))
+	r := httptest.NewRequestWithContext(t.Context(), "POST", "https://mdm.example/admin", bytes.NewReader(command.Raw))
 	r.SetPathValue("id", id.ID)
 	r.SetPathValue("channel", "device")
 	w := httptest.NewRecorder()

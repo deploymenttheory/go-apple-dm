@@ -14,7 +14,7 @@ func openLocal(path string, flags int, mode os.FileMode) (*os.File, error) {
 	if err != nil {
 		return nil, wrap(err)
 	}
-	defer root.Close()
+	defer func(cleanup func() error) { _ = cleanup() }(root.Close)
 	f, err := privatefile.OpenRootFile(root, filepath.Base(path), flags, mode)
 	return f, wrap(err)
 }
@@ -27,7 +27,7 @@ func readPrivate(path string) ([]byte, error) {
 	if err != nil {
 		return nil, wrap(err)
 	}
-	defer root.Close()
+	defer func(cleanup func() error) { _ = cleanup() }(root.Close)
 	name := filepath.Base(path)
 	info, err := root.Lstat(name)
 	if err != nil {
@@ -40,7 +40,7 @@ func readPrivate(path string) ([]byte, error) {
 	if err != nil {
 		return nil, wrap(err)
 	}
-	defer f.Close()
+	defer func(cleanup func() error) { _ = cleanup() }(f.Close)
 	raw, err := io.ReadAll(io.LimitReader(f, maxConfigFile+1))
 	if err != nil {
 		return nil, wrap(err)
@@ -56,12 +56,12 @@ func writePrivate(path string, raw []byte) error {
 	if err != nil {
 		return wrap(err)
 	}
-	defer root.Close()
+	defer func(cleanup func() error) { _ = cleanup() }(root.Close)
 	f, err := privatefile.OpenRootFile(root, filepath.Base(path), os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0o600)
 	if err != nil {
 		return wrap(err)
 	}
-	defer f.Close()
+	defer func(cleanup func() error) { _ = cleanup() }(f.Close)
 	if _, err := f.Write(raw); err != nil {
 		return wrap(err)
 	}

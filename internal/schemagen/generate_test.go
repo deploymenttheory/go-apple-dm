@@ -134,6 +134,7 @@ func TestWriteAndVerify(t *testing.T) {
 	if err := Write(out, files); err != nil {
 		t.Fatal(err)
 	}
+	// #nosec G304 -- The test controls this fixture path within its private workspace.
 	if data, _ := os.ReadFile(lock); !strings.Contains(string(data), "commands/Obsolete") {
 		t.Fatal("generate dropped a locked name without a RENAMES entry")
 	}
@@ -151,6 +152,7 @@ func TestWriteAndVerify(t *testing.T) {
 	if err := Write(out, files); err != nil {
 		t.Fatal(err)
 	}
+	// #nosec G304 -- The test controls this fixture path within its private workspace.
 	if data, _ := os.ReadFile(lock); strings.Contains(string(data), "commands/Obsolete") {
 		t.Fatal("generate kept a name ALLOWED_REMOVALS.md allows to drop")
 	}

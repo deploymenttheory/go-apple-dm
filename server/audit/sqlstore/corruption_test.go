@@ -94,7 +94,7 @@ func TestListRejectsANonNumericCursor(t *testing.T) {
 	}
 	// The table is still there.
 	var n int
-	if err := s.DB().QueryRow("SELECT COUNT(*) FROM audit_records").Scan(&n); err != nil && !errors.Is(err, sql.ErrNoRows) {
+	if err := s.DB().QueryRowContext(t.Context(), "SELECT COUNT(*) FROM audit_records").Scan(&n); err != nil && !errors.Is(err, sql.ErrNoRows) {
 		t.Fatalf("the table did not survive: %v", err)
 	}
 }

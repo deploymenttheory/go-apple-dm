@@ -10,6 +10,7 @@ import (
 )
 
 func runActiveRoot(t *testing.T, factory NewStore) {
+	t.Helper()
 	t.Run("InvalidChangesPreserveCredentials", func(t *testing.T) {
 		s := factory(t)
 		ctx := t.Context()

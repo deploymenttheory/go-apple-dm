@@ -45,11 +45,11 @@ func OpenSetup(ctx context.Context, cfg Config) (*App, error) {
 	}
 	a := &App{cfg: cfg}
 	if err := a.openStorage(ctx); err != nil {
-		_ = a.Close() //nolint:contextcheck // Close owns a bounded drain after cancellation.
+		_ = a.Close() // Close owns a bounded drain after cancellation.
 		return nil, wrapError(err)
 	}
 	if err := a.openCertificates(ctx); err != nil {
-		_ = a.Close() //nolint:contextcheck // Close owns a bounded drain after cancellation.
+		_ = a.Close() // Close owns a bounded drain after cancellation.
 		return nil, wrapError(err)
 	}
 	return a, nil
@@ -347,7 +347,7 @@ func (a *App) advanceCertificate(ctx context.Context, item lifecycle.Identity) e
 			return wrapError(err)
 		}
 		if leaf.CheckSignatureFrom(parent) != nil {
-			return nil
+			return nil //nolint:nilerr // A certificate issued by an external CA requires operator signing instead of automatic issuance.
 		}
 		if _, err = a.Certificates.IssueHTTPS(
 			ctx,
@@ -386,7 +386,7 @@ func (a *App) advanceCertificate(ctx context.Context, item lifecycle.Identity) e
 		// roots can prepare a successor and begin the tracked trust migration.
 		if !bytes.Equal(issuer.RawSubject, issuer.RawIssuer) ||
 			issuer.CheckSignatureFrom(issuer) != nil {
-			return nil
+			return nil //nolint:nilerr // A certificate issued by an external CA requires operator signing instead of automatic issuance.
 		}
 		if _, err = a.Certificates.CreateIssuer(ctx, item.ID, item.Pending, 0); err != nil {
 			return wrapError(err)

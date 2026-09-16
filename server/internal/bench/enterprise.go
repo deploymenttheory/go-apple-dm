@@ -10,6 +10,7 @@ import (
 	"crypto/x509/pkix"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"net/http/cookiejar"
 	"net/url"
@@ -96,7 +97,7 @@ func browser(ctx context.Context, e *Environment, raw string) (string, error) {
 	if err != nil {
 		return "", wrapError(err)
 	}
-	defer resp.Body.Close()
+	defer func(body io.Closer) { _ = body.Close() }(resp.Body)
 	return resp.Header.Get("Location"), nil
 }
 

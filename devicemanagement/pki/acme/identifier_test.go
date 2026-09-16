@@ -104,7 +104,7 @@ func TestHMACIdentifiers(t *testing.T) {
 		for name, identifier := range cases {
 			t.Run(name, func(t *testing.T) {
 				_, err := ids.Verify(t.Context(), identifier)
-				requireRejected(t, err)
+				_ = requireRejected(t, err)
 			})
 		}
 
@@ -120,7 +120,7 @@ func TestHMACIdentifiers(t *testing.T) {
 				t.Fatal(err)
 			}
 			_, err = ids.Verify(t.Context(), foreign)
-			requireRejected(t, err)
+			_ = requireRejected(t, err)
 		})
 
 		t.Run("Expired", func(t *testing.T) {
@@ -217,7 +217,7 @@ func TestStaticIdentifiers(t *testing.T) {
 	if _, err := ids.Verify(t.Context(), "not in the map"); err == nil {
 		t.Fatal("an unknown identifier was accepted")
 	} else {
-		requireRejected(t, err)
+		_ = requireRejected(t, err)
 	}
 	var empty acme.StaticIdentifiers
 	if _, err := empty.Verify(t.Context(), testIdentifier); err == nil {

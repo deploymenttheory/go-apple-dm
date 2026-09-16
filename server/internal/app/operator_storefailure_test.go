@@ -27,7 +27,7 @@ func TestAppCredentialListingReportsStoreFailures(t *testing.T) {
 		status  int
 	}{{state.ErrNotFound, 404}, {state.ErrInvalid, 400}, {io.ErrUnexpectedEOF, 500}} {
 		a := &App{appPushStore: &apppush.Store{State: unavailableAppState{failure: tc.failure}}}
-		req := httptest.NewRequest("GET", "/apppush/credentials", nil)
+		req := httptest.NewRequestWithContext(t.Context(), "GET", "/apppush/credentials", nil)
 		w := httptest.NewRecorder()
 		a.listAppPush(w, req)
 		if w.Code != tc.status {

@@ -124,7 +124,7 @@ func (t *transaction) List(
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func(rows *sql.Rows) { _ = rows.Close() }(rows)
 	var out []state.Record
 	for rows.Next() {
 		var r state.Record
@@ -246,7 +246,7 @@ func (s *Store) Update(ctx context.Context, keys []string, fn func(state.Tx) err
 	if err != nil {
 		return err
 	}
-	defer func() { _ = tx.Rollback() }()
+	defer func(cleanup func() error) { _ = cleanup() }(tx.Rollback)
 	if err := s.update(ctx, tx, shards, fn); err != nil {
 		return err
 	}
@@ -299,7 +299,7 @@ func (s *Store) Prune(ctx context.Context, limit int) (int, error) {
 	for rows.Next() {
 		var k string
 		if err := rows.Scan(&k); err != nil {
-			_ = rows.Close()
+			_ = rows.Close() //nolint:sqlclosecheck // Close the read cursor before issuing writes on the same connection.
 			return 0, err
 		}
 		keys = append(keys, k)

@@ -31,7 +31,7 @@ func appBackground(ctx context.Context, e *Environment, _ string) error {
 }
 
 func appSend(ctx context.Context, e *Environment, kind string) error {
-	//nolint:tagliatelle // Match the host app registration document.
+	// Match the host app registration document.
 	reg := struct {
 		Token       string `json:"token"`
 		Topic       string `json:"topic"`
@@ -116,7 +116,7 @@ func appSend(ctx context.Context, e *Environment, kind string) error {
 				if err != nil {
 					continue
 				}
-				//nolint:tagliatelle // labCorrelationID is emitted by the host app.
+				// labCorrelationID is emitted by the host app.
 				var receipt struct {
 					Correlation string `json:"labCorrelationID"`
 					Topic       string `json:"topic"`
@@ -162,8 +162,12 @@ func appRenewal(ctx context.Context, e *Environment, _ string) error {
 	if err != nil {
 		return wrapError(err)
 	}
+	signer, ok := pair.PrivateKey.(crypto.Signer)
+	if !ok {
+		return fmt.Errorf("%w: fixture key does not support signing", ErrBlocked)
+	}
 	issuer := &testpki.CA{
-		Identity: testpki.Identity{Cert: pair.Leaf, Key: pair.PrivateKey.(crypto.Signer)},
+		Identity: testpki.Identity{Cert: pair.Leaf, Key: signer},
 	}
 	identity, err := issuer.IssueApp("com.weaveplatform.deviceweave", time.Now().Add(-time.Minute))
 	if err != nil {
@@ -302,7 +306,7 @@ func liveCommand(
 			if status != 200 {
 				return nil, fmt.Errorf("%w: command result HTTP %d", errOperation, status)
 			}
-			//nolint:tagliatelle // Administration wire names.
+			// Administration wire names.
 			var res struct {
 				Status   string `json:"Status"`
 				Response []byte `json:"Response"`

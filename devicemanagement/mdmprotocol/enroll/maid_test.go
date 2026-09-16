@@ -63,7 +63,7 @@ func TestMAIDToken(t *testing.T) {
 		seen[id] = true
 		digest := sha256.Sum256([]byte(parts[0] + "." + parts[1]))
 		sig, _ := base64.RawURLEncoding.DecodeString(parts[2])
-		if err := rsa.VerifyPKCS1v15(ca.Key.Public().(*rsa.PublicKey), crypto.SHA256, digest[:], sig); err != nil {
+		if err := rsa.VerifyPKCS1v15(requireType[*rsa.PublicKey](t, ca.Key.Public()), crypto.SHA256, digest[:], sig); err != nil {
 			t.Fatal(err)
 		}
 	}

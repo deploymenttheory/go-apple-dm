@@ -118,6 +118,7 @@ func TestJWKJSONRoundTrip(t *testing.T) {
 
 func TestJWKFromPublicRejects(t *testing.T) {
 	t.Parallel()
+	// #nosec G403 -- Deliberately weak key exercises minimum RSA size rejection.
 	small, err := rsa.GenerateKey(rand.Reader, 1024)
 	if err != nil {
 		t.Fatalf("generating a short RSA key: %v", err)
@@ -130,16 +131,16 @@ func TestJWKFromPublicRejects(t *testing.T) {
 		name string
 		pub  any
 	}{
-		{"unsupported curve", &ecdsa.PublicKey{Curve: elliptic.P224(), X: big.NewInt(1), Y: big.NewInt(2)}},
+		{"unsupported curve", &ecdsa.PublicKey{Curve: elliptic.P224(), X: big.NewInt(1), Y: big.NewInt(2)}}, //nolint:staticcheck // Raw coordinates deliberately construct an invalid key for rejection testing.
 		{"unsupported key type", edPub},
 		{"short RSA modulus", &small.PublicKey},
 		{"nil RSA modulus", &rsa.PublicKey{E: 65537}},
 		{"coordinate too wide for the curve", &ecdsa.PublicKey{
 			Curve: elliptic.P256(),
-			X:     new(big.Int).Lsh(big.NewInt(1), 300),
-			Y:     big.NewInt(2),
+			X:     new(big.Int).Lsh(big.NewInt(1), 300), //nolint:staticcheck // Raw coordinates deliberately construct an invalid key for rejection testing.
+			Y:     big.NewInt(2),                        //nolint:staticcheck // Raw coordinates deliberately construct an invalid key for rejection testing.
 		}},
-		{"negative coordinate", &ecdsa.PublicKey{Curve: elliptic.P256(), X: big.NewInt(1), Y: big.NewInt(-2)}},
+		{"negative coordinate", &ecdsa.PublicKey{Curve: elliptic.P256(), X: big.NewInt(1), Y: big.NewInt(-2)}}, //nolint:staticcheck // Raw coordinates deliberately construct an invalid key for rejection testing.
 		{"non-positive RSA exponent", &rsa.PublicKey{N: new(big.Int).Lsh(big.NewInt(1), 2047), E: 0}},
 	}
 	for _, tc := range cases {
@@ -239,7 +240,11 @@ func TestThumbprintPadsCoordinates(t *testing.T) {
 	var key *ecdsa.PrivateKey
 	for range 5000 {
 		k := mustEC(t, elliptic.P256())
-		if k.PublicKey.X.BitLen() <= 248 {
+		encoded, err := k.PublicKey.Bytes()
+		if err != nil {
+			t.Fatal(err)
+		}
+		if encoded[1] == 0 {
 			key = k
 			break
 		}

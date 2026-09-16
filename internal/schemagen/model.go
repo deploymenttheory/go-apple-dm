@@ -50,7 +50,7 @@ const (
 
 // Schema is one YAML file from the Apple repository.
 //
-//nolint:tagliatelle // tags mirror Apple's YAML keys exactly
+// tags mirror Apple's YAML keys exactly
 type Schema struct {
 	Title              string              `yaml:"title"`
 	Description        string              `yaml:"description"`
@@ -70,7 +70,7 @@ type Schema struct {
 
 // Payload describes the schema object as a whole.
 //
-//nolint:tagliatelle // tags mirror Apple's YAML keys exactly
+// tags mirror Apple's YAML keys exactly
 type Payload struct {
 	PayloadType     string      `yaml:"payloadtype"`
 	RequestType     string      `yaml:"requesttype"`
@@ -97,7 +97,7 @@ func (p Payload) Identifier() string {
 
 // SupportedOS holds per-OS support. Nil means the OS is not mentioned.
 //
-//nolint:tagliatelle // tags mirror Apple's YAML keys exactly
+// tags mirror Apple's YAML keys exactly
 type SupportedOS struct {
 	IOS      *OSSupport `yaml:"iOS"`
 	MacOS    *OSSupport `yaml:"macOS"`
@@ -135,7 +135,7 @@ func (s SupportedOS) IsZero() bool {
 // is distinguishable from false, which matters because per-key blocks
 // inherit from the payload block.
 //
-//nolint:tagliatelle // tags mirror Apple's YAML keys exactly
+// tags mirror Apple's YAML keys exactly
 type OSSupport struct {
 	Introduced         string          `yaml:"introduced"`
 	Deprecated         string          `yaml:"deprecated"`
@@ -158,7 +158,7 @@ type OSSupport struct {
 
 // SharedIPad is the shared iPad behaviour block.
 //
-//nolint:tagliatelle // tags mirror Apple's YAML keys exactly
+// tags mirror Apple's YAML keys exactly
 type SharedIPad struct {
 	Mode          string   `yaml:"mode"`
 	DeviceChannel *bool    `yaml:"devicechannel"`
@@ -174,7 +174,7 @@ type UserEnrollment struct {
 
 // Key is one payload or response key, possibly with nested subkeys.
 //
-//nolint:tagliatelle // tags mirror Apple's YAML keys exactly
+// tags mirror Apple's YAML keys exactly
 type Key struct {
 	Key               string       `yaml:"key"`
 	Title             string       `yaml:"title"`
@@ -248,7 +248,7 @@ type Example struct {
 
 // ExampleFile references data relative to the Apple schema repository root.
 //
-//nolint:tagliatelle // tags mirror Apple's YAML keys exactly
+// tags mirror Apple's YAML keys exactly
 type ExampleFile struct {
 	Tab          string `yaml:"tab"`
 	Description  string `yaml:"description"`
@@ -265,7 +265,7 @@ type Note struct {
 
 // RelatedStatusItem links a configuration to status items.
 //
-//nolint:tagliatelle // tags mirror Apple's YAML keys exactly
+// tags mirror Apple's YAML keys exactly
 type RelatedStatusItem struct {
 	StatusItems []string `yaml:"status-items"`
 	Note        string   `yaml:"note"`
@@ -337,7 +337,7 @@ func Load(root string) (*Tree, error) {
 	if err != nil {
 		return nil, fmt.Errorf("schemagen: load %s: %w", root, err)
 	}
-	defer r.Close()
+	defer func(cleanup func() error) { _ = cleanup() }(r.Close)
 	tree := &Tree{Root: root}
 	err = fs.WalkDir(r.FS(), ".", func(rel string, d fs.DirEntry, walkErr error) error {
 		if walkErr != nil {
@@ -389,7 +389,7 @@ func LoadFile(path string) (*Schema, error) {
 	if err != nil {
 		return nil, fmt.Errorf("schemagen: %w", err)
 	}
-	defer r.Close()
+	defer func(cleanup func() error) { _ = cleanup() }(r.Close)
 	data, err := r.ReadFile(base)
 	if err != nil {
 		return nil, fmt.Errorf("schemagen: %w", err)

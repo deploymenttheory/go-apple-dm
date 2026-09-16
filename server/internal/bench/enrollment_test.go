@@ -28,7 +28,7 @@ func TestEnrollmentReplacementCatalogue(t *testing.T) {
 				r, err := transport.RoundTrip(req)
 				if err == nil && r.StatusCode >= 400 {
 					b, _ := io.ReadAll(r.Body)
-					r.Body.Close()
+					_ = r.Body.Close()
 					r.Body = io.NopCloser(bytes.NewReader(b))
 					t.Logf("fixture HTTP %s %d: %s", req.URL.Path, r.StatusCode, b)
 				}
@@ -57,6 +57,7 @@ func TestEnrollmentPreflightAndTrustExport(t *testing.T) {
 	if err := ExportTrust(w, file); err != nil {
 		t.Fatal(err)
 	}
+	// #nosec G304 -- The test controls this fixture path within its private workspace.
 	b, err := os.ReadFile(file)
 	if err != nil {
 		t.Fatal(err)

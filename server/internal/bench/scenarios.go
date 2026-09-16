@@ -370,13 +370,14 @@ func ddmScenario(ctx context.Context, e *Environment, predicate, checkout bool) 
 		"Type":       "com.apple.configuration.management.test",
 		"Payload":    map[string]any{"Echo": "bench"},
 	}
+	payload := map[string]any{"StandardConfigurations": []string{ident}}
 	act := map[string]any{
 		"Identifier": activation,
 		"Type":       "com.apple.activation.simple",
-		"Payload":    map[string]any{"StandardConfigurations": []string{ident}},
+		"Payload":    payload,
 	}
 	if predicate {
-		act["Payload"].(map[string]any)["Predicate"] = "FALSEPREDICATE"
+		payload["Predicate"] = "FALSEPREDICATE"
 	}
 	admin := &Environment{
 		Instance:  e.Instance,
@@ -387,14 +388,14 @@ func ddmScenario(ctx context.Context, e *Environment, predicate, checkout bool) 
 	if e.DDMURL != "" {
 		admin.URL = e.DDMURL
 	}
-	for _, v := range []map[string]any{cfg, act} {
+	for index, v := range []map[string]any{cfg, act} {
 		if err = admin.api(ctx, "PUT", "/declarations", v, nil); err != nil {
 			return wrapError(err)
 		}
 		if err = admin.api(
 			ctx,
 			"PUT",
-			"/sets/"+set+"/declarations/"+v["Identifier"].(string),
+			"/sets/"+set+"/declarations/"+[]string{ident, activation}[index],
 			nil,
 			nil,
 		); err != nil {

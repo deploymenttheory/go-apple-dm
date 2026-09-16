@@ -129,7 +129,7 @@ func (e *env) recoveryControl(ctx context.Context, op string, f recoveryFlags) e
 	if err != nil {
 		return wrapError(err)
 	}
-	defer s.DB.Close()
+	defer func(cleanup func() error) { _ = cleanup() }(s.DB.Close)
 	control, err := maintenance.Open(ctx, s.DB, s.Dialect, false)
 	if err != nil {
 		return wrapError(err)
@@ -207,7 +207,7 @@ func (e *env) recoveryArchive(ctx context.Context, op string, f recoveryFlags) e
 	if err != nil {
 		return wrapError(err)
 	}
-	defer p.Close()
+	defer func(cleanup func() error) { _ = cleanup() }(p.Close)
 	if op == "verify" {
 		dsn := e.getenv(f.verifyDSNEnv)
 		if dsn == "" && p.Manifest.Metadata.Backend == "sqlite" {

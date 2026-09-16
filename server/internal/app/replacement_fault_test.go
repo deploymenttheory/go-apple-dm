@@ -57,7 +57,7 @@ func TestReplacementBoundaryRejectsUnavailableAndUnboundState(t *testing.T) {
 		if err := a.replacementChallenge(ctx, "unregistered", csr); err == nil {
 			t.Fatal("unbound challenge claimed")
 		}
-		r := httptest.NewRequest("DELETE", "https://mdm.example/replacement", nil)
+		r := httptest.NewRequestWithContext(t.Context(), "DELETE", "https://mdm.example/replacement", nil)
 		r.SetPathValue("channel", "device")
 		r.SetPathValue("id", id.ID)
 		r.SetPathValue("attempt", "attempt")
@@ -82,7 +82,7 @@ func TestReplacementBoundaryRejectsUnavailableAndUnboundState(t *testing.T) {
 		}
 	}
 	w := httptest.NewRecorder()
-	a.replaceEnrollment(w, httptest.NewRequest("GET", "https://mdm.example/replacement", nil))
+	a.replaceEnrollment(w, httptest.NewRequestWithContext(t.Context(), "GET", "https://mdm.example/replacement", nil))
 	if w.Code != 400 {
 		t.Fatal("invalid replacement target", w.Code)
 	}

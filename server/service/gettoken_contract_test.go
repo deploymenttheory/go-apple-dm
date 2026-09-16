@@ -56,6 +56,7 @@ func TestManagedAppleAccountRS256TokenContract(t *testing.T) {
 		return &checkin.GetTokenResponse{TokenData: []byte(token)}, nil
 	}})
 	enroll(t, h, "D1")
+	// #nosec G101 -- Synthetic protocol fixtures and invalid URLs; no live credentials.
 	res, err := h.core.Checkin(t.Context(), req(h.cert), simple(t, "GetToken", "D1", map[string]any{"TokenServiceType": "com.apple.maid"}))
 	if err != nil {
 		t.Fatal(err)

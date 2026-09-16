@@ -37,8 +37,10 @@ var (
 
 // Challenge implements Authenticator.
 func (o *OAuth2) Challenge(context.Context, *http.Request, *DeviceInfo) (Challenge, error) {
-	return Challenge{Method: MethodAppleOAuth2, AuthorizationURL: o.AuthorizationURL, TokenURL: o.TokenURL,
-		RedirectURL: o.RedirectURL, ClientID: o.ClientID, Scope: o.Scope}, nil
+	return Challenge{
+		Method: MethodAppleOAuth2, AuthorizationURL: o.AuthorizationURL, TokenURL: o.TokenURL,
+		RedirectURL: o.RedirectURL, ClientID: o.ClientID, Scope: o.Scope,
+	}, nil
 }
 
 // AuthorizationRequest is the validated authorization request.

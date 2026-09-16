@@ -27,7 +27,7 @@ func TestCredentialContract(t *testing.T) {
 				if err != nil {
 					t.Fatal(err)
 				}
-				defer db.Close()
+				defer func(cleanup func() error) { _ = cleanup() }(db.Close)
 				st, err = statestore.Open(ctx, db.DB(), sqlite.Dialect)
 				if err != nil {
 					t.Fatal(err)

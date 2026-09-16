@@ -77,7 +77,7 @@ func (h *harness) tokenForm(t *testing.T, override map[string]string, contentTyp
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer resp.Body.Close()
+	defer func(body io.Closer) { _ = body.Close() }(resp.Body)
 	var body map[string]any
 	_ = json.NewDecoder(resp.Body).Decode(&body)
 	return resp.StatusCode, body
@@ -90,11 +90,17 @@ func (h *harness) bearer(t *testing.T) string {
 	if status != http.StatusOK {
 		t.Fatalf("token: %d %v", status, body)
 	}
-	return body["access_token"].(string)
+	return requireType[string](t, body["access_token"])
 }
 
-// call performs a raw API request.
-func (h *harness) call(t *testing.T, method, path, token, accept string, body string) (*http.Response, map[string]any) {
+// responseMetadata describes a response whose body has already been consumed and closed.
+type responseMetadata struct {
+	StatusCode int
+	Header     http.Header
+}
+
+// call performs a raw API request and owns its response body.
+func (h *harness) call(t *testing.T, method, path, token, accept string, body string) (responseMetadata, map[string]any) {
 	t.Helper()
 	var r io.Reader
 	if body != "" {
@@ -111,11 +117,11 @@ func (h *harness) call(t *testing.T, method, path, token, accept string, body st
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer resp.Body.Close()
+	defer func(body io.Closer) { _ = body.Close() }(resp.Body)
 	var doc map[string]any
 	raw, _ := io.ReadAll(resp.Body)
 	_ = json.Unmarshal(raw, &doc)
-	return resp, doc
+	return responseMetadata{StatusCode: resp.StatusCode, Header: resp.Header}, doc
 }
 
 // firstError returns code and source of the first error in an error document.
@@ -125,9 +131,9 @@ func firstError(t *testing.T, doc map[string]any) (code string, source map[strin
 	if len(errs) == 0 {
 		t.Fatalf("no errors in %v", doc)
 	}
-	e := errs[0].(map[string]any)
+	e := requireType[map[string]any](t, errs[0])
 	source, _ = e["source"].(map[string]any)
-	return e["code"].(string), source
+	return requireType[string](t, e["code"]), source
 }
 
 // signRaw builds a JWS with an arbitrary header and claims signed by key.
@@ -202,7 +208,7 @@ func TestServer(t *testing.T) {
 				tc.mutate(claims)
 			}
 			status, body := h.tokenForm(t, map[string]string{"client_assertion": signRaw(t, tc.key, tc.header, claims)}, "")
-			if status != http.StatusBadRequest || body["error"] != "invalid_client" || !strings.Contains(body["error_description"].(string), tc.detail) {
+			if status != http.StatusBadRequest || body["error"] != "invalid_client" || !strings.Contains(requireType[string](t, body["error_description"]), tc.detail) {
 				t.Errorf("%s: %d %v", name, status, body)
 			}
 		}
@@ -211,7 +217,7 @@ func TestServer(t *testing.T) {
 		if status, _ := h.tokenForm(t, map[string]string{"client_assertion": replay}, ""); status != http.StatusOK {
 			t.Fatalf("first use: %d", status)
 		}
-		if status, body := h.tokenForm(t, map[string]string{"client_assertion": replay}, ""); status != http.StatusBadRequest || !strings.Contains(body["error_description"].(string), "jti") {
+		if status, body := h.tokenForm(t, map[string]string{"client_assertion": replay}, ""); status != http.StatusBadRequest || !strings.Contains(requireType[string](t, body["error_description"]), "jti") {
 			t.Fatalf("replayed jti: %d %v", status, body)
 		}
 		h.srv.RejectNextTokenRequests(1)
@@ -237,7 +243,7 @@ func TestServer(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		resp.Body.Close()
+		_ = resp.Body.Close()
 		if resp.StatusCode != http.StatusBadRequest {
 			t.Fatalf("malformed form: %d", resp.StatusCode)
 		}
@@ -308,13 +314,13 @@ func TestServer(t *testing.T) {
 		if resp.StatusCode != http.StatusOK {
 			t.Fatalf("%d %v", resp.StatusCode, doc)
 		}
-		data := doc["data"].([]any)
-		attrs := data[0].(map[string]any)["attributes"].(map[string]any)
+		data := requireType[[]any](t, doc["data"])
+		attrs := requireType[map[string]any](t, requireType[map[string]any](t, data[0])["attributes"])
 		if len(data) != 2 || len(attrs) != 1 || attrs["serialNumber"] != "A" {
 			t.Fatalf("fields not honoured: %v", data)
 		}
-		paging := doc["meta"].(map[string]any)["paging"].(map[string]any)
-		links := doc["links"].(map[string]any)
+		paging := requireType[map[string]any](t, requireType[map[string]any](t, doc["meta"])["paging"])
+		links := requireType[map[string]any](t, doc["links"])
 		if paging["total"] != float64(3) || paging["limit"] != float64(2) || paging["nextCursor"] != "2" {
 			t.Fatalf("paging %v", paging)
 		}
@@ -323,11 +329,11 @@ func TestServer(t *testing.T) {
 			t.Fatalf("next %q", next)
 		}
 		resp, doc = h.call(t, http.MethodGet, strings.TrimPrefix(next, h.srv.URL), tok, "application/json", "")
-		if data := doc["data"].([]any); resp.StatusCode != http.StatusOK || len(data) != 1 || doc["links"].(map[string]any)["next"] != nil {
+		if data := requireType[[]any](t, doc["data"]); resp.StatusCode != http.StatusOK || len(data) != 1 || requireType[map[string]any](t, doc["links"])["next"] != nil {
 			t.Fatalf("last page: %d %v", resp.StatusCode, doc)
 		}
 		// Cursor past the end is empty, not an error.
-		if _, doc := h.call(t, http.MethodGet, "/v1/orgDevices?cursor=99", tok, "application/json", ""); len(doc["data"].([]any)) != 0 {
+		if _, doc := h.call(t, http.MethodGet, "/v1/orgDevices?cursor=99", tok, "application/json", ""); len(requireType[[]any](t, doc["data"])) != 0 {
 			t.Fatalf("past the end: %v", doc)
 		}
 		bad := map[string]string{
@@ -391,7 +397,7 @@ func TestServer(t *testing.T) {
 			t.Errorf("unassigned 404 mode: %d", resp.StatusCode)
 		}
 		h.srv.UnassignedLinkage404(false)
-		if _, doc := h.call(t, http.MethodGet, "/v1/orgDevices/D/relationships/assignedServer", tok, "application/json", ""); doc["data"].(map[string]any)["id"] != "" {
+		if _, doc := h.call(t, http.MethodGet, "/v1/orgDevices/D/relationships/assignedServer", tok, "application/json", ""); requireType[map[string]any](t, doc["data"])["id"] != "" {
 			t.Errorf("unassigned empty mode: %v", doc)
 		}
 		if resp, _ := h.call(t, http.MethodGet, "/v1/orgDevices/D/assignedServer", tok, "application/json", ""); resp.StatusCode != http.StatusNotFound {
@@ -407,7 +413,7 @@ func TestServer(t *testing.T) {
 		h.srv.AddOrgDevice("S1", nil)
 		h.srv.AddOrgDevice("S2", nil)
 		tok := h.bearer(t)
-		post := func(body string) (*http.Response, map[string]any) {
+		post := func(body string) (responseMetadata, map[string]any) {
 			return h.call(t, http.MethodPost, "/v1/orgDeviceActivities", tok, "application/json", body)
 		}
 		devices := `"devices":{"data":[{"type":"orgDevices","id":"S1"}]}`
@@ -437,7 +443,7 @@ func TestServer(t *testing.T) {
 		if resp.StatusCode != http.StatusCreated {
 			t.Fatalf("%d %v", resp.StatusCode, doc)
 		}
-		id := doc["data"].(map[string]any)["id"].(string)
+		id := requireType[string](t, requireType[map[string]any](t, doc["data"])["id"])
 		if _, err := uuid.Parse(id); err != nil {
 			t.Fatalf("activity id %q", id)
 		}
@@ -475,7 +481,7 @@ func TestServer(t *testing.T) {
 			t.Fatalf("after the lag: %q", got)
 		}
 		_, doc = h.call(t, http.MethodGet, "/v1/orgDeviceActivities/"+id, tok, "application/json", "")
-		attrs := doc["data"].(map[string]any)["attributes"].(map[string]any)
+		attrs := requireType[map[string]any](t, requireType[map[string]any](t, doc["data"])["attributes"])
 		dl, _ := attrs["downloadUrl"].(string)
 		if attrs["status"] != "COMPLETED" || attrs["completedDateTime"] == nil || !strings.HasPrefix(dl, h.srv.URL) {
 			t.Fatalf("%v", attrs)
@@ -488,28 +494,28 @@ func TestServer(t *testing.T) {
 			t.Fatal(err)
 		}
 		csv, _ := io.ReadAll(csvResp.Body)
-		csvResp.Body.Close()
+		_ = csvResp.Body.Close()
 		if csvResp.Header.Get("Content-Type") != "text/csv" || !strings.Contains(string(csv), "S1,ASSIGN_DEVICES,SUCCESS,") {
 			t.Fatalf("csv %q", csv)
 		}
 		// Server device count, linkage, and audit trail follow.
 		_, doc = h.call(t, http.MethodGet, "/v1/mdmServers/"+serverID, tok, "application/json", "")
-		if doc["data"].(map[string]any)["attributes"].(map[string]any)["deviceCount"] != float64(1) {
+		if requireType[map[string]any](t, requireType[map[string]any](t, doc["data"])["attributes"])["deviceCount"] != float64(1) {
 			t.Fatalf("%v", doc)
 		}
 		_, doc = h.call(t, http.MethodGet, "/v1/mdmServers/"+serverID+"/relationships/devices", tok, "application/json", "")
-		if len(doc["data"].([]any)) != 1 {
+		if len(requireType[[]any](t, doc["data"])) != 1 {
 			t.Fatalf("%v", doc)
 		}
 		_, doc = h.call(t, http.MethodGet, "/v1/orgDevices/S1", tok, "application/json", "")
-		if doc["data"].(map[string]any)["attributes"].(map[string]any)["status"] != "ASSIGNED" {
+		if requireType[map[string]any](t, requireType[map[string]any](t, doc["data"])["attributes"])["status"] != "ASSIGNED" {
 			t.Fatalf("%v", doc)
 		}
 		start := clk.Now().Add(-time.Hour).UTC().Format(time.RFC3339)
 		end := clk.Now().Add(time.Hour).UTC().Format(time.RFC3339)
 		_, doc = h.call(t, http.MethodGet, "/v1/auditEvents?filter%5BstartTimestamp%5D="+start+"&filter%5BendTimestamp%5D="+end+"&filter%5Btype%5D=DEVICE_ASSIGNED_TO_SERVER&filter%5BsubjectId%5D=S1&filter%5BactorId%5D=api", tok, "application/json", "")
-		events := doc["data"].([]any)
-		if len(events) != 1 || events[0].(map[string]any)["attributes"].(map[string]any)["eventDataPropertyKey"] != "eventDataDeviceAssignedToServer" {
+		events := requireType[[]any](t, doc["data"])
+		if len(events) != 1 || requireType[map[string]any](t, requireType[map[string]any](t, events[0])["attributes"])["eventDataPropertyKey"] != "eventDataDeviceAssignedToServer" {
 			t.Fatalf("audit %v", doc)
 		}
 		// Deleting a server with devices is a conflict.
@@ -525,7 +531,7 @@ func TestServer(t *testing.T) {
 		if resp.StatusCode != http.StatusCreated {
 			t.Fatalf("%d %v", resp.StatusCode, doc)
 		}
-		id2 := doc["data"].(map[string]any)["id"].(string)
+		id2 := requireType[string](t, requireType[map[string]any](t, doc["data"])["id"])
 		h.srv.AutoAdvance(time.Millisecond)
 		deadline := time.Now().Add(2 * time.Second)
 		for {
@@ -567,7 +573,7 @@ func TestServer(t *testing.T) {
 		if resp.StatusCode != http.StatusCreated {
 			t.Fatalf("%d %v", resp.StatusCode, doc)
 		}
-		gone := doc["data"].(map[string]any)["id"].(string)
+		gone := requireType[string](t, requireType[map[string]any](t, doc["data"])["id"])
 		h.srv.Complete()
 		if _, sub, _ := h.srv.Activity(gone); sub != "COMPLETED_WITH_ERROR" {
 			t.Fatalf("vanished device: %s", sub)
@@ -598,7 +604,7 @@ func TestServer(t *testing.T) {
 		if resp.StatusCode != http.StatusCreated {
 			t.Fatal(resp.StatusCode)
 		}
-		notMigrating := doc["data"].(map[string]any)["id"].(string)
+		notMigrating := requireType[string](t, requireType[map[string]any](t, doc["data"])["id"])
 		h.srv.Complete()
 		if _, sub, _ := h.srv.Activity(notMigrating); sub != "COMPLETED_WITH_ERROR" {
 			t.Fatalf("not migrating: %s", sub)
@@ -623,7 +629,7 @@ func TestServer(t *testing.T) {
 		t.Parallel()
 		h := newHarness(t)
 		tok := h.bearer(t)
-		call := func(method, path, body string) (*http.Response, map[string]any) {
+		call := func(method, path, body string) (responseMetadata, map[string]any) {
 			return h.call(t, method, path, tok, "application/json", body)
 		}
 		// Servers.
@@ -631,7 +637,7 @@ func TestServer(t *testing.T) {
 		if resp.StatusCode != http.StatusCreated {
 			t.Fatalf("%d %v", resp.StatusCode, doc)
 		}
-		serverID := doc["data"].(map[string]any)["id"].(string)
+		serverID := requireType[string](t, requireType[map[string]any](t, doc["data"])["id"])
 		if resp, _ := call(http.MethodPost, "/v1/mdmServers", `{"data":{"type":"mdmServers","attributes":{"serverName":"A","serverCertificate":{"name":"c","data":"QQ=="}}}}`); resp.StatusCode != http.StatusConflict {
 			t.Fatalf("duplicate: %d", resp.StatusCode)
 		}
@@ -645,7 +651,7 @@ func TestServer(t *testing.T) {
 			t.Fatalf("mismatched id: %d", resp.StatusCode)
 		}
 		resp, doc = call(http.MethodPatch, "/v1/mdmServers/"+serverID, `{"data":{"type":"mdmServers","id":"`+serverID+`","attributes":{"enableMdmDisownFlag":true,"defaultProductFamilies":["MAC"]}}}`)
-		attrs := doc["data"].(map[string]any)["attributes"].(map[string]any)
+		attrs := requireType[map[string]any](t, requireType[map[string]any](t, doc["data"])["attributes"])
 		if resp.StatusCode != http.StatusOK || attrs["enableMdmDisownFlag"] != true || attrs["serverName"] != "A" {
 			t.Fatalf("%d %v", resp.StatusCode, attrs)
 		}
@@ -658,7 +664,7 @@ func TestServer(t *testing.T) {
 		if resp.StatusCode != http.StatusCreated {
 			t.Fatalf("%d %v", resp.StatusCode, doc)
 		}
-		cfgID := doc["data"].(map[string]any)["id"].(string)
+		cfgID := requireType[string](t, requireType[map[string]any](t, doc["data"])["id"])
 		for name, body := range map[string]string{
 			"wrong type": `{"data":{"type":"configurations","attributes":{"type":"WIFI","name":"W","customSettingsValues":{"configurationProfile":"x"}}}}`,
 			"no profile": `{"data":{"type":"configurations","attributes":{"type":"CUSTOM_SETTING","name":"W"}}}`,
@@ -672,18 +678,18 @@ func TestServer(t *testing.T) {
 			t.Fatalf("wrong type: %d", resp.StatusCode)
 		}
 		resp, doc = call(http.MethodPost, "/v1/configurations", `{"data":{"type":"configurations","attributes":{"type":"CUSTOM_SETTING","name":"D","customSettingsValues":{"configurationProfile":"PD94bWw="}}}}`)
-		values := doc["data"].(map[string]any)["attributes"].(map[string]any)["customSettingsValues"].(map[string]any)
-		if resp.StatusCode != http.StatusCreated || !strings.HasSuffix(values["filename"].(string), ".mobileconfig") {
+		values := requireType[map[string]any](t, requireType[map[string]any](t, requireType[map[string]any](t, doc["data"])["attributes"])["customSettingsValues"])
+		if resp.StatusCode != http.StatusCreated || !strings.HasSuffix(requireType[string](t, values["filename"]), ".mobileconfig") {
 			t.Fatalf("default filename: %v", values)
 		}
 		_, doc = call(http.MethodGet, "/v1/configurations", "")
-		for _, item := range doc["data"].([]any) {
-			if item.(map[string]any)["attributes"].(map[string]any)["customSettingsValues"] != nil {
+		for _, item := range requireType[[]any](t, doc["data"]) {
+			if requireType[map[string]any](t, requireType[map[string]any](t, item)["attributes"])["customSettingsValues"] != nil {
 				t.Fatal("list must null customSettingsValues")
 			}
 		}
 		_, doc = call(http.MethodGet, "/v1/configurations/"+cfgID, "")
-		if doc["data"].(map[string]any)["attributes"].(map[string]any)["customSettingsValues"] == nil {
+		if requireType[map[string]any](t, requireType[map[string]any](t, doc["data"])["attributes"])["customSettingsValues"] == nil {
 			t.Fatal("get must return customSettingsValues")
 		}
 		if resp, _ := call(http.MethodPatch, "/v1/configurations/"+cfgID, `{"data":{"type":"configurations","id":"`+cfgID+`","attributes":{}}}`); resp.StatusCode != http.StatusUnprocessableEntity {
@@ -696,8 +702,8 @@ func TestServer(t *testing.T) {
 			t.Fatalf("mismatched id: %d", resp.StatusCode)
 		}
 		resp, doc = call(http.MethodPatch, "/v1/configurations/"+cfgID, `{"data":{"type":"configurations","id":"`+cfgID+`","attributes":{"name":"W2","configuredForPlatforms":["PLATFORM_IOS"],"customSettingsValues":{"configurationProfile":"QUJD","filename":"n.mobileconfig"}}}}`)
-		attrs = doc["data"].(map[string]any)["attributes"].(map[string]any)
-		if resp.StatusCode != http.StatusOK || attrs["name"] != "W2" || attrs["customSettingsValues"].(map[string]any)["filename"] != "n.mobileconfig" {
+		attrs = requireType[map[string]any](t, requireType[map[string]any](t, doc["data"])["attributes"])
+		if resp.StatusCode != http.StatusOK || attrs["name"] != "W2" || requireType[map[string]any](t, attrs["customSettingsValues"])["filename"] != "n.mobileconfig" {
 			t.Fatalf("%d %v", resp.StatusCode, attrs)
 		}
 		h.srv.AddConfiguration("ro", map[string]any{"type": "WIFI", "customSettingsValues": nil})
@@ -719,7 +725,7 @@ func TestServer(t *testing.T) {
 		if resp.StatusCode != http.StatusCreated {
 			t.Fatalf("%d %v", resp.StatusCode, doc)
 		}
-		bpID := doc["data"].(map[string]any)["id"].(string)
+		bpID := requireType[string](t, requireType[map[string]any](t, doc["data"])["id"])
 		if got := h.srv.BlueprintLinks(bpID, "apps"); len(got) != 1 || got[0] != "app1" {
 			t.Fatalf("invalid ids must be dropped: %v", got)
 		}
@@ -736,11 +742,11 @@ func TestServer(t *testing.T) {
 			t.Fatalf("wrong type: %d", resp.StatusCode)
 		}
 		_, doc = call(http.MethodGet, "/v1/blueprints/"+bpID+"?include=apps,users&limit%5Bapps%5D=1", "")
-		if inc := doc["included"].([]any); len(inc) != 1 || inc[0].(map[string]any)["id"] != "app1" {
+		if inc := requireType[[]any](t, doc["included"]); len(inc) != 1 || requireType[map[string]any](t, inc[0])["id"] != "app1" {
 			t.Fatalf("included %v", doc["included"])
 		}
 		_, doc = call(http.MethodGet, "/v1/blueprints?include=apps", "")
-		if inc := doc["included"].([]any); len(inc) != 1 {
+		if inc := requireType[[]any](t, doc["included"]); len(inc) != 1 {
 			t.Fatalf("list included %v", doc["included"])
 		}
 		_, doc = call(http.MethodGet, "/v1/blueprints?include=users", "")
@@ -775,11 +781,11 @@ func TestServer(t *testing.T) {
 			t.Fatalf("remove: %d", resp.StatusCode)
 		}
 		_, doc = call(http.MethodGet, "/v1/blueprints/"+bpID+"/relationships/apps", "")
-		if data := doc["data"].([]any); len(data) != 1 || data[0].(map[string]any)["id"] != "app2" {
+		if data := requireType[[]any](t, doc["data"]); len(data) != 1 || requireType[map[string]any](t, data[0])["id"] != "app2" {
 			t.Fatalf("after remove %v", data)
 		}
 		resp, doc = call(http.MethodPatch, "/v1/blueprints/"+bpID, `{"data":{"type":"blueprints","id":"`+bpID+`","attributes":{"name":"B2","description":"d2"},"relationships":{"users":{"data":[{"type":"users","id":"u1"}]}}}}`)
-		if resp.StatusCode != http.StatusOK || doc["data"].(map[string]any)["attributes"].(map[string]any)["name"] != "B2" || len(h.srv.BlueprintLinks(bpID, "users")) != 1 {
+		if resp.StatusCode != http.StatusOK || requireType[map[string]any](t, requireType[map[string]any](t, doc["data"])["attributes"])["name"] != "B2" || len(h.srv.BlueprintLinks(bpID, "users")) != 1 {
 			t.Fatalf("update %d %v", resp.StatusCode, doc)
 		}
 		if resp, _ := call(http.MethodPatch, "/v1/blueprints/"+bpID, `{"data":{"type":"blueprints","id":"x"}}`); resp.StatusCode != http.StatusBadRequest {

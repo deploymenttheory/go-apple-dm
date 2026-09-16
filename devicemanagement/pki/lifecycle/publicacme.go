@@ -18,8 +18,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/deploymenttheory/go-apple-dm/devicemanagement/state"
 	"golang.org/x/crypto/acme"
+
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/state"
 )
 
 const ProductionDirectory = "https://acme-v02.api.letsencrypt.org/directory"
@@ -34,10 +35,14 @@ type PublicACMEOptions struct {
 
 type publicACMERecord struct {
 	PublicACMEOptions
-	AccountKey                            []byte
-	AccountURL, OrderURL, Revision, Lease string
-	LeaseUntil, NextAttempt               time.Time
-	Failures                              int
+	AccountKey  []byte    `json:"AccountKey"`
+	AccountURL  string    `json:"AccountURL"`
+	OrderURL    string    `json:"OrderURL"`
+	Revision    string    `json:"Revision"`
+	Lease       string    `json:"Lease"`
+	LeaseUntil  time.Time `json:"LeaseUntil"`
+	NextAttempt time.Time `json:"NextAttempt"`
+	Failures    int       `json:"Failures"`
 }
 
 // PublicACMEStatus contains no account or certificate private keys.
@@ -60,6 +65,7 @@ func readACME(ctx context.Context, s state.Reader, id string) (publicACMERecord,
 	err = json.Unmarshal(r.Value, &v)
 	return v, err
 }
+
 func writeACME(ctx context.Context, tx state.Tx, id string, v publicACMERecord) error {
 	b, err := json.Marshal(v)
 	if err != nil {
@@ -215,7 +221,11 @@ func (m *Manager) RunPublicACME(ctx context.Context, id string, httpClient *http
 	if err != nil {
 		return Identity{}, err
 	}
-	client := &acme.Client{Key: private.(crypto.Signer), KID: acme.KeyID(v.AccountURL), DirectoryURL: v.Directory, HTTPClient: httpClient}
+	signer, ok := private.(crypto.Signer)
+	if !ok {
+		return Identity{}, ErrInvalid
+	}
+	client := &acme.Client{Key: signer, KID: acme.KeyID(v.AccountURL), DirectoryURL: v.Directory, HTTPClient: httpClient}
 	if v.AccountURL == "" {
 		contact := v.Contact
 		if !strings.HasPrefix(contact, "mailto:") {

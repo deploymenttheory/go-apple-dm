@@ -70,7 +70,10 @@ type Identity struct {
 // Material is a privileged application interface. Never serialize it in an
 // administrative response. The repository adapter encrypts its encoded value.
 type Material struct {
-	Key, CSR, Certificate, SignedRequest []byte
+	Key           []byte `json:"Key"`
+	CSR           []byte `json:"CSR"`
+	Certificate   []byte `json:"Certificate"`
+	SignedRequest []byte `json:"SignedRequest"`
 }
 
 type storedRevision struct {
@@ -79,9 +82,11 @@ type storedRevision struct {
 }
 type record struct {
 	Request
-	Active, Pending, Topic string
-	Generation             int64
-	Revisions              []storedRevision
+	Active     string           `json:"Active"`
+	Pending    string           `json:"Pending"`
+	Topic      string           `json:"Topic"`
+	Generation int64            `json:"Generation"`
+	Revisions  []storedRevision `json:"Revisions"`
 }
 
 // Publish commits a runtime projection inside the same repository transaction.

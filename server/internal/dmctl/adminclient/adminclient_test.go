@@ -27,6 +27,7 @@ func newClient(t *testing.T, h http.Handler) (*adminclient.Client, *httptest.Ser
 }
 
 func TestNew(t *testing.T) {
+	// #nosec G101 -- Synthetic protocol fixtures and invalid URLs; no live credentials.
 	for name, url := range map[string]string{
 		"empty":       "",
 		"spaces":      "   ",

@@ -7,11 +7,12 @@ import (
 	"os"
 	"testing"
 
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/stdlib"
+
 	"github.com/deploymenttheory/go-apple-dm/server/sqlstore/mysql"
 	"github.com/deploymenttheory/go-apple-dm/server/sqlstore/postgres"
 	"github.com/deploymenttheory/go-apple-dm/server/sqlstore/sqlcommon"
-	"github.com/jackc/pgx/v5"
-	"github.com/jackc/pgx/v5/stdlib"
 )
 
 func TestPostgresSharedState(t *testing.T) {
@@ -24,7 +25,7 @@ func TestPostgresSharedState(t *testing.T) {
 		t.Fatal(err)
 	}
 	db := stdlib.OpenDB(*cfg)
-	defer db.Close()
+	defer func(cleanup func() error) { _ = cleanup() }(db.Close)
 	db.SetMaxOpenConns(8)
 	exercise(t, db, postgres.Dialect)
 	if _, err := sqlcommon.Migrate(t.Context(), db, postgres.Dialect); err != nil {
@@ -32,6 +33,7 @@ func TestPostgresSharedState(t *testing.T) {
 	}
 	exerciseCertificateActivation(t, db, postgres.Dialect)
 }
+
 func TestMySQLSharedState(t *testing.T) {
 	dsn := os.Getenv("TEST_MYSQL_DSN")
 	if dsn == "" {
@@ -45,7 +47,7 @@ func TestMySQLSharedState(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer db.Close()
+	defer func(cleanup func() error) { _ = cleanup() }(db.Close)
 	db.SetMaxOpenConns(8)
 	exercise(t, db, mysql.Dialect)
 	if _, err := sqlcommon.Migrate(t.Context(), db, mysql.Dialect); err != nil {

@@ -47,8 +47,10 @@ func parseBody(r *http.Request) (*accountdriven.DeviceInfo, error) {
 }
 
 func baseProfile(_ context.Context, _ accountdriven.Identity, _ *accountdriven.DeviceInfo) (*enroll.Profile, error) {
-	return &enroll.Profile{Identifier: "com.example.mdm", Topic: "com.apple.mgmt.t", ServerURL: "https://mdm.example/mdm", CheckInURL: "https://mdm.example/mdm",
-		SCEP: &enroll.SCEP{URL: "https://mdm.example/scep"}}, nil
+	return &enroll.Profile{
+		Identifier: "com.example.mdm", Topic: "com.apple.mgmt.t", ServerURL: "https://mdm.example/mdm", CheckInURL: "https://mdm.example/mdm",
+		SCEP: &enroll.SCEP{URL: "https://mdm.example/scep"},
+	}, nil
 }
 
 type fixture struct {
@@ -72,8 +74,11 @@ func newFixture(t *testing.T, version string, oauth bool) *fixture {
 	f := &fixture{clock: &fakeClock{now: t0}}
 	f.tokens = newTokens(f.clock)
 	f.asweb = &accountdriven.AppleAsWeb{URL: "https://mdm.example/authenticate", Tokens: f.tokens}
-	f.oauth = &accountdriven.OAuth2{AuthorizationURL: "https://mdm.example/oauth2/authorize", TokenURL: "https://mdm.example/oauth2/token",
-		RedirectURL: "apple-remotemanagement-user-login:/oauth2/redirection", ClientID: "client-1", Scope: "MDM", Tokens: f.tokens}
+	// #nosec G101 -- Synthetic protocol fixtures and invalid URLs; no live credentials.
+	f.oauth = &accountdriven.OAuth2{
+		AuthorizationURL: "https://mdm.example/oauth2/authorize", TokenURL: "https://mdm.example/oauth2/token",
+		RedirectURL: "apple-remotemanagement-user-login:/oauth2/redirection", ClientID: "client-1", Scope: "MDM", Tokens: f.tokens,
+	}
 	var auth accountdriven.Authenticator = f.asweb
 	if oauth {
 		auth = f.oauth
@@ -92,7 +97,7 @@ func newFixture(t *testing.T, version string, oauth bool) *fixture {
 
 const body = `<?xml version="1.0"?><plist version="1.0"><dict><key>LANGUAGE</key><string>en</string><key>PRODUCT</key><string>iPhone17,2</string><key>VERSION</key><string>23A300</string></dict></plist>`
 
-func (f *fixture) post(t *testing.T, bearer string) *http.Response {
+func (f *fixture) post(t *testing.T, bearer string) testResponse {
 	t.Helper()
 	req, _ := http.NewRequestWithContext(context.Background(), http.MethodPost, f.srv.URL+"/enroll", strings.NewReader(body))
 	req.Header.Set("Content-Type", "application/xml")
@@ -103,8 +108,8 @@ func (f *fixture) post(t *testing.T, bearer string) *http.Response {
 	if err != nil {
 		t.Fatal(err)
 	}
-	t.Cleanup(func() { res.Body.Close() })
-	return res
+	t.Cleanup(func() { _ = res.Body.Close() })
+	return testResponse{res}
 }
 
 func TestTokens(t *testing.T) {
@@ -186,7 +191,7 @@ func TestTokens(t *testing.T) {
 	})
 }
 
-func (f *fixture) tokenRaw(t *testing.T, form url.Values) *http.Response {
+func (f *fixture) tokenRaw(t *testing.T, form url.Values) testResponse {
 	t.Helper()
 	req, _ := http.NewRequestWithContext(context.Background(), http.MethodPost, f.srv.URL+"/oauth2/token", strings.NewReader(form.Encode()))
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
@@ -194,8 +199,8 @@ func (f *fixture) tokenRaw(t *testing.T, form url.Values) *http.Response {
 	if err != nil {
 		t.Fatal(err)
 	}
-	t.Cleanup(func() { res.Body.Close() })
-	return res
+	t.Cleanup(func() { _ = res.Body.Close() })
+	return testResponse{res}
 }
 
 func (f *fixture) token(t *testing.T, form url.Values) accountdriven.TokenResponse {
@@ -217,8 +222,11 @@ func TestHeader(t *testing.T) {
 		for _, c := range []accountdriven.Challenge{
 			{Method: accountdriven.MethodAppleAsWeb, URL: "http://mdm.example/auth"},
 			{Method: accountdriven.MethodAppleAsWeb, URL: "::bad"},
+			// #nosec G101 -- Synthetic protocol fixtures and invalid URLs; no live credentials.
 			{Method: accountdriven.MethodAppleOAuth2, AuthorizationURL: "http://x", TokenURL: "https://x", RedirectURL: "apple-remotemanagement-user-login:/r", ClientID: "c", Scope: "s"},
+			// #nosec G101 -- Synthetic protocol fixtures and invalid URLs; no live credentials.
 			{Method: accountdriven.MethodAppleOAuth2, AuthorizationURL: "https://x", TokenURL: "https://x", RedirectURL: "https://x/r", ClientID: "c", Scope: "s"},
+			// #nosec G101 -- Synthetic protocol fixtures and invalid URLs; no live credentials.
 			{Method: accountdriven.MethodAppleOAuth2, AuthorizationURL: "https://x", TokenURL: "https://x", RedirectURL: "apple-remotemanagement-user-login:/r", ClientID: "", Scope: "s"},
 			{Method: "basic"},
 		} {
@@ -255,12 +263,12 @@ func TestFirstPost(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		bad.Body.Close()
+		_ = bad.Body.Close()
 		if bad.StatusCode != http.StatusBadRequest {
 			t.Fatalf("unparsable body = %d", bad.StatusCode)
 		}
 		get, _ := http.Get(f.srv.URL + "/enroll") //nolint:noctx // test
-		get.Body.Close()
+		_ = get.Body.Close()
 		if get.StatusCode != http.StatusMethodNotAllowed {
 			t.Fatalf("GET = %d", get.StatusCode)
 		}
@@ -277,7 +285,7 @@ func TestFirstPost(t *testing.T) {
 			t.Fatal(err)
 		}
 		rec := httptest.NewRecorder()
-		h.ServeHTTP(rec, httptest.NewRequest(http.MethodPost, "/enroll", strings.NewReader(body)))
+		h.ServeHTTP(rec, httptest.NewRequestWithContext(t.Context(), http.MethodPost, "/enroll", strings.NewReader(body)))
 		if rec.Code != http.StatusForbidden || rec.Header().Get("Content-Type") != "application/json" || !strings.Contains(rec.Body.String(), "softwareupdate.required") {
 			t.Fatalf("relay = %d %s", rec.Code, rec.Body.String())
 		}
@@ -304,7 +312,7 @@ func TestFlow(t *testing.T) {
 			}
 		})
 		t.Run("WebAuthPrefill", func(t *testing.T) {
-			r := httptest.NewRequest(http.MethodGet, "/authenticate?user-identifier=alice%40example.com", nil)
+			r := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/authenticate?user-identifier=alice%40example.com", nil)
 			if accountdriven.UserIdentifier(r) != "alice@example.com" {
 				t.Fatal("user-identifier not read")
 			}
@@ -312,7 +320,7 @@ func TestFlow(t *testing.T) {
 		var access string
 		t.Run("HandBack308", func(t *testing.T) {
 			rec := httptest.NewRecorder()
-			if err := f.asweb.Finish(rec, httptest.NewRequest(http.MethodPost, "/authenticate-results", nil), alice); err != nil {
+			if err := f.asweb.Finish(rec, httptest.NewRequestWithContext(t.Context(), http.MethodPost, "/authenticate-results", nil), alice); err != nil {
 				t.Fatal(err)
 			}
 			loc := rec.Header().Get("Location")
@@ -321,7 +329,7 @@ func TestFlow(t *testing.T) {
 			}
 			u, _ := url.Parse(loc)
 			access = u.Query().Get("access-token")
-			if err := f.asweb.Finish(httptest.NewRecorder(), httptest.NewRequest(http.MethodPost, "/x", nil), accountdriven.Identity{}); !errors.Is(err, accountdriven.ErrManagedAppleAccount) {
+			if err := f.asweb.Finish(httptest.NewRecorder(), httptest.NewRequestWithContext(t.Context(), http.MethodPost, "/x", nil), accountdriven.Identity{}); !errors.Is(err, accountdriven.ErrManagedAppleAccount) {
 				t.Fatalf("no managed id = %v", err)
 			}
 		})
@@ -370,7 +378,7 @@ func TestFlow(t *testing.T) {
 		t.Run("AuthorizationCode", func(t *testing.T) {
 			state = "340B948D"
 			q := url.Values{"response_type": {"code"}, "client_id": {challenge.ClientID}, "redirect_uri": {challenge.RedirectURL}, "state": {state}, "login_hint": {"alice@example.com"}}
-			r := httptest.NewRequest(http.MethodGet, "/oauth2/authorize?"+q.Encode(), nil)
+			r := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/oauth2/authorize?"+q.Encode(), nil)
 			req, err := f.oauth.ParseAuthorization(r)
 			if err != nil {
 				t.Fatal(err)
@@ -403,7 +411,7 @@ func TestFlow(t *testing.T) {
 				{"response_type": {"code"}, "client_id": {"client-1"}, "redirect_uri": {"https://evil/"}, "state": {"s"}},
 				{"response_type": {"code"}, "client_id": {"client-1"}, "redirect_uri": {challenge.RedirectURL}},
 			} {
-				if _, err := f.oauth.ParseAuthorization(httptest.NewRequest(http.MethodGet, "/a?"+bad.Encode(), nil)); !errors.Is(err, accountdriven.ErrOAuth2Request) {
+				if _, err := f.oauth.ParseAuthorization(httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/a?"+bad.Encode(), nil)); !errors.Is(err, accountdriven.ErrOAuth2Request) {
 					t.Fatalf("%v: %v", bad, err)
 				}
 			}
@@ -445,7 +453,7 @@ func TestFlow(t *testing.T) {
 				t.Fatalf("empty form = %d", res.StatusCode)
 			}
 			get, _ := http.Get(f.srv.URL + "/oauth2/token") //nolint:noctx // test
-			get.Body.Close()
+			_ = get.Body.Close()
 			if get.StatusCode != http.StatusMethodNotAllowed {
 				t.Fatalf("GET token = %d", get.StatusCode)
 			}
@@ -553,12 +561,14 @@ func TestHandlerFailures(t *testing.T) {
 	tk := newTokens(&fakeClock{now: t0})
 	access, _ := tk.Issue(context.Background(), accountdriven.KindAccess, alice, nil)
 	t.Run("ProfileHookError", func(t *testing.T) {
-		h, _ := accountdriven.New(accountdriven.Config{Version: accountdriven.VersionBYOD, Parse: parseBody, Auth: &accountdriven.AppleAsWeb{URL: "https://x/a", Tokens: tk}, Tokens: tk,
+		h, _ := accountdriven.New(accountdriven.Config{
+			Version: accountdriven.VersionBYOD, Parse: parseBody, Auth: &accountdriven.AppleAsWeb{URL: "https://x/a", Tokens: tk}, Tokens: tk,
 			Profile: func(context.Context, accountdriven.Identity, *accountdriven.DeviceInfo) (*enroll.Profile, error) {
 				return nil, errors.New("boom")
-			}, SignCert: signer.Cert, SignKey: signer.Key})
+			}, SignCert: signer.Cert, SignKey: signer.Key,
+		})
 		rec := httptest.NewRecorder()
-		req := httptest.NewRequest(http.MethodPost, "/enroll", strings.NewReader(body))
+		req := httptest.NewRequestWithContext(t.Context(), http.MethodPost, "/enroll", strings.NewReader(body))
 		req.Header.Set("Authorization", "Bearer "+access)
 		h.ServeHTTP(rec, req)
 		if rec.Code != http.StatusInternalServerError || strings.Contains(rec.Body.String(), "boom") {
@@ -568,19 +578,21 @@ func TestHandlerFailures(t *testing.T) {
 	t.Run("ChallengeInvalid", func(t *testing.T) {
 		h, _ := accountdriven.New(accountdriven.Config{Version: accountdriven.VersionBYOD, Parse: parseBody, Auth: &accountdriven.AppleAsWeb{URL: "http://insecure/a", Tokens: tk}, Tokens: tk, Profile: baseProfile, SignCert: signer.Cert, SignKey: signer.Key})
 		rec := httptest.NewRecorder()
-		h.ServeHTTP(rec, httptest.NewRequest(http.MethodPost, "/enroll", strings.NewReader(body)))
+		h.ServeHTTP(rec, httptest.NewRequestWithContext(t.Context(), http.MethodPost, "/enroll", strings.NewReader(body)))
 		if rec.Code != http.StatusInternalServerError {
 			t.Fatalf("insecure challenge = %d", rec.Code)
 		}
 	})
 	t.Run("UnbuildableProfile", func(t *testing.T) {
 		access2, _ := tk.Issue(context.Background(), accountdriven.KindAccess, alice, nil)
-		h, _ := accountdriven.New(accountdriven.Config{Version: accountdriven.VersionBYOD, Parse: parseBody, Auth: &accountdriven.AppleAsWeb{URL: "https://x/a", Tokens: tk}, Tokens: tk,
+		h, _ := accountdriven.New(accountdriven.Config{
+			Version: accountdriven.VersionBYOD, Parse: parseBody, Auth: &accountdriven.AppleAsWeb{URL: "https://x/a", Tokens: tk}, Tokens: tk,
 			Profile: func(context.Context, accountdriven.Identity, *accountdriven.DeviceInfo) (*enroll.Profile, error) {
 				return &enroll.Profile{}, nil
-			}, SignCert: signer.Cert, SignKey: signer.Key})
+			}, SignCert: signer.Cert, SignKey: signer.Key,
+		})
 		rec := httptest.NewRecorder()
-		req := httptest.NewRequest(http.MethodPost, "/enroll", strings.NewReader(body))
+		req := httptest.NewRequestWithContext(t.Context(), http.MethodPost, "/enroll", strings.NewReader(body))
 		req.Header.Set("Authorization", "Bearer "+access2)
 		h.ServeHTTP(rec, req)
 		if rec.Code != http.StatusInternalServerError {
@@ -588,3 +600,6 @@ func TestHandlerFailures(t *testing.T) {
 		}
 	})
 }
+
+// testResponse belongs to the test; the request helper registers body cleanup.
+type testResponse struct{ *http.Response }

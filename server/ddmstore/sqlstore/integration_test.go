@@ -66,6 +66,7 @@ func runShared(t *testing.T, db *sql.DB, d sqlcommon.Dialect, cascade string) {
 	ddmtest.RunAll(t, func(t *testing.T) ddm.Store {
 		t.Helper()
 		for _, table := range ddmTables {
+			// #nosec G202 -- Table names come from the fixed migration table list in this test.
 			if _, err := db.ExecContext(ctx, "DELETE FROM "+table); err != nil {
 				t.Fatal(err)
 			}
@@ -90,7 +91,7 @@ func TestContractPostgres(t *testing.T) {
 		t.Fatal(err)
 	}
 	db := stdlib.OpenDB(*cfg)
-	defer db.Close()
+	defer func(cleanup func() error) { _ = cleanup() }(db.Close)
 	db.SetMaxOpenConns(8)
 	runShared(t, db, postgres.Dialect, " CASCADE")
 }
@@ -108,7 +109,7 @@ func TestContractMySQL(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer db.Close()
+	defer func(cleanup func() error) { _ = cleanup() }(db.Close)
 	db.SetMaxOpenConns(8)
 	runShared(t, db, mysql.Dialect, "")
 }

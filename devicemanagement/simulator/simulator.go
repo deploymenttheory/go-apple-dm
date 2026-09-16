@@ -424,7 +424,7 @@ func (d *Device) put(ctx context.Context, url, contentType string, body []byte) 
 	if err != nil {
 		return nil, fmt.Errorf("simulator: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func(body io.Closer) { _ = body.Close() }(resp.Body)
 	data, err := io.ReadAll(io.LimitReader(resp.Body, plist.DefaultMaxBytes))
 	if err != nil {
 		return nil, fmt.Errorf("simulator: %w", err)

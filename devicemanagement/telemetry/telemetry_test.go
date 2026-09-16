@@ -113,6 +113,7 @@ func TestVocabularyBoundsHostileValues(t *testing.T) {
 // "just for debugging".
 func TestPushTokenNeverReachesTelemetry(t *testing.T) {
 	t.Parallel()
+	// #nosec G101 -- Synthetic protocol fixtures and invalid URLs; no live credentials.
 	const token = "b0aa1e5f9d3c4718bb6d2f0a9c7e4413aa55ef0011223344556677889900aabb"
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusOK)
@@ -132,7 +133,7 @@ func TestPushTokenNeverReachesTelemetry(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	resp.Body.Close()
+	_ = resp.Body.Close()
 
 	measurements := rec.Instrument(telemetry.MetricHTTPClientDuration)
 	if len(measurements) != 1 {
@@ -186,7 +187,7 @@ func TestRoundTripperRecordsTheStableAttributes(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	resp.Body.Close()
+	_ = resp.Body.Close()
 
 	m := rec.Instrument(telemetry.MetricHTTPClientDuration)[0]
 	if m.Scope != telemetry.Scope("dep") {
@@ -225,8 +226,14 @@ func TestRoundTripperBoundsTheMethod(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := rt.RoundTrip(req); err == nil {
-		t.Fatal("the transport error was swallowed")
+	{
+		response, err := rt.RoundTrip(req)
+		if response != nil {
+			_ = response.Body.Close()
+		}
+		if err == nil {
+			t.Fatal("the transport error was swallowed")
+		}
 	}
 	m := rec.Instrument(telemetry.MetricHTTPClientDuration)[0]
 	if got, _ := m.Attr(telemetry.AttrHTTPRequestMethod); got != telemetry.OtherValue {
@@ -270,8 +277,14 @@ func TestErrorTypeIsBounded(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			if _, err := rt.RoundTrip(req); err == nil {
-				t.Fatal("no error")
+			{
+				response, err := rt.RoundTrip(req)
+				if response != nil {
+					_ = response.Body.Close()
+				}
+				if err == nil {
+					t.Fatal("no error")
+				}
 			}
 			m := rec.Instrument(telemetry.MetricHTTPClientDuration)[0]
 			got, _ := m.Attr(telemetry.AttrErrorType)
@@ -291,8 +304,14 @@ func TestRoundTripperSurvivesAnEmptyURL(t *testing.T) {
 	rec := telemetrytest.NewRecorder()
 	rt := telemetry.RoundTripper(errTransport{err: errors.New("x")}, telemetry.Config{MeterProvider: rec})
 	req := &http.Request{Method: http.MethodGet}
-	if _, err := rt.RoundTrip(req.WithContext(context.Background())); err == nil {
-		t.Fatal("no error")
+	{
+		response, err := rt.RoundTrip(req.WithContext(context.Background()))
+		if response != nil {
+			_ = response.Body.Close()
+		}
+		if err == nil {
+			t.Fatal("no error")
+		}
 	}
 	m := rec.Instrument(telemetry.MetricHTTPClientDuration)[0]
 	if _, ok := m.Attr(telemetry.AttrServerAddress); ok {
@@ -331,8 +350,14 @@ func TestServerPortDefaultsToTheScheme(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			if _, err := rt.RoundTrip(req); err == nil {
-				t.Fatal("no error")
+			{
+				response, err := rt.RoundTrip(req)
+				if response != nil {
+					_ = response.Body.Close()
+				}
+				if err == nil {
+					t.Fatal("no error")
+				}
 			}
 			m := rec.Instrument(telemetry.MetricHTTPClientDuration)[0]
 			got, ok := m.Attr(telemetry.AttrServerPort)

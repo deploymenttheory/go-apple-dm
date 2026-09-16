@@ -18,7 +18,7 @@ func TestEnrollmentErrorsAreNotCacheable(t *testing.T) {
 		w := httptest.NewRecorder()
 		handler.ServeHTTP(
 			w,
-			httptest.NewRequest(
+			httptest.NewRequestWithContext(t.Context(),
 				http.MethodPost,
 				"https://mdm.example/enroll",
 				strings.NewReader("invalid"),

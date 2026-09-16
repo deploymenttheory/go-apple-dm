@@ -23,10 +23,10 @@ func subscriptionNames(t *testing.T, body []byte) []string {
 	if m["Type"] != schemaddm.DeclarationTypeManagementStatusSubscriptions || m["Identifier"] != ddm.SubscriptionIdentifier {
 		t.Fatalf("not a subscriptions declaration: %s", body)
 	}
-	items, _ := m["Payload"].(map[string]any)["StatusItems"].([]any)
+	items, _ := requireType[map[string]any](t, m["Payload"])["StatusItems"].([]any)
 	out := make([]string, 0, len(items))
 	for _, it := range items {
-		out = append(out, it.(map[string]any)["Name"].(string))
+		out = append(out, requireType[string](t, requireType[map[string]any](t, it)["Name"]))
 	}
 	return out
 }
@@ -73,8 +73,8 @@ func TestSubscriptionActivationLifecycle(t *testing.T) {
 		t.Fatal(err)
 	}
 	parsed := decode(t, body)
-	payload := parsed["Payload"].(map[string]any)
-	refs := payload["StandardConfigurations"].([]any)
+	payload := requireType[map[string]any](t, parsed["Payload"])
+	refs := requireType[[]any](t, payload["StandardConfigurations"])
 	if parsed["Type"] != schemaddm.DeclarationTypeActivationSimple || parsed["ServerToken"] != snap.Items[0].ServerToken || len(refs) != 1 || refs[0] != ddm.SubscriptionIdentifier || payload["Predicate"] != nil {
 		t.Fatalf("activation does not unconditionally reference the subscription: %s", body)
 	}

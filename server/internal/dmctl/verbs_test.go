@@ -19,7 +19,6 @@ import (
 type fakeAdmin struct {
 	mu       sync.Mutex
 	requests []request
-	pages    int
 }
 
 type request struct {

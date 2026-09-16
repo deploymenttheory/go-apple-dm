@@ -110,7 +110,7 @@ func (s *Store) Status(ctx context.Context) (Status, error) {
 		if err != nil {
 			return err
 		}
-		defer rows.Close()
+		defer func(rows *sql.Rows) { _ = rows.Close() }(rows)
 		for rows.Next() {
 			var m Member
 			var ack string

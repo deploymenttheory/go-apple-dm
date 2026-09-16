@@ -10,5 +10,8 @@ import (
 
 func TestContract(t *testing.T) {
 	t.Parallel()
-	storagetest.RunAll(t, func(t *testing.T) storage.Store { return inmem.New() })
+	storagetest.RunAll(t, func(t *testing.T) storage.Store {
+		t.Helper()
+		return inmem.New()
+	})
 }

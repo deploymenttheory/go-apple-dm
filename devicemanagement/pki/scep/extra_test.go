@@ -86,7 +86,7 @@ func TestHandlerBodyAndClientTransportErrors(t *testing.T) {
 	s, _ := newTestServer(f.signer, f.caCert, f.caKey)
 	c := serve(t, s)
 	rec := httptest.NewRecorder()
-	s.Handler().ServeHTTP(rec, httptest.NewRequest(http.MethodPost, "/scep?operation=PKIOperation", errReader{}))
+	s.Handler().ServeHTTP(rec, httptest.NewRequestWithContext(t.Context(), http.MethodPost, "/scep?operation=PKIOperation", errReader{}))
 	if rec.Code != http.StatusBadRequest {
 		t.Fatalf("erroring body: %d", rec.Code)
 	}

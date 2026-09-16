@@ -22,7 +22,7 @@ func TestPersistentWebhookDeliversAfterRestartingWorkers(t *testing.T) {
 	// Capture succeeds before workers run. Readiness must stay false until the
 	// configured workers are available, then delivery consumes the saved event.
 	w := httptest.NewRecorder()
-	a.Handler.ServeHTTP(w, httptest.NewRequest("GET", "/readyz", nil))
+	a.Handler.ServeHTTP(w, httptest.NewRequestWithContext(t.Context(), "GET", "/readyz", nil))
 	if w.Code != http.StatusServiceUnavailable {
 		t.Fatal("ready without delivery worker", w.Code)
 	}
@@ -71,7 +71,7 @@ func TestEventCaptureFailureMakesReadinessUnavailable(t *testing.T) {
 		t.Fatal(w.Code, w.Body.String())
 	}
 	w := httptest.NewRecorder()
-	a.Handler.ServeHTTP(w, httptest.NewRequest("GET", "/readyz", nil))
+	a.Handler.ServeHTTP(w, httptest.NewRequestWithContext(t.Context(), "GET", "/readyz", nil))
 	if w.Code != 503 || !strings.Contains(w.Body.String(), "event recording unavailable") {
 		t.Fatal("capture failure absent from readiness", w.Code, w.Body.String())
 	}

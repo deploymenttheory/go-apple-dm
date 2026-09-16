@@ -87,14 +87,11 @@ func JWKFromPublic(pub crypto.PublicKey) (*JWK, error) {
 		if !ok {
 			return nil, fmt.Errorf("%w: unsupported elliptic curve", ErrKey)
 		}
-		x, err := fixedWidth(k.X, size)
+		encoded, err := k.Bytes()
 		if err != nil {
-			return nil, fmt.Errorf("%w: x coordinate: %w", ErrKey, err)
+			return nil, fmt.Errorf("%w: elliptic curve point: %w", ErrKey, err)
 		}
-		y, err := fixedWidth(k.Y, size)
-		if err != nil {
-			return nil, fmt.Errorf("%w: y coordinate: %w", ErrKey, err)
-		}
+		x, y := encoded[1:1+size], encoded[1+size:]
 		return &JWK{
 			Kty: keyTypeEC,
 			Crv: name,

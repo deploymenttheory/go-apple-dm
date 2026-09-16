@@ -10,6 +10,7 @@ import (
 
 // RunIdentitySuite verifies permanent channel and parent identity boundaries.
 func RunIdentitySuite(t *testing.T, f Factory) {
+	t.Helper()
 	s := f(t)
 	ctx := t.Context()
 	id := User(1, "alice")

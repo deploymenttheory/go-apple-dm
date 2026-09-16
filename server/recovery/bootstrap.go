@@ -174,7 +174,7 @@ func (b Bootstrap) Keyring(ctx context.Context, directory string) (*crypt.Keyrin
 	if err != nil {
 		return nil, wrap(err)
 	}
-	defer provider.Close()
+	defer func(cleanup func() error) { _ = cleanup() }(provider.Close)
 	k, err := crypt.NewKeyring(
 		ctx,
 		crypt.Options{

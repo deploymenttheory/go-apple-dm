@@ -15,8 +15,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/deploymenttheory/go-apple-dm/devicemanagement/state"
 	"golang.org/x/crypto/ocsp"
+
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/state"
 )
 
 type publication struct {
