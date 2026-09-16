@@ -16,12 +16,18 @@ from lint import ROOT
 
 class LintPolicyTest(unittest.TestCase):
     def test_analysis_boundaries(self):
-        with tempfile.TemporaryDirectory(prefix="dm-lint-policy-") as directory:
+        # Keep fixtures on the checkout's volume: Windows runners put the
+        # checkout on D: and the system temporary directory on C:.
+        parent = ROOT / "cover"
+        parent.mkdir(exist_ok=True)
+        with tempfile.TemporaryDirectory(prefix="dm-lint-policy-", dir=parent) as directory:
             root = Path(directory)
             go_version = next(line.split()[1] for line in (ROOT / "go.mod").read_text().splitlines()
                               if line.startswith("go "))
-            (root / "go.mod").write_text(f"module example.test/lintpolicy\n\ngo {go_version}\n")
-            (root / "valid.go").write_text("package fixture\n\nfunc Value() int { return 1 }\n")
+            (root / "go.mod").write_text(f"module example.test/lintpolicy\n\ngo {go_version}\n",
+                                        encoding="utf-8", newline="\n")
+            (root / "valid.go").write_text("package fixture\n\nfunc Value() int { return 1 }\n",
+                                          encoding="utf-8", newline="\n")
             env = os.environ.copy()
             env.update(GOWORK="off", GOFLAGS="", GOPROXY="off")
             linter = os.environ.get("GOLANGCI_LINT", "golangci-lint")
@@ -71,7 +77,7 @@ func Generated() { missingSymbol() }
                 with self.subTest(name=name):
                     for old in ("sample_test.go", "generated.go", "result.json"):
                         (root / old).unlink(missing_ok=True)
-                    (root / filename).write_text(source)
+                    (root / filename).write_text(source, encoding="utf-8", newline="\n")
                     result = subprocess.run(
                         [linter, "run", "--fix=false", "--config=" + str(ROOT / ".golangci.yml"),
                          "--output.json.path=" + str(root / "result.json"), "./..."],
@@ -79,6 +85,7 @@ func Generated() { missingSymbol() }
                     report = root / "result.json"
                     issues = (json.loads(report.read_text()).get("Issues") or []) if report.exists() else []
                     diagnostics = result.stdout + result.stderr
+                    self.assertNotIn("level=warning", diagnostics)
                     if expected is None:
                         self.assertEqual(result.returncode, 0, diagnostics)
                     else:
