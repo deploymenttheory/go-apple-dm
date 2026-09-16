@@ -1,5 +1,23 @@
 # Changelog
 
+## [0.7.3](https://github.com/deploymenttheory/go-apple-dm/compare/v0.7.2...v0.7.3) (2026-09-16)
+
+
+### Features
+
+* add Apple management helpers and Apps and Books licensing ([8ef73c9](https://github.com/deploymenttheory/go-apple-dm/commit/8ef73c9a13ce487627518224249db02db87405f7))
+* add Apple management helpers and Apps and Books licensing ([7500eb2](https://github.com/deploymenttheory/go-apple-dm/commit/7500eb25e50a2913338339d5fced18dc7f41fdc3))
+
+
+### Bug Fixes
+
+* release please ([6da7312](https://github.com/deploymenttheory/go-apple-dm/commit/6da7312b17b4452dc77530f59499760780a6637f))
+
+
+### Documentation
+
+* reconcile implementation guides and design decisions ([b071214](https://github.com/deploymenttheory/go-apple-dm/commit/b0712144c94e445037f4c5629cc987597863ecb2))
+
 ## [0.7.2](https://github.com/deploymenttheory/go-apple-dm/compare/v0.7.1...v0.7.2) (2026-09-14)
 
 
