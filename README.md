@@ -7,27 +7,114 @@
 [![License](https://img.shields.io/github/license/deploymenttheory/go-apple-dm)](LICENSE)
 ![Status: Beta](https://img.shields.io/badge/status-preview-58A6FF)
 
-This project provides a go(lang) implementation for Apple's MDM protocol, declarative device management (DDM), enrollment, certificate issuance and Apple service clients. The repository also contains a reference
-server and an admin CLI to demonstrate how an implementation of the library could look like, additionally there is a simulator for test purposes. By design this project does not provide an opinionated: UI nor a full apple device management product, rather, the focus is on providing a consumable library upon which those types project could adopt with the reference server to show what's possible.
+Go packages for Apple's MDM protocol, declarative device management (DDM), enrollment,
+certificate issuance and Apple service clients. A reference server and the `dmctl` CLI show
+one way to compose them, and a device simulator exercises the modeled protocol exchanges.
+The project is a library to build on, not a device management product: it ships no
+management UI, and the reference server exists to demonstrate what the library supports.
 
 ## Why
 
-## Design Goals
-- Support for macOS 26 onwards. (At the time of build, macOS 27 is on the cusp of public release.)
-- Provide the best golang oss library for future apple device management products to be built upon.
-- Support for multiple database types
-- Support for both ddm and mdm from day 1.
-- Provide the
+Building an Apple device management product or internal tool means implementing check-in
+and command delivery, several enrollment modes, certificate issuance, push notifications,
+declarative management and Apple's service APIs, all against a schema that Apple revises
+with each OS release. Most of that work is the same for every product, and it has to be
+finished before the part that differentiates a product can start.
 
- - The `devicemanagement` library go module groups protocol libraries, generated schema types, storage contracts and
-in-memory implementations under [devicemanagement/](devicemanagement/).
+Open-source implementations already exist. The [reference catalogue](docs/research/reference_projects.md)
+indexes the ones reviewed during design. In Go, the Nano suite provides NanoMDM, "a
+minimalist Apple MDM server and library", with declarative management, device enrollment
+service access, command workflows and Apple Business Manager access supplied by separate
+services (KMFDDM, NanoDEP, NanoCMD, NanoAXM) and combined by NanoHUB; NanoMDM's own
+documentation places SCEP, enrollment profiles, the DEP API and app licensing outside its
+scope. MicroMDM v1 describes itself as in maintenance mode. Fleet and Zentral are complete
+management products with their own data models and user interfaces. These projects informed
+the [design decisions](docs/research/decisions/README.md); they are not dependencies, and no
+code is copied from them.
 
-- The reference `server` module adds SQL stores, the service layer, HTTP adapters and application wiring.
+This project takes a different shape. One Go module covers the protocol surface end to end:
+MDM and DDM, every current enrollment mode, SCEP, ACME with Managed Device Attestation, push,
+the device enrollment service, the Apple Business Manager and Apple School Manager API, and
+Apps and Books licensing, all behind storage contracts with a shared contract suite. Types,
+validation and platform support metadata are generated from Apple's pinned schema, so a new
+OS release is adopted by regeneration rather than hand edits. DDM runs inside the MDM
+enrollment rather than as a separate service. The reference server is an example
+composition that demonstrates the library; it is not the product. The intended consumer
+owns the product layer without having to own the protocol layer.
 
-Both modules require Go 1.27.
+## Who it is for
 
-The `devicemanagement` library go module groups protocol libraries, generated schema types, storage contracts and
-in-memory implementations under [devicemanagement/](devicemanagement/). The `server` module adds SQL stores, the service layer, HTTP adapters and application wiring. Both modules require Go 1.27.
+- Go developers building a device management product or internal tool, who want to import
+  protocol, enrollment, PKI and DDM packages and keep their own data model, policy and UI.
+- Mac admins who want to run the reference server for a fleet, or assemble their own server
+  from the library on a supported SQL backend.
+- Engineers studying how Apple device management works. The decision records, simulator
+  scenarios and diagrams describe the protocol exchanges as implemented.
+- Individuals managing their own or their family's Apple devices, who want to put a small
+  UI of their own on tested foundations. Enrolling real devices still requires an Apple MDM
+  push certificate, trusted public HTTPS and an enrollment identity issuer; the reference
+  server and simulator run without them. See the
+  [getting-started guide](docs/getting-started/getting-started.md).
+
+## Scope
+
+Two consumers appear in the last column: the product developer, who builds on the library
+or the reference server, and the operator, who runs the result. One person or team is often
+both.
+
+| Area | Library (`devicemanagement/`) | Reference server (`server/`) | Who owns the rest |
+|---|---|---|---|
+| Protocol and schema | Generated MDM, DDM, profile and status types with validation and platform metadata; plist and CMS codecs | Command validation against target metadata before queueing | The product developer decides which commands, profiles and declarations to send |
+| Enrollment | Profile-based, Automated Device Enrollment, account-driven Device and User Enrollment, user channel and Shared iPad handling | Enrollment routes, admission policy loading, OIDC web authentication | The operator writes admission policy, runs the identity provider and sets up Apple Business Manager |
+| Certificates | CA abstraction, SCEP, ACME, Managed Device Attestation, revocation | Issuer configuration, revocation services, rate limits | The operator supplies trust roots and HTTPS certificates and validates on real hardware |
+| Apple services | APNs, device enrollment service, software lookup, Business and School Manager, Apps and Books clients | Push delivery, DEP sync worker, sealed credential storage | The operator obtains and renews Apple credentials |
+| Declarative management | Engine, sets, membership, snapshots, status reports, predicates | Synchronization into commands and pushes, split-role proxy | The product developer authors declaration content |
+| Storage | Contracts, in-memory implementations, contract suites | SQLite, PostgreSQL and MySQL stores with sealed secret columns | The operator runs the database, backups and key custody |
+| Administration | Typed events and hooks | Admin API, Cedar policies, audit trail, event sinks, `dmctl` | The operator manages accounts; the product developer builds integrations and dashboards |
+| Product | None | None | The product developer builds the management UI, inventory, fleet policy and workflows |
+
+Not planned:
+
+- A management UI, inventory product or fleet policy engine.
+- A hosted service.
+- Compatibility with the internal service contracts of other implementations, such as
+  NanoMDM's `-dm` header hop.
+- Platforms other than Apple's.
+
+## Design objectives
+
+1. Library first. The server is one composition of the library, and the library never
+   imports it ([0001](docs/research/decisions/0001-architecture.md),
+   [0044](docs/research/decisions/0044-repository-layout.md)).
+2. Generated from Apple's pinned schema. Types, validation and support metadata are
+   regenerated, never hand-edited, and a pinned historical schema keeps older devices
+   manageable ([0003](docs/research/decisions/0003-schema-generator.md),
+   [0046](docs/research/decisions/0046-generated-from-is-generated.md),
+   [0052](docs/research/decisions/0052-mixed-os-fleets.md)).
+3. MDM and DDM together. Declarative management extends the MDM enrollment instead of
+   running beside it ([0039](docs/research/decisions/0039-ddm-is-an-extension-of-mdm.md)).
+4. Current Apple platforms. Devices running OS 26 onward are the target; there is no
+   compatibility layer for earlier releases.
+5. Storage-agnostic. Domain contracts and a shared contract suite define backend behavior for
+   memory, SQLite, PostgreSQL and MySQL
+   ([0005](docs/research/decisions/0005-storage-interfaces.md),
+   [0012](docs/research/decisions/0012-sql-storage-backends.md)).
+6. Secure defaults. Admission is denied unless policy permits it, revocation is on, secret
+   columns are sealed and event sinks redact by default
+   ([0037](docs/research/decisions/0037-event-sinks-and-redaction.md),
+   [0047](docs/research/decisions/0047-enrollment-authentication-and-optional-security-services.md),
+   [0050](docs/research/decisions/0050-enrollment-security-boundaries.md)).
+7. Verifiable. Simulator scenarios, contract suites, a 95% coverage floor, recorded decisions
+   and a physical-device bench back each capability
+   ([0048](docs/research/decisions/0048-reference-server-bench.md)).
+8. Explicit boundaries. Trust roots, Apple credentials, enrollment policy and the user
+   interface belong to the consumer.
+
+The root module `github.com/deploymenttheory/go-apple-dm` holds the library under
+[devicemanagement/](devicemanagement/): protocol packages, generated schema types, PKI, Apple
+clients, storage contracts and in-memory implementations. The `server` module adds SQL stores,
+the service layer, HTTP adapters, administration and application wiring. Both modules require
+Go 1.27.
 
 > [!WARNING]
 > This project is in beta. While it has been tested extensively, please thoroughly test in non-production environments before production use. Features may contain bugs or undergo changes based on community feedback. No guarantees or official support is provided. Use at your own risk. By using this project, you acknowledge and agree to these conditions. For questions or issues, please consult the documentation or contact the maintainer.
@@ -35,7 +122,7 @@ in-memory implementations under [devicemanagement/](devicemanagement/). The `ser
 > [!TIP]
 > This is a community-driven project and is not officially supported by Apple.
 
-This project generates it's mdm and ddm functionality by parsing the schema from Apple's [Device Management](https://github.com/apple/device-management) project.
+This project generates its MDM and DDM functionality by parsing the schema from Apple's [Device Management](https://github.com/apple/device-management) project.
 
 ## Quick start
 
