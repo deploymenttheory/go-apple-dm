@@ -19,12 +19,13 @@ import (
 	"testing"
 	"time"
 
+	"golang.org/x/crypto/ocsp"
+
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/clock"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/cms"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/pki/ca"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/pki/revocation"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/state"
-	"golang.org/x/crypto/ocsp"
 )
 
 type fixture struct {
@@ -275,7 +276,8 @@ func TestConfigAndHTTP(t *testing.T) {
 		body             []byte
 		status           int
 	}{
-		{"GET", "/pki/crl/" + f.id, "", nil, 200}, {"GET", "/pki/crl/unknown", "", nil, 404},
+		{"GET", "/pki/crl/" + f.id, "", nil, 200},
+		{"GET", "/pki/crl/unknown", "", nil, 404},
 		{"POST", "/pki/ocsp/" + f.id, "application/ocsp-request", request, 200},
 		{"GET", "/pki/ocsp/" + f.id + "/" + url.PathEscape(base64.StdEncoding.EncodeToString(request)), "", nil, 200},
 		{"GET", "/pki/ocsp/" + f.id + "/invalid", "", nil, 400},
@@ -284,7 +286,7 @@ func TestConfigAndHTTP(t *testing.T) {
 		{"POST", "/pki/ocsp/" + f.id, "application/ocsp-request", []byte("bad"), 400},
 	} {
 		w := httptest.NewRecorder()
-		req := httptest.NewRequest(tc.method, tc.path, bytes.NewReader(tc.body))
+		req := httptest.NewRequestWithContext(t.Context(), tc.method, tc.path, bytes.NewReader(tc.body))
 		req.Header.Set("Content-Type", tc.ct)
 		h.ServeHTTP(w, req)
 		if w.Code != tc.status {
@@ -293,7 +295,7 @@ func TestConfigAndHTTP(t *testing.T) {
 	}
 	cancelled, cancel := context.WithCancel(ctx)
 	cancel()
-	req := httptest.NewRequest("GET", "/pki/crl/"+f.id, nil).WithContext(cancelled)
+	req := httptest.NewRequestWithContext(t.Context(), "GET", "/pki/crl/"+f.id, nil).WithContext(cancelled)
 	w := httptest.NewRecorder()
 	h.ServeHTTP(w, req)
 	if w.Code != 503 {
@@ -315,7 +317,7 @@ func TestOCSPGETEscapedRequest(t *testing.T) {
 		t.Fatalf("request does not exercise consecutive slashes: %s", encoded)
 	}
 	w := httptest.NewRecorder()
-	req := httptest.NewRequest("GET", "/pki/ocsp/"+f.id+"/"+url.PathEscape(encoded), nil)
+	req := httptest.NewRequestWithContext(t.Context(), "GET", "/pki/ocsp/"+f.id+"/"+url.PathEscape(encoded), nil)
 	f.reg.Handler("/pki/").ServeHTTP(w, req)
 	if w.Code != 200 {
 		t.Fatalf("GET returned %d: %s", w.Code, w.Body.String())

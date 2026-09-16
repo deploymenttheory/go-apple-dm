@@ -43,6 +43,7 @@ func runShared(t *testing.T, db *sql.DB, d sqlcommon.Dialect, cascade string) {
 		// The version row is seeded by the migration, so it is reset rather
 		// than deleted with the rest.
 		for _, table := range []string{"admin_policies", "admin_principals"} {
+			// #nosec G202 -- Table names come from the fixed migration table list in this test.
 			if _, err := db.ExecContext(ctx, "DELETE FROM "+table); err != nil {
 				t.Fatal(err)
 			}
@@ -71,7 +72,7 @@ func TestStorePostgres(t *testing.T) {
 		t.Fatal(err)
 	}
 	db := stdlib.OpenDB(*cfg)
-	defer db.Close()
+	defer func(cleanup func() error) { _ = cleanup() }(db.Close)
 	db.SetMaxOpenConns(8)
 	runShared(t, db, postgres.Dialect, " CASCADE")
 }
@@ -89,7 +90,7 @@ func TestStoreMySQL(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer db.Close()
+	defer func(cleanup func() error) { _ = cleanup() }(db.Close)
 	db.SetMaxOpenConns(8)
 	runShared(t, db, mysql.Dialect, "")
 }

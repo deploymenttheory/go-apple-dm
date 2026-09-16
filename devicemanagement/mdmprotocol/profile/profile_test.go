@@ -99,7 +99,7 @@ func TestStableUUIDs(t *testing.T) {
 	t.Parallel()
 	p := sample()
 	a, _ := p.Marshal()
-	p.Payloads[0].Content.(*profiles.MDM).ServerURL = "https://other.example.com/mdm"
+	requireType[*profiles.MDM](t, p.Payloads[0].Content).ServerURL = "https://other.example.com/mdm"
 	b, _ := p.Marshal()
 	if string(a) == string(b) {
 		t.Fatal("content change not reflected")
@@ -197,7 +197,8 @@ func TestParseErrors(t *testing.T) {
 	}
 	// Integer forms of PayloadVersion.
 	for _, v := range []any{int64(2), uint64(2), 2, 2.0} {
-		m := map[string]any{"PayloadType": "Configuration", "PayloadVersion": v, "PayloadIdentifier": "i", "PayloadUUID": "u",
+		m := map[string]any{
+			"PayloadType": "Configuration", "PayloadVersion": v, "PayloadIdentifier": "i", "PayloadUUID": "u",
 			"PayloadContent": []any{},
 		}
 		d, _ := plist.Marshal(m)

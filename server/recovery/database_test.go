@@ -161,6 +161,7 @@ func exerciseSQLRecovery(t *testing.T, source SQL, target func() *sql.DB) {
 		t.Fatal("schema omitted")
 	}
 	for _, file := range snapshot.Tables {
+		// #nosec G304 -- The test controls this fixture path within its private workspace.
 		raw, err := os.ReadFile(filepath.Join(directory, file.Name+".jsonl"))
 		if err != nil {
 			t.Fatal(err)
@@ -326,6 +327,7 @@ func TestDatabaseRejectsCorruptMetadataAndRollsBackRows(t *testing.T) {
 	if err := s.Snapshot(t.Context(), dir); err != nil {
 		t.Fatal(err)
 	}
+	// #nosec G304 -- The test controls this fixture path within its private workspace.
 	raw, _ := os.ReadFile(filepath.Join(dir, "database.json"))
 	for _, name := range []string{"schema", "backend", "table", "columns", "sequence", "rows"} {
 		t.Run(name, func(t *testing.T) {

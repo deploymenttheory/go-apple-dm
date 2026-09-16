@@ -736,6 +736,7 @@ func TestConfig(t *testing.T) {
 			PrivateKey: key,
 			BaseURL:    "http://[::1]:x",
 		},
+		// #nosec G101 -- Synthetic protocol fixtures and invalid URLs; no live credentials.
 		"bad token url": {
 			ClientID:   testClientID,
 			KeyID:      "k",
@@ -785,21 +786,33 @@ func TestConfig(t *testing.T) {
 		t.Parallel()
 		f := newFixture(t)
 		c := f.client(t, nil)
-		if _, err := c.roundTrip(
-			context.Background(),
-			request{method: "BAD METHOD", path: "/v1/x"},
-		); !errors.Is(err, ErrArgument) &&
-			!errors.Is(err, ErrTransport) {
-			t.Fatalf("bad method: %v", err)
+		{
+			response, err := c.roundTrip(
+				context.Background(),
+				request{method: "BAD METHOD", path: "/v1/x"},
+			)
+			if response != nil {
+				_ = response.Body.Close()
+			}
+			if !errors.Is(err, ErrArgument) &&
+				!errors.Is(err, ErrTransport) {
+				t.Fatalf("bad method: %v", err)
+			}
 		}
-		if _, err := c.roundTrip(
-			context.Background(),
-			request{method: http.MethodPost, path: "/v1/x", body: make(chan int)},
-		); !errors.Is(
-			err,
-			ErrArgument,
-		) {
-			t.Fatalf("unencodable body: %v", err)
+		{
+			response, err := c.roundTrip(
+				context.Background(),
+				request{method: http.MethodPost, path: "/v1/x", body: make(chan int)},
+			)
+			if response != nil {
+				_ = response.Body.Close()
+			}
+			if !errors.Is(
+				err,
+				ErrArgument,
+			) {
+				t.Fatalf("unencodable body: %v", err)
+			}
 		}
 		if err := c.do(
 			context.Background(),
@@ -831,7 +844,7 @@ func TestConfig(t *testing.T) {
 // readAll drains a reader for tests.
 func readAll(t *testing.T, r io.ReadCloser) string {
 	t.Helper()
-	defer r.Close()
+	defer func(cleanup func() error) { _ = cleanup() }(r.Close)
 	b, err := io.ReadAll(r)
 	if err != nil {
 		t.Fatal(err)

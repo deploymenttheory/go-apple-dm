@@ -49,7 +49,11 @@ func (q *dispatchQueue) ClearCommand(
 	if q.clearErr != nil {
 		return 0, q.clearErr
 	}
-	n, err := q.Store.(storage.CommandClearer).ClearCommand(ctx, id, uuid)
+	store, ok := q.Store.(storage.CommandClearer)
+	if !ok {
+		return 0, errors.New("fixture store does not implement CommandClearer")
+	}
+	n, err := store.ClearCommand(ctx, id, uuid)
 	if q.cancel != nil {
 		q.cancel()
 	}

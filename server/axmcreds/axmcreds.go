@@ -20,7 +20,7 @@ const credentialAAD = "axm/credentials"
 
 // sealedRecord is the plaintext that gets sealed.
 //
-//nolint:tagliatelle // internal record; the tags are storage keys
+// internal record; the tags are storage keys
 type sealedRecord struct {
 	ClientID      string `json:"client_id"`
 	KeyID         string `json:"key_id"`

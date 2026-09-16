@@ -456,7 +456,7 @@ var (
 // tag of "-" omits it.
 func fieldsOf(t reflect.Type) map[string]int {
 	if cached, ok := fieldCache.Load(t); ok {
-		return cached.(map[string]int)
+		return cached.(map[string]int) //nolint:forcetypeassert // This private cache stores only the field maps built below.
 	}
 	fields := make(map[string]int, t.NumField())
 	for i := range t.NumField() {

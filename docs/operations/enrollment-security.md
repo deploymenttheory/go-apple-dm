@@ -156,7 +156,9 @@ available hardware binding.
 The pinned Apple YAML contains older Mac DDM restrictions and an ACME
 extractability description that differ from Apple's live documentation.
 Project-authored policy follows the live documentation; generated upstream
-comments remain verbatim. See the [source comparison and validation record](../wip/apple-enterprise-hardening-2026-09-11.md).
+comments remain verbatim. See [decision 0033](../research/decisions/0033-acme-identity-in-profiles-and-ddm.md)
+and Apple's [ACME payload](https://developer.apple.com/documentation/devicemanagement/acmecertificate)
+and [declarative ACME credential](https://developer.apple.com/documentation/devicemanagement/assetcredentialacme).
 
 ### Library issuance and transport configuration
 
@@ -391,7 +393,7 @@ Metadata-only security events identify admission denial, identity rejection,
 certificate status rejection and private-hop rejection. Enable an event sink or
 persistent audit to retain them. Events contain no credential or remote error
 text. DEP, AxM, APNs and webhook clients reject redirects and require HTTPS.
-`DM_WEBHOOK_URL` now rejects HTTP even on loopback, URL credentials and fragments.
+`DM_WEBHOOK_URL` rejects HTTP even on loopback, URL credentials and fragments.
 Set `DM_WEBHOOK_ROOT_CA_FILE` to a PEM bundle for a private webhook CA; it replaces
 system roots for that sink and preserves hostname verification. Webhook transport
 errors omit the configured URL, including secret path/query components. Wrapped
@@ -405,4 +407,6 @@ signature-verified CRL/OCSP output. Before rollout, exercise supported Apple OS
 versions and enrollment modes on physical devices, including ADE, account-driven
 macOS device/user channels, token expiry during an interrupted response,
 SCEP/ACME renewal and revocation, DDM synchronization and proxy transport.
-Use the [physical-device checklist and Apple reconciliation](../wip/apple-conformant-security-hardening-2026-09-11.md).
+Use the [Mac enrollment runbook](mac-enrollment-testing.md) and
+[recovery procedure](recovery.md). Record the tested revision, OS, hardware,
+enrollment mode and untested paths in the PR.

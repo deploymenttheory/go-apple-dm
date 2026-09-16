@@ -132,7 +132,7 @@ func (t *txStore) each(ctx context.Context, op, query string, args []any, scan f
 	if err != nil {
 		return wrap(op, err)
 	}
-	defer rows.Close()
+	defer func(rows *sql.Rows) { _ = rows.Close() }(rows)
 	for rows.Next() {
 		if err := scan(rows); err != nil {
 			return err

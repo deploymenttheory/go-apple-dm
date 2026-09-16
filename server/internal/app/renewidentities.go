@@ -281,7 +281,7 @@ func stableUUID(parts string) string {
 	return s[:8] + "-" + s[8:12] + "-" + s[12:16] + "-" + s[16:20] + "-" + s[20:]
 }
 
-//nolint:gocyclo // Keep the ordered workflow transitions and their failure handling together.
+// Keep the ordered workflow transitions and their failure handling together.
 func (a *App) progressMigration(
 	ctx context.Context,
 	target *managedIssuerService,
@@ -295,7 +295,7 @@ func (a *App) progressMigration(
 	if err != nil {
 		m.Phase = "blocked"
 		m.Reason = "certificate issuer evidence unavailable"
-		return nil
+		return nil //nolint:nilerr // Commit the blocked migration state so the operator can inspect and recover it.
 	}
 	if trustRequired && evidence.Issuer == cms.Fingerprint(target.enrollment.caCert) {
 		m.Phase = "confirmed"
@@ -442,7 +442,7 @@ func (a *App) progressMigration(
 		if err != nil {
 			m.Phase = "blocked"
 			m.Reason = "enrollment profile is not eligible for automatic replacement"
-			return nil
+			return nil //nolint:nilerr // Commit the blocked migration state so the operator can inspect and recover it.
 		}
 		x, err = a.replacementStore().
 			TransitionReplacement(ctx, e.ID, storage.ReplacementChange{Op: "begin", Begin: x, At: a.cfg.Clock.Now()})

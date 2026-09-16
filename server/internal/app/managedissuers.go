@@ -100,11 +100,15 @@ func (a *App) managedRegistry(ctx context.Context) (*revocation.Registry, error)
 	}
 	var issuers []revocation.Issuer
 	for _, pair := range pairs {
+		signer, ok := pair.PrivateKey.(crypto.Signer)
+		if !ok {
+			return nil, lifecycle.ErrInvalid
+		}
 		issuers = append(
 			issuers,
 			revocation.Issuer{
 				Certificate: pair.Leaf,
-				Signer:      pair.PrivateKey.(crypto.Signer),
+				Signer:      signer,
 				CRLTTL:      a.cfg.PKI.CRLTTL,
 				CRLRefresh:  a.cfg.PKI.CRLRefresh,
 				OCSPTTL:     a.cfg.PKI.OCSPTTL,
@@ -206,7 +210,11 @@ func (a *App) managedIssuer(ctx context.Context, rev string) (*managedIssuerServ
 	copy := *a.enroll
 	copy.issuerRevision = rev
 	copy.caCert = pair.Leaf
-	copy.caKey = pair.PrivateKey.(crypto.Signer)
+	signer, ok := pair.PrivateKey.(crypto.Signer)
+	if !ok {
+		return nil, lifecycle.ErrInvalid
+	}
+	copy.caKey = signer
 	copy.scepRoute = PathSCEP + "/issuers/" + rev
 	copy.acmeRoute = PathACME + "/issuers/" + rev
 	copy.trust = append(append([]*x509.Certificate(nil), copy.trust...), pair.Leaf)

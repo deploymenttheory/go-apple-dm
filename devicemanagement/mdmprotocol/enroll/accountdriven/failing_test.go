@@ -3,13 +3,14 @@ package accountdriven_test
 import (
 	"context"
 	"errors"
-	"github.com/deploymenttheory/go-apple-dm/devicemanagement/state"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/state"
 
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/enroll"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/enroll/accountdriven"
@@ -78,7 +79,7 @@ func TestStoreFailures(t *testing.T) {
 			t.Fatal(err)
 		}
 		rec := httptest.NewRecorder()
-		req := httptest.NewRequest(http.MethodPost, "/enroll", strings.NewReader(body))
+		req := httptest.NewRequestWithContext(t.Context(), http.MethodPost, "/enroll", strings.NewReader(body))
 		req.Header.Set("Authorization", "Bearer "+access)
 		h.ServeHTTP(rec, req)
 		if rec.Code != http.StatusInternalServerError {
@@ -88,14 +89,15 @@ func TestStoreFailures(t *testing.T) {
 	t.Run("AsWebFinishIssueFails", func(t *testing.T) {
 		tk, _ := newFailing(map[string]error{"Put": boom})
 		a := &accountdriven.AppleAsWeb{URL: "https://x/a", Tokens: tk}
-		if err := a.Finish(httptest.NewRecorder(), httptest.NewRequest(http.MethodPost, "/x", nil), alice); !errors.Is(err, boom) {
+		if err := a.Finish(httptest.NewRecorder(), httptest.NewRequestWithContext(t.Context(), http.MethodPost, "/x", nil), alice); !errors.Is(err, boom) {
 			t.Fatalf("err = %v", err)
 		}
 	})
 	t.Run("OAuth2GrantAndTokenFailures", func(t *testing.T) {
 		tk, fs := newFailing(map[string]error{})
+		// #nosec G101 -- Synthetic protocol fixtures and invalid URLs; no live credentials.
 		o := &accountdriven.OAuth2{AuthorizationURL: "https://x/a", TokenURL: "https://x/t", RedirectURL: "apple-remotemanagement-user-login:/r", ClientID: "c", Scope: "s", Tokens: tk}
-		r := httptest.NewRequest(http.MethodGet, "/a?response_type=code&client_id=c&redirect_uri=apple-remotemanagement-user-login:/r&state=s", nil)
+		r := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/a?response_type=code&client_id=c&redirect_uri=apple-remotemanagement-user-login:/r&state=s", nil)
 		req, err := o.ParseAuthorization(r)
 		if err != nil {
 			t.Fatal(err)
@@ -109,7 +111,7 @@ func TestStoreFailures(t *testing.T) {
 		fs.fail["Put"] = boom
 		form := url.Values{"grant_type": {"authorization_code"}, "code": {code}, "redirect_uri": {o.RedirectURL}, "client_id": {"c"}}
 		rec := httptest.NewRecorder()
-		tr := httptest.NewRequest(http.MethodPost, "/t", strings.NewReader(form.Encode()))
+		tr := httptest.NewRequestWithContext(t.Context(), http.MethodPost, "/t", strings.NewReader(form.Encode()))
 		tr.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 		o.TokenHandler().ServeHTTP(rec, tr)
 		if rec.Code != http.StatusInternalServerError || !strings.Contains(rec.Body.String(), "server_error") {
@@ -117,7 +119,7 @@ func TestStoreFailures(t *testing.T) {
 		}
 		// Malformed form body.
 		rec = httptest.NewRecorder()
-		bad := httptest.NewRequest(http.MethodPost, "/t", strings.NewReader("%zz"))
+		bad := httptest.NewRequestWithContext(t.Context(), http.MethodPost, "/t", strings.NewReader("%zz"))
 		bad.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 		o.TokenHandler().ServeHTTP(rec, bad)
 		if rec.Code != http.StatusBadRequest {
@@ -138,7 +140,7 @@ func TestStoreFailures(t *testing.T) {
 		}
 		code2, _ := tk.Issue(ctx, accountdriven.KindCode, alice, map[string]string{"client_id": o.ClientID, "redirect_uri": o.RedirectURL, "scope": o.Scope})
 		rec = httptest.NewRecorder()
-		tr = httptest.NewRequest(http.MethodPost, "/t", strings.NewReader(url.Values{"grant_type": {"authorization_code"}, "code": {code2}, "redirect_uri": {o.RedirectURL}, "client_id": {"c"}}.Encode()))
+		tr = httptest.NewRequestWithContext(t.Context(), http.MethodPost, "/t", strings.NewReader(url.Values{"grant_type": {"authorization_code"}, "code": {code2}, "redirect_uri": {o.RedirectURL}, "client_id": {"c"}}.Encode()))
 		tr.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 		o.TokenHandler().ServeHTTP(rec, tr)
 		if rec.Code != http.StatusOK || !strings.Contains(rec.Body.String(), `"expires_in":60`) {
@@ -157,7 +159,11 @@ func (f *failingStore) Exchange(ctx context.Context, hash string, at time.Time, 
 	if err := f.fail["Put"]; err != nil {
 		return err
 	}
-	return f.TokenStore.(accountdriven.AtomicTokenStore).Exchange(ctx, hash, at, validate, replacements)
+	store, ok := f.TokenStore.(accountdriven.AtomicTokenStore)
+	if !ok {
+		return errors.New("fixture store does not implement AtomicTokenStore")
+	}
+	return store.Exchange(ctx, hash, at, validate, replacements)
 }
 
 type failedState struct {

@@ -428,7 +428,7 @@ func TestNotifier(t *testing.T) {
 			t.Run(method, func(t *testing.T) {
 				var failing *ddmtest.Failing
 				f := newNotifierFixture(t, func(c *ddmsync.NotifierConfig) {
-					failing = &ddmtest.Failing{Store: c.Store.(ddm.Store), Fail: map[string]error{}}
+					failing = &ddmtest.Failing{Store: requireType[ddm.Store](t, c.Store), Fail: map[string]error{}}
 					c.Store = failing
 				})
 				dev := ddmtest.Device(1)
@@ -508,7 +508,7 @@ func TestNotifier(t *testing.T) {
 	t.Run("PushFailureStoreErrorSurfaces", func(t *testing.T) {
 		var failing *ddmtest.Failing
 		f := newNotifierFixture(t, func(c *ddmsync.NotifierConfig) {
-			failing = &ddmtest.Failing{Store: c.Store.(ddm.Store), Fail: map[string]error{}}
+			failing = &ddmtest.Failing{Store: requireType[ddm.Store](t, c.Store), Fail: map[string]error{}}
 			c.Store = failing
 		})
 		f.assignFresh(t, ddmtest.Device(1), "com.example.pushstore")
@@ -563,7 +563,7 @@ func TestNotifier(t *testing.T) {
 			f2 := newNotifierFixture(t, func(c *ddmsync.NotifierConfig) {
 				c.Clock = clock.Real{}
 				c.Poll = 50 * time.Millisecond
-				failing = &ddmtest.Failing{Store: c.Store.(ddm.Store), Fail: map[string]error{"PendingChanges": errors.New("down")}}
+				failing = &ddmtest.Failing{Store: requireType[ddm.Store](t, c.Store), Fail: map[string]error{"PendingChanges": errors.New("down")}}
 				c.Store = failing
 			})
 			ctx, cancel := context.WithCancel(context.Background())

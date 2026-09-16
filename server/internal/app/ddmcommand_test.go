@@ -110,7 +110,6 @@ func TestDDMCommandTravelsTheCommandPath(t *testing.T) {
 			t.Fatalf("request_type = %v", got)
 		}
 	})
-
 }
 
 // The admin route wrapper requests a notifier drain after successful declarative

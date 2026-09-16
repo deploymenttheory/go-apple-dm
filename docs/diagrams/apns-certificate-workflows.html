@@ -4452,7 +4452,7 @@
       border: 0;
     }
 
-    /* Route Probe separates a durable two-point query from selection and
+    /* Route Probe keeps a two-point query separate from selection and
        one-hop hover. Only the chosen shortest directed path stays prominent;
        the traveling signal is cloned viewer geometry and never authored SVG. */
     svg[data-route-picking="target"] [data-node-id] { opacity: 0.24; }
@@ -5591,6 +5591,7 @@ svg[data-purpose-filter] g[data-purpose-highlight] > path { stroke-width: 2.4; }
         <ul>
           <li>&bull; <a href="https://developer.apple.com/documentation/devicemanagement/setting-up-push-notifications-for-your-device-management-customers" target="_blank" rel="noopener noreferrer">Setting up push notifications for your device management customers</a></li>
           <li>&bull; <a href="https://developer.apple.com/documentation/usernotifications/establishing-a-certificate-based-connection-to-apns" target="_blank" rel="noopener noreferrer">Establishing a certificate-based connection to APNs</a></li>
+          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/7500eb25e50a2913338339d5fced18dc7f41fdc3/devicemanagement/pki/pushcert" target="_blank" rel="noopener noreferrer">Implementation</a></li>
         </ul>
       </div>
     </div>
@@ -9159,7 +9160,7 @@ svg[data-purpose-filter] g[data-purpose-highlight] > path { stroke-width: 2.4; }
     })();
 
     /* ============================================================
-       Intent Trace — temporary one-hop topology before durable focus.
+       Intent Trace — temporary one-hop topology before a focus selection.
        Fine-pointer hover and keyboard focus share the same stable-ID preview;
        touch continues directly to the existing click-to-focus contract.
        ============================================================ */

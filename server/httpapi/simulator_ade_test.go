@@ -175,7 +175,7 @@ func TestADEEnroll(t *testing.T) {
 			for resp.StatusCode == http.StatusFound {
 				hops++
 				loc := resp.Header.Get("Location")
-				resp.Body.Close()
+				_ = resp.Body.Close()
 				req, _ := http.NewRequestWithContext(ctx, http.MethodGet, s.srv.URL+loc, nil)
 				var err error
 				if resp, err = s.srv.Client().Do(req); err != nil {

@@ -10,7 +10,7 @@ The engine stores declarations, sets, direct assignments, versioned snapshots, s
 
 `Tokens` and `DeclarationItems` refresh the enrollment snapshot. Declaration fetches read that snapshot's version; unknown identifiers or wrong kinds return 404. All four declaration arrays are present. Upload validates known types and generated structure. Deletes update references and record affected enrollments inside the transaction.
 
-`server/ddmsync.ServiceHook` clears declarative state on `Authenticate` and `CheckOut`, including dependent user channels for device lifecycle events.
+`server/ddmsync.ServiceHook` clears declarative state on initial or changed-identity `Authenticate` and on `CheckOut`, including dependent user channels for device lifecycle events. Same-certificate retries and controlled profile replacement preserve that state.
 
 ## Rationale
 

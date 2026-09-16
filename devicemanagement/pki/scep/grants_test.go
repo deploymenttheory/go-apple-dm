@@ -204,7 +204,7 @@ func TestGrantExpiryAndInvalidConfiguration(t *testing.T) {
 		t.Fatal("nil CSR accepted")
 	}
 	now := time.Now()
-	g.Store.(*state.Memory).Now = func() time.Time { return now }
+	requireType[*state.Memory](t, g.Store).Now = func() time.Time { return now }
 	p, err := g.Issue(
 		t.Context(),
 		Grant{Binding: json.RawMessage(`"device"`), ExpiresAt: now.Add(24 * time.Hour)},

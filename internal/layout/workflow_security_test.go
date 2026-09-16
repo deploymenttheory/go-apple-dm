@@ -28,6 +28,7 @@ func TestWorkflowSecurity(t *testing.T) {
 		t.Fatalf("workflows: %v", err)
 	}
 	for _, file := range files {
+		// #nosec G304 -- The test controls this fixture path within its private workspace.
 		data, err := os.ReadFile(file)
 		if err != nil {
 			t.Fatal(err)

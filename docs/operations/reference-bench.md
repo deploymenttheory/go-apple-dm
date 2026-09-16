@@ -1,4 +1,4 @@
-# Reference server additions for the bench
+# Reference server APIs and bench configuration
 
 These are ordinary reference-server capabilities. The bench supplies configuration
 and exercises the same APIs as an operator. See the [runbook](../../test-lab/README.md)
@@ -46,7 +46,7 @@ and appears in `/routes`. Mutations produce normal administrative audit events.
 | `DELETE /enrollments/{channel}/{id}/replacement/{attempt}` | Cancels that pending attempt; preserves the active enrollment. | `replaceEnrollmentProfile` |
 | `GET /enrollments/{channel}/{id}/enrollment-evidence` | Actual pinned identity's issuance method and certificate/check-in timestamps; unknown issuance remains unknown. | `readEnrollment` |
 | `GET /enrollments/{channel}/{id}/commands/{uuid}/result` | 200: `CommandUUID`, `Status`, base64 plist `Response`, `ErrorChain`; 204 when the command has no result; 404 when absent. User channels require `?parent=...`. | `readCommands` |
-| `GET /apppush/credentials` | Paged `Items` containing `Topic`, `NotBefore`, `NotAfter`, `Version`, and `NextCursor`. | `manageAppPushCredentials` |
+| `GET /apppush/credentials` | Paged `Items` containing `Topic`, `NotBefore`, `NotAfter` and `Version`, with `NextCursor` on the page envelope. | `manageAppPushCredentials` |
 | `PUT /apppush/credentials` | JSON PEM strings `CertPEM`, `KeyPEM`, optional expected `Topic`; returns metadata. | `manageAppPushCredentials` |
 | `POST /apppush/send` | JSON `Environment`, `Topic`, hexadecimal `Token`, `PushType`, object `Payload`; optional `Priority`, `Expiration`. Returns `Accepted`, `Outcome`, `Status`, `Reason`, `APNSID`. | `sendAppPush` |
 
@@ -67,7 +67,7 @@ inspection, CSR generation and vendor CSR signing remain under `apns` and
 
 ## Persistence and migration
 
-App credentials use the existing transactional state table with the new
+App credentials use the existing transactional state table with the
 `apppush/v1/` namespace. No new SQL table migration or MDM-store interface change
 is needed. Persistent composition requires the existing storage keyring; app
 records authenticate their storage key as AAD. Memory composition is transient.
@@ -76,12 +76,11 @@ MDM and app credential stores remain separate. Updating an app credential cannot
 replace an MDM topic. A successful import increments its version; the APNs clients
 retire local connections and load committed credentials on the next send. Retain
 old encryption key names until affected app identities are re-imported under the
-active key. Existing MDM rewrap tooling does not cover the new namespace.
+active key. Existing MDM rewrap tooling does not cover this namespace.
 
 Existing local lab CA/key files, CSRs, credentials and receipts remain in place.
 Live workspaces use `mdm/mdm.sqlite` and accept both `bench` and the earlier `lab`
-key names with the preserved storage key material. The standalone lab executable
-and Python runner are replaced by the maintained bench commands.
+key names with the preserved storage key material. Use `dmctl bench` to supervise the reference runtime and execute scenarios.
 
 ## Enrollment service discovery and live testing
 

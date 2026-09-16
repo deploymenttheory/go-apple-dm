@@ -76,7 +76,7 @@ func (s *Store) Records(ctx context.Context, kind, after string, limit int) ([]e
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func(rows *sql.Rows) { _ = rows.Close() }(rows)
 	out := []eventsink.Record{}
 	for rows.Next() {
 		var rec eventsink.Record
@@ -123,7 +123,7 @@ func (s *Store) List(ctx context.Context, state, afterEvent, afterDestination st
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func(rows *sql.Rows) { _ = rows.Close() }(rows)
 	out := []DeliveryView{}
 	for rows.Next() {
 		var row DeliveryView

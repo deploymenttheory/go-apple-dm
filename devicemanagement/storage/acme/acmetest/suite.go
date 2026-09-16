@@ -173,6 +173,7 @@ func inTx(t *testing.T, what string, s acme.Store, fn func(acme.Tx) error) {
 }
 
 func runAccounts(t *testing.T, newStore Factory) {
+	t.Helper()
 	ctx := context.Background()
 	s := newStore(t)
 	_, err := s.GetAccount(ctx, "missing")
@@ -234,6 +235,7 @@ func runAccounts(t *testing.T, newStore Factory) {
 }
 
 func runOrders(t *testing.T, newStore Factory) {
+	t.Helper()
 	ctx := context.Background()
 	s := newStore(t)
 	_, err := s.GetOrder(ctx, "missing")
@@ -304,6 +306,7 @@ func runOrders(t *testing.T, newStore Factory) {
 }
 
 func runOrderList(t *testing.T, newStore Factory) {
+	t.Helper()
 	ctx := context.Background()
 	s := newStore(t)
 	const n = 5
@@ -382,6 +385,7 @@ func cmpString(a, b string) int {
 }
 
 func runAuthorizations(t *testing.T, newStore Factory) {
+	t.Helper()
 	ctx := context.Background()
 	s := newStore(t)
 	_, err := s.GetAuthorization(ctx, "missing")
@@ -435,6 +439,7 @@ func runAuthorizations(t *testing.T, newStore Factory) {
 }
 
 func runChallengeAttestation(t *testing.T, newStore Factory) {
+	t.Helper()
 	ctx := context.Background()
 	s := newStore(t)
 	// The stored attestation is verified again at finalize, against the
@@ -484,6 +489,7 @@ func runChallengeAttestation(t *testing.T, newStore Factory) {
 }
 
 func runCertificates(t *testing.T, newStore Factory) {
+	t.Helper()
 	ctx := context.Background()
 	s := newStore(t)
 	_, err := s.GetCertificate(ctx, "missing")
@@ -520,6 +526,7 @@ func runCertificates(t *testing.T, newStore Factory) {
 }
 
 func runCertificateList(t *testing.T, newStore Factory) {
+	t.Helper()
 	ctx := context.Background()
 	s := newStore(t)
 	// Four certificates over two accounts, with one UDID held twice: a
@@ -597,6 +604,7 @@ func certFor(id, accountID, serial, udid string) *acme.Certificate {
 }
 
 func runClaims(t *testing.T, newStore Factory) {
+	t.Helper()
 	ctx := context.Background()
 	s := newStore(t)
 	// Apple calls the ClientIdentifier an anti-replay, one-time code, so
@@ -628,6 +636,7 @@ func runClaims(t *testing.T, newStore Factory) {
 }
 
 func runNonces(t *testing.T, newStore Factory) {
+	t.Helper()
 	ctx := context.Background()
 	s := newStore(t)
 	must(t, "put", s.PutNonce(ctx, acme.Nonce{Value: "nonce-1", IssuedAt: T0}))
@@ -652,6 +661,7 @@ func runNonces(t *testing.T, newStore Factory) {
 }
 
 func runUpdate(t *testing.T, newStore Factory) {
+	t.Helper()
 	ctx := context.Background()
 	s := newStore(t)
 	// Everything one request changes lands together, and the transaction
@@ -763,6 +773,7 @@ func readBack(ctx context.Context, tx acme.Tx) error {
 }
 
 func runPrune(t *testing.T, newStore Factory) {
+	t.Helper()
 	ctx := context.Background()
 	s := newStore(t)
 	cutoff := T0.Add(time.Hour)
@@ -844,6 +855,7 @@ func runPrune(t *testing.T, newStore Factory) {
 }
 
 func runInvalid(t *testing.T, newStore Factory) {
+	t.Helper()
 	ctx := context.Background()
 	s := newStore(t)
 	write := func(fn func(acme.Tx) error) error { return s.Update(ctx, fn) }
@@ -903,6 +915,7 @@ func putOrder(ctx context.Context, o *acme.Order) func(acme.Tx) error {
 }
 
 func runConcurrency(t *testing.T, newStore Factory) {
+	t.Helper()
 	ctx := context.Background()
 	s := newStore(t)
 	inTx(t, "account", s, func(tx acme.Tx) error { return tx.PutAccount(ctx, Account("acct-1")) })

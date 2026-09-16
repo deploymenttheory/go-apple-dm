@@ -49,14 +49,14 @@ func TestAdminStoreOnTheProcessDatabase(t *testing.T) {
 	tok := mintPrincipal(t, m, adminauth.Principal{Name: "ops", Root: true})
 
 	resp := adminReq(t, srv.URL, http.MethodGet, "/admin/v1/config", tok, "")
-	defer resp.Body.Close()
+	defer func(body io.Closer) { _ = body.Close() }(resp.Body)
 	if resp.StatusCode != http.StatusOK {
 		t.Fatalf("status = %d, want 200: a principal from the server's own store was refused", resp.StatusCode)
 	}
 
 	// A token that was never issued is still refused.
 	bad := adminReq(t, srv.URL, http.MethodGet, "/admin/v1/config", "nonsense", "")
-	defer bad.Body.Close()
+	defer func(body io.Closer) { _ = body.Close() }(bad.Body)
 	if bad.StatusCode != http.StatusUnauthorized {
 		t.Fatalf("status = %d, want 401", bad.StatusCode)
 	}
@@ -71,7 +71,7 @@ func TestAdminStoreOffByDefault(t *testing.T) {
 	})
 	srv := serve(t, a)
 	resp := adminReq(t, srv.URL, http.MethodGet, "/admin/v1/config", "anything", "")
-	defer resp.Body.Close()
+	defer func(body io.Closer) { _ = body.Close() }(resp.Body)
 	if resp.StatusCode != http.StatusNotFound {
 		t.Fatalf("status = %d, want 404: the admin API was mounted without being asked for", resp.StatusCode)
 	}
@@ -85,7 +85,7 @@ func TestAdminStoreWithoutADatabase(t *testing.T) {
 	})
 	srv := serve(t, a)
 	resp := adminReq(t, srv.URL, http.MethodGet, "/admin/v1/config", "nope", "")
-	defer resp.Body.Close()
+	defer func(body io.Closer) { _ = body.Close() }(resp.Body)
 	if resp.StatusCode != http.StatusUnauthorized {
 		t.Fatalf("status = %d, want 401", resp.StatusCode)
 	}
@@ -110,7 +110,7 @@ func TestAdminStoreInjectionWins(t *testing.T) {
 	}
 	tok := mintPrincipal(t, m, adminauth.Principal{Name: "injected", Root: true})
 	resp := adminReq(t, srv.URL, http.MethodGet, "/admin/v1/config", tok, "")
-	defer resp.Body.Close()
+	defer func(body io.Closer) { _ = body.Close() }(resp.Body)
 	if resp.StatusCode != http.StatusOK {
 		t.Fatalf("status = %d, want 200: the injected store was not used", resp.StatusCode)
 	}
@@ -132,7 +132,7 @@ func TestBreakGlassAlongsideThePrincipalStore(t *testing.T) {
 
 	t.Run("BootstrapsAnEmptyStore", func(t *testing.T) {
 		resp := adminReq(t, srv.URL, http.MethodGet, "/admin/v1/config", "break-glass-secret", "")
-		defer resp.Body.Close()
+		defer func(body io.Closer) { _ = body.Close() }(resp.Body)
 		if resp.StatusCode != http.StatusOK {
 			t.Fatalf("status = %d, want 200: the break-glass token was refused with a store configured", resp.StatusCode)
 		}
@@ -140,7 +140,7 @@ func TestBreakGlassAlongsideThePrincipalStore(t *testing.T) {
 
 	t.Run("ReportedByConfig", func(t *testing.T) {
 		resp := adminReq(t, srv.URL, http.MethodGet, "/admin/v1/config", "break-glass-secret", "")
-		defer resp.Body.Close()
+		defer func(body io.Closer) { _ = body.Close() }(resp.Body)
 		body, err := io.ReadAll(resp.Body)
 		if err != nil {
 			t.Fatal(err)
@@ -159,7 +159,7 @@ func TestBreakGlassAlongsideThePrincipalStore(t *testing.T) {
 	t.Run("AuditedUnderItsOwnActor", func(t *testing.T) {
 		rec.reset()
 		resp := adminReq(t, srv.URL, http.MethodPut, "/admin/v1/declarations", "break-glass-secret", `{}`)
-		defer resp.Body.Close()
+		defer func(body io.Closer) { _ = body.Close() }(resp.Body)
 		actions := rec.ofType(event.AdminAction)
 		if len(actions) == 0 {
 			t.Fatal("a break-glass request published no AdminAction event")
@@ -186,12 +186,12 @@ func TestBreakGlassAlongsideThePrincipalStore(t *testing.T) {
 			t.Fatal(err)
 		}
 		denied := adminReq(t, srv.URL, http.MethodPut, "/admin/v1/declarations", string(tok), `{}`)
-		defer denied.Body.Close()
+		defer func(body io.Closer) { _ = body.Close() }(denied.Body)
 		if denied.StatusCode != http.StatusForbidden {
 			t.Fatalf("stored principal status = %d, want 403: policy was not enforced", denied.StatusCode)
 		}
 		allowed := adminReq(t, srv.URL, http.MethodGet, "/admin/v1/config", "break-glass-secret", "")
-		defer allowed.Body.Close()
+		defer func(body io.Closer) { _ = body.Close() }(allowed.Body)
 		if allowed.StatusCode != http.StatusOK {
 			t.Fatalf("break-glass status = %d, want 200", allowed.StatusCode)
 		}

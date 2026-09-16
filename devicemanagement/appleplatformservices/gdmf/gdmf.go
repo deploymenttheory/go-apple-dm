@@ -35,7 +35,7 @@ var (
 
 // Asset is one operating system release in the catalog.
 //
-//nolint:tagliatelle // Apple's key names
+// Apple's key names
 type Asset struct {
 	ProductVersion   string   `json:"ProductVersion"`
 	Build            string   `json:"Build"`
@@ -48,7 +48,7 @@ type Asset struct {
 // "macOS", "visionOS", ...). PublicAssetSets holds released versions,
 // AssetSets adds versions still in seeding.
 //
-//nolint:tagliatelle // Apple's key names
+// Apple's key names
 type Catalog struct {
 	PublicAssetSets map[string][]Asset `json:"PublicAssetSets"`
 	AssetSets       map[string][]Asset `json:"AssetSets"`
@@ -266,7 +266,7 @@ func (c *Client) fetch(ctx context.Context) (*Catalog, error) {
 	if err != nil {
 		return nil, fmt.Errorf("%w: %w", ErrRequest, err)
 	}
-	defer resp.Body.Close()
+	defer func(body io.Closer) { _ = body.Close() }(resp.Body)
 	if resp.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf("%w: %d", ErrStatus, resp.StatusCode)
 	}

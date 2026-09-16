@@ -10,6 +10,7 @@ func TestWorkspaceLockExcludesOtherHandles(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "bench.lock")
 	open := func() *os.File {
 		t.Helper()
+		// #nosec G304 -- The test controls this fixture path within its private workspace.
 		file, err := os.OpenFile(path, os.O_CREATE|os.O_RDWR, 0o600)
 		if err != nil {
 			t.Fatal(err)

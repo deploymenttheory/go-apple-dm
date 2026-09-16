@@ -45,7 +45,8 @@ func openFresh(tb testing.TB) *postgres.Store {
 // when the database carries a schema from an older build.
 func resetSchema(tb testing.TB, db interface {
 	ExecContext(context.Context, string, ...any) (sql.Result, error)
-}) {
+},
+) {
 	tb.Helper()
 	if _, err := db.ExecContext(context.Background(), "DROP TABLE IF EXISTS enrollment_replacements, user_auth, push_certs, cert_associations, commands, enrollments, schema_migrations CASCADE"); err != nil {
 		tb.Fatal(err)
@@ -127,7 +128,7 @@ func TestContract(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer s.Close()
+	defer func(cleanup func() error) { _ = cleanup() }(s.Close)
 	// Start from an empty schema every run.
 	resetSchema(t, s.DB())
 	// A conflicting table makes Open fail at migration time.
@@ -153,7 +154,10 @@ func TestContract(t *testing.T) {
 		return st
 	}
 	t.Run("Plaintext", func(t *testing.T) {
-		storagetest.RunAll(t, func(t *testing.T) storage.Store { return reset(t, s) })
+		storagetest.RunAll(t, func(t *testing.T) storage.Store {
+			t.Helper()
+			return reset(t, s)
+		})
 	})
 	// The sealed-column suites also run with a keyring (decision record 0013).
 	k, err := crypt.NewKeyring(ctx, crypt.Options{Keys: crypt.Keys{Active: "k1"}, Provider: secrets.Static{"k1": []byte("integration-key-material-32-bytes")}})
@@ -164,9 +168,12 @@ func TestContract(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer enc.Close()
+	defer func(cleanup func() error) { _ = cleanup() }(enc.Close)
 	t.Run("Encrypted", func(t *testing.T) {
-		f := func(t *testing.T) storage.Store { return reset(t, enc) }
+		f := func(t *testing.T) storage.Store {
+			t.Helper()
+			return reset(t, enc)
+		}
 		t.Run("Enrollment", func(t *testing.T) { storagetest.RunEnrollmentSuite(t, f) })
 		t.Run("BootstrapToken", func(t *testing.T) { storagetest.RunBootstrapTokenSuite(t, f) })
 		t.Run("PushCert", func(t *testing.T) { storagetest.RunPushCertSuite(t, f) })

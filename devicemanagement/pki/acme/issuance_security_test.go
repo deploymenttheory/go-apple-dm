@@ -31,6 +31,7 @@ func TestIssuanceReceiptSurvivesRegistrationFailureAndRestart(t *testing.T) {
 }
 
 func testReceiptRecovery(t *testing.T, recovery string) {
+	t.Helper()
 	var signer *countingSigner
 	var seen []byte
 	f := newFixture(t, func(c *acme.Config) {
@@ -52,7 +53,7 @@ func testReceiptRecovery(t *testing.T, recovery string) {
 		t.Fatal(err)
 	}
 	if stored.Status != acme.StatusProcessing || stored.CertificateID == "" {
-		t.Fatalf("missing durable processing receipt: %+v", stored)
+		t.Fatalf("missing stored processing receipt: %+v", stored)
 	}
 	requireProblem(
 		t,
@@ -60,7 +61,7 @@ func testReceiptRecovery(t *testing.T, recovery string) {
 		acme.ProblemOrderNotReady,
 	)
 
-	// Another instance recovers the durable receipt. Registration must never
+	// Another instance recovers the stored receipt. Registration must never
 	// need to sign again, and it receives exactly the DER from the first try.
 	g := newFixture(t, func(c *acme.Config) {
 		c.Store, c.Signer, c.Anchors, c.Clock = f.store, signer, f.attest.Anchors(), f.clock

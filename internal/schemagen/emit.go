@@ -74,7 +74,7 @@ func (e *emitter) header(extra ...string) string {
 
 func (e *emitter) files() map[string][]byte {
 	out := map[string][]byte{
-		"doc.gen.go":              e.docFile(),
+		"doc.go":                  e.docFile(),
 		"types.gen.go":            e.typesFile(),
 		"registry.gen.go":         e.registryFile(),
 		"validate.gen.go":         e.validateFile(),
@@ -127,7 +127,7 @@ func (e *emitter) docFile() []byte {
 	sb.WriteString("//\n// # Design\n//\n")
 	sb.WriteString(wrap("// ", fmt.Sprintf(
 		"Apple publishes the wire format of the %s as YAML in https://github.com/apple/device-management, "+
-			"pinned here as a git submodule. Generating this package from that pinned commit derives the wire "+
+			"pinned here alongside a historical release input for older-device contracts. Generating this package from those inputs derives the wire "+
 			"types, validation, and support metadata from Apple's schema (decision record 0003). "+
 			"Every type carries plist and json struct tags with Apple's wire keys, a Validate method driven "+
 			"by the schema's constraints, and support metadata queryable through Support(path) or the "+

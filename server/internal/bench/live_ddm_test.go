@@ -48,7 +48,9 @@ func TestLiveDDMRequiresReportsAndCleansUp(t *testing.T) {
 					}
 					w.WriteHeader(204)
 				case r.Method == "PUT" && strings.HasSuffix(r.URL.Path, "/declarations"):
-					var d struct{ Identifier string }
+					var d struct {
+						Identifier string `json:"Identifier"`
+					}
 					if err := json.NewDecoder(r.Body).Decode(&d); err != nil {
 						t.Error(err)
 					}
@@ -63,11 +65,17 @@ func TestLiveDDMRequiresReportsAndCleansUp(t *testing.T) {
 				case r.Method == "PUT" && strings.Contains(r.URL.Path, "/enrollments/"):
 					assigned = true
 				case strings.HasSuffix(r.URL.Path, "/commands"):
-					json.NewEncoder(w).Encode(map[string]int{"Queued": 1})
+					if err := json.NewEncoder(w).Encode(map[string]int{"Queued": 1}); err != nil {
+						t.Error(err)
+					}
 				case strings.HasSuffix(r.URL.Path, "/push"):
-					json.NewEncoder(w).Encode(map[string]bool{"Sent": true})
+					if err := json.NewEncoder(w).Encode(map[string]bool{"Sent": true}); err != nil {
+						t.Error(err)
+					}
 				case strings.HasSuffix(r.URL.Path, "/result"):
-					json.NewEncoder(w).Encode(map[string]any{"Status": "Acknowledged", "Response": answer})
+					if err := json.NewEncoder(w).Encode(map[string]any{"Status": "Acknowledged", "Response": answer}); err != nil {
+						t.Error(err)
+					}
 				case strings.HasSuffix(r.URL.Path, "/status"):
 					rows := []ddm.DeclarationStatus{}
 					if assigned {
@@ -89,7 +97,9 @@ func TestLiveDDMRequiresReportsAndCleansUp(t *testing.T) {
 							rows = append(rows, ddm.DeclarationStatus{Identifier: id, Active: true, Valid: valid, LastSeen: seen})
 						}
 					}
-					json.NewEncoder(w).Encode(rows)
+					if err := json.NewEncoder(w).Encode(rows); err != nil {
+						t.Error(err)
+					}
 				case strings.HasSuffix(r.URL.Path, "/status/values"):
 					at := time.Now().UTC()
 					if failure == "unchanged values" {
@@ -100,12 +110,16 @@ func TestLiveDDMRequiresReportsAndCleansUp(t *testing.T) {
 						version = []byte(`"26.6.1"`)
 						cancel()
 					}
-					json.NewEncoder(w).Encode(map[string]any{"Items": []ddm.StatusValue{
+					if err := json.NewEncoder(w).Encode(map[string]any{"Items": []ddm.StatusValue{
 						{Path: "device.operating-system.version", Value: version, LastSeen: at},
 						{Path: "device.operating-system.build-version", Value: []byte(`"25G83"`), LastSeen: at},
-					}})
+					}}); err != nil {
+						t.Error(err)
+					}
 				case r.Method == "GET":
-					json.NewEncoder(w).Encode(map[string]any{"Enabled": true, "TokenUpdatedAt": time.Now()})
+					if err := json.NewEncoder(w).Encode(map[string]any{"Enabled": true, "TokenUpdatedAt": time.Now()}); err != nil {
+						t.Error(err)
+					}
 				}
 			}))
 			defer srv.Close()

@@ -30,7 +30,7 @@
 // runs. Registration must be idempotent and concurrency-safe. Until it completes,
 // the order is processing and certificate download is denied. POST-as-GET order
 // polling and same-CSR finalize retries can recover the receipt after restart,
-// rechecking authorization without signing again. Replicas must share durable
+// rechecking authorization without signing again. Replicas must share persistent
 // state, issuer material and policy; memory storage cannot recover after restart.
 //
 // # References

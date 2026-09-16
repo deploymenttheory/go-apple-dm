@@ -153,7 +153,7 @@ func TestReplacementAdminValidatesBeforeCreatingAttempt(t *testing.T) {
 	}{
 		{"GET", "", 404}, {"POST", "{", 400}, {"POST", strings.Repeat("x", MaxAdminBody+1), 413}, {"POST", `{"identity":"unsupported"}`, 400},
 	} {
-		r := httptest.NewRequest(
+		r := httptest.NewRequestWithContext(t.Context(),
 			input.method,
 			"https://mdm.example/admin/v1/replacement",
 			strings.NewReader(input.body),
@@ -193,7 +193,7 @@ func TestEvidenceCorruptionNeverReportsCompletedIdentity(t *testing.T) {
 				readErr: errors.New("state unavailable"),
 			}
 		}
-		r := httptest.NewRequest("GET", "https://mdm.example/evidence", nil)
+		r := httptest.NewRequestWithContext(t.Context(), "GET", "https://mdm.example/evidence", nil)
 		r.SetPathValue("channel", "device")
 		r.SetPathValue("id", id.ID)
 		w := httptest.NewRecorder()

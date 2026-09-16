@@ -15,17 +15,22 @@
 // proof of organizational ownership. Consumers choose those policies separately.
 // The supplied MachineInfo store is in memory.
 //
+// PasswordHash builds the XML plist embedded in ADE account commands using
+// PBKDF2-HMAC-SHA512, random salt and caller-selected iterations. The derived
+// length follows Apple's example; deployments select their iteration policy.
+//
 // # References
 //
 //   - Decision record 0027: https://github.com/deploymenttheory/go-apple-dm/blob/main/docs/research/decisions/0027-ade-enrollment-machineinfo-and-web-view-auth.md
 //   - Decision record 0010: https://github.com/deploymenttheory/go-apple-dm/blob/main/docs/research/decisions/0010-ota-profile-service.md (the Apple iPhone Device CA)
 //   - Decision record 0009: https://github.com/deploymenttheory/go-apple-dm/blob/main/docs/research/decisions/0009-enrollment-profiles.md
 //   - End-to-end scenarios: https://github.com/deploymenttheory/go-apple-dm/blob/main/docs/testing/e2e-scenarios.md (E2E-011, E2E-018)
+//   - Password hash fields: https://developer.apple.com/documentation/devicemanagement/passwordhash/salted-sha512-pbkdf2-data.dictionary
 //   - Apple: https://developer.apple.com/documentation/devicemanagement/machineinfo
 //   - Apple: https://developer.apple.com/documentation/devicemanagement/authenticating-through-web-views
 //   - Apple: https://developer.apple.com/documentation/devicemanagement/errorcodesoftwareupdaterequired
 //   - Apple: https://developer.apple.com/documentation/devicemanagement/profile
-//   - Apple: https://developer.apple.com/library/archive/documentation/NetworkingInternet/Conceptual/iPhoneOTAConfiguration/ (the Apple iPhone Device CA)
+//   - Apple: https://developer.apple.com/library/archive/documentation/NetworkingInternet/Conceptual/iPhoneOTAConfiguration/Introduction/Introduction.html (the Apple iPhone Device CA)
 //   - Schema: third_party/device-management/other/machineinfo.yaml
 //   - Schema: third_party/device-management/mdm/errors/softwareupdate.required.yaml, psso.required.yaml, unrecognized.device.yaml
 //   - RFC 5652 (Cryptographic Message Syntax): https://www.rfc-editor.org/rfc/rfc5652

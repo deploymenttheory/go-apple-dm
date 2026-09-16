@@ -118,6 +118,16 @@ func TestAutomaticProbeTLS(t *testing.T) {
 	}
 }
 
+func TestProbeRejectsUnconfigurableDefaultTransport(t *testing.T) {
+	original := http.DefaultTransport
+	t.Cleanup(func() { http.DefaultTransport = original })
+	// A custom RoundTripper has no transport settings to clone for probe trust.
+	http.DefaultTransport = struct{ http.RoundTripper }{}
+	if err := Probe(t.Context(), ProbeConfig{}); !errors.Is(err, ErrProbe) {
+		t.Fatalf("expected probe configuration error, got %v", err)
+	}
+}
+
 func TestProbePrivateCAAndMismatch(t *testing.T) {
 	pair, path := probeFixture(t, nil, []net.IP{net.ParseIP("127.0.0.1")}, false)
 	srv := httptest.NewUnstartedServer(
@@ -168,14 +178,14 @@ func TestAutomaticProbeAddresses(t *testing.T) {
 			t.Fatal(url, err)
 		}
 	}
-	listener, err := net.Listen("tcp6", "[::1]:0")
+	listener, err := (&net.ListenConfig{}).Listen(t.Context(), "tcp6", "[::1]:0")
 	if err != nil {
 		t.Skipf("IPv6 unavailable: %v", err)
 	}
 	srv := httptest.NewUnstartedServer(
 		http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) { w.WriteHeader(200) }),
 	)
-	srv.Listener.Close()
+	_ = srv.Listener.Close()
 	srv.Listener = listener
 	srv.Start()
 	defer srv.Close()
@@ -253,7 +263,7 @@ func TestProbeReflectsDatabaseFailure(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer a.Close()
+	defer func(cleanup func() error) { _ = cleanup() }(a.Close)
 	srv := httptest.NewServer(a.Handler)
 	defer srv.Close()
 	cfg := ProbeConfig{URL: "auto", Listen: srv.Listener.Addr().String()}

@@ -2,6 +2,7 @@ package app_test
 
 import (
 	"context"
+	"io"
 	"net/http"
 	"strings"
 	"sync"
@@ -102,11 +103,15 @@ func TestAdminRoutes(t *testing.T) {
 
 	t.Run("UnknownPathIsNotFound", func(t *testing.T) {
 		srv := serve(t, a)
-		resp, err := srv.Client().Get(srv.URL + "/admin/v1/no-such-route")
+		respRequest, err := http.NewRequestWithContext(t.Context(), "GET", srv.URL+"/admin/v1/no-such-route", nil)
 		if err != nil {
 			t.Fatal(err)
 		}
-		defer resp.Body.Close()
+		resp, err := srv.Client().Do(respRequest)
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer func(body io.Closer) { _ = body.Close() }(resp.Body)
 		if resp.StatusCode != http.StatusNotFound {
 			t.Fatalf("unknown admin path = %d, want 404", resp.StatusCode)
 		}
@@ -219,7 +224,7 @@ func TestAdminAudit(t *testing.T) {
 		if got.Actor == "" {
 			t.Fatal("AdminAction carries no actor")
 		}
-		data := got.Data.(map[string]any)
+		data := requireType[map[string]any](t, got.Data)
 		if data["Action"] != app.ActionNotify {
 			t.Fatalf("action = %v, want %v", data["Action"], app.ActionNotify)
 		}
@@ -247,11 +252,15 @@ func TestAdminAudit(t *testing.T) {
 func TestAdminNotMountedWithoutCredential(t *testing.T) {
 	a := build(t, app.Config{Role: app.RoleAll, Storage: "inmem", Listen: ":0"})
 	srv := serve(t, a)
-	resp, err := srv.Client().Get(srv.URL + "/admin/v1/declarations/x")
+	respRequest, err := http.NewRequestWithContext(t.Context(), "GET", srv.URL+"/admin/v1/declarations/x", nil)
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer resp.Body.Close()
+	resp, err := srv.Client().Do(respRequest)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer func(body io.Closer) { _ = body.Close() }(resp.Body)
 	if resp.StatusCode != http.StatusNotFound {
 		t.Fatalf("status = %d, want 404 with no admin credential configured", resp.StatusCode)
 	}

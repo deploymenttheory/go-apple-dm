@@ -122,7 +122,7 @@ func TestEventBusStatsAndOwnership(t *testing.T) {
 		for range 20 {
 			_ = a.cfg.Bus.Publish(t.Context(), event.Event{})
 		}
-		request := httptest.NewRequest(http.MethodGet, "/admin/v1/config", nil)
+		request := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/admin/v1/config", nil)
 		request.Header.Set("Authorization", "Bearer token")
 		w := httptest.NewRecorder()
 		a.Handler.ServeHTTP(w, request)

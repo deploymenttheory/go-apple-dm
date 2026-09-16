@@ -198,7 +198,7 @@ func (c *Client) Do(
 	if err != nil {
 		return nil, fmt.Errorf("adminclient: %s %s: %w", method, u.Redacted(), err)
 	}
-	defer resp.Body.Close()
+	defer func(body io.Closer) { _ = body.Close() }(resp.Body)
 	raw, err := io.ReadAll(io.LimitReader(resp.Body, MaxBody))
 	if err != nil {
 		return nil, fmt.Errorf("adminclient: read body: %w", err)

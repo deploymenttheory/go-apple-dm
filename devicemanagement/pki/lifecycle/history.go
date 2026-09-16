@@ -9,8 +9,10 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/state"
 )
 
-type auditContextKey struct{}
-type auditContext struct{ Actor, Action string }
+type (
+	auditContextKey struct{}
+	auditContext    struct{ Actor, Action string }
+)
 
 // WithAudit attaches application-authenticated attribution to certificate changes.
 // It does not authorize operations; callers enforce access before invoking them.

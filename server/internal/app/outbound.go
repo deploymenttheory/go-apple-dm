@@ -27,7 +27,12 @@ func outboundClient(client *http.Client, rootFile string) (*http.Client, error) 
 	for _, cert := range certs {
 		roots.AddCert(cert)
 	}
-	transport := http.DefaultTransport.(*http.Transport).Clone()
+	base, ok := http.DefaultTransport.(*http.Transport)
+	if !ok {
+		err := fmt.Errorf("default HTTP transport %T cannot be cloned", http.DefaultTransport)
+		return nil, err
+	}
+	transport := base.Clone()
 	transport.TLSClientConfig = &tls.Config{MinVersion: tls.VersionTLS12, RootCAs: roots}
 	return &http.Client{Transport: transport}, nil
 }

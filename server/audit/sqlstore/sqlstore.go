@@ -206,7 +206,7 @@ func (s *Store) List(ctx context.Context, q audit.Query, p audit.Page) (audit.Re
 	if err != nil {
 		return audit.Result[audit.Record]{}, wrap("list", err)
 	}
-	defer rows.Close()
+	defer func(rows *sql.Rows) { _ = rows.Close() }(rows)
 
 	out := audit.Result[audit.Record]{}
 	for rows.Next() {

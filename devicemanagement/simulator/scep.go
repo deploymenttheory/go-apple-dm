@@ -123,7 +123,7 @@ func (d *Device) otaPost(ctx context.Context, url string, attrs map[string]any, 
 	if err != nil {
 		return nil, fmt.Errorf("simulator: OTA request: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func(body io.Closer) { _ = body.Close() }(resp.Body)
 	out, err := io.ReadAll(io.LimitReader(resp.Body, plist.DefaultMaxBytes))
 	if err != nil {
 		return nil, fmt.Errorf("simulator: read OTA response: %w", err)

@@ -15,6 +15,7 @@ import (
 	"time"
 	"uuid"
 
+	enrollprotocol "github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/enroll"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/mdm"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/plist"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/schema/checkin"
@@ -38,18 +39,16 @@ func TestManagedAppleAccountRS256TokenContract(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	claims := map[string]any{"iss": "registered-server-uuid", "iat": t0.Unix(), "jti": uuid.NewV4().String(), "service_type": "com.apple.maid"}
-	claimBytes, err := json.Marshal(claims)
+	issuer := uuid.NewV4().String()
+	tokenBytes, err := enrollprotocol.MAIDToken(cert, key, issuer, t0)
 	if err != nil {
 		t.Fatal(err)
 	}
-	signingInput := base64.RawURLEncoding.EncodeToString([]byte(`{"alg":"RS256","typ":"JWT"}`)) + "." + base64.RawURLEncoding.EncodeToString(claimBytes)
-	digest := sha256.Sum256([]byte(signingInput))
-	sig, err := rsa.SignPKCS1v15(rand.Reader, key, crypto.SHA256, digest[:])
+	token := string(tokenBytes)
+	claimBytes, err := base64.RawURLEncoding.DecodeString(strings.Split(token, ".")[1])
 	if err != nil {
 		t.Fatal(err)
 	}
-	token := signingInput + "." + base64.RawURLEncoding.EncodeToString(sig)
 	h := newHarness(t, service.Config{GetToken: func(_ context.Context, _ *mdm.Request, m *checkin.GetToken) (*checkin.GetTokenResponse, error) {
 		if m.TokenServiceType != "com.apple.maid" {
 			t.Fatal(m.TokenServiceType)
@@ -57,6 +56,7 @@ func TestManagedAppleAccountRS256TokenContract(t *testing.T) {
 		return &checkin.GetTokenResponse{TokenData: []byte(token)}, nil
 	}})
 	enroll(t, h, "D1")
+	// #nosec G101 -- Synthetic protocol fixtures and invalid URLs; no live credentials.
 	res, err := h.core.Checkin(t.Context(), req(h.cert), simple(t, "GetToken", "D1", map[string]any{"TokenServiceType": "com.apple.maid"}))
 	if err != nil {
 		t.Fatal(err)

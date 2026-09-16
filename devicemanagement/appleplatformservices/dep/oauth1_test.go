@@ -17,6 +17,7 @@ func TestOAuth1(t *testing.T) {
 		// RFC 5849 section 1.2, the third request: an access-token-protected
 		// GET with query parameters, signed with both secrets.
 		u, _ := url.Parse("http://photos.example.net/photos?file=vacation.jpg&size=original")
+		// #nosec G101 -- Synthetic protocol fixtures and invalid URLs; no live credentials.
 		o := dep.OAuth1{ConsumerKey: "dpf43f3p2l4k3l03", ConsumerSecret: "kd94hf93k423kf44", Token: "nnch734d00sl2jdk", TokenSecret: "pfkkdhi9sl3r4s00", Timestamp: 137131202, Nonce: "chapoH", Realm: "Photos"}
 		if got := o.Sign("GET", u); got != "MdpQcU8iPSUjWoN/UDMsK2sui9I=" {
 			t.Fatalf("RFC 5849 1.2 (photos): %s", got)
@@ -24,6 +25,7 @@ func TestOAuth1(t *testing.T) {
 		// The first request of the same section: no token, an
 		// oauth_callback protocol parameter, POST.
 		u, _ = url.Parse("https://photos.example.net/initiate")
+		// #nosec G101 -- Synthetic protocol fixtures and invalid URLs; no live credentials.
 		o = dep.OAuth1{ConsumerKey: "dpf43f3p2l4k3l03", ConsumerSecret: "kd94hf93k423kf44", Timestamp: 137131200, Nonce: "wIjqoS", Realm: "Photos", Extra: url.Values{"oauth_callback": {"http://printer.example.com/ready"}}}
 		if got := o.Sign("POST", u); got != "74KNZJeDHnMBp0EMJ9ZHt/XKycU=" {
 			t.Fatalf("RFC 5849 1.2 (initiate): %s", got)
@@ -35,6 +37,7 @@ func TestOAuth1(t *testing.T) {
 		// Apple's documented /session header: realm ADM, the parameter
 		// order of the example, and oauth_version="1.0".
 		u, _ = url.Parse("https://mdmenrollment.apple.com/session")
+		// #nosec G101 -- Synthetic protocol fixtures and invalid URLs; no live credentials.
 		o = dep.OAuth1{ConsumerKey: "CK_00fadb3d36c6094cf479838455321b7c", ConsumerSecret: "CS_secret", Token: "AT_O2109279022Oe03b641fd6f07d7face7894211d521fd8bef09c3O137392", TokenSecret: "AS_secret", Timestamp: 137131200, Nonce: "4572616e48616d6d65724c61686176", Realm: dep.OAuth1Realm, Version: true}
 		h = o.Header("GET", u)
 		// RFC 5849 §3.6 percent-encodes every reserved character of the

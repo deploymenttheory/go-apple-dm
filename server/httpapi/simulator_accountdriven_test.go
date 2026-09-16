@@ -72,8 +72,10 @@ func newADHarness(t *testing.T, version string, oauth bool) *adHarness {
 	t.Cleanup(h.srv.Close)
 	h.tokens = &accountdriven.Tokens{Store: accountdriven.NewMemStore()}
 	h.asweb = &accountdriven.AppleAsWeb{URL: "https://mdm.example/authenticate", Tokens: h.tokens}
-	h.oauth = &accountdriven.OAuth2{AuthorizationURL: "https://mdm.example/oauth2/authorize", TokenURL: h.srv.URL + "/oauth2/token",
-		RedirectURL: "apple-remotemanagement-user-login:/oauth2/redirection", ClientID: "client-1", Scope: "MDM", Tokens: h.tokens}
+	h.oauth = &accountdriven.OAuth2{
+		AuthorizationURL: "https://mdm.example/oauth2/authorize", TokenURL: h.srv.URL + "/oauth2/token",
+		RedirectURL: "apple-remotemanagement-user-login:/oauth2/redirection", ClientID: "client-1", Scope: "MDM", Tokens: h.tokens,
+	}
 	var auth accountdriven.Authenticator = h.asweb
 	if oauth {
 		auth = h.oauth
@@ -97,11 +99,15 @@ func newADHarness(t *testing.T, version string, oauth bool) *adHarness {
 		}
 		return &accountdriven.DeviceInfo{Language: body.Language, Product: body.Product, Version: body.Version, Raw: content}, nil
 	}
-	handler, err := accountdriven.New(accountdriven.Config{Version: version, Parse: parse, Auth: auth, Tokens: h.tokens,
+	handler, err := accountdriven.New(accountdriven.Config{
+		Version: version, Parse: parse, Auth: auth, Tokens: h.tokens,
 		Profile: func(context.Context, accountdriven.Identity, *accountdriven.DeviceInfo) (*enroll.Profile, error) {
-			return &enroll.Profile{Identifier: "com.example.mdm", Topic: "com.apple.mgmt.External.simulator", ServerURL: h.srv.URL + "/mdm", CheckInURL: h.srv.URL + "/mdm",
-				SCEP: &enroll.SCEP{URL: h.srv.URL + "/scep", Challenge: "secret"}}, nil
-		}, SignCert: signer.Cert, SignKey: signer.Key})
+			return &enroll.Profile{
+				Identifier: "com.example.mdm", Topic: "com.apple.mgmt.External.simulator", ServerURL: h.srv.URL + "/mdm", CheckInURL: h.srv.URL + "/mdm",
+				SCEP: &enroll.SCEP{URL: h.srv.URL + "/scep", Challenge: "secret"},
+			}, nil
+		}, SignCert: signer.Cert, SignKey: signer.Key,
+	})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -134,16 +140,18 @@ func TestAccountDrivenEnroll(t *testing.T) {
 		h := newADHarness(t, accountdriven.VersionBYOD, false)
 		d := h.device(t, "UDID-AD-1")
 		var seen simulator.AuthChallenge
-		res, err := d.AccountDrivenEnroll(ctx, simulator.AccountDrivenOptions{UserIdentifier: "alice@example.com", DiscoveryURL: h.srv.URL,
+		res, err := d.AccountDrivenEnroll(ctx, simulator.AccountDrivenOptions{
+			UserIdentifier: "alice@example.com", DiscoveryURL: h.srv.URL,
 			Authenticate: func(_ context.Context, c simulator.AuthChallenge) (string, error) {
 				seen = c
 				// The web page authenticates alice and finishes the flow.
 				rec := httptest.NewRecorder()
-				if err := h.asweb.Finish(rec, httptest.NewRequest(http.MethodPost, "/authenticate-results", nil), h.identity); err != nil {
+				if err := h.asweb.Finish(rec, httptest.NewRequestWithContext(t.Context(), http.MethodPost, "/authenticate-results", nil), h.identity); err != nil {
 					return "", err
 				}
 				return simulator.AccessTokenFromRedirect(rec.Header().Get("Location"))
-			}})
+			},
+		})
 		if err != nil {
 			t.Fatalf("enroll: %v", err)
 		}
@@ -182,14 +190,15 @@ func TestAccountDrivenEnroll(t *testing.T) {
 	t.Run("OAuth2", func(t *testing.T) {
 		h := newADHarness(t, accountdriven.VersionBYOD, true)
 		d := h.device(t, "UDID-AD-2")
-		_, err := d.AccountDrivenEnroll(ctx, simulator.AccountDrivenOptions{UserIdentifier: "alice@example.com", DiscoveryURL: h.srv.URL,
+		_, err := d.AccountDrivenEnroll(ctx, simulator.AccountDrivenOptions{
+			UserIdentifier: "alice@example.com", DiscoveryURL: h.srv.URL,
 			Authenticate: func(ctx context.Context, c simulator.AuthChallenge) (string, error) {
 				if c.Method != "apple-oauth2" {
 					return "", errors.New("wrong method")
 				}
 				return d.OAuth2CodeFlow(ctx, c, "alice@example.com", func(_ context.Context, authorizationURL string) (string, error) {
 					// The person signs in on the authorization page.
-					r := httptest.NewRequest(http.MethodGet, authorizationURL, nil)
+					r := httptest.NewRequestWithContext(t.Context(), http.MethodGet, authorizationURL, nil)
 					req, err := h.oauth.ParseAuthorization(r)
 					if err != nil {
 						return "", err
@@ -203,7 +212,8 @@ func TestAccountDrivenEnroll(t *testing.T) {
 					}
 					return rec.Header().Get("Location"), nil
 				})
-			}})
+			},
+		})
 		if err != nil {
 			t.Fatalf("oauth2 enroll: %v", err)
 		}
@@ -230,8 +240,10 @@ func TestAccountDrivenEnroll(t *testing.T) {
 			t.Fatalf("rejected family = %v", err)
 		}
 		// Authentication that fails stops the flow.
-		if _, err := d.AccountDrivenEnroll(ctx, simulator.AccountDrivenOptions{UserIdentifier: "alice@example.com", DiscoveryURL: h.srv.URL,
-			Authenticate: func(context.Context, simulator.AuthChallenge) (string, error) { return "", errors.New("cancelled") }}); !errors.Is(err, simulator.ErrAccountDriven) {
+		if _, err := d.AccountDrivenEnroll(ctx, simulator.AccountDrivenOptions{
+			UserIdentifier: "alice@example.com", DiscoveryURL: h.srv.URL,
+			Authenticate: func(context.Context, simulator.AuthChallenge) (string, error) { return "", errors.New("cancelled") },
+		}); !errors.Is(err, simulator.ErrAccountDriven) {
 			t.Fatalf("cancelled = %v", err)
 		}
 		// A wrong bearer: the server answers 401 again.

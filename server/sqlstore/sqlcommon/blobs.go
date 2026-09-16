@@ -102,7 +102,7 @@ func RewrapBlobs(
 			if err == nil {
 				err = rows.Err()
 			}
-			_ = rows.Close()
+			_ = rows.Close() //nolint:sqlclosecheck // Close the read cursor before issuing writes on the same connection.
 			if err != nil {
 				return total, err
 			}

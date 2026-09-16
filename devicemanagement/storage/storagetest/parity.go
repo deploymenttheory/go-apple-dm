@@ -442,8 +442,14 @@ func exportAll(t *testing.T, s storage.Store, limit int) []storage.EnrollmentExp
 // sameEnrollment compares two records field by field with time.Equal and
 // nil-tolerant byte comparison.
 func sameEnrollment(a, b storage.Enrollment) bool {
-	times := [][2]time.Time{{a.EnrolledAt, b.EnrolledAt}, {a.TokenUpdatedAt, b.TokenUpdatedAt}, {a.LastSeenAt, b.LastSeenAt},
-		{a.DisabledAt, b.DisabledAt}, {a.CertHashAt, b.CertHashAt}, {a.BootstrapTokenAt, b.BootstrapTokenAt}}
+	times := [][2]time.Time{
+		{a.EnrolledAt, b.EnrolledAt},
+		{a.TokenUpdatedAt, b.TokenUpdatedAt},
+		{a.LastSeenAt, b.LastSeenAt},
+		{a.DisabledAt, b.DisabledAt},
+		{a.CertHashAt, b.CertHashAt},
+		{a.BootstrapTokenAt, b.BootstrapTokenAt},
+	}
 	for _, p := range times {
 		if !p[0].Equal(p[1]) {
 			return false

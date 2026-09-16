@@ -10,7 +10,7 @@
     ],
     "repository": {
       "url": "https://github.com/deploymenttheory/go-apple-dm",
-      "revision": "bb9e5bb3af89683a960a326e309be409bb0dc40f"
+      "revision": "7500eb25e50a2913338339d5fced18dc7f41fdc3"
     },
     "views": [
       {
@@ -79,8 +79,8 @@
       "sources": [
         {
           "path": "devicemanagement/storage/storage.go",
-          "line": 351,
-          "end_line": 360,
+          "line": 402,
+          "end_line": 411,
           "label": "composed Store"
         }
       ],

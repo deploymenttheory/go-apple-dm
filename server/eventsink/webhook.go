@@ -159,13 +159,6 @@ func RecordWebhook(cfg WebhookConfig) (func(context.Context, Record) error, erro
 
 // build projects command results into acknowledge_event and other events into
 // checkin_event.
-func build(cfg WebhookConfig, e event.Event) envelope {
-	rec := cfg.Registry.Project(e)
-	if rec.At.IsZero() {
-		rec.At = cfg.Clock.Now()
-	}
-	return buildRecord(rec)
-}
 
 func buildRecord(rec Record) envelope {
 	env := envelope{Topic: "mdm." + rec.Type, EventID: rec.EventID, CreatedAt: rec.At}
@@ -229,7 +222,7 @@ func post(ctx context.Context, cfg WebhookConfig, body []byte) error {
 	if err != nil {
 		return &deliveryError{cause: err}
 	}
-	defer resp.Body.Close()
+	defer func(body io.Closer) { _ = body.Close() }(resp.Body)
 	// Drain a bounded amount for connection reuse. Receiver body content
 	// is discarded, so it cannot put secrets or unbounded text in logs.
 	_, _ = io.Copy(io.Discard, io.LimitReader(resp.Body, DefaultMaxResponse))

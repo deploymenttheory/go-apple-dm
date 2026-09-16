@@ -1,5 +1,7 @@
 // Package maintenance coordinates a pause in server writes before a checkpoint.
 //
+// # Design
+//
 // Processes register participants in shared SQL storage. When an operator
 // requests a pause, participants stop accepting requests, cancel their workers
 // and wait for existing writes to finish before acknowledging. The worker
@@ -11,6 +13,7 @@
 // before forgetting it. Cancellation leaves the persistent pause in place;
 // resuming writes requires the matching ownership ticket.
 //
-// See the recovery guide for the operator workflow:
-// https://github.com/deploymenttheory/go-apple-dm/blob/main/docs/operations/recovery.md
+// # References
+//
+//   - https://github.com/deploymenttheory/go-apple-dm/blob/main/docs/operations/recovery.md
 package maintenance

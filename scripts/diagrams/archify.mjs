@@ -41,6 +41,11 @@ if (!fs.existsSync(path.join(root,'.ready'))) {
   edit('assets/template.html',/    <\/style>|  <\/style>/,`\n${css}\n  </style>`);
   edit('assets/template.html', '<div class="diagram-container"', '<!-- PROJECT:LEGEND -->\n    <div class="diagram-container"');
   edit('assets/template.html', 'var Archify =', () => legendRuntime+'\n    var Archify =');
+  // Describe the viewer's retained selections explicitly in embedded comments.
+  edit('assets/template.html', /Route Probe separates a [a-z]+ two-point query from selection and/,
+    'Route Probe keeps a two-point query separate from selection and');
+  edit('assets/template.html', /Intent Trace — temporary one-hop topology before [a-z]+ focus\./,
+    'Intent Trace — temporary one-hop topology before a focus selection.');
   edit('renderers/shared/utils.mjs', '.replace(SVG_SLOT_RE, () => svg)', '.replace(SVG_SLOT_RE, () => svg)\n    .replace("<!-- PROJECT:LEGEND -->", () => colourLegendHtml())');
   // Canonical exports always restore the complete SVG and its static key,
   // even while a reader is highlighting one purpose in the HTML viewer.

@@ -8,6 +8,13 @@ Generated code must identify the schema bytes and revision that produced it, rep
 
 `GENERATED_FROM.json` is generated with the Go output. Real callers derive the commit from the schema checkout; an explicit commit option supports synthetic test trees. Provenance records the commit's own date, the highest introduced version per OS family, and a SHA-256 digest over sorted YAML paths and contents.
 
+Project-authored package documentation is generated as `doc.go`, with one package
+summary and Design/References sections. The generator owns that file only when it
+has the generated marker and refuses to overwrite handwritten package documentation.
+Edit the comments in `internal/schemagen/emit.go` and regenerate; Apple's schema
+descriptions remain verbatim. The generated reference points to provenance for both
+the primary schema and historical compatibility input.
+
 ## Rationale
 
 Deriving all fields from source inputs makes verification deterministic. Including paths in the schema digest distinguishes renamed schema files while making the checkout's absolute location irrelevant. OS versions describe the modeled schema surface in addition to the technical commit pin.

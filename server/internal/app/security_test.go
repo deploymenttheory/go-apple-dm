@@ -75,7 +75,7 @@ func TestPKIAndAccountStatePersistAcrossInstances(t *testing.T) {
 		t.Fatal(err)
 	}
 	request := func() *http.Request {
-		r := httptest.NewRequest("PUT", "/mdm", bytes.NewReader(body))
+		r := httptest.NewRequestWithContext(t.Context(), "PUT", "/mdm", bytes.NewReader(body))
 		r.Header.Set("Content-Type", httpapi.ContentTypeCheckin)
 		r.Header.Set("Authorization", "Bearer "+string(access.Bytes()))
 		r.Header.Set(cms.HeaderName, cms.EncodeHeader(signature))
@@ -91,7 +91,7 @@ func TestPKIAndAccountStatePersistAcrossInstances(t *testing.T) {
 	issuer, serial := cms.Fingerprint(f.appCA), d.Identity.Cert.SerialNumber.Text(16)
 	admin := func(method, path, token string, body any) *httptest.ResponseRecorder {
 		raw, _ := json.Marshal(body)
-		r := httptest.NewRequest(method, "/admin/v1"+path, bytes.NewReader(raw))
+		r := httptest.NewRequestWithContext(t.Context(), method, "/admin/v1"+path, bytes.NewReader(raw))
 		r.Header.Set("Authorization", "Bearer "+token)
 		r.Header.Set("Content-Type", "application/json")
 		w := httptest.NewRecorder()
@@ -189,7 +189,7 @@ func TestPKIAndAccountStatePersistAcrossInstances(t *testing.T) {
 		}
 	}
 	w := httptest.NewRecorder()
-	f.app.Handler.ServeHTTP(w, httptest.NewRequest("GET", "/pki/crl/"+issuer, nil))
+	f.app.Handler.ServeHTTP(w, httptest.NewRequestWithContext(t.Context(), "GET", "/pki/crl/"+issuer, nil))
 	if w.Code != 200 {
 		t.Fatal(w.Code, w.Body.String())
 	}
@@ -199,7 +199,7 @@ func TestPKIAndAccountStatePersistAcrossInstances(t *testing.T) {
 		t.Fatal(crl, err)
 	}
 	// A credential document cannot be issued using a revoked identity.
-	r := httptest.NewRequest("GET", app.PathACMECredential, nil)
+	r := httptest.NewRequestWithContext(t.Context(), "GET", app.PathACMECredential, nil)
 	sig, _ := cms.Sign(nil, d.Identity.Cert, d.Identity.Key)
 	r.Header.Set(cms.HeaderName, cms.EncodeHeader(sig))
 	w = httptest.NewRecorder()
@@ -239,7 +239,7 @@ func TestExplicitRateLimitsAndSecurityEnvironment(t *testing.T) {
 	for _, path := range []string{"/enroll/ade", "/acme/new-account"} {
 		for _, want := range []int{404, 429} {
 			w := httptest.NewRecorder()
-			r := httptest.NewRequest("POST", path, strings.NewReader("unparsed body"))
+			r := httptest.NewRequestWithContext(t.Context(), "POST", path, strings.NewReader("unparsed body"))
 			r.RemoteAddr = "192.0.2.1:1"
 			r.Header.Set("X-Forwarded-For", "1.1.1.1")
 			a.Handler.ServeHTTP(w, r)
@@ -258,7 +258,7 @@ func TestExplicitRateLimitsAndSecurityEnvironment(t *testing.T) {
 	}
 	for range 3 {
 		w := httptest.NewRecorder()
-		a.Handler.ServeHTTP(w, httptest.NewRequest("GET", "/healthz", nil))
+		a.Handler.ServeHTTP(w, httptest.NewRequestWithContext(t.Context(), "GET", "/healthz", nil))
 		if w.Code != 200 {
 			t.Fatal(w.Code)
 		}
@@ -284,7 +284,7 @@ func TestExplicitRateLimitsAndSecurityEnvironment(t *testing.T) {
 	// Off by default, including public PKI endpoints.
 	off := build(t, app.Config{Role: app.RoleAll, Storage: "inmem"})
 	w := httptest.NewRecorder()
-	off.Handler.ServeHTTP(w, httptest.NewRequest("GET", "/pki/crl/unknown", nil))
+	off.Handler.ServeHTTP(w, httptest.NewRequestWithContext(t.Context(), "GET", "/pki/crl/unknown", nil))
 	if w.Code != 404 {
 		t.Fatal(w.Code)
 	}
@@ -306,7 +306,7 @@ func TestRetiredIssuerConfiguration(t *testing.T) {
 	w := httptest.NewRecorder()
 	f.app.Handler.ServeHTTP(
 		w,
-		httptest.NewRequest("GET", "/pki/crl/"+cms.Fingerprint(retired), nil),
+		httptest.NewRequestWithContext(t.Context(), "GET", "/pki/crl/"+cms.Fingerprint(retired), nil),
 	)
 	crl, err := x509.ParseRevocationList(w.Body.Bytes())
 	if w.Code != 200 || err != nil || crl.CheckSignatureFrom(retired) != nil {
@@ -350,7 +350,7 @@ func TestRateLimitFamiliesCapacityAndConfiguration(t *testing.T) {
 	for _, path := range []string{"/enroll/ade", app.PathAuthenticate, "/scep", "/admin/v1/config", "/pki/crl/unknown", "/mdm", "/acme/new-account", "/ota", "/ota/start", "/ddm/v1/declarative-management"} {
 		for i := range 2 {
 			w := httptest.NewRecorder()
-			a.Handler.ServeHTTP(w, httptest.NewRequest("POST", path, nil))
+			a.Handler.ServeHTTP(w, httptest.NewRequestWithContext(t.Context(), "POST", path, nil))
 			if i == 1 && w.Code != 429 {
 				t.Fatal(path, w.Code, w.Body.String())
 			}
@@ -372,7 +372,7 @@ func TestRateLimitFamiliesCapacityAndConfiguration(t *testing.T) {
 	limited := build(t, cfg)
 	for _, path := range []string{app.PathAuthenticate, "/acme/new-account"} {
 		w := httptest.NewRecorder()
-		limited.Handler.ServeHTTP(w, httptest.NewRequest("POST", path, nil))
+		limited.Handler.ServeHTTP(w, httptest.NewRequestWithContext(t.Context(), "POST", path, nil))
 		if w.Code != 503 {
 			t.Fatal("capacity did not fail closed", w.Code)
 		}
@@ -424,7 +424,7 @@ func TestProtocolStateRetentionWorker(t *testing.T) {
 		}
 	}
 	w := httptest.NewRecorder()
-	a.Handler.ServeHTTP(w, httptest.NewRequest("POST", app.PathAuthenticate, nil))
+	a.Handler.ServeHTTP(w, httptest.NewRequestWithContext(t.Context(), "POST", app.PathAuthenticate, nil))
 	clk.Advance(2 * time.Minute)
 	// The worker re-arms after pruning. Cancellation must terminate its loop.
 	for clk.Pending() == 0 {

@@ -2,6 +2,7 @@ package lifecycle
 
 import (
 	"bytes"
+	"context"
 	"crypto/x509"
 	"encoding/base64"
 	"encoding/json"
@@ -113,18 +114,22 @@ func (a *acmeAuthority) RoundTrip(r *http.Request) (*http.Response, error) {
 	case "/challenge":
 		w := httptest.NewRecorder()
 		a.m.HTTP01Handler().
-			ServeHTTP(w, httptest.NewRequest(http.MethodGet, "http://MDM.EXAMPLE:80/.well-known/acme-challenge/token", nil))
+			ServeHTTP(w, httptest.NewRequestWithContext(context.Background(), http.MethodGet, "http://MDM.EXAMPLE:80/.well-known/acme-challenge/token", nil))
 		if w.Code != http.StatusOK || !strings.HasPrefix(w.Body.String(), "token.") ||
 			w.Header().Get("Cache-Control") != "no-store" {
 			a.t.Fatal("HTTP-01 response not published", w.Code, w.Body.String())
 		}
 		body = `{"type":"http-01","status":"valid","url":"https://ca.example/challenge","token":"token"}`
 	case "/finalize":
-		var envelope struct{ Payload string }
+		var envelope struct {
+			Payload string `json:"payload"`
+		}
 		requireError(a.t, json.NewDecoder(r.Body).Decode(&envelope), nil)
 		payload, err := base64.RawURLEncoding.DecodeString(envelope.Payload)
 		requireError(a.t, err, nil)
-		var request struct{ CSR string }
+		var request struct {
+			CSR string `json:"csr"`
+		}
 		requireError(a.t, json.Unmarshal(payload, &request), nil)
 		der, err := base64.RawURLEncoding.DecodeString(request.CSR)
 		requireError(a.t, err, nil)
@@ -445,7 +450,7 @@ func TestPublicACMEConfigurationAndChallengeIsolation(t *testing.T) {
 		{"GET", "http://mdm.example/.well-known/acme-challenge/token/extra", 404},
 	} {
 		w := httptest.NewRecorder()
-		m.HTTP01Handler().ServeHTTP(w, httptest.NewRequest(tc.method, tc.url, nil))
+		m.HTTP01Handler().ServeHTTP(w, httptest.NewRequestWithContext(t.Context(), tc.method, tc.url, nil))
 		if w.Code != tc.code {
 			t.Fatal(tc, w.Code)
 		}
@@ -453,7 +458,7 @@ func TestPublicACMEConfigurationAndChallengeIsolation(t *testing.T) {
 	*ca.now = ca.now.Add(time.Minute)
 	w := httptest.NewRecorder()
 	m.HTTP01Handler().
-		ServeHTTP(w, httptest.NewRequest("GET", "http://mdm.example/.well-known/acme-challenge/token", nil))
+		ServeHTTP(w, httptest.NewRequestWithContext(t.Context(), "GET", "http://mdm.example/.well-known/acme-challenge/token", nil))
 	if w.Code != 404 {
 		t.Fatal("expired challenge served")
 	}

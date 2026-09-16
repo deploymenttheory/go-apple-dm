@@ -14,12 +14,12 @@ func TestEmbeddedAddressRetainsPort(t *testing.T) {
 	if listener == nil {
 		t.Fatal("embedded runtime lost the reserved socket")
 	}
-	defer listener.Close()
+	defer func(cleanup func() error) { _ = cleanup() }(listener.Close)
 	if addr != listener.Addr().String() {
 		t.Fatalf("advertised %s; bound %s", addr, listener.Addr())
 	}
-	if other, err := net.Listen("tcp", addr); err == nil {
-		other.Close()
+	if other, err := (&net.ListenConfig{}).Listen(t.Context(), "tcp", addr); err == nil {
+		_ = other.Close()
 		t.Fatal("embedded address released before runtime startup")
 	}
 }

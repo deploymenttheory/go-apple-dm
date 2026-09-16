@@ -34,9 +34,9 @@ func liveDDM(ctx context.Context, e *Environment, device string) (err error) {
 		names[1]: inventory["BuildVersion"],
 	}
 	declarations := []struct {
-		Identifier string `json:"Identifier"` //nolint:tagliatelle // Apple declaration wire keys.
-		Type       string `json:"Type"`       //nolint:tagliatelle // Apple declaration wire keys.
-		Payload    any    `json:"Payload"`    //nolint:tagliatelle // Apple declaration wire keys.
+		Identifier string `json:"Identifier"` // Apple declaration wire keys.
+		Type       string `json:"Type"`       // Apple declaration wire keys.
+		Payload    any    `json:"Payload"`    // Apple declaration wire keys.
 	}{
 		{
 			configuration,
@@ -87,7 +87,7 @@ func liveDDM(ctx context.Context, e *Environment, device string) (err error) {
 			return false, nil
 		}
 		var values struct {
-			Items []ddm.StatusValue `json:"Items"` //nolint:tagliatelle // Existing admin API response key.
+			Items []ddm.StatusValue `json:"Items"` // Existing admin API response key.
 		}
 		if err := e.api(ctx, "GET", path+"/status/values", nil, &values); err != nil {
 			return false, err

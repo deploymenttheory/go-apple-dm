@@ -728,15 +728,17 @@ func get(t *testing.T, url, token string) int {
 	if err != nil {
 		t.Fatal(err)
 	}
-	res.Body.Close()
+	_ = res.Body.Close()
 	return res.StatusCode
 }
 
 func post(t *testing.T, url, contentType string, body []byte) int {
+	t.Helper()
 	return send(t, http.MethodPost, url, contentType, body)
 }
 
 func put(t *testing.T, url, contentType string, body []byte) int {
+	t.Helper()
 	return send(t, http.MethodPut, url, contentType, body)
 }
 
@@ -748,11 +750,14 @@ func send(t *testing.T, method, url, contentType string, body []byte) int {
 	if err != nil {
 		t.Fatal(err)
 	}
-	res.Body.Close()
+	_ = res.Body.Close()
 	return res.StatusCode
 }
 
-func do(t *testing.T, srv *httptest.Server, method, path, token string, body []byte) *http.Response {
+// testResponse belongs to the test: do registers its body for cleanup.
+type testResponse struct{ *http.Response }
+
+func do(t *testing.T, srv *httptest.Server, method, path, token string, body []byte) testResponse {
 	t.Helper()
 	req, _ := http.NewRequestWithContext(context.Background(), method, srv.URL+path, bytes.NewReader(body))
 	if token != "" {
@@ -762,11 +767,11 @@ func do(t *testing.T, srv *httptest.Server, method, path, token string, body []b
 	if err != nil {
 		t.Fatal(err)
 	}
-	t.Cleanup(func() { res.Body.Close() })
-	return res
+	t.Cleanup(func() { _ = res.Body.Close() })
+	return testResponse{res}
 }
 
-func decode(t *testing.T, res *http.Response, want int, v any) {
+func decode(t *testing.T, res testResponse, want int, v any) {
 	t.Helper()
 	data, _ := io.ReadAll(res.Body)
 	if res.StatusCode != want {

@@ -101,7 +101,7 @@ func exerciseCertificateActivation(t *testing.T, db *sql.DB, dialect sqlcommon.D
 	if err != nil {
 		t.Fatal(err)
 	}
-	second, err := ca.IssuePushWithKey(topic, time.Now().Add(-30*time.Minute), private.(crypto.Signer))
+	second, err := ca.IssuePushWithKey(topic, time.Now().Add(-30*time.Minute), requireType[crypto.Signer](t, private))
 	if err != nil {
 		t.Fatal(err)
 	}

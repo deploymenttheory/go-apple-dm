@@ -15,7 +15,10 @@ import (
 
 func TestContract(t *testing.T) {
 	t.Parallel()
-	ddmtest.RunAll(t, func(t *testing.T) ddm.Store { return inmem.New() })
+	ddmtest.RunAll(t, func(t *testing.T) ddm.Store {
+		t.Helper()
+		return inmem.New()
+	})
 }
 
 var (
@@ -103,7 +106,10 @@ func TestUpdatePanicRestoresState(t *testing.T) {
 // failure fires both outside and inside Update.
 func TestFailingWrapperPassesThrough(t *testing.T) {
 	t.Parallel()
-	ddmtest.RunAll(t, func(t *testing.T) ddm.Store { return &ddmtest.Failing{Store: inmem.New()} })
+	ddmtest.RunAll(t, func(t *testing.T) ddm.Store {
+		t.Helper()
+		return &ddmtest.Failing{Store: inmem.New()}
+	})
 
 	ctx := context.Background()
 	s := &ddmtest.Failing{Store: inmem.New(), Fail: map[string]error{"ListSets": errInjected, "Update": nil}}

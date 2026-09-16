@@ -12,9 +12,10 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/storage"
 )
 
-// ServiceHook clears DDM state after successful checkout or authentication,
-// including
-// the device's user channels. Cleanup failures are logged.
+// ServiceHook clears DDM state after successful checkout or initial/changed-identity
+// authentication, including the device's user channels. Same-certificate retries
+// preserve state. Controlled profile replacement uses a separate operation and
+// does not trigger this cleanup. Cleanup failures are logged.
 type ServiceHook struct {
 	engine      *ddm.Engine
 	enrollments storage.EnrollmentStore

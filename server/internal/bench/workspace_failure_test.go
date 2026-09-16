@@ -16,6 +16,7 @@ import (
 
 func writeFixture(t *testing.T, path string, data []byte) {
 	t.Helper()
+	// #nosec G703 -- The test controls this fixture path within its private workspace.
 	if err := os.WriteFile(path, data, 0o600); err != nil {
 		t.Fatal(err)
 	}
@@ -65,6 +66,7 @@ func TestWorkspaceRejectsIncompleteOrInvalidState(t *testing.T) {
 	w := testWorkspace(t, "live")
 	for _, name := range []string{"ca.pem", "admin-token"} {
 		path := w.path("mdm", name)
+		// #nosec G304 -- The test controls this fixture path within its private workspace.
 		data, err := os.ReadFile(path)
 		if err != nil {
 			t.Fatal(err)
@@ -75,7 +77,7 @@ func TestWorkspaceRejectsIncompleteOrInvalidState(t *testing.T) {
 		if _, err := Start(t.Context(), w, "", io.Discard); err == nil {
 			t.Fatal("missing credential accepted")
 		}
-		if len(w.Doctor()["Missing"].([]string)) == 0 {
+		if len(requireType[[]string](t, w.Doctor()["Missing"])) == 0 {
 			t.Fatal("doctor omitted missing credential")
 		}
 		writeFixture(t, path, data)
@@ -160,6 +162,7 @@ func TestBenchReportsRetainFailureAndBlockedStatus(t *testing.T) {
 	if err := WriteReports(dir, results); err != nil {
 		t.Fatal(err)
 	}
+	// #nosec G304 -- The test controls this fixture path within its private workspace.
 	b, err := os.ReadFile(filepath.Join(dir, "junit.xml"))
 	if err != nil || !strings.Contains(string(b), `failures="1"`) ||
 		!strings.Contains(string(b), `skipped="1"`) {
@@ -238,7 +241,7 @@ func TestBenchHTTPAndControlFailures(t *testing.T) {
 	}
 	srv := httptest.NewServer(
 		http.HandlerFunc(
-			func(w http.ResponseWriter, r *http.Request) { w.WriteHeader(403); w.Write([]byte("secret")) },
+			func(w http.ResponseWriter, r *http.Request) { w.WriteHeader(403); _, _ = w.Write([]byte("secret")) },
 		),
 	)
 	defer srv.Close()
@@ -283,6 +286,7 @@ func TestInitPreservesFileAtIdentityDirectory(t *testing.T) {
 	if err := Init(dir, "live", "inmem", "all", "127.0.0.1:0"); err == nil {
 		t.Fatal("identity initialization replaced existing file")
 	}
+	// #nosec G304 -- The test controls this fixture path within its private workspace.
 	data, err := os.ReadFile(filepath.Join(dir, "mdm"))
 	if err != nil || string(data) != "existing user file" {
 		t.Fatal("existing file changed")

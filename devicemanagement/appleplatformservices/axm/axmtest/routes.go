@@ -796,7 +796,7 @@ func (s *Server) handleAuditEvents(w http.ResponseWriter, r *http.Request) {
 	s.mu.Lock()
 	var matched []*resource
 	for _, ev := range s.store.audits.all() {
-		at, _ := time.Parse(time.RFC3339Nano, ev.attrs["eventDateTime"].(string)) //nolint:forcetypeassert,errcheck // seeded as time
+		at, _ := time.Parse(time.RFC3339Nano, ev.attrs["eventDateTime"].(string)) //nolint:forcetypeassert // seeded as time
 		if at.Before(start) || at.After(end) {
 			continue
 		}

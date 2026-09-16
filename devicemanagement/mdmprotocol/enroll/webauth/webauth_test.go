@@ -76,7 +76,7 @@ func newHarnessWith(t *testing.T, idp *webauthtest.Provider, mutate func(cfg *we
 			h.completed = append(h.completed, completion{bound, claims, decision})
 			h.mu.Unlock()
 			w.Header().Set("Content-Type", "application/x-apple-aspen-config")
-			fmt.Fprintf(w, "profile for %s as %s", bound.Serial, claims.Subject)
+			_, _ = fmt.Fprintf(w, "profile for %s as %s", bound.Serial, claims.Subject)
 		},
 		OnError: func(w http.ResponseWriter, _ *http.Request, status int, err error) {
 			h.mu.Lock()
@@ -114,7 +114,7 @@ func (h *harness) get(path string) (int, string) {
 	if err != nil {
 		h.t.Fatal(err)
 	}
-	defer resp.Body.Close()
+	defer func(body io.Closer) { _ = body.Close() }(resp.Body)
 	body, _ := io.ReadAll(resp.Body)
 	return resp.StatusCode, string(body)
 }
@@ -131,7 +131,7 @@ func (h *harness) callbackURL(path string) string {
 	if err != nil {
 		h.t.Fatal(err)
 	}
-	resp.Body.Close()
+	_ = resp.Body.Close()
 	if resp.StatusCode != http.StatusFound {
 		h.t.Fatalf("provider hop: status %d", resp.StatusCode)
 	}
@@ -220,7 +220,7 @@ func TestFlow(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		first.Body.Close()
+		_ = first.Body.Close()
 		if first.StatusCode != http.StatusOK {
 			t.Fatalf("first: %d", first.StatusCode)
 		}
@@ -228,7 +228,7 @@ func TestFlow(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		second.Body.Close()
+		_ = second.Body.Close()
 		if second.StatusCode != http.StatusBadRequest {
 			t.Fatalf("replay: %d", second.StatusCode)
 		}
@@ -240,7 +240,7 @@ func TestFlow(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		resp.Body.Close()
+		_ = resp.Body.Close()
 		if resp.StatusCode != http.StatusBadRequest {
 			t.Fatalf("forged: %d", resp.StatusCode)
 		}
@@ -259,7 +259,7 @@ func TestFlow(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		resp.Body.Close()
+		_ = resp.Body.Close()
 		if resp.StatusCode != http.StatusBadRequest {
 			t.Fatalf("expired: %d", resp.StatusCode)
 		}
@@ -276,7 +276,7 @@ func TestFlow(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		resp.Body.Close()
+		_ = resp.Body.Close()
 		if resp.StatusCode != http.StatusOK {
 			t.Fatalf("in time: %d", resp.StatusCode)
 		}
@@ -296,7 +296,7 @@ func TestFlow(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			resp.Body.Close()
+			_ = resp.Body.Close()
 			if resp.StatusCode != http.StatusOK {
 				t.Fatalf("%s: %d", cb, resp.StatusCode)
 			}
@@ -321,7 +321,7 @@ func TestFlow(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		resp.Body.Close()
+		_ = resp.Body.Close()
 		if resp.StatusCode != http.StatusBadGateway {
 			t.Fatalf("swapped code: %d", resp.StatusCode)
 		}
@@ -362,7 +362,7 @@ func TestFlow(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		resp.Body.Close()
+		_ = resp.Body.Close()
 		if resp.StatusCode != http.StatusBadRequest {
 			t.Fatalf("replayed denial: %d", resp.StatusCode)
 		}
@@ -415,12 +415,15 @@ func TestFlow(t *testing.T) {
 			"relative":     func(c *webauth.Config) { c.RedirectURL = "/cb" },
 			"httpIssuer":   func(c *webauth.Config) { c.Issuer = "http://idp.example.com" },
 			"httpAuthorize": func(c *webauth.Config) {
+				// #nosec G101 -- Synthetic protocol fixtures and invalid URLs; no live credentials.
 				c.Endpoints = webauth.Endpoints{Authorization: "http://idp.example.com/a", Token: "https://idp.example.com/t", JWKS: "https://idp.example.com/j"}
 			},
 			"httpToken": func(c *webauth.Config) {
+				// #nosec G101 -- Synthetic protocol fixtures and invalid URLs; no live credentials.
 				c.Endpoints = webauth.Endpoints{Authorization: "https://idp.example.com/a", Token: "http://idp.example.com/t", JWKS: "https://idp.example.com/j"}
 			},
 			"httpJWKS": func(c *webauth.Config) {
+				// #nosec G101 -- Synthetic protocol fixtures and invalid URLs; no live credentials.
 				c.Endpoints = webauth.Endpoints{Authorization: "https://idp.example.com/a", Token: "https://idp.example.com/t", JWKS: "http://idp.example.com/j"}
 			},
 			"badURL": func(c *webauth.Config) { c.RedirectURL = "https://exa mple.com/%zz" },
@@ -582,7 +585,7 @@ func TestFlow(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		resp.Body.Close()
+		_ = resp.Body.Close()
 		if resp.StatusCode != http.StatusBadRequest {
 			t.Fatalf("no code: %d", resp.StatusCode)
 		}
@@ -594,7 +597,7 @@ func TestFlow(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		post.Body.Close()
+		_ = post.Body.Close()
 		if post.StatusCode != http.StatusMethodNotAllowed || post.Header.Get("Allow") != "GET" {
 			t.Fatalf("POST: %d %q", post.StatusCode, post.Header.Get("Allow"))
 		}
@@ -666,7 +669,7 @@ func TestFlow(t *testing.T) {
 		}))
 		t.Cleanup(bad.Close)
 		eps.JWKS = bad.URL
-		client := &http.Client{Transport: trustBoth(h.idp, bad)}
+		client := &http.Client{Transport: trustBoth(t, h.idp, bad)}
 		malformed := newHarnessWith(t, h.idp, func(cfg *webauth.Config) { cfg.Endpoints = eps; cfg.HTTPClient = client })
 		if status, _ := malformed.get("/begin?serial=S1"); status != http.StatusBadRequest {
 			t.Fatalf("malformed jwks: %d", status)
@@ -680,7 +683,7 @@ func TestFlow(t *testing.T) {
 		t.Cleanup(garbage.Close)
 		eps := h.idp.Endpoints()
 		eps.Token = garbage.URL
-		client := &http.Client{Transport: trustBoth(h.idp, garbage)}
+		client := &http.Client{Transport: trustBoth(t, h.idp, garbage)}
 		bad := newHarnessWith(t, h.idp, func(cfg *webauth.Config) { cfg.Endpoints = eps; cfg.HTTPClient = client })
 		if status, _ := bad.get("/begin?serial=S1"); status != http.StatusBadGateway {
 			t.Fatalf("garbage token response: %d", status)
@@ -699,6 +702,7 @@ func TestFlow(t *testing.T) {
 			case "/ftp/.well-known/openid-configuration":
 				http.Redirect(w, r, "ftp://example.com/x", http.StatusFound)
 			default:
+				// #nosec G710 -- Deliberate redirect loop tests the client redirect limit.
 				http.Redirect(w, r, r.URL.Path, http.StatusFound)
 			}
 		}))
@@ -713,7 +717,7 @@ func TestFlow(t *testing.T) {
 				t.Fatal(err)
 			}
 			rec := httptest.NewRecorder()
-			err = flow.Begin(rec, httptest.NewRequest(http.MethodGet, "/begin", nil), webauth.Bound{})
+			err = flow.Begin(rec, httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/begin", nil), webauth.Bound{})
 			if rec.Code != http.StatusBadGateway || !errors.Is(err, webauth.ErrProvider) {
 				t.Fatalf("%s: status %d err %v", name, rec.Code, err)
 			}
@@ -736,7 +740,7 @@ func TestFlow(t *testing.T) {
 			t.Fatalf("400: %d %q", status, body)
 		}
 		rec := httptest.NewRecorder()
-		_ = h.flow.Begin(rec, httptest.NewRequest(http.MethodGet, "/begin", nil), webauth.Bound{})
+		_ = h.flow.Begin(rec, httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/begin", nil), webauth.Bound{})
 		if rec.Code != http.StatusFound {
 			t.Fatalf("Begin: %d", rec.Code)
 		}
@@ -840,8 +844,9 @@ func (failingStore) Take(context.Context, string, string) (webauth.State, error)
 
 // trustBoth returns a transport trusting the provider and another test
 // server.
-func trustBoth(p *webauthtest.Provider, other *httptest.Server) http.RoundTripper {
-	tr := other.Client().Transport.(*http.Transport).Clone()
+func trustBoth(t *testing.T, p *webauthtest.Provider, other *httptest.Server) http.RoundTripper {
+	t.Helper()
+	tr := requireType[*http.Transport](t, other.Client().Transport).Clone()
 	tr.TLSClientConfig.RootCAs.AddCert(p.Certificate())
 	return tr
 }

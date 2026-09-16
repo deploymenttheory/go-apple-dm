@@ -259,6 +259,7 @@ func TestRemainingProjections(t *testing.T) {
 				Account: "acct", Assignment: dep.Assignment{SerialNumber: "SERIAL1", ProfileUUID: "puuid"},
 			}},
 			check: func(t *testing.T, f map[string]any) {
+				t.Helper()
 				if f["account"] != "acct" || f["serial_number"] != "SERIAL1" || f["profile_uuid"] != "puuid" {
 					t.Fatalf("fields = %v", f)
 				}
@@ -270,6 +271,7 @@ func TestRemainingProjections(t *testing.T) {
 				"serial": "01", "identifier": "id", "device": "SERIAL1", "private": secretUnlock,
 			}},
 			check: func(t *testing.T, f map[string]any) {
+				t.Helper()
 				if _, ok := f["private"]; ok {
 					t.Fatalf("passthrough forwarded an unlisted key: %v", f)
 				}
@@ -282,6 +284,7 @@ func TestRemainingProjections(t *testing.T) {
 			name: "CommandQueued",
 			ev:   event.Event{Type: event.CommandQueued, At: t0, Data: &mdm.Command{UUID: "u", RequestType: "DeviceLock"}},
 			check: func(t *testing.T, f map[string]any) {
+				t.Helper()
 				if f["command_uuid"] != "u" || f["request_type"] != "DeviceLock" {
 					t.Fatalf("fields = %v", f)
 				}
@@ -291,6 +294,7 @@ func TestRemainingProjections(t *testing.T) {
 			name: "UserAuthFailed",
 			ev:   event.Event{Type: event.UserAuthFailed, At: t0, Data: "user-9"},
 			check: func(t *testing.T, f map[string]any) {
+				t.Helper()
 				if f["user_id"] != "user-9" {
 					t.Fatalf("fields = %v", f)
 				}

@@ -30,6 +30,7 @@ func TestBootstrapSQLSecretsAndEnvironmentOverrides(t *testing.T) {
 				},
 			)
 			setupRequire(t, err, nil)
+			// #nosec G304 -- The test controls this fixture path within its private workspace.
 			b, err := os.ReadFile(path)
 			setupRequire(t, err, nil)
 			if bytes.Contains(b, []byte("password")) {

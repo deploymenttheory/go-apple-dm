@@ -45,7 +45,7 @@ func TestPostgresDatabaseRecovery(t *testing.T) {
 		if _, err := control.ExecContext(t.Context(), "CREATE SCHEMA "+name); err != nil {
 			t.Fatal(err)
 		}
-		t.Cleanup(func() { _, _ = control.Exec("DROP SCHEMA " + name + " CASCADE") })
+		t.Cleanup(func() { _, _ = control.ExecContext(t.Context(), "DROP SCHEMA "+name+" CASCADE") })
 		// ConnString retains the input text; mutating RuntimeParams does not
 		// serialize it. Include search_path in the DSN actually opened below.
 		if strings.HasPrefix(dsn, "postgres://") || strings.HasPrefix(dsn, "postgresql://") {
@@ -100,11 +100,15 @@ func TestMySQLDatabaseRecovery(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		defer conn.Close()
+		defer func(cleanup func() error) { _ = cleanup() }(conn.Close)
 		if _, err := conn.ExecContext(t.Context(), "SET FOREIGN_KEY_CHECKS = 0"); err != nil {
 			t.Fatal(err)
 		}
-		defer conn.ExecContext(t.Context(), "SET FOREIGN_KEY_CHECKS = 1")
+		defer func() {
+			if _, err := conn.ExecContext(t.Context(), "SET FOREIGN_KEY_CHECKS = 1"); err != nil {
+				t.Error(err)
+			}
+		}()
 		for _, name := range names {
 			if strings.Contains(name, "`") {
 				t.Fatal("invalid table")
@@ -138,7 +142,7 @@ func exercisePublicDeploymentRecovery(t *testing.T, backend string, emptyDSN fun
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer s.DB.Close()
+	defer func(cleanup func() error) { _ = cleanup() }(s.DB.Close)
 	s = sqlFixture(t, s.DB, s.Dialect)
 	material, err := readPrivate(filepath.Join(b.Environment["DM_SECRETS_DIR"], "original-key.v1"))
 	if err != nil {
@@ -183,7 +187,7 @@ func exercisePublicDeploymentRecovery(t *testing.T, backend string, emptyDSN fun
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer p.Close()
+	defer func(cleanup func() error) { _ = cleanup() }(p.Close)
 	if err := p.CheckDatabase(t.Context(), emptyDSN()); err != nil {
 		t.Fatal(err)
 	}
@@ -199,7 +203,7 @@ func exercisePublicDeploymentRecovery(t *testing.T, backend string, emptyDSN fun
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer target.DB.Close()
+	defer func(cleanup func() error) { _ = cleanup() }(target.DB.Close)
 	restored := sqlcommon.New(target.DB, target.Dialect, sqlcommon.WithKeyring(keys))
 	got, err := restored.Get(t.Context(), id)
 	if err != nil || got.CertHash != record.CertHash || got.Push.Topic != record.Push.Topic || string(got.Push.Token) != string(record.Push.Token) {

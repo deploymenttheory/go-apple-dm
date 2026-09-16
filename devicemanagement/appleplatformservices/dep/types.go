@@ -16,7 +16,7 @@ const DefaultProtocolVersion = 10
 // Tokens is the JSON inside a decrypted server token file: the OAuth 1.0a
 // consumer and access credentials Apple issues per MDM server.
 //
-//nolint:tagliatelle // keys mirror Apple's server token file
+// keys mirror Apple's server token file
 type Tokens struct {
 	ConsumerKey       string     `json:"consumer_key"`
 	ConsumerSecret    string     `json:"consumer_secret"`
@@ -42,7 +42,7 @@ func (t Tokens) Validate() error {
 
 // Limit is the ranged page limit of one endpoint from the account detail.
 //
-//nolint:tagliatelle // keys mirror Apple's Limit object
+// keys mirror Apple's Limit object
 type Limit struct {
 	Default int            `json:"default,omitzero"`
 	Maximum int            `json:"maximum,omitzero"`
@@ -51,7 +51,7 @@ type Limit struct {
 
 // URL is one entry of the account detail's urls array.
 //
-//nolint:tagliatelle // keys mirror Apple's Url object
+// keys mirror Apple's Url object
 type URL struct {
 	URI        string         `json:"uri,omitzero"`
 	HTTPMethod []string       `json:"http_method,omitzero"`
@@ -61,7 +61,7 @@ type URL struct {
 
 // AccountDetail is the GET /account response.
 //
-//nolint:tagliatelle // keys mirror Apple's AccountDetail object
+// keys mirror Apple's AccountDetail object
 type AccountDetail struct {
 	ServerName    string         `json:"server_name,omitzero"`
 	ServerUUID    string         `json:"server_uuid,omitzero"`
@@ -95,7 +95,7 @@ func (a *AccountDetail) Limits() map[string]Limit {
 // response_status on device detail answers only. Unknown keys round-trip
 // through Extra.
 //
-//nolint:tagliatelle // keys mirror Apple's Device object
+// keys mirror Apple's Device object
 type Device struct {
 	SerialNumber          string         `json:"serial_number"`
 	Model                 string         `json:"model,omitzero"`
@@ -142,7 +142,7 @@ const (
 
 // DevicePage is the FetchDeviceResponse of the fetch and sync endpoints.
 //
-//nolint:tagliatelle // keys mirror Apple's FetchDeviceResponse object
+// keys mirror Apple's FetchDeviceResponse object
 type DevicePage struct {
 	Cursor       string         `json:"cursor"`
 	Devices      []Device       `json:"devices,omitzero"`
@@ -156,7 +156,7 @@ type DevicePage struct {
 // explicit false stay distinct and DefineProfile after FetchProfile is
 // byte-stable.
 //
-//nolint:tagliatelle // keys mirror Apple's Profile object
+// keys mirror Apple's Profile object
 type Profile struct {
 	ProfileUUID               string         `json:"profile_uuid,omitzero"`
 	ProfileName               string         `json:"profile_name"`
@@ -187,7 +187,7 @@ type Profile struct {
 // ProfileResponse is the DefineProfileResponse: the UUID Apple assigned and
 // the per-serial outcome for the devices named in the profile.
 //
-//nolint:tagliatelle // keys mirror Apple's DefineProfileResponse object
+// keys mirror Apple's DefineProfileResponse object
 type ProfileResponse struct {
 	ProfileUUID string            `json:"profile_uuid,omitzero"`
 	Devices     map[string]string `json:"devices,omitzero"`
@@ -198,7 +198,7 @@ type ProfileResponse struct {
 // (X-Server-Protocol-Version 10 and later) when at least one device is
 // THROTTLED.
 //
-//nolint:tagliatelle // keys mirror Apple's AssignProfileResponse object
+// keys mirror Apple's AssignProfileResponse object
 type AssignResponse struct {
 	ProfileUUID       string            `json:"profile_uuid,omitzero"`
 	Devices           map[string]string `json:"devices,omitzero"`
@@ -209,7 +209,7 @@ type AssignResponse struct {
 // DeviceStatuses is the per-serial outcome map of the clear-profile and
 // disown endpoints.
 //
-//nolint:tagliatelle // keys mirror Apple's DeviceStatusResponse object
+// keys mirror Apple's DeviceStatusResponse object
 type DeviceStatuses struct {
 	Devices map[string]string `json:"devices,omitzero"`
 	Extra   map[string]any    `json:",embed"`
@@ -217,7 +217,7 @@ type DeviceStatuses struct {
 
 // DeviceDetailsResponse is the DeviceListResponse of POST /devices.
 //
-//nolint:tagliatelle // keys mirror Apple's DeviceListResponse object
+// keys mirror Apple's DeviceListResponse object
 type DeviceDetailsResponse struct {
 	Devices map[string]Device `json:"devices,omitzero"`
 	Extra   map[string]any    `json:",embed"`
@@ -225,7 +225,7 @@ type DeviceDetailsResponse struct {
 
 // ActivationLockRequest is the body of POST /device/activationlock.
 //
-//nolint:tagliatelle // keys mirror Apple's ActivationLockRequest object
+// keys mirror Apple's ActivationLockRequest object
 type ActivationLockRequest struct {
 	Device      string `json:"device"`
 	EscrowKey   string `json:"escrow_key,omitzero"`
@@ -234,7 +234,7 @@ type ActivationLockRequest struct {
 
 // ActivationLockResponse is the ActivationLockStatusResponse.
 //
-//nolint:tagliatelle // keys mirror Apple's ActivationLockStatusResponse object
+// keys mirror Apple's ActivationLockStatusResponse object
 type ActivationLockResponse struct {
 	SerialNumber   string         `json:"serial_number"`
 	ResponseStatus string         `json:"response_status"`
@@ -243,7 +243,7 @@ type ActivationLockResponse struct {
 
 // BetaToken is one beta enrollment token from GET /os-beta-enrollment/tokens.
 //
-//nolint:tagliatelle // keys mirror Apple's SeedBuildToken object
+// keys mirror Apple's SeedBuildToken object
 type BetaToken struct {
 	OS    string         `json:"os,omitzero"`
 	Title string         `json:"title,omitzero"`
@@ -253,7 +253,7 @@ type BetaToken struct {
 
 // betaTokensResponse is the GetSeedBuildTokenResponse.
 //
-//nolint:tagliatelle // keys mirror Apple's GetSeedBuildTokenResponse object
+// keys mirror Apple's GetSeedBuildTokenResponse object
 type betaTokensResponse struct {
 	BetaEnrollmentTokens []BetaToken `json:"betaEnrollmentTokens,omitzero"`
 	SeedBuildTokens      []BetaToken `json:"seedBuildTokens,omitzero"`
@@ -261,14 +261,14 @@ type betaTokensResponse struct {
 
 // discoveryProfile is the account-driven enrollment profile body.
 //
-//nolint:tagliatelle // keys mirror Apple's AccountDrivenEnrollmentProfileRequest object
+// keys mirror Apple's AccountDrivenEnrollmentProfileRequest object
 type discoveryProfile struct {
 	MDMServiceDiscoveryURL string `json:"mdm_service_discovery_url"`
 }
 
 // sessionResponse is the /session answer.
 //
-//nolint:tagliatelle // keys mirror Apple's /session response
+// keys mirror Apple's /session response
 type sessionResponse struct {
 	AuthSessionToken string `json:"auth_session_token"`
 }
@@ -282,7 +282,7 @@ type fetchRequest struct {
 // serialsRequest names devices by serial for the details, disown, and
 // profile endpoints.
 //
-//nolint:tagliatelle // keys mirror Apple's request objects
+// keys mirror Apple's request objects
 type serialsRequest struct {
 	ProfileUUID string   `json:"profile_uuid,omitzero"`
 	Devices     []string `json:"devices"`
@@ -293,7 +293,7 @@ type serialsRequest struct {
 var unmarshalTime = json.UnmarshalFromFunc(func(dec *jsontext.Decoder, t *time.Time) error {
 	v, err := dec.ReadValue()
 	if err != nil {
-		return err //nolint:wrapcheck // the decoder error is the contract of an unmarshaler
+		return err // the decoder error is the contract of an unmarshaler
 	}
 	var s string
 	if err := json.Unmarshal(v, &s); err != nil {

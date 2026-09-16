@@ -26,7 +26,9 @@ func TestEventStoreRejectsInvalidOperations(t *testing.T) {
 		t.Fatal("accepted unsupported schema")
 	}
 	for _, record := range []eventsink.Record{
-		{}, {EventID: "id", Type: "type"}, {EventID: strings.Repeat("x", 65), Type: "type", At: time.Now()},
+		{},
+		{EventID: "id", Type: "type"},
+		{EventID: strings.Repeat("x", 65), Type: "type", At: time.Now()},
 		{EventID: "id", Type: strings.Repeat("x", 129), At: time.Now()},
 		{EventID: "id", Type: "type", At: time.Now(), Fields: map[string]any{"bad": make(chan int)}},
 		{EventID: "id", Type: "type", At: time.Now(), Fields: map[string]any{"oversize": strings.Repeat("x", 1<<20)}},

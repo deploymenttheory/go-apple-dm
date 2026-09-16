@@ -1,6 +1,7 @@
 package app_test
 
 import (
+	"io"
 	"net/http"
 	"strings"
 	"testing"
@@ -21,6 +22,7 @@ func TestAdminIntrospection(t *testing.T) {
 
 	t.Run("ConfigNeedsNoGrant", func(t *testing.T) {
 		resp := adminReq(t, srv, http.MethodGet, "/admin/v1/config", tok, "")
+		defer func(body io.Closer) { _ = body.Close() }(resp.Body)
 		var got struct {
 			Role     string
 			Version  string
@@ -44,6 +46,7 @@ func TestAdminIntrospection(t *testing.T) {
 
 	t.Run("RoutesMatchTheTable", func(t *testing.T) {
 		resp := adminReq(t, srv, http.MethodGet, "/admin/v1/routes", tok, "")
+		defer func(body io.Closer) { _ = body.Close() }(resp.Body)
 		var got struct {
 			Routes []struct{ Method, Pattern, Action, Family string }
 		}

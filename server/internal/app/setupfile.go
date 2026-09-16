@@ -86,7 +86,7 @@ type SetupInitOptions struct {
 	StorageKeyAliases []string
 }
 
-//nolint:gocyclo // Keep the ordered workflow transitions and their failure handling together.
+// Keep the ordered workflow transitions and their failure handling together.
 func InitSetupFile(o SetupInitOptions) (string, error) {
 	dir, role, storage, dsn, publicURL, listen, organization := o.Directory, o.Role, o.Storage, o.DSN, o.PublicURL, o.Listen, o.Organization
 	storageKeyName := o.StorageKeyName
@@ -293,7 +293,7 @@ func writeSetupFile(path string, data []byte) error {
 		return wrapError(err)
 	}
 	temp := f.Name()
-	defer os.Remove(temp)
+	defer func() { _ = os.Remove(temp) }()
 	_, err = f.Write(data)
 	if err == nil {
 		err = f.Sync()
@@ -313,6 +313,6 @@ func writeSetupFile(path string, data []byte) error {
 	if err != nil {
 		return wrapError(err)
 	}
-	defer directory.Close()
+	defer func(cleanup func() error) { _ = cleanup() }(directory.Close)
 	return wrapError(privatefile.SyncDirectory(directory))
 }

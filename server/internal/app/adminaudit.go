@@ -34,7 +34,7 @@ func (a *App) auditStore(ctx context.Context) (audit.Store, error) {
 	case a.cfg.Sinks.AuditStore != nil:
 		return a.cfg.Sinks.AuditStore, nil
 	case !a.cfg.Sinks.Persist:
-		return nil, nil //nolint:nilnil // No audit store is requested when persistence is disabled.
+		return nil, nil // No audit store is requested when persistence is disabled.
 	case a.db == nil:
 		return auditinmem.New(), nil
 	default:
@@ -219,10 +219,10 @@ type auditRecordView struct {
 	At         time.Time
 	Type       string
 	Actor      string
-	Channel    string         `json:"Channel,omitempty"`    //nolint:tagliatelle // Admin API uses exported Go field names.
-	Enrollment string         `json:"Enrollment,omitempty"` //nolint:tagliatelle // Admin API uses exported Go field names.
-	Parent     string         `json:"Parent,omitempty"`     //nolint:tagliatelle // Admin API uses exported Go field names.
-	Fields     map[string]any `json:"Fields,omitempty"`     //nolint:tagliatelle // Admin API uses exported Go field names.
+	Channel    string         `json:"Channel,omitempty"`    // Admin API uses exported Go field names.
+	Enrollment string         `json:"Enrollment,omitempty"` // Admin API uses exported Go field names.
+	Parent     string         `json:"Parent,omitempty"`     // Admin API uses exported Go field names.
+	Fields     map[string]any `json:"Fields,omitempty"`     // Admin API uses exported Go field names.
 }
 
 func auditView(rec audit.Record) auditRecordView {

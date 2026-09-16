@@ -95,7 +95,7 @@ func TestCertificateHTTP2AndRotation(t *testing.T) {
 	roots.AddCert(srv.Certificate())
 	store := push.StaticCertStore{"com.example.app": appPair(t, ca, "com.example.app")}
 	client := apns.NewApp(store, apns.WithHost(srv.URL), apns.WithRootCAs(roots))
-	defer client.Close()
+	defer func(cleanup func() error) { _ = cleanup() }(client.Close)
 	request := apns.AppRequest{
 		Topic:    "com.example.app",
 		Token:    []byte{1, 35},
@@ -145,7 +145,7 @@ func TestCertificateHTTP2AndRotation(t *testing.T) {
 		t.Fatalf("closed sender: %v", r.Err)
 	}
 	untrusted := apns.NewApp(store, apns.WithHost(srv.URL))
-	defer untrusted.Close()
+	defer func(cleanup func() error) { _ = cleanup() }(untrusted.Close)
 	if r := untrusted.Send(
 		t.Context(),
 		request,
@@ -229,7 +229,7 @@ func TestAppValidationAndBackground(t *testing.T) {
 		apns.WithHost(srv.URL),
 		apns.WithRootCAs(roots),
 	)
-	defer c.Close()
+	defer func(cleanup func() error) { _ = cleanup() }(c.Close)
 	base := apns.AppRequest{
 		Topic:    "com.example.app",
 		Token:    []byte{1},

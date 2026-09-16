@@ -65,11 +65,12 @@ func TestPagination(t *testing.T) {
 	t.Run("MergesQueryFromNext", func(t *testing.T) {
 		t.Parallel()
 		hits := 0
-		var srv = stub(t, func(w http.ResponseWriter, r *http.Request) {
+		srv := stub(t, func(w http.ResponseWriter, r *http.Request) {
 			hits++
 			q := r.URL.Query()
 			if hits == 1 {
 				// Apple's next link without the fields selection.
+				// #nosec G705 -- Test HTTP fixture emits protocol data, not a browser HTML document.
 				_, _ = fmt.Fprintf(w, `{"data":[{"type":"orgDevices","id":"A"}],"links":{"self":%q,"next":"/v1/orgDevices?cursor=1"}}`, "http://"+r.Host+r.URL.RequestURI())
 				return
 			}

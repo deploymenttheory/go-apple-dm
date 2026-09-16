@@ -156,7 +156,7 @@ func (e *env) sendApp(
 		apns.WithHost(host),
 		apns.WithTimeout(e.opts.timeout),
 	)
-	defer client.Close()
+	defer func(cleanup func() error) { _ = cleanup() }(client.Close)
 	r := client.Send(
 		ctx,
 		apns.AppRequest{

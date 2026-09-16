@@ -20,14 +20,14 @@
 // Always Close an asynchronous bus. Close stops acceptance and drains within
 // its context deadline, then cancels active contexts and abandons queued events.
 // Subsequent Close calls may wait for handlers that have not returned. The bus
-// has no durable storage or replay; its subscribers can miss events after
+// has no persistent storage or replay; its subscribers can miss events after
 // overload, expiry, sink failure or abrupt termination. Queue limits bound
 // event counts rather than payload byte sizes; producers must bound payloads.
 //
 // Publisher and Coordinator allow persistent implementations without importing
 // server code. Run coordinates participating local mutations and event capture;
 // the reference server supplies server/eventstore for SQL-backed applications.
-// Durable audit/webhook delivery then runs independently of this bus, while
+// Audit/webhook delivery from stored events runs independently of this bus, while
 // after-commit bus notifications and slog remain ephemeral.
 //
 // Events may contain sensitive protocol data. External sinks in server/eventsink

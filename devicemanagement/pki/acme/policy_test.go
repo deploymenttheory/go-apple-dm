@@ -94,7 +94,7 @@ func TestPolicies(t *testing.T) {
 		} {
 			t.Run(name, func(t *testing.T) {
 				err := policy.Authorize(t.Context(), decisionFor(props))
-				requireRefusal(t, err, acme.ProblemUnauthorized)
+				_ = requireRefusal(t, err, acme.ProblemUnauthorized)
 			})
 		}
 	})
@@ -112,7 +112,7 @@ func TestPolicies(t *testing.T) {
 		} {
 			t.Run(name, func(t *testing.T) {
 				err := policy.Authorize(t.Context(), decisionFor(props))
-				requireRefusal(t, err, acme.ProblemUnauthorized)
+				_ = requireRefusal(t, err, acme.ProblemUnauthorized)
 			})
 		}
 	})
@@ -130,7 +130,7 @@ func TestPolicies(t *testing.T) {
 		err := policy.Authorize(t.Context(), decisionFor(&attest.Properties{
 			SerialNumber: testSerial,
 		}))
-		requireRefusal(t, err, acme.ProblemUnauthorized)
+		_ = requireRefusal(t, err, acme.ProblemUnauthorized)
 		if ran != 1 {
 			t.Fatalf("%d policies ran, want the chain to stop at the first refusal", ran)
 		}
@@ -166,7 +166,7 @@ func TestPolicies(t *testing.T) {
 			err := lookup.Authorize(t.Context(), decisionFor(&attest.Properties{
 				SerialNumber: testSerial,
 			}))
-			requireRefusal(t, err, acme.ProblemUnauthorized)
+			_ = requireRefusal(t, err, acme.ProblemUnauthorized)
 		})
 
 		t.Run("NoSerial", func(t *testing.T) {
@@ -175,7 +175,7 @@ func TestPolicies(t *testing.T) {
 				return true, nil
 			})
 			err := lookup.Authorize(t.Context(), decisionFor(&attest.Properties{UDID: testUDID}))
-			requireRefusal(t, err, acme.ProblemUnauthorized)
+			_ = requireRefusal(t, err, acme.ProblemUnauthorized)
 		})
 
 		// A lookup that failed is not a device that was refused. Answering

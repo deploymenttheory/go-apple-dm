@@ -37,6 +37,7 @@ type Migration struct {
 
 func rolloverKey(id, rev string) string     { return "pki/lifecycle/rollover/" + id + "/" + rev }
 func migrationPrefix(id, rev string) string { return "pki/lifecycle/migration/" + id + "/" + rev + "/" }
+
 func migrationKey(id, rev, device string) string {
 	return migrationPrefix(id, rev) + fingerprint([]byte(device))
 }
@@ -48,6 +49,7 @@ func getJSON(ctx context.Context, s state.Reader, key string, out any) error {
 	}
 	return json.Unmarshal(r.Value, out)
 }
+
 func putJSON(ctx context.Context, tx state.Tx, key string, v any) error {
 	b, err := json.Marshal(v)
 	if err != nil {

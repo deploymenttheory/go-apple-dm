@@ -203,7 +203,7 @@ func (d *Device) discover(ctx context.Context, opts AccountDrivenOptions, domain
 	if err != nil {
 		return nil, fmt.Errorf("%w: discovery: %w", ErrAccountDriven, err)
 	}
-	defer resp.Body.Close()
+	defer func(body io.Closer) { _ = body.Close() }(resp.Body)
 	data, _ := io.ReadAll(io.LimitReader(resp.Body, accountDrivenMaxBody))
 	if resp.StatusCode != http.StatusOK {
 		return nil, &HTTPError{Status: resp.StatusCode, Body: data}
@@ -275,7 +275,7 @@ func (d *Device) attempt(ctx context.Context, baseURL string, body []byte, beare
 	if err != nil {
 		return 0, "", nil, fmt.Errorf("%w: enroll: %w", ErrAccountDriven, err)
 	}
-	defer resp.Body.Close()
+	defer func(body io.Closer) { _ = body.Close() }(resp.Body)
 	data, _ := io.ReadAll(io.LimitReader(resp.Body, accountDrivenMaxBody))
 	return resp.StatusCode, resp.Header.Get("WWW-Authenticate"), data, nil
 }
@@ -339,7 +339,7 @@ func (d *Device) exchangeAccountToken(ctx context.Context, c AuthChallenge, form
 	if err != nil {
 		return "", fmt.Errorf("%w: token request: %w", ErrAccountDriven, err)
 	}
-	defer resp.Body.Close()
+	defer func(body io.Closer) { _ = body.Close() }(resp.Body)
 	data, _ := io.ReadAll(io.LimitReader(resp.Body, accountDrivenMaxBody))
 	if resp.StatusCode != http.StatusOK {
 		return "", &HTTPError{Status: resp.StatusCode, Body: data}

@@ -5,7 +5,7 @@ import "encoding/json/jsontext"
 // Report carries Apple content-cache metrics. Scalar pointers distinguish omitted
 // properties from explicit zero, false, or empty values. Extra retains extensions.
 //
-//nolint:tagliatelle // property names follow Apple OpenAPI exactly
+// property names follow Apple OpenAPI exactly
 type Report struct {
 	Version                      *int64                    `json:"version,omitzero"`
 	ReportDate                   *string                   `json:"reportDate,omitzero"`
@@ -101,7 +101,7 @@ type Report struct {
 // Parent carries Apple content-cache metrics. Scalar pointers distinguish omitted
 // properties from explicit zero, false, or empty values. Extra retains extensions.
 //
-//nolint:tagliatelle // property names follow Apple OpenAPI exactly
+// property names follow Apple OpenAPI exactly
 type Parent struct {
 	Address *string                   `json:"address,omitzero"`
 	Port    *int64                    `json:"port,omitzero"`
@@ -115,7 +115,7 @@ type Parent struct {
 // Peer carries Apple content-cache metrics. Scalar pointers distinguish omitted
 // properties from explicit zero, false, or empty values. Extra retains extensions.
 //
-//nolint:tagliatelle // property names follow Apple OpenAPI exactly
+// property names follow Apple OpenAPI exactly
 type Peer struct {
 	Address  *string                   `json:"address,omitzero"`
 	Port     *int64                    `json:"port,omitzero"`

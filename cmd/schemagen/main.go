@@ -121,13 +121,13 @@ func run(args []string, out *os.File) error {
 		if err := schemagen.Write(*outDir, files); err != nil {
 			return err
 		}
-		fmt.Fprintf(out, "generated %d files into %s\n", len(files), *outDir)
+		_, _ = fmt.Fprintf(out, "generated %d files into %s\n", len(files), *outDir)
 		return nil
 	case "verify":
 		if err := schemagen.Verify(*schemaRoot, *outDir, opts); err != nil {
 			return err
 		}
-		fmt.Fprintln(out, "verify: ok")
+		_, _ = fmt.Fprintln(out, "verify: ok")
 		return nil
 	case "versions":
 		tree, err := schemagen.Load(*schemaRoot)
@@ -141,7 +141,7 @@ func run(args []string, out *os.File) error {
 		}
 		sort.Strings(families)
 		for _, f := range families {
-			fmt.Fprintf(out, "%s\t%s\n", f, newest[f])
+			_, _ = fmt.Fprintf(out, "%s\t%s\n", f, newest[f])
 		}
 		return nil
 	case "identifiers":

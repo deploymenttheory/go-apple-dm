@@ -293,7 +293,8 @@
         "Deploying device management enrollment profiles — https://developer.apple.com/documentation/devicemanagement/deploying-device-management-enrollment-profiles",
         "MDM payload — https://developer.apple.com/documentation/devicemanagement/mdm",
         "Onboarding users with account-driven enrollment — https://developer.apple.com/documentation/devicemanagement/onboarding-users-with-account-driven-enrollment",
-        "MachineInfo — https://developer.apple.com/documentation/devicemanagement/machineinfo"
+        "MachineInfo — https://developer.apple.com/documentation/devicemanagement/machineinfo",
+        "Implementation — https://github.com/deploymenttheory/go-apple-dm/blob/7500eb25e50a2913338339d5fced18dc7f41fdc3/server/internal/app/enroll.go"
       ]
     }
   ]

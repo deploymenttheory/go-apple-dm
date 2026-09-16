@@ -204,7 +204,7 @@ func TestClientDiscoveryAndRedirectTrust(t *testing.T) {
 	defer server.Close()
 	key := rsaKey(t)
 	// An HTTPS URL alone is insufficient if the caller disabled verification.
-	unverified := server.Client().Transport.(*http.Transport).Clone()
+	unverified := requireType[*http.Transport](t, server.Client().Transport).Clone()
 	unverified.TLSClientConfig = unverified.TLSClientConfig.Clone()
 	unverified.TLSClientConfig.InsecureSkipVerify = true
 	defer unverified.CloseIdleConnections()

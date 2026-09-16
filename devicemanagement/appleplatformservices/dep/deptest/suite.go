@@ -112,6 +112,7 @@ func must(t *testing.T, what string, err error) {
 }
 
 func runAccounts(t *testing.T, newStore Factory) {
+	t.Helper()
 	ctx := context.Background()
 	s := newStore(t, nil)
 	_, err := s.GetAccount(ctx, "missing")
@@ -190,6 +191,7 @@ func runAccounts(t *testing.T, newStore Factory) {
 }
 
 func runSealed(t *testing.T, newStore Factory) {
+	t.Helper()
 	ctx := context.Background()
 	s := newStore(t, Keyring(t))
 	a := SampleAccount("sealed")
@@ -247,12 +249,13 @@ func runSealed(t *testing.T, newStore Factory) {
 	if got, err := plain.GetAccount(ctx, "sealed"); err != nil || got.AccessSecret != a.AccessSecret {
 		t.Fatalf("plain round trip: %+v %v", got, err)
 	}
-	if _, err := plain.(SecretReader).RawSecrets(ctx, ""); !errors.Is(err, dep.ErrInvalid) {
+	if _, err := requireType[SecretReader](t, plain).RawSecrets(ctx, ""); !errors.Is(err, dep.ErrInvalid) {
 		t.Fatalf("raw empty name: %v", err)
 	}
 }
 
 func runKeypairs(t *testing.T, newStore Factory) {
+	t.Helper()
 	ctx := context.Background()
 	s := newStore(t, nil)
 	_, err := s.Keypair(ctx, "k", dep.StageStaged)
@@ -286,6 +289,7 @@ func runKeypairs(t *testing.T, newStore Factory) {
 }
 
 func runUpstage(t *testing.T, newStore Factory) {
+	t.Helper()
 	ctx := context.Background()
 	s := newStore(t, nil)
 	current := &dep.Keypair{CertPEM: []byte("CUR"), KeyPEM: []byte("CURKEY"), CreatedAt: t0}
@@ -327,6 +331,7 @@ func runUpstage(t *testing.T, newStore Factory) {
 }
 
 func runSessions(t *testing.T, newStore Factory) {
+	t.Helper()
 	ctx := context.Background()
 	s := newStore(t, nil)
 	tok, err := s.Session(ctx, "s")
@@ -352,6 +357,7 @@ func runSessions(t *testing.T, newStore Factory) {
 }
 
 func runCursor(t *testing.T, newStore Factory) {
+	t.Helper()
 	ctx := context.Background()
 	s := newStore(t, nil)
 	c, err := s.Cursor(ctx, "c")
@@ -381,6 +387,7 @@ func runCursor(t *testing.T, newStore Factory) {
 }
 
 func runDevices(t *testing.T, newStore Factory) {
+	t.Helper()
 	ctx := context.Background()
 	s := newStore(t, nil)
 	_, err := s.GetDevice(ctx, "d", "S1")
@@ -442,6 +449,7 @@ func runDevices(t *testing.T, newStore Factory) {
 }
 
 func runTombstones(t *testing.T, newStore Factory) {
+	t.Helper()
 	ctx := context.Background()
 	s := newStore(t, nil)
 	d := SampleDevice("T1")
@@ -476,6 +484,7 @@ func runTombstones(t *testing.T, newStore Factory) {
 }
 
 func runProfiles(t *testing.T, newStore Factory) {
+	t.Helper()
 	ctx := context.Background()
 	s := newStore(t, nil)
 	_, err := s.GetProfile(ctx, "p", "P1")
@@ -524,6 +533,7 @@ func runProfiles(t *testing.T, newStore Factory) {
 }
 
 func runAssignments(t *testing.T, newStore Factory) {
+	t.Helper()
 	ctx := context.Background()
 	s := newStore(t, nil)
 	_, err := s.GetAssignment(ctx, "a", "S1")
@@ -568,6 +578,7 @@ func runAssignments(t *testing.T, newStore Factory) {
 }
 
 func runUpdate(t *testing.T, newStore Factory) {
+	t.Helper()
 	ctx := context.Background()
 	s := newStore(t, nil)
 	wantErr(t, "nil fn", s.Update(ctx, nil), dep.ErrInvalid)
@@ -666,6 +677,7 @@ func runUpdate(t *testing.T, newStore Factory) {
 }
 
 func runInvalid(t *testing.T, newStore Factory) {
+	t.Helper()
 	ctx := context.Background()
 	s := newStore(t, nil)
 	checks := map[string]func() error{
@@ -706,6 +718,7 @@ func runInvalid(t *testing.T, newStore Factory) {
 }
 
 func runConcurrency(t *testing.T, newStore Factory) {
+	t.Helper()
 	ctx := context.Background()
 	s := newStore(t, nil)
 	must(t, "account", s.PutAccount(ctx, SampleAccount("c")))

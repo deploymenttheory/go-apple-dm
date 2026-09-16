@@ -19,7 +19,7 @@ implementation references when evaluating protocol behavior. Do not copy third-p
 
 ## Generated files
 
-`make generate` uses the pinned `third_party/device-management` submodule. Never hand-edit
+`make generate` uses the pinned `third_party/device-management` submodule. Never hand-edit generated `doc.go` files,
 `*.gen.go`, `devicemanagement/schema/EXPORTED_IDENTIFIERS.lock` or `devicemanagement/schema/GENERATED_FROM.json`; `make verify`
 checks deterministic regeneration and exported-name removals. Edit generator documentation
 at its source. Preserve Apple's verbatim descriptions and exact protocol identifiers.
@@ -30,7 +30,7 @@ Use the current-design format in [docs/research/decisions/TEMPLATE.md](docs/rese
 for significant decisions. Integrate amendments without changing decision filenames or numbers.
 Explain behavior, contracts, rationale and limitations; omit implementation chronology and
 comparative claims. Keep package comments in `doc.go` with a concise summary, useful sections
-and references. Generated packages follow the corresponding layout in `doc.gen.go`.
+and references. Generated packages use the same `doc.go` layout, emitted by schemagen.
 
 ## Checks
 

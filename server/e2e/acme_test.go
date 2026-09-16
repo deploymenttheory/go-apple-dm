@@ -136,7 +136,11 @@ func (f *acmeFixture) ensure(t *testing.T) {
 	if f.server != nil {
 		return
 	}
-	res, err := f.harness.server.Client().Get(f.harness.server.URL + "/acme/directory")
+	resRequest, err := http.NewRequestWithContext(t.Context(), "GET", f.harness.server.URL+"/acme/directory", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	res, err := f.harness.server.Client().Do(resRequest)
 	if err != nil {
 		t.Fatal(err)
 	}

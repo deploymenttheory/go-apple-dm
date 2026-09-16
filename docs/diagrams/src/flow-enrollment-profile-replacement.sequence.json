@@ -88,10 +88,10 @@
     },
     {
       "dot": "neutral",
-      "title": "Recorded device observations",
+      "title": "Device acceptance",
       "items": [
-        "On 13 September 2026, the recorded Mac candidates completed identity replacement and fresh device/user commands before and after restart. A controlled SCEP issuance refusal left the previous identity pinned and management working after restart.",
-        "Those dated observations cover the recorded candidates and refusal stage. They do not establish every rollback path or acceptance of a later source revision; automated state-transition tests remain separate evidence."
+        "Verify fresh device and installing-user commands before and after replacement and restart. Test a controlled issuance refusal and confirm that the previous identity remains usable.",
+        "Automated state-transition tests establish server preservation. Device-side rollback and acceptance on each OS and enrollment mode require separate live checks."
       ]
     },
     {
@@ -101,7 +101,9 @@
         "MDM payload — https://developer.apple.com/documentation/devicemanagement/mdm",
         "ACMECertificate — https://developer.apple.com/documentation/devicemanagement/acmecertificate",
         "SCEP — https://developer.apple.com/documentation/devicemanagement/scep",
-        "Mac candidate observations, 13 September 2026 — https://github.com/deploymenttheory/go-apple-dm/blob/80599ddc35778bcc88fa2ac77bb1dc68a51cf089/docs/reviews/real-mac-lifecycle-2026-09-13.md"
+        "Replacement design — https://github.com/deploymenttheory/go-apple-dm/blob/main/docs/research/decisions/0009-enrollment-profiles.md",
+        "Mac enrollment procedure — https://github.com/deploymenttheory/go-apple-dm/blob/main/docs/operations/mac-enrollment-testing.md",
+        "Implementation — https://github.com/deploymenttheory/go-apple-dm/blob/7500eb25e50a2913338339d5fced18dc7f41fdc3/server/service/replacement.go"
       ],
       "dot": "transport"
     }

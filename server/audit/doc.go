@@ -10,7 +10,7 @@
 //
 // The interface does not make the database tamper-evident. Persistence is
 // optional, write failures do not roll back device operations, and asynchronous
-// events can be lost on abrupt shutdown. Configure durable storage, access
+// events can be lost on abrupt shutdown. Configure persistent storage, access
 // controls, retention and backups when records must survive process failure.
 //
 // # References

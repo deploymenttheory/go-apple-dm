@@ -196,8 +196,10 @@ func TestEnrollAndCommandFlow(t *testing.T) {
 	if e, _ := h.store.Get(ctx, dev); e.Enabled {
 		t.Fatal("still enabled after CheckOut")
 	}
-	want := []string{"enrolled", "token-updated", "command-queued", "command-sent", "command-result", "command-sent", "command-result", "command-result", "bootstrap-token-set",
-		"bootstrap-token-set", "bootstrap-token-set", "checked-out"}
+	want := []string{
+		"enrolled", "token-updated", "command-queued", "command-sent", "command-result", "command-sent", "command-result", "command-result", "bootstrap-token-set",
+		"bootstrap-token-set", "bootstrap-token-set", "checked-out",
+	}
 	if got := h.eventTypes(); strings.Join(got, ",") != strings.Join(want, ",") {
 		t.Fatalf("events = %v\nwant %v", got, want)
 	}
@@ -419,6 +421,7 @@ func TestHandlersAndHooks(t *testing.T) {
 	// No handlers configured.
 	h := newHarness(t, service.Config{})
 	enroll(t, h, "D1")
+	// #nosec G101 -- Synthetic protocol fixtures and invalid URLs; no live credentials.
 	if _, err := h.core.Checkin(ctx, req(h.cert), simple(t, "GetToken", "D1", map[string]any{"TokenServiceType": "com.apple.maid"})); service.CodeOf(err) != service.CodeNotImplemented || !errors.Is(err, service.ErrNoHandler) {
 		t.Fatalf("GetToken without handler: %v", err)
 	}
@@ -446,6 +449,7 @@ func TestHandlersAndHooks(t *testing.T) {
 		},
 	})
 	enroll(t, h2, "D1")
+	// #nosec G101 -- Synthetic protocol fixtures and invalid URLs; no live credentials.
 	got, err := h2.core.Checkin(ctx, req(h2.cert), simple(t, "GetToken", "D1", map[string]any{"TokenServiceType": "com.apple.maid"}))
 	if err != nil || !strings.Contains(string(got.Body), "<key>TokenData</key>") {
 		t.Fatalf("GetToken: %s %v", got.Body, err)

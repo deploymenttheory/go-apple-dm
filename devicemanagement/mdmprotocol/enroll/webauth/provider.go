@@ -25,7 +25,7 @@ type Endpoints struct {
 
 // discoveryDocument is the subset of the OpenID Provider Metadata used.
 //
-//nolint:tagliatelle // keys are the OpenID Connect Discovery names
+// keys are the OpenID Connect Discovery names
 type discoveryDocument struct {
 	Issuer                string `json:"issuer"`
 	AuthorizationEndpoint string `json:"authorization_endpoint"`
@@ -35,7 +35,7 @@ type discoveryDocument struct {
 
 // tokenResponse is the token endpoint's JSON body.
 //
-//nolint:tagliatelle // keys are RFC 6749 names
+// keys are RFC 6749 names
 type tokenResponse struct {
 	AccessToken      string `json:"access_token"`
 	TokenType        string `json:"token_type"`
@@ -45,8 +45,10 @@ type tokenResponse struct {
 }
 
 // jwksMinRefresh bounds how often an unknown key id triggers a refetch.
-const jwksMinRefresh = time.Minute
-const jwksMaxAge = 15 * time.Minute
+const (
+	jwksMinRefresh = time.Minute
+	jwksMaxAge     = 15 * time.Minute
+)
 
 // discoveryPath is appended to the issuer.
 const discoveryPath = "/.well-known/openid-configuration"
@@ -57,7 +59,7 @@ func (f *Flow) fetch(req *http.Request) (int, []byte, error) {
 	if err != nil {
 		return 0, nil, fmt.Errorf("%w: %s: %w", ErrProvider, req.URL.Host, err)
 	}
-	defer resp.Body.Close()
+	defer func(body io.Closer) { _ = body.Close() }(resp.Body)
 	body, err := io.ReadAll(io.LimitReader(resp.Body, f.maxBytes+1))
 	if err != nil {
 		return 0, nil, fmt.Errorf("%w: %s: read: %w", ErrProvider, req.URL.Host, err)

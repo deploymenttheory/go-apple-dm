@@ -7,6 +7,12 @@ import (
 	"errors"
 )
 
+type privateCA struct {
+	Root         []byte `json:"Root"`
+	Intermediate []byte `json:"Intermediate"`
+	Key          []byte `json:"Key"`
+}
+
 // MarshalPrivate exports a simulated authority for a private persistent bench.
 // It contains the intermediate signing key and must never appear in reports.
 func (c *CA) MarshalPrivate() ([]byte, error) {
@@ -15,13 +21,13 @@ func (c *CA) MarshalPrivate() ([]byte, error) {
 		return nil, err
 	}
 	return json.Marshal(
-		struct{ Root, Intermediate, Key []byte }{c.Root.Raw, c.Intermediate.Raw, key},
+		privateCA{c.Root.Raw, c.Intermediate.Raw, key},
 	)
 }
 
 // ParsePrivate restores a fixture issuer and validates its key and chain.
 func ParsePrivate(data []byte) (*CA, error) {
-	var v struct{ Root, Intermediate, Key []byte }
+	var v privateCA
 	if err := json.Unmarshal(data, &v); err != nil {
 		return nil, err
 	}

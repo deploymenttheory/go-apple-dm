@@ -190,7 +190,7 @@ type OrgDevice struct {
 
 // OrgDeviceAttributes are OrgDevice.Attributes.
 //
-//nolint:tagliatelle // tags mirror Apple's JSON member names
+// tags mirror Apple's JSON member names
 type OrgDeviceAttributes struct {
 	SerialNumber                 string             `json:"serialNumber,omitempty"`
 	AddedToOrgDateTime           time.Time          `json:"addedToOrgDateTime,omitzero"`
@@ -287,7 +287,7 @@ type MDMDevice struct {
 
 // MDMDeviceAttributes are MdmDevice.Attributes.
 //
-//nolint:tagliatelle // tags mirror Apple's JSON member names
+// tags mirror Apple's JSON member names
 type MDMDeviceAttributes struct {
 	DeviceName     string `json:"deviceName,omitempty"`
 	EnrolledUserID string `json:"enrolledUserId,omitempty"`
@@ -323,7 +323,7 @@ type MDMDeviceDetail struct {
 
 // MDMDeviceDetailAttributes are MdmDeviceDetail.Attributes.
 //
-//nolint:tagliatelle // tags mirror Apple's JSON member names
+// tags mirror Apple's JSON member names
 type MDMDeviceDetailAttributes struct {
 	BluetoothMACAddress  string            `json:"bluetoothMacAddress,omitempty"`
 	DeviceEraseStatus    DeviceEraseStatus `json:"deviceEraseStatus,omitempty"`
@@ -385,7 +385,7 @@ type MDMServer struct {
 
 // MDMServerAttributes are MdmServer.Attributes.
 //
-//nolint:tagliatelle // tags mirror Apple's JSON member names
+// tags mirror Apple's JSON member names
 type MDMServerAttributes struct {
 	ServerName             string          `json:"serverName,omitempty"`
 	ServerType             MDMServerType   `json:"serverType,omitempty"`
@@ -429,7 +429,7 @@ type MDMServerCreateData struct {
 // MDMServerCreateAttributes are the creatable attributes; serverName and
 // serverCertificate are required by Apple.
 //
-//nolint:tagliatelle // tags mirror Apple's JSON member names
+// tags mirror Apple's JSON member names
 type MDMServerCreateAttributes struct {
 	ServerName          string               `json:"serverName"`
 	ServerCertificate   MDMServerCertificate `json:"serverCertificate"`
@@ -451,7 +451,7 @@ type MDMServerUpdateData struct {
 
 // MDMServerUpdateAttributes are the updatable attributes.
 //
-//nolint:tagliatelle // tags mirror Apple's JSON member names
+// tags mirror Apple's JSON member names
 type MDMServerUpdateAttributes struct {
 	ServerName             string   `json:"serverName,omitempty"`
 	EnableMDMDisownFlag    *bool    `json:"enableMdmDisownFlag,omitempty"`
@@ -547,7 +547,7 @@ func (a *OrgDeviceActivity) Succeeded() bool {
 
 // ActivityTypeMetadata carries the extra data of the migration activities.
 //
-//nolint:tagliatelle // tags mirror Apple's JSON member names
+// tags mirror Apple's JSON member names
 type ActivityTypeMetadata struct {
 	MDMMigrationDeadlineDateTime time.Time `json:"mdmMigrationDeadlineDateTime,omitzero"`
 }
@@ -572,7 +572,7 @@ type OrgDeviceActivityCreateAttributes struct {
 
 // OrgDeviceActivityCreateRelationships name the server and the devices.
 //
-//nolint:tagliatelle // tags mirror Apple's JSON member names
+// tags mirror Apple's JSON member names
 type OrgDeviceActivityCreateRelationships struct {
 	MDMServer *SingleLinkage `json:"mdmServer,omitempty"`
 	Devices   ManyLinkage    `json:"devices"`
@@ -619,7 +619,7 @@ type UserPhoneNumber struct {
 
 // UserRoleOUMapping is a role held in an organizational unit.
 //
-//nolint:tagliatelle // tags mirror Apple's JSON member names
+// tags mirror Apple's JSON member names
 type UserRoleOUMapping struct {
 	RoleName string `json:"roleName,omitempty"`
 	OUID     string `json:"ouId,omitempty"`
@@ -635,7 +635,7 @@ type User struct {
 
 // UserAttributes are User.Attributes.
 //
-//nolint:tagliatelle // tags mirror Apple's JSON member names
+// tags mirror Apple's JSON member names
 type UserAttributes struct {
 	FirstName           string              `json:"firstName,omitempty"`
 	LastName            string              `json:"lastName,omitempty"`
@@ -691,7 +691,7 @@ type UserGroup struct {
 
 // UserGroupAttributes are UserGroup.Attributes.
 //
-//nolint:tagliatelle // tags mirror Apple's JSON member names
+// tags mirror Apple's JSON member names
 type UserGroupAttributes struct {
 	OUID             string          `json:"ouId,omitempty"`
 	Name             string          `json:"name,omitempty"`
@@ -761,7 +761,7 @@ type App struct {
 
 // AppAttributes are App.Attributes.
 //
-//nolint:tagliatelle // tags mirror Apple's JSON member names
+// tags mirror Apple's JSON member names
 type AppAttributes struct {
 	Name        string        `json:"name,omitempty"`
 	BundleID    string        `json:"bundleId,omitempty"`
@@ -791,7 +791,7 @@ type Package struct {
 
 // PackageAttributes are Package.Attributes.
 //
-//nolint:tagliatelle // tags mirror Apple's JSON member names
+// tags mirror Apple's JSON member names
 type PackageAttributes struct {
 	Name            string    `json:"name,omitempty"`
 	URL             string    `json:"url,omitempty"`
@@ -1120,7 +1120,7 @@ type AuditEvent struct {
 // type-specific eventData member, kept in EventData under its key
 // (EventDataPropertyKey names the one that applies).
 //
-//nolint:tagliatelle // tags mirror Apple's JSON member names
+// tags mirror Apple's JSON member names
 type AuditEventAttributes struct {
 	EventDateTime        time.Time             `json:"eventDateTime,omitzero"`
 	Type                 AuditEventType        `json:"type,omitempty"`
@@ -1161,7 +1161,7 @@ func (a *AuditEventAttributes) Data(v any) error {
 
 // AuditEventDeviceAddedToOrg is the event data of DEVICE_ADDED_TO_ORG.
 //
-//nolint:tagliatelle // tags mirror Apple's JSON member names
+// tags mirror Apple's JSON member names
 type AuditEventDeviceAddedToOrg struct {
 	SerialNumber       string             `json:"serialNumber,omitempty"`
 	PurchaseSourceType PurchaseSourceType `json:"purchaseSourceType,omitempty"`
@@ -1170,7 +1170,7 @@ type AuditEventDeviceAddedToOrg struct {
 
 // AuditEventDeviceRemovedFromOrg is the event data of DEVICE_REMOVED_FROM_ORG.
 //
-//nolint:tagliatelle // tags mirror Apple's JSON member names
+// tags mirror Apple's JSON member names
 type AuditEventDeviceRemovedFromOrg struct {
 	SerialNumber      string `json:"serialNumber,omitempty"`
 	ReleaseEntityID   string `json:"releaseEntityId,omitempty"`

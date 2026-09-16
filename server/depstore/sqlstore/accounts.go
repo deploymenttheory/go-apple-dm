@@ -93,7 +93,7 @@ func (t *txStore) GetAccount(ctx context.Context, name string) (*dep.Account, er
 	if err != nil {
 		return nil, wrap("get account", err)
 	}
-	defer rows.Close()
+	defer func(rows *sql.Rows) { _ = rows.Close() }(rows)
 	if !rows.Next() {
 		if err := rows.Err(); err != nil {
 			return nil, wrap("get account", err)

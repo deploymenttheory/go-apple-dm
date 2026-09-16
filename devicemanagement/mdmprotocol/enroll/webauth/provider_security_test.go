@@ -29,7 +29,7 @@ func TestKnownJWKSKeyExpiresAndFailsClosed(t *testing.T) {
 			k, kid = replacement, "new"
 		}
 		w.Header().Set("Content-Type", "application/json")
-		w.Write(mustJSON(t, map[string]any{"keys": []map[string]any{ecJWK(t, kid, k)}}))
+		_, _ = w.Write(mustJSON(t, map[string]any{"keys": []map[string]any{ecJWK(t, kid, k)}}))
 	}))
 	defer srv.Close()
 	clk := clock.NewFake(time.Now())

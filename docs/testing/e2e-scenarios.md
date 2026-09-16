@@ -9,8 +9,8 @@ internal timing/storage assertions.
 
 The named tests in [server/e2e](../../server/e2e/) compose protocol clients, simulator devices,
 fake Apple services and storage backends. Their assertions verify modeled exchanges; they do
-not establish physical-device compatibility. Apple sources are indexed in the
-[reference catalogue](../research/reference_projects.md).
+not establish physical-device compatibility. Relevant Apple sources and design
+constraints are linked from the [decisions](../research/decisions/README.md).
 
 Run `make test-e2e` (build tag `e2e`). `E2E_STORE` selects `sqlite` (default, one database per test),
 `postgres` (requires `TEST_POSTGRES_DSN`, one schema per test) or `inmem`. CI runs SQLite and

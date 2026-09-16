@@ -54,7 +54,7 @@ func httpsRecoveryFixture(t *testing.T, pending string) (*App, lifecycle.Rollove
 	setupExecute(t, a, lifecycle.HTTPS, "activate", SetupRequest{Revision: v.Identity.Pending})
 	c := clock.NewFake(a.cfg.Clock.Now().Add(time.Hour))
 	a.cfg.Clock = c
-	a.protocol.(*state.Memory).Now = c.Now
+	requireType[*state.Memory](t, a.protocol).Now = c.Now
 	ca := setupExecute(
 		t,
 		a,
@@ -170,7 +170,7 @@ func TestHTTPSTrustRecoveryRejectsDamagedMaterial(t *testing.T) {
 			if damaged == "active leaf" || damaged == "pending leaf" || damaged == "new CA" ||
 				damaged == "old CA" {
 				editSetupIdentity(t, a.protocol, id, func(r map[string]any) {
-					r["Revisions"].([]any)[index].(map[string]any)["Key"] = base64.StdEncoding.EncodeToString(
+					requireType[map[string]any](t, requireType[[]any](t, r["Revisions"])[index])["Key"] = base64.StdEncoding.EncodeToString(
 						[]byte("corrupt key"),
 					)
 				})

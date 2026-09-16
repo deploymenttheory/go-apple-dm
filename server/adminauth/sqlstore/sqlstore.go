@@ -190,7 +190,7 @@ func (s *Store) Principals(ctx context.Context, p adminauth.Page) (adminauth.Res
 	if err != nil {
 		return out, wrap("list principals", err)
 	}
-	defer rows.Close()
+	defer func(rows *sql.Rows) { _ = rows.Close() }(rows)
 	for rows.Next() {
 		item, err := scanPrincipal(rows)
 		if err != nil {
@@ -340,7 +340,7 @@ func (s *Store) Policies(ctx context.Context) ([]adminauth.Policy, error) {
 	if err != nil {
 		return nil, wrap("list policies", err)
 	}
-	defer rows.Close()
+	defer func(rows *sql.Rows) { _ = rows.Close() }(rows)
 	var out []adminauth.Policy
 	for rows.Next() {
 		var p adminauth.Policy

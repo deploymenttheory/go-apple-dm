@@ -234,7 +234,7 @@ func TestNew(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		if ts := decode(t, body)["SyncTokens"].(map[string]any)["Timestamp"].(string); !strings.HasPrefix(ts, fmt.Sprint(time.Now().UTC().Year())) {
+		if ts := requireType[string](t, requireType[map[string]any](t, decode(t, body)["SyncTokens"])["Timestamp"]); !strings.HasPrefix(ts, fmt.Sprint(time.Now().UTC().Year())) {
 			t.Fatalf("Timestamp %q does not use the real clock", ts)
 		}
 		// The subscriptions baseline defaults to the 11 Apple items.
@@ -888,7 +888,7 @@ func TestManifest(t *testing.T) {
 			t.Fatal(err)
 		}
 		got := decode(t, body)
-		if got["ServerToken"] != item.ServerToken || got["Payload"].(map[string]any)["Echo"] != "DEVICE-01" {
+		if got["ServerToken"] != item.ServerToken || requireType[map[string]any](t, got["Payload"])["Echo"] != "DEVICE-01" {
 			t.Fatalf("served %s", body)
 		}
 		items, err := h.engine.DeclarationItems(ctx, dev)
@@ -910,7 +910,7 @@ func TestManifest(t *testing.T) {
 			t.Fatal(err)
 		}
 		got := decode(t, body)
-		if got["Payload"].(map[string]any)["Echo"] != "serial DEVICE-01" {
+		if requireType[map[string]any](t, got["Payload"])["Echo"] != "serial DEVICE-01" {
 			t.Fatalf("served %s", body)
 		}
 		if got["ServerToken"] != ddm.TokenFor([]byte(`{"Identifier":"com.example.cfg","Payload":{"Echo":"serial DEVICE-01"},"Type":"com.apple.configuration.management.test"}`)) {

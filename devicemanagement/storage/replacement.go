@@ -26,23 +26,31 @@ type ReplacementStore interface {
 // Replacement contains private handshake state. Administrative APIs must expose
 // a redacted view, not this record (the command contains issuance credentials).
 type Replacement struct {
-	Issuer         string
-	ReconcileUntil time.Time
+	Issuer         string    `json:"Issuer"`
+	ReconcileUntil time.Time `json:"ReconcileUntil"`
 	// CSRHash binds SCEP retries to the exact signed request.
-	CSRHash                                                       string
-	ID, Method, OldHash, CandidateHash, SecretHash, PublicKeyHash string
-	State                                                         string
-	ExpiresAt, CompletedAt                                        time.Time
-	Command                                                       mdm.Command
-	Delivered, Acknowledged, Authenticated                        bool
-	AuthenticateRaw                                               []byte
-	Tokens                                                        []ReplacementToken
+	CSRHash         string             `json:"CSRHash"`
+	ID              string             `json:"ID"`
+	Method          string             `json:"Method"`
+	OldHash         string             `json:"OldHash"`
+	CandidateHash   string             `json:"CandidateHash"`
+	SecretHash      string             `json:"SecretHash"`
+	PublicKeyHash   string             `json:"PublicKeyHash"`
+	State           string             `json:"State"`
+	ExpiresAt       time.Time          `json:"ExpiresAt"`
+	CompletedAt     time.Time          `json:"CompletedAt"`
+	Command         mdm.Command        `json:"Command"`
+	Delivered       bool               `json:"Delivered"`
+	Acknowledged    bool               `json:"Acknowledged"`
+	Authenticated   bool               `json:"Authenticated"`
+	AuthenticateRaw []byte             `json:"AuthenticateRaw"`
+	Tokens          []ReplacementToken `json:"Tokens"`
 }
 
 type ReplacementToken struct {
-	ID      mdm.EnrollmentID
-	Message *checkin.TokenUpdate
-	Raw     []byte
+	ID      mdm.EnrollmentID     `json:"ID"`
+	Message *checkin.TokenUpdate `json:"Message"`
+	Raw     []byte               `json:"Raw"`
 }
 
 type ReplacementChange struct {

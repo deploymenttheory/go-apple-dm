@@ -25,11 +25,13 @@ func TestSetupBootstrapResumesAndExportsOnlyPublicArtifacts(t *testing.T) {
 	}
 	call("init", "-dir", dir, "-role", "combined")
 	setup := filepath.Join(dir, "setup.json")
+	// #nosec G304 -- The test controls this fixture path within its private workspace.
 	keyBefore, err := os.ReadFile(filepath.Join(dir, "secrets", "storage"))
 	if err != nil {
 		t.Fatal(err)
 	}
 	call("init", "-dir", dir, "-role", "combined")
+	// #nosec G304 -- The test controls this fixture path within its private workspace.
 	keyAfter, err := os.ReadFile(filepath.Join(dir, "secrets", "storage"))
 	if err != nil || !bytes.Equal(keyBefore, keyAfter) {
 		t.Fatal("bootstrap replaced storage key", err)

@@ -70,7 +70,7 @@ func generatedAPI(directory string) (map[string]string, error) {
 	if err != nil {
 		return nil, fmt.Errorf("api audit: %w", err)
 	}
-	defer root.Close()
+	defer func(cleanup func() error) { _ = cleanup() }(root.Close)
 	result := map[string]string{}
 	err = fs.WalkDir(root.FS(), ".", func(name string, d fs.DirEntry, walkErr error) error {
 		if walkErr != nil {

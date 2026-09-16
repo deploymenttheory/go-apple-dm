@@ -4,7 +4,9 @@ import (
 	"bytes"
 	"context"
 	"errors"
+	"fmt"
 	"log/slog"
+	"strconv"
 	"strings"
 	"testing"
 
@@ -77,7 +79,7 @@ func state(t *testing.T, h *harness, id mdm.EnrollmentID) string {
 	}, " ")
 }
 
-func itoa(n int) string { return string(rune('0' + n)) }
+func itoa(n int) string { return strconv.Itoa(n) }
 
 const (
 	seeded  = "sets=lab decls=com.example.direct snapshot rows=1 values=1 pending=2"
@@ -350,5 +352,5 @@ func TestServiceHook(t *testing.T) {
 }
 
 func itoa3(n int) string {
-	return string([]byte{byte('0' + n/100), byte('0' + n/10%10), byte('0' + n%10)})
+	return fmt.Sprintf("%03d", n)
 }

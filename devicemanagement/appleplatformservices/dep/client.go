@@ -273,7 +273,7 @@ func (c *Client) send(
 	if err != nil {
 		return 0, nil, nil, fmt.Errorf("dep: %s %s: %w", r.Method, r.URL.Path, err)
 	}
-	defer resp.Body.Close()
+	defer func(body io.Closer) { _ = body.Close() }(resp.Body)
 	data, err := io.ReadAll(io.LimitReader(resp.Body, maxResponseBytes))
 	if err != nil {
 		return 0, nil, nil, fmt.Errorf("dep: read %s %s: %w", r.Method, r.URL.Path, err)
@@ -291,7 +291,7 @@ func replayable(req *http.Request, maxBytes int64) (func() (io.ReadCloser, error
 	if req.GetBody != nil {
 		return req.GetBody, req.ContentLength, nil
 	}
-	defer req.Body.Close()
+	defer func(body io.Closer) { _ = body.Close() }(req.Body)
 	buf, err := io.ReadAll(io.LimitReader(req.Body, maxBytes+1))
 	if err != nil {
 		return nil, 0, fmt.Errorf("%w: read body: %w", ErrInvalid, err)
@@ -498,7 +498,7 @@ func (c *Client) session(ctx context.Context, t Tokens, protocol int) (string, e
 	if err != nil {
 		return "", fmt.Errorf("dep: GET /session: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func(body io.Closer) { _ = body.Close() }(resp.Body)
 	body, err := io.ReadAll(io.LimitReader(resp.Body, maxResponseBytes))
 	if err != nil {
 		return "", fmt.Errorf("dep: read /session: %w", err)

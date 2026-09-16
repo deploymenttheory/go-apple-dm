@@ -75,7 +75,7 @@ func (c *Client) do(req *http.Request, requireTLS bool) ([]byte, string, error) 
 	if err != nil {
 		return nil, "", fmt.Errorf("%w: %w", ErrClient, err)
 	}
-	defer resp.Body.Close()
+	defer func(body io.Closer) { _ = body.Close() }(resp.Body)
 	if requireTLS && (resp.TLS == nil || len(resp.TLS.VerifiedChains) == 0) {
 		return nil, "", fmt.Errorf("%w: CA discovery requires verified TLS", ErrClient)
 	}

@@ -63,7 +63,7 @@ func TestOutboundPrivateTrust(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	resp.Body.Close()
+	_ = resp.Body.Close()
 	if resp.StatusCode != 204 {
 		t.Fatal(resp.StatusCode)
 	}

@@ -30,6 +30,43 @@ func TestWriteJSONMarshalError(t *testing.T) {
 	}
 }
 
+func TestAdminResponseBoundsCumulativeWrites(t *testing.T) {
+	w := &adminResponse{header: make(http.Header)}
+	chunk := make([]byte, MaxAdminBody/2)
+	for range 2 {
+		if n, err := w.Write(chunk); err != nil || n != len(chunk) {
+			t.Fatal("response within limit rejected", n, err)
+		}
+	}
+	if w.status != http.StatusOK {
+		t.Fatal("implicit success status missing", w.status)
+	}
+	w.WriteHeader(http.StatusCreated)
+	if w.status != http.StatusOK {
+		t.Fatal("status changed after writing body", w.status)
+	}
+	if n, err := w.Write([]byte("overflow")); n != 0 || !errors.Is(err, ErrBodyTooLarge) ||
+		!errors.Is(w.err, ErrBodyTooLarge) || w.body.Len() != MaxAdminBody {
+		t.Fatal("oversized administrative response was buffered", n, err, w.body.Len())
+	}
+}
+
+func TestHealthReportsUnavailableDatabase(t *testing.T) {
+	db, err := sql.Open("sqlite", ":memory:")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := db.Close(); err != nil {
+		t.Fatal(err)
+	}
+	a := &App{db: db, cfg: Config{Logger: slog.New(slog.NewTextHandler(io.Discard, nil))}}
+	w := httptest.NewRecorder()
+	a.healthz(w, httptest.NewRequestWithContext(t.Context(), http.MethodGet, PathHealthz, nil))
+	if w.Code != http.StatusServiceUnavailable || w.Body.String() != "storage unavailable\n" {
+		t.Fatal("failed storage reported healthy", w.Code, w.Body.String())
+	}
+}
+
 func TestCloseCollectsErrors(t *testing.T) {
 	a := &App{closers: []func() error{func() error { return errors.New("one") }, func() error { return nil }}}
 	if err := a.Close(); err == nil || !strings.Contains(err.Error(), "one") {
@@ -313,7 +350,7 @@ func TestStorageStatusMapping(t *testing.T) {
 	for name, tc := range cases {
 		t.Run(name, func(t *testing.T) {
 			rec := httptest.NewRecorder()
-			r := httptest.NewRequest(http.MethodGet, "/admin/v1/enrollments", nil)
+			r := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/admin/v1/enrollments", nil)
 			a.storageStatus(rec, r, fmt.Errorf("wrapped: %w", tc.err))
 			if rec.Code != tc.want {
 				t.Fatalf("code = %d, want %d", rec.Code, tc.want)

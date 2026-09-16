@@ -31,7 +31,7 @@ type dropACMEResponse struct {
 func (d *dropACMEResponse) RoundTrip(r *http.Request) (*http.Response, error) {
 	response, err := d.base.RoundTrip(r)
 	if err == nil && response.StatusCode == http.StatusCreated && d.dropped.CompareAndSwap(false, true) {
-		response.Body.Close()
+		_ = response.Body.Close()
 		return nil, errors.New("test: lost account registration response")
 	}
 	return response, err
@@ -50,20 +50,24 @@ func TestPebbleHTTP01Recovery(t *testing.T) {
 	var offset atomic.Int64
 	store.Now = func() time.Time { return time.Now().Add(time.Duration(offset.Load())) }
 	manager := &Manager{Store: store}
-	listener, err := net.Listen("tcp", "[::]:0")
+	listener, err := (&net.ListenConfig{}).Listen(t.Context(), "tcp", "[::]:0")
 	if err != nil {
 		t.Fatal(err)
 	}
 	server := &http.Server{Handler: manager.HTTP01Handler(), ReadHeaderTimeout: time.Second}
-	defer server.Close()
-	go server.Serve(listener)
-	port := listener.Addr().(*net.TCPAddr).Port
+	defer func(cleanup func() error) { _ = cleanup() }(server.Close)
+	go func() {
+		if err := server.Serve(listener); err != nil && !errors.Is(err, http.ErrServerClosed) {
+			t.Error(err)
+		}
+	}()
+	port := requireType[*net.TCPAddr](t, listener.Addr()).Port
 	address := func() string {
-		l, err := net.Listen("tcp", "127.0.0.1:0")
+		l, err := (&net.ListenConfig{}).Listen(t.Context(), "tcp", "127.0.0.1:0")
 		if err != nil {
 			t.Fatal(err)
 		}
-		defer l.Close()
+		defer func(cleanup func() error) { _ = cleanup() }(l.Close)
 		return l.Addr().String()
 	}
 	api, management := address(), address()
@@ -80,9 +84,10 @@ func TestPebbleHTTP01Recovery(t *testing.T) {
 		t.Fatal(err)
 	}
 	path := filepath.Join(t.TempDir(), "pebble.json")
-	if err = os.WriteFile(path, data, 0600); err != nil {
+	if err = os.WriteFile(path, data, 0o600); err != nil {
 		t.Fatal(err)
 	}
+	// #nosec G204 G702 -- Execute the explicitly configured test binary with argument separation; no shell.
 	command := exec.CommandContext(ctx, binary, "-config", path)
 	command.Env = append(os.Environ(), "PEBBLE_VA_NOSLEEP=1", "PEBBLE_VA_ALWAYS_VALID=0", "PEBBLE_AUTHZREUSE=0", "PEBBLE_WFE_NONCEREJECT=0")
 	var logs bytes.Buffer
@@ -97,6 +102,7 @@ func TestPebbleHTTP01Recovery(t *testing.T) {
 			t.Log(logs.String())
 		}
 	}()
+	// #nosec G304 G703 -- The test controls this fixture path within its private workspace.
 	root, err := os.ReadFile(filepath.Join(source, "test/certs/pebble.minica.pem"))
 	if err != nil {
 		t.Fatal(err)
@@ -117,7 +123,7 @@ func TestPebbleHTTP01Recovery(t *testing.T) {
 			response, err := client.Do(request)
 			if err == nil {
 				data, err := io.ReadAll(response.Body)
-				response.Body.Close()
+				_ = response.Body.Close()
 				if err != nil || response.StatusCode != 200 {
 					t.Fatalf("test CA response: %v %d", err, response.StatusCode)
 				}

@@ -41,6 +41,7 @@ func mustAppend(t *testing.T, s audit.Store, rec audit.Record) audit.Record {
 }
 
 func runAppend(t *testing.T, newStore NewStore) {
+	t.Helper()
 	ctx := context.Background()
 
 	t.Run("AssignsRisingIDs", func(t *testing.T) {
@@ -122,6 +123,7 @@ func runAppend(t *testing.T, newStore NewStore) {
 }
 
 func runList(t *testing.T, newStore NewStore) {
+	t.Helper()
 	ctx := context.Background()
 
 	t.Run("NewestFirst", func(t *testing.T) {
@@ -162,8 +164,10 @@ func runList(t *testing.T, newStore NewStore) {
 }
 
 func runFilter(t *testing.T, newStore NewStore) {
+	t.Helper()
 	ctx := context.Background()
 	seed := func(t *testing.T) audit.Store {
+		t.Helper()
 		s := newStore(t)
 		mustAppend(t, s, audit.Record{At: T0, Type: "enrolled", Actor: "device", Enrollment: device("A")})
 		mustAppend(t, s, audit.Record{At: T0.Add(time.Hour), Type: "admin-action", Actor: "ops", Enrollment: device("B")})
@@ -199,6 +203,7 @@ func runFilter(t *testing.T, newStore NewStore) {
 }
 
 func runPagination(t *testing.T, newStore NewStore) {
+	t.Helper()
 	ctx := context.Background()
 
 	t.Run("FollowsCursorsToTheEnd", func(t *testing.T) {
@@ -318,6 +323,7 @@ func runPagination(t *testing.T, newStore NewStore) {
 }
 
 func runPrune(t *testing.T, newStore NewStore) {
+	t.Helper()
 	ctx := context.Background()
 
 	t.Run("RemovesOnlyWhatIsOlder", func(t *testing.T) {

@@ -86,10 +86,10 @@ func (e *env) list(
 
 	tw := tabwriter.NewWriter(e.stdout, 0, 8, 2, ' ', 0)
 	if len(header) > 0 {
-		fmt.Fprintln(tw, strings.Join(header, "\t"))
+		_, _ = fmt.Fprintln(tw, strings.Join(header, "\t"))
 	}
 	emitRow := func(item jsontext.Value) error {
-		fmt.Fprintln(tw, strings.Join(row(item), "\t"))
+		_, _ = fmt.Fprintln(tw, strings.Join(row(item), "\t"))
 		return nil
 	}
 	var err error
@@ -104,11 +104,13 @@ func (e *env) list(
 				_ = emitRow(it)
 			}
 			if next != "" {
-				defer fmt.Fprintf(
-					e.stderr,
-					"dmctl: more results; next cursor %s (use -all to follow)\n",
-					next,
-				)
+				defer func() {
+					_, _ = fmt.Fprintf(
+						e.stderr,
+						"dmctl: more results; next cursor %s (use -all to follow)\n",
+						next,
+					)
+				}()
 			}
 		}
 	}

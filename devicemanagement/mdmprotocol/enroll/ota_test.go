@@ -100,13 +100,13 @@ func TestOTAPhase1Verify(t *testing.T) {
 	}
 	srv := httptest.NewServer(svc.Handler())
 	defer srv.Close()
-	post := func(body []byte) *http.Response {
+	post := func(body []byte) testResponse {
 		resp, err := srv.Client().Post(srv.URL, "application/pkcs7-signature", strings.NewReader(string(body))) //nolint:noctx // test
 		if err != nil {
 			t.Fatal(err)
 		}
-		t.Cleanup(func() { resp.Body.Close() })
-		return resp
+		t.Cleanup(func() { _ = resp.Body.Close() })
+		return testResponse{resp}
 	}
 
 	if resp := post(signedAttrs(t, deviceCA, "device", attrs)); resp.StatusCode != http.StatusOK || resp.Header.Get("Content-Type") != enroll.ContentTypeProfile {
@@ -138,7 +138,7 @@ func TestOTAPhase1Verify(t *testing.T) {
 		t.Fatalf("oversized: %d", resp.StatusCode)
 	}
 	resp, _ := srv.Client().Get(srv.URL) //nolint:noctx // test
-	resp.Body.Close()
+	_ = resp.Body.Close()
 	if resp.StatusCode != http.StatusMethodNotAllowed {
 		t.Fatalf("GET: %d", resp.StatusCode)
 	}
@@ -164,10 +164,13 @@ func TestOTAPhase1Verify(t *testing.T) {
 	bare := httptest.NewServer((&enroll.OTAService{DeviceRoots: deviceCA.Pool(), Logger: slog.New(slog.NewTextHandler(io.Discard, nil)), MaxBytes: 1 << 20}).Handler())
 	defer bare.Close()
 	resp, _ = bare.Client().Post(bare.URL, "", strings.NewReader(string(signedAttrs(t, deviceCA, "d", attrs)))) //nolint:noctx // test
-	resp.Body.Close()
+	_ = resp.Body.Close()
 	if resp.StatusCode != http.StatusNotImplemented {
 		t.Fatalf("no Profile: %d", resp.StatusCode)
 	}
 	_ = x509.NewCertPool
 	_ = pkix.Name{}
 }
+
+// testResponse belongs to the test; the request helper registers body cleanup.
+type testResponse struct{ *http.Response }

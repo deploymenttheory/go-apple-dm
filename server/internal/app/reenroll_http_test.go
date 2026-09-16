@@ -45,7 +45,7 @@ func TestSignedSQLiteReenrollmentAfterProfileRemoval(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		r := httptest.NewRequest(http.MethodPut, "/mdm", bytes.NewReader(raw))
+		r := httptest.NewRequestWithContext(t.Context(), http.MethodPut, "/mdm", bytes.NewReader(raw))
 		r.Header.Set("Content-Type", contentType)
 		r.Header.Set(cms.HeaderName, cms.EncodeHeader(signature))
 		w := httptest.NewRecorder()

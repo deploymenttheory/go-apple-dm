@@ -7,7 +7,6 @@ import (
 	"net/http"
 	"strings"
 	"testing"
-
 	"time"
 
 	"github.com/deploymenttheory/go-apple-dm/server/adminauth"
@@ -18,7 +17,7 @@ import (
 
 func decodeBody(t *testing.T, resp *http.Response, v any) {
 	t.Helper()
-	defer resp.Body.Close()
+	defer func(body io.Closer) { _ = body.Close() }(resp.Body)
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		t.Fatal(err)
@@ -45,13 +44,13 @@ func TestPolicyCannotDelegateCredentialMutations(t *testing.T) {
 		{http.MethodDelete, "/principals/delegate", ""},
 	} {
 		response := adminReq(t, url, request.method, "/admin/v1"+request.path, token, request.body)
-		response.Body.Close()
+		_ = response.Body.Close()
 		if response.StatusCode != http.StatusForbidden {
 			t.Fatalf("%s %s returned %d", request.method, request.path, response.StatusCode)
 		}
 	}
 	response := adminReq(t, url, http.MethodGet, "/admin/v1/principals", token, "")
-	response.Body.Close()
+	_ = response.Body.Close()
 	if response.StatusCode != http.StatusOK {
 		t.Fatal("policy-authorized principal listing was refused")
 	}
@@ -223,6 +222,7 @@ func TestAdminPolicyRoutes(t *testing.T) {
 		// The source comes back exactly as written, so an operator sees what
 		// they wrote rather than a reformatting.
 		resp = adminReq(t, srv, http.MethodGet, "/admin/v1/policies/ops", rootTok, "")
+		defer func(body io.Closer) { _ = body.Close() }(resp.Body)
 		var got struct{ Source, Description string }
 		decodeBody(t, resp, &got)
 		if got.Source != good {
@@ -252,6 +252,7 @@ func TestAdminPolicyRoutes(t *testing.T) {
 
 	t.Run("ActionCatalogue", func(t *testing.T) {
 		resp := adminReq(t, srv, http.MethodGet, "/admin/v1/actions", rootTok, "")
+		defer func(body io.Closer) { _ = body.Close() }(resp.Body)
 		var got struct {
 			Items []struct{ ID, Help string }
 		}
@@ -268,6 +269,7 @@ func TestAdminPolicyRoutes(t *testing.T) {
 
 	t.Run("Listing", func(t *testing.T) {
 		resp := adminReq(t, srv, http.MethodGet, "/admin/v1/policies", rootTok, "")
+		defer func(body io.Closer) { _ = body.Close() }(resp.Body)
 		var got struct {
 			Items []struct{ Name string }
 		}

@@ -280,11 +280,16 @@ func (p *Provider) jwks(w http.ResponseWriter, _ *http.Request) {
 	p.mu.Lock()
 	es, rs, esKID, rsKID := p.es, p.rs, p.esKID, p.rsKID
 	p.mu.Unlock()
+	encoded, err := es.PublicKey.Bytes()
+	if err != nil {
+		http.Error(w, "invalid fixture signing key", http.StatusInternalServerError)
+		return
+	}
 	writeJSON(w, http.StatusOK, map[string]any{"keys": []map[string]any{
 		{
 			"kty": "EC", "crv": "P-256", "kid": esKID, "alg": AlgES256, "use": "sig",
-			"x": b64(es.PublicKey.X.FillBytes(make([]byte, 32))),
-			"y": b64(es.PublicKey.Y.FillBytes(make([]byte, 32))),
+			"x": b64(encoded[1:33]),
+			"y": b64(encoded[33:]),
 		},
 		{
 			"kty": "RSA", "kid": rsKID, "alg": AlgRS256, "use": "sig",
@@ -548,7 +553,8 @@ func (p *Provider) Client(trust ...*x509.Certificate) *WebView {
 		TLSClientConfig: &tls.Config{RootCAs: pool, MinVersion: tls.VersionTLS12},
 	}
 	jar, _ := cookiejar.New(nil)
-	client := &http.Client{Jar: jar,
+	client := &http.Client{
+		Jar:           jar,
 		Transport:     transport,
 		CheckRedirect: func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse },
 	}
@@ -575,7 +581,7 @@ func (v *WebView) Get(ctx context.Context, rawURL string) (*http.Response, error
 		}
 		next, err := req.URL.Parse(loc)
 		if err != nil || (next.Scheme != "http" && next.Scheme != "https") {
-			return resp, nil
+			return resp, nil //nolint:nilerr // Return the last HTTP response when a redirect cannot be followed.
 		}
 		_ = resp.Body.Close()
 		current = next.String()

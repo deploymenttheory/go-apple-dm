@@ -15,6 +15,7 @@ import (
 	"time"
 
 	"filippo.io/age"
+
 	"github.com/deploymenttheory/go-apple-dm/server/internal/privatefile"
 )
 
@@ -69,7 +70,7 @@ func TestArchiveRoundTripAndOccupiedTarget(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer v.Close()
+	defer func(cleanup func() error) { _ = cleanup() }(v.Close)
 	if v.Manifest.Metadata != manifest.Metadata {
 		t.Fatal("metadata changed")
 	}
@@ -78,7 +79,9 @@ func TestArchiveRoundTripAndOccupiedTarget(t *testing.T) {
 		t.Fatal(err)
 	}
 	for _, entry := range manifest.Entries {
+		// #nosec G304 -- The test controls this fixture path within its private workspace.
 		want, _ := os.ReadFile(filepath.Join(stage, entry.Name))
+		// #nosec G304 -- The test controls this fixture path within its private workspace.
 		got, err := os.ReadFile(filepath.Join(target, entry.Name))
 		if err != nil || !bytes.Equal(got, want) {
 			t.Fatal("restored bytes changed", entry.Name, err)
@@ -120,6 +123,7 @@ func TestArchiveRoundTripAndOccupiedTarget(t *testing.T) {
 
 func TestArchiveRejectsDamagedCiphertextAndWrongIdentity(t *testing.T) {
 	source, _, identity, _ := archiveFixture(t)
+	// #nosec G304 -- The test controls this fixture path within its private workspace.
 	original, _ := os.ReadFile(source)
 	wrong, _ := age.GenerateX25519Identity()
 	for _, name := range []string{"wrong identity", "header", "last chunk", "truncate", "appended data"} {
@@ -140,6 +144,7 @@ func TestArchiveRejectsDamagedCiphertextAndWrongIdentity(t *testing.T) {
 			}
 			dir := t.TempDir()
 			file := filepath.Join(dir, "damaged.age")
+			// #nosec G703 -- The test controls this fixture path within its private workspace.
 			if err := os.WriteFile(file, data, 0o600); err != nil {
 				t.Fatal(err)
 			}
@@ -398,7 +403,7 @@ func TestRestoreRechecksIsolatedFiles(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer v.Close()
+	defer func(cleanup func() error) { _ = cleanup() }(v.Close)
 	if err := os.WriteFile(
 		filepath.Join(v.Directory(), "database.jsonl"),
 		[]byte("changed"),

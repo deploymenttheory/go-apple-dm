@@ -18,7 +18,7 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/server/internal/privatefile"
 )
 
-//nolint:gocyclo // Keep the ordered workflow transitions and their failure handling together.
+// Keep the ordered workflow transitions and their failure handling together.
 func runSetup(ctx context.Context, e *env, args []string) error {
 	if len(args) == 0 {
 		return fmt.Errorf(
@@ -149,7 +149,7 @@ func runSetup(ctx context.Context, e *env, args []string) error {
 		if err != nil {
 			return wrapError(err)
 		}
-		defer a.Close() //nolint:contextcheck // Close owns a bounded drain after cancellation.
+		defer func(cleanup func() error) { _ = cleanup() }(a.Close) // Close owns a bounded drain after cancellation.
 		return wrapError(
 			json.NewEncoder(e.stdout).
 				Encode(map[string]string{"setupFile": path, "nextAction": "create or import HTTPS and enrollment identities; request the Apple certificates"}),
@@ -169,7 +169,7 @@ func runSetup(ctx context.Context, e *env, args []string) error {
 		if err != nil {
 			return wrapError(err)
 		}
-		defer local.Close() //nolint:contextcheck // Close owns a bounded drain after cancellation.
+		defer func(cleanup func() error) { _ = cleanup() }(local.Close) // Close owns a bounded drain after cancellation.
 	}
 	if group == "status" || group == "check" {
 		if local != nil {
@@ -187,10 +187,10 @@ func runSetup(ctx context.Context, e *env, args []string) error {
 					return wrapError(err)
 				}
 				if _, err = ready.LoadTLSCertificate(ctx); err != nil {
-					_ = ready.Close() //nolint:contextcheck // Close owns a bounded drain after cancellation.
+					_ = ready.Close() // Close owns a bounded drain after cancellation.
 					return wrapError(err)
 				}
-				_ = ready.Close() //nolint:contextcheck // Close owns a bounded drain after cancellation.
+				_ = ready.Close() // Close owns a bounded drain after cancellation.
 			}
 			if err := json.NewEncoder(e.stdout).Encode(status); err != nil {
 				return wrapError(err)
@@ -250,7 +250,7 @@ func runSetup(ctx context.Context, e *env, args []string) error {
 				if e2 != nil {
 					return wrapError(e2)
 				}
-				defer full.Close() //nolint:contextcheck // Close owns a bounded drain after cancellation.
+				defer func(cleanup func() error) { _ = cleanup() }(full.Close) // Close owns a bounded drain after cancellation.
 				data, err = full.ExportEnrollmentProfile(ctx, req)
 			}
 		} else {
@@ -437,7 +437,7 @@ func runSetup(ctx context.Context, e *env, args []string) error {
 				ReadTimeout:       10 * time.Second,
 				WriteTimeout:      10 * time.Second,
 			}
-			defer server.Close() //nolint:contextcheck // Close owns a bounded drain after cancellation.
+			defer func(cleanup func() error) { _ = cleanup() }(server.Close) // Close owns a bounded drain after cancellation.
 			go func() { _ = server.Serve(listener) }()
 			item, e2 := local.Certificates.RunPublicACME(ctx, result.Identity.ID, nil)
 			err = e2

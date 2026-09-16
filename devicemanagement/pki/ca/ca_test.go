@@ -107,6 +107,7 @@ func TestSelfSignedAndLocalSignsWithPolicy(t *testing.T) {
 		t.Fatalf("with sans: %+v %v", withSANs, err)
 	}
 	// Small RSA keys rejected.
+	// #nosec G403 -- Deliberately weak key exercises minimum RSA size rejection.
 	small, _ := rsa.GenerateKey(rand.Reader, 1024)
 	if _, err := signer.Sign(ctx, csr(t, small, "small", false), ca.Policy{}); !errors.Is(err, ca.ErrPolicy) {
 		t.Fatalf("small key: %v", err)

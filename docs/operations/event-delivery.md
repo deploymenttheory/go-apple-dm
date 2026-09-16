@@ -4,7 +4,7 @@ SQL-backed reference servers capture projected events in `event_records` and ret
 one `event_deliveries` row for each destination configured at capture time. Capture
 is enabled whenever the application uses SQL, even with no audit or webhook sink.
 Audit is a separate, optional queryable trail. Memory storage and the in-process
-bus have no durable event history.
+bus have no persistent event history.
 
 ## Guarantees and configuration
 

@@ -73,7 +73,7 @@ func TestMDMAdminRoutes(t *testing.T) {
 
 	t.Run("ListEnrollments", func(t *testing.T) {
 		resp := adminReq(t, srv, http.MethodGet, "/admin/v1/enrollments", "t", "")
-		defer resp.Body.Close()
+		defer func(body io.Closer) { _ = body.Close() }(resp.Body)
 		if resp.StatusCode != http.StatusOK {
 			t.Fatalf("status = %d", resp.StatusCode)
 		}
@@ -85,7 +85,7 @@ func TestMDMAdminRoutes(t *testing.T) {
 
 	t.Run("FiltersAndPages", func(t *testing.T) {
 		one := adminReq(t, srv, http.MethodGet, "/admin/v1/enrollments?limit=1", "t", "")
-		defer one.Body.Close()
+		defer func(body io.Closer) { _ = body.Close() }(one.Body)
 		body := jsonBody(t, one)
 		if items, _ := body["Items"].([]any); len(items) != 1 {
 			t.Fatalf("limit ignored: %d", len(items))
@@ -94,7 +94,7 @@ func TestMDMAdminRoutes(t *testing.T) {
 			t.Fatal("no cursor on a full page")
 		}
 		bySerial := adminReq(t, srv, http.MethodGet, "/admin/v1/enrollments?serial=SERIAL-UDID-A", "t", "")
-		defer bySerial.Body.Close()
+		defer func(body io.Closer) { _ = body.Close() }(bySerial.Body)
 		if items, _ := jsonBody(t, bySerial)["Items"].([]any); len(items) != 1 {
 			t.Fatalf("serial filter = %d", len(items))
 		}
@@ -104,7 +104,7 @@ func TestMDMAdminRoutes(t *testing.T) {
 	// token and the raw check-in plists. None of them is inventory.
 	t.Run("ListingLeaksNoSecrets", func(t *testing.T) {
 		resp := adminReq(t, srv, http.MethodGet, "/admin/v1/enrollments/device/UDID-A", "t", "")
-		defer resp.Body.Close()
+		defer func(body io.Closer) { _ = body.Close() }(resp.Body)
 		body, err := io.ReadAll(resp.Body)
 		if err != nil {
 			t.Fatal(err)
@@ -125,7 +125,7 @@ func TestMDMAdminRoutes(t *testing.T) {
 <key>CommandUUID</key><string>CMD-1</string>
 </dict></plist>`
 		enq := adminReq(t, srv, http.MethodPost, "/admin/v1/enrollments/device/UDID-A/commands", "t", cmd)
-		defer enq.Body.Close()
+		defer func(body io.Closer) { _ = body.Close() }(enq.Body)
 		if enq.StatusCode != http.StatusOK {
 			t.Fatalf("enqueue status = %d", enq.StatusCode)
 		}
@@ -134,14 +134,14 @@ func TestMDMAdminRoutes(t *testing.T) {
 		}
 
 		list := adminReq(t, srv, http.MethodGet, "/admin/v1/enrollments/device/UDID-A/commands", "t", "")
-		defer list.Body.Close()
+		defer func(body io.Closer) { _ = body.Close() }(list.Body)
 		items, _ := jsonBody(t, list)["Items"].([]any)
 		if len(items) != 1 {
 			t.Fatalf("queue = %d, want 1", len(items))
 		}
 
 		clear := adminReq(t, srv, http.MethodDelete, "/admin/v1/enrollments/device/UDID-A/commands", "t", "")
-		defer clear.Body.Close()
+		defer func(body io.Closer) { _ = body.Close() }(clear.Body)
 		if got := jsonBody(t, clear)["Cleared"]; got != float64(1) {
 			t.Fatalf("Cleared = %v", got)
 		}
@@ -158,7 +158,7 @@ func TestMDMAdminRoutes(t *testing.T) {
 <key>CommandUUID</key><string>CMD-2</string>
 </dict></plist>`
 		resp := adminReq(t, srv, http.MethodPost, "/admin/v1/enrollments/device/UDID-OLD/commands", "t", cmd)
-		defer resp.Body.Close()
+		defer func(body io.Closer) { _ = body.Close() }(resp.Body)
 		if resp.StatusCode != http.StatusOK {
 			t.Fatalf("status = %d", resp.StatusCode)
 		}
@@ -167,7 +167,7 @@ func TestMDMAdminRoutes(t *testing.T) {
 	t.Run("PushWakesTheDevice", func(t *testing.T) {
 		before := pusher.count()
 		resp := adminReq(t, srv, http.MethodPost, "/admin/v1/enrollments/device/UDID-A/push", "t", "")
-		defer resp.Body.Close()
+		defer func(body io.Closer) { _ = body.Close() }(resp.Body)
 		if resp.StatusCode != http.StatusOK {
 			t.Fatalf("status = %d", resp.StatusCode)
 		}
@@ -178,7 +178,7 @@ func TestMDMAdminRoutes(t *testing.T) {
 
 	t.Run("DisableEnrollment", func(t *testing.T) {
 		resp := adminReq(t, srv, http.MethodDelete, "/admin/v1/enrollments/device/UDID-B", "t", "")
-		defer resp.Body.Close()
+		defer func(body io.Closer) { _ = body.Close() }(resp.Body)
 		if resp.StatusCode != http.StatusNoContent {
 			t.Fatalf("status = %d", resp.StatusCode)
 		}
@@ -193,13 +193,13 @@ func TestMDMAdminRoutes(t *testing.T) {
 
 	t.Run("ExportAndImport", func(t *testing.T) {
 		exp := adminReq(t, srv, http.MethodGet, "/admin/v1/export?limit=1", "t", "")
-		defer exp.Body.Close()
+		defer func(body io.Closer) { _ = body.Close() }(exp.Body)
 		if exp.StatusCode != http.StatusOK {
 			t.Fatalf("export status = %d", exp.StatusCode)
 		}
 		rec := `{"ID":{"Channel":1,"ID":"UDID-IMPORTED"},"Enabled":true}`
 		imp := adminReq(t, srv, http.MethodPost, "/admin/v1/import", "t", rec)
-		defer imp.Body.Close()
+		defer func(body io.Closer) { _ = body.Close() }(imp.Body)
 		if imp.StatusCode != http.StatusNoContent {
 			t.Fatalf("import status = %d", imp.StatusCode)
 		}
@@ -211,12 +211,12 @@ func TestMDMAdminRoutes(t *testing.T) {
 
 	t.Run("PushCerts", func(t *testing.T) {
 		resp := adminReq(t, srv, http.MethodGet, "/admin/v1/pushcerts", "t", "")
-		defer resp.Body.Close()
+		defer func(body io.Closer) { _ = body.Close() }(resp.Body)
 		if resp.StatusCode != http.StatusOK {
 			t.Fatalf("status = %d", resp.StatusCode)
 		}
 		bad := adminReq(t, srv, http.MethodPut, "/admin/v1/pushcerts", "t", `{"Topic":"t"}`)
-		defer bad.Body.Close()
+		defer func(body io.Closer) { _ = body.Close() }(bad.Body)
 		if bad.StatusCode != http.StatusBadRequest {
 			t.Fatalf("a certificate with no key = %d, want 400", bad.StatusCode)
 		}
@@ -286,7 +286,7 @@ func TestMDMAdminRoutesAreGoverned(t *testing.T) {
 	t.Run("RefusesAPrincipalWithoutTheAction", func(t *testing.T) {
 		rec.reset()
 		resp := adminReq(t, srv, http.MethodDelete, "/admin/v1/enrollments/device/UDID-GOV", string(reader), "")
-		defer resp.Body.Close()
+		defer func(body io.Closer) { _ = body.Close() }(resp.Body)
 		if resp.StatusCode != http.StatusForbidden {
 			t.Fatalf("status = %d, want 403", resp.StatusCode)
 		}
@@ -309,7 +309,7 @@ func TestMDMAdminRoutesAreGoverned(t *testing.T) {
 <key>CommandUUID</key><string>CMD-GOV</string>
 </dict></plist>`
 		resp := adminReq(t, srv, http.MethodPost, "/admin/v1/enrollments/device/UDID-GOV/commands", root, cmd)
-		defer resp.Body.Close()
+		defer func(body io.Closer) { _ = body.Close() }(resp.Body)
 		if resp.StatusCode != http.StatusOK {
 			t.Fatalf("status = %d", resp.StatusCode)
 		}
@@ -338,7 +338,7 @@ func TestAdminAPIOnTheMDMRole(t *testing.T) {
 	seed(t, a, "UDID-MDMROLE")
 
 	resp := adminReq(t, srv, http.MethodGet, "/admin/v1/enrollments", "t", "")
-	defer resp.Body.Close()
+	defer func(body io.Closer) { _ = body.Close() }(resp.Body)
 	if resp.StatusCode != http.StatusOK {
 		t.Fatalf("status = %d, want the mdm role to serve its own admin API", resp.StatusCode)
 	}
@@ -400,7 +400,7 @@ func TestPushRouteNeedsAPushSource(t *testing.T) {
 	srv := serve(t, a).URL
 	seed(t, a, "UDID-NOPUSH")
 	resp := adminReq(t, srv, http.MethodPost, "/admin/v1/enrollments/device/UDID-NOPUSH/push", "t", "")
-	defer resp.Body.Close()
+	defer func(body io.Closer) { _ = body.Close() }(resp.Body)
 	if resp.StatusCode != http.StatusServiceUnavailable {
 		t.Fatalf("status = %d, want 503", resp.StatusCode)
 	}
@@ -448,7 +448,7 @@ func TestCommandListingShowsResults(t *testing.T) {
 	}
 	resp := adminReq(t, srv, http.MethodGet,
 		"/admin/v1/enrollments/device/UDID-RESULT/commands?type=DeviceInformation", "t", "")
-	defer resp.Body.Close()
+	defer func(body io.Closer) { _ = body.Close() }(resp.Body)
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		t.Fatal(err)
@@ -521,7 +521,7 @@ func TestMDMAdminRoutesRejectBadPathsAndPages(t *testing.T) {
 <key>CommandUUID</key><string>CMD-D</string>
 </dict></plist>`
 	resp := adminReq(t, srv, http.MethodPost, "/admin/v1/enrollments/device/UDID-P/commands", "t", cmd)
-	defer resp.Body.Close()
+	defer func(body io.Closer) { _ = body.Close() }(resp.Body)
 	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusGone {
 		t.Fatalf("enqueue to a disabled enrollment = %d", resp.StatusCode)
 	}
@@ -555,7 +555,7 @@ func TestPushCertUploadRoundTrip(t *testing.T) {
 	}
 
 	put := adminReq(t, srv, http.MethodPut, "/admin/v1/pushcerts", "t", string(body))
-	defer put.Body.Close()
+	defer func(body io.Closer) { _ = body.Close() }(put.Body)
 	if put.StatusCode != http.StatusOK {
 		raw, _ := io.ReadAll(put.Body)
 		t.Fatalf("status = %d: %s", put.StatusCode, raw)
@@ -566,7 +566,7 @@ func TestPushCertUploadRoundTrip(t *testing.T) {
 	}
 
 	list := adminReq(t, srv, http.MethodGet, "/admin/v1/pushcerts", "t", "")
-	defer list.Body.Close()
+	defer func(body io.Closer) { _ = body.Close() }(list.Body)
 	raw, err := io.ReadAll(list.Body)
 	if err != nil {
 		t.Fatal(err)
@@ -592,7 +592,7 @@ func TestPushRouteReportsAnInvalidToken(t *testing.T) {
 	srv := serve(t, a).URL
 	seed(t, a, "UDID-DEAD")
 	resp := adminReq(t, srv, http.MethodPost, "/admin/v1/enrollments/device/UDID-DEAD/push", "t", "")
-	defer resp.Body.Close()
+	defer func(body io.Closer) { _ = body.Close() }(resp.Body)
 	body := jsonBody(t, resp)
 	if body["Outcome"] != string(push.OutcomeInvalidToken) || body["Sent"] != false {
 		t.Fatalf("body = %v", body)
@@ -613,7 +613,7 @@ func TestPushRouteSeparatesRejectionFromADeadToken(t *testing.T) {
 	srv := serve(t, a).URL
 	seed(t, a, "UDID-REJECT")
 	resp := adminReq(t, srv, http.MethodPost, "/admin/v1/enrollments/device/UDID-REJECT/push", "t", "")
-	defer resp.Body.Close()
+	defer func(body io.Closer) { _ = body.Close() }(resp.Body)
 	body := jsonBody(t, resp)
 	if body["Outcome"] != string(push.OutcomeRejected) {
 		t.Fatalf("body = %v", body)

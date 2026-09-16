@@ -92,7 +92,7 @@ func TestSnapshotSecretBindingsRejectSwappedRowsAndPurposes(t *testing.T) {
 					if err != nil {
 						t.Fatal(err)
 					}
-					defer root.Close()
+					defer func(cleanup func() error) { _ = cleanup() }(root.Close)
 					ctx, cancel := context.WithCancel(t.Context())
 					defer cancel()
 					if fault == "cancelled" {

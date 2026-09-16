@@ -36,6 +36,7 @@ func (s faultStore) Get(ctx context.Context, key string) (state.Record, error) {
 	}
 	return s.Store.Get(ctx, key)
 }
+
 func (s faultStore) Update(ctx context.Context, keys []string, fn func(state.Tx) error) error {
 	return s.Store.Update(ctx, keys, func(tx state.Tx) error { return fn(faultTx{Tx: tx, op: s.op, prefix: s.prefix}) })
 }
@@ -51,12 +52,14 @@ func (tx faultTx) Get(ctx context.Context, key string) (state.Record, error) {
 	}
 	return tx.Tx.Get(ctx, key)
 }
+
 func (tx faultTx) Put(ctx context.Context, r state.Record) error {
 	if tx.op == "put" && strings.HasPrefix(r.Key, tx.prefix) {
 		return errStorage
 	}
 	return tx.Tx.Put(ctx, r)
 }
+
 func (tx faultTx) List(ctx context.Context, prefix, after string, n int) ([]state.Record, error) {
 	if tx.op == "list" {
 		return nil, errStorage
@@ -73,8 +76,10 @@ func (tx faultTx) Delete(ctx context.Context, key string) error {
 
 func TestRefreshTransactionFailurePreservesBothCredentials(t *testing.T) {
 	for _, tc := range []struct{ op, prefix string }{
-		{"get", "account/token/refresh"}, {"put", "account/token/refresh"},
-		{"delete", "account/token/access"}, {"put", "account/token/replacement"},
+		{"get", "account/token/refresh"},
+		{"put", "account/token/refresh"},
+		{"delete", "account/token/access"},
+		{"put", "account/token/replacement"},
 	} {
 		t.Run(tc.op+tc.prefix, func(t *testing.T) {
 			ctx := t.Context()
@@ -133,8 +138,10 @@ func TestAssociationFailuresAndExpiry(t *testing.T) {
 		t.Fatal(err)
 	}
 	for _, tc := range []struct{ op, prefix string }{
-		{"get", "account/enrollment/"}, {"put", "account/enrollment/"},
-		{"get", "account/certificate/"}, {"put", "account/certificate/"},
+		{"get", "account/enrollment/"},
+		{"put", "account/enrollment/"},
+		{"get", "account/certificate/"},
+		{"put", "account/certificate/"},
 	} {
 		t.Run(tc.op+tc.prefix, func(t *testing.T) {
 			st := state.NewMemory()
@@ -300,7 +307,7 @@ func TestProfileFailuresAreReported(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			r := httptest.NewRequest("POST", "/enroll", strings.NewReader(body))
+			r := httptest.NewRequestWithContext(t.Context(), "POST", "/enroll", strings.NewReader(body))
 			if tc.bearer {
 				r.Header.Set("Authorization", "Bearer "+token)
 			}

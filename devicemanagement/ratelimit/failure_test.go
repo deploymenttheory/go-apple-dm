@@ -35,18 +35,21 @@ func (t faultyTx) Get(ctx context.Context, key string) (state.Record, error) {
 	}
 	return t.Tx.Get(ctx, key)
 }
+
 func (t faultyTx) List(ctx context.Context, prefix, after string, n int) ([]state.Record, error) {
 	if t.op == "list" {
 		return nil, errStorage
 	}
 	return t.Tx.List(ctx, prefix, after, n)
 }
+
 func (t faultyTx) Delete(ctx context.Context, key string) error {
 	if t.op == "delete" {
 		return errStorage
 	}
 	return t.Tx.Delete(ctx, key)
 }
+
 func (t faultyTx) Put(ctx context.Context, r state.Record) error {
 	if t.op == "put" {
 		return errStorage

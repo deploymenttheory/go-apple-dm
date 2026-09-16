@@ -26,8 +26,8 @@ var (
 	rsaKey   *rsa.PrivateKey
 )
 
-func testP256(t testing.TB) *ecdsa.PrivateKey {
-	t.Helper()
+func testP256(tb testing.TB) *ecdsa.PrivateKey {
+	tb.Helper()
 	p256Once.Do(func() {
 		k, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
 		if err != nil {
@@ -38,8 +38,8 @@ func testP256(t testing.TB) *ecdsa.PrivateKey {
 	return p256Key
 }
 
-func testRSA(t testing.TB) *rsa.PrivateKey {
-	t.Helper()
+func testRSA(tb testing.TB) *rsa.PrivateKey {
+	tb.Helper()
 	rsaOnce.Do(func() {
 		k, err := rsa.GenerateKey(rand.Reader, 2048)
 		if err != nil {
@@ -50,11 +50,11 @@ func testRSA(t testing.TB) *rsa.PrivateKey {
 	return rsaKey
 }
 
-func mustEC(t testing.TB, curve elliptic.Curve) *ecdsa.PrivateKey {
-	t.Helper()
+func mustEC(tb testing.TB, curve elliptic.Curve) *ecdsa.PrivateKey {
+	tb.Helper()
 	k, err := ecdsa.GenerateKey(curve, rand.Reader)
 	if err != nil {
-		t.Fatalf("generating a key: %v", err)
+		tb.Fatalf("generating a key: %v", err)
 	}
 	return k
 }
@@ -64,22 +64,22 @@ func b64(s string) string { return base64.RawURLEncoding.EncodeToString([]byte(s
 
 // jwsBody assembles encoded members directly so tests can construct malformed
 // flattened JWS values.
-func jwsBody(t testing.TB, members map[string]any) []byte {
-	t.Helper()
+func jwsBody(tb testing.TB, members map[string]any) []byte {
+	tb.Helper()
 	body, err := json.Marshal(members)
 	if err != nil {
-		t.Fatalf("encoding the test body: %v", err)
+		tb.Fatalf("encoding the test body: %v", err)
 	}
 	return body
 }
 
 // signedFor produces a valid JWS with a jwk header, for tests that only
 // need something well formed.
-func signedFor(t testing.TB, key crypto.Signer, payload []byte) []byte {
-	t.Helper()
+func signedFor(tb testing.TB, key crypto.Signer, payload []byte) []byte {
+	tb.Helper()
 	jwk, err := jose.JWKFromPublic(key.Public())
 	if err != nil {
-		t.Fatalf("JWKFromPublic: %v", err)
+		tb.Fatalf("JWKFromPublic: %v", err)
 	}
 	body, err := jose.Sign(key, jose.Header{
 		JWK:   jwk,
@@ -87,16 +87,16 @@ func signedFor(t testing.TB, key crypto.Signer, payload []byte) []byte {
 		URL:   "https://acme.example/acme/new-account",
 	}, payload)
 	if err != nil {
-		t.Fatalf("Sign: %v", err)
+		tb.Fatalf("Sign: %v", err)
 	}
 	return body
 }
 
 // reSign rebuilds a flattened body from a parsed JWS with a replacement
 // signature, keeping the protected header and payload byte for byte.
-func reSign(t testing.TB, parsed *jose.JWS, signature []byte, payload string) []byte {
-	t.Helper()
-	return jwsBody(t, map[string]any{
+func reSign(tb testing.TB, parsed *jose.JWS, signature []byte, payload string) []byte {
+	tb.Helper()
+	return jwsBody(tb, map[string]any{
 		"protected": string(parsed.Protected),
 		"payload":   payload,
 		"signature": base64.RawURLEncoding.EncodeToString(signature),
@@ -104,13 +104,13 @@ func reSign(t testing.TB, parsed *jose.JWS, signature []byte, payload string) []
 }
 
 // payloadOf recovers the encoded payload member from a body Sign produced.
-func payloadOf(t testing.TB, body []byte) string {
-	t.Helper()
+func payloadOf(tb testing.TB, body []byte) string {
+	tb.Helper()
 	var members struct {
 		Payload string `json:"payload"`
 	}
 	if err := json.Unmarshal(body, &members); err != nil {
-		t.Fatalf("decoding the payload member: %v", err)
+		tb.Fatalf("decoding the payload member: %v", err)
 	}
 	return members.Payload
 }
@@ -132,5 +132,5 @@ func (b brokenSigner) Sign(io.Reader, []byte, crypto.SignerOpts) ([]byte, error)
 // asn1Marshal writes the ECDSA SEQUENCE a crypto.Signer is expected to
 // return, so that a test can hand Sign a well-formed but useless one.
 func asn1Marshal(r, s *big.Int) ([]byte, error) {
-	return asn1.Marshal(struct{ R, S *big.Int }{R: r, S: s}) //nolint:wrapcheck // test helper
+	return asn1.Marshal(struct{ R, S *big.Int }{R: r, S: s}) // test helper
 }

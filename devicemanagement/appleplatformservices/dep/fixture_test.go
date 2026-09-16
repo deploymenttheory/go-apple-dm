@@ -41,7 +41,6 @@ type fixtureOptions struct {
 }
 
 // withRealClock uses clock.Real, for synctest-driven loops.
-func withRealClock(o *fixtureOptions) { o.real = true }
 
 // withoutAccount leaves the store empty.
 func withoutAccount(o *fixtureOptions) { o.noAccount = true }
@@ -71,7 +70,7 @@ func newFixture(t *testing.T, mutate ...func(*fixtureOptions)) *fixture {
 	f.srv = deptest.NewServer(o.server)
 	// A private transport: connections opened inside a synctest bubble
 	// must be closed there, not by another test through the default one.
-	transport := f.srv.Client().Transport.(*http.Transport).Clone()
+	transport := requireType[*http.Transport](t, f.srv.Client().Transport).Clone()
 	t.Cleanup(f.srv.Close)
 	t.Cleanup(transport.CloseIdleConnections)
 	f.bus.Subscribe(event.All, func(_ context.Context, e event.Event) error {

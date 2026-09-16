@@ -284,7 +284,7 @@ func TestDeclaration(t *testing.T) {
 		if got["ServerToken"] != snap.Items[0].ServerToken || got["Identifier"] != "com.example.cfg" || got["Type"] != schemaddm.DeclarationTypeManagementTest {
 			t.Fatalf("served %s", body)
 		}
-		if got["Payload"].(map[string]any)["Echo"] != "hi" {
+		if requireType[map[string]any](t, got["Payload"])["Echo"] != "hi" {
 			t.Fatalf("payload %s", body)
 		}
 		// The body round-trips through ParseDeclaration to the same token:
@@ -311,7 +311,7 @@ func TestDeclaration(t *testing.T) {
 			t.Fatal(err)
 		}
 		got := decode(t, body)
-		if got["ServerToken"] != old.ServerToken || got["Payload"].(map[string]any)["Echo"] != "old" {
+		if got["ServerToken"] != old.ServerToken || requireType[map[string]any](t, got["Payload"])["Echo"] != "old" {
 			t.Fatalf("served %s, want the advertised version %s", body, old.ServerToken)
 		}
 		// The next manifest refresh moves the snapshot to the new version.
@@ -322,7 +322,7 @@ func TestDeclaration(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		if got := decode(t, body); got["ServerToken"] != fresh.ServerToken || got["Payload"].(map[string]any)["Echo"] != "new" {
+		if got := decode(t, body); got["ServerToken"] != fresh.ServerToken || requireType[map[string]any](t, got["Payload"])["Echo"] != "new" {
 			t.Fatalf("served %s after refresh, want %s", body, fresh.ServerToken)
 		}
 	})
@@ -344,7 +344,7 @@ func TestDeclaration(t *testing.T) {
 		if served["ServerToken"] != got.Declarations.Configurations[0].ServerToken {
 			t.Fatalf("served token %v, advertised %v", served["ServerToken"], got.Declarations.Configurations[0].ServerToken)
 		}
-		if served["Payload"].(map[string]any)["Echo"] != dev.ID {
+		if requireType[map[string]any](t, served["Payload"])["Echo"] != dev.ID {
 			t.Fatalf("served %s", body)
 		}
 	})

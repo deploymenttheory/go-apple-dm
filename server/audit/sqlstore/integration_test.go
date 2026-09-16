@@ -43,6 +43,7 @@ func runShared(t *testing.T, db *sql.DB, d sqlcommon.Dialect, cascade string) {
 		// Each case starts from an empty trail. The identity sequence is
 		// deliberately not reset: IDsAreNotReused holds across cases too.
 		for _, table := range auditTables {
+			// #nosec G202 -- Table names come from the fixed migration table list in this test.
 			if _, err := db.ExecContext(ctx, "DELETE FROM "+table); err != nil {
 				t.Fatal(err)
 			}
@@ -68,7 +69,7 @@ func TestStorePostgres(t *testing.T) {
 		t.Fatal(err)
 	}
 	db := stdlib.OpenDB(*cfg)
-	defer db.Close()
+	defer func(cleanup func() error) { _ = cleanup() }(db.Close)
 	db.SetMaxOpenConns(8)
 	runShared(t, db, postgres.Dialect, " CASCADE")
 }
@@ -86,7 +87,7 @@ func TestStoreMySQL(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer db.Close()
+	defer func(cleanup func() error) { _ = cleanup() }(db.Close)
 	db.SetMaxOpenConns(8)
 	runShared(t, db, mysql.Dialect, "")
 }

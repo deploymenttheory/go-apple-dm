@@ -32,8 +32,10 @@ option; application-wide access defaults to false on supported Mac targets.
 ACME emits an explicit Attest boolean and validates known OS/hardware context.
 Current Apple documentation defines false as nonextractable for ACME, despite
 the inverse description in the pinned YAML. Upstream generated descriptions
-remain verbatim. The [source comparison](../../wip/apple-enterprise-hardening-2026-09-11.md)
-records platform minima and interoperability limits.
+remain verbatim. [Decision 0033](0033-acme-identity-in-profiles-and-ddm.md)
+records hardware and platform constraints; Apple's
+[ACME payload](https://developer.apple.com/documentation/devicemanagement/acmecertificate)
+defines the extractability behavior.
 
 ## Rationale
 

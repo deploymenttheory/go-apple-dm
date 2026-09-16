@@ -57,7 +57,7 @@ func TestParse(t *testing.T) {
 	})
 	t.Run("rsa pkcs1", func(t *testing.T) {
 		t.Parallel()
-		der := x509.MarshalPKCS1PrivateKey(id.Key.(*rsa.PrivateKey))
+		der := x509.MarshalPKCS1PrivateKey(requireType[*rsa.PrivateKey](t, id.Key))
 		if _, err := pushcert.Parse(certPEM, pemBlock("RSA PRIVATE KEY", der)); err != nil {
 			t.Fatal(err)
 		}
@@ -72,7 +72,7 @@ func TestParse(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		der, err := x509.MarshalECPrivateKey(ec.Key.(*ecdsa.PrivateKey))
+		der, err := x509.MarshalECPrivateKey(requireType[*ecdsa.PrivateKey](t, ec.Key))
 		if err != nil {
 			t.Fatal(err)
 		}

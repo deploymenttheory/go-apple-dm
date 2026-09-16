@@ -29,8 +29,8 @@ Service and storage tests cover multiple users, reused user identifiers on diffe
 - [server/service/checkin.go](../../../server/service/checkin.go)
 - [simulator](../../../devicemanagement/simulator)
 - <https://developer.apple.com/documentation/devicemanagement/check-in>
-- <https://developer.apple.com/documentation/devicemanagement/implementing-device-management>
-- <https://developer.apple.com/documentation/devicemanagement/profile>
+- <https://developer.apple.com/documentation/devicemanagement/enabling-network-and-mobile-user-logins>
+- <https://developer.apple.com/documentation/devicemanagement/mdm>
 
 Reference source identifiers and paths (relative to the named project):
 

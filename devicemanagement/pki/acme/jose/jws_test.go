@@ -125,6 +125,7 @@ func TestSignRejects(t *testing.T) {
 	if err != nil {
 		t.Fatalf("generating an Ed25519 key: %v", err)
 	}
+	// #nosec G403 -- Deliberately weak key exercises minimum RSA size rejection.
 	short, err := rsa.GenerateKey(rand.Reader, 1024)
 	if err != nil {
 		t.Fatalf("generating a short RSA key: %v", err)
@@ -173,11 +174,11 @@ func TestSignRejects(t *testing.T) {
 var errAlwaysFails = errors.New("test: the signer refuses")
 
 // asn1ECDSA builds the SEQUENCE a crypto.Signer returns for ECDSA.
-func asn1ECDSA(t testing.TB, r, s *big.Int) []byte {
-	t.Helper()
+func asn1ECDSA(tb testing.TB, r, s *big.Int) []byte {
+	tb.Helper()
 	der, err := asn1Marshal(r, s)
 	if err != nil {
-		t.Fatalf("encoding an ASN.1 signature: %v", err)
+		tb.Fatalf("encoding an ASN.1 signature: %v", err)
 	}
 	return der
 }
@@ -422,6 +423,7 @@ func TestVerifyFailures(t *testing.T) {
 		t.Fatalf("Parse: %v", err)
 	}
 	other := mustEC(t, elliptic.P256())
+	// #nosec G403 -- Deliberately weak key exercises minimum RSA size rejection.
 	shortRSA, err := rsa.GenerateKey(rand.Reader, 1024)
 	if err != nil {
 		t.Fatalf("generating a short RSA key: %v", err)
@@ -534,11 +536,11 @@ func TestVerifyFailures(t *testing.T) {
 // ecdsaJWS builds a P-256 JWS whose r and s each have at least the given
 // number of leading zero bytes, then returns a body carrying the signature
 // with exactly those bytes removed: the shape some Apple ACME clients emit.
-func ecdsaJWS(t testing.TB, key *ecdsa.PrivateKey, trimR, trimS int) []byte {
-	t.Helper()
+func ecdsaJWS(tb testing.TB, key *ecdsa.PrivateKey, trimR, trimS int) []byte {
+	tb.Helper()
 	jwk, err := jose.JWKFromPublic(&key.PublicKey)
 	if err != nil {
-		t.Fatalf("JWKFromPublic: %v", err)
+		tb.Fatalf("JWKFromPublic: %v", err)
 	}
 	header, err := json.Marshal(map[string]any{
 		"alg":   jose.ES256,
@@ -547,7 +549,7 @@ func ecdsaJWS(t testing.TB, key *ecdsa.PrivateKey, trimR, trimS int) []byte {
 		"url":   "https://acme.example/acme/new-account",
 	})
 	if err != nil {
-		t.Fatalf("encoding the header: %v", err)
+		tb.Fatalf("encoding the header: %v", err)
 	}
 	protected := base64.RawURLEncoding.EncodeToString(header)
 	payload := b64(`{"termsOfServiceAgreed":true}`)
@@ -557,7 +559,7 @@ func ecdsaJWS(t testing.TB, key *ecdsa.PrivateKey, trimR, trimS int) []byte {
 	for range budget {
 		r, s, err := ecdsa.Sign(rand.Reader, key, digest[:])
 		if err != nil {
-			t.Fatalf("ecdsa.Sign: %v", err)
+			tb.Fatalf("ecdsa.Sign: %v", err)
 		}
 		rb := r.FillBytes(make([]byte, 32))
 		sb := s.FillBytes(make([]byte, 32))
@@ -565,13 +567,13 @@ func ecdsaJWS(t testing.TB, key *ecdsa.PrivateKey, trimR, trimS int) []byte {
 			continue
 		}
 		sig := slices.Concat(rb[trimR:], sb[trimS:])
-		return jwsBody(t, map[string]any{
+		return jwsBody(tb, map[string]any{
 			"protected": protected,
 			"payload":   payload,
 			"signature": base64.RawURLEncoding.EncodeToString(sig),
 		})
 	}
-	t.Fatalf("no signature with %d and %d leading zero bytes within %d attempts", trimR, trimS, budget)
+	tb.Fatalf("no signature with %d and %d leading zero bytes within %d attempts", trimR, trimS, budget)
 	return nil
 }
 
@@ -667,11 +669,11 @@ func TestVerifyRejectsMalformedECDSASignatures(t *testing.T) {
 	}
 }
 
-func randomBytes(t testing.TB, n int) []byte {
-	t.Helper()
+func randomBytes(tb testing.TB, n int) []byte {
+	tb.Helper()
 	b := make([]byte, n)
 	if _, err := rand.Read(b); err != nil {
-		t.Fatalf("reading random bytes: %v", err)
+		tb.Fatalf("reading random bytes: %v", err)
 	}
 	return b
 }

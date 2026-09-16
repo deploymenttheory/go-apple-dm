@@ -93,16 +93,17 @@ func TestCyclesFindsAComponent(t *testing.T) {
 func TestUnitNamespacesInternalAndSchema(t *testing.T) {
 	t.Parallel()
 	for pkg, want := range map[string]string{
-		"mdm":                              "mdm",
-		"ddm/predicate":                    "ddm",
-		"internal/clock":                   "internal/clock",
-		"internal/app":                     "internal/app",
-		"schema/commands":                  "schema/commands",
-		"schema/support":                   "schema/support",
-		"acme/attest/attesttest":           "acme",
-		"devicemanagement/clock":           "devicemanagement/clock",
-		"devicemanagement/internal/cbor":   "devicemanagement/internal/cbor",
-		"devicemanagement/schema/commands": "devicemanagement/schema/commands",
+		"mdm":                    "mdm",
+		"ddm/predicate":          "ddm",
+		"internal/clock":         "internal/clock",
+		"internal/app":           "internal/app",
+		"schema/commands":        "schema/commands",
+		"schema/support":         "schema/support",
+		"acme/attest/attesttest": "acme",
+
+		"devicemanagement/clock":                     "devicemanagement/clock",
+		"devicemanagement/internal/cbor":             "devicemanagement/internal/cbor",
+		"devicemanagement/schema/commands":           "devicemanagement/schema/commands",
 		"devicemanagement/mdmprotocol/ddm/predicate": "devicemanagement/mdmprotocol/ddm",
 		"devicemanagement/pki/acme/attest":           "devicemanagement/pki/acme",
 		"devicemanagement/storage/ddm/inmem":         "devicemanagement/storage/ddm",

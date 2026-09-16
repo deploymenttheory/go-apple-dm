@@ -10,6 +10,16 @@ Check-in decoding resolves generated `devicemanagement/schema/checkin` messages 
 
 `Enrollment.Resolve` represents device, user, Shared iPad user, User Enrollment device, and User Enrollment user channels. Shared iPad uses Apple's all-`F` `UserID` sentinel and `UserShortName`; User Enrollment uses `EnrollmentID` and `EnrollmentUserID`. Invalid combinations and missing identifiers return errors.
 
+The protocol layer also supplies bounded helpers for values used in commands.
+`manifest.Build` hashes caller-supplied asset bytes with SHA-256 into generated
+manifest types, using whole-file or explicit chunk hashes and returning size
+separately. It does not inspect archives or host/install assets. Activation Lock
+helpers generate Apple's server-format bypass code and hash; device-returned
+codes remain opaque. Callers retain the code before enabling a lock with its hash.
+`cms.DecryptEnvelope` recovers bytes from BER/DER CMS using the matching RSA
+recipient; it does not authenticate the sender. The authenticated response path
+and retained-key lifecycle are separate responsibilities.
+
 ## Rationale
 
 Explicit channel types support command-target validation and separate device and user state. Retained bytes allow signature verification and forwarding without re-encoding.
@@ -25,6 +35,7 @@ Protocol tests cover generated message dispatch, channel resolution, typed comma
 ## References
 
 - [mdmprotocol/mdm](../../../devicemanagement/mdmprotocol/mdm)
+- [Protocol helpers and independent fixtures](../../operations/protocol-helpers.md)
 - [server/service](../../../server/service)
 - <https://developer.apple.com/documentation/devicemanagement/check-in>
 - <https://developer.apple.com/documentation/devicemanagement/commands-and-queries>

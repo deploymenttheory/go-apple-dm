@@ -199,6 +199,7 @@ func TestAuthorizeGuardsEveryMessage(t *testing.T) {
 	})
 	enroll(t, h, "D1")
 	messages := map[string]*mdm.Checkin{
+		// #nosec G101 -- Synthetic protocol fixtures and invalid URLs; no live credentials.
 		"GetToken":              simple(t, "GetToken", "D1", map[string]any{"TokenServiceType": "com.apple.maid"}),
 		"UserAuthenticate":      checkinPlist(t, map[string]any{"MessageType": "UserAuthenticate", "UDID": "D1", "UserID": "U1", "DigestResponse": ""}),
 		"DeclarativeManagement": simple(t, "DeclarativeManagement", "D1", map[string]any{"Endpoint": "tokens"}),

@@ -133,8 +133,8 @@ func Create(
 	if err != nil {
 		return manifest, fmt.Errorf("recovery: temporary archive: %w", err)
 	}
-	defer os.Remove(out.Name())
-	defer out.Close()
+	defer func() { _ = os.Remove(out.Name()) }()
+	defer func(cleanup func() error) { _ = cleanup() }(out.Close)
 	sealed, err := age.Encrypt(out, recipients...)
 	if err != nil {
 		return manifest, fmt.Errorf("recovery: encrypt: %w", err)
@@ -177,7 +177,7 @@ func inventory(ctx context.Context, stage string, limits Limits) ([]Entry, error
 	if err != nil {
 		return nil, fmt.Errorf("recovery: stage: %w", err)
 	}
-	defer root.Close()
+	defer func(cleanup func() error) { _ = cleanup() }(root.Close)
 	entries := []Entry{}
 	var total int64
 	err = fs.WalkDir(root.FS(), ".", func(name string, d fs.DirEntry, walkErr error) error {
@@ -238,7 +238,7 @@ func writeEntries(ctx context.Context, archive *tar.Writer, stage string, entrie
 	if err != nil {
 		return fmt.Errorf("recovery: stage: %w", err)
 	}
-	defer root.Close()
+	defer func(cleanup func() error) { _ = cleanup() }(root.Close)
 	for _, entry := range entries {
 		info, err := root.Lstat(entry.Name)
 		if err != nil {
@@ -311,7 +311,7 @@ func Verify(
 	if err != nil {
 		return nil, wrap(err)
 	}
-	defer f.Close()
+	defer func(cleanup func() error) { _ = cleanup() }(f.Close)
 	plaintext, err := age.Decrypt(contextReader{ctx, f}, identities...)
 	if err != nil {
 		return nil, fmt.Errorf("recovery: decrypt: %w", err)
@@ -464,12 +464,12 @@ func copyVerified(source, destination string, entry Entry) error {
 	if err != nil {
 		return wrap(err)
 	}
-	defer f.Close()
+	defer func(cleanup func() error) { _ = cleanup() }(f.Close)
 	out, err := openLocal(destination, os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0o600)
 	if err != nil {
 		return wrap(err)
 	}
-	defer out.Close()
+	defer func(cleanup func() error) { _ = cleanup() }(out.Close)
 	h := sha256.New()
 	n, err := io.Copy(io.MultiWriter(out, h), io.LimitReader(f, entry.Size+1))
 	if err != nil {
@@ -487,7 +487,7 @@ func syncDirectory(directory string) error {
 	if err != nil {
 		return wrap(err)
 	}
-	defer f.Close()
+	defer func(cleanup func() error) { _ = cleanup() }(f.Close)
 	return wrap(privatefile.SyncDirectory(f))
 }
 

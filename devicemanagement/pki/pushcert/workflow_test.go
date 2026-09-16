@@ -155,7 +155,7 @@ func TestVendorEnvelope(t *testing.T) {
 	}
 	keyBlock, _ := pem.Decode(key)
 	private, err := x509.ParsePKCS8PrivateKey(keyBlock.Bytes)
-	if err != nil || !request.PublicKey.(*rsa.PublicKey).Equal(private.(*rsa.PrivateKey).Public()) {
+	if err != nil || !requireType[*rsa.PublicKey](t, request.PublicKey).Equal(requireType[*rsa.PrivateKey](t, private).Public()) {
 		t.Fatal("CSR key pair")
 	}
 	root, err := testpki.NewCA("trusted vendor root")

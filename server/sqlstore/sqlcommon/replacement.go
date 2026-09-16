@@ -151,9 +151,8 @@ func (s *Store) replacementToken(
 	t storage.ReplacementToken,
 	at time.Time,
 ) error {
-	e, err := scanEnrollment(q.QueryRowContext(ctx, s.q(selectEnrollment+" WHERE id = ?"), t.ID.ID))
+	_, err := scanEnrollment(q.QueryRowContext(ctx, s.q(selectEnrollment+" WHERE id = ?"), t.ID.ID))
 	if errors.Is(err, sql.ErrNoRows) {
-		e = &storage.Enrollment{ID: t.ID, EnrolledAt: at}
 		// Insert the user channel with defaults; never upsert/reset an existing row.
 		_, err = q.ExecContext(
 			ctx,
@@ -200,7 +199,7 @@ func (s *Store) replacementToken(
 	if identityErr != nil {
 		return identityErr
 	}
-	e = stored
+	e := stored
 	if e.ID != t.ID {
 		return storage.ErrConflict
 	}

@@ -25,7 +25,7 @@
 //   - Decision record: https://github.com/deploymenttheory/go-apple-dm/blob/main/docs/research/decisions/0035-dmctl-structure-and-credentials.md
 //   - Threat model: https://github.com/deploymenttheory/go-apple-dm/blob/main/docs/security/threat-model.md (admin API, repudiation)
 //   - E2E scenarios: https://github.com/deploymenttheory/go-apple-dm/blob/main/docs/testing/e2e-scenarios.md (E2E-024)
-//   - Apple documents nothing about administering an MDM server; the device-facing protocol is elsewhere. The prior art is catalogued in https://github.com/deploymenttheory/go-apple-dm/blob/main/docs/research/reference_projects.md and read in record 0034.
+//   - Administrative authorization is project policy; decision record 0034 cites the implementation references that inform it.
 //   - RFC 6750: bearer token usage, including the WWW-Authenticate challenge
 //   - RFC 9110 section 11: the 401 and 403 distinction the API relies on
 package adminauth

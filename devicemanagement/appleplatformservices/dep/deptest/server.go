@@ -890,7 +890,7 @@ func (s *Server) handleRemove(w http.ResponseWriter, body []byte) {
 
 func (s *Server) handleSetDiscovery(w http.ResponseWriter, body []byte) {
 	var req struct {
-		URL string `json:"mdm_service_discovery_url"` //nolint:tagliatelle // Apple's key
+		URL string `json:"mdm_service_discovery_url"` // Apple's key
 	}
 	if err := dep.Unmarshal(body, &req); err != nil {
 		s.fail(w, http.StatusBadRequest, dep.CodeMalformedBody)

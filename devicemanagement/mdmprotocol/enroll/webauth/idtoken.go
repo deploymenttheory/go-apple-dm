@@ -108,8 +108,18 @@ func ecKey(k jwk) (*ecdsa.PublicKey, error) {
 	if err != nil {
 		return nil, fmt.Errorf("%w: key %q: y: %w", ErrJWK, k.Kid, err)
 	}
-	pub := &ecdsa.PublicKey{Curve: elliptic.P256(), X: new(big.Int).SetBytes(x), Y: new(big.Int).SetBytes(y)}
-	if _, err := pub.ECDH(); err != nil {
+	// Preserve acceptance of left-padded coordinates while using the validated
+	// uncompressed point parser instead of constructing raw curve coordinates.
+	xInt, yInt := new(big.Int).SetBytes(x), new(big.Int).SetBytes(y)
+	if xInt.BitLen() > 256 || yInt.BitLen() > 256 {
+		return nil, fmt.Errorf("%w: key %q: coordinates exceed P-256", ErrJWK, k.Kid)
+	}
+	encoded := make([]byte, 65)
+	encoded[0] = 4
+	xInt.FillBytes(encoded[1:33])
+	yInt.FillBytes(encoded[33:])
+	pub, err := ecdsa.ParseUncompressedPublicKey(elliptic.P256(), encoded)
+	if err != nil {
 		return nil, fmt.Errorf("%w: key %q: not on P-256: %w", ErrJWK, k.Kid, err)
 	}
 	return pub, nil

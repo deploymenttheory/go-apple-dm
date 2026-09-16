@@ -35,7 +35,7 @@
     ],
     "repository": {
       "url": "https://github.com/deploymenttheory/go-apple-dm",
-      "revision": "bb9e5bb3af89683a960a326e309be409bb0dc40f"
+      "revision": "7500eb25e50a2913338339d5fced18dc7f41fdc3"
     },
     "colour_profile": "purpose-v1",
     "legend": {
@@ -384,7 +384,7 @@
       "title": "Enforced rules and exceptions",
       "items": [
         "Tests reject unapproved upward imports and package-unit cycles. The explicit upward exception is mdmprotocol/enroll/ade importing appleplatformservices/gdmf.",
-        "Test scaffolding is excluded from the tier rule. pki/pushcert remains independent of the push client and imports only the standard library."
+        "Test scaffolding is excluded from the tier rule. pki/pushcert remains independent of the push client; vendor CSR encoding uses howett.net/plist."
       ]
     },
     {

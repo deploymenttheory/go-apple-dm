@@ -186,8 +186,10 @@ func TestParseEndpoint(t *testing.T) {
 			t.Errorf("%q round trip = %q", in, got.String())
 		}
 	}
-	bad := []string{"", "Tokens", "declaration", "declaration/", "declaration/configuration", "declaration/configuration/",
-		"declaration/credential/x", "declaration/configuration/a/b", "declarations/configuration/x", "status/", "declaration/configuration/" + strings.Repeat("x", 65)}
+	bad := []string{
+		"", "Tokens", "declaration", "declaration/", "declaration/configuration", "declaration/configuration/",
+		"declaration/credential/x", "declaration/configuration/a/b", "declarations/configuration/x", "status/", "declaration/configuration/" + strings.Repeat("x", 65),
+	}
 	for _, in := range bad {
 		if _, err := ddm.ParseEndpoint(in); !errors.Is(err, ddm.ErrBadEndpoint) {
 			t.Errorf("%q: %v", in, err)

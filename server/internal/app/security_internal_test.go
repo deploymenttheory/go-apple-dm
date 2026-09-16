@@ -111,7 +111,7 @@ func TestProtocolStoreOutageAndUnconfiguredRoute(t *testing.T) {
 		t.Fatal(err)
 	}
 	w := httptest.NewRecorder()
-	h.ServeHTTP(w, httptest.NewRequest("GET", "/unconfigured", nil))
+	h.ServeHTTP(w, httptest.NewRequestWithContext(t.Context(), "GET", "/unconfigured", nil))
 	if w.Code != http.StatusNoContent {
 		t.Fatal(w.Code)
 	}

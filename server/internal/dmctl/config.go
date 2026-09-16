@@ -35,10 +35,10 @@ type Config struct {
 type Context struct {
 	Server string `json:"server"`
 	// TokenEnv names an environment variable holding the credential.
-	//nolint:tagliatelle // established on-disk configuration key
+	// established on-disk configuration key
 	TokenEnv string `json:"token_env,omitempty"`
 	// TokenFile names a file holding the credential.
-	//nolint:tagliatelle // established on-disk configuration key
+	// established on-disk configuration key
 	TokenFile string `json:"token_file,omitempty"`
 	// Token stores an inline credential. Writing it requires explicit opt-in and
 	// emits a warning; token_env and token_file are the default alternatives.
@@ -83,7 +83,7 @@ func DefaultConfigPath(getenv func(string) string) string {
 
 // loadConfig reads the active context, or nil when there is no config file.
 //
-//nolint:nilnil // no configured active context is a successful optional result
+// no configured active context is a successful optional result
 func (e *env) loadConfig() (*Context, error) {
 	path := e.opts.config
 	if path == "" {

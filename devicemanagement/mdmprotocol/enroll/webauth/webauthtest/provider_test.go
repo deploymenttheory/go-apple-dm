@@ -23,7 +23,7 @@ func getJSON(t *testing.T, client *http.Client, rawURL string) map[string]any {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer resp.Body.Close()
+	defer func(body io.Closer) { _ = body.Close() }(resp.Body)
 	var out map[string]any
 	if err := json.UnmarshalRead(resp.Body, &out); err != nil {
 		t.Fatal(err)
@@ -46,7 +46,7 @@ func authorize(t *testing.T, p *webauthtest.Provider, params url.Values) (int, u
 	if err != nil {
 		t.Fatal(err)
 	}
-	resp.Body.Close()
+	_ = resp.Body.Close()
 	if resp.StatusCode != http.StatusFound {
 		return resp.StatusCode, nil
 	}
@@ -68,7 +68,7 @@ func token(t *testing.T, p *webauthtest.Provider, form url.Values, basic [2]stri
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer resp.Body.Close()
+	defer func(body io.Closer) { _ = body.Close() }(resp.Body)
 	var out map[string]any
 	if err := json.UnmarshalRead(resp.Body, &out); err != nil {
 		t.Fatal(err)
@@ -102,12 +102,12 @@ func TestProvider(t *testing.T) {
 		if len(keys) != 2 {
 			t.Fatalf("keys %v", set)
 		}
-		before := keys[0].(map[string]any)["kid"]
+		before := requireType[map[string]any](t, keys[0])["kid"]
 		if err := p.RotateKeys(); err != nil {
 			t.Fatal(err)
 		}
 		set = getJSON(t, p.HTTPClient(), p.Endpoints().JWKS)
-		if after := set["keys"].([]any)[0].(map[string]any)["kid"]; after == before || after != "es256-2" {
+		if after := requireType[map[string]any](t, requireType[[]any](t, set["keys"])[0])["kid"]; after == before || after != "es256-2" {
 			t.Fatalf("rotation: %v -> %v", before, after)
 		}
 	})
@@ -190,12 +190,12 @@ func TestProvider(t *testing.T) {
 		if status, body := token(t, p, form(code, "verifier"), [2]string{}); status != http.StatusBadRequest || body["error"] != "invalid_grant" {
 			t.Fatalf("replay: %d %v", status, body)
 		}
-		if status, body := token(t, p, form(mint(), "wrong"), [2]string{}); status != http.StatusBadRequest || !strings.Contains(body["error_description"].(string), "code_verifier") {
+		if status, body := token(t, p, form(mint(), "wrong"), [2]string{}); status != http.StatusBadRequest || !strings.Contains(requireType[string](t, body["error_description"]), "code_verifier") {
 			t.Fatalf("verifier: %d %v", status, body)
 		}
 		f := form(mint(), "verifier")
 		f.Set("redirect_uri", "https://rp.example.com/other")
-		if status, body := token(t, p, f, [2]string{}); status != http.StatusBadRequest || !strings.Contains(body["error_description"].(string), "redirect_uri") {
+		if status, body := token(t, p, f, [2]string{}); status != http.StatusBadRequest || !strings.Contains(requireType[string](t, body["error_description"]), "redirect_uri") {
 			t.Fatalf("redirect: %d %v", status, body)
 		}
 		f = form(mint(), "verifier")
@@ -242,7 +242,7 @@ func TestProvider(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		resp.Body.Close()
+		_ = resp.Body.Close()
 		if resp.StatusCode != http.StatusBadRequest {
 			t.Fatalf("bad form: %d", resp.StatusCode)
 		}
@@ -291,6 +291,7 @@ func TestProvider(t *testing.T) {
 				http.Redirect(w, r, p.Server.URL+"/authorize?response_type=code&client_id=enroll-client&redirect_uri="+url.QueryEscape(rp(r)+"/cb")+"&state=s&code_challenge=c&code_challenge_method=S256", http.StatusFound)
 			case "/cb":
 				w.Header().Set("Content-Type", "application/x-apple-aspen-config")
+				// #nosec G705 -- Test HTTP fixture emits protocol data, not a browser HTML document.
 				_, _ = io.WriteString(w, "profile "+r.URL.Query().Get("code"))
 			case "/loop":
 				http.Redirect(w, r, "/loop", http.StatusFound)
@@ -309,7 +310,7 @@ func TestProvider(t *testing.T) {
 			t.Fatal(err)
 		}
 		body, _ := io.ReadAll(resp.Body)
-		resp.Body.Close()
+		_ = resp.Body.Close()
 		if resp.StatusCode != http.StatusOK || !strings.HasPrefix(string(body), "profile ") || len(view.Hops) != 3 {
 			t.Fatalf("status %d body %q hops %v", resp.StatusCode, body, view.Hops)
 		}
@@ -317,7 +318,7 @@ func TestProvider(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		resp.Body.Close()
+		_ = resp.Body.Close()
 		if resp.StatusCode != http.StatusFound || len(view.Hops) != view.MaxHops+1 {
 			t.Fatalf("loop: %d after %d hops", resp.StatusCode, len(view.Hops))
 		}
@@ -325,7 +326,7 @@ func TestProvider(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		resp.Body.Close()
+		_ = resp.Body.Close()
 		if resp.StatusCode != http.StatusPermanentRedirect || !strings.HasPrefix(resp.Header.Get("Location"), "apple-remotemanagement-user-login://") {
 			t.Fatalf("handback: %d %q", resp.StatusCode, resp.Header.Get("Location"))
 		}
@@ -334,15 +335,27 @@ func TestProvider(t *testing.T) {
 			t.Fatal(err)
 		}
 		body, _ = io.ReadAll(resp.Body)
-		resp.Body.Close()
+		_ = resp.Body.Close()
 		if string(body) != "profile rel" {
 			t.Fatalf("relative: %q", body)
 		}
-		if _, err := view.Get(context.Background(), "::bad"); err == nil {
-			t.Fatal("bad URL accepted")
+		{
+			response, err := view.Get(context.Background(), "::bad")
+			if response != nil {
+				_ = response.Body.Close()
+			}
+			if err == nil {
+				t.Fatal("bad URL accepted")
+			}
 		}
-		if _, err := view.Get(context.Background(), "https://127.0.0.1:1/"); err == nil {
-			t.Fatal("unreachable accepted")
+		{
+			response, err := view.Get(context.Background(), "https://127.0.0.1:1/")
+			if response != nil {
+				_ = response.Body.Close()
+			}
+			if err == nil {
+				t.Fatal("unreachable accepted")
+			}
 		}
 	})
 }

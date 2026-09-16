@@ -3,8 +3,9 @@ package recovery
 import (
 	"testing"
 
-	"github.com/deploymenttheory/go-apple-dm/server/internal/privatefile"
 	"golang.org/x/sys/windows"
+
+	"github.com/deploymenttheory/go-apple-dm/server/internal/privatefile"
 )
 
 func makeUnreadable(t *testing.T, path string) {

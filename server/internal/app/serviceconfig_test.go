@@ -48,7 +48,7 @@ func TestServiceConfigTrustIsIndependentFromIdentity(t *testing.T) {
 			}
 			get := func(path string) *httptest.ResponseRecorder {
 				w := httptest.NewRecorder()
-				mux.ServeHTTP(w, httptest.NewRequest("GET", path, nil))
+				mux.ServeHTTP(w, httptest.NewRequestWithContext(t.Context(), "GET", path, nil))
 				return w
 			}
 			w := get(PathServiceConfig)
@@ -97,7 +97,7 @@ func TestServiceConfigTrustIsIndependentFromIdentity(t *testing.T) {
 				t.Fatal("public HTTPS advertises unnecessary trust")
 			}
 			bad := httptest.NewRecorder()
-			mux.ServeHTTP(bad, httptest.NewRequest("POST", PathServiceConfig, nil))
+			mux.ServeHTTP(bad, httptest.NewRequestWithContext(t.Context(), "POST", PathServiceConfig, nil))
 			if bad.Code != 405 {
 				t.Fatal("write method accepted")
 			}
@@ -127,7 +127,7 @@ func TestServiceConfigRejectsInvalidTrustAndURL(t *testing.T) {
 		t.Fatal(err)
 	}
 	w := httptest.NewRecorder()
-	mux.ServeHTTP(w, httptest.NewRequest("GET", PathServiceConfig, nil))
+	mux.ServeHTTP(w, httptest.NewRequestWithContext(t.Context(), "GET", PathServiceConfig, nil))
 	var m map[string]string
 	_ = json.Unmarshal(w.Body.Bytes(), &m)
 	if m["dep_enrollment_url"] != e.base+PathADE {

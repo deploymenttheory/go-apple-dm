@@ -49,6 +49,10 @@ func (m *Manager) IssueHTTPS(ctx context.Context, id, rev, issuerID string) (Ide
 	if err != nil {
 		return Identity{}, err
 	}
+	signer, ok := pair.PrivateKey.(crypto.Signer)
+	if !ok {
+		return Identity{}, ErrInvalid
+	}
 	var cert []byte
 	k, _ := key(id)
 	err = m.Store.Update(ctx, []string{k}, func(tx state.Tx) error {
@@ -61,7 +65,7 @@ func (m *Manager) IssueHTTPS(ctx context.Context, id, rev, issuerID string) (Ide
 			end = pair.Leaf.NotAfter
 		}
 		template := &x509.Certificate{SerialNumber: serial, Subject: csr.Subject, DNSNames: csr.DNSNames, IPAddresses: csr.IPAddresses, NotBefore: tx.Now().Add(-5 * time.Minute), NotAfter: end, KeyUsage: x509.KeyUsageDigitalSignature | x509.KeyUsageKeyEncipherment, ExtKeyUsage: []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth}}
-		der, err := x509.CreateCertificate(rand.Reader, template, pair.Leaf, csr.PublicKey, pair.PrivateKey.(crypto.Signer))
+		der, err := x509.CreateCertificate(rand.Reader, template, pair.Leaf, csr.PublicKey, signer)
 		if err != nil {
 			return err
 		}

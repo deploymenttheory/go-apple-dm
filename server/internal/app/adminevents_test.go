@@ -36,7 +36,7 @@ func eventAdmin(t *testing.T) (*app.App, *sql.DB, *eventstore.Store) {
 }
 
 func eventRequest(a *app.App, method, path, token, body string) *httptest.ResponseRecorder {
-	r := httptest.NewRequest(method, "/admin/v1"+path, strings.NewReader(body))
+	r := httptest.NewRequestWithContext(context.Background(), method, "/admin/v1"+path, strings.NewReader(body))
 	r.Header.Set("Authorization", "Bearer "+token)
 	r.Header.Set("Content-Type", "application/json")
 	w := httptest.NewRecorder()
@@ -55,7 +55,7 @@ func TestEventAPIRecordsWithoutWorkersAndRetriesDestinations(t *testing.T) {
 		Items []struct {
 			EventID string `json:"event_id"`
 			Type    string `json:"type"`
-		}
+		} `json:"Items"`
 	}
 	if err := json.Unmarshal(w.Body.Bytes(), &list); err != nil || len(list.Items) != 1 || list.Items[0].EventID == "" {
 		t.Fatal(list, err)

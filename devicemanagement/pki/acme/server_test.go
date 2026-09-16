@@ -243,7 +243,7 @@ func TestSignedRequest(t *testing.T) {
 		// never well formed. It cannot be produced over a real connection,
 		// so the handler is driven directly.
 		f := newFixture(t)
-		req := httptest.NewRequest(http.MethodPost, f.url("/new-order"), errorReader{})
+		req := httptest.NewRequestWithContext(t.Context(), http.MethodPost, f.url("/new-order"), errorReader{})
 		req.Header.Set("Content-Type", acme.ContentTypeJOSE)
 		rec := httptest.NewRecorder()
 		f.server.Handler().ServeHTTP(rec, req)

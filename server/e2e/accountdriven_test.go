@@ -49,8 +49,11 @@ func newADFixture(t *testing.T, oauth bool) *adFixture {
 		if err != nil {
 			t.Fatal(err)
 		}
-		f.oauth = &accountdriven.OAuth2{AuthorizationURL: "https://mdm.example/oauth2/authorize", TokenURL: "https://placeholder/oauth2/token",
-			RedirectURL: "apple-remotemanagement-user-login:/oauth2/redirection", ClientID: "mdm-client", Scope: "MDM", Tokens: f.tokens}
+		// #nosec G101 -- Synthetic protocol fixtures and invalid URLs; no live credentials.
+		f.oauth = &accountdriven.OAuth2{
+			AuthorizationURL: "https://mdm.example/oauth2/authorize", TokenURL: "https://placeholder/oauth2/token",
+			RedirectURL: "apple-remotemanagement-user-login:/oauth2/redirection", ClientID: "mdm-client", Scope: "MDM", Tokens: f.tokens,
+		}
 		parse := func(r *http.Request) (*accountdriven.DeviceInfo, error) {
 			raw, err := io.ReadAll(r.Body)
 			if err != nil {
@@ -124,7 +127,7 @@ func (f *adFixture) asWebAuthenticate(user string) func(context.Context, simulat
 			return "", errors.New("unexpected challenge")
 		}
 		rec := httptest.NewRecorder()
-		if err := f.asweb.Finish(rec, httptest.NewRequest(http.MethodPost, "/authenticate-results", nil), f.identity(user)); err != nil {
+		if err := f.asweb.Finish(rec, httptest.NewRequestWithContext(context.Background(), http.MethodPost, "/authenticate-results", nil), f.identity(user)); err != nil {
 			return "", err
 		}
 		return simulator.AccessTokenFromRedirect(rec.Header().Get("Location"))
@@ -140,8 +143,10 @@ func TestE2E_ServiceDiscovery(t *testing.T) {
 	f := newADFixture(t, false)
 	mac := f.device("UDID-MAC-1")
 	mac.ProductName, mac.OSVersion = "Mac16,1", "26.0"
-	res, err := mac.AccountDrivenEnroll(ctx, simulator.AccountDrivenOptions{UserIdentifier: "mac@example.com", DiscoveryURL: f.server.URL,
-		Authenticate: f.asWebAuthenticate("mac@example.com"), Parse: profile.ParseOptions{}})
+	res, err := mac.AccountDrivenEnroll(ctx, simulator.AccountDrivenOptions{
+		UserIdentifier: "mac@example.com", DiscoveryURL: f.server.URL,
+		Authenticate: f.asWebAuthenticate("mac@example.com"), Parse: profile.ParseOptions{},
+	})
 	if err != nil {
 		t.Fatalf("mac: %v", err)
 	}
@@ -158,8 +163,10 @@ func TestE2E_ServiceDiscovery(t *testing.T) {
 
 	phone := f.device("UDID-PHONE-1")
 	phone.ProductName, phone.OSVersion = "iPhone17,2", "26.0"
-	res, err = phone.AccountDrivenEnroll(ctx, simulator.AccountDrivenOptions{UserIdentifier: "phone@example.com", DiscoveryURL: f.server.URL,
-		Authenticate: f.asWebAuthenticate("phone@example.com")})
+	res, err = phone.AccountDrivenEnroll(ctx, simulator.AccountDrivenOptions{
+		UserIdentifier: "phone@example.com", DiscoveryURL: f.server.URL,
+		Authenticate: f.asWebAuthenticate("phone@example.com"),
+	})
 	if err != nil {
 		t.Fatalf("phone: %v", err)
 	}
@@ -218,11 +225,12 @@ func TestE2E_AccountDrivenOAuth2(t *testing.T) {
 	phone := f.device("UDID-PHONE-2")
 	phone.ProductName, phone.OSVersion = "iPhone17,2", "26.0"
 	var challenge simulator.AuthChallenge
-	res, err := phone.AccountDrivenEnroll(ctx, simulator.AccountDrivenOptions{UserIdentifier: "oauth@example.com", DiscoveryURL: f.server.URL,
+	res, err := phone.AccountDrivenEnroll(ctx, simulator.AccountDrivenOptions{
+		UserIdentifier: "oauth@example.com", DiscoveryURL: f.server.URL,
 		Authenticate: func(ctx context.Context, c simulator.AuthChallenge) (string, error) {
 			challenge = c
 			return phone.OAuth2CodeFlow(ctx, c, "oauth@example.com", func(_ context.Context, authorizationURL string) (string, error) {
-				r := httptest.NewRequest(http.MethodGet, authorizationURL, nil)
+				r := httptest.NewRequestWithContext(t.Context(), http.MethodGet, authorizationURL, nil)
 				req, err := f.oauth.ParseAuthorization(r)
 				if err != nil {
 					return "", err
@@ -236,7 +244,8 @@ func TestE2E_AccountDrivenOAuth2(t *testing.T) {
 				}
 				return rec.Header().Get("Location"), nil
 			})
-		}})
+		},
+	})
 	if err != nil {
 		t.Fatalf("oauth2 enrol: %v", err)
 	}
@@ -264,7 +273,6 @@ func TestE2E_AccountDrivenOAuth2(t *testing.T) {
 	if _, err := phone.Connect(ctx); err != nil {
 		t.Fatal(err)
 	}
-
 }
 
 type stripAccountBearer struct{ base http.RoundTripper }

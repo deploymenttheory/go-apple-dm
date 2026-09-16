@@ -238,7 +238,8 @@
       "title": "Public documentation",
       "items": [
         "Sending MDM commands to a device — https://developer.apple.com/documentation/devicemanagement/sending-mdm-commands-to-a-device",
-        "Handling NotNow status responses — https://developer.apple.com/documentation/devicemanagement/handling-notnow-status-responses"
+        "Handling NotNow status responses — https://developer.apple.com/documentation/devicemanagement/handling-notnow-status-responses",
+        "Implementation — https://github.com/deploymenttheory/go-apple-dm/blob/7500eb25e50a2913338339d5fced18dc7f41fdc3/server/service/connect.go"
       ]
     }
   ]

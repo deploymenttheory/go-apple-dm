@@ -178,11 +178,15 @@ func TestACME(t *testing.T) {
 		}
 		// The ACME endpoints are still mounted, because a declarative
 		// credential can use them while profiles carry SCEP.
-		res, err := f.client().Get(f.publicURL + app.PathACME + "/directory")
+		resRequest, err := http.NewRequestWithContext(t.Context(), "GET", f.publicURL+app.PathACME+"/directory", nil)
 		if err != nil {
 			t.Fatal(err)
 		}
-		defer res.Body.Close()
+		res, err := f.client().Do(resRequest)
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer func(body io.Closer) { _ = body.Close() }(res.Body)
 		if res.StatusCode != http.StatusOK {
 			t.Fatalf("directory = %d", res.StatusCode)
 		}
@@ -192,11 +196,15 @@ func TestACME(t *testing.T) {
 		// The credential document contains a client identifier, which Apple
 		// calls an anti-replay code, so a URL is not enough to fetch one.
 		f := newACMEAppFixture(t, nil)
-		res, err := f.client().Get(f.publicURL + app.PathACMECredential)
+		resRequest, err := http.NewRequestWithContext(t.Context(), "GET", f.publicURL+app.PathACMECredential, nil)
 		if err != nil {
 			t.Fatal(err)
 		}
-		defer res.Body.Close()
+		res, err := f.client().Do(resRequest)
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer func(body io.Closer) { _ = body.Close() }(res.Body)
 		if res.StatusCode != http.StatusForbidden || res.Header.Get("Cache-Control") != "no-store" {
 			t.Fatalf("unauthenticated credential: %d %v", res.StatusCode, res.Header)
 		}
@@ -279,7 +287,7 @@ func TestACME(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		defer res.Body.Close()
+		defer func(body io.Closer) { _ = body.Close() }(res.Body)
 		if res.StatusCode != http.StatusBadRequest {
 			t.Fatalf("orders without an account = %d", res.StatusCode)
 		}
@@ -456,7 +464,7 @@ func adeProfile(t *testing.T, f *acmeAppFixture, d *simulator.Device) []byte {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer res.Body.Close()
+	defer func(body io.Closer) { _ = body.Close() }(res.Body)
 	data, _ := io.ReadAll(res.Body)
 	if res.StatusCode != http.StatusOK {
 		t.Fatalf("ADE profile = %d %s", res.StatusCode, data)
@@ -501,7 +509,7 @@ func fetchCredential(t *testing.T, f *acmeAppFixture, d *simulator.Device) ddm.A
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer res.Body.Close()
+	defer func(body io.Closer) { _ = body.Close() }(res.Body)
 	data, _ := io.ReadAll(res.Body)
 	if res.StatusCode != http.StatusOK {
 		t.Fatalf("credential = %d %s", res.StatusCode, data)
@@ -524,7 +532,7 @@ func getJSON(t *testing.T, f *acmeAppFixture, url string, v any) error {
 	if err != nil {
 		return err
 	}
-	defer res.Body.Close()
+	defer func(body io.Closer) { _ = body.Close() }(res.Body)
 	data, _ := io.ReadAll(res.Body)
 	if res.StatusCode != http.StatusOK {
 		t.Fatalf("%s = %d %s", url, res.StatusCode, data)
@@ -747,7 +755,7 @@ func TestACMEWiring(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		defer res.Body.Close()
+		defer func(body io.Closer) { _ = body.Close() }(res.Body)
 		if res.StatusCode != http.StatusUnauthorized {
 			t.Fatalf("an unenrolled certificate = %d", res.StatusCode)
 		}

@@ -27,6 +27,7 @@ func openDB(t *testing.T) *sql.DB {
 
 func TestContract(t *testing.T) {
 	deptest.RunStoreSuite(t, func(t *testing.T, k *crypt.Keyring) dep.Store {
+		t.Helper()
 		s, err := sqlstore.Open(context.Background(), openDB(t), sqlite.Dialect, sqlstore.Options{Keyring: k})
 		if err != nil {
 			t.Fatal(err)

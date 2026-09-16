@@ -4452,7 +4452,7 @@
       border: 0;
     }
 
-    /* Route Probe separates a durable two-point query from selection and
+    /* Route Probe keeps a two-point query separate from selection and
        one-hop hover. Only the chosen shortest directed path stays prominent;
        the traveling signal is cloned viewer geometry and never authored SVG. */
     svg[data-route-picking="target"] [data-node-id] { opacity: 0.24; }
@@ -5148,7 +5148,7 @@ svg[data-purpose-filter] g[data-purpose-highlight] > path { stroke-width: 2.4; }
 <button type="button" data-purpose-filter-button="success" aria-pressed="false" style="--entry:var(--purpose-success)"><span class="purpose-key-dot" aria-hidden="true"></span>Successful or accepted</button>
     </div>
     <div class="purpose-key-detail" aria-live="polite" aria-atomic="true"><div><strong id="purpose-key-selection"></strong><span id="purpose-key-counts"></span></div><p id="purpose-key-description"></p></div>
-    <script id="purpose-key-data" type="application/json">{"entries":[{"key":"service","label":"Services and processing","meaning":"Services and processing steps that perform the work shown in the diagram.","nodes":["Awaiting push details"],"connections":[]},{"key":"authentication","label":"Authentication and identity","meaning":"Checks that establish or verify an identity or credential.","nodes":[],"connections":["Authenticate","Associate identity","Accepted Authenticate"]},{"key":"neutral","label":"Actors, structure, neutral states","meaning":"Actors, structural boundaries, and states that do not imply success, warning, or failure.","nodes":["Not enrolled","Enrollment reset","Disabled"],"connections":["Accepted Authenticate","CheckOut","Accepted Authenticate"]},{"key":"success","label":"Successful or accepted","meaning":"An explicitly successful or accepted result.","nodes":["Enabled"],"connections":["TokenUpdate","Replacement committed"]}],"nodes":5,"connections":8}</script>
+    <script id="purpose-key-data" type="application/json">{"entries":[{"key":"service","label":"Services and processing","meaning":"Services and processing steps that perform the work shown in the diagram.","nodes":["Awaiting push details"],"connections":[]},{"key":"authentication","label":"Authentication and identity","meaning":"Checks that establish or verify an identity or credential.","nodes":[],"connections":["Authenticate","Associate identity","Authorized new identity"]},{"key":"neutral","label":"Actors, structure, neutral states","meaning":"Actors, structural boundaries, and states that do not imply success, warning, or failure.","nodes":["Not enrolled","Enrollment reset","Disabled"],"connections":["Authorized new identity","CheckOut","Authorized new identity"]},{"key":"success","label":"Successful or accepted","meaning":"An explicitly successful or accepted result.","nodes":["Enabled"],"connections":["TokenUpdate","Replacement committed"]}],"nodes":5,"connections":8}</script>
   </section>
     <div class="diagram-container" data-detail-level="read"
          data-preset-badge-editorial-plate="ARCHIFY / PLATE 04">
@@ -5202,11 +5202,11 @@ svg[data-purpose-filter] g[data-purpose-highlight] > path { stroke-width: 2.4; }
         <!-- Transition paths -->
         <path data-edge-from="unknown" data-edge-to="authenticated" data-edge-label="Authenticate" data-edge-key="0" data-edge-id="auth" data-purpose="authentication" data-composition-points="260,152;510,152" d="M 260 152 L 510 152" class="a-emphasis purpose-arrow purpose-authentication" stroke-width="2" marker-end="url(#purpose-arrowhead-authentication)"/>
         <path data-edge-from="authenticated" data-edge-to="enabled" data-edge-label="TokenUpdate" data-edge-key="1" data-edge-id="token" data-purpose="success" data-composition-points="730,152;980,152" d="M 730 152 L 980 152" class="a-emphasis purpose-arrow purpose-success" stroke-width="2" marker-end="url(#purpose-arrowhead-success)"/>
-        <path data-edge-from="authenticated" data-edge-to="reenrolled" data-edge-label="Accepted Authenticate" data-edge-key="2" data-edge-id="rotate" data-purpose="neutral" data-composition-points="620,178;620,278" d="M 620 178 L 620 278" class="a-default purpose-arrow purpose-neutral" stroke-width="1.1" marker-end="url(#purpose-arrowhead-neutral)"/>
+        <path data-edge-from="authenticated" data-edge-to="reenrolled" data-edge-label="Authorized new identity" data-edge-key="2" data-edge-id="rotate" data-purpose="neutral" data-composition-points="620,178;620,278" d="M 620 178 L 620 278" class="a-default purpose-arrow purpose-neutral" stroke-width="1.1" marker-end="url(#purpose-arrowhead-neutral)"/>
         <path data-edge-from="reenrolled" data-edge-to="authenticated" data-edge-label="Associate identity" data-edge-key="3" data-edge-id="repin" data-purpose="authentication" data-composition-points="510,304;440,304;440,152;510,152" d="M 510 304 L 450 304 Q 440 304 440 294 L 440 162 Q 440 152 450 152 L 510 152" class="a-emphasis purpose-arrow purpose-authentication" stroke-width="2" marker-end="url(#purpose-arrowhead-authentication)"/>
         <path data-edge-from="enabled" data-edge-to="checkedout" data-edge-label="CheckOut" data-edge-key="4" data-edge-id="checkout" data-purpose="neutral" data-composition-points="1090,178;1090,450" d="M 1090 178 L 1090 450" class="a-default purpose-arrow purpose-neutral" stroke-width="1.1" marker-end="url(#purpose-arrowhead-neutral)"/>
-        <path data-edge-from="enabled" data-edge-to="reenrolled" data-edge-label="Accepted Authenticate" data-edge-key="5" data-edge-id="reset-enabled" data-purpose="neutral" data-composition-points="980,152;855,152;855,304;730,304" d="M 980 152 L 865 152 Q 855 152 855 162 L 855 294 Q 855 304 845 304 L 730 304" class="a-default purpose-arrow purpose-neutral" stroke-width="1.1" marker-end="url(#purpose-arrowhead-neutral)"/>
-        <path data-edge-from="checkedout" data-edge-to="authenticated" data-edge-label="Accepted Authenticate" data-edge-key="6" data-edge-id="resume" data-purpose="authentication" data-composition-points="1090,502;1090,575;330,575;330,152;510,152" d="M 1090 502 L 1090 565 Q 1090 575 1080 575 L 340 575 Q 330 575 330 565 L 330 162 Q 330 152 340 152 L 510 152" class="a-default purpose-arrow purpose-authentication" stroke-width="1.1" marker-end="url(#purpose-arrowhead-authentication)"/>
+        <path data-edge-from="enabled" data-edge-to="reenrolled" data-edge-label="Authorized new identity" data-edge-key="5" data-edge-id="reset-enabled" data-purpose="neutral" data-composition-points="980,152;855,152;855,304;730,304" d="M 980 152 L 865 152 Q 855 152 855 162 L 855 294 Q 855 304 845 304 L 730 304" class="a-default purpose-arrow purpose-neutral" stroke-width="1.1" marker-end="url(#purpose-arrowhead-neutral)"/>
+        <path data-edge-from="checkedout" data-edge-to="authenticated" data-edge-label="Authorized new identity" data-edge-key="6" data-edge-id="resume" data-purpose="authentication" data-composition-points="1090,502;1090,575;330,575;330,152;510,152" d="M 1090 502 L 1090 565 Q 1090 575 1080 575 L 340 575 Q 330 575 330 565 L 330 162 Q 330 152 340 152 L 510 152" class="a-default purpose-arrow purpose-authentication" stroke-width="1.1" marker-end="url(#purpose-arrowhead-authentication)"/>
         <path data-edge-from="enabled" data-edge-to="enabled" data-edge-label="Replacement committed" data-edge-key="7" data-edge-id="replace" data-purpose="success" data-composition-points="1090,126;1090,76;1240,76;1240,152;1200,152" d="M 1090 126 L 1090 86 Q 1090 76 1100 76 L 1230 76 Q 1240 76 1240 86 L 1240 142 Q 1240 152 1230 152 L 1200 152" class="a-default purpose-arrow purpose-success" stroke-width="1.1" marker-end="url(#purpose-arrowhead-success)"/>
 
         <!-- States -->
@@ -5281,9 +5281,9 @@ svg[data-purpose-filter] g[data-purpose-highlight] > path { stroke-width: 2.4; }
           <rect x="816" y="127" width="78" height="16" rx="4" class="c-mask"/>
           <text x="855" y="138" class="t-backend" font-size="10" text-anchor="middle">TokenUpdate</text>
         </g>
-        <g data-detail="context" data-edge-from="authenticated" data-edge-to="reenrolled" data-edge-label="Accepted Authenticate" data-edge-key="2" data-edge-id="rotate" data-purpose="neutral">
-          <rect x="566" y="217" width="138" height="16" rx="4" class="c-mask"/>
-          <text x="635" y="228" class="t-muted" font-size="10" text-anchor="middle">Accepted Authenticate</text>
+        <g data-detail="context" data-edge-from="authenticated" data-edge-to="reenrolled" data-edge-label="Authorized new identity" data-edge-key="2" data-edge-id="rotate" data-purpose="neutral">
+          <rect x="560" y="217" width="150" height="16" rx="4" class="c-mask"/>
+          <text x="635" y="228" class="t-muted" font-size="10" text-anchor="middle">Authorized new identity</text>
         </g>
         <g data-detail="context" data-edge-from="reenrolled" data-edge-to="authenticated" data-edge-label="Associate identity" data-edge-key="3" data-edge-id="repin" data-purpose="authentication">
           <rect x="380" y="207" width="120" height="16" rx="4" class="c-mask"/>
@@ -5293,13 +5293,13 @@ svg[data-purpose-filter] g[data-purpose-highlight] > path { stroke-width: 2.4; }
           <rect x="1060" y="354" width="60" height="16" rx="4" class="c-mask"/>
           <text x="1090" y="365" class="t-security" font-size="10" text-anchor="middle">CheckOut</text>
         </g>
-        <g data-detail="context" data-edge-from="enabled" data-edge-to="reenrolled" data-edge-label="Accepted Authenticate" data-edge-key="5" data-edge-id="reset-enabled" data-purpose="neutral">
-          <rect x="786" y="229" width="138" height="16" rx="4" class="c-mask"/>
-          <text x="855" y="240" class="t-muted" font-size="10" text-anchor="middle">Accepted Authenticate</text>
+        <g data-detail="context" data-edge-from="enabled" data-edge-to="reenrolled" data-edge-label="Authorized new identity" data-edge-key="5" data-edge-id="reset-enabled" data-purpose="neutral">
+          <rect x="780" y="229" width="150" height="16" rx="4" class="c-mask"/>
+          <text x="855" y="240" class="t-muted" font-size="10" text-anchor="middle">Authorized new identity</text>
         </g>
-        <g data-detail="context" data-edge-from="checkedout" data-edge-to="authenticated" data-edge-label="Accepted Authenticate" data-edge-key="6" data-edge-id="resume" data-purpose="authentication">
-          <rect x="611" y="553" width="138" height="16" rx="4" class="c-mask"/>
-          <text x="680" y="564" class="t-muted" font-size="10" text-anchor="middle">Accepted Authenticate</text>
+        <g data-detail="context" data-edge-from="checkedout" data-edge-to="authenticated" data-edge-label="Authorized new identity" data-edge-key="6" data-edge-id="resume" data-purpose="authentication">
+          <rect x="605" y="553" width="150" height="16" rx="4" class="c-mask"/>
+          <text x="680" y="564" class="t-muted" font-size="10" text-anchor="middle">Authorized new identity</text>
         </g>
         <g data-detail="context" data-edge-from="enabled" data-edge-to="enabled" data-edge-label="Replacement committed" data-edge-key="7" data-edge-id="replace" data-purpose="success">
           <rect x="1081" y="55" width="138" height="16" rx="4" class="c-mask"/>
@@ -5508,9 +5508,9 @@ svg[data-purpose-filter] g[data-purpose-highlight] > path { stroke-width: 2.4; }
           <h3>Initial activation and ordinary reset</h3>
         </div>
         <ul>
-          <li>&bull; An accepted ordinary Authenticate creates or resets the device-channel record, even when its certificate is unchanged. TokenUpdate then enables it.</li>
-          <li>&bull; Changed certificates require re-enrollment policy approval: the library allows by default and the reference server denies ordinary rotation.</li>
-          <li>&bull; A rejected request does not create a new enrollment state or reset an existing working enrollment.</li>
+          <li>&bull; Initial Authenticate associates the device identity; TokenUpdate enables the channel. Same-certificate Authenticate retries preserve the existing enrollment, tokens, queue and declarative state.</li>
+          <li>&bull; Both service.Core and the reference server deny changed certificates by default. An explicitly allowed changed-identity Authenticate resets enrollment state; the reset arrows show that path.</li>
+          <li>&bull; A rejected request preserves the existing state. A disabled enrollment cannot reactivate with its old certificate or TokenUpdate; a fresh identity requires authorized re-enrollment.</li>
         </ul>
       </div>
 
@@ -5531,7 +5531,7 @@ svg[data-purpose-filter] g[data-purpose-highlight] > path { stroke-width: 2.4; }
           <h3>Checkout and user channels</h3>
         </div>
         <ul>
-          <li>&bull; CheckOut disables the enrollment while retaining its record; a later accepted enrollment can reactivate it. Declarative cleanup runs through the service hook.</li>
+          <li>&bull; CheckOut disables the enrollment and clears dependent state while retaining its record. A fresh identity can reactivate it only through authorized re-enrollment. Declarative cleanup runs through the service hook.</li>
           <li>&bull; User channels are created by TokenUpdate under an existing device enrollment, with UserAuthenticate when required. They do not send device-channel Authenticate.</li>
         </ul>
       </div>
@@ -5545,6 +5545,7 @@ svg[data-purpose-filter] g[data-purpose-highlight] > path { stroke-width: 2.4; }
           <li>&bull; <a href="https://developer.apple.com/documentation/devicemanagement/check-in" target="_blank" rel="noopener noreferrer">Check-in</a></li>
           <li>&bull; <a href="https://developer.apple.com/documentation/devicemanagement/deploying-device-management-enrollment-profiles" target="_blank" rel="noopener noreferrer">Deploying device management enrollment profiles</a></li>
           <li>&bull; <a href="https://developer.apple.com/documentation/devicemanagement/mdm" target="_blank" rel="noopener noreferrer">MDM payload</a></li>
+          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/7500eb25e50a2913338339d5fced18dc7f41fdc3/server/service/checkin.go" target="_blank" rel="noopener noreferrer">Implementation</a></li>
         </ul>
       </div>
     </div>
@@ -9113,7 +9114,7 @@ svg[data-purpose-filter] g[data-purpose-highlight] > path { stroke-width: 2.4; }
     })();
 
     /* ============================================================
-       Intent Trace — temporary one-hop topology before durable focus.
+       Intent Trace — temporary one-hop topology before a focus selection.
        Fine-pointer hover and keyboard focus share the same stable-ID preview;
        touch continues directly to the existing click-to-focus contract.
        ============================================================ */

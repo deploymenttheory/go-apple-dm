@@ -4452,7 +4452,7 @@
       border: 0;
     }
 
-    /* Route Probe separates a durable two-point query from selection and
+    /* Route Probe keeps a two-point query separate from selection and
        one-hop hover. Only the chosen shortest directed path stays prominent;
        the traveling signal is cloned viewer geometry and never authored SVG. */
     svg[data-route-picking="target"] [data-node-id] { opacity: 0.24; }
@@ -5663,11 +5663,11 @@ svg[data-purpose-filter] g[data-purpose-highlight] > path { stroke-width: 2.4; }
       <div class="card">
         <div class="card-header">
           <div class="card-dot neutral"></div>
-          <h3>Recorded device observations</h3>
+          <h3>Device acceptance</h3>
         </div>
         <ul>
-          <li>&bull; On 13 September 2026, the recorded Mac candidates completed identity replacement and fresh device/user commands before and after restart. A controlled SCEP issuance refusal left the previous identity pinned and management working after restart.</li>
-          <li>&bull; Those dated observations cover the recorded candidates and refusal stage. They do not establish every rollback path or acceptance of a later source revision; automated state-transition tests remain separate evidence.</li>
+          <li>&bull; Verify fresh device and installing-user commands before and after replacement and restart. Test a controlled issuance refusal and confirm that the previous identity remains usable.</li>
+          <li>&bull; Automated state-transition tests establish server preservation. Device-side rollback and acceptance on each OS and enrollment mode require separate live checks.</li>
         </ul>
       </div>
 
@@ -5681,7 +5681,9 @@ svg[data-purpose-filter] g[data-purpose-highlight] > path { stroke-width: 2.4; }
           <li>&bull; <a href="https://developer.apple.com/documentation/devicemanagement/mdm" target="_blank" rel="noopener noreferrer">MDM payload</a></li>
           <li>&bull; <a href="https://developer.apple.com/documentation/devicemanagement/acmecertificate" target="_blank" rel="noopener noreferrer">ACMECertificate</a></li>
           <li>&bull; <a href="https://developer.apple.com/documentation/devicemanagement/scep" target="_blank" rel="noopener noreferrer">SCEP</a></li>
-          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/80599ddc35778bcc88fa2ac77bb1dc68a51cf089/docs/reviews/real-mac-lifecycle-2026-09-13.md" target="_blank" rel="noopener noreferrer">Mac candidate observations, 13 September 2026</a></li>
+          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/main/docs/research/decisions/0009-enrollment-profiles.md" target="_blank" rel="noopener noreferrer">Replacement design</a></li>
+          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/main/docs/operations/mac-enrollment-testing.md" target="_blank" rel="noopener noreferrer">Mac enrollment procedure</a></li>
+          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/7500eb25e50a2913338339d5fced18dc7f41fdc3/server/service/replacement.go" target="_blank" rel="noopener noreferrer">Implementation</a></li>
         </ul>
       </div>
     </div>
@@ -9250,7 +9252,7 @@ svg[data-purpose-filter] g[data-purpose-highlight] > path { stroke-width: 2.4; }
     })();
 
     /* ============================================================
-       Intent Trace — temporary one-hop topology before durable focus.
+       Intent Trace — temporary one-hop topology before a focus selection.
        Fine-pointer hover and keyboard focus share the same stable-ID preview;
        touch continues directly to the existing click-to-focus contract.
        ============================================================ */

@@ -38,7 +38,7 @@ func TestCertificateWorkerRenewsOnlyManagedLeavesAndPersistsNotices(t *testing.T
 	setupRequire(t, a.advanceCertificate(ctx, *v.Identity), nil)
 	a.cfg.Setup.Role = "combined"
 	editSetupIdentity(t, a.protocol, "push", func(r map[string]any) {
-		r["Revisions"].([]any)[0].(map[string]any)["SignedRequest"] = base64.StdEncoding.EncodeToString(
+		requireType[map[string]any](t, requireType[[]any](t, r["Revisions"])[0])["SignedRequest"] = base64.StdEncoding.EncodeToString(
 			[]byte("already signed"),
 		)
 	})
@@ -101,7 +101,7 @@ func TestCertificateWorkerRejectsBrokenAndForeignMaterial(t *testing.T) {
 					bad = pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: bad})
 				}
 				editSetupIdentity(t, a.protocol, id, func(r map[string]any) {
-					r["Revisions"].([]any)[0].(map[string]any)["Certificate"] = base64.StdEncoding.EncodeToString(
+					requireType[map[string]any](t, requireType[[]any](t, r["Revisions"])[0])["Certificate"] = base64.StdEncoding.EncodeToString(
 						bad,
 					)
 				})
@@ -164,7 +164,7 @@ func TestManagedIssuerWorkerRoutesAndDynamicTrust(t *testing.T) {
 		for _, rev := range []string{"2", "missing"} {
 			w := httptest.NewRecorder()
 			a.managedIssuanceHandler(isACME).
-				ServeHTTP(w, httptest.NewRequest("GET", base+"/issuers/"+rev+"/directory", nil))
+				ServeHTTP(w, httptest.NewRequestWithContext(t.Context(), "GET", base+"/issuers/"+rev+"/directory", nil))
 			if rev == "missing" && w.Code != 404 {
 				t.Fatal("unknown issuer route accepted")
 			}
@@ -172,7 +172,7 @@ func TestManagedIssuerWorkerRoutesAndDynamicTrust(t *testing.T) {
 	}
 	called := false
 	a.legacyIssuance(http.HandlerFunc(func(http.ResponseWriter, *http.Request) { called = true })).
-		ServeHTTP(httptest.NewRecorder(), httptest.NewRequest("GET", PathSCEP, nil))
+		ServeHTTP(httptest.NewRecorder(), httptest.NewRequestWithContext(t.Context(), "GET", PathSCEP, nil))
 	if !called {
 		t.Fatal("retained legacy route unavailable")
 	}
@@ -185,7 +185,7 @@ func TestManagedIssuerWorkerRoutesAndDynamicTrust(t *testing.T) {
 	setupRequire(t, a.wireServiceConfig(ctx, a.enroll, mux), nil)
 	for _, path := range []string{PathServiceConfig, PathTrustAnchors, PathTrustProfile} {
 		w := httptest.NewRecorder()
-		mux.ServeHTTP(w, httptest.NewRequest("GET", path, nil))
+		mux.ServeHTTP(w, httptest.NewRequestWithContext(t.Context(), "GET", path, nil))
 		if w.Code != 200 {
 			t.Fatal(path, w.Code, w.Body.String())
 		}
@@ -197,7 +197,7 @@ func TestManagedIssuerWorkerRoutesAndDynamicTrust(t *testing.T) {
 	}
 	for _, path := range []string{PathTrustAnchors, PathTrustProfile} {
 		w := httptest.NewRecorder()
-		mux.ServeHTTP(w, httptest.NewRequest("GET", path, nil))
+		mux.ServeHTTP(w, httptest.NewRequestWithContext(t.Context(), "GET", path, nil))
 		if w.Code != 503 {
 			t.Fatal("unavailable trust not reported", path, w.Code)
 		}
@@ -239,7 +239,7 @@ func TestIssuerRenewalWorkerPreparesSuccessorAndRestartsPreparedRollover(t *test
 			} else {
 				future := clock.NewFake(a.cfg.Clock.Now().Add(time.Hour))
 				a.cfg.Clock = future
-				a.protocol.(*state.Memory).Now = future.Now
+				requireType[*state.Memory](t, a.protocol).Now = future.Now
 				v := setupExecute(
 					t,
 					a,
@@ -308,7 +308,7 @@ func captureManagedTLS(t *testing.T, a *App) (*tls.Config, error) {
 	setupRequire(t, err, nil)
 	response, err := server.Client().Do(request)
 	if err == nil {
-		response.Body.Close()
+		_ = response.Body.Close()
 	}
 	out := <-results
 	return out.config, out.err

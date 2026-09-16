@@ -43,9 +43,15 @@ func needTarget(e *env, name string, args []string) (channel, id, parent string,
 // runEnrollments reads and disables the enrollments the server manages.
 func runEnrollments(ctx context.Context, e *env, args []string) error {
 	if len(args) == 0 {
-		return fmt.Errorf("%w: enrollments needs a subcommand: list, get, disable", ErrUsage)
+		return fmt.Errorf(
+			"%w: enrollments needs a subcommand: list, get, disable, status",
+			ErrUsage,
+		)
 	}
 	sub, rest := args[0], args[1:]
+	if sub == "status" {
+		return runEnrollmentStatus(ctx, e, rest)
+	}
 	c, err := e.client()
 	if err != nil {
 		return err

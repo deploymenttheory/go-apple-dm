@@ -15,16 +15,16 @@ import (
 
 func TestServeListenerUsesReservedSocket(t *testing.T) {
 	t.Parallel()
-	listener, err := net.Listen("tcp", "127.0.0.1:0")
+	listener, err := (&net.ListenConfig{}).Listen(t.Context(), "tcp", "127.0.0.1:0")
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer listener.Close()
+	defer func(cleanup func() error) { _ = cleanup() }(listener.Close)
 	addr := listener.Addr().String()
 	// The socket remains bound before the runtime starts. A second bind must
 	// fail, while serving the original listener must succeed.
-	if other, err := net.Listen("tcp", addr); err == nil {
-		other.Close()
+	if other, err := (&net.ListenConfig{}).Listen(t.Context(), "tcp", addr); err == nil {
+		_ = other.Close()
 		t.Fatal("reserved address was available to another listener")
 	}
 	ctx, cancel := context.WithTimeout(t.Context(), 10*time.Second)
@@ -48,7 +48,7 @@ func TestServeListenerUsesReservedSocket(t *testing.T) {
 			t.Error("runtime did not stop")
 		}
 	}()
-	transport := http.DefaultTransport.(*http.Transport).Clone()
+	transport := requireType[*http.Transport](t, http.DefaultTransport).Clone()
 	defer transport.CloseIdleConnections()
 	client := &http.Client{Transport: transport, Timeout: time.Second}
 	tick := time.NewTicker(10 * time.Millisecond)
@@ -66,7 +66,7 @@ func TestServeListenerUsesReservedSocket(t *testing.T) {
 			}
 			resp, err := client.Do(req)
 			if err == nil {
-				resp.Body.Close()
+				_ = resp.Body.Close()
 				if resp.StatusCode == http.StatusOK {
 					return
 				}
@@ -94,15 +94,15 @@ func TestServeListenerClosesOnStartupFailure(t *testing.T) {
 				// address's transport requirements.
 				addr = "0.0.0.0:0"
 			}
-			listener, err := net.Listen("tcp", addr)
+			listener, err := (&net.ListenConfig{}).Listen(t.Context(), "tcp", addr)
 			if err != nil {
 				t.Fatal(err)
 			}
-			defer listener.Close()
+			defer func(cleanup func() error) { _ = cleanup() }(listener.Close)
 			if err := ServeListener(t.Context(), cfg, listener); err == nil {
 				t.Fatal("invalid runtime started")
 			}
-			_ = listener.(*net.TCPListener).SetDeadline(time.Now())
+			_ = requireType[*net.TCPListener](t, listener).SetDeadline(time.Now())
 			if _, err := listener.Accept(); !errors.Is(err, net.ErrClosed) {
 				t.Fatalf("listener not closed after failure: %v", err)
 			}

@@ -122,7 +122,7 @@
       "id": "rotate",
       "from": "authenticated",
       "to": "reenrolled",
-      "label": "Accepted Authenticate",
+      "label": "Authorized new identity",
       "variant": "default",
       "fromSide": "bottom",
       "toSide": "top",
@@ -176,7 +176,7 @@
       "id": "reset-enabled",
       "from": "enabled",
       "to": "reenrolled",
-      "label": "Accepted Authenticate",
+      "label": "Authorized new identity",
       "fromSide": "left",
       "toSide": "right",
       "via": [
@@ -199,7 +199,7 @@
       "id": "resume",
       "from": "checkedout",
       "to": "authenticated",
-      "label": "Accepted Authenticate",
+      "label": "Authorized new identity",
       "fromSide": "bottom",
       "toSide": "left",
       "via": [
@@ -255,9 +255,9 @@
       "dot": "service",
       "title": "Initial activation and ordinary reset",
       "items": [
-        "An accepted ordinary Authenticate creates or resets the device-channel record, even when its certificate is unchanged. TokenUpdate then enables it.",
-        "Changed certificates require re-enrollment policy approval: the library allows by default and the reference server denies ordinary rotation.",
-        "A rejected request does not create a new enrollment state or reset an existing working enrollment."
+        "Initial Authenticate associates the device identity; TokenUpdate enables the channel. Same-certificate Authenticate retries preserve the existing enrollment, tokens, queue and declarative state.",
+        "Both service.Core and the reference server deny changed certificates by default. An explicitly allowed changed-identity Authenticate resets enrollment state; the reset arrows show that path.",
+        "A rejected request preserves the existing state. A disabled enrollment cannot reactivate with its old certificate or TokenUpdate; a fresh identity requires authorized re-enrollment."
       ]
     },
     {
@@ -272,7 +272,7 @@
       "dot": "neutral",
       "title": "Checkout and user channels",
       "items": [
-        "CheckOut disables the enrollment while retaining its record; a later accepted enrollment can reactivate it. Declarative cleanup runs through the service hook.",
+        "CheckOut disables the enrollment and clears dependent state while retaining its record. A fresh identity can reactivate it only through authorized re-enrollment. Declarative cleanup runs through the service hook.",
         "User channels are created by TokenUpdate under an existing device enrollment, with UserAuthenticate when required. They do not send device-channel Authenticate."
       ]
     },
@@ -282,7 +282,8 @@
       "items": [
         "Check-in — https://developer.apple.com/documentation/devicemanagement/check-in",
         "Deploying device management enrollment profiles — https://developer.apple.com/documentation/devicemanagement/deploying-device-management-enrollment-profiles",
-        "MDM payload — https://developer.apple.com/documentation/devicemanagement/mdm"
+        "MDM payload — https://developer.apple.com/documentation/devicemanagement/mdm",
+        "Implementation — https://github.com/deploymenttheory/go-apple-dm/blob/7500eb25e50a2913338339d5fced18dc7f41fdc3/server/service/checkin.go"
       ]
     }
   ]

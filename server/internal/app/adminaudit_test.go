@@ -66,7 +66,7 @@ func TestAuditTrailAttributesAdminRequests(t *testing.T) {
 	a, st := auditApp(t, app.Config{})
 	srv := serve(t, a)
 	resp := adminReq(t, srv.URL, http.MethodPut, "/admin/v1/declarations", "t", `{}`)
-	defer resp.Body.Close()
+	defer func(body io.Closer) { _ = body.Close() }(resp.Body)
 	if err := a.Close(); err != nil {
 		t.Fatal(err)
 	}
@@ -104,7 +104,7 @@ func TestAuditRouteListsAndPages(t *testing.T) {
 	get := func(path string) map[string]any {
 		t.Helper()
 		resp := adminReq(t, srv.URL, http.MethodGet, path, "t", "")
-		defer resp.Body.Close()
+		defer func(body io.Closer) { _ = body.Close() }(resp.Body)
 		if resp.StatusCode != http.StatusOK {
 			t.Fatalf("%s: status = %d", path, resp.StatusCode)
 		}
@@ -184,7 +184,7 @@ func TestAuditRouteAbsentWithoutATrail(t *testing.T) {
 	a := build(t, app.Config{Role: app.RoleAll, Storage: "inmem", AdminToken: "t"})
 	srv := serve(t, a)
 	resp := adminReq(t, srv.URL, http.MethodGet, "/admin/v1/audit", "t", "")
-	defer resp.Body.Close()
+	defer func(body io.Closer) { _ = body.Close() }(resp.Body)
 	if resp.StatusCode != http.StatusNotFound {
 		t.Fatalf("status = %d, want 404", resp.StatusCode)
 	}
@@ -273,7 +273,7 @@ func TestAuditStoreSelection(t *testing.T) {
 		// The records survive in the process's own database, which is the
 		// whole point of persisting rather than logging.
 		resp := adminReq(t, srv.URL, http.MethodGet, "/admin/v1/audit", "t", "")
-		defer resp.Body.Close()
+		defer func(body io.Closer) { _ = body.Close() }(resp.Body)
 		if resp.StatusCode != http.StatusServiceUnavailable {
 			t.Fatalf("status = %d", resp.StatusCode)
 		}
@@ -286,7 +286,7 @@ func TestAuditStoreSelection(t *testing.T) {
 		})
 		srv := serve(t, a)
 		resp := adminReq(t, srv.URL, http.MethodGet, "/admin/v1/audit", "t", "")
-		defer resp.Body.Close()
+		defer func(body io.Closer) { _ = body.Close() }(resp.Body)
 		if resp.StatusCode != http.StatusOK {
 			t.Fatalf("status = %d, want an in-memory trail", resp.StatusCode)
 		}
@@ -333,7 +333,7 @@ func TestAuditRouteMapsStoreErrors(t *testing.T) {
 	})
 	srv := serve(t, b)
 	resp := adminReq(t, srv.URL, http.MethodGet, "/admin/v1/audit", "t", "")
-	defer resp.Body.Close()
+	defer func(body io.Closer) { _ = body.Close() }(resp.Body)
 	if resp.StatusCode != http.StatusInternalServerError {
 		t.Fatalf("status = %d, want 500", resp.StatusCode)
 	}
@@ -352,7 +352,7 @@ func TestAuditRouteMapsStoreErrors(t *testing.T) {
 	})
 	csrv := serve(t, c)
 	got := adminReq(t, csrv.URL, http.MethodGet, "/admin/v1/audit/1", "t", "")
-	defer got.Body.Close()
+	defer func(body io.Closer) { _ = body.Close() }(got.Body)
 	if got.StatusCode != http.StatusInternalServerError {
 		t.Fatalf("status = %d, want 500", got.StatusCode)
 	}

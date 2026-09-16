@@ -64,6 +64,7 @@ func readAssociation(ctx context.Context, r state.Reader, ref string) (Associati
 	err = json.Unmarshal(v.Value, &a)
 	return a, err
 }
+
 func writeAssociation(ctx context.Context, tx state.Tx, a Association) error {
 	b, err := json.Marshal(a)
 	if err != nil {
@@ -149,7 +150,7 @@ func (s *Associations) ByCertificate(ctx context.Context, cert *x509.Certificate
 
 // Bind atomically claims the device-generated identity. Retrying the same identity
 // is safe even after a downstream failure. A different identity can never take over
-// a claim. Confirmation is a separate durable marker after Authenticate succeeds.
+// a claim. Confirmation is a separate stored marker after Authenticate succeeds.
 func (s *Associations) Bind(ctx context.Context, ref string, id mdm.EnrollmentID, confirm bool) error {
 	if err := id.Validate(); err != nil {
 		return err

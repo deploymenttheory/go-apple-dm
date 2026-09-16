@@ -31,6 +31,7 @@ type fakeServer struct {
 }
 
 func (f *fakeServer) handler(t *testing.T) http.Handler {
+	t.Helper()
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		body, _ := io.ReadAll(r.Body)
 		if f.roots != nil {
@@ -250,7 +251,7 @@ func TestErrors(t *testing.T) {
 	if _, err := j.GetBootstrapToken(ctx); err == nil {
 		t.Fatal("junk bootstrap token should fail")
 	}
-	if tok, err := (simulator.New("U", simulator.WithURLs(emptyServer(t), emptyServer(t)))).GetBootstrapToken(ctx); err != nil || tok != nil {
+	if tok, err := simulator.New("U", simulator.WithURLs(emptyServer(t), emptyServer(t))).GetBootstrapToken(ctx); err != nil || tok != nil {
 		t.Fatalf("empty bootstrap token = %v %v", tok, err)
 	}
 	// A server that never drains hits the loop limit.

@@ -1,6 +1,8 @@
 // Package lifecycle manages certificate setup, renewal and issuer replacement
 // using persistent state.
 //
+// # Design
+//
 // A Manager tracks active and pending revisions separately, so preparing a
 // replacement does not interrupt the identity already in use. It validates
 // imported certificates against pending keys and publishes activation in the
@@ -13,6 +15,7 @@
 // private keys and must be encrypted by persistent storage adapters. Public
 // identity views and activity history omit that key material.
 //
-// See the certificate lifecycle guide for the reference server's integration:
-// https://github.com/deploymenttheory/go-apple-dm/blob/main/docs/operations/certificate-lifecycle.md
+// # References
+//
+//   - https://github.com/deploymenttheory/go-apple-dm/blob/main/docs/operations/certificate-lifecycle.md
 package lifecycle

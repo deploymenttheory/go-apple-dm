@@ -9,6 +9,7 @@ import (
 )
 
 func runOrderTransactions(t *testing.T, factory Factory) {
+	t.Helper()
 	s := factory(t)
 	ctx := t.Context()
 	must(t, "seed order", s.Update(ctx, func(tx acme.Tx) error {

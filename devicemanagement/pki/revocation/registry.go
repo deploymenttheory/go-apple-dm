@@ -55,7 +55,7 @@ func ProvenanceFromContext(ctx context.Context) Provenance {
 	return p
 }
 
-// Certificate is the durable record of an issuance. DER permits later status
+// Certificate is the stored record of an issuance. DER permits later status
 // publication and import without relying on a live certificate pin.
 type Certificate struct {
 	Issuer              string
@@ -114,6 +114,7 @@ func New(store state.Store, issuers ...Issuer) (*Registry, error) {
 	}
 	return r, nil
 }
+
 func (r *Registry) now() time.Time {
 	if r.Now != nil {
 		return r.Now().UTC()
@@ -133,6 +134,7 @@ func putJSON(ctx context.Context, tx state.Tx, key string, v any) error {
 	}
 	return tx.Put(ctx, state.Record{Key: key, Value: b})
 }
+
 func readCertificate(ctx context.Context, st state.Reader, key string) (Certificate, error) {
 	r, err := st.Get(ctx, key)
 	if errors.Is(err, state.ErrNotFound) {

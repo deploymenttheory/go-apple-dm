@@ -33,7 +33,10 @@ func open(t *testing.T) *sqlite.Store {
 
 func TestContract(t *testing.T) {
 	t.Parallel()
-	storagetest.RunAll(t, func(t *testing.T) storage.Store { return open(t) })
+	storagetest.RunAll(t, func(t *testing.T) storage.Store {
+		t.Helper()
+		return open(t)
+	})
 }
 
 func TestOpenAndMigrations(t *testing.T) {
@@ -89,7 +92,7 @@ func TestOpenAndMigrations(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer s2.Close()
+	defer func(cleanup func() error) { _ = cleanup() }(s2.Close)
 	if err := s2.UpsertAuthenticate(ctx, mdm.EnrollmentID{Channel: mdm.ChannelDevice, ID: "d"}, &checkin.Authenticate{Topic: "t"}, nil, time.Now()); err != nil {
 		t.Fatal(err)
 	}
@@ -181,8 +184,10 @@ func TestResultRoundTripAndInvalidIDs(t *testing.T) {
 	if _, err := s.Next(ctx, id, false, t0); err != nil {
 		t.Fatal(err)
 	}
-	resp := &mdm.Response{CommandUUID: "E1", Status: mdm.StatusError, Raw: []byte("<r/>"),
-		ErrorChain: []mdm.ErrorChainItem{{ErrorCode: 12021, ErrorDomain: "MCMDMErrorDomain", LocalizedDescription: "nope"}}}
+	resp := &mdm.Response{
+		CommandUUID: "E1", Status: mdm.StatusError, Raw: []byte("<r/>"),
+		ErrorChain: []mdm.ErrorChainItem{{ErrorCode: 12021, ErrorDomain: "MCMDMErrorDomain", LocalizedDescription: "nope"}},
+	}
 	if err := s.StoreResult(ctx, id, resp, t0.Add(time.Minute)); err != nil {
 		t.Fatal(err)
 	}

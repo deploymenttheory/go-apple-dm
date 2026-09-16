@@ -43,6 +43,7 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/server/httpapi"
 	"github.com/deploymenttheory/go-apple-dm/server/maintenance"
 	"github.com/deploymenttheory/go-apple-dm/server/pushnotify"
+	"github.com/deploymenttheory/go-apple-dm/server/replycerts"
 	"github.com/deploymenttheory/go-apple-dm/server/service"
 	"github.com/deploymenttheory/go-apple-dm/server/sqlstore/mysql"
 	"github.com/deploymenttheory/go-apple-dm/server/sqlstore/postgres"
@@ -221,11 +222,12 @@ var ErrConfig = errors.New("app: invalid configuration")
 
 // App is a built process.
 type App struct {
-	eventStore     *eventstore.Store
-	eventPublisher *eventstore.Publisher
-	issuerMu       sync.Mutex
-	issuerServices map[string]*managedIssuerService
-	Certificates   *lifecycle.Manager
+	eventStore        *eventstore.Store
+	eventPublisher    *eventstore.Publisher
+	issuerMu          sync.Mutex
+	issuerServices    map[string]*managedIssuerService
+	Certificates      *lifecycle.Manager
+	ReplyCertificates *replycerts.Manager
 
 	appPushStore   *apppush.Store
 	appPushClients map[string]*apns.AppClient
@@ -359,7 +361,7 @@ func Build(ctx context.Context, cfg Config) (*App, error) {
 	ownBus := false
 	if cfg.Bus == nil && cfg.Sinks.Enabled() {
 		var err error
-		//nolint:contextcheck // the bus owns a lifetime independent of the construction/request context
+		// the bus owns a lifetime independent of the construction/request context
 		cfg.Bus, err = event.NewAsync(
 			cfg.Sinks.Dispatch,
 			event.WithErrorHandler(eventReporter(cfg.Logger, cfg.Clock)),
@@ -371,10 +373,10 @@ func Build(ctx context.Context, cfg Config) (*App, error) {
 	}
 	a := &App{cfg: cfg, ownBus: ownBus}
 	built := false
-	//nolint:contextcheck // failure cleanup owns its bounded drain context
+	// failure cleanup owns its bounded drain context
 	defer func() {
 		if !built {
-			//nolint:contextcheck // Close owns bounded teardown after construction fails.
+			// Close owns bounded teardown after construction fails.
 			_ = a.Close()
 		}
 	}()
@@ -959,11 +961,11 @@ func (a *App) adminStore(ctx context.Context) (adminauth.Store, error) {
 	case a.cfg.AdminStore != nil:
 		return a.cfg.AdminStore, nil
 	case !a.cfg.AdminStoreEnabled:
-		//nolint:nilnil // a nil store is the documented "no principal store"
+		// a nil store is the documented "no principal store"
 		// answer, not a failure: the static token stays the only credential.
 		return nil, nil
 	case a.db == nil:
-		// The in-memory principal store supports administration without durable state.
+		// The in-memory principal store supports administration without persisted state.
 		return admininmem.New(), nil
 	default:
 		s, err := adminsql.Open(ctx, a.db, a.dialect, adminsql.Options{})

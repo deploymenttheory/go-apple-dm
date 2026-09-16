@@ -418,7 +418,7 @@ func (s *Store) Next(
 		c.Raw = append([]byte(nil), q.Command.Raw...)
 		return &c, nil
 	}
-	return nil, nil //nolint:nilnil // empty queue is not an error
+	return nil, nil // empty queue is not an error
 }
 
 // StoreResult implements storage.CommandQueue.

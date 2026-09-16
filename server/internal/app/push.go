@@ -86,7 +86,7 @@ func (p PushConfig) validate() error {
 func (a *App) wirePush() (*pushnotify.Notifier, error) {
 	cfg := a.cfg.Push
 	if !cfg.Enabled() {
-		return nil, nil //nolint:nilnil // Unconfigured optional integration has no handler.
+		return nil, nil // Unconfigured optional integration has no handler.
 	}
 	pusher := cfg.Pusher
 	if pusher == nil {

@@ -18,9 +18,10 @@ import (
 	"net"
 	"time"
 
+	"howett.net/plist"
+
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/pki/pushcert"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/state"
-	"howett.net/plist"
 )
 
 //go:embed apple/*.pem
@@ -511,7 +512,10 @@ func selfSign(r record, material Material, now time.Time, validity time.Duration
 	if err != nil {
 		return nil, err
 	}
-	signer := key.(crypto.Signer)
+	signer, ok := key.(crypto.Signer)
+	if !ok {
+		return nil, ErrInvalid
+	}
 	serial, err := rand.Int(rand.Reader, new(big.Int).Lsh(big.NewInt(1), 128))
 	if err != nil {
 		return nil, err

@@ -124,11 +124,13 @@ func TestArchiveAuthenticatesFinalChunkAfterCompleteTar(t *testing.T) {
 	if err := v.Close(); err != nil {
 		t.Fatal(err)
 	}
+	// #nosec G304 -- The test controls this fixture path within its private workspace.
 	ciphertext, err := os.ReadFile(path)
 	if err != nil {
 		t.Fatal(err)
 	}
 	ciphertext[len(ciphertext)-1] ^= 1
+	// #nosec G703 -- The test controls this fixture path within its private workspace.
 	if err := os.WriteFile(path, ciphertext, 0o600); err != nil {
 		t.Fatal(err)
 	}
@@ -207,7 +209,7 @@ func TestVerifyAndRestoreFilesystemFailures(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer v.Close()
+	defer func(cleanup func() error) { _ = cleanup() }(v.Close)
 	if err := v.RestoreFiles(filepath.Join(t.TempDir(), "missing", "target")); err == nil {
 		t.Fatal("restored through missing parent")
 	}

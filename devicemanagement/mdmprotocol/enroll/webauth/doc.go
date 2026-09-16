@@ -10,10 +10,10 @@
 // response bodies are bounded.
 //
 // Authorizer decides admission and Complete serves the result; the package does
-// not build profiles. StateStore is injectable, with an in-memory implementation
-// supplied. Replicated deployments need shared state or session affinity for the
-// browser handoff. SAML, userinfo and refresh-token flows are outside this
-// relying party's scope.
+// not build profiles. StateStore is injectable; MemoryStore and SharedStore
+// supply process-local and atomic shared-state implementations. Replicated
+// deployments need shared state or session affinity for the browser handoff.
+// SAML, userinfo and refresh-token flows are outside this relying party's scope.
 //
 // # References
 //
