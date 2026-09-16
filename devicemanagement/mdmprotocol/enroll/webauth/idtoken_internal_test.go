@@ -86,6 +86,8 @@ func TestParseJWKS(t *testing.T) {
 		"empty":       map[string]any{"keys": []any{}},
 		"badX":        map[string]any{"keys": []map[string]any{{"kty": "EC", "crv": "P-256", "x": "!", "y": y}}},
 		"badY":        map[string]any{"keys": []map[string]any{{"kty": "EC", "crv": "P-256", "x": x, "y": "!"}}},
+		"oversizedX":  map[string]any{"keys": []map[string]any{{"kty": "EC", "crv": "P-256", "x": b64(append([]byte{1}, ec.X.FillBytes(make([]byte, 32))...)), "y": y}}},
+		"oversizedY":  map[string]any{"keys": []map[string]any{{"kty": "EC", "crv": "P-256", "x": x, "y": b64(append([]byte{1}, ec.Y.FillBytes(make([]byte, 32))...))}}},
 		"offCurve":    map[string]any{"keys": []map[string]any{{"kty": "EC", "crv": "P-256", "x": x, "y": x}}},
 		"badN":        map[string]any{"keys": []map[string]any{{"kty": "RSA", "n": "!", "e": "AQAB"}}},
 		"badE":        map[string]any{"keys": []map[string]any{{"kty": "RSA", "n": "AQAB", "e": "!"}}},

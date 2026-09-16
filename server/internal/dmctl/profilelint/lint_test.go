@@ -58,6 +58,12 @@ func TestInspect(t *testing.T) {
 		{name: "enum", severity: "error", path: "EncryptionType", change: func(_, p map[string]any) { p["EncryptionType"] = "DO-NOT-PRINT" }},
 		{name: "raw", severity: "unvalidated", path: "PayloadContent[0]", change: func(_, p map[string]any) { p["PayloadType"] = "com.example.future" }},
 		{name: "type", severity: "error", path: "PayloadContent", change: func(_, p map[string]any) { p["Password"] = true }},
+		{name: "envelope type", severity: "error", change: func(top, _ map[string]any) { top["PayloadVersion"] = true }},
+		{name: "envelope identity", severity: "error", path: "PayloadUUID", change: func(top, _ map[string]any) {
+			delete(top, "PayloadUUID")
+			delete(top, "PayloadIdentifier")
+		}},
+		{name: "identity type", severity: "error", path: "PayloadContent", change: func(_, p map[string]any) { p["PayloadDisplayName"] = true }},
 		{name: "encrypted", severity: "unvalidated", path: "EncryptedPayloadContent", change: func(top, _ map[string]any) {
 			delete(top, "PayloadContent")
 			top["EncryptedPayloadContent"] = []byte("opaque")
@@ -89,6 +95,13 @@ func TestInspect(t *testing.T) {
 	); len(r.Issues) != 1 ||
 		r.Issues[0].Rule != "parse" {
 		t.Fatal(r)
+	}
+}
+
+func TestInspectSizeLimit(t *testing.T) {
+	r := profilelint.Inspect(make([]byte, plist.DefaultMaxBytes+1), profilelint.Options{})
+	if len(r.Issues) != 1 || r.Issues[0].Rule != "size" || r.Issues[0].Severity != "error" {
+		t.Fatalf("oversized profile: %+v", r)
 	}
 }
 
