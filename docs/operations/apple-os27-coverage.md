@@ -8,10 +8,12 @@ remaining acceptance**; follow-up testing is in progress. See the
 and remaining behavior checks. The [handoff](../testing/macos27-handoff.md) describes
 the maintained procedure.
 
-The subsequent 40 GB macOS 27 Guestweave VM reached user-approved SCEP profile
-installation, but its APNs identity key generation fails and no TokenUpdate
-arrives. Guest command/DDM acceptance is blocked before feature delivery; see
-[the recorded blocker](../testing/macos27-live-validation.md#guest-continuation--17-september-2026).
+The original 40 GB macOS 27 Guestweave VM and a fresh **v1.1.0** native-provisioned
+guest both reached user-approved SCEP profile installation. Native account/SSH
+provisioning passes in the fresh guest, but APNs identity key generation still
+fails before enrollment and after reboot; no TokenUpdate arrives. Guest
+command/DDM acceptance remains blocked before feature delivery. See the
+[provisioning retry](../testing/macos27-live-validation.md#native-provisioning-retry--guestweave-v110).
 The complete automated matrix, thirteen required contracts and unchanged 95%
 coverage gate passed at `eb5208a`. Neither that result nor profile installation
 substitutes for the remaining native behavior checks.

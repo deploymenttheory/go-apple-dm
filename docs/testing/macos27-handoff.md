@@ -18,7 +18,20 @@ Use the guest for binary controls and destructive enrollment/update cases.
 The guest disk is limited to **40 GB**, as requested. Guestweave changes needed
 for this lab belong in that project's PRs; the telemetry startup correction is
 in merged [Guestweave PR #181](https://github.com/deploymenttheory/guestweave-cli-macos/pull/181).
-The `macos27-acceptance` guest runs 27.0 / 26A428 in the native window. Its disk
+Native guest provisioning was subsequently added in merged
+[Guestweave PR #182](https://github.com/deploymenttheory/guestweave-cli-macos/pull/182)
+and released in **v1.1.0**, using `go-bindings-macosplatform` **v0.20.0**.
+The fresh `macos27-provisioned` guest was restored and first-boot provisioned from
+that release in a visible native window. Account creation, automatic login and
+SSH pass. Its new SCEP profile is user-approved, but APNs BAA key generation still
+fails before enrollment and after reboot. Authenticate reached the server at
+12:46:40 UTC; TokenUpdate remains absent and the enrollment is disabled, with no
+user channel or assigned declarations. See the
+[controlled retry](macos27-live-validation.md#native-provisioning-retry--guestweave-v110).
+The Guestweave provisioning omission is fixed; APNs recovery is **not** established.
+
+The original comparison guest and evidence remain preserved. The
+`macos27-acceptance` guest is now suspended; its recorded OS is 27.0 / 26A428. Its disk
 is exactly 40,000,000,000 bytes, with four virtual CPUs and 4 GiB RAM. Setup is
 complete and the user installed its fresh SCEP profile with reviewed rights 4115.
 Guest Settings and `profiles` confirm user-approved enrollment, but command/DDM
@@ -39,6 +52,23 @@ preserving TLS verification. Only the guest's exact UUID/serial was added to
 admission; the physical host's rule and enrollment remain intact. The canonical
 lab now runs binaries built from `eb5208a`, with source/binary manifests saved.
 No new native feature pass is recorded for this guest.
+
+The v1.1.0 retry's private evidence, provisioning credentials and isolated SSH/UI
+helpers are in `test-lab/local/apple27/guestweave/provisioned-lab/`. Its source
+checkout is `guestweave/provisioning` at release revision `459299f`; the private
+`/private/tmp/dm-guestweave-provisioned.sh` wrapper selects that binary and the same
+short storage alias. Admission now retains the exact rules for the physical host
+and both guests. Preserve all three rules and the canonical server data.
+The fresh guest also remains within the 40 GB disk limit; no declaration should
+be assigned until actual TokenUpdate and tracked inventory establish readiness.
+Its `restored-before-first-boot` snapshot preserves the unconfigured restore;
+`provisioned-enrollment-apns-blocked` is an offline checkpoint after the retry
+and orderly guest shutdown. The live snapshot's free-space guard refused a RAM
+capture, so no live-memory snapshot is claimed. The guest was reopened in its
+native window after the offline checkpoint. Subsequent boots use the wrapper's
+ordinary `run macos27-provisioned --suspendable --no-clipboard` command; provisioning
+options are needed for the first boot of a fresh restore, not to repeat account
+creation on this configured guest.
 
 The deep checkout exceeded macOS's Unix socket path limit for Guestweave live
 snapshots. A short private storage alias and a restart with `--suspendable`

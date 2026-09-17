@@ -1,10 +1,12 @@
 # macOS 27 live validation
 
-**Current guest continuation:** the 40 GB Guestweave VM has a user-approved
-SCEP profile, but MDM command/DDM acceptance is blocked by guest APNs identity
-key generation. No TokenUpdate or installing-user channel has arrived. See
-[the guest result](#guest-continuation--17-september-2026). The conclusive physical
-results below remain retained.
+**Current guest continuation:** a fresh 40 GB VM was restored and first-boot
+provisioned with Guestweave **v1.1.0**. Native account creation and SSH work,
+but APNs identity key generation still fails before enrollment and after reboot.
+The SCEP profile is user-approved; no TokenUpdate or installing-user channel has
+arrived. Command/DDM acceptance remains blocked. See the
+[provisioning retry](#native-provisioning-retry--guestweave-v110).
+The conclusive physical results below remain retained.
 
 **Permission-test follow-up:** the user requested a repeat of the inconclusive
 app and website permission tests only. Conclusive results below remain retained.
@@ -347,7 +349,61 @@ The private evidence is under `test-lab/local/apple27/guestweave/`, including
 `clean-install` preserves the pre-enrollment disk. After resolving the lab's
 Unix socket path length with a short storage alias and restarting with
 `--suspendable`, the live `enrollment-apns-blocked` snapshot completed and resumed.
-The guest remains visible and enrolled for diagnosis; no feature policy is
-assigned. Guest-dependent binary, package/app and permission variants remain
-blocked at transport readiness. Retained physical-device passes and failures
-are unchanged.
+The original guest's enrollment and diagnostic evidence remain preserved; no
+feature policy is assigned. Guest-dependent binary, package/app and permission
+variants remain blocked at transport readiness. Retained physical-device passes
+and failures are unchanged.
+
+### Native provisioning retry — Guestweave v1.1.0
+
+[Guestweave PR #182](https://github.com/deploymenttheory/guestweave-cli-macos/pull/182)
+added the missing native `VZMacGuestProvisioningOptions` path and was merged into
+[v1.1.0](https://github.com/deploymenttheory/guestweave-cli-macos/releases/tag/v1.1.0).
+The retry used a locally built and signed binary from release revision
+`459299f6705bf721df1dceee67546f63d3b5c5d0`, with
+`go-bindings-macosplatform` **v0.20.0** and `purego` **v0.11.0**.
+The native provisioning integration test, focused package tests and changed-line
+lint passed on the implementation commit; the release adds only changelog changes
+to that code. These automated checks do not establish APNs success.
+
+A separate `macos27-provisioned` guest was restored from the checksum-verified
+27.0 / 26A428 IPSW. It has a new machine identity, an exactly 40,000,000,000-byte
+disk, four CPUs and 4 GiB RAM. The first normal boot used `--provisioning-opts`
+in a visible native window. Provisioning created the requested administrator,
+logged in automatically and enabled SSH: authentication succeeded without manual
+account setup or a guest-side script creating the account. The pre-enrollment
+baseline confirmed that no MDM profile was installed.
+
+Only this new guest's exact UUID/serial pair was added to the existing admission
+policy. The original guest, its snapshots, the physical Mac's enrollment and the
+canonical recovered database/keyring were retained. A fresh SCEP profile with
+installing-user scope, included lab trust and rights **4115** was installed through
+the guest's visible UI. Native `profiles` reports user-approved enrollment.
+
+**Result: provisioning passed; APNs enrollment remains blocked.** Authenticate
+arrived at **12:46:40 UTC on 17 September 2026**, but TokenUpdate did not. The server
+retains `Enabled=false`, an unset `TokenUpdatedAt`, zero installing-user channels
+and zero assigned declarations. No tracked command or feature declaration was
+sent to this disabled enrollment.
+
+The same `apsd` failure occurs before enrollment, after enrollment and after an
+orderly guest reboot: Secure Enclave reference-key creation fails with **-25308**
+(`errSecInteractionNotAllowed`), followed by failure to obtain a BAA certificate.
+The post-reboot capture, filtered to the new boot UUID, contains 24 key-generation
+failure messages and eight BAA-certificate failures, with no logged host-VM
+signed-nonce success. Verified lab HTTPS readiness and TCP connectivity to Apple's
+push service on 5223 and activation service on 443 still pass after reboot.
+Adding native provisioning did **not** restore APNs on this host/guest build;
+the exact underlying platform cause remains unresolved.
+
+Private evidence is under
+`test-lab/local/apple27/guestweave/provisioned-lab/`: release/binary and restore
+manifests, `baseline.json`, admission/profile review records, guest screenshots,
+the three APNs log captures and summaries, and `verification-*.json`.
+Credentials and raw identifiers remain private. The original guest's evidence
+is unchanged. `restored-before-first-boot` preserves the fresh restore, and
+`provisioned-enrollment-apns-blocked` preserves the configured guest's disk after
+orderly shutdown. A live snapshot was refused by the free-space guard; the latter
+checkpoint contains no RAM state. The new guest was reopened in its native window;
+the original comparison guest is suspended. This retry supplies no new native
+feature pass and does not change the retained physical-device results.
