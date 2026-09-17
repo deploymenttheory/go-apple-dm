@@ -15,6 +15,7 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/cms"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/mdm"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/profile"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/osversion"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/schema/commands"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/schema/profiles"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/schema/support"
@@ -257,7 +258,7 @@ func TestEscrowProfileRetainsIdentity(t *testing.T) {
 	if err := p.Validate(
 		support.Target{
 			OS:      support.MacOS,
-			Version: support.V(26, 0, 0),
+			Version: osversion.New(26, 0, 0),
 			Channel: support.ChannelDevice,
 		},
 	); err != nil {

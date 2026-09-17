@@ -12,6 +12,7 @@ import (
 
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/ddm"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/mdm"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/osversion"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/schema/support"
 )
 
@@ -53,7 +54,7 @@ func TestSeedOS27FeatureFixtures(t *testing.T) {
 			}
 			for _, platform := range support.AllOS {
 				for _, version := range []string{"26.0", "26.4", "26.6.2", "27.0"} {
-					target := support.Target{OS: platform, Version: support.MustVersion(version), Channel: support.ChannelDevice, Supervised: true, DEP: true, UserApproved: true}
+					target := support.Target{OS: platform, Version: osversion.MustParse(version), Channel: support.ChannelDevice, Supervised: true, DEP: true, UserApproved: true}
 					if platform == support.MacOS && feature.MacOSChannel != "" {
 						target.Channel = feature.MacOSChannel
 					}
@@ -96,7 +97,7 @@ func TestSeedOS27FeatureDelivery(t *testing.T) {
 	for _, platform := range support.AllOS {
 		for _, version := range []string{"26.0", "26.4", "26.6.2", "27.0"} {
 			t.Run(string(platform)+"/"+version, func(t *testing.T) {
-				target := support.Target{OS: platform, Version: support.MustVersion(version), Channel: support.ChannelDevice, Supervised: true, DEP: true, UserApproved: true}
+				target := support.Target{OS: platform, Version: osversion.MustParse(version), Channel: support.ChannelDevice, Supervised: true, DEP: true, UserApproved: true}
 				h := newHarness(t, func(c *ddm.Config) {
 					c.EnrollmentTarget = func(_ context.Context, id mdm.EnrollmentID) (support.Target, error) {
 						resolved := target
@@ -176,7 +177,7 @@ func TestSeedOS27FeatureDelivery(t *testing.T) {
 func checkArrayAssetReferences(t *testing.T) {
 	h := newHarness(t, func(c *ddm.Config) {
 		c.EnrollmentTarget = func(context.Context, mdm.EnrollmentID) (support.Target, error) {
-			return support.Target{OS: support.MacOS, Version: support.V(27, 0, 0), Supervised: true}, nil
+			return support.Target{OS: support.MacOS, Version: osversion.New(osversion.MacOS27, 0, 0), Supervised: true}, nil
 		}
 	})
 	id := mdm.EnrollmentID{Channel: mdm.ChannelDevice, ID: "relay"}
@@ -231,7 +232,7 @@ func TestSeedOS27FeatureContextWithholding(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			target := tc.target
-			target.Version = support.V(27, 0, 0)
+			target.Version = osversion.New(27, 0, 0)
 			h := newHarness(t, func(c *ddm.Config) {
 				c.EnrollmentTarget = func(context.Context, mdm.EnrollmentID) (support.Target, error) { return target, nil }
 			})

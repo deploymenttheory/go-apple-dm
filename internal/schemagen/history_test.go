@@ -9,6 +9,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/osversion"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/schema/support"
 )
 
@@ -77,7 +78,7 @@ func TestHistoryRetainsLegacySupportAndNewFields(t *testing.T) {
 		{"Shared", 27, true},
 	} {
 		if got := entries["Firewall."+tc.key].Check(
-			support.Target{OS: support.MacOS, Version: support.V(tc.major, 0, 0)},
+			support.Target{OS: support.MacOS, Version: osversion.New(tc.major, 0, 0)},
 		); got.Supported != tc.allowed {
 			t.Fatalf("%+v: %+v", tc, got)
 		}
@@ -231,7 +232,7 @@ func TestWithdrawnZeroRemovalIsUnavailable(t *testing.T) {
 	}
 	for _, version := range []int{10, 14, 15, 26, 27} {
 		if got := (&support.Entry{OS: entry}).Check(
-			support.Target{OS: support.MacOS, Version: support.V(version, 0, 0)},
+			support.Target{OS: support.MacOS, Version: osversion.New(version, 0, 0)},
 		); got.Supported {
 			t.Fatalf("withdrawn property enabled on %d", version)
 		}

@@ -46,9 +46,13 @@ bootstrap that inventory, subject to their known platform and input constraints.
 The explicit `ValidateTargets: false` option continues to bypass availability.
 
 `devicemanagement/osversion` owns the shared major/minor/patch representation,
-parsing, comparison and named macOS major release constants. `support.Version`
-aliases that type and its previous construction/parsing functions remain as
-wrappers. Generated availability tables use these shared versions for introduced,
+parsing, comparison and named macOS major release constants. Callers use this
+package directly; `support.Target` and `support.OSSupport` declare their version
+fields as `osversion.Version`. The support package owns feature availability and
+management-context checks. The previous version alias, parsing/construction
+wrappers and error re-export are removed; consumers follow the
+[API migration](../../operations/os-versions.md#migrating-from-the-support-version-api).
+Generated availability tables use these shared versions for introduced,
 deprecated and removed boundaries; a major release constant does not discard a
 feature's minor or patch floor.
 

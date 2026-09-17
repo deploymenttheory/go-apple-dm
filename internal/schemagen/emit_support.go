@@ -123,25 +123,25 @@ func overlay(dst *support.OSSupport, src *OSSupport) error {
 		switch src.Introduced {
 		case "n/a":
 			dst.NotAvailable = true
-			dst.Introduced = support.Version{}
+			dst.Introduced = osversion.Version{}
 		case "all":
 			// Apple uses "all" for a key available on every version.
 			dst.NotAvailable = false
-			dst.Introduced = support.Version{}
+			dst.Introduced = osversion.Version{}
 		default:
 			dst.NotAvailable = false
-			if dst.Introduced, err = support.ParseVersion(src.Introduced); err != nil {
+			if dst.Introduced, err = osversion.Parse(src.Introduced); err != nil {
 				return fmt.Errorf("introduced: %w", err)
 			}
 		}
 	}
 	if src.Deprecated != "" {
-		if dst.Deprecated, err = support.ParseVersion(src.Deprecated); err != nil {
+		if dst.Deprecated, err = osversion.Parse(src.Deprecated); err != nil {
 			return fmt.Errorf("deprecated: %w", err)
 		}
 	}
 	if src.Removed != "" {
-		if dst.Removed, err = support.ParseVersion(src.Removed); err != nil {
+		if dst.Removed, err = osversion.Parse(src.Removed); err != nil {
 			return fmt.Errorf("removed: %w", err)
 		}
 		// Apple uses removed: '0' for withdrawn properties. Version's zero
@@ -341,7 +341,7 @@ func osLiteral(s *support.OSSupport, os support.OS) string {
 	return "{" + strings.Join(parts, ", ") + "}"
 }
 
-func versionLit(v support.Version, os support.OS) string {
+func versionLit(v osversion.Version, os support.OS) string {
 	major := strconv.Itoa(v.Major)
 	if os == support.MacOS {
 		switch v.Major {

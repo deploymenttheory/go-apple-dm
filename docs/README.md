@@ -6,6 +6,7 @@
 - [Configuration explained](getting-started/configuration.md): server JSON, secret/path precedence, CLI contexts and bench configuration.
 - [Server release downloads](operations/server-releases.md): platform archives, signature verification and release maintenance.
 - [Architecture](architecture.md): implemented capabilities, module boundaries and limitations.
+- [OS versions and API migration](operations/os-versions.md): shared version primitives, feature availability and migration from the support version API.
 - [Design decisions](research/decisions/README.md): current design and supporting evidence.
 - [Diagrams](diagrams/README.md): interactive architecture, protocol and lifecycle views.
 - [Enrollment security operations](operations/enrollment-security.md): trust, persistence, revocation and rate-limit configuration.

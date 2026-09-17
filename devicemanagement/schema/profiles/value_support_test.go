@@ -4,13 +4,14 @@ import (
 	json "encoding/json/v2"
 	"testing"
 
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/osversion"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/schema/profiles"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/schema/support"
 )
 
 func TestVersionedSSO(t *testing.T) {
 	for _, version := range []string{"26.0", "26.4", "26.6.2", "27.0"} {
-		target := support.Target{OS: support.MacOS, Version: support.MustVersion(version), Channel: support.ChannelDevice, Supervised: true, UserApproved: true}
+		target := support.Target{OS: support.MacOS, Version: osversion.MustParse(version), Channel: support.ChannelDevice, Supervised: true, UserApproved: true}
 		for _, method := range []string{"Password", "UserSecureEnclaveKey", "OpenID"} {
 			p := &profiles.ExtensibleSingleSignOn{ExtensionIdentifier: "com.example.sso", TeamIdentifier: new("EXAMPLE123"), Type: "Redirect", PlatformSSO: &profiles.ExtensibleSingleSignOnPlatformSSO{AuthenticationMethod: new(method)}}
 			err := p.Validate(target)
@@ -22,7 +23,7 @@ func TestVersionedSSO(t *testing.T) {
 }
 
 func TestSSOPolicyValuesAndExtensionData(t *testing.T) {
-	target := support.Target{OS: support.MacOS, Version: support.MustVersion("26.6.2"), UserApproved: true}
+	target := support.Target{OS: support.MacOS, Version: osversion.MustParse("26.6.2"), UserApproved: true}
 	for _, tc := range []struct {
 		payload string
 		allowed bool

@@ -12,6 +12,7 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/clock"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/cms"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/enroll"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/osversion"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/pki/acme"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/pki/ca"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/pki/revocation"
@@ -101,7 +102,7 @@ func TestCredentialPlatformConformance(t *testing.T) {
 			}
 			target := support.Target{
 				OS:      support.OSFromProduct(tc.product),
-				Version: support.MustVersion(tc.version),
+				Version: osversion.MustParse(tc.version),
 			}
 			if err := credential.Validate(target); err != nil {
 				t.Fatal(err)

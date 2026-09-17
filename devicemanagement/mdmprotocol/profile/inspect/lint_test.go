@@ -8,6 +8,7 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/cms"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/plist"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/profile/inspect"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/osversion"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/schema/support"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/testpki"
 )
@@ -43,7 +44,7 @@ func profileData(t *testing.T, change func(map[string]any, map[string]any)) []by
 func TestInspect(t *testing.T) {
 	target := support.Target{
 		OS:         support.MacOS,
-		Version:    support.V(26, 0, 0),
+		Version:    osversion.New(26, 0, 0),
 		Channel:    support.ChannelDevice,
 		Supervised: true,
 	}
@@ -115,7 +116,7 @@ func TestSignatureAndTrust(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	target := support.Target{OS: support.MacOS, Version: support.V(26, 0, 0)}
+	target := support.Target{OS: support.MacOS, Version: osversion.New(osversion.MacOS26, 0, 0)}
 	for _, tc := range []struct {
 		roots *x509.CertPool
 		trust string
@@ -151,11 +152,11 @@ func TestTargetAvailability(t *testing.T) {
 		target         support.Target
 		change         func(map[string]any, map[string]any)
 	}{
-		{name: "unsupported platform field", severity: "error", target: support.Target{OS: support.MacOS, Version: support.V(26, 0, 0)}, change: func(_, p map[string]any) { p["CaptiveBypass"] = false }},
-		{name: "removed nested field", severity: "error", target: support.Target{OS: support.IOS, Version: support.V(26, 0, 0)}, change: func(_, p map[string]any) {
+		{name: "unsupported platform field", severity: "error", target: support.Target{OS: support.MacOS, Version: osversion.New(osversion.MacOS26, 0, 0)}, change: func(_, p map[string]any) { p["CaptiveBypass"] = false }},
+		{name: "removed nested field", severity: "error", target: support.Target{OS: support.IOS, Version: osversion.New(26, 0, 0)}, change: func(_, p map[string]any) {
 			p["EAPClientConfiguration"] = map[string]any{"TLSAllowTrustExceptions": false}
 		}},
-		{name: "deprecated nested field", severity: "warning", target: support.Target{OS: support.MacOS, Version: support.V(26, 0, 0)}, change: func(_, p map[string]any) {
+		{name: "deprecated nested field", severity: "warning", target: support.Target{OS: support.MacOS, Version: osversion.New(osversion.MacOS26, 0, 0)}, change: func(_, p map[string]any) {
 			p["QoSMarkingPolicy"] = map[string]any{"QoSMarkingWhitelistedAppIdentifiers": []any{"com.example.test"}}
 		}},
 	} {
@@ -195,7 +196,7 @@ func TestUnknownKeyInTypedDictionary(t *testing.T) {
 	report := inspect.Inspect(
 		data,
 		inspect.Options{
-			Target: support.Target{OS: support.MacOS, Version: support.V(26, 0, 0)},
+			Target: support.Target{OS: support.MacOS, Version: osversion.New(osversion.MacOS26, 0, 0)},
 		},
 	)
 	if len(report.Issues) != 1 || report.Issues[0].Severity != "unvalidated" ||

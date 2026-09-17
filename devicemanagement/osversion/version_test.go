@@ -7,7 +7,7 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/osversion"
 )
 
-func TestParseVersion(t *testing.T) {
+func TestParse(t *testing.T) {
 	t.Parallel()
 	good := map[string]osversion.Version{
 		"26":      osversion.New(26, 0, 0),
@@ -19,12 +19,12 @@ func TestParseVersion(t *testing.T) {
 	for in, want := range good {
 		got, err := osversion.Parse(in)
 		if err != nil || got != want {
-			t.Errorf("ParseVersion(%q) = %v, %v; want %v", in, got, err, want)
+			t.Errorf("Parse(%q) = %v, %v; want %v", in, got, err, want)
 		}
 	}
 	for _, bad := range []string{"", "n/a", "1.2.3.4", "a.b", "-1.0", "1..2"} {
 		if _, err := osversion.Parse(bad); !errors.Is(err, osversion.ErrVersion) {
-			t.Errorf("ParseVersion(%q) err = %v, want ErrVersion", bad, err)
+			t.Errorf("Parse(%q) err = %v, want ErrVersion", bad, err)
 		}
 	}
 	if osversion.MustParse("13.0").String() != "13.0" || osversion.New(1, 2, 3).String() != "1.2.3" {
@@ -32,7 +32,7 @@ func TestParseVersion(t *testing.T) {
 	}
 	defer func() {
 		if recover() == nil {
-			t.Error("MustVersion did not panic")
+			t.Error("MustParse did not panic")
 		}
 	}()
 	osversion.MustParse("bad")

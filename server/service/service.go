@@ -13,6 +13,7 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/dmhook"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/event"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/mdm"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/osversion"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/paging"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/schema/checkin"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/schema/commands"
@@ -512,7 +513,7 @@ func targetFor(
 		DEP:          device.Capabilities.DEP == storage.CapabilityTrue,
 		UserApproved: device.Capabilities.UserApproved == storage.CapabilityTrue,
 	}
-	if v, err := support.ParseVersion(device.Device.OSVersion); err == nil {
+	if v, err := osversion.Parse(device.Device.OSVersion); err == nil {
 		t.Version = v
 	}
 	switch e.ID.Channel {

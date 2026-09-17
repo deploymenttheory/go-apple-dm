@@ -8,6 +8,7 @@ import (
 
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/ddm"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/mdm"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/osversion"
 	schema "github.com/deploymenttheory/go-apple-dm/devicemanagement/schema/ddm"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/schema/support"
 )
@@ -20,7 +21,7 @@ func TestMixedFleetCompatibility(t *testing.T) {
 		c.EnrollmentTarget = func(context.Context, mdm.EnrollmentID) (support.Target, error) {
 			target := support.Target{OS: support.MacOS, Channel: support.ChannelDevice, Supervised: true}
 			if version != "" {
-				target.Version = support.MustVersion(version)
+				target.Version = osversion.MustParse(version)
 			}
 			return target, lookupErr
 		}
@@ -111,7 +112,7 @@ func TestMixedFleetCompatibility(t *testing.T) {
 func TestCompatibilityDeletionKeepsIndependentDeclarations(t *testing.T) {
 	h := newHarness(t, func(c *ddm.Config) {
 		c.EnrollmentTarget = func(context.Context, mdm.EnrollmentID) (support.Target, error) {
-			return support.Target{OS: support.MacOS, Version: support.V(27, 0, 0), Supervised: true}, nil
+			return support.Target{OS: support.MacOS, Version: osversion.New(osversion.MacOS27, 0, 0), Supervised: true}, nil
 		}
 	})
 	id := mdm.EnrollmentID{Channel: mdm.ChannelDevice, ID: "deleted-asset"}

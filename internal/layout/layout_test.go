@@ -225,6 +225,7 @@ func TestLibraryPackageLocations(t *testing.T) {
 func TestLibraryTierClassification(t *testing.T) {
 	t.Parallel()
 	for pkg, want := range map[string]int{
+		"devicemanagement/osversion":                 tierFoundation,
 		"devicemanagement/clock":                     tierFoundation,
 		"devicemanagement/internal/cbor":             tierFoundation,
 		"devicemanagement/schema/commands":           tierSchema,

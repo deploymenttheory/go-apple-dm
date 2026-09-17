@@ -1,38 +1,23 @@
 package support_test
 
 import (
-	"errors"
 	"testing"
 
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/osversion"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/schema/support"
 )
 
-func TestVersionAPICompatibility(t *testing.T) {
-	t.Parallel()
-	var shared osversion.Version = support.V(osversion.MacOS26, 4, 0)
-	var legacy support.Version = osversion.New(osversion.MacOS26, 4, 0)
-	parsed, err := support.ParseVersion("26.4")
-	if err != nil || parsed != shared || shared != legacy || support.MustVersion("26.4") != shared {
-		t.Fatalf("version alias or wrappers differ: %v %v %v", parsed, shared, err)
-	}
-	_, err = support.ParseVersion("invalid")
-	if !errors.Is(err, support.ErrVersion) || !errors.Is(err, osversion.ErrVersion) {
-		t.Fatalf("sentinel identity was lost: %v", err)
-	}
-}
-
 func entry() *support.Entry {
 	return &support.Entry{
 		Path: "DeviceLock.Message",
 		OS: map[support.OS]*support.OSSupport{
 			support.IOS: {
-				Introduced: support.V(7, 0, 0), Deprecated: support.V(20, 0, 0), Removed: support.V(25, 0, 0),
+				Introduced: osversion.New(7, 0, 0), Deprecated: osversion.New(20, 0, 0), Removed: osversion.New(25, 0, 0),
 				Supervised: support.Bool(true), SharedIPadMode: support.ModeIgnored, UserEnrollmentMode: support.ModeForbidden,
 				DeviceChannel: support.Bool(true), UserChannel: support.Bool(false),
 			},
 			support.MacOS: {
-				Introduced: support.V(10, 14, 0), RequiresDEP: support.Bool(true), UserApprovedMDM: support.Bool(true),
+				Introduced: osversion.New(10, 14, 0), RequiresDEP: support.Bool(true), UserApprovedMDM: support.Bool(true),
 				SharedIPadDeviceChannel: support.Bool(false), SharedIPadUserChannel: support.Bool(false),
 			},
 			support.TvOS:     {NotAvailable: true},
@@ -54,17 +39,17 @@ func TestCheck(t *testing.T) {
 		{"no target OS", support.Target{}, true, false},
 		{"not available", support.Target{OS: support.TvOS}, false, false},
 		{"unknown OS", support.Target{OS: support.WatchOS}, false, false},
-		{"before introduced", support.Target{OS: support.IOS, Version: support.V(6, 0, 0), Supervised: true}, false, false},
-		{"supported", support.Target{OS: support.IOS, Version: support.V(15, 0, 0), Supervised: true}, true, false},
-		{"deprecated", support.Target{OS: support.IOS, Version: support.V(21, 0, 0), Supervised: true}, true, true},
-		{"removed", support.Target{OS: support.IOS, Version: support.V(25, 0, 0), Supervised: true}, false, false},
-		{"unsupervised", support.Target{OS: support.IOS, Version: support.V(15, 0, 0)}, false, false},
-		{"user channel", support.Target{OS: support.IOS, Version: support.V(15, 0, 0), Supervised: true, Channel: support.ChannelUser}, false, false},
-		{"device channel", support.Target{OS: support.IOS, Version: support.V(15, 0, 0), Supervised: true, Channel: support.ChannelDevice}, true, false},
+		{"before introduced", support.Target{OS: support.IOS, Version: osversion.New(6, 0, 0), Supervised: true}, false, false},
+		{"supported", support.Target{OS: support.IOS, Version: osversion.New(15, 0, 0), Supervised: true}, true, false},
+		{"deprecated", support.Target{OS: support.IOS, Version: osversion.New(21, 0, 0), Supervised: true}, true, true},
+		{"removed", support.Target{OS: support.IOS, Version: osversion.New(25, 0, 0), Supervised: true}, false, false},
+		{"unsupervised", support.Target{OS: support.IOS, Version: osversion.New(15, 0, 0)}, false, false},
+		{"user channel", support.Target{OS: support.IOS, Version: osversion.New(15, 0, 0), Supervised: true, Channel: support.ChannelUser}, false, false},
+		{"device channel", support.Target{OS: support.IOS, Version: osversion.New(15, 0, 0), Supervised: true, Channel: support.ChannelDevice}, true, false},
 		{"user enrollment forbidden", support.Target{OS: support.IOS, Supervised: true, UserEnrollment: true}, false, false},
-		{"needs DEP", support.Target{OS: support.MacOS, Version: support.V(14, 0, 0)}, false, false},
-		{"needs UAMDM", support.Target{OS: support.MacOS, Version: support.V(14, 0, 0), DEP: true}, false, false},
-		{"mac ok", support.Target{OS: support.MacOS, Version: support.V(14, 0, 0), DEP: true, UserApproved: true}, true, false},
+		{"needs DEP", support.Target{OS: support.MacOS, Version: osversion.New(osversion.MacOS14, 0, 0)}, false, false},
+		{"needs UAMDM", support.Target{OS: support.MacOS, Version: osversion.New(osversion.MacOS14, 0, 0), DEP: true}, false, false},
+		{"mac ok", support.Target{OS: support.MacOS, Version: osversion.New(osversion.MacOS14, 0, 0), DEP: true, UserApproved: true}, true, false},
 		{"mac shared ipad device channel", support.Target{OS: support.MacOS, DEP: true, UserApproved: true, SharedIPad: true, Channel: support.ChannelDevice}, false, false},
 		{"mac shared ipad user channel", support.Target{OS: support.MacOS, DEP: true, UserApproved: true, SharedIPad: true, Channel: support.ChannelUser}, false, false},
 		{"shared ipad required", support.Target{OS: support.VisionOS}, false, false},

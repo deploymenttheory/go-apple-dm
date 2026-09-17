@@ -38,8 +38,10 @@ Leaving it nil preserves existing library behavior. Command consumers retain the
 explicit `ValidateTargets: false` escape hatch. `devicemanagement/osversion`
 provides the shared version type, parsing/comparison and named macOS major
 constants. Generated support tables retain precise introduction, deprecation
-and removal versions for each platform. `support.Version` remains an alias, and
-its existing constructors and parsers delegate to `osversion`.
+and removal versions for each platform. Target versions and support boundaries
+use `osversion.Version` directly. Consumers of the removed support version API
+must update imports and calls as described in the
+[migration guide](os-versions.md#migrating-from-the-support-version-api).
 
 Reviewed SSO enum floors are generated as value availability metadata, queryable
 through `profiles.ValueSupport(path, value)`, and enforced by typed `Validate`

@@ -8,6 +8,7 @@ import (
 	howett "howett.net/plist"
 
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/plist"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/osversion"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/schema/support"
 )
 
@@ -110,7 +111,7 @@ func Validates(t *testing.T, name string, sample, empty any) {
 		t.Errorf("%s: empty value does not implement Validate", name)
 		return
 	}
-	_ = ev.Validate(support.Target{OS: support.IOS, Version: support.V(26, 0, 0)})
+	_ = ev.Validate(support.Target{OS: support.IOS, Version: osversion.New(26, 0, 0)})
 }
 
 // Deref returns the value a sample pointer points to, or the zero value when

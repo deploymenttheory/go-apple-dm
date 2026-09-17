@@ -9,7 +9,9 @@
 //
 // The package has no schema or protocol dependencies. Feature availability,
 // removal boundaries and enrollment requirements belong to schema/support;
-// the device's observed version supplies the comparison target.
+// the device's observed version supplies the comparison target. That package's
+// Target and OSSupport fields use Version directly. Callers use Parse, MustParse,
+// New and ErrVersion from this package for all version operations.
 //
 // # References
 //

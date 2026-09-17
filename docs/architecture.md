@@ -52,8 +52,10 @@ validation, so callers use the payload's `Validate` method consistently.
 `devicemanagement/osversion` provides version parsing, comparison and named macOS
 major constants for use throughout the library. Generated support metadata keeps
 each platform's full introduction, deprecation and removal boundaries; eligibility
-also considers the channel and enrollment capabilities. `support.Version` remains
-an alias for existing consumers. SSO value-specific floors are queryable through
+also considers the channel and enrollment capabilities. `support.Target` and
+`support.OSSupport` use `osversion.Version` directly, and callers parse and
+construct versions through `osversion`. See [OS versions and API migration](operations/os-versions.md)
+for the package boundary and removed API replacements. SSO value-specific floors are queryable through
 `profiles.ValueSupport(path, value)` and retain their containing key's constraints.
 
 The [Apple schema monitor](schema-monitor.md) discovers Apple's stable default

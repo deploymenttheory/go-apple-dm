@@ -16,6 +16,7 @@ import (
 
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/enroll/ade"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/enroll/adetest"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/osversion"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/schema/support"
 )
 
@@ -54,7 +55,7 @@ func TestParseMachineInfo(t *testing.T) {
 			if p.Origin != ade.OriginHeader || p.SERIAL != "C02PARSE" || p.PRODUCT != "iPhone15,2" || !p.Verified || !p.Signer.Equal(chain.Leaf.Cert) || !bytes.Equal(p.Raw, b) || p.Platform != ade.PlatformIPhone {
 				t.Fatalf("%+v", p)
 			}
-			if *p.LANGUAGE != "en" || !*p.MDMCANREQUESTSOFTWAREUPDATE || p.Target() != (support.Target{OS: support.IOS, Version: support.V(17, 5, 1)}) {
+			if *p.LANGUAGE != "en" || !*p.MDMCANREQUESTSOFTWAREUPDATE || p.Target() != (support.Target{OS: support.IOS, Version: osversion.New(17, 5, 1)}) {
 				t.Fatalf("%+v", p.MachineInfo)
 			}
 		}

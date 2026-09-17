@@ -9,7 +9,9 @@ Apple's pinned YAML schema describes multiple protocol families, nested dictiona
 The in-repository generator uses `gopkg.in/yaml.v3` nodes to emit commands and responses, check-in messages, errors, profiles, declarations, declarative protocol messages, status items and other types. Nested dictionaries receive named types. Support metadata remains data in `devicemanagement/schema/support`; callers use `Check`, `Lookup`, `Families` and `Paths`.
 
 Version parsing and comparison live in `devicemanagement/osversion`, with named
-macOS major constants used by generated availability boundaries. Reviewed prose
+macOS major constants used by generated availability boundaries. Generator input
+parsing and boundary comparisons call this package directly, and support metadata
+declares version fields as `osversion.Version`. Reviewed prose
 supplements in the generator add value-specific availability metadata and typed
 field-relationship checks. `profiles.ValueSupport(path, value)` exposes the extra
 SSO floors; direct payload `Validate` calls enforce them along with the generated

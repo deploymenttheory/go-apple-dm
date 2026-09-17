@@ -9,8 +9,8 @@ import (
 
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/enroll"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/profile"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/osversion"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/schema/profiles"
-	"github.com/deploymenttheory/go-apple-dm/devicemanagement/schema/support"
 )
 
 func TestEnrollmentErrorsAreNotCacheable(t *testing.T) {
@@ -57,7 +57,7 @@ func TestAppleACMEHardwareMatrix(t *testing.T) {
 			),
 			func(t *testing.T) {
 				p := base()
-				p.Target.Version = support.MustVersion(tc.version)
+				p.Target.Version = osversion.MustParse(tc.version)
 				p.MacHardware = tc.hardware
 				p.ACME = &enroll.ACME{
 					DirectoryURL:     "https://mdm.example/acme",
@@ -99,7 +99,7 @@ func TestIdentityKeyDefaultsAndOverrides(t *testing.T) {
 		for _, version := range []string{"10.11", "10.13.4", "10.15", "26"} {
 			for _, override := range []bool{false, true} {
 				p := base()
-				p.Target.Version = support.MustVersion(version)
+				p.Target.Version = osversion.MustParse(version)
 				var value *bool
 				if override {
 					value = new(true)
@@ -110,9 +110,9 @@ func TestIdentityKeyDefaultsAndOverrides(t *testing.T) {
 					p.PKCS12 = &enroll.PKCS12{Data: []byte("identity"), KeyIsExtractable: value}
 				}
 				built, err := p.Build()
-				minimum := support.V(10, 13, 4)
+				minimum := osversion.New(osversion.MacOS10, 13, 4)
 				if identity == "pkcs12" {
-					minimum = support.V(10, 15, 0)
+					minimum = osversion.New(osversion.MacOS10, 15, 0)
 				}
 				if override && p.Target.Version.Compare(minimum) < 0 {
 					if err == nil {

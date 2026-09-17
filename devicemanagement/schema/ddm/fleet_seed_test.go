@@ -9,6 +9,7 @@ import (
 
 	protocol "github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/ddm"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/plist"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/osversion"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/schema/ddm"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/schema/support"
 )
@@ -37,7 +38,7 @@ func TestSeedOS27LegacyProfileCompatibility(t *testing.T) {
 				target := support.Target{
 					Supervised: true,
 					OS:         support.MacOS,
-					Version:    support.V(version, 0, 0),
+					Version:    osversion.New(version, 0, 0),
 					Channel:    support.ChannelDevice,
 				}
 				allowed := !asset || version >= 27

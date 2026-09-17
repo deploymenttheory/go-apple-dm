@@ -6,6 +6,7 @@ import (
 	"strings"
 	"text/tabwriter"
 
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/osversion"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/schema/support"
 )
 
@@ -180,7 +181,7 @@ func mode(m support.Mode) string {
 	return string(m)
 }
 
-func version(v support.Version) string {
+func version(v osversion.Version) string {
 	if v.IsZero() {
 		return "-"
 	}

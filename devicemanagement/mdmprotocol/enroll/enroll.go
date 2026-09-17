@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/profile"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/osversion"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/schema/profiles"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/schema/support"
 	"github.com/deploymenttheory/go-apple-dm/internal/httpsurl"
@@ -343,12 +344,12 @@ func (p Profile) Build() (*profile.Profile, error) {
 				KeyIsExtractable: macDefaultFalse(
 					p.PKCS12.KeyIsExtractable,
 					p.Target,
-					support.V(10, 15, 0),
+					osversion.New(osversion.MacOS10, 15, 0),
 				),
 				AllowAllAppsAccess: macDefaultFalse(
 					p.PKCS12.AllowAllAppsAccess,
 					p.Target,
-					support.V(10, 10, 0),
+					osversion.New(osversion.MacOS10, 10, 0),
 				),
 			},
 		})

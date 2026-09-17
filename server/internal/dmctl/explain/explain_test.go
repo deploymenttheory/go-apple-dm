@@ -6,6 +6,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/osversion"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/schema/commands"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/schema/profiles"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/schema/support"
@@ -197,7 +198,7 @@ func TestTriStateNilPrintsDash(t *testing.T) {
 // target OS. Rendering either as OK would assert a fact Apple never stated.
 func TestNoSupportDataIsNotOK(t *testing.T) {
 	m := explain.Match{Family: "commands", TypeName: "NotAThing", Path: "NotAThing"}
-	out := render(t, m, support.Target{OS: support.MacOS, Version: support.MustVersion("15.0")})
+	out := render(t, m, support.Target{OS: support.MacOS, Version: osversion.MustParse("15.0")})
 	if !strings.Contains(out, string(explain.VerdictUnknown)) {
 		t.Fatalf("an entry with no support data did not render as unknown:\n%s", out)
 	}
@@ -209,7 +210,7 @@ func TestNoSupportDataIsNotOK(t *testing.T) {
 // Result.Reason is printed unchanged, so explain and the server's rejection
 // use the same words for the same key.
 func TestTargetReasonIsVerbatim(t *testing.T) {
-	target := support.Target{OS: support.MacOS, Version: support.MustVersion("15.0"), Channel: support.ChannelDevice}
+	target := support.Target{OS: support.MacOS, Version: osversion.MustParse("15.0"), Channel: support.ChannelDevice}
 	m, err := explain.Resolve("DeviceLock", "commands")
 	if err != nil {
 		t.Fatal(err)

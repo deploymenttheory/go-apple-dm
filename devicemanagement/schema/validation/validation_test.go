@@ -6,6 +6,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/osversion"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/schema/support"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/schema/validation"
 )
@@ -66,7 +67,7 @@ func TestCollectorRules(t *testing.T) {
 func TestSupportChecks(t *testing.T) {
 	t.Parallel()
 	e := &support.Entry{Path: "X.Y", OS: map[support.OS]*support.OSSupport{
-		support.IOS: {Introduced: support.V(15, 0, 0), Deprecated: support.V(17, 0, 0)},
+		support.IOS: {Introduced: osversion.New(15, 0, 0), Deprecated: osversion.New(17, 0, 0)},
 	}}
 	// No target: nothing recorded.
 	c := validation.New(support.Target{})
@@ -75,7 +76,7 @@ func TestSupportChecks(t *testing.T) {
 		t.Fatal("zero target should skip support checks")
 	}
 	// Unsupported.
-	c = validation.New(support.Target{OS: support.IOS, Version: support.V(14, 0, 0)})
+	c = validation.New(support.Target{OS: support.IOS, Version: osversion.New(14, 0, 0)})
 	c.Support("X.Y", true, e)
 	c.Support("X.Z", true, nil)
 	c.Support("X.W", false, e)
@@ -86,7 +87,7 @@ func TestSupportChecks(t *testing.T) {
 		t.Error("Target")
 	}
 	// Deprecated: warning only.
-	c = validation.New(support.Target{OS: support.IOS, Version: support.V(18, 0, 0)})
+	c = validation.New(support.Target{OS: support.IOS, Version: osversion.New(18, 0, 0)})
 	c.Support("X.Y", true, e)
 	if c.Err() != nil || len(c.Warnings()) != 1 || c.Warnings()[0].Rule != validation.RuleSupport {
 		t.Fatalf("expected one warning, got err=%v warnings=%v", c.Err(), c.Warnings())

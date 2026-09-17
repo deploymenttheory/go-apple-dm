@@ -16,6 +16,7 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/cms"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/enroll"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/enroll/webauth"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/osversion"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/paging"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/pki/acme"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/pki/acme/attest"
@@ -381,7 +382,7 @@ func (s *acmeService) credentialHandler() http.Handler {
 			return
 		}
 		target := support.Target{OS: support.OSFromProduct(enrollment.Device.ProductName)}
-		version, versionErr := support.ParseVersion(enrollment.Device.OSVersion)
+		version, versionErr := osversion.Parse(enrollment.Device.OSVersion)
 		if target.OS == "" || versionErr != nil {
 			writeError(
 				w,

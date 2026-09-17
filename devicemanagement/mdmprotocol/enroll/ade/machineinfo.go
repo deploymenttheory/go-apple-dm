@@ -15,6 +15,7 @@ import (
 
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/cms"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/plist"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/osversion"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/schema/other"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/schema/support"
 )
@@ -124,7 +125,7 @@ func (p *Parsed) Validate(userEnrollment bool) error {
 // PRODUCT and the version from OS_VERSION when present.
 func (p *Parsed) Target() support.Target {
 	t := support.Target{OS: support.OSFromProduct(p.PRODUCT)}
-	if v, err := support.ParseVersion(p.OSVERSION); err == nil {
+	if v, err := osversion.Parse(p.OSVERSION); err == nil {
 		t.Version = v
 	}
 	return t

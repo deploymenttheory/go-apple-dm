@@ -34,21 +34,6 @@ const (
 	ChannelUser   Channel = "user"
 )
 
-// Version is the shared dotted OS version. The alias preserves existing callers.
-type Version = osversion.Version
-
-// ErrVersion is the shared malformed-version sentinel.
-var ErrVersion = osversion.ErrVersion
-
-// ParseVersion parses an OS version using osversion.Parse.
-func ParseVersion(s string) (Version, error) { return osversion.Parse(s) }
-
-// MustVersion parses or panics; retained for existing tables and callers.
-func MustVersion(s string) Version { return osversion.MustParse(s) }
-
-// V builds a Version using osversion.New.
-func V(major, minor, patch int) Version { return osversion.New(major, minor, patch) }
-
 // Mode is Apple's allowed/required/forbidden/ignored setting for shared
 // iPad and user enrollment contexts. Empty means unspecified (allowed).
 type Mode string
@@ -66,9 +51,9 @@ const (
 type OSSupport struct {
 	// NotAvailable is set when Apple lists "introduced: n/a".
 	NotAvailable bool
-	Introduced   Version
-	Deprecated   Version
-	Removed      Version
+	Introduced   osversion.Version
+	Deprecated   osversion.Version
+	Removed      osversion.Version
 	AccessRights string
 	Beta         bool
 
@@ -104,7 +89,7 @@ type Entry struct {
 // disables every context check.
 type Target struct {
 	OS             OS
-	Version        Version
+	Version        osversion.Version
 	Channel        Channel
 	Supervised     bool
 	SharedIPad     bool
