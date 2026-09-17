@@ -1,8 +1,9 @@
 # macOS 27 validation handoff
 
 Current host: **macOS 27.0 (26A428)**, Apple silicon, Go 1.27.1.
-Continue on `feat/macos27-compatibility-osversion`, draft
-[PR #64](https://github.com/deploymenttheory/go-apple-dm/pull/64).
+The implementation in [PR #64](https://github.com/deploymenttheory/go-apple-dm/pull/64)
+is merged. Native validation follow-up continues on
+`feat/macos27-compatibility-osversion`.
 The original preparation was completed on macOS 26.6.2 on 16 September 2026;
 its evidence is retained in [preparation validation](macos27-prep-validation.md).
 
@@ -16,7 +17,35 @@ window visible during testing, and suitable hardware-dependent checks on the hos
 Use the guest for binary controls and destructive enrollment/update cases.
 The guest disk is limited to **40 GB**, as requested. Guestweave changes needed
 for this lab belong in that project's PRs; the telemetry startup correction is
-in draft [Guestweave PR #181](https://github.com/deploymenttheory/guestweave-cli-macos/pull/181).
+in merged [Guestweave PR #181](https://github.com/deploymenttheory/guestweave-cli-macos/pull/181).
+The `macos27-acceptance` guest runs 27.0 / 26A428 in the native window. Its disk
+is exactly 40,000,000,000 bytes, with four virtual CPUs and 4 GiB RAM. Setup is
+complete and the user installed its fresh SCEP profile with reviewed rights 4115.
+Guest Settings and `profiles` confirm user-approved enrollment, but command/DDM
+testing is **blocked**: Authenticate reached the server, while APNs TokenUpdate
+did not. The guest's `apsd` cannot generate its BAA identity key
+(`errSecInteractionNotAllowed`, -25308). The server correctly retains the guest
+as disabled, with no installing-user channel or assigned declarations. Do not
+manually enable it, invent push credentials or count profile installation as
+successful command delivery. This matches the reports in
+[Apple's developer forum](https://developer.apple.com/forums/thread/840500);
+the external thread is corroboration, not an Apple-confirmed fix or diagnosis.
+
+Private configuration, credentials, snapshots and evidence are under
+`test-lab/local/apple27/guestweave/`. The snapshots are `clean-install` (before
+enrollment) and `enrollment-apns-blocked` (live state). The guest SSH connection
+forwards its loopback ports 8443 and 9443 to the host's existing lab listeners,
+preserving TLS verification. Only the guest's exact UUID/serial was added to
+admission; the physical host's rule and enrollment remain intact. The canonical
+lab now runs binaries built from `eb5208a`, with source/binary manifests saved.
+No new native feature pass is recorded for this guest.
+
+The deep checkout exceeded macOS's Unix socket path limit for Guestweave live
+snapshots. A short private storage alias and a restart with `--suspendable`
+allowed the live snapshot to complete; VM files were not moved. Keep the private
+wrapper and alias together. Guestweave PR #181's build/lint/schema checks pass;
+its dependency-review check failed because of repository dependency-graph/Advanced
+Security configuration, unrelated to its telemetry change.
 When a test needs the user's observation, wait for the answer before continuing
 or cleaning up. Silence and the withdrawn `q` replies are not test results.
 
@@ -72,6 +101,8 @@ already uses `SafariSettings.Privacy`; preserve its conclusive live observations
 `make test-schema-contracts` requires a passing execution of each named contract
 and appends its coverage to `cover/unit`, so the ordinary coverage gate includes
 the tagged OS 27 tests. Missing or skipped tests still fail the contract gate.
+The complete remote test matrix and unchanged 95% coverage gate passed at
+`eb5208a`; see [the CI run](https://github.com/deploymenttheory/go-apple-dm/actions/runs/35204383183).
 
 The primary schema pin is `b0180185a5e4077070710033341b71d0cbe1a18a` and history is
 `67045e2fa06f528b196c01edee6a8bf88b844beb`. `GENERATED_FROM.json` records both.

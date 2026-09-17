@@ -1,4 +1,10 @@
-# Physical macOS 27 validation
+# macOS 27 live validation
+
+**Current guest continuation:** the 40 GB Guestweave VM has a user-approved
+SCEP profile, but MDM command/DDM acceptance is blocked by guest APNs identity
+key generation. No TokenUpdate or installing-user channel has arrived. See
+[the guest result](#guest-continuation--17-september-2026). The conclusive physical
+results below remain retained.
 
 **Permission-test follow-up:** the user requested a repeat of the inconclusive
 app and website permission tests only. Conclusive results below remain retained.
@@ -208,7 +214,7 @@ original standalone dependency limitation was resolved in the repository follow-
 
 ## Repository follow-up — 17 September 2026
 
-On `feat/macos27-compatibility-osversion` (draft PR #64), the old container split
+In PR #64 (merged on 17 September), the old container split
 test's independent stores were replaced with two shipped roles sharing one
 persistent database and compatible encryption keys. The PostgreSQL matrix now
 uses PostgreSQL for both roles instead of a separate SQLite DDM container. The
@@ -251,7 +257,7 @@ pass. Browser measurements found no horizontal overflow or chrome overlap.
 
 Guestweave was built and signed locally using the installed Command Line Tools.
 A schema-version mismatch in its OpenTelemetry resource initialization was fixed
-and submitted as draft [Guestweave PR #181](https://github.com/deploymenttheory/guestweave-cli-macos/pull/181).
+and merged as [Guestweave PR #181](https://github.com/deploymenttheory/guestweave-cli-macos/pull/181).
 Its telemetry race test, vet, lint and restore-image lookup passed; the signed
 CLI was rebuilt from the submitted commit. Apple returned
 `UniversalMac_27.0_26A428_Restore.ipsw`, 26,626,436,228 bytes. The user authorized
@@ -260,9 +266,14 @@ clearing the Go build cache and obsolete goimports indexes, recovering about
 retained. The requested guest disk limit is **40 GB**. The initial 48 GB creation
 attempt was cancelled during download, before any guest disk was created; the
 partial restore image was retained and resumed. The completed image matches
-Apple's SHA-256 checksum. Installation has started with a disk verified as
-40,000,000,000 bytes, four virtual CPUs and 4 GiB RAM. Guest creation remains in
-progress; this does not establish native feature acceptance.
+Apple's SHA-256 checksum. Guestweave successfully created `macos27-acceptance`
+with a disk verified as 40,000,000,000 bytes, four virtual CPUs and 4 GiB RAM.
+The guest booted to Setup Assistant in a visible native window and obtained a
+network address. The completed restore download was removed after that boot,
+retaining its checksum record and recovering about 25 GiB. A concurrent Go build
+later regrew the build cache to 49 GiB and filled the host filesystem. Repeating
+the previously authorized build-cache cleanup recovered about 53 GiB; other
+active work was not terminated. The guest result is recorded below.
 
 The expanded macOS 27 inventory names 50 source cases, 73 explicit version
 boundaries and 32 fixtures, plus 12 reviewed SSO value floors. The required
@@ -284,5 +295,59 @@ invalid admin requests and retention settings. Managed OTA and revocation routes
 also reject requests when their current issuer trust becomes unavailable.
 Both module lint checks and tagged compilation passed with zero issues;
 regeneration verification, 52 schema-monitor tests and four fixture-helper tests
-passed. The combined CI coverage gate still needs a fresh run at this revision;
-these local checks do not establish a complete remote matrix result.
+passed. At revision `eb5208a`, the complete remote test matrix passed on macOS,
+Ubuntu and Windows, including storage integration, both E2E backends, reference
+server acceptance, standalone server installation and the thirteen required
+OS 27 contracts. The combined coverage gate passed at 95.00% against its unchanged
+95% minimum. See [the CI run](https://github.com/deploymenttheory/go-apple-dm/actions/runs/35204383183).
+These automated results do not establish native feature behavior.
+
+## Guest continuation — 17 September 2026
+
+The visible `macos27-acceptance` guest reports macOS **27.0 (26A428)**,
+`VirtualMac2,1`, four virtual CPUs and 4 GiB RAM. Its disk remains exactly
+40,000,000,000 bytes. Setup is complete; no Apple Account is signed in. A private SSH
+key provides guest access; loopback forwards to ports 8443 and 9443 preserve the
+lab's HTTPS origins and certificate verification. Guest FileVault was off at
+the pre-enrollment baseline. The working physical Mac's FileVault and enrollment
+were not changed.
+
+The current server and CLI were built from `eb5208a` and promoted using the
+canonical recovered database and retained keys. Existing admission correctly
+rejected the unfamiliar guest. After recording its hardware UUID and serial,
+only that exact pair was added to the admission policy. The server restarted
+with re-enrollment still disabled. The issued SCEP profile was reviewed for its
+identity payload, included trust, installing-user scope and rights **4115**
+(the existing inventory/profile rights plus application management). The user
+installed it. Settings and `profiles status -type enrollment` both show
+user-approved MDM enrollment.
+
+**Result: blocked before command/DDM acceptance.** The server received native
+Authenticate at 10:23:10 UTC, but no TokenUpdate. Its enrollment therefore remains
+disabled, with zero installing-user channels and zero assigned declarations.
+The tracked inventory helper stopped at that prerequisite; it did not queue a
+command or claim that Authenticate inventory was tracked DeviceInformation.
+
+Guest logs show `apsd` failing to create its Secure Enclave reference key with
+`NSOSStatusErrorDomain -25308` / `errSecInteractionNotAllowed`, followed by
+`APSBAAClientIdentityProvider` failing to obtain its BAA certificate. The same
+sequence occurred before enrollment and after console login. The guest's APNs
+connections remain absent despite successful TCP checks to Apple's push service
+on port 5223 and activation service on port 443. The guest clock was correct and
+its HTTPS request to the lab readiness endpoint passed with the private CA.
+This local evidence matches an
+[existing macOS 27 VM report](https://developer.apple.com/forums/thread/840500),
+including follow-up on a release-candidate host and guest. Apple DTS requested
+guest diagnostics there; the thread does not establish a released fix.
+
+The private evidence is under `test-lab/local/apple27/guestweave/`, including
+`baseline.json`, `profile-review.json`, admission backup/change records,
+`guest-enroll-003.png`, `enrollment-native-log-*.json` and
+`enrollment-blocker-*.json`. No raw identities, credentials or logs are published.
+`clean-install` preserves the pre-enrollment disk. After resolving the lab's
+Unix socket path length with a short storage alias and restarting with
+`--suspendable`, the live `enrollment-apns-blocked` snapshot completed and resumed.
+The guest remains visible and enrolled for diagnosis; no feature policy is
+assigned. Guest-dependent binary, package/app and permission variants remain
+blocked at transport readiness. Retained physical-device passes and failures
+are unchanged.
