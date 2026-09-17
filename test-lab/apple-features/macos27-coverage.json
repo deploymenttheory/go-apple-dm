@@ -1,0 +1,841 @@
+{
+  "description": "Reviewed macOS 27 structured schema boundaries. Inherited descendants and reviewed SSO enum floors are checked separately by TestSeedOS27CoverageInventory. This inventory is a coverage plan, not native pass evidence.",
+  "schemaCommit": "b0180185a5e4077070710033341b71d0cbe1a18a",
+  "historyCommit": "67045e2fa06f528b196c01edee6a8bf88b844beb",
+  "fixtures": [
+    "accessibility",
+    "acme",
+    "app-privacy",
+    "binary-controls",
+    "certificate",
+    "content-cache",
+    "data",
+    "extensible-sso",
+    "intelligence",
+    "legacy-asset",
+    "legacy-interactive-asset",
+    "legacy-url",
+    "managedapp",
+    "managedapp-legacy-config",
+    "network.dns-proxy",
+    "network.dns-settings",
+    "network.relay",
+    "network.vpn.always-on",
+    "network.vpn.ikev2",
+    "network.vpn.ipsec",
+    "network.vpn.vpn-plugin",
+    "package-removal",
+    "password",
+    "platform-sso",
+    "scep",
+    "siri",
+    "siri-sensitive-content",
+    "update-deadline",
+    "update-ios",
+    "update-macos",
+    "webcontent-filter",
+    "website-privacy"
+  ],
+  "cases": [
+    {
+      "source": "declarative/declarations/configurations/accessibility.settings.yaml",
+      "boundaries": [
+        {
+          "path": "$",
+          "kind": "introduced",
+          "version": "27.0"
+        }
+      ],
+      "fixtures": [
+        "accessibility"
+      ],
+      "nativePlan": "Apply and remove AllowLiveRecognition on eligible hardware; verify actual Accessibility behavior."
+    },
+    {
+      "source": "declarative/declarations/configurations/app.managed.yaml",
+      "boundaries": [
+        {
+          "path": "payload.AppConfig",
+          "kind": "introduced",
+          "version": "27.0"
+        },
+        {
+          "path": "payload.ExtensionConfigs",
+          "kind": "introduced",
+          "version": "27.0"
+        },
+        {
+          "path": "payload.LegacyAppConfigAssetReference",
+          "kind": "introduced",
+          "version": "27.0"
+        }
+      ],
+      "fixtures": [
+        "managedapp",
+        "managedapp-legacy-config"
+      ],
+      "nativePlan": "Use a disposable ManagedApp consumer to verify app, extension and legacy configuration, assets, rotation and config-state."
+    },
+    {
+      "source": "declarative/declarations/configurations/app.settings.yaml",
+      "boundaries": [
+        {
+          "path": "$",
+          "kind": "introduced",
+          "version": "27.0"
+        }
+      ],
+      "fixtures": [
+        "binary-controls",
+        "app-privacy"
+      ],
+      "nativePlan": "Use only a disposable VM for binary allow/deny and managed-app exceptions. Preserve app grant/revocation results; consolidated prompt remains unproven."
+    },
+    {
+      "source": "declarative/declarations/configurations/content-cache.settings.yaml",
+      "boundaries": [
+        {
+          "path": "$",
+          "kind": "introduced",
+          "version": "27.0"
+        }
+      ],
+      "fixtures": [
+        "content-cache"
+      ],
+      "nativePlan": "Preserve native report acceptance; exercise remaining declaration variants and fresh parent/peer statuses separately."
+    },
+    {
+      "source": "declarative/declarations/configurations/extensible-sso.yaml",
+      "boundaries": [
+        {
+          "path": "$",
+          "kind": "introduced",
+          "version": "27.0"
+        },
+        {
+          "path": "payload.PlatformSSO.WebAuthentication",
+          "kind": "introduced",
+          "version": "27.0"
+        }
+      ],
+      "fixtures": [
+        "platform-sso",
+        "extensible-sso"
+      ],
+      "nativePlan": "Reviewed provider and IdP required. Exercise OpenID, web allow list/password sync, login, unlock and FileVault policy variants."
+    },
+    {
+      "source": "declarative/declarations/configurations/intelligence.settings.yaml",
+      "boundaries": [
+        {
+          "path": "payload.AllowVisualIntelligence",
+          "kind": "introduced",
+          "version": "27.0"
+        },
+        {
+          "path": "payload.Apps.Calendar",
+          "kind": "introduced",
+          "version": "27.0"
+        }
+      ],
+      "fixtures": [
+        "intelligence"
+      ],
+      "nativePlan": "Preserve confirmed preference mapping; independently observe Visual Intelligence and Calendar behavior and removal."
+    },
+    {
+      "source": "declarative/declarations/configurations/legacy.interactive.yaml",
+      "boundaries": [
+        {
+          "path": "payload.ProfileAssetReference",
+          "kind": "introduced",
+          "version": "27.0"
+        }
+      ],
+      "fixtures": [
+        "legacy-interactive-asset"
+      ],
+      "nativePlan": "Verify user presentation, acceptance/decline, asset update and removal with a disposable profile."
+    },
+    {
+      "source": "declarative/declarations/configurations/legacy.yaml",
+      "boundaries": [
+        {
+          "path": "payload.ProfileAssetReference",
+          "kind": "introduced",
+          "version": "27.0"
+        }
+      ],
+      "fixtures": [
+        "legacy-asset",
+        "legacy-url"
+      ],
+      "nativePlan": "Preserve URL and asset apply/remove results; distinguish the interactive variant."
+    },
+    {
+      "source": "declarative/declarations/configurations/network.dns-proxy.yaml",
+      "boundaries": [
+        {
+          "path": "$",
+          "kind": "introduced",
+          "version": "27.0"
+        }
+      ],
+      "fixtures": [
+        "network.dns-proxy"
+      ],
+      "nativePlan": "Requires a working native endpoint and, where applicable, a signed provider; verify connectivity, isolation and removal in the disposable VM."
+    },
+    {
+      "source": "declarative/declarations/configurations/network.dns-settings.yaml",
+      "boundaries": [
+        {
+          "path": "$",
+          "kind": "introduced",
+          "version": "27.0"
+        }
+      ],
+      "fixtures": [
+        "network.dns-settings"
+      ],
+      "nativePlan": "Requires a working native endpoint and, where applicable, a signed provider; verify connectivity, isolation and removal in the disposable VM."
+    },
+    {
+      "source": "declarative/declarations/configurations/network.relay.yaml",
+      "boundaries": [
+        {
+          "path": "$",
+          "kind": "introduced",
+          "version": "27.0"
+        }
+      ],
+      "fixtures": [
+        "network.relay"
+      ],
+      "nativePlan": "Requires a working native endpoint and, where applicable, a signed provider; verify connectivity, isolation and removal in the disposable VM."
+    },
+    {
+      "source": "declarative/declarations/configurations/network.vpn.ikev2.yaml",
+      "boundaries": [
+        {
+          "path": "$",
+          "kind": "introduced",
+          "version": "27.0"
+        }
+      ],
+      "fixtures": [
+        "network.vpn.ikev2"
+      ],
+      "nativePlan": "Requires a working native endpoint and, where applicable, a signed provider; verify connectivity, isolation and removal in the disposable VM."
+    },
+    {
+      "source": "declarative/declarations/configurations/network.vpn.ipsec.yaml",
+      "boundaries": [
+        {
+          "path": "$",
+          "kind": "introduced",
+          "version": "27.0"
+        }
+      ],
+      "fixtures": [
+        "network.vpn.ipsec"
+      ],
+      "nativePlan": "Requires a working native endpoint and, where applicable, a signed provider; verify connectivity, isolation and removal in the disposable VM."
+    },
+    {
+      "source": "declarative/declarations/configurations/network.vpn.vpn-plugin.yaml",
+      "boundaries": [
+        {
+          "path": "$",
+          "kind": "introduced",
+          "version": "27.0"
+        }
+      ],
+      "fixtures": [
+        "network.vpn.vpn-plugin"
+      ],
+      "nativePlan": "Requires a working native endpoint and, where applicable, a signed provider; verify connectivity, isolation and removal in the disposable VM."
+    },
+    {
+      "source": "declarative/declarations/configurations/package.yaml",
+      "boundaries": [
+        {
+          "path": "payload.UninstallBehavior",
+          "kind": "introduced",
+          "version": "27.0"
+        }
+      ],
+      "fixtures": [
+        "package-removal"
+      ],
+      "nativePlan": "Install a disposable signed package in the VM; verify UninstallBehavior removes only its test files."
+    },
+    {
+      "source": "declarative/declarations/configurations/safari.settings.yaml",
+      "boundaries": [
+        {
+          "path": "payload.Privacy",
+          "kind": "introduced",
+          "version": "27.0"
+        }
+      ],
+      "fixtures": [
+        "website-privacy"
+      ],
+      "nativePlan": "Preserve combined organization prompt, Allow and revocation results. Test Not Now, wildcard matching and a fresh comparison origin."
+    },
+    {
+      "source": "declarative/declarations/configurations/siri.settings.yaml",
+      "boundaries": [
+        {
+          "path": "payload.AllowSiriAI",
+          "kind": "introduced",
+          "version": "27.0"
+        },
+        {
+          "path": "payload.ForceReduceSensitiveContent",
+          "kind": "introduced",
+          "version": "27.0"
+        }
+      ],
+      "fixtures": [
+        "siri",
+        "siri-sensitive-content"
+      ],
+      "nativePlan": "Preserve AllowSiriAI preference application/removal. Test ForceReduceSensitiveContent and effective Siri AI behavior separately."
+    },
+    {
+      "source": "declarative/declarations/configurations/webcontent-filter.plugin.yaml",
+      "boundaries": [
+        {
+          "path": "$",
+          "kind": "introduced",
+          "version": "27.0"
+        }
+      ],
+      "fixtures": [
+        "webcontent-filter"
+      ],
+      "nativePlan": "Requires a reviewed signed provider and test endpoint; verify filtering and removal in the disposable VM."
+    },
+    {
+      "source": "declarative/status/app.managed.list.yaml",
+      "boundaries": [
+        {
+          "path": "payload.app.managed.list.status_value.config-state",
+          "kind": "introduced",
+          "version": "27.0"
+        }
+      ],
+      "fixtures": [],
+      "nativePlan": "Capture a fresh native status and compare the actual device state; absence is not false. Retain payloads privately."
+    },
+    {
+      "source": "declarative/status/content-cache.info.yaml",
+      "boundaries": [
+        {
+          "path": "$",
+          "kind": "introduced",
+          "version": "27.0"
+        }
+      ],
+      "fixtures": [],
+      "nativePlan": "Capture a fresh native status and compare the actual device state; absence is not false. Retain payloads privately."
+    },
+    {
+      "source": "declarative/status/content-cache.parents.yaml",
+      "boundaries": [
+        {
+          "path": "$",
+          "kind": "introduced",
+          "version": "27.0"
+        }
+      ],
+      "fixtures": [],
+      "nativePlan": "Capture a fresh native status and compare the actual device state; absence is not false. Retain payloads privately."
+    },
+    {
+      "source": "declarative/status/content-cache.peers.yaml",
+      "boundaries": [
+        {
+          "path": "$",
+          "kind": "introduced",
+          "version": "27.0"
+        }
+      ],
+      "fixtures": [],
+      "nativePlan": "Capture a fresh native status and compare the actual device state; absence is not false. Retain payloads privately."
+    },
+    {
+      "source": "declarative/status/content-cache.status.yaml",
+      "boundaries": [
+        {
+          "path": "$",
+          "kind": "introduced",
+          "version": "27.0"
+        }
+      ],
+      "fixtures": [],
+      "nativePlan": "Capture a fresh native status and compare the actual device state; absence is not false. Retain payloads privately."
+    },
+    {
+      "source": "declarative/status/enhanced-logging.applecare-token.yaml",
+      "boundaries": [
+        {
+          "path": "$",
+          "kind": "introduced",
+          "version": "27.0"
+        }
+      ],
+      "fixtures": [],
+      "nativePlan": "Requires an AppleCare token on the supervised Mac user channel; observe trigger, native statuses, cancellation and completion."
+    },
+    {
+      "source": "declarative/status/enhanced-logging.status.yaml",
+      "boundaries": [
+        {
+          "path": "$",
+          "kind": "introduced",
+          "version": "27.0"
+        }
+      ],
+      "fixtures": [],
+      "nativePlan": "Requires an AppleCare token on the supervised Mac user channel; observe trigger, native statuses, cancellation and completion."
+    },
+    {
+      "source": "declarative/status/enhanced-logging.timestamp.yaml",
+      "boundaries": [
+        {
+          "path": "$",
+          "kind": "introduced",
+          "version": "27.0"
+        }
+      ],
+      "fixtures": [],
+      "nativePlan": "Requires an AppleCare token on the supervised Mac user channel; observe trigger, native statuses, cancellation and completion."
+    },
+    {
+      "source": "declarative/status/mdm.enrollment-type.yaml",
+      "boundaries": [
+        {
+          "path": "$",
+          "kind": "introduced",
+          "version": "27.0"
+        }
+      ],
+      "fixtures": [],
+      "nativePlan": "Capture a fresh native status and compare the actual device state; absence is not false. Retain payloads privately."
+    },
+    {
+      "source": "declarative/status/mdm.is-awaiting-configuration.yaml",
+      "boundaries": [
+        {
+          "path": "$",
+          "kind": "introduced",
+          "version": "27.0"
+        }
+      ],
+      "fixtures": [],
+      "nativePlan": "Capture a fresh native status and compare the actual device state; absence is not false. Retain payloads privately."
+    },
+    {
+      "source": "declarative/status/mdm.push-magic.yaml",
+      "boundaries": [
+        {
+          "path": "$",
+          "kind": "introduced",
+          "version": "27.0"
+        }
+      ],
+      "fixtures": [],
+      "nativePlan": "Capture a fresh native status and compare the actual device state; absence is not false. Retain payloads privately."
+    },
+    {
+      "source": "declarative/status/mdm.push-token.yaml",
+      "boundaries": [
+        {
+          "path": "$",
+          "kind": "introduced",
+          "version": "27.0"
+        }
+      ],
+      "fixtures": [],
+      "nativePlan": "Capture a fresh native status and compare the actual device state; absence is not false. Retain payloads privately."
+    },
+    {
+      "source": "declarative/status/security.lockdown-mode.yaml",
+      "boundaries": [
+        {
+          "path": "$",
+          "kind": "introduced",
+          "version": "27.0"
+        }
+      ],
+      "fixtures": [],
+      "nativePlan": "Capture a fresh native status and compare the actual device state; absence is not false. Retain payloads privately."
+    },
+    {
+      "source": "mdm/commands/cancel.enhanced.log.collection.yaml",
+      "boundaries": [
+        {
+          "path": "$",
+          "kind": "introduced",
+          "version": "27.0"
+        }
+      ],
+      "fixtures": [],
+      "nativePlan": "Requires an AppleCare token on the supervised Mac user channel; observe trigger, native statuses, cancellation and completion."
+    },
+    {
+      "source": "mdm/commands/information.device.yaml",
+      "boundaries": [
+        {
+          "path": "payload.Queries.QueriesItem.OSUpdateSettings",
+          "kind": "removed",
+          "version": "27.0"
+        },
+        {
+          "path": "payload.Queries.QueriesItem.SoftwareUpdateDeviceID",
+          "kind": "removed",
+          "version": "27.0"
+        },
+        {
+          "path": "response.QueryResponses.OSUpdateSettings",
+          "kind": "removed",
+          "version": "27.0"
+        },
+        {
+          "path": "response.QueryResponses.SoftwareUpdateDeviceID",
+          "kind": "removed",
+          "version": "27.0"
+        }
+      ],
+      "fixtures": [],
+      "nativePlan": "Automated rejection on macOS 27 and retention on supported macOS 26 targets; use tracked inventory and DDM for native macOS 27 update management."
+    },
+    {
+      "source": "mdm/commands/system.update.available.yaml",
+      "boundaries": [
+        {
+          "path": "$",
+          "kind": "removed",
+          "version": "27.0"
+        }
+      ],
+      "fixtures": [],
+      "nativePlan": "Automated rejection on macOS 27 and retention on supported macOS 26 targets; use tracked inventory and DDM for native macOS 27 update management."
+    },
+    {
+      "source": "mdm/commands/system.update.scan.yaml",
+      "boundaries": [
+        {
+          "path": "$",
+          "kind": "removed",
+          "version": "27.0"
+        }
+      ],
+      "fixtures": [],
+      "nativePlan": "Automated rejection on macOS 27 and retention on supported macOS 26 targets; use tracked inventory and DDM for native macOS 27 update management."
+    },
+    {
+      "source": "mdm/commands/system.update.schedule.yaml",
+      "boundaries": [
+        {
+          "path": "$",
+          "kind": "removed",
+          "version": "27.0"
+        }
+      ],
+      "fixtures": [],
+      "nativePlan": "Automated rejection on macOS 27 and retention on supported macOS 26 targets; use tracked inventory and DDM for native macOS 27 update management."
+    },
+    {
+      "source": "mdm/commands/system.update.status.yaml",
+      "boundaries": [
+        {
+          "path": "$",
+          "kind": "removed",
+          "version": "27.0"
+        }
+      ],
+      "fixtures": [],
+      "nativePlan": "Automated rejection on macOS 27 and retention on supported macOS 26 targets; use tracked inventory and DDM for native macOS 27 update management."
+    },
+    {
+      "source": "mdm/commands/trigger.enhanced.log.collection.yaml",
+      "boundaries": [
+        {
+          "path": "$",
+          "kind": "introduced",
+          "version": "27.0"
+        }
+      ],
+      "fixtures": [],
+      "nativePlan": "Requires an AppleCare token on the supervised Mac user channel; observe trigger, native statuses, cancellation and completion."
+    },
+    {
+      "source": "mdm/profiles/com.apple.AssetCache.managed.yaml",
+      "boundaries": [
+        {
+          "path": "$",
+          "kind": "deprecated",
+          "version": "27.0"
+        }
+      ],
+      "fixtures": [],
+      "nativePlan": "Confirm deprecation does not become removal; compare the retained profile behavior with its declarative replacement on an isolated test target."
+    },
+    {
+      "source": "mdm/profiles/com.apple.SoftwareUpdate.yaml",
+      "boundaries": [
+        {
+          "path": "$",
+          "kind": "removed",
+          "version": "27.0"
+        }
+      ],
+      "fixtures": [],
+      "nativePlan": "Automated rejection on macOS 27 and retention on supported macOS 26 targets; use tracked inventory and DDM for native macOS 27 update management."
+    },
+    {
+      "source": "mdm/profiles/com.apple.TCC.configuration-profile-policy.yaml",
+      "boundaries": [
+        {
+          "path": "payload.Services.Accessibility",
+          "kind": "deprecated",
+          "version": "27.0"
+        },
+        {
+          "path": "payload.Services.BluetoothAlways",
+          "kind": "deprecated",
+          "version": "27.0"
+        },
+        {
+          "path": "payload.Services.Camera",
+          "kind": "deprecated",
+          "version": "27.0"
+        },
+        {
+          "path": "payload.Services.Microphone",
+          "kind": "deprecated",
+          "version": "27.0"
+        },
+        {
+          "path": "payload.Services.SpeechRecognition",
+          "kind": "deprecated",
+          "version": "27.0"
+        }
+      ],
+      "fixtures": [],
+      "nativePlan": "Deprecated services remain accepted; verify notifications and user revocation without reading the TCC database."
+    },
+    {
+      "source": "mdm/profiles/com.apple.applicationaccess.new.yaml",
+      "boundaries": [
+        {
+          "path": "$",
+          "kind": "deprecated",
+          "version": "27.0"
+        }
+      ],
+      "fixtures": [],
+      "nativePlan": "Confirm deprecation does not become removal; compare the retained profile behavior with its declarative replacement on an isolated test target."
+    },
+    {
+      "source": "mdm/profiles/com.apple.applicationaccess.yaml",
+      "boundaries": [
+        {
+          "path": "payload.allowRapidSecurityResponseInstallation",
+          "kind": "removed",
+          "version": "27.0"
+        },
+        {
+          "path": "payload.allowRapidSecurityResponseRemoval",
+          "kind": "removed",
+          "version": "27.0"
+        },
+        {
+          "path": "payload.enforcedSoftwareUpdateDelay",
+          "kind": "removed",
+          "version": "27.0"
+        },
+        {
+          "path": "payload.enforcedSoftwareUpdateMajorOSDeferredInstallDelay",
+          "kind": "removed",
+          "version": "27.0"
+        },
+        {
+          "path": "payload.enforcedSoftwareUpdateMinorOSDeferredInstallDelay",
+          "kind": "removed",
+          "version": "27.0"
+        },
+        {
+          "path": "payload.enforcedSoftwareUpdateNonOSDeferredInstallDelay",
+          "kind": "removed",
+          "version": "27.0"
+        },
+        {
+          "path": "payload.forceDelayedAppSoftwareUpdates",
+          "kind": "removed",
+          "version": "27.0"
+        },
+        {
+          "path": "payload.forceDelayedMajorSoftwareUpdates",
+          "kind": "removed",
+          "version": "27.0"
+        },
+        {
+          "path": "payload.forceDelayedSoftwareUpdates",
+          "kind": "removed",
+          "version": "27.0"
+        }
+      ],
+      "fixtures": [],
+      "nativePlan": "Automated rejection on macOS 27 and retention on supported macOS 26 targets; use tracked inventory and DDM for native macOS 27 update management."
+    },
+    {
+      "source": "mdm/profiles/com.apple.dnsProxy.managed.yaml",
+      "boundaries": [
+        {
+          "path": "$",
+          "kind": "deprecated",
+          "version": "27.0"
+        }
+      ],
+      "fixtures": [],
+      "nativePlan": "Confirm deprecation does not become removal; compare the retained profile behavior with its declarative replacement on an isolated test target."
+    },
+    {
+      "source": "mdm/profiles/com.apple.dnsSettings.managed.yaml",
+      "boundaries": [
+        {
+          "path": "$",
+          "kind": "deprecated",
+          "version": "27.0"
+        }
+      ],
+      "fixtures": [],
+      "nativePlan": "Confirm deprecation does not become removal; compare the retained profile behavior with its declarative replacement on an isolated test target."
+    },
+    {
+      "source": "mdm/profiles/com.apple.extensiblesso.yaml",
+      "boundaries": [
+        {
+          "path": "payload.PlatformSSO.AllowWebLoginPasswordSync",
+          "kind": "introduced",
+          "version": "27.0"
+        },
+        {
+          "path": "payload.PlatformSSO.WebLoginURLAllowList",
+          "kind": "introduced",
+          "version": "27.0"
+        }
+      ],
+      "fixtures": [],
+      "nativePlan": "Confirm deprecation does not become removal; compare the retained profile behavior with its declarative replacement on an isolated test target."
+    },
+    {
+      "source": "mdm/profiles/com.apple.loginwindow.yaml",
+      "boundaries": [
+        {
+          "path": "payload.ForceCaptivePortalConnectionFromLockScreen",
+          "kind": "introduced",
+          "version": "27.0"
+        },
+        {
+          "path": "payload.ForceWifiConfigurationOnLockScreen",
+          "kind": "introduced",
+          "version": "27.0"
+        }
+      ],
+      "fixtures": [],
+      "nativePlan": "Verify Wi-Fi and captive-portal lock-screen controls separately on an appropriate test Mac."
+    },
+    {
+      "source": "mdm/profiles/com.apple.mobiledevice.passwordpolicy.yaml",
+      "boundaries": [
+        {
+          "path": "$",
+          "kind": "deprecated",
+          "version": "27.0"
+        }
+      ],
+      "fixtures": [],
+      "nativePlan": "Confirm deprecation does not become removal; compare the retained profile behavior with its declarative replacement on an isolated test target."
+    },
+    {
+      "source": "mdm/profiles/com.apple.relay.managed.yaml",
+      "boundaries": [
+        {
+          "path": "$",
+          "kind": "deprecated",
+          "version": "27.0"
+        }
+      ],
+      "fixtures": [],
+      "nativePlan": "Confirm deprecation does not become removal; compare the retained profile behavior with its declarative replacement on an isolated test target."
+    },
+    {
+      "source": "other/skipkeys.yaml",
+      "boundaries": [
+        {
+          "path": "payload.LiquidGlass",
+          "kind": "introduced",
+          "version": "27.0"
+        },
+        {
+          "path": "payload.OSShowcase",
+          "kind": "removed",
+          "version": "27.0"
+        }
+      ],
+      "fixtures": [],
+      "nativePlan": "Requires an ADE-eligible test identity at Setup Assistant: LiquidGlass skip and OSShowcase removal."
+    }
+  ],
+  "nonMacCases": [
+    {
+      "source": "declarative/declarations/configurations/network.vpn.always-on.yaml",
+      "reason": "macOS is unavailable; iOS and visionOS need separate hardware."
+    },
+    {
+      "source": "declarative/status/device.system.health.yaml",
+      "reason": "macOS is unavailable; iOS device health is not a Mac acceptance case."
+    },
+    {
+      "source": "declarative/status/mdm.is-shared-ipad.yaml",
+      "reason": "Shared iPad status is not a Mac acceptance case."
+    },
+    {
+      "source": "declarative/status/mdm.is-return-to-service.yaml",
+      "reason": "Return to Service status is unavailable on macOS."
+    }
+  ],
+  "valueFloors": {
+    "ExtensibleSingleSignOn.AuthenticationMethod": [
+      "OpenID"
+    ],
+    "ExtensibleSingleSignOn.PlatformSSO.AuthenticationMethod": [
+      "OpenID"
+    ],
+    "ExtensibleSingleSignOn.PlatformSSO.NewUserAuthenticationMethods": [
+      "OpenID"
+    ],
+    "ExtensibleSingleSignOn.PlatformSSO.FileVaultPolicy": [
+      "RequireTouchID",
+      "RequireTouchIDOrWatch",
+      "AllowOpenIDForTouchIDFallback"
+    ],
+    "ExtensibleSingleSignOn.PlatformSSO.LoginPolicy": [
+      "RequireTouchID",
+      "RequireTouchIDOrWatch",
+      "AllowOpenIDForTouchIDFallback"
+    ],
+    "ExtensibleSingleSignOn.PlatformSSO.UnlockPolicy": [
+      "RequireTouchID",
+      "RequireTouchIDOrWatch",
+      "AllowOpenIDForTouchIDFallback"
+    ]
+  }
+}

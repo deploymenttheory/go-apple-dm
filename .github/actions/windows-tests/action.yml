@@ -25,4 +25,4 @@ runs:
     - name: Windows schema contracts
       if: ${{ !cancelled() }}
       shell: pwsh
-      run: python .github/scripts/schema_monitor.py contracts --output cover/schema-contracts
+      run: python .github/scripts/schema_monitor.py contracts --output cover/schema-contracts --coverage-dir cover/unit

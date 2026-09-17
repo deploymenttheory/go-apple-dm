@@ -3,12 +3,15 @@ package app_test
 import (
 	"bytes"
 	json "encoding/json/v2"
+	"errors"
 	"net/http"
 	"net/http/httptest"
+	"net/netip"
 	"net/url"
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/contentcache"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/mdm"
@@ -115,5 +118,136 @@ func TestContentCacheConfig(t *testing.T) {
 	a.Handler.ServeHTTP(w, httptest.NewRequestWithContext(t.Context(), http.MethodPut, "https://cache.example.test/content-cache/metrics/unused", nil))
 	if w.Code != 404 {
 		t.Fatal("collector enabled by default", w.Code)
+	}
+}
+
+func TestContentCacheRetentionEnv(t *testing.T) {
+	for _, value := range []string{"", "48h", "0", "-1h", "invalid"} {
+		t.Run(value, func(t *testing.T) {
+			cfg, err := app.ParseEnv(func(key string) string {
+				switch key {
+				case app.EnvStorage:
+					return "inmem"
+				case "DM_CONTENT_CACHE_URL":
+					return "https://cache.example.test"
+				case "DM_CONTENT_CACHE_RETENTION":
+					return value
+				default:
+					return ""
+				}
+			})
+			if value != "" && value != "48h" {
+				if !errors.Is(err, app.ErrConfig) {
+					t.Fatalf("unsafe retention accepted: %v", err)
+				}
+				return
+			}
+			want := time.Duration(0) // The collector applies its default retention.
+			if value == "48h" {
+				want = 48 * time.Hour
+			}
+			if err != nil || cfg.ContentCache.PublicURL != "https://cache.example.test" || cfg.ContentCache.Retention != want {
+				t.Fatalf("content-cache environment: %+v, %v", cfg.ContentCache, err)
+			}
+		})
+	}
+}
+
+// A forwarded HTTPS assertion is authoritative only when the actual socket
+// peer is trusted. URL credentials must not be accepted in alternate routes.
+func TestContentCacheProxyTransport(t *testing.T) {
+	a := build(t, app.Config{
+		Role: app.RoleAll, Storage: "inmem", AdminToken: "test-admin",
+		ContentCache:   app.ContentCacheConfig{PublicURL: "https://cache.example.test"},
+		TrustedProxies: []netip.Prefix{netip.MustParsePrefix("192.0.2.0/24"), netip.MustParsePrefix("2001:db8::/32")},
+	})
+	id := mdm.EnrollmentID{Channel: mdm.ChannelDevice, ID: "proxy-device"}
+	if err := a.Store.Import(t.Context(), storage.EnrollmentExport{Enrollment: storage.Enrollment{ID: id, Enabled: true}}); err != nil {
+		t.Fatal(err)
+	}
+	r := httptest.NewRequestWithContext(t.Context(), http.MethodPost, "https://cache.example.test/admin/v1/enrollments/device/proxy-device/content-cache/credential", nil)
+	r.Header.Set("Authorization", "Bearer test-admin")
+	w := httptest.NewRecorder()
+	a.Handler.ServeHTTP(w, r)
+	var credential struct{ URL string }
+	if w.Code != http.StatusCreated || json.Unmarshal(w.Body.Bytes(), &credential) != nil || credential.URL == "" {
+		t.Fatalf("issue credential: %d %s", w.Code, w.Body.String())
+	}
+	cleartextURL := strings.Replace(credential.URL, "https:", "http:", 1)
+	for _, tc := range []struct {
+		name, remote, proto, suffix string
+		want                        int
+	}{
+		{"trusted IPv4", "192.0.2.5:1234", "https", "", http.StatusAccepted},
+		{"trusted mapped IPv4", "[::ffff:192.0.2.5]:1234", "https", "", http.StatusAccepted},
+		{"trusted IPv6", "[2001:db8::5]:1234", "https", "", http.StatusAccepted},
+		{"untrusted peer", "198.51.100.5:1234", "https", "", http.StatusUnauthorized},
+		{"unparseable peer", "not-an-address", "https", "", http.StatusUnauthorized},
+		{"hostname peer", "proxy.example.test:1234", "https", "", http.StatusUnauthorized},
+		{"missing assertion", "192.0.2.5:1234", "", "", http.StatusUnauthorized},
+		{"forwarded HTTP", "192.0.2.5:1234", "http", "", http.StatusUnauthorized},
+		{"ambiguous assertion", "192.0.2.5:1234", "https, http", "", http.StatusUnauthorized},
+		{"query credential", "192.0.2.5:1234", "https", "?extra=secret", http.StatusNotFound},
+		{"nested credential", "192.0.2.5:1234", "https", "/extra", http.StatusNotFound},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			r := httptest.NewRequestWithContext(t.Context(), http.MethodPost, cleartextURL+tc.suffix,
+				strings.NewReader(`{"version":1,"reportDate":"2026-09-17T12:00:00Z","hostname":"untrusted","hardware":"Mac16,1","serverGUID":"13D4D110-B2B7-4F26-8E25-CD22E58C00EE"}`))
+			r.RemoteAddr = tc.remote
+			r.Header.Set("Content-Type", "application/json")
+			r.Header.Set("X-Forwarded-Proto", tc.proto)
+			// An attacker-supplied forwarded address must not confer proxy trust.
+			r.Header.Set("X-Forwarded-For", "192.0.2.5")
+			w := httptest.NewRecorder()
+			a.Handler.ServeHTTP(w, r)
+			if w.Code != tc.want {
+				t.Fatalf("ingestion status = %d, want %d: %s", w.Code, tc.want, w.Body.String())
+			}
+		})
+	}
+	if err := a.Store.Disable(t.Context(), id, time.Now()); err != nil {
+		t.Fatal(err)
+	}
+	r = httptest.NewRequestWithContext(t.Context(), http.MethodPost, credential.URL, strings.NewReader(`{}`))
+	w = httptest.NewRecorder()
+	a.Handler.ServeHTTP(w, r)
+	if w.Code != http.StatusUnauthorized {
+		t.Fatalf("disabled enrollment credential accepted: %d %s", w.Code, w.Body.String())
+	}
+}
+
+func TestContentCacheAdminRejectsInvalidRequests(t *testing.T) {
+	a := build(t, app.Config{
+		Role: app.RoleAll, Storage: "inmem", AdminToken: "test-admin",
+		ContentCache: app.ContentCacheConfig{PublicURL: "https://cache.example.test"},
+	})
+	for _, id := range []mdm.EnrollmentID{
+		{Channel: mdm.ChannelDevice, ID: "device-id"},
+		{Channel: mdm.ChannelUser, ID: "user-id", ParentID: "device-id"},
+	} {
+		if err := a.Store.Import(t.Context(), storage.EnrollmentExport{Enrollment: storage.Enrollment{ID: id, Enabled: true}}); err != nil {
+			t.Fatal(err)
+		}
+	}
+	for _, tc := range []struct{ method, path string }{
+		{http.MethodPost, "invalid/device/content-cache/credential"},
+		{http.MethodDelete, "invalid/device/content-cache/credential"},
+		{http.MethodGet, "invalid/device/content-cache/reports"},
+		{http.MethodPost, "user/user-id/content-cache/credential?parent=device-id"},
+		{http.MethodDelete, "user/user-id/content-cache/credential?parent=device-id"},
+		{http.MethodGet, "user/user-id/content-cache/reports?parent=device-id"},
+		{http.MethodGet, "device/device-id/content-cache/reports?limit=not-a-number"},
+		{http.MethodGet, "device/device-id/content-cache/reports?limit=1001"},
+		{http.MethodGet, "device/device-id/content-cache/reports?cursor=invalid"},
+	} {
+		t.Run(tc.method+" "+tc.path, func(t *testing.T) {
+			r := httptest.NewRequestWithContext(t.Context(), tc.method, "https://cache.example.test/admin/v1/enrollments/"+tc.path, nil)
+			r.Header.Set("Authorization", "Bearer test-admin")
+			w := httptest.NewRecorder()
+			a.Handler.ServeHTTP(w, r)
+			if w.Code != http.StatusBadRequest {
+				t.Fatalf("invalid request = %d: %s", w.Code, w.Body.String())
+			}
+		})
 	}
 }

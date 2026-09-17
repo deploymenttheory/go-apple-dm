@@ -251,8 +251,38 @@ pass. Browser measurements found no horizontal overflow or chrome overlap.
 
 Guestweave was built and signed locally using the installed Command Line Tools.
 A schema-version mismatch in its OpenTelemetry resource initialization was fixed
-in the ignored lab checkout; its telemetry race test and restore-image lookup
-passed. Apple returned `UniversalMac_27.0_26A428_Restore.ipsw`, 26,626,436,228 bytes.
-VM creation is waiting for storage: the internal volume had about 36 GiB free,
-insufficient for the restore image, guest disk and host reserve. No guest has
-been created or used to claim native acceptance.
+and submitted as draft [Guestweave PR #181](https://github.com/deploymenttheory/guestweave-cli-macos/pull/181).
+Its telemetry race test, vet, lint and restore-image lookup passed; the signed
+CLI was rebuilt from the submitted commit. Apple returned
+`UniversalMac_27.0_26A428_Restore.ipsw`, 26,626,436,228 bytes. The user authorized
+clearing the Go build cache and obsolete goimports indexes, recovering about
+60 GiB. Referenced/recent indexes, downloaded modules, tools and lab data were
+retained. The requested guest disk limit is **40 GB**. The initial 48 GB creation
+attempt was cancelled during download, before any guest disk was created; the
+partial restore image was retained and resumed. The completed image matches
+Apple's SHA-256 checksum. Installation has started with a disk verified as
+40,000,000,000 bytes, four virtual CPUs and 4 GiB RAM. Guest creation remains in
+progress; this does not establish native feature acceptance.
+
+The expanded macOS 27 inventory names 50 source cases, 73 explicit version
+boundaries and 32 fixtures, plus 12 reviewed SSO value floors. The required
+inventory contract also compares inherited generated support at 663 paths across
+versions and enrollment contexts. All thirteen named OS 27 contracts passed,
+including fixture completeness and the additional supervision/channel withholding
+cases. Accessibility, web-content-filter, sensitive-content Siri,
+interactive-profile assets and legacy ManagedApp configuration now have prepared
+fixtures; their live outcomes remain pending. Existing Safari privacy results
+are unchanged.
+
+Routine contract execution now contributes Go coverage to the unit-test artifact
+on Unix and Windows, while still requiring explicit passing evidence for every
+named contract. Generated conformance checks now verify nil-receiver validation,
+command response schema paths and DDM declaration kinds. Schema and generator
+race suites passed. Additional server tests passed for trusted-proxy HTTPS
+assertions, rejected content-cache URL variants, disabled enrollment credentials,
+invalid admin requests and retention settings. Managed OTA and revocation routes
+also reject requests when their current issuer trust becomes unavailable.
+Both module lint checks and tagged compilation passed with zero issues;
+regeneration verification, 52 schema-monitor tests and four fixture-helper tests
+passed. The combined CI coverage gate still needs a fresh run at this revision;
+these local checks do not establish a complete remote matrix result.

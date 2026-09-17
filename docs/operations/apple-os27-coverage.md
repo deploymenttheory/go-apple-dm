@@ -1,9 +1,9 @@
 # Apple OS 27 feature coverage and mixed fleets
 
-Reviewed 16 September 2026. Scope: the Go library and reference server. Generated
+Reviewed 17 September 2026. Scope: the Go library and reference server. Generated
 API availability, server delivery eligibility, and acceptance by a physical device
-are separate checks. The physical macOS 27 test pass is complete **with failures
-and remaining acceptance**; see the
+are separate checks. The first physical macOS 27 pass retained **failures and
+remaining acceptance**; follow-up testing is in progress. See the
 [live validation record](../testing/macos27-live-validation.md) for completed cases
 and remaining behavior checks. The [handoff](../testing/macos27-handoff.md) describes
 the maintained procedure.
@@ -67,29 +67,57 @@ combinations in [manifest.json](../../test-lab/apple-features/manifest.json).
 iPadOS uses the iOS schema family. Fixture availability applies to the exact
 fields in that fixture, not every variant of its declaration type.
 
+The reviewed [macOS 27 inventory](../../test-lab/apple-features/macos27-coverage.json)
+names all 32 fixture IDs and 50 source cases containing 73 explicit macOS 27
+introduction, deprecation or removal boundaries at the pinned schema. The required
+`TestSeedOS27CoverageInventory` contract rejects missing or changed cases and
+checks 663 affected inherited paths against compiled metadata at all four versions
+in six enrollment contexts. It separately checks the twelve reviewed SSO enum
+floors described in prose. Source cases excluded from Mac acceptance have an
+explicit platform reason. The inventory records native test plans, not passes;
+the live report remains the evidence record. No fixture-count threshold substitutes
+for named case coverage.
+
 | Requirement | Implementation / automated evidence | Physical acceptance after upgrade |
 |---|---|---|
 | App and binary execution policy | `AppSettings`; F `binary-controls` | Allow/deny only a disposable signed fixture; verify managed-app exception and removal. |
 | App consent | App privacy declarations; F `app-privacy` | Record consolidated prompt, allowed services and revocation. |
 | Website consent | Website privacy declarations; F `website-privacy` | Use controlled HTTPS origin; verify origin scope and prompt. |
+| Accessibility Live Recognition | `AccessibilitySettings.Vision.AllowLiveRecognition`; F `accessibility` | Verify Ask about Images and Surroundings behavior on eligible hardware, then removal. |
+| Web content filter plug-in | F `webcontent-filter`; generated provider, socket, packet and URL filter settings | Reviewed signed provider and endpoint required; verify actual filtering and removal in the guest. |
 | OpenID authentication | Platform SSO declaration; F `platform-sso`; legacy-profile OpenID rejection on 26 | Provider extension and test identity required; exercise FileVault, login and unlock separately. |
-| Other SSO controls | F `platform-sso`, `extensible-sso`; retained `ExtensibleSingleSignOn` profile | Record network/captive flow, biometric/watch policy and guest FileVault behavior for configured variants. |
+| Other SSO controls | F `platform-sso`, `extensible-sso`; `WebAuthentication`; legacy `WebLoginURLAllowList` and `AllowWebLoginPasswordSync`; reviewed OpenID/Touch ID/Watch enum floors | Record web allow-list/password-sync, network/captive flow, biometric/watch policy and guest FileVault behavior separately. |
 | Enhanced AppleCare diagnostics | `TriggerEnhancedLogCollection`, `CancelEnhancedLogCollection`; command and status contracts | Valid AppleCare token; supervised Mac **user channel**. Trigger, observe status, cancel, observe completion/error. iOS/iPadOS/tvOS device channels need separate hardware. |
 | Declarative networking | F seven `network.*` fixtures; typed asset dependency checks | Real DNS/VPN/relay endpoints and extensions; measure connectivity and restore it. Always-on fixture is iOS/visionOS, not macOS. |
 | Cache reporting | F `content-cache`; native report codec/receiver; persistent admin API described below | Mac must send its native report; record device-bound persistence, paging and credential rotation. |
-| ManagedApp | F `managedapp` with data, password, certificate and identity assets; extension configuration | Signed app implementing ManagedApp required; verify consumption and asset rotation. |
-| Siri AI restrictions | `SiriSettings.AllowSiriAI`; F `siri` | Verify policy and removal on eligible hardware/account/region. |
+| ManagedApp | F `managedapp` with data, password, certificate and identity assets and extension configuration; F `managedapp-legacy-config`; `app.managed.list` config-state | Signed app implementing ManagedApp required; verify each consumer, asset rotation and fresh configuration status. |
+| Siri AI restrictions | `SiriSettings.AllowSiriAI`; F `siri`; separate `ForceReduceSensitiveContent` fixture `siri-sensitive-content` | Verify each policy's behavior and removal on eligible hardware/account/region. Preference application alone does not prove behavior. |
 | Visual Intelligence / Calendar editing | `IntelligenceSettings`; F `intelligence` | Verify each configured restriction separately. |
-| Package cleanup | `Package.Uninstall`; F `package-removal`; `package.list` status | Install disposable signed package; remove declaration and verify only its test files are removed. |
+| Package cleanup | `Package.UninstallBehavior`; F `package-removal`; `package.list` status | Install disposable signed package; remove declaration and verify only its test files are removed. |
 | Assessment framework | App implementation boundary; [Apple assessment session](https://developer.apple.com/videos/play/wwdc2026/230/) | Requires an assessment app and entitlement. No invented MDM command. |
 | ACME/SCEP accessibility | F `acme`, `scep`; generated `Accessible` fields retained on supported 26 targets | Real issuer, locked/unlocked availability and renewal. Distinguish modern asset form from older plural `credentials.*` forms. |
-| Enrollment, lockdown, setup status | Typed `mdm.enrollment-type`, `security.lockdown-mode`, `mdm.is-awaiting-configuration`; generic status persistence and subscription filtering | Capture unsolicited values and compare actual enrollment/setup state; absence is not false. |
-| Profile assets | F `legacy-asset`; older `legacy-url` remains valid on 26; legacy compatibility contract | Serve disposable profile through data asset, update/remove; validate URL path on retained 26 device. |
+| Enrollment, lockdown, setup and push status | Typed `mdm.enrollment-type`, `security.lockdown-mode`, `mdm.is-awaiting-configuration`, `mdm.push-magic` and `mdm.push-token`; generic status persistence and subscription filtering | Capture fresh values and compare actual state; absence is not false. Retain push credentials privately. |
+| Profile assets | F `legacy-asset` and `legacy-interactive-asset`; older `legacy-url` remains valid on 26; legacy compatibility contract | Preserve noninteractive apply/remove results; separately observe user presentation, acceptance/decline, update and removal for interactive profiles. |
 | Liquid Glass setup | DEP `SkipSetupItems` validation uses generated setup enums | ADE test at Setup Assistant; cannot prove by upgrading an already configured Mac. |
 | ADE reliability | Existing ADE/enrollment and retry flows | Separate erased/spare ADE Mac; preserve enrollment and retry evidence. |
 | Accessibility permission behavior | Existing PPPC schema retained, inspector reports deprecation | User notification and ability to revoke require UI observation; do not read the TCC database. |
+| Lock-screen network controls | `LoginWindow.ForceWifiConfigurationOnLockScreen` and `ForceCaptivePortalConnectionFromLockScreen`; source and inherited-boundary contract | Verify Wi-Fi and captive-portal UI separately on a suitable test Mac. |
 | Legacy update retirement | Command/query/profile availability plus dispatch recheck; software-update and mixed-fleet contracts | Retained 26 device accepts supported legacy management; 27 uses DDM. No legacy commands dispatched to 27. |
 | Menu-bar behavior, App Attest, privacy CLI/database changes, Rosetta, SMB and shared-login fixes | OS/app behavior; no new server API implied | Optional host/app smoke checks. Rosetta may require operator installation; no reinstall action is part of this prep. |
+
+The source inventory also explicitly retains deprecated content-cache, DNS proxy,
+DNS settings, relay, password-policy and application-access profiles. PPPC Camera,
+Microphone, Accessibility, SpeechRecognition and BluetoothAlways deprecations are
+checked separately from removals. macOS 27 removes the legacy SoftwareUpdate
+profile, update commands and query values, plus the application-access deferral
+and Rapid Security Response fields recorded in the inventory. LiquidGlass is a
+new setup skip key; OSShowcase is removed. Deprecation must not withhold a payload
+as though Apple had removed it.
+
+Fresh `content-cache.info`, `content-cache.parents`, `content-cache.peers` and
+`content-cache.status` observations are distinct from the native report receiver.
+Enhanced diagnostics similarly requires the AppleCare token, status and timestamp
+items to be observed separately from successful command encoding.
 
 ## Software update coverage
 

@@ -104,8 +104,11 @@ func (e *emitter) conformanceFile() []byte {
 	)
 	if e.pkg.Family == FamilyCommands {
 		b.WriteString(
-			"\t\tif r := en.NewResponse(); r == nil || r.ResponseRequestTypeName() != en.ID {\n\t\t\tt.Errorf(\"response for %q is inconsistent\", name)\n\t\t}\n",
+			"\t\tif r := en.NewResponse(); r == nil || r.ResponseRequestTypeName() != en.ID || r.SchemaPath() != en.Schema {\n\t\t\tt.Errorf(\"response for %q is inconsistent\", name)\n\t\t}\n",
 		)
+	}
+	if e.pkg.Family == FamilyDDM {
+		b.WriteString("\t\tkinded, ok := v.(interface{ DeclarationKind() ddm.Kind })\n\t\tif !ok || kinded.DeclarationKind() != en.Kind {\n\t\t\tt.Errorf(\"declaration kind for %q is inconsistent\", name)\n\t\t}\n")
 	}
 	b.WriteString("\t}\n")
 	fmt.Fprintf(

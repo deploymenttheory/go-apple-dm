@@ -1,0 +1,8 @@
+{
+  "Type": "com.apple.configuration.legacy.interactive",
+  "Identifier": "com.deploymenttheory.acceptance.legacy-interactive-asset",
+  "Payload": {
+    "VisibleName": "Disposable acceptance profile",
+    "ProfileAssetReference": "com.deploymenttheory.acceptance.data"
+  }
+}

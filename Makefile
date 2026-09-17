@@ -74,7 +74,7 @@ test:
 
 ## test-schema-contracts: require passing evidence for every published OS 27 contract
 test-schema-contracts:
-	python3 .github/scripts/schema_monitor.py contracts --output $(COVER_DIR)/schema-contracts
+	python3 .github/scripts/schema_monitor.py contracts --output $(COVER_DIR)/schema-contracts --coverage-dir $(COVER_DIR)/unit
 
 .PHONY: test-schema-contracts
 

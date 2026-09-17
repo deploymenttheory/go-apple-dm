@@ -40,8 +40,23 @@ func TestSeedOS27FeatureFixtures(t *testing.T) {
 	if err := json.Unmarshal(data, &manifest); err != nil {
 		t.Fatal(err)
 	}
-	if len(manifest.Features) < 25 {
-		t.Fatal("feature inventory unexpectedly shrank")
+	coverage, err := root.ReadFile("macos27-coverage.json")
+	if err != nil {
+		t.Fatal(err)
+	}
+	var reviewed struct {
+		Fixtures []string `json:"fixtures"`
+	}
+	if err := json.Unmarshal(coverage, &reviewed); err != nil {
+		t.Fatal(err)
+	}
+	var fixtureIDs []string
+	for _, f := range manifest.Features {
+		fixtureIDs = append(fixtureIDs, f.ID)
+	}
+	slices.Sort(fixtureIDs)
+	if !slices.Equal(fixtureIDs, reviewed.Fixtures) {
+		t.Fatal("fixture IDs differ from the reviewed coverage inventory", fixtureIDs)
 	}
 	for _, feature := range manifest.Features {
 		t.Run(feature.ID, func(t *testing.T) {
@@ -228,6 +243,9 @@ func TestSeedOS27FeatureContextWithholding(t *testing.T) {
 		{"website privacy requires Mac user scope", "website-privacy", support.Target{OS: support.MacOS, Channel: support.ChannelDevice, Supervised: true}},
 		{"binary controls require Mac system scope", "binary-controls", support.Target{OS: support.MacOS, Channel: support.ChannelUser, Supervised: true}},
 		{"Siri requires supervision", "siri", support.Target{OS: support.MacOS, Channel: support.ChannelDevice}},
+		{"accessibility requires supervision", "accessibility", support.Target{OS: support.MacOS, Channel: support.ChannelDevice}},
+		{"web content filter requires Mac system scope", "webcontent-filter", support.Target{OS: support.MacOS, Channel: support.ChannelUser, Supervised: true}},
+		{"web content filter requires supervision for MDM", "webcontent-filter", support.Target{OS: support.MacOS, Channel: support.ChannelDevice}},
 		{"Siri AI unavailable on Shared iPad", "siri", support.Target{OS: support.IOS, Channel: support.ChannelUser, Supervised: true, SharedIPad: true}},
 	} {
 		t.Run(tc.name, func(t *testing.T) {

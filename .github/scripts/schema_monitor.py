@@ -34,6 +34,7 @@ PRESENTATION_VERSION = 2
 # to compile against the stable pin; seed assessments must prove every contract
 # actually ran, rather than succeeding with missing or skipped tests.
 OS27_TESTS = {
+    LIBRARY + "/internal/schemagen/TestSeedOS27CoverageInventory",
     LIBRARY + "/devicemanagement/mdmprotocol/ddm/TestSeedOS27FeatureDelivery",
     LIBRARY + "/devicemanagement/mdmprotocol/ddm/TestSeedOS27FeatureFixtures",
     LIBRARY + "/server/service/TestSeedOS27InstallProfileCompatibility",
@@ -67,14 +68,21 @@ def missing_test_evidence(output, required):
     return sorted(required - passed)
 
 
-def verify_contracts(repo, directory):
+def verify_contracts(repo, directory, coverage_directory=None):
     """Run the published OS 27 contracts without accepting missing Go tests."""
     directory.mkdir(parents=True, exist_ok=True)
     result = {"stages": {}}
     tags, required = assessment_test_contract({}, adopted_os27=True)
     packages = sorted({"./" + test.removeprefix(LIBRARY + "/").rsplit("/", 1)[0] for test in required})
-    ok, output = command_stage(result, "tests", ["go", "test", "-race", "-count=1", *tags,
-                              "-run", "^TestSeedOS27", "-json", *packages], repo, directory)
+    command = ["go", "test", "-race", "-count=1", *tags, "-run", "^TestSeedOS27", "-json"]
+    if coverage_directory is not None:
+        coverage_directory = coverage_directory.resolve()
+        coverage_directory.mkdir(parents=True, exist_ok=True)
+        command += ["-cover", f"-coverpkg={LIBRARY}/...,{LIBRARY}/server/..."]
+    command += packages
+    if coverage_directory is not None:
+        command += ["-args", f"-test.gocoverdir={coverage_directory}"]
+    ok, output = command_stage(result, "tests", command, repo, directory)
     missing = missing_test_evidence(output, required)
     write_json(directory / "result.json", {"passed": ok and not missing,
                "requiredTests": sorted(required), "missingTests": missing})
@@ -321,7 +329,7 @@ def assess_generated(result, base_args, baseline, old_api, tool, root, directory
             shutil.copyfile(probe, source)
             command_stage(result, "boundaries", ["go", "run", source, directory / "boundaries.json"], root, directory, env)
         tags, required = assessment_test_contract(result["branch"], result.get("adoptedOS27", False))
-        tests_ok, output = command_stage(result, "tests", ["go", "test", "-race", "-count=1", *tags, "./devicemanagement/schema/...", "./devicemanagement/mdmprotocol/...", "./devicemanagement/contentcache", "./server/service", "./server/ddmadapter/...", "-json"], root, directory, env)
+        tests_ok, output = command_stage(result, "tests", ["go", "test", "-race", "-count=1", *tags, "./internal/schemagen", "./devicemanagement/schema/...", "./devicemanagement/mdmprotocol/...", "./devicemanagement/contentcache", "./server/service", "./server/ddmadapter/...", "-json"], root, directory, env)
         missing = missing_test_evidence(output, required)
         result["stages"]["tests"]["requiredTests"] = sorted(required)
         result["stages"]["tests"]["missingTests"] = missing
@@ -823,6 +831,7 @@ def main():
     parser.add_argument("action", choices=("discover", "assess", "publish", "contracts"))
     parser.add_argument("--repo", type=Path, default=ROOT)
     parser.add_argument("--output", type=Path, required=True)
+    parser.add_argument("--coverage-dir", type=Path, help="Append contract coverage to this Go coverage directory")
     parser.add_argument("--manifest", type=Path)
     parser.add_argument("--key")
     parser.add_argument("--upstream", default=UPSTREAM)
@@ -831,7 +840,7 @@ def main():
     parser.add_argument("--run-url", default="")
     args = parser.parse_args()
     if args.action == "contracts":
-        return 0 if verify_contracts(args.repo.resolve(), args.output.resolve()) else 1
+        return 0 if verify_contracts(args.repo.resolve(), args.output.resolve(), args.coverage_dir) else 1
     if args.action == "discover":
         manifest = discover(args.repo, args.output, args.upstream)
         if os.environ.get("GITHUB_OUTPUT"):

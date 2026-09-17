@@ -407,6 +407,73 @@
       ],
       "source": "https://support.apple.com/en-gb/guide/deployment/depd30715cbb/web",
       "live": "pending"
+    },
+    {
+      "id": "accessibility",
+      "file": "declarations/accessibility.json",
+      "platforms": [
+        "macOS",
+        "iOS",
+        "visionOS"
+      ],
+      "versions": [
+        "27.0"
+      ],
+      "source": "https://github.com/apple/device-management/tree/b0180185a5e4077070710033341b71d0cbe1a18a/declarative/declarations/configurations",
+      "live": "pending"
+    },
+    {
+      "id": "webcontent-filter",
+      "file": "declarations/webcontent-filter.json",
+      "platforms": [
+        "macOS"
+      ],
+      "versions": [
+        "27.0"
+      ],
+      "source": "https://github.com/apple/device-management/tree/b0180185a5e4077070710033341b71d0cbe1a18a/declarative/declarations/configurations",
+      "live": "pending"
+    },
+    {
+      "id": "siri-sensitive-content",
+      "file": "declarations/siri-sensitive-content.json",
+      "platforms": [
+        "macOS",
+        "iOS",
+        "visionOS"
+      ],
+      "versions": [
+        "27.0"
+      ],
+      "source": "https://github.com/apple/device-management/tree/b0180185a5e4077070710033341b71d0cbe1a18a/declarative/declarations/configurations",
+      "live": "pending"
+    },
+    {
+      "id": "legacy-interactive-asset",
+      "file": "declarations/legacy-interactive-asset.json",
+      "platforms": [
+        "macOS",
+        "iOS",
+        "tvOS",
+        "visionOS"
+      ],
+      "versions": [
+        "27.0"
+      ],
+      "source": "https://github.com/apple/device-management/tree/b0180185a5e4077070710033341b71d0cbe1a18a/declarative/declarations/configurations",
+      "live": "pending"
+    },
+    {
+      "id": "managedapp-legacy-config",
+      "file": "declarations/managedapp-legacy-config.json",
+      "platforms": [
+        "macOS"
+      ],
+      "versions": [
+        "27.0"
+      ],
+      "source": "https://github.com/apple/device-management/tree/b0180185a5e4077070710033341b71d0cbe1a18a/declarative/declarations/configurations",
+      "live": "pending"
     }
   ]
 }

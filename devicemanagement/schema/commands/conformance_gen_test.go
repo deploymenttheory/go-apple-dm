@@ -3378,7 +3378,7 @@ func TestConformanceRegistry(t *testing.T) {
 		if !found {
 			t.Errorf("ByID(%q) does not contain %s", en.ID, name)
 		}
-		if r := en.NewResponse(); r == nil || r.ResponseRequestTypeName() != en.ID {
+		if r := en.NewResponse(); r == nil || r.ResponseRequestTypeName() != en.ID || r.SchemaPath() != en.Schema {
 			t.Errorf("response for %q is inconsistent", name)
 		}
 	}

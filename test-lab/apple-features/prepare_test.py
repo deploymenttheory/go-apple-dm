@@ -24,6 +24,17 @@ class PrepareTests(unittest.TestCase):
         self.assertEqual(prepared[0]["Payload"], payload)
         self.assertNotEqual(prepare.bundle(["legacy-url"])[0]["Payload"], payload)
 
+    def test_additional_macos27_bundles_include_shared_profile_asset(self):
+        selected = ["accessibility", "webcontent-filter", "siri-sensitive-content",
+                    "legacy-interactive-asset", "managedapp-legacy-config"]
+        items = prepare.bundle(selected)
+        ids = [item["Identifier"] for item in items]
+        self.assertEqual(ids.count("com.deploymenttheory.acceptance.data"), 1)
+        self.assertEqual(len(items[-1]["Payload"]["StandardConfigurations"]), 5)
+        for item in items:
+            for ref in prepare.references(item["Payload"]):
+                self.assertIn(ref, ids)
+
     def test_unknown_and_asset_only(self):
         for features in [["not-a-feature"], ["acme"]]:
             with self.assertRaises(ValueError):

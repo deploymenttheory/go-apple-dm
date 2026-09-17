@@ -14,6 +14,9 @@ results and repeat only unresolved variants or cases affected by code changes.
 The user authorized a disposable macOS 27 VM built with Guestweave, with its
 window visible during testing, and suitable hardware-dependent checks on the host.
 Use the guest for binary controls and destructive enrollment/update cases.
+The guest disk is limited to **40 GB**, as requested. Guestweave changes needed
+for this lab belong in that project's PRs; the telemetry startup correction is
+in draft [Guestweave PR #181](https://github.com/deploymenttheory/guestweave-cli-macos/pull/181).
 When a test needs the user's observation, wait for the answer before continuing
 or cleaning up. Silence and the withdrawn `q` replies are not test results.
 
@@ -56,8 +59,19 @@ hashes without collecting serial numbers, credentials or profile contents.
 - Opt-in HTTPS cache-report receiver, device-bound hashed credentials, rotation,
   revocation, 30-day default retention, pagination and common transactional storage
   across memory, SQLite, PostgreSQL and MySQL.
-- Version/platform fixtures, preparation helper and twelve required OS 27 test
+- Version/platform fixtures, preparation helper and thirteen required OS 27 test
   contracts. See the coverage matrix for feature boundaries and external needs.
+
+The [reviewed inventory](../../test-lab/apple-features/macos27-coverage.json)
+enumerates 50 source cases, 73 explicit boundaries, 32 named fixtures and reviewed
+SSO value floors. Its required contract covers inherited metadata as well as
+missing cases. New Accessibility, web-content-filter, sensitive-content Siri,
+interactive-profile asset and legacy ManagedApp config fixtures are preparation
+only until native results are recorded. The existing `website-privacy` fixture
+already uses `SafariSettings.Privacy`; preserve its conclusive live observations.
+`make test-schema-contracts` requires a passing execution of each named contract
+and appends its coverage to `cover/unit`, so the ordinary coverage gate includes
+the tagged OS 27 tests. Missing or skipped tests still fail the contract gate.
 
 The primary schema pin is `b0180185a5e4077070710033341b71d0cbe1a18a` and history is
 `67045e2fa06f528b196c01edee6a8bf88b844beb`. `GENERATED_FROM.json` records both.

@@ -3022,6 +3022,10 @@ func TestConformanceRegistry(t *testing.T) {
 		if !found {
 			t.Errorf("ByID(%q) does not contain %s", en.ID, name)
 		}
+		kinded, ok := v.(interface{ DeclarationKind() ddm.Kind })
+		if !ok || kinded.DeclarationKind() != en.Kind {
+			t.Errorf("declaration kind for %q is inconsistent", name)
+		}
 	}
 	if ids := ddm.IDs(); len(ids) == 0 || len(ids) > len(ddm.Registry) {
 		t.Errorf("IDs() = %d", len(ids))
