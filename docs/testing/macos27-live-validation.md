@@ -190,7 +190,8 @@ a particular prompt or that policy removal itself revoked the grants.
 
 | Remaining case or variant | Limitation |
 |---|---|
-| App and website consent | App grants and temporary Safari grants confirmed. Combined-prompt behavior, UI revocation and website origin isolation remain unconfirmed; app permission reset was performed separately as cleanup |
+| App consent | Repeat confirmed separate standard prompts, grants and camera revocation with microphone retained. Combined organization prompt remains unproven; the cause of renewed prompts after removal is unresolved |
+| Website consent | Repeat confirmed the organization prompt, Allow, grants and camera revocation. Origin isolation remains inconclusive because the comparison origin had prior consent history; Not Now and wildcard behavior remain untested |
 | Visual Intelligence, Calendar natural-language editing and effective update controls | Protocol results retained; requested behavior not confirmed by readable preferences |
 | Encrypted DNS | Local endpoint connection failure retained; needs a compatible native DoH endpoint before behavior acceptance |
 | ManagedApp SDK and package takeover/install/removal | Current enrollment rights 19 exclude app-management right 4096; needs separately reviewed enrollment rights and matching disposable app/package fixtures. The ManagedApp SDK is present |
@@ -202,5 +203,33 @@ a particular prompt or that policy removal itself revoked the grants.
 
 Automatic OS installation, enforced deadlines, ADE/Setup Assistant, other Apple
 platforms and additional physical macOS 26 testing are outside this pass. The
-standalone server publication dependency remains as documented in
-[release sequencing](macos27-prep-validation.md#release-sequencing).
+original standalone dependency limitation was resolved in the repository follow-up below.
+
+
+## Repository follow-up — 17 September 2026
+
+On `feat/macos27-compatibility-osversion` (draft PR #64), the old container split
+test's independent stores were replaced with two shipped roles sharing one
+persistent database and compatible encryption keys. The PostgreSQL matrix now
+uses PostgreSQL for both roles instead of a separate SQLite DDM container. The
+application split test also uses shared SQL and normal enrollment; its manual
+inventory import was removed. Assignments follow enrollment, whose lifecycle
+correctly clears prior DDM state.
+
+Both backend split regressions passed with `-race -count=1`: tracked inventory
+is visible across roles, missing inventory and macOS 26 withhold the macOS 27
+fixture, macOS 27 permits it, loss of supervision withholds it, and restored
+supervision permits it again. Both roles retain state across restart. The test
+refreshes Docker's ephemeral published ports after restart. An earlier PostgreSQL
+fixture process failure required recovery; it was not counted as a pass.
+
+The complete SQLite and PostgreSQL E2E suites passed, as did shared acceptance,
+affected application/adapter/synchronization unit suites, repository verification
+(including 51 schema-monitor tests), server lint and tagged-test compilation.
+Standalone dependency resolution, public-package builds, all-server builds and
+both CLI installations passed with `GOWORK=off`, no replacements, and the exact
+declared library version `v0.7.4-0.20260917043416-c81508cf336c`.
+
+The user has now authorized continuation beyond the original physical pass,
+including a visible Guestweave macOS 27 VM. Outstanding live cases remain pending;
+the repository checks above do not establish native feature behavior.

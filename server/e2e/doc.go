@@ -9,7 +9,8 @@
 // in-memory MDM storage; SQLite is the default. Scenarios exercise signed
 // requests, enrollment, commands, push fakes, declarative management,
 // administration and optional security controls. The split-deployment scenario
-// can use a ddm container built from this repository.
+// uses both role containers built from this repository with one shared database
+// selected by E2E_STORE. The private hop does not copy inventory.
 //
 // Run make test-e2e. External database and container cases require their
 // documented environment settings and can skip when absent. Simulator-based

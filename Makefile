@@ -117,11 +117,11 @@ test-quickstart:
 
 .PHONY: test-quickstart
 
-## testdb-ddm-up: build the image and run the ddm role in Docker for TestE2E_DDMSplitDeployment; prints the exports
+## testdb-ddm-up: build both split role containers sharing E2E_STORE for TestE2E_DDMSplitDeployment; prints exports
 testdb-ddm-up:
 	scripts/testdb.sh ddm-up
 
-## testdb-ddm-down: stop the ddm role container
+## testdb-ddm-down: remove the selected split containers and database
 testdb-ddm-down:
 	scripts/testdb.sh ddm-down
 

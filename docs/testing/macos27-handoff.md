@@ -1,22 +1,34 @@
-# macOS 26 preparation → macOS 27 handoff
+# macOS 27 validation handoff
 
-Prepared on 16 September 2026 on **macOS 26.6.2**, Darwin arm64, Go 1.27.1.
-The user will install macOS 27 and reboot. This work does not initiate an OS
-installation, reboot, enrollment, profile installation or live policy assignment.
+Current host: **macOS 27.0 (26A428)**, Apple silicon, Go 1.27.1.
+Continue on `feat/macos27-compatibility-osversion`, draft
+[PR #64](https://github.com/deploymenttheory/go-apple-dm/pull/64).
+The original preparation was completed on macOS 26.6.2 on 16 September 2026;
+its evidence is retained in [preparation validation](macos27-prep-validation.md).
 
-## Start here after reboot
+## Current continuation
 
-Read this document and [Apple feature coverage](../operations/apple-os27-coverage.md).
-Continue in the same checkout. Use its workspace builds: standalone server module
-installation remains subject to the [release dependency sequence](macos27-prep-validation.md#release-sequencing). Preserve the working tree: the prepared changes
-are not a published release or a committed PR. Inspect `git status --short` before
-editing. No private lab material should be committed.
+Read the [live validation report](macos27-live-validation.md) and
+[Apple feature coverage](../operations/apple-os27-coverage.md). Preserve conclusive
+results and repeat only unresolved variants or cases affected by code changes.
+The user authorized a disposable macOS 27 VM built with Guestweave, with its
+window visible during testing, and suitable hardware-dependent checks on the host.
+Use the guest for binary controls and destructive enrollment/update cases.
+When a test needs the user's observation, wait for the answer before continuing
+or cleaning up. Silence and the withdrawn `q` replies are not test results.
 
-The next agent's task is to run the **physical macOS 27 acceptance** below, fix any
-observed protocol discrepancies, and record evidence. Automated protocol support
-is prepared; no fixture's `live: pending` is a claim of OS acceptance. Keep macOS
-26 regression coverage active throughout. Do not remove old schema APIs or the
-historical schema pin merely because the host now runs 27.
+The split-deployment regression now runs both shipped server roles against one
+SQLite or PostgreSQL database and a shared keyring. Inventory is populated through
+MDM responses; no inventory is copied to a second DDM database. Both backend
+regressions verify version/capability gating and restart persistence. The server
+module now depends on published library revision `c81508cf336c`, containing the
+shared `osversion` API; standalone dependency resolution and installation pass.
+These are automated results, not new native macOS acceptance.
+
+Inspect `git status --short` before editing and keep private lab material ignored.
+Retain macOS 26 automated coverage and both schema pins. Use `osversion` directly;
+the old `support.Version` wrappers have been removed intentionally.
+No fixture's `live: pending` is a claim of native acceptance.
 
 ```sh
 sw_vers

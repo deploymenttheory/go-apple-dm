@@ -5149,7 +5149,7 @@ svg[data-purpose-filter] g[data-purpose-highlight] > path { stroke-width: 2.4; }
 <button type="button" data-purpose-filter-button="neutral" aria-pressed="false" style="--entry:var(--purpose-neutral)"><span class="purpose-key-dot" aria-hidden="true"></span>Actors, structure, neutral states</button>
     </div>
     <div class="purpose-key-detail" aria-live="polite" aria-atomic="true"><div><strong id="purpose-key-selection"></strong><span id="purpose-key-counts"></span></div><p id="purpose-key-description"></p></div>
-    <script id="purpose-key-data" type="application/json">{"entries":[{"key":"service","label":"Services and processing","meaning":"Services and processing steps that perform the work shown in the diagram.","nodes":["Device-facing MDM role","In-process adapter","Declarative engine"],"connections":["otherwise","Handle(endpoint)"]},{"key":"transport","label":"Communication and transport","meaning":"Communication between components, including endpoints, protocol exchanges, and notifications.","nodes":["Forwarding client","Forwarding endpoint"],"connections":["DeclarativeManagement","DM_DDM_URL set","body unchanged","Handle(endpoint)"]},{"key":"storage","label":"Storage and persistence","meaning":"Records and persistence: where the system stores or retrieves information.","nodes":["Declarative store","Shared replay store"],"connections":["Persist declarative state","Claim nonce"]},{"key":"authentication","label":"Authentication and identity","meaning":"Checks that establish or verify an identity or credential.","nodes":["Signed internal HTTPS"],"connections":["verify, then decode"]},{"key":"neutral","label":"Actors, structure, neutral states","meaning":"Actors, structural boundaries, and states that do not imply success, warning, or failure.","nodes":["Device"],"connections":[]}],"nodes":9,"connections":9}</script>
+    <script id="purpose-key-data" type="application/json">{"entries":[{"key":"service","label":"Services and processing","meaning":"Services and processing steps that perform the work shown in the diagram.","nodes":["Device-facing MDM role","In-process adapter","Declarative engine"],"connections":["otherwise","Handle(endpoint)"]},{"key":"transport","label":"Communication and transport","meaning":"Communication between components, including endpoints, protocol exchanges, and notifications.","nodes":["Forwarding client","Forwarding endpoint"],"connections":["DeclarativeManagement","DM_DDM_URL set","body unchanged","Handle(endpoint)"]},{"key":"storage","label":"Storage and persistence","meaning":"Records and persistence: where the system stores or retrieves information.","nodes":["Declarative tables","Shared replay store"],"connections":["Persist declarative state","Claim nonce"]},{"key":"authentication","label":"Authentication and identity","meaning":"Checks that establish or verify an identity or credential.","nodes":["Signed internal HTTPS"],"connections":["verify, then decode"]},{"key":"neutral","label":"Actors, structure, neutral states","meaning":"Actors, structural boundaries, and states that do not imply success, warning, or failure.","nodes":["Device"],"connections":[]}],"nodes":9,"connections":9}</script>
   </section>
     <div class="diagram-container" data-detail-level="read"
          data-preset-badge-editorial-plate="ARCHIFY / PLATE 04">
@@ -5283,16 +5283,16 @@ svg[data-purpose-filter] g[data-purpose-highlight] > path { stroke-width: 2.4; }
         <text data-detail="context" x="1025" y="309" class="t-muted" font-size="11" text-anchor="middle">Handle forwarded operation</text>
         </g>
 
-        <g id="node-ddmstore" data-node-id="ddmstore" data-node-label="Declarative store" tabindex="0" role="button" aria-label="Focus Declarative store, Snapshots and device status, Architecture component" aria-pressed="false" data-node-kind="database" data-node-sublabel="Snapshots and device status" data-node-context="Architecture component" data-purpose="storage">
-          <title>Declarative store · Snapshots and device status · Architecture component</title>
+        <g id="node-ddmstore" data-node-id="ddmstore" data-node-label="Declarative tables" tabindex="0" role="button" aria-label="Focus Declarative tables, In shared application database, Architecture component" aria-pressed="false" data-node-kind="database" data-node-sublabel="In shared application database" data-node-context="Architecture component" data-purpose="storage">
+          <title>Declarative tables · In shared application database · Architecture component</title>
           <rect x="915" y="410" width="220" height="70" rx="6" class="c-mask"/>
           <rect x="915" y="410" width="220" height="70" rx="6" class="c-database" stroke-width="1.5"/>
           <g aria-hidden="true" data-semantic-sigil="database" class="semantic-sigil s-database" transform="translate(921 416) scale(0.6875)">
             <ellipse cx="8" cy="4" rx="5" ry="2"/>
             <path d="M3 4v8c0 1.1 2.2 2 5 2s5-.9 5-2V4M3 8c0 1.1 2.2 2 5 2s5-.9 5-2"/>
           </g>
-          <text data-node-label="" data-detail-anchor="" x="1025" y="443" class="t-primary" font-size="14" font-weight="600" text-anchor="middle">Declarative store</text>
-        <text data-detail="context" x="1025" y="459" class="t-muted" font-size="11" text-anchor="middle">Snapshots and device status</text>
+          <text data-node-label="" data-detail-anchor="" x="1025" y="443" class="t-primary" font-size="14" font-weight="600" text-anchor="middle">Declarative tables</text>
+        <text data-detail="context" x="1025" y="459" class="t-muted" font-size="11" text-anchor="middle">In shared application database</text>
         </g>
 
         <g id="node-replay" data-node-id="replay" data-node-label="Shared replay store" tabindex="0" role="button" aria-label="Focus Shared replay store, Atomic one-use nonce claims, Architecture component" aria-pressed="false" data-node-kind="database" data-node-sublabel="Atomic one-use nonce claims" data-node-context="Architecture component" data-purpose="storage">
@@ -5553,6 +5553,7 @@ svg[data-purpose-filter] g[data-purpose-highlight] > path { stroke-width: 2.4; }
         <ul>
           <li>&bull; With DM_DDM_URL configured, the MDM role forwards declarative requests to the DDM role. Otherwise it calls the in-process adapter.</li>
           <li>&bull; The device continues to use /mdm; the internal forwarding endpoint is not a device enrollment URL.</li>
+          <li>&bull; Both roles share one persistent database and compatible storage keyrings. Enrollment, inventory, declarations and replay state use that database; the hop does not copy inventory.</li>
         </ul>
       </div>
 

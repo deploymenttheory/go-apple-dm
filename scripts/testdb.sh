@@ -1,39 +1,19 @@
 #!/usr/bin/env bash
 # testdb.sh: PostgreSQL and MySQL in Docker for the storage and e2e suites,
-# and the reference server in the ddm role for the split-deployment e2e.
+# and both reference-server roles sharing a database for split-deployment e2e.
 #
-# Usage: scripts/testdb.sh up|down|env|ddm-up|ddm-down|ddm-env
+# Usage: scripts/testdb.sh up|down|env|ddm-up|ddm-down|ddm-env|ddm-logs
 #   up        start (or reuse) both database containers, wait for readiness, print exports
 #   down      remove both database containers
 #   env       print the database export lines matching .github/workflows/go-test.yml
-#   ddm-up    build go-apple-dm:test from this repository, run it as the ddm role, print exports
-#   ddm-down  remove the ddm container
-#   ddm-env   print the ddm export lines (TEST_DDM_URL and the shared keys)
+#   ddm-up    build go-apple-dm:test from this repository, run both roles on E2E_STORE, print exports
+#   ddm-down  remove this split fixture
+#   ddm-env   print the split fixture environment
+#   ddm-logs  print logs for the selected split fixture
 set -euo pipefail
 
 PG=dm-test-postgres
 MY=dm-test-mysql
-DDM=dm-test-ddm
-DDM_IMAGE=go-apple-dm:test
-DDM_PORT="${TEST_DDM_PORT:-8090}"
-# Shared secrets for the test hop between the roles; CI sets the same values.
-DDM_SEND_KEY="${TEST_DDM_SEND_KEY:-mdm-to-ddm-test-key-32-bytes-long!!}"
-DDM_RECV_KEY="${TEST_DDM_RECV_KEY:-ddm-to-mdm-test-key-32-bytes-long!!}"
-DDM_TLS_DIR="${TEST_DDM_TLS_DIR:-/tmp/go-apple-dm-test-ddm-tls}"
-DDM_ADMIN_TOKEN="${TEST_DDM_ADMIN_TOKEN:-admin-test-token}"
-# The container writes a persistent sqlite store, which seals its secret columns
-# and so needs a key. Test material, never a deployment value.
-DDM_STORAGE_KEY_NAME="${TEST_DDM_STORAGE_KEY_NAME:-e2e}"
-DDM_STORAGE_KEY="${TEST_DDM_STORAGE_KEY:-e2e-storage-key-of-sufficient-length}"
-
-print_ddm_env() {
-  echo "export TEST_DDM_URL='https://127.0.0.1:${DDM_PORT}'"
-  echo "export TEST_DDM_CA_FILE='${DDM_TLS_DIR}/mount/server.crt'"
-  echo "export TEST_DDM_SEND_KEY='${DDM_SEND_KEY}'"
-  echo "export TEST_DDM_RECV_KEY='${DDM_RECV_KEY}'"
-  echo "export TEST_DDM_ADMIN_TOKEN='${DDM_ADMIN_TOKEN}'"
-}
-
 print_env() {
   echo "export TEST_POSTGRES_DSN='postgres://dm:dm@127.0.0.1:5432/dm?sslmode=disable'"
   echo "export TEST_MYSQL_DSN='dm:dm@tcp(127.0.0.1:3306)/dm?parseTime=true&multiStatements=true'"
@@ -85,36 +65,8 @@ case "${1:-}" in
   env)
     print_env
     ;;
-  ddm-up)
-    mkdir -p "$DDM_TLS_DIR/mount"
-    chmod 700 "$DDM_TLS_DIR"
-    chmod 755 "$DDM_TLS_DIR/mount"
-    openssl req -x509 -newkey rsa:2048 -nodes -days 2 \
-      -subj /CN=localhost -addext 'subjectAltName=DNS:localhost,IP:127.0.0.1' \
-      -keyout "$DDM_TLS_DIR/mount/server.key" -out "$DDM_TLS_DIR/mount/server.crt" >/dev/null 2>&1
-    # The non-root container reads this mount; its host parent remains private.
-    chmod 644 "$DDM_TLS_DIR/mount/server.key" "$DDM_TLS_DIR/mount/server.crt"
-    docker build -t "$DDM_IMAGE" "$(cd "$(dirname "$0")/.." && pwd)" >&2
-    docker rm -f "$DDM" >/dev/null 2>&1 || true
-    # The mdm role signs with SEND and verifies with RECV, so the ddm role receives
-    # with the mdm role's SEND key and signs with its RECV key.
-    docker run -d --name "$DDM" -p "127.0.0.1:${DDM_PORT}:8080" \
-      -v "$DDM_TLS_DIR/mount:/test-tls:ro" \
-      -e DM_TLS_CERT_FILE=/test-tls/server.crt -e DM_TLS_KEY_FILE=/test-tls/server.key \
-      -e DM_ROLE=ddm -e DM_LISTEN=:8080 -e DM_STORAGE=sqlite -e DM_DSN=/data/ddm.db \
-      -e DM_DDM_RECV_KEY="$DDM_SEND_KEY" -e DM_DDM_SEND_KEY="$DDM_RECV_KEY" \
-      -e DM_STORAGE_KEYS="$DDM_STORAGE_KEY_NAME" \
-      -e "DM_STORAGE_KEY_$(printf '%s' "$DDM_STORAGE_KEY_NAME" | tr '[:lower:].-' '[:upper:]__')=$DDM_STORAGE_KEY" \
-      -e DM_ADMIN_TOKEN="$DDM_ADMIN_TOKEN" "$DDM_IMAGE" >/dev/null
-    wait_for "$DDM" curl -fsS --cacert "$DDM_TLS_DIR/mount/server.crt" "https://127.0.0.1:${DDM_PORT}/healthz"
-    wait_for "$DDM" sh -c 'test "$(docker inspect --format="{{.State.Health.Status}}" "$1")" = healthy' sh "$DDM"
-    print_ddm_env
-    ;;
-  ddm-down)
-    docker rm -f "$DDM" >/dev/null 2>&1 || true
-    ;;
-  ddm-env)
-    print_ddm_env
+  ddm-up|ddm-down|ddm-env|ddm-logs)
+    bash "$(dirname "$0")/split-test.sh" "${1#ddm-}"
     ;;
   *)
     echo "usage: $0 up|down|env|ddm-up|ddm-down|ddm-env" >&2

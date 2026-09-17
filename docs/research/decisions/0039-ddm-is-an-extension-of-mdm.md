@@ -16,7 +16,13 @@ This dependency direction follows the shared protocol transport and avoids a ser
 
 ## Constraints
 
-Roles describe deployment topology, not distinct Apple enrollment protocols. Split-process cleanup and state updates are not a distributed transaction. Administrative route availability follows component ownership.
+Roles describe deployment topology, not distinct Apple enrollment protocols. Both
+reference-server roles use one persistent database and compatible storage keyrings.
+Storage interfaces and tables retain their separate responsibilities, while
+enrollment and inventory have one authoritative record. The DDM SQL store wraps
+the application database; it does not open another database. The private forwarding
+hop does not synchronize inventory. Integration tests must use this same composition
+and populate inventory through enrollment and tracked command responses. Split-process cleanup and state updates are not a distributed transaction. Administrative route availability follows component ownership.
 
 ## Verification
 
