@@ -17,9 +17,9 @@
 //
 // Edit the generator to change this package. schemagen verify fails when
 // regeneration would change it or drop an exported name
-// (devicemanagement/schema/EXPORTED_IDENTIFIERS.lock). Protocol semantics
-// that Apple documents only in prose live in the hand-written packages that
-// import this one.
+// (devicemanagement/schema/EXPORTED_IDENTIFIERS.lock). Reviewed availability
+// and field-relationship supplements documented in prose are emitted as
+// support metadata and typed validation by the generator.
 //
 // # References
 //

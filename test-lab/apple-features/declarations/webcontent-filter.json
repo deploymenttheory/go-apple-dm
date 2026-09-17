@@ -1,0 +1,15 @@
+{
+  "Type": "com.apple.configuration.webcontent-filter.plugin",
+  "Identifier": "com.deploymenttheory.acceptance.webcontent-filter",
+  "Payload": {
+    "VisibleName": "Disposable acceptance filter",
+    "PluginBundleID": "com.example.acceptance.filter",
+    "Filter": {
+      "Grade": "firewall",
+      "Sockets": {
+        "Enabled": true,
+        "ProviderComposedIdentifier": "com.example.acceptance.filter.data {anchor apple generic}"
+      }
+    }
+  }
+}

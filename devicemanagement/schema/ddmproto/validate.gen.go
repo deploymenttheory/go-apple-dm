@@ -17,6 +17,11 @@ func (x *DeclarationItemsResponse) Validate(t support.Target) error {
 }
 
 func (x *DeclarationItemsResponse) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
+	c.Support(p, true, supportTable["DeclarationItemsResponse"])
 	{
 		path := validation.Join(p, "Declarations")
 		present := true
@@ -37,6 +42,10 @@ func (x *DeclarationItemsResponse) validate(c *validation.Collector, p string) {
 }
 
 func (x *DeclarationItemsResponseDeclarations) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
 	{
 		path := validation.Join(p, "Activations")
 		present := len(x.Activations) > 0
@@ -80,6 +89,10 @@ func (x *DeclarationItemsResponseDeclarations) validate(c *validation.Collector,
 }
 
 func (x *DeclarationItemsResponseDeclarationItem) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
 	{
 		path := validation.Join(p, "Identifier")
 		present := x.Identifier != ""
@@ -105,6 +118,11 @@ func (x *StatusReport) Validate(t support.Target) error {
 }
 
 func (x *StatusReport) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
+	c.Support(p, true, supportTable["StatusReport"])
 	{
 		path := validation.Join(p, "StatusItems")
 		present := len(x.StatusItems) > 0
@@ -131,6 +149,10 @@ func (x *StatusReport) validate(c *validation.Collector, p string) {
 }
 
 func (x *StatusReportErrors) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
 	{
 		path := validation.Join(p, "StatusItem")
 		present := x.StatusItem != ""
@@ -150,6 +172,10 @@ func (x *StatusReportErrors) validate(c *validation.Collector, p string) {
 }
 
 func (x *StatusReportStatusReason) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
 	{
 		path := validation.Join(p, "Code")
 		present := x.Code != ""
@@ -180,6 +206,11 @@ func (x *TokensResponse) Validate(t support.Target) error {
 }
 
 func (x *TokensResponse) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
+	c.Support(p, true, supportTable["TokensResponse"])
 	{
 		path := validation.Join(p, "SyncTokens")
 		present := len(x.SyncTokens) > 0

@@ -1,0 +1,36 @@
+{
+  "Type": "com.apple.configuration.app.managed",
+  "Identifier": "com.deploymenttheory.acceptance.managedapp",
+  "Payload": {
+    "AppComposedIdentifier": "com.example.managedapp (EXAMPLE1234)",
+    "InstallBehavior": {
+      "Install": "Required"
+    },
+    "AppConfig": {
+      "DataAssetReference": "com.deploymenttheory.acceptance.data",
+      "Passwords": [
+        {
+          "Identifier": "test-password",
+          "AssetReference": "com.deploymenttheory.acceptance.password"
+        }
+      ],
+      "Identities": [
+        {
+          "Identifier": "test-identity",
+          "AssetReference": "com.deploymenttheory.acceptance.acme"
+        }
+      ],
+      "Certificates": [
+        {
+          "Identifier": "test-certificate",
+          "AssetReference": "com.deploymenttheory.acceptance.certificate"
+        }
+      ]
+    },
+    "ExtensionConfigs": {
+      "com.example.managedapp.extension (EXAMPLE1234)": {
+        "DataAssetReference": "com.deploymenttheory.acceptance.data"
+      }
+    }
+  }
+}

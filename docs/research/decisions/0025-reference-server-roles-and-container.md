@@ -31,7 +31,8 @@ A reusable application builder lets tests exercise the same composition as the b
 
 ## Constraints
 
-The reference server is an example composition, not a complete fleet management product. Persistent deployments require stable CA material, keyring configuration, trusted public TLS and appropriate admission policy. The split hop requires HTTPS and both HMAC keys. The container integration scenario skips when its explicit environment is absent. The image runs `dmserver -check auto`. It derives the scheme and port from
+The reference server is an example composition, not a complete fleet management product. Persistent deployments require stable CA material, keyring configuration, trusted public TLS and appropriate admission policy. Split roles require the same persistent database, database schema and compatible
+storage keyrings. The split hop requires HTTPS and both HMAC keys. The container integration scenario skips when its explicit environment is absent. The image runs `dmserver -check auto`. It derives the scheme and port from
 `DM_LISTEN` and `DM_TLS_CERT_FILE`/`DM_TLS_KEY_FILE`, using loopback for wildcard
 listeners. Automatic HTTPS probes pin the configured server certificate and use
 its SANs for normal hostname verification, so private and DNS-only certificates
@@ -48,7 +49,8 @@ does not replace the backup/restore workflow.
 
 ## Verification
 
-Application tests cover roles, invalid configuration, route families, readiness and worker lifecycle. `scripts/testdb.sh ddm-up` supplies the container used by the split-deployment end-to-end scenario.
+Application tests cover roles, invalid configuration, route families, readiness and worker lifecycle. `scripts/testdb.sh ddm-up` supplies both containers and their shared SQLite or PostgreSQL database for the
+split-deployment end-to-end scenario. E2E_STORE selects the backend for both roles.
 `make test-quickstart` checks bootstrap resume/failure behavior, onboarding
 examples and an isolated Compose lifecycle with verified HTTPS, stored-admin
 handoff and retained identities/configuration across restart.

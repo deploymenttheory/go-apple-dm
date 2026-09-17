@@ -73,8 +73,9 @@ unexpected blocked or unsupported results in its selected automated suite.
 
 The E2E database matrix retains SQLite and PostgreSQL. Contract suites exercise
 configured SQL backends; `make testdb-up` prints their settings. Process acceptance
-uses isolated SQLite databases and provisions the split roles itself. The older
-container-based split regression remains packaging coverage in the existing CI job.
+uses isolated SQLite databases and provisions the split roles itself. The container-based split regression runs both shipped roles against the same
+database, using the backend named by E2E_STORE. Each run has its own Docker network
+and database. Inventory is learned through MDM and read directly by DDM.
 
 `make bench-docs` regenerates the catalogue. `make bench-docs-check` detects drift.
 GitHub Actions uploads acceptance evidence even on failure. Credentials, raw APNs
@@ -98,7 +99,11 @@ make coverage
 
 SQL packages that reset shared integration databases run serially through the
 Makefile. The container-based split regression additionally needs
-`make testdb-ddm-up` and its printed `TEST_DDM_*` settings. A skipped dependency
+`make testdb-ddm-up` with the same E2E_STORE and its complete printed environment
+(including TEST_MDM_URL and TEST_SPLIT_BACKEND). Save that output to a private file
+and source it before running the tests; it contains disposable test credentials.
+Use `make testdb-ddm-down` to remove the selected containers, network and SQLite
+volume. TEST_SPLIT_ENV_FILE selects a separate environment file for concurrent runs. A skipped dependency
 is a limit on evidence, not a pass. Coverage merges emitted profiles; remove stale
 profiles before assembling a measurement and inspect `cover/packages.txt` and
 `cover/merged.html`. The gate remains 95% overall and per non-exempt package.

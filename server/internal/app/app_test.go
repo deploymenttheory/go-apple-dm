@@ -492,6 +492,7 @@ func TestAdminAPI(t *testing.T) {
 // worth of handlers and drives Apple's DDM endpoints through the hop.
 func TestSplitRoundTrip(t *testing.T) {
 	ctx := context.Background()
+	dsn := filepath.Join(t.TempDir(), "split.sqlite")
 	ca, err := testpki.NewCA("app test CA")
 	if err != nil {
 		t.Fatal(err)
@@ -505,7 +506,8 @@ func TestSplitRoundTrip(t *testing.T) {
 		t,
 		app.Config{
 			Role:       app.RoleDDM,
-			Storage:    "inmem",
+			Storage:    "sqlite",
+			DSN:        dsn,
 			AdminToken: "t",
 			DDMRecvKey: send,
 			DDMSendKey: recv,
@@ -516,7 +518,8 @@ func TestSplitRoundTrip(t *testing.T) {
 		t,
 		app.Config{
 			Role:       app.RoleMDM,
-			Storage:    "inmem",
+			Storage:    "sqlite",
+			DSN:        dsn,
 			DDMURL:     ddmSrv.URL + "/ddm",
 			DDMSendKey: send,
 			DDMRecvKey: recv,
@@ -525,6 +528,16 @@ func TestSplitRoundTrip(t *testing.T) {
 	)
 	mdmSrv := serve(t, mdmApp)
 
+	id, err := ca.Issue("UDID-1", time.Now().Add(-time.Minute))
+	if err != nil {
+		t.Fatal(err)
+	}
+	dev := simulator.New("UDID-1",
+		simulator.WithURLs(mdmSrv.URL+"/mdm", mdmSrv.URL+"/mdm"),
+		simulator.WithIdentity(&simulator.Identity{Cert: id.Cert, Key: id.Key}))
+	if err := dev.Enroll(ctx); err != nil {
+		t.Fatalf("enroll: %v", err)
+	}
 	do(t, ddmSrv, "PUT", "/admin/v1/declarations", "t", propsDecl("com.example.split"))
 	do(
 		t,
@@ -537,15 +550,15 @@ func TestSplitRoundTrip(t *testing.T) {
 	do(t, ddmSrv, "PUT", "/admin/v1/sets/set1/declarations/com.example.split", "t", nil)
 	do(t, ddmSrv, "PUT", "/admin/v1/enrollments/device/UDID-1/sets/set1", "t", nil)
 
-	id, err := ca.Issue("UDID-1", time.Now().Add(-time.Minute))
+	// Both roles must observe the record created through normal enrollment.
+	idKey := mdm.EnrollmentID{Channel: mdm.ChannelDevice, ID: "UDID-1"}
+	mdmEnrollment, err := mdmApp.Store.Get(ctx, idKey)
 	if err != nil {
 		t.Fatal(err)
 	}
-	dev := simulator.New("UDID-1",
-		simulator.WithURLs(mdmSrv.URL+"/mdm", mdmSrv.URL+"/mdm"),
-		simulator.WithIdentity(&simulator.Identity{Cert: id.Cert, Key: id.Key}))
-	if err := dev.Enroll(ctx); err != nil {
-		t.Fatalf("enroll: %v", err)
+	ddmEnrollment, err := ddmApp.Store.Get(ctx, idKey)
+	if err != nil || ddmEnrollment.Device != mdmEnrollment.Device {
+		t.Fatalf("shared enrollment: %+v, %v", ddmEnrollment, err)
 	}
 	body, err := dev.DeclarativeManagement(ctx, "tokens", nil)
 	if err != nil {
@@ -635,7 +648,8 @@ func TestSplitRoundTrip(t *testing.T) {
 		t,
 		app.Config{
 			Role:       app.RoleMDM,
-			Storage:    "inmem",
+			Storage:    "sqlite",
+			DSN:        dsn,
 			DDMURL:     ddmSrv.URL + "/ddm",
 			DDMSendKey: []byte("wrong-00000000000000000000000000"),
 			DDMRecvKey: recv,

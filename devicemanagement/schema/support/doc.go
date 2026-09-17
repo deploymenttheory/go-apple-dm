@@ -9,6 +9,13 @@
 // metadata. Pointer booleans preserve the difference between an unspecified
 // condition and an explicit prohibition.
 //
+// Target versions and availability boundaries use osversion.Version directly.
+// Callers parse and construct versions through devicemanagement/osversion;
+// this package evaluates feature availability against those versions and the
+// target's management context. Generated macOS boundaries use osversion's named
+// major release constants while retaining the minor and patch components
+// supplied by Apple's schema.
+//
 // The tables describe the pinned Apple schema. Missing support or target data
 // limits what can be inferred; consumers must inspect the result reason rather
 // than treat an unspecified target as verified compatibility.

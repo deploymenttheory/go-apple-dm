@@ -1,12 +1,13 @@
 package support
 
 import (
-	"errors"
 	"fmt"
+	"slices"
 	"sort"
-	"strconv"
 	"strings"
 	"sync"
+
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/osversion"
 )
 
 // OS names as used in Apple's schema.
@@ -33,87 +34,6 @@ const (
 	ChannelUser   Channel = "user"
 )
 
-// Version is a dotted OS version. The zero Version means "unspecified".
-type Version struct {
-	Major, Minor, Patch int
-}
-
-// ErrVersion is returned by ParseVersion for malformed input.
-var ErrVersion = errors.New("support: malformed version")
-
-// ParseVersion parses "26", "26.4", or "10.15.4".
-func ParseVersion(s string) (Version, error) {
-	s = strings.TrimSpace(s)
-	if s == "" {
-		return Version{}, fmt.Errorf("%w: empty", ErrVersion)
-	}
-	parts := strings.Split(s, ".")
-	if len(parts) > 3 {
-		return Version{}, fmt.Errorf("%w: %q", ErrVersion, s)
-	}
-	var v Version
-	for i, p := range parts {
-		n, err := strconv.Atoi(p)
-		if err != nil || n < 0 {
-			return Version{}, fmt.Errorf("%w: %q", ErrVersion, s)
-		}
-		switch i {
-		case 0:
-			v.Major = n
-		case 1:
-			v.Minor = n
-		case 2:
-			v.Patch = n
-		}
-	}
-	return v, nil
-}
-
-// MustVersion parses or panics; for generated tables and tests.
-func MustVersion(s string) Version {
-	v, err := ParseVersion(s)
-	if err != nil {
-		panic(err)
-	}
-	return v
-}
-
-// V builds a Version.
-func V(major, minor, patch int) Version { return Version{major, minor, patch} }
-
-// IsZero reports whether the version is unspecified.
-func (v Version) IsZero() bool { return v == Version{} }
-
-// String implements fmt.Stringer.
-func (v Version) String() string {
-	if v.Patch != 0 {
-		return fmt.Sprintf("%d.%d.%d", v.Major, v.Minor, v.Patch)
-	}
-	return fmt.Sprintf("%d.%d", v.Major, v.Minor)
-}
-
-// Compare returns -1, 0, or 1.
-func (v Version) Compare(o Version) int {
-	switch {
-	case v.Major != o.Major:
-		return cmp(v.Major, o.Major)
-	case v.Minor != o.Minor:
-		return cmp(v.Minor, o.Minor)
-	default:
-		return cmp(v.Patch, o.Patch)
-	}
-}
-
-func cmp(a, b int) int {
-	switch {
-	case a < b:
-		return -1
-	case a > b:
-		return 1
-	}
-	return 0
-}
-
 // Mode is Apple's allowed/required/forbidden/ignored setting for shared
 // iPad and user enrollment contexts. Empty means unspecified (allowed).
 type Mode string
@@ -131,9 +51,9 @@ const (
 type OSSupport struct {
 	// NotAvailable is set when Apple lists "introduced: n/a".
 	NotAvailable bool
-	Introduced   Version
-	Deprecated   Version
-	Removed      Version
+	Introduced   osversion.Version
+	Deprecated   osversion.Version
+	Removed      osversion.Version
 	AccessRights string
 	Beta         bool
 
@@ -169,7 +89,7 @@ type Entry struct {
 // disables every context check.
 type Target struct {
 	OS             OS
-	Version        Version
+	Version        osversion.Version
 	Channel        Channel
 	Supervised     bool
 	SharedIPad     bool
@@ -222,6 +142,31 @@ func (e *Entry) Check(t Target) Result {
 	case ChannelUser:
 		if os.UserChannel != nil && !*os.UserChannel {
 			return Result{OS: os, Reason: fmt.Sprintf("%s: not supported on the user channel on %s", e.Path, t.OS)}
+		}
+	}
+	// DDM expresses channel and enrollment restrictions as lists rather than
+	// the legacy protocol booleans above. An omitted channel leaves these
+	// checks unspecified for offline OS/version validation.
+	if t.Channel == ChannelDevice || t.Channel == ChannelUser {
+		scope := "system"
+		if t.Channel == ChannelUser {
+			scope = "user"
+		}
+		scopes := os.AllowedScopes
+		if t.SharedIPad && os.SharedIPadScopes != nil {
+			scopes = os.SharedIPadScopes
+		}
+		if scopes != nil && !slices.Contains(scopes, scope) {
+			return Result{OS: os, Reason: fmt.Sprintf("%s: not supported in %s scope on %s (shared iPad: %t)", e.Path, scope, t.OS, t.SharedIPad)}
+		}
+		enrollment := "device"
+		if t.UserEnrollment {
+			enrollment = "user"
+		} else if t.Supervised {
+			enrollment = "supervised"
+		}
+		if os.AllowedEnrollments != nil && !slices.Contains(os.AllowedEnrollments, enrollment) {
+			return Result{OS: os, Reason: fmt.Sprintf("%s: not supported with %s enrollment on %s", e.Path, enrollment, t.OS)}
 		}
 	}
 	if os.Supervised != nil && *os.Supervised && !t.Supervised {

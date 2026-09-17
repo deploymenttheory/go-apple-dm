@@ -4314,6 +4314,7 @@ profiles/VPNVendorConfig.Group
 profiles/VPNVendorConfig.LoginGroupOrDomain
 profiles/VPNVendorConfig.Realm
 profiles/VPNVendorConfig.Role
+profiles/ValueSupport
 profiles/WebClip
 profiles/WebClip.FullScreen
 profiles/WebClip.Icon

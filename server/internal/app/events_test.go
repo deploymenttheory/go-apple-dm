@@ -24,6 +24,8 @@ func TestEventLimitsEnvironment(t *testing.T) {
 		{EnvEventWorkers, "3", false},
 		{EnvEventQueueCapacity, "5", false},
 		{EnvEventDeliveryTimeout, "4s", false},
+		{EnvAuditRetention, "48h", false},
+		{EnvAuditRetention, "bad", true},
 		{EnvEventWorkers, "-1", true},
 		{EnvEventWorkers, "bad", true},
 		{EnvEventQueueCapacity, "-1", true},
@@ -49,6 +51,12 @@ func TestEventLimitsEnvironment(t *testing.T) {
 			}
 			if err != nil {
 				t.Fatal(err)
+			}
+			if tc.key == EnvAuditRetention {
+				if cfg.Sinks.Retention != 48*time.Hour {
+					t.Fatal(cfg.Sinks.Retention)
+				}
+				return
 			}
 			if d := cfg.Sinks.Dispatch; d.Workers != 3 && d.QueueCapacity != 5 &&
 				d.DeliveryTimeout != 4*time.Second {

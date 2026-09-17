@@ -592,9 +592,9 @@ func sampleAppManaged(d int) *ddm.AppManaged {
 	_ = d
 	return &ddm.AppManaged{
 		AppStoreID:                    new("s"),
-		BundleID:                      new("s"),
-		ManifestURL:                   new("s"),
-		AppComposedIdentifier:         new("s"),
+		BundleID:                      nil,
+		ManifestURL:                   nil,
+		AppComposedIdentifier:         nil,
 		IOSApp:                        new(true),
 		InstallBehavior:               sampleAppManagedInstallBehavior(d + 1),
 		UpdateBehavior:                sampleAppManagedUpdateBehavior(d + 1),
@@ -2405,7 +2405,7 @@ func sampleSoftwareUpdateEnforcementSpecific(d int) *ddm.SoftwareUpdateEnforceme
 	return &ddm.SoftwareUpdateEnforcementSpecific{
 		TargetOSVersion:     "s",
 		TargetBuildVersion:  new("s"),
-		TargetLocalDateTime: "s",
+		TargetLocalDateTime: "2026-10-01T18:00:00",
 		DetailsURL:          new("s"),
 	}
 }
@@ -3021,6 +3021,10 @@ func TestConformanceRegistry(t *testing.T) {
 		}
 		if !found {
 			t.Errorf("ByID(%q) does not contain %s", en.ID, name)
+		}
+		kinded, ok := v.(interface{ DeclarationKind() ddm.Kind })
+		if !ok || kinded.DeclarationKind() != en.Kind {
+			t.Errorf("declaration kind for %q is inconsistent", name)
 		}
 	}
 	if ids := ddm.IDs(); len(ids) == 0 || len(ids) > len(ddm.Registry) {

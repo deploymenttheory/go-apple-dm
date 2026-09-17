@@ -1,0 +1,13 @@
+{
+  "Type": "com.apple.configuration.package",
+  "Identifier": "com.deploymenttheory.acceptance.package-removal",
+  "Payload": {
+    "ManifestURL": "https://example.com/files/packages/TestPackage.plist",
+    "InstallBehavior": {
+      "Install": "Required"
+    },
+    "UninstallBehavior": {
+      "Remove": true
+    }
+  }
+}

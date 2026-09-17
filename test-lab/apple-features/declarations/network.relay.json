@@ -1,0 +1,23 @@
+{
+  "Type": "com.apple.configuration.network.relay",
+  "Identifier": "com.deploymenttheory.acceptance.network.relay",
+  "Payload": {
+    "VisibleName": "Corporate Relay",
+    "Relays": [
+      {
+        "HTTP2RelayURL": "https://relay.example.com/proxy",
+        "AdditionalHTTPHeaderFields": {
+          "Authorization": "Bearer enterprise-token-12345"
+        },
+        "PublicKeyData": [
+          "com.deploymenttheory.acceptance.data"
+        ]
+      }
+    ],
+    "MatchDomains": [
+      "example.com",
+      "internal.example.com"
+    ],
+    "UIToggleEnabled": false
+  }
+}

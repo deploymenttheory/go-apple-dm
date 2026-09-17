@@ -6,6 +6,7 @@
 - [Configuration explained](getting-started/configuration.md): server JSON, secret/path precedence, CLI contexts and bench configuration.
 - [Server release downloads](operations/server-releases.md): platform archives, signature verification and release maintenance.
 - [Architecture](architecture.md): implemented capabilities, module boundaries and limitations.
+- [OS versions and API migration](operations/os-versions.md): shared version primitives, feature availability and migration from the support version API.
 - [Design decisions](research/decisions/README.md): current design and supporting evidence.
 - [Diagrams](diagrams/README.md): interactive architecture, protocol and lifecycle views.
 - [Enrollment security operations](operations/enrollment-security.md): trust, persistence, revocation and rate-limit configuration.
@@ -21,3 +22,7 @@
 - [Bench API and configuration](operations/reference-bench.md): runtime, enrollment and app push additions.
 - [Test scenarios](testing/e2e-scenarios.md): executable simulator scenarios and their limits.
 - [Mac enrollment testing](operations/mac-enrollment-testing.md): physical-device prerequisites, installation and acceptance checks.
+
+- [Apple OS 27 coverage](operations/apple-os27-coverage.md): feature mapping, macOS 26 compatibility and content-cache operations.
+- [macOS 27 handoff](testing/macos27-handoff.md): prepared code, pre-upgrade evidence and post-reboot acceptance.
+- [Physical macOS 27 validation](testing/macos27-live-validation.md): observed device results, fixes and remaining acceptance.

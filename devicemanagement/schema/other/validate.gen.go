@@ -17,6 +17,11 @@ func (x *EnrollmentSSODocument) Validate(t support.Target) error {
 }
 
 func (x *EnrollmentSSODocument) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
+	c.Support(p, true, supportTable["EnrollmentSSODocument"])
 	{
 		path := validation.Join(p, "iTunesStoreID")
 		present := x.ITunesStoreID != nil
@@ -64,6 +69,11 @@ func (x *MachineInfo) Validate(t support.Target) error {
 }
 
 func (x *MachineInfo) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
+	c.Support(p, true, supportTable["MachineInfo"])
 	{
 		path := validation.Join(p, "UDID")
 		present := x.UDID != ""
@@ -170,6 +180,11 @@ func (x *ManifestURL) Validate(t support.Target) error {
 }
 
 func (x *ManifestURL) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
+	c.Support(p, true, supportTable["ManifestURL"])
 	{
 		path := validation.Join(p, "items")
 		present := len(x.Items) > 0
@@ -183,6 +198,10 @@ func (x *ManifestURL) validate(c *validation.Collector, p string) {
 }
 
 func (x *ManifestURLItems) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
 	{
 		path := validation.Join(p, "assets")
 		present := len(x.Assets) > 0
@@ -206,6 +225,10 @@ func (x *ManifestURLItems) validate(c *validation.Collector, p string) {
 }
 
 func (x *ManifestURLItemsAssets) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
 	{
 		path := validation.Join(p, "kind")
 		present := x.Kind != ""
@@ -268,6 +291,10 @@ func (x *ManifestURLItemsAssets) validate(c *validation.Collector, p string) {
 }
 
 func (x *ManifestURLItemsMetadata) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
 	{
 		path := validation.Join(p, "bundle-identifier")
 		present := x.BundleIdentifier != ""
@@ -322,6 +349,10 @@ func (x *ManifestURLItemsMetadata) validate(c *validation.Collector, p string) {
 }
 
 func (x *ManifestURLItemsMetadataItems) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
 	{
 		path := validation.Join(p, "bundle-identifier")
 		present := x.BundleIdentifier != nil
@@ -345,6 +376,11 @@ func (x *PasswordHash) Validate(t support.Target) error {
 }
 
 func (x *PasswordHash) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
+	c.Support(p, true, supportTable["PasswordHash"])
 	{
 		path := validation.Join(p, "SALTED-SHA512-PBKDF2")
 		present := true
@@ -358,6 +394,10 @@ func (x *PasswordHash) validate(c *validation.Collector, p string) {
 }
 
 func (x *PasswordHashSALTEDSHA512PBKDF2) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
 	{
 		path := validation.Join(p, "entropy")
 		present := len(x.Entropy) > 0
@@ -390,6 +430,11 @@ func (x *SkipKeys) Validate(t support.Target) error {
 }
 
 func (x *SkipKeys) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
+	c.Support(p, true, supportTable["SkipKeys"])
 	{
 		path := validation.Join(p, "Accessibility")
 		present := x.Accessibility != nil

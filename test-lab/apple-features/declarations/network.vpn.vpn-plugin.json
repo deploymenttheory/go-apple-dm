@@ -1,0 +1,13 @@
+{
+  "Type": "com.apple.configuration.network.vpn.vpn-plugin",
+  "Identifier": "com.deploymenttheory.acceptance.network.vpn.vpn-plugin",
+  "Payload": {
+    "VisibleName": "Corporate VPN",
+    "HostName": "vpn.example.com",
+    "SubType": "com.example.vpn.plugin",
+    "Authentication": {
+      "Method": "Password",
+      "CredentialsAssetReference": "com.deploymenttheory.acceptance.password"
+    }
+  }
+}

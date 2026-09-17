@@ -7,10 +7,13 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"os"
+	"path/filepath"
 	"testing"
 	"time"
 
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/clock"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/cms"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/mdm"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/pki/lifecycle"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/state"
@@ -216,6 +219,54 @@ func TestManagedIssuerWorkerRoutesAndDynamicTrust(t *testing.T) {
 	setupRequire(t, err, nil)
 	_, err = a.managedIssuer(ctx, "2")
 	setupRequire(t, err, lifecycle.ErrConflict)
+}
+
+// OTA and revocation routes must re-read managed trust after startup. An issuer
+// store outage must fail closed instead of serving stale trust or a stale CRL.
+func TestManagedOTAAndRevocationRoutesRequireCurrentTrust(t *testing.T) {
+	a, _, _, _ := renewalFixture(t)
+	anchor := filepath.Join(t.TempDir(), "bootstrap.pem")
+	setupRequire(t, os.WriteFile(anchor, pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: a.enroll.caCert.Raw}), 0o600), nil)
+	a.enroll.cfg.Identity = IdentitySCEP
+	a.enroll.cfg.OTAAnchorFile = anchor
+	a.enroll.cfg.OTAChallenge = "disposable-challenge"
+	a.cfg.PKI.Enabled = true
+	mux := http.NewServeMux()
+	setupRequire(t, a.wireOTA(mux), nil)
+	setupRequire(t, a.wirePKI(t.Context(), a.enroll, mux), nil)
+	crlPath := "/pki/crl/" + cms.Fingerprint(a.enroll.caCert)
+	for _, unavailable := range []bool{false, true} {
+		if unavailable {
+			a.Certificates.Store = issuanceStateFault{Store: a.protocol, readErr: io.ErrUnexpectedEOF, txReadErr: io.ErrUnexpectedEOF}
+		}
+		for _, path := range []string{"/ota", crlPath} {
+			w := httptest.NewRecorder()
+			r := httptest.NewRequestWithContext(t.Context(), http.MethodPost, path, nil)
+			if path == crlPath {
+				r.Method = http.MethodGet
+			}
+			mux.ServeHTTP(w, r)
+			want := http.StatusForbidden // An unsigned OTA request has no trusted signer.
+			if path == crlPath {
+				want = http.StatusOK
+			}
+			if unavailable {
+				want = http.StatusServiceUnavailable
+			}
+			if w.Code != want {
+				t.Fatalf("%s (trust unavailable=%t): %d %s", path, unavailable, w.Code, w.Body.String())
+			}
+		}
+	}
+	a.enroll.cfg.OTAChallenge = ""
+	if err := a.wireOTA(http.NewServeMux()); err == nil {
+		t.Fatal("OTA configured without an admission challenge")
+	}
+	a.enroll.cfg.OTAChallenge = "disposable-challenge"
+	a.enroll.cfg.OTAAnchorFile = filepath.Join(t.TempDir(), "missing.pem")
+	if err := a.wireOTA(http.NewServeMux()); err == nil {
+		t.Fatal("OTA configured without bootstrap trust")
+	}
 }
 
 func TestIssuerRenewalWorkerPreparesSuccessorAndRestartsPreparedRollover(t *testing.T) {

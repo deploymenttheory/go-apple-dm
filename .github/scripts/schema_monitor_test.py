@@ -215,10 +215,27 @@ class AssessmentTests(unittest.TestCase):
                     self.assertEqual(expected, m.verify_contracts(Path(tmp), Path(tmp)))
                 self.assertEqual(expected, json.loads((Path(tmp) / "result.json").read_text())["passed"])
 
+    def test_contract_coverage_preserves_existing_unit_data(self):
+        events = "\n".join(json.dumps({"Action": "pass", "Package": test.rsplit("/", 1)[0],
+                                     "Test": test.rsplit("/", 1)[1]}) for test in m.OS27_TESTS)
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            coverage = root / "unit coverage"
+            coverage.mkdir()
+            existing = coverage / "covcounters.existing"
+            existing.write_bytes(b"unit data")
+            with patch.object(m, "command_stage", return_value=(True, events)) as stage, patch("builtins.print"):
+                self.assertTrue(m.verify_contracts(root, root / "contracts", coverage))
+            command = stage.call_args.args[2]
+            self.assertIn("-cover", command)
+            self.assertIn(f"-coverpkg={m.LIBRARY}/...,{m.LIBRARY}/server/...", command)
+            self.assertEqual(["-args", f"-test.gocoverdir={coverage.resolve()}"], command[-2:])
+            self.assertEqual(b"unit data", existing.read_bytes())
+
     def test_seed_contract_requires_executed_tests(self):
         tags, required = m.assessment_test_contract({"kind": "seed", "ref": "seed_OS_27_0"})
         self.assertEqual(["-tags", "schema_seed_os_27"], tags)
-        self.assertEqual(8, len(required))
+        self.assertEqual(13, len(required))
         self.assertEqual(sorted(required), m.missing_test_evidence("", required))
         lines = []
         for test in required:

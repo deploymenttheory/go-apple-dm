@@ -1,0 +1,9 @@
+{
+  "Type": "com.apple.configuration.accessibility.settings",
+  "Identifier": "com.deploymenttheory.acceptance.accessibility",
+  "Payload": {
+    "Vision": {
+      "AllowLiveRecognition": false
+    }
+  }
+}

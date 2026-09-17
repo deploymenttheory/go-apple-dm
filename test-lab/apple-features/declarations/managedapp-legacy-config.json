@@ -1,0 +1,11 @@
+{
+  "Type": "com.apple.configuration.app.managed",
+  "Identifier": "com.deploymenttheory.acceptance.managedapp-legacy-config",
+  "Payload": {
+    "AppComposedIdentifier": "com.example.managedapp (EXAMPLE1234)",
+    "InstallBehavior": {
+      "Install": "Required"
+    },
+    "LegacyAppConfigAssetReference": "com.deploymenttheory.acceptance.data"
+  }
+}

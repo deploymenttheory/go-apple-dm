@@ -9,6 +9,7 @@ import (
 
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/enroll"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/profile"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/osversion"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/pki/ca"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/schema/profiles"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/schema/support"
@@ -19,7 +20,7 @@ func base() enroll.Profile {
 		Identifier: "com.example.mdm", DisplayName: "Example MDM", Organization: "Example",
 		Topic: "com.apple.mgmt.example", ServerURL: "https://mdm.example.com/mdm", CheckInURL: "https://mdm.example.com/mdm",
 		ServerCapabilities: []string{enroll.CapabilityBootstrapToken, enroll.CapabilityToken},
-		Target:             support.Target{OS: support.OS("macOS"), Version: support.V(15, 0, 0)},
+		Target:             support.Target{OS: support.OS("macOS"), Version: osversion.New(15, 0, 0)},
 	}
 }
 

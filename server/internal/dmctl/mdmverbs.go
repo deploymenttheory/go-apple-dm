@@ -44,7 +44,7 @@ func needTarget(e *env, name string, args []string) (channel, id, parent string,
 func runEnrollments(ctx context.Context, e *env, args []string) error {
 	if len(args) == 0 {
 		return fmt.Errorf(
-			"%w: enrollments needs a subcommand: list, get, disable, status",
+			"%w: enrollments needs a subcommand: list, get, compatibility, disable, status",
 			ErrUsage,
 		)
 	}
@@ -87,12 +87,15 @@ func runEnrollments(ctx context.Context, e *env, args []string) error {
 				}
 			})
 		return e.explainNotFound(ctx, c, "mdm", err)
-	case "get":
-		channel, id, parent, err := needTarget(e, "enrollments get", rest)
+	case "get", "compatibility":
+		channel, id, parent, err := needTarget(e, "enrollments "+sub, rest)
 		if err != nil {
 			return err
 		}
 		path, q := enrollmentPath(channel, id, parent, nil)
+		if sub == "compatibility" {
+			path += "/compatibility"
+		}
 		resp, err := c.Do(ctx, http.MethodGet, path, q, nil)
 		if err != nil {
 			return e.explainNotFound(ctx, c, "mdm", err)

@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/enroll"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/osversion"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/pki/acme"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/schema/support"
 )
@@ -34,7 +35,7 @@ func (e *enrollment) profileForDevice(
 ) (*enroll.Profile, error) {
 	target := support.Target{OS: support.OSFromProduct(product)}
 	if version != "" {
-		v, err := support.ParseVersion(version)
+		v, err := osversion.Parse(version)
 		if err != nil {
 			return nil, fmt.Errorf("%w: device OS version is invalid", enroll.ErrProfile)
 		}

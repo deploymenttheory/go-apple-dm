@@ -26,7 +26,7 @@ The normal library and seed previews carry the historical checkout as
 commits and content hashes. Normal generation and verification discover that
 history input from `.gitmodules`. The library adopts OS 27 seed commit
 `b0180185a5e4077070710033341b71d0cbe1a18a` with historical release commit
-`67045e2fa06f528b196c01edee6a8bf88b844beb`. The eight OS 27 contracts run in
+`67045e2fa06f528b196c01edee6a8bf88b844beb`. The twelve OS 27 contracts run in
 ordinary validation. The monitor preserves the historical pin and compares older
 Apple stable snapshots against that release baseline without proposing a downgrade.
 Later transitions must retain all
@@ -44,6 +44,32 @@ channel and observed capabilities. Unknown OS/version inventory does not authori
 advanced commands. `DeviceInformation` and `SecurityInfo` remain available to
 bootstrap that inventory, subject to their known platform and input constraints.
 The explicit `ValidateTargets: false` option continues to bypass availability.
+
+`devicemanagement/osversion` owns the shared major/minor/patch representation,
+parsing, comparison and named macOS major release constants. Callers use this
+package directly; `support.Target` and `support.OSSupport` declare their version
+fields as `osversion.Version`. The support package owns feature availability and
+management-context checks. The previous version alias, parsing/construction
+wrappers and error re-export are removed; consumers follow the
+[API migration](../../operations/os-versions.md#migrating-from-the-support-version-api).
+Generated availability tables use these shared versions for introduced,
+deprecated and removed boundaries; a major release constant does not discard a
+feature's minor or patch floor.
+
+Reviewed enum-value availability supplements are emitted by the generator and
+queried through `profiles.ValueSupport(path, value)`. They inherit the containing
+field's platform and enrollment constraints and can only raise an introduction
+floor. Field relationships and format rules are emitted into typed `Validate`
+methods, so profile inspection, declaration delivery and direct schema consumers
+use the same checks. There is no separate reflection-based compatibility validator.
+
+Declaration validation also enforces Apple's `allowed-scopes` and
+`allowed-enrollments` metadata when the target channel is specified. Device and
+user channels map to system and user scopes; user enrollment is distinct from
+the user channel of a supervised device. Shared iPad scope overrides replace the
+ordinary scope list, including an explicit empty list that permits no scope.
+Omitted channels preserve OS/version-only validation. Local enrollment is not
+inferred from an unsupervised MDM target.
 
 An acknowledged, tracked device-channel inventory result refreshes product, OS
 and build versions. Missing and malformed observations preserve previous values;

@@ -56,6 +56,19 @@ func (a *App) ddmAdminRoutes() []adminRoute {
 		)
 	}
 	e := a.Engine
+	add(ActionReadEnrollment, "GET /enrollments/{channel}/{id}/compatibility", func(w http.ResponseWriter, r *http.Request) {
+		id, err := enrollmentFromPath(r)
+		if err != nil {
+			writeError(w, http.StatusBadRequest, err)
+			return
+		}
+		report, err := e.Compatibility(r.Context(), id)
+		if err != nil {
+			writeError(w, statusFor(err), err)
+			return
+		}
+		writeJSON(w, http.StatusOK, report)
+	})
 	add(ActionPutDeclaration, "PUT /declarations", func(w http.ResponseWriter, r *http.Request) {
 		body, err := io.ReadAll(io.LimitReader(r.Body, MaxAdminBody+1))
 		if err != nil || len(body) > MaxAdminBody {

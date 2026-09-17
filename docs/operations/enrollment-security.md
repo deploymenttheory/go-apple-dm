@@ -363,6 +363,10 @@ all applicable MDM, DDM and protocol-state stores when rotating keys. Exports ar
 plaintext privileged material; protect them and backups separately. Database
 metadata and status/audit records are not whole-database encrypted.
 
+Both reference-server roles use the same persistent database and compatible storage
+keyrings. The declaration and replay stores are interfaces over that application
+database; the private hop does not replicate enrollment or inventory records.
+
 The private DDM connection requires HTTPS and two independent random keys of at
 least 32 bytes. Set `DM_DDM_ROOT_CA_FILE` for private server trust and configure
 `DM_TLS_CERT_FILE`/`DM_TLS_KEY_FILE` on the DDM role. Requests authenticate method,

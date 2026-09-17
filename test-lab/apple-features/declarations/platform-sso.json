@@ -1,0 +1,19 @@
+{
+  "Type": "com.apple.configuration.extensible-sso",
+  "Identifier": "com.deploymenttheory.acceptance.platform-sso",
+  "Payload": {
+    "ExtensionComposedIdentifier": "com.example.sso (EXAMPLE1234)",
+    "Type": "Redirect",
+    "URLs": [
+      "https://login.example.test/"
+    ],
+    "PlatformSSO": {
+      "AuthenticationMethod": "OpenID",
+      "WebAuthentication": {
+        "URLAllowList": [
+          "https://login.example.test/"
+        ]
+      }
+    }
+  }
+}

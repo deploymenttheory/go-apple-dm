@@ -221,8 +221,12 @@ configuration path, not extra prerequisites for Compose.
 
 PostgreSQL/MySQL need a provisioned database and a protected DSN. Pass `-storage`
 and `-dsn-env` to `setup init`; a credential-bearing DSN is written to a secret
-file. Changing a DSN does not migrate existing state. For split MDM/DDM services,
-configure verified HTTPS and independent send/receive keys using the
+file. Changing a DSN does not migrate existing state. For split MDM/DDM services, both roles must use the same persistent database
+(and PostgreSQL schema, when configured) and compatible storage keyrings. Enrollment,
+inventory, command queues and DDM tables belong to that one database; the private
+hop forwards check-ins and does not replicate inventory. A separate process role
+does not create an independent data store. Configure verified HTTPS and independent
+send/receive keys using the
 [transport guidance](../operations/enrollment-security.md#identity-transport-and-storage).
 
 ## 5. Configure a native administrative CLI

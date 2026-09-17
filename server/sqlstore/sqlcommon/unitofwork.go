@@ -188,6 +188,12 @@ func (w UnitOfWork) Run(ctx context.Context, fn func(context.Context) error) (er
 		return err
 	}
 	if err = tx.Commit(); err != nil {
+		// database/sql can roll back a cancelled transaction before Commit
+		// observes the cancellation, returning ErrTxDone instead of ctx.Err().
+		// Preserve the SQL error while making that shutdown outcome identifiable.
+		if errors.Is(err, sql.ErrTxDone) && ctx.Err() != nil {
+			err = errors.Join(err, ctx.Err())
+		}
 		return fmt.Errorf("%w: commit: %w", ErrTransaction, err)
 	}
 	committed = true

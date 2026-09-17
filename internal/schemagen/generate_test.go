@@ -53,7 +53,7 @@ func TestGenerateWholeTree(t *testing.T) {
 			sort.StringsAreSorted(names),
 		)
 	}
-	for _, want := range []string{"commands/DeviceLock", "commands/DeviceLock.Message", "commands/Registry", "status/DeviceModelFamily.Value", "ddm/Declaration", "ddm/ReasonErrorActivationFailed", "ddm/ReasonCodes", "status/ReasonInfoUpdateAvailable"} {
+	for _, want := range []string{"commands/DeviceLock", "commands/DeviceLock.Message", "commands/Registry", "status/DeviceModelFamily.Value", "ddm/Declaration", "ddm/ReasonErrorActivationFailed", "ddm/ReasonCodes", "status/ReasonInfoUpdateAvailable", "profiles/ValueSupport"} {
 		if sort.SearchStrings(names, want) >= len(names) ||
 			names[sort.SearchStrings(names, want)] != want {
 			t.Errorf("EXPORTED_IDENTIFIERS.lock missing %s", want)

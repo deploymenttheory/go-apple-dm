@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/osversion"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/schema/support"
 )
 
@@ -44,7 +45,7 @@ func ParseTarget(s string) (support.Target, error) {
 		)
 	}
 	if version != "" {
-		v, err := support.ParseVersion(version)
+		v, err := osversion.Parse(version)
 		if err != nil {
 			return support.Target{}, fmt.Errorf("%w: version %q: %w", ErrTarget, version, err)
 		}

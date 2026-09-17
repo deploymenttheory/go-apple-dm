@@ -1,0 +1,20 @@
+{
+  "Type": "com.apple.configuration.app.settings",
+  "Identifier": "com.deploymenttheory.acceptance.app-privacy",
+  "Payload": {
+    "Privacy": {
+      "PermissionDefaults": {
+        "com.example.scanner": {
+          "OrganizationJustification": "This app is used for scanning work documents.",
+          "Camera": "Allow"
+        },
+        "com.example.on-site": {
+          "OrganizationJustification": "This app is used for video conferences while on-site with customers.",
+          "Camera": "Allow",
+          "Microphone": "Allow",
+          "Location": "WhileUsing"
+        }
+      }
+    }
+  }
+}

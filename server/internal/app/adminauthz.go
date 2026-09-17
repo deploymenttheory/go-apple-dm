@@ -52,7 +52,7 @@ const (
 // consequence. `dmctl policy actions` prints these, so an operator granting
 // an action knows what they are granting rather than guessing from its name.
 func AdminActions() []adminauth.Action {
-	return append(setupActions(), []adminauth.Action{
+	return append(append(setupActions(), contentCacheActions()...), []adminauth.Action{
 		{
 			ID:       ActionReplaceEnrollment,
 			Help:     "Replace an enrolled device's MDM profile and rotate its identity, or cancel a pending replacement.",

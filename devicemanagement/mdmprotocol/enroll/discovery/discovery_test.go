@@ -14,6 +14,7 @@ import (
 
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/enroll/discovery"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/plist"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/osversion"
 	schemaerrors "github.com/deploymenttheory/go-apple-dm/devicemanagement/schema/errors"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/schema/support"
 )
@@ -150,7 +151,7 @@ func TestHandler(t *testing.T) {
 			if failed.Code != schemaerrors.ErrorCodeWellKnownFailed || *failed.Description != "not in directory" || *failed.Message != "Contact IT." {
 				t.Fatalf("body %+v", failed)
 			}
-			if err := failed.Validate(support.Target{OS: support.IOS, Version: support.V(18, 0, 0)}); err != nil {
+			if err := failed.Validate(support.Target{OS: support.IOS, Version: osversion.New(18, 0, 0)}); err != nil {
 				t.Fatalf("schema: %v", err)
 			}
 		}

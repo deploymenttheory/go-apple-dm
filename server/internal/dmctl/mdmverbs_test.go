@@ -51,6 +51,8 @@ func mdmServer(t *testing.T) (*apiRecorder, map[string]string) {
 		w.Header().Set("Content-Type", "application/json")
 		path := strings.TrimPrefix(r.URL.Path, "/admin/v1")
 		switch {
+		case strings.HasSuffix(path, "/content-cache/reports"):
+			_, _ = w.Write([]byte(`{"Items":[{"ID":"report-1","ReceivedAt":"2026-09-16T12:00:00Z"}],"NextCursor":""}`))
 		case path == "/enrollments" && r.Method == http.MethodGet:
 			_, _ = w.Write([]byte(`{"Items":[{"Channel":"device","ID":"UDID-1","Enabled":true,"SerialNumber":"S1","OSVersion":"26.0","LastSeenAt":"2026-09-03T12:00:00Z"}],"NextCursor":""}`))
 		case strings.HasSuffix(path, "/commands") && r.Method == http.MethodGet:
@@ -82,6 +84,10 @@ func TestMDMVerbs(t *testing.T) {
 		expect string
 		output string
 	}{
+		{name: "Compatibility", args: []string{"enrollments", "compatibility", "device", "UDID-1"}, expect: "GET /admin/v1/enrollments/device/UDID-1/compatibility"},
+		{name: "CacheReports", args: []string{"content-cache", "reports", "UDID-1"}, expect: "GET /admin/v1/enrollments/device/UDID-1/content-cache/reports", output: "report-1"},
+		{name: "CacheRotate", args: []string{"content-cache", "rotate", "UDID-1"}, expect: "POST /admin/v1/enrollments/device/UDID-1/content-cache/credential"},
+		{name: "CacheRevoke", args: []string{"content-cache", "revoke", "UDID-1"}, expect: "DELETE /admin/v1/enrollments/device/UDID-1/content-cache/credential"},
 		{
 			name: "EnrollmentsList", args: []string{"enrollments", "list"},
 			expect: "GET /admin/v1/enrollments", output: "UDID-1",
@@ -354,5 +360,24 @@ func TestMDMVerbsRejectAnUnknownFlag(t *testing.T) {
 		if _, _, err := runWithStdin(t, env, "{}", full...); !errors.Is(err, dmctl.ErrUsage) {
 			t.Errorf("%v: err = %v, want ErrUsage", full, err)
 		}
+	}
+}
+
+func TestContentCacheUsage(t *testing.T) {
+	for _, args := range [][]string{{"content-cache"}, {"content-cache", "unknown"}, {"content-cache", "rotate"}, {"content-cache", "reports", "-invalid"}} {
+		if _, _, err := run(t, noConfig(t), args...); !errors.Is(err, dmctl.ErrUsage) {
+			t.Fatalf("%v: %v", args, err)
+		}
+	}
+	if _, _, err := run(t, noConfig(t), "content-cache", "rotate", "device"); err == nil {
+		t.Fatal("missing client configuration accepted")
+	}
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) { w.WriteHeader(500) }))
+	t.Cleanup(srv.Close)
+	env := noConfig(t)
+	env["DMCTL_SERVER"] = srv.URL
+	env["DMCTL_TOKEN"] = "test"
+	if _, _, err := run(t, env, "content-cache", "rotate", "device"); err == nil {
+		t.Fatal("failed rotation accepted")
 	}
 }

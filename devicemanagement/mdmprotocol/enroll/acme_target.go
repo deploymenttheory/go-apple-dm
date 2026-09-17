@@ -3,6 +3,7 @@ package enroll
 import (
 	"fmt"
 
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/osversion"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/schema/profiles"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/schema/support"
 )
@@ -58,14 +59,14 @@ func defaultFalse(value *bool) *bool {
 	return new(false)
 }
 
-func macKeyOption(target support.Target, minimum support.Version) bool {
+func macKeyOption(target support.Target, minimum osversion.Version) bool {
 	return target.OS == support.MacOS &&
 		(target.Version.IsZero() || target.Version.Compare(minimum) >= 0)
 }
 
 func (a *ACME) payloadForTarget(target support.Target) *profiles.ACMECertificate {
 	out := a.payload()
-	if macKeyOption(target, support.V(13, 1, 0)) {
+	if macKeyOption(target, osversion.New(osversion.MacOS13, 1, 0)) {
 		out.KeyIsExtractable = defaultFalse(out.KeyIsExtractable)
 		out.AllowAllAppsAccess = defaultFalse(out.AllowAllAppsAccess)
 	}
@@ -74,16 +75,16 @@ func (a *ACME) payloadForTarget(target support.Target) *profiles.ACMECertificate
 
 func (s *SCEP) payloadForTarget(target support.Target) *profiles.SCEP {
 	out := s.payload()
-	if target.OS != support.MacOS || macKeyOption(target, support.V(10, 13, 4)) {
+	if target.OS != support.MacOS || macKeyOption(target, osversion.New(osversion.MacOS10, 13, 4)) {
 		out.PayloadContent.KeyIsExtractable = defaultFalse(out.PayloadContent.KeyIsExtractable)
 	}
-	if macKeyOption(target, support.V(10, 10, 0)) {
+	if macKeyOption(target, osversion.New(osversion.MacOS10, 10, 0)) {
 		out.PayloadContent.AllowAllAppsAccess = defaultFalse(out.PayloadContent.AllowAllAppsAccess)
 	}
 	return out
 }
 
-func macDefaultFalse(value *bool, target support.Target, minimum support.Version) *bool {
+func macDefaultFalse(value *bool, target support.Target, minimum osversion.Version) *bool {
 	if macKeyOption(target, minimum) {
 		return defaultFalse(value)
 	}

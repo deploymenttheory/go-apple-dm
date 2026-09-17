@@ -9,6 +9,7 @@ import (
 
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/mdm"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/plist"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/osversion"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/paging"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/schema/checkin"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/schema/commands"
@@ -109,9 +110,9 @@ func TestSeedOS27EnhancedLogCommands(t *testing.T) {
 			}
 		}
 		for _, target := range []support.Target{
-			{OS: support.IOS, Version: support.V(27, 0, 0), Channel: support.ChannelDevice, Supervised: true, SharedIPad: true},
-			{OS: support.IOS, Version: support.V(27, 0, 0), Channel: support.ChannelUser, Supervised: true, SharedIPad: true},
-			{OS: support.IOS, Version: support.V(27, 0, 0), Channel: support.ChannelDevice, Supervised: true, UserEnrollment: true},
+			{OS: support.IOS, Version: osversion.New(27, 0, 0), Channel: support.ChannelDevice, Supervised: true, SharedIPad: true},
+			{OS: support.IOS, Version: osversion.New(27, 0, 0), Channel: support.ChannelUser, Supervised: true, SharedIPad: true},
+			{OS: support.IOS, Version: osversion.New(27, 0, 0), Channel: support.ChannelDevice, Supervised: true, UserEnrollment: true},
 		} {
 			want := target.SharedIPad && target.Channel == support.ChannelDevice
 			if got := commands.Support(payload.RequestTypeName()).Check(target); got.Supported != want {
@@ -132,7 +133,7 @@ func TestSeedOS27SoftwareUpdateRemoval(t *testing.T) {
 			t.Run(payload.RequestTypeName()+"/"+version, func(t *testing.T) {
 				h := newHarness(t, service.Config{})
 				id := seedDevice(t, h, "Mac16,1", version, true, false)
-				v, err := support.ParseVersion(version)
+				v, err := osversion.Parse(version)
 				if err != nil {
 					t.Fatal(err)
 				}
@@ -200,9 +201,9 @@ func TestSeedOS27ReturnToServiceRetry(t *testing.T) {
 		t.Fatal("missing availability")
 	}
 	for _, os := range []support.OS{support.IOS, support.MacOS, support.TvOS, support.VisionOS, support.WatchOS} {
-		for _, version := range []support.Version{support.V(26, 4, 0), support.V(27, 0, 0)} {
+		for _, version := range []osversion.Version{osversion.New(26, 4, 0), osversion.New(27, 0, 0)} {
 			got := entry.Check(support.Target{OS: os, Version: version, Channel: support.ChannelDevice, Supervised: true, DEP: true})
-			want := os == support.IOS && version == support.V(27, 0, 0)
+			want := os == support.IOS && version == osversion.New(27, 0, 0)
 			if got.Supported != want {
 				t.Fatalf("%s %v: %+v", os, version, got)
 			}

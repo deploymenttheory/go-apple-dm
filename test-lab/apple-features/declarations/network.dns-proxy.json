@@ -1,0 +1,14 @@
+{
+  "Type": "com.apple.configuration.network.dns-proxy",
+  "Identifier": "com.deploymenttheory.acceptance.network.dns-proxy",
+  "Payload": {
+    "VisibleName": "DNS Proxy",
+    "AppBundleIdentifier": "com.example.mydnsproxyapp",
+    "ProviderComposedIdentifier": "com.example.mydnsproxyapp.mydnsproxyprovider",
+    "ProviderConfiguration": {
+      "resolver": {
+        "ipaddress": "9.9.9.9"
+      }
+    }
+  }
+}

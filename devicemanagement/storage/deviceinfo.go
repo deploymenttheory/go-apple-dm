@@ -2,8 +2,8 @@ package storage
 
 import (
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/mdm"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/osversion"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/schema/commands"
-	"github.com/deploymenttheory/go-apple-dm/devicemanagement/schema/support"
 )
 
 // DeviceInfoFromResult refreshes routing metadata from an acknowledged,
@@ -32,7 +32,7 @@ func DeviceInfoFromResult(
 	}
 	observed := payload.QueryResponses
 	if observed.OSVersion != nil {
-		if v, err := support.ParseVersion(*observed.OSVersion); err == nil && !v.IsZero() {
+		if v, err := osversion.Parse(*observed.OSVersion); err == nil && !v.IsZero() {
 			old.OSVersion = *observed.OSVersion
 		}
 	}

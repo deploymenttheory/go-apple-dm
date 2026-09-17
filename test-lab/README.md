@@ -172,3 +172,7 @@ The [Mac enrollment runbook](../docs/operations/mac-enrollment-testing.md) cover
 preflight, local HTTPS trust, manual enrollment, authorized identity replacement
 and the separate ACME/SCEP live acceptance runs. These use the maintained server
 and bench; no separate enrollment spike executable is needed.
+
+## macOS 27 preparation and handoff
+
+Use the [feature fixtures](apple-features/README.md) and [post-reboot handoff](../docs/testing/macos27-handoff.md) for the macOS 26-to-27 acceptance sequence.

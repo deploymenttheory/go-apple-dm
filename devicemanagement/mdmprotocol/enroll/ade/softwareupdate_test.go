@@ -17,6 +17,7 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/enroll/ade"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/enroll/adetest"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/plist"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/osversion"
 	schemaerrors "github.com/deploymenttheory/go-apple-dm/devicemanagement/schema/errors"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/schema/support"
 )
@@ -166,7 +167,7 @@ func TestSoftwareUpdate(t *testing.T) {
 		if err := d.SoftwareUpdate.Validate(support.Target{}); err != nil {
 			t.Fatal(err)
 		}
-		if err := d.SoftwareUpdate.Validate(support.Target{OS: support.IOS, Version: support.V(17, 5, 0)}); err != nil {
+		if err := d.SoftwareUpdate.Validate(support.Target{OS: support.IOS, Version: osversion.New(17, 5, 0)}); err != nil {
 			t.Fatalf("iOS 17.5 target: %v", err)
 		}
 		if d.SoftwareUpdate.Details.RequireBetaProgram.Token != "seed-token" {
@@ -239,7 +240,7 @@ func TestSoftwareUpdate(t *testing.T) {
 		if err != nil || d.Action != ade.PSSORequired || d.PSSO.Code != schemaerrors.ErrorCodeCodePlatformSSORequired || d.PSSO.Details.AuthURL != details.AuthURL {
 			t.Fatalf("%+v %v", d, err)
 		}
-		if err := d.PSSO.Validate(support.Target{OS: support.MacOS, Version: support.V(26, 0, 0)}); err != nil {
+		if err := d.PSSO.Validate(support.Target{OS: support.MacOS, Version: osversion.New(osversion.MacOS26, 0, 0)}); err != nil {
 			t.Fatal(err)
 		}
 		req := httptest.NewRequestWithContext(t.Context(), http.MethodPost, "/enroll", http.NoBody)

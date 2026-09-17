@@ -1,0 +1,25 @@
+{
+  "Type": "com.apple.configuration.softwareupdate.settings",
+  "Identifier": "com.deploymenttheory.acceptance.update-macos",
+  "Payload": {
+    "Deferrals": {
+      "MajorPeriodInDays": 30,
+      "MinorPeriodInDays": 7,
+      "SystemPeriodInDays": 7
+    },
+    "AutomaticActions": {
+      "Download": "AlwaysOn",
+      "InstallOSUpdates": "AlwaysOn",
+      "InstallSecurityUpdate": "AlwaysOn"
+    },
+    "RapidSecurityResponse": {
+      "Enable": true,
+      "EnableRollback": false
+    },
+    "AllowStandardUserOSUpdates": false,
+    "Notifications": false,
+    "Beta": {
+      "ProgramEnrollment": "Allowed"
+    }
+  }
+}

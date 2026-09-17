@@ -1,0 +1,14 @@
+{
+  "Type": "com.apple.configuration.network.vpn.ikev2",
+  "Identifier": "com.deploymenttheory.acceptance.network.vpn.ikev2",
+  "Payload": {
+    "VisibleName": "Corporate IKEv2 VPN",
+    "HostName": "vpn.example.com",
+    "LocalIdentifier": "device@example.com",
+    "RemoteIdentifier": "vpn.example.com",
+    "Authentication": {
+      "Method": "SharedSecret",
+      "CredentialsAssetReference": "com.deploymenttheory.acceptance.password"
+    }
+  }
+}

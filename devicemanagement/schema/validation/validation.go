@@ -6,6 +6,7 @@ import (
 	"math"
 	"regexp"
 	"strings"
+	"time"
 
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/schema/support"
 )
@@ -74,6 +75,26 @@ func (c *Collector) add(path, rule, msg string) {
 func (c *Collector) Required(path string, present bool) {
 	if !present {
 		c.add(path, RuleRequired, "required key is missing")
+	}
+}
+
+// Require records a required relationship between fields when condition is false.
+func (c *Collector) Require(path string, condition bool, message string) {
+	if !condition {
+		c.add(path, RuleRequired, message)
+	}
+}
+
+// LocalDateTime checks an Apple device-local deadline, without a timezone or
+// fractional seconds. The calendar date must also exist.
+func (c *Collector) LocalDateTime(path string, present bool, value string) {
+	if !present {
+		return
+	}
+	const layout = "2006-01-02T15:04:05"
+	parsed, err := time.Parse(layout, value)
+	if err != nil || parsed.Format(layout) != value {
+		c.add(path, RuleFormat, "expected device-local yyyy-mm-ddThh:mm:ss without offset or fractional seconds")
 	}
 }
 

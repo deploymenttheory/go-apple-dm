@@ -65,6 +65,7 @@ import (
     "os"
 
     "github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/mdm"
+    "github.com/deploymenttheory/go-apple-dm/devicemanagement/osversion"
     "github.com/deploymenttheory/go-apple-dm/devicemanagement/schema/commands"
     "github.com/deploymenttheory/go-apple-dm/devicemanagement/schema/support"
 )
@@ -74,7 +75,7 @@ func main() {
         Queries: []string{"OSVersion", "BuildVersion"},
     }
     target := support.Target{
-        OS: support.MacOS, Version: support.V(26, 0, 0),
+        OS: support.MacOS, Version: osversion.New(osversion.MacOS26, 0, 0),
         Channel: support.ChannelDevice,
     }
     if err := query.Validate(target); err != nil {

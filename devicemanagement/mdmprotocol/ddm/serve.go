@@ -31,9 +31,13 @@ func (e *Engine) refreshSnapshot(ctx context.Context, id mdm.EnrollmentID) (*Sna
 		return nil, fmt.Errorf("%w: %w", ErrInvalid, err)
 	}
 	now := e.clock.Now().UTC()
+	target, err := e.deliveryTarget(ctx, id)
+	if err != nil {
+		return nil, err
+	}
 	var snap *Snapshot
-	err := e.store.Update(ctx, func(tx Tx) error {
-		token, items, err := e.manifestFor(ctx, tx, id)
+	err = e.store.Update(ctx, func(tx Tx) error {
+		token, items, err := e.manifestFor(ctx, tx, id, target, nil)
 		if err != nil {
 			return err
 		}
@@ -134,6 +138,25 @@ func (e *Engine) Declaration(ctx context.Context, id mdm.EnrollmentID, kind sche
 		}
 	} else if err != nil {
 		return nil, err
+	}
+	if e.enrollmentTarget != nil {
+		target, err := e.deliveryTarget(ctx, id)
+		if err != nil {
+			return nil, err
+		}
+		items, _, err := filterCompatible(ctx, e.store, snap.Items, *target)
+		if err != nil && !errors.Is(err, ErrNotFound) {
+			return nil, err
+		}
+		// A snapshot's versions remain authoritative until target eligibility
+		// changes or a referenced version is deleted. Refresh a deleted asset
+		// instead of returning its 404 for an unrelated, eligible declaration.
+		if errors.Is(err, ErrNotFound) || !sameItems(items, snap.Items) {
+			snap, err = e.refreshSnapshot(ctx, id)
+			if err != nil {
+				return nil, err
+			}
+		}
 	}
 	for _, item := range snap.Items {
 		if item.Identifier != identifier || item.Kind != kind {

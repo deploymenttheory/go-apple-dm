@@ -1,0 +1,10 @@
+{
+  "Type": "com.apple.asset.credential.acme",
+  "Identifier": "com.deploymenttheory.acceptance.acme",
+  "Payload": {
+    "Reference": {
+      "DataURL": "https://assets.example.test/acme.json"
+    },
+    "Accessible": "AfterFirstUnlock"
+  }
+}

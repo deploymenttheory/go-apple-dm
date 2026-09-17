@@ -1,0 +1,11 @@
+{
+  "Type": "com.apple.configuration.extensible-sso",
+  "Identifier": "com.deploymenttheory.acceptance.extensible-sso",
+  "Payload": {
+    "ExtensionComposedIdentifier": "com.example.sso",
+    "Type": "Redirect",
+    "URLs": [
+      "https://login.example.test/"
+    ]
+  }
+}

@@ -2,13 +2,16 @@ package conformance
 
 import (
 	"encoding/json"
+	"errors"
 	"reflect"
 	"testing"
 
 	howett "howett.net/plist"
 
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/plist"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/osversion"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/schema/support"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/schema/validation"
 )
 
 // RoundTrip encodes v, decodes into newT and compares decoded generic values
@@ -95,6 +98,7 @@ type Validator interface {
 
 // Validates checks that a populated sample passes structural validation and
 // that validating an empty value against a real target runs without panic.
+// A nil receiver must return a required-value error at the document root.
 func Validates(t *testing.T, name string, sample, empty any) {
 	t.Helper()
 	sv, ok := sample.(Validator)
@@ -105,12 +109,22 @@ func Validates(t *testing.T, name string, sample, empty any) {
 	if err := sv.Validate(support.Target{}); err != nil {
 		t.Errorf("%s: populated sample fails validation: %v", name, err)
 	}
+	nilValue, ok := reflect.Zero(reflect.TypeOf(sample)).Interface().(Validator)
+	if !ok {
+		t.Fatalf("%s: zero value does not implement Validate", name)
+	}
+	err := nilValue.Validate(support.Target{})
+	var issues validation.Errors
+	if !errors.Is(err, validation.ErrValidation) || !errors.As(err, &issues) ||
+		len(issues) != 1 || issues[0].Rule != validation.RuleRequired || issues[0].Path != "" {
+		t.Errorf("%s: nil receiver must report one required-value error at the root: %v", name, err)
+	}
 	ev, ok := empty.(Validator)
 	if !ok {
 		t.Errorf("%s: empty value does not implement Validate", name)
 		return
 	}
-	_ = ev.Validate(support.Target{OS: support.IOS, Version: support.V(26, 0, 0)})
+	_ = ev.Validate(support.Target{OS: support.IOS, Version: osversion.New(26, 0, 0)})
 }
 
 // Deref returns the value a sample pointer points to, or the zero value when

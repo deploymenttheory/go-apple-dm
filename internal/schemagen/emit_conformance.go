@@ -104,8 +104,11 @@ func (e *emitter) conformanceFile() []byte {
 	)
 	if e.pkg.Family == FamilyCommands {
 		b.WriteString(
-			"\t\tif r := en.NewResponse(); r == nil || r.ResponseRequestTypeName() != en.ID {\n\t\t\tt.Errorf(\"response for %q is inconsistent\", name)\n\t\t}\n",
+			"\t\tif r := en.NewResponse(); r == nil || r.ResponseRequestTypeName() != en.ID || r.SchemaPath() != en.Schema {\n\t\t\tt.Errorf(\"response for %q is inconsistent\", name)\n\t\t}\n",
 		)
+	}
+	if e.pkg.Family == FamilyDDM {
+		b.WriteString("\t\tkinded, ok := v.(interface{ DeclarationKind() ddm.Kind })\n\t\tif !ok || kinded.DeclarationKind() != en.Kind {\n\t\t\tt.Errorf(\"declaration kind for %q is inconsistent\", name)\n\t\t}\n")
 	}
 	b.WriteString("\t}\n")
 	fmt.Fprintf(
@@ -212,7 +215,14 @@ func (e *emitter) sampleFunc(b *bytes.Buffer, td *TypeDef) {
 		td.Name,
 	)
 	for _, f := range td.Fields {
-		fmt.Fprintf(b, "\t\t%s: %s,\n", f.Name, e.sampleValue(f))
+		value := e.sampleValue(f)
+		if e.pkg.Family == FamilyDDM && td.Name == "AppManaged" && (f.Name == "BundleID" || f.Name == "ManifestURL" || f.Name == "AppComposedIdentifier") {
+			value = "nil" // AppStoreID is the sole identifier in this valid sample.
+		}
+		if e.pkg.Family == FamilyDDM && td.Name == "SoftwareUpdateEnforcementSpecific" && f.Name == "TargetLocalDateTime" {
+			value = `"2026-10-01T18:00:00"`
+		}
+		fmt.Fprintf(b, "\t\t%s: %s,\n", f.Name, value)
 	}
 	b.WriteString("\t}\n}\n\n")
 }

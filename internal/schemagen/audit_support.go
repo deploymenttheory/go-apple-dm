@@ -5,6 +5,7 @@ import (
 	"reflect"
 	"sort"
 
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/osversion"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/schema/support"
 )
 
@@ -105,7 +106,7 @@ func BoundaryProbes(baseline, candidate string, histories ...string) ([]Boundary
 					if bound == nil {
 						continue
 					}
-					for _, v := range []support.Version{bound.Introduced, bound.Removed, bound.Deprecated} {
+					for _, v := range []osversion.Version{bound.Introduced, bound.Removed, bound.Deprecated} {
 						if !v.IsZero() {
 							versions[v.String()] = true
 						}
@@ -115,7 +116,7 @@ func BoundaryProbes(baseline, candidate string, histories ...string) ([]Boundary
 					versions["1.0"] = true
 				}
 				for version := range versions {
-					v, versionErr := support.ParseVersion(version)
+					v, versionErr := osversion.Parse(version)
 					if versionErr != nil {
 						return nil, fmt.Errorf("boundary: %w", versionErr)
 					}
@@ -146,7 +147,7 @@ func BoundaryProbes(baseline, candidate string, histories ...string) ([]Boundary
 	return cases, nil
 }
 
-func boundaryTarget(os support.OS, v support.Version, context string) support.Target {
+func boundaryTarget(os support.OS, v osversion.Version, context string) support.Target {
 	target := support.Target{
 		OS:           os,
 		Version:      v,

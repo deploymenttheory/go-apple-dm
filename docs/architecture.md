@@ -18,7 +18,7 @@ including the explicit dependency from the ADE software update gate to the GDMF 
 
 | Area | Paths | Responsibility |
 |---|---|---|
-| Foundation | `devicemanagement/paging`, `devicemanagement/clock`, `devicemanagement/secrets`, `devicemanagement/telemetry`, `devicemanagement/state`, `devicemanagement/ratelimit`, `devicemanagement/testpki` | Shared interfaces, bounded state and test utilities |
+| Foundation | `devicemanagement/osversion`, `devicemanagement/paging`, `devicemanagement/clock`, `devicemanagement/secrets`, `devicemanagement/telemetry`, `devicemanagement/state`, `devicemanagement/ratelimit`, `devicemanagement/testpki` | Shared OS versions, interfaces, bounded state and test utilities |
 | Schema | `devicemanagement/schema`, `internal/schemagen`, `cmd/schemagen` | Deterministic generation and schema-derived validation/support metadata |
 | Protocol | `devicemanagement/mdmprotocol` | Plist/CMS, MDM messages, enrollment profiles and handlers, DDM engine, predicates, hooks and events |
 | PKI | `devicemanagement/pki` | CA abstraction, SCEP, ACME, attestation, push certificate parsing and optional revocation |
@@ -45,7 +45,18 @@ contracts; both inputs and their content hashes are recorded in generated proven
 and conformance fixtures. `devicemanagement/schema/GENERATED_FROM.json` records source provenance;
 `devicemanagement/schema/EXPORTED_IDENTIFIERS.lock` guards exported names. `make verify` regenerates into a
 temporary directory and checks the output and removal guard. Generated validation covers the
-modeled schema constraints; protocol rules documented only in prose belong in the calling code.
+modeled schema constraints and reviewed supplements for value availability and
+field relationships. These supplements live in the generator and produce typed
+validation, so callers use the payload's `Validate` method consistently.
+
+`devicemanagement/osversion` provides version parsing, comparison and named macOS
+major constants for use throughout the library. Generated support metadata keeps
+each platform's full introduction, deprecation and removal boundaries; eligibility
+also considers the channel and enrollment capabilities. `support.Target` and
+`support.OSSupport` use `osversion.Version` directly, and callers parse and
+construct versions through `osversion`. See [OS versions and API migration](operations/os-versions.md)
+for the package boundary and removed API replacements. SSO value-specific floors are queryable through
+`profiles.ValueSupport(path, value)` and retain their containing key's constraints.
 
 The [Apple schema monitor](schema-monitor.md) discovers Apple's stable default
 and `seed*` branches, assesses immutable commits in isolated workspaces, then

@@ -3,10 +3,12 @@ package schemagen
 import (
 	"fmt"
 	"maps"
+	"slices"
 	"sort"
 	"strconv"
 	"strings"
 
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/osversion"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/schema/support"
 )
 
@@ -48,6 +50,23 @@ func effective(st *SchemaType) (map[string]*support.Entry, error) {
 				}
 				if err := walk(f.Elem.Struct, elemEff); err != nil {
 					return err
+				}
+			}
+			// String arrays such as DeviceInformation.Queries describe their
+			// named values as subkeys. They have no Go struct, but their per-value
+			// availability must still be retained and enforced.
+			if f.Elem != nil && f.Elem.Kind == KindScalar && f.Elem.Base == "string" {
+				itemOS, err := convertOS(eff, f.Elem.Src.SupportedOS)
+				if err != nil {
+					return err
+				}
+				for _, key := range f.Elem.Src.Subkeys {
+					valueOS, err := convertOS(itemOS, key.SupportedOS)
+					if err != nil {
+						return err
+					}
+					path := p + "." + f.Elem.Key + "." + key.Key
+					out[path] = &support.Entry{Path: path, OS: valueOS}
 				}
 			}
 			for _, v := range f.Variants {
@@ -104,25 +123,25 @@ func overlay(dst *support.OSSupport, src *OSSupport) error {
 		switch src.Introduced {
 		case "n/a":
 			dst.NotAvailable = true
-			dst.Introduced = support.Version{}
+			dst.Introduced = osversion.Version{}
 		case "all":
 			// Apple uses "all" for a key available on every version.
 			dst.NotAvailable = false
-			dst.Introduced = support.Version{}
+			dst.Introduced = osversion.Version{}
 		default:
 			dst.NotAvailable = false
-			if dst.Introduced, err = support.ParseVersion(src.Introduced); err != nil {
+			if dst.Introduced, err = osversion.Parse(src.Introduced); err != nil {
 				return fmt.Errorf("introduced: %w", err)
 			}
 		}
 	}
 	if src.Deprecated != "" {
-		if dst.Deprecated, err = support.ParseVersion(src.Deprecated); err != nil {
+		if dst.Deprecated, err = osversion.Parse(src.Deprecated); err != nil {
 			return fmt.Errorf("deprecated: %w", err)
 		}
 	}
 	if src.Removed != "" {
-		if dst.Removed, err = support.ParseVersion(src.Removed); err != nil {
+		if dst.Removed, err = osversion.Parse(src.Removed); err != nil {
 			return fmt.Errorf("removed: %w", err)
 		}
 		// Apple uses removed: '0' for withdrawn properties. Version's zero
@@ -152,10 +171,10 @@ func overlay(dst *support.OSSupport, src *OSSupport) error {
 	copyBool(&dst.AllowManualInstall, src.AllowManualInstall)
 	copyBool(&dst.AlwaysSkippable, src.AlwaysSkippable)
 	if src.AllowedEnrollments != nil {
-		dst.AllowedEnrollments = append([]string(nil), src.AllowedEnrollments...)
+		dst.AllowedEnrollments = slices.Clone(src.AllowedEnrollments)
 	}
 	if src.AllowedScopes != nil {
-		dst.AllowedScopes = append([]string(nil), src.AllowedScopes...)
+		dst.AllowedScopes = slices.Clone(src.AllowedScopes)
 	}
 	if src.SharedIPad != nil {
 		if src.SharedIPad.Mode != "" {
@@ -164,7 +183,7 @@ func overlay(dst *support.OSSupport, src *OSSupport) error {
 		copyBool(&dst.SharedIPadDeviceChannel, src.SharedIPad.DeviceChannel)
 		copyBool(&dst.SharedIPadUserChannel, src.SharedIPad.UserChannel)
 		if src.SharedIPad.AllowedScopes != nil {
-			dst.SharedIPadScopes = append([]string(nil), src.SharedIPad.AllowedScopes...)
+			dst.SharedIPadScopes = slices.Clone(src.SharedIPad.AllowedScopes)
 		}
 	}
 	if src.UserEnrollment != nil {
@@ -182,7 +201,7 @@ func (e *emitter) supportFile() []byte {
 	b := buf()
 	b.WriteString(e.header())
 	b.WriteString(
-		"import (\n\t\"github.com/deploymenttheory/go-apple-dm/devicemanagement/schema/support\"\n)\n\n",
+		"import (\n\t\"github.com/deploymenttheory/go-apple-dm/devicemanagement/osversion\"\n\t\"github.com/deploymenttheory/go-apple-dm/devicemanagement/schema/support\"\n)\n\n",
 	)
 	b.WriteString(
 		"// Support returns the support entry for a key path such as \"DeviceLock.Message\"\n// or \"DeviceLock.response.MessageResult\", or nil when unknown.\nfunc Support(path string) *support.Entry { return supportTable[path] }\n\n",
@@ -227,7 +246,12 @@ func (e *emitter) supportFile() []byte {
 		}
 		b.WriteString("}\n\n")
 	}
-	return b.Bytes()
+	e.valueSupport(b)
+	source := b.String()
+	if !strings.Contains(source, "osversion.") {
+		source = strings.ReplaceAll(source, "\t\"github.com/deploymenttheory/go-apple-dm/devicemanagement/osversion\"\n", "")
+	}
+	return []byte(source)
 }
 
 func entryLiteral(en *support.Entry) string {
@@ -238,7 +262,7 @@ func entryLiteral(en *support.Entry) string {
 		if s == nil {
 			continue
 		}
-		fmt.Fprintf(&sb, "support.%s: %s, ", osConst(os), osLiteral(s))
+		fmt.Fprintf(&sb, "support.%s: %s, ", osConst(os), osLiteral(s, os))
 	}
 	sb.WriteString("}}")
 	return sb.String()
@@ -260,20 +284,20 @@ func osConst(os support.OS) string {
 	return "OS(" + strconv.Quote(string(os)) + ")"
 }
 
-func osLiteral(s *support.OSSupport) string {
+func osLiteral(s *support.OSSupport, os support.OS) string {
 	var parts []string
 	add := func(name, v string) { parts = append(parts, name+": "+v) }
 	if s.NotAvailable {
 		add("NotAvailable", "true")
 	}
 	if !s.Introduced.IsZero() {
-		add("Introduced", versionLit(s.Introduced))
+		add("Introduced", versionLit(s.Introduced, os))
 	}
 	if !s.Deprecated.IsZero() {
-		add("Deprecated", versionLit(s.Deprecated))
+		add("Deprecated", versionLit(s.Deprecated, os))
 	}
 	if !s.Removed.IsZero() {
-		add("Removed", versionLit(s.Removed))
+		add("Removed", versionLit(s.Removed, os))
 	}
 	if s.AccessRights != "" {
 		add("AccessRights", strconv.Quote(s.AccessRights))
@@ -317,8 +341,16 @@ func osLiteral(s *support.OSSupport) string {
 	return "{" + strings.Join(parts, ", ") + "}"
 }
 
-func versionLit(v support.Version) string {
-	return fmt.Sprintf("support.V(%d, %d, %d)", v.Major, v.Minor, v.Patch)
+func versionLit(v osversion.Version, os support.OS) string {
+	major := strconv.Itoa(v.Major)
+	if os == support.MacOS {
+		switch v.Major {
+		case osversion.MacOS10, osversion.MacOS11, osversion.MacOS12, osversion.MacOS13,
+			osversion.MacOS14, osversion.MacOS15, osversion.MacOS26, osversion.MacOS27:
+			major = "osversion.MacOS" + major
+		}
+	}
+	return fmt.Sprintf("osversion.New(%s, %d, %d)", major, v.Minor, v.Patch)
 }
 
 func stringSlice(ss []string) string {

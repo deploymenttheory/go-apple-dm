@@ -206,6 +206,7 @@ func commands() map[string]command {
 		{"audit", "read the audit trail", runAudit},
 		{"events", "inspect persistent event delivery and retry a destination", runEvents},
 		{"enrollments", "list, read, disable, and inspect enrollment status", runEnrollments},
+		{"content-cache", "issue reporting credentials and inspect content-cache reports", runContentCache},
 		{"commands", "send, read, and clear queued MDM commands", runCommands},
 		{"push", "wake a device now without queueing anything", runPush},
 		{"pushcerts", "read push certificates and upload a renewal", runPushCerts},

@@ -1,0 +1,12 @@
+{
+  "Type": "com.apple.configuration.intelligence.settings",
+  "Identifier": "com.deploymenttheory.acceptance.intelligence",
+  "Payload": {
+    "AllowVisualIntelligence": false,
+    "Apps": {
+      "Calendar": {
+        "AllowNaturalLanguageEditing": false
+      }
+    }
+  }
+}
