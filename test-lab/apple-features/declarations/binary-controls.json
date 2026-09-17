@@ -1,0 +1,13 @@
+{
+  "Type": "com.apple.configuration.app.settings",
+  "Identifier": "com.deploymenttheory.acceptance.binary-controls",
+  "Payload": {
+    "Allowed": {
+      "DeniedBinaries": [
+        {
+          "TeamID": "EXAMPLE1234"
+        }
+      ]
+    }
+  }
+}

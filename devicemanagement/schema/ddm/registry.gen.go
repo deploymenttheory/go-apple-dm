@@ -744,3 +744,128 @@ func (*ManagementServerCapabilities) DeclarationTypeName() string {
 
 // DeclarationKind returns the declaration kind.
 func (*ManagementServerCapabilities) DeclarationKind() Kind { return KindManagement }
+
+// AssetReference describes a schema-declared dependency. Path uses * for array or dictionary values.
+type AssetReference struct {
+	Path  []string
+	Types []string
+}
+
+// AssetReferences maps declaration wire types to their asset dependencies.
+var AssetReferences = map[string][]AssetReference{
+	"com.apple.configuration.account.caldav": {
+		{Path: []string{"AuthenticationCredentialsAssetReference"}, Types: []string{"com.apple.asset.credential.userpassword"}},
+	},
+	"com.apple.configuration.account.carddav": {
+		{Path: []string{"AuthenticationCredentialsAssetReference"}, Types: []string{"com.apple.asset.credential.userpassword"}},
+	},
+	"com.apple.configuration.account.exchange": {
+		{Path: []string{"UserIdentityAssetReference"}, Types: []string{"com.apple.asset.useridentity"}},
+		{Path: []string{"AuthenticationCredentialsAssetReference"}, Types: []string{"com.apple.asset.credential.userpassword"}},
+		{Path: []string{"AuthenticationIdentityAssetReference"}, Types: []string{"com.apple.asset.credential.acme", "com.apple.asset.credential.identity", "com.apple.asset.credential.scep"}},
+		{Path: []string{"SMIME", "Signing", "IdentityAssetReference"}, Types: []string{"com.apple.asset.credential.acme", "com.apple.asset.credential.identity", "com.apple.asset.credential.scep"}},
+		{Path: []string{"SMIME", "Encryption", "IdentityAssetReference"}, Types: []string{"com.apple.asset.credential.acme", "com.apple.asset.credential.identity", "com.apple.asset.credential.scep"}},
+	},
+	"com.apple.configuration.account.google": {
+		{Path: []string{"UserIdentityAssetReference"}, Types: []string{"com.apple.asset.useridentity"}},
+	},
+	"com.apple.configuration.account.ldap": {
+		{Path: []string{"AuthenticationCredentialsAssetReference"}, Types: []string{"com.apple.asset.credential.userpassword"}},
+	},
+	"com.apple.configuration.account.mail": {
+		{Path: []string{"UserIdentityAssetReference"}, Types: []string{"com.apple.asset.useridentity"}},
+		{Path: []string{"IncomingServer", "AuthenticationCredentialsAssetReference"}, Types: []string{"com.apple.asset.credential.userpassword"}},
+		{Path: []string{"OutgoingServer", "AuthenticationCredentialsAssetReference"}, Types: []string{"com.apple.asset.credential.userpassword"}},
+		{Path: []string{"SMIME", "Signing", "IdentityAssetReference"}, Types: []string{"com.apple.asset.credential.acme", "com.apple.asset.credential.identity", "com.apple.asset.credential.scep"}},
+		{Path: []string{"SMIME", "Encryption", "IdentityAssetReference"}, Types: []string{"com.apple.asset.credential.acme", "com.apple.asset.credential.identity", "com.apple.asset.credential.scep"}},
+	},
+	"com.apple.configuration.account.subscribed-calendar": {
+		{Path: []string{"AuthenticationCredentialsAssetReference"}, Types: []string{"com.apple.asset.credential.userpassword"}},
+	},
+	"com.apple.configuration.app.managed": {
+		{Path: []string{"AppConfig", "DataAssetReference"}, Types: []string{"com.apple.asset.data"}},
+		{Path: []string{"AppConfig", "Passwords", "*", "AssetReference"}, Types: []string{"com.apple.asset.credential.userpassword"}},
+		{Path: []string{"AppConfig", "Identities", "*", "AssetReference"}, Types: []string{"com.apple.asset.credential.identity", "com.apple.asset.credential.scep", "com.apple.asset.credential.acme"}},
+		{Path: []string{"AppConfig", "Certificates", "*", "AssetReference"}, Types: []string{"com.apple.asset.credential.certificate"}},
+		{Path: []string{"ExtensionConfigs", "*", "DataAssetReference"}, Types: []string{"com.apple.asset.data"}},
+		{Path: []string{"ExtensionConfigs", "*", "Passwords", "*", "AssetReference"}, Types: []string{"com.apple.asset.credential.userpassword"}},
+		{Path: []string{"ExtensionConfigs", "*", "Identities", "*", "AssetReference"}, Types: []string{"com.apple.asset.credential.identity", "com.apple.asset.credential.scep", "com.apple.asset.credential.acme"}},
+		{Path: []string{"ExtensionConfigs", "*", "Certificates", "*", "AssetReference"}, Types: []string{"com.apple.asset.credential.certificate"}},
+		{Path: []string{"LegacyAppConfigAssetReference"}, Types: []string{"com.apple.asset.data"}},
+	},
+	"com.apple.configuration.content-cache.settings": {
+		{Path: []string{"ManagementStatusCertificateReference"}, Types: []string{"com.apple.asset.credential.certificate"}},
+	},
+	"com.apple.configuration.extensible-sso": {
+		{Path: []string{"PlatformSSO", "AccessKey", "TerminalIdentityAssetReference"}, Types: []string{"com.apple.asset.credential.identity", "com.apple.asset.credential.scep", "com.apple.asset.credential.acme"}},
+		{Path: []string{"PlatformSSO", "AccessKey", "ReaderIssuerCertificateAssetReference"}, Types: []string{"com.apple.asset.credential.certificate"}},
+	},
+	"com.apple.configuration.legacy.interactive": {
+		{Path: []string{"ProfileAssetReference"}, Types: []string{"com.apple.asset.data"}},
+	},
+	"com.apple.configuration.legacy": {
+		{Path: []string{"ProfileAssetReference"}, Types: []string{"com.apple.asset.data"}},
+	},
+	"com.apple.configuration.management.test": {
+		{Path: []string{"EchoDataAssetReference"}, Types: []string{"com.apple.asset.data"}},
+	},
+	"com.apple.configuration.network.dns-settings": {
+		{Path: []string{"DNSSettings", "IdentityAssetReference"}, Types: []string{"com.apple.asset.credential.identity", "com.apple.asset.credential.scep", "com.apple.asset.credential.acme"}},
+	},
+	"com.apple.configuration.network.relay": {
+		{Path: []string{"Relays", "*", "IdentityAssetReference"}, Types: []string{"com.apple.asset.credential.identity", "com.apple.asset.credential.scep", "com.apple.asset.credential.acme"}},
+		{Path: []string{"Relays", "*", "PublicKeyData", "*"}, Types: []string{"com.apple.asset.data"}},
+	},
+	"com.apple.configuration.network.vpn.always-on": {
+		{Path: []string{"TunnelConfigurations", "*", "IKEV2", "Authentication", "CredentialsAssetReference"}, Types: []string{"com.apple.asset.credential.userpassword"}},
+		{Path: []string{"TunnelConfigurations", "*", "IKEV2", "Authentication", "IdentityAssetReference"}, Types: []string{"com.apple.asset.credential.acme", "com.apple.asset.credential.identity", "com.apple.asset.credential.scep"}},
+		{Path: []string{"TunnelConfigurations", "*", "IKEV2", "Authentication", "ExtendedAuth", "CredentialsAssetReference"}, Types: []string{"com.apple.asset.credential.userpassword"}},
+	},
+	"com.apple.configuration.network.vpn.ikev2": {
+		{Path: []string{"Authentication", "CredentialsAssetReference"}, Types: []string{"com.apple.asset.credential.userpassword"}},
+		{Path: []string{"Authentication", "IdentityAssetReference"}, Types: []string{"com.apple.asset.credential.acme", "com.apple.asset.credential.identity", "com.apple.asset.credential.scep"}},
+		{Path: []string{"Authentication", "ExtendedAuth", "CredentialsAssetReference"}, Types: []string{"com.apple.asset.credential.userpassword"}},
+		{Path: []string{"DNS", "IdentityAssetReference"}, Types: []string{"com.apple.asset.credential.acme", "com.apple.asset.credential.identity", "com.apple.asset.credential.scep"}},
+		{Path: []string{"Proxies", "Protocol", "CredentialsAssetReference"}, Types: []string{"com.apple.asset.credential.userpassword"}},
+	},
+	"com.apple.configuration.network.vpn.ipsec": {
+		{Path: []string{"Authentication", "CredentialsAssetReference"}, Types: []string{"com.apple.asset.credential.userpassword"}},
+		{Path: []string{"Authentication", "IdentityAssetReference"}, Types: []string{"com.apple.asset.credential.acme", "com.apple.asset.credential.identity", "com.apple.asset.credential.scep"}},
+		{Path: []string{"Authentication", "XAuth", "CredentialsAssetReference"}, Types: []string{"com.apple.asset.credential.userpassword"}},
+		{Path: []string{"DNS", "IdentityAssetReference"}, Types: []string{"com.apple.asset.credential.acme", "com.apple.asset.credential.identity", "com.apple.asset.credential.scep"}},
+		{Path: []string{"Proxies", "Protocol", "CredentialsAssetReference"}, Types: []string{"com.apple.asset.credential.userpassword"}},
+	},
+	"com.apple.configuration.network.vpn.vpn-plugin": {
+		{Path: []string{"Authentication", "CredentialsAssetReference"}, Types: []string{"com.apple.asset.credential.userpassword"}},
+		{Path: []string{"Authentication", "IdentityAssetReference"}, Types: []string{"com.apple.asset.credential.acme", "com.apple.asset.credential.identity", "com.apple.asset.credential.scep"}},
+		{Path: []string{"DNS", "IdentityAssetReference"}, Types: []string{"com.apple.asset.credential.acme", "com.apple.asset.credential.identity", "com.apple.asset.credential.scep"}},
+		{Path: []string{"Proxies", "Protocol", "CredentialsAssetReference"}, Types: []string{"com.apple.asset.credential.userpassword"}},
+	},
+	"com.apple.configuration.screensharing.connection": {
+		{Path: []string{"AuthenticationCredentialsAssetReference"}, Types: []string{"com.apple.asset.credential.userpassword"}},
+	},
+	"com.apple.configuration.security.certificate": {
+		{Path: []string{"CredentialAssetReference"}, Types: []string{"com.apple.asset.credential.certificate"}},
+	},
+	"com.apple.configuration.security.identity": {
+		{Path: []string{"CredentialAssetReference"}, Types: []string{"com.apple.asset.credential.identity", "com.apple.asset.credential.scep", "com.apple.asset.credential.acme"}},
+	},
+	"com.apple.configuration.security.passkey.attestation": {
+		{Path: []string{"AttestationIdentityAssetReference"}, Types: []string{"com.apple.asset.credential.identity", "com.apple.asset.credential.scep", "com.apple.asset.credential.acme"}},
+	},
+	"com.apple.configuration.services.background-tasks": {
+		{Path: []string{"ExecutableAssetReference"}, Types: []string{"com.apple.asset.data"}},
+		{Path: []string{"LaunchdConfigurations", "*", "FileAssetReference"}, Types: []string{"com.apple.asset.data"}},
+	},
+	"com.apple.configuration.services.configuration-files": {
+		{Path: []string{"DataAssetReference"}, Types: []string{"com.apple.asset.data"}},
+	},
+	"com.apple.configuration.watch.enrollment": {
+		{Path: []string{"AnchorCertificateAssetReferences", "*"}, Types: []string{"com.apple.asset.credential.certificate"}},
+	},
+	"com.apple.configuration.webcontent-filter.plugin": {
+		{Path: []string{"Authentication", "CredentialsAssetReference"}, Types: []string{"com.apple.asset.credential.userpassword"}},
+		{Path: []string{"Authentication", "IdentityAssetReference"}, Types: []string{"com.apple.asset.credential.acme", "com.apple.asset.credential.identity", "com.apple.asset.credential.scep"}},
+		{Path: []string{"Filter", "URLs", "Parameters", "PIR", "AuthenticationTokenAssetReference"}, Types: []string{"com.apple.asset.credential.userpassword"}},
+	},
+}

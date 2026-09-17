@@ -1,0 +1,14 @@
+{
+  "Type": "com.apple.configuration.network.vpn.ipsec",
+  "Identifier": "com.deploymenttheory.acceptance.network.vpn.ipsec",
+  "Payload": {
+    "VisibleName": "Corporate IPSec VPN",
+    "HostName": "vpn.example.com",
+    "Authentication": {
+      "Method": "SharedSecret",
+      "LocalIdentifier": "vpngroup",
+      "LocalIdentifierType": "KeyID",
+      "CredentialsAssetReference": "com.deploymenttheory.acceptance.password"
+    }
+  }
+}

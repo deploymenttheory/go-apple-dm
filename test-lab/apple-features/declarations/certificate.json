@@ -1,0 +1,9 @@
+{
+  "Type": "com.apple.asset.credential.certificate",
+  "Identifier": "com.deploymenttheory.acceptance.certificate",
+  "Payload": {
+    "Reference": {
+      "DataURL": "https://assets.example.test/certificate.json"
+    }
+  }
+}

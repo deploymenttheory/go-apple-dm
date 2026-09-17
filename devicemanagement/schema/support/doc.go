@@ -9,6 +9,11 @@
 // metadata. Pointer booleans preserve the difference between an unspecified
 // condition and an explicit prohibition.
 //
+// OS versions are provided by devicemanagement/osversion. Version is an alias,
+// and the existing ParseVersion, MustVersion and V functions remain available.
+// Generated macOS boundaries use osversion's named major release constants
+// while retaining the minor and patch components supplied by Apple's schema.
+//
 // The tables describe the pinned Apple schema. Missing support or target data
 // limits what can be inferred; consumers must inspect the result reason rather
 // than treat an unspecified target as verified compatibility.

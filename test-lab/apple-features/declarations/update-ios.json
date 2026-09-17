@@ -1,0 +1,15 @@
+{
+  "Type": "com.apple.configuration.softwareupdate.settings",
+  "Identifier": "com.deploymenttheory.acceptance.update-ios",
+  "Payload": {
+    "Deferrals": {
+      "CombinedPeriodInDays": 7
+    },
+    "RecommendedCadence": "Oldest",
+    "AutomaticActions": {
+      "Download": "AlwaysOn",
+      "InstallOSUpdates": "AlwaysOn"
+    },
+    "Notifications": false
+  }
+}

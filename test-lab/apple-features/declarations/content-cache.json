@@ -1,0 +1,10 @@
+{
+  "Type": "com.apple.configuration.content-cache.settings",
+  "Identifier": "com.deploymenttheory.acceptance.content-cache",
+  "Payload": {
+    "ManagementStatusTarget": "https://mdm.example.test/content-cache/metrics/REPLACE_WITH_ISSUED_CREDENTIAL",
+    "ManagementSecurityConfig": "no-cert",
+    "ManagementReportingInterval": 300,
+    "DeclarativeStatusInterval": 300
+  }
+}

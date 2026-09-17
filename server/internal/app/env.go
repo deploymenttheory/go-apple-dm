@@ -155,6 +155,14 @@ func ParseEnv(get func(string) string) (Config, error) {
 	if v := get(EnvDDMSendKey); v != "" {
 		cfg.DDMSendKey = []byte(v)
 	}
+	cfg.ContentCache.PublicURL = get("DM_CONTENT_CACHE_URL")
+	if v := get("DM_CONTENT_CACHE_RETENTION"); v != "" {
+		d, err := time.ParseDuration(v)
+		if err != nil || d <= 0 {
+			return Config{}, fmt.Errorf("%w: DM_CONTENT_CACHE_RETENTION must be positive", ErrConfig)
+		}
+		cfg.ContentCache.Retention = d
+	}
 	if v := get(EnvDDMRecvKey); v != "" {
 		cfg.DDMRecvKey = []byte(v)
 	}

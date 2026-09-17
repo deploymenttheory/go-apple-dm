@@ -1,0 +1,412 @@
+{
+  "description": "Protocol fixtures. Substitute lab values and review each fixture before live assignment. No live acceptance is implied. iPadOS uses the iOS schema family.",
+  "features": [
+    {
+      "id": "binary-controls",
+      "file": "declarations/binary-controls.json",
+      "platforms": [
+        "macOS"
+      ],
+      "versions": [
+        "27.0"
+      ],
+      "source": "https://support.apple.com/en-us/148830",
+      "live": "pending"
+    },
+    {
+      "id": "app-privacy",
+      "file": "declarations/app-privacy.json",
+      "platforms": [
+        "macOS",
+        "iOS"
+      ],
+      "versions": [
+        "27.0"
+      ],
+      "source": "https://support.apple.com/en-us/148830",
+      "live": "pending",
+      "macOSChannel": "user"
+    },
+    {
+      "id": "website-privacy",
+      "file": "declarations/website-privacy.json",
+      "platforms": [
+        "macOS",
+        "iOS"
+      ],
+      "versions": [
+        "27.0"
+      ],
+      "source": "https://support.apple.com/en-us/148830",
+      "live": "pending",
+      "macOSChannel": "user"
+    },
+    {
+      "id": "platform-sso",
+      "file": "declarations/platform-sso.json",
+      "platforms": [
+        "macOS"
+      ],
+      "versions": [
+        "27.0"
+      ],
+      "source": "https://support.apple.com/en-us/148830",
+      "live": "pending"
+    },
+    {
+      "id": "extensible-sso",
+      "file": "declarations/extensible-sso.json",
+      "platforms": [
+        "macOS",
+        "iOS",
+        "visionOS"
+      ],
+      "versions": [
+        "27.0"
+      ],
+      "source": "https://support.apple.com/en-us/148830",
+      "live": "pending"
+    },
+    {
+      "id": "network.dns-proxy",
+      "file": "declarations/network.dns-proxy.json",
+      "platforms": [
+        "macOS",
+        "iOS",
+        "visionOS"
+      ],
+      "versions": [
+        "27.0"
+      ],
+      "source": "https://support.apple.com/en-us/148830",
+      "live": "pending"
+    },
+    {
+      "id": "network.dns-settings",
+      "file": "declarations/network.dns-settings.json",
+      "platforms": [
+        "macOS",
+        "iOS",
+        "visionOS"
+      ],
+      "versions": [
+        "27.0"
+      ],
+      "source": "https://support.apple.com/en-us/148830",
+      "live": "pending"
+    },
+    {
+      "id": "network.relay",
+      "file": "declarations/network.relay.json",
+      "platforms": [
+        "macOS",
+        "iOS",
+        "visionOS"
+      ],
+      "versions": [
+        "27.0"
+      ],
+      "source": "https://support.apple.com/en-us/148830",
+      "live": "pending"
+    },
+    {
+      "id": "network.vpn.ikev2",
+      "file": "declarations/network.vpn.ikev2.json",
+      "platforms": [
+        "macOS",
+        "iOS",
+        "tvOS",
+        "visionOS"
+      ],
+      "versions": [
+        "27.0"
+      ],
+      "source": "https://support.apple.com/en-us/148830",
+      "live": "pending"
+    },
+    {
+      "id": "network.vpn.ipsec",
+      "file": "declarations/network.vpn.ipsec.json",
+      "platforms": [
+        "macOS",
+        "iOS",
+        "visionOS"
+      ],
+      "versions": [
+        "27.0"
+      ],
+      "source": "https://support.apple.com/en-us/148830",
+      "live": "pending"
+    },
+    {
+      "id": "network.vpn.always-on",
+      "file": "declarations/network.vpn.always-on.json",
+      "platforms": [
+        "iOS",
+        "visionOS"
+      ],
+      "versions": [
+        "27.0"
+      ],
+      "source": "https://support.apple.com/en-us/148830",
+      "live": "pending"
+    },
+    {
+      "id": "network.vpn.vpn-plugin",
+      "file": "declarations/network.vpn.vpn-plugin.json",
+      "platforms": [
+        "macOS",
+        "iOS",
+        "tvOS",
+        "visionOS"
+      ],
+      "versions": [
+        "27.0"
+      ],
+      "source": "https://support.apple.com/en-us/148830",
+      "live": "pending"
+    },
+    {
+      "id": "content-cache",
+      "file": "declarations/content-cache.json",
+      "platforms": [
+        "macOS"
+      ],
+      "versions": [
+        "27.0"
+      ],
+      "source": "https://support.apple.com/en-us/148830",
+      "live": "pending"
+    },
+    {
+      "id": "managedapp",
+      "file": "declarations/managedapp.json",
+      "platforms": [
+        "macOS"
+      ],
+      "versions": [
+        "27.0"
+      ],
+      "source": "https://support.apple.com/en-us/148830",
+      "live": "pending"
+    },
+    {
+      "id": "package-removal",
+      "file": "declarations/package-removal.json",
+      "platforms": [
+        "macOS"
+      ],
+      "versions": [
+        "27.0"
+      ],
+      "source": "https://support.apple.com/en-us/148830",
+      "live": "pending"
+    },
+    {
+      "id": "intelligence",
+      "file": "declarations/intelligence.json",
+      "platforms": [
+        "macOS",
+        "iOS"
+      ],
+      "versions": [
+        "27.0"
+      ],
+      "source": "https://support.apple.com/en-us/148830",
+      "live": "pending"
+    },
+    {
+      "id": "siri",
+      "file": "declarations/siri.json",
+      "platforms": [
+        "macOS",
+        "iOS",
+        "visionOS"
+      ],
+      "versions": [
+        "27.0"
+      ],
+      "source": "https://support.apple.com/en-us/148830",
+      "live": "pending"
+    },
+    {
+      "id": "legacy-asset",
+      "file": "declarations/legacy-asset.json",
+      "platforms": [
+        "macOS",
+        "iOS",
+        "tvOS",
+        "visionOS",
+        "watchOS"
+      ],
+      "versions": [
+        "27.0"
+      ],
+      "source": "https://support.apple.com/en-us/148830",
+      "live": "pending"
+    },
+    {
+      "id": "legacy-url",
+      "file": "declarations/legacy-url.json",
+      "platforms": [
+        "macOS",
+        "iOS",
+        "tvOS",
+        "visionOS",
+        "watchOS"
+      ],
+      "versions": [
+        "26.0",
+        "26.4",
+        "26.6.2",
+        "27.0"
+      ],
+      "source": "https://support.apple.com/en-us/148830",
+      "live": "pending"
+    },
+    {
+      "id": "acme",
+      "file": "declarations/acme.json",
+      "platforms": [
+        "macOS",
+        "iOS",
+        "tvOS",
+        "visionOS",
+        "watchOS"
+      ],
+      "versions": [
+        "26.0",
+        "26.4",
+        "26.6.2",
+        "27.0"
+      ],
+      "source": "https://support.apple.com/en-us/148830",
+      "live": "pending"
+    },
+    {
+      "id": "scep",
+      "file": "declarations/scep.json",
+      "platforms": [
+        "macOS",
+        "iOS",
+        "tvOS",
+        "visionOS",
+        "watchOS"
+      ],
+      "versions": [
+        "26.0",
+        "26.4",
+        "26.6.2",
+        "27.0"
+      ],
+      "source": "https://support.apple.com/en-us/148830",
+      "live": "pending"
+    },
+    {
+      "id": "certificate",
+      "file": "declarations/certificate.json",
+      "platforms": [
+        "macOS",
+        "iOS",
+        "tvOS",
+        "visionOS",
+        "watchOS"
+      ],
+      "versions": [
+        "26.0",
+        "26.4",
+        "26.6.2",
+        "27.0"
+      ],
+      "source": "https://support.apple.com/en-us/148830",
+      "live": "pending"
+    },
+    {
+      "id": "password",
+      "file": "declarations/password.json",
+      "platforms": [
+        "macOS",
+        "iOS",
+        "tvOS",
+        "visionOS",
+        "watchOS"
+      ],
+      "versions": [
+        "26.0",
+        "26.4",
+        "26.6.2",
+        "27.0"
+      ],
+      "source": "https://support.apple.com/en-us/148830",
+      "live": "pending"
+    },
+    {
+      "id": "data",
+      "file": "declarations/data.json",
+      "platforms": [
+        "macOS",
+        "iOS",
+        "tvOS",
+        "visionOS",
+        "watchOS"
+      ],
+      "versions": [
+        "26.0",
+        "26.4",
+        "26.6.2",
+        "27.0"
+      ],
+      "source": "https://support.apple.com/en-us/148830",
+      "live": "pending"
+    },
+    {
+      "id": "update-macos",
+      "file": "declarations/update-macos.json",
+      "platforms": [
+        "macOS"
+      ],
+      "versions": [
+        "26.0",
+        "26.4",
+        "26.6.2",
+        "27.0"
+      ],
+      "source": "https://support.apple.com/en-gb/guide/deployment/depd30715cbb/web",
+      "live": "pending"
+    },
+    {
+      "id": "update-ios",
+      "file": "declarations/update-ios.json",
+      "platforms": [
+        "iOS",
+        "visionOS"
+      ],
+      "versions": [
+        "26.0",
+        "26.4",
+        "26.6.2",
+        "27.0"
+      ],
+      "source": "https://support.apple.com/en-gb/guide/deployment/depd30715cbb/web",
+      "live": "pending"
+    },
+    {
+      "id": "update-deadline",
+      "file": "declarations/update-deadline.json",
+      "platforms": [
+        "macOS",
+        "iOS",
+        "tvOS",
+        "visionOS"
+      ],
+      "versions": [
+        "26.0",
+        "26.4",
+        "26.6.2",
+        "27.0"
+      ],
+      "source": "https://support.apple.com/en-gb/guide/deployment/depd30715cbb/web",
+      "live": "pending"
+    }
+  ]
+}

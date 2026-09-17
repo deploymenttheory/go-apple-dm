@@ -1,0 +1,15 @@
+{
+  "Type": "com.apple.configuration.safari.settings",
+  "Identifier": "com.deploymenttheory.acceptance.website-privacy",
+  "Payload": {
+    "Privacy": {
+      "PermissionDefaults": {
+        "*example.com": {
+          "OrganizationJustification": "The camera and microphone are required for video conferencing.",
+          "Camera": "Allow",
+          "Microphone": "Allow"
+        }
+      }
+    }
+  }
+}

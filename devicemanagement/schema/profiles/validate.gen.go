@@ -28,6 +28,11 @@ func (x *CommonPayloadKeys) Validate(t support.Target) error {
 }
 
 func (x *CommonPayloadKeys) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
+	c.Support(p, true, supportTable["CommonPayloadKeys"])
 	{
 		path := validation.Join(p, "PayloadIdentifier")
 		present := x.PayloadIdentifier != ""
@@ -88,6 +93,11 @@ func (x *GlobalPreferences) Validate(t support.Target) error {
 }
 
 func (x *GlobalPreferences) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
+	c.Support(p, true, supportTable["GlobalPreferences"])
 	{
 		path := validation.Join(p, "MultipleSessionEnabled")
 		present := x.MultipleSessionEnabled != nil
@@ -111,6 +121,11 @@ func (x *TopLevel) Validate(t support.Target) error {
 }
 
 func (x *TopLevel) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
+	c.Support(p, true, supportTable["TopLevel"])
 	{
 		path := validation.Join(p, "PayloadIdentifier")
 		present := x.PayloadIdentifier != ""
@@ -233,6 +248,10 @@ func (x *TopLevel) validate(c *validation.Collector, p string) {
 }
 
 func (x *TopLevelPayloadContent) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
 	{
 		path := validation.Join(p, "ANY")
 		present := x.ANY != nil
@@ -243,6 +262,10 @@ func (x *TopLevelPayloadContent) validate(c *validation.Collector, p string) {
 }
 
 func (x *TopLevelConsentText) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
 	{
 		path := validation.Join(p, "ConsentTextItem")
 		present := len(x.ConsentTextItem) > 0
@@ -261,6 +284,11 @@ func (x *ActiveDirectoryCertificate) Validate(t support.Target) error {
 }
 
 func (x *ActiveDirectoryCertificate) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
+	c.Support(p, true, supportTable["ActiveDirectoryCertificate"])
 	{
 		path := validation.Join(p, "CertServer")
 		present := x.CertServer != ""
@@ -340,6 +368,11 @@ func (x *AIMAccount) Validate(t support.Target) error {
 }
 
 func (x *AIMAccount) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
+	c.Support(p, true, supportTable["AIMAccount"])
 	{
 		path := validation.Join(p, "AIMAccountDescription")
 		present := x.AIMAccountDescription != nil
@@ -404,6 +437,15 @@ func (x *ContentCaching) Validate(t support.Target) error {
 }
 
 func (x *ContentCaching) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
+	c.Support(p, true, supportTable["ContentCaching"])
+
+	c.Require(validation.Join(p, "AllowSharedCaching"),
+		!(x.AllowPersonalCaching != nil && !*x.AllowPersonalCaching && x.AllowSharedCaching != nil && !*x.AllowSharedCaching),
+		"personal or shared caching must be enabled")
 	{
 		path := validation.Join(p, "AllowCacheDelete")
 		present := x.AllowCacheDelete != nil
@@ -554,6 +596,10 @@ func (x *ContentCaching) validate(c *validation.Collector, p string) {
 }
 
 func (x *ContentCachingRanges) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
 	{
 		path := validation.Join(p, "type")
 		present := x.Type != nil
@@ -588,6 +634,11 @@ func (x *ParentalControlsDictionary) Validate(t support.Target) error {
 }
 
 func (x *ParentalControlsDictionary) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
+	c.Support(p, true, supportTable["ParentalControlsDictionary"])
 	{
 		path := validation.Join(p, "parentalControl")
 		present := true
@@ -606,6 +657,11 @@ func (x *DirectoryService) Validate(t support.Target) error {
 }
 
 func (x *DirectoryService) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
+	c.Support(p, true, supportTable["DirectoryService"])
 	{
 		path := validation.Join(p, "HostName")
 		present := x.HostName != ""
@@ -852,6 +908,11 @@ func (x *MediaManagementDiscBurning) Validate(t support.Target) error {
 }
 
 func (x *MediaManagementDiscBurning) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
+	c.Support(p, true, supportTable["MediaManagementDiscBurning"])
 	{
 		path := validation.Join(p, "BurnSupport")
 		present := x.BurnSupport != ""
@@ -873,6 +934,11 @@ func (x *Accounts) Validate(t support.Target) error {
 }
 
 func (x *Accounts) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
+	c.Support(p, true, supportTable["Accounts"])
 	{
 		path := validation.Join(p, "EnableGuestAccount")
 		present := x.EnableGuestAccount != nil
@@ -896,6 +962,11 @@ func (x *EnergySaver) Validate(t support.Target) error {
 }
 
 func (x *EnergySaver) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
+	c.Support(p, true, supportTable["EnergySaver"])
 	{
 		path := validation.Join(p, "com.apple.EnergySaver.desktop.ACPower")
 		present := x.ComAppleEnergySaverDesktopACPower != nil
@@ -941,6 +1012,10 @@ func (x *EnergySaver) validate(c *validation.Collector, p string) {
 }
 
 func (x *EnergySaverPowerSettings) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
 	{
 		path := validation.Join(p, "Display Sleep Timer")
 		present := x.DisplaySleepTimer != nil
@@ -1016,6 +1091,10 @@ func (x *EnergySaverPowerSettings) validate(c *validation.Collector, p string) {
 }
 
 func (x *EnergySaverEnergySaverSchedule) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
 	{
 		path := validation.Join(p, "RepeatingPowerOn")
 		present := x.RepeatingPowerOn != nil
@@ -1037,6 +1116,10 @@ func (x *EnergySaverEnergySaverSchedule) validate(c *validation.Collector, p str
 }
 
 func (x *EnergySaverRepeatingPowerItem) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
 	{
 		path := validation.Join(p, "eventtype")
 		present := x.Eventtype != ""
@@ -1070,6 +1153,11 @@ func (x *FDEFileVaultOptions) Validate(t support.Target) error {
 }
 
 func (x *FDEFileVaultOptions) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
+	c.Support(p, true, supportTable["FDEFileVaultOptions"])
 	{
 		path := validation.Join(p, "dontAllowFDEDisable")
 		present := x.DontAllowFDEDisable != nil
@@ -1099,6 +1187,11 @@ func (x *MobileAccounts) Validate(t support.Target) error {
 }
 
 func (x *MobileAccounts) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
+	c.Support(p, true, supportTable["MobileAccounts"])
 	{
 		path := validation.Join(p, "com.apple.cachedaccounts.CreateAtLogin")
 		present := x.ComAppleCachedaccountsCreateAtLogin != nil
@@ -1140,6 +1233,11 @@ func (x *TimeServer) Validate(t support.Target) error {
 }
 
 func (x *TimeServer) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
+	c.Support(p, true, supportTable["TimeServer"])
 	{
 		path := validation.Join(p, "timeServer")
 		present := x.TimeServer != nil
@@ -1163,6 +1261,11 @@ func (x *WiFiManagedSettings) Validate(t support.Target) error {
 }
 
 func (x *WiFiManagedSettings) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
+	c.Support(p, true, supportTable["WiFiManagedSettings"])
 	{
 		path := validation.Join(p, "RequireAdminForIBSS")
 		present := x.RequireAdminForIBSS != nil
@@ -1192,6 +1295,11 @@ func (x *FDEFileVault) Validate(t support.Target) error {
 }
 
 func (x *FDEFileVault) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
+	c.Support(p, true, supportTable["FDEFileVault"])
 	{
 		path := validation.Join(p, "Enable")
 		present := x.Enable != ""
@@ -1294,6 +1402,11 @@ func (x *TimeMachine) Validate(t support.Target) error {
 }
 
 func (x *TimeMachine) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
+	c.Support(p, true, supportTable["TimeMachine"])
 	{
 		path := validation.Join(p, "AutoBackup")
 		present := x.AutoBackup != nil
@@ -1354,6 +1467,11 @@ func (x *ManagedPreferences) Validate(t support.Target) error {
 }
 
 func (x *ManagedPreferences) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
+	c.Support(p, true, supportTable["ManagedPreferences"])
 	{
 		path := validation.Join(p, "PayloadContent")
 		present := len(x.PayloadContent) > 0
@@ -1368,6 +1486,10 @@ func (x *ManagedPreferences) validate(c *validation.Collector, p string) {
 }
 
 func (x *ManagedPreferencesPreferenceDomain) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
 	{
 		path := validation.Join(p, "Forced")
 		present := len(x.Forced) > 0
@@ -1389,6 +1511,10 @@ func (x *ManagedPreferencesPreferenceDomain) validate(c *validation.Collector, p
 }
 
 func (x *ManagedPreferencesPreferenceDomainForced) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
 	{
 		path := validation.Join(p, "mcx_preference_settings")
 		present := len(x.McxPreferenceSettings) > 0
@@ -1399,6 +1525,10 @@ func (x *ManagedPreferencesPreferenceDomainForced) validate(c *validation.Collec
 }
 
 func (x *ManagedPreferencesPreferenceDomainSetOnce) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
 	{
 		path := validation.Join(p, "mcx_preference_settings")
 		present := len(x.McxPreferenceSettings) > 0
@@ -1417,6 +1547,11 @@ func (x *NSExtensionManagement) Validate(t support.Target) error {
 }
 
 func (x *NSExtensionManagement) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
+	c.Support(p, true, supportTable["NSExtensionManagement"])
 	{
 		path := validation.Join(p, "AllowedExtensions")
 		present := len(x.AllowedExtensions) > 0
@@ -1446,6 +1581,11 @@ func (x *SetupAssistant) Validate(t support.Target) error {
 }
 
 func (x *SetupAssistant) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
+	c.Support(p, true, supportTable["SetupAssistant"])
 	{
 		path := validation.Join(p, "SkipCloudSetup")
 		present := x.SkipCloudSetup != nil
@@ -1529,6 +1669,11 @@ func (x *ShareKit) Validate(t support.Target) error {
 }
 
 func (x *ShareKit) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
+	c.Support(p, true, supportTable["ShareKit"])
 	{
 		path := validation.Join(p, "SHKAllowedShareServices")
 		present := len(x.SHKAllowedShareServices) > 0
@@ -1552,6 +1697,11 @@ func (x *SoftwareUpdate) Validate(t support.Target) error {
 }
 
 func (x *SoftwareUpdate) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
+	c.Support(p, true, supportTable["SoftwareUpdate"])
 	{
 		path := validation.Join(p, "CatalogURL")
 		present := x.CatalogURL != nil
@@ -1617,6 +1767,11 @@ func (x *NetworkProxyConfiguration) Validate(t support.Target) error {
 }
 
 func (x *NetworkProxyConfiguration) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
+	c.Support(p, true, supportTable["NetworkProxyConfiguration"])
 	{
 		path := validation.Join(p, "Proxies")
 		present := true
@@ -1630,6 +1785,10 @@ func (x *NetworkProxyConfiguration) validate(c *validation.Collector, p string) 
 }
 
 func (x *NetworkProxyConfigurationProxies) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
 	{
 		path := validation.Join(p, "FTPEnable")
 		present := x.FTPEnable != nil
@@ -1785,6 +1944,11 @@ func (x *PrivacyPreferencesPolicyControl) Validate(t support.Target) error {
 }
 
 func (x *PrivacyPreferencesPolicyControl) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
+	c.Support(p, true, supportTable["PrivacyPreferencesPolicyControl"])
 	{
 		path := validation.Join(p, "Services")
 		present := true
@@ -1798,6 +1962,10 @@ func (x *PrivacyPreferencesPolicyControl) validate(c *validation.Collector, p st
 }
 
 func (x *PrivacyPreferencesPolicyControlServices) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
 	{
 		path := validation.Join(p, "AddressBook")
 		present := len(x.AddressBook) > 0
@@ -2017,6 +2185,10 @@ func (x *PrivacyPreferencesPolicyControlServices) validate(c *validation.Collect
 }
 
 func (x *PrivacyPreferencesPolicyControlIdentity) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
 	{
 		path := validation.Join(p, "Identifier")
 		present := x.Identifier != ""
@@ -2100,6 +2272,11 @@ func (x *AirPlaySecurity) Validate(t support.Target) error {
 }
 
 func (x *AirPlaySecurity) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
+	c.Support(p, true, supportTable["AirPlaySecurity"])
 	{
 		path := validation.Join(p, "SecurityType")
 		present := x.SecurityType != ""
@@ -2137,6 +2314,11 @@ func (x *AirPlay) Validate(t support.Target) error {
 }
 
 func (x *AirPlay) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
+	c.Support(p, true, supportTable["AirPlay"])
 	{
 		path := validation.Join(p, "AllowList")
 		present := len(x.AllowList) > 0
@@ -2167,6 +2349,10 @@ func (x *AirPlay) validate(c *validation.Collector, p string) {
 }
 
 func (x *AirPlayAllowList) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
 	{
 		path := validation.Join(p, "DeviceID")
 		present := x.DeviceID != nil
@@ -2185,6 +2371,10 @@ func (x *AirPlayAllowList) validate(c *validation.Collector, p string) {
 }
 
 func (x *AirPlayPasswords) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
 	{
 		path := validation.Join(p, "DeviceName")
 		present := x.DeviceName != nil
@@ -2207,6 +2397,10 @@ func (x *AirPlayPasswords) validate(c *validation.Collector, p string) {
 }
 
 func (x *AirPlayWhitelist) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
 	{
 		path := validation.Join(p, "DeviceID")
 		present := x.DeviceID != nil
@@ -2233,6 +2427,11 @@ func (x *AirPrint) Validate(t support.Target) error {
 }
 
 func (x *AirPrint) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
+	c.Support(p, true, supportTable["AirPrint"])
 	{
 		path := validation.Join(p, "AirPrint")
 		present := len(x.AirPrint) > 0
@@ -2246,6 +2445,10 @@ func (x *AirPrint) validate(c *validation.Collector, p string) {
 }
 
 func (x *AirPrintAirPrint) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
 	{
 		path := validation.Join(p, "IPAddress")
 		present := x.IPAddress != ""
@@ -2286,6 +2489,11 @@ func (x *APN) Validate(t support.Target) error {
 }
 
 func (x *APN) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
+	c.Support(p, true, supportTable["APN"])
 	{
 		path := validation.Join(p, "DefaultsData")
 		present := true
@@ -2309,6 +2517,10 @@ func (x *APN) validate(c *validation.Collector, p string) {
 }
 
 func (x *APNDefaultsData) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
 	{
 		path := validation.Join(p, "apns")
 		present := len(x.Apns) > 0
@@ -2322,6 +2534,10 @@ func (x *APNDefaultsData) validate(c *validation.Collector, p string) {
 }
 
 func (x *APNDefaultsDataApns) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
 	{
 		path := validation.Join(p, "apn")
 		present := x.Apn != ""
@@ -2364,6 +2580,11 @@ func (x *AppLock) Validate(t support.Target) error {
 }
 
 func (x *AppLock) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
+	c.Support(p, true, supportTable["AppLock"])
 	{
 		path := validation.Join(p, "App")
 		present := true
@@ -2377,6 +2598,10 @@ func (x *AppLock) validate(c *validation.Collector, p string) {
 }
 
 func (x *AppLockApp) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
 	{
 		path := validation.Join(p, "Identifier")
 		present := x.Identifier != ""
@@ -2405,6 +2630,10 @@ func (x *AppLockApp) validate(c *validation.Collector, p string) {
 }
 
 func (x *AppLockAppOptions) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
 	{
 		path := validation.Join(p, "DisableTouch")
 		present := x.DisableTouch != nil
@@ -2486,6 +2715,10 @@ func (x *AppLockAppOptions) validate(c *validation.Collector, p string) {
 }
 
 func (x *AppLockAppUserEnabledOptions) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
 	{
 		path := validation.Join(p, "VoiceControl")
 		present := x.VoiceControl != nil
@@ -2527,6 +2760,11 @@ func (x *ParentalControlsApplicationRestrictions) Validate(t support.Target) err
 }
 
 func (x *ParentalControlsApplicationRestrictions) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
+	c.Support(p, true, supportTable["ParentalControlsApplicationRestrictions"])
 	{
 		path := validation.Join(p, "familyControlsEnabled")
 		present := true
@@ -2579,6 +2817,10 @@ func (x *ParentalControlsApplicationRestrictions) validate(c *validation.Collect
 }
 
 func (x *ParentalControlsApplicationRestrictionsApplicationItem) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
 	{
 		path := validation.Join(p, "bundleID")
 		present := x.BundleID != ""
@@ -2620,6 +2862,10 @@ func (x *ParentalControlsApplicationRestrictionsApplicationItem) validate(c *val
 }
 
 func (x *ParentalControlsApplicationRestrictionsAllowListAllowListItem) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
 	{
 		path := validation.Join(p, "bundleID")
 		present := x.BundleID != ""
@@ -2669,6 +2915,11 @@ func (x *Restrictions) Validate(t support.Target) error {
 }
 
 func (x *Restrictions) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
+	c.Support(p, true, supportTable["Restrictions"])
 	{
 		path := validation.Join(p, "allowAccountModification")
 		present := x.AllowAccountModification != nil
@@ -3967,6 +4218,11 @@ func (x *AppStore) Validate(t support.Target) error {
 }
 
 func (x *AppStore) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
+	c.Support(p, true, supportTable["AppStore"])
 	{
 		path := validation.Join(p, "restrict-store-require-admin-to-install")
 		present := x.RestrictStoreRequireAdminToInstall != nil
@@ -4002,6 +4258,11 @@ func (x *AutonomousSingleAppMode) Validate(t support.Target) error {
 }
 
 func (x *AutonomousSingleAppMode) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
+	c.Support(p, true, supportTable["AutonomousSingleAppMode"])
 	{
 		path := validation.Join(p, "AllowedApplications")
 		present := len(x.AllowedApplications) > 0
@@ -4015,6 +4276,10 @@ func (x *AutonomousSingleAppMode) validate(c *validation.Collector, p string) {
 }
 
 func (x *AutonomousSingleAppModeAllowedApplications) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
 	{
 		path := validation.Join(p, "BundleIdentifier")
 		present := x.BundleIdentifier != ""
@@ -4040,6 +4305,11 @@ func (x *AssociatedDomains) Validate(t support.Target) error {
 }
 
 func (x *AssociatedDomains) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
+	c.Support(p, true, supportTable["AssociatedDomains"])
 	{
 		path := validation.Join(p, "Configuration")
 		present := len(x.Configuration) > 0
@@ -4053,6 +4323,10 @@ func (x *AssociatedDomains) validate(c *validation.Collector, p string) {
 }
 
 func (x *AssociatedDomainsConfiguration) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
 	{
 		path := validation.Join(p, "ApplicationIdentifier")
 		present := x.ApplicationIdentifier != ""
@@ -4084,6 +4358,11 @@ func (x *CalDAV) Validate(t support.Target) error {
 }
 
 func (x *CalDAV) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
+	c.Support(p, true, supportTable["CalDAV"])
 	{
 		path := validation.Join(p, "CalDAVAccountDescription")
 		present := x.CalDAVAccountDescription != nil
@@ -4144,6 +4423,11 @@ func (x *CardDAV) Validate(t support.Target) error {
 }
 
 func (x *CardDAV) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
+	c.Support(p, true, supportTable["CardDAV"])
 	{
 		path := validation.Join(p, "CardDAVAccountDescription")
 		present := x.CardDAVAccountDescription != nil
@@ -4205,6 +4489,10 @@ func (x *CardDAV) validate(c *validation.Collector, p string) {
 }
 
 func (x *CardDAVCommunicationServiceRules) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
 	{
 		path := validation.Join(p, "DefaultServiceHandlers")
 		present := x.DefaultServiceHandlers != nil
@@ -4217,6 +4505,10 @@ func (x *CardDAVCommunicationServiceRules) validate(c *validation.Collector, p s
 }
 
 func (x *CardDAVCommunicationServiceRulesDefaultServiceHandlers) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
 	{
 		path := validation.Join(p, "AudioCall")
 		present := x.AudioCall != nil
@@ -4234,6 +4526,11 @@ func (x *Cellular) Validate(t support.Target) error {
 }
 
 func (x *Cellular) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
+	c.Support(p, true, supportTable["Cellular"])
 	{
 		path := validation.Join(p, "AttachAPN")
 		present := x.AttachAPN != nil
@@ -4255,6 +4552,10 @@ func (x *Cellular) validate(c *validation.Collector, p string) {
 }
 
 func (x *CellularAttachAPN) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
 	{
 		path := validation.Join(p, "Name")
 		present := x.Name != ""
@@ -4295,6 +4596,10 @@ func (x *CellularAttachAPN) validate(c *validation.Collector, p string) {
 }
 
 func (x *CellularAPNs) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
 	{
 		path := validation.Join(p, "Name")
 		present := x.Name != ""
@@ -4388,6 +4693,11 @@ func (x *CellularPrivateNetwork) Validate(t support.Target) error {
 }
 
 func (x *CellularPrivateNetwork) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
+	c.Support(p, true, supportTable["CellularPrivateNetwork"])
 	{
 		path := validation.Join(p, "Geofences")
 		present := len(x.Geofences) > 0
@@ -4438,6 +4748,10 @@ func (x *CellularPrivateNetwork) validate(c *validation.Collector, p string) {
 }
 
 func (x *CellularPrivateNetworkGeofences) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
 	{
 		path := validation.Join(p, "Longitude")
 		present := true
@@ -4486,6 +4800,11 @@ func (x *ConferenceRoomDisplay) Validate(t support.Target) error {
 }
 
 func (x *ConferenceRoomDisplay) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
+	c.Support(p, true, supportTable["ConferenceRoomDisplay"])
 	{
 		path := validation.Join(p, "Message")
 		present := x.Message != nil
@@ -4503,6 +4822,11 @@ func (x *Identification) Validate(t support.Target) error {
 }
 
 func (x *Identification) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
+	c.Support(p, true, supportTable["Identification"])
 	{
 		path := validation.Join(p, "PayloadIdentification")
 		present := true
@@ -4516,6 +4840,10 @@ func (x *Identification) validate(c *validation.Collector, p string) {
 }
 
 func (x *IdentificationPayloadIdentification) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
 	{
 		path := validation.Join(p, "UserName")
 		present := x.UserName != ""
@@ -4577,6 +4905,11 @@ func (x *ParentalControlsDashboardWidgetRestrictions) Validate(t support.Target)
 }
 
 func (x *ParentalControlsDashboardWidgetRestrictions) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
+	c.Support(p, true, supportTable["ParentalControlsDashboardWidgetRestrictions"])
 	{
 		path := validation.Join(p, "whiteListEnabled")
 		present := true
@@ -4597,6 +4930,10 @@ func (x *ParentalControlsDashboardWidgetRestrictions) validate(c *validation.Col
 }
 
 func (x *ParentalControlsDashboardWidgetRestrictionsWhiteList) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
 	{
 		path := validation.Join(p, "Type")
 		present := x.Type != ""
@@ -4622,6 +4959,11 @@ func (x *Declarations) Validate(t support.Target) error {
 }
 
 func (x *Declarations) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
+	c.Support(p, true, supportTable["Declarations"])
 	{
 		path := validation.Join(p, "Declarations")
 		present := len(x.Declarations) > 0
@@ -4640,6 +4982,11 @@ func (x *Desktop) Validate(t support.Target) error {
 }
 
 func (x *Desktop) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
+	c.Support(p, true, supportTable["Desktop"])
 	{
 		path := validation.Join(p, "locked")
 		present := x.Locked != nil
@@ -4663,6 +5010,11 @@ func (x *DNSProxy) Validate(t support.Target) error {
 }
 
 func (x *DNSProxy) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
+	c.Support(p, true, supportTable["DNSProxy"])
 	{
 		path := validation.Join(p, "AppBundleIdentifier")
 		present := x.AppBundleIdentifier != ""
@@ -4705,6 +5057,11 @@ func (x *DNSSettings) Validate(t support.Target) error {
 }
 
 func (x *DNSSettings) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
+	c.Support(p, true, supportTable["DNSSettings"])
 	{
 		path := validation.Join(p, "DNSSettings")
 		present := true
@@ -4733,6 +5090,10 @@ func (x *DNSSettings) validate(c *validation.Collector, p string) {
 }
 
 func (x *DNSSettingsDNSSettings) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
 	{
 		path := validation.Join(p, "DNSProtocol")
 		present := x.DNSProtocol != ""
@@ -4785,6 +5146,10 @@ func (x *DNSSettingsDNSSettings) validate(c *validation.Collector, p string) {
 }
 
 func (x *DNSSettingsOnDemandRulesElement) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
 	{
 		path := validation.Join(p, "Action")
 		present := x.Action != ""
@@ -4840,6 +5205,10 @@ func (x *DNSSettingsOnDemandRulesElement) validate(c *validation.Collector, p st
 }
 
 func (x *DNSSettingsOnDemandRulesElementActionParameters) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
 	{
 		path := validation.Join(p, "Domains")
 		present := len(x.Domains) > 0
@@ -4868,6 +5237,11 @@ func (x *Dock) Validate(t support.Target) error {
 }
 
 func (x *Dock) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
+	c.Support(p, true, supportTable["Dock"])
 	{
 		path := validation.Join(p, "tilesize")
 		present := x.Tilesize != nil
@@ -5097,6 +5471,10 @@ func (x *Dock) validate(c *validation.Collector, p string) {
 }
 
 func (x *DockStaticItem) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
 	{
 		path := validation.Join(p, "tile-data")
 		present := true
@@ -5120,6 +5498,10 @@ func (x *DockStaticItem) validate(c *validation.Collector, p string) {
 }
 
 func (x *DockStaticItemTileData) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
 	{
 		path := validation.Join(p, "label")
 		present := x.Label != ""
@@ -5160,6 +5542,11 @@ func (x *Domains) Validate(t support.Target) error {
 }
 
 func (x *Domains) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
+	c.Support(p, true, supportTable["Domains"])
 	{
 		path := validation.Join(p, "EmailDomains")
 		present := len(x.EmailDomains) > 0
@@ -5201,6 +5588,11 @@ func (x *ExchangeActiveSync) Validate(t support.Target) error {
 }
 
 func (x *ExchangeActiveSync) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
+	c.Support(p, true, supportTable["ExchangeActiveSync"])
 	{
 		path := validation.Join(p, "EmailAddress")
 		present := x.EmailAddress != nil
@@ -5477,6 +5869,10 @@ func (x *ExchangeActiveSync) validate(c *validation.Collector, p string) {
 }
 
 func (x *ExchangeActiveSyncCommunicationServiceRules) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
 	{
 		path := validation.Join(p, "DefaultServiceHandlers")
 		present := x.DefaultServiceHandlers != nil
@@ -5489,6 +5885,10 @@ func (x *ExchangeActiveSyncCommunicationServiceRules) validate(c *validation.Col
 }
 
 func (x *ExchangeActiveSyncCommunicationServiceRulesDefaultServiceHandlers) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
 	{
 		path := validation.Join(p, "AudioCall")
 		present := x.AudioCall != nil
@@ -5506,6 +5906,11 @@ func (x *EducationConfiguration) Validate(t support.Target) error {
 }
 
 func (x *EducationConfiguration) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
+	c.Support(p, true, supportTable["EducationConfiguration"])
 	{
 		path := validation.Join(p, "OrganizationUUID")
 		present := x.OrganizationUUID != ""
@@ -5598,6 +6003,10 @@ func (x *EducationConfiguration) validate(c *validation.Collector, p string) {
 }
 
 func (x *EducationConfigurationDepartments) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
 	{
 		path := validation.Join(p, "Name")
 		present := x.Name != ""
@@ -5615,6 +6024,10 @@ func (x *EducationConfigurationDepartments) validate(c *validation.Collector, p 
 }
 
 func (x *EducationConfigurationGroups) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
 	{
 		path := validation.Join(p, "BeaconID")
 		present := true
@@ -5669,6 +6082,10 @@ func (x *EducationConfigurationGroups) validate(c *validation.Collector, p strin
 }
 
 func (x *EducationConfigurationUsers) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
 	{
 		path := validation.Join(p, "Identifier")
 		present := x.Identifier != ""
@@ -5737,6 +6154,10 @@ func (x *EducationConfigurationUsers) validate(c *validation.Collector, p string
 }
 
 func (x *EducationConfigurationDeviceGroups) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
 	{
 		path := validation.Join(p, "Identifier")
 		present := x.Identifier != ""
@@ -5769,6 +6190,11 @@ func (x *ExchangeWebServices) Validate(t support.Target) error {
 }
 
 func (x *ExchangeWebServices) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
+	c.Support(p, true, supportTable["ExchangeWebServices"])
 	{
 		path := validation.Join(p, "EmailAddress")
 		present := x.EmailAddress != nil
@@ -5879,6 +6305,11 @@ func (x *ExtensibleSingleSignOnKerberos) Validate(t support.Target) error {
 }
 
 func (x *ExtensibleSingleSignOnKerberos) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
+	c.Support(p, true, supportTable["ExtensibleSingleSignOnKerberos"])
 	{
 		path := validation.Join(p, "ExtensionIdentifier")
 		present := x.ExtensionIdentifier != ""
@@ -5934,6 +6365,10 @@ func (x *ExtensibleSingleSignOnKerberos) validate(c *validation.Collector, p str
 }
 
 func (x *ExtensibleSingleSignOnKerberosExtensionData) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
 	{
 		path := validation.Join(p, "cacheName")
 		present := x.CacheName != nil
@@ -6171,6 +6606,10 @@ func (x *ExtensibleSingleSignOnKerberosExtensionData) validate(c *validation.Col
 }
 
 func (x *ExtensibleSingleSignOnKerberosExtensionDataDomainRealmMapping) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
 	{
 		path := validation.Join(p, "Realm")
 		present := len(x.Realm) > 0
@@ -6188,6 +6627,11 @@ func (x *ExtensibleSingleSignOn) Validate(t support.Target) error {
 }
 
 func (x *ExtensibleSingleSignOn) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
+	c.Support(p, true, supportTable["ExtensibleSingleSignOn"])
 	{
 		path := validation.Join(p, "ExtensionIdentifier")
 		present := x.ExtensionIdentifier != ""
@@ -6256,6 +6700,9 @@ func (x *ExtensibleSingleSignOn) validate(c *validation.Collector, p string) {
 		_, _ = path, present
 		c.Support(path, present, supportTable["ExtensibleSingleSignOn.AuthenticationMethod"])
 		if present {
+			c.Support(path, true, ValueSupport("ExtensibleSingleSignOn.AuthenticationMethod", *x.AuthenticationMethod))
+		}
+		if present {
 			c.Enum(path, true, *x.AuthenticationMethod, []any{"Password", "UserSecureEnclaveKey", "SmartCard", "OpenID"})
 		}
 	}
@@ -6277,11 +6724,18 @@ func (x *ExtensibleSingleSignOn) validate(c *validation.Collector, p string) {
 }
 
 func (x *ExtensibleSingleSignOnPlatformSSO) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
 	{
 		path := validation.Join(p, "AuthenticationMethod")
 		present := x.AuthenticationMethod != nil
 		_, _ = path, present
 		c.Support(path, present, supportTable["ExtensibleSingleSignOn.PlatformSSO.AuthenticationMethod"])
+		if present {
+			c.Support(path, true, ValueSupport("ExtensibleSingleSignOn.PlatformSSO.AuthenticationMethod", *x.AuthenticationMethod))
+		}
 		if present {
 			c.Enum(path, true, *x.AuthenticationMethod, []any{"Password", "UserSecureEnclaveKey", "SmartCard", "OpenID"})
 		}
@@ -6339,6 +6793,9 @@ func (x *ExtensibleSingleSignOnPlatformSSO) validate(c *validation.Collector, p 
 		present := len(x.NewUserAuthenticationMethods) > 0
 		_, _ = path, present
 		c.Support(path, present, supportTable["ExtensibleSingleSignOn.PlatformSSO.NewUserAuthenticationMethods"])
+		for i, v := range x.NewUserAuthenticationMethods {
+			c.Support(validation.Index(path, i), true, ValueSupport("ExtensibleSingleSignOn.PlatformSSO.NewUserAuthenticationMethods", v))
+		}
 		for i, v := range x.NewUserAuthenticationMethods {
 			ip := validation.Index(path, i)
 			c.Enum(ip, true, v, []any{"Password", "SmartCard", "AccessKey", "OpenID"})
@@ -6410,6 +6867,9 @@ func (x *ExtensibleSingleSignOnPlatformSSO) validate(c *validation.Collector, p 
 		_, _ = path, present
 		c.Support(path, present, supportTable["ExtensibleSingleSignOn.PlatformSSO.FileVaultPolicy"])
 		for i, v := range x.FileVaultPolicy {
+			c.Support(validation.Index(path, i), true, ValueSupport("ExtensibleSingleSignOn.PlatformSSO.FileVaultPolicy", v))
+		}
+		for i, v := range x.FileVaultPolicy {
 			ip := validation.Index(path, i)
 			c.Enum(ip, true, v, []any{"AttemptAuthentication", "RequireAuthentication", "AllowOfflineGracePeriod", "AllowAuthenticationGracePeriod", "RequireTouchID", "RequireTouchIDOrWatch", "AllowOpenIDForTouchIDFallback"})
 		}
@@ -6420,6 +6880,9 @@ func (x *ExtensibleSingleSignOnPlatformSSO) validate(c *validation.Collector, p 
 		_, _ = path, present
 		c.Support(path, present, supportTable["ExtensibleSingleSignOn.PlatformSSO.LoginPolicy"])
 		for i, v := range x.LoginPolicy {
+			c.Support(validation.Index(path, i), true, ValueSupport("ExtensibleSingleSignOn.PlatformSSO.LoginPolicy", v))
+		}
+		for i, v := range x.LoginPolicy {
 			ip := validation.Index(path, i)
 			c.Enum(ip, true, v, []any{"AttemptAuthentication", "RequireAuthentication", "AllowOfflineGracePeriod", "AllowAuthenticationGracePeriod", "RequireTouchID", "RequireTouchIDOrWatch", "AllowOpenIDForTouchIDFallback"})
 		}
@@ -6429,6 +6892,9 @@ func (x *ExtensibleSingleSignOnPlatformSSO) validate(c *validation.Collector, p 
 		present := len(x.UnlockPolicy) > 0
 		_, _ = path, present
 		c.Support(path, present, supportTable["ExtensibleSingleSignOn.PlatformSSO.UnlockPolicy"])
+		for i, v := range x.UnlockPolicy {
+			c.Support(validation.Index(path, i), true, ValueSupport("ExtensibleSingleSignOn.PlatformSSO.UnlockPolicy", v))
+		}
 		for i, v := range x.UnlockPolicy {
 			ip := validation.Index(path, i)
 			c.Enum(ip, true, v, []any{"AttemptAuthentication", "RequireAuthentication", "AllowOfflineGracePeriod", "AllowAuthenticationGracePeriod", "AllowTouchIDOrWatchForUnlock", "RequireTouchID", "RequireTouchIDOrWatch", "AllowOpenIDForTouchIDFallback"})
@@ -6491,6 +6957,10 @@ func (x *ExtensibleSingleSignOnPlatformSSO) validate(c *validation.Collector, p 
 }
 
 func (x *ExtensibleSingleSignOnPlatformSSOTokenToUserMapping) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
 	{
 		path := validation.Join(p, "AccountName")
 		present := x.AccountName != nil
@@ -6514,6 +6984,11 @@ func (x *ParentalControlsContentFilter) Validate(t support.Target) error {
 }
 
 func (x *ParentalControlsContentFilter) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
+	c.Support(p, true, supportTable["ParentalControlsContentFilter"])
 	{
 		path := validation.Join(p, "restrictWeb")
 		present := true
@@ -6584,6 +7059,10 @@ func (x *ParentalControlsContentFilter) validate(c *validation.Collector, p stri
 }
 
 func (x *ParentalControlsContentFilterSiteAllowList) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
 	{
 		path := validation.Join(p, "address")
 		present := x.Address != ""
@@ -6600,6 +7079,10 @@ func (x *ParentalControlsContentFilterSiteAllowList) validate(c *validation.Coll
 }
 
 func (x *ParentalControlsContentFilterSiteWhitelist) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
 	{
 		path := validation.Join(p, "address")
 		present := x.Address != ""
@@ -6624,6 +7107,11 @@ func (x *ParentalControlsTimeLimits) Validate(t support.Target) error {
 }
 
 func (x *ParentalControlsTimeLimits) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
+	c.Support(p, true, supportTable["ParentalControlsTimeLimits"])
 	{
 		path := validation.Join(p, "familyControlsEnabled")
 		present := true
@@ -6643,6 +7131,10 @@ func (x *ParentalControlsTimeLimits) validate(c *validation.Collector, p string)
 }
 
 func (x *ParentalControlsTimeLimitsTimeLimits) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
 	{
 		path := validation.Join(p, "weekday-allowance")
 		present := x.WeekdayAllowance != nil
@@ -6682,6 +7174,10 @@ func (x *ParentalControlsTimeLimitsTimeLimits) validate(c *validation.Collector,
 }
 
 func (x *ParentalControlsTimeLimitsAllowance) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
 	{
 		path := validation.Join(p, "enabled")
 		present := true
@@ -6728,6 +7224,11 @@ func (x *FileProvider) Validate(t support.Target) error {
 }
 
 func (x *FileProvider) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
+	c.Support(p, true, supportTable["FileProvider"])
 	{
 		path := validation.Join(p, "ManagementAllowsRemoteSyncing")
 		present := x.ManagementAllowsRemoteSyncing != nil
@@ -6787,6 +7288,11 @@ func (x *Finder) Validate(t support.Target) error {
 }
 
 func (x *Finder) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
+	c.Support(p, true, supportTable["Finder"])
 	{
 		path := validation.Join(p, "ProhibitBurn")
 		present := x.ProhibitBurn != nil
@@ -6861,6 +7367,11 @@ func (x *X8021XFirstActiveEthernet) Validate(t support.Target) error {
 }
 
 func (x *X8021XFirstActiveEthernet) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
+	c.Support(p, true, supportTable["X8021XFirstActiveEthernet"])
 	{
 		path := validation.Join(p, "ANY")
 		present := x.ANY != nil
@@ -6878,6 +7389,11 @@ func (x *X8021XFirstEthernet) Validate(t support.Target) error {
 }
 
 func (x *X8021XFirstEthernet) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
+	c.Support(p, true, supportTable["X8021XFirstEthernet"])
 	{
 		path := validation.Join(p, "ANY")
 		present := x.ANY != nil
@@ -6895,6 +7411,11 @@ func (x *Font) Validate(t support.Target) error {
 }
 
 func (x *Font) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
+	c.Support(p, true, supportTable["Font"])
 	{
 		path := validation.Join(p, "Name")
 		present := x.Name != nil
@@ -6919,6 +7440,11 @@ func (x *ParentalControlsGameCenter) Validate(t support.Target) error {
 }
 
 func (x *ParentalControlsGameCenter) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
+	c.Support(p, true, supportTable["ParentalControlsGameCenter"])
 	{
 		path := validation.Join(p, "GKFeatureGameCenterAllowed")
 		present := x.GKFeatureGameCenterAllowed != nil
@@ -6954,6 +7480,11 @@ func (x *X8021XGlobalEthernet) Validate(t support.Target) error {
 }
 
 func (x *X8021XGlobalEthernet) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
+	c.Support(p, true, supportTable["X8021XGlobalEthernet"])
 	{
 		path := validation.Join(p, "ANY")
 		present := x.ANY != nil
@@ -6971,6 +7502,11 @@ func (x *GoogleAccount) Validate(t support.Target) error {
 }
 
 func (x *GoogleAccount) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
+	c.Support(p, true, supportTable["GoogleAccount"])
 	{
 		path := validation.Join(p, "AccountDescription")
 		present := x.AccountDescription != nil
@@ -7008,6 +7544,10 @@ func (x *GoogleAccount) validate(c *validation.Collector, p string) {
 }
 
 func (x *GoogleAccountCommunicationServiceRules) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
 	{
 		path := validation.Join(p, "DefaultServiceHandlers")
 		present := x.DefaultServiceHandlers != nil
@@ -7020,6 +7560,10 @@ func (x *GoogleAccountCommunicationServiceRules) validate(c *validation.Collecto
 }
 
 func (x *GoogleAccountCommunicationServiceRulesDefaultServiceHandlers) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
 	{
 		path := validation.Join(p, "AudioCall")
 		present := x.AudioCall != nil
@@ -7037,6 +7581,11 @@ func (x *HomeScreenLayout) Validate(t support.Target) error {
 }
 
 func (x *HomeScreenLayout) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
+	c.Support(p, true, supportTable["HomeScreenLayout"])
 	{
 		path := validation.Join(p, "Dock")
 		present := len(x.Dock) > 0
@@ -7056,6 +7605,10 @@ func (x *HomeScreenLayout) validate(c *validation.Collector, p string) {
 }
 
 func (x *HomeScreenLayoutIconItem) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
 	{
 		path := validation.Join(p, "Type")
 		present := x.Type != ""
@@ -7093,6 +7646,10 @@ func (x *HomeScreenLayoutIconItem) validate(c *validation.Collector, p string) {
 }
 
 func (x *HomeScreenLayoutPagesItemIconItem) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
 	{
 		path := validation.Join(p, "Type")
 		present := x.Type != ""
@@ -7138,6 +7695,11 @@ func (x *ParentalControlDictationAndProfanity) Validate(t support.Target) error 
 }
 
 func (x *ParentalControlDictationAndProfanity) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
+	c.Support(p, true, supportTable["ParentalControlDictationAndProfanity"])
 	{
 		path := validation.Join(p, "Profanity Allowed")
 		present := x.ProfanityAllowed != nil
@@ -7161,6 +7723,11 @@ func (x *JabberAccount) Validate(t support.Target) error {
 }
 
 func (x *JabberAccount) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
+	c.Support(p, true, supportTable["JabberAccount"])
 	{
 		path := validation.Join(p, "JabberAccountDescription")
 		present := x.JabberAccountDescription != nil
@@ -7222,6 +7789,11 @@ func (x *LDAP) Validate(t support.Target) error {
 }
 
 func (x *LDAP) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
+	c.Support(p, true, supportTable["LDAP"])
 	{
 		path := validation.Join(p, "LDAPAccountDescription")
 		present := x.LDAPAccountDescription != nil
@@ -7271,6 +7843,10 @@ func (x *LDAP) validate(c *validation.Collector, p string) {
 }
 
 func (x *LDAPLDAPSearchSettings) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
 	{
 		path := validation.Join(p, "LDAPSearchSettingDescription")
 		present := x.LDAPSearchSettingDescription != nil
@@ -7304,6 +7880,11 @@ func (x *LoginItemsManagedItems) Validate(t support.Target) error {
 }
 
 func (x *LoginItemsManagedItems) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
+	c.Support(p, true, supportTable["LoginItemsManagedItems"])
 	{
 		path := validation.Join(p, "AutoLaunchedApplicationDictionary-managed")
 		present := len(x.AutoLaunchedApplicationDictionaryManaged) > 0
@@ -7317,6 +7898,10 @@ func (x *LoginItemsManagedItems) validate(c *validation.Collector, p string) {
 }
 
 func (x *LoginItemsManagedItemsAutoLaunchedApplicationDictionaryManaged) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
 	{
 		path := validation.Join(p, "Path")
 		present := x.Path != ""
@@ -7341,6 +7926,11 @@ func (x *LoginWindow) Validate(t support.Target) error {
 }
 
 func (x *LoginWindow) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
+	c.Support(p, true, supportTable["LoginWindow"])
 	{
 		path := validation.Join(p, "SHOWFULLNAME")
 		present := x.SHOWFULLNAME != nil
@@ -7517,6 +8107,11 @@ func (x *LightsOutManagementLOM) Validate(t support.Target) error {
 }
 
 func (x *LightsOutManagementLOM) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
+	c.Support(p, true, supportTable["LightsOutManagementLOM"])
 	{
 		path := validation.Join(p, "DeviceCertificateUUID")
 		present := x.DeviceCertificateUUID != nil
@@ -7552,6 +8147,11 @@ func (x *Mail) Validate(t support.Target) error {
 }
 
 func (x *Mail) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
+	c.Support(p, true, supportTable["Mail"])
 	{
 		path := validation.Join(p, "EmailAccountDescription")
 		present := x.EmailAccountDescription != nil
@@ -7793,6 +8393,11 @@ func (x *ManagedMenuExtras) Validate(t support.Target) error {
 }
 
 func (x *ManagedMenuExtras) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
+	c.Support(p, true, supportTable["ManagedMenuExtras"])
 	{
 		path := validation.Join(p, "delaySeconds")
 		present := x.DelaySeconds != nil
@@ -7972,6 +8577,11 @@ func (x *LoginWindowScripts) Validate(t support.Target) error {
 }
 
 func (x *LoginWindowScripts) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
+	c.Support(p, true, supportTable["LoginWindowScripts"])
 	{
 		path := validation.Join(p, "loginscripts")
 		present := len(x.Loginscripts) > 0
@@ -8005,6 +8615,10 @@ func (x *LoginWindowScripts) validate(c *validation.Collector, p string) {
 }
 
 func (x *LoginWindowScriptsScriptsItems) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
 	{
 		path := validation.Join(p, "filename")
 		present := x.Filename != ""
@@ -8030,6 +8644,11 @@ func (x *Printing) Validate(t support.Target) error {
 }
 
 func (x *Printing) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
+	c.Support(p, true, supportTable["Printing"])
 	{
 		path := validation.Join(p, "RequireAdminToAddPrinters")
 		present := x.RequireAdminToAddPrinters != nil
@@ -8099,6 +8718,10 @@ func (x *Printing) validate(c *validation.Collector, p string) {
 }
 
 func (x *PrintingDefaultPrinter) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
 	{
 		path := validation.Join(p, "DeviceURI")
 		present := x.DeviceURI != nil
@@ -8114,6 +8737,10 @@ func (x *PrintingDefaultPrinter) validate(c *validation.Collector, p string) {
 }
 
 func (x *PrintingUserPrinterList) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
 	{
 		path := validation.Join(p, "Printer")
 		present := x.Printer != nil
@@ -8126,6 +8753,10 @@ func (x *PrintingUserPrinterList) validate(c *validation.Collector, p string) {
 }
 
 func (x *PrintingUserPrinterListPrinter) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
 	{
 		path := validation.Join(p, "DeviceURI")
 		present := x.DeviceURI != nil
@@ -8173,6 +8804,11 @@ func (x *MDM) Validate(t support.Target) error {
 }
 
 func (x *MDM) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
+	c.Support(p, true, supportTable["MDM"])
 	{
 		path := validation.Join(p, "IdentityCertificateUUID")
 		present := x.IdentityCertificateUUID != ""
@@ -8305,6 +8941,11 @@ func (x *Passcode) Validate(t support.Target) error {
 }
 
 func (x *Passcode) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
+	c.Support(p, true, supportTable["Passcode"])
 	{
 		path := validation.Join(p, "allowSimple")
 		present := x.AllowSimple != nil
@@ -8407,6 +9048,10 @@ func (x *Passcode) validate(c *validation.Collector, p string) {
 }
 
 func (x *PasscodeCustomRegex) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
 	{
 		path := validation.Join(p, "passwordContentRegex")
 		present := x.PasswordContentRegex != ""
@@ -8431,6 +9076,11 @@ func (x *NetworkUsageRules) Validate(t support.Target) error {
 }
 
 func (x *NetworkUsageRules) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
+	c.Support(p, true, supportTable["NetworkUsageRules"])
 	{
 		path := validation.Join(p, "ApplicationRules")
 		present := len(x.ApplicationRules) > 0
@@ -8452,6 +9102,10 @@ func (x *NetworkUsageRules) validate(c *validation.Collector, p string) {
 }
 
 func (x *NetworkUsageRulesApplicationRules) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
 	{
 		path := validation.Join(p, "AppIdentifierMatches")
 		present := len(x.AppIdentifierMatches) > 0
@@ -8473,6 +9127,10 @@ func (x *NetworkUsageRulesApplicationRules) validate(c *validation.Collector, p 
 }
 
 func (x *NetworkUsageRulesSIMRules) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
 	{
 		path := validation.Join(p, "ICCIDs")
 		present := len(x.ICCIDs) > 0
@@ -8501,6 +9159,11 @@ func (x *Notifications) Validate(t support.Target) error {
 }
 
 func (x *Notifications) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
+	c.Support(p, true, supportTable["Notifications"])
 	{
 		path := validation.Join(p, "NotificationSettings")
 		present := len(x.NotificationSettings) > 0
@@ -8514,6 +9177,10 @@ func (x *Notifications) validate(c *validation.Collector, p string) {
 }
 
 func (x *NotificationsNotificationSettings) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
 	{
 		path := validation.Join(p, "BundleIdentifier")
 		present := x.BundleIdentifier != ""
@@ -8601,6 +9268,11 @@ func (x *MacOSServerAccount) Validate(t support.Target) error {
 }
 
 func (x *MacOSServerAccount) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
+	c.Support(p, true, supportTable["MacOSServerAccount"])
 	{
 		path := validation.Join(p, "HostName")
 		present := x.HostName != ""
@@ -8640,6 +9312,10 @@ func (x *MacOSServerAccount) validate(c *validation.Collector, p string) {
 }
 
 func (x *MacOSServerAccountConfiguredAccounts) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
 	{
 		path := validation.Join(p, "Type")
 		present := x.Type != ""
@@ -8667,6 +9343,11 @@ func (x *SecurityPreferences) Validate(t support.Target) error {
 }
 
 func (x *SecurityPreferences) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
+	c.Support(p, true, supportTable["SecurityPreferences"])
 	{
 		path := validation.Join(p, "dontAllowPasswordResetUI")
 		present := x.DontAllowPasswordResetUI != nil
@@ -8696,6 +9377,11 @@ func (x *UserPreferences) Validate(t support.Target) error {
 }
 
 func (x *UserPreferences) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
+	c.Support(p, true, supportTable["UserPreferences"])
 	{
 		path := validation.Join(p, "DisableUsingiCloudPassword")
 		present := x.DisableUsingiCloudPassword != nil
@@ -8713,6 +9399,11 @@ func (x *ProfileRemovalPassword) Validate(t support.Target) error {
 }
 
 func (x *ProfileRemovalPassword) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
+	c.Support(p, true, supportTable["ProfileRemovalPassword"])
 	{
 		path := validation.Join(p, "RemovalPassword")
 		present := x.RemovalPassword != nil
@@ -8730,6 +9421,11 @@ func (x *GlobalHTTPProxy) Validate(t support.Target) error {
 }
 
 func (x *GlobalHTTPProxy) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
+	c.Support(p, true, supportTable["GlobalHTTPProxy"])
 	{
 		path := validation.Join(p, "ProxyType")
 		present := x.ProxyType != nil
@@ -8792,6 +9488,11 @@ func (x *Relay) Validate(t support.Target) error {
 }
 
 func (x *Relay) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
+	c.Support(p, true, supportTable["Relay"])
 	{
 		path := validation.Join(p, "Relays")
 		present := len(x.Relays) > 0
@@ -8847,6 +9548,10 @@ func (x *Relay) validate(c *validation.Collector, p string) {
 }
 
 func (x *RelayRelays) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
 	{
 		path := validation.Join(p, "HTTP3RelayURL")
 		present := x.HTTP3RelayURL != nil
@@ -8891,6 +9596,11 @@ func (x *ScreensaverUser) Validate(t support.Target) error {
 }
 
 func (x *ScreensaverUser) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
+	c.Support(p, true, supportTable["ScreensaverUser"])
 	{
 		path := validation.Join(p, "moduleName")
 		present := x.ModuleName != ""
@@ -8921,6 +9631,11 @@ func (x *Screensaver) Validate(t support.Target) error {
 }
 
 func (x *Screensaver) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
+	c.Support(p, true, supportTable["Screensaver"])
 	{
 		path := validation.Join(p, "askForPassword")
 		present := x.AskForPassword != nil
@@ -8963,6 +9678,11 @@ func (x *X8021XSecondActiveEthernet) Validate(t support.Target) error {
 }
 
 func (x *X8021XSecondActiveEthernet) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
+	c.Support(p, true, supportTable["X8021XSecondActiveEthernet"])
 	{
 		path := validation.Join(p, "ANY")
 		present := x.ANY != nil
@@ -8980,6 +9700,11 @@ func (x *X8021XSecondEthernet) Validate(t support.Target) error {
 }
 
 func (x *X8021XSecondEthernet) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
+	c.Support(p, true, supportTable["X8021XSecondEthernet"])
 	{
 		path := validation.Join(p, "ANY")
 		present := x.ANY != nil
@@ -8997,6 +9722,11 @@ func (x *FDERecoveryKeyEscrow) Validate(t support.Target) error {
 }
 
 func (x *FDERecoveryKeyEscrow) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
+	c.Support(p, true, supportTable["FDERecoveryKeyEscrow"])
 	{
 		path := validation.Join(p, "Location")
 		present := x.Location != ""
@@ -9028,6 +9758,11 @@ func (x *FDERecoveryKeyRedirection) Validate(t support.Target) error {
 }
 
 func (x *FDERecoveryKeyRedirection) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
+	c.Support(p, true, supportTable["FDERecoveryKeyRedirection"])
 	{
 		path := validation.Join(p, "RedirectURL")
 		present := x.RedirectURL != ""
@@ -9053,6 +9788,11 @@ func (x *ACMECertificate) Validate(t support.Target) error {
 }
 
 func (x *ACMECertificate) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
+	c.Support(p, true, supportTable["ACMECertificate"])
 	{
 		path := validation.Join(p, "DirectoryURL")
 		present := x.DirectoryURL != ""
@@ -9140,6 +9880,10 @@ func (x *ACMECertificate) validate(c *validation.Collector, p string) {
 }
 
 func (x *ACMECertificateSubjectAltName) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
 	{
 		path := validation.Join(p, "rfc822Name")
 		present := x.Rfc822Name != nil
@@ -9175,6 +9919,11 @@ func (x *CertificatePreference) Validate(t support.Target) error {
 }
 
 func (x *CertificatePreference) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
+	c.Support(p, true, supportTable["CertificatePreference"])
 	{
 		path := validation.Join(p, "Name")
 		present := x.Name != ""
@@ -9200,6 +9949,11 @@ func (x *CertificateRevocation) Validate(t support.Target) error {
 }
 
 func (x *CertificateRevocation) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
+	c.Support(p, true, supportTable["CertificateRevocation"])
 	{
 		path := validation.Join(p, "EnabledForCerts")
 		present := len(x.EnabledForCerts) > 0
@@ -9212,6 +9966,10 @@ func (x *CertificateRevocation) validate(c *validation.Collector, p string) {
 }
 
 func (x *CertificateRevocationEnabledForCerts) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
 	{
 		path := validation.Join(p, "Algorithm")
 		present := x.Algorithm != ""
@@ -9240,6 +9998,11 @@ func (x *CertificateTransparency) Validate(t support.Target) error {
 }
 
 func (x *CertificateTransparency) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
+	c.Support(p, true, supportTable["CertificateTransparency"])
 	{
 		path := validation.Join(p, "DisabledForCerts")
 		present := len(x.DisabledForCerts) > 0
@@ -9258,6 +10021,10 @@ func (x *CertificateTransparency) validate(c *validation.Collector, p string) {
 }
 
 func (x *CertificateTransparencyDisabledForCerts) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
 	{
 		path := validation.Join(p, "Algorithm")
 		present := x.Algorithm != ""
@@ -9286,6 +10053,11 @@ func (x *Firewall) Validate(t support.Target) error {
 }
 
 func (x *Firewall) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
+	c.Support(p, true, supportTable["Firewall"])
 	{
 		path := validation.Join(p, "EnableFirewall")
 		present := true
@@ -9344,6 +10116,10 @@ func (x *Firewall) validate(c *validation.Collector, p string) {
 }
 
 func (x *FirewallApplications) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
 	{
 		path := validation.Join(p, "BundleID")
 		present := x.BundleID != ""
@@ -9369,6 +10145,11 @@ func (x *IdentityPreference) Validate(t support.Target) error {
 }
 
 func (x *IdentityPreference) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
+	c.Support(p, true, supportTable["IdentityPreference"])
 	{
 		path := validation.Join(p, "Name")
 		present := x.Name != ""
@@ -9394,6 +10175,11 @@ func (x *CertificatePEM) Validate(t support.Target) error {
 }
 
 func (x *CertificatePEM) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
+	c.Support(p, true, supportTable["CertificatePEM"])
 	{
 		path := validation.Join(p, "PayloadCertificateFileName")
 		present := x.PayloadCertificateFileName != nil
@@ -9418,6 +10204,11 @@ func (x *CertificatePKCS1) Validate(t support.Target) error {
 }
 
 func (x *CertificatePKCS1) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
+	c.Support(p, true, supportTable["CertificatePKCS1"])
 	{
 		path := validation.Join(p, "PayloadCertificateFileName")
 		present := x.PayloadCertificateFileName != nil
@@ -9442,6 +10233,11 @@ func (x *CertificatePKCS12) Validate(t support.Target) error {
 }
 
 func (x *CertificatePKCS12) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
+	c.Support(p, true, supportTable["CertificatePKCS12"])
 	{
 		path := validation.Join(p, "PayloadCertificateFileName")
 		present := x.PayloadCertificateFileName != nil
@@ -9484,6 +10280,11 @@ func (x *CertificateRoot) Validate(t support.Target) error {
 }
 
 func (x *CertificateRoot) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
+	c.Support(p, true, supportTable["CertificateRoot"])
 	{
 		path := validation.Join(p, "PayloadCertificateFileName")
 		present := x.PayloadCertificateFileName != nil
@@ -9508,6 +10309,11 @@ func (x *SCEP) Validate(t support.Target) error {
 }
 
 func (x *SCEP) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
+	c.Support(p, true, supportTable["SCEP"])
 	{
 		path := validation.Join(p, "PayloadContent")
 		present := true
@@ -9521,6 +10327,10 @@ func (x *SCEP) validate(c *validation.Collector, p string) {
 }
 
 func (x *SCEPPayloadContent) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
 	{
 		path := validation.Join(p, "URL")
 		present := x.URL != ""
@@ -9609,6 +10419,10 @@ func (x *SCEPPayloadContent) validate(c *validation.Collector, p string) {
 }
 
 func (x *SCEPPayloadContentSubjectAltName) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
 	{
 		path := validation.Join(p, "rfc822Name")
 		present := x.Rfc822Name != nil
@@ -9644,6 +10458,11 @@ func (x *SmartCard) Validate(t support.Target) error {
 }
 
 func (x *SmartCard) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
+	c.Support(p, true, supportTable["SmartCard"])
 	{
 		path := validation.Join(p, "UserPairing")
 		present := x.UserPairing != nil
@@ -9697,6 +10516,11 @@ func (x *ServiceManagementManagedLoginItems) Validate(t support.Target) error {
 }
 
 func (x *ServiceManagementManagedLoginItems) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
+	c.Support(p, true, supportTable["ServiceManagementManagedLoginItems"])
 	{
 		path := validation.Join(p, "Rules")
 		present := len(x.Rules) > 0
@@ -9710,6 +10534,10 @@ func (x *ServiceManagementManagedLoginItems) validate(c *validation.Collector, p
 }
 
 func (x *ServiceManagementManagedLoginItemsRules) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
 	{
 		path := validation.Join(p, "RuleType")
 		present := x.RuleType != ""
@@ -9750,6 +10578,11 @@ func (x *LockScreenMessage) Validate(t support.Target) error {
 }
 
 func (x *LockScreenMessage) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
+	c.Support(p, true, supportTable["LockScreenMessage"])
 	{
 		path := validation.Join(p, "AssetTagInformation")
 		present := x.AssetTagInformation != nil
@@ -9779,6 +10612,11 @@ func (x *SingleSignOn) Validate(t support.Target) error {
 }
 
 func (x *SingleSignOn) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
+	c.Support(p, true, supportTable["SingleSignOn"])
 	{
 		path := validation.Join(p, "Name")
 		present := x.Name != ""
@@ -9798,6 +10636,10 @@ func (x *SingleSignOn) validate(c *validation.Collector, p string) {
 }
 
 func (x *SingleSignOnKerberos) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
 	{
 		path := validation.Join(p, "PrincipalName")
 		present := x.PrincipalName != nil
@@ -9840,6 +10682,11 @@ func (x *SubscribedCalendars) Validate(t support.Target) error {
 }
 
 func (x *SubscribedCalendars) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
+	c.Support(p, true, supportTable["SubscribedCalendars"])
 	{
 		path := validation.Join(p, "SubCalAccountDescription")
 		present := x.SubCalAccountDescription != nil
@@ -9888,6 +10735,11 @@ func (x *SystemPolicyKernelExtensions) Validate(t support.Target) error {
 }
 
 func (x *SystemPolicyKernelExtensions) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
+	c.Support(p, true, supportTable["SystemPolicyKernelExtensions"])
 	{
 		path := validation.Join(p, "AllowNonAdminUserApprovals")
 		present := x.AllowNonAdminUserApprovals != nil
@@ -9923,6 +10775,11 @@ func (x *SystemExtensions) Validate(t support.Target) error {
 }
 
 func (x *SystemExtensions) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
+	c.Support(p, true, supportTable["SystemExtensions"])
 	{
 		path := validation.Join(p, "AllowUserOverrides")
 		present := x.AllowUserOverrides != nil
@@ -9976,6 +10833,11 @@ func (x *SystemLogging) Validate(t support.Target) error {
 }
 
 func (x *SystemLogging) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
+	c.Support(p, true, supportTable["SystemLogging"])
 	{
 		path := validation.Join(p, "Processes")
 		present := len(x.Processes) > 0
@@ -10005,6 +10867,11 @@ func (x *SystemMigration) Validate(t support.Target) error {
 }
 
 func (x *SystemMigration) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
+	c.Support(p, true, supportTable["SystemMigration"])
 	{
 		path := validation.Join(p, "CustomBehavior")
 		present := len(x.CustomBehavior) > 0
@@ -10017,6 +10884,10 @@ func (x *SystemMigration) validate(c *validation.Collector, p string) {
 }
 
 func (x *SystemMigrationCustomBehavior) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
 	{
 		path := validation.Join(p, "Context")
 		present := x.Context != ""
@@ -10037,6 +10908,10 @@ func (x *SystemMigrationCustomBehavior) validate(c *validation.Collector, p stri
 }
 
 func (x *SystemMigrationCustomBehaviorPaths) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
 	{
 		path := validation.Join(p, "SourcePath")
 		present := x.SourcePath != ""
@@ -10076,6 +10951,11 @@ func (x *SystemPolicyControl) Validate(t support.Target) error {
 }
 
 func (x *SystemPolicyControl) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
+	c.Support(p, true, supportTable["SystemPolicyControl"])
 	{
 		path := validation.Join(p, "EnableAssessment")
 		present := x.EnableAssessment != nil
@@ -10105,6 +10985,11 @@ func (x *SystemPolicyManaged) Validate(t support.Target) error {
 }
 
 func (x *SystemPolicyManaged) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
+	c.Support(p, true, supportTable["SystemPolicyManaged"])
 	{
 		path := validation.Join(p, "DisableOverride")
 		present := x.DisableOverride != nil
@@ -10122,6 +11007,11 @@ func (x *SystemPolicyRule) Validate(t support.Target) error {
 }
 
 func (x *SystemPolicyRule) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
+	c.Support(p, true, supportTable["SystemPolicyRule"])
 	{
 		path := validation.Join(p, "Requirement")
 		present := x.Requirement != nil
@@ -10172,6 +11062,11 @@ func (x *SystemPreferences) Validate(t support.Target) error {
 }
 
 func (x *SystemPreferences) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
+	c.Support(p, true, supportTable["SystemPreferences"])
 	{
 		path := validation.Join(p, "EnabledPreferencePanes")
 		present := len(x.EnabledPreferencePanes) > 0
@@ -10213,6 +11108,11 @@ func (x *MediaManagementAllowedMedia) Validate(t support.Target) error {
 }
 
 func (x *MediaManagementAllowedMedia) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
+	c.Support(p, true, supportTable["MediaManagementAllowedMedia"])
 	{
 		path := validation.Join(p, "logout-eject")
 		present := x.LogoutEject != nil
@@ -10243,6 +11143,10 @@ func (x *MediaManagementAllowedMedia) validate(c *validation.Collector, p string
 }
 
 func (x *MediaManagementAllowedMediaMediaItems) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
 	{
 		path := validation.Join(p, "all-media")
 		present := x.AllMedia != nil
@@ -10370,6 +11274,11 @@ func (x *X8021XThirdActiveEthernet) Validate(t support.Target) error {
 }
 
 func (x *X8021XThirdActiveEthernet) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
+	c.Support(p, true, supportTable["X8021XThirdActiveEthernet"])
 	{
 		path := validation.Join(p, "ANY")
 		present := x.ANY != nil
@@ -10387,6 +11296,11 @@ func (x *X8021XThirdEthernet) Validate(t support.Target) error {
 }
 
 func (x *X8021XThirdEthernet) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
+	c.Support(p, true, supportTable["X8021XThirdEthernet"])
 	{
 		path := validation.Join(p, "ANY")
 		present := x.ANY != nil
@@ -10404,6 +11318,11 @@ func (x *TVRemote) Validate(t support.Target) error {
 }
 
 func (x *TVRemote) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
+	c.Support(p, true, supportTable["TVRemote"])
 	{
 		path := validation.Join(p, "AllowedRemotes")
 		present := len(x.AllowedRemotes) > 0
@@ -10425,6 +11344,10 @@ func (x *TVRemote) validate(c *validation.Collector, p string) {
 }
 
 func (x *TVRemoteAllowedRemotes) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
 	{
 		path := validation.Join(p, "RemoteDeviceID")
 		present := x.RemoteDeviceID != ""
@@ -10435,6 +11358,10 @@ func (x *TVRemoteAllowedRemotes) validate(c *validation.Collector, p string) {
 }
 
 func (x *TVRemoteAllowedTVs) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
 	{
 		path := validation.Join(p, "TVDeviceID")
 		present := x.TVDeviceID != ""
@@ -10459,6 +11386,11 @@ func (x *Accessibility) Validate(t support.Target) error {
 }
 
 func (x *Accessibility) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
+	c.Support(p, true, supportTable["Accessibility"])
 	{
 		path := validation.Join(p, "closeViewFarPoint")
 		present := x.CloseViewFarPoint != nil
@@ -10611,6 +11543,11 @@ func (x *AppLayerVPN) Validate(t support.Target) error {
 }
 
 func (x *AppLayerVPN) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
+	c.Support(p, true, supportTable["AppLayerVPN"])
 	{
 		path := validation.Join(p, "VPNUUID")
 		present := x.VPNUUID != ""
@@ -10683,6 +11620,11 @@ func (x *AppToAppLayerVPNMapping) Validate(t support.Target) error {
 }
 
 func (x *AppToAppLayerVPNMapping) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
+	c.Support(p, true, supportTable["AppToAppLayerVPNMapping"])
 	{
 		path := validation.Join(p, "AppLayerVPNMapping")
 		present := len(x.AppLayerVPNMapping) > 0
@@ -10696,6 +11638,10 @@ func (x *AppToAppLayerVPNMapping) validate(c *validation.Collector, p string) {
 }
 
 func (x *AppToAppLayerVPNMappingAppLayerVPNMapping) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
 	{
 		path := validation.Join(p, "Identifier")
 		present := x.Identifier != ""
@@ -10742,6 +11688,10 @@ func (x *AppToAppLayerVPNMappingAppLayerVPNMapping) validate(c *validation.Colle
 }
 
 func (x *AppToAppLayerVPNMappingAppLayerVPNMappingMatchTools) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
 	{
 		path := validation.Join(p, "DesignatedRequirement")
 		present := x.DesignatedRequirement != ""
@@ -10773,6 +11723,11 @@ func (x *VPN) Validate(t support.Target) error {
 }
 
 func (x *VPN) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
+	c.Support(p, true, supportTable["VPN"])
 	{
 		path := validation.Join(p, "VPNType")
 		present := x.VPNType != ""
@@ -10889,6 +11844,10 @@ func (x *VPN) validate(c *validation.Collector, p string) {
 }
 
 func (x *VPNVendorConfig) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
 	{
 		path := validation.Join(p, "Realm")
 		present := x.Realm != nil
@@ -10916,6 +11875,10 @@ func (x *VPNVendorConfig) validate(c *validation.Collector, p string) {
 }
 
 func (x *VPNVPN) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
 	{
 		path := validation.Join(p, "AuthName")
 		present := x.AuthName != nil
@@ -11088,6 +12051,10 @@ func (x *VPNVPN) validate(c *validation.Collector, p string) {
 }
 
 func (x *VPNOnDemandRulesElement) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
 	{
 		path := validation.Join(p, "Action")
 		present := x.Action != ""
@@ -11143,6 +12110,10 @@ func (x *VPNOnDemandRulesElement) validate(c *validation.Collector, p string) {
 }
 
 func (x *VPNOnDemandRulesElementActionParameters) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
 	{
 		path := validation.Join(p, "Domains")
 		present := len(x.Domains) > 0
@@ -11175,6 +12146,10 @@ func (x *VPNOnDemandRulesElementActionParameters) validate(c *validation.Collect
 }
 
 func (x *VPNIPv4) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
 	{
 		path := validation.Join(p, "OverridePrimary")
 		present := x.OverridePrimary != nil
@@ -11187,6 +12162,10 @@ func (x *VPNIPv4) validate(c *validation.Collector, p string) {
 }
 
 func (x *VPNPPP) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
 	{
 		path := validation.Join(p, "AuthName")
 		present := x.AuthName != nil
@@ -11279,6 +12258,10 @@ func (x *VPNPPP) validate(c *validation.Collector, p string) {
 }
 
 func (x *VPNIPSec) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
 	{
 		path := validation.Join(p, "RemoteAddress")
 		present := x.RemoteAddress != nil
@@ -11411,6 +12394,10 @@ func (x *VPNIPSec) validate(c *validation.Collector, p string) {
 }
 
 func (x *VPNIKEv2) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
 	{
 		path := validation.Join(p, "RemoteAddress")
 		present := x.RemoteAddress != ""
@@ -11784,6 +12771,10 @@ func (x *VPNIKEv2) validate(c *validation.Collector, p string) {
 }
 
 func (x *VPNSecurityAssociationParameters) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
 	{
 		path := validation.Join(p, "EncryptionAlgorithm")
 		present := x.EncryptionAlgorithm != nil
@@ -11833,6 +12824,10 @@ func (x *VPNSecurityAssociationParameters) validate(c *validation.Collector, p s
 }
 
 func (x *VPNDNS) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
 	{
 		path := validation.Join(p, "DNSProtocol")
 		present := x.DNSProtocol != ""
@@ -11901,6 +12896,10 @@ func (x *VPNDNS) validate(c *validation.Collector, p string) {
 }
 
 func (x *VPNProxies) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
 	{
 		path := validation.Join(p, "ProxyAutoConfigEnable")
 		present := x.ProxyAutoConfigEnable != nil
@@ -11994,6 +12993,10 @@ func (x *VPNProxies) validate(c *validation.Collector, p string) {
 }
 
 func (x *VPNAlwaysOn) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
 	{
 		path := validation.Join(p, "UIToggleEnabled")
 		present := x.UIToggleEnabled != nil
@@ -12061,6 +13064,10 @@ func (x *VPNAlwaysOn) validate(c *validation.Collector, p string) {
 }
 
 func (x *VPNAlwaysOnTunnelConfigurations) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
 	{
 		path := validation.Join(p, "ProtocolType")
 		present := x.ProtocolType != ""
@@ -12084,6 +13091,10 @@ func (x *VPNAlwaysOnTunnelConfigurations) validate(c *validation.Collector, p st
 }
 
 func (x *VPNAlwaysOnServiceExceptions) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
 	{
 		path := validation.Join(p, "ServiceName")
 		present := x.ServiceName != ""
@@ -12107,6 +13118,10 @@ func (x *VPNAlwaysOnServiceExceptions) validate(c *validation.Collector, p strin
 }
 
 func (x *VPNAlwaysOnApplicationExceptions) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
 	{
 		path := validation.Join(p, "BundleIdentifier")
 		present := x.BundleIdentifier != ""
@@ -12127,6 +13142,10 @@ func (x *VPNAlwaysOnApplicationExceptions) validate(c *validation.Collector, p s
 }
 
 func (x *VPNAlwaysOnAllowedCaptiveNetworkPlugins) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
 	{
 		path := validation.Join(p, "BundleIdentifier")
 		present := x.BundleIdentifier != ""
@@ -12137,6 +13156,10 @@ func (x *VPNAlwaysOnAllowedCaptiveNetworkPlugins) validate(c *validation.Collect
 }
 
 func (x *VPNTransparentProxy) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
 	{
 		path := validation.Join(p, "AuthenticationMethod")
 		present := x.AuthenticationMethod != nil
@@ -12238,6 +13261,11 @@ func (x *WebClip) Validate(t support.Target) error {
 }
 
 func (x *WebClip) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
+	c.Support(p, true, supportTable["WebClip"])
 	{
 		path := validation.Join(p, "Precomposed")
 		present := x.Precomposed != nil
@@ -12299,6 +13327,11 @@ func (x *WebContentFilter) Validate(t support.Target) error {
 }
 
 func (x *WebContentFilter) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
+	c.Support(p, true, supportTable["WebContentFilter"])
 	{
 		path := validation.Join(p, "FilterType")
 		present := x.FilterType != nil
@@ -12488,6 +13521,10 @@ func (x *WebContentFilter) validate(c *validation.Collector, p string) {
 }
 
 func (x *WebContentFilterWhitelistedBookmarks) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
 	{
 		path := validation.Join(p, "URL")
 		present := x.URL != ""
@@ -12505,6 +13542,10 @@ func (x *WebContentFilterWhitelistedBookmarks) validate(c *validation.Collector,
 }
 
 func (x *WebContentFilterAllowListBookmarks) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
 	{
 		path := validation.Join(p, "URL")
 		present := x.URL != ""
@@ -12522,6 +13563,10 @@ func (x *WebContentFilterAllowListBookmarks) validate(c *validation.Collector, p
 }
 
 func (x *WebContentFilterURLFilterParameters) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
 	{
 		path := validation.Join(p, "URLFilterControlProviderDesignatedRequirement")
 		present := x.URLFilterControlProviderDesignatedRequirement != nil
@@ -12582,6 +13627,11 @@ func (x *WiFi) Validate(t support.Target) error {
 }
 
 func (x *WiFi) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
+	c.Support(p, true, supportTable["WiFi"])
 	{
 		path := validation.Join(p, "AutoJoin")
 		present := x.AutoJoin != nil
@@ -12789,6 +13839,10 @@ func (x *WiFi) validate(c *validation.Collector, p string) {
 }
 
 func (x *WiFiEAPClientConfiguration) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
 	{
 		path := validation.Join(p, "AcceptEAPTypes")
 		present := len(x.AcceptEAPTypes) > 0
@@ -12927,6 +13981,10 @@ func (x *WiFiEAPClientConfiguration) validate(c *validation.Collector, p string)
 }
 
 func (x *WiFiQoSMarkingPolicy) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
 	{
 		path := validation.Join(p, "QoSMarkingAllowListAppIdentifiers")
 		present := len(x.QoSMarkingAllowListAppIdentifiers) > 0
@@ -12962,6 +14020,11 @@ func (x *XsanPreferences) Validate(t support.Target) error {
 }
 
 func (x *XsanPreferences) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
+	c.Support(p, true, supportTable["XsanPreferences"])
 	{
 		path := validation.Join(p, "onlyMount")
 		present := len(x.OnlyMount) > 0
@@ -13003,6 +14066,11 @@ func (x *Xsan) Validate(t support.Target) error {
 }
 
 func (x *Xsan) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
+	c.Support(p, true, supportTable["Xsan"])
 	{
 		path := validation.Join(p, "sanName")
 		present := x.SanName != ""
@@ -13049,6 +14117,11 @@ func (x *LoginWindowLoginItems) Validate(t support.Target) error {
 }
 
 func (x *LoginWindowLoginItems) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
+	c.Support(p, true, supportTable["LoginWindowLoginItems"])
 	{
 		path := validation.Join(p, "DisableLoginItemsSuppression")
 		present := x.DisableLoginItemsSuppression != nil

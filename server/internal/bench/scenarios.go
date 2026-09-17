@@ -362,6 +362,30 @@ func ddmScenario(ctx context.Context, e *Environment, predicate, checkout bool) 
 	if err != nil {
 		return wrapError(err)
 	}
+	// The Mac management-test declaration requires supervised enrollment.
+	// Populate that capability through the same tracked inventory path used
+	// for a physical device before expecting compatible delivery.
+	d.Responder = func(cmd *mdm.Command) simulator.Reply {
+		reply := simulator.AcknowledgeAll(cmd)
+		if cmd.RequestType == "DeviceInformation" {
+			reply.Payload = &commands.DeviceInformationResponse{
+				QueryResponses: commands.DeviceInformationResponseQueryResponses{IsSupervised: new(true)},
+			}
+		}
+		return reply
+	}
+	inventory, err := enqueue(ctx, e, d, &commands.DeviceInformation{Queries: []string{"IsSupervised"}})
+	if err != nil {
+		return err
+	}
+	got, err := d.Connect(ctx)
+	if err != nil {
+		return wrapError(err)
+	}
+	if len(got) != 1 || got[0].UUID != inventory.UUID {
+		return fmt.Errorf("%w: supervision inventory not delivered", errOperation)
+	}
+	d.Responder = nil
 	ident := "com.example.bench." + randomID()
 	activation := ident + ".activation"
 	set := ident + ".set"

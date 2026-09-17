@@ -23,6 +23,7 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/mdm"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/secrets"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/simulator"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/storage"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/testpki"
 	"github.com/deploymenttheory/go-apple-dm/server/ddmsync"
 	"github.com/deploymenttheory/go-apple-dm/server/internal/app"
@@ -546,6 +547,14 @@ func TestSplitRoundTrip(t *testing.T) {
 		simulator.WithIdentity(&simulator.Identity{Cert: id.Cert, Key: id.Key}))
 	if err := dev.Enroll(ctx); err != nil {
 		t.Fatalf("enroll: %v", err)
+	}
+	// Production split roles share SQL inventory. These isolated in-memory
+	// fixtures must explicitly supply the DDM role's authoritative inventory.
+	if err := ddmApp.Store.Import(ctx, storage.EnrollmentExport{Enrollment: storage.Enrollment{
+		ID: mdm.EnrollmentID{Channel: mdm.ChannelDevice, ID: "UDID-1"}, Enabled: true,
+		Device: storage.DeviceInfo{ProductName: "Mac16,1", OSVersion: "26.6.2"},
+	}}); err != nil {
+		t.Fatal(err)
 	}
 	body, err := dev.DeclarativeManagement(ctx, "tokens", nil)
 	if err != nil {

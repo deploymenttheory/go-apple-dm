@@ -17,6 +17,11 @@ func (x *CodePlatformSSORequired) Validate(t support.Target) error {
 }
 
 func (x *CodePlatformSSORequired) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
+	c.Support(p, true, supportTable["CodePlatformSSORequired"])
 	{
 		path := validation.Join(p, "code")
 		present := x.Code != ""
@@ -52,6 +57,10 @@ func (x *CodePlatformSSORequired) validate(c *validation.Collector, p string) {
 }
 
 func (x *CodePlatformSSORequiredDetails) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
 	{
 		path := validation.Join(p, "ProfileURL")
 		present := x.ProfileURL != ""
@@ -79,6 +88,10 @@ func (x *CodePlatformSSORequiredDetails) validate(c *validation.Collector, p str
 }
 
 func (x *CodePlatformSSORequiredDetailsPackage) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
 	{
 		path := validation.Join(p, "ManifestURL")
 		present := x.ManifestURL != ""
@@ -109,6 +122,11 @@ func (x *CodeSoftwareUpdateRequired) Validate(t support.Target) error {
 }
 
 func (x *CodeSoftwareUpdateRequired) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
+	c.Support(p, true, supportTable["CodeSoftwareUpdateRequired"])
 	{
 		path := validation.Join(p, "code")
 		present := x.Code != ""
@@ -144,6 +162,10 @@ func (x *CodeSoftwareUpdateRequired) validate(c *validation.Collector, p string)
 }
 
 func (x *CodeSoftwareUpdateRequiredDetails) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
 	{
 		path := validation.Join(p, "OSVersion")
 		present := x.OSVersion != ""
@@ -169,6 +191,10 @@ func (x *CodeSoftwareUpdateRequiredDetails) validate(c *validation.Collector, p 
 }
 
 func (x *CodeSoftwareUpdateRequiredDetailsRequireBetaProgram) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
 	{
 		path := validation.Join(p, "Description")
 		present := x.Description != ""
@@ -194,6 +220,11 @@ func (x *UnrecognizedDevice) Validate(t support.Target) error {
 }
 
 func (x *UnrecognizedDevice) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
+	c.Support(p, true, supportTable["UnrecognizedDevice"])
 	{
 		path := validation.Join(p, "code")
 		present := x.Code != ""
@@ -227,6 +258,11 @@ func (x *CodePairingTokenMissing) Validate(t support.Target) error {
 }
 
 func (x *CodePairingTokenMissing) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
+	c.Support(p, true, supportTable["CodePairingTokenMissing"])
 	{
 		path := validation.Join(p, "code")
 		present := x.Code != ""
@@ -262,6 +298,10 @@ func (x *CodePairingTokenMissing) validate(c *validation.Collector, p string) {
 }
 
 func (x *CodePairingTokenMissingDetails) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
 	{
 		path := validation.Join(p, "security-token")
 		present := x.SecurityToken != ""
@@ -280,6 +320,11 @@ func (x *WellKnownFailed) Validate(t support.Target) error {
 }
 
 func (x *WellKnownFailed) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
+	c.Support(p, true, supportTable["WellKnownFailed"])
 	{
 		path := validation.Join(p, "code")
 		present := x.Code != ""

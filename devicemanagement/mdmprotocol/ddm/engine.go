@@ -50,6 +50,10 @@ type Config struct {
 	// Target supplies the validation target for uploads; nil validates for
 	// any OS.
 	Target func(ctx context.Context) support.Target
+	// EnrollmentTarget enables per-device compatibility checks at delivery.
+	// Resolve outside store transactions. Nil preserves caller-managed routing.
+	// Unknown inventory is a zero Target; lookup failures must return an error.
+	EnrollmentTarget func(context.Context, mdm.EnrollmentID) (support.Target, error)
 	// MaxStatusBytes bounds a status report; default 1 MiB.
 	MaxStatusBytes int
 	// Structural limits apply before decoding or storing a status report.
@@ -79,6 +83,7 @@ type Engine struct {
 	clock                                         clock.Clock
 	log                                           *slog.Logger
 	target                                        func(ctx context.Context) support.Target
+	enrollmentTarget                              func(context.Context, mdm.EnrollmentID) (support.Target, error)
 	maxStatus                                     int
 	maxStatusDepth, maxStatusPath, maxStatusItems int
 	keep                                          int
@@ -93,7 +98,8 @@ func New(cfg Config) (*Engine, error) {
 	e := &Engine{
 		store: cfg.Store, resolvers: cfg.Resolvers, expander: cfg.Expander, bus: cfg.Bus,
 		clock: cfg.Clock, log: cfg.Logger, target: cfg.Target,
-		maxStatus: cfg.MaxStatusBytes, keep: cfg.KeepReports, subs: cfg.Subscriptions,
+		enrollmentTarget: cfg.EnrollmentTarget,
+		maxStatus:        cfg.MaxStatusBytes, keep: cfg.KeepReports, subs: cfg.Subscriptions,
 	}
 	if e.clock == nil {
 		e.clock = clock.Real{}

@@ -212,7 +212,14 @@ func (e *emitter) sampleFunc(b *bytes.Buffer, td *TypeDef) {
 		td.Name,
 	)
 	for _, f := range td.Fields {
-		fmt.Fprintf(b, "\t\t%s: %s,\n", f.Name, e.sampleValue(f))
+		value := e.sampleValue(f)
+		if e.pkg.Family == FamilyDDM && td.Name == "AppManaged" && (f.Name == "BundleID" || f.Name == "ManifestURL" || f.Name == "AppComposedIdentifier") {
+			value = "nil" // AppStoreID is the sole identifier in this valid sample.
+		}
+		if e.pkg.Family == FamilyDDM && td.Name == "SoftwareUpdateEnforcementSpecific" && f.Name == "TargetLocalDateTime" {
+			value = `"2026-10-01T18:00:00"`
+		}
+		fmt.Fprintf(b, "\t\t%s: %s,\n", f.Name, value)
 	}
 	b.WriteString("\t}\n}\n\n")
 }

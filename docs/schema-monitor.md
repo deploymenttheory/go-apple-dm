@@ -61,12 +61,13 @@ stage also enables `schema_seed_os_27` and requires
 explicit passing JSON test events for enhanced-log commands and status, software
 update removal, Return to Service retry, the reviewed content-cache contract,
 mixed-fleet dispatch, queued commands after an upgrade, and legacy-profile wire
-compatibility. All eight contracts must pass.
+compatibility, fixture parsing/delivery, embedded profile compatibility and individual
+software-update query removal. All twelve contracts must pass.
 Missing or skipped tests fail the stage. Comparison-only older stable assessments
 do not compile these types. Content-cache tests run in both assessments; OS 27 additionally
 checks its OpenAPI file against the reviewed library fixture.
 
-`make test` also runs `make test-schema-contracts`, using the same eight-test
+`make test` also runs `make test-schema-contracts`, using the same twelve-test
 evidence check. Its JSON test log and result are retained in `cover/schema-contracts`.
 
 ## Engineering issues

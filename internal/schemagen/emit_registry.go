@@ -166,7 +166,45 @@ func (e *emitter) registryFile() []byte {
 			)
 		}
 	}
+	if e.pkg.Family == FamilyDDM {
+		b.WriteString("// AssetReference describes a schema-declared dependency. Path uses * for array or dictionary values.\ntype AssetReference struct { Path []string; Types []string }\n\n")
+		b.WriteString("// AssetReferences maps declaration wire types to their asset dependencies.\nvar AssetReferences = map[string][]AssetReference{\n")
+		for _, en := range entries {
+			refs := referencePaths(en.st.Schema.PayloadKeys, nil, false)
+			if len(refs) == 0 {
+				continue
+			}
+			fmt.Fprintf(b, "%q: {\n", en.id)
+			for _, ref := range refs {
+				fmt.Fprintf(b, "{Path: %#v, Types: %#v},\n", ref.path, ref.types)
+			}
+			b.WriteString("},\n")
+		}
+		b.WriteString("}\n")
+	}
 	return b.Bytes()
+}
+
+type referencePath struct{ path, types []string }
+
+func referencePaths(keys []Key, prefix []string, arrayItems bool) []referencePath {
+	var out []referencePath
+	for _, key := range keys {
+		segment := key.Key
+		if arrayItems || strings.HasPrefix(segment, "ANY") {
+			segment = "*"
+		}
+		path := append(append([]string{}, prefix...), segment)
+		if len(key.AssetTypes) > 0 {
+			reference := path
+			if key.Type == "<array>" {
+				reference = append(append([]string{}, path...), "*")
+			}
+			out = append(out, referencePath{reference, key.AssetTypes})
+		}
+		out = append(out, referencePaths(key.Subkeys, path, key.Type == "<array>")...)
+	}
+	return out
 }
 
 // looksLikeSecretName mirrors the identifier patterns gosec's G101 rule

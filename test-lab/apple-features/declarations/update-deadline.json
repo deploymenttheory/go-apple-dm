@@ -1,0 +1,9 @@
+{
+  "Type": "com.apple.configuration.softwareupdate.enforcement.specific",
+  "Identifier": "com.deploymenttheory.acceptance.update-deadline",
+  "Payload": {
+    "TargetOSVersion": "27.0",
+    "TargetLocalDateTime": "2099-10-01T18:00:00",
+    "DetailsURL": "https://help.example.test/updates"
+  }
+}

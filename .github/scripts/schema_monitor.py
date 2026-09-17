@@ -34,6 +34,10 @@ PRESENTATION_VERSION = 2
 # to compile against the stable pin; seed assessments must prove every contract
 # actually ran, rather than succeeding with missing or skipped tests.
 OS27_TESTS = {
+    LIBRARY + "/devicemanagement/mdmprotocol/ddm/TestSeedOS27FeatureDelivery",
+    LIBRARY + "/devicemanagement/mdmprotocol/ddm/TestSeedOS27FeatureFixtures",
+    LIBRARY + "/server/service/TestSeedOS27InstallProfileCompatibility",
+    LIBRARY + "/server/service/TestSeedOS27SoftwareUpdateQueryCompatibility",
     LIBRARY + "/server/service/TestSeedOS27EnhancedLogCommands",
     LIBRARY + "/server/service/TestSeedOS27SoftwareUpdateRemoval",
     LIBRARY + "/server/service/TestSeedOS27ReturnToServiceRetry",

@@ -23,3 +23,5 @@
 ^github.com/deploymenttheory/go-apple-dm/devicemanagement/pki/acme/attest/attesttest$  # fake Apple attestation authority, exercised by the acme/attest, acme, simulator, and e2e suites
 ^github.com/deploymenttheory/go-apple-dm/server/adminauth/adminauthtest$  # admin principal and policy store contract suite, exercised by adminauth/inmem and adminauth/sqlstore
 ^github.com/deploymenttheory/go-apple-dm/server/audit/audittest$  # audit trail contract suite and failing store, exercised by audit/inmem and audit/sqlstore
+
+^github.com/deploymenttheory/go-apple-dm/devicemanagement/contentcache/storetest$  # backend contract helper exercised by memory and SQL tests

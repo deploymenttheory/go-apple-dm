@@ -15,6 +15,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/contentcache/storetest"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/cms"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/enroll/accountdriven"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/mdm"
@@ -54,6 +55,7 @@ func exercise(t *testing.T, db *sql.DB, dialect sqlcommon.Dialect) {
 		t.Fatal(err)
 	}
 	exerciseSCEPGrants(t, a, b)
+	storetest.Run(t, a, b)
 	key := fmt.Sprintf("test/%d/", time.Now().UnixNano())
 	if err := a.Update(ctx, []string{key}, func(tx state.Tx) error {
 		if time.Since(tx.Now()) > time.Second || tx.Now().After(time.Now().Add(time.Second)) {

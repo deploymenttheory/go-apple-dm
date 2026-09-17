@@ -441,7 +441,10 @@ func (c *Core) checkTargets(
 		if err != nil {
 			return nil, nil, err
 		}
-		target := targetFor(ctx, c.store, e)
+		target, err := targetFor(ctx, c.store, e)
+		if err != nil {
+			return nil, nil, err
+		}
 		// Unspecified Target is useful for schema-only validation, but cannot
 		// establish fleet eligibility. Inventory commands bootstrap these facts.
 		if (target.OS == "" || target.Version.IsZero()) && cmd.RequestType != "DeviceInformation" &&
@@ -461,10 +464,24 @@ func (c *Core) checkTargets(
 				unsupported[id] = fmt.Errorf("%w: %w", ErrUnsupportedTarget, err)
 				continue
 			}
+			if err := validateInstallProfileContents(cmd, target); err != nil {
+				unsupported[id] = fmt.Errorf("%w: %w", ErrUnsupportedTarget, err)
+				continue
+			}
 		}
 		keep = append(keep, id)
 	}
 	return keep, unsupported, nil
+}
+
+// EnrollmentTarget resolves authoritative device inventory and capabilities for
+// command and DDM delivery. User channels inherit their parent device inventory.
+func EnrollmentTarget(ctx context.Context, st storage.EnrollmentStore, id mdm.EnrollmentID) (support.Target, error) {
+	e, err := st.Get(ctx, id)
+	if err != nil {
+		return support.Target{}, err
+	}
+	return targetFor(ctx, st, e)
 }
 
 // targetFor derives the support target of an enrollment: the OS family
@@ -475,7 +492,7 @@ func targetFor(
 	ctx context.Context,
 	st storage.EnrollmentStore,
 	e *storage.Enrollment,
-) support.Target {
+) (support.Target, error) {
 	device := e
 	if e.ID.Channel.IsUser() {
 		if parent, err := st.Get(
@@ -483,6 +500,8 @@ func targetFor(
 			mdm.EnrollmentID{Channel: deviceChannelOf(e.ID.Channel), ID: e.ID.ParentID},
 		); err == nil {
 			device = parent
+		} else {
+			return support.Target{}, err
 		}
 	}
 	// Unknown management properties never satisfy a command requirement.
@@ -505,7 +524,10 @@ func targetFor(
 				storage.EnrollmentQuery{ParentID: e.ID.ID, Channel: mdm.ChannelSharedIPadUser},
 				paging.Page{Limit: 1},
 			)
-			t.SharedIPad = err == nil && len(res.Items) > 0
+			if err != nil {
+				return support.Target{}, err
+			}
+			t.SharedIPad = len(res.Items) > 0
 		}
 	case mdm.ChannelUser:
 		t.Channel = support.ChannelUser
@@ -516,7 +538,7 @@ func targetFor(
 	case mdm.ChannelUserEnrollmentUser:
 		t.Channel, t.UserEnrollment = support.ChannelUser, true
 	}
-	return t
+	return t, nil
 }
 
 func deviceChannelOf(c mdm.Channel) mdm.Channel {

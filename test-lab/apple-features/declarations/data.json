@@ -1,0 +1,9 @@
+{
+  "Type": "com.apple.asset.data",
+  "Identifier": "com.deploymenttheory.acceptance.data",
+  "Payload": {
+    "Reference": {
+      "DataURL": "https://assets.example.test/config.plist"
+    }
+  }
+}

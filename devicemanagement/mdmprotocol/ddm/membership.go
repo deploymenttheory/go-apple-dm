@@ -9,13 +9,14 @@ import (
 
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/internal/canonjson"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/mdm"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/schema/support"
 )
 
 // manifestFor computes the manifest an enrollment should see right now:
 // static membership, resolver additions, the synthesised subscriptions
 // declaration and activation, then per-enrollment expansion. Items come back sorted by
 // (kind, identifier) with the DeclarationsToken over them.
-func (e *Engine) manifestFor(ctx context.Context, tx Tx, id mdm.EnrollmentID) (string, []SnapshotItem, error) {
+func (e *Engine) manifestFor(ctx context.Context, tx Tx, id mdm.EnrollmentID, target *support.Target, issues *[]CompatibilityIssue) (string, []SnapshotItem, error) {
 	decls, err := tx.StaticDeclarations(ctx, id)
 	if err != nil {
 		return "", nil, err
@@ -65,6 +66,16 @@ func (e *Engine) manifestFor(ctx context.Context, tx Tx, id mdm.EnrollmentID) (s
 				return "", nil, err
 			}
 			items = append(items, activation)
+		}
+	}
+	if target != nil {
+		var findings []CompatibilityIssue
+		items, findings, err = filterCompatible(ctx, tx, items, *target)
+		if err != nil {
+			return "", nil, err
+		}
+		if issues != nil {
+			*issues = findings
 		}
 	}
 	slices.SortFunc(items, func(a, b SnapshotItem) int { return compareRefs(a.DeclarationRef, b.DeclarationRef) })

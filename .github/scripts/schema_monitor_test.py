@@ -218,7 +218,7 @@ class AssessmentTests(unittest.TestCase):
     def test_seed_contract_requires_executed_tests(self):
         tags, required = m.assessment_test_contract({"kind": "seed", "ref": "seed_OS_27_0"})
         self.assertEqual(["-tags", "schema_seed_os_27"], tags)
-        self.assertEqual(8, len(required))
+        self.assertEqual(12, len(required))
         self.assertEqual(sorted(required), m.missing_test_evidence("", required))
         lines = []
         for test in required:

@@ -17,6 +17,11 @@ func (x *AccountListCalDAV) Validate(t support.Target) error {
 }
 
 func (x *AccountListCalDAV) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
+	c.Support(p, true, supportTable["AccountListCalDAV"])
 	{
 		path := validation.Join(p, "")
 		present := len(x.Value) > 0
@@ -28,6 +33,10 @@ func (x *AccountListCalDAV) validate(c *validation.Collector, p string) {
 }
 
 func (x *AccountListCalDAVAccount) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
 	{
 		path := validation.Join(p, "identifier")
 		present := x.Identifier != ""
@@ -94,6 +103,11 @@ func (x *AccountListCardDAV) Validate(t support.Target) error {
 }
 
 func (x *AccountListCardDAV) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
+	c.Support(p, true, supportTable["AccountListCardDAV"])
 	{
 		path := validation.Join(p, "")
 		present := len(x.Value) > 0
@@ -105,6 +119,10 @@ func (x *AccountListCardDAV) validate(c *validation.Collector, p string) {
 }
 
 func (x *AccountListCardDAVAccount) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
 	{
 		path := validation.Join(p, "identifier")
 		present := x.Identifier != ""
@@ -159,6 +177,11 @@ func (x *AccountListExchange) Validate(t support.Target) error {
 }
 
 func (x *AccountListExchange) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
+	c.Support(p, true, supportTable["AccountListExchange"])
 	{
 		path := validation.Join(p, "")
 		present := len(x.Value) > 0
@@ -170,6 +193,10 @@ func (x *AccountListExchange) validate(c *validation.Collector, p string) {
 }
 
 func (x *AccountListExchangeAccount) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
 	{
 		path := validation.Join(p, "identifier")
 		present := x.Identifier != ""
@@ -254,6 +281,11 @@ func (x *AccountListGoogle) Validate(t support.Target) error {
 }
 
 func (x *AccountListGoogle) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
+	c.Support(p, true, supportTable["AccountListGoogle"])
 	{
 		path := validation.Join(p, "")
 		present := len(x.Value) > 0
@@ -265,6 +297,10 @@ func (x *AccountListGoogle) validate(c *validation.Collector, p string) {
 }
 
 func (x *AccountListGoogleAccount) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
 	{
 		path := validation.Join(p, "identifier")
 		present := x.Identifier != ""
@@ -331,6 +367,11 @@ func (x *AccountListLDAP) Validate(t support.Target) error {
 }
 
 func (x *AccountListLDAP) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
+	c.Support(p, true, supportTable["AccountListLDAP"])
 	{
 		path := validation.Join(p, "")
 		present := len(x.Value) > 0
@@ -342,6 +383,10 @@ func (x *AccountListLDAP) validate(c *validation.Collector, p string) {
 }
 
 func (x *AccountListLDAPAccount) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
 	{
 		path := validation.Join(p, "identifier")
 		present := x.Identifier != ""
@@ -402,6 +447,11 @@ func (x *AccountListMailIncoming) Validate(t support.Target) error {
 }
 
 func (x *AccountListMailIncoming) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
+	c.Support(p, true, supportTable["AccountListMailIncoming"])
 	{
 		path := validation.Join(p, "")
 		present := len(x.Value) > 0
@@ -413,6 +463,10 @@ func (x *AccountListMailIncoming) validate(c *validation.Collector, p string) {
 }
 
 func (x *AccountListMailIncomingAccount) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
 	{
 		path := validation.Join(p, "identifier")
 		present := x.Identifier != ""
@@ -479,6 +533,11 @@ func (x *AccountListMailOutgoing) Validate(t support.Target) error {
 }
 
 func (x *AccountListMailOutgoing) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
+	c.Support(p, true, supportTable["AccountListMailOutgoing"])
 	{
 		path := validation.Join(p, "")
 		present := len(x.Value) > 0
@@ -490,6 +549,10 @@ func (x *AccountListMailOutgoing) validate(c *validation.Collector, p string) {
 }
 
 func (x *AccountListMailOutgoingAccount) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
 	{
 		path := validation.Join(p, "identifier")
 		present := x.Identifier != ""
@@ -544,6 +607,11 @@ func (x *AccountListSubscribedCalendar) Validate(t support.Target) error {
 }
 
 func (x *AccountListSubscribedCalendar) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
+	c.Support(p, true, supportTable["AccountListSubscribedCalendar"])
 	{
 		path := validation.Join(p, "")
 		present := len(x.Value) > 0
@@ -555,6 +623,10 @@ func (x *AccountListSubscribedCalendar) validate(c *validation.Collector, p stri
 }
 
 func (x *AccountListSubscribedCalendarAccount) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
 	{
 		path := validation.Join(p, "identifier")
 		present := x.Identifier != ""
@@ -609,6 +681,11 @@ func (x *AppManagedList) Validate(t support.Target) error {
 }
 
 func (x *AppManagedList) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
+	c.Support(p, true, supportTable["AppManagedList"])
 	{
 		path := validation.Join(p, "")
 		present := len(x.Value) > 0
@@ -620,6 +697,10 @@ func (x *AppManagedList) validate(c *validation.Collector, p string) {
 }
 
 func (x *AppManagedListApp) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
 	{
 		path := validation.Join(p, "identifier")
 		present := x.Identifier != ""
@@ -702,6 +783,10 @@ func (x *AppManagedListApp) validate(c *validation.Collector, p string) {
 }
 
 func (x *AppManagedListManagedConfiguration) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
 	{
 		path := validation.Join(p, "app-config-state")
 		present := x.AppConfigState != nil
@@ -724,6 +809,10 @@ func (x *AppManagedListManagedConfiguration) validate(c *validation.Collector, p
 }
 
 func (x *AppManagedListManagedConfigurationState) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
 	{
 		path := validation.Join(p, "state")
 		present := x.State != ""
@@ -737,6 +826,10 @@ func (x *AppManagedListManagedConfigurationState) validate(c *validation.Collect
 }
 
 func (x *AppManagedListStatusReason) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
 	{
 		path := validation.Join(p, "code")
 		present := x.Code != ""
@@ -767,6 +860,11 @@ func (x *ContentCacheInfo) Validate(t support.Target) error {
 }
 
 func (x *ContentCacheInfo) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
+	c.Support(p, true, supportTable["ContentCacheInfo"])
 	{
 		path := validation.Join(p, "")
 		present := true
@@ -778,6 +876,10 @@ func (x *ContentCacheInfo) validate(c *validation.Collector, p string) {
 }
 
 func (x *ContentCacheInfoContentCacheInfo) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
 	{
 		path := validation.Join(p, "cache-details")
 		present := len(x.CacheDetails) > 0
@@ -849,6 +951,11 @@ func (x *ContentCacheParents) Validate(t support.Target) error {
 }
 
 func (x *ContentCacheParents) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
+	c.Support(p, true, supportTable["ContentCacheParents"])
 	{
 		path := validation.Join(p, "")
 		present := len(x.Value) > 0
@@ -860,6 +967,10 @@ func (x *ContentCacheParents) validate(c *validation.Collector, p string) {
 }
 
 func (x *ContentCacheParentsContentCacheParents) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
 	{
 		path := validation.Join(p, "identifier")
 		present := x.Identifier != ""
@@ -912,6 +1023,11 @@ func (x *ContentCachePeers) Validate(t support.Target) error {
 }
 
 func (x *ContentCachePeers) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
+	c.Support(p, true, supportTable["ContentCachePeers"])
 	{
 		path := validation.Join(p, "")
 		present := len(x.Value) > 0
@@ -923,6 +1039,10 @@ func (x *ContentCachePeers) validate(c *validation.Collector, p string) {
 }
 
 func (x *ContentCachePeersContentCachePeers) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
 	{
 		path := validation.Join(p, "identifier")
 		present := x.Identifier != ""
@@ -982,6 +1102,11 @@ func (x *ContentCacheStatus) Validate(t support.Target) error {
 }
 
 func (x *ContentCacheStatus) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
+	c.Support(p, true, supportTable["ContentCacheStatus"])
 	{
 		path := validation.Join(p, "")
 		present := true
@@ -993,6 +1118,10 @@ func (x *ContentCacheStatus) validate(c *validation.Collector, p string) {
 }
 
 func (x *ContentCacheStatusContentCacheStatus) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
 	{
 		path := validation.Join(p, "server-guid")
 		present := x.ServerGuid != ""
@@ -1120,6 +1249,11 @@ func (x *DeviceSerialNumber) Validate(t support.Target) error {
 }
 
 func (x *DeviceSerialNumber) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
+	c.Support(p, true, supportTable["DeviceSerialNumber"])
 	{
 		path := validation.Join(p, "")
 		present := x.Value != ""
@@ -1136,6 +1270,11 @@ func (x *DeviceUDID) Validate(t support.Target) error {
 }
 
 func (x *DeviceUDID) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
+	c.Support(p, true, supportTable["DeviceUDID"])
 	{
 		path := validation.Join(p, "")
 		present := x.Value != ""
@@ -1152,6 +1291,11 @@ func (x *DeviceModelFamily) Validate(t support.Target) error {
 }
 
 func (x *DeviceModelFamily) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
+	c.Support(p, true, supportTable["DeviceModelFamily"])
 	{
 		path := validation.Join(p, "")
 		present := x.Value != ""
@@ -1168,6 +1312,11 @@ func (x *DeviceModelIdentifier) Validate(t support.Target) error {
 }
 
 func (x *DeviceModelIdentifier) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
+	c.Support(p, true, supportTable["DeviceModelIdentifier"])
 	{
 		path := validation.Join(p, "")
 		present := x.Value != ""
@@ -1184,6 +1333,11 @@ func (x *DeviceModelMarketingName) Validate(t support.Target) error {
 }
 
 func (x *DeviceModelMarketingName) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
+	c.Support(p, true, supportTable["DeviceModelMarketingName"])
 	{
 		path := validation.Join(p, "")
 		present := x.Value != ""
@@ -1200,6 +1354,11 @@ func (x *DeviceModelNumber) Validate(t support.Target) error {
 }
 
 func (x *DeviceModelNumber) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
+	c.Support(p, true, supportTable["DeviceModelNumber"])
 	{
 		path := validation.Join(p, "")
 		present := x.Value != ""
@@ -1216,6 +1375,11 @@ func (x *DeviceOperatingSystemBuildVersion) Validate(t support.Target) error {
 }
 
 func (x *DeviceOperatingSystemBuildVersion) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
+	c.Support(p, true, supportTable["DeviceOperatingSystemBuildVersion"])
 	{
 		path := validation.Join(p, "")
 		present := x.Value != ""
@@ -1232,6 +1396,11 @@ func (x *DeviceOperatingSystemFamily) Validate(t support.Target) error {
 }
 
 func (x *DeviceOperatingSystemFamily) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
+	c.Support(p, true, supportTable["DeviceOperatingSystemFamily"])
 	{
 		path := validation.Join(p, "")
 		present := x.Value != ""
@@ -1248,6 +1417,11 @@ func (x *DeviceOperatingSystemMarketingName) Validate(t support.Target) error {
 }
 
 func (x *DeviceOperatingSystemMarketingName) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
+	c.Support(p, true, supportTable["DeviceOperatingSystemMarketingName"])
 	{
 		path := validation.Join(p, "")
 		present := x.Value != ""
@@ -1264,6 +1438,11 @@ func (x *DeviceOperatingSystemSupplementalBuildVersion) Validate(t support.Targe
 }
 
 func (x *DeviceOperatingSystemSupplementalBuildVersion) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
+	c.Support(p, true, supportTable["DeviceOperatingSystemSupplementalBuildVersion"])
 	{
 		path := validation.Join(p, "")
 		present := x.Value != ""
@@ -1280,6 +1459,11 @@ func (x *DeviceOperatingSystemSupplementalExtraVersion) Validate(t support.Targe
 }
 
 func (x *DeviceOperatingSystemSupplementalExtraVersion) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
+	c.Support(p, true, supportTable["DeviceOperatingSystemSupplementalExtraVersion"])
 	{
 		path := validation.Join(p, "")
 		present := x.Value != ""
@@ -1296,6 +1480,11 @@ func (x *DeviceOperatingSystemVersion) Validate(t support.Target) error {
 }
 
 func (x *DeviceOperatingSystemVersion) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
+	c.Support(p, true, supportTable["DeviceOperatingSystemVersion"])
 	{
 		path := validation.Join(p, "")
 		present := x.Value != ""
@@ -1312,6 +1501,11 @@ func (x *DeviceBatteryHealth) Validate(t support.Target) error {
 }
 
 func (x *DeviceBatteryHealth) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
+	c.Support(p, true, supportTable["DeviceBatteryHealth"])
 	{
 		path := validation.Join(p, "")
 		present := x.Value != ""
@@ -1331,6 +1525,11 @@ func (x *DeviceSystemHealth) Validate(t support.Target) error {
 }
 
 func (x *DeviceSystemHealth) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
+	c.Support(p, true, supportTable["DeviceSystemHealth"])
 	{
 		path := validation.Join(p, "")
 		present := true
@@ -1342,6 +1541,10 @@ func (x *DeviceSystemHealth) validate(c *validation.Collector, p string) {
 }
 
 func (x *DeviceSystemHealthDeviceSystemHealth) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
 	{
 		path := validation.Join(p, "Baseband")
 		present := x.Baseband != nil
@@ -1416,6 +1619,11 @@ func (x *DiskManagementFileVaultEnabled) Validate(t support.Target) error {
 }
 
 func (x *DiskManagementFileVaultEnabled) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
+	c.Support(p, true, supportTable["DiskManagementFileVaultEnabled"])
 	{
 		path := validation.Join(p, "")
 		present := true
@@ -1432,6 +1640,11 @@ func (x *EnhancedLoggingAppleCareToken) Validate(t support.Target) error {
 }
 
 func (x *EnhancedLoggingAppleCareToken) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
+	c.Support(p, true, supportTable["EnhancedLoggingAppleCareToken"])
 	{
 		path := validation.Join(p, "")
 		present := x.Value != ""
@@ -1448,6 +1661,11 @@ func (x *EnhancedLoggingStatus) Validate(t support.Target) error {
 }
 
 func (x *EnhancedLoggingStatus) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
+	c.Support(p, true, supportTable["EnhancedLoggingStatus"])
 	{
 		path := validation.Join(p, "")
 		present := x.Value != ""
@@ -1467,6 +1685,11 @@ func (x *EnhancedLoggingTimestamp) Validate(t support.Target) error {
 }
 
 func (x *EnhancedLoggingTimestamp) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
+	c.Support(p, true, supportTable["EnhancedLoggingTimestamp"])
 	{
 		path := validation.Join(p, "")
 		present := x.Value != ""
@@ -1483,6 +1706,11 @@ func (x *ManagementClientCapabilities) Validate(t support.Target) error {
 }
 
 func (x *ManagementClientCapabilities) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
+	c.Support(p, true, supportTable["ManagementClientCapabilities"])
 	{
 		path := validation.Join(p, "")
 		present := true
@@ -1494,6 +1722,10 @@ func (x *ManagementClientCapabilities) validate(c *validation.Collector, p strin
 }
 
 func (x *ManagementClientCapabilitiesCapabilities) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
 	{
 		path := validation.Join(p, "supported-versions")
 		present := len(x.SupportedVersions) > 0
@@ -1521,6 +1753,10 @@ func (x *ManagementClientCapabilitiesCapabilities) validate(c *validation.Collec
 }
 
 func (x *ManagementClientCapabilitiesCapabilitiesSupportedPayloads) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
 	{
 		path := validation.Join(p, "declarations")
 		present := true
@@ -1541,6 +1777,10 @@ func (x *ManagementClientCapabilitiesCapabilitiesSupportedPayloads) validate(c *
 }
 
 func (x *ManagementClientCapabilitiesCapabilitiesSupportedPayloadsDeclarations) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
 	{
 		path := validation.Join(p, "activations")
 		present := len(x.Activations) > 0
@@ -1576,6 +1816,11 @@ func (x *ManagementDeclarations) Validate(t support.Target) error {
 }
 
 func (x *ManagementDeclarations) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
+	c.Support(p, true, supportTable["ManagementDeclarations"])
 	{
 		path := validation.Join(p, "")
 		present := true
@@ -1587,6 +1832,10 @@ func (x *ManagementDeclarations) validate(c *validation.Collector, p string) {
 }
 
 func (x *ManagementDeclarationsDeclarations) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
 	{
 		path := validation.Join(p, "activations")
 		present := len(x.Activations) > 0
@@ -1630,6 +1879,10 @@ func (x *ManagementDeclarationsDeclarations) validate(c *validation.Collector, p
 }
 
 func (x *ManagementDeclarationsDeclaration) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
 	{
 		path := validation.Join(p, "identifier")
 		present := x.Identifier != ""
@@ -1673,6 +1926,10 @@ func (x *ManagementDeclarationsDeclaration) validate(c *validation.Collector, p 
 }
 
 func (x *ManagementDeclarationsStatusReason) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
 	{
 		path := validation.Join(p, "code")
 		present := x.Code != ""
@@ -1703,6 +1960,11 @@ func (x *MDMApp) Validate(t support.Target) error {
 }
 
 func (x *MDMApp) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
+	c.Support(p, true, supportTable["MDMApp"])
 	{
 		path := validation.Join(p, "")
 		present := len(x.Value) > 0
@@ -1714,6 +1976,10 @@ func (x *MDMApp) validate(c *validation.Collector, p string) {
 }
 
 func (x *MDMAppApp) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
 	{
 		path := validation.Join(p, "identifier")
 		present := x.Identifier != ""
@@ -1771,6 +2037,11 @@ func (x *MDMEnrollmentType) Validate(t support.Target) error {
 }
 
 func (x *MDMEnrollmentType) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
+	c.Support(p, true, supportTable["MDMEnrollmentType"])
 	{
 		path := validation.Join(p, "")
 		present := x.Value != ""
@@ -1790,6 +2061,11 @@ func (x *MDMIsAwaitingConfiguration) Validate(t support.Target) error {
 }
 
 func (x *MDMIsAwaitingConfiguration) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
+	c.Support(p, true, supportTable["MDMIsAwaitingConfiguration"])
 	{
 		path := validation.Join(p, "")
 		present := true
@@ -1806,6 +2082,11 @@ func (x *MDMIsReturnToService) Validate(t support.Target) error {
 }
 
 func (x *MDMIsReturnToService) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
+	c.Support(p, true, supportTable["MDMIsReturnToService"])
 	{
 		path := validation.Join(p, "")
 		present := true
@@ -1822,6 +2103,11 @@ func (x *MDMIsSharedIPad) Validate(t support.Target) error {
 }
 
 func (x *MDMIsSharedIPad) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
+	c.Support(p, true, supportTable["MDMIsSharedIPad"])
 	{
 		path := validation.Join(p, "")
 		present := true
@@ -1838,6 +2124,11 @@ func (x *MDMPushMagic) Validate(t support.Target) error {
 }
 
 func (x *MDMPushMagic) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
+	c.Support(p, true, supportTable["MDMPushMagic"])
 	{
 		path := validation.Join(p, "")
 		present := x.Value != ""
@@ -1854,6 +2145,11 @@ func (x *MDMPushToken) Validate(t support.Target) error {
 }
 
 func (x *MDMPushToken) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
+	c.Support(p, true, supportTable["MDMPushToken"])
 	{
 		path := validation.Join(p, "")
 		present := len(x.Value) > 0
@@ -1870,6 +2166,11 @@ func (x *MigrationAssistantReport) Validate(t support.Target) error {
 }
 
 func (x *MigrationAssistantReport) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
+	c.Support(p, true, supportTable["MigrationAssistantReport"])
 	{
 		path := validation.Join(p, "")
 		present := true
@@ -1881,6 +2182,10 @@ func (x *MigrationAssistantReport) validate(c *validation.Collector, p string) {
 }
 
 func (x *MigrationAssistantReportMigrationAssistantReport) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
 	{
 		path := validation.Join(p, "completed-data-size")
 		present := x.CompletedDataSize != nil
@@ -1946,6 +2251,11 @@ func (x *MigrationAssistantState) Validate(t support.Target) error {
 }
 
 func (x *MigrationAssistantState) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
+	c.Support(p, true, supportTable["MigrationAssistantState"])
 	{
 		path := validation.Join(p, "")
 		present := x.Value != ""
@@ -1965,6 +2275,11 @@ func (x *PackageList) Validate(t support.Target) error {
 }
 
 func (x *PackageList) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
+	c.Support(p, true, supportTable["PackageList"])
 	{
 		path := validation.Join(p, "")
 		present := len(x.Value) > 0
@@ -1976,6 +2291,10 @@ func (x *PackageList) validate(c *validation.Collector, p string) {
 }
 
 func (x *PackageListPackage) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
 	{
 		path := validation.Join(p, "identifier")
 		present := x.Identifier != ""
@@ -2028,6 +2347,10 @@ func (x *PackageListPackage) validate(c *validation.Collector, p string) {
 }
 
 func (x *PackageListStatusReason) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
 	{
 		path := validation.Join(p, "code")
 		present := x.Code != ""
@@ -2058,6 +2381,11 @@ func (x *PasscodeCompliance) Validate(t support.Target) error {
 }
 
 func (x *PasscodeCompliance) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
+	c.Support(p, true, supportTable["PasscodeCompliance"])
 	{
 		path := validation.Join(p, "")
 		present := true
@@ -2074,6 +2402,11 @@ func (x *PasscodeIsPresent) Validate(t support.Target) error {
 }
 
 func (x *PasscodeIsPresent) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
+	c.Support(p, true, supportTable["PasscodeIsPresent"])
 	{
 		path := validation.Join(p, "")
 		present := true
@@ -2090,6 +2423,11 @@ func (x *ScreenSharingConnectionGroupUnresolvedConnections) Validate(t support.T
 }
 
 func (x *ScreenSharingConnectionGroupUnresolvedConnections) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
+	c.Support(p, true, supportTable["ScreenSharingConnectionGroupUnresolvedConnections"])
 	{
 		path := validation.Join(p, "")
 		present := len(x.Value) > 0
@@ -2101,6 +2439,10 @@ func (x *ScreenSharingConnectionGroupUnresolvedConnections) validate(c *validati
 }
 
 func (x *ScreenSharingConnectionGroupUnresolvedConnectionsUnresolvedGroup) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
 	{
 		path := validation.Join(p, "identifier")
 		present := x.Identifier != ""
@@ -2131,6 +2473,11 @@ func (x *SecurityCertificateList) Validate(t support.Target) error {
 }
 
 func (x *SecurityCertificateList) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
+	c.Support(p, true, supportTable["SecurityCertificateList"])
 	{
 		path := validation.Join(p, "")
 		present := len(x.Value) > 0
@@ -2142,6 +2489,10 @@ func (x *SecurityCertificateList) validate(c *validation.Collector, p string) {
 }
 
 func (x *SecurityCertificateListCertificate) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
 	{
 		path := validation.Join(p, "identifier")
 		present := x.Identifier != ""
@@ -2193,6 +2544,11 @@ func (x *SecurityLockdownMode) Validate(t support.Target) error {
 }
 
 func (x *SecurityLockdownMode) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
+	c.Support(p, true, supportTable["SecurityLockdownMode"])
 	{
 		path := validation.Join(p, "")
 		present := true
@@ -2209,6 +2565,11 @@ func (x *ServicesBackgroundTask) Validate(t support.Target) error {
 }
 
 func (x *ServicesBackgroundTask) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
+	c.Support(p, true, supportTable["ServicesBackgroundTask"])
 	{
 		path := validation.Join(p, "")
 		present := len(x.Value) > 0
@@ -2220,6 +2581,10 @@ func (x *ServicesBackgroundTask) validate(c *validation.Collector, p string) {
 }
 
 func (x *ServicesBackgroundTaskBackgroundTask) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
 	{
 		path := validation.Join(p, "identifier")
 		present := x.Identifier != ""
@@ -2285,6 +2650,10 @@ func (x *ServicesBackgroundTaskBackgroundTask) validate(c *validation.Collector,
 }
 
 func (x *ServicesBackgroundTaskBackgroundTaskLaunchd) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
 	{
 		path := validation.Join(p, "label")
 		present := x.Label != ""
@@ -2324,6 +2693,10 @@ func (x *ServicesBackgroundTaskBackgroundTaskLaunchd) validate(c *validation.Col
 }
 
 func (x *ServicesBackgroundTaskBackgroundTaskLaunchdDeviceManagement) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
 	{
 		path := validation.Join(p, "configuration-identifier")
 		present := x.ConfigurationIdentifier != ""
@@ -2356,6 +2729,11 @@ func (x *SoftwareUpdateBetaEnrollment) Validate(t support.Target) error {
 }
 
 func (x *SoftwareUpdateBetaEnrollment) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
+	c.Support(p, true, supportTable["SoftwareUpdateBetaEnrollment"])
 	{
 		path := validation.Join(p, "")
 		present := x.Value != ""
@@ -2372,6 +2750,11 @@ func (x *SoftwareUpdateDeviceID) Validate(t support.Target) error {
 }
 
 func (x *SoftwareUpdateDeviceID) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
+	c.Support(p, true, supportTable["SoftwareUpdateDeviceID"])
 	{
 		path := validation.Join(p, "")
 		present := x.Value != ""
@@ -2388,6 +2771,11 @@ func (x *SoftwareUpdateFailureReason) Validate(t support.Target) error {
 }
 
 func (x *SoftwareUpdateFailureReason) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
+	c.Support(p, true, supportTable["SoftwareUpdateFailureReason"])
 	{
 		path := validation.Join(p, "")
 		present := true
@@ -2399,6 +2787,10 @@ func (x *SoftwareUpdateFailureReason) validate(c *validation.Collector, p string
 }
 
 func (x *SoftwareUpdateFailureReasonDictionary) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
 	{
 		path := validation.Join(p, "count")
 		present := true
@@ -2429,6 +2821,11 @@ func (x *SoftwareUpdateInstallReason) Validate(t support.Target) error {
 }
 
 func (x *SoftwareUpdateInstallReason) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
+	c.Support(p, true, supportTable["SoftwareUpdateInstallReason"])
 	{
 		path := validation.Join(p, "")
 		present := true
@@ -2440,6 +2837,10 @@ func (x *SoftwareUpdateInstallReason) validate(c *validation.Collector, p string
 }
 
 func (x *SoftwareUpdateInstallReasonDictionary) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
 	{
 		path := validation.Join(p, "reason")
 		present := len(x.Reason) > 0
@@ -2468,6 +2869,11 @@ func (x *SoftwareUpdateInstallState) Validate(t support.Target) error {
 }
 
 func (x *SoftwareUpdateInstallState) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
+	c.Support(p, true, supportTable["SoftwareUpdateInstallState"])
 	{
 		path := validation.Join(p, "")
 		present := x.Value != ""
@@ -2487,6 +2893,11 @@ func (x *SoftwareUpdatePendingVersion) Validate(t support.Target) error {
 }
 
 func (x *SoftwareUpdatePendingVersion) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
+	c.Support(p, true, supportTable["SoftwareUpdatePendingVersion"])
 	{
 		path := validation.Join(p, "")
 		present := true
@@ -2498,6 +2909,10 @@ func (x *SoftwareUpdatePendingVersion) validate(c *validation.Collector, p strin
 }
 
 func (x *SoftwareUpdatePendingVersionDictionary) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
 	{
 		path := validation.Join(p, "os-version")
 		present := x.OsVersion != ""
@@ -2529,6 +2944,11 @@ func (x *Reason) Validate(t support.Target) error {
 }
 
 func (x *Reason) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
+	c.Support(p, true, supportTable["Reason"])
 	{
 		path := validation.Join(p, "code")
 		present := x.Code != ""
@@ -2559,6 +2979,11 @@ func (x *TestArrayValue) Validate(t support.Target) error {
 }
 
 func (x *TestArrayValue) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
+	c.Support(p, true, supportTable["TestArrayValue"])
 	{
 		path := validation.Join(p, "")
 		present := len(x.Value) > 0
@@ -2570,6 +2995,10 @@ func (x *TestArrayValue) validate(c *validation.Collector, p string) {
 }
 
 func (x *TestArrayValueArray) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
 	{
 		path := validation.Join(p, "key1")
 		present := x.Key1 != ""
@@ -2594,6 +3023,11 @@ func (x *TestBooleanValue) Validate(t support.Target) error {
 }
 
 func (x *TestBooleanValue) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
+	c.Support(p, true, supportTable["TestBooleanValue"])
 	{
 		path := validation.Join(p, "")
 		present := true
@@ -2610,6 +3044,11 @@ func (x *TestDictionaryValue) Validate(t support.Target) error {
 }
 
 func (x *TestDictionaryValue) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
+	c.Support(p, true, supportTable["TestDictionaryValue"])
 	{
 		path := validation.Join(p, "")
 		present := true
@@ -2621,6 +3060,10 @@ func (x *TestDictionaryValue) validate(c *validation.Collector, p string) {
 }
 
 func (x *TestDictionaryValueDictionary) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
 	{
 		path := validation.Join(p, "key1")
 		present := x.Key1 != ""
@@ -2645,6 +3088,11 @@ func (x *TestErrorValue) Validate(t support.Target) error {
 }
 
 func (x *TestErrorValue) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
+	c.Support(p, true, supportTable["TestErrorValue"])
 	{
 		path := validation.Join(p, "")
 		present := x.Value != ""
@@ -2661,6 +3109,11 @@ func (x *TestIntegerValue) Validate(t support.Target) error {
 }
 
 func (x *TestIntegerValue) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
+	c.Support(p, true, supportTable["TestIntegerValue"])
 	{
 		path := validation.Join(p, "")
 		present := true
@@ -2677,6 +3130,11 @@ func (x *TestRealValue) Validate(t support.Target) error {
 }
 
 func (x *TestRealValue) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
+	c.Support(p, true, supportTable["TestRealValue"])
 	{
 		path := validation.Join(p, "")
 		present := true
@@ -2693,6 +3151,11 @@ func (x *TestStringValue) Validate(t support.Target) error {
 }
 
 func (x *TestStringValue) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
+	c.Support(p, true, supportTable["TestStringValue"])
 	{
 		path := validation.Join(p, "")
 		present := x.Value != ""

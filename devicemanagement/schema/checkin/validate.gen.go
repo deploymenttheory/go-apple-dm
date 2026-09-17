@@ -17,6 +17,11 @@ func (x *Authenticate) Validate(t support.Target) error {
 }
 
 func (x *Authenticate) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
+	c.Support(p, true, supportTable["Authenticate"])
 	{
 		path := validation.Join(p, "DeviceName")
 		present := x.DeviceName != ""
@@ -114,6 +119,11 @@ func (x *CheckOut) Validate(t support.Target) error {
 }
 
 func (x *CheckOut) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
+	c.Support(p, true, supportTable["CheckOut"])
 	{
 		path := validation.Join(p, "MessageType")
 		present := x.MessageType != ""
@@ -156,6 +166,11 @@ func (x *DeclarativeManagement) Validate(t support.Target) error {
 }
 
 func (x *DeclarativeManagement) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
+	c.Support(p, true, supportTable["DeclarativeManagement"])
 	{
 		path := validation.Join(p, "MessageType")
 		present := x.MessageType != ""
@@ -230,6 +245,11 @@ func (x *GetBootstrapToken) Validate(t support.Target) error {
 }
 
 func (x *GetBootstrapToken) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
+	c.Support(p, true, supportTable["GetBootstrapToken"])
 	{
 		path := validation.Join(p, "MessageType")
 		present := x.MessageType != ""
@@ -257,6 +277,11 @@ func (x *GetBootstrapTokenResponse) Validate(t support.Target) error {
 }
 
 func (x *GetBootstrapTokenResponse) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
+	c.Support(p, true, supportTable["GetBootstrapTokenResponse"])
 	{
 		path := validation.Join(p, "BootstrapToken")
 		present := len(x.BootstrapToken) > 0
@@ -274,6 +299,11 @@ func (x *GetToken) Validate(t support.Target) error {
 }
 
 func (x *GetToken) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
+	c.Support(p, true, supportTable["GetToken"])
 	{
 		path := validation.Join(p, "MessageType")
 		present := x.MessageType != ""
@@ -346,6 +376,10 @@ func (x *GetToken) validate(c *validation.Collector, p string) {
 }
 
 func (x *GetTokenTokenParameters) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
 	{
 		path := validation.Join(p, "SecurityToken")
 		present := x.SecurityToken != nil
@@ -375,6 +409,11 @@ func (x *GetTokenResponse) Validate(t support.Target) error {
 }
 
 func (x *GetTokenResponse) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
+	c.Support(p, true, supportTable["GetTokenResponse"])
 	{
 		path := validation.Join(p, "TokenData")
 		present := len(x.TokenData) > 0
@@ -393,6 +432,11 @@ func (x *ReturnToService) Validate(t support.Target) error {
 }
 
 func (x *ReturnToService) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
+	c.Support(p, true, supportTable["ReturnToService"])
 	{
 		path := validation.Join(p, "MessageType")
 		present := x.MessageType != ""
@@ -421,6 +465,11 @@ func (x *ReturnToServiceResponse) Validate(t support.Target) error {
 }
 
 func (x *ReturnToServiceResponse) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
+	c.Support(p, true, supportTable["ReturnToServiceResponse"])
 	{
 		path := validation.Join(p, "PreserveDataPlan")
 		present := x.PreserveDataPlan != nil
@@ -440,6 +489,10 @@ func (x *ReturnToServiceResponse) validate(c *validation.Collector, p string) {
 }
 
 func (x *ReturnToServiceResponseReturnToService) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
 	{
 		path := validation.Join(p, "Enabled")
 		present := true
@@ -482,6 +535,11 @@ func (x *SetBootstrapToken) Validate(t support.Target) error {
 }
 
 func (x *SetBootstrapToken) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
+	c.Support(p, true, supportTable["SetBootstrapToken"])
 	{
 		path := validation.Join(p, "MessageType")
 		present := x.MessageType != ""
@@ -515,6 +573,11 @@ func (x *TokenUpdate) Validate(t support.Target) error {
 }
 
 func (x *TokenUpdate) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
+	c.Support(p, true, supportTable["TokenUpdate"])
 	{
 		path := validation.Join(p, "NotOnConsole")
 		present := true
@@ -616,6 +679,11 @@ func (x *UserAuthenticate) Validate(t support.Target) error {
 }
 
 func (x *UserAuthenticate) validate(c *validation.Collector, p string) {
+	if x == nil {
+		c.Required(p, false)
+		return
+	}
+	c.Support(p, true, supportTable["UserAuthenticate"])
 	{
 		path := validation.Join(p, "MessageType")
 		present := x.MessageType != ""

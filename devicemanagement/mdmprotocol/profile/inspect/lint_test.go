@@ -1,4 +1,4 @@
-package profilelint_test
+package inspect_test
 
 import (
 	"crypto/x509"
@@ -7,9 +7,9 @@ import (
 
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/cms"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/plist"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/profile/inspect"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/schema/support"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/testpki"
-	"github.com/deploymenttheory/go-apple-dm/server/internal/dmctl/profilelint"
 )
 
 func profileData(t *testing.T, change func(map[string]any, map[string]any)) []byte {
@@ -71,7 +71,7 @@ func TestInspect(t *testing.T) {
 		{name: "duplicate", severity: "error", path: "PayloadContent[1]", change: func(top, p map[string]any) { top["PayloadContent"] = []any{p, p} }},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
-			r := profilelint.Inspect(profileData(t, tc.change), profilelint.Options{Target: target})
+			r := inspect.Inspect(profileData(t, tc.change), inspect.Options{Target: target})
 			if tc.severity == "" && len(r.Issues) != 0 {
 				t.Fatalf("valid: %+v", r)
 			}
@@ -89,9 +89,9 @@ func TestInspect(t *testing.T) {
 			}
 		})
 	}
-	if r := profilelint.Inspect(
+	if r := inspect.Inspect(
 		[]byte("broken"),
-		profilelint.Options{Target: target},
+		inspect.Options{Target: target},
 	); len(r.Issues) != 1 ||
 		r.Issues[0].Rule != "parse" {
 		t.Fatal(r)
@@ -99,7 +99,7 @@ func TestInspect(t *testing.T) {
 }
 
 func TestInspectSizeLimit(t *testing.T) {
-	r := profilelint.Inspect(make([]byte, plist.DefaultMaxBytes+1), profilelint.Options{})
+	r := inspect.Inspect(make([]byte, plist.DefaultMaxBytes+1), inspect.Options{})
 	if len(r.Issues) != 1 || r.Issues[0].Rule != "size" || r.Issues[0].Severity != "error" {
 		t.Fatalf("oversized profile: %+v", r)
 	}
@@ -120,14 +120,14 @@ func TestSignatureAndTrust(t *testing.T) {
 		roots *x509.CertPool
 		trust string
 	}{{nil, "not-checked"}, {ca.Pool(), "trusted"}, {x509.NewCertPool(), "untrusted"}} {
-		r := profilelint.Inspect(signed, profilelint.Options{Target: target, Roots: tc.roots})
+		r := inspect.Inspect(signed, inspect.Options{Target: target, Roots: tc.roots})
 		if r.Signature != "valid" || r.Trust != tc.trust {
 			t.Fatal(r)
 		}
 	}
-	if r := profilelint.Inspect(
+	if r := inspect.Inspect(
 		plain,
-		profilelint.Options{Target: target, RequireSignature: true},
+		inspect.Options{Target: target, RequireSignature: true},
 	); len(r.Issues) != 1 ||
 		r.Issues[0].Rule != "signature" {
 		t.Fatal(r)
@@ -137,9 +137,9 @@ func TestSignatureAndTrust(t *testing.T) {
 		t.Fatal("no embedded content")
 	}
 	signed[pos] = 'X'
-	if r := profilelint.Inspect(
+	if r := inspect.Inspect(
 		signed,
-		profilelint.Options{Target: target},
+		inspect.Options{Target: target},
 	); r.Signature != "invalid" {
 		t.Fatal(r)
 	}
@@ -160,9 +160,9 @@ func TestTargetAvailability(t *testing.T) {
 		}},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
-			report := profilelint.Inspect(
+			report := inspect.Inspect(
 				profileData(t, tc.change),
-				profilelint.Options{Target: tc.target},
+				inspect.Options{Target: tc.target},
 			)
 			for _, issue := range report.Issues {
 				if issue.Severity == tc.severity &&
@@ -192,9 +192,9 @@ func TestUnknownKeyInTypedDictionary(t *testing.T) {
 			},
 		}
 	})
-	report := profilelint.Inspect(
+	report := inspect.Inspect(
 		data,
-		profilelint.Options{
+		inspect.Options{
 			Target: support.Target{OS: support.MacOS, Version: support.V(26, 0, 0)},
 		},
 	)

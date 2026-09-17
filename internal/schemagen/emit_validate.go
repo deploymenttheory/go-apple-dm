@@ -61,11 +61,15 @@ func (e *emitter) validateType(b *bytes.Buffer, td *TypeDef, patterns *[]string)
 			td.Name,
 		)
 	}
-	fmt.Fprintf(b, "func (x *%s) validate(c *validation.Collector, p string) {\n", td.Name)
+	fmt.Fprintf(b, "func (x *%s) validate(c *validation.Collector, p string) {\n\tif x == nil { c.Required(p, false); return }\n", td.Name)
+	if !td.Nested {
+		fmt.Fprintf(b, "\tc.Support(p, true, supportTable[%q])\n", td.Name)
+	}
 	if len(td.Fields) == 0 {
 		b.WriteString("\t_, _ = c, p\n}\n\n")
 		return
 	}
+	e.reviewedValidation(b, td)
 	top := topName(td)
 	for _, f := range td.Fields {
 		if f.Src.LegacyRequired {
@@ -98,13 +102,16 @@ func (e *emitter) validateType(b *bytes.Buffer, td *TypeDef, patterns *[]string)
 		if !f.Optional && !td.Leaf {
 			b.WriteString("\t\tc.Required(path, present)\n")
 		}
+		if f.Kind == KindScalar && hasValueFloor(td, f) {
+			fmt.Fprintf(b, "\t\tif present { c.Support(path, true, ValueSupport(%q, %s)) }\n", supportPath(top, f), value)
+		}
 		e.constraintChecks(b, f, value, "path", patterns)
 		switch f.Kind {
 		case KindStruct:
 			b.WriteString("\t\tif present {\n\t\t\tx." + f.Name + ".validate(c, path)\n\t\t}\n")
 		case KindArray:
 			if f.Elem != nil {
-				e.arrayChecks(b, f, patterns)
+				e.arrayChecks(b, f, patterns, td)
 			}
 			if len(f.Variants) > 0 {
 				e.variantChecks(b, f)
@@ -187,7 +194,8 @@ func (e *emitter) constraintChecks(
 }
 
 // arrayChecks emits per-element checks.
-func (e *emitter) arrayChecks(b *bytes.Buffer, f *Field, patterns *[]string) {
+func (e *emitter) arrayChecks(b *bytes.Buffer, f *Field, patterns *[]string, td *TypeDef) {
+	top := topName(td)
 	k := f.Src
 	if k.Repetition != nil {
 		fmt.Fprintf(
@@ -208,7 +216,13 @@ func (e *emitter) arrayChecks(b *bytes.Buffer, f *Field, patterns *[]string) {
 			f.Name,
 		)
 	case KindScalar:
+		if hasValueFloor(td, f) {
+			fmt.Fprintf(b, "\t\tfor i, v := range x.%s { c.Support(validation.Index(path, i), true, ValueSupport(%q, v)) }\n", f.Name, supportPath(top, f))
+		}
 		ek := el.Src
+		if el.Base == "string" && len(ek.Subkeys) > 0 {
+			fmt.Fprintf(b, "\t\tfor i, v := range x.%s { c.Support(validation.Index(path, i), true, supportTable[%q + v]) }\n", f.Name, supportPath(top, f)+"."+el.Key+".")
+		}
 		if len(ek.RangeList) > 0 || ek.Range != nil || (ek.Format != "" && el.Base == "string") {
 			fmt.Fprintf(
 				b,

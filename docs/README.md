@@ -21,3 +21,7 @@
 - [Bench API and configuration](operations/reference-bench.md): runtime, enrollment and app push additions.
 - [Test scenarios](testing/e2e-scenarios.md): executable simulator scenarios and their limits.
 - [Mac enrollment testing](operations/mac-enrollment-testing.md): physical-device prerequisites, installation and acceptance checks.
+
+- [Apple OS 27 coverage](operations/apple-os27-coverage.md): feature mapping, macOS 26 compatibility and content-cache operations.
+- [macOS 27 handoff](testing/macos27-handoff.md): prepared code, pre-upgrade evidence and post-reboot acceptance.
+- [Physical macOS 27 validation](testing/macos27-live-validation.md): observed device results, fixes and remaining acceptance.

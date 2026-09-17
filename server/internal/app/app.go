@@ -13,6 +13,10 @@ import (
 	"sync"
 	"time"
 
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/contentcache"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/mdm"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/schema/support"
+
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/appleplatformservices/axm"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/appleplatformservices/dep"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/appleplatformservices/push/apns"
@@ -161,6 +165,7 @@ type Config struct {
 	// Subscriptions enables the synthesised status-subscriptions
 	// declaration (decision record 0021).
 	Subscriptions bool
+	ContentCache  ContentCacheConfig
 	// Enroll turns the enrollment routes on (SCEP, discovery,
 	// account-driven, ADE).
 	Enroll EnrollConfig
@@ -230,6 +235,7 @@ type App struct {
 	ReplyCertificates *replycerts.Manager
 
 	appPushStore   *apppush.Store
+	contentCache   contentcache.ReportStore
 	appPushClients map[string]*apns.AppClient
 	Handler        http.Handler
 	Core           *service.Core
@@ -652,6 +658,13 @@ func (a *App) wire(ctx context.Context) error {
 	engine, err := ddm.New(ddm.Config{
 		Store: st, Bus: cfg.publisher(), Clock: cfg.Clock, Logger: cfg.Logger,
 		Subscriptions: ddm.Subscriptions{Enabled: cfg.Subscriptions},
+		EnrollmentTarget: func(ctx context.Context, id mdm.EnrollmentID) (support.Target, error) {
+			target, err := service.EnrollmentTarget(ctx, a.Store, id)
+			if errors.Is(err, storage.ErrNotFound) {
+				return support.Target{}, nil
+			}
+			return target, err
+		},
 	})
 	if err != nil {
 		return fmt.Errorf("app: engine: %w", err)
@@ -668,6 +681,9 @@ func (a *App) wire(ctx context.Context) error {
 		pusher = a.Push
 	}
 	mux := http.NewServeMux()
+	if err := a.wireContentCache(ctx, mux); err != nil {
+		return err
+	}
 	if a.Certificates != nil {
 		mux.Handle("/.well-known/acme-challenge/", a.Certificates.HTTP01Handler())
 	}
@@ -808,6 +824,9 @@ func (a *App) wire(ctx context.Context) error {
 	a.Handler, err = a.withRateLimits(ctx, mux)
 	if err == nil && a.maintenance != nil {
 		a.Handler = a.maintenance.Wrap(a.Handler)
+	}
+	if err == nil {
+		a.Handler = redactContentCacheURL(a.Handler)
 	}
 	return err
 }
@@ -1033,6 +1052,7 @@ func (a *App) wireAdmin(ctx context.Context, mux *http.ServeMux) error {
 	routes = append(routes, a.setupRoutes()...)
 	routes = append(routes, a.ddmAdminRoutes()...)
 	routes = append(routes, a.mdmAdminRoutes()...)
+	routes = append(routes, a.contentCacheRoutes()...)
 	extras, err := a.operatorRoutes(ctx)
 	if err != nil {
 		return err

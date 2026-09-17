@@ -1,4 +1,4 @@
-package profilelint
+package inspect
 
 import (
 	"fmt"
