@@ -19,7 +19,7 @@
           "proxyserver",
           "replay"
         ],
-        "note": "HTTPS carries signed requests and request-bound responses. DDM replicas share atomic replay state."
+        "note": "HTTPS carries signed requests and bound responses. Both roles share enrollment, inventory and replay state in one database."
       },
       {
         "id": "single",
@@ -34,7 +34,7 @@
     ],
     "repository": {
       "url": "https://github.com/deploymenttheory/go-apple-dm",
-      "revision": "7500eb25e50a2913338339d5fced18dc7f41fdc3"
+      "revision": "617119b0b66a3c66cfb4e88ba78a134eb4e5234d"
     },
     "colour_profile": "purpose-v1",
     "legend": {
@@ -110,7 +110,7 @@
       "sources": [
         {
           "path": "server/ddmadapter/internal/proxywire/envelope.go",
-          "label": "Sign · Verify"
+          "label": "Sign \u00b7 Verify"
         }
       ],
       "purpose": "authentication"
@@ -175,8 +175,8 @@
     {
       "id": "ddmstore",
       "type": "database",
-      "label": "Declarative store",
-      "sublabel": "Snapshots and device status",
+      "label": "Declarative tables",
+      "sublabel": "In shared application database",
       "pos": [
         915.0,
         410.0
@@ -185,7 +185,13 @@
         220,
         70
       ],
-      "purpose": "storage"
+      "purpose": "storage",
+      "sources": [
+        {
+          "path": "server/internal/app/app.go",
+          "label": "Shared database composition"
+        }
+      ]
     },
     {
       "id": "replay",
@@ -310,7 +316,8 @@
       "title": "Choosing the adapter",
       "items": [
         "With DM_DDM_URL configured, the MDM role forwards declarative requests to the DDM role. Otherwise it calls the in-process adapter.",
-        "The device continues to use /mdm; the internal forwarding endpoint is not a device enrollment URL."
+        "The device continues to use /mdm; the internal forwarding endpoint is not a device enrollment URL.",
+        "Both roles share one persistent database and compatible storage keyrings. Enrollment, inventory, declarations and replay state use that database; the hop does not copy inventory."
       ]
     },
     {
@@ -340,9 +347,9 @@
       "dot": "transport",
       "title": "Public documentation",
       "items": [
-        "Declarative Management check-in — https://developer.apple.com/documentation/devicemanagement/declarative-management",
-        "RFC 9440 — Client-Cert HTTP Header Field — https://www.rfc-editor.org/rfc/rfc9440",
-        "Private DDM adapter contract — https://github.com/deploymenttheory/go-apple-dm/blob/80599ddc35778bcc88fa2ac77bb1dc68a51cf089/server/ddmadapter/internal/proxywire/doc.go"
+        "Declarative Management check-in \u2014 https://developer.apple.com/documentation/devicemanagement/declarative-management",
+        "RFC 9440 \u2014 Client-Cert HTTP Header Field \u2014 https://www.rfc-editor.org/rfc/rfc9440",
+        "Private DDM adapter contract \u2014 https://github.com/deploymenttheory/go-apple-dm/blob/80599ddc35778bcc88fa2ac77bb1dc68a51cf089/server/ddmadapter/internal/proxywire/doc.go"
       ]
     }
   ]

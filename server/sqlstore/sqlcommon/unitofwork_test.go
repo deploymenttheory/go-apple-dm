@@ -187,6 +187,61 @@ func TestUnitOfWorkRejectsDifferentPoolsAndRollsBackPanic(t *testing.T) {
 	}
 }
 
+func TestUnitOfWorkRecognizesCancellationAfterAutomaticRollback(t *testing.T) {
+	for _, cancelled := range []bool{true, false} {
+		name := "explicit rollback"
+		if cancelled {
+			name = "automatic rollback on cancellation"
+		}
+		t.Run(name, func(t *testing.T) {
+			db := openRaw(t)
+			db.SetMaxOpenConns(1)
+			if _, err := db.ExecContext(t.Context(), "CREATE TABLE cancelled_work (id INTEGER)"); err != nil {
+				t.Fatal(err)
+			}
+			u := sqlcommon.UnitOfWork{DB: db, Dialect: sqlite.Dialect}
+			ctx, cancel := context.WithCancel(t.Context())
+			defer cancel()
+			notified, completed := false, false
+			err := u.Run(ctx, func(inside context.Context) error {
+				tx, _ := sqlcommon.CurrentTransaction(inside, db)
+				if _, err := tx.ExecContext(inside, "INSERT INTO cancelled_work VALUES (1)"); err != nil {
+					return err
+				}
+				sqlcommon.AfterCommit(inside, func(context.Context) { notified = true })
+				sqlcommon.AfterCompletion(inside, func(outside context.Context, committed bool) {
+					completed = true
+					if committed || outside.Err() != nil {
+						t.Error("rollback callback reported commit or retained cancellation")
+					}
+				})
+				if cancelled {
+					cancel()
+				} else if err := tx.Rollback(); err != nil {
+					return err
+				}
+				// With one connection, this waits until database/sql has finished
+				// its asynchronous rollback. Commit must then see ErrTxDone.
+				conn, err := db.Conn(t.Context())
+				if err != nil {
+					return err
+				}
+				return conn.Close()
+			})
+			if !errors.Is(err, sqlcommon.ErrTransaction) || !errors.Is(err, sql.ErrTxDone) {
+				t.Fatal("lost transaction error", err)
+			}
+			if errors.Is(err, context.Canceled) != cancelled || notified || !completed {
+				t.Fatal("incorrect cancellation or callback outcome", err, notified, completed)
+			}
+			var count int
+			if err := db.QueryRowContext(t.Context(), "SELECT COUNT(*) FROM cancelled_work").Scan(&count); err != nil || count != 0 {
+				t.Fatal("cancelled work survived rollback", count, err)
+			}
+		})
+	}
+}
+
 func TestLostSavepointPoisonsOuterTransactionAndSuppressesNotification(t *testing.T) {
 	for _, cancelBefore := range []bool{false, true} {
 		db := openRaw(t)

@@ -233,3 +233,26 @@ declared library version `v0.7.4-0.20260917043416-c81508cf336c`.
 The user has now authorized continuation beyond the original physical pass,
 including a visible Guestweave macOS 27 VM. Outstanding live cases remain pending;
 the repository checks above do not establish native feature behavior.
+
+SQLite CI subsequently exposed a shutdown race: `database/sql` can finish its
+automatic rollback before `Commit` observes cancellation, returning `ErrTxDone`.
+The transaction coordinator now preserves that error and includes the context's
+cancellation cause. A deterministic regression waits for rollback before commit,
+verifies that writes and commit notifications are discarded, and confirms that an
+explicit rollback without cancellation still reports a transaction error. The
+transaction, maintenance and application race suites passed; the affected CLI E2E
+test passed ten consecutive runs with `-race -count=10`.
+
+The shared-database architecture diagram was regenerated from its source JSON.
+All nine artifact checks and the repository's browser interaction checks passed.
+Archify's separate one-screen check reports vertical overflow, as expected under
+the repository's documented scrolling reading profile; it is not recorded as a
+pass. Browser measurements found no horizontal overflow or chrome overlap.
+
+Guestweave was built and signed locally using the installed Command Line Tools.
+A schema-version mismatch in its OpenTelemetry resource initialization was fixed
+in the ignored lab checkout; its telemetry race test and restore-image lookup
+passed. Apple returned `UniversalMac_27.0_26A428_Restore.ipsw`, 26,626,436,228 bytes.
+VM creation is waiting for storage: the internal volume had about 36 GiB free,
+insufficient for the restore image, guest disk and host reserve. No guest has
+been created or used to claim native acceptance.
