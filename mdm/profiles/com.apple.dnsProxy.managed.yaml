@@ -5,6 +5,7 @@ payload:
   supportedOS:
     iOS:
       introduced: '11.0'
+      deprecated: '27.0'
       multiple: false
       supervised: false
       allowmanualinstall: false
@@ -16,6 +17,7 @@ payload:
         mode: allowed
     macOS:
       introduced: '10.15'
+      deprecated: '27.0'
       multiple: false
       devicechannel: true
       userchannel: false
@@ -28,6 +30,7 @@ payload:
       introduced: n/a
     visionOS:
       introduced: '1.1'
+      deprecated: '27.0'
       multiple: false
       supervised: false
       allowmanualinstall: false
@@ -40,19 +43,31 @@ payload:
     user enrollments via MDM if DNSProxyUUID is specified.
 payloadkeys:
 - key: AppBundleIdentifier
-  title: App Bundle Identifier
+  title: App bundle identifier
   type: <string>
   presence: required
   content: The bundle identifier of the app containing the DNS proxy network extension.
 - key: ProviderBundleIdentifier
-  title: Provider Bundle Identifier
+  title: Provider bundle identifier
   type: <string>
   presence: optional
   content: The bundle identifier of the DNS proxy network extension to use. Declaring
     the bundle identifier is useful for apps that contain more than one DNS proxy
     extension.
+- key: ProviderDesignatedRequirement
+  title: Provider designated requirement
+  supportedOS:
+    iOS:
+      introduced: n/a
+    visionOS:
+      introduced: n/a
+  type: <string>
+  presence: optional
+  content: The designated requirement string that the system embeds in the code signature
+    of the DNS proxy network extension. Use this to correctly identify the DNS proxy
+    extension when `ProviderBundleIdentifier` is present.
 - key: ProviderConfiguration
-  title: Provider Configuration
+  title: Provider configuration
   type: <dictionary>
   presence: optional
   content: The dictionary of vendor-specific configuration items.
@@ -62,7 +77,7 @@ payloadkeys:
     presence: optional
     content: Key/value pairs.
 - key: DNSProxyUUID
-  title: DNS Proxy UUID
+  title: DNS proxy UUID
   supportedOS:
     iOS:
       introduced: '16.0'
@@ -77,3 +92,7 @@ notes:
 - title: ''
   content: Beginning with iOS 15, this profile is unsupervised and needs to be installed
     through MDM.
+examples:
+- title: Profile example
+  files:
+  - file: examples/mdm/profiles/com.apple.dnsProxy.managed/example1.plist

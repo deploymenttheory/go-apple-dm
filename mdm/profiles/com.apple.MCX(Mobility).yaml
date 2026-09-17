@@ -56,3 +56,7 @@ payloadkeys:
   default: false
   content: If `true`, the system bypasses the secure token authorization dialog. This
     dialog only appears on APFS volumes.
+examples:
+- title: Profile example
+  files:
+  - file: examples/mdm/profiles/com.apple.MCX(Mobility)/example1.plist

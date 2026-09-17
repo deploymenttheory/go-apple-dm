@@ -23,19 +23,6 @@ payload:
     watchOS:
       introduced: n/a
 payloadkeys:
-- key: Processes
-  supportedOS:
-    macOS:
-      introduced: n/a
-  type: <dictionary>
-  presence: optional
-  content: Not to be used.
-  subkeytype: Item
-  subkeys: &id001
-  - key: ANY
-    type: <any>
-    presence: optional
-    content: TBD
 - key: Subsystems
   supportedOS:
     macOS:
@@ -45,7 +32,11 @@ payloadkeys:
   content: A dictionary enabling the logging level for subsystems. See `Customizing
     Logging Behavior While Debugging` for more details about the format of the dictionary.
   subkeytype: Item
-  subkeys: *id001
+  subkeys: &id001
+  - key: ANY
+    type: <any>
+    presence: optional
+    content: TBD
 - key: System
   supportedOS:
     macOS:
@@ -56,3 +47,7 @@ payloadkeys:
     to `true` enables private data logging for the entire system.
   subkeytype: Item
   subkeys: *id001
+examples:
+- title: Profile example
+  files:
+  - file: examples/mdm/profiles/com.apple.system.logging/example1.plist
