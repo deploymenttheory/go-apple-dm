@@ -130,7 +130,7 @@ jobs:
         with:
           pattern: device-management-client-schema-assessment-*
           merge-multiple: true
-          path: ${{ runner.temp }}
+          path: ${{ runner.temp }}/schema-assessments/
       - name: Obtain PR credential so preview CI runs automatically
         if: ${{ vars.RP_APP_ID != '' && !(github.event_name == 'workflow_dispatch' && inputs.report_only) }}
         id: app-token
