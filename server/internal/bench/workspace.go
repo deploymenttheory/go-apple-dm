@@ -169,6 +169,7 @@ func HTTP(
 	c *http.Client,
 	base, token, method, path string,
 	body io.Reader,
+	headers ...http.Header,
 ) ([]byte, int, error) {
 	req, err := http.NewRequestWithContext(ctx, method, base+"/admin/v1"+path, body)
 	if err != nil {
@@ -176,6 +177,11 @@ func HTTP(
 	}
 	req.Header.Set("Authorization", "Bearer "+token)
 	req.Header.Set("Content-Type", "application/json")
+	for _, header := range headers {
+		for key, values := range header {
+			req.Header[key] = append([]string(nil), values...)
+		}
+	}
 	resp, err := c.Do(req)
 	if err != nil {
 		return nil, 0, fmt.Errorf("%w: bench: server request failed", errOperation)

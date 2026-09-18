@@ -9,6 +9,7 @@ import (
 	"net/http"
 
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/ddm"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/ddm/blueprint"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/mdm"
 )
 
@@ -44,6 +45,13 @@ var (
 func (a *App) ddmAdminRoutes() []adminRoute {
 	var routes []adminRoute
 	add := func(action, pattern string, fn http.HandlerFunc) {
+		guarded := func(w http.ResponseWriter, r *http.Request) {
+			if r.Method != http.MethodGet && (blueprint.OwnsSet(r.PathValue("set")) || blueprint.OwnsIdentifier(r.PathValue("id"))) {
+				writeError(w, http.StatusConflict, ddm.ErrConflict)
+				return
+			}
+			fn(w, r)
+		}
 		routes = append(
 			routes,
 			adminRoute{
@@ -51,7 +59,7 @@ func (a *App) ddmAdminRoutes() []adminRoute {
 				Action:        action,
 				Family:        "ddm",
 				LocalMutation: action != ActionNotify,
-				Handler:       fn,
+				Handler:       http.HandlerFunc(guarded),
 			},
 		)
 	}
@@ -73,6 +81,11 @@ func (a *App) ddmAdminRoutes() []adminRoute {
 		body, err := io.ReadAll(io.LimitReader(r.Body, MaxAdminBody+1))
 		if err != nil || len(body) > MaxAdminBody {
 			writeError(w, http.StatusRequestEntityTooLarge, ErrBodyTooLarge)
+			return
+		}
+		var envelope struct{ Identifier string }
+		if json.Unmarshal(body, &envelope) == nil && blueprint.OwnsIdentifier(envelope.Identifier) {
+			writeError(w, http.StatusConflict, ddm.ErrConflict)
 			return
 		}
 		d, changed, err := e.PutDeclaration(r.Context(), body)

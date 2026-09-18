@@ -272,7 +272,7 @@ func routeFamily(path string) string {
 		return "auth"
 	case strings.HasPrefix(path, PathEnroll) || path == PathWellKnown || path == "/ota" || strings.HasPrefix(path, "/ota/"):
 		return "enroll"
-	case path == PathMDM || path == "/v1/declarative-management" || path == PathDDM+"/v1/declarative-management":
+	case path == PathMDM || strings.HasPrefix(path, "/configuration-profiles/") || path == "/v1/configuration-profile" || path == PathDDM+"/v1/configuration-profile" || path == "/v1/declarative-management" || path == PathDDM+"/v1/declarative-management":
 		return "mdm"
 	}
 	return ""

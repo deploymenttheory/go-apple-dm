@@ -20,6 +20,7 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/plist"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/schema/checkin"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/state"
+	"github.com/deploymenttheory/go-apple-dm/server/configurationprofile"
 	"github.com/deploymenttheory/go-apple-dm/server/ddmadapter/internal/proxywire"
 )
 
@@ -54,6 +55,10 @@ type Config struct {
 	AllowInsecureForTests bool
 	// Backend is required.
 	Backend Backend
+	// ConfigurationProfiles receives requests authenticated by the MDM ingress.
+	ConfigurationProfiles interface {
+		Fetch(context.Context, mdm.EnrollmentID, string) ([]byte, configurationprofile.Info, error)
+	}
 	// RecvKey must sign every request (X-MDM-Signature).
 	RecvKey []byte
 	// SendKey signs every response body, including empty ones
@@ -122,6 +127,9 @@ func Handler(cfg Config) (http.Handler, error) {
 	}
 	mux := http.NewServeMux()
 	mux.HandleFunc("POST "+proxywire.Path, s.serve)
+	if cfg.ConfigurationProfiles != nil {
+		mux.HandleFunc("POST "+proxywire.ConfigurationProfilePath, s.serveConfigurationProfile)
+	}
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if err := s.authenticate(r); err != nil {
 			s.reject(w, r, http.StatusUnauthorized, err)

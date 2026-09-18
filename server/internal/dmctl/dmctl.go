@@ -203,6 +203,8 @@ func commands() map[string]command {
 		{"policies", "administer authorization policies", runPolicies},
 		{"actions", "list the actions a policy can grant", runActions},
 		{"declarations", "manage declarations", runDeclarations},
+		{"blueprints", "validate, publish and assign Blueprints", runBlueprints},
+		{"configuration-profiles", "upload, list and download configuration profiles", runConfigurationProfiles},
 		{"audit", "read the audit trail", runAudit},
 		{"events", "inspect persistent event delivery and retry a destination", runEvents},
 		{"enrollments", "list, read, disable, and inspect enrollment status", runEnrollments},

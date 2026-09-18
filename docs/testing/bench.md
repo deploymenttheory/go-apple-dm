@@ -53,6 +53,16 @@ removes its assignment and declarations and
 waits for the device's status to reflect removal. Obtain operator approval before
 running this live declaration test.
 
+LIVE-005 and LIVE-006 exercise Blueprint publication on a macOS 26 device and its
+MDM-enabled user channel. They require fresh native declaration status and
+APNs-triggered `ProfileList` responses for conditional activation, replacement of
+an uploaded configuration profile, clearing and republishing while preserving the
+assignment, unassignment, reassignment and deletion. LIVE-005 also checks that
+`LegacyProfile.ProfileAssetReference` is withheld on macOS 26 while a compatible
+configuration in the same Blueprint reaches the device. Run these only against a
+designated test Mac or VM. See [Blueprint acceptance on macOS 26](blueprints-macos26.md)
+for the command, exact assertions and recorded scope.
+
 The Mac can omit unchanged OS/build values from repeated status reports: status
 subscriptions combine as a set union and reports are incremental. LIVE-004 checks
 retained values against current inventory; it does not claim that every repetition

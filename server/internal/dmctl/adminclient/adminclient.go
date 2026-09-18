@@ -156,6 +156,11 @@ func (c *Client) Do(
 	query url.Values,
 	body any,
 ) (*Response, error) {
+	return c.DoWithHeaders(ctx, method, path, query, body, nil)
+}
+
+// DoWithHeaders supports optimistic revisions and binary profile uploads.
+func (c *Client) DoWithHeaders(ctx context.Context, method, path string, query url.Values, body any, headers http.Header) (*Response, error) {
 	u := *c.base
 	u.Path = strings.TrimRight(u.Path, "/") + Prefix + path
 	if len(query) > 0 {
@@ -189,6 +194,9 @@ func (c *Client) Do(
 		req.Header.Set("Content-Type", "application/json")
 	}
 	req.Header.Set("Accept", "application/json")
+	for key, values := range headers {
+		req.Header[key] = append([]string(nil), values...)
+	}
 
 	if c.trace != nil {
 		// The token is never traced; only the request line and the target.

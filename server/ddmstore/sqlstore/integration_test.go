@@ -46,7 +46,7 @@ func runShared(t *testing.T, db *sql.DB, d sqlcommon.Dialect, cascade string) {
 	ctx := context.Background()
 	// Start from nothing, even when the database carries a schema from an
 	// older build.
-	if _, err := db.ExecContext(ctx, "DROP TABLE IF EXISTS "+strings.Join(append(ddmTables, sqlstore.MigrationsTable), ", ")+cascade); err != nil {
+	if _, err := db.ExecContext(ctx, "DROP TABLE IF EXISTS "+strings.Join(append(ddmTables, "ddm_publication_locks", sqlstore.MigrationsTable), ", ")+cascade); err != nil {
 		t.Fatal(err)
 	}
 	s, err := sqlstore.Open(ctx, db, d, sqlstore.Options{})

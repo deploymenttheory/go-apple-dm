@@ -31,6 +31,10 @@ const (
 	EntityEnrollment types.EntityType = "MDM::Enrollment"
 	// EntityDeclaration is one declaration as a resource.
 	EntityDeclaration types.EntityType = "MDM::Declaration"
+	// EntityBlueprint is locally authored desired management state.
+	EntityBlueprint types.EntityType = "MDM::Blueprint"
+	// EntityConfigurationProfile is an immutable uploaded configuration profile.
+	EntityConfigurationProfile types.EntityType = "MDM::ConfigurationProfile"
 	// EntityDEPAccount is one device enrollment service account as a resource.
 	EntityDEPAccount types.EntityType = "MDM::DEPAccount"
 )

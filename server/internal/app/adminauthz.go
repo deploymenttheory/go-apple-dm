@@ -52,7 +52,9 @@ const (
 // consequence. `dmctl policy actions` prints these, so an operator granting
 // an action knows what they are granting rather than guessing from its name.
 func AdminActions() []adminauth.Action {
-	return append(append(setupActions(), contentCacheActions()...), []adminauth.Action{
+	actions := append(setupActions(), blueprintActions()...)
+	actions = append(actions, configurationProfileActions()...)
+	return append(append(actions, contentCacheActions()...), []adminauth.Action{
 		{
 			ID:       ActionReplaceEnrollment,
 			Help:     "Replace an enrolled device's MDM profile and rotate its identity, or cancel a pending replacement.",
@@ -495,6 +497,12 @@ func (a *App) adminResource(r *http.Request) types.EntityUID {
 	if name := r.PathValue("name"); name != "" {
 		return types.NewEntityUID(adminauth.EntityDEPAccount, types.String(name))
 	}
+	if name := r.PathValue("blueprint"); name != "" {
+		return types.NewEntityUID(adminauth.EntityBlueprint, types.String(name))
+	}
+	if revision := r.PathValue("revision"); revision != "" {
+		return types.NewEntityUID(adminauth.EntityConfigurationProfile, types.String(revision))
+	}
 	return adminauth.SystemResource
 }
 
@@ -509,6 +517,9 @@ func adminContext(r *http.Request) map[string]types.Value {
 	}
 	if set := r.PathValue("set"); set != "" {
 		ctx["set"] = types.String(set)
+	}
+	if name := r.PathValue("blueprint"); name != "" {
+		ctx["blueprint"] = types.String(name)
 	}
 	return ctx
 }
