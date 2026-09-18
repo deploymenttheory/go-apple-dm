@@ -1,26 +1,28 @@
-# Apple schema compatibility monitor
+# Device Management Client Schema Compatibility Monitor
 
-The **Apple Schema Compatibility Monitor** workflow checks whether this project's
+The **Device Management Client Schema Compatibility Monitor** workflow checks whether this project's
 generator and tested library/server behavior can handle Apple's current schemas.
 It runs daily at 03:23 UTC and supports manual runs. Manual runs default to
 `report_only: true`, which retains reports and proposed issues without GitHub writes.
 
 Apple's advertised default branch supplies stable updates. It is currently
-`release`; the monitor does not assume `main`, derive a year from an OS version, or
-assume a particular seed naming format. Every branch starting with `seed` is assessed
-even when stable has not changed. A seed advertised as the default is a discovery
-failure requiring investigation.
+`release`. The monitor reads the highest `macOS` availability from each raw YAML
+snapshot; it does not derive a version from a branch name or contain an OS-major
+release list. A seed advertised as the default is a discovery failure requiring
+investigation.
 
 ## What a cycle does
 
-1. Record the project commit, Apple default branch and commit, project production
-   pin, and all advertised seed names and commits in `discovery.json`.
-2. Copy every advertised seed commit into an immutable `schema-source/<seed>/<SHA>`
-   ref in this repository before assessment. Apple may retire the source branch
-   during promotion; the repository-owned ref is the canary's durable input.
-3. Assess stable against the production pin, and each retained canary against the
-   stable snapshot selected in the same discovery. Matrix jobs run independently
-   with at most two assessments in parallel.
+1. Record the project commit, release inputs and advertised or retained seed inputs
+   in `discovery.json`. Raw YAML determines each input's highest macOS version.
+2. Copy every release endpoint and seed commit into an immutable
+   `schema-source/<source>/<SHA>` ref in this repository before assessment. Apple
+   may retire a branch during promotion; the repository-owned ref is the durable
+   input.
+3. Form a journey from the nearest earlier release to every seed targeting a newer
+   macOS version, in Apple commit order. Each assessment compares one adjacent step;
+   when Apple's current release has that target version, it is the final step.
+   Matrix jobs run independently with at most two assessments in parallel.
 4. Compare raw schema structure and collect strict parsing failures across all
    files. Group repeated causes and retain independent protocol/support changes.
 5. If parsing succeeds, retain the project's pinned historical schema for all
@@ -39,11 +41,15 @@ failure requiring investigation.
    without an empty or partially generated PR. Existing previews explain when
    their content represents an older candidate.
 
-Production is always generated from Apple's `release` source. A canary preview
-uses its repository-owned snapshot and cannot change the production pin. A release
-update is therefore assessed and published independently of whether Apple preserved
-or merged a corresponding seed branch. The historical gitlink remains pinned for
-mixed-fleet contracts in both paths.
+Production is always generated from Apple's `release` source. Assessment executes
+every journey input from its repository-owned snapshot, while the final release
+patch continues to configure the production submodule for Apple's `release` branch.
+The historical gitlink remains pinned for mixed-fleet contracts in both paths.
+
+For example, the retained evidence currently proves the chain release 26.4 → Seed1
+→ Seed2 → Seed5 → Seed6 → Seed8 → release 27.0. When Apple publishes a macOS 28
+seed, discovery reads `28.x` from its YAML, selects the latest retained 27.x release
+as the baseline, and builds the 27 → 28 chain without a workflow edit.
 
 Every report distinguishes `passed`, `failed`, `blocked` and, for publication,
 `not-applicable`. An assessment can complete while reporting an incompatibility.
@@ -55,8 +61,8 @@ Passing tests establish those scenarios. They do not certify every Apple behavio
 or replace testing on real devices. Protocol prose and new server responsibilities
 require an engineer's review even when compilation and conformance tests pass.
 
-For `seed_OS_27_0` and candidates assessed against the adopted OS 27 API, the tests
-stage also enables `schema_seed_os_27` and requires
+For candidates that contain the Return to Service, enhanced-log and content-cache
+schema capabilities, the tests stage also enables `schema_seed_os_27` and requires
 explicit passing JSON test events for enhanced-log commands and status, software
 update removal, Return to Service retry, the reviewed content-cache contract,
 mixed-fleet dispatch, queued commands after an upgrade, and legacy-profile wire
@@ -175,12 +181,11 @@ Do not remove strict decoding just to obtain a green seed report. Review a seed
 preview before adoption; it does not automatically promote into stable. Publish
 needed library changes before deliberately updating the server module dependency.
 
-## Initial source baseline
+## Retained source evidence
 
-Production now tracks Apple `release` at `09f249a06e7e3289930bf6d05f38fb562f748ebf`.
-The adopted `seed_OS_27_0` commit `b0180185a5e4077070710033341b71d0cbe1a18a`
-is retained at `schema-source/seed_OS_27_0/b0180185a5e4077070710033341b71d0cbe1a18a`.
-The previous release history remains `67045e2fa06f528b196c01edee6a8bf88b844beb`.
+Production tracks Apple `release` at `09f249a06e7e3289930bf6d05f38fb562f748ebf`.
+The retained 26.4 release is `67045e2fa06f528b196c01edee6a8bf88b844beb`; all
+observed 27.0 seed and release inputs have immutable refs under `schema-source/`.
 The original comparison contains 314 → 343 schema files: 29 additions and one
 filename correction. Parser support now includes the top-level `examples` in 304
 files and `ReasonDetail.valuetype` in two files. Example references remain audited;

@@ -15,7 +15,7 @@ SPEC.loader.exec_module(m)
 
 def branch(ref="seed_OS_27_0", kind="seed"):
     return {"ref": ref, "kind": kind, "key": m.digest(ref)[:16], "commit": "b" * 40,
-            "baseline": "a" * 40, "baselineRef": "release"}
+            "baseline": "a" * 40, "baselineRef": "release", "publish": True}
 
 
 def report(ref="seed_OS_27_0"):
@@ -52,18 +52,38 @@ class DiscoveryTests(unittest.TestCase):
             with self.assertRaises(ValueError):
                 m.parse_refs(text)
 
-    def test_unchanged_stable_does_not_suppress_seed_discovery(self):
+    def test_retained_seed_sequence_uses_discovered_macos_versions(self):
         refs = "ref: refs/heads/release\tHEAD\n" + "a" * 40 + "\trefs/heads/release\n"
-        refs += "b" * 40 + "\trefs/heads/seed_OS_27_0\n" + "d" * 40 + "\trefs/heads/seed-next/preview\n"
-        with tempfile.TemporaryDirectory() as tmp, patch.object(m, "run", side_effect=["c" * 40, refs, "a" * 40]):
+        refs += "b" * 40 + "\trefs/heads/seed-next\n"
+
+        def source(args, *unused):
+            if args[:3] == ["git", "rev-parse", "HEAD"]:
+                return "d" * 40
+            if args[:3] == ["git", "ls-remote", "--symref"]:
+                return refs
+            if args[:2] == ["git", "rev-parse"] and args[-1] == "HEAD:" + m.HISTORY_SUBMODULE:
+                return "c" * 40
+            if args[:2] == ["git", "rev-parse"]:
+                return "a" * 40
+            return ""
+
+        # A new major requires no monitor change: the source availability
+        # creates its own 27 → 28 sequence.
+        versions = {"a" * 40: "28.0", "b" * 40: "28.0", "c" * 40: "27.0"}
+        with tempfile.TemporaryDirectory() as tmp, patch.object(m, "run", side_effect=source), \
+                patch.object(m, "mirror_seed_tips", return_value=[]), \
+                patch.object(m, "source_commits", return_value=[("b" * 40, "Seed")]), \
+                patch.object(m, "macos_version", side_effect=lambda _repo, commit: versions[commit]), \
+                patch.object(m, "source_contracts", return_value={"extended": True}):
             result = m.discover(Path(tmp), Path(tmp) / "discovery.json")
         self.assertTrue(result["complete"])
         self.assertEqual(3, len(result["branches"]))
-        self.assertEqual(result["branches"][0]["baseline"], result["branches"][0]["commit"])
-        self.assertEqual({"stable", "seed"}, {b["kind"] for b in result["branches"]})
-        seed = next(b for b in result["branches"] if b["ref"] == "seed_OS_27_0")
+        self.assertEqual(["baseline", "seed", "release"], [b["kind"] for b in result["branches"]])
+        self.assertEqual(["27.0", "28.0", "28.0"], [b["version"] for b in result["branches"]])
+        self.assertEqual(["c" * 40, "c" * 40, "b" * 40], [b["baseline"] for b in result["branches"]])
+        seed = next(b for b in result["branches"] if b["ref"] == "seed-next")
         self.assertEqual("canary-mirror", seed["source"])
-        self.assertEqual("refs/heads/schema-source/seed_OS_27_0/" + "b" * 40, seed["snapshotRef"])
+        self.assertEqual("refs/heads/schema-source/seed-next/" + "b" * 40, seed["snapshotRef"])
 
     def test_discovery_failure_is_retained(self):
         with tempfile.TemporaryDirectory() as tmp, patch.object(m, "run", side_effect=OSError("offline")):
@@ -191,7 +211,6 @@ class AssessmentTests(unittest.TestCase):
                 stable = m.assessment_sources(root, branch("release", "stable"))
                 self.assertEqual("a" * 40, stable["historyCommit"])
                 self.assertEqual("a" * 40, stable["auditBaseline"])
-                self.assertTrue(stable["adoptedOS27"])
             with patch.object(m, "run", return_value="b" * 40):
                 with self.assertRaisesRegex(ValueError, "historical provenance"):
                     m.assessment_sources(root, branch())
@@ -229,7 +248,7 @@ class AssessmentTests(unittest.TestCase):
             self.assertEqual(b"unit data", existing.read_bytes())
 
     def test_seed_contract_requires_executed_tests(self):
-        tags, required = m.assessment_test_contract({"kind": "seed", "ref": "seed_OS_27_0"})
+        tags, required = m.assessment_test_contract({"contracts": {"extended": True}})
         self.assertEqual(["-tags", "schema_seed_os_27"], tags)
         self.assertEqual(13, len(required))
         self.assertEqual(sorted(required), m.missing_test_evidence("", required))
