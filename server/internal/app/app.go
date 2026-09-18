@@ -37,6 +37,8 @@ import (
 	adminsql "github.com/deploymenttheory/go-apple-dm/server/adminauth/sqlstore"
 	"github.com/deploymenttheory/go-apple-dm/server/apppush"
 	"github.com/deploymenttheory/go-apple-dm/server/audit"
+	"github.com/deploymenttheory/go-apple-dm/server/blueprints"
+	"github.com/deploymenttheory/go-apple-dm/server/configurationprofile"
 	"github.com/deploymenttheory/go-apple-dm/server/ddmadapter/inproc"
 	"github.com/deploymenttheory/go-apple-dm/server/ddmadapter/proxyclient"
 	"github.com/deploymenttheory/go-apple-dm/server/ddmadapter/proxyserver"
@@ -234,15 +236,17 @@ type App struct {
 	Certificates      *lifecycle.Manager
 	ReplyCertificates *replycerts.Manager
 
-	appPushStore   *apppush.Store
-	contentCache   contentcache.ReportStore
-	appPushClients map[string]*apns.AppClient
-	Handler        http.Handler
-	Core           *service.Core
-	Engine         *ddm.Engine
-	Notifier       *ddmsync.Notifier
-	Store          storage.Store
-	keyring        *crypt.Keyring
+	appPushStore          *apppush.Store
+	contentCache          contentcache.ReportStore
+	appPushClients        map[string]*apns.AppClient
+	Handler               http.Handler
+	Core                  *service.Core
+	Engine                *ddm.Engine
+	Blueprints            *blueprints.Manager
+	ConfigurationProfiles *configurationprofile.Manager
+	Notifier              *ddmsync.Notifier
+	Store                 storage.Store
+	keyring               *crypt.Keyring
 	// AxM is the Business Manager client when configured.
 	AxM *axm.Client
 	// DEP is the device enrollment service; nil on the mdm role.
@@ -657,6 +661,7 @@ func (a *App) wire(ctx context.Context) error {
 	}
 	engine, err := ddm.New(ddm.Config{
 		Store: st, Bus: cfg.publisher(), Clock: cfg.Clock, Logger: cfg.Logger,
+		Expander:      configurationprofile.Expander{BaseURL: cfg.Enroll.PublicURL},
 		Subscriptions: ddm.Subscriptions{Enabled: cfg.Subscriptions},
 		EnrollmentTarget: func(ctx context.Context, id mdm.EnrollmentID) (support.Target, error) {
 			target, err := service.EnrollmentTarget(ctx, a.Store, id)
@@ -670,6 +675,12 @@ func (a *App) wire(ctx context.Context) error {
 		return fmt.Errorf("app: engine: %w", err)
 	}
 	a.Engine = engine
+	if err := a.wireConfigurationProfiles(ctx); err != nil {
+		return err
+	}
+	if err := a.wireBlueprints(ctx); err != nil {
+		return err
+	}
 	// Without a Pusher the notifier treats every group as delivered, so a
 	// declaration change queues a command and never wakes the device.
 	a.Push, err = a.wirePush()
@@ -691,6 +702,7 @@ func (a *App) wire(ctx context.Context) error {
 	mux.HandleFunc("GET /readyz", a.readyz)
 	if cfg.Role == RoleMDM || cfg.Role == RoleAll {
 		dm := inproc.Handler(engine)
+		var profileFetcher proxyclient.ConfigurationProfileFetcher
 		if cfg.DDMURL != "" {
 			var client *http.Client
 			if cfg.DDMRootCAFile != "" {
@@ -710,6 +722,10 @@ func (a *App) wire(ctx context.Context) error {
 			)
 			if err != nil {
 				return fmt.Errorf("app: proxyclient: %w", err)
+			}
+			profileFetcher, err = proxyclient.ConfigurationProfiles(proxyclient.Config{URL: cfg.DDMURL, Client: client, AllowInsecureForTests: cfg.DDMAllowInsecureForTests, SendKey: cfg.DDMSendKey, RecvKey: cfg.DDMRecvKey})
+			if err != nil {
+				return err
 			}
 		}
 		// The device enrollment service is built before enrollment,
@@ -750,6 +766,7 @@ func (a *App) wire(ctx context.Context) error {
 			return fmt.Errorf("app: core: %w", err)
 		}
 		a.Core = core
+		a.wireConfigurationProfileDownloads(mux, profileFetcher)
 		api := httpapi.Handler(
 			httpapi.Config{Checkin: core, Connect: core, Logger: cfg.Logger, Now: cfg.Clock.Now},
 		)
@@ -766,6 +783,7 @@ func (a *App) wire(ctx context.Context) error {
 		ps, err := proxyserver.Handler(
 			proxyserver.Config{
 				Bus: cfg.publisher(), Backend: engine,
+				ConfigurationProfiles: a.ConfigurationProfiles,
 				ReplayStore:           replay,
 				AllowInsecureForTests: cfg.DDMAllowInsecureForTests,
 				RecvKey:               cfg.DDMRecvKey,
@@ -1051,6 +1069,8 @@ func (a *App) wireAdmin(ctx context.Context, mux *http.ServeMux) error {
 	routes = append(routes, a.eventRoutes()...)
 	routes = append(routes, a.setupRoutes()...)
 	routes = append(routes, a.ddmAdminRoutes()...)
+	routes = append(routes, a.blueprintAdminRoutes()...)
+	routes = append(routes, a.configurationProfileAdminRoutes()...)
 	routes = append(routes, a.mdmAdminRoutes()...)
 	routes = append(routes, a.contentCacheRoutes()...)
 	extras, err := a.operatorRoutes(ctx)

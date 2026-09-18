@@ -35,6 +35,25 @@ func (txStore) Update(context.Context, func(ddm.Tx) error) error {
 	return ddm.ErrInvalid
 }
 
+// LockPublication forwards the optional transaction locking capability.
+func (t txStore) LockPublication(ctx context.Context, name string) error {
+	if locker, ok := t.Tx.(ddm.PublicationLocker); ok {
+		return locker.LockPublication(ctx, name)
+	}
+	return ddm.ErrInvalid
+}
+
+// LockPublication supports failure injection during atomic publication.
+func (f *Failing) LockPublication(ctx context.Context, name string) error {
+	if err := f.fail("LockPublication"); err != nil {
+		return err
+	}
+	if locker, ok := f.Store.(ddm.PublicationLocker); ok {
+		return locker.LockPublication(ctx, name)
+	}
+	return ddm.ErrInvalid
+}
+
 // Update implements ddm.Store.
 func (f *Failing) Update(ctx context.Context, fn func(ddm.Tx) error) error {
 	if err := f.fail("Update"); err != nil {

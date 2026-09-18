@@ -282,17 +282,17 @@ func TestMigrationsAgreeAcrossDialects(t *testing.T) {
 			if len(ms[i].Down) == 0 {
 				t.Fatalf("%s %d_%s has no down section", d.Name, ms[i].Version, ms[i].Name)
 			}
-			// Every dialect creates and drops the same fourteen tables.
+			// Every dialect creates and drops the same fifteen tables.
 			if up, down := countStatements(
 				ms[i].Up,
 				"CREATE TABLE",
 			), countStatements(
 				ms[i].Down,
 				"DROP TABLE",
-			); up != 14 ||
-				down != 14 {
+			); up != 15 ||
+				down != 15 {
 				t.Fatalf(
-					"%s %d_%s creates %d tables and drops %d, want 14",
+					"%s %d_%s creates %d tables and drops %d, want 15",
 					d.Name,
 					ms[i].Version,
 					ms[i].Name,

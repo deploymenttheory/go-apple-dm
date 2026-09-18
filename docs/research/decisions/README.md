@@ -63,3 +63,4 @@ The [architecture guide](../../architecture.md) summarizes how the decisions fit
 | 0052 | [Preserve mixed-OS fleet support across schema updates](0052-mixed-os-fleets.md) |
 | 0053 | [Apps and Books licensing](0053-apps-and-books-licensing.md) |
 | 0054 | [FileVault encryption identities](0054-filevault-encryption-identities.md) |
+| 0055 | [Blueprint composition and publication](0055-blueprint-composition.md) |

@@ -50,6 +50,14 @@ type Config struct {
 
 // Handler validates cfg and returns the forwarding handler.
 func Handler(cfg Config) (service.DMHandler, error) {
+	c, err := newClient(cfg)
+	if err != nil {
+		return nil, err
+	}
+	return c.handle, nil
+}
+
+func newClient(cfg Config) (*client, error) {
 	if cfg.URL == "" {
 		return nil, fmt.Errorf("%w: empty", ErrBadURL)
 	}
@@ -81,13 +89,14 @@ func Handler(cfg Config) (service.DMHandler, error) {
 	if cfg.Timeout <= 0 {
 		cfg.Timeout = DefaultTimeout
 	}
-	c := &client{cfg: cfg, target: u.JoinPath(proxywire.Path).String()}
-	return c.handle, nil
+	c := &client{cfg: cfg, target: u.JoinPath(proxywire.Path).String(), contentType: proxywire.ContentType}
+	return c, nil
 }
 
 type client struct {
-	cfg    Config
-	target string
+	cfg         Config
+	target      string
+	contentType string
 }
 
 func (c *client) handle(
@@ -108,7 +117,7 @@ func (c *client) handle(
 	if err != nil {
 		return service.DMResponse{}, internal(fmt.Errorf("%w: %w", ErrUpstream, err))
 	}
-	req.Header.Set("Content-Type", proxywire.ContentType)
+	req.Header.Set("Content-Type", c.contentType)
 	if c.cfg.SendKey != nil {
 		signature, err := proxywire.SignRequest(c.cfg.SendKey, req, ck.Raw)
 		if err != nil {

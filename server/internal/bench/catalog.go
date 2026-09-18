@@ -303,6 +303,20 @@ func Catalogue() []Scenario {
 			Run: liveDDM,
 		},
 		{
+			ID:     "LIVE-005",
+			Name:   "macOS 26 device Blueprint activation, profile replacement and removal",
+			Family: "blueprints", Modes: []string{"live"},
+			Prerequisites: []string{"enrolled macOS 26 test device", "MDM push identity", "automatic status subscriptions enabled"},
+			Run:           liveBlueprints(false),
+		},
+		{
+			ID:     "LIVE-006",
+			Name:   "macOS 26 user Blueprint activation, profile replacement and removal",
+			Family: "blueprints", Modes: []string{"live"},
+			Prerequisites: []string{"enrolled macOS 26 test device", "logged-in MDM-enabled user and -user-id", "MDM push identity", "automatic status subscriptions enabled"},
+			Run:           liveBlueprints(true),
+		},
+		{
 			ID:     "LIVE-002",
 			Name:   "ACME Mac enrollment, installing user channel and APNs-triggered inventory",
 			Family: "enrollment",

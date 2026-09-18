@@ -28,6 +28,7 @@ func RunAll(t *testing.T, newStore Factory) {
 	t.Run("Clear", func(t *testing.T) { RunClearSuite(t, newStore) })
 	t.Run("Update", func(t *testing.T) { RunUpdateSuite(t, newStore) })
 	t.Run("Concurrency", func(t *testing.T) { RunConcurrencySuite(t, newStore) })
+	t.Run("Publication", func(t *testing.T) { RunPublicationSuite(t, newStore) })
 }
 
 // put stores d and fails the test unless it was a change.
