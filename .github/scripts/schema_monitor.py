@@ -562,6 +562,7 @@ def stage_evidence(stage, text):
 def allowed_path(name):
     return name in (".gitmodules", SUBMODULE, HISTORY_SUBMODULE) or (name.startswith(SCHEMA + "/") and
         (name.endswith(".gen.go") or name.endswith("conformance_gen_test.go") or
+         name.endswith("/doc.go") or
          name in (SCHEMA + "/GENERATED_FROM.json", SCHEMA + "/EXPORTED_IDENTIFIERS.lock")))
 
 

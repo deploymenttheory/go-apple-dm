@@ -272,7 +272,7 @@ class AssessmentTests(unittest.TestCase):
                 m.assert_snapshot(Path("/tmp/project"), "a" * 40, "c" * 40)
 
     def test_paths_allow_generated_code_but_not_removal_allowances_or_logs(self):
-        for name in (".gitmodules", m.SUBMODULE, m.HISTORY_SUBMODULE, m.SCHEMA + "/commands/types.gen.go", m.SCHEMA + "/commands/conformance_gen_test.go", m.SCHEMA + "/GENERATED_FROM.json"):
+        for name in (".gitmodules", m.SUBMODULE, m.HISTORY_SUBMODULE, m.SCHEMA + "/commands/types.gen.go", m.SCHEMA + "/commands/conformance_gen_test.go", m.SCHEMA + "/commands/doc.go", m.SCHEMA + "/GENERATED_FROM.json"):
             self.assertTrue(m.allowed_path(name), name)
         for name in ("seeds.md", "run.log", "server/go.mod", ".github/workflows/test.yml", m.SCHEMA + "/ALLOWED_REMOVALS.md", m.SCHEMA + "/support/support.go"):
             self.assertFalse(m.allowed_path(name), name)
