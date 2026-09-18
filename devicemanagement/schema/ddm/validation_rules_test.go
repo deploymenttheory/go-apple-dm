@@ -51,3 +51,47 @@ func TestUpdateDeadline(t *testing.T) {
 		}
 	}
 }
+
+func TestBinaryIdentifierRules(t *testing.T) {
+	// Apple's app.settings.yaml "Binary identifier rules" requires a CDHash or
+	// TeamID for an allow rule; a deny rule additionally permits SigningID.
+	// PathPrefix and SigningState can only narrow a rule with that identity.
+	for _, tc := range []struct {
+		name, identifier string
+		allow, deny      bool
+	}{
+		{"empty", `{}`, false, false},
+		{"hash", `{"CDHash":"90bc96cd95be55c12e7d9b1611cbc677610bb70c"}`, true, true},
+		{"team", `{"TeamID":"EXAMPLE1234"}`, true, true},
+		{"signing-id", `{"SigningID":"com.example.app"}`, false, true},
+		{"path-only", `{"PathPrefix":"/Applications/Example.app"}`, false, false},
+		{"state-only", `{"SigningState":"All"}`, false, false},
+		{"qualifiers-only", `{"PathPrefix":"/Applications/Example.app","SigningState":"DeveloperID"}`, false, false},
+		{"empty-hash", `{"CDHash":"","PathPrefix":"/Applications/Example.app"}`, false, false},
+		{"empty-team", `{"TeamID":"","SigningState":"All"}`, false, false},
+		{"empty-signing-id", `{"SigningID":""}`, false, false},
+		{"empty-hash-with-signing-id", `{"CDHash":"","SigningID":"com.example.app"}`, false, true},
+		{"team-with-signing-id", `{"TeamID":"EXAMPLE1234","SigningID":"com.example.app"}`, true, true},
+		{"hash-with-qualifiers", `{"CDHash":"90bc96cd95be55c12e7d9b1611cbc677610bb70c","PathPrefix":"/Applications/Example.app","SigningState":"All"}`, true, true},
+		{"signing-id-with-qualifiers", `{"SigningID":"com.example.app","PathPrefix":"/Applications/Example.app","SigningState":"All"}`, false, true},
+	} {
+		for _, rule := range []struct {
+			list    string
+			allowed bool
+		}{
+			{"AllowedBinaries", tc.allow},
+			{"DeniedBinaries", tc.deny},
+		} {
+			t.Run(rule.list+"/"+tc.name, func(t *testing.T) {
+				var value ddm.AppSettings
+				payload := `{"Allowed":{"` + rule.list + `":[` + tc.identifier + `]}}`
+				if err := json.Unmarshal([]byte(payload), &value); err != nil {
+					t.Fatal(err)
+				}
+				if err := value.Validate(support.Target{}); (err == nil) != rule.allowed {
+					t.Fatalf("allowed=%v: %v", rule.allowed, err)
+				}
+			})
+		}
+	}
+}

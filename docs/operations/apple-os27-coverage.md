@@ -1,12 +1,14 @@
 # Apple OS 27 feature coverage and mixed fleets
 
-Reviewed 17 September 2026. Scope: the Go library and reference server. Generated
-API availability, server delivery eligibility, and acceptance by a physical device
-are separate checks. The first physical macOS 27 pass retained **failures and
-remaining acceptance**; follow-up testing is in progress. See the
-[live validation record](../testing/macos27-live-validation.md) for completed cases
-and remaining behavior checks. The [handoff](../testing/macos27-handoff.md) describes
-the maintained procedure.
+Reviewed 18 September 2026. Scope: the Go library and reference server. Generated
+API availability, server delivery eligibility and native protocol interoperability
+are separate checks. Project readiness requires correct library/server behavior
+and representative macOS 27 integration evidence. Certifying every Apple feature's
+UI or enforcement behavior is outside that acceptance target. See the
+[live validation record](../testing/macos27-live-validation.md) for results and
+limitations, and the [project acceptance criteria](../testing/macos27-handoff.md#project-acceptance-criteria)
+for the current completion plan. Earlier native behavior plans below are optional
+follow-up, not a list of project blockers. No final project sign-off is implied.
 
 The original 40 GB macOS 27 Guestweave VM and a fresh **v1.1.0** native-provisioned
 guest both reached user-approved SCEP profile installation. Native account/SSH
@@ -14,9 +16,26 @@ provisioning passes in the fresh guest, but APNs identity key generation still
 fails before enrollment and after reboot; no TokenUpdate arrives. Guest
 command/DDM acceptance remains blocked before feature delivery. See the
 [provisioning retry](../testing/macos27-live-validation.md#native-provisioning-retry--guestweave-v110).
+An isolated Tart 2.37.0 copy reproduces the failure with both ordinary and
+suspendable device configurations. A separate macOS 26.6.2 control on the same
+host passes device/user TokenUpdate, three timed APNs inventory commands including
+a cold boot, and LIVE-003 / LIVE-004. Its same-identity upgrade to **27.0 / 26A428**
+completed, but two new commands timed out with verified HTTPS, including after a
+cold boot and login. Native logs report failure to read the existing APNs reference
+key (`-25308`). The working 26 checkpoint is retained; no 27 recovery is claimed.
+A direct Terminal launch also misses the fresh push deadline. Late inventory
+acknowledgements confirm 27.0, supervision and Apple silicon, but do not satisfy
+timely-push acceptance. The [UTM/Tart incident review](../testing/macos27-vm-incidents.md)
+records open reports and the applicability of closed fixes. The fallback was
+restored to its working 26 checkpoint, then successfully upgraded to
+**27.2 beta / 26B5086k**, retaining identities and enrollment. Reliable APNs still
+fails on this 27.0 host: one request acknowledged after cold boot/login, but two
+subsequent independent pushes timed out with verified HTTPS and native BAA/key
+errors. The beta guest is preserved and shut down; no declarations are assigned.
+See the [beta result](../testing/macos27-live-validation.md#macos-272-beta-result).
 The complete automated matrix, thirteen required contracts and unchanged 95%
-coverage gate passed at `eb5208a`. Neither that result nor profile installation
-substitutes for the remaining native behavior checks.
+coverage gate passed at `eb5208a`. Subsequent changes require their own validation;
+profile installation alone does not demonstrate enrollment or command delivery.
 
 Sources: [enterprise changes](https://support.apple.com/en-us/148830),
 [update management](https://support.apple.com/en-gb/guide/deployment/depd30715cbb/web),
@@ -86,9 +105,12 @@ in six enrollment contexts. It separately checks the twelve reviewed SSO enum
 floors described in prose. Source cases excluded from Mac acceptance have an
 explicit platform reason. The inventory records native test plans, not passes;
 the live report remains the evidence record. No fixture-count threshold substitutes
-for named case coverage.
+for named case coverage. The third column below preserves the broader Apple
+behavior test ideas; completing that column is not required for library/reference-
+server readiness. Project integration checks focus on the exchanged payloads,
+acknowledgements, declaration status, asset service and persisted reports.
 
-| Requirement | Implementation / automated evidence | Physical acceptance after upgrade |
+| Requirement | Implementation / automated evidence | Optional Apple behavior follow-up |
 |---|---|---|
 | App and binary execution policy | `AppSettings`; F `binary-controls` | Allow/deny only a disposable signed fixture; verify managed-app exception and removal. |
 | App consent | App privacy declarations; F `app-privacy` | Record consolidated prompt, allowed services and revocation. |

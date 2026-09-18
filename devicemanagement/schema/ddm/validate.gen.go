@@ -2100,8 +2100,8 @@ func (x *AppSettingsAllowedAllowedBinaries) validate(c *validation.Collector, p 
 		return
 	}
 
-	c.Require(p, x.CDHash != nil || x.SigningID != nil || x.TeamID != nil || x.PathPrefix != nil || x.SigningState != nil,
-		"a binary identifier is required")
+	c.Require(p, (x.CDHash != nil && *x.CDHash != "") || (x.TeamID != nil && *x.TeamID != ""),
+		"a code directory hash or team identifier is required")
 	{
 		path := validation.Join(p, "CDHash")
 		present := x.CDHash != nil
@@ -2143,8 +2143,9 @@ func (x *AppSettingsAllowedDeniedBinaries) validate(c *validation.Collector, p s
 		return
 	}
 
-	c.Require(p, x.CDHash != nil || x.SigningID != nil || x.TeamID != nil || x.PathPrefix != nil,
-		"a binary identifier is required")
+	c.Require(p, (x.CDHash != nil && *x.CDHash != "") || (x.TeamID != nil && *x.TeamID != "") ||
+		(x.SigningID != nil && *x.SigningID != ""),
+		"a code directory hash, team identifier or signing identifier is required")
 	{
 		path := validation.Join(p, "CDHash")
 		present := x.CDHash != nil
