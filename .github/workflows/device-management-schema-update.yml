@@ -1,4 +1,4 @@
-name: Apple Schema Compatibility Monitor
+name: Device Management Client Schema Compatibility Monitor
 
 on:
   schedule:
@@ -12,7 +12,7 @@ on:
         default: true
 
 concurrency:
-  group: apple-schema-monitor
+  group: device-management-client-schema-monitor
   cancel-in-progress: false
 
 permissions:
@@ -20,9 +20,11 @@ permissions:
 
 jobs:
   discover:
-    name: Discover stable and seed schema commits
+    name: Discover Device Management Client Schema release-to-seed journeys
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    permissions:
+      contents: write
     outputs:
       matrix: ${{ steps.discover.outputs.matrix }}
       has_branches: ${{ steps.discover.outputs.has_branches }}
@@ -37,17 +39,26 @@ jobs:
       - name: Discover immutable source commits
         id: discover
         run: python3 .github/scripts/schema_monitor.py discover --output "${RUNNER_TEMP}/schema-discovery/discovery.json"
+      - name: Retain every journey snapshot
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: >-
+          python3 .github/scripts/schema_monitor.py capture
+          --manifest "${RUNNER_TEMP}/schema-discovery/discovery.json"
+          --output "${RUNNER_TEMP}/schema-capture/capture.json"
       - name: Retain discovery even when upstream access fails
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: schema-discovery
-          path: ${{ runner.temp }}/schema-discovery/
+          name: device-management-client-schema-discovery
+          path: |
+            ${{ runner.temp }}/schema-discovery/
+            ${{ runner.temp }}/schema-capture/
           if-no-files-found: error
           retention-days: 30
 
   assess:
-    name: Assess ${{ matrix.ref }}
+    name: Assess Device Management Client Schema ${{ matrix.ref }}
     needs: discover
     if: ${{ needs.discover.outputs.has_branches == 'true' }}
     runs-on: ubuntu-latest
@@ -73,7 +84,7 @@ jobs:
             server/go.sum
       - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
-          name: schema-discovery
+          name: device-management-client-schema-discovery
           path: ${{ runner.temp }}/schema-discovery/
       - name: Compare and test the selected candidate
         env:
@@ -86,13 +97,13 @@ jobs:
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: schema-assessment-${{ matrix.key }}
+          name: device-management-client-schema-assessment-${{ matrix.key }}
           path: ${{ runner.temp }}/schema-assessments/
           if-no-files-found: error
           retention-days: 30
 
   publish:
-    name: Publish schema reports, engineering issues and previews
+    name: Publish Device Management Client Schema reports, engineering issues and previews
     needs: [discover, assess]
     if: always()
     runs-on: ubuntu-latest
@@ -112,12 +123,12 @@ jobs:
       - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         continue-on-error: true
         with:
-          name: schema-discovery
+          name: device-management-client-schema-discovery
           path: ${{ runner.temp }}/schema-discovery/
       - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         continue-on-error: true
         with:
-          pattern: schema-assessment-*
+          pattern: device-management-client-schema-assessment-*
           merge-multiple: true
           path: ${{ runner.temp }}/schema-assessments/
       - name: Obtain PR credential so preview CI runs automatically
@@ -151,7 +162,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: schema-monitor-summary
+          name: device-management-client-schema-summary
           path: |
             ${{ runner.temp }}/schema-assessments/summary.md
             ${{ runner.temp }}/schema-assessments/proposed-issues.json

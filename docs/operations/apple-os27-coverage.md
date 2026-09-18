@@ -50,8 +50,9 @@ Sources: [enterprise changes](https://support.apple.com/en-us/148830),
 [general release notes](https://support.apple.com/en-us/127257), and the pinned
 [Apple schema](../../third_party/device-management). Wire names and platform
 constraints below come from that schema, including its historical input. The
-primary pin remains `b0180185a5e4077070710033341b71d0cbe1a18a`; the historical pin
-remains `67045e2fa06f528b196c01edee6a8bf88b844beb`. No schema pin was advanced.
+primary pin is Apple release `09f249a06e7e3289930bf6d05f38fb562f748ebf`; the
+historical pin remains `67045e2fa06f528b196c01edee6a8bf88b844beb`. The original
+OS 27 seed remains a retained canary snapshot, not the shipped source.
 
 ## Delivery contract
 

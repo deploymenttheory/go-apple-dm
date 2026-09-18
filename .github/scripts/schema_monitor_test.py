@@ -15,7 +15,7 @@ SPEC.loader.exec_module(m)
 
 def branch(ref="seed_OS_27_0", kind="seed"):
     return {"ref": ref, "kind": kind, "key": m.digest(ref)[:16], "commit": "b" * 40,
-            "baseline": "a" * 40, "baselineRef": "release"}
+            "baseline": "a" * 40, "baselineRef": "release", "publish": True}
 
 
 def report(ref="seed_OS_27_0"):
@@ -52,15 +52,38 @@ class DiscoveryTests(unittest.TestCase):
             with self.assertRaises(ValueError):
                 m.parse_refs(text)
 
-    def test_unchanged_stable_does_not_suppress_seed_discovery(self):
+    def test_retained_seed_sequence_uses_discovered_macos_versions(self):
         refs = "ref: refs/heads/release\tHEAD\n" + "a" * 40 + "\trefs/heads/release\n"
-        refs += "b" * 40 + "\trefs/heads/seed_OS_27_0\n" + "d" * 40 + "\trefs/heads/seed-next/preview\n"
-        with tempfile.TemporaryDirectory() as tmp, patch.object(m, "run", side_effect=["c" * 40, refs, "a" * 40]):
+        refs += "b" * 40 + "\trefs/heads/seed-next\n"
+
+        def source(args, *unused):
+            if args[:3] == ["git", "rev-parse", "HEAD"]:
+                return "d" * 40
+            if args[:3] == ["git", "ls-remote", "--symref"]:
+                return refs
+            if args[:2] == ["git", "rev-parse"] and args[-1] == "HEAD:" + m.HISTORY_SUBMODULE:
+                return "c" * 40
+            if args[:2] == ["git", "rev-parse"]:
+                return "a" * 40
+            return ""
+
+        # A new major requires no monitor change: the source availability
+        # creates its own 27 → 28 sequence.
+        versions = {"a" * 40: "28.0", "b" * 40: "28.0", "c" * 40: "27.0"}
+        with tempfile.TemporaryDirectory() as tmp, patch.object(m, "run", side_effect=source), \
+                patch.object(m, "mirror_seed_tips", return_value=[]), \
+                patch.object(m, "source_commits", return_value=[("b" * 40, "Seed")]), \
+                patch.object(m, "macos_version", side_effect=lambda _repo, commit: versions[commit]), \
+                patch.object(m, "source_contracts", return_value={"extended": True}):
             result = m.discover(Path(tmp), Path(tmp) / "discovery.json")
         self.assertTrue(result["complete"])
         self.assertEqual(3, len(result["branches"]))
-        self.assertEqual(result["branches"][0]["baseline"], result["branches"][0]["commit"])
-        self.assertEqual({"stable", "seed"}, {b["kind"] for b in result["branches"]})
+        self.assertEqual(["baseline", "seed", "release"], [b["kind"] for b in result["branches"]])
+        self.assertEqual(["27.0", "28.0", "28.0"], [b["version"] for b in result["branches"]])
+        self.assertEqual(["c" * 40, "c" * 40, "b" * 40], [b["baseline"] for b in result["branches"]])
+        seed = next(b for b in result["branches"] if b["ref"] == "seed-next")
+        self.assertEqual("canary-mirror", seed["source"])
+        self.assertEqual("refs/heads/schema-source/seed-next/" + "b" * 40, seed["snapshotRef"])
 
     def test_discovery_failure_is_retained(self):
         with tempfile.TemporaryDirectory() as tmp, patch.object(m, "run", side_effect=OSError("offline")):
@@ -74,6 +97,24 @@ class DiscoveryTests(unittest.TestCase):
         old = refs + "b" * 40 + "\trefs/heads/seed_27\n"
         new = refs + "e" * 40 + "\trefs/heads/seed_27\n"
         self.assertNotEqual(m.parse_refs(old)[1], m.parse_refs(new)[1])
+
+    def test_snapshot_refs_are_commit_immutable_and_safe(self):
+        commit = "b" * 40
+        self.assertEqual("refs/heads/schema-source/seed-next/" + commit, m.snapshot_ref("seed-next", commit))
+        for ref in ("seed/../next", ".seed", "seed/"):
+            with self.subTest(ref=ref), self.assertRaises(ValueError):
+                m.snapshot_ref(ref, commit)
+
+    def test_capture_keeps_an_existing_matching_snapshot(self):
+        commit = "b" * 40
+        ref = m.snapshot_ref("seed-next", commit)
+        item = {"kind": "seed", "ref": "seed-next", "commit": commit, "snapshotRef": ref}
+        manifest = {"complete": True, "upstream": "upstream", "canaryMirror": "mirror", "branches": [item]}
+        with tempfile.TemporaryDirectory() as tmp, patch.object(m, "run", return_value=commit + "\t" + ref + "\n") as run:
+            result = m.capture_canaries(manifest, Path(tmp) / "capture.json")
+        self.assertTrue(result["complete"])
+        self.assertEqual("retained", result["captured"][0]["state"])
+        self.assertTrue(all(call.args[0][:2] == ["git", "ls-remote"] for call in run.call_args_list))
 
 
 class IssueLifecycleTests(unittest.TestCase):
@@ -156,53 +197,27 @@ class IssueLifecycleTests(unittest.TestCase):
 
 
 class AssessmentTests(unittest.TestCase):
-    def test_promoted_sources_retain_history_and_compare_older_release(self):
+    def test_production_sources_retain_history_without_seed_ancestry(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
-            provenance = {"commit": "b" * 40, "ref": "seed_OS_27_0",
+            provenance = {"commit": "b" * 40, "ref": "release", "os_versions": "27.0",
                           "history": {"commit": "a" * 40}}
             m.write_json(root / m.SCHEMA / "GENERATED_FROM.json", provenance)
 
             def source(args, *unused):
                 return "a" * 40 if args[-1] == "HEAD:" + m.HISTORY_SUBMODULE else "b" * 40
 
-            with patch.object(m, "run", side_effect=source), patch.object(m, "is_ancestor", return_value=False):
-                seed = m.assessment_sources(root, root, branch())
-                self.assertEqual("a" * 40, seed["historyCommit"])
-                self.assertFalse(seed["comparisonOnly"])
-                self.assertTrue(seed["adoptedOS27"])
-                stable = m.assessment_sources(root, root, branch("release", "stable"))
-                self.assertTrue(stable["comparisonOnly"])
-                self.assertEqual("a" * 40, stable["auditBaseline"])
-                self.assertFalse(stable["adoptedOS27"])
-            with patch.object(m, "run", side_effect=source), patch.object(m, "is_ancestor", return_value=True):
-                stable = m.assessment_sources(root, root, branch("release", "stable"))
-                self.assertFalse(stable["comparisonOnly"])
-                self.assertTrue(stable["adoptedOS27"])
+            with patch.object(m, "run", side_effect=source):
+                stable = m.assessment_sources(root, branch("release", "stable"))
                 self.assertEqual("a" * 40, stable["historyCommit"])
+                self.assertEqual("a" * 40, stable["auditBaseline"])
             with patch.object(m, "run", return_value="b" * 40):
                 with self.assertRaisesRegex(ValueError, "historical provenance"):
-                    m.assessment_sources(root, root, branch())
+                    m.assessment_sources(root, branch())
             provenance.pop("history")
             m.write_json(root / m.SCHEMA / "GENERATED_FROM.json", provenance)
             with patch.object(m, "run", return_value="b" * 40):
-                self.assertEqual("b" * 40, m.assessment_sources(root, root, branch())["historyCommit"])
-
-    def test_ancestry_errors_are_not_treated_as_older_stable(self):
-        with patch.object(m, "run", return_value=""):
-            self.assertTrue(m.is_ancestor(Path("/tmp"), "a", "b"))
-        with patch.object(m, "run", side_effect=subprocess.CalledProcessError(1, "git")):
-            self.assertFalse(m.is_ancestor(Path("/tmp"), "a", "b"))
-        with patch.object(m, "run", side_effect=subprocess.CalledProcessError(128, "git")):
-            with self.assertRaises(subprocess.CalledProcessError):
-                m.is_ancestor(Path("/tmp"), "a", "b")
-
-    def test_release_issue_evidence_names_the_actual_comparison_baseline(self):
-        result = report("release")
-        result.update(comparisonOnly=True, auditBaseline="d" * 40)
-        body = m.evidence_section(incident(), result, "url")
-        self.assertIn("Baseline: ` " + "d" * 40 + " `", body)
-        self.assertNotIn("Baseline: ` " + result["branch"]["baseline"] + " `", body)
+                self.assertIsNone(m.assessment_sources(root, branch())["historyCommit"])
 
     def test_routine_contract_gate_rejects_missing_skipped_and_failed_tests(self):
         events = "\n".join(json.dumps({"Action": "pass", "Package": test.rsplit("/", 1)[0],
@@ -233,7 +248,7 @@ class AssessmentTests(unittest.TestCase):
             self.assertEqual(b"unit data", existing.read_bytes())
 
     def test_seed_contract_requires_executed_tests(self):
-        tags, required = m.assessment_test_contract({"kind": "seed", "ref": "seed_OS_27_0"})
+        tags, required = m.assessment_test_contract({"contracts": {"extended": True}})
         self.assertEqual(["-tags", "schema_seed_os_27"], tags)
         self.assertEqual(13, len(required))
         self.assertEqual(sorted(required), m.missing_test_evidence("", required))
@@ -338,23 +353,11 @@ class AssessmentTests(unittest.TestCase):
 
 
 class PublicationTests(unittest.TestCase):
-    def test_comparison_only_cannot_publish_a_downgrade(self):
+    def test_stable_release_can_publish_a_generated_update(self):
         result = report("release")
-        result.update(comparisonOnly=True, patch=True)
-        for current in ([], [{"number": 3, "body": "<!-- schema-monitor-pr --> old"}]):
-            api = FakeGitHub(current)
-            with patch.object(m, "run", side_effect=AssertionError("No git mutation expected")):
-                self.assertEqual("not-applicable", m.publish_patch(Path("/tmp"), Path("/tmp"), result, api, "token", "url"))
-            if current:
-                self.assertEqual("closed", api.calls[-1][2]["state"])
-                self.assertIn("Comparison only", api.calls[-1][2]["body"])
-
-    def test_release_comparison_cannot_close_published_api_failures(self):
-        result = report("release")
-        result["comparisonOnly"] = True
-        item = incident(stage="api")
-        existing = stored_issue(result, item)
-        self.assertEqual([], m.issue_actions([existing], [result], manifest(result), "url"))
+        result["patch"] = False
+        api = FakeGitHub([])
+        self.assertEqual("not-applicable", m.publish_patch(Path("/tmp"), Path("/tmp"), result, api, "token", "url"))
 
     def test_report_only_never_accesses_github_or_pushes(self):
         result = report()

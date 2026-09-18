@@ -38,7 +38,7 @@ route. Its reviewed OS 27 OpenAPI fixture is checked against the pinned Apple so
 
 ## Generated protocol types
 
-The pinned `third_party/device-management` submodule supplies Apple's OS 27 YAML definitions.
+The pinned `third_party/device-management` submodule supplies Apple's current release YAML definitions.
 `third_party/device-management-history` retains the release source needed for older-device
 contracts; both inputs and their content hashes are recorded in generated provenance.
 `schemagen` generates request and response types, registries, validation, platform support metadata
@@ -60,9 +60,9 @@ for the package boundary and removed API replacements. SSO value-specific floors
 
 The [Apple schema monitor](schema-monitor.md) discovers Apple's stable default
 and `seed*` branches, assesses immutable commits in isolated workspaces, then
-publishes grouped engineering issues and generated update PRs. Stable updates
-that contain the adopted seed can target the project default branch; older stable
-snapshots are comparison-only. Seed updates stay in separate draft previews.
+captures each advertised seed in an immutable repository-owned ref, then publishes
+grouped engineering issues and generated update PRs. Stable updates target the
+project default branch; retained seed snapshots stay in separate draft previews.
 Parsing failures retain raw schema findings and block dependent generation and
 runtime checks. Server tests explicitly resolve the candidate library through
 the workspace, without changing the server's published dependency requirement.
