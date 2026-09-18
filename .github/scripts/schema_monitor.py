@@ -411,7 +411,9 @@ def assess(repo, manifest, branch, directory):
                 candidate_source = manifest.get("canaryMirror", CANARY_MIRROR)
                 if not branch.get("snapshotRef"):
                     raise ValueError("Canary candidate has no retained snapshot ref")
-                run(["git", "clone", "--quiet", candidate_source, root / SUBMODULE])
+                snapshot = branch["snapshotRef"].removeprefix("refs/heads/")
+                run(["git", "clone", "--quiet", "--single-branch", "--branch", snapshot,
+                     candidate_source, root / SUBMODULE])
             else:
                 run(["git", "clone", "--quiet", "--shared", candidate_source, root / SUBMODULE])
             run(["git", "checkout", "--quiet", "--detach", branch["commit"]], root / SUBMODULE)
