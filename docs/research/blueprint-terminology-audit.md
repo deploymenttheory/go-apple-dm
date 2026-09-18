@@ -62,8 +62,8 @@ schema retains `ddm_publication_locks` in each dialect's `0001_init.sql`.
 - [Declarative management data model](https://developer.apple.com/documentation/devicemanagement/leveraging-the-declarative-management-data-model-to-scale-devices): declarations and their four categories.
 - [LegacyProfile](https://developer.apple.com/documentation/devicemanagement/legacyprofile): configuration for a legacy profile, using ProfileURL or ProfileAssetReference.
 - [ActivationSimple](https://developer.apple.com/documentation/devicemanagement/activationsimple): StandardConfigurations and Predicate.
-- [Apple configuration profile payload keys](../../third_party/device-management/mdm/profiles/CommonPayloadKeys.yaml): PayloadIdentifier and PayloadUUID.
-- [Vendored Legacy Profile schema](../../third_party/device-management/declarative/declarations/configurations/legacy.yaml) and [data asset schema](../../third_party/device-management/declarative/declarations/assets/data.yaml): declaration types and exact payload field spellings.
+- [Apple configuration profile payload keys](../../third_party/apple-device-management/current/mdm/profiles/CommonPayloadKeys.yaml): PayloadIdentifier and PayloadUUID.
+- [Vendored Legacy Profile schema](../../third_party/apple-device-management/current/declarative/declarations/configurations/legacy.yaml) and [data asset schema](../../third_party/apple-device-management/current/declarative/declarations/assets/data.yaml): declaration types and exact payload field spellings.
 
 The updated examples and API guide are in [Blueprints](../operations/blueprints.md).
 

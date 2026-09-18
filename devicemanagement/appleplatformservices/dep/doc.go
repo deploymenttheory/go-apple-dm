@@ -43,7 +43,7 @@
 //   - Apple: https://developer.apple.com/documentation/devicemanagement/remove-account-driven-enrollment-profile
 //   - Apple: https://developer.apple.com/documentation/devicemanagement/limit
 //   - Apple: https://developer.apple.com/documentation/devicemanagement/url
-//   - Schema: third_party/device-management/other/skipkeys.yaml (schema/other.SkipKeys, the skip_setup_items vocabulary)
+//   - Schema: third_party/apple-device-management/current/other/skipkeys.yaml (schema/other.SkipKeys, the skip_setup_items vocabulary)
 //   - RFC 5849 (OAuth 1.0): https://www.rfc-editor.org/rfc/rfc5849
 //   - RFC 5652 (CMS enveloped data, the .p7m token file): https://www.rfc-editor.org/rfc/rfc5652
 //   - RFC 8551 (S/MIME 4.0): https://www.rfc-editor.org/rfc/rfc8551

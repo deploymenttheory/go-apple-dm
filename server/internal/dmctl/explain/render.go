@@ -77,7 +77,7 @@ func header(w io.Writer, m Match) {
 	// The schema path is a citation, not a paraphrase: the generated packages
 	// carry no per-key prose, so nothing here is invented.
 	if m.Schema != "" {
-		_, _ = fmt.Fprintf(w, "Schema:\tthird_party/device-management/%s\n", m.Schema)
+		_, _ = fmt.Fprintf(w, "Schema:\tthird_party/apple-device-management/current/%s\n", m.Schema)
 	}
 }
 

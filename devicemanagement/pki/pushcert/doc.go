@@ -25,5 +25,5 @@
 //   - Threat model: https://github.com/deploymenttheory/go-apple-dm/blob/main/docs/security/threat-model.md (wrong or expired push certificate row)
 //   - Apple: https://developer.apple.com/documentation/devicemanagement/setting-up-push-notifications-for-your-device-management-customers
 //   - Apple: https://developer.apple.com/documentation/devicemanagement/managing-certificates-for-device-management-services-and-devices
-//   - Schema: third_party/device-management/mdm/checkin/authenticate.yaml, tokenupdate.yaml (Topic)
+//   - Schema: third_party/apple-device-management/current/mdm/checkin/authenticate.yaml, tokenupdate.yaml (Topic)
 package pushcert

@@ -25,5 +25,5 @@
 //   - Apple: https://developer.apple.com/documentation/devicemanagement/leveraging-the-declarative-management-data-model-to-scale-devices
 //   - Apple: https://developer.apple.com/documentation/devicemanagement/activationsimple
 //   - Apple: https://developer.apple.com/documentation/devicemanagement/legacyprofile
-//   - Schema: third_party/device-management/declarative/declarations/**
+//   - Schema: third_party/apple-device-management/current/declarative/declarations/**
 package blueprint

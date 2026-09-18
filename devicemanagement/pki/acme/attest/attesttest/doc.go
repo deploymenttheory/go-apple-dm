@@ -14,5 +14,5 @@
 //
 //   - Decision record 0032: https://github.com/deploymenttheory/go-apple-dm/blob/main/docs/research/decisions/0032-managed-device-attestation.md
 //   - Apple: https://developer.apple.com/documentation/devicemanagement/deviceinformationresponse
-//   - Schema: third_party/device-management/mdm/commands/information.device.yaml
+//   - Schema: third_party/apple-device-management/current/mdm/commands/information.device.yaml
 package attesttest

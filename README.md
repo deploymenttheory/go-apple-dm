@@ -303,7 +303,7 @@ and the [threat model](docs/security/threat-model.md).
 ## Sources
 
 Apple's [Device Management documentation](https://developer.apple.com/documentation/devicemanagement)
-and the pinned [device-management schema](third_party/device-management/) define the protocol.
+and the pinned [device-management schema](third_party/apple-device-management/current/) define the protocol.
 The [reference catalogue](docs/research/reference_projects.md) records additional sources.
 [Design decisions](docs/research/decisions/README.md) explain this project's implementation choices.
 

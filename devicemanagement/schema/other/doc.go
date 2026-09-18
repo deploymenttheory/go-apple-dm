@@ -29,6 +29,6 @@
 //   - Architecture: https://github.com/deploymenttheory/go-apple-dm/blob/main/docs/architecture.md
 //   - Apple: https://developer.apple.com/documentation/devicemanagement
 //   - Apple: https://github.com/apple/device-management/blob/release/docs/schema.md
-//   - Schema: third_party/device-management/other/**
+//   - Schema: third_party/apple-device-management/current/other/**
 //   - Upstream: https://github.com/apple/device-management at commit 09f249a06e7e3289930bf6d05f38fb562f748ebf (devicemanagement/schema/GENERATED_FROM.json)
 package other

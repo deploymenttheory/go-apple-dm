@@ -26,8 +26,8 @@
 //   - Apple: https://developer.apple.com/documentation/devicemanagement/declarativemanagementrequest
 //   - Apple: https://developer.apple.com/documentation/devicemanagement/devicemanagement-declarations
 //   - Apple: https://developer.apple.com/documentation/devicemanagement/status-items
-//   - Schema: third_party/device-management/declarative/protocol/*.yaml
-//   - Schema: third_party/device-management/declarative/declarations/**, declarative/status/**
-//   - Schema: third_party/device-management/mdm/checkin/declarativemanagement.yaml
+//   - Schema: third_party/apple-device-management/current/declarative/protocol/*.yaml
+//   - Schema: third_party/apple-device-management/current/declarative/declarations/**, declarative/status/**
+//   - Schema: third_party/apple-device-management/current/mdm/checkin/declarativemanagement.yaml
 //   - RFC 8785 (JSON Canonicalization Scheme): https://www.rfc-editor.org/rfc/rfc8785
 package ddm

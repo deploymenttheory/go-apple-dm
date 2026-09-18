@@ -63,7 +63,7 @@
 //   - End-to-end scenarios: https://github.com/deploymenttheory/go-apple-dm/blob/main/docs/testing/e2e-scenarios.md (E2E-009)
 //   - Apple: https://developer.apple.com/documentation/devicemanagement/leveraging-the-declarative-management-data-model-to-scale-devices
 //   - Apple: https://developer.apple.com/library/archive/documentation/Cocoa/Conceptual/Predicates/AdditionalChapters/Introduction.html
-//   - Schema: third_party/device-management/declarative/declarations/activations/simple.yaml (Predicate)
-//   - Schema: third_party/device-management/declarative/declarations/management/properties.yaml (@property values)
-//   - Schema: third_party/device-management/declarative/declarations/declarationbase.yaml (Info.Predicate reason code)
+//   - Schema: third_party/apple-device-management/current/declarative/declarations/activations/simple.yaml (Predicate)
+//   - Schema: third_party/apple-device-management/current/declarative/declarations/management/properties.yaml (@property values)
+//   - Schema: third_party/apple-device-management/current/declarative/declarations/declarationbase.yaml (Info.Predicate reason code)
 package predicate

@@ -5,6 +5,7 @@ package schemagen
 import (
 	"encoding/json"
 	"os"
+	"os/exec"
 	"reflect"
 	"slices"
 	"strings"
@@ -74,7 +75,7 @@ func TestSeedOS27CoverageInventory(t *testing.T) {
 	if !slices.Equal(fixtureIDs, inventory.Fixtures) {
 		t.Fatal("fixture IDs differ from the reviewed coverage inventory", fixtureIDs)
 	}
-	tree, err := Load("../../third_party/device-management")
+	tree, err := Load("../../third_party/apple-device-management/current")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -189,7 +190,7 @@ func checkOS27InheritedBoundaries(t *testing.T) {
 	t.Helper()
 	// Resolve inheritance using the source model and retained historical schema,
 	// then compare every affected descendant with the compiled public tables.
-	tables, _, err := sourceSupport("../../third_party/device-management", "../../third_party/device-management-history")
+	tables, _, err := sourceSupport("../../third_party/apple-device-management/current", compatibilitySchemaRoot(t))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -229,4 +230,14 @@ func checkOS27InheritedBoundaries(t *testing.T) {
 		t.Fatal("no inherited macOS 27 boundaries checked")
 	}
 	t.Logf("checked %d inherited macOS 27 paths across four versions and six enrollment contexts", checked)
+}
+
+func compatibilitySchemaRoot(t *testing.T) string {
+	t.Helper()
+	command := exec.Command("git", "config", "--file", "../../.gitmodules", "--get", "submodule.apple-device-management-compatibility.path")
+	output, err := command.Output()
+	if err != nil {
+		t.Fatal(err)
+	}
+	return "../../" + strings.TrimSpace(string(output))
 }

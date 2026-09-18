@@ -17,5 +17,5 @@
 //   - Decision record: https://github.com/deploymenttheory/go-apple-dm/blob/main/docs/research/decisions/0036-dmctl-explain-over-schema-support.md
 //   - Decision record: https://github.com/deploymenttheory/go-apple-dm/blob/main/docs/research/decisions/0035-dmctl-structure-and-credentials.md
 //   - Apple: https://github.com/apple/device-management/blob/release/docs/schema.md
-//   - Schema: third_party/device-management/docs/schema.yaml (supportedOS)
+//   - Schema: third_party/apple-device-management/current/docs/schema.yaml (supportedOS)
 package explain

@@ -22,6 +22,6 @@
 //   - Apple: https://developer.apple.com/documentation/devicemanagement/wellknown
 //   - Apple: https://developer.apple.com/documentation/devicemanagement/implementing-the-simple-authentication-account-driven-enrollment-flow
 //   - Apple: https://developer.apple.com/documentation/devicemanagement/onboarding-users-with-account-driven-enrollment
-//   - Schema: third_party/device-management/mdm/errors/well-known.failed.yaml
+//   - Schema: third_party/apple-device-management/current/mdm/errors/well-known.failed.yaml
 //   - RFC 9110 (HTTP Semantics, Accept and 405): https://www.rfc-editor.org/rfc/rfc9110
 package discovery

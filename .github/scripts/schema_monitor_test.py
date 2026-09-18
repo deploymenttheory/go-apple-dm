@@ -55,13 +55,16 @@ class DiscoveryTests(unittest.TestCase):
     def test_retained_seed_sequence_uses_discovered_macos_versions(self):
         refs = "ref: refs/heads/release\tHEAD\n" + "a" * 40 + "\trefs/heads/release\n"
         refs += "b" * 40 + "\trefs/heads/seed-next\n"
+        compatibility = "third_party/apple-device-management/n-minus-one"
 
         def source(args, *unused):
             if args[:3] == ["git", "rev-parse", "HEAD"]:
                 return "d" * 40
             if args[:3] == ["git", "ls-remote", "--symref"]:
                 return refs
-            if args[:2] == ["git", "rev-parse"] and args[-1] == "HEAD:" + m.HISTORY_SUBMODULE:
+            if args[:3] == ["git", "config", "--file"]:
+                return compatibility
+            if args[:2] == ["git", "rev-parse"] and args[-1] == "HEAD:" + compatibility:
                 return "c" * 40
             if args[:2] == ["git", "rev-parse"]:
                 return "a" * 40
@@ -104,6 +107,14 @@ class DiscoveryTests(unittest.TestCase):
         for ref in ("seed/../next", ".seed", "seed/"):
             with self.subTest(ref=ref), self.assertRaises(ValueError):
                 m.snapshot_ref(ref, commit)
+
+    def test_seed_workspace_uses_discovered_version_ref_and_commit(self):
+        seed = branch("seed-28", "seed")
+        seed["version"] = "28.0"
+        self.assertEqual("third_party/apple-device-management/28.0-seed-28-bbbbbbbbbbbb", m.candidate_submodule_path(seed))
+        seed["version"] = "28.0/unsafe"
+        with self.assertRaises(ValueError):
+            m.candidate_submodule_path(seed)
 
     def test_capture_keeps_an_existing_matching_snapshot(self):
         commit = "b" * 40
@@ -200,24 +211,25 @@ class AssessmentTests(unittest.TestCase):
     def test_production_sources_retain_history_without_seed_ancestry(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
+            compatibility = "third_party/apple-device-management/n-minus-one"
             provenance = {"commit": "b" * 40, "ref": "release", "os_versions": "27.0",
                           "history": {"commit": "a" * 40}}
             m.write_json(root / m.SCHEMA / "GENERATED_FROM.json", provenance)
 
             def source(args, *unused):
-                return "a" * 40 if args[-1] == "HEAD:" + m.HISTORY_SUBMODULE else "b" * 40
+                return "a" * 40 if args[-1] == "HEAD:" + compatibility else "b" * 40
 
             with patch.object(m, "run", side_effect=source):
-                stable = m.assessment_sources(root, branch("release", "stable"))
+                stable = m.assessment_sources(root, branch("release", "stable"), compatibility)
                 self.assertEqual("a" * 40, stable["historyCommit"])
                 self.assertEqual("a" * 40, stable["auditBaseline"])
             with patch.object(m, "run", return_value="b" * 40):
                 with self.assertRaisesRegex(ValueError, "historical provenance"):
-                    m.assessment_sources(root, branch())
+                    m.assessment_sources(root, branch(), compatibility)
             provenance.pop("history")
             m.write_json(root / m.SCHEMA / "GENERATED_FROM.json", provenance)
             with patch.object(m, "run", return_value="b" * 40):
-                self.assertIsNone(m.assessment_sources(root, branch())["historyCommit"])
+                self.assertIsNone(m.assessment_sources(root, branch(), compatibility)["historyCommit"])
 
     def test_routine_contract_gate_rejects_missing_skipped_and_failed_tests(self):
         events = "\n".join(json.dumps({"Action": "pass", "Package": test.rsplit("/", 1)[0],
@@ -266,14 +278,15 @@ class AssessmentTests(unittest.TestCase):
     def test_snapshot_guard_rejects_wrong_candidate_and_project(self):
         with patch.object(m, "run", return_value="wrong"):
             with self.assertRaises(ValueError):
-                m.assert_snapshot(Path("/tmp/project"), "a" * 40, "c" * 40)
+                m.assert_snapshot(Path("/tmp/project"), m.SUBMODULE, "a" * 40, "c" * 40)
         with patch.object(m, "run", side_effect=["a" * 40, "wrong"]):
             with self.assertRaises(ValueError):
-                m.assert_snapshot(Path("/tmp/project"), "a" * 40, "c" * 40)
+                m.assert_snapshot(Path("/tmp/project"), m.SUBMODULE, "a" * 40, "c" * 40)
 
     def test_paths_allow_generated_code_but_not_removal_allowances_or_logs(self):
-        for name in (".gitmodules", m.SUBMODULE, m.HISTORY_SUBMODULE, m.SCHEMA + "/commands/types.gen.go", m.SCHEMA + "/commands/conformance_gen_test.go", m.SCHEMA + "/commands/doc.go", m.SCHEMA + "/GENERATED_FROM.json"):
-            self.assertTrue(m.allowed_path(name), name)
+        compatibility = "third_party/apple-device-management/n-minus-one"
+        for name in (".gitmodules", m.SUBMODULE, compatibility, m.SCHEMA + "/commands/types.gen.go", m.SCHEMA + "/commands/conformance_gen_test.go", m.SCHEMA + "/commands/doc.go", m.SCHEMA + "/GENERATED_FROM.json"):
+            self.assertTrue(m.allowed_path(name, compatibility), name)
         for name in ("seeds.md", "run.log", "server/go.mod", ".github/workflows/test.yml", m.SCHEMA + "/ALLOWED_REMOVALS.md", m.SCHEMA + "/support/support.go"):
             self.assertFalse(m.allowed_path(name), name)
 
@@ -347,7 +360,8 @@ class AssessmentTests(unittest.TestCase):
                 return json.dumps({"Dir": str(root)}) if args[:3] == ["go", "list", "-m"] else ""
 
             with patch.object(m, "command_stage", side_effect=stage), patch.object(m, "run", side_effect=run), patch.object(m, "assert_snapshot"):
-                m.assess_generated(result, ["tool"], root, root, "tool", root, root)
+                m.assess_generated(result, ["tool"], root, root, "tool", root, root,
+                                   "third_party/apple-device-management/n-minus-one", m.SUBMODULE)
         self.assertEqual("passed", result["stages"]["tests"]["state"])
         self.assertEqual("boundaries", result["findings"][0]["stage"])
 
@@ -439,7 +453,7 @@ class PublicationTests(unittest.TestCase):
             source = repo / m.SCHEMA / "commands/types.gen.go"
             source.parent.mkdir(parents=True)
             source.write_text("package commands\ntype Old struct{}\n")
-            (repo / ".gitmodules").write_text('[submodule "third_party/device-management"]\n path = third_party/device-management\n url = https://github.com/apple/device-management.git\n branch = release\n')
+            (repo / ".gitmodules").write_text('[submodule "apple-device-management-current"]\n path = third_party/apple-device-management/current\n url = https://github.com/apple/device-management.git\n branch = release\n')
             real_run(["git", "add", "."], repo)
             real_run(["git", "update-index", "--add", "--cacheinfo", "160000," + "a" * 40 + "," + m.SUBMODULE], repo)
             real_run(["git", "commit", "--quiet", "-m", "baseline"], repo)

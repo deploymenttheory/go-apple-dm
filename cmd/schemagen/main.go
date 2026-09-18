@@ -25,7 +25,7 @@ func run(args []string, out *os.File) error {
 	fs := flag.NewFlagSet("schemagen", flag.ContinueOnError)
 	schemaRoot := fs.String(
 		"schema",
-		"third_party/device-management",
+		"third_party/apple-device-management/current",
 		"path to apple/device-management checkout",
 	)
 	outDir := fs.String("out", "devicemanagement/schema", "output directory")
@@ -48,7 +48,7 @@ func run(args []string, out *os.File) error {
 		}
 	})
 	if !historyExplicit {
-		if data, err := exec.CommandContext(context.Background(), "git", "config", "--file", ".gitmodules", "--get", "submodule.third_party/device-management-history.path").
+		if data, err := exec.CommandContext(context.Background(), "git", "config", "--file", ".gitmodules", "--get", "submodule.apple-device-management-compatibility.path").
 			Output(); err == nil {
 			*history = strings.TrimSpace(string(data))
 		}
@@ -56,7 +56,7 @@ func run(args []string, out *os.File) error {
 	// Commit is left empty: schemagen reads it from the checkout. Reading it
 	// from the output directory made a submodule bump stamp the old commit.
 	if *ref == "" {
-		data, err := exec.CommandContext(context.Background(), "git", "config", "--file", ".gitmodules", "--get", "submodule.third_party/device-management.branch").
+		data, err := exec.CommandContext(context.Background(), "git", "config", "--file", ".gitmodules", "--get", "submodule.apple-device-management-current.branch").
 			Output()
 		if err != nil {
 			return fmt.Errorf("read configured schema branch (or provide -ref): %w", err)

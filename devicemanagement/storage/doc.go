@@ -26,5 +26,5 @@
 //   - Apple: https://developer.apple.com/documentation/devicemanagement/check-in
 //   - Apple: https://developer.apple.com/documentation/devicemanagement/sending-mdm-commands-to-a-device
 //   - Apple: https://developer.apple.com/documentation/devicemanagement/handling-notnow-status-responses
-//   - Schema: third_party/device-management/mdm/checkin/authenticate.yaml, tokenupdate.yaml, setbootstraptoken.yaml
+//   - Schema: third_party/apple-device-management/current/mdm/checkin/authenticate.yaml, tokenupdate.yaml, setbootstraptoken.yaml
 package storage

@@ -18,5 +18,5 @@
 //   - RFC 8949 (Concise Binary Object Representation): https://www.rfc-editor.org/rfc/rfc8949
 //   - W3C WebAuthn attestation objects: https://www.w3.org/TR/webauthn-2/#sctn-attestation
 //   - Apple: https://developer.apple.com/documentation/devicemanagement/acmecertificate
-//   - Schema: third_party/device-management/mdm/profiles/com.apple.security.acme.yaml
+//   - Schema: third_party/apple-device-management/current/mdm/profiles/com.apple.security.acme.yaml
 package cbor

@@ -15,5 +15,5 @@
 //   - Decision record 0003: https://github.com/deploymenttheory/go-apple-dm/blob/main/docs/research/decisions/0003-schema-generator.md
 //   - Decision record 0018: https://github.com/deploymenttheory/go-apple-dm/blob/main/docs/research/decisions/0018-go-1.27-baseline.md
 //   - Apple: https://github.com/apple/device-management/blob/release/docs/schema.md
-//   - Schema: third_party/device-management/docs/schema.yaml (meta-schema)
+//   - Schema: third_party/apple-device-management/current/docs/schema.yaml (meta-schema)
 package conformance

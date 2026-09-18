@@ -24,5 +24,5 @@
 //   - End-to-end scenarios: https://github.com/deploymenttheory/go-apple-dm/blob/main/docs/testing/e2e-scenarios.md (E2E-006, E2E-007)
 //   - Apple: https://developer.apple.com/documentation/devicemanagement/setting-up-push-notifications-for-your-device-management-customers
 //   - Apple: https://developer.apple.com/documentation/devicemanagement/dealing-with-inactive-managed-devices-and-invalid-push-tokens
-//   - Schema: third_party/device-management/mdm/checkin/tokenupdate.yaml (Topic, PushMagic, Token)
+//   - Schema: third_party/apple-device-management/current/mdm/checkin/tokenupdate.yaml (Topic, PushMagic, Token)
 package push

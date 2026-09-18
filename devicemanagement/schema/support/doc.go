@@ -25,5 +25,5 @@
 //   - Decision record 0003: https://github.com/deploymenttheory/go-apple-dm/blob/main/docs/research/decisions/0003-schema-generator.md
 //   - Apple: https://github.com/apple/device-management/blob/release/docs/schema.md
 //   - Apple: https://developer.apple.com/documentation/devicemanagement
-//   - Schema: third_party/device-management/docs/schema.yaml (supportedOS)
+//   - Schema: third_party/apple-device-management/current/docs/schema.yaml (supportedOS)
 package support

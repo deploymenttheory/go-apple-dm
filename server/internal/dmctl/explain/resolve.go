@@ -36,7 +36,7 @@ type Match struct {
 	ID string
 	// Title is Apple's title for the schema.
 	Title string
-	// Schema is the YAML path under third_party/device-management.
+	// Schema is the YAML path under third_party/apple-device-management/current.
 	Schema string
 	// Kind is the declaration family, for schema/ddm only.
 	Kind string

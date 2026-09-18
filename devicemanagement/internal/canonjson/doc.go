@@ -19,7 +19,7 @@
 //   - Decision record 0019: https://github.com/deploymenttheory/go-apple-dm/blob/main/docs/research/decisions/0019-canonical-json-and-ddm-tokens.md
 //   - Threat model: https://github.com/deploymenttheory/go-apple-dm/blob/main/docs/security/threat-model.md (/status row)
 //   - Apple: https://developer.apple.com/documentation/devicemanagement/declarativemanagementrequest
-//   - Schema: third_party/device-management/declarative/protocol/declarationitemsresponse.yaml
-//   - Schema: third_party/device-management/declarative/protocol/tokensresponse.yaml
+//   - Schema: third_party/apple-device-management/current/declarative/protocol/declarationitemsresponse.yaml
+//   - Schema: third_party/apple-device-management/current/declarative/protocol/tokensresponse.yaml
 //   - RFC 8785 (JSON Canonicalization Scheme): https://www.rfc-editor.org/rfc/rfc8785
 package canonjson
