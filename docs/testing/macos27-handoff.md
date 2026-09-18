@@ -42,9 +42,18 @@ alone do not block the project: disclose the affected native integration gap and
 verify the repository-owned paths with protocol tests. Do not build an SSO
 provider or restore a VM merely to finish the superseded behavior checklist.
 
-Current next steps are to audit these four criteria against the existing evidence,
-address actual library/server gaps, and produce a readiness conclusion with
-explicit limitations. Full project sign-off has not yet been asserted.
+The repository audit identified and addressed the remaining gaps: binary-rule
+validation through the HTTP API, exact fixture payload preservation, and runtime
+acceptance of independently installed server binaries. Local affected race suites,
+all thirteen OS 27 contracts, generation verification and affected-package lint
+pass. The server now pins library revision `cddf78c`, containing the validator fix.
+The new process regression fails against the previous server (HTTP 200 for an
+invalid allow rule) and passes against the corrected standalone installation.
+
+The final candidate must retain passing CI, including storage integration, both
+E2E backends and the unchanged 95% gate. Candidate-specific check results and the
+completion record are maintained on [PR #65](https://github.com/deploymenttheory/go-apple-dm/pull/65).
+There is no remaining Apple feature-behavior campaign or scheduled physical test.
 
 ### Approved test placement
 

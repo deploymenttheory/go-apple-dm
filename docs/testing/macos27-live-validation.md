@@ -321,6 +321,28 @@ These automated results do not establish native feature behavior.
 
 ## Readiness follow-up — 18 September 2026
 
+### Library and reference-server completion checks
+
+The current tree was committed and pushed to PR #65 as `cddf78c` before completing
+the corrected test scope. Follow-up changes add these repository-owned checks:
+
+| Check | Evidence and acceptance boundary |
+|---|---|
+| Binary validation through HTTP | Eleven cases verify rejected creates/replacements, preservation of stored declarations, snapshots/tokens and pending notifications, and delivery of valid identifiers/qualifiers. Local race run passes. |
+| Complete fixture payload fidelity | The existing required feature-delivery contract now compares the authored and served declaration after canonical JSON normalization, excluding only the generated server token. The full platform/version fixture matrix passes; token and withholding checks remain. |
+| Standalone server runtime | The server dependency advances to `v0.7.4-0.20260918023638-cddf78c3196a`. Independent installation verifies binary module metadata and runs process acceptance against installed executables, including combined/split deployment, invalid replacements, restart persistence and CLI lifecycle. Local installation/runtime verification passes. |
+| Final regressions | Affected schema, DDM, generator, server application/service/adapter race suites, all thirteen OS 27 contracts, `make verify` and affected-package lint pass locally. Full candidate CI and the 95% gate are tracked on [PR #65](https://github.com/deploymenttheory/go-apple-dm/pull/65). |
+
+The focused process test also ran against the retained pre-fix server in isolated
+simulated workspaces. Both combined and split deployments failed as expected:
+the invalid SigningID-only allow rule returned HTTP 200 instead of 400. The
+corrected standalone binaries pass the same test. The test never launches the
+denied fixture binary or changes a physical Mac's policy. Existing native results
+are retained; these new results prove library/server contracts, not Apple's UI
+or enforcement behavior. The earlier full CI result at `eb5208a` remains historical.
+
+### Retained native follow-up
+
 The user clarified that readiness concerns the library and reference server,
 not certification of Apple's feature implementations. Earlier test-placement
 permissions remain recorded in the [handoff](macos27-handoff.md#approved-test-placement),

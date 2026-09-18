@@ -13,6 +13,8 @@ github.com/deploymenttheory/go-apple-dm v0.7.1-0.20260913221152-66294811b361 h1:
 github.com/deploymenttheory/go-apple-dm v0.7.1-0.20260913221152-66294811b361/go.mod h1:YXWzmQ19spn4jwEzwrJ1vaywFSmEQCppjOK3F/uSd4A=
 github.com/deploymenttheory/go-apple-dm v0.7.4-0.20260917043416-c81508cf336c h1:xGWRUePdsqwMuQReWbAbQZlUV+JZNWY6qxxnzjPP8a4=
 github.com/deploymenttheory/go-apple-dm v0.7.4-0.20260917043416-c81508cf336c/go.mod h1:YXWzmQ19spn4jwEzwrJ1vaywFSmEQCppjOK3F/uSd4A=
+github.com/deploymenttheory/go-apple-dm v0.7.4-0.20260918023638-cddf78c3196a h1:ON0/zaYCQ43xiQ3ip03o8HIXRicC9Hqhujueb0yLrfc=
+github.com/deploymenttheory/go-apple-dm v0.7.4-0.20260918023638-cddf78c3196a/go.mod h1:YXWzmQ19spn4jwEzwrJ1vaywFSmEQCppjOK3F/uSd4A=
 github.com/dustin/go-humanize v1.0.1 h1:GzkhY7T5VNhEkwH0PVJgjz+fX1rhBrR7pRT3mDkpeCY=
 github.com/dustin/go-humanize v1.0.1/go.mod h1:Mu1zIs6XwVuF/gI1OepvI0qD18qycQx+mFykh5fBlto=
 github.com/go-sql-driver/mysql v1.10.1 h1:arlSnNLq6a5yxGxV7qg9lF4j0C+KwD6NbQyKr9QL6ME=

@@ -61,7 +61,7 @@ fmt:
 
 .PHONY: fmt
 
-## verify-server-module-installation: resolve declared dependencies, build server packages and install dmserver/dmctl with GOWORK=off
+## verify-server-module-installation: resolve dependencies, build/install with GOWORK=off and run installed-server acceptance
 verify-server-module-installation:
 	python3 scripts/verify-server-module-installation.py
 

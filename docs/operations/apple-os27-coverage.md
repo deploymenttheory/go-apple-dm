@@ -10,6 +10,14 @@ limitations, and the [project acceptance criteria](../testing/macos27-handoff.md
 for the current completion plan. Earlier native behavior plans below are optional
 follow-up, not a list of project blockers. No final project sign-off is implied.
 
+The 18 September repository follow-up adds HTTP binary-validation regressions,
+complete declaration-payload comparisons and process acceptance against independently
+installed server binaries. The standalone server now pins the corrected library
+revision `cddf78c`; local affected checks and all thirteen OS 27 contracts pass.
+The [completion checks](../testing/macos27-live-validation.md#library-and-reference-server-completion-checks)
+describe the evidence; final candidate CI is recorded on
+[PR #65](https://github.com/deploymenttheory/go-apple-dm/pull/65).
+
 The original 40 GB macOS 27 Guestweave VM and a fresh **v1.1.0** native-provisioned
 guest both reached user-approved SCEP profile installation. Native account/SSH
 provisioning passes in the fresh guest, but APNs identity key generation still
