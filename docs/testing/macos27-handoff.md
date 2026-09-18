@@ -280,8 +280,9 @@ the tagged OS 27 tests. Missing or skipped tests still fail the contract gate.
 The complete remote test matrix and unchanged 95% coverage gate passed at
 `eb5208a`; see [the CI run](https://github.com/deploymenttheory/go-apple-dm/actions/runs/35204383183).
 
-The primary schema pin is `b0180185a5e4077070710033341b71d0cbe1a18a` and history is
-`67045e2fa06f528b196c01edee6a8bf88b844beb`. `GENERATED_FROM.json` records both.
+The primary schema pin is release `09f249a06e7e3289930bf6d05f38fb562f748ebf` and
+history is `67045e2fa06f528b196c01edee6a8bf88b844beb`. The original OS 27 seed is
+retained as a canary snapshot. `GENERATED_FROM.json` records the shipped inputs.
 Regenerate with the existing generator; never hand-edit generated files.
 
 ## Evidence and retained macOS 26 baseline

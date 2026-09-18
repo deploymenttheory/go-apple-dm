@@ -24,11 +24,12 @@ changes remain subject to the existing generation/API guards.
 The normal library and seed previews carry the historical checkout as
 `third_party/device-management-history`; `GENERATED_FROM.json` records both
 commits and content hashes. Normal generation and verification discover that
-history input from `.gitmodules`. The library adopts OS 27 seed commit
-`b0180185a5e4077070710033341b71d0cbe1a18a` with historical release commit
-`67045e2fa06f528b196c01edee6a8bf88b844beb`. The twelve OS 27 contracts run in
-ordinary validation. The monitor preserves the historical pin and compares older
-Apple stable snapshots against that release baseline without proposing a downgrade.
+history input from `.gitmodules`. The library ships Apple release commit
+`09f249a06e7e3289930bf6d05f38fb562f748ebf` with historical release commit
+`67045e2fa06f528b196c01edee6a8bf88b844beb`. The original OS 27 seed is retained
+as an immutable canary snapshot. The twelve OS 27 contracts run in ordinary
+validation. The monitor assesses release updates against the shipped release pin
+and seed candidates against their independently retained release baseline.
 Later transitions must retain all
 previously published contracts; the public API guard detects incomplete history.
 

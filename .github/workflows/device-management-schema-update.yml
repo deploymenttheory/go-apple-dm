@@ -23,6 +23,8 @@ jobs:
     name: Discover stable and seed schema commits
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    permissions:
+      contents: write
     outputs:
       matrix: ${{ steps.discover.outputs.matrix }}
       has_branches: ${{ steps.discover.outputs.has_branches }}
@@ -37,12 +39,21 @@ jobs:
       - name: Discover immutable source commits
         id: discover
         run: python3 .github/scripts/schema_monitor.py discover --output "${RUNNER_TEMP}/schema-discovery/discovery.json"
+      - name: Retain advertised canary snapshots
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: >-
+          python3 .github/scripts/schema_monitor.py capture
+          --manifest "${RUNNER_TEMP}/schema-discovery/discovery.json"
+          --output "${RUNNER_TEMP}/schema-capture/capture.json"
       - name: Retain discovery even when upstream access fails
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: schema-discovery
-          path: ${{ runner.temp }}/schema-discovery/
+          path: |
+            ${{ runner.temp }}/schema-discovery/
+            ${{ runner.temp }}/schema-capture/
           if-no-files-found: error
           retention-days: 30
 

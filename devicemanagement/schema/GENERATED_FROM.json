@@ -1,10 +1,10 @@
 {
   "source": "https://github.com/apple/device-management",
-  "ref": "seed_OS_27_0",
-  "commit": "b0180185a5e4077070710033341b71d0cbe1a18a",
-  "yaml_sha256": "eca25dd54cbc513e9bf8c38d54a6fac95f579d2b8a7b61eddf0036509a5db9c4",
+  "ref": "release",
+  "commit": "09f249a06e7e3289930bf6d05f38fb562f748ebf",
+  "yaml_sha256": "c7f6d5f2304664be84a97aad2596d59c8857cfeea22ce97287410ff61485882f",
   "os_versions": "27.0",
-  "commit_date": "2026-09-02",
+  "commit_date": "2026-09-17",
   "generator": "schemagen (cmd/schemagen, internal/schemagen)",
   "history": {
     "source": "https://github.com/apple/device-management",

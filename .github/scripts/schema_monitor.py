@@ -20,12 +20,17 @@ from schema_issue_content import changed_fragments, enrich_findings, evidence_va
 
 ROOT = Path(__file__).resolve().parents[2]
 UPSTREAM = "https://github.com/apple/device-management.git"
+# Canary commits live in this repository under immutable schema-source refs.
+# Apple removes seed branches when it promotes a release, so its repository is
+# not a durable source for a candidate that has already been assessed.
+CANARY_MIRROR = "https://github.com/deploymenttheory/go-apple-dm.git"
 LIBRARY = "github.com/deploymenttheory/go-apple-dm"
 SCHEMA = "devicemanagement/schema"
 SUBMODULE = "third_party/device-management"
 HISTORY_SUBMODULE = "third_party/device-management-history"
 STAGES = ("snapshot", "audit", "parse", "generate", "verify", "api", "build", "boundaries", "tests")
 SHA = re.compile(r"^[0-9a-f]{40}$")
+REF = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._/-]*$")
 MARKER = re.compile(r"<!-- schema-monitor (\{.*?\}) -->")
 START, END = "<!-- schema-monitor:evidence:start -->", "<!-- schema-monitor:evidence:end -->"
 PRESENTATION_VERSION = 2
@@ -122,8 +127,16 @@ def parse_refs(text):
     return default, heads
 
 
-def discover(repo, output, upstream=UPSTREAM):
-    manifest = {"schemaVersion": 1, "complete": False, "branches": [], "upstream": upstream}
+def snapshot_ref(ref, commit):
+    """Return the immutable in-repository ref for one advertised seed commit."""
+    if not REF.fullmatch(ref) or ".." in ref or ref.endswith("/") or not SHA.fullmatch(commit):
+        raise ValueError("Seed snapshot requires a safe ref name and full commit SHA")
+    return "refs/heads/schema-source/" + ref + "/" + commit
+
+
+def discover(repo, output, upstream=UPSTREAM, canary_mirror=CANARY_MIRROR):
+    manifest = {"schemaVersion": 2, "complete": False, "branches": [], "upstream": upstream,
+                "canaryMirror": canary_mirror}
     try:
         manifest["projectCommit"] = run(["git", "rev-parse", "HEAD"], repo).strip()
         default, heads = parse_refs(run(["git", "ls-remote", "--symref", upstream, "HEAD", "refs/heads/*"]))
@@ -131,16 +144,67 @@ def discover(repo, output, upstream=UPSTREAM):
         manifest["stableRef"], manifest["stableCommit"] = default, heads[default]
         for branch in [default] + sorted(b for b in heads if b.startswith("seed")):
             stable = branch == default
-            manifest["branches"].append({
+            entry = {
                 "key": digest(branch)[:16], "ref": branch, "commit": heads[branch],
                 "baseline": pinned if stable else heads[default],
                 "baselineRef": "project-pin" if stable else default,
-                "kind": "stable" if stable else "seed"})
+                "kind": "stable" if stable else "seed"}
+            if stable:
+                entry["source"] = "upstream"
+            else:
+                entry.update(source="canary-mirror", snapshotRef=snapshot_ref(branch, heads[branch]))
+            manifest["branches"].append(entry)
         manifest["complete"] = True
     except (subprocess.SubprocessError, OSError, ValueError) as exc:
         manifest["error"] = failure_text(exc)
     write_json(output, manifest)
     return manifest
+
+
+def capture_canaries(manifest, output):
+    """Copy advertised seed commits into immutable refs before Apple retires them."""
+    captured = []
+    try:
+        if not manifest.get("complete"):
+            raise ValueError("Cannot capture an incomplete discovery manifest")
+        mirror = manifest.get("canaryMirror", CANARY_MIRROR)
+        env = git_auth_env()
+        for branch in manifest.get("branches", []):
+            if branch.get("kind") != "seed":
+                continue
+            ref, commit = branch["snapshotRef"], branch["commit"]
+            existing = run(["git", "ls-remote", mirror, ref], env=env).strip()
+            if existing:
+                actual = existing.split()[0]
+                if actual != commit:
+                    raise ValueError("Canary snapshot ref is immutable but points at a different commit: " + ref)
+                captured.append({"ref": ref, "commit": commit, "state": "retained"})
+                continue
+            with tempfile.TemporaryDirectory(prefix="dm-schema-capture-") as scratch:
+                source = Path(scratch) / "source"
+                run(["git", "clone", "--quiet", "--single-branch", "--branch", branch["ref"], manifest["upstream"], source])
+                actual = run(["git", "rev-parse", "HEAD"], source).strip()
+                if actual != commit:
+                    raise ValueError("Advertised seed changed during capture: " + branch["ref"])
+                run(["git", "push", mirror, commit + ":" + ref], source, env=env)
+            retained = run(["git", "ls-remote", mirror, ref], env=env).strip().split()
+            if not retained or retained[0] != commit:
+                raise ValueError("Canary snapshot was not retained: " + ref)
+            captured.append({"ref": ref, "commit": commit, "state": "captured"})
+        result = {"complete": True, "captured": captured}
+    except (subprocess.SubprocessError, OSError, ValueError, KeyError) as exc:
+        result = {"complete": False, "captured": captured, "error": failure_text(exc)}
+    write_json(output, result)
+    return result
+
+
+def git_auth_env():
+    """Let Actions' GH_TOKEN authenticate mirror pushes without logging it."""
+    env = os.environ.copy()
+    if env.get("GH_TOKEN"):
+        env.update(GIT_CONFIG_COUNT="2", GIT_CONFIG_KEY_0="credential.helper", GIT_CONFIG_VALUE_0="",
+                   GIT_CONFIG_KEY_1="credential.https://github.com.helper", GIT_CONFIG_VALUE_1="!gh auth git-credential")
+    return env
 
 
 def failure_text(exc):
@@ -174,18 +238,8 @@ def assert_snapshot(root, expected, project):
         raise ValueError("Candidate or project SHA changed during assessment")
 
 
-def is_ancestor(root, older, newer):
-    try:
-        run(["git", "merge-base", "--is-ancestor", older, newer], root)
-        return True
-    except subprocess.CalledProcessError as exc:
-        if exc.returncode == 1:
-            return False
-        raise
-
-
-def assessment_sources(root, apple, branch):
-    """Keep the published history; an older stable branch is comparison-only."""
+def assessment_sources(root, branch):
+    """Validate production provenance and select its compatibility history."""
     provenance = json.loads((root / SCHEMA / "GENERATED_FROM.json").read_text())
     pinned = run(["git", "rev-parse", "HEAD:" + SUBMODULE], root).strip()
     if provenance["commit"] != pinned:
@@ -194,20 +248,13 @@ def assessment_sources(root, apple, branch):
     if history:
         if run(["git", "rev-parse", "HEAD:" + HISTORY_SUBMODULE], root).strip() != history:
             raise ValueError("Published historical provenance does not match its gitlink")
-    elif branch["kind"] == "seed":
-        history = pinned
     if history and not SHA.fullmatch(history):
         raise ValueError("Historical schema requires a full commit SHA")
-    comparison = (branch["kind"] == "stable" and provenance["ref"].startswith("seed")
-                  and not is_ancestor(apple, pinned, branch["commit"]))
-    if comparison and not history:
-        raise ValueError("Stable comparison requires the retained release baseline")
-    # Once this contract is published, candidates containing that source must
-    # keep executing it, including when Apple's release branch catches up.
-    adopted_os27 = (provenance["ref"] == "seed_OS_27_0" or provenance.get("os_versions", "").split(".")[0] == "27")
-    return {"historyCommit": history, "comparisonOnly": comparison,
-            "auditBaseline": history if comparison else branch["baseline"],
-            "adoptedOS27": adopted_os27 and not comparison}
+    # Production is always an Apple release. A canary is independently
+    # compared to the latest release and never controls production promotion.
+    adopted_os27 = provenance.get("os_versions", "").split(".")[0] == "27"
+    return {"historyCommit": history, "auditBaseline": branch["baseline"],
+            "adoptedOS27": adopted_os27}
 
 
 def api_findings(report):
@@ -240,10 +287,18 @@ def assess(repo, manifest, branch, directory):
             run(["git", "clone", "--quiet", "--shared", repo, root])
             run(["git", "checkout", "--quiet", "--detach", manifest["projectCommit"]], root)
             run(["git", "clone", "--quiet", "--no-checkout", manifest["upstream"], apple])
-            result.update(assessment_sources(root, apple, branch))
+            result.update(assessment_sources(root, branch))
+            result["canaryMirror"] = manifest.get("canaryMirror", CANARY_MIRROR)
             run(["git", "clone", "--quiet", "--shared", apple, baseline])
             run(["git", "checkout", "--quiet", "--detach", result["auditBaseline"]], baseline)
-            run(["git", "clone", "--quiet", "--shared", apple, root / SUBMODULE])
+            candidate_source = apple
+            if branch.get("source") == "canary-mirror":
+                candidate_source = manifest.get("canaryMirror", CANARY_MIRROR)
+                if not branch.get("snapshotRef"):
+                    raise ValueError("Canary candidate has no retained snapshot ref")
+                run(["git", "clone", "--quiet", candidate_source, root / SUBMODULE])
+            else:
+                run(["git", "clone", "--quiet", "--shared", candidate_source, root / SUBMODULE])
             run(["git", "checkout", "--quiet", "--detach", branch["commit"]], root / SUBMODULE)
             if result["historyCommit"]:
                 run(["git", "clone", "--quiet", "--shared", apple, root / HISTORY_SUBMODULE])
@@ -257,16 +312,7 @@ def assess(repo, manifest, branch, directory):
             shutil.copytree(root / SCHEMA, old_api)
             tool = scratch / "schemagen"
             run(["go", "build", "-o", tool, "./cmd/schemagen"], root)
-            if result["comparisonOnly"]:
-                # This result cannot be adopted. Compare release evolution
-                # against its retained release baseline, not the newer seed API.
-                (old_api / "EXPORTED_IDENTIFIERS.lock").unlink()
-                run([tool, "-schema", baseline, "-history", "", "-ref", manifest["stableRef"],
-                     "-out", old_api, "generate"], root)
-                shutil.copyfile(old_api / "EXPORTED_IDENTIFIERS.lock", root / SCHEMA / "EXPORTED_IDENTIFIERS.lock")
-                result["apiBaseline"] = "retained-release"
-            else:
-                result["apiBaseline"] = "published-project"
+            result["apiBaseline"] = "published-project"
             base_args = [tool, "-schema", root / SUBMODULE, "-ref", branch["ref"]]
             ok, text = command_stage(result, "audit", base_args + ["-baseline", baseline, "-report", directory, "audit"], root, directory)
             if not ok:
@@ -301,8 +347,15 @@ def assess_generated(result, base_args, baseline, old_api, tool, root, directory
             "schemagen cannot generate the Apple candidate", "Reproduce the generation failure and correct the generator in a separate PR.",
             [{"path": "generate.log", "detail": text[-5000:]}]))
         return
-    # Provenance and local make commands on the preview must name the seed.
-    run(["git", "config", "--file", ".gitmodules", "submodule.third_party/device-management.branch", result["branch"]["ref"]], root)
+    # Stable changes continue to use Apple's release checkout. Canary previews
+    # use the immutable project-owned snapshot that supplied their gitlink.
+    if result["branch"].get("source") == "canary-mirror":
+        snapshot = result["branch"]["snapshotRef"].removeprefix("refs/heads/")
+        run(["git", "config", "--file", ".gitmodules", "submodule.third_party/device-management.url", result["canaryMirror"]], root)
+        run(["git", "config", "--file", ".gitmodules", "submodule.third_party/device-management.branch", snapshot], root)
+    else:
+        run(["git", "config", "--file", ".gitmodules", "submodule.third_party/device-management.url", UPSTREAM], root)
+        run(["git", "config", "--file", ".gitmodules", "submodule.third_party/device-management.branch", result["branch"]["ref"]], root)
     command_stage(result, "verify", base_args + ["-out", root / SCHEMA, "verify"], root, directory)
     ok, text = command_stage(result, "api", [tool, "-ref", result["branch"]["ref"], "-baseline", old_api, "-schema", root / SCHEMA, "api-diff"], root, directory)
     if ok:
@@ -348,8 +401,6 @@ def assess_generated(result, base_args, baseline, old_api, tool, root, directory
         if run(["git", "rev-parse", "HEAD"], root / HISTORY_SUBMODULE).strip() != result["historyCommit"]:
             raise ValueError("Historical schema changed during assessment")
         paths.append(HISTORY_SUBMODULE)
-    if result.get("comparisonOnly"):
-        return
     run(["git", "add", "--", *paths], root)
     names = run(["git", "diff", "--cached", "--name-only"], root).splitlines()
     if any(not allowed_path(name) for name in names):
@@ -391,8 +442,6 @@ def render_report(result):
     names = list(STAGES) + [name for name in result["stages"] if name not in STAGES]
     text += ["| " + name + " | " + result["stages"][name]["state"] + " |" for name in names]
     text += ["", "Passing checks establish the listed scenarios, not complete OS or real-device support.", ""]
-    if result.get("comparisonOnly"):
-        text += ["**Comparison only:** Apple stable does not contain the adopted seed. API checks use the retained release baseline; this report does not authorize replacing the published API. No downgrade PR is produced.", ""]
     for item in result["findings"]:
         text += ["- **" + item["title"] + "** (" + item["kind"] + "): " + item["action"]]
     text += ["", "Generated preview available: **" + str(result["patch"]).lower() + "**.", ""]
@@ -641,7 +690,6 @@ def issue_actions(existing, reports, manifest, run_url, repository="deploymentth
         result = by_branch.get(old["branch"])
         status = None
         if (result and result["complete"] and old["kind"] == "failure"
-                and not (result.get("comparisonOnly") and old["stage"] in ("verify", "api"))
                 and result["stages"].get(old["stage"], {}).get("state") == "passed"):
             status = "verified"
         elif manifest.get("complete") and old["branch"] == "discovery":
@@ -676,10 +724,6 @@ def publish_patch(repo, directory, result, github, token, run_url):
         raise ValueError("The schema branch has a PR without the monitor ownership marker")
     body = "<!-- schema-monitor-pr -->\n" + render_report(result) + "\nFull evidence: " + run_url + "\n"
     body += "\nEngineering issues: https://github.com/" + github.repository + "/issues?q=is%3Aissue+label%3Aschema-monitor\n"
-    if result.get("comparisonOnly"):
-        if current:
-            github.request("PATCH", "pulls/" + str(current["number"]), {"state": "closed", "body": body})
-        return "not-applicable"
     if branch["kind"] == "seed":
         body += "\nThis draft is a preview. Stable adoption, server dependency updates and compatibility fixes require separate review.\n"
     if current and branch["kind"] == "seed" and branch["commit"] == branch["baseline"]:
@@ -828,13 +872,14 @@ def retire_previews(github, manifest):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("action", choices=("discover", "assess", "publish", "contracts"))
+    parser.add_argument("action", choices=("discover", "capture", "assess", "publish", "contracts"))
     parser.add_argument("--repo", type=Path, default=ROOT)
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--coverage-dir", type=Path, help="Append contract coverage to this Go coverage directory")
     parser.add_argument("--manifest", type=Path)
     parser.add_argument("--key")
     parser.add_argument("--upstream", default=UPSTREAM)
+    parser.add_argument("--canary-mirror", default=os.environ.get("SCHEMA_CANARY_MIRROR", CANARY_MIRROR))
     parser.add_argument("--repository", default=os.environ.get("GITHUB_REPOSITORY", "deploymenttheory/go-apple-dm"))
     parser.add_argument("--report-only", action="store_true")
     parser.add_argument("--run-url", default="")
@@ -842,18 +887,21 @@ def main():
     if args.action == "contracts":
         return 0 if verify_contracts(args.repo.resolve(), args.output.resolve(), args.coverage_dir) else 1
     if args.action == "discover":
-        manifest = discover(args.repo, args.output, args.upstream)
+        manifest = discover(args.repo, args.output, args.upstream, args.canary_mirror)
         if os.environ.get("GITHUB_OUTPUT"):
             with open(os.environ["GITHUB_OUTPUT"], "a") as output:
                 output.write("matrix=" + json.dumps(manifest["branches"]) + "\n")
                 output.write("has_branches=" + str(bool(manifest["branches"])).lower() + "\n")
         return 0 if manifest["complete"] else 1
     if not args.manifest:
-        parser.error("--manifest is required for assessment/publication")
+        parser.error("--manifest is required for capture, assessment or publication")
     if args.action == "publish" and not args.manifest.exists():
         manifest = {"schemaVersion": 1, "complete": False, "branches": [], "projectCommit": os.environ.get("GITHUB_SHA", "unknown"), "error": "Discovery artifact is missing"}
     else:
         manifest = json.loads(args.manifest.read_text())
+    if args.action == "capture":
+        result = capture_canaries(manifest, args.output.resolve())
+        return 0 if result["complete"] else 1
     if args.action == "assess":
         branch = next(b for b in manifest["branches"] if b["key"] == args.key)
         result = assess(args.repo, manifest, branch, args.output.resolve() / branch["key"])
