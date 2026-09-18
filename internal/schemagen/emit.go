@@ -154,7 +154,7 @@ func (e *emitter) docFile() []byte {
 	sb.WriteString(
 		"//   - Apple: https://github.com/apple/device-management/blob/release/docs/schema.md\n",
 	)
-	fmt.Fprintf(&sb, "//   - Schema: third_party/device-management/%s/**\n", dir)
+	fmt.Fprintf(&sb, "//   - Schema: third_party/apple-device-management/current/%s/**\n", dir)
 	fmt.Fprintf(
 		&sb,
 		"//   - Upstream: https://github.com/apple/device-management at commit %s (devicemanagement/schema/GENERATED_FROM.json)\n",

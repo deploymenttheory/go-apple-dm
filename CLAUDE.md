@@ -19,7 +19,7 @@ implementation references when evaluating protocol behavior. Do not copy third-p
 
 ## Generated files
 
-`make generate` uses the pinned `third_party/device-management` submodule. Never hand-edit generated `doc.go` files,
+`make generate` uses the pinned `third_party/apple-device-management/current` submodule. Never hand-edit generated `doc.go` files,
 `*.gen.go`, `devicemanagement/schema/EXPORTED_IDENTIFIERS.lock` or `devicemanagement/schema/GENERATED_FROM.json`; `make verify`
 checks deterministic regeneration and exported-name removals. Edit generator documentation
 at its source. Preserve Apple's verbatim descriptions and exact protocol identifiers.

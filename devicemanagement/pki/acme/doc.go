@@ -41,7 +41,7 @@
 //   - Decision record 0008: the certificate authority abstraction issuance goes through
 //   - Threat model: https://github.com/deploymenttheory/go-apple-dm/blob/main/docs/security/threat-model.md
 //   - Apple: https://developer.apple.com/documentation/devicemanagement/acmecertificate
-//   - Schema: third_party/device-management/mdm/profiles/com.apple.security.acme.yaml
+//   - Schema: third_party/apple-device-management/current/mdm/profiles/com.apple.security.acme.yaml
 //   - RFC 8555 (ACME): https://www.rfc-editor.org/rfc/rfc8555
 //   - draft-ietf-acme-device-attest: https://datatracker.ietf.org/doc/draft-acme-device-attest/
 //   - RFC 7515 (JWS), RFC 7638 (JWK thumbprint), RFC 4043 (permanent identifier)

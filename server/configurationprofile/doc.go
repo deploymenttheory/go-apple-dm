@@ -24,7 +24,7 @@
 //   - Threat model: https://github.com/deploymenttheory/go-apple-dm/blob/main/docs/security/threat-model.md
 //   - Operations: https://github.com/deploymenttheory/go-apple-dm/blob/main/docs/operations/blueprints.md
 //   - Apple: https://developer.apple.com/documentation/devicemanagement/legacyprofile
-//   - Schema: third_party/device-management/declarative/declarations/configurations/legacy.yaml
-//   - Schema: third_party/device-management/declarative/declarations/assets/data.yaml
-//   - Schema: third_party/device-management/mdm/profiles/TopLevel.yaml, CommonPayloadKeys.yaml
+//   - Schema: third_party/apple-device-management/current/declarative/declarations/configurations/legacy.yaml
+//   - Schema: third_party/apple-device-management/current/declarative/declarations/assets/data.yaml
+//   - Schema: third_party/apple-device-management/current/mdm/profiles/TopLevel.yaml, CommonPayloadKeys.yaml
 package configurationprofile

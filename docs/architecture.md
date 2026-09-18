@@ -38,9 +38,9 @@ route. Its reviewed OS 27 OpenAPI fixture is checked against the pinned Apple so
 
 ## Generated protocol types
 
-The pinned `third_party/device-management` submodule supplies Apple's current release YAML definitions.
-`third_party/device-management-history` retains the release source needed for older-device
-contracts; both inputs and their content hashes are recorded in generated provenance.
+The pinned `third_party/apple-device-management/current` submodule supplies Apple's current release YAML definitions.
+The versioned path selected by the `apple-device-management-compatibility` submodule retains the release source
+needed for older-device contracts; both inputs and their content hashes are recorded in generated provenance.
 `schemagen` generates request and response types, registries, validation, platform support metadata
 and conformance fixtures. `devicemanagement/schema/GENERATED_FROM.json` records source provenance;
 `devicemanagement/schema/EXPORTED_IDENTIFIERS.lock` guards exported names. `make verify` regenerates into a

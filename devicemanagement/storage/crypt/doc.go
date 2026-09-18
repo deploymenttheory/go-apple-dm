@@ -20,6 +20,6 @@
 //   - Threat model: https://github.com/deploymenttheory/go-apple-dm/blob/main/docs/security/threat-model.md (Storage disclosure and ciphertext row swap rows)
 //   - Apple: https://developer.apple.com/documentation/devicemanagement/check-in
 //   - Apple: https://developer.apple.com/documentation/devicemanagement/managing-certificates-for-device-management-services-and-devices
-//   - Schema: third_party/device-management/mdm/checkin/tokenupdate.yaml (UnlockToken)
-//   - Schema: third_party/device-management/mdm/checkin/setbootstraptoken.yaml (BootstrapToken)
+//   - Schema: third_party/apple-device-management/current/mdm/checkin/tokenupdate.yaml (UnlockToken)
+//   - Schema: third_party/apple-device-management/current/mdm/checkin/setbootstraptoken.yaml (BootstrapToken)
 package crypt

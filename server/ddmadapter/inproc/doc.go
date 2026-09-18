@@ -12,5 +12,5 @@
 //
 //   - Decision record 0023: https://github.com/deploymenttheory/go-apple-dm/blob/main/docs/research/decisions/0023-ddm-adapters-and-wire-contract.md
 //   - Apple: https://developer.apple.com/documentation/devicemanagement/declarativemanagementrequest
-//   - Schema: third_party/device-management/mdm/checkin/declarativemanagement.yaml
+//   - Schema: third_party/apple-device-management/current/mdm/checkin/declarativemanagement.yaml
 package inproc

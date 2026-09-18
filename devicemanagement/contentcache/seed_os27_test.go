@@ -14,7 +14,7 @@ func TestSeedOS27ContentCacheContract(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	candidate, err := os.ReadFile("../../third_party/device-management/openapi/content-cache/metrics_report.json")
+	candidate, err := os.ReadFile("../../third_party/apple-device-management/current/openapi/content-cache/metrics_report.json")
 	if err != nil {
 		t.Fatal(err)
 	}

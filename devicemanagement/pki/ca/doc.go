@@ -20,5 +20,5 @@
 //   - End-to-end scenarios: https://github.com/deploymenttheory/go-apple-dm/blob/main/docs/testing/e2e-scenarios.md (E2E-006)
 //   - Apple: https://developer.apple.com/documentation/devicemanagement/managing-certificates-for-device-management-services-and-devices
 //   - Apple: https://developer.apple.com/documentation/devicemanagement/scep
-//   - Schema: third_party/device-management/mdm/profiles/com.apple.security.scep.yaml
+//   - Schema: third_party/apple-device-management/current/mdm/profiles/com.apple.security.scep.yaml
 package ca

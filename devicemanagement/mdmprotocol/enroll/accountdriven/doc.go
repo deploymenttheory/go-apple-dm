@@ -25,6 +25,6 @@
 //   - Apple: https://developer.apple.com/documentation/devicemanagement/onboarding-users-with-account-driven-enrollment
 //   - Apple: https://developer.apple.com/documentation/devicemanagement/implementing-the-simple-authentication-account-driven-enrollment-flow
 //   - Apple: https://developer.apple.com/documentation/devicemanagement/implementing-the-oauth2-authentication-account-driven-enrollment-flow
-//   - Schema: third_party/device-management/mdm/profiles/com.apple.mdm.yaml (EnrollmentMode, AssignedManagedAppleID)
+//   - Schema: third_party/apple-device-management/current/mdm/profiles/com.apple.mdm.yaml (EnrollmentMode, AssignedManagedAppleID)
 //   - RFC 6749 (OAuth 2.0), RFC 6750 (bearer tokens): https://www.rfc-editor.org/rfc/rfc6749, https://www.rfc-editor.org/rfc/rfc6750
 package accountdriven

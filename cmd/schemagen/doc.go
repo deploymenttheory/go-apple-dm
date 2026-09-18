@@ -29,6 +29,6 @@
 //   - Decision record 0003: https://github.com/deploymenttheory/go-apple-dm/blob/main/docs/research/decisions/0003-schema-generator.md
 //   - Apple: https://github.com/apple/device-management/blob/release/docs/schema.md
 //   - Apple: https://github.com/apple/device-management
-//   - Schema: third_party/device-management/docs/schema.yaml (meta-schema)
+//   - Schema: third_party/apple-device-management/current/docs/schema.yaml (meta-schema)
 //   - GeneratedFrom: devicemanagement/schema/GENERATED_FROM.json, devicemanagement/schema/EXPORTED_IDENTIFIERS.lock, devicemanagement/schema/ALLOWED_REMOVALS.md
 package main

@@ -26,11 +26,33 @@ UPSTREAM = "https://github.com/apple/device-management.git"
 CANARY_MIRROR = "https://github.com/deploymenttheory/go-apple-dm.git"
 LIBRARY = "github.com/deploymenttheory/go-apple-dm"
 SCHEMA = "devicemanagement/schema"
-SUBMODULE = "third_party/device-management"
-HISTORY_SUBMODULE = "third_party/device-management-history"
+SUBMODULE = "third_party/apple-device-management/current"
+CURRENT_SUBMODULE = "apple-device-management-current"
+COMPATIBILITY_SUBMODULE = "apple-device-management-compatibility"
 STAGES = ("snapshot", "audit", "parse", "generate", "verify", "api", "build", "boundaries", "tests")
 SHA = re.compile(r"^[0-9a-f]{40}$")
 REF = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._/-]*$")
+
+
+def configured_submodule_path(repo, name):
+    """Resolve a semantic source role without coupling code to an OS version."""
+    path = run(["git", "config", "--file", ".gitmodules", "--get", "submodule." + name + ".path"], repo).strip()
+    if not path or path.startswith("/") or ".." in Path(path).parts:
+        raise ValueError("Configured " + name + " submodule path is unsafe or missing")
+    return path
+
+
+def candidate_submodule_path(branch):
+    """Give each retained seed its own reproducible workspace checkout."""
+    if branch["kind"] != "seed":
+        return SUBMODULE
+    version = branch.get("version", "")
+    ref = branch.get("ref", "")
+    commit = branch.get("commit", "")
+    if not re.fullmatch(r"[0-9]+(?:\.[0-9]+)*", version) or not REF.fullmatch(ref) or not SHA.fullmatch(commit):
+        raise ValueError("Seed source requires a discovered version, safe ref and full commit SHA")
+    label = re.sub(r"[^A-Za-z0-9._-]+", "-", ref).strip(".-")
+    return "third_party/apple-device-management/" + version + "-" + label + "-" + commit[:12]
 MARKER = re.compile(r"<!-- schema-monitor (\{.*?\}) -->")
 START, END = "<!-- schema-monitor:evidence:start -->", "<!-- schema-monitor:evidence:end -->"
 PRESENTATION_VERSION = 2
@@ -228,7 +250,8 @@ def discover(repo, output, upstream=UPSTREAM, canary_mirror=CANARY_MIRROR):
     try:
         manifest["projectCommit"] = run(["git", "rev-parse", "HEAD"], repo).strip()
         default, heads = parse_refs(run(["git", "ls-remote", "--symref", upstream, "HEAD", "refs/heads/*"]))
-        historical = run(["git", "rev-parse", "HEAD:" + HISTORY_SUBMODULE], repo).strip()
+        compatibility_submodule = configured_submodule_path(repo, COMPATIBILITY_SUBMODULE)
+        historical = run(["git", "rev-parse", "HEAD:" + compatibility_submodule], repo).strip()
         pinned = run(["git", "rev-parse", "HEAD:" + SUBMODULE], repo).strip()
         if not SHA.fullmatch(historical) or not SHA.fullmatch(pinned):
             raise ValueError("A project schema gitlink is not a full commit SHA")
@@ -354,13 +377,13 @@ def command_stage(result, stage, args, cwd, directory, env=None):
     return code == 0, text
 
 
-def assert_snapshot(root, expected, project):
-    actual = run(["git", "rev-parse", "HEAD"], root / SUBMODULE).strip()
+def assert_snapshot(root, candidate_submodule, expected, project):
+    actual = run(["git", "rev-parse", "HEAD"], root / candidate_submodule).strip()
     if actual != expected or run(["git", "rev-parse", "HEAD"], root).strip() != project:
         raise ValueError("Candidate or project SHA changed during assessment")
 
 
-def assessment_sources(root, branch):
+def assessment_sources(root, branch, compatibility_submodule):
     """Validate production provenance and select its compatibility history."""
     provenance = json.loads((root / SCHEMA / "GENERATED_FROM.json").read_text())
     pinned = run(["git", "rev-parse", "HEAD:" + SUBMODULE], root).strip()
@@ -368,11 +391,11 @@ def assessment_sources(root, branch):
         raise ValueError("Published provenance does not match the project gitlink")
     history = provenance.get("history", {}).get("commit")
     if history:
-        if run(["git", "rev-parse", "HEAD:" + HISTORY_SUBMODULE], root).strip() != history:
+        if run(["git", "rev-parse", "HEAD:" + compatibility_submodule], root).strip() != history:
             raise ValueError("Published historical provenance does not match its gitlink")
     if history and not SHA.fullmatch(history):
         raise ValueError("Historical schema requires a full commit SHA")
-    return {"historyCommit": history, "auditBaseline": branch["baseline"]}
+    return {"historyCommit": history, "historySubmodule": compatibility_submodule, "auditBaseline": branch["baseline"]}
 
 
 def api_findings(report):
@@ -405,7 +428,10 @@ def assess(repo, manifest, branch, directory):
             run(["git", "clone", "--quiet", "--shared", repo, root])
             run(["git", "checkout", "--quiet", "--detach", manifest["projectCommit"]], root)
             run(["git", "clone", "--quiet", "--no-checkout", manifest["upstream"], apple])
-            result.update(assessment_sources(root, branch))
+            compatibility_submodule = configured_submodule_path(root, COMPATIBILITY_SUBMODULE)
+            result.update(assessment_sources(root, branch, compatibility_submodule))
+            candidate_submodule = candidate_submodule_path(branch)
+            result["candidateSubmodule"] = candidate_submodule
             result["canaryMirror"] = manifest.get("canaryMirror", CANARY_MIRROR)
             baseline_source = apple
             if branch.get("baselineSnapshotRef"):
@@ -423,16 +449,16 @@ def assess(repo, manifest, branch, directory):
                     raise ValueError("Canary candidate has no retained snapshot ref")
                 snapshot = branch["snapshotRef"].removeprefix("refs/heads/")
                 run(["git", "clone", "--quiet", "--single-branch", "--branch", snapshot,
-                     candidate_source, root / SUBMODULE])
+                     candidate_source, root / candidate_submodule])
             else:
-                run(["git", "clone", "--quiet", "--shared", candidate_source, root / SUBMODULE])
-            run(["git", "checkout", "--quiet", "--detach", branch["commit"]], root / SUBMODULE)
+                run(["git", "clone", "--quiet", "--shared", candidate_source, root / candidate_submodule])
+            run(["git", "checkout", "--quiet", "--detach", branch["commit"]], root / candidate_submodule)
             if result["historyCommit"]:
-                run(["git", "clone", "--quiet", "--shared", apple, root / HISTORY_SUBMODULE])
-                run(["git", "checkout", "--quiet", "--detach", result["historyCommit"]], root / HISTORY_SUBMODULE)
-                for key, value in {"path": HISTORY_SUBMODULE, "url": UPSTREAM, "branch": manifest["stableRef"]}.items():
-                    run(["git", "config", "--file", ".gitmodules", "submodule." + HISTORY_SUBMODULE + "." + key, value], root)
-            assert_snapshot(root, branch["commit"], manifest["projectCommit"])
+                run(["git", "clone", "--quiet", "--shared", apple, root / compatibility_submodule])
+                run(["git", "checkout", "--quiet", "--detach", result["historyCommit"]], root / compatibility_submodule)
+                for key, value in {"path": compatibility_submodule, "url": UPSTREAM}.items():
+                    run(["git", "config", "--file", ".gitmodules", "submodule." + COMPATIBILITY_SUBMODULE + "." + key, value], root)
+            assert_snapshot(root, candidate_submodule, branch["commit"], manifest["projectCommit"])
             result["stages"]["snapshot"] = {"state": "passed"}
             result["projectContext"] = project_context(root)
             old_api = scratch / "published-api"
@@ -440,7 +466,7 @@ def assess(repo, manifest, branch, directory):
             tool = scratch / "schemagen"
             run(["go", "build", "-o", tool, "./cmd/schemagen"], root)
             result["apiBaseline"] = "published-project"
-            base_args = [tool, "-schema", root / SUBMODULE, "-ref", branch["ref"]]
+            base_args = [tool, "-schema", root / candidate_submodule, "-ref", branch["ref"]]
             ok, text = command_stage(result, "audit", base_args + ["-baseline", baseline, "-report", directory, "audit"], root, directory)
             if not ok:
                 raise ValueError("The schema audit did not produce a complete report")
@@ -452,8 +478,8 @@ def assess(repo, manifest, branch, directory):
             result["counts"] = {"baseline": audit["baselineCount"], "candidate": audit["candidateCount"]}
             result["stages"]["parse"] = {"state": "passed" if audit["parsePassed"] else "failed"}
             if audit["parsePassed"]:
-                assess_generated(result, base_args, baseline, old_api, tool, root, directory)
-            assert_snapshot(root, branch["commit"], manifest["projectCommit"])
+                assess_generated(result, base_args, baseline, old_api, tool, root, directory, compatibility_submodule, candidate_submodule)
+            assert_snapshot(root, candidate_submodule, branch["commit"], manifest["projectCommit"])
             result["complete"] = True
     except (subprocess.SubprocessError, OSError, ValueError, KeyError) as exc:
         result["findings"].append(finding("automation", "failure", "snapshot", "assessment",
@@ -466,23 +492,23 @@ def assess(repo, manifest, branch, directory):
     return result
 
 
-def assess_generated(result, base_args, baseline, old_api, tool, root, directory):
+def assess_generated(result, base_args, baseline, old_api, tool, root, directory, compatibility_submodule, candidate_submodule):
     ok, text = command_stage(result, "generate", base_args + ["-out", root / SCHEMA, "generate"], root, directory)
-    assert_snapshot(root, result["branch"]["commit"], result["projectCommit"])
+    assert_snapshot(root, candidate_submodule, result["branch"]["commit"], result["projectCommit"])
     if not ok:
         result["findings"].append(finding("schema-format", "failure", "generate", "generation",
             "schemagen cannot generate the Apple candidate", "Reproduce the generation failure and correct the generator in a separate PR.",
             [{"path": "generate.log", "detail": text[-5000:]}]))
         return
-    # Stable changes continue to use Apple's release checkout. Canary previews
-    # use the immutable project-owned snapshot that supplied their gitlink.
-    if result["branch"].get("source") == "canary-mirror":
+    # Only a release updates the production source. Seeds use their own
+    # immutable workspace path and never alter the current source declaration.
+    if result["branch"].get("publish", result["branch"]["kind"] == "stable") and result["branch"].get("source") == "canary-mirror":
         snapshot = result["branch"]["snapshotRef"].removeprefix("refs/heads/")
-        run(["git", "config", "--file", ".gitmodules", "submodule.third_party/device-management.url", result["canaryMirror"]], root)
-        run(["git", "config", "--file", ".gitmodules", "submodule.third_party/device-management.branch", snapshot], root)
-    else:
-        run(["git", "config", "--file", ".gitmodules", "submodule.third_party/device-management.url", UPSTREAM], root)
-        run(["git", "config", "--file", ".gitmodules", "submodule.third_party/device-management.branch", result["branch"]["ref"]], root)
+        run(["git", "config", "--file", ".gitmodules", "submodule." + CURRENT_SUBMODULE + ".url", result["canaryMirror"]], root)
+        run(["git", "config", "--file", ".gitmodules", "submodule." + CURRENT_SUBMODULE + ".branch", snapshot], root)
+    elif result["branch"].get("publish", result["branch"]["kind"] == "stable"):
+        run(["git", "config", "--file", ".gitmodules", "submodule." + CURRENT_SUBMODULE + ".url", UPSTREAM], root)
+        run(["git", "config", "--file", ".gitmodules", "submodule." + CURRENT_SUBMODULE + ".branch", result["branch"]["ref"]], root)
     command_stage(result, "verify", base_args + ["-out", root / SCHEMA, "verify"], root, directory)
     ok, text = command_stage(result, "api", [tool, "-ref", result["branch"]["ref"], "-baseline", old_api, "-schema", root / SCHEMA, "api-diff"], root, directory)
     if ok:
@@ -522,20 +548,20 @@ def assess_generated(result, base_args, baseline, old_api, tool, root, directory
             result["findings"].append(finding("runtime" if stage in ("build", "boundaries", "tests") else "public-api", "failure", stage, stage,
                 "Apple candidate fails " + stage + " checks", "Reproduce the failing check using the recorded source commits and log; repair or explicitly review the incompatibility.",
                 stage_evidence(stage, (directory / (stage + ".log")).read_text())))
-    assert_snapshot(root, result["branch"]["commit"], result["projectCommit"])
+    assert_snapshot(root, candidate_submodule, result["branch"]["commit"], result["projectCommit"])
     # A baseline proves that the starting release still compiles and tests. It
     # deliberately cannot create a generated patch, so no compatibility-only
     # generated path can turn its evidence into an automation failure.
-    if result["branch"]["kind"] == "baseline":
+    if not result["branch"].get("publish", result["branch"]["kind"] == "stable"):
         return
     paths = [".gitmodules", SUBMODULE, SCHEMA]
     if result.get("historyCommit"):
-        if run(["git", "rev-parse", "HEAD"], root / HISTORY_SUBMODULE).strip() != result["historyCommit"]:
+        if run(["git", "rev-parse", "HEAD"], root / compatibility_submodule).strip() != result["historyCommit"]:
             raise ValueError("Historical schema changed during assessment")
-        paths.append(HISTORY_SUBMODULE)
+        paths.append(compatibility_submodule)
     run(["git", "add", "--", *paths], root)
     names = run(["git", "diff", "--cached", "--name-only"], root).splitlines()
-    if any(not allowed_path(name) for name in names):
+    if any(not allowed_path(name, compatibility_submodule) for name in names):
         raise ValueError("Candidate patch contains unexpected paths")
     if names:
         patch = run(["git", "diff", "--cached", "--binary"], root)
@@ -559,8 +585,8 @@ def stage_evidence(stage, text):
     text = re.sub(r"/[^ \n]*/dm-schema-assessment-[^/ \n]+", "$ASSESSMENT", text)
     return [{"path": stage + ".log", "detail": text[-5000:]}]
 
-def allowed_path(name):
-    return name in (".gitmodules", SUBMODULE, HISTORY_SUBMODULE) or (name.startswith(SCHEMA + "/") and
+def allowed_path(name, compatibility_submodule=None):
+    return name in (".gitmodules", SUBMODULE, compatibility_submodule) or (name.startswith(SCHEMA + "/") and
         (name.endswith(".gen.go") or name.endswith("conformance_gen_test.go") or
          name.endswith("/doc.go") or
          name in (SCHEMA + "/GENERATED_FROM.json", SCHEMA + "/EXPORTED_IDENTIFIERS.lock")))
@@ -882,11 +908,12 @@ def publish_patch(repo, directory, result, github, token, run_url):
         run(["git", "checkout", "--quiet", "--detach", result["projectCommit"]], root)
         run(["git", "apply", "--index", directory / "candidate.patch"], root)
         names = run(["git", "diff", "--cached", "--name-only"], root).splitlines()
-        if any(not allowed_path(name) for name in names):
+        compatibility_submodule = result.get("historySubmodule")
+        if any(not allowed_path(name, compatibility_submodule) for name in names):
             raise ValueError("Publication rejected unexpected patch paths")
         if run(["git", "rev-parse", ":" + SUBMODULE], root).strip() != branch["commit"]:
             raise ValueError("Patch gitlink is not the assessed candidate")
-        if result.get("historyCommit") and run(["git", "rev-parse", ":" + HISTORY_SUBMODULE], root).strip() != result["historyCommit"]:
+        if result.get("historyCommit") and run(["git", "rev-parse", ":" + compatibility_submodule], root).strip() != result["historyCommit"]:
             raise ValueError("Patch history gitlink is not the assessed historical source")
         run(["git", "remote", "set-url", "origin", "https://github.com/" + github.repository + ".git"], root)
         env = os.environ.copy()

@@ -21,5 +21,5 @@
 //   - Threat model: https://github.com/deploymenttheory/go-apple-dm/blob/main/docs/security/threat-model.md (private DDM proxy)
 //   - E2E scenarios: https://github.com/deploymenttheory/go-apple-dm/blob/main/docs/testing/e2e-scenarios.md (E2E-010)
 //   - Apple: https://developer.apple.com/documentation/devicemanagement/declarativemanagementrequest
-//   - Schema: third_party/device-management/mdm/checkin/declarativemanagement.yaml
+//   - Schema: third_party/apple-device-management/current/mdm/checkin/declarativemanagement.yaml
 package proxyserver

@@ -19,5 +19,5 @@
 //   - Decision record 0004: https://github.com/deploymenttheory/go-apple-dm/blob/main/docs/research/decisions/0004-checkin-and-command-core.md (validated command payloads)
 //   - Decision record 0009: https://github.com/deploymenttheory/go-apple-dm/blob/main/docs/research/decisions/0009-enrollment-profiles.md (validated profiles)
 //   - Apple: https://github.com/apple/device-management/blob/release/docs/schema.md
-//   - Schema: third_party/device-management/docs/schema.yaml (meta-schema)
+//   - Schema: third_party/apple-device-management/current/docs/schema.yaml (meta-schema)
 package validation

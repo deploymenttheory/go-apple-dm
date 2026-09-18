@@ -24,6 +24,6 @@
 //   - Apple: https://developer.apple.com/documentation/devicemanagement/check-in
 //   - Apple: https://developer.apple.com/documentation/devicemanagement/commands-and-queries
 //   - Apple: https://developer.apple.com/documentation/devicemanagement/handling-notnow-status-responses
-//   - Schema: third_party/device-management/mdm/checkin/*.yaml
-//   - Schema: third_party/device-management/mdm/commands/*.yaml
+//   - Schema: third_party/apple-device-management/current/mdm/checkin/*.yaml
+//   - Schema: third_party/apple-device-management/current/mdm/commands/*.yaml
 package mdm

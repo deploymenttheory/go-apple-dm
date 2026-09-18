@@ -15,6 +15,6 @@
 //   - End-to-end scenarios: https://github.com/deploymenttheory/go-apple-dm/blob/main/docs/testing/e2e-scenarios.md (E2E-011, E2E-018)
 //   - Apple: https://developer.apple.com/documentation/devicemanagement/machineinfo
 //   - Apple: https://developer.apple.com/documentation/devicemanagement/authenticating-through-web-views
-//   - Schema: third_party/device-management/other/machineinfo.yaml
+//   - Schema: third_party/apple-device-management/current/other/machineinfo.yaml
 //   - RFC 5652 (Cryptographic Message Syntax): https://www.rfc-editor.org/rfc/rfc5652
 package adetest

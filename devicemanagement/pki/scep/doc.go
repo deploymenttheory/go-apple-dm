@@ -36,6 +36,6 @@
 //   - End-to-end scenarios: https://github.com/deploymenttheory/go-apple-dm/blob/main/docs/testing/e2e-scenarios.md (E2E-006, E2E-016)
 //   - Apple: https://developer.apple.com/documentation/devicemanagement/scep
 //   - Apple: https://developer.apple.com/documentation/devicemanagement/managing-certificates-for-device-management-services-and-devices
-//   - Schema: third_party/device-management/mdm/profiles/com.apple.security.scep.yaml
+//   - Schema: third_party/apple-device-management/current/mdm/profiles/com.apple.security.scep.yaml
 //   - RFC 8894 (Simple Certificate Enrolment Protocol): https://www.rfc-editor.org/rfc/rfc8894
 package scep

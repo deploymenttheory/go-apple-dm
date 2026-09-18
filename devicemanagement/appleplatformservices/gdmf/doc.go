@@ -19,5 +19,5 @@
 //   - Apple: https://developer.apple.com/documentation/devicemanagement/machineinfo (SOFTWARE_UPDATE_DEVICE_ID)
 //   - Apple: https://developer.apple.com/documentation/devicemanagement/errorcodesoftwareupdaterequired
 //   - Apple: https://developer.apple.com/documentation/devicemanagement/deploying-software-updates-using-declarative-management
-//   - Schema: third_party/device-management/mdm/errors/softwareupdate.required.yaml
+//   - Schema: third_party/apple-device-management/current/mdm/errors/softwareupdate.required.yaml
 package gdmf

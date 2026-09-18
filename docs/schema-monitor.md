@@ -35,16 +35,19 @@ investigation.
    the race detector. Changed support cases include stable and candidate OS
    boundaries and device/user, supervision, ADE, user approval, shared iPad and
    user enrollment contexts.
-7. Reconcile engineering issues and publish generated changes. Stable uses one
-   normal PR on `schema/update-stable`; each seed uses one draft on
-   `schema/preview/<Apple branch>`. A parsing/generation failure creates issues
-   without an empty or partially generated PR. Existing previews explain when
-   their content represents an older candidate.
+7. Reconcile engineering issues and publish generated changes. The final release
+   can create one normal PR on `schema/update-stable`. Seeds retain evidence and
+   raise engineering issues without creating adoption PRs. A parsing/generation
+   failure never creates an empty or partially generated PR.
 
-Production is always generated from Apple's `release` source. Assessment executes
-every journey input from its repository-owned snapshot, while the final release
-patch continues to configure the production submodule for Apple's `release` branch.
-The historical gitlink remains pinned for mixed-fleet contracts in both paths.
+Production is always generated from Apple's `release` source at
+`third_party/apple-device-management/current`. The
+`apple-device-management-compatibility` entry selects a versioned `n-1` source
+for mixed-fleet contracts. Assessment materializes every seed beneath
+`third_party/apple-device-management/<version>-<seed>-<commit>` in its isolated
+workspace from a repository-owned immutable snapshot. Those seed directories are
+never committed or initialized by ordinary CI; only a final release changes
+`current`.
 
 For example, the retained evidence currently proves the chain release 26.4 → Seed1
 → Seed2 → Seed5 → Seed6 → Seed8 → release 27.0. When Apple publishes a macOS 28
@@ -152,12 +155,11 @@ Report-only publication also retains one Markdown preview per proposed issue in
 the `schema-monitor-summary` artifact, alongside `proposed-issues.json`.
 
 The runner checks candidate and project SHAs before and after generation/tests.
-It invokes `schemagen` directly. `make generate` and `make verify` initialize the
-committed submodule pin and would reset a manually selected candidate checkout.
-Preview patches update `.gitmodules` so subsequent local generation records the
-correct Apple ref and initializes the pinned historical input. The history
-gitlink is checked before assessment completes and again before publication.
-They never update `ALLOWED_REMOVALS.md`, handwritten Go files,
+It invokes `schemagen` directly. `make generate` and `make verify` initialize
+only `current` and the configured compatibility source. Release patches update
+`current`; seed assessments retain their dynamically named workspace only as
+run evidence. The compatibility gitlink is checked before assessment completes
+and again before publication. The monitor never updates `ALLOWED_REMOVALS.md`, handwritten Go files,
 server dependency requirements or release metadata.
 
 For a raw source comparison without running candidate code:

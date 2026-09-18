@@ -23,6 +23,6 @@
 //   - End-to-end scenarios: https://github.com/deploymenttheory/go-apple-dm/blob/main/docs/testing/e2e-scenarios.md (E2E-001 to E2E-005)
 //   - Apple: https://developer.apple.com/documentation/devicemanagement/check-in
 //   - Apple: https://developer.apple.com/documentation/devicemanagement/managing-connections
-//   - Schema: third_party/device-management/mdm/checkin/*.yaml
-//   - Schema: third_party/device-management/mdm/errors/*.yaml
+//   - Schema: third_party/apple-device-management/current/mdm/checkin/*.yaml
+//   - Schema: third_party/apple-device-management/current/mdm/errors/*.yaml
 package httpapi

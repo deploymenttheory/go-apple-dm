@@ -21,5 +21,5 @@
 //   - Apple: https://developer.apple.com/documentation/devicemanagement/check-in
 //   - Apple: https://developer.apple.com/documentation/devicemanagement/commands-and-queries
 //   - Apple: https://developer.apple.com/documentation/devicemanagement/integrating-declarative-management
-//   - Schema: third_party/device-management/declarative/protocol/*.yaml, declarative/status/**
+//   - Schema: third_party/apple-device-management/current/declarative/protocol/*.yaml, declarative/status/**
 package simulator

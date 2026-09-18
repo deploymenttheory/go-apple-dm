@@ -117,7 +117,7 @@ an application. Signed profile delivery, native asset-reference delivery on macO
 27, split server topology and other SQL backends require separate evidence.
 
 Apple's field names and availability are defined in the pinned
-[`LegacyProfile` schema](../../third_party/device-management/declarative/declarations/configurations/legacy.yaml)
-and [`ProfileList` schema](../../third_party/device-management/mdm/commands/profile.list.yaml).
+[`LegacyProfile` schema](../../third_party/apple-device-management/current/declarative/declarations/configurations/legacy.yaml)
+and [`ProfileList` schema](../../third_party/apple-device-management/current/mdm/commands/profile.list.yaml).
 Positive acceptance for `ProfileAssetReference` requires macOS 27; its exclusion on
 macOS 26 is a compatibility assertion.

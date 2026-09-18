@@ -24,9 +24,9 @@
 //   - Apple: https://developer.apple.com/documentation/devicemanagement/deviceinformationresponse
 //   - Apple: https://support.apple.com/guide/deployment/managed-device-attestation-dep28afbde6a/web
 //   - Apple certificate authority: https://www.apple.com/certificateauthority/private/
-//   - Schema: third_party/device-management/mdm/profiles/com.apple.security.acme.yaml
-//   - Schema: third_party/device-management/mdm/commands/information.device.yaml
-//   - Schema: third_party/device-management/declarative/declarations/assets/credentials/acme.yaml
+//   - Schema: third_party/apple-device-management/current/mdm/profiles/com.apple.security.acme.yaml
+//   - Schema: third_party/apple-device-management/current/mdm/commands/information.device.yaml
+//   - Schema: third_party/apple-device-management/current/declarative/declarations/assets/credentials/acme.yaml
 //   - RFC 8555 (ACME): https://www.rfc-editor.org/rfc/rfc8555
 //   - draft-ietf-acme-device-attest: https://datatracker.ietf.org/doc/draft-acme-device-attest/
 package attest

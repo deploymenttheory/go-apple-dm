@@ -237,7 +237,7 @@ func TestNoDescriptionsAreInvented(t *testing.T) {
 		t.Fatal(err)
 	}
 	out := render(t, m[0], support.Target{})
-	if !strings.Contains(out, "third_party/device-management/") {
+	if !strings.Contains(out, "third_party/apple-device-management/current/") {
 		t.Fatalf("the schema path is not cited:\n%s", out)
 	}
 	entry := commands.Registry["DeviceLock"]

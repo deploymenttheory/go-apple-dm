@@ -7,7 +7,7 @@ They do not prove that the OS applied a setting. See the
 [reboot handoff](../../docs/testing/macos27-handoff.md).
 
 Some payloads are adapted from Apple's examples at the pinned
-`third_party/device-management/examples` revision. See [APPLE-LICENSE.txt](APPLE-LICENSE.txt).
+`third_party/apple-device-management/current/examples` revision. See [APPLE-LICENSE.txt](APPLE-LICENSE.txt).
 The manifest retains source links, explicit target expectations and pending live
 status. Example URLs, identifiers, credentials, hashes and dates must be replaced
 in a private copy. Do not assign the whole directory to a real device.

@@ -22,7 +22,7 @@ E2E_PKGS += ./acceptance/...
 endif
 FUZZ_SMOKE_TIME ?= 20s
 FUZZ_TIME ?= 10m
-SCHEMA_DIR := third_party/device-management
+SCHEMA_DIR := third_party/apple-device-management/current
 
 ## help: list targets
 help:
@@ -36,7 +36,7 @@ tools:
 	GOTOOLCHAIN=go$(GO_VERSION) $(GO) install golang.org/x/vuln/cmd/govulncheck@latest
 	GOTOOLCHAIN=go$(GO_VERSION) $(GO) install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@$(GOLANGCI_LINT_VERSION)
 
-## submodule: initialise the pinned Apple schema submodule
+## submodule: initialise the pinned Apple schema sources
 submodule:
 	git submodule update --init --recursive
 

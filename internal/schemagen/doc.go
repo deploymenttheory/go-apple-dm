@@ -25,7 +25,7 @@
 //   - Decision record 0018: https://github.com/deploymenttheory/go-apple-dm/blob/main/docs/research/decisions/0018-go-1.27-baseline.md (JSON policy for generated marshal methods)
 //   - Apple: https://github.com/apple/device-management/blob/release/docs/schema.md
 //   - Apple: https://github.com/apple/device-management
-//   - Schema: third_party/device-management/docs/schema.yaml (meta-schema)
-//   - Schema: third_party/device-management/mdm/**, declarative/**, other/**
+//   - Schema: third_party/apple-device-management/current/docs/schema.yaml (meta-schema)
+//   - Schema: third_party/apple-device-management/current/mdm/**, declarative/**, other/**
 //   - GeneratedFrom: devicemanagement/schema/GENERATED_FROM.json, devicemanagement/schema/EXPORTED_IDENTIFIERS.lock, devicemanagement/schema/ALLOWED_REMOVALS.md
 package schemagen

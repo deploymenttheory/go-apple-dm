@@ -31,7 +31,7 @@
 //   - Apple: https://developer.apple.com/documentation/devicemanagement/errorcodesoftwareupdaterequired
 //   - Apple: https://developer.apple.com/documentation/devicemanagement/profile
 //   - Apple: https://developer.apple.com/library/archive/documentation/NetworkingInternet/Conceptual/iPhoneOTAConfiguration/Introduction/Introduction.html (the Apple iPhone Device CA)
-//   - Schema: third_party/device-management/other/machineinfo.yaml
-//   - Schema: third_party/device-management/mdm/errors/softwareupdate.required.yaml, psso.required.yaml, unrecognized.device.yaml
+//   - Schema: third_party/apple-device-management/current/other/machineinfo.yaml
+//   - Schema: third_party/apple-device-management/current/mdm/errors/softwareupdate.required.yaml, psso.required.yaml, unrecognized.device.yaml
 //   - RFC 5652 (Cryptographic Message Syntax): https://www.rfc-editor.org/rfc/rfc5652
 package ade

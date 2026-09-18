@@ -25,6 +25,6 @@
 //   - Threat model: https://github.com/deploymenttheory/go-apple-dm/blob/main/docs/security/threat-model.md (/checkin and /connect rows)
 //   - Apple: https://developer.apple.com/documentation/devicemanagement/check-in
 //   - Apple: https://developer.apple.com/documentation/devicemanagement/managing-certificates-for-device-management-services-and-devices
-//   - Schema: third_party/device-management/mdm/profiles/com.apple.mdm.yaml (SignMessage)
+//   - Schema: third_party/apple-device-management/current/mdm/profiles/com.apple.mdm.yaml (SignMessage)
 //   - RFC 5652 (Cryptographic Message Syntax): https://www.rfc-editor.org/rfc/rfc5652
 package cms

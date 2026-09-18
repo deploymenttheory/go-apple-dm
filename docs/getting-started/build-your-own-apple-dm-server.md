@@ -115,7 +115,7 @@ Captured CLI output (trailing spaces removed):
 ```text
 DeviceInformation.Queries  (commands)
 Title:                     Device Information Command
-Schema:                    third_party/device-management/mdm/commands/information.device.yaml
+Schema:                    third_party/apple-device-management/current/mdm/commands/information.device.yaml
 
 Target  macOS 26.0
 

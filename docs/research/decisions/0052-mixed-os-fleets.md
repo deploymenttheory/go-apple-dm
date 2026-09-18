@@ -21,10 +21,11 @@ boundaries. Current definitions supply new fields and updated availability.
 Ambiguous moves, incompatible wire types, and unreviewed required-to-optional
 changes remain subject to the existing generation/API guards.
 
-The normal library and seed previews carry the historical checkout as
-`third_party/device-management-history`; `GENERATED_FROM.json` records both
-commits and content hashes. Normal generation and verification discover that
-history input from `.gitmodules`. The library ships Apple release commit
+The normal library carries the historical checkout at the versioned path selected by
+the `apple-device-management-compatibility` `.gitmodules` entry; seed assessments use
+their own immutable version-and-commit workspace. `GENERATED_FROM.json` records both
+commits and content hashes. Normal generation and verification discover that history
+input from `.gitmodules`. The library ships Apple release commit
 `09f249a06e7e3289930bf6d05f38fb562f748ebf` with historical release commit
 `67045e2fa06f528b196c01edee6a8bf88b844beb`. The original OS 27 seed is retained
 as an immutable canary snapshot. The twelve OS 27 contracts run in ordinary
