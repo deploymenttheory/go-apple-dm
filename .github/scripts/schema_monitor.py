@@ -257,16 +257,16 @@ def discover(repo, output, upstream=UPSTREAM, canary_mirror=CANARY_MIRROR):
                 entries.append(sequence_entry("baseline", "release_" + baseline_version.replace(".", "_"), baseline,
                                               baseline, ordinal, baseline_version, baseline_version, capture_source=baseline_source))
                 ordinal += 1
-                previous = baseline
+                previous, previous_version = baseline, baseline_version
                 for commit, (ref, subject, source, version, contracts) in seeds.items():
                     if version != target:
                         continue
-                    entries.append(sequence_entry("seed", ref, commit, previous, ordinal, version, baseline_version,
+                    entries.append(sequence_entry("seed", ref, commit, previous, ordinal, version, previous_version,
                                                   subject, source, contracts))
-                    ordinal, previous = ordinal + 1, commit
+                    ordinal, previous, previous_version = ordinal + 1, commit, version
                 if releases[heads[default]][0] == target:
                     entries.append(sequence_entry("release", default, heads[default], previous, ordinal, target,
-                                                  baseline_version, "Apple release", upstream, source_contracts(apple, heads[default])))
+                                                  previous_version, "Apple release", upstream, source_contracts(apple, heads[default])))
                     ordinal += 1
             if not entries:
                 baseline_version, _ = releases[pinned]
