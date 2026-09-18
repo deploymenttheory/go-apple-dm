@@ -7,7 +7,7 @@ packaged executable are different inputs.
 | Workflow or job | Trigger and input | Contract checked |
 |---|---|---|
 | Go Test: unit | Application PRs and main pushes; Linux, macOS, Windows | Both modules, races, generated conformance and published OS 27 contract evidence. Linux contributes unit coverage. |
-| Go Test: candidate module installation | Same application changes; Linux and Windows | A temporary module proxy serves candidate server sources; `GOWORK=off` resolves declared dependencies, builds packages and installs commands without repairing requirements. |
+| Go Test: candidate module installation | Same application changes; Linux and Windows | A temporary module proxy serves candidate server sources; `GOWORK=off` resolves declared dependencies, builds and installs commands without repairing requirements. Binary metadata verifies the library version; installed commands run simulated process acceptance, including binary-policy validation and restart. |
 | Go Test: generate check | Same application changes | `make verify` checks workflow/script contracts and regenerated output, including changed, missing and stale generated files and removed locked exported names. Verification does not rewrite generated output. |
 | Go Test: storage integration | Same application changes; SQL services | Shared storage contracts on SQLite, PostgreSQL and MySQL; PostgreSQL timing is reported with its shared-runner threshold disabled. |
 | Go Test: E2E | Same application changes; SQLite and PostgreSQL | Backend-specific server/device exchanges and split DDM transport. The SQLite-only embedded acceptance catalogue runs once, in the SQLite job. |
@@ -19,7 +19,7 @@ packaged executable are different inputs.
 | Security | Application PR/main changes and weekly schedule | Both modules' vulnerability checks and gosec SARIF, plus the Docker build-context exclusion check. |
 | Dependency Review | PRs other than docs/metadata/workflow-only changes | Dependency diff against the base revision. |
 | Check server release assets | Server implementation/dependencies, packaging/workflow inputs, LICENSE or release operations guide | Build all six archives, check hashes and Linux versions; execute the packaged Windows binaries and native workspace-lock test. Does not publish. |
-| Published server module installation | `server/v*` tag push or explicit version dispatch | Retrieve the actual published module and verify requirements, builds and command installation with `GOWORK=off`. This reports after publication; it cannot prevent tag creation. |
+| Published server module installation | `server/v*` tag push or explicit version dispatch | Retrieve the actual published module and verify requirements, builds, installation and process acceptance with `GOWORK=off`. This reports after publication; it cannot prevent tag creation. |
 | Release server | Release Please server output or tag-specific dispatch | Build the tagged sources, check hashes and Linux executable versions, sign checksums and upload assets to the existing release. |
 | Apple Schema Compatibility Monitor | Daily schedule or manual dispatch | Discover immutable upstream revisions, assess changes and retain evidence; report-only dispatch avoids publishing. Distinct from checking generated files at the current pin. |
 | PR title / Release Please | Ordinary PR title changes / main pushes | Conventional Commit titles / managed release metadata and tags. |
@@ -55,7 +55,10 @@ The linter version is pinned in `.golangci-version` and shared by local installa
 and CI. `scripts/lint.py` selects this checkout's workspace explicitly; server
 tests can therefore exercise library APIs introduced in the same change. The
 independent candidate/published installation checks retain `GOWORK=off` and the
-server's declared library dependency. Lint cannot replace those consumer checks.
+server's declared library dependency. Their acceptance driver runs the installed
+executables in disposable SQLite/TLS workspaces, including separate server roles
+and CLI lifecycle. It does not contact Apple or enroll a physical device. Lint
+cannot replace those consumer checks.
 A compilation error stops analysis even if a tool prints "0 issues". Investigate
 the selected module version and build tags before changing exclusions.
 

@@ -44,7 +44,7 @@ jobs:
         with:
           go-version-file: go.mod
           cache-dependency-path: server/go.sum
-      - name: Verify candidate server dependencies, package builds and command installation
+      - name: Verify candidate dependencies, installation and standalone runtime
         run: python scripts/verify-server-module-installation.py
 
   unit:

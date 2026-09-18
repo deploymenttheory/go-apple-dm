@@ -15,7 +15,7 @@ permissions:
 
 jobs:
   server-module-installation:
-    name: Published server dependencies, builds and command installation
+    name: Published server dependencies, installation and runtime
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -28,7 +28,7 @@ jobs:
         with:
           go-version-file: go.mod
           cache-dependency-path: server/go.sum
-      - name: Verify published server dependencies, package builds and command installation
+      - name: Verify published server dependencies, installation and runtime
         env:
           VERSION: ${{ inputs.version }}
           REF_NAME: ${{ github.ref_name }}

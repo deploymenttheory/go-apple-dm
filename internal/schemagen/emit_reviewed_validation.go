@@ -44,14 +44,17 @@ func (e *emitter) reviewedValidation(b *bytes.Buffer, td *TypeDef) {
 	c.Require(p, identifiers == 1, "exactly one app identifier or manifest is required")
 `)
 	case "AppSettingsAllowedAllowedBinaries":
+		// app.settings.yaml: qualifiers cannot identify an allowed binary alone.
 		b.WriteString(`
-	c.Require(p, x.CDHash != nil || x.SigningID != nil || x.TeamID != nil || x.PathPrefix != nil || x.SigningState != nil,
-		"a binary identifier is required")
+	c.Require(p, (x.CDHash != nil && *x.CDHash != "") || (x.TeamID != nil && *x.TeamID != ""),
+		"a code directory hash or team identifier is required")
 `)
 	case "AppSettingsAllowedDeniedBinaries":
+		// Deny rules may also use a signing identifier without a hash or team.
 		b.WriteString(`
-	c.Require(p, x.CDHash != nil || x.SigningID != nil || x.TeamID != nil || x.PathPrefix != nil,
-		"a binary identifier is required")
+	c.Require(p, (x.CDHash != nil && *x.CDHash != "") || (x.TeamID != nil && *x.TeamID != "") ||
+		(x.SigningID != nil && *x.SigningID != ""),
+		"a code directory hash, team identifier or signing identifier is required")
 `)
 	}
 }

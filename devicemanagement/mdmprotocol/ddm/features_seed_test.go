@@ -3,7 +3,9 @@
 package ddm_test
 
 import (
+	"bytes"
 	"context"
+	"encoding/json/jsontext"
 	json "encoding/json/v2"
 	"errors"
 	"os"
@@ -167,6 +169,13 @@ func TestSeedOS27FeatureDelivery(t *testing.T) {
 						t.Errorf("%s: compatible declaration withheld: %v", f.ID, err)
 						continue
 					}
+					// Compare against the authored fixture, not the stored canonical
+					// declaration: otherwise an upload-time loss would go unnoticed.
+					authored, err := root.ReadFile(f.File)
+					if err != nil {
+						t.Fatal(err)
+					}
+					checkFixturePayload(t, f.ID, authored, body)
 					var served struct{ ServerToken string }
 					if err := json.Unmarshal(body, &served); err != nil {
 						t.Fatal(err)
@@ -186,6 +195,32 @@ func TestSeedOS27FeatureDelivery(t *testing.T) {
 				}
 			})
 		}
+	}
+}
+
+func checkFixturePayload(t *testing.T, id string, authored, served []byte) {
+	t.Helper()
+	var wire map[string]jsontext.Value
+	if err := json.Unmarshal(served, &wire); err != nil {
+		t.Fatal(err)
+	}
+	// The fixture harness has no dynamic expansion. ServerToken is the only
+	// server-authored member; identifiers, types and every payload value survive.
+	delete(wire, "ServerToken")
+	got, err := json.Marshal(wire)
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := jsontext.Value(bytes.Clone(authored))
+	actual := jsontext.Value(got)
+	if err := want.Canonicalize(); err != nil {
+		t.Fatal(err)
+	}
+	if err := actual.Canonicalize(); err != nil {
+		t.Fatal(err)
+	}
+	if !bytes.Equal(want, actual) {
+		t.Errorf("%s: delivered declaration changed fixture payload\nwant: %s\n got: %s", id, want, actual)
 	}
 }
 
