@@ -194,13 +194,14 @@ def source_contracts(repo, commit):
 
 
 def sequence_entry(kind, ref, commit, baseline, ordinal, version, baseline_version,
-                   subject="", capture_source=UPSTREAM, contracts=None):
+                   subject="", capture_source=UPSTREAM, contracts=None, baseline_snapshot_ref=None):
     """Describe one adjacent, version-discovered source transition."""
     return {
         "key": digest(kind + "\0" + ref + "\0" + commit)[:16],
         "kind": kind, "ref": ref, "commit": commit, "baseline": baseline,
         "baselineRef": "previous-journey-step", "source": "canary-mirror",
         "snapshotRef": snapshot_ref(ref, commit), "captureSource": capture_source,
+        "baselineSnapshotRef": baseline_snapshot_ref,
         "version": version, "baselineVersion": baseline_version,
         "sequence": ordinal, "subject": subject, "contracts": contracts or {},
         # Only the final release can create a normal generated-update PR. Every
@@ -258,15 +259,17 @@ def discover(repo, output, upstream=UPSTREAM, canary_mirror=CANARY_MIRROR):
                                               baseline, ordinal, baseline_version, baseline_version, capture_source=baseline_source))
                 ordinal += 1
                 previous, previous_version = baseline, baseline_version
+                previous_snapshot = entries[-1]["snapshotRef"]
                 for commit, (ref, subject, source, version, contracts) in seeds.items():
                     if version != target:
                         continue
                     entries.append(sequence_entry("seed", ref, commit, previous, ordinal, version, previous_version,
-                                                  subject, source, contracts))
+                                                  subject, source, contracts, previous_snapshot))
                     ordinal, previous, previous_version = ordinal + 1, commit, version
+                    previous_snapshot = entries[-1]["snapshotRef"]
                 if releases[heads[default]][0] == target:
                     entries.append(sequence_entry("release", default, heads[default], previous, ordinal, target,
-                                                  previous_version, "Apple release", upstream, source_contracts(apple, heads[default])))
+                                                  previous_version, "Apple release", upstream, source_contracts(apple, heads[default]), previous_snapshot))
                     ordinal += 1
             if not entries:
                 baseline_version, _ = releases[pinned]
@@ -404,7 +407,14 @@ def assess(repo, manifest, branch, directory):
             run(["git", "clone", "--quiet", "--no-checkout", manifest["upstream"], apple])
             result.update(assessment_sources(root, branch))
             result["canaryMirror"] = manifest.get("canaryMirror", CANARY_MIRROR)
-            run(["git", "clone", "--quiet", "--shared", apple, baseline])
+            baseline_source = apple
+            if branch.get("baselineSnapshotRef"):
+                baseline_snapshot = branch["baselineSnapshotRef"].removeprefix("refs/heads/")
+                baseline_source = manifest.get("canaryMirror", CANARY_MIRROR)
+                run(["git", "clone", "--quiet", "--single-branch", "--branch", baseline_snapshot,
+                     baseline_source, baseline])
+            else:
+                run(["git", "clone", "--quiet", "--shared", baseline_source, baseline])
             run(["git", "checkout", "--quiet", "--detach", result["auditBaseline"]], baseline)
             candidate_source = apple
             if branch.get("source") == "canary-mirror":
@@ -513,6 +523,11 @@ def assess_generated(result, base_args, baseline, old_api, tool, root, directory
                 "Apple candidate fails " + stage + " checks", "Reproduce the failing check using the recorded source commits and log; repair or explicitly review the incompatibility.",
                 stage_evidence(stage, (directory / (stage + ".log")).read_text())))
     assert_snapshot(root, result["branch"]["commit"], result["projectCommit"])
+    # A baseline proves that the starting release still compiles and tests. It
+    # deliberately cannot create a generated patch, so no compatibility-only
+    # generated path can turn its evidence into an automation failure.
+    if result["branch"]["kind"] == "baseline":
+        return
     paths = [".gitmodules", SUBMODULE, SCHEMA]
     if result.get("historyCommit"):
         if run(["git", "rev-parse", "HEAD"], root / HISTORY_SUBMODULE).strip() != result["historyCommit"]:
