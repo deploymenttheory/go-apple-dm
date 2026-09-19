@@ -1,0 +1,13 @@
+{
+  "Type": "com.apple.configuration.app.settings",
+  "Identifier": "com.example.binary-isolation.settings",
+  "Payload": {
+    "Allowed": {
+      "DeniedBinaries": [
+        {
+          "SigningID": "com.mothersruin.SuspiciousPackageApp"
+        }
+      ]
+    }
+  }
+}
