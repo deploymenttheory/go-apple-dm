@@ -24,6 +24,17 @@ as unvalidated and checks signature integrity separately from certificate trust.
 Lint exit 3 means incomplete validation; lint does not establish installation.
 See the [inspection guide](../../operations/status-and-profile-inspection.md).
 
+`dmctl utility` consumes the library's public App Store identity, native app
+identity and App Settings packages without initializing an admin client. Discovery
+supports human, JSON, NDJSON and CSV output; payload constructors write validated
+Apple JSON. Callers choose match modes and versioned targets explicitly. Privacy
+inputs use generated permission records. The [utility guide](../../operations/app-identity-and-settings.md)
+documents input formats and platform requirements.
+
+The library owns discovery, identity observations and pure payload construction.
+The CLI owns flags, file/stdin handling, tables, CSV and exit codes. A published
+root-library version containing the utility APIs is required by the server module.
+
 ## Rationale
 
 Separate logic permits direct testing and keeps stdout usable by scripts. Credential references avoid duplicating secrets in ordinary configuration. Local validation gives feedback before a request reaches the server.

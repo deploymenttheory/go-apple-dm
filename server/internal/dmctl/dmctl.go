@@ -185,6 +185,7 @@ func Verbs() []string {
 // function.
 func commands() map[string]command {
 	cmds := []command{
+		{"utility", "discover app identities and build validated App Settings payloads", runUtility},
 		{"recovery", "pause, back up, verify and restore a persistent server", runRecovery},
 		{"setup", "manage certificate setup and renewal with persistent state", runSetup},
 		{"bench", "prepare and run maintained reference-server scenarios", runBench},
@@ -261,8 +262,8 @@ func (o *options) bind(fs *flag.FlagSet, def options) {
 		"context from the config file ("+EnvContext+")",
 	)
 	fs.StringVar(&o.config, "config", def.config, "config file path ("+EnvConfig+")")
-	fs.StringVar(&o.output, "output", def.output, "output: human, json, or ndjson")
-	fs.IntVar(&o.limit, "limit", def.limit, "page size (0 uses the server default)")
+	fs.StringVar(&o.output, "output", def.output, "output: human, json, or ndjson (utility discovery also supports csv)")
+	fs.IntVar(&o.limit, "limit", def.limit, "page/result size (0 uses the command default)")
 	fs.BoolVar(&o.all, "all", def.all, "follow cursors to the end of a listing")
 	fs.DurationVar(&o.timeout, "timeout", def.timeout, "per-request timeout")
 	fs.BoolVar(
@@ -365,7 +366,7 @@ func usage(w io.Writer, fs *flag.FlagSet) {
 	fs.PrintDefaults()
 	_, _ = fmt.Fprintln(
 		w,
-		"\nexplain and certificate preparation work offline. bench manages its own workspace; administration reads -server and -token.",
+		"\nexplain, certificate preparation, and utility commands need no management server. Public App Store Identity queries Apple; native inspection requires macOS. bench manages its own workspace; administration reads -server and -token.",
 	)
 }
 

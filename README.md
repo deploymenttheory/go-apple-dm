@@ -222,6 +222,8 @@ component relationships, protocol exchanges and lifecycle transitions.
   FileVault encryption certificates are generated automatically in Go and stored encrypted.
 - [Offline profile lint and paginated DDM inspection](docs/operations/status-and-profile-inspection.md)
   through `dmctl`, using generated schema metadata and existing status storage.
+- [App identity and App Settings utilities](docs/operations/app-identity-and-settings.md)
+  for Public App Store Identity lookup, native signing inspection, and validated payload construction.
 - In-memory, SQLite, PostgreSQL and MySQL persistence; column sealing and key rotation for
   selected secrets; optional shared security state and inbound rate limits.
 - A device simulator, an admin API with scoped credentials and Cedar policies, and projected
