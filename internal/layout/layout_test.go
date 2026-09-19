@@ -39,6 +39,7 @@ const (
 	tierServices          // appleplatformservices: outbound clients to Apple
 	tierStorage           // storage: contracts and the in-memory backend, no drivers
 	tierClient            // simulator: a device, in software
+	tierUtility           // configuration authoring: application identity discovery
 	tierServer            // server: persistence, service layer, transport
 	tierApp               // composition: cmd, internal/app, e2e
 )
@@ -46,7 +47,7 @@ const (
 var tierNames = map[int]string{
 	tierFoundation: "foundation", tierSchema: "schema", tierProtocol: "mdmprotocol",
 	tierPKI: "pki", tierServices: "appleplatformservices", tierStorage: "storage",
-	tierClient: "simulator", tierServer: "server", tierApp: "app",
+	tierClient: "simulator", tierUtility: "utility", tierServer: "server", tierApp: "app",
 }
 
 // tierOf maps a package to its tier by path, which is the point of the
@@ -61,6 +62,8 @@ func tierOf(pkg string) int {
 		return tierApp
 	case strings.HasPrefix(pkg, "server/"):
 		return tierServer
+	case strings.HasPrefix(pkg, "utility/"):
+		return tierUtility
 	case pkg == "simulator":
 		return tierClient
 	case pkg == "storage", strings.HasPrefix(pkg, "storage/"):
@@ -225,21 +228,42 @@ func TestLibraryPackageLocations(t *testing.T) {
 func TestLibraryTierClassification(t *testing.T) {
 	t.Parallel()
 	for pkg, want := range map[string]int{
-		"devicemanagement/osversion":                 tierFoundation,
-		"devicemanagement/clock":                     tierFoundation,
-		"devicemanagement/internal/cbor":             tierFoundation,
-		"devicemanagement/schema/commands":           tierSchema,
-		"devicemanagement/mdmprotocol/ddm":           tierProtocol,
-		"devicemanagement/pki/acme":                  tierPKI,
-		"devicemanagement/appleplatformservices/axm": tierServices,
-		"devicemanagement/contentcache":              tierServices,
-		"devicemanagement/storage/inmem":             tierStorage,
-		"devicemanagement/simulator":                 tierClient,
-		"server/service":                             tierServer,
-		"internal/schemagen":                         tierApp,
+		"devicemanagement/osversion":                      tierFoundation,
+		"devicemanagement/clock":                          tierFoundation,
+		"devicemanagement/internal/cbor":                  tierFoundation,
+		"devicemanagement/schema/commands":                tierSchema,
+		"devicemanagement/mdmprotocol/ddm":                tierProtocol,
+		"devicemanagement/pki/acme":                       tierPKI,
+		"devicemanagement/appleplatformservices/axm":      tierServices,
+		"devicemanagement/contentcache":                   tierServices,
+		"devicemanagement/storage/inmem":                  tierStorage,
+		"devicemanagement/simulator":                      tierClient,
+		"devicemanagement/utility/appidentity":            tierUtility,
+		"devicemanagement/utility/appleappidentity":       tierUtility,
+		"devicemanagement/utility/publicappstoreidentity": tierUtility,
+		"server/service":                                  tierServer,
+		"internal/schemagen":                              tierApp,
 	} {
 		if got := tierOf(pkg); got != want {
 			t.Errorf("tierOf(%q) = %d, want %d", pkg, got, want)
+		}
+	}
+}
+
+// Identity discovery and its authoring examples stay usable without device
+// simulation, persistence, or server dependencies, including through tests.
+func TestUtilitiesHaveNoPersistenceDependencies(t *testing.T) {
+	t.Parallel()
+	g := load(t)
+	for _, pkg := range g.Packages() {
+		if tierOf(pkg) != tierUtility {
+			continue
+		}
+		for _, dep := range g.Imports[pkg] {
+			tier := tierOf(dep)
+			if tier == tierStorage || tier == tierClient || tier >= tierServer {
+				t.Errorf("utility %s imports forbidden dependency %s", pkg, dep)
+			}
 		}
 	}
 }

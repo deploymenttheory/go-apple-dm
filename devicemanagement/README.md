@@ -11,6 +11,7 @@ There is no separate `devicemanagement` module. The reference server remains in
 | [`pki/`](pki/) | Certificate issuance, validation and revocation |
 | [`schema/`](schema/) | Generated Apple types, validation and source provenance |
 | [`storage/`](storage/) | Storage contracts, memory implementations and contract suites |
+| [`utility/`](utility/) | App identity discovery for configuration authoring: public App Store listings, Apple app bundle IDs, and native signing facts |
 | [`simulator/`](simulator/) | Device simulator for embedding and tests |
 | [`clock/`](clock/), [`paging/`](paging/), [`state/`](state/) | Clock, pagination and protocol state abstractions |
 | [`ratelimit/`](ratelimit/), [`secrets/`](secrets/), [`telemetry/`](telemetry/) | Quotas, secret handling and instrumentation |
