@@ -7,7 +7,8 @@ Blueprint. Discovery selects no application or allow/deny policy automatically.
 
 ```mermaid
 flowchart LR
-  Source[App name or uploaded artifact] --> Discovery[Authorized identity discovery]
+  Source[App name or artifact file] --> CLI[dmctl app-identities]
+  CLI --> Discovery[Authorized server identity discovery]
   Discovery --> Review[Select app and matching identifiers]
   Review --> Payload[Explicit typed DDM payload]
   Payload --> Validate[Validate target compatibility]
@@ -16,6 +17,67 @@ flowchart LR
   Device --> Verify[Compare payload, activation and server tokens]
   Verify --> Remove[Unassign and verify removal on next sync]
 ```
+
+## CLI
+
+`dmctl app-identities` uses the existing server connection, context, token
+reference and CA settings. Public App Store searches and artifact inspection run
+on the reference server. All output modes preserve the discovery response,
+including candidate metadata, artifact provenance and incomplete-report issues.
+Discovery selects no candidate, constructs no policy and publishes no Blueprint.
+
+```sh
+export DMCTL_SERVER="https://your-mdm-server"
+export DMCTL_TOKEN="env:DM_ADMIN_TOKEN"
+
+# Search an explicit storefront and platform category.
+dmctl app-identities public-app-store search \
+  -term "Example" -country GB -entity iPadSoftware -output json
+
+# Resolve the App Store ID selected after reviewing the search results.
+dmctl app-identities public-app-store lookup 123 \
+  -country GB -entity iPadSoftware -output json
+
+# Search or resolve an Apple-bundled iPhone/iPad application.
+dmctl app-identities apple search -term Safari
+dmctl app-identities apple lookup com.apple.mobilesafari
+
+# Stream a local artifact to the server using the same authenticated client.
+dmctl app-identities inspect -file /path/to/application.dmg \
+  -timeout 3m -output json > identity.json
+
+# A pipeline can supply artifact bytes on stdin.
+dmctl app-identities inspect -file - -timeout 3m -output json < application.zip
+```
+
+Public App Store search accepts optional `-developer` and `-limit` (1–200; zero
+uses the server default). Discovery has no cursor pagination, so catalogue
+commands reject `-all`. An Apple catalogue search without `-term` returns the
+bundled catalogue. Artifact inspection requires an explicit file or `-file -`;
+it streams bytes without loading the complete upload into CLI memory. Use the
+normal `-timeout` flag to allow for upload and inspection; the server retains
+its own inspection and size limits. Incomplete inspection remains a report to
+review, not a selected application or an automatically usable policy.
+
+After selecting the application and matching scope and authoring
+`app-controls.json` with the [Go helpers](#complete-reference-server-workflow),
+use the ordinary Blueprint commands:
+
+```sh
+dmctl blueprints validate -file app-controls.json \
+  -target macos:27.0,channel=device,supervised
+dmctl blueprints publish -file app-controls.json
+dmctl blueprints assign app-controls DEVICE_ID
+dmctl enrollments status values device DEVICE_ID \
+  -prefix management.declarations -all -output json
+dmctl blueprints unassign app-controls DEVICE_ID
+```
+
+Use the enrollment's actual OS, version, channel and capabilities in `-target`.
+Omitting it retains structural validation. The flag uses the same target syntax
+as `dmctl explain` and `dmctl profile lint`, and applies only to
+`blueprints validate`. App Store or artifact discovery and schema validation do
+not establish native policy enforcement; see the delivery checks below.
 
 ## API
 
@@ -130,7 +192,13 @@ no public App Store request and changes no physical device:
 
 ```sh
 go test ./server/internal/app -run '^TestApplicationSettings' -race -count=1
+go test ./server/internal/dmctl -run '^TestApplicationIdentityCLIWorkflow$' -race -count=1
 ```
+
+The CLI workflow test uses `dmctl` for identity discovery, target validation,
+publication, assignment and removal against the assembled reference server. A
+certificate-authenticated simulator fetches the resulting configuration and
+activation. It covers both App Store identity and streamed Mach-O inspection.
 
 This check proves authoring and protocol delivery. Native acceptance, application
 visibility and binary execution behavior require device status and on-device

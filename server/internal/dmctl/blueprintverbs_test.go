@@ -1,11 +1,14 @@
 package dmctl_test
 
 import (
+	"errors"
 	"io"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
+
+	"github.com/deploymenttheory/go-apple-dm/server/internal/dmctl"
 )
 
 func TestBlueprintCLI(t *testing.T) {
@@ -49,5 +52,40 @@ func TestBlueprintCLI(t *testing.T) {
 				t.Fatal("profile bytes changed")
 			}
 		})
+	}
+}
+
+func TestBlueprintValidationTarget(t *testing.T) {
+	var calls int
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		calls++
+		q := r.URL.Query()
+		if r.Method != "POST" || r.URL.Path != "/admin/v1/blueprints/validate" || q.Get("os") != "macOS" || q.Get("version") != "28.0" || q.Get("channel") != "user" {
+			t.Errorf("target lost: %s %s", r.Method, r.URL)
+		}
+		for _, flag := range []string{"supervised", "sharedIPad", "dep", "userEnrollment", "userApproved"} {
+			if q.Get(flag) != "true" {
+				t.Errorf("capability %s lost", flag)
+			}
+		}
+		_, _ = io.WriteString(w, `{}`)
+	}))
+	t.Cleanup(srv.Close)
+	for _, target := range []string{"macos", "macos:27", "macos:invalid,channel=device", "macos:27,channel=other", "unknown:27,channel=device", "macos:27,channel=device,unknown"} {
+		_, _, err := runWithStdin(t, noConfig(t), `{"Identifier":"apps"}`, "-server", srv.URL, "blueprints", "validate", "-target", target)
+		if !errors.Is(err, dmctl.ErrUsage) {
+			t.Fatal("invalid target accepted", target, err)
+		}
+	}
+	if _, _, err := runWithStdin(t, noConfig(t), `{"Identifier":"apps"}`, "-server", srv.URL, "blueprints", "publish", "-target", "macos:27,channel=device"); !errors.Is(err, dmctl.ErrUsage) {
+		t.Fatal("publication silently ignored target", err)
+	}
+	if calls != 0 {
+		t.Fatal("invalid target contacted server")
+	}
+	// A future version must be passed through to schema-backed server validation.
+	_, _, err := runWithStdin(t, noConfig(t), `{"Identifier":"apps"}`, "-server", srv.URL, "blueprints", "validate", "-target", "macos:28.0,channel=user,supervised,shared-ipad,dep,user-enrollment,user-approved")
+	if err != nil || calls != 1 {
+		t.Fatal("validation failed", calls, err)
 	}
 }

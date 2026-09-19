@@ -24,6 +24,15 @@ as unvalidated and checks signature integrity separately from certificate trust.
 Lint exit 3 means incomplete validation; lint does not establish installation.
 See the [inspection guide](../../operations/status-and-profile-inspection.md).
 
+`app-identities` discovers public App Store and Apple-bundled application
+identities and streams artifact files or stdin through the normal authenticated
+admin client. It preserves the server's discovery report, including incomplete
+results, without selecting an application or authoring policy. The HTTP client
+accepts reader bodies so artifact uploads do not require a complete in-memory
+copy. `blueprints validate -target` shares the existing target parser and passes
+OS/version/channel and capabilities to schema-backed server validation. See the
+[application identity workflow](../../operations/application-identities.md).
+
 ## Rationale
 
 Separate logic permits direct testing and keeps stdout usable by scripts. Credential references avoid duplicating secrets in ordinary configuration. Local validation gives feedback before a request reaches the server.
