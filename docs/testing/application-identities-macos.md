@@ -101,3 +101,44 @@ root library `v0.7.4-0.20260919192617-bee5875be93c`; its rebuilt binary SHA-256 
 `2c10a986bdf4effbbcb71df02c6c09e193d711a3017da8a7e2a1b23678d65302`.
 The utility and server authoring tests and standalone module installation/process
 acceptance also pass with these released dependencies.
+
+## Physical-host App Settings enforcement
+
+An explicitly authorized follow-up on 19 September 2026 tested the physical host,
+running macOS **27.0 (26A428)**. Hardware identity matched its existing enrollment;
+the reference server reported a supervised device target and no assigned test
+declarations. The existing host server and enrollment were preserved. That server
+predates the Blueprint API, so this check used its declaration/set administration
+API and the current Go authoring helper.
+
+`appidentity.Inspect` inspected the host's **Suspicious Package 4.5**. Both
+architectures had valid Developer ID signatures. The helper's results populated
+and validated a typed `ddm.AppSettings` payload containing only `DeniedBinaries`.
+Each entry combined CDHash, SigningID, TeamID and the application's
+`Contents/MacOS/` path prefix. No allow list or team-wide rule was supplied.
+A native shell/curl watchdog was armed to remove the assignment after 60 seconds,
+independently of the Python test controller.
+
+| Check | Observation |
+| --- | --- |
+| Before assignment | Suspicious Package launched; an unrelated Python control exited 0. |
+| Declaration delivery | The Mac reported the configuration and activation valid and active at 20:06:51 UTC. |
+| Intended restriction | Suspicious Package did not launch; native `managedeventsd` logs recorded `DENIED exec` for its executable. |
+| Isolation control | The unrelated Python launch was also denied by `managedeventsd` and terminated with SIGKILL. |
+| Removal | The test declarations disappeared from device status; Suspicious Package and Python both ran again by 20:07:05 UTC. No test declarations remained assigned. |
+
+Reconstructing the declaration **without assignment** produced the same server
+token the device had reported active. Its canonical payload matched the authored
+deny-only payload exactly; the server had not introduced an allow list. The
+temporary unassigned record was deleted after comparison.
+
+**Result: DDM delivery passed; isolated binary enforcement failed.** This
+reproduces the [earlier physical-host isolation failure](macos27-live-validation.md)
+with a vendor app and additional identifier/path constraints. The result does not
+establish a successful app-control workflow or identify the underlying cause.
+No further restrictive rule was applied after recovery.
+
+Private evidence is under `test-lab/local/application-identities/host/`, including
+helper output, the exact typed payload, before/during/after execution probes,
+device status, reconstructed canonical payload/token, native logs and removal
+records. No device identifiers or administrative credentials are committed.
