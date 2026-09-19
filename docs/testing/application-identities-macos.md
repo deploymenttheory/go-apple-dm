@@ -135,8 +135,10 @@ temporary unassigned record was deleted after comparison.
 **Result: DDM delivery passed; isolated binary enforcement failed.** This
 reproduces the [earlier physical-host isolation failure](macos27-live-validation.md)
 with a vendor app and additional identifier/path constraints. The result does not
-establish a successful app-control workflow or identify the underlying cause.
-No further restrictive rule was applied after recovery.
+establish a successful app-control workflow. A separate
+[SigningID-only isolation test](app-settings-binary-isolation.md) narrows the
+unrelated failures to ad-hoc signed controls and identifies a native signing-category
+check consistent with that behavior. All controls recovered after removal.
 
 Private evidence is under `test-lab/local/application-identities/host/`, including
 helper output, the exact typed payload, before/during/after execution probes,
