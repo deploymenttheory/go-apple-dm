@@ -8,7 +8,6 @@ import (
 
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/ddm"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/ddm/blueprint"
-	"github.com/deploymenttheory/go-apple-dm/devicemanagement/schema/support"
 	"github.com/deploymenttheory/go-apple-dm/server/adminauth"
 )
 
@@ -54,7 +53,12 @@ func (a *App) blueprintAdminRoutes() []adminRoute {
 		if !ok {
 			return
 		}
-		v, err := a.Blueprints.Validate(r.Context(), spec, support.Target{})
+		target, err := authoringTarget(r.URL.Query())
+		if err != nil {
+			writeError(w, http.StatusBadRequest, err)
+			return
+		}
+		v, err := a.Blueprints.Validate(r.Context(), spec, target)
 		if err != nil {
 			writeError(w, statusFor(err), err)
 			return

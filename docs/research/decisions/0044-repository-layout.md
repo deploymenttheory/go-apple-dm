@@ -13,7 +13,9 @@ configuration authors through Go APIs.
 Its tier sits above simulator and below server, with an additional prohibition on
 storage and simulator imports. Public App Store Identity searches public listings,
 appleappidentity queries a dated snapshot of Apple's iPhone and iPad app catalogue,
-and appidentity inspects native code-signing facts. Callers select applications
+appidentity reads native or portable signing facts, and appartifact discovers
+applications inside distribution archives. Portable readers use go-macos-pkg and
+go-apfs-v2; they do not execute uploaded code or claim signature trust. Callers select applications
 and matching criteria, then populate the existing generated payload types.
 Discovery does not choose policy or run during Blueprint compilation.
 Lower tiers cannot depend on utility packages.

@@ -54,6 +54,7 @@ const (
 func AdminActions() []adminauth.Action {
 	actions := append(setupActions(), blueprintActions()...)
 	actions = append(actions, configurationProfileActions()...)
+	actions = append(actions, applicationIdentityActions()...)
 	return append(append(actions, contentCacheActions()...), []adminauth.Action{
 		{
 			ID:       ActionReplaceEnrollment,

@@ -24,7 +24,7 @@ including the explicit dependency from the ADE software update gate to the GDMF 
 | PKI | `devicemanagement/pki` | CA abstraction, SCEP, ACME, attestation, push certificate parsing and optional revocation |
 | Apple clients | `devicemanagement/appleplatformservices` | APNs, device enrollment service, software lookup, Business Manager, School Manager and Apps and Books licensing APIs |
 | Content-cache metrics | `devicemanagement/contentcache` | Opt-in OS 27 report contract and receiver; consumers supply authentication, TLS and persistence |
-| Configuration authoring utilities | `devicemanagement/utility` | Discover public App Store identities, Apple app bundle IDs, and native signing facts through Go APIs; no persistence or server dependencies |
+| Configuration authoring utilities | `devicemanagement/utility` | Discover public App Store identities, Apple app bundle IDs, and native or portable artifact signing metadata through Go APIs; no persistence or server dependencies |
 | Persistence | `devicemanagement/storage`, `server/sqlstore`, `server/*store`, `server/statestore` | Domain contracts, memory implementations and SQL persistence |
 | Service | `server/service`, `server/httpapi`, `server/ddmsync`, `server/ddmadapter`, `server/pushnotify` | Enrollment authorization, command delivery, DDM synchronization and transport |
 | Administration | `server/adminauth`, `server/audit`, `server/eventstore`, `server/eventsink`, `server/axmcreds` | Principals, policy, credential storage, projected audit and webhook output |
@@ -36,6 +36,13 @@ The table groups responsibilities; the exact enforced tiers and test-only except
 The [content-cache receiver](research/decisions/0051-content-cache-metrics.md) is
 an embeddable library at the service-client tier. It installs no reference-server
 route. Its reviewed OS 27 OpenAPI fixture is checked against the pinned Apple source.
+
+Application identity discovery is exposed through authenticated authoring routes.
+Uploaded PKG, DMG, ZIP and Mach-O artifacts use portable readers with bounded
+scratch extraction. Discovery returns candidates and provenance; publication
+accepts explicit existing payload fields and performs no identity lookup. See
+[application identity authoring](operations/application-identities.md).
+
 
 ## Generated protocol types
 
