@@ -1,5 +1,33 @@
 # Changelog
 
+## [0.9.4](https://github.com/deploymenttheory/go-apple-dm/compare/server/v0.9.3...server/v0.9.4) (2026-09-19)
+
+
+### Features
+
+* add Blueprint composition and DDM publication ([45f8e5a](https://github.com/deploymenttheory/go-apple-dm/commit/45f8e5a28562c72144487b212250536b1fe04370))
+* add Blueprint composition and DDM publication ([45f09cb](https://github.com/deploymenttheory/go-apple-dm/commit/45f09cb1dd77c5c8433a9b3ef71a3220759d7706))
+* add guided onboarding and local Compose quickstart ([10058fe](https://github.com/deploymenttheory/go-apple-dm/commit/10058febcaea9795952fa2fd99111be429093706))
+* add guided onboarding and local Compose quickstart ([f84a831](https://github.com/deploymenttheory/go-apple-dm/commit/f84a831509fbc9d88f7810866a0b49fbe97b2d3e))
+* add macOS 27 compatibility and shared OS version support ([ee64353](https://github.com/deploymenttheory/go-apple-dm/commit/ee643534df5769ff54303fdc491ba75bff9339b6))
+* add macOS 27 compatibility and shared OS version support ([69adcf4](https://github.com/deploymenttheory/go-apple-dm/commit/69adcf428a64368c505f6cb94807a9da25922516))
+* **utility:** discover app identities for DDM authoring ([77a660e](https://github.com/deploymenttheory/go-apple-dm/commit/77a660e2682a86660556b86fc0529e5503c38d7f))
+
+
+### Bug Fixes
+
+* complete macOS 27 library and server validation ([ebceb75](https://github.com/deploymenttheory/go-apple-dm/commit/ebceb75c9a28a9d20365a2fd4112fd1244a4dbb9))
+* preserve cancellation during transaction shutdown ([767197e](https://github.com/deploymenttheory/go-apple-dm/commit/767197ee17f29763869c6e63ce8d9b253a446076))
+* **server:** pin library revision containing Blueprint APIs ([1706d74](https://github.com/deploymenttheory/go-apple-dm/commit/1706d74283510fb46edf8a56e85e3001d6bfb370))
+* share persistence across split MDM and DDM tests ([617119b](https://github.com/deploymenttheory/go-apple-dm/commit/617119b0b66a3c66cfb4e88ba78a134eb4e5234d))
+
+
+### Refactoring
+
+* make osversion the sole version API ([c81508c](https://github.com/deploymenttheory/go-apple-dm/commit/c81508cf336c671c9fa50ee02ca8b36262ce255e))
+* **schema:** version third-party sources ([652bb90](https://github.com/deploymenttheory/go-apple-dm/commit/652bb907635907e3c3529b84305dfbe7bdb31b30))
+* **schema:** version third-party sources ([b3ccea9](https://github.com/deploymenttheory/go-apple-dm/commit/b3ccea970c0d9a6bbd6eaece8079d62a27b4ef98))
+
 ## [0.9.3](https://github.com/deploymenttheory/go-apple-dm/compare/server/v0.9.2...server/v0.9.3) (2026-09-16)
 
 
