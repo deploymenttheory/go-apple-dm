@@ -94,16 +94,6 @@ func TestApplicationIdentityConcurrentUpload(t *testing.T) {
 	if w.Code != 503 || w.Header().Get("Retry-After") != "5" {
 		t.Fatal(w.Code, w.Header())
 	}
-	ctx, cancel := context.WithCancel(t.Context())
-	cancel()
-	r := httptest.NewRequestWithContext(ctx, "POST", "https://mdm.example/admin/v1/authoring/app-identities/artifacts", strings.NewReader("test"))
-	r.Header.Set("Authorization", "Bearer admin")
-	r.Header.Set("Content-Type", "application/octet-stream")
-	w = httptest.NewRecorder()
-	a.Handler.ServeHTTP(w, r)
-	if w.Code != 408 {
-		t.Fatal(w.Code, w.Body.String())
-	}
 }
 
 func TestApplicationIdentityInvalidConfig(t *testing.T) {
@@ -268,7 +258,6 @@ func TestArtifactUploadFailures(t *testing.T) {
 		{"read", appartifact.Options{}, identityBodyFailure{}, "application/octet-stream", 400},
 		{"unsupported", appartifact.Options{}, strings.NewReader("unsupported file"), "application/octet-stream", 415},
 		{"invalid", appartifact.Options{}, strings.NewReader("xar!bad"), "application/octet-stream", 400},
-		{"deadline", appartifact.Options{Timeout: time.Nanosecond}, bytes.NewReader(fixture), "application/octet-stream", 504},
 	} {
 		t.Run(test.name, func(t *testing.T) {
 			a := build(t, app.Config{Role: app.RoleAll, Storage: "inmem", AdminToken: "admin", ApplicationIdentities: app.ApplicationIdentityConfig{Artifacts: test.opts}})
@@ -278,6 +267,41 @@ func TestArtifactUploadFailures(t *testing.T) {
 			}
 			if strings.Contains(w.Body.String(), "dm-upload-") || strings.Contains(w.Body.String(), test.opts.TempDir) && test.opts.TempDir != "" {
 				t.Fatal("private path exposed")
+			}
+		})
+	}
+}
+
+func TestArtifactUploadContextFailures(t *testing.T) {
+	fixture, err := os.ReadFile("../../../devicemanagement/utility/appidentity/testdata/fixture.macho")
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, status := range []int{http.StatusRequestTimeout, http.StatusGatewayTimeout} {
+		t.Run(http.StatusText(status), func(t *testing.T) {
+			temp := t.TempDir()
+			a := build(t, app.Config{Role: app.RoleAll, Storage: "inmem", AdminToken: "admin", ApplicationIdentities: app.ApplicationIdentityConfig{Artifacts: appartifact.Options{TempDir: temp}}})
+			var ctx context.Context
+			var cancel context.CancelFunc
+			if status == http.StatusRequestTimeout {
+				ctx, cancel = context.WithCancel(t.Context())
+				cancel()
+			} else {
+				// An expired deadline avoids assumptions about OS timer resolution.
+				ctx, cancel = context.WithDeadline(t.Context(), time.Now().Add(-time.Second))
+			}
+			defer cancel()
+			r := httptest.NewRequestWithContext(ctx, "POST", "https://mdm.example/admin/v1/authoring/app-identities/artifacts", bytes.NewReader(fixture))
+			r.Header.Set("Authorization", "Bearer admin")
+			r.Header.Set("Content-Type", "application/octet-stream")
+			w := httptest.NewRecorder()
+			a.Handler.ServeHTTP(w, r)
+			if w.Code != status {
+				t.Fatal(w.Code, w.Body.String())
+			}
+			files, err := os.ReadDir(temp)
+			if err != nil || len(files) != 0 {
+				t.Fatal("upload scratch leak", files, err)
 			}
 		})
 	}

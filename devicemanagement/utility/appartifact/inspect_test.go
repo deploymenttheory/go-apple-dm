@@ -191,7 +191,7 @@ func TestAmbiguityAndCandidateFailure(t *testing.T) {
 	if err != nil || r.Complete || len(r.Applications) != 2 || len(r.Issues) != 1 {
 		t.Fatal(r, err)
 	}
-	for _, opts := range []Options{{MaxApplications: 1}, {MaxEntries: 1}, {MaxBytes: 10}, {MaxExpandedBytes: 10}, {Timeout: time.Nanosecond}} {
+	for _, opts := range []Options{{MaxApplications: 1}, {MaxEntries: 1}, {MaxBytes: 10}, {MaxExpandedBytes: 10}} {
 		if _, err := Inspect(t.Context(), file, opts); err == nil {
 			t.Fatal("limit ignored", opts)
 		}
@@ -201,6 +201,17 @@ func TestAmbiguityAndCandidateFailure(t *testing.T) {
 	}
 	if _, err := Inspect(t.Context(), file, Options{TempDir: filepath.Join(t.TempDir(), "missing")}); err == nil {
 		t.Fatal("scratch failure ignored")
+	}
+}
+
+func TestInspectionDeadline(t *testing.T) {
+	file := put(t, t.TempDir(), "artifact", zipFixture(t))
+	// An expired deadline is deterministic across platforms and timer resolutions.
+	ctx, cancel := context.WithDeadline(t.Context(), time.Now().Add(-time.Second))
+	defer cancel()
+	report, err := Inspect(ctx, file, Options{Timeout: time.Minute})
+	if !errors.Is(err, context.DeadlineExceeded) || report.SHA256 != "" || len(report.Applications) != 0 {
+		t.Fatal(report, err)
 	}
 }
 
