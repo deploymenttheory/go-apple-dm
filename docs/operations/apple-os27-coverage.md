@@ -121,7 +121,7 @@ acknowledgements, declaration status, asset service and persisted reports.
 
 | Requirement | Implementation / automated evidence | Optional Apple behavior follow-up |
 |---|---|---|
-| App and binary execution policy | `AppSettings`; F `binary-controls` | Allow/deny only a disposable signed fixture; verify managed-app exception and removal. |
+| App and binary execution policy | `AppSettings`; F `binary-controls` | Use the [signing-classified control matrix](../testing/app-settings-binary-isolation.md): deny the matching eligible target and ad-hoc controls, permit unrelated eligible signed controls, then verify removal. Allow mode and managed-app exceptions remain unverified. |
 | App consent | App privacy declarations; F `app-privacy` | Record consolidated prompt, allowed services and revocation. |
 | Website consent | Website privacy declarations; F `website-privacy` | Use controlled HTTPS origin; verify origin scope and prompt. |
 | Accessibility Live Recognition | `AccessibilitySettings.Vision.AllowLiveRecognition`; F `accessibility` | Verify Ask about Images and Surroundings behavior on eligible hardware, then removal. |

@@ -110,6 +110,13 @@ A valid ad-hoc signature may have an unknown category. Inspection does not infer
 Enterprise or TestFlight signing, or establish Gatekeeper acceptance or
 notarization. Review the facts before choosing a payload's `SigningState`.
 
+Signature integrity does not establish permission to execute under DDM binary
+controls. macOS imposes a signing restriction independently of identifier matching;
+review the [execution contract](../../docs/testing/app-settings-binary-isolation.md#protocol-expectation)
+when authoring these payloads. `SigningState` is a rule qualifier, not an override
+of that restriction. These helpers report identity facts without choosing policy
+or predicting the state of other applications on the target device.
+
 The author selects the match:
 
 | Payload field(s) | Authoring consideration |
@@ -165,7 +172,7 @@ are private and removed after inspection. These parser bounds are not a process
 memory limit. Deployment resource limits and concurrency control remain the
 caller's responsibility.
 
-The [reference server authoring API](../../../docs/operations/application-identities.md)
+The [reference server authoring API](../../docs/operations/application-identities.md)
 exposes these operations. Its upload response is a discovery report; application
 installation uses the existing MDM/DDM distribution mechanisms.
 
@@ -174,5 +181,5 @@ installation uses the existing MDM/DDM distribution mechanisms.
 - [Apple iTunes Search API](https://developer.apple.com/library/archive/documentation/AudioVideo/Conceptual/iTuneSearchAPI/)
 - [Apple iPhone and iPad app bundle IDs](https://support.apple.com/en-euro/guide/deployment/depece748c41/web)
 - [Apple code-signing hashes](https://developer.apple.com/documentation/technotes/tn3126-inside-code-signing-hashes)
-- [Pinned App Settings schema](../../../third_party/apple-device-management/current/declarative/declarations/configurations/app.settings.yaml)
+- [Pinned App Settings schema](../../third_party/apple-device-management/current/declarative/declarations/configurations/app.settings.yaml)
 - [Stop hunting for bundle IDs and CDHashes](https://cantscript.com/posts/stop-hunting-for-bundle-ids--cdhashes/)

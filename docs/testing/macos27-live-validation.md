@@ -108,7 +108,7 @@ Credentials, profile grants, device identifiers and recovery material stay there
 | Legacy profile through a data asset | Passed installation, managed preference, ProfileList and removal after correcting the asset-server certificate | `feature-legacy-asset-20260916T200350600367Z/` |
 | Legacy profile through its URL | Passed installation, managed preference, ProfileList and removal | `feature-legacy-url-20260916T200519970931Z/` |
 | Siri AI restriction | Passed declaration status and native managed preference application/removal; AI request behavior was not exercised | `feature-siri-20260916T201055404741Z/` |
-| Binary controls | Failed isolation: unrelated non-Apple executables also terminated; recovered by removing the test assignment | `feature-binary-controls-20260916T200703527400Z/` |
+| Binary controls | Delivery/removal observed; unrelated tool denials are explained by the [documented signing restriction and later controls](app-settings-binary-isolation.md). Full variant coverage remains incomplete. | `feature-binary-controls-20260916T200703527400Z/` |
 | Intelligence: Visual Intelligence and Calendar editing | Protocol valid/active and removed; requested behavior unconfirmed by readable managed preferences | `feature-intelligence-20260916T203056198244Z/` |
 | Software update settings only | Protocol valid/active and removed; effective override unconfirmed by readable preferences; no update initiated | `feature-update-macos-20260916T203238514823Z/` |
 | Native content-cache reporting and certificate asset | Passed activation, configured limits, HTTPS POST ingestion, authenticated device association, pagination, restart, credential rotation/revocation, and restoration to disabled | `feature-content-cache-20260916T203920052248Z/` |
@@ -163,9 +163,12 @@ Credentials, profile grants, device identifiers and recovery material stay there
   `dmctl` also terminated with exit 137. Native Apple tools and the already
   running server remained available, allowing the assignment to be removed.
   Python and the disposable binary then ran successfully; declaration cleanup
-  completed. Do not repeat this rule on the working Mac. The captured payload
-  and status evidence do not yet establish whether the cause is OS behavior or
-  payload semantics. Binary-control acceptance remains failed.
+  completed. The later [signing-classified control matrix](app-settings-binary-isolation.md)
+  distinguishes eligible signed executables from ad-hoc executables and explains
+  the extra denials as documented macOS behavior. The earlier expectation that
+  every unrelated executable would remain runnable was incorrect. This historical
+  run does not establish every binary-control variant; no repeat on the working
+  Mac is needed to correct its interpretation.
 - Restricted execution reported the Mac as unenrolled and hid its signing
   identity. Unrestricted native inspection found the retained user-approved
   enrollment, which then passed inventory and both channels. An unavailable
@@ -362,9 +365,11 @@ contracts, generation verification and affected-package lint. Neither schema
 pin changed. These are local results; the previously recorded complete CI matrix
 and 95% gate remain tied to `eb5208a`.
 
-The saved failing native binary fixture already contained a 40-character CDHash
-and SigningID and did not contain an allow list. The validator correction does
-not establish the cause of that native failure or convert it to a pass.
+The saved native binary fixture already contained a 40-character CDHash and
+SigningID and did not contain an allow list. The validator correction is separate
+from the [documented native signing restriction](app-settings-binary-isolation.md)
+that explains the unrelated tool denials. Preserve the original observations;
+the later interpretation does not supply evidence for untested variants.
 
 **Scoped encrypted DNS: passed on the standard HTTPS port.** The Mac was verified
 as the retained physical 27.0 / 26A428 enrollment, with no assigned declarations.

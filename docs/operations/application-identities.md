@@ -98,13 +98,13 @@ republication require no App Store connection or retained uploaded artifact.
 Application installation continues to use the existing MDM/DDM mechanisms; a
 discovery response or successful publication does not prove device installation.
 
-On the tested physical Mac running macOS 27.0 (26A428), a SigningID-only
-`DeniedBinaries` rule also prevented unrelated ad-hoc signed Python and Git from
-launching; an unrelated Developer ID app continued to run. Removal restored all
-controls. The delivered payload and native policy contained only the requested
-deny rule. See the [binary isolation investigation](../testing/app-settings-binary-isolation.md)
-before evaluating native enforcement on this build. Schema validation and valid/active
-device status do not establish isolated execution control.
+macOS binary controls impose a signing restriction independently of the selected
+identifier rules. Review the [execution contract and recorded control matrix](../testing/app-settings-binary-isolation.md#protocol-expectation)
+before assignment, including its effect on ad-hoc developer tools. Discovery and
+schema validation establish neither execution eligibility nor preservation of
+every unrelated executable. The physical macOS 27.0 (26A428) run matched the
+documented behavior, and removal restored every control. No policy is broadened
+or rewritten by the authoring API to compensate for platform restrictions.
 
 See [macOS identity acceptance](../testing/application-identities-macos.md) for the
 vendor-artifact installation procedure, native hash comparisons and recorded limits.
