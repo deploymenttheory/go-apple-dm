@@ -78,8 +78,9 @@ const (
 // Config is the process configuration; see ParseEnv for the DM_*
 // variables and cmd/dmserver for the flags.
 type Config struct {
-	persistentEvents event.Publisher
-	Setup            *SetupConfig
+	ApplicationIdentities ApplicationIdentityConfig
+	persistentEvents      event.Publisher
+	Setup                 *SetupConfig
 
 	PKI                     PKIConfig
 	RateLimits              RateLimitConfig
@@ -423,6 +424,9 @@ func reenrollPolicy(allow bool) service.ReenrollPolicy {
 }
 
 func (c Config) validate() error {
+	if o := c.ApplicationIdentities.Artifacts; o.MaxBytes < 0 || o.MaxBytes > 1<<40 || o.MaxExpandedBytes < 0 || o.MaxExpandedBytes > 1<<40 || o.MaxEntries < 0 || o.MaxApplications < 0 || o.MaxDepth < 0 || o.Timeout < 0 {
+		return fmt.Errorf("%w: invalid application artifact inspection limits", ErrConfig)
+	}
 	if d := c.Sinks.Dispatch; d.Workers < 0 || d.QueueCapacity < 0 || d.DeliveryTimeout < 0 {
 		return fmt.Errorf("%w: event dispatch limits must be non-negative", ErrConfig)
 	}
@@ -1070,6 +1074,7 @@ func (a *App) wireAdmin(ctx context.Context, mux *http.ServeMux) error {
 	routes = append(routes, a.setupRoutes()...)
 	routes = append(routes, a.ddmAdminRoutes()...)
 	routes = append(routes, a.blueprintAdminRoutes()...)
+	routes = append(routes, a.applicationIdentityRoutes()...)
 	routes = append(routes, a.configurationProfileAdminRoutes()...)
 	routes = append(routes, a.mdmAdminRoutes()...)
 	routes = append(routes, a.contentCacheRoutes()...)

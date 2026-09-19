@@ -20,7 +20,7 @@ func fixture(t *testing.T, path string, data []byte) string {
 	if err := os.MkdirAll(filepath.Dir(path), 0o700); err != nil {
 		t.Fatal(err)
 	}
-	if err := os.WriteFile(path, data, 0o600); err != nil {
+	if err := os.WriteFile(path, data, 0o600); err != nil { // #nosec G703 -- all callers supply a fixture path beneath t.TempDir.
 		t.Fatal(err)
 	}
 	return path

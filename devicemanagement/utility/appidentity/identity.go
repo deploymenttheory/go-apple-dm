@@ -32,6 +32,8 @@ const (
 	Valid    Status = "valid"
 	Invalid  Status = "invalid"
 	Unsigned Status = "unsigned"
+	// NotChecked means metadata was read without verifying signature integrity.
+	NotChecked Status = "not-checked"
 )
 
 // Category is a verified signing requirement, or Unknown. Enterprise and
@@ -45,8 +47,8 @@ const (
 	AppStore    Category = "AppStore"
 )
 
-// Signature records the result of strict verification. Detail is diagnostic
-// text from codesign and is not suitable for policy decisions or machine parsing.
+// Signature records native verification or NotChecked for portable metadata.
+// Detail is diagnostic text from codesign, unsuitable for policy decisions.
 type Signature struct {
 	Status   Status   `json:"status"`
 	Category Category `json:"category"`
@@ -56,12 +58,15 @@ type Signature struct {
 // Architecture contains the identity of one independently signed Mach-O slice.
 // TeamID remains empty when absent, including for Apple platform binaries.
 type Architecture struct {
-	Name                  string    `json:"name"`
-	CDHash                string    `json:"cdhash,omitempty"`
-	SigningID             string    `json:"signingID,omitempty"`
-	TeamID                string    `json:"teamID,omitempty"`
-	DesignatedRequirement string    `json:"designatedRequirement,omitempty"`
-	Signature             Signature `json:"signature"`
+	Name                  string          `json:"name"`
+	CPU                   uint32          `json:"cpu,omitempty"`
+	Subtype               uint32          `json:"subtype,omitempty"`
+	CodeDirectories       []CodeDirectory `json:"codeDirectories,omitempty"`
+	CDHash                string          `json:"cdhash,omitempty"`
+	SigningID             string          `json:"signingID,omitempty"`
+	TeamID                string          `json:"teamID,omitempty"`
+	DesignatedRequirement string          `json:"designatedRequirement,omitempty"`
+	Signature             Signature       `json:"signature"`
 }
 
 // Identity describes a file observed at inspection time. Bundle metadata is

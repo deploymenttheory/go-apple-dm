@@ -14,8 +14,14 @@
 // provide lipo where needed. Subprocesses have bounded output and deadlines.
 // Inspection reads the main executable without launching it or traversing
 // embedded helpers. Verification does not establish Gatekeeper acceptance or
-// notarization. Portable identity reports can be consumed on other platforms;
-// callers are responsible for the provenance of reports loaded from JSON.
+// notarization.
+//
+// ReadBundle and ReadExecutable parse immutable bytes on any platform through
+// go-macos-pkg. They retain every architecture and supported code directory,
+// including full hashes and Apple's twenty-byte CDHashes. Parsed signatures have
+// NotChecked status and Unknown category; reading metadata does not establish
+// integrity, certificate trust, Gatekeeper acceptance or notarization. When a
+// slice has multiple code directories, callers select an algorithm explicitly.
 //
 // Inspection returns observed identifiers and preserves an absent team
 // identifier. Callers choose the matching identifiers and constraints for their

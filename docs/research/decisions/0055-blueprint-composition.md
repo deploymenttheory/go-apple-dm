@@ -49,6 +49,15 @@ status, together with current eligibility and the last advertised snapshot.
 Retained obsolete revisions never authorize access on their own. Split roles
 carry downloads over the same authenticated private hop as DDM requests.
 
+Application identity discovery runs through authenticated authoring routes before
+publication. Public App Store queries, the Apple app catalogue and uploaded
+artifacts return selectable facts. Uploads use private temporary storage and
+portable PKG/DMG/Mach-O readers. A separate discovery action grants no publication
+rights. Selected identifiers populate existing payload fields; no application
+reference syntax or network resolution is added to Blueprint compilation.
+Validation accepts an optional explicit target with OS, version, channel and
+enrollment capabilities.
+
 ## Consequences
 
 Developers can reuse the compiler without taking on a server or database model.

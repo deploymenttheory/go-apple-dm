@@ -15,6 +15,10 @@ client in `appleplatformservices/axm`. Apple documents the hosted resource in
 The local convenience format below is not the Apple Business API request schema
 or a DDM declaration type.
 
+For app controls, use [application identity discovery](application-identities.md)
+to select identifiers before constructing the explicit payload. The validation
+API accepts target OS, version, channel and enrollment capabilities.
+
 ## Author and publish
 
 Save this as `engineering.json`:
