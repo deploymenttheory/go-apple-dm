@@ -79,10 +79,12 @@ UI/feature test is currently scheduled. Preserve the host enrollment, FileVault
 and login policy; no wipe is authorized. Inspection at the scope correction found
 zero physical-device test assignments and the current fixture marked removed.
 
-The binary rule that disrupted unrelated executables remains a recorded native
-failure. Its saved payload already contained a specific CDHash and signing ID;
+The binary rule's disruption of unrelated executables remains recorded. The
+[signing-classified controls and Apple contract](app-settings-binary-isolation.md)
+resolve its interpretation: ad-hoc tool denials match the platform's documented
+restriction. The saved payload already contained a specific CDHash and signing ID;
 the separate library identifier-validation defect was corrected and regression
-tested. Do not infer that the correction explains the native failure.
+tested. These results do not establish allow-mode or managed-app exception behavior.
 
 The latest complete CI matrix passed at `eb5208a`, including thirteen named OS 27
 contracts and the unchanged 95% gate. The subsequent binary validation correction

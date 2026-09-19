@@ -46,6 +46,30 @@ matching plist media type. Real HTTPS, certificates,
 issuer challenges and signing identities belong under `test-lab/local`, which is
 ignored by git. No private values belong in this fixture directory.
 
+## Binary execution controls
+
+The `binary-controls` fixture tests configured identifier matching together with
+macOS's independent signing restriction. Use the
+[documented execution contract and recorded matrix](../../docs/testing/app-settings-binary-isolation.md)
+to classify results. An ad-hoc signed executable is not an eligible unrelated
+control simply because its signature passes integrity verification.
+
+For a deny-only case, use a disposable Developer ID signed target, an unrelated
+eligible Developer ID app, an Apple system control and separate ad-hoc controls.
+Establish that all run before assignment. While active, expect the matching target
+and ad-hoc controls to be denied while the eligible unrelated controls run.
+Withdraw the test configuration and confirm every baseline probe recovers. Keep
+an independent native removal watchdog armed throughout the bounded assignment.
+Use an explicitly designated native test device and preserve its enrollment.
+
+The recorded control matrix covers this deny-mode case. Empty-list,
+development-signed and unsigned cases, allow mode and managed-app exceptions
+remain untested; the manifest's pending live status is not a blanket failure or
+pass. Do not rerun the physical test merely to correct the interpretation of
+existing evidence.
+
+## Offline checks
+
 Run the offline preparation checks with:
 
 ```sh

@@ -132,13 +132,14 @@ token the device had reported active. Its canonical payload matched the authored
 deny-only payload exactly; the server had not introduced an allow list. The
 temporary unassigned record was deleted after comparison.
 
-**Result: DDM delivery passed; isolated binary enforcement failed.** This
-reproduces the [earlier physical-host isolation failure](macos27-live-validation.md)
-with a vendor app and additional identifier/path constraints. The result does not
-establish a successful app-control workflow. A separate
-[SigningID-only isolation test](app-settings-binary-isolation.md) narrows the
-unrelated failures to ad-hoc signed controls and identifies a native signing-category
-check consistent with that behavior. All controls recovered after removal.
+**Result: DDM delivery passed; the observed denials match the documented signing
+restriction.** The initial expectation that every unrelated executable would
+remain runnable was incorrect. The separate
+[SigningID-only control matrix](app-settings-binary-isolation.md) distinguished
+eligible Developer ID and Apple controls, which ran, from ad-hoc signed controls,
+which were denied. All controls recovered after removal. The
+[earlier physical-host result](macos27-live-validation.md) is retained; allow mode,
+managed-app exceptions and other untested variants remain unverified.
 
 Private evidence is under `test-lab/local/application-identities/host/`, including
 helper output, the exact typed payload, before/during/after execution probes,
