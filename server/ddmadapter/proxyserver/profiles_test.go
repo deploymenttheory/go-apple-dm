@@ -4,10 +4,13 @@ import (
 	"bytes"
 	"context"
 	json "encoding/json/v2"
+	"errors"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/ddm"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/mdm"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/state"
 	"github.com/deploymenttheory/go-apple-dm/server/configurationprofile"
@@ -20,11 +23,58 @@ type profileSource struct {
 	id       mdm.EnrollmentID
 	revision string
 	body     []byte
+	err      error
+	calls    int
 }
 
 func (s *profileSource) Fetch(_ context.Context, id mdm.EnrollmentID, revision string) ([]byte, configurationprofile.Info, error) {
 	s.id, s.revision = id, revision
-	return s.body, configurationprofile.Info{ContentType: "application/xml"}, nil
+	s.calls++
+	return s.body, configurationprofile.Info{ContentType: "application/xml"}, s.err
+}
+
+func TestProfilePrivateHopRejectsInvalidRequests(t *testing.T) {
+	body, err := json.Marshal(proxywire.ConfigurationProfileRequest{
+		Enrollment: mdm.EnrollmentID{ID: "device", Channel: mdm.ChannelDevice}, Revision: "revision",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	valid := string(body)
+	for _, test := range []struct {
+		name, contentType, body string
+		fetchErr                error
+		status, calls           int
+	}{
+		{name: "content type", contentType: "application/xml", body: valid, status: 415},
+		{name: "body limit", contentType: "application/json", body: strings.Repeat("x", 4097), status: 400},
+		{name: "malformed JSON", contentType: "application/json", body: "{", status: 400},
+		{name: "unknown member", contentType: "application/json", body: `{"Unexpected":true}`, status: 400},
+		{name: "missing identity", contentType: "application/json", body: `{"Revision":"revision"}`, status: 400},
+		{name: "missing profile", contentType: "application/json", body: valid, fetchErr: ddm.ErrNotFound, status: 404, calls: 1},
+		{name: "invalid revision", contentType: "application/json", body: valid, fetchErr: ddm.ErrInvalid, status: 404, calls: 1},
+		{name: "backend failure", contentType: "application/json", body: valid, fetchErr: errors.New("private storage detail"), status: 500, calls: 1},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			source := &profileSource{err: test.fetchErr}
+			h := mustHandler(t, proxyserver.Config{Backend: newStub(), ConfigurationProfiles: source})
+			r := httptest.NewRequestWithContext(t.Context(), http.MethodPost, "https://ddm.example"+proxywire.ConfigurationProfilePath, strings.NewReader(test.body))
+			r.Header.Set("Content-Type", test.contentType)
+			signature, err := proxywire.SignRequest(recvKey, r, []byte(test.body))
+			if err != nil {
+				t.Fatal(err)
+			}
+			r.Header.Set(proxywire.HeaderSignature, signature)
+			w := httptest.NewRecorder()
+			h.ServeHTTP(w, r)
+			if w.Code != test.status || w.Body.Len() != 0 || source.calls != test.calls {
+				t.Fatalf("status=%d body=%q backend calls=%d", w.Code, w.Body.String(), source.calls)
+			}
+			if err := proxywire.VerifyBoundResponse(sendKey, w.Header().Get(proxywire.HeaderSignature), signature, w.Code, w.Header().Get("Content-Type"), w.Body.Bytes()); err != nil {
+				t.Fatalf("error response not bound to authenticated request: %v", err)
+			}
+		})
+	}
 }
 
 func TestProfilePrivateHop(t *testing.T) {

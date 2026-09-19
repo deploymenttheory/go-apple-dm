@@ -9,13 +9,13 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-// schemaRoot returns the vendored Apple schema, skipping when the submodule
-// is not initialised.
+// schemaRoot requires the current pinned Apple schema. Missing source must fail
+// the generator suite instead of silently dropping its coverage.
 func schemaRoot(t *testing.T) string {
 	t.Helper()
-	root := filepath.Join("..", "..", "third_party", "device-management")
+	root := filepath.Join("..", "..", "third_party", "apple-device-management", "current")
 	if _, err := os.Stat(filepath.Join(root, "docs", "schema.yaml")); err != nil {
-		t.Skip("apple/device-management submodule not initialised")
+		t.Fatalf("current Apple schema unavailable (run git submodule update --init): %v", err)
 	}
 	return root
 }

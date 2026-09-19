@@ -40,6 +40,10 @@ standalone server archive's declared dependency; a change to `server/go.mod` doe
 The generated-output job invokes `make verify` once. It compares expected output
 without rewriting the tree and rejects unexpected `.gen.go` and
 `conformance_gen_test.go` files under the configured generated-output root.
+Generator unit tests require the pinned schema at
+`third_party/apple-device-management/current`. A missing checkout fails the
+suite so a stale source path cannot silently skip generation and verification
+tests or remove their coverage.
 
 The embedded `server/acceptance` suite configures SQLite itself and runs only in
 the SQLite E2E job. `server/e2e` runs against both stores; process acceptance
