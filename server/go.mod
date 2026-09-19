@@ -5,7 +5,7 @@ go 1.27.0
 require (
 	filippo.io/age v1.3.2
 	github.com/cedar-policy/cedar-go v1.8.0
-	github.com/deploymenttheory/go-apple-dm v0.7.4-0.20260919184614-68907f4c720a
+	github.com/deploymenttheory/go-apple-dm v0.7.4-0.20260919192617-bee5875be93c
 	github.com/go-sql-driver/mysql v1.10.1
 	github.com/jackc/pgx/v5 v5.11.0
 	github.com/smallstep/pkcs7 v0.2.3
@@ -17,8 +17,8 @@ require (
 require (
 	filippo.io/edwards25519 v1.2.0 // indirect
 	filippo.io/hpke v0.4.0 // indirect
-	github.com/deploymenttheory/go-apfs-v2 v0.3.1-0.20260919171608-f739e6c4cea8 // indirect
-	github.com/deploymenttheory/go-macos-pkg v0.5.1-0.20260919160249-744399d31825 // indirect
+	github.com/deploymenttheory/go-apfs-v2 v0.3.1 // indirect
+	github.com/deploymenttheory/go-macos-pkg v0.6.0 // indirect
 	github.com/dustin/go-humanize v1.0.1 // indirect
 	github.com/go-compressions/lzfse v0.3.0 // indirect
 	github.com/google/uuid v1.6.0 // indirect
@@ -28,7 +28,7 @@ require (
 	github.com/mattn/go-isatty v0.0.24 // indirect
 	github.com/micromdm/plist v0.3.0 // indirect
 	github.com/ncruces/go-strftime v1.0.0 // indirect
-	github.com/pierrec/lz4/v4 v4.1.29 // indirect
+	github.com/pierrec/lz4/v4 v4.1.30 // indirect
 	github.com/remyoudompheng/bigfft v0.0.0-20230129092748-24d4a6f8daec // indirect
 	github.com/smallstep/scep v0.0.0-20260331191114-261f960a40d1 // indirect
 	github.com/ulikunitz/xz v0.5.16 // indirect

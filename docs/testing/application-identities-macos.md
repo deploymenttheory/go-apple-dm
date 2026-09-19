@@ -45,7 +45,7 @@ enrollment and isolated SQLite database were retained. A fresh MDM
 subsequently committed as `a5d404f`; the candidate was built before that commit.
 Its binary SHA-256 was
 `34f3f6c7a202bf137210a786fc957785ebf016d40a29eebbd1800e7d6ed54a70`.
-The server's published library dependency is
+The initial library API came from
 `v0.7.4-0.20260919184614-68907f4c720a`.
 
 | Artifact | Version/build | Installed bundle ID | Result |
@@ -90,3 +90,14 @@ including artifact discovery, native comparison, authoring responses, installer
 logs and a manifest of source and binary hashes. Credentials and device identity
 details remain outside source control. These checks establish artifact-to-installed
 identity parity and authoring behavior, not macOS 27 binary-control enforcement.
+
+## Released readers
+
+Discovery and installed-app comparisons were repeated with `go-macos-pkg v0.6.0`
+and `go-apfs-v2 v0.3.1`. Both artifacts again returned complete reports, and both
+architecture hashes, signing IDs and team IDs matched the installed apps. The
+reader source files match those used in the initial run. The final server pins
+root library `v0.7.4-0.20260919192617-bee5875be93c`; its rebuilt binary SHA-256 is
+`2c10a986bdf4effbbcb71df02c6c09e193d711a3017da8a7e2a1b23678d65302`.
+The utility and server authoring tests and standalone module installation/process
+acceptance also pass with these released dependencies.
