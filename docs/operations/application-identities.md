@@ -12,6 +12,9 @@ flowchart LR
   Review --> Payload[Explicit typed DDM payload]
   Payload --> Validate[Validate target compatibility]
   Validate --> Blueprint[Publish and assign Blueprint]
+  Blueprint --> Device[Authenticated device DDM sync]
+  Device --> Verify[Compare payload, activation and server tokens]
+  Verify --> Remove[Unassign and verify removal on next sync]
 ```
 
 ## API
@@ -57,6 +60,83 @@ empty when multiple code directories exist: select from `codeDirectories`
 explicitly. A hash rule must account for each architecture, and app updates can
 change its hashes. Signature verification, notarization and Gatekeeper acceptance
 are separate operations.
+
+## Complete reference-server workflow
+
+The maintained [Go examples](../../server/internal/app/applicationauthoring_example_test.go)
+use the reference server's HTTP API with existing typed payloads. They are
+compile-only examples for a configured server; substitute your server URL,
+administrator credential, selected application, target and enrollment ID.
+`TestApplicationSettingsWorkflow` in the
+[integration test](../../server/internal/app/applicationauthoring_workflow_test.go)
+executes the same selection and publication helpers against the assembled server,
+then checks delivery through certificate-authenticated device check-ins.
+
+1. Discover candidates using an explicit App Store storefront and entity, or
+   upload an artifact. Review names, developers, platform metadata, artifact
+   SHA-256 and inspection issues. Search results can contain similar names;
+   an artifact can contain several apps.
+2. Select the exact App Store ID or artifact candidate `location`. Choose the
+   policy and matching scope explicitly. The App Store example authors
+   `DeniedApps` for the selected bundle ID. The macOS example authors
+   `DeniedBinaries` for all code-directory hashes of the selected build, across
+   architectures. It stops on incomplete reports or candidates without hashes.
+3. Build `ddm.AppSettings`, wrap it with `blueprint.NewDeclaration`, then validate
+   the Blueprint for the intended enrollment's actual target. The examples use
+   supervised OS 27 fixtures; version support remains schema-driven.
+4. Publish the explicit Blueprint and retain its `Revision` and
+   `Compiled.Identifiers["applications"]`. Assign it to the chosen enrollment
+   separately. Existing Blueprint updates require `If-Match` with the current
+   revision. Publication alone does not deliver a policy to any device.
+5. On the device's next DDM sync, verify the configuration and activation as
+   described below. Selected identifiers persist in the Blueprint; delivery and
+   unchanged republication require neither discovery nor the uploaded file.
+6. Unassign the Blueprint, sync again and verify both declarations leave the
+   device manifest. Delete the Blueprint with its current revision when it is
+   no longer needed.
+
+The author can choose other scopes using the same typed payload:
+
+| Matching scope | Explicit payload fields | Consequence |
+| --- | --- | --- |
+| iPhone/iPad application identity | `AllowedApps` or `DeniedApps` bundle IDs | Matches the bundle ID across releases; does not install or uninstall the app. |
+| Specific macOS build | One `AllowedBinaries` or `DeniedBinaries` entry per selected `CDHash` | Covers the selected code directories; updates can require new hashes. |
+| macOS signing identity | `SigningID`, optionally narrowed with the observed `TeamID` in the same entry | Matches those identifiers across builds; review both values before choosing this broader scope. |
+
+Fields within one binary entry must all match. Do not turn an artifact-relative
+location into `PathPrefix`, or infer `SigningState` from portable inspection.
+The macOS signing restriction described below applies independently of these
+identifier choices.
+
+### Verify device-facing delivery
+
+An admin `GET /blueprints/{id}` verifies stored authoring state. To verify delivery,
+the enrolled device uses Apple's `DeclarativeManagement` check-in at `/mdm` with
+its device identity. An admin bearer token is not a device credential.
+
+Fetch `tokens`, then `declaration-items`. Match the returned declarations token,
+find the compiled configuration identifier in `Declarations.Configurations`, and
+fetch `declaration/configuration/{identifier}`. Check its `Type`, `Identifier`,
+`ServerToken` and complete `Payload` against the authored selection. Also fetch
+the activation identified by `Compiled.Activations["default"]`; its
+`StandardConfigurations` must contain that configuration identifier. A stored
+configuration without its applicable activation does not complete this workflow.
+
+The integration test uses the existing simulator's `SyncDDM` to perform that
+protocol exchange. It verifies both storage backends, same-name App Store
+candidates, a two-app artifact with distinct hashes, all architectures, target
+rejection, assignment isolation, unchanged republication, and removal. It makes
+no public App Store request and changes no physical device:
+
+```sh
+go test ./server/internal/app -run '^TestApplicationSettings' -race -count=1
+```
+
+This check proves authoring and protocol delivery. Native acceptance, application
+visibility and binary execution behavior require device status and on-device
+observation; simulator delivery does not establish those outcomes. The owned
+Mach-O fixture is ad-hoc signed and is used only to verify inspection and payload
+preservation, not as an example of executable eligibility under binary controls.
 
 ## Limits and storage
 

@@ -18,6 +18,10 @@ or a DDM declaration type.
 For app controls, use [application identity discovery](application-identities.md)
 to select identifiers before constructing the explicit payload. The validation
 API accepts target OS, version, channel and enrollment capabilities.
+The [complete App Settings workflow](application-identities.md#complete-reference-server-workflow)
+connects discovery and explicit matching choices to publication, assignment,
+device-facing declaration verification and removal, with maintained Go examples
+and an integration test against both reference-server storage backends.
 
 ## Author and publish
 
