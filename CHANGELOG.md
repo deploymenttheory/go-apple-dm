@@ -1,5 +1,54 @@
 # Changelog
 
+## [0.7.4](https://github.com/deploymenttheory/go-apple-dm/compare/v0.7.3...v0.7.4) (2026-09-19)
+
+
+### Features
+
+* add Blueprint composition and DDM publication ([45f8e5a](https://github.com/deploymenttheory/go-apple-dm/commit/45f8e5a28562c72144487b212250536b1fe04370))
+* add Blueprint composition and DDM publication ([45f09cb](https://github.com/deploymenttheory/go-apple-dm/commit/45f09cb1dd77c5c8433a9b3ef71a3220759d7706))
+* add guided onboarding and local Compose quickstart ([10058fe](https://github.com/deploymenttheory/go-apple-dm/commit/10058febcaea9795952fa2fd99111be429093706))
+* add guided onboarding and local Compose quickstart ([f84a831](https://github.com/deploymenttheory/go-apple-dm/commit/f84a831509fbc9d88f7810866a0b49fbe97b2d3e))
+* add macOS 27 compatibility and shared OS version support ([ee64353](https://github.com/deploymenttheory/go-apple-dm/commit/ee643534df5769ff54303fdc491ba75bff9339b6))
+* add macOS 27 compatibility and shared OS version support ([69adcf4](https://github.com/deploymenttheory/go-apple-dm/commit/69adcf428a64368c505f6cb94807a9da25922516))
+* **utility:** add app identity discovery and App Settings builders ([646da4e](https://github.com/deploymenttheory/go-apple-dm/commit/646da4efe9d4d31d710b5bb519a9ebfbbef98ab4))
+* **utility:** discover app identities for DDM authoring ([77a660e](https://github.com/deploymenttheory/go-apple-dm/commit/77a660e2682a86660556b86fc0529e5503c38d7f))
+
+
+### Bug Fixes
+
+* **ci:** restore monitor artifact paths ([a43ba55](https://github.com/deploymenttheory/go-apple-dm/commit/a43ba55b97e01e8a700fdf6f32e2799bb276200d))
+* **ci:** restore monitor assessment artifact path ([50d077a](https://github.com/deploymenttheory/go-apple-dm/commit/50d077a427e67828d54b285c4749d4ea8e764dc0))
+* **ci:** restore monitor assessment artifact path ([58cc822](https://github.com/deploymenttheory/go-apple-dm/commit/58cc822184c3214a898a4ffeca23bebd486b8e1c))
+* **ci:** restore schema monitor artifact paths ([7999efb](https://github.com/deploymenttheory/go-apple-dm/commit/7999efb2704c4a40446747d0a5a2e9f956190513))
+* complete macOS 27 library and server validation ([ebceb75](https://github.com/deploymenttheory/go-apple-dm/commit/ebceb75c9a28a9d20365a2fd4112fd1244a4dbb9))
+* preserve cancellation during transaction shutdown ([767197e](https://github.com/deploymenttheory/go-apple-dm/commit/767197ee17f29763869c6e63ce8d9b253a446076))
+* **schema:** fetch retained assessment snapshots ([ad7ad74](https://github.com/deploymenttheory/go-apple-dm/commit/ad7ad748799e6eb8bbf3e5203f6b0161a1690929))
+* **schema:** permit generated package documentation ([3f4ad32](https://github.com/deploymenttheory/go-apple-dm/commit/3f4ad329f12ad7e9901270eb8c5db50a8b565216))
+* **schema:** permit generated package documentation ([3819de8](https://github.com/deploymenttheory/go-apple-dm/commit/3819de8063859a9f707e82379799cddc10a7cfaa))
+* **schema:** replay each retained snapshot transition ([fe5755a](https://github.com/deploymenttheory/go-apple-dm/commit/fe5755ac95ece7d2ea67c721fb54f6a671065f4d))
+* **schema:** replay each retained snapshot transition ([9305e3d](https://github.com/deploymenttheory/go-apple-dm/commit/9305e3d471016cfdb51013adf19102ff379337e4))
+* **schema:** report adjacent journey versions ([f93b3ba](https://github.com/deploymenttheory/go-apple-dm/commit/f93b3ba758461f2fce116e058d2fd9847e119281))
+* **schema:** separate release and canary sources ([b79da48](https://github.com/deploymenttheory/go-apple-dm/commit/b79da486548d1c041b7b0a6e746f383119648cbf))
+* **schema:** separate release and canary sources ([89d8829](https://github.com/deploymenttheory/go-apple-dm/commit/89d88298eaa0c86de11f85c87358c7a566efdfe7))
+* **server:** pin library revision containing Blueprint APIs ([1706d74](https://github.com/deploymenttheory/go-apple-dm/commit/1706d74283510fb46edf8a56e85e3001d6bfb370))
+* share persistence across split MDM and DDM tests ([617119b](https://github.com/deploymenttheory/go-apple-dm/commit/617119b0b66a3c66cfb4e88ba78a134eb4e5234d))
+* validate binary policy identities and record macOS 27 findings ([cddf78c](https://github.com/deploymenttheory/go-apple-dm/commit/cddf78c3196a9ba561af4d079534e548f05a3186))
+
+
+### Refactoring
+
+* make osversion the sole version API ([c81508c](https://github.com/deploymenttheory/go-apple-dm/commit/c81508cf336c671c9fa50ee02ca8b36262ce255e))
+* **schema:** version third-party sources ([652bb90](https://github.com/deploymenttheory/go-apple-dm/commit/652bb907635907e3c3529b84305dfbe7bdb31b30))
+* **schema:** version third-party sources ([b3ccea9](https://github.com/deploymenttheory/go-apple-dm/commit/b3ccea970c0d9a6bbd6eaece8079d62a27b4ef98))
+* **utility:** focus on app identity discovery for DDM authoring ([63fe182](https://github.com/deploymenttheory/go-apple-dm/commit/63fe1822fe37c606d8d09163c53892cc37122877))
+
+
+### Documentation
+
+* record macOS 27 guest enrollment blocker and CI results ([c582bb7](https://github.com/deploymenttheory/go-apple-dm/commit/c582bb7d09a0c136777999802c86dfec4a087c6f))
+* record native provisioning enrollment retry ([97b4d35](https://github.com/deploymenttheory/go-apple-dm/commit/97b4d3508b4d5ec69860abbbad1602cd7858e2b9))
+
 ## [0.7.3](https://github.com/deploymenttheory/go-apple-dm/compare/v0.7.2...v0.7.3) (2026-09-16)
 
 
