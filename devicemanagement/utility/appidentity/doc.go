@@ -1,5 +1,5 @@
 // Package appidentity inspects macOS application bundles and executable
-// code-signing identities.
+// code-signing identities for use when authoring device management configurations.
 //
 // # Design
 //
@@ -17,9 +17,9 @@
 // notarization. Portable identity reports can be consumed on other platforms;
 // callers are responsible for the provenance of reports loaded from JSON.
 //
-// Policy construction belongs to utility/appsettings. Inspection preserves an
-// absent team identifier; the policy builder applies Apple's sentinel only to
-// a verified Apple identity.
+// Inspection returns observed identifiers and preserves an absent team
+// identifier. Callers choose the matching identifiers and constraints for their
+// existing payload types; inspection does not choose allow or deny policy.
 //
 // # References
 //

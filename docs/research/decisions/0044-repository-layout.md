@@ -8,11 +8,15 @@ Package paths describe dependency responsibilities, and library consumers should
 
 The root module contains protocol packages, certificate services, Apple service clients, foundational utilities, storage contracts and in-memory backends beneath `devicemanagement/`. This directory is a package namespace within the existing module. The server module contains SQL implementations, service orchestration, HTTP adapters, sinks, administration and binaries. Production and test imports cannot create a library dependency on the server module.
 
-The `devicemanagement/utility/` namespace contains reusable administration helpers.
+The `devicemanagement/utility/` namespace discovers application identities for
+configuration authors through Go APIs.
 Its tier sits above simulator and below server, with an additional prohibition on
-storage and simulator imports. Public App Store Identity performs outbound
-lookup, appidentity inspects native code, and appsettings constructs generated
-payloads without I/O. Lower tiers cannot depend on utility packages.
+storage and simulator imports. Public App Store Identity searches public listings,
+appleappidentity queries a dated snapshot of Apple's iPhone and iPad app catalogue,
+and appidentity inspects native code-signing facts. Callers select applications
+and matching criteria, then populate the existing generated payload types.
+Discovery does not choose policy or run during Blueprint compilation.
+Lower tiers cannot depend on utility packages.
 
 Library-only JSON, CBOR and SCEP helpers live under `devicemanagement/internal/`.
 The shared `internal/httpsurl` remains at the repository root so both modules can

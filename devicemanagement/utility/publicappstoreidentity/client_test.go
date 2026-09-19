@@ -6,6 +6,7 @@ import (
 	"io"
 	"math"
 	"net/http"
+	"reflect"
 	"strings"
 	"testing"
 	"time"
@@ -50,8 +51,56 @@ func TestSearchAndLookup(t *testing.T) {
 		t.Fatalf("search: %v %v", apps, err)
 	}
 	a, err := c.Lookup(t.Context(), 123, testStore)
-	if err != nil || a != apps[0] || a.BundleID != "com.example.app" || a.Name != "Example" || a.Developer != "Example Inc" || a.Version != "2.0" || a.Store.Country != "GB" {
+	if err != nil || !reflect.DeepEqual(a, apps[0]) || a.BundleID != "com.example.app" || a.Name != "Example" || a.Developer != "Example Inc" || a.Version != "2.0" || a.Store.Country != "GB" {
 		t.Fatalf("listing: %+v %v", a, err)
+	}
+}
+
+func TestDeveloperFilterAndPlatformMetadata(t *testing.T) {
+	c := fixtureClient(t, `{"resultCount":3,"results":[
+		{"trackId":1,"bundleId":"com.example.phone","trackName":"Example","artistName":"Example Inc","kind":"software","features":["iosUniversal"],"supportedDevices":["iPhone17,1","iPad16,3"]},
+		{"trackId":2,"bundleId":"com.other.app","trackName":"Example","artistName":"Another Publisher"},
+		{"trackId":3,"bundleId":"com.example.mac","trackName":"Example","artistName":"Example Inc","kind":"mac-software"}
+	]}`, 200)
+	base := c.HTTPClient.Transport
+	calls := 0
+	c.HTTPClient.Transport = transportFunc(func(r *http.Request) (*http.Response, error) {
+		calls++
+		if r.URL.Query().Has("developer") || r.URL.Query().Get("limit") != "3" {
+			t.Fatalf("local filter changed API query: %s", r.URL)
+		}
+		return base.RoundTrip(r)
+	})
+	for _, tc := range []struct {
+		developer string
+		ids       []int64
+	}{
+		{" eXAmple ", []int64{1, 3}},
+		{"PUBLISHER", []int64{2}},
+		{"missing", []int64{}},
+		{"   ", []int64{1, 2, 3}},
+	} {
+		apps, err := c.Search(t.Context(), Query{Term: "Example", Developer: tc.developer, Store: testStore, Limit: 3})
+		if err != nil || len(apps) != len(tc.ids) || apps == nil {
+			t.Fatalf("%q: %+v %v", tc.developer, apps, err)
+		}
+		for i, app := range apps {
+			if app.ID != tc.ids[i] {
+				t.Fatalf("%q: unexpected order or match: %+v", tc.developer, apps)
+			}
+			if app.ID == 1 && (app.Kind != "software" || !reflect.DeepEqual(app.Features, []string{"iosUniversal"}) || !reflect.DeepEqual(app.SupportedDevices, []string{"iPhone17,1", "iPad16,3"})) {
+				t.Fatalf("lost platform metadata: %+v", app)
+			}
+			if app.ID == 3 && (app.Kind != "mac-software" || app.Features != nil || app.SupportedDevices != nil) {
+				t.Fatalf("invented platform metadata: %+v", app)
+			}
+		}
+	}
+	if calls != 4 {
+		t.Fatalf("unexpected additional requests: %d", calls)
+	}
+	if _, err := fixtureClient(t, "failure", 503).Search(t.Context(), Query{Term: "Example", Store: testStore, Developer: "Example"}); !errors.Is(err, ErrStatus) {
+		t.Fatalf("search failure: %v", err)
 	}
 }
 

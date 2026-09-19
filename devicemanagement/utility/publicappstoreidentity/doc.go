@@ -1,18 +1,20 @@
-// Package publicappstoreidentity resolves public App Store listings to bundle
-// identifiers through Apple's iTunes Search API.
+// Package publicappstoreidentity discovers public App Store bundle identifiers
+// for use when authoring device management configurations.
 //
 // # Design
 //
 // Client searches by term or looks up a numeric App Store ID in an explicit
-// country storefront and software entity. Results include listing metadata and
-// the storefront used for the request. Each operation makes one HTTP request
-// with bounded response decoding and a context deadline. Callers supply shared
-// caching, rate limiting and any custom HTTP transport.
+// country storefront and software entity through Apple's iTunes Search API.
+// Search can filter the returned listings by developer name. Results preserve
+// Apple's platform metadata and the storefront used for the request; callers
+// choose among matches. Each operation makes one HTTP request with bounded
+// response decoding and a context deadline. The limit applies before local
+// filtering. Callers supply caching, rate limiting and any custom HTTP transport.
 //
 // Listing metadata identifies a public store entry. Native code-signing identity
-// belongs to utility/appidentity, and App Settings construction belongs to
-// utility/appsettings. The client does not query private Apps and Books inventory
-// or undocumented external-version endpoints.
+// belongs to utility/appidentity. Callers use selected bundle identifiers in
+// their existing payload types. The client does not query private Apps and
+// Books inventory or undocumented external-version endpoints.
 //
 // # References
 //

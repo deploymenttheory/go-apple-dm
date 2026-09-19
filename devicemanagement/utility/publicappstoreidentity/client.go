@@ -51,6 +51,9 @@ type Query struct {
 	Term  string `json:"term"`
 	Store Store  `json:"store"`
 	Limit int    `json:"limit"`
+	// Developer filters the returned listings by a case-insensitive substring
+	// of their developer name. Filtering happens after the API applies Limit.
+	Developer string `json:"developer,omitempty"`
 }
 
 // App is a public store listing, with the storefront used to resolve it.
@@ -62,6 +65,11 @@ type App struct {
 	Version   string `json:"version"`
 	URL       string `json:"url"`
 	Store     Store  `json:"store"`
+	// Kind, Features and SupportedDevices preserve Apple's platform metadata.
+	// Store.Entity is the requested search category, not a compatibility claim.
+	Kind             string   `json:"kind,omitempty"`
+	Features         []string `json:"features,omitempty"`
+	SupportedDevices []string `json:"supportedDevices,omitempty"`
 }
 
 // StatusError preserves the status and Retry-After header without retrying.
@@ -83,7 +91,8 @@ type Client struct {
 }
 
 // Search returns the matching listings. An empty result is successful. The API's
-// limit bounds this single request; Search does not imply additional pages exist.
+// limit bounds this single request, before the optional developer filter is
+// applied. Search does not select a match or imply additional pages exist.
 func (c *Client) Search(ctx context.Context, q Query) ([]App, error) {
 	if strings.TrimSpace(q.Term) == "" {
 		return nil, fmt.Errorf("%w: term is required", ErrInvalid)
@@ -94,7 +103,20 @@ func (c *Client) Search(ctx context.Context, q Query) ([]App, error) {
 	if q.Limit < 1 || q.Limit > 200 {
 		return nil, fmt.Errorf("%w: limit must be 1..200", ErrInvalid)
 	}
-	return c.request(ctx, "search", q.Store, url.Values{"term": {q.Term}, "limit": {strconv.Itoa(q.Limit)}})
+	apps, err := c.request(ctx, "search", q.Store, url.Values{"term": {q.Term}, "limit": {strconv.Itoa(q.Limit)}})
+	if err != nil {
+		return nil, err
+	}
+	if developer := strings.ToLower(strings.TrimSpace(q.Developer)); developer != "" {
+		matches := apps[:0]
+		for _, app := range apps {
+			if strings.Contains(strings.ToLower(app.Developer), developer) {
+				matches = append(matches, app)
+			}
+		}
+		apps = matches
+	}
+	return apps, nil
 }
 
 // Lookup resolves one numeric App Store ID in the requested store. A missing
@@ -177,12 +199,15 @@ func (c *Client) request(ctx context.Context, endpoint string, store Store, q ur
 	var response struct {
 		Count   *int `json:"resultCount"`
 		Results []struct {
-			ID        int64  `json:"trackId"`
-			BundleID  string `json:"bundleId"`
-			Name      string `json:"trackName"`
-			Developer string `json:"artistName"`
-			Version   string `json:"version"`
-			URL       string `json:"trackViewUrl"`
+			ID               int64    `json:"trackId"`
+			BundleID         string   `json:"bundleId"`
+			Name             string   `json:"trackName"`
+			Developer        string   `json:"artistName"`
+			Version          string   `json:"version"`
+			URL              string   `json:"trackViewUrl"`
+			Kind             string   `json:"kind"`
+			Features         []string `json:"features"`
+			SupportedDevices []string `json:"supportedDevices"`
 		} `json:"results"`
 	}
 	if err := json.Unmarshal(data, &response); err != nil {
@@ -196,7 +221,11 @@ func (c *Client) request(ctx context.Context, endpoint string, store Store, q ur
 		if r.ID <= 0 || strings.TrimSpace(r.BundleID) == "" || strings.TrimSpace(r.Name) == "" {
 			return nil, fmt.Errorf("%w: incomplete listing", ErrDecode)
 		}
-		apps = append(apps, App{ID: r.ID, BundleID: r.BundleID, Name: r.Name, Developer: r.Developer, Version: r.Version, URL: r.URL, Store: store})
+		apps = append(apps, App{
+			ID: r.ID, BundleID: r.BundleID, Name: r.Name, Developer: r.Developer,
+			Version: r.Version, URL: r.URL, Store: store,
+			Kind: r.Kind, Features: r.Features, SupportedDevices: r.SupportedDevices,
+		})
 	}
 	return apps, nil
 }

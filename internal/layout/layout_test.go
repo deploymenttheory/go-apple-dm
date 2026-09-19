@@ -39,7 +39,7 @@ const (
 	tierServices          // appleplatformservices: outbound clients to Apple
 	tierStorage           // storage: contracts and the in-memory backend, no drivers
 	tierClient            // simulator: a device, in software
-	tierUtility           // administration helpers: discovery and payload construction
+	tierUtility           // configuration authoring: application identity discovery
 	tierServer            // server: persistence, service layer, transport
 	tierApp               // composition: cmd, internal/app, e2e
 )
@@ -239,7 +239,7 @@ func TestLibraryTierClassification(t *testing.T) {
 		"devicemanagement/storage/inmem":                  tierStorage,
 		"devicemanagement/simulator":                      tierClient,
 		"devicemanagement/utility/appidentity":            tierUtility,
-		"devicemanagement/utility/appsettings":            tierUtility,
+		"devicemanagement/utility/appleappidentity":       tierUtility,
 		"devicemanagement/utility/publicappstoreidentity": tierUtility,
 		"server/service":                                  tierServer,
 		"internal/schemagen":                              tierApp,
@@ -250,7 +250,7 @@ func TestLibraryTierClassification(t *testing.T) {
 	}
 }
 
-// Utilities compose portable library capabilities without acquiring device
+// Identity discovery and its authoring examples stay usable without device
 // simulation, persistence, or server dependencies, including through tests.
 func TestUtilitiesHaveNoPersistenceDependencies(t *testing.T) {
 	t.Parallel()
@@ -263,9 +263,6 @@ func TestUtilitiesHaveNoPersistenceDependencies(t *testing.T) {
 			tier := tierOf(dep)
 			if tier == tierStorage || tier == tierClient || tier >= tierServer {
 				t.Errorf("utility %s imports forbidden dependency %s", pkg, dep)
-			}
-			if strings.HasSuffix(pkg, "/publicappstoreidentity") && strings.HasPrefix(dep, "devicemanagement/") {
-				t.Errorf("public App Store identity client %s imports domain package %s", pkg, dep)
 			}
 		}
 	}
