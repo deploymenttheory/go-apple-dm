@@ -7,9 +7,11 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"strconv"
 
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/ddm/blueprint"
 	"github.com/deploymenttheory/go-apple-dm/server/blueprints"
+	"github.com/deploymenttheory/go-apple-dm/server/internal/dmctl/explain"
 )
 
 func runBlueprints(ctx context.Context, e *env, args []string) error {
@@ -22,6 +24,7 @@ func runBlueprints(ctx context.Context, e *env, args []string) error {
 	revision := fs.String("revision", "", "current revision required for updates and deletion")
 	channel := fs.String("channel", "device", "enrollment channel: device or user")
 	parent := fs.String("parent", "", "parent device ID for a user channel")
+	target := fs.String("target", "", "validation target: OS:version,channel=device|user[,supervised,...] (validate only)")
 	rest, err := e.parseVerb(fs, args[1:])
 	if err != nil {
 		return err
@@ -32,6 +35,21 @@ func runBlueprints(ctx context.Context, e *env, args []string) error {
 	}
 	path, method := "/blueprints", http.MethodGet
 	q := url.Values{}
+	if *target != "" {
+		if sub != "validate" {
+			return fmt.Errorf("%w: -target applies only to blueprints validate", ErrUsage)
+		}
+		t, err := explain.ParseTarget(*target)
+		if err != nil || t.Version.IsZero() || t.Channel == "" {
+			return fmt.Errorf("%w: -target requires a valid OS, version and channel", ErrUsage)
+		}
+		q.Set("os", string(t.OS))
+		q.Set("version", t.Version.String())
+		q.Set("channel", string(t.Channel))
+		for key, value := range map[string]bool{"supervised": t.Supervised, "sharedIPad": t.SharedIPad, "userEnrollment": t.UserEnrollment, "dep": t.DEP, "userApproved": t.UserApproved} {
+			q.Set(key, strconv.FormatBool(value))
+		}
+	}
 	var body any
 	switch sub {
 	case "validate", "publish":

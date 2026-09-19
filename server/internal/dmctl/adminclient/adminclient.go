@@ -159,7 +159,9 @@ func (c *Client) Do(
 	return c.DoWithHeaders(ctx, method, path, query, body, nil)
 }
 
-// DoWithHeaders supports optimistic revisions and binary profile uploads.
+// DoWithHeaders supports optimistic revisions and binary uploads. io.Reader
+// bodies are streamed without buffering or JSON encoding; callers select the
+// content type in headers. The HTTP transport closes io.ReadCloser bodies.
 func (c *Client) DoWithHeaders(ctx context.Context, method, path string, query url.Values, body any, headers http.Header) (*Response, error) {
 	u := *c.base
 	u.Path = strings.TrimRight(u.Path, "/") + Prefix + path
@@ -174,6 +176,8 @@ func (c *Client) DoWithHeaders(ctx context.Context, method, path string, query u
 			rdr = bytes.NewReader(b)
 		case string:
 			rdr = strings.NewReader(b)
+		case io.Reader:
+			rdr = b
 		default:
 			raw, err := json.Marshal(body)
 			if err != nil {

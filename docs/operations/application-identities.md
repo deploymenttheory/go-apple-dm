@@ -7,12 +7,77 @@ Blueprint. Discovery selects no application or allow/deny policy automatically.
 
 ```mermaid
 flowchart LR
-  Source[App name or uploaded artifact] --> Discovery[Authorized identity discovery]
+  Source[App name or artifact file] --> CLI[dmctl app-identities]
+  CLI --> Discovery[Authorized server identity discovery]
   Discovery --> Review[Select app and matching identifiers]
   Review --> Payload[Explicit typed DDM payload]
   Payload --> Validate[Validate target compatibility]
   Validate --> Blueprint[Publish and assign Blueprint]
+  Blueprint --> Device[Authenticated device DDM sync]
+  Device --> Verify[Compare payload, activation and server tokens]
+  Verify --> Remove[Unassign and verify removal on next sync]
 ```
+
+## CLI
+
+`dmctl app-identities` uses the existing server connection, context, token
+reference and CA settings. Public App Store searches and artifact inspection run
+on the reference server. All output modes preserve the discovery response,
+including candidate metadata, artifact provenance and incomplete-report issues.
+Discovery selects no candidate, constructs no policy and publishes no Blueprint.
+
+```sh
+export DMCTL_SERVER="https://your-mdm-server"
+export DMCTL_TOKEN="env:DM_ADMIN_TOKEN"
+
+# Search an explicit storefront and platform category.
+dmctl app-identities public-app-store search \
+  -term "Example" -country GB -entity iPadSoftware -output json
+
+# Resolve the App Store ID selected after reviewing the search results.
+dmctl app-identities public-app-store lookup 123 \
+  -country GB -entity iPadSoftware -output json
+
+# Search or resolve an Apple-bundled iPhone/iPad application.
+dmctl app-identities apple search -term Safari
+dmctl app-identities apple lookup com.apple.mobilesafari
+
+# Stream a local artifact to the server using the same authenticated client.
+dmctl app-identities inspect -file /path/to/application.dmg \
+  -timeout 3m -output json > identity.json
+
+# A pipeline can supply artifact bytes on stdin.
+dmctl app-identities inspect -file - -timeout 3m -output json < application.zip
+```
+
+Public App Store search accepts optional `-developer` and `-limit` (1–200; zero
+uses the server default). Discovery has no cursor pagination, so catalogue
+commands reject `-all`. An Apple catalogue search without `-term` returns the
+bundled catalogue. Artifact inspection requires an explicit file or `-file -`;
+it streams bytes without loading the complete upload into CLI memory. Use the
+normal `-timeout` flag to allow for upload and inspection; the server retains
+its own inspection and size limits. Incomplete inspection remains a report to
+review, not a selected application or an automatically usable policy.
+
+After selecting the application and matching scope and authoring
+`app-controls.json` with the [Go helpers](#complete-reference-server-workflow),
+use the ordinary Blueprint commands:
+
+```sh
+dmctl blueprints validate -file app-controls.json \
+  -target macos:27.0,channel=device,supervised
+dmctl blueprints publish -file app-controls.json
+dmctl blueprints assign app-controls DEVICE_ID
+dmctl enrollments status values device DEVICE_ID \
+  -prefix management.declarations -all -output json
+dmctl blueprints unassign app-controls DEVICE_ID
+```
+
+Use the enrollment's actual OS, version, channel and capabilities in `-target`.
+Omitting it retains structural validation. The flag uses the same target syntax
+as `dmctl explain` and `dmctl profile lint`, and applies only to
+`blueprints validate`. App Store or artifact discovery and schema validation do
+not establish native policy enforcement; see the delivery checks below.
 
 ## API
 
@@ -57,6 +122,89 @@ empty when multiple code directories exist: select from `codeDirectories`
 explicitly. A hash rule must account for each architecture, and app updates can
 change its hashes. Signature verification, notarization and Gatekeeper acceptance
 are separate operations.
+
+## Complete reference-server workflow
+
+The maintained [Go examples](../../server/internal/app/applicationauthoring_example_test.go)
+use the reference server's HTTP API with existing typed payloads. They are
+compile-only examples for a configured server; substitute your server URL,
+administrator credential, selected application, target and enrollment ID.
+`TestApplicationSettingsWorkflow` in the
+[integration test](../../server/internal/app/applicationauthoring_workflow_test.go)
+executes the same selection and publication helpers against the assembled server,
+then checks delivery through certificate-authenticated device check-ins.
+
+1. Discover candidates using an explicit App Store storefront and entity, or
+   upload an artifact. Review names, developers, platform metadata, artifact
+   SHA-256 and inspection issues. Search results can contain similar names;
+   an artifact can contain several apps.
+2. Select the exact App Store ID or artifact candidate `location`. Choose the
+   policy and matching scope explicitly. The App Store example authors
+   `DeniedApps` for the selected bundle ID. The macOS example authors
+   `DeniedBinaries` for all code-directory hashes of the selected build, across
+   architectures. It stops on incomplete reports or candidates without hashes.
+3. Build `ddm.AppSettings`, wrap it with `blueprint.NewDeclaration`, then validate
+   the Blueprint for the intended enrollment's actual target. The examples use
+   supervised OS 27 fixtures; version support remains schema-driven.
+4. Publish the explicit Blueprint and retain its `Revision` and
+   `Compiled.Identifiers["applications"]`. Assign it to the chosen enrollment
+   separately. Existing Blueprint updates require `If-Match` with the current
+   revision. Publication alone does not deliver a policy to any device.
+5. On the device's next DDM sync, verify the configuration and activation as
+   described below. Selected identifiers persist in the Blueprint; delivery and
+   unchanged republication require neither discovery nor the uploaded file.
+6. Unassign the Blueprint, sync again and verify both declarations leave the
+   device manifest. Delete the Blueprint with its current revision when it is
+   no longer needed.
+
+The author can choose other scopes using the same typed payload:
+
+| Matching scope | Explicit payload fields | Consequence |
+| --- | --- | --- |
+| iPhone/iPad application identity | `AllowedApps` or `DeniedApps` bundle IDs | Matches the bundle ID across releases; does not install or uninstall the app. |
+| Specific macOS build | One `AllowedBinaries` or `DeniedBinaries` entry per selected `CDHash` | Covers the selected code directories; updates can require new hashes. |
+| macOS signing identity | `SigningID`, optionally narrowed with the observed `TeamID` in the same entry | Matches those identifiers across builds; review both values before choosing this broader scope. |
+
+Fields within one binary entry must all match. Do not turn an artifact-relative
+location into `PathPrefix`, or infer `SigningState` from portable inspection.
+The macOS signing restriction described below applies independently of these
+identifier choices.
+
+### Verify device-facing delivery
+
+An admin `GET /blueprints/{id}` verifies stored authoring state. To verify delivery,
+the enrolled device uses Apple's `DeclarativeManagement` check-in at `/mdm` with
+its device identity. An admin bearer token is not a device credential.
+
+Fetch `tokens`, then `declaration-items`. Match the returned declarations token,
+find the compiled configuration identifier in `Declarations.Configurations`, and
+fetch `declaration/configuration/{identifier}`. Check its `Type`, `Identifier`,
+`ServerToken` and complete `Payload` against the authored selection. Also fetch
+the activation identified by `Compiled.Activations["default"]`; its
+`StandardConfigurations` must contain that configuration identifier. A stored
+configuration without its applicable activation does not complete this workflow.
+
+The integration test uses the existing simulator's `SyncDDM` to perform that
+protocol exchange. It verifies both storage backends, same-name App Store
+candidates, a two-app artifact with distinct hashes, all architectures, target
+rejection, assignment isolation, unchanged republication, and removal. It makes
+no public App Store request and changes no physical device:
+
+```sh
+go test ./server/internal/app -run '^TestApplicationSettings' -race -count=1
+go test ./server/internal/dmctl -run '^TestApplicationIdentityCLIWorkflow$' -race -count=1
+```
+
+The CLI workflow test uses `dmctl` for identity discovery, target validation,
+publication, assignment and removal against the assembled reference server. A
+certificate-authenticated simulator fetches the resulting configuration and
+activation. It covers both App Store identity and streamed Mach-O inspection.
+
+This check proves authoring and protocol delivery. Native acceptance, application
+visibility and binary execution behavior require device status and on-device
+observation; simulator delivery does not establish those outcomes. The owned
+Mach-O fixture is ad-hoc signed and is used only to verify inspection and payload
+preservation, not as an example of executable eligibility under binary controls.
 
 ## Limits and storage
 

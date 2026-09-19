@@ -18,6 +18,10 @@ or a DDM declaration type.
 For app controls, use [application identity discovery](application-identities.md)
 to select identifiers before constructing the explicit payload. The validation
 API accepts target OS, version, channel and enrollment capabilities.
+The [complete App Settings workflow](application-identities.md#complete-reference-server-workflow)
+connects discovery and explicit matching choices to publication, assignment,
+device-facing declaration verification and removal, with maintained Go examples
+and an integration test against both reference-server storage backends.
 
 ## Author and publish
 
@@ -47,10 +51,17 @@ Save this as `engineering.json`:
 
 ```sh
 dmctl blueprints validate -file engineering.json
+dmctl blueprints validate -file engineering.json -target macos:27.0,channel=device,supervised
 dmctl blueprints publish -file engineering.json
 dmctl blueprints assign engineering DEVICE_ID
 dmctl blueprints get engineering
 ```
+
+`validate -target` checks schema support for the supplied OS, version, channel and
+capabilities. OS version and channel are required when a target is supplied; use
+the intended enrollment's actual values. Without `-target`, validation checks
+the Blueprint structure. The target is validation context and is not persisted
+in the Blueprint source or accepted on other Blueprint operations.
 
 Publishing returns a `Revision`. Supply that revision on every update:
 
