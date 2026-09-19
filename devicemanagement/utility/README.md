@@ -13,7 +13,8 @@ packages directly.
 | --- | --- | --- |
 | [`publicappstoreidentity`](publicappstoreidentity/) | App name, storefront and software entity; optional developer filter | Public listings with bundle IDs, developer names and Apple's platform metadata |
 | [`appleappidentity`](appleappidentity/) | Apple app name or bundle ID | Bundle IDs from Apple's iPhone and iPad catalogue, including preinstalled apps |
-| [`appidentity`](appidentity/) | Local macOS app bundle or Mach-O binary path | Bundle metadata and each architecture's CDHash, SigningID, TeamID and verified signing category |
+| [`appidentity`](appidentity/) | Native path, or portable filesystem/reader | Bundle metadata and each architecture's CDHashes, SigningID and TeamID; native inspection additionally verifies signing category |
+| [`appartifact`](appartifact/) | Immutable PKG, DMG, ZIP or Mach-O file | Candidate applications, portable identities and artifact provenance |
 
 Callers choose the intended application, allow or deny policy, and matching
 breadth. Identity discovery runs while authoring, before a payload is passed to
@@ -131,6 +132,42 @@ errors; unsigned and invalid signatures remain visible in successful reports.
 Identity records have JSON tags so callers can retain or export selected facts.
 Reports describe the inspected file at that time; callers are responsible for
 the provenance and freshness of imported records.
+
+## Application distributions on any server platform
+
+```go
+report, err := appartifact.Inspect(ctx, "Example.pkg", appartifact.Options{})
+```
+
+The reader uses `go-macos-pkg` for installer payloads and Mach-O signatures and
+`go-apfs-v2` for APFS and HFS+/HFSX disk images. It does not mount images, execute
+installers or require macOS. ZIP bundles and nested distribution containers are
+also supported. `appidentity.ReadBundle` and `ReadExecutable` expose the portable
+readers directly for callers that already have a filesystem or random-access file.
+
+Review `Applications` and `Issues` before selecting a candidate. Multiple apps are
+returned separately. Scripts are not run, and their presence makes `Complete`
+false. Apps created or downloaded by scripts are not discoverable from the payload.
+Encrypted images, unsupported filesystems and PKG hard links return errors.
+Bundle inspection reads the main executable; it does not enumerate embedded
+helpers. Container locations are provenance, not installation paths.
+
+Each architecture retains every supported `CodeDirectory`. `CDHash` is populated
+on the architecture only when it has one code directory; otherwise choose the
+appropriate algorithm from `CodeDirectories`. Observed signed metadata has
+`not-checked` signature status and `unknown` category. Never derive `SigningState`
+or an Apple signing category from unverified identifiers or certificate names.
+
+Default limits are 512 MiB per file, 2 GiB expanded data/logical image, 100,000
+entries, 128 applications/issues, four nested containers and a two-minute
+cooperative deadline. Byte limits can be configured up to 1 TiB. Scratch files
+are private and removed after inspection. These parser bounds are not a process
+memory limit. Deployment resource limits and concurrency control remain the
+caller's responsibility.
+
+The [reference server authoring API](../../../docs/operations/application-identities.md)
+exposes these operations. Its upload response is a discovery report; application
+installation uses the existing MDM/DDM distribution mechanisms.
 
 ## References
 
