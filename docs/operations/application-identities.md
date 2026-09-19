@@ -97,3 +97,6 @@ Publish the explicit source using the existing Blueprint API. Publication and
 republication require no App Store connection or retained uploaded artifact.
 Application installation continues to use the existing MDM/DDM mechanisms; a
 discovery response or successful publication does not prove device installation.
+
+See [macOS identity acceptance](../testing/application-identities-macos.md) for the
+vendor-artifact installation procedure, native hash comparisons and recorded limits.
