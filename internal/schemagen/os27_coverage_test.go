@@ -234,7 +234,7 @@ func checkOS27InheritedBoundaries(t *testing.T) {
 
 func compatibilitySchemaRoot(t *testing.T) string {
 	t.Helper()
-	command := exec.Command("git", "config", "--file", "../../.gitmodules", "--get", "submodule.apple-device-management-compatibility.path")
+	command := exec.CommandContext(t.Context(), "git", "config", "--file", "../../.gitmodules", "--get", "submodule.apple-device-management-compatibility.path")
 	output, err := command.Output()
 	if err != nil {
 		t.Fatal(err)
