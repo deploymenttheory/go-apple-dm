@@ -237,3 +237,58 @@ func TestServerOutcomeReceiverExamples(t *testing.T) {
 		})
 	}
 }
+
+func TestReplayedOutcomeReceiverExample(t *testing.T) {
+	now := time.Date(2026, 9, 20, 12, 0, 0, 0, time.UTC)
+	var received []byte
+	var headers http.Header
+	receiver := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		var err error
+		received, err = io.ReadAll(r.Body)
+		if err != nil {
+			t.Error(err)
+		}
+		headers = r.Header.Clone()
+		w.WriteHeader(http.StatusNoContent)
+	}))
+	defer receiver.Close()
+	s := testStore(t, Config{Source: "mdm", Now: func() time.Time { return now }, Client: receiver.Client(), PrivateNetworks: []string{"127.0.0.0/8"}})
+	c, err := s.Create(t.Context(), Spec{Name: "command-results", URL: receiver.URL, Events: []string{"server.command.result"}}, true)
+	if err != nil {
+		t.Fatal(err)
+	}
+	response, err := mdm.DecodeResponse([]byte(`<plist version="1.0"><dict><key>UDID</key><string>55693EB3-DF03-5FD1-9263-F7CDB8AD7FFD</string><key>CommandUUID</key><string>41d35de3-a343-4146-ba4b-0069bae2a54f</string><key>Status</key><string>Acknowledged</string></dict></plist>`), "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	ctx := WithCorrelation(t.Context(), "corr_example_exchange")
+	if err := s.CaptureOutcome(ctx, event.Event{Type: event.CommandResult, At: now, Enrollment: response.ID, Actor: "device", Data: response}); err != nil {
+		t.Fatal(err)
+	}
+	// A later configuration change cannot recover previously uncaptured data.
+	spec := c.Subscription.Spec
+	spec.Payload.FullJSON = true
+	c, err = s.Update(t.Context(), c.Subscription.ID, c.Subscription.Revision, spec, true)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var replay ReplayResult
+	for _, key := range []string{"first-replay", "replay-again"} {
+		replay, err = s.Replay(t.Context(), ReplayRequest{SubscriptionID: c.Subscription.ID, Key: key}, true)
+		if err != nil || len(replay.DeliveryIDs) != 1 || len(replay.Missing) != 1 {
+			t.Fatal(replay, err)
+		}
+	}
+	if err := s.Send(t.Context(), replay.DeliveryIDs[0]); err != nil {
+		t.Fatal(err)
+	}
+	if err := Verify(c.Credentials.SigningSecret, headers, received, now); err != nil {
+		t.Fatal(err)
+	}
+	var e Event
+	if err := json.Unmarshal(received, &e); err != nil {
+		t.Fatal(err)
+	}
+	e.EventID = "evt_example_server_command_result_replay"
+	assertReceiverExample(t, "server-command-result-replay", e)
+}

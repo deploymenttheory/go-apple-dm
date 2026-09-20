@@ -30,6 +30,7 @@ with readable example IDs; the fixture clock fixes timestamps and durations.
 | Bodies replaced by authenticated references | [JSON](../../server/webhook/testdata/large-reference.json) |
 | Server command result, summary | [JSON](../../server/webhook/testdata/server-command-result.json) |
 | Server command result, full decoded JSON | [JSON](../../server/webhook/testdata/server-command-result-full-json.json) |
+| Replayed command result with previously uncaptured JSON | [JSON](../../server/webhook/testdata/server-command-result-replay.json) |
 | Worker state | [JSON](../../server/webhook/testdata/server-worker-state.json) |
 | Managed certificate lifecycle | [JSON](../../server/webhook/testdata/server-certificate-lifecycle.json) |
 
@@ -201,8 +202,11 @@ dmctl webhooks replay --file replay.json --key OPERATOR_REQUEST_ID
 Replay also accepts exact `type`, inclusive `after` and exclusive `before` timestamps.
 It applies the destination's current filters and disclosure ceiling. Preview reports
 selected event IDs, missing representations and truncation without scheduling work.
-Replay uses one retained snapshot per occurrence, preferring the snapshot covering
-the most requested parts. Missing parts remain `not_captured`; there is no live-state
+Replay uses one retained snapshot per occurrence, preferring the snapshot with the
+most complete or empty requested parts, then the most observed representations.
+`not_captured` descriptors from previous replays do not count as captured data and
+remain listed in `missing_payloads` on subsequent previews and replays.
+Missing parts remain `not_captured`; there is no live-state
 reconstruction or synthesis of uncaptured sensitive data. Non-root replay only reads
 summary captures. A preview/operation selects at most 1,000 events and scans at most
 10,000 retained snapshots; narrow the selection when `truncated` is true.

@@ -289,6 +289,57 @@ func TestReplayNeverInventsMissingParts(t *testing.T) {
 	}
 }
 
+func TestRepeatedReplayPreservesAvailablePartsAndMissingReport(t *testing.T) {
+	s := testStore(t, Config{})
+	subscribe(t, s, PayloadPolicy{FullJSON: true})
+	e := occurrence()
+	if err := s.Capture(t.Context(), e); err != nil {
+		t.Fatal(err)
+	}
+	// The source retained request_json. This broader destination adds explicit
+	// not_captured descriptors for the three representations that were absent.
+	target := subscribe(t, s, PayloadPolicy{FullJSON: true, RawRequest: true, RawResponse: true})
+	first, err := s.Replay(t.Context(), ReplayRequest{SubscriptionID: target.Subscription.ID, Key: "first"}, true)
+	if err != nil || len(first.Missing[e.EventID]) != 3 {
+		t.Fatal(first, err)
+	}
+	// Replaying a replay must not mistake not_captured descriptors for data.
+	second, err := s.Replay(t.Context(), ReplayRequest{SubscriptionID: target.Subscription.ID, Key: "second"}, true)
+	if err != nil || len(second.Missing[e.EventID]) != 3 {
+		t.Fatal("missing representations disappeared after repeated replay", second, err)
+	}
+	r, _, err := s.retained(t.Context(), second.DeliveryIDs[0])
+	if err != nil || string(r.Parts["request_json"].Value) != string(e.Payloads["request_json"].Value) {
+		t.Fatal("replay lost the captured representation", r, err)
+	}
+}
+
+func TestReplayPrefersCapturedJSONOverReplayPlaceholders(t *testing.T) {
+	s := testStore(t, Config{})
+	subscribe(t, s, PayloadPolicy{RawRequest: true, RawResponse: true})
+	jsonSource := subscribe(t, s, PayloadPolicy{FullJSON: true})
+	e := occurrence()
+	if err := s.Capture(t.Context(), e); err != nil {
+		t.Fatal(err)
+	}
+	// Raw captures cover two parts; the JSON capture covers only request_json.
+	// Replaying to all representations chooses the raw snapshot and adds two
+	// not_captured JSON descriptors without combining the source snapshots.
+	all := subscribe(t, s, PayloadPolicy{FullJSON: true, RawRequest: true, RawResponse: true})
+	if _, err := s.Replay(t.Context(), ReplayRequest{SubscriptionID: all.Subscription.ID, Key: "all"}, true); err != nil {
+		t.Fatal(err)
+	}
+	// Those two descriptors must not outrank the original captured JSON.
+	result, err := s.Replay(t.Context(), ReplayRequest{SubscriptionID: jsonSource.Subscription.ID, Key: "json"}, true)
+	if err != nil || len(result.DeliveryIDs) != 1 {
+		t.Fatal(result, err)
+	}
+	r, _, err := s.retained(t.Context(), result.DeliveryIDs[0])
+	if err != nil || string(r.Parts["request_json"].Value) != string(e.Payloads["request_json"].Value) {
+		t.Fatal("placeholder snapshot outranked the retained body", r.Parts, err)
+	}
+}
+
 func TestRetentionFailurePreservesData(t *testing.T) {
 	for _, spec := range []struct{ table, operation string }{{"event_deliveries", "UPDATE"}, {"webhook_messages", "UPDATE"}, {"event_deliveries", "DELETE"}, {"event_records", "DELETE"}, {"webhook_messages", "DELETE"}, {"webhook_replays", "DELETE"}} {
 		t.Run(spec.table+spec.operation, func(t *testing.T) {

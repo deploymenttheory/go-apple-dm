@@ -449,9 +449,10 @@ func (s *Store) Replay(ctx context.Context, req ReplayRequest, root bool) (Repla
 		// Select the retained representation with the best coverage of the new
 		// policy. Never assemble a wider snapshot from live state or revisions.
 		type candidate struct {
-			r     retained
-			d     Delivery
-			score int
+			r        retained
+			d        Delivery
+			score    int
+			observed int
 		}
 		best := map[string]candidate{}
 		order := []string{}
@@ -463,13 +464,22 @@ func (s *Store) Replay(ctx context.Context, req ReplayRequest, root bool) (Repla
 			if !sub.Spec.matches(r.Event) {
 				continue
 			}
-			score := len(copyPayloads(r.Parts, sub.Payload))
+			score, observed := 0, 0
+			for name, p := range r.Parts {
+				if !sub.Payload.allows(name) || p.Availability == "not_captured" {
+					continue
+				}
+				observed++
+				if p.Availability == "complete" || p.Availability == "empty" {
+					score++
+				}
+			}
 			old, ok := best[d.EventID]
 			if !ok {
 				order = append(order, d.EventID)
 			}
-			if !ok || score > old.score {
-				best[d.EventID] = candidate{r, d, score}
+			if !ok || score > old.score || score == old.score && observed > old.observed {
+				best[d.EventID] = candidate{r, d, score, observed}
 			}
 		}
 		if len(order) > req.Limit {
@@ -487,7 +497,7 @@ func (s *Store) Replay(ctx context.Context, req ReplayRequest, root bool) (Repla
 				if !sub.Payload.allows(part) {
 					continue
 				}
-				if _, ok := r.Parts[part]; ok {
+				if p, ok := r.Parts[part]; ok && p.Availability != "not_captured" {
 					continue
 				}
 				result.Missing[eventID] = append(result.Missing[eventID], part)
