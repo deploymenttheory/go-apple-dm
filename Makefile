@@ -48,7 +48,8 @@ generate: submodule
 ## verify: fail if regeneration changes anything or removes an exported identifier
 verify: submodule
 	$(GO) test ./internal/layout -run TestWorkflowSecurity
-	python3 -m unittest discover -s .github/scripts -p '*_test.py'
+	python3 -B -m unittest discover -s .github/scripts -p '*_test.py'
+	python3 -B -m unittest discover -s scripts -p 'device_management_schema_contracts_test.py'
 	$(GO) run ./cmd/schemagen verify
 
 ## lint: compile and lint both workspace modules, including tagged tests, without rewriting
@@ -74,7 +75,7 @@ test:
 
 ## test-schema-contracts: require passing evidence for every published OS 27 contract
 test-schema-contracts:
-	python3 .github/scripts/schema_monitor.py contracts --output $(COVER_DIR)/schema-contracts --coverage-dir $(COVER_DIR)/unit
+	python3 scripts/device-management-schema-contracts.py --output $(COVER_DIR)/schema-contracts --coverage-dir $(COVER_DIR)/unit
 
 .PHONY: test-schema-contracts
 

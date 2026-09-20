@@ -92,10 +92,11 @@ Edit project-authored generated comments in `internal/schemagen`, then run `make
 `devicemanagement/schema/GENERATED_FROM.json`. Record intentional exported-name removals in
 [schema/ALLOWED_REMOVALS.md](devicemanagement/schema/ALLOWED_REMOVALS.md).
 
-The [Apple schema monitor](docs/schema-monitor.md) checks Apple's stable default
-and every `seed*` branch independently. Use its report-only mode to reproduce a
-compatibility assessment. Seed previews remain drafts; fix generator and server
-compatibility findings in separate reviewed changes.
+The [Device Management Client Schema monitor](docs/schema-monitor.md) checks upcoming
+Apple schemas against the generator on main, using the published pin as a control.
+It reports code generation failures with source evidence and remediation guidance.
+Use report-only mode to retain proposed incidents without publishing. Ordinary CI
+runs published feature contracts separately from the monitor.
 
 ## Pull requests
 

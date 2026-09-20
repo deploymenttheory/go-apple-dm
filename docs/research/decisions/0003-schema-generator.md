@@ -20,14 +20,15 @@ modify the vendored Apple input.
 
 Generated conformance tests exercise XML plist, binary plist and JSON round trips. `devicemanagement/schema/EXPORTED_IDENTIFIERS.lock` tracks exported names, and approved removals belong in `devicemanagement/schema/ALLOWED_REMOVALS.md`. Provenance is generated from the checked-out schema as described in record 0046.
 
-The schema monitor follows Apple's advertised stable default branch and discovers
-every branch whose name starts with `seed`. It compares the project pin to stable,
-and stable to each seed, using recorded commit SHAs. Raw YAML comparison and strict
-parsing are independent; parser failures do not suppress engineering review evidence.
-Complete generated changes can produce a stable update PR or a draft seed preview.
-Neither the removal allowance nor the server dependency requirement is edited by
-automation. Engineering issues distinguish executable failures from behavior reviews;
-blocked checks cannot establish a fix. See the [monitor guide](../../schema-monitor.md).
+The Device Management Client Schema monitor discovers upcoming release and active
+seed heads dynamically, excluding inputs already contained in the published pin or
+promoted release. It verifies strict parsing, generation, regeneration consistency
+and compilation in isolated workspaces, with the published schema as a control.
+Incidents group unsupported constructs across files and snapshots and identify the
+relevant generator code and required regression tests. The candidate output uses a
+fresh identifier lock; the published API guard remains in ordinary CI. Source
+adoption and server compatibility are outside the monitor's responsibility.
+See the [monitor guide](../../schema-monitor.md).
 
 ## Rationale
 

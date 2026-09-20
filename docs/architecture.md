@@ -66,14 +66,13 @@ construct versions through `osversion`. See [OS versions and API migration](oper
 for the package boundary and removed API replacements. SSO value-specific floors are queryable through
 `profiles.ValueSupport(path, value)` and retain their containing key's constraints.
 
-The [Apple schema monitor](schema-monitor.md) discovers Apple's stable default
-and `seed*` branches, assesses immutable commits in isolated workspaces, then
-captures each advertised seed in an immutable repository-owned ref, then publishes
-grouped engineering issues and generated update PRs. Stable updates target the
-project default branch; retained seed snapshots stay in separate draft previews.
-Parsing failures retain raw schema findings and block dependent generation and
-runtime checks. Server tests explicitly resolve the candidate library through
-the workspace, without changing the server's published dependency requirement.
+The [Device Management Client Schema monitor](schema-monitor.md) discovers upcoming
+release and seed schemas, retains immutable source commits and runs the generator
+on main in isolated workspaces. The published schema pin is a control. Generation,
+regeneration consistency and generated-package compilation determine compatibility.
+Grouped incidents describe the failing construct, generator code and required tests.
+Server behaviour and published feature contracts remain the responsibility of ordinary
+CI; source adoption and production pin changes require separate review.
 
 ## Enrollment and command service
 

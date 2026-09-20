@@ -23,14 +23,15 @@ changes remain subject to the existing generation/API guards.
 
 The normal library carries the historical checkout at the versioned path selected by
 the `apple-device-management-compatibility` `.gitmodules` entry; seed assessments use
-their own immutable version-and-commit workspace. `GENERATED_FROM.json` records both
+their own isolated immutable source workspace. `GENERATED_FROM.json` records both
 commits and content hashes. Normal generation and verification discover that history
 input from `.gitmodules`. The library ships Apple release commit
 `09f249a06e7e3289930bf6d05f38fb562f748ebf` with historical release commit
 `67045e2fa06f528b196c01edee6a8bf88b844beb`. The original OS 27 seed is retained
-as an immutable canary snapshot. The twelve OS 27 contracts run in ordinary
-validation. The monitor assesses release updates against the shipped release pin
-and seed candidates against their independently retained release baseline.
+as an immutable canary snapshot. The thirteen OS 27 contracts run in ordinary
+validation. The monitor checks upcoming schemas with the current generator and uses the shipped
+release pin as its control. Its scope is code generation; mixed-fleet behaviour
+contracts remain in ordinary CI.
 Later transitions must retain all
 previously published contracts; the public API guard detects incomplete history.
 
