@@ -1,203 +1,117 @@
-# Device Management Client Schema Compatibility Monitor
+# Device Management Client Schema Code Generation Monitor
 
-The **Device Management Client Schema Compatibility Monitor** workflow checks whether this project's
-generator and tested library/server behavior can handle Apple's current schemas.
-It runs daily at 03:23 UTC and supports manual runs. Manual runs default to
-`report_only: true`, which retains reports and proposed issues without GitHub writes.
+The monitor checks whether the generator on main can process upcoming Apple Device
+Management Client Schemas and produce valid Go packages. A confirmed failure opens
+an incident explaining the schema change, generator limitation, relevant code and
+required regression test.
 
-Apple's advertised default branch supplies stable updates. It is currently
-`release`. The monitor reads the highest `macOS` availability from each raw YAML
-snapshot; it does not derive a version from a branch name or contain an OS-major
-release list. A seed advertised as the default is a discovery failure requiring
-investigation.
+## Inputs and checks
 
-## What a cycle does
+Discovery records the project commit, the published schema pin and Apple's live
+release and `seed*` branch heads. The published pin is the control. Candidate heads
+already contained in that pin are excluded, as are seed heads already promoted to
+the live release. Discovery uses Git ancestry and branch roles, without an OS version
+list. Archived source branches are retained for reproduction but are not rediscovered
+as upcoming changes.
 
-1. Record the project commit, release inputs and advertised or retained seed inputs
-   in `discovery.json`. Raw YAML determines each input's highest macOS version.
-2. Copy every release endpoint and seed commit into an immutable
-   `schema-source/<source>/<SHA>` ref in this repository before assessment. Apple
-   may retire a branch during promotion; the repository-owned ref is the durable
-   input.
-3. Form a journey from the nearest earlier release to every seed targeting a newer
-   macOS version, in Apple commit order. Each assessment compares one adjacent step;
-   when Apple's current release has that target version, it is the final step.
-   Matrix jobs run independently with at most two assessments in parallel.
-4. Compare raw schema structure and collect strict parsing failures across all
-   files. Group repeated causes and retain independent protocol/support changes.
-5. If parsing succeeds, retain the project's pinned historical schema for all
-   candidates, generate the combined API, verify deterministic
-   output and exported-name removals, and compare generated public declarations,
-   signatures and serialization tags against the project API.
-6. Build both Go modules; verify the server resolves the candidate library through
-   `go.work`. Compare source-derived support cases with the compiled tables and run
-   generated conformance, MDM protocol, server service and DDM adapter tests with
-   the race detector. Changed support cases include stable and candidate OS
-   boundaries and device/user, supervision, ADE, user approval, shared iPad and
-   user enrollment contexts.
-7. Reconcile engineering issues and publish generated changes. The final release
-   can create one normal PR on `schema/update-stable`. Seeds retain evidence and
-   raise engineering issues without creating adoption PRs. A parsing/generation
-   failure never creates an empty or partially generated PR.
+The workflow preserves control and candidate commits under immutable
+`schema-source/<ref>/<commit>` refs. Every assessment checks out its recorded project
+and Apple commits in a temporary workspace. The production compatibility-history
+input remains pinned to the generator's recorded provenance.
 
-Production is always generated from Apple's `release` source at
-`third_party/apple-device-management/current`. The
-`apple-device-management-compatibility` entry selects a versioned `n-1` source
-for mixed-fleet contracts. Assessment materializes every seed beneath
-`third_party/apple-device-management/<version>-<seed>-<commit>` in its isolated
-workspace from a repository-owned immutable snapshot. Those seed directories are
-never committed or initialized by ordinary CI; only a final release changes
-`current`.
+Each assessment performs:
 
-For example, the retained evidence currently proves the chain release 26.4 → Seed1
-→ Seed2 → Seed5 → Seed6 → Seed8 → release 27.0. When Apple publishes a macOS 28
-seed, discovery reads `28.x` from its YAML, selects the latest retained 27.x release
-as the baseline, and builds the 27 → 28 chain without a workflow edit.
+1. Strict schema decoding, type construction and Go generation with `schemagen`.
+2. Regeneration verification against the newly generated output.
+3. Compilation of `devicemanagement/schema/...`, including its handwritten helpers.
 
-Every report distinguishes `passed`, `failed`, `blocked` and, for publication,
-`not-applicable`. An assessment can complete while reporting an incompatibility.
-The workflow then succeeds at its monitoring job while recording the failure in
-the report and issue. Missing evidence, discovery failures and publication errors
-make the workflow fail. Blocked runtime checks are never presented as passing.
+The temporary output starts without the production exported-identifier lock. Removing
+an identifier from a candidate is not itself a generator failure. Normal `make verify`
+continues to enforce the published API lock in ordinary CI.
 
-Passing tests establish those scenarios. They do not certify every Apple behavior
-or replace testing on real devices. Protocol prose and new server responsibilities
-require an engineer's review even when compilation and conformance tests pass.
+This workflow does not test server behaviour, device support, feature inventories or
+application installation. It does not create schema-adoption PRs or alter production
+pins. Published feature contracts run separately through
+`scripts/device-management-schema-contracts.py` in ordinary CI.
 
-For candidates that contain the Return to Service, enhanced-log and content-cache
-schema capabilities, the tests stage also enables `schema_seed_os_27` and requires
-explicit passing JSON test events for enhanced-log commands and status, software
-update removal, Return to Service retry, the reviewed content-cache contract,
-mixed-fleet dispatch, queued commands after an upgrade, and legacy-profile wire
-compatibility, fixture parsing/delivery, embedded profile compatibility and individual
-software-update query removal. All twelve contracts must pass.
-Missing or skipped tests fail the stage. Content-cache tests run in both
-assessments; OS 27 additionally checks its OpenAPI file against the reviewed
-library fixture.
+## Diagnosis and incidents
 
-`make test` also runs `make test-schema-contracts`, using the same twelve-test
-evidence check. Its JSON test log and result are retained in `cover/schema-contracts`.
+Failed generation retains the exact diagnostic and, when possible, collects strict
+parse failures across the candidate tree. The publisher groups observations by cause
+across files and candidate snapshots before creating an incident. Incidents include:
 
-## Engineering issues
+- Immutable generator, control and candidate commits, plus reproduction commands.
+- The failed phase and representative schema changes with source links.
+- The relevant generator file and function.
+- Evidence-based implementation guidance and a regression-test requirement.
 
-Each ticket starts with what changed and the observed project impact, followed by
-a required-work checklist, completion criteria, blockers and links to relevant
-code and Apple inputs. Confirmed parsing/check failures, compatibility verification
-and support decisions are identified explicitly. An optional new capability is
-not presented as a demonstrated runtime regression. Candidate-dependent reviews
-link to parser or generation blockers by finding identity, including on the first
-publication cycle.
+Known unsupported fields, YAML shapes and scalar types receive specific guidance.
+Malformed YAML is identified as a possible upstream-input problem. Unrecognised
+failures retain their diagnostics and stage location, with the exact fix explicitly
+left for investigation. These recommendations are not automatically verified patches.
 
-Raw source evidence and reproduction details are collapsed. Long protocol prose
-is displayed around the changed clauses, so a requirement near the end of a
-paragraph remains visible. Known equivalent edits to Markdown, contractions and
-requirement phrasing do not create reviews. Availability prose is suppressed only
-when the affected structured availability is unchanged. Other prose changes remain
-review evidence; the full comparison remains in `audit.json`.
+A passing control is required before attributing failures to future schemas. A control
+failure, missing checkout, missing artifact or dependency-download failure is reported
+as monitoring failure. Candidate failures, control failures and publication failures
+make the workflow fail; artifact uploads run regardless of assessment outcome.
 
-All managed issues carry `schema-monitor` and one of the labels below. Identity is
-the Apple branch plus a normalized cause; hundreds of identical metadata failures
-produce one issue, with affected paths in the retained evidence.
+Issue identities exclude file names, line numbers and workflow run URLs. An unchanged
+assessment produces no issue writes. Engineer notes outside the managed evidence
+section survive updates. A moved candidate retains earlier unresolved input commits;
+closure requires all affected commits to pass. A newer passing tip or a retired branch
+alone cannot verify a fix. To verify an older affected commit, replay its retained
+manifest with the new project commit recorded explicitly and retain that new evidence.
 
-| Kind | Label | Example and required action |
-|---|---|---|
-| Schema format failure | `schema-gap` | Unknown metadata, invalid YAML, unsupported generation input. Check Apple's schema definition and implement deliberate support or investigate upstream. |
-| Public API failure | `schema-gap` | Exported name removal, changed Go type/signature or wire tag. Preserve compatibility or propose a reviewed migration. |
-| Runtime compatibility failure | `schema-gap` | Candidate build, support boundary or existing protocol/service test fails. Reproduce using the recorded commits and add the necessary fix. |
-| Behavior review | `schema-review` | Changed availability/enrollment rules, new commands, check-in/DDM protocol fields or wording. Record required server changes or why existing handling suffices. |
-| Upstream input/scope | `schema-review` or `schema-gap` | New input area needs a support decision; missing/invalid referenced JSON examples need investigation. |
-| Automation failure | `schema-automation` | Discovery, missing matrix results, snapshot mismatch or PR publication failed. Repair the workflow or credential and rerun. |
+Writes are serial and paced. Each publication performs at most 10 new issue creations
+and 50 issue writes. Rate-limit responses honour retry headers with bounded backoff.
+`publication.json` records completed and deferred actions; a later run reconciles
+against GitHub again before resuming. No repeated creation is attempted after an
+ambiguous transport failure within the same run.
 
-Issues update when evidence, project/candidate identity, status or the versioned
-presentation changes. The bot refreshes managed titles and its marked evidence
-block, preserving comments, engineer notes outside the block and checked tasks
-whose instruction text is unchanged. Formatting changes do not reopen a
-maintainer-closed issue. Repeating the same scan and presentation produces no writes
-or daily comments. Migrating review evidence for an unchanged Apple snapshot also
-preserves a maintainer's closure, including when editorial filtering changes the
-evidence fingerprint. Reproducible failures close only when the relevant stage
-actually passes in a completed later assessment. Behavior reviews require an
-engineer to close them. An automatically verified failure reopens if it recurs;
-an unchanged finding closed by a maintainer remains acknowledged. New evidence
-can reopen that acknowledgment.
+## Running and reproducing
 
-If Apple retires a seed, its immutable snapshot remains reproducible, while its
-open issues become **inactive**, not fixed, and its bot-owned preview PR closes.
-Discovery failure cannot retire branches. A seed that becomes identical to stable
-no longer needs a separate preview.
-
-## Reproduce locally
-
-Discovery and assessment require Git, Go (the version in `go.mod`) and Python 3.
-Publication additionally uses the GitHub CLI. Commit implementation changes before
-assessing: the runner clones the recorded project commit, so uncommitted edits are
-not part of the tested snapshot.
+The workflow runs daily and supports manual dispatch. Dispatch defaults to report-only:
+source snapshots and assessment artifacts are retained, but issue publication is disabled.
+Monitor unit and integration checks also run on pull requests changing its scripts or workflow.
 
 ```sh
-python3 .github/scripts/schema_monitor.py discover --output /tmp/schema-discovery.json
+python3 .github/scripts/device_management_client_schema_monitor.py discover \
+  --output /tmp/device-management-discovery.json
+python3 .github/scripts/device_management_client_schema_monitor.py capture \
+  --manifest /tmp/device-management-discovery.json \
+  --output /tmp/device-management-capture.json
+python3 .github/scripts/device_management_client_schema_monitor.py assess \
+  --manifest /tmp/device-management-discovery.json --key ASSESSMENT_KEY \
+  --output /tmp/device-management-assessments
+python3 .github/scripts/device_management_client_schema_monitor.py publish \
+  --manifest /tmp/device-management-discovery.json \
+  --output /tmp/device-management-assessments --report-only
 ```
 
-Read a branch's `key` from the manifest, then run:
+`capture` writes immutable Git refs and requires repository contents permission.
+`assess` writes only temporary checkouts and local reports. To reproduce an existing
+assessment, download the `device-management-client-schema-discovery` artifact and use
+its manifest and the assessment key recorded in the incident. Existing captured refs
+make another capture unnecessary.
+
+Artifacts are named `device-management-client-schema-discovery`,
+`device-management-client-schema-assessment-<key>` and
+`device-management-client-schema-summary`. They retain complete file inventories,
+diagnostics, per-stage logs, planned issue actions and publication status for 30 days.
+
+## Historical incident consolidation
+
+The explicit `consolidate` action selects only legacy parse incidents for the reviewed
+`--historical-commit` containing the single-object `examples` diagnostic. It retains the earliest issue as the historical
+record, links duplicate file records, preserves notes and closes them as not planned.
+The closure explains that historical parsing has not been repaired. It does not close
+unrelated incidents or create future-schema incidents from historical observations.
 
 ```sh
-python3 .github/scripts/schema_monitor.py assess \
-  --manifest /tmp/schema-discovery.json --key BRANCH_KEY --output /tmp/schema-reports
-python3 .github/scripts/schema_monitor.py publish \
-  --manifest /tmp/schema-discovery.json --output /tmp/schema-reports --report-only
+python3 .github/scripts/device_management_client_schema_monitor.py consolidate \
+  --historical-commit REVIEWED_HISTORICAL_SHA \
+  --output /tmp/device-management-consolidation --report-only
 ```
 
-Assess every manifest entry before publication. Missing entries deliberately produce
-an automation finding. For an exact historical reproduction, download the original
-`schema-discovery` artifact and check out its `projectCommit`; a new discovery may
-select newer Apple commits. The workflow retains discovery, per-branch reports,
-logs, support cases and any candidate patch for 30 days.
-Report-only publication also retains one Markdown preview per proposed issue in
-the `schema-monitor-summary` artifact, alongside `proposed-issues.json`.
-
-The runner checks candidate and project SHAs before and after generation/tests.
-It invokes `schemagen` directly. `make generate` and `make verify` initialize
-only `current` and the configured compatibility source. Release patches update
-`current`; seed assessments retain their dynamically named workspace only as
-run evidence. The compatibility gitlink is checked before assessment completes
-and again before publication. The monitor never updates `ALLOWED_REMOVALS.md`, handwritten Go files,
-server dependency requirements or release metadata.
-
-For a raw source comparison without running candidate code:
-
-```sh
-go run ./cmd/schemagen -schema /path/to/seed -baseline /path/to/stable \
-  -ref seed_OS_27_0 -report /tmp/schema-audit audit
-```
-
-## Publication and adoption
-
-Discovery and assessment jobs have read permissions. The publisher consumes
-restricted generated patches and reports; it does not run candidate code. Issues
-use `GITHUB_TOKEN`. PR publication uses the configured `RP_APP_ID` and
-`RP_APP_PRIVATE_KEY`, with `RELEASE_PLEASE_PAT` as fallback, so PR CI can run
-automatically. Missing PR credentials produce a publication incident when there
-is a patch to publish; existing assessment evidence remains available.
-
-Fix generator and runtime findings in separate PRs, then rerun the monitor.
-Do not remove strict decoding just to obtain a green seed report. Review a seed
-preview before adoption; it does not automatically promote into stable. Publish
-needed library changes before deliberately updating the server module dependency.
-
-## Retained source evidence
-
-Production tracks Apple `release` at `09f249a06e7e3289930bf6d05f38fb562f748ebf`.
-The retained 26.4 release is `67045e2fa06f528b196c01edee6a8bf88b844beb`; all
-observed 27.0 seed and release inputs have immutable refs under `schema-source/`.
-The original comparison contains 314 → 343 schema files: 29 additions and one
-filename correction. Parser support now includes the top-level `examples` in 304
-files and `ReasonDetail.valuetype` in two files. Example references remain audited;
-the timestamp annotation preserves the underlying string type. Apple's recorded
-meta-schema defines the example structure but omits `valuetype`, so the latter is
-an explicit compatibility annotation based on the source files.
-
-The compatibility work retains the stable submodule pin. Seed generation can
-expose additional upstream API removals or type changes; runtime compatibility
-tests do not authorize those changes. API and exported-name guards continue to
-report them independently, and any seed adoption needs a separate migration
-decision. The content-cache library supports its reviewed OpenAPI separately;
-other new input areas still require an engineering support decision.
+Review `consolidation.json`; omit `--report-only` to apply those changes. The operation
+is idempotent and uses the same paced, rate-limit-aware GitHub client.

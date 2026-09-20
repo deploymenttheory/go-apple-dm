@@ -487,7 +487,7 @@ devices; the Mac run cannot sign those off.
 
 ```sh
 go test -race -tags schema_seed_os_27 ./... ./server/...
-python3 .github/scripts/schema_monitor.py contracts --output cover/schema-contracts
+python3 scripts/device-management-schema-contracts.py --output cover/schema-contracts
 go run ./cmd/schemagen verify
 python3 scripts/lint.py
 python3 -m unittest discover -s .github/scripts -p '*_test.py'

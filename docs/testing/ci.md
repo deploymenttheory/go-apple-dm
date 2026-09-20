@@ -21,7 +21,7 @@ packaged executable are different inputs.
 | Check server release assets | Server implementation/dependencies, packaging/workflow inputs, LICENSE or release operations guide | Build all six archives, check hashes and Linux versions; execute the packaged Windows binaries and native workspace-lock test. Does not publish. |
 | Published server module installation | `server/v*` tag push or explicit version dispatch | Retrieve the actual published module and verify requirements, builds, installation and process acceptance with `GOWORK=off`. This reports after publication; it cannot prevent tag creation. |
 | Release server | Release Please server output or tag-specific dispatch | Build the tagged sources, check hashes and Linux executable versions, sign checksums and upload assets to the existing release. |
-| Device Management Client Schema Compatibility Monitor | Daily schedule or manual dispatch | Discover immutable upstream revisions, assess changes and retain evidence; report-only dispatch avoids publishing. Distinct from checking generated files at the current pin. |
+| Device Management Client Schema Code Generation Monitor | Daily schedule or manual dispatch; monitor tests on relevant PRs | Generate, verify and compile upcoming schemas against a passing published-pin control. Group generator failures with remediation guidance; report-only dispatch avoids issue writes. |
 | PR title / Release Please | Ordinary PR title changes / main pushes | Conventional Commit titles / managed release metadata and tags. |
 
 ## Path selection and duplication
