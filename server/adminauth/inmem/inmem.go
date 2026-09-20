@@ -16,10 +16,12 @@ var _ adminauth.Store = (*Store)(nil)
 // Store keeps principals and policies in memory. It is safe for concurrent
 // use.
 type Store struct {
-	mu         sync.RWMutex
-	principals map[string]record
-	policies   map[string]adminauth.Policy
-	version    int64
+	mu          sync.RWMutex
+	principals  map[string]record
+	policies    map[string]adminauth.Policy
+	version     int64
+	roles       map[string]adminauth.Role
+	initialized bool
 }
 
 // record is a principal plus the digest of its current token, which never
@@ -34,6 +36,7 @@ func New() *Store {
 	return &Store{
 		principals: make(map[string]record),
 		policies:   make(map[string]adminauth.Policy),
+		roles:      make(map[string]adminauth.Role),
 	}
 }
 
@@ -44,6 +47,11 @@ func (s *Store) ApplyPrincipal(_ context.Context, name string, change adminauth.
 	r, ok := s.principals[name]
 	if !ok {
 		return adminauth.Principal{}, adminauth.ErrNotFound
+	}
+	if change.Op == "update" {
+		if err := s.validateRoles(change.Roles); err != nil {
+			return adminauth.Principal{}, err
+		}
 	}
 	p, err := change.Apply(r.p, now)
 	if err != nil {
@@ -80,6 +88,16 @@ func (s *Store) ApplyPrincipal(_ context.Context, name string, change adminauth.
 func (s *Store) CreatePrincipal(_ context.Context, p adminauth.Principal, digest string, now time.Time) (adminauth.Principal, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
+	return s.createPrincipal(p, digest, now)
+}
+
+func (s *Store) createPrincipal(p adminauth.Principal, digest string, now time.Time) (adminauth.Principal, error) {
+	if !adminauth.ValidName(p.Name) {
+		return adminauth.Principal{}, adminauth.ErrInvalid
+	}
+	if err := s.validateRoles(p.Roles); err != nil {
+		return adminauth.Principal{}, err
+	}
 	if _, ok := s.principals[p.Name]; ok {
 		return adminauth.Principal{}, fmt.Errorf("%w: principal %q", adminauth.ErrConflict, p.Name)
 	}
@@ -87,6 +105,7 @@ func (s *Store) CreatePrincipal(_ context.Context, p adminauth.Principal, digest
 	sort.Strings(p.Roles)
 	p.CreatedAt, p.UpdatedAt, p.TokenAt = now, now, now
 	s.principals[p.Name] = record{p: p, digest: digest}
+	s.initialized = true
 	return p, nil
 }
 
@@ -151,6 +170,9 @@ func (s *Store) UpdatePrincipal(_ context.Context, name string, roles []string, 
 	r, ok := s.principals[name]
 	if !ok {
 		return adminauth.Principal{}, fmt.Errorf("%w: principal %q", adminauth.ErrNotFound, name)
+	}
+	if err := s.validateRoles(roles); err != nil {
+		return adminauth.Principal{}, err
 	}
 	r.p.Roles = slices.Clone(roles)
 	sort.Strings(r.p.Roles)
@@ -222,6 +244,10 @@ func (s *Store) CountRoot(_ context.Context) (int, error) {
 func (s *Store) PutPolicy(_ context.Context, p adminauth.Policy, now time.Time) (adminauth.Policy, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
+	if err := s.validateReferences(p); err != nil {
+		return adminauth.Policy{}, err
+	}
+	p = clonePolicy(p)
 	if old, ok := s.policies[p.Name]; ok {
 		p.CreatedAt = old.CreatedAt
 	} else {
@@ -230,7 +256,7 @@ func (s *Store) PutPolicy(_ context.Context, p adminauth.Policy, now time.Time) 
 	p.UpdatedAt = now
 	s.policies[p.Name] = p
 	s.version++
-	return p, nil
+	return clonePolicy(p), nil
 }
 
 // GetPolicy implements adminauth.Store.
@@ -241,7 +267,7 @@ func (s *Store) GetPolicy(_ context.Context, name string) (adminauth.Policy, err
 	if !ok {
 		return adminauth.Policy{}, fmt.Errorf("%w: policy %q", adminauth.ErrNotFound, name)
 	}
-	return p, nil
+	return clonePolicy(p), nil
 }
 
 // Policies implements adminauth.Store, ordered by name.
@@ -255,7 +281,7 @@ func (s *Store) Policies(_ context.Context) ([]adminauth.Policy, error) {
 	sort.Strings(names)
 	out := make([]adminauth.Policy, 0, len(names))
 	for _, name := range names {
-		out = append(out, s.policies[name])
+		out = append(out, clonePolicy(s.policies[name]))
 	}
 	return out, nil
 }

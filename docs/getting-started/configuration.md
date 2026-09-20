@@ -44,7 +44,6 @@ Here is the complete generated **Compose** document, with ordering normalized:
 {
   "version": 1,
   "environment": {
-    "DM_ROLE": "all",
     "DM_LISTEN": "0.0.0.0:8443",
     "DM_PUBLIC_URL": "https://localhost:8443",
     "DM_ORGANIZATION": "go-apple-dm",
@@ -54,12 +53,11 @@ Here is the complete generated **Compose** document, with ordering normalized:
     "DM_SECRETS_DIR": "/data/secrets",
     "DM_STORAGE_KEYS_STRICT": "true",
     "DM_IDENTITY": "acme",
-    "DM_ADMIN_STORE": "true",
     "DM_AUDIT_STORE": "true",
     "DM_AUDIT_RETENTION": "720h"
   },
   "secretFiles": {
-    "DM_ADMIN_TOKEN": "/data/secrets/admin",
+    "DM_BOOTSTRAP_TOKEN": "/data/secrets/admin",
     "DM_SCEP_HMAC_KEY": "/data/secrets/issuance"
   },
   "setup": {
@@ -84,11 +82,10 @@ names to **strings**, including booleans and durations: use `"true"`, not `true`
 `secretFiles` maps the same names to files containing their values. `setup`
 selects the managed certificate workflow and its identity IDs.
 
-These roles answer different questions:
+The server always runs unified device management. The certificate workflow has its own role:
 
 | Setting | Choices | Meaning |
 |---|---|---|
-| `environment.DM_ROLE` | `all`, `mdm`, `ddm` | Which server services this process runs; start with `all` |
 | `setup.role` | `customer`, `vendor`, `combined` | Whether it manages customer identities, signs customer push requests, or does both |
 
 The `https`, `issuer`, `push` and `vendor` IDs name persistent certificate
@@ -204,8 +201,7 @@ their choices. Additional settings are defined in
 | `DM_STORAGE`, `DM_DSN` | `sqlite`, `dm.db` | Select storage; managed setup writes absolute SQLite paths |
 | `DM_STORAGE_KEYS`, `DM_SECRETS_DIR` | Unset | Required stable keyring for persistent reference-server storage |
 | `DM_STORAGE_KEYS_STRICT` | Enabled by setup init | Reject legacy plaintext in encrypted fields |
-| `DM_ADMIN_TOKEN` | Unset | Unrestricted bootstrap/break-glass credential; remove after testing stored administration |
-| `DM_ADMIN_STORE` | `false`; quickstart sets `true` | Persistent principals and Cedar policies |
+| `DM_BOOTSTRAP_TOKEN` | Unset | One-time creation of the first stored root; accepted only by the bootstrap endpoint |
 | `DM_AUDIT_STORE` | `false`; quickstart sets `true` | Persist projected audit events |
 | `DM_AUDIT_RETENTION` | Quickstart sets `720h` | Audit retention interval |
 | `DM_ENROLLMENT_POLICY_FILE` | Unset; admission denies without a matching policy | JSON rules for admitted devices/accounts |
@@ -221,13 +217,7 @@ configuration path, not extra prerequisites for Compose.
 
 PostgreSQL/MySQL need a provisioned database and a protected DSN. Pass `-storage`
 and `-dsn-env` to `setup init`; a credential-bearing DSN is written to a secret
-file. Changing a DSN does not migrate existing state. For split MDM/DDM services, both roles must use the same persistent database
-(and PostgreSQL schema, when configured) and compatible storage keyrings. Enrollment,
-inventory, command queues and DDM tables belong to that one database; the private
-hop forwards check-ins and does not replicate inventory. A separate process role
-does not create an independent data store. Configure verified HTTPS and independent
-send/receive keys using the
-[transport guidance](../operations/enrollment-security.md#identity-transport-and-storage).
+file. Changing a DSN does not migrate existing state. The reference server uses one database for unified device management.
 
 ## 5. Configure a native administrative CLI
 

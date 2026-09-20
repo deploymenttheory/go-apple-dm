@@ -344,16 +344,17 @@ Embedded applications supplying custom HTTP transports own their trust policy.
 
 Principal creation, updates, token rotation (including self-rotation), revocation
 and deletion require a root administrator independently of Cedar. Stored root
-principals also need a policy permitting the action. Scoped principals retain
+principals administer authorization independently of Cedar; fleet operations
+still require explicit policies. Scoped principals retain
 policy-authorized reads and device operations. Role membership alone cannot
 prove equivalent authority under arbitrary Cedar policies. The store atomically
 rejects removing the last active root credential; revoked and expired roots do
 not count. Custom admin stores must implement `ApplyPrincipal` and pass
 `adminauthtest`. Legacy low-level storage writes are for trusted import tooling,
 not authenticated administration. Rotate root tokens before natural expiry;
-the guard does not prevent all remaining tokens expiring later or a policy
-change denying their access. Remove the static break-glass token after bootstrap
-as described in the README.
+the guard does not prevent all remaining tokens expiring later.
+The one-time bootstrap secret cannot authenticate ordinary requests.
+See [access control](access-control.md) for managed roles and fenced root recovery.
 
 Persistent stores require `DM_STORAGE_KEYS`. Encryption covers raw Authenticate,
 TokenUpdate, UserAuthenticate, commands, results and error chains, existing
@@ -363,19 +364,12 @@ all applicable MDM, DDM and protocol-state stores when rotating keys. Exports ar
 plaintext privileged material; protect them and backups separately. Database
 metadata and status/audit records are not whole-database encrypted.
 
-Both reference-server roles use the same persistent database and compatible storage
-keyrings. The declaration and replay stores are interfaces over that application
-database; the private hop does not replicate enrollment or inventory records.
+The reference server runs MDM and DDM in one process with the same database and
+storage keyring. Custom applications can still use the reusable proxy adapters;
+they own their TLS, independent request/response keys and shared replay storage.
+The reference binary no longer accepts private DDM forwarding settings.
 
-The private DDM connection requires HTTPS and two independent random keys of at
-least 32 bytes. Set `DM_DDM_ROOT_CA_FILE` for private server trust and configure
-`DM_TLS_CERT_FILE`/`DM_TLS_KEY_FILE` on the DDM role. Requests authenticate method,
-request target, content type, timestamp, nonce and body; responses bind to that
-request, status, content type and body. Five-minute freshness and shared atomic
-nonce records retained ten minutes reject replay across replicas. Both adapters
-refuse redirects. `AllowInsecureForTests` is a programmatic literal-loopback test
-exception; there is no environment switch. `scripts/testdb.sh ddm-up` exercises
-TLS with a generated test CA. The image runs `dmserver -check auto`. It derives the scheme and port from
+The image runs `dmserver -check auto`. It derives the scheme and port from
 `DM_LISTEN` and `DM_TLS_CERT_FILE`/`DM_TLS_KEY_FILE`, using loopback for wildcard
 listeners. Automatic HTTPS probes pin the configured server certificate and use
 its SANs for normal hostname verification, so private and DNS-only certificates

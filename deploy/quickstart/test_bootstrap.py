@@ -82,7 +82,7 @@ class BootstrapTests(unittest.TestCase):
             ("environment", "DM_STORAGE_KEYS", "new"),
             ("setup", "httpsId", "new"),
             ("environment", "DM_AUDIT_STORE", "not-a-bool"),
-            ("secretFiles", "DM_ADMIN_TOKEN", "missing-token"),
+            ("secretFiles", "DM_BOOTSTRAP_TOKEN", "missing-token"),
         ]
         for section, key, value in changes:
             with self.subTest(key=key, section=section):

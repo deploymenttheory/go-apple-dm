@@ -118,14 +118,6 @@ test-quickstart:
 
 .PHONY: test-quickstart
 
-## testdb-ddm-up: build both split role containers sharing E2E_STORE for TestE2E_DDMSplitDeployment; prints exports
-testdb-ddm-up:
-	scripts/testdb.sh ddm-up
-
-## testdb-ddm-down: remove the selected split containers and database
-testdb-ddm-down:
-	scripts/testdb.sh ddm-down
-
 ## testdb-up: start PostgreSQL and MySQL in Docker for test-storage and E2E_STORE=postgres test-e2e; prints the exports
 testdb-up:
 	@scripts/testdb.sh up
@@ -165,13 +157,12 @@ ci: lint verify verify-server-module-installation test test-storage test-storage
 clean:
 	rm -rf $(COVER_DIR)
 
-.PHONY: help tools submodule generate verify verify-server-module-installation lint test test-storage test-storage-perf test-conformance test-e2e testdb-up testdb-down docker-build testdb-ddm-up testdb-ddm-down fuzz-smoke fuzz coverage vuln refs refs-activity ci clean
+.PHONY: help tools submodule generate verify verify-server-module-installation lint test test-storage test-storage-perf test-conformance test-e2e testdb-up testdb-down docker-build fuzz-smoke fuzz coverage vuln refs refs-activity ci clean
 
 # Bench recipes delegate to dmctl; Go owns workspace and scenario behavior.
 BENCH_WORKSPACE ?= test-lab/local
 BENCH_MODE ?= simulated
 BENCH_STORAGE ?= sqlite
-BENCH_TOPOLOGY ?= all
 BENCH_LISTEN ?= 127.0.0.1:8443
 BENCH_SCENARIO ?= all
 BENCH_DEVICE_ID ?=
@@ -190,9 +181,9 @@ bench-build:
 	$(GO) build -o "$(BENCH_BIN_DIR)/dmserver" ./server/cmd/dmserver
 	$(GO) build -o "$(BENCH_BIN_DIR)/dmctl" ./server/cmd/dmctl
 
-## bench-init: initialize BENCH_WORKSPACE (BENCH_MODE, BENCH_STORAGE, BENCH_TOPOLOGY, BENCH_LISTEN)
+## bench-init: initialize BENCH_WORKSPACE (BENCH_MODE, BENCH_STORAGE, BENCH_LISTEN)
 bench-init: bench-build
-	"$(BENCH_BIN_DIR)/dmctl" bench init -workspace "$(BENCH_WORKSPACE)" -mode "$(BENCH_MODE)" -storage "$(BENCH_STORAGE)" -topology "$(BENCH_TOPOLOGY)" -listen "$(BENCH_LISTEN)"
+	"$(BENCH_BIN_DIR)/dmctl" bench init -workspace "$(BENCH_WORKSPACE)" -mode "$(BENCH_MODE)" -storage "$(BENCH_STORAGE)" -listen "$(BENCH_LISTEN)"
 
 ## bench-doctor: inspect workspace and live prerequisites without changing device state
 bench-doctor: bench-build
@@ -235,7 +226,7 @@ bench-profile: bench-build
 bench-replace: bench-build
 	"$(BENCH_BIN_DIR)/dmctl" bench replace -workspace "$(BENCH_WORKSPACE)" -device-id "$(BENCH_DEVICE_ID)" -identity "$(BENCH_IDENTITY)" -attach-url "$(BENCH_ATTACH_URL)"
 
-## test-acceptance: shared scenarios against built dmserver processes, including split topology
+## test-acceptance: shared scenarios against built dmserver processes, using unified device management
 # Absolute paths survive go test's package working directory.
 test-acceptance: bench-build
 	BENCH_DMSERVER="$(abspath $(BENCH_BIN_DIR))/dmserver" BENCH_DMCTL="$(abspath $(BENCH_BIN_DIR))/dmctl" BENCH_REPORT_DIR="$(abspath $(BENCH_REPORT_DIR))" BENCH_REVISION="$(BENCH_REVISION)" $(GO) test -race -count=1 -timeout 300s -tags acceptance ./server/acceptance/...

@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"errors"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -131,9 +130,7 @@ func TestScenarioPrerequisiteFailures(t *testing.T) {
 		Instance:  Instance{Mode: "simulated", URL: "https://invalid"},
 		Client:    &http.Client{},
 	}
-	if err := splitRoundTrip(t.Context(), e, ""); !errors.Is(err, ErrBlocked) {
-		t.Fatalf("missing split: %v", err)
-	}
+
 	if _, err := browser(t.Context(), e, "://"); err == nil {
 		t.Fatal("invalid browser URL accepted")
 	}

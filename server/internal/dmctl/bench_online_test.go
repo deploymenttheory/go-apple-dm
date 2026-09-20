@@ -16,7 +16,7 @@ import (
 func TestBenchCommandsUseMaintainedRuntime(t *testing.T) {
 	env := noConfig(t)
 	dir := t.TempDir()
-	if err := bench.Init(dir, "simulated", "inmem", "all", "127.0.0.1:0"); err != nil {
+	if err := bench.Init(dir, "simulated", "inmem", "127.0.0.1:0"); err != nil {
 		t.Fatal(err)
 	}
 	w, err := bench.Load(dir)

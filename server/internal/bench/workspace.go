@@ -24,18 +24,14 @@ type Workspace struct {
 	Version   int               `json:"Version"`
 	Mode      string            `json:"Mode"`
 	Storage   string            `json:"Storage"`
-	Topology  string            `json:"Topology"`
 	Listen    string            `json:"Listen"`
 	DSN       string            `json:"DSN,omitempty"`
 	Directory string            `json:"-"`
 }
 
-func Init(dir, mode, storage, topology, listen string) error {
+func Init(dir, mode, storage, listen string) error {
 	if mode != "simulated" && mode != "live" {
 		return fmt.Errorf("%w: mode must be simulated or live", errOperation)
-	}
-	if topology != "all" && topology != "split" {
-		return fmt.Errorf("%w: topology must be all or split", errOperation)
 	}
 	if storage != "sqlite" && storage != "inmem" && storage != "postgres" && storage != "mysql" {
 		return fmt.Errorf("%w: unknown storage", errOperation)
@@ -77,7 +73,7 @@ func Init(dir, mode, storage, topology, listen string) error {
 		)
 	}
 	b, err := json.MarshalIndent(
-		Workspace{Version: 1, Mode: mode, Storage: storage, Topology: topology, Listen: listen},
+		Workspace{Version: 2, Mode: mode, Storage: storage, Listen: listen},
 		"",
 		"  ",
 	)
@@ -102,8 +98,7 @@ func Load(dir string) (*Workspace, error) {
 	if err = json.Unmarshal(b, &w); err != nil {
 		return nil, wrapError(err)
 	}
-	if w.Version != 1 || (w.Mode != "simulated" && w.Mode != "live") ||
-		(w.Topology != "all" && w.Topology != "split") {
+	if w.Version != 2 || (w.Mode != "simulated" && w.Mode != "live") {
 		return nil, fmt.Errorf("%w: invalid workspace configuration", errOperation)
 	}
 	w.Directory = root
@@ -134,6 +129,17 @@ func (w *Workspace) client() (*http.Client, error) {
 }
 
 func (w *Workspace) token() (string, error) {
+	b, err := os.ReadFile(w.path("mdm", "admin-credential"))
+	if err == nil {
+		return strings.TrimSpace(string(b)), nil
+	}
+	if !errors.Is(err, os.ErrNotExist) {
+		return "", err
+	}
+	return w.bootstrapToken()
+}
+
+func (w *Workspace) bootstrapToken() (string, error) {
 	b, err := os.ReadFile(w.path("mdm", "admin-token"))
 	return strings.TrimSpace(string(b)), wrapError(err)
 }
@@ -157,7 +163,6 @@ func (w *Workspace) Doctor() map[string]any {
 	return map[string]any{
 		"Mode":              w.Mode,
 		"Storage":           w.Storage,
-		"Topology":          w.Topology,
 		"Missing":           missing,
 		"LivePrerequisites": live,
 	}

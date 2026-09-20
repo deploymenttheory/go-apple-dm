@@ -9,7 +9,7 @@ only want to explore the server. Apple credentials are needed in step 6.
 1. [Start Compose](#1-start-the-compose-package).
 2. [Check HTTPS and CLI access](#2-verify-https-and-administrative-access).
 3. [Edit the JSON configuration](#3-inspect-and-edit-the-json-configuration).
-4. [Create your administrator](#4-create-a-stored-administrator).
+4. [Manage administrator access](#4-manage-stored-administrator-access).
 5. [Stop and resume](#5-stop-and-resume-without-losing-state).
 6. [Enroll a Mac and retrieve inventory](#6-enroll-your-first-real-mac).
 
@@ -103,24 +103,44 @@ ok
 `healthz` checks storage. `readyz` additionally checks configured workers. These
 probes do not contact Apple or prove a device can reach the server.
 
-Define the CLI shortcut and inspect the server:
+Exchange the one-time bootstrap secret for a stored root credential. Run this
+once; `set -C` protects an existing credential file. The token is saved privately
+inside the volume and is never printed to the terminal.
+
+```sh
+dc run --rm -T --entrypoint sh bootstrap -ec '
+  umask 077
+  set -C
+  dmctl -server https://dmserver:8443 -ca-file /data/https-ca.pem \
+    -token @/data/secrets/admin -output human \
+    auth bootstrap operator-root > /data/operator-root-token
+'
+```
+
+Root has authority to manage access but needs an explicit permit for device
+operations. Define the CLI shortcut (Compose already points it at the new token)
+and install this broad policy for the local lab:
 
 ```sh
 dmctl() { dc run --rm -T dmctl "$@"; }
+```
+
+```sh
+dmctl policies put operator-root -file - <<'CEDAR'
+permit (principal == MDM::Principal::"operator-root", action, resource);
+CEDAR
+```
+
+Inspect the server:
+
+```sh
 dmctl status
 dmctl enrollments list
 dmctl routes
 ```
 
-The beginning of `status` on a fresh quickstart is:
-
-```text
-Role:            all
-Version:         (devel)
-Families:        apppush, audit, ddm, dep, events, introspection, mdm, principals, setup
-Authorization:   policy (principals and Cedar policies)
-Break-glass:     ACTIVE, bypasses policy: unset DM_ADMIN_TOKEN once principals exist
-```
+`status` reports `Service: device-management`, policy authorization and
+`Bootstrap pending: false`. Route families describe available API features.
 
 An empty enrollment list prints just its headings:
 
@@ -191,64 +211,30 @@ the old document on failure. Runtime startup and device-facing connectivity
 still need their own checks. Native installations edit their generated setup
 file directly.
 
-## 4. Create a stored administrator
+## 4. Manage stored administrator access
 
-The initial token is unrestricted bootstrap access. Create a named root
-principal and its policy, verify them, then remove that bootstrap access.
-
-Run this **once**. It saves the new token privately inside the volume; `set -C`
-prevents accidentally truncating an existing token file on a repeat run:
+The first root created in step 2 can administer principals, roles and policies.
+Its lab policy explicitly grants all device operations. For routine use, create
+a role and a narrower policy before assigning it:
 
 ```sh
-dc run --rm -T --entrypoint sh bootstrap -ec '
-  umask 077
-  set -C
-  dmctl -server https://dmserver:8443 -ca-file /data/https-ca.pem \
-    -token @/data/secrets/admin -output human \
-    principals create operator-root -root > /data/operator-root-token
-'
-```
-
-The CLI writes this message to stderr; the token goes only to the file:
-
-```text
-dmctl: token for "operator-root"; it is not stored and cannot be shown again
-```
-
-The server stores a token verifier, not recoverable plaintext. Root status
-allows principal/policy administration, but ordinary actions still need a
-Cedar permit. Install one for this lab administrator:
-
-```sh
-dmctl policies put operator-root -file - <<'CEDAR'
-permit (principal == MDM::Principal::"operator-root", action, resource);
+dmctl roles put operators -description 'Routine device diagnostics'
+dmctl policies put operators -file - <<'CEDAR'
+permit (principal in MDM::Role::"operators",
+        action in MDM::Action::"OperatorActions", resource);
 CEDAR
-dmctl -token @/data/operator-root-token principals list
-dmctl -token @/data/operator-root-token enrollments list
+dmctl principals create diagnostic-operator -roles operators
 ```
 
-The first list should contain `operator-root` with `ROOT=true`. The second
-tests an ordinary policy-controlled action; a successful `status` alone only
-proves authenticated introspection.
+Save the returned credential privately. The operator can inspect devices and
+submit five diagnostic commands. Erase, lock, raw responses, secrets and
+administration require separate grants. Role names alone grant nothing.
 
-Export the latest config again. In your editor, remove the
-`DM_ADMIN_TOKEN` entry from `secretFiles` (and from `environment` if you added
-an inline value). Keep `DM_ADMIN_STORE` set to `"true"`:
-
-```sh
-dc run --rm -T bootstrap config > "$GS_DIR/setup.json"
-# Edit $GS_DIR/setup.json now, then:
-dc run --rm -T bootstrap apply-config < "$GS_DIR/setup.json"
-dc restart dmserver
-dmctl() { dc run --rm -T dmctl -token @/data/operator-root-token "$@"; }
-dmctl status
-dmctl enrollments list
-```
-
-`status` should now show break-glass access disabled. Keep the token file and
-configuration in your recovery plan. Later `dc up` runs preserve this change.
-For more users, create scoped policies and principals; role names grant no
-permissions by themselves. See [administrative authorization](../research/decisions/0034-admin-api-and-authorization.md).
+Bootstrap was consumed in step 2 and cannot be reused, even after a restart.
+You may remove `DM_BOOTSTRAP_TOKEN` from the setup document and restart to remove
+the unused secret from process configuration. Existing credentials remain valid.
+See [access control](../operations/access-control.md) for action groups, policy
+validation, root recovery and upgrading an existing installation.
 
 ## 5. Stop and resume without losing state
 
@@ -530,16 +516,17 @@ The server stays in the foreground. In a second terminal at the repository root:
 ```sh
 ./bin/dmctl -server https://localhost:8443 \
   -token "@$PWD/test-lab/local/native/secrets/admin" \
-  -ca-file test-lab/local/native/https-ca.pem status
+  -ca-file test-lab/local/native/https-ca.pem -output human \
+  auth bootstrap operator-root > test-lab/local/native/operator-root-token
 ```
 
-For stored administration, first add `"DM_ADMIN_STORE": "true"` to the
-generated file's `environment` and restart. Then follow step 4 with native
-paths and direct `./bin/dmctl` commands. Native `setup init` does not add the
-Compose helper's audit/admin choices automatically. Use
-[CLI contexts](configuration.md#5-configure-a-native-administrative-cli) to save
-the server and credential reference. **Ctrl-C** drains and stops the foreground
-server; run it again with the same setup file to resume.
+Use `@test-lab/local/native/operator-root-token` for subsequent commands. Install
+an explicit operational policy as in step 2, then follow step 4 for routine roles.
+The principal store is always enabled. Native setup does not enable an optional
+audit sink automatically; SQL event capture remains persistent.
+Use [CLI contexts](configuration.md#5-configure-a-native-administrative-cli) to
+save the server and credential reference. **Ctrl-C** drains the foreground server;
+run it again with the same setup file to resume.
 
 ## 8. Choose the next capability
 
@@ -560,7 +547,7 @@ server; run it again with the same setup file to resume.
 | Bootstrap exits nonzero | Read its logs; verify retained config/keys. Restore missing initialized state rather than deleting the volume |
 | HTTPS certificate error | Use the exported CA and a hostname in the certificate SANs; never use an insecure bypass |
 | CLI connection refused after restart | Read server logs and wait for health; a rejected runtime setting can stop startup |
-| CLI unauthorized after admin handoff | Use `/data/operator-root-token`; the old bootstrap token was intentionally removed |
+| CLI unauthorized after admin handoff | Use `/data/operator-root-token`; the bootstrap secret cannot authenticate ordinary requests |
 | Authenticated but forbidden | Inspect the principal's roles and Cedar permit; root flag or a role name alone does not grant ordinary actions |
 | `setup check` says push missing | Complete the vendor-signed CSR and Apple portal import/activation |
 | Profile generation denied | Match the actual UDID/serial to admission policy and restart after policy/config edits |

@@ -12,12 +12,13 @@
 // Store.ApplyPrincipal atomically preserves an active root under concurrent
 // credential changes. Natural expiry and policy lockout remain operator concerns.
 //
-// The reference server separately accepts DM_ADMIN_TOKEN as a root credential
-// that bypasses policy, including when a principal store is configured. Its use
-// is audited as break-glass; removal requires unsetting it and restarting. Use
-// it to bootstrap principals, then verify their access and remove it. This
-// package does not implement administrative users, passwords, sessions or
-// federation; applications can supply another authorizer.
+// Managed roles are named records; membership alone grants no authority.
+// Policies are schema-validated and inactive documents remain stored. Any
+// invalid active policy or evaluation diagnostic denies operational access.
+// The reference server exchanges DM_BOOTSTRAP_TOKEN for the first stored root
+// credential exactly once. Root can repair authorization independently of Cedar;
+// ordinary device operations always need an explicit policy grant.
+// This package does not implement users, passwords, sessions or federation.
 //
 // # References
 //

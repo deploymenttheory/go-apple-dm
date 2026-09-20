@@ -22,7 +22,7 @@ func policyApp(t *testing.T, bus *event.Bus) (*app.App, *adminauth.Manager, admi
 	t.Helper()
 	st := inmem.New()
 	a := build(t, app.Config{
-		Role: app.RoleAll, Storage: "inmem", Listen: ":0",
+		Storage: "inmem", Listen: ":0",
 		AdminStore: st, Bus: bus,
 	})
 	reg, err := adminauth.NewRegistry(app.AdminActions()...)
@@ -39,6 +39,11 @@ func policyApp(t *testing.T, bus *event.Bus) (*app.App, *adminauth.Manager, admi
 // mint creates a principal and returns its token.
 func mintPrincipal(t *testing.T, m *adminauth.Manager, p adminauth.Principal) string {
 	t.Helper()
+	for _, role := range p.Roles {
+		if _, err := m.PutRole(t.Context(), adminauth.Root, adminauth.Role{Name: role}); err != nil {
+			t.Fatal(err)
+		}
+	}
 	_, tok, err := m.CreatePrincipal(context.Background(), adminauth.Root, p, time.Time{})
 	if err != nil {
 		t.Fatalf("CreatePrincipal %s: %v", p.Name, err)
@@ -185,7 +190,7 @@ func TestAdminPolicy(t *testing.T) {
 			Source: `permit (
 				principal in MDM::Role::"ops",
 				action == MDM::Action::"assignSet",
-				resource == MDM::Enrollment::"device/UDID-OK"
+				resource == MDM::Enrollment::"device/UDID-OK/"
 			) when { context.set == "allowed" && context.channel == "device" };`,
 		}); err != nil {
 			t.Fatal(err)

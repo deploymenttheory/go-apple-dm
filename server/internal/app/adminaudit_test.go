@@ -25,9 +25,9 @@ func auditApp(t *testing.T, cfg app.Config) (*app.App, audit.Store) {
 	st := auditinmem.New()
 	cfg.Sinks.AuditStore = st
 	if cfg.Storage == "" {
-		cfg.Storage, cfg.Role = "inmem", app.RoleAll
+		cfg.Storage = "inmem"
 	}
-	cfg.AdminToken = "t"
+	cfg.BootstrapToken = "t"
 	return build(t, cfg), st
 }
 
@@ -65,15 +65,15 @@ func TestAuditTrailRecordsStateChanges(t *testing.T) {
 func TestAuditTrailAttributesAdminRequests(t *testing.T) {
 	a, st := auditApp(t, app.Config{})
 	srv := serve(t, a)
-	resp := adminReq(t, srv.URL, http.MethodPut, "/admin/v1/declarations", "t", `{}`)
+	resp := adminReq(t, srv.URL, http.MethodPut, "/admin/v1/declarations", "t", `{"Identifier":"com.example.invalid"}`)
 	defer func(body io.Closer) { _ = body.Close() }(resp.Body)
 	if err := a.Close(); err != nil {
 		t.Fatal(err)
 	}
 	for _, rec := range readAll(t, st) {
 		if rec.Type == "admin-action" {
-			if rec.Actor != app.BreakGlassActor {
-				t.Fatalf("actor = %q, want the break-glass actor", rec.Actor)
+			if rec.Actor != "fixture-root" {
+				t.Fatalf("actor = %q, want the stored fixture actor", rec.Actor)
 			}
 			// The path is recorded as the admin mux saw it, after
 			// StripPrefix, so it is the route rather than the mount point.
@@ -181,7 +181,7 @@ func TestAuditRouteRejectsBadInput(t *testing.T) {
 // Without a trail the routes are not mounted, so the admin API does not grow
 // a surface a deployment did not ask for.
 func TestAuditRouteAbsentWithoutATrail(t *testing.T) {
-	a := build(t, app.Config{Role: app.RoleAll, Storage: "inmem", AdminToken: "t"})
+	a := build(t, app.Config{Storage: "inmem", BootstrapToken: "t"})
 	srv := serve(t, a)
 	resp := adminReq(t, srv.URL, http.MethodGet, "/admin/v1/audit", "t", "")
 	defer func(body io.Closer) { _ = body.Close() }(resp.Body)
@@ -262,8 +262,8 @@ const a2Years = 2 * 365 * 24 * time.Hour
 func TestAuditStoreSelection(t *testing.T) {
 	t.Run("PersistOnADatabase", func(t *testing.T) {
 		a := build(t, app.Config{
-			Role: app.RoleAll, Storage: "sqlite", DSN: filepath.Join(t.TempDir(), "a.db"),
-			AdminToken: "t", Sinks: app.SinkConfig{Persist: true},
+			Storage: "sqlite", DSN: filepath.Join(t.TempDir(), "a.db"),
+			BootstrapToken: "t", Sinks: app.SinkConfig{Persist: true},
 		})
 		srv := serve(t, a)
 		publishSomething(t, a)
@@ -281,7 +281,7 @@ func TestAuditStoreSelection(t *testing.T) {
 
 	t.Run("PersistWithoutADatabase", func(t *testing.T) {
 		a := build(t, app.Config{
-			Role: app.RoleAll, Storage: "inmem", AdminToken: "t",
+			Storage: "inmem", BootstrapToken: "t",
 			Sinks: app.SinkConfig{Persist: true},
 		})
 		srv := serve(t, a)
@@ -295,7 +295,7 @@ func TestAuditStoreSelection(t *testing.T) {
 	t.Run("OpenFailureIsReported", func(t *testing.T) {
 		dsn := filepath.Join(t.TempDir(), "b.db")
 		a, err := app.Build(context.Background(), app.Config{
-			Role: app.RoleAll, Storage: "sqlite", DSN: dsn, AdminToken: "t", Logger: quiet,
+			Storage: "sqlite", DSN: dsn, BootstrapToken: "t", Logger: quiet,
 			StorageKeys: []string{"test"},
 			Secrets:     secrets.Static{"test": []byte("0123456789abcdef0123456789abcdef")},
 			Sinks:       app.SinkConfig{Persist: true},
@@ -310,7 +310,7 @@ func TestAuditStoreSelection(t *testing.T) {
 		// failing path is exercised through a store that cannot append.
 		failing := &audittest.Failing{Store: auditinmem.New(), Fail: "Append"}
 		b := build(t, app.Config{
-			Role: app.RoleAll, Storage: "inmem", AdminToken: "t",
+			Storage: "inmem", BootstrapToken: "t",
 			Sinks: app.SinkConfig{AuditStore: failing},
 		})
 		publishSomething(t, b)
@@ -328,7 +328,7 @@ func TestAuditRouteMapsStoreErrors(t *testing.T) {
 	_ = a
 	failing := &audittest.Failing{Store: auditinmem.New(), Fail: "List"}
 	b := build(t, app.Config{
-		Role: app.RoleAll, Storage: "inmem", AdminToken: "t",
+		Storage: "inmem", BootstrapToken: "t",
 		Sinks: app.SinkConfig{AuditStore: failing},
 	})
 	srv := serve(t, b)
@@ -347,7 +347,7 @@ func TestAuditRouteMapsStoreErrors(t *testing.T) {
 
 	getFails := &audittest.Failing{Store: auditinmem.New(), Fail: "Get"}
 	c := build(t, app.Config{
-		Role: app.RoleAll, Storage: "inmem", AdminToken: "t",
+		Storage: "inmem", BootstrapToken: "t",
 		Sinks: app.SinkConfig{AuditStore: getFails},
 	})
 	csrv := serve(t, c)
@@ -364,7 +364,7 @@ func TestAuditRetentionSurvivesAFailedPrune(t *testing.T) {
 	fake := clock.NewFake(audittest.T0)
 	failing := &audittest.Failing{Store: auditinmem.New(), Fail: "Prune"}
 	a := build(t, app.Config{
-		Role: app.RoleAll, Storage: "inmem", AdminToken: "t", Clock: fake,
+		Storage: "inmem", BootstrapToken: "t", Clock: fake,
 		Sinks: app.SinkConfig{AuditStore: failing, Retention: time.Hour, PruneInterval: time.Minute},
 	})
 	runCtx, cancel := context.WithCancel(context.Background())

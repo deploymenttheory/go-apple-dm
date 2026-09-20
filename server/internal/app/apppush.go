@@ -58,7 +58,7 @@ func (a *App) appPushRoutes() []adminRoute {
 	return []adminRoute{
 		{
 			Pattern: "GET /apppush/credentials",
-			Action:  ActionManageAppPush,
+			Action:  ActionReadAppPush,
 			Family:  "apppush",
 			Handler: http.HandlerFunc(a.listAppPush),
 		},

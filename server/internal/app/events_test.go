@@ -67,7 +67,7 @@ func TestEventLimitsEnvironment(t *testing.T) {
 	for _, d := range []event.AsyncConfig{{Workers: -1}, {QueueCapacity: -1}, {DeliveryTimeout: -1}} {
 		_, err := Build(
 			t.Context(),
-			Config{Role: RoleAll, Storage: "inmem", Sinks: SinkConfig{Dispatch: d}},
+			Config{Storage: "inmem", Sinks: SinkConfig{Dispatch: d}},
 		)
 		if !errors.Is(err, ErrConfig) {
 			t.Fatal(err)
@@ -105,10 +105,9 @@ func TestEventBusStatsAndOwnership(t *testing.T) {
 		a, err := Build(
 			t.Context(),
 			Config{
-				Role:       RoleAll,
-				Storage:    "inmem",
-				AdminToken: "token",
-				Logger:     slog.New(slog.NewJSONHandler(&logs, nil)),
+				Storage:        "inmem",
+				BootstrapToken: "token",
+				Logger:         slog.New(slog.NewJSONHandler(&logs, nil)),
 				Sinks: SinkConfig{
 					Audit:    true,
 					Dispatch: event.AsyncConfig{Workers: 1, QueueCapacity: 2},
@@ -131,7 +130,11 @@ func TestEventBusStatsAndOwnership(t *testing.T) {
 			_ = a.cfg.Bus.Publish(t.Context(), event.Event{})
 		}
 		request := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/admin/v1/config", nil)
-		request.Header.Set("Authorization", "Bearer token")
+		credential, err := FixtureAdminCredential(a)
+		if err != nil {
+			t.Fatal(err)
+		}
+		request.Header.Set("Authorization", "Bearer "+string(credential))
 		w := httptest.NewRecorder()
 		a.Handler.ServeHTTP(w, request)
 		if w.Code != 200 || !strings.Contains(w.Body.String(), `"Rejected":20`) ||
@@ -147,7 +150,7 @@ func TestEventBusStatsAndOwnership(t *testing.T) {
 		}
 	})
 	b := event.New()
-	a, err := Build(t.Context(), Config{Role: RoleAll, Storage: "inmem", Bus: b})
+	a, err := Build(t.Context(), Config{Storage: "inmem", Bus: b})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -165,7 +168,6 @@ func TestEventBusCleanupOnBuildFailure(t *testing.T) {
 		_, err := Build(
 			t.Context(),
 			Config{
-				Role:    RoleAll,
 				Storage: "inmem",
 				Sinks:   SinkConfig{WebhookURL: "http://invalid.example"},
 			},

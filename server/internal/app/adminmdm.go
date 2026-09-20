@@ -44,29 +44,31 @@ func (a *App) mdmAdminRoutes() []adminRoute {
 				Action:        action,
 				Family:        "mdm",
 				LocalMutation: action != ActionPushEnrollment,
+				Command:       action == ActionEnqueueUnknownCommand,
+				RequestType:   map[string]string{"enqueueCommand.InstallProfile": "InstallProfile"}[action],
 				Handler:       fn,
 			},
 		)
 	}
 
-	add(ActionReadEnrollment, "GET /enrollments", a.listEnrollments)
+	add(ActionListEnrollments, "GET /enrollments", a.listEnrollments)
 	add(ActionReadEnrollment, "GET /enrollments/{channel}/{id}", a.getEnrollment)
 	add(ActionDisableEnrollment, "DELETE /enrollments/{channel}/{id}", a.disableEnrollment)
-	add(ActionEnqueueCommand, "POST /enrollments/{channel}/{id}/commands", a.enqueueCommand)
+	add(ActionEnqueueUnknownCommand, "POST /enrollments/{channel}/{id}/commands", a.enqueueCommand)
 	add(
-		ActionEnqueueCommand,
+		"enqueueCommand.InstallProfile",
 		"POST /enrollments/{channel}/{id}/filevault/escrow",
 		a.enqueueFileVaultEscrow,
 	)
 	add(ActionReadCommands, "GET /enrollments/{channel}/{id}/commands", a.listCommands)
 	add(
-		ActionReadCommands,
+		ActionReadRawCommandResult,
 		"GET /enrollments/{channel}/{id}/commands/{uuid}/result",
 		a.getCommandResult,
 	)
 	add(ActionClearCommands, "DELETE /enrollments/{channel}/{id}/commands", a.clearCommands)
 	add(ActionPushEnrollment, "POST /enrollments/{channel}/{id}/push", a.pushEnrollment)
-	add(ActionManagePushCerts, "GET /pushcerts", a.listPushCerts)
+	add(ActionReadPushCerts, "GET /pushcerts", a.listPushCerts)
 	add(ActionManagePushCerts, "PUT /pushcerts", a.putPushCert)
 	add(ActionExportEnrollments, "GET /export", a.exportEnrollments)
 	add(ActionImportEnrollments, "POST /import", a.importEnrollment)
@@ -185,16 +187,12 @@ func (a *App) enqueueCommand(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusBadRequest, err)
 		return
 	}
-	body, err := io.ReadAll(io.LimitReader(r.Body, MaxAdminBody+1))
-	if err != nil || len(body) > MaxAdminBody {
-		writeError(w, http.StatusRequestEntityTooLarge, ErrBodyTooLarge)
+	cmd, ok := r.Context().Value(decodedCommandKey{}).(*mdm.Command)
+	if !ok {
+		writeError(w, http.StatusBadRequest, mdm.ErrInvalidCommand)
 		return
 	}
-	cmd, err := mdm.DecodeCommand(body)
-	if err != nil {
-		writeError(w, http.StatusBadRequest, fmt.Errorf("app: command: %w", err))
-		return
-	}
+
 	cmd, err = a.prepareCommandEncryption(r.Context(), id, cmd)
 	if err != nil {
 		status := http.StatusInternalServerError

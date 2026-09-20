@@ -60,7 +60,8 @@ func TestAxM(t *testing.T) {
 		fake := axmtest.NewServer()
 		t.Cleanup(fake.Close)
 		cfg.AxM.BaseURL, cfg.AxM.TokenURL, cfg.AxM.HTTPClient = fake.URL, fake.TokenURL, fake.Client()
-		cfg.Role, cfg.Storage, cfg.AdminToken, cfg.Logger = app.RoleDDM, "inmem", "t", quiet
+		cfg.Storage, cfg.BootstrapToken, cfg.Logger = "inmem", "t", quiet
+		cfg.StorageKeys = nil
 		a := build(t, cfg)
 		if a.AxM == nil {
 			t.Fatal("client not built from the key file")
@@ -87,7 +88,7 @@ func TestAxM(t *testing.T) {
 		}
 		fake.AutoAdvance(10 * time.Millisecond)
 		app.AxMWaitInterval = 10 * time.Millisecond
-		a := build(t, app.Config{Role: app.RoleDDM, Storage: "inmem", AdminToken: "t", AxM: app.AxMConfig{ClientID: "BUSINESSAPI.abc", KeyID: "kid-1", KeyPEM: keyPEM, BaseURL: fake.URL, TokenURL: fake.TokenURL, HTTPClient: fake.Client()}})
+		a := build(t, app.Config{Storage: "inmem", BootstrapToken: "t", AxM: app.AxMConfig{ClientID: "BUSINESSAPI.abc", KeyID: "kid-1", KeyPEM: keyPEM, BaseURL: fake.URL, TokenURL: fake.TokenURL, HTTPClient: fake.Client()}})
 		srv := serve(t, a)
 		if got := get(t, srv.URL+"/admin/v1/axm/servers", ""); got != http.StatusUnauthorized {
 			t.Fatalf("axm without token = %d", got)

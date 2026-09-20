@@ -19,10 +19,9 @@ import (
 func TestFileVaultCertificateWorkflow(t *testing.T) {
 	ctx := t.Context()
 	cfg := app.Config{
-		Role:       app.RoleAll,
-		Storage:    "sqlite",
-		DSN:        filepath.Join(t.TempDir(), "encryption.db"),
-		AdminToken: "secret",
+		Storage:        "sqlite",
+		DSN:            filepath.Join(t.TempDir(), "encryption.db"),
+		BootstrapToken: "secret",
 	}
 	a := build(t, cfg)
 	srv := serve(t, a)
@@ -102,7 +101,7 @@ func TestFileVaultCertificateWorkflow(t *testing.T) {
 }
 
 func TestFileVaultRejectsVolatileCertificateStorage(t *testing.T) {
-	a := build(t, app.Config{Role: app.RoleAll, Storage: "inmem", AdminToken: "secret"})
+	a := build(t, app.Config{Storage: "inmem", BootstrapToken: "secret"})
 	srv := serve(t, a)
 	id := seed(t, a, "D")
 	cmd, err := mdm.NewCommand(
@@ -136,10 +135,9 @@ func TestFileVaultEscrowWorkflow(t *testing.T) {
 	a := build(
 		t,
 		app.Config{
-			Role:       app.RoleAll,
-			Storage:    "sqlite",
-			DSN:        filepath.Join(t.TempDir(), "escrow.db"),
-			AdminToken: "secret",
+			Storage:        "sqlite",
+			DSN:            filepath.Join(t.TempDir(), "escrow.db"),
+			BootstrapToken: "secret",
 		},
 	)
 	srv := serve(t, a)

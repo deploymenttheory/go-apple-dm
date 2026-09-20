@@ -62,7 +62,7 @@ func TestDDMCommandTravelsTheCommandPath(t *testing.T) {
 		rec := &recorder{}
 		bus.Subscribe(event.All, rec.handle)
 		fake := clock.NewFake(t0app)
-		a := build(t, app.Config{Role: app.RoleAll, Storage: "inmem", AdminToken: "t", Bus: bus, Clock: fake})
+		a := build(t, app.Config{Storage: "inmem", BootstrapToken: "t", Bus: bus, Clock: fake})
 
 		id := enrolled(t, a, "UDID-DDM-1")
 		declare(t, a, id)
@@ -87,7 +87,7 @@ func TestDDMCommandTravelsTheCommandPath(t *testing.T) {
 		st := auditinmem.New()
 		fake := clock.NewFake(t0app)
 		a := build(t, app.Config{
-			Role: app.RoleAll, Storage: "inmem", AdminToken: "t", Clock: fake,
+			Storage: "inmem", BootstrapToken: "t", Clock: fake,
 			Sinks: app.SinkConfig{AuditStore: st},
 		})
 		id := enrolled(t, a, "UDID-DDM-2")
@@ -120,7 +120,7 @@ func TestAdminWriteKicksTheNotifier(t *testing.T) {
 	// Clock.After, so the count of pending waiters rising is the evidence
 	// that an extra iteration ran without time moving.
 	fake := clock.NewFake(t0app)
-	a := build(t, app.Config{Role: app.RoleAll, Storage: "inmem", AdminToken: "t", Clock: fake})
+	a := build(t, app.Config{Storage: "inmem", BootstrapToken: "t", Clock: fake})
 	srv := serve(t, a)
 
 	ctx, cancel := context.WithCancel(context.Background())
@@ -143,7 +143,7 @@ func TestAdminWriteKicksTheNotifier(t *testing.T) {
 // A read must not kick, so the notifier is not woken by every dashboard poll.
 func TestAdminReadDoesNotKick(t *testing.T) {
 	fake := clock.NewFake(t0app)
-	a := build(t, app.Config{Role: app.RoleAll, Storage: "inmem", AdminToken: "t", Clock: fake})
+	a := build(t, app.Config{Storage: "inmem", BootstrapToken: "t", Clock: fake})
 	srv := serve(t, a)
 
 	ctx, cancel := context.WithCancel(context.Background())

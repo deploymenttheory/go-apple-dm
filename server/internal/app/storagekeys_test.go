@@ -24,15 +24,15 @@ import (
 func TestPersistentStorageNeedsAKeyring(t *testing.T) {
 	t.Parallel()
 	_, err := app.Build(context.Background(), app.Config{
-		Role: app.RoleAll, Storage: "sqlite",
-		DSN: filepath.Join(t.TempDir(), "nokey.db"), Logger: quiet,
+		Storage: "sqlite",
+		DSN:     filepath.Join(t.TempDir(), "nokey.db"), Logger: quiet,
 	})
 	if !errors.Is(err, app.ErrConfig) {
 		t.Fatalf("Build = %v, want a configuration error", err)
 	}
 	// An in-memory store has nothing persistent to protect.
 	a, err := app.Build(context.Background(), app.Config{
-		Role: app.RoleAll, Storage: "inmem", Logger: quiet,
+		Storage: "inmem", Logger: quiet,
 	})
 	if err != nil {
 		t.Fatalf("inmem: %v", err)
@@ -49,7 +49,7 @@ func TestSecretsAreSealedByTheAssembledServer(t *testing.T) {
 	dsn := filepath.Join(t.TempDir(), "sealed.db")
 	const token = "bootstrap-secret"
 	a := build(t, app.Config{
-		Role: app.RoleAll, Storage: "sqlite", DSN: dsn,
+		Storage: "sqlite", DSN: dsn,
 		StorageKeys: []string{"storage-v1"},
 		Secrets:     secrets.Static{"storage-v1": []byte("0123456789abcdef0123456789abcdef")},
 	})
@@ -114,7 +114,7 @@ func TestStorageKeySources(t *testing.T) {
 			t.Fatal(err)
 		}
 		a, err := app.Build(context.Background(), app.Config{
-			Role: app.RoleAll, Storage: "sqlite", DSN: sqliteAt(t), Logger: quiet,
+			Storage: "sqlite", DSN: sqliteAt(t), Logger: quiet,
 			StorageKeys: []string{"mounted"}, SecretsDir: dir,
 		})
 		if err != nil {
@@ -126,7 +126,7 @@ func TestStorageKeySources(t *testing.T) {
 	t.Run("DirectoryMissing", func(t *testing.T) {
 		t.Parallel()
 		_, err := app.Build(context.Background(), app.Config{
-			Role: app.RoleAll, Storage: "sqlite", DSN: sqliteAt(t), Logger: quiet,
+			Storage: "sqlite", DSN: sqliteAt(t), Logger: quiet,
 			StorageKeys: []string{"mounted"},
 			SecretsDir:  filepath.Join(t.TempDir(), "absent"),
 		})
@@ -139,7 +139,7 @@ func TestStorageKeySources(t *testing.T) {
 		// t.Setenv forbids a parallel test.
 		t.Setenv("DM_STORAGE_KEY_FROM_ENV", material)
 		a, err := app.Build(context.Background(), app.Config{
-			Role: app.RoleAll, Storage: "sqlite", DSN: sqliteAt(t), Logger: quiet,
+			Storage: "sqlite", DSN: sqliteAt(t), Logger: quiet,
 			StorageKeys: []string{"from-env"},
 		})
 		if err != nil {
@@ -151,7 +151,7 @@ func TestStorageKeySources(t *testing.T) {
 	t.Run("KeyNotFound", func(t *testing.T) {
 		t.Parallel()
 		_, err := app.Build(context.Background(), app.Config{
-			Role: app.RoleAll, Storage: "sqlite", DSN: sqliteAt(t), Logger: quiet,
+			Storage: "sqlite", DSN: sqliteAt(t), Logger: quiet,
 			StorageKeys: []string{"never-set"},
 		})
 		if err == nil {

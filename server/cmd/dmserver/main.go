@@ -55,8 +55,7 @@ func run(ctx context.Context, args []string, getenv func(string) string, out *os
 	fs.SetOutput(out)
 	showVersion := fs.Bool("version", false, "print the build version and exit")
 	fs.StringVar(&setupPath, "setup-file", setupPath, "persistent certificate setup configuration (DM_SETUP_FILE)")
-	var check, checkCA, sendKey, recvKey, storageKeys string
-	role := fs.String("role", string(cfg.Role), "mdm, ddm, or all ("+app.EnvRole+")")
+	var check, checkCA, storageKeys string
 	fs.StringVar(
 		&cfg.TLSCertFile,
 		"tls-cert",
@@ -77,24 +76,7 @@ func run(ctx context.Context, args []string, getenv func(string) string, out *os
 		"sqlite, postgres, mysql, or inmem ("+app.EnvStorage+")",
 	)
 	fs.StringVar(&cfg.DSN, "dsn", cfg.DSN, "database path or DSN ("+app.EnvDSN+")")
-	fs.StringVar(
-		&cfg.DDMURL,
-		"ddm-url",
-		cfg.DDMURL,
-		"mdm role: forward DDM to this ddm role ("+app.EnvDDMURL+")",
-	)
-	fs.StringVar(
-		&sendKey,
-		"ddm-send-key",
-		string(cfg.DDMSendKey),
-		"HMAC key for what this role sends ("+app.EnvDDMSendKey+")",
-	)
-	fs.StringVar(
-		&recvKey,
-		"ddm-recv-key",
-		string(cfg.DDMRecvKey),
-		"HMAC key for what this role receives ("+app.EnvDDMRecvKey+")",
-	)
+
 	fs.StringVar(
 		&storageKeys,
 		"storage-keys",
@@ -108,10 +90,10 @@ func run(ctx context.Context, args []string, getenv func(string) string, out *os
 		"directory holding the storage key material ("+app.EnvSecretsDir+")",
 	)
 	fs.StringVar(
-		&cfg.AdminToken,
-		"admin-token",
-		cfg.AdminToken,
-		"bearer token enabling the admin API ("+app.EnvAdminToken+")",
+		&cfg.BootstrapToken,
+		"bootstrap-token",
+		cfg.BootstrapToken,
+		"one-time first-root bootstrap token ("+app.EnvBootstrapToken+")",
 	)
 	fs.StringVar(
 		&cfg.CAFile,
@@ -178,8 +160,6 @@ func run(ctx context.Context, args []string, getenv func(string) string, out *os
 			TLSKeyFile: cfg.TLSKeyFile, CAFile: checkCA,
 		})
 	}
-	cfg.Role = app.Role(*role)
-	cfg.DDMSendKey, cfg.DDMRecvKey = keyBytes(sendKey), keyBytes(recvKey)
 	if storageKeys != "" {
 		cfg.StorageKeys = nil
 		for name := range strings.SplitSeq(storageKeys, ",") {
@@ -190,11 +170,4 @@ func run(ctx context.Context, args []string, getenv func(string) string, out *os
 	}
 	cfg.Logger = slog.New(slog.NewJSONHandler(os.Stderr, nil))
 	return serve(ctx, cfg)
-}
-
-func keyBytes(s string) []byte {
-	if s == "" {
-		return nil
-	}
-	return []byte(s)
 }

@@ -22,7 +22,7 @@ import (
 func eventAdmin(t *testing.T) (*app.App, *sql.DB, *eventstore.Store) {
 	t.Helper()
 	dsn := filepath.Join(t.TempDir(), "events.sqlite")
-	a := build(t, app.Config{Role: app.RoleAll, Storage: "sqlite", DSN: dsn, AdminToken: "t", AdminStoreEnabled: true, Sinks: app.SinkConfig{Persist: true}})
+	a := build(t, app.Config{Storage: "sqlite", DSN: dsn, BootstrapToken: "t", Sinks: app.SinkConfig{Persist: true}})
 	s, err := sqlite.Open(t.Context(), dsn, sqlite.Options{})
 	if err != nil {
 		t.Fatal(err)

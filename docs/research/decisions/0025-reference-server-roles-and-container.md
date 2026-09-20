@@ -1,5 +1,7 @@
 # 0025: Reference server roles and container
 
+Runtime and authorization decisions updated by [0056](0056-unified-server-rbac.md).
+
 ## Context
 
 The library needs a runnable composition for local development and integration testing, including deployments with a separate declaration engine.

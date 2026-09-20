@@ -21,7 +21,7 @@ func (blueprintListFailure) List(context.Context, string, string, int) ([]state.
 }
 
 func TestBlueprintAdminInputAndReadContracts(t *testing.T) {
-	a := build(t, app.Config{Role: app.RoleAll, Storage: "inmem", AdminToken: "admin"})
+	a := build(t, app.Config{Storage: "inmem", BootstrapToken: "admin"})
 	request := func(method, path, body string) *httptest.ResponseRecorder {
 		t.Helper()
 		r := httptest.NewRequestWithContext(t.Context(), method, "https://mdm.example/admin/v1"+path, strings.NewReader(body))

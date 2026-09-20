@@ -28,7 +28,7 @@ Discovery selects no candidate, constructs no policy and publishes no Blueprint.
 
 ```sh
 export DMCTL_SERVER="https://your-mdm-server"
-export DMCTL_TOKEN="env:DM_ADMIN_TOKEN"
+export DMCTL_TOKEN="@/protected/operator-token"
 
 # Search an explicit storefront and platform category.
 dmctl app-identities public-app-store search \

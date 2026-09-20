@@ -40,8 +40,6 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/server/blueprints"
 	"github.com/deploymenttheory/go-apple-dm/server/configurationprofile"
 	"github.com/deploymenttheory/go-apple-dm/server/ddmadapter/inproc"
-	"github.com/deploymenttheory/go-apple-dm/server/ddmadapter/proxyclient"
-	"github.com/deploymenttheory/go-apple-dm/server/ddmadapter/proxyserver"
 	sqlstore "github.com/deploymenttheory/go-apple-dm/server/ddmstore/sqlstore"
 	"github.com/deploymenttheory/go-apple-dm/server/ddmsync"
 	"github.com/deploymenttheory/go-apple-dm/server/eventsink"
@@ -56,16 +54,6 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/server/sqlstore/sqlcommon"
 	"github.com/deploymenttheory/go-apple-dm/server/sqlstore/sqlite"
 	"github.com/deploymenttheory/go-apple-dm/server/webhook"
-)
-
-// Role selects what a process serves.
-type Role string
-
-// Roles.
-const (
-	RoleMDM Role = "mdm"
-	RoleDDM Role = "ddm"
-	RoleAll Role = "all"
 )
 
 // Paths served by the handler.
@@ -86,21 +74,10 @@ type Config struct {
 
 	PKI                     PKIConfig
 	RateLimits              RateLimitConfig
-	Role                    Role
 	TLSCertFile, TLSKeyFile string
 	Listen                  string
 	Storage                 string // sqlite, postgres, mysql, inmem
 	DSN                     string // file path for sqlite
-	// DDMURL, on the mdm role, forwards DeclarativeManagement check-ins to
-	// a ddm role through proxyclient; empty means the local engine.
-	DDMURL string
-	// DDMRootCAFile configures HTTPS trust for the private DDM server.
-	DDMRootCAFile string
-	// DDMAllowInsecureForTests enables loopback-only cleartext adapters.
-	DDMAllowInsecureForTests bool
-	// DDMSendKey signs what this role sends across the hop; DDMRecvKey
-	// verifies what it receives.
-	DDMSendKey, DDMRecvKey []byte
 	// AllowReenroll accepts Authenticate with a different certificate and replaces
 	// the enrollment pin. The library defaults to allowing this; the reference
 	// server defaults to DenyReenroll.
@@ -129,34 +106,12 @@ type Config struct {
 	SecretsDir string
 	// Secrets overrides both, for tests and embedding.
 	Secrets secrets.Provider
-	// AdminToken enables the admin API on the ddm and all roles with a single
-	// static credential that authenticates as root and bypasses policy.
-	//
-	// Alongside a principal store it is the break-glass credential, and it
-	// keeps working rather than being superseded: an empty principal store
-	// authenticates nobody, and the route that creates the first principal is
-	// itself authorized, so without it there is no way in. Its use is audited
-	// under the actor "break-glass" and logged at warn on every request.
-	//
-	// It has no expiry and cannot be revoked without restarting the process.
-	// While it is set, every least-privilege property record 0034 claims is
-	// void for whoever holds it, so a deployment sets it to create real
-	// principals and then unsets it. An audit record with the actor
-	// "break-glass" after that point is an incident. See
-	// docs/operations/deployment.md.
-	AdminToken string
-	// AdminStore holds admin principals and Cedar policies. When set, an admin
-	// request that does not present AdminToken is authenticated against it and
-	// authorized by policy (decision record 0034). Injecting a store here
-	// overrides AdminStoreEnabled, which is how tests supply a fake.
+	// BootstrapToken is accepted only for the first-root bootstrap endpoint.
+	BootstrapToken string
+	// AdminStore overrides the process database for custom compositions and tests.
 	AdminStore adminauth.Store
-	// AdminStoreEnabled opens the principal and policy store on the process's
-	// own database, so principals work in the shipped binary rather than only
-	// where a caller injects AdminStore. Off by default: turning it on mounts
-	// the admin API, which is a security change rather than a convenience.
-	AdminStoreEnabled bool
 	// CAFile is a PEM bundle of roots that device identities chain to;
-	// the mdm role then verifies Mdm-Signature on every check-in and
+	// the server then verifies Mdm-Signature on every check-in and
 	// connect. CARoots is the parsed form (tests set it directly).
 	CAFile  string
 	CARoots *x509.CertPool
@@ -175,7 +130,7 @@ type Config struct {
 	// account-driven, ADE).
 	Enroll EnrollConfig
 	// AxM connects Apple Business Manager or Apple School Manager; its
-	// admin routes live under the admin API on the ddm and all roles.
+	// administrative routes live under the admin API.
 	AxM AxMConfig
 	// DEP configures the device enrollment service client and worker;
 	// its admin routes live under the admin API too.
@@ -253,13 +208,11 @@ type App struct {
 	keyring               *crypt.Keyring
 	// AxM is the Business Manager client when configured.
 	AxM *axm.Client
-	// DEP is the device enrollment service; nil on the mdm role.
+	// DEP is the device enrollment service when configured.
 	DEP *dep.Client
 	// Push wakes devices; nil when no push source is configured.
 	Push *pushnotify.Notifier
-	// admin authorizes admin callers against the stored Cedar policies. It
-	// is nil when the deployment configured the static DM_ADMIN_TOKEN
-	// instead, which bypasses policy by design (decision record 0034).
+	// admin authenticates stored principals and evaluates their Cedar policies.
 	admin *adminauth.Manager
 	// adminTable is the mounted admin route table, served by GET /routes.
 	adminTable  []adminRoute
@@ -435,7 +388,7 @@ func (c Config) validate() error {
 	if c.Sinks.WebhookURL != "" || len(c.Sinks.WebhookHMACKey) != 0 {
 		return fmt.Errorf("%w: legacy webhook settings require migration to managed subscriptions", ErrConfig)
 	}
-	if c.Webhooks.Enabled && (c.Storage == "inmem" || len(c.StorageKeys) == 0 || !c.AdminStoreEnabled && c.AdminStore == nil && c.AdminToken == "") {
+	if c.Webhooks.Enabled && (c.Storage == "inmem" || len(c.StorageKeys) == 0) {
 		return fmt.Errorf("%w: managed webhooks require SQL, encryption, and administration", ErrConfig)
 	}
 	if o := c.ApplicationIdentities.Artifacts; o.MaxBytes < 0 || o.MaxBytes > 1<<40 || o.MaxExpandedBytes < 0 || o.MaxExpandedBytes > 1<<40 || o.MaxEntries < 0 || o.MaxApplications < 0 || o.MaxDepth < 0 || o.Timeout < 0 {
@@ -450,11 +403,6 @@ func (c Config) validate() error {
 	if err := c.validateSecurity(); err != nil {
 		return err
 	}
-	switch c.Role {
-	case RoleMDM, RoleDDM, RoleAll:
-	default:
-		return fmt.Errorf("%w: role %q (want mdm, ddm, or all)", ErrConfig, c.Role)
-	}
 	switch c.Storage {
 	case "sqlite", "postgres", "mysql":
 		if c.DSN == "" {
@@ -468,29 +416,11 @@ func (c Config) validate() error {
 			c.Storage,
 		)
 	}
-	if c.DDMURL != "" && c.Role != RoleMDM {
-		return fmt.Errorf("%w: DDM URL is only for the mdm role", ErrConfig)
-	}
-	// The hop forwards a check-in verbatim and the ddm role resolves the
-	// enrollment from that body, so an unauthenticated hop hands any caller
-	// every enrollment's declarations and its status reports. proxyserver
-	// requires MAC keys and shared replay state; validation of the same keys is
-	// this package's job: the ddm role exists to serve the hop, and an mdm
-	// role forwarding to it is the other end of the same trust boundary.
 	if c.Storage != "inmem" && len(c.StorageKeys) == 0 {
 		return fmt.Errorf(
 			"%w: %s storage seals unlock tokens, bootstrap tokens and push keys, so it needs %s",
 			ErrConfig, c.Storage, EnvStorageKeys,
 		)
-	}
-	if c.Role == RoleDDM || c.DDMURL != "" {
-		if len(c.DDMSendKey) < 32 || len(c.DDMRecvKey) < 32 ||
-			string(c.DDMSendKey) == string(c.DDMRecvKey) {
-			return fmt.Errorf(
-				"%w: the declarative management hop needs %s and %s on both roles",
-				ErrConfig, EnvDDMSendKey, EnvDDMRecvKey,
-			)
-		}
 	}
 	if err := c.Enroll.validate(); err != nil {
 		return err
@@ -518,7 +448,7 @@ func (c *Config) roots() error {
 	return nil
 }
 
-// certSource picks how the mdm role learns the device certificate.
+// certSource picks how the server learns the device certificate.
 func (a *App) certSource() func(http.Handler) http.Handler {
 	if a.Certificates != nil {
 		return func(next http.Handler) http.Handler {
@@ -649,7 +579,7 @@ func (a *App) openStorage(ctx context.Context) error {
 	if err != nil {
 		return wrapError(err)
 	}
-	a.maintenance, err = control.Register(ctx, string(a.cfg.Role))
+	a.maintenance, err = control.Register(ctx, "device-management")
 	if err != nil {
 		return wrapError(err)
 	}
@@ -721,43 +651,10 @@ func (a *App) wire(ctx context.Context) error {
 	}
 	mux.HandleFunc("GET "+PathHealthz, a.healthz)
 	mux.HandleFunc("GET /readyz", a.readyz)
-	if cfg.Role == RoleMDM || cfg.Role == RoleAll {
+	{
 		dm := inproc.Handler(engine)
-		var profileFetcher proxyclient.ConfigurationProfileFetcher
-		if cfg.DDMURL != "" {
-			var client *http.Client
-			if cfg.DDMRootCAFile != "" {
-				client, err = trustedHTTPClient(cfg.DDMRootCAFile)
-				if err != nil {
-					return err
-				}
-			}
-			dm, err = proxyclient.Handler(
-				proxyclient.Config{
-					URL:                   cfg.DDMURL,
-					Client:                client,
-					AllowInsecureForTests: cfg.DDMAllowInsecureForTests,
-					SendKey:               cfg.DDMSendKey,
-					RecvKey:               cfg.DDMRecvKey,
-				},
-			)
-			if err != nil {
-				return fmt.Errorf("app: proxyclient: %w", err)
-			}
-			profileFetcher, err = proxyclient.ConfigurationProfiles(proxyclient.Config{URL: cfg.DDMURL, Client: client, AllowInsecureForTests: cfg.DDMAllowInsecureForTests, SendKey: cfg.DDMSendKey, RecvKey: cfg.DDMRecvKey})
-			if err != nil {
-				return err
-			}
-		}
-		// The device enrollment service is built before enrollment,
-		// because an ACME policy can make an assignment in it a condition
-		// of issuing an identity, and a policy that cannot reach its store
-		// should fail here rather than answer every device with a server
-		// error.
-		if cfg.Role != RoleMDM {
-			if err := a.wireDEP(ctx); err != nil {
-				return err
-			}
+		if err := a.wireDEP(ctx); err != nil {
+			return err
 		}
 		enrollHooks, err := a.wireEnrollment(ctx, mux)
 		if err != nil {
@@ -787,7 +684,7 @@ func (a *App) wire(ctx context.Context) error {
 			return fmt.Errorf("app: core: %w", err)
 		}
 		a.Core = core
-		a.wireConfigurationProfileDownloads(mux, profileFetcher)
+		a.wireConfigurationProfileDownloads(mux, nil)
 		api := httpapi.Handler(
 			httpapi.Config{Checkin: core, Connect: core, Logger: cfg.Logger, Now: cfg.Clock.Now},
 		)
@@ -795,38 +692,6 @@ func (a *App) wire(ctx context.Context) error {
 			PathMDM,
 			a.certSource()(api),
 		) // check-in is PUT, connect is PUT; httpapi enforces methods
-	}
-	if cfg.Role == RoleDDM {
-		replay, err := a.protocolState(ctx)
-		if err != nil {
-			return err
-		}
-		ps, err := proxyserver.Handler(
-			proxyserver.Config{
-				Bus: cfg.publisher(), Backend: engine,
-				ConfigurationProfiles: a.ConfigurationProfiles,
-				ReplayStore:           replay,
-				AllowInsecureForTests: cfg.DDMAllowInsecureForTests,
-				RecvKey:               cfg.DDMRecvKey,
-				SendKey:               cfg.DDMSendKey,
-				Logger:                cfg.Logger,
-			},
-		)
-		if err != nil {
-			return fmt.Errorf("app: proxyserver: %w", err)
-		}
-		mux.Handle(PathDDM+"/", http.StripPrefix(PathDDM, ps))
-		// The ddm role serves no device channel, but its notifier still
-		// enqueues DeclarativeManagement into the shared command queue that
-		// the mdm role delivers from. Building a core here means those
-		// commands are screened, hooked and audited on this role too.
-		core, err := service.New(service.Config{
-			Store: a.Store, Bus: cfg.publisher(), Clock: cfg.Clock, Logger: cfg.Logger,
-		})
-		if err != nil {
-			return fmt.Errorf("app: core: %w", err)
-		}
-		a.Core = core
 	}
 
 	// Build the notifier after Core so DeclarativeManagement commands pass through
@@ -854,9 +719,7 @@ func (a *App) wire(ctx context.Context) error {
 	}
 	a.addWorker("ddm-notifier", a.Notifier.Run)
 	a.addWorker("audit-retention", a.runAuditRetention)
-	// Every role that has a credential serves the admin API. Withholding it
-	// from the mdm role would leave the half that owns enrollments, commands
-	// and push with no administrative surface.
+	// Mount one administrative API for all device-management capabilities.
 	if err := a.wireAdmin(ctx, mux); err != nil {
 		return err
 	}
@@ -989,24 +852,11 @@ func (a *App) wireSinks(ctx context.Context) error {
 	return nil
 }
 
-// adminStore resolves the admin principal and policy store, following the
-// same three-way choice as the other satellite stores: an injected store
-// wins, then the process's own database, then memory when there is no
-// database to share. It returns a nil store when neither an injection nor
-// AdminStoreEnabled asked for one, which leaves the static token as the only
-// credential.
-//
-// Before this existed, adminauth/sqlstore was imported only by its own tests:
-// cmd/dmserver never set AdminStore, so the principals, policies and
-// revocable tokens of record 0034 were unreachable from the shipped binary.
+// adminStore uses the shared database, or memory for ephemeral compositions.
 func (a *App) adminStore(ctx context.Context) (adminauth.Store, error) {
 	switch {
 	case a.cfg.AdminStore != nil:
 		return a.cfg.AdminStore, nil
-	case !a.cfg.AdminStoreEnabled:
-		// a nil store is the documented "no principal store"
-		// answer, not a failure: the static token stays the only credential.
-		return nil, nil
 	case a.db == nil:
 		// The in-memory principal store supports administration without persisted state.
 		return admininmem.New(), nil
@@ -1055,9 +905,6 @@ func (a *App) readyz(w http.ResponseWriter, r *http.Request) {
 }
 
 func (a *App) wireAdmin(ctx context.Context, mux *http.ServeMux) error {
-	if !a.adminEnabled() {
-		return nil
-	}
 	cfg := a.cfg
 	store, err := a.adminStore(ctx)
 	if err != nil {
@@ -1088,6 +935,8 @@ func (a *App) wireAdmin(ctx context.Context, mux *http.ServeMux) error {
 	routes = append(routes, extras...)
 	if a.admin != nil {
 		routes = append(routes, a.principalRoutes()...)
+		routes = append(routes, a.roleRoutes()...)
+		mux.Handle("POST "+PathAdmin+"auth/bootstrap", http.HandlerFunc(a.bootstrapAdmin))
 	}
 	if a.audit != nil {
 		routes = append(routes, a.auditRoutes()...)
@@ -1098,30 +947,14 @@ func (a *App) wireAdmin(ctx context.Context, mux *http.ServeMux) error {
 			return err
 		}
 		a.AxM = client
-		routes = append(
-			routes,
-			adminRoute{
-				Pattern: "/axm/",
-				Action:  ActionManageBusinessMgr,
-				Family:  "axm",
-				Handler: a.axmHandler(client),
-			},
-		)
+		routes = append(routes, a.axmRoutes(client)...)
 	}
 	if a.dep == nil {
 		if err := a.wireDEP(ctx); err != nil {
 			return err
 		}
 	}
-	routes = append(
-		routes,
-		adminRoute{
-			Pattern: "/dep/",
-			Action:  ActionManageDEP,
-			Family:  "dep",
-			Handler: a.dep.handler(),
-		},
-	)
+	routes = append(routes, a.dep.routes()...)
 	if a.acme != nil {
 		routes = append(
 			routes,

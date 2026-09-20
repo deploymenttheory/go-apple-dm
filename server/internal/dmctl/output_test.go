@@ -43,7 +43,7 @@ func jsonServer(t *testing.T, body string) map[string]string {
 func TestMalformedBodyIsPrintedRaw(t *testing.T) {
 	// Types that cannot decode into the expected shapes: a number where a
 	// string belongs, a scalar where a list belongs.
-	const body = `{"Role":123,"Routes":5,"Items":7}`
+	const body = `{"Service":123,"Routes":5,"Items":7}`
 	env := jsonServer(t, body)
 	for _, verb := range []string{"status", "routes", "actions"} {
 		out, _, err := run(t, env, verb)
@@ -70,7 +70,7 @@ func TestListingWithOddItems(t *testing.T) {
 
 // A write failure surfaces rather than being dropped, in every output mode.
 func TestWriteFailuresSurface(t *testing.T) {
-	env := jsonServer(t, `{"Items":[{"Name":"a"}],"Role":"all"}`)
+	env := jsonServer(t, `{"Items":[{"Name":"a"}],"Service":"device-management"}`)
 	getenv := func(k string) string { return env[k] }
 	for name, args := range map[string][]string{
 		"human table": {"principals", "list"},

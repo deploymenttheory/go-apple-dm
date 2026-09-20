@@ -11,7 +11,7 @@ packaged executable are different inputs.
 | Go Test: generate check | Same application changes | `make verify` checks workflow/script contracts and regenerated output, including changed, missing and stale generated files and removed locked exported names. Verification does not rewrite generated output. |
 | Go Test: storage integration | Same application changes; SQL services | Shared storage contracts on SQLite, PostgreSQL and MySQL; PostgreSQL timing is reported with its shared-runner threshold disabled. |
 | Go Test: E2E | Same application changes; SQLite and PostgreSQL | Backend-specific server/device exchanges and split DDM transport. The SQLite-only embedded acceptance catalogue runs once, in the SQLite job. |
-| Go Test: process acceptance | Same application changes | Shared scenarios against built `dmserver` processes, including split topology; executable bench catalogue matches its documentation. |
+| Go Test: process acceptance | Same application changes | Shared scenarios against built `dmserver` processes, using unified device management; executable bench catalogue matches its documentation. |
 | Go Test: fuzz smoke | Same application changes | Brief execution of each fuzz target. |
 | Go Test: coverage | Successful unit, storage and E2E jobs | Merge Linux unit, SQL contract and both E2E profiles; retain the 95% package and overall gate. Process acceptance is separate evidence. |
 | Onboarding quickstart | Onboarding docs, Compose/helper scripts, Docker/build inputs and Go/module changes; manual dispatch | Offline documentation examples, JSON/local links, bootstrap failure/resume contracts and isolated Compose HTTPS/admin-handoff/restart checks. No Apple services or physical enrollment. |
@@ -47,7 +47,7 @@ tests or remove their coverage.
 
 The embedded `server/acceptance` suite configures SQLite itself and runs only in
 the SQLite E2E job. `server/e2e` runs against both stores; process acceptance
-covers binary startup, supervision and split topology with local fixtures.
+covers binary startup, supervision and unified device management with local fixtures.
 
 Candidate installation, published installation and archive smoke tests check
 different inputs. Native Windows unit tests run in application CI; release

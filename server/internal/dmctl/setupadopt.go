@@ -23,9 +23,9 @@ func runSetupBenchAdoption(ctx context.Context, e *env, source, destination, rol
 	if err != nil {
 		return wrapError(err)
 	}
-	if w.Mode != "live" || w.Storage != "sqlite" || w.Topology != "all" {
+	if w.Mode != "live" || w.Storage != "sqlite" {
 		return fmt.Errorf(
-			"%w: bench adoption requires a live SQLite workspace with all roles",
+			"%w: bench adoption requires a live SQLite workspace",
 			ErrUsage,
 		)
 	}
@@ -43,7 +43,7 @@ func runSetupBenchAdoption(ctx context.Context, e *env, source, destination, rol
 		return fmt.Errorf("dmctl: existing enrollment database: %w", err)
 	}
 	settings := map[string][]byte{
-		"DM_AUDIT_STORE": []byte("true"), "DM_ADMIN_STORE": []byte("true"),
+		"DM_AUDIT_STORE":   []byte("true"),
 		"DM_DISCOVERY":     []byte("Mac=mdm-adde,iPhone=mdm-byod"),
 		"DM_PUSH_COALESCE": []byte("-1s"),
 	}
@@ -67,18 +67,18 @@ func runSetupBenchAdoption(ctx context.Context, e *env, source, destination, rol
 	settings[app.EnvSCEPChallenge] = []byte(strings.TrimSpace(string(challenge)))
 	path, err := app.InitSetupFile(
 		app.SetupInitOptions{
-			Directory:         destination,
-			Role:              role,
-			Storage:           "sqlite",
-			DSN:               dsn,
-			Listen:            w.Listen,
-			PublicURL:         "https://" + w.Listen,
-			Organization:      "go-apple-dm",
-			StorageKeyFile:    filepath.Join(mdmDir, "storage-key"),
-			StorageKeyName:    "bench",
-			StorageKeyAliases: []string{"lab"},
-			AdminTokenFile:    filepath.Join(mdmDir, "admin-token"),
-			AdditionalSecrets: settings,
+			Directory:          destination,
+			Role:               role,
+			Storage:            "sqlite",
+			DSN:                dsn,
+			Listen:             w.Listen,
+			PublicURL:          "https://" + w.Listen,
+			Organization:       "go-apple-dm",
+			StorageKeyFile:     filepath.Join(mdmDir, "storage-key"),
+			StorageKeyName:     "bench",
+			StorageKeyAliases:  []string{"lab"},
+			BootstrapTokenFile: filepath.Join(mdmDir, "admin-token"),
+			AdditionalSecrets:  settings,
 		},
 	)
 	if err != nil {

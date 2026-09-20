@@ -2,6 +2,7 @@ package app
 
 import (
 	"bytes"
+	"context"
 	"crypto/x509"
 	"crypto/x509/pkix"
 	"errors"
@@ -143,6 +144,7 @@ func TestAdminQueueRejectsMalformedTargetsAndLookupFailure(t *testing.T) {
 		t.Fatal(err)
 	}
 	r := httptest.NewRequestWithContext(t.Context(), "POST", "https://mdm.example/admin", bytes.NewReader(command.Raw))
+	r = r.WithContext(context.WithValue(r.Context(), decodedCommandKey{}, command))
 	r.SetPathValue("id", id.ID)
 	r.SetPathValue("channel", "device")
 	w := httptest.NewRecorder()

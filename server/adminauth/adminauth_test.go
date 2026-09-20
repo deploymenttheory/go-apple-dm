@@ -150,17 +150,9 @@ func TestAuthorizeStoreFailure(t *testing.T) {
 
 // A stored policy that no longer compiles is an error, not a silent deny.
 func TestCompileRejectsStoredGarbage(t *testing.T) {
-	ctx := context.Background()
-	st := inmem.New()
-	if _, err := st.PutPolicy(ctx, adminauth.Policy{Name: "bad", Source: "not cedar"}, t0); err != nil {
-		t.Fatal(err)
-	}
-	m, err := adminauth.New(st, registry(t))
-	if err != nil {
-		t.Fatal(err)
-	}
-	if _, err := m.Authorize(ctx, adminauth.Root, "listEnrollments", adminauth.SystemResource, nil); !errors.Is(err, adminauth.ErrInvalid) {
-		t.Fatalf("err = %v, want ErrInvalid", err)
+	_, err := adminauth.Compile(registry(t), 1, []adminauth.Policy{{Name: "bad", Source: "not cedar"}})
+	if !errors.Is(err, adminauth.ErrInvalid) {
+		t.Fatalf("invalid stored policy: %v", err)
 	}
 }
 

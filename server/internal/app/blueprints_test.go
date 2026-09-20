@@ -42,7 +42,7 @@ func TestBlueprintAdminAndDeviceDelivery(t *testing.T) {
 	}
 	for _, backend := range []string{"inmem", "sqlite"} {
 		t.Run(backend, func(t *testing.T) {
-			a := build(t, app.Config{Role: app.RoleAll, Storage: backend, DSN: filepath.Join(t.TempDir(), "app.db"), AdminToken: "admin", CARoots: ca.Pool(), Enroll: app.EnrollConfig{PublicURL: "https://mdm.example"}})
+			a := build(t, app.Config{Storage: backend, DSN: filepath.Join(t.TempDir(), "app.db"), BootstrapToken: "admin", CARoots: ca.Pool(), Enroll: app.EnrollConfig{PublicURL: "https://mdm.example"}})
 			request := func(method, path, revision string, body []byte, cert *x509.Certificate) *httptest.ResponseRecorder {
 				t.Helper()
 				r := httptest.NewRequestWithContext(t.Context(), method, "https://mdm.example"+path, bytes.NewReader(body))
@@ -142,67 +142,5 @@ func TestBlueprintAdminAndDeviceDelivery(t *testing.T) {
 				t.Fatal("immutable profile lost", w.Code)
 			}
 		})
-	}
-}
-
-func TestBlueprintSplitDownload(t *testing.T) {
-	ca, err := testpki.NewCA("split")
-	if err != nil {
-		t.Fatal(err)
-	}
-	identity, err := ca.Issue("device", time.Now().Add(-time.Minute))
-	if err != nil {
-		t.Fatal(err)
-	}
-	send, recv := []byte("ssssssssssssssssssssssssssssssss"), []byte("rrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrr")
-	backend := build(t, app.Config{Role: app.RoleDDM, Storage: "inmem", DDMSendKey: send, DDMRecvKey: recv, Enroll: app.EnrollConfig{PublicURL: "https://mdm.example"}})
-	srv := serve(t, backend)
-	front := build(t, app.Config{Role: app.RoleMDM, Storage: "inmem", DDMURL: srv.URL + app.PathDDM, DDMSendKey: recv, DDMRecvKey: send, CARoots: ca.Pool()})
-	id := mdm.EnrollmentID{ID: "split-device", Channel: mdm.ChannelDevice}
-	for _, a := range []*app.App{backend, front} {
-		if err := a.Store.Import(t.Context(), storage.EnrollmentExport{Enrollment: storage.Enrollment{ID: id, Enabled: true, CertHash: cms.Fingerprint(identity.Cert), Capabilities: storage.Capabilities{Supervised: storage.CapabilityTrue}, Device: storage.DeviceInfo{ProductName: "Mac16,1", OSVersion: "27.0"}}}); err != nil {
-			t.Fatal(err)
-		}
-	}
-	p := &profile.Profile{Identifier: "com.example.split", UUID: "6C9B0C20-0000-7000-8000-000000000001", Payloads: []profile.Payload{{Identifier: "com.example.split.payload", UUID: "6C9B0C20-0000-7000-8000-000000000002", Content: &profile.Raw{Type: "com.example.custom", Keys: map[string]any{"Value": "split"}}}}}
-	body, err := p.Marshal()
-	if err != nil {
-		t.Fatal(err)
-	}
-	info, err := backend.ConfigurationProfiles.Upload(t.Context(), body)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if _, err := backend.Blueprints.Publish(t.Context(), blueprint.Spec{Identifier: "split", Declarations: []blueprint.Declaration{{Identifier: "p", ConfigurationProfile: &blueprint.ConfigurationProfileReference{Revision: info.Revision, UseProfileAssetReference: true}}}}, ""); err != nil {
-		t.Fatal(err)
-	}
-	if _, err := backend.Blueprints.Assign(t.Context(), id, "split", true); err != nil {
-		t.Fatal(err)
-	}
-	if _, err := backend.Engine.Manifest(t.Context(), id); err != nil {
-		t.Fatal(err)
-	}
-	request := func() *httptest.ResponseRecorder {
-		t.Helper()
-		r := httptest.NewRequestWithContext(t.Context(), "GET", "https://mdm.example"+configurationprofile.Path+info.Revision+"?channel=device&id=split-device", nil)
-		r.TLS = &tls.ConnectionState{PeerCertificates: []*x509.Certificate{identity.Cert}, VerifiedChains: [][]*x509.Certificate{{identity.Cert, ca.Cert}}}
-		w := httptest.NewRecorder()
-		front.Handler.ServeHTTP(w, r)
-		return w
-	}
-	if w := request(); w.Code != 200 || !bytes.Equal(w.Body.Bytes(), body) {
-		t.Fatal("split profile", w.Code, w.Body.String())
-	}
-	if _, err := backend.Blueprints.Assign(t.Context(), id, "split", false); err != nil {
-		t.Fatal(err)
-	}
-	if w := request(); w.Code != 404 {
-		t.Fatal("split unassignment", w.Code)
-	}
-	if err := front.Store.Disable(t.Context(), id, time.Now()); err != nil {
-		t.Fatal(err)
-	}
-	if w := request(); w.Code != 403 {
-		t.Fatal("disabled ingress", w.Code)
 	}
 }

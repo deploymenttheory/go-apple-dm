@@ -115,7 +115,7 @@ func (a *App) retryEvent(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	// Native deliveries require their own replay permission and, for sensitive
-	// captures, root authority. The generic outbox endpoint cannot grant either.
+	// captures, a separate sensitive replay grant. The generic outbox endpoint cannot grant either.
 	if strings.HasPrefix(body.Destination, "native-webhook:") {
 		writeError(w, http.StatusForbidden, ErrUnauthorized)
 		return

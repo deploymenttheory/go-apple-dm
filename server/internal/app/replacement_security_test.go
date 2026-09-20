@@ -23,7 +23,6 @@ func replacementSecurityApp(t *testing.T) (*App, mdm.EnrollmentID) {
 	a, err := Build(
 		t.Context(),
 		Config{
-			Role:    RoleAll,
 			Storage: "inmem",
 			Logger:  slog.New(slog.NewTextHandler(io.Discard, nil)),
 			Enroll: EnrollConfig{

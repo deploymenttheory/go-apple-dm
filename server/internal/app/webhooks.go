@@ -10,17 +10,22 @@ import (
 	"strings"
 	"time"
 
+	"github.com/cedar-policy/cedar-go/types"
+
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/mdm"
+	"github.com/deploymenttheory/go-apple-dm/server/adminauth"
 	"github.com/deploymenttheory/go-apple-dm/server/eventstore"
 	"github.com/deploymenttheory/go-apple-dm/server/sqlstore/sqlcommon"
 	"github.com/deploymenttheory/go-apple-dm/server/webhook"
 )
 
 const (
-	ActionReadWebhooks          = "readWebhooks"
-	ActionManageWebhooks        = "manageWebhooks"
-	ActionReadWebhookDeliveries = "readWebhookDeliveries"
-	ActionReplayWebhooks        = "replayWebhooks"
+	ActionManageSensitiveWebhooks = "manageSensitiveWebhooks"
+	ActionReplaySensitiveWebhooks = "replaySensitiveWebhooks"
+	ActionReadWebhooks            = "readWebhooks"
+	ActionManageWebhooks          = "manageWebhooks"
+	ActionReadWebhookDeliveries   = "readWebhookDeliveries"
+	ActionReplayWebhooks          = "replayWebhooks"
 )
 
 func parseWebhookEnv(cfg *Config, get func(string) string) error {
@@ -34,7 +39,7 @@ func parseWebhookEnv(cfg *Config, get func(string) string) error {
 		}
 		cfg.Webhooks.Enabled = enabled
 	}
-	cfg.Webhooks.Source = string(cfg.Role)
+	cfg.Webhooks.Source = "device-management"
 	cfg.Webhooks.RootCAFile = get("DM_WEBHOOK_ROOT_CA_FILE")
 	if value := get("DM_WEBHOOK_PRIVATE_NETWORKS"); value != "" {
 		for _, p := range strings.Split(value, ",") {
@@ -65,7 +70,7 @@ func (a *App) openWebhooks(ctx context.Context, store *eventstore.Store) error {
 		return nil
 	}
 	cfg := a.cfg.Webhooks
-	cfg.Source = string(a.cfg.Role)
+	cfg.Source = "device-management"
 	if a.cfg.Clock != nil {
 		cfg.Now = a.cfg.Clock.Now
 	}
@@ -96,12 +101,23 @@ func (a *App) webhookRoutes() []adminRoute {
 	routes := []adminRoute{}
 	add := func(action, pattern string, mutation bool) {
 		routes = append(routes, adminRoute{Pattern: pattern, Action: action, Family: "webhooks", LocalMutation: mutation, Handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			principal, _, err := a.principal(r)
+			principal, err := a.principal(r)
 			if err != nil {
 				writeError(w, http.StatusUnauthorized, ErrUnauthorized)
 				return
 			}
-			a.webhooks.Admin(w, r, principal.Root)
+			sensitiveAction := ActionManageSensitiveWebhooks
+			if action == ActionReplayWebhooks {
+				sensitiveAction = ActionReplaySensitiveWebhooks
+			}
+			decision, err := a.admin.Authorize(r.Context(), principal, sensitiveAction, adminauth.SystemResource, map[string]types.Value{"method": types.String(r.Method)})
+			sensitive := err == nil && decision.Allowed
+			if sensitive {
+				if req, ok := r.Context().Value(authorizationKey{}).(*authorizationRequest); ok {
+					req.Decision.Policies = append(req.Decision.Policies, decision.Policies...)
+				}
+			}
+			a.webhooks.Admin(w, r, sensitive)
 		})})
 	}
 	for _, p := range []string{"GET /webhooks", "GET /webhooks/{id}", "GET /webhooks/catalogue", "GET /webhooks/status"} {

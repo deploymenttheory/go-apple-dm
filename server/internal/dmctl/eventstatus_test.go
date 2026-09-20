@@ -11,7 +11,7 @@ func TestStatusReportsEventOverload(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		_, _ = w.Write(
 			[]byte(
-				`{"Role":"all","EventDelivery":{"Async":true,"Workers":8,"QueueCapacity":1024,"Queued":10,"InFlight":8,"Accepted":20,"Delivered":2,"Failed":0,"TimedOut":0,"Rejected":99,"Abandoned":0,"DeliveryTimeout":"30s"}}`,
+				`{"Service":"device-management","EventDelivery":{"Async":true,"Workers":8,"QueueCapacity":1024,"Queued":10,"InFlight":8,"Accepted":20,"Delivered":2,"Failed":0,"TimedOut":0,"Rejected":99,"Abandoned":0,"DeliveryTimeout":"30s"}}`,
 			),
 		)
 	}))

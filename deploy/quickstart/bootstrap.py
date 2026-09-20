@@ -54,7 +54,7 @@ class Bootstrap:
                      "-public-url", "https://localhost:8443", "-listen", "0.0.0.0:8443", setup=False)
         document = json.loads(self.path.read_text())
         if not complete.exists():
-            for name, value in {"DM_ADMIN_STORE": "true", "DM_AUDIT_STORE": "true",
+            for name, value in {"DM_AUDIT_STORE": "true",
                                 "DM_AUDIT_RETENTION": "720h"}.items():
                 document["environment"].setdefault(name, value)
             self.write_json(self.path, document)

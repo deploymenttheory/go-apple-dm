@@ -60,7 +60,7 @@ func TestReenrollDeniedByDefault(t *testing.T) {
 	}
 
 	t.Run("Default", func(t *testing.T) {
-		a := build(t, app.Config{Role: app.RoleMDM, Storage: "inmem"})
+		a := build(t, app.Config{Storage: "inmem"})
 		if err := authenticateAs(t, a, "UDID-1", device.Cert); err != nil {
 			t.Fatalf("initial enrollment: %v", err)
 		}
@@ -74,7 +74,7 @@ func TestReenrollDeniedByDefault(t *testing.T) {
 	})
 
 	t.Run("OptIn", func(t *testing.T) {
-		a := build(t, app.Config{Role: app.RoleMDM, Storage: "inmem", AllowReenroll: true})
+		a := build(t, app.Config{Storage: "inmem", AllowReenroll: true})
 		if err := authenticateAs(t, a, "UDID-1", device.Cert); err != nil {
 			t.Fatalf("initial enrollment: %v", err)
 		}

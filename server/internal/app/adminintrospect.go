@@ -5,6 +5,7 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/deploymenttheory/go-apple-dm/server/adminauth"
 	"github.com/deploymenttheory/go-apple-dm/server/internal/buildinfo"
 )
 
@@ -32,15 +33,13 @@ func (a *App) introspectionRoutes() []adminRoute {
 			Introspection: true,
 			Handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				writeJSON(w, http.StatusOK, map[string]any{
-					"Role":     string(a.cfg.Role),
+					"Service":  "device-management",
 					"Version":  buildVersion(),
 					"Families": a.adminFamilies(),
 					"Policy":   a.admin != nil,
-					// Reported so an operator can see the standing root
-					// credential without reading logs, and so dmctl can say
-					// it out loud after bootstrap.
-					"BreakGlass":    a.cfg.AdminToken != "",
-					"EventDelivery": a.eventStats(),
+					// Reports whether the one-time first-root exchange is available.
+					"BootstrapPending": a.bootstrapPending(r),
+					"EventDelivery":    a.eventStats(),
 				})
 			}),
 		},
@@ -50,14 +49,25 @@ func (a *App) introspectionRoutes() []adminRoute {
 			Family:        "introspection",
 			Introspection: true,
 			Handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				type view struct{ Method, Pattern, Action, Family string }
+				type view struct {
+					Method, Pattern, Action, Family string
+					Resource                        string
+					Context                         map[string]adminauth.ContextAttribute
+					Sensitive, RootOnly             bool
+					CommandActions                  []string
+				}
 				out := make([]view, 0, len(a.adminTable))
 				for _, rt := range a.adminTable {
 					method, pattern, ok := strings.Cut(rt.Pattern, " ")
 					if !ok {
 						method, pattern = "", rt.Pattern
 					}
-					out = append(out, view{method, pattern, rt.Action, rt.Family})
+					action, _ := a.admin.Registry().Lookup(rt.Action)
+					v := view{Method: method, Pattern: pattern, Action: rt.Action, Family: rt.Family, Resource: string(action.Resource), Context: action.Context, Sensitive: action.Sensitive, RootOnly: action.RootOnly}
+					if rt.Command {
+						v.CommandActions = commandActionIDs()
+					}
+					out = append(out, v)
 				}
 				sort.Slice(out, func(i, j int) bool {
 					if out[i].Pattern != out[j].Pattern {
@@ -88,4 +98,9 @@ func (a *App) adminFamilies() []string {
 // buildVersion reports the packaged release or go install module version.
 func buildVersion() string {
 	return buildinfo.Version()
+}
+
+func (a *App) bootstrapPending(r *http.Request) bool {
+	initialized, err := a.admin.Initialized(r.Context())
+	return err == nil && !initialized && a.cfg.BootstrapToken != ""
 }

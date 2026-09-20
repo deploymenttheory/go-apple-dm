@@ -40,7 +40,7 @@ func pathFor(pattern string) (method, path string) {
 func adminApp(t *testing.T, bus *event.Bus) *app.App {
 	t.Helper()
 	return build(t, app.Config{
-		Role: app.RoleAll, Storage: "inmem", AdminToken: "secret",
+		Storage: "inmem", BootstrapToken: "secret",
 		Listen: ":0", Bus: bus,
 	})
 }
@@ -232,10 +232,10 @@ func TestAdminAudit(t *testing.T) {
 
 	// Reads are the bulk of admin traffic and change nothing, so they are not
 	// audited; only mutations are.
-	t.Run("ReadsAreNotAudited", func(t *testing.T) {
+	t.Run("OrdinaryReadsAreNotAudited", func(t *testing.T) {
 		before := len(rec.ofType(event.AdminAction))
 		req, _ := http.NewRequestWithContext(context.Background(), http.MethodGet,
-			srv.URL+"/admin/v1/declarations/nope", nil)
+			srv.URL+"/admin/v1/enrollments", nil)
 		req.Header.Set("Authorization", "Bearer secret")
 		resp, err := srv.Client().Do(req)
 		if err != nil {
@@ -249,8 +249,8 @@ func TestAdminAudit(t *testing.T) {
 }
 
 // The admin API requires a configured authentication mechanism.
-func TestAdminNotMountedWithoutCredential(t *testing.T) {
-	a := build(t, app.Config{Role: app.RoleAll, Storage: "inmem", Listen: ":0"})
+func TestAdminRequiresCredential(t *testing.T) {
+	a := build(t, app.Config{Storage: "inmem", Listen: ":0"})
 	srv := serve(t, a)
 	respRequest, err := http.NewRequestWithContext(t.Context(), "GET", srv.URL+"/admin/v1/declarations/x", nil)
 	if err != nil {
@@ -261,7 +261,7 @@ func TestAdminNotMountedWithoutCredential(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer func(body io.Closer) { _ = body.Close() }(resp.Body)
-	if resp.StatusCode != http.StatusNotFound {
-		t.Fatalf("status = %d, want 404 with no admin credential configured", resp.StatusCode)
+	if resp.StatusCode != http.StatusUnauthorized {
+		t.Fatalf("status = %d, want 401 with no admin credential configured", resp.StatusCode)
 	}
 }

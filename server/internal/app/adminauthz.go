@@ -8,8 +8,6 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/cedar-policy/cedar-go/types"
-
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/ddm"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/event"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/mdm"
@@ -31,14 +29,11 @@ const (
 	ActionReadEnrollment         = "readEnrollment"
 	ActionReadEnrollmentStatus   = "readEnrollmentStatus"
 	ActionNotify                 = "notify"
-	ActionManageDEP              = "manageDEP"
-	ActionManageBusinessMgr      = "manageBusinessManager"
 	ActionReadACME               = "readACME"
 	ActionManagePrincipals       = "managePrincipals"
 	ActionReadAudit              = "readAudit"
 	ActionRetryEvents            = "retryEvents"
 	ActionDisableEnrollment      = "disableEnrollment"
-	ActionEnqueueCommand         = "enqueueCommand"
 	ActionReadCommands           = "readCommands"
 	ActionClearCommands          = "clearCommands"
 	ActionPushEnrollment         = "pushEnrollment"
@@ -48,18 +43,17 @@ const (
 	ActionManagePolicies         = "managePolicies"
 )
 
-// AdminActions describes every action, with operator-facing prose naming the
+// baseAdminActions describes the static actions, with operator-facing prose naming the
 // consequence. `dmctl policy actions` prints these, so an operator granting
 // an action knows what they are granting rather than guessing from its name.
-func AdminActions() []adminauth.Action {
+func baseAdminActions() []adminauth.Action {
 	actions := append(setupActions(), blueprintActions()...)
 	actions = append(actions, []adminauth.Action{
 		{ID: ActionReadWebhooks, Help: "Read webhook subscriptions and catalogue.", Resource: adminauth.EntitySystem},
-		{ID: ActionManageWebhooks, Help: "Manage webhook destinations and export server event summaries. Sensitive destinations require root.", Resource: adminauth.EntitySystem},
+		{ID: ActionManageWebhooks, Help: "Manage webhook destinations and export server event summaries. Sensitive destinations require a separate grant.", Resource: adminauth.EntitySystem},
 		{ID: ActionReadWebhookDeliveries, Help: "Inspect webhook delivery metadata and failures.", Resource: adminauth.EntitySystem},
-		{ID: ActionReplayWebhooks, Help: "Retry and replay retained webhook occurrences. Sensitive captures and destinations require root.", Resource: adminauth.EntitySystem},
+		{ID: ActionReplayWebhooks, Help: "Retry and replay retained webhook occurrences. Sensitive captures and destinations require a separate grant.", Resource: adminauth.EntitySystem},
 	}...)
-	actions = append(actions, configurationProfileActions()...)
 	actions = append(actions, applicationIdentityActions()...)
 	return append(append(actions, contentCacheActions()...), []adminauth.Action{
 		{
@@ -132,16 +126,7 @@ func AdminActions() []adminauth.Action {
 			Help:     "Drain pending declaration changes and wake the affected devices.",
 			Resource: adminauth.EntitySystem,
 		},
-		{
-			ID:       ActionManageDEP,
-			Help:     "Administer device enrollment service accounts, tokens, and profiles.",
-			Resource: adminauth.EntityDEPAccount,
-		},
-		{
-			ID:       ActionManageBusinessMgr,
-			Help:     "List and reassign hardware in Apple Business Manager.",
-			Resource: adminauth.EntitySystem,
-		},
+
 		{
 			ID:       ActionReadACME,
 			Help:     "Read issued ACME identities and the hardware Apple attested for each.",
@@ -162,14 +147,10 @@ func AdminActions() []adminauth.Action {
 			Help:     "Stop an enrollment receiving commands and pushes, as a check-out would.",
 			Resource: adminauth.EntityEnrollment,
 		},
-		{
-			ID:       ActionEnqueueCommand,
-			Help:     "Send any MDM command to a device, including erase and lock.",
-			Resource: adminauth.EntityEnrollment,
-		},
+
 		{
 			ID:       ActionReadCommands,
-			Help:     "Read an enrollment's command queue and the results devices returned.",
+			Help:     "Read command queue metadata without raw response content.",
 			Resource: adminauth.EntityEnrollment,
 		},
 		{
@@ -209,7 +190,7 @@ func AdminActions() []adminauth.Action {
 		},
 		{
 			ID:       ActionReadConfig,
-			Help:     "Read the server's role and route table. Authenticated callers always may; a policy does not gate it.",
+			Help:     "Read the server configuration and route table. Authenticated callers always may; a policy does not gate it.",
 			Resource: adminauth.EntitySystem,
 		},
 	}...)
@@ -228,8 +209,7 @@ type adminRoute struct {
 	Pattern string
 	// Action is the adminauth action id this route requires.
 	Action string
-	// Family names the group a role must be able to back, so a role that did
-	// not build the dependency does not register the route.
+	// Family groups related routes for introspection and enrollment resolution.
 	Family string
 	// LocalMutation means the handler's mutations use the shared SQL pool and
 	// perform no remote calls. Its response is withheld until event capture and
@@ -238,27 +218,20 @@ type adminRoute struct {
 	// Introspection routes expose role and route metadata without fleet data. They
 	// require authentication but bypass policy evaluation so authenticated clients
 	// can determine which families the process serves.
-	Introspection bool
-	Handler       http.Handler
+	Introspection      bool
+	Handler            http.Handler
+	ResourceParam      string
+	NotifyDeclarations bool
+	Command            bool
+	RequestType        string
+	Sensitive          bool
 }
 
 // Admin authorization errors.
 var (
 	// ErrForbidden is a caller authenticated but not permitted.
 	ErrForbidden = errors.New("app: forbidden")
-	// ErrAdminUnconfigured reports that an enabled admin API has neither a
-	// principal store nor a static token. Build returns this configuration error.
-	ErrAdminUnconfigured = errors.New(
-		"app: admin API needs DM_ADMIN_TOKEN or an admin principal store",
-	)
 )
-
-// adminEnabled reports whether the admin API has a way to authenticate a
-// caller. With neither a principal store nor a static token the API is not
-// mounted at all, rather than mounted and unguarded.
-func (a *App) adminEnabled() bool {
-	return a.cfg.AdminStore != nil || a.cfg.AdminStoreEnabled || a.cfg.AdminToken != ""
-}
 
 // mustAdminRegistry builds the action registry from the action table. The
 // table is a compile-time constant, so a failure here is a programming error
@@ -278,17 +251,22 @@ func mustAdminRegistry() *adminauth.Registry {
 func (a *App) buildAdminMux(routes []adminRoute) (http.Handler, error) {
 	reg := mustAdminRegistry()
 	mux := http.NewServeMux()
-	for _, rt := range routes {
+	for i := range routes {
+		rt := routes[i]
 		if rt.Action == "" {
 			return nil, fmt.Errorf("%w: admin route %q declares no action", ErrConfig, rt.Pattern)
 		}
-		if _, ok := reg.Lookup(rt.Action); !ok {
+		action, ok := reg.Lookup(rt.Action)
+		if !ok {
 			return nil, fmt.Errorf(
 				"%w: admin route %q names unknown action %q",
 				ErrConfig, rt.Pattern,
 				rt.Action,
 			)
 		}
+		rt.ResourceParam = resourceParameter(action.Resource)
+		rt.Sensitive = action.Sensitive
+		routes[i] = rt
 		mux.Handle(rt.Pattern, a.authorized(rt))
 	}
 	a.adminTable = routes
@@ -306,26 +284,14 @@ func (r adminRoute) RoutePattern() string { return r.Pattern }
 func (r adminRoute) RouteAction() string  { return r.Action }
 func (r adminRoute) RouteFamily() string  { return r.Family }
 
-// BreakGlassActor is the audit actor for a request authenticated by the
-// static DM_ADMIN_TOKEN rather than by a stored principal. It is a fixed
-// string, so an operator can alert on it: after the first principals exist,
-// a record carrying this actor means someone used the standing root
-// credential that should have been removed.
-const BreakGlassActor = "break-glass"
-
-// breakGlassPrincipal is who the static token authenticates as. It is root
-// and bypasses policy by design. Alongside a principal store it is the
-// bootstrap credential, because an empty store authenticates nobody and the
-// route that creates the first principal is itself authorized.
-var breakGlassPrincipal = adminauth.Principal{Name: BreakGlassActor, Root: true, TokenID: "static"}
-
 // authorized wraps a route with authentication, the policy check, and the
 // audit record. It is applied once, where the mux is built, so no route can
 // be added without it.
-func (a *App) authorized(rt adminRoute) http.Handler {
+func (a *App) authorized(route adminRoute) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		rt := route // Dynamic command actions belong to this request only.
 		w.Header().Set("Cache-Control", "no-store")
-		p, bypass, err := a.principal(r)
+		p, err := a.principal(r)
 		if err != nil {
 			w.Header().Set("WWW-Authenticate", `Bearer realm="mdm-admin"`)
 			a.auditDenied(r, adminauth.Principal{}, rt, err)
@@ -357,7 +323,20 @@ func (a *App) authorized(rt adminRoute) http.Handler {
 			}
 			r = r.WithContext(context.WithValue(r.Context(), canonicalEnrollmentKey{}, canonical))
 		}
-		if !bypass && !rt.Introspection {
+		if !rt.Introspection {
+			var err error
+			r, err = a.resolvePermission(r, &rt)
+			if err != nil {
+				status := http.StatusBadRequest
+				if errors.Is(err, ErrBodyTooLarge) {
+					status = http.StatusRequestEntityTooLarge
+				}
+				writeError(w, status, err)
+				return
+			}
+		}
+		r = r.WithContext(context.WithValue(r.Context(), actorKey{}, p))
+		if !rt.Introspection {
 			if err := a.checkPolicy(r, p, rt); err != nil {
 				a.auditDenied(r, p, rt, err)
 				writeError(
@@ -374,6 +353,10 @@ func (a *App) authorized(rt adminRoute) http.Handler {
 			a.localAdmin(w, r, p, rt)
 			return
 		}
+		if rt.Sensitive && (r.Method == http.MethodGet || r.Method == http.MethodHead) {
+			a.sensitiveAdminRead(w, r, p, rt)
+			return
+		}
 		if err := a.auditAction(r, p, rt); errors.Is(err, event.ErrCapture) {
 			w.Header().Set("Retry-After", "5")
 			writeError(w, http.StatusServiceUnavailable, event.ErrCapture)
@@ -381,6 +364,10 @@ func (a *App) authorized(rt adminRoute) http.Handler {
 		}
 		rec := &statusRecorder{ResponseWriter: w}
 		rt.Handler.ServeHTTP(rec, r)
+		setAdminOutcome(r, rec.status)
+		if err := a.auditAction(r, p, rt); err != nil {
+			a.cfg.Logger.ErrorContext(r.Context(), "app: record administrative outcome", "error", err)
+		}
 		a.kickNotifier(rt, r, rec.status)
 	})
 }
@@ -414,7 +401,7 @@ func (w *statusRecorder) Write(b []byte) (int, error) {
 // change rows remain the notification signal; this wrapper reduces polling
 // latency. Kick is nonblocking, and a drain without pending rows has no effect.
 func (a *App) kickNotifier(rt adminRoute, r *http.Request, status int) {
-	if a.Notifier == nil || rt.Family != "ddm" {
+	if a.Notifier == nil || !rt.NotifyDeclarations {
 		return
 	}
 	switch r.Method {
@@ -427,62 +414,52 @@ func (a *App) kickNotifier(rt adminRoute, r *http.Request, status int) {
 	a.Notifier.Kick()
 }
 
-// principal authenticates the caller, reporting whether policy is bypassed.
-func (a *App) principal(r *http.Request) (adminauth.Principal, bool, error) {
+// principal authenticates a stored administrator credential.
+func (a *App) principal(r *http.Request) (adminauth.Principal, error) {
 	tok, ok := strings.CutPrefix(r.Header.Get("Authorization"), "Bearer ")
 	if !ok || tok == "" {
-		return adminauth.Principal{}, false, ErrUnauthorized
+		return adminauth.Principal{}, ErrUnauthorized
 	}
-	// The break-glass token is tried first, and in constant time, so it still
-	// works when the principal store is empty or unreachable -- which is
-	// exactly when it is needed. It never short-circuits on a prefix match.
-	if a.cfg.AdminToken != "" && constantTimeEqual(tok, a.cfg.AdminToken) {
-		if a.admin != nil {
-			// Only worth saying when principals exist: until they do, the
-			// static token is the intended and only way in.
-			a.cfg.Logger.WarnContext(
-				r.Context(),
-				"app: admin request used the break-glass token, which bypasses policy; create principals and unset DM_ADMIN_TOKEN",
-				"actor",
-				BreakGlassActor,
-				"method",
-				r.Method,
-				"path",
-				r.URL.Path,
-			)
-		}
-		return breakGlassPrincipal, true, nil
-	}
+
 	if a.admin != nil {
 		p, err := a.admin.Authenticate(r.Context(), adminauth.Token(tok))
 		if err != nil {
-			return adminauth.Principal{}, false, fmt.Errorf(
+			return adminauth.Principal{}, fmt.Errorf(
 				"app: authenticate administrator: %w",
 				err,
 			)
 		}
-		return p, false, nil
+		return p, nil
 	}
-	return adminauth.Principal{}, false, ErrUnauthorized
+	return adminauth.Principal{}, ErrUnauthorized
 }
 
 // checkPolicy evaluates one route's action for the principal.
 func (a *App) checkPolicy(r *http.Request, p adminauth.Principal, rt adminRoute) error {
-	// Credential mutations require Root as well as their Cedar action. A
-	// policy may grant read access, but cannot delegate issuance of authority.
-	if rt.Action == ActionManagePrincipals && r.Method != http.MethodGet &&
-		r.Method != http.MethodHead &&
-		!p.Root {
-		return fmt.Errorf("%w: credential mutations require a root principal", adminauth.ErrDenied)
-	}
-	if rt.Action == ActionManagePolicies {
-		if !p.Root {
-			return fmt.Errorf("%w: %s is not a root principal", adminauth.ErrDenied, p.Name)
+	if p.Root && (authorityMutation(rt) || rt.Action == ActionReadPrincipals || rt.Action == ActionReadRoles || rt.Action == ActionReadPolicies) {
+		if req, ok := r.Context().Value(authorizationKey{}).(*authorizationRequest); ok {
+			version, err := a.admin.Version(r.Context())
+			if err != nil {
+				return err
+			}
+			req.Decision = adminauth.Decision{Allowed: true, Version: version}
 		}
 		return nil
 	}
-	d, err := a.admin.Authorize(r.Context(), p, rt.Action, a.adminResource(r), adminContext(r))
+	if authorityMutation(rt) {
+		if !p.Root {
+			return fmt.Errorf("%w: authority administration requires root", adminauth.ErrDenied)
+		}
+		return nil
+	}
+	req, ok := r.Context().Value(authorizationKey{}).(*authorizationRequest)
+	if !ok {
+		return adminauth.ErrDenied
+	}
+	d, err := a.admin.Authorize(r.Context(), p, rt.Action, req.Resource, req.Context)
+	req.Decision = d
 	if err != nil {
+		req.Decision.Errors = []string{err.Error()}
 		return fmt.Errorf("app: authorize administrator: %w", err)
 	}
 	if !d.Allowed {
@@ -491,50 +468,9 @@ func (a *App) checkPolicy(r *http.Request, p adminauth.Principal, rt adminRoute)
 	return nil
 }
 
-// adminResource maps the request path onto the entity a policy can name, so a
-// rule can be written about one enrollment or one declaration rather than the
-// deployment as a whole.
-func (a *App) adminResource(r *http.Request) types.EntityUID {
-	if id := r.PathValue("id"); id != "" {
-		if ch := r.PathValue("channel"); ch != "" {
-			return types.NewEntityUID(adminauth.EntityEnrollment, types.String(ch+"/"+id))
-		}
-		return types.NewEntityUID(adminauth.EntityDeclaration, types.String(id))
-	}
-	if name := r.PathValue("name"); name != "" {
-		return types.NewEntityUID(adminauth.EntityDEPAccount, types.String(name))
-	}
-	if name := r.PathValue("blueprint"); name != "" {
-		return types.NewEntityUID(adminauth.EntityBlueprint, types.String(name))
-	}
-	if revision := r.PathValue("revision"); revision != "" {
-		return types.NewEntityUID(adminauth.EntityConfigurationProfile, types.String(revision))
-	}
-	return adminauth.SystemResource
-}
-
-// adminContext are the request facts a policy condition may read. Only
-// bounded, server-derived values go in: never a request body, never a header.
-func adminContext(r *http.Request) map[string]types.Value {
-	ctx := map[string]types.Value{
-		"method": types.String(r.Method),
-	}
-	if ch := r.PathValue("channel"); ch != "" {
-		ctx["channel"] = types.String(ch)
-	}
-	if set := r.PathValue("set"); set != "" {
-		ctx["set"] = types.String(set)
-	}
-	if name := r.PathValue("blueprint"); name != "" {
-		ctx["blueprint"] = types.String(name)
-	}
-	return ctx
-}
-
-// auditAction records an allowed mutating request. Reads are not audited:
-// they are the bulk of admin traffic and carry no change to attribute.
+// auditAction records allowed mutations and sensitive reads.
 func (a *App) auditAction(r *http.Request, p adminauth.Principal, rt adminRoute) error {
-	if a.cfg.publisher() == nil || r.Method == http.MethodGet || r.Method == http.MethodHead {
+	if a.cfg.publisher() == nil || (!rt.Sensitive && (r.Method == http.MethodGet || r.Method == http.MethodHead)) {
 		return nil
 	}
 	return a.publishAdmin(r, event.AdminAction, p, rt, nil)
@@ -568,10 +504,24 @@ func (a *App) publishAdmin(
 		"Action":  rt.Action,
 		"Method":  r.Method,
 		"Path":    r.URL.Path,
+		"Outcome": "authorized",
 		"TokenID": p.TokenID,
+	}
+	if req, ok := r.Context().Value(authorizationKey{}).(*authorizationRequest); ok {
+		data["Resource"] = req.Resource.String()
+		if req.Outcome != "" {
+			data["Outcome"] = req.Outcome
+			data["Status"] = req.Status
+		}
+		data["Policies"] = req.Decision.Policies
+		data["PolicyVersion"] = req.Decision.Version
+		if len(req.Decision.Errors) > 0 {
+			data["EvaluationErrors"] = req.Decision.Errors
+		}
 	}
 	if cause != nil {
 		data["Reason"] = cause.Error()
+		data["Outcome"] = "denied"
 	}
 	actor := p.Name
 	if actor == "" {
@@ -612,7 +562,7 @@ func (a *App) resolveAdminEnrollment(r *http.Request, family string) (mdm.Enroll
 	if !errors.Is(err, ddm.ErrNotFound) {
 		return mdm.EnrollmentID{}, fmt.Errorf("app: resolve DDM identity: %w", err)
 	}
-	// A split DDM deployment supports preassignments before the MDM row exists.
+	// Declaration preassignments are supported before the MDM row exists.
 	// The first authorized assignment establishes an immutable DDM identity.
 	return enrollmentFromPath(r)
 }

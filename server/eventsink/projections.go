@@ -51,8 +51,8 @@ func Default() *Registry {
 	r.Register(event.ACMEIssued, passthrough("serial", "identifier", "device"))
 	r.Register(event.AttestationRejected, passthrough("identifier", "reason"))
 
-	r.Register(event.AdminAction, passthrough("Action", "Method", "Path", "TokenID"))
-	r.Register(event.AdminDenied, passthrough("Action", "Method", "Path", "TokenID", "Reason"))
+	r.Register(event.AdminAction, passthrough("Action", "Method", "Path", "TokenID", "Resource", "Policies", "PolicyVersion", "EvaluationErrors", "Outcome", "Status"))
+	r.Register(event.AdminDenied, passthrough("Action", "Method", "Path", "TokenID", "Resource", "Policies", "PolicyVersion", "EvaluationErrors", "Outcome", "Status", "Reason"))
 
 	// The DEP vocabulary lives in package dep by design, so its projections
 	// live here beside the rest rather than forcing dep to import a sink.

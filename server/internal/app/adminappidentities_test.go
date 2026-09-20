@@ -77,7 +77,7 @@ type heldIdentityBody struct {
 func (b heldIdentityBody) Read([]byte) (int, error) { close(b.entered); <-b.release; return 0, io.EOF }
 
 func TestApplicationIdentityConcurrentUpload(t *testing.T) {
-	a := build(t, app.Config{Role: app.RoleAll, Storage: "inmem", AdminToken: "admin"})
+	a := build(t, app.Config{Storage: "inmem", BootstrapToken: "admin"})
 	body := heldIdentityBody{entered: make(chan struct{}), release: make(chan struct{})}
 	done := make(chan *httptest.ResponseRecorder, 1)
 	go func() { done <- identityRequest(t, a, "POST", "/authoring/app-identities/artifacts", body, nil) }()
@@ -97,7 +97,7 @@ func TestApplicationIdentityConcurrentUpload(t *testing.T) {
 }
 
 func TestApplicationIdentityInvalidConfig(t *testing.T) {
-	if _, err := app.Build(t.Context(), app.Config{Role: app.RoleAll, Storage: "inmem", ApplicationIdentities: app.ApplicationIdentityConfig{Artifacts: appartifact.Options{MaxBytes: -1}}}); !errors.Is(err, app.ErrConfig) {
+	if _, err := app.Build(t.Context(), app.Config{Storage: "inmem", ApplicationIdentities: app.ApplicationIdentityConfig{Artifacts: appartifact.Options{MaxBytes: -1}}}); !errors.Is(err, app.ErrConfig) {
 		t.Fatal(err)
 	}
 }
@@ -114,7 +114,7 @@ func TestApplicationIdentityAuthoring(t *testing.T) {
 		return &http.Response{StatusCode: 200, Header: make(http.Header), Body: io.NopCloser(strings.NewReader(`{"resultCount":1,"results":[{"trackId":123,"bundleId":"com.example.app","trackName":"Example","artistName":"Example Inc","kind":"software"}]}`))}, nil
 	})}}
 	temp := t.TempDir()
-	a := build(t, app.Config{Role: app.RoleAll, Storage: "inmem", AdminToken: "admin", ApplicationIdentities: app.ApplicationIdentityConfig{PublicAppStore: client, Artifacts: appartifact.Options{TempDir: temp}}})
+	a := build(t, app.Config{Storage: "inmem", BootstrapToken: "admin", ApplicationIdentities: app.ApplicationIdentityConfig{PublicAppStore: client, Artifacts: appartifact.Options{TempDir: temp}}})
 	prefix := "/authoring/app-identities"
 	for _, route := range []string{"/public-app-store?term=Example&developer=Example&country=GB&entity=software&limit=10", "/public-app-store/123?country=GB&entity=software", "/apple?term=Safari", "/apple/com.apple.mobilesafari"} {
 		w := identityRequest(t, a, "GET", prefix+route, nil, nil)
@@ -208,7 +208,7 @@ func TestIdentityInputsAndUpstreamFailures(t *testing.T) {
 		}
 		return &http.Response{StatusCode: status, Header: headers, Body: io.NopCloser(strings.NewReader(body))}, nil
 	})}}
-	a := build(t, app.Config{Role: app.RoleAll, Storage: "inmem", AdminToken: "admin", ApplicationIdentities: app.ApplicationIdentityConfig{PublicAppStore: client}})
+	a := build(t, app.Config{Storage: "inmem", BootstrapToken: "admin", ApplicationIdentities: app.ApplicationIdentityConfig{PublicAppStore: client}})
 	prefix := "/authoring/app-identities"
 	for _, test := range []struct {
 		path string
@@ -260,7 +260,7 @@ func TestArtifactUploadFailures(t *testing.T) {
 		{"invalid", appartifact.Options{}, strings.NewReader("xar!bad"), "application/octet-stream", 400},
 	} {
 		t.Run(test.name, func(t *testing.T) {
-			a := build(t, app.Config{Role: app.RoleAll, Storage: "inmem", AdminToken: "admin", ApplicationIdentities: app.ApplicationIdentityConfig{Artifacts: test.opts}})
+			a := build(t, app.Config{Storage: "inmem", BootstrapToken: "admin", ApplicationIdentities: app.ApplicationIdentityConfig{Artifacts: test.opts}})
 			w := identityRequest(t, a, "POST", "/authoring/app-identities/artifacts", test.body, map[string]string{"Content-Type": test.media})
 			if w.Code != test.status {
 				t.Fatal(w.Code, w.Body.String())
@@ -280,7 +280,7 @@ func TestArtifactUploadContextFailures(t *testing.T) {
 	for _, status := range []int{http.StatusRequestTimeout, http.StatusGatewayTimeout} {
 		t.Run(http.StatusText(status), func(t *testing.T) {
 			temp := t.TempDir()
-			a := build(t, app.Config{Role: app.RoleAll, Storage: "inmem", AdminToken: "admin", ApplicationIdentities: app.ApplicationIdentityConfig{Artifacts: appartifact.Options{TempDir: temp}}})
+			a := build(t, app.Config{Storage: "inmem", BootstrapToken: "admin", ApplicationIdentities: app.ApplicationIdentityConfig{Artifacts: appartifact.Options{TempDir: temp}}})
 			var ctx context.Context
 			var cancel context.CancelFunc
 			if status == http.StatusRequestTimeout {

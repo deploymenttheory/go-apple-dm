@@ -54,6 +54,15 @@ func (s *Store) applyPrincipal(ctx context.Context, tx *sql.Tx, name string, cha
 	if err != nil {
 		return adminauth.Principal{}, wrap("read principal", err)
 	}
+	previous.Roles, err = s.principalRoles(ctx, name)
+	if err != nil {
+		return adminauth.Principal{}, err
+	}
+	if change.Op == "update" {
+		if err := s.validateRoles(ctx, change.Roles); err != nil {
+			return adminauth.Principal{}, err
+		}
+	}
 	p, err := change.Apply(previous, now)
 	if err != nil {
 		return adminauth.Principal{}, err
@@ -96,6 +105,11 @@ func (s *Store) applyPrincipal(ctx context.Context, tx *sql.Tx, name string, cha
 			return adminauth.Principal{}, adminauth.ErrConflict
 		}
 		return adminauth.Principal{}, wrap("change principal", err)
+	}
+	if change.Op == "update" {
+		if err := s.replaceRoles(ctx, name, p.Roles); err != nil {
+			return adminauth.Principal{}, err
+		}
 	}
 	return p, nil
 }

@@ -58,7 +58,7 @@ func TestApplicationSettingsWorkflow(t *testing.T) {
 					t.Fatal(err)
 				}
 				scratch := t.TempDir()
-				a := build(t, app.Config{Role: app.RoleAll, Storage: backend, DSN: filepath.Join(t.TempDir(), "app.db"), AdminToken: "admin", CARoots: ca.Pool(), ApplicationIdentities: app.ApplicationIdentityConfig{PublicAppStore: store, Artifacts: appartifact.Options{TempDir: scratch}}})
+				a := build(t, app.Config{Storage: backend, DSN: filepath.Join(t.TempDir(), "app.db"), BootstrapToken: "admin", CARoots: ca.Pool(), ApplicationIdentities: app.ApplicationIdentityConfig{PublicAppStore: store, Artifacts: appartifact.Options{TempDir: scratch}}})
 				srv := serve(t, a)
 				server := appSettingsExample{client: srv.Client(), baseURL: srv.URL, token: "admin"}
 				osName, product := "iOS", "iPad16,1"

@@ -148,10 +148,10 @@ func TestAdministration(t *testing.T) {
 		if _, err := m.PutPolicy(ctx, plain, doc); !errors.Is(err, adminauth.ErrDenied) {
 			t.Fatalf("PutPolicy: %v, want ErrDenied", err)
 		}
-		if _, err := m.GetPolicy(ctx, plain, "p"); !errors.Is(err, adminauth.ErrDenied) {
+		if _, err := m.GetPolicy(ctx, plain, "p"); !errors.Is(err, adminauth.ErrNotFound) {
 			t.Fatalf("GetPolicy: %v", err)
 		}
-		if _, err := m.Policies(ctx, plain); !errors.Is(err, adminauth.ErrDenied) {
+		if _, err := m.Policies(ctx, plain); err != nil {
 			t.Fatalf("Policies: %v", err)
 		}
 		if err := m.DeletePolicy(ctx, plain, "p"); !errors.Is(err, adminauth.ErrDenied) {
@@ -201,10 +201,10 @@ func TestAdministration(t *testing.T) {
 		if _, err := m.UpdatePrincipal(ctx, ops, "ops", []string{"a"}, false); !errors.Is(err, adminauth.ErrDenied) {
 			t.Fatalf("delegated update: %v", err)
 		}
-		put(t, m, "special", `permit (principal == MDM::Principal::"special", action, resource);`)
 		if _, _, err := m.CreatePrincipal(ctx, root, adminauth.Principal{Name: "special"}, time.Time{}); err != nil {
 			t.Fatal(err)
 		}
+		put(t, m, "special", `permit (principal == MDM::Principal::"special", action, resource);`)
 		if _, _, err := m.Rotate(ctx, root, "special", time.Time{}); err != nil {
 			t.Fatalf("root rotation refused: %v", err)
 		}

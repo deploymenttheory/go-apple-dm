@@ -21,7 +21,7 @@ import (
 )
 
 // adminTables in dependency order for DELETE and DROP.
-var adminTables = []string{"admin_policy_version", "admin_policies", "admin_principals"}
+var adminTables = []string{"admin_principal_roles", "admin_policy_version", "admin_policies", "admin_principals", "admin_roles"}
 
 func runShared(t *testing.T, db *sql.DB, d sqlcommon.Dialect, cascade string) {
 	t.Helper()
@@ -32,7 +32,7 @@ func runShared(t *testing.T, db *sql.DB, d sqlcommon.Dialect, cascade string) {
 	if _, err := sqlstore.Open(ctx, db, d, sqlstore.Options{}); err != nil {
 		t.Fatal(err)
 	}
-	if v, err := sqlstore.Version(ctx, db, d); err != nil || v != 1 {
+	if v, err := sqlstore.Version(ctx, db, d); err != nil || v != 2 {
 		t.Fatalf("version %d %v", v, err)
 	}
 	if applied, err := sqlstore.Migrate(ctx, db, d); err != nil || len(applied) != 0 {
@@ -42,13 +42,13 @@ func runShared(t *testing.T, db *sql.DB, d sqlcommon.Dialect, cascade string) {
 		t.Helper()
 		// The version row is seeded by the migration, so it is reset rather
 		// than deleted with the rest.
-		for _, table := range []string{"admin_policies", "admin_principals"} {
+		for _, table := range []string{"admin_principal_roles", "admin_policies", "admin_principals", "admin_roles"} {
 			// #nosec G202 -- Table names come from the fixed migration table list in this test.
 			if _, err := db.ExecContext(ctx, "DELETE FROM "+table); err != nil {
 				t.Fatal(err)
 			}
 		}
-		if _, err := db.ExecContext(ctx, "UPDATE admin_policy_version SET version = 0 WHERE id = 1"); err != nil {
+		if _, err := db.ExecContext(ctx, "UPDATE admin_policy_version SET version = 0, initialized = false WHERE id = 1"); err != nil {
 			t.Fatal(err)
 		}
 		s, err := sqlstore.Open(ctx, db, d, sqlstore.Options{SkipMigrate: true})
@@ -57,7 +57,7 @@ func runShared(t *testing.T, db *sql.DB, d sqlcommon.Dialect, cascade string) {
 		}
 		return s
 	})
-	if reverted, err := sqlstore.Rollback(ctx, db, d, 0); err != nil || len(reverted) != 1 {
+	if reverted, err := sqlstore.Rollback(ctx, db, d, 0); err != nil || len(reverted) != 2 {
 		t.Fatalf("rollback: %v %v", reverted, err)
 	}
 }

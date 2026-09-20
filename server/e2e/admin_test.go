@@ -60,14 +60,13 @@ func newAdminHarness(t *testing.T) *adminHarness {
 	trail := auditinmem.New()
 	pusher := &countingPusher{}
 	a, err := app.Build(context.Background(), app.Config{
-		Role: app.RoleAll, Storage: "sqlite", DSN: dsn,
-		StorageKeys:       []string{"e2e"},
-		Secrets:           secrets.Static{"e2e": []byte("0123456789abcdef0123456789abcdef")},
-		AdminStoreEnabled: true,
-		AdminToken:        "break-glass",
-		Logger:            slog.New(slog.NewTextHandler(io.Discard, nil)),
-		Push:              app.PushConfig{Pusher: pusher, Coalesce: -1},
-		Sinks:             app.SinkConfig{AuditStore: trail},
+		Storage: "sqlite", DSN: dsn,
+		StorageKeys:    []string{"e2e"},
+		Secrets:        secrets.Static{"e2e": []byte("0123456789abcdef0123456789abcdef")},
+		BootstrapToken: "bootstrap-secret",
+		Logger:         slog.New(slog.NewTextHandler(io.Discard, nil)),
+		Push:           app.PushConfig{Pusher: pusher, Coalesce: -1},
+		Sinks:          app.SinkConfig{AuditStore: trail},
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -117,6 +116,11 @@ func (h *adminHarness) ctl(t *testing.T, token, stdin string, args ...string) (s
 
 func (h *adminHarness) mint(t *testing.T, p adminauth.Principal) string {
 	t.Helper()
+	for _, role := range p.Roles {
+		if _, err := h.manager.PutRole(t.Context(), adminauth.Root, adminauth.Role{Name: role}); err != nil {
+			t.Fatal(err)
+		}
+	}
 	_, tok, err := h.manager.CreatePrincipal(context.Background(), adminauth.Root, p, time.Time{})
 	if err != nil {
 		t.Fatalf("CreatePrincipal %s: %v", p.Name, err)
@@ -210,9 +214,9 @@ func TestE2E_AdminCLI(t *testing.T) {
 			// is the regression this guards. A status from the server means
 			// the route was reached, whatever it says.
 			//
-			// The walk runs as break-glass so that revoking or deleting the
+			// The walk uses a separate stored root so revoking or deleting the
 			// scratch principal cannot invalidate the walker's credential.
-			_, err := h.ctl(t, "break-glass", "{}", "api", method, path)
+			_, err := h.ctl(t, root, "{}", "api", method, path)
 			if err != nil && errors.Is(err, dmctl.ErrUsage) {
 				t.Errorf("%s %s cannot be expressed by the CLI: %v", method, rt.Pattern, err)
 			}

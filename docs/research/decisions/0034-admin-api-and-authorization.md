@@ -1,5 +1,7 @@
 # 0034: Admin API surface and authorization
 
+Runtime and authorization decisions updated by [0056](0056-unified-server-rbac.md).
+
 ## Context
 
 Administrative routes can enqueue destructive commands, export secrets and change authorization policy. Credentials need distinct, revocable authority.

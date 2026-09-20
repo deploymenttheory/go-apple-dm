@@ -11,13 +11,9 @@ import (
 
 // Environment variables read by ParseEnv.
 const (
-	EnvRole       = "DM_ROLE"
-	EnvListen     = "DM_LISTEN"
-	EnvStorage    = "DM_STORAGE"
-	EnvDSN        = "DM_DSN"
-	EnvDDMURL     = "DM_DDM_URL"
-	EnvDDMSendKey = "DM_DDM_SEND_KEY"
-	EnvDDMRecvKey = "DM_DDM_RECV_KEY"
+	EnvListen  = "DM_LISTEN"
+	EnvStorage = "DM_STORAGE"
+	EnvDSN     = "DM_DSN"
 	// EnvStorageKeys names the keys sealing the secret columns, active
 	// first; material comes from DM_STORAGE_KEY_<NAME> or EnvSecretsDir.
 	EnvStorageKeys       = "DM_STORAGE_KEYS" // #nosec G101 -- the variable name, not a credential
@@ -25,11 +21,9 @@ const (
 	EnvSecretsDir        = "DM_SECRETS_DIR" // #nosec G101 -- the variable name, not a credential
 	// EnvAllowReenroll opts back in to the library's permissive
 	// re-enrollment behaviour; see Config.AllowReenroll.
-	EnvAllowReenroll = "DM_ALLOW_REENROLL"
-	EnvAdminToken    = "DM_ADMIN_TOKEN" // #nosec G101 -- the variable name, not a credential
-	// EnvAdminStore opens the admin principal and policy store on the
-	// process's own database. Off by default: it mounts the admin API.
-	EnvAdminStore = "DM_ADMIN_STORE"
+	EnvAllowReenroll  = "DM_ALLOW_REENROLL"
+	EnvBootstrapToken = "DM_BOOTSTRAP_TOKEN" // #nosec G101 -- the variable name, not a credential
+
 	// EnvAudit writes a projected slog record for every event.
 	EnvAudit = "DM_AUDIT_LOG"
 	// EnvWebhookURL is a rejected legacy setting; use DM_WEBHOOKS_ENABLED.
@@ -100,7 +94,6 @@ const (
 
 // Defaults applied by ParseEnv when a variable is unset.
 const (
-	DefaultRole    = RoleAll
 	DefaultListen  = "127.0.0.1:8080"
 	DefaultStorage = "sqlite"
 	DefaultDSN     = "dm.db"
@@ -121,6 +114,11 @@ func keyNames(v string) []string {
 }
 
 func ParseEnv(get func(string) string) (Config, error) {
+	for _, key := range []string{"DM_ROLE", "DM_DDM_URL", "DM_DDM_ROOT_CA_FILE", "DM_DDM_SEND_KEY", "DM_DDM_RECV_KEY", "DM_ADMIN_TOKEN", "DM_ADMIN_STORE"} {
+		if get(key) != "" {
+			return Config{}, fmt.Errorf("%w: %s has been removed; use the unified server and one-time DM_BOOTSTRAP_TOKEN", ErrConfig, key)
+		}
+	}
 	pick := func(key, def string) string {
 		if v := get(key); v != "" {
 			return v
@@ -133,16 +131,13 @@ func ParseEnv(get func(string) string) (Config, error) {
 			ProductionHost:  get("DM_APP_PUSH_PRODUCTION_HOST"),
 			RootCAFile:      get("DM_APP_PUSH_ROOT_CA_FILE"),
 		},
-		TLSCertFile:   get("DM_TLS_CERT_FILE"),
-		TLSKeyFile:    get("DM_TLS_KEY_FILE"),
-		Role:          Role(pick(EnvRole, string(DefaultRole))),
-		Listen:        pick(EnvListen, DefaultListen),
-		Storage:       pick(EnvStorage, DefaultStorage),
-		DSN:           pick(EnvDSN, DefaultDSN),
-		DDMURL:        get(EnvDDMURL),
-		DDMRootCAFile: get("DM_DDM_ROOT_CA_FILE"),
-		SecretsDir:    get(EnvSecretsDir),
-		AdminToken:    get(EnvAdminToken),
+		TLSCertFile:    get("DM_TLS_CERT_FILE"),
+		TLSKeyFile:     get("DM_TLS_KEY_FILE"),
+		Listen:         pick(EnvListen, DefaultListen),
+		Storage:        pick(EnvStorage, DefaultStorage),
+		DSN:            pick(EnvDSN, DefaultDSN),
+		SecretsDir:     get(EnvSecretsDir),
+		BootstrapToken: get(EnvBootstrapToken),
 		Sinks: SinkConfig{
 			WebhookURL:        get(EnvWebhookURL),
 			WebhookRootCAFile: get(EnvWebhookRootCAFile),
@@ -152,9 +147,7 @@ func ParseEnv(get func(string) string) (Config, error) {
 		CertHeader:    get(EnvCertHeader),
 		Subscriptions: true,
 	}
-	if v := get(EnvDDMSendKey); v != "" {
-		cfg.DDMSendKey = []byte(v)
-	}
+
 	cfg.ContentCache.PublicURL = get("DM_CONTENT_CACHE_URL")
 	if v := get("DM_CONTENT_CACHE_RETENTION"); v != "" {
 		d, err := time.ParseDuration(v)
@@ -163,9 +156,7 @@ func ParseEnv(get func(string) string) (Config, error) {
 		}
 		cfg.ContentCache.Retention = d
 	}
-	if v := get(EnvDDMRecvKey); v != "" {
-		cfg.DDMRecvKey = []byte(v)
-	}
+
 	if v := get(EnvSubscriptions); v != "" {
 		b, err := strconv.ParseBool(v)
 		if err != nil {
@@ -310,7 +301,6 @@ func ParseEnv(get func(string) string) (Config, error) {
 		EnvACMEUnattested:    &cfg.Enroll.ACME.AllowUnattested,
 		EnvAllowReenroll:     &cfg.AllowReenroll,
 		EnvStorageKeysStrict: &cfg.StorageKeysStrict,
-		EnvAdminStore:        &cfg.AdminStoreEnabled,
 		EnvAudit:             &cfg.Sinks.Audit,
 		EnvAuditStore:        &cfg.Sinks.Persist,
 	} {

@@ -98,7 +98,7 @@ func TestConfigTokenSources(t *testing.T) {
 			w.WriteHeader(http.StatusUnauthorized)
 			return
 		}
-		_, _ = w.Write([]byte(`{"Role":"all"}`))
+		_, _ = w.Write([]byte(`{"Service":"device-management"}`))
 	}))
 	defer srv.Close()
 

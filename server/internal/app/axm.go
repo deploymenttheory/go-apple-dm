@@ -86,9 +86,13 @@ const MaxAxMSerials = 1000
 //	POST /axm/assign   {"server":"..","serials":[..],"wait":true}
 //	POST /axm/unassign {"serials":[..],"wait":true}
 //	GET  /axm/activities/{id}
-func (a *App) axmHandler(client *axm.Client) http.Handler {
-	mux := http.NewServeMux()
-	mux.HandleFunc("GET /axm/servers", func(w http.ResponseWriter, r *http.Request) {
+func (a *App) axmRoutes(client *axm.Client) []adminRoute {
+	var routes []adminRoute
+	actions := map[string]string{"GET /axm/servers": ActionReadBusinessMgr, "GET /axm/devices": ActionReadBusinessMgr, "GET /axm/activities/{id}": ActionReadBusinessMgr, "POST /axm/assign": ActionAssignBusinessMgr, "POST /axm/unassign": ActionUnassignBusinessMgr}
+	add := func(pattern string, handler http.HandlerFunc) {
+		routes = append(routes, adminRoute{Pattern: pattern, Action: actions[pattern], Family: "axm", Handler: handler})
+	}
+	add("GET /axm/servers", func(w http.ResponseWriter, r *http.Request) {
 		page, err := client.ListMDMServers(r.Context(), listOptions(r))
 		if err != nil {
 			writeError(w, axmStatus(err), err)
@@ -96,7 +100,7 @@ func (a *App) axmHandler(client *axm.Client) http.Handler {
 		}
 		writeJSON(w, http.StatusOK, page)
 	})
-	mux.HandleFunc("GET /axm/devices", func(w http.ResponseWriter, r *http.Request) {
+	add("GET /axm/devices", func(w http.ResponseWriter, r *http.Request) {
 		page, err := client.ListOrgDevices(r.Context(), listOptions(r))
 		if err != nil {
 			writeError(w, axmStatus(err), err)
@@ -104,7 +108,7 @@ func (a *App) axmHandler(client *axm.Client) http.Handler {
 		}
 		writeJSON(w, http.StatusOK, page)
 	})
-	mux.HandleFunc("GET /axm/activities/{id}", func(w http.ResponseWriter, r *http.Request) {
+	add("GET /axm/activities/{id}", func(w http.ResponseWriter, r *http.Request) {
 		act, err := client.GetOrgDeviceActivity(r.Context(), r.PathValue("id"), axm.GetOptions{})
 		if err != nil {
 			writeError(w, axmStatus(err), err)
@@ -155,7 +159,7 @@ func (a *App) axmHandler(client *axm.Client) http.Handler {
 		}
 		writeJSON(w, http.StatusAccepted, act)
 	}
-	mux.HandleFunc("POST /axm/assign", func(w http.ResponseWriter, r *http.Request) {
+	add("POST /axm/assign", func(w http.ResponseWriter, r *http.Request) {
 		activity(
 			w,
 			r,
@@ -164,7 +168,7 @@ func (a *App) axmHandler(client *axm.Client) http.Handler {
 			},
 		)
 	})
-	mux.HandleFunc("POST /axm/unassign", func(w http.ResponseWriter, r *http.Request) {
+	add("POST /axm/unassign", func(w http.ResponseWriter, r *http.Request) {
 		activity(
 			w,
 			r,
@@ -173,7 +177,7 @@ func (a *App) axmHandler(client *axm.Client) http.Handler {
 			},
 		)
 	})
-	return mux
+	return routes
 }
 
 // Waits used by the admin API when the caller asks to wait.

@@ -22,11 +22,11 @@ import (
 // Run the same HTTP contract against embedded and installed server binaries.
 // No policy is sent to a physical device and no binary execution is attempted.
 func TestBinaryValidationDelivery(t *testing.T) {
-	for _, topology := range []string{"all", "split"} {
+	for _, topology := range []string{"device-management"} {
 		t.Run(topology, func(t *testing.T) {
 			ctx := t.Context()
 			dir := t.TempDir()
-			if err := bench.Init(dir, "simulated", "sqlite", topology, "127.0.0.1:0"); err != nil {
+			if err := bench.Init(dir, "simulated", "sqlite", "127.0.0.1:0"); err != nil {
 				t.Fatal(err)
 			}
 			w, err := bench.Load(dir)
@@ -39,12 +39,9 @@ func TestBinaryValidationDelivery(t *testing.T) {
 				t.Fatal(err)
 			}
 			t.Cleanup(func() { e.Close() })
-			api := func(ddmRole bool, method, path string, body []byte, want int) []byte {
+			api := func(method, path string, body []byte, want int) []byte {
 				t.Helper()
 				base := e.URL
-				if ddmRole && e.DDMURL != "" {
-					base = e.DDMURL
-				}
 				out, code, err := bench.HTTP(ctx, e.Client, base, e.Token, method, path, bytes.NewReader(body))
 				if code != want || (want < 400 && err != nil) {
 					t.Fatalf("%s %s: HTTP %d, want %d: %v: %s", method, path, code, want, err, out)
@@ -54,7 +51,7 @@ func TestBinaryValidationDelivery(t *testing.T) {
 			d := simulator.New("BINARY-VALIDATION-"+topology, simulator.WithClient(e.Client), simulator.WithDDM(map[string]any{}))
 			d.OSVersion, d.SerialNumber = "27.0", "BENCH-APPROVED-SYNTHETIC"
 			enrollment := []byte(fmt.Sprintf(`{"DeviceID":%q,"Serial":%q}`, d.UDID, d.SerialNumber))
-			p := api(false, "POST", "/enrollment-profiles", enrollment, http.StatusOK)
+			p := api("POST", "/enrollment-profiles", enrollment, http.StatusOK)
 			if err := d.ApplyProfile(ctx, p, profile.ParseOptions{}); err != nil {
 				t.Fatal(err)
 			}
@@ -73,7 +70,7 @@ func TestBinaryValidationDelivery(t *testing.T) {
 				}
 				return reply
 			}
-			api(false, "POST", devicePath+"/commands", cmd.Raw, http.StatusOK)
+			api("POST", devicePath+"/commands", cmd.Raw, http.StatusOK)
 			got, err := d.Connect(ctx)
 			if err != nil || len(got) != 1 || got[0].UUID != cmd.UUID {
 				t.Fatal("tracked macOS27 inventory not delivered", got, err)
@@ -84,14 +81,14 @@ func TestBinaryValidationDelivery(t *testing.T) {
 			declaration := func(p string) []byte {
 				return []byte(fmt.Sprintf(`{"Type":"com.apple.configuration.app.settings","Identifier":%q,"Payload":%s}`, identifier, p))
 			}
-			api(true, "PUT", "/declarations", declaration(payload), http.StatusOK)
-			before := api(true, "GET", "/declarations/"+identifier, nil, http.StatusOK)
+			api("PUT", "/declarations", declaration(payload), http.StatusOK)
+			before := api("GET", "/declarations/"+identifier, nil, http.StatusOK)
 			activation := []byte(fmt.Sprintf(`{"Type":"com.apple.activation.simple","Identifier":"com.example.binary-activation","Payload":{"StandardConfigurations":[%q]}}`, identifier))
-			api(true, "PUT", "/declarations", activation, http.StatusOK)
+			api("PUT", "/declarations", activation, http.StatusOK)
 			for _, id := range []string{identifier, "com.example.binary-activation"} {
-				api(true, "PUT", "/sets/binary/declarations/"+id, nil, http.StatusOK)
+				api("PUT", "/sets/binary/declarations/"+id, nil, http.StatusOK)
 			}
-			api(true, "PUT", devicePath+"/sets/binary", nil, http.StatusOK)
+			api("PUT", devicePath+"/sets/binary", nil, http.StatusOK)
 			if _, err := d.SyncDDM(ctx); err != nil {
 				t.Fatal(err)
 			}
@@ -109,9 +106,9 @@ func TestBinaryValidationDelivery(t *testing.T) {
 				`{"Allowed":{"AllowedBinaries":[{"PathPrefix":"/Applications/Fixture.app"}]}}`,
 				`{"Allowed":{"DeniedBinaries":[{"SigningID":""}]}}`,
 			} {
-				api(true, "PUT", "/declarations", declaration(invalid), http.StatusBadRequest)
+				api("PUT", "/declarations", declaration(invalid), http.StatusBadRequest)
 			}
-			after := api(true, "GET", "/declarations/"+identifier, nil, http.StatusOK)
+			after := api("GET", "/declarations/"+identifier, nil, http.StatusOK)
 			if !bytes.Equal(before, after) {
 				t.Fatal("invalid replacement changed persisted declaration")
 			}
@@ -128,14 +125,14 @@ func TestBinaryValidationDelivery(t *testing.T) {
 				t.Fatal(err)
 			}
 			e = restarted
-			if persisted := api(true, "GET", "/declarations/"+identifier, nil, http.StatusOK); !bytes.Equal(before, persisted) {
+			if persisted := api("GET", "/declarations/"+identifier, nil, http.StatusOK); !bytes.Equal(before, persisted) {
 				t.Fatal("restart did not preserve the accepted declaration")
 			}
-			api(true, "DELETE", devicePath+"/sets/binary", nil, http.StatusOK)
+			api("DELETE", devicePath+"/sets/binary", nil, http.StatusOK)
 			for _, id := range []string{identifier, "com.example.binary-activation"} {
-				api(true, "DELETE", "/sets/binary/declarations/"+id, nil, http.StatusOK)
-				api(true, "DELETE", "/declarations/"+id, nil, http.StatusNoContent)
-				api(true, "GET", "/declarations/"+id, nil, http.StatusNotFound)
+				api("DELETE", "/sets/binary/declarations/"+id, nil, http.StatusOK)
+				api("DELETE", "/declarations/"+id, nil, http.StatusNoContent)
+				api("GET", "/declarations/"+id, nil, http.StatusNotFound)
 			}
 		})
 	}

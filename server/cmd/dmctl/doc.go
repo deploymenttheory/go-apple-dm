@@ -13,7 +13,7 @@
 //
 //	dmctl [flags] <command> [flags] [arguments]
 //	dmctl explain DeviceInformation -target macos:15.0,supervised
-//	dmctl -server http://localhost:8080 -token env:DM_ADMIN_TOKEN status
+//	dmctl -server http://localhost:8080 -token env:DM_BOOTSTRAP_TOKEN status
 //	dmctl api GET /admin/v1/routes
 //
 // Configuration can select server, token references, context and output through

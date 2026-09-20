@@ -75,7 +75,6 @@ func newEnrollFixture(t *testing.T, method string, mutate func(*app.Config)) *en
 	roots := x509.NewCertPool()
 	roots.AddCert(appCA)
 	cfg := app.Config{
-		Role:    app.RoleAll,
 		Storage: "inmem",
 		CARoots: roots,
 		Logger:  quiet,
@@ -172,7 +171,7 @@ func (f *enrollFixture) signIn(t *testing.T) func(context.Context, simulator.Aut
 func TestEnrollment(t *testing.T) {
 	ctx := context.Background()
 	t.Run("Disabled", func(t *testing.T) {
-		a := build(t, app.Config{Role: app.RoleAll, Storage: "inmem"})
+		a := build(t, app.Config{Storage: "inmem"})
 		srv := serve(t, a)
 		for _, p := range []string{app.PathSCEP, app.PathWellKnown, app.PathADE, app.PathEnroll + "mdm-byod"} {
 			if got := get(t, srv.URL+p, ""); got != http.StatusNotFound {
@@ -442,7 +441,7 @@ func TestEnrollment(t *testing.T) {
 			mutate(&e)
 			if _, err := app.Build(
 				ctx,
-				app.Config{Role: app.RoleAll, Storage: "inmem", Logger: quiet, Enroll: e},
+				app.Config{Storage: "inmem", Logger: quiet, Enroll: e},
 			); err == nil {
 				t.Errorf("%s: no error", name)
 			}

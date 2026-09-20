@@ -17,16 +17,16 @@ func TestBootstrapSQLSecretsAndEnvironmentOverrides(t *testing.T) {
 			dsn := "user:password@database.example/database"
 			path, err := InitSetupFile(
 				SetupInitOptions{
-					Directory:         filepath.Join(dir, "managed"),
-					Role:              "customer",
-					Storage:           storage,
-					DSN:               dsn,
-					ACMEKeyFile:       key,
-					StorageKeyFile:    key,
-					AdminTokenFile:    key,
-					IssuanceKeyFile:   key,
-					StorageKeyAliases: []string{"legacy"},
-					AdditionalSecrets: map[string][]byte{EnvSCEPChallenge: []byte("preserved")},
+					Directory:          filepath.Join(dir, "managed"),
+					Role:               "customer",
+					Storage:            storage,
+					DSN:                dsn,
+					ACMEKeyFile:        key,
+					StorageKeyFile:     key,
+					BootstrapTokenFile: key,
+					IssuanceKeyFile:    key,
+					StorageKeyAliases:  []string{"legacy"},
+					AdditionalSecrets:  map[string][]byte{EnvSCEPChallenge: []byte("preserved")},
 				},
 			)
 			setupRequire(t, err, nil)
@@ -43,7 +43,7 @@ func TestBootstrapSQLSecretsAndEnvironmentOverrides(t *testing.T) {
 			}
 			var document SetupFile
 			setupRequire(t, json.Unmarshal(b, &document), nil)
-			document.SecretFiles[EnvAdminToken] = "missing-token"
+			document.SecretFiles[EnvBootstrapToken] = "missing-token"
 			document.Setup.VendorTokenFile = "vendor-token"
 			b, err = json.Marshal(document)
 			setupRequire(t, err, nil)
@@ -52,13 +52,13 @@ func TestBootstrapSQLSecretsAndEnvironmentOverrides(t *testing.T) {
 				t.Fatal("missing secret ignored")
 			}
 			cfg, err = LoadSetupFile(path, func(name string) string {
-				if name == EnvAdminToken {
+				if name == EnvBootstrapToken {
 					return "explicit-token"
 				}
 				return ""
 			})
 			setupRequire(t, err, nil)
-			if cfg.AdminToken != "explicit-token" ||
+			if cfg.BootstrapToken != "explicit-token" ||
 				cfg.Setup.VendorTokenFile != filepath.Join(filepath.Dir(path), "vendor-token") {
 				t.Fatal("explicit override or relative path lost")
 			}

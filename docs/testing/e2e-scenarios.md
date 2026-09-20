@@ -14,8 +14,7 @@ constraints are linked from the [decisions](../research/decisions/README.md).
 
 Run `make test-e2e` (build tag `e2e`). `E2E_STORE` selects `sqlite` (default, one database per test),
 `postgres` (requires `TEST_POSTGRES_DSN`, one schema per test) or `inmem`. CI runs SQLite and
-PostgreSQL scenarios. E2E-010 requires both server containers sharing the selected database: `scripts/testdb.sh ddm-up`
-prints the `TEST_DDM_*` settings. The test skips when these are absent.
+PostgreSQL scenarios. Unified reference-server scenarios run through the shared bench.
 
 Scenario identifiers remain stable. E2E-015 and E2E-022 have no corresponding named tests in the
 current tree and are not counted as implemented coverage. Readiness and declarative ACME
@@ -33,7 +32,6 @@ broader deployment behavior.
 | E2E-007 | APNs 410 marks token invalid and emits PushTokenInvalid | Dealing with inactive managed devices and invalid push tokens | `TestE2E_PushInvalidToken` |
 | E2E-008 | Declaration change: push, tokens, declaration-items, fetch, status verified | Integrating declarative management | `TestE2E_DDMRoundTrip` |
 | E2E-009 | Activation predicate excludes a device; declaration-items omits it | Leveraging the declarative management data model | `TestE2E_DDMPredicate` |
-| E2E-010 | Split deployment: the `mdm` and `ddm` containers share one SQLite or PostgreSQL database; MDM enrollment and tracked inventory control DDM delivery through `proxyclient` (built from this repository, run by `scripts/testdb.sh ddm-up`), signed both ways; status codes and bodies relayed unchanged; wrong keys and oversized bodies rejected | Integrating declarative management | `TestE2E_DDMSplitDeployment` |
 | E2E-011 | DEP: token PKI exchange with the fake DEP service, fetch then sync with cursor expiry, profile defined and assigned by the state-driven assigner, the device enrols through ADE with verified MachineInfo, the software update gate answers 403 for an old OS | Device assignment, MachineInfo | `TestE2E_DEPAssign` |
 | E2E-012 | Account-driven service discovery routes a Mac to `mdm-adde` and an iPhone to `mdm-byod`; each enrols through the `apple-as-web` flow with the reusable access tokens and registered certificate associations and the right `EnrollmentMode` | Onboarding users with account-driven enrollment | `TestE2E_ServiceDiscovery` |
 | E2E-013 | macOS user channel through `UserAuthenticate` (digest) and `TokenUpdate`; a user-channel command is delivered to that user, a device-only command addressed to the user is rejected at enqueue, two users on one device coexist | Check-in (UserAuthenticate) | `TestE2E_UserChannel` |

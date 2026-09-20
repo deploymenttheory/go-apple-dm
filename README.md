@@ -147,14 +147,17 @@ go get "github.com/deploymenttheory/go-apple-dm/server@$DM_REV"
 From a repository checkout, run a local development server:
 
 ```sh
-DM_ROLE=all DM_STORAGE=inmem DM_ADMIN_TOKEN=dev-token go run ./server/cmd/dmserver
+DM_STORAGE=inmem DM_BOOTSTRAP_TOKEN=dev-token go run ./server/cmd/dmserver
 ```
 
 In another terminal:
 
 ```sh
 curl http://127.0.0.1:8080/healthz
-go run ./server/cmd/dmctl -server http://127.0.0.1:8080 -token dev-token status
+umask 077
+go run ./server/cmd/dmctl -server http://127.0.0.1:8080 -token dev-token \
+  -output human auth bootstrap local-root > /tmp/dm-local-root-token
+go run ./server/cmd/dmctl -server http://127.0.0.1:8080 -token @/tmp/dm-local-root-token status
 ```
 
 This configuration loses state on restart. Device enrollment additionally requires a public
@@ -166,11 +169,11 @@ The listener defaults to `127.0.0.1:8080`. Remote listeners require
 Remote `dmctl` connections require HTTPS with verified trust. Use `-ca-file`
 or `DMCTL_CA_FILE` for a private CA. The former `-insecure` flag is rejected.
 
-`DM_ADMIN_TOKEN` grants unrestricted administrative access and bypasses policy. To use scoped
-credentials, enable the principal store, create principals and policies, then remove the
-bootstrap token and restart. `dmctl status` reports accepted authorization modes.
-Principal and credential mutations require root, including token rotation.
-Scoped principals retain their policy-authorized device operations and reads.
+`DM_BOOTSTRAP_TOKEN` can only create the first stored root credential. The server
+consumes it atomically; it never grants ordinary API access. Root administers
+principals, managed roles and policies. Device operations require explicit Cedar
+permits, including for root. See [access control](docs/operations/access-control.md)
+for roles, safe action groups, bootstrap, recovery and upgrade instructions.
 
 The schema can also be inspected offline:
 
@@ -235,23 +238,22 @@ hardware attestation and deployment-specific trust configuration require separat
 
 ## Reference server
 
-`server/cmd/dmserver` supports `all`, `mdm` and `ddm` roles. `all` runs the device service and
-DDM engine together. `mdm` serves device traffic and can forward DDM requests to the `ddm`
-role through `DM_DDM_URL`. The private proxy protocol requires request and response HMAC keys;
-requires HTTPS and shared replay protection. It is specific to this project's adapters.
+`server/cmd/dmserver` runs MDM and DDM together as one device-management service.
+DDM is an extension of the MDM enrollment. Runtime `mdm`, `ddm` and `all` modes
+and the private forwarding listener have been removed. Reusable protocol adapters
+remain available to custom applications.
 
 Configuration is read from `DM_*` environment variables. This table groups the main settings;
 [server/internal/app/env.go](server/internal/app/env.go) defines their parsing and defaults.
 
 | Variables | Purpose |
 |---|---|
-| `DM_ROLE`, `DM_LISTEN`, `DM_STORAGE`, `DM_DSN` | Role, listen address (default `127.0.0.1:8080`), backend (`sqlite`, `postgres`, `mysql`, `inmem`), and DSN |
+| `DM_LISTEN`, `DM_STORAGE`, `DM_DSN` | Listen address (default `127.0.0.1:8080`), backend (`sqlite`, `postgres`, `mysql`, `inmem`), and DSN |
 | `DM_TLS_CERT_FILE`, `DM_TLS_KEY_FILE` | Server TLS certificate and private key; required for a non-loopback listener |
-| `DM_ADMIN_STORE` | Open the admin principal and Cedar policy store on this process's database, so `dmctl principals` and `dmctl policies` work. Disabled by default; enables principal and policy management routes |
-| `DM_ADMIN_TOKEN` | Break-glass bearer token for `/admin/v1/`. Authenticates as root and **bypasses policy**, has no expiry, and cannot be revoked without a restart. It exists because an empty principal store authenticates nobody: set it to create the first principals, then unset it and restart. Its use is audited under the actor `break-glass`, and `dmctl status` reports whether it is still accepted |
+| `DM_BOOTSTRAP_TOKEN` | One-time secret accepted only by `POST /admin/v1/auth/bootstrap`; creates the first root without fleet permissions. The principal/role/policy store is always enabled |
 | `DM_STORAGE_KEYS`, `DM_STORAGE_KEY_<NAME>`, `DM_SECRETS_DIR`, `DM_STORAGE_KEYS_STRICT` | Keys sealing the secret columns of a persistent store: escrow and private keys, raw check-ins and command/results, protocol state and credential-bearing declarations. `DM_STORAGE_KEYS` lists key names active-first, and the material comes from `DM_STORAGE_KEY_<NAME>` or from files in `DM_SECRETS_DIR`. A rotation prepends a name and runs `Rewrap`; `DM_STORAGE_KEYS_STRICT` then refuses any row still in clear. A persistent backend will not start without this |
 | `DM_ALLOW_REENROLL` | Permit a changed certificate during `Authenticate`. Disabled by default in both the reusable service and reference server. Enable only with an enrollment authorization policy that permits the replacement; certificate chain validation alone does not bind a certificate to an enrollment identifier |
-| `DM_DDM_URL`, `DM_DDM_SEND_KEY`, `DM_DDM_RECV_KEY`, `DM_DDM_ROOT_CA_FILE`, `DM_DDM_SUBSCRIPTIONS` | The split-deployment hop and synthesized status subscriptions. Independent random keys of at least 32 bytes and HTTPS are required: the hop carries a check-in verbatim and the receiving role trusts the enrollment id in that body |
+| `DM_DDM_SUBSCRIPTIONS` | Synthesize automatic status subscription declarations |
 | `DM_CA_FILE`, `DM_CERT_HEADER`, `DM_TRUSTED_PROXIES` | Verified direct mTLS/CMS or a trusted socket peer forwarding one validated certificate; protect the backend with TLS or loopback |
 | `DM_PUBLIC_URL`, `DM_PUSH_TOPIC` | Turn on the enrollment routes; the server URL devices are given and the push topic |
 | `DM_ENROLL_CA_CERT_FILE`, `DM_ENROLL_CA_KEY_FILE`, `DM_ENROLLMENT_POLICY_FILE` | Persistent CA material and explicit device/account admission policy. Empty policy denies issuance. SCEP profiles carry expiring random credentials bound to one CSR. Only memory storage permits an ephemeral development CA |

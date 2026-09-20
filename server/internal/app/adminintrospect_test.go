@@ -24,14 +24,14 @@ func TestAdminIntrospection(t *testing.T) {
 		resp := adminReq(t, srv, http.MethodGet, "/admin/v1/config", tok, "")
 		defer func(body io.Closer) { _ = body.Close() }(resp.Body)
 		var got struct {
-			Role     string
+			Service  string
 			Version  string
 			Families []string
 			Policy   bool
 		}
 		decodeBody(t, resp, &got)
-		if got.Role != string(app.RoleAll) {
-			t.Fatalf("role = %q", got.Role)
+		if got.Service != "device-management" {
+			t.Fatalf("role = %q", got.Service)
 		}
 		if got.Version == "" {
 			t.Fatal("no version")
@@ -96,7 +96,7 @@ func TestAdminIntrospection(t *testing.T) {
 			if rt.RouteAction() != app.ActionReadConfig {
 				continue
 			}
-			if !strings.Contains(rt.RoutePattern(), "/config") && !strings.Contains(rt.RoutePattern(), "/routes") {
+			if !strings.Contains(rt.RoutePattern(), "/config") && !strings.Contains(rt.RoutePattern(), "/routes") && !strings.Contains(rt.RoutePattern(), "/actions") && !strings.Contains(rt.RoutePattern(), "/schema") && !strings.Contains(rt.RoutePattern(), "/auth/me") {
 				t.Fatalf("route %q claims the introspection action", rt.RoutePattern())
 			}
 		}

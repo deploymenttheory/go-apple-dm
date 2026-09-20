@@ -28,7 +28,7 @@ func mdmAdminApp(t *testing.T) (*app.App, string, *recordingPusher) {
 	t.Helper()
 	p := &recordingPusher{}
 	a := build(t, app.Config{
-		Role: app.RoleAll, Storage: "inmem", AdminToken: "t",
+		Storage: "inmem", BootstrapToken: "t",
 		Push: app.PushConfig{Pusher: p, Coalesce: -1},
 	})
 	return a, serve(t, a).URL, p
@@ -255,7 +255,7 @@ func TestMDMAdminRoutesAreGoverned(t *testing.T) {
 	bus.Subscribe(event.All, rec.handle)
 	st := inmem.New()
 	a := build(t, app.Config{
-		Role: app.RoleAll, Storage: "inmem", AdminStore: st, Bus: bus,
+		Storage: "inmem", AdminStore: st, Bus: bus,
 	})
 	srv := serve(t, a).URL
 	seed(t, a, "UDID-GOV")
@@ -314,7 +314,7 @@ func TestMDMAdminRoutesAreGoverned(t *testing.T) {
 			t.Fatalf("status = %d", resp.StatusCode)
 		}
 		for _, e := range rec.ofType(event.AdminAction) {
-			if data, _ := e.Data.(map[string]any); data["Action"] == app.ActionEnqueueCommand {
+			if data, _ := e.Data.(map[string]any); data["Action"] == "enqueueCommand.DeviceInformation" {
 				if e.Actor != "ops" {
 					t.Fatalf("actor = %q", e.Actor)
 				}
@@ -331,7 +331,7 @@ func TestMDMAdminRoutesAreGoverned(t *testing.T) {
 func TestAdminAPIOnTheMDMRole(t *testing.T) {
 	p := &recordingPusher{}
 	a := build(t, app.Config{
-		Role: app.RoleMDM, Storage: "inmem", AdminToken: "t",
+		Storage: "inmem", BootstrapToken: "t",
 		Push: app.PushConfig{Pusher: p, Coalesce: -1},
 	})
 	srv := serve(t, a).URL
@@ -351,7 +351,7 @@ func TestAdminAPIOnTheMDMRole(t *testing.T) {
 // error is for the operator's log, not the caller's screen.
 func TestMDMAdminRoutesHideStorageFailures(t *testing.T) {
 	a := build(t, app.Config{
-		Role: app.RoleAll, Storage: "sqlite", DSN: filepath.Join(t.TempDir(), "m.db"), AdminToken: "t",
+		Storage: "sqlite", DSN: filepath.Join(t.TempDir(), "m.db"), BootstrapToken: "t",
 	})
 	srv := serve(t, a).URL
 	seed(t, a, "UDID-CLOSED")
@@ -394,7 +394,7 @@ func TestMDMAdminRoutesHideStorageFailures(t *testing.T) {
 // rather than reporting a success nobody received.
 func TestPushRouteNeedsAPushSource(t *testing.T) {
 	a := build(t, app.Config{
-		Role: app.RoleAll, Storage: "inmem", AdminToken: "t",
+		Storage: "inmem", BootstrapToken: "t",
 		Push: app.PushConfig{Source: app.PushSourceOff},
 	})
 	srv := serve(t, a).URL
@@ -586,7 +586,7 @@ func TestPushCertUploadRoundTrip(t *testing.T) {
 // push route reports it rather than flattening it to "sent".
 func TestPushRouteReportsAnInvalidToken(t *testing.T) {
 	a := build(t, app.Config{
-		Role: app.RoleAll, Storage: "inmem", AdminToken: "t",
+		Storage: "inmem", BootstrapToken: "t",
 		Push: app.PushConfig{Pusher: &deadTokenPusher{}, Coalesce: -1},
 	})
 	srv := serve(t, a).URL
@@ -607,7 +607,7 @@ func TestPushRouteReportsAnInvalidToken(t *testing.T) {
 // operator reading "rejected" goes and looks at their push certificate.
 func TestPushRouteSeparatesRejectionFromADeadToken(t *testing.T) {
 	a := build(t, app.Config{
-		Role: app.RoleAll, Storage: "inmem", AdminToken: "t",
+		Storage: "inmem", BootstrapToken: "t",
 		Push: app.PushConfig{Pusher: &rejectingPusher{}, Coalesce: -1},
 	})
 	srv := serve(t, a).URL

@@ -2,14 +2,11 @@ package app_test
 
 import (
 	"context"
-	json "encoding/json/v2"
 	"io"
 	"net/http"
 	"path/filepath"
 	"testing"
-	"time"
 
-	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/event"
 	"github.com/deploymenttheory/go-apple-dm/server/adminauth"
 	"github.com/deploymenttheory/go-apple-dm/server/adminauth/inmem"
 	adminsql "github.com/deploymenttheory/go-apple-dm/server/adminauth/sqlstore"
@@ -22,8 +19,7 @@ import (
 func TestAdminStoreOnTheProcessDatabase(t *testing.T) {
 	dsn := filepath.Join(t.TempDir(), "admin.db")
 	a := build(t, app.Config{
-		Role: app.RoleAll, Storage: "sqlite", DSN: dsn, Listen: ":0",
-		AdminStoreEnabled: true,
+		Storage: "sqlite", DSN: dsn, Listen: ":0",
 	})
 	srv := serve(t, a)
 
@@ -65,15 +61,15 @@ func TestAdminStoreOnTheProcessDatabase(t *testing.T) {
 // Without DM_ADMIN_STORE and without a token the admin API is not mounted,
 // so turning the store on is an explicit act rather than a side effect of
 // choosing a SQL backend.
-func TestAdminStoreOffByDefault(t *testing.T) {
+func TestAdminStoreRequiresAuthenticationByDefault(t *testing.T) {
 	a := build(t, app.Config{
-		Role: app.RoleAll, Storage: "sqlite", DSN: filepath.Join(t.TempDir(), "off.db"), Listen: ":0",
+		Storage: "sqlite", DSN: filepath.Join(t.TempDir(), "off.db"), Listen: ":0",
 	})
 	srv := serve(t, a)
 	resp := adminReq(t, srv.URL, http.MethodGet, "/admin/v1/config", "anything", "")
 	defer func(body io.Closer) { _ = body.Close() }(resp.Body)
-	if resp.StatusCode != http.StatusNotFound {
-		t.Fatalf("status = %d, want 404: the admin API was mounted without being asked for", resp.StatusCode)
+	if resp.StatusCode != http.StatusUnauthorized {
+		t.Fatalf("status = %d, want 401: the admin API must require a stored credential", resp.StatusCode)
 	}
 }
 
@@ -81,7 +77,7 @@ func TestAdminStoreOffByDefault(t *testing.T) {
 // API must still behave the same way.
 func TestAdminStoreWithoutADatabase(t *testing.T) {
 	a := build(t, app.Config{
-		Role: app.RoleAll, Storage: "inmem", Listen: ":0", AdminStoreEnabled: true,
+		Storage: "inmem", Listen: ":0",
 	})
 	srv := serve(t, a)
 	resp := adminReq(t, srv.URL, http.MethodGet, "/admin/v1/config", "nope", "")
@@ -96,8 +92,8 @@ func TestAdminStoreWithoutADatabase(t *testing.T) {
 func TestAdminStoreInjectionWins(t *testing.T) {
 	st := inmem.New()
 	a := build(t, app.Config{
-		Role: app.RoleAll, Storage: "inmem", Listen: ":0",
-		AdminStore: st, AdminStoreEnabled: true,
+		Storage: "inmem", Listen: ":0",
+		AdminStore: st,
 	})
 	srv := serve(t, a)
 	reg, err := adminauth.NewRegistry(app.AdminActions()...)
@@ -118,82 +114,3 @@ func TestAdminStoreInjectionWins(t *testing.T) {
 
 // The static token remains usable alongside the principal store so an empty
 // store can be bootstrapped through authorized routes.
-func TestBreakGlassAlongsideThePrincipalStore(t *testing.T) {
-	bus := event.New()
-	rec := &recorder{}
-	bus.Subscribe(event.All, rec.handle)
-
-	st := inmem.New()
-	a := build(t, app.Config{
-		Role: app.RoleAll, Storage: "inmem", Listen: ":0",
-		AdminStore: st, AdminToken: "break-glass-secret", Bus: bus,
-	})
-	srv := serve(t, a)
-
-	t.Run("BootstrapsAnEmptyStore", func(t *testing.T) {
-		resp := adminReq(t, srv.URL, http.MethodGet, "/admin/v1/config", "break-glass-secret", "")
-		defer func(body io.Closer) { _ = body.Close() }(resp.Body)
-		if resp.StatusCode != http.StatusOK {
-			t.Fatalf("status = %d, want 200: the break-glass token was refused with a store configured", resp.StatusCode)
-		}
-	})
-
-	t.Run("ReportedByConfig", func(t *testing.T) {
-		resp := adminReq(t, srv.URL, http.MethodGet, "/admin/v1/config", "break-glass-secret", "")
-		defer func(body io.Closer) { _ = body.Close() }(resp.Body)
-		body, err := io.ReadAll(resp.Body)
-		if err != nil {
-			t.Fatal(err)
-		}
-		var cfg struct{ Policy, BreakGlass bool }
-		if err := json.Unmarshal(body, &cfg); err != nil {
-			t.Fatal(err)
-		}
-		if !cfg.Policy || !cfg.BreakGlass {
-			t.Fatalf("config = %+v, want both policy and break-glass reported", cfg)
-		}
-	})
-
-	// The point of the distinct actor: an operator can alert on it once
-	// bootstrap is over.
-	t.Run("AuditedUnderItsOwnActor", func(t *testing.T) {
-		rec.reset()
-		resp := adminReq(t, srv.URL, http.MethodPut, "/admin/v1/declarations", "break-glass-secret", `{}`)
-		defer func(body io.Closer) { _ = body.Close() }(resp.Body)
-		actions := rec.ofType(event.AdminAction)
-		if len(actions) == 0 {
-			t.Fatal("a break-glass request published no AdminAction event")
-		}
-		if got := actions[0].Actor; got != app.BreakGlassActor {
-			t.Fatalf("actor = %q, want %q", got, app.BreakGlassActor)
-		}
-	})
-
-	// Break-glass bypasses policy; an ordinary principal does not. Both
-	// credentials are live at once and they are graded differently.
-	t.Run("BypassesPolicyWhileStoredPrincipalsDoNot", func(t *testing.T) {
-		reg, err := adminauth.NewRegistry(app.AdminActions()...)
-		if err != nil {
-			t.Fatal(err)
-		}
-		m, err := adminauth.New(st, reg)
-		if err != nil {
-			t.Fatal(err)
-		}
-		_, tok, err := m.CreatePrincipal(context.Background(),
-			adminauth.Root, adminauth.Principal{Name: "reader"}, time.Time{})
-		if err != nil {
-			t.Fatal(err)
-		}
-		denied := adminReq(t, srv.URL, http.MethodPut, "/admin/v1/declarations", string(tok), `{}`)
-		defer func(body io.Closer) { _ = body.Close() }(denied.Body)
-		if denied.StatusCode != http.StatusForbidden {
-			t.Fatalf("stored principal status = %d, want 403: policy was not enforced", denied.StatusCode)
-		}
-		allowed := adminReq(t, srv.URL, http.MethodGet, "/admin/v1/config", "break-glass-secret", "")
-		defer func(body io.Closer) { _ = body.Close() }(allowed.Body)
-		if allowed.StatusCode != http.StatusOK {
-			t.Fatalf("break-glass status = %d, want 200", allowed.StatusCode)
-		}
-	})
-}

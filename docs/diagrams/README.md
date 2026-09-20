@@ -6,6 +6,11 @@ Architecture diagrams pin component paths to a repository revision. Other diagra
 types include a pinned implementation reference in their explanatory cards.
 Library source paths include the `devicemanagement/` package prefix.
 
+The pinned admin-plane and system-architecture diagrams predate the unified
+server RBAC change. For current bootstrap, roles, and policy behavior, follow
+[access control](../operations/access-control.md) and
+[decision 0056](../research/decisions/0056-unified-server-rbac.md).
+
 Click a diagram name below to open its interactive HTML preview from `main`. These previews
 require an internet connection and reflect changes after they are merged. The **HTML source**
 links open the files in GitHub. For offline viewing, open the `.html` files from a local
@@ -46,8 +51,8 @@ to highlight matching components and connections and see their counts and exampl
 | [acme-internals](https://htmlpreview.github.io/?https://raw.githubusercontent.com/deploymenttheory/go-apple-dm/main/docs/diagrams/acme-internals.html) · [HTML source](acme-internals.html) | ACME coordination, nonce consumption, attestation and admission checks, CSR finalization, and certificate issuance. |
 | [push](https://htmlpreview.github.io/?https://raw.githubusercontent.com/deploymenttheory/go-apple-dm/main/docs/diagrams/push.html) · [HTML source](push.html) | The MDM wake path from a coalesced request to APNs and the device, including invalid-token events and certificate reloads. |
 | [apple-service-clients](https://htmlpreview.github.io/?https://raw.githubusercontent.com/deploymenttheory/go-apple-dm/main/docs/diagrams/apple-service-clients.html) · [HTML source](apple-service-clients.html) | Device-assignment, Apple Business Manager, software-catalogue, and Apps and Books clients, with their distinct authentication and completion behavior. |
-| [admin-plane](https://htmlpreview.github.io/?https://raw.githubusercontent.com/deploymenttheory/go-apple-dm/main/docs/diagrams/admin-plane.html) · [HTML source](admin-plane.html) | Static-root and stored-principal authorization, setup and event administration, and Unix/Windows protection for CLI credential files. |
-| [split-deployment](https://htmlpreview.github.io/?https://raw.githubusercontent.com/deploymenttheory/go-apple-dm/main/docs/diagrams/split-deployment.html) · [HTML source](split-deployment.html) | In-process declarative management or split roles using HTTPS, independent signing keys, request-bound responses, and shared atomic replay storage. |
+| [admin-plane](https://htmlpreview.github.io/?https://raw.githubusercontent.com/deploymenttheory/go-apple-dm/main/docs/diagrams/admin-plane.html) · [HTML source](admin-plane.html) | Historical authorization flow before decision 0056, setup and event administration, and Unix/Windows protection for CLI credential files. |
+| [split-deployment](https://htmlpreview.github.io/?https://raw.githubusercontent.com/deploymenttheory/go-apple-dm/main/docs/diagrams/split-deployment.html) · [HTML source](split-deployment.html) | Reusable in-process and proxy adapter compositions. Split mode is no longer offered by the reference binary; see decision 0056. |
 | [reference-server-bench](https://htmlpreview.github.io/?https://raw.githubusercontent.com/deploymenttheory/go-apple-dm/main/docs/diagrams/reference-server-bench.html) · [HTML source](reference-server-bench.html) | Shared runtime supervision, embedded and process scenarios, fixture boundaries, and explicit live prerequisites and validation limits. |
 
 ## Flows and lifecycles

@@ -3,7 +3,7 @@
 //
 // # Design
 //
-// Build validates configuration and assembles mdm, ddm or all roles. The MDM
+// Build validates configuration and assembles unified device management. The MDM
 // role serves devices and uses a local declaration engine or authenticated
 // proxyclient; the DDM role serves the engine through proxyserver.
 // Administrative families depend on available components and credentials. Run

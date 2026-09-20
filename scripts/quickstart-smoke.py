@@ -26,7 +26,7 @@ def main():
             raise RuntimeError(f"Compose {args}: {result.stderr}\n{result.stdout}")
         return result
 
-    token = "@/data/secrets/admin"
+    token = "@/data/operator-root-token"
 
     def cli(*args, success=True):
         return run("run", "--rm", "-T", "dmctl", "-token", token, *args, success=success)
@@ -42,7 +42,15 @@ def main():
         print(f"Building isolated project {project}", flush=True)
         run("--profile", "tools", "build")
         run("up", "-d", "--wait", "--wait-timeout", "90")
-        assert "Role:" in cli("status").stdout
+        # Save the token as the volume's runtime user, never in logs or arguments.
+        run("run", "--rm", "-T", "--entrypoint", "sh", "bootstrap", "-ec",
+            "umask 077; set -C; dmctl -server https://dmserver:8443 -ca-file /data/https-ca.pem "
+            "-token @/data/secrets/admin -output human auth bootstrap operator-root "
+            "> /data/operator-root-token")
+        policy = 'permit (principal == MDM::Principal::"operator-root", action, resource);\n'
+        run("run", "--rm", "-T", "dmctl", "policies", "put", "operator-root", "-file", "-", stdin=policy)
+        token = "@/data/operator-root-token"
+        assert "Service:" in cli("status").stdout
         assert "CHANNEL  ID  ENABLED  SERIAL  OS  LAST SEEN" in cli("enrollments", "list").stdout
         original = identities()
         with tempfile.TemporaryDirectory(prefix="dm-quickstart-smoke-") as directory:
@@ -55,20 +63,9 @@ def main():
                     assert response.status == 200 and response.read().strip() == b"ok"
         print("Verified HTTPS, empty inventory and explicit incomplete enrollment", flush=True)
 
-        # Save the token as the volume's runtime user, never in logs or arguments.
-        run("run", "--rm", "-T", "--entrypoint", "sh", "bootstrap", "-ec",
-            "umask 077; set -C; dmctl -server https://dmserver:8443 -ca-file /data/https-ca.pem "
-            "-token @/data/secrets/admin -output human principals create operator-root -root "
-            "> /data/operator-root-token")
-        policy = 'permit (principal == MDM::Principal::"operator-root", action, resource);\n'
-        run("run", "--rm", "-T", "dmctl", "policies", "put", "operator-root", "-file", "-", stdin=policy)
-        token = "@/data/operator-root-token"
-        assert "operator-root" in cli("principals", "list").stdout
-        cli("enrollments", "list")
-
         document = json.loads(run("run", "--rm", "-T", "bootstrap", "config").stdout)
         document["environment"]["DM_ORGANIZATION"] = "Onboarding smoke test"
-        del document["secretFiles"]["DM_ADMIN_TOKEN"]
+        del document["secretFiles"]["DM_BOOTSTRAP_TOKEN"]
         run("run", "--rm", "-T", "bootstrap", "apply-config", stdin=json.dumps(document))
         run("down")
         run("up", "-d", "--wait", "--wait-timeout", "90")

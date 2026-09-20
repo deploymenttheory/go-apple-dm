@@ -76,12 +76,7 @@ func TestCloseCollectsErrors(t *testing.T) {
 
 func TestRunSurfacesNonCancelErrors(t *testing.T) {
 	a, err := Build(context.Background(), Config{
-		Role:    RoleDDM,
 		Storage: "inmem",
-		DDMSendKey: []byte(
-			"hop-send-key-0123456789012345678901",
-		),
-		DDMRecvKey: []byte("hop-recv-key-0123456789012345678901"),
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -307,7 +302,7 @@ func TestAdminStoreOpenFailureIsReported(t *testing.T) {
 	if err := db.Close(); err != nil {
 		t.Fatal(err)
 	}
-	a := &App{cfg: Config{AdminStoreEnabled: true}, db: db, dialect: sqlite.Dialect}
+	a := &App{cfg: Config{}, db: db, dialect: sqlite.Dialect}
 	if _, err := a.adminStore(context.Background()); err == nil {
 		t.Fatal("adminStore = nil error on a closed database")
 	}

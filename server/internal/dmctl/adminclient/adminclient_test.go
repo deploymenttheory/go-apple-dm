@@ -334,13 +334,13 @@ func TestServerConfig(t *testing.T) {
 			w.WriteHeader(http.StatusNotFound)
 			return
 		}
-		_, _ = w.Write([]byte(`{"Role":"ddm","Version":"devel","Families":["ddm","principals"]}`))
+		_, _ = w.Write([]byte(`{"Service":"device-management","Version":"devel","Families":["ddm","principals"]}`))
 	}))
 	got, err := c.ServerConfig(context.Background())
 	if err != nil {
 		t.Fatal(err)
 	}
-	if got.Role != "ddm" || len(got.Families) != 2 {
+	if got.Service != "device-management" || len(got.Families) != 2 {
 		t.Fatalf("config = %+v", got)
 	}
 

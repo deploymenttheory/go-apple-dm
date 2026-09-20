@@ -10,7 +10,7 @@ import (
 
 func TestAttachExistingLiveServer(t *testing.T) {
 	dir := t.TempDir()
-	if err := Init(dir, "live", "sqlite", "all", "127.0.0.1:8443"); err != nil {
+	if err := Init(dir, "live", "sqlite", "127.0.0.1:8443"); err != nil {
 		t.Fatal(err)
 	}
 	w, err := Load(dir)
