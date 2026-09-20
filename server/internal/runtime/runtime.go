@@ -53,8 +53,7 @@ func serve(ctx context.Context, cfg app.Config, listener net.Listener) error {
 	if cfg.TLSCertFile == "" && cfg.Setup == nil {
 		host, _, err := net.SplitHostPort(cfg.Listen)
 		ip := net.ParseIP(host)
-		if err != nil || ip == nil || !ip.IsLoopback() ||
-			(cfg.Role == app.RoleDDM && !cfg.DDMAllowInsecureForTests) {
+		if err != nil || ip == nil || !ip.IsLoopback() {
 			return fmt.Errorf(
 				"%w: HTTP listeners require a literal loopback address; remote listeners and private DDM require TLS",
 				app.ErrConfig,
@@ -143,7 +142,7 @@ func serve(ctx context.Context, cfg app.Config, listener net.Listener) error {
 			Info(
 				"dmserver: listening",
 				"role",
-				string(cfg.Role),
+				"device-management",
 				"addr",
 				cfg.Listen,
 				"storage",

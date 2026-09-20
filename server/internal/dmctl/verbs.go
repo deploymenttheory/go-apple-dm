@@ -115,11 +115,11 @@ func runStatus(ctx context.Context, e *env, args []string) error {
 	}
 	return e.emit(resp, func(w *tabwriter.Writer) {
 		var cfg struct {
-			Role, Version string
-			Families      []string
-			Policy        bool
-			BreakGlass    bool
-			EventDelivery *struct {
+			Service, Version string
+			Families         []string
+			Policy           bool
+			BootstrapPending bool
+			EventDelivery    *struct {
 				event.Stats
 				DeliveryTimeout string
 			}
@@ -128,11 +128,11 @@ func runStatus(ctx context.Context, e *env, args []string) error {
 			_, _ = fmt.Fprintln(w, string(resp.Body))
 			return
 		}
-		_, _ = fmt.Fprintf(w, "Role:\t%s\n", cfg.Role)
+		_, _ = fmt.Fprintf(w, "Service:\t%s\n", cfg.Service)
 		_, _ = fmt.Fprintf(w, "Version:\t%s\n", cfg.Version)
 		_, _ = fmt.Fprintf(w, "Families:\t%s\n", strings.Join(cfg.Families, ", "))
 		_, _ = fmt.Fprintf(w, "Authorization:\t%s\n", policyMode(cfg.Policy))
-		_, _ = fmt.Fprintf(w, "Break-glass:\t%s\n", breakGlassMode(cfg.Policy, cfg.BreakGlass))
+		_, _ = fmt.Fprintf(w, "Bootstrap pending:\t%t\n", cfg.BootstrapPending)
 		if stats := cfg.EventDelivery; stats != nil {
 			_, _ = fmt.Fprintf(
 				w,
@@ -162,23 +162,7 @@ func policyMode(policy bool) string {
 	if policy {
 		return "policy (principals and Cedar policies)"
 	}
-	return "static token (development)"
-}
-
-// breakGlassMode says whether the server still accepts the static token. It
-// is worth a line of its own because the credential is root, bypasses policy,
-// has no expiry, and cannot be revoked without a restart. Once principals
-// exist it should be gone, so the wording tells the operator what to do
-// rather than only reporting a flag.
-func breakGlassMode(policy, breakGlass bool) string {
-	switch {
-	case !breakGlass:
-		return "not configured"
-	case policy:
-		return "ACTIVE, bypasses policy: unset DM_ADMIN_TOKEN once principals exist"
-	default:
-		return "active (the only credential; no principal store configured)"
-	}
+	return "managed principals (Cedar unavailable)"
 }
 
 func runRoutes(ctx context.Context, e *env, args []string) error {
@@ -396,7 +380,7 @@ func (e *env) emitToken(resp *adminResponse) error {
 // runPolicies administers the authorization policies.
 func runPolicies(ctx context.Context, e *env, args []string) error {
 	if len(args) == 0 {
-		return fmt.Errorf("%w: policies needs a subcommand: list, get, put, delete", ErrUsage)
+		return fmt.Errorf("%w: policies needs a subcommand: list, get, put, validate, activate, deactivate, delete", ErrUsage)
 	}
 	sub, rest := args[0], args[1:]
 	c, err := e.client()
@@ -411,15 +395,18 @@ func runPolicies(ctx context.Context, e *env, args []string) error {
 		}
 		return e.emit(resp, func(w *tabwriter.Writer) {
 			var body struct {
-				Items []struct{ Name, Description string }
+				Items []struct {
+					Name, Description string
+					Active            *bool
+				}
 			}
 			if err := json.Unmarshal(resp.Body, &body); err != nil {
 				_, _ = fmt.Fprintln(w, string(resp.Body))
 				return
 			}
-			_, _ = fmt.Fprintln(w, "NAME\tDESCRIPTION")
+			_, _ = fmt.Fprintln(w, "NAME\tACTIVE\tDESCRIPTION")
 			for _, p := range body.Items {
-				_, _ = fmt.Fprintf(w, "%s\t%s\n", p.Name, dash(p.Description))
+				_, _ = fmt.Fprintf(w, "%s\t%t\t%s\n", p.Name, p.Active == nil || *p.Active, dash(p.Description))
 			}
 		})
 	case "get":
@@ -444,8 +431,18 @@ func runPolicies(ctx context.Context, e *env, args []string) error {
 			}
 		}
 		return e.emit(resp, nil)
-	case "put":
-		return e.putPolicy(ctx, c, rest)
+	case "put", "validate":
+		return e.writePolicy(ctx, c, rest, sub == "validate")
+	case "activate", "deactivate":
+		name, _, err := needName(e, "policies "+sub, rest)
+		if err != nil {
+			return err
+		}
+		resp, err := c.Do(ctx, http.MethodPost, "/policies/"+url.PathEscape(name)+"/activation", nil, map[string]bool{"Active": sub == "activate"})
+		if err != nil {
+			return err
+		}
+		return e.emit(resp, nil)
 	case "delete":
 		name, _, err := needName(e, "policies delete", rest)
 		if err != nil {
@@ -461,7 +458,7 @@ func runPolicies(ctx context.Context, e *env, args []string) error {
 	}
 }
 
-func (e *env) putPolicy(ctx context.Context, c clientDoer, args []string) error {
+func (e *env) writePolicy(ctx context.Context, c clientDoer, args []string, validate bool) error {
 	fs := e.verbFlags("policies put")
 	file := fs.String("file", "", "read the policy from a file, or - for stdin")
 	desc := fs.String("description", "", "operator note")
@@ -476,8 +473,11 @@ func (e *env) putPolicy(ctx context.Context, c clientDoer, args []string) error 
 	if err != nil {
 		return err
 	}
-	resp, err := c.Do(ctx, http.MethodPut, "/policies/"+url.PathEscape(rest[0]), nil,
-		map[string]any{"Source": src, "Description": *desc})
+	method, path := http.MethodPut, "/policies/"+url.PathEscape(rest[0])
+	if validate {
+		method, path = http.MethodPost, "/policies/validate"
+	}
+	resp, err := c.Do(ctx, method, path, nil, map[string]any{"Name": rest[0], "Source": src, "Description": *desc})
 	if err != nil {
 		return fmt.Errorf("dmctl: put policy: %w", err)
 	}

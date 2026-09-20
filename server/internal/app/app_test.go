@@ -22,7 +22,6 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/ddm"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/mdm"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/secrets"
-	"github.com/deploymenttheory/go-apple-dm/devicemanagement/simulator"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/testpki"
 	"github.com/deploymenttheory/go-apple-dm/server/ddmsync"
 	"github.com/deploymenttheory/go-apple-dm/server/internal/app"
@@ -49,22 +48,12 @@ func build(t *testing.T, cfg app.Config) *app.App {
 			cfg.Secrets = material
 		}
 	}
-	// The hop refuses to run unauthenticated, so a role that serves or calls
-	// it needs a credential even when the test is about something else.
-	cfg.DDMAllowInsecureForTests = true
-	if cfg.Role == app.RoleDDM || cfg.DDMURL != "" {
-		if len(cfg.DDMSendKey) == 0 {
-			cfg.DDMSendKey = []byte("hop-send-key-0123456789012345678901")
-		}
-		if len(cfg.DDMRecvKey) == 0 {
-			cfg.DDMRecvKey = []byte("hop-recv-key-0123456789012345678901")
-		}
-	}
 	a, err := app.Build(context.Background(), cfg)
 	if err != nil {
 		t.Fatalf("Build: %v", err)
 	}
 	t.Cleanup(func() { _ = a.Close() })
+	fixtureAdmin(t, a, cfg.BootstrapToken, cfg.DSN)
 	return a
 }
 
@@ -91,7 +80,7 @@ func TestParseEnv(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		if cfg.Role != app.RoleAll || cfg.Listen != app.DefaultListen || cfg.Storage != "sqlite" ||
+		if cfg.Listen != app.DefaultListen || cfg.Storage != "sqlite" ||
 			cfg.DSN != "dm.db" ||
 			!cfg.Subscriptions {
 			t.Fatalf("cfg = %+v", cfg)
@@ -99,46 +88,24 @@ func TestParseEnv(t *testing.T) {
 	})
 	t.Run("Overrides", func(t *testing.T) {
 		cfg, err := app.ParseEnv(env(map[string]string{
-			app.EnvRole:          "mdm",
-			app.EnvListen:        ":9",
-			app.EnvStorage:       "postgres",
-			app.EnvDSN:           "postgres://x",
-			app.EnvDDMURL:        "https://ddm",
-			app.EnvDDMSendKey:    "ssssssssssssssssssssssssssssssss",
-			app.EnvDDMRecvKey:    "rrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrr",
-			app.EnvAdminToken:    "t",
-			app.EnvSubscriptions: "false",
-			app.EnvCAFile:        "ca.pem",
-			app.EnvCertHeader:    "X-Cert",
+			app.EnvListen:         ":9",
+			app.EnvStorage:        "postgres",
+			app.EnvDSN:            "postgres://x",
+			app.EnvBootstrapToken: "t",
+			app.EnvSubscriptions:  "false",
+			app.EnvCAFile:         "ca.pem",
+			app.EnvCertHeader:     "X-Cert",
 		}))
 		if err != nil {
 			t.Fatal(err)
 		}
-		if cfg.Role != app.RoleMDM || cfg.DDMURL != "https://ddm" || string(cfg.DDMSendKey) != "ssssssssssssssssssssssssssssssss" || string(cfg.DDMRecvKey) != "rrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrr" ||
-			cfg.AdminToken != "t" || cfg.Subscriptions ||
+		if cfg.BootstrapToken != "t" || cfg.Subscriptions ||
 			cfg.CAFile != "ca.pem" ||
 			cfg.CertHeader != "X-Cert" {
 			t.Fatalf("cfg = %+v", cfg)
 		}
 	})
-	t.Run("AdminStore", func(t *testing.T) {
-		cfg, err := app.ParseEnv(env(nil))
-		if err != nil || cfg.AdminStoreEnabled {
-			t.Fatalf("the principal store must be off unless asked for: %+v, %v", cfg, err)
-		}
-		cfg, err = app.ParseEnv(env(map[string]string{app.EnvAdminStore: "true"}))
-		if err != nil || !cfg.AdminStoreEnabled {
-			t.Fatalf("cfg = %+v, err = %v", cfg, err)
-		}
-		if _, err := app.ParseEnv(
-			env(map[string]string{app.EnvAdminStore: "maybe"}),
-		); !errors.Is(
-			err,
-			app.ErrConfig,
-		) {
-			t.Fatalf("err = %v", err)
-		}
-	})
+
 	t.Run("Inmem", func(t *testing.T) {
 		cfg, err := app.ParseEnv(env(map[string]string{app.EnvStorage: "inmem"}))
 		if err != nil || cfg.DSN != "" {
@@ -157,7 +124,7 @@ func TestParseEnv(t *testing.T) {
 	})
 	t.Run("Invalid", func(t *testing.T) {
 		if _, err := app.ParseEnv(
-			env(map[string]string{app.EnvRole: "proxy"}),
+			env(map[string]string{"DM_ROLE": "proxy"}),
 		); !errors.Is(
 			err,
 			app.ErrConfig,
@@ -169,40 +136,10 @@ func TestParseEnv(t *testing.T) {
 
 func TestBuild(t *testing.T) {
 	ctx := context.Background()
-	t.Run("MDMRole", func(t *testing.T) {
-		a := build(t, app.Config{Role: app.RoleMDM, Storage: "inmem", AdminToken: "t"})
-		if a.Core == nil || a.Engine == nil || a.Notifier == nil {
-			t.Fatal("mdm role must wire the core, the engine (for cleanup), and the notifier")
-		}
-		srv := serve(t, a)
-		// No admin API on the mdm role even with a token.
-		if got := get(t, srv.URL+"/admin/v1/declarations/x", "t"); got != http.StatusNotFound {
-			t.Fatalf("admin on mdm role = %d", got)
-		}
-		if got := get(t, srv.URL+"/ddm/v1/declarative-management", ""); got != http.StatusNotFound {
-			t.Fatalf("ddm hop on mdm role = %d", got)
-		}
-	})
-	t.Run("DDMRole", func(t *testing.T) {
-		a := build(t, app.Config{Role: app.RoleDDM, Storage: "inmem", AdminToken: "t"})
-		// The ddm role builds a core so its notifier can enqueue
-		// DeclarativeManagement through the MDM command path, but it mounts
-		// no device route: the /mdm 404 below is what "does not serve
-		// check-in" actually means.
-		if a.Core == nil {
-			t.Fatal("ddm role needs a core to enqueue through")
-		}
-		srv := serve(t, a)
-		if got := post(t, srv.URL+"/mdm", "application/x-apple-aspen-mdm-checkin", nil); got != http.StatusNotFound {
-			t.Fatalf("/mdm on ddm role = %d", got)
-		}
-		if got := post(t, srv.URL+"/ddm/v1/declarative-management", "text/plain", nil); got != http.StatusUnsupportedMediaType {
-			t.Fatalf("hop content type check = %d", got)
-		}
-	})
+
 	t.Run("AllRole", func(t *testing.T) {
 		dir := t.TempDir()
-		a := build(t, app.Config{Role: app.RoleAll, Storage: "sqlite", DSN: filepath.Join(dir, "all.db"), AdminToken: "t"})
+		a := build(t, app.Config{Storage: "sqlite", DSN: filepath.Join(dir, "all.db"), BootstrapToken: "t"})
 		if a.Core == nil || a.Engine == nil {
 			t.Fatal("all role wires everything")
 		}
@@ -216,7 +153,7 @@ func TestBuild(t *testing.T) {
 			t.Fatalf("put = %d", res.StatusCode)
 		}
 		_ = a.Close()
-		b := build(t, app.Config{Role: app.RoleAll, Storage: "sqlite", DSN: filepath.Join(dir, "all.db"), AdminToken: "t"})
+		b := build(t, app.Config{Storage: "sqlite", DSN: filepath.Join(dir, "all.db"), BootstrapToken: "t"})
 		if _, err := b.Engine.GetDeclaration(ctx, "com.example.persist"); err != nil {
 			t.Fatalf("after reopen: %v", err)
 		}
@@ -230,7 +167,7 @@ func TestBuild(t *testing.T) {
 		if err := os.WriteFile(path, pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: ca.Cert.Raw}), 0o600); err != nil {
 			t.Fatal(err)
 		}
-		a := build(t, app.Config{Role: app.RoleMDM, Storage: "inmem", CAFile: path})
+		a := build(t, app.Config{Storage: "inmem", CAFile: path})
 		srv := serve(t, a)
 		// Signature verification is active: an unsigned check-in is refused.
 		if got := put(t, srv.URL+"/mdm", "application/x-apple-aspen-mdm-checkin", []byte("<plist/>")); got != http.StatusBadRequest {
@@ -243,12 +180,10 @@ func TestBuild(t *testing.T) {
 			t.Fatal(err)
 		}
 		cases := map[string]app.Config{
-			"role":            {Role: "proxy", Storage: "inmem"},
-			"storage":         {Role: app.RoleAll, Storage: "redis"},
-			"dsn":             {Role: app.RoleAll, Storage: "sqlite"},
-			"ddm url on ddm":  {Role: app.RoleDDM, Storage: "inmem", DDMURL: "http://x"},
-			"ca file missing": {Role: app.RoleMDM, Storage: "inmem", CAFile: filepath.Join(t.TempDir(), "nope.pem")},
-			"ca file empty":   {Role: app.RoleMDM, Storage: "inmem", CAFile: noCerts},
+			"storage":         {Storage: "redis"},
+			"dsn":             {Storage: "sqlite"},
+			"ca file missing": {Storage: "inmem", CAFile: filepath.Join(t.TempDir(), "nope.pem")},
+			"ca file empty":   {Storage: "inmem", CAFile: noCerts},
 		}
 		for name, cfg := range cases {
 			cfg.Logger = quiet
@@ -256,23 +191,20 @@ func TestBuild(t *testing.T) {
 				t.Errorf("%s: err = %v, want ErrConfig", name, err)
 			}
 		}
-		if _, err := app.Build(ctx, app.Config{Role: app.RoleAll, Storage: "sqlite", DSN: filepath.Join(t.TempDir(), "missing", "x.db"), StorageKeys: []string{"k"}, Secrets: secrets.Static{"k": []byte("0123456789abcdef0123456789abcdef")}, Logger: quiet}); err == nil {
+		if _, err := app.Build(ctx, app.Config{Storage: "sqlite", DSN: filepath.Join(t.TempDir(), "missing", "x.db"), StorageKeys: []string{"k"}, Secrets: secrets.Static{"k": []byte("0123456789abcdef0123456789abcdef")}, Logger: quiet}); err == nil {
 			t.Error("sqlite in a missing directory must fail")
 		}
-		if _, err := app.Build(ctx, app.Config{Role: app.RoleAll, Storage: "postgres", DSN: "postgres://127.0.0.1:1/x?sslmode=disable&connect_timeout=1", StorageKeys: []string{"k"}, Secrets: secrets.Static{"k": []byte("0123456789abcdef0123456789abcdef")}, Logger: quiet}); err == nil {
+		if _, err := app.Build(ctx, app.Config{Storage: "postgres", DSN: "postgres://127.0.0.1:1/x?sslmode=disable&connect_timeout=1", StorageKeys: []string{"k"}, Secrets: secrets.Static{"k": []byte("0123456789abcdef0123456789abcdef")}, Logger: quiet}); err == nil {
 			t.Error("unreachable postgres must fail")
 		}
-		if _, err := app.Build(ctx, app.Config{Role: app.RoleAll, Storage: "mysql", DSN: "dm:dm@tcp(127.0.0.1:1)/x?timeout=1s", StorageKeys: []string{"k"}, Secrets: secrets.Static{"k": []byte("0123456789abcdef0123456789abcdef")}, Logger: quiet}); err == nil {
+		if _, err := app.Build(ctx, app.Config{Storage: "mysql", DSN: "dm:dm@tcp(127.0.0.1:1)/x?timeout=1s", StorageKeys: []string{"k"}, Secrets: secrets.Static{"k": []byte("0123456789abcdef0123456789abcdef")}, Logger: quiet}); err == nil {
 			t.Error("unreachable mysql must fail")
-		}
-		if _, err := app.Build(ctx, app.Config{Role: app.RoleMDM, Storage: "inmem", DDMURL: "::bad", Logger: quiet}); err == nil {
-			t.Error("bad DDM URL must fail")
 		}
 	})
 }
 
 func TestHealthz(t *testing.T) {
-	a := build(t, app.Config{Role: app.RoleDDM, Storage: "sqlite", DSN: filepath.Join(t.TempDir(), "h.db")})
+	a := build(t, app.Config{Storage: "sqlite", DSN: filepath.Join(t.TempDir(), "h.db")})
 	srv := serve(t, a)
 	if got := get(t, srv.URL+"/healthz", ""); got != http.StatusOK {
 		t.Fatalf("healthz = %d", got)
@@ -289,7 +221,7 @@ func TestHealthz(t *testing.T) {
 }
 
 func TestRun(t *testing.T) {
-	a := build(t, app.Config{Role: app.RoleDDM, Storage: "inmem"})
+	a := build(t, app.Config{Storage: "inmem"})
 	ctx, cancel := context.WithCancel(context.Background())
 	done := make(chan error, 1)
 	go func() { done <- a.Run(ctx) }()
@@ -307,7 +239,7 @@ func TestRun(t *testing.T) {
 // TestAdminInternalErrors closes the database under a running app: every
 // admin route fails closed at the maintenance gate without leaking the cause.
 func TestAdminInternalErrors(t *testing.T) {
-	a := build(t, app.Config{Role: app.RoleDDM, Storage: "sqlite", DSN: filepath.Join(t.TempDir(), "i.db"), AdminToken: "t"})
+	a := build(t, app.Config{Storage: "sqlite", DSN: filepath.Join(t.TempDir(), "i.db"), BootstrapToken: "t"})
 	srv := serve(t, a)
 	if err := a.Close(); err != nil {
 		t.Fatal(err)
@@ -339,17 +271,17 @@ func TestAdminInternalErrors(t *testing.T) {
 	}
 }
 
-func TestAdminDisabledWithoutToken(t *testing.T) {
-	a := build(t, app.Config{Role: app.RoleDDM, Storage: "inmem"})
+func TestAdminRequiresAuthentication(t *testing.T) {
+	a := build(t, app.Config{Storage: "inmem"})
 	srv := serve(t, a)
-	if got := get(t, srv.URL+"/admin/v1/declarations/x", "anything"); got != http.StatusNotFound {
-		t.Fatalf("admin without token = %d, want 404", got)
+	if got := get(t, srv.URL+"/admin/v1/declarations/x", "anything"); got != http.StatusUnauthorized {
+		t.Fatalf("admin without token = %d, want 401", got)
 	}
 }
 
 func TestAdminAPI(t *testing.T) {
 	fake := clock.NewFake(time.Date(2026, 9, 1, 12, 0, 0, 0, time.UTC))
-	a := build(t, app.Config{Role: app.RoleDDM, Storage: "inmem", AdminToken: "secret", Clock: fake})
+	a := build(t, app.Config{Storage: "inmem", BootstrapToken: "secret", Clock: fake})
 	srv := serve(t, a)
 	const dev = "/admin/v1/enrollments/device/DEV-1"
 	t.Run("Auth", func(t *testing.T) {
@@ -490,188 +422,6 @@ func TestAdminAPI(t *testing.T) {
 
 // TestSplitRoundTrip runs the ddm role and the mdm role as two processes'
 // worth of handlers and drives Apple's DDM endpoints through the hop.
-func TestSplitRoundTrip(t *testing.T) {
-	ctx := context.Background()
-	dsn := filepath.Join(t.TempDir(), "split.sqlite")
-	ca, err := testpki.NewCA("app test CA")
-	if err != nil {
-		t.Fatal(err)
-	}
-	send, recv := []byte(
-		"mdm-to-ddm-000000000000000000000",
-	), []byte(
-		"ddm-to-mdm-000000000000000000000",
-	)
-	ddmApp := build(
-		t,
-		app.Config{
-			Role:       app.RoleDDM,
-			Storage:    "sqlite",
-			DSN:        dsn,
-			AdminToken: "t",
-			DDMRecvKey: send,
-			DDMSendKey: recv,
-		},
-	)
-	ddmSrv := serve(t, ddmApp)
-	mdmApp := build(
-		t,
-		app.Config{
-			Role:       app.RoleMDM,
-			Storage:    "sqlite",
-			DSN:        dsn,
-			DDMURL:     ddmSrv.URL + "/ddm",
-			DDMSendKey: send,
-			DDMRecvKey: recv,
-			CARoots:    ca.Pool(),
-		},
-	)
-	mdmSrv := serve(t, mdmApp)
-
-	id, err := ca.Issue("UDID-1", time.Now().Add(-time.Minute))
-	if err != nil {
-		t.Fatal(err)
-	}
-	dev := simulator.New("UDID-1",
-		simulator.WithURLs(mdmSrv.URL+"/mdm", mdmSrv.URL+"/mdm"),
-		simulator.WithIdentity(&simulator.Identity{Cert: id.Cert, Key: id.Key}))
-	if err := dev.Enroll(ctx); err != nil {
-		t.Fatalf("enroll: %v", err)
-	}
-	do(t, ddmSrv, "PUT", "/admin/v1/declarations", "t", propsDecl("com.example.split"))
-	do(
-		t,
-		ddmSrv,
-		"PUT",
-		"/admin/v1/enrollments/device/UDID-1/declarations/com.example.split",
-		"t",
-		nil,
-	)
-	do(t, ddmSrv, "PUT", "/admin/v1/sets/set1/declarations/com.example.split", "t", nil)
-	do(t, ddmSrv, "PUT", "/admin/v1/enrollments/device/UDID-1/sets/set1", "t", nil)
-
-	// Both roles must observe the record created through normal enrollment.
-	idKey := mdm.EnrollmentID{Channel: mdm.ChannelDevice, ID: "UDID-1"}
-	mdmEnrollment, err := mdmApp.Store.Get(ctx, idKey)
-	if err != nil {
-		t.Fatal(err)
-	}
-	ddmEnrollment, err := ddmApp.Store.Get(ctx, idKey)
-	if err != nil || ddmEnrollment.Device != mdmEnrollment.Device {
-		t.Fatalf("shared enrollment: %+v, %v", ddmEnrollment, err)
-	}
-	body, err := dev.DeclarativeManagement(ctx, "tokens", nil)
-	if err != nil {
-		t.Fatalf("tokens: %v", err)
-	}
-	var tokens struct {
-		SyncTokens struct{ DeclarationsToken string }
-	}
-	if err := json.Unmarshal(
-		body,
-		&tokens,
-	); err != nil ||
-		len(tokens.SyncTokens.DeclarationsToken) != 64 {
-		t.Fatalf("tokens body %s: %v", body, err)
-	}
-	body, err = dev.DeclarativeManagement(ctx, "declaration-items", nil)
-	if err != nil {
-		t.Fatalf("items: %v", err)
-	}
-	var items struct {
-		Declarations struct {
-			Management []struct{ Identifier, ServerToken string }
-		}
-		DeclarationsToken string
-	}
-	if err := json.Unmarshal(
-		body,
-		&items,
-	); err != nil || len(items.Declarations.Management) != 1 ||
-		items.DeclarationsToken != tokens.SyncTokens.DeclarationsToken {
-		t.Fatalf("items body %s: %v", body, err)
-	}
-	body, err = dev.DeclarativeManagement(ctx, "declaration/management/com.example.split", nil)
-	if err != nil {
-		t.Fatalf("declaration: %v", err)
-	}
-	var decl struct{ Identifier, ServerToken string }
-	if err := json.Unmarshal(
-		body,
-		&decl,
-	); err != nil ||
-		decl.ServerToken != items.Declarations.Management[0].ServerToken {
-		t.Fatalf("declaration body %s: %v", body, err)
-	}
-	var herr *simulator.HTTPError
-	if _, err := dev.DeclarativeManagement(
-		ctx,
-		"declaration/management/com.example.absent",
-		nil,
-	); !errors.As(err, &herr) ||
-		herr.Status != http.StatusNotFound {
-		t.Fatalf("absent declaration: %v, want 404 relayed", err)
-	}
-	if _, err := dev.DeclarativeManagement(
-		ctx,
-		"declaration/../x",
-		nil,
-	); !errors.As(err, &herr) ||
-		herr.Status != http.StatusBadRequest {
-		t.Fatalf("bad endpoint: %v, want 400 relayed", err)
-	}
-	report := fmt.Sprintf(
-		`{"StatusItems":{"management":{"declarations":{"activations":[],"configurations":[],"assets":[],"management":[{"identifier":"com.example.split","server-token":%q,"active":false,"valid":"valid","reasons":[]}]}}},"Errors":[],"FullReport":true}`,
-		decl.ServerToken,
-	)
-	if body, err := dev.DeclarativeManagement(
-		ctx,
-		"status",
-		[]byte(report),
-	); err != nil ||
-		len(body) != 0 {
-		t.Fatalf("status: body %q err %v", body, err)
-	}
-	var rows []struct{ Identifier string }
-	decode(
-		t,
-		do(t, ddmSrv, "GET", "/admin/v1/enrollments/device/UDID-1/status", "t", nil),
-		http.StatusOK,
-		&rows,
-	)
-	if len(rows) != 1 || rows[0].Identifier != "com.example.split" {
-		t.Fatalf("status rows on the ddm role = %+v", rows)
-	}
-
-	// Wrong send key: the ddm role answers 401 and the device sees an internal error, never a 404.
-	badApp := build(
-		t,
-		app.Config{
-			Role:       app.RoleMDM,
-			Storage:    "sqlite",
-			DSN:        dsn,
-			DDMURL:     ddmSrv.URL + "/ddm",
-			DDMSendKey: []byte("wrong-00000000000000000000000000"),
-			DDMRecvKey: recv,
-			CARoots:    ca.Pool(),
-		},
-	)
-	badSrv := serve(t, badApp)
-	bad := simulator.New("UDID-1",
-		simulator.WithURLs(badSrv.URL+"/mdm", badSrv.URL+"/mdm"),
-		simulator.WithIdentity(&simulator.Identity{Cert: id.Cert, Key: id.Key}))
-	if err := bad.Enroll(ctx); err != nil {
-		t.Fatal(err)
-	}
-	if _, err := bad.DeclarativeManagement(
-		ctx,
-		"tokens",
-		nil,
-	); !errors.As(err, &herr) ||
-		herr.Status != http.StatusInternalServerError {
-		t.Fatalf("wrong key: %v, want 500", err)
-	}
-}
 
 func TestCertSources(t *testing.T) {
 	t.Run("Header", func(t *testing.T) {
@@ -682,7 +432,6 @@ func TestCertSources(t *testing.T) {
 		a := build(
 			t,
 			app.Config{
-				Role:           app.RoleMDM,
 				Storage:        "inmem",
 				CertHeader:     "X-Client-Cert",
 				CARoots:        ca.Pool(),
@@ -700,7 +449,7 @@ func TestCertSources(t *testing.T) {
 		}
 	})
 	t.Run("TLSDefault", func(t *testing.T) {
-		a := build(t, app.Config{Role: app.RoleMDM, Storage: "inmem"})
+		a := build(t, app.Config{Storage: "inmem"})
 		srv := serve(t, a)
 		if got := put(
 			t,
@@ -744,11 +493,6 @@ func get(t *testing.T, url, token string) int {
 	}
 	_ = res.Body.Close()
 	return res.StatusCode
-}
-
-func post(t *testing.T, url, contentType string, body []byte) int {
-	t.Helper()
-	return send(t, http.MethodPost, url, contentType, body)
 }
 
 func put(t *testing.T, url, contentType string, body []byte) int {

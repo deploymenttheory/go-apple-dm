@@ -20,7 +20,7 @@ const (
 func blueprintActions() []adminauth.Action {
 	return []adminauth.Action{
 		{ID: ActionReadBlueprints, Resource: adminauth.EntityBlueprint, Help: "Read Blueprint source, publication revisions and compilation results."},
-		{ID: ActionPublishBlueprints, Resource: adminauth.EntityBlueprint, Help: "Validate, publish or delete Blueprints and their complete declaration sets."},
+		{ID: ActionPublishBlueprints, Resource: adminauth.EntityBlueprint, Help: "Validate or publish Blueprints and their complete declaration sets."},
 		{ID: ActionAssignBlueprint, Resource: adminauth.EntityEnrollment, Help: "Assign or unassign a Blueprint to a device or user enrollment."},
 	}
 }
@@ -33,7 +33,7 @@ func (a *App) blueprintAdminRoutes() []adminRoute {
 	}
 	var routes []adminRoute
 	add := func(action, pattern string, fn http.HandlerFunc) {
-		routes = append(routes, adminRoute{Pattern: pattern, Action: action, Family: "ddm", LocalMutation: true, Handler: fn})
+		routes = append(routes, adminRoute{Pattern: pattern, Action: action, Family: "ddm", LocalMutation: true, NotifyDeclarations: true, Handler: fn})
 	}
 	decode := func(w http.ResponseWriter, r *http.Request) (blueprint.Spec, bool) {
 		var spec blueprint.Spec
@@ -82,7 +82,7 @@ func (a *App) blueprintAdminRoutes() []adminRoute {
 		w.Header().Set("ETag", `"`+v.Revision+`"`)
 		writeJSON(w, http.StatusOK, v)
 	})
-	add(ActionReadBlueprints, "GET /blueprints", func(w http.ResponseWriter, r *http.Request) {
+	add(ActionListBlueprints, "GET /blueprints", func(w http.ResponseWriter, r *http.Request) {
 		p, err := page(r)
 		if err != nil {
 			writeError(w, http.StatusBadRequest, err)
@@ -104,7 +104,7 @@ func (a *App) blueprintAdminRoutes() []adminRoute {
 		w.Header().Set("ETag", `"`+v.Revision+`"`)
 		writeJSON(w, http.StatusOK, v)
 	})
-	add(ActionPublishBlueprints, "DELETE /blueprints/{blueprint}", func(w http.ResponseWriter, r *http.Request) {
+	add(ActionDeleteBlueprint, "DELETE /blueprints/{blueprint}", func(w http.ResponseWriter, r *http.Request) {
 		respond(w, a.Blueprints.Delete(r.Context(), r.PathValue("blueprint"), expectedRevision(r)))
 	})
 	for _, method := range []string{http.MethodPut, http.MethodDelete} {

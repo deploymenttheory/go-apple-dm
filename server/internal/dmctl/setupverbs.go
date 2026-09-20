@@ -49,7 +49,7 @@ func runSetup(ctx context.Context, e *env, args []string) error {
 		"adopt an existing live bench including database and identity keys",
 	)
 	adminTokenFile := fs.String(
-		"admin-token-file",
+		"bootstrap-token-file",
 		"",
 		"existing admin token for database adoption",
 	)
@@ -123,19 +123,19 @@ func runSetup(ctx context.Context, e *env, args []string) error {
 	if group == "init" {
 		path, err := app.InitSetupFile(
 			app.SetupInitOptions{
-				Directory:       *dir,
-				Role:            *role,
-				Storage:         *storage,
-				DSN:             e.getenv(*dsnEnv),
-				PublicURL:       *publicURL,
-				Listen:          *listen,
-				Organization:    *org,
-				StorageKeyFile:  *storageKeyFile,
-				StorageKeyName:  *storageKeyName,
-				AdminTokenFile:  *adminTokenFile,
-				IssuanceKeyFile: *issuanceKeyFile,
-				ACMEKeyFile:     *acmeKeyFile,
-				HTTP01Listen:    *http01Listen,
+				Directory:          *dir,
+				Role:               *role,
+				Storage:            *storage,
+				DSN:                e.getenv(*dsnEnv),
+				PublicURL:          *publicURL,
+				Listen:             *listen,
+				Organization:       *org,
+				StorageKeyFile:     *storageKeyFile,
+				StorageKeyName:     *storageKeyName,
+				BootstrapTokenFile: *adminTokenFile,
+				IssuanceKeyFile:    *issuanceKeyFile,
+				ACMEKeyFile:        *acmeKeyFile,
+				HTTP01Listen:       *http01Listen,
 			},
 		)
 		if err != nil {

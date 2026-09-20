@@ -59,6 +59,9 @@ func New(store Store, reg *Registry, opts ...Option) (*Manager, error) {
 // Registry returns the action registry this manager serves.
 func (m *Manager) Registry() *Registry { return m.reg }
 
+// Version returns the committed policy and role-catalogue version.
+func (m *Manager) Version(ctx context.Context) (int64, error) { return m.store.PolicyVersion(ctx) }
+
 // Authenticate resolves a plaintext token to its principal.
 //
 // A malformed token is rejected on its checksum before any query runs, so a
@@ -90,7 +93,8 @@ func (m *Manager) Authorize(ctx context.Context, p Principal, action string, res
 	}
 	set, err := m.policySet(ctx)
 	if err != nil {
-		return Decision{}, err
+		version, _ := m.Version(ctx)
+		return Decision{Version: version}, err
 	}
 	return set.Authorize(p, action, resource, reqCtx), nil
 }
@@ -109,10 +113,25 @@ func (m *Manager) policySet(ctx context.Context) (*PolicySet, error) {
 	if cur != nil && cur.Version() == v {
 		return cur, nil
 	}
-	docs, err := m.store.Policies(ctx)
-	if err != nil {
-		return nil, err
+	var docs []Policy
+	for attempt := 0; ; attempt++ {
+		docs, err = m.store.Policies(ctx)
+		if err != nil {
+			return nil, err
+		}
+		current, err := m.store.PolicyVersion(ctx)
+		if err != nil {
+			return nil, err
+		}
+		if current == v {
+			break
+		}
+		if attempt >= 3 {
+			return nil, fmt.Errorf("%w: authority changed while reading policies", ErrInvalid)
+		}
+		v = current
 	}
+
 	set, err := Compile(m.reg, v, docs)
 	if err != nil {
 		return nil, err
@@ -221,7 +240,7 @@ func (m *Manager) PutPolicy(ctx context.Context, actor Principal, doc Policy) (P
 	if err := m.canAdminister(actor); err != nil {
 		return Policy{}, err
 	}
-	if err := Validate(m.reg, doc); err != nil {
+	if err := m.ValidatePolicy(ctx, doc); err != nil {
 		return Policy{}, err
 	}
 	return m.store.PutPolicy(ctx, doc, m.clock.Now())
@@ -229,17 +248,11 @@ func (m *Manager) PutPolicy(ctx context.Context, actor Principal, doc Policy) (P
 
 // GetPolicy returns one policy document.
 func (m *Manager) GetPolicy(ctx context.Context, actor Principal, name string) (Policy, error) {
-	if err := m.canAdminister(actor); err != nil {
-		return Policy{}, err
-	}
 	return m.store.GetPolicy(ctx, name)
 }
 
 // Policies returns every policy document, ordered by name.
 func (m *Manager) Policies(ctx context.Context, actor Principal) ([]Policy, error) {
-	if err := m.canAdminister(actor); err != nil {
-		return nil, err
-	}
 	return m.store.Policies(ctx)
 }
 

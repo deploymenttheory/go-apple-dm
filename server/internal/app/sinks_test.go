@@ -87,7 +87,7 @@ func publishSomething(t *testing.T, a *app.App) {
 
 func nativeWebhookConfig(t *testing.T, srv *httptest.Server) app.Config {
 	t.Helper()
-	return app.Config{Role: app.RoleAll, Storage: "sqlite", DSN: filepath.Join(t.TempDir(), "webhooks.sqlite"), AdminToken: "t", StorageKeys: []string{"test"}, Secrets: secrets.Static{"test": []byte("0123456789abcdef0123456789abcdef")}, Webhooks: webhook.Config{Enabled: true, RootCAFile: webhookRoot(t, srv), PrivateNetworks: []string{"127.0.0.0/8"}}}
+	return app.Config{Storage: "sqlite", DSN: filepath.Join(t.TempDir(), "webhooks.sqlite"), BootstrapToken: "t", StorageKeys: []string{"test"}, Secrets: secrets.Static{"test": []byte("0123456789abcdef0123456789abcdef")}, Webhooks: webhook.Config{Enabled: true, RootCAFile: webhookRoot(t, srv), PrivateNetworks: []string{"127.0.0.0/8"}}}
 }
 
 func createNativeSubscription(t *testing.T, a *app.App, endpoint string) webhook.Change {
@@ -126,8 +126,8 @@ func TestWebhookSinkReceivesEnrollmentEvents(t *testing.T) {
 
 func TestManagedWebhookRequiresEncryptedSQL(t *testing.T) {
 	for _, cfg := range []app.Config{
-		{Role: app.RoleAll, Storage: "inmem", AdminToken: "t", Webhooks: webhook.Config{Enabled: true}},
-		{Role: app.RoleAll, Storage: "sqlite", DSN: filepath.Join(t.TempDir(), "unencrypted.sqlite"), AdminToken: "t", Webhooks: webhook.Config{Enabled: true}},
+		{Storage: "inmem", BootstrapToken: "t", Webhooks: webhook.Config{Enabled: true}},
+		{Storage: "sqlite", DSN: filepath.Join(t.TempDir(), "unencrypted.sqlite"), BootstrapToken: "t", Webhooks: webhook.Config{Enabled: true}},
 	} {
 		if a, err := app.Build(t.Context(), cfg); err == nil {
 			_ = a.Close()
@@ -139,7 +139,7 @@ func TestManagedWebhookRequiresEncryptedSQL(t *testing.T) {
 // Without a sink configured nothing subscribes and no bus is created, which
 // is what every deployment before this change had.
 func TestNoSinksMeansNoBus(t *testing.T) {
-	a := build(t, app.Config{Role: app.RoleAll, Storage: "inmem", Listen: ":0"})
+	a := build(t, app.Config{Storage: "inmem", Listen: ":0"})
 	publishSomething(t, a)
 	if err := a.Close(); err != nil {
 		t.Fatalf("Close: %v", err)
@@ -150,7 +150,7 @@ func TestNoSinksMeansNoBus(t *testing.T) {
 // that silently publishes nowhere.
 func TestBadWebhookURLFailsBuild(t *testing.T) {
 	_, err := app.Build(context.Background(), app.Config{
-		Role: app.RoleAll, Storage: "inmem", Listen: ":0", Logger: quiet,
+		Storage: "inmem", Listen: ":0", Logger: quiet,
 		Sinks: app.SinkConfig{WebhookURL: "\x7f://bad"},
 	})
 	if err == nil {

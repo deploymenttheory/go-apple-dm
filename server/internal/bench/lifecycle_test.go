@@ -11,7 +11,7 @@ import (
 
 func TestWorkspaceSupervisorRestart(t *testing.T) {
 	dir := t.TempDir()
-	if err := Init(dir, "simulated", "sqlite", "all", "127.0.0.1:0"); err != nil {
+	if err := Init(dir, "simulated", "sqlite", "127.0.0.1:0"); err != nil {
 		t.Fatal(err)
 	}
 	w, err := Load(dir)

@@ -18,10 +18,9 @@ func TestStatusPages(t *testing.T) {
 	for _, backend := range []string{"inmem", "sqlite"} {
 		t.Run(backend, func(t *testing.T) {
 			cfg := app.Config{
-				Role:       app.RoleAll,
-				Storage:    backend,
-				AdminToken: "secret",
-				DSN:        filepath.Join(t.TempDir(), "status.db"),
+				Storage:        backend,
+				BootstrapToken: "secret",
+				DSN:            filepath.Join(t.TempDir(), "status.db"),
 			}
 			a := build(t, cfg)
 			srv := serve(t, a)

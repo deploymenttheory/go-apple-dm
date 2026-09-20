@@ -1,5 +1,7 @@
 # 0039: Declarative device management within the MDM enrollment
 
+Runtime and authorization decisions updated by [0056](0056-unified-server-rbac.md).
+
 ## Context
 
 Declarative device management uses MDM enrollment, identity and check-in transport. Its declaration engine can nevertheless have a separate deployment lifecycle.

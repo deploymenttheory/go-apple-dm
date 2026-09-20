@@ -21,7 +21,7 @@ func registry(t *testing.T) *adminauth.Registry {
 	t.Helper()
 	reg, err := adminauth.NewRegistry(
 		adminauth.Action{ID: "listEnrollments", Help: "List enrolled devices.", Resource: adminauth.EntitySystem},
-		adminauth.Action{ID: "enqueueCommand", Help: "Queue a command to a device.", Resource: adminauth.EntityEnrollment},
+		adminauth.Action{ID: "enqueueCommand", Help: "Queue a command to a device.", Resource: adminauth.EntityEnrollment, Context: map[string]adminauth.ContextAttribute{"requestType": {Type: "String", Required: true}}},
 		adminauth.Action{ID: "exportEnrollments", Help: "Export enrollments including unlock and bootstrap tokens.", Resource: adminauth.EntitySystem},
 		adminauth.Action{ID: "putDeclaration", Help: "Publish a declaration.", Resource: adminauth.EntityDeclaration},
 	)
@@ -34,6 +34,11 @@ func registry(t *testing.T) *adminauth.Registry {
 func manager(t *testing.T) (*adminauth.Manager, *inmem.Store, *clock.Fake) {
 	t.Helper()
 	st := inmem.New()
+	for _, name := range []string{"reader", "admin", "break-glass", "a", "b", "ci"} {
+		if _, err := st.PutRole(t.Context(), adminauth.Role{Name: name}, t0); err != nil {
+			t.Fatal(err)
+		}
+	}
 	fake := clock.NewFake(t0)
 	m, err := adminauth.New(st, registry(t), adminauth.WithClock(fake))
 	if err != nil {
@@ -45,6 +50,25 @@ func manager(t *testing.T) (*adminauth.Manager, *inmem.Store, *clock.Fake) {
 // put stores a policy as the bootstrap root actor.
 func put(t *testing.T, m *adminauth.Manager, name, src string) {
 	t.Helper()
+	for _, kind := range []string{string(adminauth.EntityRole), string(adminauth.EntityPrincipal)} {
+		refs, err := adminauth.References(src, kind)
+		if err != nil {
+			t.Fatal(err)
+		}
+		for _, name := range refs {
+			if kind == string(adminauth.EntityRole) {
+				_, err = m.PutRole(t.Context(), adminauth.Root, adminauth.Role{Name: name})
+			} else {
+				_, getErr := m.Principal(t.Context(), name)
+				if getErr != nil {
+					_, _, err = m.CreatePrincipal(t.Context(), adminauth.Root, adminauth.Principal{Name: name}, time.Time{})
+				}
+			}
+			if err != nil {
+				t.Fatal(err)
+			}
+		}
+	}
 	if _, err := m.PutPolicy(context.Background(), adminauth.Root, adminauth.Policy{Name: name, Source: src}); err != nil {
 		t.Fatalf("PutPolicy %s: %v", name, err)
 	}
@@ -90,7 +114,7 @@ func TestAuthorize(t *testing.T) {
 		ci := adminauth.Principal{Name: "ci"}
 		allowed := map[string]bool{"DeviceInformation": true, "EraseDevice": false}
 		for reqType, want := range allowed {
-			d, err := m.Authorize(ctx, ci, "enqueueCommand", adminauth.SystemResource,
+			d, err := m.Authorize(ctx, ci, "enqueueCommand", types.NewEntityUID(adminauth.EntityEnrollment, "device/test/"),
 				map[string]types.Value{"requestType": types.String(reqType)})
 			if err != nil {
 				t.Fatal(err)
@@ -209,5 +233,15 @@ func TestRegistry(t *testing.T) {
 		if a.Help == "" {
 			t.Fatalf("action %q has no help text", a.ID)
 		}
+	}
+}
+
+func TestEvaluationDiagnosticsDenyEvenWithMatchingPermit(t *testing.T) {
+	m, _, _ := manager(t)
+	put(t, m, "permit", `permit(principal,action,resource);`)
+	put(t, m, "overflowing-forbid", `forbid(principal,action,resource) when { 9223372036854775807 + 1 > 0 };`)
+	decision, err := m.Authorize(t.Context(), adminauth.Principal{Name: "reader"}, "listEnrollments", adminauth.SystemResource, nil)
+	if err != nil || decision.Allowed || len(decision.Errors) == 0 {
+		t.Fatalf("erroring forbid allowed request: %+v %v", decision, err)
 	}
 }

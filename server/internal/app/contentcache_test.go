@@ -23,7 +23,7 @@ import (
 func TestContentCacheIngestion(t *testing.T) {
 	for _, backend := range []string{"inmem", "sqlite"} {
 		t.Run(backend, func(t *testing.T) {
-			cfg := app.Config{Role: app.RoleAll, Storage: backend, AdminToken: "test-admin", ContentCache: app.ContentCacheConfig{PublicURL: "https://cache.example.test"}}
+			cfg := app.Config{Storage: backend, BootstrapToken: "test-admin", ContentCache: app.ContentCacheConfig{PublicURL: "https://cache.example.test"}}
 			if backend == "sqlite" {
 				cfg.DSN = filepath.Join(t.TempDir(), "cache.db")
 			}
@@ -108,12 +108,12 @@ func TestContentCacheIngestion(t *testing.T) {
 
 func TestContentCacheConfig(t *testing.T) {
 	for _, endpoint := range []string{"http://cache.example.test", "https://cache.example.test/path", "https://cache.example.test?token=secret", "https://user:secret@cache.example.test"} {
-		_, err := app.Build(t.Context(), app.Config{Role: app.RoleAll, Storage: "inmem", ContentCache: app.ContentCacheConfig{PublicURL: endpoint}})
+		_, err := app.Build(t.Context(), app.Config{Storage: "inmem", ContentCache: app.ContentCacheConfig{PublicURL: endpoint}})
 		if err == nil || strings.Contains(err.Error(), "secret") {
 			t.Fatalf("unsafe endpoint: %v", err)
 		}
 	}
-	a := build(t, app.Config{Role: app.RoleAll, Storage: "inmem"})
+	a := build(t, app.Config{Storage: "inmem"})
 	w := httptest.NewRecorder()
 	a.Handler.ServeHTTP(w, httptest.NewRequestWithContext(t.Context(), http.MethodPut, "https://cache.example.test/content-cache/metrics/unused", nil))
 	if w.Code != 404 {
@@ -157,7 +157,7 @@ func TestContentCacheRetentionEnv(t *testing.T) {
 // peer is trusted. URL credentials must not be accepted in alternate routes.
 func TestContentCacheProxyTransport(t *testing.T) {
 	a := build(t, app.Config{
-		Role: app.RoleAll, Storage: "inmem", AdminToken: "test-admin",
+		Storage: "inmem", BootstrapToken: "test-admin",
 		ContentCache:   app.ContentCacheConfig{PublicURL: "https://cache.example.test"},
 		TrustedProxies: []netip.Prefix{netip.MustParsePrefix("192.0.2.0/24"), netip.MustParsePrefix("2001:db8::/32")},
 	})
@@ -218,7 +218,7 @@ func TestContentCacheProxyTransport(t *testing.T) {
 
 func TestContentCacheAdminRejectsInvalidRequests(t *testing.T) {
 	a := build(t, app.Config{
-		Role: app.RoleAll, Storage: "inmem", AdminToken: "test-admin",
+		Storage: "inmem", BootstrapToken: "test-admin",
 		ContentCache: app.ContentCacheConfig{PublicURL: "https://cache.example.test"},
 	})
 	for _, id := range []mdm.EnrollmentID{

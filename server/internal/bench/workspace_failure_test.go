@@ -24,15 +24,15 @@ func writeFixture(t *testing.T, path string, data []byte) {
 
 func TestWorkspaceRejectsIncompleteOrInvalidState(t *testing.T) {
 	t.Parallel()
-	for _, args := range [][3]string{{"unknown", "inmem", "all"}, {"live", "unknown", "all"}, {"live", "inmem", "unknown"}} {
-		if err := Init(t.TempDir(), args[0], args[1], args[2], "127.0.0.1:0"); err == nil {
+	for _, args := range [][2]string{{"unknown", "inmem"}, {"live", "unknown"}} {
+		if err := Init(t.TempDir(), args[0], args[1], "127.0.0.1:0"); err == nil {
 			t.Fatalf("invalid workspace accepted: %v", args)
 		}
 	}
 	dir := t.TempDir()
 	file := filepath.Join(dir, "file")
 	writeFixture(t, file, []byte("preserve"))
-	if err := Init(file, "live", "inmem", "all", "127.0.0.1:0"); err == nil {
+	if err := Init(file, "live", "inmem", "127.0.0.1:0"); err == nil {
 		t.Fatal("file replaced by workspace")
 	}
 	if err := initialize(file); err == nil {
@@ -43,7 +43,7 @@ func TestWorkspaceRejectsIncompleteOrInvalidState(t *testing.T) {
 		t.Fatal(err)
 	}
 	writeFixture(t, filepath.Join(partial, "mdm", "ca.pem"), []byte("preserve"))
-	if err := Init(partial, "live", "inmem", "all", "127.0.0.1:0"); err == nil {
+	if err := Init(partial, "live", "inmem", "127.0.0.1:0"); err == nil {
 		t.Fatal("partial identity accepted")
 	}
 	if err := initialize(filepath.Join(partial, "mdm")); err == nil {
@@ -106,7 +106,7 @@ func TestStartFailureCleansUp(t *testing.T) {
 			case "missing binary":
 				binary = w.path("absent")
 			case "split memory":
-				w.Topology = "split"
+				w.Settings = map[string]string{"DM_ROLE": "split"}
 			case "bad push certificate":
 				writeFixture(t, w.path("mdm", "push.pem"), []byte("bad"))
 			case "unreadable push certificate":
@@ -115,15 +115,15 @@ func TestStartFailureCleansUp(t *testing.T) {
 				}
 			case "missing push key":
 				w.Settings = map[string]string{
-					"DM_ADMIN_TOKEN": "",
+					"DM_BOOTSTRAP_TOKEN": "",
 				} // absent operator authentication prevents seeding.
 			case "split binary":
 				w.Storage = "sqlite"
-				w.Topology = "split"
+				w.Settings = map[string]string{"DM_ROLE": "split"}
 				binary = w.path("absent")
 			case "split bad config":
 				w.Storage = "sqlite"
-				w.Topology = "split"
+				w.Settings = map[string]string{"DM_ROLE": "split"}
 				w.Settings = map[string]string{"DM_PUSH_COALESCE": "invalid"}
 			}
 			ctx, cancel := context.WithTimeout(t.Context(), 3*time.Second)
@@ -283,7 +283,7 @@ func TestInitPreservesFileAtIdentityDirectory(t *testing.T) {
 	t.Parallel()
 	dir := t.TempDir()
 	writeFixture(t, filepath.Join(dir, "mdm"), []byte("existing user file"))
-	if err := Init(dir, "live", "inmem", "all", "127.0.0.1:0"); err == nil {
+	if err := Init(dir, "live", "inmem", "127.0.0.1:0"); err == nil {
 		t.Fatal("identity initialization replaced existing file")
 	}
 	// #nosec G304 -- The test controls this fixture path within its private workspace.

@@ -37,6 +37,7 @@ const (
 	EntityConfigurationProfile types.EntityType = "MDM::ConfigurationProfile"
 	// EntityDEPAccount is one device enrollment service account as a resource.
 	EntityDEPAccount types.EntityType = "MDM::DEPAccount"
+	EntitySet        types.EntityType = "MDM::DeclarationSet"
 )
 
 // SystemResource is the resource for deployment-wide routes.
@@ -196,8 +197,10 @@ type Policy struct {
 	Source string
 	// Description is operator prose, never interpreted.
 	Description string
-	CreatedAt   time.Time
-	UpdatedAt   time.Time
+	// Active defaults to true when omitted. False retains a policy without evaluating it.
+	Active    *bool `json:",omitempty"`
+	CreatedAt time.Time
+	UpdatedAt time.Time
 }
 
 // Page requests one page of principals or policies.
@@ -223,6 +226,12 @@ type Result[T any] struct {
 // A store never sees a plaintext token: the caller mints one, hands the store
 // its digest, and shows the value to the operator once.
 type Store interface {
+	PutRole(context.Context, Role, time.Time) (Role, error)
+	Role(context.Context, string) (Role, error)
+	Roles(context.Context, Page) (Result[Role], error)
+	DeleteRole(context.Context, string) error
+	BootstrapPrincipal(context.Context, Principal, string, time.Time) (Principal, error)
+	Initialized(context.Context) (bool, error)
 	// ApplyPrincipal serializes mutations across instances and refuses removal,
 	// revocation, expiry or demotion of the last active root credential. Older
 	// low-level write methods below are intended for import/storage tooling;

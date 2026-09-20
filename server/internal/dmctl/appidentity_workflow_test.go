@@ -9,6 +9,7 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
+	"strings"
 	"testing"
 	"time"
 
@@ -41,7 +42,7 @@ func TestApplicationIdentityCLIWorkflow(t *testing.T) {
 				t.Fatal(err)
 			}
 			a, err := app.Build(t.Context(), app.Config{
-				Role: app.RoleAll, Storage: "inmem", AdminToken: "operator", CARoots: ca.Pool(),
+				Storage: "inmem", BootstrapToken: "operator", CARoots: ca.Pool(),
 				Logger:                slog.New(slog.NewTextHandler(io.Discard, nil)),
 				ApplicationIdentities: app.ApplicationIdentityConfig{PublicAppStore: &publicappstoreidentity.Client{BaseURL: upstream.URL, HTTPClient: upstream.Client()}},
 			})
@@ -53,6 +54,19 @@ func TestApplicationIdentityCLIWorkflow(t *testing.T) {
 			t.Cleanup(srv.Close)
 			env := noConfig(t)
 			env["DMCTL_SERVER"], env["DMCTL_TOKEN"], env["DMCTL_OUTPUT"] = srv.URL, "operator", "json"
+			bootstrap, _, err := run(t, env, "-output", "human", "auth", "bootstrap", "operator")
+			if err != nil {
+				t.Fatal(err)
+			}
+			env["DMCTL_TOKEN"] = strings.TrimSpace(bootstrap)
+			request := httptest.NewRequestWithContext(t.Context(), "PUT", "/admin/v1/policies/operator", strings.NewReader(`{"Source":"permit(principal == MDM::Principal::\"operator\",action,resource);"}`))
+			request.Header.Set("Authorization", "Bearer "+env["DMCTL_TOKEN"])
+			response := httptest.NewRecorder()
+			a.Handler.ServeHTTP(response, request)
+			if response.Code != 200 {
+				t.Fatal(response.Code, response.Body.String())
+			}
+
 			call := func(args ...string) string {
 				t.Helper()
 				out, stderr, err := run(t, env, args...)

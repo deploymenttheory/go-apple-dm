@@ -34,7 +34,7 @@ func (f *scenarioFault) RoundTrip(r *http.Request) (*http.Response, error) {
 func testWorkspace(t *testing.T, mode string) *Workspace {
 	t.Helper()
 	dir := t.TempDir()
-	if err := Init(dir, mode, "inmem", "all", "127.0.0.1:0"); err != nil {
+	if err := Init(dir, mode, "inmem", "127.0.0.1:0"); err != nil {
 		t.Fatal(err)
 	}
 	w, err := Load(dir)

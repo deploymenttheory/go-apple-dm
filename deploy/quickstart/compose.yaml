@@ -35,7 +35,7 @@ services:
     entrypoint: ["/dmctl"]
     environment:
       DMCTL_SERVER: https://dmserver:8443
-      DMCTL_TOKEN: "@/data/secrets/admin"
+      DMCTL_TOKEN: "@/data/operator-root-token"
       DMCTL_CA_FILE: /data/https-ca.pem
       DM_LISTEN: ""
       DM_STORAGE: ""

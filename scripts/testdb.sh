@@ -1,15 +1,10 @@
 #!/usr/bin/env bash
 # testdb.sh: PostgreSQL and MySQL in Docker for the storage and e2e suites,
-# and both reference-server roles sharing a database for split-deployment e2e.
 #
-# Usage: scripts/testdb.sh up|down|env|ddm-up|ddm-down|ddm-env|ddm-logs
+# Usage: scripts/testdb.sh up|down|env
 #   up        start (or reuse) both database containers, wait for readiness, print exports
 #   down      remove both database containers
 #   env       print the database export lines matching .github/workflows/go-test.yml
-#   ddm-up    build go-apple-dm:test from this repository, run both roles on E2E_STORE, print exports
-#   ddm-down  remove this split fixture
-#   ddm-env   print the split fixture environment
-#   ddm-logs  print logs for the selected split fixture
 set -euo pipefail
 
 PG=dm-test-postgres
@@ -65,11 +60,8 @@ case "${1:-}" in
   env)
     print_env
     ;;
-  ddm-up|ddm-down|ddm-env|ddm-logs)
-    bash "$(dirname "$0")/split-test.sh" "${1#ddm-}"
-    ;;
   *)
-    echo "usage: $0 up|down|env|ddm-up|ddm-down|ddm-env" >&2
+    echo "usage: $0 up|down|env" >&2
     exit 2
     ;;
 esac

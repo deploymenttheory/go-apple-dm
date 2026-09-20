@@ -115,7 +115,7 @@ func TestStartupFailureLeavesNoSupervisor(t *testing.T) {
 				cancel()
 			case "split child exit":
 				w.Storage = "sqlite"
-				w.Topology = "split"
+				w.Settings = map[string]string{"DM_ROLE": "split"}
 				var err error
 				binary, err = os.Executable()
 				if err != nil {

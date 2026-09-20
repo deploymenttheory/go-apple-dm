@@ -28,10 +28,9 @@ func TestDEP(t *testing.T) {
 		fake := deptest.NewServer(deptest.Options{Clock: clk})
 		t.Cleanup(fake.Close)
 		a := build(t, app.Config{
-			Role:       app.RoleDDM,
-			Storage:    "inmem",
-			AdminToken: "t",
-			Clock:      clk,
+			Storage:        "inmem",
+			BootstrapToken: "t",
+			Clock:          clk,
 			DEP: app.DEPConfig{
 				BaseURL:    fake.URL(),
 				HTTPClient: fake.Client(),
@@ -263,10 +262,9 @@ func TestDEP(t *testing.T) {
 		t.Cleanup(fake.Close)
 		failing := &deptest.Failing{Store: depinmem.New()}
 		a := build(t, app.Config{
-			Role:       app.RoleDDM,
-			Storage:    "inmem",
-			AdminToken: "t",
-			Clock:      clk,
+			Storage:        "inmem",
+			BootstrapToken: "t",
+			Clock:          clk,
 			DEP: app.DEPConfig{
 				BaseURL:      fake.URL(),
 				HTTPClient:   fake.Client(),
@@ -330,14 +328,9 @@ func TestDEP(t *testing.T) {
 	})
 	t.Run("BadBaseURL", func(t *testing.T) {
 		_, err := app.Build(ctx, app.Config{
-			Role:       app.RoleDDM,
-			Storage:    "inmem",
-			AdminToken: "t",
-			DDMSendKey: []byte(
-				"hop-send-key-0123456789012345678901",
-			),
-			DDMRecvKey: []byte("hop-recv-key-0123456789012345678901"),
-			DEP:        app.DEPConfig{BaseURL: "not a url"},
+			Storage:        "inmem",
+			BootstrapToken: "t",
+			DEP:            app.DEPConfig{BaseURL: "not a url"},
 		})
 		if err == nil || !strings.Contains(err.Error(), "DEP client") {
 			t.Fatalf("Build = %v", err)
@@ -379,10 +372,9 @@ func TestDEP(t *testing.T) {
 		fake := deptest.NewServer(deptest.Options{Clock: clk})
 		t.Cleanup(fake.Close)
 		a := build(t, app.Config{
-			Role:       app.RoleDDM,
-			Storage:    "inmem",
-			AdminToken: "t",
-			Clock:      clk,
+			Storage:        "inmem",
+			BootstrapToken: "t",
+			Clock:          clk,
 			DEP: app.DEPConfig{
 				BaseURL:      fake.URL(),
 				HTTPClient:   fake.Client(),
@@ -484,11 +476,10 @@ func TestDEP(t *testing.T) {
 		a := build(
 			t,
 			app.Config{
-				Role:       app.RoleAll,
-				Storage:    "sqlite",
-				DSN:        t.TempDir() + "/dep.db",
-				AdminToken: "t",
-				DEP:        app.DEPConfig{BaseURL: fake.URL(), HTTPClient: fake.Client()},
+				Storage:        "sqlite",
+				DSN:            t.TempDir() + "/dep.db",
+				BootstrapToken: "t",
+				DEP:            app.DEPConfig{BaseURL: fake.URL(), HTTPClient: fake.Client()},
 			},
 		)
 		srv := serve(t, a)

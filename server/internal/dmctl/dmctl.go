@@ -185,6 +185,8 @@ func Verbs() []string {
 // function.
 func commands() map[string]command {
 	cmds := []command{
+		{"roles", "manage administrative roles", runRoles},
+		{"auth", "inspect authorization, bootstrap, and recover root credentials", runAuth},
 		{"recovery", "pause, back up, verify and restore a persistent server", runRecovery},
 		{"setup", "manage certificate setup and renewal with persistent state", runSetup},
 		{"bench", "prepare and run maintained reference-server scenarios", runBench},
@@ -196,7 +198,7 @@ func commands() map[string]command {
 			"describe a command, declaration, payload, or status item, offline",
 			runExplain,
 		},
-		{"status", "show the server's role, families, and version", runStatus},
+		{"status", "show the server's service, families, and version", runStatus},
 		{"profile", "lint a local configuration profile against an explicit target", runProfile},
 		{"routes", "list the admin routes the server serves", runRoutes},
 		{"principals", "administer admin credentials", runPrincipals},
@@ -477,9 +479,9 @@ func (e *env) explainNotFound(
 		}
 	}
 	return fmt.Errorf(
-		"%w (this server runs role=%s, which does not serve %s)",
+		"%w (this server serves %s, which does not serve %s)",
 		err,
-		cfg.Role,
+		cfg.Service,
 		family,
 	)
 }

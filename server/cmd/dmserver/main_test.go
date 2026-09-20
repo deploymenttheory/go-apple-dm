@@ -50,7 +50,7 @@ func quiet() *slog.Logger { return slog.New(slog.NewTextHandler(io.Discard, nil)
 // The old path returned srv.Shutdown's error and left the notifier and the
 // DEP syncer running, so the process could exit mid-drain.
 func TestServeStopsOnContextCancel(t *testing.T) {
-	cfg := app.Config{Role: app.RoleAll, Storage: "inmem", Listen: "127.0.0.1:0", Logger: quiet()}
+	cfg := app.Config{Storage: "inmem", Listen: "127.0.0.1:0", Logger: quiet()}
 	ctx, cancel := context.WithCancel(context.Background())
 	done := make(chan error, 1)
 	go func() { done <- serve(ctx, cfg) }()
@@ -76,7 +76,7 @@ func TestServeReportsListenError(t *testing.T) {
 	}
 	defer func(cleanup func() error) { _ = cleanup() }(held.Close)
 
-	cfg := app.Config{Role: app.RoleAll, Storage: "inmem", Listen: held.Addr().String(), Logger: quiet()}
+	cfg := app.Config{Storage: "inmem", Listen: held.Addr().String(), Logger: quiet()}
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	done := make(chan error, 1)
@@ -93,7 +93,7 @@ func TestServeReportsListenError(t *testing.T) {
 
 // A configuration Build rejects never reaches the listener.
 func TestServeReportsBuildError(t *testing.T) {
-	cfg := app.Config{Role: app.Role("nonsense"), Storage: "inmem", Listen: "127.0.0.1:0", Logger: quiet()}
+	cfg := app.Config{Storage: "nonsense", Listen: "127.0.0.1:0", Logger: quiet()}
 	if err := serve(context.Background(), cfg); !errors.Is(err, app.ErrConfig) {
 		t.Fatalf("serve = %v, want ErrConfig", err)
 	}

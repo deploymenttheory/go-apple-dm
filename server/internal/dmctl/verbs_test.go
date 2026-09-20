@@ -43,7 +43,7 @@ func (f *fakeAdmin) serve(w http.ResponseWriter, r *http.Request) {
 	path := strings.TrimPrefix(r.URL.Path, "/admin/v1")
 	switch {
 	case path == "/config":
-		_, _ = w.Write([]byte(`{"Role":"all","Version":"devel","Families":["ddm","principals"],"Policy":true}`))
+		_, _ = w.Write([]byte(`{"Service":"device-management","Version":"devel","Families":["ddm","principals"],"Policy":true}`))
 	case path == "/principals" && r.Method == http.MethodPost:
 		w.WriteHeader(http.StatusCreated)
 		_, _ = w.Write([]byte(`{"Principal":{"Name":"ci","Roles":["reader"]},"Token":"mdmt_freshtoken"}`))
@@ -336,7 +336,7 @@ func TestDeclarationVerbs(t *testing.T) {
 func TestNotFoundExplainsRole(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if strings.HasSuffix(r.URL.Path, "/config") {
-			_, _ = w.Write([]byte(`{"Role":"ddm","Version":"devel","Families":["ddm"]}`))
+			_, _ = w.Write([]byte(`{"Service":"device-management","Version":"devel","Families":["ddm"]}`))
 			return
 		}
 		w.WriteHeader(http.StatusNotFound)
@@ -351,13 +351,13 @@ func TestNotFoundExplainsRole(t *testing.T) {
 	if err == nil {
 		t.Fatal("expected a failure")
 	}
-	if !strings.Contains(err.Error(), "role=ddm") {
+	if !strings.Contains(err.Error(), "serves device-management") {
 		t.Fatalf("err = %v, want the role named", err)
 	}
 
 	// A family the server does serve keeps the plain error.
 	_, _, err = run(t, env, "declarations", "get", "nope")
-	if err == nil || strings.Contains(err.Error(), "role=") {
+	if err == nil || strings.Contains(err.Error(), "this server serves") {
 		t.Fatalf("err = %v, want the unadorned not-found", err)
 	}
 }

@@ -70,8 +70,8 @@ func TestOpen(t *testing.T) {
 			t.Fatal(err)
 		}
 		v, err := sqlstore.Version(ctx, db, sqlite.Dialect)
-		if err != nil || v != 1 {
-			t.Fatalf("version = %d, %v; want 1", v, err)
+		if err != nil || v != 2 {
+			t.Fatalf("version = %d, %v; want 2", v, err)
 		}
 		if s.DB() != db {
 			t.Fatal("DB() returned a different pool")

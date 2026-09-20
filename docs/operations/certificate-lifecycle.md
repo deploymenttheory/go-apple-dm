@@ -342,7 +342,7 @@ separate CAs. It does not stop the running server. Switch the listener to
 is required for adoption of the same certificates.
 
 For other deployments, initialize with the existing `-storage-key-file` and
-`-storage-key-name`, preserve existing `-admin-token-file`, `-issuance-key-file`,
+`-storage-key-name`, preserve existing `-bootstrap-token-file`, `-issuance-key-file`,
 and `-acme-key-file` as applicable, retain the original database and security
 settings, and adopt each identity with `setup adopt -kind KIND -id ID -cert FILE
 -key FILE`. Importing a new certificate is a separate pending revision, rather than

@@ -33,7 +33,7 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/server/service"
 )
 
-// Enrollment routes on the mdm and all roles (decision records 0027 to 0029).
+// Enrollment routes (decision records 0027 to 0029).
 const (
 	PathSCEP            = "/scep"
 	PathACME            = "/acme"

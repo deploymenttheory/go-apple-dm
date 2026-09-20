@@ -201,9 +201,14 @@ func (d *depService) profileURL() string {
 //	GET  /dep/accounts/{name}/devices?cursor=&limit=
 //	PUT  /dep/accounts/{name}/profile            body: DEP profile JSON; url defaults to this server
 //	POST /dep/accounts/{name}/sync               sync then assign once
-func (d *depService) handler() http.Handler {
-	mux := http.NewServeMux()
-	mux.HandleFunc("GET /dep/accounts", func(w http.ResponseWriter, r *http.Request) {
+func (d *depService) routes() []adminRoute {
+	var routes []adminRoute
+	// #nosec G101 -- Values are permission identifiers, never credentials.
+	actions := map[string]string{"GET /dep/accounts": ActionListDEP, "GET /dep/accounts/{name}/devices": ActionReadDEP, "PUT /dep/accounts/{name}/keypair": "manageDEPCredentials", "PUT /dep/accounts/{name}/token": "manageDEPCredentials", "PUT /dep/accounts/{name}/tokens": "manageDEPCredentials", "PUT /dep/accounts/{name}/profile": "manageDEPProfiles", "POST /dep/accounts/{name}/sync": "syncDEPDevices"}
+	add := func(pattern string, handler http.HandlerFunc) {
+		routes = append(routes, adminRoute{Pattern: pattern, Action: actions[pattern], Family: "dep", Handler: handler})
+	}
+	add("GET /dep/accounts", func(w http.ResponseWriter, r *http.Request) {
 		res, err := d.store.ListAccounts(
 			r.Context(),
 			paging.Page{Cursor: r.URL.Query().Get("cursor")},
@@ -235,7 +240,7 @@ func (d *depService) handler() http.Handler {
 		}
 		writeJSON(w, http.StatusOK, map[string]any{"Items": rows, "NextCursor": res.NextCursor})
 	})
-	mux.HandleFunc(
+	add(
 		"PUT /dep/accounts/{name}/keypair",
 		func(w http.ResponseWriter, r *http.Request) {
 			name := r.PathValue("name")
@@ -253,7 +258,7 @@ func (d *depService) handler() http.Handler {
 			_, _ = w.Write(kp.CertPEM) // #nosec G705 -- a PEM certificate this server generated
 		},
 	)
-	mux.HandleFunc("PUT /dep/accounts/{name}/token", func(w http.ResponseWriter, r *http.Request) {
+	add("PUT /dep/accounts/{name}/token", func(w http.ResponseWriter, r *http.Request) {
 		body, err := io.ReadAll(io.LimitReader(r.Body, MaxAdminBody+1))
 		if err != nil || len(body) > MaxAdminBody || len(body) == 0 {
 			writeError(
@@ -276,7 +281,7 @@ func (d *depService) handler() http.Handler {
 		}
 		writeJSON(w, http.StatusOK, detail)
 	})
-	mux.HandleFunc("PUT /dep/accounts/{name}/tokens", func(w http.ResponseWriter, r *http.Request) {
+	add("PUT /dep/accounts/{name}/tokens", func(w http.ResponseWriter, r *http.Request) {
 		var tokens dep.Tokens
 		body, err := io.ReadAll(io.LimitReader(r.Body, MaxAdminBody+1))
 		if err != nil || len(body) > MaxAdminBody {
@@ -294,7 +299,7 @@ func (d *depService) handler() http.Handler {
 		}
 		writeJSON(w, http.StatusOK, detail)
 	})
-	mux.HandleFunc(
+	add(
 		"GET /dep/accounts/{name}/devices",
 		func(w http.ResponseWriter, r *http.Request) {
 			page := paging.Page{Cursor: r.URL.Query().Get("cursor")}
@@ -314,7 +319,7 @@ func (d *depService) handler() http.Handler {
 			writeJSON(w, http.StatusOK, res)
 		},
 	)
-	mux.HandleFunc(
+	add(
 		"PUT /dep/accounts/{name}/profile",
 		func(w http.ResponseWriter, r *http.Request) {
 			name := r.PathValue("name")
@@ -361,7 +366,7 @@ func (d *depService) handler() http.Handler {
 			writeJSON(w, http.StatusOK, resp)
 		},
 	)
-	mux.HandleFunc("POST /dep/accounts/{name}/sync", func(w http.ResponseWriter, r *http.Request) {
+	add("POST /dep/accounts/{name}/sync", func(w http.ResponseWriter, r *http.Request) {
 		sres, ares, err := d.runOnce(r.Context(), r.PathValue("name"))
 		if err != nil {
 			writeError(w, depStatus(err), err)
@@ -369,7 +374,7 @@ func (d *depService) handler() http.Handler {
 		}
 		writeJSON(w, http.StatusOK, map[string]any{"Sync": sres, "Assign": ares})
 	})
-	return mux
+	return routes
 }
 
 // depStatus maps client and store errors to admin API statuses.

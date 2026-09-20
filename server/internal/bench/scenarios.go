@@ -350,13 +350,6 @@ func ddmCheckout(ctx context.Context, e *Environment, _ string) error {
 	return ddmScenario(ctx, e, false, true)
 }
 
-func splitRoundTrip(ctx context.Context, e *Environment, _ string) error {
-	if e.Topology != "split" {
-		return fmt.Errorf("%w: use a split workspace", ErrBlocked)
-	}
-	return ddmScenario(ctx, e, false, false)
-}
-
 func ddmScenario(ctx context.Context, e *Environment, predicate, checkout bool) error {
 	d, err := e.device(ctx)
 	if err != nil {
@@ -409,9 +402,7 @@ func ddmScenario(ctx context.Context, e *Environment, predicate, checkout bool) 
 		Token:     e.Token,
 		Workspace: e.Workspace,
 	}
-	if e.DDMURL != "" {
-		admin.URL = e.DDMURL
-	}
+
 	for index, v := range []map[string]any{cfg, act} {
 		if err = admin.api(ctx, "PUT", "/declarations", v, nil); err != nil {
 			return wrapError(err)

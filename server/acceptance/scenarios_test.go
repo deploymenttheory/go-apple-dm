@@ -21,10 +21,10 @@ func TestScenarios(t *testing.T) {
 	if binary != "" {
 		adapter = "process"
 	}
-	for _, topology := range []string{"all", "split"} {
+	for _, topology := range []string{"device-management"} {
 		t.Run(topology, func(t *testing.T) {
 			dir := t.TempDir()
-			if err := bench.Init(dir, "simulated", "sqlite", topology, "127.0.0.1:0"); err != nil {
+			if err := bench.Init(dir, "simulated", "sqlite", "127.0.0.1:0"); err != nil {
 				t.Fatal(err)
 			}
 			w, err := bench.Load(dir)
@@ -41,12 +41,6 @@ func TestScenarios(t *testing.T) {
 			var results []bench.Result
 			for _, s := range bench.Catalogue() {
 				if strings.HasPrefix(s.ID, "LIVE-") {
-					continue
-				}
-				if topology == "all" && s.ID == "E2E-010" {
-					continue
-				}
-				if topology == "split" && s.ID != "E2E-010" {
 					continue
 				}
 				t.Run(s.ID, func(t *testing.T) {

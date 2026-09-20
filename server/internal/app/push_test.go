@@ -50,7 +50,7 @@ func TestPushWiring(t *testing.T) {
 	t.Run("NotifierGetsThePusher", func(t *testing.T) {
 		p := &recordingPusher{}
 		a := build(t, app.Config{
-			Role: app.RoleAll, Storage: "inmem", Listen: ":0", AdminToken: "t",
+			Storage: "inmem", Listen: ":0", BootstrapToken: "t",
 			Push: app.PushConfig{Pusher: p, Coalesce: -1},
 		})
 		if a.Push == nil {
@@ -65,7 +65,7 @@ func TestPushWiring(t *testing.T) {
 
 	t.Run("OffBuildsNoPusher", func(t *testing.T) {
 		a := build(t, app.Config{
-			Role: app.RoleAll, Storage: "inmem", Listen: ":0", AdminToken: "t",
+			Storage: "inmem", Listen: ":0", BootstrapToken: "t",
 			Push: app.PushConfig{Source: app.PushSourceOff},
 		})
 		if a.Push != nil {
@@ -75,7 +75,7 @@ func TestPushWiring(t *testing.T) {
 
 	t.Run("StoreSourceIsTheDefaultForADeployment", func(t *testing.T) {
 		a := build(t, app.Config{
-			Role: app.RoleAll, Storage: "inmem", Listen: ":0", AdminToken: "t",
+			Storage: "inmem", Listen: ":0", BootstrapToken: "t",
 			Push: app.PushConfig{Source: app.PushSourceStore},
 		})
 		if a.Push == nil {
@@ -94,7 +94,7 @@ func TestPushWiring(t *testing.T) {
 			},
 		} {
 			_, err := app.Build(context.Background(), app.Config{
-				Role: app.RoleAll, Storage: "inmem", Listen: ":0", AdminToken: "t",
+				Storage: "inmem", Listen: ":0", BootstrapToken: "t",
 				Logger: quiet, Push: cfg,
 			})
 			if !errors.Is(err, app.ErrConfig) {
@@ -108,7 +108,7 @@ func TestPushWiring(t *testing.T) {
 	t.Run("MissingCertificateIsABuildError", func(t *testing.T) {
 		dir := t.TempDir()
 		_, err := app.Build(context.Background(), app.Config{
-			Role: app.RoleAll, Storage: "inmem", Listen: ":0", AdminToken: "t", Logger: quiet,
+			Storage: "inmem", Listen: ":0", BootstrapToken: "t", Logger: quiet,
 			Push: app.PushConfig{
 				Source:   app.PushSourceFile,
 				CertFile: filepath.Join(dir, "absent.pem"),
@@ -146,7 +146,7 @@ func TestPushTopicFromCertificate(t *testing.T) {
 		t.Fatal(err)
 	}
 	a := build(t, app.Config{
-		Role: app.RoleAll, Storage: "inmem", Listen: ":0", AdminToken: "t",
+		Storage: "inmem", Listen: ":0", BootstrapToken: "t",
 		Push: app.PushConfig{
 			Source: app.PushSourceFile, CertFile: certPath, KeyFile: keyPath,
 			Transport: func(tls.Certificate) *http.Client { return http.DefaultClient },
@@ -202,7 +202,7 @@ func TestPushCertSourceOptions(t *testing.T) {
 
 	// An explicit topic must agree with the certificate.
 	a := build(t, app.Config{
-		Role: app.RoleAll, Storage: "inmem", Listen: ":0", AdminToken: "t",
+		Storage: "inmem", Listen: ":0", BootstrapToken: "t",
 		Push: app.PushConfig{
 			Source: app.PushSourceFile, CertFile: certPath, KeyFile: keyPath,
 			Topic: "com.apple.mgmt.External.opts", Host: "https://apns.example",
@@ -213,7 +213,6 @@ func TestPushCertSourceOptions(t *testing.T) {
 	}
 
 	_, err = app.Build(context.Background(), app.Config{
-		Role:    app.RoleAll,
 		Storage: "inmem",
 		Logger:  quiet,
 		Push: app.PushConfig{
@@ -229,7 +228,7 @@ func TestPushCertSourceOptions(t *testing.T) {
 
 	// The store source takes a cache TTL.
 	b := build(t, app.Config{
-		Role: app.RoleAll, Storage: "inmem", Listen: ":0", AdminToken: "t",
+		Storage: "inmem", Listen: ":0", BootstrapToken: "t",
 		Push: app.PushConfig{Source: app.PushSourceStore, CertTTL: time.Minute},
 	})
 	if b.Push == nil {

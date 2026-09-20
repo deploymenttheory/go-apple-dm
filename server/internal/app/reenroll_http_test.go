@@ -34,7 +34,7 @@ func TestSignedSQLiteReenrollmentAfterProfileRemoval(t *testing.T) {
 	}
 	roots := x509.NewCertPool()
 	roots.AddCert(ca.Cert)
-	a := build(t, app.Config{Role: app.RoleMDM, Storage: "sqlite", DSN: filepath.Join(t.TempDir(), "mdm.sqlite"), CARoots: roots, AllowReenroll: true})
+	a := build(t, app.Config{Storage: "sqlite", DSN: filepath.Join(t.TempDir(), "mdm.sqlite"), CARoots: roots, AllowReenroll: true})
 	request := func(identity *testpki.Identity, body map[string]any, want int, contentType string) []byte {
 		t.Helper()
 		raw, err := plist.Marshal(body)

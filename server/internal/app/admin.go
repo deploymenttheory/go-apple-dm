@@ -55,11 +55,12 @@ func (a *App) ddmAdminRoutes() []adminRoute {
 		routes = append(
 			routes,
 			adminRoute{
-				Pattern:       pattern,
-				Action:        action,
-				Family:        "ddm",
-				LocalMutation: action != ActionNotify,
-				Handler:       http.HandlerFunc(guarded),
+				Pattern:            pattern,
+				Action:             action,
+				Family:             "ddm",
+				LocalMutation:      action != ActionNotify,
+				NotifyDeclarations: true,
+				Handler:            http.HandlerFunc(guarded),
 			},
 		)
 	}
@@ -127,7 +128,7 @@ func (a *App) ddmAdminRoutes() []adminRoute {
 			respond(w, e.DeleteDeclaration(r.Context(), r.PathValue("id")))
 		},
 	)
-	add(ActionAssignSet,
+	add(ActionEditSet,
 		"PUT /sets/{set}/declarations/{id}",
 		func(w http.ResponseWriter, r *http.Request) {
 			set := r.PathValue("set")
@@ -139,7 +140,7 @@ func (a *App) ddmAdminRoutes() []adminRoute {
 			respondChanged(w, changed, err)
 		},
 	)
-	add(ActionAssignSet,
+	add(ActionEditSet,
 		"DELETE /sets/{set}/declarations/{id}",
 		func(w http.ResponseWriter, r *http.Request) {
 			changed, err := e.RemoveFromSet(r.Context(), r.PathValue("set"), r.PathValue("id"))

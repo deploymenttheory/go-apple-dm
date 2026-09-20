@@ -39,9 +39,8 @@ func AttachURL(w *Workspace, address string) (*Environment, error) {
 	c.CheckRedirect = func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }
 	return &Environment{
 		Instance: Instance{
-			URL:      strings.TrimSuffix(address, "/"),
-			Mode:     w.Mode,
-			Topology: w.Topology,
+			URL:  strings.TrimSuffix(address, "/"),
+			Mode: w.Mode,
 		},
 		Client:    c,
 		Token:     token,

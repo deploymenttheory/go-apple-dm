@@ -19,6 +19,18 @@ type NewStore func(t *testing.T) adminauth.Store
 // RunSuite runs every contract case against newStore.
 func RunSuite(t *testing.T, newStore NewStore) {
 	t.Helper()
+	factory := newStore
+	newStore = func(t *testing.T) adminauth.Store {
+		t.Helper()
+		s := factory(t)
+		for _, name := range []string{"reader", "operator", "admin"} {
+			if _, err := s.PutRole(t.Context(), adminauth.Role{Name: name}, t0); err != nil {
+				t.Fatal(err)
+			}
+		}
+		return s
+	}
+	t.Run("Roles", func(t *testing.T) { runRoles(t, newStore) })
 	t.Run("Principals", func(t *testing.T) { runPrincipals(t, newStore) })
 	t.Run("Tokens", func(t *testing.T) { runTokens(t, newStore) })
 	t.Run("Policies", func(t *testing.T) { runPolicies(t, newStore) })

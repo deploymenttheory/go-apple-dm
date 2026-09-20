@@ -17,6 +17,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/deploymenttheory/go-apple-dm/server/adminauth"
+
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/cms"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/enroll"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/mdm"
@@ -267,6 +269,14 @@ func TestSetupAPIAuthRolesAndPublicHistory(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	_, token, err := a.admin.Bootstrap(t.Context(), "fixture-root", time.Time{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := a.admin.PutPolicy(t.Context(), adminauth.Root, adminauth.Policy{Name: "fixture", Source: `permit(principal == MDM::Principal::"fixture-root",action,resource);`}); err != nil {
+		t.Fatal(err)
+	}
+	cfg.BootstrapToken = string(token)
 	defer func(cleanup func() error) { _ = cleanup() }(a.Close)
 	request := func(method, path, body, token string) *httptest.ResponseRecorder {
 		req := httptest.NewRequestWithContext(t.Context(), method, path, strings.NewReader(body))
@@ -285,24 +295,24 @@ func TestSetupAPIAuthRolesAndPublicHistory(t *testing.T) {
 		"POST",
 		"/admin/v1/setup/vendor/request",
 		body,
-		cfg.AdminToken,
+		cfg.BootstrapToken,
 	); response.Code != 400 {
 		t.Fatal(response.Code, response.Body.String())
 	}
 	body = `{"subject":{"CommonName":"customer"}}`
-	response := request("POST", "/admin/v1/setup/push/request", body, cfg.AdminToken)
+	response := request("POST", "/admin/v1/setup/push/request", body, cfg.BootstrapToken)
 	if response.Code != 200 {
 		t.Fatal(response.Code, response.Body.String())
 	}
-	response = request("GET", "/admin/v1/setup/workflow/push/history", "", cfg.AdminToken)
-	if response.Code != 200 || !strings.Contains(response.Body.String(), BreakGlassActor) {
+	response = request("GET", "/admin/v1/setup/workflow/push/history", "", cfg.BootstrapToken)
+	if response.Code != 200 || !strings.Contains(response.Body.String(), "fixture-root") {
 		t.Fatal(response.Code, response.Body.String())
 	}
 	if strings.Contains(response.Body.String(), "PRIVATE KEY") ||
 		strings.Contains(response.Body.String(), "SignedRequest") {
 		t.Fatal("history leaked material")
 	}
-	response = request("GET", "/admin/v1/setup/workflow/push/export?artifact=csr", "", cfg.AdminToken)
+	response = request("GET", "/admin/v1/setup/workflow/push/export?artifact=csr", "", cfg.BootstrapToken)
 	if response.Code != http.StatusOK || !strings.Contains(response.Body.String(), "BEGIN CERTIFICATE REQUEST") {
 		t.Fatal("public CSR export failed", response.Code, response.Body.String())
 	}
@@ -320,12 +330,12 @@ func TestSetupAPIAuthRolesAndPublicHistory(t *testing.T) {
 		"GET",
 		"/admin/v1/setup/workflow/push/export?artifact=key",
 		"",
-		cfg.AdminToken,
+		cfg.BootstrapToken,
 	)
 	if response.Code != 400 {
 		t.Fatal("private key export allowed", response.Code)
 	}
-	response = request("GET", "/admin/v1/setup", "", cfg.AdminToken)
+	response = request("GET", "/admin/v1/setup", "", cfg.BootstrapToken)
 	var status SetupStatus
 	if err := json.Unmarshal(response.Body.Bytes(), &status); err != nil || status.Ready {
 		t.Fatal("incomplete setup reported ready", err)

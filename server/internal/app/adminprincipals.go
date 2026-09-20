@@ -10,9 +10,8 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/server/adminauth"
 )
 
-// principalRoutes administer admin credentials and the Cedar policies that
-// bound them. They are mounted only when a principal store is configured:
-// with the static token there is nothing to administer.
+// principalRoutes administer stored credentials and the Cedar policies that
+// bound their access. Authority mutations require a root principal.
 //
 //	GET    /principals
 //	POST   /principals                       body: {Name, Roles, Root, ExpiresAt}
@@ -41,7 +40,7 @@ func (a *App) principalRoutes() []adminRoute {
 		)
 	}
 
-	add(ActionManagePrincipals, "GET /principals", func(w http.ResponseWriter, r *http.Request) {
+	add(ActionReadPrincipals, "GET /principals", func(w http.ResponseWriter, r *http.Request) {
 		res, err := a.admin.Principals(
 			r.Context(),
 			adminauth.Page{Cursor: r.URL.Query().Get("cursor")},
@@ -58,7 +57,7 @@ func (a *App) principalRoutes() []adminRoute {
 	})
 
 	add(
-		ActionManagePrincipals,
+		ActionReadPrincipals,
 		"GET /principals/{name}",
 		func(w http.ResponseWriter, r *http.Request) {
 			p, err := a.admin.Principal(r.Context(), r.PathValue("name"))
@@ -184,7 +183,7 @@ func (a *App) principalRoutes() []adminRoute {
 		},
 	)
 
-	add(ActionManagePolicies, "GET /policies", func(w http.ResponseWriter, r *http.Request) {
+	add(ActionReadPolicies, "GET /policies", func(w http.ResponseWriter, r *http.Request) {
 		docs, err := a.admin.Policies(r.Context(), a.actor(r))
 		if err != nil {
 			writeError(w, adminStatus(err), err)
@@ -193,7 +192,7 @@ func (a *App) principalRoutes() []adminRoute {
 		writeJSON(w, http.StatusOK, map[string]any{"Items": docs})
 	})
 
-	add(ActionManagePolicies, "GET /policies/{name}", func(w http.ResponseWriter, r *http.Request) {
+	add(ActionReadPolicies, "GET /policies/{name}", func(w http.ResponseWriter, r *http.Request) {
 		doc, err := a.admin.GetPolicy(r.Context(), a.actor(r), r.PathValue("name"))
 		if err != nil {
 			writeError(w, adminStatus(err), err)
@@ -203,12 +202,15 @@ func (a *App) principalRoutes() []adminRoute {
 	})
 
 	add(ActionManagePolicies, "PUT /policies/{name}", func(w http.ResponseWriter, r *http.Request) {
-		var body struct{ Source, Description string }
+		var body struct {
+			Source, Description string
+			Active              *bool
+		}
 		if !decodeAdmin(w, r, &body) {
 			return
 		}
 		doc, err := a.admin.PutPolicy(r.Context(), a.actor(r), adminauth.Policy{
-			Name: r.PathValue("name"), Source: body.Source, Description: body.Description,
+			Name: r.PathValue("name"), Source: body.Source, Description: body.Description, Active: body.Active,
 		})
 		if err != nil {
 			writeError(w, adminStatus(err), err)
@@ -235,9 +237,9 @@ func (a *App) principalRoutes() []adminRoute {
 
 	// The action catalogue an operator writes policies against, with the
 	// prose that says what granting each one means.
-	add(ActionManagePolicies, "GET /actions", func(w http.ResponseWriter, r *http.Request) {
+	routes = append(routes, adminRoute{Pattern: "GET /actions", Action: ActionReadConfig, Family: "authorization", Introspection: true, Handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, http.StatusOK, map[string]any{"Items": AdminActions()})
-	})
+	})})
 
 	return routes
 }
@@ -269,7 +271,10 @@ func viewOf(p adminauth.Principal) principalView {
 // actor is the principal making the request, resolved again from the header.
 // The authorization wrapper has already accepted it.
 func (a *App) actor(r *http.Request) adminauth.Principal {
-	p, _, err := a.principal(r)
+	if p, ok := r.Context().Value(actorKey{}).(adminauth.Principal); ok {
+		return p
+	}
+	p, err := a.principal(r)
 	if err != nil {
 		return adminauth.Principal{}
 	}

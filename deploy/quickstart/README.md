@@ -9,7 +9,7 @@ From the repository root:
 ```sh
 docker compose -f deploy/quickstart/compose.yaml --profile tools build
 docker compose -f deploy/quickstart/compose.yaml up -d --wait
-docker compose -f deploy/quickstart/compose.yaml run --rm -T dmctl status
+# Continue with the walkthrough to exchange the bootstrap secret and grant access.
 ```
 
 `QUICKSTART_PORT` changes the loopback host port (default 8443). State lives in

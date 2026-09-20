@@ -22,7 +22,7 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/server/webhook"
 )
 
-func TestWebhookRootGateCannotBeDelegated(t *testing.T) {
+func TestWebhookSensitiveAccessRequiresSeparateGrant(t *testing.T) {
 	receiver := newCollector().server(t)
 	cfg := nativeWebhookConfig(t, receiver)
 	st := inmem.New()
@@ -37,7 +37,7 @@ func TestWebhookRootGateCannotBeDelegated(t *testing.T) {
 		t.Fatal(err)
 	}
 	token := mintPrincipal(t, m, adminauth.Principal{Name: "webhook-delegate"})
-	if _, err := m.PutPolicy(t.Context(), adminauth.Root, adminauth.Policy{Name: "all-actions", Source: `permit(principal, action, resource);`}); err != nil {
+	if _, err := m.PutPolicy(t.Context(), adminauth.Root, adminauth.Policy{Name: "webhook-actions", Source: `permit(principal, action in [MDM::Action::"readWebhooks", MDM::Action::"manageWebhooks", MDM::Action::"replayWebhooks", MDM::Action::"retryEvents"], resource);`}); err != nil {
 		t.Fatal(err)
 	}
 	spec := `{"name":"sensitive","url":"https://receiver.example.test/hook","events":["protocol.*"],"payload":{"full_json":true}}`
@@ -81,6 +81,12 @@ func TestWebhookRootGateCannotBeDelegated(t *testing.T) {
 	}
 	if w := eventRequest(a, "POST", "/webhooks/replays", token, `{"subscription_id":"`+c.Subscription.ID+`","dry_run":true}`); w.Code != 403 {
 		t.Fatal(w.Code, w.Body.String())
+	}
+	if _, err := m.PutPolicy(t.Context(), adminauth.Root, adminauth.Policy{Name: "sensitive-grant", Source: `permit(principal == MDM::Principal::"webhook-delegate", action == MDM::Action::"manageSensitiveWebhooks",resource);`}); err != nil {
+		t.Fatal(err)
+	}
+	if w := eventRequest(a, "POST", base+"/pause", token, ""); w.Code != 200 {
+		t.Fatal("explicit sensitive grant rejected", w.Code)
 	}
 	summary := strings.Replace(spec, `"full_json":true`, `"full_json":false`, 1)
 	if w := eventRequest(a, "POST", "/webhooks", token, summary); w.Code != 201 {
@@ -140,7 +146,7 @@ func TestWebhookEnvironment(t *testing.T) {
 				return "webhook-env-test.sqlite"
 			case app.EnvStorageKeys:
 				return "test"
-			case app.EnvAdminToken:
+			case app.EnvBootstrapToken:
 				return "test-admin"
 			}
 			return ""
@@ -180,7 +186,7 @@ func TestWebhookSimulatorEnrollmentAndCommand(t *testing.T) {
 	native := nativeWebhookConfig(t, receiver)
 	f := newEnrollFixture(t, "", func(cfg *app.Config) {
 		cfg.Storage, cfg.DSN, cfg.StorageKeys, cfg.Secrets = native.Storage, native.DSN, native.StorageKeys, native.Secrets
-		cfg.AdminToken, cfg.Webhooks = native.AdminToken, native.Webhooks
+		cfg.BootstrapToken, cfg.Webhooks = native.BootstrapToken, native.Webhooks
 	})
 	spec, err := json.Marshal(webhook.Spec{Name: "simulator", URL: receiver.URL, Events: []string{"protocol.*", "server.enrolled", "server.token.updated", "server.command.result"}, Payload: webhook.PayloadPolicy{FullJSON: true, RawRequest: true, RawResponse: true}})
 	if err != nil {

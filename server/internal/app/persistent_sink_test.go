@@ -55,7 +55,7 @@ func TestPersistentWebhookRejectsInvalidTrustAndEndpoint(t *testing.T) {
 		{WebhookURL: "https://webhook.example.test", WebhookRootCAFile: "missing"},
 		{WebhookURL: "://invalid"},
 	} {
-		cfg := app.Config{Role: app.RoleAll, Storage: "sqlite", DSN: filepath.Join(t.TempDir(), "events.sqlite"), StorageKeys: []string{"test"}, Secrets: secrets.Static{"test": []byte("0123456789abcdef0123456789abcdef")}, Sinks: sinks, Logger: quiet}
+		cfg := app.Config{Storage: "sqlite", DSN: filepath.Join(t.TempDir(), "events.sqlite"), StorageKeys: []string{"test"}, Secrets: secrets.Static{"test": []byte("0123456789abcdef0123456789abcdef")}, Sinks: sinks, Logger: quiet}
 		if a, err := app.Build(t.Context(), cfg); err == nil {
 			_ = a.Close()
 			t.Fatal("accepted unavailable event destination")

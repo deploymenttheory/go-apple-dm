@@ -361,7 +361,6 @@ func TestSetupBenchAdoptionPreservesDatabaseAndImportedIdentities(t *testing.T) 
 					source,
 					benchMode,
 					"sqlite",
-					"all",
 					"127.0.0.1:8443",
 				); err != nil {
 					t.Fatal(err)

@@ -28,7 +28,6 @@ func runBench(ctx context.Context, e *env, args []string) error {
 	dir := fs.String("workspace", "test-lab/local", "private workspace")
 	mode := fs.String("mode", "simulated", "simulated or live (init)")
 	storage := fs.String("storage", "sqlite", "sqlite, inmem, postgres, or mysql (init)")
-	topology := fs.String("topology", "all", "all or split (init)")
 	listen := fs.String("listen", "127.0.0.1:8443", "loopback listener (init)")
 	binary := fs.String(
 		"dmserver",
@@ -61,7 +60,7 @@ func runBench(ctx context.Context, e *env, args []string) error {
 		return fmt.Errorf("%w: -attach-url supports run, profile, and replace", ErrUsage)
 	}
 	if sub == "init" {
-		return wrapError(bench.Init(*dir, *mode, *storage, *topology, *listen))
+		return wrapError(bench.Init(*dir, *mode, *storage, *listen))
 	}
 	if sub == "list" {
 		return benchList(e, *format)

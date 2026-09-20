@@ -33,7 +33,7 @@ func TestServeListenerUsesReservedSocket(t *testing.T) {
 	go func() {
 		defer close(done)
 		serveErr = ServeListener(ctx, app.Config{
-			Role: app.RoleAll, Storage: "inmem", Listen: "unused:0",
+			Storage: "inmem", Listen: "unused:0",
 			Logger: slog.New(slog.NewTextHandler(io.Discard, nil)),
 		}, listener)
 	}()
@@ -83,7 +83,7 @@ func TestServeListenerClosesOnStartupFailure(t *testing.T) {
 	for _, name := range []string{"configuration", "TLS", "actual address"} {
 		t.Run(name, func(t *testing.T) {
 			addr := "127.0.0.1:0"
-			cfg := app.Config{Role: app.RoleAll, Storage: "inmem", Listen: addr}
+			cfg := app.Config{Storage: "inmem", Listen: addr}
 			switch name {
 			case "configuration":
 				cfg.Storage = "invalid"

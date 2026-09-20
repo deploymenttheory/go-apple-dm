@@ -144,7 +144,7 @@ func TestBenchRejectsMissingScenarioScratchDirectory(t *testing.T) {
 	}
 	result := Run(
 		t.Context(),
-		&Environment{Instance: Instance{Mode: "simulated", Topology: "all"}},
+		&Environment{Instance: Instance{Mode: "simulated"}},
 		Scenario{
 			Modes:    []string{"simulated"},
 			Settings: map[string]string{"DM_ALLOW_REENROLL": "true"},

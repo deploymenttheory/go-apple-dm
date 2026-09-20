@@ -30,7 +30,7 @@ func Example_applicationSettings() {
 	ctx := context.Background()
 	server := appSettingsExample{
 		client:  &http.Client{Timeout: 2 * time.Minute},
-		baseURL: "https://mdm.example", token: os.Getenv("DM_ADMIN_TOKEN"),
+		baseURL: "https://mdm.example", token: os.Getenv("DM_BOOTSTRAP_TOKEN"),
 	}
 	var results struct {
 		Items []publicappstoreidentity.App `json:"items"`
@@ -68,7 +68,7 @@ func Example_applicationSettingsArtifact() {
 	ctx := context.Background()
 	server := appSettingsExample{
 		client:  &http.Client{Timeout: 3 * time.Minute},
-		baseURL: "https://mdm.example", token: os.Getenv("DM_ADMIN_TOKEN"),
+		baseURL: "https://mdm.example", token: os.Getenv("DM_BOOTSTRAP_TOKEN"),
 	}
 	artifact, err := os.Open("applications.zip")
 	if err != nil {

@@ -19,7 +19,6 @@ import (
 // Catalogue JSON uses the administration PascalCase convention.
 type Scenario struct {
 	Settings      map[string]string                                 `json:"Settings,omitempty"`
-	Topology      string                                            `json:"Topology,omitempty"`
 	ID            string                                            `json:"ID"`
 	Name          string                                            `json:"Name"`
 	Family        string                                            `json:"Family"`
@@ -103,15 +102,6 @@ func Catalogue() []Scenario {
 			Regression: "TestE2E_DDMPredicate",
 			Modes:      []string{"simulated"},
 			Run:        ddmPredicate,
-		},
-		{
-			ID:         "E2E-010",
-			Topology:   "split",
-			Name:       "DDM declaration and status round trip across separate MDM and DDM roles with an authenticated proxy hop",
-			Family:     "split",
-			Regression: "TestE2E_DDMSplitDeployment",
-			Modes:      []string{"simulated"},
-			Run:        splitRoundTrip,
 		},
 		{
 			ID:         "E2E-011",
@@ -394,17 +384,13 @@ func Run(ctx context.Context, e *Environment, s Scenario, adapter, revision, dev
 		return r
 	}
 	var err error
-	if len(s.Settings) > 0 || (s.Topology != "" && s.Topology != e.Topology) {
+	if len(s.Settings) > 0 {
 		dir, merr := os.MkdirTemp("", "dm-bench-scenario-")
 		if merr != nil {
 			err = merr
 		} else {
 			defer func() { _ = os.RemoveAll(dir) }()
-			topology := s.Topology
-			if topology == "" {
-				topology = e.Topology
-			}
-			err = Init(dir, "simulated", "sqlite", topology, "127.0.0.1:0")
+			err = Init(dir, "simulated", "sqlite", "127.0.0.1:0")
 			if err == nil {
 				var w *Workspace
 				w, err = Load(dir)

@@ -31,7 +31,7 @@ start an isolated temporary instance of the same server executable and clean it 
 The catalogue records those configuration choices. They never reconfigure a live server.
 
 The default workspace is `test-lab/local`, SQLite, all-in-one, and simulated.
-`BENCH_WORKSPACE`, `BENCH_MODE`, `BENCH_STORAGE`, `BENCH_TOPOLOGY` and `BENCH_LISTEN`
+`BENCH_WORKSPACE`, `BENCH_MODE`, `BENCH_STORAGE` and `BENCH_LISTEN`
 configure `bench-init`. Existing workspaces are read from their private `bench.json`;
 init refuses to overwrite them. PostgreSQL/MySQL workspaces require a private `DSN`
 setting. Split deployments require shared persistent storage.

@@ -1,16 +1,16 @@
-// Package main runs the reference server in mdm, ddm or all mode.
+// Package main runs the unified device-management reference server.
 //
 // # Design
 //
 // The command reads DM_* variables, applies flag overrides and delegates
-// composition to server/internal/app. The mdm role serves device ingress; ddm
-// serves a declaration engine through the internal adapter; all combines them.
+// composition to server/internal/app. One runtime serves device ingress and
+// the declaration engine through the in-process adapter.
 // Administrative families depend on configured components and credentials. TLS
 // termination belongs to the deployment.
 //
 // # Usage
 //
-//	dmserver -role all -storage inmem -admin-token dev-token
+//	dmserver -storage inmem -bootstrap-token dev-token
 //	dmserver -check auto
 //
 // Use -help for current flags. The -check mode supports container health probes
@@ -20,6 +20,6 @@
 //
 // # References
 //
-//   - Decision record 0025: https://github.com/deploymenttheory/go-apple-dm/blob/main/docs/research/decisions/0025-reference-server-roles-and-container.md
-//   - Container: Dockerfile, scripts/testdb.sh (ddm-up), .github/workflows/go-test.yml (e2e job)
+//   - Decision record 0056: https://github.com/deploymenttheory/go-apple-dm/blob/main/docs/research/decisions/0056-unified-server-rbac.md
+//   - Container: Dockerfile, scripts/testdb.sh, .github/workflows/go-test.yml (e2e job)
 package main

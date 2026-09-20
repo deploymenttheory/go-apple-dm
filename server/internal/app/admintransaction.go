@@ -22,6 +22,7 @@ func (a *App) localAdmin(
 	err := a.eventPublisher.Run(r.Context(), func(ctx context.Context) error {
 		inside := r.WithContext(ctx)
 		rt.Handler.ServeHTTP(buffer, inside)
+		setAdminOutcome(r, buffer.status)
 		if buffer.err != nil {
 			return buffer.err
 		}
@@ -79,4 +80,39 @@ func (w *adminResponse) Write(b []byte) (int, error) {
 	}
 	n, err := w.body.Write(b)
 	return n, wrapError(err)
+}
+
+func setAdminOutcome(r *http.Request, status int) {
+	if status == 0 {
+		status = http.StatusOK
+	}
+	if req, ok := r.Context().Value(authorizationKey{}).(*authorizationRequest); ok {
+		req.Status = status
+		req.Outcome = "succeeded"
+		if status >= 300 {
+			req.Outcome = "failed"
+		}
+	}
+}
+
+// Sensitive response bytes are withheld until their audit record is captured.
+func (a *App) sensitiveAdminRead(w http.ResponseWriter, r *http.Request, p adminauth.Principal, rt adminRoute) {
+	buffer := &adminResponse{header: make(http.Header)}
+	rt.Handler.ServeHTTP(buffer, r)
+	setAdminOutcome(r, buffer.status)
+	if buffer.err != nil {
+		writeError(w, http.StatusInternalServerError, buffer.err)
+		return
+	}
+	if err := a.auditAction(r, p, rt); err != nil {
+		writeError(w, http.StatusServiceUnavailable, event.ErrCapture)
+		return
+	}
+	for key, values := range buffer.header {
+		w.Header()[key] = values
+	}
+	if buffer.status != 0 {
+		w.WriteHeader(buffer.status)
+	}
+	_, _ = w.Write(buffer.body.Bytes()) // #nosec G705 -- encoded by the bounded admin handler
 }

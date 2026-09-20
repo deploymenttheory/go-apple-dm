@@ -319,23 +319,30 @@ func (c *Client) Page(
 	return p.Items, p.NextCursor, nil
 }
 
-// ServerConfig reports role, available families, version and accepted credential
-// modes. The CLI uses it to explain unavailable routes and display break-glass
+// ServerConfig reports the service, available families, version and accepted credential
+// state. The CLI uses it to explain unavailable routes and bootstrap
 // status.
 type ServerConfig struct {
-	Role     string
+	Service  string
 	Version  string
 	Families []string
 	Routes   []Route
 	// Policy reports a principal and Cedar policy store.
 	Policy bool
-	// BreakGlass reports that the static DM_ADMIN_TOKEN is still accepted.
-	BreakGlass bool
+	// BootstrapPending reports that first-root bootstrap is configured and unconsumed.
+	BootstrapPending bool
 }
 
 // Route is one entry of the server's route table.
 type Route struct {
 	Method, Pattern, Action, Family string
+	Resource                        string
+	Sensitive, RootOnly             bool
+	CommandActions                  []string
+	Context                         map[string]struct {
+		Type     string
+		Required bool
+	}
 }
 
 // ServerConfig fetches GET /config.

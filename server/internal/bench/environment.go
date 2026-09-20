@@ -43,11 +43,9 @@ import (
 type Instance struct {
 	Binary       string `json:"Binary"`
 	URL          string `json:"URL"`
-	DDMURL       string `json:"DDMURL"`
 	ControlURL   string `json:"ControlURL"`
 	ControlToken string `json:"ControlToken"`
 	Mode         string `json:"Mode"`
-	Topology     string `json:"Topology"`
 }
 
 // Environment owns fixture services and the ordinary server runtime(s).
@@ -104,16 +102,15 @@ func Start(ctx context.Context, w *Workspace, binary string, out io.Writer) (*En
 	if err != nil {
 		return nil, wrapError(err)
 	}
-	token, err := w.token()
+	token, err := w.bootstrapToken()
 	if err != nil {
 		return nil, wrapError(err)
 	}
 	ctx, cancel := context.WithCancel(ctx)
 	e := &Environment{
 		Instance: Instance{
-			Binary:   binary,
-			Mode:     w.Mode,
-			Topology: w.Topology,
+			Binary: binary,
+			Mode:   w.Mode,
 		},
 		Client:    client,
 		Token:     token,
@@ -137,7 +134,6 @@ func Start(ctx context.Context, w *Workspace, binary string, out io.Writer) (*En
 		"DM_LISTEN":        addr,
 		"DM_STORAGE":       w.Storage,
 		"DM_DSN":           w.path("mdm", "bench-"+w.Mode+".sqlite"),
-		"DM_ROLE":          "all",
 		"DM_TLS_CERT_FILE": w.path("mdm", "tls.pem"),
 		"DM_TLS_KEY_FILE":  w.path("mdm", "tls.key"),
 		"DM_CA_FILE": w.path(
@@ -147,14 +143,13 @@ func Start(ctx context.Context, w *Workspace, binary string, out io.Writer) (*En
 		"DM_ENROLL_CA_CERT_FILE":    w.path("mdm", "ca.pem"),
 		"DM_ENROLL_TLS_ANCHOR_FILE": w.path("mdm", "ca.pem"),
 		"DM_ENROLL_CA_KEY_FILE":     w.path("mdm", "ca.key"),
-		"DM_ADMIN_TOKEN":            token,
+		"DM_BOOTSTRAP_TOKEN":        token,
 		"DM_STORAGE_KEYS":           "bench,lab",
 		"DM_PUBLIC_URL":             e.URL,
 		"DM_PUSH_SOURCE":            "store",
 		"DM_PUSH_COALESCE":          "-1s",
 		"DM_AUDIT_STORE":            "true",
 		"DM_DISCOVERY":              "Mac=mdm-adde,iPhone=mdm-byod",
-		"DM_ADMIN_STORE":            "true",
 	}
 	for k, v := range w.Settings {
 		env[k] = v
@@ -209,46 +204,15 @@ func Start(ctx context.Context, w *Workspace, binary string, out io.Writer) (*En
 		}
 
 	}
-	if w.Topology == "split" {
-		if w.Storage == "inmem" {
-			return nil, fmt.Errorf(
-				"%w: split topology requires shared persistent storage",
-				errOperation,
-			)
-		}
-		ddmAddr, ddmListener, err := address(ctx, "127.0.0.1:0", binary == "")
-		if err != nil {
-			return nil, wrapError(err)
-		}
-		e.listeners = append(e.listeners, ddmListener)
-		e.DDMURL = "https://" + ddmAddr
-		// Both roles use the workspace TLS identity and trust anchor.
-		ddmEnv := map[string]string{}
-		for k, v := range env {
-			ddmEnv[k] = v
-		}
-		ddmEnv["DM_ROLE"] = "ddm"
-		ddmEnv["DM_LISTEN"] = ddmAddr
-		send, recv := randomID(), randomID()
-		ddmEnv["DM_DDM_RECV_KEY"] = send
-		ddmEnv["DM_DDM_SEND_KEY"] = recv
-		if err = e.launch(ctx, ddmEnv, binary, out, ddmListener); err != nil {
-			return nil, wrapError(err)
-		}
-		if err = e.ready(ctx, e.DDMURL); err != nil {
-			return nil, wrapError(err)
-		}
-		env["DM_ROLE"] = "mdm"
-		env["DM_DDM_URL"] = e.DDMURL + app.PathDDM
-		env["DM_DDM_ROOT_CA_FILE"] = w.path("mdm", "ca.pem")
-		env["DM_DDM_SEND_KEY"] = send
-		env["DM_DDM_RECV_KEY"] = recv
-	}
+
 	if err = e.launch(ctx, env, binary, out, listener); err != nil {
 		return nil, wrapError(err)
 	}
 	if err = e.ready(ctx, e.URL); err != nil {
 		return nil, wrapError(err)
+	}
+	if err = e.authorizeBench(ctx); err != nil {
+		return nil, err
 	}
 	if err = e.seed(ctx, env["DM_PUSH_TOPIC"], cert, key); err != nil {
 		return nil, err
@@ -462,7 +426,7 @@ func Up(ctx context.Context, w *Workspace, binary string, out io.Writer) error {
 		return wrapError(err)
 	}
 	defer func() { _ = os.Remove(w.path("running.json")) }()
-	_, _ = fmt.Fprintln(out, "Bench ready:", e.URL, "mode="+w.Mode, "topology="+w.Topology)
+	_, _ = fmt.Fprintln(out, "Bench ready:", e.URL, "mode="+w.Mode, "service=device-management")
 	select {
 	case <-stop:
 		return nil

@@ -229,7 +229,7 @@ func (s *acmeService) policy() (acme.Policy, error) {
 		if s.app.dep == nil {
 			return nil, fmt.Errorf(
 				"%w: %s=%s needs the device enrollment service, which the %s role does not run",
-				ErrConfig, EnvACMEPolicy, s.cfg.Policy, s.app.cfg.Role,
+				ErrConfig, EnvACMEPolicy, s.cfg.Policy, "device-management",
 			)
 		}
 		if s.cfg.Policy == ACMEPolicyDEP {

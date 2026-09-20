@@ -79,6 +79,11 @@ func TestAdminPrincipalRoutes(t *testing.T) {
 		Token string
 	}
 
+	for _, role := range []string{"reader", "ops"} {
+		if _, err := m.PutRole(ctx, adminauth.Root, adminauth.Role{Name: role}); err != nil {
+			t.Fatal(err)
+		}
+	}
 	t.Run("Create", func(t *testing.T) {
 		resp := adminReq(t, srv, http.MethodPost, "/admin/v1/principals", rootTok,
 			`{"Name":"ci","Roles":["reader"]}`)
@@ -307,7 +312,7 @@ func TestAdminPolicyRoutes(t *testing.T) {
 		}); err != nil {
 			t.Fatal(err)
 		}
-		resp := adminReq(t, srv, http.MethodGet, "/admin/v1/policies", tok, "")
+		resp := adminReq(t, srv, http.MethodDelete, "/admin/v1/policies/everything", tok, "")
 		_ = resp.Body.Close()
 		if resp.StatusCode != http.StatusForbidden {
 			t.Fatalf("non-root policy read = %d, want 403", resp.StatusCode)
@@ -324,20 +329,13 @@ func quote(s string) string {
 	return string(b)
 }
 
-// The principal routes are absent with the static token: there is nothing to
-// administer, and mounting them would imply otherwise.
-func TestPrincipalRoutesNeedAStore(t *testing.T) {
-	a := build(t, app.Config{Role: app.RoleAll, Storage: "inmem", Listen: ":0", AdminToken: "secret"})
-	srv := serve(t, a).URL
-	resp := adminReq(t, srv, http.MethodGet, "/admin/v1/principals", "secret", "")
-	_ = resp.Body.Close()
-	if resp.StatusCode != http.StatusNotFound {
-		t.Fatalf("principals with a static token = %d, want 404", resp.StatusCode)
-	}
-	for _, rt := range a.AdminRoutes() {
-		if strings.Contains(rt.RoutePattern(), "/principals") {
-			t.Fatalf("principal route %q was registered without a store", rt.RoutePattern())
-		}
+// The unified server always has a managed principal store.
+func TestPrincipalRoutesAlwaysHaveAStore(t *testing.T) {
+	a := build(t, app.Config{Storage: "inmem", BootstrapToken: "secret"})
+	resp := adminReq(t, serve(t, a).URL, http.MethodGet, "/admin/v1/principals", "secret", "")
+	defer func() { _ = resp.Body.Close() }()
+	if resp.StatusCode != http.StatusOK {
+		t.Fatalf("principals = %d", resp.StatusCode)
 	}
 }
 
@@ -388,7 +386,7 @@ func TestAdminStoreFailureIsInternal(t *testing.T) {
 		t.Fatal(err)
 	}
 	st.Store = base
-	a := build(t, app.Config{Role: app.RoleAll, Storage: "inmem", Listen: ":0", AdminStore: st})
+	a := build(t, app.Config{Storage: "inmem", Listen: ":0", AdminStore: st})
 	srv := serve(t, a).URL
 	resp := adminReq(t, srv, http.MethodGet, "/admin/v1/principals", string(tok), "")
 	_ = resp.Body.Close()

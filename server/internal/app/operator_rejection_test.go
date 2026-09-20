@@ -17,7 +17,7 @@ import (
 
 func TestOperatorAPIsRejectInvalidInput(t *testing.T) {
 	t.Parallel()
-	f := newEnrollFixture(t, "", func(c *app.Config) { c.AdminToken = "operator" })
+	f := newEnrollFixture(t, "", func(c *app.Config) { c.BootstrapToken = "operator" })
 	for _, tc := range []struct {
 		name, method, path, body string
 		status                   int
@@ -52,11 +52,10 @@ func TestOperatorAPIsRejectInvalidInput(t *testing.T) {
 		})
 	}
 	cfg := app.Config{
-		Role:       app.RoleAll,
-		Storage:    "inmem",
-		AdminToken: "t",
-		Logger:     quiet,
-		AppPush:    app.AppPushConfig{RootCAFile: "missing.pem"},
+		Storage:        "inmem",
+		BootstrapToken: "t",
+		Logger:         quiet,
+		AppPush:        app.AppPushConfig{RootCAFile: "missing.pem"},
 	}
 	if a, err := app.Build(t.Context(), cfg); err == nil {
 		_ = a.Close()
@@ -110,7 +109,6 @@ func TestOperatorSecurityConfigurationRejectsIncompleteCredentials(t *testing.T)
 			}
 		}
 		cfg := app.Config{
-			Role:    app.RoleAll,
 			Storage: "inmem",
 			Logger:  quiet,
 			Enroll:  app.EnrollConfig{UserAuthHA1File: file},
@@ -123,7 +121,6 @@ func TestOperatorSecurityConfigurationRejectsIncompleteCredentials(t *testing.T)
 	if a, err := app.Build(
 		t.Context(),
 		app.Config{
-			Role:        app.RoleAll,
 			Storage:     "inmem",
 			Logger:      quiet,
 			TLSCertFile: "certificate.pem",

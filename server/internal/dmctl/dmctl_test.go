@@ -210,7 +210,7 @@ func TestServerVerbs(t *testing.T) {
 		}
 		switch r.URL.Path {
 		case "/admin/v1/config":
-			_, _ = w.Write([]byte(`{"Role":"all","Version":"devel","Families":["ddm"],"Policy":true}`))
+			_, _ = w.Write([]byte(`{"Service":"device-management","Version":"devel","Families":["ddm"],"Policy":true}`))
 		case "/admin/v1/routes":
 			_, _ = w.Write([]byte(`{"Routes":[{"Method":"GET","Pattern":"/config","Action":"readConfig","Family":"introspection"}]}`))
 		case "/admin/v1/actions":
@@ -232,7 +232,7 @@ func TestServerVerbs(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		for _, want := range []string{"Role:", "all", "policy"} {
+		for _, want := range []string{"Service:", "device-management", "policy"} {
 			if !strings.Contains(out, want) {
 				t.Fatalf("status output missing %q:\n%s", want, out)
 			}
@@ -270,7 +270,7 @@ func TestServerVerbs(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		const want = `{"Role":"all","Version":"devel","Families":["ddm"],"Policy":true}`
+		const want = `{"Service":"device-management","Version":"devel","Families":["ddm"],"Policy":true}`
 		if strings.TrimSpace(out) != want {
 			t.Fatalf("json output = %q, want the body byte for byte", out)
 		}
@@ -347,7 +347,7 @@ func TestConfig(t *testing.T) {
 				w.WriteHeader(http.StatusUnauthorized)
 				return
 			}
-			_, _ = w.Write([]byte(`{"Role":"all","Version":"devel"}`))
+			_, _ = w.Write([]byte(`{"Service":"device-management","Version":"devel"}`))
 		}))
 		defer srv.Close()
 		env := map[string]string{
@@ -424,7 +424,7 @@ func TestTokenSpecs(t *testing.T) {
 			w.WriteHeader(http.StatusUnauthorized)
 			return
 		}
-		_, _ = w.Write([]byte(`{"Role":"all"}`))
+		_, _ = w.Write([]byte(`{"Service":"device-management"}`))
 	}))
 	defer srv.Close()
 
@@ -457,51 +457,13 @@ func TestTokenSpecs(t *testing.T) {
 	}
 }
 
-// The break-glass token is root, bypasses policy, has no expiry and cannot be
-// revoked without a restart, so status says so plainly and says what to do
-// about it. Reading logs should not be the only way to find out it is still
-// set.
-func TestStatusReportsBreakGlass(t *testing.T) {
-	cases := map[string]struct {
-		body string
-		want string
-		gone string
-	}{
-		"ActiveBesideAStore": {
-			body: `{"Role":"all","Version":"devel","Families":["ddm"],"Policy":true,"BreakGlass":true}`,
-			want: "unset DM_ADMIN_TOKEN",
-		},
-		"TheOnlyCredential": {
-			body: `{"Role":"all","Version":"devel","Families":["ddm"],"Policy":false,"BreakGlass":true}`,
-			want: "the only credential",
-		},
-		"Removed": {
-			body: `{"Role":"all","Version":"devel","Families":["ddm"],"Policy":true,"BreakGlass":false}`,
-			want: "not configured",
-			gone: "unset DM_ADMIN_TOKEN",
-		},
-	}
-	for name, tc := range cases {
-		t.Run(name, func(t *testing.T) {
-			srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				w.Header().Set("Content-Type", "application/json")
-				_, _ = w.Write([]byte(tc.body))
-			}))
-			defer srv.Close()
-			env := noConfig(t)
-			env["DMCTL_SERVER"] = srv.URL
-			env["DMCTL_TOKEN"] = "tok"
-			out, _, err := run(t, env, "status")
-			if err != nil {
-				t.Fatal(err)
-			}
-			if !strings.Contains(out, tc.want) {
-				t.Fatalf("status output missing %q:\n%s", tc.want, out)
-			}
-			if tc.gone != "" && strings.Contains(out, tc.gone) {
-				t.Fatalf("status output should not contain %q:\n%s", tc.gone, out)
-			}
-		})
+func TestStatusReportsBootstrapState(t *testing.T) {
+	for _, value := range []string{"true", "false"} {
+		env := jsonServer(t, `{"Service":"device-management","Policy":true,"BootstrapPending":`+value+`}`)
+		out, _, err := run(t, env, "status")
+		if err != nil || !strings.Contains(out, "Bootstrap pending:") || !strings.Contains(out, value) {
+			t.Fatal(out, err)
+		}
 	}
 }
 
@@ -609,7 +571,7 @@ func TestServerPrecedence(t *testing.T) {
 		srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			*hit = name
 			w.Header().Set("Content-Type", "application/json")
-			_, _ = w.Write([]byte(`{"Role":"all","Version":"devel"}`))
+			_, _ = w.Write([]byte(`{"Service":"device-management","Version":"devel"}`))
 		}))
 		t.Cleanup(srv.Close)
 		return srv

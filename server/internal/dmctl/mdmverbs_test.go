@@ -317,7 +317,7 @@ func TestMDMVerbsExplainAMissingFamily(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		if strings.HasSuffix(r.URL.Path, "/config") {
-			_, _ = w.Write([]byte(`{"Role":"ddm","Version":"devel","Families":["ddm"]}`))
+			_, _ = w.Write([]byte(`{"Service":"device-management","Version":"devel","Families":["ddm"]}`))
 			return
 		}
 		w.WriteHeader(http.StatusNotFound)
@@ -332,7 +332,7 @@ func TestMDMVerbsExplainAMissingFamily(t *testing.T) {
 	if err == nil {
 		t.Fatal("a missing family reported success")
 	}
-	if !strings.Contains(err.Error(), "role=ddm") {
+	if !strings.Contains(err.Error(), "serves device-management") {
 		t.Fatalf("err = %v, want the role named", err)
 	}
 }

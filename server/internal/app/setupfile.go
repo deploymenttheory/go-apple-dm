@@ -79,7 +79,7 @@ type SetupInitOptions struct {
 	Directory, Role, Storage, DSN, PublicURL, Listen, Organization string
 	StorageKeyFile, StorageKeyName                                 string
 	HTTP01Listen                                                   string
-	AdminTokenFile, IssuanceKeyFile, ACMEKeyFile                   string
+	BootstrapTokenFile, IssuanceKeyFile, ACMEKeyFile               string
 	// AdditionalSecrets preserves deployment settings during an explicit import.
 	// Values are written to protected files and referenced by environment name.
 	AdditionalSecrets map[string][]byte
@@ -140,7 +140,7 @@ func InitSetupFile(o SetupInitOptions) (string, error) {
 			return "", wrapError(err)
 		}
 		b = []byte(hex.EncodeToString(b))
-		source := map[string]string{storageKeyName: o.StorageKeyFile, "admin": o.AdminTokenFile, "issuance": o.IssuanceKeyFile}[name]
+		source := map[string]string{storageKeyName: o.StorageKeyFile, "admin": o.BootstrapTokenFile, "issuance": o.IssuanceKeyFile}[name]
 		if source != "" {
 			// #nosec G304 -- Existing key file explicitly selected for local adoption.
 			b, err = os.ReadFile(source)
@@ -177,15 +177,14 @@ func InitSetupFile(o SetupInitOptions) (string, error) {
 			EnvListen:            listen,
 			EnvPublicURL:         publicURL,
 			EnvOrganization:      organization,
-			EnvRole:              "all",
 			EnvStorageKeys:       storageKeyName,
 			EnvSecretsDir:        filepath.Join(dir, "secrets"),
 			EnvStorageKeysStrict: "true",
 			EnvIdentity:          "acme",
 		},
 		SecretFiles: map[string]string{
-			EnvAdminToken:  filepath.Join(dir, "secrets", "admin"),
-			EnvSCEPHMACKey: filepath.Join(dir, "secrets", "issuance"),
+			EnvBootstrapToken: filepath.Join(dir, "secrets", "admin"),
+			EnvSCEPHMACKey:    filepath.Join(dir, "secrets", "issuance"),
 		},
 	}
 	f.Setup.HTTP01Listen = o.HTTP01Listen

@@ -38,7 +38,7 @@ func TestPKIAndAccountStatePersistAcrossInstances(t *testing.T) {
 			CRLRefresh: time.Minute,
 			OCSPTTL:    time.Minute,
 		}
-		c.AdminToken = "admin"
+		c.BootstrapToken = "admin"
 		c.Storage = "sqlite"
 		c.DSN = filepath.Join(t.TempDir(), "security.db")
 		c.StorageKeys = []string{"test"}
@@ -234,7 +234,6 @@ func TestExplicitRateLimitsAndSecurityEnvironment(t *testing.T) {
 		t.Fatal(err)
 	}
 	cfg.Storage = "inmem"
-	cfg.Role = app.RoleAll
 	a := build(t, cfg)
 	for _, path := range []string{"/enroll/ade", "/acme/new-account"} {
 		for _, want := range []int{404, 429} {
@@ -282,7 +281,7 @@ func TestExplicitRateLimitsAndSecurityEnvironment(t *testing.T) {
 		t.Fatal("missing publication lifetimes accepted")
 	}
 	// Off by default, including public PKI endpoints.
-	off := build(t, app.Config{Role: app.RoleAll, Storage: "inmem"})
+	off := build(t, app.Config{Storage: "inmem"})
 	w := httptest.NewRecorder()
 	off.Handler.ServeHTTP(w, httptest.NewRequestWithContext(t.Context(), "GET", "/pki/crl/unknown", nil))
 	if w.Code != 404 {
@@ -342,7 +341,6 @@ func TestRateLimitFamiliesCapacityAndConfiguration(t *testing.T) {
 		}
 	}
 	cfg := app.Config{
-		Role:       app.RoleAll,
 		Storage:    "inmem",
 		RateLimits: app.RateLimitConfig{Routes: quotas},
 	}
@@ -410,7 +408,7 @@ func TestRateLimitFamiliesCapacityAndConfiguration(t *testing.T) {
 func TestProtocolStateRetentionWorker(t *testing.T) {
 	clk := clock.NewFake(time.Now())
 	quota := app.RouteQuota{Interval: time.Second, Burst: 1, GlobalInterval: time.Second, GlobalBurst: 1}
-	a := build(t, app.Config{Role: app.RoleAll, Storage: "inmem", Clock: clk, RateLimits: app.RateLimitConfig{Routes: map[string]app.RouteQuota{"auth": quota}}})
+	a := build(t, app.Config{Storage: "inmem", Clock: clk, RateLimits: app.RateLimitConfig{Routes: map[string]app.RouteQuota{"auth": quota}}})
 	ctx, cancel := context.WithCancel(t.Context())
 	defer cancel()
 	done := make(chan error, 1)

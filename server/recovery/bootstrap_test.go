@@ -28,7 +28,7 @@ func bootstrapFixture(t *testing.T) (string, Bootstrap) {
 	b := Bootstrap{
 		Version:     1,
 		Environment: map[string]string{"DM_STORAGE": "sqlite", "DM_DSN": filepath.Join(dir, "database.sqlite"), "DM_PUBLIC_URL": "https://mdm.example.test", "DM_STORAGE_KEYS": "original-key.v1,retired-key.v0", "DM_SECRETS_DIR": keys, "DM_STORAGE_KEYS_STRICT": "true", "DM_CA_FILE": filepath.Join(keys, "trust")},
-		SecretFiles: map[string]string{"DM_ADMIN_TOKEN": "secrets/admin", "DM_ENROLLMENT_POLICY_FILE": "secrets/policy-reference"},
+		SecretFiles: map[string]string{"DM_BOOTSTRAP_TOKEN": "secrets/admin", "DM_ENROLLMENT_POLICY_FILE": "secrets/policy-reference"},
 		Setup:       map[string]json.RawMessage{"role": json.RawMessage(`"combined"`), "vendorTokenFile": json.RawMessage(`"secrets/vendor-token"`)},
 	}
 	path := filepath.Join(dir, "setup.json")
@@ -41,11 +41,11 @@ func bootstrapFixture(t *testing.T) (string, Bootstrap) {
 func TestBootstrapCapturesReferencedFilesAndOriginalKeyNames(t *testing.T) {
 	source, original := bootstrapFixture(t)
 	dir := filepath.Join(t.TempDir(), "captured")
-	b, err := CaptureBootstrap(t.Context(), source, dir, map[string]string{"DM_ADMIN_TOKEN": "replacement-admin-token", "DM_SETUP_FILE": source, "UNRELATED": "ignored"})
+	b, err := CaptureBootstrap(t.Context(), source, dir, map[string]string{"DM_BOOTSTRAP_TOKEN": "replacement-admin-token", "DM_SETUP_FILE": source, "UNRELATED": "ignored"})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if b.Environment["DM_ADMIN_TOKEN"] != "replacement-admin-token" || b.Environment["UNRELATED"] != "" || b.Environment["DM_SETUP_FILE"] != "" {
+	if b.Environment["DM_BOOTSTRAP_TOKEN"] != "replacement-admin-token" || b.Environment["UNRELATED"] != "" || b.Environment["DM_SETUP_FILE"] != "" {
 		t.Fatal("override precedence changed")
 	}
 	if b.Environment["DM_STORAGE_KEYS"] != original.Environment["DM_STORAGE_KEYS"] {
@@ -120,7 +120,7 @@ func TestCaptureRefusesIncompleteAndUnsafeSetup(t *testing.T) {
 		"missing key names":        func(b *Bootstrap) { b.Environment["DM_STORAGE_KEYS"] = "" },
 		"key traversal":            func(b *Bootstrap) { b.Environment["DM_STORAGE_KEYS"] = "../storage" },
 		"no key provider":          func(b *Bootstrap) { b.Environment["DM_SECRETS_DIR"] = "" },
-		"missing secret":           func(b *Bootstrap) { b.SecretFiles["DM_ADMIN_TOKEN"] = "missing-file" },
+		"missing secret":           func(b *Bootstrap) { b.SecretFiles["DM_BOOTSTRAP_TOKEN"] = "missing-file" },
 		"missing reference file":   func(b *Bootstrap) { b.SecretFiles["DM_CA_FILE"] = "missing-file" },
 		"missing certificate":      func(b *Bootstrap) { b.Environment["DM_CA_FILE"] = "missing-cert" },
 		"invalid vendor path type": func(b *Bootstrap) { b.Setup["vendorTokenFile"] = json.RawMessage(`17`) },
@@ -156,7 +156,7 @@ func TestCaptureRefusesIncompleteAndUnsafeSetup(t *testing.T) {
 func TestBootstrapInstallRejectsEscapingReferences(t *testing.T) {
 	for _, change := range []func(*Bootstrap){
 		func(b *Bootstrap) { b.Environment["DM_SECRETS_DIR"] = "../elsewhere" },
-		func(b *Bootstrap) { b.SecretFiles["DM_ADMIN_TOKEN"] = "/etc/private" },
+		func(b *Bootstrap) { b.SecretFiles["DM_BOOTSTRAP_TOKEN"] = "/etc/private" },
 		func(b *Bootstrap) { b.Setup["vendorTokenFile"] = json.RawMessage(`"../vendor"`) },
 		func(b *Bootstrap) { b.Setup["vendorTokenFile"] = json.RawMessage(`false`) },
 	} {

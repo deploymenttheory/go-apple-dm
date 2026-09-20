@@ -238,7 +238,7 @@ func TestACME(t *testing.T) {
 		// What Apple attested is stored with the certificate, so an
 		// operator can ask which hardware holds an identity without
 		// trusting a subject name.
-		f := newACMEAppFixture(t, func(cfg *app.Config) { cfg.AdminToken = "t" })
+		f := newACMEAppFixture(t, func(cfg *app.Config) { cfg.BootstrapToken = "t" })
 		d := f.acmeDevice(t, "ACME-APP-3", "Mac16,1")
 		if err := d.ADEEnroll(ctx, f.publicURL+app.PathADE, simulator.ADEOptions{}); err != nil {
 			t.Fatal(err)
@@ -366,7 +366,7 @@ func TestACME(t *testing.T) {
 
 	t.Run("BadPolicy", func(t *testing.T) {
 		_, err := app.Build(ctx, app.Config{
-			Role: app.RoleAll, Storage: "inmem", Logger: quiet,
+			Storage: "inmem", Logger: quiet,
 			Enroll: app.EnrollConfig{
 				PublicURL: "https://mdm.example", Topic: "com.apple.mgmt.External.x",
 				Identity: app.IdentityACME,
@@ -602,7 +602,7 @@ func TestACMEWiring(t *testing.T) {
 
 	t.Run("BadAnchorFile", func(t *testing.T) {
 		_, err := app.Build(ctx, app.Config{
-			Role: app.RoleAll, Storage: "inmem", Logger: quiet,
+			Storage: "inmem", Logger: quiet,
 			Enroll: app.EnrollConfig{
 				PublicURL: "https://mdm.example", Topic: "com.apple.mgmt.External.x",
 				Identity: app.IdentityACME,
@@ -620,7 +620,7 @@ func TestACMEWiring(t *testing.T) {
 		// says so, because a generated key works for one process and fails
 		// the moment a second has to verify what the first minted.
 		a := build(t, app.Config{
-			Role: app.RoleAll, Storage: "sqlite", DSN: t.TempDir() + "/acme.db", Logger: quiet,
+			Storage: "sqlite", DSN: t.TempDir() + "/acme.db", Logger: quiet,
 			Enroll: app.EnrollConfig{
 				PublicURL: "https://mdm.example", Topic: "com.apple.mgmt.External.x",
 				Identity: app.IdentityACME, CACertFile: certFile, CAKeyFile: keyFile,
@@ -778,7 +778,7 @@ func TestACMEAdminFailures(t *testing.T) {
 	boom := errors.New("boom")
 	failing := &acmetest.Failing{Store: acmeinmem.New()}
 	f := newACMEAppFixture(t, func(cfg *app.Config) {
-		cfg.AdminToken = "t"
+		cfg.BootstrapToken = "t"
 		cfg.Enroll.ACME.Store = failing
 	})
 	d := f.acmeDevice(t, "ACME-ADMIN-1", "Mac16,1")
@@ -907,7 +907,7 @@ func TestACMEIdentifierKeyFallsBackToSCEP(t *testing.T) {
 	// Both are the same kind of secret held by the same server, so a
 	// deployment that configured one has said what it means to.
 	a := build(t, app.Config{
-		Role: app.RoleAll, Storage: "inmem", Logger: quiet,
+		Storage: "inmem", Logger: quiet,
 		Enroll: app.EnrollConfig{
 			PublicURL: "https://mdm.example", Topic: "com.apple.mgmt.External.x",
 			Identity:    app.IdentityACME,
@@ -973,21 +973,12 @@ func TestACMEEnvKeys(t *testing.T) {
 	}
 }
 
-func TestACMEDEPPolicyNeedsTheDEPStore(t *testing.T) {
-	// A role without the required DEP store must reject the ownership-policy
-	// configuration during Build.
-	_, err := app.Build(context.Background(), app.Config{
-		Role: app.RoleMDM, Storage: "inmem", Logger: quiet,
-		Enroll: app.EnrollConfig{
-			PublicURL: "https://mdm.example", Topic: "com.apple.mgmt.External.x",
-			Identity: app.IdentityACME,
-			ACME:     app.ACMEConfig{Policy: app.ACMEPolicyDEP},
-		},
+func TestUnifiedServerSupportsACMEDEPPolicy(t *testing.T) {
+	a := build(t, app.Config{
+		Storage: "inmem", Logger: quiet,
+		Enroll: app.EnrollConfig{PublicURL: "https://mdm.example", Topic: "com.apple.mgmt.External.x", Identity: app.IdentityACME, ACME: app.ACMEConfig{Policy: app.ACMEPolicyDEP}},
 	})
-	if !errors.Is(err, app.ErrConfig) {
-		t.Fatalf("Build = %v", err)
-	}
-	if err == nil || !strings.Contains(err.Error(), "device enrollment service") {
-		t.Fatalf("error does not say why: %v", err)
+	if a.DEP == nil {
+		t.Fatal("unified server has no device enrollment service")
 	}
 }

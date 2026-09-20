@@ -406,10 +406,10 @@ func TestAdminHandlersHandlePostAuthorizationStorageFailure(t *testing.T) {
 
 func TestSecurityStartupRejectsMissingTrustAndPersistentIssuer(t *testing.T) {
 	for _, cfg := range []Config{
-		{Role: RoleAll, Storage: "sqlite", Enroll: EnrollConfig{PublicURL: "https://mdm.example", Topic: "com.apple.mgmt.test"}},
-		{Role: RoleAll, Storage: "inmem", CertHeader: "Client-Cert"},
-		{Role: RoleAll, Storage: "inmem", CertHeader: "Client-Cert", TrustedProxies: []netip.Prefix{netip.MustParsePrefix("127.0.0.1/32")}},
-		{Role: RoleAll, Storage: "inmem", Enroll: EnrollConfig{PublicURL: "https://mdm.example", Topic: "com.apple.mgmt.test", AdmissionFile: "absent-policy"}},
+		{Storage: "sqlite", Enroll: EnrollConfig{PublicURL: "https://mdm.example", Topic: "com.apple.mgmt.test"}},
+		{Storage: "inmem", CertHeader: "Client-Cert"},
+		{Storage: "inmem", CertHeader: "Client-Cert", TrustedProxies: []netip.Prefix{netip.MustParsePrefix("127.0.0.1/32")}},
+		{Storage: "inmem", Enroll: EnrollConfig{PublicURL: "https://mdm.example", Topic: "com.apple.mgmt.test", AdmissionFile: "absent-policy"}},
 	} {
 		a, err := Build(t.Context(), cfg)
 		if a != nil {

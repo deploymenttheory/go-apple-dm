@@ -26,7 +26,6 @@ func TestReplacementProfileClaimsItsPendingAttempt(t *testing.T) {
 	for _, backend := range []string{"inmem", "sqlite"} {
 		t.Run(backend, func(t *testing.T) {
 			a, err := Build(t.Context(), Config{
-				Role:    RoleAll,
 				Storage: "inmem",
 				DSN:     filepath.Join(t.TempDir(), "mdm.sqlite"),
 				Logger:  slog.New(slog.NewTextHandler(io.Discard, nil)),

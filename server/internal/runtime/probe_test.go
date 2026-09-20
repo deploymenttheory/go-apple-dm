@@ -253,7 +253,6 @@ func TestProbeReflectsDatabaseFailure(t *testing.T) {
 	a, err := app.Build(
 		t.Context(),
 		app.Config{
-			Role:        app.RoleAll,
 			Storage:     "sqlite",
 			DSN:         filepath.Join(t.TempDir(), "health.db"),
 			StorageKeys: []string{"test"},
