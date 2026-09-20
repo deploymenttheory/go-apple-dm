@@ -1,7 +1,7 @@
 [submodule "apple-device-management-current"]
 	path = third_party/apple-device-management/current
-	url = https://github.com/apple/device-management
-	branch = release
+	url = https://github.com/deploymenttheory/go-apple-dm.git
+	branch = schema-source/release/09f249a06e7e3289930bf6d05f38fb562f748ebf
 [submodule "apple-device-management-compatibility"]
 	path = third_party/apple-device-management/26.4
 	url = https://github.com/apple/device-management.git
