@@ -1,0 +1,11 @@
+{
+  "schema_version": "1",
+  "event_id": "evt_example_server_worker_state",
+  "type": "server.worker.state",
+  "occurred_at": "2026-09-20T12:00:00Z",
+  "source": "mdm",
+  "data": {
+    "running": true,
+    "worker": "event-delivery"
+  }
+}

@@ -53,6 +53,12 @@ const (
 // an action knows what they are granting rather than guessing from its name.
 func AdminActions() []adminauth.Action {
 	actions := append(setupActions(), blueprintActions()...)
+	actions = append(actions, []adminauth.Action{
+		{ID: ActionReadWebhooks, Help: "Read webhook subscriptions and catalogue.", Resource: adminauth.EntitySystem},
+		{ID: ActionManageWebhooks, Help: "Manage webhook destinations and export server event summaries. Sensitive destinations require root.", Resource: adminauth.EntitySystem},
+		{ID: ActionReadWebhookDeliveries, Help: "Inspect webhook delivery metadata and failures.", Resource: adminauth.EntitySystem},
+		{ID: ActionReplayWebhooks, Help: "Retry and replay retained webhook occurrences. Sensitive captures and destinations require root.", Resource: adminauth.EntitySystem},
+	}...)
 	actions = append(actions, configurationProfileActions()...)
 	actions = append(actions, applicationIdentityActions()...)
 	return append(append(actions, contentCacheActions()...), []adminauth.Action{

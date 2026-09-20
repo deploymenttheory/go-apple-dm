@@ -14,6 +14,7 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/schema/checkin"
 	"github.com/deploymenttheory/go-apple-dm/server/ddmadapter/internal/proxywire"
 	"github.com/deploymenttheory/go-apple-dm/server/service"
+	"github.com/deploymenttheory/go-apple-dm/server/webhook"
 )
 
 // DefaultTimeout bounds one forwarded check-in.
@@ -118,6 +119,11 @@ func (c *client) handle(
 		return service.DMResponse{}, internal(fmt.Errorf("%w: %w", ErrUpstream, err))
 	}
 	req.Header.Set("Content-Type", c.contentType)
+	if id := webhook.CorrelationID(ctx); id != "" {
+		q := req.URL.Query()
+		q.Set("correlation_id", id)
+		req.URL.RawQuery = q.Encode()
+	}
 	if c.cfg.SendKey != nil {
 		signature, err := proxywire.SignRequest(c.cfg.SendKey, req, ck.Raw)
 		if err != nil {

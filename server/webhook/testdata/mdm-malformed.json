@@ -1,0 +1,49 @@
+{
+  "schema_version": "1",
+  "event_id": "evt_example_mdm_malformed",
+  "type": "protocol.mdm.exchange",
+  "occurred_at": "2026-09-20T12:00:00Z",
+  "source": "mdm",
+  "correlation_id": "corr_example_exchange",
+  "data": {
+    "http": {
+      "duration_ms": 0,
+      "method": "PUT",
+      "response_complete": true,
+      "route": "/mdm",
+      "status": 400
+    },
+    "operation": "unknown",
+    "outcome": "rejected"
+  },
+  "payloads": {
+    "request_json": {
+      "content_type": "application/json",
+      "encoding": "json",
+      "availability": "undecodable",
+      "size": 0
+    },
+    "request_raw": {
+      "content_type": "application/x-apple-aspen-mdm",
+      "encoding": "base64",
+      "availability": "complete",
+      "size": 11,
+      "sha256": "9c77be83ca7feeaef40e7afa99506f3ee701dead6bb2c34317116a6344c45fd7",
+      "value": "bm90IGEgcGxpc3Q="
+    },
+    "response_json": {
+      "content_type": "application/json",
+      "encoding": "json",
+      "availability": "undecodable",
+      "size": 0
+    },
+    "response_raw": {
+      "content_type": "application/xml",
+      "encoding": "base64",
+      "availability": "complete",
+      "size": 12,
+      "sha256": "0cd6aed5d21ae37310b3c4e0facf48009005018bf4402fbcda1cb66d69b03346",
+      "value": "QmFkIFJlcXVlc3QK"
+    }
+  }
+}

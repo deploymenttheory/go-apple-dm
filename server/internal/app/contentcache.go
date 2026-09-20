@@ -15,6 +15,7 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/state"
 	"github.com/deploymenttheory/go-apple-dm/internal/httpsurl"
 	"github.com/deploymenttheory/go-apple-dm/server/adminauth"
+	"github.com/deploymenttheory/go-apple-dm/server/webhook"
 )
 
 // ContentCacheConfig enables native cache reporting when PublicURL is nonempty.
@@ -55,11 +56,16 @@ func (a *App) wireContentCache(ctx context.Context, mux *http.ServeMux) error {
 			if err != nil || !enrollment.Enabled {
 				return contentcache.ErrCredential
 			}
+			webhook.ObserveSubject(ctx, webhook.Subject{Kind: "enrollment", ID: id.ID, Channel: id.Channel.String(), ParentID: id.ParentID})
 			return nil
 		},
 		Accept: func(ctx context.Context, report *contentcache.Report) error {
 			token, _ := ctx.Value(contentCacheTokenKey{}).(string)
-			return a.contentCache.Accept(ctx, token, report)
+			err := a.contentCache.Accept(ctx, token, report)
+			if err == nil {
+				webhook.ObserveOutcome(ctx, "succeeded")
+			}
+			return err
 		},
 	})
 	if err != nil {

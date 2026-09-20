@@ -24,6 +24,8 @@ func TestSnapshotSecretBindingsRejectSwappedRowsAndPurposes(t *testing.T) {
 		{"push_certs", "key_pem", []string{"topic"}, []string{"original-topic"}, false, "original-topic"},
 		{"dep_keypairs", "key_pem", []string{"account", "stage"}, []string{"account", "pending"}, false, "account/pending"},
 		{"protocol_state", "value", []string{"record_key"}, []string{"pki/issuer"}, true, ""},
+		{"webhook_subscriptions", "config", []string{"id"}, []string{"subscription-1"}, true, ""},
+		{"webhook_messages", "payload", []string{"delivery_id"}, []string{"delivery-1"}, true, ""},
 		{"ddm_snapshot_items", "expanded", []string{"enrollment_id", "kind", "identifier"}, []string{"device", "configuration", "temporary"}, true, ""},
 	} {
 		t.Run(tc.table, func(t *testing.T) {

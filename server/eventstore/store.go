@@ -19,10 +19,13 @@ import (
 var migrations embed.FS
 
 var (
-	ErrInvalid  = errors.New("eventstore: invalid argument")
-	ErrLease    = errors.New("eventstore: delivery lease no longer held")
-	ErrEmpty    = errors.New("eventstore: no delivery ready")
-	ErrNotFound = errors.New("eventstore: event not found")
+	ErrPaused    = errors.New("eventstore: destination paused")
+	ErrExpired   = errors.New("eventstore: payload expired")
+	ErrCancelled = errors.New("eventstore: delivery cancelled")
+	ErrInvalid   = errors.New("eventstore: invalid argument")
+	ErrLease     = errors.New("eventstore: delivery lease no longer held")
+	ErrEmpty     = errors.New("eventstore: no delivery ready")
+	ErrNotFound  = errors.New("eventstore: event not found")
 )
 
 // Store owns event records and destination acknowledgements, not its SQL pool.
@@ -200,6 +203,8 @@ func (s *Store) Finish(
 	state := "delivered"
 	switch code {
 	case "":
+	case "paused", "expired", "cancelled":
+		state = code
 	case "transport", "timeout", "http-408", "http-429", "http-5xx":
 		state = "pending"
 	case "http-rejected", "destination-unavailable":

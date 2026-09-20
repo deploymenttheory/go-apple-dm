@@ -2,6 +2,7 @@ package app_test
 
 import (
 	"context"
+	"encoding/json"
 	"encoding/pem"
 	"io"
 	"net/http"
@@ -14,8 +15,10 @@ import (
 	"time"
 
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/mdm"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/secrets"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/storage"
 	"github.com/deploymenttheory/go-apple-dm/server/internal/app"
+	"github.com/deploymenttheory/go-apple-dm/server/webhook"
 )
 
 // collector records webhook deliveries.
@@ -82,45 +85,54 @@ func publishSomething(t *testing.T, a *app.App) {
 	}
 }
 
-// The wiring is asserted end to end rather than by inspection: a state change
-// through the real server has to reach a real webhook receiver.
-func TestWebhookSinkReceivesEnrollmentEvents(t *testing.T) {
-	c := newCollector()
-	srv := c.server(t)
-	a := build(t, app.Config{
-		Role: app.RoleAll, Storage: "inmem", Listen: ":0",
-		Sinks: app.SinkConfig{Audit: true, WebhookURL: srv.URL, WebhookRootCAFile: webhookRoot(t, srv)},
-	})
-	if a.Core == nil {
-		t.Fatal("core missing")
-	}
-	// Any state change will do; an import publishes without needing a device.
-	publishSomething(t, a)
-	c.wait(t)
-	body := c.all()
-	if !strings.Contains(body, `"topic":"mdm.`) {
-		t.Fatalf("not the MicroMDM envelope:\n%s", body)
-	}
+func nativeWebhookConfig(t *testing.T, srv *httptest.Server) app.Config {
+	t.Helper()
+	return app.Config{Role: app.RoleAll, Storage: "sqlite", DSN: filepath.Join(t.TempDir(), "webhooks.sqlite"), AdminToken: "t", StorageKeys: []string{"test"}, Secrets: secrets.Static{"test": []byte("0123456789abcdef0123456789abcdef")}, Webhooks: webhook.Config{Enabled: true, RootCAFile: webhookRoot(t, srv), PrivateNetworks: []string{"127.0.0.0/8"}}}
 }
 
-// The bus Build creates is asynchronous, so Close must drain it or a
-// delivery in flight is lost when the process exits.
-func TestCloseDrainsTheEventBus(t *testing.T) {
-	c := newCollector()
-	srv := c.server(t)
-	a, err := app.Build(context.Background(), app.Config{
-		Role: app.RoleAll, Storage: "inmem", Listen: ":0", Logger: quiet,
-		Sinks: app.SinkConfig{WebhookURL: srv.URL, WebhookRootCAFile: webhookRoot(t, srv)},
-	})
+func createNativeSubscription(t *testing.T, a *app.App, endpoint string) webhook.Change {
+	t.Helper()
+	b, err := json.Marshal(webhook.Spec{Name: "workflow", URL: endpoint, Events: []string{"server.enrollment.imported"}})
 	if err != nil {
 		t.Fatal(err)
 	}
-	publishSomething(t, a)
-	if err := a.Close(); err != nil {
-		t.Fatalf("Close: %v", err)
+	w := eventRequest(a, "POST", "/webhooks", "t", string(b))
+	if w.Code != 201 {
+		t.Fatal(w.Code, w.Body.String())
 	}
-	if c.all() == "" {
-		t.Fatal("Close returned before the asynchronous sink delivered")
+	var change webhook.Change
+	if err := json.Unmarshal(w.Body.Bytes(), &change); err != nil {
+		t.Fatal(err)
+	}
+	return change
+}
+
+func TestWebhookSinkReceivesEnrollmentEvents(t *testing.T) {
+	c := newCollector()
+	srv := c.server(t)
+	a := build(t, nativeWebhookConfig(t, srv))
+	createNativeSubscription(t, a, srv.URL)
+	ctx, cancel := context.WithCancel(t.Context())
+	done := make(chan error, 1)
+	go func() { done <- a.Run(ctx) }()
+	defer func() { cancel(); <-done }()
+	publishSomething(t, a)
+	c.wait(t)
+	body := c.all()
+	if !strings.Contains(body, `"type":"server.enrollment.imported"`) || strings.Contains(body, `"topic"`) {
+		t.Fatal(body)
+	}
+}
+
+func TestManagedWebhookRequiresEncryptedSQL(t *testing.T) {
+	for _, cfg := range []app.Config{
+		{Role: app.RoleAll, Storage: "inmem", AdminToken: "t", Webhooks: webhook.Config{Enabled: true}},
+		{Role: app.RoleAll, Storage: "sqlite", DSN: filepath.Join(t.TempDir(), "unencrypted.sqlite"), AdminToken: "t", Webhooks: webhook.Config{Enabled: true}},
+	} {
+		if a, err := app.Build(t.Context(), cfg); err == nil {
+			_ = a.Close()
+			t.Fatal("accepted unencrypted or ephemeral webhook store")
+		}
 	}
 }
 

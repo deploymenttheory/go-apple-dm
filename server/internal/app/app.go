@@ -55,6 +55,7 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/server/sqlstore/postgres"
 	"github.com/deploymenttheory/go-apple-dm/server/sqlstore/sqlcommon"
 	"github.com/deploymenttheory/go-apple-dm/server/sqlstore/sqlite"
+	"github.com/deploymenttheory/go-apple-dm/server/webhook"
 )
 
 // Role selects what a process serves.
@@ -78,6 +79,7 @@ const (
 // Config is the process configuration; see ParseEnv for the DM_*
 // variables and cmd/dmserver for the flags.
 type Config struct {
+	Webhooks              webhook.Config
 	ApplicationIdentities ApplicationIdentityConfig
 	persistentEvents      event.Publisher
 	Setup                 *SetupConfig
@@ -201,12 +203,12 @@ type SinkConfig struct {
 	// Audit writes a projected slog record for each event delivered to the sink.
 	// Retention depends on the configured log destination.
 	Audit bool
-	// WebhookURL receives projected events in a MicroMDM-compatible envelope without
-	// raw_payload.
+	// WebhookURL is obsolete. Nonempty legacy settings fail startup with
+	// migration guidance; configure Webhooks and managed subscriptions instead.
 	WebhookURL string
 	// WebhookRootCAFile configures private HTTPS trust for the receiver.
 	WebhookRootCAFile string
-	// WebhookHMACKey signs the webhook body when set.
+	// WebhookHMACKey is obsolete and causes startup to fail when set.
 	WebhookHMACKey []byte
 	// Persist delivers captured occurrences to the SQL audit trail. The event
 	// store retains pending deliveries until this destination acknowledges them.
@@ -230,6 +232,7 @@ var ErrConfig = errors.New("app: invalid configuration")
 
 // App is a built process.
 type App struct {
+	webhooks          *webhook.Store
 	eventStore        *eventstore.Store
 	eventPublisher    *eventstore.Publisher
 	issuerMu          sync.Mutex
@@ -308,11 +311,16 @@ func (a *App) addWorker(name string, run func(context.Context) error) {
 // setRunning records a worker entering or leaving its loop.
 func (a *App) setRunning(name string, up bool) {
 	a.mu.Lock()
-	defer a.mu.Unlock()
 	if a.running == nil {
 		a.running = make(map[string]bool, len(a.workers))
 	}
 	a.running[name] = up
+	a.mu.Unlock()
+	if a.webhooks != nil {
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+		_ = a.webhooks.Capture(ctx, webhook.Event{Type: "server.worker.state", Data: map[string]any{"worker": name, "running": up}})
+	}
 }
 
 // Workers reports every supervised loop and whether it is running, in
@@ -424,6 +432,12 @@ func reenrollPolicy(allow bool) service.ReenrollPolicy {
 }
 
 func (c Config) validate() error {
+	if c.Sinks.WebhookURL != "" || len(c.Sinks.WebhookHMACKey) != 0 {
+		return fmt.Errorf("%w: legacy webhook settings require migration to managed subscriptions", ErrConfig)
+	}
+	if c.Webhooks.Enabled && (c.Storage == "inmem" || len(c.StorageKeys) == 0 || !c.AdminStoreEnabled && c.AdminStore == nil && c.AdminToken == "") {
+		return fmt.Errorf("%w: managed webhooks require SQL, encryption, and administration", ErrConfig)
+	}
 	if o := c.ApplicationIdentities.Artifacts; o.MaxBytes < 0 || o.MaxBytes > 1<<40 || o.MaxExpandedBytes < 0 || o.MaxExpandedBytes > 1<<40 || o.MaxEntries < 0 || o.MaxApplications < 0 || o.MaxDepth < 0 || o.Timeout < 0 {
 		return fmt.Errorf("%w: invalid application artifact inspection limits", ErrConfig)
 	}
@@ -696,6 +710,9 @@ func (a *App) wire(ctx context.Context) error {
 		pusher = a.Push
 	}
 	mux := http.NewServeMux()
+	if a.webhooks != nil {
+		mux.Handle(webhook.PayloadPath, a.webhooks.PayloadHandler())
+	}
 	if err := a.wireContentCache(ctx, mux); err != nil {
 		return err
 	}
@@ -849,6 +866,9 @@ func (a *App) wire(ctx context.Context) error {
 	}
 	if err == nil {
 		a.Handler = redactContentCacheURL(a.Handler)
+		if a.webhooks != nil {
+			a.Handler = a.webhooks.Observe(a.Handler, mux)
+		}
 	}
 	return err
 }
@@ -966,24 +986,6 @@ func (a *App) wireSinks(ctx context.Context) error {
 		a.audit = store
 		a.cfg.Bus.Subscribe(event.All, auditSink(store, reg))
 	}
-	if a.cfg.Sinks.WebhookURL != "" {
-		client, err := outboundClient(nil, a.cfg.Sinks.WebhookRootCAFile)
-		if err != nil {
-			return fmt.Errorf("app: webhook trust: %w", err)
-		}
-		h, err := eventsink.Webhook(eventsink.WebhookConfig{
-			Client:   client,
-			URL:      a.cfg.Sinks.WebhookURL,
-			Registry: reg,
-			HMACKey:  a.cfg.Sinks.WebhookHMACKey,
-			Clock:    a.cfg.Clock,
-			Logger:   a.cfg.Logger,
-		})
-		if err != nil {
-			return fmt.Errorf("app: webhook sink: %w", err)
-		}
-		a.cfg.Bus.Subscribe(event.All, h)
-	}
 	return nil
 }
 
@@ -1071,6 +1073,7 @@ func (a *App) wireAdmin(ctx context.Context, mux *http.ServeMux) error {
 	var routes []adminRoute
 	routes = append(routes, a.introspectionRoutes()...)
 	routes = append(routes, a.eventRoutes()...)
+	routes = append(routes, a.webhookRoutes()...)
 	routes = append(routes, a.setupRoutes()...)
 	routes = append(routes, a.ddmAdminRoutes()...)
 	routes = append(routes, a.blueprintAdminRoutes()...)

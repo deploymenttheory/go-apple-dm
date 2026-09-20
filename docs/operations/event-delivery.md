@@ -12,16 +12,16 @@ bus have no persistent event history.
 |---|---|
 | Participating local SQL mutation | `event.Run` coordinates the mutation and event capture in one transaction. Capture failure rolls back that operation. This does not span remote Apple calls or independently supplied stores. |
 | Native audit on the same SQL pool | Audit append and delivery acknowledgment commit together. `DM_AUDIT_STORE` enables the trail; `DM_AUDIT_RETENTION` configures its age-based prune worker. |
-| HTTPS webhook or custom external audit store | At-least-once attempts. Deduplicate the stable `EventID`; a lost response can cause a repeated delivery after the receiver has accepted it. |
+| Native webhook or custom external audit store | At-least-once attempts. Native webhooks deduplicate `webhook-id`; custom audit stores deduplicate `EventID`. A lost response can repeat an accepted delivery. |
 | Slog and direct bus subscribers | Ephemeral notification, including after-commit notifications in SQL applications. Queue rejection, expiry and shutdown can lose notifications without undoing committed SQL state. |
-| In-memory application audit/webhook | Bounded asynchronous bus delivery. No restart recovery. |
+| In-memory application audit | Bounded asynchronous bus delivery. No restart recovery. Managed webhooks require SQL. |
 
-`DM_WEBHOOK_URL` configures the HTTPS receiver, `DM_WEBHOOK_HMAC_KEY` optionally
-signs the body, and `DM_WEBHOOK_ROOT_CA_FILE` supplies private roots. Redirects,
-URL credentials and fragments are refused. The MicroMDM-compatible envelope omits
-`raw_payload`; default projections exclude escrowed secrets and unknown event types
-emit metadata only. Direct bus subscribers receive internal data and need their own
-disclosure policy.
+[Native webhooks](webhooks.md) use managed subscriptions enabled by
+`DM_WEBHOOKS_ENABLED`. They have an independent envelope, root-controlled sensitive
+representations, encrypted captures, Standard Webhooks signatures and authenticated
+payload references. `dmctl webhooks` manages their configuration, delivery and replay.
+The former `DM_WEBHOOK_URL`/`DM_WEBHOOK_HMAC_KEY` settings now fail with migration
+guidance. Audit and ordinary event inspection retain their existing safe projections.
 
 `DM_EVENT_WORKERS`, `DM_EVENT_QUEUE_CAPACITY` and `DM_EVENT_DELIVERY_TIMEOUT` affect
 the in-memory bus, including slog, rather than persistent destination scheduling.
@@ -68,8 +68,8 @@ Pages default to 100 items, with a maximum of 1,000. Event pages are ordered by
 stable event ID, not by occurrence timestamp. Pass the last ID as `--after-event`
 (`after_event` in HTTP); `--type` filters occurrences. Delivery pages are ordered by
 event ID then destination and require both `--after-event` and
-`--after-destination` from the last row. Delivery state accepts `pending`, `blocked`
-or `delivered`; the type filter applies only to occurrence listing.
+`--after-destination` from the last row. Delivery state accepts `pending`, `blocked`, `delivered`, `paused`, `expired`
+or `cancelled`; the type filter applies only to occurrence listing.
 
 Resolve the underlying rejection or missing destination before retry. Retry does
 not reset delivered rows or active leases, and conflicting/ineligible requests
@@ -77,18 +77,17 @@ return HTTP 409. It does not create a new destination or replay a delivered reco
 
 ## Destination changes and retention
 
-The reference webhook destination ID is `webhook:` followed by the SHA-256 digest
-of its configured URL. Changing the URL creates a different destination. Old rows
-keep their original ID; they are not silently redirected to the replacement URL.
-Restoring the original receiver configuration makes its blocked deliveries eligible
-for manual retry. Receivers should keep deduplication state for their expected
-retry horizon. Native audit uses the destination ID `audit`.
+Native webhooks store opaque scheduling markers in this outbox and encrypted bodies
+in their own tables. Use `dmctl webhooks` for retry/replay; the generic event retry
+endpoint rejects native destinations so it cannot bypass sensitive-payload authority.
+Legacy `webhook:` destination IDs remain in history and are not mapped to managed
+subscriptions. Native audit uses the destination ID `audit`.
 
-Audit retention prunes only the audit trail. There is currently no event-store
-retention worker or pruning API: occurrence/delivery rows continue to accumulate,
-including delivered rows and events with no destinations. Account for these tables
-in capacity and backup planning. Neither projection nor the append-and-prune audit
-API protects against a database administrator modifying records.
+Native webhook retention prunes its payloads and scheduling records independently.
+The ordinary projected journal has no general retention worker; audit retention only
+prunes the audit trail. Account for ordinary `event_records` and `event_deliveries`
+in capacity and backup planning. Neither projection nor append-and-prune audit protects
+against a database administrator modifying records.
 
 Implementation evidence: [publisher](../../server/eventstore/publisher.go),
 [worker](../../server/eventstore/worker.go), [queries and retry](../../server/eventstore/operations.go),

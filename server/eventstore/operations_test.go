@@ -45,3 +45,19 @@ func TestRecordListingIncludesOccurrencesWithoutDestinations(t *testing.T) {
 		t.Fatal(rows, err)
 	}
 }
+
+func TestOldestPendingExcludesStoppedDeliveries(t *testing.T) {
+	db, s, p := fixture(t)
+	if err := p.Publish(t.Context(), event.Event{ID: "old", Type: event.Enrolled}); err != nil {
+		t.Fatal(err)
+	}
+	for _, state := range []string{"paused", "expired", "cancelled", "delivered"} {
+		if _, err := db.DB().ExecContext(t.Context(), "UPDATE event_deliveries SET state = ?", state); err != nil {
+			t.Fatal(err)
+		}
+		status, err := s.Status(t.Context())
+		if err != nil || !status.OldestPending.IsZero() {
+			t.Fatal(state, status, err)
+		}
+	}
+}

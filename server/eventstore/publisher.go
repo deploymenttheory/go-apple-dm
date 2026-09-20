@@ -5,6 +5,7 @@ import (
 	"crypto/rand"
 	"encoding/json"
 	"fmt"
+	"reflect"
 	"sync"
 	"time"
 
@@ -19,13 +20,16 @@ var ErrCapture = event.ErrCapture
 // Publisher records events before notifying optional in-process subscribers.
 // Configure it before use and keep Destinations stable for its lifetime.
 type Publisher struct {
-	Store        *Store
-	Registry     *eventsink.Registry
-	Destinations []string
-	Subscribers  event.Publisher
-	Report       func(error)
-	mu           sync.Mutex
-	health       CaptureHealth
+	// CaptureAdditional records another JSON-serializable representation in the same transaction.
+	// It runs before after-commit notifications and must perform no network I/O.
+	CaptureAdditional func(context.Context, event.Event) error
+	Store             *Store
+	Registry          *eventsink.Registry
+	Destinations      []string
+	Subscribers       event.Publisher
+	Report            func(error)
+	mu                sync.Mutex
+	health            CaptureHealth
 }
 
 // CaptureHealth exposes recording failure without disclosing event contents.
@@ -78,6 +82,19 @@ func (p *Publisher) Publish(ctx context.Context, e event.Event) error {
 		return sqlcommon.Fail(ctx, fmt.Errorf("%w: projection invalid", ErrCapture))
 	}
 	if denial(e.Type) {
+		if p.CaptureAdditional != nil && e.Data != nil {
+			// Denials are deferred until rollback. Preserve the concrete data
+			// type and its contents before the publisher releases its input.
+			data, err := json.Marshal(e.Data)
+			copy := reflect.New(reflect.TypeOf(e.Data))
+			if err == nil {
+				err = json.Unmarshal(data, copy.Interface())
+			}
+			if err != nil {
+				return sqlcommon.Fail(ctx, fmt.Errorf("%w: additional data invalid", ErrCapture))
+			}
+			e.Data = copy.Elem().Interface()
+		}
 		var captureErr error
 		sqlcommon.AfterCompletion(ctx, func(outside context.Context, _ bool) {
 			bounded, cancel := context.WithTimeout(outside, 10*time.Second)
@@ -95,7 +112,15 @@ func (p *Publisher) Publish(ctx context.Context, e event.Event) error {
 }
 
 func (p *Publisher) capture(ctx context.Context, e event.Event, rec eventsink.Record) error {
-	err := p.Store.Capture(ctx, rec, p.Destinations)
+	err := p.Store.Run(ctx, func(ctx context.Context) error {
+		if err := p.Store.Capture(ctx, rec, p.Destinations); err != nil {
+			return err
+		}
+		if p.CaptureAdditional != nil {
+			return p.CaptureAdditional(ctx, e)
+		}
+		return nil
+	})
 	p.mu.Lock()
 	if err != nil {
 		p.health.LastFailure = time.Now().UTC()

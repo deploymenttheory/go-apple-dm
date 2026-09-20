@@ -1,0 +1,42 @@
+{
+  "schema_version": "1",
+  "event_id": "evt_example_enrollment_discovery",
+  "type": "protocol.enrollment.exchange",
+  "occurred_at": "2026-09-20T12:00:00Z",
+  "source": "mdm",
+  "correlation_id": "corr_example_exchange",
+  "data": {
+    "http": {
+      "duration_ms": 0,
+      "method": "GET",
+      "response_complete": true,
+      "route": "/.well-known/com.apple.remotemanagement",
+      "status": 200
+    },
+    "operation": "discovery",
+    "outcome": "unknown"
+  },
+  "payloads": {
+    "request_json": {
+      "content_type": "application/json",
+      "encoding": "json",
+      "availability": "empty",
+      "size": 0
+    },
+    "response_json": {
+      "content_type": "application/json",
+      "encoding": "json",
+      "availability": "complete",
+      "size": 89,
+      "sha256": "e974ef710df152b5c7056c6b846906681a36dbd260d225dbc64af27778ce43e9",
+      "value": {
+        "Servers": [
+          {
+            "Version": "mdm-byod",
+            "BaseURL": "https://mdm.example.test/enroll/mdm-byod"
+          }
+        ]
+      }
+    }
+  }
+}

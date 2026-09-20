@@ -1,0 +1,45 @@
+{
+  "schema_version": "1",
+  "event_id": "evt_example_mdm_idle",
+  "type": "protocol.mdm.exchange",
+  "occurred_at": "2026-09-20T12:00:00Z",
+  "source": "mdm",
+  "subject": {
+    "kind": "enrollment",
+    "id": "55693EB3-DF03-5FD1-9263-F7CDB8AD7FFD",
+    "channel": "device"
+  },
+  "correlation_id": "corr_example_exchange",
+  "data": {
+    "command_uuid": "",
+    "device_status": "Idle",
+    "http": {
+      "duration_ms": 0,
+      "method": "PUT",
+      "response_complete": true,
+      "route": "/mdm",
+      "status": 200
+    },
+    "operation": "connect",
+    "outcome": "succeeded"
+  },
+  "payloads": {
+    "request_json": {
+      "content_type": "application/json",
+      "encoding": "json",
+      "availability": "complete",
+      "size": 63,
+      "sha256": "749917f3d011332535b91b7f2fb8e9b0d8690f2a32684b8b0d8de8d9b88f56ba",
+      "value": {
+        "Status": "Idle",
+        "UDID": "55693EB3-DF03-5FD1-9263-F7CDB8AD7FFD"
+      }
+    },
+    "response_json": {
+      "content_type": "application/json",
+      "encoding": "json",
+      "availability": "empty",
+      "size": 0
+    }
+  }
+}

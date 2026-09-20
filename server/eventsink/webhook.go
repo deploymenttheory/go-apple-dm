@@ -89,9 +89,12 @@ type ackEv struct {
 // checkin_event/acknowledge_event envelope. raw_payload is omitted because a raw
 // check-in can contain escrowed tokens and other sensitive values.
 //
-// Use event.WithAsync to keep receiver latency off device requests. The
-// reference application configures this mode. Delivery has bounded replies and
-// retries but does not retain pending delivery across process failure.
+// Callers can use event.WithAsync to keep receiver latency off device requests.
+// Delivery has bounded replies and retries but does not retain pending delivery
+// across process failure.
+//
+// Deprecated: use server/webhook for native managed subscriptions. The reference
+// application rejects the former single-destination webhook configuration.
 func Webhook(cfg WebhookConfig) (event.Handler, error) {
 	if cfg.Registry == nil {
 		cfg.Registry = Default()

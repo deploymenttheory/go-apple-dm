@@ -1,0 +1,20 @@
+{
+  "schema_version": "1",
+  "event_id": "evt_example_server_certificate_lifecycle",
+  "type": "server.certificate.lifecycle",
+  "occurred_at": "2026-09-20T12:00:00Z",
+  "source": "mdm",
+  "subject": {
+    "kind": "certificate",
+    "id": "device-identity-issuer"
+  },
+  "correlation_id": "corr_example_exchange",
+  "data": {
+    "certificate_id": "device-identity-issuer",
+    "generation": 2,
+    "kind": "issuer",
+    "operation": "activated",
+    "outcome": "succeeded",
+    "version": "revision_example"
+  }
+}

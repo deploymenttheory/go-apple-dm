@@ -22,6 +22,7 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/state"
 	"github.com/deploymenttheory/go-apple-dm/server/configurationprofile"
 	"github.com/deploymenttheory/go-apple-dm/server/ddmadapter/internal/proxywire"
+	"github.com/deploymenttheory/go-apple-dm/server/webhook"
 )
 
 // Backend serves one DeclarativeManagement check-in; *ddm.Engine
@@ -215,6 +216,9 @@ func (s *server) serve(w http.ResponseWriter, r *http.Request) {
 			s.reject(w, r, http.StatusUnauthorized, err)
 			return
 		}
+	}
+	if s.cfg.RecvKey != nil {
+		r = r.WithContext(webhook.WithCorrelation(r.Context(), r.URL.Query().Get("correlation_id")))
 	}
 	ck, err := mdm.DecodeCheckin(body, mdm.WithLimits(s.cfg.Decoder))
 	if err != nil {

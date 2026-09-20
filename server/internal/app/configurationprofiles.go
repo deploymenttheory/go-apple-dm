@@ -10,6 +10,7 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/server/ddmadapter/proxyclient"
 	"github.com/deploymenttheory/go-apple-dm/server/httpapi"
 	"github.com/deploymenttheory/go-apple-dm/server/service"
+	"github.com/deploymenttheory/go-apple-dm/server/webhook"
 )
 
 func (a *App) wireConfigurationProfiles(ctx context.Context) error {
@@ -39,6 +40,7 @@ func (a *App) wireConfigurationProfileDownloads(mux *http.ServeMux, remote proxy
 			http.Error(w, "Forbidden", http.StatusForbidden)
 			return
 		}
+		webhook.ObserveSubject(r.Context(), webhook.Subject{Kind: "enrollment", ID: id.ID, Channel: id.Channel.String(), ParentID: id.ParentID})
 		if remote != nil {
 			resp, err := remote(r.Context(), id, r.PathValue("revision"))
 			if err != nil {
@@ -50,6 +52,7 @@ func (a *App) wireConfigurationProfileDownloads(mux *http.ServeMux, remote proxy
 				return
 			}
 			writeProfile(w, resp.Body, resp.ContentType)
+			webhook.ObserveOutcome(r.Context(), "succeeded")
 			return
 		}
 		b, info, err := a.ConfigurationProfiles.Fetch(r.Context(), id, r.PathValue("revision"))
@@ -58,5 +61,6 @@ func (a *App) wireConfigurationProfileDownloads(mux *http.ServeMux, remote proxy
 			return
 		}
 		writeProfile(w, b, info.ContentType)
+		webhook.ObserveOutcome(r.Context(), "succeeded")
 	})))
 }

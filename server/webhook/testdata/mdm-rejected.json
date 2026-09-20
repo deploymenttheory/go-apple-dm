@@ -1,0 +1,58 @@
+{
+  "schema_version": "1",
+  "event_id": "evt_example_mdm_rejected",
+  "type": "protocol.mdm.exchange",
+  "occurred_at": "2026-09-20T12:00:00Z",
+  "source": "mdm",
+  "correlation_id": "corr_example_exchange",
+  "data": {
+    "claimed_id": "55693EB3-DF03-5FD1-9263-F7CDB8AD7FFD",
+    "command_uuid": "41d35de3-a343-4146-ba4b-0069bae2a54f",
+    "device_status": "Acknowledged",
+    "http": {
+      "duration_ms": 0,
+      "method": "PUT",
+      "response_complete": true,
+      "route": "/mdm",
+      "status": 403
+    },
+    "operation": "connect",
+    "outcome": "rejected"
+  },
+  "payloads": {
+    "request_json": {
+      "content_type": "application/json",
+      "encoding": "json",
+      "availability": "complete",
+      "size": 124,
+      "sha256": "0466a678e698398f1daf39596a5e50b7626cb997f8e45a7c57b05ade558f01ee",
+      "value": {
+        "CommandUUID": "41d35de3-a343-4146-ba4b-0069bae2a54f",
+        "Status": "Acknowledged",
+        "UDID": "55693EB3-DF03-5FD1-9263-F7CDB8AD7FFD"
+      }
+    },
+    "request_raw": {
+      "content_type": "application/x-apple-aspen-mdm",
+      "encoding": "base64",
+      "availability": "complete",
+      "size": 252,
+      "sha256": "69a543c8f1215f271f6f6bfc0759ce220a137f28ac5079288a46801432a9956d",
+      "value": "PD94bWwgdmVyc2lvbj0iMS4wIj8+PHBsaXN0IHZlcnNpb249IjEuMCI+PGRpY3Q+PGtleT5VRElEPC9rZXk+PHN0cmluZz41NTY5M0VCMy1ERjAzLTVGRDEtOTI2My1GN0NEQjhBRDdGRkQ8L3N0cmluZz48a2V5PkNvbW1hbmRVVUlEPC9rZXk+PHN0cmluZz40MWQzNWRlMy1hMzQzLTQxNDYtYmE0Yi0wMDY5YmFlMmE1NGY8L3N0cmluZz48a2V5PlN0YXR1czwva2V5PjxzdHJpbmc+QWNrbm93bGVkZ2VkPC9zdHJpbmc+PC9kaWN0PjwvcGxpc3Q+"
+    },
+    "response_json": {
+      "content_type": "application/json",
+      "encoding": "json",
+      "availability": "undecodable",
+      "size": 0
+    },
+    "response_raw": {
+      "content_type": "application/xml",
+      "encoding": "base64",
+      "availability": "complete",
+      "size": 10,
+      "sha256": "c029d1c560ecb35bbb632f9f7102907b41a289e258055d477f92e21884f9ab79",
+      "value": "Rm9yYmlkZGVuCg=="
+    }
+  }
+}

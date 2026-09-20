@@ -1,0 +1,37 @@
+{
+  "schema_version": "1",
+  "event_id": "evt_example_scep_rejected",
+  "type": "protocol.scep.exchange",
+  "occurred_at": "2026-09-20T12:00:00Z",
+  "source": "mdm",
+  "correlation_id": "corr_example_exchange",
+  "data": {
+    "http": {
+      "duration_ms": 0,
+      "method": "POST",
+      "response_complete": true,
+      "route": "/scep",
+      "status": 400
+    },
+    "operation": "exchange",
+    "outcome": "rejected"
+  },
+  "payloads": {
+    "request_raw": {
+      "content_type": "application/octet-stream",
+      "encoding": "base64",
+      "availability": "complete",
+      "size": 16,
+      "sha256": "d76c59341f307942c7a72b822acf95d9f71f2281c8135657c7d43d6645e0d1ea",
+      "value": "YmFkLXNjZXAtcmVxdWVzdA=="
+    },
+    "response_raw": {
+      "content_type": "application/xml",
+      "encoding": "base64",
+      "availability": "complete",
+      "size": 12,
+      "sha256": "0cd6aed5d21ae37310b3c4e0facf48009005018bf4402fbcda1cb66d69b03346",
+      "value": "QmFkIFJlcXVlc3QK"
+    }
+  }
+}
