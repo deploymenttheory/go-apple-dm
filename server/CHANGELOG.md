@@ -1,5 +1,24 @@
 # Changelog
 
+## [0.10.0](https://github.com/deploymenttheory/go-apple-dm/compare/server/v0.9.4...server/v0.10.0) (2026-09-20)
+
+
+### ⚠ BREAKING CHANGES
+
+* **server:** DM_WEBHOOK_URL and DM_WEBHOOK_HMAC_KEY now require migration to managed subscriptions.
+
+### Features
+
+* **server:** add managed native webhooks ([4e56864](https://github.com/deploymenttheory/go-apple-dm/commit/4e56864d425ccf72a2fbe6bbc47d7beeef5fe83a))
+* **server:** add managed native webhooks ([31a75a9](https://github.com/deploymenttheory/go-apple-dm/commit/31a75a95e767789bd70d2fbf352af1ce587fab7c))
+* **server:** implement unified device management RBAC ([0d135cd](https://github.com/deploymenttheory/go-apple-dm/commit/0d135cdfc31999079c175e3c86ef51842718d661))
+* **server:** implement unified device management RBAC ([790c778](https://github.com/deploymenttheory/go-apple-dm/commit/790c77868b069972f159a62cec72f48d7df0f003))
+
+
+### Bug Fixes
+
+* **server:** preserve captured payloads across webhook replays ([02788ea](https://github.com/deploymenttheory/go-apple-dm/commit/02788ea70260d7165925d2056b64371c6259ed6e))
+
 ## [0.9.4](https://github.com/deploymenttheory/go-apple-dm/compare/server/v0.9.3...server/v0.9.4) (2026-09-20)
 
 
