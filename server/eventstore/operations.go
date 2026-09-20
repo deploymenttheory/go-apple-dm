@@ -31,7 +31,7 @@ COALESCE(SUM(CASE WHEN d.state = 'pending' THEN 1 ELSE 0 END), 0),
 COALESCE(SUM(CASE WHEN d.state = 'blocked' THEN 1 ELSE 0 END), 0),
 COALESCE(SUM(CASE WHEN d.state = 'delivered' THEN 1 ELSE 0 END), 0),
 COALESCE(SUM(CASE WHEN d.attempts > 1 THEN d.attempts - 1 ELSE 0 END), 0),
-MIN(CASE WHEN d.state <> 'delivered' THEN r.occurred_at ELSE NULL END)
+MIN(CASE WHEN d.state IN ('pending', 'blocked') THEN r.occurred_at ELSE NULL END)
 FROM event_deliveries d JOIN event_records r ON r.event_id = d.event_id`).Scan(&out.Records, &out.Pending, &out.Blocked, &out.Delivered, &out.Retries, &oldest)
 	if oldest.Valid {
 		out.OldestPending = time.UnixMicro(oldest.Int64).UTC()
@@ -108,7 +108,7 @@ func (s *Store) List(ctx context.Context, state, afterEvent, afterDestination st
 	if limit <= 0 || limit > 1000 {
 		return nil, ErrInvalid
 	}
-	if state != "" && state != "pending" && state != "blocked" && state != "delivered" {
+	if state != "" && state != "pending" && state != "blocked" && state != "delivered" && state != "paused" && state != "expired" && state != "cancelled" {
 		return nil, ErrInvalid
 	}
 	query := "SELECT event_id, destination, state, attempts, next_attempt, last_code FROM event_deliveries WHERE (event_id > ? OR (event_id = ? AND destination > ?))"
@@ -151,7 +151,7 @@ func (s *Store) Retry(ctx context.Context, eventID, destination string) error {
 		if err != nil {
 			return err
 		}
-		res, err := q.ExecContext(ctx, s.d.Rebind("UPDATE event_deliveries SET state = 'pending', next_attempt = 0, lease_token = '', lease_until = 0, last_code = '' WHERE event_id = ? AND destination = ? AND state <> 'delivered' AND lease_until <= ?"), eventID, destination, now.UnixMicro())
+		res, err := q.ExecContext(ctx, s.d.Rebind("UPDATE event_deliveries SET state = 'pending', next_attempt = 0, lease_token = '', lease_until = 0, last_code = '' WHERE event_id = ? AND destination = ? AND state IN ('pending','blocked') AND lease_until <= ?"), eventID, destination, now.UnixMicro())
 		if err != nil {
 			return err
 		}

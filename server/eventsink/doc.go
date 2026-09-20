@@ -8,18 +8,18 @@
 // projection from an unreviewed type. This avoids exporting raw protocol
 // structures containing escrowed tokens or other sensitive fields.
 //
-// The webhook uses a MicroMDM-compatible envelope without raw_payload. It
+// The deprecated Webhook helper uses a MicroMDM-compatible envelope without raw_payload. It
 // requires HTTPS without URL credentials or fragments, refuses redirects and
 // supports bounded replies, retries and optional body HMAC signing. Custom
 // clients configure private trust and remain the caller's security boundary.
 // Transport error strings omit URLs; unwrapped causes can contain sensitive
 // path/query values and should not be logged.
 //
-// SQL-backed reference applications capture projections in server/eventstore
-// and deliver audit/webhook records with persistent leases and retries.
-// RecordWebhook sends a projected record without re-projecting it. External
-// delivery is at least once; receivers deduplicate using EventID. In-memory
-// applications use the ephemeral asynchronous bus. Slog and direct bus
+// SQL-backed reference applications capture these projections in server/eventstore.
+// Managed subscriptions in server/webhook use an independent native envelope and
+// persistent leases, with root-controlled sensitive representations and mandatory
+// signing. RecordWebhook remains a legacy projected-record helper for external
+// callers. In-memory applications use the ephemeral asynchronous bus. Slog and direct bus
 // subscribers remain ephemeral; direct subscribers must apply their own
 // disclosure policy.
 //

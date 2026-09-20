@@ -32,7 +32,7 @@ const (
 	EnvAdminStore = "DM_ADMIN_STORE"
 	// EnvAudit writes a projected slog record for every event.
 	EnvAudit = "DM_AUDIT_LOG"
-	// EnvWebhookURL receives an event per POST in the MicroMDM envelope.
+	// EnvWebhookURL is a rejected legacy setting; use DM_WEBHOOKS_ENABLED.
 	EnvWebhookURL = "DM_WEBHOOK_URL"
 	// EnvWebhookRootCAFile supplies a private trust bundle for HTTPS webhooks.
 	EnvWebhookRootCAFile = "DM_WEBHOOK_ROOT_CA_FILE"
@@ -40,7 +40,7 @@ const (
 	EnvAuditStore = "DM_AUDIT_STORE"
 	// EnvAuditRetention is how long audit records are kept.
 	EnvAuditRetention = "DM_AUDIT_RETENTION"
-	// EnvWebhookHMACKey signs the webhook body.
+	// EnvWebhookHMACKey is a rejected legacy setting; managed keys are mandatory.
 	EnvWebhookHMACKey = "DM_WEBHOOK_HMAC_KEY" // #nosec G101 -- the variable name, not a credential
 	EnvCAFile         = "DM_CA_FILE"
 	EnvCertHeader     = "DM_CERT_HEADER"
@@ -321,6 +321,9 @@ func ParseEnv(get func(string) string) (Config, error) {
 			}
 			*dst = b
 		}
+	}
+	if err := parseWebhookEnv(&cfg, get); err != nil {
+		return Config{}, err
 	}
 	return eventConfigFromEnv(get, cfg)
 }

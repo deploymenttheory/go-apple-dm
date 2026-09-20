@@ -1,0 +1,62 @@
+{
+  "schema_version": "1",
+  "event_id": "evt_example_mdm_token_update",
+  "type": "protocol.mdm.exchange",
+  "occurred_at": "2026-09-20T12:00:00Z",
+  "source": "mdm",
+  "subject": {
+    "kind": "enrollment",
+    "id": "55693EB3-DF03-5FD1-9263-F7CDB8AD7FFD",
+    "channel": "device"
+  },
+  "correlation_id": "corr_example_exchange",
+  "data": {
+    "http": {
+      "duration_ms": 0,
+      "method": "PUT",
+      "response_complete": true,
+      "route": "/mdm",
+      "status": 200
+    },
+    "operation": "TokenUpdate",
+    "outcome": "succeeded"
+  },
+  "payloads": {
+    "request_json": {
+      "content_type": "application/json",
+      "encoding": "json",
+      "availability": "complete",
+      "size": 181,
+      "sha256": "af7a30f08f0d6dba43e1ccd39e71104d03ee3f1704d98e1f08efdded6b461f3b",
+      "value": {
+        "MessageType": "TokenUpdate",
+        "PushMagic": "example-push-magic",
+        "Token": "ZXhhbXBsZS10b2tlbg==",
+        "Topic": "com.apple.mgmt.External.example",
+        "UDID": "55693EB3-DF03-5FD1-9263-F7CDB8AD7FFD"
+      }
+    },
+    "request_raw": {
+      "content_type": "application/x-apple-aspen-mdm-checkin",
+      "encoding": "base64",
+      "availability": "complete",
+      "size": 328,
+      "sha256": "f34da7ff40f895ec3154fb9f2979a93f03fe702b4c5a966d35496f3f215c1e91",
+      "value": "PHBsaXN0IHZlcnNpb249IjEuMCI+PGRpY3Q+PGtleT5NZXNzYWdlVHlwZTwva2V5PjxzdHJpbmc+VG9rZW5VcGRhdGU8L3N0cmluZz48a2V5PlVESUQ8L2tleT48c3RyaW5nPjU1NjkzRUIzLURGMDMtNUZEMS05MjYzLUY3Q0RCOEFEN0ZGRDwvc3RyaW5nPjxrZXk+VG9waWM8L2tleT48c3RyaW5nPmNvbS5hcHBsZS5tZ210LkV4dGVybmFsLmV4YW1wbGU8L3N0cmluZz48a2V5PlRva2VuPC9rZXk+PGRhdGE+WlhoaGJYQnNaUzEwYjJ0bGJnPT08L2RhdGE+PGtleT5QdXNoTWFnaWM8L2tleT48c3RyaW5nPmV4YW1wbGUtcHVzaC1tYWdpYzwvc3RyaW5nPjwvZGljdD48L3BsaXN0Pg=="
+    },
+    "response_json": {
+      "content_type": "application/json",
+      "encoding": "json",
+      "availability": "empty",
+      "size": 0
+    },
+    "response_raw": {
+      "content_type": "application/xml",
+      "encoding": "base64",
+      "availability": "complete",
+      "size": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "value": ""
+    }
+  }
+}

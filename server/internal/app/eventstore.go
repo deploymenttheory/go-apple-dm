@@ -2,7 +2,6 @@ package app
 
 import (
 	"context"
-	"crypto/sha256"
 	"fmt"
 
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/event"
@@ -71,28 +70,6 @@ func (a *App) wirePersistentSinks(ctx context.Context) error {
 			senders["audit"] = send
 		}
 	}
-	if a.cfg.Sinks.WebhookURL != "" {
-		client, err := outboundClient(nil, a.cfg.Sinks.WebhookRootCAFile)
-		if err != nil {
-			return fmt.Errorf("app: webhook trust: %w", err)
-		}
-		send, err := eventsink.RecordWebhook(
-			eventsink.WebhookConfig{
-				URL:     a.cfg.Sinks.WebhookURL,
-				Client:  client,
-				HMACKey: a.cfg.Sinks.WebhookHMACKey,
-				Clock:   a.cfg.Clock,
-				Logger:  a.cfg.Logger,
-				Retries: -1,
-			},
-		)
-		if err != nil {
-			return wrapError(err)
-		}
-		id := fmt.Sprintf("webhook:%x", sha256.Sum256([]byte(a.cfg.Sinks.WebhookURL)))
-		destinations = append(destinations, id)
-		senders[id] = send
-	}
 	p := &eventstore.Publisher{
 		Store:        s,
 		Registry:     reg,
@@ -101,6 +78,12 @@ func (a *App) wirePersistentSinks(ctx context.Context) error {
 		Report:       func(err error) { a.cfg.Logger.Error("app: event recording or notification failed", "error", err) },
 	}
 	a.eventStore, a.eventPublisher = s, p
+	if err := a.openWebhooks(ctx, s); err != nil {
+		return err
+	}
+	if a.webhooks != nil {
+		p.CaptureAdditional = a.webhooks.CaptureOutcome
+	}
 	a.cfg.persistentEvents = p
 	if a.cfg.Sinks.Audit && a.cfg.Bus != nil {
 		a.cfg.Bus.Subscribe(event.All, eventsink.Slog(a.cfg.Logger, reg))
@@ -111,5 +94,8 @@ func (a *App) wirePersistentSinks(ctx context.Context) error {
 		TransactionalDestinations: transactional,
 	}
 	a.addWorker("event-delivery", w.Run)
+	if a.webhooks != nil {
+		w.Resolve = a.webhooks.Resolve
+	}
 	return nil
 }

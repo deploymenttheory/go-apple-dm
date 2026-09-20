@@ -397,12 +397,13 @@ Metadata-only security events identify admission denial, identity rejection,
 certificate status rejection and private-hop rejection. Enable an event sink or
 persistent audit to retain them. Events contain no credential or remote error
 text. DEP, AxM, APNs and webhook clients reject redirects and require HTTPS.
-`DM_WEBHOOK_URL` rejects HTTP even on loopback, URL credentials and fragments.
-Set `DM_WEBHOOK_ROOT_CA_FILE` to a PEM bundle for a private webhook CA; it replaces
-system roots for that sink and preserves hostname verification. Webhook transport
-errors omit the configured URL, including secret path/query components. Wrapped
-causes remain available to trusted callers through `errors.Is`; avoid logging
-unwrapped transport errors. HMAC remains optional and does not replace TLS.
+Native [webhooks](webhooks.md) require verified HTTPS and reject URL credentials,
+fragments and redirects. `DM_WEBHOOK_ROOT_CA_FILE` adds private roots to system
+trust. `DM_WEBHOOK_PRIVATE_NETWORKS` explicitly permits private receiver CIDRs;
+dial-time checks pin each connection to a checked resolved address. Mandatory
+Standard Webhooks signatures supplement TLS. Transport diagnostics omit receiver
+URLs and response bodies. Full decoded JSON and raw protocol export require
+root-managed subscriptions, encrypted retention and separate receiver credentials.
 
 ## Device validation
 

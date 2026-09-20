@@ -56,7 +56,7 @@
           "bus",
           "sinks"
         ],
-        "note": "SQL event capture and persistent audit/webhook delivery; slog and in-process subscribers remain ephemeral."
+        "note": "SQL outcomes and native webhook exchange capture; independent delivery with root-controlled sensitive payloads."
       }
     ],
     "colour_profile": "purpose-v1",
@@ -173,7 +173,7 @@
       "id": "sinks",
       "type": "backend",
       "label": "Event consumers",
-      "sublabel": "Audit, logs, and webhooks",
+      "sublabel": "Audit, logs, native webhooks",
       "pos": [
         355.0,
         710
@@ -184,8 +184,8 @@
       ],
       "sources": [
         {
-          "path": "server/eventsink/webhook.go",
-          "label": "webhook"
+          "path": "server/eventstore/worker.go",
+          "label": "Persistent delivery worker"
         },
         {
           "path": "server/eventsink/slog.go",
@@ -282,7 +282,7 @@
       "id": "storepkg",
       "type": "database",
       "label": "storage.Store",
-      "sublabel": "pins · queue · tokens",
+      "sublabel": "pins \u00b7 queue \u00b7 tokens",
       "pos": [
         995.0,
         410
@@ -539,16 +539,18 @@
       "items": [
         "DMHandler connects the service to declarative management without importing the engine. UserVerifier supplies user-channel authentication policy.",
         "After the status gate and hooks, a pending replacement handles permitted candidate traffic before ordinary dispatch; unrelated traffic still needs the appropriate identity authorization.",
-        "SQL capture commits with participating local mutations; workers retry audit/webhook delivery. Slog and in-memory subscribers remain ephemeral."
+        "SQL outcome capture commits with participating local mutations. Native webhooks also observe public protocol requests and replies; exchange capture runs after the handler. Slog and in-process subscribers remain ephemeral.",
+        "Sensitive JSON/raw export requires root-managed subscriptions and encrypted retention. Revision changes pause old backlog; replay uses retained representations. The protocol library has no webhook transport dependency."
       ]
     },
     {
       "dot": "transport",
       "title": "Public documentation",
       "items": [
-        "Check-in — https://developer.apple.com/documentation/devicemanagement/check-in",
-        "Sending MDM commands to a device — https://developer.apple.com/documentation/devicemanagement/sending-mdm-commands-to-a-device",
-        "Declarative Management check-in — https://developer.apple.com/documentation/devicemanagement/declarative-management"
+        "Check-in \u2014 https://developer.apple.com/documentation/devicemanagement/check-in",
+        "Sending MDM commands to a device \u2014 https://developer.apple.com/documentation/devicemanagement/sending-mdm-commands-to-a-device",
+        "Declarative Management check-in \u2014 https://developer.apple.com/documentation/devicemanagement/declarative-management",
+        "Native webhook contract and JSON examples \u2014 https://github.com/deploymenttheory/go-apple-dm/blob/main/docs/operations/webhooks.md"
       ]
     }
   ]

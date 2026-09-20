@@ -17,8 +17,14 @@ import (
 func TestPersistentWebhookDeliversAfterRestartingWorkers(t *testing.T) {
 	c := newCollector()
 	srv := c.server(t)
-	a := build(t, app.Config{Role: app.RoleAll, Storage: "sqlite", DSN: filepath.Join(t.TempDir(), "events.sqlite"), Sinks: app.SinkConfig{Audit: true, Persist: true, WebhookURL: srv.URL, WebhookRootCAFile: webhookRoot(t, srv)}})
+	cfg := nativeWebhookConfig(t, srv)
+	a := build(t, cfg)
+	createNativeSubscription(t, a, srv.URL)
 	publishSomething(t, a)
+	if err := a.Close(); err != nil {
+		t.Fatal(err)
+	}
+	a = build(t, cfg)
 	// Capture succeeds before workers run. Readiness must stay false until the
 	// configured workers are available, then delivery consumes the saved event.
 	w := httptest.NewRecorder()

@@ -1,0 +1,28 @@
+{
+  "schema_version": "1",
+  "event_id": "evt_example_server_command_result_replay",
+  "type": "server.command.result",
+  "occurred_at": "2026-09-20T12:00:00Z",
+  "source": "mdm",
+  "subject": {
+    "kind": "enrollment",
+    "id": "55693EB3-DF03-5FD1-9263-F7CDB8AD7FFD",
+    "channel": "device"
+  },
+  "correlation_id": "corr_example_exchange",
+  "data": {
+    "actor": "device",
+    "fields": {
+      "command_uuid": "41d35de3-a343-4146-ba4b-0069bae2a54f",
+      "status": "Acknowledged"
+    }
+  },
+  "payloads": {
+    "event_json": {
+      "content_type": "application/json",
+      "encoding": "json",
+      "availability": "not_captured",
+      "size": 0
+    }
+  }
+}

@@ -17,6 +17,7 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/plist"
 	schemaerrors "github.com/deploymenttheory/go-apple-dm/devicemanagement/schema/errors"
 	"github.com/deploymenttheory/go-apple-dm/server/service"
+	"github.com/deploymenttheory/go-apple-dm/server/webhook"
 )
 
 // Content types Apple devices send.
@@ -145,6 +146,7 @@ func CheckinHandler(cfg Config) http.Handler {
 			return
 		}
 		res, err := cfg.Checkin.Checkin(r.Context(), cfg.request(r), ck)
+		webhook.ObserveMDM(r.Context(), ck, nil, err == nil)
 		if err != nil {
 			cfg.serviceError(w, r, err)
 			return
@@ -152,6 +154,11 @@ func CheckinHandler(cfg Config) http.Handler {
 		status := http.StatusOK
 		if res.Status != 0 {
 			status = res.Status
+		}
+		if status >= 500 {
+			webhook.ObserveOutcome(r.Context(), "failed")
+		} else if status >= 400 {
+			webhook.ObserveOutcome(r.Context(), "rejected")
 		}
 		writeBody(w, status, res.ContentType, res.Body)
 	})
@@ -187,6 +194,7 @@ func ConnectHandler(cfg Config) http.Handler {
 			return
 		}
 		cmd, err := cfg.Connect.Connect(r.Context(), cfg.request(r), resp)
+		webhook.ObserveMDM(r.Context(), nil, resp, err == nil)
 		if err != nil {
 			cfg.serviceError(w, r, err)
 			return
@@ -231,6 +239,9 @@ func (c Config) fail(w http.ResponseWriter, r *http.Request, status int, err err
 
 // serviceError uses 401 only for a typed account-driven reauthentication challenge.
 func (c Config) serviceError(w http.ResponseWriter, r *http.Request, err error) {
+	if code := service.CodeOf(err); code == service.CodeInternal || code == service.CodeUnavailable {
+		webhook.ObserveOutcome(r.Context(), "failed")
+	}
 	if reauth, ok := errors.AsType[*accountdriven.Reauthentication](err); ok {
 		header, e := reauth.Challenge.Header()
 		if e != nil {

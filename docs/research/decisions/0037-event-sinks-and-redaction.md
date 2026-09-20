@@ -2,82 +2,96 @@
 
 ## Context
 
-Events can contain protocol messages with escrowed secrets and private device data. External logs and webhooks need explicit field selection.
+Protocol messages can contain escrowed secrets, enrollment credentials and private
+device data. External workflows need stable server outcomes and a device exchange
+feed, while audit readers need reviewed summaries.
 
 ## Decision
 
-A projection registry selects fields for each event type. Unknown types emit metadata only. The slog sink, webhook and persisted audit trail consume projected records. Webhooks use the MicroMDM-compatible envelope while omitting `raw_payload`.
+The projection registry in `server/eventsink` continues to select fields for slog,
+the persistent event journal and audit. Unknown internal types emit metadata only;
+registering a nil projection explicitly selects metadata only.
 
-SQL-backed reference applications capture projected records and destination IDs in
-`server/eventstore`. Participating local mutations and capture commit together;
-workers deliver audit/webhook records using persistent leases and retries. Native
-audit append/acknowledgment shares the same SQL transaction. External delivery is
-at least once and receivers deduplicate EventID. Slog and direct bus subscribers
-remain ephemeral.
+Native webhooks live in `server/webhook`. The root Apple protocol library gains no
+webhook envelope, delivery transport, subscriptions or storage interfaces. The server
+adapts existing typed events, observes device-facing HTTP exchanges before CMS decoding
+and after response writes, and wraps managed certificate state transitions locally.
+The [webhook guide](../../operations/webhooks.md) defines the versioned envelope,
+explicit catalogue, payload policy, administration and receiver examples.
 
-Webhook construction requires HTTPS and rejects URL credentials and fragments.
-Redirects are refused and response reads are bounded. `DM_WEBHOOK_ROOT_CA_FILE`
-supplies a private CA bundle without disabling hostname verification. Transport
-error strings omit the configured URL, including sensitive path/query values;
-trusted callers can still inspect wrapped causes. Persistent worker retries own
-delivery scheduling; they do not stack the webhook helper's in-memory retry loop.
+Managed subscriptions require SQL and storage encryption. Only enabled, matching
+subscriptions retain native captures. Summary delivery uses reviewed projections;
+full decoded JSON and original bodies require root-managed subscriptions. Cedar
+permissions alone cannot create or mutate sensitive destinations, retrieve their
+credentials, or retry/replay their captures. Subscription URLs and keys are encrypted.
+Receiver payload credentials are separate from administrator credentials and scoped
+to the current subscription revision.
 
-In-memory applications use the asynchronous event bus for audit/webhook delivery.
-The reference bus defaults to eight workers, a 1,024-event pending queue and a
-30-second lifetime from acceptance. `DM_EVENT_WORKERS`, `DM_EVENT_QUEUE_CAPACITY`
-and `DM_EVENT_DELIVERY_TIMEOUT` configure this bus, not SQL destination leases or
-retry deadlines. Zero selects defaults; negative values fail configuration.
-Saturation rejects new events without waiting, counts each rejection and limits
-overflow warnings to one per ten seconds. `/admin/v1/config` and `dmctl status`
-expose bus statistics; `dmctl events status` exposes persistent capture/delivery.
+Participating local SQL mutations and server-outcome capture commit together through
+`event.Run`. Capture failure rolls back the local operation. Public exchange capture
+runs after the protocol handler and records observation failure without changing the
+response. Unverified claims are distinct from verified subjects. Correlation is
+preserved across authenticated private DDM forwarding; delivery order is unspecified.
 
-Accepted bus events preserve context values independently of request cancellation.
-Subscribers run in registration order for each event; different events can finish
-out of order. Expired queued events are not delivered. Closing an owned bus drains
-for five seconds before cancellation; injected buses remain caller-owned. SQL
-workers leave unacknowledged leases for recovery after expiry, rather than deleting
-pending deliveries during shutdown.
+Encrypted retained messages use the existing outbox's leases and retry worker. Outbox
+markers contain only scheduling metadata. HTTPS transport verifies trust and hostname,
+checks resolved addresses at dial time, requires explicit private-network CIDRs,
+refuses redirects and bounds receiver replies. Standard Webhooks signatures authenticate
+the delivery ID, attempt timestamp and immutable body. Key rotation permits bounded
+overlap. Payload bodies over the inline bound become authenticated references.
 
-Registering a nil projection removes any prior field projection and retains the
-type as known. Future lookups emit metadata only; an in-flight projection can
-finish using its captured function.
+A destination update creates a revision and pauses old backlog. Replay is explicit,
+bounded and idempotent, creates a new delivery ID for the same occurrence, and only
+uses retained representations under the current disclosure ceiling. It cannot extend
+expiry or reconstruct data from current device state. Retention defaults to seven
+days for bodies and thirty days for delivery metadata. Credential/payload access and
+per-attempt bookkeeping do not recursively produce webhook occurrences.
+
+`DM_WEBHOOK_URL` and `DM_WEBHOOK_HMAC_KEY` fail startup with migration instructions.
+Old delivery history is retained without being rerouted. MicroMDM compatibility is
+outside the native contract. In-memory applications can still use ephemeral slog,
+audit and direct bus subscribers; managed webhooks require persistent encrypted SQL.
 
 ## Rationale
 
-An allowlist keeps new fields from leaving the process unless they are reviewed. A common projection gives every sink the same disclosure policy. Asynchronous delivery separates receiver latency from device request handling.
+Audit projections and sensitive workflow export have different disclosure contracts.
+Root-only sensitive destinations preserve that distinction across configuration,
+credentials and replay. A native envelope covers polling, failed exchanges and
+non-MDM server outcomes without constraining the protocol library to a workflow API.
+Durable capture and independent delivery avoid adding receiver latency to a device
+request. Separate HTTP observations describe bytes actually consumed/written without
+claiming an atomic transaction with a remote device.
 
 ## Constraints
 
-In-memory audit/webhook handlers share bus capacity and can lose events through
-overload, expiry, handler failure or shutdown. The bus bounds event count, not
-payload bytes; non-cooperating subscribers can retain a worker. SQL delivery state
-survives restart but does not guarantee global ordering, unlimited retention policy
-or exactly-once network delivery. A changed destination is not a request to replay
-old events to it. Capture failures can roll back participating local mutations;
-after-commit bus notification failures cannot undo the commit.
+Delivery is at least once, unordered and bounded by retention. Receivers deduplicate
+`webhook-id`; explicit replay may need independent occurrence-level deduplication.
+An already-started network request can finish after a destination is paused or edited.
+A process crash or storage failure after the device reply can leave a missing exchange
+observation. Per-process capture counters and worker readiness expose failures.
 
-Direct internal subscribers can receive unprojected data and must enforce their
-own disclosure policy. MicroMDM receivers requiring `raw_payload` are not
-byte-for-byte compatible. Projection is not encryption or database tamper evidence.
+SQL coordination does not span external Apple calls or independently supplied stores.
+Unconsumed, oversized, interrupted and undecodable payloads have explicit availability
+markers. A successful HTTP reply alone does not prove a successful protocol operation.
+Plaintext summary metadata, database administrators and external receivers remain
+outside payload encryption's protection boundary. Direct bus subscribers receive
+internal data and remain responsible for their own disclosure policy.
 
 ## Verification
 
-Projection tests seed payloads with sentinel secrets, cover every event type and reject mismatched payload types. Sink tests cover the envelope, retries, cancellation, failed destinations and redaction; application tests cover event delivery and close/drain behavior. Event-store suites cover transactional rollback, restart, leases, destination isolation and manual retry across SQL backends.
+Receiver fixtures compare actual delivered JSON and verify signatures. Tests cover
+transaction rollback, sensitive root gates, retained snapshot replay, revision and
+credential isolation, expiration, restart, concurrent SQL leases, database failures,
+protocol observations and unchanged replies. PostgreSQL, MySQL and SQLite exercise
+the native store. Existing projection, audit, bus and service suites preserve their
+separate contracts. The Python receiver verifies the same Standard Webhooks signing
+input independently.
 
 ## References
 
-- [server/eventstore](../../../server/eventstore)
-- [server/internal/app/eventstore.go](../../../server/internal/app/eventstore.go)
-- [server/eventsink](../../../server/eventsink)
-- [mdmprotocol/event](../../../devicemanagement/mdmprotocol/event)
-- [server/internal/app/app.go](../../../server/internal/app/app.go)
-- <https://developer.apple.com/documentation/devicemanagement/check-in>
-- <https://developer.apple.com/documentation/devicemanagement/tokenupdaterequest>
-
-Reference source identifiers and paths (relative to the named project):
-
-- `micromdm/nanomdm@494831912abf895b41d533b5a9d81e2d6aa8ae10`, `service/webhook/service.go`
-- `service/webhook/event.go`, `service/webhook/event.json`
-- `micromdm/micromdm@904493b9500ffc8a21846846781e362f5c612107`, `workflow/webhook/webhook.go`
-- `workflow/webhook/checkin.go`, `workflow/webhook/acknowledge.go`, `workflow/webhook/http_post.go`
-- `jessepeterson/kmfddm@4b75a7652a71c9e74ccbcb78c8a7285211670151`, `notifier/notifier.go`
+- [Native webhook guide](../../operations/webhooks.md)
+- [Webhook implementation and contract](../../../server/webhook)
+- [Persistent outbox](../../../server/eventstore)
+- [Safe projections](../../../server/eventsink)
+- [Library events](../../../devicemanagement/mdmprotocol/event)
+- [Standard Webhooks specification](https://github.com/standard-webhooks/standard-webhooks/blob/main/spec/standard-webhooks.md)

@@ -27,7 +27,7 @@ including the explicit dependency from the ADE software update gate to the GDMF 
 | Configuration authoring utilities | `devicemanagement/utility` | Discover public App Store identities, Apple app bundle IDs, and native or portable artifact signing metadata through Go APIs; no persistence or server dependencies |
 | Persistence | `devicemanagement/storage`, `server/sqlstore`, `server/*store`, `server/statestore` | Domain contracts, memory implementations and SQL persistence |
 | Service | `server/service`, `server/httpapi`, `server/ddmsync`, `server/ddmadapter`, `server/pushnotify` | Enrollment authorization, command delivery, DDM synchronization and transport |
-| Administration | `server/adminauth`, `server/audit`, `server/eventstore`, `server/eventsink`, `server/axmcreds` | Principals, policy, credential storage, projected audit and webhook output |
+| Administration | `server/adminauth`, `server/audit`, `server/eventstore`, `server/eventsink`, `server/webhook`, `server/axmcreds` | Principals, policy, credential storage, projected audit and managed native webhooks |
 | Composition and testing | `server/internal/app`, `server/internal/dmctl`, `server/cmd`, `server/e2e`, `devicemanagement/simulator` | Application wiring, CLI and executable scenarios |
 
 The table groups responsibilities; the exact enforced tiers and test-only exceptions are in
@@ -174,7 +174,8 @@ and privileged plaintext exports accordingly.
 
 The `all`, `mdm` and `ddm` roles compose services from environment configuration. Admin routes
 use either an unrestricted bootstrap token or stored principals with Cedar policies. Event sinks
-project permitted fields; raw event payloads remain inside the process. SQL applications always
+project permitted fields for audit and logs. Native webhook subscriptions can also
+export encrypted retained JSON/raw representations under a root-only disclosure policy. SQL applications always
 capture projected events in `server/eventstore`, including events with no configured delivery
 destination. Participating local mutations and event capture share one SQL transaction through
 `event.Run`; capture failure rolls back that operation. This is not a transaction spanning Apple
@@ -182,10 +183,15 @@ services, remote sinks or independently supplied stores.
 
 Persistent workers deliver audit/webhook records per destination with leases and retries.
 Native audit append and delivery acknowledgment commit together on the shared SQL pool;
-external sinks are at least once and must deduplicate EventID. Slog and in-process bus
+external sinks are at least once. Native webhook receivers deduplicate the delivery
+ID in `webhook-id`; external audit sinks deduplicate EventID. Slog and in-process bus
 subscribers remain ephemeral. Audit persistence/retention are separately configured and do not
 provide tamper resistance against database operators. `dmctl events` inspects captures,
 delivery status and manual retry; see [event delivery](operations/event-delivery.md).
+`dmctl webhooks` manages native destinations, revision-isolated backlog, credential
+rotation and replay. [Native webhooks](operations/webhooks.md) describes the payload
+contract and tested JSON examples. Device exchange capture is a server HTTP adapter;
+the root library remains independent of webhook delivery.
 
 Replicas must share the relevant database, issuer keys and configuration. Completed account
 credentials, certificate associations and OIDC browser handoffs persist in shared SQL protocol

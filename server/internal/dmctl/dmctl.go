@@ -208,6 +208,7 @@ func commands() map[string]command {
 		{"configuration-profiles", "upload, list and download configuration profiles", runConfigurationProfiles},
 		{"audit", "read the audit trail", runAudit},
 		{"events", "inspect persistent event delivery and retry a destination", runEvents},
+		{"webhooks", "manage native subscriptions, delivery, credentials and replay", runWebhooks},
 		{"enrollments", "list, read, disable, and inspect enrollment status", runEnrollments},
 		{"content-cache", "issue reporting credentials and inspect content-cache reports", runContentCache},
 		{"commands", "send, read, and clear queued MDM commands", runCommands},

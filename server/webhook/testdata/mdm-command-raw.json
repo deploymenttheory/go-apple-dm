@@ -1,0 +1,44 @@
+{
+  "schema_version": "1",
+  "event_id": "evt_example_mdm_command_raw",
+  "type": "protocol.mdm.exchange",
+  "occurred_at": "2026-09-20T12:00:00Z",
+  "source": "mdm",
+  "subject": {
+    "kind": "enrollment",
+    "id": "55693EB3-DF03-5FD1-9263-F7CDB8AD7FFD",
+    "channel": "device"
+  },
+  "correlation_id": "corr_example_exchange",
+  "data": {
+    "command_uuid": "41d35de3-a343-4146-ba4b-0069bae2a54f",
+    "device_status": "Acknowledged",
+    "http": {
+      "duration_ms": 0,
+      "method": "PUT",
+      "response_complete": true,
+      "route": "/mdm",
+      "status": 200
+    },
+    "operation": "connect",
+    "outcome": "succeeded"
+  },
+  "payloads": {
+    "request_raw": {
+      "content_type": "application/x-apple-aspen-mdm",
+      "encoding": "base64",
+      "availability": "complete",
+      "size": 252,
+      "sha256": "69a543c8f1215f271f6f6bfc0759ce220a137f28ac5079288a46801432a9956d",
+      "value": "PD94bWwgdmVyc2lvbj0iMS4wIj8+PHBsaXN0IHZlcnNpb249IjEuMCI+PGRpY3Q+PGtleT5VRElEPC9rZXk+PHN0cmluZz41NTY5M0VCMy1ERjAzLTVGRDEtOTI2My1GN0NEQjhBRDdGRkQ8L3N0cmluZz48a2V5PkNvbW1hbmRVVUlEPC9rZXk+PHN0cmluZz40MWQzNWRlMy1hMzQzLTQxNDYtYmE0Yi0wMDY5YmFlMmE1NGY8L3N0cmluZz48a2V5PlN0YXR1czwva2V5PjxzdHJpbmc+QWNrbm93bGVkZ2VkPC9zdHJpbmc+PC9kaWN0PjwvcGxpc3Q+"
+    },
+    "response_raw": {
+      "content_type": "application/xml",
+      "encoding": "base64",
+      "availability": "complete",
+      "size": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "value": ""
+    }
+  }
+}

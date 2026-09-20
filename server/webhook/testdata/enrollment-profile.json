@@ -1,0 +1,54 @@
+{
+  "schema_version": "1",
+  "event_id": "evt_example_enrollment_profile",
+  "type": "protocol.enrollment.exchange",
+  "occurred_at": "2026-09-20T12:00:00Z",
+  "source": "mdm",
+  "correlation_id": "corr_example_exchange",
+  "data": {
+    "http": {
+      "duration_ms": 0,
+      "method": "GET",
+      "response_complete": true,
+      "route": "/enroll/ade",
+      "status": 200
+    },
+    "operation": "ade",
+    "outcome": "unknown"
+  },
+  "payloads": {
+    "request_json": {
+      "content_type": "application/json",
+      "encoding": "json",
+      "availability": "empty",
+      "size": 0
+    },
+    "request_raw": {
+      "content_type": "application/octet-stream",
+      "encoding": "base64",
+      "availability": "complete",
+      "size": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "value": ""
+    },
+    "response_json": {
+      "content_type": "application/json",
+      "encoding": "json",
+      "availability": "complete",
+      "size": 65,
+      "sha256": "f2a6df618515421ae59e539acdb983796f0e694dbfa2f9a68af3b5b3f7f9c4c7",
+      "value": {
+        "PayloadIdentifier": "example.mdm",
+        "PayloadType": "Configuration"
+      }
+    },
+    "response_raw": {
+      "content_type": "application/xml",
+      "encoding": "base64",
+      "availability": "complete",
+      "size": 150,
+      "sha256": "22ce2c3f0b36c1a4d635bab9a3fe948542c475db2127a2a0d60945adb654a50a",
+      "value": "PHBsaXN0IHZlcnNpb249IjEuMCI+PGRpY3Q+PGtleT5QYXlsb2FkVHlwZTwva2V5PjxzdHJpbmc+Q29uZmlndXJhdGlvbjwvc3RyaW5nPjxrZXk+UGF5bG9hZElkZW50aWZpZXI8L2tleT48c3RyaW5nPmV4YW1wbGUubWRtPC9zdHJpbmc+PC9kaWN0PjwvcGxpc3Q+"
+    }
+  }
+}

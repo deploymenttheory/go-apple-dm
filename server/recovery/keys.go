@@ -40,6 +40,8 @@ func sealedBindings() map[string]sealedBinding {
 	m["dep_sessions.token"] = sealedBinding{keys: []string{"account"}}
 	m["dep_keypairs.key_pem"] = sealedBinding{keys: []string{"account", "stage"}, separator: "/"}
 	m["protocol_state.value"] = sealedBinding{keys: []string{"record_key"}, composite: true}
+	m["webhook_subscriptions.config"] = sealedBinding{keys: []string{"id"}, composite: true}
+	m["webhook_messages.payload"] = sealedBinding{keys: []string{"delivery_id"}, composite: true}
 	m["ddm_declarations.canonical"] = sealedBinding{
 		keys:      []string{"identifier", "server_token"},
 		composite: true,

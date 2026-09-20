@@ -161,3 +161,31 @@ func TestCaptureHealthOnlyAdvancesAfterCommit(t *testing.T) {
 		t.Fatal("committed capture was not reported", err, p.Health())
 	}
 }
+
+func TestDeferredAdditionalCaptureOwnsDenialData(t *testing.T) {
+	_, _, p := fixture(t)
+	var reason string
+	p.CaptureAdditional = func(_ context.Context, e event.Event) error {
+		data, ok := e.Data.(map[string]string)
+		if !ok {
+			t.Fatal("concrete event type changed")
+		}
+		reason = data["reason"]
+		return nil
+	}
+	fault := errors.New("denied")
+	err := p.Run(t.Context(), func(ctx context.Context) error {
+		data := map[string]string{"reason": "original"}
+		if err := p.Publish(ctx, event.Event{Type: event.AdminDenied, Data: data}); err != nil {
+			return err
+		}
+		data["reason"] = "mutated-after-publish"
+		return fault
+	})
+	if !errors.Is(err, fault) || reason != "original" {
+		t.Fatal("deferred capture observed released data", reason, err)
+	}
+	if err := p.Publish(t.Context(), event.Event{Type: event.AdminDenied, Data: make(chan int)}); !errors.Is(err, eventstore.ErrCapture) {
+		t.Fatal(err)
+	}
+}

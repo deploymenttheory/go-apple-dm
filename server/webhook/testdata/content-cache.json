@@ -1,0 +1,46 @@
+{
+  "schema_version": "1",
+  "event_id": "evt_example_content_cache",
+  "type": "protocol.content_cache.exchange",
+  "occurred_at": "2026-09-20T12:00:00Z",
+  "source": "mdm",
+  "subject": {
+    "kind": "enrollment",
+    "id": "55693EB3-DF03-5FD1-9263-F7CDB8AD7FFD",
+    "channel": "device"
+  },
+  "correlation_id": "corr_example_exchange",
+  "data": {
+    "http": {
+      "duration_ms": 0,
+      "method": "POST",
+      "response_complete": true,
+      "route": "/content-cache/metrics",
+      "status": 202
+    },
+    "operation": "report",
+    "outcome": "succeeded"
+  },
+  "payloads": {
+    "request_json": {
+      "content_type": "application/json",
+      "encoding": "json",
+      "availability": "complete",
+      "size": 147,
+      "sha256": "7bb59ff43813e0e6ad627fd0164d52cfafc1dfd2ab0530d84238ae7197c38fc3",
+      "value": {
+        "version": 1,
+        "reportDate": "2026-09-20T12:00:00Z",
+        "hostname": "example-mac",
+        "hardware": "Mac16,1",
+        "serverGUID": "13D4D110-B2B7-4F26-8E25-CD22E58C00EE"
+      }
+    },
+    "response_json": {
+      "content_type": "application/json",
+      "encoding": "json",
+      "availability": "empty",
+      "size": 0
+    }
+  }
+}

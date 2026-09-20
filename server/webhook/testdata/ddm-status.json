@@ -1,0 +1,73 @@
+{
+  "schema_version": "1",
+  "event_id": "evt_example_ddm_status",
+  "type": "protocol.ddm.exchange",
+  "occurred_at": "2026-09-20T12:00:00Z",
+  "source": "mdm",
+  "subject": {
+    "kind": "enrollment",
+    "id": "55693EB3-DF03-5FD1-9263-F7CDB8AD7FFD",
+    "channel": "device"
+  },
+  "correlation_id": "corr_example_exchange",
+  "data": {
+    "http": {
+      "duration_ms": 0,
+      "method": "PUT",
+      "response_complete": true,
+      "route": "/mdm",
+      "status": 200
+    },
+    "operation": "status",
+    "outcome": "succeeded"
+  },
+  "payloads": {
+    "report_json": {
+      "content_type": "application/json",
+      "encoding": "json",
+      "availability": "complete",
+      "size": 58,
+      "sha256": "9cf5273fb10d396a9c12cdfa147b83054745d8f2ae874ff32dba5362b4c299aa",
+      "value": {
+        "StatusItems": {
+          "device.operating-system.version": "27.0"
+        }
+      }
+    },
+    "request_json": {
+      "content_type": "application/json",
+      "encoding": "json",
+      "availability": "complete",
+      "size": 195,
+      "sha256": "7e154e4d24caab7b643f861e7810aceed816eed1ef313b81ca3b6ee11dea558f",
+      "value": {
+        "Data": "eyJTdGF0dXNJdGVtcyI6eyJkZXZpY2Uub3BlcmF0aW5nLXN5c3RlbS52ZXJzaW9uIjoiMjcuMCJ9fQ==",
+        "Endpoint": "status",
+        "MessageType": "DeclarativeManagement",
+        "UDID": "55693EB3-DF03-5FD1-9263-F7CDB8AD7FFD"
+      }
+    },
+    "request_raw": {
+      "content_type": "application/x-apple-aspen-mdm-checkin",
+      "encoding": "base64",
+      "availability": "complete",
+      "size": 320,
+      "sha256": "def574c7713504fc0e31cce0d3aea54d7c19c62723986f66b4e8a7253bc466d0",
+      "value": "PHBsaXN0IHZlcnNpb249IjEuMCI+PGRpY3Q+PGtleT5NZXNzYWdlVHlwZTwva2V5PjxzdHJpbmc+RGVjbGFyYXRpdmVNYW5hZ2VtZW50PC9zdHJpbmc+PGtleT5VRElEPC9rZXk+PHN0cmluZz41NTY5M0VCMy1ERjAzLTVGRDEtOTI2My1GN0NEQjhBRDdGRkQ8L3N0cmluZz48a2V5PkVuZHBvaW50PC9rZXk+PHN0cmluZz5zdGF0dXM8L3N0cmluZz48a2V5PkRhdGE8L2tleT48ZGF0YT5leUpUZEdGMGRYTkpkR1Z0Y3lJNmV5SmtaWFpwWTJVdWIzQmxjbUYwYVc1bkxYTjVjM1JsYlM1MlpYSnphVzl1SWpvaU1qY3VNQ0o5ZlE9PTwvZGF0YT48L2RpY3Q+PC9wbGlzdD4="
+    },
+    "response_json": {
+      "content_type": "application/json",
+      "encoding": "json",
+      "availability": "empty",
+      "size": 0
+    },
+    "response_raw": {
+      "content_type": "application/xml",
+      "encoding": "base64",
+      "availability": "complete",
+      "size": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "value": ""
+    }
+  }
+}

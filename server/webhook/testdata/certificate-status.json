@@ -1,0 +1,37 @@
+{
+  "schema_version": "1",
+  "event_id": "evt_example_certificate_status",
+  "type": "protocol.certificate_status.exchange",
+  "occurred_at": "2026-09-20T12:00:00Z",
+  "source": "mdm",
+  "correlation_id": "corr_example_exchange",
+  "data": {
+    "http": {
+      "duration_ms": 0,
+      "method": "GET",
+      "response_complete": true,
+      "route": "/pki/crl/example",
+      "status": 200
+    },
+    "operation": "exchange",
+    "outcome": "unknown"
+  },
+  "payloads": {
+    "request_raw": {
+      "content_type": "application/octet-stream",
+      "encoding": "base64",
+      "availability": "complete",
+      "size": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "value": ""
+    },
+    "response_raw": {
+      "content_type": "application/xml",
+      "encoding": "base64",
+      "availability": "complete",
+      "size": 16,
+      "sha256": "dac02fa5865a03d07a413292b1777e1c0e925782f7d3228249fd28204fd46118",
+      "value": "ZXhhbXBsZS1kZXItYm9keQ=="
+    }
+  }
+}

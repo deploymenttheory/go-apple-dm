@@ -1,0 +1,55 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/deploymenttheory/go-apple-dm/server/webhook/event.schema.json",
+  "title": "Native server webhook event, version 1",
+  "type": "object",
+  "required": ["schema_version", "event_id", "type", "occurred_at", "source", "data"],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {"const": "1"},
+    "event_id": {"type": "string", "minLength": 1, "maxLength": 64},
+    "type": {"type": "string", "pattern": "^(server|protocol|webhook)\\.[a-z_]+(\\.[a-z_]+)*$"},
+    "occurred_at": {"type": "string", "format": "date-time"},
+    "source": {"type": "string", "minLength": 1},
+    "correlation_id": {"type": "string", "maxLength": 64},
+    "subject": {
+      "type": "object",
+      "required": ["kind", "id"],
+      "additionalProperties": false,
+      "properties": {
+        "kind": {"type": "string"},
+        "id": {"type": "string"},
+        "channel": {"type": "string"},
+        "parent_id": {"type": "string"}
+      }
+    },
+    "data": {"type": "object"},
+    "payloads": {
+      "type": "object",
+      "propertyNames": {"enum": ["request_json", "response_json", "report_json", "event_json", "request_raw", "response_raw"]},
+      "additionalProperties": {"$ref": "#/$defs/payload"}
+    }
+  },
+  "$defs": {
+    "payload": {
+      "type": "object",
+      "required": ["content_type", "encoding", "availability", "size"],
+      "additionalProperties": false,
+      "properties": {
+        "content_type": {"type": "string"},
+        "encoding": {"enum": ["json", "base64"]},
+        "availability": {"enum": ["complete", "empty", "undecodable", "not_read", "incomplete", "too_large", "not_captured"]},
+        "size": {"type": "integer", "minimum": 0},
+        "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "value": {},
+        "href": {"type": "string", "pattern": "^/webhooks/v1/payloads/[^/]+/(request|response|report|event)_(json|raw)$"},
+        "expires_at": {"type": "string", "format": "date-time"}
+      },
+      "allOf": [
+        {"if": {"required": ["href"]}, "then": {"required": ["expires_at", "sha256"], "not": {"required": ["value"]}}},
+        {"if": {"properties": {"encoding": {"const": "base64"}}, "required": ["value"]}, "then": {"properties": {"value": {"type": "string", "contentEncoding": "base64"}}}},
+        {"if": {"properties": {"availability": {"const": "complete"}}}, "then": {"required": ["sha256"], "oneOf": [{"required": ["value"]}, {"required": ["href"]}]}, "else": {"not": {"anyOf": [{"required": ["value"]}, {"required": ["href"]}]}}}
+      ]
+    }
+  }
+}

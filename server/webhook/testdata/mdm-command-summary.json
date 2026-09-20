@@ -1,0 +1,26 @@
+{
+  "schema_version": "1",
+  "event_id": "evt_example_mdm_command_summary",
+  "type": "protocol.mdm.exchange",
+  "occurred_at": "2026-09-20T12:00:00Z",
+  "source": "mdm",
+  "subject": {
+    "kind": "enrollment",
+    "id": "55693EB3-DF03-5FD1-9263-F7CDB8AD7FFD",
+    "channel": "device"
+  },
+  "correlation_id": "corr_example_exchange",
+  "data": {
+    "command_uuid": "41d35de3-a343-4146-ba4b-0069bae2a54f",
+    "device_status": "Acknowledged",
+    "http": {
+      "duration_ms": 0,
+      "method": "PUT",
+      "response_complete": true,
+      "route": "/mdm",
+      "status": 200
+    },
+    "operation": "connect",
+    "outcome": "succeeded"
+  }
+}

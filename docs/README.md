@@ -10,6 +10,7 @@
 - [Design decisions](research/decisions/README.md): current design and supporting evidence.
 - [Diagrams](diagrams/README.md): interactive architecture, protocol and lifecycle views.
 - [Enrollment security operations](operations/enrollment-security.md): trust, persistence, revocation and rate-limit configuration.
+- [Native webhooks](operations/webhooks.md): managed subscriptions, tested JSON examples, sensitive payloads and replay.
 - [Event delivery](operations/event-delivery.md): SQL event capture, audit/webhook delivery, inspection and retry.
 - [Status and profile inspection](operations/status-and-profile-inspection.md): paginated DDM diagnostics and offline profile lint.
 - [Protocol helpers](operations/protocol-helpers.md): JWTs, password hashes, automatic encryption certificates, recovery-key decryption, bypass codes and installation manifests.

@@ -1,0 +1,44 @@
+{
+  "schema_version": "1",
+  "event_id": "evt_example_acme_error",
+  "type": "protocol.acme.exchange",
+  "occurred_at": "2026-09-20T12:00:00Z",
+  "source": "mdm",
+  "correlation_id": "corr_example_exchange",
+  "data": {
+    "http": {
+      "duration_ms": 0,
+      "method": "POST",
+      "response_complete": true,
+      "route": "/acme/new-order",
+      "status": 400
+    },
+    "operation": "exchange",
+    "outcome": "rejected"
+  },
+  "payloads": {
+    "request_json": {
+      "content_type": "application/json",
+      "encoding": "json",
+      "availability": "complete",
+      "size": 65,
+      "sha256": "e83f9bc5e9b30977cd3d8c92d642cf4c84bbb3c0139f5dafbde91ac0240ac7e9",
+      "value": {
+        "protected": "example",
+        "payload": "example",
+        "signature": "example"
+      }
+    },
+    "response_json": {
+      "content_type": "application/json",
+      "encoding": "json",
+      "availability": "complete",
+      "size": 74,
+      "sha256": "7c52c8c4fc97408b09c45066f2cd0f87d42c9a58271387ed5f21d71c6b7d91dd",
+      "value": {
+        "type": "urn:ietf:params:acme:error:malformed",
+        "detail": "invalid request"
+      }
+    }
+  }
+}

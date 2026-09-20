@@ -6,6 +6,7 @@ import (
 	"io"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/deploymenttheory/go-apple-dm/server/eventstore"
 )
@@ -111,6 +112,12 @@ func (a *App) retryEvent(w http.ResponseWriter, r *http.Request) {
 	decoder.DisallowUnknownFields()
 	if decoder.Decode(&body) != nil || decoder.Decode(new(any)) != io.EOF {
 		a.eventError(w, eventstore.ErrInvalid)
+		return
+	}
+	// Native deliveries require their own replay permission and, for sensitive
+	// captures, root authority. The generic outbox endpoint cannot grant either.
+	if strings.HasPrefix(body.Destination, "native-webhook:") {
+		writeError(w, http.StatusForbidden, ErrUnauthorized)
 		return
 	}
 	if err := a.eventStore.Retry(r.Context(), r.PathValue("event"), body.Destination); err != nil {

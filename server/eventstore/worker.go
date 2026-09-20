@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"math/rand/v2"
 	"time"
 
 	"github.com/deploymenttheory/go-apple-dm/server/eventsink"
@@ -13,11 +14,21 @@ import (
 // accepted an attempt even if its reply was lost; deduplicate using EventID.
 type Sender func(context.Context, eventsink.Record) error
 
+// SourceError identifies a failure reading a managed destination or retained
+// message. Workers stop on this error so readiness exposes storage failure.
+type SourceError struct{ Err error }
+
+func (e *SourceError) Error() string { return "eventstore: managed delivery source unavailable" }
+func (e *SourceError) Unwrap() error { return e.Err }
+
 // Worker leases records independently across replicas. Destination identifiers
 // must identify immutable receiver configurations, including endpoint changes.
 type Worker struct {
 	Store        *Store
 	Destinations map[string]Sender
+	// Resolve loads a managed destination at delivery time. Static destinations
+	// take precedence. It must not perform the delivery itself.
+	Resolve func(context.Context, string) (Sender, error)
 	// TransactionalDestinations write only to Store's SQL pool through the
 	// supplied context. Their write and delivery acknowledgement commit together.
 	// Never register a network sender or a store backed by another pool here.
@@ -60,11 +71,27 @@ func (w *Worker) Step(ctx context.Context) error {
 	}
 	code := "destination-unavailable"
 	var delay time.Duration
-	if send := w.Destinations[d.Destination]; send != nil {
+	send := w.Destinations[d.Destination]
+	if send == nil && w.Resolve != nil {
+		var err error
+		send, err = w.Resolve(ctx, d.Destination)
+		if err != nil {
+			return err
+		}
+	}
+	if send != nil {
 		attempt, cancel := context.WithTimeout(ctx, timeout)
 		err = send(attempt, d.Record)
 		cancel()
+		var source *SourceError
+		if errors.As(err, &source) {
+			return err
+		}
 		code, delay = classify(err, d.Attempts)
+		if delay > 0 && len(d.Destination) >= 15 && d.Destination[:15] == "native-webhook:" {
+			// Positive jitter preserves Retry-After as a lower bound.
+			delay = min(24*time.Hour, delay+time.Duration(rand.Int64N(int64(delay/4)+1))) // #nosec G404 -- scheduling jitter, not a security value
+		}
 	}
 	// When the process is stopping, leave the lease for a later worker rather
 	// than acknowledge a cancelled attempt whose remote outcome is unknown.
@@ -100,6 +127,15 @@ func (w *Worker) Run(ctx context.Context) error {
 }
 
 func classify(err error, attempt int) (string, time.Duration) {
+	if errors.Is(err, ErrPaused) {
+		return "paused", 0
+	}
+	if errors.Is(err, ErrExpired) {
+		return "expired", 0
+	}
+	if errors.Is(err, ErrCancelled) {
+		return "cancelled", 0
+	}
 	if err == nil {
 		return "", 0
 	}
