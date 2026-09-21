@@ -65,25 +65,29 @@ type deviceKey struct {
 type state struct {
 	accounts map[string]dep.Account
 	// secrets holds the three OAuth secrets per account, sealed or not.
-	secrets  map[string]map[string][]byte
-	sessions map[string][]byte
-	cursors  map[string]dep.Cursor
-	keypairs map[keypairKey]dep.Keypair
-	devices  map[deviceKey]dep.StoredDevice
-	profiles map[deviceKey]dep.Profile
-	assigns  map[deviceKey]dep.Assignment
+	secrets          map[string]map[string][]byte
+	sessions         map[string][]byte
+	cursors          map[string]dep.Cursor
+	keypairs         map[keypairKey]dep.Keypair
+	devices          map[deviceKey]dep.StoredDevice
+	profiles         map[deviceKey]dep.Profile
+	assigns          map[deviceKey]dep.Assignment
+	seen             map[deviceKey]string
+	assignmentStates map[string]dep.AssignmentState
 }
 
 func newState() *state {
 	return &state{
-		accounts: map[string]dep.Account{},
-		secrets:  map[string]map[string][]byte{},
-		sessions: map[string][]byte{},
-		cursors:  map[string]dep.Cursor{},
-		keypairs: map[keypairKey]dep.Keypair{},
-		devices:  map[deviceKey]dep.StoredDevice{},
-		profiles: map[deviceKey]dep.Profile{},
-		assigns:  map[deviceKey]dep.Assignment{},
+		accounts:         map[string]dep.Account{},
+		secrets:          map[string]map[string][]byte{},
+		sessions:         map[string][]byte{},
+		cursors:          map[string]dep.Cursor{},
+		keypairs:         map[keypairKey]dep.Keypair{},
+		devices:          map[deviceKey]dep.StoredDevice{},
+		profiles:         map[deviceKey]dep.Profile{},
+		assigns:          map[deviceKey]dep.Assignment{},
+		seen:             map[deviceKey]string{},
+		assignmentStates: map[string]dep.AssignmentState{},
 	}
 }
 
@@ -94,14 +98,16 @@ func (st *state) clone() *state {
 		secrets[k] = maps.Clone(v)
 	}
 	return &state{
-		accounts: maps.Clone(st.accounts),
-		secrets:  secrets,
-		sessions: maps.Clone(st.sessions),
-		cursors:  maps.Clone(st.cursors),
-		keypairs: maps.Clone(st.keypairs),
-		devices:  maps.Clone(st.devices),
-		profiles: maps.Clone(st.profiles),
-		assigns:  maps.Clone(st.assigns),
+		accounts:         maps.Clone(st.accounts),
+		secrets:          secrets,
+		sessions:         maps.Clone(st.sessions),
+		cursors:          maps.Clone(st.cursors),
+		keypairs:         maps.Clone(st.keypairs),
+		devices:          maps.Clone(st.devices),
+		profiles:         maps.Clone(st.profiles),
+		assigns:          maps.Clone(st.assigns),
+		seen:             maps.Clone(st.seen),
+		assignmentStates: maps.Clone(st.assignmentStates),
 	}
 }
 
@@ -288,6 +294,8 @@ func (t *tx) DeleteAccount(_ context.Context, name string) error {
 	delete(t.st.secrets, name)
 	delete(t.st.sessions, name)
 	delete(t.st.cursors, name)
+	delete(t.st.assignmentStates, name)
+	maps.DeleteFunc(t.st.seen, func(k deviceKey, _ string) bool { return k.account == name })
 	for _, stage := range []dep.Stage{dep.StageStaged, dep.StageCurrent} {
 		delete(t.st.keypairs, keypairKey{name, stage})
 	}
@@ -489,6 +497,9 @@ func (t *tx) ListDevices(_ context.Context, account string, q dep.DeviceQuery, p
 	var serials []string
 	for k, sd := range t.st.devices {
 		if k.account != account || (sd.Deleted && !q.IncludeDeleted) || (q.ProfileUUID != "" && sd.ProfileUUID != q.ProfileUUID) {
+			continue
+		}
+		if q.NotSeenInGeneration != "" && t.st.seen[k] == q.NotSeenInGeneration {
 			continue
 		}
 		serials = append(serials, k.serial)

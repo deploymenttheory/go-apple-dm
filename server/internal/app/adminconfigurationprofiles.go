@@ -57,6 +57,7 @@ func (a *App) configurationProfileAdminRoutes() []adminRoute {
 		}
 		writeProfile(w, b, v.ContentType)
 	})
+	routes[len(routes)-1].MaxResponseBytes = configurationprofile.MaxBytes
 	return routes
 }
 

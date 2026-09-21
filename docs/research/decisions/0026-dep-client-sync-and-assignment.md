@@ -8,7 +8,11 @@ The device enrollment service uses account-scoped OAuth 1.0a credentials, rotati
 
 `dep.Client` resolves accounts through a store, signs requests, coordinates session refresh per account and retries authentication once. Token PKI handling validates imported `.p7m` contents before updating the active credentials. Account expiry and service errors are typed.
 
-`Syncer` performs fetch then incremental sync, commits cursors with each page, deduplicates devices by operation date and handles stale or repeated cursors. `Assigner` compares stored profile state with desired state, records per-device outcomes and applies bounded backoff. API profiles retain unknown fields and validate documented combinations and setup keys.
+`Syncer` performs fetch then incremental sync and commits cursors with each page. Each full fetch persists a generation and marks returned serials. Only successful completion tombstones active devices absent from that generation, including an empty snapshot. Account locks and cursor revisions reject responses from superseded sync passes. An interrupted fetch resumes without deleting unseen inventory early.
+
+`Assigner` compares stored profile state with desired state and records per-device outcomes. Account retry deadlines and failure counts live in the store, so a new worker respects an earlier Retry-After response. A renewable account claim fences competing workers; bounded network requests run outside transactions, and writes recheck claim ownership. Assignment readback cannot restore a device removed by sync. The reference server schedules sync and assignment independently; zero disables the corresponding background operation. API profiles retain unknown fields and validate documented combinations and setup keys.
+
+DEP migration 0002 adds cursor revision/generation fields, device fetch markers and assignment state. Custom stores must implement `MarkFetched`, `AssignmentState`, `PutAssignmentState` and transactional `LockAccount` with the shared contract semantics. The server module pins a library revision implementing this contract so standalone builds use the same interfaces.
 
 ## Rationale
 
@@ -20,7 +24,7 @@ API types are maintained from Apple's documentation because this service's JSON 
 
 ## Verification
 
-Client, PKI, syncer and assigner tests use the independent fake service for signature verification, session rotation, pagination, injected errors and per-serial outcomes. Store contracts cover token and device state; end-to-end tests cover assignment and ADE enrollment.
+Client, PKI, syncer and assigner tests use the independent fake service for signature verification, session rotation, pagination, injected errors and per-serial outcomes. Store contracts cover resumable and empty snapshots, persisted backoff, concurrent account locking and rollback across memory, SQLite, PostgreSQL and MySQL. Worker race tests cover stale sync responses, expired claims and readback after removal. End-to-end tests cover assignment and ADE enrollment.
 
 ## References
 

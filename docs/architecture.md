@@ -173,7 +173,8 @@ status/audit records are not whole-database encrypted. Protect the database, bac
 and privileged plaintext exports accordingly.
 
 The `all`, `mdm` and `ddm` roles compose services from environment configuration. Admin routes
-use either an unrestricted bootstrap token or stored principals with Cedar policies. Event sinks
+authorize stored principals through Cedar policies. The one-time bootstrap token is accepted only
+by the bootstrap endpoint and creates the first root principal; fleet access requires explicit policies. Event sinks
 project permitted fields for audit and logs. Native webhook subscriptions can also
 export encrypted retained JSON/raw representations under a root-only disclosure policy. SQL applications always
 capture projected events in `server/eventstore`, including events with no configured delivery

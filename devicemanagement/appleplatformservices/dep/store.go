@@ -116,6 +116,10 @@ type Cursor struct {
 	Phase        Phase
 	FetchedUntil *time.Time
 	UpdatedAt    time.Time
+	// Revision fences concurrent sync responses. Generation identifies the
+	// full fetch being resumed; it is empty once reconciliation completes.
+	Revision   int64
+	Generation string
 }
 
 // IsZero reports whether no cursor is stored.
@@ -139,6 +143,8 @@ type DeviceQuery struct {
 	IncludeDeleted bool
 	// ProfileUUID limits the list to devices carrying that profile.
 	ProfileUUID string
+	// NotSeenInGeneration selects rows absent from this full fetch.
+	NotSeenInGeneration string
 }
 
 // Assignment is the recorded outcome of the last profile assignment
@@ -238,6 +244,27 @@ type DeviceStore interface {
 	GetDevice(ctx context.Context, account, serial string) (*StoredDevice, error)
 	// ListDevices pages by serial, excluding tombstones unless asked.
 	ListDevices(ctx context.Context, account string, q DeviceQuery, p paging.Page) (paging.Result[StoredDevice], error)
+	// MarkFetched records membership in a full-fetch generation. Call inside
+	// Update after LockAccount, together with the device and cursor writes.
+	MarkFetched(ctx context.Context, account, generation string, serials []string) error
+}
+
+// AssignmentState survives worker replacement and process restart. Owner and
+// LeaseUntil fence overlapping runs; NotBefore is the account retry deadline.
+type AssignmentState struct {
+	Owner      string
+	LeaseUntil time.Time
+	NotBefore  time.Time
+	Failures   int
+}
+
+// AssignmentStateStore persists account-wide scheduling independently of
+// individual device outcomes. Mutations require LockAccount inside Update.
+type AssignmentStateStore interface {
+	// AssignmentState returns zero state when no scheduling state is stored.
+	AssignmentState(ctx context.Context, account string) (AssignmentState, error)
+	// PutAssignmentState replaces the account's scheduling state.
+	PutAssignmentState(ctx context.Context, account string, state AssignmentState) error
 }
 
 // ProfileStore keeps the profiles defined through an account.
@@ -259,19 +286,28 @@ type AssignmentStore interface {
 	ListAssignments(ctx context.Context, account string, q AssignmentQuery, p paging.Page) (paging.Result[Assignment], error)
 }
 
-// Tx is the view every store exposes inside Update.
-type Tx interface {
+// Records is the shared record access provided by stores and transactions.
+type Records interface {
 	AccountStore
 	SessionStore
 	CursorStore
 	DeviceStore
 	ProfileStore
 	AssignmentStore
+	AssignmentStateStore
+}
+
+// Tx is a transaction view. LockAccount must precede reads used for sync or
+// assignment decisions. Competing transactions for that account serialize.
+// LockAccount returns ErrNotFound if the account no longer exists.
+type Tx interface {
+	Records
+	LockAccount(ctx context.Context, account string) error
 }
 
 // Store is one backend. Methods called outside Update commit on their own.
 type Store interface {
-	Tx
+	Records
 	// Update runs fn in one transaction; an error rolls everything back.
 	Update(ctx context.Context, fn func(tx Tx) error) error
 }

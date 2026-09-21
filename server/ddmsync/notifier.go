@@ -2,6 +2,8 @@ package ddmsync
 
 import (
 	"context"
+	"crypto/sha256"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"log/slog"
@@ -13,19 +15,14 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/event"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/mdm"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/schema/commands"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/schema/ddmproto"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/storage"
 )
 
-// DefaultDedupeKey is the dedupe key NotifierConfig.DedupeKey uses when it is
-// not set. It suppresses a second DeclarativeManagement while one is still
-// pending for the same enrollment.
-//
-// Suppression is safe for this command specifically, and only for it: the
-// command is a doorbell, not a payload. A device that receives it fetches the
-// current tokens and declaration items, so a pending command already carries
-// every change made since it was queued. It would not be safe for a command
-// whose payload is the instruction, which is why the key is opt-in per caller
-// rather than a property of the queue.
+// DefaultDedupeKey is the default prefix for generation-specific deduplication.
+// Only commands carrying the same declarations token can suppress each other:
+// an older command may already have been applied while its acknowledgment is
+// still outstanding.
 const DefaultDedupeKey = "ddm"
 
 // Defaults for NotifierConfig.
@@ -75,9 +72,10 @@ type NotifierConfig struct {
 	// Backoff maps the attempt count to the retry delay. Default
 	// storage.NotNowBackoff.
 	Backoff func(attempt int) time.Duration
-	// DedupeKey suppresses a new DeclarativeManagement while one is still
-	// pending for the same enrollment. Nil uses DefaultDedupeKey; an empty
-	// string turns suppression off, so every drain queues a command.
+	// DedupeKey prefixes a digest of the declarations token, suppressing only
+	// the same generation for an enrollment. Nil uses DefaultDedupeKey; an empty
+	// string turns suppression off, so every drain queues a command. Prefixes
+	// are limited to 190 bytes to fit the SQL stores' 255-byte dedupe keys.
 	//
 	// It is a pointer for the same reason service.Config.ValidateTargets is:
 	// the zero value has to mean "not set" so that "" can mean "off".
@@ -97,13 +95,16 @@ type Notifier struct {
 	kick chan struct{}
 }
 
-// ErrNotifierConfig reports a missing required dependency.
-var ErrNotifierConfig = errors.New("ddmsync: notifier needs Store, Tokens, and Enqueuer")
+// ErrNotifierConfig reports an invalid notifier configuration.
+var ErrNotifierConfig = errors.New("ddmsync: invalid notifier configuration")
 
 // NewNotifier validates the configuration and applies defaults.
 func NewNotifier(cfg NotifierConfig) (*Notifier, error) {
 	if cfg.Store == nil || cfg.Tokens == nil || cfg.Enqueuer == nil {
-		return nil, ErrNotifierConfig
+		return nil, fmt.Errorf("%w: needs Store, Tokens, and Enqueuer", ErrNotifierConfig)
+	}
+	if cfg.DedupeKey != nil && len(*cfg.DedupeKey) > 190 {
+		return nil, fmt.Errorf("%w: dedupe prefix exceeds 190 bytes", ErrNotifierConfig)
 	}
 	if cfg.Clock == nil {
 		cfg.Clock = clock.Real{}
@@ -172,13 +173,13 @@ func (n *Notifier) report(ctx context.Context, res DrainResult) {
 		"deferred", res.Deferred, "failed", res.Failed, "pushed", res.Pushed)
 }
 
-// DrainResult counts what one drain did.// DrainResult counts what one drain did.
+// DrainResult counts what one drain did.
 type DrainResult struct {
 	// Deferred enrollments were left for a later drain because a change
 	// arrived within Window.
 	Deferred int
 	// Queued enrollments received a new command; Deduped ones already had
-	// one pending and were pushed anyway; Skipped ones cannot be
+	// the same generation pending and were pushed anyway; Skipped ones cannot be
 	// commanded (disabled or unknown) and were completed without a push.
 	Queued, Deduped, Skipped int
 	// Failed enrollments had their change rows scheduled for a retry.
@@ -282,8 +283,12 @@ func (n *Notifier) command(
 	if err != nil {
 		return 0, fmt.Errorf("command: %w", err)
 	}
+	key, err := generationKey(*n.cfg.DedupeKey, tokens)
+	if err != nil {
+		return 0, err
+	}
 	r, err := n.cfg.Enqueuer.Enqueue(ctx, []mdm.EnrollmentID{g.id}, cmd,
-		storage.EnqueueOptions{DedupeKey: *n.cfg.DedupeKey, Now: now})
+		storage.EnqueueOptions{DedupeKey: key, Now: now})
 	if err != nil {
 		return 0, fmt.Errorf("enqueue: %w", err)
 	}
@@ -302,6 +307,21 @@ func (n *Notifier) command(
 		return outcomeSkipped, nil
 	}
 	return outcomeQueued, nil
+}
+
+func generationKey(prefix string, tokens []byte) (string, error) {
+	if prefix == "" {
+		return "", nil
+	}
+	var response ddmproto.TokensResponse
+	if err := json.Unmarshal(tokens, &response); err != nil {
+		return "", fmt.Errorf("%w: tokens: %w", ddm.ErrNotifier, err)
+	}
+	token, _ := response.SyncTokens["DeclarationsToken"].(string)
+	if token == "" {
+		return "", fmt.Errorf("%w: missing declarations token", ddm.ErrNotifier)
+	}
+	return fmt.Sprintf("%s:%x", prefix, sha256.Sum256([]byte(token))), nil
 }
 
 // push wakes every commanded enrollment once. A whole-batch push error

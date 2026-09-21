@@ -225,6 +225,8 @@ type adminRoute struct {
 	Command            bool
 	RequestType        string
 	Sensitive          bool
+	// MaxResponseBytes bounds buffered responses; zero uses MaxAdminBody.
+	MaxResponseBytes int
 }
 
 // Admin authorization errors.

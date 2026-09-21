@@ -18,7 +18,7 @@ func (a *App) localAdmin(
 	p adminauth.Principal,
 	rt adminRoute,
 ) {
-	buffer := &adminResponse{header: make(http.Header)}
+	buffer := &adminResponse{header: make(http.Header), limit: rt.MaxResponseBytes}
 	err := a.eventPublisher.Run(r.Context(), func(ctx context.Context) error {
 		inside := r.WithContext(ctx)
 		rt.Handler.ServeHTTP(buffer, inside)
@@ -61,6 +61,7 @@ type adminResponse struct {
 	body   bytes.Buffer
 	status int
 	err    error
+	limit  int
 }
 
 func (w *adminResponse) Header() http.Header { return w.header }
@@ -71,7 +72,11 @@ func (w *adminResponse) WriteHeader(code int) {
 }
 
 func (w *adminResponse) Write(b []byte) (int, error) {
-	if w.body.Len()+len(b) > MaxAdminBody {
+	limit := w.limit
+	if limit <= 0 {
+		limit = MaxAdminBody
+	}
+	if len(b) > limit-w.body.Len() {
 		w.err = ErrBodyTooLarge
 		return 0, w.err
 	}
@@ -97,7 +102,7 @@ func setAdminOutcome(r *http.Request, status int) {
 
 // Sensitive response bytes are withheld until their audit record is captured.
 func (a *App) sensitiveAdminRead(w http.ResponseWriter, r *http.Request, p adminauth.Principal, rt adminRoute) {
-	buffer := &adminResponse{header: make(http.Header)}
+	buffer := &adminResponse{header: make(http.Header), limit: rt.MaxResponseBytes}
 	rt.Handler.ServeHTTP(buffer, r)
 	setAdminOutcome(r, buffer.status)
 	if buffer.err != nil {

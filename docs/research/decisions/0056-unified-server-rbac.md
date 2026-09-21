@@ -30,10 +30,10 @@ catalogue to generate the schema, route introspection and explicit routine actio
 groups. Authorize decoded commands by request type before side effects. Separate
 raw content, destructive operations and credential access from routine grants.
 
-Use one-time first-root bootstrap with a durable consumed marker. Root manages
+Use one-time first-root bootstrap with a persisted consumed marker. Root manages
 authorization independently of Cedar so policy repair remains possible. Root has
 no implicit operational grants. Lost-root recovery requires local access and an
-owned, drained maintenance fence, and leaves a durable event.
+owned, drained maintenance fence, and leaves a persisted event.
 
 Fail closed on invalid active policy sets or evaluation diagnostics. Preserve
 legacy policies for explicit repair, including forbids. Migrate role identities

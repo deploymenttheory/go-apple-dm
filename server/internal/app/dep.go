@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"sync"
 	"time"
 
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/appleplatformservices/dep"
@@ -24,8 +25,9 @@ type DEPConfig struct {
 	// BaseURL overrides https://mdmenrollment.apple.com (tests point it
 	// at the fake service).
 	BaseURL string
-	// SyncInterval and AssignInterval drive the background worker;
-	// zero disables it (the admin API can still sync and assign).
+	// SyncInterval and AssignInterval independently schedule inventory sync
+	// and profile assignment. Zero disables that background operation; the
+	// admin API can still sync and assign.
 	SyncInterval, AssignInterval time.Duration
 	// ProfileURL is the DEP profile url; default PublicURL + /enroll/ade.
 	ProfileURL string
@@ -145,41 +147,71 @@ func (d *depService) runOnce(
 	return sres, ares, nil
 }
 
-// Run is the background worker: every SyncInterval it syncs and assigns
-// every account with tokens. Disabled when the interval is zero. It
-// returns nil once the context ends: a stopped worker is not a failure.
+// Run independently schedules sync and assignment until cancellation.
 func (d *depService) Run(ctx context.Context) error {
-	interval := d.app.cfg.DEP.SyncInterval
-	if interval <= 0 {
-		<-ctx.Done()
-		return nil
+	var workers sync.WaitGroup
+	for _, job := range []struct {
+		interval time.Duration
+		assign   bool
+	}{{d.app.cfg.DEP.SyncInterval, false}, {d.app.cfg.DEP.AssignInterval, true}} {
+		if job.interval <= 0 {
+			continue
+		}
+		workers.Go(func() { d.runScheduled(ctx, job.interval, job.assign) })
 	}
+	<-ctx.Done()
+	workers.Wait()
+	return nil
+}
+
+func (d *depService) runScheduled(ctx context.Context, interval time.Duration, assign bool) {
 	for {
 		select {
 		case <-ctx.Done():
-			return nil
+			return
 		case <-d.app.cfg.Clock.After(interval):
 		}
-		res, err := d.store.ListAccounts(ctx, paging.Page{Limit: 1000})
+		if err := d.runAccounts(ctx, assign); err != nil && ctx.Err() == nil {
+			d.app.cfg.Logger.WarnContext(ctx, "app: DEP worker", "assignment", assign, "error", err)
+		}
+	}
+}
+
+func (d *depService) runAccounts(ctx context.Context, assign bool) error {
+	p := paging.Page{Limit: 1000}
+	for {
+		res, err := d.store.ListAccounts(ctx, p)
 		if err != nil {
-			d.app.cfg.Logger.WarnContext(ctx, "app: DEP accounts", "error", err)
-			continue
+			return err
 		}
 		for _, acct := range res.Items {
+			if err := ctx.Err(); err != nil {
+				return err
+			}
 			if !acct.HasTokens() {
 				continue
 			}
-			if _, _, err := d.runOnce(ctx, acct.Name); err != nil && ctx.Err() == nil {
-				d.app.cfg.Logger.WarnContext(
-					ctx,
-					"app: DEP sync",
-					"account",
-					acct.Name,
-					"error",
-					err,
-				)
+			if assign {
+				worker, e := d.assigner(acct.Name)
+				err = e
+				if err == nil {
+					_, err = worker.RunOnce(ctx)
+				}
+			} else {
+				worker, e := d.syncer(acct.Name)
+				err = e
+				if err == nil {
+					_, err = worker.RunOnce(ctx)
+				}
+			}
+			if err != nil && !errors.Is(err, dep.ErrBackoff) && ctx.Err() == nil {
+				d.app.cfg.Logger.WarnContext(ctx, "app: DEP account worker", "account", acct.Name, "assignment", assign, "error", err)
 			}
 		}
+		if res.NextCursor == "" {
+			return nil
+		}
+		p.Cursor = res.NextCursor
 	}
 }
 

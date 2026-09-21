@@ -5,7 +5,7 @@ go 1.27.0
 require (
 	filippo.io/age v1.3.2
 	github.com/cedar-policy/cedar-go v1.8.0
-	github.com/deploymenttheory/go-apple-dm v0.7.4-0.20260919192617-bee5875be93c
+	github.com/deploymenttheory/go-apple-dm v0.8.1-0.20260921062359-9c2d1008436c
 	github.com/go-sql-driver/mysql v1.10.1
 	github.com/jackc/pgx/v5 v5.11.0
 	github.com/smallstep/pkcs7 v0.2.3

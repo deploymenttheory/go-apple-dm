@@ -212,7 +212,7 @@ func TestWebhookSimulatorEnrollmentAndCommand(t *testing.T) {
 	if got, err := d.Connect(t.Context()); err != nil || len(got) != 1 || got[0].UUID != cmd.UUID {
 		t.Fatal(got, err)
 	}
-	// Starting the worker after the exchanges also checks that captures are durable.
+	// Starting the worker after the exchanges also checks that captures are persisted.
 	w = eventRequest(f.app, "GET", "/webhooks/deliveries?subscription_id="+c.Subscription.ID, "t", "")
 	var deliveries []webhook.Delivery
 	if w.Code != 200 || json.Unmarshal(w.Body.Bytes(), &deliveries) != nil || len(deliveries) < 7 {

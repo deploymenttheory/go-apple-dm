@@ -71,9 +71,6 @@ type AssignerConfig struct {
 type Assigner struct {
 	cfg  AssignerConfig
 	kick chan struct{}
-
-	notBefore time.Time
-	failures  int
 }
 
 // AssignResult counts what one run did.
@@ -159,13 +156,19 @@ func (a *Assigner) Run(ctx context.Context) error {
 // RunOnce assigns every eligible device once. It returns ErrBackoff with
 // NotBefore set while the account is backing off after HTTP 429, and the
 // service error of a failed batch (earlier batches stay recorded).
-func (a *Assigner) RunOnce(ctx context.Context) (AssignResult, error) {
-	var res AssignResult
-	now := a.cfg.Clock.Now()
-	if now.Before(a.notBefore) {
-		res.NotBefore = a.notBefore
-		return res, fmt.Errorf("%w: until %s", ErrBackoff, a.notBefore.UTC().Format(time.RFC3339))
+func (a *Assigner) RunOnce(ctx context.Context) (res AssignResult, runErr error) {
+	run, deadline, err := a.claim(ctx)
+	if err != nil {
+		res.NotBefore = deadline
+		return res, err
 	}
+	defer func() {
+		cleanup, cancel := context.WithTimeout(context.WithoutCancel(ctx), 5*time.Second)
+		defer cancel()
+		if err := run.release(cleanup, runErr == nil); err != nil {
+			runErr = errors.Join(runErr, err)
+		}
+	}()
 	acct, err := a.cfg.Store.GetAccount(ctx, a.cfg.Account)
 	if err != nil {
 		return res, err
@@ -173,7 +176,7 @@ func (a *Assigner) RunOnce(ctx context.Context) (AssignResult, error) {
 	if acct.ProfileUUID == "" {
 		return res, nil
 	}
-	serials, err := a.candidates(ctx, acct.ProfileUUID, now, &res)
+	serials, err := a.candidates(ctx, acct.ProfileUUID, a.cfg.Clock.Now(), &res)
 	if err != nil {
 		return res, err
 	}
@@ -182,26 +185,26 @@ func (a *Assigner) RunOnce(ctx context.Context) (AssignResult, error) {
 		opts = append(opts, WithAssignPUT())
 	}
 	for batch := range slices.Chunk(serials, a.cfg.BatchSize) {
-		resp, err := a.cfg.Client.AssignProfile(ctx, a.cfg.Account, acct.ProfileUUID, batch, opts...)
+		if err := run.renew(ctx); err != nil {
+			return res, err
+		}
+		request, cancel := context.WithTimeout(ctx, assignmentRequestTimeout)
+		resp, err := a.cfg.Client.AssignProfile(request, a.cfg.Account, acct.ProfileUUID, batch, opts...)
+		cancel()
 		if err != nil {
 			if statusIs(err, http.StatusTooManyRequests) {
-				a.failures++
-				// Retry-After is authoritative when Apple sends it; the
-				// account backoff covers a bare 429.
-				delay := a.cfg.AccountBackoff.Delay(a.failures)
-				if ra := retryAfter(err); ra > 0 {
-					delay = ra
+				deadline, storeErr := run.throttle(ctx, retryAfter(err))
+				res.NotBefore = deadline
+				if storeErr != nil {
+					return res, errors.Join(err, storeErr)
 				}
-				a.notBefore = a.cfg.Clock.Now().Add(delay)
-				res.NotBefore = a.notBefore
 			}
 			return res, err
 		}
-		if err := a.record(ctx, acct.ProfileUUID, batch, resp, &res); err != nil {
+		if err := a.record(ctx, run, acct.ProfileUUID, batch, resp, &res); err != nil {
 			return res, err
 		}
 	}
-	a.failures = 0
 	return res, nil
 }
 
@@ -278,10 +281,10 @@ func (a *Assigner) state(ctx context.Context, sd *StoredDevice, profileUUID stri
 
 // record writes the per-serial outcome of one batch, schedules retries,
 // reads successes back when configured, and publishes EventDeviceAssigned.
-func (a *Assigner) record(ctx context.Context, profileUUID string, batch []string, resp *AssignResponse, res *AssignResult) error {
+func (a *Assigner) record(ctx context.Context, run *assignmentRun, profileUUID string, batch []string, resp *AssignResponse, res *AssignResult) error {
 	updated := *res
 	err := event.Run(ctx, a.cfg.Bus, func(ctx context.Context) error {
-		return a.recordBatch(ctx, profileUUID, batch, resp, &updated)
+		return a.recordBatch(ctx, run, profileUUID, batch, resp, &updated)
 	})
 	if err != nil {
 		return err
@@ -289,17 +292,20 @@ func (a *Assigner) record(ctx context.Context, profileUUID string, batch []strin
 	*res = updated
 	if a.cfg.ReadBack {
 		// Remote inspection happens only after the local outcome commits.
-		return a.readBack(ctx, batch)
+		return a.readBack(ctx, run, batch)
 	}
 	return nil
 }
 
-func (a *Assigner) recordBatch(ctx context.Context, profileUUID string, batch []string, resp *AssignResponse, res *AssignResult) error {
+func (a *Assigner) recordBatch(ctx context.Context, run *assignmentRun, profileUUID string, batch []string, resp *AssignResponse, res *AssignResult) error {
 	now := a.cfg.Clock.Now()
 	var success []string
 	var events []event.Event
 	err := a.cfg.Store.Update(ctx, func(tx Tx) error {
 		success, events = success[:0], events[:0]
+		if _, err := run.lock(ctx, tx); err != nil {
+			return err
+		}
 		for _, serial := range batch {
 			asg, err := tx.GetAssignment(ctx, a.cfg.Account, serial)
 			if errors.Is(err, ErrNotFound) {
@@ -375,13 +381,21 @@ func (a *Assigner) outcome(asg *Assignment, status, profileUUID string, retryAft
 // readBack refreshes the stored records of the serials from
 // DeviceDetails, keeping the op fields the details endpoint does not
 // carry.
-func (a *Assigner) readBack(ctx context.Context, serials []string) error {
-	details, err := a.cfg.Client.DeviceDetails(ctx, a.cfg.Account, serials)
+func (a *Assigner) readBack(ctx context.Context, run *assignmentRun, serials []string) error {
+	if err := run.renew(ctx); err != nil {
+		return err
+	}
+	request, cancel := context.WithTimeout(ctx, assignmentRequestTimeout)
+	defer cancel()
+	details, err := a.cfg.Client.DeviceDetails(request, a.cfg.Account, serials)
 	if err != nil {
 		return err
 	}
 	now := a.cfg.Clock.Now()
 	return a.cfg.Store.Update(ctx, func(tx Tx) error {
+		if _, err := run.lock(ctx, tx); err != nil {
+			return err
+		}
 		devs := make([]Device, 0, len(details))
 		for _, serial := range serials {
 			d, ok := details[serial]
@@ -391,6 +405,9 @@ func (a *Assigner) readBack(ctx context.Context, serials []string) error {
 			existing, err := tx.GetDevice(ctx, a.cfg.Account, serial)
 			if err != nil && !errors.Is(err, ErrNotFound) {
 				return err
+			}
+			if existing == nil || existing.Deleted {
+				continue
 			}
 			if existing != nil {
 				d.OpType, d.OpDate = existing.OpType, existing.OpDate

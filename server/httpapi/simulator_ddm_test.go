@@ -1000,7 +1000,7 @@ func TestConnectRunsSyncOnDeclarativeManagement(t *testing.T) {
 	if r := lastReply(); r.Status != mdm.StatusError || len(r.ErrorChain) != 1 || r.ErrorChain[0].ErrorDomain != "GoAppleMDMSimulatorDDMErrorDomain" || !strings.Contains(r.ErrorChain[0].LocalizedDescription, "command Data") {
 		t.Fatalf("reply = %+v", lastReply())
 	}
-	if h.stub.hit("tokens") != 2 {
+	if h.stub.hit("tokens") != 1 {
 		t.Fatal("malformed Data must not trigger a sync")
 	}
 

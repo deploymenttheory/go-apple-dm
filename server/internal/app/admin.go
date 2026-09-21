@@ -207,7 +207,13 @@ func (a *App) ddmAdminRoutes() []adminRoute {
 	enrollmentGet(
 		ActionReadEnrollmentStatus,
 		"status",
-		func(ctx context.Context, id mdm.EnrollmentID) (any, error) { return e.DeclarationStatus(ctx, id) },
+		func(ctx context.Context, id mdm.EnrollmentID) (any, error) {
+			rows, err := e.DeclarationStatus(ctx, id)
+			for i := range rows {
+				rows[i].Reasons = projectStatusJSON("", rows[i].Reasons)
+			}
+			return rows, err
+		},
 	)
 	for _, kind := range []string{"values", "errors", "reports"} {
 		add(ActionReadEnrollmentStatus, "GET /enrollments/{channel}/{id}/status/"+kind,

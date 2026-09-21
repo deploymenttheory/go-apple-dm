@@ -84,10 +84,10 @@ func TestMigrateDirect(t *testing.T) {
 	ctx := context.Background()
 	db := openDB(t)
 	applied, err := sqlstore.Migrate(ctx, db, sqlite.Dialect)
-	if err != nil || len(applied) != 1 {
+	if err != nil || len(applied) != 2 {
 		t.Fatalf("migrate = %v %v", applied, err)
 	}
-	if v, err := sqlstore.Version(ctx, db, sqlite.Dialect); err != nil || v != 1 {
+	if v, err := sqlstore.Version(ctx, db, sqlite.Dialect); err != nil || v != 2 {
 		t.Fatalf("version = %d %v", v, err)
 	}
 }
