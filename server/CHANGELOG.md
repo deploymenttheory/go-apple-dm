@@ -1,5 +1,24 @@
 # Changelog
 
+## [0.10.1](https://github.com/deploymenttheory/go-apple-dm/compare/server/v0.10.0...server/v0.10.1) (2026-09-21)
+
+
+### Bug Fixes
+
+* correct DDM delivery, DEP workers, and admin responses ([9c2d100](https://github.com/deploymenttheory/go-apple-dm/commit/9c2d1008436c54a033d4895c701fc545408cf9d1))
+* correct lifecycle and DEP behavior and reconcile diagrams ([3b4949f](https://github.com/deploymenttheory/go-apple-dm/commit/3b4949f6ed33aa5929ee48d05302aa4535b485e6))
+* **ddm:** commit lifecycle cleanup with authoritative authentication outcomes ([4c7bc4a](https://github.com/deploymenttheory/go-apple-dm/commit/4c7bc4a9e634a94da89630d248a64d55c8e0ff6d))
+* **dep:** fence account changes and reset forced identity replacements atomically ([55218ec](https://github.com/deploymenttheory/go-apple-dm/commit/55218ecb526cfcf77607dac52a8b48bfdafb7393))
+* **depstore:** serialize state writes without locking absent account rows ([c1a9487](https://github.com/deploymenttheory/go-apple-dm/commit/c1a9487d510ddbad038e8a171861a4f96ebfd5dd))
+* preserve device sync state and enforce API response boundaries ([8eceb6f](https://github.com/deploymenttheory/go-apple-dm/commit/8eceb6f43592cb77839d52b2e32454c064d12f39))
+* **runtime:** drain observed writes and retain resources after shutdown timeouts ([e3db044](https://github.com/deploymenttheory/go-apple-dm/commit/e3db0449b366f96ebb0d6e27a02a1d65d382e1a5))
+
+
+### Documentation
+
+* reconcile documentation and diagrams with current behavior ([dde3a4d](https://github.com/deploymenttheory/go-apple-dm/commit/dde3a4df649be09795788d1c8eaf62ba6dedd4c0))
+* reconcile documentation and diagrams with current behavior ([812ac0e](https://github.com/deploymenttheory/go-apple-dm/commit/812ac0ef205e9e9e3495f8487a403adf23ddb5f4))
+
 ## [0.10.0](https://github.com/deploymenttheory/go-apple-dm/compare/server/v0.9.4...server/v0.10.0) (2026-09-20)
 
 
