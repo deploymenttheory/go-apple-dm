@@ -731,13 +731,15 @@ func (a *App) wire(ctx context.Context) error {
 		return err
 	}
 	a.Handler, err = a.withRateLimits(ctx, mux)
-	if err == nil && a.maintenance != nil {
-		a.Handler = a.maintenance.Wrap(a.Handler)
-	}
 	if err == nil {
 		a.Handler = redactContentCacheURL(a.Handler)
 		if a.webhooks != nil {
 			a.Handler = a.webhooks.Observe(a.Handler, mux)
+		}
+		if a.maintenance != nil {
+			// Admission includes observation's deferred persistence. Rejected
+			// requests must not create new writes after a pause is acknowledged.
+			a.Handler = a.maintenance.Wrap(a.Handler)
 		}
 	}
 	return err

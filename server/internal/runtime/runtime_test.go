@@ -38,10 +38,11 @@ func TestSupervisePreservesFirstFailure(t *testing.T) {
 			stopped := false
 			got := supervise(
 				ctx,
-				&http.Server{ReadHeaderTimeout: time.Second},
+				[]*http.Server{{ReadHeaderTimeout: time.Second}},
 				serving,
 				workers,
 				func() { stopped = true },
+				func() error { return nil },
 				10*time.Millisecond,
 			)
 			if !errors.Is(got, want) || !stopped {
@@ -87,7 +88,7 @@ func TestSuperviseDrainsHTTPBeforeWorkers(t *testing.T) {
 				timeout = 10 * time.Millisecond
 			}
 			go func() {
-				done <- supervise(ctx, srv.Config, make(chan error), workers, func() { close(stopped); workers <- nil }, timeout)
+				done <- supervise(ctx, []*http.Server{srv.Config}, make(chan error), workers, func() { close(stopped); workers <- nil }, func() error { return nil }, timeout)
 			}()
 			if !expire {
 				select {
