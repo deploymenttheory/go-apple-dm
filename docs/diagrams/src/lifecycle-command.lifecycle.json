@@ -120,12 +120,21 @@
       "to": "acknowledged",
       "label": "Acknowledged",
       "variant": "emphasis",
-      "fromSide": "right",
-      "toSide": "left",
-      "via": [],
+      "fromSide": "top",
+      "toSide": "top",
+      "via": [
+        [
+          620,
+          42
+        ],
+        [
+          1090,
+          42
+        ]
+      ],
       "labelAt": [
-        855,
-        138
+        950,
+        30
       ],
       "purpose": "success"
     },
@@ -198,20 +207,24 @@
       "to": "cleared",
       "label": "Clear or reset",
       "variant": "security",
-      "fromSide": "right",
+      "fromSide": "bottom",
       "toSide": "right",
       "via": [
         [
-          900,
-          152
+          620,
+          236
         ],
         [
-          900,
+          860,
+          236
+        ],
+        [
+          860,
           476
         ]
       ],
       "labelAt": [
-        900,
+        860,
         376
       ],
       "purpose": "neutral"
@@ -238,7 +251,7 @@
         ]
       ],
       "labelAt": [
-        705,
+        730,
         66
       ],
       "purpose": "transport"
@@ -313,19 +326,19 @@
       "title": "Implementation references",
       "dot": "artifact",
       "items": [
-        "pending: Pending — https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/devicemanagement/storage/storage.go",
-        "sent: Sent — https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/server/service/connect.go",
-        "acknowledged: Acknowledged — https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/devicemanagement/storage/storage.go",
-        "notnow: NotNow — https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/devicemanagement/storage/inmem/inmem.go",
-        "cleared: Cleared — https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/devicemanagement/storage/storage.go",
-        "errored: Command failed — https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/devicemanagement/storage/storage.go"
+        "pending: Pending — https://github.com/deploymenttheory/go-apple-dm/blob/e3db0449b366f96ebb0d6e27a02a1d65d382e1a5/devicemanagement/storage/storage.go",
+        "sent: Sent — https://github.com/deploymenttheory/go-apple-dm/blob/e3db0449b366f96ebb0d6e27a02a1d65d382e1a5/server/service/connect.go",
+        "acknowledged: Acknowledged — https://github.com/deploymenttheory/go-apple-dm/blob/e3db0449b366f96ebb0d6e27a02a1d65d382e1a5/devicemanagement/storage/storage.go",
+        "notnow: NotNow — https://github.com/deploymenttheory/go-apple-dm/blob/e3db0449b366f96ebb0d6e27a02a1d65d382e1a5/devicemanagement/storage/inmem/inmem.go",
+        "cleared: Cleared — https://github.com/deploymenttheory/go-apple-dm/blob/e3db0449b366f96ebb0d6e27a02a1d65d382e1a5/devicemanagement/storage/storage.go",
+        "errored: Command failed — https://github.com/deploymenttheory/go-apple-dm/blob/e3db0449b366f96ebb0d6e27a02a1d65d382e1a5/devicemanagement/storage/storage.go"
       ]
     },
     {
       "title": "Implementation references (continued)",
       "dot": "artifact",
       "items": [
-        "Separate replacement lifecycle — https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/server/service/replacement.go"
+        "Separate replacement lifecycle — https://github.com/deploymenttheory/go-apple-dm/blob/e3db0449b366f96ebb0d6e27a02a1d65d382e1a5/server/service/replacement.go"
       ]
     }
   ]

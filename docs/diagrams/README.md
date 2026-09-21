@@ -97,6 +97,13 @@ The type is `architecture`, `workflow`, `sequence`, `dataflow`, or `lifecycle`. 
 a Git revision. Other diagram types cite implementation paths in their cards.
 Review behavior against those sources and refresh the pins when implementations change.
 
+`make docs-check` requires implementation evidence for internal components and verifies
+that delivered HTML matches source node/relationship inventories, directions, purposes,
+visible labels, explanatory cards and card link destinations. It also checks pinned code
+paths and line ranges, and rejects opposing arrows that share a drawn straight segment.
+These offline checks detect stale delivery, broken references and that route ambiguity;
+code review, vendor reconciliation and browser inspection establish the remaining evidence.
+
 Require all nine showcase artifact checks, with zero errors and warnings. Inspect the exact
 delivered HTML at 1440×900, 1600×1000, 1920×1080, and 2048×1320, including light and dark
 screenshots at each size. Keep horizontal containment, readable labels,

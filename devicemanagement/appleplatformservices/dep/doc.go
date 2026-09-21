@@ -5,13 +5,31 @@
 //
 // One client supports multiple named accounts with credentials and sessions
 // supplied by Store. OAuth 1.0a signing, coordinated session refresh, typed
-// service errors and token-expiry checks manage account access. Syncer commits
-// each cursor with its page and fences stale responses with persisted revisions.
-// Full fetches record generation membership; only a successfully completed fetch
-// tombstones devices absent from its snapshot. Assigner derives work from stored
-// profile state, uses an account lease, and retains account-wide retry deadlines
-// and per-device outcomes across worker replacement. These persistence and
-// reconciliation rules are project policy around Apple's fetch and sync APIs.
+// service errors and token-expiry checks manage account access. Requests, cached
+// sessions and writebacks are bound to the account's Apple identity and OAuth
+// credentials. Concurrent renewal cannot publish an old session or stale result.
+//
+// Syncer commits each cursor with its page after checking account identity,
+// credentials and cursor revision. Full fetches record generation membership;
+// only completion of the current generation tombstones absent devices. Assigner
+// derives work from stored profile state and rechecks its lease, account binding
+// and desired profile before saving outcomes or readback. A still-owned lease
+// can preserve Apple's cooldown after a same-identity credential or target
+// change; it cannot write retry state after identity replacement or lease loss.
+// Local rejection cannot undo a request already accepted by Apple.
+//
+// StoreTokens and ordinary ImportToken calls reject established Apple identity
+// or consumer-key changes. ImportOptions.Force permits replacement; an actual
+// identity change requires a validated server UUID and atomically clears old
+// inventory, profiles, sessions and worker state. The local account name,
+// protocol version, creation time and token keypairs survive. Same-identity
+// renewals retain inventory and the desired profile. Omitted identity metadata
+// does not erase a known binding. These persistence and reconciliation rules
+// are project policy around Apple's APIs.
+//
+// Custom stores must hold Tx.LockAccount until transaction completion even when
+// the account is absent and ErrNotFound is returned, including delete/recreate
+// transitions. The SQL implementation uses schema 3's stable account-name locks.
 //
 // Persistence implementations live in storage/dep and server/depstore. The
 // separate axm package implements the Apple Business Manager and Apple School
@@ -24,11 +42,13 @@
 //
 // # References
 //
+//   - Operations: https://github.com/deploymenttheory/go-apple-dm/blob/main/docs/operations/dep-synchronization.md
 //   - Decision record 0026: https://github.com/deploymenttheory/go-apple-dm/blob/main/docs/research/decisions/0026-dep-client-sync-and-assignment.md
 //   - Decision record 0013: https://github.com/deploymenttheory/go-apple-dm/blob/main/docs/research/decisions/0013-secrets-at-rest.md (sealed token columns)
 //   - Threat model: https://github.com/deploymenttheory/go-apple-dm/blob/main/docs/security/threat-model.md
 //   - Apple: https://developer.apple.com/documentation/devicemanagement/device-assignment
 //   - Apple: https://developer.apple.com/documentation/devicemanagement/authenticating-for-automated-device-enrollment
+//   - Apple: https://developer.apple.com/documentation/devicemanagement/accountdetail
 //   - Apple: https://developer.apple.com/documentation/devicemanagement/fetch-devices
 //   - Apple: https://developer.apple.com/documentation/devicemanagement/sync-devices
 //   - Apple: https://developer.apple.com/documentation/devicemanagement/device

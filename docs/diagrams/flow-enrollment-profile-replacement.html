@@ -5152,7 +5152,7 @@ svg[data-purpose-filter] g[data-purpose-highlight] > path { stroke-width: 2.4; }
 <button type="button" data-purpose-filter-button="success" aria-pressed="false" style="--entry:var(--purpose-success)"><span class="purpose-key-dot" aria-hidden="true"></span>Successful or accepted</button>
     </div>
     <div class="purpose-key-detail" aria-live="polite" aria-atomic="true"><div><strong id="purpose-key-selection"></strong><span id="purpose-key-counts"></span></div><p id="purpose-key-description"></p></div>
-    <script id="purpose-key-data" type="application/json">{"entries":[{"key":"service","label":"Services and processing","meaning":"Services and processing steps that perform the work shown in the diagram.","nodes":["Enrollment admin","MDM service"],"connections":[]},{"key":"transport","label":"Communication and transport","meaning":"Communication between components, including endpoints, protocol exchanges, and notifications.","nodes":[],"connections":["POST the enrollment-scoped replacement action","Return redacted attempt metadata","Request APNs wake through the MDM notifier"]},{"key":"storage","label":"Storage and persistence","meaning":"Records and persistence: where the system stores or retrieves information.","nodes":["Replacement state"],"connections":["Read enabled enrollment and original profile","Begin a 30-minute replacement attempt","Mark replacement InstallProfile as delivered","Record the candidate certificate fingerprint","Record successful candidate authentication","Stage the candidate device token","Record acknowledgement and evaluate completion"]},{"key":"authentication","label":"Authentication and identity","meaning":"Checks that establish or verify an identity or credential.","nodes":[],"connections":["Poll with the current enrollment identity","Authenticate with the candidate identity","TokenUpdate with candidate identity and push details"]},{"key":"certificate","label":"Certificates and cryptography","meaning":"Certificate issuance and cryptographic work, including signing, encryption, and keys.","nodes":["Identity issuer"],"connections":["Complete authorized SCEP or ACME issuance","Return candidate identity certificate"]},{"key":"artifact","label":"Configuration and artifacts","meaning":"Configuration and artifacts that the system consumes or produces.","nodes":[],"connections":["Return InstallProfile with fresh identity authorization"]},{"key":"neutral","label":"Actors, structure, neutral states","meaning":"Actors, structural boundaries, and states that do not imply success, warning, or failure.","nodes":["Operator or bench","Apple device"],"connections":[]},{"key":"success","label":"Successful or accepted","meaning":"An explicitly successful or accepted result.","nodes":[],"connections":["Acknowledge the delivered InstallProfile command","Return an empty successful response"]}],"nodes":6,"connections":18}</script>
+    <script id="purpose-key-data" type="application/json">{"entries":[{"key":"service","label":"Services and processing","meaning":"Services and processing steps that perform the work shown in the diagram.","nodes":["Enrollment admin","MDM service"],"connections":[]},{"key":"transport","label":"Communication and transport","meaning":"Communication between components, including endpoints, protocol exchanges, and notifications.","nodes":[],"connections":["POST the enrollment-scoped replacement action","Return redacted attempt metadata","Request APNs wake through the MDM notifier"]},{"key":"storage","label":"Storage and persistence","meaning":"Records and persistence: where the system stores or retrieves information.","nodes":["Replacement state"],"connections":["Read enabled enrollment and original profile","Begin replacement with a 30-minute issuance grant","Mark replacement InstallProfile as delivered","Record candidate fingerprint and certificate expiry","Record successful candidate authentication","Stage the candidate device token","Record acknowledgement and evaluate completion"]},{"key":"authentication","label":"Authentication and identity","meaning":"Checks that establish or verify an identity or credential.","nodes":[],"connections":["Poll with the current enrollment identity","Authenticate with the candidate identity","TokenUpdate with candidate identity and push details"]},{"key":"certificate","label":"Certificates and cryptography","meaning":"Certificate issuance and cryptographic work, including signing, encryption, and keys.","nodes":["Identity issuer"],"connections":["Complete authorized SCEP or ACME issuance","Return candidate identity certificate"]},{"key":"artifact","label":"Configuration and artifacts","meaning":"Configuration and artifacts that the system consumes or produces.","nodes":[],"connections":["Return InstallProfile with fresh identity authorization"]},{"key":"neutral","label":"Actors, structure, neutral states","meaning":"Actors, structural boundaries, and states that do not imply success, warning, or failure.","nodes":["Operator or bench","Apple device"],"connections":[]},{"key":"success","label":"Successful or accepted","meaning":"An explicitly successful or accepted result.","nodes":[],"connections":["Acknowledge the delivered InstallProfile command","Return an empty successful response"]}],"nodes":6,"connections":18}</script>
   </section>
     <div class="diagram-container" data-detail-level="read"
          data-preset-badge-editorial-plate="ARCHIFY / PLATE 04">
@@ -5223,11 +5223,11 @@ svg[data-purpose-filter] g[data-purpose-highlight] > path { stroke-width: 2.4; }
         </g>
         </g>
 
-        <g data-edge-from="admin" data-edge-to="store" data-edge-label="Begin a 30-minute replacement attempt" data-edge-key="2" data-edge-id="begin" data-purpose="storage">
+        <g data-edge-from="admin" data-edge-to="store" data-edge-label="Begin replacement with a 30-minute issuance grant" data-edge-key="2" data-edge-id="begin" data-purpose="storage">
           <path data-composition-edge-from="admin" data-composition-edge-to="store" data-composition-edge-id="begin" data-composition-points="365.1,247;559.7,247" d="M 365.1 247 L 559.7 247" class="a-default purpose-arrow purpose-storage" stroke-width="1.4" marker-end="url(#purpose-arrowhead-storage)"/>
         <g data-detail="context">
-          <rect x="334.30000000000007" y="227" width="256.2" height="16" rx="3" class="c-mask"/>
-          <text x="462.4000000000001" y="237" class="t-backend" font-size="11" text-anchor="middle">Begin a 30-minute replacement attempt</text>
+          <rect x="294.70000000000005" y="227" width="335.4" height="16" rx="3" class="c-mask"/>
+          <text x="462.40000000000003" y="237" class="t-backend" font-size="11" text-anchor="middle">Begin replacement with a 30-minute issuance grant</text>
         </g>
         </g>
 
@@ -5279,11 +5279,11 @@ svg[data-purpose-filter] g[data-purpose-highlight] > path { stroke-width: 2.4; }
         </g>
         </g>
 
-        <g data-edge-from="issuer" data-edge-to="store" data-edge-label="Record the candidate certificate fingerprint" data-edge-key="9" data-edge-id="register" data-purpose="storage">
+        <g data-edge-from="issuer" data-edge-to="store" data-edge-label="Record candidate fingerprint and certificate expiry" data-edge-key="9" data-edge-id="register" data-purpose="storage">
           <path data-composition-edge-from="issuer" data-composition-edge-to="store" data-composition-edge-id="register" data-composition-points="976.9,499;573.7,499" d="M 976.9 499 L 573.7 499" class="a-default purpose-arrow purpose-storage" stroke-width="1.4" marker-end="url(#purpose-arrowhead-storage)"/>
         <g data-detail="context">
-          <rect x="624.0999999999999" y="479" width="302.4" height="16" rx="3" class="c-mask"/>
-          <text x="775.3" y="489" class="t-backend" font-size="11" text-anchor="middle">Record the candidate certificate fingerprint</text>
+          <rect x="601" y="479" width="348.59999999999997" height="16" rx="3" class="c-mask"/>
+          <text x="775.3" y="489" class="t-backend" font-size="11" text-anchor="middle">Record candidate fingerprint and certificate expiry</text>
         </g>
         </g>
 
@@ -5341,7 +5341,7 @@ svg[data-purpose-filter] g[data-purpose-highlight] > path { stroke-width: 2.4; }
           <rect x="721.8000000000001" y="731" width="315.59999999999997" height="16" rx="3" class="c-mask"/>
           <text x="879.6" y="741" class="t-backend" font-size="11" text-anchor="middle">Record acknowledgement and evaluate completion</text>
         </g>
-        <text data-detail="fine" x="585.7" y="769" class="t-dim" font-size="7">Atomically promote candidate identity and tokens</text>
+        <text data-detail="fine" x="585.7" y="769" class="t-dim" font-size="7">Promote only when all three conditions hold</text>
         </g>
 
         <g data-edge-from="core" data-edge-to="device" data-edge-label="Return an empty successful response" data-edge-key="17" data-edge-id="complete" data-purpose="success">
@@ -5643,8 +5643,9 @@ svg[data-purpose-filter] g[data-purpose-highlight] > path { stroke-width: 2.4; }
           <h3>Commit conditions</h3>
         </div>
         <ul>
-          <li>&bull; Promotion requires candidate Authenticate, a valid device-channel TokenUpdate, and acknowledgement of the delivered InstallProfile command. Acknowledgement may arrive before or after candidate check-in.</li>
+          <li>&bull; Promotion requires candidate Authenticate, a valid device-channel TokenUpdate, and acknowledgement of the delivered InstallProfile command. Authenticate must precede TokenUpdate; acknowledgement may arrive before or after those check-ins.</li>
           <li>&bull; The original top-level profile and MDM payload metadata are retained; the identity payload receives a fresh UUID and issuance authorization. A replacement can select SCEP or ACME.</li>
+          <li>&bull; A candidate user-channel TokenUpdate is staged but does not satisfy the required device-channel token. Promotion is atomic; later stale command results cannot undo it.</li>
         </ul>
       </div>
 
@@ -5655,8 +5656,8 @@ svg[data-purpose-filter] g[data-purpose-highlight] > path { stroke-width: 2.4; }
         </div>
         <ul>
           <li>&bull; Error or CommandFormatError fails the attempt; cancellation and expiry also end it without promoting the candidate. NotNow leaves the attempt pending.</li>
-          <li>&bull; The server keeps its working enrollment, queue, escrow and user channels. Server-side preservation does not by itself establish how a physical device recovers from every failure.</li>
-          <li>&bull; The attempt expires after 30 minutes. Storage evaluates expiry during transitions, including reads; there is no background expiry worker.</li>
+          <li>&bull; The replacement transition preserves the working enrollment, queue, escrow, DDM state and user channels. An independent CheckOut still disables the enrollment. Server preservation does not establish device-side recovery from every failure.</li>
+          <li>&bull; New issuance is authorized for 30 minutes. Recording a candidate certificate extends the reconciliation deadline to its NotAfter time, if later. Storage checks expiry during transitions, including reads; there is no background expiry worker.</li>
         </ul>
       </div>
 
@@ -5692,11 +5693,24 @@ svg[data-purpose-filter] g[data-purpose-highlight] > path { stroke-width: 2.4; }
           <h3>Implementation references</h3>
         </div>
         <ul>
-          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/server/internal/bench/enrollment.go" target="_blank" rel="noopener noreferrer">operator: Operator or bench</a></li>
-          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/server/internal/app/adminmdm.go" target="_blank" rel="noopener noreferrer">admin: Enrollment admin</a></li>
-          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/devicemanagement/storage/replacement.go" target="_blank" rel="noopener noreferrer">store: Replacement state</a></li>
-          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/server/internal/app/enroll.go" target="_blank" rel="noopener noreferrer">issuer: Identity issuer</a></li>
-          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/server/service/replacement.go" target="_blank" rel="noopener noreferrer">core: MDM service</a></li>
+          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/e3db0449b366f96ebb0d6e27a02a1d65d382e1a5/server/internal/bench/enrollment.go#L237" target="_blank" rel="noopener noreferrer">operator: Operator or bench</a></li>
+          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/e3db0449b366f96ebb0d6e27a02a1d65d382e1a5/server/internal/app/replacement.go#L329" target="_blank" rel="noopener noreferrer">admin: Enrollment admin</a></li>
+          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/e3db0449b366f96ebb0d6e27a02a1d65d382e1a5/server/internal/app/adminbench.go#L64" target="_blank" rel="noopener noreferrer">Replacement route and permission</a></li>
+          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/e3db0449b366f96ebb0d6e27a02a1d65d382e1a5/devicemanagement/storage/replacement.go#L98" target="_blank" rel="noopener noreferrer">store: Replacement state transitions and expiry</a></li>
+          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/e3db0449b366f96ebb0d6e27a02a1d65d382e1a5/server/internal/app/enroll.go#L201" target="_blank" rel="noopener noreferrer">issuer: Identity issuer wiring</a></li>
+          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/e3db0449b366f96ebb0d6e27a02a1d65d382e1a5/server/internal/app/security.go#L91" target="_blank" rel="noopener noreferrer">Certificate registration callback</a></li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-dot artifact"></div>
+          <h3>Implementation references (continued)</h3>
+        </div>
+        <ul>
+          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/e3db0449b366f96ebb0d6e27a02a1d65d382e1a5/server/internal/app/replacement.go#L272" target="_blank" rel="noopener noreferrer">Candidate issuance and reconciliation deadline</a></li>
+          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/e3db0449b366f96ebb0d6e27a02a1d65d382e1a5/server/service/replacement.go#L45" target="_blank" rel="noopener noreferrer">core: MDM service candidate check-in</a></li>
+          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/e3db0449b366f96ebb0d6e27a02a1d65d382e1a5/server/service/replacement.go#L93" target="_blank" rel="noopener noreferrer">Command delivery and result handling</a></li>
         </ul>
       </div>
     </div>

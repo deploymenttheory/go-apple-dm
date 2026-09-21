@@ -35,7 +35,7 @@
     ],
     "repository": {
       "url": "https://github.com/deploymenttheory/go-apple-dm",
-      "revision": "2b8157efa2c6cbfff459bc44f66736a5d2e7c753"
+      "revision": "c1a9487d510ddbad038e8a171861a4f96ebfd5dd"
     },
     "colour_profile": "purpose-v1",
     "legend": {
@@ -109,6 +109,10 @@
         {
           "path": "devicemanagement/appleplatformservices/dep/oauth1.go",
           "label": "OAuth 1.0a"
+        },
+        {
+          "path": "devicemanagement/appleplatformservices/dep/accountfence.go",
+          "label": "credential and identity checks"
         }
       ],
       "purpose": "transport"
@@ -193,6 +197,10 @@
         {
           "path": "devicemanagement/appleplatformservices/dep/assigner.go",
           "label": "assignment"
+        },
+        {
+          "path": "devicemanagement/appleplatformservices/dep/assignmentstate.go",
+          "label": "lease, target and cooldown checks"
         }
       ],
       "purpose": "service"
@@ -236,6 +244,10 @@
         {
           "path": "devicemanagement/appleplatformservices/dep/store.go",
           "label": "DEP persistence"
+        },
+        {
+          "path": "server/depstore/sqlstore/syncstate.go",
+          "label": "stable account-name locks"
         }
       ]
     },
@@ -395,9 +407,19 @@
       "dot": "service",
       "title": "Inventory and assignments",
       "items": [
-        "Synchronization begins with a full fetch and then incremental cursors. A full-fetch generation reconciles missing devices only at successful completion; page and cursor persistence is atomic.",
-        "Synchronization and assignment have independent schedules. The reconciler persists per-device retries, checks the desired target before saving outcomes and reads back Apple state in the reference server.",
+        "Inventory pages and cursors commit atomically after account, credential and cursor checks. Only the final page of the current full-fetch generation reconciles missing devices; interrupted or superseded fetches cannot delete unseen inventory.",
+        "Sync and assignment run independently. Assignment outcomes and readback recheck lease ownership, Apple account identity, OAuth credentials and the desired profile before saving; a conflict stops that run.",
         "Apps and Books returns asynchronous event IDs. The caller persists progress, authenticates notifications and checks completion before installation."
+      ]
+    },
+    {
+      "dot": "warning",
+      "title": "DEP renewal, reset and cooldowns",
+      "items": [
+        "Ordinary token imports reject established Apple identity or consumer-key changes. Force permits an atomic identity reset only with a validated server UUID; same-identity renewals preserve inventory and local settings.",
+        "Old responses cannot restore reset inventory or sessions. A still-owned lease may retain HTTP 429 or device THROTTLED cooldowns across a same-identity token or desired-profile change; identity reset discards the old server’s cooldowns.",
+        "Local checks cannot undo requests already accepted by Apple. Later reconciliation reads current Apple state.",
+        "Token validation and atomic reset — https://github.com/deploymenttheory/go-apple-dm/blob/c1a9487d510ddbad038e8a171861a4f96ebfd5dd/devicemanagement/appleplatformservices/dep/token.go"
       ]
     },
     {

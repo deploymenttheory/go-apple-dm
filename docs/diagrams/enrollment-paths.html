@@ -5212,7 +5212,7 @@ svg[data-purpose-filter] g[data-purpose-highlight] > path { stroke-width: 2.4; }
 
 
         <!-- Edge paths -->
-        <path data-edge-from="issuer" data-edge-to="checkin" data-edge-label="Use device certificate" data-edge-key="0" data-edge-id="checkin" data-purpose="authentication" data-composition-points="854.5,464;854.5,448;507.5,448;507.5,464" d="M 854.5 464 L 854.5 448 L 507.5 448 L 507.5 464" class="a-default purpose-arrow purpose-authentication" stroke-width="1.4" marker-end="url(#purpose-arrowhead-authentication)"/>
+        <path data-edge-from="issuer" data-edge-to="checkin" data-edge-label="Use device certificate" data-edge-key="0" data-edge-id="checkin" data-purpose="authentication" data-composition-points="854.5,532;854.5,570;507.5,570;507.5,532" d="M 854.5 532 L 854.5 570 L 507.5 570 L 507.5 532" class="a-default purpose-arrow purpose-authentication" stroke-width="1.4" marker-end="url(#purpose-arrowhead-authentication)"/>
         <path data-edge-from="profile" data-edge-to="issuer" data-edge-label="Install identity payload" data-edge-key="1" data-edge-id="identity" data-purpose="artifact" data-composition-points="1086.5,464;1086.5,448;854.5,448;854.5,464" d="M 1086.5 464 L 1086.5 448 L 854.5 448 L 854.5 464" class="a-default purpose-arrow purpose-artifact" stroke-width="1.4" marker-end="url(#purpose-arrowhead-artifact)"/>
         <path data-edge-from="manual" data-edge-to="profile" data-edge-label="Admin export" data-edge-key="2" data-edge-id="manual-export" data-purpose="artifact" data-composition-points="160.5,406;160.5,422;1853.5,422;1853.5,548;1107.5,548;1107.5,532" d="M 160.5 406 L 160.5 422 L 1853.5 422 L 1853.5 548 L 1107.5 548 L 1107.5 532" class="a-default purpose-arrow purpose-artifact" stroke-width="1.4" marker-end="url(#purpose-arrowhead-artifact)"/>
         <path data-edge-from="manual" data-edge-to="ota" data-edge-label="OTA only" data-edge-key="3" data-edge-id="ota1" data-purpose="transport" data-composition-points="273,372;395,372" d="M 273 372 L 395 372" class="a-default purpose-arrow purpose-transport" stroke-width="1.4" marker-end="url(#purpose-arrowhead-transport)"/>
@@ -5369,8 +5369,8 @@ svg[data-purpose-filter] g[data-purpose-highlight] > path { stroke-width: 2.4; }
 
         <!-- Edge labels -->
         <g data-detail="context" data-edge-from="issuer" data-edge-to="checkin" data-edge-label="Use device certificate" data-edge-key="0" data-edge-id="checkin" data-purpose="authentication">
-          <rect x="609" y="428" width="144" height="14" rx="3" class="c-mask"/>
-          <text x="681" y="438" class="t-muted" font-size="10" text-anchor="middle">Use device certificate</text>
+          <rect x="609" y="548" width="144" height="14" rx="3" class="c-mask"/>
+          <text x="681" y="558" class="t-muted" font-size="10" text-anchor="middle">Use device certificate</text>
         </g>
         <g data-detail="context" data-edge-from="profile" data-edge-to="issuer" data-edge-label="Install identity payload" data-edge-key="1" data-edge-id="identity" data-purpose="artifact">
           <rect x="892.5" y="428" width="156" height="14" rx="3" class="c-mask"/>
@@ -5625,6 +5625,7 @@ svg[data-purpose-filter] g[data-purpose-highlight] > path { stroke-width: 2.4; }
         <ul>
           <li>&bull; Automated Device Enrollment, account-driven enrollment, and profile-based enrollment describe how enrollment begins. SCEP and ACME describe how the device obtains its identity.</li>
           <li>&bull; Account-driven discovery selects User Enrollment (mdm-byod) or Device Enrollment (mdm-adde). The reference server’s OTA delivery supports SCEP only and separates identity bootstrap from MDM profile delivery.</li>
+          <li>&bull; ADE software-update gating and browser authentication are optional library hooks. The reference composition serves its configured ADE profile directly. OTA requires a bootstrap-signed POST for the identity profile, then an identity-signed POST for the MDM profile.</li>
         </ul>
       </div>
 
@@ -5669,12 +5670,12 @@ svg[data-purpose-filter] g[data-purpose-highlight] > path { stroke-width: 2.4; }
           <h3>Implementation references</h3>
         </div>
         <ul>
-          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/devicemanagement/mdmprotocol/enroll/ade/handler.go" target="_blank" rel="noopener noreferrer">updategate: Verify and admit device</a></li>
-          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/devicemanagement/mdmprotocol/enroll/ade/handler.go" target="_blank" rel="noopener noreferrer">adeprofile: ADE authentication</a></li>
-          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/devicemanagement/mdmprotocol/enroll/discovery/discovery.go" target="_blank" rel="noopener noreferrer">discovery: Discover service</a></li>
-          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/devicemanagement/mdmprotocol/enroll/accountdriven/handler.go" target="_blank" rel="noopener noreferrer">adprofile: Authenticate account</a></li>
-          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/devicemanagement/mdmprotocol/enroll/enroll.go" target="_blank" rel="noopener noreferrer">manual: Choose profile delivery</a></li>
-          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/devicemanagement/mdmprotocol/enroll/ota.go" target="_blank" rel="noopener noreferrer">ota: OTA identity phase</a></li>
+          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/e3db0449b366f96ebb0d6e27a02a1d65d382e1a5/devicemanagement/mdmprotocol/enroll/ade/handler.go#L142" target="_blank" rel="noopener noreferrer">updategate: Verify and admit device</a></li>
+          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/e3db0449b366f96ebb0d6e27a02a1d65d382e1a5/devicemanagement/mdmprotocol/enroll/ade/handler.go#L142" target="_blank" rel="noopener noreferrer">adeprofile: ADE authentication</a></li>
+          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/e3db0449b366f96ebb0d6e27a02a1d65d382e1a5/devicemanagement/mdmprotocol/enroll/discovery/discovery.go#L159" target="_blank" rel="noopener noreferrer">discovery: Discover service</a></li>
+          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/e3db0449b366f96ebb0d6e27a02a1d65d382e1a5/devicemanagement/mdmprotocol/enroll/accountdriven/handler.go#L145" target="_blank" rel="noopener noreferrer">adprofile: Authenticate account</a></li>
+          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/e3db0449b366f96ebb0d6e27a02a1d65d382e1a5/server/internal/app/adminbench.go#L149" target="_blank" rel="noopener noreferrer">manual: Choose delivery; administrative export</a></li>
+          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/e3db0449b366f96ebb0d6e27a02a1d65d382e1a5/devicemanagement/mdmprotocol/enroll/ota.go#L210" target="_blank" rel="noopener noreferrer">ota: OTA identity phase</a></li>
         </ul>
       </div>
 
@@ -5684,10 +5685,11 @@ svg[data-purpose-filter] g[data-purpose-highlight] > path { stroke-width: 2.4; }
           <h3>Implementation references (continued)</h3>
         </div>
         <ul>
-          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/devicemanagement/mdmprotocol/enroll/ota.go" target="_blank" rel="noopener noreferrer">otafinal: OTA management phase</a></li>
-          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/devicemanagement/mdmprotocol/enroll/enroll.go" target="_blank" rel="noopener noreferrer">profile: Enrollment profile</a></li>
-          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/server/internal/app/enroll.go" target="_blank" rel="noopener noreferrer">issuer: Enrollment identity</a></li>
-          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/server/service/checkin.go" target="_blank" rel="noopener noreferrer">checkin: Authenticate + TokenUpdate</a></li>
+          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/e3db0449b366f96ebb0d6e27a02a1d65d382e1a5/devicemanagement/mdmprotocol/enroll/ota.go#L210" target="_blank" rel="noopener noreferrer">otafinal: OTA management phase</a></li>
+          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/e3db0449b366f96ebb0d6e27a02a1d65d382e1a5/devicemanagement/mdmprotocol/enroll/enroll.go#L262" target="_blank" rel="noopener noreferrer">profile: Enrollment profile builder</a></li>
+          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/e3db0449b366f96ebb0d6e27a02a1d65d382e1a5/server/internal/app/enroll.go#L509" target="_blank" rel="noopener noreferrer">issuer: Enrollment identity configuration</a></li>
+          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/e3db0449b366f96ebb0d6e27a02a1d65d382e1a5/server/service/checkin.go#L83" target="_blank" rel="noopener noreferrer">checkin: Complete check-in</a></li>
+          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/e3db0449b366f96ebb0d6e27a02a1d65d382e1a5/server/internal/app/adminbench.go#L64" target="_blank" rel="noopener noreferrer">Profile export route and permission</a></li>
         </ul>
       </div>
     </div>

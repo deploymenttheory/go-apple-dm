@@ -10,7 +10,7 @@
     ],
     "repository": {
       "url": "https://github.com/deploymenttheory/go-apple-dm",
-      "revision": "2b8157efa2c6cbfff459bc44f66736a5d2e7c753"
+      "revision": "e3db0449b366f96ebb0d6e27a02a1d65d382e1a5"
     },
     "views": [
       {
@@ -81,8 +81,8 @@
       ],
       "sources": [
         {
-          "path": "server/httpapi/httpapi.go",
-          "label": "cert middlewares"
+          "path": "server/httpapi/cert.go",
+          "label": "TLS, proxy and signed-body middleware"
         }
       ],
       "purpose": "authentication"
@@ -295,7 +295,7 @@
       "id": "storepkg",
       "type": "database",
       "label": "storage.Store",
-      "sublabel": "pins · queue · tokens",
+      "sublabel": "pins \u00b7 queue \u00b7 tokens",
       "pos": [
         995.0,
         410
@@ -414,7 +414,27 @@
       "to": "errors",
       "label": "Map HTTP errors",
       "variant": "security",
-      "purpose": "failure"
+      "purpose": "failure",
+      "fromSide": "bottom",
+      "toSide": "right",
+      "via": [
+        [
+          465,
+          520
+        ],
+        [
+          295,
+          520
+        ],
+        [
+          295,
+          595
+        ]
+      ],
+      "labelAt": [
+        370,
+        508
+      ]
     },
     {
       "id": "e5",
@@ -573,10 +593,10 @@
       "dot": "transport",
       "title": "Public documentation",
       "items": [
-        "Check-in — https://developer.apple.com/documentation/devicemanagement/check-in",
-        "Sending MDM commands to a device — https://developer.apple.com/documentation/devicemanagement/sending-mdm-commands-to-a-device",
-        "Declarative Management check-in — https://developer.apple.com/documentation/devicemanagement/declarative-management",
-        "Native webhook contract and JSON examples — https://github.com/deploymenttheory/go-apple-dm/blob/main/docs/operations/webhooks.md"
+        "Check-in \u2014 https://developer.apple.com/documentation/devicemanagement/check-in",
+        "Sending MDM commands to a device \u2014 https://developer.apple.com/documentation/devicemanagement/sending-mdm-commands-to-a-device",
+        "Declarative Management check-in \u2014 https://developer.apple.com/documentation/devicemanagement/declarative-management",
+        "Native webhook contract and JSON examples \u2014 https://github.com/deploymenttheory/go-apple-dm/blob/main/docs/operations/webhooks.md"
       ]
     }
   ]

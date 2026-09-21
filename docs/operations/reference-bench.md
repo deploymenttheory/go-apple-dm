@@ -7,7 +7,7 @@ for workspace commands and the [testing guide](../testing/bench.md) for test lay
 ## Runtime and configuration
 
 `dmserver` uses the shared HTTP/worker lifecycle. Native TLS is required for
-remote listeners. A TLS proxy can forward over literal-loopback HTTP or verified
+remote main application listeners. A TLS proxy can forward over literal-loopback HTTP or verified
 TLS to a remote backend. The default listener is `127.0.0.1:8080`, including in
 the container image. On shutdown, requests drain before workers stop and
 connections/storage close. `/healthz` checks storage;
@@ -42,7 +42,7 @@ and appears in `/routes`. Mutations produce normal administrative audit events.
 | Method and path | Input and result | Action |
 |---|---|---|
 | `POST /enrollment-profiles` | JSON `DeviceID`, optional `Serial`, `Identity` (`acme` or `scep`) and `AccessRights`; returns a mobileconfig using the configured issuer and topic. Default rights request device inventory. | `issueEnrollmentProfile` |
-| `POST /enrollments/{channel}/{id}/replacement` | Optional `Identity`; creates a 30-minute attempt and its InstallProfile command. Device channel only; original profile must have installation rights and recorded metadata. | `replaceEnrollmentProfile` |
+| `POST /enrollments/{channel}/{id}/replacement` | Optional `Identity`; prepares an InstallProfile command with a 30-minute issuance grant. An issued candidate extends reconciliation to its certificate expiry when later. Device channel only; original profile must have installation rights and recorded metadata. | `replaceEnrollmentProfile` |
 | `GET /enrollments/{channel}/{id}/replacement` | Redacted current attempt, delivery, acknowledgment, expiry and certificate fingerprints. | `readEnrollment` |
 | `DELETE /enrollments/{channel}/{id}/replacement/{attempt}` | Cancels that pending attempt; preserves the active enrollment. | `replaceEnrollmentProfile` |
 | `GET /enrollments/{channel}/{id}/enrollment-evidence` | Actual pinned identity's issuance method and certificate/check-in timestamps; unknown issuance remains unknown. | `readEnrollment` |
@@ -92,5 +92,15 @@ account-driven `/.well-known/com.apple.remotemanagement` discovery.
 
 The replacement table is included in each SQL backend's initial schema. Pending
 state is sealed with the configured storage keyring and committed atomically with
-identity/token changes. See the [Mac enrollment runbook](mac-enrollment-testing.md)
+identity/token changes. Preparation does not send a push; the operator requests
+one separately, while `dmctl bench replace` prepares and then requests the wake.
+Promotion requires candidate Authenticate, device-channel TokenUpdate and an
+acknowledgment of the delivered InstallProfile. Authenticate must precede
+TokenUpdate; acknowledgment may arrive before or after those check-ins. Same-certificate
+retries and controlled replacement preserve DDM state. Ordinary enrollment resets
+and CheckOut require DDM cleanup before success; the shared-SQL composition rolls
+back the MDM mutation, cleanup and captured events together on cleanup failure.
+See the [replacement transition rules](../../devicemanagement/storage/replacement.go),
+[DDM transaction limits](../research/decisions/0020-ddm-engine-membership-and-storage.md)
+and [Mac enrollment runbook](mac-enrollment-testing.md)
 for ACME, SCEP, replacement and the exact live evidence required.

@@ -21,9 +21,14 @@ state. Recorded templates omit issuance secrets.
 An enrollment-scoped administrative action prepares a profile replacement with
 a fresh client identity. It retains the original profile's identifier, rights,
 capabilities, topic and endpoints. The attempt owns its `InstallProfile` command
-and expires after 30 minutes. Candidate Authenticate and TokenUpdate messages
-are staged; the active identity changes only after the candidate's device
-TokenUpdate and acknowledgment of the delivered command, in either order.
+and authorizes fresh issuance for 30 minutes. Recording a candidate certificate
+extends the reconciliation deadline to that certificate's `NotAfter`, if later.
+Storage evaluates expiry on transitions, including reads; no background worker
+expires attempts. Candidate Authenticate and TokenUpdate messages are staged;
+promotion requires candidate Authenticate, a valid device-channel TokenUpdate,
+and acknowledgment of the delivered command. Authenticate must precede
+TokenUpdate; acknowledgment may arrive before or after those check-ins. A staged
+user-channel token does not replace the device-channel requirement.
 Cancellation, expiry and device-reported failure preserve the working enrollment.
 Ordinary re-enrollment remains governed by its existing policy.
 
@@ -48,7 +53,9 @@ Callers must preserve identifiers and UUIDs when updating existing profiles. Att
 Replacement requires a recorded original profile with profile-installation rights.
 Candidate authorization follows [identity pinning](0006-mdm-signature-verification.md);
 [storage contracts](0005-storage-interfaces.md) preserve queued work, escrow,
-certificate history and user channels during the transition. Simulator recovery
+certificate history, DDM state and user channels during the transition. An
+independent CheckOut still disables the enrollment. Promotion is atomic and later
+stale command results cannot reverse it. Simulator recovery
 does not establish macOS replacement eligibility or device-side rollback. OTA
 updates after profile-signing certificate expiry require separate live evidence.
 
@@ -64,6 +71,9 @@ for actual installation, replacement and rollback verification.
 
 - [mdmprotocol/profile](../../../devicemanagement/mdmprotocol/profile)
 - [mdmprotocol/enroll](../../../devicemanagement/mdmprotocol/enroll)
+- [Replacement administration and issuance](../../../server/internal/app/replacement.go)
+- [Replacement transition rules](../../../devicemanagement/storage/replacement.go)
+- [Replacement transition tests](../../../devicemanagement/storage/replacement_test.go)
 - <https://developer.apple.com/documentation/devicemanagement/profile-specific-payload-keys>
 - <https://developer.apple.com/documentation/devicemanagement/mdm>
 - <https://developer.apple.com/documentation/devicemanagement/deploying-device-management-enrollment-profiles>

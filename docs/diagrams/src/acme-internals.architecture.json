@@ -10,7 +10,7 @@
     ],
     "repository": {
       "url": "https://github.com/deploymenttheory/go-apple-dm",
-      "revision": "2b8157efa2c6cbfff459bc44f66736a5d2e7c753"
+      "revision": "e3db0449b366f96ebb0d6e27a02a1d65d382e1a5"
     },
     "views": [
       {
@@ -66,8 +66,8 @@
     {
       "id": "directory",
       "type": "external",
-      "label": "ACME discovery",
-      "sublabel": "Operation URLs and nonce",
+      "label": "Device discovery",
+      "sublabel": "Read directory; obtain nonce",
       "pos": [
         15.0,
         110
@@ -134,11 +134,18 @@
       "sources": [
         {
           "path": "devicemanagement/pki/acme/server.go",
-          "label": "routes"
+          "line": 175,
+          "label": "Register HTTP routes"
         },
         {
           "path": "devicemanagement/pki/acme/handlers.go",
-          "label": "handlers"
+          "line": 658,
+          "label": "Finalize and validate CSR"
+        },
+        {
+          "path": "devicemanagement/pki/acme/issuance.go",
+          "line": 29,
+          "label": "Issue or recover receipt"
         }
       ],
       "purpose": "service"
@@ -159,7 +166,8 @@
       "sources": [
         {
           "path": "devicemanagement/pki/acme/attest/attest.go",
-          "label": "verify"
+          "line": 321,
+          "label": "Verify chain freshness and key"
         },
         {
           "path": "devicemanagement/pki/acme/attest/anchors.go",
@@ -205,8 +213,14 @@
       "purpose": "storage",
       "sources": [
         {
+          "path": "devicemanagement/pki/acme/server.go",
+          "line": 360,
+          "label": "Consume replay nonce"
+        },
+        {
           "path": "devicemanagement/pki/acme/store.go",
-          "label": "Nonce store"
+          "line": 120,
+          "label": "Nonce persistence contract"
         }
       ]
     },
@@ -268,7 +282,13 @@
       "sources": [
         {
           "path": "devicemanagement/pki/acme/policy.go",
-          "label": "decisions"
+          "line": 41,
+          "label": "Admission policy contract"
+        },
+        {
+          "path": "devicemanagement/pki/acme/handlers.go",
+          "line": 734,
+          "label": "Reverify key and admission"
         }
       ],
       "purpose": "policy"
@@ -289,7 +309,18 @@
       "sources": [
         {
           "path": "devicemanagement/pki/acme/identifier.go",
-          "label": "claim once"
+          "line": 112,
+          "label": "Verify HMAC binding"
+        },
+        {
+          "path": "devicemanagement/pki/acme/handlers.go",
+          "line": 188,
+          "label": "New order claims identifier"
+        },
+        {
+          "path": "devicemanagement/pki/acme/store.go",
+          "line": 73,
+          "label": "Atomic one-use claim contract"
         }
       ],
       "purpose": "policy"
@@ -335,7 +366,8 @@
       "sources": [
         {
           "path": "devicemanagement/pki/ca/ca.go",
-          "label": "signer"
+          "line": 210,
+          "label": "Sign approved CSR"
         },
         {
           "path": "devicemanagement/pki/ca/othername.go",
@@ -350,11 +382,11 @@
       "id": "e1",
       "from": "device",
       "to": "server",
-      "label": "Signed ACME request",
+      "label": "Signed request",
       "variant": "emphasis",
       "labelAt": [
         295,
-        245
+        315
       ],
       "purpose": "transport"
     },
@@ -363,16 +395,16 @@
       "from": "directory",
       "to": "server",
       "label": "Discover operations",
-      "fromSide": "bottom",
-      "toSide": "top",
+      "fromSide": "right",
+      "toSide": "left",
       "via": [
         [
-          125,
-          220
+          295,
+          145
         ],
         [
-          465,
-          220
+          295,
+          295
         ]
       ],
       "labelAt": [
@@ -442,8 +474,8 @@
       "label": "device-attest-01",
       "variant": "security",
       "labelAt": [
-        465.0,
-        344.0
+        465,
+        390
       ],
       "purpose": "authentication"
     },
@@ -481,9 +513,23 @@
       "from": "server",
       "to": "capkg",
       "label": "Verify CSR; issue",
-      "fromSide": "left",
-      "toSide": "right",
-      "purpose": "certificate"
+      "fromSide": "bottom",
+      "toSide": "top",
+      "purpose": "certificate",
+      "via": [
+        [
+          465,
+          370
+        ],
+        [
+          125,
+          370
+        ]
+      ],
+      "labelAt": [
+        295,
+        358
+      ]
     },
     {
       "id": "e12",
@@ -504,10 +550,22 @@
       "label": "refused",
       "variant": "security",
       "labelAt": [
-        585.0,
-        644.0
+        625,
+        644
       ],
-      "purpose": "failure"
+      "purpose": "failure",
+      "fromSide": "bottom",
+      "toSide": "bottom",
+      "via": [
+        [
+          785,
+          655
+        ],
+        [
+          465,
+          655
+        ]
+      ]
     }
   ],
   "cards": [
@@ -515,15 +573,17 @@
       "dot": "authentication",
       "title": "What attestation proves",
       "items": [
-        "The server verifies Apple attestation evidence, challenge freshness, and the expected device identity before applying admission policy.",
-        "At finalization, the certificate signing request must use the attested key. Accepting a challenge does not itself issue a certificate."
+        "The attested path verifies Apple evidence, challenge freshness and expected device identity before admission policy. Unattested issuance requires an explicit configured exception.",
+        "Finalization checks the CSR signature, reverifies stored attestation against the CSR key, and rechecks admission. Accepting a challenge does not itself issue a certificate."
       ]
     },
     {
       "dot": "policy",
       "title": "Protocol and policy",
       "items": [
-        "Signed requests use one-use replay nonces. Orders and identifiers are persisted so concurrent requests cannot reuse an authorization.",
+        "Signed requests use one-use replay nonces. Identifier HMAC verification is stateless; the new-order transaction claims the identifier once while creating protocol state.",
+        "Issuance persists a CSR-bound certificate receipt under the order lock before registration. Retries reuse that certificate; required registration must complete before the certificate is exposed.",
+        "Finalize retries and order polls can recover pending registration after key, expiry and policy rechecks. Certificate retrieval checks account ownership and refuses incomplete registration.",
         "ACME protocol failures use problem documents. Optional issuance registration and revocation add certificate-status tracking."
       ]
     },
@@ -535,6 +595,16 @@
         "Deploy Managed Device Attestation — https://support.apple.com/en-gb/guide/deployment/dep54e5ac1fd/web",
         "RFC 8555 — ACME — https://www.rfc-editor.org/rfc/rfc8555",
         "Validate Managed Device Attestation — https://developer.apple.com/documentation/devicemanagement/validating-a-managed-device-attestation-attestation"
+      ]
+    },
+    {
+      "dot": "artifact",
+      "title": "Implementation references",
+      "items": [
+        "Discovery and nonce responses — https://github.com/deploymenttheory/go-apple-dm/blob/e3db0449b366f96ebb0d6e27a02a1d65d382e1a5/devicemanagement/pki/acme/handlers.go#L31",
+        "Receipt registration and recovery — https://github.com/deploymenttheory/go-apple-dm/blob/e3db0449b366f96ebb0d6e27a02a1d65d382e1a5/devicemanagement/pki/acme/issuance.go#L104",
+        "Order polling recovery — https://github.com/deploymenttheory/go-apple-dm/blob/e3db0449b366f96ebb0d6e27a02a1d65d382e1a5/devicemanagement/pki/acme/handlers.go#L295",
+        "Certificate retrieval handler — https://github.com/deploymenttheory/go-apple-dm/blob/e3db0449b366f96ebb0d6e27a02a1d65d382e1a5/devicemanagement/pki/acme/handlers.go#L821"
       ]
     }
   ]

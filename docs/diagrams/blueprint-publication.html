@@ -5221,8 +5221,8 @@ svg[data-purpose-filter] g[data-purpose-highlight] > path { stroke-width: 2.4; }
           <text data-detail="context" x="168" y="124" class="t-muted" font-size="11" text-anchor="middle">Native declarations or profile refs</text>
         </g>
 
-        <g id="node-compile" data-node-id="compile" data-node-label="Compile and validate" tabindex="0" role="button" aria-label="Focus Compile and validate, Resolve references; check target, Author and publish" aria-pressed="false" data-node-kind="security" data-node-sublabel="Resolve references; check target" data-node-context="Author and publish" data-purpose="policy">
-          <title>Compile and validate · Resolve references; check target · Author and publish</title>
+        <g id="node-compile" data-node-id="compile" data-node-label="Compile and validate" tabindex="0" role="button" aria-label="Focus Compile and validate, Resolve refs; validate structure, Author and publish" aria-pressed="false" data-node-kind="security" data-node-sublabel="Resolve refs; validate structure" data-node-context="Author and publish" data-purpose="policy">
+          <title>Compile and validate · Resolve refs; validate structure · Author and publish</title>
           <rect x="386" y="86" width="240" height="76" rx="6" class="c-mask"/>
           <rect x="386" y="86" width="240" height="76" rx="6" class="c-security" stroke-width="1.5"/>
           <g aria-hidden="true" data-semantic-sigil="security" class="semantic-sigil s-security" transform="translate(392 92) scale(0.6875)">
@@ -5230,7 +5230,7 @@ svg[data-purpose-filter] g[data-purpose-highlight] > path { stroke-width: 2.4; }
             <path d="m5.8 8 1.5 1.5 3-3"/>
           </g>
           <text data-node-label="" data-detail-anchor="" x="506" y="107" class="t-primary" font-size="14" font-weight="600" text-anchor="middle">Compile and validate</text>
-          <text data-detail="context" x="506" y="124" class="t-muted" font-size="11" text-anchor="middle">Resolve references; check target</text>
+          <text data-detail="context" x="506" y="124" class="t-muted" font-size="11" text-anchor="middle">Resolve refs; validate structure</text>
         </g>
 
         <g id="node-publish" data-node-id="publish" data-node-label="Publish complete set" tabindex="0" role="button" aria-label="Focus Publish complete set, Source revision and DDM transaction, Author and publish" aria-pressed="false" data-node-kind="database" data-node-sublabel="Source revision and DDM transaction" data-node-context="Author and publish" data-purpose="storage">
@@ -5515,7 +5515,7 @@ svg[data-purpose-filter] g[data-purpose-highlight] > path { stroke-width: 2.4; }
           <h3>Publication is server state</h3>
         </div>
         <ul>
-          <li>&bull; Validation can preview a target without writing state. Publishing persists desired state; the device synchronizes and evaluates activation afterwards.</li>
+          <li>&bull; Target-aware validation is an optional preview. Publish validates with an empty support.Target, persists desired state, and leaves synchronization and activation to the device.</li>
           <li>&bull; The Blueprint source revision differs from declaration ServerToken values. Removing an item withdraws it from this set; retained versions and uploaded profile bytes have their own stores.</li>
           <li>&bull; Publication notifies existing assignments too. Adding or removing membership is a separate enrollment-scoped operation.</li>
         </ul>
@@ -5548,12 +5548,12 @@ svg[data-purpose-filter] g[data-purpose-highlight] > path { stroke-width: 2.4; }
           <h3>Implementation references</h3>
         </div>
         <ul>
-          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/devicemanagement/mdmprotocol/ddm/blueprint/blueprint.go" target="_blank" rel="noopener noreferrer">spec: Author Blueprint</a></li>
-          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/server/blueprints/manager.go" target="_blank" rel="noopener noreferrer">compile: Compile and validate</a></li>
-          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/devicemanagement/mdmprotocol/ddm/publication.go" target="_blank" rel="noopener noreferrer">publish: Publish complete set</a></li>
-          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/server/blueprints/manager.go" target="_blank" rel="noopener noreferrer">assign: Assign enrollment</a></li>
-          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/server/ddmsync/notifier.go" target="_blank" rel="noopener noreferrer">notify: Notify changed state</a></li>
-          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/devicemanagement/mdmprotocol/ddm/serve.go" target="_blank" rel="noopener noreferrer">device: Synchronize and activate</a></li>
+          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/e3db0449b366f96ebb0d6e27a02a1d65d382e1a5/devicemanagement/mdmprotocol/ddm/blueprint/blueprint.go" target="_blank" rel="noopener noreferrer">spec: Author Blueprint</a></li>
+          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/e3db0449b366f96ebb0d6e27a02a1d65d382e1a5/server/blueprints/manager.go" target="_blank" rel="noopener noreferrer">compile: Compile and validate</a></li>
+          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/e3db0449b366f96ebb0d6e27a02a1d65d382e1a5/devicemanagement/mdmprotocol/ddm/publication.go" target="_blank" rel="noopener noreferrer">publish: Publish complete set</a></li>
+          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/e3db0449b366f96ebb0d6e27a02a1d65d382e1a5/server/blueprints/manager.go" target="_blank" rel="noopener noreferrer">assign: Assign enrollment</a></li>
+          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/e3db0449b366f96ebb0d6e27a02a1d65d382e1a5/server/ddmsync/notifier.go" target="_blank" rel="noopener noreferrer">notify: Notify changed state</a></li>
+          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/e3db0449b366f96ebb0d6e27a02a1d65d382e1a5/devicemanagement/mdmprotocol/ddm/serve.go" target="_blank" rel="noopener noreferrer">device: Synchronize and activate</a></li>
         </ul>
       </div>
 
@@ -5563,8 +5563,9 @@ svg[data-purpose-filter] g[data-purpose-highlight] > path { stroke-width: 2.4; }
           <h3>Implementation references (continued)</h3>
         </div>
         <ul>
-          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/server/internal/app/adminblueprints.go" target="_blank" rel="noopener noreferrer">Revision and ETag administration</a></li>
-          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/server/configurationprofile/manager.go" target="_blank" rel="noopener noreferrer">Uploaded configuration profiles</a></li>
+          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/e3db0449b366f96ebb0d6e27a02a1d65d382e1a5/server/internal/app/adminblueprints.go" target="_blank" rel="noopener noreferrer">Revision and ETag administration</a></li>
+          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/e3db0449b366f96ebb0d6e27a02a1d65d382e1a5/server/configurationprofile/manager.go" target="_blank" rel="noopener noreferrer">Uploaded configuration profiles</a></li>
+          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/e3db0449b366f96ebb0d6e27a02a1d65d382e1a5/server/blueprints/manager.go#L205-L209" target="_blank" rel="noopener noreferrer">Publish validation without a target</a></li>
         </ul>
       </div>
     </div>

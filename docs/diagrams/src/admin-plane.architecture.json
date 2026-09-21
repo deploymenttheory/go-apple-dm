@@ -34,7 +34,7 @@
     ],
     "repository": {
       "url": "https://github.com/deploymenttheory/go-apple-dm",
-      "revision": "2b8157efa2c6cbfff459bc44f66736a5d2e7c753"
+      "revision": "c1a9487d510ddbad038e8a171861a4f96ebfd5dd"
     },
     "colour_profile": "purpose-v1",
     "legend": {
@@ -259,7 +259,8 @@
       "from": "dmctl",
       "to": "adminclient",
       "label": "typed calls",
-      "purpose": "transport"
+      "purpose": "transport",
+      "labelDy": -42
     },
     {
       "id": "config-cli",
@@ -275,11 +276,27 @@
       "to": "authorized",
       "label": "Bearer token",
       "variant": "security",
-      "labelAt": [
-        425.0,
-        194.0
+      "purpose": "authentication",
+      "fromSide": "bottom",
+      "toSide": "left",
+      "via": [
+        [
+          425,
+          206
+        ],
+        [
+          285,
+          206
+        ],
+        [
+          285,
+          295
+        ]
       ],
-      "purpose": "authentication"
+      "labelAt": [
+        425,
+        194
+      ]
     },
     {
       "id": "authorized-manager",
@@ -293,6 +310,7 @@
       "from": "authorized",
       "to": "permissions",
       "label": "Resolve scope",
+      "purpose": "authentication",
       "fromSide": "top",
       "toSide": "bottom",
       "via": [
@@ -304,8 +322,7 @@
           725,
           218
         ]
-      ],
-      "purpose": "authentication"
+      ]
     },
     {
       "id": "authorized-routes",
@@ -373,9 +390,9 @@
         "Cedar authorization overview — https://docs.cedarpolicy.com/",
         "Sending MDM commands to a device — https://developer.apple.com/documentation/devicemanagement/sending-mdm-commands-to-a-device",
         "Deploying device management enrollment profiles — https://developer.apple.com/documentation/devicemanagement/deploying-device-management-enrollment-profiles",
-        "Setup authorization — https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/server/internal/app/adminsetup.go",
-        "Event administration — https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/server/internal/app/adminevents.go",
-        "Cross-platform credential files — https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/server/internal/privatefile/doc.go"
+        "Setup authorization — https://github.com/deploymenttheory/go-apple-dm/blob/c1a9487d510ddbad038e8a171861a4f96ebfd5dd/server/internal/app/adminsetup.go",
+        "Event administration — https://github.com/deploymenttheory/go-apple-dm/blob/c1a9487d510ddbad038e8a171861a4f96ebfd5dd/server/internal/app/adminevents.go",
+        "Cross-platform credential files — https://github.com/deploymenttheory/go-apple-dm/blob/c1a9487d510ddbad038e8a171861a4f96ebfd5dd/server/internal/privatefile/doc.go"
       ]
     }
   ]

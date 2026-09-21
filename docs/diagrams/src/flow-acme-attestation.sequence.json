@@ -6,7 +6,7 @@
     "quality_profile": "showcase",
     "viewBox": [
       1320,
-      754
+      898
     ],
     "column_fit": "spread",
     "views": [
@@ -173,29 +173,67 @@
       "purpose": "certificate"
     },
     {
+      "id": "recheck",
+      "from": "acme",
+      "to": "attest",
+      "label": "Reverify evidence against the CSR public key",
+      "y": 535,
+      "variant": "security",
+      "purpose": "authentication"
+    },
+    {
+      "id": "readmit",
+      "from": "acme",
+      "to": "policy",
+      "label": "Recheck current admission policy",
+      "y": 571,
+      "variant": "security",
+      "purpose": "policy"
+    },
+    {
+      "id": "lock",
+      "from": "acme",
+      "to": "store",
+      "label": "Lock order; validate current authorization",
+      "y": 607,
+      "variant": "default",
+      "purpose": "storage"
+    },
+    {
       "id": "sign",
       "from": "acme",
       "to": "ca",
       "label": "Issue with PermanentIdentifier",
-      "y": 535,
+      "y": 643,
       "variant": "default",
       "purpose": "certificate"
+    },
+    {
+      "id": "receipt",
+      "from": "acme",
+      "to": "store",
+      "label": "Commit CSR-bound certificate receipt",
+      "y": 679,
+      "variant": "default",
+      "purpose": "storage",
+      "note": "Signing and receipt share the order transaction"
     },
     {
       "id": "order-back",
       "from": "acme",
       "to": "device",
       "label": "Finalized order: certificate URL",
-      "y": 571,
+      "y": 715,
       "variant": "return",
-      "purpose": "success"
+      "purpose": "success",
+      "note": "Only after required registration completes"
     },
     {
       "id": "cert-get",
       "from": "device",
       "to": "acme",
       "label": "POST-as-GET certificate URL",
-      "y": 607,
+      "y": 751,
       "variant": "default",
       "purpose": "transport"
     },
@@ -204,7 +242,7 @@
       "from": "acme",
       "to": "device",
       "label": "Return PEM certificate chain",
-      "y": 643,
+      "y": 787,
       "variant": "return",
       "purpose": "certificate"
     }
@@ -215,7 +253,7 @@
       "title": "Two verification stages",
       "items": [
         "Challenge processing verifies the Apple attestation chain, freshness, required device identifiers, and configured admission policy.",
-        "Finalization verifies the certificate signing request and checks that its public key matches the attested key."
+        "Finalization checks the CSR signature, reverifies stored evidence against the CSR public key, and rechecks device binding and admission policy before signing."
       ]
     },
     {
@@ -223,6 +261,7 @@
       "title": "Certificate retrieval",
       "items": [
         "Signed requests consume one-use replay nonces. A finalized order provides a certificate URL that the client retrieves using POST-as-GET.",
+        "Issuance commits a receipt before registration. Registration failure leaves a recoverable processing order; finalize retry or order polling rechecks key, expiry and admission and reuses the same certificate. Download is blocked until registration completes.",
         "SCEP and ACME identity issuance are independent of the HTTPS trust anchors distributed for enrollment endpoints."
       ]
     },
@@ -240,19 +279,23 @@
       "title": "Implementation references",
       "dot": "artifact",
       "items": [
-        "acme: ACME server — https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/devicemanagement/pki/acme/server.go",
-        "store: ACME state store — https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/devicemanagement/pki/acme/store.go",
-        "attest: Attestation — https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/devicemanagement/pki/acme/attest/attest.go",
-        "policy: Admission policy — https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/devicemanagement/pki/acme/policy.go",
-        "ca: Identity CA — https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/devicemanagement/pki/ca/ca.go",
-        "Account, order and challenge handlers — https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/devicemanagement/pki/acme/handlers.go"
+        "acme: ACME server routes — https://github.com/deploymenttheory/go-apple-dm/blob/e3db0449b366f96ebb0d6e27a02a1d65d382e1a5/devicemanagement/pki/acme/server.go#L175",
+        "store: ACME state store — https://github.com/deploymenttheory/go-apple-dm/blob/e3db0449b366f96ebb0d6e27a02a1d65d382e1a5/devicemanagement/pki/acme/store.go#L60",
+        "attest: Attestation — https://github.com/deploymenttheory/go-apple-dm/blob/e3db0449b366f96ebb0d6e27a02a1d65d382e1a5/devicemanagement/pki/acme/attest/attest.go#L321",
+        "policy: Admission policy — https://github.com/deploymenttheory/go-apple-dm/blob/e3db0449b366f96ebb0d6e27a02a1d65d382e1a5/devicemanagement/pki/acme/policy.go#L41",
+        "ca: Identity CA — https://github.com/deploymenttheory/go-apple-dm/blob/e3db0449b366f96ebb0d6e27a02a1d65d382e1a5/devicemanagement/pki/ca/ca.go#L210",
+        "Account handler — https://github.com/deploymenttheory/go-apple-dm/blob/e3db0449b366f96ebb0d6e27a02a1d65d382e1a5/devicemanagement/pki/acme/handlers.go#L69"
       ]
     },
     {
       "title": "Implementation references (continued)",
       "dot": "artifact",
       "items": [
-        "Finalization and retrieval — https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/devicemanagement/pki/acme/issuance.go"
+        "Order and atomic identifier claim — https://github.com/deploymenttheory/go-apple-dm/blob/e3db0449b366f96ebb0d6e27a02a1d65d382e1a5/devicemanagement/pki/acme/handlers.go#L188",
+        "Challenge evidence validation — https://github.com/deploymenttheory/go-apple-dm/blob/e3db0449b366f96ebb0d6e27a02a1d65d382e1a5/devicemanagement/pki/acme/handlers.go#L476",
+        "Finalization handler — https://github.com/deploymenttheory/go-apple-dm/blob/e3db0449b366f96ebb0d6e27a02a1d65d382e1a5/devicemanagement/pki/acme/handlers.go#L658",
+        "Certificate retrieval handler — https://github.com/deploymenttheory/go-apple-dm/blob/e3db0449b366f96ebb0d6e27a02a1d65d382e1a5/devicemanagement/pki/acme/handlers.go#L821",
+        "Receipt and registration recovery — https://github.com/deploymenttheory/go-apple-dm/blob/e3db0449b366f96ebb0d6e27a02a1d65d382e1a5/devicemanagement/pki/acme/issuance.go#L29"
       ]
     }
   ]

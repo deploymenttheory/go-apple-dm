@@ -35,7 +35,7 @@
     ],
     "repository": {
       "url": "https://github.com/deploymenttheory/go-apple-dm",
-      "revision": "2b8157efa2c6cbfff459bc44f66736a5d2e7c753"
+      "revision": "c1a9487d510ddbad038e8a171861a4f96ebfd5dd"
     },
     "colour_profile": "purpose-v1",
     "legend": {
@@ -85,7 +85,7 @@
       "sources": [
         {
           "path": "devicemanagement/storage/storage.go",
-          "line": 253,
+          "line": 255,
           "label": "PushStore"
         }
       ]
@@ -170,7 +170,7 @@
       "sources": [
         {
           "path": "devicemanagement/storage/storage.go",
-          "line": 314,
+          "line": 316,
           "label": "PushCertStore"
         }
       ]
@@ -352,11 +352,8 @@
       "from": "certstoredb",
       "to": "certstore",
       "label": "reload on change",
-      "labelAt": [
-        875,
-        400
-      ],
-      "purpose": "storage"
+      "purpose": "storage",
+      "labelDy": -28
     },
     {
       "id": "certstore-pushcert",
@@ -391,7 +388,7 @@
       "dot": "certificate",
       "title": "Credentials and outcomes",
       "items": [
-        "The client selects the MDM push certificate by topic. Certificate replacement retires cached connections; shutdown closes the clients.",
+        "The provider caches credentials by topic and checks the stored version after its TTL (30 seconds by default). A changed version reloads the credential; failed reloads return an error. The APNs client retires replaced connections and closes clients on shutdown.",
         "APNs acceptance does not prove that a command ran. App notifications use a separate client and credential store; see the app delivery companion."
       ]
     },

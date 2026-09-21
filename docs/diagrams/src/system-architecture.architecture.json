@@ -72,7 +72,7 @@
       "id": "devices",
       "type": "external",
       "label": "Apple devices",
-      "sublabel": "Mac \u00b7 iPhone \u00b7 iPad",
+      "sublabel": "Mac · iPhone · iPad",
       "pos": [
         40,
         300
@@ -363,12 +363,9 @@
       "id": "core-store",
       "from": "core",
       "to": "store",
-      "label": "enrollments \u00b7 queue",
-      "labelAt": [
-        1050,
-        284
-      ],
-      "purpose": "storage"
+      "label": "enrollments · queue",
+      "purpose": "storage",
+      "labelDy": -32
     },
     {
       "id": "apns-device",
@@ -417,29 +414,16 @@
       "to": "adminapi",
       "label": "Bearer token",
       "variant": "security",
-      "labelAt": [
-        1130,
-        875
-      ],
       "purpose": "authentication",
       "fromSide": "left",
       "toSide": "right",
-      "via": [
-        [
-          1060,
-          935
-        ],
-        [
-          1060,
-          735
-        ]
-      ]
+      "labelDx": 80
     },
     {
       "id": "admin-engine",
       "from": "adminapi",
       "to": "engine",
-      "label": "Blueprints \u00b7 declarations",
+      "label": "Blueprints · declarations",
       "labelAt": [
         870,
         640
@@ -450,17 +434,17 @@
       "id": "admin-clients",
       "from": "adminapi",
       "to": "depaxm",
-      "label": "assign \u00b7 sync",
+      "label": "assign · sync",
       "fromSide": "bottom",
       "toSide": "right",
       "via": [
         [
           870,
-          850
+          1010
         ],
         [
           1410,
-          850
+          1010
         ],
         [
           1410,
@@ -514,21 +498,9 @@
       "label": "Commands / replacement",
       "fromSide": "right",
       "toSide": "right",
-      "via": [
-        [
-          1020,
-          735
-        ],
-        [
-          1020,
-          335
-        ]
-      ],
-      "labelAt": [
-        1020,
-        630
-      ],
-      "purpose": "service"
+      "purpose": "service",
+      "labelDx": 95,
+      "labelDy": 0
     }
   ],
   "cards": [
@@ -555,19 +527,19 @@
       "title": "Read next",
       "items": [
         "Follow enrollment diagrams for discovery and trust, command and DDM flows for device requests, and the Blueprint, application identity and native webhook companions for current administration.",
-        "Apple service client interfaces \u2014 https://github.com/deploymenttheory/go-apple-dm/blob/main/docs/diagrams/apple-service-clients.html",
-        "GDMF software lookup client \u2014 https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/devicemanagement/appleplatformservices/gdmf/gdmf.go",
-        "Apps and Books client \u2014 https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/devicemanagement/appleplatformservices/appsbooks/client.go"
+        "Apple service client interfaces — https://github.com/deploymenttheory/go-apple-dm/blob/main/docs/diagrams/apple-service-clients.html",
+        "GDMF software lookup client — https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/devicemanagement/appleplatformservices/gdmf/gdmf.go",
+        "Apps and Books client — https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/devicemanagement/appleplatformservices/appsbooks/client.go"
       ]
     },
     {
       "dot": "transport",
       "title": "Public documentation",
       "items": [
-        "Device Management \u2014 https://developer.apple.com/documentation/devicemanagement",
-        "Sending MDM commands to a device \u2014 https://developer.apple.com/documentation/devicemanagement/sending-mdm-commands-to-a-device",
-        "Integrating declarative management \u2014 https://developer.apple.com/documentation/devicemanagement/integrating-declarative-management",
-        "MDM payload \u2014 https://developer.apple.com/documentation/devicemanagement/mdm"
+        "Device Management — https://developer.apple.com/documentation/devicemanagement",
+        "Sending MDM commands to a device — https://developer.apple.com/documentation/devicemanagement/sending-mdm-commands-to-a-device",
+        "Integrating declarative management — https://developer.apple.com/documentation/devicemanagement/integrating-declarative-management",
+        "MDM payload — https://developer.apple.com/documentation/devicemanagement/mdm"
       ]
     }
   ]

@@ -80,7 +80,7 @@
       "col": 2,
       "type": "security",
       "label": "Import server token",
-      "sublabel": "Decrypt API credentials",
+      "sublabel": "Validate identity; commit or reject",
       "width": 225,
       "height": 68,
       "purpose": "certificate"
@@ -102,7 +102,7 @@
       "col": 4,
       "type": "backend",
       "label": "Reconcile assignments",
-      "sublabel": "Compare desired and saved state",
+      "sublabel": "Fence outcomes by current target",
       "width": 225,
       "height": 68,
       "purpose": "service"
@@ -162,7 +162,7 @@
       "id": "e3",
       "from": "importtoken",
       "to": "sync",
-      "label": "OAuth 1.0a session",
+      "label": "accepted credentials",
       "role": "main",
       "purpose": "authentication"
     },
@@ -170,7 +170,7 @@
       "id": "e4",
       "from": "sync",
       "to": "assign",
-      "label": "devices in the store",
+      "label": "saved inventory",
       "role": "main",
       "purpose": "storage"
     },
@@ -206,24 +206,34 @@
       "dot": "certificate",
       "title": "Server-token setup",
       "items": [
-        "The operator uploads the server’s public certificate to the Apple management portal and imports the encrypted .p7m server token.",
-        "The dep client uses the resulting OAuth 1.0a credentials; this token is unrelated to an MDM push certificate."
+        "The operator uploads the public certificate and imports the encrypted .p7m server token. The retained private key decrypts the OAuth credentials; this is separate from an MDM push certificate.",
+        "Validation occurs before a locked commit. Ordinary imports reject an established Apple identity or consumer-key change; a concurrent credential or staged-key change rejects the candidate."
       ]
     },
     {
       "dot": "service",
       "title": "Recurring reconciliation",
       "items": [
-        "Inventory starts with a full fetch, then follows incremental cursors. Expired, invalid or missing cursors restart a full fetch; only a completed fetch reconciles devices absent from that generation.",
-        "The server schedules synchronization and assignment independently. Assignment persists current-target outcomes and retry times, and readback verifies Apple state. Assignment does not complete device enrollment."
+        "Inventory starts with a full fetch, then follows incremental cursors. Invalid or expired cursors restart a fetch. Only successful completion of the current generation reconciles missing devices.",
+        "Sync and assignment have independent schedules. Assignment saves outcomes and readback only while account identity, credentials, lease and desired profile still match. Defining a profile also rechecks the account after Apple responds."
       ]
     },
     {
       "dot": "warning",
       "title": "Retry and concurrency",
       "items": [
-        "HTTP throttling and per-device THROTTLED results are separate. Assignment honors retry_after_seconds and retains deferred work in durable assignment state.",
-        "Each inventory page and its cursor commit together. Revision checks reject stale worker writes; partial snapshots never delete unseen devices."
+        "HTTP 429 and per-device THROTTLED results defer assignments. A still-owned lease preserves cooldowns across same-identity credential renewal or a changed desired profile, even when its business result is stale.",
+        "An identity reset or lost lease rejects old cooldown writes. Account and cursor checks reject stale inventory pages; each accepted page commits atomically with its cursor.",
+        "A local conflict stops further batches; it cannot undo work already accepted by Apple. Later runs reconcile the resulting Apple state."
+      ]
+    },
+    {
+      "dot": "storage",
+      "title": "Explicit identity replacement",
+      "items": [
+        "Force resets state only for an actual identity change with a validated server UUID. The transaction clears old inventory, profile definitions, target, sessions and retry state, and starts a fresh fetch generation.",
+        "The account name, protocol version, creation time and token keypairs survive. Same-identity renewals preserve inventory and target; omitted identity metadata does not erase an established binding.",
+        "SQL schema 3 locks a stable account-name row, including absent names and delete/recreate transitions. Custom stores must provide the same transaction-long LockAccount contract."
       ]
     },
     {
@@ -234,19 +244,30 @@
         "Server token authentication — https://developer.apple.com/documentation/devicemanagement/authenticating-for-automated-device-enrollment",
         "Fetch devices — https://developer.apple.com/documentation/devicemanagement/fetch-devices",
         "Sync devices — https://developer.apple.com/documentation/devicemanagement/sync-devices",
-        "Assign a profile and throttling — https://developer.apple.com/documentation/devicemanagement/assign-profile"
+        "Assign a profile and throttling — https://developer.apple.com/documentation/devicemanagement/assign-profile",
+        "Apple account metadata — https://developer.apple.com/documentation/devicemanagement/accountdetail"
       ]
     },
     {
       "title": "Implementation references",
       "dot": "artifact",
       "items": [
-        "keypair: Create server-token key — https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/devicemanagement/appleplatformservices/dep/token.go",
-        "importtoken: Import server token — https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/server/internal/app/dep.go",
-        "sync: Synchronize inventory — https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/devicemanagement/appleplatformservices/dep/syncer.go",
-        "assign: Reconcile assignments — https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/devicemanagement/appleplatformservices/dep/assigner.go",
-        "backoff: Persist retry state — https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/devicemanagement/appleplatformservices/dep/assignmentstate.go",
-        "Independent worker schedules — https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/server/internal/app/dep.go"
+        "keypair: GenerateTokenPKI — https://github.com/deploymenttheory/go-apple-dm/blob/c1a9487d510ddbad038e8a171861a4f96ebfd5dd/devicemanagement/appleplatformservices/dep/tokenpki.go#L36",
+        "importtoken: Validate and commit tokens — https://github.com/deploymenttheory/go-apple-dm/blob/c1a9487d510ddbad038e8a171861a4f96ebfd5dd/devicemanagement/appleplatformservices/dep/token.go#L190",
+        "sync: Synchronize inventory — https://github.com/deploymenttheory/go-apple-dm/blob/c1a9487d510ddbad038e8a171861a4f96ebfd5dd/devicemanagement/appleplatformservices/dep/syncer.go",
+        "assign: Reconcile assignments — https://github.com/deploymenttheory/go-apple-dm/blob/c1a9487d510ddbad038e8a171861a4f96ebfd5dd/devicemanagement/appleplatformservices/dep/assigner.go",
+        "backoff: Lease, target and cooldown checks — https://github.com/deploymenttheory/go-apple-dm/blob/c1a9487d510ddbad038e8a171861a4f96ebfd5dd/devicemanagement/appleplatformservices/dep/assignmentstate.go",
+        "Account and credential checks — https://github.com/deploymenttheory/go-apple-dm/blob/c1a9487d510ddbad038e8a171861a4f96ebfd5dd/devicemanagement/appleplatformservices/dep/accountfence.go"
+      ]
+    },
+    {
+      "title": "Implementation references (continued)",
+      "dot": "artifact",
+      "items": [
+        "Profile definition and independent schedules — https://github.com/deploymenttheory/go-apple-dm/blob/c1a9487d510ddbad038e8a171861a4f96ebfd5dd/server/internal/app/dep.go",
+        "Custom-store locking contract — https://github.com/deploymenttheory/go-apple-dm/blob/c1a9487d510ddbad038e8a171861a4f96ebfd5dd/devicemanagement/appleplatformservices/dep/store.go#L305",
+        "SQL account-name lock implementation — https://github.com/deploymenttheory/go-apple-dm/blob/c1a9487d510ddbad038e8a171861a4f96ebfd5dd/server/depstore/sqlstore/syncstate.go",
+        "SQL schema 3 migration — https://github.com/deploymenttheory/go-apple-dm/blob/c1a9487d510ddbad038e8a171861a4f96ebfd5dd/server/depstore/sqlstore/migrations/postgres/0003_account_locks.sql"
       ]
     }
   ]

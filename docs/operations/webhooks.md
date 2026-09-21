@@ -4,6 +4,12 @@ The reference server sends subscribed occurrences to HTTPS receivers. An occurre
 can describe a server outcome or a device-facing HTTP exchange. Webhooks belong to
 the server module; the Apple protocol library's types, events and hooks are unchanged.
 
+The reference server applies maintenance admission before webhook observation.
+An acknowledged [maintenance pause](recovery.md#pause-and-back-up) includes deferred
+exchange capture writes from already admitted requests. Requests rejected during
+the pause return 503 without creating new webhook captures; see the
+[maintenance regression](../../server/internal/app/maintenance_test.go).
+
 ## Review the JSON contract
 
 These examples are captured and POSTed to a test HTTPS receiver by

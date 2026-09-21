@@ -206,6 +206,19 @@ validation remain deployment responsibilities. The [threat model](security/threa
 The [bench decision](research/decisions/0048-reference-server-bench.md) consolidates
 local demonstration and automated execution around the ordinary server runtime.
 
+The [runtime supervisor](../server/internal/runtime/runtime.go) drains the main HTTP
+listener and any HTTP-01 listener under one deadline, then cancels and awaits workers.
+It closes application resources only after both drains complete. A timeout returns
+an error and retains shared resources and maintenance registration; recovery must
+confirm the process has stopped before forgetting that registration. Cleanup errors
+are returned alongside an earlier runtime failure. These boundaries follow Go's
+[HTTP shutdown contract](https://pkg.go.dev/net/http#Server.Shutdown) and are exercised
+by the [shutdown regressions](../server/internal/runtime/shutdown_test.go).
+
+The main listener requires TLS outside literal loopback. The separate HTTP-01
+challenge listener can use non-loopback plain HTTP, as required by
+[ACME HTTP-01 validation](https://www.rfc-editor.org/rfc/rfc8555#section-8.3).
+
 ```mermaid
 flowchart LR
     Make[Makefile and CI] --> CLI[dmctl bench]
