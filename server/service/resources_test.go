@@ -15,6 +15,8 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/server/service"
 )
 
+// TestAuthorizeResource checks resource authorization against certificate, revocation, and
+// parent-enrollment state.
 func TestAuthorizeResource(t *testing.T) {
 	ctx := t.Context()
 	ca, err := testpki.NewCA("resources")

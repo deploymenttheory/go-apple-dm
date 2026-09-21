@@ -26,6 +26,7 @@ const target = "https://mdm.example.com/enroll/ade"
 
 var quietLogger = slog.New(slog.NewTextHandler(io.Discard, nil))
 
+// okHook builds an ADE enrollment profile using the parsed serial and resolved managed identity.
 func okHook(_ context.Context, p *ade.Parsed, id ade.Identity) (*enroll.Profile, error) {
 	prof := &enroll.Profile{
 		Identifier: "com.example.mdm", Topic: "com.apple.mgmt.test", ServerURL: "https://mdm.example.com/mdm?ref=" + p.SERIAL,
@@ -44,6 +45,7 @@ type depRecord struct {
 	Serial, ManagedAppleAccount string
 }
 
+// serve serves a request through the handler and returns the recorded response.
 func serve(t *testing.T, h http.Handler, req *http.Request) *httptest.ResponseRecorder {
 	t.Helper()
 	rec := httptest.NewRecorder()
@@ -51,6 +53,7 @@ func serve(t *testing.T, h http.Handler, req *http.Request) *httptest.ResponseRe
 	return rec
 }
 
+// parseProfile checks the successful profile response headers and parses its enrollment profile.
 func parseProfile(t *testing.T, rec *httptest.ResponseRecorder) *enroll.Profile {
 	t.Helper()
 	if rec.Code != http.StatusOK || rec.Header().Get("Content-Type") != ade.ContentTypeProfile || rec.Header().Get("X-Content-Type-Options") != "nosniff" {
@@ -67,6 +70,7 @@ type webAuthSpy struct {
 	bound []ade.Bound
 }
 
+// Begin records the ADE binding and redirects to the fake identity provider.
 func (s *webAuthSpy) Begin(w http.ResponseWriter, _ *http.Request, b ade.Bound) {
 	s.bound = append(s.bound, b)
 	http.Redirect(w, &http.Request{}, "https://idp.example.com/authorize?state=x", http.StatusFound)
@@ -76,12 +80,16 @@ type failingStore struct{ ade.MachineInfoStore }
 
 var errStore = errors.New("db down")
 
+// Put returns the injected ADE record-write failure.
 func (failingStore) Put(context.Context, *ade.Record) error { return errStore }
 
+// Get returns the injected ADE record-read failure.
 func (failingStore) Get(context.Context, string) (*ade.Record, bool, error) {
 	return nil, false, errStore
 }
 
+// TestHandler checks ADE identity binding, signed profile delivery, web authentication, and hook
+// and storage failures.
 func TestHandler(t *testing.T) {
 	t.Parallel()
 	chain := adetest.NewChain(t)
@@ -395,10 +403,13 @@ func TestHandler(t *testing.T) {
 
 type brokenSigner struct{ key crypto.Signer }
 
+// Public returns the wrapped signer's public key.
 func (b brokenSigner) Public() crypto.PublicKey { return b.key.Public() }
 
+// Sign returns the injected signing-policy failure.
 func (brokenSigner) Sign(io.Reader, []byte, crypto.SignerOpts) ([]byte, error) {
 	return nil, errPolicy
 }
 
+// itoa formats an integer in decimal.
 func itoa(n int) string { return strconv.Itoa(n) }

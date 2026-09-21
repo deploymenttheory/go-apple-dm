@@ -158,6 +158,8 @@ func (k *JWK) Public() (crypto.PublicKey, error) {
 	}
 }
 
+// ecPublic decodes the JWK elliptic-curve coordinates and validates the resulting public
+// key.
 func (k *JWK) ecPublic() (*ecdsa.PublicKey, error) {
 	curve, size, ok := curveByName(k.Crv)
 	if !ok {
@@ -191,6 +193,8 @@ func (k *JWK) ecPublic() (*ecdsa.PublicKey, error) {
 	return pub, nil
 }
 
+// rsaPublic decodes the JWK modulus and exponent and validates the resulting RSA public
+// key.
 func (k *JWK) rsaPublic() (*rsa.PublicKey, error) {
 	n, err := base64.RawURLEncoding.DecodeString(k.N)
 	if err != nil {

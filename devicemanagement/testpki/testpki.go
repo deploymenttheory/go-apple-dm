@@ -130,6 +130,7 @@ func (ca *CA) IssuePushWithKey(
 	return ca.issue(subject, notBefore, key)
 }
 
+// issue creates and parses a certificate signed by the test authority.
 func (ca *CA) issue(
 	subject pkix.Name,
 	notBefore time.Time,

@@ -100,8 +100,10 @@ type collection struct {
 	items map[string]*resource
 }
 
+// newCollection creates an empty resource collection with deterministic insertion order.
 func newCollection() *collection { return &collection{items: map[string]*resource{}} }
 
+// put stores a resource by ID, adding its ID to insertion order only on first creation.
 func (c *collection) put(r *resource) {
 	if _, ok := c.items[r.id]; !ok {
 		c.order = append(c.order, r.id)
@@ -109,11 +111,13 @@ func (c *collection) put(r *resource) {
 	c.items[r.id] = r
 }
 
+// get returns a resource and whether its ID exists in the collection.
 func (c *collection) get(id string) (*resource, bool) {
 	r, ok := c.items[id]
 	return r, ok
 }
 
+// del removes a resource and its insertion-order entry.
 func (c *collection) del(id string) {
 	if _, ok := c.items[id]; !ok {
 		return
@@ -122,6 +126,7 @@ func (c *collection) del(id string) {
 	c.order = slices.DeleteFunc(c.order, func(s string) bool { return s == id })
 }
 
+// all returns resources in their recorded insertion order.
 func (c *collection) all() []*resource {
 	out := make([]*resource, 0, len(c.order))
 	for _, id := range c.order {
@@ -148,6 +153,7 @@ type store struct {
 	assignments                                                                                          map[string]assignment
 }
 
+// newStore allocates the fake service's resource collections.
 func newStore() *store {
 	return &store{
 		devices: newCollection(), mdmDevices: newCollection(), servers: newCollection(),

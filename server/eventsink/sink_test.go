@@ -29,6 +29,7 @@ const (
 	secretUser   = "SENTINEL-USER-NAME"
 )
 
+// ptr returns a pointer to the supplied value.
 func ptr[T any](v T) *T { return &v }
 
 // tokenUpdateWithSecrets is the payload service/checkin.go publishes verbatim
@@ -89,6 +90,7 @@ func events() []event.Event {
 	}
 }
 
+// sentinels returns the secret markers that must not appear in projected events.
 func sentinels() []string {
 	return []string{secretUnlock, secretPush, secretMagic, secretUser}
 }
@@ -202,6 +204,7 @@ func TestEveryEventTypeIsProjected(t *testing.T) {
 	}
 }
 
+// TestSlogSinkWritesProjectedRecords checks slog sink writes projected records.
 func TestSlogSinkWritesProjectedRecords(t *testing.T) {
 	var buf bytes.Buffer
 	h := eventsink.Slog(slog.New(slog.NewJSONHandler(&buf, nil)), nil)

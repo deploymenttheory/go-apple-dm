@@ -35,6 +35,8 @@ type Config struct {
 	ConfigurationProfiles *configurationprofile.Manager
 }
 
+// Manager coordinates blueprint publication and source revisions across the configured
+// stores.
 type Manager struct{ cfg Config }
 
 // Record retains authoring source separately from Apple's wire declarations.
@@ -45,6 +47,8 @@ type Record struct {
 	Compiled             *blueprint.Compiled
 }
 
+// New constructs an authoring manager over the supplied engine and state store. Both are
+// required; persistent stores must supply Config.Run to share a SQL transaction.
 func New(cfg Config) (*Manager, error) {
 	if cfg.Engine == nil || cfg.State == nil {
 		return nil, ddm.ErrInvalid
@@ -55,9 +59,13 @@ func New(cfg Config) (*Manager, error) {
 	return &Manager{cfg: cfg}, nil
 }
 
-func hash(b []byte) string     { h := sha256.Sum256(b); return hex.EncodeToString(h[:]) }
+// hash returns the lowercase SHA-256 digest used for immutable revision identifiers.
+func hash(b []byte) string { h := sha256.Sum256(b); return hex.EncodeToString(h[:]) }
+
+// specKey constructs the namespaced key for spec state.
 func specKey(id string) string { return specPrefix + id }
 
+// read loads a JSON record and maps an absent state key to ddm.ErrNotFound.
 func read[T any](ctx context.Context, reader state.Reader, key string) (T, error) {
 	var out T
 	r, err := reader.Get(ctx, key)
@@ -73,6 +81,7 @@ func read[T any](ctx context.Context, reader state.Reader, key string) (T, error
 	return out, nil
 }
 
+// put encodes a JSON record through the supplied state transaction.
 func put(ctx context.Context, tx state.Tx, key string, value any) error {
 	b, err := json.Marshal(value)
 	if err != nil {
@@ -89,6 +98,8 @@ func (m *Manager) Get(ctx context.Context, id string) (Record, error) {
 	return read[Record](ctx, m.cfg.State, specKey(id))
 }
 
+// list returns records under the prefix in key order and derives the next exclusive cursor
+// from one lookahead row.
 func list[T any](ctx context.Context, st state.Store, prefix string, page paging.Page) (paging.Result[T], error) {
 	var out paging.Result[T]
 	rows, err := st.List(ctx, prefix, prefix+page.Cursor, page.Size()+1)
@@ -108,6 +119,8 @@ func list[T any](ctx context.Context, st state.Store, prefix string, page paging
 	return out, nil
 }
 
+// List returns stored blueprint authoring records in a bounded page ordered by source
+// identifier.
 func (m *Manager) List(ctx context.Context, page paging.Page) (paging.Result[Record], error) {
 	return list[Record](ctx, m.cfg.State, specPrefix, page)
 }
@@ -135,6 +148,8 @@ func (m *Manager) Validate(ctx context.Context, spec blueprint.Spec, target supp
 	return blueprint.Compile(spec, opts)
 }
 
+// normalized normalizes blueprint source into the representation used for revision
+// comparison.
 func normalized(spec blueprint.Spec) (blueprint.Spec, []byte, error) {
 	// Round-trip first so sorting and canonicalization cannot mutate the caller.
 	b, err := json.Marshal(spec)
@@ -227,6 +242,9 @@ func (m *Manager) Publish(ctx context.Context, spec blueprint.Spec, expected str
 	return result, nil
 }
 
+// Delete removes a blueprint only when expected matches its current revision. Declaration
+// removals, assignment cleanup, and source deletion commit together; a stale or empty
+// revision returns ddm.ErrConflict.
 func (m *Manager) Delete(ctx context.Context, id, expected string) error {
 	return m.mutate(ctx, id, func(ctx context.Context, tx ddm.Tx, st state.Tx) error {
 		old, err := read[Record](ctx, st, specKey(id))
@@ -247,6 +265,9 @@ func (m *Manager) Delete(ctx context.Context, id, expected string) error {
 	})
 }
 
+// Assign adds or removes the blueprint set for an enrollment and records a synchronization
+// change in the same transaction. The result reports whether membership changed; the
+// blueprint must already exist.
 func (m *Manager) Assign(ctx context.Context, id mdm.EnrollmentID, name string, assigned bool) (bool, error) {
 	if err := id.Validate(); err != nil {
 		return false, ddm.ErrInvalid

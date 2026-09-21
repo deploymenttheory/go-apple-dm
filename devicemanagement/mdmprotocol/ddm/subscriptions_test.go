@@ -41,6 +41,8 @@ func subscribed(t *testing.T, h *harness, id mdm.EnrollmentID) ([]string, []byte
 	return subscriptionNames(t, body), body
 }
 
+// capabilitiesReport builds an enabled status report advertising the supplied status-item
+// capabilities.
 func capabilitiesReport(t *testing.T, statusItems any) []byte {
 	t.Helper()
 	return report(t, boolp(true), map[string]any{"management": map[string]any{"client-capabilities": map[string]any{
@@ -49,8 +51,11 @@ func capabilitiesReport(t *testing.T, statusItems any) []byte {
 	}}}, nil)
 }
 
+// enabled enables automatic status subscriptions in the test configuration.
 func enabled(c *ddm.Config) { c.Subscriptions = ddm.Subscriptions{Enabled: true} }
 
+// TestSubscriptionActivationLifecycle checks automatic subscription activation, administrator
+// overrides, capability changes, and disabling subscriptions.
 func TestSubscriptionActivationLifecycle(t *testing.T) {
 	t.Parallel()
 	ctx := t.Context()
@@ -117,6 +122,8 @@ func TestSubscriptionActivationLifecycle(t *testing.T) {
 	}
 }
 
+// TestSubscriptions checks baseline and capability-driven subscriptions, administrator overrides,
+// and storage-failure fallback.
 func TestSubscriptions(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()

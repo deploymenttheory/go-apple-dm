@@ -81,7 +81,11 @@ type transaction struct {
 	now     time.Time
 }
 
+// Now returns the database time captured for the current state transaction.
 func (t *transaction) Now() time.Time { return t.now }
+
+// Get reads a state record through the current transaction, opening sealed values when a
+// keyring is configured.
 func (t *transaction) Get(ctx context.Context, k string) (state.Record, error) {
 	if !state.ValidKey(k) {
 		return state.Record{}, state.ErrInvalid
@@ -102,6 +106,7 @@ func (t *transaction) Get(ctx context.Context, k string) (state.Record, error) {
 	return r, err
 }
 
+// List returns a bounded page of state records in key order after the exclusive cursor.
 func (t *transaction) List(
 	ctx context.Context,
 	prefix, after string,
@@ -146,6 +151,8 @@ func (t *transaction) List(
 	return out, rows.Err()
 }
 
+// Put stores a state record through the current transaction, sealing its value when a
+// keyring is configured.
 func (t *transaction) Put(ctx context.Context, r state.Record) error {
 	if !state.ValidKey(r.Key) {
 		return state.ErrInvalid
@@ -178,6 +185,7 @@ func (t *transaction) Put(ctx context.Context, r state.Record) error {
 	return err
 }
 
+// Delete removes the state record addressed by its key.
 func (t *transaction) Delete(ctx context.Context, k string) error {
 	if !state.ValidKey(k) {
 		return state.ErrInvalid
@@ -201,6 +209,7 @@ func (s *Store) List(ctx context.Context, prefix, after string, limit int) ([]st
 	)
 }
 
+// databaseTime reads the authoritative UTC time from the configured SQL backend.
 func databaseTime(ctx context.Context, q queryer, d sqlcommon.Dialect) (time.Time, error) {
 	query := "SELECT CAST((julianday('now') - 2440587.5) * 86400000000 AS INTEGER)"
 	switch d.Name {
@@ -253,6 +262,8 @@ func (s *Store) Update(ctx context.Context, keys []string, fn func(state.Tx) err
 	return tx.Commit()
 }
 
+// update locks the requested state shards, captures database time, and invokes the
+// callback in the supplied SQL transaction.
 func (s *Store) update(
 	ctx context.Context,
 	tx *sql.Tx,

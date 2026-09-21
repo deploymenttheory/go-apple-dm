@@ -347,6 +347,7 @@ func Parse(data []byte, o ParseOptions) (*Parsed, error) {
 	return out, nil
 }
 
+// parsePayload decodes a payload while retaining its common envelope fields.
 func parsePayload(keys map[string]any, resolve Resolver) (Payload, error) {
 	typ := str(keys, "PayloadType")
 	if typ == "" {
@@ -403,6 +404,7 @@ func (p *Profile) FindUUID(u string) (*Payload, bool) {
 	return nil, false
 }
 
+// orOne uses the provided payload version, defaulting an omitted value to one.
 func orOne(v int64) int64 {
 	if v == 0 {
 		return 1
@@ -410,17 +412,20 @@ func orOne(v int64) int64 {
 	return v
 }
 
+// setIf adds a profile field only when its optional value is present.
 func setIf(m map[string]any, k, v string) {
 	if v != "" {
 		m[k] = v
 	}
 }
 
+// str reads a string field from the decoded profile map.
 func str(m map[string]any, k string) string {
 	s, _ := m[k].(string)
 	return s
 }
 
+// num reads an integer field from the decoded profile map.
 func num(m map[string]any, k string) int64 {
 	switch v := m[k].(type) {
 	case int64:

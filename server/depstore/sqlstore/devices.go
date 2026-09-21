@@ -40,6 +40,7 @@ func (t *txStore) PutDevices(ctx context.Context, account string, devs []dep.Dev
 	return nil
 }
 
+// scanDevice decodes a persisted device record and its tombstone and observation metadata.
 func scanDevice(row scanner) (dep.StoredDevice, string, error) {
 	var sd dep.StoredDevice
 	var raw []byte
@@ -207,6 +208,7 @@ func (t *txStore) PutAssignment(ctx context.Context, a *dep.Assignment) error {
 	return err
 }
 
+// scanAssignment decodes a recorded assignment result and its retry timing.
 func scanAssignment(row scanner) (dep.Assignment, string, error) {
 	var a dep.Assignment
 	var attempted, next sql.NullTime

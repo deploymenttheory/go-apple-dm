@@ -6,6 +6,8 @@ import (
 	"golang.org/x/sys/windows"
 )
 
+// makeWorldReadable grants Everyone access through a protected Windows DACL for
+// permission-validation tests.
 func makeWorldReadable(t *testing.T, path string) {
 	t.Helper()
 	descriptor, err := windows.SecurityDescriptorFromString("D:P(A;;FA;;;WD)")

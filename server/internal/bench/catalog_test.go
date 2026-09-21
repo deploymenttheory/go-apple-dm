@@ -9,6 +9,8 @@ import (
 	"testing"
 )
 
+// TestCatalogueAndReports checks unique maintained scenario IDs and report handling of unsupported
+// and other non-pass outcomes.
 func TestCatalogueAndReports(t *testing.T) {
 	seen := map[string]bool{}
 	for _, s := range Catalogue() {
@@ -54,6 +56,8 @@ func TestCatalogueAndReports(t *testing.T) {
 	}
 }
 
+// TestInitPreservesIdentities checks that workspace initialization preserves existing identities
+// and doctor output redacts credentials.
 func TestInitPreservesIdentities(t *testing.T) {
 	dir := t.TempDir()
 	if err := Init(dir, "simulated", "sqlite", "127.0.0.1:0"); err != nil {

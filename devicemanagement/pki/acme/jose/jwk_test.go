@@ -15,6 +15,7 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/pki/acme/jose"
 )
 
+// TestJWKRoundTrip checks EC JWK round trips and fixed-width public coordinates.
 func TestJWKRoundTrip(t *testing.T) {
 	t.Parallel()
 	cases := []struct {
@@ -60,6 +61,7 @@ func TestJWKRoundTrip(t *testing.T) {
 	}
 }
 
+// TestJWKRoundTripRSA checks JWK round trip RSA.
 func TestJWKRoundTripRSA(t *testing.T) {
 	t.Parallel()
 	key := testRSA(t)
@@ -116,6 +118,7 @@ func TestJWKJSONRoundTrip(t *testing.T) {
 	}
 }
 
+// TestJWKFromPublicRejects checks that JWK from public rejects.
 func TestJWKFromPublicRejects(t *testing.T) {
 	t.Parallel()
 	// #nosec G403 -- Deliberately weak key exercises minimum RSA size rejection.
@@ -153,6 +156,7 @@ func TestJWKFromPublicRejects(t *testing.T) {
 	}
 }
 
+// TestJWKPublicRejects checks rejection of invalid JWK public keys and thumbprints.
 func TestJWKPublicRejects(t *testing.T) {
 	t.Parallel()
 	valid, err := jose.JWKFromPublic(&testP256(t).PublicKey)

@@ -111,6 +111,3 @@ func TestAdminStoreInjectionWins(t *testing.T) {
 		t.Fatalf("status = %d, want 200: the injected store was not used", resp.StatusCode)
 	}
 }
-
-// The static token remains usable alongside the principal store so an empty
-// store can be bootstrapped through authorized routes.

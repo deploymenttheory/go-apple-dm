@@ -29,6 +29,8 @@ type Workspace struct {
 	Directory string            `json:"-"`
 }
 
+// Init creates the persistent bench workspace with its selected mode, storage, and listener
+// settings.
 func Init(dir, mode, storage, listen string) error {
 	if mode != "simulated" && mode != "live" {
 		return fmt.Errorf("%w: mode must be simulated or live", errOperation)
@@ -83,6 +85,7 @@ func Init(dir, mode, storage, listen string) error {
 	return privateFile(filepath.Join(root, "bench.json"), append(b, '\n'))
 }
 
+// Load reads and validates an existing persistent bench workspace.
 func Load(dir string) (*Workspace, error) {
 	root, err := filepath.Abs(dir)
 	if err != nil {
@@ -105,10 +108,12 @@ func Load(dir string) (*Workspace, error) {
 	return &w, nil
 }
 
+// path resolves a workspace-owned artifact path.
 func (w *Workspace) path(parts ...string) string {
 	return filepath.Join(append([]string{w.Directory}, parts...)...)
 }
 
+// client constructs the HTTP client using the workspace's server trust settings.
 func (w *Workspace) client() (*http.Client, error) {
 	b, err := os.ReadFile(w.path("mdm", "ca.pem"))
 	if err != nil {
@@ -128,6 +133,8 @@ func (w *Workspace) client() (*http.Client, error) {
 	}, nil
 }
 
+// token loads the stored admin credential, falling back to the bootstrap token when the
+// credential file is absent.
 func (w *Workspace) token() (string, error) {
 	b, err := os.ReadFile(w.path("mdm", "admin-credential"))
 	if err == nil {
@@ -139,6 +146,8 @@ func (w *Workspace) token() (string, error) {
 	return w.bootstrapToken()
 }
 
+// bootstrapToken loads the one-time bootstrap credential used to initialize bench
+// administration.
 func (w *Workspace) bootstrapToken() (string, error) {
 	b, err := os.ReadFile(w.path("mdm", "admin-token"))
 	return strings.TrimSpace(string(b)), wrapError(err)

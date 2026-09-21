@@ -16,7 +16,7 @@ Canonical content avoids resynchronization caused only by whitespace or key orde
 
 ## Constraints
 
-Token algorithms are this project's implementation choices; Apple requires content changes to be reflected in the tokens. Tokens identify content and are not authorization credentials. SHA-256 hashing is not a mathematical guarantee of collision-free identifiers.
+Token algorithms are this project's implementation choices; Apple permits a unique version string and requires content changes to be reflected in the tokens. Tokens identify content and are not authorization credentials. SHA-256 hashing is not a mathematical guarantee of collision-free identifiers.
 
 ## Verification
 
@@ -24,6 +24,7 @@ Canonicalization tests cover RFC vectors, ordering, numeric forms, idempotency a
 
 ## References
 
+- [RFC 8785: JSON Canonicalization Scheme](https://www.rfc-editor.org/rfc/rfc8785)
 - [internal/canonjson](../../../devicemanagement/internal/canonjson)
 - [mdmprotocol/ddm/token.go](../../../devicemanagement/mdmprotocol/ddm/token.go)
 - [mdmprotocol/ddm/token_test.go](../../../devicemanagement/mdmprotocol/ddm/token_test.go)

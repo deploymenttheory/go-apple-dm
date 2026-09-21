@@ -25,6 +25,7 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/testpki"
 )
 
+// TestParseSignerPEM checks supported and invalid PEM signer encodings.
 func TestParseSignerPEM(t *testing.T) {
 	ec, _ := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
 	ecDER, _ := x509.MarshalECPrivateKey(ec)
@@ -53,6 +54,7 @@ func TestParseSignerPEM(t *testing.T) {
 	}
 }
 
+// TestReadCertsPEM checks certificate-file decoding and rejection of malformed or missing files.
 func TestReadCertsPEM(t *testing.T) {
 	dir := t.TempDir()
 	bad := filepath.Join(dir, "bad.pem")
@@ -70,6 +72,7 @@ func TestReadCertsPEM(t *testing.T) {
 	}
 }
 
+// TestCompleteBranches checks enrollment completion response branches.
 func TestCompleteBranches(t *testing.T) {
 	e := &enrollment{tokens: &accountdriven.Tokens{Store: accountdriven.NewMemStore()}}
 	e.asweb = &accountdriven.AppleAsWeb{URL: "https://x/a", Tokens: e.tokens}
@@ -91,6 +94,7 @@ func TestCompleteBranches(t *testing.T) {
 	}
 }
 
+// TestCompleteADEUnknownSerial checks complete ADE unknown serial.
 func TestCompleteADEUnknownSerial(t *testing.T) {
 	e := &enrollment{ade: ade.New(ade.Config{})}
 	rec := httptest.NewRecorder()
@@ -100,6 +104,7 @@ func TestCompleteADEUnknownSerial(t *testing.T) {
 	}
 }
 
+// TestParseDeviceInfoErrors checks parse device info errors.
 func TestParseDeviceInfoErrors(t *testing.T) {
 	ca, err := testpki.NewCA("ca")
 	if err != nil {
@@ -125,4 +130,5 @@ func TestParseDeviceInfoErrors(t *testing.T) {
 
 type errReader struct{}
 
+// Read returns a synthetic broken-pipe read failure.
 func (errReader) Read([]byte) (int, error) { return 0, errors.New("broken pipe") }

@@ -20,6 +20,7 @@ func (c *Client) ClientConfig(ctx context.Context) (ClientConfiguration, error) 
 	return c.clientConfig(ctx)
 }
 
+// clientConfig retrieves the client configuration used to check management ownership.
 func (c *Client) clientConfig(ctx context.Context) (ClientConfiguration, error) {
 	var out ClientConfiguration
 	err := c.call(ctx, "clientConfig", http.MethodGet, nil, nil, &out)
@@ -49,6 +50,8 @@ func (c *Client) SetClientConfig(
 	return out, err
 }
 
+// validateConfig validates the submitted manager identity and notification settings
+// against service limits and supported notification types.
 func (c *Client) validateConfig(in ClientConfigurationRequest) error {
 	if in.MDMInfo.ID != c.mdmID || in.MDMInfo.Name == "" || in.MDMInfo.Metadata == "" {
 		return ErrInput
@@ -112,6 +115,8 @@ func (c *Client) InvitationURL(ctx context.Context, inviteCode string) (string, 
 	return link, nil
 }
 
+// limit checks a count or string length against a service-advertised limit; missing limits
+// return ErrProtocol and excessive values return ErrLimit.
 func (c *Client) limit(key string, n int) error {
 	limit := c.service.Limits[key]
 	if limit <= 0 {
@@ -123,6 +128,8 @@ func (c *Client) limit(key string, n int) error {
 	return nil
 }
 
+// requireOwner rejects operations when the service client context belongs to another
+// manager.
 func (c *Client) requireOwner(ctx context.Context) error {
 	config, err := c.clientConfig(ctx)
 	if err != nil {

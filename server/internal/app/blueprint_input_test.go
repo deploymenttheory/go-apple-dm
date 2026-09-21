@@ -16,10 +16,12 @@ import (
 
 type blueprintListFailure struct{ state.Store }
 
+// List returns a synthetic blueprint-storage outage.
 func (blueprintListFailure) List(context.Context, string, string, int) ([]state.Record, error) {
 	return nil, errors.New("blueprint storage unavailable")
 }
 
+// TestBlueprintAdminInputAndReadContracts checks blueprint admin input and read contracts.
 func TestBlueprintAdminInputAndReadContracts(t *testing.T) {
 	a := build(t, app.Config{Storage: "inmem", BootstrapToken: "admin"})
 	request := func(method, path, body string) *httptest.ResponseRecorder {

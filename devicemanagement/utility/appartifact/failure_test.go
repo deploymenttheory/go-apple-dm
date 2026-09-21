@@ -18,6 +18,8 @@ import (
 	"github.com/deploymenttheory/go-macos-pkg/pkg/xar"
 )
 
+// testInspector creates an artifact inspector with small fixture limits and an isolated scratch
+// directory.
 func testInspector(t *testing.T) *inspector {
 	t.Helper()
 	return &inspector{ctx: t.Context(), temp: t.TempDir(), opts: Options{MaxBytes: 1 << 20, MaxExpandedBytes: 64 << 20, MaxEntries: 100, MaxApplications: 5, MaxDepth: 2}, report: Report{Complete: true}}
@@ -29,6 +31,8 @@ type failingFS struct {
 	cancel          context.CancelFunc
 }
 
+// Open injects cancellation or an open failure for the selected path, or wraps the opened file
+// with configured faults.
 func (f failingFS) Open(name string) (fs.File, error) {
 	if name == f.name {
 		if f.cancel != nil {
@@ -50,6 +54,7 @@ type failingFile struct {
 	operation string
 }
 
+// Read injects a file-read permission error or delegates to the file.
 func (f failingFile) Read(b []byte) (int, error) {
 	if f.operation == "read" {
 		return 0, fs.ErrPermission
@@ -57,6 +62,7 @@ func (f failingFile) Read(b []byte) (int, error) {
 	return f.File.Read(b)
 }
 
+// Stat injects a file-stat permission error or delegates to the file.
 func (f failingFile) Stat() (fs.FileInfo, error) {
 	if f.operation == "stat" {
 		return nil, fs.ErrPermission
@@ -64,6 +70,7 @@ func (f failingFile) Stat() (fs.FileInfo, error) {
 	return f.File.Stat()
 }
 
+// TestWalkFailuresAndStandaloneBinaries checks walk failures and standalone binaries.
 func TestWalkFailuresAndStandaloneBinaries(t *testing.T) {
 	files := fstest.MapFS{"bin": &fstest.MapFile{Data: executable(t)}}
 	i := testInspector(t)
@@ -114,6 +121,7 @@ func TestWalkFailuresAndStandaloneBinaries(t *testing.T) {
 	}
 }
 
+// TestNestedLimitsAndScratchFailures checks nested limits and scratch failures.
 func TestNestedLimitsAndScratchFailures(t *testing.T) {
 	files := fstest.MapFS{"nested.zip": &fstest.MapFile{Data: zipFixture(t)}}
 	for _, mode := range []string{"depth", "scratch", "expanded"} {
@@ -166,6 +174,7 @@ func TestNestedLimitsAndScratchFailures(t *testing.T) {
 	}
 }
 
+// rawPackage writes a flat-package fixture with an optional payload and scripts member.
 func rawPackage(t *testing.T, payload []byte, scripts bool) string {
 	t.Helper()
 	var out bytes.Buffer
@@ -191,6 +200,7 @@ func rawPackage(t *testing.T, payload []byte, scripts bool) string {
 	return put(t, t.TempDir(), "input.pkg", out.Bytes())
 }
 
+// cpioPayload encodes one CPIO entry with the supplied name, mode, and data.
 func cpioPayload(t *testing.T, name string, mode uint32, data []byte) []byte {
 	t.Helper()
 	var out bytes.Buffer
@@ -207,6 +217,8 @@ func cpioPayload(t *testing.T, name string, mode uint32, data []byte) []byte {
 	return out.Bytes()
 }
 
+// TestPackagePayloadFailures checks package payload rejection, nested inspection budgets, scratch
+// failures, and hard-link handling.
 func TestPackagePayloadFailures(t *testing.T) {
 	if _, err := Inspect(t.Context(), rawPackage(t, cpioPayload(t, "./", 0o40755, nil), false), Options{}); err != nil {
 		t.Fatal("valid root directory rejected", err)
@@ -260,6 +272,7 @@ func TestPackagePayloadFailures(t *testing.T) {
 	}
 }
 
+// TestZIPSpecialEntriesAndFailure checks ZIP special entries and failure.
 func TestZIPSpecialEntriesAndFailure(t *testing.T) {
 	var out bytes.Buffer
 	z := zip.NewWriter(&out)
@@ -298,6 +311,8 @@ func TestZIPSpecialEntriesAndFailure(t *testing.T) {
 	}
 }
 
+// TestMalformedDMGFilesystems checks rejection of malformed DMG filesystems and image-size limit
+// violations.
 func TestMalformedDMGFilesystems(t *testing.T) {
 	for _, kind := range []string{"unknown", "apfs", "hfs", "short"} {
 		b := make([]byte, 4096)

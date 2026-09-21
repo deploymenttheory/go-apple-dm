@@ -7,6 +7,7 @@ import (
 	"testing"
 )
 
+// TestEnrollmentStatusPages checks enrollment status CLI pagination.
 func TestEnrollmentStatusPages(t *testing.T) {
 	var calls []string
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

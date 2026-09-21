@@ -10,6 +10,8 @@ import (
 	"time"
 )
 
+// TestActivities checks activity request bodies, migration constraints, terminal polling, timeout,
+// and log retrieval.
 func TestActivities(t *testing.T) {
 	t.Parallel()
 	now := time.Date(2026, 9, 2, 12, 0, 0, 0, time.UTC)
@@ -319,6 +321,8 @@ func TestActivities(t *testing.T) {
 	})
 }
 
+// TestAssignment checks assignment convergence through empty and missing readbacks and terminal
+// failures.
 func TestAssignment(t *testing.T) {
 	t.Parallel()
 	t.Run("ConvergenceToleratesEmptyAnd404", func(t *testing.T) {

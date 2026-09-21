@@ -15,6 +15,7 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/server/internal/app"
 )
 
+// TestOperatorAPIsRejectInvalidInput checks operator ap is reject invalid input.
 func TestOperatorAPIsRejectInvalidInput(t *testing.T) {
 	t.Parallel()
 	f := newEnrollFixture(t, "", func(c *app.Config) { c.BootstrapToken = "operator" })
@@ -63,6 +64,8 @@ func TestOperatorAPIsRejectInvalidInput(t *testing.T) {
 	}
 }
 
+// TestCommandResultPagesUntilMatchingPendingCommand checks command result pages until matching
+// pending command.
 func TestCommandResultPagesUntilMatchingPendingCommand(t *testing.T) {
 	a, srv, _ := mdmAdminApp(t)
 	id := seed(t, a, "paged-results")
@@ -99,6 +102,8 @@ func TestCommandResultPagesUntilMatchingPendingCommand(t *testing.T) {
 	}
 }
 
+// TestOperatorSecurityConfigurationRejectsIncompleteCredentials checks that operator security
+// configuration rejects incomplete credentials.
 func TestOperatorSecurityConfigurationRejectsIncompleteCredentials(t *testing.T) {
 	t.Parallel()
 	for _, material := range []string{"missing", "{", `{"alice":"not-a-digest"}`, `{"alice":"aabb"}`} {

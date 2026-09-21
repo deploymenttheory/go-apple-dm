@@ -7,6 +7,8 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/server/sqlstore/sqlcommon"
 )
 
+// wireBlueprints constructs the Blueprint manager with shared protocol state, profile
+// hosting and SQL transaction coordination when available.
 func (a *App) wireBlueprints(ctx context.Context) error {
 	st, err := a.protocolState(ctx)
 	if err != nil {

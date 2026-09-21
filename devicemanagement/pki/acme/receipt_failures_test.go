@@ -16,6 +16,7 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/storage/acme/acmetest"
 )
 
+// TestChallengeStorageFailurePreservesRetry checks that challenge storage failure preserves retry.
 func TestChallengeStorageFailurePreservesRetry(t *testing.T) {
 	for _, method := range []string{"GetOrder", "GetAuthorization", "GetChallenge", "PutOrder"} {
 		t.Run(method, func(t *testing.T) {
@@ -46,6 +47,7 @@ func TestChallengeStorageFailurePreservesRetry(t *testing.T) {
 	}
 }
 
+// TestFinalizeStorageReadsFailClosed checks finalize storage reads fail closed.
 func TestFinalizeStorageReadsFailClosed(t *testing.T) {
 	for _, method := range []string{"GetOrder", "GetAuthorization", "GetChallenge"} {
 		for _, after := range []int{2, 3} {
@@ -131,6 +133,8 @@ func TestFinalizeRechecksStateAfterPolicy(t *testing.T) {
 	}
 }
 
+// TestReceiptCommitFailureDoesNotExposeCertificate checks that receipt commit failure does not
+// expose certificate.
 func TestReceiptCommitFailureDoesNotExposeCertificate(t *testing.T) {
 	for _, failAt := range []int{1, 2} {
 		t.Run(
@@ -193,6 +197,7 @@ func TestReceiptCommitFailureDoesNotExposeCertificate(t *testing.T) {
 	}
 }
 
+// TestReceiptPollingFailsClosed checks that receipt polling fails closed.
 func TestReceiptPollingFailsClosed(t *testing.T) {
 	for _, fault := range []string{"policy", "expired", "malformed-pem", "malformed-der", "wrong-order", "missing-receipt"} {
 		t.Run(fault, func(t *testing.T) {
@@ -256,6 +261,7 @@ func TestReceiptPollingFailsClosed(t *testing.T) {
 	}
 }
 
+// TestReceiptExpiresDuringRegistration checks receipt expires during registration.
 func TestReceiptExpiresDuringRegistration(t *testing.T) {
 	var f *fixture
 	f = newFixture(t, func(c *acme.Config) {

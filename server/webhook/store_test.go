@@ -21,6 +21,7 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/server/sqlstore/sqlite"
 )
 
+// testStore opens a temporary SQLite webhook store with encrypted keys and a durable event outbox.
 func testStore(t *testing.T, cfg Config) *Store {
 	t.Helper()
 	db, err := sql.Open("sqlite", sqlite.DSN(filepath.Join(t.TempDir(), "webhook.sqlite"), sqlite.Options{}))
@@ -43,6 +44,8 @@ func testStore(t *testing.T, cfg Config) *Store {
 	return s
 }
 
+// subscribe creates an all-event subscription using the supplied payload policy and fixture
+// sensitive-payload authorization.
 func subscribe(t *testing.T, s *Store, policy PayloadPolicy) Change {
 	t.Helper()
 	c, err := s.Create(t.Context(), Spec{Name: "workflow", URL: "https://receiver.example.test/webhook", Events: []string{"*"}, Payload: policy}, true)
@@ -52,10 +55,13 @@ func subscribe(t *testing.T, s *Store, policy PayloadPolicy) Change {
 	return c
 }
 
+// occurrence returns an MDM exchange event fixture with private request and response payloads.
 func occurrence() Event {
 	return Event{EventID: "occurrence-example", Type: "protocol.mdm.exchange", Subject: &Subject{Kind: "enrollment", ID: "device-1", Channel: "device"}, Data: map[string]any{"operation": "connect", "outcome": "succeeded", "device_status": "Acknowledged"}, Payloads: map[string]Payload{"request_raw": BodyPayload([]byte("private-request"), "application/xml", false), "request_json": BodyPayload([]byte(`{"Token":"private-token"}`), "application/json", true), "response_raw": BodyPayload([]byte("private-response"), "application/xml", false)}}
 }
 
+// deliveries loads up to 1,000 deliveries for the supplied subscription, failing the test on
+// error.
 func deliveries(t *testing.T, s *Store, id string) []Delivery {
 	t.Helper()
 	d, err := s.Deliveries(t.Context(), id, "", 1000)
@@ -65,6 +71,7 @@ func deliveries(t *testing.T, s *Store, id string) []Delivery {
 	return d
 }
 
+// TestCaptureAtomicityAndDisclosure checks capture atomicity and disclosure.
 func TestCaptureAtomicityAndDisclosure(t *testing.T) {
 	s := testStore(t, Config{})
 	if err := s.Capture(t.Context(), occurrence()); err != nil {
@@ -123,6 +130,8 @@ func TestCaptureAtomicityAndDisclosure(t *testing.T) {
 	}
 }
 
+// TestJSONReferencePreservesNumberAndDigest checks that JSON reference preserves number and
+// digest.
 func TestJSONReferencePreservesNumberAndDigest(t *testing.T) {
 	s := testStore(t, Config{})
 	c := subscribe(t, s, PayloadPolicy{FullJSON: true})
@@ -159,6 +168,8 @@ func TestJSONReferencePreservesNumberAndDigest(t *testing.T) {
 	}
 }
 
+// TestRootGateAndRevisionIsolation checks sensitive-payload authorization and isolation of
+// subscription revisions.
 func TestRootGateAndRevisionIsolation(t *testing.T) {
 	s := testStore(t, Config{})
 	spec := Spec{Name: "sensitive", URL: "https://receiver.example.test/hook", Events: []string{"*"}, Payload: PayloadPolicy{FullJSON: true}}
@@ -212,6 +223,7 @@ func TestRootGateAndRevisionIsolation(t *testing.T) {
 	}
 }
 
+// TestReplayAndRetention checks webhook replay and expiry-driven retention cleanup.
 func TestReplayAndRetention(t *testing.T) {
 	now := time.Date(2026, 9, 20, 12, 0, 0, 0, time.UTC)
 	s := testStore(t, Config{Now: func() time.Time { return now }})
@@ -268,6 +280,8 @@ func TestReplayAndRetention(t *testing.T) {
 	}
 }
 
+// TestPayloadReferenceAuthority checks payload-reference authorization and rejection after
+// credential rotation.
 func TestPayloadReferenceAuthority(t *testing.T) {
 	s := testStore(t, Config{})
 	c := subscribe(t, s, PayloadPolicy{RawRequest: true})

@@ -1,0 +1,197 @@
+{
+  "schema_version": 2,
+  "diagram_type": "workflow",
+  "meta": {
+    "title": "Blueprint Publication and Assignment",
+    "quality_profile": "showcase",
+    "colour_profile": "purpose-v1",
+    "legend": {
+      "mode": "hidden"
+    },
+    "locale": "en"
+  },
+  "lanes": [
+    {
+      "id": "flow",
+      "label": "Author and publish"
+    },
+    {
+      "id": "delivery",
+      "label": "Assign and synchronize"
+    }
+  ],
+  "mainPath": [
+    "spec",
+    "compile",
+    "publish",
+    "assign",
+    "notify",
+    "device"
+  ],
+  "nodes": [
+    {
+      "id": "spec",
+      "lane": "flow",
+      "col": 0,
+      "label": "Author Blueprint",
+      "sublabel": "Native declarations or profile refs",
+      "type": "backend",
+      "width": 240,
+      "height": 76,
+      "purpose": "artifact"
+    },
+    {
+      "id": "compile",
+      "lane": "flow",
+      "col": 1,
+      "label": "Compile and validate",
+      "sublabel": "Resolve references; check target",
+      "type": "security",
+      "width": 240,
+      "height": 76,
+      "purpose": "policy"
+    },
+    {
+      "id": "publish",
+      "lane": "flow",
+      "col": 2,
+      "label": "Publish complete set",
+      "sublabel": "Source revision and DDM transaction",
+      "type": "database",
+      "width": 240,
+      "height": 76,
+      "purpose": "storage"
+    },
+    {
+      "id": "assign",
+      "lane": "delivery",
+      "col": 2,
+      "label": "Enrollment assignments",
+      "sublabel": "Preserve or change membership",
+      "type": "backend",
+      "width": 240,
+      "height": 76,
+      "purpose": "policy"
+    },
+    {
+      "id": "notify",
+      "lane": "delivery",
+      "col": 3,
+      "label": "Notify changed state",
+      "sublabel": "Queue current tokens and wake",
+      "type": "backend",
+      "width": 240,
+      "height": 76,
+      "purpose": "transport"
+    },
+    {
+      "id": "device",
+      "lane": "delivery",
+      "col": 4,
+      "label": "Synchronize and activate",
+      "sublabel": "Device reports declaration status",
+      "type": "external",
+      "width": 240,
+      "height": 76,
+      "purpose": "success"
+    }
+  ],
+  "edges": [
+    {
+      "id": "spec-compile",
+      "from": "spec",
+      "to": "compile",
+      "label": "Specification",
+      "purpose": "artifact",
+      "role": "main"
+    },
+    {
+      "id": "compile-publish",
+      "from": "compile",
+      "to": "publish",
+      "label": "Validated set",
+      "purpose": "storage",
+      "role": "main"
+    },
+    {
+      "id": "publish-assign",
+      "from": "publish",
+      "to": "assign",
+      "label": "Set available",
+      "purpose": "policy",
+      "role": "main",
+      "fromSide": "bottom",
+      "toSide": "top"
+    },
+    {
+      "id": "assign-notify",
+      "from": "assign",
+      "to": "notify",
+      "label": "Committed changes",
+      "purpose": "transport",
+      "role": "main"
+    },
+    {
+      "id": "notify-device",
+      "from": "notify",
+      "to": "device",
+      "label": "MDM and DDM",
+      "purpose": "transport",
+      "role": "main"
+    }
+  ],
+  "cards": [
+    {
+      "title": "Revision and transaction",
+      "items": [
+        "Creation uses an empty expected revision; updates require the current source revision. Unchanged normalized source retains its revision.",
+        "Publishing replaces complete set membership while preserving existing assignments. Source, declarations and change rows commit together with the configured transaction runner."
+      ],
+      "dot": "storage"
+    },
+    {
+      "title": "Publication is server state",
+      "items": [
+        "Validation can preview a target without writing state. Publishing persists desired state; the device synchronizes and evaluates activation afterwards.",
+        "The Blueprint source revision differs from declaration ServerToken values. Removing an item withdraws it from this set; retained versions and uploaded profile bytes have their own stores.",
+        "Publication notifies existing assignments too. Adding or removing membership is a separate enrollment-scoped operation."
+      ],
+      "dot": "policy"
+    },
+    {
+      "title": "Configuration profile references",
+      "items": [
+        "Uploaded profiles supply a public HTTPS download URL and integrity metadata. Profile storage and authenticated device downloads remain owned by configurationprofile."
+      ],
+      "dot": "artifact"
+    },
+    {
+      "dot": "transport",
+      "title": "Public documentation",
+      "items": [
+        "Declarative synchronization \u2014 https://developer.apple.com/documentation/devicemanagement/integrating-declarative-management",
+        "Device activation and status \u2014 https://developer.apple.com/documentation/devicemanagement/leveraging-the-declarative-management-data-model-to-scale-devices"
+      ]
+    },
+    {
+      "title": "Implementation references",
+      "dot": "artifact",
+      "items": [
+        "spec: Author Blueprint \u2014 https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/devicemanagement/mdmprotocol/ddm/blueprint/blueprint.go",
+        "compile: Compile and validate \u2014 https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/server/blueprints/manager.go",
+        "publish: Publish complete set \u2014 https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/devicemanagement/mdmprotocol/ddm/publication.go",
+        "assign: Assign enrollment \u2014 https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/server/blueprints/manager.go",
+        "notify: Notify changed state \u2014 https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/server/ddmsync/notifier.go",
+        "device: Synchronize and activate \u2014 https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/devicemanagement/mdmprotocol/ddm/serve.go"
+      ]
+    },
+    {
+      "title": "Implementation references (continued)",
+      "dot": "artifact",
+      "items": [
+        "Revision and ETag administration \u2014 https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/server/internal/app/adminblueprints.go",
+        "Uploaded configuration profiles \u2014 https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/server/configurationprofile/manager.go"
+      ]
+    }
+  ]
+}

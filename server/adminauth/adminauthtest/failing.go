@@ -19,6 +19,7 @@ type Failing struct {
 	Fail string
 }
 
+// fails reports whether the named operation is configured to fail.
 func (f *Failing) fails(name string) bool { return f.Fail == name }
 
 // ApplyPrincipal implements adminauth.Store, including lifecycle fault injection.

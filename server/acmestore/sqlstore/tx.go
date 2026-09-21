@@ -62,6 +62,7 @@ func (s *Store) UpdateOrder(ctx context.Context, id string, fn func(acme.Tx) err
 	})
 }
 
+// runInTx executes the callback in a transaction and rolls it back if the callback fails.
 func (s *Store) runInTx(ctx context.Context, fn func(*txStore) error) error {
 	if _, ok := sqlcommon.CurrentTransaction(ctx, s.db); ok {
 		return sqlcommon.Savepoint(ctx, s.db, func(_ context.Context, tx *sql.Tx) error { return fn(&txStore{s: s, q: tx}) })

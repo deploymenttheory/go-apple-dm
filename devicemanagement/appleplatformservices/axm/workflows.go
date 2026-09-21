@@ -134,6 +134,7 @@ type WaitOptions struct {
 	MaxInterval time.Duration
 }
 
+// defaults fills unspecified options with this package's defaults.
 func (o WaitOptions) defaults() WaitOptions {
 	if o.Interval <= 0 {
 		o.Interval = DefaultWaitInterval

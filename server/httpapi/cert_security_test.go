@@ -15,6 +15,8 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/server/httpapi"
 )
 
+// TestCertificateTrustBoundaries checks certificate extraction only from verified TLS or trusted
+// proxy assertions and rejects conflicting sources.
 func TestCertificateTrustBoundaries(t *testing.T) {
 	ca, err := testpki.NewCA("root")
 	if err != nil {
@@ -88,6 +90,8 @@ func TestCertificateTrustBoundaries(t *testing.T) {
 	}
 }
 
+// TestDuplicateEmptyCertificateEvidenceRejected checks duplicate empty certificate evidence
+// rejected.
 func TestDuplicateEmptyCertificateEvidenceRejected(t *testing.T) {
 	next := http.HandlerFunc(
 		func(http.ResponseWriter, *http.Request) { t.Fatal("ambiguous credentials reached handler") },

@@ -24,12 +24,16 @@ type countingSigner struct {
 	calls atomic.Int32
 }
 
+// TestIssuanceReceiptSurvivesRegistrationFailureAndRestart checks that issuance receipt survives
+// registration failure and restart.
 func TestIssuanceReceiptSurvivesRegistrationFailureAndRestart(t *testing.T) {
 	for _, recovery := range []string{"finalize", "poll"} {
 		t.Run(recovery, func(t *testing.T) { testReceiptRecovery(t, recovery) })
 	}
 }
 
+// testReceiptRecovery checks that another server instance recovers the stored issuance receipt
+// without signing a second certificate.
 func testReceiptRecovery(t *testing.T, recovery string) {
 	t.Helper()
 	var signer *countingSigner
@@ -100,6 +104,8 @@ func testReceiptRecovery(t *testing.T, recovery string) {
 	}
 }
 
+// TestDelayedChallengeCannotReopenCompletedOrder checks that delayed challenge cannot reopen
+// completed order.
 func TestDelayedChallengeCannotReopenCompletedOrder(t *testing.T) {
 	for _, denied := range []bool{false, true} {
 		t.Run(map[bool]string{false: "success", true: "rejection"}[denied], func(t *testing.T) {
@@ -151,6 +157,7 @@ func TestDelayedChallengeCannotReopenCompletedOrder(t *testing.T) {
 	}
 }
 
+// Sign counts certificate-signing calls and delegates to the configured signer.
 func (s *countingSigner) Sign(
 	ctx context.Context,
 	csr *x509.CertificateRequest,

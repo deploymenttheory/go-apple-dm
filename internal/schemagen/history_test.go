@@ -13,6 +13,8 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/schema/support"
 )
 
+// TestHistoryRetainsLegacySupportAndNewFields checks that history retains legacy support and new
+// fields.
 func TestHistoryRetainsLegacySupportAndNewFields(t *testing.T) {
 	t.Parallel()
 	old := &Tree{Schemas: []*Schema{
@@ -93,6 +95,7 @@ func TestHistoryRetainsLegacySupportAndNewFields(t *testing.T) {
 	}
 }
 
+// TestHistoryMovesAndRemovedSchemas checks history moves and removed schemas.
 func TestHistoryMovesAndRemovedSchemas(t *testing.T) {
 	t.Parallel()
 	old := &Tree{
@@ -134,6 +137,8 @@ func TestHistoryMovesAndRemovedSchemas(t *testing.T) {
 	}
 }
 
+// TestHistoryPreservesLegacyProfileRepresentation checks that history preserves legacy profile
+// representation.
 func TestHistoryPreservesLegacyProfileRepresentation(t *testing.T) {
 	t.Parallel()
 	path := "declarative/declarations/configurations/legacy.yaml"
@@ -190,6 +195,7 @@ func TestHistoryPreservesLegacyProfileRepresentation(t *testing.T) {
 	}
 }
 
+// TestHistoryProvenanceAndFailure checks history provenance and failure.
 func TestHistoryProvenanceAndFailure(t *testing.T) {
 	t.Parallel()
 	root := auditFixture(t, map[string]string{"mdm/commands/a.yaml": auditSchema})
@@ -224,6 +230,7 @@ func TestHistoryProvenanceAndFailure(t *testing.T) {
 	}
 }
 
+// TestWithdrawnZeroRemovalIsUnavailable checks withdrawn zero removal is unavailable.
 func TestWithdrawnZeroRemovalIsUnavailable(t *testing.T) {
 	t.Parallel()
 	entry, err := convertOS(nil, &SupportedOS{MacOS: &OSSupport{Introduced: "10.0", Removed: "0"}})

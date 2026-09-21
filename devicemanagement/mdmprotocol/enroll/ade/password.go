@@ -31,6 +31,8 @@ func PasswordHash(password []byte, iterations int) ([]byte, error) {
 	return passwordHash(password, salt, iterations)
 }
 
+// passwordHash derives the password representation required by the enrollment account
+// configuration.
 func passwordHash(password, salt []byte, iterations int) ([]byte, error) {
 	entropy, err := pbkdf2.Key(sha512.New, string(password), salt, iterations, 128)
 	if err != nil {

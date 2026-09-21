@@ -27,6 +27,7 @@ func presenceExpr(f *Field) (present, value string) {
 	return "true", x
 }
 
+// validateFile emits the schema-driven validation methods for one family.
 func (e *emitter) validateFile() []byte {
 	b := buf()
 	b.WriteString(e.header())
@@ -53,6 +54,7 @@ func (e *emitter) validateFile() []byte {
 	return b.Bytes()
 }
 
+// validateType emits field and relationship validation for one generated type.
 func (e *emitter) validateType(b *bytes.Buffer, td *TypeDef, patterns *[]string) {
 	if !td.Nested {
 		fmt.Fprintf(
@@ -320,6 +322,8 @@ func (e *emitter) mapChecks(b *bytes.Buffer, f *Field, patterns *[]string) {
 	}
 }
 
+// indexOf returns the pattern index, appending the pattern when it is not already
+// recorded.
 func indexOf(patterns *[]string, p string) int {
 	for i, x := range *patterns {
 		if x == p {
@@ -330,6 +334,7 @@ func indexOf(patterns *[]string, p string) int {
 	return len(*patterns) - 1
 }
 
+// joinLiterals renders values as Go literals and joins them with commas.
 func joinLiterals(vs []any) string {
 	parts := make([]string, 0, len(vs))
 	for _, v := range vs {
@@ -338,6 +343,8 @@ func joinLiterals(vs []any) string {
 	return strings.Join(parts, ", ")
 }
 
+// floatPtr emits a Go expression for an optional floating-point value, using nil for an
+// absent value.
 func floatPtr(f *float64) string {
 	if f == nil {
 		return "nil"

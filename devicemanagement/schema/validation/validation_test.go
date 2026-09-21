@@ -11,6 +11,7 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/schema/validation"
 )
 
+// TestCollectorRules checks validation error collection, field paths, and error formatting.
 func TestCollectorRules(t *testing.T) {
 	t.Parallel()
 	c := validation.New(support.Target{})
@@ -64,6 +65,8 @@ func TestCollectorRules(t *testing.T) {
 	}
 }
 
+// TestSupportChecks checks support validation errors, deprecation warnings, and empty-target
+// behavior.
 func TestSupportChecks(t *testing.T) {
 	t.Parallel()
 	e := &support.Entry{Path: "X.Y", OS: map[support.OS]*support.OSSupport{

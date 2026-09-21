@@ -138,6 +138,7 @@ func TestE2E_OTAProfileService(t *testing.T) {
 	}
 }
 
+// hasEvent reports whether the supplied event type is present.
 func hasEvent(types []event.Type, want event.Type) bool {
 	for _, t := range types {
 		if t == want {

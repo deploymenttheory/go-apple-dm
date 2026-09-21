@@ -22,6 +22,7 @@ var (
 	ErrParticipant = errors.New("maintenance: participant registration missing")
 )
 
+// Store persists maintenance ownership and registered writer acknowledgements in SQL.
 type Store struct {
 	db *sql.DB
 	d  sqlcommon.Dialect
@@ -59,17 +60,23 @@ func Open(ctx context.Context, db *sql.DB, d sqlcommon.Dialect, initialize bool)
 	return s, nil
 }
 
+// Member identifies a registered writer and whether it has drained for the current
+// maintenance ticket.
 type Member struct {
 	ID      string `json:"id"`
 	Label   string `json:"label"`
 	Drained bool   `json:"drained"`
 }
 
+// Status summarizes the active maintenance ticket and the drain state of registered
+// writers.
 type Status struct {
 	Token   string   `json:"token,omitempty"`
 	Members []Member `json:"members"`
 }
 
+// Ready reports whether a maintenance ticket is active and every registered writer has
+// acknowledged its drain.
 func (s Status) Ready() bool {
 	if s.Token == "" {
 		return false
@@ -99,6 +106,8 @@ func (s *Store) transaction(
 	}))
 }
 
+// Status reads the maintenance ticket and participant acknowledgements within one store
+// transaction.
 func (s *Store) Status(ctx context.Context) (Status, error) {
 	out := Status{Members: []Member{}}
 	err := s.transaction(ctx, func(ctx context.Context, q sqlcommon.Queryer, token string) error {
@@ -144,6 +153,8 @@ func (s *Store) Request(ctx context.Context, ticket string) error {
 	})
 }
 
+// Resume clears the write pause only when ticket owns the current maintenance fence. An
+// empty ticket returns ErrInvalid and a different ticket returns ErrOwner.
 func (s *Store) Resume(ctx context.Context, ticket string) error {
 	if ticket == "" {
 		return ErrInvalid
@@ -177,6 +188,8 @@ func (s *Store) WaitDrained(ctx context.Context, ticket string) error {
 	}
 }
 
+// Register registers a writer with a unique participant ID. It rejects empty or oversized
+// labels and returns ErrFenced while a maintenance pause is active.
 func (s *Store) Register(ctx context.Context, label string) (*Participant, error) {
 	if label == "" || len(label) > 255 {
 		return nil, ErrInvalid
@@ -202,6 +215,8 @@ func (s *Store) Register(ctx context.Context, label string) (*Participant, error
 	return p, nil
 }
 
+// acknowledge records that a registered writer has drained for the current maintenance
+// ticket.
 func (s *Store) acknowledge(ctx context.Context, id, ticket string) error {
 	return s.transaction(ctx, func(ctx context.Context, q sqlcommon.Queryer, current string) error {
 		if current != ticket {
@@ -236,6 +251,7 @@ func (s *Store) Forget(ctx context.Context, ticket, id string, processStopped bo
 	})
 }
 
+// affected requires the expected participant or maintenance row to have been updated.
 func affected(result sql.Result, err error) error {
 	if err != nil {
 		return err
@@ -250,6 +266,8 @@ func affected(result sql.Result, err error) error {
 	return nil
 }
 
+// wait waits 100 milliseconds between maintenance checks, stopping promptly on context
+// cancellation.
 func wait(ctx context.Context) error {
 	timer := time.NewTimer(100 * time.Millisecond)
 	defer timer.Stop()
@@ -261,6 +279,7 @@ func wait(ctx context.Context) error {
 	}
 }
 
+// wrap classifies a maintenance storage failure while preserving nil success.
 func wrap(err error) error {
 	if err == nil {
 		return nil

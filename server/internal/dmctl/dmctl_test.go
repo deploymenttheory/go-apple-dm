@@ -39,6 +39,8 @@ func noConfig(t *testing.T) map[string]string {
 	return map[string]string{"DMCTL_CONFIG": filepath.Join(t.TempDir(), "absent.json")}
 }
 
+// TestUsage checks CLI usage for missing commands, unknown commands, invalid flags, and the verb
+// catalogue.
 func TestUsage(t *testing.T) {
 	t.Run("NoCommand", func(t *testing.T) {
 		_, errOut, err := run(t, noConfig(t))
@@ -131,6 +133,8 @@ func TestGlobalFlagsAfterVerb(t *testing.T) {
 	}
 }
 
+// TestExplainVerb checks schema explanation argument handling, suggestions, listings, ambiguity,
+// and invalid targets.
 func TestExplainVerb(t *testing.T) {
 	env := noConfig(t)
 
@@ -193,6 +197,7 @@ func TestExplainVerb(t *testing.T) {
 	})
 }
 
+// TestVersionVerb checks CLI version output.
 func TestVersionVerb(t *testing.T) {
 	out, _, err := run(t, noConfig(t), "version")
 	if err != nil || strings.TrimSpace(out) == "" {
@@ -457,6 +462,7 @@ func TestTokenSpecs(t *testing.T) {
 	}
 }
 
+// TestStatusReportsBootstrapState checks that status reports bootstrap state.
 func TestStatusReportsBootstrapState(t *testing.T) {
 	for _, value := range []string{"true", "false"} {
 		env := jsonServer(t, `{"Service":"device-management","Policy":true,"BootstrapPending":`+value+`}`)

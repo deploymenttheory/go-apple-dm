@@ -8,6 +8,8 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/appleplatformservices/push/apns"
 )
 
+// TestEndpointRejectedBeforeLoadingPushCredentials checks endpoint rejected before loading push
+// credentials.
 func TestEndpointRejectedBeforeLoadingPushCredentials(t *testing.T) {
 	for _, raw := range []string{"http://127.0.0.1:1234/secret", "https://user:secret@example.com/", "https://example.com/#secret", "https:///secret"} {
 		// Nil certificate storage panics if configuration validation reaches it.

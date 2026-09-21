@@ -14,6 +14,8 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/server/internal/app"
 )
 
+// TestStatusPages checks enrollment status pagination, redacted projections, channel isolation,
+// and authorization.
 func TestStatusPages(t *testing.T) {
 	for _, backend := range []string{"inmem", "sqlite"} {
 		t.Run(backend, func(t *testing.T) {

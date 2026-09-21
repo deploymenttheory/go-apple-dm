@@ -15,6 +15,7 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/server/sqlstore/sqlite"
 )
 
+// openDB opens a temporary SQLite database and registers its cleanup.
 func openDB(t *testing.T) *sql.DB {
 	t.Helper()
 	db, err := sql.Open("sqlite", sqlite.DSN(filepath.Join(t.TempDir(), "adminauth.db"), sqlite.Options{}))
@@ -25,6 +26,7 @@ func openDB(t *testing.T) *sql.DB {
 	return db
 }
 
+// openStore opens a migrated authorization store backed by a temporary SQLite database.
 func openStore(t *testing.T) *sqlstore.Store {
 	t.Helper()
 	s, err := sqlstore.Open(context.Background(), openDB(t), sqlite.Dialect, sqlstore.Options{})
@@ -34,6 +36,7 @@ func openStore(t *testing.T) *sqlstore.Store {
 	return s
 }
 
+// TestContract runs the shared authorization-store suite against SQLite.
 func TestContract(t *testing.T) {
 	adminauthtest.RunSuite(t, func(t *testing.T) adminauth.Store {
 		t.Helper()
@@ -41,6 +44,7 @@ func TestContract(t *testing.T) {
 	})
 }
 
+// TestOpen checks authorization store configuration, migrations, and explicit migration skipping.
 func TestOpen(t *testing.T) {
 	ctx := context.Background()
 
@@ -97,6 +101,7 @@ func TestOpen(t *testing.T) {
 	})
 }
 
+// TestInvalidNames checks rejection of invalid principal and policy names by the SQL store.
 func TestInvalidNames(t *testing.T) {
 	ctx := context.Background()
 	s := openStore(t)

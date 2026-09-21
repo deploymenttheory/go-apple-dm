@@ -33,7 +33,7 @@ The [architecture guide](../../architecture.md) summarizes how the decisions fit
 | 0022 | [Change notifier](0022-change-notifier.md) |
 | 0023 | [DDM adapters and the internal wire contract](0023-ddm-adapters-and-wire-contract.md) |
 | 0024 | [Simulator DDM client and predicate subset](0024-simulator-ddm-client-and-predicates.md) |
-| 0025 | [Reference server roles and container](0025-reference-server-roles-and-container.md) |
+| 0025 | [Reference server runtime and container](0025-reference-server-roles-and-container.md) |
 | 0026 | [DEP client, device sync, and profile assignment](0026-dep-client-sync-and-assignment.md) |
 | 0027 | [Automated Device Enrollment: MachineInfo, the enrollment endpoint, and web view authentication](0027-ade-enrollment-machineinfo-and-web-view-auth.md) |
 | 0028 | [Account-driven enrollment and service discovery](0028-account-driven-enrollment-and-service-discovery.md) |
@@ -64,5 +64,4 @@ The [architecture guide](../../architecture.md) summarizes how the decisions fit
 | 0053 | [Apps and Books licensing](0053-apps-and-books-licensing.md) |
 | 0054 | [FileVault encryption identities](0054-filevault-encryption-identities.md) |
 | 0055 | [Blueprint composition and publication](0055-blueprint-composition.md) |
-
-- [0056: Unified reference server and managed RBAC](0056-unified-server-rbac.md)
+| 0056 | [Unified reference server and managed RBAC](0056-unified-server-rbac.md) |

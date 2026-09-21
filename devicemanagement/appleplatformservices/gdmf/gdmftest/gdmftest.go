@@ -82,6 +82,8 @@ func (s *Server) SetStatus(code int) {
 	s.status = code
 }
 
+// serve records a catalogue request and returns the configured JSON fixture, raw body, or
+// HTTP failure.
 func (s *Server) serve(w http.ResponseWriter, _ *http.Request) {
 	s.Hits.Add(1)
 	s.mu.Lock()

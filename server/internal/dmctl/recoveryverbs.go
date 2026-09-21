@@ -23,6 +23,8 @@ type recoveryFlags struct {
 	wait                                                                                                      time.Duration
 }
 
+// runRecovery parses and executes the recovery subcommand, reporting argument and operation
+// failures to the CLI caller.
 func runRecovery(ctx context.Context, e *env, args []string) error {
 	if len(args) == 0 {
 		return fmt.Errorf(
@@ -114,6 +116,8 @@ func runRecovery(ctx context.Context, e *env, args []string) error {
 	return e.recoveryControl(ctx, op, f)
 }
 
+// recoveryControl runs maintenance control or backup against the configured local
+// database using the operator's ownership ticket where required.
 func (e *env) recoveryControl(ctx context.Context, op string, f recoveryFlags) error {
 	if op != "pause" && op != "status" && op != "resume" && op != "forget" && op != "backup" {
 		return fmt.Errorf("%w: unknown recovery operation", ErrUsage)
@@ -182,6 +186,8 @@ func (e *env) recoveryControl(ctx context.Context, op string, f recoveryFlags) e
 	)
 }
 
+// readRecoveryIdentityFile reads and trims a local recovery credential file, such as an
+// ownership ticket or age identity file.
 func readRecoveryIdentityFile(path string) (string, error) {
 	// #nosec G304 -- Explicit local operator credential path, never remote input.
 	raw, err := os.ReadFile(path)
@@ -191,6 +197,8 @@ func readRecoveryIdentityFile(path string) (string, error) {
 	return strings.TrimSpace(string(raw)), nil
 }
 
+// recoveryArchive runs checkpoint verification or restore using the selected archive and
+// identities.
 func (e *env) recoveryArchive(ctx context.Context, op string, f recoveryFlags) error {
 	if f.archive == "" || f.identity == "" {
 		return fmt.Errorf("%w: -archive and -identity-file required", ErrUsage)
@@ -234,6 +242,8 @@ func (e *env) recoveryArchive(ctx context.Context, op string, f recoveryFlags) e
 	return wrapError(json.NewEncoder(e.stdout).Encode(result))
 }
 
+// recoveryBackup creates a checkpoint using the active maintenance ticket and selected
+// encryption recipients.
 func (e *env) recoveryBackup(
 	ctx context.Context,
 	s recovery.SQL,

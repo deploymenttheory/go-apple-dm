@@ -20,6 +20,8 @@ type SetupStatus struct {
 	PublicACME        *lifecycle.PublicACMEStatus `json:"publicAcme,omitempty"`
 }
 
+// CertificateSetupStatus reports managed identity readiness and configuration issues; it
+// returns ErrConfig when certificate setup is unavailable.
 func (a *App) CertificateSetupStatus(ctx context.Context) (SetupStatus, error) {
 	if a.Certificates == nil {
 		return SetupStatus{}, ErrConfig

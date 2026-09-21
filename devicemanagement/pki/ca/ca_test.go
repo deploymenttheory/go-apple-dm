@@ -19,6 +19,7 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/pki/ca"
 )
 
+// csr creates and parses a CSR with optional DNS, email, IP, and URI subject alternative names.
 func csr(t *testing.T, key any, cn string, sans bool) *x509.CertificateRequest {
 	t.Helper()
 	tmpl := &x509.CertificateRequest{Subject: pkix.Name{CommonName: cn, Organization: []string{"o"}}}
@@ -39,6 +40,7 @@ func csr(t *testing.T, key any, cn string, sans bool) *x509.CertificateRequest {
 	return c
 }
 
+// TestSelfSignedAndLocalSignsWithPolicy checks self signed and local signs with policy.
 func TestSelfSignedAndLocalSignsWithPolicy(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
@@ -126,12 +128,14 @@ func TestSelfSignedAndLocalSignsWithPolicy(t *testing.T) {
 	}
 }
 
+// pool creates a certificate pool containing the supplied certificate.
 func pool(c *x509.Certificate) *x509.CertPool {
 	p := x509.NewCertPool()
 	p.AddCert(c)
 	return p
 }
 
+// TestConstructorErrors checks invalid CA construction, weak RSA keys, and depot input validation.
 func TestConstructorErrors(t *testing.T) {
 	t.Parallel()
 	cert, key, _ := ca.NewSelfSigned(ca.SelfSignedOptions{Subject: pkix.Name{CommonName: "x"}, Validity: time.Hour, RSABits: 2048})
@@ -164,11 +168,15 @@ func TestConstructorErrors(t *testing.T) {
 
 type failDepot struct{}
 
+// Put returns a synthetic disk-full error when storing a certificate.
 func (failDepot) Put(context.Context, *x509.Certificate) error { return errors.New("disk full") }
+
+// Get returns a synthetic certificate-read failure.
 func (failDepot) Get(context.Context, *big.Int) (*x509.Certificate, error) {
 	return nil, errors.New("no")
 }
 
+// TestDepotFailure checks that certificate depot failure prevents successful issuance.
 func TestDepotFailure(t *testing.T) {
 	t.Parallel()
 	cert, key, _ := ca.NewSelfSigned(ca.SelfSignedOptions{})
@@ -179,6 +187,7 @@ func TestDepotFailure(t *testing.T) {
 	}
 }
 
+// TestMismatchedCAKey checks rejection of an issuer certificate and private key that do not match.
 func TestMismatchedCAKey(t *testing.T) {
 	t.Parallel()
 	cert, _, _ := ca.NewSelfSigned(ca.SelfSignedOptions{})
@@ -190,6 +199,7 @@ func TestMismatchedCAKey(t *testing.T) {
 
 type failReader struct{ after int }
 
+// Read reads random bytes until the configured number of reads is exhausted, then fails.
 func (f *failReader) Read(p []byte) (int, error) {
 	if f.after <= 0 {
 		return 0, errors.New("entropy exhausted")
@@ -198,6 +208,7 @@ func (f *failReader) Read(p []byte) (int, error) {
 	return rand.Read(p)
 }
 
+// TestRandomFailures checks certificate issuance failure when entropy is unavailable.
 func TestRandomFailures(t *testing.T) {
 	t.Parallel()
 	if _, err := ca.SerialFrom(&failReader{}); err == nil {

@@ -23,6 +23,7 @@ const (
 	testKeyID    = "e339d085-a821-438a-a527-d044edacf50a"
 )
 
+// newKey generates a P-256 private key, failing the test on error.
 func newKey(t *testing.T) *ecdsa.PrivateKey {
 	t.Helper()
 	key, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
@@ -32,6 +33,7 @@ func newKey(t *testing.T) *ecdsa.PrivateKey {
 	return key
 }
 
+// sec1PEM encodes a private key as SEC 1 PEM, failing the test on error.
 func sec1PEM(t *testing.T, key *ecdsa.PrivateKey) []byte {
 	t.Helper()
 	der, err := x509.MarshalECPrivateKey(key)
@@ -41,6 +43,7 @@ func sec1PEM(t *testing.T, key *ecdsa.PrivateKey) []byte {
 	return pem.EncodeToMemory(&pem.Block{Type: "EC PRIVATE KEY", Bytes: der})
 }
 
+// pkcs8PEM encodes a private key as PKCS #8 PEM, failing the test on error.
 func pkcs8PEM(t *testing.T, key any) []byte {
 	t.Helper()
 	der, err := x509.MarshalPKCS8PrivateKey(key)
@@ -61,8 +64,14 @@ type instantClock struct {
 	onAfter func()
 }
 
-func (c *instantClock) Now() time.Time                  { return time.Now() }
+// Now returns the current wall-clock time.
+func (c *instantClock) Now() time.Time { return time.Now() }
+
+// Since returns the wall-clock duration since t.
 func (c *instantClock) Since(t time.Time) time.Duration { return time.Since(t) }
+
+// After records the requested delay and immediately signals the timer, invoking the optional
+// callback.
 func (c *instantClock) After(d time.Duration) <-chan time.Time {
 	c.mu.Lock()
 	c.delays = append(c.delays, d)
@@ -75,6 +84,7 @@ func (c *instantClock) After(d time.Duration) <-chan time.Time {
 	return ch
 }
 
+// recorded returns a copy of the recorded delays under the clock's mutex.
 func (c *instantClock) recorded() []time.Duration {
 	c.mu.Lock()
 	defer c.mu.Unlock()
@@ -91,6 +101,7 @@ type fixture struct {
 	cfg   Config
 }
 
+// newFixture creates the fake AXM service, client credentials, and immediate clock fixture.
 func newFixture(t *testing.T) *fixture {
 	t.Helper()
 	srv := axmtest.NewServer()

@@ -91,6 +91,8 @@ func (s *Store) CreatePrincipal(_ context.Context, p adminauth.Principal, digest
 	return s.createPrincipal(p, digest, now)
 }
 
+// createPrincipal stores a new principal and credential digest while the caller holds the
+// store lock.
 func (s *Store) createPrincipal(p adminauth.Principal, digest string, now time.Time) (adminauth.Principal, error) {
 	if !adminauth.ValidName(p.Name) {
 		return adminauth.Principal{}, adminauth.ErrInvalid

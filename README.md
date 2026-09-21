@@ -5,7 +5,7 @@
 [![Go Reference](https://pkg.go.dev/badge/github.com/deploymenttheory/go-apple-dm.svg)](https://pkg.go.dev/github.com/deploymenttheory/go-apple-dm)
 [![Go Version](https://img.shields.io/github/go-mod/go-version/deploymenttheory/go-apple-dm)](https://go.dev/)
 [![License](https://img.shields.io/github/license/deploymenttheory/go-apple-dm)](LICENSE)
-![Status: Beta](https://img.shields.io/badge/status-preview-58A6FF)
+![Status: Alpha](https://img.shields.io/badge/status-alpha-58A6FF)
 
 Go packages for Apple's MDM protocol, declarative device management (DDM), enrollment,
 certificate issuance and Apple service clients. A reference server and the `dmctl` CLI show
@@ -21,26 +21,17 @@ declarative management and Apple's service APIs, all against a schema that Apple
 with each OS release. Most of that work is the same for every product, and it has to be
 finished before the part that differentiates a product can start.
 
-Open-source implementations already exist. The [reference catalogue](docs/research/reference_projects.md)
-indexes the ones reviewed during design. In Go, the Nano suite provides NanoMDM, "a
-minimalist Apple MDM server and library", with declarative management, device enrollment
-service access, command workflows and Apple Business Manager access supplied by separate
-services (KMFDDM, NanoDEP, NanoCMD, NanoAXM) and combined by NanoHUB; NanoMDM's own
-documentation places SCEP, enrollment profiles, the DEP API and app licensing outside its
-scope. MicroMDM v1 describes itself as in maintenance mode. Fleet and Zentral are complete
-management products with their own data models and user interfaces. These projects informed
-the [design decisions](docs/research/decisions/README.md); they are not dependencies, and no
-code is copied from them.
+The library provides reusable protocol, enrollment, certificate and Apple-service
+packages behind storage interfaces. Types, validation and platform support metadata
+come from Apple's [Device Management Client Schema](https://github.com/apple/device-management)
+and the pinned compatibility input. The reference server composes these packages
+with persistent SQL state, managed administration and background workers.
 
-This project takes a different shape. One Go module covers the protocol surface end to end:
-MDM and DDM, every current enrollment mode, SCEP, ACME with Managed Device Attestation, push,
-the device enrollment service, the Apple Business Manager and Apple School Manager API, and
-Apps and Books licensing, all behind storage contracts with a shared contract suite. Types,
-validation and platform support metadata are generated from Apple's pinned schema, so a new
-OS release is adopted by regeneration rather than hand edits. DDM runs inside the MDM
-enrollment rather than as a separate service. The reference server is an example
-composition that demonstrates the library; it is not the product. The intended consumer
-owns the product layer without having to own the protocol layer.
+Apple defines the [MDM exchanges](https://developer.apple.com/documentation/devicemanagement/sending-mdm-commands-to-a-device)
+and [DDM integration](https://developer.apple.com/documentation/devicemanagement/integrating-declarative-management).
+The project's [architecture](docs/architecture.md) and
+[decisions](docs/research/decisions/README.md) explain implementation choices and
+operator responsibilities.
 
 ## Who it is for
 
@@ -68,9 +59,9 @@ both.
 | Enrollment | Profile-based, Automated Device Enrollment, account-driven Device and User Enrollment, user channel and Shared iPad handling | Enrollment routes, admission policy loading, OIDC web authentication | The operator writes admission policy, runs the identity provider and sets up Apple Business Manager |
 | Certificates | CA abstraction, SCEP, ACME, Managed Device Attestation, revocation | Issuer configuration, revocation services, rate limits | The operator supplies trust roots and HTTPS certificates and validates on real hardware |
 | Apple services | APNs, device enrollment service, software lookup, Business and School Manager, Apps and Books clients | Push delivery, DEP sync worker, sealed credential storage | The operator obtains and renews Apple credentials |
-| Declarative management | Engine, sets, membership, snapshots, status reports, predicates, Blueprint compiler and atomic publication | Blueprint API/CLI, configuration profile storage and delivery, synchronization into commands and pushes, split-role proxy | The product developer authors declarations and builds fleet workflows; see [Blueprints](docs/operations/blueprints.md) |
+| Declarative management | Engine, sets, membership, snapshots, status reports, predicates, Blueprint compiler and atomic publication | Blueprint API/CLI, configuration profile storage and delivery, synchronization into commands and pushes through the in-process adapter | The product developer authors declarations and builds fleet workflows; see [Blueprints](docs/operations/blueprints.md) |
 | Storage | Contracts, in-memory implementations, contract suites | SQLite, PostgreSQL and MySQL stores with sealed secret columns | The operator runs the database, backups and key custody |
-| Administration | Typed events and hooks | Admin API, Cedar policies, audit trail, event sinks, `dmctl` | The operator manages accounts; the product developer builds integrations and dashboards |
+| Administration | Typed events and hooks | Admin API, managed principals and roles, Cedar policies, audit trail, native webhooks, `dmctl` | The operator manages accounts; the product developer builds integrations and dashboards |
 | Product | None | None | The product developer builds the management UI, inventory, fleet policy and workflows |
 
 Not planned:
@@ -93,8 +84,9 @@ Not planned:
    [0052](docs/research/decisions/0052-mixed-os-fleets.md)).
 3. MDM and DDM together. Declarative management extends the MDM enrollment instead of
    running beside it ([0039](docs/research/decisions/0039-ddm-is-an-extension-of-mdm.md)).
-4. Current Apple platforms. Devices running OS 26 onward are the target; there is no
-   compatibility layer for earlier releases.
+4. Schema-defined Apple platforms. Availability is evaluated against each device's
+   observed OS, version, channel and capabilities. The pinned compatibility schema
+   retains support for older devices; individual features keep Apple's release floors.
 5. Storage-agnostic. Domain contracts and a shared contract suite define backend behavior for
    memory, SQLite, PostgreSQL and MySQL
    ([0005](docs/research/decisions/0005-storage-interfaces.md),

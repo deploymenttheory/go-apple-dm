@@ -15,6 +15,7 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/server/internal/app"
 )
 
+// decodeBody reads, closes, and decodes a response body, failing the test on error.
 func decodeBody(t *testing.T, resp *http.Response, v any) {
 	t.Helper()
 	defer func(body io.Closer) { _ = body.Close() }(resp.Body)
@@ -27,6 +28,8 @@ func decodeBody(t *testing.T, resp *http.Response, v any) {
 	}
 }
 
+// TestPolicyCannotDelegateCredentialMutations checks that policy cannot delegate credential
+// mutations.
 func TestPolicyCannotDelegateCredentialMutations(t *testing.T) {
 	a, m, _ := policyApp(t, nil)
 	token := mintPrincipal(t, m, adminauth.Principal{Name: "delegate"})
@@ -202,6 +205,8 @@ func TestAdminPrincipalRoutes(t *testing.T) {
 	})
 }
 
+// TestAdminPolicyRoutes checks policy administration, unknown-action validation, action listing,
+// and access control.
 func TestAdminPolicyRoutes(t *testing.T) {
 	ctx := context.Background()
 	a, m, _ := policyApp(t, nil)
@@ -395,6 +400,7 @@ func TestAdminStoreFailureIsInternal(t *testing.T) {
 	}
 }
 
+// mustRegistry builds the reference server's complete authorization action registry.
 func mustRegistry(t *testing.T) *adminauth.Registry {
 	t.Helper()
 	reg, err := adminauth.NewRegistry(app.AdminActions()...)

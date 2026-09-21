@@ -15,6 +15,8 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/state"
 )
 
+// TestRevokeCertificateAuthorizations checks certificate-revocation authorization and preservation
+// of state after invalid requests.
 func TestRevokeCertificateAuthorizations(t *testing.T) {
 	for _, mode := range []string{"account", "certificate-key", "authorized-identifiers"} {
 		t.Run(mode, func(t *testing.T) {

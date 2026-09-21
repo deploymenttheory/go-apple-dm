@@ -98,7 +98,7 @@
       "id": "manual",
       "lane": "profile",
       "col": 0,
-      "label": "Choose profile delivery",
+      "label": "Choose delivery",
       "sublabel": "Admin export or OTA discovery",
       "type": "frontend",
       "width": 225,
@@ -153,7 +153,7 @@
       "id": "checkin",
       "lane": "identity",
       "col": 1,
-      "label": "Authenticate + TokenUpdate",
+      "label": "Complete check-in",
       "sublabel": "Associate identity; enable channel",
       "type": "backend",
       "width": 225,
@@ -267,7 +267,7 @@
       "title": "Enrollment type and identity method",
       "items": [
         "Automated Device Enrollment, account-driven enrollment, and profile-based enrollment describe how enrollment begins. SCEP and ACME describe how the device obtains its identity.",
-        "Account-driven discovery selects User Enrollment (mdm-byod) or Device Enrollment (mdm-adde). The reference server’s OTA delivery supports SCEP only and separates identity bootstrap from MDM profile delivery."
+        "Account-driven discovery selects User Enrollment (mdm-byod) or Device Enrollment (mdm-adde). The reference server\u2019s OTA delivery supports SCEP only and separates identity bootstrap from MDM profile delivery."
       ]
     },
     {
@@ -290,11 +290,32 @@
       "dot": "transport",
       "title": "Public documentation",
       "items": [
-        "Deploying device management enrollment profiles — https://developer.apple.com/documentation/devicemanagement/deploying-device-management-enrollment-profiles",
-        "MDM payload — https://developer.apple.com/documentation/devicemanagement/mdm",
-        "Onboarding users with account-driven enrollment — https://developer.apple.com/documentation/devicemanagement/onboarding-users-with-account-driven-enrollment",
-        "MachineInfo — https://developer.apple.com/documentation/devicemanagement/machineinfo",
-        "Implementation — https://github.com/deploymenttheory/go-apple-dm/blob/7500eb25e50a2913338339d5fced18dc7f41fdc3/server/internal/app/enroll.go"
+        "Deploying device management enrollment profiles \u2014 https://developer.apple.com/documentation/devicemanagement/deploying-device-management-enrollment-profiles",
+        "MDM payload \u2014 https://developer.apple.com/documentation/devicemanagement/mdm",
+        "Onboarding users with account-driven enrollment \u2014 https://developer.apple.com/documentation/devicemanagement/onboarding-users-with-account-driven-enrollment",
+        "MachineInfo \u2014 https://developer.apple.com/documentation/devicemanagement/machineinfo"
+      ]
+    },
+    {
+      "title": "Implementation references",
+      "dot": "artifact",
+      "items": [
+        "updategate: Verify and admit device \u2014 https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/devicemanagement/mdmprotocol/enroll/ade/handler.go",
+        "adeprofile: ADE authentication \u2014 https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/devicemanagement/mdmprotocol/enroll/ade/handler.go",
+        "discovery: Discover service \u2014 https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/devicemanagement/mdmprotocol/enroll/discovery/discovery.go",
+        "adprofile: Authenticate account \u2014 https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/devicemanagement/mdmprotocol/enroll/accountdriven/handler.go",
+        "manual: Choose profile delivery \u2014 https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/devicemanagement/mdmprotocol/enroll/enroll.go",
+        "ota: OTA identity phase \u2014 https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/devicemanagement/mdmprotocol/enroll/ota.go"
+      ]
+    },
+    {
+      "title": "Implementation references (continued)",
+      "dot": "artifact",
+      "items": [
+        "otafinal: OTA management phase \u2014 https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/devicemanagement/mdmprotocol/enroll/ota.go",
+        "profile: Enrollment profile \u2014 https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/devicemanagement/mdmprotocol/enroll/enroll.go",
+        "issuer: Enrollment identity \u2014 https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/server/internal/app/enroll.go",
+        "checkin: Authenticate + TokenUpdate \u2014 https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/server/service/checkin.go"
       ]
     }
   ]

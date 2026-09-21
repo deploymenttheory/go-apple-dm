@@ -20,6 +20,7 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/testpki"
 )
 
+// signedAttrs encodes OTA attributes as a plist and signs them with a newly issued test identity.
 func signedAttrs(t *testing.T, ca *testpki.CA, cn string, attrs map[string]any) []byte {
 	t.Helper()
 	id, err := ca.Issue(cn, time.Now().Add(-time.Minute))
@@ -34,6 +35,7 @@ func signedAttrs(t *testing.T, ca *testpki.CA, cn string, attrs map[string]any) 
 	return signed
 }
 
+// TestOTAProfileBuild checks OTA Profile Service payload construction and round trips.
 func TestOTAProfileBuild(t *testing.T) {
 	t.Parallel()
 	p, err := enroll.OTAProfile{Identifier: "com.example.ota", DisplayName: "Enroll", URL: "https://mdm.example.com/ota", Challenge: "c1"}.Build()
@@ -73,6 +75,7 @@ func TestOTAProfileBuild(t *testing.T) {
 	}
 }
 
+// TestOTAPhase1Verify checks OTA phase1 verify.
 func TestOTAPhase1Verify(t *testing.T) {
 	t.Parallel()
 	deviceCA, _ := testpki.NewCA("Apple iPhone Device CA (test)")

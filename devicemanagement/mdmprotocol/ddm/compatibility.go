@@ -30,6 +30,8 @@ type CompatibilityReport struct {
 	Issues   []CompatibilityIssue
 }
 
+// deliveryTarget resolves the observed platform and enrollment constraints used for
+// declaration delivery.
 func (e *Engine) deliveryTarget(ctx context.Context, id mdm.EnrollmentID) (*support.Target, error) {
 	if e.enrollmentTarget == nil {
 		return nil, nil
@@ -71,6 +73,7 @@ type compatibleItem struct {
 	reason  string
 }
 
+// filterCompatible removes declarations that cannot be delivered to the resolved target.
 func filterCompatible(ctx context.Context, store DeclarationStore, items []SnapshotItem, target support.Target) ([]SnapshotItem, []CompatibilityIssue, error) {
 	unknown := target.OS == "" || target.Version.IsZero()
 	byID := make(map[string]*compatibleItem, len(items))
@@ -175,6 +178,7 @@ func filterCompatible(ctx context.Context, store DeclarationStore, items []Snaps
 	return result, issues, nil
 }
 
+// pruneStatusSubscriptions removes unavailable status items from generated subscriptions.
 func pruneStatusSubscriptions(entry *compatibleItem, target support.Target, unknown bool) {
 	items, _ := entry.payload["StatusItems"].([]any)
 	kept := make([]any, 0, len(items))
@@ -200,6 +204,7 @@ func pruneStatusSubscriptions(entry *compatibleItem, target support.Target, unkn
 	}
 }
 
+// referencedStrings extracts declaration references at the supplied payload paths.
 func referencedStrings(value any, path []string) []string {
 	if len(path) == 0 {
 		if s, ok := value.(string); ok {
@@ -225,6 +230,7 @@ func referencedStrings(value any, path []string) []string {
 	return result
 }
 
+// sameItems compares declaration-item collections for equivalent advertised content.
 func sameItems(a, b []SnapshotItem) bool {
 	if len(a) != len(b) {
 		return false

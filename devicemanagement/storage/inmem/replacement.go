@@ -10,6 +10,10 @@ import (
 
 var _ storage.ReplacementStore = (*Store)(nil)
 
+// TransitionReplacement applies a device identity replacement transition under the
+// enrollment lock. A successful terminal transition commits the candidate certificate pin,
+// token updates, and history atomically while preserving enrollment state. User channels
+// and conflicting certificate reuse are rejected.
 func (s *Store) TransitionReplacement(ctx context.Context, id mdm.EnrollmentID, change storage.ReplacementChange) (*storage.Replacement, error) {
 	if err := ctx.Err(); err != nil {
 		return nil, err

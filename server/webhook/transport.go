@@ -30,6 +30,8 @@ const (
 	HeaderSignature = "webhook-signature"
 )
 
+// validateURL requires an absolute HTTPS receiver URL without embedded user information or
+// a fragment.
 func validateURL(raw string) error {
 	u, err := url.Parse(raw)
 	if err != nil || u.Scheme != "https" || u.Hostname() == "" || u.User != nil || u.Fragment != "" {
@@ -38,6 +40,8 @@ func validateURL(raw string) error {
 	return nil
 }
 
+// newHTTPClient constructs the bounded receiver client with verified TLS and redirects
+// disabled.
 func newHTTPClient(cfg Config) (*http.Client, error) {
 	allowed := []netip.Prefix{}
 	for _, raw := range cfg.PrivateNetworks {
@@ -124,6 +128,7 @@ func newHTTPClient(cfg Config) (*http.Client, error) {
 	return &http.Client{Transport: transport, Timeout: 10 * time.Second, CheckRedirect: func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }}, nil
 }
 
+// signingKey decodes and validates the webhook signing-secret representation.
 func signingKey(secret string) ([]byte, error) {
 	key, err := base64.StdEncoding.DecodeString(strings.TrimPrefix(secret, "whsec_"))
 	if err != nil || len(key) != 32 {
@@ -182,6 +187,10 @@ func (s *Store) Resolve(_ context.Context, dest string) (eventstore.Sender, erro
 	return func(ctx context.Context, rec eventsink.Record) error { return s.Send(ctx, rec.EventID) }, nil
 }
 
+// Send attempts one signed delivery of the retained immutable body. It checks the current
+// subscription state, includes overlapping signing keys when configured, and reports
+// receiver status and Retry-After to the worker. It neither acquires a delivery lease nor
+// schedules retries itself.
 func (s *Store) Send(ctx context.Context, id string) error {
 	r, d, err := s.retained(ctx, id)
 	if errors.Is(err, ErrExpired) || errors.Is(err, ErrNotFound) {

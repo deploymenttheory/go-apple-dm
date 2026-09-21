@@ -20,6 +20,8 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/schema/support"
 )
 
+// parse parses machine information inside an HTTP handler and returns the parser's result and
+// error.
 func parse(t *testing.T, req *http.Request, o ade.ParseOptions) (*ade.Parsed, error) {
 	t.Helper()
 	var (
@@ -30,6 +32,7 @@ func parse(t *testing.T, req *http.Request, o ade.ParseOptions) (*ade.Parsed, er
 	return p, err
 }
 
+// getWithHeader builds an enrollment GET request with the supplied machine-information header.
 func getWithHeader(t *testing.T, value string) *http.Request {
 	t.Helper()
 	req := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "https://mdm.example.com/enroll", http.NoBody)
@@ -37,6 +40,8 @@ func getWithHeader(t *testing.T, value string) *http.Request {
 	return req
 }
 
+// TestParseMachineInfo checks ADE machine information from headers, queries, and bodies, including
+// limits and malformed inputs.
 func TestParseMachineInfo(t *testing.T) {
 	t.Parallel()
 	chain := adetest.NewChain(t)
@@ -269,8 +274,10 @@ func TestParseMachineInfo(t *testing.T) {
 
 type failingReader struct{}
 
+// Read returns io.ErrUnexpectedEOF without reading bytes.
 func (failingReader) Read([]byte) (int, error) { return 0, io.ErrUnexpectedEOF }
 
+// TestVerify checks ADE certificate trust and per-handler audit behavior.
 func TestVerify(t *testing.T) {
 	t.Parallel()
 	chain := adetest.NewChain(t)
@@ -335,6 +342,7 @@ func TestVerify(t *testing.T) {
 	})
 }
 
+// TestPlatformFromProduct checks platform classification from Apple product identifiers.
 func TestPlatformFromProduct(t *testing.T) {
 	t.Parallel()
 	t.Run("Table", func(t *testing.T) {
@@ -369,6 +377,7 @@ func TestPlatformFromProduct(t *testing.T) {
 	})
 }
 
+// TestAppleAnchors checks Apple ADE trust-anchor shape and isolation of returned slices.
 func TestAppleAnchors(t *testing.T) {
 	t.Parallel()
 	a := ade.AppleAnchors()
@@ -384,6 +393,7 @@ func TestAppleAnchors(t *testing.T) {
 	}
 }
 
+// TestMemStore checks in-memory ADE record validation, lookup, and replacement.
 func TestMemStore(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()

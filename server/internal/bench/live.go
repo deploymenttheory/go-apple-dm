@@ -18,6 +18,7 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/testpki"
 )
 
+// appAlert runs the application alert notification scenario.
 func appAlert(
 	ctx context.Context,
 	e *Environment,
@@ -26,10 +27,13 @@ func appAlert(
 	return appSend(ctx, e, "alert")
 }
 
+// appBackground runs the background application notification scenario.
 func appBackground(ctx context.Context, e *Environment, _ string) error {
 	return appSend(ctx, e, "background")
 }
 
+// appSend sends an app notification using simulated defaults or live registration; live
+// runs also require a matching device receipt.
 func appSend(ctx context.Context, e *Environment, kind string) error {
 	// Match the host app registration document.
 	reg := struct {
@@ -132,6 +136,8 @@ func appSend(ctx context.Context, e *Environment, kind string) error {
 	}
 }
 
+// requireAppCredential requires an application-push credential before a live push scenario
+// runs.
 func (e *Environment) requireAppCredential(ctx context.Context, topic string) error {
 	path := "/apppush/credentials"
 	for {
@@ -154,6 +160,8 @@ func (e *Environment) requireAppCredential(ctx context.Context, topic string) er
 	}
 }
 
+// appRenewal replaces the app credential with a fixture-issued certificate, checks the
+// version increment, and sends an alert.
 func appRenewal(ctx context.Context, e *Environment, _ string) error {
 	pair, err := tls.LoadX509KeyPair(
 		e.Workspace.path("fixtures", "device-root.pem"),
@@ -211,11 +219,13 @@ func appRenewal(ctx context.Context, e *Environment, _ string) error {
 	return appSend(ctx, e, "alert")
 }
 
+// liveMDM checks a live DeviceInformation exchange through the inventory scenario.
 func liveMDM(ctx context.Context, e *Environment, device string) error {
 	_, err := liveInventory(ctx, e, device)
 	return err
 }
 
+// liveInventory collects the live inventory evidence required by the scenario.
 func liveInventory(ctx context.Context, e *Environment, device string) (map[string]string, error) {
 	if strings.TrimSpace(device) == "" {
 		return nil, fmt.Errorf("%w: -device-id is required", ErrBlocked)

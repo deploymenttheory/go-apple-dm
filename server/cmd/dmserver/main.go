@@ -16,6 +16,7 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/server/internal/runtime"
 )
 
+// main runs dmserver, printing a returned error and exiting with status 1 on failure.
 func main() {
 	if err := run(context.Background(), os.Args[1:], os.Getenv, os.Stdout); err != nil {
 		fmt.Fprintln(os.Stderr, "dmserver:", err)
@@ -23,6 +24,8 @@ func main() {
 	}
 }
 
+// run parses setup, environment, and command flags, then prints version information,
+// probes health, or starts the server.
 func run(ctx context.Context, args []string, getenv func(string) string, out *os.File) error {
 	// Version inspection must work even when setup files are unavailable.
 	if len(args) == 1 && (args[0] == "--version" || args[0] == "-version") {

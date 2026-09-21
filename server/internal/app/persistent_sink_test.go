@@ -14,6 +14,8 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/server/internal/app"
 )
 
+// TestPersistentWebhookDeliversAfterRestartingWorkers checks persistent webhook delivers after
+// restarting workers.
 func TestPersistentWebhookDeliversAfterRestartingWorkers(t *testing.T) {
 	c := newCollector()
 	srv := c.server(t)
@@ -50,6 +52,8 @@ func TestPersistentWebhookDeliversAfterRestartingWorkers(t *testing.T) {
 	}
 }
 
+// TestPersistentWebhookRejectsInvalidTrustAndEndpoint checks that persistent webhook rejects
+// invalid trust and endpoint.
 func TestPersistentWebhookRejectsInvalidTrustAndEndpoint(t *testing.T) {
 	for _, sinks := range []app.SinkConfig{
 		{WebhookURL: "https://webhook.example.test", WebhookRootCAFile: "missing"},
@@ -63,6 +67,8 @@ func TestPersistentWebhookRejectsInvalidTrustAndEndpoint(t *testing.T) {
 	}
 }
 
+// TestEventCaptureFailureMakesReadinessUnavailable checks event capture failure makes readiness
+// unavailable.
 func TestEventCaptureFailureMakesReadinessUnavailable(t *testing.T) {
 	a, db, _ := eventAdmin(t)
 	if _, err := db.ExecContext(t.Context(), "DROP TABLE event_records"); err != nil {

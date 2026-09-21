@@ -43,6 +43,8 @@ type Config struct {
 	CommandType func(context.Context, mdm.EnrollmentID, string) (string, error)
 }
 
+// Store persists encrypted webhook subscriptions, captured payloads, and delivery
+// metadata.
 type Store struct {
 	db              *sql.DB
 	d               sqlcommon.Dialect
@@ -62,6 +64,8 @@ type storedSubscription struct {
 	TokenHash     string    `json:"token_hash"`
 }
 
+// MigrationSet returns the embedded webhook migrations for SQLite, PostgreSQL, or MySQL.
+// Other dialects return ErrInvalid.
 func MigrationSet(d sqlcommon.Dialect) (sqlcommon.MigrationSet, error) {
 	switch d.Name {
 	case "sqlite", "postgres", "mysql":
@@ -109,6 +113,8 @@ func Open(ctx context.Context, db *sql.DB, d sqlcommon.Dialect, keys *crypt.Keyr
 	return &Store{db: db, d: d, unit: sqlcommon.UnitOfWork{DB: db, Dialect: d}, keys: keys, outbox: outbox, cfg: cfg, client: client}, nil
 }
 
+// seal encodes a value as JSON and encrypts it with its purpose and record ID as associated
+// data.
 func (s *Store) seal(v any, purpose, id string) ([]byte, error) {
 	b, err := json.Marshal(v)
 	if err != nil {
@@ -117,6 +123,8 @@ func (s *Store) seal(v any, purpose, id string) ([]byte, error) {
 	return sqlcommon.SealBlob(s.keys, purpose, b, id)
 }
 
+// open requires a sealed value, decrypts it with the expected associated data, and decodes
+// its JSON.
 func (s *Store) open(b []byte, v any, purpose, id string) error {
 	if !crypt.IsSealed(b) {
 		return crypt.ErrUnsealed
@@ -128,11 +136,15 @@ func (s *Store) open(b []byte, v any, purpose, id string) error {
 	return json.Unmarshal(b, v)
 }
 
+// query uses the context transaction when available, falling back to the store database.
 func (s *Store) query(ctx context.Context) sqlcommon.Queryer { return sqlcommon.Query(ctx, s.db) }
+
+// exec executes a dialect-rebound statement through the current database executor.
 func (s *Store) exec(ctx context.Context, q string, args ...any) (sql.Result, error) {
 	return s.query(ctx).ExecContext(ctx, s.d.Rebind(q), args...)
 }
 
+// load loads and decrypts a subscription, optionally acquiring its mutation lock.
 func (s *Store) load(ctx context.Context, id string, lock bool) (storedSubscription, error) {
 	q := "SELECT config FROM webhook_subscriptions WHERE id = ?"
 	if lock {
@@ -150,6 +162,7 @@ func (s *Store) load(ctx context.Context, id string, lock bool) (storedSubscript
 	return sub, err
 }
 
+// save encodes and seals subscription state before inserting or updating its record.
 func (s *Store) save(ctx context.Context, sub storedSubscription, create bool) error {
 	b, err := s.seal(sub, "webhook_subscriptions.config", sub.ID)
 	if err != nil {
@@ -163,6 +176,8 @@ func (s *Store) save(ctx context.Context, sub storedSubscription, create bool) e
 	return err
 }
 
+// validate validates destination configuration, event patterns, and filter bounds before
+// persistence.
 func validate(spec Spec) error {
 	if spec.Name == "" || len(spec.Name) > 128 || len(spec.URL) > 4096 || len(spec.Events) == 0 || len(spec.Events) > 128 {
 		return ErrInvalid
@@ -209,17 +224,22 @@ func validate(spec Spec) error {
 	return nil
 }
 
+// newCredentials creates independent random webhook signing and payload-access credentials.
 func newCredentials() Credentials {
 	key := make([]byte, 32)
 	_, _ = rand.Read(key)
 	return Credentials{SigningSecret: "whsec_" + base64.StdEncoding.EncodeToString(key), PayloadToken: rand.Text()}
 }
 
+// hashToken returns a SHA-256 digest for comparison without retaining the plaintext token.
 func hashToken(token string) string {
 	h := sha256.Sum256([]byte(token))
 	return hex.EncodeToString(h[:])
 }
 
+// Create persists an enabled subscription and returns its credentials once. Sensitive
+// payload policies require the caller-supplied authority flag; the host must authorize
+// ordinary subscription management separately.
 func (s *Store) Create(ctx context.Context, spec Spec, root bool) (Change, error) {
 	if err := validate(spec); err != nil {
 		return Change{}, err
@@ -234,11 +254,15 @@ func (s *Store) Create(ctx context.Context, spec Spec, root bool) (Change, error
 	return Change{Subscription: sub.Subscription, Credentials: &cred}, err
 }
 
+// Get returns subscription configuration and state without signing or payload credentials.
+// Missing subscriptions return ErrNotFound.
 func (s *Store) Get(ctx context.Context, id string) (Subscription, error) {
 	sub, err := s.load(ctx, id, false)
 	return sub.Subscription, err
 }
 
+// List returns subscription metadata after an exclusive ID cursor, without credentials. A
+// zero limit selects 100; limits outside 1 through 1000 return ErrInvalid.
 func (s *Store) List(ctx context.Context, after string, limit int) ([]Subscription, error) {
 	if limit == 0 {
 		limit = 100
@@ -304,6 +328,9 @@ func (s *Store) Update(ctx context.Context, id string, revision int, spec Spec, 
 	return out, err
 }
 
+// SetState pauses, resumes, disables, enables, or deletes a subscription and updates its
+// queued delivery state atomically. Sensitive subscriptions require the caller-supplied
+// authority flag; deleted subscriptions cannot be changed.
 func (s *Store) SetState(ctx context.Context, id, action string, root bool) (Subscription, error) {
 	var out Subscription
 	err := s.unit.Run(ctx, func(ctx context.Context) error {
@@ -352,6 +379,7 @@ func (s *Store) SetState(ctx context.Context, id, action string, root bool) (Sub
 	return out, err
 }
 
+// deliveryState updates pending deliveries to match the subscription's lifecycle state.
 func (s *Store) deliveryState(ctx context.Context, id, state string, currentOnly bool) error {
 	query := `UPDATE event_deliveries SET state = ?, lease_token = '', lease_until = 0 WHERE state IN ('pending','paused','blocked') AND event_id IN (SELECT delivery_id FROM webhook_messages WHERE subscription_id = ?`
 	args := []any{state, id}
@@ -364,6 +392,10 @@ func (s *Store) deliveryState(ctx context.Context, id, state string, currentOnly
 	return err
 }
 
+// Rotate replaces signing and payload credentials and returns the new secrets once. The old
+// signing key remains usable for the requested overlap, from zero to seven days; the old
+// payload token is replaced immediately. Sensitive subscriptions require the authority
+// flag.
 func (s *Store) Rotate(ctx context.Context, id string, overlap time.Duration, root bool) (Change, error) {
 	if overlap < 0 || overlap > 7*24*time.Hour {
 		return Change{}, ErrInvalid
@@ -403,11 +435,16 @@ func BlobColumns() []sqlcommon.BlobColumn {
 	}
 }
 
+// Rewrap reseals encrypted webhook columns under the active storage key and returns the
+// number rewritten. Previously accepted keys must remain available during rotation.
 func (s *Store) Rewrap(ctx context.Context) (int, error) {
 	return sqlcommon.RewrapBlobs(ctx, s.db, s.d, s.keys, BlobColumns())
 }
 
+// destination binds an outbox destination to a subscription ID and immutable revision.
 func destination(id string, revision int) string {
 	return fmt.Sprintf("native-webhook:%s:%d", id, revision)
 }
+
+// isDestination recognizes outbox destinations owned by native webhook delivery.
 func isDestination(id string) bool { return strings.HasPrefix(id, "native-webhook:") }

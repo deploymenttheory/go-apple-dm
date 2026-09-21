@@ -13,6 +13,7 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/server/internal/dmctl"
 )
 
+// TestProfileLintCLI checks profile lint CLI output and exit results.
 func TestProfileLintCLI(t *testing.T) {
 	const profile = `<?xml version="1.0"?><plist version="1.0"><dict><key>PayloadType</key><string>Configuration</string><key>PayloadIdentifier</key><string>example</string><key>PayloadUUID</key><string>id</string><key>PayloadVersion</key><integer>1</integer><key>PayloadContent</key><array><dict><key>PayloadType</key><string>com.apple.wifi.managed</string><key>PayloadIdentifier</key><string>example.wifi</string><key>PayloadUUID</key><string>wifi</string><key>PayloadVersion</key><integer>1</integer><key>SSID_STR</key><string>Example</string></dict></array></dict></plist>`
 	for _, tc := range []struct {
@@ -39,6 +40,7 @@ func TestProfileLintCLI(t *testing.T) {
 	}
 }
 
+// TestProfileLintArgumentsAndFiles checks profile lint arguments and files.
 func TestProfileLintArgumentsAndFiles(t *testing.T) {
 	dir := t.TempDir()
 	missing := filepath.Join(dir, "missing")
@@ -91,6 +93,7 @@ func TestProfileLintArgumentsAndFiles(t *testing.T) {
 	}
 }
 
+// TestProfileLintIOFailures checks profile lint I/O failures.
 func TestProfileLintIOFailures(t *testing.T) {
 	for _, tc := range []struct {
 		name, mode string

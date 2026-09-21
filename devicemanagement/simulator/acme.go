@@ -253,6 +253,8 @@ func acmeCSR(p *enroll.ACME, key crypto.Signer) ([]byte, error) {
 	return der, nil
 }
 
+// isEmptyName reports whether the supported common name, organization, unit, country,
+// locality, and province fields are empty.
 func isEmptyName(n pkix.Name) bool {
 	return n.CommonName == "" && len(n.Organization) == 0 && len(n.OrganizationalUnit) == 0 &&
 		len(n.Country) == 0 && len(n.Locality) == 0 && len(n.Province) == 0

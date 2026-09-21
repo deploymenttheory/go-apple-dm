@@ -19,6 +19,7 @@ type unavailableRoles struct {
 	fail string
 }
 
+// Roles injects a role-listing failure or delegates to the store.
 func (s unavailableRoles) Roles(ctx context.Context, p adminauth.Page) (adminauth.Result[adminauth.Role], error) {
 	if s.fail == "Roles" {
 		return adminauth.Result[adminauth.Role]{}, adminauthtest.ErrFailing
@@ -26,6 +27,7 @@ func (s unavailableRoles) Roles(ctx context.Context, p adminauth.Page) (adminaut
 	return s.Store.Roles(ctx, p)
 }
 
+// Role injects a role-lookup failure or delegates to the store.
 func (s unavailableRoles) Role(ctx context.Context, name string) (adminauth.Role, error) {
 	if s.fail == "Role" {
 		return adminauth.Role{}, adminauthtest.ErrFailing
@@ -33,6 +35,8 @@ func (s unavailableRoles) Role(ctx context.Context, name string) (adminauth.Role
 	return s.Store.Role(ctx, name)
 }
 
+// TestRoleHandlersRejectInvalidInputAndStorageFailures checks role handlers reject invalid input
+// and storage failures.
 func TestRoleHandlersRejectInvalidInputAndStorageFailures(t *testing.T) {
 	for _, tc := range []struct {
 		method, path, body, fail string

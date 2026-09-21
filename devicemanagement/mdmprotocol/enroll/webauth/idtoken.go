@@ -99,6 +99,7 @@ func parseJWKS(body []byte) ([]verificationKey, error) {
 	return keys, nil
 }
 
+// ecKey constructs an elliptic-curve public key from validated JWK coordinates.
 func ecKey(k jwk) (*ecdsa.PublicKey, error) {
 	x, err := base64.RawURLEncoding.DecodeString(k.X)
 	if err != nil {
@@ -125,6 +126,7 @@ func ecKey(k jwk) (*ecdsa.PublicKey, error) {
 	return pub, nil
 }
 
+// rsaKey constructs an RSA public key from the JWK modulus and exponent.
 func rsaKey(k jwk) (*rsa.PublicKey, error) {
 	n, err := base64.RawURLEncoding.DecodeString(k.N)
 	if err != nil {
@@ -243,6 +245,7 @@ func verifyIDToken(raw string, lookup keyLookup, checks idTokenChecks) (Claims, 
 	return typedClaims(rawClaims), nil
 }
 
+// checkClaims validates the identity token's issuer, audience, timing, and nonce claims.
 func checkClaims(c map[string]any, checks idTokenChecks) error {
 	if iss, _ := c["iss"].(string); iss != checks.issuer {
 		return fmt.Errorf("%w: iss %q, want %q", ErrIDToken, iss, checks.issuer)
@@ -311,6 +314,7 @@ func audienceContains(aud any, clientID string) bool {
 	return false
 }
 
+// numericDate reads a numeric JWT timestamp without accepting an incompatible claim type.
 func numericDate(v any) (time.Time, bool) {
 	f, ok := v.(float64)
 	if !ok {
@@ -319,6 +323,7 @@ func numericDate(v any) (time.Time, bool) {
 	return time.Unix(int64(f), 0), true
 }
 
+// typedClaims extracts the typed identity claims needed by the enrollment flow.
 func typedClaims(c map[string]any) Claims {
 	cl := Claims{Raw: c}
 	cl.Subject, _ = c["sub"].(string)

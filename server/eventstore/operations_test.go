@@ -8,6 +8,8 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/server/eventstore"
 )
 
+// TestRecordListingIncludesOccurrencesWithoutDestinations checks that record listing includes
+// occurrences without destinations.
 func TestRecordListingIncludesOccurrencesWithoutDestinations(t *testing.T) {
 	_, s, p := fixture(t)
 	p.Destinations = nil
@@ -46,6 +48,8 @@ func TestRecordListingIncludesOccurrencesWithoutDestinations(t *testing.T) {
 	}
 }
 
+// TestOldestPendingExcludesStoppedDeliveries checks that oldest pending excludes stopped
+// deliveries.
 func TestOldestPendingExcludesStoppedDeliveries(t *testing.T) {
 	db, s, p := fixture(t)
 	if err := p.Publish(t.Context(), event.Event{ID: "old", Type: event.Enrolled}); err != nil {

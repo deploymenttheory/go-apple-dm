@@ -16,6 +16,8 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/storage/crypt"
 )
 
+// TestRetainedCiphertextCorruptionFailsClosed checks that retained ciphertext corruption fails
+// closed.
 func TestRetainedCiphertextCorruptionFailsClosed(t *testing.T) {
 	ctx := t.Context()
 	now := time.Now()
@@ -86,6 +88,8 @@ func TestRetainedCiphertextCorruptionFailsClosed(t *testing.T) {
 	}
 }
 
+// TestReplacementCommitFailuresRollBackPinAndTokens checks replacement commit failures roll back
+// pin and tokens.
 func TestReplacementCommitFailuresRollBackPinAndTokens(t *testing.T) {
 	ctx := t.Context()
 	now := time.Now()
@@ -227,6 +231,8 @@ func TestReplacementCommitFailuresRollBackPinAndTokens(t *testing.T) {
 	}
 }
 
+// TestAtomicAuthenticateRejectsReuseAndRollsBackStorageFailure checks that atomic authenticate
+// rejects reuse and rolls back storage failure.
 func TestAtomicAuthenticateRejectsReuseAndRollsBackStorageFailure(t *testing.T) {
 	ctx := t.Context()
 	now := time.Now()
@@ -293,6 +299,8 @@ func TestAtomicAuthenticateRejectsReuseAndRollsBackStorageFailure(t *testing.T) 
 	}
 }
 
+// TestReauthenticationRejectsCorruptReturningUserWithoutChangingParent checks that
+// reauthentication rejects corrupt returning user without changing parent.
 func TestReauthenticationRejectsCorruptReturningUserWithoutChangingParent(t *testing.T) {
 	for _, channel := range []any{"not-a-channel", int(mdm.ChannelDevice)} {
 		s := openWith(t, filepath.Join(t.TempDir(), "returning.db"), nil)
@@ -315,6 +323,8 @@ func TestReauthenticationRejectsCorruptReturningUserWithoutChangingParent(t *tes
 	}
 }
 
+// TestIdentityReadsDistinguishMissingDeviceFromDatabaseFailure checks identity reads distinguish
+// missing device from database failure.
 func TestIdentityReadsDistinguishMissingDeviceFromDatabaseFailure(t *testing.T) {
 	s := openWith(t, filepath.Join(t.TempDir(), "missing.db"), nil)
 	id := mdm.EnrollmentID{Channel: mdm.ChannelDevice, ID: "missing"}
@@ -339,6 +349,8 @@ func TestIdentityReadsDistinguishMissingDeviceFromDatabaseFailure(t *testing.T) 
 	}
 }
 
+// TestCorruptCapabilityAndReplacementRecordsAreRejected checks corrupt capability and replacement
+// records are rejected.
 func TestCorruptCapabilityAndReplacementRecordsAreRejected(t *testing.T) {
 	ctx := t.Context()
 	now := time.Now()
@@ -419,6 +431,8 @@ func TestCorruptCapabilityAndReplacementRecordsAreRejected(t *testing.T) {
 	}
 }
 
+// TestUserAuthLifecycleAndQueueDisableFailures checks user auth lifecycle and queue disable
+// failures.
 func TestUserAuthLifecycleAndQueueDisableFailures(t *testing.T) {
 	ctx := t.Context()
 	now := time.Now()
@@ -496,6 +510,8 @@ func TestUserAuthLifecycleAndQueueDisableFailures(t *testing.T) {
 	}
 }
 
+// TestUserAuthRejectsCorruptIdentityAndDisabledChild checks that user auth rejects corrupt
+// identity and disabled child.
 func TestUserAuthRejectsCorruptIdentityAndDisabledChild(t *testing.T) {
 	for _, fault := range []string{"wrong parent", "wrong channel", "malformed channel", "missing table", "disabled child", "corrupt enrollment", "malformed enrollment channel"} {
 		t.Run(fault, func(t *testing.T) {
@@ -568,6 +584,8 @@ func TestUserAuthRejectsCorruptIdentityAndDisabledChild(t *testing.T) {
 	}
 }
 
+// TestInventoryPersistenceFailureRollsBackAcknowledgment checks inventory persistence failure
+// rolls back acknowledgment.
 func TestInventoryPersistenceFailureRollsBackAcknowledgment(t *testing.T) {
 	t.Parallel()
 	ctx, now := t.Context(), time.Now()
@@ -619,6 +637,8 @@ func TestInventoryPersistenceFailureRollsBackAcknowledgment(t *testing.T) {
 	}
 }
 
+// TestCapabilityPersistenceFailureRollsBackAcknowledgment checks capability persistence failure
+// rolls back acknowledgment.
 func TestCapabilityPersistenceFailureRollsBackAcknowledgment(t *testing.T) {
 	ctx, now := t.Context(), time.Now()
 	s := openWith(t, filepath.Join(t.TempDir(), "capabilities.db"), keyring(t, "storage-key-v1"))

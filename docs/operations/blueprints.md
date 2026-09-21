@@ -105,10 +105,9 @@ version, channel and observed capabilities. Publication is atomic on the server;
 it does not make the device install all declarations atomically. Native/profile
 setting conflicts retain Apple's ordinary conflict-resolution behavior.
 
-The maintained live acceptance scenarios exercise this lifecycle on both device
-and user channels of a macOS 26 VM. See
-[Blueprint acceptance on macOS 26](../testing/blueprints-macos26.md) for the
-reproduction command, native device evidence and platform limits.
+The maintained live acceptance scenarios exercise this lifecycle on macOS 26
+device and user channels. See [Blueprint acceptance](../testing/bench.md#blueprint-acceptance)
+for the command, native assertions and platform limits.
 
 ## Configuration profiles
 
@@ -158,26 +157,33 @@ against the target and profile scope at download; channels are not split
 automatically. External `ProfileURL` values are also supported as ordinary native
 payloads; the server does not fetch or validate external files.
 
-In a split deployment publish through the DDM process. Set its `DM_PUBLIC_URL`
-to the public MDM ingress URL. The MDM process authenticates device downloads and
-forwards them through the existing signed, replay-protected private hop. The DDM
-process checks membership and snapshots and returns authenticated profile bytes.
+The reference server authenticates downloads and serves profiles through its
+in-process adapter. Custom compositions can use the reusable
+[authenticated adapters](../research/decisions/0023-ddm-adapters-and-wire-contract.md);
+their caller owns shared enrollment state, replay protection and public URL wiring.
 
 ## HTTP and authorization
 
 Routes are relative to `/admin/v1` and use the existing bearer authentication,
-Cedar policies, audit trail and transaction handling:
+Cedar policies, audit trail and transaction handling. The
+[Blueprint routes](../../server/internal/app/adminblueprints.go),
+[profile routes](../../server/internal/app/adminconfigurationprofiles.go) and
+[permission catalogue](../../server/internal/app/admincatalog.go) define these actions:
 
+<!-- docs-check: permissions -->
 | Method and route | Action |
 |---|---|
 | `POST /blueprints/validate` | `publishBlueprints` |
 | `PUT /blueprints/{blueprint}` | `publishBlueprints` |
-| `GET /blueprints`, `GET /blueprints/{blueprint}` | `readBlueprints` |
-| `DELETE /blueprints/{blueprint}` | `publishBlueprints` |
+| `GET /blueprints` | `listBlueprints` |
+| `GET /blueprints/{blueprint}` | `readBlueprints` |
+| `DELETE /blueprints/{blueprint}` | `deleteBlueprint` |
 | `PUT` or `DELETE /enrollments/{channel}/{id}/blueprints/{blueprint}` | `assignBlueprint` |
-| `POST /configuration-profiles` | `manageConfigurationProfiles` |
-| `GET /configuration-profiles`, `GET /configuration-profiles/{revision}` | `manageConfigurationProfiles` |
-| `GET /configuration-profiles/{revision}/content` | `manageConfigurationProfiles` |
+| `POST /configuration-profiles` | `uploadConfigurationProfile` |
+| `GET /configuration-profiles` | `readConfigurationProfiles` |
+| `GET /configuration-profiles/{revision}` | `readConfigurationProfile` |
+| `GET /configuration-profiles/{revision}/content` | `downloadConfigurationProfile` |
+<!-- /docs-check: permissions -->
 
 Use a Blueprint spec directly as the validation/publication JSON body, and raw
 profile bytes for upload. GET/PUT return a quoted `ETag`; send it in `If-Match`
@@ -216,5 +222,7 @@ This feature supplies composition and deployment primitives. A graphical builder
 declaration catalog, smart groups, templates, approvals and synchronization with
 Apple-hosted Blueprints remain product-layer concerns.
 
-The [terminology audit](../research/blueprint-terminology-audit.md) records the
-Apple references, package boundaries, and retained implementation names.
+Apple defines the [declaration data model](https://developer.apple.com/documentation/devicemanagement/leveraging-the-declarative-management-data-model-to-scale-devices).
+The [compiler](../../devicemanagement/mdmprotocol/ddm/blueprint/blueprint.go) and
+[server manager](../../server/blueprints) implement the local authoring format;
+`Revision`, publication locks and storage snapshots are project concepts.

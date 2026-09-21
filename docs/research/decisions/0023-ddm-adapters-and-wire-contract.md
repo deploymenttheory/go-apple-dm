@@ -22,14 +22,15 @@ Forwarding exact bytes avoids a second enrollment representation and preserves t
 
 ## Constraints
 
-The caller supplies a shared replay store. The reference server uses encrypted
-SQL protocol state and requires native TLS on its DDM role. The explicit
+The caller supplies a shared replay store and verifies both transport directions.
+The reference server uses the in-process adapter; custom compositions can use
+`server/statestore` for encrypted SQL replay state. The explicit
 programmatic `AllowInsecureForTests` exception accepts only literal loopback
 HTTP. This protocol does not implement NanoMDM's `-dm` header contract.
 
 ## Verification
 
-Adapter tests compare in-process and proxied responses, exact forwarded bytes, channel resolution, signatures, stale envelopes, cross-replica replay, request/response substitution, limits and timeouts. The split-deployment end-to-end scenario uses the project's container.
+Adapter tests compare in-process and proxied responses, exact forwarded bytes, channel resolution, signatures, stale envelopes, cross-replica replay, request/response substitution, limits and timeouts. Reference-server E2E uses the in-process adapter; proxy packages have their own transport regression suites.
 
 ## References
 

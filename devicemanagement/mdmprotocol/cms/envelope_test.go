@@ -11,6 +11,7 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/cms"
 )
 
+// fixtureRecipient loads an envelope recipient certificate and private key from testdata.
 func fixtureRecipient(t *testing.T, name string) (*x509.Certificate, crypto.Decrypter) {
 	t.Helper()
 	// #nosec G304 -- The test controls this fixture path within its private workspace.
@@ -36,6 +37,7 @@ func fixtureRecipient(t *testing.T, name string) (*x509.Certificate, crypto.Decr
 	return cert, requireType[crypto.Decrypter](t, key)
 }
 
+// TestDecryptEnvelope checks decryption of the envelope fixtures with their recipient identities.
 func TestDecryptEnvelope(t *testing.T) {
 	cert, key := fixtureRecipient(t, "recipient")
 	other, otherKey := fixtureRecipient(t, "other")

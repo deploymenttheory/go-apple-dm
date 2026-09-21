@@ -18,6 +18,8 @@ type scenarioFault struct {
 	paths     []string
 }
 
+// RoundTrip fails the selected scenario request while excluding cleanup and the unauthorized probe
+// from its count.
 func (f *scenarioFault) RoundTrip(r *http.Request) (*http.Response, error) {
 	// Cleanup and the explicit unauthorized probe are outside scenario success evidence.
 	if r.Method != "DELETE" && r.Header.Get("Authorization") != "Bearer invalid" {
@@ -31,6 +33,7 @@ func (f *scenarioFault) RoundTrip(r *http.Request) (*http.Response, error) {
 	return f.base.RoundTrip(r)
 }
 
+// testWorkspace initializes and loads an in-memory bench workspace for the supplied mode.
 func testWorkspace(t *testing.T, mode string) *Workspace {
 	t.Helper()
 	dir := t.TempDir()

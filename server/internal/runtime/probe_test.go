@@ -22,6 +22,8 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/server/internal/app"
 )
 
+// probeFixture creates a TLS certificate with the supplied names, addresses, and expiry state and
+// writes its PEM file.
 func probeFixture(
 	t *testing.T,
 	names []string,
@@ -69,6 +71,7 @@ func probeFixture(
 	return pair, path
 }
 
+// TestAutomaticProbeTLS checks TLS settings used by automatic health probes.
 func TestAutomaticProbeTLS(t *testing.T) {
 	t.Parallel()
 	for _, tc := range []struct {
@@ -118,6 +121,8 @@ func TestAutomaticProbeTLS(t *testing.T) {
 	}
 }
 
+// TestProbeRejectsUnconfigurableDefaultTransport checks that probe rejects unconfigurable default
+// transport.
 func TestProbeRejectsUnconfigurableDefaultTransport(t *testing.T) {
 	original := http.DefaultTransport
 	t.Cleanup(func() { http.DefaultTransport = original })
@@ -128,6 +133,7 @@ func TestProbeRejectsUnconfigurableDefaultTransport(t *testing.T) {
 	}
 }
 
+// TestProbePrivateCAAndMismatch checks probe private CA and mismatch.
 func TestProbePrivateCAAndMismatch(t *testing.T) {
 	pair, path := probeFixture(t, nil, []net.IP{net.ParseIP("127.0.0.1")}, false)
 	srv := httptest.NewUnstartedServer(
@@ -171,6 +177,7 @@ func TestProbePrivateCAAndMismatch(t *testing.T) {
 	}
 }
 
+// TestAutomaticProbeAddresses checks automatic health-probe address selection.
 func TestAutomaticProbeAddresses(t *testing.T) {
 	for _, tc := range []struct{ listen, want string }{{":1234", "127.0.0.1:1234"}, {"0.0.0.0:4321", "127.0.0.1:4321"}, {"[::]:1234", "[::1]:1234"}, {"[::1]:1234", "[::1]:1234"}} {
 		url, _, err := automaticProbe(ProbeConfig{Listen: tc.listen})
@@ -197,6 +204,7 @@ func TestAutomaticProbeAddresses(t *testing.T) {
 	}
 }
 
+// TestProbeFailurePaths checks health-probe rejection of malformed certificates and trust roots.
 func TestProbeFailurePaths(t *testing.T) {
 	t.Parallel()
 	for _, cfg := range []ProbeConfig{
@@ -249,6 +257,7 @@ func TestProbeFailurePaths(t *testing.T) {
 	}
 }
 
+// TestProbeReflectsDatabaseFailure checks probe reflects database failure.
 func TestProbeReflectsDatabaseFailure(t *testing.T) {
 	a, err := app.Build(
 		t.Context(),

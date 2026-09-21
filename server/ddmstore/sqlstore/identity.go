@@ -9,6 +9,7 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/mdm"
 )
 
+// validID checks the identifier before it is used to address stored state.
 func (t *txStore) validID(ctx context.Context, id mdm.EnrollmentID) error {
 	if err := validID(id); err != nil {
 		return err

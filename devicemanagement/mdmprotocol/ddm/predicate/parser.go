@@ -50,6 +50,7 @@ type parser struct {
 	depth int
 }
 
+// parse parses the complete predicate and rejects trailing input.
 func parse(src string) (expr, error) {
 	p := &parser{lx: newLexer(src)}
 	if err := p.advance(); err != nil {
@@ -68,6 +69,8 @@ func parse(src string) (expr, error) {
 	return e, nil
 }
 
+// advance reads the next predicate token, returning any lexer error before changing the
+// current token.
 func (p *parser) advance() error {
 	tok, err := p.lx.next()
 	if err != nil {
@@ -85,10 +88,12 @@ func (p *parser) keyword() string {
 	return strings.ToUpper(p.tok.text)
 }
 
+// isOp reports whether the current token is the requested operator.
 func (p *parser) isOp(text string) bool {
 	return p.tok.kind == tokOp && p.tok.text == text
 }
 
+// enter tracks parser nesting and rejects expressions beyond the permitted depth.
 func (p *parser) enter() error {
 	p.depth++
 	if p.depth > maxDepth {
@@ -97,10 +102,12 @@ func (p *parser) enter() error {
 	return nil
 }
 
+// leave releases one level of parser nesting after a recursive production.
 func (p *parser) leave() {
 	p.depth--
 }
 
+// parseOr parses disjunctions while preserving the tighter binding of conjunctions.
 func (p *parser) parseOr() (expr, error) {
 	left, err := p.parseAnd()
 	if err != nil {
@@ -119,6 +126,7 @@ func (p *parser) parseOr() (expr, error) {
 	return left, nil
 }
 
+// parseAnd parses conjunctions while preserving the tighter binding of negation.
 func (p *parser) parseAnd() (expr, error) {
 	left, err := p.parseNot()
 	if err != nil {
@@ -137,6 +145,7 @@ func (p *parser) parseAnd() (expr, error) {
 	return left, nil
 }
 
+// parseNot parses unary negation before comparison or parenthesized expressions.
 func (p *parser) parseNot() (expr, error) {
 	if p.keyword() != "NOT" && !p.isOp("!") {
 		return p.parsePrimary()
@@ -155,6 +164,7 @@ func (p *parser) parseNot() (expr, error) {
 	return &notExpr{operand: operand}, nil
 }
 
+// parsePrimary parses a constant, comparison, or parenthesized expression.
 func (p *parser) parsePrimary() (expr, error) {
 	switch {
 	case p.tok.kind == tokLParen:
@@ -169,6 +179,7 @@ func (p *parser) parsePrimary() (expr, error) {
 	return p.parseComparison()
 }
 
+// parseConst recognizes the supported boolean predicate constants.
 func (p *parser) parseConst(value bool) (expr, error) {
 	if err := p.advance(); err != nil {
 		return nil, err
@@ -176,6 +187,7 @@ func (p *parser) parseConst(value bool) (expr, error) {
 	return &constExpr{value: value}, nil
 }
 
+// parseParenthesised parses a grouped expression and requires its closing parenthesis.
 func (p *parser) parseParenthesised() (expr, error) {
 	if err := p.enter(); err != nil {
 		return nil, err
@@ -197,6 +209,8 @@ func (p *parser) parseParenthesised() (expr, error) {
 	return e, nil
 }
 
+// parseComparison parses both operands and their comparison operator, allowing the
+// supported case modifier before or after the operator.
 func (p *parser) parseComparison() (expr, error) {
 	left, err := p.parseOperand()
 	if err != nil {
@@ -245,6 +259,7 @@ func (p *parser) parseModifier() (bool, error) {
 	return true, nil
 }
 
+// parseOp recognizes and consumes a supported comparison operator.
 func (p *parser) parseOp() (cmpOp, error) {
 	var (
 		op cmpOp
@@ -272,6 +287,7 @@ func (p *parser) parseOp() (cmpOp, error) {
 	return op, nil
 }
 
+// parseOperand parses a literal or supported property or status reference.
 func (p *parser) parseOperand() (operand, error) {
 	switch p.tok.kind {
 	case tokProperty:
@@ -291,6 +307,7 @@ func (p *parser) parseOperand() (operand, error) {
 	return nil, syntaxErr(p.tok.pos, "unexpected %s", p.tok.describe())
 }
 
+// parseLiteral parses a scalar or aggregate literal.
 func (p *parser) parseLiteral() (*literal, error) {
 	switch p.tok.kind {
 	case tokString:
@@ -330,6 +347,7 @@ func (p *parser) parseWordLiteral() (*literal, error) {
 	return nil, p.unsupportedWord(word)
 }
 
+// unsupportedWord classifies a keyword that belongs to unsupported predicate syntax.
 func (p *parser) unsupportedWord(word string) error {
 	pos := p.tok.pos
 	// A key path such as SELF.name is reported by its head segment.
@@ -345,6 +363,7 @@ func (p *parser) unsupportedWord(word string) error {
 	return unsupportedErr(pos, "bare key path %q, use @property(%s) or @status(%s)", p.tok.text, p.tok.text, p.tok.text)
 }
 
+// parseAggregate parses a bounded collection literal and requires its closing delimiter.
 func (p *parser) parseAggregate() (*literal, error) {
 	if err := p.enter(); err != nil {
 		return nil, err

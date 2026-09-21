@@ -33,6 +33,7 @@ type certificateSummary struct {
 	Revisions  []lifecycle.Revision `json:"Revisions"`
 }
 
+// readCertificate loads the public workflow view used to describe a certificate transition.
 func readCertificate(ctx context.Context, tx state.Tx, key string) (certificateSummary, error) {
 	record, err := tx.Get(ctx, key)
 	if errors.Is(err, state.ErrNotFound) {
@@ -46,6 +47,8 @@ func readCertificate(ctx context.Context, tx state.Tx, key string) (certificateS
 	return out, err
 }
 
+// Update observes certificate-state transitions inside the underlying transaction and
+// captures their webhook outcomes.
 func (s *certificateState) Update(ctx context.Context, keys []string, fn func(state.Tx) error) error {
 	return s.capture.unit.Run(ctx, func(ctx context.Context) error {
 		var events []Event

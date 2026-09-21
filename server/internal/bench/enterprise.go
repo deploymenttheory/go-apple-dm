@@ -23,6 +23,8 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/simulator"
 )
 
+// issuedDevice issues a simulator identity from the selected fixture CA and configures
+// its MDM endpoints.
 func (e *Environment) issuedDevice(certPath, keyPath string) (*simulator.Device, error) {
 	pair, err := tls.LoadX509KeyPair(
 		e.Workspace.path(certPath),
@@ -66,6 +68,7 @@ func (e *Environment) issuedDevice(certPath, keyPath string) (*simulator.Device,
 	return d, nil
 }
 
+// adeEnroll runs an Automated Device Enrollment exchange using the bench fixtures.
 func adeEnroll(ctx context.Context, e *Environment, _ string) error {
 	d, err := e.factoryDevice()
 	if err != nil {
@@ -80,6 +83,7 @@ func adeEnroll(ctx context.Context, e *Environment, _ string) error {
 	))
 }
 
+// browser runs the browser authentication step of the enrollment scenario.
 func browser(ctx context.Context, e *Environment, raw string) (string, error) {
 	c := *e.Client
 	c.Jar, _ = cookiejar.New(nil)
@@ -101,6 +105,8 @@ func browser(ctx context.Context, e *Environment, raw string) (string, error) {
 	return resp.Header.Get("Location"), nil
 }
 
+// accountDriven runs account-driven enrollment through discovery, authentication, and
+// profile delivery.
 func accountDriven(ctx context.Context, e *Environment, _ string) error {
 	for _, family := range []string{"Mac", "iPhone"} {
 		d, err := e.factoryDevice()
@@ -147,6 +153,8 @@ func accountDriven(ctx context.Context, e *Environment, _ string) error {
 	return nil
 }
 
+// depAssign installs fixture DEP credentials and a profile, synchronizes inventory, and
+// checks that the fixture device was persisted.
 func depAssign(ctx context.Context, e *Environment, _ string) error {
 	var tokens dep.Tokens
 	b, err := os.ReadFile(e.Workspace.path("fixtures", "dep-tokens.json"))
@@ -183,6 +191,7 @@ func depAssign(ctx context.Context, e *Environment, _ string) error {
 	return nil
 }
 
+// abmAssign exercises Apple Business device assignment against the configured fixture.
 func abmAssign(ctx context.Context, e *Environment, _ string) error {
 	var servers struct{ Items []struct{ ID string } }
 	if err := e.api(ctx, "GET", "/axm/servers", nil, &servers); err != nil {
@@ -221,6 +230,7 @@ func abmAssign(ctx context.Context, e *Environment, _ string) error {
 	)
 }
 
+// factoryDevice creates a simulator with an identity signed by the fixture device CA.
 func (e *Environment) factoryDevice() (*simulator.Device, error) {
 	return e.issuedDevice("fixtures/device-root.pem", "fixtures/device-root.key")
 }

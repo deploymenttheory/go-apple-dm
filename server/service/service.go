@@ -59,6 +59,7 @@ func CodeOf(err error) Code {
 	return CodeInternal
 }
 
+// wrapCode wraps a failure in the selected service error code.
 func wrapCode(code Code, err error) error {
 	if err == nil {
 		return nil
@@ -297,6 +298,8 @@ func New(cfg Config) (*Core, error) {
 	return c, nil
 }
 
+// acceptAllUsers provides the default user-admission decision for an otherwise valid
+// enrollment.
 func acceptAllUsers(
 	context.Context,
 	*mdm.Request,
@@ -400,6 +403,7 @@ func (c *Core) enqueue(
 	return res, nil
 }
 
+// codeForStorage maps storage sentinel errors to the service error classification.
 func codeForStorage(err error) Code {
 	switch {
 	case errors.Is(err, storage.ErrNotFound):
@@ -542,6 +546,8 @@ func targetFor(
 	return t, nil
 }
 
+// deviceChannelOf maps a User Enrollment user channel to its device channel and otherwise
+// returns the ordinary device channel.
 func deviceChannelOf(c mdm.Channel) mdm.Channel {
 	if c == mdm.ChannelUserEnrollmentUser {
 		return mdm.ChannelUserEnrollmentDevice

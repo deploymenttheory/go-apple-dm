@@ -10,6 +10,8 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/utility/appidentity"
 )
 
+// ExampleInspect demonstrates authoring per-architecture binary allow rules after native signature
+// inspection.
 func ExampleInspect() {
 	identity, err := appidentity.Inspect(context.Background(), "/Applications/Example.app")
 	if err != nil {

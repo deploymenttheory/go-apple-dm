@@ -19,6 +19,7 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/server/sqlstore/sqlite"
 )
 
+// eventAdmin builds a persistent-event application and opens access to its SQLite event store.
 func eventAdmin(t *testing.T) (*app.App, *sql.DB, *eventstore.Store) {
 	t.Helper()
 	dsn := filepath.Join(t.TempDir(), "events.sqlite")
@@ -35,6 +36,7 @@ func eventAdmin(t *testing.T) (*app.App, *sql.DB, *eventstore.Store) {
 	return a, s.DB(), e
 }
 
+// eventRequest serves a JSON admin event request with the supplied bearer token.
 func eventRequest(a *app.App, method, path, token, body string) *httptest.ResponseRecorder {
 	r := httptest.NewRequestWithContext(context.Background(), method, "/admin/v1"+path, strings.NewReader(body))
 	r.Header.Set("Authorization", "Bearer "+token)
@@ -44,6 +46,8 @@ func eventRequest(a *app.App, method, path, token, body string) *httptest.Respon
 	return w
 }
 
+// TestEventAPIRecordsWithoutWorkersAndRetriesDestinations checks event API records without workers
+// and retries destinations.
 func TestEventAPIRecordsWithoutWorkersAndRetriesDestinations(t *testing.T) {
 	a, _, events := eventAdmin(t)
 	seed(t, a, "event-device")
@@ -105,6 +109,8 @@ func TestEventAPIRecordsWithoutWorkersAndRetriesDestinations(t *testing.T) {
 	}
 }
 
+// TestLocalAdminCaptureFailureRollsBackMutationAndWithholdsCredential checks local admin capture
+// failure rolls back mutation and withholds credential.
 func TestLocalAdminCaptureFailureRollsBackMutationAndWithholdsCredential(t *testing.T) {
 	a, db, _ := eventAdmin(t)
 	id := seed(t, a, "keep-enabled")
@@ -145,6 +151,8 @@ func TestLocalAdminCaptureFailureRollsBackMutationAndWithholdsCredential(t *test
 	}
 }
 
+// TestEnrollmentImportCannotCommitWithoutEvent checks that enrollment import cannot commit without
+// event.
 func TestEnrollmentImportCannotCommitWithoutEvent(t *testing.T) {
 	a, db, _ := eventAdmin(t)
 	if _, err := db.ExecContext(t.Context(), "DROP TABLE event_records"); err != nil {

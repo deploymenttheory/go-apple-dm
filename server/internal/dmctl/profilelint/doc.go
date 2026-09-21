@@ -14,7 +14,7 @@
 //
 // # References
 //
-//   - Inspection guide: docs/operations/status-and-profile-inspection.md (relative to repository root)
+//   - Inspection guide: https://github.com/deploymenttheory/go-apple-dm/blob/main/docs/operations/status-and-profile-inspection.md
 //   - Apple profile structure: https://developer.apple.com/documentation/devicemanagement/configuring-multiple-devices-using-profiles
 //   - Apple schema metadata: https://github.com/apple/device-management/blob/release/docs/schema.md
 package profilelint

@@ -13,26 +13,31 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/paging"
 )
 
+// copyStatus copies declaration status and its mutable error details.
 func copyStatus(d ddm.DeclarationStatus) ddm.DeclarationStatus {
 	d.Reasons = bytes.Clone(d.Reasons)
 	return d
 }
 
+// copyValue copies canonical status-value bytes.
 func copyValue(v ddm.StatusValue) ddm.StatusValue {
 	v.Value = bytes.Clone(v.Value)
 	return v
 }
 
+// copyError copies status-error details for independent ownership.
 func copyError(e ddm.StatusError) ddm.StatusError {
 	e.Reasons = bytes.Clone(e.Reasons)
 	return e
 }
 
+// copyReport copies stored report data without sharing its byte buffers.
 func copyReport(r ddm.StatusReportRecord) ddm.StatusReportRecord {
 	r.Raw = bytes.Clone(r.Raw)
 	return r
 }
 
+// compareStatus orders declaration-status records deterministically.
 func compareStatus(a, b ddm.DeclarationStatus) int {
 	return cmp.Or(cmp.Compare(a.Kind, b.Kind), cmp.Compare(a.Identifier, b.Identifier))
 }

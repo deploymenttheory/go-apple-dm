@@ -98,6 +98,8 @@ func SignCSR(
 	return []byte(base64.StdEncoding.EncodeToString(xml)), nil
 }
 
+// verifyVendorChain verifies the vendor signing certificate chain before signing a customer
+// push request.
 func verifyVendorChain(chain [][]byte, roots *x509.CertPool, at time.Time) error {
 	if roots == nil || len(chain) < 3 {
 		return fmt.Errorf(

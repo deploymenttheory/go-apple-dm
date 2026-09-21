@@ -5545,7 +5545,31 @@ svg[data-purpose-filter] g[data-purpose-highlight] > path { stroke-width: 2.4; }
           <li>&bull; <a href="https://developer.apple.com/documentation/devicemanagement/check-in" target="_blank" rel="noopener noreferrer">Check-in</a></li>
           <li>&bull; <a href="https://developer.apple.com/documentation/devicemanagement/deploying-device-management-enrollment-profiles" target="_blank" rel="noopener noreferrer">Deploying device management enrollment profiles</a></li>
           <li>&bull; <a href="https://developer.apple.com/documentation/devicemanagement/mdm" target="_blank" rel="noopener noreferrer">MDM payload</a></li>
-          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/7500eb25e50a2913338339d5fced18dc7f41fdc3/server/service/checkin.go" target="_blank" rel="noopener noreferrer">Implementation</a></li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-dot artifact"></div>
+          <h3>Implementation references</h3>
+        </div>
+        <ul>
+          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/devicemanagement/storage/storage.go" target="_blank" rel="noopener noreferrer">unknown: Not enrolled</a></li>
+          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/server/service/checkin.go" target="_blank" rel="noopener noreferrer">authenticated: Awaiting push details</a></li>
+          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/server/service/checkin.go" target="_blank" rel="noopener noreferrer">enabled: Enabled</a></li>
+          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/devicemanagement/storage/authenticate.go" target="_blank" rel="noopener noreferrer">reenrolled: Enrollment reset</a></li>
+          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/server/service/checkin.go" target="_blank" rel="noopener noreferrer">checkedout: Disabled</a></li>
+          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/server/ddmsync/servicehook.go" target="_blank" rel="noopener noreferrer">Declarative cleanup hook</a></li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-dot artifact"></div>
+          <h3>Implementation references (continued)</h3>
+        </div>
+        <ul>
+          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/server/service/replacement.go" target="_blank" rel="noopener noreferrer">Controlled replacement</a></li>
         </ul>
       </div>
     </div>

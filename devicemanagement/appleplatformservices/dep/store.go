@@ -109,7 +109,8 @@ const (
 
 // Cursor is the persisted position of one account's device sync. Value is
 // Apple's opaque cursor; UpdatedAt is when it was received, which is what
-// the 7-day expiry is measured from; Phase says whether the next call is
+// local staleness checks use; Apple determines the actual cursor expiry. Phase
+// says whether the next call is
 // a fetch or a sync.
 type Cursor struct {
 	Value        string
@@ -126,7 +127,8 @@ type Cursor struct {
 func (c Cursor) IsZero() bool { return c.Value == "" && c.Phase == "" && c.UpdatedAt.IsZero() }
 
 // StoredDevice is a device as the store keeps it: the last wire record,
-// whether it is tombstoned by a deleted op, and when it was written.
+// whether it is tombstoned, and when it was written. A tombstone can reflect an
+// Apple deleted operation or absence from a completed full-fetch generation.
 type StoredDevice struct {
 	Account string
 	Device
@@ -271,7 +273,9 @@ type AssignmentStateStore interface {
 type ProfileStore interface {
 	// PutProfile upserts by ProfileUUID, which must be set.
 	PutProfile(ctx context.Context, account string, p *Profile) error
+	// GetProfile returns the stored profile or ErrNotFound when absent.
 	GetProfile(ctx context.Context, account, uuid string) (*Profile, error)
+	// DeleteProfile removes the stored profile or returns ErrNotFound when absent.
 	DeleteProfile(ctx context.Context, account, uuid string) error
 	// ListProfiles pages by UUID.
 	ListProfiles(ctx context.Context, account string, p paging.Page) (paging.Result[Profile], error)
@@ -281,6 +285,7 @@ type ProfileStore interface {
 type AssignmentStore interface {
 	// PutAssignment upserts by (Account, SerialNumber).
 	PutAssignment(ctx context.Context, a *Assignment) error
+	// GetAssignment returns the stored outcome for the account and serial, or ErrNotFound.
 	GetAssignment(ctx context.Context, account, serial string) (*Assignment, error)
 	// ListAssignments pages by serial.
 	ListAssignments(ctx context.Context, account string, q AssignmentQuery, p paging.Page) (paging.Result[Assignment], error)
@@ -302,6 +307,8 @@ type Records interface {
 // LockAccount returns ErrNotFound if the account no longer exists.
 type Tx interface {
 	Records
+	// LockAccount serializes account-scoped transitions within the current transaction;
+	// acquire it before changing cursor or worker state.
 	LockAccount(ctx context.Context, account string) error
 }
 

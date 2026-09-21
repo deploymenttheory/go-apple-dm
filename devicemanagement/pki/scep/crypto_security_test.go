@@ -17,6 +17,8 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/pki/scep"
 )
 
+// assertSecureSCEPWire checks that the SCEP message verifies and uses SHA-256 signing and
+// AES-128-CBC encryption.
 func assertSecureSCEPWire(t *testing.T, raw []byte) {
 	t.Helper()
 	p7, err := pkcs7.Parse(raw)
@@ -57,6 +59,7 @@ func assertSecureSCEPWire(t *testing.T, raw []byte) {
 	}
 }
 
+// TestSCEPUsesAESAndSHA256OnWire checks that SCEP uses aes and sha256 on wire.
 func TestSCEPUsesAESAndSHA256OnWire(t *testing.T) {
 	f := newFixture(t)
 	s, err := newTestServer(f.signer, f.caCert, f.caKey)
@@ -85,6 +88,8 @@ func TestSCEPUsesAESAndSHA256OnWire(t *testing.T) {
 	}
 }
 
+// TestServerRejectsDESAndUnexpectedMessageType checks that server rejects des and unexpected
+// message type.
 func TestServerRejectsDESAndUnexpectedMessageType(t *testing.T) {
 	f := newFixture(t)
 	s, err := newTestServer(f.signer, f.caCert, f.caKey)

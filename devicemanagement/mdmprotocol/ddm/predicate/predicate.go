@@ -37,10 +37,12 @@ func (e *SyntaxError) Unwrap() error {
 	return e.Err
 }
 
+// syntaxErr constructs a predicate syntax error with the source position.
 func syntaxErr(offset int, format string, args ...any) error {
 	return &SyntaxError{Offset: offset, Msg: fmt.Sprintf(format, args...), Err: ErrSyntax}
 }
 
+// unsupportedErr identifies syntax outside the supported predicate language.
 func unsupportedErr(offset int, format string, args ...any) error {
 	return &SyntaxError{Offset: offset, Msg: fmt.Sprintf(format, args...) + " is not supported", Err: ErrUnsupported}
 }
@@ -156,6 +158,7 @@ func (p *Predicate) String() string {
 	return sb.String()
 }
 
+// renderExpr writes an expression with parentheses where operator precedence requires them.
 func renderExpr(sb *strings.Builder, e expr) {
 	switch n := e.(type) {
 	case *constExpr:
@@ -200,6 +203,7 @@ func renderCompound(sb *strings.Builder, n *compoundExpr) {
 	renderChild(sb, n.right, prec+1)
 }
 
+// renderCompare writes a comparison with its optional case-insensitive modifier.
 func renderCompare(sb *strings.Builder, n *compareExpr) {
 	renderOperand(sb, n.left)
 	sb.WriteByte(' ')
@@ -211,6 +215,7 @@ func renderCompare(sb *strings.Builder, n *compareExpr) {
 	renderOperand(sb, n.right)
 }
 
+// renderOperand writes a property, status reference, or literal in predicate syntax.
 func renderOperand(sb *strings.Builder, o operand) {
 	switch v := o.(type) {
 	case *propertyRef:
@@ -240,6 +245,8 @@ func renderKey(sb *strings.Builder, key string) {
 	renderString(sb, key)
 }
 
+// renderLiteral writes a predicate literal with the escaping required for round-trip
+// parsing.
 func renderLiteral(sb *strings.Builder, lit *literal) {
 	switch lit.kind {
 	case litNull:

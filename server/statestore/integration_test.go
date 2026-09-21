@@ -15,6 +15,7 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/server/sqlstore/sqlcommon"
 )
 
+// TestPostgresSharedState runs shared state and protocol-concurrency checks against PostgreSQL.
 func TestPostgresSharedState(t *testing.T) {
 	dsn := os.Getenv("TEST_POSTGRES_DSN")
 	if dsn == "" {
@@ -34,6 +35,7 @@ func TestPostgresSharedState(t *testing.T) {
 	exerciseCertificateActivation(t, db, postgres.Dialect)
 }
 
+// TestMySQLSharedState checks MySQL shared state.
 func TestMySQLSharedState(t *testing.T) {
 	dsn := os.Getenv("TEST_MYSQL_DSN")
 	if dsn == "" {

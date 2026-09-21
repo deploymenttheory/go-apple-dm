@@ -17,7 +17,7 @@
 //
 // SQL-backed reference applications capture these projections in server/eventstore.
 // Managed subscriptions in server/webhook use an independent native envelope and
-// persistent leases, with root-controlled sensitive representations and mandatory
+// persistent leases, with separately authorized sensitive representations and mandatory
 // signing. RecordWebhook remains a legacy projected-record helper for external
 // callers. In-memory applications use the ephemeral asynchronous bus. Slog and direct bus
 // subscribers remain ephemeral; direct subscribers must apply their own
@@ -31,5 +31,5 @@
 //   - micromdm/nanomdm@494831912abf895b41d533b5a9d81e2d6aa8ae10 service/webhook/service.go, event.go
 //   - micromdm/micromdm@904493b9500ffc8a21846846781e362f5c612107 workflow/webhook/webhook.go, checkin.go, http_post.go
 //   - Apple documents no webhook or audit surface; the protocol events these records describe are the check-in and command pages cited by ddm and service.
-//   - RFC 2104: HMAC, used to sign the webhook body
+//   - RFC 2104 (HMAC): https://www.rfc-editor.org/rfc/rfc2104
 package eventsink

@@ -9,6 +9,7 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/schema/support"
 )
 
+// TestVersionedSSO checks SSO profile validation against target OS versions.
 func TestVersionedSSO(t *testing.T) {
 	for _, version := range []string{"26.0", "26.4", "26.6.2", "27.0"} {
 		target := support.Target{OS: support.MacOS, Version: osversion.MustParse(version), Channel: support.ChannelDevice, Supervised: true, UserApproved: true}
@@ -22,6 +23,7 @@ func TestVersionedSSO(t *testing.T) {
 	}
 }
 
+// TestSSOPolicyValuesAndExtensionData checks SSO policy values and extension data.
 func TestSSOPolicyValuesAndExtensionData(t *testing.T) {
 	target := support.Target{OS: support.MacOS, Version: osversion.MustParse("26.6.2"), UserApproved: true}
 	for _, tc := range []struct {

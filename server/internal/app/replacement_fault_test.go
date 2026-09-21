@@ -19,6 +19,7 @@ type unavailableReplacementStore struct {
 	fault error
 }
 
+// TransitionReplacement returns the configured replacement-transition failure.
 func (s unavailableReplacementStore) TransitionReplacement(
 	context.Context,
 	mdm.EnrollmentID,
@@ -27,6 +28,8 @@ func (s unavailableReplacementStore) TransitionReplacement(
 	return nil, s.fault
 }
 
+// TestReplacementBoundaryRejectsUnavailableAndUnboundState checks that replacement boundary
+// rejects unavailable and unbound state.
 func TestReplacementBoundaryRejectsUnavailableAndUnboundState(t *testing.T) {
 	a, id := replacementSecurityApp(t)
 	backing := a.Store

@@ -38,6 +38,7 @@ type fixture struct {
 	csr    *x509.CertificateRequest
 }
 
+// setup creates a revocation registry with a fake clock, issuer, and issued device certificate.
 func setup(t *testing.T) *fixture {
 	t.Helper()
 	root, key, err := ca.NewSelfSigned(ca.SelfSignedOptions{})
@@ -64,6 +65,7 @@ func setup(t *testing.T) *fixture {
 	return &fixture{reg: reg, st: st, clock: clk, issuer: i, id: cms.Fingerprint(root), leaf: leaf, csr: csr}
 }
 
+// TestRevocationAndSignedPublication checks revocation and signed publication.
 func TestRevocationAndSignedPublication(t *testing.T) {
 	f := setup(t)
 	ctx := t.Context()
@@ -166,6 +168,7 @@ func TestRevocationAndSignedPublication(t *testing.T) {
 	}
 }
 
+// TestUnknownExpiryAndInvalidInputs checks unknown expiry and invalid inputs.
 func TestUnknownExpiryAndInvalidInputs(t *testing.T) {
 	f := setup(t)
 	ctx := t.Context()
@@ -247,6 +250,7 @@ func TestUnknownExpiryAndInvalidInputs(t *testing.T) {
 	}
 }
 
+// TestConfigAndHTTP checks revocation registry configuration and HTTP handlers.
 func TestConfigAndHTTP(t *testing.T) {
 	f := setup(t)
 	ctx := t.Context()
@@ -303,6 +307,8 @@ func TestConfigAndHTTP(t *testing.T) {
 	}
 }
 
+// TestOCSPGETEscapedRequest checks OCSP GET handling when escaped request data contains
+// consecutive slashes.
 func TestOCSPGETEscapedRequest(t *testing.T) {
 	f := setup(t)
 	// Force consecutive slashes in base64 rather than depending on random keys

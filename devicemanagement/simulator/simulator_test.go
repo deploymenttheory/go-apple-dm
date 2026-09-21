@@ -30,6 +30,8 @@ type fakeServer struct {
 	status    int // when non-zero, every request fails with this status
 }
 
+// handler builds a fake MDM handler that records check-ins, responses, and optional signature
+// identities.
 func (f *fakeServer) handler(t *testing.T) http.Handler {
 	t.Helper()
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -101,6 +103,7 @@ func (f *fakeServer) handler(t *testing.T) http.Handler {
 	})
 }
 
+// newDevice starts the fake MDM server and creates a simulator using its URLs and HTTP client.
 func newDevice(t *testing.T, f *fakeServer, opts ...simulator.Option) *simulator.Device {
 	t.Helper()
 	srv := httptest.NewServer(f.handler(t))
@@ -108,6 +111,7 @@ func newDevice(t *testing.T, f *fakeServer, opts ...simulator.Option) *simulator
 	return simulator.New("UDID-1", append([]simulator.Option{simulator.WithURLs(srv.URL+"/checkin", srv.URL+"/connect"), simulator.WithClient(srv.Client())}, opts...)...)
 }
 
+// TestEnrollConnectAndCheckin checks enroll connect and checkin.
 func TestEnrollConnectAndCheckin(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
@@ -207,6 +211,7 @@ func TestEnrollConnectAndCheckin(t *testing.T) {
 	}
 }
 
+// TestErrors checks simulator HTTP, decoding, signing, URL, and command-loop failures.
 func TestErrors(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
@@ -276,6 +281,7 @@ func TestErrors(t *testing.T) {
 	}
 }
 
+// emptyServer starts an HTTP server that returns an empty successful response.
 func emptyServer(t *testing.T) string {
 	t.Helper()
 	s := httptest.NewServer(http.HandlerFunc(func(http.ResponseWriter, *http.Request) {}))

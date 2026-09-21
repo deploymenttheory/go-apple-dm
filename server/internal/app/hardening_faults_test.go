@@ -14,6 +14,8 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/state"
 )
 
+// TestSCEPGrantRejectsInvalidBindingWithoutReservation checks that SCEP grant rejects invalid
+// binding without reservation.
 func TestSCEPGrantRejectsInvalidBindingWithoutReservation(t *testing.T) {
 	a, id := replacementSecurityApp(t)
 	e := a.enroll
@@ -41,6 +43,8 @@ func TestSCEPGrantRejectsInvalidBindingWithoutReservation(t *testing.T) {
 	}
 }
 
+// TestCredentialGrantExpiryAndPersistenceFailures checks credential grant expiry and persistence
+// failures.
 func TestCredentialGrantExpiryAndPersistenceFailures(t *testing.T) {
 	a, id := replacementSecurityApp(t)
 	s := a.enroll.acme
@@ -123,6 +127,8 @@ func TestCredentialGrantExpiryAndPersistenceFailures(t *testing.T) {
 	}
 }
 
+// TestAppleServiceClientsRejectUnavailablePrivateTrust checks apple service clients reject
+// unavailable private trust.
 func TestAppleServiceClientsRejectUnavailablePrivateTrust(t *testing.T) {
 	missing := filepath.Join(t.TempDir(), "missing.pem")
 	a := &App{

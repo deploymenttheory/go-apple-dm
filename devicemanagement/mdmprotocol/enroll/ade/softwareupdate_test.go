@@ -22,11 +22,13 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/schema/support"
 )
 
+// parsedInfo builds verified ADE machine information for the supplied serial.
 func parsedInfo(serial string) *ade.Parsed {
 	info := adetest.Info(serial)
 	return &ade.Parsed{MachineInfo: info, Origin: ade.OriginBody, Verified: true, Platform: ade.PlatformFromProduct(info.PRODUCT)}
 }
 
+// requireVersion creates a policy requiring the supplied OS version.
 func requireVersion(v string) ade.Policy {
 	return ade.PolicyFunc(func(context.Context, *ade.Parsed) (ade.Target, bool, error) {
 		return ade.Target{OSVersion: v}, true, nil
@@ -42,10 +44,13 @@ type pssoPolicy struct {
 	err      error
 }
 
+// PlatformSSO returns the configured Platform SSO requirement, details, and error.
 func (p pssoPolicy) PlatformSSO(context.Context, *ade.Parsed) (*schemaerrors.CodePlatformSSORequiredDetails, bool, error) {
 	return p.details, p.required, p.err
 }
 
+// TestSoftwareUpdate checks ADE software-update and Platform SSO responses, encodings, and policy
+// failures.
 func TestSoftwareUpdate(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()

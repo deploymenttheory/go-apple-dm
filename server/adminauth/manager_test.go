@@ -23,6 +23,7 @@ func newRoot(t *testing.T, m *adminauth.Manager, name string) (adminauth.Princip
 	return p, tok
 }
 
+// TestNew checks required authorization manager dependencies and registry access.
 func TestNew(t *testing.T) {
 	reg := registry(t)
 	if _, err := adminauth.New(nil, reg); !errors.Is(err, adminauth.ErrInvalid) {
@@ -44,6 +45,8 @@ func TestNew(t *testing.T) {
 	}
 }
 
+// TestAuthenticate checks token authentication, malformed and unknown tokens, revocation, expiry,
+// and rotation.
 func TestAuthenticate(t *testing.T) {
 	ctx := context.Background()
 
@@ -304,6 +307,7 @@ func TestStoreFailuresSurface(t *testing.T) {
 	}
 }
 
+// TestFakeClockIsUsed checks fake clock is used.
 func TestFakeClockIsUsed(t *testing.T) {
 	st := inmem.New()
 	fake := clock.NewFake(t0)

@@ -234,6 +234,7 @@ func IsUnauthorized(err error) bool {
 	return hasStatus(err, http.StatusUnauthorized)
 }
 
+// hasStatus reports whether the API error chain contains the requested HTTP status.
 func hasStatus(err error, status int) bool {
 	var e *Error
 	return errors.As(err, &e) && e.Status == status

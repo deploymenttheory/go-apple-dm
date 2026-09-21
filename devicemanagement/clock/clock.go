@@ -97,6 +97,7 @@ func (f *Fake) Pending() int {
 	return len(f.waiters)
 }
 
+// fireLocked delivers due fake-clock timers while the clock mutex is held.
 func (f *Fake) fireLocked() {
 	remaining := f.waiters[:0]
 	for _, w := range f.waiters {

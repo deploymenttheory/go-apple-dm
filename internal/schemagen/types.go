@@ -138,6 +138,8 @@ func pushFrames(stack []frame, k *Key, f *Field) []frame {
 	return append(append([]frame(nil), stack...), frame{owner: k.Key, field: f})
 }
 
+// build builds request and response type models for one schema and resolves recursive-
+// type fixups.
 func (b *builder) build() (*SchemaType, error) {
 	b.top = TypeNameForSchema(b.schema)
 	if b.pkg.used[b.top] {
@@ -263,6 +265,7 @@ func (b *builder) uniqueName(candidates ...string) string {
 	}
 }
 
+// buildStruct creates a generated struct model for a schema object.
 func (b *builder) buildStruct(
 	name string,
 	keys []Key,
@@ -277,6 +280,8 @@ func (b *builder) buildStruct(
 	return td, nil
 }
 
+// fillStruct builds struct fields and rejects duplicate names or names reserved for
+// generated methods.
 func (b *builder) fillStruct(td *TypeDef, keys []Key, keyPath string, stack []frame) error {
 	names := map[string]string{}
 	for i := range keys {
@@ -362,6 +367,7 @@ func pointerable(goType string) bool {
 	return !strings.HasPrefix(goType, "[]") && !strings.HasPrefix(goType, "map[")
 }
 
+// findFrame finds an enclosing schema-resolution frame for a referenced definition.
 func findFrame(stack []frame, owner string) *frame {
 	for i := len(stack) - 1; i >= 0; i-- {
 		if stack[i].owner == owner {
@@ -371,6 +377,7 @@ func findFrame(stack []frame, owner string) *frame {
 	return nil
 }
 
+// resolveType maps a source field type to its generated Go representation.
 func (b *builder) resolveType(f *Field, parent *TypeDef, k *Key, path string, stack []frame) error {
 	if k.RecursiveTo != "" {
 		return b.resolveRecursive(f, k, path, stack)
@@ -490,6 +497,8 @@ func (b *builder) resolveWildcardMap(
 	return nil
 }
 
+// resolveArray builds an array type with its element or variant models and any deferred
+// recursive-type fixups.
 func (b *builder) resolveArray(
 	f *Field,
 	parent *TypeDef,

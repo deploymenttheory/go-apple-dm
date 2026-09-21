@@ -16,7 +16,7 @@ A certificate proves possession of the issued key; its association binds that ke
 
 ## Constraints
 
-macOS device channels omit the ongoing bearer; macOS user channels and supported iOS, iPadOS and visionOS channels send it. Recognized account-driven sessions can be challenged to reauthenticate and retry. Legacy query-credential profiles need re-enrollment. Apple-facing OAuth does not require extra PKCE parameters; upstream OIDC uses S256. Record 0047 and the operations guide describe shared state and migration.
+macOS device channels omit the ongoing bearer; macOS user channels and supported iOS, iPadOS and visionOS channels send it. Recognized account-driven sessions can be challenged to reauthenticate and retry. Apple-facing OAuth does not require extra PKCE parameters; upstream OIDC uses S256. Record 0047 and the operations guide describe shared state and authentication requirements.
 
 ## Verification
 

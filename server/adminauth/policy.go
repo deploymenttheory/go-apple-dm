@@ -73,6 +73,7 @@ func NewRegistry(actions ...Action) (*Registry, error) {
 	return r, nil
 }
 
+// cloneAction copies an action definition without sharing its mutable membership data.
 func cloneAction(a Action) Action {
 	a.Groups = slices.Clone(a.Groups)
 	a.Context = maps.Clone(a.Context)

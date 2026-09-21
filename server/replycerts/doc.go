@@ -24,7 +24,7 @@
 //
 // # References
 //
-//   - Design decision: docs/research/decisions/0054-filevault-encryption-identities.md (relative to repository root)
+//   - Design decision: https://github.com/deploymenttheory/go-apple-dm/blob/main/docs/research/decisions/0054-filevault-encryption-identities.md
 //
 //   - Apple rotation certificate fields: https://developer.apple.com/documentation/devicemanagement/rotatefilevaultkeycommand/command-data.dictionary
 //
@@ -34,5 +34,5 @@
 //
 //   - macOS 26 bootstrap-token rotation: https://support.apple.com/en-us/124963
 //
-//   - Protocol helpers: docs/operations/protocol-helpers.md (relative to repository root)
+//   - Protocol helpers: https://github.com/deploymenttheory/go-apple-dm/blob/main/docs/operations/protocol-helpers.md
 package replycerts

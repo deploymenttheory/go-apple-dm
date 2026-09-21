@@ -111,6 +111,7 @@ func (p *Publisher) Publish(ctx context.Context, e event.Event) error {
 	return p.capture(ctx, e, rec)
 }
 
+// capture appends the projected event and its destination work to durable outbox state.
 func (p *Publisher) capture(ctx context.Context, e event.Event, rec eventsink.Record) error {
 	err := p.Store.Run(ctx, func(ctx context.Context) error {
 		if err := p.Store.Capture(ctx, rec, p.Destinations); err != nil {
@@ -150,6 +151,7 @@ func (p *Publisher) capture(ctx context.Context, e event.Event, rec eventsink.Re
 	return nil
 }
 
+// denial identifies denial and rejection event types that use the isolated capture path.
 func denial(t event.Type) bool {
 	switch t {
 	case event.EnrollmentDenied, event.IdentityRejected, event.CertificateStatusRejected, event.PrivateHopRejected, event.CertReuseDenied, event.UserAuthFailed, event.AttestationRejected, event.AdminDenied:

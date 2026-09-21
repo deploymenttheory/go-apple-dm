@@ -5151,7 +5151,7 @@ svg[data-purpose-filter] g[data-purpose-highlight] > path { stroke-width: 2.4; }
 <button type="button" data-purpose-filter-button="warning" aria-pressed="false" style="--entry:var(--purpose-warning)"><span class="purpose-key-dot" aria-hidden="true"></span>Warning, deferred, or retry</button>
     </div>
     <div class="purpose-key-detail" aria-live="polite" aria-atomic="true"><div><strong id="purpose-key-selection"></strong><span id="purpose-key-counts"></span></div><p id="purpose-key-description"></p></div>
-    <script id="purpose-key-data" type="application/json">{"entries":[{"key":"service","label":"Services and processing","meaning":"Services and processing steps that perform the work shown in the diagram.","nodes":["Synchronize inventory","Reconcile assignments"],"connections":[]},{"key":"transport","label":"Communication and transport","meaning":"Communication between components, including endpoints, protocol exchanges, and notifications.","nodes":[],"connections":["fetch, then cursor","AssignProfile"]},{"key":"storage","label":"Storage and persistence","meaning":"Records and persistence: where the system stores or retrieves information.","nodes":[],"connections":["devices in the store"]},{"key":"authentication","label":"Authentication and identity","meaning":"Checks that establish or verify an identity or credential.","nodes":[],"connections":["OAuth 1.0a session"]},{"key":"certificate","label":"Certificates and cryptography","meaning":"Certificate issuance and cryptographic work, including signing, encryption, and keys.","nodes":["Create server-token key","Import server token"],"connections":["public certificate","encrypted token"]},{"key":"neutral","label":"Actors, structure, neutral states","meaning":"Actors, structural boundaries, and states that do not imply success, warning, or failure.","nodes":["Apple management portal","Device inventory API","Profile-assignment API"],"connections":[]},{"key":"warning","label":"Warning, deferred, or retry","meaning":"A warning, deferred action, or condition that requires a retry.","nodes":["API rate limit"],"connections":["rate limited"]}],"nodes":8,"connections":7}</script>
+    <script id="purpose-key-data" type="application/json">{"entries":[{"key":"service","label":"Services and processing","meaning":"Services and processing steps that perform the work shown in the diagram.","nodes":["Synchronize inventory","Reconcile assignments"],"connections":[]},{"key":"transport","label":"Communication and transport","meaning":"Communication between components, including endpoints, protocol exchanges, and notifications.","nodes":[],"connections":["fetch, then cursor","AssignProfile"]},{"key":"storage","label":"Storage and persistence","meaning":"Records and persistence: where the system stores or retrieves information.","nodes":[],"connections":["devices in the store"]},{"key":"authentication","label":"Authentication and identity","meaning":"Checks that establish or verify an identity or credential.","nodes":[],"connections":["OAuth 1.0a session"]},{"key":"certificate","label":"Certificates and cryptography","meaning":"Certificate issuance and cryptographic work, including signing, encryption, and keys.","nodes":["Create server-token key","Import server token"],"connections":["public certificate","encrypted token"]},{"key":"neutral","label":"Actors, structure, neutral states","meaning":"Actors, structural boundaries, and states that do not imply success, warning, or failure.","nodes":["Apple management portal","Device inventory API","Profile-assignment API"],"connections":[]},{"key":"warning","label":"Warning, deferred, or retry","meaning":"A warning, deferred action, or condition that requires a retry.","nodes":["Persist retry state"],"connections":["rate limited"]}],"nodes":8,"connections":7}</script>
   </section>
     <div class="diagram-container" data-detail-level="read"
          data-preset-badge-editorial-plate="ARCHIFY / PLATE 04">
@@ -5303,16 +5303,16 @@ svg[data-purpose-filter] g[data-purpose-highlight] > path { stroke-width: 2.4; }
           <text data-detail="context" x="1351.5" y="376" class="t-muted" font-size="11" text-anchor="middle">Assign and read back state</text>
         </g>
 
-        <g id="node-backoff" data-node-id="backoff" data-node-label="API rate limit" tabindex="0" role="button" aria-label="Focus API rate limit, Delay retries after HTTP 429, Retry" aria-pressed="false" data-node-kind="security" data-node-sublabel="Delay retries after HTTP 429" data-node-context="Retry" data-purpose="warning">
-          <title>API rate limit · Delay retries after HTTP 429 · Retry</title>
+        <g id="node-backoff" data-node-id="backoff" data-node-label="Persist retry state" tabindex="0" role="button" aria-label="Focus Persist retry state, HTTP 429 or device THROTTLED, Retry" aria-pressed="false" data-node-kind="security" data-node-sublabel="HTTP 429 or device THROTTLED" data-node-context="Retry" data-purpose="warning">
+          <title>Persist retry state · HTTP 429 or device THROTTLED · Retry</title>
           <rect x="1239" y="464" width="225" height="68" rx="6" class="c-mask"/>
           <rect x="1239" y="464" width="225" height="68" rx="6" class="c-security" stroke-width="1.5"/>
           <g aria-hidden="true" data-semantic-sigil="security" class="semantic-sigil s-security" transform="translate(1245 470) scale(0.6875)">
             <path d="M8 2.2 13 4v3.5c0 3.1-1.8 5.4-5 6.5-3.2-1.1-5-3.4-5-6.5V4Z"/>
             <path d="m5.8 8 1.5 1.5 3-3"/>
           </g>
-          <text data-node-label="" data-detail-anchor="" x="1351.5" y="485" class="t-primary" font-size="14" font-weight="600" text-anchor="middle">API rate limit</text>
-          <text data-detail="context" x="1351.5" y="502" class="t-muted" font-size="11" text-anchor="middle">Delay retries after HTTP 429</text>
+          <text data-node-label="" data-detail-anchor="" x="1351.5" y="485" class="t-primary" font-size="14" font-weight="600" text-anchor="middle">Persist retry state</text>
+          <text data-detail="context" x="1351.5" y="502" class="t-muted" font-size="11" text-anchor="middle">HTTP 429 or device THROTTLED</text>
         </g>
 
         <!-- Edge labels -->
@@ -5561,8 +5561,19 @@ svg[data-purpose-filter] g[data-purpose-highlight] > path { stroke-width: 2.4; }
           <h3>Recurring reconciliation</h3>
         </div>
         <ul>
-          <li>&bull; Inventory starts with a full fetch, then follows incremental cursors. An expired cursor starts a new full fetch.</li>
-          <li>&bull; Profile assignment configures what enrollment profile Apple directs the device to use; the device must still complete enrollment.</li>
+          <li>&bull; Inventory starts with a full fetch, then follows incremental cursors. Expired, invalid or missing cursors restart a full fetch; only a completed fetch reconciles devices absent from that generation.</li>
+          <li>&bull; The server schedules synchronization and assignment independently. Assignment persists current-target outcomes and retry times, and readback verifies Apple state. Assignment does not complete device enrollment.</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-dot warning"></div>
+          <h3>Retry and concurrency</h3>
+        </div>
+        <ul>
+          <li>&bull; HTTP throttling and per-device THROTTLED results are separate. Assignment honors retry_after_seconds and retains deferred work in durable assignment state.</li>
+          <li>&bull; Each inventory page and its cursor commit together. Revision checks reject stale worker writes; partial snapshots never delete unseen devices.</li>
         </ul>
       </div>
 
@@ -5573,7 +5584,25 @@ svg[data-purpose-filter] g[data-purpose-highlight] > path { stroke-width: 2.4; }
         </div>
         <ul>
           <li>&bull; <a href="https://developer.apple.com/documentation/devicemanagement/device-assignment" target="_blank" rel="noopener noreferrer">Device assignment</a></li>
-          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/7500eb25e50a2913338339d5fced18dc7f41fdc3/devicemanagement/appleplatformservices/dep/assigner.go" target="_blank" rel="noopener noreferrer">Implementation</a></li>
+          <li>&bull; <a href="https://developer.apple.com/documentation/devicemanagement/authenticating-for-automated-device-enrollment" target="_blank" rel="noopener noreferrer">Server token authentication</a></li>
+          <li>&bull; <a href="https://developer.apple.com/documentation/devicemanagement/fetch-devices" target="_blank" rel="noopener noreferrer">Fetch devices</a></li>
+          <li>&bull; <a href="https://developer.apple.com/documentation/devicemanagement/sync-devices" target="_blank" rel="noopener noreferrer">Sync devices</a></li>
+          <li>&bull; <a href="https://developer.apple.com/documentation/devicemanagement/assign-profile" target="_blank" rel="noopener noreferrer">Assign a profile and throttling</a></li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-dot artifact"></div>
+          <h3>Implementation references</h3>
+        </div>
+        <ul>
+          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/devicemanagement/appleplatformservices/dep/token.go" target="_blank" rel="noopener noreferrer">keypair: Create server-token key</a></li>
+          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/server/internal/app/dep.go" target="_blank" rel="noopener noreferrer">importtoken: Import server token</a></li>
+          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/devicemanagement/appleplatformservices/dep/syncer.go" target="_blank" rel="noopener noreferrer">sync: Synchronize inventory</a></li>
+          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/devicemanagement/appleplatformservices/dep/assigner.go" target="_blank" rel="noopener noreferrer">assign: Reconcile assignments</a></li>
+          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/devicemanagement/appleplatformservices/dep/assignmentstate.go" target="_blank" rel="noopener noreferrer">backoff: Persist retry state</a></li>
+          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/server/internal/app/dep.go" target="_blank" rel="noopener noreferrer">Independent worker schedules</a></li>
         </ul>
       </div>
     </div>

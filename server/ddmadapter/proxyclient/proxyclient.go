@@ -22,7 +22,7 @@ const DefaultTimeout = 30 * time.Second
 
 // Errors.
 var (
-	// ErrUpstream wraps every failure of the ddm role or the network.
+	// ErrUpstream wraps every failure of the remote declaration backend or the network.
 	ErrUpstream = errors.New("proxyclient: upstream failure")
 	// ErrBadURL is returned by Handler for an empty or unusable URL.
 	ErrBadURL = errors.New("proxyclient: invalid URL")
@@ -32,7 +32,7 @@ var (
 type Config struct {
 	// AllowInsecureForTests permits HTTP only to a literal loopback address.
 	AllowInsecureForTests bool
-	// URL is the base URL of the ddm role; proxywire.Path is appended.
+	// URL is the base URL of the remote declaration backend; proxywire.Path is appended.
 	URL string
 	// Client defaults to an http.Client with DefaultTimeout. Set TLS
 	// client certificates on its transport for mutual TLS.
@@ -58,6 +58,7 @@ func Handler(cfg Config) (service.DMHandler, error) {
 	return c.handle, nil
 }
 
+// newClient validates private-adapter configuration and constructs its bounded HTTP client.
 func newClient(cfg Config) (*client, error) {
 	if cfg.URL == "" {
 		return nil, fmt.Errorf("%w: empty", ErrBadURL)
@@ -100,6 +101,8 @@ type client struct {
 	contentType string
 }
 
+// handle forwards the original declarative check-in bytes over the authenticated private
+// hop and maps its response to the service contract.
 func (c *client) handle(
 	ctx context.Context,
 	_ *mdm.Request,
@@ -162,7 +165,7 @@ func (c *client) handle(
 	return relay(resp, body)
 }
 
-// relay maps the ddm role's answer to the device-facing response: Apple's
+// relay maps the remote declaration backend's answer to the device-facing response: Apple's
 // statuses pass through, a 400 is the device's fault, everything else is
 // an upstream failure the device must not see.
 func relay(resp *http.Response, body []byte) (service.DMResponse, error) {
@@ -181,6 +184,7 @@ func relay(resp *http.Response, body []byte) (service.DMResponse, error) {
 	return service.DMResponse{}, internal(fmt.Errorf("%w: status %d", ErrUpstream, resp.StatusCode))
 }
 
+// internal wraps a private-adapter failure as a service internal error.
 func internal(err error) error {
 	return &service.Error{Code: service.CodeInternal, Err: err}
 }

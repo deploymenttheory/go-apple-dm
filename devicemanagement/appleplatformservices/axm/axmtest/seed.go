@@ -182,6 +182,7 @@ func (s *Server) AddAuditEvent(id string, attrs map[string]any) {
 	s.addAuditLocked(id, attrs)
 }
 
+// addAuditLocked appends an audit resource while the caller holds the server mutex.
 func (s *Server) addAuditLocked(id string, attrs map[string]any) {
 	s.store.audits.put(&resource{typ: typeAuditEvents, id: id, attrs: merge(map[string]any{
 		"eventDateTime": s.now().UTC(), "type": "DEVICE_ADDED_TO_ORG", "category": "DEVICE_INVENTORY",

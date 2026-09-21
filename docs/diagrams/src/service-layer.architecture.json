@@ -10,7 +10,7 @@
     ],
     "repository": {
       "url": "https://github.com/deploymenttheory/go-apple-dm",
-      "revision": "7500eb25e50a2913338339d5fced18dc7f41fdc3"
+      "revision": "2b8157efa2c6cbfff459bc44f66736a5d2e7c753"
     },
     "views": [
       {
@@ -56,7 +56,7 @@
           "bus",
           "sinks"
         ],
-        "note": "SQL outcomes and native webhook exchange capture; independent delivery with root-controlled sensitive payloads."
+        "note": "SQL outcome capture and public protocol observations feed native webhooks; sensitive representations require separate grants."
       }
     ],
     "colour_profile": "purpose-v1",
@@ -188,12 +188,12 @@
           "label": "Persistent delivery worker"
         },
         {
-          "path": "server/eventsink/slog.go",
-          "label": "slog"
+          "path": "server/webhook/observe.go",
+          "label": "Protocol observations"
         },
         {
-          "path": "server/internal/app/eventstore.go",
-          "label": "Persistent delivery wiring"
+          "path": "server/webhook/capture.go",
+          "label": "Native capture"
         }
       ],
       "purpose": "service"
@@ -261,7 +261,14 @@
         220,
         70
       ],
-      "purpose": "transport"
+      "purpose": "transport",
+      "sources": [
+        {
+          "path": "server/service/service.go",
+          "line": 111,
+          "label": "DMHandler"
+        }
+      ]
     },
     {
       "id": "verifier",
@@ -276,13 +283,19 @@
         220,
         70
       ],
-      "purpose": "authentication"
+      "purpose": "authentication",
+      "sources": [
+        {
+          "path": "server/service/userauth.go",
+          "label": "User authentication"
+        }
+      ]
     },
     {
       "id": "storepkg",
       "type": "database",
       "label": "storage.Store",
-      "sublabel": "pins \u00b7 queue \u00b7 tokens",
+      "sublabel": "pins · queue · tokens",
       "pos": [
         995.0,
         410
@@ -291,7 +304,14 @@
         220,
         70
       ],
-      "purpose": "storage"
+      "purpose": "storage",
+      "sources": [
+        {
+          "path": "devicemanagement/storage/storage.go",
+          "line": 402,
+          "label": "Store"
+        }
+      ]
     },
     {
       "id": "ddmengine",
@@ -306,7 +326,13 @@
         220,
         70
       ],
-      "purpose": "service"
+      "purpose": "service",
+      "sources": [
+        {
+          "path": "devicemanagement/mdmprotocol/ddm/engine.go",
+          "label": "Declarative engine"
+        }
+      ]
     },
     {
       "id": "replacement",
@@ -540,17 +566,17 @@
         "DMHandler connects the service to declarative management without importing the engine. UserVerifier supplies user-channel authentication policy.",
         "After the status gate and hooks, a pending replacement handles permitted candidate traffic before ordinary dispatch; unrelated traffic still needs the appropriate identity authorization.",
         "SQL outcome capture commits with participating local mutations. Native webhooks also observe public protocol requests and replies; exchange capture runs after the handler. Slog and in-process subscribers remain ephemeral.",
-        "Sensitive JSON/raw export requires root-managed subscriptions and encrypted retention. Revision changes pause old backlog; replay uses retained representations. The protocol library has no webhook transport dependency."
+        "Sensitive JSON/raw export requires authorized sensitive subscriptions and encrypted retention. Revision changes pause old backlog; replay uses retained representations. The protocol library has no webhook transport dependency."
       ]
     },
     {
       "dot": "transport",
       "title": "Public documentation",
       "items": [
-        "Check-in \u2014 https://developer.apple.com/documentation/devicemanagement/check-in",
-        "Sending MDM commands to a device \u2014 https://developer.apple.com/documentation/devicemanagement/sending-mdm-commands-to-a-device",
-        "Declarative Management check-in \u2014 https://developer.apple.com/documentation/devicemanagement/declarative-management",
-        "Native webhook contract and JSON examples \u2014 https://github.com/deploymenttheory/go-apple-dm/blob/main/docs/operations/webhooks.md"
+        "Check-in — https://developer.apple.com/documentation/devicemanagement/check-in",
+        "Sending MDM commands to a device — https://developer.apple.com/documentation/devicemanagement/sending-mdm-commands-to-a-device",
+        "Declarative Management check-in — https://developer.apple.com/documentation/devicemanagement/declarative-management",
+        "Native webhook contract and JSON examples — https://github.com/deploymenttheory/go-apple-dm/blob/main/docs/operations/webhooks.md"
       ]
     }
   ]

@@ -24,6 +24,7 @@ import (
 
 const appPlist = `<?xml version="1.0"?><plist version="1.0"><dict><key>CFBundleIdentifier</key><string>com.deploymenttheory.identity.fixture</string><key>CFBundleExecutable</key><string>Fixture</string><key>CFBundleName</key><string>Fixture</string><key>CFBundleShortVersionString</key><string>1.0</string></dict></plist>`
 
+// put creates parent directories and writes a fixture file, returning its path.
 func put(t *testing.T, root, name string, b []byte) string {
 	t.Helper()
 	p := filepath.Join(root, filepath.FromSlash(name))
@@ -36,6 +37,7 @@ func put(t *testing.T, root, name string, b []byte) string {
 	return p
 }
 
+// executable loads the signed Mach-O fixture used by artifact inspection tests.
 func executable(t *testing.T) []byte {
 	t.Helper()
 	b, err := os.ReadFile("../appidentity/testdata/fixture.macho")
@@ -45,6 +47,7 @@ func executable(t *testing.T) []byte {
 	return b
 }
 
+// tree creates a temporary application bundle containing metadata and the Mach-O fixture.
 func tree(t *testing.T) string {
 	t.Helper()
 	root := t.TempDir()
@@ -53,6 +56,7 @@ func tree(t *testing.T) string {
 	return root
 }
 
+// makeZIP encodes the supplied files as a ZIP archive.
 func makeZIP(t *testing.T, files map[string][]byte) []byte {
 	t.Helper()
 	var out bytes.Buffer
@@ -72,11 +76,14 @@ func makeZIP(t *testing.T, files map[string][]byte) []byte {
 	return out.Bytes()
 }
 
+// zipFixture builds a ZIP containing the application metadata and Mach-O fixture.
 func zipFixture(t *testing.T) []byte {
 	t.Helper()
 	return makeZIP(t, map[string][]byte{"Fixture.app/Contents/Info.plist": []byte(appPlist), "Fixture.app/Contents/MacOS/Fixture": executable(t)})
 }
 
+// packageFixture builds a component package with the requested compression and optional
+// postinstall script.
 func packageFixture(t *testing.T, root string, scripts bool, compression flatpkg.Compression) []byte {
 	t.Helper()
 	opts := flatpkg.ComponentOptions{Root: root, Identifier: "com.example.package", Version: "1.0", InstallLocation: "/Applications", TempDir: t.TempDir(), Compression: compression}
@@ -91,6 +98,7 @@ func packageFixture(t *testing.T, root string, scripts bool, compression flatpkg
 	return out.Bytes()
 }
 
+// imageFixture creates an APFS or HFS+ image from the fixture directory and wraps it as a DMG.
 func imageFixture(t *testing.T, root, kind string) string {
 	t.Helper()
 	raw, err := os.Create(filepath.Join(t.TempDir(), "raw"))
@@ -114,6 +122,8 @@ func imageFixture(t *testing.T, root, kind string) string {
 	return dmg
 }
 
+// checkReport checks artifact metadata, per-architecture identity extraction, and
+// scratch-directory cleanup.
 func checkReport(t *testing.T, file, format string) Report {
 	t.Helper()
 	temp := t.TempDir()
@@ -145,6 +155,7 @@ func checkReport(t *testing.T, file, format string) Report {
 	return report
 }
 
+// TestDistributionFormats checks inspection of scripted and nested-package distribution formats.
 func TestDistributionFormats(t *testing.T) {
 	root := tree(t)
 	for _, test := range []struct {
@@ -184,6 +195,7 @@ func TestDistributionFormats(t *testing.T) {
 	})
 }
 
+// TestAmbiguityAndCandidateFailure checks ambiguity and candidate failure.
 func TestAmbiguityAndCandidateFailure(t *testing.T) {
 	files := map[string][]byte{"First.app/Contents/Info.plist": []byte(appPlist), "First.app/Contents/MacOS/Fixture": executable(t), "Second.app/Contents/Info.plist": []byte(appPlist), "Second.app/Contents/MacOS/Fixture": executable(t), "Broken.app/Contents/Info.plist": []byte("broken"), "readme": []byte("documentation"), "empty": nil}
 	file := put(t, t.TempDir(), "apps.zip", makeZIP(t, files))
@@ -204,6 +216,7 @@ func TestAmbiguityAndCandidateFailure(t *testing.T) {
 	}
 }
 
+// TestInspectionDeadline checks cancellation when artifact inspection exceeds its deadline.
 func TestInspectionDeadline(t *testing.T) {
 	file := put(t, t.TempDir(), "artifact", zipFixture(t))
 	// An expired deadline is deterministic across platforms and timer resolutions.
@@ -215,6 +228,7 @@ func TestInspectionDeadline(t *testing.T) {
 	}
 }
 
+// TestRejectedInputAndTraversal checks rejected input and traversal.
 func TestRejectedInputAndTraversal(t *testing.T) {
 	for _, data := range [][]byte{nil, []byte("not an artifact"), []byte("xar!invalid"), []byte("PK\x03\x04invalid"), {0xfe, 0xed, 0xfa, 0xcf}} {
 		if _, err := Inspect(t.Context(), put(t, t.TempDir(), "input", data), Options{}); err == nil {

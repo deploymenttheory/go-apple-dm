@@ -17,5 +17,10 @@
 //
 // # References
 //
-//   - https://github.com/deploymenttheory/go-apple-dm/blob/main/docs/operations/certificate-lifecycle.md
+//   - Certificate operations: https://github.com/deploymenttheory/go-apple-dm/blob/main/docs/operations/certificate-lifecycle.md
+//   - Workflow implementation: https://github.com/deploymenttheory/go-apple-dm/blob/main/devicemanagement/pki/lifecycle/lifecycle.go
+//   - Apple push setup: https://developer.apple.com/documentation/devicemanagement/setting-up-push-notifications-for-your-device-management-customers
+//   - Apple certificate management: https://developer.apple.com/documentation/devicemanagement/managing-certificates-for-device-management-services-and-devices
+//   - RFC 8555 (ACME): https://www.rfc-editor.org/rfc/rfc8555
+//   - Let's Encrypt HTTP-01: https://letsencrypt.org/docs/challenge-types/
 package lifecycle

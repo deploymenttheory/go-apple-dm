@@ -476,6 +476,8 @@ func runSetup(ctx context.Context, e *env, args []string) error {
 	return wrapError(json.NewEncoder(e.stdout).Encode(result))
 }
 
+// writeSetupArtifact writes and syncs a setup artifact to a new private file, refusing
+// to overwrite an existing path.
 func writeSetupArtifact(path string, data []byte) error {
 	// #nosec G304 -- Explicit CLI output path; exclusive creation prevents replacing an existing file.
 	f, err := privatefile.OpenFile(path, os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0o600)

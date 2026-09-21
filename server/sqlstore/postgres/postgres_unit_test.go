@@ -10,6 +10,7 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/server/sqlstore/postgres"
 )
 
+// TestOpenArgumentErrors checks PostgreSQL store rejection of empty and malformed DSNs.
 func TestOpenArgumentErrors(t *testing.T) {
 	t.Parallel()
 	if _, err := postgres.Open(context.Background(), "", postgres.Options{}); !errors.Is(err, postgres.ErrDSNRequired) {
@@ -22,6 +23,8 @@ func TestOpenArgumentErrors(t *testing.T) {
 	}
 }
 
+// TestIsUniqueViolation checks PostgreSQL unique-constraint classification without misclassifying
+// other errors.
 func TestIsUniqueViolation(t *testing.T) {
 	t.Parallel()
 	dup := &pgconn.PgError{Code: "23505"}

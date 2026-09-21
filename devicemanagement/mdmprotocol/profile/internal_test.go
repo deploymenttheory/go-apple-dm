@@ -2,6 +2,7 @@ package profile
 
 import "testing"
 
+// TestNumForms checks accepted numeric representations and nonnumeric fallback.
 func TestNumForms(t *testing.T) {
 	t.Parallel()
 	for _, v := range []any{int64(2), uint64(2), 2, 2.0} {

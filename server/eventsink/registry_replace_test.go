@@ -8,6 +8,7 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/server/eventsink"
 )
 
+// TestReplaceProjectionWithMetadataOnly checks replace projection with metadata only.
 func TestReplaceProjectionWithMetadataOnly(t *testing.T) {
 	r := eventsink.NewRegistry()
 	e := event.Event{Type: event.Enrolled, Data: "fixture"}

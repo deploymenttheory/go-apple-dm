@@ -15,6 +15,8 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/testpki"
 )
 
+// TestUntrustedProviderIdentity checks provider identity trust, key matching, topic extensions,
+// CSR validation, and vendor key restrictions.
 func TestUntrustedProviderIdentity(t *testing.T) {
 	t.Parallel()
 	ca, err := testpki.NewCA("issuer")

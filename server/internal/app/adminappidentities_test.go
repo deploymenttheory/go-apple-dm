@@ -26,8 +26,11 @@ import (
 
 type identityTransport func(*http.Request) (*http.Response, error)
 
+// RoundTrip calls the injected HTTP round-trip function.
 func (f identityTransport) RoundTrip(r *http.Request) (*http.Response, error) { return f(r) }
 
+// identityRequest serves an authenticated application-identity admin request with optional
+// headers.
 func identityRequest(t *testing.T, a *app.App, method, path string, body io.Reader, headers map[string]string) *httptest.ResponseRecorder {
 	t.Helper()
 	r := httptest.NewRequestWithContext(t.Context(), method, "https://mdm.example/admin/v1"+path, body)
@@ -41,6 +44,8 @@ func identityRequest(t *testing.T, a *app.App, method, path string, body io.Read
 	return w
 }
 
+// TestApplicationIdentityAuthorization checks that identity discovery requires its own permission
+// and does not grant declaration publication.
 func TestApplicationIdentityAuthorization(t *testing.T) {
 	a, manager, _ := policyApp(t, nil)
 	token := mintPrincipal(t, manager, adminauth.Principal{Name: "author", Roles: []string{"author"}})
@@ -74,8 +79,10 @@ type heldIdentityBody struct {
 	release chan struct{}
 }
 
+// Read signals that reading began, waits for release, then returns EOF.
 func (b heldIdentityBody) Read([]byte) (int, error) { close(b.entered); <-b.release; return 0, io.EOF }
 
+// TestApplicationIdentityConcurrentUpload checks application identity concurrent upload.
 func TestApplicationIdentityConcurrentUpload(t *testing.T) {
 	a := build(t, app.Config{Storage: "inmem", BootstrapToken: "admin"})
 	body := heldIdentityBody{entered: make(chan struct{}), release: make(chan struct{})}
@@ -96,12 +103,15 @@ func TestApplicationIdentityConcurrentUpload(t *testing.T) {
 	}
 }
 
+// TestApplicationIdentityInvalidConfig checks application identity invalid config.
 func TestApplicationIdentityInvalidConfig(t *testing.T) {
 	if _, err := app.Build(t.Context(), app.Config{Storage: "inmem", ApplicationIdentities: app.ApplicationIdentityConfig{Artifacts: appartifact.Options{MaxBytes: -1}}}); !errors.Is(err, app.ErrConfig) {
 		t.Fatal(err)
 	}
 }
 
+// TestApplicationIdentityAuthoring checks identity authoring preserves storefront and catalogue
+// provenance without retaining uploaded artifact bytes.
 func TestApplicationIdentityAuthoring(t *testing.T) {
 	var unavailable atomic.Bool
 	client := &publicappstoreidentity.Client{HTTPClient: &http.Client{Transport: identityTransport(func(r *http.Request) (*http.Response, error) {
@@ -188,6 +198,7 @@ func TestApplicationIdentityAuthoring(t *testing.T) {
 	}
 }
 
+// TestIdentityInputsAndUpstreamFailures checks identity inputs and upstream failures.
 func TestIdentityInputsAndUpstreamFailures(t *testing.T) {
 	var mode atomic.Int32
 	client := &publicappstoreidentity.Client{HTTPClient: &http.Client{Transport: identityTransport(func(r *http.Request) (*http.Response, error) {
@@ -237,8 +248,11 @@ func TestIdentityInputsAndUpstreamFailures(t *testing.T) {
 
 type identityBodyFailure struct{}
 
+// Read returns io.ErrUnexpectedEOF without reading bytes.
 func (identityBodyFailure) Read([]byte) (int, error) { return 0, io.ErrUnexpectedEOF }
 
+// TestArtifactUploadFailures checks artifact upload failures without exposing private filesystem
+// paths.
 func TestArtifactUploadFailures(t *testing.T) {
 	fixture, err := os.ReadFile("../../../devicemanagement/utility/appidentity/testdata/fixture.macho")
 	if err != nil {
@@ -272,6 +286,7 @@ func TestArtifactUploadFailures(t *testing.T) {
 	}
 }
 
+// TestArtifactUploadContextFailures checks artifact upload context failures.
 func TestArtifactUploadContextFailures(t *testing.T) {
 	fixture, err := os.ReadFile("../../../devicemanagement/utility/appidentity/testdata/fixture.macho")
 	if err != nil {

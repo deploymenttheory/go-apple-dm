@@ -119,6 +119,8 @@ func (s *Store) deviceIdentity(ctx context.Context, q querier, id mdm.Enrollment
 	return s.exists(ctx, q, id.Device())
 }
 
+// usable checks whether the enrollment can participate in the requested authenticated
+// storage operation.
 func (s *Store) usable(ctx context.Context, q querier, id mdm.EnrollmentID, active bool) error {
 	if id.Channel.IsUser() {
 		p, err := s.identity(ctx, q, id.Device(), true)

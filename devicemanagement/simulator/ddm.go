@@ -145,6 +145,8 @@ type ddmChannel struct {
 	baseline map[string]string // graded row per key at the last posted report
 }
 
+// newDDMChannel allocates independent declaration and status state for one simulator
+// channel.
 func newDDMChannel(d *Device, identity func() map[string]any) *ddmChannel {
 	return &ddmChannel{dev: d, identity: identity, state: DDMState{Declarations: map[string]*DDMDeclaration{}}}
 }
@@ -252,6 +254,7 @@ func (c *ddmChannel) call(ctx context.Context, endpoint string, data []byte) ([]
 	return c.dev.checkin(ctx, f)
 }
 
+// ddmKey constructs the simulator's key for a declaration family and identifier.
 func ddmKey(kind schemaddm.Kind, identifier string) string { return string(kind) + "/" + identifier }
 
 // sync is the bounded convergence loop: tokens; stop when the token is
@@ -487,6 +490,7 @@ func (c *ddmChannel) handleCommand(ctx context.Context, cmd *mdm.Command, reply 
 	return reply
 }
 
+// ddmErrorReply builds a declarative-management error reply for the failed operation.
 func ddmErrorReply(err error) Reply {
 	return Reply{Status: mdm.StatusError, ErrorChain: []mdm.ErrorChainItem{{
 		ErrorCode: 1, ErrorDomain: ddmErrorDomain, LocalizedDescription: err.Error(), USEnglishDescription: err.Error(),

@@ -1,5 +1,6 @@
 // Package proxyclient forwards MDM declarative check-ins to a separately
-// deployed declaration engine.
+// deployed declaration engine in a custom application composition. The unified
+// reference server uses the in-process adapter.
 //
 // # Design
 //
@@ -21,6 +22,7 @@
 //   - Decision record 0023: https://github.com/deploymenttheory/go-apple-dm/blob/main/docs/research/decisions/0023-ddm-adapters-and-wire-contract.md
 //   - Decision record 0025: https://github.com/deploymenttheory/go-apple-dm/blob/main/docs/research/decisions/0025-reference-server-roles-and-container.md
 //   - Threat model: https://github.com/deploymenttheory/go-apple-dm/blob/main/docs/security/threat-model.md (private DDM proxy)
-//   - E2E scenarios: https://github.com/deploymenttheory/go-apple-dm/blob/main/docs/testing/e2e-scenarios.md (E2E-010)
+//   - Adapter contract tests: https://github.com/deploymenttheory/go-apple-dm/blob/main/server/ddmadapter/proxyclient/proxyclient_test.go
+//   - Reference composition: https://github.com/deploymenttheory/go-apple-dm/blob/main/server/internal/app/doc.go
 //   - Apple: https://developer.apple.com/documentation/devicemanagement/declarativemanagementrequest
 package proxyclient

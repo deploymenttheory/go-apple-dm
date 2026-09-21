@@ -141,6 +141,7 @@ func (m *MemoryStore) Len() int {
 	return len(m.states)
 }
 
+// sweepLocked removes expired browser enrollment state while the store mutex is held.
 func (m *MemoryStore) sweepLocked(now time.Time) int {
 	m.lastSweep = now
 	n := 0

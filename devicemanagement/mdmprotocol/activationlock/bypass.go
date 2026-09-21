@@ -56,6 +56,8 @@ func Hash(code string) (string, error) {
 	return hashBytes(raw[:]), nil
 }
 
+// encode renders the bypass value in the representation expected by the Activation Lock
+// protocol.
 func encode(raw [16]byte) string {
 	var out strings.Builder
 	for bits, symbol := 0, 0; bits < 128; symbol++ {
@@ -73,6 +75,7 @@ func encode(raw [16]byte) string {
 	return out.String()
 }
 
+// hashBytes derives the activation-lock hash from the supplied secret bytes.
 func hashBytes(raw []byte) string {
 	// All parameters are fixed, valid PBKDF2 parameters from Apple's algorithm.
 	derived, _ := pbkdf2.Key(sha256.New, string(raw), []byte{0, 0, 0, 0}, 50000, 32)

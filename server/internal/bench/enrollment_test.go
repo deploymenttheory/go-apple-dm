@@ -11,6 +11,8 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/profile"
 )
 
+// TestEnrollmentReplacementCatalogue checks enrollment replacement scenarios in the bench
+// catalogue.
 func TestEnrollmentReplacementCatalogue(t *testing.T) {
 	for _, id := range []string{"E2E-027", "E2E-028", "E2E-029", "E2E-030", "E2E-031"} {
 		t.Run(id, func(t *testing.T) {
@@ -41,6 +43,7 @@ func TestEnrollmentReplacementCatalogue(t *testing.T) {
 	}
 }
 
+// TestEnrollmentPreflightAndTrustExport checks enrollment preflight and trust export.
 func TestEnrollmentPreflightAndTrustExport(t *testing.T) {
 	w := testWorkspace(t, "live")
 	if ready, _ := EnrollmentPreflight(w, "acme")["Ready"].(bool); ready {

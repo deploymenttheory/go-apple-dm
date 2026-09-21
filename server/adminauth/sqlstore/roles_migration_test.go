@@ -11,6 +11,8 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/server/sqlstore/sqlite"
 )
 
+// TestRoleMigrationPreservesCredentialsAndPolicies checks that role migration preserves
+// credentials and policies.
 func TestRoleMigrationPreservesCredentialsAndPolicies(t *testing.T) {
 	ctx := t.Context()
 	db := openDB(t)

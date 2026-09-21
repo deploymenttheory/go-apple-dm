@@ -82,9 +82,8 @@ not establish native policy enforcement; see the delivery checks below.
 ## API
 
 All paths below are relative to `/admin/v1`. Routes are available wherever the
-Blueprint administration routes are mounted. Stored principals need the
-`discoverApplicationIdentities` action on the system resource. The development
-static admin token retains its normal root behavior. Discovery uses existing
+Blueprint administration routes are mounted. Stored principals, including root, need the
+`discoverApplicationIdentities` action on the system resource. Discovery uses existing
 admin quotas and audit handling; its POST does not publish declarations or wake
 devices. Publication requires its separate existing permissions.
 
@@ -176,13 +175,16 @@ An admin `GET /blueprints/{id}` verifies stored authoring state. To verify deliv
 the enrolled device uses Apple's `DeclarativeManagement` check-in at `/mdm` with
 its device identity. An admin bearer token is not a device credential.
 
-Fetch `tokens`, then `declaration-items`. Match the returned declarations token,
+Use tokens from the `DeclarativeManagement` command's `Data` when present, or fetch
+`tokens` when absent. An unchanged declarations token needs no synchronization.
+For a changed token, fetch `declaration-items`. Match the declarations token,
 find the compiled configuration identifier in `Declarations.Configurations`, and
 fetch `declaration/configuration/{identifier}`. Check its `Type`, `Identifier`,
 `ServerToken` and complete `Payload` against the authored selection. Also fetch
 the activation identified by `Compiled.Activations["default"]`; its
 `StandardConfigurations` must contain that configuration identifier. A stored
 configuration without its applicable activation does not complete this workflow.
+Apple defines this flow in [DDM integration](https://developer.apple.com/documentation/devicemanagement/integrating-declarative-management).
 
 The integration test uses the existing simulator's `SyncDDM` to perform that
 protocol exchange. It verifies both storage backends, same-name App Store
@@ -246,13 +248,79 @@ republication require no App Store connection or retained uploaded artifact.
 Application installation continues to use the existing MDM/DDM mechanisms; a
 discovery response or successful publication does not prove device installation.
 
-macOS binary controls impose a signing restriction independently of the selected
-identifier rules. Review the [execution contract and recorded control matrix](../testing/app-settings-binary-isolation.md#protocol-expectation)
-before assignment, including its effect on ad-hoc developer tools. Discovery and
-schema validation establish neither execution eligibility nor preservation of
-every unrelated executable. The physical macOS 27.0 (26A428) run matched the
-documented behavior, and removal restored every control. No policy is broadened
-or rewritten by the authoring API to compensate for platform restrictions.
+## Native artifact verification
 
-See [macOS identity acceptance](../testing/application-identities-macos.md) for the
-vendor-artifact installation procedure, native hash comparisons and recorded limits.
+Use the [artifact inspector](../../devicemanagement/utility/appartifact) to discover
+candidate identities, then verify the selected artifact on a designated Mac:
+
+1. Record the server revision, target OS/build, original vendor URL, artifact version,
+   SHA-256 and size. Retain exact bytes privately; do not commit vendor binaries.
+2. Upload the original PKG, DMG or other supported artifact. Check its reported
+   format, completeness, bundle identity and every executable architecture.
+3. Install those exact bytes using the intended distribution method. Verify the
+   application exists at its installed path; a command acknowledgment, download or
+   installer receipt does not by itself prove successful installation. Record a
+   native installer control separately from MDM delivery.
+4. Compare the installed `Info.plist` and run
+   `codesign --verify --strict --all-architectures`. Inspect each architecture with
+   `codesign -d --verbose=4 --arch ARCH`, comparing SigningID, TeamID and CDHash to
+   the portable report. Apple's [code-signing hash explanation](https://developer.apple.com/documentation/technotes/tn3126-inside-code-signing-hashes)
+   distinguishes full code-directory hashes from CDHash and explains per-architecture
+   identities; preserve all supported code directories rather than selecting one
+   convenience field blindly.
+5. Validate a typed payload for the intended target, publish an unassigned Blueprint,
+   repeat with its current revision to check idempotence, then delete it. Identity
+   inspection does not require assigning execution restrictions to the device.
+
+Installed-app MDM inventory requires the corresponding enrollment access right.
+Portable inspection reports signing metadata without validating signature integrity,
+notarization or execution eligibility. These independent native checks do not imply
+that the server has performed them. See Apple's [InstalledApplicationList command](https://developer.apple.com/documentation/devicemanagement/installedapplicationlistcommand).
+
+## Binary execution controls
+
+Apple's [deployment contract](https://support.apple.com/guide/deployment/allow-and-deny-apps-and-binaries-dep001044b08/1/web/1.0)
+requires eligible signing categories when macOS binary controls are enabled.
+Unsigned, ad-hoc and development-signed executables can be denied independently
+of the chosen identifiers, including when an explicit binary list is empty.
+Signature integrity, signing category and execution eligibility are separate facts.
+
+An [AppSettings binary entry](https://developer.apple.com/documentation/devicemanagement/appsettingsallowed_binaryidentifierobject)
+combines all supplied matching fields. `SigningState` qualifies the rule; it does
+not disable the platform's baseline signing restriction. The server preserves the
+authored payload and does not introduce an allow list or broaden a deny rule.
+
+The [SigningID-only example](../testing/fixtures/app-settings-signing-id-deny.json)
+illustrates a narrow rule. Replace its target identifier with that of a disposable,
+verified Developer ID signed application before testing. For a supervised target
+whose schema supports binary controls:
+
+1. Establish baseline execution of the matching target, an unrelated Developer ID
+   app, an Apple system executable and separate ad-hoc controls. Inspect signing
+   metadata independently.
+2. Arm an independent native cleanup watchdog before assignment. It must remove only
+   the test assignment and notify the device using credentials stored privately.
+   Validate that removal transport before the test; an interpreter affected by the
+   restriction cannot be the only cleanup mechanism.
+3. Assign the configuration and its activation for a bounded test window. Require
+   valid/active device status and match the canonical payload and server token.
+   Check actual execution and native denial events; `open` returning zero alone
+   does not establish that an app launched.
+4. Expect the matching target and ad-hoc controls to be denied, while unrelated
+   eligible signed controls run. Remove the assignment in unconditional cleanup,
+   verify declaration removal and rerun every baseline control. Remove the policy
+   rather than replacing it with an empty binary list.
+
+A physical macOS 27.0 (26A428) deny-mode observation supports that distinction.
+It is not validation of the current server revision or every platform variant.
+Empty-list, unsigned/development-signed controls, allow mode and managed-app
+exceptions need separate native evidence. Discovery and simulator delivery do not
+establish native enforcement or successful application installation.
+
+[Delivery regressions](../../devicemanagement/mdmprotocol/ddm/app_settings_delivery_test.go)
+cover SigningID-only, CDHash-only, combined identifiers/path and explicit SigningState
+payloads, including field preservation and declaration tokens. Run them with:
+
+```sh
+go test -race ./devicemanagement/mdmprotocol/ddm ./devicemanagement/mdmprotocol/ddm/blueprint
+```

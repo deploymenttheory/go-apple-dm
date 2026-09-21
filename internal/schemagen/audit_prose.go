@@ -33,6 +33,8 @@ func normalizeProse(text string, unchangedAvailability bool) string {
 	return strings.Join(strings.Fields(text), " ")
 }
 
+// substantiveProse returns prose changes that remain after normalizing presentation and
+// unchanged availability wording.
 func substantiveProse(before, after auditDocument) []Evidence {
 	changes := []Evidence{}
 	for _, field := range compareFields(before.prose, after.prose) {
@@ -50,6 +52,8 @@ func substantiveProse(before, after auditDocument) []Evidence {
 	return changes
 }
 
+// unchangedProseAvailability reports whether the supportedOS metadata relevant to a
+// prose path is unchanged.
 func unchangedProseAvailability(before, after auditDocument, prosePath string) bool {
 	owner := strings.TrimSuffix(strings.TrimSuffix(prosePath, ".content"), ".description")
 	for _, field := range compareFields(before.fields, after.fields) {
@@ -66,6 +70,7 @@ func unchangedProseAvailability(before, after auditDocument, prosePath string) b
 	return true
 }
 
+// fieldContext returns the nearest content description at or above a field path.
 func fieldContext(prose map[string]string, field string) string {
 	for field != "" {
 		if content := prose[field+".content"]; content != "" {
@@ -80,6 +85,8 @@ func fieldContext(prose map[string]string, field string) string {
 	return ""
 }
 
+// enrichEvidence adds the supplied before-and-after values and context to matching
+// finding evidence.
 func (t *auditTree) enrichEvidence(key, file string, field Evidence, context string) {
 	f := t.findings[key]
 	if f == nil {

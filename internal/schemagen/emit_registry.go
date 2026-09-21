@@ -7,6 +7,7 @@ import (
 	"strings"
 )
 
+// registryFile emits the type registry used to resolve schema identifiers at runtime.
 func (e *emitter) registryFile() []byte {
 	b := buf()
 	b.WriteString(e.header())
@@ -187,6 +188,7 @@ func (e *emitter) registryFile() []byte {
 
 type referencePath struct{ path, types []string }
 
+// referencePaths collects nested declaration-reference paths for generated metadata.
 func referencePaths(keys []Key, prefix []string, arrayItems bool) []referencePath {
 	var out []referencePath
 	for _, key := range keys {
@@ -238,6 +240,8 @@ func (e *emitter) registryEntries() []registryEntry {
 	return out
 }
 
+// kindConst returns the Go expression for a schema kind, including credential and base
+// kinds.
 func kindConst(k Kind) string {
 	switch k {
 	case KindActivation:

@@ -11,6 +11,8 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/server/eventstore"
 )
 
+// eventRoutes declares event inspection and retry routes when the persistent event store
+// is available.
 func (a *App) eventRoutes() []adminRoute {
 	if a.eventStore == nil {
 		return nil
@@ -50,6 +52,8 @@ func (a *App) eventRoutes() []adminRoute {
 	}
 }
 
+// eventStatus returns persistent delivery counts, capture health and supervised worker
+// state.
 func (a *App) eventStatus(w http.ResponseWriter, r *http.Request) {
 	s, err := a.eventStore.Status(r.Context())
 	if err != nil {
@@ -63,6 +67,8 @@ func (a *App) eventStatus(w http.ResponseWriter, r *http.Request) {
 	)
 }
 
+// listEvents returns a bounded page of event records or destination deliveries according
+// to the requested route.
 func (a *App) listEvents(w http.ResponseWriter, r *http.Request) {
 	q := r.URL.Query()
 	limit := 100
@@ -94,6 +100,8 @@ func (a *App) listEvents(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, map[string]any{"Items": items})
 }
 
+// getEvent returns one retained event record, mapping lookup failures to the event API
+// error contract.
 func (a *App) getEvent(w http.ResponseWriter, r *http.Request) {
 	record, err := a.eventStore.Record(r.Context(), r.PathValue("event"))
 	if err != nil {
@@ -103,6 +111,8 @@ func (a *App) getEvent(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, record)
 }
 
+// retryEvent validates and reschedules a projected-event delivery; native webhook
+// destinations are rejected and must use their own replay API.
 func (a *App) retryEvent(w http.ResponseWriter, r *http.Request) {
 	var body struct {
 		Destination string `json:"destination"`
@@ -127,6 +137,8 @@ func (a *App) retryEvent(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNoContent)
 }
 
+// eventError maps event-store sentinel errors to HTTP responses without exposing
+// unexpected storage failures.
 func (a *App) eventError(w http.ResponseWriter, err error) {
 	status := http.StatusServiceUnavailable
 	if errors.Is(err, eventstore.ErrInvalid) {

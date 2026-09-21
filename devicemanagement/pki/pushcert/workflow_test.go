@@ -22,6 +22,7 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/testpki"
 )
 
+// appIdentity issues an app push identity carrying the supplied topic extension.
 func appIdentity(t *testing.T, extension []byte) *testpki.Identity {
 	t.Helper()
 	ca, err := testpki.NewCA("app issuer")
@@ -50,6 +51,7 @@ func appIdentity(t *testing.T, extension []byte) *testpki.Identity {
 	return id
 }
 
+// appTopics encodes the app-topic extension used by the push certificate fixture.
 func appTopics(t *testing.T) []byte {
 	t.Helper()
 	der, err := asn1.Marshal(struct {
@@ -62,6 +64,8 @@ func appTopics(t *testing.T) []byte {
 	return der
 }
 
+// TestAppCertificateWorkflow checks app push certificate inspection, topic authorization,
+// validity, and separation from MDM credentials.
 func TestAppCertificateWorkflow(t *testing.T) {
 	t.Parallel()
 	id := appIdentity(t, appTopics(t))
@@ -141,6 +145,8 @@ func TestAppCertificateWorkflow(t *testing.T) {
 	}
 }
 
+// TestVendorEnvelope checks vendor CSR signing, envelope contents, key binding, and invalid
+// signing inputs.
 func TestVendorEnvelope(t *testing.T) {
 	t.Parallel()
 	key, csr, err := pushcert.GenerateCSR(pkix.Name{CommonName: "customer"})

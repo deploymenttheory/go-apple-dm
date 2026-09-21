@@ -43,8 +43,8 @@ type Result[T any] struct {
 type Query struct {
 	// Type restricts to one event type.
 	Type string
-	// Actor restricts to one actor, which is how "what did this admin do"
-	// and "what did break-glass do" are asked.
+	// Actor restricts results to the device, server, or principal that caused
+	// the recorded action.
 	Actor string
 	// Enrollment restricts to one enrollment id.
 	Enrollment string
@@ -67,8 +67,8 @@ type Record struct {
 	At time.Time
 	// Type is the event type, for example "command-queued".
 	Type string
-	// Actor is who caused it: "device", "admin", a principal name, or
-	// "break-glass".
+	// Actor identifies who caused the event, such as "device", "server",
+	// "admin", or an administrative principal name.
 	Actor string
 	// Enrollment is the enrollment the event concerned, zero for events with
 	// no enrollment such as an admin action.

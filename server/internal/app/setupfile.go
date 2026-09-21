@@ -86,7 +86,10 @@ type SetupInitOptions struct {
 	StorageKeyAliases []string
 }
 
-// Keep the ordered workflow transitions and their failure handling together.
+// InitSetupFile creates a protected setup directory with generated or imported
+// secret files and a configuration that references them. It validates deployment
+// settings before exposing the resulting configuration path; callers retain
+// ownership of the created setup directory.
 func InitSetupFile(o SetupInitOptions) (string, error) {
 	dir, role, storage, dsn, publicURL, listen, organization := o.Directory, o.Role, o.Storage, o.DSN, o.PublicURL, o.Listen, o.Organization
 	storageKeyName := o.StorageKeyName

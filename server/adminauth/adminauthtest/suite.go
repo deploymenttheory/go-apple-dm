@@ -37,10 +37,14 @@ func RunSuite(t *testing.T, newStore NewStore) {
 	t.Run("ActiveRoot", func(t *testing.T) { runActiveRoot(t, newStore) })
 }
 
+// principal constructs a contract-test principal with the requested role names
+// and a deterministic credential ID.
 func principal(name string, roles ...string) adminauth.Principal {
 	return adminauth.Principal{Name: name, Roles: roles, TokenID: name + "-id"}
 }
 
+// runPrincipals checks principal round trips, sorted roles, duplicate and missing
+// identities, updates, root counts, and pagination.
 func runPrincipals(t *testing.T, newStore NewStore) {
 	t.Helper()
 	ctx := context.Background()
@@ -172,6 +176,8 @@ func runPrincipals(t *testing.T, newStore NewStore) {
 	})
 }
 
+// runTokens checks digest lookup, immediate invalidation after rotation or revocation, and
+// credential expiry boundaries.
 func runTokens(t *testing.T, newStore NewStore) {
 	t.Helper()
 	ctx := context.Background()
@@ -284,6 +290,8 @@ func runTokens(t *testing.T, newStore NewStore) {
 	})
 }
 
+// runPolicies checks policy source preservation, stable creation time, ordered listing,
+// and version changes on every write.
 func runPolicies(t *testing.T, newStore NewStore) {
 	t.Helper()
 	ctx := context.Background()

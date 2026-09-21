@@ -16,10 +16,13 @@ type unavailableAppState struct {
 	failure error
 }
 
+// List returns the configured application-state list failure.
 func (s unavailableAppState) List(context.Context, string, string, int) ([]state.Record, error) {
 	return nil, s.failure
 }
 
+// TestAppCredentialListingReportsStoreFailures checks that app credential listing reports store
+// failures.
 func TestAppCredentialListingReportsStoreFailures(t *testing.T) {
 	t.Parallel()
 	for _, tc := range []struct {

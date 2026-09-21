@@ -11,6 +11,8 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/state"
 )
 
+// TestHTTPSTrustRecoveryResumesAfterEveryRepositoryFailure checks HTTPS trust recovery resumes
+// after every repository failure.
 func TestHTTPSTrustRecoveryResumesAfterEveryRepositoryFailure(t *testing.T) {
 	for _, phase := range []string{"read", "write"} {
 		for failAt := 1; failAt <= 40; failAt++ {
@@ -47,6 +49,8 @@ func TestHTTPSTrustRecoveryResumesAfterEveryRepositoryFailure(t *testing.T) {
 	}
 }
 
+// httpsRecoveryFixture builds an HTTPS issuer-rollover fixture with the requested
+// pending-certificate state.
 func httpsRecoveryFixture(t *testing.T, pending string) (*App, lifecycle.Rollover) {
 	t.Helper()
 	a, _, _, _ := renewalFixture(t)
@@ -105,6 +109,8 @@ func httpsRecoveryFixture(t *testing.T, pending string) (*App, lifecycle.Rollove
 	return a, job
 }
 
+// TestHTTPSTrustActivationRecoversExistingPendingLeaves checks that HTTPS trust activation
+// recovers existing pending leaves.
 func TestHTTPSTrustActivationRecoversExistingPendingLeaves(t *testing.T) {
 	for _, pending := range []string{"old", "new", "empty", "foreign"} {
 		t.Run(pending, func(t *testing.T) {
@@ -140,6 +146,8 @@ func TestHTTPSTrustActivationRecoversExistingPendingLeaves(t *testing.T) {
 	}
 }
 
+// TestHTTPSTrustRecoveryRejectsDamagedMaterial checks that HTTPS trust recovery rejects damaged
+// material.
 func TestHTTPSTrustRecoveryRejectsDamagedMaterial(t *testing.T) {
 	for _, damaged := range []string{"active leaf", "pending leaf", "new CA", "old CA", "missing active", "missing identity", "missing successor"} {
 		t.Run(damaged, func(t *testing.T) {

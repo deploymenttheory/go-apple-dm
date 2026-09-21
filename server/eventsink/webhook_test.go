@@ -22,6 +22,7 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/server/eventsink"
 )
 
+// quiet returns a logger that discards output.
 func quiet() *slog.Logger { return slog.New(slog.NewTextHandler(io.Discard, nil)) }
 
 // receiver records what a webhook endpoint was sent.
@@ -33,6 +34,8 @@ type receiver struct {
 	fail   int // fail this many deliveries before succeeding
 }
 
+// handler builds a receiver that records request bodies and headers and injects configured HTTP
+// failures.
 func (r *receiver) handler() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
 		body, _ := io.ReadAll(req.Body)
@@ -53,12 +56,14 @@ func (r *receiver) handler() http.Handler {
 	})
 }
 
+// sent returns a copy of received bodies under the receiver mutex.
 func (r *receiver) sent() []string {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	return append([]string(nil), r.bodies...)
 }
 
+// newWebhook creates a legacy webhook handler connected to a trusted test TLS receiver.
 func newWebhook(t *testing.T, cfg eventsink.WebhookConfig) (event.Handler, *receiver) {
 	t.Helper()
 	rec := &receiver{}
@@ -161,6 +166,7 @@ func TestWebhookSplitsAcknowledgeFromCheckin(t *testing.T) {
 	}
 }
 
+// TestWebhookSignsTheBody checks webhook signs the body.
 func TestWebhookSignsTheBody(t *testing.T) {
 	key := []byte("shared-secret")
 	h, rec := newWebhook(t, eventsink.WebhookConfig{HMACKey: key, Clock: clock.Real{}})
@@ -195,6 +201,7 @@ func TestWebhookRetriesThenSucceeds(t *testing.T) {
 	}
 }
 
+// TestWebhookReportsAPersistentFailure checks that webhook reports a persistent failure.
 func TestWebhookReportsAPersistentFailure(t *testing.T) {
 	rec := &receiver{fail: 99}
 	srv := httptest.NewTLSServer(rec.handler())
@@ -218,6 +225,7 @@ func TestWebhookReportsAPersistentFailure(t *testing.T) {
 	}
 }
 
+// TestWebhookStopsOnCancellation checks that webhook stops on cancellation.
 func TestWebhookStopsOnCancellation(t *testing.T) {
 	rec := &receiver{fail: 99}
 	srv := httptest.NewTLSServer(rec.handler())
@@ -236,6 +244,7 @@ func TestWebhookStopsOnCancellation(t *testing.T) {
 	}
 }
 
+// TestWebhookNeedsAURL checks that a legacy webhook requires a destination URL.
 func TestWebhookNeedsAURL(t *testing.T) {
 	if _, err := eventsink.Webhook(eventsink.WebhookConfig{}); !errors.Is(err, eventsink.ErrWebhookConfig) {
 		t.Fatalf("err = %v, want ErrWebhookConfig", err)

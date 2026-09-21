@@ -30,6 +30,7 @@ type call struct {
 	data     []byte
 }
 
+// Handle records the DDM call and returns the configured endpoint response or error.
 func (s *stub) Handle(_ context.Context, id mdm.EnrollmentID, endpoint string, data []byte) (ddm.Response, error) {
 	s.calls = append(s.calls, call{id: id, endpoint: endpoint, data: data})
 	if err := s.errs[endpoint]; err != nil {
@@ -38,6 +39,7 @@ func (s *stub) Handle(_ context.Context, id mdm.EnrollmentID, endpoint string, d
 	return s.responses[endpoint], nil
 }
 
+// dmCheckin encodes and decodes a DeclarativeManagement check-in with optional Data.
 func dmCheckin(t *testing.T, udid, endpoint string, data []byte) (*mdm.Checkin, *checkin.DeclarativeManagement) {
 	t.Helper()
 	fields := map[string]any{"MessageType": "DeclarativeManagement", "UDID": udid, "Endpoint": endpoint}
@@ -59,6 +61,8 @@ func dmCheckin(t *testing.T, udid, endpoint string, data []byte) (*mdm.Checkin, 
 	return ck, m
 }
 
+// TestHandler checks in-process DDM endpoint responses, error mapping, nil inputs, and a real
+// engine.
 func TestHandler(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
@@ -207,6 +211,7 @@ func TestHandler(t *testing.T) {
 	})
 }
 
+// TestCodeFor checks DDM error-to-HTTP mapping through wrapped errors.
 func TestCodeFor(t *testing.T) {
 	t.Parallel()
 	for _, tc := range []struct {
@@ -225,6 +230,7 @@ func TestCodeFor(t *testing.T) {
 	}
 }
 
+// TestResponse checks default response status and preservation of explicit errors.
 func TestResponse(t *testing.T) {
 	t.Parallel()
 	got := inproc.Response(ddm.Response{Body: []byte("{}")})

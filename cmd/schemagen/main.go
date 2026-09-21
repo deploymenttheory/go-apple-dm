@@ -14,6 +14,7 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/internal/schemagen"
 )
 
+// main runs schemagen, printing a returned error and exiting with status 1 on failure.
 func main() {
 	if err := run(os.Args[1:], os.Stdout); err != nil {
 		fmt.Fprintln(os.Stderr, "schemagen:", err)
@@ -21,6 +22,8 @@ func main() {
 	}
 }
 
+// run parses schema and output options and dispatches generation, verification, or schema
+// inspection commands.
 func run(args []string, out *os.File) error {
 	fs := flag.NewFlagSet("schemagen", flag.ContinueOnError)
 	schemaRoot := fs.String(

@@ -20,7 +20,7 @@
 //
 // # References
 //
-//   - Design decision: docs/research/decisions/0053-apps-and-books-licensing.md (relative to repository root)
+//   - Design decision: https://github.com/deploymenttheory/go-apple-dm/blob/main/docs/research/decisions/0053-apps-and-books-licensing.md
 //
 //   - Apple management API: https://developer.apple.com/documentation/devicemanagement/getting-started-with-the-management-api
 //
@@ -34,5 +34,5 @@
 //
 //   - Notification authentication and delivery: https://developer.apple.com/documentation/devicemanagement/subscribing-to-notifications
 //
-//   - Repository guide: docs/operations/apps-and-books.md (relative to repository root)
+//   - Repository guide: https://github.com/deploymenttheory/go-apple-dm/blob/main/docs/operations/apps-and-books.md
 package appsbooks

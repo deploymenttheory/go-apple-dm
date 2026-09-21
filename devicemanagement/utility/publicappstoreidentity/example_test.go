@@ -16,10 +16,13 @@ import (
 
 type exampleTransport struct{}
 
+// RoundTrip returns the example public App Store lookup response without network access.
 func (exampleTransport) RoundTrip(r *http.Request) (*http.Response, error) {
 	return &http.Response{StatusCode: 200, Request: r, Body: io.NopCloser(strings.NewReader(`{"resultCount":1,"results":[{"trackId":123,"bundleId":"com.example.app","trackName":"Example","artistName":"Example Inc","kind":"software","features":["iosUniversal"]}]}`))}, nil
 }
 
+// ExampleClient_Search_appSettings demonstrates selecting a public App Store result and validating
+// an app allow rule for the target.
 func ExampleClient_Search_appSettings() {
 	client := publicappstoreidentity.Client{HTTPClient: &http.Client{Transport: exampleTransport{}}}
 	apps, err := client.Search(context.Background(), publicappstoreidentity.Query{
@@ -60,6 +63,7 @@ func ExampleClient_Search_appSettings() {
 	// Output: {"Allowed":{"AllowedApps":["com.example.app"]}}
 }
 
+// ExampleClient_Search demonstrates public App Store search with an injected fixture transport.
 func ExampleClient_Search() {
 	// Inject a deterministic response for this executable example. Omit
 	// HTTPClient to query Apple's public service with the default transport.

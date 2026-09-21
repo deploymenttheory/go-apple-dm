@@ -9,6 +9,8 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/server/adminauth"
 )
 
+// roleRoutes declares managed role and policy-validation endpoints with authorization and
+// transaction metadata.
 func (a *App) roleRoutes() []adminRoute {
 	var routes []adminRoute
 	add := func(action, pattern string, handler http.HandlerFunc) {

@@ -20,6 +20,8 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/server/internal/app"
 )
 
+// TestContentCacheIngestion checks authenticated content-cache ingestion, report paging,
+// credential persistence, rotation, and revocation.
 func TestContentCacheIngestion(t *testing.T) {
 	for _, backend := range []string{"inmem", "sqlite"} {
 		t.Run(backend, func(t *testing.T) {
@@ -106,6 +108,8 @@ func TestContentCacheIngestion(t *testing.T) {
 	}
 }
 
+// TestContentCacheConfig checks that the content-cache collector is disabled by default and
+// rejects unsafe endpoints.
 func TestContentCacheConfig(t *testing.T) {
 	for _, endpoint := range []string{"http://cache.example.test", "https://cache.example.test/path", "https://cache.example.test?token=secret", "https://user:secret@cache.example.test"} {
 		_, err := app.Build(t.Context(), app.Config{Storage: "inmem", ContentCache: app.ContentCacheConfig{PublicURL: endpoint}})
@@ -121,6 +125,7 @@ func TestContentCacheConfig(t *testing.T) {
 	}
 }
 
+// TestContentCacheRetentionEnv checks content cache retention env.
 func TestContentCacheRetentionEnv(t *testing.T) {
 	for _, value := range []string{"", "48h", "0", "-1h", "invalid"} {
 		t.Run(value, func(t *testing.T) {
@@ -216,6 +221,8 @@ func TestContentCacheProxyTransport(t *testing.T) {
 	}
 }
 
+// TestContentCacheAdminRejectsInvalidRequests checks that content cache admin rejects invalid
+// requests.
 func TestContentCacheAdminRejectsInvalidRequests(t *testing.T) {
 	a := build(t, app.Config{
 		Storage: "inmem", BootstrapToken: "test-admin",

@@ -11,6 +11,8 @@ import (
 	"time"
 )
 
+// TestPagination checks next-link pagination, query merging, page limits, cancellation, and
+// metadata.
 func TestPagination(t *testing.T) {
 	t.Parallel()
 	seed := func(t *testing.T, n int) *fixture {
@@ -197,6 +199,8 @@ func TestPagination(t *testing.T) {
 	})
 }
 
+// TestDecode checks AXM response decoding for identifier arrays, unknown status values, and MDM
+// server IDs.
 func TestDecode(t *testing.T) {
 	t.Parallel()
 	t.Run("ArraysForIMEIMEID", func(t *testing.T) {

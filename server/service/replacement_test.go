@@ -13,6 +13,8 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/server/service"
 )
 
+// TestAuthorizedReplacementPreservesEnrollment checks that authorized replacement preserves
+// enrollment.
 func TestAuthorizedReplacementPreservesEnrollment(t *testing.T) {
 	for _, outcome := range []string{"commit", "rollback", "expired", "cancelled"} {
 		t.Run(outcome, func(t *testing.T) {

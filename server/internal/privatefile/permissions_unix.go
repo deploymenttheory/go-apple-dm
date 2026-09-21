@@ -7,6 +7,7 @@ import "os"
 // Protect applies owner-only access to a newly created file.
 func Protect(path string) error { return wrap(os.Chmod(path, 0o600)) }
 
+// protectFile restricts an owned file to its required Unix permission mode.
 func protectFile(file *os.File) error { return wrap(file.Chmod(0o600)) }
 
 // Check refuses nonregular files and access granted to other users.

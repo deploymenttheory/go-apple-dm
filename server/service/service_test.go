@@ -34,6 +34,8 @@ type harness struct {
 	cert2  *x509.Certificate
 }
 
+// newHarness creates an MDM service harness with an in-memory store, fake clock, captured events,
+// and test certificates.
 func newHarness(t *testing.T, cfg service.Config) *harness {
 	t.Helper()
 	h := &harness{store: inmem.New(), clock: clock.NewFake(t0)}
@@ -55,6 +57,7 @@ func newHarness(t *testing.T, cfg service.Config) *harness {
 	return h
 }
 
+// eventTypes returns the captured event type names.
 func (h *harness) eventTypes() []string {
 	out := make([]string, 0, len(h.events))
 	for _, e := range h.events {
@@ -63,10 +66,12 @@ func (h *harness) eventTypes() []string {
 	return out
 }
 
+// req builds an MDM request with the supplied certificate and fixture receive time.
 func req(cert *x509.Certificate) *mdm.Request {
 	return &mdm.Request{Certificate: cert, ReceivedAt: t0}
 }
 
+// checkinPlist encodes and decodes a check-in plist, failing the test on invalid fixture data.
 func checkinPlist(t *testing.T, fields map[string]any) *mdm.Checkin {
 	t.Helper()
 	raw, err := plist.Marshal(fields)
@@ -80,6 +85,7 @@ func checkinPlist(t *testing.T, fields map[string]any) *mdm.Checkin {
 	return ck
 }
 
+// authenticate builds an Authenticate check-in with fixture macOS device information.
 func authenticate(t *testing.T, udid string) *mdm.Checkin {
 	t.Helper()
 	return checkinPlist(t, map[string]any{
@@ -89,6 +95,7 @@ func authenticate(t *testing.T, udid string) *mdm.Checkin {
 	})
 }
 
+// tokenUpdate builds a TokenUpdate check-in after applying supplied field overrides.
 func tokenUpdate(t *testing.T, udid string, extra map[string]any) *mdm.Checkin {
 	t.Helper()
 	f := map[string]any{"MessageType": "TokenUpdate", "Topic": "com.apple.mgmt.t", "UDID": udid, "PushMagic": "magic", "Token": []byte{1, 2, 3}, "UserLongName": ""}
@@ -96,6 +103,7 @@ func tokenUpdate(t *testing.T, udid string, extra map[string]any) *mdm.Checkin {
 	return checkinPlist(t, f)
 }
 
+// simple builds the requested check-in type after applying supplied field overrides.
 func simple(t *testing.T, msgType, udid string, extra map[string]any) *mdm.Checkin {
 	t.Helper()
 	f := map[string]any{"MessageType": msgType, "UDID": udid}
@@ -103,10 +111,12 @@ func simple(t *testing.T, msgType, udid string, extra map[string]any) *mdm.Check
 	return checkinPlist(t, f)
 }
 
+// response builds a device-channel command response with the supplied UUID and status.
 func response(udid, cmdUUID string, status mdm.Status) *mdm.Response {
 	return &mdm.Response{Enrollment: mdm.Enrollment{UDID: udid}, ID: mdm.EnrollmentID{Channel: mdm.ChannelDevice, ID: udid}, CommandUUID: cmdUUID, Status: status}
 }
 
+// enroll completes Authenticate and TokenUpdate check-ins for the supplied device.
 func enroll(t *testing.T, h *harness, udid string) {
 	t.Helper()
 	ctx := context.Background()
@@ -118,6 +128,7 @@ func enroll(t *testing.T, h *harness, udid string) {
 	}
 }
 
+// TestEnrollAndCommandFlow checks enroll and command flow.
 func TestEnrollAndCommandFlow(t *testing.T) {
 	t.Parallel()
 	h := newHarness(t, service.Config{})
@@ -208,6 +219,8 @@ func TestEnrollAndCommandFlow(t *testing.T) {
 	}
 }
 
+// TestPinningAndReenroll checks certificate pinning and approved reenrollment replace the accepted
+// identity without retaining the old pin.
 func TestPinningAndReenroll(t *testing.T) {
 	t.Parallel()
 	h := newHarness(t, service.Config{Reenroll: service.AllowReenroll})
@@ -304,6 +317,7 @@ func TestPinningAndReenroll(t *testing.T) {
 	}
 }
 
+// TestDenyReenrollAndPinModes checks deny reenroll and pin modes.
 func TestDenyReenrollAndPinModes(t *testing.T) {
 	t.Parallel()
 	deny := newHarness(t, service.Config{Reenroll: service.DenyReenroll})
@@ -381,6 +395,8 @@ func TestDenyReenrollAndPinModes(t *testing.T) {
 	}
 }
 
+// TestUserChannel checks user-channel enrollment, command delivery, and authentication after
+// device enrollment.
 func TestUserChannel(t *testing.T) {
 	t.Parallel()
 	h := newHarness(t, service.Config{})
@@ -415,6 +431,8 @@ func TestUserChannel(t *testing.T) {
 	}
 }
 
+// TestHandlersAndHooks checks protocol handler responses, hook context and veto behavior, and
+// missing handlers.
 func TestHandlersAndHooks(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
@@ -475,6 +493,7 @@ func TestHandlersAndHooks(t *testing.T) {
 	}
 }
 
+// TestArgumentErrors checks service argument validation and invalid enrollment-state transitions.
 func TestArgumentErrors(t *testing.T) {
 	t.Parallel()
 	if _, err := service.New(service.Config{}); err == nil {
@@ -519,6 +538,8 @@ type recordingHook struct {
 	after  int
 }
 
+// Before counts calls, vetoes the selected operation, and otherwise adds the operation to the
+// context.
 func (r *recordingHook) Before(ctx context.Context, c *service.Call) (context.Context, error) {
 	r.before++
 	if c.Op == r.veto {
@@ -527,6 +548,7 @@ func (r *recordingHook) Before(ctx context.Context, c *service.Call) (context.Co
 	return context.WithValue(ctx, ctxKey{}, c.Op), nil
 }
 
+// After counts calls and requires the context set by Before to reach After.
 func (r *recordingHook) After(ctx context.Context, c *service.Call, _ error) {
 	r.after++
 	if ctx.Value(ctxKey{}) != c.Op {

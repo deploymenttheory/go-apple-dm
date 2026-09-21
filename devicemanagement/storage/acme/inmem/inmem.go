@@ -49,6 +49,7 @@ type state struct {
 	nonces map[string]acme.Nonce
 }
 
+// newState allocates the maps used by an empty in-memory store.
 func newState() *state {
 	return &state{
 		accounts:    map[string]acme.Account{},
@@ -119,6 +120,7 @@ func (s *Store) view() (*tx, func()) {
 	return &tx{st: s.st}, s.mu.Unlock
 }
 
+// validID checks the identifier before it is used to address stored state.
 func validID(what, id string) error {
 	if id == "" {
 		return fmt.Errorf("%w: empty %s", acme.ErrInvalid, what)
@@ -126,6 +128,7 @@ func validID(what, id string) error {
 	return nil
 }
 
+// notFound wraps the missing-record sentinel with the resource identifier.
 func notFound(what, id string) error {
 	return fmt.Errorf("%w: %s %q", acme.ErrNotFound, what, id)
 }
@@ -146,6 +149,7 @@ func cloneBytes(b []byte) []byte {
 	return out
 }
 
+// cloneBool copies an optional boolean while preserving nil.
 func cloneBool(b *bool) *bool {
 	if b == nil {
 		return nil
@@ -178,12 +182,14 @@ func cloneProblem(p *acme.Problem) *acme.Problem {
 	return &out
 }
 
+// cloneBinding copies identifier-binding state without sharing mutable values.
 func cloneBinding(b acme.Binding) acme.Binding {
 	b.Organization = slices.Clone(b.Organization)
 	b.NotAfter = b.NotAfter.UTC()
 	return b
 }
 
+// cloneAccount copies an account and its mutable contact and key data.
 func cloneAccount(a acme.Account) acme.Account {
 	a.Contact = slices.Clone(a.Contact)
 	if a.Key != nil {
@@ -194,6 +200,8 @@ func cloneAccount(a acme.Account) acme.Account {
 	return a
 }
 
+// cloneOrder copies an order, its binding and problem details, normalizing timestamps to
+// UTC.
 func cloneOrder(o acme.Order) acme.Order {
 	o.Binding = cloneBinding(o.Binding)
 	o.Error = cloneProblem(o.Error)
@@ -208,6 +216,7 @@ func cloneAuthorization(a acme.Authorization) acme.Authorization {
 	return a
 }
 
+// cloneChallenge copies challenge state and retained attestation bytes.
 func cloneChallenge(c acme.Challenge) acme.Challenge {
 	c.Attestation = cloneBytes(c.Attestation)
 	c.Error = cloneProblem(c.Error)
@@ -215,6 +224,7 @@ func cloneChallenge(c acme.Challenge) acme.Challenge {
 	return c
 }
 
+// cloneProperties copies attested property values for independent storage.
 func cloneProperties(p attest.Properties) attest.Properties {
 	p.Freshness = cloneBytes(p.Freshness)
 	p.SIPEnabled = cloneBool(p.SIPEnabled)
@@ -222,6 +232,7 @@ func cloneProperties(p attest.Properties) attest.Properties {
 	return p
 }
 
+// cloneCertificate copies a certificate record and its encoded certificate bytes.
 func cloneCertificate(c acme.Certificate) acme.Certificate {
 	c.ChainPEM = cloneBytes(c.ChainPEM)
 	c.Device = cloneProperties(c.Device)
@@ -458,10 +469,12 @@ func (t *tx) ClaimIdentifier(_ context.Context, identifier, orderID string) erro
 // cannot build one out of a record id and depend on an ordering the
 // backend chose for itself.
 
+// encodeCursor encodes the last record position for a subsequent page request.
 func encodeCursor(id string) string {
 	return base64.RawURLEncoding.EncodeToString([]byte(id))
 }
 
+// decodeCursor validates and decodes the position carried by a pagination cursor.
 func decodeCursor(c string) (string, error) {
 	if c == "" {
 		return "", nil

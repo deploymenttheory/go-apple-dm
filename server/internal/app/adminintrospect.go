@@ -14,16 +14,13 @@ import (
 // exists for the route table's sake rather than to be granted.
 const ActionReadConfig = "readConfig"
 
-// introspectionRoutes describe the server to a client.
+// introspectionRoutes describes the unified server to an authenticated client.
 //
-//	GET /config   role, version, and the families this process serves
+//	GET /config   service, version, bootstrap state and enabled families
 //	GET /routes   the mounted route table with the action each route requires
 //
-// GET /routes is generated from the same slice the mux is built from, so it
-// cannot drift from what is served. That is the whole reason it exists rather
-// than a hand-written API document: no reference server publishes its route
-// table at all, and a document that is written separately is wrong the moment
-// a route moves.
+// The route response reads the same table used to build the mux, including
+// resource types, required context and sensitive-operation metadata.
 func (a *App) introspectionRoutes() []adminRoute {
 	return []adminRoute{
 		{
@@ -100,6 +97,8 @@ func buildVersion() string {
 	return buildinfo.Version()
 }
 
+// bootstrapPending reports whether a configured bootstrap secret can still create the
+// first root; store failures return false.
 func (a *App) bootstrapPending(r *http.Request) bool {
 	initialized, err := a.admin.Initialized(r.Context())
 	return err == nil && !initialized && a.cfg.BootstrapToken != ""

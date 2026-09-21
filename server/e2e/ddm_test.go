@@ -21,6 +21,7 @@ const (
 	declAct    = `{"Type":"com.apple.activation.simple","Identifier":"com.example.act","Payload":{"StandardConfigurations":["com.example.config"]%s}}`
 )
 
+// reasonCodes returns the reason codes from a simulator declaration, or an empty slice for nil.
 func reasonCodes(d *simulator.DDMDeclaration) []string {
 	var out []string
 	if d == nil {
@@ -32,6 +33,7 @@ func reasonCodes(d *simulator.DDMDeclaration) []string {
 	return out
 }
 
+// hasCode reports whether the supplied reason code is present.
 func hasCode(codes []string, want string) bool {
 	for _, c := range codes {
 		if c == want {

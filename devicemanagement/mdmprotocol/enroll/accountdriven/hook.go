@@ -19,6 +19,7 @@ var ErrEnrollmentToken = errors.New("accountdriven: enrollment authorization req
 // recognized, certificate-associated account enrollments may produce this result.
 type Reauthentication struct{ Challenge Challenge }
 
+// Error returns the diagnostic message for this error.
 func (e *Reauthentication) Error() string { return "accountdriven: reauthentication required" }
 
 // CheckinHook authenticates account-driven check-in, command and DDM requests.
@@ -41,6 +42,7 @@ func IdentityFromContext(ctx context.Context) (Identity, bool) {
 	return id, ok
 }
 
+// associations selects the configured association repository for check-in validation.
 func (h *CheckinHook) associations() *Associations {
 	if h.Associations != nil {
 		return h.Associations

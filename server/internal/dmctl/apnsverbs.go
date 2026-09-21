@@ -20,6 +20,8 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/server/internal/privatefile"
 )
 
+// runAPNS parses and executes the APNs subcommand, reporting argument and operation
+// failures to the CLI caller.
 func runAPNS(ctx context.Context, e *env, args []string) error {
 	if len(args) == 0 {
 		return fmt.Errorf("%w: apns needs inspect, check, or send", ErrUsage)
@@ -123,6 +125,8 @@ func runAPNS(ctx context.Context, e *env, args []string) error {
 	return e.localJSON(info)
 }
 
+// sendApp sends an app notification directly to the explicitly selected APNs
+// environment using the supplied certificate.
 func (e *env) sendApp(
 	ctx context.Context,
 	cert tls.Certificate,
@@ -187,6 +191,8 @@ func (e *env) sendApp(
 	return nil
 }
 
+// readAppToken decodes a nonempty hexadecimal token, optionally extracting it from
+// registration JSON whose topic and environment must match the request.
 func readAppToken(data, topic, environment string) ([]byte, error) {
 	text := strings.TrimSpace(data)
 	if strings.HasPrefix(text, "{") {
@@ -213,6 +219,7 @@ func readAppToken(data, topic, environment string) ([]byte, error) {
 	return token, nil
 }
 
+// localJSON encodes a local command result as JSON on standard output.
 func (e *env) localJSON(value any) error {
 	if err := json.NewEncoder(e.stdout).Encode(value); err != nil {
 		return fmt.Errorf("dmctl: write JSON: %w", err)
@@ -244,6 +251,8 @@ func writeNewPrivateFile(name string, data []byte) error {
 	return nil
 }
 
+// runPushCSR parses and executes the push CSR subcommand, reporting argument and operation
+// failures to the CLI caller.
 func runPushCSR(e *env, args []string) error {
 	fs := e.verbFlags("pushcerts csr")
 	keyOut := fs.String("key-out", "", "new PKCS#8 key file; kept on the customer server")
@@ -273,6 +282,8 @@ func runPushCSR(e *env, args []string) error {
 	return e.localJSON(map[string]string{"keyFile": *keyOut, "csrFile": *csrOut})
 }
 
+// runSignCSR parses and executes the sign CSR subcommand, reporting argument and operation
+// failures to the CLI caller.
 func runSignCSR(e *env, args []string) error {
 	fs := e.verbFlags("pushcerts sign")
 	csr := fs.String("csr", "", "customer PEM or DER CSR")
@@ -312,6 +323,8 @@ func runSignCSR(e *env, args []string) error {
 	return e.localJSON(map[string]string{"requestFile": *out})
 }
 
+// pushCertificateUpload reads upload JSON or builds it from a validated MDM push
+// certificate, private key and topic.
 func (e *env) pushCertificateUpload(file, certFile, keyFile, topic string) (string, error) {
 	if certFile == "" && keyFile == "" && topic == "" {
 		return e.readSource(file)

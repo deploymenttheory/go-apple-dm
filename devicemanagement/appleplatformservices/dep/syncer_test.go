@@ -62,6 +62,8 @@ func cursorsSent(f *fixture, path string) []string {
 	return out
 }
 
+// TestSyncer checks full fetch and incremental synchronization, cursor recovery, retry scheduling,
+// and commit ordering.
 func TestSyncer(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()

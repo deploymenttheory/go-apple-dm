@@ -59,7 +59,7 @@ and the [FileVault escrow payload](https://developer.apple.com/documentation/dev
    ```
 
    Choose a fresh command UUID and an identifier belonging to your deployment.
-   This requires `EnqueueCommand` authorization and an enabled device enrollment.
+   This requires `enqueueCommand.InstallProfile` authorization and an enabled device enrollment.
    `Location` is Apple's user-facing description of where the key is escrowed.
 3. The server atomically retains a new certificate/key and stable payload UUIDs,
    then queues an `InstallProfile` command. Its system profile contains

@@ -9,6 +9,7 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/ddm/blueprint"
 )
 
+// TestE2E_BlueprintPublication checks e2 e blueprint publication.
 func TestE2E_BlueprintPublication(t *testing.T) {
 	h := newDDMHarness(t, false)
 	ctx := t.Context()

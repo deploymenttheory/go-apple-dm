@@ -10,6 +10,8 @@ import (
 	"testing"
 )
 
+// bootstrapFixture writes a recovery bootstrap fixture with storage keys, secret-file references,
+// and setup metadata.
 func bootstrapFixture(t *testing.T) (string, Bootstrap) {
 	t.Helper()
 	dir := t.TempDir()
@@ -38,6 +40,8 @@ func bootstrapFixture(t *testing.T) (string, Bootstrap) {
 	return path, b
 }
 
+// TestBootstrapCapturesReferencedFilesAndOriginalKeyNames checks that bootstrap captures
+// referenced files and original key names.
 func TestBootstrapCapturesReferencedFilesAndOriginalKeyNames(t *testing.T) {
 	source, original := bootstrapFixture(t)
 	dir := filepath.Join(t.TempDir(), "captured")
@@ -85,6 +89,8 @@ func TestBootstrapCapturesReferencedFilesAndOriginalKeyNames(t *testing.T) {
 	}
 }
 
+// TestBootstrapCapturesEnvironmentKeyProvider checks that bootstrap captures environment key
+// provider.
 func TestBootstrapCapturesEnvironmentKeyProvider(t *testing.T) {
 	source, _ := bootstrapFixture(t)
 	var b Bootstrap
@@ -109,6 +115,8 @@ func TestBootstrapCapturesEnvironmentKeyProvider(t *testing.T) {
 	}
 }
 
+// TestCaptureRefusesIncompleteAndUnsafeSetup checks that capture refuses incomplete and unsafe
+// setup.
 func TestCaptureRefusesIncompleteAndUnsafeSetup(t *testing.T) {
 	cases := map[string]func(*Bootstrap){
 		"version":                  func(b *Bootstrap) { b.Version = 2 },
@@ -153,6 +161,8 @@ func TestCaptureRefusesIncompleteAndUnsafeSetup(t *testing.T) {
 	}
 }
 
+// TestBootstrapInstallRejectsEscapingReferences checks that bootstrap install rejects escaping
+// references.
 func TestBootstrapInstallRejectsEscapingReferences(t *testing.T) {
 	for _, change := range []func(*Bootstrap){
 		func(b *Bootstrap) { b.Environment["DM_SECRETS_DIR"] = "../elsewhere" },
@@ -182,6 +192,8 @@ func TestBootstrapInstallRejectsEscapingReferences(t *testing.T) {
 	}
 }
 
+// TestBootstrapUsesOriginalEnvironmentAndRefusesInvalidKeyMaterial checks that bootstrap uses
+// original environment and refuses invalid key material.
 func TestBootstrapUsesOriginalEnvironmentAndRefusesInvalidKeyMaterial(t *testing.T) {
 	for _, fault := range []string{"", "duplicate environment key", "short key"} {
 		t.Run(fault, func(t *testing.T) {

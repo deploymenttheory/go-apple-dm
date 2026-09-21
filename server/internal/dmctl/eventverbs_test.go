@@ -10,6 +10,8 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/server/internal/dmctl"
 )
 
+// TestPersistentEventCommands checks persistent-event commands and rejects unavailable or
+// unconfigured servers.
 func TestPersistentEventCommands(t *testing.T) {
 	f := &fakeAdmin{}
 	status := 200

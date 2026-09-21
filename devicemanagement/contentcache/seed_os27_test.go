@@ -8,6 +8,7 @@ import (
 	"testing"
 )
 
+// TestSeedOS27ContentCacheContract checks that the report fixture matches the pinned Apple schema.
 func TestSeedOS27ContentCacheContract(t *testing.T) {
 	t.Parallel()
 	pinned, err := os.ReadFile("testdata/metrics_report.json")

@@ -16,6 +16,8 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/server/service"
 )
 
+// TestSeedOS27MixedFleet checks shared inventory, legacy update, and enhanced-logging commands
+// across macOS 15, 26, and 27 device and user enrollments.
 func TestSeedOS27MixedFleet(t *testing.T) {
 	// Identity policy has separate coverage. This test isolates version and
 	// channel routing through one core and one enqueue request for the fleet.
@@ -93,6 +95,8 @@ func TestSeedOS27MixedFleet(t *testing.T) {
 	}
 }
 
+// TestSeedOS27UpgradeRechecksQueuedCommands checks that observed upgrades clear newly unsupported
+// queued commands, emit a rejection event, and preserve supported work without inventing device results.
 func TestSeedOS27UpgradeRechecksQueuedCommands(t *testing.T) {
 	for _, validate := range []bool{true, false} {
 		h := newHarness(t, service.Config{ValidateTargets: new(validate)})

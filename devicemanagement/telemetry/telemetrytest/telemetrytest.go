@@ -34,6 +34,8 @@ func (m Measurement) Attr(key string) (string, bool) {
 	return "", false
 }
 
+// cut splits a recorded attribute at its first equals sign and reports whether the
+// separator was present.
 func cut(s string) (k, v string, ok bool) {
 	for i := range len(s) {
 		if s[i] == '=' {
@@ -117,6 +119,7 @@ func (r *Recorder) Instrument(name string) []Measurement {
 	return out
 }
 
+// add appends an observation to the recorder's synchronized state.
 func (r *Recorder) add(scope, name string, value float64, set attribute.Set) {
 	attrs := make([]string, 0, set.Len())
 	for _, kv := range set.ToSlice() {
@@ -136,21 +139,25 @@ type recordingMeter struct {
 	scope string
 }
 
+// Float64Histogram returns a histogram that records observations in the test recorder.
 func (m *recordingMeter) Float64Histogram(name string, _ ...metric.Float64HistogramOption) (metric.Float64Histogram, error) {
 	h, err := m.Meter.Float64Histogram(name)
 	return &f64hist{Float64Histogram: h, m: m, name: name}, err
 }
 
+// Int64Counter returns a counter that records additions in the test recorder.
 func (m *recordingMeter) Int64Counter(name string, _ ...metric.Int64CounterOption) (metric.Int64Counter, error) {
 	c, err := m.Meter.Int64Counter(name)
 	return &i64counter{Int64Counter: c, m: m, name: name}, err
 }
 
+// Int64UpDownCounter returns an up-down counter backed by the test recorder.
 func (m *recordingMeter) Int64UpDownCounter(name string, _ ...metric.Int64UpDownCounterOption) (metric.Int64UpDownCounter, error) {
 	c, err := m.Meter.Int64UpDownCounter(name)
 	return &i64updown{Int64UpDownCounter: c, m: m, name: name}, err
 }
 
+// Int64Gauge returns a gauge backed by the test recorder.
 func (m *recordingMeter) Int64Gauge(name string, _ ...metric.Int64GaugeOption) (metric.Int64Gauge, error) {
 	g, err := m.Meter.Int64Gauge(name)
 	return &i64gauge{Int64Gauge: g, m: m, name: name}, err
@@ -162,6 +169,7 @@ type f64hist struct {
 	name string
 }
 
+// Record records the instrument value and its attributes for later assertions.
 func (h *f64hist) Record(ctx context.Context, v float64, opts ...metric.RecordOption) {
 	h.m.rec.add(h.m.scope, h.name, v, metric.NewRecordConfig(opts).Attributes())
 	h.Float64Histogram.Record(ctx, v, opts...)
@@ -173,6 +181,7 @@ type i64counter struct {
 	name string
 }
 
+// Add records the counter delta and its attributes for later assertions.
 func (c *i64counter) Add(ctx context.Context, v int64, opts ...metric.AddOption) {
 	c.m.rec.add(c.m.scope, c.name, float64(v), metric.NewAddConfig(opts).Attributes())
 	c.Int64Counter.Add(ctx, v, opts...)
@@ -184,6 +193,7 @@ type i64updown struct {
 	name string
 }
 
+// Add records the counter delta and its attributes for later assertions.
 func (c *i64updown) Add(ctx context.Context, v int64, opts ...metric.AddOption) {
 	c.m.rec.add(c.m.scope, c.name, float64(v), metric.NewAddConfig(opts).Attributes())
 	c.Int64UpDownCounter.Add(ctx, v, opts...)
@@ -195,6 +205,7 @@ type i64gauge struct {
 	name string
 }
 
+// Record records the instrument value and its attributes for later assertions.
 func (g *i64gauge) Record(ctx context.Context, v int64, opts ...metric.RecordOption) {
 	g.m.rec.add(g.m.scope, g.name, float64(v), metric.NewRecordConfig(opts).Attributes())
 	g.Int64Gauge.Record(ctx, v, opts...)

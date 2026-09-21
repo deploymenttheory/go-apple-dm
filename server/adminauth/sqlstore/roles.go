@@ -12,6 +12,7 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/server/sqlstore/sqlcommon"
 )
 
+// lock acquires the shared authorization-state row lock for this SQL transaction.
 func (s *Store) lock(ctx context.Context, tx *sql.Tx) error {
 	res, err := tx.ExecContext(ctx, "UPDATE admin_policy_version SET version = version WHERE id = 1")
 	if err != nil {
@@ -23,6 +24,8 @@ func (s *Store) lock(ctx context.Context, tx *sql.Tx) error {
 	return tx.QueryRowContext(ctx, "SELECT version FROM admin_policy_version WHERE id = 1").Scan(&version)
 }
 
+// validateRoles requires every assigned role to exist before principal membership is
+// stored.
 func (s *Store) validateRoles(ctx context.Context, roles []string) error {
 	for _, name := range roles {
 		if _, err := s.Role(ctx, name); err != nil {
@@ -32,6 +35,7 @@ func (s *Store) validateRoles(ctx context.Context, roles []string) error {
 	return nil
 }
 
+// replaceRoles replaces a principal's role-membership rows through the current transaction.
 func (s *Store) replaceRoles(ctx context.Context, name string, roles []string) error {
 	q := sqlcommon.Query(ctx, s.db)
 	if _, err := q.ExecContext(ctx, s.q("DELETE FROM admin_principal_roles WHERE principal_name = ?"), name); err != nil {
@@ -45,6 +49,7 @@ func (s *Store) replaceRoles(ctx context.Context, name string, roles []string) e
 	return nil
 }
 
+// principalRoles loads the managed role names assigned to a principal.
 func (s *Store) principalRoles(ctx context.Context, name string) ([]string, error) {
 	rows, err := sqlcommon.Query(ctx, s.db).QueryContext(ctx, s.q("SELECT role_name FROM admin_principal_roles WHERE principal_name = ? ORDER BY role_name"), name)
 	if err != nil {
@@ -62,6 +67,7 @@ func (s *Store) principalRoles(ctx context.Context, name string) ([]string, erro
 	return roles, rows.Err()
 }
 
+// Role returns the named managed role, or ErrNotFound when no such role exists.
 func (s *Store) Role(ctx context.Context, name string) (adminauth.Role, error) {
 	var role adminauth.Role
 	err := sqlcommon.Query(ctx, s.db).QueryRowContext(ctx, s.q("SELECT name,description,created_at,updated_at FROM admin_roles WHERE name = ?"), name).Scan(&role.Name, &role.Description, &role.CreatedAt, &role.UpdatedAt)
@@ -71,6 +77,8 @@ func (s *Store) Role(ctx context.Context, name string) (adminauth.Role, error) {
 	return role, err
 }
 
+// PutRole creates or updates a named role, preserving its creation time and advancing the
+// policy version. Role membership alone grants no operational permission.
 func (s *Store) PutRole(ctx context.Context, role adminauth.Role, now time.Time) (adminauth.Role, error) {
 	if !adminauth.ValidName(role.Name) {
 		return adminauth.Role{}, adminauth.ErrInvalid
@@ -95,6 +103,7 @@ func (s *Store) PutRole(ctx context.Context, role adminauth.Role, now time.Time)
 	return role, err
 }
 
+// Roles returns a page of managed roles in name order using an exclusive cursor.
 func (s *Store) Roles(ctx context.Context, p adminauth.Page) (adminauth.Result[adminauth.Role], error) {
 	out := adminauth.Result[adminauth.Role]{Items: []adminauth.Role{}}
 	if p.Limit <= 0 {
@@ -119,6 +128,8 @@ func (s *Store) Roles(ctx context.Context, p adminauth.Page) (adminauth.Result[a
 	return out, rows.Err()
 }
 
+// DeleteRole removes an unreferenced role. Principal membership or a policy reference
+// returns ErrConflict; an absent role returns ErrNotFound.
 func (s *Store) DeleteRole(ctx context.Context, name string) error {
 	return s.runInTx(ctx, func(ctx context.Context, tx *sql.Tx) error {
 		if err := s.lock(ctx, tx); err != nil {
@@ -154,12 +165,17 @@ func (s *Store) DeleteRole(ctx context.Context, name string) error {
 	})
 }
 
+// Initialized reports whether principal initialization has permanently consumed the
+// bootstrap opportunity.
 func (s *Store) Initialized(ctx context.Context) (bool, error) {
 	var initialized bool
 	err := sqlcommon.Query(ctx, s.db).QueryRowContext(ctx, "SELECT initialized FROM admin_policy_version WHERE id = 1").Scan(&initialized)
 	return initialized, err
 }
 
+// BootstrapPrincipal atomically installs the first active root credential and closes
+// bootstrap. It requires an empty, uninitialized principal store and receives only the
+// credential digest.
 func (s *Store) BootstrapPrincipal(ctx context.Context, p adminauth.Principal, digest string, now time.Time) (adminauth.Principal, error) {
 	var out adminauth.Principal
 	err := s.runInTx(ctx, func(ctx context.Context, tx *sql.Tx) error {

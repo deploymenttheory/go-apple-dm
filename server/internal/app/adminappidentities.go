@@ -27,10 +27,14 @@ type ApplicationIdentityConfig struct {
 	Artifacts      appartifact.Options
 }
 
+// applicationIdentityActions declares the system-scoped permission for application
+// identity discovery and artifact inspection.
 func applicationIdentityActions() []adminauth.Action {
 	return []adminauth.Action{{ID: ActionDiscoverApplicationIdentities, Resource: adminauth.EntitySystem, Help: "Discover public and Apple app identifiers, and inspect uploaded application artifacts for configuration authoring."}}
 }
 
+// applicationIdentityRoutes builds the identity-authoring routes when Blueprints are
+// available, with bounded queries and artifact inspection.
 func (a *App) applicationIdentityRoutes() []adminRoute {
 	if a.Blueprints == nil {
 		return nil
@@ -161,11 +165,15 @@ func (a *App) applicationIdentityRoutes() []adminRoute {
 	return routes
 }
 
+// storeQuery extracts the requested App Store country and entity without performing a
+// lookup.
 func storeQuery(r *http.Request) publicappstoreidentity.Store {
 	q := r.URL.Query()
 	return publicappstoreidentity.Store{Country: q.Get("country"), Entity: publicappstoreidentity.Entity(q.Get("entity"))}
 }
 
+// writeIdentityError maps discovery failures to bounded HTTP errors and forwards a
+// validated Retry-After value for throttling.
 func writeIdentityError(w http.ResponseWriter, err error) {
 	var status *publicappstoreidentity.StatusError
 	switch {

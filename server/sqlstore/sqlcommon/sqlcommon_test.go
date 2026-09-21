@@ -16,6 +16,7 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/server/sqlstore/sqlite"
 )
 
+// TestRebindAndUpserts checks dialect-specific bind markers and upsert SQL.
 func TestRebindAndUpserts(t *testing.T) {
 	t.Parallel()
 	q := "SELECT ? WHERE a = ? AND b IN (?, ?)"
@@ -38,6 +39,7 @@ func TestRebindAndUpserts(t *testing.T) {
 	}
 }
 
+// TestMustSub checks filesystem subdirectory access and panic on an invalid directory.
 func TestMustSub(t *testing.T) {
 	t.Parallel()
 	fsys := fstest.MapFS{"migrations/0001_a.sql": {Data: []byte("-- +up\nSELECT 1;")}}
@@ -52,6 +54,7 @@ func TestMustSub(t *testing.T) {
 	sqlcommon.MustSub(fsys, "../escape")
 }
 
+// TestPoolApply checks database pool settings and preservation of defaults for zero options.
 func TestPoolApply(t *testing.T) {
 	t.Parallel()
 	db := openRaw(t)
@@ -93,6 +96,7 @@ func TestDialectMigrationsAgree(t *testing.T) {
 	}
 }
 
+// TestMigrationSetTable checks independent migration tables and rejection of invalid table names.
 func TestMigrationSetTable(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
@@ -142,12 +146,14 @@ func TestMigrationSetTable(t *testing.T) {
 // brokenFS fails every Open, so directory and file reads both error.
 type brokenFS struct{}
 
+// Open returns a synthetic filesystem-open failure.
 func (brokenFS) Open(string) (fs.File, error) { return nil, errors.New("disk on fire") }
 
 // unreadableFS lists one file whose Open fails. It deliberately does not
 // embed MapFS so fs.ReadFile cannot bypass Open.
 type unreadableFS struct{ m fstest.MapFS }
 
+// Open rejects the selected migration file and delegates other opens to the fixture filesystem.
 func (u unreadableFS) Open(name string) (fs.File, error) {
 	if name == "0001_a.sql" {
 		return nil, errors.New("unreadable")
@@ -155,6 +161,7 @@ func (u unreadableFS) Open(name string) (fs.File, error) {
 	return u.m.Open(name)
 }
 
+// TestMigrationLoadErrors checks propagation of migration filesystem and file-read failures.
 func TestMigrationLoadErrors(t *testing.T) {
 	t.Parallel()
 	if _, err := sqlcommon.LoadMigrations(brokenFS{}); !errors.Is(err, sqlcommon.ErrMigration) {
@@ -166,6 +173,7 @@ func TestMigrationLoadErrors(t *testing.T) {
 	}
 }
 
+// TestMigrationParsing checks migration file parsing and invalid migration definitions.
 func TestMigrationParsing(t *testing.T) {
 	t.Parallel()
 	bad := map[string]fstest.MapFS{
@@ -198,6 +206,7 @@ func TestMigrationParsing(t *testing.T) {
 	}
 }
 
+// openRaw opens a temporary raw SQLite database and registers cleanup.
 func openRaw(t *testing.T) *sql.DB {
 	t.Helper()
 	db, err := sql.Open("sqlite", sqlite.DSN(filepath.Join(t.TempDir(), "m.db"), sqlite.Options{}))
@@ -208,6 +217,8 @@ func openRaw(t *testing.T) *sql.DB {
 	return db
 }
 
+// TestMigrateAndRollback checks migration and rollback versions, failed statements, invalid sets,
+// and closed databases.
 func TestMigrateAndRollback(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()

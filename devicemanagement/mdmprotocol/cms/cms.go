@@ -46,6 +46,8 @@ type VerifyOptions struct {
 	ClockSkew time.Duration
 }
 
+// now returns the configured clock time, using the package default when no clock is
+// supplied.
 func (o VerifyOptions) now() time.Time {
 	if o.Now != nil {
 		return o.Now()
@@ -171,6 +173,7 @@ func verifyChain(p7 *pkcs7.PKCS7, signer *x509.Certificate, roots *x509.CertPool
 	return nil
 }
 
+// withinSkew checks whether a timestamp falls within the accepted clock-skew window.
 func withinSkew(e *pkcs7.SigningTimeNotValidError, skew time.Duration) bool {
 	return !e.SigningTime.Before(e.NotBefore.Add(-skew)) && !e.SigningTime.After(e.NotAfter.Add(skew))
 }
@@ -231,6 +234,8 @@ func marshalAttributes(attrs []rawAttribute) ([]byte, error) {
 	return asn1.MarshalWithParams(attrs, "set")
 }
 
+// hashFor selects a supported SHA digest by its CMS object identifier. Unknown
+// identifiers return ErrAlgorithm.
 func hashFor(oid asn1.ObjectIdentifier) (crypto.Hash, error) {
 	switch {
 	case oid.Equal(pkcs7.OIDDigestAlgorithmSHA1):
@@ -245,6 +250,8 @@ func hashFor(oid asn1.ObjectIdentifier) (crypto.Hash, error) {
 	return 0, fmt.Errorf("%w: digest %v", ErrAlgorithm, oid)
 }
 
+// signatureAlgorithm maps a CMS signature OID and digest to an X.509 signature algorithm,
+// rejecting unsupported signature OIDs.
 func signatureAlgorithm(oid asn1.ObjectIdentifier, h crypto.Hash) (x509.SignatureAlgorithm, error) {
 	rsaByHash := map[crypto.Hash]x509.SignatureAlgorithm{
 		crypto.SHA1: x509.SHA1WithRSA, crypto.SHA256: x509.SHA256WithRSA, crypto.SHA384: x509.SHA384WithRSA, crypto.SHA512: x509.SHA512WithRSA,

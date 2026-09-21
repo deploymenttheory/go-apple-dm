@@ -13,6 +13,7 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/server/adminauth/inmem"
 )
 
+// TestValidName checks accepted principal and role names and their length limits.
 func TestValidName(t *testing.T) {
 	for name, want := range map[string]bool{
 		"alice":     true,
@@ -43,6 +44,7 @@ func TestValidName(t *testing.T) {
 	}
 }
 
+// TestParseRoles checks sorted, deduplicated role parsing and rejection of malformed roles.
 func TestParseRoles(t *testing.T) {
 	got, err := adminauth.ParseRoles(" b , a ,, b ")
 	if err != nil {
@@ -59,6 +61,7 @@ func TestParseRoles(t *testing.T) {
 	}
 }
 
+// TestPrincipalCovers checks principal role containment and root-principal coverage rules.
 func TestPrincipalCovers(t *testing.T) {
 	root := adminauth.Principal{Name: "root", Root: true}
 	ops := adminauth.Principal{Name: "ops", Roles: []string{"a", "b"}}
@@ -78,6 +81,7 @@ func TestPrincipalCovers(t *testing.T) {
 	}
 }
 
+// TestPrincipalActive checks principal activity across revocation and expiry boundaries.
 func TestPrincipalActive(t *testing.T) {
 	now := t0
 	revoked := adminauth.Principal{Name: "a"}
@@ -156,6 +160,7 @@ func TestCompileRejectsStoredGarbage(t *testing.T) {
 	}
 }
 
+// TestValidateNames checks policy-name validation.
 func TestValidateNames(t *testing.T) {
 	reg := registry(t)
 	if err := adminauth.Validate(reg, adminauth.Policy{Name: "bad name", Source: "permit (principal, action, resource);"}); !errors.Is(err, adminauth.ErrInvalid) {

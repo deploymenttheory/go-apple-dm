@@ -31,6 +31,7 @@ func acmeProfile() enroll.Profile {
 	}
 }
 
+// TestACMEProfileRoundTrip checks ACME profile round trip.
 func TestACMEProfileRoundTrip(t *testing.T) {
 	p := acmeProfile()
 	built, err := p.Build()
@@ -87,6 +88,7 @@ func TestACMEProfileRoundTrip(t *testing.T) {
 	}
 }
 
+// TestACMEProfileValidation checks ACME profile validation, including valid combinations.
 func TestACMEProfileValidation(t *testing.T) {
 	// Apple's rules about key type, size, hardware binding, and
 	// attestation. A profile that breaks one installs and then fails on the
@@ -164,6 +166,7 @@ func TestACMEProfileValidation(t *testing.T) {
 	})
 }
 
+// TestExactlyOneIdentitySource checks exactly one identity source.
 func TestExactlyOneIdentitySource(t *testing.T) {
 	p := acmeProfile()
 	p.SCEP = &enroll.SCEP{URL: "https://mdm.example/scep"}

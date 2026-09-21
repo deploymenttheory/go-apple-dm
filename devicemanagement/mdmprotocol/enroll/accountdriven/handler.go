@@ -62,11 +62,16 @@ type HTTPError struct {
 	Err         error
 }
 
+// Error returns the diagnostic message for this error.
 func (e *HTTPError) Error() string { return fmt.Sprintf("accountdriven: http %d: %v", e.Status, e.Err) }
+
+// Unwrap exposes the wrapped cause for errors.Is and errors.As.
 func (e *HTTPError) Unwrap() error { return e.Err }
 
 // Authenticator produces the challenge for an unauthenticated attempt.
 type Authenticator interface {
+	// Challenge returns the authentication challenge appropriate to the incoming enrollment
+	// request and parsed device information.
 	Challenge(ctx context.Context, r *http.Request, info *DeviceInfo) (Challenge, error)
 }
 
@@ -170,6 +175,8 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	h.serveProfile(w, r, id, info)
 }
 
+// challenge obtains an authentication challenge and writes the account-driven enrollment
+// response.
 func (h *Handler) challenge(w http.ResponseWriter, r *http.Request, info *DeviceInfo) {
 	c, err := h.cfg.Auth.Challenge(r.Context(), r, info)
 	if err != nil {

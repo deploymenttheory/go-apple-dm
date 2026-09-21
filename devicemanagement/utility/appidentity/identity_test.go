@@ -15,6 +15,7 @@ import (
 
 const metadata = "Identifier=com.example.signed\nCDHash=0123456789abcdef0123456789abcdef01234567\nTeamIdentifier=EXAMPLETEAM\ndesignated => identifier \"com.example.signed\" and anchor apple generic\n"
 
+// fixture creates parent directories and writes an application identity fixture file.
 func fixture(t *testing.T, path string, data []byte) string {
 	t.Helper()
 	if err := os.MkdirAll(filepath.Dir(path), 0o700); err != nil {
@@ -26,6 +27,7 @@ func fixture(t *testing.T, path string, data []byte) string {
 	return path
 }
 
+// bundle creates a temporary application bundle with the supplied metadata.
 func bundle(t *testing.T, meta string) string {
 	t.Helper()
 	root := filepath.Join(t.TempDir(), "Example.app")
@@ -36,6 +38,8 @@ func bundle(t *testing.T, meta string) string {
 
 const bundlePlist = `<?xml version="1.0"?><plist version="1.0"><dict><key>CFBundleIdentifier</key><string>com.example.bundle</string><key>CFBundleExecutable</key><string>Example</string><key>CFBundleName</key><string>Example</string><key>CFBundleShortVersionString</key><string>1.2</string></dict></plist>`
 
+// goodRunner simulates architecture and signature metadata commands, with a failing requirement
+// check.
 func goodRunner(_ context.Context, tool string, args ...string) (string, error) {
 	if tool == "/usr/bin/lipo" {
 		return "x86_64 arm64e.x1", nil
@@ -49,6 +53,7 @@ func goodRunner(_ context.Context, tool string, args ...string) (string, error) 
 	return "", nil
 }
 
+// TestInspectBundleAndArchitectures checks inspect bundle and architectures.
 func TestInspectBundleAndArchitectures(t *testing.T) {
 	root := bundle(t, bundlePlist)
 	var displayed []string
@@ -82,6 +87,7 @@ func TestInspectBundleAndArchitectures(t *testing.T) {
 	}
 }
 
+// TestInspectionFailures checks application identity inspection error paths.
 func TestInspectionFailures(t *testing.T) {
 	file := fixture(t, filepath.Join(t.TempDir(), "binary"), nil)
 	for _, tc := range []struct {
@@ -122,6 +128,7 @@ func TestInspectionFailures(t *testing.T) {
 	}
 }
 
+// TestBundleFailures checks rejection of malformed bundle metadata and directories used as plists.
 func TestBundleFailures(t *testing.T) {
 	for _, data := range []string{"not plist", strings.Repeat("a", maxMetadata+1), strings.ReplaceAll(bundlePlist, "<string>Example</string>", "<string>../escape</string>"), strings.ReplaceAll(bundlePlist, "com.example.bundle", "")} {
 		_, err := resolve(bundle(t, data))
@@ -146,6 +153,7 @@ func TestBundleFailures(t *testing.T) {
 	}
 }
 
+// TestSignatureObservations checks recorded signature observations from the tool runner.
 func TestSignatureObservations(t *testing.T) {
 	for _, tc := range []struct {
 		name                              string
@@ -208,6 +216,7 @@ func TestSignatureObservations(t *testing.T) {
 	}
 }
 
+// TestMetadataAndOutputLimits checks metadata and output limits.
 func TestMetadataAndOutputLimits(t *testing.T) {
 	for _, s := range []string{metadata + "Identifier=other\n", strings.ReplaceAll(metadata, "0123456789abcdef0123456789abcdef01234567", "xx"), "Identifier=x\n", strings.ReplaceAll(metadata, "Identifier=com.example.signed\n", "")} {
 		if _, err := parseMetadata(s); !errors.Is(err, ErrInspect) {
@@ -226,6 +235,8 @@ func TestMetadataAndOutputLimits(t *testing.T) {
 	}
 }
 
+// TestNativeInspect checks native application identity inspection produces architecture-specific
+// observations.
 func TestNativeInspect(t *testing.T) {
 	if runtime.GOOS != "darwin" {
 		if _, err := Inspect(t.Context(), "ignored"); !errors.Is(err, ErrUnsupported) {
@@ -247,6 +258,7 @@ func TestNativeInspect(t *testing.T) {
 	}
 }
 
+// TestToolRunner checks bounded tool output and reporting of unavailable tools.
 func TestToolRunner(t *testing.T) {
 	exe, err := os.Executable()
 	if err != nil {
@@ -271,6 +283,7 @@ func TestToolRunner(t *testing.T) {
 	}
 }
 
+// TestToolHelper acts as the subprocess fixture for tool-runner output and failure tests.
 func TestToolHelper(t *testing.T) {
 	if os.Getenv("GO_APPIDENTITY_TEST_HELPER") == "" {
 		return

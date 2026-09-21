@@ -21,6 +21,8 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/server/internal/app"
 )
 
+// TestDEP checks DEP admin operations, status, worker execution, environment configuration, and
+// persistent storage.
 func TestDEP(t *testing.T) {
 	ctx := context.Background()
 	t.Run("AdminLifecycle", func(t *testing.T) {

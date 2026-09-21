@@ -54,8 +54,10 @@ type PublicACMEStatus struct {
 	Failures    int       `json:"failures"`
 }
 
+// acmeKey constructs the namespaced key for ACME state.
 func acmeKey(id string) string { return "pki/lifecycle/public-acme/" + id }
 
+// readACME loads and decodes the persistent public-ACME account and order state.
 func readACME(ctx context.Context, s state.Reader, id string) (publicACMERecord, error) {
 	var v publicACMERecord
 	r, err := s.Get(ctx, acmeKey(id))
@@ -66,6 +68,8 @@ func readACME(ctx context.Context, s state.Reader, id string) (publicACMERecord,
 	return v, err
 }
 
+// writeACME encodes public-ACME state, including private account material, into the
+// supplied transaction.
 func writeACME(ctx context.Context, tx state.Tx, id string, v publicACMERecord) error {
 	b, err := json.Marshal(v)
 	if err != nil {
@@ -128,6 +132,8 @@ func (m *Manager) ConfigurePublicACME(ctx context.Context, id string, o PublicAC
 	})
 }
 
+// PublicACMEStatus returns persisted HTTPS issuance settings and retry status without
+// account keys. It returns ErrNotFound when ACME has not been configured for the identity.
 func (m *Manager) PublicACMEStatus(ctx context.Context, id string) (PublicACMEStatus, error) {
 	v, err := readACME(ctx, m.Store, id)
 	return PublicACMEStatus{PublicACMEOptions: v.PublicACMEOptions, Revision: v.Revision, OrderURL: v.OrderURL, NextAttempt: v.NextAttempt, Failures: v.Failures}, err

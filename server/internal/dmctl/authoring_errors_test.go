@@ -16,6 +16,8 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/server/internal/dmctl/adminclient"
 )
 
+// TestAuthoringCommandsRejectInvalidInputBeforeSending checks authoring commands reject invalid
+// input before sending.
 func TestAuthoringCommandsRejectInvalidInputBeforeSending(t *testing.T) {
 	var calls atomic.Int32
 	srv := httptest.NewServer(http.HandlerFunc(func(http.ResponseWriter, *http.Request) { calls.Add(1) }))
@@ -75,6 +77,7 @@ func TestAuthoringCommandsRejectInvalidInputBeforeSending(t *testing.T) {
 	}
 }
 
+// TestAuthoringListingsAndProfileFile checks authoring listings and profile file.
 func TestAuthoringListingsAndProfileFile(t *testing.T) {
 	const profile = "profile\x00bytes"
 	var uploaded atomic.Bool
@@ -113,6 +116,8 @@ func TestAuthoringListingsAndProfileFile(t *testing.T) {
 	}
 }
 
+// TestAuthoringCommandsPropagateServerAndOutputFailures checks authoring commands propagate server
+// and output failures.
 func TestAuthoringCommandsPropagateServerAndOutputFailures(t *testing.T) {
 	var status atomic.Int32
 	status.Store(http.StatusServiceUnavailable)

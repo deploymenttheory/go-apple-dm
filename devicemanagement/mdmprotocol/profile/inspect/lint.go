@@ -38,6 +38,7 @@ type Report struct {
 	Issues    []Issue `json:"issues"`
 }
 
+// add appends a diagnostic with its payload path, severity, rule, and message.
 func (r *Report) add(path, severity, rule, message string) {
 	r.Issues = append(r.Issues, Issue{path, severity, rule, message})
 }
@@ -152,6 +153,8 @@ func resolvePayload(typ string, keys map[string]any) profiles.Payload {
 	return profile.DefaultResolver(typ, keys)
 }
 
+// verify unwraps and verifies CMS content when present, recording signature or trust
+// failures in the report rather than returning an error value.
 func (r *Report) verify(data []byte, o Options) ([]byte, bool) {
 	if !cms.IsSigned(data) {
 		if o.RequireSignature {
@@ -178,6 +181,7 @@ func (r *Report) verify(data []byte, o Options) ([]byte, bool) {
 	return content, true
 }
 
+// validate flattens joined validation failures into path-qualified profile diagnostics.
 func (r *Report) validate(path string, err error) {
 	if err == nil {
 		return
@@ -203,6 +207,7 @@ func (r *Report) validate(path string, err error) {
 	)
 }
 
+// splitKeys separates common payload-envelope keys from payload-specific content.
 func splitKeys(raw map[string]any) (map[string]any, map[string]any) {
 	common, body := map[string]any{}, map[string]any{}
 	typ := reflect.TypeFor[profiles.CommonPayloadKeys]()
@@ -216,6 +221,7 @@ func splitKeys(raw map[string]any) (map[string]any, map[string]any) {
 	return common, body
 }
 
+// join joins a nested field path for diagnostics.
 func join(prefix, key string) string {
 	if prefix == "" {
 		return key
@@ -223,6 +229,8 @@ func join(prefix, key string) string {
 	return prefix + "." + key
 }
 
+// fieldType finds the Go field type associated with a plist key on a struct or pointer-to-
+// struct type.
 func fieldType(typ reflect.Type, key string) (reflect.Type, bool) {
 	for typ.Kind() == reflect.Pointer {
 		typ = typ.Elem()

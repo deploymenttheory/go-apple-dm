@@ -205,6 +205,7 @@ func ParseChain(ders [][]byte) (*Attestation, error) {
 	return fromDER(ders)
 }
 
+// fromDER parses attestation certificate bytes into the evidence used by policy validation.
 func fromDER(ders [][]byte) (*Attestation, error) {
 	if len(ders) > MaxChain {
 		return nil, fmt.Errorf("%w: %d certificates, limit %d", ErrFormat, len(ders), MaxChain)
@@ -341,6 +342,8 @@ func (a *Attestation) Verify(o VerifyOptions) error {
 	return nil
 }
 
+// verifyChain verifies the attestation chain against the configured trust anchors and
+// verification time.
 func (a *Attestation) verifyChain(o VerifyOptions) error {
 	anchorCerts := o.Anchors
 	if len(anchorCerts) == 0 {

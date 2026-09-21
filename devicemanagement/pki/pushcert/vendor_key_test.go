@@ -10,6 +10,7 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/testpki"
 )
 
+// TestVendorPortalRejectsNonRSAIdentity checks that vendor portal rejects non RSA identity.
 func TestVendorPortalRejectsNonRSAIdentity(t *testing.T) {
 	ca, err := testpki.NewCA("vendor test authority")
 	if err != nil {

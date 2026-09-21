@@ -8,7 +8,7 @@ feed, while audit readers need reviewed summaries.
 
 ## Decision
 
-The projection registry in `server/eventsink` continues to select fields for slog,
+The projection registry in `server/eventsink` selects fields for slog,
 the persistent event journal and audit. Unknown internal types emit metadata only;
 registering a nil projection explicitly selects metadata only.
 
@@ -21,17 +21,18 @@ explicit catalogue, payload policy, administration and receiver examples.
 
 Managed subscriptions require SQL and storage encryption. Only enabled, matching
 subscriptions retain native captures. Summary delivery uses reviewed projections;
-full decoded JSON and original bodies require root-managed subscriptions. Cedar
-permissions alone cannot create or mutate sensitive destinations, retrieve their
-credentials, or retry/replay their captures. Subscription URLs and keys are encrypted.
+full decoded JSON and original bodies require explicit sensitive-operation grants
+in addition to the ordinary route grant. `manageSensitiveWebhooks` controls
+destination operations and `replaySensitiveWebhooks` controls sensitive retry/replay.
+Root receives no implicit fleet grants. Subscription URLs and keys are encrypted.
 Receiver payload credentials are separate from administrator credentials and scoped
 to the current subscription revision.
 
 Participating local SQL mutations and server-outcome capture commit together through
 `event.Run`. Capture failure rolls back the local operation. Public exchange capture
 runs after the protocol handler and records observation failure without changing the
-response. Unverified claims are distinct from verified subjects. Correlation is
-preserved across authenticated private DDM forwarding; delivery order is unspecified.
+response. Unverified claims are distinct from verified subjects. Correlation groups observations from one request; the reference-server source is
+`device-management`. Delivery order is unspecified.
 
 Encrypted retained messages use the existing outbox's leases and retry worker. Outbox
 markers contain only scheduling metadata. HTTPS transport verifies trust and hostname,
@@ -47,15 +48,13 @@ expiry or reconstruct data from current device state. Retention defaults to seve
 days for bodies and thirty days for delivery metadata. Credential/payload access and
 per-attempt bookkeeping do not recursively produce webhook occurrences.
 
-`DM_WEBHOOK_URL` and `DM_WEBHOOK_HMAC_KEY` fail startup with migration instructions.
-Old delivery history is retained without being rerouted. MicroMDM compatibility is
-outside the native contract. In-memory applications can still use ephemeral slog,
+In-memory applications can still use ephemeral slog,
 audit and direct bus subscribers; managed webhooks require persistent encrypted SQL.
 
 ## Rationale
 
 Audit projections and sensitive workflow export have different disclosure contracts.
-Root-only sensitive destinations preserve that distinction across configuration,
+Separately authorized sensitive destinations preserve that distinction across configuration,
 credentials and replay. A native envelope covers polling, failed exchanges and
 non-MDM server outcomes without constraining the protocol library to a workflow API.
 Persisted capture and independent delivery avoid adding receiver latency to a device
@@ -80,7 +79,7 @@ internal data and remain responsible for their own disclosure policy.
 ## Verification
 
 Receiver fixtures compare actual delivered JSON and verify signatures. Tests cover
-transaction rollback, sensitive root gates, retained snapshot replay, revision and
+transaction rollback, sensitive permission gates, retained snapshot replay, revision and
 credential isolation, expiration, restart, concurrent SQL leases, database failures,
 protocol observations and unchanged replies. PostgreSQL, MySQL and SQLite exercise
 the native store. Existing projection, audit, bus and service suites preserve their
@@ -90,6 +89,7 @@ input independently.
 ## References
 
 - [Native webhook guide](../../operations/webhooks.md)
+- [Reference-server authorization](../../../server/internal/app/webhooks.go)
 - [Webhook implementation and contract](../../../server/webhook)
 - [Persistent outbox](../../../server/eventstore)
 - [Safe projections](../../../server/eventsink)

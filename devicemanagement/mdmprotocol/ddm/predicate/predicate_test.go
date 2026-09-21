@@ -122,6 +122,8 @@ var parseCases = []parseCase{
 	{"tight compound", `@property(a)==1&&@property(b)==2||!@property(c)==3`, `@property(a) == 1 AND @property(b) == 2 OR NOT @property(c) == 3`},
 }
 
+// TestParseTable checks parsed expression trees, canonical strings, and preservation of original
+// source.
 func TestParseTable(t *testing.T) {
 	t.Parallel()
 	for _, tc := range parseCases {
@@ -141,6 +143,7 @@ func TestParseTable(t *testing.T) {
 	}
 }
 
+// propEq builds a numeric property-equality expression.
 func propEq(key string, n float64) expr {
 	return &compareExpr{left: &propertyRef{key: key}, op: cmpEq, right: &literal{kind: litNumber, number: n}}
 }
@@ -291,6 +294,7 @@ var errorCases = []errorCase{
 	{"modifier n", `@property(a) CONTAINS[n] 'x'`, ErrUnsupported, "modifier [n]", 21},
 }
 
+// TestParseErrors checks predicate syntax errors, wrapped causes, messages, and byte offsets.
 func TestParseErrors(t *testing.T) {
 	t.Parallel()
 	for _, tc := range errorCases {
@@ -339,6 +343,8 @@ var roundTripEnv = MapEnv{
 	},
 }
 
+// TestStringRoundTrip checks that canonical predicate strings preserve the tree and evaluation
+// when parsed again.
 func TestStringRoundTrip(t *testing.T) {
 	t.Parallel()
 	inputs := make([]string, 0, len(parseCases)+len(evalCases))
@@ -372,6 +378,7 @@ func TestStringRoundTrip(t *testing.T) {
 	}
 }
 
+// TestStringNil checks empty strings for nil and zero-value predicates.
 func TestStringNil(t *testing.T) {
 	t.Parallel()
 	var p *Predicate
@@ -386,6 +393,7 @@ func TestStringNil(t *testing.T) {
 	}
 }
 
+// TestMustParsePanics checks that MustParse panics with the parse error.
 func TestMustParsePanics(t *testing.T) {
 	t.Parallel()
 	defer func() {
@@ -401,6 +409,7 @@ func TestMustParsePanics(t *testing.T) {
 	MustParse(`SELF == 1`)
 }
 
+// TestMustParse checks MustParse with a valid predicate.
 func TestMustParse(t *testing.T) {
 	t.Parallel()
 	if got := MustParse(`1==0`).String(); got != "1 == 0" {
@@ -408,6 +417,7 @@ func TestMustParse(t *testing.T) {
 	}
 }
 
+// TestValidate checks validation success and syntax and unsupported-expression errors.
 func TestValidate(t *testing.T) {
 	t.Parallel()
 	if err := Validate(`@property(shard) <= 75`); err != nil {
@@ -422,6 +432,7 @@ func TestValidate(t *testing.T) {
 	}
 }
 
+// TestInternalHelpers checks internal operator and token descriptions and classification.
 func TestInternalHelpers(t *testing.T) {
 	t.Parallel()
 	for op := cmpEq; op <= cmpEndsWith; op++ {

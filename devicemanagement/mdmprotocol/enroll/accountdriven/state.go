@@ -13,14 +13,18 @@ import (
 // Implementations must revalidate expiry and first use under the transaction lock.
 type AtomicTokenStore interface {
 	TokenStore
+	// Exchange rechecks expiry and first use under the transaction lock, applies validate,
+	// and atomically consumes the token and installs its replacements.
 	Exchange(ctx context.Context, hash string, at time.Time, validate func(Record) error, replacements map[string]Record) error
 }
 
 // StateTokenStore implements TokenStore over an atomic memory or SQL backend.
 type StateTokenStore struct{ Backend state.Store }
 
+// tokenKey constructs the namespaced key for token state.
 func tokenKey(hash string) string { return "account/token/" + hash }
 
+// readToken loads and decodes an enrollment token record from state storage.
 func readToken(ctx context.Context, r state.Reader, hash string) (Record, error) {
 	v, err := r.Get(ctx, tokenKey(hash))
 	if errors.Is(err, state.ErrNotFound) {
@@ -34,6 +38,7 @@ func readToken(ctx context.Context, r state.Reader, hash string) (Record, error)
 	return rec, err
 }
 
+// putToken encodes an enrollment token record into the current transaction.
 func putToken(ctx context.Context, tx state.Tx, hash string, rec Record) error {
 	data, err := json.Marshal(rec)
 	if err != nil {

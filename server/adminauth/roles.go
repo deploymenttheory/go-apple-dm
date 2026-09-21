@@ -83,6 +83,9 @@ func ValidateReferences(ctx context.Context, store Store, p Policy) error {
 	return nil
 }
 
+// PutRole requires root authority and creates or updates a named role, preserving its
+// creation time and advancing the policy version. Role membership alone grants no
+// operational permission.
 func (m *Manager) PutRole(ctx context.Context, actor Principal, role Role) (Role, error) {
 	if err := m.canAdminister(actor); err != nil {
 		return Role{}, err
@@ -93,14 +96,18 @@ func (m *Manager) PutRole(ctx context.Context, actor Principal, role Role) (Role
 	return m.store.PutRole(ctx, role, m.clock.Now())
 }
 
+// Role returns the named managed role, or ErrNotFound when no such role exists.
 func (m *Manager) Role(ctx context.Context, name string) (Role, error) {
 	return m.store.Role(ctx, name)
 }
 
+// Roles returns a page of managed roles in name order using an exclusive cursor.
 func (m *Manager) Roles(ctx context.Context, page Page) (Result[Role], error) {
 	return m.store.Roles(ctx, page)
 }
 
+// DeleteRole requires root authority and removes an unreferenced role. Principal membership
+// or a policy reference returns ErrConflict; an absent role returns ErrNotFound.
 func (m *Manager) DeleteRole(ctx context.Context, actor Principal, name string) error {
 	if err := m.canAdminister(actor); err != nil {
 		return err
@@ -124,6 +131,8 @@ func (m *Manager) Bootstrap(ctx context.Context, name string, expires time.Time)
 	return p, token, nil
 }
 
+// Initialized reports whether principal initialization has permanently consumed the
+// bootstrap opportunity.
 func (m *Manager) Initialized(ctx context.Context) (bool, error) { return m.store.Initialized(ctx) }
 
 // ValidatePolicy checks without persisting or changing the active policy set.

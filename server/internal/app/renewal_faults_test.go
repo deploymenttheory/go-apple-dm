@@ -23,6 +23,7 @@ type setupStateFault struct {
 	afterUpdate func()
 }
 
+// Get runs the injected state-read fault before delegating to the store.
 func (s *setupStateFault) Get(ctx context.Context, key string) (state.Record, error) {
 	if err := s.fail("read", key); err != nil {
 		return state.Record{}, err
@@ -30,6 +31,7 @@ func (s *setupStateFault) Get(ctx context.Context, key string) (state.Record, er
 	return s.Store.Get(ctx, key)
 }
 
+// List runs the injected state-list fault before delegating to the store.
 func (s *setupStateFault) List(
 	ctx context.Context,
 	prefix, after string,
@@ -41,6 +43,7 @@ func (s *setupStateFault) List(
 	return s.Store.List(ctx, prefix, after, limit)
 }
 
+// Update wraps a state transaction with faults and invokes the post-update hook after success.
 func (s *setupStateFault) Update(ctx context.Context, keys []string, f func(state.Tx) error) error {
 	err := s.Store.Update(
 		ctx,
@@ -58,6 +61,7 @@ type setupFaultTx struct {
 	fail func(string, string) error
 }
 
+// Get runs the injected state-read fault before delegating to the transaction.
 func (tx setupFaultTx) Get(ctx context.Context, key string) (state.Record, error) {
 	if err := tx.fail("read", key); err != nil {
 		return state.Record{}, err
@@ -65,6 +69,7 @@ func (tx setupFaultTx) Get(ctx context.Context, key string) (state.Record, error
 	return tx.Tx.Get(ctx, key)
 }
 
+// Put runs the injected state-write fault before delegating to the transaction.
 func (tx setupFaultTx) Put(ctx context.Context, record state.Record) error {
 	if err := tx.fail("write", record.Key); err != nil {
 		return err
@@ -72,6 +77,7 @@ func (tx setupFaultTx) Put(ctx context.Context, record state.Record) error {
 	return tx.Tx.Put(ctx, record)
 }
 
+// List runs the injected state-list fault before delegating to the transaction.
 func (tx setupFaultTx) List(
 	ctx context.Context,
 	prefix, after string,
@@ -83,6 +89,8 @@ func (tx setupFaultTx) List(
 	return tx.Tx.List(ctx, prefix, after, limit)
 }
 
+// TestManagedServicesPropagateEveryCertificateReadFailure checks managed services propagate every
+// certificate read failure.
 func TestManagedServicesPropagateEveryCertificateReadFailure(t *testing.T) {
 	for _, name := range []string{"pairs", "issuer", "registry", "profile trust", "service config", "status", "retire HTTPS"} {
 		t.Run(name, func(t *testing.T) {
@@ -146,6 +154,8 @@ func TestManagedServicesPropagateEveryCertificateReadFailure(t *testing.T) {
 	}
 }
 
+// TestMigrationOperationsPropagateEnrollmentAndRepositoryFailures checks migration operations
+// propagate enrollment and repository failures.
 func TestMigrationOperationsPropagateEnrollmentAndRepositoryFailures(t *testing.T) {
 	a, e, target, job := renewalFixture(t)
 	ctx := t.Context()
@@ -204,6 +214,8 @@ func TestMigrationOperationsPropagateEnrollmentAndRepositoryFailures(t *testing.
 	a.protocol, a.Certificates.Store = protocol, protocol
 }
 
+// TestDeviceRenewalFinalCommitFencesStaleWorkers checks device renewal final commit fences stale
+// workers.
 func TestDeviceRenewalFinalCommitFencesStaleWorkers(t *testing.T) {
 	for _, mode := range []string{"read", "corrupt", "generation", "write"} {
 		t.Run(mode, func(t *testing.T) {
@@ -263,6 +275,8 @@ func TestDeviceRenewalFinalCommitFencesStaleWorkers(t *testing.T) {
 	}
 }
 
+// TestReconciliationPagesTerminalAndMissingDevices checks reconciliation pages terminal and
+// missing devices.
 func TestReconciliationPagesTerminalAndMissingDevices(t *testing.T) {
 	a, _, _, _ := renewalFixture(t)
 	ctx := t.Context()

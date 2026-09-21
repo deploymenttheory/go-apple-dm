@@ -22,6 +22,8 @@ const (
 	EnvTrustedProxies      = "DM_TRUSTED_PROXIES"
 )
 
+// parseSecurityEnv overlays admission, revocation and quota configuration from environment
+// values, rejecting malformed fields.
 func parseSecurityEnv(get func(string) string, c *Config) error {
 	c.Enroll.AdmissionFile = get(EnvEnrollmentPolicy)
 	if raw := get(EnvPKIRevocation); raw != "" {
@@ -101,6 +103,8 @@ func parseSecurityEnv(get func(string) string, c *Config) error {
 	return nil
 }
 
+// securityConfigFromEnv applies security environment overrides and validates the complete
+// resulting configuration.
 func securityConfigFromEnv(get func(string) string, cfg Config) (Config, error) {
 	if err := parseSecurityEnv(get, &cfg); err != nil {
 		return Config{}, err

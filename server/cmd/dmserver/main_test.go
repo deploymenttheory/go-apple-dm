@@ -16,6 +16,7 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/server/internal/buildinfo"
 )
 
+// TestVersionWithoutSetup checks that version output does not require loading server setup.
 func TestVersionWithoutSetup(t *testing.T) {
 	for _, flag := range []string{"--version", "-version"} {
 		t.Run(flag, func(t *testing.T) {

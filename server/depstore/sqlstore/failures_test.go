@@ -80,6 +80,7 @@ func TestClosedDatabaseSurfaces(t *testing.T) {
 	}
 }
 
+// TestMigrateDirect checks direct DEP migration application and reported schema version.
 func TestMigrateDirect(t *testing.T) {
 	ctx := context.Background()
 	db := openDB(t)

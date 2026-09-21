@@ -521,6 +521,8 @@ func (c *Client) RemoveFromBlueprint(ctx context.Context, id string, rel Bluepri
 	return c.linkBlueprint(ctx, http.MethodDelete, id, rel, ids, requestOptions{})
 }
 
+// linkBlueprint updates a blueprint relationship using the relationship endpoint and
+// selected method.
 func (c *Client) linkBlueprint(ctx context.Context, method, id string, rel BlueprintRelationship, ids []string, o requestOptions) error {
 	if err := requireID("blueprint id", id); err != nil {
 		return err

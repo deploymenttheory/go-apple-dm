@@ -26,6 +26,7 @@ type Capabilities struct {
 	ObservedAt   time.Time
 }
 
+// observed maps an optional reported flag to unknown, true, or false capability state.
 func observed(p *bool) Capability {
 	if p == nil {
 		return CapabilityUnknown

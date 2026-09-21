@@ -177,6 +177,7 @@ func (d *Device) connectIdentity() map[string]any {
 	return map[string]any{"UDID": d.UDID}
 }
 
+// checkinFields builds the device identity fields shared by simulator check-in messages.
 func (d *Device) checkinFields(messageType string) map[string]any {
 	if d.EnrollmentID != "" {
 		// User Enrollment: the device identifies itself by EnrollmentID and
@@ -459,6 +460,7 @@ func (d *Device) SharedIPadUser(shortName, longName string) *User {
 	return d.User(mdm.SharedIPadUserID, shortName, longName)
 }
 
+// identity builds the parent-device and user identifiers for a user-channel check-in.
 func (u *User) identity() map[string]any {
 	if u.Device.EnrollmentID != "" {
 		return map[string]any{"EnrollmentID": u.Device.EnrollmentID, "EnrollmentUserID": u.UserID}
@@ -479,7 +481,6 @@ func (u *User) Authenticate(ctx context.Context, digestResponse string) ([]byte,
 	return u.Device.checkin(ctx, f)
 }
 
-// TokenUpdate sends the user channel TokenUpdate.
 // CheckOut sends CheckOut on the user channel: the server disables this
 // user only (decision record 0029).
 func (u *User) CheckOut(ctx context.Context) error {
@@ -490,6 +491,9 @@ func (u *User) CheckOut(ctx context.Context) error {
 	return err
 }
 
+// TokenUpdate sends the user channel identifiers and push credentials to the device
+// check-in endpoint. Missing push magic and token bytes are initialized and retained for
+// subsequent calls.
 func (u *User) TokenUpdate(ctx context.Context) error {
 	if u.PushMagic == "" {
 		u.PushMagic = "magic-" + u.Device.UDID + "-" + u.UserID

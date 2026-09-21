@@ -17,6 +17,7 @@ type DeclarationRef struct {
 	ServerToken string
 }
 
+// compareRefs orders declaration references deterministically before token calculation.
 func compareRefs(a, b DeclarationRef) int {
 	return cmp.Or(cmp.Compare(a.Kind, b.Kind), cmp.Compare(a.Identifier, b.Identifier), cmp.Compare(a.ServerToken, b.ServerToken))
 }

@@ -36,6 +36,8 @@ func (a *App) startHTTPSTrustRollover(
 	return job, wrapError(err)
 }
 
+// advanceHTTPSTrust advances persisted device trust migrations and activates the
+// replacement HTTPS trust only after the required cohort is ready.
 func (a *App) advanceHTTPSTrust(ctx context.Context, job lifecycle.Rollover) error {
 	if job.Phase == "complete" {
 		return nil
@@ -118,6 +120,8 @@ func (a *App) advanceHTTPSTrust(ctx context.Context, job lifecycle.Rollover) err
 	return a.activateHTTPSTrust(ctx, job)
 }
 
+// activateHTTPSTrust activates the replacement trust CA and reconciles the HTTPS leaf,
+// allowing recovery after partial activation.
 func (a *App) activateHTTPSTrust(ctx context.Context, job lifecycle.Rollover) error {
 	// Every existing enabled device has confirmed trust. New enrollment profiles
 	// already include pending HTTPS trust, closing the cohort discovery window.
@@ -201,6 +205,8 @@ func (a *App) activateHTTPSTrust(ctx context.Context, job lifecycle.Rollover) er
 	return wrapError(a.Certificates.CompleteRollover(ctx, job.IssuerID, job.To))
 }
 
+// progressHTTPSTrust advances one device's trust-installation command, recording
+// acknowledgment, failure or disabled enrollment on the migration.
 func (a *App) progressHTTPSTrust(
 	ctx context.Context,
 	job lifecycle.Rollover,
@@ -285,6 +291,8 @@ func (a *App) progressHTTPSTrust(
 	return nil
 }
 
+// retireHTTPSTrust refuses to retire a CA still signing the active HTTPS leaf, then
+// delegates retirement to the lifecycle manager.
 func (a *App) retireHTTPSTrust(ctx context.Context, id, rev string) (lifecycle.Identity, error) {
 	material, err := a.Certificates.LoadMaterial(ctx, id, rev)
 	if err != nil {

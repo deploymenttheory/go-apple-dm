@@ -20,6 +20,8 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/testpki"
 )
 
+// TestServiceConfigTrustIsIndependentFromIdentity checks service config trust is independent from
+// identity.
 func TestServiceConfigTrustIsIndependentFromIdentity(t *testing.T) {
 	ca, _ := testpki.NewCA("HTTPS CA")
 	identity, _ := testpki.NewCA("identity CA")
@@ -105,6 +107,8 @@ func TestServiceConfigTrustIsIndependentFromIdentity(t *testing.T) {
 	}
 }
 
+// TestServiceConfigRejectsInvalidTrustAndURL checks that service config rejects invalid trust and
+// URL.
 func TestServiceConfigRejectsInvalidTrustAndURL(t *testing.T) {
 	ca, _ := testpki.NewCA("ca")
 	leaf, _ := ca.Issue("leaf", time.Now().Add(-time.Minute))
@@ -135,6 +139,8 @@ func TestServiceConfigRejectsInvalidTrustAndURL(t *testing.T) {
 	}
 }
 
+// TestProfileMetadataPersistsAndRedactsAuthorization checks that profile metadata persists and
+// redacts authorization.
 func TestProfileMetadataPersistsAndRedactsAuthorization(t *testing.T) {
 	ca, _ := testpki.NewCA("ca")
 	st := state.NewMemory()
@@ -192,6 +198,7 @@ func TestProfileMetadataPersistsAndRedactsAuthorization(t *testing.T) {
 	}
 }
 
+// allowTestAdmission grants fixture admission for one hour.
 func allowTestAdmission(context.Context, AdmissionRequest) (AdmissionGrant, error) {
 	return AdmissionGrant{ExpiresAt: time.Now().Add(time.Hour)}, nil
 }

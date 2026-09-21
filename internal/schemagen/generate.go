@@ -192,6 +192,7 @@ func generatedFile(root *os.Root, path, name string) (bool, error) {
 // ErrVerify is returned by Verify when the tree is out of date.
 var ErrVerify = errors.New("schemagen: verify failed")
 
+// cloneFiles copies the file map while sharing its byte slices with the original.
 func cloneFiles(f Files) Files {
 	out := make(Files, len(f))
 	maps.Copy(out, f)

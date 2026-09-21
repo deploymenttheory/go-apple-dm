@@ -33,6 +33,8 @@ func TestEnrollmentWithAnIndependentClient(t *testing.T) {
 	}
 }
 
+// testIndependentClient checks an independent ACME client's complete attested issuance flow,
+// including optional registration recovery.
 func testIndependentClient(t *testing.T, recoverRegistration bool) {
 	t.Helper()
 	var attempts atomic.Int32

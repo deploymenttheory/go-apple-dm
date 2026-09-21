@@ -11,6 +11,8 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/pki/pushcert"
 )
 
+// runAppPush parses and executes the app push subcommand, reporting argument and operation
+// failures to the CLI caller.
 func runAppPush(ctx context.Context, e *env, args []string) error {
 	if len(args) == 0 {
 		return fmt.Errorf("%w: apppush needs list, put, or send", ErrUsage)

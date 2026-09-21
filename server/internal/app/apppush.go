@@ -20,6 +20,8 @@ import (
 // Environments are always explicit on sends; credentials are never MDM credentials.
 type AppPushConfig struct{ DevelopmentHost, ProductionHost, RootCAFile string }
 
+// wireAppPush opens app-push credential storage and creates separate development and
+// production APNs clients, registering both for shutdown.
 func (a *App) wireAppPush(ctx context.Context) error {
 	st, err := a.protocolState(ctx)
 	if err != nil {
@@ -54,6 +56,8 @@ func (a *App) wireAppPush(ctx context.Context) error {
 	return nil
 }
 
+// appPushRoutes declares distinct permissions for reading credentials, replacing
+// credentials and sending app notifications.
 func (a *App) appPushRoutes() []adminRoute {
 	return []adminRoute{
 		{
@@ -77,6 +81,7 @@ func (a *App) appPushRoutes() []adminRoute {
 	}
 }
 
+// appPushError maps credential storage failures to bounded administrative errors.
 func (a *App) appPushError(w http.ResponseWriter, err error) {
 	switch {
 	case errors.Is(err, state.ErrInvalid):
@@ -88,6 +93,8 @@ func (a *App) appPushError(w http.ResponseWriter, err error) {
 	}
 }
 
+// listAppPush returns a page of app-push credential metadata, enforcing a limit from 1 to
+// 1,000.
 func (a *App) listAppPush(w http.ResponseWriter, r *http.Request) {
 	p, err := page(r)
 	if err != nil {
@@ -109,6 +116,8 @@ func (a *App) listAppPush(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, 200, map[string]any{"Items": rows, "NextCursor": next})
 }
 
+// readAdminJSON decodes a bounded request into out and writes an error response on
+// failure; callers must stop when it returns false.
 func readAdminJSON(w http.ResponseWriter, r *http.Request, out any) bool {
 	b, err := io.ReadAll(io.LimitReader(r.Body, MaxAdminBody+1))
 	if err != nil || len(b) > MaxAdminBody {
@@ -122,6 +131,8 @@ func readAdminJSON(w http.ResponseWriter, r *http.Request, out any) bool {
 	return true
 }
 
+// putAppPush stores the supplied app-push identity and retires cached connections for its
+// topic before returning metadata.
 func (a *App) putAppPush(w http.ResponseWriter, r *http.Request) {
 	var in struct{ Topic, CertPEM, KeyPEM string }
 	if !readAdminJSON(w, r, &in) {
@@ -138,6 +149,8 @@ func (a *App) putAppPush(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, 200, m)
 }
 
+// sendAppPush validates the environment and device token, sends one APNs request and
+// reports provider acceptance separately from device delivery.
 func (a *App) sendAppPush(w http.ResponseWriter, r *http.Request) {
 	var in struct {
 		Environment, Topic, Token, PushType string
@@ -193,6 +206,8 @@ func (a *App) sendAppPush(w http.ResponseWriter, r *http.Request) {
 	)
 }
 
+// operatorRoutes initializes app-push clients and combines their routes with configured
+// enrollment operations.
 func (a *App) operatorRoutes(ctx context.Context) ([]adminRoute, error) {
 	if err := a.wireAppPush(ctx); err != nil {
 		return nil, err

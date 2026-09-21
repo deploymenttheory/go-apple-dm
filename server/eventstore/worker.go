@@ -18,7 +18,10 @@ type Sender func(context.Context, eventsink.Record) error
 // message. Workers stop on this error so readiness exposes storage failure.
 type SourceError struct{ Err error }
 
+// Error returns the diagnostic message for this error.
 func (e *SourceError) Error() string { return "eventstore: managed delivery source unavailable" }
+
+// Unwrap exposes the wrapped cause for errors.Is and errors.As.
 func (e *SourceError) Unwrap() error { return e.Err }
 
 // Worker leases records independently across replicas. Destination identifiers
@@ -126,6 +129,8 @@ func (w *Worker) Run(ctx context.Context) error {
 	}
 }
 
+// classify maps sender failures to persisted delivery state and retry delay, respecting
+// terminal and paused outcomes.
 func classify(err error, attempt int) (string, time.Duration) {
 	if errors.Is(err, ErrPaused) {
 		return "paused", 0

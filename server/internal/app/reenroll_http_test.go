@@ -19,6 +19,8 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/server/internal/app"
 )
 
+// TestSignedSQLiteReenrollmentAfterProfileRemoval checks signed SQLite reenrollment after profile
+// removal.
 func TestSignedSQLiteReenrollmentAfterProfileRemoval(t *testing.T) {
 	ca, err := testpki.NewCA("re-enrollment transport")
 	if err != nil {

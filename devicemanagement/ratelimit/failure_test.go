@@ -17,6 +17,7 @@ type faultyStore struct {
 	op string
 }
 
+// Update wraps state transactions to inject rate-limiter storage failures.
 func (s faultyStore) Update(ctx context.Context, keys []string, fn func(state.Tx) error) error {
 	return s.Store.Update(ctx, keys, func(tx state.Tx) error { return fn(faultyTx{Tx: tx, op: s.op}) })
 }
@@ -26,6 +27,7 @@ type faultyTx struct {
 	op string
 }
 
+// Get injects a read failure or corrupt record, or delegates to the transaction.
 func (t faultyTx) Get(ctx context.Context, key string) (state.Record, error) {
 	if t.op == "get" {
 		return state.Record{}, errStorage
@@ -36,6 +38,7 @@ func (t faultyTx) Get(ctx context.Context, key string) (state.Record, error) {
 	return t.Tx.Get(ctx, key)
 }
 
+// List injects a list failure or delegates to the transaction.
 func (t faultyTx) List(ctx context.Context, prefix, after string, n int) ([]state.Record, error) {
 	if t.op == "list" {
 		return nil, errStorage
@@ -43,6 +46,7 @@ func (t faultyTx) List(ctx context.Context, prefix, after string, n int) ([]stat
 	return t.Tx.List(ctx, prefix, after, n)
 }
 
+// Delete injects a delete failure or delegates to the transaction.
 func (t faultyTx) Delete(ctx context.Context, key string) error {
 	if t.op == "delete" {
 		return errStorage
@@ -50,6 +54,7 @@ func (t faultyTx) Delete(ctx context.Context, key string) error {
 	return t.Tx.Delete(ctx, key)
 }
 
+// Put injects a write failure or delegates to the transaction.
 func (t faultyTx) Put(ctx context.Context, r state.Record) error {
 	if t.op == "put" {
 		return errStorage
@@ -57,6 +62,8 @@ func (t faultyTx) Put(ctx context.Context, r state.Record) error {
 	return t.Tx.Put(ctx, r)
 }
 
+// TestStorageFailuresNeverAdmitUnaccountedTraffic checks that storage failures never admit
+// unaccounted traffic.
 func TestStorageFailuresNeverAdmitUnaccountedTraffic(t *testing.T) {
 	for _, op := range []string{"get", "corrupt", "list", "delete", "put"} {
 		t.Run(op, func(t *testing.T) {

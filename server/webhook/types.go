@@ -66,7 +66,11 @@ type PayloadPolicy struct {
 	RawResponse bool `json:"raw_response"`
 }
 
+// Sensitive reports whether the policy permits complete decoded bodies or original request
+// or response bytes.
 func (p PayloadPolicy) Sensitive() bool { return p.FullJSON || p.RawRequest || p.RawResponse }
+
+// allows checks whether the disclosure policy permits the named captured representation.
 func (p PayloadPolicy) allows(part string) bool {
 	switch part {
 	case "request_raw":
@@ -98,6 +102,8 @@ type Spec struct {
 	Payload PayloadPolicy `json:"payload"`
 }
 
+// Subscription is the persisted public configuration and lifecycle state of a webhook
+// destination; it excludes receiver credentials.
 type Subscription struct {
 	ID       string `json:"id"`
 	Revision int    `json:"revision"`
@@ -115,11 +121,15 @@ type Credentials struct {
 	PayloadToken  string `json:"payload_token"`
 }
 
+// Change returns a subscription mutation and, only when created or rotated, the newly
+// issued receiver credentials.
 type Change struct {
 	Subscription Subscription `json:"subscription"`
 	Credentials  *Credentials `json:"credentials,omitempty"`
 }
 
+// CatalogueEntry describes one native webhook event type and the payload representations
+// available for capture.
 type CatalogueEntry struct {
 	Type          string   `json:"type"`
 	Operations    []string `json:"operations,omitempty"`
@@ -131,6 +141,8 @@ type CatalogueEntry struct {
 // The list is deliberately explicit: new internal events require contract review.
 var outcomes = strings.Fields(`enrollment-denied identity-rejected certificate-status-rejected private-hop-rejected enrolled reenrolled token-updated checked-out cert-rotated command-queued command-sent command-rejected command-result bootstrap-token-set push-token-invalid push-rejected ddm-changed ddm-status-received cert-reuse-denied enrollment-imported user-authenticated user-auth-failed acme-challenge-valid acme-issued certificate-revoked attestation-rejected admin-action admin-denied dep-device-added dep-device-modified dep-device-deleted dep-device-assigned dep-token-expiring`)
 
+// OutcomeType maps a reviewed internal event name to the native server event vocabulary.
+// Unknown internal events return an empty string and are not captured.
 func OutcomeType(internal string) string {
 	if !slices.Contains(outcomes, internal) {
 		return ""
@@ -158,6 +170,7 @@ func Catalogue() []CatalogueEntry {
 	return out
 }
 
+// known reports whether an event belongs to the reviewed native webhook catalogue.
 func known(t string) bool {
 	for _, e := range Catalogue() {
 		if e.Type == t {
@@ -167,10 +180,14 @@ func known(t string) bool {
 	return false
 }
 
+// eventMatch matches an event name against an exact name, a family wildcard, or the global
+// wildcard.
 func eventMatch(pattern, name string) bool {
 	return pattern == "*" || pattern == name || strings.HasSuffix(pattern, ".*") && strings.HasPrefix(name, strings.TrimSuffix(pattern, "*"))
 }
 
+// matches applies event selection and subject filters using OR within a field and AND
+// between fields.
 func (s Spec) matches(e Event) bool {
 	matched := false
 	for _, t := range s.Events {

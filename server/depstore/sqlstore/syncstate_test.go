@@ -11,6 +11,7 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/server/sqlstore/sqlite"
 )
 
+// TestWorkerStateValidationAndAtomicity checks worker state validation and atomicity.
 func TestWorkerStateValidationAndAtomicity(t *testing.T) {
 	s := newWorkerStateStore(t)
 	ctx := t.Context()
@@ -77,6 +78,7 @@ func TestWorkerStateValidationAndAtomicity(t *testing.T) {
 	}
 }
 
+// newWorkerStateStore opens a migrated DEP worker-state store in a temporary SQLite database.
 func newWorkerStateStore(t *testing.T) *sqlstore.Store {
 	t.Helper()
 	s, err := sqlstore.Open(t.Context(), openDB(t), sqlite.Dialect, sqlstore.Options{})

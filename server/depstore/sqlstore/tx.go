@@ -44,6 +44,7 @@ func (s *Store) Update(ctx context.Context, fn func(dep.Tx) error) error {
 	return s.runInTx(ctx, func(t *txStore) error { return fn(t) })
 }
 
+// runInTx executes the callback in a transaction and rolls it back if the callback fails.
 func (s *Store) runInTx(ctx context.Context, fn func(*txStore) error) error {
 	if _, ok := sqlcommon.CurrentTransaction(ctx, s.db); ok {
 		return sqlcommon.Savepoint(ctx, s.db, func(_ context.Context, tx *sql.Tx) error { return fn(&txStore{s: s, q: tx}) })

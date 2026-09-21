@@ -1,58 +1,51 @@
 # 0039: Declarative device management within the MDM enrollment
 
-Runtime and authorization decisions updated by [0056](0056-unified-server-rbac.md).
-
 ## Context
 
-Declarative device management uses MDM enrollment, identity and check-in transport. Its declaration engine can nevertheless have a separate deployment lifecycle.
+Declarative device management uses the existing MDM enrollment, identity and
+check-in transport. Declaration evaluation is a separate library responsibility.
 
 ## Decision
 
-The protocol core decodes `DeclarativeManagement` as a check-in message. The service dispatches it through `DMHandler`; the declaration engine depends on MDM types without a reverse engine dependency in the core.
+The protocol core decodes `DeclarativeManagement` as a check-in message. The
+service dispatches it through `DMHandler`; the declaration engine depends on MDM
+types without a reverse engine dependency in the core. The reference server
+assembles MDM and DDM together through the in-process adapter.
 
-Declaration changes are persisted transactionally. The notifier builds `DeclarativeManagement` commands and sends them through the normal service enqueue path, retaining target checks, hooks and events. Administrative write wrappers can wake the notifier; the engine has no callback into command dispatch.
+Declaration changes persist transactionally. The notifier creates ordinary
+`DeclarativeManagement` commands with the current tokens and a deduplication key
+containing the declarations-token digest. A newer token can queue while an older
+command awaits acknowledgment or NotNow retry. Administrative mutations wake the
+notifier; the engine has no callback into command dispatch.
 
-## Rationale
+## Rationale and constraints
 
-This dependency direction follows the shared protocol transport and avoids a serving-to-dispatch cycle. Persistent change rows support both in-process and split deployments. Administrative resources can expose MDM and DDM operations according to the process's configured components.
+One application database owns enrollment, inventory and protocol state. The DDM
+SQL store wraps that pool. Target inventory is populated by enrollment and tracked
+command responses; it is not copied between independent device inventories.
+Storage interfaces and tables retain their own responsibilities.
 
-## Constraints
+Reusable proxy adapters support custom compositions. Their caller supplies shared
+state and authenticated transport; the reference binary does not configure a
+separate declaration server. Adapter wire behavior is documented in
+[0023](0023-ddm-adapters-and-wire-contract.md).
 
-Roles describe deployment topology, not distinct Apple enrollment protocols. Both
-reference-server roles use one persistent database and compatible storage keyrings.
-Storage interfaces and tables retain their separate responsibilities, while
-enrollment and inventory have one authoritative record. The DDM SQL store wraps
-the application database; it does not open another database. The private forwarding
-hop does not synchronize inventory. Integration tests must use this same composition
-and populate inventory through enrollment and tracked command responses. Split-process cleanup and state updates are not a distributed transaction. Administrative route availability follows component ownership.
+Apple's command can carry tokens in `Data`. A client requests `tokens` when they
+are absent; an unchanged declarations token needs no declaration synchronization.
+The simulator implements that flow and fetches tokens again when resolving a
+manifest conflict. Server publication is distinct from device application.
 
 ## Verification
 
-Layout tests enforce import direction. Application tests verify that DDM commands publish normal command events and audit records and that writes wake the notifier. Notifier tests cover coalescing and retries; end-to-end tests cover the split hop and CLI route coverage.
+Layout tests enforce dependency direction. Service and application tests verify
+normal command events, target checks and notifier wakeups. Notifier regressions
+exercise coalescing, retries and delivery of a newer generation with older work
+pending; simulator tests verify command-embedded tokens and convergence.
 
 ## References
 
-- [mdmprotocol/mdm](../../../devicemanagement/mdmprotocol/mdm)
-- [mdmprotocol/ddm](../../../devicemanagement/mdmprotocol/ddm)
-- [server/ddmsync](../../../server/ddmsync)
-- [server/ddmadapter](../../../server/ddmadapter)
-- <https://developer.apple.com/documentation/devicemanagement/leveraging-the-declarative-management-data-model-to-scale-devices>
-- <https://developer.apple.com/documentation/devicemanagement/integrating-declarative-management>
-- <https://developer.apple.com/documentation/devicemanagement/declarative-management>
-- <https://developer.apple.com/documentation/devicemanagement/declarativemanagementcommand>
-
-Reference source identifiers and paths (relative to the named project):
-
-- `zentralopensource/zentral@6b93d01d1bc8471ed98807b02a26b83452e8c8b7`
-- `zentral/contrib/mdm/artifacts.py`, `commands/declarative_management.py`, `commands/scheduling.py`
-- `commands/base.py`, `declarations/`, `workers.py`, `models.py`
-- `fleetdm/fleet@111bc85f1d6cf1e7952efb6f9ea9d6277c36529a`
-- `server/mdm/apple/commander.go`, `server/mdm/apple/reconcile.go`
-- `server/service/apple_mdm_declarations_batched.go`, `server/service/apple_mdm.go`
-- `server/mdm/nanomdm/service/service.go`, `server/mdm/nanomdm/service/nanomdm/dm.go`
-- `jessepeterson/kmfddm@4b75a7652a71c9e74ccbcb78c8a7285211670151`
-- `notifier/notifier.go`, `notifier/foss/foss.go`, `notifier/foss/dm.go`, `notifier/cmd_dm.go`
-- `http/api/api.go`, `http/api/declarations.go`
-- `micromdm/nanohub@3d73c1a83d5a042bfa5d31ba98d32de996007667`
-- `ddmadapter/ddmadapter.go`, `ddmadapter/service.go`, `enqueue/enqueue.go`, `nanohub.go`
-- `cmd/nanohub/nanohub.go`
+- [Notifier](../../../server/ddmsync/notifier.go)
+- [Simulator synchronization](../../../devicemanagement/simulator/ddm.go)
+- [In-process adapter](../../../server/ddmadapter/inproc)
+- [Apple DDM integration](https://developer.apple.com/documentation/devicemanagement/integrating-declarative-management)
+- [Apple DeclarativeManagement command](https://developer.apple.com/documentation/devicemanagement/declarativemanagementcommand)

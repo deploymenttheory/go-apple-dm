@@ -215,7 +215,7 @@ type adminRoute struct {
 	// perform no remote calls. Its response is withheld until event capture and
 	// the mutation commit together.
 	LocalMutation bool
-	// Introspection routes expose role and route metadata without fleet data. They
+	// Introspection routes expose service and route metadata without fleet data. They
 	// require authentication but bypass policy evaluation so authenticated clients
 	// can determine which families the process serves.
 	Introspection      bool
@@ -283,8 +283,12 @@ func (a *App) AdminRoutes() []adminRoute { return a.adminTable }
 // Pattern and action accessors keep adminRoute's fields readable from tests
 // in another package without exporting the handler.
 func (r adminRoute) RoutePattern() string { return r.Pattern }
-func (r adminRoute) RouteAction() string  { return r.Action }
-func (r adminRoute) RouteFamily() string  { return r.Family }
+
+// RouteAction returns the route's declared permission identifier.
+func (r adminRoute) RouteAction() string { return r.Action }
+
+// RouteFamily returns the route's administrative feature family.
+func (r adminRoute) RouteFamily() string { return r.Family }
 
 // authorized wraps a route with authentication, the policy check, and the
 // audit record. It is applied once, where the mux is built, so no route can
@@ -381,6 +385,8 @@ type statusRecorder struct {
 	status int
 }
 
+// WriteHeader records the first response status for auditing and forwards the call to the
+// underlying writer.
 func (w *statusRecorder) WriteHeader(status int) {
 	if w.status == 0 {
 		w.status = status
@@ -388,6 +394,7 @@ func (w *statusRecorder) WriteHeader(status int) {
 	w.ResponseWriter.WriteHeader(status)
 }
 
+// Write records an implicit 200 response and wraps errors from the underlying writer.
 func (w *statusRecorder) Write(b []byte) (int, error) {
 	if w.status == 0 {
 		w.status = http.StatusOK
@@ -495,6 +502,8 @@ func (a *App) auditDenied(r *http.Request, p adminauth.Principal, rt adminRoute,
 	}
 }
 
+// publishAdmin publishes the actor, authorization decision and outcome metadata for an
+// administrative request; publication errors are returned to the caller.
 func (a *App) publishAdmin(
 	r *http.Request,
 	t event.Type,
@@ -549,6 +558,8 @@ func constantTimeEqual(got, want string) bool {
 	return subtle.ConstantTimeCompare([]byte(got), []byte(want)) == 1
 }
 
+// resolveAdminEnrollment resolves stored MDM or DDM identity before accepting a validated
+// declaration preassignment for an unknown enrollment.
 func (a *App) resolveAdminEnrollment(r *http.Request, family string) (mdm.EnrollmentID, error) {
 	e, err := a.Store.EnrollmentByID(r.Context(), r.PathValue("id"))
 	if err == nil {

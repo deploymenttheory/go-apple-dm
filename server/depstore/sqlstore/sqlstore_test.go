@@ -15,6 +15,7 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/server/sqlstore/sqlite"
 )
 
+// openDB opens a temporary SQLite database and registers its cleanup.
 func openDB(t *testing.T) *sql.DB {
 	t.Helper()
 	db, err := sql.Open("sqlite", sqlite.DSN(filepath.Join(t.TempDir(), "dep.db"), sqlite.Options{}))
@@ -25,6 +26,7 @@ func openDB(t *testing.T) *sql.DB {
 	return db
 }
 
+// TestContract runs the shared DEP store suite against SQLite.
 func TestContract(t *testing.T) {
 	deptest.RunStoreSuite(t, func(t *testing.T, k *crypt.Keyring) dep.Store {
 		t.Helper()
@@ -36,6 +38,7 @@ func TestContract(t *testing.T) {
 	})
 }
 
+// TestOpenAndMigrations checks DEP store opening, migrations, rollback, and missing-schema errors.
 func TestOpenAndMigrations(t *testing.T) {
 	ctx := context.Background()
 	if _, err := sqlstore.Open(ctx, nil, sqlite.Dialect, sqlstore.Options{}); !errors.Is(err, dep.ErrInvalid) {

@@ -36,6 +36,7 @@ type fakeService struct {
 	lastResp   *mdm.Response
 }
 
+// Checkin records the check-in request and returns the configured result or error.
 func (f *fakeService) Checkin(_ context.Context, r *mdm.Request, ck *mdm.Checkin) (*service.CheckinResult, error) {
 	f.lastReq, f.lastCk = r, ck
 	if f.checkinErr != nil {
@@ -47,6 +48,7 @@ func (f *fakeService) Checkin(_ context.Context, r *mdm.Request, ck *mdm.Checkin
 	return &service.CheckinResult{}, nil
 }
 
+// Connect records the connect request and returns the configured command or error.
 func (f *fakeService) Connect(_ context.Context, r *mdm.Request, resp *mdm.Response) (*mdm.Command, error) {
 	f.lastReq, f.lastResp = r, resp
 	if f.connectErr != nil {
@@ -60,6 +62,8 @@ const tokenUpdate = `<plist version="1.0"><dict><key>MessageType</key><string>To
 
 const idle = `<plist version="1.0"><dict><key>Status</key><string>Idle</string><key>UDID</key><string>D1</string></dict></plist>`
 
+// do serves an MDM request with the supplied content type, body, and headers and records the
+// response.
 func do(t *testing.T, h http.Handler, method, ct, body string, hdr map[string]string) *httptest.ResponseRecorder {
 	t.Helper()
 	req := httptest.NewRequestWithContext(t.Context(), method, "/mdm?tag=x&tag=y", strings.NewReader(body))
@@ -74,6 +78,7 @@ func do(t *testing.T, h http.Handler, method, ct, body string, hdr map[string]st
 	return rec
 }
 
+// TestCheckinAndConnectHandlers checks checkin and connect handlers.
 func TestCheckinAndConnectHandlers(t *testing.T) {
 	t.Parallel()
 	fs := &fakeService{result: &service.CheckinResult{Body: []byte("<plist/>"), ContentType: "application/xml", Status: 200}}
@@ -131,6 +136,8 @@ func TestCheckinAndConnectHandlers(t *testing.T) {
 	}
 }
 
+// TestServiceErrorMapping checks HTTP mapping of service errors, capture retry guidance, and
+// unenrollment responses.
 func TestServiceErrorMapping(t *testing.T) {
 	t.Parallel()
 	cases := []struct {
@@ -181,9 +188,14 @@ func TestServiceErrorMapping(t *testing.T) {
 
 type disconnectedBody struct{}
 
+// Read returns io.ErrUnexpectedEOF to simulate a disconnected request body.
 func (disconnectedBody) Read([]byte) (int, error) { return 0, io.ErrUnexpectedEOF }
-func (disconnectedBody) Close() error             { return nil }
 
+// Close closes the fixture body without error.
+func (disconnectedBody) Close() error { return nil }
+
+// TestIncompleteBodyDoesNotReachProtocolService checks that incomplete body does not reach
+// protocol service.
 func TestIncompleteBodyDoesNotReachProtocolService(t *testing.T) {
 	fs := &fakeService{}
 	h := httpapi.Handler(httpapi.Config{Checkin: fs, Connect: fs})
@@ -198,6 +210,7 @@ func TestIncompleteBodyDoesNotReachProtocolService(t *testing.T) {
 	}
 }
 
+// certCapture builds a handler that records the context certificate and echoes the request body.
 func certCapture() (http.Handler, *[]*x509.Certificate) {
 	var seen []*x509.Certificate
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -207,6 +220,8 @@ func certCapture() (http.Handler, *[]*x509.Certificate) {
 	}), &seen
 }
 
+// TestCertMiddlewares checks CMS, proxy-header, and TLS certificate middleware trust and
+// malformed-input behavior.
 func TestCertMiddlewares(t *testing.T) {
 	t.Parallel()
 	ca, err := testpki.NewCA("ca")

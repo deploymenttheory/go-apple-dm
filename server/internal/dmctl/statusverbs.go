@@ -8,6 +8,8 @@ import (
 	"net/url"
 )
 
+// runEnrollmentStatus parses and executes the enrollment status subcommand, reporting
+// argument and operation failures to the CLI caller.
 func runEnrollmentStatus(ctx context.Context, e *env, args []string) error {
 	if len(args) == 0 || (args[0] != "values" && args[0] != "errors" && args[0] != "reports") {
 		return fmt.Errorf("%w: enrollments status needs values, errors or reports", ErrUsage)

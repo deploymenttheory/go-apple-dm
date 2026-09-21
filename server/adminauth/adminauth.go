@@ -226,11 +226,21 @@ type Result[T any] struct {
 // A store never sees a plaintext token: the caller mints one, hands the store
 // its digest, and shows the value to the operator once.
 type Store interface {
+	// PutRole upserts a validated role while preserving creation time and advancing the
+	// authorization version.
 	PutRole(context.Context, Role, time.Time) (Role, error)
+	// Role returns a managed role by name, or ErrNotFound when absent.
 	Role(context.Context, string) (Role, error)
+	// Roles returns managed roles in name order using the requested cursor and limit.
 	Roles(context.Context, Page) (Result[Role], error)
+	// DeleteRole removes an unreferenced role, returning ErrConflict while principals or
+	// policies still refer to it.
 	DeleteRole(context.Context, string) error
+	// BootstrapPrincipal atomically creates the first active root credential and permanently
+	// closes bootstrap; an initialized or nonempty store returns ErrConflict.
 	BootstrapPrincipal(context.Context, Principal, string, time.Time) (Principal, error)
+	// Initialized reports whether principal initialization has permanently consumed
+	// the bootstrap opportunity, independently of current credential expiry.
 	Initialized(context.Context) (bool, error)
 	// ApplyPrincipal serializes mutations across instances and refuses removal,
 	// revocation, expiry or demotion of the last active root credential. Older

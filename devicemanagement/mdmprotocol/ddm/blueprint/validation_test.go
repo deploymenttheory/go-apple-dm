@@ -13,6 +13,8 @@ import (
 	schema "github.com/deploymenttheory/go-apple-dm/devicemanagement/schema/ddm"
 )
 
+// TestCompileRejectsInvalidDeclarationAndActivationInputs checks that compile rejects invalid
+// declaration and activation inputs.
 func TestCompileRejectsInvalidDeclarationAndActivationInputs(t *testing.T) {
 	for _, tc := range []struct {
 		name   string
@@ -49,6 +51,7 @@ func TestCompileRejectsInvalidDeclarationAndActivationInputs(t *testing.T) {
 	}
 }
 
+// TestManagedAppExtensionAssetReferences checks managed app extension asset references.
 func TestManagedAppExtensionAssetReferences(t *testing.T) {
 	payload := jsontext.Value(`{"BundleID":"com.example.app","ExtensionConfigs":{"com.example.app.extension":{"DataAssetReference":"data"},"com.example.app.second":{"DataAssetReference":"data"}}}`)
 	spec := blueprint.Spec{Identifier: "extensions", Declarations: []blueprint.Declaration{
@@ -108,6 +111,7 @@ func TestManagedAppExtensionAssetReferences(t *testing.T) {
 	}
 }
 
+// TestConfigurationProfileDescriptorValidation checks configuration profile descriptor validation.
 func TestConfigurationProfileDescriptorValidation(t *testing.T) {
 	for _, tc := range []struct {
 		name   string
@@ -139,10 +143,13 @@ func TestConfigurationProfileDescriptorValidation(t *testing.T) {
 
 type unencodableDeclaration struct{ schema.MathSettings }
 
+// MarshalJSON returns a synthetic JSON encoding failure.
 func (*unencodableDeclaration) MarshalJSON() ([]byte, error) {
 	return nil, errors.New("cannot encode test payload")
 }
 
+// TestNewDeclarationRejectsNilAndEncodingFailure checks that new declaration rejects nil and
+// encoding failure.
 func TestNewDeclarationRejectsNilAndEncodingFailure(t *testing.T) {
 	for _, payload := range []schema.Declaration{nil, (*schema.MathSettings)(nil), &unencodableDeclaration{}} {
 		if got, err := blueprint.NewDeclaration("math", payload); !errors.Is(err, ddm.ErrInvalidDeclaration) || got.Identifier != "" {
@@ -151,6 +158,8 @@ func TestNewDeclarationRejectsNilAndEncodingFailure(t *testing.T) {
 	}
 }
 
+// TestCompiledNamespaceOwnership checks that compiled identifiers stay within the reserved
+// blueprint namespace.
 func TestCompiledNamespaceOwnership(t *testing.T) {
 	compiled, err := blueprint.Compile(blueprint.Spec{Identifier: "names", Declarations: []blueprint.Declaration{declaration(t, "math", &schema.MathSettings{})}}, blueprint.Options{})
 	if err != nil {

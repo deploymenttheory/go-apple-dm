@@ -156,6 +156,8 @@ func TestReceiverExamples(t *testing.T) {
 	}
 }
 
+// assertReceiverExample compares the event's formatted JSON with the receiver fixture, optionally
+// updating it when UPDATE_WEBHOOK_FIXTURES is set.
 func assertReceiverExample(t *testing.T, name string, e Event) {
 	t.Helper()
 	b, err := json.MarshalIndent(e, "", "  ")
@@ -181,6 +183,7 @@ func assertReceiverExample(t *testing.T, name string, e Event) {
 	}
 }
 
+// TestServerOutcomeReceiverExamples checks server outcome receiver examples.
 func TestServerOutcomeReceiverExamples(t *testing.T) {
 	now := time.Date(2026, 9, 20, 12, 0, 0, 0, time.UTC)
 	for _, name := range []string{"server-command-result", "server-command-result-full-json", "server-worker-state", "server-certificate-lifecycle"} {
@@ -238,6 +241,7 @@ func TestServerOutcomeReceiverExamples(t *testing.T) {
 	}
 }
 
+// TestReplayedOutcomeReceiverExample checks replayed outcome receiver example.
 func TestReplayedOutcomeReceiverExample(t *testing.T) {
 	now := time.Date(2026, 9, 20, 12, 0, 0, 0, time.UTC)
 	var received []byte

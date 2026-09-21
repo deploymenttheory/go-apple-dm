@@ -11,6 +11,7 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/state"
 )
 
+// TestTransactions checks transaction rollback and isolation of stored byte slices.
 func TestTransactions(t *testing.T) {
 	ctx := t.Context()
 	now := time.Now().UTC()
@@ -99,6 +100,7 @@ func TestTransactions(t *testing.T) {
 	}
 }
 
+// TestInvalidAndCancelled checks invalid state-store inputs and canceled operations.
 func TestInvalidAndCancelled(t *testing.T) {
 	st := state.NewMemory()
 	ctx := t.Context()

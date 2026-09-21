@@ -7,6 +7,7 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/storage"
 )
 
+// TestDeviceInfoObservations checks device information updates from observed response fields.
 func TestDeviceInfoObservations(t *testing.T) {
 	t.Parallel()
 	old := storage.DeviceInfo{OSVersion: "26.4", ProductName: "Mac15,1", BuildVersion: "old"}

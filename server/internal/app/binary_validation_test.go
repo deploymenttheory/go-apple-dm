@@ -21,6 +21,7 @@ import (
 	ddminmem "github.com/deploymenttheory/go-apple-dm/devicemanagement/storage/ddm/inmem"
 )
 
+// TestBinaryValidationAdminTransactions checks binary validation admin transactions.
 func TestBinaryValidationAdminTransactions(t *testing.T) {
 	for _, tc := range []struct {
 		name, list, rule string

@@ -22,6 +22,8 @@ import (
 
 var vendorPurpose = asn1.ObjectIdentifier{1, 2, 840, 113635, 100, 4, 12}
 
+// vendorFixture creates a vendor identity fixture with a trusted root, intermediate, and activated
+// vendor certificate.
 func vendorFixture(t *testing.T) (*Manager, *faultRepository, Material, Material, []byte) {
 	t.Helper()
 	m, s, now := testManager(t)
@@ -70,6 +72,8 @@ func vendorFixture(t *testing.T) (*Manager, *faultRepository, Material, Material
 	return m, s, root, mat, leaf
 }
 
+// TestVendorAndCustomerCSRExchangeValidatesEveryBoundary checks that vendor and customer CSR
+// exchange validates every boundary.
 func TestVendorAndCustomerCSRExchangeValidatesEveryBoundary(t *testing.T) {
 	m, _, root, vendor, leaf := vendorFixture(t)
 	ctx := t.Context()
@@ -155,6 +159,8 @@ type portalEnvelope struct {
 	Signature string `plist:"PushCertSignature"`
 }
 
+// TestReturnedVendorEnvelopeRejectsSubstitutionAndInvalidSignatures checks that returned vendor
+// envelope rejects substitution and invalid signatures.
 func TestReturnedVendorEnvelopeRejectsSubstitutionAndInvalidSignatures(t *testing.T) {
 	m, _, root, _, _ := vendorFixture(t)
 	ctx := t.Context()
@@ -245,6 +251,8 @@ func TestReturnedVendorEnvelopeRejectsSubstitutionAndInvalidSignatures(t *testin
 	}
 }
 
+// TestImportRejectsUntrustedExpiredWrongHostAndWrongPurpose checks that import rejects untrusted
+// expired wrong host and wrong purpose.
 func TestImportRejectsUntrustedExpiredWrongHostAndWrongPurpose(t *testing.T) {
 	m, _, now := testManager(t)
 	root := rootIdentity(t, m, "root")
@@ -343,6 +351,8 @@ func TestImportRejectsUntrustedExpiredWrongHostAndWrongPurpose(t *testing.T) {
 	requireError(t, err, ErrInvalid)
 }
 
+// TestIssuerAndHTTPSCreationRetriesAndCorruptMaterial checks issuer and HTTPS creation retries and
+// corrupt material.
 func TestIssuerAndHTTPSCreationRetriesAndCorruptMaterial(t *testing.T) {
 	m, _, now := testManager(t)
 	ctx := t.Context()
@@ -424,6 +434,7 @@ func TestIssuerAndHTTPSCreationRetriesAndCorruptMaterial(t *testing.T) {
 	}
 }
 
+// TestAppleChainCycleRejected checks apple chain cycle rejected.
 func TestAppleChainCycleRejected(t *testing.T) {
 	m, _, now := testManager(t)
 	root := rootIdentity(t, m, "root")

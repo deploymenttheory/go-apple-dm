@@ -25,6 +25,7 @@ type request struct {
 	method, path, query, body string
 }
 
+// last returns the most recent captured request, or an empty request when none was recorded.
 func (f *fakeAdmin) last() request {
 	f.mu.Lock()
 	defer f.mu.Unlock()
@@ -34,6 +35,8 @@ func (f *fakeAdmin) last() request {
 	return f.requests[len(f.requests)-1]
 }
 
+// serve records CLI admin requests and serves fixture principal, policy, declaration, and
+// introspection responses.
 func (f *fakeAdmin) serve(w http.ResponseWriter, r *http.Request) {
 	body, _ := io.ReadAll(r.Body)
 	f.mu.Lock()
@@ -87,6 +90,7 @@ func (f *fakeAdmin) serve(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// fakeServer starts the fake admin server and returns the corresponding CLI environment.
 func fakeServer(t *testing.T) (*fakeAdmin, map[string]string) {
 	t.Helper()
 	f := &fakeAdmin{}
@@ -98,6 +102,8 @@ func fakeServer(t *testing.T) (*fakeAdmin, map[string]string) {
 	return f, env
 }
 
+// TestPrincipalVerbs checks principal CLI lifecycle operations, required names, pagination, and
+// NDJSON output.
 func TestPrincipalVerbs(t *testing.T) {
 	f, env := fakeServer(t)
 
@@ -219,6 +225,8 @@ func TestPrincipalVerbs(t *testing.T) {
 	})
 }
 
+// TestPolicyVerbs checks policy CLI listing, verbatim source reads, file and stdin writes, and
+// deletion.
 func TestPolicyVerbs(t *testing.T) {
 	f, env := fakeServer(t)
 
@@ -293,6 +301,7 @@ func TestPolicyVerbs(t *testing.T) {
 	})
 }
 
+// TestDeclarationVerbs checks declaration CLI reads, file uploads, deletion, and required names.
 func TestDeclarationVerbs(t *testing.T) {
 	f, env := fakeServer(t)
 

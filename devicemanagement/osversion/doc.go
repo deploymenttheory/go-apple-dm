@@ -15,6 +15,6 @@
 //
 // # References
 //
-//   - Availability metadata: devicemanagement/schema/support (relative to repository root)
-//   - Mixed-OS fleets: docs/research/decisions/0052-mixed-os-fleets.md (relative to repository root)
+//   - Availability metadata: https://github.com/deploymenttheory/go-apple-dm/tree/main/devicemanagement/schema/support
+//   - Mixed-OS fleets: https://github.com/deploymenttheory/go-apple-dm/blob/main/docs/research/decisions/0052-mixed-os-fleets.md
 package osversion

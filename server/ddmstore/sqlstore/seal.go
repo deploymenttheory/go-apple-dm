@@ -6,10 +6,14 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/server/sqlstore/sqlcommon"
 )
 
+// seal seals declaration state through the configured keyring, binding ciphertext to the
+// purpose and record keys.
 func (s *Store) seal(p string, b []byte, keys ...string) ([]byte, error) {
 	return sqlcommon.SealBlob(s.keyring, p, b, keys...)
 }
 
+// open opens declaration state through the configured keyring using its purpose and record
+// keys.
 func (s *Store) open(p string, b []byte, keys ...string) ([]byte, error) {
 	return sqlcommon.OpenBlob(s.keyring, p, b, keys...)
 }

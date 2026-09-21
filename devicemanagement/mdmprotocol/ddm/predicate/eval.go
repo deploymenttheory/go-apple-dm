@@ -15,9 +15,14 @@ func typeErr(format string, args ...any) error {
 // emptyEnv is used when Eval receives a nil Env.
 type emptyEnv struct{}
 
+// Property reports that the empty evaluation environment has no property value.
 func (emptyEnv) Property(string) (any, bool) { return nil, false }
-func (emptyEnv) Status(string) (any, bool)   { return nil, false }
 
+// Status reports that the empty evaluation environment has no status value.
+func (emptyEnv) Status(string) (any, bool) { return nil, false }
+
+// evalExpr evaluates a predicate expression against the supplied property and status
+// environment.
 func evalExpr(e expr, env Env) (bool, error) {
 	switch n := e.(type) {
 	case *constExpr:
@@ -52,6 +57,8 @@ func evalCompound(n *compoundExpr, env Env) (bool, error) {
 	return evalExpr(n.right, env)
 }
 
+// evalCompare resolves both operands and applies the comparison with its case-insensitive
+// setting.
 func evalCompare(n *compareExpr, env Env) (bool, error) {
 	left, err := operandValue(n.left, env)
 	if err != nil {
@@ -86,6 +93,7 @@ func operandValue(o operand, env Env) (any, error) {
 	return nil, fmt.Errorf("%w: unknown operand %T", ErrSyntax, o)
 }
 
+// literalValue converts a parsed literal to its evaluation value.
 func literalValue(lit *literal) any {
 	switch lit.kind {
 	case litNull:
@@ -152,6 +160,8 @@ func normalize(raw any) (any, error) {
 	return nil, typeErr("unsupported value type %T", raw)
 }
 
+// normalizeSlice normalizes collection elements into a slice of supported evaluation
+// values.
 func normalizeSlice(n int, at func(int) any) (any, error) {
 	items := make([]any, n)
 	for i := range n {
@@ -181,6 +191,7 @@ func typeName(v any) string {
 	return fmt.Sprintf("%T", v)
 }
 
+// compareValues applies the parsed comparison operator to the resolved operands.
 func compareValues(op cmpOp, ci bool, left, right any) (bool, error) {
 	switch op {
 	case cmpEq:
@@ -201,6 +212,7 @@ func compareValues(op cmpOp, ci bool, left, right any) (bool, error) {
 	return false, fmt.Errorf("%w: unknown operator %d", ErrSyntax, op)
 }
 
+// fold applies the requested comparison modifiers before comparing string values.
 func fold(ci bool, s string) string {
 	if ci {
 		return strings.ToLower(s)
@@ -208,6 +220,8 @@ func fold(ci bool, s string) string {
 	return s
 }
 
+// equalValues compares nil, numbers, strings, and booleans for equality, rejecting
+// incompatible types.
 func equalValues(ci bool, left, right any) (bool, error) {
 	if left == nil || right == nil {
 		return left == nil && right == nil, nil
@@ -229,6 +243,7 @@ func equalValues(ci bool, left, right any) (bool, error) {
 	return false, typeErr("cannot compare %s with %s for equality", typeName(left), typeName(right))
 }
 
+// orderValues orders compatible operand values for relational comparisons.
 func orderValues(op cmpOp, ci bool, left, right any) (bool, error) {
 	if left == nil || right == nil {
 		return false, nil
@@ -265,6 +280,7 @@ func orderValues(op cmpOp, ci bool, left, right any) (bool, error) {
 	return false, nil
 }
 
+// compareFloats returns the ordering of two numeric operands.
 func compareFloats(a, b float64) int {
 	switch {
 	case a < b:
@@ -275,6 +291,7 @@ func compareFloats(a, b float64) int {
 	return 0
 }
 
+// inValues tests whether an operand belongs to the comparison collection.
 func inValues(ci bool, left, right any) (bool, error) {
 	items, ok := right.([]any)
 	if !ok {
@@ -295,6 +312,8 @@ func inValues(ci bool, left, right any) (bool, error) {
 	return false, nil
 }
 
+// substringValues applies the requested string containment operation to compatible
+// operands.
 func substringValues(op cmpOp, ci bool, left, right any) (bool, error) {
 	if left == nil || right == nil {
 		return false, nil

@@ -7,6 +7,7 @@ import (
 	"testing"
 )
 
+// TestStatusReportsEventOverload checks that status reports event overload.
 func TestStatusReportsEventOverload(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		_, _ = w.Write(

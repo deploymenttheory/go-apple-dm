@@ -20,6 +20,8 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/storage"
 )
 
+// TestCertificateWorkerRenewsOnlyManagedLeavesAndPersistsNotices checks certificate worker renews
+// only managed leaves and persists notices.
 func TestCertificateWorkerRenewsOnlyManagedLeavesAndPersistsNotices(t *testing.T) {
 	a, clock := memorySetupApp(t)
 	ctx := t.Context()
@@ -80,6 +82,8 @@ func TestCertificateWorkerRenewsOnlyManagedLeavesAndPersistsNotices(t *testing.T
 	}
 }
 
+// TestCertificateWorkerRejectsBrokenAndForeignMaterial checks that certificate worker rejects
+// broken and foreign material.
 func TestCertificateWorkerRejectsBrokenAndForeignMaterial(t *testing.T) {
 	for _, mode := range []string{"leaf PEM", "leaf DER", "CA PEM", "CA DER", "different CA", "missing CA", "missing material", "ACME read failure", "CA read failure", "issuance conflict"} {
 		t.Run(mode, func(t *testing.T) {
@@ -153,6 +157,8 @@ func TestCertificateWorkerRejectsBrokenAndForeignMaterial(t *testing.T) {
 	}
 }
 
+// TestManagedIssuerWorkerRoutesAndDynamicTrust checks managed issuer worker routes and dynamic
+// trust.
 func TestManagedIssuerWorkerRoutesAndDynamicTrust(t *testing.T) {
 	a, _, _, _ := renewalFixture(t)
 	ctx := t.Context()
@@ -269,6 +275,8 @@ func TestManagedOTAAndRevocationRoutesRequireCurrentTrust(t *testing.T) {
 	}
 }
 
+// TestIssuerRenewalWorkerPreparesSuccessorAndRestartsPreparedRollover checks issuer renewal worker
+// prepares successor and restarts prepared rollover.
 func TestIssuerRenewalWorkerPreparesSuccessorAndRestartsPreparedRollover(t *testing.T) {
 	for _, id := range []string{"issuer", "https-ca"} {
 		t.Run(id, func(t *testing.T) {
@@ -309,6 +317,8 @@ func TestIssuerRenewalWorkerPreparesSuccessorAndRestartsPreparedRollover(t *test
 	}
 }
 
+// TestIdleIdentityWorkerHandlesEvidenceAndStorageFailures checks idle identity worker handles
+// evidence and storage failures.
 func TestIdleIdentityWorkerHandlesEvidenceAndStorageFailures(t *testing.T) {
 	a, e, _, job := renewalFixture(t)
 	job.Phase = "complete"
@@ -331,12 +341,16 @@ func TestIdleIdentityWorkerHandlesEvidenceAndStorageFailures(t *testing.T) {
 	setupRequire(t, a.identityRenewalPass(t.Context()), nil)
 }
 
+// storageExportWithoutEvidence builds an enabled enrollment export with an unknown certificate pin
+// and no issuance evidence.
 func storageExportWithoutEvidence(id mdm.EnrollmentID) storage.EnrollmentExport {
 	return storage.EnrollmentExport{
 		Enrollment: storage.Enrollment{ID: id, Enabled: true, CertHash: "unknown"},
 	}
 }
 
+// captureManagedTLS captures the managed TLS configuration or error during a test client
+// handshake.
 func captureManagedTLS(t *testing.T, a *App) (*tls.Config, error) {
 	t.Helper()
 	type result struct {

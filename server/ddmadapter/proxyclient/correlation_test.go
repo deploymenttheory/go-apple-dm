@@ -22,11 +22,13 @@ type correlationBackend struct {
 	received chan string
 }
 
+// Handle captures the request correlation ID and returns an empty successful DDM response.
 func (b *correlationBackend) Handle(ctx context.Context, _ mdm.EnrollmentID, _ string, _ []byte) (ddm.Response, error) {
 	b.received <- webhook.CorrelationID(ctx)
 	return ddm.Response{Status: http.StatusOK, Body: []byte(`{}`)}, nil
 }
 
+// TestCorrelationAcrossAuthenticatedProxy checks correlation across authenticated proxy.
 func TestCorrelationAcrossAuthenticatedProxy(t *testing.T) {
 	t.Parallel()
 	for _, tc := range []struct {

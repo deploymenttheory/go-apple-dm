@@ -112,7 +112,7 @@ notarization. Review the facts before choosing a payload's `SigningState`.
 
 Signature integrity does not establish permission to execute under DDM binary
 controls. macOS imposes a signing restriction independently of identifier matching;
-review the [execution contract](../../docs/testing/app-settings-binary-isolation.md#protocol-expectation)
+review the [execution contract](../../docs/operations/application-identities.md#binary-execution-controls)
 when authoring these payloads. `SigningState` is a rule qualifier, not an override
 of that restriction. These helpers report identity facts without choosing policy
 or predicting the state of other applications on the target device.

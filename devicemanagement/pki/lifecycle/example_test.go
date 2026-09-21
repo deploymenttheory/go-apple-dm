@@ -9,6 +9,8 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/state"
 )
 
+// ExampleManager_Begin demonstrates resuming a pending certificate request and exporting its
+// public CSR.
 func ExampleManager_Begin() {
 	// Memory is appropriate for this example. Deployments supply an encrypted
 	// persistent state adapter and retain its external encryption keys.

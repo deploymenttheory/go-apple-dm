@@ -198,6 +198,8 @@ responsekeys:
 	return tree
 }
 
+// TestGenerateSynthetic checks generated types, validation, support tables, registries, tests, and
+// one package comment from synthetic schemas.
 func TestGenerateSynthetic(t *testing.T) {
 	t.Parallel()
 	pkgs, err := Build(syntheticTree(t))
@@ -308,6 +310,7 @@ func TestGenerateSynthetic(t *testing.T) {
 	}
 }
 
+// TestUniqueNameSuffixes checks numeric suffix allocation for colliding generated names.
 func TestUniqueNameSuffixes(t *testing.T) {
 	t.Parallel()
 	b := &builder{pkg: &Package{used: map[string]bool{"A": true, "AB": true, "AB2": true}}}
@@ -319,6 +322,7 @@ func TestUniqueNameSuffixes(t *testing.T) {
 	}
 }
 
+// TestHeaderExtra checks generated file header metadata.
 func TestHeaderExtra(t *testing.T) {
 	t.Parallel()
 	e := &emitter{pkg: &Package{Name: "x"}, opts: Options{Commit: "c"}}

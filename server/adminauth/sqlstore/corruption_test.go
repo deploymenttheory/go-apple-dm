@@ -50,6 +50,8 @@ func TestPolicyWriteFailsWithoutTheVersionRow(t *testing.T) {
 	}
 }
 
+// TestPolicyDeleteFailsWithoutTheVersionRow checks that policy delete fails without the version
+// row.
 func TestPolicyDeleteFailsWithoutTheVersionRow(t *testing.T) {
 	ctx := context.Background()
 	s, db := openWithDB(t)
@@ -116,6 +118,7 @@ func TestOpenFailsOnAConflictingSchema(t *testing.T) {
 	}
 }
 
+// TestSetTokenOnUnknownPrincipal checks set token on unknown principal.
 func TestSetTokenOnUnknownPrincipal(t *testing.T) {
 	ctx := context.Background()
 	s, _ := openWithDB(t)

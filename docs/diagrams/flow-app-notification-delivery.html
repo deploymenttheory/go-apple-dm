@@ -5149,7 +5149,7 @@ svg[data-purpose-filter] g[data-purpose-highlight] > path { stroke-width: 2.4; }
 <button type="button" data-purpose-filter-button="neutral" aria-pressed="false" style="--entry:var(--purpose-neutral)"><span class="purpose-key-dot" aria-hidden="true"></span>Actors, structure, neutral states</button>
     </div>
     <div class="purpose-key-detail" aria-live="polite" aria-atomic="true"><div><strong id="purpose-key-selection"></strong><span id="purpose-key-counts"></span></div><p id="purpose-key-description"></p></div>
-    <script id="purpose-key-data" type="application/json">{"entries":[{"key":"service","label":"Services and processing","meaning":"Services and processing steps that perform the work shown in the diagram.","nodes":[],"connections":["Select explicit environment and validate payload","Wait for the matching receipt in a live scenario"]},{"key":"transport","label":"Communication and transport","meaning":"Communication between components, including endpoints, protocol exchanges, and notifications.","nodes":["App push admin","App APNs client"],"connections":["POST /admin/v1/apppush/send","POST payload to the registered device token","Return status, reason, and APNs identifier","Report APNs send outcome","Return Accepted, Outcome, Status, Reason, APNSID","Asynchronously deliver if permitted by the device"]},{"key":"storage","label":"Storage and persistence","meaning":"Records and persistence: where the system stores or retrieves information.","nodes":["App credentials","Bench evidence"],"connections":["Load app credential by topic","Record labCorrelationID, topic, and environment"]},{"key":"certificate","label":"Certificates and cryptography","meaning":"Certificate issuance and cryptographic work, including signing, encryption, and keys.","nodes":[],"connections":["Return validated certificate and private key"]},{"key":"neutral","label":"Actors, structure, neutral states","meaning":"Actors, structural boundaries, and states that do not imply success, warning, or failure.","nodes":["Caller or bench","APNs","Registered app"],"connections":[]}],"nodes":7,"connections":11}</script>
+    <script id="purpose-key-data" type="application/json">{"entries":[{"key":"service","label":"Services and processing","meaning":"Services and processing steps that perform the work shown in the diagram.","nodes":[],"connections":["Select explicit environment and validate payload","Wait for the matching receipt in a live scenario"]},{"key":"transport","label":"Communication and transport","meaning":"Communication between components, including endpoints, protocol exchanges, and notifications.","nodes":["App push admin","App push client"],"connections":["POST /admin/v1/apppush/send","POST payload to the registered device token","Return status, reason, and APNs identifier","Report APNs send outcome","Return Accepted, Outcome, Status, Reason, APNSID","Asynchronously deliver if permitted by the device"]},{"key":"storage","label":"Storage and persistence","meaning":"Records and persistence: where the system stores or retrieves information.","nodes":["Credentials","Bench evidence"],"connections":["Load app credential by topic","Record labCorrelationID, topic, and environment"]},{"key":"certificate","label":"Certificates and cryptography","meaning":"Certificate issuance and cryptographic work, including signing, encryption, and keys.","nodes":[],"connections":["Return validated certificate and private key"]},{"key":"neutral","label":"Actors, structure, neutral states","meaning":"Actors, structural boundaries, and states that do not imply success, warning, or failure.","nodes":["Caller","APNs","Registered app"],"connections":[]}],"nodes":7,"connections":11}</script>
   </section>
     <div class="diagram-container" data-detail-level="read"
          data-preset-badge-editorial-plate="ARCHIFY / PLATE 04">
@@ -5297,15 +5297,15 @@ svg[data-purpose-filter] g[data-purpose-highlight] > path { stroke-width: 2.4; }
 
 
         <!-- Participants -->
-        <g id="node-caller" data-node-id="caller" data-node-label="Caller or bench" tabindex="0" role="button" aria-label="Focus Caller or bench, Supply app registration, Sequence participant" aria-pressed="false" data-node-kind="external" data-node-sublabel="Supply app registration" data-node-context="Sequence participant" data-purpose="neutral">
-          <title>Caller or bench · Supply app registration · Sequence participant</title>
+        <g id="node-caller" data-node-id="caller" data-node-label="Caller" tabindex="0" role="button" aria-label="Focus Caller, Supply app registration, Sequence participant" aria-pressed="false" data-node-kind="external" data-node-sublabel="Supply app registration" data-node-context="Sequence participant" data-purpose="neutral">
+          <title>Caller · Supply app registration · Sequence participant</title>
           <rect x="62" y="72" width="147" height="54" rx="6" class="c-mask"/>
           <rect x="62" y="72" width="147" height="54" rx="6" class="c-external" stroke-width="1.5"/>
           <g aria-hidden="true" data-semantic-sigil="external" class="semantic-sigil s-external" transform="translate(68 78) scale(0.6875)">
             <rect x="2.5" y="5" width="8.5" height="8" rx="1.5"/>
             <path d="M8 2.5h5.5V8M13.5 2.5 7.5 8.5"/>
           </g>
-          <text data-node-label="" data-detail-anchor="" x="135.5" y="94" class="t-primary" font-size="14" font-weight="600" text-anchor="middle">Caller or bench</text>
+          <text data-node-label="" data-detail-anchor="" x="135.5" y="94" class="t-primary" font-size="14" font-weight="600" text-anchor="middle">Caller</text>
           <text data-detail="context" x="135.5" y="111" class="t-muted" font-size="10" text-anchor="middle">Supply app registration</text>
         </g>
 
@@ -5320,26 +5320,26 @@ svg[data-purpose-filter] g[data-purpose-highlight] > path { stroke-width: 2.4; }
           <text data-detail="context" x="314" y="111" class="t-muted" font-size="10.5" text-anchor="middle">Authorize and validate</text>
         </g>
 
-        <g id="node-store" data-node-id="store" data-node-label="App credentials" tabindex="0" role="button" aria-label="Focus App credentials, Certificate for app topic, Sequence participant" aria-pressed="false" data-node-kind="database" data-node-sublabel="Certificate for app topic" data-node-context="Sequence participant" data-purpose="storage">
-          <title>App credentials · Certificate for app topic · Sequence participant</title>
+        <g id="node-store" data-node-id="store" data-node-label="Credentials" tabindex="0" role="button" aria-label="Focus Credentials, Certificate for app topic, Sequence participant" aria-pressed="false" data-node-kind="database" data-node-sublabel="Certificate for app topic" data-node-context="Sequence participant" data-purpose="storage">
+          <title>Credentials · Certificate for app topic · Sequence participant</title>
           <rect x="419" y="72" width="147" height="54" rx="6" class="c-mask"/>
           <rect x="419" y="72" width="147" height="54" rx="6" class="c-database" stroke-width="1.5"/>
           <g aria-hidden="true" data-semantic-sigil="database" class="semantic-sigil s-database" transform="translate(425 78) scale(0.6875)">
             <ellipse cx="8" cy="4" rx="5" ry="2"/>
             <path d="M3 4v8c0 1.1 2.2 2 5 2s5-.9 5-2V4M3 8c0 1.1 2.2 2 5 2s5-.9 5-2"/>
           </g>
-          <text data-node-label="" data-detail-anchor="" x="492.5" y="94" class="t-primary" font-size="14" font-weight="600" text-anchor="middle">App credentials</text>
+          <text data-node-label="" data-detail-anchor="" x="492.5" y="94" class="t-primary" font-size="14" font-weight="600" text-anchor="middle">Credentials</text>
           <text data-detail="context" x="492.5" y="111" class="t-muted" font-size="9.2" text-anchor="middle">Certificate for app topic</text>
         </g>
 
-        <g id="node-client" data-node-id="client" data-node-label="App APNs client" tabindex="0" role="button" aria-label="Focus App APNs client, Explicit dev/prod host, Sequence participant" aria-pressed="false" data-node-kind="backend" data-node-sublabel="Explicit dev/prod host" data-node-context="Sequence participant" data-purpose="transport">
-          <title>App APNs client · Explicit dev/prod host · Sequence participant</title>
+        <g id="node-client" data-node-id="client" data-node-label="App push client" tabindex="0" role="button" aria-label="Focus App push client, Explicit dev/prod host, Sequence participant" aria-pressed="false" data-node-kind="backend" data-node-sublabel="Explicit dev/prod host" data-node-context="Sequence participant" data-purpose="transport">
+          <title>App push client · Explicit dev/prod host · Sequence participant</title>
           <rect x="597.5" y="72" width="147" height="54" rx="6" class="c-mask"/>
           <rect x="597.5" y="72" width="147" height="54" rx="6" class="c-backend" stroke-width="1.5"/>
           <g aria-hidden="true" data-semantic-sigil="backend" class="semantic-sigil s-backend" transform="translate(603.5 78) scale(0.6875)">
             <path d="M6 3 3 8l3 5M10 3l3 5-3 5"/>
           </g>
-          <text data-node-label="" data-detail-anchor="" x="671" y="94" class="t-primary" font-size="14" font-weight="600" text-anchor="middle">App APNs client</text>
+          <text data-node-label="" data-detail-anchor="" x="671" y="94" class="t-primary" font-size="14" font-weight="600" text-anchor="middle">App push client</text>
           <text data-detail="context" x="671" y="111" class="t-muted" font-size="10.5" text-anchor="middle">Explicit dev/prod host</text>
         </g>
 
@@ -5615,7 +5615,20 @@ svg[data-purpose-filter] g[data-purpose-highlight] > path { stroke-width: 2.4; }
         <ul>
           <li>&bull; <a href="https://developer.apple.com/documentation/usernotifications/sending-notification-requests-to-apns" target="_blank" rel="noopener noreferrer">Sending notification requests to APNs</a></li>
           <li>&bull; <a href="https://developer.apple.com/documentation/usernotifications/establishing-a-certificate-based-connection-to-apns" target="_blank" rel="noopener noreferrer">Establishing a certificate-based connection to APNs</a></li>
-          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/7500eb25e50a2913338339d5fced18dc7f41fdc3/server/internal/app/apppush.go" target="_blank" rel="noopener noreferrer">Implementation</a></li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-dot artifact"></div>
+          <h3>Implementation references</h3>
+        </div>
+        <ul>
+          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/server/internal/bench/live.go" target="_blank" rel="noopener noreferrer">caller: Caller or bench</a></li>
+          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/server/internal/app/apppush.go" target="_blank" rel="noopener noreferrer">api: App push admin</a></li>
+          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/server/apppush/store.go" target="_blank" rel="noopener noreferrer">store: App credentials</a></li>
+          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/devicemanagement/appleplatformservices/push/apns/app.go" target="_blank" rel="noopener noreferrer">client: App APNs client</a></li>
+          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/server/internal/bench/live.go" target="_blank" rel="noopener noreferrer">evidence: Bench evidence</a></li>
         </ul>
       </div>
     </div>

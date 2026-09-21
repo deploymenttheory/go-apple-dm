@@ -5,6 +5,7 @@ import (
 	"testing"
 )
 
+// TestRegexSample checks generated regex samples match their patterns and invalid patterns fail.
 func TestRegexSample(t *testing.T) {
 	t.Parallel()
 	patterns := []string{

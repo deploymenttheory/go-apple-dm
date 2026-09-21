@@ -7,6 +7,8 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/appleplatformservices/dep"
 )
 
+// TestRegressionExpiredCursorRetainsRemovedDevice checks that a full refetch after cursor expiry
+// marks removed DEP devices as deleted.
 func TestRegressionExpiredCursorRetainsRemovedDevice(t *testing.T) {
 	f := newFixture(t)
 	ctx := t.Context()

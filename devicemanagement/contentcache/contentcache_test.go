@@ -27,6 +27,7 @@ type schema struct {
 	Items      *schema           `json:"items"`
 }
 
+// contract loads a content-cache JSON schema fixture, failing the test on error.
 func contract(t *testing.T) schema {
 	t.Helper()
 	data, err := os.ReadFile("testdata/metrics_report.json")
@@ -44,6 +45,8 @@ func contract(t *testing.T) schema {
 	return doc.Components.Schemas["CacheServerMetricsReport"]
 }
 
+// sample builds a sample value from a schema using enum values and representative primitive
+// values.
 func sample(s schema) any {
 	if len(s.Enum) > 0 {
 		return s.Enum[0]
@@ -75,6 +78,7 @@ func sample(s schema) any {
 	}
 }
 
+// encode encodes a fixture as deterministic JSON, failing the test on error.
 func encode(t *testing.T, v any) []byte {
 	t.Helper()
 	b, err := json.Marshal(v, json.Deterministic(true))
@@ -84,6 +88,8 @@ func encode(t *testing.T, v any) []byte {
 	return b
 }
 
+// TestReportMatchesAppleContract checks schema fields, required values, unknown-field
+// preservation, and round trips retaining explicit zero and false values.
 func TestReportMatchesAppleContract(t *testing.T) {
 	t.Parallel()
 	s := contract(t)
@@ -181,6 +187,7 @@ func TestReportMatchesAppleContract(t *testing.T) {
 	}
 }
 
+// TestDecodeRejectsMalformedReports checks that decode rejects malformed reports.
 func TestDecodeRejectsMalformedReports(t *testing.T) {
 	t.Parallel()
 	for _, bad := range []string{"null", "[]", "{}", "{", minimal + minimal, strings.Replace(minimal, `"version":1`, `"version":1,"version":2`, 1), strings.Replace(minimal, `"version":1`, `"version":1.5`, 1), strings.Replace(minimal, `cache.example`, "\xff", 1)} {
@@ -192,6 +199,8 @@ func TestDecodeRejectsMalformedReports(t *testing.T) {
 
 var errCallback = errors.New("private callback diagnostic")
 
+// TestReceiver checks content-cache request validation, one-time sink delivery, HTTP errors, and
+// callback-error redaction.
 func TestReceiver(t *testing.T) {
 	t.Parallel()
 	for _, tc := range []struct {
@@ -278,8 +287,11 @@ func TestReceiver(t *testing.T) {
 
 type brokenReader struct{}
 
+// Read returns the injected read error.
 func (brokenReader) Read([]byte) (int, error) { return 0, errCallback }
 
+// FuzzDecode checks that accepted content-cache reports validate and can be encoded and decoded
+// again.
 func FuzzDecode(f *testing.F) {
 	f.Add([]byte(minimal))
 	f.Add([]byte(`null`))

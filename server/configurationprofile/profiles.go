@@ -43,6 +43,8 @@ func ValidRevision(s string) bool {
 	return true
 }
 
+// validateProfile checks an uploaded profile against its requested target and declaration
+// delivery constraints.
 func validateProfile(data []byte, target support.Target) (*profile.Parsed, error) {
 	if len(data) == 0 || len(data) > MaxBytes {
 		return nil, ddm.ErrInvalid
@@ -106,6 +108,8 @@ func (m *Manager) Upload(ctx context.Context, data []byte) (Info, error) {
 	return info, nil
 }
 
+// Get returns metadata for an immutable profile revision. Invalid revision syntax returns
+// ddm.ErrInvalid and a missing record returns ddm.ErrNotFound.
 func (m *Manager) Get(ctx context.Context, revision string) (Info, error) {
 	if !ValidRevision(revision) {
 		return Info{}, ddm.ErrInvalid
@@ -113,6 +117,7 @@ func (m *Manager) Get(ctx context.Context, revision string) (Info, error) {
 	return read[Info](ctx, m.cfg.State, profilePrefix+revision)
 }
 
+// List returns profile metadata in revision order using the supplied keyset page.
 func (m *Manager) List(ctx context.Context, page paging.Page) (paging.Result[Info], error) {
 	return list[Info](ctx, m.cfg.State, profilePrefix, page)
 }
@@ -126,6 +131,8 @@ func (m *Manager) ProfileURL(revision string) string {
 	return m.cfg.BaseURL + Path + revision
 }
 
+// Data returns the stored profile bytes and metadata after verifying their SHA-256
+// revision. Missing records, invalid revisions, and integrity failures return errors.
 func (m *Manager) Data(ctx context.Context, revision string) ([]byte, Info, error) {
 	info, err := m.Get(ctx, revision)
 	if err != nil {
@@ -141,6 +148,8 @@ func (m *Manager) Data(ctx context.Context, revision string) ([]byte, Info, erro
 	return r.Value, info, nil
 }
 
+// profileURL recognizes a local immutable-profile URL and extracts its revision only when
+// its origin, path, and query form match.
 func profileURL(raw, base string) (string, bool) {
 	u, err := url.Parse(raw)
 	if err != nil || u.RawQuery != "" || u.Fragment != "" {

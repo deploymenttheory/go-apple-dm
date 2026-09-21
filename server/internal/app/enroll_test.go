@@ -41,6 +41,8 @@ type enrollFixture struct {
 	idp       *webauthtest.Provider
 }
 
+// writeCA creates a self-signed authority and writes its certificate and RSA private key to
+// temporary PEM files.
 func writeCA(t *testing.T) (certFile, keyFile string, cert *x509.Certificate) {
 	t.Helper()
 	cert, key, err := ca.NewSelfSigned(ca.SelfSignedOptions{Subject: pkix.Name{CommonName: "app test CA"}})
@@ -58,6 +60,8 @@ func writeCA(t *testing.T) (certFile, keyFile string, cert *x509.Certificate) {
 	return certFile, keyFile, cert
 }
 
+// newEnrollFixture creates a TLS reference-server enrollment fixture with device trust, SCEP,
+// discovery, and a fake OIDC provider.
 func newEnrollFixture(t *testing.T, method string, mutate func(*app.Config)) *enrollFixture {
 	t.Helper()
 	f := &enrollFixture{idp: webauthtest.New(t)}
@@ -139,6 +143,7 @@ func (f *enrollFixture) client() *http.Client {
 	}
 }
 
+// device creates a simulator with a fixture-issued identity and the supplied product name.
 func (f *enrollFixture) device(t *testing.T, udid, product string) *simulator.Device {
 	t.Helper()
 	id, err := f.deviceCA.Issue(udid, time.Now().Add(-time.Minute))
@@ -168,6 +173,8 @@ func (f *enrollFixture) signIn(t *testing.T) func(context.Context, simulator.Aut
 	}
 }
 
+// TestEnrollment checks discovery, ADE and account-driven enrollment routes, trust loading, and
+// invalid configuration.
 func TestEnrollment(t *testing.T) {
 	ctx := context.Background()
 	t.Run("Disabled", func(t *testing.T) {

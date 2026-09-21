@@ -198,6 +198,8 @@ func TestSeedOS27FeatureDelivery(t *testing.T) {
 	}
 }
 
+// checkFixturePayload checks that serving a declaration changes only its server-authored
+// ServerToken.
 func checkFixturePayload(t *testing.T, id string, authored, served []byte) {
 	t.Helper()
 	var wire map[string]jsontext.Value
@@ -224,6 +226,8 @@ func checkFixturePayload(t *testing.T, id string, authored, served []byte) {
 	}
 }
 
+// checkArrayAssetReferences checks that relay eligibility follows assignment and removal of its
+// referenced array asset.
 func checkArrayAssetReferences(t *testing.T) {
 	h := newHarness(t, func(c *ddm.Config) {
 		c.EnrollmentTarget = func(context.Context, mdm.EnrollmentID) (support.Target, error) {
@@ -269,6 +273,8 @@ func checkArrayAssetReferences(t *testing.T) {
 	check(false)
 }
 
+// TestSeedOS27FeatureContextWithholding checks that unsupported OS 27 enrollment contexts
+// reject declarations and withhold them from manifests and direct delivery.
 func TestSeedOS27FeatureContextWithholding(t *testing.T) {
 	for _, tc := range []struct {
 		name, file string

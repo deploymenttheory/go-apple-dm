@@ -13,10 +13,13 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/server/sqlstore/sqlite"
 )
 
+// TestSyncStateMigrationPreservesInventory checks that sync state migration preserves inventory.
 func TestSyncStateMigrationPreservesInventory(t *testing.T) {
 	checkSyncStateUpgrade(t, openDB(t), sqlite.Dialect)
 }
 
+// checkSyncStateUpgrade checks that the sync-state migration preserves accounts, devices, and
+// cursor data while adding empty scheduling state.
 func checkSyncStateUpgrade(t *testing.T, db *sql.DB, dialect sqlcommon.Dialect) {
 	t.Helper()
 	ctx := t.Context()

@@ -10,6 +10,7 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/appleplatformservices/axm"
 )
 
+// TestAxMStatus checks AXM error-to-HTTP status mapping.
 func TestAxMStatus(t *testing.T) {
 	cases := map[error]int{
 		&axm.Error{Status: http.StatusNotFound}:        http.StatusNotFound,
@@ -28,6 +29,7 @@ func TestAxMStatus(t *testing.T) {
 	}
 }
 
+// TestListOptions checks AXM listing query option parsing.
 func TestListOptions(t *testing.T) {
 	r := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/x?limit=abc&cursor=c1", nil)
 	if o := listOptions(r); o.Limit != 0 || o.Cursor != "c1" {

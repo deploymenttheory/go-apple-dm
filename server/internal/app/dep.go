@@ -53,6 +53,8 @@ type depService struct {
 	client *dep.Client
 }
 
+// newDEP selects injected, in-memory or SQL DEP storage and constructs the shared outbound
+// client with configured trust and event delivery.
 func (a *App) newDEP(ctx context.Context) (*depService, error) {
 	var st dep.Store
 	switch {
@@ -87,6 +89,8 @@ func (a *App) newDEP(ctx context.Context) (*depService, error) {
 	return &depService{app: a, store: st, client: client}, nil
 }
 
+// syncer constructs an account-scoped inventory worker using the shared client, persistent
+// state and application clock.
 func (d *depService) syncer(account string) (*dep.Syncer, error) {
 	s, err := dep.NewSyncer(
 		dep.SyncerConfig{
@@ -104,6 +108,8 @@ func (d *depService) syncer(account string) (*dep.Syncer, error) {
 	return s, nil
 }
 
+// assigner constructs an account-scoped assignment worker with readback enabled and the
+// configured assignment HTTP method.
 func (d *depService) assigner(account string) (*dep.Assigner, error) {
 	a, err := dep.NewAssigner(
 		dep.AssignerConfig{
@@ -164,6 +170,8 @@ func (d *depService) Run(ctx context.Context) error {
 	return nil
 }
 
+// runScheduled runs periodic inventory or assignment passes until cancellation, logging
+// pass failures without terminating the schedule.
 func (d *depService) runScheduled(ctx context.Context, interval time.Duration, assign bool) {
 	for {
 		select {
@@ -177,6 +185,8 @@ func (d *depService) runScheduled(ctx context.Context, interval time.Duration, a
 	}
 }
 
+// runAccounts visits credentialed accounts and runs the selected worker; account failures
+// are logged while listing and cancellation errors stop the pass.
 func (d *depService) runAccounts(ctx context.Context, assign bool) error {
 	p := paging.Page{Limit: 1000}
 	for {

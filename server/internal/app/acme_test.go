@@ -39,6 +39,7 @@ type acmeAppFixture struct {
 	attestation *attesttest.CA
 }
 
+// newACMEAppFixture creates an ACME application fixture with an optional configuration mutation.
 func newACMEAppFixture(t *testing.T, mutate func(*app.Config)) *acmeAppFixture {
 	t.Helper()
 	return newACMEAppFixtureWith(t, func(cfg *app.Config, _ *attesttest.CA) {
@@ -71,6 +72,8 @@ func newACMEAppFixtureWith(
 	return f
 }
 
+// TestACME checks application ACME credential binding, default SCEP behavior, admin queries, and
+// configuration.
 func TestACME(t *testing.T) {
 	ctx := context.Background()
 	t.Run("UnknownMacHardwareCredentialUsesExistingEnrollment", func(t *testing.T) {
@@ -379,6 +382,7 @@ func TestACME(t *testing.T) {
 	})
 }
 
+// TestMacCredentialHardwareIssuance checks mac credential hardware issuance.
 func TestMacCredentialHardwareIssuance(t *testing.T) {
 	for _, hardware := range []enroll.MacHardware{enroll.MacAppleSilicon, enroll.MacT2} {
 		t.Run(string(hardware), func(t *testing.T) {
@@ -521,6 +525,7 @@ func fetchCredential(t *testing.T, f *acmeAppFixture, d *simulator.Device) ddm.A
 	return credential
 }
 
+// getJSON fetches authenticated JSON, requiring HTTP 200 and returning request or decoding errors.
 func getJSON(t *testing.T, f *acmeAppFixture, url string, v any) error {
 	t.Helper()
 	req, err := http.NewRequestWithContext(context.Background(), http.MethodGet, url, nil)
@@ -540,6 +545,8 @@ func getJSON(t *testing.T, f *acmeAppFixture, url string, v any) error {
 	return json.Unmarshal(data, v)
 }
 
+// TestACMEWiring checks ACME status, key and anchor loading, persistent stores, and configured
+// attestation policies.
 func TestACMEWiring(t *testing.T) {
 	ctx := context.Background()
 
@@ -773,6 +780,8 @@ func writeAnchors(t *testing.T, ca *attesttest.CA) string {
 	return path
 }
 
+// TestACMEAdminFailures checks ACME admin certificate and order pagination and storage error
+// responses.
 func TestACMEAdminFailures(t *testing.T) {
 	ctx := context.Background()
 	boom := errors.New("boom")
@@ -848,6 +857,7 @@ func (f *acmeAppFixture) acmeStore(t *testing.T) acme.Store {
 	return s
 }
 
+// TestACMEPolicyFaultIsNotARefusal checks ACME policy fault is not a refusal.
 func TestACMEPolicyFaultIsNotARefusal(t *testing.T) {
 	// A lookup failure leaves the challenge pending so the device can retry after
 	// storage recovers.
@@ -903,6 +913,7 @@ func TestACMEPolicyFaultIsNotARefusal(t *testing.T) {
 	}
 }
 
+// TestACMEIdentifierKeyFallsBackToSCEP checks ACME identifier key falls back to SCEP.
 func TestACMEIdentifierKeyFallsBackToSCEP(t *testing.T) {
 	// Both are the same kind of secret held by the same server, so a
 	// deployment that configured one has said what it means to.
@@ -920,6 +931,7 @@ func TestACMEIdentifierKeyFallsBackToSCEP(t *testing.T) {
 	}
 }
 
+// TestACMEEnvKeys checks ACME environment key configuration and missing key-file failures.
 func TestACMEEnvKeys(t *testing.T) {
 	env := func(m map[string]string) func(string) string {
 		return func(k string) string {
@@ -973,6 +985,7 @@ func TestACMEEnvKeys(t *testing.T) {
 	}
 }
 
+// TestUnifiedServerSupportsACMEDEPPolicy checks that unified server supports acmedep policy.
 func TestUnifiedServerSupportsACMEDEPPolicy(t *testing.T) {
 	a := build(t, app.Config{
 		Storage: "inmem", Logger: quiet,

@@ -75,6 +75,7 @@ type vector struct {
 	sigOID    asn1.ObjectIdentifier
 }
 
+// attr encodes a CMS attribute value as an ASN.1 SET.
 func attr(t *testing.T, oid asn1.ObjectIdentifier, v any) tAttr {
 	t.Helper()
 	b, err := asn1.Marshal(v)
@@ -84,6 +85,7 @@ func attr(t *testing.T, oid asn1.ObjectIdentifier, v any) tAttr {
 	return tAttr{Type: oid, Value: asn1.RawValue{Tag: 17, IsCompound: true, Bytes: b}}
 }
 
+// build builds a signed CMS fixture with the requested test variations.
 func build(t *testing.T, v vector) []byte {
 	t.Helper()
 	if v.hash == 0 {
@@ -204,6 +206,8 @@ func appleLikeChain(t *testing.T) (root, inter, leaf identity) {
 	return root, inter, leaf
 }
 
+// TestVerifyAttached checks attached CMS signatures, signed attributes, algorithms, tampering, and
+// certificate paths.
 func TestVerifyAttached(t *testing.T) {
 	t.Parallel()
 	ca := newCA(t)
@@ -403,6 +407,7 @@ func TestVerifyAttached(t *testing.T) {
 	})
 }
 
+// TestVerifyAttachedPathCycle checks verify attached path cycle.
 func TestVerifyAttachedPathCycle(t *testing.T) {
 	t.Parallel()
 	// Two CAs that certify each other and a leaf under one of them: the
@@ -439,6 +444,7 @@ func TestVerifyAttachedPathCycle(t *testing.T) {
 	}
 }
 
+// indexOf returns the first byte-subsequence position, or -1 when absent.
 func indexOf(hay, needle []byte) int {
 	for i := 0; i+len(needle) <= len(hay); i++ {
 		if string(hay[i:i+len(needle)]) == string(needle) {
@@ -448,6 +454,8 @@ func indexOf(hay, needle []byte) int {
 	return -1
 }
 
+// FuzzVerifyAttached exercises attached CMS verification with validity-tolerant anchors and
+// explicit trust roots.
 func FuzzVerifyAttached(f *testing.F) {
 	ca := newCA(&testing.T{})
 	leaf := newLeaf(&testing.T{}, ca, rsaKey(&testing.T{}), time.Now().Add(-time.Minute))

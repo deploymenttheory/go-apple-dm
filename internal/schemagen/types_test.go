@@ -6,6 +6,8 @@ import (
 	"testing"
 )
 
+// TestBuildWholeTree checks complete schema type generation, response types, status leaves, field
+// metadata, and recursive references.
 func TestBuildWholeTree(t *testing.T) {
 	t.Parallel()
 	tree, err := Load(schemaRoot(t))
@@ -124,6 +126,7 @@ func TestBuildWholeTree(t *testing.T) {
 	}
 }
 
+// fieldByKey finds a generated field by key, returning nil when the type or field is absent.
 func fieldByKey(td *TypeDef, key string) *Field {
 	if td == nil {
 		return nil
@@ -136,6 +139,8 @@ func fieldByKey(td *TypeDef, key string) *Field {
 	return nil
 }
 
+// buildOne parses and classifies one schema fixture, then returns its generated package or build
+// error.
 func buildOne(t *testing.T, path, doc string) (*Package, error) {
 	t.Helper()
 	s, err := Parse([]byte(doc))
@@ -154,6 +159,7 @@ func buildOne(t *testing.T, path, doc string) (*Package, error) {
 	return pkgs[0], nil
 }
 
+// TestBuildShapes checks generated field shapes, response paths, and shared subkey-type reuse.
 func TestBuildShapes(t *testing.T) {
 	t.Parallel()
 	doc := `title: Shape Test
@@ -261,6 +267,8 @@ responsekeys:
 	}
 }
 
+// TestBuildErrors checks naming collisions, incompatible shapes, and unresolved recursive types
+// during generation.
 func TestBuildErrors(t *testing.T) {
 	t.Parallel()
 	cases := map[string]string{
@@ -330,6 +338,7 @@ payloadkeys:
 	}
 }
 
+// TestStatusLeafShapes checks scalar and dictionary status-leaf type shapes.
 func TestStatusLeafShapes(t *testing.T) {
 	t.Parallel()
 	scalar := "title: Status Device Model Family\npayload:\n  statusitemtype: device.model.family\npayloadkeys:\n- key: device.model.family\n  type: <string>\n  presence: required\n"

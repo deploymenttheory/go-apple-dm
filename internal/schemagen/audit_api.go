@@ -65,6 +65,8 @@ func CompareAPI(baseline, candidate string) (*APIReport, error) {
 	return report, nil
 }
 
+// generatedAPI extracts exported Go declarations from generated files for API-change
+// comparison.
 func generatedAPI(directory string) (map[string]string, error) {
 	root, err := os.OpenRoot(directory)
 	if err != nil {
@@ -99,6 +101,7 @@ func generatedAPI(directory string) (map[string]string, error) {
 	return result, nil
 }
 
+// apiNode normalizes an AST node into the representation used by API comparison.
 func apiNode(n any) string {
 	var b bytes.Buffer
 	// All nodes have already passed Go's parser.
@@ -106,6 +109,7 @@ func apiNode(n any) string {
 	return b.String()
 }
 
+// apiFunction normalizes a generated function signature for API comparison.
 func apiFunction(f *ast.FuncType) string {
 	fieldTypes := func(fields *ast.FieldList) string {
 		if fields == nil {
@@ -129,6 +133,7 @@ func apiFunction(f *ast.FuncType) string {
 	) + ")"
 }
 
+// recordAPIDecl adds an exported declaration to the generated API inventory.
 func recordAPIDecl(out map[string]string, prefix string, decl ast.Decl) {
 	switch d := decl.(type) {
 	case *ast.FuncDecl:

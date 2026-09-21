@@ -14,6 +14,8 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/schema/support"
 )
 
+// TestSeedOS27LegacyProfileCompatibility checks that profile URLs remain supported across
+// macOS releases while profile asset references require macOS 27 and omit the URL on the wire.
 func TestSeedOS27LegacyProfileCompatibility(t *testing.T) {
 	t.Parallel()
 	for _, interactive := range []bool{false, true} {

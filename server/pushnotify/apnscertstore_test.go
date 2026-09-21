@@ -30,6 +30,7 @@ func target(id string, token []byte) push.Target {
 	return push.Target{ID: mdm.EnrollmentID{Channel: mdm.ChannelDevice, ID: id}, Push: mdm.Push{Topic: "com.apple.mgmt.External.test", Token: token, Magic: "magic-" + id}}
 }
 
+// TestPushWithStoreCertStore checks push with store cert store.
 func TestPushWithStoreCertStore(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()

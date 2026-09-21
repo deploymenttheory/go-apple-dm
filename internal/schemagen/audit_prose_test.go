@@ -5,6 +5,8 @@ import (
 	"testing"
 )
 
+// TestAuditProseKeepsLateRequirementsAndFiltersVerifiedEditorialChanges checks that audit prose
+// keeps late requirements and filters verified editorial changes.
 func TestAuditProseKeepsLateRequirementsAndFiltersVerifiedEditorialChanges(t *testing.T) {
 	t.Parallel()
 	common := strings.Repeat("Existing token description. ", 100)
@@ -39,6 +41,8 @@ func TestAuditProseKeepsLateRequirementsAndFiltersVerifiedEditorialChanges(t *te
 	}
 }
 
+// TestAuditEditorialNormalizationIsConservative checks audit editorial normalization is
+// conservative.
 func TestAuditEditorialNormalizationIsConservative(t *testing.T) {
 	t.Parallel()
 	for _, pair := range [][2]string{
@@ -74,6 +78,8 @@ func TestAuditEditorialNormalizationIsConservative(t *testing.T) {
 	}
 }
 
+// TestAuditFieldMeaningDoesNotChangeStructuralFingerprint checks that audit field meaning does not
+// change structural fingerprint.
 func TestAuditFieldMeaningDoesNotChangeStructuralFingerprint(t *testing.T) {
 	t.Parallel()
 	before := auditFixture(t, map[string]string{"mdm/checkin/message.yaml": auditSchema})

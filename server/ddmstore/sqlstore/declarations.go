@@ -16,6 +16,7 @@ const declarationCols = "identifier, type, kind, server_token, canonical, create
 
 var versionCols = []string{"identifier", "server_token", "type", "canonical", "created_at"}
 
+// scanDeclaration decodes a declaration row and opens its retained canonical content.
 func (t *txStore) scanDeclaration(row scanner) (ddm.Declaration, error) {
 	var d ddm.Declaration
 	if err := row.Scan(

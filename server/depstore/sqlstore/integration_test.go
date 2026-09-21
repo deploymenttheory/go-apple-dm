@@ -24,6 +24,8 @@ import (
 // depTables in dependency order for DELETE and DROP.
 var depTables = []string{"dep_assignment_state", "dep_assignments", "dep_profiles", "dep_devices", "dep_keypairs", "dep_cursors", "dep_sessions", "dep_accounts"}
 
+// runShared runs DEP store migration, shared store-contract, and rollback checks for a SQL
+// dialect.
 func runShared(t *testing.T, db *sql.DB, d sqlcommon.Dialect, cascade string) {
 	t.Helper()
 	ctx := context.Background()
@@ -59,6 +61,7 @@ func runShared(t *testing.T, db *sql.DB, d sqlcommon.Dialect, cascade string) {
 	}
 }
 
+// TestContractPostgres runs the shared DEP SQL store suite against PostgreSQL.
 func TestContractPostgres(t *testing.T) {
 	dsn := os.Getenv("TEST_POSTGRES_DSN")
 	if dsn == "" {
@@ -74,6 +77,7 @@ func TestContractPostgres(t *testing.T) {
 	runShared(t, db, postgres.Dialect, " CASCADE")
 }
 
+// TestContractMySQL runs the shared DEP SQL store suite against MySQL.
 func TestContractMySQL(t *testing.T) {
 	dsn := os.Getenv("TEST_MYSQL_DSN")
 	if dsn == "" {

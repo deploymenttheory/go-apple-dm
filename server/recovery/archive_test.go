@@ -19,6 +19,7 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/server/internal/privatefile"
 )
 
+// archiveFixture creates an encrypted recovery archive containing secret and database fixtures.
 func archiveFixture(t *testing.T) (string, string, *age.X25519Identity, Manifest) {
 	t.Helper()
 	dir := t.TempDir()
@@ -63,6 +64,7 @@ func archiveFixture(t *testing.T) (string, string, *age.X25519Identity, Manifest
 	return destination, stage, id, manifest
 }
 
+// TestArchiveRoundTripAndOccupiedTarget checks archive round trip and occupied target.
 func TestArchiveRoundTripAndOccupiedTarget(t *testing.T) {
 	source, stage, identity, manifest := archiveFixture(t)
 	parent := t.TempDir()
@@ -121,6 +123,8 @@ func TestArchiveRoundTripAndOccupiedTarget(t *testing.T) {
 	}
 }
 
+// TestArchiveRejectsDamagedCiphertextAndWrongIdentity checks that archive rejects damaged
+// ciphertext and wrong identity.
 func TestArchiveRejectsDamagedCiphertextAndWrongIdentity(t *testing.T) {
 	source, _, identity, _ := archiveFixture(t)
 	// #nosec G304 -- The test controls this fixture path within its private workspace.
@@ -159,6 +163,7 @@ func TestArchiveRejectsDamagedCiphertextAndWrongIdentity(t *testing.T) {
 	}
 }
 
+// TestArchiveRejectsUnsafeSourcesAndLimits checks that archive rejects unsafe sources and limits.
 func TestArchiveRejectsUnsafeSourcesAndLimits(t *testing.T) {
 	source, stage, identity, manifest := archiveFixture(t)
 	recipients := []age.Recipient{identity.Recipient()}
@@ -277,6 +282,8 @@ func TestArchiveRejectsUnsafeSourcesAndLimits(t *testing.T) {
 	}
 }
 
+// craftedArchive creates an age-encrypted tar archive with explicitly supplied manifest, entries,
+// and trailing bytes.
 func craftedArchive(
 	t *testing.T,
 	identity *age.X25519Identity,
@@ -328,6 +335,8 @@ func craftedArchive(
 	return file
 }
 
+// TestAuthenticatedArchiveStillRequiresSafeCompleteManifest checks that authenticated archive
+// still requires safe complete manifest.
 func TestAuthenticatedArchiveStillRequiresSafeCompleteManifest(t *testing.T) {
 	id, _ := age.GenerateX25519Identity()
 	data := []byte("x")
@@ -397,6 +406,7 @@ func TestAuthenticatedArchiveStillRequiresSafeCompleteManifest(t *testing.T) {
 	}
 }
 
+// TestRestoreRechecksIsolatedFiles checks that restore rechecks isolated files.
 func TestRestoreRechecksIsolatedFiles(t *testing.T) {
 	source, _, identity, _ := archiveFixture(t)
 	v, err := Verify(t.Context(), source, t.TempDir(), []age.Identity{identity}, Limits{})
@@ -416,6 +426,8 @@ func TestRestoreRechecksIsolatedFiles(t *testing.T) {
 	}
 }
 
+// FuzzArchiveNames checks that accepted archive names exclude absolute paths, backslashes, and NUL
+// bytes.
 func FuzzArchiveNames(f *testing.F) {
 	for _, name := range []string{"secrets/key", "../secret", "/absolute", "a\\b", "a/./b", "a//b", "a\x00b"} {
 		f.Add(name)

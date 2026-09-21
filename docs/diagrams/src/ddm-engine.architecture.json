@@ -10,7 +10,7 @@
     ],
     "repository": {
       "url": "https://github.com/deploymenttheory/go-apple-dm",
-      "revision": "7500eb25e50a2913338339d5fced18dc7f41fdc3"
+      "revision": "2b8157efa2c6cbfff459bc44f66736a5d2e7c753"
     },
     "views": [
       {
@@ -43,7 +43,7 @@
           "canonjson",
           "predicate"
         ],
-        "note": "A ServerToken is the hash of the RFC 8785 canonical declaration."
+        "note": "This engine derives ServerToken from canonical JSON. Apple requires a distinct revision token, not a specific hash format."
       }
     ],
     "colour_profile": "purpose-v1",
@@ -256,13 +256,19 @@
         220,
         70
       ],
-      "purpose": "transport"
+      "purpose": "transport",
+      "sources": [
+        {
+          "path": "server/pushnotify/notifier.go",
+          "label": "Wake notifier"
+        }
+      ]
     },
     {
       "id": "sqlstore",
       "type": "database",
-      "label": "ddm/sqlstore · inmem",
-      "sublabel": "own migration set",
+      "label": "Declarative backends",
+      "sublabel": "ddmstore/sqlstore · inmem",
       "pos": [
         995.0,
         410
@@ -271,7 +277,17 @@
         220,
         70
       ],
-      "purpose": "storage"
+      "purpose": "storage",
+      "sources": [
+        {
+          "path": "server/ddmstore/sqlstore/sqlstore.go",
+          "label": "SQL backend"
+        },
+        {
+          "path": "devicemanagement/storage/ddm/inmem/inmem.go",
+          "label": "Memory backend"
+        }
+      ]
     }
   ],
   "connections": [
@@ -368,8 +384,16 @@
       "dot": "service",
       "title": "From desired state to synchronization",
       "items": [
-        "The engine commits declaration changes and their change records together. The notifier reads those records after commit.",
-        "The notifier queues a DeclarativeManagement command through service.Core and requests an MDM push when a pusher is configured."
+        "The engine commits declaration changes and change records together. The notifier reads those records after commit and obtains current synchronization tokens.",
+        "The notifier queues DeclarativeManagement with TokensResponse in Data and deduplicates by declaration-token generation. A configured pusher requests an MDM wake."
+      ]
+    },
+    {
+      "dot": "policy",
+      "title": "Delivery eligibility and activation",
+      "items": [
+        "The reference composition evaluates declaration support against enrollment inventory before advertisement and refreshes snapshots when eligibility changes.",
+        "Automatic status subscriptions include an activation unless an administrator overrides the generated identifiers. The device evaluates activation predicates and reports status; server publication does not prove activation."
       ]
     },
     {
@@ -386,7 +410,8 @@
       "items": [
         "Integrating declarative management — https://developer.apple.com/documentation/devicemanagement/integrating-declarative-management",
         "Declarations — https://developer.apple.com/documentation/devicemanagement/devicemanagement-declarations",
-        "RFC 8785 — JSON Canonicalization Scheme — https://www.rfc-editor.org/rfc/rfc8785"
+        "RFC 8785 — JSON Canonicalization Scheme — https://www.rfc-editor.org/rfc/rfc8785",
+        "Declarative data model and activation — https://developer.apple.com/documentation/devicemanagement/leveraging-the-declarative-management-data-model-to-scale-devices"
       ]
     }
   ]

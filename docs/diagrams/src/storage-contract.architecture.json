@@ -10,7 +10,7 @@
     ],
     "repository": {
       "url": "https://github.com/deploymenttheory/go-apple-dm",
-      "revision": "7500eb25e50a2913338339d5fced18dc7f41fdc3"
+      "revision": "2b8157efa2c6cbfff459bc44f66736a5d2e7c753"
     },
     "views": [
       {
@@ -78,7 +78,14 @@
         220,
         70
       ],
-      "purpose": "authentication"
+      "purpose": "authentication",
+      "sources": [
+        {
+          "path": "server/service/checkin.go",
+          "line": 188,
+          "label": "Authenticate"
+        }
+      ]
     },
     {
       "id": "enqueue",
@@ -93,7 +100,14 @@
         220,
         70
       ],
-      "purpose": "service"
+      "purpose": "service",
+      "sources": [
+        {
+          "path": "server/service/transaction.go",
+          "line": 12,
+          "label": "Enqueue"
+        }
+      ]
     },
     {
       "id": "setbst",
@@ -108,7 +122,14 @@
         220,
         70
       ],
-      "purpose": "storage"
+      "purpose": "storage",
+      "sources": [
+        {
+          "path": "server/service/checkin.go",
+          "line": 312,
+          "label": "SetBootstrapToken"
+        }
+      ]
     },
     {
       "id": "export",
@@ -123,7 +144,14 @@
         220,
         70
       ],
-      "purpose": "storage"
+      "purpose": "storage",
+      "sources": [
+        {
+          "path": "server/service/migrate.go",
+          "line": 15,
+          "label": "ExportEnrollments"
+        }
+      ]
     },
     {
       "id": "enrollmentstore",
@@ -314,7 +342,14 @@
         220,
         70
       ],
-      "purpose": "policy"
+      "purpose": "policy",
+      "sources": [
+        {
+          "path": "server/service/checkin.go",
+          "line": 114,
+          "label": "Identity authorization"
+        }
+      ]
     },
     {
       "id": "pushsvc",
@@ -329,7 +364,13 @@
         220,
         70
       ],
-      "purpose": "transport"
+      "purpose": "transport",
+      "sources": [
+        {
+          "path": "server/pushnotify/notifier.go",
+          "label": "Notify"
+        }
+      ]
     },
     {
       "id": "userauth",
@@ -344,7 +385,14 @@
         220,
         70
       ],
-      "purpose": "authentication"
+      "purpose": "authentication",
+      "sources": [
+        {
+          "path": "server/service/checkin.go",
+          "line": 388,
+          "label": "UserAuthenticate"
+        }
+      ]
     },
     {
       "id": "pushcertmgr",
@@ -359,7 +407,13 @@
         220,
         70
       ],
-      "purpose": "certificate"
+      "purpose": "certificate",
+      "sources": [
+        {
+          "path": "server/internal/app/adminsetup.go",
+          "label": "Certificate administration"
+        }
+      ]
     }
   ],
   "boundaries": [
@@ -485,9 +539,9 @@
         "Check-in — https://developer.apple.com/documentation/devicemanagement/check-in",
         "Set Bootstrap Token — https://developer.apple.com/documentation/devicemanagement/set-bootstrap-token",
         "Go cipher.NewGCM — https://pkg.go.dev/crypto/cipher#NewGCM",
-        "CommandClearer contract — https://github.com/deploymenttheory/go-apple-dm/blob/80599ddc35778bcc88fa2ac77bb1dc68a51cf089/devicemanagement/storage/storage.go#L248",
-        "Dispatch revalidation — https://github.com/deploymenttheory/go-apple-dm/blob/80599ddc35778bcc88fa2ac77bb1dc68a51cf089/server/service/connect.go#L109",
-        "ReplacementStore contract — https://github.com/deploymenttheory/go-apple-dm/blob/80599ddc35778bcc88fa2ac77bb1dc68a51cf089/devicemanagement/storage/replacement.go#L18"
+        "CommandClearer contract — https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/devicemanagement/storage/storage.go#L248",
+        "Dispatch revalidation — https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/server/service/connect.go#L99",
+        "ReplacementStore contract — https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/devicemanagement/storage/replacement.go#L18"
       ]
     }
   ]

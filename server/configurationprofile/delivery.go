@@ -16,6 +16,9 @@ import (
 // The URLs carry no bearer credential; downloads require the pinned MDM identity.
 type Expander struct{ BaseURL string }
 
+// Expand adds the complete enrollment identity to a locally hosted profile or data-asset
+// URL. It returns (nil, nil) when no hosted URL applies; malformed declaration JSON returns
+// an error. The URL contains no bearer credential.
 func (e Expander) Expand(_ context.Context, id mdm.EnrollmentID, d *ddm.Declaration) ([]byte, error) {
 	var wire struct {
 		Identifier, Type string
@@ -45,10 +48,12 @@ func (e Expander) Expand(_ context.Context, id mdm.EnrollmentID, d *ddm.Declarat
 	return json.Marshal(wire)
 }
 
+// channelName returns the wire name of the enrollment's management channel.
 func channelName(id mdm.EnrollmentID) string {
 	return id.Channel.String()
 }
 
+// urlField locates the URL field in a LegacyProfile or AssetData declaration payload.
 func urlField(typ string, p map[string]any) (map[string]any, string) {
 	switch typ {
 	case schema.DeclarationTypeLegacyProfile:

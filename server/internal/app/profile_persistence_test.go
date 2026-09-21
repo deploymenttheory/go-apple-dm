@@ -15,6 +15,7 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/storage/storagetest"
 )
 
+// TestManualEnrollmentInstallationScope checks manual enrollment installation scope.
 func TestManualEnrollmentInstallationScope(t *testing.T) {
 	for _, tc := range []struct{ product, scope, want string }{
 		{"Mac", "", profile.ScopeUser},
@@ -56,10 +57,12 @@ type rejectProfileTemplateTx struct {
 	fault error
 }
 
+// Update wraps state transactions to reject writes containing profile templates.
 func (s rejectProfileTemplateStore) Update(ctx context.Context, keys []string, fn func(state.Tx) error) error {
 	return s.Store.Update(ctx, keys, func(tx state.Tx) error { return fn(rejectProfileTemplateTx{Tx: tx, fault: s.fault}) })
 }
 
+// Put rejects stored profile metadata containing a template and delegates other writes.
 func (tx rejectProfileTemplateTx) Put(ctx context.Context, r state.Record) error {
 	var metadata profileMetadata
 	if json.Unmarshal(r.Value, &metadata) == nil && len(metadata.Template) > 0 {
@@ -68,6 +71,8 @@ func (tx rejectProfileTemplateTx) Put(ctx context.Context, r state.Record) error
 	return tx.Tx.Put(ctx, r)
 }
 
+// TestProfilePersistenceFailureNeverDeliversCredentialProfile checks that profile persistence
+// failure never delivers credential profile.
 func TestProfilePersistenceFailureNeverDeliversCredentialProfile(t *testing.T) {
 	a, id := replacementSecurityApp(t)
 	e := a.enroll
@@ -126,6 +131,8 @@ func TestProfilePersistenceFailureNeverDeliversCredentialProfile(t *testing.T) {
 	}
 }
 
+// TestCommandEvidenceRejectsInvalidTargetAndStorageFailure checks that command evidence rejects
+// invalid target and storage failure.
 func TestCommandEvidenceRejectsInvalidTargetAndStorageFailure(t *testing.T) {
 	a, id := replacementSecurityApp(t)
 	a.Store = &storagetest.Failing{Store: a.Store, Fail: map[string]error{"Commands": errors.New("evidence unavailable")}}

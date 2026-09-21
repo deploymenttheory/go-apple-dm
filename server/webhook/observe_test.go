@@ -21,6 +21,8 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/server/statestore"
 )
 
+// TestObservationBoundaries checks HTTP observation boundaries without suppressing panics or
+// leaking query strings.
 func TestObservationBoundaries(t *testing.T) {
 	for _, tc := range []struct {
 		name, request string
@@ -76,6 +78,7 @@ func TestObservationBoundaries(t *testing.T) {
 	}
 }
 
+// TestCMSObservationAndCaptureFailure checks CMS observation and capture failure.
 func TestCMSObservationAndCaptureFailure(t *testing.T) {
 	s := testStore(t, Config{CommandType: func(context.Context, mdm.EnrollmentID, string) (string, error) { return "DeviceInformation", nil }})
 	c := subscribe(t, s, PayloadPolicy{FullJSON: true, RawRequest: true, RawResponse: true})
@@ -125,6 +128,7 @@ func TestCMSObservationAndCaptureFailure(t *testing.T) {
 	}
 }
 
+// TestRouteAndCorrelationBoundaries checks route and correlation boundaries.
 func TestRouteAndCorrelationBoundaries(t *testing.T) {
 	s := testStore(t, Config{})
 	for path, want := range map[string]string{"/mdm": "mdm", "/scep": "scep", "/acme/new-account": "acme", "/pki/ocsp/issuer": "certificate_status", "/content-cache/metrics": "content_cache", "/.well-known/com.apple.remotemanagement": "enrollment", "/enroll/ade": "enrollment", "/enroll/authenticate": "enrollment", "/enroll/oidc/callback": "enrollment", "/enroll/oauth2/token": "enrollment", "/enroll/mdm-byod": "enrollment", "/ota": "enrollment", "/configuration-profiles/revision": "profile", "/admin/v1/webhooks": "", "/healthz": "", "/ddm/v1/status": "", "/webhooks/v1/payloads/id/body": ""} {
@@ -156,6 +160,7 @@ func TestRouteAndCorrelationBoundaries(t *testing.T) {
 	ObserveOutcome(t.Context(), "unknown")
 }
 
+// TestOutcomeCaptureUsesSafeSummary checks that outcome capture uses safe summary.
 func TestOutcomeCaptureUsesSafeSummary(t *testing.T) {
 	s := testStore(t, Config{CommandType: func(context.Context, mdm.EnrollmentID, string) (string, error) { return "DeviceInformation", nil }})
 	summary := subscribe(t, s, PayloadPolicy{})
@@ -200,6 +205,7 @@ func TestOutcomeCaptureUsesSafeSummary(t *testing.T) {
 	}
 }
 
+// TestManagedCertificateCaptureIsAtomic checks managed certificate capture is atomic.
 func TestManagedCertificateCaptureIsAtomic(t *testing.T) {
 	s := testStore(t, Config{})
 	subscribe(t, s, PayloadPolicy{})
@@ -270,19 +276,31 @@ func TestManagedCertificateCaptureIsAtomic(t *testing.T) {
 
 type brokenRequest struct{}
 
+// Read returns a partial request body with io.ErrUnexpectedEOF.
 func (brokenRequest) Read(p []byte) (int, error) { return copy(p, "partial"), io.ErrUnexpectedEOF }
-func (brokenRequest) Close() error               { return nil }
+
+// Close closes the fixture request body without error.
+func (brokenRequest) Close() error { return nil }
 
 type brokenReply struct {
 	header   http.Header
 	deadline bool
 }
 
-func (w *brokenReply) Header() http.Header              { return w.header }
-func (*brokenReply) WriteHeader(int)                    {}
-func (*brokenReply) Write([]byte) (int, error)          { return 2, io.ErrClosedPipe }
+// Header returns the fixture response header map.
+func (w *brokenReply) Header() http.Header { return w.header }
+
+// WriteHeader ignores response status writes in this failure fixture.
+func (*brokenReply) WriteHeader(int) {}
+
+// Write returns a partial write count and io.ErrClosedPipe.
+func (*brokenReply) Write([]byte) (int, error) { return 2, io.ErrClosedPipe }
+
+// SetWriteDeadline records that a response-write deadline was set.
 func (w *brokenReply) SetWriteDeadline(time.Time) error { w.deadline = true; return nil }
 
+// TestObservationIncompleteIOAndResponseController checks observation incomplete I/O and response
+// controller.
 func TestObservationIncompleteIOAndResponseController(t *testing.T) {
 	s := testStore(t, Config{})
 	c := subscribe(t, s, PayloadPolicy{RawRequest: true, RawResponse: true})

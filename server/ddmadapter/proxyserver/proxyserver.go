@@ -28,6 +28,8 @@ import (
 // Backend serves one DeclarativeManagement check-in; *ddm.Engine
 // satisfies it.
 type Backend interface {
+	// Handle processes the selected declarative endpoint for the complete enrollment
+	// identity and returns the protocol response.
 	Handle(
 		ctx context.Context,
 		id mdm.EnrollmentID,
@@ -171,6 +173,8 @@ func (s *server) authenticate(r *http.Request) error {
 	return nil
 }
 
+// serve validates the private-hop content type, bounded body, and signature before
+// dispatching the declarative check-in.
 func (s *server) serve(w http.ResponseWriter, r *http.Request) {
 	if ct, _, err := mime.ParseMediaType(
 		r.Header.Get("Content-Type"),

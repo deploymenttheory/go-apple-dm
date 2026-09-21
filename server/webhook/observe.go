@@ -41,6 +41,8 @@ func WithCorrelation(ctx context.Context, id string) context.Context {
 	return context.WithValue(ctx, correlationKey{}, id)
 }
 
+// CorrelationID returns the exchange correlation identifier stored in ctx, or an empty
+// string when no observation has assigned one.
 func CorrelationID(ctx context.Context) string {
 	id, _ := ctx.Value(correlationKey{}).(string)
 	return id
@@ -154,6 +156,8 @@ type boundedBody struct {
 	failed bool
 }
 
+// Read records request bytes up to the capture bound while forwarding reads to the wrapped
+// body.
 func (b *boundedBody) Read(p []byte) (int, error) {
 	n, err := b.ReadCloser.Read(p)
 	b.read += int64(n)
@@ -177,7 +181,12 @@ type observedWriter struct {
 	failed  bool
 }
 
+// Unwrap returns the underlying writer so HTTP response controllers can reach its supported
+// interfaces.
 func (w *observedWriter) Unwrap() http.ResponseWriter { return w.ResponseWriter }
+
+// WriteHeader forwards informational statuses and records and forwards only the first
+// final response status.
 func (w *observedWriter) WriteHeader(status int) {
 	if status < 200 {
 		w.ResponseWriter.WriteHeader(status)
@@ -189,6 +198,8 @@ func (w *observedWriter) WriteHeader(status int) {
 	}
 }
 
+// Write captures response bytes within the configured bound while preserving the underlying
+// write result.
 func (w *observedWriter) Write(p []byte) (int, error) {
 	if w.status == 0 {
 		w.WriteHeader(http.StatusOK)
@@ -204,6 +215,8 @@ func (w *observedWriter) Write(p []byte) (int, error) {
 	return n, err
 }
 
+// Flush forwards a flush to the underlying writer while preserving the observed response
+// state.
 func (w *observedWriter) Flush() {
 	if w.status == 0 {
 		w.WriteHeader(http.StatusOK)
@@ -213,6 +226,8 @@ func (w *observedWriter) Flush() {
 	}
 }
 
+// decodedPayload decodes an observed protocol body for capture while retaining explicit
+// decoding failures.
 func decodedPayload(body []byte, limit int) Payload {
 	trimmed := bytes.TrimSpace(body)
 	if len(trimmed) == 0 {

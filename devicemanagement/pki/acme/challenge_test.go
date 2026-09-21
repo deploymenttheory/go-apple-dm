@@ -449,6 +449,7 @@ func TestEventsAreOptional(t *testing.T) {
 	})
 }
 
+// TestRequiredAttestationCannotBeDowngraded checks that required attestation cannot be downgraded.
 func TestRequiredAttestationCannotBeDowngraded(t *testing.T) {
 	f := newFixture(t, func(c *acme.Config) { c.AllowUnattested = true })
 	binding := f.ids[testIdentifier]

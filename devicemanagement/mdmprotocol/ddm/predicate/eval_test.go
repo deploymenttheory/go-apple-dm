@@ -185,6 +185,8 @@ var evalCases = []evalCase{
 	{`@status(count) == @property(strct)`, false, true},
 }
 
+// TestEvalTable checks predicate evaluation results and typed evaluation errors across the
+// expression table.
 func TestEvalTable(t *testing.T) {
 	t.Parallel()
 	for _, tc := range evalCases {
@@ -214,6 +216,7 @@ func TestEvalTable(t *testing.T) {
 	}
 }
 
+// TestEvalProperties checks property lookup, comparison, and missing-property behavior.
 func TestEvalProperties(t *testing.T) {
 	t.Parallel()
 	env := Properties{"shard": 42, "name": "alpha"}
@@ -241,6 +244,7 @@ func TestEvalProperties(t *testing.T) {
 	}
 }
 
+// TestEvalNilEnv checks constant and property predicates with nil and empty environments.
 func TestEvalNilEnv(t *testing.T) {
 	t.Parallel()
 	got, err := MustParse(`@property(a) == NULL AND @status(b) == NULL`).Eval(nil)
@@ -256,6 +260,7 @@ func TestEvalNilEnv(t *testing.T) {
 	}
 }
 
+// TestEvalNilPredicate checks that nil and zero-value predicates return syntax errors.
 func TestEvalNilPredicate(t *testing.T) {
 	t.Parallel()
 	var p *Predicate
@@ -269,10 +274,12 @@ func TestEvalNilPredicate(t *testing.T) {
 
 type bogusExpr struct{}
 
+// precedence gives the unsupported expression primary precedence for evaluator tests.
 func (bogusExpr) precedence() int { return precPrimary }
 
 type bogusOperand struct{}
 
+// isOperand marks the unsupported test node as an operand.
 func (bogusOperand) isOperand() {}
 
 // TestEvalInternalGuards covers the defensive branches that a parsed tree

@@ -29,6 +29,7 @@ type faultStore struct {
 	direct     bool
 }
 
+// Get injects a direct state-read failure for matching keys or delegates to the store.
 func (s faultStore) Get(ctx context.Context, key string) (state.Record, error) {
 	if s.direct && strings.HasPrefix(key, s.prefix) {
 		return state.Record{}, errStorage
@@ -36,6 +37,7 @@ func (s faultStore) Get(ctx context.Context, key string) (state.Record, error) {
 	return s.Store.Get(ctx, key)
 }
 
+// Update wraps the transaction so configured operations can fail.
 func (s faultStore) Update(ctx context.Context, keys []string, fn func(state.Tx) error) error {
 	return s.Store.Update(ctx, keys, func(tx state.Tx) error { return fn(faultTx{Tx: tx, op: s.op, prefix: s.prefix}) })
 }
@@ -45,6 +47,7 @@ type faultTx struct {
 	op, prefix string
 }
 
+// Get injects a transaction read failure for matching keys or delegates to the transaction.
 func (tx faultTx) Get(ctx context.Context, key string) (state.Record, error) {
 	if tx.op == "get" && strings.HasPrefix(key, tx.prefix) {
 		return state.Record{}, errStorage
@@ -52,6 +55,7 @@ func (tx faultTx) Get(ctx context.Context, key string) (state.Record, error) {
 	return tx.Tx.Get(ctx, key)
 }
 
+// Put injects a transaction write failure for matching keys or delegates to the transaction.
 func (tx faultTx) Put(ctx context.Context, r state.Record) error {
 	if tx.op == "put" && strings.HasPrefix(r.Key, tx.prefix) {
 		return errStorage
@@ -59,6 +63,7 @@ func (tx faultTx) Put(ctx context.Context, r state.Record) error {
 	return tx.Tx.Put(ctx, r)
 }
 
+// List injects a transaction list failure or delegates to the transaction.
 func (tx faultTx) List(ctx context.Context, prefix, after string, n int) ([]state.Record, error) {
 	if tx.op == "list" {
 		return nil, errStorage
@@ -66,6 +71,7 @@ func (tx faultTx) List(ctx context.Context, prefix, after string, n int) ([]stat
 	return tx.Tx.List(ctx, prefix, after, n)
 }
 
+// TestRegistryFailuresAreAtomic checks registry failures are atomic.
 func TestRegistryFailuresAreAtomic(t *testing.T) {
 	for _, tc := range []struct{ action, op, prefix string }{
 		{"register", "get", "pki/cert/"},
@@ -117,6 +123,7 @@ type failingSigner struct {
 	fail bool
 }
 
+// Sign returns an injected signing failure when enabled, otherwise delegates to the signer.
 func (s *failingSigner) Sign(random io.Reader, digest []byte, opts crypto.SignerOpts) ([]byte, error) {
 	if s.fail {
 		return nil, errStorage
@@ -124,6 +131,8 @@ func (s *failingSigner) Sign(random io.Reader, digest []byte, opts crypto.Signer
 	return s.Signer.Sign(random, digest, opts)
 }
 
+// TestSigningFailureDoesNotAdvanceCRLOrClaimGoodStatus checks that signing failure does not
+// advance CRL or claim good status.
 func TestSigningFailureDoesNotAdvanceCRLOrClaimGoodStatus(t *testing.T) {
 	f := setup(t)
 	ctx := t.Context()
@@ -192,6 +201,8 @@ func TestSigningFailureDoesNotAdvanceCRLOrClaimGoodStatus(t *testing.T) {
 	}
 }
 
+// TestConflictingAndCorruptCertificateRecordsFailClosed checks conflicting and corrupt certificate
+// records fail closed.
 func TestConflictingAndCorruptCertificateRecordsFailClosed(t *testing.T) {
 	f := setup(t)
 	ctx := t.Context()

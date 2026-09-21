@@ -32,6 +32,7 @@ type MigrationSet struct {
 
 var tableName = regexp.MustCompile(`^[a-z_][a-z0-9_]{0,62}$`)
 
+// validate requires a safe migration-table identifier before constructing SQL.
 func (m MigrationSet) validate() error {
 	if !tableName.MatchString(m.Table) {
 		return fmt.Errorf("%w: bad migrations table %q", ErrMigration, m.Table)
@@ -39,6 +40,7 @@ func (m MigrationSet) validate() error {
 	return nil
 }
 
+// set returns the dialect's default embedded migration set.
 func (d Dialect) set() MigrationSet {
 	return MigrationSet{Table: DefaultMigrationsTable, FS: d.Migrations}
 }
@@ -77,6 +79,7 @@ func LoadMigrations(fsys fs.FS) ([]Migration, error) {
 	return out, nil
 }
 
+// parseMigration extracts the ordered version and statement content from a migration file.
 func parseMigration(fsys fs.FS, name string) (Migration, error) {
 	base := strings.TrimSuffix(name, ".sql")
 	verStr, title, ok := strings.Cut(base, "_")
@@ -266,6 +269,7 @@ func VersionOf(ctx context.Context, db *sql.DB, d Dialect, table string) (int, e
 	return v, nil
 }
 
+// ensureMigrationsTable creates the migration-version table when it is absent.
 func ensureMigrationsTable(ctx context.Context, db *sql.DB, d Dialect, table string) error {
 	_, err := db.ExecContext(ctx, "CREATE TABLE IF NOT EXISTS "+table+ // #nosec G202 -- table name validated by tableName
 		" (version INTEGER NOT NULL PRIMARY KEY, name VARCHAR(255) NOT NULL, applied_at "+timestampType(d)+" NOT NULL)")
@@ -275,6 +279,7 @@ func ensureMigrationsTable(ctx context.Context, db *sql.DB, d Dialect, table str
 	return nil
 }
 
+// timestampType selects the SQL timestamp type supported by the dialect.
 func timestampType(d Dialect) string {
 	switch d.Name {
 	case "postgres":
@@ -286,6 +291,7 @@ func timestampType(d Dialect) string {
 	}
 }
 
+// appliedVersions reads the migration versions already recorded in the database.
 func appliedVersions(ctx context.Context, db *sql.DB, table string) (map[int]bool, error) {
 	rows, err := db.QueryContext(ctx, "SELECT version FROM "+table) // #nosec G202 -- table name validated by tableName
 	if err != nil {
@@ -306,6 +312,7 @@ func appliedVersions(ctx context.Context, db *sql.DB, table string) (map[int]boo
 	return out, nil
 }
 
+// runInTx executes the callback in a transaction and rolls it back if the callback fails.
 func runInTx(ctx context.Context, db *sql.DB, fn func(*sql.Tx) error) error {
 	if _, ok := CurrentTransaction(ctx, db); ok {
 		return Savepoint(ctx, db, func(_ context.Context, tx *sql.Tx) error { return fn(tx) })

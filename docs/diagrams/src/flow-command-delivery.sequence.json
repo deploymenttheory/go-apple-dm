@@ -238,8 +238,18 @@
       "title": "Public documentation",
       "items": [
         "Sending MDM commands to a device — https://developer.apple.com/documentation/devicemanagement/sending-mdm-commands-to-a-device",
-        "Handling NotNow status responses — https://developer.apple.com/documentation/devicemanagement/handling-notnow-status-responses",
-        "Implementation — https://github.com/deploymenttheory/go-apple-dm/blob/7500eb25e50a2913338339d5fced18dc7f41fdc3/server/service/connect.go"
+        "Handling NotNow status responses — https://developer.apple.com/documentation/devicemanagement/handling-notnow-status-responses"
+      ]
+    },
+    {
+      "title": "Implementation references",
+      "dot": "artifact",
+      "items": [
+        "core: MDM service — https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/server/service/transaction.go",
+        "store: Command store — https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/devicemanagement/storage/storage.go#L208",
+        "push: Wake notifier — https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/server/pushnotify/notifier.go",
+        "Administrative enqueue — https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/server/internal/app/adminmdm.go",
+        "Result and next-command handling — https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/server/service/connect.go"
       ]
     }
   ]

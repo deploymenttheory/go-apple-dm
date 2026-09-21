@@ -22,6 +22,7 @@ import (
 	auditinmem "github.com/deploymenttheory/go-apple-dm/server/audit/inmem"
 )
 
+// rbacRequest serves an admin request with the supplied bearer token.
 func rbacRequest(a *App, method, path, token, body string) *httptest.ResponseRecorder {
 	r := httptest.NewRequestWithContext(context.Background(), method, "/admin/v1"+path, strings.NewReader(body))
 	r.Header.Set("Authorization", "Bearer "+token)
@@ -30,6 +31,7 @@ func rbacRequest(a *App, method, path, token, body string) *httptest.ResponseRec
 	return w
 }
 
+// bootstrapRBAC bootstraps RBAC and returns the validated managed root-principal token.
 func bootstrapRBAC(t *testing.T, a *App) string {
 	t.Helper()
 	w := rbacRequest(a, "POST", "/auth/bootstrap", "bootstrap-secret", `{"Name":"root"}`)
@@ -42,6 +44,8 @@ func bootstrapRBAC(t *testing.T, a *App) string {
 	return result.Token
 }
 
+// TestRBACBootstrapPersistsAndRootHasNoFleetAuthority checks rbac bootstrap persists and root has
+// no fleet authority.
 func TestRBACBootstrapPersistsAndRootHasNoFleetAuthority(t *testing.T) {
 	cfg := Config{Storage: "sqlite", DSN: filepath.Join(t.TempDir(), "server.db"), BootstrapToken: "bootstrap-secret", StorageKeys: []string{"test"}, Secrets: secrets.Static{"test": []byte("0123456789abcdef0123456789abcdef")}, Logger: slog.New(slog.NewTextHandler(io.Discard, nil))}
 	a, err := Build(t.Context(), cfg)
@@ -80,6 +84,7 @@ func TestRBACBootstrapPersistsAndRootHasNoFleetAuthority(t *testing.T) {
 	}
 }
 
+// TestRBACRoutineGrantsAndSensitiveBoundaries checks rbac routine grants and sensitive boundaries.
 func TestRBACRoutineGrantsAndSensitiveBoundaries(t *testing.T) {
 	trail := auditinmem.New()
 	a, err := Build(t.Context(), Config{Storage: "inmem", BootstrapToken: "bootstrap-secret", Sinks: SinkConfig{AuditStore: trail}})
@@ -225,6 +230,8 @@ func TestRBACRoutineGrantsAndSensitiveBoundaries(t *testing.T) {
 	}
 }
 
+// TestRBACInvalidActivePolicyFailsClosedAndRootCanRepair checks that rbac invalid active policy
+// fails closed and root can repair.
 func TestRBACInvalidActivePolicyFailsClosedAndRootCanRepair(t *testing.T) {
 	store := admininmem.New()
 	a, err := Build(t.Context(), Config{Storage: "inmem", AdminStore: store, BootstrapToken: "bootstrap-secret"})

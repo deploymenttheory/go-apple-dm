@@ -23,6 +23,8 @@ import (
 // auditTables is every table this migration set owns.
 var auditTables = []string{"audit_records"}
 
+// runShared runs audit store migration, shared store-contract, and rollback checks for a SQL
+// dialect.
 func runShared(t *testing.T, db *sql.DB, d sqlcommon.Dialect, cascade string) {
 	t.Helper()
 	ctx := context.Background()
@@ -59,6 +61,7 @@ func runShared(t *testing.T, db *sql.DB, d sqlcommon.Dialect, cascade string) {
 	}
 }
 
+// TestStorePostgres runs the audit SQL store suite against PostgreSQL.
 func TestStorePostgres(t *testing.T) {
 	dsn := os.Getenv("TEST_POSTGRES_DSN")
 	if dsn == "" {
@@ -74,6 +77,7 @@ func TestStorePostgres(t *testing.T) {
 	runShared(t, db, postgres.Dialect, " CASCADE")
 }
 
+// TestStoreMySQL runs the audit SQL store suite against MySQL.
 func TestStoreMySQL(t *testing.T) {
 	dsn := os.Getenv("TEST_MYSQL_DSN")
 	if dsn == "" {

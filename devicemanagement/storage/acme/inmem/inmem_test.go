@@ -12,6 +12,7 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/storage/acme/inmem"
 )
 
+// TestContract runs the shared ACME store suite against in-memory storage.
 func TestContract(t *testing.T) {
 	acmetest.RunAll(t, func(_ *testing.T) acme.Store { return inmem.New() })
 }

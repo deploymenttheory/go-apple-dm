@@ -123,6 +123,8 @@ func Load(dir string) (*Graph, error) {
 	return g, nil
 }
 
+// run runs a Go inspection command in the supplied directory with workspace resolution
+// enabled.
 func run(dir string, args ...string) (string, error) {
 	cmd := exec.CommandContext(
 		context.Background(),

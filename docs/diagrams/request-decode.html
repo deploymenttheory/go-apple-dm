@@ -5704,9 +5704,50 @@ svg[data-purpose-filter] g[data-purpose-highlight] > path { stroke-width: 2.4; }
           <li>&bull; <a href="https://developer.apple.com/documentation/devicemanagement/check-in" target="_blank" rel="noopener noreferrer">Check-in</a></li>
           <li>&bull; <a href="https://www.rfc-editor.org/rfc/rfc9440" target="_blank" rel="noopener noreferrer">RFC 9440 — Client-Cert HTTP Header Field</a></li>
           <li>&bull; <a href="https://developer.apple.com/documentation/devicemanagement/mdm" target="_blank" rel="noopener noreferrer">MDM payload</a></li>
-          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/80599ddc35778bcc88fa2ac77bb1dc68a51cf089/server/internal/app/security.go" target="_blank" rel="noopener noreferrer">Quota wrapper and shared state</a></li>
-          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/80599ddc35778bcc88fa2ac77bb1dc68a51cf089/server/service/checkin.go" target="_blank" rel="noopener noreferrer">Certificate status before service hooks</a></li>
-          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/7500eb25e50a2913338339d5fced18dc7f41fdc3/server/httpapi/httpapi.go" target="_blank" rel="noopener noreferrer">Implementation</a></li>
+          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/server/internal/app/security.go" target="_blank" rel="noopener noreferrer">Quota wrapper and shared state</a></li>
+          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/server/service/checkin.go" target="_blank" rel="noopener noreferrer">Certificate status before service hooks</a></li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-dot artifact"></div>
+          <h3>Implementation references</h3>
+        </div>
+        <ul>
+          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/devicemanagement/mdmprotocol/plist/plist.go" target="_blank" rel="noopener noreferrer">body: Request body</a></li>
+          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/devicemanagement/mdmprotocol/cms/cms.go" target="_blank" rel="noopener noreferrer">signature: Mdm-Signature</a></li>
+          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/devicemanagement/mdmprotocol/plist/plist.go" target="_blank" rel="noopener noreferrer">plist: Plist decoder</a></li>
+          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/devicemanagement/mdmprotocol/cms/cms.go" target="_blank" rel="noopener noreferrer">cms: Verify signed body</a></li>
+          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/devicemanagement/mdmprotocol/mdm/checkin.go" target="_blank" rel="noopener noreferrer">checkin: Typed check-in</a></li>
+          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/devicemanagement/mdmprotocol/mdm/response.go" target="_blank" rel="noopener noreferrer">response: Command response</a></li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-dot artifact"></div>
+          <h3>Implementation references (continued)</h3>
+        </div>
+        <ul>
+          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/server/httpapi/cert.go" target="_blank" rel="noopener noreferrer">cert: Device certificate</a></li>
+          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/server/httpapi/cert.go" target="_blank" rel="noopener noreferrer">tls: TLS certificate</a></li>
+          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/server/httpapi/cert.go" target="_blank" rel="noopener noreferrer">proxy: Trusted proxy</a></li>
+          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/server/httpapi/cert.go" target="_blank" rel="noopener noreferrer">identity: Extract identity</a></li>
+          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/server/service/service.go" target="_blank" rel="noopener noreferrer">authorize: Core authorization</a></li>
+          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/server/internal/app/security.go" target="_blank" rel="noopener noreferrer">quotas: HTTP quota gate</a></li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-dot artifact"></div>
+          <h3>Implementation references (continued)</h3>
+        </div>
+        <ul>
+          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/server/internal/app/security.go" target="_blank" rel="noopener noreferrer">quota-refusal: Quota refusal</a></li>
+          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/server/service/service.go" target="_blank" rel="noopener noreferrer">status-refusal: Status rejected</a></li>
+          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/server/httpapi/httpapi.go" target="_blank" rel="noopener noreferrer">Body decoding and HTTP mapping</a></li>
         </ul>
       </div>
     </div>

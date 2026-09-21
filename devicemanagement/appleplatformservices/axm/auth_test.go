@@ -23,6 +23,7 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/secrets"
 )
 
+// TestScope checks scope derivation, explicit overrides, and the School Manager host.
 func TestScope(t *testing.T) {
 	t.Parallel()
 	t.Run("FromClientID", func(t *testing.T) {
@@ -108,6 +109,8 @@ func TestScope(t *testing.T) {
 	})
 }
 
+// TestAssertion checks assertion claims, key IDs, P-256 enforcement, expiry bounds, clock skew,
+// and unique JTIs.
 func TestAssertion(t *testing.T) {
 	t.Parallel()
 	key := newKey(t)
@@ -247,6 +250,8 @@ func TestAssertion(t *testing.T) {
 	})
 }
 
+// TestKeyLoading checks SEC 1 and PKCS #8 key loading from files and secret providers and rejects
+// invalid keys.
 func TestKeyLoading(t *testing.T) {
 	t.Parallel()
 	key := newKey(t)
@@ -360,6 +365,8 @@ func TestKeyLoading(t *testing.T) {
 	})
 }
 
+// TestTokenExchange checks token-exchange encoding, scope, endpoint overrides, and failure
+// responses.
 func TestTokenExchange(t *testing.T) {
 	t.Parallel()
 	t.Run("FormBody", func(t *testing.T) {
@@ -523,6 +530,8 @@ func TestTokenExchange(t *testing.T) {
 	})
 }
 
+// TestTokenCache checks token reuse, refresh margins, concurrent refresh sharing, cancellation,
+// and forced refresh.
 func TestTokenCache(t *testing.T) {
 	t.Parallel()
 	t.Run("ReuseWithinTTL", func(t *testing.T) {
@@ -667,6 +676,8 @@ func TestTokenCache(t *testing.T) {
 	})
 }
 
+// TestUnauthorized checks that an unauthorized request refreshes once and a second rejection
+// becomes an authentication error.
 func TestUnauthorized(t *testing.T) {
 	t.Parallel()
 	t.Run("ReplayOnce", func(t *testing.T) {
@@ -717,6 +728,7 @@ func TestUnauthorized(t *testing.T) {
 	})
 }
 
+// TestConfig checks default AXM configuration and request construction.
 func TestConfig(t *testing.T) {
 	t.Parallel()
 	key := newKey(t)

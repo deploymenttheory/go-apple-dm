@@ -62,8 +62,8 @@ major constants for use throughout the library. Generated support metadata keeps
 each platform's full introduction, deprecation and removal boundaries; eligibility
 also considers the channel and enrollment capabilities. `support.Target` and
 `support.OSSupport` use `osversion.Version` directly, and callers parse and
-construct versions through `osversion`. See [OS versions and API migration](operations/os-versions.md)
-for the package boundary and removed API replacements. SSO value-specific floors are queryable through
+construct versions through `osversion`. See [OS versions and feature availability](operations/os-versions.md)
+for version construction and availability checks. SSO value-specific floors are queryable through
 `profiles.ValueSupport(path, value)` and retain their containing key's constraints.
 
 The [Device Management Client Schema monitor](schema-monitor.md) discovers upcoming
@@ -83,8 +83,7 @@ Command enqueueing validates the actual wire envelope and known payloads before
 storage. Required fields and value constraints always apply. With target validation
 enabled, both command and populated-field availability are checked per enrollment;
 unsupported targets appear in the enqueue result's skipped entries. Unknown command
-types retain their wire bytes for caller-supplied extensions. Callers that previously
-queued incomplete known commands must now provide valid required input.
+types retain their wire bytes for caller-supplied extensions. Known commands require valid input before queueing.
 
 Fleet eligibility requires known OS and version inventory; inventory commands
 remain available to establish it. A tracked inventory acknowledgment refreshes
@@ -109,7 +108,7 @@ Account-driven Device Enrollment and account-driven User Enrollment use service 
 the authenticated account with the certificate. The first `Authenticate` reserves the enrollment
 identifier; successful storage confirms it. These are separate store operations with retry
 semantics, not a distributed transaction. Subsequent requests follow the platform/channel bearer
-rules. See [enrollment security operations](operations/enrollment-security.md) for migration.
+rules. See [enrollment security operations](operations/enrollment-security.md) for the authentication and persistence contracts.
 
 Commands are checked against available target metadata, queued with deduplication options and
 delivered through the MDM connect exchange. Responses persist results and drive retry behavior.
@@ -134,12 +133,13 @@ diagnostics while retaining the stored evidence. See [inspection](operations/sta
 delivery operations and must not be treated as side-effect-free previews.
 
 `server/ddmsync` converts pending changes into `DeclarativeManagement` commands and pushes.
-The engine can run in process or behind the project's private `POST /v1/declarative-management`
-proxy. Both adapters require HTTPS and independent HMAC keys in both directions.
+The reference server uses the in-process adapter. Custom compositions can use the
+project's private `POST /v1/declarative-management` proxy. The proxy client and server
+require HTTPS and independent HMAC keys in both directions.
 Request signatures bind method, target, content type, timestamp, nonce and body;
 response signatures bind the request envelope, status, content type and body.
-The receiving adapter requires shared atomic replay state; the reference server
-supplies its SQL protocol store. Mutual TLS and bearer checks are additional library
+The receiving adapter requires caller-supplied shared atomic replay state.
+`server/statestore` provides a SQL implementation. Mutual TLS and bearer checks are additional library
 options. See [decision 0023](research/decisions/0023-ddm-adapters-and-wire-contract.md)
 for freshness limits and the explicit loopback-only test exception.
 
@@ -172,11 +172,11 @@ commands/results, protocol state and credential-bearing declaration data. Metada
 status/audit records are not whole-database encrypted. Protect the database, backups, profiles
 and privileged plaintext exports accordingly.
 
-The `all`, `mdm` and `ddm` roles compose services from environment configuration. Admin routes
+The reference server composes MDM and DDM together from environment configuration. Admin routes
 authorize stored principals through Cedar policies. The one-time bootstrap token is accepted only
 by the bootstrap endpoint and creates the first root principal; fleet access requires explicit policies. Event sinks
 project permitted fields for audit and logs. Native webhook subscriptions can also
-export encrypted retained JSON/raw representations under a root-only disclosure policy. SQL applications always
+export encrypted retained JSON/raw representations under explicit sensitive-export grants. SQL applications always
 capture projected events in `server/eventstore`, including events with no configured delivery
 destination. Participating local mutations and event capture share one SQL transaction through
 `event.Run`; capture failure rolls back that operation. This is not a transaction spanning Apple

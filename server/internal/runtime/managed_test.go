@@ -15,6 +15,8 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/server/internal/app"
 )
 
+// managedRuntimeConfig creates managed HTTPS setup with an activated lab certificate and returns
+// its configuration and trust roots.
 func managedRuntimeConfig(t *testing.T) (app.Config, *x509.CertPool) {
 	t.Helper()
 	path, err := app.InitSetupFile(
@@ -63,6 +65,7 @@ func managedRuntimeConfig(t *testing.T) (app.Config, *x509.CertPool) {
 	return cfg, roots
 }
 
+// runtimeAddress finds an available loopback address by opening and closing a temporary listener.
 func runtimeAddress(t *testing.T) string {
 	t.Helper()
 	l, err := (&net.ListenConfig{}).Listen(t.Context(), "tcp", "127.0.0.1:0")
@@ -76,6 +79,7 @@ func runtimeAddress(t *testing.T) string {
 	return address
 }
 
+// TestManagedRuntimeTLSHTTP01AndShutdown checks managed runtime tlshttp01 and shutdown.
 func TestManagedRuntimeTLSHTTP01AndShutdown(t *testing.T) {
 	cfg, roots := managedRuntimeConfig(t)
 	cfg.Listen, cfg.Setup.HTTP01Listen = runtimeAddress(t), runtimeAddress(t)
@@ -133,6 +137,8 @@ func TestManagedRuntimeTLSHTTP01AndShutdown(t *testing.T) {
 	}
 }
 
+// TestManagedRuntimeRejectsMissingIdentityAndOccupiedListeners checks that managed runtime rejects
+// missing identity and occupied listeners.
 func TestManagedRuntimeRejectsMissingIdentityAndOccupiedListeners(t *testing.T) {
 	cfg, _ := managedRuntimeConfig(t)
 	validHTTPS := cfg.Setup.HTTPSID

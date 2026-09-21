@@ -7,6 +7,8 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/server/configurationprofile"
 )
 
+// configurationProfileAdminRoutes declares immutable profile upload, metadata and content
+// routes with distinct permissions and response bounds.
 func (a *App) configurationProfileAdminRoutes() []adminRoute {
 	if a.ConfigurationProfiles == nil {
 		return nil
@@ -61,6 +63,8 @@ func (a *App) configurationProfileAdminRoutes() []adminRoute {
 	return routes
 }
 
+// writeProfile writes profile bytes with the supplied content type, disables caching and
+// prevents content sniffing.
 func writeProfile(w http.ResponseWriter, b []byte, contentType string) {
 	w.Header().Set("Content-Type", contentType)
 	w.Header().Set("X-Content-Type-Options", "nosniff")

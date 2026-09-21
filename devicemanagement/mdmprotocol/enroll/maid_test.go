@@ -19,10 +19,12 @@ import (
 
 type badSigner struct{ crypto.Signer }
 
+// Sign returns io.ErrClosedPipe to simulate a profile-signing failure.
 func (badSigner) Sign(io.Reader, []byte, crypto.SignerOpts) ([]byte, error) {
 	return nil, io.ErrClosedPipe
 }
 
+// TestMAIDToken checks managed Apple account token structure and unique JWT IDs.
 func TestMAIDToken(t *testing.T) {
 	ca, err := testpki.NewCA("ADE server")
 	if err != nil {

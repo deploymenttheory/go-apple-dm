@@ -120,6 +120,8 @@ func CertFromHeader(name string, opts ...HeaderOption) func(http.Handler) http.H
 	}
 }
 
+// parseHeaderCert parses the client certificate supplied through the configured trusted
+// ingress header.
 func parseHeaderCert(v string) (*x509.Certificate, error) {
 	if strings.HasPrefix(v, ":") && strings.HasSuffix(v, ":") && len(v) > 2 {
 		der, err := base64.StdEncoding.DecodeString(v[1 : len(v)-1])
@@ -186,6 +188,8 @@ func CertFromMdmSignature(o cms.VerifyOptions, maxBytes int64) func(http.Handler
 	}
 }
 
+// verifiedIdentity attaches a verified certificate to the request context, rejecting a
+// conflict with an existing identity.
 func verifiedIdentity(
 	w http.ResponseWriter,
 	r *http.Request,

@@ -62,6 +62,8 @@ type VerifyInput struct {
 // store. It returns false for a wrong password or unknown user and an error
 // only when the check itself could not run.
 type UserVerifier interface {
+	// Verify checks the device's user-authentication response against the supplied challenge
+	// and realm, distinguishing rejection from verifier failure.
 	Verify(ctx context.Context, r *mdm.Request, in VerifyInput) (bool, error)
 }
 
@@ -135,6 +137,7 @@ func expectedDigest(h1 string, p map[string]string) string {
 	return md5hex(strings.Join([]string{h1, p["nonce"], p["nc"], p["cnonce"], p["qop"], ha2}, ":"))
 }
 
+// md5hex returns the hexadecimal MD5 value required by the HTTP Digest exchange.
 func md5hex(s string) string {
 	sum := md5.Sum([]byte(s)) // #nosec G401 -- RFC 2617 Digest requires MD5
 	return hex.EncodeToString(sum[:])
@@ -228,6 +231,8 @@ func (d *DigestUserAuth) Handle(ctx context.Context, r *mdm.Request, m *checkin.
 	return d.verify(ctx, r, m, raw)
 }
 
+// challenge creates and stores the user authentication challenge before returning it to the
+// device.
 func (d *DigestUserAuth) challenge(ctx context.Context, r *mdm.Request, m *checkin.UserAuthenticate, raw []byte) (*mdm.UserAuthenticateResponse, error) {
 	if d.Manage != nil {
 		if err := d.Manage(ctx, r, m); err != nil {
@@ -248,6 +253,8 @@ func (d *DigestUserAuth) challenge(ctx context.Context, r *mdm.Request, m *check
 	return &mdm.UserAuthenticateResponse{DigestChallenge: &challenge}, nil
 }
 
+// verify checks the response to an outstanding, unexpired user challenge and retains a
+// token only after successful verification.
 func (d *DigestUserAuth) verify(ctx context.Context, r *mdm.Request, m *checkin.UserAuthenticate, raw []byte) (*mdm.UserAuthenticateResponse, error) {
 	now := d.now()
 	st, err := d.outstanding(ctx, r.ID)
@@ -305,6 +312,7 @@ func (d *DigestUserAuth) reject(ctx context.Context, r *mdm.Request, m *checkin.
 	return &mdm.UserAuthenticateResponse{AuthToken: new("")}, nil
 }
 
+// publish publishes the user-authentication outcome through the configured event publisher.
 func (d *DigestUserAuth) publish(ctx context.Context, t event.Type, id mdm.EnrollmentID, data any) {
 	if d.Bus == nil {
 		return
@@ -314,6 +322,7 @@ func (d *DigestUserAuth) publish(ctx context.Context, t event.Type, id mdm.Enrol
 	_ = d.Bus.Publish(ctx, event.Event{Type: t, At: d.now(), Enrollment: id, Actor: "device", Data: data})
 }
 
+// random reads randomness from the configured source for authentication material.
 func (d *DigestUserAuth) random(n int) (string, error) {
 	rd := d.Rand
 	if rd == nil {
@@ -326,6 +335,7 @@ func (d *DigestUserAuth) random(n int) (string, error) {
 	return hex.EncodeToString(b), nil
 }
 
+// realm returns the configured user-authentication realm.
 func (d *DigestUserAuth) realm() string {
 	if d.Realm == "" {
 		return DefaultUserAuthRealm
@@ -333,6 +343,7 @@ func (d *DigestUserAuth) realm() string {
 	return d.Realm
 }
 
+// ttl returns the configured challenge lifetime or its default.
 func (d *DigestUserAuth) ttl() time.Duration {
 	if d.ChallengeTTL <= 0 {
 		return DefaultUserAuthChallengeTTL
@@ -340,6 +351,8 @@ func (d *DigestUserAuth) ttl() time.Duration {
 	return d.ChallengeTTL
 }
 
+// now returns the configured clock time, using the package default when no clock is
+// supplied.
 func (d *DigestUserAuth) now() time.Time {
 	if d.Clock == nil {
 		return time.Now()

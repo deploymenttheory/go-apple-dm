@@ -39,6 +39,8 @@ type adHarness struct {
 	identity accountdriven.Identity
 }
 
+// newADHarness creates a TLS account-driven enrollment harness with signed profiles, SCEP,
+// discovery, and MDM endpoints.
 func newADHarness(t *testing.T, version string, oauth bool) *adHarness {
 	t.Helper()
 	h := &adHarness{store: inmem.New(), identity: accountdriven.Identity{UserIdentifier: "alice@example.com", ManagedAppleAccount: "alice@example.com"}}
@@ -134,6 +136,8 @@ func (h *adHarness) device(t *testing.T, udid string) *simulator.Device {
 	return d
 }
 
+// TestAccountDrivenEnroll checks simulator account-driven enrollment through Apple-as-web and
+// OAuth, including failures.
 func TestAccountDrivenEnroll(t *testing.T) {
 	ctx := context.Background()
 	t.Run("AppleAsWeb", func(t *testing.T) {

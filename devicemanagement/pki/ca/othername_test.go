@@ -78,6 +78,7 @@ func sanExtension(t *testing.T, cert *x509.Certificate) pkix.Extension {
 	return found[0]
 }
 
+// TestPermanentIdentifierRoundTrip checks permanent identifier round trip.
 func TestPermanentIdentifierRoundTrip(t *testing.T) {
 	t.Parallel()
 	signer := testSigner(t)
@@ -118,6 +119,7 @@ func TestPermanentIdentifierRoundTrip(t *testing.T) {
 	}
 }
 
+// TestSANCriticalWhenSubjectEmpty checks san critical when subject empty.
 func TestSANCriticalWhenSubjectEmpty(t *testing.T) {
 	t.Parallel()
 	signer := testSigner(t)
@@ -142,6 +144,7 @@ func TestSANCriticalWhenSubjectEmpty(t *testing.T) {
 	}
 }
 
+// TestPolicySubjectOverridesRequest checks policy subject overrides request.
 func TestPolicySubjectOverridesRequest(t *testing.T) {
 	t.Parallel()
 	signer := testSigner(t)
@@ -159,6 +162,8 @@ func TestPolicySubjectOverridesRequest(t *testing.T) {
 	}
 }
 
+// TestOtherNamesAndConventionalSANsShareOneExtension checks other names and conventional sa ns
+// share one extension.
 func TestOtherNamesAndConventionalSANsShareOneExtension(t *testing.T) {
 	t.Parallel()
 	signer := testSigner(t)
@@ -212,6 +217,7 @@ func TestOtherNamesAndConventionalSANsShareOneExtension(t *testing.T) {
 	}
 }
 
+// TestSANExtensionBuildsEveryNameForm checks san extension builds every name form.
 func TestSANExtensionBuildsEveryNameForm(t *testing.T) {
 	t.Parallel()
 	if _, ok, err := ca.SANExtension(ca.SANs{}, false); ok || err != nil {
@@ -238,6 +244,7 @@ func TestSANExtensionBuildsEveryNameForm(t *testing.T) {
 	}
 }
 
+// TestSANExtensionRejectsUnencodableNames checks that san extension rejects unencodable names.
 func TestSANExtensionRejectsUnencodableNames(t *testing.T) {
 	t.Parallel()
 	good, err := ca.PermanentIdentifier("x")
@@ -320,6 +327,7 @@ func TestSANExtensionMatchesCryptoX509(t *testing.T) {
 	}
 }
 
+// TestOtherNameConstructorsRejectEmptyInput checks other name constructors reject empty input.
 func TestOtherNameConstructorsRejectEmptyInput(t *testing.T) {
 	t.Parallel()
 	if _, err := ca.PermanentIdentifier(""); err == nil {
@@ -354,6 +362,7 @@ func otherNameSAN(t *testing.T, body []byte) []byte {
 	return value
 }
 
+// TestParseOtherNamesRejectsMalformedInput checks that parse other names rejects malformed input.
 func TestParseOtherNamesRejectsMalformedInput(t *testing.T) {
 	t.Parallel()
 	if _, err := ca.ParseOtherNames(nil); err == nil {
@@ -392,6 +401,8 @@ func TestParseOtherNamesRejectsMalformedInput(t *testing.T) {
 	}
 }
 
+// TestParsePermanentIdentifierRejectsMalformedInput checks that parse permanent identifier rejects
+// malformed input.
 func TestParsePermanentIdentifierRejectsMalformedInput(t *testing.T) {
 	t.Parallel()
 	if _, _, err := ca.ParsePermanentIdentifier(nil); err == nil {
@@ -434,6 +445,7 @@ func TestParsePermanentIdentifierRejectsMalformedInput(t *testing.T) {
 	}
 }
 
+// TestSignRejectsUncertifiableRequests checks that sign rejects uncertifiable requests.
 func TestSignRejectsUncertifiableRequests(t *testing.T) {
 	t.Parallel()
 	signer := testSigner(t)
@@ -459,6 +471,7 @@ func TestSignRejectsUncertifiableRequests(t *testing.T) {
 	}
 }
 
+// TestKindOf checks supported private-key classification and unsupported types.
 func TestKindOf(t *testing.T) {
 	t.Parallel()
 	// The RSA moduli and EC curves are synthetic because KindOf looks only
@@ -495,6 +508,7 @@ func TestKindOf(t *testing.T) {
 	}
 }
 
+// TestAllowedKeys checks allowed-key policy restrictions on EC curves and RSA sizes.
 func TestAllowedKeys(t *testing.T) {
 	t.Parallel()
 	signer := testSigner(t)

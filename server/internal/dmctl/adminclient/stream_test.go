@@ -19,6 +19,8 @@ type gatedBody struct {
 	pending bool
 }
 
+// Read reads a prefix, waits for release or cancellation, then exposes the remaining binary
+// suffix.
 func (b *gatedBody) Read(p []byte) (int, error) {
 	if b.prefix.Len() > 0 {
 		return b.prefix.Read(p)
@@ -36,6 +38,7 @@ func (b *gatedBody) Read(p []byte) (int, error) {
 	return 0, io.EOF
 }
 
+// TestBinaryUploadStreamsBeforeEOF checks binary upload streams before EOF.
 func TestBinaryUploadStreamsBeforeEOF(t *testing.T) {
 	ctx, cancel := context.WithTimeout(t.Context(), 5*time.Second)
 	defer cancel()

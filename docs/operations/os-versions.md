@@ -55,28 +55,17 @@ The zero `Version` means unspecified; a target with an unspecified version does
 not establish that a feature's release floor has been met. The reference server
 restricts unknown inventory as described in the [mixed-OS fleet decision](../research/decisions/0052-mixed-os-fleets.md).
 
-## Migrating from the support version API
+## Inputs and validation
 
-The version exports in `schema/support` have been removed. Add the
-`devicemanagement/osversion` import and replace the old names as follows:
+Use `osversion.Version` in application fields and public interfaces. Keep the
+`support` import for targets, OS identifiers and availability checks. Test parsing
+failures with `errors.Is(err, osversion.ErrVersion)`; do not match error strings.
+Availability describes schema support, while installation or execution also depends
+on the device's actual state and platform requirements.
 
-| Removed API | Replacement |
-|---|---|
-| `support.Version` | `osversion.Version` |
-| `support.ParseVersion(s)` | `osversion.Parse(s)` |
-| `support.MustVersion(s)` | `osversion.MustParse(s)` |
-| `support.V(major, minor, patch)` | `osversion.New(major, minor, patch)` |
-| `support.ErrVersion` | `osversion.ErrVersion` |
-
-Keep the `support` import where code uses targets, OS identifiers or availability
-checks. Update explicit version types in fields, function signatures, composite
-literals and tests. Check malformed-version errors with
-`errors.Is(err, osversion.ErrVersion)`; parser error text uses the `osversion:`
-prefix. Version components, comparison, formatting and zero-value behavior are
-unchanged by removal of the aliases and wrappers. No wire or stored data migration
-is needed.
-
-The root library must be published before a standalone server can resolve these
-APIs through its declared dependency. Follow the
-[release sequencing](../testing/macos27-prep-validation.md#release-sequencing)
-before publishing the server.
+Implementation: [version primitives](../../devicemanagement/osversion),
+[availability evaluation](../../devicemanagement/schema/support), and
+[DDM target filtering](../../devicemanagement/mdmprotocol/ddm/compatibility.go).
+Apple defines the input availability metadata in its
+[schema format](https://github.com/apple/device-management/blob/release/docs/schema.md).
+The [server release guide](server-releases.md) covers independent module validation.

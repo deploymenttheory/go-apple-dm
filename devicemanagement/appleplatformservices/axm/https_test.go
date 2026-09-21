@@ -5,6 +5,8 @@ import (
 	"testing"
 )
 
+// TestEndpointOverridesRejectPlaintextAndCredentials checks endpoint overrides reject plaintext
+// and credentials.
 func TestEndpointOverridesRejectPlaintextAndCredentials(t *testing.T) {
 	f := newFixture(t)
 	for _, raw := range []string{"http://127.0.0.1:1234/secret", "https://user:secret@example.com/", "https://example.com/#secret", "https:///secret"} {

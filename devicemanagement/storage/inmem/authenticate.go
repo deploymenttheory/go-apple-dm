@@ -8,6 +8,7 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/storage"
 )
 
+// deviceRecordLocked looks up the device enrollment record while the store lock is held.
 func (s *Store) deviceRecordLocked(id mdm.EnrollmentID) (*record, error) {
 	if err := id.Validate(); err != nil {
 		return nil, storage.ErrInvalid
@@ -18,6 +19,8 @@ func (s *Store) deviceRecordLocked(id mdm.EnrollmentID) (*record, error) {
 	return s.get(id.Device())
 }
 
+// clearPendingLocked marks every nonterminal command as cleared at the supplied time while
+// the store lock is held.
 func clearPendingLocked(r *record, at time.Time) {
 	for _, q := range r.queue {
 		if !q.State.Terminal() {

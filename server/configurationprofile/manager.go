@@ -25,8 +25,11 @@ type Config struct {
 	Target  func(context.Context, mdm.EnrollmentID) (support.Target, error)
 }
 
+// Manager coordinates stored profile revisions and authenticated DDM delivery.
 type Manager struct{ cfg Config }
 
+// New constructs a profile manager with the required state store and DDM engine. It removes
+// trailing slashes from BaseURL; callers supply the public HTTPS origin.
 func New(cfg Config) (*Manager, error) {
 	if cfg.State == nil || cfg.Engine == nil {
 		return nil, ddm.ErrInvalid
@@ -35,8 +38,10 @@ func New(cfg Config) (*Manager, error) {
 	return &Manager{cfg: cfg}, nil
 }
 
+// hash returns the lowercase SHA-256 digest used for immutable revision identifiers.
 func hash(b []byte) string { h := sha256.Sum256(b); return hex.EncodeToString(h[:]) }
 
+// read loads a JSON record and maps an absent state key to ddm.ErrNotFound.
 func read[T any](ctx context.Context, reader state.Reader, key string) (T, error) {
 	var out T
 	r, err := reader.Get(ctx, key)
@@ -52,6 +57,7 @@ func read[T any](ctx context.Context, reader state.Reader, key string) (T, error
 	return out, nil
 }
 
+// put encodes a JSON record through the supplied state transaction.
 func put(ctx context.Context, tx state.Tx, key string, value any) error {
 	b, err := json.Marshal(value)
 	if err != nil {
@@ -60,6 +66,8 @@ func put(ctx context.Context, tx state.Tx, key string, value any) error {
 	return tx.Put(ctx, state.Record{Key: key, Value: b})
 }
 
+// list returns records under the prefix in key order and derives the next exclusive cursor
+// from one lookahead row.
 func list[T any](ctx context.Context, st state.Store, prefix string, page paging.Page) (paging.Result[T], error) {
 	var out paging.Result[T]
 	rows, err := st.List(ctx, prefix, prefix+page.Cursor, page.Size()+1)

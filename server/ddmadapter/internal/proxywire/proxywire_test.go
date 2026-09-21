@@ -9,6 +9,7 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/server/ddmadapter/internal/proxywire"
 )
 
+// TestSignVerify checks proxy signatures for valid, missing, incorrect, and empty-body inputs.
 func TestSignVerify(t *testing.T) {
 	t.Parallel()
 	key := []byte("k1")
@@ -55,8 +56,10 @@ func TestSignVerify(t *testing.T) {
 
 type failingReader struct{ err error }
 
+// Read returns the configured read failure.
 func (f failingReader) Read([]byte) (int, error) { return 0, f.err }
 
+// TestReadBody checks proxy body reading at size and read-error boundaries.
 func TestReadBody(t *testing.T) {
 	t.Parallel()
 	t.Run("OK", func(t *testing.T) {

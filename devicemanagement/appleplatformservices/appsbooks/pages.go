@@ -100,6 +100,7 @@ func (c *Client) Users(ctx context.Context, q UsersQuery) (UsersPage, error) {
 	return out, err
 }
 
+// readPage decodes page data and pagination metadata from an Apps and Books response.
 func readPage[T any](
 	ctx context.Context,
 	c *Client,
@@ -119,6 +120,7 @@ func readPage[T any](
 	return out, err
 }
 
+// checkPage validates pagination state before following the next service page.
 func checkPage(p Pagination, index int) error {
 	if p.CurrentPageIndex != index || p.TotalPages < 0 || p.Size < 0 ||
 		(p.NextPageIndex != nil && *p.NextPageIndex <= index) {
@@ -127,12 +129,14 @@ func checkPage(p Pagination, index int) error {
 	return nil
 }
 
+// setString adds an optional string query parameter when its value is present.
 func setString(v url.Values, key, value string) {
 	if value != "" {
 		v.Set(key, value)
 	}
 }
 
+// setBool adds an optional boolean query parameter without conflating false with absence.
 func setBool(v url.Values, key string, value *bool) {
 	if value != nil {
 		v.Set(key, strconv.FormatBool(*value))
@@ -198,6 +202,8 @@ func (c *Client) WalkUsers(
 	)
 }
 
+// walk visits successive service pages and stops on callback, request, or pagination
+// failure.
 func walk[T any](
 	ctx context.Context,
 	maxPages int,

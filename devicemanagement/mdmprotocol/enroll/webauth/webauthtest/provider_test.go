@@ -16,6 +16,7 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/enroll/webauth/webauthtest"
 )
 
+// getJSON fetches and decodes a JSON object, failing the test on request or decoding errors.
 func getJSON(t *testing.T, client *http.Client, rawURL string) map[string]any {
 	t.Helper()
 	req, _ := http.NewRequestWithContext(context.Background(), http.MethodGet, rawURL, nil)
@@ -31,6 +32,7 @@ func getJSON(t *testing.T, client *http.Client, rawURL string) map[string]any {
 	return out
 }
 
+// s256 computes the unpadded base64url SHA-256 value used by PKCE.
 func s256(v string) string {
 	sum := sha256.Sum256([]byte(v))
 	return base64.RawURLEncoding.EncodeToString(sum[:])
@@ -57,6 +59,8 @@ func authorize(t *testing.T, p *webauthtest.Provider, params url.Values) (int, u
 	return resp.StatusCode, loc.Query()
 }
 
+// token posts a token request with optional HTTP Basic credentials and returns its status and JSON
+// body.
 func token(t *testing.T, p *webauthtest.Provider, form url.Values, basic [2]string) (int, map[string]any) {
 	t.Helper()
 	req, _ := http.NewRequestWithContext(context.Background(), http.MethodPost, p.Server.URL+"/token", strings.NewReader(form.Encode()))
@@ -76,6 +80,8 @@ func token(t *testing.T, p *webauthtest.Provider, form url.Values, basic [2]stri
 	return resp.StatusCode, out
 }
 
+// TestProvider checks fake OIDC discovery, keys, authorization, token issuance, and client
+// behavior.
 func TestProvider(t *testing.T) {
 	t.Parallel()
 

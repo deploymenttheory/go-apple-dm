@@ -8,6 +8,8 @@ import (
 	"testing"
 )
 
+// TestBootstrapSQLSecretsAndEnvironmentOverrides checks bootstrap SQL secrets and environment
+// overrides.
 func TestBootstrapSQLSecretsAndEnvironmentOverrides(t *testing.T) {
 	for _, storage := range []string{"postgres", "mysql"} {
 		t.Run(storage, func(t *testing.T) {
@@ -66,6 +68,8 @@ func TestBootstrapSQLSecretsAndEnvironmentOverrides(t *testing.T) {
 	}
 }
 
+// TestBootstrapRejectsInvalidReferencesAndPartialSecrets checks that bootstrap rejects invalid
+// references and partial secrets.
 func TestBootstrapRejectsInvalidReferencesAndPartialSecrets(t *testing.T) {
 	for _, mode := range []string{"role", "storage", "key name", "key alias", "missing key", "short key", "missing ACME", "invalid additional", "directory blocked", "secret blocked", "alias blocked", "ACME blocked", "additional blocked", "DSN missing", "DSN blocked", "setup blocked"} {
 		t.Run(mode, func(t *testing.T) {

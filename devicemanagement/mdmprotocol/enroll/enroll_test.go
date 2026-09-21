@@ -15,6 +15,7 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/schema/support"
 )
 
+// base returns a base macOS enrollment profile with bootstrap-token and token capabilities.
 func base() enroll.Profile {
 	return enroll.Profile{
 		Identifier: "com.example.mdm", DisplayName: "Example MDM", Organization: "Example",
@@ -24,6 +25,8 @@ func base() enroll.Profile {
 	}
 }
 
+// TestEnrollmentProfile checks enrollment profile round trips, SCEP identity linkage, roots,
+// capabilities, and key restrictions.
 func TestEnrollmentProfile(t *testing.T) {
 	t.Parallel()
 	root, _, err := ca.NewSelfSigned(ca.SelfSignedOptions{Subject: pkix.Name{CommonName: "Example Root"}})
@@ -96,6 +99,7 @@ func TestEnrollmentProfile(t *testing.T) {
 	}
 }
 
+// TestPKCS12AndDefaults checks pkcs12 and defaults.
 func TestPKCS12AndDefaults(t *testing.T) {
 	t.Parallel()
 	in := base()
@@ -121,6 +125,7 @@ func TestPKCS12AndDefaults(t *testing.T) {
 	}
 }
 
+// TestInstallationScopeRoundTrip checks installation scope round trip.
 func TestInstallationScopeRoundTrip(t *testing.T) {
 	t.Parallel()
 	for _, scope := range []string{"", profile.ScopeSystem, profile.ScopeUser} {
@@ -157,6 +162,7 @@ func TestInstallationScopeRoundTrip(t *testing.T) {
 	}
 }
 
+// TestBuildErrors checks enrollment profile construction and marshaling errors.
 func TestBuildErrors(t *testing.T) {
 	t.Parallel()
 	cases := map[string]func(p *enroll.Profile){
@@ -182,6 +188,8 @@ func TestBuildErrors(t *testing.T) {
 	}
 }
 
+// TestParseErrors checks malformed enrollment profiles, missing MDM payloads, broken identity
+// references, and invalid roots.
 func TestParseErrors(t *testing.T) {
 	t.Parallel()
 	if _, err := enroll.Parse([]byte("junk"), profile.ParseOptions{}); !errors.Is(err, enroll.ErrProfile) {
@@ -218,6 +226,7 @@ func TestParseErrors(t *testing.T) {
 	}
 }
 
+// TestSubjectConversion checks subject conversion and empty-name handling.
 func TestSubjectConversion(t *testing.T) {
 	t.Parallel()
 	n := pkix.Name{Country: []string{"GB"}, Organization: []string{"Ex"}, OrganizationalUnit: []string{"IT"}, Locality: []string{"Cardiff"}, Province: []string{"Wales"}, CommonName: "cn"}

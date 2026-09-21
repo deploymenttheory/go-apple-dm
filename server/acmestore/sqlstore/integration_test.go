@@ -23,6 +23,8 @@ import (
 // acmeTables in dependency order for DELETE and DROP.
 var acmeTables = []string{"acme_claims", "acme_nonces", "acme_certificates", "acme_challenges", "acme_authorizations", "acme_orders", "acme_accounts"}
 
+// runShared runs ACME store migration, shared store-contract, and rollback checks for a SQL
+// dialect.
 func runShared(t *testing.T, db *sql.DB, d sqlcommon.Dialect, cascade string) {
 	t.Helper()
 	ctx := context.Background()
@@ -57,6 +59,7 @@ func runShared(t *testing.T, db *sql.DB, d sqlcommon.Dialect, cascade string) {
 	}
 }
 
+// TestStorePostgres runs the ACME SQL store suite against PostgreSQL.
 func TestStorePostgres(t *testing.T) {
 	dsn := os.Getenv("TEST_POSTGRES_DSN")
 	if dsn == "" {
@@ -72,6 +75,7 @@ func TestStorePostgres(t *testing.T) {
 	runShared(t, db, postgres.Dialect, " CASCADE")
 }
 
+// TestStoreMySQL runs the ACME SQL store suite against MySQL.
 func TestStoreMySQL(t *testing.T) {
 	dsn := os.Getenv("TEST_MYSQL_DSN")
 	if dsn == "" {

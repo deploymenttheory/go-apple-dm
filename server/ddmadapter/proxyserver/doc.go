@@ -1,4 +1,5 @@
-// Package proxyserver accepts declarative check-ins forwarded by the MDM role.
+// Package proxyserver accepts declarative check-ins forwarded by a proxyclient
+// in a custom composition with a remote declaration engine.
 //
 // # Design
 //
@@ -10,16 +11,18 @@
 // device-facing semantics.
 //
 // HTTPS is required, except for the explicit literal-loopback test option. The
-// reference server mounts this handler under /ddm/ with shared SQL replay state
-// and native TLS on the DDM role. The hop is an internal deployment choice, not a
-// separate enrollment protocol.
+// embedding application chooses the listener, route prefix, replay store, and
+// TLS configuration. The unified reference server uses the in-process adapter;
+// it does not expose this proxy endpoint. The hop is a project transport for
+// the same Apple declarative check-in protocol.
 //
 // # References
 //
 //   - Decision record 0023: https://github.com/deploymenttheory/go-apple-dm/blob/main/docs/research/decisions/0023-ddm-adapters-and-wire-contract.md
 //   - Decision record 0025: https://github.com/deploymenttheory/go-apple-dm/blob/main/docs/research/decisions/0025-reference-server-roles-and-container.md
 //   - Threat model: https://github.com/deploymenttheory/go-apple-dm/blob/main/docs/security/threat-model.md (private DDM proxy)
-//   - E2E scenarios: https://github.com/deploymenttheory/go-apple-dm/blob/main/docs/testing/e2e-scenarios.md (E2E-010)
+//   - Adapter contract tests: https://github.com/deploymenttheory/go-apple-dm/blob/main/server/ddmadapter/proxyserver/proxyserver_test.go
+//   - Reference composition: https://github.com/deploymenttheory/go-apple-dm/blob/main/server/internal/app/doc.go
 //   - Apple: https://developer.apple.com/documentation/devicemanagement/declarativemanagementrequest
 //   - Schema: third_party/apple-device-management/current/mdm/checkin/declarativemanagement.yaml
 package proxyserver

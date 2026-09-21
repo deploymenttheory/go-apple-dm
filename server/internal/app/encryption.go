@@ -15,6 +15,8 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/server/statestore"
 )
 
+// openReplyCertificates opens retained reply-encryption identities when encrypted SQL
+// storage is available.
 func (a *App) openReplyCertificates(ctx context.Context) error {
 	if a.db == nil || a.keyring == nil {
 		return nil
@@ -31,6 +33,8 @@ func (a *App) openReplyCertificates(ctx context.Context) error {
 	return nil
 }
 
+// prepareCommandEncryption prepares retained encryption material for RotateFileVaultKey
+// and leaves other command types unchanged.
 func (a *App) prepareCommandEncryption(
 	ctx context.Context,
 	id mdm.EnrollmentID,

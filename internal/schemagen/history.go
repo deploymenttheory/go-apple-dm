@@ -91,6 +91,8 @@ func historyMoves(current, previous *Tree) map[string]string {
 	return moves
 }
 
+// mergeKeys combines current and historical schema keys without losing retained
+// compatibility entries.
 func mergeKeys(current, previous []Key, path string) ([]Key, error) {
 	keys := make(map[string]Key, len(current))
 	for _, key := range current {

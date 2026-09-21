@@ -280,6 +280,7 @@ func (j *JWS) Verify(pub crypto.PublicKey) error {
 	return j.verifyRSA(pub, hash, digest)
 }
 
+// verifyECDSA verifies the JWS ECDSA signature over the protected header and payload.
 func (j *JWS) verifyECDSA(pub crypto.PublicKey, digest []byte, wantCurve string, size int) error {
 	key, ok := pub.(*ecdsa.PublicKey)
 	if !ok {
@@ -343,6 +344,8 @@ func candidateSplits(sig []byte, size int) [][2][]byte {
 	return out
 }
 
+// verifyRSA verifies the JWS RSA signature using the algorithm selected by its protected
+// header.
 func (j *JWS) verifyRSA(pub crypto.PublicKey, hash crypto.Hash, digest []byte) error {
 	key, ok := pub.(*rsa.PublicKey)
 	if !ok {

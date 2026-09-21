@@ -51,6 +51,8 @@ func runBenchChild() {
 	}
 }
 
+// TestSupervisorReportsUnexpectedProcessExit checks that supervisor reports unexpected process
+// exit.
 func TestSupervisorReportsUnexpectedProcessExit(t *testing.T) {
 	for _, code := range []string{"0", "3"} {
 		t.Run(code, func(t *testing.T) {
@@ -92,6 +94,7 @@ func TestSupervisorReportsUnexpectedProcessExit(t *testing.T) {
 	}
 }
 
+// TestStartupFailureLeavesNoSupervisor checks startup failure leaves no supervisor.
 func TestStartupFailureLeavesNoSupervisor(t *testing.T) {
 	t.Parallel()
 	for _, name := range []string{"lock directory", "invalid address", "descriptor directory", "cancelled", "split child exit"} {

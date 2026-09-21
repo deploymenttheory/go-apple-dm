@@ -12,6 +12,7 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/server/internal/app"
 )
 
+// TestSupervisePreservesFirstFailure checks that supervise preserves first failure.
 func TestSupervisePreservesFirstFailure(t *testing.T) {
 	t.Parallel()
 	failure := errors.New("worker failed")
@@ -50,6 +51,7 @@ func TestSupervisePreservesFirstFailure(t *testing.T) {
 	}
 }
 
+// TestSuperviseDrainsHTTPBeforeWorkers checks that supervise drains HTTP before workers.
 func TestSuperviseDrainsHTTPBeforeWorkers(t *testing.T) {
 	t.Parallel()
 	for _, expire := range []bool{false, true} {
@@ -109,6 +111,8 @@ func TestSuperviseDrainsHTTPBeforeWorkers(t *testing.T) {
 	}
 }
 
+// TestServeStartupFailures checks listener startup failure for invalid TLS, listener, and runtime
+// configuration.
 func TestServeStartupFailures(t *testing.T) {
 	t.Parallel()
 	cfg := app.Config{
@@ -140,6 +144,8 @@ func TestServeStartupFailures(t *testing.T) {
 	}
 }
 
+// TestServeRejectsUnprotectedSecurityBoundaries checks that serve rejects unprotected security
+// boundaries.
 func TestServeRejectsUnprotectedSecurityBoundaries(t *testing.T) {
 	for _, cfg := range []app.Config{
 		{Listen: ":8080"},

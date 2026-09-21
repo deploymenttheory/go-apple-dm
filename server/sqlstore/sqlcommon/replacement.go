@@ -16,6 +16,10 @@ const purposeReplacement = "enrollment_replacements.state_blob"
 
 var _ storage.ReplacementStore = (*Store)(nil)
 
+// TransitionReplacement applies a device identity replacement transition under the
+// enrollment lock. A successful terminal transition commits the candidate certificate pin,
+// token updates, and history atomically while preserving enrollment state. User channels
+// and conflicting certificate reuse are rejected.
 func (s *Store) TransitionReplacement(
 	ctx context.Context,
 	id mdm.EnrollmentID,
@@ -99,6 +103,8 @@ func (s *Store) TransitionReplacement(
 	return storage.CloneReplacement(r), nil
 }
 
+// commitReplacement commits the candidate certificate pin, history, and captured token
+// updates in the current enrollment transaction.
 func (s *Store) commitReplacement(
 	ctx context.Context,
 	q querier,
@@ -145,6 +151,8 @@ func (s *Store) commitReplacement(
 	return nil
 }
 
+// replacementToken stores one captured token update while committing an identity
+// replacement.
 func (s *Store) replacementToken(
 	ctx context.Context,
 	q querier,

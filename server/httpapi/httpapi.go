@@ -29,11 +29,15 @@ const (
 
 // Checkiner is the check-in half of the service.
 type Checkiner interface {
+	// Checkin processes the decoded check-in for the authenticated request and returns its
+	// protocol response.
 	Checkin(ctx context.Context, r *mdm.Request, ck *mdm.Checkin) (*service.CheckinResult, error)
 }
 
 // Connecter is the command half of the service.
 type Connecter interface {
+	// Connect records the authenticated device response and returns its next eligible
+	// command, or nil when idle.
 	Connect(ctx context.Context, r *mdm.Request, resp *mdm.Response) (*mdm.Command, error)
 }
 
@@ -53,6 +57,7 @@ type Config struct {
 	Now func() time.Time
 }
 
+// logger returns the configured HTTP API logger or the default logger.
 func (c Config) logger() *slog.Logger {
 	if c.Logger != nil {
 		return c.Logger
@@ -60,6 +65,8 @@ func (c Config) logger() *slog.Logger {
 	return slog.Default()
 }
 
+// now returns the configured clock time, using the package default when no clock is
+// supplied.
 func (c Config) now() time.Time {
 	if c.Now != nil {
 		return c.Now()
@@ -67,6 +74,8 @@ func (c Config) now() time.Time {
 	return time.Now()
 }
 
+// maxBytes resolves the plist decoder byte limit; a negative limit disables this ingress
+// bound.
 func (c Config) maxBytes() int64 {
 	if c.Decoder.MaxBytes > 0 {
 		return int64(c.Decoder.MaxBytes)
@@ -223,6 +232,7 @@ func Handler(cfg Config) http.Handler {
 	})
 }
 
+// allowedMethod rejects unsupported HTTP methods and advertises the permitted method.
 func allowedMethod(w http.ResponseWriter, r *http.Request) bool {
 	if r.Method == http.MethodPut || r.Method == http.MethodPost {
 		return true
@@ -232,6 +242,8 @@ func allowedMethod(w http.ResponseWriter, r *http.Request) bool {
 	return false
 }
 
+// fail logs a rejected MDM request and writes the supplied HTTP status without exposing
+// its error detail.
 func (c Config) fail(w http.ResponseWriter, r *http.Request, status int, err error) {
 	c.logger().InfoContext(r.Context(), "mdm request rejected", "status", status, "err", err, "remote", r.RemoteAddr)
 	http.Error(w, http.StatusText(status), status)

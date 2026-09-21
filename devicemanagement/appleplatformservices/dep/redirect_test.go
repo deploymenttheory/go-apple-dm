@@ -9,6 +9,8 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/appleplatformservices/dep"
 )
 
+// TestCredentialRequestsNeverFollowRedirects checks that credential requests never follow
+// redirects.
 func TestCredentialRequestsNeverFollowRedirects(t *testing.T) {
 	var leaked atomic.Int64
 	destination := httptest.NewTLSServer(

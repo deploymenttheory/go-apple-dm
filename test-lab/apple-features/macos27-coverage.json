@@ -89,7 +89,7 @@
         "binary-controls",
         "app-privacy"
       ],
-      "nativePlan": "On a designated native test device, use signing-classified controls and independent native rollback: in deny mode block the matching eligible target and ad-hoc controls, permit unrelated eligible Developer ID and Apple controls, then withdraw the configuration and verify baseline recovery. Preserve the recorded deny-mode evidence; empty-list, development-signed, unsigned, allow-mode and managed-app exception cases remain untested. See docs/testing/app-settings-binary-isolation.md. Preserve app grant/revocation results; consolidated prompt remains unproven."
+      "nativePlan": "On a designated native test device, use signing-classified controls and independent native rollback: in deny mode block the matching eligible target and ad-hoc controls, permit unrelated eligible Developer ID and Apple controls, then withdraw the configuration and verify baseline recovery. Native deny-mode observations do not cover every variant; empty-list, development-signed, unsigned, allow-mode and managed-app exception cases remain untested. See docs/operations/application-identities.md#binary-execution-controls. Verify app grants and revocation separately; the consolidated prompt requires independent native evidence."
     },
     {
       "source": "declarative/declarations/configurations/content-cache.settings.yaml",

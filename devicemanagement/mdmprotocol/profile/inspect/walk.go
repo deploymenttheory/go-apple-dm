@@ -83,6 +83,8 @@ func supportPath(parent, key string) string {
 	return exact
 }
 
+// checkSupport adds diagnostics when a payload or field is unavailable for the selected
+// target.
 func (r *Report) checkSupport(schemaPath, path string, target support.Target) {
 	entry := profiles.Support(schemaPath)
 	if entry == nil {

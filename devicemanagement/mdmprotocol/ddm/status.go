@@ -41,6 +41,8 @@ func (e *Engine) Status(ctx context.Context, id mdm.EnrollmentID, body []byte) (
 	return out, nil
 }
 
+// storeStatus commits reported values and declaration status using the engine's status
+// transaction contract.
 func (e *Engine) storeStatus(ctx context.Context, id mdm.EnrollmentID, body []byte) (*StatusOutcome, error) {
 	if err := id.Validate(); err != nil {
 		return nil, fmt.Errorf("%w: %w", ErrInvalid, err)
@@ -143,8 +145,11 @@ func (w *statusWalker) walk(path string, v any) error {
 	return nil
 }
 
+// isStatusItem recognizes a status path that represents an item rather than an intermediate
+// object.
 func isStatusItem(path string) bool { return len(status.ByID(path)) > 0 }
 
+// item walks one reported status item into canonical stored values.
 func (w *statusWalker) item(path string, v any) error {
 	if err := w.value(path, v); err != nil {
 		return err
@@ -211,6 +216,7 @@ func (w *statusWalker) declaration(kind schemaddm.Kind, row status.ManagementDec
 	return nil
 }
 
+// declarations collects reported declaration activation and validity state.
 func (w *statusWalker) declarations() []DeclarationStatus {
 	out := make([]DeclarationStatus, 0, len(w.order))
 	for _, k := range w.order {
@@ -219,6 +225,8 @@ func (w *statusWalker) declarations() []DeclarationStatus {
 	return out
 }
 
+// value canonicalizes a nonempty status path and appends its timestamped value; malformed
+// values wrap ErrStatusMalformed.
 func (w *statusWalker) value(path string, v any) error {
 	if path == "" {
 		return nil

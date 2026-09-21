@@ -18,6 +18,8 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/server/service"
 )
 
+// TestSetupLabResumesAfterEachRepositoryFailure checks setup lab resumes after each repository
+// failure.
 func TestSetupLabResumesAfterEachRepositoryFailure(t *testing.T) {
 	for _, phase := range []string{"read", "write"} {
 		for failAt := 1; failAt <= 18; failAt++ {
@@ -64,6 +66,8 @@ func TestSetupLabResumesAfterEachRepositoryFailure(t *testing.T) {
 	}
 }
 
+// TestSetupRolloverOperationsAndManagedCertificateSource checks setup rollover operations and
+// managed certificate source.
 func TestSetupRolloverOperationsAndManagedCertificateSource(t *testing.T) {
 	a, _, _, _ := renewalFixture(t)
 	ctx := t.Context()
@@ -126,6 +130,8 @@ func TestSetupRolloverOperationsAndManagedCertificateSource(t *testing.T) {
 	}
 }
 
+// TestCertificateNoticeAndIssuerFailuresRemainRetryable checks certificate notice and issuer
+// failures remain retryable.
 func TestCertificateNoticeAndIssuerFailuresRemainRetryable(t *testing.T) {
 	for _, phase := range []string{"new request", "notice", "rollover read", "rollover progress", "issuer PEM", "issuer DER", "issuer missing"} {
 		t.Run(phase, func(t *testing.T) {
@@ -199,6 +205,8 @@ func TestCertificateNoticeAndIssuerFailuresRemainRetryable(t *testing.T) {
 	}
 }
 
+// TestMigrationPersistsDisabledBlockedAndRetryStates checks migration persists disabled blocked
+// and retry states.
 func TestMigrationPersistsDisabledBlockedAndRetryStates(t *testing.T) {
 	for _, mode := range []string{"disabled", "lookup failure", "replacement failure", "unsupported trust", "enqueue failure"} {
 		t.Run(mode, func(t *testing.T) {

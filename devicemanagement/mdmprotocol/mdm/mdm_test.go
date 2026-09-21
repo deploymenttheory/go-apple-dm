@@ -11,6 +11,7 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/schema/commands"
 )
 
+// TestEnrollmentResolve checks device and user enrollment ID resolution and validation.
 func TestEnrollmentResolve(t *testing.T) {
 	t.Parallel()
 	cases := []struct {
@@ -59,6 +60,7 @@ func TestEnrollmentResolve(t *testing.T) {
 	}
 }
 
+// TestEnrollmentIDValidate checks enrollment ID validity and channel formatting.
 func TestEnrollmentIDValidate(t *testing.T) {
 	t.Parallel()
 	bad := []mdm.EnrollmentID{
@@ -105,6 +107,8 @@ const authenticate = `<?xml version="1.0" encoding="UTF-8"?>
 <key>Model</key><string>MacBookPro18,1</string>
 </dict></plist>`
 
+// TestDecodeCheckinTypes checks typed check-in decoding, push and unlock data, and user-channel
+// IDs.
 func TestDecodeCheckinTypes(t *testing.T) {
 	t.Parallel()
 	c, err := mdm.DecodeCheckin([]byte(tokenUpdate))
@@ -138,6 +142,8 @@ func TestDecodeCheckinTypes(t *testing.T) {
 	}
 }
 
+// TestDecodeCheckinRejects checks rejection of unknown check-ins, missing IDs, malformed plists,
+// and incomplete token updates.
 func TestDecodeCheckinRejects(t *testing.T) {
 	t.Parallel()
 	var pe *mdm.ParseError
@@ -164,6 +170,7 @@ func TestDecodeCheckinRejects(t *testing.T) {
 	}
 }
 
+// TestNewCommandRoundTrip checks new command round trip.
 func TestNewCommandRoundTrip(t *testing.T) {
 	t.Parallel()
 	msg := "locked"
@@ -215,6 +222,8 @@ const ackResponse = `<?xml version="1.0" encoding="UTF-8"?>
 <key>MessageResult</key><string>Success</string>
 </dict></plist>`
 
+// TestDecodeResponseTyped checks typed command-response decoding and fallback for unknown request
+// types.
 func TestDecodeResponseTyped(t *testing.T) {
 	t.Parallel()
 	r, err := mdm.DecodeResponse([]byte(ackResponse), "DeviceLock")
@@ -244,6 +253,7 @@ func TestDecodeResponseTyped(t *testing.T) {
 	}
 }
 
+// TestDecodeResponseIdleAndError checks decode response idle and error.
 func TestDecodeResponseIdleAndError(t *testing.T) {
 	t.Parallel()
 	idle := `<plist version="1.0"><dict><key>Status</key><string>Idle</string><key>UDID</key><string>D</string></dict></plist>`
@@ -278,6 +288,7 @@ func TestDecodeResponseIdleAndError(t *testing.T) {
 	}
 }
 
+// TestPushValidAndParseError checks push valid and parse error.
 func TestPushValidAndParseError(t *testing.T) {
 	t.Parallel()
 	if (mdm.Push{Topic: "t", Token: []byte{1}, Magic: "m"}).Valid() != true || (mdm.Push{}).Valid() {
@@ -289,6 +300,7 @@ func TestPushValidAndParseError(t *testing.T) {
 	}
 }
 
+// FuzzDecodeCheckin exercises check-in decoding with bounded plist input.
 func FuzzDecodeCheckin(f *testing.F) {
 	f.Add([]byte(tokenUpdate))
 	f.Add([]byte(authenticate))
@@ -297,6 +309,7 @@ func FuzzDecodeCheckin(f *testing.F) {
 	})
 }
 
+// FuzzDecodeResponse exercises command and typed response decoding with bounded plist input.
 func FuzzDecodeResponse(f *testing.F) {
 	f.Add([]byte(ackResponse))
 	f.Fuzz(func(t *testing.T, data []byte) {

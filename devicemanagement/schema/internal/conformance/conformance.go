@@ -75,6 +75,7 @@ func RoundTrip(t *testing.T, v any, newT func() any, jsonOnly bool) {
 	}
 }
 
+// sameJSON compares the semantic JSON values of schema conformance encodings.
 func sameJSON(a, b []byte) bool {
 	var x, y any
 	if json.Unmarshal(a, &x) != nil || json.Unmarshal(b, &y) != nil {
@@ -83,6 +84,7 @@ func sameJSON(a, b []byte) bool {
 	return reflect.DeepEqual(x, y)
 }
 
+// samePlist compares the decoded plist values of schema conformance encodings.
 func samePlist(a, b []byte) bool {
 	var x, y any
 	if plist.Unmarshal(a, &x) != nil || plist.Unmarshal(b, &y) != nil {
@@ -93,6 +95,8 @@ func samePlist(a, b []byte) bool {
 
 // Validator is implemented by every generated top-level type.
 type Validator interface {
+	// Validate checks the generated value against the specified platform and enrollment
+	// target.
 	Validate(t support.Target) error
 }
 

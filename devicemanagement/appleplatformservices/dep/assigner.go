@@ -297,6 +297,8 @@ func (a *Assigner) record(ctx context.Context, run *assignmentRun, profileUUID s
 	return nil
 }
 
+// recordBatch stores assignment outcomes and retry timing for every device in a completed
+// batch.
 func (a *Assigner) recordBatch(ctx context.Context, run *assignmentRun, profileUUID string, batch []string, resp *AssignResponse, res *AssignResult) error {
 	now := a.cfg.Clock.Now()
 	var success []string

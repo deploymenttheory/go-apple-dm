@@ -41,11 +41,11 @@
       "purpose": "artifact"
     },
     {
-      "id": "role",
+      "id": "validate",
       "lane": "startup",
       "col": 1,
-      "label": "Validate server role",
-      "sublabel": "mdm, ddm, or all",
+      "label": "Validate configuration",
+      "sublabel": "Unified runtime and secrets",
       "type": "security",
       "width": 225,
       "height": 68,
@@ -166,98 +166,98 @@
     {
       "id": "r1",
       "from": "env",
-      "to": "role",
+      "to": "validate",
       "label": "Parse Config",
-      "role": "main",
-      "purpose": "artifact"
+      "purpose": "artifact",
+      "role": "main"
     },
     {
       "id": "r2",
-      "from": "role",
+      "from": "validate",
       "to": "openstorage",
       "label": "Valid configuration",
-      "role": "main",
-      "purpose": "success"
+      "purpose": "success",
+      "role": "main"
     },
     {
       "id": "r3",
       "from": "openstorage",
       "to": "wire",
       "label": "Provide stores",
-      "role": "main",
-      "purpose": "storage"
+      "purpose": "storage",
+      "role": "main"
     },
     {
       "id": "r4",
       "from": "wire",
       "to": "listen",
       "label": "Application built",
-      "role": "branch",
-      "purpose": "success"
+      "purpose": "success",
+      "role": "branch"
     },
     {
       "id": "r5",
       "from": "listen",
       "to": "workers",
       "label": "Listener ready",
-      "role": "main",
-      "purpose": "success"
+      "purpose": "success",
+      "role": "main"
     },
     {
       "id": "r6",
       "from": "workers",
       "to": "drain",
       "label": "Stop or runtime failure",
-      "role": "branch",
-      "purpose": "neutral"
+      "purpose": "neutral",
+      "role": "branch"
     },
     {
       "id": "r7",
       "from": "drain",
       "to": "stopworkers",
       "label": "HTTP drained",
-      "role": "main",
-      "purpose": "success"
+      "purpose": "success",
+      "role": "main"
     },
     {
       "id": "r8",
       "from": "stopworkers",
       "to": "close",
       "label": "Workers stopped",
-      "role": "main",
-      "purpose": "success"
+      "purpose": "success",
+      "role": "main"
     },
     {
       "id": "maintenance-request",
       "from": "workers",
       "to": "pause",
       "label": "Maintenance request",
-      "role": "branch",
-      "purpose": "warning"
+      "purpose": "warning",
+      "role": "branch"
     },
     {
       "id": "maintenance-drain",
       "from": "pause",
       "to": "wait",
       "label": "Admission closed",
-      "role": "main",
-      "purpose": "warning"
+      "purpose": "warning",
+      "role": "main"
     },
     {
       "id": "maintenance-ack",
       "from": "wait",
       "to": "paused",
       "label": "Writes stopped",
-      "role": "main",
-      "purpose": "success"
+      "purpose": "success",
+      "role": "main"
     },
     {
       "id": "maintenance-resume",
       "from": "paused",
       "to": "workers",
       "label": "Owner resumes",
-      "role": "return",
-      "purpose": "service"
+      "purpose": "service",
+      "role": "return"
     }
   ],
   "cards": [
@@ -265,16 +265,16 @@
       "dot": "service",
       "title": "Shared runtime",
       "items": [
-        "dmserver and embedded bench scenarios share server/internal/runtime. Remote listeners require TLS; plain HTTP is limited to literal loopback. Private DDM forwarding requires HTTPS.",
-        "The application registers workers for supervision and readiness. A worker failure cancels sibling loops and reaches the runtime supervisor; a shutdown signal follows the ordered HTTP drain path."
+        "dmserver and embedded bench scenarios share server/internal/runtime. Remote listeners require TLS; plain HTTP is limited to literal loopback.",
+        "The application registers workers for supervision and readiness. A worker failure cancels sibling loops and reaches the runtime supervisor; shutdown follows the ordered HTTP drain path."
       ]
     },
     {
       "dot": "service",
       "title": "Configured services and workers",
       "items": [
-        "Managed setup registers certificate-renewal and device-identity-renewal workers. SQL applications register persistent event-delivery; DDM, retention and Apple inventory workers follow configured capabilities.",
-        "mdm and all expose configured enrollment and /mdm. ddm serves the internal adapter. Enrollment discovery, trust routes and app-push clients are conditional capabilities."
+        "The unified application mounts administration, MDM and configured enrollment services. DDM uses the in-process adapter; public discovery, certificate routes and app notifications depend on configuration.",
+        "Certificate renewal, native-webhook retention, persistent event delivery, DDM changes and DEP synchronization/assignment run under runtime supervision as configured."
       ]
     },
     {
@@ -294,12 +294,35 @@
       ]
     },
     {
-      "dot": "transport",
       "title": "Implementation references",
+      "dot": "artifact",
       "items": [
-        "Runtime supervision — https://github.com/deploymenttheory/go-apple-dm/blob/7500eb25e50a2913338339d5fced18dc7f41fdc3/server/internal/runtime/runtime.go",
-        "Worker registration — https://github.com/deploymenttheory/go-apple-dm/blob/7500eb25e50a2913338339d5fced18dc7f41fdc3/server/internal/app/app.go",
-        "Maintenance participant — https://github.com/deploymenttheory/go-apple-dm/blob/7500eb25e50a2913338339d5fced18dc7f41fdc3/server/maintenance/participant.go"
+        "env: Load configuration — https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/server/internal/app/env.go",
+        "validate: Validate configuration — https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/server/internal/app/app.go",
+        "openstorage: Open configured stores — https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/server/internal/app/app.go",
+        "wire: Build application — https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/server/internal/app/app.go",
+        "listen: Open listener — https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/server/internal/runtime/runtime.go",
+        "workers: Supervise workers — https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/server/internal/runtime/runtime.go"
+      ]
+    },
+    {
+      "title": "Implementation references (continued)",
+      "dot": "artifact",
+      "items": [
+        "drain: Drain HTTP requests — https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/server/internal/runtime/runtime.go",
+        "stopworkers: Stop background work — https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/server/internal/runtime/runtime.go",
+        "close: Close application — https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/server/internal/app/app.go",
+        "pause: Close admission — https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/server/maintenance/participant.go",
+        "wait: Drain admitted work — https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/server/maintenance/participant.go",
+        "paused: Acknowledge pause — https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/server/maintenance/participant.go"
+      ]
+    },
+    {
+      "title": "Implementation references (continued)",
+      "dot": "artifact",
+      "items": [
+        "Native webhook retention — https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/server/internal/app/webhooks.go",
+        "DEP worker schedules — https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/server/internal/app/dep.go"
       ]
     }
   ]

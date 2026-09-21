@@ -11,6 +11,8 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/server/configurationprofile"
 )
 
+// runConfigurationProfiles parses and executes the configuration profiles subcommand,
+// reporting argument and operation failures to the CLI caller.
 func runConfigurationProfiles(ctx context.Context, e *env, args []string) error {
 	if len(args) == 0 {
 		return fmt.Errorf("%w: configuration-profiles needs upload, list, get or download", ErrUsage)

@@ -36,6 +36,8 @@ type adeStub struct {
 	plist   bool
 }
 
+// newADEStub creates a TLS ADE stub with signed profiles, software-update responses, a web view,
+// SCEP, and MDM endpoints.
 func newADEStub(t *testing.T) *adeStub {
 	t.Helper()
 	s := &adeStub{store: inmem.New()}
@@ -126,6 +128,7 @@ func newADEStub(t *testing.T) *adeStub {
 	return s
 }
 
+// device creates a simulator using an identity issued by the ADE fixture authority.
 func (s *adeStub) device(t *testing.T, udid string) *simulator.Device {
 	t.Helper()
 	id, err := s.ca.Issue(udid, time.Now().Add(-time.Minute))
@@ -137,6 +140,8 @@ func (s *adeStub) device(t *testing.T, udid string) *simulator.Device {
 	return d
 }
 
+// TestADEEnroll checks simulator ADE profile delivery, required updates, web views, and error
+// paths.
 func TestADEEnroll(t *testing.T) {
 	ctx := context.Background()
 	t.Run("Profile", func(t *testing.T) {

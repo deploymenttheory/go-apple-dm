@@ -48,12 +48,14 @@ type lastCall struct {
 	data     []byte
 }
 
+// seen returns the last captured DDM call under the stub mutex.
 func (s *stub) seen() lastCall {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	return s.last
 }
 
+// Handle records the DDM request and returns an endpoint-specific fixture response or error.
 func (s *stub) Handle(_ context.Context, id mdm.EnrollmentID, endpoint string, data []byte) (ddm.Response, error) {
 	s.mu.Lock()
 	s.last = lastCall{id: id, endpoint: endpoint, data: data}
@@ -67,6 +69,7 @@ func (s *stub) Handle(_ context.Context, id mdm.EnrollmentID, endpoint string, d
 	return ddm.Response{Body: []byte(`{"endpoint":"` + endpoint + `"}`), Status: 200}, nil
 }
 
+// newStub creates a DDM backend stub with successful, missing, invalid, and failing endpoints.
 func newStub() *stub {
 	return &stub{
 		responses: map[string]ddm.Response{
@@ -82,6 +85,7 @@ func newStub() *stub {
 	}
 }
 
+// mustHandler constructs a proxy server handler with fixture keys and an in-memory replay store.
 func mustHandler(t *testing.T, cfg proxyserver.Config) http.Handler {
 	t.Helper()
 	if cfg.Logger == nil {
@@ -123,9 +127,10 @@ func dmPlist(t *testing.T, fields map[string]any) []byte {
 
 type reqOpt func(*http.Request)
 
+// withHeader returns a request option that sets the supplied header.
 func withHeader(k, v string) reqOpt { return func(r *http.Request) { r.Header.Set(k, v) } }
 
-// post sends body to h as the mdm role would, with overrides.
+// post sends a signed proxy request to h, applying the supplied overrides.
 func post(h http.Handler, body []byte, opts ...reqOpt) *httptest.ResponseRecorder {
 	r := httptest.NewRequestWithContext(context.Background(), http.MethodPost, proxywire.Path, bytes.NewReader(body))
 	r.Header.Set("Content-Type", proxywire.ContentType)
@@ -143,6 +148,7 @@ func post(h http.Handler, body []byte, opts ...reqOpt) *httptest.ResponseRecorde
 	return w
 }
 
+// TestHandler checks the proxy server's required backend and handler construction.
 func TestHandler(t *testing.T) {
 	t.Parallel()
 	if _, err := proxyserver.Handler(
@@ -167,6 +173,7 @@ func TestHandler(t *testing.T) {
 	}
 }
 
+// TestRoutes checks proxy route methods, paths, and content types.
 func TestRoutes(t *testing.T) {
 	t.Parallel()
 	h := mustHandler(t, proxyserver.Config{Backend: newStub()})
@@ -225,6 +232,7 @@ func TestRoutes(t *testing.T) {
 	})
 }
 
+// TestSignature checks rejection of invalid signed envelopes and replayed requests.
 func TestSignature(t *testing.T) {
 	h := mustHandler(t, proxyserver.Config{Backend: newStub()})
 	body := dmPlist(t, nil)
@@ -272,6 +280,8 @@ func TestSignature(t *testing.T) {
 	}
 }
 
+// verifyResponse verifies the response signature against the recorded request signature, status,
+// content type, and body.
 func verifyResponse(w *httptest.ResponseRecorder, key []byte) error {
 	return proxywire.VerifyBoundResponse(
 		key,
@@ -316,6 +326,7 @@ func tlsServer(t *testing.T, h http.Handler, cfg *tls.Config) *httptest.Server {
 	return srv
 }
 
+// send sends a signed proxy request after applying the supplied request options.
 func send(t *testing.T, c *http.Client, url string, body []byte, opts ...reqOpt) testResponse {
 	t.Helper()
 	req, err := http.NewRequestWithContext(
@@ -357,6 +368,7 @@ func handshakeFails(t *testing.T, c *http.Client, url string, body []byte) bool 
 	return false
 }
 
+// TestAuth checks bearer and mutual-TLS proxy authentication and unauthorized requests.
 func TestAuth(t *testing.T) {
 	t.Parallel()
 	body := dmPlist(t, nil)
@@ -484,6 +496,7 @@ func TestAuth(t *testing.T) {
 	})
 }
 
+// TestTLSConfig checks proxy TLS configuration with and without a server certificate.
 func TestTLSConfig(t *testing.T) {
 	t.Parallel()
 	ca, err := testpki.NewCA("x")
@@ -500,6 +513,8 @@ func TestTLSConfig(t *testing.T) {
 	}
 }
 
+// TestCheckin checks proxy check-in decoding, device and user channels, message type, and body
+// limits.
 func TestCheckin(t *testing.T) {
 	t.Parallel()
 	t.Run("DeviceChannel", func(t *testing.T) {
@@ -640,8 +655,11 @@ func TestCheckin(t *testing.T) {
 
 type failingReader struct{}
 
+// Read returns a synthetic connection-reset read failure.
 func (failingReader) Read([]byte) (int, error) { return 0, errors.New("connection reset") }
 
+// TestBackendErrors checks proxy HTTP mapping of backend not-found, invalid-input, and internal
+// errors.
 func TestBackendErrors(t *testing.T) {
 	t.Parallel()
 	h := mustHandler(t, proxyserver.Config{Backend: newStub(), SendKey: sendKey})
@@ -738,6 +756,8 @@ func TestHandleParity(t *testing.T) {
 	}
 }
 
+// TestHandlerRequiresReplayStateAndIndependentKeys checks that handler requires replay state and
+// independent keys.
 func TestHandlerRequiresReplayStateAndIndependentKeys(t *testing.T) {
 	for _, cfg := range []proxyserver.Config{
 		{Backend: newStub(), RecvKey: recvKey, SendKey: sendKey},

@@ -19,6 +19,8 @@ const (
 	EnvEventDeliveryTimeout = "DM_EVENT_DELIVERY_TIMEOUT"
 )
 
+// parseEventEnv overlays configured worker, queue and timeout values, rejecting malformed
+// or negative limits.
 func parseEventEnv(cfg *event.AsyncConfig, get func(string) string) error {
 	for name, dst := range map[string]*int{EnvEventWorkers: &cfg.Workers, EnvEventQueueCapacity: &cfg.QueueCapacity} {
 		if raw := get(name); raw != "" {
@@ -75,6 +77,8 @@ type eventDeliveryStatus struct {
 	DeliveryTimeout string
 }
 
+// eventStats returns asynchronous bus statistics or nil when no in-process bus is
+// configured.
 func (a *App) eventStats() *eventDeliveryStatus {
 	if a.cfg.Bus == nil {
 		return nil
@@ -83,6 +87,8 @@ func (a *App) eventStats() *eventDeliveryStatus {
 	return &eventDeliveryStatus{Stats: s, DeliveryTimeout: s.DeliveryTimeout.String()}
 }
 
+// eventConfigFromEnv overlays event-delivery settings before applying and validating the
+// security configuration.
 func eventConfigFromEnv(get func(string) string, cfg Config) (Config, error) {
 	if err := parseEventEnv(&cfg.Sinks.Dispatch, get); err != nil {
 		return Config{}, err

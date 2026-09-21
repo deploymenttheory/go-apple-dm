@@ -29,6 +29,8 @@ const ActionManageContentCache = "manageContentCacheCredentials"
 
 type contentCacheTokenKey struct{}
 
+// wireContentCache validates the public HTTPS origin, opens metrics state and mounts the
+// credential-authorized reporting receiver when configured.
 func (a *App) wireContentCache(ctx context.Context, mux *http.ServeMux) error {
 	if a.cfg.ContentCache.PublicURL == "" {
 		return nil
@@ -75,6 +77,8 @@ func (a *App) wireContentCache(ctx context.Context, mux *http.ServeMux) error {
 	return nil
 }
 
+// contentCacheHTTPS accepts direct TLS or an HTTPS forwarding assertion from an explicitly
+// trusted proxy address.
 func (a *App) contentCacheHTTPS(r *http.Request) bool {
 	if r.TLS != nil {
 		return true
@@ -116,10 +120,14 @@ func redactContentCacheURL(next http.Handler) http.Handler {
 	})
 }
 
+// contentCacheActions declares the enrollment-scoped permission for managing content-cache
+// reporting credentials.
 func contentCacheActions() []adminauth.Action {
 	return []adminauth.Action{{ID: ActionManageContentCache, Help: "Issue, rotate or revoke a device's content-cache reporting credential.", Resource: adminauth.EntityEnrollment}}
 }
 
+// contentCacheRoutes declares reporting-credential and metrics-inspection routes when the
+// receiver is enabled.
 func (a *App) contentCacheRoutes() []adminRoute {
 	if a.contentCache == nil {
 		return nil
@@ -132,6 +140,8 @@ func (a *App) contentCacheRoutes() []adminRoute {
 	}
 }
 
+// rotateContentCache replaces the enrollment's reporting credential and returns its
+// non-cacheable reporting URL.
 func (a *App) rotateContentCache(w http.ResponseWriter, r *http.Request) {
 	id, err := enrollmentFromPath(r)
 	if err != nil {
@@ -147,6 +157,8 @@ func (a *App) rotateContentCache(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusCreated, map[string]string{"URL": strings.TrimRight(a.cfg.ContentCache.PublicURL, "/") + "/content-cache/metrics/" + token})
 }
 
+// revokeContentCache revokes the selected enrollment's reporting credential and returns
+// 204 on success.
 func (a *App) revokeContentCache(w http.ResponseWriter, r *http.Request) {
 	id, err := enrollmentFromPath(r)
 	if err != nil {
@@ -160,6 +172,7 @@ func (a *App) revokeContentCache(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNoContent)
 }
 
+// contentCacheReports returns a validated page of reports for a device-channel enrollment.
 func (a *App) contentCacheReports(w http.ResponseWriter, r *http.Request) {
 	id, err := enrollmentFromPath(r)
 	if err != nil {
@@ -183,6 +196,8 @@ func (a *App) contentCacheReports(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, reports)
 }
 
+// contentCacheError returns a bounded content-cache error, distinguishing invalid input
+// from storage failure.
 func contentCacheError(w http.ResponseWriter, err error) {
 	code := http.StatusInternalServerError
 	if errors.Is(err, state.ErrInvalid) {

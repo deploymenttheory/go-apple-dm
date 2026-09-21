@@ -10,6 +10,8 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/server/sqlstore/sqlite"
 )
 
+// TestBlobRotationEnforcesKeysAndPreservesFailedWrites checks that blob rotation enforces keys and
+// preserves failed writes.
 func TestBlobRotationEnforcesKeysAndPreservesFailedWrites(t *testing.T) {
 	ctx := t.Context()
 	s := openWith(t, filepath.Join(t.TempDir(), "blobs.db"), nil)

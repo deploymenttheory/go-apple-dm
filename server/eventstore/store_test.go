@@ -14,6 +14,8 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/server/sqlstore/sqlite"
 )
 
+// fixture opens an SQLite event store with a domain-mutation table and audit and webhook publisher
+// destinations.
 func fixture(t *testing.T) (*sqlite.Store, *eventstore.Store, *eventstore.Publisher) {
 	t.Helper()
 	db, err := sqlite.Open(t.Context(), filepath.Join(t.TempDir(), "events.sqlite"), sqlite.Options{})
@@ -31,6 +33,7 @@ func fixture(t *testing.T) (*sqlite.Store, *eventstore.Store, *eventstore.Publis
 	return db, s, &eventstore.Publisher{Store: s, Destinations: []string{"audit", "webhook"}}
 }
 
+// TestRequiredCaptureRollsBackDomainMutation checks required capture rolls back domain mutation.
 func TestRequiredCaptureRollsBackDomainMutation(t *testing.T) {
 	db, _, p := fixture(t)
 	notified := 0
@@ -62,6 +65,8 @@ func TestRequiredCaptureRollsBackDomainMutation(t *testing.T) {
 	}
 }
 
+// TestDeliveryLeaseFencesStaleWorkerAndPreservesProjection checks that delivery lease fences stale
+// worker and preserves projection.
 func TestDeliveryLeaseFencesStaleWorkerAndPreservesProjection(t *testing.T) {
 	db, s, p := fixture(t)
 	if err := p.Publish(t.Context(), event.Event{Type: event.AdminAction, Data: map[string]any{"action": "write", "credential": "safe-id", "password": "secret-value"}}); err != nil {
@@ -117,6 +122,7 @@ func TestDeliveryLeaseFencesStaleWorkerAndPreservesProjection(t *testing.T) {
 	}
 }
 
+// TestDenialSurvivesOperationRollback checks that denial survives operation rollback.
 func TestDenialSurvivesOperationRollback(t *testing.T) {
 	db, s, p := fixture(t)
 	denied := errors.New("denied")
@@ -142,6 +148,7 @@ func TestDenialSurvivesOperationRollback(t *testing.T) {
 	}
 }
 
+// TestCaptureHealthOnlyAdvancesAfterCommit checks capture health only advances after commit.
 func TestCaptureHealthOnlyAdvancesAfterCommit(t *testing.T) {
 	_, _, p := fixture(t)
 	fault := errors.New("domain validation failed")
@@ -162,6 +169,7 @@ func TestCaptureHealthOnlyAdvancesAfterCommit(t *testing.T) {
 	}
 }
 
+// TestDeferredAdditionalCaptureOwnsDenialData checks deferred additional capture owns denial data.
 func TestDeferredAdditionalCaptureOwnsDenialData(t *testing.T) {
 	_, _, p := fixture(t)
 	var reason string

@@ -23,6 +23,7 @@ import (
 
 var errBoom = errors.New("boom")
 
+// quiet returns a logger that discards output.
 func quiet() *slog.Logger { return slog.New(slog.NewTextHandler(io.Discard, nil)) }
 
 type completion struct {
@@ -50,6 +51,7 @@ type failure struct {
 	err    error
 }
 
+// newHarness creates an enrollment web-authentication harness with a fake identity provider.
 func newHarness(t *testing.T, mutate func(cfg *webauth.Config)) *harness {
 	t.Helper()
 	return newHarnessWith(t, webauthtest.New(t), mutate)
@@ -138,6 +140,7 @@ func (h *harness) callbackURL(path string) string {
 	return resp.Header.Get("Location")
 }
 
+// lastFailure returns the latest captured failure, failing the test if none was recorded.
 func (h *harness) lastFailure() failure {
 	h.mu.Lock()
 	defer h.mu.Unlock()
@@ -147,17 +150,21 @@ func (h *harness) lastFailure() failure {
 	return h.failures[len(h.failures)-1]
 }
 
+// completions returns a copy of the captured authentication completions under the harness mutex.
 func (h *harness) completions() []completion {
 	h.mu.Lock()
 	defer h.mu.Unlock()
 	return append([]completion(nil), h.completed...)
 }
 
+// s256 computes the unpadded base64url SHA-256 value used by PKCE.
 func s256(v string) string {
 	sum := sha256.Sum256([]byte(v))
 	return base64.RawURLEncoding.EncodeToString(sum[:])
 }
 
+// TestFlow checks browser authentication with PKCE, nonce and state binding, token verification,
+// authorization, and provider failures.
 func TestFlow(t *testing.T) {
 	t.Parallel()
 
@@ -754,6 +761,7 @@ func TestFlow(t *testing.T) {
 	})
 }
 
+// TestNew checks web-authentication configuration and state lifetime limits.
 func TestNew(t *testing.T) {
 	t.Parallel()
 	complete := func(context.Context, webauth.Bound, webauth.Claims, webauth.Decision, http.ResponseWriter, *http.Request) {
@@ -782,6 +790,8 @@ func TestNew(t *testing.T) {
 	}
 }
 
+// TestMemoryStore checks state-store insertion, single-use consumption, capacity, expiry, and
+// sweeping.
 func TestMemoryStore(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
@@ -837,7 +847,10 @@ func TestMemoryStore(t *testing.T) {
 // failingStore fails every operation.
 type failingStore struct{}
 
+// Put returns the injected authentication-state write failure.
 func (failingStore) Put(context.Context, string, webauth.State) error { return errBoom }
+
+// Take returns the injected authentication-state consumption failure.
 func (failingStore) Take(context.Context, string, string) (webauth.State, error) {
 	return webauth.State{}, errBoom
 }

@@ -30,6 +30,7 @@ type faultRepository struct {
 	beforeUpdate          func()
 }
 
+// Get runs the injected read-fault hook before delegating to the store.
 func (s *faultRepository) Get(ctx context.Context, k string) (state.Record, error) {
 	if s.get != nil {
 		if err := s.get(k); err != nil {
@@ -39,6 +40,7 @@ func (s *faultRepository) Get(ctx context.Context, k string) (state.Record, erro
 	return s.Store.Get(ctx, k)
 }
 
+// List runs the injected list-fault hook before delegating to the store.
 func (s *faultRepository) List(ctx context.Context, p, a string, n int) ([]state.Record, error) {
 	if s.list != nil {
 		if err := s.list(p); err != nil {
@@ -48,6 +50,7 @@ func (s *faultRepository) List(ctx context.Context, p, a string, n int) ([]state
 	return s.Store.List(ctx, p, a, n)
 }
 
+// Update runs the pre-update hook and wraps the transaction with fault injection.
 func (s *faultRepository) Update(
 	ctx context.Context,
 	keys []string,
@@ -68,6 +71,7 @@ type faultTransaction struct {
 	faults *faultRepository
 }
 
+// Get runs the injected transaction-read hook before delegating to the transaction.
 func (tx faultTransaction) Get(ctx context.Context, k string) (state.Record, error) {
 	if tx.faults.txGet != nil {
 		if err := tx.faults.txGet(k); err != nil {
@@ -77,6 +81,7 @@ func (tx faultTransaction) Get(ctx context.Context, k string) (state.Record, err
 	return tx.Tx.Get(ctx, k)
 }
 
+// List runs the injected list-fault hook before delegating to the transaction.
 func (tx faultTransaction) List(ctx context.Context, p, a string, n int) ([]state.Record, error) {
 	if tx.faults.list != nil {
 		if err := tx.faults.list(p); err != nil {
@@ -86,6 +91,7 @@ func (tx faultTransaction) List(ctx context.Context, p, a string, n int) ([]stat
 	return tx.Tx.List(ctx, p, a, n)
 }
 
+// Put runs the injected write-fault hook before delegating to the transaction.
 func (tx faultTransaction) Put(ctx context.Context, v state.Record) error {
 	if tx.faults.put != nil {
 		if err := tx.faults.put(v.Key); err != nil {
@@ -95,6 +101,7 @@ func (tx faultTransaction) Put(ctx context.Context, v state.Record) error {
 	return tx.Tx.Put(ctx, v)
 }
 
+// requireError requires success or an error matching the supplied sentinel through errors.Is.
 func requireError(t *testing.T, err, want error) {
 	t.Helper()
 	if want == nil && err != nil || want != nil && !errors.Is(err, want) {
@@ -102,6 +109,8 @@ func requireError(t *testing.T, err, want error) {
 	}
 }
 
+// testManager creates an in-memory lifecycle manager with fault injection and a mutable fixture
+// clock.
 func testManager(t *testing.T) (*Manager, *faultRepository, *time.Time) {
 	t.Helper()
 	now := time.Now().UTC().Truncate(time.Second)
@@ -111,6 +120,7 @@ func testManager(t *testing.T) (*Manager, *faultRepository, *time.Time) {
 	return &Manager{Store: f}, f, &now
 }
 
+// requestFor builds an identity request, adding fixture DNS names for HTTPS identities.
 func requestFor(id string, kind Kind) Request {
 	r := Request{ID: id, Kind: kind, Subject: pkix.Name{CommonName: id}}
 	if kind == HTTPS {
@@ -119,6 +129,7 @@ func requestFor(id string, kind Kind) Request {
 	return r
 }
 
+// pending begins a pending identity version, failing the test on error.
 func pending(t *testing.T, m *Manager, id string, kind Kind) Identity {
 	t.Helper()
 	v, err := m.Begin(t.Context(), requestFor(id, kind))
@@ -126,6 +137,7 @@ func pending(t *testing.T, m *Manager, id string, kind Kind) Identity {
 	return v
 }
 
+// rootIdentity creates and activates a root issuer and returns its certificate and key material.
 func rootIdentity(t *testing.T, m *Manager, id string) Material {
 	t.Helper()
 	v := pending(t, m, id, Issuer)
@@ -138,6 +150,7 @@ func rootIdentity(t *testing.T, m *Manager, id string) Material {
 	return material
 }
 
+// putRecord encodes and writes a state record in a transaction, failing the test on error.
 func putRecord(t *testing.T, s state.Store, k string, v any) {
 	t.Helper()
 	b, err := json.Marshal(v)
@@ -153,6 +166,7 @@ func putRecord(t *testing.T, s state.Store, k string, v any) {
 	)
 }
 
+// changeRecord loads, mutates, and rewrites a stored lifecycle identity record.
 func changeRecord(t *testing.T, m *Manager, id string, fn func(*record)) {
 	t.Helper()
 	r, err := read(t.Context(), m.Store, id)
@@ -161,6 +175,7 @@ func changeRecord(t *testing.T, m *Manager, id string, fn func(*record)) {
 	putRecord(t, m.Store, prefix+id, r)
 }
 
+// privateSigner parses a PEM PKCS #8 private key and requires it to implement crypto.Signer.
 func privateSigner(t *testing.T, data []byte) crypto.Signer {
 	t.Helper()
 	b, _ := pem.Decode(data)
@@ -172,6 +187,7 @@ func privateSigner(t *testing.T, data []byte) crypto.Signer {
 	return requireType[crypto.Signer](t, k)
 }
 
+// issueCertificate issues a PEM certificate using the supplied authority material and template.
 func issueCertificate(
 	t *testing.T,
 	root Material,
@@ -196,6 +212,8 @@ func issueCertificate(
 	return pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: der})
 }
 
+// TestRequestValidationCancellationAndPublicHistory checks request validation cancellation and
+// public history.
 func TestRequestValidationCancellationAndPublicHistory(t *testing.T) {
 	m, _, _ := testManager(t)
 	ctx := WithAudit(t.Context(), "operator", "request")
@@ -260,6 +278,8 @@ func TestRequestValidationCancellationAndPublicHistory(t *testing.T) {
 	}
 }
 
+// TestReadAndWriteFailuresPreservePendingMaterial checks read and write failures preserve pending
+// material.
 func TestReadAndWriteFailuresPreservePendingMaterial(t *testing.T) {
 	m, s, _ := testManager(t)
 	ctx := t.Context()
@@ -329,6 +349,7 @@ func TestReadAndWriteFailuresPreservePendingMaterial(t *testing.T) {
 	requireError(t, err, ErrConflict)
 }
 
+// TestListPaginationAndCorruptStoredJSON checks list pagination and corrupt stored JSON.
 func TestListPaginationAndCorruptStoredJSON(t *testing.T) {
 	m, s, _ := testManager(t)
 	for i := range 101 {
@@ -366,6 +387,8 @@ func TestListPaginationAndCorruptStoredJSON(t *testing.T) {
 	}
 }
 
+// TestNoticesOncePerThresholdAndAtomicFailures checks notices once per threshold and atomic
+// failures.
 func TestNoticesOncePerThresholdAndAtomicFailures(t *testing.T) {
 	m, s, now := testManager(t)
 	ctx := t.Context()

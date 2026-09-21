@@ -32,6 +32,8 @@ func (s *Store) StorePushCert(_ context.Context, topic string, certPEM, keyPEM [
 	return withoutKey(rec), nil
 }
 
+// withoutKey returns a push certificate with its private key removed and certificate bytes
+// copied.
 func withoutKey(c storage.PushCert) storage.PushCert {
 	c.KeyPEM = nil
 	c.CertPEM = append([]byte(nil), c.CertPEM...)
@@ -166,6 +168,8 @@ func (s *Store) ClearUserAuth(_ context.Context, id mdm.EnrollmentID) error {
 	return nil
 }
 
+// clearUserAuthOfDeviceLocked clears cached user authentication beneath the selected parent
+// device.
 func (s *Store) clearUserAuthOfDeviceLocked(deviceID string) {
 	for k, st := range s.userAuth {
 		if st.ID.ParentID == deviceID {
@@ -176,6 +180,7 @@ func (s *Store) clearUserAuthOfDeviceLocked(deviceID string) {
 
 // Export and import (decision record 0017).
 
+// exportCursor encodes an enrollment position for resumable export pagination.
 func exportCursor(e storage.Enrollment) string { return e.ID.ParentID + "\x00" + e.ID.ID }
 
 // Export implements storage.MigrationStore.
@@ -207,6 +212,7 @@ func (s *Store) Export(_ context.Context, p paging.Page) (paging.Result[storage.
 	return out, nil
 }
 
+// exportLocked builds an enrollment export from the current locked store state.
 func (s *Store) exportLocked(r *record) storage.EnrollmentExport {
 	e := r.Enrollment
 	e.Push.Token = append([]byte(nil), e.Push.Token...)

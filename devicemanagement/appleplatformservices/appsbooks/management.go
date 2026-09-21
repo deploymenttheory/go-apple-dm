@@ -16,6 +16,8 @@ func (c *Client) Disassociate(ctx context.Context, in ManageAssetsRequest) (Even
 	return c.manageAssets(ctx, "disassociateAssets", in)
 }
 
+// manageAssets submits an asset assignment or revocation batch after validating identifiers
+// and service limits.
 func (c *Client) manageAssets(
 	ctx context.Context,
 	endpoint string,
@@ -72,6 +74,7 @@ func (c *Client) Revoke(ctx context.Context, in RevokeAssetsRequest) (Event, err
 	return c.event(ctx, "revokeAssets", in)
 }
 
+// targets validates and counts the device and user targets in an asset-management batch.
 func (c *Client) targets(users, devices []string, userLimit, deviceLimit string) error {
 	if len(users)+len(devices) == 0 || !unique(users) || !unique(devices) {
 		return ErrInput
@@ -82,6 +85,7 @@ func (c *Client) targets(users, devices []string, userLimit, deviceLimit string)
 	return c.limit(deviceLimit, len(devices))
 }
 
+// unique rejects empty or repeated identifiers in a submitted batch.
 func unique(values []string) bool {
 	seen := map[string]bool{}
 	for _, v := range values {
@@ -108,6 +112,8 @@ func (c *Client) RetireUsers(ctx context.Context, in ManageUsersRequest) (Event,
 	return c.manageUsers(ctx, "retireUsers", in)
 }
 
+// manageUsers submits a user-management batch after validating user IDs and the service
+// batch limit.
 func (c *Client) manageUsers(
 	ctx context.Context,
 	endpoint string,
@@ -136,6 +142,8 @@ func (c *Client) manageUsers(
 	return c.event(ctx, endpoint, in)
 }
 
+// event submits an asynchronous management request and requires a nonempty event ID in its
+// response.
 func (c *Client) event(ctx context.Context, endpoint string, in any) (Event, error) {
 	var out Event
 	err := c.call(ctx, endpoint, http.MethodPost, nil, in, &out)

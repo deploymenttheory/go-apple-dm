@@ -6,7 +6,7 @@
     "quality_profile": "showcase",
     "viewBox": [
       1500,
-      960
+      1080
     ],
     "views": [
       {
@@ -40,12 +40,12 @@
           "depaxm",
           "appleapis"
         ],
-        "note": "Stored principals require Cedar authorization. The static root admin token bypasses it; it is not a macOS bootstrap token."
+        "note": "Stored principal tokens and Cedar permissions protect the unified admin API, with separate root authority management."
       }
     ],
     "repository": {
       "url": "https://github.com/deploymenttheory/go-apple-dm",
-      "revision": "7500eb25e50a2913338339d5fced18dc7f41fdc3"
+      "revision": "2b8157efa2c6cbfff459bc44f66736a5d2e7c753"
     },
     "colour_profile": "purpose-v1",
     "legend": {
@@ -72,7 +72,7 @@
       "id": "devices",
       "type": "external",
       "label": "Apple devices",
-      "sublabel": "Mac · iPhone · iPad",
+      "sublabel": "Mac \u00b7 iPhone \u00b7 iPad",
       "pos": [
         40,
         300
@@ -105,19 +105,25 @@
       "sublabel": "admin CLI",
       "pos": [
         1120,
-        700
+        900
       ],
       "size": [
         220,
         70
       ],
-      "purpose": "neutral"
+      "purpose": "neutral",
+      "sources": [
+        {
+          "path": "server/internal/dmctl/config.go",
+          "label": "CLI configuration"
+        }
+      ]
     },
     {
       "id": "depaxm",
       "type": "backend",
-      "label": "Service clients",
-      "sublabel": "dep · axm · gdmf",
+      "label": "Configured Apple clients",
+      "sublabel": "DEP and optional AxM",
       "pos": [
         400,
         100
@@ -126,7 +132,17 @@
         220,
         70
       ],
-      "purpose": "transport"
+      "purpose": "transport",
+      "sources": [
+        {
+          "path": "server/internal/app/dep.go",
+          "label": "DEP composition"
+        },
+        {
+          "path": "server/internal/app/axm.go",
+          "label": "AxM composition"
+        }
+      ]
     },
     {
       "id": "httpsurface",
@@ -162,7 +178,13 @@
         220,
         70
       ],
-      "purpose": "transport"
+      "purpose": "transport",
+      "sources": [
+        {
+          "path": "server/pushnotify/notifier.go",
+          "label": "Wake notifier"
+        }
+      ]
     },
     {
       "id": "adminapi",
@@ -310,7 +332,7 @@
       "id": "clients-apple",
       "from": "depaxm",
       "to": "appleapis",
-      "label": "OAuth API requests",
+      "label": "Apple API requests",
       "variant": "emphasis",
       "purpose": "transport"
     },
@@ -341,7 +363,7 @@
       "id": "core-store",
       "from": "core",
       "to": "store",
-      "label": "enrollments · queue",
+      "label": "enrollments \u00b7 queue",
       "labelAt": [
         1050,
         284
@@ -396,16 +418,28 @@
       "label": "Bearer token",
       "variant": "security",
       "labelAt": [
-        1050,
-        784
+        1130,
+        875
       ],
-      "purpose": "authentication"
+      "purpose": "authentication",
+      "fromSide": "left",
+      "toSide": "right",
+      "via": [
+        [
+          1060,
+          935
+        ],
+        [
+          1060,
+          735
+        ]
+      ]
     },
     {
       "id": "admin-engine",
       "from": "adminapi",
       "to": "engine",
-      "label": "declarations · sets",
+      "label": "Blueprints \u00b7 declarations",
       "labelAt": [
         870,
         640
@@ -416,7 +450,7 @@
       "id": "admin-clients",
       "from": "adminapi",
       "to": "depaxm",
-      "label": "assign · sync",
+      "label": "assign \u00b7 sync",
       "fromSide": "bottom",
       "toSide": "right",
       "via": [
@@ -510,26 +544,30 @@
       "dot": "service",
       "title": "What the server manages",
       "items": [
-        "The shared runtime serves HTTP or native TLS and supervises background workers. Roles select the mounted services.",
-        "The admin API manages commands, declarations, enrollment profiles, controlled replacement, and separate app push credentials.",
-        "The MDM service and declarative engine share persistent enrollment and feature stores; the overview shows selected control paths."
+        "The unified runtime serves device and admin routes over native TLS or loopback HTTP and supervises configured background workers.",
+        "The admin API manages commands, Blueprints, declarations, enrollment profiles, application identities, native webhooks and separate app push credentials.",
+        "The MDM service and declarative engine share persistent enrollment and feature stores. Device check-ins use the in-process declarative adapter.",
+        "DEP and optional AxM clients are wired into this reference application. GDMF software lookup and Apps and Books are reusable library clients; embedding applications configure their use."
       ]
     },
     {
       "dot": "transport",
       "title": "Read next",
       "items": [
-        "Follow the enrollment diagrams for discovery and trust, the command flow for device requests, and the companion diagrams for replacement, app notifications, and the test bench."
+        "Follow enrollment diagrams for discovery and trust, command and DDM flows for device requests, and the Blueprint, application identity and native webhook companions for current administration.",
+        "Apple service client interfaces \u2014 https://github.com/deploymenttheory/go-apple-dm/blob/main/docs/diagrams/apple-service-clients.html",
+        "GDMF software lookup client \u2014 https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/devicemanagement/appleplatformservices/gdmf/gdmf.go",
+        "Apps and Books client \u2014 https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/devicemanagement/appleplatformservices/appsbooks/client.go"
       ]
     },
     {
       "dot": "transport",
       "title": "Public documentation",
       "items": [
-        "Device Management — https://developer.apple.com/documentation/devicemanagement",
-        "Sending MDM commands to a device — https://developer.apple.com/documentation/devicemanagement/sending-mdm-commands-to-a-device",
-        "Integrating declarative management — https://developer.apple.com/documentation/devicemanagement/integrating-declarative-management",
-        "MDM payload — https://developer.apple.com/documentation/devicemanagement/mdm"
+        "Device Management \u2014 https://developer.apple.com/documentation/devicemanagement",
+        "Sending MDM commands to a device \u2014 https://developer.apple.com/documentation/devicemanagement/sending-mdm-commands-to-a-device",
+        "Integrating declarative management \u2014 https://developer.apple.com/documentation/devicemanagement/integrating-declarative-management",
+        "MDM payload \u2014 https://developer.apple.com/documentation/devicemanagement/mdm"
       ]
     }
   ]

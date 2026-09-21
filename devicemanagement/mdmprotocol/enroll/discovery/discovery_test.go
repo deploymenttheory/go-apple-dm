@@ -21,6 +21,7 @@ import (
 
 var errBoom = errors.New("boom")
 
+// do serves a request with the supplied method, URL, and headers and records the response.
 func do(t *testing.T, h http.Handler, method, target string, headers map[string]string) *httptest.ResponseRecorder {
 	t.Helper()
 	req := httptest.NewRequestWithContext(t.Context(), method, target, nil)
@@ -32,8 +33,11 @@ func do(t *testing.T, h http.Handler, method, target string, headers map[string]
 	return rec
 }
 
+// quietLogger returns a logger that discards output.
 func quietLogger() *slog.Logger { return slog.New(slog.NewTextHandler(io.Discard, nil)) }
 
+// TestHandler checks discovery response bodies, model routing, methods, redirects, HTTPS
+// requirements, and errors.
 func TestHandler(t *testing.T) {
 	t.Parallel()
 	table := map[discovery.ModelFamily]discovery.Server{
@@ -310,6 +314,7 @@ func TestHandler(t *testing.T) {
 	})
 }
 
+// TestParseModelFamily checks supported discovery model families and unknown-family rejection.
 func TestParseModelFamily(t *testing.T) {
 	t.Parallel()
 	for _, f := range discovery.ModelFamilies {

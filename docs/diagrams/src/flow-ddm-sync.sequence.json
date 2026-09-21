@@ -132,7 +132,7 @@
       "id": "enqueue",
       "from": "notifier",
       "to": "core",
-      "label": "Queue DeclarativeManagement command",
+      "label": "Queue command with sync tokens",
       "y": 355,
       "variant": "default",
       "purpose": "service"
@@ -159,7 +159,7 @@
       "id": "deliver",
       "from": "core",
       "to": "device",
-      "label": "Return DeclarativeManagement",
+      "label": "Return DeclarativeManagement + Data",
       "y": 463,
       "variant": "return",
       "purpose": "transport"
@@ -168,7 +168,7 @@
       "id": "tokens",
       "from": "device",
       "to": "core",
-      "label": "Check-in: tokens",
+      "label": "Only without Data: request tokens",
       "y": 499,
       "variant": "default",
       "purpose": "transport"
@@ -177,7 +177,7 @@
       "id": "tokens-forward",
       "from": "core",
       "to": "engine",
-      "label": "Refresh snapshot and sync token",
+      "label": "Fallback: refresh snapshot and tokens",
       "y": 535,
       "variant": "default",
       "purpose": "service"
@@ -278,16 +278,16 @@
       "dot": "transport",
       "title": "Server-side change notification",
       "items": [
-        "The engine commits changes to assigned declarations and persistent change records. The notifier queues a synchronization command through service.Core.",
-        "A configured pusher prompts the device to poll. The device receives the command from the MDM server’s response."
+        "The engine commits changes to assigned declarations and persistent change records. The notifier enqueues the current tokens with a generation-specific deduplication key.",
+        "A configured pusher prompts the device to poll. The device receives the command in the MDM server response, then follows token comparison and manifest synchronization."
       ]
     },
     {
       "dot": "transport",
       "title": "Device synchronization",
       "items": [
-        "This server carries Endpoint values inside DeclarativeManagement check-ins to /mdm. The adapter passes each operation to the engine.",
-        "The device compares synchronization tokens, fetches the manifest and changed declarations as needed, and reports status separately."
+        "The command Data carries TokensResponse. The device compares DeclarationsToken with its stored token: unchanged state ends synchronization; changed state leads to declaration-items and needed declaration fetches.",
+        "A tokens check-in is the fallback for a command without Data, not an unconditional extra request. This server carries the Endpoint value inside DeclarativeManagement check-in to /mdm; status reports are separate."
       ]
     },
     {
@@ -304,7 +304,27 @@
         "Integrating declarative management — https://developer.apple.com/documentation/devicemanagement/integrating-declarative-management",
         "Declarative Management check-in — https://developer.apple.com/documentation/devicemanagement/declarative-management",
         "Declarations — https://developer.apple.com/documentation/devicemanagement/devicemanagement-declarations",
-        "Implementation — https://github.com/deploymenttheory/go-apple-dm/blob/7500eb25e50a2913338339d5fced18dc7f41fdc3/server/ddmsync/notifier.go"
+        "DeclarativeManagement command Data — https://developer.apple.com/documentation/devicemanagement/declarativemanagementcommand/command-data.dictionary",
+        "TokensResponse — https://developer.apple.com/documentation/devicemanagement/tokensresponse"
+      ]
+    },
+    {
+      "title": "Implementation references",
+      "dot": "artifact",
+      "items": [
+        "admin: Admin API — https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/server/internal/app/admin.go",
+        "engine: DDM engine — https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/devicemanagement/mdmprotocol/ddm/publication.go",
+        "ddmstore: Declarative store — https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/devicemanagement/mdmprotocol/ddm/store.go",
+        "notifier: Change notifier — https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/server/ddmsync/notifier.go",
+        "core: MDM and adapters — https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/server/ddmadapter/inproc/inproc.go",
+        "Token, manifest and declaration responses — https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/devicemanagement/mdmprotocol/ddm/serve.go"
+      ]
+    },
+    {
+      "title": "Implementation references (continued)",
+      "dot": "artifact",
+      "items": [
+        "Status processing — https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/devicemanagement/mdmprotocol/ddm/status.go"
       ]
     }
   ]

@@ -13,6 +13,8 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/server/statestore"
 )
 
+// TestUnitOfWorkSharesStateAndRejectsIgnoredNestedFailure checks that unit of work shares state
+// and rejects ignored nested failure.
 func TestUnitOfWorkSharesStateAndRejectsIgnoredNestedFailure(t *testing.T) {
 	s, err := sqlite.Open(t.Context(), filepath.Join(t.TempDir(), "unit.sqlite"), sqlite.Options{})
 	if err != nil {
@@ -72,6 +74,8 @@ func TestUnitOfWorkSharesStateAndRejectsIgnoredNestedFailure(t *testing.T) {
 	}
 }
 
+// TestSavepointRollsBackHandledFailureWithoutLosingOuterWork checks savepoint rolls back handled
+// failure without losing outer work.
 func TestSavepointRollsBackHandledFailureWithoutLosingOuterWork(t *testing.T) {
 	db := openRaw(t)
 	if _, err := db.ExecContext(t.Context(), "CREATE TABLE savepoint_test (id INTEGER PRIMARY KEY)"); err != nil {
@@ -117,6 +121,8 @@ func TestSavepointRollsBackHandledFailureWithoutLosingOuterWork(t *testing.T) {
 	}
 }
 
+// TestSavepointCannotHideRequiredFailureAndRecoversPanic checks that savepoint cannot hide
+// required failure and recovers panic.
 func TestSavepointCannotHideRequiredFailureAndRecoversPanic(t *testing.T) {
 	db := openRaw(t)
 	u := sqlcommon.UnitOfWork{DB: db, Dialect: sqlite.Dialect}
@@ -148,6 +154,8 @@ func TestSavepointCannotHideRequiredFailureAndRecoversPanic(t *testing.T) {
 	}
 }
 
+// TestUnitOfWorkRejectsDifferentPoolsAndRollsBackPanic checks that unit of work rejects different
+// pools and rolls back panic.
 func TestUnitOfWorkRejectsDifferentPoolsAndRollsBackPanic(t *testing.T) {
 	a := openRaw(t)
 	b := openRaw(t)
@@ -187,6 +195,8 @@ func TestUnitOfWorkRejectsDifferentPoolsAndRollsBackPanic(t *testing.T) {
 	}
 }
 
+// TestUnitOfWorkRecognizesCancellationAfterAutomaticRollback checks unit of work recognizes
+// cancellation after automatic rollback.
 func TestUnitOfWorkRecognizesCancellationAfterAutomaticRollback(t *testing.T) {
 	for _, cancelled := range []bool{true, false} {
 		name := "explicit rollback"
@@ -242,6 +252,8 @@ func TestUnitOfWorkRecognizesCancellationAfterAutomaticRollback(t *testing.T) {
 	}
 }
 
+// TestLostSavepointPoisonsOuterTransactionAndSuppressesNotification checks lost savepoint poisons
+// outer transaction and suppresses notification.
 func TestLostSavepointPoisonsOuterTransactionAndSuppressesNotification(t *testing.T) {
 	for _, cancelBefore := range []bool{false, true} {
 		db := openRaw(t)

@@ -31,6 +31,9 @@ const (
 // a static error so callers can match it.
 var errWorkersStuck = errors.New("dmserver: workers did not stop before the shutdown deadline")
 
+// Serve builds and runs the configured reference application with its HTTP listeners and
+// workers. It shuts down owned resources when the context is cancelled or a supervised
+// component fails.
 func Serve(ctx context.Context, cfg app.Config) error {
 	return serve(ctx, cfg, nil)
 }
@@ -45,6 +48,8 @@ func ServeListener(ctx context.Context, cfg app.Config, listener net.Listener) e
 	return serve(ctx, cfg, listener)
 }
 
+// serve builds the application, starts listeners and supervised workers, and releases owned
+// resources on shutdown. Plain HTTP is limited to literal loopback addresses.
 func serve(ctx context.Context, cfg app.Config, listener net.Listener) error {
 	if listener != nil {
 		defer func(cleanup func() error) { _ = cleanup() }(listener.Close)
@@ -202,6 +207,8 @@ func supervise(
 	return first
 }
 
+// serveHTTP serves the listener using managed TLS, configured TLS files, or plain HTTP
+// according to the application configuration.
 func serveHTTP(srv *http.Server, listener net.Listener, cfg app.Config) error {
 	if cfg.Setup != nil {
 		return wrapError(srv.ServeTLS(listener, "", ""))

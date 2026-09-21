@@ -28,6 +28,8 @@ const (
 	ActionReplayWebhooks          = "replayWebhooks"
 )
 
+// parseWebhookEnv reads managed webhook limits and outbound policy, fixes the source to
+// device-management and rejects legacy single-destination settings.
 func parseWebhookEnv(cfg *Config, get func(string) string) error {
 	if get("DM_WEBHOOK_URL") != "" || get("DM_WEBHOOK_HMAC_KEY") != "" {
 		return fmt.Errorf("%w: replace DM_WEBHOOK_URL/DM_WEBHOOK_HMAC_KEY with DM_WEBHOOKS_ENABLED and dmctl webhooks create; existing delivery history is retained", ErrConfig)
@@ -65,6 +67,8 @@ func parseWebhookEnv(cfg *Config, get func(string) string) error {
 	return nil
 }
 
+// openWebhooks opens encrypted SQL webhook capture, attaches certificate observation and
+// registers retention when managed webhooks are enabled.
 func (a *App) openWebhooks(ctx context.Context, store *eventstore.Store) error {
 	if !a.cfg.Webhooks.Enabled {
 		return nil
@@ -94,6 +98,8 @@ func (a *App) openWebhooks(ctx context.Context, store *eventstore.Store) error {
 	return nil
 }
 
+// webhookRoutes declares subscription and delivery routes and evaluates additional Cedar
+// grants before allowing sensitive capture or replay operations.
 func (a *App) webhookRoutes() []adminRoute {
 	if a.webhooks == nil {
 		return nil

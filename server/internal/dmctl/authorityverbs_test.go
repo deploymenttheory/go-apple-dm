@@ -15,6 +15,7 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/server/internal/dmctl/adminclient"
 )
 
+// TestAuthorityCommandRequests checks authority CLI methods, paths, request bodies, and output.
 func TestAuthorityCommandRequests(t *testing.T) {
 	for _, tc := range []struct {
 		args                 []string
@@ -67,6 +68,8 @@ func TestAuthorityCommandRequests(t *testing.T) {
 	}
 }
 
+// TestAuthorityCommandsRejectInputWithoutRequests checks authority commands reject input without
+// requests.
 func TestAuthorityCommandsRejectInputWithoutRequests(t *testing.T) {
 	var calls atomic.Int32
 	srv := httptest.NewServer(http.HandlerFunc(func(http.ResponseWriter, *http.Request) { calls.Add(1) }))
@@ -115,6 +118,7 @@ func TestAuthorityCommandsRejectInputWithoutRequests(t *testing.T) {
 	}
 }
 
+// TestAuthorityCommandsReportServerFailure checks authority commands report server failure.
 func TestAuthorityCommandsReportServerFailure(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) { w.WriteHeader(http.StatusServiceUnavailable) }))
 	t.Cleanup(srv.Close)

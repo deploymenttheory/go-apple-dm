@@ -13,6 +13,7 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/schema/profiles"
 )
 
+// TestEnrollmentErrorsAreNotCacheable checks enrollment errors are not cacheable.
 func TestEnrollmentErrorsAreNotCacheable(t *testing.T) {
 	for _, handler := range []http.Handler{(&enroll.OTAService{}).Handler()} {
 		w := httptest.NewRecorder()
@@ -30,6 +31,7 @@ func TestEnrollmentErrorsAreNotCacheable(t *testing.T) {
 	}
 }
 
+// TestAppleACMEHardwareMatrix checks apple ACME hardware matrix.
 func TestAppleACMEHardwareMatrix(t *testing.T) {
 	for _, tc := range []struct {
 		version              string
@@ -87,6 +89,7 @@ func TestAppleACMEHardwareMatrix(t *testing.T) {
 	}
 }
 
+// btoi converts true to 1 and false to 0.
 func btoi(v bool) int {
 	if v {
 		return 1
@@ -94,6 +97,7 @@ func btoi(v bool) int {
 	return 0
 }
 
+// TestIdentityKeyDefaultsAndOverrides checks identity key defaults and overrides.
 func TestIdentityKeyDefaultsAndOverrides(t *testing.T) {
 	for _, identity := range []string{"scep", "pkcs12"} {
 		for _, version := range []string{"10.11", "10.13.4", "10.15", "26"} {

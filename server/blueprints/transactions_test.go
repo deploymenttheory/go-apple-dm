@@ -23,6 +23,7 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/server/configurationprofile"
 )
 
+// newManager constructs a blueprint manager, failing the test on invalid configuration.
 func newManager(t *testing.T, cfg blueprints.Config) *blueprints.Manager {
 	t.Helper()
 	m, err := blueprints.New(cfg)
@@ -32,6 +33,7 @@ func newManager(t *testing.T, cfg blueprints.Config) *blueprints.Manager {
 	return m
 }
 
+// TestManagerRejectsInvalidOperations checks that manager rejects invalid operations.
 func TestManagerRejectsInvalidOperations(t *testing.T) {
 	cfg := memoryConfig(t)
 	for _, bad := range []blueprints.Config{{}, {Engine: cfg.Engine}, {State: cfg.State}} {
@@ -61,6 +63,7 @@ func TestManagerRejectsInvalidOperations(t *testing.T) {
 	}
 }
 
+// TestValidateConfigurationProfileRequirements checks validate configuration profile requirements.
 func TestValidateConfigurationProfileRequirements(t *testing.T) {
 	for _, mode := range []string{"unconfigured", "missing revision", "missing public URL"} {
 		t.Run(mode, func(t *testing.T) {
@@ -96,6 +99,7 @@ func TestValidateConfigurationProfileRequirements(t *testing.T) {
 	}
 }
 
+// TestPublicationNormalizationAndPagination checks publication normalization and pagination.
 func TestPublicationNormalizationAndPagination(t *testing.T) {
 	ctx := t.Context()
 	cfg := memoryConfig(t)
@@ -156,6 +160,7 @@ type failingMetadataStore struct {
 	getErr, listErr, putErr, deleteErr error
 }
 
+// Get injects a metadata-read failure or delegates to the state store.
 func (s failingMetadataStore) Get(ctx context.Context, key string) (state.Record, error) {
 	if s.getErr != nil {
 		return state.Record{}, s.getErr
@@ -163,6 +168,7 @@ func (s failingMetadataStore) Get(ctx context.Context, key string) (state.Record
 	return s.Store.Get(ctx, key)
 }
 
+// List injects a metadata-list failure or delegates to the state store.
 func (s failingMetadataStore) List(ctx context.Context, prefix, after string, limit int) ([]state.Record, error) {
 	if s.listErr != nil {
 		return nil, s.listErr
@@ -170,6 +176,7 @@ func (s failingMetadataStore) List(ctx context.Context, prefix, after string, li
 	return s.Store.List(ctx, prefix, after, limit)
 }
 
+// Update wraps metadata transactions with configured failures.
 func (s failingMetadataStore) Update(ctx context.Context, keys []string, fn func(state.Tx) error) error {
 	return s.Store.Update(ctx, keys, func(tx state.Tx) error { return fn(failingMetadataTx{Tx: tx, faults: s}) })
 }
@@ -179,6 +186,7 @@ type failingMetadataTx struct {
 	faults failingMetadataStore
 }
 
+// Get injects a metadata-read failure or delegates to the transaction.
 func (tx failingMetadataTx) Get(ctx context.Context, key string) (state.Record, error) {
 	if tx.faults.getErr != nil {
 		return state.Record{}, tx.faults.getErr
@@ -186,6 +194,7 @@ func (tx failingMetadataTx) Get(ctx context.Context, key string) (state.Record, 
 	return tx.Tx.Get(ctx, key)
 }
 
+// Put injects a metadata-write failure or delegates to the transaction.
 func (tx failingMetadataTx) Put(ctx context.Context, r state.Record) error {
 	if tx.faults.putErr != nil {
 		return tx.faults.putErr
@@ -193,6 +202,7 @@ func (tx failingMetadataTx) Put(ctx context.Context, r state.Record) error {
 	return tx.Tx.Put(ctx, r)
 }
 
+// Delete injects a metadata-delete failure or delegates to the transaction.
 func (tx failingMetadataTx) Delete(ctx context.Context, key string) error {
 	if tx.faults.deleteErr != nil {
 		return tx.faults.deleteErr
@@ -200,6 +210,7 @@ func (tx failingMetadataTx) Delete(ctx context.Context, key string) error {
 	return tx.Tx.Delete(ctx, key)
 }
 
+// TestStoredSourceReadFailures checks stored source read failures.
 func TestStoredSourceReadFailures(t *testing.T) {
 	for _, corrupt := range []bool{false, true} {
 		t.Run(map[bool]string{false: "storage error", true: "corrupt JSON"}[corrupt], func(t *testing.T) {
@@ -250,6 +261,7 @@ type wrappedPublicationStore struct {
 	wrap func(ddm.Tx) ddm.Tx
 }
 
+// Update wraps the publication transaction before invoking the callback.
 func (s wrappedPublicationStore) Update(ctx context.Context, fn func(ddm.Tx) error) error {
 	return s.Store.Update(ctx, func(tx ddm.Tx) error { return fn(s.wrap(tx)) })
 }
@@ -260,6 +272,8 @@ type failingPublicationTx struct {
 	err       error
 }
 
+// LockPublication injects a publication-lock failure or delegates to a transaction implementing
+// PublicationLocker.
 func (tx failingPublicationTx) LockPublication(ctx context.Context, name string) error {
 	if tx.operation == "lock" {
 		return tx.err
@@ -271,6 +285,7 @@ func (tx failingPublicationTx) LockPublication(ctx context.Context, name string)
 	return locker.LockPublication(ctx, name)
 }
 
+// PutSet injects a set-publication failure or delegates to the transaction.
 func (tx failingPublicationTx) PutSet(ctx context.Context, name string, at time.Time) (bool, error) {
 	if tx.operation == "publish" {
 		return false, tx.err
@@ -278,6 +293,7 @@ func (tx failingPublicationTx) PutSet(ctx context.Context, name string, at time.
 	return tx.Tx.PutSet(ctx, name, at)
 }
 
+// DeleteSet injects a set-deletion failure or delegates to the transaction.
 func (tx failingPublicationTx) DeleteSet(ctx context.Context, name string) error {
 	if tx.operation == "delete set" {
 		return tx.err
@@ -285,6 +301,7 @@ func (tx failingPublicationTx) DeleteSet(ctx context.Context, name string) error
 	return tx.Tx.DeleteSet(ctx, name)
 }
 
+// AssignSet injects a set-assignment failure or delegates to the transaction.
 func (tx failingPublicationTx) AssignSet(ctx context.Context, id mdm.EnrollmentID, name string, at time.Time) (bool, error) {
 	if tx.operation == "assign" {
 		return false, tx.err
@@ -292,6 +309,7 @@ func (tx failingPublicationTx) AssignSet(ctx context.Context, id mdm.EnrollmentI
 	return tx.Tx.AssignSet(ctx, id, name, at)
 }
 
+// UnassignSet injects a set-unassignment failure or delegates to the transaction.
 func (tx failingPublicationTx) UnassignSet(ctx context.Context, id mdm.EnrollmentID, name string) (bool, error) {
 	if tx.operation == "unassign" {
 		return false, tx.err
@@ -299,6 +317,7 @@ func (tx failingPublicationTx) UnassignSet(ctx context.Context, id mdm.Enrollmen
 	return tx.Tx.UnassignSet(ctx, id, name)
 }
 
+// RecordChanges injects a change-recording failure or delegates to the transaction.
 func (tx failingPublicationTx) RecordChanges(ctx context.Context, ids []mdm.EnrollmentID, reason string, at time.Time) error {
 	if tx.operation == "notify" {
 		return tx.err
@@ -306,6 +325,8 @@ func (tx failingPublicationTx) RecordChanges(ctx context.Context, ids []mdm.Enro
 	return tx.Tx.RecordChanges(ctx, ids, reason, at)
 }
 
+// TestMutationFailuresRollBackSourceDeclarationsAndAssignments checks mutation failures roll back
+// source declarations and assignments.
 func TestMutationFailuresRollBackSourceDeclarationsAndAssignments(t *testing.T) {
 	for _, tc := range []struct{ operation, mutation string }{
 		{"missing lock", "publish"},

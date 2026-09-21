@@ -49,6 +49,7 @@ func DigestResponse(challenge, username, password, uri string, random io.Reader)
 		username, realm, nonce, uri, nc, cnonce, response), nil
 }
 
+// md5hex returns the hexadecimal MD5 value required by the HTTP Digest exchange.
 func md5hex(s string) string {
 	sum := md5.Sum([]byte(s)) // #nosec G401 -- RFC 2617 Digest requires MD5
 	return hex.EncodeToString(sum[:])

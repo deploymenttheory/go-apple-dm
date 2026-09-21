@@ -23,6 +23,8 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/server/statestore"
 )
 
+// TestSQLiteCertificateActivationAndWorkflowAreAtomic checks SQLite certificate activation and
+// workflow are atomic.
 func TestSQLiteCertificateActivationAndWorkflowAreAtomic(t *testing.T) {
 	db := sqliteDB(t)
 	if _, err := sqlcommon.Migrate(t.Context(), db, sqlite.Dialect); err != nil {
@@ -31,6 +33,8 @@ func TestSQLiteCertificateActivationAndWorkflowAreAtomic(t *testing.T) {
 	exerciseCertificateActivation(t, db, sqlite.Dialect)
 }
 
+// TestCertificatePublicationRequiresEncryptedSQLTransaction checks that certificate publication
+// requires encrypted SQL transaction.
 func TestCertificatePublicationRequiresEncryptedSQLTransaction(t *testing.T) {
 	if err := statestore.PublishCertificate(t.Context(), nil, lifecycle.Identity{Kind: lifecycle.Push}, lifecycle.Material{}); err == nil {
 		t.Fatal("published without a SQL transaction")
@@ -50,6 +54,8 @@ func TestCertificatePublicationRequiresEncryptedSQLTransaction(t *testing.T) {
 	}
 }
 
+// exerciseCertificateActivation checks atomic certificate activation, encrypted storage, rollback,
+// and recovery of pending keys after reopening.
 func exerciseCertificateActivation(t *testing.T, db *sql.DB, dialect sqlcommon.Dialect) {
 	t.Helper()
 	ctx := t.Context()

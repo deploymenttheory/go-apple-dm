@@ -14,6 +14,7 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/server/sqlstore/sqlite"
 )
 
+// fixture opens a migrated maintenance store in a temporary SQLite database.
 func fixture(t *testing.T) *Store {
 	t.Helper()
 	db, err := sql.Open(
@@ -31,6 +32,7 @@ func fixture(t *testing.T) *Store {
 	return s
 }
 
+// TestFenceDrainsHTTPAndWorkers checks that fence drains HTTP and workers.
 func TestFenceDrainsHTTPAndWorkers(t *testing.T) {
 	s := fixture(t)
 	p, err := s.Register(t.Context(), "replica-one")
@@ -130,6 +132,7 @@ func TestFenceDrainsHTTPAndWorkers(t *testing.T) {
 	}
 }
 
+// TestCrashedMemberRequiresExplicitRemoval checks that crashed member requires explicit removal.
 func TestCrashedMemberRequiresExplicitRemoval(t *testing.T) {
 	s := fixture(t)
 	p, err := s.Register(t.Context(), "stopped-process")
@@ -173,6 +176,7 @@ func TestCrashedMemberRequiresExplicitRemoval(t *testing.T) {
 	}
 }
 
+// TestMaintenanceFailureIsClosed checks maintenance failure is closed.
 func TestMaintenanceFailureIsClosed(t *testing.T) {
 	s := fixture(t)
 	p, err := s.Register(t.Context(), "server")

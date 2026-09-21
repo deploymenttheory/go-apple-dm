@@ -105,6 +105,7 @@ func (d *Device) OTAEnroll(ctx context.Context, profileServiceURL, challenge str
 	return d.ApplyProfile(ctx, phase2, o)
 }
 
+// otaPost sends a signed over-the-air enrollment exchange and reads its response.
 func (d *Device) otaPost(ctx context.Context, url string, attrs map[string]any, signer *Identity) ([]byte, error) {
 	body, err := plist.Marshal(attrs)
 	if err != nil {

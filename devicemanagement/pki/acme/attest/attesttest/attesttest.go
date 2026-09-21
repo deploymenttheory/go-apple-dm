@@ -74,6 +74,8 @@ func NewCA() (*CA, error) {
 	return c, nil
 }
 
+// create issues and parses a fixture certificate, wrapping construction failures with
+// ErrCA.
 func create(
 	tmpl, parent *x509.Certificate,
 	pub crypto.PublicKey,
@@ -242,6 +244,7 @@ func extensions(p attest.Properties) ([]pkix.Extension, error) {
 	return exts, nil
 }
 
+// intExtension encodes an integer-valued attestation certificate extension.
 func intExtension(oid asn1.ObjectIdentifier, v int) (pkix.Extension, error) {
 	der, err := asn1.Marshal(v)
 	if err != nil {

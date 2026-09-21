@@ -18,6 +18,8 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/state"
 )
 
+// exerciseSCEPGrants checks that concurrent SCEP replicas reuse one signing receipt and reject a
+// changed CSR using the same grant.
 func exerciseSCEPGrants(t *testing.T, a, b state.Store) {
 	t.Helper()
 	key, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
@@ -119,6 +121,7 @@ type sqlReceiptSigner struct {
 	count *atomic.Int64
 }
 
+// Sign counts certificate-signing calls and delegates to the wrapped signer.
 func (s sqlReceiptSigner) Sign(
 	ctx context.Context,
 	csr *x509.CertificateRequest,

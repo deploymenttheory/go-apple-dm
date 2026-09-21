@@ -199,6 +199,8 @@ type liveBlueprintTest struct {
 	status                      map[string]ddm.DeclarationStatus
 }
 
+// evidence writes phase-specific Blueprint evidence to a JSON file in the scenario
+// directory.
 func (t *liveBlueprintTest) evidence(name string, value any) error {
 	b, err := json.Marshal(value)
 	if err != nil {
@@ -207,6 +209,7 @@ func (t *liveBlueprintTest) evidence(name string, value any) error {
 	return wrapError(os.WriteFile(filepath.Join(t.dir, strings.ReplaceAll(t.phase, " ", "-")+"-"+name+".json"), append(b, '\n'), 0o600))
 }
 
+// upload uploads a profile artifact used by the live blueprint scenario.
 func (t *liveBlueprintTest) upload(ctx context.Context, p *profile.Profile) (string, error) {
 	raw, err := p.Marshal()
 	if err != nil {
@@ -222,6 +225,7 @@ func (t *liveBlueprintTest) upload(ctx context.Context, p *profile.Profile) (str
 	return info.Revision, t.evidence("profile", info)
 }
 
+// publish publishes the scenario's current blueprint source and retains its revision.
 func (t *liveBlueprintTest) publish(ctx context.Context, spec blueprint.Spec) error {
 	raw, err := json.Marshal(spec)
 	if err != nil {
@@ -256,6 +260,7 @@ func (t *liveBlueprintTest) publish(ctx context.Context, spec blueprint.Spec) er
 	return t.e.api(ctx, "POST", "/notify", nil, nil)
 }
 
+// assign changes the live enrollment's blueprint membership.
 func (t *liveBlueprintTest) assign(ctx context.Context, assigned bool) error {
 	method := "DELETE"
 	if assigned {
@@ -267,6 +272,7 @@ func (t *liveBlueprintTest) assign(ctx context.Context, assigned bool) error {
 	return t.e.api(ctx, "POST", "/notify", nil, nil)
 }
 
+// readStatus loads the device's reported declaration status for scenario checks.
 func (t *liveBlueprintTest) readStatus(ctx context.Context) error {
 	var rows []ddm.DeclarationStatus
 	if err := t.e.api(ctx, "GET", t.path+"/status"+t.query, nil, &rows); err != nil {
@@ -281,6 +287,7 @@ func (t *liveBlueprintTest) readStatus(ctx context.Context) error {
 	return t.evidence("status", t.status)
 }
 
+// wait waits for the expected activation and profile status after the scenario change.
 func (t *liveBlueprintTest) wait(ctx context.Context, since time.Time, active bool, display string, changed []string) error {
 	if err := waitLive(ctx, func() (bool, error) {
 		if err := t.readStatus(ctx); err != nil {
@@ -308,11 +315,15 @@ func (t *liveBlueprintTest) wait(ctx context.Context, since time.Time, active bo
 	return t.checkProfile(ctx, display)
 }
 
+// liveBlueprintStatus checks whether reported declaration state matches the expected active
+// state and observation time.
 func liveBlueprintStatus(row ddm.DeclarationStatus, active bool, since time.Time, fresh bool) bool {
 	return row.Identifier != "" && row.ServerToken != "" && row.Active == active &&
 		(row.Valid == "valid" || (!active && row.Valid == "unknown")) && (!fresh || !row.LastSeen.Before(since))
 }
 
+// checkProfile checks ProfileList for the expected profile identity, display name and
+// DDM source, or for its absence.
 func (t *liveBlueprintTest) checkProfile(ctx context.Context, display string) error {
 	cmd, err := mdm.NewCommand(&commands.ProfileList{})
 	if err != nil {
@@ -347,6 +358,8 @@ func (t *liveBlueprintTest) checkProfile(ctx context.Context, display string) er
 	return nil
 }
 
+// waitRemoved waits for the scenario declarations to disappear from status, then
+// verifies that ProfileList no longer includes the profile.
 func (t *liveBlueprintTest) waitRemoved(ctx context.Context) error {
 	if err := waitLive(ctx, func() (bool, error) {
 		if err := t.readStatus(ctx); err != nil {
@@ -362,6 +375,8 @@ func (t *liveBlueprintTest) waitRemoved(ctx context.Context) error {
 	return t.checkProfile(ctx, "")
 }
 
+// cleanup deletes the scenario Blueprint, notifies the device, and verifies removal of
+// its declarations and profile.
 func (t *liveBlueprintTest) cleanup(ctx context.Context) error {
 	if t.record.Revision == "" {
 		return nil

@@ -52,6 +52,7 @@ func NewClient(scepURL string, h *http.Client) *Client {
 	return &Client{URL: scepURL, HTTP: &copy}
 }
 
+// get requests the selected SCEP operation with the caller's context.
 func (c *Client) get(ctx context.Context, op string, requireTLS bool) ([]byte, string, error) {
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, c.operationURL(op), nil)
 	if err != nil {
@@ -70,6 +71,7 @@ func (c *Client) operationURL(op string) string {
 	return c.URL + sep + "operation=" + url.QueryEscape(op)
 }
 
+// do sends a SCEP request and returns its bounded response body or HTTP failure.
 func (c *Client) do(req *http.Request, requireTLS bool) ([]byte, string, error) {
 	resp, err := c.HTTP.Do(req)
 	if err != nil {
@@ -105,6 +107,7 @@ func (c *Client) GetCACert(ctx context.Context) ([]*x509.Certificate, error) {
 	return c.getCACert(ctx, false)
 }
 
+// getCACert retrieves and parses the SCEP service's CA certificate response.
 func (c *Client) getCACert(ctx context.Context, requireTLS bool) ([]*x509.Certificate, error) {
 	b, ct, err := c.get(ctx, "GetCACert", requireTLS)
 	if err != nil {
@@ -288,6 +291,8 @@ func (c *Client) Enroll(ctx context.Context, key crypto.Signer, o EnrollOptions)
 	return issued, nil
 }
 
+// signatureAlgorithm selects SHA-256 for RSA keys; zero leaves algorithm selection to x509
+// for other key types.
 func signatureAlgorithm(key crypto.Signer) x509.SignatureAlgorithm {
 	if _, ok := key.Public().(*rsa.PublicKey); ok {
 		return x509.SHA256WithRSA

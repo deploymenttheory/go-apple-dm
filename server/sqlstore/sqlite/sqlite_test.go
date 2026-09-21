@@ -21,6 +21,7 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/server/sqlstore/sqltest"
 )
 
+// open opens a temporary SQLite MDM store and registers cleanup.
 func open(t *testing.T) *sqlite.Store {
 	t.Helper()
 	s, err := sqlite.Open(context.Background(), filepath.Join(t.TempDir(), "dm.db"), sqlite.Options{})
@@ -31,6 +32,7 @@ func open(t *testing.T) *sqlite.Store {
 	return s
 }
 
+// TestContract runs the shared MDM storage suite against SQLite.
 func TestContract(t *testing.T) {
 	t.Parallel()
 	storagetest.RunAll(t, func(t *testing.T) storage.Store {
@@ -39,6 +41,8 @@ func TestContract(t *testing.T) {
 	})
 }
 
+// TestOpenAndMigrations checks SQLite opening, migration idempotence, rollback, re-migration, and
+// closed-store behavior.
 func TestOpenAndMigrations(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
@@ -98,6 +102,7 @@ func TestOpenAndMigrations(t *testing.T) {
 	}
 }
 
+// TestClearBatches checks batched command clearing, filters, pagination, and invalid cursors.
 func TestClearBatches(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
@@ -160,6 +165,7 @@ func TestClearBatches(t *testing.T) {
 	}
 }
 
+// TestResultRoundTripAndInvalidIDs checks result round trip and invalid IDs.
 func TestResultRoundTripAndInvalidIDs(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
@@ -484,6 +490,8 @@ func TestWriteFailuresSurface(t *testing.T) {
 	}
 }
 
+// TestIsUniqueViolation checks SQLite primary-key and unique-index violations without
+// misclassifying other database errors.
 func TestIsUniqueViolation(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
@@ -540,6 +548,8 @@ func BenchmarkClear100k(b *testing.B) {
 	}
 }
 
+// TestOpenMigrationFailure checks SQLite opening rejects conflicting schemas and invalid database
+// files.
 func TestOpenMigrationFailure(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()

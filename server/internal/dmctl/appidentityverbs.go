@@ -12,6 +12,8 @@ import (
 
 const appIdentityPath = "/authoring/app-identities"
 
+// runAppIdentities parses and executes the app identities subcommand, reporting argument
+// and operation failures to the CLI caller.
 func runAppIdentities(ctx context.Context, e *env, args []string) error {
 	if len(args) > 0 {
 		switch args[0] {
@@ -28,6 +30,8 @@ func runAppIdentities(ctx context.Context, e *env, args []string) error {
 	return fmt.Errorf("%w: app-identities needs public-app-store, apple or inspect", ErrUsage)
 }
 
+// runIdentityCatalogue parses and executes the identity catalogue subcommand, reporting
+// argument and operation failures to the CLI caller.
 func runIdentityCatalogue(ctx context.Context, e *env, source string, args []string) error {
 	fs := e.verbFlags("app-identities " + source + " search|lookup")
 	term := fs.String("term", "", "application name to search for")
@@ -102,6 +106,8 @@ func runIdentityCatalogue(ctx context.Context, e *env, source string, args []str
 	return e.emit(resp, nil)
 }
 
+// runArtifactInspection parses and executes the artifact inspection subcommand, reporting
+// argument and operation failures to the CLI caller.
 func runArtifactInspection(ctx context.Context, e *env, args []string) error {
 	fs := e.verbFlags("app-identities inspect")
 	file := fs.String("file", "", "required artifact path, or - to stream stdin")

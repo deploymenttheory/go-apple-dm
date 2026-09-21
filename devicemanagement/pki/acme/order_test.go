@@ -584,6 +584,7 @@ func tamper(der []byte) []byte {
 // neither a policy refusal nor a bad certificate request.
 type brokenSigner struct{ ca.Signer }
 
+// Sign returns the injected certificate-signing failure.
 func (brokenSigner) Sign(
 	context.Context,
 	*x509.CertificateRequest,
@@ -607,6 +608,7 @@ func setOrderStatus(t *testing.T, f *fixture, fl *flow, status string) {
 	}
 }
 
+// challengeRecord loads the flow's stored challenge, failing the test on error.
 func challengeRecord(t *testing.T, f *fixture, fl *flow) *acme.Challenge {
 	t.Helper()
 	record, err := f.store.GetChallenge(t.Context(), idOf(fl.chalURL))
@@ -616,6 +618,7 @@ func challengeRecord(t *testing.T, f *fixture, fl *flow) *acme.Challenge {
 	return record
 }
 
+// putChallenge writes a challenge in a store transaction, failing the test on error.
 func putChallenge(t *testing.T, f *fixture, c *acme.Challenge) {
 	t.Helper()
 	if err := f.store.Update(t.Context(), func(tx acme.Tx) error {
@@ -625,6 +628,8 @@ func putChallenge(t *testing.T, f *fixture, c *acme.Challenge) {
 	}
 }
 
+// TestRequiredAttestationRecheckedAtFinalization checks required attestation rechecked at
+// finalization.
 func TestRequiredAttestationRecheckedAtFinalization(t *testing.T) {
 	f := newFixture(t, func(c *acme.Config) { c.AllowUnattested = true })
 	binding := f.ids[testIdentifier]

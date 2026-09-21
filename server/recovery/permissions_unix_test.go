@@ -7,6 +7,8 @@ import (
 	"testing"
 )
 
+// makeUnreadable removes Unix file permissions for unreadability tests and restores them during
+// cleanup.
 func makeUnreadable(t *testing.T, path string) {
 	t.Helper()
 	if os.Geteuid() == 0 {

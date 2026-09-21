@@ -20,6 +20,7 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/server/internal/app"
 )
 
+// axmKey generates a P-256 private key and its SEC 1 PEM encoding.
 func axmKey(t *testing.T) (*ecdsa.PrivateKey, []byte) {
 	t.Helper()
 	key, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
@@ -33,6 +34,7 @@ func axmKey(t *testing.T) (*ecdsa.PrivateKey, []byte) {
 	return key, pem.EncodeToMemory(&pem.Block{Type: "EC PRIVATE KEY", Bytes: der})
 }
 
+// TestAxM checks AXM environment configuration and admin assignment requests.
 func TestAxM(t *testing.T) {
 	t.Run("ConfiguredFromEnv", func(t *testing.T) {
 		_, keyPEM := axmKey(t)

@@ -15,8 +15,10 @@ import (
 	"time"
 )
 
+// b64 encodes bytes as unpadded URL-safe base64.
 func b64(b []byte) string { return base64.RawURLEncoding.EncodeToString(b) }
 
+// mustJSON encodes a JSON fixture, failing the test on error.
 func mustJSON(t *testing.T, v any) []byte {
 	t.Helper()
 	out, err := json.Marshal(v)
@@ -26,11 +28,13 @@ func mustJSON(t *testing.T, v any) []byte {
 	return out
 }
 
+// ecJWK builds a P-256 JSON Web Key with the supplied key ID.
 func ecJWK(t *testing.T, kid string, key *ecdsa.PrivateKey) map[string]any {
 	t.Helper()
 	return map[string]any{"kty": "EC", "crv": "P-256", "kid": kid, "x": b64(key.X.FillBytes(make([]byte, 32))), "y": b64(key.Y.FillBytes(make([]byte, 32)))}
 }
 
+// signES256 signs the supplied JWT header and claims using ES256.
 func signES256(t *testing.T, key *ecdsa.PrivateKey, header, claims map[string]any) string {
 	t.Helper()
 	input := b64(mustJSON(t, header)) + "." + b64(mustJSON(t, claims))
@@ -42,6 +46,7 @@ func signES256(t *testing.T, key *ecdsa.PrivateKey, header, claims map[string]an
 	return input + "." + b64(append(r.FillBytes(make([]byte, 32)), s.FillBytes(make([]byte, 32))...))
 }
 
+// TestParseJWKS checks JWKS parsing, key selection, algorithm matching, and invalid keys.
 func TestParseJWKS(t *testing.T) {
 	t.Parallel()
 	ec, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
@@ -110,6 +115,8 @@ func TestParseJWKS(t *testing.T) {
 	}
 }
 
+// TestVerifyIDToken checks ID token claims, audiences, nonce and time validation, and signature
+// failures.
 func TestVerifyIDToken(t *testing.T) {
 	t.Parallel()
 	ec, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)

@@ -233,7 +233,26 @@
         "ACMECertificate — https://developer.apple.com/documentation/devicemanagement/acmecertificate",
         "Deploy Managed Device Attestation — https://support.apple.com/en-gb/guide/deployment/dep54e5ac1fd/web",
         "RFC 8555 — ACME — https://www.rfc-editor.org/rfc/rfc8555",
-        "Implementation — https://github.com/deploymenttheory/go-apple-dm/blob/7500eb25e50a2913338339d5fced18dc7f41fdc3/devicemanagement/pki/acme/issuance.go"
+        "Validate Managed Device Attestation — https://developer.apple.com/documentation/devicemanagement/validating-a-managed-device-attestation-attestation"
+      ]
+    },
+    {
+      "title": "Implementation references",
+      "dot": "artifact",
+      "items": [
+        "acme: ACME server — https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/devicemanagement/pki/acme/server.go",
+        "store: ACME state store — https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/devicemanagement/pki/acme/store.go",
+        "attest: Attestation — https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/devicemanagement/pki/acme/attest/attest.go",
+        "policy: Admission policy — https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/devicemanagement/pki/acme/policy.go",
+        "ca: Identity CA — https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/devicemanagement/pki/ca/ca.go",
+        "Account, order and challenge handlers — https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/devicemanagement/pki/acme/handlers.go"
+      ]
+    },
+    {
+      "title": "Implementation references (continued)",
+      "dot": "artifact",
+      "items": [
+        "Finalization and retrieval — https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/devicemanagement/pki/acme/issuance.go"
       ]
     }
   ]

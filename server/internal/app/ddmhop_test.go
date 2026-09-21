@@ -16,12 +16,6 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/server/internal/app"
 )
 
-// TestDDMHopNeedsACredential holds both ends of the declarative management hop
-// to an authenticated channel. The hop forwards a check-in verbatim and the
-// ddm role resolves the enrollment from that body, so without a credential any
-// caller reaching the listener names any enrollment and reads its declarations
-// or writes its status reports.
-
 // TestCertHeaderIsVerifiedAgainstCARoots holds the proxy header source to the
 // enrollment CA when one is configured. A device certificate is not secret, so
 // a header alone lets anyone who reaches the listener past the proxy present

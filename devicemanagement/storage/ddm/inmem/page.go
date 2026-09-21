@@ -10,6 +10,7 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/paging"
 )
 
+// limitOf uses a positive requested page limit or the default page size.
 func limitOf(p paging.Page) int {
 	if p.Limit <= 0 {
 		return paging.DefaultPageSize

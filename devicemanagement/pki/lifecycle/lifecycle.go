@@ -16,6 +16,7 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/state"
 )
 
+// Kind identifies the certificate workflow: vendor, push, HTTPS, or local issuer.
 type Kind string
 
 const (
@@ -93,6 +94,8 @@ type record struct {
 // Returning an error must roll back both publication and the workflow transition.
 type Publish func(context.Context, state.Tx, Identity, Material) error
 
+// Manager coordinates persistent certificate transitions using the configured
+// repository, trust policy, and publication callback.
 type Manager struct {
 	Store   Repository
 	Trust   Trust
@@ -103,6 +106,7 @@ var validID = regexp.MustCompile(`^[a-zA-Z0-9][a-zA-Z0-9_.-]{0,127}$`)
 
 const prefix = "pki/lifecycle/identity/"
 
+// key validates a logical identity ID before constructing its persistent state key.
 func key(id string) (string, error) {
 	if !validID.MatchString(id) {
 		return "", fmt.Errorf("%w: identity ID", ErrInvalid)
@@ -110,6 +114,8 @@ func key(id string) (string, error) {
 	return prefix + id, nil
 }
 
+// read loads an identity record by validated ID, preserving storage errors and rejecting
+// malformed stored JSON.
 func read(ctx context.Context, s state.Reader, id string) (record, error) {
 	k, err := key(id)
 	if err != nil {
@@ -126,6 +132,8 @@ func read(ctx context.Context, s state.Reader, id string) (record, error) {
 	return out, nil
 }
 
+// write advances the stored generation and writes identity state and activity through the
+// same transaction.
 func write(ctx context.Context, tx state.Tx, r record) error {
 	k, err := key(r.ID)
 	if err != nil {
@@ -142,6 +150,7 @@ func write(ctx context.Context, tx state.Tx, r record) error {
 	return writeActivity(ctx, tx, r)
 }
 
+// revision finds a revision within an identity record or returns ErrNotFound.
 func revision(r *record, id string) (*storedRevision, error) {
 	for i := range r.Revisions {
 		if r.Revisions[i].ID == id {
@@ -151,10 +160,15 @@ func revision(r *record, id string) (*storedRevision, error) {
 	return nil, ErrNotFound
 }
 
+// change applies a transition while holding the identity record lock and returns the
+// resulting public view.
 func (m *Manager) change(ctx context.Context, id string, fn func(state.Tx, *record) error) (Identity, error) {
 	return m.changeLocked(ctx, id, nil, fn)
 }
 
+// changeLocked locks the identity and additional workflow keys, applies the transition, and
+// records the public activity in the same transaction. A callback error leaves the stored
+// identity unchanged.
 func (m *Manager) changeLocked(ctx context.Context, id string, locks []string, fn func(state.Tx, *record) error) (Identity, error) {
 	k, err := key(id)
 	if err != nil {
@@ -230,6 +244,9 @@ func (m *Manager) Begin(ctx context.Context, req Request) (Identity, error) {
 	return out, err
 }
 
+// Get returns the public view of an identity using repository time for renewal status. It
+// returns ErrNotFound when the identity does not exist and never returns private key
+// material.
 func (m *Manager) Get(ctx context.Context, id string) (Identity, error) {
 	k, err := key(id)
 	if err != nil {
@@ -246,6 +263,8 @@ func (m *Manager) Get(ctx context.Context, id string) (Identity, error) {
 	return out, err
 }
 
+// List returns public identity views in storage-key order. It reads successive pages and
+// stops on a storage or decoding error; the result is not a fleet-wide atomic snapshot.
 func (m *Manager) List(ctx context.Context) ([]Identity, error) {
 	out := []Identity{}
 	after := ""
@@ -319,6 +338,9 @@ func (m *Manager) Export(ctx context.Context, id, rev, artifact string) ([]byte,
 	return nil, fmt.Errorf("%w: artifact unavailable", ErrInvalid)
 }
 
+// Cancel cancels a pending revision without changing the active identity. Already
+// cancelled revisions succeed; another existing revision returns ErrConflict and an
+// unknown revision returns ErrNotFound.
 func (m *Manager) Cancel(ctx context.Context, id, rev string) (Identity, error) {
 	return m.change(ctx, id, func(_ state.Tx, r *record) error {
 		v, err := revision(r, rev)
@@ -337,8 +359,11 @@ func (m *Manager) Cancel(ctx context.Context, id, rev string) (Identity, error) 
 	})
 }
 
+// fingerprint returns the lowercase SHA-256 fingerprint of the supplied bytes.
 func fingerprint(b []byte) string { h := sha256.Sum256(b); return hex.EncodeToString(h[:]) }
 
+// view projects stored revisions into a public identity view and derives renewal timing
+// without exposing private material.
 func view(r record, now time.Time) Identity {
 	v := Identity{Request: r.Request, Active: r.Active, Pending: r.Pending, Topic: r.Topic, Generation: r.Generation, Revisions: []Revision{}}
 	for _, rev := range r.Revisions {

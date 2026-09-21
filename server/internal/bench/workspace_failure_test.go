@@ -14,6 +14,7 @@ import (
 	"time"
 )
 
+// writeFixture writes a private workspace fixture file, failing the test on error.
 func writeFixture(t *testing.T, path string, data []byte) {
 	t.Helper()
 	// #nosec G703 -- The test controls this fixture path within its private workspace.
@@ -22,6 +23,8 @@ func writeFixture(t *testing.T, path string, data []byte) {
 	}
 }
 
+// TestWorkspaceRejectsIncompleteOrInvalidState checks that workspace rejects incomplete or invalid
+// state.
 func TestWorkspaceRejectsIncompleteOrInvalidState(t *testing.T) {
 	t.Parallel()
 	for _, args := range [][2]string{{"unknown", "inmem"}, {"live", "unknown"}} {
@@ -88,6 +91,7 @@ func TestWorkspaceRejectsIncompleteOrInvalidState(t *testing.T) {
 	}
 }
 
+// TestStartFailureCleansUp checks start failure cleans up.
 func TestStartFailureCleansUp(t *testing.T) {
 	t.Parallel()
 	for _, name := range []string{"missing DSN", "missing storage key", "bad config", "missing binary", "split memory", "bad push certificate", "unreadable push certificate", "missing push key", "split binary", "split bad config"} {
@@ -136,6 +140,8 @@ func TestStartFailureCleansUp(t *testing.T) {
 	}
 }
 
+// TestBenchReportsRetainFailureAndBlockedStatus checks that bench reports retain failure and
+// blocked status.
 func TestBenchReportsRetainFailureAndBlockedStatus(t *testing.T) {
 	t.Parallel()
 	e := &Environment{Instance: Instance{Mode: "live"}}
@@ -203,13 +209,18 @@ func TestBenchReportsRetainFailureAndBlockedStatus(t *testing.T) {
 
 type failingRead struct{}
 
+// Read returns io.ErrUnexpectedEOF without reading bytes.
 func (failingRead) Read([]byte) (int, error) { return 0, io.ErrUnexpectedEOF }
-func (failingRead) Close() error             { return nil }
+
+// Close closes the fixture body without error.
+func (failingRead) Close() error { return nil }
 
 type transportFunc func(*http.Request) (*http.Response, error)
 
+// RoundTrip calls the injected HTTP round-trip function.
 func (f transportFunc) RoundTrip(r *http.Request) (*http.Response, error) { return f(r) }
 
+// TestBenchHTTPAndControlFailures checks bench HTTP and control failures.
 func TestBenchHTTPAndControlFailures(t *testing.T) {
 	t.Parallel()
 	c := &http.Client{Transport: transportFunc(func(r *http.Request) (*http.Response, error) {
@@ -279,6 +290,7 @@ func TestBenchHTTPAndControlFailures(t *testing.T) {
 	}
 }
 
+// TestInitPreservesFileAtIdentityDirectory checks that init preserves file at identity directory.
 func TestInitPreservesFileAtIdentityDirectory(t *testing.T) {
 	t.Parallel()
 	dir := t.TempDir()

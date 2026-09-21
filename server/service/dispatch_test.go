@@ -23,6 +23,8 @@ type dispatchQueue struct {
 	cancel              context.CancelFunc
 }
 
+// Next delegates command selection and marks that subsequent enrollment reads occur after dispatch
+// selection.
 func (q *dispatchQueue) Next(
 	ctx context.Context,
 	id mdm.EnrollmentID,
@@ -34,6 +36,7 @@ func (q *dispatchQueue) Next(
 	return cmd, err
 }
 
+// Get injects an enrollment-read failure after command selection or delegates to the store.
 func (q *dispatchQueue) Get(ctx context.Context, id mdm.EnrollmentID) (*storage.Enrollment, error) {
 	if q.afterNext && q.lookupErr != nil {
 		return nil, q.lookupErr
@@ -41,6 +44,8 @@ func (q *dispatchQueue) Get(ctx context.Context, id mdm.EnrollmentID) (*storage.
 	return q.Store.Get(ctx, id)
 }
 
+// ClearCommand injects a command-clear failure or delegates to CommandClearer and optionally
+// cancels the context.
 func (q *dispatchQueue) ClearCommand(
 	ctx context.Context,
 	id mdm.EnrollmentID,
@@ -60,6 +65,8 @@ func (q *dispatchQueue) ClearCommand(
 	return n, err
 }
 
+// TestDispatchRejectsInvalidStoredCommandWithoutClearingOtherWork checks that dispatch rejects
+// invalid stored command without clearing other work.
 func TestDispatchRejectsInvalidStoredCommandWithoutClearingOtherWork(t *testing.T) {
 	t.Parallel()
 	h := newHarness(t, service.Config{})
@@ -92,6 +99,8 @@ func TestDispatchRejectsInvalidStoredCommandWithoutClearingOtherWork(t *testing.
 	}
 }
 
+// TestDispatchFailsSafelyWhenQueueCannotDiscardWork checks that dispatch fails safely when queue
+// cannot discard work.
 func TestDispatchFailsSafelyWhenQueueCannotDiscardWork(t *testing.T) {
 	t.Parallel()
 	boom := errors.New("store failure")

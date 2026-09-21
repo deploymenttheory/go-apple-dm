@@ -50,6 +50,8 @@ func OpenDatabase(ctx context.Context, backend, dsn string) (SQL, error) {
 	return s, nil
 }
 
+// schemaForBackend selects the compiled reference-server migrations for the recorded SQL
+// backend.
 func schemaForBackend(backend string) (SQL, error) {
 	var d sqlcommon.Dialect
 	switch backend {
@@ -66,6 +68,8 @@ func schemaForBackend(backend string) (SQL, error) {
 	return SQL{Dialect: d, Schema: sets}, err
 }
 
+// BackupOptions supplies the maintenance ticket, checkpoint metadata, protected
+// configuration files, and archive limits for a backup.
 type BackupOptions struct {
 	SetupFile, Destination, StagingParent, Ticket, Revision string
 	Overrides                                               map[string]string
@@ -132,6 +136,9 @@ type Prepared struct {
 	SQL       SQL
 }
 
+// Prepare decrypts and verifies a checkpoint, selects the compiled backend schema, and
+// checks its bootstrap settings and encrypted database values. The caller owns the returned
+// temporary files and must close the Prepared checkpoint; failures clean them up.
 func Prepare(
 	ctx context.Context,
 	source, parent string,
@@ -187,6 +194,8 @@ func (p *Prepared) CheckDatabase(ctx context.Context, dsn string) error {
 	return s.Restore(ctx, filepath.Join(p.Directory(), "database"))
 }
 
+// RestoreResult identifies the restored deployment and the maintenance ticket that must
+// be explicitly resumed before writes continue.
 type RestoreResult struct {
 	SetupFile  string `json:"setupFile"`
 	TicketFile string `json:"ticketFile"`

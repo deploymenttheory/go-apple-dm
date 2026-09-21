@@ -32,10 +32,13 @@ var errBoom = errors.New("boom")
 
 // Fixture builders in Apple's wire form {"Type","Identifier","Payload"}.
 
+// activation builds an activation fixture without a predicate.
 func activation(id string, configs ...string) []byte {
 	return activationWithPredicate(id, "", configs...)
 }
 
+// activationWithPredicate builds an activation fixture with the supplied predicate and
+// configuration references.
 func activationWithPredicate(id, pred string, configs ...string) []byte {
 	payload := map[string]any{"StandardConfigurations": configs}
 	if pred != "" {
@@ -44,18 +47,22 @@ func activationWithPredicate(id, pred string, configs ...string) []byte {
 	return declJSON(schemaddm.DeclarationTypeActivationSimple, id, payload)
 }
 
+// configTest builds a management test configuration containing the supplied echo value.
 func configTest(id, echo string) []byte {
 	return declJSON(schemaddm.DeclarationTypeManagementTest, id, map[string]any{"Echo": echo})
 }
 
+// properties builds a management properties declaration fixture.
 func properties(id string, payload map[string]any) []byte {
 	return declJSON(schemaddm.DeclarationTypeManagementProperties, id, payload)
 }
 
+// assetData builds a data asset declaration fixture for the supplied URL.
 func assetData(id, url string) []byte {
 	return declJSON(schemaddm.DeclarationTypeAssetData, id, map[string]any{"Reference": map[string]any{"DataURL": url}})
 }
 
+// declJSON encodes a declaration envelope as JSON, panicking if the fixture cannot be encoded.
 func declJSON(typ, id string, payload map[string]any) []byte {
 	b, err := json.Marshal(map[string]any{"Type": typ, "Identifier": id, "Payload": payload})
 	if err != nil {
@@ -78,6 +85,7 @@ type harness struct {
 	events []event.Event
 }
 
+// newHarness creates a DDM engine fixture with its stores, clock, and captured events.
 func newHarness(t *testing.T, opts ...func(*ddm.Config)) *harness {
 	t.Helper()
 	h := &harness{t: t, store: ddminmem.New(), clock: clock.NewFake(t0), bus: event.New(), logs: &bytes.Buffer{}}
@@ -102,6 +110,7 @@ func newHarness(t *testing.T, opts ...func(*ddm.Config)) *harness {
 	return h
 }
 
+// Events returns a copy of the captured events under the harness mutex.
 func (h *harness) Events() []event.Event {
 	h.mu.Lock()
 	defer h.mu.Unlock()
@@ -156,6 +165,7 @@ func (h *harness) drain() {
 	}
 }
 
+// pendingIDs returns pending enrollment IDs and notification reasons for assertions.
 func pendingIDs(rows []ddm.Change) []string {
 	out := make([]string, 0, len(rows))
 	for _, r := range rows {
@@ -164,6 +174,7 @@ func pendingIDs(rows []ddm.Change) []string {
 	return out
 }
 
+// decode decodes a JSON response into a map, failing the test on malformed JSON.
 func decode(t *testing.T, body []byte) map[string]any {
 	t.Helper()
 	var m map[string]any
@@ -176,6 +187,7 @@ func decode(t *testing.T, body []byte) map[string]any {
 // resolverFunc adapts a function to ddm.Resolver.
 type resolverFunc func(ctx context.Context, id mdm.EnrollmentID) ([]string, error)
 
+// Resolve calls the injected declaration resolver.
 func (f resolverFunc) Resolve(ctx context.Context, id mdm.EnrollmentID) ([]string, error) {
 	return f(ctx, id)
 }
@@ -183,10 +195,12 @@ func (f resolverFunc) Resolve(ctx context.Context, id mdm.EnrollmentID) ([]strin
 // expanderFunc adapts a function to ddm.Expander.
 type expanderFunc func(ctx context.Context, id mdm.EnrollmentID, d *ddm.Declaration) ([]byte, error)
 
+// Expand calls the injected declaration expander.
 func (f expanderFunc) Expand(ctx context.Context, id mdm.EnrollmentID, d *ddm.Declaration) ([]byte, error) {
 	return f(ctx, id, d)
 }
 
+// TestNew checks the required DDM store and default engine configuration.
 func TestNew(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
@@ -248,6 +262,8 @@ func TestNew(t *testing.T) {
 	})
 }
 
+// TestPutDeclaration checks declaration creation, canonical no-ops, change recording, kind
+// conflicts, and predicate validation.
 func TestPutDeclaration(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
@@ -394,6 +410,8 @@ func TestPutDeclaration(t *testing.T) {
 	})
 }
 
+// TestDeleteDeclaration checks declaration deletion notifications, missing declarations, and
+// storage failures.
 func TestDeleteDeclaration(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
@@ -460,6 +478,7 @@ func TestDeleteDeclaration(t *testing.T) {
 	})
 }
 
+// TestSets checks set creation, deletion, membership changes, and no-op notification behavior.
 func TestSets(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
@@ -575,6 +594,8 @@ func TestSets(t *testing.T) {
 	})
 }
 
+// TestAssign checks declaration and set assignment, enrollment validation, no-ops, and
+// notifications.
 func TestAssign(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
@@ -674,6 +695,7 @@ func TestAssign(t *testing.T) {
 	})
 }
 
+// TestTouch checks explicit change recording for valid, empty, and invalid enrollment lists.
 func TestTouch(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
@@ -717,6 +739,8 @@ func TestTouch(t *testing.T) {
 	})
 }
 
+// TestManifest checks manifest resolution, expansion, token changes, and failures that must
+// prevent publication.
 func TestManifest(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
@@ -1010,6 +1034,7 @@ func goldenManifest(t *testing.T, h *harness) []ddm.DeclarationRef {
 	return refs
 }
 
+// TestEngineStoreFailures checks propagation of DDM engine storage failures.
 func TestEngineStoreFailures(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()

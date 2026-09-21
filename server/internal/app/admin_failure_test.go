@@ -12,6 +12,8 @@ import (
 	ddminmem "github.com/deploymenttheory/go-apple-dm/devicemanagement/storage/ddm/inmem"
 )
 
+// TestDDMHandlersReportFailedStoreReadsAndInvalidChannels checks DDM handlers report failed store
+// reads and invalid channels.
 func TestDDMHandlersReportFailedStoreReadsAndInvalidChannels(t *testing.T) {
 	failure := errors.New("private database connection details")
 	for _, tc := range []struct {

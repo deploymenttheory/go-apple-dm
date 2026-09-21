@@ -14,6 +14,7 @@ import (
 
 type auditExpander func(context.Context, mdm.EnrollmentID, *ddm.Declaration) ([]byte, error)
 
+// Expand calls the injected declaration expansion function.
 func (f auditExpander) Expand(
 	c context.Context,
 	id mdm.EnrollmentID,
@@ -22,6 +23,7 @@ func (f auditExpander) Expand(
 	return f(c, id, d)
 }
 
+// TestDeletedExpandedDeclarationNotServed checks deleted expanded declaration not served.
 func TestDeletedExpandedDeclarationNotServed(t *testing.T) {
 	ctx := t.Context()
 	st := ddminmem.New()

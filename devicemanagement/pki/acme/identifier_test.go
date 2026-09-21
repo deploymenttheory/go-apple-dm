@@ -267,6 +267,7 @@ func TestIdentifiersFunc(t *testing.T) {
 	})
 }
 
+// decodeSegment decodes an unpadded base64url segment, failing the test on error.
 func decodeSegment(t *testing.T, segment string) []byte {
 	t.Helper()
 	raw, err := base64.RawURLEncoding.DecodeString(segment)

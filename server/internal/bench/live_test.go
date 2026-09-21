@@ -12,6 +12,8 @@ import (
 	"time"
 )
 
+// TestLiveAppEvidence checks that live app scenarios require device evidence beyond APNs
+// acceptance.
 func TestLiveAppEvidence(t *testing.T) {
 	for _, name := range []string{"missing registration", "partial registration", "missing credential", "wrong receipt", "matching receipt"} {
 		t.Run(name, func(t *testing.T) {

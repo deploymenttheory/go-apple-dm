@@ -9,6 +9,8 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/schema/commands"
 )
 
+// ExampleBuild_macOS demonstrates embedding a generated package manifest in
+// InstallEnterpriseApplication.
 func ExampleBuild_macOS() {
 	// In production read the exact signed .pkg bytes you publish over HTTPS.
 	pkg := strings.NewReader("example package bytes")
@@ -29,6 +31,8 @@ func ExampleBuild_macOS() {
 	// Output: InstallEnterpriseApplication 21
 }
 
+// ExampleBuild_iOS demonstrates building and hosting an enterprise IPA manifest for
+// InstallApplication.
 func ExampleBuild_iOS() {
 	// Build against the actual enterprise-signed IPA and its bundle metadata.
 	m, _, err := manifest.Build("https://mdm.example.com/assets/Example.ipa", manifest.Metadata{BundleIdentifier: "com.example.app", BundleVersion: "42", Title: "Example"}, strings.NewReader("example IPA bytes"), 0)

@@ -9,6 +9,8 @@ import (
 	"testing"
 )
 
+// TestAppleBypassVectors checks Apple activation-lock bypass vectors and independent hash and
+// generation behavior.
 func TestAppleBypassVectors(t *testing.T) {
 	data, err := os.ReadFile("testdata/vectors.json")
 	if err != nil {

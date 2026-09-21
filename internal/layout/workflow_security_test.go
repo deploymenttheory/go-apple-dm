@@ -15,6 +15,7 @@ var (
 	immutableImage  = regexp.MustCompile(`^docker://[^@\s]+@sha256:[0-9a-f]{64}$`)
 )
 
+// pinnedUses accepts local actions, commit-pinned actions, and digest-pinned container images.
 func pinnedUses(value string) bool {
 	if strings.HasPrefix(value, "docker://") {
 		return immutableImage.MatchString(value)
@@ -22,6 +23,8 @@ func pinnedUses(value string) bool {
 	return strings.HasPrefix(value, "./") || immutableAction.MatchString(value)
 }
 
+// TestWorkflowSecurity checks workflow actions and container images against repository security
+// requirements.
 func TestWorkflowSecurity(t *testing.T) {
 	files, err := filepath.Glob(filepath.Join(repoRoot(t), ".github/workflows/*"))
 	if err != nil || len(files) == 0 {
@@ -61,6 +64,8 @@ func TestWorkflowSecurity(t *testing.T) {
 	}
 }
 
+// TestWorkflowSecurityReferences checks immutable remote references and local actions while
+// rejecting mutable references.
 func TestWorkflowSecurityReferences(t *testing.T) {
 	for _, value := range []string{"actions/checkout@v7", "org/repo/workflow.yml@main", "${{ inputs.action }}", "docker://image:latest", "actions/checkout@abc", "docker://image@" + strings.Repeat("a", 40)} {
 		if pinnedUses(value) {

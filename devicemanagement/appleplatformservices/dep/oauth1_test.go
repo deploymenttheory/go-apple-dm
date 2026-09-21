@@ -9,6 +9,7 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/appleplatformservices/dep"
 )
 
+// TestOAuth1 checks the OAuth 1 signature vector and malformed authorization headers.
 func TestOAuth1(t *testing.T) {
 	t.Parallel()
 

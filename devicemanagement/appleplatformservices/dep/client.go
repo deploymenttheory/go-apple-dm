@@ -457,6 +457,8 @@ func (c *Client) authenticate(ctx context.Context, acct *Account) (string, error
 	}
 }
 
+// markState persists a changed account state and returns the original cause joined with
+// any storage error.
 func (c *Client) markState(ctx context.Context, acct *Account, cause error, s AccountState) error {
 	if acct.State == s {
 		return cause

@@ -246,6 +246,8 @@ type CommandQueue interface {
 // made ineligible by a device upgrade. The service never assumes that a custom
 // backend understands a newly added ClearFilter field.
 type CommandClearer interface {
+	// ClearCommand marks the selected nonterminal command cleared and returns the
+	// number of affected records. The command remains available in history.
 	ClearCommand(ctx context.Context, id mdm.EnrollmentID, uuid string) (int64, error)
 }
 

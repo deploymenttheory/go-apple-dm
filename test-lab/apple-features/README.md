@@ -4,7 +4,7 @@ These are protocol fixtures, not production policy. Automated tests validate eac
 fixture and exercise its delivery on every declared platform/version combination.
 They do not prove that the OS applied a setting. See the
 [coverage matrix](../../docs/operations/apple-os27-coverage.md) and
-[reboot handoff](../../docs/testing/macos27-handoff.md).
+[device readiness procedure](../../docs/operations/mac-enrollment-testing.md#feature-acceptance-and-vm-readiness).
 
 Some payloads are adapted from Apple's examples at the pinned
 `third_party/apple-device-management/current/examples` revision. See [APPLE-LICENSE.txt](APPLE-LICENSE.txt).
@@ -50,7 +50,7 @@ ignored by git. No private values belong in this fixture directory.
 
 The `binary-controls` fixture tests configured identifier matching together with
 macOS's independent signing restriction. Use the
-[documented execution contract and recorded matrix](../../docs/testing/app-settings-binary-isolation.md)
+[execution contract and control procedure](../../docs/operations/application-identities.md#binary-execution-controls)
 to classify results. An ad-hoc signed executable is not an eligible unrelated
 control simply because its signature passes integrity verification.
 
@@ -62,11 +62,11 @@ Withdraw the test configuration and confirm every baseline probe recovers. Keep
 an independent native removal watchdog armed throughout the bounded assignment.
 Use an explicitly designated native test device and preserve its enrollment.
 
-The recorded control matrix covers this deny-mode case. Empty-list,
+Native observations cover the described deny-mode case on macOS 27.0 (26A428). Empty-list,
 development-signed and unsigned cases, allow mode and managed-app exceptions
 remain untested; the manifest's pending live status is not a blanket failure or
-pass. Do not rerun the physical test merely to correct the interpretation of
-existing evidence.
+pass. Record a fresh result for the actual source revision and target when native
+acceptance is required.
 
 ## Offline checks
 
@@ -75,3 +75,38 @@ Run the offline preparation checks with:
 ```sh
 python3 -m unittest discover -s test-lab/apple-features -p '*_test.py'
 ```
+
+## Assign and remove a selected bundle
+
+Use an authenticated CLI context and replace example endpoints, hashes and
+identifiers in private payload overrides. Review the target inventory and required
+capabilities before assignment; compatibility is an explanation, not an approval
+gate. Assignments schedule notifications immediately.
+
+```sh
+python3 test-lab/apple-features/prepare.py --feature FEATURE --out PRIVATE_DIR
+# Repeat for each declaration named in bundle.json:
+dmctl declarations put -file PRIVATE_DIR/DECLARATION.json
+dmctl sets add LAB_SET DECLARATION_IDENTIFIER
+dmctl sets assign device DEVICE_ID LAB_SET
+dmctl enrollments compatibility device DEVICE_ID
+dmctl notify
+```
+
+For a supported installing-user payload, use `user USER_ID` and `-parent DEVICE_ID`
+in assignment, compatibility and status commands. Observe both protocol status and
+actual feature behavior using [status inspection](../../docs/operations/status-and-profile-inspection.md).
+Record the source revision, OS/build, expected and observed outcome, timestamps,
+limitations and cleanup privately. Missing dependencies are blocked acceptance,
+not successful tests.
+
+```sh
+dmctl sets unassign device DEVICE_ID LAB_SET
+dmctl notify
+```
+
+For a user-channel case, unassign `user USER_ID LAB_SET -parent DEVICE_ID`.
+Verify removal before deleting test set members/declarations. Restore any separate
+service state or user choices affected by the test and preserve unrelated policy.
+Software-update fixtures with placeholder dates are validation examples; use real
+metadata and device-local deadlines only for a separately selected installation test.

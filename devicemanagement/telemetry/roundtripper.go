@@ -179,6 +179,7 @@ func hostAttrs(req *http.Request) []attribute.KeyValue {
 	return out
 }
 
+// defaultPort returns the conventional port for the URL scheme.
 func defaultPort(scheme string) string {
 	switch scheme {
 	case "https":

@@ -17,6 +17,7 @@ import (
 // Verifier verifies access tokens, including external identity provider tokens.
 // Implementations must check expiry, issuer, audience and invalidation as applicable.
 type Verifier interface {
+	// Verify authenticates an opaque credential and returns its bound account identity.
 	Verify(context.Context, secrets.Secret) (Identity, error)
 }
 
@@ -52,9 +53,13 @@ type Associations struct{ Store state.Store }
 
 var ErrAssociation = errors.New("accountdriven: enrollment association mismatch")
 
-func associationKey(ref string) string  { return "account/enrollment/" + ref }
+// associationKey constructs the namespaced key for association state.
+func associationKey(ref string) string { return "account/enrollment/" + ref }
+
+// certificateKey constructs the namespaced key for certificate state.
 func certificateKey(hash string) string { return "account/certificate/" + hash }
 
+// readAssociation decodes the persisted account-to-enrollment association.
 func readAssociation(ctx context.Context, r state.Reader, ref string) (Association, error) {
 	v, err := r.Get(ctx, associationKey(ref))
 	if err != nil {
@@ -65,6 +70,7 @@ func readAssociation(ctx context.Context, r state.Reader, ref string) (Associati
 	return a, err
 }
 
+// writeAssociation encodes an association into the current state transaction.
 func writeAssociation(ctx context.Context, tx state.Tx, a Association) error {
 	b, err := json.Marshal(a)
 	if err != nil {
@@ -184,6 +190,7 @@ func (a Association) RequiresBearer(ch mdm.Channel) bool {
 	return !isMac || ch.IsUser()
 }
 
+// sameIdentity compares the account identity fields that bind a resumed enrollment.
 func sameIdentity(a, b Identity) bool {
 	return a.ManagedAppleAccount != "" && a.ManagedAppleAccount == b.ManagedAppleAccount && a.Subject == b.Subject && a.Issuer == b.Issuer
 }

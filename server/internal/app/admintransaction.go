@@ -12,6 +12,8 @@ import (
 
 var errAdminResponse = errors.New("app: local administrative operation failed")
 
+// localAdmin buffers a bounded response until the local mutation and audit capture commit.
+// Failed handler responses roll back local writes; capture failures return 503.
 func (a *App) localAdmin(
 	w http.ResponseWriter,
 	r *http.Request,
@@ -64,13 +66,19 @@ type adminResponse struct {
 	limit  int
 }
 
+// Header returns the buffered response headers that will be copied after a successful
+// transaction.
 func (w *adminResponse) Header() http.Header { return w.header }
+
+// WriteHeader records the first status without writing to the client before commit.
 func (w *adminResponse) WriteHeader(code int) {
 	if w.status == 0 {
 		w.status = code
 	}
 }
 
+// Write buffers response bytes up to the route limit, records an implicit 200 and retains
+// an overflow error for rollback.
 func (w *adminResponse) Write(b []byte) (int, error) {
 	limit := w.limit
 	if limit <= 0 {
@@ -87,6 +95,8 @@ func (w *adminResponse) Write(b []byte) (int, error) {
 	return n, wrapError(err)
 }
 
+// setAdminOutcome records the response status and success or failure on the request's
+// authorization metadata.
 func setAdminOutcome(r *http.Request, status int) {
 	if status == 0 {
 		status = http.StatusOK

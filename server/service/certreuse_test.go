@@ -13,10 +13,12 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/server/service"
 )
 
+// deviceID constructs a device-channel enrollment ID.
 func deviceID(udid string) mdm.EnrollmentID {
 	return mdm.EnrollmentID{Channel: mdm.ChannelDevice, ID: udid}
 }
 
+// certHashOf reads the stored certificate pin for the supplied device, failing the test on error.
 func certHashOf(t *testing.T, h *harness, udid string) string {
 	t.Helper()
 	e, err := h.store.Get(context.Background(), deviceID(udid))

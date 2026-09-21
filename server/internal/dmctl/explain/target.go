@@ -90,6 +90,7 @@ func ParseTarget(s string) (support.Target, error) {
 	return t, nil
 }
 
+// osNames returns the accepted operating-system selector names.
 func osNames() string {
 	names := make([]string, 0, len(support.AllOS))
 	for _, os := range support.AllOS {

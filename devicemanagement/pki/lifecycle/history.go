@@ -29,6 +29,8 @@ type Activity struct {
 	Identity Identity  `json:"identity"`
 }
 
+// writeActivity records the public identity view in activity history using the current
+// transaction time.
 func writeActivity(ctx context.Context, tx state.Tx, r record) error {
 	attribution, _ := ctx.Value(auditContextKey{}).(auditContext)
 	if attribution.Actor == "" {

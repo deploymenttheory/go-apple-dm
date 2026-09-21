@@ -101,6 +101,7 @@ func TestClear100kUnderOneSecond(t *testing.T) {
 	}
 }
 
+// BenchmarkClear100k measures clearing a PostgreSQL queue containing 100,000 commands.
 func BenchmarkClear100k(b *testing.B) {
 	ctx := context.Background()
 	for range b.N {
@@ -115,6 +116,8 @@ func BenchmarkClear100k(b *testing.B) {
 	}
 }
 
+// TestContract runs plaintext and encrypted MDM storage suites against PostgreSQL, including
+// migration and replacement workflows.
 func TestContract(t *testing.T) {
 	dsn := os.Getenv("TEST_POSTGRES_DSN")
 	if dsn == "" {

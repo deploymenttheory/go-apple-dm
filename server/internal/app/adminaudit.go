@@ -115,6 +115,8 @@ func (a *App) auditRoutes() []adminRoute {
 	}
 }
 
+// listAudit validates audit filters and pagination, then returns projected records and a
+// continuation cursor.
 func (a *App) listAudit(w http.ResponseWriter, r *http.Request) {
 	q, err := auditQuery(r)
 	if err != nil {
@@ -148,6 +150,7 @@ func (a *App) listAudit(w http.ResponseWriter, r *http.Request) {
 	)
 }
 
+// getAudit loads and projects one audit record identified by its numeric path parameter.
 func (a *App) getAudit(w http.ResponseWriter, r *http.Request) {
 	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
 	if err != nil {
@@ -225,6 +228,8 @@ type auditRecordView struct {
 	Fields     map[string]any `json:"Fields,omitempty"`     // Admin API uses exported Go field names.
 }
 
+// auditView projects an audit record into the administrative response, omitting an unknown
+// empty channel.
 func auditView(rec audit.Record) auditRecordView {
 	v := auditRecordView{
 		EventID: rec.EventID,
@@ -237,6 +242,8 @@ func auditView(rec audit.Record) auditRecordView {
 	return v
 }
 
+// auditViews projects audit records in their existing order and returns a non-nil empty
+// slice for an empty page.
 func auditViews(recs []audit.Record) []auditRecordView {
 	out := make([]auditRecordView, 0, len(recs))
 	for _, rec := range recs {

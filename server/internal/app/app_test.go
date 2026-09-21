@@ -29,6 +29,8 @@ import (
 
 var quiet = slog.New(slog.NewTextHandler(io.Discard, nil))
 
+// build builds the reference server with fixture storage keys and managed admin credentials,
+// registering cleanup.
 func build(t *testing.T, cfg app.Config) *app.App {
 	t.Helper()
 	if cfg.Logger == nil {
@@ -57,6 +59,7 @@ func build(t *testing.T, cfg app.Config) *app.App {
 	return a
 }
 
+// serve starts an HTTP server for the application and registers cleanup.
 func serve(t *testing.T, a *app.App) *httptest.Server {
 	t.Helper()
 	srv := httptest.NewServer(a.Handler)
@@ -64,6 +67,7 @@ func serve(t *testing.T, a *app.App) *httptest.Server {
 	return srv
 }
 
+// TestParseEnv checks environment defaults, overrides, storage selection, and invalid values.
 func TestParseEnv(t *testing.T) {
 	env := func(m map[string]string) func(string) string {
 		return func(k string) string {
@@ -134,6 +138,8 @@ func TestParseEnv(t *testing.T) {
 	})
 }
 
+// TestBuild checks unified runtime construction, certificate-root loading, and invalid
+// configuration.
 func TestBuild(t *testing.T) {
 	ctx := context.Background()
 
@@ -203,6 +209,7 @@ func TestBuild(t *testing.T) {
 	})
 }
 
+// TestHealthz checks health status before and after store closure and unknown-route responses.
 func TestHealthz(t *testing.T) {
 	a := build(t, app.Config{Storage: "sqlite", DSN: filepath.Join(t.TempDir(), "h.db")})
 	srv := serve(t, a)
@@ -220,6 +227,7 @@ func TestHealthz(t *testing.T) {
 	}
 }
 
+// TestRun checks that application workers stop when their context is canceled.
 func TestRun(t *testing.T) {
 	a := build(t, app.Config{Storage: "inmem"})
 	ctx, cancel := context.WithCancel(context.Background())
@@ -271,6 +279,7 @@ func TestAdminInternalErrors(t *testing.T) {
 	}
 }
 
+// TestAdminRequiresAuthentication checks that unauthenticated admin requests return HTTP 401.
 func TestAdminRequiresAuthentication(t *testing.T) {
 	a := build(t, app.Config{Storage: "inmem"})
 	srv := serve(t, a)
@@ -279,6 +288,8 @@ func TestAdminRequiresAuthentication(t *testing.T) {
 	}
 }
 
+// TestAdminAPI checks authenticated declaration, assignment, status, and notification admin
+// routes.
 func TestAdminAPI(t *testing.T) {
 	fake := clock.NewFake(time.Date(2026, 9, 1, 12, 0, 0, 0, time.UTC))
 	a := build(t, app.Config{Storage: "inmem", BootstrapToken: "secret", Clock: fake})
@@ -420,9 +431,7 @@ func TestAdminAPI(t *testing.T) {
 	})
 }
 
-// TestSplitRoundTrip runs the ddm role and the mdm role as two processes'
-// worth of handlers and drives Apple's DDM endpoints through the hop.
-
+// TestCertSources checks certificate extraction from configured headers and default TLS state.
 func TestCertSources(t *testing.T) {
 	t.Run("Header", func(t *testing.T) {
 		ca, err := testpki.NewCA("proxy roots")
@@ -464,14 +473,17 @@ func TestCertSources(t *testing.T) {
 
 // helpers
 
+// propsDecl builds a management properties declaration fixture with the supplied identifier.
 func propsDecl(id string) []byte {
 	return fmt.Appendf(nil, `{"Type":"com.apple.management.properties","Identifier":%q,"Payload":{"shard":7}}`, id)
 }
 
+// enrollment constructs a device-channel enrollment ID.
 func enrollment(id string) mdm.EnrollmentID {
 	return mdm.EnrollmentID{Channel: mdm.ChannelDevice, ID: id}
 }
 
+// serverToken reads a stored declaration's ServerToken, failing the test on error.
 func serverToken(t *testing.T, a *app.App, id string) string {
 	t.Helper()
 	d, err := a.Engine.GetDeclaration(context.Background(), id)
@@ -481,6 +493,7 @@ func serverToken(t *testing.T, a *app.App, id string) string {
 	return d.ServerToken
 }
 
+// get sends a GET request with an optional bearer token and returns its HTTP status.
 func get(t *testing.T, url, token string) int {
 	t.Helper()
 	req, _ := http.NewRequestWithContext(context.Background(), http.MethodGet, url, nil)
@@ -495,11 +508,14 @@ func get(t *testing.T, url, token string) int {
 	return res.StatusCode
 }
 
+// put sends a PUT request with the supplied content type and body and returns its HTTP status.
 func put(t *testing.T, url, contentType string, body []byte) int {
 	t.Helper()
 	return send(t, http.MethodPut, url, contentType, body)
 }
 
+// send sends an HTTP request with the supplied method, content type, and body and returns its
+// status.
 func send(t *testing.T, method, url, contentType string, body []byte) int {
 	t.Helper()
 	req, _ := http.NewRequestWithContext(context.Background(), method, url, bytes.NewReader(body))
@@ -515,6 +531,8 @@ func send(t *testing.T, method, url, contentType string, body []byte) int {
 // testResponse belongs to the test: do registers its body for cleanup.
 type testResponse struct{ *http.Response }
 
+// do sends a request to the fixture server with an optional bearer token and registers response
+// cleanup.
 func do(t *testing.T, srv *httptest.Server, method, path, token string, body []byte) testResponse {
 	t.Helper()
 	req, _ := http.NewRequestWithContext(context.Background(), method, srv.URL+path, bytes.NewReader(body))
@@ -529,6 +547,8 @@ func do(t *testing.T, srv *httptest.Server, method, path, token string, body []b
 	return testResponse{res}
 }
 
+// decode requires the expected HTTP status and decodes the response JSON, failing the test on
+// mismatch.
 func decode(t *testing.T, res testResponse, want int, v any) {
 	t.Helper()
 	data, _ := io.ReadAll(res.Body)

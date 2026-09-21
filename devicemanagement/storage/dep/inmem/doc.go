@@ -4,7 +4,9 @@
 // # Design
 //
 // Update applies changes to copied state and commits only after a successful
-// callback. Device pages and cursors and staged keypair promotion are atomic.
+// callback. Device pages, generation membership, cursors, assignment leases and
+// retry state participate in the same serialized transaction. Staged keypair
+// promotion is atomic as well.
 // WithKeyring seals OAuth secrets, sessions and private keys in memory through
 // storage/crypt. The dep/deptest contracts define behavior shared with
 // server/depstore/sqlstore. Encryption does not make this backend persistent;

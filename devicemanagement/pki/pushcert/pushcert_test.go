@@ -19,10 +19,13 @@ const topic = "com.apple.mgmt.External.test"
 
 var uid = asn1.ObjectIdentifier{0, 9, 2342, 19200300, 100, 1, 1}
 
+// pemBlock encodes bytes in a PEM block of the supplied type.
 func pemBlock(typ string, b []byte) []byte {
 	return pem.EncodeToMemory(&pem.Block{Type: typ, Bytes: b})
 }
 
+// TestParse checks push certificate and key formats, chain retention, topic requirements, and
+// invalid pairs.
 func TestParse(t *testing.T) {
 	t.Parallel()
 	ca, err := testpki.NewCA("pushcert")
@@ -152,6 +155,8 @@ func TestParse(t *testing.T) {
 	})
 }
 
+// TestTopicFromCert checks MDM topic extraction and rejection of absent, invalid, or nil
+// certificate identities.
 func TestTopicFromCert(t *testing.T) {
 	t.Parallel()
 	cert := &x509.Certificate{Subject: pkix.Name{Names: []pkix.AttributeTypeAndValue{

@@ -10,7 +10,7 @@
     ],
     "repository": {
       "url": "https://github.com/deploymenttheory/go-apple-dm",
-      "revision": "7500eb25e50a2913338339d5fced18dc7f41fdc3"
+      "revision": "2b8157efa2c6cbfff459bc44f66736a5d2e7c753"
     },
     "views": [
       {
@@ -183,7 +183,13 @@
         220,
         70
       ],
-      "purpose": "storage"
+      "purpose": "storage",
+      "sources": [
+        {
+          "path": "server/sqlstore/sqlcommon/seal.go",
+          "label": "Sealed values"
+        }
+      ]
     },
     {
       "id": "suite",
@@ -246,7 +252,13 @@
         220,
         70
       ],
-      "purpose": "storage"
+      "purpose": "storage",
+      "sources": [
+        {
+          "path": "server/internal/app/app.go",
+          "label": "Feature store composition"
+        }
+      ]
     },
     {
       "id": "pool",
@@ -311,7 +323,13 @@
         220,
         70
       ],
-      "purpose": "artifact"
+      "purpose": "artifact",
+      "sources": [
+        {
+          "path": "server/ddmstore/sqlstore/sqlstore.go",
+          "label": "Feature migrations"
+        }
+      ]
     }
   ],
   "connections": [

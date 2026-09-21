@@ -22,6 +22,7 @@ func envelopeDER(raw []byte) ([]byte, error) {
 	return der, nil
 }
 
+// berValue reads one BER value and normalizes its encoded structure for SCEP parsing.
 func berValue(raw []byte, depth int) ([]byte, int, error) {
 	if len(raw) < 2 || depth > maxBERDepth || raw[0] == 0 {
 		return nil, 0, ErrWire

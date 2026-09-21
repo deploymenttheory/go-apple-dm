@@ -28,9 +28,15 @@ type (
 	}
 )
 
-func issuanceHash(b []byte) string        { h := sha256.Sum256(b); return fmt.Sprintf("%x", h) }
+// issuanceHash returns the hexadecimal SHA-256 digest used in issuance-state keys.
+func issuanceHash(b []byte) string { h := sha256.Sum256(b); return fmt.Sprintf("%x", h) }
+
+// scepGrantKey derives a namespaced grant key without storing the challenge password in
+// the key.
 func scepGrantKey(password string) string { return "scep/grant/" + issuanceHash([]byte(password)) }
 
+// issueSCEPGrant persists the enrollment binding and admission evidence in a SCEP grant
+// with the admission deadline.
 func (e *enrollment) issueSCEPGrant(
 	ctx context.Context,
 	b acme.Binding,
@@ -52,6 +58,8 @@ func (e *enrollment) issueSCEPGrant(
 	return password, nil
 }
 
+// scepGrants builds the shared grant verifier, requiring the CSR subject to match its
+// binding and rechecking enrollment admission.
 func (e *enrollment) scepGrants() scep.Grants {
 	return scep.Grants{
 		Store:  e.state,
@@ -70,6 +78,8 @@ func (e *enrollment) scepGrants() scep.Grants {
 	}
 }
 
+// verifySCEPGrant verifies the challenge and CSR through the configured grant store,
+// preserving the underlying error for inspection.
 func (e *enrollment) verifySCEPGrant(
 	ctx context.Context,
 	password string,
@@ -183,6 +193,8 @@ func (e *enrollment) issueSCEP(
 
 type issuanceAdmission struct{ app *App }
 
+// Before binds ordinary Authenticate requests to recorded certificate-issuance evidence;
+// account and replacement identities use their own admission hooks.
 func (h issuanceAdmission) Before(ctx context.Context, c *service.Call) (context.Context, error) {
 	if c.Op != "checkin:Authenticate" || c.Request == nil || c.Request.Certificate == nil {
 		return ctx, nil
@@ -217,4 +229,7 @@ func (h issuanceAdmission) Before(ctx context.Context, c *service.Call) (context
 	}
 	return ctx, nil
 }
+
+// After leaves the completed exchange unchanged because issuance admission runs before
+// dispatch.
 func (issuanceAdmission) After(context.Context, *service.Call, error) {}

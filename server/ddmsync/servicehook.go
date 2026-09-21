@@ -34,6 +34,9 @@ func NewServiceHook(e *ddm.Engine, enrollments storage.EnrollmentStore, log *slo
 // Before implements dmhook.Hook.
 type retryKey struct{}
 
+// Before marks Authenticate requests that reuse the enrollment's pinned certificate so
+// lifecycle cleanup can preserve their DDM state. Lookup failures leave the context
+// unmarked and are handled by the ordinary check-in path.
 func (h *ServiceHook) Before(ctx context.Context, c *dmhook.Call) (context.Context, error) {
 	if c != nil && c.Op == "checkin:Authenticate" && c.Request != nil &&
 		c.Request.Certificate != nil &&
@@ -60,6 +63,7 @@ func (h *ServiceHook) After(ctx context.Context, c *dmhook.Call, err error) {
 	h.clear(ctx, c.Request.ID)
 }
 
+// clear clears declarative state for the enrollment and any dependent user channels.
 func (h *ServiceHook) clear(ctx context.Context, id mdm.EnrollmentID) {
 	if !id.Channel.IsUser() && h.enrollments != nil {
 		cursor := ""
@@ -81,6 +85,7 @@ func (h *ServiceHook) clear(ctx context.Context, id mdm.EnrollmentID) {
 	h.one(ctx, id)
 }
 
+// one clears one enrollment's declarative state through the engine.
 func (h *ServiceHook) one(ctx context.Context, id mdm.EnrollmentID) {
 	if err := h.engine.ClearEnrollment(ctx, id); err != nil {
 		h.log.WarnContext(ctx, "ddm: clear enrollment", "enrollment", id.ID, "error", err)

@@ -23,6 +23,7 @@ type recordingPusher struct {
 	woke []mdm.EnrollmentID
 }
 
+// Push records push targets under a mutex and reports each push as sent.
 func (p *recordingPusher) Push(
 	_ context.Context,
 	targets []push.Target,
@@ -37,6 +38,7 @@ func (p *recordingPusher) Push(
 	return out, nil
 }
 
+// count returns the number of recorded push targets under the mutex.
 func (p *recordingPusher) count() int {
 	p.mu.Lock()
 	defer p.mu.Unlock()

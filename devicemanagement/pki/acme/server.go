@@ -216,6 +216,7 @@ type exchange struct {
 	payload []byte
 }
 
+// ctx returns the context of the current ACME HTTP exchange.
 func (e *exchange) ctx() context.Context { return e.r.Context() }
 
 // keyMode says where a signed request's key comes from.
@@ -388,6 +389,7 @@ func (s *Server) addNonce(e *exchange) {
 	e.w.Header().Add("Cache-Control", "no-store")
 }
 
+// mintNonce creates and stores a fresh one-use ACME replay nonce.
 func (s *Server) mintNonce(ctx context.Context) (string, error) {
 	buf := make([]byte, 16)
 	if _, err := rand.Read(buf); err != nil {

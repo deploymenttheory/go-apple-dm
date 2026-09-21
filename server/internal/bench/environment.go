@@ -68,6 +68,7 @@ type Environment struct {
 	listeners []net.Listener
 }
 
+// randomID generates an independent identifier for bench resources.
 func randomID() string { var b [16]byte; _, _ = rand.Read(b[:]); return hex.EncodeToString(b[:]) }
 
 // address retains the bound socket for embedded runtimes. Child processes still
@@ -221,6 +222,8 @@ func Start(ctx context.Context, w *Workspace, binary string, out io.Writer) (*En
 	return e, nil
 }
 
+// upload uploads a push certificate, key and topic through an administrative PUT
+// request.
 func (e *Environment) upload(ctx context.Context, path, topic string, cert, key []byte) error {
 	b, err := json.Marshal(
 		map[string]string{"Topic": topic, "CertPEM": string(cert), "KeyPEM": string(key)},
@@ -232,6 +235,7 @@ func (e *Environment) upload(ctx context.Context, path, topic string, cert, key 
 	return wrapError(err)
 }
 
+// launch starts the configured bench server process or embedded runtime.
 func (e *Environment) launch(
 	ctx context.Context,
 	env map[string]string,
@@ -275,6 +279,7 @@ func (e *Environment) launch(
 	return nil
 }
 
+// ready waits for the bench server's readiness endpoint before running scenarios.
 func (e *Environment) ready(ctx context.Context, base string) error {
 	deadline := time.NewTimer(20 * time.Second)
 	defer deadline.Stop()
@@ -442,6 +447,8 @@ func Up(ctx context.Context, w *Workspace, binary string, out io.Writer) error {
 	}
 }
 
+// Attach loads the recorded bench instance and its HTTP credentials from an existing
+// workspace.
 func Attach(w *Workspace) (*Environment, error) {
 	b, err := os.ReadFile(w.path("running.json"))
 	if err != nil {
@@ -462,6 +469,7 @@ func Attach(w *Workspace) (*Environment, error) {
 	return &Environment{Instance: in, Client: c, Token: t, Workspace: w}, nil
 }
 
+// Control executes the requested lifecycle control against the bench environment.
 func (e *Environment) Control(
 	ctx context.Context,
 	method, path string,
@@ -485,6 +493,8 @@ func (e *Environment) Control(
 	return b, wrapError(err)
 }
 
+// providerFixtures starts the APNs fixture, configures its trust roots, and issues
+// fixture MDM and app push credentials.
 func (e *Environment) providerFixtures(env map[string]string) (cert, key []byte, err error) {
 	w := e.Workspace
 	authority, err := testpki.NewCA("bench provider fixture")
@@ -535,6 +545,7 @@ func (e *Environment) providerFixtures(env map[string]string) (cert, key []byte,
 	return cert, key, nil
 }
 
+// oidcFixture configures the local OpenID Connect provider used by enrollment scenarios.
 func (e *Environment) oidcFixture(env map[string]string) error {
 	w := e.Workspace
 	var err error
@@ -569,6 +580,8 @@ func (e *Environment) oidcFixture(env map[string]string) error {
 	return nil
 }
 
+// identityFixtures writes device trust, digest-user and attestation fixtures and
+// configures enrollment to use them.
 func (e *Environment) identityFixtures(env map[string]string) error {
 	w := e.Workspace
 	var err error
@@ -621,6 +634,7 @@ func (e *Environment) identityFixtures(env map[string]string) error {
 	return nil
 }
 
+// depFixture starts and configures the local DEP service fixture.
 func (e *Environment) depFixture(env map[string]string) error {
 	w := e.Workspace
 	e.DEP = deptest.NewServer(deptest.Options{})
@@ -653,6 +667,7 @@ func (e *Environment) depFixture(env map[string]string) error {
 	return nil
 }
 
+// abmFixture starts and configures the local Apple Business API fixture.
 func (e *Environment) abmFixture(env map[string]string) error {
 	w := e.Workspace
 	var err error
@@ -694,6 +709,8 @@ func (e *Environment) abmFixture(env map[string]string) error {
 	return nil
 }
 
+// seed seeds MDM push credentials and simulated app credentials through the
+// administrative API, preserving existing live MDM credentials.
 func (e *Environment) seed(ctx context.Context, topic string, cert, key []byte) error {
 	w := e.Workspace
 	// Seed through ordinary admin routes. Live renewals remain authoritative.
@@ -749,6 +766,8 @@ func (e *Environment) seed(ctx context.Context, topic string, cert, key []byte) 
 	return nil
 }
 
+// configureACMEIdentifierKey supplies the identifier-signing key required for bench ACME
+// enrollment.
 func configureACMEIdentifierKey(env map[string]string) {
 	if env["DM_ACME_HMAC_KEY"] == "" {
 		// A separate derivation keeps issued identifiers usable after a bench restart.

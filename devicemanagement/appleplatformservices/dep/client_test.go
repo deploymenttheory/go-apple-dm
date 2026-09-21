@@ -15,6 +15,8 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/storage/dep/inmem"
 )
 
+// TestSession checks session refresh, rotated-token persistence, repeated authentication
+// rejection, and storage failures.
 func TestSession(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
@@ -235,6 +237,7 @@ func TestSession(t *testing.T) {
 	})
 }
 
+// TestError checks DEP error codes in quoted and bare responses and profile-specific failures.
 func TestError(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
@@ -325,6 +328,8 @@ func TestError(t *testing.T) {
 	})
 }
 
+// TestTransport checks replayable request bodies, protocol headers, and DEP client transport
+// failures.
 func TestTransport(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
@@ -581,4 +586,5 @@ func TestTransport(t *testing.T) {
 // iotest is a reader that always fails.
 type iotest struct{}
 
+// Read returns a synthetic read failure.
 func (iotest) Read([]byte) (int, error) { return 0, errors.New("read failed") }

@@ -16,6 +16,8 @@ import (
 
 var errProfileLint = errors.New("profile validation failed")
 
+// runProfile parses and executes the profile subcommand, reporting argument and operation
+// failures to the CLI caller.
 func runProfile(_ context.Context, e *env, args []string) error {
 	if len(args) == 0 || args[0] != "lint" {
 		return fmt.Errorf("%w: profile needs lint", ErrUsage)
@@ -77,6 +79,7 @@ func runProfile(_ context.Context, e *env, args []string) error {
 	return nil
 }
 
+// emitLint writes profile-inspection diagnostics in the requested output format.
 func emitLint(e *env, file string, report profilelint.Report) error {
 	if e.opts.output == outputJSON || e.opts.output == outputNDJSON {
 		if err := json.MarshalWrite(e.stdout, report); err != nil {

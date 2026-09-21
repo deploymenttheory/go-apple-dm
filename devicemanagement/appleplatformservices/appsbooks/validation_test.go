@@ -70,6 +70,8 @@ func protocolClient(t *testing.T, change func(*appsbooks.ServiceConfiguration), 
 	return client, cfg
 }
 
+// TestConfigValidation rejects invalid client configuration while allowing offline default
+// construction.
 func TestConfigValidation(t *testing.T) {
 	_, base := protocolClient(t, nil, nil)
 	for _, tc := range []struct {
@@ -110,6 +112,7 @@ func TestConfigValidation(t *testing.T) {
 	}
 }
 
+// TestInvalidClientConfigurationNeverPosted checks that invalid client configuration never posted.
 func TestInvalidClientConfigurationNeverPosted(t *testing.T) {
 	client, _ := protocolClient(t, nil, nil)
 	for _, tc := range []struct {
@@ -140,6 +143,7 @@ func TestInvalidClientConfigurationNeverPosted(t *testing.T) {
 	}
 }
 
+// TestMutationValidationNeverPosted checks that mutation validation never posted.
 func TestMutationValidationNeverPosted(t *testing.T) {
 	client, _ := protocolClient(t, nil, nil)
 	asset := appsbooks.Asset{AdamID: "1", PricingParam: "STDQ"}
@@ -181,6 +185,7 @@ func TestMutationValidationNeverPosted(t *testing.T) {
 	}
 }
 
+// TestDiscoveryValidationAndCopies checks discovery validation and copies.
 func TestDiscoveryValidationAndCopies(t *testing.T) {
 	for _, tc := range []struct {
 		name   string
@@ -224,8 +229,11 @@ func TestDiscoveryValidationAndCopies(t *testing.T) {
 
 type readFailure struct{ err error }
 
+// Read returns the configured read failure without reading bytes.
 func (r readFailure) Read([]byte) (int, error) { return 0, r.err }
 
+// TestTransportErrorsRedactSecretsAndPreserveCause checks transport errors redact secrets and
+// preserve cause.
 func TestTransportErrorsRedactSecretsAndPreserveCause(t *testing.T) {
 	cause := errors.New("private-content-token in transport diagnostic")
 	for _, bodyFailure := range []bool{false, true} {
@@ -257,6 +265,7 @@ func TestTransportErrorsRedactSecretsAndPreserveCause(t *testing.T) {
 	}
 }
 
+// TestResponseAndEventValidation checks response and event validation.
 func TestResponseAndEventValidation(t *testing.T) {
 	for _, body := range []string{"{", `{"uId":"L","assets":true}`, `{"assets":[]}`, strings.Repeat("x", 32<<20+1)} {
 		client, _ := protocolClient(t, nil, func(w http.ResponseWriter, _ *http.Request) { _, _ = io.WriteString(w, body) })
@@ -284,6 +293,7 @@ func TestResponseAndEventValidation(t *testing.T) {
 	}
 }
 
+// TestQueryFiltersAndVisitorFailures checks query filters and visitor failures.
 func TestQueryFiltersAndVisitorFailures(t *testing.T) {
 	client, _ := protocolClient(t, nil, func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Query().Get("minAvailableCount") != "0" || r.URL.Query().Get("deviceAssignable") != "false" || r.URL.Query().Get("revocable") != "true" {
@@ -315,6 +325,8 @@ func TestQueryFiltersAndVisitorFailures(t *testing.T) {
 	}
 }
 
+// TestNotificationRejectsUnauthenticatedAndMalformedInput checks that notification rejects
+// unauthenticated and malformed input.
 func TestNotificationRejectsUnauthenticatedAndMalformedInput(t *testing.T) {
 	cause := errors.New("body unavailable")
 	for _, tc := range []struct {
@@ -351,6 +363,7 @@ func TestNotificationRejectsUnauthenticatedAndMalformedInput(t *testing.T) {
 	}
 }
 
+// TestRetryAfterDateAndReadRetryBound checks retry after date and read retry bound.
 func TestRetryAfterDateAndReadRetryBound(t *testing.T) {
 	for _, retry := range []string{"Tue, 15 Sep 2026 00:00:03 GMT", "Mon, 14 Sep 2026 00:00:00 GMT", "invalid"} {
 		reads := 0
@@ -395,6 +408,7 @@ func clientOperations(client *appsbooks.Client) map[string]func(context.Context)
 	}
 }
 
+// TestCancellationWhileClientOccupied checks cancellation while client occupied.
 func TestCancellationWhileClientOccupied(t *testing.T) {
 	_, cfg := protocolClient(t, nil, nil)
 	entered, release := make(chan struct{}), make(chan struct{})
@@ -426,6 +440,7 @@ func TestCancellationWhileClientOccupied(t *testing.T) {
 	}
 }
 
+// TestMutationsRequireLocationOwner checks mutations require location owner.
 func TestMutationsRequireLocationOwner(t *testing.T) {
 	for _, body := range []string{`{"uId":"L"}`, `{"uId":"L","mdmInfo":{"id":"other"}}`} {
 		_, cfg := protocolClient(t, nil, nil)

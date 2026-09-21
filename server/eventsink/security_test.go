@@ -14,8 +14,10 @@ import (
 
 type failingTransport struct{ err error }
 
+// RoundTrip returns the configured HTTP transport failure.
 func (t failingTransport) RoundTrip(*http.Request) (*http.Response, error) { return nil, t.err }
 
+// TestWebhookTransportProtectsEndpointSecrets checks webhook transport protects endpoint secrets.
 func TestWebhookTransportProtectsEndpointSecrets(t *testing.T) {
 	for _, endpoint := range []string{
 		"http://example.com/secret", "http://127.0.0.1/secret",

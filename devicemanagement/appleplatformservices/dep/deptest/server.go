@@ -359,17 +359,20 @@ func (s *Server) Profiles() map[string]dep.Profile {
 	return out
 }
 
+// set applies a fixture-state mutation under the server mutex.
 func (s *Server) set(fn func()) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	fn()
 }
 
+// record appends a cloned device change with its sequence number and fake-clock timestamp.
 func (s *Server) record(typ string, d dep.Device) {
 	d = d.Clone()
 	s.ops = append(s.ops, op{seq: len(s.ops) + 1, typ: typ, date: s.o.Clock.Now(), device: d})
 }
 
+// remove removes the selected serial from the fake account's device inventory.
 func (s *Server) remove(serial string) bool {
 	d, ok := s.devices[serial]
 	if !ok {
@@ -470,6 +473,7 @@ func (s *Server) handle(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// scripted writes the supplied scripted headers and response body or DEP error.
 func (s *Server) scripted(w http.ResponseWriter, sc Scripted) {
 	if sc.RetryAfter != "" {
 		w.Header().Set("Retry-After", sc.RetryAfter)
@@ -499,6 +503,7 @@ func (s *Server) fail(w http.ResponseWriter, status int, code string) {
 	_, _ = io.WriteString(w, code)
 }
 
+// writeJSON writes a JSON fixture response with HTTP 200, or HTTP 500 if encoding fails.
 func (s *Server) writeJSON(w http.ResponseWriter, v any) {
 	raw, err := dep.Marshal(v)
 	if err != nil {
@@ -510,6 +515,7 @@ func (s *Server) writeJSON(w http.ResponseWriter, v any) {
 	_, _ = w.Write(raw)
 }
 
+// newSession creates and records the next fake authentication session.
 func (s *Server) newSession() string {
 	s.nextSession++
 	tok := fmt.Sprintf("SESSION-%04d", s.nextSession)
@@ -542,6 +548,7 @@ func (s *Server) handleSession(w http.ResponseWriter, r *http.Request) {
 	s.writeJSON(w, map[string]string{"auth_session_token": s.newSession()})
 }
 
+// verifyOAuth checks the request's OAuth signature against the fake account credentials.
 func (s *Server) verifyOAuth(r *http.Request) error {
 	p, err := dep.ParseOAuth1Header(r.Header.Get("Authorization"))
 	if err != nil {
@@ -595,6 +602,8 @@ type pageRequest struct {
 	Limit  int    `json:"limit"`
 }
 
+// limit clamps an omitted or oversized page size to the fake service's defaults and
+// maximum.
 func (s *Server) limit(n int) int {
 	switch {
 	case n <= 0:
@@ -605,6 +614,7 @@ func (s *Server) limit(n int) int {
 	return n
 }
 
+// issueCursor records an opaque fake cursor for resuming the selected device-list position.
 func (s *Server) issueCursor(c cursor) string {
 	s.nextCursor++
 	id := fmt.Sprintf("%016x", s.nextCursor)
@@ -632,6 +642,7 @@ func stripOp(d dep.Device) dep.Device {
 	return d
 }
 
+// handleFetch serves a page of the fake account's full device inventory.
 func (s *Server) handleFetch(w http.ResponseWriter, body []byte) {
 	var req pageRequest
 	if err := dep.Unmarshal(body, &req); err != nil {
@@ -672,6 +683,8 @@ func (s *Server) handleFetch(w http.ResponseWriter, body []byte) {
 	)
 }
 
+// handleSync serves device changes after the supplied fake cursor and reports invalid or
+// expired cursors.
 func (s *Server) handleSync(w http.ResponseWriter, body []byte) {
 	var req pageRequest
 	if err := dep.Unmarshal(body, &req); err != nil {
@@ -717,6 +730,7 @@ type serialsBody struct {
 	Devices     []string `json:"devices"`
 }
 
+// serials decodes the serial-number batch used by device operations.
 func (s *Server) serials(w http.ResponseWriter, body []byte) (serialsBody, bool) {
 	var req serialsBody
 	if err := dep.Unmarshal(body, &req); err != nil {
@@ -730,6 +744,7 @@ func (s *Server) serials(w http.ResponseWriter, body []byte) (serialsBody, bool)
 	return req, true
 }
 
+// handleDetails returns fake inventory records for the requested serial numbers.
 func (s *Server) handleDetails(w http.ResponseWriter, body []byte) {
 	req, ok := s.serials(w, body)
 	if !ok {
@@ -749,6 +764,7 @@ func (s *Server) handleDetails(w http.ResponseWriter, body []byte) {
 	s.writeJSON(w, map[string]any{"devices": out})
 }
 
+// handleDisown removes the requested serials from the fake service inventory.
 func (s *Server) handleDisown(w http.ResponseWriter, body []byte) {
 	req, ok := s.serials(w, body)
 	if !ok {
@@ -765,6 +781,8 @@ func (s *Server) handleDisown(w http.ResponseWriter, body []byte) {
 	s.writeJSON(w, map[string]any{"devices": out})
 }
 
+// handleActivationLock reports activation-lock success for a known fixture device or
+// DEVICE_NOT_FOUND otherwise.
 func (s *Server) handleActivationLock(w http.ResponseWriter, body []byte) {
 	var req dep.ActivationLockRequest
 	if err := dep.Unmarshal(body, &req); err != nil || req.Device == "" {
@@ -805,6 +823,7 @@ func (s *Server) assign(uuid string, serials []string) (map[string]string, int) 
 	return out, retry
 }
 
+// handleDefine stores an enrollment profile and returns its fake service identifier.
 func (s *Server) handleDefine(w http.ResponseWriter, body []byte) {
 	var p dep.Profile
 	if err := dep.Unmarshal(body, &p); err != nil {
@@ -830,6 +849,7 @@ func (s *Server) handleDefine(w http.ResponseWriter, body []byte) {
 	s.writeJSON(w, dep.ProfileResponse{ProfileUUID: p.ProfileUUID, Devices: out})
 }
 
+// handleFetchProfile returns the fake service's stored enrollment profile.
 func (s *Server) handleFetchProfile(w http.ResponseWriter, uuid string) {
 	if uuid == "" {
 		s.fail(w, http.StatusBadRequest, dep.CodeProfileUUIDRequired)
@@ -843,6 +863,7 @@ func (s *Server) handleFetchProfile(w http.ResponseWriter, uuid string) {
 	s.writeJSON(w, p)
 }
 
+// handleAssign applies an enrollment-profile assignment batch to the fake inventory.
 func (s *Server) handleAssign(w http.ResponseWriter, body []byte) {
 	var req serialsBody
 	if err := dep.Unmarshal(body, &req); err != nil {
@@ -868,6 +889,7 @@ func (s *Server) handleAssign(w http.ResponseWriter, body []byte) {
 	)
 }
 
+// handleRemove clears enrollment-profile assignments for the requested serials.
 func (s *Server) handleRemove(w http.ResponseWriter, body []byte) {
 	req, ok := s.serials(w, body)
 	if !ok {
@@ -888,6 +910,7 @@ func (s *Server) handleRemove(w http.ResponseWriter, body []byte) {
 	s.writeJSON(w, map[string]any{"devices": out})
 }
 
+// handleSetDiscovery updates the fake account-driven enrollment discovery profile.
 func (s *Server) handleSetDiscovery(w http.ResponseWriter, body []byte) {
 	var req struct {
 		URL string `json:"mdm_service_discovery_url"` // Apple's key

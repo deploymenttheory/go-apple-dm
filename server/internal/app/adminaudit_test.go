@@ -31,6 +31,7 @@ func auditApp(t *testing.T, cfg app.Config) (*app.App, audit.Store) {
 	return build(t, cfg), st
 }
 
+// readAll loads up to 100 audit records, failing the test on error.
 func readAll(t *testing.T, st audit.Store) []audit.Record {
 	t.Helper()
 	res, err := st.List(context.Background(), audit.Query{}, audit.Page{Limit: 100})

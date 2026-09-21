@@ -10,6 +10,7 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/cms"
 )
 
+// TestSignAttachedRoundTrip checks sign attached round trip.
 func TestSignAttachedRoundTrip(t *testing.T) {
 	t.Parallel()
 	ca := newCA(t)

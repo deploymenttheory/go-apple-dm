@@ -35,6 +35,8 @@ type adeFixture struct {
 	served []ade.Identity
 }
 
+// newADEFixture creates an end-to-end ADE fixture with web authentication, signed profiles, and a
+// fake identity provider.
 func newADEFixture(t *testing.T, mutate ...func(*ade.Config)) *adeFixture {
 	t.Helper()
 	f := &adeFixture{idp: webauthtest.New(t)}

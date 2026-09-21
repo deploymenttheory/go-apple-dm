@@ -14,6 +14,8 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/plist"
 )
 
+// TestScenarioRejectsIncorrectDeviceBehavior checks that scenario rejects incorrect device
+// behavior.
 func TestScenarioRejectsIncorrectDeviceBehavior(t *testing.T) {
 	for _, name := range []string{"command missing", "wake without command", "user command missing", "shared device command missing", "shared user command missing", "unauthenticated TokenUpdate accepted", "malformed challenge", "invalid digest challenge", "default erasure enabled", "escrow lost"} {
 		t.Run(name, func(t *testing.T) {
@@ -110,6 +112,7 @@ func TestScenarioRejectsIncorrectDeviceBehavior(t *testing.T) {
 	}
 }
 
+// TestBenchFailsWhenReadinessNeverArrives checks that bench fails when readiness never arrives.
 func TestBenchFailsWhenReadinessNeverArrives(t *testing.T) {
 	t.Parallel()
 	srv := httptest.NewServer(
@@ -137,6 +140,8 @@ func TestBenchFailsWhenReadinessNeverArrives(t *testing.T) {
 	}
 }
 
+// TestBenchRejectsMissingScenarioScratchDirectory checks that bench rejects missing scenario
+// scratch directory.
 func TestBenchRejectsMissingScenarioScratchDirectory(t *testing.T) {
 	missing := t.TempDir() + "/absent"
 	for _, name := range []string{"TMPDIR", "TMP", "TEMP"} {
@@ -159,6 +164,8 @@ func TestBenchRejectsMissingScenarioScratchDirectory(t *testing.T) {
 	}
 }
 
+// TestFixedListenerAndUnavailableScriptControl checks fixed listener and unavailable script
+// control.
 func TestFixedListenerAndUnavailableScriptControl(t *testing.T) {
 	t.Parallel()
 	if addr, _, err := address(t.Context(), "127.0.0.1:8443", false); err != nil || addr != "127.0.0.1:8443" {

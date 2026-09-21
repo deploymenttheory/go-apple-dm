@@ -22,6 +22,7 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/server/internal/app"
 )
 
+// TestBlueprintAdminAndDeviceDelivery checks blueprint admin and device delivery.
 func TestBlueprintAdminAndDeviceDelivery(t *testing.T) {
 	ca, err := testpki.NewCA("blueprint identity")
 	if err != nil {

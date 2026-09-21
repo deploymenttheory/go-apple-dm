@@ -10,6 +10,8 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/internal/layout"
 )
 
+// TestRepositoryGraphAcceptsSingleModuleAndRejectsBrokenModules checks that repository graph
+// accepts single module and rejects broken modules.
 func TestRepositoryGraphAcceptsSingleModuleAndRejectsBrokenModules(t *testing.T) {
 	t.Parallel()
 	for _, mode := range []string{"library only", "broken library", "broken server"} {

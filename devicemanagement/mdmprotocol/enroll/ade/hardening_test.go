@@ -9,6 +9,7 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/enroll/ade"
 )
 
+// TestEnrollmentErrorsAreNotCacheable checks enrollment errors are not cacheable.
 func TestEnrollmentErrorsAreNotCacheable(t *testing.T) {
 	w := httptest.NewRecorder()
 	ade.New(ade.Config{}).

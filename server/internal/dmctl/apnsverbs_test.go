@@ -18,6 +18,8 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/server/internal/privatefile"
 )
 
+// TestOfflineAPNSCommands checks offline APNs certificate commands, input validation, environment
+// matching, and overwrite refusal.
 func TestOfflineAPNSCommands(t *testing.T) {
 	t.Parallel()
 	env := noConfig(t)
@@ -122,6 +124,7 @@ func TestOfflineAPNSCommands(t *testing.T) {
 	}
 }
 
+// TestCSRCommandPreservesKeys checks that CSR command preserves keys.
 func TestCSRCommandPreservesKeys(t *testing.T) {
 	t.Parallel()
 	env := noConfig(t)

@@ -50,6 +50,8 @@ func streamingBER(t *testing.T, raw []byte) []byte {
 	return append(out, 0, 0)
 }
 
+// TestCheckEnvelopeAcceptsAuthenticatedStreamingBER checks that check envelope accepts
+// authenticated streaming BER.
 func TestCheckEnvelopeAcceptsAuthenticatedStreamingBER(t *testing.T) {
 	key, err := rsa.GenerateKey(rand.Reader, 2048)
 	if err != nil {
@@ -109,6 +111,7 @@ func TestCheckEnvelopeAcceptsAuthenticatedStreamingBER(t *testing.T) {
 	}
 }
 
+// TestEnvelopeBERBoundsAndFraming checks envelope BER bounds and framing.
 func TestEnvelopeBERBoundsAndFraming(t *testing.T) {
 	for _, raw := range [][]byte{
 		nil,
@@ -161,6 +164,7 @@ func TestEnvelopeBERBoundsAndFraming(t *testing.T) {
 	}
 }
 
+// FuzzEnvelopeBER checks that BER envelope validation never modifies the signed input bytes.
 func FuzzEnvelopeBER(f *testing.F) {
 	for _, raw := range [][]byte{nil, {0x30, 0}, {0x30, 0x80, 0, 0}, {0x30, 0x80, 0x04, 0x03, 0, 0, 1, 0, 0}} {
 		f.Add(raw)

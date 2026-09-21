@@ -41,6 +41,8 @@ type fakeEnqueuer struct {
 	skip  map[mdm.EnrollmentID]error
 }
 
+// Enqueue records enqueue calls and returns configured failures or per-enrollment queued and
+// skipped results.
 func (f *fakeEnqueuer) Enqueue(_ context.Context, ids []mdm.EnrollmentID, cmd *mdm.Command, o storage.EnqueueOptions) (storage.EnqueueResult, error) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
@@ -59,6 +61,7 @@ func (f *fakeEnqueuer) Enqueue(_ context.Context, ids []mdm.EnrollmentID, cmd *m
 	return res, nil
 }
 
+// count returns the number of recorded enqueue calls under the mutex.
 func (f *fakeEnqueuer) count() int {
 	f.mu.Lock()
 	defer f.mu.Unlock()
@@ -73,6 +76,7 @@ type fakePusher struct {
 	results map[mdm.EnrollmentID]push.Result
 }
 
+// Notify records notification batches and returns configured push results or failures.
 func (f *fakePusher) Notify(_ context.Context, ids []mdm.EnrollmentID) (map[mdm.EnrollmentID]push.Result, error) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
@@ -91,6 +95,7 @@ func (f *fakePusher) Notify(_ context.Context, ids []mdm.EnrollmentID) (map[mdm.
 	return out, nil
 }
 
+// count returns the number of recorded notification batches under the mutex.
 func (f *fakePusher) count() int {
 	f.mu.Lock()
 	defer f.mu.Unlock()
@@ -109,6 +114,7 @@ type notifierFixture struct {
 	evMu     sync.Mutex
 }
 
+// newNotifierFixture creates a notifier fixture whose engine and notifier share the same clock.
 func newNotifierFixture(t *testing.T, mutate func(*ddmsync.NotifierConfig)) *notifierFixture {
 	t.Helper()
 	f := &notifierFixture{store: ddminmem.New(), clock: clock.NewFake(notifierT0), enq: &fakeEnqueuer{}, pusher: &fakePusher{}, bus: event.New()}
@@ -157,6 +163,7 @@ func (f *notifierFixture) assignFresh(t *testing.T, id mdm.EnrollmentID, name st
 	}
 }
 
+// drain drains the notifier once, failing the test on error.
 func (f *notifierFixture) drain(t *testing.T) ddmsync.DrainResult {
 	t.Helper()
 	res, err := f.notifier.DrainOnce(context.Background())
@@ -166,6 +173,7 @@ func (f *notifierFixture) drain(t *testing.T) ddmsync.DrainResult {
 	return res
 }
 
+// pending reads pending changes using a cutoff one year beyond the fixture clock.
 func (f *notifierFixture) pending(t *testing.T) []ddm.Change {
 	t.Helper()
 	rows, err := f.store.PendingChanges(context.Background(), f.clock.Now().Add(365*24*time.Hour), 10000)
@@ -175,6 +183,7 @@ func (f *notifierFixture) pending(t *testing.T) []ddm.Change {
 	return rows
 }
 
+// TestNewNotifier checks notifier dependencies, deduplication-key length, and defaults.
 func TestNewNotifier(t *testing.T) {
 	t.Run("DedupeKeyLength", func(t *testing.T) {
 		f := newNotifierFixture(t, nil)
@@ -215,6 +224,8 @@ func TestNewNotifier(t *testing.T) {
 	})
 }
 
+// TestNotifier checks notification coalescing, command deduplication, failures, events, immediate
+// kicks, and shutdown.
 func TestNotifier(t *testing.T) {
 	ctx := context.Background()
 	t.Run("CoalescesBurstWithinWindow", func(t *testing.T) {
@@ -603,6 +614,7 @@ func TestNotifier(t *testing.T) {
 
 type tokensFunc func(context.Context, mdm.EnrollmentID) ([]byte, error)
 
+// Tokens calls the injected tokens function.
 func (fn tokensFunc) Tokens(ctx context.Context, id mdm.EnrollmentID) ([]byte, error) {
 	return fn(ctx, id)
 }
@@ -688,6 +700,7 @@ func TestNotifierReportsEveryDrain(t *testing.T) {
 	}
 }
 
+// waitForDrain waits up to five seconds for a drain that queued at least one command.
 func waitForDrain(t *testing.T, mu *sync.Mutex, got *[]ddmsync.DrainResult) {
 	t.Helper()
 	deadline := time.Now().Add(5 * time.Second)

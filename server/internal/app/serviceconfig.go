@@ -27,6 +27,8 @@ const (
 	PathTrustProfile  = "/enroll/trust/profile"
 )
 
+// wireServiceConfig loads enrollment trust material and mounts the configured
+// service-configuration and trust-profile endpoints.
 func (a *App) wireServiceConfig(ctx context.Context, e *enrollment, mux *http.ServeMux) error {
 	if a.Certificates != nil && a.cfg.Setup.HTTPSCAID != "" {
 		material, err := a.Certificates.LoadMaterial(ctx, a.cfg.Setup.HTTPSCAID, "")
@@ -123,6 +125,8 @@ func (a *App) wireServiceConfig(ctx context.Context, e *enrollment, mux *http.Se
 	return nil
 }
 
+// trustProfile encodes the supplied root certificates as a system-scoped configuration
+// profile.
 func trustProfile(certs []*x509.Certificate) ([]byte, error) {
 	p := &profile.Profile{
 		Identifier:  "com.deploymenttheory.mdm.https-trust",
@@ -152,6 +156,8 @@ type profileMetadata struct {
 	Roots        map[string]string `json:"roots"`
 }
 
+// profileMetadataKey derives a stable key from the profile identifier and the binding's
+// best available device identity.
 func profileMetadataKey(b acme.Binding, identifier string) string {
 	id := b.EnrollmentUDID()
 	if id == "" {
@@ -164,6 +170,8 @@ func profileMetadataKey(b acme.Binding, identifier string) string {
 	return "enrollment-profile:" + hex.EncodeToString(h[:])
 }
 
+// stabilizeProfile atomically reuses persisted profile and payload UUIDs, adding stable
+// UUIDs for newly included roots.
 func (e *enrollment) stabilizeProfile(
 	ctx context.Context,
 	b acme.Binding,
@@ -208,6 +216,8 @@ func (e *enrollment) stabilizeProfile(
 	return nil
 }
 
+// currentTrustAnchors returns current managed trust certificates as base64 DER, using the
+// supplied fallback only for static configuration.
 func (a *App) currentTrustAnchors(ctx context.Context, fallback []string) ([]string, error) {
 	if a.Certificates == nil {
 		return fallback, nil

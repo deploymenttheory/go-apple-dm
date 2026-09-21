@@ -18,6 +18,8 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/server/sqlstore/sqlcommon"
 )
 
+// runRoles parses and executes the roles subcommand, reporting argument and operation
+// failures to the CLI caller.
 func runRoles(ctx context.Context, e *env, args []string) error {
 	if len(args) == 0 {
 		return fmt.Errorf("%w: roles needs list, get, put, or delete", ErrUsage)
@@ -67,6 +69,8 @@ func runRoles(ctx context.Context, e *env, args []string) error {
 	return e.emit(resp, nil)
 }
 
+// runAuth parses and executes the auth subcommand, reporting argument and operation
+// failures to the CLI caller.
 func runAuth(ctx context.Context, e *env, args []string) error {
 	if len(args) == 0 {
 		return fmt.Errorf("%w: auth needs me, schema, bootstrap, or recover-root", ErrUsage)
@@ -127,6 +131,8 @@ func runAuth(ctx context.Context, e *env, args []string) error {
 	}
 }
 
+// recoverRoot creates a recovery root principal through the local database under an
+// owned, drained maintenance fence and writes its credential to a new private file.
 func recoverRoot(ctx context.Context, e *env, args []string) error {
 	fs := e.verbFlags("auth recover-root")
 	setup := fs.String("setup-file", e.getenv("DM_SETUP_FILE"), "local setup file")

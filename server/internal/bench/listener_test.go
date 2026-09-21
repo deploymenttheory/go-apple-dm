@@ -5,6 +5,7 @@ import (
 	"testing"
 )
 
+// TestEmbeddedAddressRetainsPort checks that embedded address retains port.
 func TestEmbeddedAddressRetainsPort(t *testing.T) {
 	t.Parallel()
 	addr, listener, err := address(t.Context(), "127.0.0.1:0", true)

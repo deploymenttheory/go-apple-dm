@@ -143,6 +143,7 @@ func TestSeedOS27CoverageInventory(t *testing.T) {
 	}
 }
 
+// readOS27JSON reads a repository JSON fixture and decodes it into the supplied target.
 func readOS27JSON(t *testing.T, path string, target any) {
 	t.Helper()
 	root, err := os.OpenRoot("../..")
@@ -159,6 +160,8 @@ func readOS27JSON(t *testing.T, path string, target any) {
 	}
 }
 
+// explicitMacOS27Boundaries collects and sorts explicit macOS 27 introduction, deprecation, and
+// removal boundaries.
 func explicitMacOS27Boundaries(s *Schema) []os27Boundary {
 	var result []os27Boundary
 	add := func(path string, m *SupportedOS) {
@@ -186,6 +189,8 @@ func explicitMacOS27Boundaries(s *Schema) []os27Boundary {
 	return result
 }
 
+// checkOS27InheritedBoundaries compares inherited macOS 27 support metadata with compiled tables
+// across versions and enrollment contexts.
 func checkOS27InheritedBoundaries(t *testing.T) {
 	t.Helper()
 	// Resolve inheritance using the source model and retained historical schema,
@@ -232,6 +237,7 @@ func checkOS27InheritedBoundaries(t *testing.T) {
 	t.Logf("checked %d inherited macOS 27 paths across four versions and six enrollment contexts", checked)
 }
 
+// compatibilitySchemaRoot reads the compatibility schema submodule path from .gitmodules.
 func compatibilitySchemaRoot(t *testing.T) string {
 	t.Helper()
 	command := exec.CommandContext(t.Context(), "git", "config", "--file", "../../.gitmodules", "--get", "submodule.apple-device-management-compatibility.path")

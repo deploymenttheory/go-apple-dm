@@ -13,6 +13,8 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/testpki"
 )
 
+// profileData encodes a Wi-Fi profile fixture after applying optional profile and payload
+// mutations.
 func profileData(t *testing.T, change func(map[string]any, map[string]any)) []byte {
 	t.Helper()
 	payload := map[string]any{
@@ -41,6 +43,7 @@ func profileData(t *testing.T, change func(map[string]any, map[string]any)) []by
 	return data
 }
 
+// TestInspect checks profile lint findings and redaction of secret values in diagnostics.
 func TestInspect(t *testing.T) {
 	target := support.Target{
 		OS:         support.MacOS,
@@ -99,6 +102,7 @@ func TestInspect(t *testing.T) {
 	}
 }
 
+// TestInspectSizeLimit checks that profile inspection rejects input above the size limit.
 func TestInspectSizeLimit(t *testing.T) {
 	r := inspect.Inspect(make([]byte, plist.DefaultMaxBytes+1), inspect.Options{})
 	if len(r.Issues) != 1 || r.Issues[0].Rule != "size" || r.Issues[0].Severity != "error" {
@@ -106,6 +110,7 @@ func TestInspectSizeLimit(t *testing.T) {
 	}
 }
 
+// TestSignatureAndTrust checks profile signature inspection and certificate trust findings.
 func TestSignatureAndTrust(t *testing.T) {
 	ca, err := testpki.NewCA("lint")
 	if err != nil {
@@ -146,6 +151,7 @@ func TestSignatureAndTrust(t *testing.T) {
 	}
 }
 
+// TestTargetAvailability checks target-availability findings for profile payloads.
 func TestTargetAvailability(t *testing.T) {
 	for _, tc := range []struct {
 		name, severity string
@@ -176,6 +182,7 @@ func TestTargetAvailability(t *testing.T) {
 	}
 }
 
+// TestUnknownKeyInTypedDictionary checks unknown key in typed dictionary.
 func TestUnknownKeyInTypedDictionary(t *testing.T) {
 	data := profileData(t, func(_, p map[string]any) {
 		for key := range p {

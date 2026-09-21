@@ -9,6 +9,8 @@ import (
 	"time"
 )
 
+// TestWorkspaceSupervisorRestart checks supervisor restart preserves workspace identity and drains
+// processes and descriptors.
 func TestWorkspaceSupervisorRestart(t *testing.T) {
 	dir := t.TempDir()
 	if err := Init(dir, "simulated", "sqlite", "127.0.0.1:0"); err != nil {

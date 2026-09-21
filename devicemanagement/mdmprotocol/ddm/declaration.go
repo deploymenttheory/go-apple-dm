@@ -72,6 +72,7 @@ func canonicalDeclaration(identifier, typ string, payload jsontext.Value) ([]byt
 	return out, nil
 }
 
+// validIdentifier checks the declaration identifier syntax accepted by the engine.
 func validIdentifier(s string) error {
 	switch {
 	case s == "":

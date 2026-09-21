@@ -73,6 +73,8 @@ func runExplain(_ context.Context, e *env, args []string) error {
 	return nil
 }
 
+// explainList prints supported explanation families, or the identifiers or field paths
+// within a selected family.
 func (e *env) explainList(family string, paths bool) error {
 	if family == "" {
 		for _, f := range explain.Families() {
@@ -158,6 +160,7 @@ func runStatus(ctx context.Context, e *env, args []string) error {
 	})
 }
 
+// policyMode describes whether the server advertises Cedar policy support.
 func policyMode(policy bool) string {
 	if policy {
 		return "policy (principals and Cedar policies)"
@@ -165,6 +168,8 @@ func policyMode(policy bool) string {
 	return "managed principals (Cedar unavailable)"
 }
 
+// runRoutes parses and executes the routes subcommand, reporting argument and operation
+// failures to the CLI caller.
 func runRoutes(ctx context.Context, e *env, args []string) error {
 	fs := e.verbFlags("routes")
 	if _, err := e.parseVerb(fs, args); err != nil {
@@ -193,6 +198,8 @@ func runRoutes(ctx context.Context, e *env, args []string) error {
 	})
 }
 
+// runActions parses and executes the actions subcommand, reporting argument and operation
+// failures to the CLI caller.
 func runActions(ctx context.Context, e *env, args []string) error {
 	fs := e.verbFlags("actions")
 	if _, err := e.parseVerb(fs, args); err != nil {
@@ -311,6 +318,8 @@ func runPrincipals(ctx context.Context, e *env, args []string) error {
 	}
 }
 
+// createPrincipal submits a principal-creation request and handles the one-time credential
+// result.
 func (e *env) createPrincipal(ctx context.Context, c clientDoer, args []string) error {
 	fs := e.verbFlags("principals create")
 	roles := fs.String("roles", "", "comma-separated roles")
@@ -333,6 +342,7 @@ func (e *env) createPrincipal(ctx context.Context, c clientDoer, args []string) 
 	return e.emitToken(resp)
 }
 
+// setRoles updates a principal's root flag and, when supplied, managed-role membership.
 func (e *env) setRoles(ctx context.Context, c clientDoer, args []string) error {
 	fs := e.verbFlags("principals set-roles")
 	roles := fs.String("roles", "", "comma-separated roles")
@@ -458,6 +468,8 @@ func runPolicies(ctx context.Context, e *env, args []string) error {
 	}
 }
 
+// writePolicy loads a policy source and description, then submits them for storage or
+// validation.
 func (e *env) writePolicy(ctx context.Context, c clientDoer, args []string, validate bool) error {
 	fs := e.verbFlags("policies put")
 	file := fs.String("file", "", "read the policy from a file, or - for stdin")

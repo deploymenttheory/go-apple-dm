@@ -80,6 +80,7 @@ type ParseOptions struct {
 	Logger *slog.Logger
 }
 
+// maxBytes returns the configured machine-info limit or DefaultMaxBytes.
 func (o ParseOptions) maxBytes() int64 {
 	if o.MaxBytes > 0 {
 		return o.MaxBytes
@@ -87,6 +88,7 @@ func (o ParseOptions) maxBytes() int64 {
 	return DefaultMaxBytes
 }
 
+// anchors selects the trust anchors used to verify machine-info signatures.
 func (o ParseOptions) anchors() []*x509.Certificate {
 	if o.Anchors != nil {
 		return o.Anchors
@@ -94,6 +96,7 @@ func (o ParseOptions) anchors() []*x509.Certificate {
 	return AppleAnchors()
 }
 
+// logger returns the configured logger or the package default.
 func (o ParseOptions) logger() *slog.Logger {
 	if o.Logger != nil {
 		return o.Logger
@@ -286,12 +289,15 @@ func Validate(m *MachineInfo, userEnrollment bool) error {
 	return fmt.Errorf("%w: missing %v, forbidden %v", ErrPresence, sorted(missing), sorted(forbidden))
 }
 
+// requiresOSVersion reports whether present machine-info fields require an accompanying OS
+// version.
 func requiresOSVersion(m *MachineInfo) bool {
 	return m.MDMCANREQUESTSOFTWAREUPDATE != nil || m.SOFTWAREUPDATEDEVICEID != nil ||
 		m.SUPPLEMENTALBUILDVERSION != nil || m.SUPPLEMENTALOSVERSIONEXTRA != nil ||
 		m.MDMCANREQUESTPSSOCONFIG != nil || m.MANDATORYSOFTWAREUPDATEREQUIRED != nil
 }
 
+// sorted returns a sorted copy of the supplied strings.
 func sorted(s []string) []string {
 	out := append([]string(nil), s...)
 	for i := 1; i < len(out); i++ {

@@ -35,7 +35,7 @@
     ],
     "repository": {
       "url": "https://github.com/deploymenttheory/go-apple-dm",
-      "revision": "7500eb25e50a2913338339d5fced18dc7f41fdc3"
+      "revision": "2b8157efa2c6cbfff459bc44f66736a5d2e7c753"
     },
     "colour_profile": "purpose-v1",
     "legend": {
@@ -210,7 +210,13 @@
         220,
         70
       ],
-      "purpose": "policy"
+      "purpose": "policy",
+      "sources": [
+        {
+          "path": "devicemanagement/mdmprotocol/enroll/ade/softwareupdate.go",
+          "label": "Software update gate"
+        }
+      ]
     },
     {
       "id": "depstore",
@@ -225,7 +231,13 @@
         220,
         70
       ],
-      "purpose": "storage"
+      "purpose": "storage",
+      "sources": [
+        {
+          "path": "devicemanagement/appleplatformservices/dep/store.go",
+          "label": "DEP persistence"
+        }
+      ]
     },
     {
       "id": "appsbookssvc",
@@ -255,7 +267,13 @@
         220,
         70
       ],
-      "purpose": "service"
+      "purpose": "service",
+      "sources": [
+        {
+          "path": "devicemanagement/appleplatformservices/appsbooks/client.go",
+          "label": "Apps and Books client"
+        }
+      ]
     }
   ],
   "boundaries": [
@@ -275,9 +293,13 @@
       "id": "dep-auth",
       "from": "depclient",
       "to": "depsvc",
-      "label": "OAuth 1.0a",
+      "label": "OAuth session + session header",
       "variant": "security",
-      "purpose": "authentication"
+      "purpose": "authentication",
+      "labelAt": [
+        305,
+        194
+      ]
     },
     {
       "id": "axm-auth",
@@ -363,7 +385,7 @@
       "dot": "authentication",
       "title": "Service authentication",
       "items": [
-        "The device-assignment client uses OAuth 1.0a credentials from the server-token exchange. The package retains the name dep.",
+        "The dep client uses OAuth 1.0a to obtain a session token, then sends X-ADM-Auth-Session on device-assignment requests.",
         "axm exchanges an ES256-signed client assertion for an OAuth access token, then uses that token as Bearer authentication on API calls.",
         "Software catalogue lookup uses public HTTPS requests; it does not use the device-assignment or business API credentials.",
         "Apps and Books sends the original location sToken as a bearer credential and checks the returned library UID and MDM identity."
@@ -373,9 +395,9 @@
       "dot": "service",
       "title": "Inventory and assignments",
       "items": [
-        "The synchronizer starts with a full fetch and follows incremental cursors; an expired cursor causes a new full fetch.",
-        "The reconciler compares desired profile assignment with stored devices and calls Apple. Readback is configurable in the library and enabled by the reference server.",
-        "Apps and Books returns asynchronous event IDs. The caller persists progress, authenticates notifications and checks event completion before installation."
+        "Synchronization begins with a full fetch and then incremental cursors. A full-fetch generation reconciles missing devices only at successful completion; page and cursor persistence is atomic.",
+        "Synchronization and assignment have independent schedules. The reconciler persists per-device retries, checks the desired target before saving outcomes and reads back Apple state in the reference server.",
+        "Apps and Books returns asynchronous event IDs. The caller persists progress, authenticates notifications and checks completion before installation."
       ]
     },
     {
@@ -392,7 +414,9 @@
         "Device assignment — https://developer.apple.com/documentation/devicemanagement/device-assignment",
         "Implementing OAuth for the Apple School Manager and Apple Business APIs — https://developer.apple.com/documentation/apple-school-and-business-manager-api/implementing-oauth-for-the-apple-school-manager-and-apple-business-api",
         "ErrorCodeSoftwareUpdateRequired — https://developer.apple.com/documentation/devicemanagement/errorcodesoftwareupdaterequired",
-        "Apps and Books — https://developer.apple.com/documentation/devicemanagement/getting-started-with-the-management-api"
+        "Apps and Books — https://developer.apple.com/documentation/devicemanagement/getting-started-with-the-management-api",
+        "ADE session authentication — https://developer.apple.com/documentation/devicemanagement/authenticating-for-automated-device-enrollment",
+        "Assignment throttling — https://developer.apple.com/documentation/devicemanagement/assign-profile"
       ]
     }
   ]

@@ -14,7 +14,7 @@ their tested scope. Keep private evidence and credentials outside source control
 | Unit | `make test` | Component behavior and error handling |
 | Contract | `make test-contract` (`test-storage` alias) | Interchangeable state/storage implementations obey the same interface |
 | E2E | `make test-e2e` | Shared scenarios against embedded reference-server runtime, plus retained detailed regressions |
-| Acceptance | `make test-acceptance` | The same shared scenarios against built `dmserver` processes, including split deployment |
+| Acceptance | `make test-acceptance` | The same shared scenarios against built `dmserver` processes with unified device management |
 | Live bench | `make bench-run` in an explicitly live workspace | Applicable behavior with real Apple credentials and devices |
 
 `server/acceptance` is tagged `e2e` or `acceptance`. An empty `BENCH_DMSERVER` selects
@@ -60,8 +60,8 @@ an uploaded configuration profile, clearing and republishing while preserving th
 assignment, unassignment, reassignment and deletion. LIVE-005 also checks that
 `LegacyProfile.ProfileAssetReference` is withheld on macOS 26 while a compatible
 configuration in the same Blueprint reaches the device. Run these only against a
-designated test Mac or VM. See [Blueprint acceptance on macOS 26](blueprints-macos26.md)
-for the command, exact assertions and recorded scope.
+designated test Mac or VM. See [Blueprint acceptance](#blueprint-acceptance)
+for the command, exact assertions and platform limits.
 
 The Mac can omit unchanged OS/build values from repeated status reports: status
 subscriptions combine as a set union and reports are incremental. LIVE-004 checks
@@ -177,3 +177,82 @@ Use `make bench-enrollment-preflight`, `bench-trust`, `bench-profile` and
 `bench-replace` for operator preparation. Follow the [Mac enrollment runbook](../operations/mac-enrollment-testing.md)
 for device installation and live acceptance. Simulator failures validate server
 recovery; device-side rollback and ADE activation need their own live evidence.
+
+## Blueprint acceptance
+
+The [live Blueprint scenarios](../../server/internal/bench/live_blueprints.go)
+exercise macOS 26 device (LIVE-005) and installing-user (LIVE-006) channels. They
+use native DDM reports, real APNs wakes and acknowledged `ProfileList` commands;
+they are unsupported in simulated mode. LIVE-006 requires the installing user to
+be logged in and MDM-enabled. The current runner's OS restriction is part of its
+acceptance contract, not the full platform availability of Blueprint compilation.
+
+### Assertions
+
+Each scenario uses a unique Blueprint identifier, profile identifier and UUID.
+The profile contains a managed preference in a unique
+`com.deploymenttheory.acceptance.*` domain. It does not configure an existing
+application's preferences. Its `PayloadScope` is `System` for LIVE-005 and `User`
+for LIVE-006.
+
+| Step | Required evidence |
+|---|---|
+| Inventory | A new `DeviceInformation` command is accepted through APNs and acknowledged by the selected device; its OS version is 26.x and its build is nonempty. |
+| Composition | A Blueprint contains a native management status subscription and a `LegacyProfile` configuration using the uploaded profile's `ProfileURL`, with separate `ActivationSimple` declarations. |
+| False predicate | The native subscription and unconditional activation are valid and active. The conditional activation and profile configuration are inactive. A fresh `ProfileList` omits the profile. |
+| Identical publication | Repeating the same source with the current revision preserves the returned source revision and compiled declarations. |
+| True predicate | Updating `Predicate` to `TRUEPREDICATE` produces fresh valid, active status. A fresh `ProfileList` contains the original `PayloadIdentifier`, `PayloadUUID` and expected display name, with `Source` equal to `Declarative Device Management`. |
+| Profile replacement | Uploading revised bytes and publishing their revision changes the profile configuration's reported `ServerToken`. The same profile identifier and UUID appear exactly once, with the revised display name. |
+| Clear and republish | Publishing an identifier-only source removes the temporary declarations from native status and removes the profile from `ProfileList`. Republishing the complete source installs it again without assigning the Blueprint again. |
+| Unassign and reassign | Unassignment removes the declarations and installed profile. Reassignment restores them, with fresh native status. |
+| Delete while assigned | Deleting the Blueprint removes its declarations from native status and its profile from a fresh `ProfileList`. |
+| macOS 27 field on macOS 26 | LIVE-005 publishes `ProfileAssetReference`. Compatibility reports the configuration as withheld for `unsupported-target`; a compatible subscription and activation in the same publication receive fresh device status, while the profile configuration is absent and the profile remains uninstalled. |
+
+The inactive profile configuration may report validity `unknown` before its
+activation becomes true. Active declarations must report `valid`. Changed
+declarations must have a report timestamp at or after the corresponding mutation;
+unchanged declarations may retain earlier status because Apple reports changes
+incrementally. A server-side publication response alone cannot satisfy the native
+installation or removal checks.
+
+Deferred cleanup runs with its own deadline even if the scenario fails or its
+context expires. Cleanup errors fail the scenario. Uploaded immutable profile
+revisions and retained declaration versions remain available to administrators;
+the temporary Blueprint, its assignments and its installed profile are removed.
+
+### Run
+
+Build the working tree and use an explicitly live bench workspace containing the
+server's CA certificate and admin credential. The server must already be running
+with DDM status subscriptions enabled and an HTTPS public URL reachable by the VM.
+
+```sh
+make bench-build
+test-lab/local/bin/dmctl bench run \
+  -workspace /path/to/live-workspace \
+  -attach-url https://your-mdm-server.example \
+  -scenario blueprints \
+  -device-id DEVICE_ID \
+  -user-id INSTALLING_USERS_GENERATED_UID \
+  -revision SOURCE_REVISION \
+  -report-dir /path/to/private/results
+```
+
+Use `-scenario LIVE-005` or `-scenario LIVE-006` to run one channel. The user ID is
+the local account's `GeneratedUID`; the scenario builds the complete user enrollment
+identity with its parent device ID. The user assignment and status requests include
+that parent explicitly.
+
+The report directory contains `results.json` and `junit.xml`. Phase evidence lives
+under the workspace's `evidence/blueprints-live-*` directories: inventory,
+publication records, configuration profile upload metadata, declaration status,
+decoded `ProfileList` responses and the compatibility result. Record the running
+server and CLI binary hashes, source revision and working-tree file hashes alongside
+these files. All evidence directories are private and remain outside source control.
+
+Apple defines the [LegacyProfile declaration](https://developer.apple.com/documentation/devicemanagement/legacyprofile)
+and [ProfileList response](https://developer.apple.com/documentation/devicemanagement/profilelistcommand).
+These checks prove profile installation/removal through `ProfileURL`; reading the
+managed preference in an application is a separate behavior check. Native signed
+profiles, OS 27 asset-reference delivery and other SQL backends need their own
+acceptance evidence. No past run establishes a pass for a new source revision.

@@ -26,6 +26,8 @@ func OpenRootFile(root *os.Root, name string, flags int, mode os.FileMode) (*os.
 	return prepare(f, nil)
 }
 
+// prepare protects an opened file before use, closing it if permissions cannot be secured
+// and propagating any opening error.
 func prepare(file *os.File, err error) (*os.File, error) {
 	if err != nil {
 		return nil, wrap(err)
@@ -37,6 +39,7 @@ func prepare(file *os.File, err error) (*os.File, error) {
 	return file, nil
 }
 
+// wrap classifies an underlying failure while preserving nil success.
 func wrap(err error) error {
 	if err == nil {
 		return nil

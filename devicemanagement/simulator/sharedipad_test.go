@@ -7,6 +7,7 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/simulator"
 )
 
+// TestSharedIPadUser checks shared ipad user.
 func TestSharedIPadUser(t *testing.T) {
 	d := simulator.New("UDID-SIP")
 	u := d.SharedIPadUser("student", "Student One")

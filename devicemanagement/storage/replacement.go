@@ -16,6 +16,9 @@ import (
 // commits the candidate pin, token and certificate history in the same transaction;
 // it never resets the enrollment, user channels, escrow or command queue.
 type ReplacementStore interface {
+	// TransitionReplacement applies a device replacement transition and returns its stored
+	// handshake state. Candidate pin, tokens, and certificate history commit together on
+	// completion.
 	TransitionReplacement(
 		context.Context,
 		mdm.EnrollmentID,
@@ -47,12 +50,16 @@ type Replacement struct {
 	Tokens          []ReplacementToken `json:"Tokens"`
 }
 
+// ReplacementToken holds a token update captured during controlled identity replacement,
+// including its original wire bytes.
 type ReplacementToken struct {
 	ID      mdm.EnrollmentID     `json:"ID"`
 	Message *checkin.TokenUpdate `json:"Message"`
 	Raw     []byte               `json:"Raw"`
 }
 
+// ReplacementChange describes one input to the replacement state machine. Op selects the
+// transition and At supplies the authoritative transition time.
 type ReplacementChange struct {
 	Issuer                                          string
 	ReconcileUntil                                  time.Time

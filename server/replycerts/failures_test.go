@@ -15,6 +15,8 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/server/replycerts"
 )
 
+// TestInvalidRotationInputs checks invalid FileVault rotation inputs neither persist identities
+// nor modify unrelated commands.
 func TestInvalidRotationInputs(t *testing.T) {
 	id := mdm.EnrollmentID{Channel: mdm.ChannelDevice, ID: "D"}
 	store := state.NewMemory()
@@ -70,6 +72,8 @@ func TestInvalidRotationInputs(t *testing.T) {
 	}
 }
 
+// TestRetainedIdentityCorruption checks that corrupt retained reply identities and conflicting
+// retries are rejected without replacing the identity.
 func TestRetainedIdentityCorruption(t *testing.T) {
 	ctx := t.Context()
 	id := mdm.EnrollmentID{Channel: mdm.ChannelDevice, ID: "D"}
@@ -159,6 +163,7 @@ type faultTx struct {
 	operation string
 }
 
+// Get injects a reply-certificate read failure or delegates to the transaction.
 func (tx faultTx) Get(ctx context.Context, key string) (state.Record, error) {
 	if tx.operation == "get" {
 		return state.Record{}, errUnavailable
@@ -166,6 +171,7 @@ func (tx faultTx) Get(ctx context.Context, key string) (state.Record, error) {
 	return tx.Tx.Get(ctx, key)
 }
 
+// Put injects a reply-certificate write failure or delegates to the transaction.
 func (tx faultTx) Put(ctx context.Context, record state.Record) error {
 	if tx.operation == "put" {
 		return errUnavailable
@@ -173,6 +179,7 @@ func (tx faultTx) Put(ctx context.Context, record state.Record) error {
 	return tx.Tx.Put(ctx, record)
 }
 
+// Delete injects a reply-certificate delete failure or delegates to the transaction.
 func (tx faultTx) Delete(ctx context.Context, key string) error {
 	if tx.operation == "delete" {
 		return errUnavailable
@@ -185,10 +192,13 @@ type transactionFaultStore struct {
 	operation string
 }
 
+// Update wraps reply-certificate state transactions with the configured operation failure.
 func (s transactionFaultStore) Update(ctx context.Context, keys []string, fn func(state.Tx) error) error {
 	return s.Store.Update(ctx, keys, func(tx state.Tx) error { return fn(faultTx{Tx: tx, operation: s.operation}) })
 }
 
+// TestIdentityStorageFailures checks reply-identity storage and generation failures do not expose
+// commands or discard retained keys.
 func TestIdentityStorageFailures(t *testing.T) {
 	ctx := t.Context()
 	id := mdm.EnrollmentID{Channel: mdm.ChannelDevice, ID: "D"}

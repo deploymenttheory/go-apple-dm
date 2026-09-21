@@ -13,8 +13,10 @@
 // the enrollment's advertised snapshot and validate profile scope against the
 // configured target. Identity authentication, certificate pinning and revocation
 // checks belong to server/service and the HTTP ingress in server/internal/app.
-// Split deployments forward downloads through server/ddmadapter. Delivery works
-// with ordinary DDM declarations and has no dependency on Blueprint authoring.
+// Custom compositions can forward downloads through server/ddmadapter. The
+// reference server serves configuration profiles through its in-process adapter.
+// Delivery works with ordinary DDM declarations and has no dependency on
+// Blueprint authoring.
 //
 // # References
 //

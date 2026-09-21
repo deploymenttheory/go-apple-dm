@@ -7,6 +7,7 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/utility/appleappidentity"
 )
 
+// TestSearch checks Apple application catalogue search results.
 func TestSearch(t *testing.T) {
 	for _, tc := range []struct {
 		term string
@@ -26,6 +27,8 @@ func TestSearch(t *testing.T) {
 	}
 }
 
+// TestSnapshotIdentifiers checks catalogue completeness, unique identifiers, and identifier lookup
+// against the source snapshot.
 func TestSnapshotIdentifiers(t *testing.T) {
 	all := appleappidentity.Search("")
 	if len(all) == 0 || !reflect.DeepEqual(all, appleappidentity.Search("  ")) {
@@ -54,6 +57,7 @@ func TestSnapshotIdentifiers(t *testing.T) {
 	}
 }
 
+// TestResultsDoNotMutateCatalogue checks that results do not mutate catalogue.
 func TestResultsDoNotMutateCatalogue(t *testing.T) {
 	want := appleappidentity.Search("Safari")
 	result := appleappidentity.Search("Safari")

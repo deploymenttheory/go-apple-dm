@@ -110,6 +110,8 @@ func (a *App) storageStatus(w http.ResponseWriter, r *http.Request, err error) {
 	}
 }
 
+// listEnrollments returns a filtered page of enrollment metadata without exporting
+// enrollment secrets.
 func (a *App) listEnrollments(w http.ResponseWriter, r *http.Request) {
 	p, err := page(r)
 	if err != nil {
@@ -152,6 +154,7 @@ func (a *App) listEnrollments(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, map[string]any{"Items": items, "NextCursor": res.NextCursor})
 }
 
+// getEnrollment returns projected metadata for the validated enrollment identity.
 func (a *App) getEnrollment(w http.ResponseWriter, r *http.Request) {
 	id, err := enrollmentFromPath(r)
 	if err != nil {
@@ -166,6 +169,8 @@ func (a *App) getEnrollment(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, viewEnrollment(*e))
 }
 
+// disableEnrollment disables the selected enrollment at the configured clock time and
+// returns 204 on success.
 func (a *App) disableEnrollment(w http.ResponseWriter, r *http.Request) {
 	id, err := enrollmentFromPath(r)
 	if err != nil {
@@ -215,6 +220,8 @@ func (a *App) enqueueCommand(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, out)
 }
 
+// listCommands returns paginated command metadata, optionally filtered by request type,
+// without raw response bodies.
 func (a *App) listCommands(w http.ResponseWriter, r *http.Request) {
 	id, err := enrollmentFromPath(r)
 	if err != nil {
@@ -239,6 +246,8 @@ func (a *App) listCommands(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, map[string]any{"Items": items, "NextCursor": res.NextCursor})
 }
 
+// clearCommands clears eligible queued commands matching the optional request-type filter
+// and reports the count.
 func (a *App) clearCommands(w http.ResponseWriter, r *http.Request) {
 	id, err := enrollmentFromPath(r)
 	if err != nil {
@@ -286,6 +295,7 @@ func (a *App) pushEnrollment(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, out)
 }
 
+// listPushCerts returns push topics, expiry and revision metadata without private keys.
 func (a *App) listPushCerts(w http.ResponseWriter, r *http.Request) {
 	certs, err := a.Store.PushCerts(r.Context())
 	if err != nil {
@@ -302,6 +312,8 @@ func (a *App) listPushCerts(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, map[string]any{"Items": items})
 }
 
+// putPushCert validates a bounded PEM credential request, stores the push identity and
+// returns its public metadata.
 func (a *App) putPushCert(w http.ResponseWriter, r *http.Request) {
 	body, err := io.ReadAll(io.LimitReader(r.Body, MaxAdminBody+1))
 	if err != nil || len(body) > MaxAdminBody {
@@ -340,6 +352,8 @@ func (a *App) putPushCert(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
+// exportEnrollments returns a page of enrollment export records through the service's
+// export contract.
 func (a *App) exportEnrollments(w http.ResponseWriter, r *http.Request) {
 	p, err := page(r)
 	if err != nil {
@@ -354,6 +368,8 @@ func (a *App) exportEnrollments(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, map[string]any{"Items": res.Items, "NextCursor": res.NextCursor})
 }
 
+// importEnrollment decodes a bounded enrollment export, imports it through the service and
+// returns 204 on success.
 func (a *App) importEnrollment(w http.ResponseWriter, r *http.Request) {
 	body, err := io.ReadAll(io.LimitReader(r.Body, MaxAdminBody+1))
 	if err != nil || len(body) > MaxAdminBody {
@@ -409,6 +425,8 @@ type enrollmentView struct {
 	DisabledAt     time.Time `json:",omitempty"`
 }
 
+// viewEnrollment selects enrollment identity, inventory and lifecycle metadata while
+// excluding tokens and credentials.
 func viewEnrollment(e storage.Enrollment) enrollmentView {
 	return enrollmentView{
 		Channel: e.ID.Channel.String(), ID: e.ID.ID, ParentID: e.ID.ParentID,
@@ -438,6 +456,8 @@ type queuedView struct {
 	ErrorCodes  []int64 `json:",omitempty"`
 }
 
+// viewQueued selects command timing, state and error codes while excluding command and
+// response payloads.
 func viewQueued(q storage.QueuedCommand) queuedView {
 	v := queuedView{
 		CommandUUID: q.Command.UUID, RequestType: q.Command.RequestType,

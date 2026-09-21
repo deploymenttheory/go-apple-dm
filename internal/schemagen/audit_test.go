@@ -10,6 +10,7 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
+// auditFixture writes a temporary schema source tree from the supplied files.
 func auditFixture(t *testing.T, files map[string]string) string {
 	t.Helper()
 	root := t.TempDir()
@@ -37,6 +38,8 @@ payloadkeys:
   presence: optional
 `
 
+// TestAuditGroupsParserErrorsAndKeepsIndependentDiff checks that audit groups parser errors and
+// keeps independent diff.
 func TestAuditGroupsParserErrorsAndKeepsIndependentDiff(t *testing.T) {
 	t.Parallel()
 	before := auditFixture(t, map[string]string{"mdm/commands/a.yaml": auditSchema})
@@ -91,6 +94,8 @@ func TestAuditGroupsParserErrorsAndKeepsIndependentDiff(t *testing.T) {
 	}
 }
 
+// TestAuditSeparatesDocumentationRenamesAndAvailability checks audit separates documentation
+// renames and availability.
 func TestAuditSeparatesDocumentationRenamesAndAvailability(t *testing.T) {
 	t.Parallel()
 	base := auditFixture(t, map[string]string{
@@ -140,6 +145,8 @@ func TestAuditSeparatesDocumentationRenamesAndAvailability(t *testing.T) {
 	}
 }
 
+// TestAuditReportsMalformedUnknownDuplicateAndExampleInputs checks that audit reports malformed
+// unknown duplicate and example inputs.
 func TestAuditReportsMalformedUnknownDuplicateAndExampleInputs(t *testing.T) {
 	t.Parallel()
 	base := auditFixture(t, nil)
@@ -185,6 +192,7 @@ func TestAuditReportsMalformedUnknownDuplicateAndExampleInputs(t *testing.T) {
 	}
 }
 
+// TestAuditRepeatedWireIDsAndAmbiguousMoves checks audit repeated wire IDs and ambiguous moves.
 func TestAuditRepeatedWireIDsAndAmbiguousMoves(t *testing.T) {
 	t.Parallel()
 	before := auditFixture(t, map[string]string{
@@ -208,6 +216,7 @@ func TestAuditRepeatedWireIDsAndAmbiguousMoves(t *testing.T) {
 	}
 }
 
+// TestAuditIncompleteSourceCannotPass checks that audit incomplete source cannot pass.
 func TestAuditIncompleteSourceCannotPass(t *testing.T) {
 	t.Parallel()
 	valid := auditFixture(t, map[string]string{"mdm/commands/a.yaml": auditSchema})
@@ -222,6 +231,7 @@ func TestAuditIncompleteSourceCannotPass(t *testing.T) {
 	}
 }
 
+// TestAuditYAMLAliasesAndEmptyValues checks audit YAML aliases and empty values.
 func TestAuditYAMLAliasesAndEmptyValues(t *testing.T) {
 	t.Parallel()
 	var node yaml.Node
@@ -261,6 +271,8 @@ notes:
 	}
 }
 
+// TestAuditMetadataOnlyAndExistingInputAreaDoNotRaiseReview checks that audit metadata only and
+// existing input area do not raise review.
 func TestAuditMetadataOnlyAndExistingInputAreaDoNotRaiseReview(t *testing.T) {
 	t.Parallel()
 	before := auditFixture(
@@ -284,6 +296,8 @@ func TestAuditMetadataOnlyAndExistingInputAreaDoNotRaiseReview(t *testing.T) {
 	}
 }
 
+// TestAuditAPIChangesDespiteCompilableCandidate checks audit API changes despite compilable
+// candidate.
 func TestAuditAPIChangesDespiteCompilableCandidate(t *testing.T) {
 	t.Parallel()
 	before := auditFixture(t, map[string]string{"commands/types.gen.go": `package commands
@@ -331,6 +345,7 @@ func TestAuditAPIChangesDespiteCompilableCandidate(t *testing.T) {
 	}
 }
 
+// TestProvenanceUsesSelectedBranch checks that provenance uses selected branch.
 func TestProvenanceUsesSelectedBranch(t *testing.T) {
 	t.Parallel()
 	root := auditFixture(t, map[string]string{"mdm/commands/a.yaml": auditSchema})
@@ -347,6 +362,8 @@ func TestProvenanceUsesSelectedBranch(t *testing.T) {
 	}
 }
 
+// TestBoundaryCasesCompareSourceAcrossVersionsAndContexts checks boundary cases compare source
+// across versions and contexts.
 func TestBoundaryCasesCompareSourceAcrossVersionsAndContexts(t *testing.T) {
 	t.Parallel()
 	baseline := auditFixture(t, map[string]string{"mdm/commands/a.yaml": auditSchema})

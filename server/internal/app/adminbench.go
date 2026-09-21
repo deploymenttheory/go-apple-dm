@@ -59,6 +59,8 @@ func (a *App) getCommandResult(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// enrollmentAdminRoutes declares profile-issuance, replacement and evidence routes when
+// enrollment is configured.
 func (a *App) enrollmentAdminRoutes() []adminRoute {
 	if a.enroll == nil {
 		return nil
@@ -97,6 +99,8 @@ func (a *App) enrollmentAdminRoutes() []adminRoute {
 	}
 }
 
+// issueEnrollmentProfile validates a bounded issuance request and returns an enrollment
+// profile with caching disabled.
 func (a *App) issueEnrollmentProfile(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Cache-Control", "no-store")
 	var req EnrollmentProfileRequest

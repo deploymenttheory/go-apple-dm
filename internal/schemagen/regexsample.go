@@ -24,6 +24,7 @@ func regexSample(pattern string) (string, bool) {
 	return s, true
 }
 
+// genRegex constructs a sample string from the supported regular-expression syntax.
 func genRegex(re *syntax.Regexp) string {
 	switch re.Op {
 	case syntax.OpLiteral:

@@ -164,6 +164,8 @@ var errBenchSelection = errors.New(
 	"bench: selection contains failed, blocked, or unsupported scenarios; inspect evidence",
 )
 
+// benchEnrollmentOffline exports bench trust material or reports enrollment preflight
+// readiness from the local workspace.
 func benchEnrollmentOffline(e *env, w *bench.Workspace, sub, identity, destination string) error {
 	if sub == "trust" {
 		if destination == "" {
@@ -181,6 +183,7 @@ func benchEnrollmentOffline(e *env, w *bench.Workspace, sub, identity, destinati
 	return nil
 }
 
+// benchReplace runs the selected controlled identity-replacement bench workflow.
 func benchReplace(
 	ctx context.Context,
 	e *env,
@@ -196,6 +199,7 @@ func benchReplace(
 	return wrapError(err)
 }
 
+// benchList prints the bench scenario catalogue and its execution requirements.
 func benchList(e *env, format string) error {
 	if format == "markdown" {
 		_, err := fmt.Fprint(e.stdout, bench.Markdown())
@@ -204,6 +208,8 @@ func benchList(e *env, format string) error {
 	return wrapError(json.NewEncoder(e.stdout).Encode(bench.Catalogue()))
 }
 
+// benchUp runs the bench supervisor with cancellation on interrupt or termination
+// signals.
 func benchUp(ctx context.Context, e *env, w *bench.Workspace, binary string) error {
 	ctx, cancel := signal.NotifyContext(ctx, os.Interrupt, syscall.SIGTERM)
 	defer cancel()

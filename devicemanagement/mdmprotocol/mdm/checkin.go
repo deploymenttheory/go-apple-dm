@@ -35,6 +35,7 @@ func WithLimits(d plist.Decoder) DecodeOption {
 	return func(o *decodeOptions) { o.dec = d }
 }
 
+// applyDecodeOptions combines decoder options before parsing a check-in message.
 func applyDecodeOptions(opts []DecodeOption) decodeOptions {
 	var o decodeOptions
 	for _, opt := range opts {

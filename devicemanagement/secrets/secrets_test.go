@@ -14,6 +14,8 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/secrets"
 )
 
+// TestSecretsRedacted checks secret redaction across formatting and encoding and verifies copied
+// access to secret bytes.
 func TestSecretsRedacted(t *testing.T) {
 	t.Parallel()
 	s := secrets.New([]byte("hunter2"))
@@ -54,6 +56,8 @@ func TestSecretsRedacted(t *testing.T) {
 	}
 }
 
+// TestProviders checks static, environment, directory, and chained secret providers, including
+// size limits and hard failures.
 func TestProviders(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
@@ -142,6 +146,7 @@ func TestProviders(t *testing.T) {
 
 type failing struct{}
 
+// Get returns a synthetic secret-provider outage.
 func (failing) Get(context.Context, string) (secrets.Secret, error) {
 	return secrets.Secret{}, errors.New("vault down")
 }

@@ -54,6 +54,7 @@ func (t *txStore) PutAccount(ctx context.Context, a *dep.Account) error {
 
 type scanner interface{ Scan(dest ...any) error }
 
+// scanAccount decodes account metadata and opens its sealed OAuth credentials.
 func (t *txStore) scanAccount(row scanner) (*dep.Account, error) {
 	var a dep.Account
 	var cs, at, as, limits []byte
@@ -165,6 +166,7 @@ func (t *txStore) SetAccountState(ctx context.Context, name string, s dep.Accoun
 	return nil
 }
 
+// validStage accepts only the staged and current token keypair slots.
 func validStage(stage dep.Stage) error {
 	if stage != dep.StageStaged && stage != dep.StageCurrent {
 		return fmt.Errorf("%w: keypair stage %q", dep.ErrInvalid, stage)

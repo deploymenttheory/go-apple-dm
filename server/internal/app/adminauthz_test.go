@@ -37,6 +37,7 @@ func pathFor(pattern string) (method, path string) {
 	return method, "/admin/v1/" + strings.Join(out, "/")
 }
 
+// adminApp builds an in-memory admin application using the supplied event bus.
 func adminApp(t *testing.T, bus *event.Bus) *app.App {
 	t.Helper()
 	return build(t, app.Config{
@@ -124,6 +125,7 @@ type recorder struct {
 	events []event.Event
 }
 
+// handle records the event under the recorder mutex.
 func (r *recorder) handle(_ context.Context, e event.Event) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
@@ -139,6 +141,7 @@ func (r *recorder) reset() {
 	r.events = nil
 }
 
+// ofType returns captured events matching the supplied type under the recorder mutex.
 func (r *recorder) ofType(t event.Type) []event.Event {
 	r.mu.Lock()
 	defer r.mu.Unlock()

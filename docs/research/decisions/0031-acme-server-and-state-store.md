@@ -28,7 +28,7 @@ Bound identifiers authorize a specific enrollment attempt without relying on a p
 
 ## Constraints
 
-Supported identifiers and JWS forms are intentionally bounded. Revocation requires issuance provenance and the registry described in record 0047. Protocol state and external registration calls do not form a distributed transaction: callers must supply a pure signer and idempotent registration, and all replicas must share issuer material and policy. Stop older writers before deploying the changed store contract. Completed legacy records remain readable without a SQL migration.
+Supported identifiers and JWS forms are intentionally bounded. Revocation requires issuance provenance and the registry described in record 0047. Protocol state and external registration calls do not form a distributed transaction: callers must supply a pure signer and idempotent registration, and all replicas must share issuer material and policy. All replicas must implement the same order-locking and registration contract.
 
 ## Verification
 

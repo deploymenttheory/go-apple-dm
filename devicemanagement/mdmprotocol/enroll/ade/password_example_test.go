@@ -7,6 +7,8 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/schema/commands"
 )
 
+// ExamplePasswordHash demonstrates using an ADE password hash in account creation and
+// password-change commands.
 func ExamplePasswordHash() {
 	// Supply the password from your secret input and calibrate iterations for
 	// your deployment. This iteration count is illustrative, not a recommendation.

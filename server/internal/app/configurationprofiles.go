@@ -13,6 +13,8 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/server/webhook"
 )
 
+// wireConfigurationProfiles constructs profile hosting with shared state, the DDM engine
+// and stored enrollment-target resolution.
 func (a *App) wireConfigurationProfiles(ctx context.Context) error {
 	st, err := a.protocolState(ctx)
 	if err != nil {
@@ -27,6 +29,8 @@ func (a *App) wireConfigurationProfiles(ctx context.Context) error {
 	return err
 }
 
+// wireConfigurationProfileDownloads mounts certificate-authenticated profile downloads,
+// using the supplied proxy fetcher when present and local hosting otherwise.
 func (a *App) wireConfigurationProfileDownloads(mux *http.ServeMux, remote proxyclient.ConfigurationProfileFetcher) {
 	mux.Handle("GET "+configurationprofile.Path+"{revision}", a.certSource()(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		q := r.URL.Query()

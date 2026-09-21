@@ -13,6 +13,7 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/plist"
 )
 
+// TestSign checks fake ADE signatures, certificate-chain variants, and embedded content.
 func TestSign(t *testing.T) {
 	t.Parallel()
 	chain := adetest.NewChain(t)
@@ -70,6 +71,7 @@ func TestSign(t *testing.T) {
 	})
 }
 
+// TestRequest checks fake ADE request lanes, origins, and headers.
 func TestRequest(t *testing.T) {
 	t.Parallel()
 	chain := adetest.NewChain(t)

@@ -334,6 +334,8 @@ func nested(open, closing string, n int) string {
 	return strings.Repeat(open, n) + strings.Repeat(closing, n)
 }
 
+// TestCanonicalizeErrors checks that malformed canonical JSON returns errors without output and
+// fails Valid.
 func TestCanonicalizeErrors(t *testing.T) {
 	t.Parallel()
 	for _, tc := range errorCases {
@@ -353,6 +355,8 @@ func TestCanonicalizeErrors(t *testing.T) {
 	}
 }
 
+// TestCanonicalizeErrorMessages checks useful canonical JSON error messages and wrapped syntax,
+// duplicate-name, and range errors.
 func TestCanonicalizeErrorMessages(t *testing.T) {
 	t.Parallel()
 	_, err := canonjson.Canonicalize(nil)
@@ -373,6 +377,7 @@ func TestCanonicalizeErrorMessages(t *testing.T) {
 	}
 }
 
+// TestMaxDepth checks canonical JSON nesting limits across arrays and objects.
 func TestMaxDepth(t *testing.T) {
 	t.Parallel()
 	in := nested("[", "]", canonjson.MaxDepth)
@@ -393,6 +398,7 @@ func TestMaxDepth(t *testing.T) {
 	}
 }
 
+// TestAppend checks canonical append output and preservation of the destination on errors.
 func TestAppend(t *testing.T) {
 	t.Parallel()
 	dst := []byte("prefix:")
@@ -433,6 +439,7 @@ type marshalDoc struct {
 	Ratio   float64        `json:"ratio"`
 }
 
+// TestMarshal checks canonical marshaling, large integers, and rejection of unsupported Go values.
 func TestMarshal(t *testing.T) {
 	t.Parallel()
 	doc := marshalDoc{
@@ -467,6 +474,7 @@ func TestMarshal(t *testing.T) {
 	}
 }
 
+// TestValid checks JSON validity classification for valid and invalid inputs.
 func TestValid(t *testing.T) {
 	t.Parallel()
 	cases := []struct {
@@ -492,6 +500,8 @@ func TestValid(t *testing.T) {
 	}
 }
 
+// FuzzCanonicalize checks canonical JSON validity, idempotence, preserved values, and absence of
+// output on errors.
 func FuzzCanonicalize(f *testing.F) {
 	for _, tc := range allCases() {
 		f.Add([]byte(tc.in))

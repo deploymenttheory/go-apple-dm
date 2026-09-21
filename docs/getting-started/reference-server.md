@@ -54,7 +54,7 @@ The package contains:
 | `dmctl` | CLI container, run on demand with the tools profile; uses the same CA and token files |
 
 The named `state` volume holds configuration, SQLite data and keys under `/data`.
-The server uses runtime role `all` and certificate role `customer`. Port 8443 is
+The server runs MDM and DDM together and uses certificate role `customer`. Port 8443 is
 published on the host's **loopback address only**.
 
 If port 8443 is occupied, set `export QUICKSTART_PORT=18443` before `dc up`.

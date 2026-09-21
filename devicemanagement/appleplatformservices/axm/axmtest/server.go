@@ -265,6 +265,7 @@ type recorder struct {
 	status int
 }
 
+// WriteHeader records the response status before forwarding it to the underlying writer.
 func (r *recorder) WriteHeader(code int) {
 	r.status = code
 	r.ResponseWriter.WriteHeader(code)
@@ -502,6 +503,7 @@ func (s *Server) apiError(
 	}})
 }
 
+// notFound writes the fake service's missing-resource error response.
 func (s *Server) notFound(w http.ResponseWriter, typ, id string) {
 	s.apiError(
 		w,
@@ -512,6 +514,7 @@ func (s *Server) notFound(w http.ResponseWriter, typ, id string) {
 	)
 }
 
+// badParameter writes the fake service's invalid-parameter error response.
 func (s *Server) badParameter(w http.ResponseWriter, name, detail string) {
 	s.apiError(
 		w,
@@ -522,6 +525,7 @@ func (s *Server) badParameter(w http.ResponseWriter, name, detail string) {
 	)
 }
 
+// conflict writes the fake service's conflicting-state error response.
 func (s *Server) conflict(w http.ResponseWriter, code, detail, pointer string) {
 	var src map[string]any
 	if pointer != "" {

@@ -17,6 +17,8 @@ const (
 	ActionRevokeCertificates = "revokeCertificates"
 )
 
+// pkiAdminRoutes declares certificate lookup, import and revocation routes when
+// certificate status services are enabled.
 func (a *App) pkiAdminRoutes() []adminRoute {
 	if a.revocations == nil {
 		return nil
@@ -150,6 +152,8 @@ func (a *App) pkiAdminRoutes() []adminRoute {
 	}
 }
 
+// pkiError maps revocation errors to fixed HTTP status text without exposing internal
+// error details.
 func pkiError(w http.ResponseWriter, err error) {
 	status := http.StatusInternalServerError
 	switch {

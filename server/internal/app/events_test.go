@@ -16,6 +16,7 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/event"
 )
 
+// TestEventLimitsEnvironment checks event-bus limits parsed from environment variables.
 func TestEventLimitsEnvironment(t *testing.T) {
 	for _, tc := range []struct {
 		key, value string
@@ -75,6 +76,7 @@ func TestEventLimitsEnvironment(t *testing.T) {
 	}
 }
 
+// TestEventReporterRateLimitsWithoutPayloads checks event reporter rate limits without payloads.
 func TestEventReporterRateLimitsWithoutPayloads(t *testing.T) {
 	var logs bytes.Buffer
 	clk := clock.NewFake(time.Now())
@@ -99,6 +101,7 @@ func TestEventReporterRateLimitsWithoutPayloads(t *testing.T) {
 	}
 }
 
+// TestEventBusStatsAndOwnership checks event bus stats and ownership.
 func TestEventBusStatsAndOwnership(t *testing.T) {
 	synctest.Test(t, func(t *testing.T) {
 		var logs bytes.Buffer
@@ -163,6 +166,7 @@ func TestEventBusStatsAndOwnership(t *testing.T) {
 	}
 }
 
+// TestEventBusCleanupOnBuildFailure checks event bus cleanup on build failure.
 func TestEventBusCleanupOnBuildFailure(t *testing.T) {
 	synctest.Test(t, func(t *testing.T) {
 		_, err := Build(

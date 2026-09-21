@@ -135,6 +135,8 @@ func TestStrictKeyringRefusesPlaintext(t *testing.T) {
 	}
 }
 
+// TestMoreFailurePaths checks DEP SQL failures for unavailable keys, cascade deletion, dialects,
+// and schema conflicts.
 func TestMoreFailurePaths(t *testing.T) {
 	ctx := context.Background()
 	t.Run("SealedRowWithoutKeyring", func(t *testing.T) {

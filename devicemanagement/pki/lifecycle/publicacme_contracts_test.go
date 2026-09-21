@@ -33,6 +33,8 @@ type acmeAuthority struct {
 	failPath                                                string
 }
 
+// acmeFixture creates a public ACME lifecycle fixture with a trusted fake authority and pending
+// HTTPS identity.
 func acmeFixture(t *testing.T) (*Manager, *faultRepository, *acmeAuthority) {
 	t.Helper()
 	m, s, now := testManager(t)
@@ -71,6 +73,8 @@ func acmeFixture(t *testing.T) (*Manager, *faultRepository, *acmeAuthority) {
 	}
 }
 
+// RoundTrip serves the fake ACME authority's discovery, issuance, and HTTP-01 validation
+// responses.
 func (a *acmeAuthority) RoundTrip(r *http.Request) (*http.Response, error) {
 	a.requests[r.URL.Path]++
 	if a.before != nil {
@@ -170,6 +174,8 @@ func (a *acmeAuthority) RoundTrip(r *http.Request) (*http.Response, error) {
 	}, nil
 }
 
+// TestPublicACMEFencesFailuresAndInterruptedWorkers checks public ACME fences failures and
+// interrupted workers.
 func TestPublicACMEFencesFailuresAndInterruptedWorkers(t *testing.T) {
 	for _, mode := range []string{"unconfigured", "lease held", "invalid account key", "invalid order", "invalid order persistence", "missing challenge", "challenge storage", "wait order", "missing CSR", "material read", "certificate rejected", "lease expired", "lease replaced", "account persistence", "order persistence", "certificate persistence", "persistence read", "activation read", "activation lease"} {
 		t.Run(mode, func(t *testing.T) {
@@ -291,6 +297,8 @@ func TestPublicACMEFencesFailuresAndInterruptedWorkers(t *testing.T) {
 	}
 }
 
+// TestPublicACMECompletesAndResumesPersistedOrders checks that public ACME completes and resumes
+// persisted orders.
 func TestPublicACMECompletesAndResumesPersistedOrders(t *testing.T) {
 	for _, mode := range []string{"new", "existing account", "processing challenge", "authorized", "issued certificate"} {
 		t.Run(mode, func(t *testing.T) {
@@ -353,6 +361,7 @@ func TestPublicACMECompletesAndResumesPersistedOrders(t *testing.T) {
 	}
 }
 
+// TestPublicACMEFailureBackoffAndRecovery checks public ACME failure backoff and recovery.
 func TestPublicACMEFailureBackoffAndRecovery(t *testing.T) {
 	for _, path := range []string{"/account", "/new-order", "/order", "/auth", "/challenge", "/finalize", "/cert"} {
 		t.Run(path, func(t *testing.T) {
@@ -377,6 +386,8 @@ func TestPublicACMEFailureBackoffAndRecovery(t *testing.T) {
 	}
 }
 
+// TestPublicACMEConfigurationAndChallengeIsolation checks public ACME configuration and challenge
+// isolation.
 func TestPublicACMEConfigurationAndChallengeIsolation(t *testing.T) {
 	m, s, ca := acmeFixture(t)
 	ctx := t.Context()

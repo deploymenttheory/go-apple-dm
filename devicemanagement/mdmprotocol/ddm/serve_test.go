@@ -43,6 +43,7 @@ type itemRef struct {
 	ServerToken string `json:"ServerToken"`
 }
 
+// tokens fetches and decodes the tokens response, returning both the parsed value and JSON bytes.
 func tokens(t *testing.T, h *harness, id mdm.EnrollmentID) (tokensResponse, []byte) {
 	t.Helper()
 	body, err := h.engine.Tokens(context.Background(), id)
@@ -56,6 +57,7 @@ func tokens(t *testing.T, h *harness, id mdm.EnrollmentID) (tokensResponse, []by
 	return out, body
 }
 
+// items fetches and decodes declaration items, returning both the parsed value and JSON bytes.
 func items(t *testing.T, h *harness, id mdm.EnrollmentID) (itemsResponse, []byte) {
 	t.Helper()
 	body, err := h.engine.DeclarationItems(context.Background(), id)
@@ -69,6 +71,7 @@ func items(t *testing.T, h *harness, id mdm.EnrollmentID) (itemsResponse, []byte
 	return out, body
 }
 
+// TestTokens checks token response stability, timestamps, empty manifests, and wire format.
 func TestTokens(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
@@ -160,6 +163,7 @@ func TestTokens(t *testing.T) {
 	})
 }
 
+// TestDeclarationItems checks that declaration items contain all four sorted kind arrays.
 func TestDeclarationItems(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
@@ -263,6 +267,8 @@ func TestDeclarationItems(t *testing.T) {
 	})
 }
 
+// TestDeclaration checks snapshot-version delivery, expansion tokens, missing declarations, and
+// kind validation.
 func TestDeclaration(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
@@ -420,6 +426,7 @@ func TestDeclaration(t *testing.T) {
 	})
 }
 
+// TestHandle checks DDM endpoint dispatch, status data requirements, and HTTP result mapping.
 func TestHandle(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()

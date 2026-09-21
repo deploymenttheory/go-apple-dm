@@ -10,6 +10,8 @@ import (
 	"github.com/deploymenttheory/go-apfs-v2/pkg/hfsplus"
 )
 
+// dmg reads a disk image without mounting it and inspects discovered application content
+// within configured limits.
 func (i *inspector) dmg(filename, location string, depth int) error {
 	// #nosec G115 -- Inspect validates positive byte limits at or below one TiB.
 	r, err := disk.OpenDMGWithLimits(filename, disk.DMGLimits{ImageBytes: uint64(i.opts.MaxExpandedBytes), ChunkBytes: uint64(min(i.opts.MaxBytes, 64<<20))})

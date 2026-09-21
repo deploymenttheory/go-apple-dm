@@ -7,6 +7,7 @@ import (
 	"testing"
 )
 
+// makeWorldReadable sets world-readable Unix permissions on a fixture file.
 func makeWorldReadable(t *testing.T, path string) {
 	t.Helper()
 	// #nosec G302 -- Deliberately public permissions exercise file permission handling.

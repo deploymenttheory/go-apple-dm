@@ -17,6 +17,8 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/server/recovery"
 )
 
+// TestRecoveryCommandsPreserveEnrollmentAndIssuer checks recovery commands preserve enrollment and
+// issuer.
 func TestRecoveryCommandsPreserveEnrollmentAndIssuer(t *testing.T) {
 	dir := t.TempDir()
 	env := noConfig(t)
@@ -138,6 +140,8 @@ func TestRecoveryCommandsPreserveEnrollmentAndIssuer(t *testing.T) {
 	}
 }
 
+// TestRecoveryPauseRetainsOwnershipAfterTimeout checks that recovery pause retains ownership after
+// timeout.
 func TestRecoveryPauseRetainsOwnershipAfterTimeout(t *testing.T) {
 	dir, env := t.TempDir(), noConfig(t)
 	source := filepath.Join(dir, "source")
@@ -227,6 +231,7 @@ func TestRecoveryPauseRetainsOwnershipAfterTimeout(t *testing.T) {
 	}
 }
 
+// TestRecoveryCommandUsage checks recovery-command usage validation.
 func TestRecoveryCommandUsage(t *testing.T) {
 	for _, args := range [][]string{
 		{}, {"unknown"}, {"keygen"}, {"status"}, {"pause"}, {"verify"}, {"restore"}, {"verify", "-unknown"}, {"status", "extra"},

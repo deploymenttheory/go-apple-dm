@@ -13,6 +13,7 @@ import (
 
 type deletionExpander struct{}
 
+// Expand returns the configured declaration expansion for the deletion-access contract.
 func (deletionExpander) Expand(
 	_ context.Context,
 	_ mdm.EnrollmentID,

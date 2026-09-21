@@ -6,8 +6,12 @@
 // One client supports multiple named accounts with credentials and sessions
 // supplied by Store. OAuth 1.0a signing, coordinated session refresh, typed
 // service errors and token-expiry checks manage account access. Syncer commits
-// each cursor with its page for at-least-once delivery; Assigner derives work
-// from stored profile state and records per-device outcomes with backoff.
+// each cursor with its page and fences stale responses with persisted revisions.
+// Full fetches record generation membership; only a successfully completed fetch
+// tombstones devices absent from its snapshot. Assigner derives work from stored
+// profile state, uses an account lease, and retains account-wide retry deadlines
+// and per-device outcomes across worker replacement. These persistence and
+// reconciliation rules are project policy around Apple's fetch and sync APIs.
 //
 // Persistence implementations live in storage/dep and server/depstore. The
 // separate axm package implements the Apple Business Manager and Apple School

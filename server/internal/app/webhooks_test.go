@@ -22,6 +22,8 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/server/webhook"
 )
 
+// TestWebhookSensitiveAccessRequiresSeparateGrant checks that webhook sensitive access requires
+// separate grant.
 func TestWebhookSensitiveAccessRequiresSeparateGrant(t *testing.T) {
 	receiver := newCollector().server(t)
 	cfg := nativeWebhookConfig(t, receiver)
@@ -94,6 +96,8 @@ func TestWebhookSensitiveAccessRequiresSeparateGrant(t *testing.T) {
 	}
 }
 
+// TestWebhookObservesRejectedContentCacheWithoutCredentialLeak checks webhook observes rejected
+// content cache without credential leak.
 func TestWebhookObservesRejectedContentCacheWithoutCredentialLeak(t *testing.T) {
 	receiver := newCollector().server(t)
 	cfg := nativeWebhookConfig(t, receiver)
@@ -117,6 +121,7 @@ func TestWebhookObservesRejectedContentCacheWithoutCredentialLeak(t *testing.T) 
 	}
 }
 
+// TestWebhookEnvironment checks native webhook environment configuration.
 func TestWebhookEnvironment(t *testing.T) {
 	for _, tc := range []struct {
 		key, value string
@@ -166,6 +171,7 @@ func TestWebhookEnvironment(t *testing.T) {
 	}
 }
 
+// TestWebhookSimulatorEnrollmentAndCommand checks webhook simulator enrollment and command.
 func TestWebhookSimulatorEnrollmentAndCommand(t *testing.T) {
 	type received struct {
 		body    []byte

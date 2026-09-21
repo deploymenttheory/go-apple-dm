@@ -16,6 +16,8 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/server/recovery"
 )
 
+// TestRootRecoveryRequiresOwnedFenceAndCapturesAudit checks that root recovery requires owned
+// fence and captures audit.
 func TestRootRecoveryRequiresOwnedFenceAndCapturesAudit(t *testing.T) {
 	dir := t.TempDir()
 	env := noConfig(t)

@@ -7,6 +7,7 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/server/eventsink"
 )
 
+// TestRejectedCommandProjection checks safe event projection of command rejections.
 func TestRejectedCommandProjection(t *testing.T) {
 	t.Parallel()
 	record := eventsink.Default().

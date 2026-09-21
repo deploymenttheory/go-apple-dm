@@ -40,6 +40,7 @@ func (f *Failing) SetFail(fail map[string]error) {
 	f.Fail = fail
 }
 
+// fail returns the configured failure for an operation when fault injection is enabled.
 func (f *Failing) fail(method string) error {
 	f.mu.Lock()
 	defer f.mu.Unlock()
@@ -183,6 +184,8 @@ func (f *Failing) Prune(ctx context.Context, before time.Time) (int, error) {
 
 // The transaction view applies the same failures inside Update.
 
+// GetAccount injects the configured GetAccount failure before calling the underlying store
+// or transaction.
 func (t *txView) GetAccount(ctx context.Context, id string) (*acme.Account, error) {
 	if err := t.f.fail("GetAccount"); err != nil {
 		return nil, err
@@ -190,6 +193,8 @@ func (t *txView) GetAccount(ctx context.Context, id string) (*acme.Account, erro
 	return t.tx.GetAccount(ctx, id)
 }
 
+// AccountByThumbprint injects the configured AccountByThumbprint failure before calling the
+// underlying store or transaction.
 func (t *txView) AccountByThumbprint(ctx context.Context, thumbprint string) (*acme.Account, error) {
 	if err := t.f.fail("AccountByThumbprint"); err != nil {
 		return nil, err
@@ -197,6 +202,8 @@ func (t *txView) AccountByThumbprint(ctx context.Context, thumbprint string) (*a
 	return t.tx.AccountByThumbprint(ctx, thumbprint)
 }
 
+// GetOrder injects the configured GetOrder failure before calling the underlying store or
+// transaction.
 func (t *txView) GetOrder(ctx context.Context, id string) (*acme.Order, error) {
 	if err := t.f.fail("GetOrder"); err != nil {
 		return nil, err
@@ -204,6 +211,8 @@ func (t *txView) GetOrder(ctx context.Context, id string) (*acme.Order, error) {
 	return t.tx.GetOrder(ctx, id)
 }
 
+// GetAuthorization injects the configured GetAuthorization failure before calling the
+// underlying store or transaction.
 func (t *txView) GetAuthorization(ctx context.Context, id string) (*acme.Authorization, error) {
 	if err := t.f.fail("GetAuthorization"); err != nil {
 		return nil, err
@@ -211,6 +220,8 @@ func (t *txView) GetAuthorization(ctx context.Context, id string) (*acme.Authori
 	return t.tx.GetAuthorization(ctx, id)
 }
 
+// GetChallenge injects the configured GetChallenge failure before calling the underlying
+// store or transaction.
 func (t *txView) GetChallenge(ctx context.Context, id string) (*acme.Challenge, error) {
 	if err := t.f.fail("GetChallenge"); err != nil {
 		return nil, err
@@ -218,6 +229,8 @@ func (t *txView) GetChallenge(ctx context.Context, id string) (*acme.Challenge, 
 	return t.tx.GetChallenge(ctx, id)
 }
 
+// GetCertificate injects the configured GetCertificate failure before calling the
+// underlying store or transaction.
 func (t *txView) GetCertificate(ctx context.Context, id string) (*acme.Certificate, error) {
 	if err := t.f.fail("GetCertificate"); err != nil {
 		return nil, err
@@ -225,6 +238,8 @@ func (t *txView) GetCertificate(ctx context.Context, id string) (*acme.Certifica
 	return t.tx.GetCertificate(ctx, id)
 }
 
+// ListOrders injects the configured ListOrders failure before calling the underlying store
+// or transaction.
 func (t *txView) ListOrders(
 	ctx context.Context,
 	accountID string,
@@ -236,6 +251,8 @@ func (t *txView) ListOrders(
 	return t.tx.ListOrders(ctx, accountID, p)
 }
 
+// ListCertificates injects the configured ListCertificates failure before calling the
+// underlying store or transaction.
 func (t *txView) ListCertificates(
 	ctx context.Context,
 	q acme.CertificateQuery,
@@ -247,6 +264,8 @@ func (t *txView) ListCertificates(
 	return t.tx.ListCertificates(ctx, q, p)
 }
 
+// PutAccount injects the configured PutAccount failure before calling the underlying store
+// or transaction.
 func (t *txView) PutAccount(ctx context.Context, a *acme.Account) error {
 	if err := t.f.fail("PutAccount"); err != nil {
 		return err
@@ -254,6 +273,8 @@ func (t *txView) PutAccount(ctx context.Context, a *acme.Account) error {
 	return t.tx.PutAccount(ctx, a)
 }
 
+// PutOrder injects the configured PutOrder failure before calling the underlying store or
+// transaction.
 func (t *txView) PutOrder(ctx context.Context, o *acme.Order) error {
 	if err := t.f.fail("PutOrder"); err != nil {
 		return err
@@ -261,6 +282,8 @@ func (t *txView) PutOrder(ctx context.Context, o *acme.Order) error {
 	return t.tx.PutOrder(ctx, o)
 }
 
+// PutAuthorization injects the configured PutAuthorization failure before calling the
+// underlying store or transaction.
 func (t *txView) PutAuthorization(ctx context.Context, a *acme.Authorization) error {
 	if err := t.f.fail("PutAuthorization"); err != nil {
 		return err
@@ -268,6 +291,8 @@ func (t *txView) PutAuthorization(ctx context.Context, a *acme.Authorization) er
 	return t.tx.PutAuthorization(ctx, a)
 }
 
+// PutChallenge injects the configured PutChallenge failure before calling the underlying
+// store or transaction.
 func (t *txView) PutChallenge(ctx context.Context, c *acme.Challenge) error {
 	if err := t.f.fail("PutChallenge"); err != nil {
 		return err
@@ -275,6 +300,8 @@ func (t *txView) PutChallenge(ctx context.Context, c *acme.Challenge) error {
 	return t.tx.PutChallenge(ctx, c)
 }
 
+// PutCertificate injects the configured PutCertificate failure before calling the
+// underlying store or transaction.
 func (t *txView) PutCertificate(ctx context.Context, c *acme.Certificate) error {
 	if err := t.f.fail("PutCertificate"); err != nil {
 		return err
@@ -282,6 +309,8 @@ func (t *txView) PutCertificate(ctx context.Context, c *acme.Certificate) error 
 	return t.tx.PutCertificate(ctx, c)
 }
 
+// ClaimIdentifier injects the configured ClaimIdentifier failure before calling the
+// underlying store or transaction.
 func (t *txView) ClaimIdentifier(ctx context.Context, identifier, orderID string) error {
 	if err := t.f.fail("ClaimIdentifier"); err != nil {
 		return err

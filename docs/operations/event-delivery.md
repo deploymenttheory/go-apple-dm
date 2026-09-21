@@ -17,12 +17,9 @@ bus have no persistent event history.
 | In-memory application audit | Bounded asynchronous bus delivery. No restart recovery. Managed webhooks require SQL. |
 
 [Native webhooks](webhooks.md) use managed subscriptions enabled by
-`DM_WEBHOOKS_ENABLED`. They have an independent envelope, root-controlled sensitive
+`DM_WEBHOOKS_ENABLED`. They have an independent envelope, separately authorized sensitive
 representations, encrypted captures, Standard Webhooks signatures and authenticated
 payload references. `dmctl webhooks` manages their configuration, delivery and replay.
-The former `DM_WEBHOOK_URL`/`DM_WEBHOOK_HMAC_KEY` settings now fail with migration
-guidance. Audit and ordinary event inspection retain their existing safe projections.
-
 `DM_EVENT_WORKERS`, `DM_EVENT_QUEUE_CAPACITY` and `DM_EVENT_DELIVERY_TIMEOUT` affect
 the in-memory bus, including slog, rather than persistent destination scheduling.
 Persistent workers currently default to a ten-second attempt timeout and one-second
@@ -39,8 +36,7 @@ authorize the denied request.
 
 ## Inspect and retry
 
-Use the ordinary authenticated `dmctl` configuration. These commands are already
-implemented:
+Use the ordinary authenticated `dmctl` configuration. The commands are:
 
 ```bash
 dmctl events status
@@ -60,7 +56,7 @@ The equivalent routes are under `/admin/v1`:
 | `GET /events/{event}` | One original projected occurrence |
 | `POST /events/{event}/retry` | Reset an eligible waiting/blocked delivery using `{"destination":"DESTINATION_ID"}` |
 
-Reads require `ActionReadAudit`; retry requires `ActionRetryEvents` under the
+Reads require `readAudit`; retry requires `retryEvents` under the
 existing admin authorization rules. Routes are registered only with a persistent
 event store. `dmctl routes` reports the available surface.
 
@@ -80,8 +76,7 @@ return HTTP 409. It does not create a new destination or replay a delivered reco
 Native webhooks store opaque scheduling markers in this outbox and encrypted bodies
 in their own tables. Use `dmctl webhooks` for retry/replay; the generic event retry
 endpoint rejects native destinations so it cannot bypass sensitive-payload authority.
-Legacy `webhook:` destination IDs remain in history and are not mapped to managed
-subscriptions. Native audit uses the destination ID `audit`.
+Native audit uses the destination ID `audit`.
 
 Native webhook retention prunes its payloads and scheduling records independently.
 The ordinary projected journal has no general retention worker; audit retention only

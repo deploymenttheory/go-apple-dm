@@ -28,6 +28,8 @@ func goldenToken(t *testing.T) string {
 	return strings.TrimSpace(string(b))
 }
 
+// TestDeclarationsToken checks declaration-token length, order independence, content sensitivity,
+// framing, and backend consistency.
 func TestDeclarationsToken(t *testing.T) {
 	t.Parallel()
 	a := ddm.DeclarationRef{Kind: schemaddm.KindConfiguration, Identifier: "com.example.a", ServerToken: "t1"}
@@ -85,6 +87,7 @@ func TestDeclarationsToken(t *testing.T) {
 	})
 }
 
+// TestTokenFor checks canonical declaration hashing and independence from time.
 func TestTokenFor(t *testing.T) {
 	t.Parallel()
 	target := support.Target{}
@@ -149,6 +152,7 @@ func TestTokenFor(t *testing.T) {
 	})
 }
 
+// TestSortRefs checks reference ordering without mutating the input slice.
 func TestSortRefs(t *testing.T) {
 	t.Parallel()
 	refs := []ddm.DeclarationRef{
@@ -166,6 +170,7 @@ func TestSortRefs(t *testing.T) {
 	}
 }
 
+// TestParseEndpoint checks DDM endpoint parsing, formatting, and invalid endpoint rejection.
 func TestParseEndpoint(t *testing.T) {
 	t.Parallel()
 	good := map[string]ddm.Endpoint{

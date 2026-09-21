@@ -17,6 +17,8 @@ var generatedColumns = map[string]string{
 	"ddm_status_reports": "seq", "ddm_status_errors": "seq",
 }
 
+// snapshotSequences records database sequence state needed to continue allocating IDs after
+// restore.
 func (s SQL) snapshotSequences(
 	ctx context.Context,
 	q sqlcommon.Queryer,
@@ -64,6 +66,7 @@ func (s SQL) snapshotSequences(
 	return out, nil
 }
 
+// sequenceName resolves the sequence associated with a generated-key column.
 func (s SQL) sequenceName(
 	ctx context.Context,
 	q sqlcommon.Queryer,
@@ -88,6 +91,7 @@ func (s SQL) sequenceName(
 	return strings.Join(parts, "."), nil
 }
 
+// validateSequences checks sequence metadata against the compiled checkpoint schema.
 func validateSequences(info databaseSnapshot) error {
 	expected := map[string]string{}
 	for _, table := range info.Tables {
@@ -108,6 +112,7 @@ func validateSequences(info databaseSnapshot) error {
 	return nil
 }
 
+// restoreSequences restores the sequence positions after the table data has been loaded.
 func (s SQL) restoreSequences(
 	ctx context.Context,
 	q sqlcommon.Queryer,

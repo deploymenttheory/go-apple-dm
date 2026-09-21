@@ -50,6 +50,7 @@ func TestHelpFlags(t *testing.T) {
 	}
 }
 
+// TestHelpDoesNotPerformOperations checks that help does not perform operations.
 func TestHelpDoesNotPerformOperations(t *testing.T) {
 	var requests atomic.Int32
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
@@ -92,6 +93,8 @@ func TestFlagWithEqualsAfterPositional(t *testing.T) {
 	}
 }
 
+// TestConfigTokenSources checks inline and file-based CLI token sources and missing or empty
+// configuration.
 func TestConfigTokenSources(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Header.Get("Authorization") != "Bearer from-config" {
@@ -164,6 +167,7 @@ func TestConfigTokenSources(t *testing.T) {
 	})
 }
 
+// TestDefaultConfigPathHomeFallback checks default config path home fallback.
 func TestDefaultConfigPathHomeFallback(t *testing.T) {
 	got := dmctl.DefaultConfigPath(func(k string) string {
 		if k == "HOME" {

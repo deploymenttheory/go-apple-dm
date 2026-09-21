@@ -122,6 +122,8 @@ func (e *Engine) RemoveFromSet(ctx context.Context, set, identifier string) (boo
 	})
 }
 
+// setMembership changes a set's declaration membership and records affected enrollments in
+// the same transaction.
 func (e *Engine) setMembership(ctx context.Context, set string, op func(Tx) (bool, error)) (bool, error) {
 	var changed bool
 	now := e.clock.Now()
@@ -168,6 +170,8 @@ func (e *Engine) UnassignDeclaration(ctx context.Context, id mdm.EnrollmentID, i
 	return e.assignment(ctx, id, func(tx Tx) (bool, error) { return tx.UnassignDeclaration(ctx, id, identifier) })
 }
 
+// assignment changes an enrollment's set or declaration assignment and records a
+// synchronization change.
 func (e *Engine) assignment(ctx context.Context, id mdm.EnrollmentID, op func(Tx) (bool, error)) (bool, error) {
 	if err := id.Validate(); err != nil {
 		return false, fmt.Errorf("%w: %w", ErrInvalid, err)

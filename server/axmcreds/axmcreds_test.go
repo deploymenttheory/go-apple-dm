@@ -22,6 +22,7 @@ const (
 	testKeyID    = "e339d085-a821-438a-a527-d044edacf50a"
 )
 
+// newKey generates a P-256 private key, failing the test on error.
 func newKey(t *testing.T) *ecdsa.PrivateKey {
 	t.Helper()
 	key, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
@@ -31,6 +32,7 @@ func newKey(t *testing.T) *ecdsa.PrivateKey {
 	return key
 }
 
+// sec1PEM encodes a private key as SEC 1 PEM, failing the test on error.
 func sec1PEM(t *testing.T, key *ecdsa.PrivateKey) []byte {
 	t.Helper()
 	der, err := x509.MarshalECPrivateKey(key)
@@ -40,6 +42,7 @@ func sec1PEM(t *testing.T, key *ecdsa.PrivateKey) []byte {
 	return pem.EncodeToMemory(&pem.Block{Type: "EC PRIVATE KEY", Bytes: der})
 }
 
+// TestCredentials checks AXM credential encryption at rest and storage failures.
 func TestCredentials(t *testing.T) {
 	t.Parallel()
 	t.Run("SealedAtRest", func(t *testing.T) {

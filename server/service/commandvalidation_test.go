@@ -12,6 +12,7 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/server/service"
 )
 
+// TestEnqueueValidatesWirePayload checks that enqueue validates wire payload.
 func TestEnqueueValidatesWirePayload(t *testing.T) {
 	t.Parallel()
 	for _, off := range []bool{false, true} {
@@ -41,6 +42,7 @@ func TestEnqueueValidatesWirePayload(t *testing.T) {
 	}
 }
 
+// TestEnqueueChecksPresentFieldsPerTarget checks enqueue checks present fields per target.
 func TestEnqueueChecksPresentFieldsPerTarget(t *testing.T) {
 	t.Parallel()
 	for _, off := range []bool{false, true} {
@@ -73,6 +75,8 @@ func TestEnqueueChecksPresentFieldsPerTarget(t *testing.T) {
 	}
 }
 
+// TestEnqueueRetainsUnknownCommandExtensions checks that enqueue retains unknown command
+// extensions.
 func TestEnqueueRetainsUnknownCommandExtensions(t *testing.T) {
 	t.Parallel()
 	h := newHarness(t, service.Config{})
@@ -95,6 +99,8 @@ func TestEnqueueRetainsUnknownCommandExtensions(t *testing.T) {
 	}
 }
 
+// TestEnqueueRequiresInventoryForAdvancedCommands checks that enqueue requires inventory for
+// advanced commands.
 func TestEnqueueRequiresInventoryForAdvancedCommands(t *testing.T) {
 	t.Parallel()
 	for _, device := range []storage.DeviceInfo{

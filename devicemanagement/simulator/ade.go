@@ -38,6 +38,7 @@ type SoftwareUpdateRequired struct {
 	Message      string
 }
 
+// Error returns the diagnostic message for this error.
 func (e *SoftwareUpdateRequired) Error() string {
 	return fmt.Sprintf("simulator: software update required: %s %s", e.OSVersion, e.BuildVersion)
 }

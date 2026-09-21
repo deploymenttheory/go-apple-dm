@@ -14,6 +14,8 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/server/service"
 )
 
+// TestCertificateStatusPrecedesAllSideEffectsAndPinModes checks certificate status precedes all
+// side effects and pin modes.
 func TestCertificateStatusPrecedesAllSideEffectsAndPinModes(t *testing.T) {
 	for _, pin := range []service.PinMode{service.PinEnforce, service.PinWarn, service.PinOff} {
 		t.Run(strconv.Itoa(int(pin)), func(t *testing.T) {
@@ -67,14 +69,21 @@ func TestCertificateStatusPrecedesAllSideEffectsAndPinModes(t *testing.T) {
 
 type failedCompletion struct{}
 
+// Before passes the call context through without vetoing the fixture operation.
 func (failedCompletion) Before(ctx context.Context, _ *service.Call) (context.Context, error) {
 	return ctx, nil
 }
+
+// After leaves the completed call unchanged in this fixture.
 func (failedCompletion) After(context.Context, *service.Call, error) {}
+
+// Complete returns a synthetic association-confirmation failure.
 func (failedCompletion) Complete(context.Context, *service.Call) error {
 	return errors.New("association confirmation unavailable")
 }
 
+// TestCompletionFailureCannotReportSuccessfulAuthenticate checks that completion failure cannot
+// report successful authenticate.
 func TestCompletionFailureCannotReportSuccessfulAuthenticate(t *testing.T) {
 	h := newHarness(t, service.Config{Hooks: []service.Hook{failedCompletion{}}})
 	if _, err := h.core.Checkin(t.Context(), req(h.cert), authenticate(t, "D")); err == nil || service.CodeOf(err) != service.CodeInternal {

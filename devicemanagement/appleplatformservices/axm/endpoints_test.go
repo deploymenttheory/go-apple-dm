@@ -33,6 +33,7 @@ func seedAll(t *testing.T, f *fixture) (serverID string) {
 	return serverID
 }
 
+// TestEndpoints checks AXM endpoint methods, paths, headers, query parameters, and request bodies.
 func TestEndpoints(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t)

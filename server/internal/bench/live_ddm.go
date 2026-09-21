@@ -104,6 +104,7 @@ func liveDDM(ctx context.Context, e *Environment, device string) (err error) {
 	})
 }
 
+// cleanupLiveDDM removes the declarations and assignments created by a live DDM scenario.
 func cleanupLiveDDM(
 	ctx context.Context,
 	e *Environment,
@@ -136,6 +137,8 @@ func cleanupLiveDDM(
 	})
 }
 
+// waitLive polls the supplied live-state predicate until success, cancellation, or a
+// reported failure.
 func waitLive(ctx context.Context, ready func() (bool, error)) error {
 	for {
 		ok, err := ready()

@@ -247,6 +247,8 @@ func (a *App) ddmAdminRoutes() []adminRoute {
 
 type canonicalEnrollmentKey struct{}
 
+// enrollmentFromPath returns the authorized canonical identity when present, otherwise
+// parsing and validating channel, ID and parent parameters.
 func enrollmentFromPath(r *http.Request) (mdm.EnrollmentID, error) {
 	if id, ok := r.Context().Value(canonicalEnrollmentKey{}).(mdm.EnrollmentID); ok {
 		return id, nil
@@ -264,6 +266,8 @@ func enrollmentFromPath(r *http.Request) (mdm.EnrollmentID, error) {
 	return id, nil
 }
 
+// statusFor maps DDM sentinel errors to HTTP status codes, treating unrecognized failures
+// as server errors.
 func statusFor(err error) int {
 	switch {
 	case errors.Is(err, ddm.ErrNotFound):
@@ -279,6 +283,7 @@ func statusFor(err error) int {
 	}
 }
 
+// respond returns 204 after a successful mutation or writes the mapped DDM error.
 func respond(w http.ResponseWriter, err error) {
 	if err != nil {
 		writeError(w, statusFor(err), err)
@@ -287,6 +292,7 @@ func respond(w http.ResponseWriter, err error) {
 	w.WriteHeader(http.StatusNoContent)
 }
 
+// respondChanged returns the mutation's Changed flag or writes the mapped DDM error.
 func respondChanged(w http.ResponseWriter, changed bool, err error) {
 	if err != nil {
 		writeError(w, statusFor(err), err)
@@ -295,6 +301,8 @@ func respondChanged(w http.ResponseWriter, changed bool, err error) {
 	writeJSON(w, http.StatusOK, map[string]any{"Changed": changed})
 }
 
+// writeJSON writes the JSON content type and status before encoding the response. An
+// encoding failure is written to the already-started response.
 func writeJSON(w http.ResponseWriter, status int, v any) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
@@ -307,6 +315,8 @@ func writeJSON(w http.ResponseWriter, status int, v any) {
 	}
 }
 
+// writeError writes the shared JSON error envelope, replacing server-side error details
+// with a fixed message.
 func writeError(w http.ResponseWriter, status int, err error) {
 	msg := err.Error()
 	if status >= http.StatusInternalServerError {

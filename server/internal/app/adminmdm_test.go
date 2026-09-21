@@ -34,6 +34,7 @@ func mdmAdminApp(t *testing.T) (*app.App, string, *recordingPusher) {
 	return a, serve(t, a).URL, p
 }
 
+// jsonBody reads and decodes a JSON response object, failing the test on error.
 func jsonBody(t *testing.T, resp *http.Response) map[string]any {
 	t.Helper()
 	body, err := io.ReadAll(resp.Body)
@@ -47,6 +48,7 @@ func jsonBody(t *testing.T, resp *http.Response) map[string]any {
 	return out
 }
 
+// seed imports an enabled macOS enrollment with fixture push credentials.
 func seed(t *testing.T, a *app.App, udid string) mdm.EnrollmentID {
 	t.Helper()
 	id := mdm.EnrollmentID{Channel: mdm.ChannelDevice, ID: udid}
@@ -325,9 +327,8 @@ func TestMDMAdminRoutesAreGoverned(t *testing.T) {
 	})
 }
 
-// The mdm role owns enrollments, commands and push, and used to serve no
-// admin API at all: adminEnabled was gated on the role rather than on having
-// a credential.
+// TestAdminAPIOnTheMDMRole checks that the unified runtime serves its enrollment
+// admin routes to an authenticated managed principal.
 func TestAdminAPIOnTheMDMRole(t *testing.T) {
 	p := &recordingPusher{}
 	a := build(t, app.Config{
@@ -406,6 +407,7 @@ func TestPushRouteNeedsAPushSource(t *testing.T) {
 	}
 }
 
+// TestMDMAdminBodyLimits checks MDM admin body limits.
 func TestMDMAdminBodyLimits(t *testing.T) {
 	a, srv, _ := mdmAdminApp(t)
 	seed(t, a, "UDID-BIG")
@@ -460,6 +462,7 @@ func TestCommandListingShowsResults(t *testing.T) {
 	}
 }
 
+// TestChannelFilterAcceptsEveryChannel checks that channel filter accepts every channel.
 func TestChannelFilterAcceptsEveryChannel(t *testing.T) {
 	a, srv, _ := mdmAdminApp(t)
 	_ = a
@@ -626,6 +629,7 @@ func TestPushRouteSeparatesRejectionFromADeadToken(t *testing.T) {
 // deadTokenPusher is APNs answering 410 for a token the device no longer has.
 type deadTokenPusher struct{}
 
+// Push reports an invalid, unregistered push token for every target.
 func (deadTokenPusher) Push(_ context.Context, targets []push.Target) (map[mdm.EnrollmentID]push.Result, error) {
 	out := make(map[mdm.EnrollmentID]push.Result, len(targets))
 	for _, tgt := range targets {
@@ -638,6 +642,7 @@ func (deadTokenPusher) Push(_ context.Context, targets []push.Target) (map[mdm.E
 // certificate does not match the token. Every device answers this way.
 type rejectingPusher struct{}
 
+// Push reports a device-token/topic mismatch for every push target.
 func (rejectingPusher) Push(_ context.Context, targets []push.Target) (map[mdm.EnrollmentID]push.Result, error) {
 	out := make(map[mdm.EnrollmentID]push.Result, len(targets))
 	for _, tgt := range targets {

@@ -11,6 +11,8 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/schema/other"
 )
 
+// TestPasswordHashVector checks the independent password-hash vector, embedded plist data, salt
+// randomness, and lengths.
 func TestPasswordHashVector(t *testing.T) {
 	salt := make([]byte, 32)
 	for i := range salt {

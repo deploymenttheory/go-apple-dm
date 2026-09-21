@@ -13,6 +13,8 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/server/internal/dmctl"
 )
 
+// TestCertificateAdministration checks certificate administration requests, offline help, and
+// missing-file or server failures.
 func TestCertificateAdministration(t *testing.T) {
 	if _, _, err := run(t, noConfig(t), "certificates", "status", "-h"); err != nil {
 		t.Fatal("help requires server configuration", err)
