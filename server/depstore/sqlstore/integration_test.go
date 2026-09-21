@@ -22,7 +22,7 @@ import (
 )
 
 // depTables in dependency order for DELETE and DROP.
-var depTables = []string{"dep_assignments", "dep_profiles", "dep_devices", "dep_keypairs", "dep_cursors", "dep_sessions", "dep_accounts"}
+var depTables = []string{"dep_assignment_state", "dep_assignments", "dep_profiles", "dep_devices", "dep_keypairs", "dep_cursors", "dep_sessions", "dep_accounts"}
 
 func runShared(t *testing.T, db *sql.DB, d sqlcommon.Dialect, cascade string) {
 	t.Helper()
@@ -30,10 +30,11 @@ func runShared(t *testing.T, db *sql.DB, d sqlcommon.Dialect, cascade string) {
 	if _, err := db.ExecContext(ctx, "DROP TABLE IF EXISTS "+strings.Join(append(depTables, sqlstore.MigrationsTable), ", ")+cascade); err != nil {
 		t.Fatal(err)
 	}
+	checkSyncStateUpgrade(t, db, d)
 	if _, err := sqlstore.Open(ctx, db, d, sqlstore.Options{}); err != nil {
 		t.Fatal(err)
 	}
-	if v, err := sqlstore.Version(ctx, db, d); err != nil || v != 1 {
+	if v, err := sqlstore.Version(ctx, db, d); err != nil || v != 2 {
 		t.Fatalf("version %d %v", v, err)
 	}
 	if applied, err := sqlstore.Migrate(ctx, db, d); err != nil || len(applied) != 0 {
@@ -53,7 +54,7 @@ func runShared(t *testing.T, db *sql.DB, d sqlcommon.Dialect, cascade string) {
 		}
 		return s
 	})
-	if reverted, err := sqlstore.Rollback(ctx, db, d, 0); err != nil || len(reverted) != 1 {
+	if reverted, err := sqlstore.Rollback(ctx, db, d, 0); err != nil || len(reverted) != 2 {
 		t.Fatalf("rollback: %v %v", reverted, err)
 	}
 }

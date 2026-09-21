@@ -283,8 +283,11 @@ func (c *Client) do(ctx context.Context, r request, out any) error {
 	if err != nil {
 		return fmt.Errorf("%w: reading body: %w", ErrTransport, err)
 	}
-	if out == nil || resp.StatusCode == http.StatusNoContent || len(bytes.TrimSpace(body)) == 0 {
+	if out == nil {
 		return nil
+	}
+	if len(bytes.TrimSpace(body)) == 0 {
+		return fmt.Errorf("%w: %s %s: empty response", ErrDecode, r.method, resp.Request.URL)
 	}
 	if err := json.Unmarshal(body, out); err != nil {
 		return fmt.Errorf("%w: %s %s: %w", ErrDecode, r.method, resp.Request.URL, err)
@@ -293,7 +296,7 @@ func (c *Client) do(ctx context.Context, r request, out any) error {
 }
 
 // roundTrip executes r with authentication, one replay on 401, and the
-// retry policy, returning a response with a status below 400 whose body
+// retry policy, returning a response with a 2xx status whose body
 // the caller closes.
 func (c *Client) roundTrip(ctx context.Context, r request) (*http.Response, error) {
 	target, err := c.url(r)
@@ -327,7 +330,7 @@ func (c *Client) roundTrip(ctx context.Context, r request) (*http.Response, erro
 			}
 			continue
 		}
-		if resp.StatusCode < http.StatusBadRequest {
+		if resp.StatusCode >= http.StatusOK && resp.StatusCode < http.StatusMultipleChoices {
 			return resp, nil
 		}
 		body, _ := io.ReadAll(io.LimitReader(resp.Body, maxErrorBody))

@@ -104,7 +104,7 @@ func (t *txStore) GetAccount(ctx context.Context, name string) (*dep.Account, er
 }
 
 // accountTables lists every table keyed by account, for DeleteAccount.
-var accountTables = []string{"dep_sessions", "dep_cursors", "dep_keypairs", "dep_devices", "dep_profiles", "dep_assignments"}
+var accountTables = []string{"dep_sessions", "dep_cursors", "dep_keypairs", "dep_devices", "dep_profiles", "dep_assignments", "dep_assignment_state"}
 
 // DeleteAccount implements dep.AccountStore.
 func (t *txStore) DeleteAccount(ctx context.Context, name string) error {
@@ -281,7 +281,7 @@ func (t *txStore) Cursor(ctx context.Context, name string) (dep.Cursor, error) {
 	var c dep.Cursor
 	var phase string
 	var fetched sql.NullTime
-	found, err := t.row(ctx, "get cursor", "SELECT value, phase, fetched_until, updated_at FROM dep_cursors WHERE account = ?", []any{name}, &c.Value, &phase, &fetched, &c.UpdatedAt)
+	found, err := t.row(ctx, "get cursor", "SELECT value, phase, fetched_until, updated_at, revision, generation FROM dep_cursors WHERE account = ?", []any{name}, &c.Value, &phase, &fetched, &c.UpdatedAt, &c.Revision, &c.Generation)
 	if err != nil || !found {
 		return dep.Cursor{}, err
 	}
@@ -291,7 +291,7 @@ func (t *txStore) Cursor(ctx context.Context, name string) (dep.Cursor, error) {
 	return c, nil
 }
 
-var cursorCols = []string{"account", "value", "phase", "fetched_until", "updated_at"}
+var cursorCols = []string{"account", "value", "phase", "fetched_until", "updated_at", "revision", "generation"}
 
 // SetCursor implements dep.CursorStore.
 func (t *txStore) SetCursor(ctx context.Context, name string, c dep.Cursor) error {
@@ -302,7 +302,7 @@ func (t *txStore) SetCursor(ctx context.Context, name string, c dep.Cursor) erro
 		_, err := t.exec(ctx, "clear cursor", "DELETE FROM dep_cursors WHERE account = ?", name)
 		return err
 	}
-	_, err := t.exec(ctx, "set cursor", t.upsert("dep_cursors", cursorCols, cursorCols[:1], nil), name, c.Value, string(c.Phase), nullTime(c.FetchedUntil), utc(c.UpdatedAt))
+	_, err := t.exec(ctx, "set cursor", t.upsert("dep_cursors", cursorCols, cursorCols[:1], nil), name, c.Value, string(c.Phase), nullTime(c.FetchedUntil), utc(c.UpdatedAt), c.Revision, c.Generation)
 	return err
 }
 

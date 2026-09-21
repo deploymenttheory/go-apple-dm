@@ -1,4 +1,4 @@
-"""Standard Webhooks receiver with a durable, deduplicated SQLite inbox.
+"""Standard Webhooks receiver with a persisted, deduplicated SQLite inbox.
 
 Run behind verified HTTPS. This example stores received bodies; protect its
 directory and database according to the subscription's disclosure policy.
@@ -85,7 +85,7 @@ def main():
             except sqlite3.Error:
                 self.send_error(503)
                 return
-            # A separate workflow consumer processes this durable inbox.
+            # A separate workflow consumer processes this persisted inbox.
             self.send_response(204)
             self.end_headers()
 

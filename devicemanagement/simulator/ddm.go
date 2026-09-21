@@ -98,7 +98,8 @@ type DDMState struct {
 
 // DDMSyncResult describes one SyncDDM call.
 type DDMSyncResult struct {
-	// Rounds is how many tokens fetches it took to settle.
+	// Rounds is how many token comparisons it took to settle, starting with
+	// the command's token when supplied, otherwise a fetched token.
 	Rounds int
 	// Fetched and Removed list "<kind>/<identifier>" keys.
 	Fetched []string
@@ -259,6 +260,12 @@ func ddmKey(kind schemaddm.Kind, identifier string) string { return string(kind)
 // absent from the manifest, and repeat while the token moved during the
 // round. Fleet issue 43050 is the failure mode MaxRounds guards against.
 func (c *ddmChannel) sync(ctx context.Context) (DDMSyncResult, error) {
+	return c.syncToken(ctx, "")
+}
+
+// syncToken uses the command's token for the first comparison when supplied.
+// Subsequent convergence rounds fetch current tokens as usual.
+func (c *ddmChannel) syncToken(ctx context.Context, commandToken string) (DDMSyncResult, error) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	cfg := c.dev.ddmConfig()
@@ -271,9 +278,14 @@ func (c *ddmChannel) sync(ctx context.Context) (DDMSyncResult, error) {
 	var res DDMSyncResult
 	for res.Rounds < maxRounds {
 		res.Rounds++
-		tok, err := c.fetchTokens(ctx)
-		if err != nil {
-			return res, err
+		tok := commandToken
+		commandToken = ""
+		if tok == "" {
+			var err error
+			tok, err = c.fetchTokens(ctx)
+			if err != nil {
+				return res, err
+			}
 		}
 		res.Token = tok
 		if tok == c.state.DeclarationsToken && c.state.Items != nil && !stale {
@@ -452,6 +464,7 @@ func (c *ddmChannel) report(full bool) []byte {
 // DeclarativeManagement command; any failure turns the reply into an Error
 // with a one-item error chain.
 func (c *ddmChannel) handleCommand(ctx context.Context, cmd *mdm.Command, reply Reply) Reply {
+	var commandToken string
 	if dm, ok := cmd.Payload.(*commands.DeclarativeManagement); ok && len(dm.Data) > 0 {
 		tok, err := declarationsToken(dm.Data)
 		if err != nil {
@@ -460,8 +473,9 @@ func (c *ddmChannel) handleCommand(ctx context.Context, cmd *mdm.Command, reply 
 		c.mu.Lock()
 		c.state.TokenHint = tok
 		c.mu.Unlock()
+		commandToken = tok
 	}
-	if _, err := c.sync(ctx); err != nil {
+	if _, err := c.syncToken(ctx, commandToken); err != nil {
 		return ddmErrorReply(err)
 	}
 	c.mu.Lock()

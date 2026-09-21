@@ -94,6 +94,10 @@ func (t *txStore) ListDevices(ctx context.Context, account string, q dep.DeviceQ
 		where = append(where, "profile_uuid = ?")
 		args = append(args, q.ProfileUUID)
 	}
+	if q.NotSeenInGeneration != "" {
+		where = append(where, "fetch_generation <> ?")
+		args = append(args, q.NotSeenInGeneration)
+	}
 	where, args = after(where, args, "serial_number", p)
 	query := selectDevice + " WHERE " + strings.Join(where, " AND ") + " ORDER BY serial_number"
 	return keyset(ctx, t, "list devices", query, args, p, func(rows *sql.Rows) (dep.StoredDevice, string, error) { return scanDevice(rows) })

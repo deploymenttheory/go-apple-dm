@@ -53,7 +53,7 @@ func TestOpenAndMigrations(t *testing.T) {
 		t.Fatal("DB accessor")
 	}
 	v, err := sqlstore.Version(ctx, db, sqlite.Dialect)
-	if err != nil || v != 1 {
+	if err != nil || v != 2 {
 		t.Fatalf("version = %d %v", v, err)
 	}
 	// Idempotent: a second Open applies nothing; SkipMigrate leaves the schema alone.
@@ -64,7 +64,7 @@ func TestOpenAndMigrations(t *testing.T) {
 		t.Fatal(err)
 	}
 	reverted, err := sqlstore.Rollback(ctx, db, sqlite.Dialect, 0)
-	if err != nil || len(reverted) != 1 {
+	if err != nil || len(reverted) != 2 {
 		t.Fatalf("rollback = %v %v", reverted, err)
 	}
 	if v, err := sqlstore.Version(ctx, db, sqlite.Dialect); err != nil || v != 0 {

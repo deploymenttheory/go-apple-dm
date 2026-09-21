@@ -402,3 +402,52 @@ func (t *txView) ListAssignments(ctx context.Context, account string, q dep.Assi
 	}
 	return t.tx.ListAssignments(ctx, account, q, p)
 }
+
+func (t *txView) LockAccount(ctx context.Context, account string) error {
+	if err := t.f.fail("LockAccount"); err != nil {
+		return err
+	}
+	return t.tx.LockAccount(ctx, account)
+}
+
+func (f *Failing) MarkFetched(ctx context.Context, account, generation string, serials []string) error {
+	if err := f.fail("MarkFetched"); err != nil {
+		return err
+	}
+	return f.Store.MarkFetched(ctx, account, generation, serials)
+}
+
+func (f *Failing) AssignmentState(ctx context.Context, account string) (dep.AssignmentState, error) {
+	if err := f.fail("AssignmentState"); err != nil {
+		return dep.AssignmentState{}, err
+	}
+	return f.Store.AssignmentState(ctx, account)
+}
+
+func (f *Failing) PutAssignmentState(ctx context.Context, account string, state dep.AssignmentState) error {
+	if err := f.fail("PutAssignmentState"); err != nil {
+		return err
+	}
+	return f.Store.PutAssignmentState(ctx, account, state)
+}
+
+func (t *txView) MarkFetched(ctx context.Context, account, generation string, serials []string) error {
+	if err := t.f.fail("MarkFetched"); err != nil {
+		return err
+	}
+	return t.tx.MarkFetched(ctx, account, generation, serials)
+}
+
+func (t *txView) AssignmentState(ctx context.Context, account string) (dep.AssignmentState, error) {
+	if err := t.f.fail("AssignmentState"); err != nil {
+		return dep.AssignmentState{}, err
+	}
+	return t.tx.AssignmentState(ctx, account)
+}
+
+func (t *txView) PutAssignmentState(ctx context.Context, account string, state dep.AssignmentState) error {
+	if err := t.f.fail("PutAssignmentState"); err != nil {
+		return err
+	}
+	return t.tx.PutAssignmentState(ctx, account, state)
+}

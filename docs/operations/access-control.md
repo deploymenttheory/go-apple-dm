@@ -132,7 +132,7 @@ dmctl recovery resume -setup-file /protected/setup.json -ticket-file /protected/
 ```
 
 Recovery verifies the owned, drained fence inside the write transaction, creates
-a new root without fleet grants and captures a durable `recoverRoot` event. It
+a new root without fleet grants and captures a persisted `recoverRoot` event. It
 leaves maintenance paused and never reopens bootstrap. The output file must be
 new and private. If writing it fails after commit, the error identifies the
 created principal; repeat with a new name and then revoke the inaccessible one.

@@ -82,6 +82,7 @@ func SampleProfile(uuid string) *dep.Profile {
 // RunStoreSuite runs every subtest against stores from the factory.
 func RunStoreSuite(t *testing.T, newStore Factory) {
 	t.Helper()
+	t.Run("SyncAndAssignmentState", func(t *testing.T) { runWorkerState(t, newStore) })
 	t.Run("Accounts", func(t *testing.T) { runAccounts(t, newStore) })
 	t.Run("AccountsSealedAtRest", func(t *testing.T) { runSealed(t, newStore) })
 	t.Run("Keypairs", func(t *testing.T) { runKeypairs(t, newStore) })

@@ -218,7 +218,7 @@ func TestSyncer(t *testing.T) {
 			t.Fatalf("second rejection: %v", err)
 		}
 		// EXHAUSTED_CURSOR during the fetch phase flips to sync.
-		_ = f.store.SetCursor(ctx, acct, dep.Cursor{Value: "fetch-cursor", Phase: dep.PhaseFetch, UpdatedAt: f.clk.Now()})
+		_ = f.store.SetCursor(ctx, acct, dep.Cursor{Value: "fetch-cursor", Phase: dep.PhaseFetch, Generation: "existing-fetch", UpdatedAt: f.clk.Now()})
 		f.srv.Script(dep.PathFetchDevices, deptest.Scripted{Status: 400, Code: dep.CodeExhaustedCursor})
 		f.srv.Script(dep.PathSyncDevices, deptest.Scripted{Status: 200, Body: `{"cursor":"next","devices":[],"more_to_follow":false}`})
 		res, err = s.RunOnce(ctx)
@@ -408,7 +408,7 @@ func TestSyncer(t *testing.T) {
 		}
 		// SetCursor after EXHAUSTED_CURSOR in the fetch phase can fail too.
 		failing.Fail = map[string]error{"SetCursor": errors.New("down")}
-		_ = f.store.SetCursor(ctx, acct, dep.Cursor{Value: "fc", Phase: dep.PhaseFetch, UpdatedAt: f.clk.Now()})
+		_ = f.store.SetCursor(ctx, acct, dep.Cursor{Value: "fc", Phase: dep.PhaseFetch, Generation: "existing-fetch", UpdatedAt: f.clk.Now()})
 		f.srv.Script(dep.PathFetchDevices, deptest.Scripted{Status: 400, Code: dep.CodeExhaustedCursor})
 		if _, err := s.RunOnce(ctx); err == nil || !strings.Contains(err.Error(), "down") {
 			t.Fatalf("SetCursor on exhausted: %v", err)

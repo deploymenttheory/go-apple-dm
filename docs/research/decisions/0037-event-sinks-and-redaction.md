@@ -58,7 +58,7 @@ Audit projections and sensitive workflow export have different disclosure contra
 Root-only sensitive destinations preserve that distinction across configuration,
 credentials and replay. A native envelope covers polling, failed exchanges and
 non-MDM server outcomes without constraining the protocol library to a workflow API.
-Durable capture and independent delivery avoid adding receiver latency to a device
+Persisted capture and independent delivery avoid adding receiver latency to a device
 request. Separate HTTP observations describe bytes actually consumed/written without
 claiming an atomic transaction with a remote device.
 

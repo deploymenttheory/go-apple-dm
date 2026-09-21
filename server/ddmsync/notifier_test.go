@@ -176,6 +176,16 @@ func (f *notifierFixture) pending(t *testing.T) []ddm.Change {
 }
 
 func TestNewNotifier(t *testing.T) {
+	t.Run("DedupeKeyLength", func(t *testing.T) {
+		f := newNotifierFixture(t, nil)
+		for _, size := range []int{190, 191} {
+			key := strings.Repeat("k", size)
+			_, err := ddmsync.NewNotifier(ddmsync.NotifierConfig{Store: f.store, Tokens: f.engine, Enqueuer: f.enq, DedupeKey: &key})
+			if (size == 190 && err != nil) || (size == 191 && !errors.Is(err, ddmsync.ErrNotifierConfig)) {
+				t.Fatalf("prefix length %d: %v", size, err)
+			}
+		}
+	})
 	t.Run("RequiresStoreTokensEnqueuer", func(t *testing.T) {
 		st := ddminmem.New()
 		eng, err := ddm.New(ddm.Config{Store: st})
@@ -251,7 +261,7 @@ func TestNotifier(t *testing.T) {
 			}
 			id := c.ids[0]
 			seen[id] = true
-			if c.opts.DedupeKey != ddmsync.DefaultDedupeKey {
+			if !strings.HasPrefix(c.opts.DedupeKey, ddmsync.DefaultDedupeKey+":") {
 				t.Fatalf("dedupe key = %q", c.opts.DedupeKey)
 			}
 			dm, ok := c.cmd.Payload.(*commands.DeclarativeManagement)
@@ -610,7 +620,7 @@ func TestNotifierDedupeIsConfigurable(t *testing.T) {
 		f.assignFresh(t, ddmtest.Device(1), "com.example.a")
 		f.clock.Advance(ddmsync.DefaultNotifyWindow)
 		f.drain(t)
-		if len(f.enq.calls) == 0 || f.enq.calls[0].opts.DedupeKey != ddmsync.DefaultDedupeKey {
+		if len(f.enq.calls) == 0 || !strings.HasPrefix(f.enq.calls[0].opts.DedupeKey, ddmsync.DefaultDedupeKey+":") {
 			t.Fatalf("calls = %+v", f.enq.calls)
 		}
 	})
@@ -631,14 +641,14 @@ func TestNotifierDedupeIsConfigurable(t *testing.T) {
 		}
 	})
 
-	t.Run("ACustomKeyIsUsedVerbatim", func(t *testing.T) {
+	t.Run("ACustomKeyPrefixesGeneration", func(t *testing.T) {
 		t.Parallel()
 		key := "declarative-sync"
 		f := newNotifierFixture(t, func(c *ddmsync.NotifierConfig) { c.DedupeKey = &key })
 		f.assignFresh(t, ddmtest.Device(1), "com.example.a")
 		f.clock.Advance(ddmsync.DefaultNotifyWindow)
 		f.drain(t)
-		if len(f.enq.calls) == 0 || f.enq.calls[0].opts.DedupeKey != key {
+		if len(f.enq.calls) == 0 || !strings.HasPrefix(f.enq.calls[0].opts.DedupeKey, key+":") {
 			t.Fatalf("calls = %+v", f.enq.calls)
 		}
 	})

@@ -119,7 +119,7 @@ type ErrorResponse struct {
 	Errors []ErrorItem `json:"errors"`
 }
 
-// Error is an API response with a 4xx or 5xx status. Errors holds every
+// Error is an API response with a non-2xx status. Errors holds every
 // entry of Apple's error document; for a body that is not that document
 // Errors is empty and Body holds the raw bytes.
 type Error struct {
@@ -140,14 +140,18 @@ func (e *Error) Error() string {
 		b.WriteString(": ")
 		b.WriteString(item.Code)
 		if item.Detail != "" {
-			b.WriteString(" (" + item.Detail + ")")
+			b.WriteString(" (")
+			b.WriteString(item.Detail)
+			b.WriteByte(')')
 		}
 		if item.Source != nil {
 			switch {
 			case item.Source.Parameter != "":
-				b.WriteString(" parameter " + item.Source.Parameter)
+				b.WriteString(" parameter ")
+				b.WriteString(item.Source.Parameter)
 			case item.Source.Pointer != "":
-				b.WriteString(" at " + item.Source.Pointer)
+				b.WriteString(" at ")
+				b.WriteString(item.Source.Pointer)
 			}
 		}
 	}
@@ -156,7 +160,8 @@ func (e *Error) Error() string {
 		if len(body) > 200 {
 			body = body[:200] + "..."
 		}
-		b.WriteString(": " + body)
+		b.WriteString(": ")
+		b.WriteString(body)
 	}
 	return b.String()
 }
@@ -193,13 +198,17 @@ func (e *AuthError) Error() string {
 		fmt.Fprintf(&b, ": status %d", e.Status)
 	}
 	if e.Code != "" {
-		b.WriteString(": " + e.Code)
+		b.WriteString(": ")
+		b.WriteString(e.Code)
 	}
 	if e.Description != "" {
-		b.WriteString(" (" + e.Description + ")")
+		b.WriteString(" (")
+		b.WriteString(e.Description)
+		b.WriteByte(')')
 	}
 	if e.Err != nil {
-		b.WriteString(": " + e.Err.Error())
+		b.WriteString(": ")
+		b.WriteString(e.Err.Error())
 	}
 	return b.String()
 }

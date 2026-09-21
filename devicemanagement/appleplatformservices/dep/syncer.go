@@ -2,6 +2,7 @@ package dep
 
 import (
 	"context"
+	"crypto/rand"
 	"errors"
 	"fmt"
 	"log/slog"
@@ -10,6 +11,7 @@ import (
 
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/clock"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/event"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/paging"
 )
 
 // Defaults for SyncerConfig.
@@ -148,11 +150,17 @@ func (s *Syncer) RunOnce(ctx context.Context) (SyncResult, error) {
 	}
 	if age := s.cfg.Clock.Now().Sub(cur.UpdatedAt); !cur.IsZero() && age > s.cfg.MaxCursorAge {
 		s.cfg.Logger.InfoContext(ctx, "dep: cursor stale, fetching", "account", s.cfg.Account, "age", age)
-		cur = Cursor{}
+		cur, err = s.startFetch(ctx, cur)
+		if err != nil {
+			return res, err
+		}
 		res.Restarted = true
 	}
-	if cur.Value == "" || cur.Phase == "" {
-		cur = Cursor{Phase: PhaseFetch}
+	if cur.Phase == "" || (cur.Phase == PhaseFetch && cur.Generation == "") {
+		cur, err = s.startFetch(ctx, cur)
+		if err != nil {
+			return res, err
+		}
 	}
 	restarted := false
 	for {
@@ -161,10 +169,20 @@ func (s *Syncer) RunOnce(ctx context.Context) (SyncResult, error) {
 		if err != nil {
 			switch {
 			case codeIs(err, CodeExhaustedCursor) && cur.Phase == PhaseFetch:
-				cur.Phase = PhaseSync
-				if err := s.cfg.Store.SetCursor(ctx, s.cfg.Account, cur); err != nil {
+				if cur.Value == "" {
+					return res, fmt.Errorf("%w: exhausted fetch without a cursor", ErrInvalid)
+				}
+				next := cur
+				next.Phase = PhaseSync
+				next.Generation = ""
+				next.Revision++
+				next.UpdatedAt = s.cfg.Clock.Now()
+				_, _, deleted, err := s.commit(ctx, cur, &DevicePage{}, next)
+				if err != nil {
 					return res, err
 				}
+				res.Deleted += deleted
+				cur = next
 				continue
 			case codeIs(err, CodeExhaustedCursor):
 				return res, nil
@@ -174,7 +192,10 @@ func (s *Syncer) RunOnce(ctx context.Context) (SyncResult, error) {
 				}
 				restarted, res.Restarted = true, true
 				s.cfg.Logger.InfoContext(ctx, "dep: cursor rejected, fetching", "account", s.cfg.Account, "error", err)
-				cur = Cursor{Phase: PhaseFetch}
+				cur, err = s.startFetch(ctx, cur)
+				if err != nil {
+					return res, err
+				}
 				continue
 			default:
 				return res, err
@@ -186,11 +207,12 @@ func (s *Syncer) RunOnce(ctx context.Context) (SyncResult, error) {
 		if page.MoreToFollow && page.Cursor == cur.Value {
 			return res, fmt.Errorf("%w: %q", ErrSameCursor, page.Cursor)
 		}
-		next := Cursor{Value: page.Cursor, Phase: PhaseSync, FetchedUntil: page.FetchedUntil, UpdatedAt: s.cfg.Clock.Now()}
+		next := Cursor{Value: page.Cursor, Phase: PhaseSync, FetchedUntil: page.FetchedUntil, UpdatedAt: s.cfg.Clock.Now(), Revision: cur.Revision + 1}
 		if cur.Phase == PhaseFetch && page.MoreToFollow {
 			next.Phase = PhaseFetch
+			next.Generation = cur.Generation
 		}
-		added, modified, deleted, err := s.commit(ctx, cur.Phase, page, next)
+		added, modified, deleted, err := s.commit(ctx, cur, page, next)
 		if err != nil {
 			return res, err
 		}
@@ -276,9 +298,9 @@ func retryAfter(err error) time.Duration {
 // commit deduplicates the page, writes it with the next cursor in one
 // transaction with required event capture. A failed capture leaves the cursor
 // unchanged, so the next sync can request the same page.
-func (s *Syncer) commit(ctx context.Context, phase Phase, page *DevicePage, next Cursor) (added, modified, deleted int, err error) {
+func (s *Syncer) commit(ctx context.Context, current Cursor, page *DevicePage, next Cursor) (added, modified, deleted int, err error) {
 	err = event.Run(ctx, s.cfg.Bus, func(ctx context.Context) error {
-		added, modified, deleted, err = s.commitPage(ctx, phase, page, next)
+		added, modified, deleted, err = s.commitPage(ctx, current, page, next)
 		return err
 	})
 	if err != nil {
@@ -287,12 +309,16 @@ func (s *Syncer) commit(ctx context.Context, phase Phase, page *DevicePage, next
 	return added, modified, deleted, nil
 }
 
-func (s *Syncer) commitPage(ctx context.Context, phase Phase, page *DevicePage, next Cursor) (added, modified, deleted int, err error) {
+func (s *Syncer) commitPage(ctx context.Context, current Cursor, page *DevicePage, next Cursor) (added, modified, deleted int, err error) {
+	phase := current.Phase
 	devs := Dedupe(page.Devices)
 	now := s.cfg.Clock.Now()
 	var evs []event.Event
 	err = s.cfg.Store.Update(ctx, func(tx Tx) error {
 		evs = evs[:0]
+		if err := checkCursor(ctx, tx, s.cfg.Account, current); err != nil {
+			return err
+		}
 		for i := range devs {
 			d := &devs[i]
 			d.normalise()
@@ -304,6 +330,22 @@ func (s *Syncer) commitPage(ctx context.Context, phase Phase, page *DevicePage, 
 		}
 		if err := tx.PutDevices(ctx, s.cfg.Account, devs, now); err != nil {
 			return err
+		}
+		if phase == PhaseFetch {
+			serials := make([]string, 0, len(devs))
+			for _, d := range devs {
+				serials = append(serials, d.SerialNumber)
+			}
+			if err := tx.MarkFetched(ctx, s.cfg.Account, current.Generation, serials); err != nil {
+				return err
+			}
+			if next.Phase == PhaseSync {
+				missing, err := s.reconcile(ctx, tx, current.Generation, now)
+				if err != nil {
+					return err
+				}
+				evs = append(evs, missing...)
+			}
 		}
 		return tx.SetCursor(ctx, s.cfg.Account, next)
 	})
@@ -391,4 +433,59 @@ func opDate(d Device) time.Time {
 		return time.Time{}
 	}
 	return *d.OpDate
+}
+
+// startFetch persists a fresh generation before requesting its first page.
+// A stale response cannot reset a cursor advanced by another worker.
+func (s *Syncer) startFetch(ctx context.Context, current Cursor) (Cursor, error) {
+	next := Cursor{Phase: PhaseFetch, Revision: current.Revision + 1, Generation: rand.Text(), UpdatedAt: s.cfg.Clock.Now()}
+	err := s.cfg.Store.Update(ctx, func(tx Tx) error {
+		if err := checkCursor(ctx, tx, s.cfg.Account, current); err != nil {
+			return err
+		}
+		return tx.SetCursor(ctx, s.cfg.Account, next)
+	})
+	return next, err
+}
+
+func checkCursor(ctx context.Context, tx Tx, account string, expected Cursor) error {
+	if err := tx.LockAccount(ctx, account); err != nil {
+		return err
+	}
+	current, err := tx.Cursor(ctx, account)
+	if err != nil {
+		return err
+	}
+	if current.Revision != expected.Revision || current.Generation != expected.Generation || current.Value != expected.Value || current.Phase != expected.Phase {
+		return fmt.Errorf("%w: sync cursor changed", ErrConflict)
+	}
+	return nil
+}
+
+// reconcile runs only at the end of a successful full fetch, in the same
+// transaction as the final page and cursor. Partial snapshots never delete.
+func (s *Syncer) reconcile(ctx context.Context, tx Tx, generation string, now time.Time) ([]event.Event, error) {
+	var events []event.Event
+	p := paging.Page{Limit: 500}
+	for {
+		rows, err := tx.ListDevices(ctx, s.cfg.Account, DeviceQuery{NotSeenInGeneration: generation}, p)
+		if err != nil {
+			return nil, err
+		}
+		var removed []Device
+		for _, row := range rows.Items {
+			d := row.Device.Clone()
+			d.OpType = OpDeleted
+			d.OpDate = Time(now)
+			removed = append(removed, d)
+			events = append(events, event.Event{Type: EventDeviceDeleted, At: now, Actor: Actor, Data: DeviceEvent{Account: s.cfg.Account, Device: d, Phase: PhaseFetch}})
+		}
+		if err := tx.PutDevices(ctx, s.cfg.Account, removed, now); err != nil {
+			return nil, err
+		}
+		if rows.NextCursor == "" {
+			return events, nil
+		}
+		p.Cursor = rows.NextCursor
+	}
 }

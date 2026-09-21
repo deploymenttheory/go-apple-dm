@@ -235,12 +235,12 @@ retry semantics. Retrying the same operation must not create a new command
 identity accidentally.
 
 `service.Hook.Before` can reject operations before storage changes.
-`Hook.After` observes their outcome; it is not a substitute for a durable
+`Hook.After` observes their outcome; it is not a substitute for a persisted
 transactional audit record. Optional completion hooks must support retries
 after partial progress. Keep remote calls outside storage transactions.
 
 The event bus supports different delivery models. A plain asynchronous bus is
-not durable. If an operation must not commit without recording its event, wire
+not persisted. If an operation must not commit without recording its event, wire
 the transactional capture and destination delivery components as the reference
 server does. Consumers must tolerate retries and record their own completion.
 See [event delivery](../operations/event-delivery.md).
