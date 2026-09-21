@@ -310,7 +310,12 @@
       "purpose": "failure",
       "role": "error",
       "fromSide": "bottom",
-      "toSide": "top"
+      "toSide": "top",
+      "route": "straight",
+      "labelAt": [
+        1025,
+        561
+      ]
     }
   ],
   "cards": [
