@@ -11,8 +11,8 @@ github.com/cedar-policy/cedar-go v1.8.0/go.mod h1:h5+3CVW1oI5LXVskJG+my9TFCYI5yj
 github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/deploymenttheory/go-apfs-v2 v0.3.1 h1:+wF+nmNXxMn6d+ihyQNSm58tPglNUtI02Mj0YBeXOY8=
 github.com/deploymenttheory/go-apfs-v2 v0.3.1/go.mod h1:8F+giXscCXK717Q0dV8RSXL+eWhXSOn3eQ1EarZl1LA=
-github.com/deploymenttheory/go-apple-dm v0.7.4-0.20260919192617-bee5875be93c h1:r2epugv99BqvbTeCizwJmu6fCb+kTnpPas2AWyhOijw=
-github.com/deploymenttheory/go-apple-dm v0.7.4-0.20260919192617-bee5875be93c/go.mod h1:l0QDhsVvpwb+wRqTEsu84evox3xOQJyM6kPUoWZ1lVc=
+github.com/deploymenttheory/go-apple-dm v0.8.1-0.20260921062359-9c2d1008436c h1:1wbgprGUOcjW0yx/9Yk+NJQYRjMEycluqXKAmdzIc3Q=
+github.com/deploymenttheory/go-apple-dm v0.8.1-0.20260921062359-9c2d1008436c/go.mod h1:l0QDhsVvpwb+wRqTEsu84evox3xOQJyM6kPUoWZ1lVc=
 github.com/deploymenttheory/go-macos-pkg v0.6.0 h1:OvRsai008x1IFUh/gN7AOEJkE+cpD1mUdyYOy+aS9h0=
 github.com/deploymenttheory/go-macos-pkg v0.6.0/go.mod h1:XE0TXQWiows9fWH0YBQ876xfjl/SGkn41QGt4Pdnu9A=
 github.com/dustin/go-humanize v1.0.1 h1:GzkhY7T5VNhEkwH0PVJgjz+fX1rhBrR7pRT3mDkpeCY=

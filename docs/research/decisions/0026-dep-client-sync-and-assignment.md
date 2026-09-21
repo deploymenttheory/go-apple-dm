@@ -12,7 +12,7 @@ The device enrollment service uses account-scoped OAuth 1.0a credentials, rotati
 
 `Assigner` compares stored profile state with desired state and records per-device outcomes. Account retry deadlines and failure counts live in the store, so a new worker respects an earlier Retry-After response. A renewable account claim fences competing workers; bounded network requests run outside transactions, and writes recheck claim ownership. Assignment readback cannot restore a device removed by sync. The reference server schedules sync and assignment independently; zero disables the corresponding background operation. API profiles retain unknown fields and validate documented combinations and setup keys.
 
-DEP migration 0002 adds cursor revision/generation fields, device fetch markers and assignment state. Custom stores must implement `MarkFetched`, `AssignmentState`, `PutAssignmentState` and transactional `LockAccount` with the shared contract semantics. Publish the updated library and update the server's library requirement before releasing the server module independently.
+DEP migration 0002 adds cursor revision/generation fields, device fetch markers and assignment state. Custom stores must implement `MarkFetched`, `AssignmentState`, `PutAssignmentState` and transactional `LockAccount` with the shared contract semantics. The server module pins a library revision implementing this contract so standalone builds use the same interfaces.
 
 ## Rationale
 
