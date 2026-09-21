@@ -281,6 +281,27 @@ class DiagramContent(unittest.TestCase):
         self.checker.diagram_content("diagram", self.spec, rendered)
         self.assertFalse(self.checker.errors)
 
+    def test_opposing_routes_cannot_share_a_drawn_segment(self):
+        """Arrows at one shared node still need distinguishable incoming/outgoing routes."""
+        spec = copy.deepcopy(self.spec)
+        spec["edges"].append({"id": "reply", "from": "b", "to": "a", "label": "Reply", "purpose": "transport"})
+        rendered = self.rendered.replace('<path data-edge-id="request"', '<path d="M 0 0 L 100 0" data-edge-id="request"')
+        reply = '<g data-edge-id="reply" data-edge-from="b" data-edge-to="a" data-edge-label="Reply" data-purpose="transport"><path d="M 100 0 L 50 0 Q 42 0 42 8 L 42 40"/><text>Reply</text></g>'
+        rendered = rendered.replace('</svg>', reply + '</svg>')
+        self.checker.diagram_content("diagram", spec, rendered)
+        self.assertEqual(self.checker.errors, ["diagram: opposing diagram routes request and reply share 50px"])
+        self.checker.errors.clear()
+        rendered = rendered.replace('M 100 0 L 50 0 Q 42 0 42 8 L 42 40', 'M 100 12 L 50 12 Q 42 12 42 20 L 42 40')
+        self.checker.diagram_content("diagram", spec, rendered)
+        self.assertFalse(self.checker.errors)
+
+    def test_curved_and_crossing_routes_are_not_collinear_overlaps(self):
+        """Rounded corners and perpendicular crossings do not trigger this narrow guard."""
+        self.assertEqual(MODULE.route_segments('M 0 0 L 10 0 Q 20 0 20 10 L 20 30'),
+                         [((0, 0), (10, 0)), ((20, 10), (20, 30))])
+        self.assertEqual(MODULE.opposing_overlap(((0, 0), (100, 0)), ((50, -10), (50, 10))), 0)
+        self.assertEqual(MODULE.opposing_overlap(((0, 0), (100, 0)), ((50, 0), (110, 0))), 0)
+
 
 if __name__ == "__main__":
     unittest.main()

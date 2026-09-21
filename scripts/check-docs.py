@@ -10,6 +10,7 @@ from functools import lru_cache
 import html
 from html.parser import HTMLParser
 import json
+from itertools import combinations
 from pathlib import Path
 import re
 import subprocess
@@ -43,6 +44,46 @@ def card_text(value):
     return normalized_text(re.sub(r"\s+[—–-]\s+https?://\S+", "", value))
 
 
+def route_segments(path):
+    """Extract straight portions of the renderer's absolute SVG paths, excluding curves."""
+    tokens = re.findall(r"[A-Za-z]|[-+]?(?:\d*\.)?\d+(?:[eE][-+]?\d+)?", path)
+    position, segments, index, command = None, [], 0, None
+    arity = {"M": 2, "L": 2, "Q": 4, "C": 6}
+    while index < len(tokens):
+        if tokens[index].isalpha():
+            command = tokens[index]
+            index += 1
+        count = arity.get(command)
+        if count is None or index + count > len(tokens):
+            return segments
+        try:
+            values = [float(value) for value in tokens[index:index + count]]
+        except ValueError:
+            return segments
+        target = tuple(values[-2:])
+        if command == "L" and position is not None:
+            segments.append((position, target))
+        position = target
+        index += count
+        if command == "M":
+            command = "L"
+    return segments
+
+
+def opposing_overlap(first, second):
+    """Measure collinear overlap only when the two directed segments oppose each other."""
+    for axis in (0, 1):
+        cross = 1 - axis
+        coordinates = [point[cross] for segment in (first, second) for point in segment]
+        if max(coordinates) - min(coordinates) > 0.01:
+            continue
+        a, b = (point[axis] for point in first)
+        c, d = (point[axis] for point in second)
+        if (b - a) * (d - c) < 0:
+            return max(0, min(max(a, b), max(c, d)) - max(min(a, b), min(c, d)))
+    return 0
+
+
 class DiagramHTML(HTMLParser):
     """Read delivered graph metadata and visible cards without executing viewer code."""
 
@@ -52,6 +93,7 @@ class DiagramHTML(HTMLParser):
         self.nodes = {}
         self.edges = {}
         self.cards = []
+        self.routes = []
         self.card_depth = 0
         self.field = None
         self.card_links = None
@@ -73,6 +115,9 @@ class DiagramHTML(HTMLParser):
                                      tag == "text" or parent[2]))
             if tag == "text" and self.graph_stack[-1][1] is not None:
                 self.graph_stack[-1][1]["visible_text"].append([])
+            element = self.graph_stack[-1][1]
+            if tag == "path" and element is not None and "data-edge-id" in element:
+                self.routes.append((element["data-edge-id"], route_segments(attrs.get("d", ""))))
         if tag == "div":
             if self.card_depth:
                 self.card_depth += 1
@@ -329,6 +374,12 @@ class Checker:
                  for card in spec.get("cards", [])]
         if cards != rendered.card_values():
             self.error(owner, "delivered explanatory cards differ from source")
+        for (first, a), (second, b) in combinations(rendered.routes, 2):
+            if first == second:
+                continue
+            overlap = max((opposing_overlap(x, y) for x in a for y in b), default=0)
+            if overlap >= 8:
+                self.error(owner, f"opposing diagram routes {first} and {second} share {overlap:g}px")
 
     def diagram(self, name):
         """Check source coverage, immutable evidence and links in the delivered HTML."""
