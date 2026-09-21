@@ -13,9 +13,6 @@ func (t *txStore) LockAccount(ctx context.Context, account string) error {
 	if err := t.lockAccountName(ctx, account); err != nil {
 		return err
 	}
-	if _, err := t.exec(ctx, "lock account", "UPDATE dep_accounts SET name = name WHERE name = ?", account); err != nil {
-		return err
-	}
 	_, err := t.GetAccount(ctx, account)
 	return err
 }

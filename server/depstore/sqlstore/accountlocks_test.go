@@ -170,6 +170,95 @@ func checkAccountNameLocks(t *testing.T, db *sql.DB, dialect sqlcommon.Dialect) 
 			t.Fatal(err)
 		}
 	})
+	t.Run("StateUpdateSharesNameLock", func(t *testing.T) {
+		const name = "lock-account-state"
+		if err := s.PutAccount(t.Context(), &dep.Account{Name: name, CreatedAt: now, UpdatedAt: now}); err != nil {
+			t.Fatal(err)
+		}
+		ctx, cancel := context.WithTimeout(t.Context(), 5*time.Second)
+		defer cancel()
+		read, release := make(chan struct{}), make(chan struct{})
+		unblock := sync.OnceFunc(func() { close(release) })
+		defer unblock()
+		policy := asyncStoreCall(t, func() error {
+			return s.Update(ctx, func(tx dep.Tx) error {
+				if err := tx.LockAccount(ctx, name); err != nil {
+					return err
+				}
+				account, err := tx.GetAccount(ctx, name)
+				if err != nil {
+					return err
+				}
+				close(read)
+				<-release
+				account.ProfileUUID = "desired-profile"
+				return tx.PutAccount(ctx, account)
+			})
+		})
+		select {
+		case <-read:
+		case <-ctx.Done():
+			t.Fatal("policy update did not read account")
+		}
+		attempting := make(chan struct{})
+		state := asyncStoreCall(t, func() error {
+			close(attempting)
+			return s.SetAccountState(ctx, name, dep.AccountState{TokenInvalid: true})
+		})
+		<-attempting
+		assertStoreCallBlocked(t, state)
+		unblock()
+		if err := <-policy; err != nil {
+			t.Fatal(err)
+		}
+		if err := <-state; err != nil {
+			t.Fatal(err)
+		}
+		account, err := s.GetAccount(ctx, name)
+		if err != nil || account.ProfileUUID != "desired-profile" || !account.State.TokenInvalid {
+			t.Fatal("concurrent account state or policy was lost", account, err)
+		}
+	})
+	t.Run("UnrelatedCreationDoesNotWait", func(t *testing.T) {
+		if dialect.Name == "sqlite" {
+			t.Skip("SQLite serializes database writers")
+		}
+		ctx, cancel := context.WithTimeout(t.Context(), 5*time.Second)
+		defer cancel()
+		locked, release := make(chan struct{}), make(chan struct{})
+		unblock := sync.OnceFunc(func() { close(release) })
+		defer unblock()
+		first := asyncStoreCall(t, func() error {
+			return s.Update(ctx, func(tx dep.Tx) error {
+				if err := tx.LockAccount(ctx, "lock-unrelated-first"); !errors.Is(err, dep.ErrNotFound) {
+					return errors.Join(errors.New("expected an absent account"), err)
+				}
+				close(locked)
+				<-release
+				return nil
+			})
+		})
+		select {
+		case <-locked:
+		case <-ctx.Done():
+			t.Fatal("absent name was not locked")
+		}
+		second := asyncStoreCall(t, func() error {
+			return s.PutAccount(ctx, &dep.Account{Name: "lock-unrelated-second", CreatedAt: now, UpdatedAt: now})
+		})
+		select {
+		case err := <-second:
+			if err != nil {
+				t.Fatal(err)
+			}
+		case <-ctx.Done():
+			t.Fatal("locking an absent account blocked a different account name")
+		}
+		unblock()
+		if err := <-first; err != nil {
+			t.Fatal(err)
+		}
+	})
 }
 
 // asyncStoreCall runs a competing operation and ensures its goroutine exits

@@ -153,7 +153,7 @@ func (t *txStore) ListAccounts(ctx context.Context, p paging.Page) (paging.Resul
 
 // SetAccountState implements dep.AccountStore.
 func (t *txStore) SetAccountState(ctx context.Context, name string, s dep.AccountState) error {
-	if err := validName("account name", name); err != nil {
+	if err := t.lockAccountName(ctx, name); err != nil {
 		return err
 	}
 	res, err := t.exec(ctx, "set account state", "UPDATE dep_accounts SET terms_expired = ?, token_invalid = ? WHERE name = ?", s.TermsExpired, s.TokenInvalid, name)
@@ -342,7 +342,7 @@ func (s *Store) ListAccounts(ctx context.Context, p paging.Page) (paging.Result[
 
 // SetAccountState implements dep.AccountStore.
 func (s *Store) SetAccountState(ctx context.Context, name string, st dep.AccountState) error {
-	return s.view(ctx).SetAccountState(ctx, name, st)
+	return s.write(ctx, func(t *txStore) error { return t.SetAccountState(ctx, name, st) })
 }
 
 // PutKeypair implements dep.AccountStore.
