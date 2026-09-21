@@ -1,5 +1,6 @@
 """Failure-contract tests for the offline documentation reference checker."""
 
+import copy
 import importlib.util
 import json
 from pathlib import Path
@@ -168,6 +169,117 @@ class DocumentationLinks(unittest.TestCase):
                 self.write("docs/diagrams/flow.html", url)
                 self.checker.diagram(name)
                 self.assertTrue(any("core needs" in x for x in self.checker.errors))
+
+    def test_architecture_guide_cannot_satisfy_implementation_coverage(self):
+        """Architecture sources obey the same code-evidence rule as workflow cards."""
+        revision = "e" * 40
+        name = "docs/diagrams/src/core.architecture.json"
+        url = MODULE.REPOSITORY + "/blob/" + revision + "/docs/guide.md"
+        spec = {"meta": {"repository": {"url": MODULE.REPOSITORY, "revision": revision}},
+                "components": [{"id": "core", "type": "backend", "sources": [{"path": "docs/guide.md"}]}]}
+        self.write(name, json.dumps(spec))
+        self.write("docs/diagrams/core.html", url)
+        self.checker.git_object = lambda revision, path: "# Guide\n"
+        self.checker.diagram(name)
+        self.assertEqual(self.checker.errors, [name + ": component core has no implementation source"])
+
+
+class DiagramContent(unittest.TestCase):
+    """Changing authored behavior must invalidate an unchanged delivered artifact."""
+
+    def setUp(self):
+        """Use a minimal renderer-shaped graph with separate path and label metadata."""
+        self.checker = MODULE.Checker(".")
+        self.spec = {
+            "diagram_type": "workflow",
+            "nodes": [{"id": "a", "label": "Client", "purpose": "transport"},
+                      {"id": "b", "label": "Server", "sublabel": "Handles requests", "purpose": "service"}],
+            "edges": [{"id": "request", "from": "a", "to": "b", "label": "Send request", "purpose": "transport"}],
+            "cards": [{"title": "Contract", "items": ["Preserve A & B.", "Reference — https://example.com/contract"]}],
+        }
+        self.rendered = '''<svg>
+            <g data-node-id="a" data-node-label="Client" data-purpose="transport"><text>Client</text></g>
+            <g data-node-id="b" data-node-label="Server" data-node-sublabel="Handles requests" data-purpose="service"><text>Server</text><text>Handles requests</text></g>
+            <path data-edge-id="request" data-edge-from="a" data-edge-to="b" data-edge-label="Send request" data-purpose="transport"/>
+            <g data-edge-id="request" data-edge-from="a" data-edge-to="b" data-edge-label="Send request" data-purpose="transport"><text>Send request</text></g>
+            </svg><div class="card"><div class="card-header"><h3>Contract</h3></div>
+            <ul><li>&bull; Preserve <code>A &amp; B</code>.</li><li>&bull; <a href="https://example.com/contract">Reference</a></li></ul></div>'''
+
+    def test_all_diagram_types_accept_matching_delivery(self):
+        """Each type's collection names use the same delivered graph contract."""
+        for kind, (nodes, edges) in MODULE.DIAGRAM_COLLECTIONS.items():
+            with self.subTest(kind=kind):
+                spec = {"diagram_type": kind, nodes: self.spec["nodes"], edges: self.spec["edges"], "cards": self.spec["cards"]}
+                self.checker.diagram_content("diagram", spec, self.rendered)
+                self.assertFalse(self.checker.errors)
+
+    def test_source_reversal_and_relabeling_require_redelivery(self):
+        """Existing links cannot conceal reversed direction or changed node semantics."""
+        for collection, field, value in (("edges", "from", "b"), ("edges", "to", "a"),
+                                         ("edges", "label", "Reject request"), ("edges", "purpose", "failure"),
+                                         ("nodes", "label", "Different client"), ("nodes", "sublabel", "New behavior")):
+            with self.subTest(collection=collection, field=field):
+                spec = copy.deepcopy(self.spec)
+                spec[collection][0][field] = value
+                self.checker.errors.clear()
+                self.checker.diagram_content("diagram", spec, self.rendered)
+                self.assertTrue(any(field + " differs" in error for error in self.checker.errors))
+
+    def test_missing_and_extra_entities_fail(self):
+        """A valid subset is insufficient: removed and newly added entities must agree."""
+        spec = copy.deepcopy(self.spec)
+        spec["nodes"][0]["id"] = "replacement"
+        spec["edges"] = []
+        self.checker.diagram_content("diagram", spec, self.rendered)
+        self.assertEqual(len(self.checker.errors), 2)
+        self.assertTrue(all("inventory differs" in error for error in self.checker.errors))
+
+    def test_path_and_label_metadata_must_agree(self):
+        """A correct label group must not hide an incorrectly directed path."""
+        rendered = self.rendered.replace('data-edge-to="b"', 'data-edge-to="a"', 1)
+        self.checker.diagram_content("diagram", self.spec, rendered)
+        self.assertEqual(self.checker.errors, ["diagram: delivered edges request to differs from source"])
+
+    def test_changed_card_cannot_hide_in_script(self):
+        """Visible cards must match even if a script contains the new source wording."""
+        spec = copy.deepcopy(self.spec)
+        spec["cards"][0]["items"][0] = "Stop all writes."
+        self.checker.diagram_content("diagram", spec, self.rendered + '<script>const text="Stop all writes.";</script>')
+        self.assertEqual(self.checker.errors, ["diagram: delivered explanatory cards differ from source"])
+
+    def test_matching_metadata_cannot_hide_wrong_visible_label(self):
+        """Correct accessibility metadata does not excuse a different drawn label."""
+        rendered = self.rendered.replace('<text>Send request</text>', '<text>Wrong behavior</text>')
+        self.checker.diagram_content("diagram", self.spec, rendered)
+        self.assertEqual(self.checker.errors, ["diagram: delivered edges request visible label differs from source"])
+
+    def test_added_words_cannot_reverse_visible_meaning(self):
+        """A source label embedded within a contradictory visible sentence must fail."""
+        rendered = self.rendered.replace('<text>Send request</text>', '<text>Do not Send request</text>')
+        self.checker.diagram_content("diagram", self.spec, rendered)
+        self.assertEqual(self.checker.errors, ["diagram: delivered edges request visible label differs from source"])
+
+    def test_visible_sublabel_must_match_metadata(self):
+        """Preserved metadata cannot conceal altered or missing explanatory SVG text."""
+        for replacement in ('<text>Rejects requests</text>', ''):
+            with self.subTest(replacement=replacement):
+                self.checker.errors.clear()
+                rendered = self.rendered.replace('<text>Handles requests</text>', replacement)
+                self.checker.diagram_content("diagram", self.spec, rendered)
+                self.assertEqual(self.checker.errors, ["diagram: delivered nodes b visible sublabel differs from source"])
+
+    def test_link_destination_cannot_hide_in_script(self):
+        """Matching captions and a script URL cannot excuse an incorrect clickable link."""
+        rendered = self.rendered.replace('href="https://example.com/contract"', 'href="https://example.com/wrong"')
+        rendered += '<script>const source="https://example.com/contract";</script>'
+        self.checker.diagram_content("diagram", self.spec, rendered)
+        self.assertEqual(self.checker.errors, ["diagram: delivered explanatory cards differ from source"])
+
+    def test_wrapped_svg_text_preserves_exact_words(self):
+        """Renderer line breaks may split a label into tspans without changing its meaning."""
+        rendered = self.rendered.replace('<text>Send request</text>', '<text><tspan>Send</tspan><tspan>request</tspan></text>')
+        self.checker.diagram_content("diagram", self.spec, rendered)
+        self.assertFalse(self.checker.errors)
 
 
 if __name__ == "__main__":

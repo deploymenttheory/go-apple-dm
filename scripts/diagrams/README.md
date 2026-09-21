@@ -73,3 +73,4 @@ Run `node scripts/diagrams/verify-viewer.mjs` for browser interaction and export
 and `--output=/tmp/diagram-viewer-checks.json` to choose the receipt path. This checks every
 used colour in both themes, counts against source JSON, keyboard focus, native exploration
 handoffs, print restoration, and complete SVG/PNG exports while a category is highlighted.
+When `--only` selects diagrams, each selected diagram receives both-theme export checks.

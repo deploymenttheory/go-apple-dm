@@ -8,6 +8,7 @@ Archify delivery and browser review remain separate checks.
 import argparse
 from functools import lru_cache
 import html
+from html.parser import HTMLParser
 import json
 from pathlib import Path
 import re
@@ -23,6 +24,97 @@ REFERENCE_LINK = re.compile(r"^\s*\[[^\]]+\]:\s*(<[^>]+>|\S+)", re.MULTILINE)
 HTML_LINK = re.compile(r'(?:href|src)=["\x27]([^"\x27]+)["\x27]')
 LINE_ANCHOR = re.compile(r"L([1-9][0-9]*)(?:-L([1-9][0-9]*))?\Z")
 PIN = re.compile(r"[0-9a-f]{40}\Z")
+DIAGRAM_COLLECTIONS = {
+    "architecture": ("components", "connections"),
+    "workflow": ("nodes", "edges"),
+    "sequence": ("participants", "messages"),
+    "dataflow": ("nodes", "flows"),
+    "lifecycle": ("states", "transitions"),
+}
+
+
+def normalized_text(value):
+    """Ignore formatting whitespace while retaining authored words and punctuation."""
+    return " ".join(value.split())
+
+
+def card_text(value):
+    """Match reference captions after the renderer turns their URLs into anchors."""
+    return normalized_text(re.sub(r"\s+[—–-]\s+https?://\S+", "", value))
+
+
+class DiagramHTML(HTMLParser):
+    """Read delivered graph metadata and visible cards without executing viewer code."""
+
+    def __init__(self, source):
+        """Collect all occurrences so an inconsistent path and label cannot conceal drift."""
+        super().__init__(convert_charrefs=True)
+        self.nodes = {}
+        self.edges = {}
+        self.cards = []
+        self.card_depth = 0
+        self.field = None
+        self.card_links = None
+        self.graph_stack = []
+        self.feed(source)
+
+    def handle_starttag(self, tag, attributes):
+        """Capture graph elements and the caption/list structure of explanatory cards."""
+        attrs = dict(attributes)
+        graph_element = None
+        for key, collection in (("data-node-id", self.nodes), ("data-edge-id", self.edges)):
+            if key in attrs:
+                collection.setdefault(attrs[key], []).append(attrs)
+                attrs["visible_text"] = []
+                graph_element = attrs
+        if tag == "svg" or self.graph_stack:
+            parent = self.graph_stack[-1] if self.graph_stack else (None, None, False)
+            self.graph_stack.append((tag, graph_element if graph_element is not None else parent[1],
+                                     tag == "text" or parent[2]))
+            if tag == "text" and self.graph_stack[-1][1] is not None:
+                self.graph_stack[-1][1]["visible_text"].append([])
+        if tag == "div":
+            if self.card_depth:
+                self.card_depth += 1
+            elif "card" in (attrs.get("class") or "").split():
+                self.card_depth = 1
+                self.cards.append({"title": [], "items": [], "links": []})
+        if self.card_depth:
+            if tag == "h3":
+                self.field = self.cards[-1]["title"]
+            elif tag == "li":
+                self.field = []
+                self.cards[-1]["items"].append(self.field)
+                self.card_links = []
+                self.cards[-1]["links"].append(self.card_links)
+            elif tag == "a" and self.card_links is not None:
+                self.card_links.append(attrs.get("href", ""))
+
+    def handle_endtag(self, tag):
+        """End the current card or visible text field."""
+        if self.graph_stack and self.graph_stack[-1][0] == tag:
+            self.graph_stack.pop()
+        if tag in ("h3", "li"):
+            self.field = None
+            self.card_links = None
+        if tag == "div" and self.card_depth:
+            self.card_depth -= 1
+
+    def handle_data(self, data):
+        """Keep visible graph and card text, excluding copies in scripts or attributes."""
+        if self.graph_stack:
+            _, element, visible = self.graph_stack[-1]
+            if visible and element is not None:
+                element["visible_text"][-1].append(data)
+        if self.field is not None:
+            self.field.append(data)
+
+    def card_values(self):
+        """Return normalized captions and list items in their delivered order."""
+        return [{"title": normalized_text("".join(card["title"])),
+                 "items": [re.sub(r"^•\s*", "", normalized_text("".join(item)))
+                           for item in card["items"]], "links": card["links"]}
+                for card in self.cards]
 
 
 def prose(text):
@@ -207,6 +299,37 @@ class Checker:
             self.local_link(owner, link)
             self.code_link(owner, link)
 
+    def diagram_content(self, owner, spec, source):
+        """Detect stale graph semantics and cards independently of source-link presence."""
+        collections = DIAGRAM_COLLECTIONS.get(spec.get("diagram_type"))
+        if collections is None:
+            return  # Archify owns schema validation; isolated reference fixtures omit the type.
+        rendered = DiagramHTML(source)
+        for collection, actual, fields in (
+            (collections[0], rendered.nodes, {"label": "data-node-label", "sublabel": "data-node-sublabel", "purpose": "data-purpose"}),
+            (collections[1], rendered.edges, {"from": "data-edge-from", "to": "data-edge-to", "label": "data-edge-label", "purpose": "data-purpose"}),
+        ):
+            expected = {item["id"]: item for item in spec.get(collection, [])}
+            if expected.keys() != actual.keys():
+                self.error(owner, f"delivered {collection} inventory differs: missing {sorted(expected.keys() - actual.keys())}; unexpected {sorted(actual.keys() - expected.keys())}")
+            for identifier in expected.keys() & actual.keys():
+                for field, attribute in fields.items():
+                    value = normalized_text(expected[identifier].get(field, ""))
+                    if any(normalized_text(element.get(attribute, "")) != value for element in actual[identifier]):
+                        self.error(owner, f"delivered {collection} {identifier} {field} differs from source")
+                for field in ("label", "sublabel"):
+                    value = normalized_text(expected[identifier].get(field, ""))
+                    if value and not any(value == normalized_text(" ".join(block))
+                                         for element in actual[identifier] for block in element["visible_text"]):
+                        self.error(owner, f"delivered {collection} {identifier} visible {field} differs from source")
+        cards = [{"title": normalized_text(card.get("title", "")),
+                  "items": [card_text(item) for item in card.get("items", [])],
+                  "links": [[match.group(0).rstrip(".,;)]") for match in URL.finditer(item)]
+                            for item in card.get("items", [])]}
+                 for card in spec.get("cards", [])]
+        if cards != rendered.card_values():
+            self.error(owner, "delivered explanatory cards differ from source")
+
     def diagram(self, name):
         """Check source coverage, immutable evidence and links in the delivered HTML."""
         spec = json.loads((self.root / name).read_text())
@@ -216,14 +339,19 @@ class Checker:
             self.error(name, f"missing delivered HTML: {artifact.name}")
             rendered = None
         else:
-            rendered = html.unescape(artifact.read_text())
+            raw = artifact.read_text()
+            rendered = html.unescape(raw)
             if not rendered.strip():
                 self.error(name, f"delivered HTML is empty: {artifact.name}")
+            self.diagram_content(name, spec, raw)
         repository = spec.get("meta", {}).get("repository", {})
         revision = repository.get("revision", "")
         for component in spec.get("components", []):
             sources = component.get("sources", [])
-            if component.get("type") not in ("external", "cloud") and not sources:
+            if component.get("type") not in ("external", "cloud") and not any(
+                implementation_reference(f"{REPOSITORY}/blob/{revision}/{source['path']}")
+                for source in sources
+            ):
                 self.error(name, f"component {component['id']} has no implementation source")
             for source in sources:
                 if not PIN.fullmatch(revision) or repository.get("url", "").rstrip("/") != REPOSITORY:
