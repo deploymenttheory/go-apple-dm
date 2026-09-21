@@ -267,12 +267,13 @@ func TestAtomicAuthenticateRejectsReuseAndRollsBackStorageFailure(t *testing.T) 
 					t.Fatal(err)
 				}
 			}
+			var result storage.AuthenticateResult
 			if err := s.AuthenticateEnrollment(
 				ctx,
 				id,
-				storage.AuthenticateChange{Hash: "used", At: now},
-			); err == nil {
-				t.Fatal("authentication failure ignored")
+				storage.AuthenticateChange{Hash: "used", At: now, Result: &result},
+			); err == nil || result.Known {
+				t.Fatalf("authentication failure published success: %+v %v", result, err)
 			}
 			if _, err := s.EnrollmentByID(ctx, id.ID); !errors.Is(err, storage.ErrNotFound) {
 				t.Fatal("partial enrollment survived rollback", err)

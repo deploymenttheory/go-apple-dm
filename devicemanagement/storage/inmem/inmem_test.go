@@ -16,3 +16,11 @@ func TestContract(t *testing.T) {
 		return inmem.New()
 	})
 }
+
+// TestAuthenticateResult checks the optional atomic outcome and wrapper forwarding.
+func TestAuthenticateResult(t *testing.T) {
+	storagetest.RunAuthenticateResultSuite(t, func(t *testing.T) storage.Store {
+		t.Helper()
+		return inmem.New()
+	})
+}

@@ -59,8 +59,14 @@ func (s *Store) AuthenticateEnrollment(
 		e = &r.Enrollment
 	}
 	retry, err := storage.CheckAuthenticate(id, e, c)
-	if err != nil || retry {
+	if err != nil {
 		return err
+	}
+	if retry {
+		if c.Result != nil {
+			*c.Result = storage.AuthenticateResult{Known: true}
+		}
+		return nil
 	}
 	if c.Hash != "" {
 		if owner, ok := s.certs[c.Hash]; ok && owner != id {
@@ -85,6 +91,9 @@ func (s *Store) AuthenticateEnrollment(
 		s.certs[c.Hash] = id
 		r.CertHash, r.CertHashAt = c.Hash, c.At
 		s.recordAssociationLocked(id, c.Hash, c.At)
+	}
+	if c.Result != nil {
+		*c.Result = storage.AuthenticateResult{Known: true, Reset: true}
 	}
 	return nil
 }

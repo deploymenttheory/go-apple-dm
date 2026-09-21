@@ -154,12 +154,14 @@ func (s *Store) AuthenticateEnrollment(
 	); err != nil {
 		return err
 	}
-	return s.tx(ctx, func(q querier) error {
+	var result storage.AuthenticateResult
+	err := s.tx(ctx, func(q querier) error {
 		e, err := s.ensureEnrollment(ctx, q, id, c.At)
 		if err != nil {
 			return err
 		}
 		retry, err := storage.CheckAuthenticate(id, e, c)
+		result = storage.AuthenticateResult{Known: true, Reset: !retry}
 		if err != nil || retry {
 			return err
 		}
@@ -194,4 +196,8 @@ func (s *Store) AuthenticateEnrollment(
 		}
 		return nil
 	})
+	if err == nil && c.Result != nil {
+		*c.Result = result
+	}
+	return err
 }
