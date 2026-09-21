@@ -108,6 +108,28 @@ class Checker:
         self.errors.append(f"{owner}: {message}")
 
     @lru_cache(maxsize=None)
+    def tracked_paths(self):
+        """Include indexed files, submodule contents and their directory ancestors."""
+        result = subprocess.run(
+            ["git", "ls-files", "--cached", "--recurse-submodules", "-z"],
+            cwd=self.root, capture_output=True, text=True, check=True,
+        )
+        paths = set()
+        for name in result.stdout.split("\0"):
+            if name:
+                path = Path(name)
+                paths.add(path)
+                paths.update(path.parents)
+        return paths
+
+    def tracked_target(self, target):
+        """Reject local leftovers that will not exist in a clean Git checkout."""
+        try:
+            return target.resolve().relative_to(self.root) in self.tracked_paths()
+        except ValueError:
+            return False
+
+    @lru_cache(maxsize=None)
     def git_object(self, revision, path):
         """Read evidence from its pinned revision, never from shifted working lines."""
         return subprocess.run(
@@ -135,6 +157,8 @@ class Checker:
                 target = self.root / path
                 if not target.exists():
                     raise ValueError("path is absent from the checkout")
+                if not self.tracked_target(target):
+                    raise ValueError("target is not tracked by Git")
                 text = target.read_text() if target.is_file() else ""
             else:
                 text = self.git_object(revision, path)
@@ -169,6 +193,8 @@ class Checker:
         self.checked_links += 1
         if not target.exists():
             self.error(owner, f"missing local target: {url}")
+        elif not self.tracked_target(target):
+            self.error(owner, f"local target is not tracked by Git: {url}")
         elif parsed.fragment and target.suffix == ".md":
             if unquote(parsed.fragment) not in anchors(target.read_text()):
                 self.error(owner, f"missing Markdown anchor: {url}")

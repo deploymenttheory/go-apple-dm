@@ -3,6 +3,7 @@
 import importlib.util
 import json
 from pathlib import Path
+import subprocess
 import tempfile
 import unittest
 
@@ -20,6 +21,7 @@ class DocumentationLinks(unittest.TestCase):
         directory = tempfile.TemporaryDirectory()
         self.addCleanup(directory.cleanup)
         self.root = Path(directory.name)
+        subprocess.run(["git", "init", "--quiet", str(self.root)], check=True, capture_output=True)
         self.checker = MODULE.Checker(self.root)
 
     def write(self, name, text):
@@ -27,6 +29,7 @@ class DocumentationLinks(unittest.TestCase):
         path = self.root / name
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(text)
+        subprocess.run(["git", "add", "--", name], cwd=self.root, check=True, capture_output=True)
         return path
 
     def test_local_targets_and_duplicate_heading_anchors(self):
@@ -43,6 +46,31 @@ class DocumentationLinks(unittest.TestCase):
         text = ('[a](a.md)\n![b](b.png)\n[x]: c.md\n<a href="d.md">d</a>\n'
                 '```md\n[example](nonexistent.md)\n```\n')
         self.assertEqual([url for _, url in MODULE.local_links(text)], ["a.md", "b.png", "c.md", "d.md"])
+
+    def test_directory_targets_require_tracked_contents(self):
+        """Local leftovers must not make directory links pass before a clean checkout."""
+        (self.root / "empty").mkdir()
+        (self.root / "untracked").mkdir()
+        (self.root / "untracked/notes.md").write_text("local only\n")
+        self.write("tracked/nested/page.md", "# Tracked\n")
+        self.checker.local_link("README.md:1", "tracked")
+        self.checker.local_link("README.md:2", "tracked/nested/")
+        self.assertFalse(self.checker.errors)
+        for directory in ("empty", "untracked"):
+            self.checker.local_link("README.md:3", directory)
+            self.checker.code_link("doc", MODULE.REPOSITORY + "/tree/main/" + directory)
+        self.assertEqual(len(self.checker.errors), 4)
+        self.assertTrue(all("not tracked by Git" in error for error in self.checker.errors))
+
+    def test_untracked_and_ignored_file_targets_fail(self):
+        """Files missing from the Git index cannot validate local or current code links."""
+        self.write(".gitignore", "ignored.go\n")
+        for name in ("untracked.go", "ignored.go"):
+            (self.root / name).write_text("package local\n")
+            self.checker.local_link("README.md:1", name)
+            self.checker.code_link("doc", MODULE.REPOSITORY + "/blob/main/" + name)
+        self.assertEqual(len(self.checker.errors), 4)
+        self.assertTrue(all("not tracked by Git" in error for error in self.checker.errors))
 
     def test_linked_image_checks_its_outer_destination(self):
         """A valid badge image must not conceal a missing enclosing license link."""

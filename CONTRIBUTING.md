@@ -88,6 +88,7 @@ Integrate amendments into the current decision and preserve its number and filen
 Run `make docs-check` for local documentation links, code references, documentation
 contracts and diagram-source checks; this check does not modify files. Reconcile
 protocol claims with primary vendor sources and link them beside the relevant contract.
+Local link targets must be tracked by Git; stage new target files before running the check.
 Keep authored documentation about current behavior: consolidate duplicate guides and
 remove superseded reports, handoffs and migration narratives. Generated release
 changelogs, schema provenance and vendor snapshots retain their own ownership.

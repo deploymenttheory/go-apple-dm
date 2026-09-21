@@ -129,9 +129,11 @@ items to be observed separately from successful command encoding.
 
 ## Software update coverage
 
-The schema and [software-update helpers](../../scripts/softwareupdates) are the
-protocol integration points. Selecting an available release and scheduling real
-installation remains an operator policy decision. Tests never install an OS.
+Protocol integration points are the [generated DDM schema](../../devicemanagement/schema/ddm),
+[ADE software-update gate](../../devicemanagement/mdmprotocol/enroll/ade/softwareupdate.go),
+and [GDMF release lookup](../../devicemanagement/appleplatformservices/gdmf).
+Selecting an available release and scheduling real installation remains an
+operator policy decision. Tests never install an OS.
 
 | Concern | Code / fixture evidence | Live proof required |
 |---|---|---|
