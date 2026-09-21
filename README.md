@@ -193,8 +193,9 @@ Use `make bench-init`, `make bench-up`, and `make bench-run`; see the [testing g
 [Open the interactive architecture diagram](https://htmlpreview.github.io/?https://raw.githubusercontent.com/deploymenttheory/go-apple-dm/main/docs/diagrams/system-architecture.html).
 
 The [architecture guide](docs/architecture.md) describes implemented capabilities, module
-boundaries and limitations. The [31 interactive diagrams](docs/diagrams/README.md) show
-component relationships, protocol exchanges and lifecycle transitions.
+boundaries and limitations. The [34 interactive diagrams](docs/diagrams/README.md) show
+component relationships, protocol exchanges, data flows and lifecycle transitions,
+with links to implementation evidence and vendor documentation.
 
 ## Capabilities
 
