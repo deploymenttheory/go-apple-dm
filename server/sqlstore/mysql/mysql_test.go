@@ -64,6 +64,12 @@ func TestContract(t *testing.T) {
 			t.Helper()
 			return reset(t, s)
 		})
+		t.Run("AuthenticateResult", func(t *testing.T) {
+			storagetest.RunAuthenticateResultSuite(t, func(t *testing.T) storage.Store {
+				t.Helper()
+				return reset(t, s)
+			})
+		})
 	})
 	// The sealed-column suites also run with a keyring (decision record 0013).
 	k, err := crypt.NewKeyring(ctx, crypt.Options{Keys: crypt.Keys{Active: "k1"}, Provider: secrets.Static{"k1": []byte("integration-key-material-32-bytes")}})
@@ -80,6 +86,7 @@ func TestContract(t *testing.T) {
 			t.Helper()
 			return reset(t, enc)
 		}
+		t.Run("AuthenticateResult", func(t *testing.T) { storagetest.RunAuthenticateResultSuite(t, f) })
 		t.Run("Enrollment", func(t *testing.T) { storagetest.RunEnrollmentSuite(t, f) })
 		t.Run("BootstrapToken", func(t *testing.T) { storagetest.RunBootstrapTokenSuite(t, f) })
 		t.Run("PushCert", func(t *testing.T) { storagetest.RunPushCertSuite(t, f) })

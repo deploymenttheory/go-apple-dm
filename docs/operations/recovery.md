@@ -54,12 +54,18 @@ dmctl recovery backup \
 Pause is persistent. It rejects new server/setup registrations and HTTP requests,
 cancels background workers, and waits for admitted requests and workers to finish
 on every registered process. A timeout leaves the fence closed and reports it.
+Admission encloses webhook observation, including deferred capture writes, so
+pause acknowledgments wait for those writes too. Rejected requests cannot create
+new exchange captures. See the [admission regression](../../server/internal/app/maintenance_test.go)
+and [observation drain contract](../../server/webhook/maintenance_test.go).
 The ticket is written before the fence is requested, allowing recovery after a
 CLI crash. Do not run a concurrent resume while a checkpoint is being made.
 
 Inspect a stalled drain with `recovery status -setup-file PATH`. Participants
-never expire automatically. After independently stopping a crashed or unreachable
-process, remove only its registration:
+never expire automatically. A server shutdown that cannot finish its HTTP or worker
+drain retains its registration and shared resources and returns an error. After
+independently stopping that process, or a crashed or unreachable process, remove
+only its registration:
 
 ```sh
 dmctl recovery forget -setup-file PATH -ticket-file TICKET \

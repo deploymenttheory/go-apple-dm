@@ -60,7 +60,7 @@
       "stage": 0,
       "row": 0,
       "tag": "third_party",
-      "width": 190,
+      "width": 230,
       "height": 58,
       "purpose": "artifact"
     },
@@ -93,7 +93,7 @@
       "sublabel": "Identifiers and availability",
       "stage": 2,
       "row": 1,
-      "width": 190,
+      "width": 230,
       "height": 58,
       "purpose": "artifact"
     },
@@ -208,7 +208,7 @@
       "title": "Verification",
       "items": [
         "make verify regenerates the outputs and detects changes against the checked-in files. EXPORTED_IDENTIFIERS.lock guards public naming stability.",
-        "GENERATED_FROM.json records both Apple revisions and their schema digests. make test requires all eight OS 27 runtime contracts."
+        "GENERATED_FROM.json records both Apple revisions and their schema digests. make test requires every OS 27 runtime contract in the published inventory."
       ]
     },
     {
@@ -223,20 +223,21 @@
       "title": "Implementation references",
       "dot": "artifact",
       "items": [
-        "yaml: Apple schema repository \u2014 https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/devicemanagement/schema/GENERATED_FROM.json",
-        "loader: Schema generator \u2014 https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/internal/schemagen/generate.go",
-        "types: Generated Go types \u2014 https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/devicemanagement/schema/commands/types.gen.go",
-        "registry: Registries and support \u2014 https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/devicemanagement/schema/commands/support.gen.go",
-        "nameslock: Public-name lock \u2014 https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/devicemanagement/schema/EXPORTED_IDENTIFIERS.lock",
-        "conformance: Conformance tests \u2014 https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/devicemanagement/schema/commands/conformance_gen_test.go"
+        "yaml: Apple schema repository \u2014 https://github.com/deploymenttheory/go-apple-dm/blob/e3db0449b366f96ebb0d6e27a02a1d65d382e1a5/devicemanagement/schema/GENERATED_FROM.json",
+        "loader: Schema generator \u2014 https://github.com/deploymenttheory/go-apple-dm/blob/e3db0449b366f96ebb0d6e27a02a1d65d382e1a5/internal/schemagen/generate.go",
+        "types: Generated Go types \u2014 https://github.com/deploymenttheory/go-apple-dm/blob/e3db0449b366f96ebb0d6e27a02a1d65d382e1a5/devicemanagement/schema/commands/types.gen.go",
+        "registry: Registries and support \u2014 https://github.com/deploymenttheory/go-apple-dm/blob/e3db0449b366f96ebb0d6e27a02a1d65d382e1a5/devicemanagement/schema/commands/support.gen.go",
+        "nameslock: Public-name lock \u2014 https://github.com/deploymenttheory/go-apple-dm/blob/e3db0449b366f96ebb0d6e27a02a1d65d382e1a5/devicemanagement/schema/EXPORTED_IDENTIFIERS.lock",
+        "conformance: Conformance tests \u2014 https://github.com/deploymenttheory/go-apple-dm/blob/e3db0449b366f96ebb0d6e27a02a1d65d382e1a5/devicemanagement/schema/commands/conformance_gen_test.go"
       ]
     },
     {
       "title": "Implementation references (continued)",
       "dot": "artifact",
       "items": [
-        "generatedfrom: Generation provenance \u2014 https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/devicemanagement/schema/GENERATED_FROM.json",
-        "Future-schema monitor \u2014 https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/.github/scripts/device_management_client_schema_monitor.py"
+        "generatedfrom: Generation provenance \u2014 https://github.com/deploymenttheory/go-apple-dm/blob/e3db0449b366f96ebb0d6e27a02a1d65d382e1a5/devicemanagement/schema/GENERATED_FROM.json",
+        "Future-schema monitor \u2014 https://github.com/deploymenttheory/go-apple-dm/blob/e3db0449b366f96ebb0d6e27a02a1d65d382e1a5/.github/scripts/device_management_client_schema_monitor.py",
+        "Published runtime contract inventory \u2014 https://github.com/deploymenttheory/go-apple-dm/blob/e3db0449b366f96ebb0d6e27a02a1d65d382e1a5/scripts/device-management-schema-contracts.py"
       ]
     }
   ]

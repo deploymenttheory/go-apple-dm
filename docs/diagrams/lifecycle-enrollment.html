@@ -5205,7 +5205,7 @@ svg[data-purpose-filter] g[data-purpose-highlight] > path { stroke-width: 2.4; }
         <path data-edge-from="authenticated" data-edge-to="reenrolled" data-edge-label="Authorized new identity" data-edge-key="2" data-edge-id="rotate" data-purpose="neutral" data-composition-points="620,178;620,278" d="M 620 178 L 620 278" class="a-default purpose-arrow purpose-neutral" stroke-width="1.1" marker-end="url(#purpose-arrowhead-neutral)"/>
         <path data-edge-from="reenrolled" data-edge-to="authenticated" data-edge-label="Associate identity" data-edge-key="3" data-edge-id="repin" data-purpose="authentication" data-composition-points="510,304;440,304;440,152;510,152" d="M 510 304 L 450 304 Q 440 304 440 294 L 440 162 Q 440 152 450 152 L 510 152" class="a-emphasis purpose-arrow purpose-authentication" stroke-width="2" marker-end="url(#purpose-arrowhead-authentication)"/>
         <path data-edge-from="enabled" data-edge-to="checkedout" data-edge-label="CheckOut" data-edge-key="4" data-edge-id="checkout" data-purpose="neutral" data-composition-points="1090,178;1090,450" d="M 1090 178 L 1090 450" class="a-default purpose-arrow purpose-neutral" stroke-width="1.1" marker-end="url(#purpose-arrowhead-neutral)"/>
-        <path data-edge-from="enabled" data-edge-to="reenrolled" data-edge-label="Authorized new identity" data-edge-key="5" data-edge-id="reset-enabled" data-purpose="neutral" data-composition-points="980,152;855,152;855,304;730,304" d="M 980 152 L 865 152 Q 855 152 855 162 L 855 294 Q 855 304 845 304 L 730 304" class="a-default purpose-arrow purpose-neutral" stroke-width="1.1" marker-end="url(#purpose-arrowhead-neutral)"/>
+        <path data-edge-from="enabled" data-edge-to="reenrolled" data-edge-label="Authorized new identity" data-edge-key="5" data-edge-id="reset-enabled" data-purpose="neutral" data-composition-points="1090,178;1090,225;855,225;855,304;730,304" d="M 1090 178 L 1090 215 Q 1090 225 1080 225 L 865 225 Q 855 225 855 235 L 855 294 Q 855 304 845 304 L 730 304" class="a-default purpose-arrow purpose-neutral" stroke-width="1.1" marker-end="url(#purpose-arrowhead-neutral)"/>
         <path data-edge-from="checkedout" data-edge-to="authenticated" data-edge-label="Authorized new identity" data-edge-key="6" data-edge-id="resume" data-purpose="authentication" data-composition-points="1090,502;1090,575;330,575;330,152;510,152" d="M 1090 502 L 1090 565 Q 1090 575 1080 575 L 340 575 Q 330 575 330 565 L 330 162 Q 330 152 340 152 L 510 152" class="a-default purpose-arrow purpose-authentication" stroke-width="1.1" marker-end="url(#purpose-arrowhead-authentication)"/>
         <path data-edge-from="enabled" data-edge-to="enabled" data-edge-label="Replacement committed" data-edge-key="7" data-edge-id="replace" data-purpose="success" data-composition-points="1090,126;1090,76;1240,76;1240,152;1200,152" d="M 1090 126 L 1090 86 Q 1090 76 1100 76 L 1230 76 Q 1240 76 1240 86 L 1240 142 Q 1240 152 1230 152 L 1200 152" class="a-default purpose-arrow purpose-success" stroke-width="1.1" marker-end="url(#purpose-arrowhead-success)"/>
 
@@ -5294,8 +5294,8 @@ svg[data-purpose-filter] g[data-purpose-highlight] > path { stroke-width: 2.4; }
           <text x="1090" y="365" class="t-security" font-size="10" text-anchor="middle">CheckOut</text>
         </g>
         <g data-detail="context" data-edge-from="enabled" data-edge-to="reenrolled" data-edge-label="Authorized new identity" data-edge-key="5" data-edge-id="reset-enabled" data-purpose="neutral">
-          <rect x="780" y="229" width="150" height="16" rx="4" class="c-mask"/>
-          <text x="855" y="240" class="t-muted" font-size="10" text-anchor="middle">Authorized new identity</text>
+          <rect x="780" y="239" width="150" height="16" rx="4" class="c-mask"/>
+          <text x="855" y="250" class="t-muted" font-size="10" text-anchor="middle">Authorized new identity</text>
         </g>
         <g data-detail="context" data-edge-from="checkedout" data-edge-to="authenticated" data-edge-label="Authorized new identity" data-edge-key="6" data-edge-id="resume" data-purpose="authentication">
           <rect x="605" y="553" width="150" height="16" rx="4" class="c-mask"/>
@@ -5510,7 +5510,7 @@ svg[data-purpose-filter] g[data-purpose-highlight] > path { stroke-width: 2.4; }
         <ul>
           <li>&bull; Initial Authenticate associates the device identity; TokenUpdate enables the channel. Same-certificate Authenticate retries preserve the existing enrollment, tokens, queue and declarative state.</li>
           <li>&bull; Both service.Core and the reference server deny changed certificates by default. An explicitly allowed changed-identity Authenticate resets enrollment state; the reset arrows show that path.</li>
-          <li>&bull; A rejected request preserves the existing state. A disabled enrollment cannot reactivate with its old certificate or TokenUpdate; a fresh identity requires authorized re-enrollment.</li>
+          <li>&bull; Policy-rejected identity transitions preserve existing state. A disabled enrollment cannot reactivate with its old certificate or TokenUpdate; a fresh identity requires authorized re-enrollment.</li>
         </ul>
       </div>
 
@@ -5533,6 +5533,7 @@ svg[data-purpose-filter] g[data-purpose-highlight] > path { stroke-width: 2.4; }
         <ul>
           <li>&bull; CheckOut disables the enrollment and clears dependent state while retaining its record. A fresh identity can reactivate it only through authorized re-enrollment. Declarative cleanup runs through the service hook.</li>
           <li>&bull; User channels are created by TokenUpdate under an existing device enrollment, with UserAuthenticate when required. They do not send device-channel Authenticate.</li>
+          <li>&bull; Declarative cleanup must complete before success. Shared-SQL reference composition rolls back enrollment changes and cleanup together on failure. Memory or independently committing stores have no cross-store rollback.</li>
         </ul>
       </div>
 
@@ -5554,12 +5555,12 @@ svg[data-purpose-filter] g[data-purpose-highlight] > path { stroke-width: 2.4; }
           <h3>Implementation references</h3>
         </div>
         <ul>
-          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/devicemanagement/storage/storage.go" target="_blank" rel="noopener noreferrer">unknown: Not enrolled</a></li>
-          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/server/service/checkin.go" target="_blank" rel="noopener noreferrer">authenticated: Awaiting push details</a></li>
-          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/server/service/checkin.go" target="_blank" rel="noopener noreferrer">enabled: Enabled</a></li>
-          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/devicemanagement/storage/authenticate.go" target="_blank" rel="noopener noreferrer">reenrolled: Enrollment reset</a></li>
-          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/server/service/checkin.go" target="_blank" rel="noopener noreferrer">checkedout: Disabled</a></li>
-          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/server/ddmsync/servicehook.go" target="_blank" rel="noopener noreferrer">Declarative cleanup hook</a></li>
+          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/e3db0449b366f96ebb0d6e27a02a1d65d382e1a5/devicemanagement/storage/storage.go" target="_blank" rel="noopener noreferrer">unknown: Not enrolled</a></li>
+          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/e3db0449b366f96ebb0d6e27a02a1d65d382e1a5/server/service/checkin.go#L193" target="_blank" rel="noopener noreferrer">authenticated: Awaiting push details</a></li>
+          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/e3db0449b366f96ebb0d6e27a02a1d65d382e1a5/server/service/checkin.go#L279" target="_blank" rel="noopener noreferrer">enabled: Enabled</a></li>
+          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/e3db0449b366f96ebb0d6e27a02a1d65d382e1a5/devicemanagement/storage/authenticate.go" target="_blank" rel="noopener noreferrer">reenrolled: Enrollment reset</a></li>
+          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/e3db0449b366f96ebb0d6e27a02a1d65d382e1a5/server/service/checkin.go#L319" target="_blank" rel="noopener noreferrer">checkedout: Disabled</a></li>
+          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/e3db0449b366f96ebb0d6e27a02a1d65d382e1a5/server/ddmsync/servicehook.go#L51" target="_blank" rel="noopener noreferrer">Declarative cleanup hook</a></li>
         </ul>
       </div>
 
@@ -5569,7 +5570,7 @@ svg[data-purpose-filter] g[data-purpose-highlight] > path { stroke-width: 2.4; }
           <h3>Implementation references (continued)</h3>
         </div>
         <ul>
-          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/server/service/replacement.go" target="_blank" rel="noopener noreferrer">Controlled replacement</a></li>
+          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/e3db0449b366f96ebb0d6e27a02a1d65d382e1a5/server/service/replacement.go#L45" target="_blank" rel="noopener noreferrer">Controlled replacement</a></li>
         </ul>
       </div>
     </div>

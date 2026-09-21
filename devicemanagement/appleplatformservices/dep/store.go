@@ -304,11 +304,13 @@ type Records interface {
 
 // Tx is a transaction view. LockAccount must precede reads used for sync or
 // assignment decisions. Competing transactions for that account serialize.
-// LockAccount returns ErrNotFound if the account no longer exists.
+// LockAccount also locks an absent account name. In that case it returns
+// ErrNotFound while retaining the name lock until the transaction completes.
 type Tx interface {
 	Records
 	// LockAccount serializes account-scoped transitions within the current transaction;
-	// acquire it before changing cursor or worker state.
+	// acquire it before creating an account or changing cursor, worker, or keypair
+	// state. The lock survives deletion and recreation within the transaction.
 	LockAccount(ctx context.Context, account string) error
 }
 

@@ -75,8 +75,9 @@ type Client struct {
 
 // accountSession serialises session refreshes for one account.
 type accountSession struct {
-	mu    sync.Mutex
-	token string
+	mu      sync.Mutex
+	token   string
+	binding accountBinding
 }
 
 // NewClient validates the configuration and applies defaults.
@@ -184,6 +185,9 @@ func (c *Client) Do(ctx context.Context, account string, req *http.Request, out 
 	if err != nil {
 		return err
 	}
+	if err := checkAccountFence(ctx, acct); err != nil {
+		return err
+	}
 	replay, length, err := replayable(req, c.cfg.MaxBodyBytes)
 	if err != nil {
 		return err
@@ -197,9 +201,14 @@ func (c *Client) Do(ctx context.Context, account string, req *http.Request, out 
 		if err != nil {
 			return err
 		}
+		// A response from replaced credentials must not rotate sessions, change
+		// account state, or escape to a caller that might persist its body.
+		if err := c.accountUpdate(ctx, acct, func(Tx, *Account) error { return nil }); err != nil {
+			return c.staleResponse(err, status, header, body, out)
+		}
 		if rotated := header.Get(HeaderSession); rotated != "" && rotated != token {
-			if err := c.adoptSession(ctx, acct.Name, rotated); err != nil {
-				return err
+			if err := c.adoptSession(ctx, acct, rotated); err != nil {
+				return c.staleResponse(err, status, header, body, out)
 			}
 			token = rotated
 		}
@@ -207,8 +216,8 @@ func (c *Client) Do(ctx context.Context, account string, req *http.Request, out 
 			if acct.State != (AccountState{}) {
 				// A definitive success clears TermsExpired and TokenInvalid;
 				// a store failure is reported, not swallowed.
-				if err := c.cfg.Store.SetAccountState(ctx, acct.Name, AccountState{}); err != nil {
-					return fmt.Errorf("dep: clear account state: %w", err)
+				if err := c.accountUpdate(ctx, acct, func(tx Tx, _ *Account) error { return tx.SetAccountState(ctx, acct.Name, AccountState{}) }); err != nil {
+					return c.staleResponse(fmt.Errorf("dep: clear account state: %w", err), status, header, body, out)
 				}
 				acct.State = AccountState{}
 			}
@@ -387,10 +396,20 @@ func (c *Client) sessionToken(ctx context.Context, acct *Account, stale string) 
 	s := c.sessionFor(acct.Name)
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	if s.token != "" && s.token != stale {
-		return s.token, nil
+	if s.binding != binding(acct) {
+		s.token = ""
+		s.binding = binding(acct)
 	}
-	stored, err := c.cfg.Store.Session(ctx, acct.Name)
+	var stored string
+	err := c.accountUpdate(ctx, acct, func(tx Tx, _ *Account) error {
+		if s.token != "" && s.token != stale {
+			stored = s.token
+			return nil
+		}
+		var err error
+		stored, err = tx.Session(ctx, acct.Name)
+		return err
+	})
 	if err != nil {
 		return "", err
 	}
@@ -402,7 +421,7 @@ func (c *Client) sessionToken(ctx context.Context, acct *Account, stale string) 
 	if err != nil {
 		return "", err
 	}
-	if err := c.cfg.Store.SetSession(ctx, acct.Name, token); err != nil {
+	if err := c.accountUpdate(ctx, acct, func(tx Tx, _ *Account) error { return tx.SetSession(ctx, acct.Name, token) }); err != nil {
 		return "", err
 	}
 	s.token = token
@@ -410,17 +429,15 @@ func (c *Client) sessionToken(ctx context.Context, acct *Account, stale string) 
 }
 
 // adoptSession persists a session the service rotated in a response.
-func (c *Client) adoptSession(ctx context.Context, name, token string) error {
-	s := c.sessionFor(name)
+func (c *Client) adoptSession(ctx context.Context, acct *Account, token string) error {
+	s := c.sessionFor(acct.Name)
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	if s.token == token {
-		return nil
-	}
-	if err := c.cfg.Store.SetSession(ctx, name, token); err != nil {
+	if err := c.accountUpdate(ctx, acct, func(tx Tx, _ *Account) error { return tx.SetSession(ctx, acct.Name, token) }); err != nil {
 		return err
 	}
 	s.token = token
+	s.binding = binding(acct)
 	return nil
 }
 
@@ -432,7 +449,7 @@ func (c *Client) authenticate(ctx context.Context, acct *Account) (string, error
 	switch {
 	case err == nil:
 		if acct.State != (AccountState{}) {
-			if serr := c.cfg.Store.SetAccountState(ctx, acct.Name, AccountState{}); serr != nil {
+			if serr := c.accountUpdate(ctx, acct, func(tx Tx, _ *Account) error { return tx.SetAccountState(ctx, acct.Name, AccountState{}) }); serr != nil {
 				return "", serr
 			}
 			acct.State = AccountState{}
@@ -463,7 +480,12 @@ func (c *Client) markState(ctx context.Context, acct *Account, cause error, s Ac
 	if acct.State == s {
 		return cause
 	}
-	if err := c.cfg.Store.SetAccountState(ctx, acct.Name, s); err != nil {
+	if err := c.accountUpdate(ctx, acct, func(tx Tx, current *Account) error {
+		// Preserve a concurrent failure flag set for these same credentials.
+		s.TermsExpired = s.TermsExpired || current.State.TermsExpired
+		s.TokenInvalid = s.TokenInvalid || current.State.TokenInvalid
+		return tx.SetAccountState(ctx, acct.Name, s)
+	}); err != nil {
 		return errors.Join(cause, err)
 	}
 	acct.State = s

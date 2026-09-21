@@ -45,6 +45,9 @@ func (t *txStore) PutAccount(ctx context.Context, a *dep.Account) error {
 			return err
 		}
 	}
+	if err := t.lockAccountName(ctx, a.Name); err != nil {
+		return err
+	}
 	_, err = t.exec(ctx, "put account", t.upsert("dep_accounts", accountCols, accountCols[:1], []string{"created_at"}),
 		a.Name, a.ConsumerKey, cs, at, as, nullTime(a.AccessTokenExpiry), a.ProtocolVersion,
 		a.OrgName, a.OrgID, a.ServerName, a.ServerUUID, a.AdminID, limits, a.ProfileUUID, a.State.TermsExpired, a.State.TokenInvalid,
@@ -104,12 +107,13 @@ func (t *txStore) GetAccount(ctx context.Context, name string) (*dep.Account, er
 	return t.scanAccount(rows)
 }
 
-// accountTables lists every table keyed by account, for DeleteAccount.
+// accountTables lists account data removed by DeleteAccount. Persistent name
+// locks are retained so deletion cannot split competing writers across locks.
 var accountTables = []string{"dep_sessions", "dep_cursors", "dep_keypairs", "dep_devices", "dep_profiles", "dep_assignments", "dep_assignment_state"}
 
 // DeleteAccount implements dep.AccountStore.
 func (t *txStore) DeleteAccount(ctx context.Context, name string) error {
-	if err := validName("account name", name); err != nil {
+	if err := t.lockAccountName(ctx, name); err != nil {
 		return err
 	}
 	res, err := t.exec(ctx, "delete account", "DELETE FROM dep_accounts WHERE name = ?", name)
@@ -149,7 +153,7 @@ func (t *txStore) ListAccounts(ctx context.Context, p paging.Page) (paging.Resul
 
 // SetAccountState implements dep.AccountStore.
 func (t *txStore) SetAccountState(ctx context.Context, name string, s dep.AccountState) error {
-	if err := validName("account name", name); err != nil {
+	if err := t.lockAccountName(ctx, name); err != nil {
 		return err
 	}
 	res, err := t.exec(ctx, "set account state", "UPDATE dep_accounts SET terms_expired = ?, token_invalid = ? WHERE name = ?", s.TermsExpired, s.TokenInvalid, name)
@@ -197,6 +201,9 @@ func (t *txStore) PutKeypair(ctx context.Context, name string, stage dep.Stage, 
 		// dated when it is stored.
 		created = time.Now()
 	}
+	if err := t.lockAccountName(ctx, name); err != nil {
+		return err
+	}
 	_, err = t.exec(ctx, "put keypair", t.upsert("dep_keypairs", keypairCols, keypairCols[:2], nil), name, string(stage), kp.CertPEM, key, utc(created))
 	return err
 }
@@ -228,6 +235,9 @@ func (t *txStore) Keypair(ctx context.Context, name string, stage dep.Stage) (*d
 // UpstageKeypair implements dep.AccountStore. The key is re-sealed for
 // its new row identity.
 func (t *txStore) UpstageKeypair(ctx context.Context, name string) error {
+	if err := t.lockAccountName(ctx, name); err != nil {
+		return err
+	}
 	kp, err := t.Keypair(ctx, name, dep.StageStaged)
 	if err != nil {
 		return err
@@ -332,7 +342,7 @@ func (s *Store) ListAccounts(ctx context.Context, p paging.Page) (paging.Result[
 
 // SetAccountState implements dep.AccountStore.
 func (s *Store) SetAccountState(ctx context.Context, name string, st dep.AccountState) error {
-	return s.view(ctx).SetAccountState(ctx, name, st)
+	return s.write(ctx, func(t *txStore) error { return t.SetAccountState(ctx, name, st) })
 }
 
 // PutKeypair implements dep.AccountStore.

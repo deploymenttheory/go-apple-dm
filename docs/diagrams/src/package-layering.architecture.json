@@ -347,25 +347,25 @@
       "to": "clienttier",
       "variant": "dashed",
       "label": "ADE OS lookup exception",
-      "fromSide": "left",
-      "toSide": "bottom",
+      "fromSide": "right",
+      "toSide": "top",
       "via": [
         [
-          815,
+          1090,
           305
         ],
         [
-          815,
-          220
+          1090,
+          60
         ],
         [
           680,
-          220
+          60
         ]
       ],
       "labelAt": [
-        700,
-        208
+        850,
+        46
       ],
       "purpose": "neutral"
     }

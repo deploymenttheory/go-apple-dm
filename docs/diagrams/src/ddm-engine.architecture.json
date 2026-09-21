@@ -10,7 +10,7 @@
     ],
     "repository": {
       "url": "https://github.com/deploymenttheory/go-apple-dm",
-      "revision": "2b8157efa2c6cbfff459bc44f66736a5d2e7c753"
+      "revision": "e3db0449b366f96ebb0d6e27a02a1d65d382e1a5"
     },
     "views": [
       {
@@ -68,11 +68,13 @@
       "sources": [
         {
           "path": "server/ddmadapter/inproc/inproc.go",
-          "label": "in process"
+          "line": 36,
+          "label": "In-process handler"
         },
         {
           "path": "server/ddmadapter/proxyclient/proxyclient.go",
-          "label": "over the hop"
+          "line": 53,
+          "label": "HTTP proxy handler"
         }
       ],
       "purpose": "transport"
@@ -96,7 +98,7 @@
       "id": "servicehook",
       "type": "backend",
       "label": "Enrollment cleanup hook",
-      "sublabel": "Ordinary reset or CheckOut",
+      "sublabel": "Required before check-in success",
       "pos": [
         15.0,
         410
@@ -108,7 +110,18 @@
       "sources": [
         {
           "path": "server/ddmsync/servicehook.go",
-          "label": "clear on check-in"
+          "line": 51,
+          "label": "Fallible lifecycle completion"
+        },
+        {
+          "path": "server/service/checkin.go",
+          "line": 193,
+          "label": "Authoritative reset outcome"
+        },
+        {
+          "path": "devicemanagement/storage/authenticate.go",
+          "line": 33,
+          "label": "Optional outcome contract"
         }
       ],
       "purpose": "service"
@@ -128,12 +141,19 @@
       ],
       "sources": [
         {
-          "path": "devicemanagement/mdmprotocol/ddm/engine.go",
-          "label": "Config and New"
+          "path": "devicemanagement/mdmprotocol/ddm/serve.go",
+          "line": 204,
+          "label": "Handle device endpoints"
         },
         {
-          "path": "devicemanagement/mdmprotocol/ddm/serve.go",
-          "label": "Handle"
+          "path": "devicemanagement/mdmprotocol/ddm/clear.go",
+          "line": 13,
+          "label": "Clear enrollment state"
+        },
+        {
+          "path": "devicemanagement/mdmprotocol/ddm/admin.go",
+          "line": 24,
+          "label": "Publish declaration changes"
         }
       ],
       "purpose": "service"
@@ -154,7 +174,8 @@
       "sources": [
         {
           "path": "devicemanagement/internal/canonjson/canonjson.go",
-          "label": "canonical JSON"
+          "line": 39,
+          "label": "Canonicalize JSON"
         }
       ],
       "purpose": "service"
@@ -175,7 +196,8 @@
       "sources": [
         {
           "path": "server/ddmsync/notifier.go",
-          "label": "DrainOnce"
+          "line": 212,
+          "label": "Drain committed changes"
         }
       ],
       "purpose": "transport"
@@ -196,7 +218,8 @@
       "sources": [
         {
           "path": "devicemanagement/mdmprotocol/ddm/store.go",
-          "label": "store contract"
+          "line": 291,
+          "label": "Transactional DDM store"
         }
       ],
       "purpose": "storage"
@@ -217,7 +240,8 @@
       "sources": [
         {
           "path": "devicemanagement/mdmprotocol/ddm/predicate/predicate.go",
-          "label": "activation"
+          "line": 104,
+          "label": "Parse predicate syntax"
         }
       ],
       "purpose": "service"
@@ -237,8 +261,9 @@
       ],
       "sources": [
         {
-          "path": "server/service/service.go",
-          "label": "Enqueue"
+          "path": "server/service/transaction.go",
+          "line": 12,
+          "label": "Enqueue with event transaction"
         }
       ],
       "purpose": "service"
@@ -260,7 +285,8 @@
       "sources": [
         {
           "path": "server/pushnotify/notifier.go",
-          "label": "Wake notifier"
+          "line": 28,
+          "label": "Notify enrolled devices"
         }
       ]
     },
@@ -281,10 +307,12 @@
       "sources": [
         {
           "path": "server/ddmstore/sqlstore/sqlstore.go",
+          "line": 89,
           "label": "SQL backend"
         },
         {
           "path": "devicemanagement/storage/ddm/inmem/inmem.go",
+          "line": 16,
           "label": "Memory backend"
         }
       ]
@@ -309,7 +337,7 @@
       "id": "e3",
       "from": "servicehook",
       "to": "engine",
-      "label": "Ordinary reset cleanup",
+      "label": "Required lifecycle cleanup",
       "variant": "security",
       "purpose": "service"
     },
@@ -376,7 +404,23 @@
       "from": "ddmstore",
       "to": "sqlstore",
       "label": "sqlstore or inmem",
-      "purpose": "storage"
+      "purpose": "storage",
+      "fromSide": "bottom",
+      "toSide": "top",
+      "via": [
+        [
+          785,
+          375
+        ],
+        [
+          1105,
+          375
+        ]
+      ],
+      "labelAt": [
+        945,
+        364
+      ]
     }
   ],
   "cards": [
@@ -401,7 +445,17 @@
       "title": "Timing and cleanup",
       "items": [
         "Defaults coalesce recent changes for two seconds and poll each second; admin mutations also wake the notifier. These timings are repository policy.",
-        "Initial or changed-identity Authenticate and CheckOut clear declarative state. Same-certificate retries and controlled profile replacement retain the working enrollment’s state."
+        "Initial or changed-identity Authenticate and CheckOut clear assignments, snapshots, status and pending changes. Device cleanup includes dependent user channels; user CheckOut clears only that user.",
+        "The hook completes before check-in success and propagates cleanup failures. Built-in stores classify Authenticate under their write lock, so delayed same-certificate retries preserve later assignments. Controlled replacement also preserves DDM state."
+      ]
+    },
+    {
+      "dot": "storage",
+      "title": "Transaction boundary",
+      "items": [
+        "The reference shared-SQL composition rolls back the MDM mutation, DDM cleanup and captured events together when cleanup fails. The successful per-store result remains subject to the outer transaction.",
+        "Memory and independently committing stores provide no cross-store rollback. Legacy custom enrollment stores may omit the optional reset result; their pre-read fallback requires external serialization for concurrent check-ins.",
+        "Shared SQL unit of work — https://github.com/deploymenttheory/go-apple-dm/blob/e3db0449b366f96ebb0d6e27a02a1d65d382e1a5/server/sqlstore/sqlcommon/unitofwork.go#L155"
       ]
     },
     {

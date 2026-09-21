@@ -22,7 +22,7 @@ import (
 )
 
 // depTables in dependency order for DELETE and DROP.
-var depTables = []string{"dep_assignment_state", "dep_assignments", "dep_profiles", "dep_devices", "dep_keypairs", "dep_cursors", "dep_sessions", "dep_accounts"}
+var depTables = []string{"dep_assignment_state", "dep_assignments", "dep_profiles", "dep_devices", "dep_keypairs", "dep_cursors", "dep_sessions", "dep_accounts", "dep_account_locks"}
 
 // runShared runs DEP store migration, shared store-contract, and rollback checks for a SQL
 // dialect.
@@ -36,7 +36,7 @@ func runShared(t *testing.T, db *sql.DB, d sqlcommon.Dialect, cascade string) {
 	if _, err := sqlstore.Open(ctx, db, d, sqlstore.Options{}); err != nil {
 		t.Fatal(err)
 	}
-	if v, err := sqlstore.Version(ctx, db, d); err != nil || v != 2 {
+	if v, err := sqlstore.Version(ctx, db, d); err != nil || v != 3 {
 		t.Fatalf("version %d %v", v, err)
 	}
 	if applied, err := sqlstore.Migrate(ctx, db, d); err != nil || len(applied) != 0 {
@@ -56,7 +56,8 @@ func runShared(t *testing.T, db *sql.DB, d sqlcommon.Dialect, cascade string) {
 		}
 		return s
 	})
-	if reverted, err := sqlstore.Rollback(ctx, db, d, 0); err != nil || len(reverted) != 2 {
+	t.Run("AccountNameLocks", func(t *testing.T) { checkAccountNameLocks(t, db, d) })
+	if reverted, err := sqlstore.Rollback(ctx, db, d, 0); err != nil || len(reverted) != 3 {
 		t.Fatalf("rollback: %v %v", reverted, err)
 	}
 }

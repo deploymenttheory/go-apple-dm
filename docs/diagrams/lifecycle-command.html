@@ -5203,11 +5203,11 @@ svg[data-purpose-filter] g[data-purpose-highlight] > path { stroke-width: 2.4; }
 
         <!-- Transition paths -->
         <path data-edge-from="pending" data-edge-to="sent" data-edge-label="Device polls; select command" data-edge-key="0" data-edge-id="take" data-purpose="transport" data-composition-points="260,152;510,152" d="M 260 152 L 510 152" class="a-emphasis purpose-arrow purpose-transport" stroke-width="2" marker-end="url(#purpose-arrowhead-transport)"/>
-        <path data-edge-from="sent" data-edge-to="acknowledged" data-edge-label="Acknowledged" data-edge-key="1" data-edge-id="ack" data-purpose="success" data-composition-points="730,152;980,152" d="M 730 152 L 980 152" class="a-emphasis purpose-arrow purpose-success" stroke-width="2" marker-end="url(#purpose-arrowhead-success)"/>
+        <path data-edge-from="sent" data-edge-to="acknowledged" data-edge-label="Acknowledged" data-edge-key="1" data-edge-id="ack" data-purpose="success" data-composition-points="620,126;620,42;1090,42;1090,126" d="M 620 126 L 620 52 Q 620 42 630 42 L 1080 42 Q 1090 42 1090 52 L 1090 126" class="a-emphasis purpose-arrow purpose-success" stroke-width="2" marker-end="url(#purpose-arrowhead-success)"/>
         <path data-edge-from="sent" data-edge-to="notnow" data-edge-label="NotNow" data-edge-key="2" data-edge-id="decline" data-purpose="warning" data-composition-points="620,178;620,278" d="M 620 178 L 620 278" class="a-default purpose-arrow purpose-warning" stroke-width="1.1" marker-end="url(#purpose-arrowhead-warning)"/>
         <path data-edge-from="notnow" data-edge-to="sent" data-edge-label="Later eligible poll" data-edge-key="3" data-edge-id="retry" data-purpose="warning" data-composition-points="510,304;450,304;450,152;510,152" d="M 510 304 L 460 304 Q 450 304 450 294 L 450 162 Q 450 152 460 152 L 510 152" class="a-emphasis purpose-arrow purpose-warning" stroke-width="2" marker-end="url(#purpose-arrowhead-warning)"/>
         <path data-edge-from="sent" data-edge-to="errored" data-edge-label="Error / CommandFormatError" data-edge-key="4" data-edge-id="fail" data-purpose="failure" data-composition-points="620,178;620,210;1090,210;1090,450" d="M 620 178 L 620 200 Q 620 210 630 210 L 1080 210 Q 1090 210 1090 220 L 1090 450" class="a-default purpose-arrow purpose-failure" stroke-width="1.1" marker-end="url(#purpose-arrowhead-failure)"/>
-        <path data-edge-from="sent" data-edge-to="cleared" data-edge-label="Clear or reset" data-edge-key="5" data-edge-id="clear" data-purpose="neutral" data-composition-points="730,152;900,152;900,476;730,476" d="M 730 152 L 890 152 Q 900 152 900 162 L 900 466 Q 900 476 890 476 L 730 476" class="a-default purpose-arrow purpose-neutral" stroke-width="1.1" marker-end="url(#purpose-arrowhead-neutral)"/>
+        <path data-edge-from="sent" data-edge-to="cleared" data-edge-label="Clear or reset" data-edge-key="5" data-edge-id="clear" data-purpose="neutral" data-composition-points="620,178;620,236;860,236;860,476;730,476" d="M 620 178 L 620 226 Q 620 236 630 236 L 850 236 Q 860 236 860 246 L 860 466 Q 860 476 850 476 L 730 476" class="a-default purpose-arrow purpose-neutral" stroke-width="1.1" marker-end="url(#purpose-arrowhead-neutral)"/>
         <path data-edge-from="sent" data-edge-to="sent" data-edge-label="Poll before terminal result" data-edge-key="6" data-edge-id="redeliver" data-purpose="transport" data-composition-points="620,126;620,76;780,76;780,152;730,152" d="M 620 126 L 620 86 Q 620 76 630 76 L 770 76 Q 780 76 780 86 L 780 142 Q 780 152 770 152 L 730 152" class="a-default purpose-arrow purpose-transport" stroke-width="1.1" marker-end="url(#purpose-arrowhead-transport)"/>
         <path data-edge-from="pending" data-edge-to="cleared" data-edge-label="Clear or reset" data-edge-key="7" data-edge-id="clear-pending" data-purpose="neutral" data-composition-points="150,178;150,476;510,476" d="M 150 178 L 150 466 Q 150 476 160 476 L 510 476" class="a-default purpose-arrow purpose-neutral" stroke-width="1.1" marker-end="url(#purpose-arrowhead-neutral)"/>
         <path data-edge-from="notnow" data-edge-to="cleared" data-edge-label="Clear or reset" data-edge-key="8" data-edge-id="clear-notnow" data-purpose="neutral" data-composition-points="620,330;620,450" d="M 620 330 L 620 450" class="a-default purpose-arrow purpose-neutral" stroke-width="1.1" marker-end="url(#purpose-arrowhead-neutral)"/>
@@ -5292,8 +5292,8 @@ svg[data-purpose-filter] g[data-purpose-highlight] > path { stroke-width: 2.4; }
           <text x="385" y="138" class="t-backend" font-size="10" text-anchor="middle">Device polls; select command</text>
         </g>
         <g data-detail="context" data-edge-from="sent" data-edge-to="acknowledged" data-edge-label="Acknowledged" data-edge-key="1" data-edge-id="ack" data-purpose="success">
-          <rect x="813" y="127" width="84" height="16" rx="4" class="c-mask"/>
-          <text x="855" y="138" class="t-backend" font-size="10" text-anchor="middle">Acknowledged</text>
+          <rect x="908" y="19" width="84" height="16" rx="4" class="c-mask"/>
+          <text x="950" y="30" class="t-backend" font-size="10" text-anchor="middle">Acknowledged</text>
         </g>
         <g data-detail="context" data-edge-from="sent" data-edge-to="notnow" data-edge-label="NotNow" data-edge-key="2" data-edge-id="decline" data-purpose="warning">
           <rect x="651" y="247" width="48" height="16" rx="4" class="c-mask"/>
@@ -5308,12 +5308,12 @@ svg[data-purpose-filter] g[data-purpose-highlight] > path { stroke-width: 2.4; }
           <text x="1090" y="250" class="t-security" font-size="10" text-anchor="middle">Error / CommandFormatError</text>
         </g>
         <g data-detail="context" data-edge-from="sent" data-edge-to="cleared" data-edge-label="Clear or reset" data-edge-key="5" data-edge-id="clear" data-purpose="neutral">
-          <rect x="852" y="365" width="96" height="16" rx="4" class="c-mask"/>
-          <text x="900" y="376" class="t-security" font-size="10" text-anchor="middle">Clear or reset</text>
+          <rect x="812" y="365" width="96" height="16" rx="4" class="c-mask"/>
+          <text x="860" y="376" class="t-security" font-size="10" text-anchor="middle">Clear or reset</text>
         </g>
         <g data-detail="context" data-edge-from="sent" data-edge-to="sent" data-edge-label="Poll before terminal result" data-edge-key="6" data-edge-id="redeliver" data-purpose="transport">
-          <rect x="618" y="55" width="174" height="16" rx="4" class="c-mask"/>
-          <text x="705" y="66" class="t-muted" font-size="10" text-anchor="middle">Poll before terminal result</text>
+          <rect x="643" y="55" width="174" height="16" rx="4" class="c-mask"/>
+          <text x="730" y="66" class="t-muted" font-size="10" text-anchor="middle">Poll before terminal result</text>
         </g>
         <g data-detail="context" data-edge-from="pending" data-edge-to="cleared" data-edge-label="Clear or reset" data-edge-key="7" data-edge-id="clear-pending" data-purpose="neutral">
           <rect x="292" y="453" width="96" height="16" rx="4" class="c-mask"/>
@@ -5571,12 +5571,12 @@ svg[data-purpose-filter] g[data-purpose-highlight] > path { stroke-width: 2.4; }
           <h3>Implementation references</h3>
         </div>
         <ul>
-          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/devicemanagement/storage/storage.go" target="_blank" rel="noopener noreferrer">pending: Pending</a></li>
-          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/server/service/connect.go" target="_blank" rel="noopener noreferrer">sent: Sent</a></li>
-          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/devicemanagement/storage/storage.go" target="_blank" rel="noopener noreferrer">acknowledged: Acknowledged</a></li>
-          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/devicemanagement/storage/inmem/inmem.go" target="_blank" rel="noopener noreferrer">notnow: NotNow</a></li>
-          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/devicemanagement/storage/storage.go" target="_blank" rel="noopener noreferrer">cleared: Cleared</a></li>
-          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/devicemanagement/storage/storage.go" target="_blank" rel="noopener noreferrer">errored: Command failed</a></li>
+          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/e3db0449b366f96ebb0d6e27a02a1d65d382e1a5/devicemanagement/storage/storage.go" target="_blank" rel="noopener noreferrer">pending: Pending</a></li>
+          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/e3db0449b366f96ebb0d6e27a02a1d65d382e1a5/server/service/connect.go" target="_blank" rel="noopener noreferrer">sent: Sent</a></li>
+          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/e3db0449b366f96ebb0d6e27a02a1d65d382e1a5/devicemanagement/storage/storage.go" target="_blank" rel="noopener noreferrer">acknowledged: Acknowledged</a></li>
+          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/e3db0449b366f96ebb0d6e27a02a1d65d382e1a5/devicemanagement/storage/inmem/inmem.go" target="_blank" rel="noopener noreferrer">notnow: NotNow</a></li>
+          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/e3db0449b366f96ebb0d6e27a02a1d65d382e1a5/devicemanagement/storage/storage.go" target="_blank" rel="noopener noreferrer">cleared: Cleared</a></li>
+          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/e3db0449b366f96ebb0d6e27a02a1d65d382e1a5/devicemanagement/storage/storage.go" target="_blank" rel="noopener noreferrer">errored: Command failed</a></li>
         </ul>
       </div>
 
@@ -5586,7 +5586,7 @@ svg[data-purpose-filter] g[data-purpose-highlight] > path { stroke-width: 2.4; }
           <h3>Implementation references (continued)</h3>
         </div>
         <ul>
-          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/server/service/replacement.go" target="_blank" rel="noopener noreferrer">Separate replacement lifecycle</a></li>
+          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/e3db0449b366f96ebb0d6e27a02a1d65d382e1a5/server/service/replacement.go" target="_blank" rel="noopener noreferrer">Separate replacement lifecycle</a></li>
         </ul>
       </div>
     </div>

@@ -294,7 +294,9 @@
       "dot": "storage",
       "title": "State preservation",
       "items": [
-        "Ordinary enrollment reset or checkout clears declarative state through the service hook. Controlled profile replacement avoids that reset."
+        "Initial or changed-identity Authenticate and CheckOut require service-hook cleanup before success. Device transitions also clear dependent user channels; user CheckOut clears only that user.",
+        "Built-in stores report the actual reset or retry under their write lock. Same-certificate retries and controlled profile replacement preserve existing DDM assignments and snapshots.",
+        "Cleanup errors fail check-in. Shared-SQL reference composition rolls back enrollment mutation, cleanup and captured events together. Independent stores have no cross-store rollback; legacy stores without the optional outcome require serialization for the pre-read fallback."
       ]
     },
     {
@@ -312,19 +314,22 @@
       "title": "Implementation references",
       "dot": "artifact",
       "items": [
-        "admin: Admin API — https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/server/internal/app/admin.go",
-        "engine: DDM engine — https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/devicemanagement/mdmprotocol/ddm/publication.go",
-        "ddmstore: Declarative store — https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/devicemanagement/mdmprotocol/ddm/store.go",
-        "notifier: Change notifier — https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/server/ddmsync/notifier.go",
-        "core: MDM and adapters — https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/server/ddmadapter/inproc/inproc.go",
-        "Token, manifest and declaration responses — https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/devicemanagement/mdmprotocol/ddm/serve.go"
+        "admin: Admin API — https://github.com/deploymenttheory/go-apple-dm/blob/e3db0449b366f96ebb0d6e27a02a1d65d382e1a5/server/internal/app/admin.go#L45",
+        "engine: DDM engine declaration mutation — https://github.com/deploymenttheory/go-apple-dm/blob/e3db0449b366f96ebb0d6e27a02a1d65d382e1a5/devicemanagement/mdmprotocol/ddm/admin.go#L24",
+        "ddmstore: Declarative store — https://github.com/deploymenttheory/go-apple-dm/blob/e3db0449b366f96ebb0d6e27a02a1d65d382e1a5/devicemanagement/mdmprotocol/ddm/store.go#L291",
+        "notifier: Change notifier — https://github.com/deploymenttheory/go-apple-dm/blob/e3db0449b366f96ebb0d6e27a02a1d65d382e1a5/server/ddmsync/notifier.go#L212",
+        "core: MDM and adapters — https://github.com/deploymenttheory/go-apple-dm/blob/e3db0449b366f96ebb0d6e27a02a1d65d382e1a5/server/ddmadapter/inproc/inproc.go#L36",
+        "Token, manifest and declaration responses — https://github.com/deploymenttheory/go-apple-dm/blob/e3db0449b366f96ebb0d6e27a02a1d65d382e1a5/devicemanagement/mdmprotocol/ddm/serve.go#L204"
       ]
     },
     {
       "title": "Implementation references (continued)",
       "dot": "artifact",
       "items": [
-        "Status processing — https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/devicemanagement/mdmprotocol/ddm/status.go"
+        "Status processing — https://github.com/deploymenttheory/go-apple-dm/blob/e3db0449b366f96ebb0d6e27a02a1d65d382e1a5/devicemanagement/mdmprotocol/ddm/status.go#L31",
+        "Required lifecycle completion — https://github.com/deploymenttheory/go-apple-dm/blob/e3db0449b366f96ebb0d6e27a02a1d65d382e1a5/server/ddmsync/servicehook.go#L51",
+        "Reset or retry classification — https://github.com/deploymenttheory/go-apple-dm/blob/e3db0449b366f96ebb0d6e27a02a1d65d382e1a5/server/service/checkin.go#L193",
+        "Shared SQL rollback — https://github.com/deploymenttheory/go-apple-dm/blob/e3db0449b366f96ebb0d6e27a02a1d65d382e1a5/server/sqlstore/sqlcommon/unitofwork.go#L155"
       ]
     }
   ]

@@ -32,8 +32,8 @@ const (
 var errWorkersStuck = errors.New("dmserver: workers did not stop before the shutdown deadline")
 
 // Serve builds and runs the configured reference application with its HTTP listeners and
-// workers. It shuts down owned resources when the context is cancelled or a supervised
-// component fails.
+// workers. Cancellation or component failure drains HTTP and workers before closing
+// resources. A drain timeout retains shared resources and maintenance registration.
 func Serve(ctx context.Context, cfg app.Config) error {
 	return serve(ctx, cfg, nil)
 }
@@ -48,9 +48,10 @@ func ServeListener(ctx context.Context, cfg app.Config, listener net.Listener) e
 	return serve(ctx, cfg, listener)
 }
 
-// serve builds the application, starts listeners and supervised workers, and releases owned
-// resources on shutdown. Plain HTTP is limited to literal loopback addresses.
-func serve(ctx context.Context, cfg app.Config, listener net.Listener) error {
+// serve builds the application, starts listeners and supervised workers, and releases
+// resources after their drains complete. Plain HTTP on the main application listener is
+// limited to literal loopback; the separate HTTP-01 listener may bind non-loopback addresses.
+func serve(ctx context.Context, cfg app.Config, listener net.Listener) (err error) {
 	if listener != nil {
 		defer func(cleanup func() error) { _ = cleanup() }(listener.Close)
 		cfg.Listen = listener.Addr().String()
@@ -70,7 +71,14 @@ func serve(ctx context.Context, cfg app.Config, listener net.Listener) error {
 	if err != nil {
 		return wrapError(err)
 	}
-	defer func(cleanup func() error) { _ = cleanup() }(a.Close) // Close owns a bounded drain after the request context is canceled.
+	supervising := false
+	defer func() {
+		if !supervising {
+			if closeErr := a.Close(); closeErr != nil {
+				err = errors.Join(err, fmt.Errorf("dmserver: close application: %w", closeErr))
+			}
+		}
+	}()
 	if cfg.Setup != nil {
 		if _, err := a.LoadTLSCertificate(ctx); err != nil {
 			return fmt.Errorf(
@@ -87,28 +95,20 @@ func serve(ctx context.Context, cfg app.Config, listener net.Listener) error {
 		defer func(cleanup func() error) { _ = cleanup() }(listener.Close)
 	}
 	serving := make(chan error, 2)
+	var challengeServer *http.Server
+	var challengeListener net.Listener
 	if cfg.Setup != nil && cfg.Setup.HTTP01Listen != "" {
-		challengeListener, err := (&net.ListenConfig{}).Listen(ctx, "tcp", cfg.Setup.HTTP01Listen)
+		challengeListener, err = (&net.ListenConfig{}).Listen(ctx, "tcp", cfg.Setup.HTTP01Listen)
 		if err != nil {
 			return wrapError(err)
 		}
-		challengeServer := &http.Server{
+		defer func(cleanup func() error) { _ = cleanup() }(challengeListener.Close)
+		challengeServer = &http.Server{
 			Handler:           a.Certificates.HTTP01Handler(),
 			ReadHeaderTimeout: readHeaderTimeout,
 			ReadTimeout:       readTimeout,
 			WriteTimeout:      writeTimeout,
 		}
-		defer func(cleanup func() error) { _ = cleanup() }(challengeServer.Close)
-		go func() {
-			if err := challengeServer.Serve(
-				challengeListener,
-			); !errors.Is(
-				err,
-				http.ErrServerClosed,
-			) {
-				serving <- fmt.Errorf("dmserver: HTTP-01 listener: %w", err)
-			}
-		}()
 	}
 
 	// The workers get their own context so shutdown can stop accepting new
@@ -137,6 +137,18 @@ func serve(ctx context.Context, cfg app.Config, listener net.Listener) error {
 		srv.TLSConfig.GetConfigForClient = a.ManagedTLSConfig
 	}
 	workers := make(chan error, 1)
+	servers := []*http.Server{srv}
+	// Once serving starts, only the supervisor may release application
+	// resources: a timed-out handler or worker can still be using them.
+	supervising = true
+	if challengeServer != nil {
+		servers = append(servers, challengeServer)
+		go func() {
+			if err := challengeServer.Serve(challengeListener); !errors.Is(err, http.ErrServerClosed) {
+				serving <- fmt.Errorf("dmserver: HTTP-01 listener: %w", err)
+			}
+		}()
+	}
 	go func() { workers <- a.Run(workerCtx) }()
 	logger := cfg.Logger
 	if logger == nil {
@@ -158,15 +170,18 @@ func serve(ctx context.Context, cfg app.Config, listener net.Listener) error {
 		}
 	}()
 
-	return supervise(ctx, srv, serving, workers, stopWorkers, shutdownTimeout)
+	return supervise(ctx, servers, serving, workers, stopWorkers, a.Close, shutdownTimeout)
 }
 
-// supervise preserves the first failure while draining HTTP before stopping workers.
+// supervise preserves the first failure while draining every HTTP listener before
+// stopping workers. Cleanup runs only after both drains complete; an incomplete
+// drain retains shared resources and maintenance registration for safe recovery.
 func supervise(
 	ctx context.Context,
-	srv *http.Server,
+	servers []*http.Server,
 	serving, workers <-chan error,
 	stopWorkers context.CancelFunc,
+	cleanup func() error,
 	timeout time.Duration,
 ) error {
 	var first error
@@ -185,16 +200,30 @@ func supervise(
 	// old path exit mid-drain.
 	shutdownCtx, cancel := context.WithTimeout(context.WithoutCancel(ctx), timeout)
 	defer cancel()
-	if err := srv.Shutdown(shutdownCtx); err != nil {
-		_ = srv.Close()
-		if first == nil {
-			first = fmt.Errorf("dmserver: shutdown: %w", err)
+	drains := make(chan error, len(servers))
+	for _, srv := range servers {
+		go func() {
+			err := srv.Shutdown(shutdownCtx)
+			if err != nil {
+				_ = srv.Close()
+			}
+			drains <- err
+		}()
+	}
+	httpDrained := true
+	for range servers {
+		if err := <-drains; err != nil {
+			httpDrained = false
+			if first == nil {
+				first = fmt.Errorf("dmserver: shutdown: %w", err)
+			}
 		}
 	}
 	stopWorkers()
 	if !workersDone {
 		select {
 		case err := <-workers:
+			workersDone = true
 			if err != nil && first == nil {
 				first = err
 			}
@@ -202,6 +231,11 @@ func supervise(
 			if first == nil {
 				first = errWorkersStuck
 			}
+		}
+	}
+	if httpDrained && workersDone {
+		if err := cleanup(); err != nil {
+			first = errors.Join(first, fmt.Errorf("dmserver: close application: %w", err))
 		}
 	}
 	return first

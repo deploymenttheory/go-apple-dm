@@ -158,7 +158,13 @@ dmctl setup workflow export -id push -artifact signed-request -out customer.sign
 ```
 
 **Operator step:** Upload the signed request to the [Apple Push Certificates Portal](https://identity.apple.com/pushcert/)
-and download the MDM push certificate. Record which Apple account owns it.
+and download the MDM push certificate. The portal returns the certificate only;
+the matching private key remains in the customer deployment that created the
+CSR. Record which Apple account owns it. This follows Apple's
+[customer push setup workflow](https://developer.apple.com/documentation/devicemanagement/setting-up-push-notifications-for-your-device-management-customers).
+The vendor signature is produced by
+[`pushcert.SignCSR`](../../devicemanagement/pki/pushcert/csr.go), using the vendor's
+signing key, never the customer's private key.
 
 ```sh
 dmctl setup push import -revision 1 -cert downloaded-mdm-push.pem
@@ -166,6 +172,14 @@ dmctl setup push activate -revision 1
 dmctl setup check
 dmserver --setup-file "$DM_SETUP_FILE"
 ```
+
+`push import` validates the certificate against the retained pending key and
+stores the revision as `ready`. It leaves the active runtime credential in place.
+The separate `push activate` operation revalidates that ready revision and
+publishes it. In the reference server, workflow activation and the runtime push
+certificate/version commit in one SQL transaction; a publication error rolls
+both back. See [`Manager.Import` and `Manager.Activate`](../../devicemanagement/pki/lifecycle/certificates.go)
+and [runtime certificate publication](../../server/statestore/certificates.go).
 
 The active push certificate determines the enrollment topic. If a setup API server
 was already running before the initial push and issuer activation, restart it once

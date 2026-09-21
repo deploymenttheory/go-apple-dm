@@ -5672,7 +5672,9 @@ svg[data-purpose-filter] g[data-purpose-highlight] > path { stroke-width: 2.4; }
           <h3>State preservation</h3>
         </div>
         <ul>
-          <li>&bull; Ordinary enrollment reset or checkout clears declarative state through the service hook. Controlled profile replacement avoids that reset.</li>
+          <li>&bull; Initial or changed-identity Authenticate and CheckOut require service-hook cleanup before success. Device transitions also clear dependent user channels; user CheckOut clears only that user.</li>
+          <li>&bull; Built-in stores report the actual reset or retry under their write lock. Same-certificate retries and controlled profile replacement preserve existing DDM assignments and snapshots.</li>
+          <li>&bull; Cleanup errors fail check-in. Shared-SQL reference composition rolls back enrollment mutation, cleanup and captured events together. Independent stores have no cross-store rollback; legacy stores without the optional outcome require serialization for the pre-read fallback.</li>
         </ul>
       </div>
 
@@ -5696,12 +5698,12 @@ svg[data-purpose-filter] g[data-purpose-highlight] > path { stroke-width: 2.4; }
           <h3>Implementation references</h3>
         </div>
         <ul>
-          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/server/internal/app/admin.go" target="_blank" rel="noopener noreferrer">admin: Admin API</a></li>
-          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/devicemanagement/mdmprotocol/ddm/publication.go" target="_blank" rel="noopener noreferrer">engine: DDM engine</a></li>
-          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/devicemanagement/mdmprotocol/ddm/store.go" target="_blank" rel="noopener noreferrer">ddmstore: Declarative store</a></li>
-          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/server/ddmsync/notifier.go" target="_blank" rel="noopener noreferrer">notifier: Change notifier</a></li>
-          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/server/ddmadapter/inproc/inproc.go" target="_blank" rel="noopener noreferrer">core: MDM and adapters</a></li>
-          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/devicemanagement/mdmprotocol/ddm/serve.go" target="_blank" rel="noopener noreferrer">Token, manifest and declaration responses</a></li>
+          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/e3db0449b366f96ebb0d6e27a02a1d65d382e1a5/server/internal/app/admin.go#L45" target="_blank" rel="noopener noreferrer">admin: Admin API</a></li>
+          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/e3db0449b366f96ebb0d6e27a02a1d65d382e1a5/devicemanagement/mdmprotocol/ddm/admin.go#L24" target="_blank" rel="noopener noreferrer">engine: DDM engine declaration mutation</a></li>
+          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/e3db0449b366f96ebb0d6e27a02a1d65d382e1a5/devicemanagement/mdmprotocol/ddm/store.go#L291" target="_blank" rel="noopener noreferrer">ddmstore: Declarative store</a></li>
+          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/e3db0449b366f96ebb0d6e27a02a1d65d382e1a5/server/ddmsync/notifier.go#L212" target="_blank" rel="noopener noreferrer">notifier: Change notifier</a></li>
+          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/e3db0449b366f96ebb0d6e27a02a1d65d382e1a5/server/ddmadapter/inproc/inproc.go#L36" target="_blank" rel="noopener noreferrer">core: MDM and adapters</a></li>
+          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/e3db0449b366f96ebb0d6e27a02a1d65d382e1a5/devicemanagement/mdmprotocol/ddm/serve.go#L204" target="_blank" rel="noopener noreferrer">Token, manifest and declaration responses</a></li>
         </ul>
       </div>
 
@@ -5711,7 +5713,10 @@ svg[data-purpose-filter] g[data-purpose-highlight] > path { stroke-width: 2.4; }
           <h3>Implementation references (continued)</h3>
         </div>
         <ul>
-          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/devicemanagement/mdmprotocol/ddm/status.go" target="_blank" rel="noopener noreferrer">Status processing</a></li>
+          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/e3db0449b366f96ebb0d6e27a02a1d65d382e1a5/devicemanagement/mdmprotocol/ddm/status.go#L31" target="_blank" rel="noopener noreferrer">Status processing</a></li>
+          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/e3db0449b366f96ebb0d6e27a02a1d65d382e1a5/server/ddmsync/servicehook.go#L51" target="_blank" rel="noopener noreferrer">Required lifecycle completion</a></li>
+          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/e3db0449b366f96ebb0d6e27a02a1d65d382e1a5/server/service/checkin.go#L193" target="_blank" rel="noopener noreferrer">Reset or retry classification</a></li>
+          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/e3db0449b366f96ebb0d6e27a02a1d65d382e1a5/server/sqlstore/sqlcommon/unitofwork.go#L155" target="_blank" rel="noopener noreferrer">Shared SQL rollback</a></li>
         </ul>
       </div>
     </div>

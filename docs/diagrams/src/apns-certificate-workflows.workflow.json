@@ -12,7 +12,11 @@
   "lanes": [
     {
       "id": "mdm",
-      "label": "MDM customer credential"
+      "label": "MDM customer request"
+    },
+    {
+      "id": "mdm-active",
+      "label": "MDM certificate activation"
     },
     {
       "id": "app",
@@ -55,21 +59,32 @@
     },
     {
       "id": "mdm-import",
-      "lane": "mdm",
-      "col": 3,
-      "label": "Validate MDM import",
-      "sublabel": "Check key, validity, and topic",
+      "lane": "mdm-active",
+      "col": 2,
+      "label": "Import to ready state",
+      "sublabel": "Match retained key and topic",
       "type": "security",
       "width": 225,
       "height": 68,
       "purpose": "certificate"
     },
     {
+      "id": "mdm-activate",
+      "lane": "mdm-active",
+      "col": 3,
+      "label": "Activate ready revision",
+      "sublabel": "Revalidate and publish identity",
+      "type": "backend",
+      "width": 225,
+      "height": 68,
+      "purpose": "service"
+    },
+    {
       "id": "mdm-store",
-      "lane": "mdm",
+      "lane": "mdm-active",
       "col": 4,
       "label": "MDM certificate store",
-      "sublabel": "Commit a new credential version",
+      "sublabel": "Active credential and version",
       "type": "database",
       "width": 225,
       "height": 68,
@@ -80,7 +95,7 @@
       "lane": "app",
       "col": 0,
       "label": "App credentials",
-      "sublabel": "Apple Developer provisioning",
+      "sublabel": "Downloaded cert + retained key",
       "type": "external",
       "width": 225,
       "height": 68,
@@ -141,15 +156,39 @@
       "id": "m3",
       "from": "portal",
       "to": "mdm-import",
-      "label": "Certificate and key",
+      "label": "Certificate only",
       "role": "main",
-      "purpose": "certificate"
+      "purpose": "certificate",
+      "fromSide": "right",
+      "toSide": "top",
+      "via": [
+        [
+          1120,
+          120
+        ],
+        [
+          1120,
+          196
+        ],
+        [
+          872.5,
+          196
+        ]
+      ]
     },
     {
       "id": "m4",
       "from": "mdm-import",
+      "to": "mdm-activate",
+      "label": "Ready revision",
+      "role": "main",
+      "purpose": "storage"
+    },
+    {
+      "id": "m4-publish",
+      "from": "mdm-activate",
       "to": "mdm-store",
-      "label": "Commit",
+      "label": "Publish atomically",
       "role": "main",
       "purpose": "storage"
     },
@@ -191,15 +230,17 @@
       "title": "Different credentials",
       "items": [
         "MDM customer certificates authorize MDM wake notifications. App provider certificates authorize app notifications for their permitted topics.",
-        "The MDM vendor signing identity signs customer CSR requests; it is not the credential used to send customer MDM pushes."
+        "The MDM vendor signing identity signs customer CSR requests; it is not the credential used to send customer MDM pushes.",
+        "The customer retains the CSR private key. The vendor receives the public CSR, and Apple’s portal returns only a certificate. The app-provider flow also combines a downloaded certificate with a locally retained key."
       ],
       "dot": "certificate"
     },
     {
       "title": "Validation and replacement",
       "items": [
-        "Inspecting a certificate does not prove possession of its private key. Import and send validation require a matching certificate/key pair.",
-        "Invalid imports leave the existing credential in place. Successful replacement retires cached connections, and shutdown closes clients."
+        "Managed MDM import validates the returned certificate against its pending private key and stores a ready revision. It does not replace the active runtime credential.",
+        "Activate revalidates the ready revision, then commits workflow activation and the reference server’s runtime push row in one transaction. Failed import or activation leaves the active credential unchanged.",
+        "Runtime MDM reload retires cached connections after activation. App import commits its separate credential and invalidates its cache; shutdown closes clients."
       ],
       "dot": "certificate"
     },
@@ -213,8 +254,9 @@
     {
       "title": "Public documentation",
       "items": [
-        "Setting up push notifications for your device management customers \u2014 https://developer.apple.com/documentation/devicemanagement/setting-up-push-notifications-for-your-device-management-customers",
-        "Establishing a certificate-based connection to APNs \u2014 https://developer.apple.com/documentation/usernotifications/establishing-a-certificate-based-connection-to-apns"
+        "Setting up push notifications for your device management customers — https://developer.apple.com/documentation/devicemanagement/setting-up-push-notifications-for-your-device-management-customers",
+        "Establishing a certificate-based connection to APNs — https://developer.apple.com/documentation/usernotifications/establishing-a-certificate-based-connection-to-apns",
+        "MDM vendor CSR signing certificate — https://developer.apple.com/help/account/certificates/mdm-vendor-csr-signing-certificate"
       ],
       "dot": "transport"
     },
@@ -222,19 +264,20 @@
       "title": "Implementation references",
       "dot": "artifact",
       "items": [
-        "mdm-key: Create key and CSR \u2014 https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/devicemanagement/pki/pushcert/csr.go",
-        "vendor: Vendor signs request \u2014 https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/devicemanagement/pki/pushcert/pushcert.go",
-        "mdm-import: Validate MDM import \u2014 https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/server/internal/app/adminsetup.go",
-        "mdm-store: MDM certificate store \u2014 https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/devicemanagement/storage/pushcert.go",
-        "app-import: Validate app import \u2014 https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/server/apppush/store.go",
-        "app-store: Encrypted app store \u2014 https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/server/apppush/store.go"
+        "mdm-key: Begin pending customer key and CSR — https://github.com/deploymenttheory/go-apple-dm/blob/c1a9487d510ddbad038e8a171861a4f96ebfd5dd/devicemanagement/pki/lifecycle/lifecycle.go#L197",
+        "vendor: SignCSR — https://github.com/deploymenttheory/go-apple-dm/blob/c1a9487d510ddbad038e8a171861a4f96ebfd5dd/devicemanagement/pki/pushcert/csr.go#L51",
+        "mdm-import: Import validates and marks ready — https://github.com/deploymenttheory/go-apple-dm/blob/c1a9487d510ddbad038e8a171861a4f96ebfd5dd/devicemanagement/pki/lifecycle/certificates.go#L261",
+        "mdm-activate: Activate publishes the revision — https://github.com/deploymenttheory/go-apple-dm/blob/c1a9487d510ddbad038e8a171861a4f96ebfd5dd/devicemanagement/pki/lifecycle/certificates.go#L299",
+        "mdm-store: Runtime certificate publication — https://github.com/deploymenttheory/go-apple-dm/blob/c1a9487d510ddbad038e8a171861a4f96ebfd5dd/server/statestore/certificates.go#L14",
+        "app-import: Validate app import — https://github.com/deploymenttheory/go-apple-dm/blob/c1a9487d510ddbad038e8a171861a4f96ebfd5dd/server/apppush/store.go"
       ]
     },
     {
       "title": "Implementation references (continued)",
       "dot": "artifact",
       "items": [
-        "clients: Retire old connections \u2014 https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/devicemanagement/appleplatformservices/push/apns/lifecycle.go"
+        "app-store: Encrypted app store — https://github.com/deploymenttheory/go-apple-dm/blob/c1a9487d510ddbad038e8a171861a4f96ebfd5dd/server/apppush/store.go",
+        "clients: Retire old connections — https://github.com/deploymenttheory/go-apple-dm/blob/c1a9487d510ddbad038e8a171861a4f96ebfd5dd/devicemanagement/appleplatformservices/push/apns/lifecycle.go"
       ]
     }
   ]

@@ -45,7 +45,7 @@
       "lane": "flow",
       "col": 1,
       "label": "Compile and validate",
-      "sublabel": "Resolve references; check target",
+      "sublabel": "Resolve refs; validate structure",
       "type": "security",
       "width": 240,
       "height": 76,
@@ -152,7 +152,7 @@
     {
       "title": "Publication is server state",
       "items": [
-        "Validation can preview a target without writing state. Publishing persists desired state; the device synchronizes and evaluates activation afterwards.",
+        "Target-aware validation is an optional preview. Publish validates with an empty support.Target, persists desired state, and leaves synchronization and activation to the device.",
         "The Blueprint source revision differs from declaration ServerToken values. Removing an item withdraws it from this set; retained versions and uploaded profile bytes have their own stores.",
         "Publication notifies existing assignments too. Adding or removing membership is a separate enrollment-scoped operation."
       ],
@@ -169,28 +169,29 @@
       "dot": "transport",
       "title": "Public documentation",
       "items": [
-        "Declarative synchronization \u2014 https://developer.apple.com/documentation/devicemanagement/integrating-declarative-management",
-        "Device activation and status \u2014 https://developer.apple.com/documentation/devicemanagement/leveraging-the-declarative-management-data-model-to-scale-devices"
+        "Declarative synchronization — https://developer.apple.com/documentation/devicemanagement/integrating-declarative-management",
+        "Device activation and status — https://developer.apple.com/documentation/devicemanagement/leveraging-the-declarative-management-data-model-to-scale-devices"
       ]
     },
     {
       "title": "Implementation references",
       "dot": "artifact",
       "items": [
-        "spec: Author Blueprint \u2014 https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/devicemanagement/mdmprotocol/ddm/blueprint/blueprint.go",
-        "compile: Compile and validate \u2014 https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/server/blueprints/manager.go",
-        "publish: Publish complete set \u2014 https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/devicemanagement/mdmprotocol/ddm/publication.go",
-        "assign: Assign enrollment \u2014 https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/server/blueprints/manager.go",
-        "notify: Notify changed state \u2014 https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/server/ddmsync/notifier.go",
-        "device: Synchronize and activate \u2014 https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/devicemanagement/mdmprotocol/ddm/serve.go"
+        "spec: Author Blueprint — https://github.com/deploymenttheory/go-apple-dm/blob/e3db0449b366f96ebb0d6e27a02a1d65d382e1a5/devicemanagement/mdmprotocol/ddm/blueprint/blueprint.go",
+        "compile: Compile and validate — https://github.com/deploymenttheory/go-apple-dm/blob/e3db0449b366f96ebb0d6e27a02a1d65d382e1a5/server/blueprints/manager.go",
+        "publish: Publish complete set — https://github.com/deploymenttheory/go-apple-dm/blob/e3db0449b366f96ebb0d6e27a02a1d65d382e1a5/devicemanagement/mdmprotocol/ddm/publication.go",
+        "assign: Assign enrollment — https://github.com/deploymenttheory/go-apple-dm/blob/e3db0449b366f96ebb0d6e27a02a1d65d382e1a5/server/blueprints/manager.go",
+        "notify: Notify changed state — https://github.com/deploymenttheory/go-apple-dm/blob/e3db0449b366f96ebb0d6e27a02a1d65d382e1a5/server/ddmsync/notifier.go",
+        "device: Synchronize and activate — https://github.com/deploymenttheory/go-apple-dm/blob/e3db0449b366f96ebb0d6e27a02a1d65d382e1a5/devicemanagement/mdmprotocol/ddm/serve.go"
       ]
     },
     {
       "title": "Implementation references (continued)",
       "dot": "artifact",
       "items": [
-        "Revision and ETag administration \u2014 https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/server/internal/app/adminblueprints.go",
-        "Uploaded configuration profiles \u2014 https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/server/configurationprofile/manager.go"
+        "Revision and ETag administration — https://github.com/deploymenttheory/go-apple-dm/blob/e3db0449b366f96ebb0d6e27a02a1d65d382e1a5/server/internal/app/adminblueprints.go",
+        "Uploaded configuration profiles — https://github.com/deploymenttheory/go-apple-dm/blob/e3db0449b366f96ebb0d6e27a02a1d65d382e1a5/server/configurationprofile/manager.go",
+        "Publish validation without a target — https://github.com/deploymenttheory/go-apple-dm/blob/e3db0449b366f96ebb0d6e27a02a1d65d382e1a5/server/blueprints/manager.go#L205-L209"
       ]
     }
   ]

@@ -6,13 +6,23 @@ The device enrollment service uses account-scoped OAuth 1.0a credentials, rotati
 
 ## Decision
 
-`dep.Client` resolves accounts through a store, signs requests, coordinates session refresh per account and retries authentication once. Token PKI handling validates imported `.p7m` contents before updating the active credentials. Account expiry and service errors are typed.
+`dep.Client` resolves accounts through a store, signs requests, coordinates session refresh per account and retries authentication once. Sessions, response adoption and account-state writes are bound to the exact OAuth credentials and Apple account identity that initiated the request. A renewal cannot install an old cached session or an obsolete authentication failure.
 
-`Syncer` performs fetch then incremental sync and commits cursors with each page. Each full fetch persists a generation and marks returned serials. Only successful completion tombstones active devices absent from that generation, including an empty snapshot. Account locks and cursor revisions reject responses from superseded sync passes. An interrupted fetch resumes without deleting unseen inventory early.
+Token validation runs outside the write transaction. The commit locks the account name, rechecks the credential and identity baseline and any staged keypair, then merges into the current account. Concurrent profile/configuration changes survive a renewal. An invalid candidate does not mark unrelated active credentials invalid.
 
-`Assigner` compares stored profile state with desired state and records per-device outcomes. Account retry deadlines and failure counts live in the store, so a new worker respects an earlier Retry-After response. A renewable account claim fences competing workers; bounded network requests run outside transactions, and writes recheck claim ownership. Assignment readback cannot restore a device removed by sync. The reference server schedules sync and assignment independently; zero disables the corresponding background operation. API profiles retain unknown fields and validate documented combinations and setup keys.
+`StoreTokens` and ordinary `ImportToken` reject an established consumer-key or Apple identity change. `ImportOptions.Force` explicitly permits replacement. An actual identity change requires a validated nonempty `server_uuid` and atomically clears the old server's devices, profile definitions, desired target, sessions, cursor and assignment state. A new fetch generation and incremented cursor revision reject old workers. The local account name, protocol version, creation time and token keypairs survive. A same-identity renewal, including a forced renewal, preserves inventory and the desired profile. Omitted `server_uuid` or `org_id` values do not erase an established binding. The [operations guide](../../operations/dep-synchronization.md) specifies the identity comparison and reset procedure.
 
-The SQL schema persists cursor revision/generation fields, device fetch markers and assignment state. Custom stores must implement `MarkFetched`, `AssignmentState`, `PutAssignmentState` and transactional `LockAccount` with the shared contract semantics. The server module pins a library revision implementing this contract so standalone builds use the same interfaces.
+`Syncer` performs fetch then incremental sync and commits cursors with each page. Each full fetch persists a generation and marks returned serials. Only successful completion of the current generation tombstones active devices absent from that generation, including an empty snapshot. Locked account/credential checks and cursor revisions reject superseded responses. An interrupted fetch resumes without deleting unseen inventory early.
+
+`Assigner` compares stored profile state with desired state and records per-device outcomes. Every business-result commit rechecks the account identity, OAuth credentials, desired profile and renewable assignment lease. A conflict stops further batches; earlier committed batches and remote requests already accepted by Apple cannot be undone. Assignment readback cannot restore a device removed by sync. The reference server also checks the account binding after defining a profile remotely, before publishing that profile as the target.
+
+Account retry deadlines and failure counts live in the store, so replacement workers respect earlier throttling. Cooldown writes require the same Apple identity and an unexpired owned lease, but tolerate same-identity credential renewal or a changed desired profile. A stale per-device `THROTTLED` response becomes a conservative account cooldown without saving its obsolete assignment outcomes. Identity reset or lease loss prevents those writes. Bounded network requests run outside transactions.
+
+The reference server schedules sync and assignment independently; zero disables the corresponding background operation. API profiles retain unknown fields and validate documented combinations and setup keys.
+
+The SQL schema persists cursor revision/generation fields, device fetch markers and assignment state. Schema 3 adds `dep_account_locks` for SQLite, PostgreSQL and MySQL. Its stable per-name row serializes account creation, account/keypair mutations and reset even while the account is absent; account deletion does not delete that lock row. This avoids relying on a lock on a nonexistent account row.
+
+Custom stores must implement `MarkFetched`, `AssignmentState`, `PutAssignmentState` and transactional `LockAccount` with the shared contract semantics. `LockAccount` returns `ErrNotFound` for an absent account but **still holds the name lock until transaction completion**, including delete/recreate. Account creation and keypair staging/promotion must participate in that same lock. No Go interface signature changed; this is a stronger storage contract. The reference server's SQL store migrates to schema 3 on open; external migration management must apply the matching dialect's migration before using these semantics.
 
 Apple's [Assign Profile response](https://developer.apple.com/documentation/devicemanagement/assign-profile)
 can return HTTP 200 with per-device `THROTTLED` results and
@@ -32,15 +42,20 @@ API types are maintained from Apple's documentation because this service's JSON 
 
 ## Verification
 
-Client, PKI, syncer and assigner tests use the independent fake service for signature verification, session rotation, pagination, injected errors and per-serial outcomes. Store contracts cover resumable and empty snapshots, persisted backoff, concurrent account locking and rollback across memory, SQLite, PostgreSQL and MySQL. Worker race tests cover stale sync responses, expired claims and readback after removal. End-to-end tests cover assignment and ADE enrollment.
+Client, PKI, syncer and assigner tests use the independent fake service for signature verification, session rotation, pagination, injected errors and per-serial outcomes. Store contracts cover resumable and empty snapshots, persisted backoff, concurrent account locking and rollback across memory, SQLite, PostgreSQL and MySQL. Worker race tests cover stale sync responses, expired claims, readback after removal, desired-profile changes, concurrent renewal/import, staged-key replacement and explicit identity reset. Shared memory/SQL account-fence contracts exercise stale success, authentication and throttle responses; SQL contracts cover absent-name creation locks and keypair staging. End-to-end tests cover assignment and ADE enrollment.
 
 ## References
 
 - [appleplatformservices/dep](../../../devicemanagement/appleplatformservices/dep)
 - [storage/dep](../../../devicemanagement/storage/dep)
 - [server/depstore](../../../server/depstore)
+- [Account/credential fences](../../../devicemanagement/appleplatformservices/dep/accountfence.go)
+- [Atomic token commit and reset](../../../devicemanagement/appleplatformservices/dep/token.go)
+- [SQL account-name locks](../../../server/depstore/sqlstore/syncstate.go)
+- [DEP operations](../../operations/dep-synchronization.md)
 - <https://developer.apple.com/documentation/devicemanagement/device-assignment>
 - <https://developer.apple.com/documentation/devicemanagement/authenticating-for-automated-device-enrollment>
+- <https://developer.apple.com/documentation/devicemanagement/accountdetail>
 - <https://developer.apple.com/documentation/devicemanagement/fetch-devices>
 - <https://developer.apple.com/documentation/devicemanagement/sync-devices>
 - <https://developer.apple.com/documentation/devicemanagement/define-profile>

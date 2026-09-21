@@ -177,12 +177,16 @@
       "from": "enabled",
       "to": "reenrolled",
       "label": "Authorized new identity",
-      "fromSide": "left",
+      "fromSide": "bottom",
       "toSide": "right",
       "via": [
         [
+          1090,
+          225
+        ],
+        [
           855,
-          152
+          225
         ],
         [
           855,
@@ -191,7 +195,7 @@
       ],
       "labelAt": [
         855,
-        240
+        250
       ],
       "purpose": "neutral"
     },
@@ -257,7 +261,7 @@
       "items": [
         "Initial Authenticate associates the device identity; TokenUpdate enables the channel. Same-certificate Authenticate retries preserve the existing enrollment, tokens, queue and declarative state.",
         "Both service.Core and the reference server deny changed certificates by default. An explicitly allowed changed-identity Authenticate resets enrollment state; the reset arrows show that path.",
-        "A rejected request preserves the existing state. A disabled enrollment cannot reactivate with its old certificate or TokenUpdate; a fresh identity requires authorized re-enrollment."
+        "Policy-rejected identity transitions preserve existing state. A disabled enrollment cannot reactivate with its old certificate or TokenUpdate; a fresh identity requires authorized re-enrollment."
       ]
     },
     {
@@ -273,7 +277,8 @@
       "title": "Checkout and user channels",
       "items": [
         "CheckOut disables the enrollment and clears dependent state while retaining its record. A fresh identity can reactivate it only through authorized re-enrollment. Declarative cleanup runs through the service hook.",
-        "User channels are created by TokenUpdate under an existing device enrollment, with UserAuthenticate when required. They do not send device-channel Authenticate."
+        "User channels are created by TokenUpdate under an existing device enrollment, with UserAuthenticate when required. They do not send device-channel Authenticate.",
+        "Declarative cleanup must complete before success. Shared-SQL reference composition rolls back enrollment changes and cleanup together on failure. Memory or independently committing stores have no cross-store rollback."
       ]
     },
     {
@@ -289,19 +294,19 @@
       "title": "Implementation references",
       "dot": "artifact",
       "items": [
-        "unknown: Not enrolled — https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/devicemanagement/storage/storage.go",
-        "authenticated: Awaiting push details — https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/server/service/checkin.go",
-        "enabled: Enabled — https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/server/service/checkin.go",
-        "reenrolled: Enrollment reset — https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/devicemanagement/storage/authenticate.go",
-        "checkedout: Disabled — https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/server/service/checkin.go",
-        "Declarative cleanup hook — https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/server/ddmsync/servicehook.go"
+        "unknown: Not enrolled — https://github.com/deploymenttheory/go-apple-dm/blob/e3db0449b366f96ebb0d6e27a02a1d65d382e1a5/devicemanagement/storage/storage.go",
+        "authenticated: Awaiting push details — https://github.com/deploymenttheory/go-apple-dm/blob/e3db0449b366f96ebb0d6e27a02a1d65d382e1a5/server/service/checkin.go#L193",
+        "enabled: Enabled — https://github.com/deploymenttheory/go-apple-dm/blob/e3db0449b366f96ebb0d6e27a02a1d65d382e1a5/server/service/checkin.go#L279",
+        "reenrolled: Enrollment reset — https://github.com/deploymenttheory/go-apple-dm/blob/e3db0449b366f96ebb0d6e27a02a1d65d382e1a5/devicemanagement/storage/authenticate.go",
+        "checkedout: Disabled — https://github.com/deploymenttheory/go-apple-dm/blob/e3db0449b366f96ebb0d6e27a02a1d65d382e1a5/server/service/checkin.go#L319",
+        "Declarative cleanup hook — https://github.com/deploymenttheory/go-apple-dm/blob/e3db0449b366f96ebb0d6e27a02a1d65d382e1a5/server/ddmsync/servicehook.go#L51"
       ]
     },
     {
       "title": "Implementation references (continued)",
       "dot": "artifact",
       "items": [
-        "Controlled replacement — https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/server/service/replacement.go"
+        "Controlled replacement — https://github.com/deploymenttheory/go-apple-dm/blob/e3db0449b366f96ebb0d6e27a02a1d65d382e1a5/server/service/replacement.go#L45"
       ]
     }
   ]

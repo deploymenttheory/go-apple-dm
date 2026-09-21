@@ -72,8 +72,9 @@
     {
       "title": "Commit conditions",
       "items": [
-        "Promotion requires candidate Authenticate, a valid device-channel TokenUpdate, and acknowledgement of the delivered InstallProfile command. Acknowledgement may arrive before or after candidate check-in.",
-        "The original top-level profile and MDM payload metadata are retained; the identity payload receives a fresh UUID and issuance authorization. A replacement can select SCEP or ACME."
+        "Promotion requires candidate Authenticate, a valid device-channel TokenUpdate, and acknowledgement of the delivered InstallProfile command. Authenticate must precede TokenUpdate; acknowledgement may arrive before or after those check-ins.",
+        "The original top-level profile and MDM payload metadata are retained; the identity payload receives a fresh UUID and issuance authorization. A replacement can select SCEP or ACME.",
+        "A candidate user-channel TokenUpdate is staged but does not satisfy the required device-channel token. Promotion is atomic; later stale command results cannot undo it."
       ],
       "dot": "policy"
     },
@@ -81,8 +82,8 @@
       "title": "Unsuccessful attempts",
       "items": [
         "Error or CommandFormatError fails the attempt; cancellation and expiry also end it without promoting the candidate. NotNow leaves the attempt pending.",
-        "The server keeps its working enrollment, queue, escrow and user channels. Server-side preservation does not by itself establish how a physical device recovers from every failure.",
-        "The attempt expires after 30 minutes. Storage evaluates expiry during transitions, including reads; there is no background expiry worker."
+        "The replacement transition preserves the working enrollment, queue, escrow, DDM state and user channels. An independent CheckOut still disables the enrollment. Server preservation does not establish device-side recovery from every failure.",
+        "New issuance is authorized for 30 minutes. Recording a candidate certificate extends the reconciliation deadline to its NotAfter time, if later. Storage checks expiry during transitions, including reads; there is no background expiry worker."
       ],
       "dot": "failure"
     },
@@ -110,11 +111,21 @@
       "title": "Implementation references",
       "dot": "artifact",
       "items": [
-        "operator: Operator or bench — https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/server/internal/bench/enrollment.go",
-        "admin: Enrollment admin — https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/server/internal/app/adminmdm.go",
-        "store: Replacement state — https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/devicemanagement/storage/replacement.go",
-        "issuer: Identity issuer — https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/server/internal/app/enroll.go",
-        "core: MDM service — https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/server/service/replacement.go"
+        "operator: Operator or bench — https://github.com/deploymenttheory/go-apple-dm/blob/e3db0449b366f96ebb0d6e27a02a1d65d382e1a5/server/internal/bench/enrollment.go#L237",
+        "admin: Enrollment admin — https://github.com/deploymenttheory/go-apple-dm/blob/e3db0449b366f96ebb0d6e27a02a1d65d382e1a5/server/internal/app/replacement.go#L329",
+        "Replacement route and permission — https://github.com/deploymenttheory/go-apple-dm/blob/e3db0449b366f96ebb0d6e27a02a1d65d382e1a5/server/internal/app/adminbench.go#L64",
+        "store: Replacement state transitions and expiry — https://github.com/deploymenttheory/go-apple-dm/blob/e3db0449b366f96ebb0d6e27a02a1d65d382e1a5/devicemanagement/storage/replacement.go#L98",
+        "issuer: Identity issuer wiring — https://github.com/deploymenttheory/go-apple-dm/blob/e3db0449b366f96ebb0d6e27a02a1d65d382e1a5/server/internal/app/enroll.go#L201",
+        "Certificate registration callback — https://github.com/deploymenttheory/go-apple-dm/blob/e3db0449b366f96ebb0d6e27a02a1d65d382e1a5/server/internal/app/security.go#L91"
+      ]
+    },
+    {
+      "title": "Implementation references (continued)",
+      "dot": "artifact",
+      "items": [
+        "Candidate issuance and reconciliation deadline — https://github.com/deploymenttheory/go-apple-dm/blob/e3db0449b366f96ebb0d6e27a02a1d65d382e1a5/server/internal/app/replacement.go#L272",
+        "core: MDM service candidate check-in — https://github.com/deploymenttheory/go-apple-dm/blob/e3db0449b366f96ebb0d6e27a02a1d65d382e1a5/server/service/replacement.go#L45",
+        "Command delivery and result handling — https://github.com/deploymenttheory/go-apple-dm/blob/e3db0449b366f96ebb0d6e27a02a1d65d382e1a5/server/service/replacement.go#L93"
       ]
     }
   ],
@@ -141,7 +152,7 @@
       "id": "begin",
       "from": "admin",
       "to": "store",
-      "label": "Begin a 30-minute replacement attempt",
+      "label": "Begin replacement with a 30-minute issuance grant",
       "y": 247,
       "variant": "default",
       "purpose": "storage"
@@ -204,7 +215,7 @@
       "id": "register",
       "from": "issuer",
       "to": "store",
-      "label": "Record the candidate certificate fingerprint",
+      "label": "Record candidate fingerprint and certificate expiry",
       "y": 499,
       "variant": "default",
       "purpose": "storage"
@@ -270,7 +281,7 @@
       "label": "Record acknowledgement and evaluate completion",
       "y": 751,
       "variant": "default",
-      "note": "Atomically promote candidate identity and tokens",
+      "note": "Promote only when all three conditions hold",
       "purpose": "storage"
     },
     {

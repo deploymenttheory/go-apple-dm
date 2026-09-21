@@ -33,6 +33,22 @@ func (s *scheduledDEPStore) GetAccount(ctx context.Context, name string) (*dep.A
 	return s.Store.GetAccount(ctx, name)
 }
 
+// Update counts account snapshots taken under the worker's transaction lock too.
+func (s *scheduledDEPStore) Update(ctx context.Context, fn func(dep.Tx) error) error {
+	return s.Store.Update(ctx, func(tx dep.Tx) error { return fn(&scheduledDEPTx{Tx: tx, store: s}) })
+}
+
+type scheduledDEPTx struct {
+	dep.Tx
+	store *scheduledDEPStore
+}
+
+// GetAccount records a transaction-scoped account snapshot.
+func (t *scheduledDEPTx) GetAccount(ctx context.Context, name string) (*dep.Account, error) {
+	t.store.accounts.Add(1)
+	return t.Tx.GetAccount(ctx, name)
+}
+
 // TestDEPIndependentSchedules checks independent DEP worker schedules.
 func TestDEPIndependentSchedules(t *testing.T) {
 	for _, tc := range []struct {

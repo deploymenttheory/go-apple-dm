@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/cms"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/dmhook"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/event"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/mdm"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/plist"
@@ -56,13 +57,11 @@ func (c *Core) checkin(
 		// A profile update must not trigger hooks that clear state on re-enrollment.
 		call.Op = "replacement:" + ck.Type
 	} else if err == nil {
-		res, err = c.dispatchCheckin(ctx, r, ck)
+		res, err = c.dispatchCheckin(ctx, call)
 	}
 	if err == nil {
 		for _, h := range c.hooks {
-			if h, ok := h.(interface {
-				Complete(context.Context, *Call) error
-			}); ok {
+			if h, ok := h.(dmhook.Completer); ok {
 				if e := h.Complete(ctx, call); e != nil {
 					err = wrapCode(CodeInternal, e)
 					break
@@ -81,10 +80,11 @@ func (c *Core) checkin(
 }
 
 // dispatchCheckin routes a decoded check-in message to the matching protocol handler.
-func (c *Core) dispatchCheckin(ctx context.Context, r *mdm.Request, ck *mdm.Checkin) (*CheckinResult, error) {
+func (c *Core) dispatchCheckin(ctx context.Context, call *Call) (*CheckinResult, error) {
+	r, ck := call.Request, call.Checkin
 	switch m := ck.Message.(type) {
 	case *checkin.Authenticate:
-		return nil, c.authenticate(ctx, r, ck, m)
+		return nil, c.authenticate(ctx, call, m)
 	case *checkin.TokenUpdate:
 		return nil, c.tokenUpdate(ctx, r, ck, m)
 	case *checkin.CheckOut:
@@ -192,10 +192,10 @@ func (c *Core) otherHolders(ctx context.Context, id mdm.EnrollmentID, hash strin
 // transition.
 func (c *Core) authenticate(
 	ctx context.Context,
-	r *mdm.Request,
-	ck *mdm.Checkin,
+	call *Call,
 	m *checkin.Authenticate,
 ) error {
+	r, ck := call.Request, call.Checkin
 	if r.ID.Channel.IsUser() {
 		return wrapCode(
 			CodeBadRequest,
@@ -243,22 +243,32 @@ func (c *Core) authenticate(
 	if existing != nil {
 		expected = existing.CertHash
 	}
+	var result storage.AuthenticateResult
 	if err := c.store.AuthenticateEnrollment(ctx, r.ID, storage.AuthenticateChange{
 		ExpectedHash: expected, Hash: hash, AllowReuse: allowReuse,
 		AllowReenroll: rotated,
 		Message:       m, Raw: ck.Raw, At: now,
+		Result: &result,
 	}); err != nil {
 		if errors.Is(err, storage.ErrConflict) {
 			return wrapCode(CodeForbidden, fmt.Errorf("%w: %w", ErrCertMismatch, err))
 		}
 		return wrapCode(codeForStorage(err), err)
 	}
-	if rotated {
+	if !result.Known {
+		// Legacy stores do not expose the locked outcome. This preserves their
+		// pre-read behavior without claiming authoritative concurrent classification.
+		result.Reset = existing == nil || hash == "" || existing.CertHash != hash
+	}
+	call.Authenticate = &dmhook.AuthenticateResult{Known: result.Known, Reset: result.Reset}
+	if rotated && result.Reset {
 		c.publish(ctx, event.CertRotated, r.ID, "device", existing.CertHash)
 	}
-	if existing == nil {
+	if existing == nil && result.Reset {
 		c.publish(ctx, event.Enrolled, r.ID, "device", m)
 	} else {
+		// Repeated Authenticate retains its existing audit occurrence, without
+		// claiming a new enrollment or rotation after a concurrent reset won.
 		c.publish(ctx, event.Reenrolled, r.ID, "device", m)
 	}
 	return nil

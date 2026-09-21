@@ -20,6 +20,7 @@
 - [Protocol helpers](operations/protocol-helpers.md): JWTs, password hashes, automatic encryption certificates, recovery-key decryption, bypass codes and installation manifests.
 - [Apps and Books](operations/apps-and-books.md): location setup, device/user licensing, user association, notifications and completion checks.
 - [CI responsibilities](testing/ci.md): triggers, distinct checks, dependency retries and release gates.
+- [ADE inventory and assignment](operations/dep-synchronization.md): server-token renewal, explicit identity replacement, reconciliation and storage upgrades.
 - [Certificate lifecycle](operations/certificate-lifecycle.md): provisioning, renewal, issuer rollover and retained encryption identities.
 - [Backup and recovery](operations/recovery.md): maintenance fences, authenticated backups, verification and isolated restore.
 - [Threat model](security/threat-model.md): assets, trust boundaries, controls and residual risks.

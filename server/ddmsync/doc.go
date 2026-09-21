@@ -12,7 +12,11 @@
 // ServiceHook uses enrollment storage to find dependent user channels and calls
 // Engine.ClearEnrollment on initial or changed-identity Authenticate and on
 // CheckOut. Same-certificate retries and controlled replacement preserve DDM
-// state. Cleanup across MDM and DDM stores is not a distributed transaction.
+// state. Complete returns cleanup failures before the check-in reports success.
+// Shared SQL compositions roll back the enrollment mutation and cleanup together;
+// independent stores do not provide a distributed transaction. Built-in stores
+// classify retries under their write lock. Legacy stores without that result use
+// a pre-read fallback and require external serialization for concurrent requests.
 //
 // # References
 //

@@ -5149,13 +5149,14 @@ svg[data-purpose-filter] g[data-purpose-highlight] > path { stroke-width: 2.4; }
 <button type="button" data-purpose-filter-button="neutral" aria-pressed="false" style="--entry:var(--purpose-neutral)"><span class="purpose-key-dot" aria-hidden="true"></span>Actors, structure, neutral states</button>
 <button type="button" data-purpose-filter-button="success" aria-pressed="false" style="--entry:var(--purpose-success)"><span class="purpose-key-dot" aria-hidden="true"></span>Successful or accepted</button>
 <button type="button" data-purpose-filter-button="warning" aria-pressed="false" style="--entry:var(--purpose-warning)"><span class="purpose-key-dot" aria-hidden="true"></span>Warning, deferred, or retry</button>
+<button type="button" data-purpose-filter-button="failure" aria-pressed="false" style="--entry:var(--purpose-failure)"><span class="purpose-key-dot" aria-hidden="true"></span>Failed, rejected, or invalid</button>
     </div>
     <div class="purpose-key-detail" aria-live="polite" aria-atomic="true"><div><strong id="purpose-key-selection"></strong><span id="purpose-key-counts"></span></div><p id="purpose-key-description"></p></div>
-    <script id="purpose-key-data" type="application/json">{"entries":[{"key":"service","label":"Services and processing","meaning":"Services and processing steps that perform the work shown in the diagram.","nodes":["Build application","Supervise workers","Stop background work","Close application","Drain admitted work"],"connections":["Owner resumes"]},{"key":"transport","label":"Communication and transport","meaning":"Communication between components, including endpoints, protocol exchanges, and notifications.","nodes":["Open listener","Drain HTTP requests"],"connections":[]},{"key":"storage","label":"Storage and persistence","meaning":"Records and persistence: where the system stores or retrieves information.","nodes":["Open configured stores","Acknowledge pause"],"connections":["Provide stores"]},{"key":"artifact","label":"Configuration and artifacts","meaning":"Configuration and artifacts that the system consumes or produces.","nodes":["Load configuration","Validate configuration"],"connections":["Parse Config"]},{"key":"neutral","label":"Actors, structure, neutral states","meaning":"Actors, structural boundaries, and states that do not imply success, warning, or failure.","nodes":[],"connections":["Stop or runtime failure"]},{"key":"success","label":"Successful or accepted","meaning":"An explicitly successful or accepted result.","nodes":[],"connections":["Valid configuration","Application built","Listener ready","HTTP drained","Workers stopped","Writes stopped"]},{"key":"warning","label":"Warning, deferred, or retry","meaning":"A warning, deferred action, or condition that requires a retry.","nodes":["Close admission"],"connections":["Maintenance request","Admission closed"]}],"nodes":12,"connections":12}</script>
+    <script id="purpose-key-data" type="application/json">{"entries":[{"key":"service","label":"Services and processing","meaning":"Services and processing steps that perform the work shown in the diagram.","nodes":["Build application","Supervise workers","Cancel and await workers","Close application","Drain admitted work"],"connections":["Owner resumes"]},{"key":"transport","label":"Communication and transport","meaning":"Communication between components, including endpoints, protocol exchanges, and notifications.","nodes":["Open main listener","Drain HTTP listeners"],"connections":[]},{"key":"storage","label":"Storage and persistence","meaning":"Records and persistence: where the system stores or retrieves information.","nodes":["Open configured stores","Acknowledge pause"],"connections":["Provide stores"]},{"key":"artifact","label":"Configuration and artifacts","meaning":"Configuration and artifacts that the system consumes or produces.","nodes":["Load and validate config"],"connections":[]},{"key":"neutral","label":"Actors, structure, neutral states","meaning":"Actors, structural boundaries, and states that do not imply success, warning, or failure.","nodes":[],"connections":["Stop or runtime failure","Drain returns"]},{"key":"success","label":"Successful or accepted","meaning":"An explicitly successful or accepted result.","nodes":[],"connections":["Valid configuration","Application built","Listener ready","Both drains complete","Writes stopped"]},{"key":"warning","label":"Warning, deferred, or retry","meaning":"A warning, deferred action, or condition that requires a retry.","nodes":["Close admission"],"connections":["Maintenance request","Admission closed"]},{"key":"failure","label":"Failed, rejected, or invalid","meaning":"An explicitly failed, rejected, or invalid result.","nodes":["Retain shared resources"],"connections":["Any drain incomplete"]}],"nodes":12,"connections":12}</script>
   </section>
     <div class="diagram-container" data-detail-level="read"
          data-preset-badge-editorial-plate="ARCHIFY / PLATE 04">
-      <svg viewBox="0 0 1516 808" data-purpose-diagram-view-box="0 0 1516 660" role="img" lang="en" aria-labelledby="archify-diagram-title archify-diagram-description" data-preset="classic" data-quality-profile="showcase">
+      <svg viewBox="0 0 1950 934" data-purpose-diagram-view-box="0 0 1950 786" role="img" lang="en" aria-labelledby="archify-diagram-title archify-diagram-description" data-preset="classic" data-quality-profile="showcase">
         <title id="archify-diagram-title">Reference Server: Configure, Serve, and Shut Down</title>
         <desc id="archify-diagram-description">A workflow diagram generated by Archify.</desc>
         <!-- Definitions -->
@@ -5192,17 +5193,21 @@ svg[data-purpose-filter] g[data-purpose-highlight] > path { stroke-width: 2.4; }
         <rect width="100%" height="100%" fill="url(#grid)" />
 
         <!-- Swimlanes -->
-        <rect data-graph-role="structural-frame" data-composition-frame-kind="lane" data-composition-frame-id="lane-0" x="40" y="52" width="1448" height="106" rx="10" class="c-lane" stroke-width="1"/>
+        <rect data-graph-role="structural-frame" data-composition-frame-kind="lane" data-composition-frame-id="lane-0" x="40" y="52" width="1506" height="106" rx="10" class="c-lane" stroke-width="1"/>
         <text x="54" y="74" class="t-dim" font-size="10" font-weight="600">01 / Configure and build</text>
 
-        <rect data-graph-role="structural-frame" data-composition-frame-kind="lane" data-composition-frame-id="lane-1" x="40" y="178" width="1448" height="106" rx="10" class="c-lane" stroke-width="1"/>
+        <rect data-graph-role="structural-frame" data-composition-frame-kind="lane" data-composition-frame-id="lane-1" x="40" y="178" width="1506" height="106" rx="10" class="c-lane" stroke-width="1"/>
         <text x="54" y="200" class="t-dim" font-size="10" font-weight="600">02 / Shared runtime</text>
 
-        <rect data-graph-role="structural-frame" data-composition-frame-kind="lane" data-composition-frame-id="lane-2" x="40" y="304" width="1448" height="106" rx="10" class="c-lane" stroke-width="1"/>
+        <rect data-graph-role="structural-frame" data-composition-frame-kind="lane" data-composition-frame-id="lane-2" x="40" y="304" width="1506" height="106" rx="10" class="c-lane" stroke-width="1"/>
         <text x="54" y="326" class="t-dim" font-size="10" font-weight="600">03 / Persistent maintenance pause</text>
 
-        <rect data-graph-role="structural-frame" data-composition-frame-kind="lane" data-composition-frame-id="lane-3" x="40" y="430" width="1448" height="106" rx="10" class="c-lane" stroke-width="1"/>
+        <rect data-graph-role="structural-frame" data-composition-frame-kind="lane" data-composition-frame-id="lane-3" x="40" y="430" width="1506" height="106" rx="10" class="c-lane" stroke-width="1"/>
         <text x="54" y="452" class="t-dim" font-size="10" font-weight="600">04 / Orderly shutdown</text>
+
+        <rect data-graph-role="structural-frame" data-composition-frame-kind="lane" data-composition-frame-id="lane-4" x="40" y="556" width="1506" height="106" rx="10" class="c-lane" stroke-width="1"/>
+        <rect data-graph-role="structural-frame" data-composition-frame-kind="exception-lane" data-composition-frame-id="lane-4-exception" x="46" y="562" width="1494" height="94" rx="8" class="c-security-group" stroke-width="1"/>
+        <text x="54" y="578" class="t-security" font-size="10" font-weight="600">EX / Incomplete shutdown</text>
 
         <!-- Phase headers -->
 
@@ -5211,216 +5216,217 @@ svg[data-purpose-filter] g[data-purpose-highlight] > path { stroke-width: 2.4; }
 
 
         <!-- Edge paths -->
-        <path data-edge-from="wait" data-edge-to="paused" data-edge-label="Writes stopped" data-edge-key="0" data-edge-id="maintenance-ack" data-purpose="success" data-composition-points="614,372;748,372" d="M 614 372 L 748 372" class="a-default purpose-arrow purpose-success" stroke-width="1.4" marker-end="url(#purpose-arrowhead-success)"/>
-        <path data-edge-from="pause" data-edge-to="wait" data-edge-label="Admission closed" data-edge-key="1" data-edge-id="maintenance-drain" data-purpose="warning" data-composition-points="160.5,406;160.5,422;501.5,422;501.5,406" d="M 160.5 406 L 160.5 422 L 501.5 422 L 501.5 406" class="a-default purpose-arrow purpose-warning" stroke-width="1.4" marker-end="url(#purpose-arrowhead-warning)"/>
-        <path data-edge-from="workers" data-edge-to="pause" data-edge-label="Maintenance request" data-edge-key="2" data-edge-id="maintenance-request" data-purpose="warning" data-composition-points="1189.5,280;1189.5,426;160.5,426;160.5,406" d="M 1189.5 280 L 1189.5 426 L 160.5 426 L 160.5 406" class="a-default purpose-arrow purpose-warning" stroke-width="1.4" marker-end="url(#purpose-arrowhead-warning)"/>
-        <path data-edge-from="paused" data-edge-to="workers" data-edge-label="Owner resumes" data-edge-key="3" data-edge-id="maintenance-resume" data-purpose="service" data-composition-points="973,372;1189.5,372;1189.5,280" d="M 973 372 L 1189.5 372 L 1189.5 280" class="a-default purpose-arrow purpose-service" stroke-width="1.4" marker-end="url(#purpose-arrowhead-service)"/>
-        <path data-edge-from="env" data-edge-to="validate" data-edge-label="Parse Config" data-edge-key="4" data-edge-id="r1" data-purpose="artifact" data-composition-points="273,120;389,120" d="M 273 120 L 389 120" class="a-default purpose-arrow purpose-artifact" stroke-width="1.4" marker-end="url(#purpose-arrowhead-artifact)"/>
-        <path data-edge-from="validate" data-edge-to="openstorage" data-edge-label="Valid configuration" data-edge-key="5" data-edge-id="r2" data-purpose="success" data-composition-points="614,120;748,120" d="M 614 120 L 748 120" class="a-default purpose-arrow purpose-success" stroke-width="1.4" marker-end="url(#purpose-arrowhead-success)"/>
-        <path data-edge-from="openstorage" data-edge-to="wire" data-edge-label="Provide stores" data-edge-key="6" data-edge-id="r3" data-purpose="storage" data-composition-points="860.5,154;860.5,170;1189.5,170;1189.5,154" d="M 860.5 154 L 860.5 170 L 1189.5 170 L 1189.5 154" class="a-default purpose-arrow purpose-storage" stroke-width="1.4" marker-end="url(#purpose-arrowhead-storage)"/>
-        <path data-edge-from="wire" data-edge-to="listen" data-edge-label="Application built" data-edge-key="7" data-edge-id="r4" data-purpose="success" data-composition-points="1302,120;1500,120;1500,196;860.5,196;860.5,212" d="M 1302 120 L 1500 120 L 1500 196 L 860.5 196 L 860.5 212" class="a-default purpose-arrow purpose-success" stroke-width="1.4" marker-end="url(#purpose-arrowhead-success)"/>
-        <path data-edge-from="listen" data-edge-to="workers" data-edge-label="Listener ready" data-edge-key="8" data-edge-id="r5" data-purpose="success" data-composition-points="860.5,280;860.5,296;1189.5,296;1189.5,280" d="M 860.5 280 L 860.5 296 L 1189.5 296 L 1189.5 280" class="a-default purpose-arrow purpose-success" stroke-width="1.4" marker-end="url(#purpose-arrowhead-success)"/>
-        <path data-edge-from="workers" data-edge-to="drain" data-edge-label="Stop or runtime failure" data-edge-key="9" data-edge-id="r6" data-purpose="neutral" data-composition-points="1302,246;1500,246;1500,498;1302,498" d="M 1302 246 L 1500 246 L 1500 498 L 1302 498" class="a-default purpose-arrow purpose-neutral" stroke-width="1.4" marker-end="url(#purpose-arrowhead-neutral)"/>
-        <path data-edge-from="drain" data-edge-to="stopworkers" data-edge-label="HTTP drained" data-edge-key="10" data-edge-id="r7" data-purpose="success" data-composition-points="1077,498;973,498" d="M 1077 498 L 973 498" class="a-default purpose-arrow purpose-success" stroke-width="1.4" marker-end="url(#purpose-arrowhead-success)"/>
-        <path data-edge-from="stopworkers" data-edge-to="close" data-edge-label="Workers stopped" data-edge-key="11" data-edge-id="r8" data-purpose="success" data-composition-points="748,498;614,498" d="M 748 498 L 614 498" class="a-default purpose-arrow purpose-success" stroke-width="1.4" marker-end="url(#purpose-arrowhead-success)"/>
+        <path data-edge-from="wait" data-edge-to="paused" data-edge-label="Writes stopped" data-edge-key="0" data-edge-id="maintenance-ack" data-purpose="success" data-composition-points="652,372;802,372" d="M 652 372 L 802 372" class="a-default purpose-arrow purpose-success" stroke-width="1.4" marker-end="url(#purpose-arrowhead-success)"/>
+        <path data-edge-from="pause" data-edge-to="wait" data-edge-label="Admission closed" data-edge-key="1" data-edge-id="maintenance-drain" data-purpose="warning" data-composition-points="283,372;427,372" d="M 283 372 L 427 372" class="a-default purpose-arrow purpose-warning" stroke-width="1.4" marker-end="url(#purpose-arrowhead-warning)"/>
+        <path data-edge-from="workers" data-edge-to="pause" data-edge-label="Maintenance request" data-edge-key="2" data-edge-id="maintenance-request" data-purpose="warning" data-composition-points="1247.5,280;1247.5,426;170.5,426;170.5,406" d="M 1247.5 280 L 1247.5 426 L 170.5 426 L 170.5 406" class="a-default purpose-arrow purpose-warning" stroke-width="1.4" marker-end="url(#purpose-arrowhead-warning)"/>
+        <path data-edge-from="paused" data-edge-to="workers" data-edge-label="Owner resumes" data-edge-key="3" data-edge-id="maintenance-resume" data-purpose="service" data-composition-points="1027,372;1100,372;1100,246;1135,246" d="M 1027 372 L 1100 372 L 1100 246 L 1135 246" class="a-default purpose-arrow purpose-service" stroke-width="1.4" marker-end="url(#purpose-arrowhead-service)"/>
+        <path data-edge-from="env" data-edge-to="openstorage" data-edge-label="Valid configuration" data-edge-key="4" data-edge-id="r2" data-purpose="success" data-composition-points="293,120;427,120" d="M 293 120 L 427 120" class="a-default purpose-arrow purpose-success" stroke-width="1.4" marker-end="url(#purpose-arrowhead-success)"/>
+        <path data-edge-from="openstorage" data-edge-to="wire" data-edge-label="Provide stores" data-edge-key="5" data-edge-id="r3" data-purpose="storage" data-composition-points="652,120;802,120" d="M 652 120 L 802 120" class="a-default purpose-arrow purpose-storage" stroke-width="1.4" marker-end="url(#purpose-arrowhead-storage)"/>
+        <path data-edge-from="wire" data-edge-to="listen" data-edge-label="Application built" data-edge-key="6" data-edge-id="r4" data-purpose="success" data-composition-points="914.5,154;914.5,212" d="M 914.5 154 L 914.5 212" class="a-default purpose-arrow purpose-success" stroke-width="1.4" marker-end="url(#purpose-arrowhead-success)"/>
+        <path data-edge-from="listen" data-edge-to="workers" data-edge-label="Listener ready" data-edge-key="7" data-edge-id="r5" data-purpose="success" data-composition-points="1027,246;1070,246;1070,190;1247.5,190;1247.5,212" d="M 1027 246 L 1070 246 L 1070 190 L 1247.5 190 L 1247.5 212" class="a-default purpose-arrow purpose-success" stroke-width="1.4" marker-end="url(#purpose-arrowhead-success)"/>
+        <path data-edge-from="workers" data-edge-to="drain" data-edge-label="Stop or runtime failure" data-edge-key="8" data-edge-id="r6" data-purpose="neutral" data-composition-points="1360,246;1558,246;1558,498;1360,498" d="M 1360 246 L 1558 246 L 1558 498 L 1360 498" class="a-default purpose-arrow purpose-neutral" stroke-width="1.4" marker-end="url(#purpose-arrowhead-neutral)"/>
+        <path data-edge-from="drain" data-edge-to="stopworkers" data-edge-label="Drain returns" data-edge-key="9" data-edge-id="r7" data-purpose="neutral" data-composition-points="1135,498;1037,498" d="M 1135 498 L 1037 498" class="a-default purpose-arrow purpose-neutral" stroke-width="1.4" marker-end="url(#purpose-arrowhead-neutral)"/>
+        <path data-edge-from="stopworkers" data-edge-to="close" data-edge-label="Both drains complete" data-edge-key="10" data-edge-id="r8" data-purpose="success" data-composition-points="792,498;652,498" d="M 792 498 L 652 498" class="a-default purpose-arrow purpose-success" stroke-width="1.4" marker-end="url(#purpose-arrowhead-success)"/>
+        <path data-edge-from="stopworkers" data-edge-to="retain" data-edge-label="Any drain incomplete" data-edge-key="11" data-edge-id="shutdown-incomplete" data-purpose="failure" data-composition-points="914.5,532;914.5,548;1933.5,548;1933.5,574;914.5,574;914.5,590" d="M 914.5 532 L 914.5 548 L 1933.5 548 L 1933.5 574 L 914.5 574 L 914.5 590" class="a-default purpose-arrow purpose-failure" stroke-width="1.4" marker-end="url(#purpose-arrowhead-failure)"/>
 
         <!-- Nodes -->
-        <g id="node-env" data-node-id="env" data-node-label="Load configuration" tabindex="0" role="button" aria-label="Focus Load configuration, Environment, then CLI overrides, Configure and build" aria-pressed="false" data-node-kind="backend" data-node-sublabel="Environment, then CLI overrides" data-node-context="Configure and build" data-purpose="artifact">
-          <title>Load configuration · Environment, then CLI overrides · Configure and build</title>
-          <rect x="48" y="86" width="225" height="68" rx="6" class="c-mask"/>
-          <rect x="48" y="86" width="225" height="68" rx="6" class="c-backend" stroke-width="1.5"/>
+        <g id="node-env" data-node-id="env" data-node-label="Load and validate config" tabindex="0" role="button" aria-label="Focus Load and validate config, Environment, CLI and secrets, Configure and build" aria-pressed="false" data-node-kind="backend" data-node-sublabel="Environment, CLI and secrets" data-node-context="Configure and build" data-purpose="artifact">
+          <title>Load and validate config · Environment, CLI and secrets · Configure and build</title>
+          <rect x="48" y="86" width="245" height="68" rx="6" class="c-mask"/>
+          <rect x="48" y="86" width="245" height="68" rx="6" class="c-backend" stroke-width="1.5"/>
           <g aria-hidden="true" data-semantic-sigil="backend" class="semantic-sigil s-backend" transform="translate(54 92) scale(0.6875)">
             <path d="M6 3 3 8l3 5M10 3l3 5-3 5"/>
           </g>
-          <text data-node-label="" data-detail-anchor="" x="160.5" y="107" class="t-primary" font-size="14" font-weight="600" text-anchor="middle">Load configuration</text>
-          <text data-detail="context" x="160.5" y="124" class="t-muted" font-size="11" text-anchor="middle">Environment, then CLI overrides</text>
-        </g>
-
-        <g id="node-validate" data-node-id="validate" data-node-label="Validate configuration" tabindex="0" role="button" aria-label="Focus Validate configuration, Unified runtime and secrets, Configure and build" aria-pressed="false" data-node-kind="security" data-node-sublabel="Unified runtime and secrets" data-node-context="Configure and build" data-purpose="artifact">
-          <title>Validate configuration · Unified runtime and secrets · Configure and build</title>
-          <rect x="389" y="86" width="225" height="68" rx="6" class="c-mask"/>
-          <rect x="389" y="86" width="225" height="68" rx="6" class="c-security" stroke-width="1.5"/>
-          <g aria-hidden="true" data-semantic-sigil="security" class="semantic-sigil s-security" transform="translate(395 92) scale(0.6875)">
-            <path d="M8 2.2 13 4v3.5c0 3.1-1.8 5.4-5 6.5-3.2-1.1-5-3.4-5-6.5V4Z"/>
-            <path d="m5.8 8 1.5 1.5 3-3"/>
-          </g>
-          <text data-node-label="" data-detail-anchor="" x="501.5" y="107" class="t-primary" font-size="14" font-weight="600" text-anchor="middle">Validate configuration</text>
-          <text data-detail="context" x="501.5" y="124" class="t-muted" font-size="11" text-anchor="middle">Unified runtime and secrets</text>
+          <text data-node-label="" data-detail-anchor="" x="170.5" y="107" class="t-primary" font-size="14" font-weight="600" text-anchor="middle">Load and validate config</text>
+          <text data-detail="context" x="170.5" y="124" class="t-muted" font-size="11" text-anchor="middle">Environment, CLI and secrets</text>
         </g>
 
         <g id="node-openstorage" data-node-id="openstorage" data-node-label="Open configured stores" tabindex="0" role="button" aria-label="Focus Open configured stores, Memory or shared SQL pool, Configure and build" aria-pressed="false" data-node-kind="database" data-node-sublabel="Memory or shared SQL pool" data-node-context="Configure and build" data-purpose="storage">
           <title>Open configured stores · Memory or shared SQL pool · Configure and build</title>
-          <rect x="748" y="86" width="225" height="68" rx="6" class="c-mask"/>
-          <rect x="748" y="86" width="225" height="68" rx="6" class="c-database" stroke-width="1.5"/>
-          <g aria-hidden="true" data-semantic-sigil="database" class="semantic-sigil s-database" transform="translate(754 92) scale(0.6875)">
+          <rect x="427" y="86" width="225" height="68" rx="6" class="c-mask"/>
+          <rect x="427" y="86" width="225" height="68" rx="6" class="c-database" stroke-width="1.5"/>
+          <g aria-hidden="true" data-semantic-sigil="database" class="semantic-sigil s-database" transform="translate(433 92) scale(0.6875)">
             <ellipse cx="8" cy="4" rx="5" ry="2"/>
             <path d="M3 4v8c0 1.1 2.2 2 5 2s5-.9 5-2V4M3 8c0 1.1 2.2 2 5 2s5-.9 5-2"/>
           </g>
-          <text data-node-label="" data-detail-anchor="" x="860.5" y="107" class="t-primary" font-size="14" font-weight="600" text-anchor="middle">Open configured stores</text>
-          <text data-detail="context" x="860.5" y="124" class="t-muted" font-size="11" text-anchor="middle">Memory or shared SQL pool</text>
+          <text data-node-label="" data-detail-anchor="" x="539.5" y="107" class="t-primary" font-size="14" font-weight="600" text-anchor="middle">Open configured stores</text>
+          <text data-detail="context" x="539.5" y="124" class="t-muted" font-size="11" text-anchor="middle">Memory or shared SQL pool</text>
         </g>
 
         <g id="node-wire" data-node-id="wire" data-node-label="Build application" tabindex="0" role="button" aria-label="Focus Build application, Wire services and register routes, Configure and build" aria-pressed="false" data-node-kind="backend" data-node-sublabel="Wire services and register routes" data-node-context="Configure and build" data-purpose="service">
           <title>Build application · Wire services and register routes · Configure and build</title>
-          <rect x="1077" y="86" width="225" height="68" rx="6" class="c-mask"/>
-          <rect x="1077" y="86" width="225" height="68" rx="6" class="c-backend" stroke-width="1.5"/>
-          <g aria-hidden="true" data-semantic-sigil="backend" class="semantic-sigil s-backend" transform="translate(1083 92) scale(0.6875)">
+          <rect x="802" y="86" width="225" height="68" rx="6" class="c-mask"/>
+          <rect x="802" y="86" width="225" height="68" rx="6" class="c-backend" stroke-width="1.5"/>
+          <g aria-hidden="true" data-semantic-sigil="backend" class="semantic-sigil s-backend" transform="translate(808 92) scale(0.6875)">
             <path d="M6 3 3 8l3 5M10 3l3 5-3 5"/>
           </g>
-          <text data-node-label="" data-detail-anchor="" x="1189.5" y="107" class="t-primary" font-size="14" font-weight="600" text-anchor="middle">Build application</text>
-          <text data-detail="context" x="1189.5" y="124" class="t-muted" font-size="10.9" text-anchor="middle">Wire services and register routes</text>
+          <text data-node-label="" data-detail-anchor="" x="914.5" y="107" class="t-primary" font-size="14" font-weight="600" text-anchor="middle">Build application</text>
+          <text data-detail="context" x="914.5" y="124" class="t-muted" font-size="10.9" text-anchor="middle">Wire services and register routes</text>
         </g>
 
-        <g id="node-listen" data-node-id="listen" data-node-label="Open listener" tabindex="0" role="button" aria-label="Focus Open listener, Native TLS or loopback HTTP, Shared runtime" aria-pressed="false" data-node-kind="backend" data-node-sublabel="Native TLS or loopback HTTP" data-node-context="Shared runtime" data-purpose="transport">
-          <title>Open listener · Native TLS or loopback HTTP · Shared runtime</title>
-          <rect x="748" y="212" width="225" height="68" rx="6" class="c-mask"/>
-          <rect x="748" y="212" width="225" height="68" rx="6" class="c-backend" stroke-width="1.5"/>
-          <g aria-hidden="true" data-semantic-sigil="backend" class="semantic-sigil s-backend" transform="translate(754 218) scale(0.6875)">
+        <g id="node-listen" data-node-id="listen" data-node-label="Open main listener" tabindex="0" role="button" aria-label="Focus Open main listener, TLS or literal loopback HTTP, Shared runtime" aria-pressed="false" data-node-kind="backend" data-node-sublabel="TLS or literal loopback HTTP" data-node-context="Shared runtime" data-purpose="transport">
+          <title>Open main listener · TLS or literal loopback HTTP · Shared runtime</title>
+          <rect x="802" y="212" width="225" height="68" rx="6" class="c-mask"/>
+          <rect x="802" y="212" width="225" height="68" rx="6" class="c-backend" stroke-width="1.5"/>
+          <g aria-hidden="true" data-semantic-sigil="backend" class="semantic-sigil s-backend" transform="translate(808 218) scale(0.6875)">
             <path d="M6 3 3 8l3 5M10 3l3 5-3 5"/>
           </g>
-          <text data-node-label="" data-detail-anchor="" x="860.5" y="233" class="t-primary" font-size="14" font-weight="600" text-anchor="middle">Open listener</text>
-          <text data-detail="context" x="860.5" y="250" class="t-muted" font-size="11" text-anchor="middle">Native TLS or loopback HTTP</text>
+          <text data-node-label="" data-detail-anchor="" x="914.5" y="233" class="t-primary" font-size="14" font-weight="600" text-anchor="middle">Open main listener</text>
+          <text data-detail="context" x="914.5" y="250" class="t-muted" font-size="11" text-anchor="middle">TLS or literal loopback HTTP</text>
         </g>
 
         <g id="node-workers" data-node-id="workers" data-node-label="Supervise workers" tabindex="0" role="button" aria-label="Focus Supervise workers, Certificates · events · DDM, Shared runtime" aria-pressed="false" data-node-kind="backend" data-node-sublabel="Certificates · events · DDM" data-node-context="Shared runtime" data-purpose="service">
           <title>Supervise workers · Certificates · events · DDM · Shared runtime</title>
-          <rect x="1077" y="212" width="225" height="68" rx="6" class="c-mask"/>
-          <rect x="1077" y="212" width="225" height="68" rx="6" class="c-backend" stroke-width="1.5"/>
-          <g aria-hidden="true" data-semantic-sigil="backend" class="semantic-sigil s-backend" transform="translate(1083 218) scale(0.6875)">
+          <rect x="1135" y="212" width="225" height="68" rx="6" class="c-mask"/>
+          <rect x="1135" y="212" width="225" height="68" rx="6" class="c-backend" stroke-width="1.5"/>
+          <g aria-hidden="true" data-semantic-sigil="backend" class="semantic-sigil s-backend" transform="translate(1141 218) scale(0.6875)">
             <path d="M6 3 3 8l3 5M10 3l3 5-3 5"/>
           </g>
-          <text data-node-label="" data-detail-anchor="" x="1189.5" y="233" class="t-primary" font-size="14" font-weight="600" text-anchor="middle">Supervise workers</text>
-          <text data-detail="context" x="1189.5" y="250" class="t-muted" font-size="11" text-anchor="middle">Certificates · events · DDM</text>
+          <text data-node-label="" data-detail-anchor="" x="1247.5" y="233" class="t-primary" font-size="14" font-weight="600" text-anchor="middle">Supervise workers</text>
+          <text data-detail="context" x="1247.5" y="250" class="t-muted" font-size="11" text-anchor="middle">Certificates · events · DDM</text>
         </g>
 
         <g id="node-pause" data-node-id="pause" data-node-label="Close admission" tabindex="0" role="button" aria-label="Focus Close admission, Cancel background workers, Persistent maintenance pause" aria-pressed="false" data-node-kind="backend" data-node-sublabel="Cancel background workers" data-node-context="Persistent maintenance pause" data-purpose="warning">
           <title>Close admission · Cancel background workers · Persistent maintenance pause</title>
-          <rect x="48" y="338" width="225" height="68" rx="6" class="c-mask"/>
-          <rect x="48" y="338" width="225" height="68" rx="6" class="c-backend" stroke-width="1.5"/>
-          <g aria-hidden="true" data-semantic-sigil="backend" class="semantic-sigil s-backend" transform="translate(54 344) scale(0.6875)">
+          <rect x="58" y="338" width="225" height="68" rx="6" class="c-mask"/>
+          <rect x="58" y="338" width="225" height="68" rx="6" class="c-backend" stroke-width="1.5"/>
+          <g aria-hidden="true" data-semantic-sigil="backend" class="semantic-sigil s-backend" transform="translate(64 344) scale(0.6875)">
             <path d="M6 3 3 8l3 5M10 3l3 5-3 5"/>
           </g>
-          <text data-node-label="" data-detail-anchor="" x="160.5" y="359" class="t-primary" font-size="14" font-weight="600" text-anchor="middle">Close admission</text>
-          <text data-detail="context" x="160.5" y="376" class="t-muted" font-size="11" text-anchor="middle">Cancel background workers</text>
+          <text data-node-label="" data-detail-anchor="" x="170.5" y="359" class="t-primary" font-size="14" font-weight="600" text-anchor="middle">Close admission</text>
+          <text data-detail="context" x="170.5" y="376" class="t-muted" font-size="11" text-anchor="middle">Cancel background workers</text>
         </g>
 
         <g id="node-wait" data-node-id="wait" data-node-label="Drain admitted work" tabindex="0" role="button" aria-label="Focus Drain admitted work, Await HTTP and worker writes, Persistent maintenance pause" aria-pressed="false" data-node-kind="backend" data-node-sublabel="Await HTTP and worker writes" data-node-context="Persistent maintenance pause" data-purpose="service">
           <title>Drain admitted work · Await HTTP and worker writes · Persistent maintenance pause</title>
-          <rect x="389" y="338" width="225" height="68" rx="6" class="c-mask"/>
-          <rect x="389" y="338" width="225" height="68" rx="6" class="c-backend" stroke-width="1.5"/>
-          <g aria-hidden="true" data-semantic-sigil="backend" class="semantic-sigil s-backend" transform="translate(395 344) scale(0.6875)">
+          <rect x="427" y="338" width="225" height="68" rx="6" class="c-mask"/>
+          <rect x="427" y="338" width="225" height="68" rx="6" class="c-backend" stroke-width="1.5"/>
+          <g aria-hidden="true" data-semantic-sigil="backend" class="semantic-sigil s-backend" transform="translate(433 344) scale(0.6875)">
             <path d="M6 3 3 8l3 5M10 3l3 5-3 5"/>
           </g>
-          <text data-node-label="" data-detail-anchor="" x="501.5" y="359" class="t-primary" font-size="14" font-weight="600" text-anchor="middle">Drain admitted work</text>
-          <text data-detail="context" x="501.5" y="376" class="t-muted" font-size="11" text-anchor="middle">Await HTTP and worker writes</text>
+          <text data-node-label="" data-detail-anchor="" x="539.5" y="359" class="t-primary" font-size="14" font-weight="600" text-anchor="middle">Drain admitted work</text>
+          <text data-detail="context" x="539.5" y="376" class="t-muted" font-size="11" text-anchor="middle">Await HTTP and worker writes</text>
         </g>
 
         <g id="node-paused" data-node-id="paused" data-node-label="Acknowledge pause" tabindex="0" role="button" aria-label="Focus Acknowledge pause, Retain fence until owner resumes, Persistent maintenance pause" aria-pressed="false" data-node-kind="backend" data-node-sublabel="Retain fence until owner resumes" data-node-context="Persistent maintenance pause" data-purpose="storage">
           <title>Acknowledge pause · Retain fence until owner resumes · Persistent maintenance pause</title>
-          <rect x="748" y="338" width="225" height="68" rx="6" class="c-mask"/>
-          <rect x="748" y="338" width="225" height="68" rx="6" class="c-backend" stroke-width="1.5"/>
-          <g aria-hidden="true" data-semantic-sigil="backend" class="semantic-sigil s-backend" transform="translate(754 344) scale(0.6875)">
+          <rect x="802" y="338" width="225" height="68" rx="6" class="c-mask"/>
+          <rect x="802" y="338" width="225" height="68" rx="6" class="c-backend" stroke-width="1.5"/>
+          <g aria-hidden="true" data-semantic-sigil="backend" class="semantic-sigil s-backend" transform="translate(808 344) scale(0.6875)">
             <path d="M6 3 3 8l3 5M10 3l3 5-3 5"/>
           </g>
-          <text data-node-label="" data-detail-anchor="" x="860.5" y="359" class="t-primary" font-size="14" font-weight="600" text-anchor="middle">Acknowledge pause</text>
-          <text data-detail="context" x="860.5" y="376" class="t-muted" font-size="11" text-anchor="middle">Retain fence until owner resumes</text>
+          <text data-node-label="" data-detail-anchor="" x="914.5" y="359" class="t-primary" font-size="14" font-weight="600" text-anchor="middle">Acknowledge pause</text>
+          <text data-detail="context" x="914.5" y="376" class="t-muted" font-size="11" text-anchor="middle">Retain fence until owner resumes</text>
         </g>
 
-        <g id="node-close" data-node-id="close" data-node-label="Close application" tabindex="0" role="button" aria-label="Focus Close application, Release clients and stores, Orderly shutdown" aria-pressed="false" data-node-kind="backend" data-node-sublabel="Release clients and stores" data-node-context="Orderly shutdown" data-purpose="service">
-          <title>Close application · Release clients and stores · Orderly shutdown</title>
-          <rect x="389" y="464" width="225" height="68" rx="6" class="c-mask"/>
-          <rect x="389" y="464" width="225" height="68" rx="6" class="c-backend" stroke-width="1.5"/>
-          <g aria-hidden="true" data-semantic-sigil="backend" class="semantic-sigil s-backend" transform="translate(395 470) scale(0.6875)">
+        <g id="node-close" data-node-id="close" data-node-label="Close application" tabindex="0" role="button" aria-label="Focus Close application, Report any cleanup failure, Orderly shutdown" aria-pressed="false" data-node-kind="backend" data-node-sublabel="Report any cleanup failure" data-node-context="Orderly shutdown" data-purpose="service">
+          <title>Close application · Report any cleanup failure · Orderly shutdown</title>
+          <rect x="427" y="464" width="225" height="68" rx="6" class="c-mask"/>
+          <rect x="427" y="464" width="225" height="68" rx="6" class="c-backend" stroke-width="1.5"/>
+          <g aria-hidden="true" data-semantic-sigil="backend" class="semantic-sigil s-backend" transform="translate(433 470) scale(0.6875)">
             <path d="M6 3 3 8l3 5M10 3l3 5-3 5"/>
           </g>
-          <text data-node-label="" data-detail-anchor="" x="501.5" y="485" class="t-primary" font-size="14" font-weight="600" text-anchor="middle">Close application</text>
-          <text data-detail="context" x="501.5" y="502" class="t-muted" font-size="11" text-anchor="middle">Release clients and stores</text>
+          <text data-node-label="" data-detail-anchor="" x="539.5" y="485" class="t-primary" font-size="14" font-weight="600" text-anchor="middle">Close application</text>
+          <text data-detail="context" x="539.5" y="502" class="t-muted" font-size="11" text-anchor="middle">Report any cleanup failure</text>
         </g>
 
-        <g id="node-stopworkers" data-node-id="stopworkers" data-node-label="Stop background work" tabindex="0" role="button" aria-label="Focus Stop background work, Retain pending SQL deliveries, Orderly shutdown" aria-pressed="false" data-node-kind="backend" data-node-sublabel="Retain pending SQL deliveries" data-node-context="Orderly shutdown" data-purpose="service">
-          <title>Stop background work · Retain pending SQL deliveries · Orderly shutdown</title>
-          <rect x="748" y="464" width="225" height="68" rx="6" class="c-mask"/>
-          <rect x="748" y="464" width="225" height="68" rx="6" class="c-backend" stroke-width="1.5"/>
-          <g aria-hidden="true" data-semantic-sigil="backend" class="semantic-sigil s-backend" transform="translate(754 470) scale(0.6875)">
+        <g id="node-stopworkers" data-node-id="stopworkers" data-node-label="Cancel and await workers" tabindex="0" role="button" aria-label="Focus Cancel and await workers, Within the shared deadline, Orderly shutdown" aria-pressed="false" data-node-kind="backend" data-node-sublabel="Within the shared deadline" data-node-context="Orderly shutdown" data-purpose="service">
+          <title>Cancel and await workers · Within the shared deadline · Orderly shutdown</title>
+          <rect x="792" y="464" width="245" height="68" rx="6" class="c-mask"/>
+          <rect x="792" y="464" width="245" height="68" rx="6" class="c-backend" stroke-width="1.5"/>
+          <g aria-hidden="true" data-semantic-sigil="backend" class="semantic-sigil s-backend" transform="translate(798 470) scale(0.6875)">
             <path d="M6 3 3 8l3 5M10 3l3 5-3 5"/>
           </g>
-          <text data-node-label="" data-detail-anchor="" x="860.5" y="485" class="t-primary" font-size="14" font-weight="600" text-anchor="middle">Stop background work</text>
-          <text data-detail="context" x="860.5" y="502" class="t-muted" font-size="11" text-anchor="middle">Retain pending SQL deliveries</text>
+          <text data-node-label="" data-detail-anchor="" x="914.5" y="485" class="t-primary" font-size="14" font-weight="600" text-anchor="middle">Cancel and await workers</text>
+          <text data-detail="context" x="914.5" y="502" class="t-muted" font-size="11" text-anchor="middle">Within the shared deadline</text>
         </g>
 
-        <g id="node-drain" data-node-id="drain" data-node-label="Drain HTTP requests" tabindex="0" role="button" aria-label="Focus Drain HTTP requests, Stop accepting new traffic, Orderly shutdown" aria-pressed="false" data-node-kind="backend" data-node-sublabel="Stop accepting new traffic" data-node-context="Orderly shutdown" data-purpose="transport">
-          <title>Drain HTTP requests · Stop accepting new traffic · Orderly shutdown</title>
-          <rect x="1077" y="464" width="225" height="68" rx="6" class="c-mask"/>
-          <rect x="1077" y="464" width="225" height="68" rx="6" class="c-backend" stroke-width="1.5"/>
-          <g aria-hidden="true" data-semantic-sigil="backend" class="semantic-sigil s-backend" transform="translate(1083 470) scale(0.6875)">
+        <g id="node-drain" data-node-id="drain" data-node-label="Drain HTTP listeners" tabindex="0" role="button" aria-label="Focus Drain HTTP listeners, Main and optional HTTP-01, Orderly shutdown" aria-pressed="false" data-node-kind="backend" data-node-sublabel="Main and optional HTTP-01" data-node-context="Orderly shutdown" data-purpose="transport">
+          <title>Drain HTTP listeners · Main and optional HTTP-01 · Orderly shutdown</title>
+          <rect x="1135" y="464" width="225" height="68" rx="6" class="c-mask"/>
+          <rect x="1135" y="464" width="225" height="68" rx="6" class="c-backend" stroke-width="1.5"/>
+          <g aria-hidden="true" data-semantic-sigil="backend" class="semantic-sigil s-backend" transform="translate(1141 470) scale(0.6875)">
             <path d="M6 3 3 8l3 5M10 3l3 5-3 5"/>
           </g>
-          <text data-node-label="" data-detail-anchor="" x="1189.5" y="485" class="t-primary" font-size="14" font-weight="600" text-anchor="middle">Drain HTTP requests</text>
-          <text data-detail="context" x="1189.5" y="502" class="t-muted" font-size="11" text-anchor="middle">Stop accepting new traffic</text>
+          <text data-node-label="" data-detail-anchor="" x="1247.5" y="485" class="t-primary" font-size="14" font-weight="600" text-anchor="middle">Drain HTTP listeners</text>
+          <text data-detail="context" x="1247.5" y="502" class="t-muted" font-size="11" text-anchor="middle">Main and optional HTTP-01</text>
+        </g>
+
+        <g id="node-retain" data-node-id="retain" data-node-label="Retain shared resources" tabindex="0" role="button" aria-label="Focus Retain shared resources, Keep maintenance registration, Incomplete shutdown" aria-pressed="false" data-node-kind="database" data-node-sublabel="Keep maintenance registration" data-node-context="Incomplete shutdown" data-purpose="failure">
+          <title>Retain shared resources · Keep maintenance registration · Incomplete shutdown</title>
+          <rect x="802" y="590" width="225" height="68" rx="6" class="c-mask"/>
+          <rect x="802" y="590" width="225" height="68" rx="6" class="c-database" stroke-width="1.5"/>
+          <g aria-hidden="true" data-semantic-sigil="database" class="semantic-sigil s-database" transform="translate(808 596) scale(0.6875)">
+            <ellipse cx="8" cy="4" rx="5" ry="2"/>
+            <path d="M3 4v8c0 1.1 2.2 2 5 2s5-.9 5-2V4M3 8c0 1.1 2.2 2 5 2s5-.9 5-2"/>
+          </g>
+          <text data-node-label="" data-detail-anchor="" x="914.5" y="611" class="t-primary" font-size="14" font-weight="600" text-anchor="middle">Retain shared resources</text>
+          <text data-detail="context" x="914.5" y="628" class="t-muted" font-size="11" text-anchor="middle">Keep maintenance registration</text>
         </g>
 
         <!-- Edge labels -->
         <g data-detail="context" data-edge-from="wait" data-edge-to="paused" data-edge-label="Writes stopped" data-edge-key="0" data-edge-id="maintenance-ack" data-purpose="success">
-          <rect x="633" y="352" width="96" height="14" rx="3" class="c-mask"/>
-          <text x="681" y="362" class="t-muted" font-size="10" text-anchor="middle">Writes stopped</text>
+          <rect x="679" y="352" width="96" height="14" rx="3" class="c-mask"/>
+          <text x="727" y="362" class="t-muted" font-size="10" text-anchor="middle">Writes stopped</text>
         </g>
         <g data-detail="context" data-edge-from="pause" data-edge-to="wait" data-edge-label="Admission closed" data-edge-key="1" data-edge-id="maintenance-drain" data-purpose="warning">
-          <rect x="277" y="402" width="108" height="14" rx="3" class="c-mask"/>
-          <text x="331" y="412" class="t-muted" font-size="10" text-anchor="middle">Admission closed</text>
+          <rect x="301" y="352" width="108" height="14" rx="3" class="c-mask"/>
+          <text x="355" y="362" class="t-muted" font-size="10" text-anchor="middle">Admission closed</text>
         </g>
         <g data-detail="context" data-edge-from="workers" data-edge-to="pause" data-edge-label="Maintenance request" data-edge-key="2" data-edge-id="maintenance-request" data-purpose="warning">
-          <rect x="612" y="406" width="126" height="14" rx="3" class="c-mask"/>
-          <text x="675" y="416" class="t-muted" font-size="10" text-anchor="middle">Maintenance request</text>
+          <rect x="646" y="406" width="126" height="14" rx="3" class="c-mask"/>
+          <text x="709" y="416" class="t-muted" font-size="10" text-anchor="middle">Maintenance request</text>
         </g>
         <g data-detail="context" data-edge-from="paused" data-edge-to="workers" data-edge-label="Owner resumes" data-edge-key="3" data-edge-id="maintenance-resume" data-purpose="service">
-          <rect x="1036.25" y="352" width="90" height="14" rx="3" class="c-mask"/>
-          <text x="1081.25" y="362" class="t-muted" font-size="10" text-anchor="middle">Owner resumes</text>
+          <rect x="1055" y="315" width="90" height="14" rx="3" class="c-mask"/>
+          <text x="1100" y="325" class="t-muted" font-size="10" text-anchor="middle">Owner resumes</text>
         </g>
-        <g data-detail="context" data-edge-from="env" data-edge-to="validate" data-edge-label="Parse Config" data-edge-key="4" data-edge-id="r1" data-purpose="artifact">
-          <rect x="289" y="100" width="84" height="14" rx="3" class="c-mask"/>
-          <text x="331" y="110" class="t-muted" font-size="10" text-anchor="middle">Parse Config</text>
+        <g data-detail="context" data-edge-from="env" data-edge-to="openstorage" data-edge-label="Valid configuration" data-edge-key="4" data-edge-id="r2" data-purpose="success">
+          <rect x="297" y="100" width="126" height="14" rx="3" class="c-mask"/>
+          <text x="360" y="110" class="t-muted" font-size="10" text-anchor="middle">Valid configuration</text>
         </g>
-        <g data-detail="context" data-edge-from="validate" data-edge-to="openstorage" data-edge-label="Valid configuration" data-edge-key="5" data-edge-id="r2" data-purpose="success">
-          <rect x="618" y="100" width="126" height="14" rx="3" class="c-mask"/>
-          <text x="681" y="110" class="t-muted" font-size="10" text-anchor="middle">Valid configuration</text>
+        <g data-detail="context" data-edge-from="openstorage" data-edge-to="wire" data-edge-label="Provide stores" data-edge-key="5" data-edge-id="r3" data-purpose="storage">
+          <rect x="679" y="100" width="96" height="14" rx="3" class="c-mask"/>
+          <text x="727" y="110" class="t-muted" font-size="10" text-anchor="middle">Provide stores</text>
         </g>
-        <g data-detail="context" data-edge-from="openstorage" data-edge-to="wire" data-edge-label="Provide stores" data-edge-key="6" data-edge-id="r3" data-purpose="storage">
-          <rect x="977" y="150" width="96" height="14" rx="3" class="c-mask"/>
-          <text x="1025" y="160" class="t-muted" font-size="10" text-anchor="middle">Provide stores</text>
+        <g data-detail="context" data-edge-from="wire" data-edge-to="listen" data-edge-label="Application built" data-edge-key="6" data-edge-id="r4" data-purpose="success">
+          <rect x="925" y="179" width="114" height="14" rx="3" class="c-mask"/>
+          <text x="982" y="189" class="t-muted" font-size="10" text-anchor="middle">Application built</text>
         </g>
-        <g data-detail="context" data-edge-from="wire" data-edge-to="listen" data-edge-label="Application built" data-edge-key="7" data-edge-id="r4" data-purpose="success">
-          <rect x="1123.25" y="176" width="114" height="14" rx="3" class="c-mask"/>
-          <text x="1180.25" y="186" class="t-muted" font-size="10" text-anchor="middle">Application built</text>
+        <g data-detail="context" data-edge-from="listen" data-edge-to="workers" data-edge-label="Listener ready" data-edge-key="7" data-edge-id="r5" data-purpose="success">
+          <rect x="1112" y="168" width="96" height="14" rx="3" class="c-mask"/>
+          <text x="1160" y="178" class="t-muted" font-size="10" text-anchor="middle">Listener ready</text>
         </g>
-        <g data-detail="context" data-edge-from="listen" data-edge-to="workers" data-edge-label="Listener ready" data-edge-key="8" data-edge-id="r5" data-purpose="success">
-          <rect x="977" y="276" width="96" height="14" rx="3" class="c-mask"/>
-          <text x="1025" y="286" class="t-muted" font-size="10" text-anchor="middle">Listener ready</text>
+        <g data-detail="context" data-edge-from="workers" data-edge-to="drain" data-edge-label="Stop or runtime failure" data-edge-key="8" data-edge-id="r6" data-purpose="neutral">
+          <rect x="1384" y="226" width="150" height="14" rx="3" class="c-mask"/>
+          <text x="1459" y="236" class="t-muted" font-size="10" text-anchor="middle">Stop or runtime failure</text>
         </g>
-        <g data-detail="context" data-edge-from="workers" data-edge-to="drain" data-edge-label="Stop or runtime failure" data-edge-key="9" data-edge-id="r6" data-purpose="neutral">
-          <rect x="1326" y="226" width="150" height="14" rx="3" class="c-mask"/>
-          <text x="1401" y="236" class="t-muted" font-size="10" text-anchor="middle">Stop or runtime failure</text>
+        <g data-detail="context" data-edge-from="drain" data-edge-to="stopworkers" data-edge-label="Drain returns" data-edge-key="9" data-edge-id="r7" data-purpose="neutral">
+          <rect x="1041" y="478" width="90" height="14" rx="3" class="c-mask"/>
+          <text x="1086" y="488" class="t-muted" font-size="10" text-anchor="middle">Drain returns</text>
         </g>
-        <g data-detail="context" data-edge-from="drain" data-edge-to="stopworkers" data-edge-label="HTTP drained" data-edge-key="10" data-edge-id="r7" data-purpose="success">
-          <rect x="983" y="478" width="84" height="14" rx="3" class="c-mask"/>
-          <text x="1025" y="488" class="t-muted" font-size="10" text-anchor="middle">HTTP drained</text>
+        <g data-detail="context" data-edge-from="stopworkers" data-edge-to="close" data-edge-label="Both drains complete" data-edge-key="10" data-edge-id="r8" data-purpose="success">
+          <rect x="656" y="478" width="132" height="14" rx="3" class="c-mask"/>
+          <text x="722" y="488" class="t-muted" font-size="10" text-anchor="middle">Both drains complete</text>
         </g>
-        <g data-detail="context" data-edge-from="stopworkers" data-edge-to="close" data-edge-label="Workers stopped" data-edge-key="11" data-edge-id="r8" data-purpose="success">
-          <rect x="630" y="478" width="102" height="14" rx="3" class="c-mask"/>
-          <text x="681" y="488" class="t-muted" font-size="10" text-anchor="middle">Workers stopped</text>
+        <g data-detail="context" data-edge-from="stopworkers" data-edge-to="retain" data-edge-label="Any drain incomplete" data-edge-key="11" data-edge-id="shutdown-incomplete" data-purpose="failure">
+          <rect x="1358" y="528" width="132" height="14" rx="3" class="c-mask"/>
+          <text x="1424" y="538" class="t-muted" font-size="10" text-anchor="middle">Any drain incomplete</text>
         </g>
 
         <!-- Legend -->
 <g data-graph-role="legend" data-purpose-legend="" aria-label="Legend">
-    <path d="M 40 668 H 1476" class="purpose-legend-rule"/>
-    <text x="40" y="688" class="t-primary" font-size="14" font-weight="600">Legend</text>
-    <g data-purpose-legend-entry="service"><rect x="40" y="707" width="13" height="13" rx="3" class="purpose-swatch purpose-service"/><text x="62" y="718" class="t-primary" font-size="13">Services and processing</text></g>
-<g data-purpose-legend-entry="transport"><rect x="399" y="707" width="13" height="13" rx="3" class="purpose-swatch purpose-transport"/><text x="421" y="718" class="t-primary" font-size="13">Communication and transport</text></g>
-<g data-purpose-legend-entry="storage"><rect x="758" y="707" width="13" height="13" rx="3" class="purpose-swatch purpose-storage"/><text x="780" y="718" class="t-primary" font-size="13">Storage and persistence</text></g>
-<g data-purpose-legend-entry="artifact"><rect x="1117" y="707" width="13" height="13" rx="3" class="purpose-swatch purpose-artifact"/><text x="1139" y="718" class="t-primary" font-size="13">Configuration and artifacts</text></g>
-<g data-purpose-legend-entry="neutral"><rect x="40" y="737" width="13" height="13" rx="3" class="purpose-swatch purpose-neutral"/><text x="62" y="748" class="t-primary" font-size="13">Actors, structure, neutral states</text></g>
-<g data-purpose-legend-entry="success"><rect x="399" y="737" width="13" height="13" rx="3" class="purpose-swatch purpose-success"/><text x="421" y="748" class="t-primary" font-size="13">Successful or accepted</text></g>
-<g data-purpose-legend-entry="warning"><rect x="758" y="737" width="13" height="13" rx="3" class="purpose-swatch purpose-warning"/><text x="780" y="748" class="t-primary" font-size="13">Warning, deferred, or retry</text></g>
-    <text x="40" y="784" class="t-muted" font-size="12">Colour identifies purpose or outcome; line style does not imply success or failure.</text>
+    <path d="M 40 794 H 1910" class="purpose-legend-rule"/>
+    <text x="40" y="814" class="t-primary" font-size="14" font-weight="600">Legend</text>
+    <g data-purpose-legend-entry="service"><rect x="40" y="833" width="13" height="13" rx="3" class="purpose-swatch purpose-service"/><text x="62" y="844" class="t-primary" font-size="13">Services and processing</text></g>
+<g data-purpose-legend-entry="transport"><rect x="351.6666666666667" y="833" width="13" height="13" rx="3" class="purpose-swatch purpose-transport"/><text x="373.6666666666667" y="844" class="t-primary" font-size="13">Communication and transport</text></g>
+<g data-purpose-legend-entry="storage"><rect x="663.3333333333334" y="833" width="13" height="13" rx="3" class="purpose-swatch purpose-storage"/><text x="685.3333333333334" y="844" class="t-primary" font-size="13">Storage and persistence</text></g>
+<g data-purpose-legend-entry="artifact"><rect x="975" y="833" width="13" height="13" rx="3" class="purpose-swatch purpose-artifact"/><text x="997" y="844" class="t-primary" font-size="13">Configuration and artifacts</text></g>
+<g data-purpose-legend-entry="neutral"><rect x="1286.6666666666667" y="833" width="13" height="13" rx="3" class="purpose-swatch purpose-neutral"/><text x="1308.6666666666667" y="844" class="t-primary" font-size="13">Actors, structure, neutral states</text></g>
+<g data-purpose-legend-entry="success"><rect x="1598.3333333333335" y="833" width="13" height="13" rx="3" class="purpose-swatch purpose-success"/><text x="1620.3333333333335" y="844" class="t-primary" font-size="13">Successful or accepted</text></g>
+<g data-purpose-legend-entry="warning"><rect x="40" y="863" width="13" height="13" rx="3" class="purpose-swatch purpose-warning"/><text x="62" y="874" class="t-primary" font-size="13">Warning, deferred, or retry</text></g>
+<g data-purpose-legend-entry="failure"><rect x="351.6666666666667" y="863" width="13" height="13" rx="3" class="purpose-swatch purpose-failure"/><text x="373.6666666666667" y="874" class="t-primary" font-size="13">Failed, rejected, or invalid</text></g>
+    <text x="40" y="910" class="t-muted" font-size="12">Colour identifies purpose or outcome; line style does not imply success or failure.</text>
   </g>
       </svg>
       <p class="intent-trace-status no-print" id="intent-trace-status" role="status" aria-live="polite" aria-atomic="true"></p>
@@ -5614,7 +5620,7 @@ svg[data-purpose-filter] g[data-purpose-highlight] > path { stroke-width: 2.4; }
           <h3>Shared runtime</h3>
         </div>
         <ul>
-          <li>&bull; dmserver and embedded bench scenarios share server/internal/runtime. Remote listeners require TLS; plain HTTP is limited to literal loopback.</li>
+          <li>&bull; dmserver and embedded bench scenarios share server/internal/runtime. The main listener requires TLS outside literal loopback. The optional separate HTTP-01 challenge listener may bind non-loopback plain HTTP.</li>
           <li>&bull; The application registers workers for supervision and readiness. A worker failure cancels sibling loops and reaches the runtime supervisor; shutdown follows the ordered HTTP drain path.</li>
         </ul>
       </div>
@@ -5636,8 +5642,9 @@ svg[data-purpose-filter] g[data-purpose-highlight] > path { stroke-width: 2.4; }
           <h3>Ordered shutdown</h3>
         </div>
         <ul>
-          <li>&bull; On normal shutdown, stop accepting HTTP requests and drain them before stopping and awaiting workers. Then close clients, stores and application resources.</li>
-          <li>&bull; A worker failure may already have cancelled its siblings when HTTP draining begins. Shutdown is bounded, preserves the first failure and retains pending SQL deliveries.</li>
+          <li>&bull; On shutdown, drain both HTTP listeners concurrently under one deadline, then cancel and await workers. Close clients, stores and application resources only when both HTTP and worker drains complete.</li>
+          <li>&bull; An HTTP drain timeout force-closes connections but cannot prove handlers have exited. Return a failure while retaining shared resources and maintenance registration; stop the process before manually forgetting that participant.</li>
+          <li>&bull; A worker failure may already have cancelled its siblings. Preserve the first failure, join any cleanup failure, and retain pending SQL deliveries.</li>
         </ul>
       </div>
 
@@ -5647,7 +5654,7 @@ svg[data-purpose-filter] g[data-purpose-highlight] > path { stroke-width: 2.4; }
           <h3>Maintenance is a resumable pause</h3>
         </div>
         <ul>
-          <li>&bull; Shared SQL maintenance state gates request admission. A pause closes admission, cancels workers and waits for admitted HTTP requests and all worker writes before the participant acknowledges.</li>
+          <li>&bull; Shared SQL maintenance admission wraps webhook observation and rate limits. A pause cancels workers and awaits admitted HTTP work, including deferred observation/capture writes, before acknowledging.</li>
           <li>&bull; New requests receive 503 during the pause or a control-store failure. The fence persists across timeout and restart; only the matching ownership ticket resumes work. Every registered writer must acknowledge.</li>
         </ul>
       </div>
@@ -5658,12 +5665,12 @@ svg[data-purpose-filter] g[data-purpose-highlight] > path { stroke-width: 2.4; }
           <h3>Implementation references</h3>
         </div>
         <ul>
-          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/server/internal/app/env.go" target="_blank" rel="noopener noreferrer">env: Load configuration</a></li>
-          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/server/internal/app/app.go" target="_blank" rel="noopener noreferrer">validate: Validate configuration</a></li>
-          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/server/internal/app/app.go" target="_blank" rel="noopener noreferrer">openstorage: Open configured stores</a></li>
-          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/server/internal/app/app.go" target="_blank" rel="noopener noreferrer">wire: Build application</a></li>
-          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/server/internal/runtime/runtime.go" target="_blank" rel="noopener noreferrer">listen: Open listener</a></li>
-          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/server/internal/runtime/runtime.go" target="_blank" rel="noopener noreferrer">workers: Supervise workers</a></li>
+          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/e3db0449b366f96ebb0d6e27a02a1d65d382e1a5/server/internal/app/env.go" target="_blank" rel="noopener noreferrer">env: Load and validate configuration</a></li>
+          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/e3db0449b366f96ebb0d6e27a02a1d65d382e1a5/server/internal/app/app.go" target="_blank" rel="noopener noreferrer">Configuration validation: Validate configuration</a></li>
+          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/e3db0449b366f96ebb0d6e27a02a1d65d382e1a5/server/internal/app/app.go" target="_blank" rel="noopener noreferrer">openstorage: Open configured stores</a></li>
+          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/e3db0449b366f96ebb0d6e27a02a1d65d382e1a5/server/internal/app/app.go" target="_blank" rel="noopener noreferrer">wire: Build application</a></li>
+          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/e3db0449b366f96ebb0d6e27a02a1d65d382e1a5/server/internal/runtime/runtime.go" target="_blank" rel="noopener noreferrer">listen: Main and optional challenge listeners</a></li>
+          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/e3db0449b366f96ebb0d6e27a02a1d65d382e1a5/server/internal/runtime/runtime.go" target="_blank" rel="noopener noreferrer">workers: Supervise workers</a></li>
         </ul>
       </div>
 
@@ -5673,12 +5680,12 @@ svg[data-purpose-filter] g[data-purpose-highlight] > path { stroke-width: 2.4; }
           <h3>Implementation references (continued)</h3>
         </div>
         <ul>
-          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/server/internal/runtime/runtime.go" target="_blank" rel="noopener noreferrer">drain: Drain HTTP requests</a></li>
-          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/server/internal/runtime/runtime.go" target="_blank" rel="noopener noreferrer">stopworkers: Stop background work</a></li>
-          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/server/internal/app/app.go" target="_blank" rel="noopener noreferrer">close: Close application</a></li>
-          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/server/maintenance/participant.go" target="_blank" rel="noopener noreferrer">pause: Close admission</a></li>
-          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/server/maintenance/participant.go" target="_blank" rel="noopener noreferrer">wait: Drain admitted work</a></li>
-          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/server/maintenance/participant.go" target="_blank" rel="noopener noreferrer">paused: Acknowledge pause</a></li>
+          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/e3db0449b366f96ebb0d6e27a02a1d65d382e1a5/server/internal/runtime/runtime.go" target="_blank" rel="noopener noreferrer">drain: Drain HTTP requests</a></li>
+          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/e3db0449b366f96ebb0d6e27a02a1d65d382e1a5/server/internal/runtime/runtime.go" target="_blank" rel="noopener noreferrer">stopworkers: Stop background work</a></li>
+          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/e3db0449b366f96ebb0d6e27a02a1d65d382e1a5/server/internal/runtime/runtime.go#L236" target="_blank" rel="noopener noreferrer">close: Close application</a></li>
+          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/e3db0449b366f96ebb0d6e27a02a1d65d382e1a5/server/maintenance/participant.go" target="_blank" rel="noopener noreferrer">pause: Close admission</a></li>
+          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/e3db0449b366f96ebb0d6e27a02a1d65d382e1a5/server/maintenance/participant.go" target="_blank" rel="noopener noreferrer">wait: Drain admitted work</a></li>
+          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/e3db0449b366f96ebb0d6e27a02a1d65d382e1a5/server/maintenance/participant.go" target="_blank" rel="noopener noreferrer">paused: Acknowledge pause</a></li>
         </ul>
       </div>
 
@@ -5688,8 +5695,22 @@ svg[data-purpose-filter] g[data-purpose-highlight] > path { stroke-width: 2.4; }
           <h3>Implementation references (continued)</h3>
         </div>
         <ul>
-          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/server/internal/app/webhooks.go" target="_blank" rel="noopener noreferrer">Native webhook retention</a></li>
-          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/server/internal/app/dep.go" target="_blank" rel="noopener noreferrer">DEP worker schedules</a></li>
+          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/e3db0449b366f96ebb0d6e27a02a1d65d382e1a5/server/internal/app/webhooks.go" target="_blank" rel="noopener noreferrer">Native webhook retention</a></li>
+          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/e3db0449b366f96ebb0d6e27a02a1d65d382e1a5/server/internal/app/dep.go" target="_blank" rel="noopener noreferrer">DEP worker schedules</a></li>
+          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/e3db0449b366f96ebb0d6e27a02a1d65d382e1a5/server/internal/runtime/runtime.go#L236" target="_blank" rel="noopener noreferrer">retain: Preserve undrained application resources</a></li>
+          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/e3db0449b366f96ebb0d6e27a02a1d65d382e1a5/server/internal/app/app.go#L734" target="_blank" rel="noopener noreferrer">Maintenance outside deferred observation</a></li>
+          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/e3db0449b366f96ebb0d6e27a02a1d65d382e1a5/server/internal/runtime/shutdown_test.go" target="_blank" rel="noopener noreferrer">HTTP and worker deadline regression contracts</a></li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-dot transport"></div>
+          <h3>Public documentation</h3>
+        </div>
+        <ul>
+          <li>&bull; <a href="https://pkg.go.dev/net/http#Server.Shutdown" target="_blank" rel="noopener noreferrer">Go HTTP shutdown and forced close</a></li>
+          <li>&bull; <a href="https://www.rfc-editor.org/rfc/rfc8555#section-8.3" target="_blank" rel="noopener noreferrer">ACME HTTP-01 validation over HTTP port 80</a></li>
         </ul>
       </div>
     </div>

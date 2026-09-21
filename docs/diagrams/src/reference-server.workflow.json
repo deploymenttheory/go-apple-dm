@@ -26,6 +26,11 @@
     {
       "id": "shutdown",
       "label": "Orderly shutdown"
+    },
+    {
+      "id": "incomplete",
+      "label": "Incomplete shutdown",
+      "variant": "exception"
     }
   ],
   "nodes": [
@@ -33,28 +38,17 @@
       "id": "env",
       "lane": "startup",
       "col": 0,
-      "label": "Load configuration",
-      "sublabel": "Environment, then CLI overrides",
+      "label": "Load and validate config",
+      "sublabel": "Environment, CLI and secrets",
       "type": "backend",
-      "width": 225,
-      "height": 68,
-      "purpose": "artifact"
-    },
-    {
-      "id": "validate",
-      "lane": "startup",
-      "col": 1,
-      "label": "Validate configuration",
-      "sublabel": "Unified runtime and secrets",
-      "type": "security",
-      "width": 225,
+      "width": 245,
       "height": 68,
       "purpose": "artifact"
     },
     {
       "id": "openstorage",
       "lane": "startup",
-      "col": 2,
+      "col": 1,
       "label": "Open configured stores",
       "sublabel": "Memory or shared SQL pool",
       "type": "database",
@@ -65,7 +59,7 @@
     {
       "id": "wire",
       "lane": "startup",
-      "col": 3,
+      "col": 2,
       "label": "Build application",
       "sublabel": "Wire services and register routes",
       "type": "backend",
@@ -77,8 +71,8 @@
       "id": "listen",
       "lane": "runtime",
       "col": 2,
-      "label": "Open listener",
-      "sublabel": "Native TLS or loopback HTTP",
+      "label": "Open main listener",
+      "sublabel": "TLS or literal loopback HTTP",
       "type": "backend",
       "width": 225,
       "height": 68,
@@ -99,8 +93,8 @@
       "id": "drain",
       "lane": "shutdown",
       "col": 3,
-      "label": "Drain HTTP requests",
-      "sublabel": "Stop accepting new traffic",
+      "label": "Drain HTTP listeners",
+      "sublabel": "Main and optional HTTP-01",
       "type": "backend",
       "width": 225,
       "height": 68,
@@ -110,10 +104,10 @@
       "id": "stopworkers",
       "lane": "shutdown",
       "col": 2,
-      "label": "Stop background work",
-      "sublabel": "Retain pending SQL deliveries",
+      "label": "Cancel and await workers",
+      "sublabel": "Within the shared deadline",
       "type": "backend",
-      "width": 225,
+      "width": 245,
       "height": 68,
       "purpose": "service"
     },
@@ -122,7 +116,7 @@
       "lane": "shutdown",
       "col": 1,
       "label": "Close application",
-      "sublabel": "Release clients and stores",
+      "sublabel": "Report any cleanup failure",
       "type": "backend",
       "width": 225,
       "height": 68,
@@ -160,20 +154,23 @@
       "width": 225,
       "height": 68,
       "purpose": "storage"
+    },
+    {
+      "id": "retain",
+      "lane": "incomplete",
+      "col": 2,
+      "label": "Retain shared resources",
+      "sublabel": "Keep maintenance registration",
+      "type": "database",
+      "width": 225,
+      "height": 68,
+      "purpose": "failure"
     }
   ],
   "edges": [
     {
-      "id": "r1",
-      "from": "env",
-      "to": "validate",
-      "label": "Parse Config",
-      "purpose": "artifact",
-      "role": "main"
-    },
-    {
       "id": "r2",
-      "from": "validate",
+      "from": "env",
       "to": "openstorage",
       "label": "Valid configuration",
       "purpose": "success",
@@ -193,7 +190,14 @@
       "to": "listen",
       "label": "Application built",
       "purpose": "success",
-      "role": "branch"
+      "role": "branch",
+      "fromSide": "bottom",
+      "toSide": "top",
+      "route": "straight",
+      "labelAt": [
+        982,
+        189
+      ]
     },
     {
       "id": "r5",
@@ -201,7 +205,27 @@
       "to": "workers",
       "label": "Listener ready",
       "purpose": "success",
-      "role": "main"
+      "role": "main",
+      "fromSide": "right",
+      "toSide": "top",
+      "via": [
+        [
+          1070,
+          246
+        ],
+        [
+          1070,
+          190
+        ],
+        [
+          1247.5,
+          190
+        ]
+      ],
+      "labelAt": [
+        1160,
+        178
+      ]
     },
     {
       "id": "r6",
@@ -215,15 +239,15 @@
       "id": "r7",
       "from": "drain",
       "to": "stopworkers",
-      "label": "HTTP drained",
-      "purpose": "success",
+      "label": "Drain returns",
+      "purpose": "neutral",
       "role": "main"
     },
     {
       "id": "r8",
       "from": "stopworkers",
       "to": "close",
-      "label": "Workers stopped",
+      "label": "Both drains complete",
       "purpose": "success",
       "role": "main"
     },
@@ -241,7 +265,10 @@
       "to": "wait",
       "label": "Admission closed",
       "purpose": "warning",
-      "role": "main"
+      "role": "main",
+      "fromSide": "right",
+      "toSide": "left",
+      "route": "straight"
     },
     {
       "id": "maintenance-ack",
@@ -257,7 +284,33 @@
       "to": "workers",
       "label": "Owner resumes",
       "purpose": "service",
-      "role": "return"
+      "role": "return",
+      "fromSide": "right",
+      "toSide": "left",
+      "via": [
+        [
+          1100,
+          372
+        ],
+        [
+          1100,
+          246
+        ]
+      ],
+      "labelAt": [
+        1100,
+        325
+      ]
+    },
+    {
+      "id": "shutdown-incomplete",
+      "from": "stopworkers",
+      "to": "retain",
+      "label": "Any drain incomplete",
+      "purpose": "failure",
+      "role": "error",
+      "fromSide": "bottom",
+      "toSide": "top"
     }
   ],
   "cards": [
@@ -265,7 +318,7 @@
       "dot": "service",
       "title": "Shared runtime",
       "items": [
-        "dmserver and embedded bench scenarios share server/internal/runtime. Remote listeners require TLS; plain HTTP is limited to literal loopback.",
+        "dmserver and embedded bench scenarios share server/internal/runtime. The main listener requires TLS outside literal loopback. The optional separate HTTP-01 challenge listener may bind non-loopback plain HTTP.",
         "The application registers workers for supervision and readiness. A worker failure cancels sibling loops and reaches the runtime supervisor; shutdown follows the ordered HTTP drain path."
       ]
     },
@@ -281,15 +334,16 @@
       "dot": "neutral",
       "title": "Ordered shutdown",
       "items": [
-        "On normal shutdown, stop accepting HTTP requests and drain them before stopping and awaiting workers. Then close clients, stores and application resources.",
-        "A worker failure may already have cancelled its siblings when HTTP draining begins. Shutdown is bounded, preserves the first failure and retains pending SQL deliveries."
+        "On shutdown, drain both HTTP listeners concurrently under one deadline, then cancel and await workers. Close clients, stores and application resources only when both HTTP and worker drains complete.",
+        "An HTTP drain timeout force-closes connections but cannot prove handlers have exited. Return a failure while retaining shared resources and maintenance registration; stop the process before manually forgetting that participant.",
+        "A worker failure may already have cancelled its siblings. Preserve the first failure, join any cleanup failure, and retain pending SQL deliveries."
       ]
     },
     {
       "dot": "warning",
       "title": "Maintenance is a resumable pause",
       "items": [
-        "Shared SQL maintenance state gates request admission. A pause closes admission, cancels workers and waits for admitted HTTP requests and all worker writes before the participant acknowledges.",
+        "Shared SQL maintenance admission wraps webhook observation and rate limits. A pause cancels workers and awaits admitted HTTP work, including deferred observation/capture writes, before acknowledging.",
         "New requests receive 503 during the pause or a control-store failure. The fence persists across timeout and restart; only the matching ownership ticket resumes work. Every registered writer must acknowledge."
       ]
     },
@@ -297,32 +351,43 @@
       "title": "Implementation references",
       "dot": "artifact",
       "items": [
-        "env: Load configuration — https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/server/internal/app/env.go",
-        "validate: Validate configuration — https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/server/internal/app/app.go",
-        "openstorage: Open configured stores — https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/server/internal/app/app.go",
-        "wire: Build application — https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/server/internal/app/app.go",
-        "listen: Open listener — https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/server/internal/runtime/runtime.go",
-        "workers: Supervise workers — https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/server/internal/runtime/runtime.go"
+        "env: Load and validate configuration — https://github.com/deploymenttheory/go-apple-dm/blob/e3db0449b366f96ebb0d6e27a02a1d65d382e1a5/server/internal/app/env.go",
+        "Configuration validation: Validate configuration — https://github.com/deploymenttheory/go-apple-dm/blob/e3db0449b366f96ebb0d6e27a02a1d65d382e1a5/server/internal/app/app.go",
+        "openstorage: Open configured stores — https://github.com/deploymenttheory/go-apple-dm/blob/e3db0449b366f96ebb0d6e27a02a1d65d382e1a5/server/internal/app/app.go",
+        "wire: Build application — https://github.com/deploymenttheory/go-apple-dm/blob/e3db0449b366f96ebb0d6e27a02a1d65d382e1a5/server/internal/app/app.go",
+        "listen: Main and optional challenge listeners — https://github.com/deploymenttheory/go-apple-dm/blob/e3db0449b366f96ebb0d6e27a02a1d65d382e1a5/server/internal/runtime/runtime.go",
+        "workers: Supervise workers — https://github.com/deploymenttheory/go-apple-dm/blob/e3db0449b366f96ebb0d6e27a02a1d65d382e1a5/server/internal/runtime/runtime.go"
       ]
     },
     {
       "title": "Implementation references (continued)",
       "dot": "artifact",
       "items": [
-        "drain: Drain HTTP requests — https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/server/internal/runtime/runtime.go",
-        "stopworkers: Stop background work — https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/server/internal/runtime/runtime.go",
-        "close: Close application — https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/server/internal/app/app.go",
-        "pause: Close admission — https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/server/maintenance/participant.go",
-        "wait: Drain admitted work — https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/server/maintenance/participant.go",
-        "paused: Acknowledge pause — https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/server/maintenance/participant.go"
+        "drain: Drain HTTP requests — https://github.com/deploymenttheory/go-apple-dm/blob/e3db0449b366f96ebb0d6e27a02a1d65d382e1a5/server/internal/runtime/runtime.go",
+        "stopworkers: Stop background work — https://github.com/deploymenttheory/go-apple-dm/blob/e3db0449b366f96ebb0d6e27a02a1d65d382e1a5/server/internal/runtime/runtime.go",
+        "close: Close application — https://github.com/deploymenttheory/go-apple-dm/blob/e3db0449b366f96ebb0d6e27a02a1d65d382e1a5/server/internal/runtime/runtime.go#L236",
+        "pause: Close admission — https://github.com/deploymenttheory/go-apple-dm/blob/e3db0449b366f96ebb0d6e27a02a1d65d382e1a5/server/maintenance/participant.go",
+        "wait: Drain admitted work — https://github.com/deploymenttheory/go-apple-dm/blob/e3db0449b366f96ebb0d6e27a02a1d65d382e1a5/server/maintenance/participant.go",
+        "paused: Acknowledge pause — https://github.com/deploymenttheory/go-apple-dm/blob/e3db0449b366f96ebb0d6e27a02a1d65d382e1a5/server/maintenance/participant.go"
       ]
     },
     {
       "title": "Implementation references (continued)",
       "dot": "artifact",
       "items": [
-        "Native webhook retention — https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/server/internal/app/webhooks.go",
-        "DEP worker schedules — https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/server/internal/app/dep.go"
+        "Native webhook retention — https://github.com/deploymenttheory/go-apple-dm/blob/e3db0449b366f96ebb0d6e27a02a1d65d382e1a5/server/internal/app/webhooks.go",
+        "DEP worker schedules — https://github.com/deploymenttheory/go-apple-dm/blob/e3db0449b366f96ebb0d6e27a02a1d65d382e1a5/server/internal/app/dep.go",
+        "retain: Preserve undrained application resources — https://github.com/deploymenttheory/go-apple-dm/blob/e3db0449b366f96ebb0d6e27a02a1d65d382e1a5/server/internal/runtime/runtime.go#L236",
+        "Maintenance outside deferred observation — https://github.com/deploymenttheory/go-apple-dm/blob/e3db0449b366f96ebb0d6e27a02a1d65d382e1a5/server/internal/app/app.go#L734",
+        "HTTP and worker deadline regression contracts — https://github.com/deploymenttheory/go-apple-dm/blob/e3db0449b366f96ebb0d6e27a02a1d65d382e1a5/server/internal/runtime/shutdown_test.go"
+      ]
+    },
+    {
+      "dot": "transport",
+      "title": "Public documentation",
+      "items": [
+        "Go HTTP shutdown and forced close — https://pkg.go.dev/net/http#Server.Shutdown",
+        "ACME HTTP-01 validation over HTTP port 80 — https://www.rfc-editor.org/rfc/rfc8555#section-8.3"
       ]
     }
   ]

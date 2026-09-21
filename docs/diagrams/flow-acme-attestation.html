@@ -5152,11 +5152,11 @@ svg[data-purpose-filter] g[data-purpose-highlight] > path { stroke-width: 2.4; }
 <button type="button" data-purpose-filter-button="success" aria-pressed="false" style="--entry:var(--purpose-success)"><span class="purpose-key-dot" aria-hidden="true"></span>Successful or accepted</button>
     </div>
     <div class="purpose-key-detail" aria-live="polite" aria-atomic="true"><div><strong id="purpose-key-selection"></strong><span id="purpose-key-counts"></span></div><p id="purpose-key-description"></p></div>
-    <script id="purpose-key-data" type="application/json">{"entries":[{"key":"service","label":"Services and processing","meaning":"Services and processing steps that perform the work shown in the diagram.","nodes":["ACME server"],"connections":[]},{"key":"transport","label":"Communication and transport","meaning":"Communication between components, including endpoints, protocol exchanges, and notifications.","nodes":[],"connections":["GET /acme/directory","HEAD /acme/new-nonce","POST /acme/new-account","POST /acme/new-order","POST-as-GET certificate URL"]},{"key":"storage","label":"Storage and persistence","meaning":"Records and persistence: where the system stores or retrieves information.","nodes":["ACME state store"],"connections":["Claim enrollment identifier once"]},{"key":"authentication","label":"Authentication and identity","meaning":"Checks that establish or verify an identity or credential.","nodes":["Attestation"],"connections":["Replay-Nonce header","Submit device-attest-01 evidence","Verify Apple chain and freshness"]},{"key":"certificate","label":"Certificates and cryptography","meaning":"Certificate issuance and cryptographic work, including signing, encryption, and keys.","nodes":["Identity CA"],"connections":["POST finalize: CSR with attested key","Issue with PermanentIdentifier","Return PEM certificate chain"]},{"key":"policy","label":"Authorization and policy","meaning":"Authorization and policy decisions that determine whether an action is allowed.","nodes":["Admission policy"],"connections":["Evaluate admission policy"]},{"key":"neutral","label":"Actors, structure, neutral states","meaning":"Actors, structural boundaries, and states that do not imply success, warning, or failure.","nodes":["Apple device"],"connections":[]},{"key":"success","label":"Successful or accepted","meaning":"An explicitly successful or accepted result.","nodes":[],"connections":["Finalized order: certificate URL"]}],"nodes":6,"connections":14}</script>
+    <script id="purpose-key-data" type="application/json">{"entries":[{"key":"service","label":"Services and processing","meaning":"Services and processing steps that perform the work shown in the diagram.","nodes":["ACME server"],"connections":[]},{"key":"transport","label":"Communication and transport","meaning":"Communication between components, including endpoints, protocol exchanges, and notifications.","nodes":[],"connections":["GET /acme/directory","HEAD /acme/new-nonce","POST /acme/new-account","POST /acme/new-order","POST-as-GET certificate URL"]},{"key":"storage","label":"Storage and persistence","meaning":"Records and persistence: where the system stores or retrieves information.","nodes":["ACME state store"],"connections":["Claim enrollment identifier once","Lock order; validate current authorization","Commit CSR-bound certificate receipt"]},{"key":"authentication","label":"Authentication and identity","meaning":"Checks that establish or verify an identity or credential.","nodes":["Attestation"],"connections":["Replay-Nonce header","Submit device-attest-01 evidence","Verify Apple chain and freshness","Reverify evidence against the CSR public key"]},{"key":"certificate","label":"Certificates and cryptography","meaning":"Certificate issuance and cryptographic work, including signing, encryption, and keys.","nodes":["Identity CA"],"connections":["POST finalize: CSR with attested key","Issue with PermanentIdentifier","Return PEM certificate chain"]},{"key":"policy","label":"Authorization and policy","meaning":"Authorization and policy decisions that determine whether an action is allowed.","nodes":["Admission policy"],"connections":["Evaluate admission policy","Recheck current admission policy"]},{"key":"neutral","label":"Actors, structure, neutral states","meaning":"Actors, structural boundaries, and states that do not imply success, warning, or failure.","nodes":["Apple device"],"connections":[]},{"key":"success","label":"Successful or accepted","meaning":"An explicitly successful or accepted result.","nodes":[],"connections":["Finalized order: certificate URL"]}],"nodes":6,"connections":18}</script>
   </section>
     <div class="diagram-container" data-detail-level="read"
          data-preset-badge-editorial-plate="ARCHIFY / PLATE 04">
-      <svg viewBox="0 0 1320 902" data-purpose-diagram-view-box="0 0 1320 754" role="img" lang="en" aria-labelledby="archify-diagram-title archify-diagram-description" data-preset="classic" data-quality-profile="showcase">
+      <svg viewBox="0 0 1320 1046" data-purpose-diagram-view-box="0 0 1320 898" role="img" lang="en" aria-labelledby="archify-diagram-title archify-diagram-description" data-preset="classic" data-quality-profile="showcase">
         <title id="archify-diagram-title">ACME with Managed Device Attestation</title>
         <desc id="archify-diagram-description">A sequence diagram generated by Archify.</desc>
         <!-- Definitions -->
@@ -5196,12 +5196,12 @@ svg[data-purpose-filter] g[data-purpose-highlight] > path { stroke-width: 2.4; }
 
 
         <!-- Lifelines -->
-        <path d="M 149.5 142 L 149.5 689" class="a-default" stroke-width="0.8" stroke-dasharray="3,7"/>
-        <path d="M 358.1 142 L 358.1 689" class="a-default" stroke-width="0.8" stroke-dasharray="3,7"/>
-        <path d="M 566.7 142 L 566.7 689" class="a-default" stroke-width="0.8" stroke-dasharray="3,7"/>
-        <path d="M 775.3 142 L 775.3 689" class="a-default" stroke-width="0.8" stroke-dasharray="3,7"/>
-        <path d="M 983.9 142 L 983.9 689" class="a-default" stroke-width="0.8" stroke-dasharray="3,7"/>
-        <path d="M 1192.5 142 L 1192.5 689" class="a-default" stroke-width="0.8" stroke-dasharray="3,7"/>
+        <path d="M 149.5 142 L 149.5 833" class="a-default" stroke-width="0.8" stroke-dasharray="3,7"/>
+        <path d="M 358.1 142 L 358.1 833" class="a-default" stroke-width="0.8" stroke-dasharray="3,7"/>
+        <path d="M 566.7 142 L 566.7 833" class="a-default" stroke-width="0.8" stroke-dasharray="3,7"/>
+        <path d="M 775.3 142 L 775.3 833" class="a-default" stroke-width="0.8" stroke-dasharray="3,7"/>
+        <path d="M 983.9 142 L 983.9 833" class="a-default" stroke-width="0.8" stroke-dasharray="3,7"/>
+        <path d="M 1192.5 142 L 1192.5 833" class="a-default" stroke-width="0.8" stroke-dasharray="3,7"/>
 
         <!-- Activations -->
 
@@ -5288,35 +5288,69 @@ svg[data-purpose-filter] g[data-purpose-highlight] > path { stroke-width: 2.4; }
         </g>
         </g>
 
-        <g data-edge-from="acme" data-edge-to="ca" data-edge-label="Issue with PermanentIdentifier" data-edge-key="10" data-edge-id="sign" data-purpose="certificate">
-          <path data-composition-edge-from="acme" data-composition-edge-to="ca" data-composition-edge-id="sign" data-composition-points="365.1,535;1185.5,535" d="M 365.1 535 L 1185.5 535" class="a-default purpose-arrow purpose-certificate" stroke-width="1.4" marker-end="url(#purpose-arrowhead-certificate)"/>
+        <g data-edge-from="acme" data-edge-to="attest" data-edge-label="Reverify evidence against the CSR public key" data-edge-key="10" data-edge-id="recheck" data-purpose="authentication">
+          <path data-composition-edge-from="acme" data-composition-edge-to="attest" data-composition-edge-id="recheck" data-composition-points="365.1,535;768.3,535" d="M 365.1 535 L 768.3 535" class="a-default purpose-arrow purpose-authentication" stroke-width="1.4" marker-end="url(#purpose-arrowhead-authentication)"/>
         <g data-detail="context">
-          <rect x="670.3" y="515" width="210" height="16" rx="3" class="c-mask"/>
-          <text x="775.3" y="525" class="t-backend" font-size="11" text-anchor="middle">Issue with PermanentIdentifier</text>
+          <rect x="415.50000000000006" y="515" width="302.4" height="16" rx="3" class="c-mask"/>
+          <text x="566.7" y="525" class="t-security" font-size="11" text-anchor="middle">Reverify evidence against the CSR public key</text>
         </g>
         </g>
 
-        <g data-edge-from="acme" data-edge-to="device" data-edge-label="Finalized order: certificate URL" data-edge-key="11" data-edge-id="order-back" data-purpose="success">
-          <path data-composition-edge-from="acme" data-composition-edge-to="device" data-composition-edge-id="order-back" data-composition-points="351.1,571;156.5,571" d="M 351.1 571 L 156.5 571" class="a-default purpose-arrow purpose-success" stroke-width="1.4" stroke-dasharray="3,5" marker-end="url(#purpose-arrowhead-success)"/>
+        <g data-edge-from="acme" data-edge-to="policy" data-edge-label="Recheck current admission policy" data-edge-key="11" data-edge-id="readmit" data-purpose="policy">
+          <path data-composition-edge-from="acme" data-composition-edge-to="policy" data-composition-edge-id="readmit" data-composition-points="365.1,571;976.9,571" d="M 365.1 571 L 976.9 571" class="a-default purpose-arrow purpose-policy" stroke-width="1.4" marker-end="url(#purpose-arrowhead-policy)"/>
         <g data-detail="context">
-          <rect x="142.20000000000002" y="551" width="223.2" height="16" rx="3" class="c-mask"/>
-          <text x="253.8" y="561" class="t-muted" font-size="11" text-anchor="middle">Finalized order: certificate URL</text>
+          <rect x="559.4" y="551" width="223.2" height="16" rx="3" class="c-mask"/>
+          <text x="671" y="561" class="t-security" font-size="11" text-anchor="middle">Recheck current admission policy</text>
         </g>
         </g>
 
-        <g data-edge-from="device" data-edge-to="acme" data-edge-label="POST-as-GET certificate URL" data-edge-key="12" data-edge-id="cert-get" data-purpose="transport">
-          <path data-composition-edge-from="device" data-composition-edge-to="acme" data-composition-edge-id="cert-get" data-composition-points="156.5,607;351.1,607" d="M 156.5 607 L 351.1 607" class="a-default purpose-arrow purpose-transport" stroke-width="1.4" marker-end="url(#purpose-arrowhead-transport)"/>
+        <g data-edge-from="acme" data-edge-to="store" data-edge-label="Lock order; validate current authorization" data-edge-key="12" data-edge-id="lock" data-purpose="storage">
+          <path data-composition-edge-from="acme" data-composition-edge-to="store" data-composition-edge-id="lock" data-composition-points="365.1,607;559.7,607" d="M 365.1 607 L 559.7 607" class="a-default purpose-arrow purpose-storage" stroke-width="1.4" marker-end="url(#purpose-arrowhead-storage)"/>
         <g data-detail="context">
-          <rect x="158.70000000000002" y="587" width="190.2" height="16" rx="3" class="c-mask"/>
-          <text x="253.8" y="597" class="t-backend" font-size="11" text-anchor="middle">POST-as-GET certificate URL</text>
+          <rect x="317.80000000000007" y="587" width="289.2" height="16" rx="3" class="c-mask"/>
+          <text x="462.4000000000001" y="597" class="t-backend" font-size="11" text-anchor="middle">Lock order; validate current authorization</text>
         </g>
         </g>
 
-        <g data-edge-from="acme" data-edge-to="device" data-edge-label="Return PEM certificate chain" data-edge-key="13" data-edge-id="download" data-purpose="certificate">
-          <path data-composition-edge-from="acme" data-composition-edge-to="device" data-composition-edge-id="download" data-composition-points="351.1,643;156.5,643" d="M 351.1 643 L 156.5 643" class="a-default purpose-arrow purpose-certificate" stroke-width="1.4" stroke-dasharray="3,5" marker-end="url(#purpose-arrowhead-certificate)"/>
+        <g data-edge-from="acme" data-edge-to="ca" data-edge-label="Issue with PermanentIdentifier" data-edge-key="13" data-edge-id="sign" data-purpose="certificate">
+          <path data-composition-edge-from="acme" data-composition-edge-to="ca" data-composition-edge-id="sign" data-composition-points="365.1,643;1185.5,643" d="M 365.1 643 L 1185.5 643" class="a-default purpose-arrow purpose-certificate" stroke-width="1.4" marker-end="url(#purpose-arrowhead-certificate)"/>
         <g data-detail="context">
-          <rect x="155.40000000000003" y="623" width="196.79999999999998" height="16" rx="3" class="c-mask"/>
-          <text x="253.8" y="633" class="t-muted" font-size="11" text-anchor="middle">Return PEM certificate chain</text>
+          <rect x="670.3" y="623" width="210" height="16" rx="3" class="c-mask"/>
+          <text x="775.3" y="633" class="t-backend" font-size="11" text-anchor="middle">Issue with PermanentIdentifier</text>
+        </g>
+        </g>
+
+        <g data-edge-from="acme" data-edge-to="store" data-edge-label="Commit CSR-bound certificate receipt" data-edge-key="14" data-edge-id="receipt" data-purpose="storage">
+          <path data-composition-edge-from="acme" data-composition-edge-to="store" data-composition-edge-id="receipt" data-composition-points="365.1,679;559.7,679" d="M 365.1 679 L 559.7 679" class="a-default purpose-arrow purpose-storage" stroke-width="1.4" marker-end="url(#purpose-arrowhead-storage)"/>
+        <g data-detail="context">
+          <rect x="337.6" y="659" width="249.6" height="16" rx="3" class="c-mask"/>
+          <text x="462.40000000000003" y="669" class="t-backend" font-size="11" text-anchor="middle">Commit CSR-bound certificate receipt</text>
+        </g>
+        <text data-detail="fine" x="377.1" y="697" class="t-dim" font-size="7">Signing and receipt share the order transaction</text>
+        </g>
+
+        <g data-edge-from="acme" data-edge-to="device" data-edge-label="Finalized order: certificate URL" data-edge-key="15" data-edge-id="order-back" data-purpose="success">
+          <path data-composition-edge-from="acme" data-composition-edge-to="device" data-composition-edge-id="order-back" data-composition-points="351.1,715;156.5,715" d="M 351.1 715 L 156.5 715" class="a-default purpose-arrow purpose-success" stroke-width="1.4" stroke-dasharray="3,5" marker-end="url(#purpose-arrowhead-success)"/>
+        <g data-detail="context">
+          <rect x="142.20000000000002" y="695" width="223.2" height="16" rx="3" class="c-mask"/>
+          <text x="253.8" y="705" class="t-muted" font-size="11" text-anchor="middle">Finalized order: certificate URL</text>
+        </g>
+        <text data-detail="fine" x="168.5" y="733" class="t-dim" font-size="7">Only after required registration completes</text>
+        </g>
+
+        <g data-edge-from="device" data-edge-to="acme" data-edge-label="POST-as-GET certificate URL" data-edge-key="16" data-edge-id="cert-get" data-purpose="transport">
+          <path data-composition-edge-from="device" data-composition-edge-to="acme" data-composition-edge-id="cert-get" data-composition-points="156.5,751;351.1,751" d="M 156.5 751 L 351.1 751" class="a-default purpose-arrow purpose-transport" stroke-width="1.4" marker-end="url(#purpose-arrowhead-transport)"/>
+        <g data-detail="context">
+          <rect x="158.70000000000002" y="731" width="190.2" height="16" rx="3" class="c-mask"/>
+          <text x="253.8" y="741" class="t-backend" font-size="11" text-anchor="middle">POST-as-GET certificate URL</text>
+        </g>
+        </g>
+
+        <g data-edge-from="acme" data-edge-to="device" data-edge-label="Return PEM certificate chain" data-edge-key="17" data-edge-id="download" data-purpose="certificate">
+          <path data-composition-edge-from="acme" data-composition-edge-to="device" data-composition-edge-id="download" data-composition-points="351.1,787;156.5,787" d="M 351.1 787 L 156.5 787" class="a-default purpose-arrow purpose-certificate" stroke-width="1.4" stroke-dasharray="3,5" marker-end="url(#purpose-arrowhead-certificate)"/>
+        <g data-detail="context">
+          <rect x="155.40000000000003" y="767" width="196.79999999999998" height="16" rx="3" class="c-mask"/>
+          <text x="253.8" y="777" class="t-muted" font-size="11" text-anchor="middle">Return PEM certificate chain</text>
         </g>
         </g>
 
@@ -5397,17 +5431,17 @@ svg[data-purpose-filter] g[data-purpose-highlight] > path { stroke-width: 2.4; }
 
         <!-- Legend -->
 <g data-graph-role="legend" data-purpose-legend="" aria-label="Legend">
-    <path d="M 40 762 H 1280" class="purpose-legend-rule"/>
-    <text x="40" y="782" class="t-primary" font-size="14" font-weight="600">Legend</text>
-    <g data-purpose-legend-entry="service"><rect x="40" y="801" width="13" height="13" rx="3" class="purpose-swatch purpose-service"/><text x="62" y="812" class="t-primary" font-size="13">Services and processing</text></g>
-<g data-purpose-legend-entry="transport"><rect x="350" y="801" width="13" height="13" rx="3" class="purpose-swatch purpose-transport"/><text x="372" y="812" class="t-primary" font-size="13">Communication and transport</text></g>
-<g data-purpose-legend-entry="storage"><rect x="660" y="801" width="13" height="13" rx="3" class="purpose-swatch purpose-storage"/><text x="682" y="812" class="t-primary" font-size="13">Storage and persistence</text></g>
-<g data-purpose-legend-entry="authentication"><rect x="970" y="801" width="13" height="13" rx="3" class="purpose-swatch purpose-authentication"/><text x="992" y="812" class="t-primary" font-size="13">Authentication and identity</text></g>
-<g data-purpose-legend-entry="certificate"><rect x="40" y="831" width="13" height="13" rx="3" class="purpose-swatch purpose-certificate"/><text x="62" y="842" class="t-primary" font-size="13">Certificates and cryptography</text></g>
-<g data-purpose-legend-entry="policy"><rect x="350" y="831" width="13" height="13" rx="3" class="purpose-swatch purpose-policy"/><text x="372" y="842" class="t-primary" font-size="13">Authorization and policy</text></g>
-<g data-purpose-legend-entry="neutral"><rect x="660" y="831" width="13" height="13" rx="3" class="purpose-swatch purpose-neutral"/><text x="682" y="842" class="t-primary" font-size="13">Actors, structure, neutral states</text></g>
-<g data-purpose-legend-entry="success"><rect x="970" y="831" width="13" height="13" rx="3" class="purpose-swatch purpose-success"/><text x="992" y="842" class="t-primary" font-size="13">Successful or accepted</text></g>
-    <text x="40" y="878" class="t-muted" font-size="12">Colour identifies purpose or outcome; line style does not imply success or failure.</text>
+    <path d="M 40 906 H 1280" class="purpose-legend-rule"/>
+    <text x="40" y="926" class="t-primary" font-size="14" font-weight="600">Legend</text>
+    <g data-purpose-legend-entry="service"><rect x="40" y="945" width="13" height="13" rx="3" class="purpose-swatch purpose-service"/><text x="62" y="956" class="t-primary" font-size="13">Services and processing</text></g>
+<g data-purpose-legend-entry="transport"><rect x="350" y="945" width="13" height="13" rx="3" class="purpose-swatch purpose-transport"/><text x="372" y="956" class="t-primary" font-size="13">Communication and transport</text></g>
+<g data-purpose-legend-entry="storage"><rect x="660" y="945" width="13" height="13" rx="3" class="purpose-swatch purpose-storage"/><text x="682" y="956" class="t-primary" font-size="13">Storage and persistence</text></g>
+<g data-purpose-legend-entry="authentication"><rect x="970" y="945" width="13" height="13" rx="3" class="purpose-swatch purpose-authentication"/><text x="992" y="956" class="t-primary" font-size="13">Authentication and identity</text></g>
+<g data-purpose-legend-entry="certificate"><rect x="40" y="975" width="13" height="13" rx="3" class="purpose-swatch purpose-certificate"/><text x="62" y="986" class="t-primary" font-size="13">Certificates and cryptography</text></g>
+<g data-purpose-legend-entry="policy"><rect x="350" y="975" width="13" height="13" rx="3" class="purpose-swatch purpose-policy"/><text x="372" y="986" class="t-primary" font-size="13">Authorization and policy</text></g>
+<g data-purpose-legend-entry="neutral"><rect x="660" y="975" width="13" height="13" rx="3" class="purpose-swatch purpose-neutral"/><text x="682" y="986" class="t-primary" font-size="13">Actors, structure, neutral states</text></g>
+<g data-purpose-legend-entry="success"><rect x="970" y="975" width="13" height="13" rx="3" class="purpose-swatch purpose-success"/><text x="992" y="986" class="t-primary" font-size="13">Successful or accepted</text></g>
+    <text x="40" y="1022" class="t-muted" font-size="12">Colour identifies purpose or outcome; line style does not imply success or failure.</text>
   </g>
       </svg>
       <p class="intent-trace-status no-print" id="intent-trace-status" role="status" aria-live="polite" aria-atomic="true"></p>
@@ -5602,7 +5636,7 @@ svg[data-purpose-filter] g[data-purpose-highlight] > path { stroke-width: 2.4; }
         </div>
         <ul>
           <li>&bull; Challenge processing verifies the Apple attestation chain, freshness, required device identifiers, and configured admission policy.</li>
-          <li>&bull; Finalization verifies the certificate signing request and checks that its public key matches the attested key.</li>
+          <li>&bull; Finalization checks the CSR signature, reverifies stored evidence against the CSR public key, and rechecks device binding and admission policy before signing.</li>
         </ul>
       </div>
 
@@ -5613,6 +5647,7 @@ svg[data-purpose-filter] g[data-purpose-highlight] > path { stroke-width: 2.4; }
         </div>
         <ul>
           <li>&bull; Signed requests consume one-use replay nonces. A finalized order provides a certificate URL that the client retrieves using POST-as-GET.</li>
+          <li>&bull; Issuance commits a receipt before registration. Registration failure leaves a recoverable processing order; finalize retry or order polling rechecks key, expiry and admission and reuses the same certificate. Download is blocked until registration completes.</li>
           <li>&bull; SCEP and ACME identity issuance are independent of the HTTPS trust anchors distributed for enrollment endpoints.</li>
         </ul>
       </div>
@@ -5636,12 +5671,12 @@ svg[data-purpose-filter] g[data-purpose-highlight] > path { stroke-width: 2.4; }
           <h3>Implementation references</h3>
         </div>
         <ul>
-          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/devicemanagement/pki/acme/server.go" target="_blank" rel="noopener noreferrer">acme: ACME server</a></li>
-          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/devicemanagement/pki/acme/store.go" target="_blank" rel="noopener noreferrer">store: ACME state store</a></li>
-          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/devicemanagement/pki/acme/attest/attest.go" target="_blank" rel="noopener noreferrer">attest: Attestation</a></li>
-          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/devicemanagement/pki/acme/policy.go" target="_blank" rel="noopener noreferrer">policy: Admission policy</a></li>
-          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/devicemanagement/pki/ca/ca.go" target="_blank" rel="noopener noreferrer">ca: Identity CA</a></li>
-          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/devicemanagement/pki/acme/handlers.go" target="_blank" rel="noopener noreferrer">Account, order and challenge handlers</a></li>
+          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/e3db0449b366f96ebb0d6e27a02a1d65d382e1a5/devicemanagement/pki/acme/server.go#L175" target="_blank" rel="noopener noreferrer">acme: ACME server routes</a></li>
+          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/e3db0449b366f96ebb0d6e27a02a1d65d382e1a5/devicemanagement/pki/acme/store.go#L60" target="_blank" rel="noopener noreferrer">store: ACME state store</a></li>
+          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/e3db0449b366f96ebb0d6e27a02a1d65d382e1a5/devicemanagement/pki/acme/attest/attest.go#L321" target="_blank" rel="noopener noreferrer">attest: Attestation</a></li>
+          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/e3db0449b366f96ebb0d6e27a02a1d65d382e1a5/devicemanagement/pki/acme/policy.go#L41" target="_blank" rel="noopener noreferrer">policy: Admission policy</a></li>
+          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/e3db0449b366f96ebb0d6e27a02a1d65d382e1a5/devicemanagement/pki/ca/ca.go#L210" target="_blank" rel="noopener noreferrer">ca: Identity CA</a></li>
+          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/e3db0449b366f96ebb0d6e27a02a1d65d382e1a5/devicemanagement/pki/acme/handlers.go#L69" target="_blank" rel="noopener noreferrer">Account handler</a></li>
         </ul>
       </div>
 
@@ -5651,7 +5686,11 @@ svg[data-purpose-filter] g[data-purpose-highlight] > path { stroke-width: 2.4; }
           <h3>Implementation references (continued)</h3>
         </div>
         <ul>
-          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/devicemanagement/pki/acme/issuance.go" target="_blank" rel="noopener noreferrer">Finalization and retrieval</a></li>
+          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/e3db0449b366f96ebb0d6e27a02a1d65d382e1a5/devicemanagement/pki/acme/handlers.go#L188" target="_blank" rel="noopener noreferrer">Order and atomic identifier claim</a></li>
+          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/e3db0449b366f96ebb0d6e27a02a1d65d382e1a5/devicemanagement/pki/acme/handlers.go#L476" target="_blank" rel="noopener noreferrer">Challenge evidence validation</a></li>
+          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/e3db0449b366f96ebb0d6e27a02a1d65d382e1a5/devicemanagement/pki/acme/handlers.go#L658" target="_blank" rel="noopener noreferrer">Finalization handler</a></li>
+          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/e3db0449b366f96ebb0d6e27a02a1d65d382e1a5/devicemanagement/pki/acme/handlers.go#L821" target="_blank" rel="noopener noreferrer">Certificate retrieval handler</a></li>
+          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/e3db0449b366f96ebb0d6e27a02a1d65d382e1a5/devicemanagement/pki/acme/issuance.go#L29" target="_blank" rel="noopener noreferrer">Receipt and registration recovery</a></li>
         </ul>
       </div>
     </div>

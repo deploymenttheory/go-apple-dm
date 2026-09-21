@@ -11,7 +11,7 @@ const output=path.resolve(process.argv.find(a=>a.startsWith('--output='))?.slice
 const only=process.argv.find(a=>a.startsWith('--only='))?.slice(7).split(',');
 export async function main(){
  const browser=new ChromeVisualBrowser(findChrome()),results=[];
- const exportNames=['acme-internals','checkin-dispatch','enrollment-paths','flow-enrollment-profile-replacement','request-decode','lifecycle-command','flow-scep-issuance'];
+ const exportNames=only || ['acme-internals','checkin-dispatch','enrollment-paths','flow-enrollment-profile-replacement','request-decode','lifecycle-command','flow-scep-issuance'];
  try {
   for(const src of fs.readdirSync(path.join(root,'docs/diagrams/src')).filter(x=>x.endsWith('.json')&&(!only||only.includes(x.split('.')[0])))){
    const name=src.split('.')[0],artifactPath=path.join(root,'docs/diagrams',name+'.html');

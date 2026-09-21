@@ -15,6 +15,19 @@ type Call struct {
 	Checkin  *mdm.Checkin
 	Response *mdm.Response
 	Command  *mdm.Command
+	// Authenticate is populated after successful ordinary authentication. Known
+	// means storage classified the transition under its write lock. Otherwise
+	// Reset is a pre-read fallback for legacy stores, which requires external
+	// serialization to classify concurrent requests reliably.
+	Authenticate *AuthenticateResult
+}
+
+// AuthenticateResult tells completion hooks whether authentication reset the
+// enrollment or preserved it as an idempotent retry. It describes the current
+// operation, not the eventual commit of an enclosing transaction.
+type AuthenticateResult struct {
+	Known bool
+	Reset bool
 }
 
 // Hook observes and may veto operations. Before runs before storage is
@@ -28,11 +41,11 @@ type Hook interface {
 	After(ctx context.Context, c *Call, err error)
 }
 
-// Completer persists a successful check-in's authorization state before the
-// transport reports success. An error is returned to the device; implementations
+// Completer finishes a successful check-in's required authorization and lifecycle
+// work before the transport reports success. An error is returned to the device; implementations
 // must permit an idempotent retry after a partially completed service operation.
 type Completer interface {
-	// Complete persists authorization state after a successful check-in but before the
-	// transport reports success. A failure must permit an idempotent retry.
+	// Complete finishes required state changes after a successful check-in but before
+	// the transport reports success. A failure must permit an idempotent retry.
 	Complete(context.Context, *Call) error
 }
