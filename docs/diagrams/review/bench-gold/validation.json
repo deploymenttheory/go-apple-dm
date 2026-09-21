@@ -1,0 +1,1366 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "implementation_revision": "69d3e810d136377ec2e7b21e1da64563e3feb351",
+  "reading_policy": "Vertical document scrolling is intentional; require horizontal containment, readable unclipped text, clear routes and accessible cards.",
+  "review_only": true,
+  "content_checks": {
+    "status": "pass",
+    "linksChecked": 65,
+    "diagrams": [
+      {
+        "name": "01-ownership-zones",
+        "pinnedImplementationReferences": 11
+      },
+      {
+        "name": "02-execution-modes",
+        "pinnedImplementationReferences": 11
+      },
+      {
+        "name": "03-evidence-boundaries",
+        "pinnedImplementationReferences": 12
+      },
+      {
+        "name": "04-guided-walkthrough",
+        "pinnedImplementationReferences": 11
+      },
+      {
+        "name": "05-compact-overview",
+        "pinnedImplementationReferences": 10
+      }
+    ],
+    "errors": []
+  },
+  "examples": [
+    {
+      "name": "01-ownership-zones",
+      "output": "01-ownership-zones.html",
+      "specification": {
+        "path": "src/01-ownership-zones.architecture.json",
+        "sha256": "66754cf2494231fa26d8604c0cb1882ed8974bc02ef17cc41e7dc3534ea59d45",
+        "bytes": 11491
+      },
+      "artifact": {
+        "sha256": "bcc2e8d381b2a3cc3936a31fc9e397685d951b899805628db84d58443e3adde5",
+        "bytes": 748715
+      },
+      "validation": {
+        "checksPassed": 9,
+        "checkCount": 9,
+        "compositionProfile": "showcase",
+        "compositionStatus": "pass",
+        "errors": 0,
+        "warnings": 0
+      },
+      "pinned_implementation_references": 11,
+      "browser_evidence": "failed",
+      "upstream_browser_reason": "Vertical scrolling only at all four measured viewport sizes; no horizontal overflow.",
+      "upstream_browser_diagnostics": [
+        {
+          "code": "viewer/viewport-overflow",
+          "viewport": {
+            "width": 1440,
+            "height": 900,
+            "theme": "light"
+          },
+          "evidence": {
+            "innerWidth": 1440,
+            "innerHeight": 900,
+            "scrollWidth": 1440,
+            "scrollHeight": 2232,
+            "overflowX": false,
+            "overflowY": true
+          }
+        },
+        {
+          "code": "viewer/viewport-overflow",
+          "viewport": {
+            "width": 1600,
+            "height": 1000,
+            "theme": "light"
+          },
+          "evidence": {
+            "innerWidth": 1600,
+            "innerHeight": 1000,
+            "scrollWidth": 1600,
+            "scrollHeight": 2421,
+            "overflowX": false,
+            "overflowY": true
+          }
+        },
+        {
+          "code": "viewer/viewport-overflow",
+          "viewport": {
+            "width": 1920,
+            "height": 1080,
+            "theme": "light"
+          },
+          "evidence": {
+            "innerWidth": 1920,
+            "innerHeight": 1080,
+            "scrollWidth": 1920,
+            "scrollHeight": 2429,
+            "overflowX": false,
+            "overflowY": true
+          }
+        },
+        {
+          "code": "viewer/viewport-overflow",
+          "viewport": {
+            "width": 2048,
+            "height": 1320,
+            "theme": "light"
+          },
+          "evidence": {
+            "innerWidth": 2048,
+            "innerHeight": 1320,
+            "scrollWidth": 2048,
+            "scrollHeight": 2445,
+            "overflowX": false,
+            "overflowY": true
+          }
+        },
+        {
+          "code": "viewer/viewport-overflow",
+          "viewport": {
+            "width": 1440,
+            "height": 900,
+            "theme": "dark"
+          },
+          "evidence": {
+            "innerWidth": 1440,
+            "innerHeight": 900,
+            "scrollWidth": 1440,
+            "scrollHeight": 2232,
+            "overflowX": false,
+            "overflowY": true
+          }
+        },
+        {
+          "code": "viewer/viewport-overflow",
+          "viewport": {
+            "width": 2048,
+            "height": 1320,
+            "theme": "dark"
+          },
+          "evidence": {
+            "innerWidth": 2048,
+            "innerHeight": 1320,
+            "scrollWidth": 2048,
+            "scrollHeight": 2445,
+            "overflowX": false,
+            "overflowY": true
+          }
+        }
+      ],
+      "supplemental_browser_evidence": {
+        "status": "passed",
+        "captures": [
+          {
+            "viewport": [
+              1440,
+              900
+            ],
+            "theme": "light",
+            "horizontal_containment": true,
+            "svg_text_contained": true,
+            "scroll_height": 2232
+          },
+          {
+            "viewport": [
+              1440,
+              900
+            ],
+            "theme": "dark",
+            "horizontal_containment": true,
+            "svg_text_contained": true,
+            "scroll_height": 2232
+          },
+          {
+            "viewport": [
+              1600,
+              1000
+            ],
+            "theme": "light",
+            "horizontal_containment": true,
+            "svg_text_contained": true,
+            "scroll_height": 2421
+          },
+          {
+            "viewport": [
+              1600,
+              1000
+            ],
+            "theme": "dark",
+            "horizontal_containment": true,
+            "svg_text_contained": true,
+            "scroll_height": 2421
+          },
+          {
+            "viewport": [
+              1920,
+              1080
+            ],
+            "theme": "light",
+            "horizontal_containment": true,
+            "svg_text_contained": true,
+            "scroll_height": 2429
+          },
+          {
+            "viewport": [
+              1920,
+              1080
+            ],
+            "theme": "dark",
+            "horizontal_containment": true,
+            "svg_text_contained": true,
+            "scroll_height": 2429
+          },
+          {
+            "viewport": [
+              2048,
+              1320
+            ],
+            "theme": "light",
+            "horizontal_containment": true,
+            "svg_text_contained": true,
+            "scroll_height": 2445
+          },
+          {
+            "viewport": [
+              2048,
+              1320
+            ],
+            "theme": "dark",
+            "horizontal_containment": true,
+            "svg_text_contained": true,
+            "scroll_height": 2445
+          }
+        ]
+      },
+      "interaction_checks": {
+        "status": "passed",
+        "guided_views": [],
+        "theme_changed": true,
+        "theme_restored": true,
+        "search_matches": 1,
+        "search_closed": true,
+        "focus_opened": true,
+        "focus_closed": true,
+        "legend_errors": [],
+        "browser_errors": []
+      },
+      "exports": [
+        {
+          "format": "svg",
+          "theme": "light",
+          "bytes": 76385,
+          "canonical": "true",
+          "error": null,
+          "clean": true,
+          "colourErrors": []
+        },
+        {
+          "format": "png",
+          "theme": "light",
+          "bytes": 819324,
+          "canonical": "true",
+          "error": null,
+          "clean": true,
+          "colourErrors": []
+        },
+        {
+          "format": "svg",
+          "theme": "dark",
+          "bytes": 76385,
+          "canonical": "true",
+          "error": null,
+          "clean": true,
+          "colourErrors": []
+        },
+        {
+          "format": "png",
+          "theme": "dark",
+          "bytes": 823697,
+          "canonical": "true",
+          "error": null,
+          "clean": true,
+          "colourErrors": []
+        }
+      ],
+      "visual_review": "passed",
+      "visual_review_scope": "Rendered full-page light and dark screenshots, small-desktop readability, zone headings, arrow direction and clearance, source badges, legend and explanatory cards. Automated containment additionally covers all eight viewport/theme combinations.",
+      "correction_rounds": 0
+    },
+    {
+      "name": "02-execution-modes",
+      "output": "02-execution-modes.html",
+      "specification": {
+        "path": "src/02-execution-modes.architecture.json",
+        "sha256": "5945aa71b757c3d5168508f564a820e329114e437f7e43208d458cba00fc5504",
+        "bytes": 11832
+      },
+      "artifact": {
+        "sha256": "51e7f49c68403039d3fd8993cc5e7a2f4e007aa2068a89a0fbe9f17cd70eccfb",
+        "bytes": 750496
+      },
+      "validation": {
+        "checksPassed": 9,
+        "checkCount": 9,
+        "compositionProfile": "showcase",
+        "compositionStatus": "pass",
+        "errors": 0,
+        "warnings": 0
+      },
+      "pinned_implementation_references": 11,
+      "browser_evidence": "failed",
+      "upstream_browser_reason": "Vertical scrolling only at all four measured viewport sizes; no horizontal overflow.",
+      "upstream_browser_diagnostics": [
+        {
+          "code": "viewer/viewport-overflow",
+          "viewport": {
+            "width": 1440,
+            "height": 900,
+            "theme": "light"
+          },
+          "evidence": {
+            "innerWidth": 1440,
+            "innerHeight": 900,
+            "scrollWidth": 1440,
+            "scrollHeight": 2232,
+            "overflowX": false,
+            "overflowY": true
+          }
+        },
+        {
+          "code": "viewer/viewport-overflow",
+          "viewport": {
+            "width": 1600,
+            "height": 1000,
+            "theme": "light"
+          },
+          "evidence": {
+            "innerWidth": 1600,
+            "innerHeight": 1000,
+            "scrollWidth": 1600,
+            "scrollHeight": 2421,
+            "overflowX": false,
+            "overflowY": true
+          }
+        },
+        {
+          "code": "viewer/viewport-overflow",
+          "viewport": {
+            "width": 1920,
+            "height": 1080,
+            "theme": "light"
+          },
+          "evidence": {
+            "innerWidth": 1920,
+            "innerHeight": 1080,
+            "scrollWidth": 1920,
+            "scrollHeight": 2429,
+            "overflowX": false,
+            "overflowY": true
+          }
+        },
+        {
+          "code": "viewer/viewport-overflow",
+          "viewport": {
+            "width": 2048,
+            "height": 1320,
+            "theme": "light"
+          },
+          "evidence": {
+            "innerWidth": 2048,
+            "innerHeight": 1320,
+            "scrollWidth": 2048,
+            "scrollHeight": 2445,
+            "overflowX": false,
+            "overflowY": true
+          }
+        },
+        {
+          "code": "viewer/viewport-overflow",
+          "viewport": {
+            "width": 1440,
+            "height": 900,
+            "theme": "dark"
+          },
+          "evidence": {
+            "innerWidth": 1440,
+            "innerHeight": 900,
+            "scrollWidth": 1440,
+            "scrollHeight": 2232,
+            "overflowX": false,
+            "overflowY": true
+          }
+        },
+        {
+          "code": "viewer/viewport-overflow",
+          "viewport": {
+            "width": 2048,
+            "height": 1320,
+            "theme": "dark"
+          },
+          "evidence": {
+            "innerWidth": 2048,
+            "innerHeight": 1320,
+            "scrollWidth": 2048,
+            "scrollHeight": 2445,
+            "overflowX": false,
+            "overflowY": true
+          }
+        }
+      ],
+      "supplemental_browser_evidence": {
+        "status": "passed",
+        "captures": [
+          {
+            "viewport": [
+              1440,
+              900
+            ],
+            "theme": "light",
+            "horizontal_containment": true,
+            "svg_text_contained": true,
+            "scroll_height": 2232
+          },
+          {
+            "viewport": [
+              1440,
+              900
+            ],
+            "theme": "dark",
+            "horizontal_containment": true,
+            "svg_text_contained": true,
+            "scroll_height": 2232
+          },
+          {
+            "viewport": [
+              1600,
+              1000
+            ],
+            "theme": "light",
+            "horizontal_containment": true,
+            "svg_text_contained": true,
+            "scroll_height": 2421
+          },
+          {
+            "viewport": [
+              1600,
+              1000
+            ],
+            "theme": "dark",
+            "horizontal_containment": true,
+            "svg_text_contained": true,
+            "scroll_height": 2421
+          },
+          {
+            "viewport": [
+              1920,
+              1080
+            ],
+            "theme": "light",
+            "horizontal_containment": true,
+            "svg_text_contained": true,
+            "scroll_height": 2429
+          },
+          {
+            "viewport": [
+              1920,
+              1080
+            ],
+            "theme": "dark",
+            "horizontal_containment": true,
+            "svg_text_contained": true,
+            "scroll_height": 2429
+          },
+          {
+            "viewport": [
+              2048,
+              1320
+            ],
+            "theme": "light",
+            "horizontal_containment": true,
+            "svg_text_contained": true,
+            "scroll_height": 2445
+          },
+          {
+            "viewport": [
+              2048,
+              1320
+            ],
+            "theme": "dark",
+            "horizontal_containment": true,
+            "svg_text_contained": true,
+            "scroll_height": 2445
+          }
+        ]
+      },
+      "interaction_checks": {
+        "status": "passed",
+        "guided_views": [],
+        "theme_changed": true,
+        "theme_restored": true,
+        "search_matches": 1,
+        "search_closed": true,
+        "focus_opened": true,
+        "focus_closed": true,
+        "legend_errors": [],
+        "browser_errors": []
+      },
+      "exports": [
+        {
+          "format": "svg",
+          "theme": "light",
+          "bytes": 78166,
+          "canonical": "true",
+          "error": null,
+          "clean": true,
+          "colourErrors": []
+        },
+        {
+          "format": "png",
+          "theme": "light",
+          "bytes": 838746,
+          "canonical": "true",
+          "error": null,
+          "clean": true,
+          "colourErrors": []
+        },
+        {
+          "format": "svg",
+          "theme": "dark",
+          "bytes": 78166,
+          "canonical": "true",
+          "error": null,
+          "clean": true,
+          "colourErrors": []
+        },
+        {
+          "format": "png",
+          "theme": "dark",
+          "bytes": 842382,
+          "canonical": "true",
+          "error": null,
+          "clean": true,
+          "colourErrors": []
+        }
+      ],
+      "visual_review": "passed",
+      "visual_review_scope": "Rendered full-page light and dark screenshots, small-desktop readability, zone headings, arrow direction and clearance, source badges, legend and explanatory cards. Automated containment additionally covers all eight viewport/theme combinations.",
+      "correction_rounds": 0
+    },
+    {
+      "name": "03-evidence-boundaries",
+      "output": "03-evidence-boundaries.html",
+      "specification": {
+        "path": "src/03-evidence-boundaries.architecture.json",
+        "sha256": "d174c84fed2438b8bdec23c91555af9a82e22eb458a79a777ebfa32aa6e71785",
+        "bytes": 12242
+      },
+      "artifact": {
+        "sha256": "9fcd6bbc6e306e2e8921fb1a19f148ce9e03b61614a677158e845c7b5a320cda",
+        "bytes": 751672
+      },
+      "validation": {
+        "checksPassed": 9,
+        "checkCount": 9,
+        "compositionProfile": "showcase",
+        "compositionStatus": "pass",
+        "errors": 0,
+        "warnings": 0
+      },
+      "pinned_implementation_references": 12,
+      "browser_evidence": "failed",
+      "upstream_browser_reason": "Vertical scrolling only at all four measured viewport sizes; no horizontal overflow.",
+      "upstream_browser_diagnostics": [
+        {
+          "code": "viewer/viewport-overflow",
+          "viewport": {
+            "width": 1440,
+            "height": 900,
+            "theme": "light"
+          },
+          "evidence": {
+            "innerWidth": 1440,
+            "innerHeight": 900,
+            "scrollWidth": 1440,
+            "scrollHeight": 2232,
+            "overflowX": false,
+            "overflowY": true
+          }
+        },
+        {
+          "code": "viewer/viewport-overflow",
+          "viewport": {
+            "width": 1600,
+            "height": 1000,
+            "theme": "light"
+          },
+          "evidence": {
+            "innerWidth": 1600,
+            "innerHeight": 1000,
+            "scrollWidth": 1600,
+            "scrollHeight": 2421,
+            "overflowX": false,
+            "overflowY": true
+          }
+        },
+        {
+          "code": "viewer/viewport-overflow",
+          "viewport": {
+            "width": 1920,
+            "height": 1080,
+            "theme": "light"
+          },
+          "evidence": {
+            "innerWidth": 1920,
+            "innerHeight": 1080,
+            "scrollWidth": 1920,
+            "scrollHeight": 2429,
+            "overflowX": false,
+            "overflowY": true
+          }
+        },
+        {
+          "code": "viewer/viewport-overflow",
+          "viewport": {
+            "width": 2048,
+            "height": 1320,
+            "theme": "light"
+          },
+          "evidence": {
+            "innerWidth": 2048,
+            "innerHeight": 1320,
+            "scrollWidth": 2048,
+            "scrollHeight": 2445,
+            "overflowX": false,
+            "overflowY": true
+          }
+        },
+        {
+          "code": "viewer/viewport-overflow",
+          "viewport": {
+            "width": 1440,
+            "height": 900,
+            "theme": "dark"
+          },
+          "evidence": {
+            "innerWidth": 1440,
+            "innerHeight": 900,
+            "scrollWidth": 1440,
+            "scrollHeight": 2232,
+            "overflowX": false,
+            "overflowY": true
+          }
+        },
+        {
+          "code": "viewer/viewport-overflow",
+          "viewport": {
+            "width": 2048,
+            "height": 1320,
+            "theme": "dark"
+          },
+          "evidence": {
+            "innerWidth": 2048,
+            "innerHeight": 1320,
+            "scrollWidth": 2048,
+            "scrollHeight": 2445,
+            "overflowX": false,
+            "overflowY": true
+          }
+        }
+      ],
+      "supplemental_browser_evidence": {
+        "status": "passed",
+        "captures": [
+          {
+            "viewport": [
+              1440,
+              900
+            ],
+            "theme": "light",
+            "horizontal_containment": true,
+            "svg_text_contained": true,
+            "scroll_height": 2232
+          },
+          {
+            "viewport": [
+              1440,
+              900
+            ],
+            "theme": "dark",
+            "horizontal_containment": true,
+            "svg_text_contained": true,
+            "scroll_height": 2232
+          },
+          {
+            "viewport": [
+              1600,
+              1000
+            ],
+            "theme": "light",
+            "horizontal_containment": true,
+            "svg_text_contained": true,
+            "scroll_height": 2421
+          },
+          {
+            "viewport": [
+              1600,
+              1000
+            ],
+            "theme": "dark",
+            "horizontal_containment": true,
+            "svg_text_contained": true,
+            "scroll_height": 2421
+          },
+          {
+            "viewport": [
+              1920,
+              1080
+            ],
+            "theme": "light",
+            "horizontal_containment": true,
+            "svg_text_contained": true,
+            "scroll_height": 2429
+          },
+          {
+            "viewport": [
+              1920,
+              1080
+            ],
+            "theme": "dark",
+            "horizontal_containment": true,
+            "svg_text_contained": true,
+            "scroll_height": 2429
+          },
+          {
+            "viewport": [
+              2048,
+              1320
+            ],
+            "theme": "light",
+            "horizontal_containment": true,
+            "svg_text_contained": true,
+            "scroll_height": 2445
+          },
+          {
+            "viewport": [
+              2048,
+              1320
+            ],
+            "theme": "dark",
+            "horizontal_containment": true,
+            "svg_text_contained": true,
+            "scroll_height": 2445
+          }
+        ]
+      },
+      "interaction_checks": {
+        "status": "passed",
+        "guided_views": [],
+        "theme_changed": true,
+        "theme_restored": true,
+        "search_matches": 1,
+        "search_closed": true,
+        "focus_opened": true,
+        "focus_closed": true,
+        "legend_errors": [],
+        "browser_errors": []
+      },
+      "exports": [
+        {
+          "format": "svg",
+          "theme": "light",
+          "bytes": 79006,
+          "canonical": "true",
+          "error": null,
+          "clean": true,
+          "colourErrors": []
+        },
+        {
+          "format": "png",
+          "theme": "light",
+          "bytes": 868548,
+          "canonical": "true",
+          "error": null,
+          "clean": true,
+          "colourErrors": []
+        },
+        {
+          "format": "svg",
+          "theme": "dark",
+          "bytes": 79006,
+          "canonical": "true",
+          "error": null,
+          "clean": true,
+          "colourErrors": []
+        },
+        {
+          "format": "png",
+          "theme": "dark",
+          "bytes": 872934,
+          "canonical": "true",
+          "error": null,
+          "clean": true,
+          "colourErrors": []
+        }
+      ],
+      "visual_review": "passed",
+      "visual_review_scope": "Rendered full-page light and dark screenshots, small-desktop readability, zone headings, arrow direction and clearance, source badges, legend and explanatory cards. Automated containment additionally covers all eight viewport/theme combinations.",
+      "correction_rounds": 1
+    },
+    {
+      "name": "04-guided-walkthrough",
+      "output": "04-guided-walkthrough.html",
+      "specification": {
+        "path": "src/04-guided-walkthrough.architecture.json",
+        "sha256": "3903ef12762b4e78de97ffd0e71a7bbf5f7bed25f78d79440d62b708126518cb",
+        "bytes": 13138
+      },
+      "artifact": {
+        "sha256": "fbbdd742e478f6647c190a4fe3613042a95f19d6764f59a137ce7f0886e24183",
+        "bytes": 749563
+      },
+      "validation": {
+        "checksPassed": 9,
+        "checkCount": 9,
+        "compositionProfile": "showcase",
+        "compositionStatus": "pass",
+        "errors": 0,
+        "warnings": 0
+      },
+      "pinned_implementation_references": 11,
+      "browser_evidence": "failed",
+      "upstream_browser_reason": "Vertical scrolling only at all four measured viewport sizes; no horizontal overflow.",
+      "upstream_browser_diagnostics": [
+        {
+          "code": "viewer/viewport-overflow",
+          "viewport": {
+            "width": 1440,
+            "height": 900,
+            "theme": "light"
+          },
+          "evidence": {
+            "innerWidth": 1440,
+            "innerHeight": 900,
+            "scrollWidth": 1440,
+            "scrollHeight": 2293,
+            "overflowX": false,
+            "overflowY": true
+          }
+        },
+        {
+          "code": "viewer/viewport-overflow",
+          "viewport": {
+            "width": 1600,
+            "height": 1000,
+            "theme": "light"
+          },
+          "evidence": {
+            "innerWidth": 1600,
+            "innerHeight": 1000,
+            "scrollWidth": 1600,
+            "scrollHeight": 2488,
+            "overflowX": false,
+            "overflowY": true
+          }
+        },
+        {
+          "code": "viewer/viewport-overflow",
+          "viewport": {
+            "width": 1920,
+            "height": 1080,
+            "theme": "light"
+          },
+          "evidence": {
+            "innerWidth": 1920,
+            "innerHeight": 1080,
+            "scrollWidth": 1920,
+            "scrollHeight": 2496,
+            "overflowX": false,
+            "overflowY": true
+          }
+        },
+        {
+          "code": "viewer/viewport-overflow",
+          "viewport": {
+            "width": 2048,
+            "height": 1320,
+            "theme": "light"
+          },
+          "evidence": {
+            "innerWidth": 2048,
+            "innerHeight": 1320,
+            "scrollWidth": 2048,
+            "scrollHeight": 2511,
+            "overflowX": false,
+            "overflowY": true
+          }
+        },
+        {
+          "code": "viewer/viewport-overflow",
+          "viewport": {
+            "width": 1440,
+            "height": 900,
+            "theme": "dark"
+          },
+          "evidence": {
+            "innerWidth": 1440,
+            "innerHeight": 900,
+            "scrollWidth": 1440,
+            "scrollHeight": 2293,
+            "overflowX": false,
+            "overflowY": true
+          }
+        },
+        {
+          "code": "viewer/viewport-overflow",
+          "viewport": {
+            "width": 2048,
+            "height": 1320,
+            "theme": "dark"
+          },
+          "evidence": {
+            "innerWidth": 2048,
+            "innerHeight": 1320,
+            "scrollWidth": 2048,
+            "scrollHeight": 2511,
+            "overflowX": false,
+            "overflowY": true
+          }
+        }
+      ],
+      "supplemental_browser_evidence": {
+        "status": "passed",
+        "captures": [
+          {
+            "viewport": [
+              1440,
+              900
+            ],
+            "theme": "light",
+            "horizontal_containment": true,
+            "svg_text_contained": true,
+            "scroll_height": 2293
+          },
+          {
+            "viewport": [
+              1440,
+              900
+            ],
+            "theme": "dark",
+            "horizontal_containment": true,
+            "svg_text_contained": true,
+            "scroll_height": 2293
+          },
+          {
+            "viewport": [
+              1600,
+              1000
+            ],
+            "theme": "light",
+            "horizontal_containment": true,
+            "svg_text_contained": true,
+            "scroll_height": 2488
+          },
+          {
+            "viewport": [
+              1600,
+              1000
+            ],
+            "theme": "dark",
+            "horizontal_containment": true,
+            "svg_text_contained": true,
+            "scroll_height": 2488
+          },
+          {
+            "viewport": [
+              1920,
+              1080
+            ],
+            "theme": "light",
+            "horizontal_containment": true,
+            "svg_text_contained": true,
+            "scroll_height": 2496
+          },
+          {
+            "viewport": [
+              1920,
+              1080
+            ],
+            "theme": "dark",
+            "horizontal_containment": true,
+            "svg_text_contained": true,
+            "scroll_height": 2496
+          },
+          {
+            "viewport": [
+              2048,
+              1320
+            ],
+            "theme": "light",
+            "horizontal_containment": true,
+            "svg_text_contained": true,
+            "scroll_height": 2511
+          },
+          {
+            "viewport": [
+              2048,
+              1320
+            ],
+            "theme": "dark",
+            "horizontal_containment": true,
+            "svg_text_contained": true,
+            "scroll_height": 2511
+          }
+        ]
+      },
+      "interaction_checks": {
+        "status": "passed",
+        "guided_views": [
+          {
+            "id": "prepare",
+            "focused": true
+          },
+          {
+            "id": "simulated",
+            "focused": true
+          },
+          {
+            "id": "process-checks",
+            "focused": true
+          },
+          {
+            "id": "live-checks",
+            "focused": true
+          },
+          {
+            "id": "evidence-scope",
+            "focused": true
+          }
+        ],
+        "theme_changed": true,
+        "theme_restored": true,
+        "search_matches": 1,
+        "search_closed": true,
+        "focus_opened": true,
+        "focus_closed": true,
+        "legend_errors": [],
+        "browser_errors": []
+      },
+      "exports": [
+        {
+          "format": "svg",
+          "theme": "light",
+          "bytes": 76266,
+          "canonical": "true",
+          "error": null,
+          "clean": true,
+          "colourErrors": []
+        },
+        {
+          "format": "png",
+          "theme": "light",
+          "bytes": 817245,
+          "canonical": "true",
+          "error": null,
+          "clean": true,
+          "colourErrors": []
+        },
+        {
+          "format": "svg",
+          "theme": "dark",
+          "bytes": 76266,
+          "canonical": "true",
+          "error": null,
+          "clean": true,
+          "colourErrors": []
+        },
+        {
+          "format": "png",
+          "theme": "dark",
+          "bytes": 821710,
+          "canonical": "true",
+          "error": null,
+          "clean": true,
+          "colourErrors": []
+        }
+      ],
+      "visual_review": "passed",
+      "visual_review_scope": "Rendered full-page light and dark screenshots, small-desktop readability, zone headings, arrow direction and clearance, source badges, legend and explanatory cards. Automated containment additionally covers all eight viewport/theme combinations.",
+      "correction_rounds": 0
+    },
+    {
+      "name": "05-compact-overview",
+      "output": "05-compact-overview.html",
+      "specification": {
+        "path": "src/05-compact-overview.architecture.json",
+        "sha256": "87ac885f68acba29a40ec87e32f3f1d05f6ecb7bf434e6d9a901193a26f2f38a",
+        "bytes": 9378
+      },
+      "artifact": {
+        "sha256": "3b41145213ebddf8452e31c13f5311a0b19ed1b342e81746a1dfc500f358e1e8",
+        "bytes": 744022
+      },
+      "validation": {
+        "checksPassed": 9,
+        "checkCount": 9,
+        "compositionProfile": "showcase",
+        "compositionStatus": "pass",
+        "errors": 0,
+        "warnings": 0
+      },
+      "pinned_implementation_references": 10,
+      "browser_evidence": "failed",
+      "upstream_browser_reason": "Vertical scrolling only at all four measured viewport sizes; no horizontal overflow.",
+      "upstream_browser_diagnostics": [
+        {
+          "code": "viewer/viewport-overflow",
+          "viewport": {
+            "width": 1440,
+            "height": 900,
+            "theme": "light"
+          },
+          "evidence": {
+            "innerWidth": 1440,
+            "innerHeight": 900,
+            "scrollWidth": 1440,
+            "scrollHeight": 2004,
+            "overflowX": false,
+            "overflowY": true
+          }
+        },
+        {
+          "code": "viewer/viewport-overflow",
+          "viewport": {
+            "width": 1600,
+            "height": 1000,
+            "theme": "light"
+          },
+          "evidence": {
+            "innerWidth": 1600,
+            "innerHeight": 1000,
+            "scrollWidth": 1600,
+            "scrollHeight": 2166,
+            "overflowX": false,
+            "overflowY": true
+          }
+        },
+        {
+          "code": "viewer/viewport-overflow",
+          "viewport": {
+            "width": 1920,
+            "height": 1080,
+            "theme": "light"
+          },
+          "evidence": {
+            "innerWidth": 1920,
+            "innerHeight": 1080,
+            "scrollWidth": 1920,
+            "scrollHeight": 2163,
+            "overflowX": false,
+            "overflowY": true
+          }
+        },
+        {
+          "code": "viewer/viewport-overflow",
+          "viewport": {
+            "width": 2048,
+            "height": 1320,
+            "theme": "light"
+          },
+          "evidence": {
+            "innerWidth": 2048,
+            "innerHeight": 1320,
+            "scrollWidth": 2048,
+            "scrollHeight": 2182,
+            "overflowX": false,
+            "overflowY": true
+          }
+        },
+        {
+          "code": "viewer/viewport-overflow",
+          "viewport": {
+            "width": 1440,
+            "height": 900,
+            "theme": "dark"
+          },
+          "evidence": {
+            "innerWidth": 1440,
+            "innerHeight": 900,
+            "scrollWidth": 1440,
+            "scrollHeight": 2004,
+            "overflowX": false,
+            "overflowY": true
+          }
+        },
+        {
+          "code": "viewer/viewport-overflow",
+          "viewport": {
+            "width": 2048,
+            "height": 1320,
+            "theme": "dark"
+          },
+          "evidence": {
+            "innerWidth": 2048,
+            "innerHeight": 1320,
+            "scrollWidth": 2048,
+            "scrollHeight": 2182,
+            "overflowX": false,
+            "overflowY": true
+          }
+        }
+      ],
+      "supplemental_browser_evidence": {
+        "status": "passed",
+        "captures": [
+          {
+            "viewport": [
+              1440,
+              900
+            ],
+            "theme": "light",
+            "horizontal_containment": true,
+            "svg_text_contained": true,
+            "scroll_height": 2004
+          },
+          {
+            "viewport": [
+              1440,
+              900
+            ],
+            "theme": "dark",
+            "horizontal_containment": true,
+            "svg_text_contained": true,
+            "scroll_height": 2004
+          },
+          {
+            "viewport": [
+              1600,
+              1000
+            ],
+            "theme": "light",
+            "horizontal_containment": true,
+            "svg_text_contained": true,
+            "scroll_height": 2166
+          },
+          {
+            "viewport": [
+              1600,
+              1000
+            ],
+            "theme": "dark",
+            "horizontal_containment": true,
+            "svg_text_contained": true,
+            "scroll_height": 2166
+          },
+          {
+            "viewport": [
+              1920,
+              1080
+            ],
+            "theme": "light",
+            "horizontal_containment": true,
+            "svg_text_contained": true,
+            "scroll_height": 2163
+          },
+          {
+            "viewport": [
+              1920,
+              1080
+            ],
+            "theme": "dark",
+            "horizontal_containment": true,
+            "svg_text_contained": true,
+            "scroll_height": 2163
+          },
+          {
+            "viewport": [
+              2048,
+              1320
+            ],
+            "theme": "light",
+            "horizontal_containment": true,
+            "svg_text_contained": true,
+            "scroll_height": 2182
+          },
+          {
+            "viewport": [
+              2048,
+              1320
+            ],
+            "theme": "dark",
+            "horizontal_containment": true,
+            "svg_text_contained": true,
+            "scroll_height": 2182
+          }
+        ]
+      },
+      "interaction_checks": {
+        "status": "passed",
+        "guided_views": [],
+        "theme_changed": true,
+        "theme_restored": true,
+        "search_matches": 1,
+        "search_closed": true,
+        "focus_opened": true,
+        "focus_closed": true,
+        "legend_errors": [],
+        "browser_errors": []
+      },
+      "exports": [
+        {
+          "format": "svg",
+          "theme": "light",
+          "bytes": 72228,
+          "canonical": "true",
+          "error": null,
+          "clean": true,
+          "colourErrors": []
+        },
+        {
+          "format": "png",
+          "theme": "light",
+          "bytes": 757038,
+          "canonical": "true",
+          "error": null,
+          "clean": true,
+          "colourErrors": []
+        },
+        {
+          "format": "svg",
+          "theme": "dark",
+          "bytes": 72228,
+          "canonical": "true",
+          "error": null,
+          "clean": true,
+          "colourErrors": []
+        },
+        {
+          "format": "png",
+          "theme": "dark",
+          "bytes": 761787,
+          "canonical": "true",
+          "error": null,
+          "clean": true,
+          "colourErrors": []
+        }
+      ],
+      "visual_review": "passed",
+      "visual_review_scope": "Rendered full-page light and dark screenshots, small-desktop readability, zone headings, arrow direction and clearance, source badges, legend and explanatory cards. Automated containment additionally covers all eight viewport/theme combinations.",
+      "correction_rounds": 0
+    }
+  ],
+  "documentation_checks": {
+    "command": "make docs-check",
+    "exit_code": 0,
+    "python_contract_tests": 26,
+    "documentation_links_checked": 1475,
+    "canonical_diagram_code_references": 344,
+    "findings": 0,
+    "go_documentation_tests": "passed in root and server modules"
+  }
+}
