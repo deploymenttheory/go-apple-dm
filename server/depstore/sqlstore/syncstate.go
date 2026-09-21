@@ -7,16 +7,30 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/appleplatformservices/dep"
 )
 
-// LockAccount obtains a write lock before decision reads, including on SQLite.
-// Callers invoke it only through the transaction view supplied to Update.
+// LockAccount serializes a name before decision reads, including before account
+// creation. ErrNotFound leaves that name locked until the transaction finishes.
 func (t *txStore) LockAccount(ctx context.Context, account string) error {
-	if err := validName("account name", account); err != nil {
+	if err := t.lockAccountName(ctx, account); err != nil {
 		return err
 	}
 	if _, err := t.exec(ctx, "lock account", "UPDATE dep_accounts SET name = name WHERE name = ?", account); err != nil {
 		return err
 	}
 	_, err := t.GetAccount(ctx, account)
+	return err
+}
+
+// lockAccountName acquires a stable transaction lock shared by account and token
+// keypair mutations. Lock rows survive account deletion and identity replacement.
+func (t *txStore) lockAccountName(ctx context.Context, account string) error {
+	if err := validName("account name", account); err != nil {
+		return err
+	}
+	cols := []string{"account"}
+	if _, err := t.exec(ctx, "create account lock", t.s.d.InsertIgnore("dep_account_locks", cols, cols), account); err != nil {
+		return err
+	}
+	_, err := t.exec(ctx, "lock account name", "UPDATE dep_account_locks SET account = account WHERE account = ?", account)
 	return err
 }
 

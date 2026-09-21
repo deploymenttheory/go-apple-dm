@@ -16,8 +16,9 @@ const (
 // Network requests are bounded below the lease duration and no SQL transaction
 // is kept open across a request. Every state write rechecks ownership.
 type assignmentRun struct {
-	a     *Assigner
-	owner string
+	a       *Assigner
+	owner   string
+	account *Account
 }
 
 // claim acquires the account assignment lease unless another live owner or the persisted
@@ -27,6 +28,11 @@ func (a *Assigner) claim(ctx context.Context) (*assignmentRun, time.Time, error)
 	var deadline time.Time
 	err := a.cfg.Store.Update(ctx, func(tx Tx) error {
 		if err := tx.LockAccount(ctx, a.cfg.Account); err != nil {
+			return err
+		}
+		var err error
+		r.account, err = tx.GetAccount(ctx, a.cfg.Account)
+		if err != nil {
 			return err
 		}
 		state, err := tx.AssignmentState(ctx, a.cfg.Account)
@@ -51,17 +57,40 @@ func (a *Assigner) claim(ctx context.Context) (*assignmentRun, time.Time, error)
 // lock locks the account and verifies that this run still owns an unexpired assignment
 // lease.
 func (r *assignmentRun) lock(ctx context.Context, tx Tx) (AssignmentState, error) {
-	if err := tx.LockAccount(ctx, r.a.cfg.Account); err != nil {
-		return AssignmentState{}, err
-	}
-	state, err := tx.AssignmentState(ctx, r.a.cfg.Account)
+	state, acct, err := r.lockLease(ctx, tx)
 	if err != nil {
 		return state, err
 	}
-	if state.Owner != r.owner || !r.a.cfg.Clock.Now().Before(state.LeaseUntil) {
-		return state, fmt.Errorf("%w: assignment lease lost", ErrConflict)
+	if binding(acct) != binding(r.account) {
+		return state, fmt.Errorf("%w: assignment credentials changed", ErrConflict)
+	}
+	if acct.ProfileUUID != r.account.ProfileUUID {
+		return state, fmt.Errorf("%w: desired assignment profile changed", ErrConflict)
 	}
 	return state, nil
+}
+
+// lockLease checks account identity and ownership without discarding a vendor cooldown
+// merely because the desired profile changed while a request was in flight.
+func (r *assignmentRun) lockLease(ctx context.Context, tx Tx) (AssignmentState, *Account, error) {
+	if err := tx.LockAccount(ctx, r.account.Name); err != nil {
+		return AssignmentState{}, nil, err
+	}
+	acct, err := tx.GetAccount(ctx, r.account.Name)
+	if err != nil {
+		return AssignmentState{}, nil, err
+	}
+	if identityChanged(r.account, acct.Tokens(), &AccountDetail{ServerUUID: acct.ServerUUID, OrgID: acct.OrgID}) {
+		return AssignmentState{}, nil, fmt.Errorf("%w: assignment account identity changed", ErrConflict)
+	}
+	state, err := tx.AssignmentState(ctx, r.a.cfg.Account)
+	if err != nil {
+		return state, nil, err
+	}
+	if state.Owner != r.owner || !r.a.cfg.Clock.Now().Before(state.LeaseUntil) {
+		return state, nil, fmt.Errorf("%w: assignment lease lost", ErrConflict)
+	}
+	return state, acct, nil
 }
 
 // renew extends this run's persisted lease while retaining its ownership fence.
@@ -80,7 +109,7 @@ func (r *assignmentRun) renew(ctx context.Context) error {
 func (r *assignmentRun) throttle(ctx context.Context, retry time.Duration) (time.Time, error) {
 	var deadline time.Time
 	err := r.a.cfg.Store.Update(ctx, func(tx Tx) error {
-		state, err := r.lock(ctx, tx)
+		state, _, err := r.lockLease(ctx, tx)
 		if err != nil {
 			return err
 		}
@@ -89,6 +118,28 @@ func (r *assignmentRun) throttle(ctx context.Context, retry time.Duration) (time
 			retry = r.a.cfg.AccountBackoff.Delay(state.Failures)
 		}
 		deadline = r.a.cfg.Clock.Now().Add(retry)
+		if state.NotBefore.After(deadline) {
+			deadline = state.NotBefore
+		}
+		state.NotBefore = deadline
+		return tx.PutAssignmentState(ctx, r.a.cfg.Account, state)
+	})
+	return deadline, err
+}
+
+// preserveThrottle retains a stale batch's per-device throttle as a conservative
+// account cooldown, without publishing or recording obsolete assignment outcomes.
+func (r *assignmentRun) preserveThrottle(ctx context.Context, delay time.Duration) (time.Time, error) {
+	var deadline time.Time
+	err := r.a.cfg.Store.Update(ctx, func(tx Tx) error {
+		state, _, err := r.lockLease(ctx, tx)
+		if err != nil {
+			return err
+		}
+		deadline = r.a.cfg.Clock.Now().Add(delay)
+		if state.NotBefore.After(deadline) {
+			deadline = state.NotBefore
+		}
 		state.NotBefore = deadline
 		return tx.PutAssignmentState(ctx, r.a.cfg.Account, state)
 	})

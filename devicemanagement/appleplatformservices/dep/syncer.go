@@ -140,14 +140,24 @@ func (s *Syncer) Run(ctx context.Context) error {
 // ErrSameCursor; transient errors retry inside the run.
 func (s *Syncer) RunOnce(ctx context.Context) (SyncResult, error) {
 	var res SyncResult
-	acct, err := s.cfg.Store.GetAccount(ctx, s.cfg.Account)
+	var acct *Account
+	var cur Cursor
+	err := s.cfg.Store.Update(ctx, func(tx Tx) error {
+		if err := tx.LockAccount(ctx, s.cfg.Account); err != nil {
+			return err
+		}
+		var err error
+		acct, err = tx.GetAccount(ctx, s.cfg.Account)
+		if err != nil {
+			return err
+		}
+		cur, err = tx.Cursor(ctx, s.cfg.Account)
+		return err
+	})
 	if err != nil {
 		return res, err
 	}
-	cur, err := s.cfg.Store.Cursor(ctx, s.cfg.Account)
-	if err != nil {
-		return res, err
-	}
+	ctx = withAccountFence(ctx, acct)
 	if age := s.cfg.Clock.Now().Sub(cur.UpdatedAt); !cur.IsZero() && age > s.cfg.MaxCursorAge {
 		s.cfg.Logger.InfoContext(ctx, "dep: cursor stale, fetching", "account", s.cfg.Account, "age", age)
 		cur, err = s.startFetch(ctx, cur)
@@ -274,6 +284,9 @@ func (s *Syncer) limit(acct *Account, uri string) int {
 // network failure or a 408, 429, or 5xx answer. Sentinels, other 4xx
 // answers, and cancellations are not.
 func transient(err error) bool {
+	if errors.Is(err, ErrConflict) {
+		return false
+	}
 	var e *Error
 	if errors.As(err, &e) {
 		return e.Status == http.StatusTooManyRequests || e.Status == http.StatusRequestTimeout || e.Status >= 500
@@ -457,6 +470,13 @@ func (s *Syncer) startFetch(ctx context.Context, current Cursor) (Cursor, error)
 // phase no longer matches the stored cursor.
 func checkCursor(ctx context.Context, tx Tx, account string, expected Cursor) error {
 	if err := tx.LockAccount(ctx, account); err != nil {
+		return err
+	}
+	acct, err := tx.GetAccount(ctx, account)
+	if err != nil {
+		return err
+	}
+	if err := checkAccountFence(ctx, acct); err != nil {
 		return err
 	}
 	current, err := tx.Cursor(ctx, account)

@@ -40,7 +40,8 @@ func checkSyncStateUpgrade(t *testing.T, db *sql.DB, dialect sqlcommon.Dialect) 
 		t.Fatal(err)
 	}
 	now := time.Date(2026, 9, 1, 12, 0, 0, 0, time.UTC)
-	if err := st.PutAccount(ctx, &dep.Account{Name: "upgrade", ProfileUUID: "profile", CreatedAt: now, UpdatedAt: now}); err != nil {
+	// Seed the old schema directly: current account writers require name locks.
+	if _, err := db.ExecContext(ctx, dialect.Rebind("INSERT INTO dep_accounts (name, profile_uuid, org_name, server_name, admin_id, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)"), "upgrade", "profile", "", "", "", now, now); err != nil {
 		t.Fatal(err)
 	}
 	if err := st.PutDevices(ctx, "upgrade", []dep.Device{{SerialNumber: "KEPT", ProfileUUID: "profile"}}, now); err != nil {
@@ -50,7 +51,7 @@ func checkSyncStateUpgrade(t *testing.T, db *sql.DB, dialect sqlcommon.Dialect) 
 		t.Fatal(err)
 	}
 	applied, err := depsql.Migrate(ctx, db, dialect)
-	if err != nil || len(applied) != 1 || applied[0] != 2 {
+	if err != nil || len(applied) != 2 || applied[0] != 2 || applied[1] != 3 {
 		t.Fatalf("upgrade: %v %v", applied, err)
 	}
 	account, err := st.GetAccount(ctx, "upgrade")

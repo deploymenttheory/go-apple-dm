@@ -9,7 +9,8 @@
 // stored beside indexed lookup fields, timestamps use UTC and lists use keyset
 // pagination. Device pages, fetch-generation membership and cursors commit
 // together; account locks and persisted assignment leases fence worker overlap.
-// Assignment retry deadlines survive process restart.
+// Stable name locks also serialize first token imports and token keypair staging,
+// and survive account deletion. Assignment retry deadlines survive process restart.
 // appleplatformservices/dep/deptest supplies the shared contract tests.
 //
 // # References
@@ -22,4 +23,5 @@
 //   - Apple: https://developer.apple.com/documentation/devicemanagement/sync-devices (cursor lifetime)
 //   - Migrations: https://github.com/deploymenttheory/go-apple-dm/tree/main/server/depstore/sqlstore/migrations
 //   - Worker-state migration: 0002_sync_state.sql in each dialect directory
+//   - Account-name lock migration: 0003_account_locks.sql in each dialect directory
 package sqlstore

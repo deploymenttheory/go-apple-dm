@@ -396,7 +396,9 @@ func TestSyncer(t *testing.T) {
 		for _, method := range []string{"PutDevices", "Update"} {
 			failing.Fail = map[string]error{method: errors.New("down")}
 			f.srv.AddDevices(device("C" + method))
-			if _, err := s.RunOnce(ctx); !errors.Is(err, dep.ErrSync) {
+			// Update may now fail while taking the initial atomic account/cursor
+			// snapshot, before a page commit can wrap the error as ErrSync.
+			if _, err := s.RunOnce(ctx); err == nil || (method == "PutDevices" && !errors.Is(err, dep.ErrSync)) {
 				t.Fatalf("%s: %v", method, err)
 			}
 		}

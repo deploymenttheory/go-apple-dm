@@ -291,7 +291,12 @@ func (d *depService) routes() []adminRoute {
 				writeError(w, http.StatusInternalServerError, err)
 				return
 			}
-			if err := d.store.PutKeypair(r.Context(), name, dep.StageStaged, kp); err != nil {
+			if err := d.store.Update(r.Context(), func(tx dep.Tx) error {
+				if err := tx.LockAccount(r.Context(), name); err != nil && !errors.Is(err, dep.ErrNotFound) {
+					return err
+				}
+				return tx.PutKeypair(r.Context(), name, dep.StageStaged, kp)
+			}); err != nil {
 				writeError(w, depStatus(err), err)
 				return
 			}
@@ -381,6 +386,11 @@ func (d *depService) routes() []adminRoute {
 			if p.ProfileName == "" {
 				p.ProfileName = "go-apple-dm"
 			}
+			baseline, err := d.store.GetAccount(r.Context(), name)
+			if err != nil {
+				writeError(w, depStatus(err), err)
+				return
+			}
 			resp, err := d.client.DefineProfile(r.Context(), name, &p)
 			if err != nil {
 				writeError(w, depStatus(err), err)
@@ -388,12 +398,18 @@ func (d *depService) routes() []adminRoute {
 			}
 			ctx := r.Context()
 			err = d.store.Update(ctx, func(tx dep.Tx) error {
-				if err := tx.PutProfile(ctx, name, &p); err != nil {
-					return fmt.Errorf("app: DEP profile: %w", err)
+				if err := tx.LockAccount(ctx, name); err != nil {
+					return err
 				}
 				acct, err := tx.GetAccount(ctx, name)
 				if err != nil {
 					return fmt.Errorf("app: DEP account: %w", err)
+				}
+				if !sameDEPAccount(baseline, acct) {
+					return fmt.Errorf("%w: DEP account changed during profile definition", dep.ErrConflict)
+				}
+				if err := tx.PutProfile(ctx, name, &p); err != nil {
+					return fmt.Errorf("app: DEP profile: %w", err)
 				}
 				acct.ProfileUUID = resp.ProfileUUID
 				if err := tx.PutAccount(ctx, acct); err != nil {
@@ -417,6 +433,14 @@ func (d *depService) routes() []adminRoute {
 		writeJSON(w, http.StatusOK, map[string]any{"Sync": sres, "Assign": ares})
 	})
 	return routes
+}
+
+// sameDEPAccount binds a remote profile definition to the credentials and identity
+// observed before its request, while allowing concurrent local policy changes.
+func sameDEPAccount(a, b *dep.Account) bool {
+	return a.ConsumerKey == b.ConsumerKey && a.ConsumerSecret == b.ConsumerSecret &&
+		a.AccessToken == b.AccessToken && a.AccessSecret == b.AccessSecret &&
+		a.ServerUUID == b.ServerUUID && a.OrgID == b.OrgID
 }
 
 // depStatus maps client and store errors to admin API statuses.

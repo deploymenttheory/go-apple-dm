@@ -169,10 +169,8 @@ func (a *Assigner) RunOnce(ctx context.Context) (res AssignResult, runErr error)
 			runErr = errors.Join(runErr, err)
 		}
 	}()
-	acct, err := a.cfg.Store.GetAccount(ctx, a.cfg.Account)
-	if err != nil {
-		return res, err
-	}
+	acct := run.account
+	ctx = withAccountFence(ctx, acct)
 	if acct.ProfileUUID == "" {
 		return res, nil
 	}
@@ -192,6 +190,16 @@ func (a *Assigner) RunOnce(ctx context.Context) (res AssignResult, runErr error)
 		resp, err := a.cfg.Client.AssignProfile(request, a.cfg.Account, acct.ProfileUUID, batch, opts...)
 		cancel()
 		if err != nil {
+			var cooldown *assignmentCooldown
+			if errors.As(err, &cooldown) {
+				delay := cooldown.delay
+				if delay <= 0 {
+					delay = a.cfg.ThrottleDelay
+				}
+				deadline, storeErr := run.preserveThrottle(ctx, delay)
+				res.NotBefore = deadline
+				return res, errors.Join(err, storeErr)
+			}
 			if statusIs(err, http.StatusTooManyRequests) {
 				deadline, storeErr := run.throttle(ctx, retryAfter(err))
 				res.NotBefore = deadline
@@ -287,6 +295,20 @@ func (a *Assigner) record(ctx context.Context, run *assignmentRun, profileUUID s
 		return a.recordBatch(ctx, run, profileUUID, batch, resp, &updated)
 	})
 	if err != nil {
+		if errors.Is(err, ErrConflict) {
+			for _, status := range resp.Devices {
+				if status != StatusThrottled {
+					continue
+				}
+				delay := time.Duration(resp.RetryAfterSeconds) * time.Second
+				if delay <= 0 {
+					delay = a.cfg.ThrottleDelay
+				}
+				deadline, cooldownErr := run.preserveThrottle(ctx, delay)
+				res.NotBefore = deadline
+				return errors.Join(err, cooldownErr)
+			}
+		}
 		return err
 	}
 	*res = updated

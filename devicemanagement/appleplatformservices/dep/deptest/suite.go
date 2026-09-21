@@ -85,6 +85,7 @@ func SampleProfile(uuid string) *dep.Profile {
 func RunStoreSuite(t *testing.T, newStore Factory) {
 	t.Helper()
 	t.Run("SyncAndAssignmentState", func(t *testing.T) { runWorkerState(t, newStore) })
+	t.Run("AccountFences", func(t *testing.T) { runAccountFences(t, newStore) })
 	t.Run("Accounts", func(t *testing.T) { runAccounts(t, newStore) })
 	t.Run("AccountsSealedAtRest", func(t *testing.T) { runSealed(t, newStore) })
 	t.Run("Keypairs", func(t *testing.T) { runKeypairs(t, newStore) })
