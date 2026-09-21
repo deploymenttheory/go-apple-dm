@@ -184,6 +184,7 @@ func (d *Device) AccountDrivenEnroll(ctx context.Context, opts AccountDrivenOpti
 	return res, nil
 }
 
+// discover requests account-driven enrollment discovery for the simulator identity.
 func (d *Device) discover(ctx context.Context, opts AccountDrivenOptions, domain string) ([]DiscoveryServer, error) {
 	base := "https://" + domain
 	if opts.DiscoveryURL != "" {
@@ -329,6 +330,8 @@ func (d *Device) OAuth2CodeFlow(ctx context.Context, c AuthChallenge, loginHint 
 	return d.exchangeAccountToken(ctx, c, form)
 }
 
+// exchangeAccountToken exchanges the simulator's account authentication credential for
+// enrollment token data.
 func (d *Device) exchangeAccountToken(ctx context.Context, c AuthChallenge, form url.Values) (string, error) {
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, c.TokenURL, strings.NewReader(form.Encode()))
 	if err != nil {

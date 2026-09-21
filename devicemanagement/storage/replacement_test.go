@@ -9,6 +9,8 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/storage"
 )
 
+// TestReplacementAdmissionRejectsInvalidTransitions checks that replacement admission rejects
+// invalid transitions.
 func TestReplacementAdmissionRejectsInvalidTransitions(t *testing.T) {
 	now := time.Now()
 	id := mdm.EnrollmentID{Channel: mdm.ChannelDevice, ID: "device"}
@@ -114,6 +116,8 @@ func TestReplacementAdmissionRejectsInvalidTransitions(t *testing.T) {
 	}
 }
 
+// TestReplacementConfirmationOutlivesIssuanceGrant checks replacement confirmation outlives
+// issuance grant.
 func TestReplacementConfirmationOutlivesIssuanceGrant(t *testing.T) {
 	now := time.Now()
 	id := mdm.EnrollmentID{Channel: mdm.ChannelDevice, ID: "device"}

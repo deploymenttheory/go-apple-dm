@@ -1,5 +1,5 @@
 // Package proxywire defines the internal protocol between separately deployed
-// MDM and declaration-engine roles.
+// MDM request handlers and declaration engines in custom application compositions.
 //
 // # Design
 //

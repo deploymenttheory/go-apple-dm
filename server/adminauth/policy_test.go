@@ -31,6 +31,8 @@ func registry(t *testing.T) *adminauth.Registry {
 	return reg
 }
 
+// manager creates an authorization manager with fixture roles, an in-memory store, and a fake
+// clock.
 func manager(t *testing.T) (*adminauth.Manager, *inmem.Store, *clock.Fake) {
 	t.Helper()
 	st := inmem.New()
@@ -74,6 +76,8 @@ func put(t *testing.T, m *adminauth.Manager, name, src string) {
 	}
 }
 
+// TestAuthorize checks default denial, role grants, context restrictions, forbids, policy
+// attribution, and refreshed policy state.
 func TestAuthorize(t *testing.T) {
 	ctx := context.Background()
 
@@ -197,6 +201,7 @@ func TestPutPolicyRejectsUnknownAction(t *testing.T) {
 	}
 }
 
+// TestPutPolicyRejectsMalformedSource checks that put policy rejects malformed source.
 func TestPutPolicyRejectsMalformedSource(t *testing.T) {
 	ctx := context.Background()
 	m, _, _ := manager(t)
@@ -213,6 +218,7 @@ func TestPutPolicyRejectsMalformedSource(t *testing.T) {
 	}
 }
 
+// TestRegistry checks action registry validation, sorted IDs, lookups, and help text.
 func TestRegistry(t *testing.T) {
 	if _, err := adminauth.NewRegistry(adminauth.Action{ID: "a"}, adminauth.Action{ID: "a"}); !errors.Is(err, adminauth.ErrConflict) {
 		t.Fatal("a duplicate action id was accepted")
@@ -236,6 +242,8 @@ func TestRegistry(t *testing.T) {
 	}
 }
 
+// TestEvaluationDiagnosticsDenyEvenWithMatchingPermit checks evaluation diagnostics deny even with
+// matching permit.
 func TestEvaluationDiagnosticsDenyEvenWithMatchingPermit(t *testing.T) {
 	m, _, _ := manager(t)
 	put(t, m, "permit", `permit(principal,action,resource);`)

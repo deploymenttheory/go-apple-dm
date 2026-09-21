@@ -118,6 +118,8 @@ type OIDCConfig struct {
 // Enabled reports whether enrollment routes are configured.
 func (e EnrollConfig) Enabled() bool { return e.PublicURL != "" && e.Topic != "" }
 
+// validate checks HTTPS enrollment configuration, paired CA files, identity mode and
+// account-driven discovery values.
 func (e EnrollConfig) validate() error {
 	if !e.Enabled() {
 		return nil
@@ -502,6 +504,8 @@ func (e *enrollment) profile(ctx context.Context, b acme.Binding) (*enroll.Profi
 	return e.profileWithIdentity(ctx, b, e.cfg.Identity)
 }
 
+// profileWithIdentity obtains admission and builds a stable SCEP or ACME enrollment
+// profile using the selected issuer and current trust material.
 func (e *enrollment) profileWithIdentity(
 	ctx context.Context,
 	b acme.Binding,
@@ -683,6 +687,8 @@ func (e *enrollment) loadCA(ctx context.Context, a *App) error {
 
 var errPEM = errors.New("no usable PEM block")
 
+// readCertsPEM loads certificate PEM blocks from an operator-configured file, rejecting
+// malformed certificates or an empty certificate set.
 func readCertsPEM(path string) ([]*x509.Certificate, error) {
 	data, err := os.ReadFile(
 		path,
@@ -712,6 +718,8 @@ func readCertsPEM(path string) ([]*x509.Certificate, error) {
 	return certs, nil
 }
 
+// parseSignerPEM finds an RSA, EC or PKCS#8 private key that implements crypto.Signer,
+// rejecting unsupported or malformed material.
 func parseSignerPEM(data []byte) (crypto.Signer, error) {
 	for {
 		var block *pem.Block
@@ -761,6 +769,8 @@ func returnToService(enabled bool) service.ReturnToServiceHandler {
 	}
 }
 
+// client selects the configured root-CA client, then an injected HTTP client, then the
+// default client.
 func (c OIDCConfig) client() (*http.Client, error) {
 	if c.RootCAFile != "" {
 		return trustedHTTPClient(c.RootCAFile)
@@ -771,6 +781,8 @@ func (c OIDCConfig) client() (*http.Client, error) {
 	return http.DefaultClient, nil
 }
 
+// wireOIDC constructs the configured OIDC enrollment flow, admission callback and
+// account-driven authentication endpoints.
 func (a *App) wireOIDC(e *enrollment, mux *http.ServeMux) error {
 	cfg := a.cfg.Enroll
 	var err error

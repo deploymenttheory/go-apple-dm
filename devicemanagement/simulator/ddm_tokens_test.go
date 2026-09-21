@@ -13,6 +13,8 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/schema/ddmproto"
 )
 
+// TestCommandTokenControlsSynchronizationRequests checks command token controls synchronization
+// requests.
 func TestCommandTokenControlsSynchronizationRequests(t *testing.T) {
 	for _, tc := range []struct {
 		name, data string

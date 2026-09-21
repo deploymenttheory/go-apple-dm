@@ -8,6 +8,7 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/server/adminauth"
 )
 
+// TestPrincipalMutationRollsBackOnFailure checks principal mutation rolls back on failure.
 func TestPrincipalMutationRollsBackOnFailure(t *testing.T) {
 	for name, damage := range map[string]string{
 		"missing-lock-table":      "DROP TABLE admin_policy_version",
@@ -50,6 +51,7 @@ func TestPrincipalMutationRollsBackOnFailure(t *testing.T) {
 	}
 }
 
+// TestPrincipalRotationCannotShareDigest checks that principal rotation cannot share digest.
 func TestPrincipalRotationCannotShareDigest(t *testing.T) {
 	s := openStore(t)
 	ctx, now := t.Context(), time.Now()

@@ -20,6 +20,7 @@ type assignFixture struct {
 	syncer  *dep.Syncer
 }
 
+// newAssignFixture creates a DEP assignment fixture with a profile registered at the fake service.
 func newAssignFixture(t *testing.T, opts ...func(*fixtureOptions)) *assignFixture {
 	t.Helper()
 	f := newFixture(t, opts...)
@@ -31,6 +32,7 @@ func newAssignFixture(t *testing.T, opts ...func(*fixtureOptions)) *assignFixtur
 	return &assignFixture{fixture: f, profile: resp.ProfileUUID, syncer: newSyncer(t, f)}
 }
 
+// sync runs one DEP synchronization pass, failing the test on error.
 func (a *assignFixture) sync(t *testing.T) {
 	t.Helper()
 	if _, err := a.syncer.RunOnce(context.Background()); err != nil {
@@ -38,6 +40,8 @@ func (a *assignFixture) sync(t *testing.T) {
 	}
 }
 
+// newAssigner constructs an assigner using the fixture's client, store, events, and retry
+// settings.
 func newAssigner(t *testing.T, f *assignFixture, mutate ...func(*dep.AssignerConfig)) *dep.Assigner {
 	t.Helper()
 	cfg := dep.AssignerConfig{
@@ -56,6 +60,7 @@ func newAssigner(t *testing.T, f *assignFixture, mutate ...func(*dep.AssignerCon
 	return a
 }
 
+// assignment reads an assignment from the fixture store, failing the test on error.
 func assignment(t *testing.T, s dep.Store, serial string) *dep.Assignment {
 	t.Helper()
 	a, err := s.GetAssignment(context.Background(), acct, serial)
@@ -65,6 +70,8 @@ func assignment(t *testing.T, s dep.Store, serial string) *dep.Assignment {
 	return a
 }
 
+// TestAssigner checks assignment reconciliation, per-device throttling, account backoff, batching,
+// and storage failures.
 func TestAssigner(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()

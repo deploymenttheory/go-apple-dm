@@ -86,6 +86,7 @@ type recordingTracer struct {
 	scope string
 }
 
+// Start records a new test span and returns its span-bearing context.
 func (t *recordingTracer) Start(ctx context.Context, name string, opts ...trace.SpanStartOption) (context.Context, trace.Span) {
 	ctx, inner := t.Tracer.Start(ctx, name, opts...)
 	s := &Span{Scope: t.scope, Name: name}
@@ -101,6 +102,7 @@ type recordingSpan struct {
 	out *Span
 }
 
+// SetAttributes records attributes attached to the test span.
 func (s *recordingSpan) SetAttributes(attrs ...attribute.KeyValue) {
 	s.rec.mu.Lock()
 	for _, kv := range attrs {
@@ -111,6 +113,7 @@ func (s *recordingSpan) SetAttributes(attrs ...attribute.KeyValue) {
 	s.Span.SetAttributes(attrs...)
 }
 
+// SetStatus records the span status code and description for assertions.
 func (s *recordingSpan) SetStatus(code codes.Code, description string) {
 	s.rec.mu.Lock()
 	s.out.Status, s.out.StatusMessage = code, description
@@ -118,6 +121,7 @@ func (s *recordingSpan) SetStatus(code codes.Code, description string) {
 	s.Span.SetStatus(code, description)
 }
 
+// End marks the recorded span complete and retains its final attributes.
 func (s *recordingSpan) End(opts ...trace.SpanEndOption) {
 	s.rec.mu.Lock()
 	s.out.Ended = true

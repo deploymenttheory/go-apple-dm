@@ -7,6 +7,7 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/activationlock"
 )
 
+// ExampleGenerate demonstrates generating an activation-lock bypass code and its DEP escrow hash.
 func ExampleGenerate() {
 	code, hash := activationlock.Generate()
 	// Persist code securely against the device before sending this request.

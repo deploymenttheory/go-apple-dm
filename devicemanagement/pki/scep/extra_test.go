@@ -20,6 +20,7 @@ import (
 
 type errReader struct{}
 
+// Read returns a synthetic read failure.
 func (errReader) Read([]byte) (int, error) { return 0, errors.New("read failed") }
 
 // TestRenewalSkipsChallenge checks that a trusted renewal signer needs no
@@ -80,6 +81,7 @@ func TestRenewalRequiresMatchingSubject(t *testing.T) {
 	}
 }
 
+// TestHandlerBodyAndClientTransportErrors checks handler body and client transport errors.
 func TestHandlerBodyAndClientTransportErrors(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t)
@@ -133,8 +135,10 @@ func TestHandlerBodyAndClientTransportErrors(t *testing.T) {
 
 type oddSigner struct{ *rsa.PrivateKey }
 
+// Public returns an unsupported public-key type for validation tests.
 func (oddSigner) Public() crypto.PublicKey { return struct{}{} }
 
+// TestSelfSignedRejectsUnsupportedKey checks that self signed rejects unsupported key.
 func TestSelfSignedRejectsUnsupportedKey(t *testing.T) {
 	t.Parallel()
 	if _, err := scep.SelfSigned(oddSigner{rsaKey(t)}, pkix.Name{CommonName: "x"}); !errors.Is(err, scep.ErrClient) {

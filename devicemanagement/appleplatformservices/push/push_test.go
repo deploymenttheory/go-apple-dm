@@ -15,8 +15,10 @@ import (
 
 var t0 = time.Date(2026, 9, 1, 12, 0, 0, 0, time.UTC)
 
+// dev constructs a device enrollment ID.
 func dev(n string) mdm.EnrollmentID { return mdm.EnrollmentID{Channel: mdm.ChannelDevice, ID: n} }
 
+// TestCoalesce checks push suppression inside the coalescing window and delivery after it expires.
 func TestCoalesce(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
@@ -47,6 +49,7 @@ func TestCoalesce(t *testing.T) {
 	}
 }
 
+// TestStaticCertStore checks static certificate lookup and rejection of missing topics.
 func TestStaticCertStore(t *testing.T) {
 	t.Parallel()
 	s := push.StaticCertStore{"t": {}}

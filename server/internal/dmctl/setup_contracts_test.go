@@ -20,6 +20,7 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/server/internal/dmctl"
 )
 
+// TestSetupCheckBuildsReadyManagedServer checks setup check builds ready managed server.
 func TestSetupCheckBuildsReadyManagedServer(t *testing.T) {
 	env, dir := noConfig(t), t.TempDir()
 	path := filepath.Join(dir, "setup.json")
@@ -88,6 +89,8 @@ func TestSetupCheckBuildsReadyManagedServer(t *testing.T) {
 	}
 }
 
+// TestSetupPropagatesBootstrapAndOpenFailures checks that setup propagates bootstrap and open
+// failures.
 func TestSetupPropagatesBootstrapAndOpenFailures(t *testing.T) {
 	for _, mode := range []string{"parse environment", "volatile storage", "open local storage"} {
 		t.Run(mode, func(t *testing.T) {
@@ -114,6 +117,7 @@ func TestSetupPropagatesBootstrapAndOpenFailures(t *testing.T) {
 	}
 }
 
+// TestSetupRemoteCommandsAndFailures checks setup remote commands and failures.
 func TestSetupRemoteCommandsAndFailures(t *testing.T) {
 	for _, mode := range []string{"success", "incomplete", "unavailable", "invalid response", "invalid client"} {
 		t.Run(mode, func(t *testing.T) {
@@ -197,6 +201,8 @@ func TestSetupRemoteCommandsAndFailures(t *testing.T) {
 	}
 }
 
+// TestSetupLocalValidationAndArtifactProtection checks setup local validation and artifact
+// protection.
 func TestSetupLocalValidationAndArtifactProtection(t *testing.T) {
 	env, dir := noConfig(t), t.TempDir()
 	path := filepath.Join(dir, "setup.json")
@@ -347,6 +353,8 @@ func TestSetupLocalValidationAndArtifactProtection(t *testing.T) {
 	}
 }
 
+// TestSetupBenchAdoptionPreservesDatabaseAndImportedIdentities checks that setup bench adoption
+// preserves database and imported identities.
 func TestSetupBenchAdoptionPreservesDatabaseAndImportedIdentities(t *testing.T) {
 	for _, mode := range []string{"missing workspace", "simulated", "missing key", "missing database", "missing challenge", "missing certificate", "missing private key", "untrusted push", "different database", "invalid environment"} {
 		t.Run(mode, func(t *testing.T) {

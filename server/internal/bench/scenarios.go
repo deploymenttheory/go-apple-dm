@@ -15,6 +15,7 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/simulator"
 )
 
+// api sends an authenticated administrative request through the bench client.
 func (e *Environment) api(ctx context.Context, method, path string, in, out any) error {
 	var body []byte
 	var err error
@@ -38,6 +39,8 @@ func (e *Environment) api(ctx context.Context, method, path string, in, out any)
 	return nil
 }
 
+// device creates a simulator and provisions it with an enrollment profile issued by the
+// bench server.
 func (e *Environment) device(
 	ctx context.Context,
 	opts ...simulator.Option,
@@ -72,7 +75,11 @@ func (e *Environment) device(
 	}
 	return d, nil
 }
+
+// pathOf builds the administrative enrollment path for the simulator device ID.
 func pathOf(d *simulator.Device) string { return "/enrollments/device/" + url.PathEscape(d.UDID) }
+
+// enrollIdle enrolls a simulator and verifies its idle command exchange.
 func enrollIdle(ctx context.Context, e *Environment, _ string) error {
 	d, err := e.device(ctx)
 	if err != nil {
@@ -101,6 +108,7 @@ func enrollIdle(ctx context.Context, e *Environment, _ string) error {
 	return nil
 }
 
+// enqueue queues the scenario command for the selected enrollment.
 func enqueue(
 	ctx context.Context,
 	e *Environment,
@@ -121,6 +129,7 @@ func enqueue(
 	return cmd, nil
 }
 
+// commandsInOrder checks ordered command delivery and acknowledgement.
 func commandsInOrder(ctx context.Context, e *Environment, _ string) error {
 	d, err := e.device(ctx)
 	if err != nil {
@@ -170,6 +179,7 @@ func commandsInOrder(ctx context.Context, e *Environment, _ string) error {
 	return nil
 }
 
+// notNow checks deferred command delivery after a NotNow response.
 func notNow(ctx context.Context, e *Environment, _ string) error {
 	d, err := e.device(ctx)
 	if err != nil {
@@ -213,6 +223,7 @@ func notNow(ctx context.Context, e *Environment, _ string) error {
 	return nil
 }
 
+// commandError checks persistence and reporting of a device command error.
 func commandError(ctx context.Context, e *Environment, _ string) error {
 	d, err := e.device(ctx)
 	if err != nil {
@@ -250,6 +261,8 @@ func commandError(ctx context.Context, e *Environment, _ string) error {
 	return nil
 }
 
+// reenroll checks that unauthorized identity reenrollment is rejected and the original
+// identity retains its queued command.
 func reenroll(ctx context.Context, e *Environment, _ string) error {
 	d, err := e.device(ctx)
 	if err != nil {
@@ -287,6 +300,7 @@ func reenroll(ctx context.Context, e *Environment, _ string) error {
 	return nil
 }
 
+// scepPush exercises SCEP-issued identity followed by an MDM push wake-up.
 func scepPush(ctx context.Context, e *Environment, _ string) error {
 	d, err := e.device(ctx)
 	if err != nil {
@@ -314,6 +328,8 @@ func scepPush(ctx context.Context, e *Environment, _ string) error {
 	return nil
 }
 
+// invalidToken checks that an APNs Unregistered response is reported as an invalid-
+// token outcome.
 func invalidToken(ctx context.Context, e *Environment, _ string) error {
 	d, err := e.device(ctx)
 	if err != nil {
@@ -338,18 +354,24 @@ func invalidToken(ctx context.Context, e *Environment, _ string) error {
 	return nil
 }
 
+// ddmRoundTrip exercises declaration publication, synchronization, and device status
+// reporting.
 func ddmRoundTrip(ctx context.Context, e *Environment, _ string) error {
 	return ddmScenario(ctx, e, false, false)
 }
 
+// ddmPredicate checks declaration activation under the scenario's predicate values.
 func ddmPredicate(ctx context.Context, e *Environment, _ string) error {
 	return ddmScenario(ctx, e, true, false)
 }
 
+// ddmCheckout checks that device checkout clears retained declaration status and
+// prevents reenrollment.
 func ddmCheckout(ctx context.Context, e *Environment, _ string) error {
 	return ddmScenario(ctx, e, false, true)
 }
 
+// ddmScenario runs the selected declarative-management scenario steps.
 func ddmScenario(ctx context.Context, e *Environment, predicate, checkout bool) error {
 	d, err := e.device(ctx)
 	if err != nil {
@@ -467,6 +489,8 @@ func ddmScenario(ctx context.Context, e *Environment, predicate, checkout bool) 
 	return nil
 }
 
+// adminRoutes checks that advertised admin routes name permission actions and that
+// invalid credentials are rejected.
 func adminRoutes(ctx context.Context, e *Environment, _ string) error {
 	var routes struct {
 		Routes []struct{ Pattern, Action string }
@@ -489,6 +513,8 @@ func adminRoutes(ctx context.Context, e *Environment, _ string) error {
 	return nil
 }
 
+// returnDisabled checks that Return to Service reports Enabled false under the default
+// server configuration.
 func returnDisabled(ctx context.Context, e *Environment, _ string) error {
 	d, err := e.device(ctx)
 	if err != nil {

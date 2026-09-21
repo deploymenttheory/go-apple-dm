@@ -28,8 +28,10 @@ type collector struct {
 	got    chan struct{}
 }
 
+// newCollector creates a webhook collector with a buffered delivery signal channel.
 func newCollector() *collector { return &collector{got: make(chan struct{}, 64)} }
 
+// webhookRoot writes the test receiver's certificate as a trusted webhook root PEM file.
 func webhookRoot(t *testing.T, srv *httptest.Server) string {
 	t.Helper()
 	path := filepath.Join(t.TempDir(), "webhook-root.pem")
@@ -39,6 +41,7 @@ func webhookRoot(t *testing.T, srv *httptest.Server) string {
 	return path
 }
 
+// server starts a TLS webhook receiver that captures bodies and signals delivery.
 func (c *collector) server(t *testing.T) *httptest.Server {
 	t.Helper()
 	srv := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -55,6 +58,7 @@ func (c *collector) server(t *testing.T) *httptest.Server {
 	return srv
 }
 
+// wait waits up to five seconds for a webhook delivery.
 func (c *collector) wait(t *testing.T) {
 	t.Helper()
 	select {
@@ -64,6 +68,7 @@ func (c *collector) wait(t *testing.T) {
 	}
 }
 
+// all joins all captured webhook bodies under the collector mutex.
 func (c *collector) all() string {
 	c.mu.Lock()
 	defer c.mu.Unlock()
@@ -85,11 +90,15 @@ func publishSomething(t *testing.T, a *app.App) {
 	}
 }
 
+// nativeWebhookConfig builds persistent native-webhook configuration trusting the test receiver
+// and allowing loopback delivery.
 func nativeWebhookConfig(t *testing.T, srv *httptest.Server) app.Config {
 	t.Helper()
 	return app.Config{Storage: "sqlite", DSN: filepath.Join(t.TempDir(), "webhooks.sqlite"), BootstrapToken: "t", StorageKeys: []string{"test"}, Secrets: secrets.Static{"test": []byte("0123456789abcdef0123456789abcdef")}, Webhooks: webhook.Config{Enabled: true, RootCAFile: webhookRoot(t, srv), PrivateNetworks: []string{"127.0.0.0/8"}}}
 }
 
+// createNativeSubscription creates a native subscription for enrollment-imported events and
+// decodes its returned secret-bearing change.
 func createNativeSubscription(t *testing.T, a *app.App, endpoint string) webhook.Change {
 	t.Helper()
 	b, err := json.Marshal(webhook.Spec{Name: "workflow", URL: endpoint, Events: []string{"server.enrollment.imported"}})
@@ -107,6 +116,7 @@ func createNativeSubscription(t *testing.T, a *app.App, endpoint string) webhook
 	return change
 }
 
+// TestWebhookSinkReceivesEnrollmentEvents checks webhook sink receives enrollment events.
 func TestWebhookSinkReceivesEnrollmentEvents(t *testing.T) {
 	c := newCollector()
 	srv := c.server(t)
@@ -124,6 +134,7 @@ func TestWebhookSinkReceivesEnrollmentEvents(t *testing.T) {
 	}
 }
 
+// TestManagedWebhookRequiresEncryptedSQL checks that managed webhook requires encrypted SQL.
 func TestManagedWebhookRequiresEncryptedSQL(t *testing.T) {
 	for _, cfg := range []app.Config{
 		{Storage: "inmem", BootstrapToken: "t", Webhooks: webhook.Config{Enabled: true}},

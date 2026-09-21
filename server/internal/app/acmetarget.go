@@ -16,6 +16,8 @@ type acmeTarget struct {
 	credential bool
 }
 
+// resolveMac uses known hardware information when available, otherwise consulting the
+// configured resolver.
 func (s *acmeService) resolveMac(
 	ctx context.Context,
 	b acme.Binding,
@@ -27,6 +29,8 @@ func (s *acmeService) resolveMac(
 	return s.cfg.MacHardware(ctx, b)
 }
 
+// profileForDevice parses device version and hardware information before building a
+// compatible enrollment profile.
 func (e *enrollment) profileForDevice(
 	ctx context.Context,
 	b acme.Binding,
@@ -51,6 +55,8 @@ func (e *enrollment) profileForDevice(
 	return e.profileWithIdentity(ctx, b, identity, acmeTarget{target: target, hardware: hardware})
 }
 
+// apply disables unsupported Mac ACME hardware options and validates the resulting payload
+// against its target.
 func (t acmeTarget) apply(payload *enroll.ACME) error {
 	if t.target.OS == support.MacOS {
 		switch {

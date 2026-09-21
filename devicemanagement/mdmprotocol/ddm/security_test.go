@@ -10,6 +10,7 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/storage/ddm/inmem"
 )
 
+// TestStatusStructuralLimitsBeforePersistence checks status structural limits before persistence.
 func TestStatusStructuralLimitsBeforePersistence(t *testing.T) {
 	s := inmem.New()
 	e, err := ddm.New(

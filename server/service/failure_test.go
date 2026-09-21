@@ -165,6 +165,7 @@ func TestStorageFailuresAreInternal(t *testing.T) {
 	}
 }
 
+// TestEventHandlerFailureIsLogged checks event handler failure is logged.
 func TestEventHandlerFailureIsLogged(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()

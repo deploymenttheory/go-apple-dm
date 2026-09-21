@@ -29,6 +29,8 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/server/eventstore"
 )
 
+// reviewApp builds an application, bootstraps a managed principal, and grants it the fixture's
+// admin actions.
 func reviewApp(t *testing.T) (*App, string) {
 	t.Helper()
 	a, err := Build(t.Context(), Config{Storage: "inmem", BootstrapToken: "bootstrap-secret"})
@@ -45,6 +47,8 @@ func reviewApp(t *testing.T) (*App, string) {
 	return a, root
 }
 
+// TestRegressionStatusReasonsEscapeProjection checks that viewer status responses redact
+// diagnostic secrets while preserving stored evidence.
 func TestRegressionStatusReasonsEscapeProjection(t *testing.T) {
 	a, root := reviewApp(t)
 	ctx := t.Context()
@@ -98,6 +102,8 @@ func TestRegressionStatusReasonsEscapeProjection(t *testing.T) {
 	}
 }
 
+// TestRegressionLargeProfileDownload checks large profile downloads retain exact bytes and
+// withhold content when required audit capture fails.
 func TestRegressionLargeProfileDownload(t *testing.T) {
 	a, root := reviewApp(t)
 	p := &profile.Profile{Identifier: "com.example.review", UUID: "6C9B0C20-0000-7000-8000-000000000001", Scope: profile.ScopeSystem, Payloads: []profile.Payload{{Identifier: "com.example.review.settings", UUID: "6C9B0C20-0000-7000-8000-000000000002", Content: &profile.Raw{Type: "com.example.settings", Keys: map[string]any{"Value": "test"}}}}}
@@ -136,8 +142,11 @@ func TestRegressionLargeProfileDownload(t *testing.T) {
 
 type failedReviewPublisher struct{}
 
+// Publish returns event.ErrCapture to simulate event publication failure.
 func (failedReviewPublisher) Publish(context.Context, event.Event) error { return event.ErrCapture }
 
+// assertNoStatusSecret checks that JSON diagnostic strings contain neither the plaintext fixture
+// secret nor its base64 encoding.
 func assertNoStatusSecret(t *testing.T, raw []byte) {
 	t.Helper()
 	var value any
@@ -168,6 +177,8 @@ func assertNoStatusSecret(t *testing.T, raw []byte) {
 	visit(value)
 }
 
+// TestRegressionDEPAccountBackoffLostAcrossPasses checks that subsequent DEP passes respect a
+// persisted account Retry-After deadline.
 func TestRegressionDEPAccountBackoffLostAcrossPasses(t *testing.T) {
 	ctx := t.Context()
 	clk := clock.NewFake(time.Date(2026, 9, 20, 12, 0, 0, 0, time.UTC))
@@ -206,6 +217,8 @@ func TestRegressionDEPAccountBackoffLostAcrossPasses(t *testing.T) {
 	}
 }
 
+// TestDEPReconciliationCaptureRollbackAndAdmission checks DEP reconciliation capture rollback and
+// admission.
 func TestDEPReconciliationCaptureRollbackAndAdmission(t *testing.T) {
 	ctx := t.Context()
 	clk := clock.NewFake(time.Date(2026, 9, 20, 12, 0, 0, 0, time.UTC))

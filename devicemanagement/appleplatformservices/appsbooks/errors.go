@@ -35,6 +35,7 @@ type APIError struct {
 	RetryAfter time.Duration
 }
 
+// Error reports the HTTP status and Apple service error number.
 func (e *APIError) Error() string {
 	return fmt.Sprintf("appsbooks: HTTP %d, Apple error %d", e.HTTPStatus, e.Number)
 }
@@ -44,5 +45,8 @@ func (e *APIError) Error() string {
 // already have reached Apple: reconcile before explicitly resubmitting it.
 type TransportError struct{ cause error }
 
-func (*TransportError) Error() string   { return "appsbooks: request transport failed" }
+// Error returns a transport-failure message without disclosing the request URL.
+func (*TransportError) Error() string { return "appsbooks: request transport failed" }
+
+// Unwrap exposes the wrapped cause for errors.Is and errors.As.
 func (e *TransportError) Unwrap() error { return e.cause }

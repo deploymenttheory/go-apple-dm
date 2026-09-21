@@ -9,6 +9,8 @@ import (
 	"strconv"
 )
 
+// runEvents parses and executes the events subcommand, reporting argument and operation
+// failures to the CLI caller.
 func runEvents(ctx context.Context, e *env, args []string) error {
 	if len(args) == 0 {
 		return fmt.Errorf("%w: events requires status, list, or retry", ErrUsage)

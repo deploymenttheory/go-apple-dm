@@ -55,6 +55,8 @@ func OpenSetup(ctx context.Context, cfg Config) (*App, error) {
 	return a, nil
 }
 
+// openCertificates opens reply-encryption state and validates and constructs managed
+// certificate storage when setup is configured.
 func (a *App) openCertificates(ctx context.Context) error {
 	if err := a.openReplyCertificates(ctx); err != nil {
 		return err
@@ -116,6 +118,8 @@ func (a *App) openCertificates(ctx context.Context) error {
 	return nil
 }
 
+// configureManagedIdentities derives runtime enrollment and push configuration from active
+// managed identities, rejecting conflicting file-based settings.
 func (a *App) configureManagedIdentities(ctx context.Context) error {
 	if a.Certificates == nil {
 		return nil
@@ -205,6 +209,8 @@ func (a *App) LoadTLSCertificate(ctx context.Context) (*tls.Certificate, error) 
 	return &pair, nil
 }
 
+// renewCertificates runs certificate renewal scans every minute until cancellation and
+// logs failures without ending the worker.
 func (a *App) renewCertificates(ctx context.Context) error {
 	timer := time.NewTicker(time.Minute)
 	defer timer.Stop()
@@ -220,6 +226,8 @@ func (a *App) renewCertificates(ctx context.Context) error {
 	}
 }
 
+// certificateRenewalPass records renewal notices and advances pending certificate
+// workflows and trust migrations under the renewal-worker audit identity.
 func (a *App) certificateRenewalPass(ctx context.Context) error {
 	ctx = context.WithValue(ctx, setupActorKey{}, "certificate-renewal-worker")
 	ctx = lifecycle.WithAudit(ctx, "certificate-renewal-worker", "scheduled-renewal")
@@ -289,6 +297,8 @@ func (a *App) certificateRenewalPass(ctx context.Context) error {
 	return nil
 }
 
+// advanceCertificate advances automated push signing, HTTPS renewal and issuer
+// rollover steps while leaving workflows requiring operator input pending.
 func (a *App) advanceCertificate(ctx context.Context, item lifecycle.Identity) error {
 	switch item.Kind {
 	case lifecycle.Push:

@@ -2,7 +2,7 @@
   "schema_version": 1,
   "diagram_type": "architecture",
   "meta": {
-    "title": "Split Deployment: mdm and ddm Roles",
+    "title": "Declarative Management Adapters",
     "quality_profile": "showcase",
     "viewBox": [
       1480,
@@ -11,7 +11,7 @@
     "views": [
       {
         "id": "split",
-        "label": "Split",
+        "label": "Signed proxy adapter",
         "focus": [
           "mdmrole",
           "proxyclient",
@@ -19,7 +19,7 @@
           "proxyserver",
           "replay"
         ],
-        "note": "HTTPS carries signed requests and bound responses. Both roles share enrollment, inventory and replay state in one database."
+        "note": "Reusable proxy adapters authenticate requests and bound responses; the embedding application owns shared state and transport."
       },
       {
         "id": "single",
@@ -29,12 +29,12 @@
           "inproc",
           "engine"
         ],
-        "note": "Without a remote declarative URL, the service invokes the engine through its in-process adapter."
+        "note": "The unified reference server supplies the in-process adapter. Embedders may compose the reusable proxy implementations."
       }
     ],
     "repository": {
       "url": "https://github.com/deploymenttheory/go-apple-dm",
-      "revision": "617119b0b66a3c66cfb4e88ba78a134eb4e5234d"
+      "revision": "2b8157efa2c6cbfff459bc44f66736a5d2e7c753"
     },
     "colour_profile": "purpose-v1",
     "legend": {
@@ -82,8 +82,8 @@
     {
       "id": "mdmrole",
       "type": "backend",
-      "label": "Device-facing MDM role",
-      "sublabel": "Receive and authorize",
+      "label": "MDM service",
+      "sublabel": "Configured DMHandler",
       "pos": [
         315.0,
         260.0
@@ -92,7 +92,14 @@
         220,
         70
       ],
-      "purpose": "service"
+      "purpose": "service",
+      "sources": [
+        {
+          "path": "server/service/service.go",
+          "line": 111,
+          "label": "Adapter seam"
+        }
+      ]
     },
     {
       "id": "hop",
@@ -119,7 +126,7 @@
       "id": "inproc",
       "type": "backend",
       "label": "In-process adapter",
-      "sublabel": "No remote URL configured",
+      "sublabel": "Direct DMHandler call",
       "pos": [
         615.0,
         260.0
@@ -170,13 +177,19 @@
         220,
         70
       ],
-      "purpose": "service"
+      "purpose": "service",
+      "sources": [
+        {
+          "path": "devicemanagement/mdmprotocol/ddm/serve.go",
+          "label": "Handle requests"
+        }
+      ]
     },
     {
       "id": "ddmstore",
       "type": "database",
       "label": "Declarative tables",
-      "sublabel": "In shared application database",
+      "sublabel": "Host-provided state",
       "pos": [
         915.0,
         410.0
@@ -188,8 +201,12 @@
       "purpose": "storage",
       "sources": [
         {
-          "path": "server/internal/app/app.go",
-          "label": "Shared database composition"
+          "path": "server/ddmstore/sqlstore/sqlstore.go",
+          "label": "SQL declarative state"
+        },
+        {
+          "path": "devicemanagement/mdmprotocol/ddm/store.go",
+          "label": "Store interface"
         }
       ]
     },
@@ -208,12 +225,8 @@
       ],
       "sources": [
         {
-          "path": "server/ddmadapter/internal/proxywire/envelope.go",
-          "label": "Freshness and nonce claim"
-        },
-        {
-          "path": "server/statestore/sqlstore.go",
-          "label": "Shared protocol state"
+          "path": "server/ddmadapter/proxyserver/proxyserver.go",
+          "label": "Replay store requirement"
         }
       ],
       "purpose": "storage"
@@ -235,15 +248,19 @@
       "id": "mdm-proxyclient",
       "from": "mdmrole",
       "to": "proxyclient",
-      "label": "DM_DDM_URL set",
+      "label": "Proxy adapter",
       "purpose": "transport"
     },
     {
       "id": "mdm-inproc",
       "from": "mdmrole",
       "to": "inproc",
-      "label": "otherwise",
-      "purpose": "service"
+      "label": "In-process adapter",
+      "purpose": "service",
+      "labelAt": [
+        575,
+        344
+      ]
     },
     {
       "id": "client-hop",
@@ -315,9 +332,8 @@
       "dot": "service",
       "title": "Choosing the adapter",
       "items": [
-        "With DM_DDM_URL configured, the MDM role forwards declarative requests to the DDM role. Otherwise it calls the in-process adapter.",
-        "The device continues to use /mdm; the internal forwarding endpoint is not a device enrollment URL.",
-        "Both roles share one persistent database and compatible storage keyrings. Enrollment, inventory, declarations and replay state use that database; the hop does not copy inventory."
+        "service.Core accepts a DMHandler. The unified reference server uses ddmadapter/inproc; embedding applications can compose proxyclient and proxyserver.",
+        "The device continues to use the public MDM check-in endpoint. The signed forwarding endpoint belongs to the embedding application, which supplies enrollment identity, inventory, declarations and replay persistence."
       ]
     },
     {
@@ -332,7 +348,7 @@
       "dot": "storage",
       "title": "Shared replay protection",
       "items": [
-        "The receiving adapter checks five-minute freshness and atomically claims each nonce for ten minutes. All receiving replicas must share replay state; the reference server supplies its SQL protocol store.",
+        "The receiving adapter checks five-minute freshness and atomically claims each nonce for ten minutes. All receiving replicas must share replay state; the embedding application supplies it.",
         "A failed signature, stale request or repeated nonce is rejected before the engine runs. HMAC authenticates the exchange; HTTPS provides transport encryption."
       ]
     },
@@ -348,8 +364,7 @@
       "title": "Public documentation",
       "items": [
         "Declarative Management check-in \u2014 https://developer.apple.com/documentation/devicemanagement/declarative-management",
-        "RFC 9440 \u2014 Client-Cert HTTP Header Field \u2014 https://www.rfc-editor.org/rfc/rfc9440",
-        "Private DDM adapter contract \u2014 https://github.com/deploymenttheory/go-apple-dm/blob/80599ddc35778bcc88fa2ac77bb1dc68a51cf089/server/ddmadapter/internal/proxywire/doc.go"
+        "Private DDM adapter contract \u2014 https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/server/ddmadapter/internal/proxywire/doc.go"
       ]
     }
   ]

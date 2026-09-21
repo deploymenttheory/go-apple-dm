@@ -35,6 +35,8 @@ func SignRequest(key []byte, r *http.Request, body []byte) (string, error) {
 	return prefix + "." + sign(key, requestPrefix(r, prefix), body), nil
 }
 
+// requestPrefix constructs the signed request context that binds envelope metadata to the
+// body.
 func requestPrefix(r *http.Request, prefix string) []byte {
 	target := r.RequestURI
 	if target == "" {

@@ -12,6 +12,8 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/testpki"
 )
 
+// TestConfiguredSHA1RootDoesNotRequireSelfSignatureValidation checks that configured sha1 root
+// does not require self signature validation.
 func TestConfiguredSHA1RootDoesNotRequireSelfSignatureValidation(t *testing.T) {
 	root, err := testpki.NewCA("legacy trust anchor")
 	if err != nil {

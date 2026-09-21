@@ -47,6 +47,8 @@ func BodyPayload(body []byte, contentType string, asJSON bool) Payload {
 	return p
 }
 
+// payloadBytes returns the byte representation used for payload size and digest
+// calculation.
 func payloadBytes(p Payload) ([]byte, error) {
 	if p.Availability != "complete" {
 		return nil, ErrNotFound
@@ -119,6 +121,8 @@ func (s *Store) Capture(ctx context.Context, e Event) error {
 	return err
 }
 
+// captureFor freezes one occurrence under the subscription disclosure policy and stores
+// its encrypted body and outbox delivery in the current capture transaction.
 func (s *Store) captureFor(ctx context.Context, e Event, sub Subscription, expires time.Time) (string, error) {
 	id := rand.Text()
 	e.SchemaVersion = SchemaVersion
@@ -184,6 +188,8 @@ func (s *Store) captureFor(ctx context.Context, e Event, sub Subscription, expir
 	return id, err
 }
 
+// copyPayloads copies the captured payload entries allowed by the destination's disclosure
+// policy.
 func copyPayloads(parts map[string]Payload, policy PayloadPolicy) map[string]Payload {
 	out := map[string]Payload{}
 	for name, p := range parts {
@@ -200,7 +206,7 @@ func copyPayloads(parts map[string]Payload, policy PayloadPolicy) map[string]Pay
 
 // CaptureOutcome adapts existing in-process events without changing library APIs.
 // The projection remains the summary; complete internal data is a distinct,
-// root-controlled representation.
+// separately authorized sensitive representation.
 func (s *Store) CaptureOutcome(ctx context.Context, in event.Event) error {
 	typ := OutcomeType(string(in.Type))
 	if typ == "" {
@@ -246,6 +252,8 @@ func (s *Store) CaptureOutcome(ctx context.Context, in event.Event) error {
 	return s.Capture(ctx, e)
 }
 
+// Delivery is the administrative view of a delivery attempt sequence, retaining its
+// occurrence ID, subscription revision, and delivery state without captured bodies.
 type Delivery struct {
 	ID             string    `json:"id"`
 	EventID        string    `json:"event_id"`
@@ -260,6 +268,9 @@ type Delivery struct {
 	Event          Event     `json:"event"`
 }
 
+// Deliveries lists delivery metadata after an exclusive delivery-ID cursor. A nonempty id
+// selects a subscription or exact delivery; a zero limit selects 100 and the maximum is
+// 1000. Captured payload bodies are not returned.
 func (s *Store) Deliveries(ctx context.Context, id, after string, limit int) ([]Delivery, error) {
 	if limit == 0 {
 		limit = 100
@@ -300,6 +311,8 @@ func (s *Store) Deliveries(ctx context.Context, id, after string, limit int) ([]
 	return out, rows.Err()
 }
 
+// retained loads a delivery's captured representation, rejecting missing or expired
+// retained payloads.
 func (s *Store) retained(ctx context.Context, id string) (retained, Delivery, error) {
 	list, err := s.Deliveries(ctx, id, "", 1)
 	if err != nil {
@@ -325,6 +338,9 @@ func (s *Store) retained(ctx context.Context, id string) (retained, Delivery, er
 	return r, d, err
 }
 
+// Retry requeues the same retained delivery for its original subscription revision. Expired
+// payloads or changed, paused, disabled, or deleted destinations cannot be retried;
+// sensitive captures require the authority flag.
 func (s *Store) Retry(ctx context.Context, id string, root bool) error {
 	return s.unit.Run(ctx, func(ctx context.Context) error {
 		_, d, err := s.retained(ctx, id)
@@ -345,6 +361,8 @@ func (s *Store) Retry(ctx context.Context, id string, root bool) error {
 	})
 }
 
+// ReplayRequest selects retained occurrences for a destination. Key makes a non-dry
+// replay idempotent; DryRun reports the selection without creating deliveries.
 type ReplayRequest struct {
 	SubscriptionID string    `json:"subscription_id"`
 	EventIDs       []string  `json:"event_ids,omitempty"`
@@ -355,6 +373,9 @@ type ReplayRequest struct {
 	DryRun         bool      `json:"dry_run"`
 	Limit          int       `json:"limit,omitempty"`
 }
+
+// ReplayResult reports selected occurrence IDs, newly created delivery IDs, missing
+// representations, and whether the bounded selection was truncated.
 type ReplayResult struct {
 	EventIDs    []string            `json:"event_ids"`
 	DeliveryIDs []string            `json:"delivery_ids"`
@@ -363,6 +384,10 @@ type ReplayResult struct {
 	Missing     map[string][]string `json:"missing_payloads,omitempty"`
 }
 
+// Replay selects retained occurrences and creates fresh deliveries under the destination's
+// current disclosure policy. It never reconstructs missing payloads from live state.
+// Non-dry runs require an idempotency key; reusing it with different input returns
+// ErrConflict. The authority flag controls access to sensitive captures.
 func (s *Store) Replay(ctx context.Context, req ReplayRequest, root bool) (ReplayResult, error) {
 	if req.Limit == 0 {
 		req.Limit = 100
@@ -560,6 +585,8 @@ func (s *Store) Prune(ctx context.Context) error {
 	})
 }
 
+// RunRetention prunes expired payloads and metadata immediately and then once per minute
+// until cancellation. A pruning error stops the worker so the host can expose the failure.
 func (s *Store) RunRetention(ctx context.Context) error {
 	for {
 		if err := s.Prune(ctx); err != nil {
@@ -575,6 +602,9 @@ func (s *Store) RunRetention(ctx context.Context) error {
 	}
 }
 
+// Status returns delivery counts and oldest occurrence times by state, capture failures,
+// and configured retention periods without exposing destination secrets or captured
+// payloads.
 func (s *Store) Status(ctx context.Context) (map[string]any, error) {
 	rows, err := s.query(ctx).QueryContext(ctx, `SELECT d.state, COUNT(*), MIN(m.occurred_at) FROM event_deliveries d JOIN webhook_messages m ON m.delivery_id = d.event_id GROUP BY d.state`)
 	if err != nil {

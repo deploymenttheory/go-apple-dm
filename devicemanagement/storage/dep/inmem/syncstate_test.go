@@ -10,6 +10,7 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/storage/dep/inmem"
 )
 
+// TestWorkerStateValidationAndAtomicity checks worker state validation and atomicity.
 func TestWorkerStateValidationAndAtomicity(t *testing.T) {
 	s := inmem.New()
 	ctx := t.Context()

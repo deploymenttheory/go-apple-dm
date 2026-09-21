@@ -114,8 +114,10 @@ func Open(ctx context.Context, db *sql.DB, d sqlcommon.Dialect, o Options) (*Sto
 // DB exposes the pool for health checks and tests.
 func (s *Store) DB() *sql.DB { return s.db }
 
+// q rewrites query placeholders for the configured SQL dialect.
 func (s *Store) q(query string) string { return s.d.Rebind(query) }
 
+// wrap adds the store operation to an error while retaining the wrapped cause.
 func wrap(op string, err error) error { return fmt.Errorf("sqlstore: %s: %w", op, err) }
 
 const recordCols = "id, at, type, actor, channel, enrollment_id, parent_id, fields, event_id"
@@ -256,6 +258,7 @@ func (s *Store) Prune(ctx context.Context, before time.Time) (int, error) {
 // scanner is what a *sql.Row and *sql.Rows have in common.
 type scanner interface{ Scan(dest ...any) error }
 
+// scanRecord decodes an audit row and its structured fields.
 func scanRecord(sc scanner) (audit.Record, error) {
 	var (
 		rec              audit.Record
@@ -279,6 +282,7 @@ func scanRecord(sc scanner) (audit.Record, error) {
 	return rec, nil
 }
 
+// encodeFields serializes audit fields into their stored JSON representation.
 func encodeFields(f map[string]any) (string, error) {
 	if len(f) == 0 {
 		return "", nil
@@ -290,6 +294,7 @@ func encodeFields(f map[string]any) (string, error) {
 	return string(b), nil
 }
 
+// decodeFields parses the structured fields retained with an audit record.
 func decodeFields(s string) (map[string]any, error) {
 	if s == "" {
 		return nil, nil
@@ -311,6 +316,7 @@ func channelOf(id mdm.EnrollmentID) string {
 	return id.Channel.String()
 }
 
+// channelFrom maps the stored channel representation to the management-channel type.
 func channelFrom(s string) mdm.Channel {
 	for _, c := range []mdm.Channel{
 		mdm.ChannelDevice, mdm.ChannelUser, mdm.ChannelSharedIPadUser,

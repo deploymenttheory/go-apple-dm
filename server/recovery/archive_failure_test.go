@@ -20,12 +20,14 @@ import (
 
 type rejectedRecipient struct{}
 
+// Wrap returns a synthetic age-recipient failure.
 func (rejectedRecipient) Wrap([]byte) ([]*age.Stanza, error) {
 	return nil, errors.New("recipient unavailable")
 }
 
 type failingArchiveWriter struct{ left int }
 
+// Write accepts writes within the remaining byte budget and fails larger writes.
 func (w *failingArchiveWriter) Write(p []byte) (int, error) {
 	if len(p) > w.left {
 		return 0, errors.New("archive storage failed")
@@ -34,6 +36,8 @@ func (w *failingArchiveWriter) Write(p []byte) (int, error) {
 	return len(p), nil
 }
 
+// TestArchivePublicationFailuresNeverPublish checks that archive publication failures never
+// publish.
 func TestArchivePublicationFailuresNeverPublish(t *testing.T) {
 	_, stage, identity, manifest := archiveFixture(t)
 	for name, change := range map[string]func(*Metadata, *[]age.Recipient){
@@ -67,6 +71,8 @@ func TestArchivePublicationFailuresNeverPublish(t *testing.T) {
 	}
 }
 
+// TestAuthenticatedArchiveRequiresOneLeadingManifest checks that authenticated archive requires
+// one leading manifest.
 func TestAuthenticatedArchiveRequiresOneLeadingManifest(t *testing.T) {
 	_, _, identity, _ := archiveFixture(t)
 	for _, tc := range []struct {
@@ -107,6 +113,8 @@ func TestAuthenticatedArchiveRequiresOneLeadingManifest(t *testing.T) {
 	}
 }
 
+// TestArchiveAuthenticatesFinalChunkAfterCompleteTar checks that archive authenticates final chunk
+// after complete tar.
 func TestArchiveAuthenticatesFinalChunkAfterCompleteTar(t *testing.T) {
 	_, _, key, m := archiveFixture(t)
 	payload := bytes.Repeat([]byte("x"), 62976)
@@ -140,6 +148,8 @@ func TestArchiveAuthenticatesFinalChunkAfterCompleteTar(t *testing.T) {
 	}
 }
 
+// TestArchiveDetectsChangedAndUnreadableSource checks that archive detects changed and unreadable
+// source.
 func TestArchiveDetectsChangedAndUnreadableSource(t *testing.T) {
 	for _, change := range []string{"removed", "size", "content", "symlink", "unreadable"} {
 		t.Run(change, func(t *testing.T) {
@@ -194,6 +204,7 @@ func TestArchiveDetectsChangedAndUnreadableSource(t *testing.T) {
 	}
 }
 
+// TestVerifyAndRestoreFilesystemFailures checks verify and restore filesystem failures.
 func TestVerifyAndRestoreFilesystemFailures(t *testing.T) {
 	archive, _, key, _ := archiveFixture(t)
 	if _, err := Verify(t.Context(), archive, t.TempDir(), nil, Limits{}); err == nil {
@@ -227,6 +238,8 @@ func TestVerifyAndRestoreFilesystemFailures(t *testing.T) {
 	}
 }
 
+// TestExtractionFailsBeforePublishingBadFiles checks that extraction fails before publishing bad
+// files.
 func TestExtractionFailsBeforePublishingBadFiles(t *testing.T) {
 	data := []byte("protected key")
 	hash := sha256.Sum256(data)
@@ -273,6 +286,7 @@ func TestExtractionFailsBeforePublishingBadFiles(t *testing.T) {
 	}
 }
 
+// TestBoundedPrivateFileHelpers checks bounded private file helpers.
 func TestBoundedPrivateFileHelpers(t *testing.T) {
 	dir := t.TempDir()
 	if _, err := readPrivate(filepath.Join(dir, "missing")); err == nil {

@@ -19,10 +19,13 @@ type brokenCacheState struct {
 	mode string
 }
 
+// Get returns the configured state-read error.
 func (s brokenCacheState) Get(context.Context, string) (state.Record, error) {
 	return state.Record{}, s.err
 }
 
+// Update injects an update failure or wraps the transaction to inject individual operation
+// failures.
 func (s brokenCacheState) Update(ctx context.Context, keys []string, fn func(state.Tx) error) error {
 	if s.mode == "update" {
 		return s.err
@@ -36,6 +39,7 @@ type brokenCacheTx struct {
 	mode string
 }
 
+// Get injects a transaction read failure or delegates to the underlying transaction.
 func (t brokenCacheTx) Get(ctx context.Context, key string) (state.Record, error) {
 	if t.mode == "get" {
 		return state.Record{}, t.err
@@ -43,6 +47,7 @@ func (t brokenCacheTx) Get(ctx context.Context, key string) (state.Record, error
 	return t.Tx.Get(ctx, key)
 }
 
+// List injects a transaction list failure or delegates to the underlying transaction.
 func (t brokenCacheTx) List(ctx context.Context, prefix, after string, limit int) ([]state.Record, error) {
 	if t.mode == "list" {
 		return nil, t.err
@@ -50,10 +55,12 @@ func (t brokenCacheTx) List(ctx context.Context, prefix, after string, limit int
 	return t.Tx.List(ctx, prefix, after, limit)
 }
 
+// testCacheReport returns a populated content-cache report fixture.
 func testCacheReport() *contentcache.Report {
 	return &contentcache.Report{Version: new(int64(1)), ReportDate: new("2026-09-16T12:00:00Z"), Hostname: new("test"), Hardware: new("Mac16,1"), ServerGUID: new("13D4D110-B2B7-4F26-8E25-CD22E58C00EE")}
 }
 
+// TestReportStoreFailures checks that content-cache report storage failures reach callers.
 func TestReportStoreFailures(t *testing.T) {
 	memory := state.NewMemory()
 	store := &contentcache.StateStore{State: memory}
@@ -110,6 +117,8 @@ func TestReportStoreFailures(t *testing.T) {
 	}
 }
 
+// TestReportPagingPastExpiredRecordsAndCorruption checks report paging past expired records and
+// corruption.
 func TestReportPagingPastExpiredRecordsAndCorruption(t *testing.T) {
 	now := time.Date(2026, 9, 16, 12, 0, 0, 0, time.UTC)
 	memory := state.NewMemory()

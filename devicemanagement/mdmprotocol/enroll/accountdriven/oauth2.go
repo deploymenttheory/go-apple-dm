@@ -155,6 +155,7 @@ func (o *OAuth2) TokenHandler() http.Handler {
 	})
 }
 
+// writeTokenError writes the supplied OAuth token error as JSON with caching disabled.
 func writeTokenError(w http.ResponseWriter, status int, code, desc string) {
 	w.Header().Set("Content-Type", "application/json")
 	w.Header().Set("Cache-Control", "no-store")

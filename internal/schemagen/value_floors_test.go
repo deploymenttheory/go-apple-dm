@@ -7,6 +7,8 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/schema/support"
 )
 
+// TestValueFloorPreservesStructuredRequirements checks that value floor preserves structured
+// requirements.
 func TestValueFloorPreservesStructuredRequirements(t *testing.T) {
 	t.Parallel()
 	tree := &Tree{Schemas: []*Schema{{
@@ -46,6 +48,8 @@ func TestValueFloorPreservesStructuredRequirements(t *testing.T) {
 	}
 }
 
+// TestVersionLiteralsRetainPrecisionAndPlatform checks version literals retain precision and
+// platform.
 func TestVersionLiteralsRetainPrecisionAndPlatform(t *testing.T) {
 	t.Parallel()
 	for _, tc := range []struct {

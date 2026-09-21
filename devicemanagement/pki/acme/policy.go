@@ -39,6 +39,8 @@ func (d *Decision) Properties() attest.Properties {
 // Other errors leave the challenge pending so clients can retry infrastructure
 // failures.
 type Policy interface {
+	// Authorize checks the issuance decision and returns an error when enrollment policy
+	// refuses it.
 	Authorize(ctx context.Context, d *Decision) error
 }
 

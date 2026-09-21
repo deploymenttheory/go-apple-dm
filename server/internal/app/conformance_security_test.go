@@ -25,6 +25,8 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/server/httpapi"
 )
 
+// TestCredentialPlatformConformance checks hardware-specific credential fields and prevents
+// downgrading the required attestation grant.
 func TestCredentialPlatformConformance(t *testing.T) {
 	for _, tc := range []struct {
 		name, product, version string
@@ -148,6 +150,8 @@ func TestCredentialPlatformConformance(t *testing.T) {
 	}
 }
 
+// TestCredentialGrantTracksEnrollmentAndIdentity checks credential grant tracks enrollment and
+// identity.
 func TestCredentialGrantTracksEnrollmentAndIdentity(t *testing.T) {
 	root, rootKey, err := ca.NewSelfSigned(ca.SelfSignedOptions{})
 	authority := &testpki.CA{Identity: testpki.Identity{Cert: root, Key: rootKey}}
@@ -256,6 +260,7 @@ func TestCredentialGrantTracksEnrollmentAndIdentity(t *testing.T) {
 	}
 }
 
+// TestDeviceBindingSeparatesMDMAndAttestation checks device binding separates MDM and attestation.
 func TestDeviceBindingSeparatesMDMAndAttestation(t *testing.T) {
 	mac := deviceBinding("mdm-udid", "serial", "Mac16,1", "subject")
 	if mac.MDMUDID != "mdm-udid" || mac.UDID != "" || mac.Serial != "serial" {

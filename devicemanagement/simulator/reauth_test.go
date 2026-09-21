@@ -12,6 +12,8 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/secrets"
 )
 
+// TestReauthenticationRetainsInterruptedCommandResult checks that reauthentication retains
+// interrupted command result.
 func TestReauthenticationRetainsInterruptedCommandResult(t *testing.T) {
 	var interrupted []byte
 	requests, logins := 0, 0
@@ -64,6 +66,8 @@ func TestReauthenticationRetainsInterruptedCommandResult(t *testing.T) {
 	}
 }
 
+// TestMacDeviceChannelOmitsBearerAndUserSendsIt checks mac device channel omits bearer and user
+// sends it.
 func TestMacDeviceChannelOmitsBearerAndUserSendsIt(t *testing.T) {
 	var authorization string
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { authorization = r.Header.Get("Authorization") }))

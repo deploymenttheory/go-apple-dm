@@ -11,6 +11,8 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/appleplatformservices/dep/deptest"
 )
 
+// TestToken checks token expiry and terms state, expiring events, and account validation before
+// storage.
 func TestToken(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()

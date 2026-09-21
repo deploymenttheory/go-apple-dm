@@ -5,8 +5,8 @@
 // # Design
 //
 // The acceptance and e2e build tags enable simulated catalogue scenarios against
-// an embedded runtime or a built dmserver executable. Tests cover the combined
-// server and split MDM/DDM topology using persistent bench workspaces.
+// an embedded runtime or a built dmserver executable. Tests exercise the unified
+// server using persistent bench workspaces.
 //
 // Live scenarios are excluded from this suite. Reports describe the simulated
 // exchanges that ran; they do not establish Apple-service or physical-device

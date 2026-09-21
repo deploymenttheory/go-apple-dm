@@ -17,7 +17,7 @@
   "participants": [
     {
       "id": "caller",
-      "label": "Caller or bench",
+      "label": "Caller",
       "sublabel": "Supply app registration",
       "type": "external",
       "purpose": "neutral"
@@ -31,14 +31,14 @@
     },
     {
       "id": "store",
-      "label": "App credentials",
+      "label": "Credentials",
       "sublabel": "Certificate for app topic",
       "type": "database",
       "purpose": "storage"
     },
     {
       "id": "client",
-      "label": "App APNs client",
+      "label": "App push client",
       "sublabel": "Explicit dev/prod host",
       "type": "backend",
       "purpose": "transport"
@@ -93,11 +93,21 @@
     {
       "title": "Public documentation",
       "items": [
-        "Sending notification requests to APNs — https://developer.apple.com/documentation/usernotifications/sending-notification-requests-to-apns",
-        "Establishing a certificate-based connection to APNs — https://developer.apple.com/documentation/usernotifications/establishing-a-certificate-based-connection-to-apns",
-        "Implementation — https://github.com/deploymenttheory/go-apple-dm/blob/7500eb25e50a2913338339d5fced18dc7f41fdc3/server/internal/app/apppush.go"
+        "Sending notification requests to APNs \u2014 https://developer.apple.com/documentation/usernotifications/sending-notification-requests-to-apns",
+        "Establishing a certificate-based connection to APNs \u2014 https://developer.apple.com/documentation/usernotifications/establishing-a-certificate-based-connection-to-apns"
       ],
       "dot": "transport"
+    },
+    {
+      "title": "Implementation references",
+      "dot": "artifact",
+      "items": [
+        "caller: Caller or bench \u2014 https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/server/internal/bench/live.go",
+        "api: App push admin \u2014 https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/server/internal/app/apppush.go",
+        "store: App credentials \u2014 https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/server/apppush/store.go",
+        "client: App APNs client \u2014 https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/devicemanagement/appleplatformservices/push/apns/app.go",
+        "evidence: Bench evidence \u2014 https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/server/internal/bench/live.go"
+      ]
     }
   ],
   "messages": [

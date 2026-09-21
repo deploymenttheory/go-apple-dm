@@ -6,6 +6,8 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/ddm/predicate"
 )
 
+// ExampleParse demonstrates predicate parsing, evaluation against device properties, and
+// unsupported syntax errors.
 func ExampleParse() {
 	p, err := predicate.Parse(
 		`(@property(shard) <= 75) and @status(device.identifier.serial-number) beginswith 'ZYXW'`,

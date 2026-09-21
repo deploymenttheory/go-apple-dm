@@ -16,6 +16,8 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/server/service"
 )
 
+// TestSeedOS27InstallProfileCompatibility checks the OpenID SSO version floor while retaining
+// exact signed profile bytes for supported targets.
 func TestSeedOS27InstallProfileCompatibility(t *testing.T) {
 	for _, method := range []string{"Password", "OpenID"} {
 		p := &profile.Profile{Identifier: "sso", UUID: "profile", Payloads: []profile.Payload{{Identifier: "sso.payload", UUID: "payload", Content: &profiles.ExtensibleSingleSignOn{ExtensionIdentifier: "com.example.sso", Type: "Redirect", PlatformSSO: &profiles.ExtensibleSingleSignOnPlatformSSO{AuthenticationMethod: new(method)}}}}}
@@ -49,6 +51,8 @@ func TestSeedOS27InstallProfileCompatibility(t *testing.T) {
 	}
 }
 
+// TestSeedOS27SoftwareUpdateQueryCompatibility checks that removed software-update inventory
+// queries are withheld on macOS 27 while OSVersion remains available.
 func TestSeedOS27SoftwareUpdateQueryCompatibility(t *testing.T) {
 	for _, version := range []string{"26.0", "26.4", "26.6.2", "27.0"} {
 		h := newHarness(t, service.Config{})

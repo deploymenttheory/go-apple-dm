@@ -65,6 +65,7 @@ type blueprintProtocolFixture struct {
 	faultOccurrence, requests             int
 }
 
+// fail consumes the named fixture fault at most once.
 func (f *blueprintProtocolFixture) fail(name string) bool {
 	if f.fault != name || f.used {
 		return false
@@ -73,6 +74,7 @@ func (f *blueprintProtocolFixture) fail(name string) bool {
 	return true
 }
 
+// encode writes a JSON fixture response, reporting encoding or write errors to the test.
 func (f *blueprintProtocolFixture) encode(w http.ResponseWriter, value any) {
 	f.t.Helper()
 	b, err := json.Marshal(value)
@@ -86,6 +88,8 @@ func (f *blueprintProtocolFixture) encode(w http.ResponseWriter, value any) {
 	}
 }
 
+// serve serves the blueprint bench protocol fixture with configurable publication, inventory,
+// status, and cleanup faults.
 func (f *blueprintProtocolFixture) serve(w http.ResponseWriter, r *http.Request) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
@@ -296,10 +300,12 @@ func (f *blueprintProtocolFixture) serve(w http.ResponseWriter, r *http.Request)
 	}
 }
 
+// assetReference reports whether the fixture blueprint selects a profile asset reference.
 func (f *blueprintProtocolFixture) assetReference() bool {
 	return len(f.record.Spec.Declarations) > 1 && f.record.Spec.Declarations[1].ConfigurationProfile.UseProfileAssetReference
 }
 
+// profileActive reports whether the fixture's conditional profile activation uses TRUEPREDICATE.
 func (f *blueprintProtocolFixture) profileActive() bool {
 	return len(f.record.Spec.Activations) > 1 && f.record.Spec.Activations[1].Predicate == "TRUEPREDICATE"
 }

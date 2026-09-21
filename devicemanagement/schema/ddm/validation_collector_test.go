@@ -9,6 +9,7 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/schema/validation"
 )
 
+// TestTypedValidationCollectsRules checks typed validation collects rules.
 func TestTypedValidationCollectsRules(t *testing.T) {
 	t.Parallel()
 	payload := &ddm.ContentCaching{AllowPersonalCaching: new(false), AllowSharedCaching: new(false), ManagementSecurityConfig: new("specificServerCert")}

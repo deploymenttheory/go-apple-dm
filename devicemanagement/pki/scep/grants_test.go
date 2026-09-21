@@ -21,6 +21,7 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/state"
 )
 
+// TestSharedGrantIssuanceOverAppleSCEPWire checks shared grant issuance over apple SCEP wire.
 func TestSharedGrantIssuanceOverAppleSCEPWire(t *testing.T) {
 	g, password, _ := grantFixture(t)
 	root, key, err := ca.NewSelfSigned(ca.SelfSignedOptions{})
@@ -99,6 +100,7 @@ func TestSharedGrantIssuanceOverAppleSCEPWire(t *testing.T) {
 	}
 }
 
+// grantCSR creates and parses a device CSR with a new P-256 key.
 func grantCSR(t *testing.T) *x509.CertificateRequest {
 	t.Helper()
 	k, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
@@ -120,6 +122,7 @@ func grantCSR(t *testing.T) *x509.CertificateRequest {
 	return csr
 }
 
+// grantFixture issues an in-memory SCEP grant bound to the device CSR's common name.
 func grantFixture(t *testing.T) (Grants, string, *x509.CertificateRequest) {
 	t.Helper()
 	g := Grants{
@@ -141,6 +144,8 @@ func grantFixture(t *testing.T) (Grants, string, *x509.CertificateRequest) {
 	return g, p, grantCSR(t)
 }
 
+// TestGrantReplicasReserveOneCSRAndRecheckAdmission checks grant replicas reserve one CSR and
+// recheck admission.
 func TestGrantReplicasReserveOneCSRAndRecheckAdmission(t *testing.T) {
 	g, password, csr := grantFixture(t)
 	bad := *csr
@@ -180,6 +185,7 @@ func TestGrantReplicasReserveOneCSRAndRecheckAdmission(t *testing.T) {
 	}
 }
 
+// TestGrantExpiryAndInvalidConfiguration checks grant expiry and invalid configuration.
 func TestGrantExpiryAndInvalidConfiguration(t *testing.T) {
 	g, password, csr := grantFixture(t)
 	for _, bad := range []Grants{{}, {Store: g.Store}, {Authorize: g.Authorize}} {
@@ -228,6 +234,7 @@ type grantFaultStore struct {
 	txValue                   []byte
 }
 
+// Get injects a grant-read failure or delegates to the state store.
 func (s grantFaultStore) Get(ctx context.Context, k string) (state.Record, error) {
 	if s.read != nil {
 		return state.Record{}, s.read
@@ -235,6 +242,7 @@ func (s grantFaultStore) Get(ctx context.Context, k string) (state.Record, error
 	return s.Store.Get(ctx, k)
 }
 
+// Update injects an update failure or wraps the transaction with grant-specific faults.
 func (s grantFaultStore) Update(ctx context.Context, keys []string, fn func(state.Tx) error) error {
 	if s.update != nil {
 		return s.update
@@ -252,6 +260,7 @@ type grantFaultTx struct {
 	value     []byte
 }
 
+// Get injects a read failure or substitutes the configured value in the transaction's result.
 func (s grantFaultTx) Get(ctx context.Context, k string) (state.Record, error) {
 	if s.read != nil {
 		return state.Record{}, s.read
@@ -263,6 +272,7 @@ func (s grantFaultTx) Get(ctx context.Context, k string) (state.Record, error) {
 	return r, err
 }
 
+// Put injects a grant-write failure or delegates to the transaction.
 func (s grantFaultTx) Put(ctx context.Context, r state.Record) error {
 	if s.put != nil {
 		return s.put
@@ -270,6 +280,8 @@ func (s grantFaultTx) Put(ctx context.Context, r state.Record) error {
 	return s.Tx.Put(ctx, r)
 }
 
+// TestGrantStorageFailuresAndChangedAuthorization checks grant storage failures and changed
+// authorization.
 func TestGrantStorageFailuresAndChangedAuthorization(t *testing.T) {
 	g, password, csr := grantFixture(t)
 	backend := g.Store
@@ -307,6 +319,7 @@ type receiptSigner struct {
 	fn func(context.Context, *x509.CertificateRequest, ca.Policy) (*x509.Certificate, error)
 }
 
+// Sign calls the injected certificate-signing function.
 func (s receiptSigner) Sign(
 	ctx context.Context,
 	csr *x509.CertificateRequest,
@@ -315,6 +328,8 @@ func (s receiptSigner) Sign(
 	return s.fn(ctx, csr, p)
 }
 
+// TestCertificateReceiptSurvivesRegistrationFailureAndReplicas checks that certificate receipt
+// survives registration failure and replicas.
 func TestCertificateReceiptSurvivesRegistrationFailureAndReplicas(t *testing.T) {
 	g, password, csr := grantFixture(t)
 	root, key, err := ca.NewSelfSigned(ca.SelfSignedOptions{})
@@ -383,6 +398,7 @@ func TestCertificateReceiptSurvivesRegistrationFailureAndReplicas(t *testing.T) 
 	}
 }
 
+// TestCertificateIssuerFailurePaths checks certificate issuer failure paths.
 func TestCertificateIssuerFailurePaths(t *testing.T) {
 	g, password, csr := grantFixture(t)
 	root, key, err := ca.NewSelfSigned(ca.SelfSignedOptions{})

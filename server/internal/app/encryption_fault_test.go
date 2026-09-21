@@ -20,14 +20,17 @@ import (
 
 type escrowStateFailure struct{ state.Store }
 
+// Update returns a synthetic identity-state storage failure.
 func (escrowStateFailure) Update(context.Context, []string, func(state.Tx) error) error {
 	return errors.New("identity storage unavailable")
 }
 
 type escrowReadFailure struct{}
 
+// Read returns io.ErrUnexpectedEOF without reading bytes.
 func (escrowReadFailure) Read([]byte) (int, error) { return 0, io.ErrUnexpectedEOF }
 
+// TestFileVaultEscrowFailureOrdering checks FileVault escrow failure ordering.
 func TestFileVaultEscrowFailureOrdering(t *testing.T) {
 	const body = `{"CommandUUID":"escrow","ProfileIdentifier":"example.escrow","Location":"Help desk"}`
 	for _, tc := range []struct {

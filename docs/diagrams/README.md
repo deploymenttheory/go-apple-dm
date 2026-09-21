@@ -1,15 +1,11 @@
 # Diagrams
 
-Thirty-one interactive diagrams explain the library and reference server. They are generated
+Thirty-four interactive diagrams explain the library and reference server. They are generated
 with [Archify](https://github.com/tt-a1i/archify) from the JSON sources in [`src/`](src/).
 Architecture diagrams pin component paths to a repository revision. Other diagram
-types include a pinned implementation reference in their explanatory cards.
+types include named, pinned implementation references for their internal steps, participants,
+and states in their explanatory cards.
 Library source paths include the `devicemanagement/` package prefix.
-
-The pinned admin-plane and system-architecture diagrams predate the unified
-server RBAC change. For current bootstrap, roles, and policy behavior, follow
-[access control](../operations/access-control.md) and
-[decision 0056](../research/decisions/0056-unified-server-rbac.md).
 
 Click a diagram name below to open its interactive HTML preview from `main`. These previews
 require an internet connection and reflect changes after they are merged. The **HTML source**
@@ -51,8 +47,8 @@ to highlight matching components and connections and see their counts and exampl
 | [acme-internals](https://htmlpreview.github.io/?https://raw.githubusercontent.com/deploymenttheory/go-apple-dm/main/docs/diagrams/acme-internals.html) · [HTML source](acme-internals.html) | ACME coordination, nonce consumption, attestation and admission checks, CSR finalization, and certificate issuance. |
 | [push](https://htmlpreview.github.io/?https://raw.githubusercontent.com/deploymenttheory/go-apple-dm/main/docs/diagrams/push.html) · [HTML source](push.html) | The MDM wake path from a coalesced request to APNs and the device, including invalid-token events and certificate reloads. |
 | [apple-service-clients](https://htmlpreview.github.io/?https://raw.githubusercontent.com/deploymenttheory/go-apple-dm/main/docs/diagrams/apple-service-clients.html) · [HTML source](apple-service-clients.html) | Device-assignment, Apple Business Manager, software-catalogue, and Apps and Books clients, with their distinct authentication and completion behavior. |
-| [admin-plane](https://htmlpreview.github.io/?https://raw.githubusercontent.com/deploymenttheory/go-apple-dm/main/docs/diagrams/admin-plane.html) · [HTML source](admin-plane.html) | Historical authorization flow before decision 0056, setup and event administration, and Unix/Windows protection for CLI credential files. |
-| [split-deployment](https://htmlpreview.github.io/?https://raw.githubusercontent.com/deploymenttheory/go-apple-dm/main/docs/diagrams/split-deployment.html) · [HTML source](split-deployment.html) | Reusable in-process and proxy adapter compositions. Split mode is no longer offered by the reference binary; see decision 0056. |
+| [admin-plane](https://htmlpreview.github.io/?https://raw.githubusercontent.com/deploymenttheory/go-apple-dm/main/docs/diagrams/admin-plane.html) · [HTML source](admin-plane.html) | Unified administration authentication, bootstrap role setup, Cedar policy checks, request permissions, and CLI credential protection. |
+| [ddm-adapters](https://htmlpreview.github.io/?https://raw.githubusercontent.com/deploymenttheory/go-apple-dm/main/docs/diagrams/ddm-adapters.html) · [HTML source](ddm-adapters.html) | Reusable in-process and signed proxy adapters for host applications, including body integrity and replay protection. |
 | [reference-server-bench](https://htmlpreview.github.io/?https://raw.githubusercontent.com/deploymenttheory/go-apple-dm/main/docs/diagrams/reference-server-bench.html) · [HTML source](reference-server-bench.html) | Shared runtime supervision, embedded and process scenarios, fixture boundaries, and explicit live prerequisites and validation limits. |
 
 ## Flows and lifecycles
@@ -65,6 +61,9 @@ to highlight matching components and connections and see their counts and exampl
 | [enrollment-paths](https://htmlpreview.github.io/?https://raw.githubusercontent.com/deploymenttheory/go-apple-dm/main/docs/diagrams/enrollment-paths.html) · [HTML source](enrollment-paths.html) | Automated Device Enrollment, account-driven enrollment, and profile-based/OTA delivery converging on identity and check-in. |
 | [apns-certificate-workflows](https://htmlpreview.github.io/?https://raw.githubusercontent.com/deploymenttheory/go-apple-dm/main/docs/diagrams/apns-certificate-workflows.html) · [HTML source](apns-certificate-workflows.html) | Separate operator workflows for MDM push certificates and app notification credentials, including import and connection retirement. |
 | [test-harness](https://htmlpreview.github.io/?https://raw.githubusercontent.com/deploymenttheory/go-apple-dm/main/docs/diagrams/test-harness.html) · [HTML source](test-harness.html) | Independent unit, contract, fuzz, embedded, process, and live checks; the coverage gate and separate requirements for device acceptance. |
+| [native-webhooks](https://htmlpreview.github.io/?https://raw.githubusercontent.com/deploymenttheory/go-apple-dm/main/docs/diagrams/native-webhooks.html) · [HTML source](native-webhooks.html) | Durable observation and capture, subscription permissions, leased delivery, Standard Webhooks signing, and permitted replay. |
+| [blueprint-publication](https://htmlpreview.github.io/?https://raw.githubusercontent.com/deploymenttheory/go-apple-dm/main/docs/diagrams/blueprint-publication.html) · [HTML source](blueprint-publication.html) | Authoring validation, compilation and publication, preserved enrollment assignments, generation notifications, and device-side activation. |
+| [application-identity](https://htmlpreview.github.io/?https://raw.githubusercontent.com/deploymenttheory/go-apple-dm/main/docs/diagrams/application-identity.html) · [HTML source](application-identity.html) | Portable and native artifact inspection, installed and catalog discovery, explicit identity selection, and schema-aware authoring validation. |
 | [flow-dep-sync-assign](https://htmlpreview.github.io/?https://raw.githubusercontent.com/deploymenttheory/go-apple-dm/main/docs/diagrams/flow-dep-sync-assign.html) · [HTML source](flow-dep-sync-assign.html) | Device-assignment server-token setup followed by recurring inventory synchronization, assignment, and readback. |
 | [flow-ade-enrollment](https://htmlpreview.github.io/?https://raw.githubusercontent.com/deploymenttheory/go-apple-dm/main/docs/diagrams/flow-ade-enrollment.html) · [HTML source](flow-ade-enrollment.html) | Conditional admission and web authentication, profile delivery, identity issuance, Authenticate, and TokenUpdate. |
 | [flow-account-driven-enrollment](https://htmlpreview.github.io/?https://raw.githubusercontent.com/deploymenttheory/go-apple-dm/main/docs/diagrams/flow-account-driven-enrollment.html) · [HTML source](flow-account-driven-enrollment.html) | Discovery, alternative authentication methods, profile delivery, certificate association, and completed check-in. |
@@ -100,7 +99,7 @@ Review behavior against those sources and refresh the pins when implementations 
 
 Require all nine showcase artifact checks, with zero errors and warnings. Inspect the exact
 delivered HTML at 1440×900, 1600×1000, 1920×1080, and 2048×1320, including light and dark
-screenshots at the smallest and largest sizes. Keep horizontal containment, readable labels,
+screenshots at each size. Keep horizontal containment, readable labels,
 clear routes, and accessible explanatory cards. Vertical page scrolling is intentional.
 Upstream `visual-check` still treats vertical scrolling as a containment failure; retain that
 raw result and assess it against this reading policy rather than claiming an upstream pass.
@@ -146,7 +145,9 @@ Apple's documentation, which each package cites in the `# References` section of
   [Assign profile](https://developer.apple.com/documentation/devicemanagement/assign-profile)
 - [Apple Business Manager API](https://developer.apple.com/documentation/applebusinessapi) and
   [its OAuth](https://developer.apple.com/documentation/apple-school-and-business-manager-api/implementing-oauth-for-the-apple-school-manager-and-apple-business-api)
-- [RFC 8555](https://www.rfc-editor.org/rfc/rfc8555) (ACME) and
+- [Standard Webhooks specification](https://github.com/standard-webhooks/standard-webhooks/blob/main/spec/standard-webhooks.md)
+  and [Cedar authorization](https://docs.cedarpolicy.com/auth/authorization.html)
+- [RFC 8894](https://www.rfc-editor.org/rfc/rfc8894) (SCEP), [RFC 8555](https://www.rfc-editor.org/rfc/rfc8555) (ACME) and
   [RFC 8785](https://www.rfc-editor.org/rfc/rfc8785) (JSON Canonicalization Scheme)
 
 The design decisions the diagrams reflect are recorded in

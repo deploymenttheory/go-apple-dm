@@ -7,6 +7,7 @@ import (
 	"testing"
 )
 
+// TestPrivateCreationAndAccess checks private creation and access.
 func TestPrivateCreationAndAccess(t *testing.T) {
 	dir := t.TempDir()
 	root, err := os.OpenRoot(dir)
@@ -61,6 +62,8 @@ func TestPrivateCreationAndAccess(t *testing.T) {
 	}
 }
 
+// TestPrivateFileFailures checks private-file failures for missing parents, failed protection, and
+// closed handles.
 func TestPrivateFileFailures(t *testing.T) {
 	dir := t.TempDir()
 	missing := filepath.Join(dir, "missing", "file")
@@ -103,6 +106,7 @@ func TestPrivateFileFailures(t *testing.T) {
 	}
 }
 
+// TestProtectionFollowsOpenedFile checks protection follows opened file.
 func TestProtectionFollowsOpenedFile(t *testing.T) {
 	dir := t.TempDir()
 	original, moved := filepath.Join(dir, "original"), filepath.Join(dir, "moved")

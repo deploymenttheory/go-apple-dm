@@ -100,6 +100,8 @@ func Inspect(ctx context.Context, path string) (Identity, error) {
 	return inspect(ctx, path, runTool)
 }
 
+// inspect collects bundle metadata and native signing observations without launching the
+// application.
 func inspect(ctx context.Context, path string, run commandRunner) (Identity, error) {
 	if err := ctx.Err(); err != nil {
 		return Identity{}, err
@@ -122,6 +124,7 @@ func inspect(ctx context.Context, path string, run commandRunner) (Identity, err
 	return id, nil
 }
 
+// resolve resolves an application bundle and its main executable for inspection.
 func resolve(path string) (Identity, error) {
 	if strings.TrimSpace(path) == "" {
 		return Identity{}, ErrInput
@@ -170,6 +173,7 @@ func resolve(path string) (Identity, error) {
 	return id, nil
 }
 
+// architectures enumerates the executable architectures reported by lipo.
 func architectures(ctx context.Context, path string, run commandRunner) ([]string, error) {
 	info, err := os.Stat(path)
 	if err != nil {
@@ -198,6 +202,8 @@ func architectures(ctx context.Context, path string, run commandRunner) ([]strin
 	return names, nil
 }
 
+// inspectArchitecture collects and verifies signing metadata for one executable
+// architecture.
 func inspectArchitecture(ctx context.Context, path, name string, run commandRunner) (Architecture, error) {
 	a := Architecture{Name: name, Signature: Signature{Category: Unknown}}
 	out, err := run(ctx, "/usr/bin/codesign", "-d", "--verbose=4", "-r-", "--arch", name, path)
@@ -246,11 +252,13 @@ func inspectArchitecture(ctx context.Context, path, name string, run commandRunn
 	return a, nil
 }
 
+// isExit reports whether the error chain contains an exec.ExitError.
 func isExit(err error) bool {
 	var exit *exec.ExitError
 	return errors.As(err, &exit)
 }
 
+// parseMetadata extracts supported signing metadata from codesign output.
 func parseMetadata(out string) (map[string]string, error) {
 	fields := make(map[string]string)
 	for line := range strings.SplitSeq(out, "\n") {
@@ -282,6 +290,7 @@ type boundedOutput struct {
 	overflow bool
 }
 
+// Write retains subprocess output up to the configured bound and reports overflow.
 func (b *boundedOutput) Write(p []byte) (int, error) {
 	if len(p) > maxMetadata-b.buffer.Len() {
 		b.overflow = true
@@ -290,8 +299,10 @@ func (b *boundedOutput) Write(p []byte) (int, error) {
 	return b.buffer.Write(p)
 }
 
+// String returns the captured subprocess output.
 func (b *boundedOutput) String() string { return b.buffer.String() }
 
+// runTool runs an inspection tool with the configured deadline and bounded output capture.
 func runTool(ctx context.Context, tool string, args ...string) (string, error) {
 	cmd := exec.CommandContext(ctx, tool, args...) // #nosec G204 -- fixed tool; target is an absolute path and arguments never pass through a shell.
 	cmd.Env = append(os.Environ(), "LC_ALL=C")

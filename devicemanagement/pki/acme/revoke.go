@@ -18,11 +18,16 @@ import (
 
 // Revocations is the optional issuer registry used by the ACME server.
 type Revocations interface {
+	// Register records the issued certificate and its provenance under the selected issuer.
 	Register(context.Context, string, *x509.Certificate, revocation.Provenance) error
+	// ByCertificate resolves a certificate to its retained issuance and revocation record.
 	ByCertificate(context.Context, *x509.Certificate) (revocation.Certificate, error)
+	// Revoke records revocation for the issuer and serial number using the selected reason
+	// code.
 	Revoke(context.Context, string, *big.Int, int) error
 }
 
+// revocationURL returns this server's certificate-revocation endpoint URL.
 func (s *Server) revocationURL() string {
 	if s.cfg.Revocations == nil {
 		return ""
@@ -30,6 +35,8 @@ func (s *Server) revocationURL() string {
 	return s.url("/revoke-cert")
 }
 
+// revokeCertificate validates account or certificate-key authority before recording ACME
+// certificate revocation.
 func (s *Server) revokeCertificate(e *exchange) error {
 	var body struct {
 		Certificate string `json:"certificate"`

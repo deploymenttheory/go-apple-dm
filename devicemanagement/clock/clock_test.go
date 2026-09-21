@@ -7,6 +7,7 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/clock"
 )
 
+// TestRealClock checks real-clock time, elapsed duration, and timer delivery.
 func TestRealClock(t *testing.T) {
 	t.Parallel()
 	var c clock.Clock = clock.Real{}
@@ -25,6 +26,7 @@ func TestRealClock(t *testing.T) {
 	}
 }
 
+// TestFakeNowSinceAdvanceSet checks fake now since advance set.
 func TestFakeNowSinceAdvanceSet(t *testing.T) {
 	t.Parallel()
 	start := time.Date(2026, 9, 1, 12, 0, 0, 0, time.UTC)
@@ -43,6 +45,7 @@ func TestFakeNowSinceAdvanceSet(t *testing.T) {
 	}
 }
 
+// TestFakeAfterFiresWhenDue checks fake after fires when due.
 func TestFakeAfterFiresWhenDue(t *testing.T) {
 	t.Parallel()
 	start := time.Date(2026, 9, 1, 12, 0, 0, 0, time.UTC)
@@ -71,6 +74,7 @@ func TestFakeAfterFiresWhenDue(t *testing.T) {
 	}
 }
 
+// TestFakeAfterNonPositiveFiresImmediately checks fake after non positive fires immediately.
 func TestFakeAfterNonPositiveFiresImmediately(t *testing.T) {
 	t.Parallel()
 	f := clock.NewFake(time.Unix(0, 0))
@@ -86,6 +90,8 @@ func TestFakeAfterNonPositiveFiresImmediately(t *testing.T) {
 	}
 }
 
+// TestFakeSetFiresDueWaitersAndKeepsOthers checks that fake set fires due waiters and keeps
+// others.
 func TestFakeSetFiresDueWaitersAndKeepsOthers(t *testing.T) {
 	t.Parallel()
 	start := time.Date(2026, 9, 1, 0, 0, 0, 0, time.UTC)

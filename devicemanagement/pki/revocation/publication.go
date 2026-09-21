@@ -27,6 +27,7 @@ type publication struct {
 	Dirty     bool
 }
 
+// readPublication loads the stored certificate-status publication for an issuer.
 func readPublication(ctx context.Context, s state.Reader, issuer string) (publication, error) {
 	v, err := s.Get(ctx, crlKey(issuer))
 	if errors.Is(err, state.ErrNotFound) {
@@ -208,6 +209,7 @@ func (r *Registry) Handler(prefix string) http.Handler {
 	return mux
 }
 
+// statusError maps a certificate-status failure to the protocol response error.
 func statusError(w http.ResponseWriter, err error) {
 	status := http.StatusServiceUnavailable
 	if errors.Is(err, ErrUnknown) {

@@ -37,6 +37,7 @@ func Inspect(data []byte) (Info, error) {
 	return inspectLeaf(leaf)
 }
 
+// inspectLeaf extracts validity and topic authorization from the leaf push certificate.
 func inspectLeaf(leaf *x509.Certificate) (Info, error) {
 	i := Info{
 		Subject:      leaf.Subject.String(),
@@ -75,6 +76,7 @@ func inspectLeaf(leaf *x509.Certificate) (Info, error) {
 	return i, nil
 }
 
+// parseTopics decodes the certificate extension carrying allowed push topics.
 func parseTopics(data []byte, topics map[string][]string) error {
 	var sequence asn1.RawValue
 	rest, err := asn1.Unmarshal(data, &sequence)

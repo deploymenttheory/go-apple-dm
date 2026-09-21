@@ -111,6 +111,7 @@ func (d *ddmHarness) drain() ddmsync.DrainResult {
 	return res
 }
 
+// put stores a declaration fixture, failing the test on error.
 func (d *ddmHarness) put(raw string) *ddm.Declaration {
 	d.t.Helper()
 	decl, _, err := d.engine.PutDeclaration(context.Background(), []byte(raw))
@@ -120,6 +121,7 @@ func (d *ddmHarness) put(raw string) *ddm.Declaration {
 	return decl
 }
 
+// assign creates a set, adds its declaration members, and assigns it to an enrollment.
 func (d *ddmHarness) assign(id mdm.EnrollmentID, set string, identifiers ...string) {
 	d.t.Helper()
 	ctx := context.Background()
@@ -136,6 +138,7 @@ func (d *ddmHarness) assign(id mdm.EnrollmentID, set string, identifiers ...stri
 	}
 }
 
+// status indexes an enrollment's declaration status by identifier.
 func (d *ddmHarness) status(id mdm.EnrollmentID) map[string]ddm.DeclarationStatus {
 	d.t.Helper()
 	rows, err := d.engine.DeclarationStatus(context.Background(), id)
@@ -149,6 +152,7 @@ func (d *ddmHarness) status(id mdm.EnrollmentID) map[string]ddm.DeclarationStatu
 	return out
 }
 
+// countEvents counts captured events of the supplied type under the harness mutex.
 func (d *ddmHarness) countEvents(typ event.Type) int {
 	d.mu.Lock()
 	defer d.mu.Unlock()

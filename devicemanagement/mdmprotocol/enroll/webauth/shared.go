@@ -14,6 +14,8 @@ import (
 // browser binding check and consumption together; mismatches leave state intact.
 type SharedStore struct{ Backend state.Store }
 
+// browserStateKey constructs the browser-state storage key from a digest of the state
+// token.
 func browserStateKey(key string) string { return "oidc/state/" + browserDigest(key) }
 
 // Put implements StateStore.

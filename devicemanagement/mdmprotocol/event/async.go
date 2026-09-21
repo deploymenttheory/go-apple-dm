@@ -77,6 +77,7 @@ func NewAsync(cfg AsyncConfig, opts ...Option) (*Bus, error) {
 	return b, nil
 }
 
+// defaultAsyncConfig constructs the default bounded asynchronous-delivery settings.
 func defaultAsyncConfig() AsyncConfig {
 	return AsyncConfig{
 		Workers:         DefaultWorkers,
@@ -85,6 +86,7 @@ func defaultAsyncConfig() AsyncConfig {
 	}
 }
 
+// start starts the configured asynchronous delivery workers.
 func (b *Bus) start(cfg AsyncConfig) {
 	b.config = cfg
 	b.queue = make([]delivery, cfg.QueueCapacity)
@@ -112,6 +114,7 @@ func (b *Bus) Stats() Stats {
 	return out
 }
 
+// worker delivers queued events until the asynchronous bus is stopped.
 func (b *Bus) worker() {
 	defer b.wg.Done()
 	for {

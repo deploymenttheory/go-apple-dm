@@ -51,6 +51,7 @@ var (
 	_ storage.MigrationStore = (*Store)(nil)
 )
 
+// get looks up and validates an enrollment in the current locked store state.
 func (s *Store) get(id mdm.EnrollmentID) (*record, error) {
 	if err := id.Validate(); err != nil {
 		return nil, fmt.Errorf("%w: %w", storage.ErrInvalid, err)
@@ -95,6 +96,8 @@ func (s *Store) UpsertAuthenticate(
 	return s.resetAuthenticateLocked(r, id, msg, raw, at)
 }
 
+// resetAuthenticateLocked resets enrollment authentication state after a permitted identity
+// change.
 func (s *Store) resetAuthenticateLocked(
 	r *record,
 	id mdm.EnrollmentID,
@@ -143,6 +146,7 @@ func (s *Store) disableChildrenLocked(deviceID string, at time.Time) {
 	}
 }
 
+// dropCertLocked removes the current certificate-to-enrollment index entry.
 func (s *Store) dropCertLocked(deviceID string) {
 	for h, owner := range s.certs {
 		if owner.ID == deviceID {
@@ -367,6 +371,7 @@ func (s *Store) Enqueue(
 	return res, nil
 }
 
+// hasPendingKey reports whether a queued command already occupies the deduplication key.
 func hasPendingKey(r *record, key string) bool {
 	for _, q := range r.queue {
 		if q.DedupeKey == key && !q.State.Terminal() {
@@ -535,6 +540,7 @@ func (s *Store) Commands(
 	return out, nil
 }
 
+// containsState reports whether the queue state matches one of the requested states.
 func containsState(states []storage.State, s storage.State) bool {
 	return slices.Contains(states, s)
 }
@@ -649,6 +655,7 @@ func (s *Store) recordAssociationLocked(dev mdm.EnrollmentID, hash string, at ti
 	s.history = append(s.history, storage.CertAssociation{ID: dev, Hash: hash, At: at})
 }
 
+// historyLocked returns certificate-association history while the store lock is held.
 func (s *Store) historyLocked(match func(storage.CertAssociation) bool) []storage.CertAssociation {
 	out := []storage.CertAssociation{}
 	for _, a := range s.history {

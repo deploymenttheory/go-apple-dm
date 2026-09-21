@@ -13,6 +13,8 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/server/webhook"
 )
 
+// runWebhooks parses and executes the webhooks subcommand, reporting argument and operation
+// failures to the CLI caller.
 func runWebhooks(ctx context.Context, e *env, args []string) error {
 	if len(args) == 0 {
 		return fmt.Errorf("%w: webhooks needs create, update, list, get, delete, pause, resume, enable, disable, rotate, test, catalogue, deliveries, retry, replay or status", ErrUsage)

@@ -19,6 +19,8 @@ import (
 
 type issuedByKey struct{}
 
+// issuerFromContext returns the recorded issuer revision or an empty string when issuance
+// has not supplied one.
 func issuerFromContext(ctx context.Context) string {
 	s, _ := ctx.Value(issuedByKey{}).(string)
 	return s
@@ -31,6 +33,7 @@ type managedIssuerService struct {
 	scep       http.Handler
 }
 
+// scepPath returns the issuer-specific SCEP route or the shared default route.
 func (e *enrollment) scepPath() string {
 	if e.scepRoute != "" {
 		return e.scepRoute
@@ -38,6 +41,7 @@ func (e *enrollment) scepPath() string {
 	return PathSCEP
 }
 
+// acmePath returns the issuer-specific ACME route or the shared default route.
 func (e *enrollment) acmePath() string {
 	if e.acmeRoute != "" {
 		return e.acmeRoute
@@ -45,14 +49,20 @@ func (e *enrollment) acmePath() string {
 	return PathACME
 }
 
+// managedIssuerPairs loads enrollment issuer key pairs excluding cancelled and retired
+// revisions.
 func (a *App) managedIssuerPairs(ctx context.Context) ([]tls.Certificate, error) {
 	return a.managedPairs(ctx, false)
 }
 
+// managedPairs loads key pairs for the configured enrollment issuer with explicit control
+// over retired revisions.
 func (a *App) managedPairs(ctx context.Context, includeRetired bool) ([]tls.Certificate, error) {
 	return a.certificatePairs(ctx, a.cfg.Setup.IssuerID, includeRetired)
 }
 
+// certificatePairs loads usable certificate revisions, excluding cancelled or incomplete
+// material and optionally retired revisions.
 func (a *App) certificatePairs(
 	ctx context.Context,
 	id string,
@@ -81,6 +91,7 @@ func (a *App) certificatePairs(
 	return out, nil
 }
 
+// managedRoots builds a trust pool from non-retired managed enrollment issuers.
 func (a *App) managedRoots(ctx context.Context) (*x509.CertPool, error) {
 	pool := x509.NewCertPool()
 	pairs, err := a.managedIssuerPairs(ctx)
@@ -93,6 +104,8 @@ func (a *App) managedRoots(ctx context.Context) (*x509.CertPool, error) {
 	return pool, nil
 }
 
+// managedRegistry builds certificate-status services with all retained issuer signing
+// keys, including retired issuers needed for revocation.
 func (a *App) managedRegistry(ctx context.Context) (*revocation.Registry, error) {
 	pairs, err := a.managedPairs(ctx, true)
 	if err != nil {
@@ -123,6 +136,8 @@ func (a *App) managedRegistry(ctx context.Context) (*revocation.Registry, error)
 	return registry, nil
 }
 
+// certificateRegistry returns a registry built from managed identities or the configured
+// static registry.
 func (a *App) certificateRegistry(ctx context.Context) (*revocation.Registry, error) {
 	if a.Certificates != nil {
 		return a.managedRegistry(ctx)
@@ -165,6 +180,8 @@ func (a *App) ManagedTLSConfig(hello *tls.ClientHelloInfo) (*tls.Config, error) 
 	}, nil
 }
 
+// profileIssuer selects the context's target issuer revision or falls back to the active
+// managed issuer.
 func (a *App) profileIssuer(ctx context.Context) (*managedIssuerService, error) {
 	rev, _ := ctx.Value(targetIssuerKey{}).(string)
 	if rev == "" {
@@ -177,6 +194,8 @@ func (a *App) profileIssuer(ctx context.Context) (*managedIssuerService, error) 
 	return a.managedIssuer(ctx, rev)
 }
 
+// managedIssuer validates the requested issuer revision and initializes or reuses its
+// cached SCEP/ACME services under the issuer mutex.
 func (a *App) managedIssuer(ctx context.Context, rev string) (*managedIssuerService, error) {
 	if a.enroll == nil {
 		return nil, fmt.Errorf("%w: enrollment is not configured", lifecycle.ErrConflict)
@@ -271,6 +290,8 @@ func (a *App) managedIssuer(ctx context.Context, rev string) (*managedIssuerServ
 	return service, nil
 }
 
+// managedIssuanceHandler dispatches an issuer-specific SCEP or ACME URL, returning 404
+// when its issuer cannot be loaded.
 func (a *App) managedIssuanceHandler(isACME bool) http.Handler {
 	prefix := PathSCEP + "/issuers/"
 	if isACME {
@@ -292,6 +313,8 @@ func (a *App) managedIssuanceHandler(isACME bool) http.Handler {
 	})
 }
 
+// profileSigningIdentity returns a callback that resolves the current managed signing
+// identity, or nil for static enrollment configuration.
 func (a *App) profileSigningIdentity(
 	e *enrollment,
 ) func(context.Context) (*x509.Certificate, crypto.Signer, error) {
@@ -307,6 +330,8 @@ func (a *App) profileSigningIdentity(
 	}
 }
 
+// managedProfileTrust collects distinct non-retired HTTPS and enrollment CA certificates
+// for enrollment profiles.
 func (a *App) managedProfileTrust(ctx context.Context) ([]*x509.Certificate, error) {
 	seen := map[string]bool{}
 	out := []*x509.Certificate{}

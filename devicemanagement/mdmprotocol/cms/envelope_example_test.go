@@ -21,6 +21,8 @@ func readRotatedKey(response *commands.RotateFileVaultKeyResponse, cert *x509.Ce
 	return cms.DecryptEnvelope(response.RotateResult.EncryptedNewRecoveryKey, cert, key)
 }
 
+// ExampleDecryptEnvelope demonstrates selecting the retained reply certificate when decrypting a
+// rotated FileVault key.
 func ExampleDecryptEnvelope() {
 	// For the outgoing RotateFileVaultKey command, set
 	// ReplyEncryptionCertificate to cert.Raw. Persist that certificate and its

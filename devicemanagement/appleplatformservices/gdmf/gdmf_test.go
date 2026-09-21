@@ -11,6 +11,8 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/appleplatformservices/gdmf/gdmftest"
 )
 
+// TestCatalogLatest checks latest GDMF asset selection, public visibility, tie handling, and
+// result isolation.
 func TestCatalogLatest(t *testing.T) {
 	t.Parallel()
 	cat := gdmftest.Catalog()
@@ -55,6 +57,7 @@ func TestCatalogLatest(t *testing.T) {
 	}
 }
 
+// TestCompareVersions checks ordering of OS version strings.
 func TestCompareVersions(t *testing.T) {
 	t.Parallel()
 	cases := []struct {
@@ -79,6 +82,8 @@ func TestCompareVersions(t *testing.T) {
 	}
 }
 
+// TestClient checks GDMF fetching, cache reuse, stale fallback, and invalid or unavailable
+// responses.
 func TestClient(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
@@ -193,6 +198,7 @@ func TestClient(t *testing.T) {
 	})
 }
 
+// TestFake checks the fake GDMF service's configured responses and request counts.
 func TestFake(t *testing.T) {
 	t.Parallel()
 	f := gdmftest.NewFake("iPhone15,2", "Nope1,1")

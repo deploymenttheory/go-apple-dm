@@ -36,10 +36,18 @@ type StoredReport struct {
 // ReportStore is the ingestion, credential lifecycle and inspection contract.
 // Accept must revalidate the credential atomically with persisting the report.
 type ReportStore interface {
+	// RotateCredential replaces the enrollment's ingestion credential and returns the new
+	// token once, invalidating the previous credential.
 	RotateCredential(context.Context, mdm.EnrollmentID) (string, error)
+	// RevokeCredential invalidates the enrollment's current ingestion credential.
 	RevokeCredential(context.Context, mdm.EnrollmentID) error
+	// Authenticate resolves a valid ingestion credential to its bound enrollment without
+	// revealing whether an unknown credential or enrollment exists.
 	Authenticate(context.Context, string) (mdm.EnrollmentID, error)
+	// Accept revalidates the credential and stores its report atomically, binding the report
+	// to the authenticated enrollment.
 	Accept(context.Context, string, *Report) error
+	// Reports returns the retained reports for an enrollment in a bounded page.
 	Reports(context.Context, mdm.EnrollmentID, paging.Page) (paging.Result[StoredReport], error)
 }
 
@@ -58,6 +66,7 @@ type ingestionCredential struct {
 	Digest     []byte
 }
 
+// enrollmentKey constructs the state key for an enrolled content-cache server.
 func enrollmentKey(id mdm.EnrollmentID) (string, error) {
 	if id.Validate() != nil || id.Channel != mdm.ChannelDevice {
 		return "", state.ErrInvalid
@@ -105,6 +114,7 @@ func (s *StateStore) RevokeCredential(ctx context.Context, id mdm.EnrollmentID) 
 	return s.State.Update(ctx, []string{key}, func(tx state.Tx) error { return tx.Delete(ctx, key) })
 }
 
+// credentialKey constructs the state key for a content-cache reporting credential.
 func credentialKey(token string) (string, error) {
 	key, secret, ok := strings.Cut(token, ".")
 	if !ok || len(key) != 64 || len(secret) != 43 {
@@ -119,6 +129,8 @@ func credentialKey(token string) (string, error) {
 	return storePrefix + "credential/" + key, nil
 }
 
+// authenticate authenticates a reporting token against its stored digest and bound
+// enrollment identity.
 func authenticate(ctx context.Context, reader state.Reader, token string) (mdm.EnrollmentID, error) {
 	key, err := credentialKey(token)
 	if err != nil {

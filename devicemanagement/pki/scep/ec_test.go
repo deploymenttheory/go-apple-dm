@@ -11,6 +11,7 @@ import (
 	"time"
 )
 
+// ecIdentity creates a self-signed P-256 certificate and private key.
 func ecIdentity(t *testing.T) (*x509.Certificate, *ecdsa.PrivateKey) {
 	t.Helper()
 	key, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)

@@ -24,7 +24,7 @@ idempotency does not replace the queue's existing command-UUID conflict rules.
 Personal rotation supplies `ReplyEncryptionCertificate`; institutional rotation
 supplies `NewCertificate`. `EscrowProfile` creates a system profile containing the
 certificate and its referencing `com.apple.security.FDERecoveryKeyEscrow` payload.
-The admin escrow route authorizes `EnqueueCommand` for an enabled device enrollment.
+The admin escrow route authorizes `enqueueCommand.InstallProfile` for an enabled device enrollment.
 It prepares and queues; the caller checks prerequisites, pushes, tracks the result,
 retrieves encrypted material and persists the recovered secret.
 

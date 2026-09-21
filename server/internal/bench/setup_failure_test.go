@@ -15,6 +15,7 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/testpki"
 )
 
+// TestFixtureSetupRefusesUnwritableOutputs checks that fixture setup refuses unwritable outputs.
 func TestFixtureSetupRefusesUnwritableOutputs(t *testing.T) {
 	t.Parallel()
 	for _, name := range []string{"fixtures", "fixtures/apns-root.pem", "fixtures/app.pem", "fixtures/app.key", "fixtures/oidc-root.pem", "fixtures/device-root.pem", "fixtures/user-ha1.json", "fixtures/attestation.json", "fixtures/attestation-root.pem", "fixtures/device-root.key", "fixtures/dep-tls.pem", "fixtures/dep-tokens.json", "fixtures/abm-tls.pem", "fixtures/abm.key"} {
@@ -35,6 +36,8 @@ func TestFixtureSetupRefusesUnwritableOutputs(t *testing.T) {
 	}
 }
 
+// TestLiveWorkspaceImportsAndPreservesMDMCredential checks that live workspace imports and
+// preserves MDM credential.
 func TestLiveWorkspaceImportsAndPreservesMDMCredential(t *testing.T) {
 	t.Parallel()
 	w := testWorkspace(t, "live")
@@ -79,6 +82,7 @@ func TestLiveWorkspaceImportsAndPreservesMDMCredential(t *testing.T) {
 	}
 }
 
+// TestSeedingPropagatesImportFailures checks that seeding propagates import failures.
 func TestSeedingPropagatesImportFailures(t *testing.T) {
 	t.Parallel()
 	for _, name := range []string{"malformed listing", "MDM rejected", "missing app certificate", "missing app key", "app rejected"} {
@@ -122,6 +126,8 @@ func TestSeedingPropagatesImportFailures(t *testing.T) {
 	}
 }
 
+// TestScenarioPrerequisiteFailures checks scenario prerequisite rejection for invalid enrollment,
+// DEP, and attestation inputs.
 func TestScenarioPrerequisiteFailures(t *testing.T) {
 	t.Parallel()
 	w := testWorkspace(t, "simulated")
@@ -158,6 +164,8 @@ func TestScenarioPrerequisiteFailures(t *testing.T) {
 	}
 }
 
+// TestReadinessDetectsExitedOrCancelledRuntime checks that readiness detects exited or cancelled
+// runtime.
 func TestReadinessDetectsExitedOrCancelledRuntime(t *testing.T) {
 	t.Parallel()
 	for _, name := range []string{"clean exit", "failed exit", "cancel", "invalid URL"} {
@@ -207,6 +215,7 @@ func TestReadinessDetectsExitedOrCancelledRuntime(t *testing.T) {
 	}
 }
 
+// TestSupervisorAuthorizationAndScripts checks supervisor authorization and scripts.
 func TestSupervisorAuthorizationAndScripts(t *testing.T) {
 	for _, mode := range []string{"simulated", "live"} {
 		t.Run(mode, func(t *testing.T) {

@@ -20,6 +20,8 @@ type assignmentRun struct {
 	owner string
 }
 
+// claim acquires the account assignment lease unless another live owner or the persisted
+// retry deadline prevents a run.
 func (a *Assigner) claim(ctx context.Context) (*assignmentRun, time.Time, error) {
 	r := &assignmentRun{a: a, owner: rand.Text()}
 	var deadline time.Time
@@ -46,6 +48,8 @@ func (a *Assigner) claim(ctx context.Context) (*assignmentRun, time.Time, error)
 	return r, deadline, err
 }
 
+// lock locks the account and verifies that this run still owns an unexpired assignment
+// lease.
 func (r *assignmentRun) lock(ctx context.Context, tx Tx) (AssignmentState, error) {
 	if err := tx.LockAccount(ctx, r.a.cfg.Account); err != nil {
 		return AssignmentState{}, err
@@ -60,6 +64,7 @@ func (r *assignmentRun) lock(ctx context.Context, tx Tx) (AssignmentState, error
 	return state, nil
 }
 
+// renew extends this run's persisted lease while retaining its ownership fence.
 func (r *assignmentRun) renew(ctx context.Context) error {
 	return r.a.cfg.Store.Update(ctx, func(tx Tx) error {
 		state, err := r.lock(ctx, tx)
@@ -71,6 +76,7 @@ func (r *assignmentRun) renew(ctx context.Context) error {
 	})
 }
 
+// throttle persists account-wide assignment backoff while this run owns the lease.
 func (r *assignmentRun) throttle(ctx context.Context, retry time.Duration) (time.Time, error) {
 	var deadline time.Time
 	err := r.a.cfg.Store.Update(ctx, func(tx Tx) error {
@@ -89,6 +95,7 @@ func (r *assignmentRun) throttle(ctx context.Context, retry time.Duration) (time
 	return deadline, err
 }
 
+// release releases this run's assignment lease without overwriting a replacement owner.
 func (r *assignmentRun) release(ctx context.Context, success bool) error {
 	return r.a.cfg.Store.Update(ctx, func(tx Tx) error {
 		if err := tx.LockAccount(ctx, r.a.cfg.Account); err != nil {

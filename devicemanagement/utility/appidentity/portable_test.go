@@ -13,6 +13,7 @@ import (
 	"testing"
 )
 
+// TestPortableFixtureMatchesAppleTools checks that portable fixture matches apple tools.
 func TestPortableFixtureMatchesAppleTools(t *testing.T) {
 	f, err := os.Open("testdata/fixture.macho")
 	if err != nil {
@@ -51,6 +52,8 @@ func TestPortableFixtureMatchesAppleTools(t *testing.T) {
 	}
 }
 
+// portableImage builds a minimal Mach-O image containing code directories for the supplied signing
+// IDs.
 func portableImage(ids ...string) []byte {
 	var dirs [][]byte
 	for _, id := range ids {
@@ -99,6 +102,8 @@ func portableImage(ids ...string) []byte {
 	return bytes.Join([][]byte{b, cmd, super}, nil)
 }
 
+// TestPortableUnsignedMultipleDirectoriesAndErrors checks portable unsigned multiple directories
+// and errors.
 func TestPortableUnsignedMultipleDirectoriesAndErrors(t *testing.T) {
 	for _, ids := range [][]string{nil, {"com.example.same", "com.example.same"}} {
 		b := portableImage(ids...)
@@ -121,6 +126,7 @@ func TestPortableUnsignedMultipleDirectoriesAndErrors(t *testing.T) {
 
 type portableFS struct{ open func(string) (fs.File, error) }
 
+// Open calls the injected filesystem-open function.
 func (f portableFS) Open(name string) (fs.File, error) { return f.open(name) }
 
 type portableFile struct {
@@ -128,6 +134,7 @@ type portableFile struct {
 	readErr, statErr, closeErr error
 }
 
+// Read injects a file-read failure or delegates to the file.
 func (f portableFile) Read(p []byte) (int, error) {
 	if f.readErr != nil {
 		return 0, f.readErr
@@ -135,14 +142,19 @@ func (f portableFile) Read(p []byte) (int, error) {
 	return f.File.Read(p)
 }
 
+// Stat injects a file-stat failure or delegates to the file.
 func (f portableFile) Stat() (fs.FileInfo, error) {
 	if f.statErr != nil {
 		return nil, f.statErr
 	}
 	return f.File.Stat()
 }
+
+// Close closes the underlying file and returns the configured close error.
 func (f portableFile) Close() error { _ = f.File.Close(); return f.closeErr }
 
+// TestPortableBundleFailures checks portable bundle rejection of invalid metadata, filesystem
+// failures, and invalid executables.
 func TestPortableBundleFailures(t *testing.T) {
 	if _, err := ReadBundle(t.Context(), nil, "."); !errors.Is(err, ErrInput) {
 		t.Fatal(err)

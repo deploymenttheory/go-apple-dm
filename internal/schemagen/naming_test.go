@@ -2,6 +2,7 @@ package schemagen
 
 import "testing"
 
+// TestGoName checks conversion of schema names into Go identifiers.
 func TestGoName(t *testing.T) {
 	t.Parallel()
 	cases := map[string]string{
@@ -31,6 +32,7 @@ func TestGoName(t *testing.T) {
 	}
 }
 
+// TestTypeNameForSchema checks type name for schema.
 func TestTypeNameForSchema(t *testing.T) {
 	// Not parallel: mutates the package-level override map.
 	cases := []struct {

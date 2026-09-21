@@ -29,6 +29,8 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/storage"
 )
 
+// managedRolloverApp creates a replacement-security application with observed macOS product and
+// version data.
 func managedRolloverApp(t *testing.T) (*App, mdm.EnrollmentID) {
 	t.Helper()
 	a, id := replacementSecurityApp(t)
@@ -43,6 +45,8 @@ func managedRolloverApp(t *testing.T) (*App, mdm.EnrollmentID) {
 	return a, id
 }
 
+// TestManagedIssuerRolloverKeepsOfflineDeviceAndRetiresLegacyRoute checks that managed issuer
+// rollover keeps offline device and retires legacy route.
 func TestManagedIssuerRolloverKeepsOfflineDeviceAndRetiresLegacyRoute(t *testing.T) {
 	ctx := t.Context()
 	a, id := managedRolloverApp(t)
@@ -248,6 +252,7 @@ func TestManagedIssuerRolloverKeepsOfflineDeviceAndRetiresLegacyRoute(t *testing
 	}
 }
 
+// TestSetupAPIAuthRolesAndPublicHistory checks setup API auth roles and public history.
 func TestSetupAPIAuthRolesAndPublicHistory(t *testing.T) {
 	path, err := InitSetupFile(
 		SetupInitOptions{
@@ -342,6 +347,8 @@ func TestSetupAPIAuthRolesAndPublicHistory(t *testing.T) {
 	}
 }
 
+// TestBootstrapKeepsImportedSecretsAndRejectsDifferentDatabaseKey checks that bootstrap keeps
+// imported secrets and rejects different database key.
 func TestBootstrapKeepsImportedSecretsAndRejectsDifferentDatabaseKey(t *testing.T) {
 	dir := t.TempDir()
 	secret := filepath.Join(dir, "old-key")
@@ -396,6 +403,8 @@ func TestBootstrapKeepsImportedSecretsAndRejectsDifferentDatabaseKey(t *testing.
 	}
 }
 
+// TestHTTPSCARolloverWaitsForTrustBeforeChangingTLS checks that httpsca rollover waits for trust
+// before changing TLS.
 func TestHTTPSCARolloverWaitsForTrustBeforeChangingTLS(t *testing.T) {
 	ctx := t.Context()
 	a, id := managedRolloverApp(t)

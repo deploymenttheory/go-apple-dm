@@ -24,8 +24,14 @@ type advancingClock struct {
 	waits []time.Duration
 }
 
-func (c *advancingClock) Now() time.Time                  { c.mu.Lock(); defer c.mu.Unlock(); return c.now }
+// Now returns the clock's current time under its mutex.
+func (c *advancingClock) Now() time.Time { c.mu.Lock(); defer c.mu.Unlock(); return c.now }
+
+// Since returns the elapsed duration from t to the fixture clock's current time.
 func (c *advancingClock) Since(t time.Time) time.Duration { return c.Now().Sub(t) }
+
+// After advances the fixture clock, records the delay, and returns an already populated timer
+// channel.
 func (c *advancingClock) After(d time.Duration) <-chan time.Time {
 	c.mu.Lock()
 	defer c.mu.Unlock()
@@ -36,6 +42,7 @@ func (c *advancingClock) After(d time.Duration) <-chan time.Time {
 	return ch
 }
 
+// advance advances the fixture clock under its mutex.
 func (c *advancingClock) advance(d time.Duration) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
@@ -49,6 +56,7 @@ type fixture struct {
 	configReads atomic.Int32
 }
 
+// newFixture creates a fake Apps and Books service and client with a controllable clock.
 func newFixture(t *testing.T, handler http.HandlerFunc) *fixture {
 	t.Helper()
 	f := &fixture{clock: &advancingClock{now: time.Date(2026, 9, 15, 0, 0, 0, 0, time.UTC)}}
@@ -109,6 +117,8 @@ func newFixture(t *testing.T, handler http.HandlerFunc) *fixture {
 	return f
 }
 
+// TestLicensingAndUserLifecycle checks license association and disassociation alongside user
+// invitation and retirement.
 func TestLicensingAndUserLifecycle(t *testing.T) {
 	seen := map[string]int{}
 	var mu sync.Mutex
@@ -201,6 +211,7 @@ func TestLicensingAndUserLifecycle(t *testing.T) {
 	}
 }
 
+// TestPagesAndDynamicLimits checks pagination against the service's current limits.
 func TestPagesAndDynamicLimits(t *testing.T) {
 	var posts atomic.Int32
 	f := newFixture(t, func(w http.ResponseWriter, r *http.Request) {
@@ -311,6 +322,8 @@ func TestPagesAndDynamicLimits(t *testing.T) {
 	}
 }
 
+// TestRetriesCancellationAndIdentity checks retry bounds, cancellation, and client identity on
+// Apps and Books requests.
 func TestRetriesCancellationAndIdentity(t *testing.T) {
 	var reads, posts atomic.Int32
 	f := newFixture(t, func(w http.ResponseWriter, r *http.Request) {
@@ -396,6 +409,7 @@ func TestRetriesCancellationAndIdentity(t *testing.T) {
 	}
 }
 
+// TestNotification checks authenticated decoding of Apps and Books notifications.
 func TestNotification(t *testing.T) {
 	const data = `{"notification":{"eventId":"E","result":"SUCCESS","type":"ASSOCIATE","assignments":[{"adamId":"1","pricingParam":"STDQ","clientUserId":"U"}]},"notificationId":"N","notificationType":"ASSET_MANAGEMENT","uId":"L"}`
 	request := func(body, auth string) *http.Request {
@@ -446,8 +460,11 @@ func TestNotification(t *testing.T) {
 
 type roundTripFunc func(*http.Request) (*http.Response, error)
 
+// RoundTrip calls the injected HTTP round-trip function.
 func (fn roundTripFunc) RoundTrip(r *http.Request) (*http.Response, error) { return fn(r) }
 
+// TestConfigurationOwnershipAndRedirects checks client-configuration ownership and refusal of
+// credential-bearing redirects.
 func TestConfigurationOwnershipAndRedirects(t *testing.T) {
 	for _, owner := range []string{"", "ours", "other"} {
 		t.Run("owner="+owner, func(t *testing.T) {
@@ -526,6 +543,8 @@ func TestConfigurationOwnershipAndRedirects(t *testing.T) {
 	}
 }
 
+// TestConcurrentConfigurationAndTokenIsolation checks configuration updates and token isolation
+// under concurrent requests.
 func TestConcurrentConfigurationAndTokenIsolation(t *testing.T) {
 	fixtures := []*fixture{
 		newFixture(

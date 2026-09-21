@@ -24,6 +24,8 @@ type policySchema struct {
 	json      []byte
 }
 
+// buildSchema builds Cedar action and entity constraints from the registered administrative
+// catalogue.
 func (r *Registry) buildSchema() error {
 	entities := map[string]any{
 		"Principal": map[string]any{"memberOfTypes": []string{"Role"}},
@@ -70,6 +72,7 @@ func (r *Registry) buildSchema() error {
 // Schema returns the exact schema used to validate policies and requests.
 func (r *Registry) Schema() json.RawMessage { return append(json.RawMessage(nil), r.schema.json...) }
 
+// validatePolicy checks a parsed policy against the registry's Cedar schema.
 func (r *Registry) validatePolicy(id string, p *cedar.Policy) error {
 	if err := r.schema.validator.Policy(id, (*expast.Policy)(p.AST())); err != nil {
 		return fmt.Errorf("%w: policy %s: %w", ErrInvalid, id, err)
@@ -77,6 +80,7 @@ func (r *Registry) validatePolicy(id string, p *cedar.Policy) error {
 	return nil
 }
 
+// actionEntities constructs Cedar action entities and their action-group parents.
 func (r *Registry) actionEntities() types.EntityMap {
 	out := types.EntityMap{}
 	for _, a := range r.Actions() {

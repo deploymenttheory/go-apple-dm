@@ -8,7 +8,7 @@ Configuration names must remain distinguishable from Apple protocol keys and oth
 
 The reference server uses `DM_*` environment variables and the CLI uses `DMCTL_*`. Binaries are `dmserver` and `dmctl`. Complete variable spellings are constants so operators can locate them directly in source.
 
-`MDM` remains in protocol identifiers such as the `mdm` role, `MachineInfo` keys and Apple service error/activity names. References to other projects' tools retain their original names.
+`MDM` remains in protocol identifiers such as the `mdm` package, `MachineInfo` keys and Apple service error/activity names. References to other projects' tools retain their original names.
 
 ## Rationale
 
@@ -20,7 +20,7 @@ The parser does not provide legacy `MDM_*` or `MDMCTL_*` aliases. Existing confi
 
 ## Verification
 
-Configuration tests exercise server and CLI names and role values. Protocol conformance and service-client tests pin Apple's wire constants. Container integration uses the documented `DM_*` variables.
+Configuration tests exercise server and CLI names and certificate workflow roles. Protocol conformance and service-client tests pin Apple's wire constants. Container integration uses the documented `DM_*` variables.
 
 ## References
 

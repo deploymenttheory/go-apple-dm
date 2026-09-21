@@ -20,6 +20,7 @@ type apiRecorder struct {
 	bodies   []string
 }
 
+// record captures the request method, URI, and body under the recorder mutex.
 func (a *apiRecorder) record(r *http.Request) {
 	body, _ := io.ReadAll(r.Body)
 	a.mu.Lock()
@@ -28,12 +29,14 @@ func (a *apiRecorder) record(r *http.Request) {
 	a.bodies = append(a.bodies, string(body))
 }
 
+// seen returns a copy of captured request summaries under the recorder mutex.
 func (a *apiRecorder) seen() []string {
 	a.mu.Lock()
 	defer a.mu.Unlock()
 	return append([]string(nil), a.requests...)
 }
 
+// sawPrefix reports whether a captured request starts with the supplied prefix.
 func (a *apiRecorder) sawPrefix(prefix string) bool {
 	for _, r := range a.seen() {
 		if strings.HasPrefix(r, prefix) {
@@ -43,6 +46,7 @@ func (a *apiRecorder) sawPrefix(prefix string) bool {
 	return false
 }
 
+// mdmServer starts a fake MDM admin server and returns its request recorder and CLI environment.
 func mdmServer(t *testing.T) (*apiRecorder, map[string]string) {
 	t.Helper()
 	rec := &apiRecorder{}
@@ -178,6 +182,7 @@ func TestMDMVerbs(t *testing.T) {
 	}
 }
 
+// containsAny reports whether any captured request contains the supplied text.
 func containsAny(reqs []string, want string) bool {
 	for _, r := range reqs {
 		if strings.Contains(r, want) {
@@ -363,6 +368,8 @@ func TestMDMVerbsRejectAnUnknownFlag(t *testing.T) {
 	}
 }
 
+// TestContentCacheUsage checks content-cache CLI usage, required client configuration, and
+// rotation failures.
 func TestContentCacheUsage(t *testing.T) {
 	for _, args := range [][]string{{"content-cache"}, {"content-cache", "unknown"}, {"content-cache", "rotate"}, {"content-cache", "reports", "-invalid"}} {
 		if _, _, err := run(t, noConfig(t), args...); !errors.Is(err, dmctl.ErrUsage) {

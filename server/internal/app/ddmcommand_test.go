@@ -128,6 +128,8 @@ func TestAdminReadDoesNotKick(t *testing.T) {
 	checkAdminNotifierDrains(t, http.MethodGet, "/admin/v1/config", "", 0)
 }
 
+// checkAdminNotifierDrains checks how many immediate notifier drains an admin mutation triggers
+// without advancing the polling clock.
 func checkAdminNotifierDrains(t *testing.T, method, path, body string, want int) {
 	t.Helper()
 	synctest.Test(t, func(t *testing.T) {

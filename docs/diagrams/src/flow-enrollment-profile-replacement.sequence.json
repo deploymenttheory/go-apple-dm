@@ -102,10 +102,20 @@
         "ACMECertificate — https://developer.apple.com/documentation/devicemanagement/acmecertificate",
         "SCEP — https://developer.apple.com/documentation/devicemanagement/scep",
         "Replacement design — https://github.com/deploymenttheory/go-apple-dm/blob/main/docs/research/decisions/0009-enrollment-profiles.md",
-        "Mac enrollment procedure — https://github.com/deploymenttheory/go-apple-dm/blob/main/docs/operations/mac-enrollment-testing.md",
-        "Implementation — https://github.com/deploymenttheory/go-apple-dm/blob/7500eb25e50a2913338339d5fced18dc7f41fdc3/server/service/replacement.go"
+        "Mac enrollment procedure — https://github.com/deploymenttheory/go-apple-dm/blob/main/docs/operations/mac-enrollment-testing.md"
       ],
       "dot": "transport"
+    },
+    {
+      "title": "Implementation references",
+      "dot": "artifact",
+      "items": [
+        "operator: Operator or bench — https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/server/internal/bench/enrollment.go",
+        "admin: Enrollment admin — https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/server/internal/app/adminmdm.go",
+        "store: Replacement state — https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/devicemanagement/storage/replacement.go",
+        "issuer: Identity issuer — https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/server/internal/app/enroll.go",
+        "core: MDM service — https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/server/service/replacement.go"
+      ]
     }
   ],
   "messages": [

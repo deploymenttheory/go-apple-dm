@@ -42,6 +42,7 @@ type adminHarness struct {
 // countingPusher stands in for APNs and records who was woken.
 type countingPusher struct{ woke []mdm.EnrollmentID }
 
+// Push records push targets and reports that each push was sent.
 func (p *countingPusher) Push(
 	_ context.Context,
 	targets []push.Target,
@@ -54,6 +55,8 @@ func (p *countingPusher) Push(
 	return out, nil
 }
 
+// newAdminHarness builds the reference server with SQLite and exposes its authorization store and
+// captured audit and push state.
 func newAdminHarness(t *testing.T) *adminHarness {
 	t.Helper()
 	dsn := filepath.Join(t.TempDir(), "admin.db")
@@ -114,6 +117,7 @@ func (h *adminHarness) ctl(t *testing.T, token, stdin string, args ...string) (s
 	return out.String(), nil
 }
 
+// mint creates required roles and mints a token for the supplied principal.
 func (h *adminHarness) mint(t *testing.T, p adminauth.Principal) string {
 	t.Helper()
 	for _, role := range p.Roles {
@@ -134,8 +138,8 @@ func (h *adminHarness) mint(t *testing.T, p adminauth.Principal) string {
 func TestE2E_AdminCLI(t *testing.T) {
 	h := newAdminHarness(t)
 
-	// Bootstrap with the break-glass credential, which is the documented way
-	// in: an empty principal store authenticates nobody.
+	// Seed a managed administrator in the fixture store and grant its fleet
+	// permissions explicitly; root authority alone manages only RBAC.
 	root := h.mint(t, adminauth.Principal{Name: "ops", Root: true})
 	if _, err := h.manager.PutPolicy(context.Background(), adminauth.Root, adminauth.Policy{
 		Name:   "ops",

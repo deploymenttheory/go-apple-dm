@@ -11,11 +11,14 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/paging"
 )
 
+// copyDeclaration copies a declaration and its mutable canonical content for storage
+// isolation.
 func copyDeclaration(d ddm.Declaration) ddm.Declaration {
 	d.Canonical = bytes.Clone(d.Canonical)
 	return d
 }
 
+// copyVersion copies retained declaration-version content for storage isolation.
 func copyVersion(v ddm.DeclarationVersion) ddm.DeclarationVersion {
 	v.Canonical = bytes.Clone(v.Canonical)
 	return v

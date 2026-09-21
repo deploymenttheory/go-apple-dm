@@ -16,6 +16,8 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/server/service"
 )
 
+// TestRolloverClaimsAndTrustFailuresPreserveRetryState checks rollover claims and trust failures
+// preserve retry state.
 func TestRolloverClaimsAndTrustFailuresPreserveRetryState(t *testing.T) {
 	for _, authority := range []string{"issuer", "https-ca"} {
 		for _, mode := range []string{"claim failure", "claim conflict", "final save failure", "blocked", "backoff", "unsupported", "enqueue failure"} {
@@ -115,6 +117,8 @@ func TestRolloverClaimsAndTrustFailuresPreserveRetryState(t *testing.T) {
 	}
 }
 
+// TestHTTPSTrustMigrationPagesAndExplicitRetry checks HTTPS trust migration pages and explicit
+// retry.
 func TestHTTPSTrustMigrationPagesAndExplicitRetry(t *testing.T) {
 	a, job := httpsRecoveryFixture(t, "")
 	ctx := t.Context()
@@ -151,6 +155,8 @@ func TestHTTPSTrustMigrationPagesAndExplicitRetry(t *testing.T) {
 	}
 }
 
+// TestManagedConfigurationPropagatesCorruptIdentityRecords checks that managed configuration
+// propagates corrupt identity records.
 func TestManagedConfigurationPropagatesCorruptIdentityRecords(t *testing.T) {
 	for _, id := range []string{"push", "issuer"} {
 		t.Run(id, func(t *testing.T) {
@@ -202,12 +208,15 @@ type renewalCancelLog struct {
 	cancel context.CancelFunc
 }
 
+// Write records log output and cancels the worker context.
 func (w *renewalCancelLog) Write(p []byte) (int, error) {
 	n, err := w.Buffer.Write(p)
 	w.cancel()
 	return n, err
 }
 
+// TestRenewalWorkersReportScanFailureAndStopOnCancellation checks renewal workers report scan
+// failure and stop on cancellation.
 func TestRenewalWorkersReportScanFailureAndStopOnCancellation(t *testing.T) {
 	for _, name := range []string{"certificates", "devices"} {
 		t.Run(name, func(t *testing.T) {

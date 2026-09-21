@@ -8,6 +8,7 @@ import (
 	"testing"
 )
 
+// TestAttachExistingLiveServer checks attach existing live server.
 func TestAttachExistingLiveServer(t *testing.T) {
 	dir := t.TempDir()
 	if err := Init(dir, "live", "sqlite", "127.0.0.1:8443"); err != nil {

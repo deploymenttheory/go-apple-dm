@@ -10,7 +10,7 @@
     ],
     "repository": {
       "url": "https://github.com/deploymenttheory/go-apple-dm",
-      "revision": "7500eb25e50a2913338339d5fced18dc7f41fdc3"
+      "revision": "2b8157efa2c6cbfff459bc44f66736a5d2e7c753"
     },
     "colour_profile": "purpose-v1",
     "legend": {
@@ -54,7 +54,14 @@
         260,
         80
       ],
-      "purpose": "authentication"
+      "purpose": "authentication",
+      "sources": [
+        {
+          "path": "server/service/checkin.go",
+          "line": 188,
+          "label": "authenticate"
+        }
+      ]
     },
     {
       "id": "tokenupdate",
@@ -69,7 +76,14 @@
         260,
         80
       ],
-      "purpose": "service"
+      "purpose": "service",
+      "sources": [
+        {
+          "path": "server/service/checkin.go",
+          "line": 262,
+          "label": "tokenUpdate"
+        }
+      ]
     },
     {
       "id": "setbootstrap",
@@ -84,7 +98,14 @@
         260,
         80
       ],
-      "purpose": "storage"
+      "purpose": "storage",
+      "sources": [
+        {
+          "path": "server/service/checkin.go",
+          "line": 312,
+          "label": "setBootstrapToken"
+        }
+      ]
     },
     {
       "id": "checkout",
@@ -99,7 +120,14 @@
         260,
         80
       ],
-      "purpose": "service"
+      "purpose": "service",
+      "sources": [
+        {
+          "path": "server/service/checkin.go",
+          "line": 301,
+          "label": "checkOut"
+        }
+      ]
     },
     {
       "id": "getbootstrap",
@@ -114,7 +142,14 @@
         260,
         80
       ],
-      "purpose": "storage"
+      "purpose": "storage",
+      "sources": [
+        {
+          "path": "server/service/checkin.go",
+          "line": 323,
+          "label": "getBootstrapToken"
+        }
+      ]
     },
     {
       "id": "gettoken",
@@ -129,7 +164,14 @@
         260,
         80
       ],
-      "purpose": "authentication"
+      "purpose": "authentication",
+      "sources": [
+        {
+          "path": "server/service/checkin.go",
+          "line": 374,
+          "label": "handleGetToken"
+        }
+      ]
     },
     {
       "id": "userauthenticate",
@@ -144,7 +186,14 @@
         260,
         80
       ],
-      "purpose": "authentication"
+      "purpose": "authentication",
+      "sources": [
+        {
+          "path": "server/service/checkin.go",
+          "line": 388,
+          "label": "handleUserAuthenticate"
+        }
+      ]
     },
     {
       "id": "declarative",
@@ -159,7 +208,14 @@
         260,
         80
       ],
-      "purpose": "service"
+      "purpose": "service",
+      "sources": [
+        {
+          "path": "server/service/checkin.go",
+          "line": 403,
+          "label": "handleDeclarativeManagement"
+        }
+      ]
     },
     {
       "id": "returntoservice",
@@ -174,7 +230,14 @@
         260,
         80
       ],
-      "purpose": "policy"
+      "purpose": "policy",
+      "sources": [
+        {
+          "path": "server/service/checkin.go",
+          "line": 341,
+          "label": "handleReturnToService"
+        }
+      ]
     }
   ],
   "connections": [

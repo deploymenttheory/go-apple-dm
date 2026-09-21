@@ -21,6 +21,8 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/simulator"
 )
 
+// attestation loads the saved private attestation CA for simulator certificate
+// issuance.
 func (e *Environment) attestation() (*attesttest.CA, error) {
 	b, err := os.ReadFile(e.Workspace.path("fixtures", "attestation.json"))
 	if err != nil {
@@ -30,6 +32,7 @@ func (e *Environment) attestation() (*attesttest.CA, error) {
 	return ca, wrapError(err)
 }
 
+// acmeDevice constructs a simulator configured for ACME identity issuance.
 func (e *Environment) acmeDevice(
 	ctx context.Context,
 	faults simulator.ACMEFaults,
@@ -61,6 +64,8 @@ func (e *Environment) acmeDevice(
 	return d, raw, wrapError(err)
 }
 
+// acmeEnroll enrolls an ACME simulator and checks rejection of identifier replay and
+// invalid attestation evidence.
 func acmeEnroll(ctx context.Context, e *Environment, _ string) error {
 	d, raw, err := e.acmeDevice(ctx, simulator.ACMEFaults{})
 	if err != nil {
@@ -100,6 +105,8 @@ func acmeEnroll(ctx context.Context, e *Environment, _ string) error {
 	return nil
 }
 
+// deviceAttestation verifies device-property attestation freshness, device binding,
+// cached reuse and rejection of tampered evidence.
 func deviceAttestation(ctx context.Context, e *Environment, _ string) error {
 	d, _, err := e.acmeDevice(ctx, simulator.ACMEFaults{})
 	if err != nil {
@@ -146,6 +153,7 @@ func deviceAttestation(ctx context.Context, e *Environment, _ string) error {
 	return nil
 }
 
+// otaEnroll runs the over-the-air enrollment profile exchange.
 func otaEnroll(ctx context.Context, e *Environment, _ string) error {
 	d, err := e.factoryDevice()
 	if err != nil {
@@ -167,6 +175,7 @@ func otaEnroll(ctx context.Context, e *Environment, _ string) error {
 	return wrapError(d.OTAEnroll(ctx, e.URL+"/ota", "bench-ota", identity, profile.ParseOptions{}))
 }
 
+// returnEnabled checks the Return to Service workflow when the server enables it.
 func returnEnabled(ctx context.Context, e *Environment, _ string) error {
 	d, err := e.device(ctx)
 	if err != nil {
@@ -186,6 +195,7 @@ func returnEnabled(ctx context.Context, e *Environment, _ string) error {
 	return nil
 }
 
+// authenticateUser performs the simulated user-authentication exchange.
 func authenticateUser(ctx context.Context, u *simulator.User) error {
 	b, err := u.Authenticate(ctx, "")
 	if err != nil {
@@ -211,6 +221,7 @@ func authenticateUser(ctx context.Context, u *simulator.User) error {
 	return wrapError(u.TokenUpdate(ctx))
 }
 
+// userChannels exercises independent device and user management channels.
 func userChannels(ctx context.Context, e *Environment, _ string) error {
 	d, err := e.device(ctx)
 	if err != nil {
@@ -280,6 +291,7 @@ func userChannels(ctx context.Context, e *Environment, _ string) error {
 	return wrapError(alice.CheckOut(ctx))
 }
 
+// sharedIPad exercises the shared-iPad user-channel scenario.
 func sharedIPad(ctx context.Context, e *Environment, _ string) error {
 	d, err := e.device(ctx, func(d *simulator.Device) {
 		d.Model, d.ModelName, d.ProductName, d.OSVersion = "iPad", "iPad Pro", "iPad14,1", "18.4"

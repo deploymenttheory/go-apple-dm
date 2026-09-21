@@ -26,6 +26,7 @@ const (
 // other/skipkeys.yaml through the generator.
 var skipKeys = loadSkipKeys()
 
+// loadSkipKeys loads the schema-derived vocabulary accepted for skip_setup_items.
 func loadSkipKeys() map[string]struct{} {
 	t := reflect.TypeFor[other.SkipKeys]()
 	out := make(map[string]struct{}, t.NumField())
@@ -93,6 +94,7 @@ func (p *Profile) Validate() error {
 	return nil
 }
 
+// validateURL checks the profile's service URLs before submission to Apple.
 func (p *Profile) validateURL() error {
 	if p.URL == "" {
 		return &ProfileError{Code: CodeConfigURLInvalid, Detail: "url is empty"}
@@ -109,6 +111,7 @@ func (p *Profile) validateURL() error {
 	return nil
 }
 
+// checkLen rejects a field value beyond the service's supported length.
 func checkLen(code, field, value string, limit int) error {
 	if value == "" {
 		return &ProfileError{Code: code, Detail: field + " is empty"}

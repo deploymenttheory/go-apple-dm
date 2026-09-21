@@ -40,14 +40,17 @@ type admissionInventory struct {
 	accountErr, deviceErr error
 }
 
+// GetAccount returns the configured DEP account and error.
 func (s admissionInventory) GetAccount(context.Context, string) (*dep.Account, error) {
 	return s.account, s.accountErr
 }
 
+// GetDevice returns the configured DEP device and error.
 func (s admissionInventory) GetDevice(context.Context, string, string) (*dep.StoredDevice, error) {
 	return s.device, s.deviceErr
 }
 
+// TestAdmissionInventoryFailuresDenyIssuance checks admission inventory failures deny issuance.
 func TestAdmissionInventoryFailuresDenyIssuance(t *testing.T) {
 	a := &App{cfg: Config{Clock: clock.Real{}}}
 	file := filepath.Join(t.TempDir(), "policy.json")
@@ -114,6 +117,8 @@ func TestAdmissionInventoryFailuresDenyIssuance(t *testing.T) {
 	}
 }
 
+// TestAccountAdmissionRequiresExplicitStableMapping checks that account admission requires
+// explicit stable mapping.
 func TestAccountAdmissionRequiresExplicitStableMapping(t *testing.T) {
 	request := AdmissionRequest{
 		Issuer:        "https://idp",
@@ -190,6 +195,7 @@ type issuanceStateFault struct {
 	txValue                      []byte
 }
 
+// Get injects an issuance-state read failure or delegates to the store.
 func (s issuanceStateFault) Get(ctx context.Context, k string) (state.Record, error) {
 	if s.readErr != nil {
 		return state.Record{}, s.readErr
@@ -197,6 +203,7 @@ func (s issuanceStateFault) Get(ctx context.Context, k string) (state.Record, er
 	return s.Store.Get(ctx, k)
 }
 
+// Update wraps issuance-state transactions with configured read, write, and value faults.
 func (s issuanceStateFault) Update(
 	ctx context.Context,
 	keys []string,
@@ -215,6 +222,7 @@ type issuanceTxFault struct {
 	value             []byte
 }
 
+// Get injects a read failure or substitutes the configured transaction-record value.
 func (t issuanceTxFault) Get(ctx context.Context, k string) (state.Record, error) {
 	if t.readErr != nil {
 		return state.Record{}, t.readErr
@@ -226,6 +234,7 @@ func (t issuanceTxFault) Get(ctx context.Context, k string) (state.Record, error
 	return r, err
 }
 
+// Put injects an issuance-state write failure or delegates to the transaction.
 func (t issuanceTxFault) Put(ctx context.Context, r state.Record) error {
 	if t.writeErr != nil {
 		return t.writeErr
@@ -233,6 +242,7 @@ func (t issuanceTxFault) Put(ctx context.Context, r state.Record) error {
 	return t.Tx.Put(ctx, r)
 }
 
+// TestIssuanceFailsClosedOnStateFaults checks that issuance fails closed on state faults.
 func TestIssuanceFailsClosedOnStateFaults(t *testing.T) {
 	backend := state.NewMemory()
 	cert, key, err := ca.NewSelfSigned(ca.SelfSignedOptions{})
@@ -311,6 +321,8 @@ func TestIssuanceFailsClosedOnStateFaults(t *testing.T) {
 	}
 }
 
+// TestAuthenticateRequiresMatchingIssuanceEvidence checks that authenticate requires matching
+// issuance evidence.
 func TestAuthenticateRequiresMatchingIssuanceEvidence(t *testing.T) {
 	backend := state.NewMemory()
 	a := &App{protocol: backend}
@@ -361,6 +373,8 @@ func TestAuthenticateRequiresMatchingIssuanceEvidence(t *testing.T) {
 	}
 }
 
+// TestAdminHandlersHandlePostAuthorizationStorageFailure checks admin handlers handle post
+// authorization storage failure.
 func TestAdminHandlersHandlePostAuthorizationStorageFailure(t *testing.T) {
 	fault := errors.New("database unavailable with secret detail")
 	store := &storagetest.Failing{
@@ -404,6 +418,8 @@ func TestAdminHandlersHandlePostAuthorizationStorageFailure(t *testing.T) {
 	}
 }
 
+// TestSecurityStartupRejectsMissingTrustAndPersistentIssuer checks that security startup rejects
+// missing trust and persistent issuer.
 func TestSecurityStartupRejectsMissingTrustAndPersistentIssuer(t *testing.T) {
 	for _, cfg := range []Config{
 		{Storage: "sqlite", Enroll: EnrollConfig{PublicURL: "https://mdm.example", Topic: "com.apple.mgmt.test"}},
@@ -421,6 +437,8 @@ func TestSecurityStartupRejectsMissingTrustAndPersistentIssuer(t *testing.T) {
 	}
 }
 
+// TestAdmissionEventsExcludeCredentialsAndSurviveSinkFailure checks admission events exclude
+// credentials and survive sink failure.
 func TestAdmissionEventsExcludeCredentialsAndSurviveSinkFailure(t *testing.T) {
 	bus := event.New()
 	var events []event.Event

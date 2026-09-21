@@ -16,6 +16,7 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/state"
 )
 
+// TestAtomicQuotas checks atomic quota consumption and absence of raw bucket keys in storage.
 func TestAtomicQuotas(t *testing.T) {
 	ctx := t.Context()
 	now := time.Now().Truncate(time.Microsecond)
@@ -61,6 +62,7 @@ func TestAtomicQuotas(t *testing.T) {
 	}
 }
 
+// TestConcurrentCapacityAndFailures checks concurrent capacity and failures.
 func TestConcurrentCapacityAndFailures(t *testing.T) {
 	ctx := t.Context()
 	now := time.Now().Truncate(time.Microsecond)
@@ -110,6 +112,7 @@ func TestConcurrentCapacityAndFailures(t *testing.T) {
 	}
 }
 
+// TestHTTPAndProxyTrust checks HTTP and proxy trust.
 func TestHTTPAndProxyTrust(t *testing.T) {
 	trusted := []netip.Prefix{netip.MustParsePrefix("10.0.0.0/8")}
 	for _, tc := range []struct{ peer, forward, want string }{

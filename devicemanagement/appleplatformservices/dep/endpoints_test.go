@@ -10,6 +10,8 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/appleplatformservices/dep/deptest"
 )
 
+// TestEndpoints checks DEP endpoint methods and payloads, account-driven discovery operations, and
+// beta-token rejection.
 func TestEndpoints(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()

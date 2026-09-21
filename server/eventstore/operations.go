@@ -22,6 +22,8 @@ type Status struct {
 	OldestPending time.Time `json:"oldest_pending,omitempty"`
 }
 
+// Status returns current outbox counts and oldest pending work for operational inspection,
+// propagating database failures.
 func (s *Store) Status(ctx context.Context) (Status, error) {
 	var out Status
 	var oldest sql.NullInt64

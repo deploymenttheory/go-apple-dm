@@ -15,6 +15,7 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/server/sqlstore/sqlite"
 )
 
+// TestWorkerRetryAndOperatorRecovery checks worker retry and operator recovery.
 func TestWorkerRetryAndOperatorRecovery(t *testing.T) {
 	for _, tc := range []struct {
 		name        string
@@ -88,6 +89,8 @@ func TestWorkerRetryAndOperatorRecovery(t *testing.T) {
 	}
 }
 
+// TestNativeAuditAppendAndAcknowledgementCommitTogether checks native audit append and
+// acknowledgement commit together.
 func TestNativeAuditAppendAndAcknowledgementCommitTogether(t *testing.T) {
 	for _, failure := range []string{"append", "acknowledgement", "lease"} {
 		t.Run(failure, func(t *testing.T) {
@@ -159,6 +162,8 @@ func TestNativeAuditAppendAndAcknowledgementCommitTogether(t *testing.T) {
 	}
 }
 
+// TestRemoteDeliveryDoesNotHoldSQLTransaction checks that remote delivery does not hold SQL
+// transaction.
 func TestRemoteDeliveryDoesNotHoldSQLTransaction(t *testing.T) {
 	db, s, p := fixture(t)
 	db.DB().SetMaxOpenConns(1)
@@ -188,6 +193,7 @@ func TestRemoteDeliveryDoesNotHoldSQLTransaction(t *testing.T) {
 	}
 }
 
+// TestWorkerMissingDestinationAndCancellation checks worker missing destination and cancellation.
 func TestWorkerMissingDestinationAndCancellation(t *testing.T) {
 	_, s, p := fixture(t)
 	p.Destinations = []string{"retired-receiver"}

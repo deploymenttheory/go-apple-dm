@@ -10,7 +10,7 @@
     ],
     "repository": {
       "url": "https://github.com/deploymenttheory/go-apple-dm",
-      "revision": "7500eb25e50a2913338339d5fced18dc7f41fdc3"
+      "revision": "2b8157efa2c6cbfff459bc44f66736a5d2e7c753"
     },
     "views": [
       {
@@ -202,7 +202,13 @@
         220,
         70
       ],
-      "purpose": "storage"
+      "purpose": "storage",
+      "sources": [
+        {
+          "path": "devicemanagement/pki/acme/store.go",
+          "label": "Nonce store"
+        }
+      ]
     },
     {
       "id": "orders",
@@ -301,7 +307,17 @@
         220,
         70
       ],
-      "purpose": "storage"
+      "purpose": "storage",
+      "sources": [
+        {
+          "path": "server/acmestore/sqlstore/sqlstore.go",
+          "label": "SQL backend"
+        },
+        {
+          "path": "devicemanagement/storage/acme/inmem/inmem.go",
+          "label": "Memory backend"
+        }
+      ]
     },
     {
       "id": "capkg",
@@ -517,7 +533,8 @@
       "items": [
         "ACMECertificate — https://developer.apple.com/documentation/devicemanagement/acmecertificate",
         "Deploy Managed Device Attestation — https://support.apple.com/en-gb/guide/deployment/dep54e5ac1fd/web",
-        "RFC 8555 — ACME — https://www.rfc-editor.org/rfc/rfc8555"
+        "RFC 8555 — ACME — https://www.rfc-editor.org/rfc/rfc8555",
+        "Validate Managed Device Attestation — https://developer.apple.com/documentation/devicemanagement/validating-a-managed-device-attestation-attestation"
       ]
     }
   ]

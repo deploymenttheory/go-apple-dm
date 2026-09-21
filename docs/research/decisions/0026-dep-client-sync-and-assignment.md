@@ -12,7 +12,15 @@ The device enrollment service uses account-scoped OAuth 1.0a credentials, rotati
 
 `Assigner` compares stored profile state with desired state and records per-device outcomes. Account retry deadlines and failure counts live in the store, so a new worker respects an earlier Retry-After response. A renewable account claim fences competing workers; bounded network requests run outside transactions, and writes recheck claim ownership. Assignment readback cannot restore a device removed by sync. The reference server schedules sync and assignment independently; zero disables the corresponding background operation. API profiles retain unknown fields and validate documented combinations and setup keys.
 
-DEP migration 0002 adds cursor revision/generation fields, device fetch markers and assignment state. Custom stores must implement `MarkFetched`, `AssignmentState`, `PutAssignmentState` and transactional `LockAccount` with the shared contract semantics. The server module pins a library revision implementing this contract so standalone builds use the same interfaces.
+The SQL schema persists cursor revision/generation fields, device fetch markers and assignment state. Custom stores must implement `MarkFetched`, `AssignmentState`, `PutAssignmentState` and transactional `LockAccount` with the shared contract semantics. The server module pins a library revision implementing this contract so standalone builds use the same interfaces.
+
+Apple's [Assign Profile response](https://developer.apple.com/documentation/devicemanagement/assign-profile)
+can return HTTP 200 with per-device `THROTTLED` results and
+`retry_after_seconds` in protocol version 10. Check device outcomes in addition to
+HTTP status. The [assigner](../../../devicemanagement/appleplatformservices/dep/assigner.go)
+and [persisted assignment state](../../../devicemanagement/appleplatformservices/dep/assignmentstate.go)
+coordinate retry eligibility; the [syncer](../../../devicemanagement/appleplatformservices/dep/syncer.go)
+owns inventory generations and stale-response rejection.
 
 ## Rationale
 

@@ -16,6 +16,7 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/server/sqlstore/sqlite"
 )
 
+// TestFileVaultCertificateWorkflow checks FileVault certificate workflow.
 func TestFileVaultCertificateWorkflow(t *testing.T) {
 	ctx := t.Context()
 	cfg := app.Config{
@@ -100,6 +101,8 @@ func TestFileVaultCertificateWorkflow(t *testing.T) {
 	}
 }
 
+// TestFileVaultRejectsVolatileCertificateStorage checks that FileVault rejects volatile
+// certificate storage.
 func TestFileVaultRejectsVolatileCertificateStorage(t *testing.T) {
 	a := build(t, app.Config{Storage: "inmem", BootstrapToken: "secret"})
 	srv := serve(t, a)
@@ -131,6 +134,7 @@ func TestFileVaultRejectsVolatileCertificateStorage(t *testing.T) {
 	}
 }
 
+// TestFileVaultEscrowWorkflow checks FileVault escrow workflow.
 func TestFileVaultEscrowWorkflow(t *testing.T) {
 	a := build(
 		t,

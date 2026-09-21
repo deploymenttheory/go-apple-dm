@@ -19,7 +19,7 @@
           "manager",
           "cedar"
         ],
-        "note": "Static root tokens bypass Cedar. Stored-principal tokens require a policy decision before the route handler runs."
+        "note": "Stored tokens identify principals; resolved action, resource and context enter authorization before the handler."
       },
       {
         "id": "credentials",
@@ -27,14 +27,14 @@
         "focus": [
           "config",
           "dmctl",
-          "statictoken"
+          "permissions"
         ],
-        "note": "Use file or environment credential references to keep secrets out of command arguments."
+        "note": "Use protected credential references. The one-time bootstrap exchange creates the first stored root credential."
       }
     ],
     "repository": {
       "url": "https://github.com/deploymenttheory/go-apple-dm",
-      "revision": "7500eb25e50a2913338339d5fced18dc7f41fdc3"
+      "revision": "2b8157efa2c6cbfff459bc44f66736a5d2e7c753"
     },
     "colour_profile": "purpose-v1",
     "legend": {
@@ -56,7 +56,13 @@
         220,
         70
       ],
-      "purpose": "neutral"
+      "purpose": "neutral",
+      "sources": [
+        {
+          "path": "server/internal/dmctl/config.go",
+          "label": "CLI configuration"
+        }
+      ]
     },
     {
       "id": "adminclient",
@@ -82,8 +88,8 @@
     {
       "id": "authorized",
       "type": "security",
-      "label": "Route authorization",
-      "sublabel": "Check action and resource",
+      "label": "Admin request gate",
+      "sublabel": "Authenticate, authorize, audit",
       "pos": [
         315.0,
         260.0
@@ -130,10 +136,10 @@
       "purpose": "artifact"
     },
     {
-      "id": "statictoken",
+      "id": "permissions",
       "type": "security",
-      "label": "DM_ADMIN_TOKEN",
-      "sublabel": "root, bypasses Cedar",
+      "label": "Request permissions",
+      "sublabel": "Canonical scope and sensitivity",
       "pos": [
         615.0,
         110.0
@@ -142,13 +148,19 @@
         220,
         70
       ],
-      "purpose": "authentication"
+      "purpose": "authentication",
+      "sources": [
+        {
+          "path": "server/internal/app/adminrequest.go",
+          "label": "Resolve permissions"
+        }
+      ]
     },
     {
       "id": "manager",
       "type": "security",
-      "label": "Stored-principal policy",
-      "sublabel": "Authenticate and authorize",
+      "label": "Principal and roles",
+      "sublabel": "Authenticate stored credentials",
       "pos": [
         615.0,
         260.0
@@ -184,12 +196,12 @@
           "label": "Commands and enrollment"
         },
         {
-          "path": "server/internal/app/adminsetup.go",
-          "label": "Certificate setup"
+          "path": "server/internal/app/adminblueprints.go",
+          "label": "Blueprint routes"
         },
         {
-          "path": "server/internal/app/adminevents.go",
-          "label": "Events and delivery retry"
+          "path": "server/internal/app/webhooks.go",
+          "label": "Webhook permissions"
         }
       ],
       "purpose": "service"
@@ -207,13 +219,19 @@
         220,
         70
       ],
-      "purpose": "policy"
+      "purpose": "policy",
+      "sources": [
+        {
+          "path": "server/adminauth/policy.go",
+          "label": "Policy evaluation"
+        }
+      ]
     },
     {
       "id": "adminstore",
       "type": "database",
       "label": "Administration state",
-      "sublabel": "Principals and policies",
+      "sublabel": "Principals, roles and policies",
       "pos": [
         915.0,
         410.0
@@ -222,7 +240,17 @@
         220,
         70
       ],
-      "purpose": "storage"
+      "purpose": "storage",
+      "sources": [
+        {
+          "path": "server/adminauth/adminauth.go",
+          "label": "Authority store contract"
+        },
+        {
+          "path": "server/adminauth/roles.go",
+          "label": "Roles"
+        }
+      ]
     }
   ],
   "connections": [
@@ -263,8 +291,8 @@
     {
       "id": "authorized-static",
       "from": "authorized",
-      "to": "statictoken",
-      "label": "constant-time compare",
+      "to": "permissions",
+      "label": "Resolve scope",
       "fromSide": "top",
       "toSide": "bottom",
       "via": [
@@ -301,25 +329,33 @@
       "id": "manager-store",
       "from": "manager",
       "to": "adminstore",
-      "label": "principals · policies",
+      "label": "Read authority state",
       "purpose": "storage"
     }
   ],
   "cards": [
     {
       "dot": "policy",
-      "title": "Two authorization paths",
+      "title": "Bootstrap and normal authorization",
       "items": [
-        "The static DM_ADMIN_TOKEN is checked first and grants root authority without Cedar. Stored-principal tokens are authenticated and authorized against policy.",
-        "Each registered admin route declares an action. Policy editing requires root independently of Cedar."
+        "DM_BOOTSTRAP_TOKEN is accepted only by POST /admin/v1/auth/bootstrap to create the first stored root credential. Normal routes authenticate stored principal tokens.",
+        "Roles, granular actions, canonical resources and request context govern operational access. Root-only authority management is checked separately; data-plane requests use policy evaluation."
       ]
     },
     {
       "dot": "transport",
       "title": "Current route coverage",
       "items": [
-        "Routes manage MDM commands/results, declarative state, Apple service clients, certificates, audit and principals. App-push credentials/sends, profile issuance, enrollment evidence and controlled replacement are enabled capabilities.",
-        "Certificate setup exposes workflow status, history, public exports and authorized vendor, push, HTTPS and issuer operations. Event administration exposes captured events, recording health, destination delivery status and manual retry."
+        "The unified admin API manages commands, declarative state, Blueprints, application identity discovery, profiles, Apple service clients, certificates, audit and native webhooks.",
+        "Route metadata resolves enrollment scope and command-specific actions. Sensitive webhook representations require separate sensitive-management or sensitive-replay grants."
+      ]
+    },
+    {
+      "dot": "policy",
+      "title": "Authorization results",
+      "items": [
+        "Invalid credentials return 401; denied permissions return 403. Policy documents are validated against the registered schema and actions before activation.",
+        "Root authority administration protects the credential and policy recovery path. Allowed mutations and sensitive reads participate in audit capture."
       ]
     },
     {
@@ -337,9 +373,9 @@
         "Cedar authorization overview — https://docs.cedarpolicy.com/",
         "Sending MDM commands to a device — https://developer.apple.com/documentation/devicemanagement/sending-mdm-commands-to-a-device",
         "Deploying device management enrollment profiles — https://developer.apple.com/documentation/devicemanagement/deploying-device-management-enrollment-profiles",
-        "Setup authorization — https://github.com/deploymenttheory/go-apple-dm/blob/80599ddc35778bcc88fa2ac77bb1dc68a51cf089/server/internal/app/adminsetup.go",
-        "Event administration — https://github.com/deploymenttheory/go-apple-dm/blob/80599ddc35778bcc88fa2ac77bb1dc68a51cf089/server/internal/app/adminevents.go",
-        "Cross-platform credential files — https://github.com/deploymenttheory/go-apple-dm/blob/80599ddc35778bcc88fa2ac77bb1dc68a51cf089/server/internal/privatefile/doc.go"
+        "Setup authorization — https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/server/internal/app/adminsetup.go",
+        "Event administration — https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/server/internal/app/adminevents.go",
+        "Cross-platform credential files — https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/server/internal/privatefile/doc.go"
       ]
     }
   ]

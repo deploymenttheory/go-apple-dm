@@ -56,6 +56,8 @@ func TestLiveBlueprintStatusRejectsIncompleteEvidence(t *testing.T) {
 	}
 }
 
+// TestLiveBlueprintRejectsMalformedDataAndEvidenceWriteFailures checks that live blueprint rejects
+// malformed data and evidence write failures.
 func TestLiveBlueprintRejectsMalformedDataAndEvidenceWriteFailures(t *testing.T) {
 	client := &http.Client{Transport: transportFunc(func(r *http.Request) (*http.Response, error) {
 		body := "{"
@@ -96,6 +98,8 @@ func TestLiveBlueprintRejectsMalformedDataAndEvidenceWriteFailures(t *testing.T)
 	}
 }
 
+// TestLiveBlueprintWaitRequiresBothConfigurationAndActivation checks that live blueprint wait
+// requires both configuration and activation.
 func TestLiveBlueprintWaitRequiresBothConfigurationAndActivation(t *testing.T) {
 	for _, activation := range []bool{false, true} {
 		compiled := &blueprint.Compiled{Identifiers: map[string]string{}, Activations: map[string]string{}}
@@ -117,6 +121,8 @@ func TestLiveBlueprintWaitRequiresBothConfigurationAndActivation(t *testing.T) {
 	}
 }
 
+// TestLiveBlueprintPrerequisites checks that live blueprint scenarios reject missing
+// prerequisites.
 func TestLiveBlueprintPrerequisites(t *testing.T) {
 	for _, mode := range []string{"user ID", "evidence directory"} {
 		t.Run(mode, func(t *testing.T) {
@@ -142,6 +148,7 @@ func TestLiveBlueprintPrerequisites(t *testing.T) {
 	}
 }
 
+// TestBlueprintScenariosRequireLiveDevices checks blueprint scenarios require live devices.
 func TestBlueprintScenariosRequireLiveDevices(t *testing.T) {
 	scenarios, err := Select("blueprints")
 	if err != nil || len(scenarios) != 2 {

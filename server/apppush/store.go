@@ -36,6 +36,8 @@ type Store struct {
 	Now   func() time.Time
 }
 
+// now returns the configured clock time, using the package default when no clock is
+// supplied.
 func (s *Store) now() time.Time {
 	if s.Now != nil {
 		return s.Now()
@@ -43,6 +45,7 @@ func (s *Store) now() time.Time {
 	return time.Now()
 }
 
+// key validates the credential name and constructs its application-push state key.
 func key(topic string) (string, error) {
 	k := prefix + topic
 	if topic == "" || !state.ValidKey(k) {
@@ -51,6 +54,7 @@ func key(topic string) (string, error) {
 	return k, nil
 }
 
+// decode parses stored application-push credential metadata and private material.
 func (s *Store) decode(r state.Record) (record, error) {
 	b := r.Value
 	var err error

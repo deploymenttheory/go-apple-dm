@@ -22,6 +22,7 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/testpki"
 )
 
+// privateFixture writes a private fixture file and returns its path.
 func privateFixture(t *testing.T, dir, name string, data []byte) string {
 	t.Helper()
 	p := filepath.Join(dir, name)
@@ -31,10 +32,13 @@ func privateFixture(t *testing.T, dir, name string, data []byte) string {
 	return p
 }
 
+// certificatePEM encodes certificate DER as PEM.
 func certificatePEM(der []byte) []byte {
 	return pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: der})
 }
 
+// TestCLICompletesVendorSigningAndMDMImport checks that CLI completes vendor signing and MDM
+// import.
 func TestCLICompletesVendorSigningAndMDMImport(t *testing.T) {
 	t.Parallel()
 	env := noConfig(t)
@@ -175,6 +179,7 @@ func TestCLICompletesVendorSigningAndMDMImport(t *testing.T) {
 	}
 }
 
+// TestOfflineCertificateCommandFailures checks offline certificate command failures.
 func TestOfflineCertificateCommandFailures(t *testing.T) {
 	t.Parallel()
 	env := noConfig(t)
@@ -238,6 +243,7 @@ func TestOfflineCertificateCommandFailures(t *testing.T) {
 	}
 }
 
+// TestAppPushCommandRejectsUnreadableFiles checks that app push command rejects unreadable files.
 func TestAppPushCommandRejectsUnreadableFiles(t *testing.T) {
 	t.Parallel()
 	env := noConfig(t)

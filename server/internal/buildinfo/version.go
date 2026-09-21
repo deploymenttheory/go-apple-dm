@@ -14,6 +14,7 @@ func Version() string {
 	return moduleVersion(info)
 }
 
+// moduleVersion reads the selected module version from Go build information.
 func moduleVersion(info *debug.BuildInfo) string {
 	if info == nil || info.Main.Version == "" {
 		return "devel"

@@ -44,8 +44,8 @@ exercises enrollment, SCEP, MDM commands and signed delivery through the applica
 Each body has `schema_version`, `event_id`, `type`, `occurred_at`, `source` and `data`.
 `subject` identifies a resource verified by the server. Unverified device claims
 appear as `data.claimed_id`; they cannot match subject/channel filters. `source` is
-the serving role (`all`, `mdm` or `ddm`). A `correlation_id` connects occurrences in
-one incoming request and survives authenticated private DDM forwarding. It does not
+`device-management` in the reference server. A `correlation_id` connects occurrences
+observed during one incoming request. It does not
 imply delivery order or tie every later device response to its enqueue request.
 
 For exchanges, `data.outcome` describes server processing independently of the
@@ -103,8 +103,11 @@ Store them at the receiver. Summary subscriptions can be delegated through Cedar
 
 Any payload option set to `true` makes the subscription sensitive. Creation, edits,
 state changes, credential rotation, synthetic tests, retry and replay then require
-an actual root principal in addition to route authorization. Granting a Cedar action
-cannot confer that root authority. Full JSON is sensitive too: converting a plist
+an explicit `manageSensitiveWebhooks` grant for destination operations or
+`replaySensitiveWebhooks` for retry/replay, in addition to the ordinary route action.
+Root also needs these fleet-operation grants. The
+[authorization wrapper](../../server/internal/app/webhooks.go) applies both checks.
+Full JSON is sensitive too: converting a plist
 to JSON does not remove escrow, enrollment or push credentials.
 
 Event selectors accept exact types, a known family followed by `.*`, or `*`.
@@ -150,16 +153,20 @@ receiver. Payload access does not itself produce webhook events.
 
 ## Delivery, rotation and replay
 
-Every POST includes Standard Webhooks `webhook-id`, `webhook-timestamp` and
+Every POST follows the [Standard Webhooks signature contract](https://github.com/standard-webhooks/standard-webhooks/blob/main/spec/standard-webhooks.md)
+and includes `webhook-id`, `webhook-timestamp` and
 `webhook-signature`. HMAC-SHA256 signs `id.timestamp.body` using the decoded 32-byte
 secret. Verify the exact incoming bytes before parsing, enforce a five-minute
-timestamp window, and durably deduplicate `webhook-id`. The body `event_id` identifies
+timestamp window as the example receiver policy, and durably deduplicate
+`webhook-id`. This envelope and replay policy are project choices; the signature
+standard does not prescribe their fields. The body `event_id` identifies
 an occurrence; the header identifies a delivery. Automatic retries keep both IDs
 and the body unchanged. Explicit replay keeps the occurrence ID and creates a new
 delivery ID. Receivers choose whether replay should re-run their workflow.
 
 `dmctl webhooks rotate --id ID` rotates signing and payload credentials. Signing uses
-both keys for a default 24-hour overlap; `--overlap 0s` removes overlap. Payload-token
+both keys for a project-default 24-hour overlap; `--overlap 0s` removes overlap.
+Payload-token
 rotation is immediate. Updating a subscription requires its expected revision:
 
 ```sh
@@ -177,7 +184,7 @@ cancels outstanding deliveries. A request already in flight may still reach the
 previous receiver when an administrator changes state or credentials.
 
 HTTP 2xx acknowledges delivery. Timeouts, transport errors and HTTP 408/429/5xx retry
-with exponential backoff, positive jitter and bounded Retry-After (maximum 24 hours).
+with exponential backoff, positive jitter and bounded Retry-After (project maximum 24 hours).
 Other HTTP responses block that delivery for operator action. Redirects are refused.
 Worker leases support multiple replicas and restart recovery. No global or per-device
 ordering is promised. Database/decryption failures stop the delivery worker instead
@@ -207,7 +214,7 @@ most complete or empty requested parts, then the most observed representations.
 `not_captured` descriptors from previous replays do not count as captured data and
 remain listed in `missing_payloads` on subsequent previews and replays.
 Missing parts remain `not_captured`; there is no live-state
-reconstruction or synthesis of uncaptured sensitive data. Non-root replay only reads
+reconstruction or synthesis of uncaptured sensitive data. Replay without `replaySensitiveWebhooks` only reads
 summary captures. A preview/operation selects at most 1,000 events and scans at most
 10,000 retained snapshots; narrow the selection when `truncated` is true.
 
@@ -250,8 +257,8 @@ observable capture gaps, not an unlimited lossless protocol journal.
 
 Native delivery bookkeeping, payload fetches and per-attempt failures do not create
 recursive webhook events. Administrative operations may create ordinary admin-action
-outcomes. Health endpoints and authenticated internal DDM exchanges are excluded
-from the public exchange feed; DDM service outcomes retain the forwarded correlation.
+outcomes. Health endpoints are excluded from the public exchange feed. DDM service outcomes
+retain the incoming request's correlation identifier.
 
 ## HTTP administration
 
@@ -272,16 +279,3 @@ All routes below are prefixed by `/admin/v1`. Collection pages use `after` and `
 | `GET /webhooks/deliveries/{id}` | One delivery's safe metadata |
 | `POST /webhooks/deliveries/{id}/retry` | Retry an eligible current-revision delivery |
 | `POST /webhooks/replays` | Preview or idempotent replay selection |
-
-## Migration
-
-`DM_WEBHOOK_URL` and `DM_WEBHOOK_HMAC_KEY` now fail startup with explicit migration
-guidance. Replace them with managed subscriptions and install the new receiver
-credentials. Legacy event/delivery history stays in the existing tables; native
-subscriptions never silently inherit or reroute it. Legacy projected history has no
-native retained bodies and cannot be reconstructed by native replay. The native
-envelope is independent of MicroMDM compatibility.
-
-References: [decision 0037](../research/decisions/0037-event-sinks-and-redaction.md),
-[event delivery](event-delivery.md), [receiver example](../../server/examples/webhook-receiver/README.md),
-[Standard Webhooks specification](https://github.com/standard-webhooks/standard-webhooks/blob/main/spec/standard-webhooks.md).

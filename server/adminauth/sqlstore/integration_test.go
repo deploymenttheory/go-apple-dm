@@ -23,6 +23,8 @@ import (
 // adminTables in dependency order for DELETE and DROP.
 var adminTables = []string{"admin_principal_roles", "admin_policy_version", "admin_policies", "admin_principals", "admin_roles"}
 
+// runShared runs authorization store migration, shared store-contract, and rollback checks for a
+// SQL dialect.
 func runShared(t *testing.T, db *sql.DB, d sqlcommon.Dialect, cascade string) {
 	t.Helper()
 	ctx := context.Background()
@@ -62,6 +64,7 @@ func runShared(t *testing.T, db *sql.DB, d sqlcommon.Dialect, cascade string) {
 	}
 }
 
+// TestStorePostgres runs the authorization SQL store suite against PostgreSQL.
 func TestStorePostgres(t *testing.T) {
 	dsn := os.Getenv("TEST_POSTGRES_DSN")
 	if dsn == "" {
@@ -77,6 +80,7 @@ func TestStorePostgres(t *testing.T) {
 	runShared(t, db, postgres.Dialect, " CASCADE")
 }
 
+// TestStoreMySQL runs the authorization SQL store suite against MySQL.
 func TestStoreMySQL(t *testing.T) {
 	dsn := os.Getenv("TEST_MYSQL_DSN")
 	if dsn == "" {

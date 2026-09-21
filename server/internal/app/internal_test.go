@@ -22,6 +22,7 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/server/sqlstore/sqlite"
 )
 
+// TestWriteJSONMarshalError checks write JSON marshal error.
 func TestWriteJSONMarshalError(t *testing.T) {
 	rec := httptest.NewRecorder()
 	writeJSON(rec, 200, map[string]any{"ch": make(chan int)})
@@ -30,6 +31,7 @@ func TestWriteJSONMarshalError(t *testing.T) {
 	}
 }
 
+// TestAdminResponseBoundsCumulativeWrites checks admin response bounds cumulative writes.
 func TestAdminResponseBoundsCumulativeWrites(t *testing.T) {
 	w := &adminResponse{header: make(http.Header)}
 	chunk := make([]byte, MaxAdminBody/2)
@@ -51,6 +53,7 @@ func TestAdminResponseBoundsCumulativeWrites(t *testing.T) {
 	}
 }
 
+// TestHealthReportsUnavailableDatabase checks that health reports unavailable database.
 func TestHealthReportsUnavailableDatabase(t *testing.T) {
 	db, err := sql.Open("sqlite", ":memory:")
 	if err != nil {
@@ -67,6 +70,7 @@ func TestHealthReportsUnavailableDatabase(t *testing.T) {
 	}
 }
 
+// TestCloseCollectsErrors checks that application shutdown returns all resource-close errors.
 func TestCloseCollectsErrors(t *testing.T) {
 	a := &App{closers: []func() error{func() error { return errors.New("one") }, func() error { return nil }}}
 	if err := a.Close(); err == nil || !strings.Contains(err.Error(), "one") {
@@ -74,6 +78,7 @@ func TestCloseCollectsErrors(t *testing.T) {
 	}
 }
 
+// TestRunSurfacesNonCancelErrors checks run surfaces non cancel errors.
 func TestRunSurfacesNonCancelErrors(t *testing.T) {
 	a, err := Build(context.Background(), Config{
 		Storage: "inmem",
@@ -127,6 +132,7 @@ func TestAdminActionsAreComplete(t *testing.T) {
 	}
 }
 
+// TestBuildVersion checks that build version reporting is nonempty.
 func TestBuildVersion(t *testing.T) {
 	if buildVersion() == "" {
 		t.Fatal("buildVersion returned nothing")
@@ -167,6 +173,7 @@ func TestTopicOf(t *testing.T) {
 // the first failure stops its siblings rather than waiting for them, and the
 // running state is observable while the loops are up.
 
+// TestRunSupervisesEveryWorker checks run supervises every worker.
 func TestRunSupervisesEveryWorker(t *testing.T) {
 	a := &App{}
 	var started sync.WaitGroup
@@ -211,6 +218,7 @@ func TestRunSupervisesEveryWorker(t *testing.T) {
 	}
 }
 
+// TestRunFirstFailureStopsSiblings checks that run first failure stops siblings.
 func TestRunFirstFailureStopsSiblings(t *testing.T) {
 	a := &App{}
 	boom := errors.New("boom")
@@ -244,6 +252,8 @@ func TestRunFirstFailureStopsSiblings(t *testing.T) {
 	}
 }
 
+// TestRunWithoutWorkersWaitsForCancellation checks that run without workers waits for
+// cancellation.
 func TestRunWithoutWorkersWaitsForCancellation(t *testing.T) {
 	a := &App{}
 	ctx, cancel := context.WithCancel(context.Background())

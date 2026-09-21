@@ -793,6 +793,7 @@ var errStore = errors.New("the store is unavailable")
 // mid-body looks like to the handler.
 type errorReader struct{}
 
+// Read returns the injected read failure.
 func (errorReader) Read([]byte) (int, error) { return 0, errStore }
 
 // blindFirstLookup makes the first thumbprint lookup miss, so the account
@@ -802,6 +803,8 @@ type blindFirstLookup struct {
 	seen bool
 }
 
+// AccountByThumbprint hides the first account lookup, then delegates subsequent lookups to the
+// store.
 func (b *blindFirstLookup) AccountByThumbprint(
 	ctx context.Context,
 	thumbprint string,
@@ -840,6 +843,7 @@ func newFixtureSharing(t *testing.T, f *fixture, fail map[string]error) *fixture
 	return g
 }
 
+// newFixtureWithStore creates an ACME fixture using the supplied store.
 func newFixtureWithStore(t *testing.T, store acme.Store) *fixture {
 	t.Helper()
 	return newFixture(t, func(c *acme.Config) { c.Store = store })
@@ -861,6 +865,7 @@ func nextLink(h http.Header) string {
 	return ""
 }
 
+// contains reports whether a string appears in the list.
 func contains(list []string, want string) bool {
 	for _, v := range list {
 		if v == want {

@@ -99,8 +99,6 @@ const (
 	DefaultDSN     = "dm.db"
 )
 
-// ParseEnv builds a Config from DM_* variables through get (os.Getenv in
-// the binary). Booleans accept strconv.ParseBool forms.
 // keyNames splits a comma separated key list, active first, dropping blanks so
 // a trailing comma or a padded list is not a key named "".
 func keyNames(v string) []string {
@@ -113,6 +111,8 @@ func keyNames(v string) []string {
 	return out
 }
 
+// ParseEnv loads and validates server configuration through get, applies defaults and
+// rejects retired runtime and static-administration settings.
 func ParseEnv(get func(string) string) (Config, error) {
 	for _, key := range []string{"DM_ROLE", "DM_DDM_URL", "DM_DDM_ROOT_CA_FILE", "DM_DDM_SEND_KEY", "DM_DDM_RECV_KEY", "DM_ADMIN_TOKEN", "DM_ADMIN_STORE"} {
 		if get(key) != "" {

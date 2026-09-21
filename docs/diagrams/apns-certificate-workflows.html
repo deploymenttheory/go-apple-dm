@@ -5149,7 +5149,7 @@ svg[data-purpose-filter] g[data-purpose-highlight] > path { stroke-width: 2.4; }
 <button type="button" data-purpose-filter-button="neutral" aria-pressed="false" style="--entry:var(--purpose-neutral)"><span class="purpose-key-dot" aria-hidden="true"></span>Actors, structure, neutral states</button>
     </div>
     <div class="purpose-key-detail" aria-live="polite" aria-atomic="true"><div><strong id="purpose-key-selection"></strong><span id="purpose-key-counts"></span></div><p id="purpose-key-description"></p></div>
-    <script id="purpose-key-data" type="application/json">{"entries":[{"key":"service","label":"Services and processing","meaning":"Services and processing steps that perform the work shown in the diagram.","nodes":["Retire old connections"],"connections":[]},{"key":"transport","label":"Communication and transport","meaning":"Communication between components, including endpoints, protocol exchanges, and notifications.","nodes":[],"connections":["On MDM reload","After app import"]},{"key":"storage","label":"Storage and persistence","meaning":"Records and persistence: where the system stores or retrieves information.","nodes":["MDM certificate store","Encrypted app store"],"connections":["Commit"]},{"key":"certificate","label":"Certificates and cryptography","meaning":"Certificate issuance and cryptographic work, including signing, encryption, and keys.","nodes":["Create key and CSR","Vendor signs request","Validate MDM import","App certificate and key","Validate app import"],"connections":["Submit CSR","Upload signed request","Certificate and key","Certificate and key","Encrypt and commit"]},{"key":"neutral","label":"Actors, structure, neutral states","meaning":"Actors, structural boundaries, and states that do not imply success, warning, or failure.","nodes":["Apple push portal"],"connections":[]}],"nodes":9,"connections":8}</script>
+    <script id="purpose-key-data" type="application/json">{"entries":[{"key":"service","label":"Services and processing","meaning":"Services and processing steps that perform the work shown in the diagram.","nodes":["Retire old connections"],"connections":[]},{"key":"transport","label":"Communication and transport","meaning":"Communication between components, including endpoints, protocol exchanges, and notifications.","nodes":[],"connections":["On MDM reload","After app import"]},{"key":"storage","label":"Storage and persistence","meaning":"Records and persistence: where the system stores or retrieves information.","nodes":["MDM certificate store","Encrypted app store"],"connections":["Commit"]},{"key":"certificate","label":"Certificates and cryptography","meaning":"Certificate issuance and cryptographic work, including signing, encryption, and keys.","nodes":["Create key and CSR","Vendor signs request","Validate MDM import","App credentials","Validate app import"],"connections":["Submit CSR","Upload signed request","Certificate and key","Certificate and key","Encrypt and commit"]},{"key":"neutral","label":"Actors, structure, neutral states","meaning":"Actors, structural boundaries, and states that do not imply success, warning, or failure.","nodes":["Apple push portal"],"connections":[]}],"nodes":9,"connections":8}</script>
   </section>
     <div class="diagram-container" data-detail-level="read"
          data-preset-badge-editorial-plate="ARCHIFY / PLATE 04">
@@ -5273,15 +5273,15 @@ svg[data-purpose-filter] g[data-purpose-highlight] > path { stroke-width: 2.4; }
           <text data-detail="context" x="1512.5" y="124" class="t-muted" font-size="11" text-anchor="middle">Commit a new credential version</text>
         </g>
 
-        <g id="node-app-key" data-node-id="app-key" data-node-label="App certificate and key" tabindex="0" role="button" aria-label="Focus App certificate and key, Apple Developer provisioning, App provider credential" aria-pressed="false" data-node-kind="external" data-node-sublabel="Apple Developer provisioning" data-node-context="App provider credential" data-purpose="certificate">
-          <title>App certificate and key · Apple Developer provisioning · App provider credential</title>
+        <g id="node-app-key" data-node-id="app-key" data-node-label="App credentials" tabindex="0" role="button" aria-label="Focus App credentials, Apple Developer provisioning, App provider credential" aria-pressed="false" data-node-kind="external" data-node-sublabel="Apple Developer provisioning" data-node-context="App provider credential" data-purpose="certificate">
+          <title>App credentials · Apple Developer provisioning · App provider credential</title>
           <rect x="48" y="212" width="225" height="68" rx="6" class="c-mask"/>
           <rect x="48" y="212" width="225" height="68" rx="6" class="c-external" stroke-width="1.5"/>
           <g aria-hidden="true" data-semantic-sigil="external" class="semantic-sigil s-external" transform="translate(54 218) scale(0.6875)">
             <rect x="2.5" y="5" width="8.5" height="8" rx="1.5"/>
             <path d="M8 2.5h5.5V8M13.5 2.5 7.5 8.5"/>
           </g>
-          <text data-node-label="" data-detail-anchor="" x="160.5" y="233" class="t-primary" font-size="14" font-weight="600" text-anchor="middle">App certificate and key</text>
+          <text data-node-label="" data-detail-anchor="" x="160.5" y="233" class="t-primary" font-size="14" font-weight="600" text-anchor="middle">App credentials</text>
           <text data-detail="context" x="160.5" y="250" class="t-muted" font-size="11" text-anchor="middle">Apple Developer provisioning</text>
         </g>
 
@@ -5591,7 +5591,31 @@ svg[data-purpose-filter] g[data-purpose-highlight] > path { stroke-width: 2.4; }
         <ul>
           <li>&bull; <a href="https://developer.apple.com/documentation/devicemanagement/setting-up-push-notifications-for-your-device-management-customers" target="_blank" rel="noopener noreferrer">Setting up push notifications for your device management customers</a></li>
           <li>&bull; <a href="https://developer.apple.com/documentation/usernotifications/establishing-a-certificate-based-connection-to-apns" target="_blank" rel="noopener noreferrer">Establishing a certificate-based connection to APNs</a></li>
-          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/7500eb25e50a2913338339d5fced18dc7f41fdc3/devicemanagement/pki/pushcert" target="_blank" rel="noopener noreferrer">Implementation</a></li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-dot artifact"></div>
+          <h3>Implementation references</h3>
+        </div>
+        <ul>
+          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/devicemanagement/pki/pushcert/csr.go" target="_blank" rel="noopener noreferrer">mdm-key: Create key and CSR</a></li>
+          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/devicemanagement/pki/pushcert/pushcert.go" target="_blank" rel="noopener noreferrer">vendor: Vendor signs request</a></li>
+          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/server/internal/app/adminsetup.go" target="_blank" rel="noopener noreferrer">mdm-import: Validate MDM import</a></li>
+          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/devicemanagement/storage/pushcert.go" target="_blank" rel="noopener noreferrer">mdm-store: MDM certificate store</a></li>
+          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/server/apppush/store.go" target="_blank" rel="noopener noreferrer">app-import: Validate app import</a></li>
+          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/server/apppush/store.go" target="_blank" rel="noopener noreferrer">app-store: Encrypted app store</a></li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-dot artifact"></div>
+          <h3>Implementation references (continued)</h3>
+        </div>
+        <ul>
+          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/devicemanagement/appleplatformservices/push/apns/lifecycle.go" target="_blank" rel="noopener noreferrer">clients: Retire old connections</a></li>
         </ul>
       </div>
     </div>

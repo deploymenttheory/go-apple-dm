@@ -10,7 +10,7 @@
     ],
     "repository": {
       "url": "https://github.com/deploymenttheory/go-apple-dm",
-      "revision": "7500eb25e50a2913338339d5fced18dc7f41fdc3"
+      "revision": "2b8157efa2c6cbfff459bc44f66736a5d2e7c753"
     },
     "colour_profile": "purpose-v1",
     "legend": {
@@ -47,7 +47,13 @@
         220,
         70
       ],
-      "purpose": "artifact"
+      "purpose": "artifact",
+      "sources": [
+        {
+          "path": "server/internal/bench/workspace.go",
+          "label": "Workspace"
+        }
+      ]
     },
     {
       "id": "supervisor",
@@ -62,7 +68,13 @@
         220,
         70
       ],
-      "purpose": "service"
+      "purpose": "service",
+      "sources": [
+        {
+          "path": "server/internal/bench/environment.go",
+          "label": "Supervisor"
+        }
+      ]
     },
     {
       "id": "runtime",
@@ -97,7 +109,13 @@
         220,
         70
       ],
-      "purpose": "service"
+      "purpose": "service",
+      "sources": [
+        {
+          "path": "server/internal/app/app.go",
+          "label": "Application"
+        }
+      ]
     },
     {
       "id": "catalogue",
@@ -132,7 +150,13 @@
         220,
         70
       ],
-      "purpose": "service"
+      "purpose": "service",
+      "sources": [
+        {
+          "path": "devicemanagement/simulator/simulator.go",
+          "label": "Device simulator"
+        }
+      ]
     },
     {
       "id": "process",
@@ -147,7 +171,13 @@
         220,
         70
       ],
-      "purpose": "service"
+      "purpose": "service",
+      "sources": [
+        {
+          "path": "server/internal/bench/environment.go",
+          "label": "Process launch"
+        }
+      ]
     },
     {
       "id": "live",
@@ -177,7 +207,13 @@
         220,
         70
       ],
-      "purpose": "storage"
+      "purpose": "storage",
+      "sources": [
+        {
+          "path": "server/internal/bench/catalog.go",
+          "label": "Result reports"
+        }
+      ]
     },
     {
       "id": "contracts",
@@ -192,7 +228,13 @@
         220,
         70
       ],
-      "purpose": "service"
+      "purpose": "service",
+      "sources": [
+        {
+          "path": "devicemanagement/storage/storagetest/suite.go",
+          "label": "Backend contracts"
+        }
+      ]
     }
   ],
   "connections": [

@@ -75,6 +75,7 @@ func TestRecorderCapturesEveryInstrumentKind(t *testing.T) {
 	}
 }
 
+// TestSpanRecorderCapturesSpans checks that span recorder captures spans.
 func TestSpanRecorderCapturesSpans(t *testing.T) {
 	t.Parallel()
 	rec := telemetrytest.NewSpanRecorder()

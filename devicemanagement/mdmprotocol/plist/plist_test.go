@@ -24,6 +24,7 @@ var binaryFixture = []byte{
 	0x00, 0x0f,
 }
 
+// TestRoundTripXML checks XML plist marshaling, indentation, and value round trips.
 func TestRoundTripXML(t *testing.T) {
 	t.Parallel()
 	in := sample{Name: "n", Count: 3, Flag: true, Items: []string{"a", "b"}}
@@ -47,6 +48,7 @@ func TestRoundTripXML(t *testing.T) {
 	}
 }
 
+// TestBinaryDecode checks binary plist detection and decoding.
 func TestBinaryDecode(t *testing.T) {
 	t.Parallel()
 	if plist.DetectFormat(binaryFixture) != plist.FormatBinary {
@@ -61,6 +63,7 @@ func TestBinaryDecode(t *testing.T) {
 	}
 }
 
+// TestDetectFormat checks plist format detection and format names.
 func TestDetectFormat(t *testing.T) {
 	t.Parallel()
 	cases := map[string]plist.Format{
@@ -83,6 +86,7 @@ func TestDetectFormat(t *testing.T) {
 	}
 }
 
+// TestLimits checks plist size and depth limits and rejection of unknown or malformed formats.
 func TestLimits(t *testing.T) {
 	t.Parallel()
 	var v map[string]any
@@ -113,6 +117,7 @@ func TestLimits(t *testing.T) {
 	}
 }
 
+// TestMarshalErrors checks rejection of unsupported Go values during plist marshaling.
 func TestMarshalErrors(t *testing.T) {
 	t.Parallel()
 	if _, err := plist.Marshal(make(chan int)); err == nil {
@@ -123,6 +128,7 @@ func TestMarshalErrors(t *testing.T) {
 	}
 }
 
+// FuzzUnmarshal exercises XML and binary plist decoding with a 64 KiB input limit.
 func FuzzUnmarshal(f *testing.F) {
 	f.Add([]byte(`<?xml version="1.0"?><plist version="1.0"><dict><key>A</key><string>b</string></dict></plist>`))
 	f.Add(binaryFixture)

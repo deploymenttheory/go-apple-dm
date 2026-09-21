@@ -8,6 +8,8 @@ import (
 	"net/url"
 )
 
+// runContentCache parses and executes the content cache subcommand, reporting argument and
+// operation failures to the CLI caller.
 func runContentCache(ctx context.Context, e *env, args []string) error {
 	if len(args) == 0 {
 		return fmt.Errorf("%w: content-cache needs reports, rotate or revoke", ErrUsage)

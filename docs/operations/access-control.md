@@ -1,8 +1,7 @@
 # Reference-server access control
 
-The reference server runs MDM and DDM together. `mdm`, `ddm` and `all` were
-deployment modes, not access roles. Roles now mean managed groups of named API
-principals. Certificate setup roles (`customer`, `vendor`, `combined`) retain
+The reference server runs MDM and DDM together. Roles are managed groups of
+named API principals. Certificate setup roles (`customer`, `vendor`, `combined`) retain
 their separate meaning.
 
 A principal authenticates with a checksummed bearer token. The database stores
@@ -88,7 +87,7 @@ dmctl policies activate operators
 
 Validation checks syntax, actions, resource types, context attributes and named
 principal/role references. Inactive documents are preserved and excluded from
-evaluation. Activating or updating a document requires validation. Invalid legacy
+evaluation. Activating or updating a document requires validation. Invalid stored
 documents can be replaced or deleted by root. An invalid active document blocks
 the entire operational policy set; the server never silently drops a broken
 forbid while retaining permits. Evaluation diagnostics also deny the request.
@@ -137,26 +136,16 @@ leaves maintenance paused and never reopens bootstrap. The output file must be
 new and private. If writing it fails after commit, the error identifies the
 created principal; repeat with a new name and then revoke the inaccessible one.
 
-## Upgrade from runtime modes and static administration
+## Implementation and policy language
 
-Back up the database and external keys using the recovery workflow. Run one
-unified service against the retained database. Remove `DM_ROLE`, all private DDM
-forwarding settings, `DM_ADMIN_STORE` and `DM_ADMIN_TOKEN`; these settings now fail
-startup with an explicit configuration error. `DM_DDM_SUBSCRIPTIONS` remains.
-The `-role`, `-admin-token` and forwarding flags are removed from `dmserver`.
-Bench workspaces use version 2; initialize a new isolated workspace rather than
-reusing an old split workspace.
+The [permission catalogue](../../server/internal/app/admincatalog.go) defines the
+allowed actions, resource types and explicit action-group membership. The
+[authorization manager](../../server/adminauth/manager.go) owns principal, role
+and policy state. The [HTTP wrapper](../../server/internal/app/adminauthz.go)
+resolves resource identities and applies route checks before handlers run.
 
-The migration preserves principal names, token digests, root flags, policies and
-device state. It creates role records from legacy memberships and parsed role
-references, imports normalized memberships and marks existing principal stores
-as initialized. Existing tokens continue to authenticate. A database with
-principals cannot use bootstrap, even if their credentials are inaccessible;
-use fenced root recovery in that case.
-
-Review policies against the new schema and action catalogue. Replace broad
-`enqueueCommand` grants with explicit command actions; split list, content and
-mutation permissions where required; update enrollment resource literals to
-include the parent component. Policies that no longer validate block operational
-authorization until root repairs or explicitly removes them. No policy is
-automatically rewritten, deactivated or broadened by migration.
+Cedar describes [policy syntax](https://docs.cedarpolicy.com/policies/syntax-policy.html)
+and its [authorization algorithm](https://docs.cedarpolicy.com/auth/authorization.html).
+Cedar can skip a policy that produces an evaluation error. This server deliberately
+denies an operation if any evaluation diagnostic occurs; invalid active documents
+also block the operational policy set. This fail-closed policy is a project choice.

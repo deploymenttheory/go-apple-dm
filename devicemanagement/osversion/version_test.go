@@ -7,6 +7,7 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/osversion"
 )
 
+// TestParse checks OS version parsing, formatting, invalid strings, and MustParse panics.
 func TestParse(t *testing.T) {
 	t.Parallel()
 	good := map[string]osversion.Version{
@@ -38,6 +39,7 @@ func TestParse(t *testing.T) {
 	osversion.MustParse("bad")
 }
 
+// TestVersionCompare checks major, minor, and patch ordering and zero-version detection.
 func TestVersionCompare(t *testing.T) {
 	t.Parallel()
 	a, b := osversion.New(10, 15, 4), osversion.New(11, 0, 0)

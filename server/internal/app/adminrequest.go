@@ -120,10 +120,14 @@ func resourceParameter(kind types.EntityType) string {
 	return ""
 }
 
+// authorityMutation identifies principal, role and policy mutations that require root
+// authority independently of Cedar grants.
 func authorityMutation(rt adminRoute) bool {
 	return rt.Action == ActionManagePolicies || rt.Action == ActionManagePrincipals || rt.Action == ActionManageRoles
 }
 
+// commandActionIDs collects explicit per-command permissions and the unknown-command
+// permission from the action catalogue.
 func commandActionIDs() []string {
 	var out []string
 	for _, action := range AdminActions() {

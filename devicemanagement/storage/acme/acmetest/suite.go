@@ -151,6 +151,8 @@ func RunAll(t *testing.T, newStore Factory) {
 	t.Run("Concurrency", func(t *testing.T) { runConcurrency(t, newStore) })
 }
 
+// must stops the calling test when a setup or contract operation returns an unexpected
+// error.
 func must(t *testing.T, what string, err error) {
 	t.Helper()
 	if err != nil {
@@ -158,6 +160,7 @@ func must(t *testing.T, what string, err error) {
 	}
 }
 
+// wantErr checks that an operation returns the expected error classification.
 func wantErr(t *testing.T, what string, err, want error) {
 	t.Helper()
 	if !errors.Is(err, want) {
@@ -172,6 +175,8 @@ func inTx(t *testing.T, what string, s acme.Store, fn func(acme.Tx) error) {
 	must(t, what, s.Update(context.Background(), fn))
 }
 
+// runAccounts checks account copies, unique thumbprints, updates, rekeying, and reuse of a
+// released thumbprint.
 func runAccounts(t *testing.T, newStore Factory) {
 	t.Helper()
 	ctx := context.Background()
@@ -234,6 +239,8 @@ func runAccounts(t *testing.T, newStore Factory) {
 	inTx(t, "reuse released thumbprint", s, func(tx acme.Tx) error { return tx.PutAccount(ctx, dup) })
 }
 
+// runOrders checks order state transitions and independent copies of binding and
+// structured failure details.
 func runOrders(t *testing.T, newStore Factory) {
 	t.Helper()
 	ctx := context.Background()
@@ -305,6 +312,8 @@ func runOrders(t *testing.T, newStore Factory) {
 	}
 }
 
+// runOrderList checks account-scoped order listing and deterministic pagination without
+// duplicates.
 func runOrderList(t *testing.T, newStore Factory) {
 	t.Helper()
 	ctx := context.Background()
@@ -384,6 +393,8 @@ func cmpString(a, b string) int {
 	}
 }
 
+// runAuthorizations checks authorization and challenge round trips, successful
+// transitions, and retained challenge errors.
 func runAuthorizations(t *testing.T, newStore Factory) {
 	t.Helper()
 	ctx := context.Background()
@@ -438,6 +449,8 @@ func runAuthorizations(t *testing.T, newStore Factory) {
 	}
 }
 
+// runChallengeAttestation checks byte-exact attestation storage, copy isolation, and empty
+// or absent attestation values.
 func runChallengeAttestation(t *testing.T, newStore Factory) {
 	t.Helper()
 	ctx := context.Background()
@@ -488,6 +501,8 @@ func runChallengeAttestation(t *testing.T, newStore Factory) {
 	}
 }
 
+// runCertificates checks certificate round trips and independent copies of certificate,
+// binding, and attested-property data.
 func runCertificates(t *testing.T, newStore Factory) {
 	t.Helper()
 	ctx := context.Background()
@@ -525,6 +540,8 @@ func runCertificates(t *testing.T, newStore Factory) {
 	}
 }
 
+// runCertificateList checks certificate filters, combined constraints, and pagination that
+// visits every match once.
 func runCertificateList(t *testing.T, newStore Factory) {
 	t.Helper()
 	ctx := context.Background()
@@ -603,6 +620,8 @@ func certFor(id, accountID, serial, udid string) *acme.Certificate {
 	return c
 }
 
+// runClaims checks exclusive identifier claims and release of claims after transaction
+// rollback.
 func runClaims(t *testing.T, newStore Factory) {
 	t.Helper()
 	ctx := context.Background()
@@ -635,6 +654,8 @@ func runClaims(t *testing.T, newStore Factory) {
 	})
 }
 
+// runNonces checks nonce round trips and one-use consumption without disturbing other
+// nonces.
 func runNonces(t *testing.T, newStore Factory) {
 	t.Helper()
 	ctx := context.Background()
@@ -660,6 +681,8 @@ func runNonces(t *testing.T, newStore Factory) {
 	}
 }
 
+// runUpdate checks read-your-writes, atomic commit, and rollback across all ACME record
+// types.
 func runUpdate(t *testing.T, newStore Factory) {
 	t.Helper()
 	ctx := context.Background()
@@ -772,6 +795,8 @@ func readBack(ctx context.Context, tx acme.Tx) error {
 	return nil
 }
 
+// runPrune checks expiration pruning of orders, authorizations, challenges, and nonces
+// while retaining live data, accounts, and certificates.
 func runPrune(t *testing.T, newStore Factory) {
 	t.Helper()
 	ctx := context.Background()
@@ -854,6 +879,8 @@ func runPrune(t *testing.T, newStore Factory) {
 	}
 }
 
+// runInvalid checks ErrInvalid for missing required ACME record identities and nil
+// transaction callbacks or records.
 func runInvalid(t *testing.T, newStore Factory) {
 	t.Helper()
 	ctx := context.Background()
@@ -906,14 +933,18 @@ func runInvalid(t *testing.T, newStore Factory) {
 	}
 }
 
+// putAccount returns a transaction callback that stores the supplied account.
 func putAccount(ctx context.Context, a *acme.Account) func(acme.Tx) error {
 	return func(tx acme.Tx) error { return tx.PutAccount(ctx, a) }
 }
 
+// putOrder returns a transaction callback that stores the supplied order.
 func putOrder(ctx context.Context, o *acme.Order) func(acme.Tx) error {
 	return func(tx acme.Tx) error { return tx.PutOrder(ctx, o) }
 }
 
+// runConcurrency checks concurrent order transactions and exactly one successful consumer
+// for each nonce.
 func runConcurrency(t *testing.T, newStore Factory) {
 	t.Helper()
 	ctx := context.Background()

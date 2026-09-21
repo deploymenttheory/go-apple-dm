@@ -55,7 +55,7 @@
     {
       "id": "yaml",
       "type": "external",
-      "label": "Apple schema repository",
+      "label": "Apple schema sources",
       "sublabel": "OS 27 and historical release",
       "stage": 0,
       "row": 0,
@@ -89,7 +89,7 @@
     {
       "id": "registry",
       "type": "backend",
-      "label": "Registries and support",
+      "label": "Registry and support",
       "sublabel": "Identifiers and availability",
       "stage": 2,
       "row": 1,
@@ -122,7 +122,7 @@
     {
       "id": "generatedfrom",
       "type": "database",
-      "label": "Generation provenance",
+      "label": "Provenance record",
       "sublabel": "Source commit and digest",
       "stage": 1,
       "row": 2,
@@ -188,7 +188,7 @@
       "from": "yaml",
       "to": "generatedfrom",
       "variant": "default",
-      "label": "commit · digest",
+      "label": "commit \u00b7 digest",
       "classification": "provenance",
       "id": "flow-6",
       "purpose": "artifact"
@@ -215,9 +215,28 @@
       "dot": "transport",
       "title": "Public documentation",
       "items": [
-        "Apple device-management schema repository — https://github.com/apple/device-management",
-        "Go Modules Reference — https://go.dev/ref/mod",
-        "Implementation — https://github.com/deploymenttheory/go-apple-dm/blob/7500eb25e50a2913338339d5fced18dc7f41fdc3/internal/schemagen/generate.go"
+        "Apple device-management schema repository \u2014 https://github.com/apple/device-management",
+        "Go Modules Reference \u2014 https://go.dev/ref/mod"
+      ]
+    },
+    {
+      "title": "Implementation references",
+      "dot": "artifact",
+      "items": [
+        "yaml: Apple schema repository \u2014 https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/devicemanagement/schema/GENERATED_FROM.json",
+        "loader: Schema generator \u2014 https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/internal/schemagen/generate.go",
+        "types: Generated Go types \u2014 https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/devicemanagement/schema/commands/types.gen.go",
+        "registry: Registries and support \u2014 https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/devicemanagement/schema/commands/support.gen.go",
+        "nameslock: Public-name lock \u2014 https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/devicemanagement/schema/EXPORTED_IDENTIFIERS.lock",
+        "conformance: Conformance tests \u2014 https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/devicemanagement/schema/commands/conformance_gen_test.go"
+      ]
+    },
+    {
+      "title": "Implementation references (continued)",
+      "dot": "artifact",
+      "items": [
+        "generatedfrom: Generation provenance \u2014 https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/devicemanagement/schema/GENERATED_FROM.json",
+        "Future-schema monitor \u2014 https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/.github/scripts/device_management_client_schema_monitor.py"
       ]
     }
   ]

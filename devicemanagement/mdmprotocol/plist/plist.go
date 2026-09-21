@@ -97,6 +97,7 @@ type Decoder struct {
 	MaxDepth int
 }
 
+// limits resolves zero byte and nesting limits to the decoder defaults.
 func (d Decoder) limits() (maxBytes, maxDepth int) {
 	maxBytes, maxDepth = d.MaxBytes, d.MaxDepth
 	if maxBytes == 0 {

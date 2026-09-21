@@ -79,6 +79,7 @@ func state(t *testing.T, h *harness, id mdm.EnrollmentID) string {
 	}, " ")
 }
 
+// itoa formats an integer in decimal.
 func itoa(n int) string { return strconv.Itoa(n) }
 
 const (
@@ -86,6 +87,7 @@ const (
 	cleared = "sets= decls= - rows=0 values=0 pending=0"
 )
 
+// clearHarness creates a DDM harness with direct and set-member declaration fixtures.
 func clearHarness(t *testing.T, opts ...func(*ddm.Config)) *harness {
 	t.Helper()
 	h := newHarness(t, opts...)
@@ -101,6 +103,7 @@ func clearHarness(t *testing.T, opts ...func(*ddm.Config)) *harness {
 	return h
 }
 
+// TestClearEnrollment checks enrollment DDM state clearing, ID validation, and storage failures.
 func TestClearEnrollment(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
@@ -164,6 +167,8 @@ func enrollments(t *testing.T) *storeinmem.Store {
 	return st
 }
 
+// TestServiceHook checks DDM cleanup hooks for checkout and reauthentication, including
+// user-channel paging and failures.
 func TestServiceHook(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
@@ -351,6 +356,7 @@ func TestServiceHook(t *testing.T) {
 	})
 }
 
+// itoa3 formats an integer with at least three decimal digits.
 func itoa3(n int) string {
 	return fmt.Sprintf("%03d", n)
 }

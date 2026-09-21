@@ -7,6 +7,7 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/schema/support"
 )
 
+// TestExplicitEmptySupportLists checks explicit empty support lists.
 func TestExplicitEmptySupportLists(t *testing.T) {
 	t.Parallel()
 	parent := supportOS{

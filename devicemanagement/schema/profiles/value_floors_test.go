@@ -12,6 +12,8 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/schema/validation"
 )
 
+// TestSSOValueFloors checks value-specific SSO support floors without assigning extra floors to
+// unrelated values.
 func TestSSOValueFloors(t *testing.T) {
 	t.Parallel()
 	for _, field := range []string{"NewUserAuthenticationMethods", "FileVaultPolicy", "LoginPolicy", "UnlockPolicy"} {
@@ -59,6 +61,7 @@ func TestSSOValueFloors(t *testing.T) {
 	}
 }
 
+// TestNilProfileValidation checks that nil profile payloads fail validation.
 func TestNilProfileValidation(t *testing.T) {
 	t.Parallel()
 	var payload *profiles.ExtensibleSingleSignOn

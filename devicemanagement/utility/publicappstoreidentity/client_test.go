@@ -14,12 +14,15 @@ import (
 
 type transportFunc func(*http.Request) (*http.Response, error)
 
+// RoundTrip calls the injected HTTP round-trip function.
 func (f transportFunc) RoundTrip(r *http.Request) (*http.Response, error) { return f(r) }
 
 const listing = `{"resultCount":1,"results":[{"trackId":123,"bundleId":"com.example.app","trackName":"Example","artistName":"Example Inc","version":"2.0","trackViewUrl":"https://apps.apple.com/app/id123"}]}`
 
 var testStore = Store{Country: "gb", Entity: MacSoftware}
 
+// fixtureClient creates a client returning the supplied response body and status with a
+// Retry-After header.
 func fixtureClient(t *testing.T, body string, status int) *Client {
 	t.Helper()
 	return &Client{HTTPClient: &http.Client{Transport: transportFunc(func(r *http.Request) (*http.Response, error) {
@@ -27,6 +30,8 @@ func fixtureClient(t *testing.T, body string, status int) *Client {
 	})}}
 }
 
+// TestSearchAndLookup checks public App Store request parameters, deadlines, decoding, and listing
+// conversion.
 func TestSearchAndLookup(t *testing.T) {
 	c := fixtureClient(t, listing, 200)
 	base := c.HTTPClient.Transport
@@ -56,6 +61,7 @@ func TestSearchAndLookup(t *testing.T) {
 	}
 }
 
+// TestDeveloperFilterAndPlatformMetadata checks developer filter and platform metadata.
 func TestDeveloperFilterAndPlatformMetadata(t *testing.T) {
 	c := fixtureClient(t, `{"resultCount":3,"results":[
 		{"trackId":1,"bundleId":"com.example.phone","trackName":"Example","artistName":"Example Inc","kind":"software","features":["iosUniversal"],"supportedDevices":["iPhone17,1","iPad16,3"]},
@@ -104,6 +110,7 @@ func TestDeveloperFilterAndPlatformMetadata(t *testing.T) {
 	}
 }
 
+// TestEntitiesAndDefaults checks App Store entity defaults and empty results.
 func TestEntitiesAndDefaults(t *testing.T) {
 	c := fixtureClient(t, `{"resultCount":0,"results":[]}`, 200)
 	original := http.DefaultClient
@@ -124,6 +131,8 @@ func TestEntitiesAndDefaults(t *testing.T) {
 	}
 }
 
+// TestInvalidQueries checks invalid App Store queries and client configuration before requests are
+// sent.
 func TestInvalidQueries(t *testing.T) {
 	for _, q := range []Query{
 		{Store: testStore},
@@ -152,6 +161,7 @@ func TestInvalidQueries(t *testing.T) {
 	}
 }
 
+// TestResponses checks App Store response validation and error classification.
 func TestResponses(t *testing.T) {
 	for _, tc := range []struct {
 		body   string
@@ -185,9 +195,13 @@ func TestResponses(t *testing.T) {
 
 type failingBody struct{ closed bool }
 
+// Read returns io.ErrUnexpectedEOF without reading bytes.
 func (*failingBody) Read([]byte) (int, error) { return 0, io.ErrUnexpectedEOF }
-func (b *failingBody) Close() error           { b.closed = true; return nil }
 
+// Close records that the response body was closed.
+func (b *failingBody) Close() error { b.closed = true; return nil }
+
+// TestRequestFailures checks request failure propagation and closure of failed response bodies.
 func TestRequestFailures(t *testing.T) {
 	body := &failingBody{}
 	c := &Client{HTTPClient: &http.Client{Transport: transportFunc(func(r *http.Request) (*http.Response, error) {

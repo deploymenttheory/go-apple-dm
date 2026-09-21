@@ -119,6 +119,8 @@ func (s *Server) Requests() []Request {
 	return append([]Request(nil), s.requests...)
 }
 
+// handle records an APNs-style device request and returns the configured result for its
+// token.
 func (s *Server) handle(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost || !strings.HasPrefix(r.URL.Path, "/3/device/") {
 		http.Error(w, `{"reason":"BadPath"}`, http.StatusNotFound)

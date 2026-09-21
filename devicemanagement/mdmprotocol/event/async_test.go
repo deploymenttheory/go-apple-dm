@@ -12,6 +12,7 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/event"
 )
 
+// TestAsyncConfiguration checks asynchronous event-bus configuration validation.
 func TestAsyncConfiguration(t *testing.T) {
 	for _, cfg := range []event.AsyncConfig{{Workers: -1}, {QueueCapacity: -1}, {DeliveryTimeout: -1}} {
 		if b, err := event.NewAsync(cfg); b != nil || !errors.Is(err, event.ErrAsyncConfig) {
@@ -38,6 +39,8 @@ func TestAsyncConfiguration(t *testing.T) {
 	}
 }
 
+// assertAccounting checks event accounting conservation, nonnegative counts, and worker and queue
+// limits.
 func assertAccounting(t *testing.T, b *event.Bus) {
 	t.Helper()
 	s := b.Stats()
@@ -53,6 +56,7 @@ func assertAccounting(t *testing.T, b *event.Bus) {
 	}
 }
 
+// TestBoundedAsyncRejectionAndRecovery checks bounded async rejection and recovery.
 func TestBoundedAsyncRejectionAndRecovery(t *testing.T) {
 	synctest.Test(t, func(t *testing.T) {
 		var rejected atomic.Int64
@@ -103,6 +107,7 @@ func TestBoundedAsyncRejectionAndRecovery(t *testing.T) {
 	})
 }
 
+// TestAsyncExpiryIncludesQueueTime checks that async expiry includes queue time.
 func TestAsyncExpiryIncludesQueueTime(t *testing.T) {
 	synctest.Test(t, func(t *testing.T) {
 		b, _ := event.NewAsync(
@@ -129,6 +134,7 @@ func TestAsyncExpiryIncludesQueueTime(t *testing.T) {
 	})
 }
 
+// TestAsyncCancellationAndDrainTimeout checks async cancellation and drain timeout.
 func TestAsyncCancellationAndDrainTimeout(t *testing.T) {
 	synctest.Test(t, func(t *testing.T) {
 		type key struct{}
@@ -163,6 +169,7 @@ func TestAsyncCancellationAndDrainTimeout(t *testing.T) {
 	})
 }
 
+// TestConcurrentPublishAndClose checks concurrent publish and close.
 func TestConcurrentPublishAndClose(t *testing.T) {
 	b, _ := event.NewAsync(event.AsyncConfig{Workers: 2, QueueCapacity: 4})
 	boom := errors.New("sink failed")
@@ -183,6 +190,8 @@ func TestConcurrentPublishAndClose(t *testing.T) {
 	assertAccounting(t, b)
 }
 
+// TestAsyncDeadlineSkipsRemainingSubscribers checks that async deadline skips remaining
+// subscribers.
 func TestAsyncDeadlineSkipsRemainingSubscribers(t *testing.T) {
 	synctest.Test(t, func(t *testing.T) {
 		b, _ := event.NewAsync(event.AsyncConfig{Workers: 1, DeliveryTimeout: time.Second})

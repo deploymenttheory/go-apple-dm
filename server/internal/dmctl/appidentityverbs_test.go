@@ -15,6 +15,8 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/server/internal/dmctl"
 )
 
+// TestAppIdentityCommands checks application identity CLI request construction and preservation of
+// discovery responses.
 func TestAppIdentityCommands(t *testing.T) {
 	const response = `{"items":[{"id":123,"bundleID":"com.example.selected"}],"complete":false,"issues":[{"reason":"review this"}]}`
 	for _, test := range []struct {
@@ -49,6 +51,7 @@ func TestAppIdentityCommands(t *testing.T) {
 	}
 }
 
+// TestAppIdentityArtifactUpload checks app identity artifact upload.
 func TestAppIdentityArtifactUpload(t *testing.T) {
 	const artifact = "PK\x03\x04\x00\xff\x80artifact\nbytes"
 	const report = `{"complete":false,"applications":[],"issues":[{"reason":"unsupported candidate"}]}`
@@ -77,6 +80,7 @@ func TestAppIdentityArtifactUpload(t *testing.T) {
 	}
 }
 
+// TestAppIdentityInputAndHelp checks app identity input and help.
 func TestAppIdentityInputAndHelp(t *testing.T) {
 	var requests atomic.Int32
 	srv := httptest.NewServer(http.HandlerFunc(func(http.ResponseWriter, *http.Request) { requests.Add(1) }))
@@ -128,6 +132,8 @@ func TestAppIdentityInputAndHelp(t *testing.T) {
 	}
 }
 
+// TestAppIdentityFailures checks propagation of identity-command configuration, server, input,
+// cancellation, and output failures.
 func TestAppIdentityFailures(t *testing.T) {
 	for _, operation := range [][]string{{"apple", "search"}, {"inspect", "-file", "-"}} {
 		args := append([]string{"app-identities"}, operation...)

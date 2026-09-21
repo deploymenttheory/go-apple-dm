@@ -7,6 +7,7 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/server/adminauth"
 )
 
+// TestMint checks minted token uniqueness, prefix, length, and validity.
 func TestMint(t *testing.T) {
 	seen := make(map[adminauth.Token]bool)
 	for range 200 {
@@ -74,6 +75,7 @@ func TestValid(t *testing.T) {
 	})
 }
 
+// TestDigest checks deterministic, distinct token digests that do not contain the token body.
 func TestDigest(t *testing.T) {
 	a, err := adminauth.Mint()
 	if err != nil {
@@ -100,6 +102,7 @@ func TestDigest(t *testing.T) {
 	}
 }
 
+// TestRedact checks token redaction for ordinary, short, and empty values.
 func TestRedact(t *testing.T) {
 	tok, err := adminauth.Mint()
 	if err != nil {

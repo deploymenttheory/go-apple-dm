@@ -15,6 +15,7 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/server/sqlstore/sqlite"
 )
 
+// openDB opens a temporary SQLite database and registers its cleanup.
 func openDB(t *testing.T) *sql.DB {
 	t.Helper()
 	db, err := sql.Open("sqlite", sqlite.DSN(filepath.Join(t.TempDir(), "audit.db"), sqlite.Options{}))
@@ -25,6 +26,7 @@ func openDB(t *testing.T) *sql.DB {
 	return db
 }
 
+// openStore opens a migrated audit store backed by a temporary SQLite database.
 func openStore(t *testing.T) *sqlstore.Store {
 	t.Helper()
 	s, err := sqlstore.Open(context.Background(), openDB(t), sqlite.Dialect, sqlstore.Options{})
@@ -34,6 +36,7 @@ func openStore(t *testing.T) *sqlstore.Store {
 	return s
 }
 
+// TestContract runs the shared audit-store suite against SQLite.
 func TestContract(t *testing.T) {
 	audittest.RunSuite(t, func(t *testing.T) audit.Store {
 		t.Helper()
@@ -41,6 +44,8 @@ func TestContract(t *testing.T) {
 	})
 }
 
+// TestOpen checks audit store configuration, database failures, skipped migrations, and pool
+// access.
 func TestOpen(t *testing.T) {
 	ctx := context.Background()
 
@@ -85,6 +90,7 @@ func TestOpen(t *testing.T) {
 	})
 }
 
+// TestMigrations checks audit schema versioning, rollback, and ownership of its migration table.
 func TestMigrations(t *testing.T) {
 	ctx := context.Background()
 
@@ -133,6 +139,8 @@ func TestMigrations(t *testing.T) {
 	})
 }
 
+// TestInitialSchemaAllowsMissingEventIDAndDeduplicatesOccurrences checks that initial schema
+// allows missing event ID and deduplicates occurrences.
 func TestInitialSchemaAllowsMissingEventIDAndDeduplicatesOccurrences(t *testing.T) {
 	ctx := t.Context()
 	db := openDB(t)
@@ -177,6 +185,7 @@ func TestAppendRejectsUnencodableFields(t *testing.T) {
 	}
 }
 
+// TestFailuresSurface checks that audit operations report errors from a closed database pool.
 func TestFailuresSurface(t *testing.T) {
 	ctx := context.Background()
 	db := openDB(t)

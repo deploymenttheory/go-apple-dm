@@ -10,6 +10,7 @@ import (
 	schemaddm "github.com/deploymenttheory/go-apple-dm/devicemanagement/schema/ddm"
 )
 
+// item constructs a declaration item for the advertised-snapshot storage contract.
 func item(kind schemaddm.Kind, identifier, token string) ddm.SnapshotItem {
 	return ddm.SnapshotItem{DeclarationRef: ddm.DeclarationRef{Kind: kind, Identifier: identifier, ServerToken: token}, BaseToken: token}
 }

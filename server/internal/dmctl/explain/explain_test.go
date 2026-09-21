@@ -13,6 +13,7 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/server/internal/dmctl/explain"
 )
 
+// render renders schema explanation output, failing the test on error.
 func render(t *testing.T, m explain.Match, target support.Target) string {
 	t.Helper()
 	var buf bytes.Buffer
@@ -22,6 +23,8 @@ func render(t *testing.T, m explain.Match, target support.Target) string {
 	return buf.String()
 }
 
+// TestResolve checks schema resolution by Go name, wire ID, dotted path, and family with ambiguity
+// reporting.
 func TestResolve(t *testing.T) {
 	t.Run("ByGoTypeName", func(t *testing.T) {
 		got, err := explain.Resolve("DeviceLock", "")
@@ -112,6 +115,8 @@ func TestResolve(t *testing.T) {
 	})
 }
 
+// TestSuggest checks bounded near-match suggestions without inventing results for empty or
+// unrelated input.
 func TestSuggest(t *testing.T) {
 	got := explain.Suggest("devicelo", "", 5)
 	if len(got) == 0 {
@@ -137,6 +142,7 @@ func TestSuggest(t *testing.T) {
 	}
 }
 
+// TestFamiliesAndListings checks schema family listing and sorted, deduplicated IDs and paths.
 func TestFamiliesAndListings(t *testing.T) {
 	fams := explain.Families()
 	if len(fams) != 8 {
@@ -246,6 +252,7 @@ func TestNoDescriptionsAreInvented(t *testing.T) {
 	}
 }
 
+// TestParseTarget checks accepted and rejected schema target expressions.
 func TestParseTarget(t *testing.T) {
 	t.Run("Accepts", func(t *testing.T) {
 		got, err := explain.ParseTarget("macos:15.0,channel=device,supervised,dep,user-approved,shared-ipad,user-enrollment")
@@ -284,6 +291,7 @@ func TestParseTarget(t *testing.T) {
 	})
 }
 
+// TestKeys checks that explained field keys are sorted and belong to the selected type.
 func TestKeys(t *testing.T) {
 	m, err := explain.Resolve("DeviceLock", "commands")
 	if err != nil {

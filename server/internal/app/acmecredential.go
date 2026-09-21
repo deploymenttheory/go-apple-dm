@@ -28,6 +28,8 @@ type credentialGrant struct {
 	ExpiresAt          time.Time        `json:"expiresAt"`
 }
 
+// credentialGrantKey derives the ACME credential-grant storage key from the identifier's
+// SHA-256 digest.
 func credentialGrantKey(identifier string) string {
 	sum := sha256.Sum256([]byte(identifier))
 	return "acme-credential:" + hex.EncodeToString(sum[:])

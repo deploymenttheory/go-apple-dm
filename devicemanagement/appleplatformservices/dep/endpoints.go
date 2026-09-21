@@ -228,6 +228,8 @@ func (c *Client) BetaEnrollmentTokens(ctx context.Context, account string) ([]Be
 	return out.SeedBuildTokens, nil
 }
 
+// needSerials rejects empty or invalid serial-number batches before making a service
+// request.
 func needSerials(serials []string) error {
 	if len(serials) == 0 {
 		return fmt.Errorf("%w: no device serials", ErrInvalid)

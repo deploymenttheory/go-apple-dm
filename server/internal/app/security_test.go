@@ -27,6 +27,8 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/server/internal/app"
 )
 
+// TestPKIAndAccountStatePersistAcrossInstances checks PKI and account state persist across
+// instances.
 func TestPKIAndAccountStatePersistAcrossInstances(t *testing.T) {
 	var config app.Config
 	var diagnostics bytes.Buffer
@@ -215,6 +217,8 @@ func TestPKIAndAccountStatePersistAcrossInstances(t *testing.T) {
 	}
 }
 
+// TestExplicitRateLimitsAndSecurityEnvironment checks explicit rate limits and security
+// environment.
 func TestExplicitRateLimitsAndSecurityEnvironment(t *testing.T) {
 	raw := `{"enroll":{"interval":"1h","burst":1,"global_interval":"1h","global_burst":10},"acme":{"interval":"1h","burst":1,"global_interval":"1h","global_burst":10}}`
 	get := func(k string) string {
@@ -289,6 +293,7 @@ func TestExplicitRateLimitsAndSecurityEnvironment(t *testing.T) {
 	}
 }
 
+// TestRetiredIssuerConfiguration checks rejection of invalid retired-issuer configuration.
 func TestRetiredIssuerConfiguration(t *testing.T) {
 	certFile, keyFile, retired := writeCA(t)
 	var config app.Config
@@ -330,6 +335,8 @@ func TestRetiredIssuerConfiguration(t *testing.T) {
 	}
 }
 
+// TestRateLimitFamiliesCapacityAndConfiguration checks rate limit families capacity and
+// configuration.
 func TestRateLimitFamiliesCapacityAndConfiguration(t *testing.T) {
 	quotas := map[string]app.RouteQuota{}
 	for _, name := range []string{"enroll", "auth", "scep", "admin", "pki", "mdm", "acme"} {
@@ -405,6 +412,7 @@ func TestRateLimitFamiliesCapacityAndConfiguration(t *testing.T) {
 	}
 }
 
+// TestProtocolStateRetentionWorker checks protocol state retention worker.
 func TestProtocolStateRetentionWorker(t *testing.T) {
 	clk := clock.NewFake(time.Now())
 	quota := app.RouteQuota{Interval: time.Second, Burst: 1, GlobalInterval: time.Second, GlobalBurst: 1}

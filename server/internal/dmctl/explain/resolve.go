@@ -69,6 +69,7 @@ var families = []string{
 // metadata for offline lookup.
 var index = buildIndex()
 
+// buildIndex indexes generated schema identifiers for command-line lookup.
 func buildIndex() map[string][]entry {
 	out := make(map[string][]entry, len(families))
 	for name, e := range commands.Registry {
@@ -188,6 +189,7 @@ func Resolve(arg, family string) ([]Match, error) {
 	return nil, fmt.Errorf("%w: %q", ErrNotFound, arg)
 }
 
+// match constructs a Match from an indexed schema entry and the selected field path.
 func match(family string, r entry, path string, key bool) Match {
 	return Match{
 		Family: family, TypeName: r.typeName, ID: r.id, Title: r.title,

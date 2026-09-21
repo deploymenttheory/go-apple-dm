@@ -28,6 +28,7 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/server/statestore"
 )
 
+// configuration builds a blueprint containing a math settings declaration.
 func configuration(t *testing.T) blueprint.Spec {
 	t.Helper()
 	c, err := blueprint.NewDeclaration("math", &schema.MathSettings{})
@@ -37,6 +38,7 @@ func configuration(t *testing.T) blueprint.Spec {
 	return blueprint.Spec{Identifier: "engineering", Declarations: []blueprint.Declaration{c}}
 }
 
+// profileBytes encodes a configuration-profile fixture containing the supplied setting.
 func profileBytes(t *testing.T, setting string) []byte {
 	t.Helper()
 	p := profileValue(setting)
@@ -47,10 +49,13 @@ func profileBytes(t *testing.T, setting string) []byte {
 	return b
 }
 
+// profileValue builds a system configuration profile containing the supplied setting.
 func profileValue(setting string) *profile.Profile {
 	return &profile.Profile{Identifier: "com.example.blueprint", UUID: "6C9B0C20-0000-7000-8000-000000000001", Scope: profile.ScopeSystem, Payloads: []profile.Payload{{Identifier: "com.example.blueprint.settings", UUID: "6C9B0C20-0000-7000-8000-000000000002", Content: &profile.Raw{Type: "com.example.settings", Keys: map[string]any{"Setting": setting}}}}}
 }
 
+// memoryConfig creates an in-memory DDM engine and configuration-profile manager for blueprint
+// tests.
 func memoryConfig(t *testing.T) blueprints.Config {
 	t.Helper()
 	e, err := ddm.New(ddm.Config{Store: inmem.New(), Expander: configurationprofile.Expander{BaseURL: "https://mdm.example"}})
@@ -65,6 +70,8 @@ func memoryConfig(t *testing.T) blueprints.Config {
 	return blueprints.Config{Engine: e, State: st, ConfigurationProfiles: profiles}
 }
 
+// sqlConfig creates SQL-backed DDM and state stores with a shared transaction runner for blueprint
+// tests.
 func sqlConfig(t *testing.T, db *sql.DB, d sqlcommon.Dialect) blueprints.Config {
 	t.Helper()
 	st, err := sqlstore.Open(t.Context(), db, d, sqlstore.Options{})
@@ -86,6 +93,8 @@ func sqlConfig(t *testing.T, db *sql.DB, d sqlcommon.Dialect) blueprints.Config 
 	return blueprints.Config{Engine: e, State: s, Run: (sqlcommon.UnitOfWork{DB: db, Dialect: d}).Run, ConfigurationProfiles: profiles}
 }
 
+// TestManager checks blueprint revision, transaction, assignment, and profile behavior with memory
+// and SQLite stores.
 func TestManager(t *testing.T) {
 	t.Run("memory", func(t *testing.T) { exercise(t, memoryConfig(t)) })
 	t.Run("sqlite", func(t *testing.T) {
@@ -98,6 +107,8 @@ func TestManager(t *testing.T) {
 	})
 }
 
+// exercise checks blueprint revision preconditions, idempotence, concurrent publication, rollback,
+// assignment, and deletion.
 func exercise(t *testing.T, cfg blueprints.Config) {
 	t.Helper()
 	ctx := t.Context()
@@ -219,6 +230,7 @@ func exercise(t *testing.T, cfg blueprints.Config) {
 
 type failState struct{ state.Store }
 
+// Update runs the transaction callback and then injects a metadata failure to force rollback.
 func (s failState) Update(ctx context.Context, keys []string, fn func(state.Tx) error) error {
 	return s.Store.Update(ctx, keys, func(tx state.Tx) error {
 		if err := fn(tx); err != nil {
@@ -228,6 +240,8 @@ func (s failState) Update(ctx context.Context, keys []string, fn func(state.Tx) 
 	})
 }
 
+// exerciseProfiles checks immutable profile revisions and download access against assignment and
+// advertised snapshots.
 func exerciseProfiles(t *testing.T, m *blueprints.Manager, profiles *configurationprofile.Manager, e *ddm.Engine) {
 	t.Helper()
 	ctx := t.Context()
@@ -308,6 +322,8 @@ func exerciseProfiles(t *testing.T, m *blueprints.Manager, profiles *configurati
 	}
 }
 
+// TestConfigurationProfileValidation checks configuration-profile signature preservation and
+// rejection of unsupported signed assets.
 func TestConfigurationProfileValidation(t *testing.T) {
 	cfg := memoryConfig(t)
 	profiles := cfg.ConfigurationProfiles

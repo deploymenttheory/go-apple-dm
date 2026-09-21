@@ -77,6 +77,7 @@ type compoundExpr struct {
 	right expr
 }
 
+// precedence returns this expression node's binding strength for parenthesized rendering.
 func (e *compoundExpr) precedence() int {
 	if e.op == logicalAnd {
 		return precAnd
@@ -89,6 +90,7 @@ type notExpr struct {
 	operand expr
 }
 
+// precedence returns this expression node's binding strength for parenthesized rendering.
 func (*notExpr) precedence() int { return precNot }
 
 // constExpr is TRUEPREDICATE or FALSEPREDICATE.
@@ -96,6 +98,7 @@ type constExpr struct {
 	value bool
 }
 
+// precedence returns this expression node's binding strength for parenthesized rendering.
 func (*constExpr) precedence() int { return precPrimary }
 
 // compareExpr compares two operands.
@@ -106,6 +109,7 @@ type compareExpr struct {
 	right           operand
 }
 
+// precedence returns this expression node's binding strength for parenthesized rendering.
 func (*compareExpr) precedence() int { return precPrimary }
 
 // operand is one side of a comparison.
@@ -118,6 +122,7 @@ type propertyRef struct {
 	key string
 }
 
+// isOperand marks the node as a predicate operand; it performs no evaluation.
 func (*propertyRef) isOperand() {}
 
 // statusRef is an @status(path) reference.
@@ -125,6 +130,7 @@ type statusRef struct {
 	path string
 }
 
+// isOperand marks the node as a predicate operand; it performs no evaluation.
 func (*statusRef) isOperand() {}
 
 // litKind identifies the type of a literal.
@@ -148,4 +154,5 @@ type literal struct {
 	items   []literal
 }
 
+// isOperand marks the node as a predicate operand; it performs no evaluation.
 func (*literal) isOperand() {}

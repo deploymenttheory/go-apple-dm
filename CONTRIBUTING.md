@@ -13,7 +13,7 @@ the server, including in tests. The package import constraints are documented in
 [architecture.md](docs/architecture.md) and enforced by `internal/layout`.
 
 Run checks appropriate to the change. `make verify` checks generated output; `make test` runs
-both modules with the race detector and requires all eight OS 27 contracts through
+both modules with the race detector and requires all published OS 27 contracts through
 `make test-schema-contracts`. Storage changes require the shared contract suite and
 SQL integration tests. Protocol changes require relevant simulator scenarios and failure-path
 tests. `make help` describes the database, end-to-end, fuzz and coverage targets. The coverage
@@ -85,6 +85,13 @@ Do not paraphrase verbatim Apple schema descriptions.
 Document significant design decisions using the [decision template](docs/research/decisions/TEMPLATE.md).
 Integrate amendments into the current decision and preserve its number and filename. Update
 [architecture.md](docs/architecture.md), related guides and diagram sources when behavior changes.
+Run `make docs-check` for local documentation links, code references, documentation
+contracts and diagram-source checks; this check does not modify files. Reconcile
+protocol claims with primary vendor sources and link them beside the relevant contract.
+Local link targets must be tracked by Git; stage new target files before running the check.
+Keep authored documentation about current behavior: consolidate duplicate guides and
+remove superseded reports, handoffs and migration narratives. Generated release
+changelogs, schema provenance and vendor snapshots retain their own ownership.
 Diagram JSON sources and regeneration instructions are in [docs/diagrams](docs/diagrams/README.md).
 
 Edit project-authored generated comments in `internal/schemagen`, then run `make generate` and

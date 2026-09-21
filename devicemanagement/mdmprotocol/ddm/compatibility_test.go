@@ -13,6 +13,8 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/schema/support"
 )
 
+// TestMixedFleetCompatibility checks per-target declaration withholding, snapshot validation,
+// resolver failures, and bootstrap-only unknown inventory.
 func TestMixedFleetCompatibility(t *testing.T) {
 	version := "26.6.2"
 	var lookupErr error
@@ -109,6 +111,8 @@ func TestMixedFleetCompatibility(t *testing.T) {
 	}
 }
 
+// TestCompatibilityDeletionKeepsIndependentDeclarations checks that compatibility deletion keeps
+// independent declarations.
 func TestCompatibilityDeletionKeepsIndependentDeclarations(t *testing.T) {
 	h := newHarness(t, func(c *ddm.Config) {
 		c.EnrollmentTarget = func(context.Context, mdm.EnrollmentID) (support.Target, error) {

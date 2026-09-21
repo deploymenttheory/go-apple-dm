@@ -384,6 +384,7 @@ func reenrollPolicy(allow bool) service.ReenrollPolicy {
 	return service.DenyReenroll
 }
 
+// validate rejects inconsistent server configuration before runtime resources are opened.
 func (c Config) validate() error {
 	if c.Sinks.WebhookURL != "" || len(c.Sinks.WebhookHMACKey) != 0 {
 		return fmt.Errorf("%w: legacy webhook settings require migration to managed subscriptions", ErrConfig)
@@ -465,6 +466,8 @@ func (a *App) certSource() func(http.Handler) http.Handler {
 	return a.certSourceWithRoots(a.cfg.CARoots)
 }
 
+// certSourceWithRoots combines TLS, trusted proxy headers and verified Mdm-Signature
+// extraction while enforcing the configured trust roots and proxy allowlist.
 func (a *App) certSourceWithRoots(roots *x509.CertPool) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		signed := next
@@ -535,6 +538,8 @@ func (a *App) openKeyring(ctx context.Context) error {
 	return nil
 }
 
+// openStorage opens the configured backend and keyring; SQL backends additionally register
+// maintenance participation and apply coordinated migrations.
 func (a *App) openStorage(ctx context.Context) error {
 	var (
 		dialect sqlcommon.Dialect
@@ -589,6 +594,8 @@ func (a *App) openStorage(ctx context.Context) error {
 	return nil
 }
 
+// ddmStore opens DDM storage on the shared SQL pool or creates an independent in-memory
+// store when no pool exists.
 func (a *App) ddmStore(ctx context.Context) (ddm.Store, error) {
 	if a.db == nil {
 		return ddminmem.New(), nil
@@ -756,6 +763,8 @@ func (a *App) Run(ctx context.Context) error {
 	return a.runWorkers(ctx)
 }
 
+// runWorkers runs registered workers concurrently, cancels peers on failure and waits for
+// all workers before returning the first reported error.
 func (a *App) runWorkers(ctx context.Context) error {
 	if len(a.workers) == 0 {
 		<-ctx.Done()
@@ -904,6 +913,8 @@ func (a *App) readyz(w http.ResponseWriter, r *http.Request) {
 	a.healthz(w, r)
 }
 
+// wireAdmin constructs stored-principal authorization, gathers enabled feature routes and
+// mounts the authenticated administrative surface.
 func (a *App) wireAdmin(ctx context.Context, mux *http.ServeMux) error {
 	cfg := a.cfg
 	store, err := a.adminStore(ctx)

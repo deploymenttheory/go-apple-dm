@@ -29,16 +29,19 @@ type countingCertStore struct {
 	versions atomic.Int64
 }
 
+// PushCert counts certificate loads before delegating to the certificate store.
 func (c *countingCertStore) PushCert(ctx context.Context, topic string) (*storage.PushCert, error) {
 	c.loads.Add(1)
 	return c.PushCertStore.PushCert(ctx, topic)
 }
 
+// PushCertVersion counts version lookups before delegating to the certificate store.
 func (c *countingCertStore) PushCertVersion(ctx context.Context, topic string) (int64, error) {
 	c.versions.Add(1)
 	return c.PushCertStore.PushCertVersion(ctx, topic)
 }
 
+// counts returns the certificate-load and version-lookup counters.
 func (c *countingCertStore) counts() (loads, versions int64) {
 	return c.loads.Load(), c.versions.Load()
 }
@@ -54,10 +57,12 @@ type stubCertStore struct {
 	loads      int
 }
 
+// StorePushCert returns the injected certificate-write failure.
 func (s *stubCertStore) StorePushCert(context.Context, string, []byte, []byte, time.Time) (storage.PushCert, error) {
 	return storage.PushCert{}, errStub
 }
 
+// PushCert counts loads and returns the configured certificate or error.
 func (s *stubCertStore) PushCert(context.Context, string) (*storage.PushCert, error) {
 	s.loads++
 	if s.certErr != nil {
@@ -66,10 +71,12 @@ func (s *stubCertStore) PushCert(context.Context, string) (*storage.PushCert, er
 	return s.cert, nil
 }
 
+// PushCerts returns the configured certificate list and error.
 func (s *stubCertStore) PushCerts(context.Context) ([]storage.PushCert, error) {
 	return s.list, s.listErr
 }
 
+// PushCertVersion returns the configured certificate version and error.
 func (s *stubCertStore) PushCertVersion(context.Context, string) (int64, error) {
 	return s.version, s.versionErr
 }
@@ -89,6 +96,7 @@ func issuePushPEM(t *testing.T, ca *testpki.CA, topic string, notBefore time.Tim
 	return certPEM, keyPEM, id
 }
 
+// TestStoreCertStoreCachesAndReloads checks store cert store caches and reloads.
 func TestStoreCertStoreCachesAndReloads(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
@@ -183,6 +191,7 @@ func TestStoreCertStoreCachesAndReloads(t *testing.T) {
 	}
 }
 
+// TestStoreCertStoreErrors checks store cert store errors.
 func TestStoreCertStoreErrors(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
@@ -240,6 +249,8 @@ func TestStoreCertStoreErrors(t *testing.T) {
 	}
 }
 
+// TestExpiringCerts checks push-certificate expiry windows, already expired certificates, and
+// storage failures.
 func TestExpiringCerts(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()

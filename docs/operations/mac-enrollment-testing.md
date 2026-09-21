@@ -121,3 +121,44 @@ ADE Setup Assistant activation requires a separate test involving an assigned de
 and Apple Business Manager/School Manager. Manual enrollment does not prove that
 path. Apps and Books user invitations and licensing concern app distribution;
 they are not prerequisites for manual enrollment and inventory.
+
+## Feature acceptance and VM readiness
+
+Before assigning a feature, run fresh tracked `DeviceInformation` queries for
+`OSVersion`, `BuildVersion`, `IsSupervised` and `IsAppleSilicon`, and inspect the
+server's compatibility target. `LIVE-001` supplies OS/build evidence; query the
+capabilities separately. When permitted, `SecurityInfo.ManagementStatus` supplies
+ADE and user-approved observations. Do not infer them from a profile an operator
+uploaded. Select a user channel by its canonical identifier and parent device.
+
+Use the [feature fixture workflow](../../test-lab/apple-features/README.md) one
+bundle at a time. Compare compatibility preview, fetched declarations and native
+status, then test the intended OS behavior separately. Unassign only the test
+set, verify status removal and restore its observable effects. Removing a
+configuration does not necessarily undo user consent or reactivate/deactivate a
+service. [Blueprint acceptance](../testing/bench.md#blueprint-acceptance) and
+[application identity checks](application-identities.md#native-artifact-verification)
+provide focused procedures.
+
+For a VM, successful HTTPS and profile installation do not establish APNs readiness.
+Require a new independently pushed inventory request, its matching command UUID
+and a bounded acknowledgment after enrollment, after restart and during an idle
+logged-in session. Preserve a working checkpoint before destructive OS changes.
+Readiness failures stop downstream feature acceptance.
+
+Tests on macOS 27.0 (26A428) and a 27.2 beta guest (26B5086k), hosted on 27.0,
+observed APNs/BAA key failures despite working HTTPS; a 26.6.2 guest control on the
+same host delivered commands. These observations are limited to those tested
+configurations. They do not identify a universal virtualization defect or prove
+that another host/guest release has the same behavior. Late responses around boot
+or login show queue progress, not that an independent APNs notification caused it.
+Apple's [command delivery protocol](https://developer.apple.com/documentation/devicemanagement/sending-mdm-commands-to-a-device)
+separates the wake notification from the subsequent HTTPS exchange.
+
+Feature prerequisites include appropriate enrollment access rights, provider
+extensions and endpoints, disposable signed apps, and real issuer/IdP credentials.
+Enhanced diagnostics needs an AppleCare token and the supported channel. Software
+update enforcement and ADE Setup Assistant require separate, explicitly selected
+targets. A Mac run cannot establish iOS/iPadOS, Shared iPad, tvOS, visionOS or watchOS
+acceptance. Native results should state which behavior was measured, rather than
+classifying an entire schema family as passed.

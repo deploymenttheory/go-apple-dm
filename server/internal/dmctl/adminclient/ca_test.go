@@ -12,6 +12,8 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/server/internal/dmctl/adminclient"
 )
 
+// TestExplicitServerTrust checks explicit admin-server trust, invalid trust files, and
+// preservation of caller transports.
 func TestExplicitServerTrust(t *testing.T) {
 	srv := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Header.Get("Authorization") != "Bearer operator" {

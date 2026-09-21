@@ -115,18 +115,31 @@ func New(store state.Store, issuers ...Issuer) (*Registry, error) {
 	return r, nil
 }
 
+// now returns the configured clock time, using the package default when no clock is
+// supplied.
 func (r *Registry) now() time.Time {
 	if r.Now != nil {
 		return r.Now().UTC()
 	}
 	return time.Now().UTC()
 }
-func issuerKey(id string) string             { return "pki/issuer/" + id }
-func certificatePrefix(issuer string) string { return "pki/cert/" + issuer + "/" }
-func certKey(issuer, serial string) string   { return certificatePrefix(issuer) + serial }
-func fingerprintKey(hash string) string      { return "pki/fingerprint/" + hash }
-func crlKey(issuer string) string            { return "pki/crl/" + issuer }
 
+// issuerKey constructs the namespaced key for issuer state.
+func issuerKey(id string) string { return "pki/issuer/" + id }
+
+// certificatePrefix constructs the namespaced key for certificate state.
+func certificatePrefix(issuer string) string { return "pki/cert/" + issuer + "/" }
+
+// certKey constructs the namespaced key for cert state.
+func certKey(issuer, serial string) string { return certificatePrefix(issuer) + serial }
+
+// fingerprintKey constructs the namespaced key for fingerprint state.
+func fingerprintKey(hash string) string { return "pki/fingerprint/" + hash }
+
+// crlKey constructs the namespaced key for crl state.
+func crlKey(issuer string) string { return "pki/crl/" + issuer }
+
+// putJSON encodes a revocation-registry record into the supplied state transaction.
 func putJSON(ctx context.Context, tx state.Tx, key string, v any) error {
 	b, err := json.Marshal(v)
 	if err != nil {
@@ -135,6 +148,7 @@ func putJSON(ctx context.Context, tx state.Tx, key string, v any) error {
 	return tx.Put(ctx, state.Record{Key: key, Value: b})
 }
 
+// readCertificate loads and decodes a retained certificate provenance record.
 func readCertificate(ctx context.Context, st state.Reader, key string) (Certificate, error) {
 	r, err := st.Get(ctx, key)
 	if errors.Is(err, state.ErrNotFound) {

@@ -17,6 +17,8 @@ type Participant struct {
 	requests  sync.WaitGroup
 }
 
+// ID returns the stable identifier assigned when this writer joined the maintenance
+// protocol.
 func (p *Participant) ID() string { return p.id }
 
 // Wrap rejects new requests during maintenance, including on a control-store
@@ -43,6 +45,8 @@ func (p *Participant) Wrap(next http.Handler) http.Handler {
 	})
 }
 
+// admission sets whether the participant accepts new requests while holding its admission
+// mutex.
 func (p *Participant) admission(accepting bool) {
 	p.mu.Lock()
 	p.accepting = accepting
@@ -100,6 +104,8 @@ func (p *Participant) Run(ctx context.Context, workers func(context.Context) err
 	}
 }
 
+// runActive runs background workers until they stop or maintenance begins, then closes
+// admission, cancels workers, and waits for outstanding requests.
 func (p *Participant) runActive(
 	ctx context.Context,
 	workers func(context.Context) error,

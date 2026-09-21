@@ -26,6 +26,7 @@ var keyProvider = secrets.Static{
 	"storage-key-v2": []byte("second-key-material-32-bytes-long"),
 }
 
+// keyring creates a keyring using the supplied active and accepted fixture keys.
 func keyring(t *testing.T, active string, accepted ...string) *crypt.Keyring {
 	t.Helper()
 	k, err := crypt.NewKeyring(context.Background(), crypt.Options{Keys: crypt.Keys{Active: active, Accepted: accepted}, Provider: keyProvider})
@@ -35,6 +36,7 @@ func keyring(t *testing.T, active string, accepted ...string) *crypt.Keyring {
 	return k
 }
 
+// openWith opens an SQLite store with the supplied keyring and registers cleanup.
 func openWith(t *testing.T, path string, k *crypt.Keyring) *sqlite.Store {
 	t.Helper()
 	s, err := sqlite.Open(context.Background(), path, sqlite.Options{Keyring: k})
@@ -55,6 +57,8 @@ func TestContractEncrypted(t *testing.T) {
 	})
 }
 
+// seedSecrets seeds unlock, bootstrap, user-authentication, and push-certificate secrets for
+// encryption tests.
 func seedSecrets(t *testing.T, s *sqlite.Store, id mdm.EnrollmentID) {
 	t.Helper()
 	ctx := context.Background()
@@ -89,6 +93,7 @@ func seedSecrets(t *testing.T, s *sqlite.Store, id mdm.EnrollmentID) {
 	}
 }
 
+// rawColumns reads encrypted secret columns directly from SQLite for at-rest assertions.
 func rawColumns(t *testing.T, s *sqlite.Store, id string) map[string][]byte {
 	t.Helper()
 	ctx := context.Background()
@@ -259,6 +264,8 @@ func TestRewrapMovesToActiveKey(t *testing.T) {
 	}
 }
 
+// sealWith encrypts fixture plaintext with the named key and enrollment unlock-token associated
+// data.
 func sealWith(t *testing.T, name, plaintext string) []byte {
 	t.Helper()
 	k := keyring(t, name)

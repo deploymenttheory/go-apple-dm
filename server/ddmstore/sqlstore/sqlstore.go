@@ -121,6 +121,7 @@ func Open(ctx context.Context, db *sql.DB, d sqlcommon.Dialect, o Options) (*Sto
 // DB exposes the pool for health checks and tests.
 func (s *Store) DB() *sql.DB { return s.db }
 
+// wrap adds the store operation to an error while retaining the wrapped cause.
 func wrap(op string, err error) error { return fmt.Errorf("sqlstore: %s: %w", op, err) }
 
 // validID maps an ill-formed enrollment id to ddm.ErrInvalid.

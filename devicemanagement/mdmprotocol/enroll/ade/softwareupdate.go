@@ -47,6 +47,8 @@ type BetaProgram struct {
 // is required and to what. It is only consulted when the device says
 // MDM_CAN_REQUEST_SOFTWARE_UPDATE.
 type Policy interface {
+	// MinimumOS returns an OS target and whether that requirement applies. Gate
+	// compares the device version with the target before requiring an update.
 	MinimumOS(ctx context.Context, p *Parsed) (target Target, required bool, err error)
 }
 
@@ -60,6 +62,8 @@ func (f PolicyFunc) MinimumOS(ctx context.Context, p *Parsed) (Target, bool, err
 // before enrollment. It is consulted only when the device says
 // MDM_CAN_REQUEST_PSSO_CONFIG, and before the software update check.
 type PSSOPolicy interface {
+	// PlatformSSO returns the Platform SSO configuration and whether the device must
+	// complete it before enrollment.
 	PlatformSSO(ctx context.Context, p *Parsed) (details *schemaerrors.CodePlatformSSORequiredDetails, required bool, err error)
 }
 
@@ -148,8 +152,10 @@ func Gate(ctx context.Context, p *Parsed, policy Policy, lookup gdmf.Lookup, log
 	return updateDecision(target)
 }
 
+// flag reads an optional boolean without treating absence as true.
 func flag(b *bool) bool { return b != nil && *b }
 
+// deviceID selects the device identity used for enrollment-policy decisions.
 func deviceID(p *Parsed) string {
 	if p.SOFTWAREUPDATEDEVICEID != nil && *p.SOFTWAREUPDATEDEVICEID != "" {
 		return *p.SOFTWAREUPDATEDEVICEID
@@ -157,6 +163,8 @@ func deviceID(p *Parsed) string {
 	return p.PRODUCT
 }
 
+// updateDecision builds and validates the softwareupdate.required response for the
+// selected update target.
 func updateDecision(t Target) (*Decision, error) {
 	body := &schemaerrors.CodeSoftwareUpdateRequired{
 		Code:    schemaerrors.ErrorCodeCodeSoftwareUpdateRequired,
@@ -176,6 +184,8 @@ func updateDecision(t Target) (*Decision, error) {
 	return &Decision{Action: SoftwareUpdateRequired, SoftwareUpdate: body, Reason: "update to " + t.OSVersion}, nil
 }
 
+// pssoDecision builds and validates a platform-sso.required response from nonnil Platform
+// SSO details.
 func pssoDecision(details *schemaerrors.CodePlatformSSORequiredDetails) (*Decision, error) {
 	if details == nil {
 		return nil, fmt.Errorf("%w: psso.required without details", ErrGate)

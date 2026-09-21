@@ -39,6 +39,7 @@ func (f *Failing) SetFail(fail map[string]error) {
 	f.Fail = fail
 }
 
+// fail returns the configured failure for an operation when fault injection is enabled.
 func (f *Failing) fail(method string) error {
 	f.mu.Lock()
 	defer f.mu.Unlock()
@@ -252,6 +253,8 @@ func (f *Failing) ListAssignments(ctx context.Context, account string, q dep.Ass
 
 // The transaction view applies the same failures inside Update.
 
+// PutAccount injects the configured PutAccount failure before calling the underlying store
+// or transaction.
 func (t *txView) PutAccount(ctx context.Context, a *dep.Account) error {
 	if err := t.f.fail("PutAccount"); err != nil {
 		return err
@@ -259,6 +262,8 @@ func (t *txView) PutAccount(ctx context.Context, a *dep.Account) error {
 	return t.tx.PutAccount(ctx, a)
 }
 
+// GetAccount injects the configured GetAccount failure before calling the underlying store
+// or transaction.
 func (t *txView) GetAccount(ctx context.Context, name string) (*dep.Account, error) {
 	if err := t.f.fail("GetAccount"); err != nil {
 		return nil, err
@@ -266,6 +271,8 @@ func (t *txView) GetAccount(ctx context.Context, name string) (*dep.Account, err
 	return t.tx.GetAccount(ctx, name)
 }
 
+// DeleteAccount injects the configured DeleteAccount failure before calling the underlying
+// store or transaction.
 func (t *txView) DeleteAccount(ctx context.Context, name string) error {
 	if err := t.f.fail("DeleteAccount"); err != nil {
 		return err
@@ -273,6 +280,8 @@ func (t *txView) DeleteAccount(ctx context.Context, name string) error {
 	return t.tx.DeleteAccount(ctx, name)
 }
 
+// ListAccounts injects the configured ListAccounts failure before calling the underlying
+// store or transaction.
 func (t *txView) ListAccounts(ctx context.Context, p paging.Page) (paging.Result[dep.Account], error) {
 	if err := t.f.fail("ListAccounts"); err != nil {
 		return paging.Result[dep.Account]{}, err
@@ -280,6 +289,8 @@ func (t *txView) ListAccounts(ctx context.Context, p paging.Page) (paging.Result
 	return t.tx.ListAccounts(ctx, p)
 }
 
+// SetAccountState injects the configured SetAccountState failure before calling the
+// underlying store or transaction.
 func (t *txView) SetAccountState(ctx context.Context, name string, s dep.AccountState) error {
 	if err := t.f.fail("SetAccountState"); err != nil {
 		return err
@@ -287,6 +298,8 @@ func (t *txView) SetAccountState(ctx context.Context, name string, s dep.Account
 	return t.tx.SetAccountState(ctx, name, s)
 }
 
+// PutKeypair injects the configured PutKeypair failure before calling the underlying store
+// or transaction.
 func (t *txView) PutKeypair(ctx context.Context, name string, stage dep.Stage, kp *dep.Keypair) error {
 	if err := t.f.fail("PutKeypair"); err != nil {
 		return err
@@ -294,6 +307,8 @@ func (t *txView) PutKeypair(ctx context.Context, name string, stage dep.Stage, k
 	return t.tx.PutKeypair(ctx, name, stage, kp)
 }
 
+// Keypair injects the configured Keypair failure before calling the underlying store or
+// transaction.
 func (t *txView) Keypair(ctx context.Context, name string, stage dep.Stage) (*dep.Keypair, error) {
 	if err := t.f.fail("Keypair"); err != nil {
 		return nil, err
@@ -301,6 +316,8 @@ func (t *txView) Keypair(ctx context.Context, name string, stage dep.Stage) (*de
 	return t.tx.Keypair(ctx, name, stage)
 }
 
+// UpstageKeypair injects the configured UpstageKeypair failure before calling the
+// underlying store or transaction.
 func (t *txView) UpstageKeypair(ctx context.Context, name string) error {
 	if err := t.f.fail("UpstageKeypair"); err != nil {
 		return err
@@ -308,6 +325,8 @@ func (t *txView) UpstageKeypair(ctx context.Context, name string) error {
 	return t.tx.UpstageKeypair(ctx, name)
 }
 
+// Session injects the configured Session failure before calling the underlying store or
+// transaction.
 func (t *txView) Session(ctx context.Context, name string) (string, error) {
 	if err := t.f.fail("Session"); err != nil {
 		return "", err
@@ -315,6 +334,8 @@ func (t *txView) Session(ctx context.Context, name string) (string, error) {
 	return t.tx.Session(ctx, name)
 }
 
+// SetSession injects the configured SetSession failure before calling the underlying store
+// or transaction.
 func (t *txView) SetSession(ctx context.Context, name, token string) error {
 	if err := t.f.fail("SetSession"); err != nil {
 		return err
@@ -322,6 +343,8 @@ func (t *txView) SetSession(ctx context.Context, name, token string) error {
 	return t.tx.SetSession(ctx, name, token)
 }
 
+// Cursor injects the configured Cursor failure before calling the underlying store or
+// transaction.
 func (t *txView) Cursor(ctx context.Context, name string) (dep.Cursor, error) {
 	if err := t.f.fail("Cursor"); err != nil {
 		return dep.Cursor{}, err
@@ -329,6 +352,8 @@ func (t *txView) Cursor(ctx context.Context, name string) (dep.Cursor, error) {
 	return t.tx.Cursor(ctx, name)
 }
 
+// SetCursor injects the configured SetCursor failure before calling the underlying store or
+// transaction.
 func (t *txView) SetCursor(ctx context.Context, name string, c dep.Cursor) error {
 	if err := t.f.fail("SetCursor"); err != nil {
 		return err
@@ -336,6 +361,8 @@ func (t *txView) SetCursor(ctx context.Context, name string, c dep.Cursor) error
 	return t.tx.SetCursor(ctx, name, c)
 }
 
+// PutDevices injects the configured PutDevices failure before calling the underlying store
+// or transaction.
 func (t *txView) PutDevices(ctx context.Context, account string, devs []dep.Device, at time.Time) error {
 	if err := t.f.fail("PutDevices"); err != nil {
 		return err
@@ -343,6 +370,8 @@ func (t *txView) PutDevices(ctx context.Context, account string, devs []dep.Devi
 	return t.tx.PutDevices(ctx, account, devs, at)
 }
 
+// GetDevice injects the configured GetDevice failure before calling the underlying store or
+// transaction.
 func (t *txView) GetDevice(ctx context.Context, account, serial string) (*dep.StoredDevice, error) {
 	if err := t.f.fail("GetDevice"); err != nil {
 		return nil, err
@@ -350,6 +379,8 @@ func (t *txView) GetDevice(ctx context.Context, account, serial string) (*dep.St
 	return t.tx.GetDevice(ctx, account, serial)
 }
 
+// ListDevices injects the configured ListDevices failure before calling the underlying
+// store or transaction.
 func (t *txView) ListDevices(ctx context.Context, account string, q dep.DeviceQuery, p paging.Page) (paging.Result[dep.StoredDevice], error) {
 	if err := t.f.fail("ListDevices"); err != nil {
 		return paging.Result[dep.StoredDevice]{}, err
@@ -357,6 +388,8 @@ func (t *txView) ListDevices(ctx context.Context, account string, q dep.DeviceQu
 	return t.tx.ListDevices(ctx, account, q, p)
 }
 
+// PutProfile injects the configured PutProfile failure before calling the underlying store
+// or transaction.
 func (t *txView) PutProfile(ctx context.Context, account string, p *dep.Profile) error {
 	if err := t.f.fail("PutProfile"); err != nil {
 		return err
@@ -364,6 +397,8 @@ func (t *txView) PutProfile(ctx context.Context, account string, p *dep.Profile)
 	return t.tx.PutProfile(ctx, account, p)
 }
 
+// GetProfile injects the configured GetProfile failure before calling the underlying store
+// or transaction.
 func (t *txView) GetProfile(ctx context.Context, account, uuid string) (*dep.Profile, error) {
 	if err := t.f.fail("GetProfile"); err != nil {
 		return nil, err
@@ -371,6 +406,8 @@ func (t *txView) GetProfile(ctx context.Context, account, uuid string) (*dep.Pro
 	return t.tx.GetProfile(ctx, account, uuid)
 }
 
+// DeleteProfile injects the configured DeleteProfile failure before calling the underlying
+// store or transaction.
 func (t *txView) DeleteProfile(ctx context.Context, account, uuid string) error {
 	if err := t.f.fail("DeleteProfile"); err != nil {
 		return err
@@ -378,6 +415,8 @@ func (t *txView) DeleteProfile(ctx context.Context, account, uuid string) error 
 	return t.tx.DeleteProfile(ctx, account, uuid)
 }
 
+// ListProfiles injects the configured ListProfiles failure before calling the underlying
+// store or transaction.
 func (t *txView) ListProfiles(ctx context.Context, account string, p paging.Page) (paging.Result[dep.Profile], error) {
 	if err := t.f.fail("ListProfiles"); err != nil {
 		return paging.Result[dep.Profile]{}, err
@@ -385,6 +424,8 @@ func (t *txView) ListProfiles(ctx context.Context, account string, p paging.Page
 	return t.tx.ListProfiles(ctx, account, p)
 }
 
+// PutAssignment injects the configured PutAssignment failure before calling the underlying
+// store or transaction.
 func (t *txView) PutAssignment(ctx context.Context, a *dep.Assignment) error {
 	if err := t.f.fail("PutAssignment"); err != nil {
 		return err
@@ -392,6 +433,8 @@ func (t *txView) PutAssignment(ctx context.Context, a *dep.Assignment) error {
 	return t.tx.PutAssignment(ctx, a)
 }
 
+// GetAssignment injects the configured GetAssignment failure before calling the underlying
+// store or transaction.
 func (t *txView) GetAssignment(ctx context.Context, account, serial string) (*dep.Assignment, error) {
 	if err := t.f.fail("GetAssignment"); err != nil {
 		return nil, err
@@ -399,6 +442,8 @@ func (t *txView) GetAssignment(ctx context.Context, account, serial string) (*de
 	return t.tx.GetAssignment(ctx, account, serial)
 }
 
+// ListAssignments injects the configured ListAssignments failure before calling the
+// underlying store or transaction.
 func (t *txView) ListAssignments(ctx context.Context, account string, q dep.AssignmentQuery, p paging.Page) (paging.Result[dep.Assignment], error) {
 	if err := t.f.fail("ListAssignments"); err != nil {
 		return paging.Result[dep.Assignment]{}, err
@@ -406,6 +451,8 @@ func (t *txView) ListAssignments(ctx context.Context, account string, q dep.Assi
 	return t.tx.ListAssignments(ctx, account, q, p)
 }
 
+// LockAccount injects the configured LockAccount failure before calling the underlying
+// store or transaction.
 func (t *txView) LockAccount(ctx context.Context, account string) error {
 	if err := t.f.fail("LockAccount"); err != nil {
 		return err
@@ -413,6 +460,8 @@ func (t *txView) LockAccount(ctx context.Context, account string) error {
 	return t.tx.LockAccount(ctx, account)
 }
 
+// MarkFetched injects the configured MarkFetched failure before calling the underlying
+// store or transaction.
 func (f *Failing) MarkFetched(ctx context.Context, account, generation string, serials []string) error {
 	if err := f.fail("MarkFetched"); err != nil {
 		return err
@@ -420,6 +469,8 @@ func (f *Failing) MarkFetched(ctx context.Context, account, generation string, s
 	return f.Store.MarkFetched(ctx, account, generation, serials)
 }
 
+// AssignmentState injects the configured AssignmentState failure before calling the
+// underlying store or transaction.
 func (f *Failing) AssignmentState(ctx context.Context, account string) (dep.AssignmentState, error) {
 	if err := f.fail("AssignmentState"); err != nil {
 		return dep.AssignmentState{}, err
@@ -427,6 +478,8 @@ func (f *Failing) AssignmentState(ctx context.Context, account string) (dep.Assi
 	return f.Store.AssignmentState(ctx, account)
 }
 
+// PutAssignmentState injects the configured PutAssignmentState failure before calling the
+// underlying store or transaction.
 func (f *Failing) PutAssignmentState(ctx context.Context, account string, state dep.AssignmentState) error {
 	if err := f.fail("PutAssignmentState"); err != nil {
 		return err
@@ -434,6 +487,8 @@ func (f *Failing) PutAssignmentState(ctx context.Context, account string, state 
 	return f.Store.PutAssignmentState(ctx, account, state)
 }
 
+// MarkFetched injects the configured MarkFetched failure before calling the underlying
+// store or transaction.
 func (t *txView) MarkFetched(ctx context.Context, account, generation string, serials []string) error {
 	if err := t.f.fail("MarkFetched"); err != nil {
 		return err
@@ -441,6 +496,8 @@ func (t *txView) MarkFetched(ctx context.Context, account, generation string, se
 	return t.tx.MarkFetched(ctx, account, generation, serials)
 }
 
+// AssignmentState injects the configured AssignmentState failure before calling the
+// underlying store or transaction.
 func (t *txView) AssignmentState(ctx context.Context, account string) (dep.AssignmentState, error) {
 	if err := t.f.fail("AssignmentState"); err != nil {
 		return dep.AssignmentState{}, err
@@ -448,6 +505,8 @@ func (t *txView) AssignmentState(ctx context.Context, account string) (dep.Assig
 	return t.tx.AssignmentState(ctx, account)
 }
 
+// PutAssignmentState injects the configured PutAssignmentState failure before calling the
+// underlying store or transaction.
 func (t *txView) PutAssignmentState(ctx context.Context, account string, state dep.AssignmentState) error {
 	if err := t.f.fail("PutAssignmentState"); err != nil {
 		return err

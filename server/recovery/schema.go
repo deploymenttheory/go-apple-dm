@@ -47,6 +47,7 @@ type schemaDescription struct {
 	Versions  []int    `json:"versions"`
 }
 
+// describe derives the checkpoint table description from the compiled SQL schema.
 func describe(set sqlcommon.MigrationSet) (schemaDescription, error) {
 	out := schemaDescription{Name: set.Table, Tables: []string{set.Table}}
 	if set.FS == nil || !identifier.MatchString(set.Table) {
@@ -78,6 +79,7 @@ func describe(set sqlcommon.MigrationSet) (schemaDescription, error) {
 	return out, nil
 }
 
+// quoted quotes a validated database identifier for the selected SQL dialect.
 func quoted(d sqlcommon.Dialect, name string) (string, error) {
 	if !identifier.MatchString(name) {
 		return "", ErrInvalid

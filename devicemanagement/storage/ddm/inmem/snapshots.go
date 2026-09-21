@@ -9,6 +9,8 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/mdm"
 )
 
+// copySnapshot copies advertised snapshot items so returned values cannot alter stored
+// snapshots.
 func copySnapshot(s ddm.Snapshot) ddm.Snapshot {
 	items := make([]ddm.SnapshotItem, len(s.Items))
 	for i, it := range s.Items {

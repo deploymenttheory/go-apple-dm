@@ -12,6 +12,8 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/storage/ddm/inmem"
 )
 
+// TestPublishSet checks atomic set publication, canonical no-ops, retained assignments, snapshot
+// versions, and rollback.
 func TestPublishSet(t *testing.T) {
 	ctx := t.Context()
 	store := inmem.New()
@@ -67,6 +69,7 @@ func TestPublishSet(t *testing.T) {
 	}
 }
 
+// TestPublishSetRollsBackStorageFailures checks publish set rolls back storage failures.
 func TestPublishSetRollsBackStorageFailures(t *testing.T) {
 	for _, operation := range []string{"LockPublication", "PutSet", "SetDeclarations", "GetDeclaration", "PutDeclaration", "AddSetDeclaration", "RemoveSetDeclaration", "AffectedEnrollments", "RecordChanges"} {
 		t.Run(operation, func(t *testing.T) {
@@ -111,6 +114,8 @@ func TestPublishSetRollsBackStorageFailures(t *testing.T) {
 	}
 }
 
+// TestPublishSetRejectsInvalidInputBeforeTransactionUse checks that publish set rejects invalid
+// input before transaction use.
 func TestPublishSetRejectsInvalidInputBeforeTransactionUse(t *testing.T) {
 	engine, err := ddm.New(ddm.Config{Store: inmem.New()})
 	if err != nil {

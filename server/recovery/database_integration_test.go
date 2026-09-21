@@ -29,6 +29,7 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/server/sqlstore/sqlcommon"
 )
 
+// TestPostgresDatabaseRecovery checks PostgreSQL database and public deployment recovery.
 func TestPostgresDatabaseRecovery(t *testing.T) {
 	dsn := os.Getenv("TEST_POSTGRES_DSN")
 	if dsn == "" {
@@ -127,6 +128,8 @@ func TestMySQLDatabaseRecovery(t *testing.T) {
 	exercisePublicDeploymentRecovery(t, "mysql", func() string { clear(); return normalized })
 }
 
+// exercisePublicDeploymentRecovery checks public backup and restore behavior, preserving
+// enrollment identity and storage-key bindings while restoring paused.
 func exercisePublicDeploymentRecovery(t *testing.T, backend string, emptyDSN func() string) {
 	t.Helper()
 	setup, b := bootstrapFixture(t)

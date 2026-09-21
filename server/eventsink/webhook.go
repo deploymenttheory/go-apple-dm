@@ -163,6 +163,8 @@ func RecordWebhook(cfg WebhookConfig) (func(context.Context, Record) error, erro
 // build projects command results into acknowledge_event and other events into
 // checkin_event.
 
+// buildRecord constructs the legacy envelope with command acknowledgment fields or check-
+// in fields, according to the event type.
 func buildRecord(rec Record) envelope {
 	env := envelope{Topic: "mdm." + rec.Type, EventID: rec.EventID, CreatedAt: rec.At}
 	t := event.Type(rec.Type)
@@ -182,6 +184,7 @@ func buildRecord(rec Record) envelope {
 	return env
 }
 
+// deliver delivers one legacy webhook body with the configured retry and signing policy.
 func deliver(ctx context.Context, cfg WebhookConfig, body []byte) error {
 	var last error
 	wait := cfg.Backoff
@@ -210,6 +213,7 @@ func deliver(ctx context.Context, cfg WebhookConfig, body []byte) error {
 	return last
 }
 
+// post performs one legacy webhook HTTP attempt and classifies the receiver response.
 func post(ctx context.Context, cfg WebhookConfig, body []byte) error {
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, cfg.URL, bytes.NewReader(body))
 	if err != nil {
@@ -242,9 +246,14 @@ type HTTPError struct {
 	RetryAfter time.Duration
 }
 
+// Error returns the diagnostic message for this error.
 func (e *HTTPError) Error() string { return fmt.Sprintf("sink: webhook rejected: HTTP %d", e.Status) }
-func (*HTTPError) Unwrap() error   { return errStatus }
 
+// Unwrap classifies receiver HTTP rejections with the webhook status sentinel.
+func (*HTTPError) Unwrap() error { return errStatus }
+
+// retryAfter interprets a Retry-After value as seconds or an HTTP date relative to the
+// supplied time.
 func retryAfter(value string, now time.Time) time.Duration {
 	d, err := time.ParseDuration(value + "s")
 	if err != nil {
@@ -265,5 +274,8 @@ func retryAfter(value string, now time.Time) time.Duration {
 // Keep their identity available to callers without serializing them into logs.
 type deliveryError struct{ cause error }
 
-func (*deliveryError) Error() string   { return "sink: webhook transport failed" }
+// Error returns a transport-failure message without disclosing the request URL.
+func (*deliveryError) Error() string { return "sink: webhook transport failed" }
+
+// Unwrap exposes the wrapped cause for errors.Is and errors.As.
 func (e *deliveryError) Unwrap() error { return e.cause }

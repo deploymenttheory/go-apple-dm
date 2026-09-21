@@ -89,14 +89,17 @@ type lexer struct {
 	prevOperand bool
 }
 
+// newLexer initializes predicate scanning at the beginning of the input.
 func newLexer(src string) *lexer {
 	return &lexer{src: src}
 }
 
+// isDigit reports whether the byte is an ASCII decimal digit.
 func isDigit(c byte) bool {
 	return c >= '0' && c <= '9'
 }
 
+// isIdentStart reports whether a byte may begin a predicate identifier.
 func isIdentStart(c byte) bool {
 	return c == '_' || (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z')
 }
@@ -106,10 +109,12 @@ func isKeyChar(c byte) bool {
 	return isIdentStart(c) || isDigit(c) || c == '.' || c == '-'
 }
 
+// isSpace reports whether the byte is whitespace accepted by the predicate grammar.
 func isSpace(c byte) bool {
 	return c == ' ' || c == '\t' || c == '\n' || c == '\r'
 }
 
+// byteAt returns the input byte at the requested offset, or the lexer's end sentinel.
 func (l *lexer) byteAt(i int) byte {
 	if i < len(l.src) {
 		return l.src[i]
@@ -117,10 +122,12 @@ func (l *lexer) byteAt(i int) byte {
 	return 0
 }
 
+// digitAt reports whether the requested input offset contains a decimal digit.
 func (l *lexer) digitAt(i int) bool {
 	return isDigit(l.byteAt(i))
 }
 
+// skipSpace advances past whitespace without consuming the next predicate token.
 func (l *lexer) skipSpace() {
 	for l.pos < len(l.src) && isSpace(l.src[l.pos]) {
 		l.pos++
@@ -145,6 +152,7 @@ func (l *lexer) readKeyChars() string {
 	return l.src[start:l.pos]
 }
 
+// readDigits consumes consecutive decimal digits at the current lexer position.
 func (l *lexer) readDigits() int {
 	start := l.pos
 	for l.pos < len(l.src) && isDigit(l.src[l.pos]) {
@@ -216,6 +224,7 @@ func endsOperand(tok token) bool {
 	return false
 }
 
+// scanPunct recognizes punctuation that delimits predicate operands and groups.
 func (l *lexer) scanPunct() (token, error) {
 	c := l.src[l.pos]
 	switch c {
@@ -243,6 +252,7 @@ func (l *lexer) scanPunct() (token, error) {
 	return token{}, syntaxErr(l.pos, "unexpected character %q", r)
 }
 
+// scanOperator recognizes supported comparison and logical operator tokens.
 func (l *lexer) scanOperator() (token, error) {
 	if l.pos+2 <= len(l.src) {
 		switch two := l.src[l.pos : l.pos+2]; two {
@@ -260,6 +270,7 @@ func (l *lexer) scanOperator() (token, error) {
 	return token{}, syntaxErr(l.pos, "unexpected character %q, expected %q", c, string([]byte{c, c}))
 }
 
+// unsupportedArithmetic reports arithmetic syntax that is outside the predicate subset.
 func (l *lexer) unsupportedArithmetic() error {
 	start := l.pos
 	op := l.src[l.pos : l.pos+1]
@@ -270,6 +281,8 @@ func (l *lexer) unsupportedArithmetic() error {
 	return unsupportedErr(start, "arithmetic operator %s", op)
 }
 
+// unsupportedFormatArgument reports placeholder syntax that cannot be resolved from device
+// state.
 func (l *lexer) unsupportedFormatArgument() error {
 	start := l.pos
 	l.pos++
@@ -281,6 +294,8 @@ func (l *lexer) unsupportedFormatArgument() error {
 	return unsupportedErr(start, "format argument %s", name)
 }
 
+// unsupportedVariable reports variable syntax outside supported property and status
+// references.
 func (l *lexer) unsupportedVariable() error {
 	start := l.pos
 	l.pos++
@@ -299,6 +314,7 @@ func (l *lexer) scanIdent() token {
 	return token{kind: tokIdent, text: text, callFollows: l.byteAt(i) == '('}
 }
 
+// scanNumber reads a numeric literal and rejects malformed numeric syntax.
 func (l *lexer) scanNumber() (token, error) {
 	start := l.pos
 	if c := l.src[l.pos]; c == '+' || c == '-' {
@@ -407,6 +423,7 @@ func (l *lexer) scanString() (token, error) {
 	return token{}, syntaxErr(start, "unterminated string")
 }
 
+// scanEscape decodes one escape sequence inside a string literal.
 func (l *lexer) scanEscape(sb *strings.Builder) error {
 	start := l.pos
 	l.pos++
@@ -445,6 +462,8 @@ func (l *lexer) hex4() (rune, bool) {
 	return rune(v), true
 }
 
+// scanUnicodeEscape decodes a four-digit Unicode escape and an optional surrogate pair;
+// lone surrogates become replacement characters.
 func (l *lexer) scanUnicodeEscape(sb *strings.Builder, start int) error {
 	r, ok := l.hex4()
 	if !ok {

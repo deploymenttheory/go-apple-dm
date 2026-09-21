@@ -20,6 +20,7 @@ import (
 // #nosec G101 -- Synthetic protocol fixtures and invalid URLs; no live credentials.
 const token = "9tXmyH1t3fFQ0zPzr3aUqKq0Q7RmAcXvIcQ5cdKZ3wA"
 
+// key generates a P-256 private key, failing the test on error.
 func key(t *testing.T) *ecdsa.PrivateKey {
 	t.Helper()
 	k, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
@@ -29,6 +30,7 @@ func key(t *testing.T) *ecdsa.PrivateKey {
 	return k
 }
 
+// newCA creates an attestation test authority, failing the test on error.
 func newCA(t *testing.T) *attesttest.CA {
 	t.Helper()
 	ca, err := attesttest.NewCA()
@@ -38,6 +40,7 @@ func newCA(t *testing.T) *attesttest.CA {
 	return ca
 }
 
+// boolp returns a pointer to the supplied boolean.
 func boolp(b bool) *bool { return &b }
 
 // macProperties is a full set as a Mac on macOS 14.2 or later reports it.
@@ -55,6 +58,7 @@ func macProperties() attest.Properties {
 	}
 }
 
+// TestParseObjectReadsEveryDocumentedProperty checks parse object reads every documented property.
 func TestParseObjectReadsEveryDocumentedProperty(t *testing.T) {
 	ca := newCA(t)
 	k := key(t)
@@ -104,6 +108,7 @@ func TestParseObjectReadsEveryDocumentedProperty(t *testing.T) {
 	}
 }
 
+// TestParseObjectRejects checks malformed attestation-object rejection.
 func TestParseObjectRejects(t *testing.T) {
 	ca := newCA(t)
 	k := key(t)
@@ -155,6 +160,7 @@ func TestParseObjectRejects(t *testing.T) {
 	}
 }
 
+// TestParseObjectWithoutAttestation checks parse object without attestation.
 func TestParseObjectWithoutAttestation(t *testing.T) {
 	// A device whose profile did not ask for an attestation, or whose
 	// hardware cannot produce one, still answers the challenge. That is a
@@ -173,6 +179,8 @@ func TestParseObjectWithoutAttestation(t *testing.T) {
 	}
 }
 
+// TestParseChain checks certificate-chain parsing, extracted identity properties, and invalid
+// chain inputs.
 func TestParseChain(t *testing.T) {
 	ca := newCA(t)
 	k := key(t)
@@ -212,6 +220,8 @@ func TestParseChain(t *testing.T) {
 	}
 }
 
+// TestVerifyFreshness checks freshness binding to the ACME challenge token and missing-extension
+// behavior.
 func TestVerifyFreshness(t *testing.T) {
 	ca := newCA(t)
 	k := key(t)
@@ -284,6 +294,7 @@ func TestVerifyFreshness(t *testing.T) {
 	})
 }
 
+// TestVerifyBindsTheAttestedKey checks that verify binds the attested key.
 func TestVerifyBindsTheAttestedKey(t *testing.T) {
 	// The CSR key must match the attestation leaf key; a valid attestation for
 	// another key cannot authorize issuance.
@@ -317,6 +328,8 @@ func TestVerifyBindsTheAttestedKey(t *testing.T) {
 	}
 }
 
+// TestVerifyChain checks attestation-chain trust, expiry, missing intermediates, and default Apple
+// anchors.
 func TestVerifyChain(t *testing.T) {
 	ca := newCA(t)
 	k := key(t)
@@ -411,6 +424,7 @@ func TestVerifyChain(t *testing.T) {
 	})
 }
 
+// TestUserEnrollmentHasNoIdentity checks user enrollment has no identity.
 func TestUserEnrollmentHasNoIdentity(t *testing.T) {
 	// Apple omits the serial number and the UDID for a user enrollment.
 	// That is a genuine attestation of a key on real hardware, so it must
@@ -437,6 +451,7 @@ func TestUserEnrollmentHasNoIdentity(t *testing.T) {
 	}
 }
 
+// TestMalformedExtensions checks malformed attestation extensions and absent blank values.
 func TestMalformedExtensions(t *testing.T) {
 	ca := newCA(t)
 	k := key(t)
@@ -496,6 +511,7 @@ func TestMalformedExtensions(t *testing.T) {
 	})
 }
 
+// TestAppleAnchors checks Apple attestation anchor identities and isolation of returned slices.
 func TestAppleAnchors(t *testing.T) {
 	got := attest.AppleAnchors()
 	if len(got) != 1 {
@@ -515,6 +531,7 @@ func TestAppleAnchors(t *testing.T) {
 	}
 }
 
+// TestLeafAndPublicKey checks leaf and public key.
 func TestLeafAndPublicKey(t *testing.T) {
 	ca := newCA(t)
 	k := key(t)
@@ -535,6 +552,7 @@ func TestLeafAndPublicKey(t *testing.T) {
 	}
 }
 
+// TestAttestTestCAErrors checks attest test CA errors.
 func TestAttestTestCAErrors(t *testing.T) {
 	ca := newCA(t)
 	if _, err := ca.Leaf(attesttest.LeafOptions{}); !errors.Is(err, attesttest.ErrCA) {
@@ -566,6 +584,8 @@ func TestAttestTestCAErrors(t *testing.T) {
 	}
 }
 
+// FuzzParseObject checks that accepted attestation objects have Apple format and a chain and
+// reject untrusted fuzzed evidence.
 func FuzzParseObject(f *testing.F) {
 	ca, err := attesttest.NewCA()
 	if err != nil {

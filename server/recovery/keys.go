@@ -84,6 +84,8 @@ func (s SQL) ValidateKeys(ctx context.Context, directory string, ring *crypt.Key
 	return nil
 }
 
+// validateTableKeys checks that encrypted snapshot columns can be opened with the restored
+// storage keyring.
 func validateTableKeys(
 	ctx context.Context,
 	root *os.Root,

@@ -15,6 +15,7 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/schema/support"
 )
 
+// declaration constructs a blueprint declaration from a typed payload, failing the test on error.
 func declaration(t *testing.T, key string, payload schema.Declaration) blueprint.Declaration {
 	t.Helper()
 	c, err := blueprint.NewDeclaration(key, payload)
@@ -24,6 +25,7 @@ func declaration(t *testing.T, key string, payload schema.Declaration) blueprint
 	return c
 }
 
+// TestArrayReferencesAndTargetAvailability checks array references and target availability.
 func TestArrayReferencesAndTargetAvailability(t *testing.T) {
 	spec := blueprint.Spec{Identifier: "relay", Declarations: []blueprint.Declaration{
 		{Identifier: "key", Type: schema.DeclarationTypeAssetData, Payload: jsontext.Value(`{"Reference":{"DataURL":"https://example.test/key","ContentType":"application/octet-stream"}}`)},
@@ -62,6 +64,8 @@ func TestArrayReferencesAndTargetAvailability(t *testing.T) {
 	}
 }
 
+// TestCompile checks deterministic blueprint compilation and identifier isolation across
+// blueprints.
 func TestCompile(t *testing.T) {
 	spec := blueprint.Spec{Identifier: "engineering", Declarations: []blueprint.Declaration{
 		declaration(t, "disk", &schema.DiskManagementSettings{}),
@@ -100,6 +104,8 @@ func TestCompile(t *testing.T) {
 	}
 }
 
+// TestReferencesAndProfiles checks reference rewriting, input immutability, dangling references,
+// and configuration-profile restrictions.
 func TestReferencesAndProfiles(t *testing.T) {
 	spec := blueprint.Spec{Identifier: "test", Declarations: []blueprint.Declaration{
 		{Identifier: "data", Type: schema.DeclarationTypeAssetData, Payload: jsontext.Value(`{"Reference":{"DataURL":"https://example.test/profile","ContentType":"application/xml"}}`)},
@@ -138,6 +144,7 @@ func TestReferencesAndProfiles(t *testing.T) {
 	}
 }
 
+// TestInvalidInputs checks invalid blueprint inputs and empty-blueprint handling.
 func TestInvalidInputs(t *testing.T) {
 	base := declaration(t, "cfg", &schema.MathSettings{})
 	for _, spec := range []blueprint.Spec{

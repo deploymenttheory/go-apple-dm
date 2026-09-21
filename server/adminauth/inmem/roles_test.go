@@ -9,6 +9,7 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/server/adminauth/inmem"
 )
 
+// TestRoleValidationPreservesAuthority checks that role validation preserves authority.
 func TestRoleValidationPreservesAuthority(t *testing.T) {
 	s := inmem.New()
 	ctx, now := t.Context(), time.Now().UTC()
@@ -41,6 +42,8 @@ func TestRoleValidationPreservesAuthority(t *testing.T) {
 	}
 }
 
+// TestInvalidBootstrapDoesNotInitializeStore checks that invalid bootstrap does not initialize
+// store.
 func TestInvalidBootstrapDoesNotInitializeStore(t *testing.T) {
 	s := inmem.New()
 	ctx, now := t.Context(), time.Now().UTC()

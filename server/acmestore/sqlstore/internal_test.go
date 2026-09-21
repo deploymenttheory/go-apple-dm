@@ -112,7 +112,10 @@ type failingResult struct{}
 
 var errNoRowCount = errors.New("no row count")
 
+// LastInsertId returns the injected SQL-result failure.
 func (failingResult) LastInsertId() (int64, error) { return 0, errNoRowCount }
+
+// RowsAffected returns the injected SQL-result failure.
 func (failingResult) RowsAffected() (int64, error) { return 0, errNoRowCount }
 
 // TestAffectedSurfacesAnUncountableResult: a statement whose row count

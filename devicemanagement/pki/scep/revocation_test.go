@@ -12,6 +12,8 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/state"
 )
 
+// TestRevokedRenewalCannotUseChallengeFallback checks that revoked renewal cannot use challenge
+// fallback.
 func TestRevokedRenewalCannotUseChallengeFallback(t *testing.T) {
 	f := newFixture(t)
 	ctx := t.Context()

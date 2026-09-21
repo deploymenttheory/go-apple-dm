@@ -8,6 +8,7 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/schema/support"
 )
 
+// TestCrossFieldRules checks declarative payload cross-field constraints.
 func TestCrossFieldRules(t *testing.T) {
 	for _, tc := range []struct {
 		name, schema, payload string
@@ -43,6 +44,7 @@ func TestCrossFieldRules(t *testing.T) {
 	}
 }
 
+// TestUpdateDeadline checks software-update deadline validation.
 func TestUpdateDeadline(t *testing.T) {
 	for _, deadline := range []string{"2026-10-01T18:00:00", "2026-10-01T18:00:00Z", "2026-10-01T18:00:00+01:00", "2026-10-01T18:00:00.5", "2026-02-30T18:00:00"} {
 		err := (&ddm.SoftwareUpdateEnforcementSpecific{TargetOSVersion: "27.0", TargetLocalDateTime: deadline}).Validate(support.Target{})
@@ -52,6 +54,7 @@ func TestUpdateDeadline(t *testing.T) {
 	}
 }
 
+// TestBinaryIdentifierRules checks allowed binary-identifier combinations.
 func TestBinaryIdentifierRules(t *testing.T) {
 	// Apple's app.settings.yaml "Binary identifier rules" requires a CDHash or
 	// TeamID for an allow rule; a deny rule additionally permits SigningID.

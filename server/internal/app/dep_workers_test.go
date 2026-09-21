@@ -21,16 +21,19 @@ type scheduledDEPStore struct {
 	accounts atomic.Int64
 }
 
+// ListAccounts counts account-list calls before delegating to the DEP store.
 func (s *scheduledDEPStore) ListAccounts(ctx context.Context, page paging.Page) (paging.Result[dep.Account], error) {
 	s.lists.Add(1)
 	return s.Store.ListAccounts(ctx, page)
 }
 
+// GetAccount counts account-lookup calls before delegating to the DEP store.
 func (s *scheduledDEPStore) GetAccount(ctx context.Context, name string) (*dep.Account, error) {
 	s.accounts.Add(1)
 	return s.Store.GetAccount(ctx, name)
 }
 
+// TestDEPIndependentSchedules checks independent DEP worker schedules.
 func TestDEPIndependentSchedules(t *testing.T) {
 	for _, tc := range []struct {
 		name          string
@@ -68,6 +71,7 @@ func TestDEPIndependentSchedules(t *testing.T) {
 	}
 }
 
+// TestDEPWorkerVisitsEveryAccountPage checks DEP worker visits every account page.
 func TestDEPWorkerVisitsEveryAccountPage(t *testing.T) {
 	ctx := t.Context()
 	st := &scheduledDEPStore{Store: depinmem.New()}

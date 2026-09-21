@@ -7,6 +7,8 @@ import (
 	"testing"
 )
 
+// TestBenchOfflineCommands checks offline bench setup, identity preservation, trust export,
+// prerequisites, and credential redaction.
 func TestBenchOfflineCommands(t *testing.T) {
 	env := noConfig(t)
 	dir := t.TempDir()
@@ -94,6 +96,8 @@ func TestBenchOfflineCommands(t *testing.T) {
 	}
 }
 
+// TestBenchDirectAttachmentRejectsUnsupportedActions checks that bench direct attachment rejects
+// unsupported actions.
 func TestBenchDirectAttachmentRejectsUnsupportedActions(t *testing.T) {
 	for _, sub := range []string{"init", "list", "doctor", "enrollment-preflight", "trust", "up", "status", "down"} {
 		t.Run(sub, func(t *testing.T) {

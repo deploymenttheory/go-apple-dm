@@ -30,6 +30,8 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/state"
 )
 
+// TestAdmissionPolicyDeniesUnlistedAndUnverifiedIdentities checks admission policy denies unlisted
+// and unverified identities.
 func TestAdmissionPolicyDeniesUnlistedAndUnverifiedIdentities(t *testing.T) {
 	a := &App{cfg: Config{Clock: clock.Real{}}}
 	e := &enrollment{now: time.Now}
@@ -81,6 +83,8 @@ func TestAdmissionPolicyDeniesUnlistedAndUnverifiedIdentities(t *testing.T) {
 	}
 }
 
+// TestAdmissionPolicyRejectsUnknownConstraints checks that admission policy rejects unknown
+// constraints.
 func TestAdmissionPolicyRejectsUnknownConstraints(t *testing.T) {
 	a := &App{cfg: Config{Clock: clock.Real{}}}
 	file := filepath.Join(t.TempDir(), "policy.json")
@@ -96,6 +100,8 @@ func TestAdmissionPolicyRejectsUnknownConstraints(t *testing.T) {
 	}
 }
 
+// TestIssuanceGrantConcurrentClaimsRetryAndReadmission checks issuance grant concurrent claims
+// retry and readmission.
 func TestIssuanceGrantConcurrentClaimsRetryAndReadmission(t *testing.T) {
 	ctx := t.Context()
 	st := state.NewMemory()
@@ -255,6 +261,7 @@ type admissionDEPStore struct {
 	fail   error
 }
 
+// ListAccounts returns two pages of DEP accounts and counts listing calls.
 func (s *admissionDEPStore) ListAccounts(
 	_ context.Context,
 	page paging.Page,
@@ -271,6 +278,8 @@ func (s *admissionDEPStore) ListAccounts(
 	}, nil
 }
 
+// GetDevice injects a device-lookup failure, hides the device in the first account, or returns the
+// configured device.
 func (s *admissionDEPStore) GetDevice(
 	_ context.Context,
 	account, _ string,
@@ -284,6 +293,8 @@ func (s *admissionDEPStore) GetDevice(
 	return s.device, nil
 }
 
+// TestDEPAdmissionRequiresCurrentAssignmentAndTraversesPages checks that DEP admission requires
+// current assignment and traverses pages.
 func TestDEPAdmissionRequiresCurrentAssignmentAndTraversesPages(t *testing.T) {
 	store := &admissionDEPStore{
 		device: &dep.StoredDevice{
@@ -326,6 +337,8 @@ func TestDEPAdmissionRequiresCurrentAssignmentAndTraversesPages(t *testing.T) {
 	}
 }
 
+// TestSCEPRenewalPreservesAdmissionAndRejectsRemovedOwnership checks that SCEP renewal preserves
+// admission and rejects removed ownership.
 func TestSCEPRenewalPreservesAdmissionAndRejectsRemovedOwnership(t *testing.T) {
 	st := state.NewMemory()
 	a := &App{cfg: Config{Clock: clock.Real{}}, protocol: st}

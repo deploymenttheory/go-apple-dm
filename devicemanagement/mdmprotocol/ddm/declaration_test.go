@@ -11,6 +11,8 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/schema/support"
 )
 
+// TestParseDeclaration checks declaration parsing, generated validation, reserved types,
+// identifiers, and malformed JSON.
 func TestParseDeclaration(t *testing.T) {
 	t.Parallel()
 	target := support.Target{}
@@ -166,6 +168,8 @@ func TestParseDeclaration(t *testing.T) {
 	})
 }
 
+// TestRenderDeclaration checks ServerToken insertion and rejection of invalid canonical
+// declaration data.
 func TestRenderDeclaration(t *testing.T) {
 	t.Parallel()
 	t.Run("InsertsServerToken", func(t *testing.T) {

@@ -80,6 +80,7 @@ func (c *Core) checkin(
 	return res, nil
 }
 
+// dispatchCheckin routes a decoded check-in message to the matching protocol handler.
 func (c *Core) dispatchCheckin(ctx context.Context, r *mdm.Request, ck *mdm.Checkin) (*CheckinResult, error) {
 	switch m := ck.Message.(type) {
 	case *checkin.Authenticate:
@@ -111,6 +112,8 @@ func (c *Core) authorize(ctx context.Context, r *mdm.Request) error {
 	return c.authorizeRequest(ctx, r, false)
 }
 
+// authorizeRequest checks device and user-channel disabled state and enforces the
+// configured certificate-pinning policy; checkout may proceed for disabled enrollments.
 func (c *Core) authorizeRequest(ctx context.Context, r *mdm.Request, checkout bool) error {
 	e, err := c.store.Get(ctx, r.ID.Device())
 	if err != nil {
@@ -185,6 +188,8 @@ func (c *Core) otherHolders(ctx context.Context, id mdm.EnrollmentID, hash strin
 	return others, nil
 }
 
+// authenticate processes device authentication and the resulting enrollment-state
+// transition.
 func (c *Core) authenticate(
 	ctx context.Context,
 	r *mdm.Request,
@@ -259,6 +264,8 @@ func (c *Core) authenticate(
 	return nil
 }
 
+// tokenUpdate stores the device or user push credentials and emits the resulting
+// token-update event.
 func (c *Core) tokenUpdate(ctx context.Context, r *mdm.Request, ck *mdm.Checkin, m *checkin.TokenUpdate) error {
 	push, err := mdm.PushFromTokenUpdate(m)
 	if err != nil {
@@ -298,6 +305,7 @@ func (c *Core) tokenUpdate(ctx context.Context, r *mdm.Request, ck *mdm.Checkin,
 	return nil
 }
 
+// checkOut authorizes checkout, disables the enrollment, and publishes CheckedOut.
 func (c *Core) checkOut(ctx context.Context, r *mdm.Request) error {
 	if err := c.authorizeRequest(ctx, r, true); err != nil {
 		return err
@@ -309,6 +317,7 @@ func (c *Core) checkOut(ctx context.Context, r *mdm.Request) error {
 	return nil
 }
 
+// setBootstrapToken persists the received bootstrap token for the authenticated enrollment.
 func (c *Core) setBootstrapToken(ctx context.Context, r *mdm.Request, m *checkin.SetBootstrapToken) error {
 	if err := c.authorize(ctx, r); err != nil {
 		return err
@@ -320,6 +329,8 @@ func (c *Core) setBootstrapToken(ctx context.Context, r *mdm.Request, m *checkin
 	return nil
 }
 
+// getBootstrapToken returns the retained bootstrap token through the check-in response
+// contract.
 func (c *Core) getBootstrapToken(ctx context.Context, r *mdm.Request) (*CheckinResult, error) {
 	if err := c.authorize(ctx, r); err != nil {
 		return nil, err
@@ -371,6 +382,7 @@ func (c *Core) handleReturnToService(ctx context.Context, r *mdm.Request, m *che
 	return plistResult(resp)
 }
 
+// handleGetToken handles the enrollment's request for protocol token data.
 func (c *Core) handleGetToken(ctx context.Context, r *mdm.Request, m *checkin.GetToken) (*CheckinResult, error) {
 	if err := c.authorize(ctx, r); err != nil {
 		return nil, err
@@ -385,6 +397,8 @@ func (c *Core) handleGetToken(ctx context.Context, r *mdm.Request, m *checkin.Ge
 	return plistResult(resp)
 }
 
+// handleUserAuthenticate passes a user-channel authentication exchange to the configured
+// verifier.
 func (c *Core) handleUserAuthenticate(ctx context.Context, r *mdm.Request, m *checkin.UserAuthenticate) (*CheckinResult, error) {
 	if err := c.authorize(ctx, r); err != nil {
 		return nil, err
@@ -400,6 +414,8 @@ func (c *Core) handleUserAuthenticate(ctx context.Context, r *mdm.Request, m *ch
 	return plistResult(resp)
 }
 
+// handleDeclarativeManagement dispatches a declarative-management exchange through the
+// configured extension.
 func (c *Core) handleDeclarativeManagement(ctx context.Context, r *mdm.Request, ck *mdm.Checkin, m *checkin.DeclarativeManagement) (*CheckinResult, error) {
 	if err := c.authorize(ctx, r); err != nil {
 		return nil, err
@@ -414,6 +430,7 @@ func (c *Core) handleDeclarativeManagement(ctx context.Context, r *mdm.Request, 
 	return &CheckinResult{Body: resp.Body, ContentType: resp.ContentType, Status: resp.Status}, nil
 }
 
+// plistResult encodes a successful check-in response as a plist result.
 func plistResult(v any) (*CheckinResult, error) {
 	body, err := plist.Marshal(v)
 	if err != nil {

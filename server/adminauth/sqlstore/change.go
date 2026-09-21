@@ -30,6 +30,8 @@ func (s *Store) ApplyPrincipal(
 	return out, nil
 }
 
+// applyPrincipal performs a principal mutation under the authorization lock and preserves
+// an active root credential.
 func (s *Store) applyPrincipal(ctx context.Context, tx *sql.Tx, name string, change adminauth.PrincipalChange, now time.Time) (adminauth.Principal, error) {
 	if _, err := tx.ExecContext(
 		ctx,

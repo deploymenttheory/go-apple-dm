@@ -56,6 +56,7 @@ func TestZeroConfigIsNoOp(t *testing.T) {
 	}
 }
 
+// TestScope checks telemetry scope names and a nonempty version.
 func TestScope(t *testing.T) {
 	t.Parallel()
 	if got := telemetry.Scope("dep"); got != telemetry.ScopeRoot+"/dep" {
@@ -163,6 +164,7 @@ func TestPushTokenNeverReachesTelemetry(t *testing.T) {
 	}
 }
 
+// TestRoundTripperRecordsTheStableAttributes checks round tripper records the stable attributes.
 func TestRoundTripperRecordsTheStableAttributes(t *testing.T) {
 	t.Parallel()
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
@@ -321,12 +323,18 @@ func TestRoundTripperSurvivesAnEmptyURL(t *testing.T) {
 
 type errTransport struct{ err error }
 
+// RoundTrip returns the configured HTTP transport failure.
 func (e errTransport) RoundTrip(*http.Request) (*http.Response, error) { return nil, e.err }
 
 type timeoutErr struct{}
 
-func (timeoutErr) Error() string   { return "i/o timeout" }
-func (timeoutErr) Timeout() bool   { return true }
+// Error returns the fixture timeout message.
+func (timeoutErr) Error() string { return "i/o timeout" }
+
+// Timeout marks the fixture error as a timeout.
+func (timeoutErr) Timeout() bool { return true }
+
+// Temporary marks the fixture error as non-temporary.
 func (timeoutErr) Temporary() bool { return false }
 
 // server.port is required by the convention even when the URL omits it, so

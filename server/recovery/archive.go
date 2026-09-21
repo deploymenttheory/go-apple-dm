@@ -36,12 +36,16 @@ type Metadata struct {
 	CreatedAt time.Time `json:"createdAt"`
 }
 
+// Entry records an archive member's path, size, and integrity digest for verification
+// before restore.
 type Entry struct {
 	Name   string `json:"name"`
 	Size   int64  `json:"size"`
 	SHA256 string `json:"sha256"`
 }
 
+// Manifest describes the checkpoint format, deployment metadata, and authenticated
+// inventory of archive members.
 type Manifest struct {
 	Version  int      `json:"version"`
 	Metadata Metadata `json:"metadata"`
@@ -55,6 +59,7 @@ type Limits struct {
 	Files int
 }
 
+// defaults fills unspecified options with this package's defaults.
 func (l Limits) defaults() Limits {
 	if l.Bytes <= 0 {
 		l.Bytes = 8 << 30
@@ -65,6 +70,7 @@ func (l Limits) defaults() Limits {
 	return l
 }
 
+// validName rejects archive member names that could escape the extraction directory.
 func validName(name string) bool {
 	if name == "" || len(name) > 1024 || path.Clean(name) != name || strings.HasPrefix(name, "/") {
 		return false
@@ -87,6 +93,7 @@ type contextReader struct {
 	r   io.Reader
 }
 
+// Read checks context cancellation before reading more archive bytes.
 func (r contextReader) Read(p []byte) (int, error) {
 	if err := r.ctx.Err(); err != nil {
 		return 0, err
@@ -172,6 +179,7 @@ func Create(
 	return manifest, syncDirectory(filepath.Dir(destination))
 }
 
+// inventory builds the archive member list with sizes and integrity digests.
 func inventory(ctx context.Context, stage string, limits Limits) ([]Entry, error) {
 	root, err := os.OpenRoot(stage)
 	if err != nil {
@@ -233,6 +241,7 @@ func inventory(ctx context.Context, stage string, limits Limits) ([]Entry, error
 	return entries, nil
 }
 
+// writeEntries writes the validated checkpoint members into the archive.
 func writeEntries(ctx context.Context, archive *tar.Writer, stage string, entries []Entry) error {
 	root, err := os.OpenRoot(stage)
 	if err != nil {
@@ -280,8 +289,12 @@ type Verified struct {
 	directory string
 }
 
+// Directory returns the private extraction directory owned by this verified checkpoint;
+// Close removes that directory.
 func (v *Verified) Directory() string { return v.directory }
 
+// Close removes the owned extraction directory and clears its path after successful
+// cleanup. Repeated calls after successful cleanup are harmless.
 func (v *Verified) Close() error {
 	if v.directory == "" {
 		return nil
@@ -361,6 +374,8 @@ func Verify(
 	return v, nil
 }
 
+// validateManifest checks the checkpoint format, metadata, and bounded member inventory
+// before extraction.
 func validateManifest(m Manifest, limits Limits) error {
 	if m.Version != 1 || m.Metadata.PublicURL == "" || m.Metadata.Revision == "" ||
 		m.Metadata.CreatedAt.IsZero() {
@@ -393,6 +408,7 @@ func validateManifest(m Manifest, limits Limits) error {
 	return nil
 }
 
+// extract writes validated archive entries into the owned private extraction directory.
 func extract(ctx context.Context, archive *tar.Reader, v *Verified) error {
 	for _, entry := range v.Manifest.Entries {
 		header, err := archive.Next()
@@ -459,6 +475,7 @@ func (v *Verified) RestoreFiles(destination string) error {
 	return syncDirectory(destination)
 }
 
+// copyVerified copies a member while checking its declared size and integrity digest.
 func copyVerified(source, destination string, entry Entry) error {
 	f, err := openLocal(source, os.O_RDONLY, 0)
 	if err != nil {
@@ -481,6 +498,7 @@ func copyVerified(source, destination string, entry Entry) error {
 	return wrap(out.Sync())
 }
 
+// syncDirectory flushes directory metadata after recovery files have been installed.
 func syncDirectory(directory string) error {
 	// #nosec G304 -- Operator-selected publication directory; sync does not read its contents.
 	f, err := os.Open(directory)
@@ -491,6 +509,7 @@ func syncDirectory(directory string) error {
 	return wrap(privatefile.SyncDirectory(f))
 }
 
+// wrap classifies an underlying failure while preserving nil success.
 func wrap(err error) error {
 	if err == nil {
 		return nil

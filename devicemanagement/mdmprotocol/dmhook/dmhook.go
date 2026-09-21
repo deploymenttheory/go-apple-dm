@@ -21,7 +21,10 @@ type Call struct {
 // touched; an error aborts the operation with CodeForbidden. After runs
 // with the operation's result.
 type Hook interface {
+	// Before runs before the wrapped protocol operation and may replace its context or
+	// reject it.
 	Before(ctx context.Context, c *Call) (context.Context, error)
+	// After observes the wrapped operation's result after processing.
 	After(ctx context.Context, c *Call, err error)
 }
 
@@ -29,5 +32,7 @@ type Hook interface {
 // transport reports success. An error is returned to the device; implementations
 // must permit an idempotent retry after a partially completed service operation.
 type Completer interface {
+	// Complete persists authorization state after a successful check-in but before the
+	// transport reports success. A failure must permit an idempotent retry.
 	Complete(context.Context, *Call) error
 }

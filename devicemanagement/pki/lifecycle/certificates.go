@@ -55,6 +55,7 @@ func AppleAuthorities() ([]*x509.Certificate, error) {
 	return out, nil
 }
 
+// apple loads the Apple issuer certificates and constructs their trust pool.
 func (t Trust) apple() ([]*x509.Certificate, *x509.CertPool, error) {
 	certs := t.Apple
 	var err error
@@ -73,6 +74,7 @@ func (t Trust) apple() ([]*x509.Certificate, *x509.CertPool, error) {
 	return certs, roots, nil
 }
 
+// generate creates pending key material and a CSR for the requested certificate identity.
 func generate(req Request) (Material, error) {
 	key, err := rsa.GenerateKey(rand.Reader, 2048)
 	if err != nil {
@@ -97,6 +99,8 @@ func generate(req Request) (Material, error) {
 	return Material{Key: pem.EncodeToMemory(&pem.Block{Type: "PRIVATE KEY", Bytes: der}), CSR: pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE REQUEST", Bytes: csr})}, nil
 }
 
+// certificates parses the supplied certificate chain, rejecting missing or malformed
+// certificate data.
 func certificates(data []byte) ([]*x509.Certificate, error) {
 	if !bytes.Contains(data, []byte("-----BEGIN")) {
 		c, err := x509.ParseCertificate(data)
@@ -124,6 +128,7 @@ func certificates(data []byte) ([]*x509.Certificate, error) {
 	return out, nil
 }
 
+// certificatePEM encodes the supplied certificates as a PEM chain.
 func certificatePEM(certs []*x509.Certificate) []byte {
 	var out []byte
 	for _, c := range certs {
@@ -132,6 +137,7 @@ func certificatePEM(certs []*x509.Certificate) []byte {
 	return out
 }
 
+// completeChain connects the supplied certificate chain to available issuer certificates.
 func completeChain(chain, authorities []*x509.Certificate) ([]*x509.Certificate, error) {
 	for len(chain) < 10 {
 		last := chain[len(chain)-1]
@@ -158,6 +164,8 @@ func completeChain(chain, authorities []*x509.Certificate) ([]*x509.Certificate,
 	return nil, fmt.Errorf("%w: certificate chain too long", ErrInvalid)
 }
 
+// validate checks validity, key binding, certificate purpose, and configured trust before
+// activation. It returns normalized material, the leaf certificate, and any push topic.
 func (m *Manager) validate(r record, material Material, at time.Time) (Material, *x509.Certificate, string, error) {
 	chain, err := certificates(material.Certificate)
 	if err != nil {
@@ -292,6 +300,8 @@ func (m *Manager) Activate(ctx context.Context, id, rev string) (Identity, error
 	return m.activate(ctx, id, rev, nil, nil)
 }
 
+// activate publishes a ready certificate revision and updates the active and pending
+// workflow state in the same transaction.
 func (m *Manager) activate(ctx context.Context, id, rev string, locks []string, guard func(state.Tx) error) (Identity, error) {
 	return m.changeLocked(ctx, id, locks, func(tx state.Tx, r *record) error {
 		if guard != nil {
@@ -401,6 +411,8 @@ func (m *Manager) Adopt(ctx context.Context, req Request, certificate, keyPEM []
 	return out, err
 }
 
+// certificatePEMOrDER normalizes parseable PEM or DER certificates to PEM and leaves
+// unparseable input unchanged.
 func certificatePEMOrDER(b []byte) []byte {
 	cs, err := certificates(b)
 	if err != nil {
@@ -503,6 +515,7 @@ func (m *Manager) CreateIssuer(ctx context.Context, id, rev string, validity tim
 	})
 }
 
+// selfSign creates a self-signed issuing certificate using the pending key material.
 func selfSign(r record, material Material, now time.Time, validity time.Duration) ([]byte, error) {
 	b, _ := pem.Decode(material.Key)
 	if b == nil {
@@ -528,6 +541,8 @@ func selfSign(r record, material Material, now time.Time, validity time.Duration
 	return pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: der}), nil
 }
 
+// verifySigned checks the submitted vendor-signed request against the pending workflow and
+// configured trust.
 func (m *Manager) verifySigned(signed, csrPEM []byte, at time.Time) error {
 	xml, err := base64.StdEncoding.DecodeString(string(bytes.TrimSpace(signed)))
 	if err != nil {

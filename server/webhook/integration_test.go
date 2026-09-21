@@ -22,6 +22,8 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/server/sqlstore/sqlcommon"
 )
 
+// TestSQLContracts checks SQL webhook capture rollback, exclusive concurrent claims, and
+// retention.
 func TestSQLContracts(t *testing.T) {
 	for _, backend := range []string{"postgres", "mysql"} {
 		t.Run(backend, func(t *testing.T) {

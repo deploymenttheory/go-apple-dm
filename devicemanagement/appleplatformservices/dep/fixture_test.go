@@ -45,14 +45,17 @@ type fixtureOptions struct {
 // withoutAccount leaves the store empty.
 func withoutAccount(o *fixtureOptions) { o.noAccount = true }
 
+// withServer applies an option to the fake DEP server.
 func withServer(fn func(*deptest.Options)) func(*fixtureOptions) {
 	return func(o *fixtureOptions) { fn(&o.server) }
 }
 
+// withClient builds a fixture option that sets the DEP client configuration hook.
 func withClient(fn func(*dep.ClientConfig)) func(*fixtureOptions) {
 	return func(o *fixtureOptions) { o.client = fn }
 }
 
+// newFixture creates a fake DEP service with its client, store, clock, and event bus.
 func newFixture(t *testing.T, mutate ...func(*fixtureOptions)) *fixture {
 	t.Helper()
 	var o fixtureOptions

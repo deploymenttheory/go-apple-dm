@@ -23,6 +23,7 @@ type Record struct {
 
 // Reader reads records, including expired ones; protocol callers validate expiry.
 type Reader interface {
+	// Get returns the requested stored record or the store's missing-record error.
 	Get(context.Context, string) (Record, error)
 	// List returns up to limit records in key order, strictly after after.
 	List(ctx context.Context, prefix, after string, limit int) ([]Record, error)
@@ -32,8 +33,11 @@ type Reader interface {
 // acquiring locks. A callback must not re-enter the Store or retain its Tx.
 type Tx interface {
 	Reader
+	// Now returns the authoritative time for this transaction.
 	Now() time.Time
+	// Put writes the record through the current transaction.
 	Put(context.Context, Record) error
+	// Delete removes the addressed record through the current transaction.
 	Delete(context.Context, string) error
 }
 
@@ -42,6 +46,8 @@ type Tx interface {
 // Keys may designate a whole logical group (for example an issuer's CRL).
 type Store interface {
 	Reader
+	// Update serializes changes for the supplied keys and commits only if the callback
+	// succeeds.
 	Update(ctx context.Context, keys []string, fn func(Tx) error) error
 	// Prune deletes at most limit expired records. It never deletes immortal data.
 	Prune(ctx context.Context, limit int) (int, error)
@@ -68,8 +74,13 @@ type Memory struct {
 }
 
 // NewMemory returns an empty store.
-func NewMemory() *Memory    { return &Memory{records: make(map[string]Record)} }
+func NewMemory() *Memory { return &Memory{records: make(map[string]Record)} }
+
+// clone copies record bytes so callers cannot mutate stored state through returned buffers.
 func clone(r Record) Record { r.Value = slices.Clone(r.Value); return r }
+
+// now returns the configured clock time, using the package default when no clock is
+// supplied.
 func (m *Memory) now() time.Time {
 	if m.Now != nil {
 		return m.Now().UTC()
@@ -152,7 +163,10 @@ type memoryTx struct {
 	now     time.Time
 }
 
+// Now returns the authoritative timestamp captured for this memory transaction.
 func (t *memoryTx) Now() time.Time { return t.now }
+
+// Get reads a record from the transaction's state and returns independent record bytes.
 func (t *memoryTx) Get(ctx context.Context, k string) (Record, error) {
 	if err := ctx.Err(); err != nil {
 		return Record{}, err
@@ -173,6 +187,7 @@ func (t *memoryTx) Get(ctx context.Context, k string) (Record, error) {
 	return clone(r), nil
 }
 
+// List returns matching records after the exclusive key cursor in lexical order.
 func (t *memoryTx) List(ctx context.Context, prefix, after string, limit int) ([]Record, error) {
 	if err := ctx.Err(); err != nil {
 		return nil, err
@@ -205,6 +220,7 @@ func (t *memoryTx) List(ctx context.Context, prefix, after string, limit int) ([
 	return out, nil
 }
 
+// Put writes independent record bytes into the transaction's state.
 func (t *memoryTx) Put(ctx context.Context, r Record) error {
 	if err := ctx.Err(); err != nil {
 		return err
@@ -217,6 +233,7 @@ func (t *memoryTx) Put(ctx context.Context, r Record) error {
 	return nil
 }
 
+// Delete removes the addressed record from the transaction's state.
 func (t *memoryTx) Delete(ctx context.Context, k string) error {
 	if err := ctx.Err(); err != nil {
 		return err

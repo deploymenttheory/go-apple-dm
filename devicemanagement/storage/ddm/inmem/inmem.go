@@ -65,6 +65,7 @@ type state struct {
 	seq int64
 }
 
+// newState allocates the maps used by an empty in-memory store.
 func newState() *state {
 	return &state{
 		decls:         map[string]ddm.Declaration{},
@@ -104,6 +105,8 @@ func (st *state) clone() *state {
 	}
 }
 
+// cloneNested copies nested maps so a transaction can change membership independently of
+// committed state.
 func cloneNested[K, IK comparable, V any](m map[K]map[IK]V) map[K]map[IK]V {
 	out := make(map[K]map[IK]V, len(m))
 	for k, inner := range m {
@@ -112,6 +115,7 @@ func cloneNested[K, IK comparable, V any](m map[K]map[IK]V) map[K]map[IK]V {
 	return out
 }
 
+// cloneSlices copies map values that contain mutable slices.
 func cloneSlices[K comparable, V any](m map[K][]V) map[K][]V {
 	out := make(map[K][]V, len(m))
 	for k, s := range m {
@@ -120,6 +124,7 @@ func cloneSlices[K comparable, V any](m map[K][]V) map[K][]V {
 	return out
 }
 
+// nextSeq advances and returns the next change-record sequence number.
 func (st *state) nextSeq() int64 {
 	st.seq++
 	return st.seq

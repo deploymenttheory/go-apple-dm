@@ -26,11 +26,13 @@ type appSettingsExample struct {
 	baseURL, token string
 }
 
+// Example_applicationSettings demonstrates selecting a store application, publishing
+// target-validated settings, and assigning the blueprint.
 func Example_applicationSettings() {
 	ctx := context.Background()
 	server := appSettingsExample{
 		client:  &http.Client{Timeout: 2 * time.Minute},
-		baseURL: "https://mdm.example", token: os.Getenv("DM_BOOTSTRAP_TOKEN"),
+		baseURL: "https://mdm.example", token: os.Getenv("DMCTL_TOKEN"),
 	}
 	var results struct {
 		Items []publicappstoreidentity.App `json:"items"`
@@ -64,11 +66,13 @@ func Example_applicationSettings() {
 	fmt.Println(record.Compiled.Identifiers["applications"])
 }
 
+// Example_applicationSettingsArtifact demonstrates inspecting an artifact, selecting binary
+// identities, and publishing and assigning validated controls.
 func Example_applicationSettingsArtifact() {
 	ctx := context.Background()
 	server := appSettingsExample{
 		client:  &http.Client{Timeout: 3 * time.Minute},
-		baseURL: "https://mdm.example", token: os.Getenv("DM_BOOTSTRAP_TOKEN"),
+		baseURL: "https://mdm.example", token: os.Getenv("DMCTL_TOKEN"),
 	}
 	artifact, err := os.Open("applications.zip")
 	if err != nil {
@@ -175,6 +179,8 @@ func (s appSettingsExample) publish(ctx context.Context, identifier string, payl
 	return record, err
 }
 
+// request sends an authenticated admin request and either decodes the successful response or
+// drains its body.
 func (s appSettingsExample) request(ctx context.Context, method, path string, body io.Reader, headers http.Header, result any) error {
 	req, err := http.NewRequestWithContext(ctx, method, s.baseURL+"/admin/v1"+path, body)
 	if err != nil {

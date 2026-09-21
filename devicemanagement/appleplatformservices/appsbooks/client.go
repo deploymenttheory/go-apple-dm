@@ -117,6 +117,8 @@ func New(cfg Config) (*Client, error) {
 	}, nil
 }
 
+// lock waits for exclusive client access, returning when the context is cancelled before
+// acquisition.
 func (c *Client) lock(ctx context.Context) error {
 	select {
 	case c.gate <- struct{}{}:
@@ -125,6 +127,8 @@ func (c *Client) lock(ctx context.Context) error {
 		return fmt.Errorf("appsbooks: waiting: %w", ctx.Err())
 	}
 }
+
+// unlock releases the client gate after an operation completes.
 func (c *Client) unlock() { <-c.gate }
 
 // ServiceConfig returns a copy of configuration cached for at most five minutes.
@@ -147,6 +151,8 @@ func (c *Client) ServiceConfig(ctx context.Context) (ServiceConfiguration, error
 	return out, nil
 }
 
+// refresh refreshes expired service configuration before resolving endpoint URLs and
+// request limits.
 func (c *Client) refresh(ctx context.Context) error {
 	if !c.refreshed.IsZero() && c.clock.Since(c.refreshed) < 5*time.Minute {
 		return nil
@@ -165,6 +171,7 @@ func (c *Client) refresh(ctx context.Context) error {
 	return nil
 }
 
+// endpoint resolves a service endpoint name against the downloaded configuration.
 func (c *Client) endpoint(name string) (*url.URL, error) {
 	u, err := httpsurl.Parse(c.service.URLs[name])
 	if err != nil || !strings.EqualFold(u.Host, c.base.Host) || u.RawQuery != "" {
@@ -173,6 +180,8 @@ func (c *Client) endpoint(name string) (*url.URL, error) {
 	return u, nil
 }
 
+// call refreshes service configuration, resolves the named endpoint, and sends an
+// authenticated request with the supplied query.
 func (c *Client) call(ctx context.Context, name, method string, q url.Values, in, out any) error {
 	if err := c.refresh(ctx); err != nil {
 		return err
@@ -185,6 +194,8 @@ func (c *Client) call(ctx context.Context, name, method string, q url.Values, in
 	return c.request(ctx, method, u, in, out, true)
 }
 
+// checkMeta rejects response metadata that violates the configured client ownership
+// contract.
 func (c *Client) checkMeta(meta ResponseMeta) error {
 	if meta.UID == "" {
 		return fmt.Errorf("%w: missing library identifier", ErrProtocol)
@@ -199,6 +210,8 @@ func (c *Client) checkMeta(meta ResponseMeta) error {
 	return nil
 }
 
+// wait waits through the configured clock for the requested delay, returning cancellation
+// instead of waiting further.
 func (c *Client) wait(ctx context.Context, d time.Duration) error {
 	if d <= 0 {
 		return nil

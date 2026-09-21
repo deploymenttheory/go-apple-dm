@@ -485,6 +485,7 @@ func expand(n *yaml.Node, path []pathEntry) *yaml.Node {
 	return &out
 }
 
+// ownerOf finds the schema object that owns a nested definition.
 func ownerOf(path []pathEntry) *yaml.Node {
 	if len(path) == 0 {
 		return nil

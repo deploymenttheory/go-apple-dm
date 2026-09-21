@@ -190,6 +190,7 @@ func percentEncode(s string) string {
 	return sb.String()
 }
 
+// sortedKeys returns map keys in deterministic lexical order.
 func sortedKeys(v url.Values) []string {
 	keys := make([]string, 0, len(v))
 	for k := range v {

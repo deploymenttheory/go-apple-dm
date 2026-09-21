@@ -13,6 +13,8 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/server/sqlstore/sqlite"
 )
 
+// TestCheckinRequiredEventFailureDoesNotEnroll checks that checkin required event failure does not
+// enroll.
 func TestCheckinRequiredEventFailureDoesNotEnroll(t *testing.T) {
 	s, err := sqlite.Open(t.Context(), filepath.Join(t.TempDir(), "mdm.sqlite"), sqlite.Options{})
 	if err != nil {

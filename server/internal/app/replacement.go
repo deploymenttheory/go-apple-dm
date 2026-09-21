@@ -39,6 +39,8 @@ type identityEvidence struct {
 	NotAfter     time.Time `json:"notAfter"`
 }
 
+// recordIssuedIdentity persists issuance method, issuer and device binding by certificate
+// fingerprint until the certificate expires.
 func (a *App) recordIssuedIdentity(ctx context.Context, c *x509.Certificate) error {
 	method := revocation.ProvenanceFromContext(ctx).Source
 	if method == "" {
@@ -76,6 +78,8 @@ func (a *App) recordIssuedIdentity(ctx context.Context, c *x509.Certificate) err
 	return nil
 }
 
+// enrollmentEvidence returns available certificate-issuance and check-in evidence for the
+// selected enrollment.
 func (a *App) enrollmentEvidence(w http.ResponseWriter, r *http.Request) {
 	id, err := enrollmentFromPath(r)
 	if err != nil {
@@ -118,6 +122,8 @@ func (a *App) enrollmentEvidence(w http.ResponseWriter, r *http.Request) {
 
 type replacementAdmission struct{ app *App }
 
+// Before recognizes replacement identities before service dispatch and binds them to the
+// pending replacement attempt.
 func (h replacementAdmission) Before(
 	ctx context.Context,
 	call *service.Call,
@@ -163,19 +169,26 @@ func (h replacementAdmission) Before(
 	return ctx, nil
 }
 
+// After leaves the exchange unchanged because replacement admission runs before dispatch.
 func (replacementAdmission) After(context.Context, *service.Call, error) {}
 
+// replacementStore returns the storage backend's optional replacement capability or nil
+// when it is unavailable.
 func (a *App) replacementStore() storage.ReplacementStore {
 	s, _ := a.Store.(storage.ReplacementStore)
 	return s
 }
 
+// replacementSubject encodes a device identity and attempt into the certificate subject
+// used for replacement issuance.
 func replacementSubject(id mdm.EnrollmentID, attempt string) string {
 	return replacementSubjectPrefix + base64.RawURLEncoding.EncodeToString(
 		[]byte(id.ID),
 	) + ":" + attempt
 }
 
+// parseReplacementSubject decodes and validates the enrollment identity and attempt in a
+// replacement certificate subject.
 func parseReplacementSubject(subject string) (mdm.EnrollmentID, string, error) {
 	encoded, attempt, ok := strings.Cut(strings.TrimPrefix(subject, replacementSubjectPrefix), ":")
 	id, err := base64.RawURLEncoding.DecodeString(encoded)
@@ -219,6 +232,8 @@ func (a *App) bindReplacementSubject(
 	return wrapError(err)
 }
 
+// resolveReplacementSubject resolves an opaque replacement subject through its persisted
+// binding, or parses the supported embedded-device subject format.
 func (a *App) resolveReplacementSubject(
 	ctx context.Context,
 	subject string,
@@ -249,8 +264,11 @@ func (a *App) resolveReplacementSubject(
 	return id, ref, nil
 }
 
+// digest returns a hexadecimal SHA-256 digest for stable storage identifiers.
 func digest(b []byte) string { h := sha256.Sum256(b); return hex.EncodeToString(h[:]) }
 
+// replacementIssuance associates an issued replacement certificate with its validated
+// pending attempt.
 func (a *App) replacementIssuance(ctx context.Context, cert *x509.Certificate) error {
 	if !strings.HasPrefix(cert.Subject.CommonName, replacementSubjectPrefix) {
 		return nil
@@ -280,6 +298,8 @@ func (a *App) replacementIssuance(ctx context.Context, cert *x509.Certificate) e
 	return wrapError(err)
 }
 
+// replacementChallenge verifies the replacement challenge and CSR against the pending
+// attempt's identity and deadline.
 func (a *App) replacementChallenge(
 	ctx context.Context,
 	password string,
@@ -304,6 +324,8 @@ func (a *App) replacementChallenge(
 	return wrapError(err)
 }
 
+// replaceEnrollment handles preparation, inspection and cancellation of enrollment
+// replacements through the administrative API.
 func (a *App) replaceEnrollment(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Cache-Control", "no-store")
 	id, err := enrollmentFromPath(r)
@@ -373,6 +395,8 @@ func (a *App) replaceEnrollment(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
+// prepareReplacement validates the active device enrollment and prepares the replacement
+// identity, profile and queued installation attempt.
 func (a *App) prepareReplacement(
 	ctx context.Context,
 	id mdm.EnrollmentID,
@@ -486,6 +510,8 @@ func (a *App) prepareReplacement(
 	}, nil
 }
 
+// recordProfile persists delivered enrollment-profile metadata for later controlled
+// replacement.
 func (e *enrollment) recordProfile(
 	ctx context.Context,
 	binding acme.Binding,

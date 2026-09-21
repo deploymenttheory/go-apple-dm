@@ -27,10 +27,12 @@ func RunSuite(t *testing.T, newStore NewStore) {
 	t.Run("Prune", func(t *testing.T) { runPrune(t, newStore) })
 }
 
+// device constructs a device-channel identity for audit storage assertions.
 func device(id string) mdm.EnrollmentID {
 	return mdm.EnrollmentID{Channel: mdm.ChannelDevice, ID: id}
 }
 
+// mustAppend appends an audit record and stops the contract test on failure.
 func mustAppend(t *testing.T, s audit.Store, rec audit.Record) audit.Record {
 	t.Helper()
 	out, err := s.Append(context.Background(), rec)
@@ -40,6 +42,8 @@ func mustAppend(t *testing.T, s audit.Store, rec audit.Record) audit.Record {
 	return out
 }
 
+// runAppend checks rising audit IDs, field round trips, invalid records, missing IDs, and
+// copy isolation.
 func runAppend(t *testing.T, newStore NewStore) {
 	t.Helper()
 	ctx := context.Background()
@@ -122,6 +126,7 @@ func runAppend(t *testing.T, newStore NewStore) {
 	})
 }
 
+// runList checks descending audit order, empty listings, and malformed cursor rejection.
 func runList(t *testing.T, newStore NewStore) {
 	t.Helper()
 	ctx := context.Background()
@@ -163,6 +168,8 @@ func runList(t *testing.T, newStore NewStore) {
 	})
 }
 
+// runFilter checks audit filters individually and in combination, including inclusive
+// lower and exclusive upper time bounds.
 func runFilter(t *testing.T, newStore NewStore) {
 	t.Helper()
 	ctx := context.Background()
@@ -202,6 +209,8 @@ func runFilter(t *testing.T, newStore NewStore) {
 	}
 }
 
+// runPagination checks complete audit pagination, end cursors, filter retention, and
+// bounded page sizes.
 func runPagination(t *testing.T, newStore NewStore) {
 	t.Helper()
 	ctx := context.Background()
@@ -322,6 +331,7 @@ func runPagination(t *testing.T, newStore NewStore) {
 	})
 }
 
+// runPrune checks that pruning removes only records strictly older than its cutoff.
 func runPrune(t *testing.T, newStore NewStore) {
 	t.Helper()
 	ctx := context.Background()

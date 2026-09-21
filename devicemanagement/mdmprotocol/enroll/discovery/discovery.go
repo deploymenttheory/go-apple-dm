@@ -140,6 +140,7 @@ type Config struct {
 	Logger *slog.Logger
 }
 
+// logger returns the configured discovery logger or the default logger.
 func (c Config) logger() *slog.Logger {
 	if c.Logger != nil {
 		return c.Logger
@@ -216,6 +217,7 @@ func validateServers(servers []Server) error {
 // ErrNotHTTPS reports a URL that is not absolute https.
 var ErrNotHTTPS = errors.New("discovery: URL must be absolute https")
 
+// requireHTTPS requires a parseable absolute HTTPS discovery URL with a host.
 func requireHTTPS(raw string) error {
 	u, err := url.Parse(raw)
 	if err != nil {
@@ -227,6 +229,7 @@ func requireHTTPS(raw string) error {
 	return nil
 }
 
+// allowedMethod rejects unsupported HTTP methods and advertises the permitted method.
 func allowedMethod(w http.ResponseWriter, r *http.Request) bool {
 	if r.Method == http.MethodGet || r.Method == http.MethodHead {
 		return true

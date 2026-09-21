@@ -19,6 +19,8 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/server/service"
 )
 
+// seedDevice seeds observed OS and enrollment capabilities and optionally creates a user-channel
+// enrollment.
 func seedDevice(t *testing.T, h *harness, product, version string, supervised bool, user bool) mdm.EnrollmentID {
 	t.Helper()
 	enroll(t, h, "D1")
@@ -44,6 +46,8 @@ func seedDevice(t *testing.T, h *harness, product, version string, supervised bo
 	return id
 }
 
+// TestSeedOS27EnhancedLogCommands checks enhanced-logging command availability by OS, channel,
+// supervision, and enrollment mode, including AppleCare token validation and result storage.
 func TestSeedOS27EnhancedLogCommands(t *testing.T) {
 	for _, payload := range []commands.Command{&commands.TriggerEnhancedLogCollection{AppleCareToken: "test-token-normal"}, &commands.CancelEnhancedLogCollection{}} {
 		for _, tc := range []struct {
@@ -127,6 +131,8 @@ func TestSeedOS27EnhancedLogCommands(t *testing.T) {
 	}
 }
 
+// TestSeedOS27SoftwareUpdateRemoval checks that legacy update commands remain deprecated but
+// usable on macOS 26 and are rejected on macOS 27.
 func TestSeedOS27SoftwareUpdateRemoval(t *testing.T) {
 	for _, payload := range []commands.Command{&commands.AvailableOSUpdates{}, &commands.ScheduleOSUpdateScan{}, &commands.ScheduleOSUpdate{Updates: []commands.ScheduleOSUpdateUpdates{{InstallAction: "Default", ProductKey: new("test-update")}}}, &commands.OSUpdateStatus{}} {
 		for _, version := range []string{"26.4", "27.0"} {
@@ -157,6 +163,8 @@ func TestSeedOS27SoftwareUpdateRemoval(t *testing.T) {
 	}
 }
 
+// TestSeedOS27ReturnToServiceRetry checks optional retry-field encoding, bootstrap-token
+// precedence, and the retry field's iOS 27 support boundary.
 func TestSeedOS27ReturnToServiceRetry(t *testing.T) {
 	for _, value := range []*bool{nil, new(false), new(true)} {
 		for _, ownToken := range []bool{false, true} {

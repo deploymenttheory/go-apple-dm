@@ -9,6 +9,8 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/pki/scep"
 )
 
+// TestClientRejectsInvalidTrustAndRenewalBeforeSending checks that client rejects invalid trust
+// and renewal before sending.
 func TestClientRejectsInvalidTrustAndRenewalBeforeSending(t *testing.T) {
 	f := newFixture(t)
 	key := rsaKey(t)
@@ -45,6 +47,7 @@ func TestClientRejectsInvalidTrustAndRenewalBeforeSending(t *testing.T) {
 
 type unexpectedSCEPTransport struct{ called bool }
 
+// RoundTrip records an unexpected SCEP request and returns an error.
 func (t *unexpectedSCEPTransport) RoundTrip(*http.Request) (*http.Response, error) {
 	t.called = true
 	return nil, errors.New("unexpected SCEP request")

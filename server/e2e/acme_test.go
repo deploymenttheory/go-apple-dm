@@ -40,6 +40,8 @@ type acmeFixture struct {
 	bus         *event.Bus
 }
 
+// newACMEFixture creates an end-to-end ACME fixture with an attestation authority and lazily
+// mounted ACME handler.
 func newACMEFixture(t *testing.T, mutate ...func(*acme.Config)) *acmeFixture {
 	t.Helper()
 	attestCA, err := attesttest.NewCA()
@@ -96,6 +98,7 @@ func newACMEFixture(t *testing.T, mutate ...func(*acme.Config)) *acmeFixture {
 	return f
 }
 
+// server1URL returns the fixture MDM server's base URL.
 func (f *acmeFixture) server1URL() string { return f.harness.server.URL }
 
 // profile builds an enrollment profile whose identity comes from ACME,

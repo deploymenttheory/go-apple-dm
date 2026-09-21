@@ -114,6 +114,7 @@ func TestUnitNamespacesInternalAndSchema(t *testing.T) {
 	}
 }
 
+// TestLibraryContainerPreservesUnitCycles checks that library container preserves unit cycles.
 func TestLibraryContainerPreservesUnitCycles(t *testing.T) {
 	t.Parallel()
 	const ddm = "devicemanagement/mdmprotocol/ddm"
@@ -127,6 +128,8 @@ func TestLibraryContainerPreservesUnitCycles(t *testing.T) {
 	}
 }
 
+// TestServerContainerPreservesUnitBoundaries checks that server container preserves unit
+// boundaries.
 func TestServerContainerPreservesUnitBoundaries(t *testing.T) {
 	t.Parallel()
 	const dmctl = "server/internal/dmctl"

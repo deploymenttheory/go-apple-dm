@@ -26,6 +26,7 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/server/internal/app"
 )
 
+// TestApplicationIdentityCLIWorkflow checks application identity CLI workflow.
 func TestApplicationIdentityCLIWorkflow(t *testing.T) {
 	for _, source := range []string{"public-app-store", "artifact"} {
 		t.Run(source, func(t *testing.T) {

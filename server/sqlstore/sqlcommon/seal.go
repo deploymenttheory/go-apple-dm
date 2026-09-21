@@ -117,6 +117,7 @@ type rewrapRow struct {
 	value []byte
 }
 
+// rewrapColumn rewrites the selected encrypted column under the active storage key.
 func (s *Store) rewrapColumn(ctx context.Context, c sealedColumn) (int, error) {
 	active := s.keyring.Active()
 	total := 0
@@ -158,6 +159,8 @@ func (s *Store) rewrapColumn(ctx context.Context, c sealedColumn) (int, error) {
 	}
 }
 
+// rewrapPage reads the next bounded page of nonempty stored column values for key
+// rewrapping.
 func (s *Store) rewrapPage(ctx context.Context, c sealedColumn, cursor string) ([]rewrapRow, error) {
 	rows, err := Query(ctx, s.db).QueryContext(ctx, s.q("SELECT "+c.idCol+", "+c.col+" FROM "+c.table+" WHERE "+c.col+" IS NOT NULL AND "+c.idCol+" > ? ORDER BY "+c.idCol+" LIMIT ?"), cursor, RewrapBatchSize)
 	if err != nil {
@@ -181,4 +184,6 @@ func (s *Store) rewrapPage(ctx context.Context, c sealedColumn, cursor string) (
 	return out, nil
 }
 
+// commandRowID constructs the stable row identity used as command encryption associated
+// data.
 func commandRowID(id, uuid string) string { return fmt.Sprintf("%d:%s%s", len(id), id, uuid) }

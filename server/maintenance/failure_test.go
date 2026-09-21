@@ -12,6 +12,8 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/server/sqlstore/sqlite"
 )
 
+// TestControlRejectsInvalidOwnershipAndRegistration checks that control rejects invalid ownership
+// and registration.
 func TestControlRejectsInvalidOwnershipAndRegistration(t *testing.T) {
 	s := fixture(t)
 	ctx := t.Context()
@@ -68,6 +70,7 @@ func TestControlRejectsInvalidOwnershipAndRegistration(t *testing.T) {
 	}
 }
 
+// TestWorkerFailureClosesAdmission checks worker failure closes admission, including worker.
 func TestWorkerFailureClosesAdmission(t *testing.T) {
 	for _, workerError := range []error{nil, errors.New("worker failed")} {
 		t.Run("worker", func(t *testing.T) {
@@ -93,6 +96,7 @@ func TestWorkerFailureClosesAdmission(t *testing.T) {
 	}
 }
 
+// TestControlFailureCancelsActiveWorker checks that control failure cancels active worker.
 func TestControlFailureCancelsActiveWorker(t *testing.T) {
 	s := fixture(t)
 	p, err := s.Register(t.Context(), "control-failure")
@@ -113,6 +117,8 @@ func TestControlFailureCancelsActiveWorker(t *testing.T) {
 	}
 }
 
+// TestMalformedPersistentControlStateNeverReportsReady checks that malformed persistent control
+// state never reports ready.
 func TestMalformedPersistentControlStateNeverReportsReady(t *testing.T) {
 	for _, corrupt := range []string{
 		"DROP TABLE maintenance_participants",
@@ -151,9 +157,13 @@ func TestMalformedPersistentControlStateNeverReportsReady(t *testing.T) {
 
 type failedResult struct{}
 
+// RowsAffected returns a synthetic affected-row confirmation failure.
 func (failedResult) RowsAffected() (int64, error) { return 0, errors.New("cannot confirm write") }
+
+// LastInsertId returns an error for the unsupported fixture result operation.
 func (failedResult) LastInsertId() (int64, error) { return 0, errors.New("unused") }
 
+// TestFailedControlWriteCannotAcknowledge checks that failed control write cannot acknowledge.
 func TestFailedControlWriteCannotAcknowledge(t *testing.T) {
 	if err := affected(nil, errors.New("write failed")); err == nil {
 		t.Fatal("lost write failure")

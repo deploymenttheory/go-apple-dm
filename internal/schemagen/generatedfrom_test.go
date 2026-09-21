@@ -8,6 +8,7 @@ import (
 	"testing"
 )
 
+// osTree builds a schema tree with the supplied per-platform introduction versions.
 func osTree(entries map[string]map[string]string) *Tree {
 	t := &Tree{}
 	for title, byOS := range entries {
@@ -57,6 +58,7 @@ func TestNewestIntroducedTakesTheHighestPerFamily(t *testing.T) {
 	}
 }
 
+// TestNewestIntroducedOnNothing checks newest introduced on nothing.
 func TestNewestIntroducedOnNothing(t *testing.T) {
 	t.Parallel()
 	if got := NewestIntroduced(nil); len(got) != 0 {
@@ -67,6 +69,7 @@ func TestNewestIntroducedOnNothing(t *testing.T) {
 	}
 }
 
+// TestNewestOSVersionAcrossFamilies checks newest OS version across families.
 func TestNewestOSVersionAcrossFamilies(t *testing.T) {
 	t.Parallel()
 	got := NewestOSVersion(osTree(map[string]map[string]string{
@@ -140,6 +143,7 @@ func TestYAMLSHA256IdentifiesTheSchema(t *testing.T) {
 	}
 }
 
+// TestYAMLSHA256OnAMissingDirectory checks yamlsha256 on a missing directory.
 func TestYAMLSHA256OnAMissingDirectory(t *testing.T) {
 	t.Parallel()
 	if _, err := yamlSHA256(filepath.Join(t.TempDir(), "absent")); err == nil {
@@ -184,6 +188,7 @@ func TestDescribeIsAFunctionOfTheCheckout(t *testing.T) {
 	}
 }
 
+// TestDescribeOnAMissingCheckout checks describe on a missing checkout.
 func TestDescribeOnAMissingCheckout(t *testing.T) {
 	t.Parallel()
 	if _, err := describe(filepath.Join(t.TempDir(), "absent"), nil, "abc"); err == nil {

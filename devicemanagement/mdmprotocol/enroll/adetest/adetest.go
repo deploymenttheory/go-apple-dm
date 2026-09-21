@@ -65,6 +65,8 @@ func (c *Chain) Options() ade.ParseOptions {
 	return ade.ParseOptions{Anchors: c.Anchors()}
 }
 
+// selfSigned creates a self-signed test identity and fails the calling test if generation
+// fails.
 func selfSigned(tb testing.TB, name string) Identity {
 	tb.Helper()
 	key := rsaKey(tb)
@@ -84,6 +86,8 @@ func selfSigned(tb testing.TB, name string) Identity {
 	return Identity{Cert: cert, Key: key}
 }
 
+// issue issues a test identity under the supplied parent and fails the calling test on
+// generation or parsing errors.
 func issue(tb testing.TB, parent Identity, tmpl *x509.Certificate) Identity {
 	tb.Helper()
 	key := rsaKey(tb)
@@ -98,6 +102,8 @@ func issue(tb testing.TB, parent Identity, tmpl *x509.Certificate) Identity {
 	return Identity{Cert: cert, Key: key}
 }
 
+// rsaKey generates the RSA key used by enrollment fixtures, failing the calling test on
+// error.
 func rsaKey(tb testing.TB) crypto.Signer {
 	tb.Helper()
 	key, err := rsa.GenerateKey(rand.Reader, 2048)

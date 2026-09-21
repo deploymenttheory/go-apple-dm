@@ -110,6 +110,8 @@ type Tokens struct {
 	AccessTTL, EnrollmentTTL, RefreshTTL, CodeTTL time.Duration
 }
 
+// now returns the configured clock time, using the package default when no clock is
+// supplied.
 func (t *Tokens) now() time.Time {
 	if t.Now != nil {
 		return t.Now()
@@ -117,6 +119,7 @@ func (t *Tokens) now() time.Time {
 	return time.Now()
 }
 
+// ttl returns the configured lifetime or its package default.
 func (t *Tokens) ttl(k Kind) time.Duration {
 	switch k {
 	case KindAccess:
@@ -130,6 +133,7 @@ func (t *Tokens) ttl(k Kind) time.Duration {
 	}
 }
 
+// or returns a positive duration or the supplied default.
 func or(d, def time.Duration) time.Duration {
 	if d > 0 {
 		return d

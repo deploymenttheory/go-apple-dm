@@ -99,7 +99,7 @@ Artifacts are named `device-management-client-schema-discovery`,
 `device-management-client-schema-summary`. They retain complete file inventories,
 diagnostics, per-stage logs, planned issue actions and publication status for 30 days.
 
-## Historical incident consolidation
+## Incident consolidation
 
 The explicit `consolidate` action selects only legacy parse incidents for the reviewed
 `--historical-commit` containing the single-object `examples` diagnostic. It retains the earliest issue as the historical
@@ -115,3 +115,14 @@ python3 .github/scripts/device_management_client_schema_monitor.py consolidate \
 
 Review `consolidation.json`; omit `--report-only` to apply those changes. The operation
 is idempotent and uses the same paced, rate-limit-aware GitHub client.
+
+## Sources and implementation
+
+Apple publishes [Device Management Client Schemas](https://github.com/apple/device-management)
+and the [schema format](https://github.com/apple/device-management/blob/release/docs/schema.md).
+The [workflow](../.github/workflows/device-management-schema-update.yml),
+[monitor](../.github/scripts/device_management_client_schema_monitor.py) and
+[diagnostic classifier](../.github/scripts/device_management_client_schema_diagnostics.py)
+implement the project's discovery, assessment and incident policy. The
+[published contract runner](../scripts/device-management-schema-contracts.py)
+verifies shipped features separately from candidate code generation.

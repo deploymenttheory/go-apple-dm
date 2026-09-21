@@ -78,6 +78,7 @@ func (v Version) Compare(o Version) int {
 	}
 }
 
+// cmp compares version components and returns their ordering.
 func cmp(a, b int) int {
 	switch {
 	case a < b:

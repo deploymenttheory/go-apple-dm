@@ -28,6 +28,7 @@ type harness struct {
 	key *ecdsa.PrivateKey
 }
 
+// newHarness creates the fake AXM service and registers the signing key used by its tests.
 func newHarness(t *testing.T) *harness {
 	t.Helper()
 	srv := axmtest.NewServer()
@@ -151,6 +152,8 @@ func signRaw(t *testing.T, key *ecdsa.PrivateKey, header, claims map[string]any)
 	return signing + "." + sig
 }
 
+// TestServer checks the fake AXM server's authentication, paging, resource, fault, and
+// request-recording behavior.
 func TestServer(t *testing.T) {
 	t.Parallel()
 	t.Run("TokenEndpoint", func(t *testing.T) {

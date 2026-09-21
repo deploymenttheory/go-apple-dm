@@ -19,6 +19,7 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/testpki"
 )
 
+// pushCert creates a test MDM push certificate and returns it as a TLS certificate.
 func pushCert(t *testing.T, ca *testpki.CA, notBefore time.Time) tls.Certificate {
 	t.Helper()
 	id, err := ca.IssuePush("com.apple.mgmt.External.test", notBefore)
@@ -28,6 +29,7 @@ func pushCert(t *testing.T, ca *testpki.CA, notBefore time.Time) tls.Certificate
 	return tls.Certificate{Certificate: [][]byte{id.Cert.Raw}, PrivateKey: id.Key, Leaf: id.Cert}
 }
 
+// target builds a device push target with the fixture's topic and push magic.
 func target(id string, token []byte) push.Target {
 	return push.Target{
 		ID:   mdm.EnrollmentID{Channel: mdm.ChannelDevice, ID: id},
@@ -35,6 +37,7 @@ func target(id string, token []byte) push.Target {
 	}
 }
 
+// newClient creates an APNs client that trusts the fake push server.
 func newClient(
 	t *testing.T,
 	srv *pushtest.Server,
@@ -50,6 +53,8 @@ func newClient(
 		append([]apns.Option{apns.WithHost(srv.URL), apns.WithTransport(transport)}, opts...)...)
 }
 
+// TestStatusMapping checks APNs outcomes, retry timing, invalid targets, and cancellation across
+// response statuses.
 func TestStatusMapping(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
@@ -172,6 +177,7 @@ func TestClassifyEveryDocumentedReason(t *testing.T) {
 	}
 }
 
+// TestPerTopicClientsAndExpiry checks per topic clients and expiry.
 func TestPerTopicClientsAndExpiry(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
@@ -283,6 +289,8 @@ func TestPerTopicClientsAndExpiry(t *testing.T) {
 	}
 }
 
+// TestTopicFromCert checks MDM topic extraction from the certificate UID and rejection when
+// absent.
 func TestTopicFromCert(t *testing.T) {
 	t.Parallel()
 	uid := asn1.ObjectIdentifier{0, 9, 2342, 19200300, 100, 1, 1}

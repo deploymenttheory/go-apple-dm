@@ -19,6 +19,8 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/pki/acme/jose"
 )
 
+// TestAlgorithms checks the supported JOSE algorithms and isolation of the returned algorithm
+// list.
 func TestAlgorithms(t *testing.T) {
 	t.Parallel()
 	got := jose.Algorithms()
@@ -32,6 +34,7 @@ func TestAlgorithms(t *testing.T) {
 	}
 }
 
+// TestSignParseVerifyRoundTrip checks sign parse verify round trip.
 func TestSignParseVerifyRoundTrip(t *testing.T) {
 	t.Parallel()
 	rsaKey := testRSA(t)
@@ -92,6 +95,7 @@ func TestSignParseVerifyRoundTrip(t *testing.T) {
 	}
 }
 
+// TestSignWithKeyID checks sign with key ID.
 func TestSignWithKeyID(t *testing.T) {
 	t.Parallel()
 	key := testP256(t)
@@ -119,6 +123,7 @@ func TestSignWithKeyID(t *testing.T) {
 	}
 }
 
+// TestSignRejects checks JOSE signing rejection of unsupported or invalid keys and headers.
 func TestSignRejects(t *testing.T) {
 	t.Parallel()
 	_, edKey, err := ed25519.GenerateKey(rand.Reader)
@@ -183,6 +188,7 @@ func asn1ECDSA(tb testing.TB, r, s *big.Int) []byte {
 	return der
 }
 
+// TestParseRejectsBodyShape checks that parse rejects body shape.
 func TestParseRejectsBodyShape(t *testing.T) {
 	t.Parallel()
 	valid := signedFor(t, testP256(t), []byte(`{}`))
@@ -283,6 +289,7 @@ func TestParseRejectsBodyShape(t *testing.T) {
 	}
 }
 
+// TestParseRejectsProtectedHeader checks that parse rejects protected header.
 func TestParseRejectsProtectedHeader(t *testing.T) {
 	t.Parallel()
 	jwk, err := jose.JWKFromPublic(&testP256(t).PublicKey)
@@ -379,6 +386,7 @@ func TestParseAcceptsUnknownHeaderMembers(t *testing.T) {
 	}
 }
 
+// TestParseRejectsOversizedBody checks that parse rejects oversized body.
 func TestParseRejectsOversizedBody(t *testing.T) {
 	t.Parallel()
 	body := append(make([]byte, jose.MaxBody), '{')
@@ -390,6 +398,7 @@ func TestParseRejectsOversizedBody(t *testing.T) {
 	}
 }
 
+// errString returns an error's message, or an empty string for success.
 func errString(_ *jose.JWS, err error) string {
 	if err == nil {
 		return ""
@@ -414,6 +423,8 @@ func TestParseKeepsRawProtected(t *testing.T) {
 	}
 }
 
+// TestVerifyFailures checks signature verification against wrong keys, changed algorithms,
+// malformed signatures, and tampered payloads.
 func TestVerifyFailures(t *testing.T) {
 	t.Parallel()
 	key := testP256(t)
@@ -577,6 +588,7 @@ func ecdsaJWS(tb testing.TB, key *ecdsa.PrivateKey, trimR, trimS int) []byte {
 	return nil
 }
 
+// leadingZeros reports whether the first n bytes are zero.
 func leadingZeros(b []byte, n int) bool {
 	for i := range n {
 		if b[i] != 0 {
@@ -635,6 +647,7 @@ func TestVerifyShortECDSASignatureBothTrimmed(t *testing.T) {
 	}
 }
 
+// TestVerifyRejectsMalformedECDSASignatures checks that verify rejects malformed ECDSA signatures.
 func TestVerifyRejectsMalformedECDSASignatures(t *testing.T) {
 	t.Parallel()
 	key := testP256(t)
@@ -669,6 +682,7 @@ func TestVerifyRejectsMalformedECDSASignatures(t *testing.T) {
 	}
 }
 
+// randomBytes reads n cryptographically random bytes, failing the test on error.
 func randomBytes(tb testing.TB, n int) []byte {
 	tb.Helper()
 	b := make([]byte, n)

@@ -373,6 +373,7 @@ func usage(w io.Writer, fs *flag.FlagSet) {
 	)
 }
 
+// runVersion prints the local build version without contacting a server.
 func runVersion(_ context.Context, e *env, _ []string) error {
 	_, _ = fmt.Fprintln(e.stdout, version())
 	return nil
@@ -406,6 +407,7 @@ func (e *env) resolveToken() (string, error) {
 	return readTokenSpec(tok, e.getenv)
 }
 
+// readTokenSpec loads the administrative credential from the selected token source.
 func readTokenSpec(spec string, getenv func(string) string) (string, error) {
 	switch {
 	case strings.HasPrefix(spec, "@"):

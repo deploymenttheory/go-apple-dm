@@ -362,6 +362,8 @@ type Result struct {
 
 var ErrBlocked = errors.New("scenario prerequisites unavailable")
 
+// Run executes a supported scenario and returns its status, duration, adapter and
+// revision metadata.
 func Run(ctx context.Context, e *Environment, s Scenario, adapter, revision, device string) Result {
 	r := Result{
 		ID:       s.ID,
@@ -419,6 +421,7 @@ func Run(ctx context.Context, e *Environment, s Scenario, adapter, revision, dev
 	return r
 }
 
+// Select resolves a scenario selector against the catalogue and rejects unknown selections.
 func Select(selector string) ([]Scenario, error) {
 	var out []Scenario
 	for _, s := range Catalogue() {

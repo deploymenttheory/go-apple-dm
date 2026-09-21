@@ -30,6 +30,7 @@ type faultStore struct {
 	direct     bool
 }
 
+// Get injects a direct read failure for matching keys or delegates to the store.
 func (s faultStore) Get(ctx context.Context, key string) (state.Record, error) {
 	if s.direct && strings.HasPrefix(key, s.prefix) {
 		return state.Record{}, errStorage
@@ -37,6 +38,7 @@ func (s faultStore) Get(ctx context.Context, key string) (state.Record, error) {
 	return s.Store.Get(ctx, key)
 }
 
+// Update wraps the transaction so configured operations can fail.
 func (s faultStore) Update(ctx context.Context, keys []string, fn func(state.Tx) error) error {
 	return s.Store.Update(ctx, keys, func(tx state.Tx) error { return fn(faultTx{Tx: tx, op: s.op, prefix: s.prefix}) })
 }
@@ -46,6 +48,7 @@ type faultTx struct {
 	op, prefix string
 }
 
+// Get injects a transaction read failure for matching keys or delegates to the transaction.
 func (tx faultTx) Get(ctx context.Context, key string) (state.Record, error) {
 	if tx.op == "get" && strings.HasPrefix(key, tx.prefix) {
 		return state.Record{}, errStorage
@@ -53,6 +56,7 @@ func (tx faultTx) Get(ctx context.Context, key string) (state.Record, error) {
 	return tx.Tx.Get(ctx, key)
 }
 
+// Put injects a transaction write failure for matching keys or delegates to the transaction.
 func (tx faultTx) Put(ctx context.Context, r state.Record) error {
 	if tx.op == "put" && strings.HasPrefix(r.Key, tx.prefix) {
 		return errStorage
@@ -60,6 +64,7 @@ func (tx faultTx) Put(ctx context.Context, r state.Record) error {
 	return tx.Tx.Put(ctx, r)
 }
 
+// List injects a transaction list failure or delegates to the transaction.
 func (tx faultTx) List(ctx context.Context, prefix, after string, n int) ([]state.Record, error) {
 	if tx.op == "list" {
 		return nil, errStorage
@@ -67,6 +72,7 @@ func (tx faultTx) List(ctx context.Context, prefix, after string, n int) ([]stat
 	return tx.Tx.List(ctx, prefix, after, n)
 }
 
+// Delete injects a transaction delete failure for matching keys or delegates to the transaction.
 func (tx faultTx) Delete(ctx context.Context, key string) error {
 	if tx.op == "delete" && strings.HasPrefix(key, tx.prefix) {
 		return errStorage
@@ -74,6 +80,8 @@ func (tx faultTx) Delete(ctx context.Context, key string) error {
 	return tx.Tx.Delete(ctx, key)
 }
 
+// TestRefreshTransactionFailurePreservesBothCredentials checks that refresh transaction failure
+// preserves both credentials.
 func TestRefreshTransactionFailurePreservesBothCredentials(t *testing.T) {
 	for _, tc := range []struct{ op, prefix string }{
 		{"get", "account/token/refresh"},
@@ -131,6 +139,7 @@ func TestRefreshTransactionFailurePreservesBothCredentials(t *testing.T) {
 	}
 }
 
+// TestAssociationFailuresAndExpiry checks association failures and expiry.
 func TestAssociationFailuresAndExpiry(t *testing.T) {
 	ctx := t.Context()
 	ca, err := testpki.NewCA("account failure")
@@ -201,10 +210,12 @@ type challengeAuth struct {
 	err       error
 }
 
+// Challenge returns the configured authentication challenge and error.
 func (a challengeAuth) Challenge(context.Context, *http.Request, *accountdriven.DeviceInfo) (accountdriven.Challenge, error) {
 	return a.challenge, a.err
 }
 
+// TestExternalVerifierAndHookFailures checks external verifier and hook failures.
 func TestExternalVerifierAndHookFailures(t *testing.T) {
 	ctx := t.Context()
 	st := state.NewMemory()
@@ -274,6 +285,7 @@ func TestExternalVerifierAndHookFailures(t *testing.T) {
 	}
 }
 
+// TestProfileFailuresAreReported checks profile failures are reported.
 func TestProfileFailuresAreReported(t *testing.T) {
 	ctx := t.Context()
 	ca, _ := testpki.NewCA("profile failures")
@@ -331,6 +343,7 @@ func TestProfileFailuresAreReported(t *testing.T) {
 
 type brokenProfileSigner struct{ crypto.Signer }
 
+// Sign returns the injected profile-signing failure.
 func (brokenProfileSigner) Sign(io.Reader, []byte, crypto.SignerOpts) ([]byte, error) {
 	return nil, errStorage
 }

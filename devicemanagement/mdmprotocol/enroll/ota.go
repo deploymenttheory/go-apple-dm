@@ -285,6 +285,7 @@ func (s *OTAService) Handler() http.Handler {
 	})
 }
 
+// str extracts a string from the decoded wire value.
 func str(m map[string]any, k string) string {
 	s, _ := m[k].(string)
 	return s

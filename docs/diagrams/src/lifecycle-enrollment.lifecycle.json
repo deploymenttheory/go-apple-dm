@@ -282,8 +282,26 @@
       "items": [
         "Check-in — https://developer.apple.com/documentation/devicemanagement/check-in",
         "Deploying device management enrollment profiles — https://developer.apple.com/documentation/devicemanagement/deploying-device-management-enrollment-profiles",
-        "MDM payload — https://developer.apple.com/documentation/devicemanagement/mdm",
-        "Implementation — https://github.com/deploymenttheory/go-apple-dm/blob/7500eb25e50a2913338339d5fced18dc7f41fdc3/server/service/checkin.go"
+        "MDM payload — https://developer.apple.com/documentation/devicemanagement/mdm"
+      ]
+    },
+    {
+      "title": "Implementation references",
+      "dot": "artifact",
+      "items": [
+        "unknown: Not enrolled — https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/devicemanagement/storage/storage.go",
+        "authenticated: Awaiting push details — https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/server/service/checkin.go",
+        "enabled: Enabled — https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/server/service/checkin.go",
+        "reenrolled: Enrollment reset — https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/devicemanagement/storage/authenticate.go",
+        "checkedout: Disabled — https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/server/service/checkin.go",
+        "Declarative cleanup hook — https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/server/ddmsync/servicehook.go"
+      ]
+    },
+    {
+      "title": "Implementation references (continued)",
+      "dot": "artifact",
+      "items": [
+        "Controlled replacement — https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/server/service/replacement.go"
       ]
     }
   ]

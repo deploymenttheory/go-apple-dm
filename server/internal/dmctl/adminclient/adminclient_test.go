@@ -15,6 +15,7 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/server/internal/dmctl/adminclient"
 )
 
+// newClient starts a test admin server and constructs a client with fixture credentials.
 func newClient(t *testing.T, h http.Handler) (*adminclient.Client, *httptest.Server) {
 	t.Helper()
 	srv := httptest.NewServer(h)
@@ -26,6 +27,7 @@ func newClient(t *testing.T, h http.Handler) (*adminclient.Client, *httptest.Ser
 	return c, srv
 }
 
+// TestNew checks admin client configuration validation.
 func TestNew(t *testing.T) {
 	// #nosec G101 -- Synthetic protocol fixtures and invalid URLs; no live credentials.
 	for name, url := range map[string]string{
@@ -50,6 +52,8 @@ func TestNew(t *testing.T) {
 	}
 }
 
+// TestDo checks authenticated request construction, bodies, response errors, redirect refusal,
+// timeouts, and trace redaction.
 func TestDo(t *testing.T) {
 	ctx := context.Background()
 
@@ -315,6 +319,7 @@ func TestEach(t *testing.T) {
 	})
 }
 
+// TestPage checks decoding of paginated admin results and cursors.
 func TestPage(t *testing.T) {
 	c, _ := newClient(t, http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		_, _ = w.Write([]byte(`{"Items":[{"n":1}],"NextCursor":"next"}`))
@@ -328,6 +333,8 @@ func TestPage(t *testing.T) {
 	}
 }
 
+// TestServerConfig checks server introspection decoding and rejection of malformed configuration
+// responses.
 func TestServerConfig(t *testing.T) {
 	c, _ := newClient(t, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path != "/admin/v1/config" {

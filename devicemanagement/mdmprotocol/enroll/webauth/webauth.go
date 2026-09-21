@@ -208,11 +208,14 @@ func (f *Flow) checkRedirect(_ *http.Request, _ []*http.Request) error {
 	return http.ErrUseLastResponse
 }
 
+// browserDigest hashes browser binding material before it is placed in persistent flow
+// state.
 func browserDigest(value string) string {
 	sum := sha256.Sum256([]byte(value))
 	return fmt.Sprintf("%x", sum)
 }
 
+// browserCookie constructs the cookie used to bind the browser to its enrollment flow.
 func (f *Flow) browserCookie(stateKey, value string, maxAge int) *http.Cookie {
 	prefix := "__Host-dm-oidc-"
 	if f.cfg.AllowInsecureForTests {
@@ -222,6 +225,7 @@ func (f *Flow) browserCookie(stateKey, value string, maxAge int) *http.Cookie {
 	return &http.Cookie{Name: prefix + browserDigest(stateKey)[:32], Value: value, Path: "/", Secure: !f.cfg.AllowInsecureForTests, HttpOnly: true, SameSite: http.SameSiteLaxMode, MaxAge: maxAge}
 }
 
+// defaultErrorWriter writes the default authentication failure response.
 func defaultErrorWriter(w http.ResponseWriter, _ *http.Request, status int, _ error) {
 	msg := "Enrollment could not continue."
 	switch status {
@@ -320,6 +324,8 @@ func (f *Flow) Callback() http.Handler {
 	})
 }
 
+// callback validates the browser callback, exchanges its authorization code, and completes
+// the bound enrollment flow.
 func (f *Flow) callback(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	q := r.URL.Query()

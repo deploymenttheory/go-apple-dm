@@ -48,6 +48,8 @@ func hex(t *testing.T, s string) []byte {
 	return out
 }
 
+// TestUnmarshalAttestationObject checks CBOR decoding of attestation format, statement, and
+// certificate-chain fields.
 func TestUnmarshalAttestationObject(t *testing.T) {
 	// {"fmt": "apple", "attStmt": {"x5c": [h'01', h'02']}}
 	raw := hex(t, "a2 63 666d74 65 6170706c65 67 61747453746d74 a1 63 783563 82 4101 4102")
@@ -73,6 +75,7 @@ func TestUnmarshalAttestationObject(t *testing.T) {
 	}
 }
 
+// TestUnmarshalSkipsUnknownMembers checks that unmarshal skips unknown members.
 func TestUnmarshalSkipsUnknownMembers(t *testing.T) {
 	// A member Apple might add later must not break the decode.
 	// {"fmt": "apple", "authData": h'0102', "attStmt": {"x5c": []}}
@@ -86,6 +89,7 @@ func TestUnmarshalSkipsUnknownMembers(t *testing.T) {
 	}
 }
 
+// TestUnmarshalScalars checks CBOR scalar round trips.
 func TestUnmarshalScalars(t *testing.T) {
 	type scalars struct {
 		Text   string            `cbor:"t"`
@@ -117,6 +121,7 @@ func TestUnmarshalScalars(t *testing.T) {
 	}
 }
 
+// TestUnmarshalPointerAndNull checks unmarshal pointer and null.
 func TestUnmarshalPointerAndNull(t *testing.T) {
 	// {"nested": {"x5c": [h'ff']}} fills the pointer; null leaves it nil.
 	raw := hex(t, "a1 66 6e6573746564 a1 63 783563 81 41ff")
@@ -137,6 +142,8 @@ func TestUnmarshalPointerAndNull(t *testing.T) {
 	}
 }
 
+// TestUnmarshalRejects checks malformed CBOR rejection by both decoding and well-formedness
+// validation.
 func TestUnmarshalRejects(t *testing.T) {
 	cases := []struct {
 		name string
@@ -180,6 +187,7 @@ func TestUnmarshalRejects(t *testing.T) {
 	}
 }
 
+// TestUnmarshalRejectsDuplicateKeys checks that unmarshal rejects duplicate keys.
 func TestUnmarshalRejectsDuplicateKeys(t *testing.T) {
 	// A duplicate would let a sender show one member to a validator and
 	// another to the decoder that acts on it.
@@ -198,6 +206,7 @@ func TestUnmarshalRejectsDuplicateKeys(t *testing.T) {
 	}
 }
 
+// TestUnmarshalDepth checks that CBOR decoding and validation reject excessive nesting.
 func TestUnmarshalDepth(t *testing.T) {
 	deep := bytes.Repeat([]byte{0x81}, cbor.MaxDepth+2)
 	deep = append(deep, 0x01)
@@ -218,6 +227,7 @@ func TestUnmarshalDepth(t *testing.T) {
 	}
 }
 
+// TestUnmarshalSizeLimit checks CBOR input-size limits.
 func TestUnmarshalSizeLimit(t *testing.T) {
 	big := make([]byte, cbor.MaxBytes+1)
 	var raw cbor.RawMessage
@@ -229,6 +239,7 @@ func TestUnmarshalSizeLimit(t *testing.T) {
 	}
 }
 
+// TestUnmarshalTargets checks rejection of non-pointer, nil, and incompatible CBOR decode targets.
 func TestUnmarshalTargets(t *testing.T) {
 	var raw cbor.RawMessage
 	if err := cbor.Unmarshal(hex(t, "01"), raw); !errors.Is(err, cbor.ErrTarget) {
@@ -266,6 +277,7 @@ func TestUnmarshalTargets(t *testing.T) {
 	}
 }
 
+// TestUnmarshalNestedError checks propagation of CBOR errors nested inside containers.
 func TestUnmarshalNestedError(t *testing.T) {
 	// A fault inside a member names the member.
 	raw := hex(t, "a1 63 666d74 01")
@@ -276,6 +288,7 @@ func TestUnmarshalNestedError(t *testing.T) {
 	}
 }
 
+// TestMarshalDeterministicOrder checks deterministic ordering of encoded CBOR map entries.
 func TestMarshalDeterministicOrder(t *testing.T) {
 	// RFC 8949 section 4.2.1: shorter keys first, then bytewise.
 	enc, err := cbor.Marshal(map[string]int{"bb": 2, "a": 1, "ab": 3, "c": 4})
@@ -295,6 +308,7 @@ func TestMarshalDeterministicOrder(t *testing.T) {
 	}
 }
 
+// TestMarshalHeadWidths checks CBOR integer and length header widths.
 func TestMarshalHeadWidths(t *testing.T) {
 	cases := []struct {
 		name string
@@ -327,6 +341,8 @@ func TestMarshalHeadWidths(t *testing.T) {
 	}
 }
 
+// TestMarshalRejects checks rejection of unsupported CBOR values, invalid raw messages, and
+// excessive nesting.
 func TestMarshalRejects(t *testing.T) {
 	if _, err := cbor.Marshal(1.5); !errors.Is(err, cbor.ErrType) {
 		t.Fatalf("float = %v", err)
@@ -363,6 +379,7 @@ func TestMarshalRejects(t *testing.T) {
 	}
 }
 
+// TestMarshalRawMessagePassesThrough checks marshal raw message passes through.
 func TestMarshalRawMessagePassesThrough(t *testing.T) {
 	inner := hex(t, "a1 63 783563 81 4101")
 	enc, err := cbor.Marshal(map[string]cbor.RawMessage{"attStmt": cbor.RawMessage(inner)})
@@ -378,6 +395,7 @@ func TestMarshalRawMessagePassesThrough(t *testing.T) {
 	}
 }
 
+// TestWellformed checks that truncated CBOR is not considered well formed.
 func TestWellformed(t *testing.T) {
 	good := hex(t, "a2 63 666d74 65 6170706c65 67 61747453746d74 a1 63 783563 82 4101 4102")
 	if err := cbor.Wellformed(good); err != nil {
@@ -388,6 +406,8 @@ func TestWellformed(t *testing.T) {
 	}
 }
 
+// FuzzUnmarshal checks agreement between CBOR decoding and well-formedness validation and exact
+// raw-message round trips.
 func FuzzUnmarshal(f *testing.F) {
 	f.Add(hex(f2t(f), "a2 63 666d74 65 6170706c65 67 61747453746d74 a1 63 783563 82 4101 4102"))
 	f.Add([]byte{0x01})
@@ -427,6 +447,7 @@ func f2t(f *testing.F) *testing.T {
 	return &testing.T{}
 }
 
+// TestUnmarshalErrorsInsideContainers checks unmarshal errors inside containers.
 func TestUnmarshalErrorsInsideContainers(t *testing.T) {
 	type strings3 struct {
 		X string `cbor:"x"`
@@ -456,6 +477,7 @@ func TestUnmarshalErrorsInsideContainers(t *testing.T) {
 	}
 }
 
+// TestFieldNamingIgnoresUnexported checks that field naming ignores unexported.
 func TestFieldNamingIgnoresUnexported(t *testing.T) {
 	type mixed struct {
 		Kept   string `cbor:"kept"`

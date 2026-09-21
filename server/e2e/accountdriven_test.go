@@ -116,6 +116,7 @@ func newADFixture(t *testing.T, oauth bool) *adFixture {
 	return f
 }
 
+// identity builds an account-driven identity for the supplied user.
 func (f *adFixture) identity(user string) accountdriven.Identity {
 	return accountdriven.Identity{UserIdentifier: user, ManagedAppleAccount: user, Subject: "sub-" + user}
 }
@@ -207,6 +208,7 @@ func TestE2E_ServiceDiscovery(t *testing.T) {
 	}
 }
 
+// countEvents counts captured events with the supplied name.
 func (f *adFixture) countEvents(name string) int {
 	n := 0
 	for _, e := range f.eventTypes() {
@@ -277,6 +279,7 @@ func TestE2E_AccountDrivenOAuth2(t *testing.T) {
 
 type stripAccountBearer struct{ base http.RoundTripper }
 
+// RoundTrip removes the bearer authorization header from a cloned request before forwarding it.
 func (s stripAccountBearer) RoundTrip(r *http.Request) (*http.Response, error) {
 	clone := r.Clone(r.Context())
 	clone.Header.Del("Authorization")

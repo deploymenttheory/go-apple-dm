@@ -15,6 +15,8 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/testpki"
 )
 
+// TestAppPushAdministration checks app push admin requests, certificate normalization, private-key
+// redaction, and local validation.
 func TestAppPushAdministration(t *testing.T) {
 	dir := t.TempDir()
 	ca, err := testpki.NewCA("CLI app identity")

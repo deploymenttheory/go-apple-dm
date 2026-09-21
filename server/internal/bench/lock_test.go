@@ -6,6 +6,7 @@ import (
 	"testing"
 )
 
+// TestWorkspaceLockExcludesOtherHandles checks that workspace lock excludes other handles.
 func TestWorkspaceLockExcludesOtherHandles(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "bench.lock")
 	open := func() *os.File {

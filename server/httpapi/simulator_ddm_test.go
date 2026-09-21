@@ -67,10 +67,12 @@ type ddmStub struct {
 	bumpAfterTokens int
 }
 
+// newDDMStub creates an empty DDM stub with token, response, and request-tracking state.
 func newDDMStub() *ddmStub {
 	return &ddmStub{token: 1, decls: map[string]*stubDecl{}, hits: map[string]int{}, channels: map[string][]mdm.Channel{}, fail: map[string]int{}, badJSON: map[string]bool{}}
 }
 
+// tok formats the stub's current declaration token.
 func (s *ddmStub) tok() string { return fmt.Sprintf("tok-%d", s.token) }
 
 // put adds or replaces a declaration and bumps the manifest token.
@@ -84,6 +86,7 @@ func (s *ddmStub) put(kind, typ, id, serverToken string, payload map[string]any)
 	s.token++
 }
 
+// remove removes a declaration and advances the stub's token under its mutex.
 func (s *ddmStub) remove(key string) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -91,12 +94,14 @@ func (s *ddmStub) remove(key string) {
 	s.token++
 }
 
+// hit returns the request count for an endpoint under the stub mutex.
 func (s *ddmStub) hit(endpoint string) int {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	return s.hits[endpoint]
 }
 
+// declarationHits counts requests to declaration endpoints under the stub mutex.
 func (s *ddmStub) declarationHits() int {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -109,17 +114,21 @@ func (s *ddmStub) declarationHits() int {
 	return n
 }
 
+// reports returns a copy of the captured status-report slice under the stub mutex.
 func (s *ddmStub) reports() []json.RawMessage {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	return slices.Clone(s.statuses)
 }
 
+// jsonBody encodes a value as a JSON DDM response fixture.
 func jsonBody(v any) service.DMResponse {
 	b, _ := json.Marshal(v)
 	return service.DMResponse{Body: b, ContentType: "application/json"}
 }
 
+// handle records a DDM check-in and serves configured tokens, declaration items, declarations,
+// status acknowledgments, or faults.
 func (s *ddmStub) handle(_ context.Context, _ *mdm.Request, ck *mdm.Checkin, m *checkin.DeclarativeManagement) (service.DMResponse, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -184,6 +193,7 @@ type ddmHarness struct {
 	srv  *httptest.Server
 }
 
+// newDDMHarness creates an MDM HTTP harness wired to the DDM stub.
 func newDDMHarness(t *testing.T) *ddmHarness {
 	t.Helper()
 	h := &ddmHarness{stub: newDDMStub()}
@@ -250,6 +260,7 @@ type decodedReport struct {
 	} `json:"StatusItems"`
 }
 
+// decodeReport decodes a status report, failing the test on malformed JSON.
 func decodeReport(t *testing.T, body []byte) decodedReport {
 	t.Helper()
 	var r decodedReport
@@ -259,6 +270,7 @@ func decodeReport(t *testing.T, body []byte) decodedReport {
 	return r
 }
 
+// rows combines all declaration-kind status rows, returning nil when declarations are absent.
 func (r decodedReport) rows() []reportRow {
 	d := r.StatusItems.Management.Declarations
 	if d == nil {
@@ -267,6 +279,7 @@ func (r decodedReport) rows() []reportRow {
 	return slices.Concat(d.Activations, d.Configurations, d.Assets, d.Management)
 }
 
+// row finds a declaration-status row by identifier, failing the test when absent.
 func (r decodedReport) row(t *testing.T, id string) reportRow {
 	t.Helper()
 	for _, row := range r.rows() {
@@ -278,6 +291,7 @@ func (r decodedReport) row(t *testing.T, id string) reportRow {
 	return reportRow{}
 }
 
+// codes returns the reason codes from the declaration-status row.
 func (r reportRow) codes() []string {
 	out := make([]string, 0, len(r.Reasons))
 	for _, reason := range r.Reasons {
@@ -286,6 +300,7 @@ func (r reportRow) codes() []string {
 	return out
 }
 
+// TestSyncDDMFirstSyncFetchesEverything checks sync DDM first sync fetches everything.
 func TestSyncDDMFirstSyncFetchesEverything(t *testing.T) {
 	t.Parallel()
 	h := newDDMHarness(t)
@@ -317,6 +332,7 @@ func TestSyncDDMFirstSyncFetchesEverything(t *testing.T) {
 	}
 }
 
+// TestSyncDDMUnchangedTokenSkipsItems checks that sync DDM unchanged token skips items.
 func TestSyncDDMUnchangedTokenSkipsItems(t *testing.T) {
 	t.Parallel()
 	h := newDDMHarness(t)
@@ -337,6 +353,7 @@ func TestSyncDDMUnchangedTokenSkipsItems(t *testing.T) {
 	}
 }
 
+// TestSyncDDMChangedTokenFetchesOnlyChanged checks sync DDM changed token fetches only changed.
 func TestSyncDDMChangedTokenFetchesOnlyChanged(t *testing.T) {
 	t.Parallel()
 	h := newDDMHarness(t)
@@ -361,6 +378,7 @@ func TestSyncDDMChangedTokenFetchesOnlyChanged(t *testing.T) {
 	}
 }
 
+// TestSyncDDMRemovalByManifest checks sync DDM removal by manifest.
 func TestSyncDDMRemovalByManifest(t *testing.T) {
 	t.Parallel()
 	h := newDDMHarness(t)
@@ -382,6 +400,7 @@ func TestSyncDDMRemovalByManifest(t *testing.T) {
 	}
 }
 
+// TestSyncDDM404RemovesDeclaration checks that sync ddm404 removes declaration.
 func TestSyncDDM404RemovesDeclaration(t *testing.T) {
 	t.Parallel()
 	h := newDDMHarness(t)
@@ -414,6 +433,7 @@ func TestSyncDDM404RemovesDeclaration(t *testing.T) {
 	}
 }
 
+// TestSyncDDMConvergesWithinRounds checks sync DDM converges within rounds.
 func TestSyncDDMConvergesWithinRounds(t *testing.T) {
 	t.Parallel()
 	h := newDDMHarness(t)
@@ -433,6 +453,7 @@ func TestSyncDDMConvergesWithinRounds(t *testing.T) {
 	}
 }
 
+// TestSyncDDMNotSettled checks sync DDM not settled.
 func TestSyncDDMNotSettled(t *testing.T) {
 	t.Parallel()
 	h := newDDMHarness(t)
@@ -452,6 +473,7 @@ func TestSyncDDMNotSettled(t *testing.T) {
 	}
 }
 
+// TestSyncDDMBadJSON checks sync DDM bad JSON.
 func TestSyncDDMBadJSON(t *testing.T) {
 	t.Parallel()
 	h := newDDMHarness(t)
@@ -505,6 +527,8 @@ func TestSyncDDMBadJSON(t *testing.T) {
 	}
 }
 
+// readAll reads the request body until the first read error and returns the bytes read as a
+// string.
 func readAll(r *http.Request) string {
 	var sb strings.Builder
 	buf := make([]byte, 4096)
@@ -517,6 +541,7 @@ func readAll(r *http.Request) string {
 	}
 }
 
+// TestSyncDDMServerError checks sync DDM server error.
 func TestSyncDDMServerError(t *testing.T) {
 	t.Parallel()
 	h := newDDMHarness(t)
@@ -549,6 +574,8 @@ func TestSyncDDMServerError(t *testing.T) {
 	}
 }
 
+// TestStatusReportRules checks status reports containing device items and advertised client
+// capabilities.
 func TestStatusReportRules(t *testing.T) {
 	t.Parallel()
 	type want struct {
@@ -781,6 +808,8 @@ func TestStatusReportRules(t *testing.T) {
 	})
 }
 
+// TestStatusReportIncremental checks incremental DDM reporting, quiet updates, full reports, and
+// declaration removal.
 func TestStatusReportIncremental(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
@@ -841,6 +870,8 @@ func TestStatusReportIncremental(t *testing.T) {
 	}
 }
 
+// TestUserChannelDDM checks user-channel DDM state and reports remain separate from the device
+// channel.
 func TestUserChannelDDM(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
@@ -883,6 +914,8 @@ func TestUserChannelDDM(t *testing.T) {
 	}
 }
 
+// TestDDMFaults checks simulator handling of dropped status reports, stale tokens, and failed
+// declaration fetches.
 func TestDDMFaults(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
@@ -942,6 +975,7 @@ func TestDDMFaults(t *testing.T) {
 	})
 }
 
+// TestConnectRunsSyncOnDeclarativeManagement checks connect runs sync on declarative management.
 func TestConnectRunsSyncOnDeclarativeManagement(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()

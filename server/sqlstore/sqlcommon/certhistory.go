@@ -70,6 +70,7 @@ func (s *Store) recordAssociation(ctx context.Context, q querier, deviceID, hash
 const selectAssociation = "SELECT ca.enrollment_id, e.channel, e.parent_id, ca.cert_hash, ca.associated_at " +
 	"FROM cert_associations ca JOIN enrollments e ON e.id = ca.enrollment_id"
 
+// associations loads certificate-to-enrollment associations for the requested identity.
 func (s *Store) associations(ctx context.Context, where string, arg any) ([]storage.CertAssociation, error) {
 	rows, err := Query(ctx, s.db).QueryContext(ctx, s.q(selectAssociation+" WHERE "+where+" ORDER BY ca.associated_at, ca.cert_hash, ca.enrollment_id"), arg)
 	if err != nil {

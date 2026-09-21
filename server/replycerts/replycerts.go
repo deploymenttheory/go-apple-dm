@@ -42,6 +42,8 @@ type binding struct {
 	EscrowUUID      string    `json:"escrowUUID,omitempty"`
 }
 
+// recordKey constructs the state key binding a retained identity to its enrollment and
+// command.
 func recordKey(id mdm.EnrollmentID, uuid string) string {
 	data, _ := json.Marshal(struct {
 		Enrollment mdm.EnrollmentID `json:"enrollment"`
@@ -149,6 +151,7 @@ func (m *Manager) Recipient(
 	return material(selected)
 }
 
+// material parses the retained certificate and private key for response decryption.
 func material(b binding) (*x509.Certificate, crypto.Decrypter, error) {
 	pair := dep.Keypair{CertPEM: b.Certificate, KeyPEM: b.Key}
 	cert, err := pair.Certificate()
@@ -183,6 +186,8 @@ func (m *Manager) Forget(ctx context.Context, id mdm.EnrollmentID, commandUUID s
 	return nil
 }
 
+// selectIdentity chooses or creates the encryption identity associated with the requested
+// FileVault operation.
 func (m *Manager) selectIdentity(
 	ctx context.Context,
 	id mdm.EnrollmentID,

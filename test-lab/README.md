@@ -26,7 +26,7 @@ make bench-down
 
 `all` selects scenarios supported by the workspace's mode. An explicit unsupported
 scenario returns a nonzero exit status. Scenarios requiring another configuration
-(for example ACME, user authentication, return-to-service, or split deployment)
+(for example ACME, user authentication, return-to-service, or enrollment admission)
 start an isolated temporary instance of the same server executable and clean it up.
 The catalogue records those configuration choices. They never reconfigure a live server.
 
@@ -34,7 +34,7 @@ The default workspace is `test-lab/local`, SQLite, all-in-one, and simulated.
 `BENCH_WORKSPACE`, `BENCH_MODE`, `BENCH_STORAGE` and `BENCH_LISTEN`
 configure `bench-init`. Existing workspaces are read from their private `bench.json`;
 init refuses to overwrite them. PostgreSQL/MySQL workspaces require a private `DSN`
-setting. Split deployments require shared persistent storage.
+setting. Each workspace runs the unified reference server.
 
 Simulated APNs uses mutual TLS with generated provider identities. DEP, ABM, OIDC,
 and attestation fixtures are local. No Apple account or physical device is required.
@@ -175,4 +175,4 @@ and bench; no separate enrollment spike executable is needed.
 
 ## macOS 27 preparation and handoff
 
-Use the [feature fixtures](apple-features/README.md) and [post-reboot handoff](../docs/testing/macos27-handoff.md) for the macOS 26-to-27 acceptance sequence.
+Use the [feature fixtures](apple-features/README.md) and [device readiness procedure](../docs/operations/mac-enrollment-testing.md#feature-acceptance-and-vm-readiness) for native acceptance prerequisites and cleanup.

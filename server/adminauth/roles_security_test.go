@@ -10,6 +10,8 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/server/adminauth/adminauthtest"
 )
 
+// TestRoleAdministrationRejectsUnauthorizedAndInvalidChanges checks that role administration
+// rejects unauthorized and invalid changes.
 func TestRoleAdministrationRejectsUnauthorizedAndInvalidChanges(t *testing.T) {
 	m, store, _ := manager(t)
 	ctx := t.Context()
@@ -35,6 +37,8 @@ func TestRoleAdministrationRejectsUnauthorizedAndInvalidChanges(t *testing.T) {
 	}
 }
 
+// TestPolicyReferencesRejectMissingEntitiesAndMalformedSource checks policy references reject
+// missing entities and malformed source.
 func TestPolicyReferencesRejectMissingEntitiesAndMalformedSource(t *testing.T) {
 	m, store, _ := manager(t)
 	for _, source := range []string{
@@ -56,6 +60,8 @@ func TestPolicyReferencesRejectMissingEntitiesAndMalformedSource(t *testing.T) {
 	}
 }
 
+// TestBootstrapValidationDoesNotConsumeCredential checks that bootstrap validation does not
+// consume credential.
 func TestBootstrapValidationDoesNotConsumeCredential(t *testing.T) {
 	m, _, _ := manager(t)
 	for _, tc := range []struct {
@@ -75,6 +81,8 @@ func TestBootstrapValidationDoesNotConsumeCredential(t *testing.T) {
 	}
 }
 
+// TestInvalidMembershipAndFailedRotationPreservePrincipal checks invalid membership and failed
+// rotation preserve principal.
 func TestInvalidMembershipAndFailedRotationPreservePrincipal(t *testing.T) {
 	m, store, _ := manager(t)
 	p, token := newRoot(t, m, "root")
@@ -103,6 +111,8 @@ type changingPolicyVersion struct {
 	failAt int
 }
 
+// PolicyVersion changes the observed policy version across reads and optionally fails the
+// configured read.
 func (s *changingPolicyVersion) PolicyVersion(ctx context.Context) (int64, error) {
 	s.reads++
 	if s.reads == s.failAt {
@@ -112,6 +122,8 @@ func (s *changingPolicyVersion) PolicyVersion(ctx context.Context) (int64, error
 	return v + int64(min(s.reads, s.stopAt)), err
 }
 
+// TestPolicyCompilationRequiresConsistentAuthority checks that policy compilation requires
+// consistent authority.
 func TestPolicyCompilationRequiresConsistentAuthority(t *testing.T) {
 	for _, tc := range []struct {
 		name           string

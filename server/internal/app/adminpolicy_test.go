@@ -51,6 +51,8 @@ func mintPrincipal(t *testing.T, m *adminauth.Manager, p adminauth.Principal) st
 	return string(tok)
 }
 
+// adminReq sends an admin request with an optional bearer token, failing the test on transport
+// errors.
 func adminReq(t *testing.T, srv string, method, path, token string, body string) *http.Response {
 	t.Helper()
 	var rdr *strings.Reader
@@ -276,6 +278,8 @@ func TestAdminPolicyAdministrationNeedsRoot(t *testing.T) {
 	}
 }
 
+// TestStoredChannelPrecedesScopedCedarAuthorization checks stored channel precedes scoped cedar
+// authorization.
 func TestStoredChannelPrecedesScopedCedarAuthorization(t *testing.T) {
 	a, m, _ := policyApp(t, event.New())
 	ctx := t.Context()

@@ -6,6 +6,8 @@ import (
 	"testing"
 )
 
+// TestDocumentationMetadataDoesNotChangeGeneratedAPI checks that documentation metadata does not
+// change generated API.
 func TestDocumentationMetadataDoesNotChangeGeneratedAPI(t *testing.T) {
 	t.Parallel()
 	const doc = "title: Test\npayload:\n  statusitemtype: test.status\npayloadkeys:\n- key: test.status\n  type: <string>\nreasons:\n- value: Error.Failed\n  details:\n  - key: Timestamp\n    type: <string>\n"
@@ -40,6 +42,8 @@ func TestDocumentationMetadataDoesNotChangeGeneratedAPI(t *testing.T) {
 	}
 }
 
+// TestProfileTitleChangePreservesPublicName checks that profile title change preserves public
+// name.
 func TestProfileTitleChangePreservesPublicName(t *testing.T) {
 	t.Parallel()
 	for _, title := range []string{"Content Caching", "Content Caching Service"} {
@@ -54,6 +58,7 @@ func TestProfileTitleChangePreservesPublicName(t *testing.T) {
 	}
 }
 
+// TestSeedMetadataStrictParsing checks seed metadata strict parsing.
 func TestSeedMetadataStrictParsing(t *testing.T) {
 	t.Parallel()
 	const metadata = `examples:
@@ -105,6 +110,8 @@ reasons:
 	}
 }
 
+// TestExampleReferencesStillAuditedAfterParsing checks example references still audited after
+// parsing.
 func TestExampleReferencesStillAuditedAfterParsing(t *testing.T) {
 	t.Parallel()
 	before := auditFixture(t, map[string]string{"mdm/commands/a.yaml": auditSchema})

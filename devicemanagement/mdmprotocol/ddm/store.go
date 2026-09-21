@@ -182,10 +182,14 @@ type SetStore interface {
 	PutSet(ctx context.Context, name string, at time.Time) (created bool, err error)
 	// DeleteSet removes the set, its memberships, and its assignments.
 	DeleteSet(ctx context.Context, name string) error
+	// GetSet returns the named declaration set or ErrNotFound.
 	GetSet(ctx context.Context, name string) (*Set, error)
+	// ListSets returns a bounded page of declaration sets in name order.
 	ListSets(ctx context.Context, p paging.Page) (paging.Result[Set], error)
 	// AddSetDeclaration returns ErrNotFound when either side is unknown.
 	AddSetDeclaration(ctx context.Context, set, identifier string, at time.Time) (changed bool, err error)
+	// RemoveSetDeclaration removes one declaration from a set and reports whether membership
+	// changed.
 	RemoveSetDeclaration(ctx context.Context, set, identifier string) (changed bool, err error)
 	// SetDeclarations lists member identifiers, sorted; ErrNotFound for an
 	// unknown set.
@@ -198,11 +202,21 @@ type SetStore interface {
 type AssignmentStore interface {
 	// EnrollmentIdentity resolves a previously stored raw ID to its immutable identity.
 	EnrollmentIdentity(ctx context.Context, rawID string) (mdm.EnrollmentID, error)
+	// AssignSet assigns the named set to the complete enrollment identity and reports
+	// whether a binding was added.
 	AssignSet(ctx context.Context, id mdm.EnrollmentID, set string, at time.Time) (changed bool, err error)
+	// UnassignSet removes a set assignment from the enrollment and reports whether a binding
+	// existed.
 	UnassignSet(ctx context.Context, id mdm.EnrollmentID, set string) (changed bool, err error)
+	// EnrollmentSets returns the sets assigned to the complete enrollment identity.
 	EnrollmentSets(ctx context.Context, id mdm.EnrollmentID) ([]string, error)
+	// SetEnrollments returns a bounded page of enrollment identities assigned to the set.
 	SetEnrollments(ctx context.Context, set string, p paging.Page) (paging.Result[mdm.EnrollmentID], error)
+	// AssignDeclaration directly assigns one declaration to an enrollment and reports
+	// whether a binding was added.
 	AssignDeclaration(ctx context.Context, id mdm.EnrollmentID, identifier string, at time.Time) (changed bool, err error)
+	// UnassignDeclaration removes a direct declaration assignment and reports whether a
+	// binding existed.
 	UnassignDeclaration(ctx context.Context, id mdm.EnrollmentID, identifier string) (changed bool, err error)
 	// EnrollmentDeclarations lists direct assignments only, sorted.
 	EnrollmentDeclarations(ctx context.Context, id mdm.EnrollmentID) ([]string, error)
@@ -218,6 +232,7 @@ type AssignmentStore interface {
 type SnapshotStore interface {
 	// PutSnapshot replaces the snapshot and its items atomically.
 	PutSnapshot(ctx context.Context, s *Snapshot) error
+	// Snapshot returns the advertised snapshot retained for the enrollment.
 	Snapshot(ctx context.Context, id mdm.EnrollmentID) (*Snapshot, error)
 }
 
@@ -231,6 +246,8 @@ type StatusStore interface {
 	PutStatus(ctx context.Context, id mdm.EnrollmentID, u StatusUpdate) (StatusOutcome, error)
 	// DeclarationStatus lists rows sorted by (kind, identifier).
 	DeclarationStatus(ctx context.Context, id mdm.EnrollmentID) ([]DeclarationStatus, error)
+	// DeclarationStatusByIdentifier returns a page of enrollment status records for the
+	// selected declaration identifier.
 	DeclarationStatusByIdentifier(ctx context.Context, identifier string, p paging.Page) (paging.Result[EnrollmentDeclarationStatus], error)
 	// StatusValues pages by path.
 	StatusValues(ctx context.Context, id mdm.EnrollmentID, q StatusValueQuery, p paging.Page) (paging.Result[StatusValue], error)
@@ -246,6 +263,8 @@ type ChangeStore interface {
 	RecordChanges(ctx context.Context, ids []mdm.EnrollmentID, reason string, at time.Time) error
 	// PendingChanges returns rows due at or before now, oldest first.
 	PendingChanges(ctx context.Context, now time.Time, limit int) ([]Change, error)
+	// CompleteChanges marks the supplied change rows complete so they are no longer selected
+	// for delivery.
 	CompleteChanges(ctx context.Context, seqs []int64) error
 	// FailChanges records the error and the next attempt time; rows are
 	// never deleted by a failure.

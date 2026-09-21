@@ -66,6 +66,7 @@ type harness struct {
 	events []event.Event
 }
 
+// newHarness creates an end-to-end MDM harness with a new store and event bus.
 func newHarness(t *testing.T, cfg service.Config) *harness {
 	t.Helper()
 	return newHarnessWith(t, cfg, newStore(t), newBus())
@@ -277,6 +278,7 @@ func (h *harness) device(udid string) *simulator.Device {
 	)
 }
 
+// identity issues an identity from the harness authority for the supplied common name.
 func (h *harness) identity(cn string) *simulator.Identity {
 	h.t.Helper()
 	id, err := h.ca.Issue(cn, time.Now().Add(-time.Minute))
@@ -286,6 +288,7 @@ func (h *harness) identity(cn string) *simulator.Identity {
 	return &simulator.Identity{Cert: id.Cert, Key: id.Key}
 }
 
+// eventTypes returns the captured event types under the harness mutex.
 func (h *harness) eventTypes() []event.Type {
 	h.mu.Lock()
 	defer h.mu.Unlock()
@@ -296,6 +299,7 @@ func (h *harness) eventTypes() []event.Type {
 	return out
 }
 
+// deviceID constructs a device-channel enrollment ID.
 func deviceID(udid string) mdm.EnrollmentID {
 	return mdm.EnrollmentID{Channel: mdm.ChannelDevice, ID: udid}
 }
@@ -307,6 +311,7 @@ type harnessDepot struct {
 	h *harness
 }
 
+// Put runs the optional certificate-issued hook before storing the certificate.
 func (d *harnessDepot) Put(ctx context.Context, cert *x509.Certificate) error {
 	if d.h.certificateIssued != nil {
 		if err := d.h.certificateIssued(ctx, cert); err != nil {

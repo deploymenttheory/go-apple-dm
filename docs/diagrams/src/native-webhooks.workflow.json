@@ -1,0 +1,221 @@
+{
+  "schema_version": 2,
+  "diagram_type": "workflow",
+  "meta": {
+    "title": "Native Webhook Capture and Delivery",
+    "quality_profile": "showcase",
+    "colour_profile": "purpose-v1",
+    "legend": {
+      "mode": "hidden"
+    },
+    "locale": "en"
+  },
+  "lanes": [
+    {
+      "id": "flow",
+      "label": "Capture and delivery"
+    },
+    {
+      "id": "control",
+      "label": "Administration and retained replay"
+    }
+  ],
+  "mainPath": [
+    "observe",
+    "capture",
+    "retain",
+    "lease",
+    "send"
+  ],
+  "nodes": [
+    {
+      "id": "observe",
+      "lane": "flow",
+      "col": 0,
+      "label": "Observe exchange",
+      "sublabel": "Public request and completed reply",
+      "type": "backend",
+      "width": 240,
+      "height": 76,
+      "purpose": "transport"
+    },
+    {
+      "id": "capture",
+      "lane": "flow",
+      "col": 1,
+      "label": "Capture occurrence",
+      "sublabel": "Select permitted representations",
+      "type": "backend",
+      "width": 240,
+      "height": 76,
+      "purpose": "service"
+    },
+    {
+      "id": "retain",
+      "lane": "flow",
+      "col": 2,
+      "label": "Encrypted retention",
+      "sublabel": "Persist occurrence and deliveries",
+      "type": "database",
+      "width": 240,
+      "height": 76,
+      "purpose": "storage"
+    },
+    {
+      "id": "lease",
+      "lane": "flow",
+      "col": 3,
+      "label": "Lease pending delivery",
+      "sublabel": "Persistent eventstore worker",
+      "type": "backend",
+      "width": 240,
+      "height": 76,
+      "purpose": "storage"
+    },
+    {
+      "id": "send",
+      "lane": "flow",
+      "col": 4,
+      "label": "Send to receiver",
+      "sublabel": "HTTPS and authenticated request",
+      "type": "external",
+      "width": 240,
+      "height": 76,
+      "purpose": "transport"
+    },
+    {
+      "id": "subscription",
+      "lane": "control",
+      "col": 1,
+      "label": "Manage subscription",
+      "sublabel": "RBAC and sensitive export grant",
+      "type": "security",
+      "width": 240,
+      "height": 76,
+      "purpose": "policy"
+    },
+    {
+      "id": "replay",
+      "lane": "control",
+      "col": 3,
+      "label": "Replay occurrence",
+      "sublabel": "New delivery; same captured data",
+      "type": "backend",
+      "width": 240,
+      "height": 76,
+      "purpose": "artifact"
+    }
+  ],
+  "edges": [
+    {
+      "id": "observe-capture",
+      "from": "observe",
+      "to": "capture",
+      "label": "After handler",
+      "purpose": "transport",
+      "role": "main"
+    },
+    {
+      "id": "capture-retain",
+      "from": "capture",
+      "to": "retain",
+      "label": "Capture and fan out",
+      "purpose": "storage",
+      "role": "main"
+    },
+    {
+      "id": "retain-lease",
+      "from": "retain",
+      "to": "lease",
+      "label": "Due delivery",
+      "purpose": "storage",
+      "role": "main"
+    },
+    {
+      "id": "lease-send",
+      "from": "lease",
+      "to": "send",
+      "label": "Signed payload",
+      "purpose": "transport",
+      "role": "main"
+    },
+    {
+      "id": "subscription-capture",
+      "from": "subscription",
+      "to": "capture",
+      "label": "Select capture",
+      "purpose": "policy",
+      "role": "branch"
+    },
+    {
+      "id": "retain-replay",
+      "from": "retain",
+      "to": "replay",
+      "label": "Retained bytes",
+      "purpose": "artifact",
+      "role": "branch"
+    },
+    {
+      "id": "replay-lease",
+      "from": "replay",
+      "to": "lease",
+      "label": "New delivery",
+      "purpose": "transport",
+      "role": "return"
+    }
+  ],
+  "cards": [
+    {
+      "title": "Capture boundaries",
+      "items": [
+        "Public protocol exchanges are observed after the handler; participating local SQL outcomes are captured with their mutation. The protocol library has no webhook transport dependency.",
+        "Managed webhooks require SQL and encryption. Summary capture and sensitive representations have separate authorization."
+      ],
+      "dot": "policy"
+    },
+    {
+      "title": "Delivery and replay",
+      "items": [
+        "Delivery is at least once and unordered. Consumers deduplicate delivery IDs; a replay creates a new delivery for the same occurrence.",
+        "The worker retries failures using persistent leases and backoff. Subscription revision changes pause old backlog; replay cannot reconstruct representations that were not retained."
+      ],
+      "dot": "storage"
+    },
+    {
+      "title": "Receiver authentication",
+      "items": [
+        "Requests carry Standard Webhooks signature headers. Receiver verification, replay-window checks and deduplication are separate from transport TLS."
+      ],
+      "dot": "authentication"
+    },
+    {
+      "dot": "transport",
+      "title": "Public documentation",
+      "items": [
+        "Standard Webhooks specification \u2014 https://github.com/standard-webhooks/standard-webhooks/blob/main/spec/standard-webhooks.md",
+        "Apple MDM exchanges \u2014 https://developer.apple.com/documentation/devicemanagement/sending-mdm-commands-to-a-device",
+        "Native webhook contract \u2014 https://github.com/deploymenttheory/go-apple-dm/blob/main/docs/operations/webhooks.md"
+      ]
+    },
+    {
+      "title": "Implementation references",
+      "dot": "artifact",
+      "items": [
+        "observe: Observe exchange \u2014 https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/server/webhook/observe.go",
+        "capture: Capture occurrence \u2014 https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/server/webhook/capture.go",
+        "retain: Encrypt retained content \u2014 https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/server/webhook/store.go#L112",
+        "lease: Lease pending delivery \u2014 https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/server/eventstore/worker.go",
+        "send: Send to receiver \u2014 https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/server/webhook/transport.go",
+        "subscription: Manage subscription \u2014 https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/server/internal/app/webhooks.go"
+      ]
+    },
+    {
+      "title": "Implementation references (continued)",
+      "dot": "artifact",
+      "items": [
+        "replay: Create replay deliveries \u2014 https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/server/webhook/capture.go#L366",
+        "retain: Persist retained messages and delivery metadata \u2014 https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/server/webhook/capture.go#L122"
+      ]
+    }
+  ]
+}

@@ -70,6 +70,8 @@ type AccountAdmissionRule struct {
 
 var errDEPAdmissionUnavailable = errors.New("app: DEP admission store unavailable")
 
+// matches requires matching issuer and configured identity selectors, verified email when
+// requested, and any configured group membership.
 func (rule AccountAdmissionRule) matches(r AdmissionRequest) bool {
 	if rule.Issuer == "" || rule.Issuer != r.Issuer || rule.ManagedAppleAccount == "" {
 		return false
@@ -90,6 +92,8 @@ func (rule AccountAdmissionRule) matches(r AdmissionRequest) bool {
 		)
 }
 
+// enrollmentAdmission uses an injected admission callback or constructs the local
+// device/account policy from the configured file and DEP inventory.
 func (a *App) enrollmentAdmission(e *enrollment) (EnrollmentAdmission, error) {
 	if e.cfg.Admission != nil {
 		return e.cfg.Admission, nil
@@ -163,6 +167,8 @@ func (a *App) enrollmentAdmission(e *enrollment) (EnrollmentAdmission, error) {
 	}, nil
 }
 
+// accountAdmission projects verified account identity claims into the admission request,
+// ignoring non-string group values.
 func accountAdmission(id accountdriven.Identity) AdmissionRequest {
 	c := id.Claims
 	email, _ := c["email"].(string)
@@ -187,6 +193,8 @@ func accountAdmission(id accountdriven.Identity) AdmissionRequest {
 	}
 }
 
+// admit resolves the device or account identity, checks the grant's account binding and
+// expiry, and emits a security event on denial.
 func (e *enrollment) admit(
 	ctx context.Context,
 	b acme.Binding,
@@ -236,6 +244,8 @@ func (e *enrollment) admit(
 	return g, nil
 }
 
+// securityEvent publishes a metadata-only security occurrence when a publisher is
+// configured and logs non-capacity delivery failures.
 func (a *App) securityEvent(ctx context.Context, kind event.Type) {
 	if a.cfg.publisher() == nil {
 		return
@@ -249,6 +259,8 @@ func (a *App) securityEvent(ctx context.Context, kind event.Type) {
 	}
 }
 
+// admittedDEPDevice requires a retained device assigned or pushed to the account's
+// configured enrollment profile.
 func admittedDEPDevice(d *dep.StoredDevice, account *dep.Account) bool {
 	return d != nil && account != nil && !d.Deleted && account.ProfileUUID != "" &&
 		d.ProfileUUID == account.ProfileUUID &&

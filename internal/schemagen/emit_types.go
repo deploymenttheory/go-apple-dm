@@ -6,6 +6,7 @@ import (
 	"strings"
 )
 
+// typesFile emits the wire types and schema descriptions for one family.
 func (e *emitter) typesFile() []byte {
 	b := buf()
 	b.WriteString(e.header())
@@ -39,6 +40,7 @@ func (e *emitter) typesFile() []byte {
 	return b.Bytes()
 }
 
+// typeDecl emits a wire type with its field tags and source descriptions.
 func (e *emitter) typeDecl(b *bytes.Buffer, td *TypeDef) {
 	doc := strings.TrimSpace(td.Doc)
 	if doc == "" {

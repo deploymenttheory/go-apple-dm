@@ -20,6 +20,8 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/testpki"
 )
 
+// TestEnrollmentEvidenceRequiresCompletedIdentityAndUserChannel checks that enrollment evidence
+// requires completed identity and user channel.
 func TestEnrollmentEvidenceRequiresCompletedIdentityAndUserChannel(t *testing.T) {
 	w := testWorkspace(t, "simulated")
 	e, err := Start(t.Context(), w, "", io.Discard)
@@ -89,6 +91,8 @@ func TestEnrollmentEvidenceRequiresCompletedIdentityAndUserChannel(t *testing.T)
 	}
 }
 
+// TestReplacementReportsWakeFailureWithoutHidingCreatedAttempt checks that replacement reports
+// wake failure without hiding created attempt.
 func TestReplacementReportsWakeFailureWithoutHidingCreatedAttempt(t *testing.T) {
 	for _, mode := range []string{"created", "denied", "wake failed", "wake refused"} {
 		t.Run(mode, func(t *testing.T) {
@@ -131,6 +135,8 @@ func TestReplacementReportsWakeFailureWithoutHidingCreatedAttempt(t *testing.T) 
 	}
 }
 
+// TestTrustExportRejectsEmptyAndNonCACertificates checks that trust export rejects empty and non
+// CA certificates.
 func TestTrustExportRejectsEmptyAndNonCACertificates(t *testing.T) {
 	w := testWorkspace(t, "simulated")
 	leaf, err := os.ReadFile(w.path("mdm", "tls.pem"))
@@ -152,6 +158,8 @@ func TestTrustExportRejectsEmptyAndNonCACertificates(t *testing.T) {
 	}
 }
 
+// TestDiscoveryRejectsIncompleteOrInconsistentTrust checks that discovery rejects incomplete or
+// inconsistent trust.
 func TestDiscoveryRejectsIncompleteOrInconsistentTrust(t *testing.T) {
 	for _, failure := range []string{"document", "missing URLs", "anchors", "empty anchors", "missing trust URL", "profile", "unrelated profile"} {
 		t.Run(failure, func(t *testing.T) {
@@ -212,6 +220,8 @@ func TestDiscoveryRejectsIncompleteOrInconsistentTrust(t *testing.T) {
 	}
 }
 
+// TestLivePreflightRequiresUsableMDMPushIdentity checks that live preflight requires usable MDM
+// push identity.
 func TestLivePreflightRequiresUsableMDMPushIdentity(t *testing.T) {
 	w := testWorkspace(t, "live")
 	authority, err := testpki.NewCA("test push issuer")
@@ -253,6 +263,8 @@ func TestLivePreflightRequiresUsableMDMPushIdentity(t *testing.T) {
 	}
 }
 
+// TestTrustBootstrapRejectsUnavailableSources checks that trust bootstrap rejects unavailable
+// sources.
 func TestTrustBootstrapRejectsUnavailableSources(t *testing.T) {
 	ctx := t.Context()
 	bad := &Environment{Instance: Instance{URL: "://invalid"}, Client: http.DefaultClient}

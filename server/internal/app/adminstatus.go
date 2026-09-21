@@ -73,6 +73,8 @@ func projectStatusJSON(path string, raw []byte) []byte {
 	return out
 }
 
+// projectStatusValue recursively replaces sensitive values with a redaction marker,
+// modifying nested maps and slices in place.
 func projectStatusValue(path string, v any) any {
 	if sensitiveStatusPath(path) {
 		return "[redacted]"
@@ -90,6 +92,8 @@ func projectStatusValue(path string, v any) any {
 	return v
 }
 
+// sensitiveStatusPath recognizes sensitive path segments after normalizing case, hyphens
+// and underscores.
 func sensitiveStatusPath(path string) bool {
 	for _, part := range strings.Split(strings.ToLower(path), ".") {
 		part = strings.NewReplacer("-", "", "_", "").Replace(part)

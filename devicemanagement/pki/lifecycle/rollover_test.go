@@ -10,6 +10,8 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/state"
 )
 
+// TestRolloverRetainsOfflineDevicesAndRejectsStaleWorkers checks that rollover retains offline
+// devices and rejects stale workers.
 func TestRolloverRetainsOfflineDevicesAndRejectsStaleWorkers(t *testing.T) {
 	ctx := t.Context()
 	now := time.Now()

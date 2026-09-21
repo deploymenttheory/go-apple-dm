@@ -217,7 +217,7 @@
       "dot": "service",
       "title": "Snapshots and errors",
       "items": [
-        "Manifest retrieval refreshes the enrollment snapshot. Declaration retrieval uses the version advertised by that snapshot.",
+        "Tokens and manifest retrieval refresh the enrollment snapshot. Declaration retrieval preserves advertised versions while target eligibility and retained declarations remain valid.",
         "Invalid endpoint syntax and invalid status data are rejected at different stages. HTTP 404 for a declaration tells the device to remove its local copy."
       ]
     },
@@ -227,8 +227,29 @@
       "items": [
         "Declarative Management check-in — https://developer.apple.com/documentation/devicemanagement/declarative-management",
         "Declarations — https://developer.apple.com/documentation/devicemanagement/devicemanagement-declarations",
-        "RFC 8785 — JSON Canonicalization Scheme — https://www.rfc-editor.org/rfc/rfc8785",
-        "Implementation — https://github.com/deploymenttheory/go-apple-dm/blob/7500eb25e50a2913338339d5fced18dc7f41fdc3/devicemanagement/mdmprotocol/ddm/serve.go"
+        "RFC 8785 — JSON Canonicalization Scheme — https://www.rfc-editor.org/rfc/rfc8785"
+      ]
+    },
+    {
+      "title": "Implementation references",
+      "dot": "artifact",
+      "items": [
+        "checkin: DeclarativeManagement — https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/server/service/checkin.go#L403",
+        "parse: Parse Endpoint — https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/devicemanagement/mdmprotocol/ddm/endpoint.go",
+        "tokens: tokens — https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/devicemanagement/mdmprotocol/ddm/serve.go",
+        "response: HTTP 200 — https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/devicemanagement/mdmprotocol/ddm/serve.go",
+        "declitems: declaration-items — https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/devicemanagement/mdmprotocol/ddm/serve.go",
+        "manifest-response: HTTP 200 — https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/devicemanagement/mdmprotocol/ddm/serve.go"
+      ]
+    },
+    {
+      "title": "Implementation references (continued)",
+      "dot": "artifact",
+      "items": [
+        "declaration: Fetch declaration — https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/devicemanagement/mdmprotocol/ddm/compatibility.go",
+        "declaration-response: HTTP 200 or 404 — https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/devicemanagement/mdmprotocol/ddm/serve.go",
+        "status: status — https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/devicemanagement/mdmprotocol/ddm/status.go",
+        "status-response: Acknowledge or reject — https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/devicemanagement/mdmprotocol/ddm/status.go"
       ]
     }
   ]

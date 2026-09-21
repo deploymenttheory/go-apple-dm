@@ -10,6 +10,8 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/storage"
 )
 
+// runFleetUpgrade checks observed inventory updates and exact command clearing while
+// preserving unrelated queued work.
 func runFleetUpgrade(t *testing.T, newStore Factory) {
 	t.Helper()
 	s := newStore(t)

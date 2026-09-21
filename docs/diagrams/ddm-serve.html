@@ -5580,7 +5580,7 @@ svg[data-purpose-filter] g[data-purpose-highlight] > path { stroke-width: 2.4; }
           <h3>Snapshots and errors</h3>
         </div>
         <ul>
-          <li>&bull; Manifest retrieval refreshes the enrollment snapshot. Declaration retrieval uses the version advertised by that snapshot.</li>
+          <li>&bull; Tokens and manifest retrieval refresh the enrollment snapshot. Declaration retrieval preserves advertised versions while target eligibility and retained declarations remain valid.</li>
           <li>&bull; Invalid endpoint syntax and invalid status data are rejected at different stages. HTTP 404 for a declaration tells the device to remove its local copy.</li>
         </ul>
       </div>
@@ -5594,7 +5594,34 @@ svg[data-purpose-filter] g[data-purpose-highlight] > path { stroke-width: 2.4; }
           <li>&bull; <a href="https://developer.apple.com/documentation/devicemanagement/declarative-management" target="_blank" rel="noopener noreferrer">Declarative Management check-in</a></li>
           <li>&bull; <a href="https://developer.apple.com/documentation/devicemanagement/devicemanagement-declarations" target="_blank" rel="noopener noreferrer">Declarations</a></li>
           <li>&bull; <a href="https://www.rfc-editor.org/rfc/rfc8785" target="_blank" rel="noopener noreferrer">RFC 8785 — JSON Canonicalization Scheme</a></li>
-          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/7500eb25e50a2913338339d5fced18dc7f41fdc3/devicemanagement/mdmprotocol/ddm/serve.go" target="_blank" rel="noopener noreferrer">Implementation</a></li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-dot artifact"></div>
+          <h3>Implementation references</h3>
+        </div>
+        <ul>
+          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/server/service/checkin.go#L403" target="_blank" rel="noopener noreferrer">checkin: DeclarativeManagement</a></li>
+          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/devicemanagement/mdmprotocol/ddm/endpoint.go" target="_blank" rel="noopener noreferrer">parse: Parse Endpoint</a></li>
+          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/devicemanagement/mdmprotocol/ddm/serve.go" target="_blank" rel="noopener noreferrer">tokens: tokens</a></li>
+          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/devicemanagement/mdmprotocol/ddm/serve.go" target="_blank" rel="noopener noreferrer">response: HTTP 200</a></li>
+          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/devicemanagement/mdmprotocol/ddm/serve.go" target="_blank" rel="noopener noreferrer">declitems: declaration-items</a></li>
+          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/devicemanagement/mdmprotocol/ddm/serve.go" target="_blank" rel="noopener noreferrer">manifest-response: HTTP 200</a></li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-dot artifact"></div>
+          <h3>Implementation references (continued)</h3>
+        </div>
+        <ul>
+          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/devicemanagement/mdmprotocol/ddm/compatibility.go" target="_blank" rel="noopener noreferrer">declaration: Fetch declaration</a></li>
+          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/devicemanagement/mdmprotocol/ddm/serve.go" target="_blank" rel="noopener noreferrer">declaration-response: HTTP 200 or 404</a></li>
+          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/devicemanagement/mdmprotocol/ddm/status.go" target="_blank" rel="noopener noreferrer">status: status</a></li>
+          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/devicemanagement/mdmprotocol/ddm/status.go" target="_blank" rel="noopener noreferrer">status-response: Acknowledge or reject</a></li>
         </ul>
       </div>
     </div>

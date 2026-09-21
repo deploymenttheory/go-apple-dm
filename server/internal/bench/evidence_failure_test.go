@@ -9,6 +9,7 @@ import (
 	"time"
 )
 
+// TestScenariosRejectIncompleteEvidence checks scenarios reject incomplete evidence.
 func TestScenariosRejectIncompleteEvidence(t *testing.T) {
 	cases := []struct {
 		id, method, suffix, body string
@@ -78,6 +79,8 @@ func TestScenariosRejectIncompleteEvidence(t *testing.T) {
 	}
 }
 
+// TestNotNowInterruptions checks that interrupted NotNow workflows and canceled backoff cannot
+// pass.
 func TestNotNowInterruptions(t *testing.T) {
 	w := testWorkspace(t, "simulated")
 	e, err := Start(t.Context(), w, "", io.Discard)

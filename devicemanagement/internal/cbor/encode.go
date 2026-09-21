@@ -46,6 +46,8 @@ func (e *encoder) head(major byte, arg uint64) {
 	}
 }
 
+// value encodes a supported Go value as CBOR, enforcing the nesting limit and validating
+// RawMessage bytes.
 func (e *encoder) value(rv reflect.Value, depth int) error {
 	if depth > MaxDepth {
 		return fmt.Errorf("%w: over %d levels", ErrDepth, MaxDepth)
@@ -99,6 +101,7 @@ func (e *encoder) value(rv reflect.Value, depth int) error {
 	return nil
 }
 
+// sequence encodes array or slice elements in order.
 func (e *encoder) sequence(rv reflect.Value, depth int) error {
 	if rv.Type().Elem().Kind() == reflect.Uint8 && rv.Kind() == reflect.Slice {
 		b := rv.Bytes()
@@ -122,6 +125,7 @@ type pair struct {
 	value []byte
 }
 
+// writePairs writes encoded map entries in canonical key order.
 func (e *encoder) writePairs(pairs []pair) {
 	slices.SortFunc(pairs, func(a, b pair) int { return compareKeys(a.key, b.key) })
 	e.head(majMap, uint64(len(pairs))) //#nosec G115 -- a length is never negative
@@ -141,6 +145,7 @@ func compareKeys(a, b []byte) int {
 	return slices.Compare(a, b)
 }
 
+// mapping encodes a Go map as canonically ordered CBOR key-value pairs.
 func (e *encoder) mapping(rv reflect.Value, depth int) error {
 	if rv.Type().Key().Kind() != reflect.String {
 		return fmt.Errorf("%w: map with %s keys", ErrType, rv.Type().Key())
@@ -158,6 +163,7 @@ func (e *encoder) mapping(rv reflect.Value, depth int) error {
 	return nil
 }
 
+// structure encodes the supported struct fields as a CBOR map.
 func (e *encoder) structure(rv reflect.Value, depth int) error {
 	t := rv.Type()
 	pairs := make([]pair, 0, t.NumField())

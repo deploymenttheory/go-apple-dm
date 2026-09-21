@@ -7,7 +7,9 @@
 // shared dialect helpers. OAuth secrets, sessions and private keys are sealed
 // through storage/crypt when a keyring is supplied. Device/profile bytes are
 // stored beside indexed lookup fields, timestamps use UTC and lists use keyset
-// pagination. Device pages commit with their cursors in one transaction.
+// pagination. Device pages, fetch-generation membership and cursors commit
+// together; account locks and persisted assignment leases fence worker overlap.
+// Assignment retry deadlines survive process restart.
 // appleplatformservices/dep/deptest supplies the shared contract tests.
 //
 // # References
@@ -18,5 +20,6 @@
 //   - Apple: https://developer.apple.com/documentation/devicemanagement/device
 //   - Apple: https://developer.apple.com/documentation/devicemanagement/profile
 //   - Apple: https://developer.apple.com/documentation/devicemanagement/sync-devices (cursor lifetime)
-//   - Migrations: dep/sqlstore/migrations/{sqlite,postgres,mysql}/0001_init.sql
+//   - Migrations: https://github.com/deploymenttheory/go-apple-dm/tree/main/server/depstore/sqlstore/migrations
+//   - Worker-state migration: 0002_sync_state.sql in each dialect directory
 package sqlstore

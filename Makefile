@@ -62,6 +62,15 @@ fmt:
 
 .PHONY: fmt
 
+## docs-check: check authored function comments, documentation links, diagram evidence and route permissions
+docs-check:
+	$(GO) test ./internal/layout -run TestDocumentation -count=1
+	python3 -B -m unittest discover -s scripts -p check_docs_test.py
+	python3 -B scripts/check-docs.py
+	cd $(SERVER_DIR) && $(GO) test ./internal/app -run TestDocumentation -count=1
+
+.PHONY: docs-check
+
 ## verify-server-module-installation: resolve dependencies, build/install with GOWORK=off and run installed-server acceptance
 verify-server-module-installation:
 	python3 scripts/verify-server-module-installation.py
@@ -151,7 +160,7 @@ refs-activity:
 	@scripts/refs-activity.sh
 
 ## ci: everything CI runs, in order
-ci: lint verify verify-server-module-installation test test-storage test-storage-perf test-e2e test-acceptance bench-docs-check fuzz-smoke coverage
+ci: lint verify docs-check verify-server-module-installation test test-storage test-storage-perf test-e2e test-acceptance bench-docs-check fuzz-smoke coverage
 
 ## clean: remove coverage output
 clean:

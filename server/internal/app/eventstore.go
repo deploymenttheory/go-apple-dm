@@ -11,6 +11,8 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/server/eventstore"
 )
 
+// publisher prefers persistent event capture, otherwise returning the in-process bus or
+// nil when neither is configured.
 func (c Config) publisher() event.Publisher {
 	if c.persistentEvents != nil {
 		return c.persistentEvents
@@ -21,6 +23,8 @@ func (c Config) publisher() event.Publisher {
 	return nil
 }
 
+// wirePersistentSinks opens SQL event capture and wires audit and webhook destinations
+// with their delivery workers and transaction boundaries.
 func (a *App) wirePersistentSinks(ctx context.Context) error {
 	s, err := eventstore.Open(ctx, a.db, a.dialect)
 	if err != nil {

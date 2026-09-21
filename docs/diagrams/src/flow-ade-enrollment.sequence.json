@@ -257,8 +257,18 @@
         "MachineInfo — https://developer.apple.com/documentation/devicemanagement/machineinfo",
         "Authenticating through web views — https://developer.apple.com/documentation/devicemanagement/authenticating-through-web-views",
         "ErrorCodeSoftwareUpdateRequired — https://developer.apple.com/documentation/devicemanagement/errorcodesoftwareupdaterequired",
-        "Deploying device management enrollment profiles — https://developer.apple.com/documentation/devicemanagement/deploying-device-management-enrollment-profiles",
-        "Implementation — https://github.com/deploymenttheory/go-apple-dm/blob/7500eb25e50a2913338339d5fced18dc7f41fdc3/devicemanagement/mdmprotocol/enroll/ade/handler.go"
+        "Deploying device management enrollment profiles — https://developer.apple.com/documentation/devicemanagement/deploying-device-management-enrollment-profiles"
+      ]
+    },
+    {
+      "title": "Implementation references",
+      "dot": "artifact",
+      "items": [
+        "ade: ADE endpoint — https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/devicemanagement/mdmprotocol/enroll/ade/handler.go",
+        "gdmf: Software data — https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/devicemanagement/appleplatformservices/gdmf/gdmf.go",
+        "idp: Identity provider — https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/devicemanagement/mdmprotocol/enroll/webauth/webauth.go",
+        "profile: Profile / issuer — https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/server/internal/app/enroll.go",
+        "core: MDM service — https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/server/service/checkin.go"
       ]
     }
   ]

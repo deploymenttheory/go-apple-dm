@@ -24,7 +24,7 @@ The corresponding authenticated routes are:
 | `/errors` | `limit`, `cursor`, user `parent` | 100 errors, newest first |
 | `/reports` | `limit`, `cursor`, user `parent` | 100 retained reports, newest first |
 
-All use `ReadEnrollmentStatus` authorization, the existing enrollment identity
+All use `readEnrollmentStatus` authorization, the existing enrollment identity
 rules and `Items`/`NextCursor` response shape. The shared paging contract clamps
 positive limits to 1,000 per page, without imposing a total-record limit. Follow
 `NextCursor` or use `-all` to read subsequent pages. The values route's 1,000-item

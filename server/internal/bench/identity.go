@@ -19,6 +19,8 @@ import (
 
 var errLab = errors.New("bench")
 
+// privateFile creates a new identity file with mode 0600, refusing to overwrite an
+// existing path.
 func privateFile(path string, data []byte) error {
 	f, err := os.OpenFile(
 		path,
@@ -33,6 +35,8 @@ func privateFile(path string, data []byte) error {
 	return errors.Join(writeErr, closeErr)
 }
 
+// initialize creates the local identity and credential material required by the bench
+// workspace.
 func initialize(dir string) error {
 	if err := os.MkdirAll(dir, 0o700); err != nil {
 		return fmt.Errorf("%w: directory: %w", errLab, err)

@@ -210,8 +210,29 @@
       "items": [
         "Go command: Test packages — https://pkg.go.dev/cmd/go#hdr-Test_packages",
         "Testing procedures — https://github.com/deploymenttheory/go-apple-dm/blob/main/docs/testing/bench.md",
-        "CI responsibilities — https://github.com/deploymenttheory/go-apple-dm/blob/main/docs/testing/ci.md",
-        "Implementation — https://github.com/deploymenttheory/go-apple-dm/blob/7500eb25e50a2913338339d5fced18dc7f41fdc3/Makefile"
+        "CI responsibilities — https://github.com/deploymenttheory/go-apple-dm/blob/main/docs/testing/ci.md"
+      ]
+    },
+    {
+      "title": "Implementation references",
+      "dot": "artifact",
+      "items": [
+        "fuzz: Fuzz smoke tests — https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/Makefile",
+        "unit: Unit and contract tests — https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/devicemanagement/storage/storagetest/suite.go",
+        "coverage: Coverage policy — https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/Makefile",
+        "catalogue: Shared scenario catalogue — https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/server/internal/bench/catalog.go",
+        "e2e: Embedded runtime — https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/server/internal/bench/environment.go",
+        "process: Process acceptance — https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/server/internal/bench/environment.go"
+      ]
+    },
+    {
+      "title": "Implementation references (continued)",
+      "dot": "artifact",
+      "items": [
+        "acceptance: Process evidence — https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/server/internal/bench/catalog.go",
+        "live: Real device or app — https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/server/internal/bench/live.go",
+        "liveproof: Live evidence — https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/server/internal/bench/live.go",
+        "Coverage exemptions — https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/scripts/coverage-exempt.txt"
       ]
     }
   ]

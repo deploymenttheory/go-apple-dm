@@ -11,7 +11,7 @@ import (
 
 // Wire constants.
 const (
-	// Path is the only route the ddm role serves for the mdm role.
+	// Path is the declaration check-in route exposed by the private proxy adapter.
 	Path = "/v1/declarative-management"
 	// ContentType is the request body type: the check-in plist as received.
 	ContentType = "application/x-apple-aspen-mdm-checkin"
@@ -63,6 +63,8 @@ func preamble(status int) []byte {
 	return fmt.Appendf(nil, "ddm-response\nstatus=%d\n", status)
 }
 
+// sign returns the base64 HMAC-SHA256 over the context prefix followed by the exact body
+// bytes.
 func sign(key, prefix, body []byte) string {
 	mac := hmac.New(sha256.New, key)
 	mac.Write(prefix)
@@ -70,6 +72,8 @@ func sign(key, prefix, body []byte) string {
 	return base64.StdEncoding.EncodeToString(mac.Sum(nil))
 }
 
+// verify decodes and compares the supplied HMAC in constant time, distinguishing missing
+// and invalid signatures.
 func verify(key []byte, header string, prefix, body []byte) error {
 	if header == "" {
 		return ErrMissingSignature

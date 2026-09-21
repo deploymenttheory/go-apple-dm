@@ -6,6 +6,7 @@ import (
 	"testing"
 )
 
+// TestParse checks HTTPS URL parsing and rejection of unsafe URLs.
 func TestParse(t *testing.T) {
 	for _, raw := range []string{"", "http://example.com/secret", "//example.com", "https:///missing", "https://user:secret@example.com", "https://example.com/#secret", "https:opaque", "https://example.com/%zz"} {
 		if u, err := Parse(

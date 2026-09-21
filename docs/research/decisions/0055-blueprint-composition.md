@@ -36,8 +36,7 @@ The Blueprint manager resolves uploaded references through that package. It reus
 encrypted protocol-state store for specs and immutable profile blobs. SQL uses
 the shared unit of work; in memory the state transaction commits last inside the
 DDM transaction's private write set. Compiler namespaces are reserved against
-low-level admin mutation. No schema migration for an existing installation is
-introduced because the product is new.
+low-level admin mutation. Profile and authoring records use the existing encrypted state-store schema.
 
 The `ConfigurationProfile` convenience object creates Apple’s `LegacyProfile`
 declaration and defaults to `ProfileURL`. Its `UseProfileAssetReference` option
@@ -46,8 +45,9 @@ accepts only unsigned plist data with digest, size, MIME type and MDM
 authentication. Original profile bytes and identities are preserved. Device
 downloads use full enrollment identity, pinning, enabled state and certificate
 status, together with current eligibility and the last advertised snapshot.
-Retained obsolete revisions never authorize access on their own. Split roles
-carry downloads over the same authenticated private hop as DDM requests.
+Retained obsolete revisions never authorize access on their own. The reference
+server serves downloads in process. Reusable adapters also carry profile downloads
+for custom compositions through their authenticated private transport.
 
 Application identity discovery runs through authenticated authoring routes before
 publication. Public App Store queries, the Apple app catalogue and uploaded

@@ -78,7 +78,10 @@ type StatusError struct {
 	RetryAfter string
 }
 
+// Error reports the unexpected HTTP status without including the response body.
 func (e *StatusError) Error() string { return fmt.Sprintf("%s: %d", ErrStatus, e.StatusCode) }
+
+// Unwrap classifies non-successful HTTP responses as ErrStatus.
 func (e *StatusError) Unwrap() error { return ErrStatus }
 
 // Client is safe for concurrent use if its fields are not modified. Zero values
@@ -138,6 +141,8 @@ func (c *Client) Lookup(ctx context.Context, id int64, store Store) (App, error)
 	return apps[0], nil
 }
 
+// request validates the storefront, sends one bounded iTunes Search API request, and
+// decodes its public app listings. It does not retry or infer another storefront.
 func (c *Client) request(ctx context.Context, endpoint string, store Store, q url.Values) ([]App, error) {
 	store.Country = strings.ToUpper(store.Country)
 	if len(store.Country) != 2 || store.Country[0] < 'A' || store.Country[0] > 'Z' || store.Country[1] < 'A' || store.Country[1] > 'Z' {

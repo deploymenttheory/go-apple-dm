@@ -16,6 +16,7 @@ type ProfileService struct {
 	DeviceAttributes []string
 }
 
+// validate requires a valid HTTPS Profile Service URL and nonempty device-attribute names.
 func (s *ProfileService) validate() error {
 	u, err := url.Parse(s.URL)
 	if err != nil || u.Scheme != "https" || u.Hostname() == "" || u.User != nil ||
@@ -36,12 +37,14 @@ func (s *ProfileService) validate() error {
 	return nil
 }
 
+// content builds the Profile Service payload dictionary.
 func (s *ProfileService) content() map[string]any {
 	m := map[string]any{"URL": s.URL, "DeviceAttributes": s.DeviceAttributes}
 	setIf(m, "Challenge", s.Challenge)
 	return m
 }
 
+// parseService decodes and validates the Profile Service payload fields.
 func parseService(value any) (*ProfileService, error) {
 	m, ok := value.(map[string]any)
 	if !ok {

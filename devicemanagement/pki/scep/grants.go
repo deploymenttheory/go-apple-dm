@@ -40,13 +40,16 @@ type Grants struct {
 	Authorize GrantAuthorization
 }
 
+// grantHash hashes an issuance credential without retaining its plaintext form.
 func grantHash(b []byte) string {
 	h := sha256.Sum256(b)
 	return hex.EncodeToString(h[:])
 }
 
+// grantKey constructs the namespaced key for grant state.
 func grantKey(password string) string { return "scep/grant/" + grantHash([]byte(password)) }
 
+// configured requires a persistent grant store and an authorization callback.
 func (g Grants) configured() error {
 	if g.Store == nil || g.Authorize == nil {
 		return fmt.Errorf("%w: grant store and authorization are required", ErrChallenge)

@@ -11,6 +11,7 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/storage"
 )
 
+// replacement loads any controlled identity-replacement workflow for the enrollment.
 func (c *Core) replacement(ctx context.Context, r *mdm.Request) (*storage.Replacement, string, error) {
 	if c.replacements == nil || r.Certificate == nil {
 		return nil, "", nil
@@ -25,6 +26,8 @@ func (c *Core) replacement(ctx context.Context, r *mdm.Request) (*storage.Replac
 	return x, cms.Fingerprint(r.Certificate), nil
 }
 
+// transitionReplacement applies a replacement transition through the optional replacement
+// storage contract.
 func (c *Core) transitionReplacement(ctx context.Context, r *mdm.Request, ch storage.ReplacementChange) (*storage.Replacement, error) {
 	ch.At = c.clock.Now()
 	x, err := c.replacements.TransitionReplacement(ctx, r.ID.Device(), ch)
@@ -37,6 +40,8 @@ func (c *Core) transitionReplacement(ctx context.Context, r *mdm.Request, ch sto
 	return x, nil
 }
 
+// replacementCheckin recognizes and records check-in evidence belonging to a pending
+// identity replacement.
 func (c *Core) replacementCheckin(ctx context.Context, r *mdm.Request, ck *mdm.Checkin) (bool, error) {
 	x, hash, err := c.replacement(ctx, r)
 	if err != nil || x == nil {
@@ -83,6 +88,8 @@ func (c *Core) replacementCheckin(ctx context.Context, r *mdm.Request, ck *mdm.C
 	return true, err
 }
 
+// replacementConnect handles command acknowledgement associated with the replacement
+// handshake.
 func (c *Core) replacementConnect(ctx context.Context, r *mdm.Request, resp *mdm.Response) (*mdm.Command, bool, error) {
 	x, hash, err := c.replacement(ctx, r)
 	if err != nil || x == nil || x.State != storage.ReplacementPending {

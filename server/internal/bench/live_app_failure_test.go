@@ -13,6 +13,7 @@ import (
 	"time"
 )
 
+// TestLiveAppFailuresAndCredentialPagination checks live app failures and credential pagination.
 func TestLiveAppFailuresAndCredentialPagination(t *testing.T) {
 	for _, name := range []string{"invalid registration", "credential unavailable", "paginated credential", "receipt timeout", "unreadable receipt", "invalid receipt glob"} {
 		t.Run(name, func(t *testing.T) {

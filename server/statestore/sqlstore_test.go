@@ -28,6 +28,7 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/server/statestore"
 )
 
+// sqliteDB opens a temporary SQLite database allowing eight concurrent connections.
 func sqliteDB(t *testing.T) *sql.DB {
 	t.Helper()
 	db, err := sql.Open(
@@ -41,8 +42,12 @@ func sqliteDB(t *testing.T) *sql.DB {
 	t.Cleanup(func() { _ = db.Close() })
 	return db
 }
+
+// TestSQLiteSharedState checks SQLite shared state.
 func TestSQLiteSharedState(t *testing.T) { exercise(t, sqliteDB(t), sqlite.Dialect) }
 
+// exercise checks shared SQL state, transaction rollback, expiry, rate limits, single-use tokens,
+// and certificate workflows across store instances.
 func exercise(t *testing.T, db *sql.DB, dialect sqlcommon.Dialect) {
 	t.Helper()
 	ctx := t.Context()
@@ -189,6 +194,7 @@ func exercise(t *testing.T, db *sql.DB, dialect sqlcommon.Dialect) {
 	}
 }
 
+// TestInvalidAndDatabaseFailures checks invalid and database failures.
 func TestInvalidAndDatabaseFailures(t *testing.T) {
 	ctx := t.Context()
 	db := sqliteDB(t)
@@ -271,6 +277,8 @@ func TestInvalidAndDatabaseFailures(t *testing.T) {
 	}
 }
 
+// TestMalformedRowsAndFailedPruning checks malformed rows and failed pruning, including malformed
+// expiry, malformed key, delete rollback, missing .
 func TestMalformedRowsAndFailedPruning(t *testing.T) {
 	t.Run("malformed expiry", func(t *testing.T) {
 		ctx := t.Context()

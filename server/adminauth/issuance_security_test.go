@@ -38,6 +38,8 @@ func TestDelegatedCreationCannotClaimNamedPolicyAuthority(t *testing.T) {
 	}
 }
 
+// TestRevokedRootDoesNotPermitRevokingLastActiveRoot checks that revoked root does not permit
+// revoking last active root.
 func TestRevokedRootDoesNotPermitRevokingLastActiveRoot(t *testing.T) {
 	m, _, _ := manager(t)
 	root, _ := newRoot(t, m, "first")

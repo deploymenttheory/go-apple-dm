@@ -130,6 +130,8 @@ type Delivery struct {
 	Attempts    int              `json:"attempts"`
 }
 
+// now queries the database clock and returns its timestamp in UTC at microsecond
+// precision.
 func (s *Store) now(ctx context.Context, q sqlcommon.Queryer) (time.Time, error) {
 	query := "SELECT CAST((julianday('now') - 2440587.5) * 86400000000 AS INTEGER)"
 	switch s.d.Name {

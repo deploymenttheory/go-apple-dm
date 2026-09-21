@@ -21,6 +21,8 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/storage"
 )
 
+// issuedIdentity loads issuance evidence by fingerprint and fills missing issuer
+// information from the certificate registry.
 func (a *App) issuedIdentity(ctx context.Context, hash string) (identityEvidence, error) {
 	var evidence identityEvidence
 	rec, err := a.protocol.Get(ctx, "issued-identity:"+hash)
@@ -56,6 +58,8 @@ func (a *App) issuedIdentity(ctx context.Context, hash string) (identityEvidence
 	return evidence, nil
 }
 
+// enabledDevices collects all enabled device-channel enrollments through paginated storage
+// reads.
 func (a *App) enabledDevices(ctx context.Context) ([]storage.Enrollment, error) {
 	out := []storage.Enrollment{}
 	enabled := true
@@ -77,6 +81,8 @@ func (a *App) enabledDevices(ctx context.Context) ([]storage.Enrollment, error) 
 	}
 }
 
+// startIssuerRollover records the enabled-device cohort, initializes the target issuer and
+// activates its managed rollover.
 func (a *App) startIssuerRollover(ctx context.Context, id, rev string) (lifecycle.Rollover, error) {
 	if id != a.cfg.Setup.IssuerID || a.enroll == nil {
 		return lifecycle.Rollover{}, lifecycle.ErrConflict
@@ -103,6 +109,8 @@ func (a *App) startIssuerRollover(ctx context.Context, id, rev string) (lifecycl
 	return result, wrapError(err)
 }
 
+// renewDeviceIdentities runs identity-renewal scans every minute until cancellation,
+// logging scan failures for later retry.
 func (a *App) renewDeviceIdentities(ctx context.Context) error {
 	timer := time.NewTicker(time.Minute)
 	defer timer.Stop()
@@ -118,6 +126,8 @@ func (a *App) renewDeviceIdentities(ctx context.Context) error {
 	}
 }
 
+// identityRenewalPass advances issuer rollovers and pending renewal records before
+// scheduling ordinary expiring-device renewals.
 func (a *App) identityRenewalPass(ctx context.Context) error {
 	if a.enroll == nil {
 		return nil
@@ -180,6 +190,8 @@ func (a *App) identityRenewalPass(ctx context.Context) error {
 	return nil
 }
 
+// advanceRollover claims due device migrations with persisted generation checks, advances
+// replacements and tracks completion of the rollover cohort.
 func (a *App) advanceRollover(ctx context.Context, job lifecycle.Rollover) error {
 	target, err := a.managedIssuer(ctx, job.To)
 	if err != nil {
@@ -275,6 +287,8 @@ func (a *App) advanceRollover(ctx context.Context, job lifecycle.Rollover) error
 	return nil
 }
 
+// stableUUID formats the first 16 bytes of a SHA-256 digest as a deterministic UUID-shaped
+// command identifier.
 func stableUUID(parts string) string {
 	sum := sha256.Sum256([]byte(parts))
 	s := hex.EncodeToString(sum[:16])
@@ -459,6 +473,8 @@ func (a *App) progressMigration(
 	return nil
 }
 
+// queuedCommand searches an enrollment's command pages for a UUID and returns
+// storage.ErrNotFound if none matches.
 func (a *App) queuedCommand(
 	ctx context.Context,
 	id mdm.EnrollmentID,
@@ -487,6 +503,8 @@ type deviceRenewal struct {
 	lifecycle.Migration
 }
 
+// renewOneIdentity claims a persisted device-renewal job before advancing replacement,
+// preventing concurrent workers from issuing duplicate attempts.
 func (a *App) renewOneIdentity(ctx context.Context, e storage.Enrollment) error {
 	k := "pki/lifecycle/device-renewal/" + digest([]byte(e.ID.ID))
 	var job deviceRenewal
@@ -548,6 +566,8 @@ func (a *App) renewOneIdentity(ctx context.Context, e storage.Enrollment) error 
 	}))
 }
 
+// retireManagedIssuer checks retained enrollment dependencies before retiring a managed
+// issuer revision.
 func (a *App) retireManagedIssuer(ctx context.Context, id, rev string) (lifecycle.Identity, error) {
 	if id != a.cfg.Setup.IssuerID {
 		return lifecycle.Identity{}, lifecycle.ErrConflict
@@ -579,6 +599,8 @@ func (a *App) retireManagedIssuer(ctx context.Context, id, rev string) (lifecycl
 	return result, wrapError(err)
 }
 
+// reconcileDeviceRenewals revisits persisted device-renewal jobs and reconciles their
+// replacement evidence and current enrollment state.
 func (a *App) reconcileDeviceRenewals(ctx context.Context) error {
 	const prefix = "pki/lifecycle/device-renewal/"
 	after := ""
@@ -617,6 +639,7 @@ func (a *App) reconcileDeviceRenewals(ctx context.Context) error {
 	}
 }
 
+// deviceRenewalStatus returns the persisted renewal migration for the specified device.
 func (a *App) deviceRenewalStatus(ctx context.Context, device string) (lifecycle.Migration, error) {
 	k := "pki/lifecycle/device-renewal/" + digest([]byte(device))
 	row, err := a.protocol.Get(ctx, k)
@@ -628,6 +651,8 @@ func (a *App) deviceRenewalStatus(ctx context.Context, device string) (lifecycle
 	return job.Migration, wrapError(err)
 }
 
+// resetMigration resets a nonterminal migration for an explicit retry, clearing attempt
+// state and incrementing its retry counter; confirmed and disabled migrations conflict.
 func resetMigration(m *lifecycle.Migration) error {
 	if m.Phase == "confirmed" || m.Phase == "disabled" {
 		return lifecycle.ErrConflict
@@ -639,6 +664,8 @@ func resetMigration(m *lifecycle.Migration) error {
 	return nil
 }
 
+// retryMigration resets a stored device or issuer migration for an operator-requested
+// retry.
 func (a *App) retryMigration(ctx context.Context, id, rev, device string) error {
 	if device == "" || (id != a.cfg.Setup.IssuerID && id != a.cfg.Setup.HTTPSCAID) {
 		return lifecycle.ErrInvalid

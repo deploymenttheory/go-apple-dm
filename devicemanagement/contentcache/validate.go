@@ -83,6 +83,8 @@ func (r *Report) Validate() error {
 	return nil
 }
 
+// validateGUID accepts an absent GUID and otherwise requires a value recognized by
+// uuid.Parse; failures include the report field path.
 func validateGUID(path string, value *string) error {
 	if value == nil {
 		return nil

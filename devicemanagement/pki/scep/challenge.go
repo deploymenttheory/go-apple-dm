@@ -20,6 +20,8 @@ import (
 
 // Challenge verifies the challenge password a device presents in its CSR.
 type Challenge interface {
+	// Verify validates the challenge password against the certificate request before
+	// issuance.
 	Verify(ctx context.Context, password string, csr *x509.CertificateRequest) error
 }
 
@@ -139,6 +141,7 @@ func (h *HMACChallenge) Issue(commonName string) string {
 	return fmt.Sprintf("%d.%s", exp, base64.RawURLEncoding.EncodeToString(h.mac(exp, commonName)))
 }
 
+// mac authenticates SCEP challenge payload bytes with HMAC-SHA256 and the configured key.
 func (h *HMACChallenge) mac(exp int64, cn string) []byte {
 	m := hmac.New(sha256.New, h.key)
 	var b [8]byte

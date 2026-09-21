@@ -185,6 +185,8 @@ func TestApplicationSettingsWorkflow(t *testing.T) {
 	}
 }
 
+// applicationSettingsDevice seeds a supervised OS 27 enrollment and creates a simulator that signs
+// DDM requests with its pinned identity.
 func applicationSettingsDevice(t *testing.T, a *app.App, baseURL string, ca *testpki.CA, id, product string) *simulator.Device {
 	t.Helper()
 	identity, err := ca.Issue(id, time.Now().Add(-time.Minute))
@@ -204,6 +206,8 @@ func applicationSettingsDevice(t *testing.T, a *app.App, baseURL string, ca *tes
 	return simulator.New(id, simulator.WithURLs(baseURL+"/mdm", baseURL+"/mdm"), simulator.WithIdentity(&simulator.Identity{Cert: identity.Cert, Key: identity.Key}))
 }
 
+// assertApplicationSettingsJSON compares application settings as decoded JSON values, ignoring
+// serialization differences.
 func assertApplicationSettingsJSON(t *testing.T, actual any, expected string) {
 	t.Helper()
 	raw, err := json.Marshal(actual)
@@ -222,6 +226,8 @@ func assertApplicationSettingsJSON(t *testing.T, actual any, expected string) {
 	}
 }
 
+// applicationSettingsArtifact builds a ZIP with selected and decoy application bundles carrying
+// different code-directory hashes.
 func applicationSettingsArtifact(t *testing.T) []byte {
 	t.Helper()
 	executable, err := os.ReadFile("../../../devicemanagement/utility/appidentity/testdata/fixture.macho")
@@ -257,6 +263,7 @@ func applicationSettingsArtifact(t *testing.T) []byte {
 	return buf.Bytes()
 }
 
+// TestApplicationSettingsExampleSelection checks application settings example selection.
 func TestApplicationSettingsExampleSelection(t *testing.T) {
 	app := publicappstoreidentity.App{ID: 123, BundleID: "com.example.selected"}
 	for _, candidates := range [][]publicappstoreidentity.App{nil, {app}, {app, app}, {{ID: 123}}} {

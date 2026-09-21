@@ -11,6 +11,7 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/mdm"
 )
 
+// TestSyncDelivery checks synchronous subscriber order and default event timestamps.
 func TestSyncDelivery(t *testing.T) {
 	t.Parallel()
 	b := event.New()
@@ -58,6 +59,7 @@ func TestSyncDelivery(t *testing.T) {
 	}
 }
 
+// TestHandlerErrors checks event handler error propagation and reporting.
 func TestHandlerErrors(t *testing.T) {
 	t.Parallel()
 	var reported []error
@@ -73,6 +75,7 @@ func TestHandlerErrors(t *testing.T) {
 	}
 }
 
+// TestAsyncAndClose checks delivery of accepted asynchronous events and rejection after close.
 func TestAsyncAndClose(t *testing.T) {
 	t.Parallel()
 	b := event.New(event.WithAsync())
@@ -112,6 +115,7 @@ func TestAsyncAndClose(t *testing.T) {
 	}
 }
 
+// TestCloseTimeout checks that event-bus close honors its deadline.
 func TestCloseTimeout(t *testing.T) {
 	t.Parallel()
 	b := event.New(event.WithAsync())

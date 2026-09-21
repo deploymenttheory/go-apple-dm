@@ -24,6 +24,8 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/server/service"
 )
 
+// TestSCEPFinalizationRejectsInvalidStateAndSigner checks that SCEP finalization rejects invalid
+// state and signer.
 func TestSCEPFinalizationRejectsInvalidStateAndSigner(t *testing.T) {
 	a, id := replacementSecurityApp(t)
 	e := a.enroll
@@ -80,6 +82,8 @@ func TestSCEPFinalizationRejectsInvalidStateAndSigner(t *testing.T) {
 	}
 }
 
+// TestACMECredentialRejectsMissingIdentityFailedLookupAndDisable checks that ACME credential
+// rejects missing identity failed lookup and disable.
 func TestACMECredentialRejectsMissingIdentityFailedLookupAndDisable(t *testing.T) {
 	a, id := replacementSecurityApp(t)
 	ctx := t.Context()
@@ -121,6 +125,8 @@ func TestACMECredentialRejectsMissingIdentityFailedLookupAndDisable(t *testing.T
 	}
 }
 
+// TestAdminQueueRejectsMalformedTargetsAndLookupFailure checks that admin queue rejects malformed
+// targets and lookup failure.
 func TestAdminQueueRejectsMalformedTargetsAndLookupFailure(t *testing.T) {
 	a, id := replacementSecurityApp(t)
 	for _, handler := range []http.HandlerFunc{a.enqueueCommand, a.pushEnrollment} {

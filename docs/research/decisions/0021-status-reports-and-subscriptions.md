@@ -13,7 +13,7 @@ A full report atomically removes absent status. Optional synthesized subscriptio
 The engine exposes `StatusValues` with prefix filtering/pagination, `StatusErrors`
 and reverse-chronological `StatusReports`. The admin API and
 `dmctl enrollments status values|errors|reports` expose all three under
-`ReadEnrollmentStatus`, scoped to the full enrollment channel and parent identity.
+`readEnrollmentStatus`, scoped to the full enrollment channel and parent identity.
 With no `limit` query parameter, the admin values route returns up to 1,000 items
 per page; errors and reports default to 100. Built-in stores cap each page at
 1,000 through `paging.Page.Size`; this is not a total-record limit. Follow

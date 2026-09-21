@@ -14,6 +14,8 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/server/sqlstore/sqlite"
 )
 
+// TestSnapshotSecretBindingsRejectSwappedRowsAndPurposes checks snapshot secret bindings reject
+// swapped rows and purposes.
 func TestSnapshotSecretBindingsRejectSwappedRowsAndPurposes(t *testing.T) {
 	for _, tc := range []struct {
 		table, column string
@@ -110,6 +112,8 @@ func TestSnapshotSecretBindingsRejectSwappedRowsAndPurposes(t *testing.T) {
 	}
 }
 
+// TestKeyValidationRequiresMetadataAndKeyring checks that key validation requires metadata and
+// keyring.
 func TestKeyValidationRequiresMetadataAndKeyring(t *testing.T) {
 	s := sqlFixture(t, emptySQLite(t), sqlite.Dialect)
 	if err := s.ValidateKeys(t.Context(), t.TempDir(), nil); err == nil {

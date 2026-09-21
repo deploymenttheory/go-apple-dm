@@ -44,6 +44,8 @@ func requireRefusal(t *testing.T, err error, kind string) *acme.Problem {
 	return p
 }
 
+// TestPolicies checks attestation policy composition, device lookup, required properties, and
+// server enforcement.
 func TestPolicies(t *testing.T) {
 	yes, no := true, false
 

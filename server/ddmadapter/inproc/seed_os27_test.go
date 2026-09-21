@@ -14,6 +14,8 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/server/ddmadapter/inproc"
 )
 
+// TestSeedOS27EnhancedLoggingStatus checks enhanced-logging states, token and timestamp
+// persistence, and full-report removal versus partial-report preservation.
 func TestSeedOS27EnhancedLoggingStatus(t *testing.T) {
 	t.Parallel()
 	engine, err := ddm.New(ddm.Config{Store: inmem.New()})

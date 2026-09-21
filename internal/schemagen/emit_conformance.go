@@ -227,6 +227,8 @@ func (e *emitter) sampleFunc(b *bytes.Buffer, td *TypeDef) {
 	b.WriteString("\t}\n}\n\n")
 }
 
+// sampleValue builds a Go sample expression for a field, handling scalar pointers and
+// nested structs.
 func (e *emitter) sampleValue(f *Field) string {
 	if f.Pointer {
 		if f.Kind == KindStruct {
@@ -254,6 +256,8 @@ func (e *emitter) sampleOf(f *Field) string {
 	return e.sampleBase(f, f.Base)
 }
 
+// sampleArray builds a Go sample expression for an array from its element type or
+// heterogeneous variants.
 func (e *emitter) sampleArray(f *Field) string {
 	if len(f.Variants) > 0 {
 		parts := make([]string, 0, len(f.Variants))

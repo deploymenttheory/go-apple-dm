@@ -179,6 +179,8 @@ type auditPair struct {
 	existed, exists bool
 }
 
+// matchAuditDocuments pairs schema documents by path or an unambiguous wire identifier,
+// retaining unmatched additions and removals.
 func matchAuditDocuments(before, after map[string]auditDocument) []auditPair {
 	pairs := []auditPair{}
 	used := map[string]bool{}
@@ -215,6 +217,8 @@ func matchAuditDocuments(before, after map[string]auditDocument) []auditPair {
 	return pairs
 }
 
+// add coalesces a finding by category and key, retaining each distinct source-evidence item
+// once.
 func (t *auditTree) add(category, kind, stage, key, title, action, file, detail string) {
 	key = category + ":" + key
 	f := t.findings[key]
@@ -241,6 +245,7 @@ func (t *auditTree) add(category, kind, stage, key, title, action, file, detail 
 
 var unknownAuditField = regexp.MustCompile(`field ([^ ]+) not found in type ([^\s]+)`)
 
+// parseError records a schema parsing failure with its source evidence.
 func (t *auditTree) parseError(file string, err error) {
 	t.parsePassed = false
 	messages := unknownAuditField.FindAllStringSubmatch(err.Error(), -1)
@@ -271,6 +276,7 @@ func (t *auditTree) parseError(file string, err error) {
 	}
 }
 
+// readAuditTree loads and indexes a schema tree for comparison without generating output.
 func readAuditTree(directory string, strict bool) (*auditTree, error) {
 	root, err := os.OpenRoot(directory)
 	if err != nil {
@@ -346,6 +352,7 @@ func readAuditTree(directory string, strict bool) (*auditTree, error) {
 	return tree, nil
 }
 
+// auditID derives the stable identifier used to correlate a schema object across revisions.
 func auditID(file string, fields map[string]string) string {
 	for _, key := range []string{"requesttype", "declarationtype", "statusitemtype", "credentialtype", "payloadtype"} {
 		if value := fields["payload."+key]; value != "" {
@@ -355,6 +362,8 @@ func auditID(file string, fields map[string]string) string {
 	return file
 }
 
+// auditScalar returns a YAML scalar with whitespace collapsed, or an empty string for a
+// nil node.
 func auditScalar(n *yaml.Node) string {
 	if n == nil {
 		return ""
@@ -362,6 +371,7 @@ func auditScalar(n *yaml.Node) string {
 	return strings.Join(strings.Fields(n.Value), " ")
 }
 
+// auditChild finds a named child in the source audit representation.
 func auditChild(n *yaml.Node, key string) *yaml.Node {
 	if n == nil {
 		return nil
@@ -380,6 +390,7 @@ func auditChild(n *yaml.Node, key string) *yaml.Node {
 	return nil
 }
 
+// flattenAudit indexes nested schema fields by their source paths.
 func flattenAudit(
 	n *yaml.Node,
 	prefix string,
@@ -440,6 +451,8 @@ func flattenAudit(
 	}
 }
 
+// compareFields returns sorted before-and-after evidence for changed, added and removed
+// field values.
 func compareFields(before, after map[string]string) []Evidence {
 	keys := map[string]bool{}
 	for key := range before {
@@ -470,12 +483,15 @@ func compareFields(before, after map[string]string) []Evidence {
 	return changes
 }
 
+// sameFields reports whether compared field collections have equivalent schema content.
 func sameFields(
 	before, after map[string]string,
 ) bool {
 	return len(compareFields(before, after)) == 0
 }
 
+// reviewChange records a source change that requires review before generated contracts can
+// be accepted.
 func (t *auditTree) reviewChange(change SchemaChange, old, current auditDocument) {
 	file := change.Path
 	protocol := strings.HasPrefix(file, "mdm/checkin/") ||
@@ -565,6 +581,8 @@ func (t *auditTree) reviewChange(change SchemaChange, old, current auditDocument
 	}
 }
 
+// checkExamples checks that referenced example files exist and that JSON examples
+// contain valid JSON syntax.
 func (t *auditTree) checkExamples(root *os.Root, file string, node *yaml.Node) {
 	examples := auditChild(node, "examples")
 	if examples == nil {

@@ -6,7 +6,7 @@ Tests need to observe declarative synchronization and activation outcomes withou
 
 ## Decision
 
-The simulator maintains per-channel declaration state and runs a bounded token/manifest/fetch loop. Unchanged tokens avoid fetches; missing manifest entries and 404 responses remove declarations. A nonconverging server returns `ErrDDMNotSettled`. Fault options cover stale tokens, fetch failures and dropped reports.
+The simulator maintains per-channel declaration state and runs a bounded token/manifest/fetch loop. Tokens embedded in command `Data` are consumed directly; the `tokens` endpoint is used when absent or when resolving a manifest conflict. Unchanged tokens avoid fetches; missing manifest entries and 404 responses remove declarations. A nonconverging server returns `ErrDDMNotSettled`. Fault options cover stale tokens, fetch failures and dropped reports.
 
 The public predicate package implements a documented NSPredicate subset. Upload validates activation syntax; the simulator evaluates it and generates Apple's declaration status reasons. Full and incremental status reports reflect the simulated state.
 
@@ -24,6 +24,7 @@ Predicate parse/evaluation tables and fuzz targets cover accepted and rejected s
 
 ## References
 
+- [Apple DDM integration](https://developer.apple.com/documentation/devicemanagement/integrating-declarative-management)
 - [simulator](../../../devicemanagement/simulator)
 - [mdmprotocol/ddm/predicate](../../../devicemanagement/mdmprotocol/ddm/predicate)
 - <https://developer.apple.com/documentation/devicemanagement/leveraging-the-declarative-management-data-model-to-scale-devices>

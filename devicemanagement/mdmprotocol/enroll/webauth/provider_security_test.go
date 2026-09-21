@@ -15,6 +15,7 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/clock"
 )
 
+// TestKnownJWKSKeyExpiresAndFailsClosed checks that known JWKS key expires and fails closed.
 func TestKnownJWKSKeyExpiresAndFailsClosed(t *testing.T) {
 	key, _ := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
 	replacement, _ := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)

@@ -10,6 +10,8 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/server/service"
 )
 
+// TestReenrollmentAfterCheckoutRequiresApprovedNewIdentity checks that reenrollment after checkout
+// requires approved new identity.
 func TestReenrollmentAfterCheckoutRequiresApprovedNewIdentity(t *testing.T) {
 	for _, allow := range []bool{false, true} {
 		name, policy := "denied", service.DenyReenroll

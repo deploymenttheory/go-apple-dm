@@ -11,6 +11,7 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/internal/layout"
 )
 
+// repoRoot resolves the repository root from the layout test package.
 func repoRoot(t *testing.T) string {
 	t.Helper()
 	root, err := filepath.Abs(filepath.Join("..", ".."))
@@ -20,6 +21,7 @@ func repoRoot(t *testing.T) string {
 	return root
 }
 
+// load loads the repository import graph, failing the test on error.
 func load(t *testing.T) *layout.Graph {
 	t.Helper()
 	g, err := layout.LoadRepo(repoRoot(t))

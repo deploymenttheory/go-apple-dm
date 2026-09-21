@@ -10,6 +10,8 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/server/adminauth"
 )
 
+// runRoles checks role membership and policy references, role pagination, and permanently
+// consumed bootstrap under concurrent attempts.
 func runRoles(t *testing.T, newStore NewStore) {
 	t.Helper()
 	t.Run("MembershipAndPolicyReferences", func(t *testing.T) {

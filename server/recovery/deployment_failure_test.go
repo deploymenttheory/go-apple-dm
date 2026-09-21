@@ -15,6 +15,8 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/server/sqlstore/sqlite"
 )
 
+// deploymentFixture creates a fenced SQLite deployment with backup options and an age recipient
+// identity.
 func deploymentFixture(t *testing.T) (SQL, BackupOptions, *age.X25519Identity) {
 	t.Helper()
 	source, b := bootstrapFixture(t)
@@ -40,6 +42,8 @@ func deploymentFixture(t *testing.T) (SQL, BackupOptions, *age.X25519Identity) {
 	return s, BackupOptions{SetupFile: source, Destination: filepath.Join(dir, "backup.age"), StagingParent: dir, Ticket: ticket, Revision: "test", Recipients: []age.Recipient{key.Recipient()}}, key
 }
 
+// TestBackupRefusesIncompleteOrUnfencedDeployment checks that backup refuses incomplete or
+// unfenced deployment.
 func TestBackupRefusesIncompleteOrUnfencedDeployment(t *testing.T) {
 	for _, fault := range []string{"no maintenance", "wrong ticket", "missing parent", "missing setup", "different backend", "unregistered table", "unsealed value"} {
 		t.Run(fault, func(t *testing.T) {
@@ -159,6 +163,8 @@ func TestPrepareRejectsAuthenticatedButIncompleteDeployment(t *testing.T) {
 	}
 }
 
+// TestRestoreRefusesUnsafeTargetsAndUnpausedSnapshots checks that restore refuses unsafe targets
+// and unpaused snapshots.
 func TestRestoreRefusesUnsafeTargetsAndUnpausedSnapshots(t *testing.T) {
 	s, o, key := deploymentFixture(t)
 	if _, err := s.Backup(t.Context(), o); err != nil {

@@ -101,6 +101,8 @@ func (s *Server) AutoAdvance(every time.Duration) {
 	}(s.ticker, s.stop)
 }
 
+// advanceLocked advances scripted asynchronous activities while the caller holds the server
+// mutex.
 func (s *Server) advanceLocked() int {
 	moved := 0
 	now := s.now().UTC()

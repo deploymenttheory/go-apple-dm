@@ -22,6 +22,7 @@ var (
 // statusCols is the column list scanStatus reads, positionally.
 const statusCols = "kind, identifier, server_token, active, valid, reasons, first_seen, last_seen"
 
+// scanStatus decodes stored declaration-status state and its error details.
 func scanStatus(row scanner, d *ddm.DeclarationStatus) error {
 	if err := row.Scan(&d.Kind, &d.Identifier, &d.ServerToken, &d.Active, &d.Valid, &d.Reasons, &d.FirstSeen, &d.LastSeen); err != nil {
 		return wrap("scan declaration status", err)

@@ -24,6 +24,8 @@ type Factory func(t *testing.T, keyring *crypt.Keyring) dep.Store
 // can inspect how secrets rest: the raw bytes of consumer_secret,
 // access_token, access_secret, session, and key_pem:<stage>.
 type SecretReader interface {
+	// RawSecrets returns stored secret encodings so the contract suite can verify encryption
+	// at rest.
 	RawSecrets(ctx context.Context, name string) (map[string][]byte, error)
 }
 
@@ -98,6 +100,7 @@ func RunStoreSuite(t *testing.T, newStore Factory) {
 	t.Run("Concurrency", func(t *testing.T) { runConcurrency(t, newStore) })
 }
 
+// wantErr checks that an operation returns the expected error classification.
 func wantErr(t *testing.T, what string, err, want error) {
 	t.Helper()
 	if !errors.Is(err, want) {
@@ -105,6 +108,8 @@ func wantErr(t *testing.T, what string, err, want error) {
 	}
 }
 
+// must stops the calling test when a setup or contract operation returns an unexpected
+// error.
 func must(t *testing.T, what string, err error) {
 	t.Helper()
 	if err != nil {
@@ -112,6 +117,8 @@ func must(t *testing.T, what string, err error) {
 	}
 }
 
+// runAccounts checks account round trips, update timestamps, ordered pagination, and
+// deletion of dependent records.
 func runAccounts(t *testing.T, newStore Factory) {
 	t.Helper()
 	ctx := context.Background()
@@ -191,6 +198,8 @@ func runAccounts(t *testing.T, newStore Factory) {
 	}
 }
 
+// runSealed checks encrypted secret round trips, keypair resealing during promotion, and
+// plaintext operation without a keyring.
 func runSealed(t *testing.T, newStore Factory) {
 	t.Helper()
 	ctx := context.Background()
@@ -255,6 +264,8 @@ func runSealed(t *testing.T, newStore Factory) {
 	}
 }
 
+// runKeypairs checks keypair slot validation, staged replacement, and independent returned
+// key bytes.
 func runKeypairs(t *testing.T, newStore Factory) {
 	t.Helper()
 	ctx := context.Background()
@@ -289,6 +300,8 @@ func runKeypairs(t *testing.T, newStore Factory) {
 	}
 }
 
+// runUpstage checks that staged key promotion is transactional, clears the staged slot,
+// and preserves the current key after failure.
 func runUpstage(t *testing.T, newStore Factory) {
 	t.Helper()
 	ctx := context.Background()
@@ -331,6 +344,7 @@ func runUpstage(t *testing.T, newStore Factory) {
 	}
 }
 
+// runSessions checks independent account sessions, replacement, and clearing.
 func runSessions(t *testing.T, newStore Factory) {
 	t.Helper()
 	ctx := context.Background()
@@ -357,6 +371,7 @@ func runSessions(t *testing.T, newStore Factory) {
 	}
 }
 
+// runCursor checks cursor replacement, UTC timestamp normalization, and clearing.
 func runCursor(t *testing.T, newStore Factory) {
 	t.Helper()
 	ctx := context.Background()
@@ -387,6 +402,8 @@ func runCursor(t *testing.T, newStore Factory) {
 	}
 }
 
+// runDevices checks device round trips, immutable first-seen times, copied data, account
+// isolation, filtering, and pagination.
 func runDevices(t *testing.T, newStore Factory) {
 	t.Helper()
 	ctx := context.Background()
@@ -449,6 +466,8 @@ func runDevices(t *testing.T, newStore Factory) {
 	wantErr(t, "no serial", s.PutDevices(ctx, "d", []dep.Device{{Model: "x"}}, t0), dep.ErrInvalid)
 }
 
+// runTombstones checks tombstone retention, default listing exclusion, explicit inclusion,
+// and revival without losing first-seen time.
 func runTombstones(t *testing.T, newStore Factory) {
 	t.Helper()
 	ctx := context.Background()
@@ -484,6 +503,8 @@ func runTombstones(t *testing.T, newStore Factory) {
 	}
 }
 
+// runProfiles checks profile round trips, copied optional fields, replacement, account
+// isolation, and pagination.
 func runProfiles(t *testing.T, newStore Factory) {
 	t.Helper()
 	ctx := context.Background()
@@ -533,6 +554,8 @@ func runProfiles(t *testing.T, newStore Factory) {
 	}
 }
 
+// runAssignments checks assignment outcomes, retry timestamps, successful reset,
+// filtering, and ordered pagination.
 func runAssignments(t *testing.T, newStore Factory) {
 	t.Helper()
 	ctx := context.Background()
@@ -578,6 +601,8 @@ func runAssignments(t *testing.T, newStore Factory) {
 	}
 }
 
+// runUpdate checks transaction validation, rollback of device and cursor changes, and
+// committed writes across DEP record types.
 func runUpdate(t *testing.T, newStore Factory) {
 	t.Helper()
 	ctx := context.Background()
@@ -677,6 +702,8 @@ func runUpdate(t *testing.T, newStore Factory) {
 	}
 }
 
+// runInvalid checks that missing required identities and nil records return ErrInvalid
+// across DEP store operations.
 func runInvalid(t *testing.T, newStore Factory) {
 	t.Helper()
 	ctx := context.Background()
@@ -718,6 +745,8 @@ func runInvalid(t *testing.T, newStore Factory) {
 	}
 }
 
+// runConcurrency checks that concurrent device, assignment, cursor, and session writes
+// retain all device and assignment records.
 func runConcurrency(t *testing.T, newStore Factory) {
 	t.Helper()
 	ctx := context.Background()

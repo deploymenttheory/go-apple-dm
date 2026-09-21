@@ -7,6 +7,8 @@ import (
 	"testing"
 )
 
+// adminRequest serves a webhook admin request with the supplied sensitive-payload authorization
+// and requires its status and no-store header.
 func adminRequest(t *testing.T, s *Store, method, path, body string, root bool, status int) *httptest.ResponseRecorder {
 	t.Helper()
 	r := httptest.NewRequestWithContext(t.Context(), method, path, strings.NewReader(body))
@@ -21,6 +23,8 @@ func adminRequest(t *testing.T, s *Store, method, path, body string, root bool, 
 	return w
 }
 
+// TestAdminContract checks webhook admin responses without disclosing credentials or storage
+// diagnostics.
 func TestAdminContract(t *testing.T) {
 	s := testStore(t, Config{})
 	body := `{"name":"workflow","url":"https://receiver.example.test/webhook","events":["protocol.*"],"payload":{"full_json":true}}`
@@ -85,6 +89,7 @@ func TestAdminContract(t *testing.T) {
 	}
 }
 
+// TestFiltersAndPauseSemantics checks filters and pause semantics.
 func TestFiltersAndPauseSemantics(t *testing.T) {
 	s := testStore(t, Config{})
 	c := subscribe(t, s, PayloadPolicy{})

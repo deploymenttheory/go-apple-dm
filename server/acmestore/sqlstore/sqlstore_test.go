@@ -24,6 +24,7 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/server/sqlstore/sqlite"
 )
 
+// openDB opens a temporary SQLite database and registers its cleanup.
 func openDB(t *testing.T) *sql.DB {
 	t.Helper()
 	db, err := sql.Open("sqlite", sqlite.DSN(filepath.Join(t.TempDir(), "acme.db"), sqlite.Options{}))
@@ -53,6 +54,7 @@ func TestStore(t *testing.T) {
 	})
 }
 
+// TestOpenAndMigrations checks ACME store opening, migration, rollback, and missing-schema errors.
 func TestOpenAndMigrations(t *testing.T) {
 	ctx := context.Background()
 	if _, err := sqlstore.Open(ctx, nil, sqlite.Dialect, sqlstore.Options{}); !errors.Is(err, acme.ErrInvalid) {

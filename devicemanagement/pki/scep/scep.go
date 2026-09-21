@@ -46,6 +46,7 @@ const maxMessage = 1 << 20
 // CSRVerifier inspects the decrypted CSR before signing. A nil return
 // allows issuance.
 type CSRVerifier interface {
+	// VerifyCSR validates a certificate request before issuance.
 	VerifyCSR(ctx context.Context, csr *x509.CertificateRequest) error
 }
 
@@ -265,6 +266,8 @@ func (s *Server) Handler() http.Handler {
 	})
 }
 
+// servePKIOperation parses the signed SCEP exchange, validates issuance authority, and
+// writes the certificate response.
 func (s *Server) servePKIOperation(w http.ResponseWriter, r *http.Request) {
 	body, err := readMessage(r)
 	if err != nil {
@@ -288,6 +291,7 @@ func (s *Server) servePKIOperation(w http.ResponseWriter, r *http.Request) {
 	_, _ = w.Write(rep) // #nosec G705 -- server-built PKI message, not reflected input
 }
 
+// readMessage reads the SCEP PKIOperation message from the permitted HTTP request form.
 func readMessage(r *http.Request) ([]byte, error) {
 	if r.Method == http.MethodPost {
 		b, err := io.ReadAll(io.LimitReader(r.Body, maxMessage+1))

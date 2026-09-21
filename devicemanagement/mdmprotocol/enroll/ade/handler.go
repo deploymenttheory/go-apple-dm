@@ -59,6 +59,8 @@ type Bound struct {
 // authenticator calls Handler.Resume and Handler.Finish. enroll/webauth
 // satisfies this interface.
 type WebAuth interface {
+	// Begin starts browser authentication bound to the verified device and writes the
+	// initial HTTP response.
 	Begin(w http.ResponseWriter, r *http.Request, bound Bound)
 }
 
@@ -127,6 +129,8 @@ func New(cfg Config) *Handler {
 	return h
 }
 
+// now returns the configured clock time, using the package default when no clock is
+// supplied.
 func (h *Handler) now() time.Time {
 	if h.cfg.Now != nil {
 		return h.cfg.Now()
@@ -349,6 +353,7 @@ func (h *Handler) reject(w http.ResponseWriter, r *http.Request, err error) {
 	http.Error(w, http.StatusText(status), status)
 }
 
+// fail logs the enrollment failure and writes a generic HTTP 500 response.
 func (h *Handler) fail(w http.ResponseWriter, r *http.Request, err error) {
 	h.logger.ErrorContext(r.Context(), "ade: request failed", "error", err, "remote", r.RemoteAddr)
 	http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)

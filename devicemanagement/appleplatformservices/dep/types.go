@@ -374,6 +374,7 @@ func (p Profile) Clone() Profile {
 	return out
 }
 
+// cloneStrings copies a string slice, preserving nil input.
 func cloneStrings(s []string) []string {
 	if s == nil {
 		return nil

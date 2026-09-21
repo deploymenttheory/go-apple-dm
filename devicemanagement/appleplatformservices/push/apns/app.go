@@ -48,6 +48,8 @@ func (c *AppClient) Send(ctx context.Context, r AppRequest) push.Result {
 	return c.client.send(ctx, n, false)
 }
 
+// notification constructs the application notification payload after validating the request
+// fields.
 func (r AppRequest) notification() (notification, error) {
 	n := notification{
 		topic:      r.Topic,
@@ -111,6 +113,7 @@ func (r AppRequest) notification() (notification, error) {
 	return n, nil
 }
 
+// validateAlert checks the alert value against the supported APNs payload forms.
 func validateAlert(aps map[string]json.RawMessage) error {
 	for _, name := range []string{"alert", "sound", "badge"} {
 		raw, present := aps[name]

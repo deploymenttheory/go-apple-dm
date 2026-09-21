@@ -143,6 +143,8 @@ func (h *HMACIdentifiers) Verify(_ context.Context, identifier string) (Binding,
 	return s.Binding, nil
 }
 
+// mac authenticates identifier-binding payload bytes with HMAC-SHA256 and the configured
+// key.
 func (h *HMACIdentifiers) mac(payload []byte) []byte {
 	m := hmac.New(sha256.New, h.key)
 	m.Write(payload)

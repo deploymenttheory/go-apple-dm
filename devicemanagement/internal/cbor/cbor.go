@@ -144,6 +144,8 @@ func (d *decoder) head() (major byte, arg uint64, err error) {
 	return major, arg, nil
 }
 
+// readArg decodes the CBOR additional-information argument and rejects invalid or truncated
+// encodings.
 func (d *decoder) readArg(n int) (uint64, error) {
 	if d.off+n > len(d.buf) {
 		return 0, fmt.Errorf("%w: truncated argument at %d", ErrSyntax, d.off)
@@ -297,6 +299,7 @@ func (d *decoder) value(rv reflect.Value, depth int) error {
 	}
 }
 
+// array decodes a bounded CBOR array into its destination value.
 func (d *decoder) array(rv reflect.Value, arg uint64, depth int) error {
 	if rv.Kind() != reflect.Slice {
 		return fmt.Errorf("%w: array into %s", ErrType, rv.Type())
@@ -315,6 +318,7 @@ func (d *decoder) array(rv reflect.Value, arg uint64, depth int) error {
 	return nil
 }
 
+// mapping decodes CBOR map entries into a supported map or struct destination.
 func (d *decoder) mapping(rv reflect.Value, arg uint64, depth int) error {
 	n, err := d.fits(arg, 2)
 	if err != nil {
@@ -349,6 +353,7 @@ func (d *decoder) mapping(rv reflect.Value, arg uint64, depth int) error {
 	}
 }
 
+// structure matches CBOR map keys to the destination struct's supported fields.
 func (d *decoder) structure(rv reflect.Value, n int, depth int) error {
 	fields := fieldsOf(rv.Type())
 	seen := make(map[string]bool, n)
@@ -399,6 +404,7 @@ func (d *decoder) textKey() (string, error) {
 	return string(b), nil
 }
 
+// setUint assigns an unsigned value only when it fits the destination type.
 func setUint(rv reflect.Value, v uint64) error {
 	switch rv.Kind() {
 	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
@@ -417,6 +423,7 @@ func setUint(rv reflect.Value, v uint64) error {
 	return nil
 }
 
+// setInt assigns a signed value only when it fits the destination type.
 func setInt(rv reflect.Value, v int64) error {
 	switch rv.Kind() {
 	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
@@ -430,6 +437,7 @@ func setInt(rv reflect.Value, v int64) error {
 	return nil
 }
 
+// setBytes assigns a decoded CBOR byte string to a compatible destination.
 func setBytes(rv reflect.Value, b []byte) error {
 	if rv.Kind() != reflect.Slice || rv.Type().Elem().Kind() != reflect.Uint8 {
 		return fmt.Errorf("%w: byte string into %s", ErrType, rv.Type())
@@ -438,6 +446,7 @@ func setBytes(rv reflect.Value, b []byte) error {
 	return nil
 }
 
+// setText assigns a decoded CBOR text string to a compatible destination.
 func setText(rv reflect.Value, b []byte) error {
 	if rv.Kind() != reflect.String {
 		return fmt.Errorf("%w: text string into %s", ErrType, rv.Type())

@@ -66,6 +66,8 @@ func (p PushConfig) Enabled() bool {
 	return p.Pusher != nil || (p.Source != "" && p.Source != PushSourceOff)
 }
 
+// validate checks that enabled MDM push uses a supported credential source and a complete
+// identity configuration.
 func (p PushConfig) validate() error {
 	switch p.Source {
 	case "", PushSourceOff, PushSourceStore:

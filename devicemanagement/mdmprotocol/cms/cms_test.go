@@ -23,6 +23,7 @@ type identity struct {
 	key  crypto.Signer
 }
 
+// newCA creates a certificate authority fixture.
 func newCA(t *testing.T) identity {
 	t.Helper()
 	key, err := rsa.GenerateKey(rand.Reader, 2048)
@@ -42,6 +43,7 @@ func newCA(t *testing.T) identity {
 	return identity{cert: cert, key: key}
 }
 
+// newLeaf creates a leaf certificate fixture signed by the test authority.
 func newLeaf(t *testing.T, ca identity, key crypto.Signer, notBefore time.Time) identity {
 	t.Helper()
 	tmpl := &x509.Certificate{
@@ -57,6 +59,7 @@ func newLeaf(t *testing.T, ca identity, key crypto.Signer, notBefore time.Time) 
 	return identity{cert: cert, key: key}
 }
 
+// rsaKey generates a 2048-bit RSA key, failing the test on error.
 func rsaKey(t *testing.T) crypto.Signer {
 	t.Helper()
 	k, err := rsa.GenerateKey(rand.Reader, 2048)
@@ -66,6 +69,7 @@ func rsaKey(t *testing.T) crypto.Signer {
 	return k
 }
 
+// ecKey generates a P-256 private key, failing the test on error.
 func ecKey(t *testing.T) crypto.Signer {
 	t.Helper()
 	k, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
@@ -75,12 +79,14 @@ func ecKey(t *testing.T) crypto.Signer {
 	return k
 }
 
+// pool creates a certificate pool containing the fixture authority.
 func pool(ca identity) *x509.CertPool {
 	p := x509.NewCertPool()
 	p.AddCert(ca.cert)
 	return p
 }
 
+// TestSignVerifyRSAAndECDSA checks sign verify RSA and ECDSA.
 func TestSignVerifyRSAAndECDSA(t *testing.T) {
 	t.Parallel()
 	ca := newCA(t)
@@ -118,6 +124,7 @@ func TestSignVerifyRSAAndECDSA(t *testing.T) {
 	}
 }
 
+// TestVerifySigningTimeSkew checks verify signing time skew.
 func TestVerifySigningTimeSkew(t *testing.T) {
 	t.Parallel()
 	ca := newCA(t)
@@ -158,6 +165,8 @@ func TestVerifySigningTimeSkew(t *testing.T) {
 	}
 }
 
+// TestVerifyErrors checks malformed CMS headers, invalid signer counts, nil inputs, and expired
+// certificates.
 func TestVerifyErrors(t *testing.T) {
 	t.Parallel()
 	if _, err := cms.DecodeHeader(""); !errors.Is(err, cms.ErrHeader) {
@@ -204,6 +213,7 @@ func TestVerifyErrors(t *testing.T) {
 	}
 }
 
+// FuzzVerify exercises detached CMS verification with generated signature and content inputs.
 func FuzzVerify(f *testing.F) {
 	ca := newCA(&testing.T{})
 	leaf := newLeaf(&testing.T{}, ca, rsaKey(&testing.T{}), time.Now().Add(-time.Minute))

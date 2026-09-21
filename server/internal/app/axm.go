@@ -34,6 +34,8 @@ type AxMConfig struct {
 // Enabled reports whether the client is configured.
 func (c AxMConfig) Enabled() bool { return c.ClientID != "" }
 
+// validate requires a key identifier and private key when the Apple Business Manager
+// client is enabled.
 func (c AxMConfig) validate() error {
 	if !c.Enabled() {
 		return nil
@@ -189,6 +191,8 @@ var (
 // ErrBadAxMRequest reports an invalid assignment body.
 var ErrBadAxMRequest = errors.New("app: invalid Business Manager request")
 
+// listOptions reads the cursor and optional numeric page limit for an Apple Business
+// Manager request.
 func listOptions(r *http.Request) axm.ListOptions {
 	o := axm.ListOptions{Cursor: r.URL.Query().Get("cursor")}
 	if v := r.URL.Query().Get("limit"); v != "" {

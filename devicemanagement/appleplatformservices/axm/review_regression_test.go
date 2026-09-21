@@ -7,6 +7,7 @@ import (
 	"testing"
 )
 
+// TestResponseStatusAndRepresentation checks response status and representation.
 func TestResponseStatusAndRepresentation(t *testing.T) {
 	for _, status := range []int{301, 302, 303, 307, 308} {
 		t.Run(fmt.Sprint(status), func(t *testing.T) {
@@ -39,6 +40,8 @@ func TestResponseStatusAndRepresentation(t *testing.T) {
 	}
 }
 
+// TestRegressionRedirectReportedAsSuccess checks that a rejected redirect is returned as an error
+// rather than successful empty data.
 func TestRegressionRedirectReportedAsSuccess(t *testing.T) {
 	srv := stub(t, func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Location", "https://example.invalid/redirect")

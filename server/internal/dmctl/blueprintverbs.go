@@ -14,6 +14,8 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/server/internal/dmctl/explain"
 )
 
+// runBlueprints parses and executes the blueprints subcommand, reporting argument and
+// operation failures to the CLI caller.
 func runBlueprints(ctx context.Context, e *env, args []string) error {
 	if len(args) == 0 {
 		return fmt.Errorf("%w: blueprints needs validate, publish, list, get, delete, assign or unassign", ErrUsage)

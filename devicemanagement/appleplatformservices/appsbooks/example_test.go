@@ -52,6 +52,8 @@ func installationAfterFallback(
 	return nil, errLicensingIncomplete
 }
 
+// ExampleClient_Associate demonstrates associating an Apps and Books asset with device serial
+// numbers.
 func ExampleClient_Associate() {
 	c, err := appsbooks.New(
 		appsbooks.Config{

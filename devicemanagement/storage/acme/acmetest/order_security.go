@@ -8,6 +8,8 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/pki/acme"
 )
 
+// runOrderTransactions checks order-scoped transaction validation, serialization of
+// concurrent writers, and rollback.
 func runOrderTransactions(t *testing.T, factory Factory) {
 	t.Helper()
 	s := factory(t)

@@ -11,6 +11,7 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/server/internal/dmctl"
 )
 
+// TestBlueprintCLI checks blueprint CLI requests and preservation of configuration-profile bytes.
 func TestBlueprintCLI(t *testing.T) {
 	var method, path, match, body string
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -55,6 +56,8 @@ func TestBlueprintCLI(t *testing.T) {
 	}
 }
 
+// TestBlueprintValidationTarget checks target validation, capability forwarding, and rejection of
+// invalid targets before contacting the server.
 func TestBlueprintValidationTarget(t *testing.T) {
 	var calls int
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

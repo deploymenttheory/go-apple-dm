@@ -18,6 +18,7 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/schema/support"
 )
 
+// sample returns a profile containing MDM, root-certificate, and raw custom payloads.
 func sample() *profile.Profile {
 	return &profile.Profile{
 		Identifier: "com.example.test", UUID: "6C9B0C20-0000-7000-8000-000000000001",
@@ -44,6 +45,8 @@ func sample() *profile.Profile {
 	}
 }
 
+// TestBuildAndParse checks profile envelopes, typed and raw payloads, lookup, and stable round
+// trips.
 func TestBuildAndParse(t *testing.T) {
 	t.Parallel()
 	p := sample()
@@ -95,6 +98,8 @@ func TestBuildAndParse(t *testing.T) {
 	}
 }
 
+// TestStableUUIDs checks stable profile and payload UUIDs across content changes and newly
+// generated UUID uniqueness.
 func TestStableUUIDs(t *testing.T) {
 	t.Parallel()
 	p := sample()
@@ -115,6 +120,8 @@ func TestStableUUIDs(t *testing.T) {
 	}
 }
 
+// TestValidateErrors checks profile validation failures for missing fields, nil content, and
+// invalid payloads.
 func TestValidateErrors(t *testing.T) {
 	t.Parallel()
 	p := &profile.Profile{Scope: "Galaxy", Payloads: []profile.Payload{
@@ -152,6 +159,8 @@ func TestValidateErrors(t *testing.T) {
 	}
 }
 
+// TestParseErrors checks profile parse limits, signature requirements, payload resolution, and
+// malformed content.
 func TestParseErrors(t *testing.T) {
 	t.Parallel()
 	for name, data := range map[string][]byte{
@@ -208,6 +217,8 @@ func TestParseErrors(t *testing.T) {
 	}
 }
 
+// TestSignAttached checks attached profile signing, embedded plist recovery, trust validation, and
+// invalid signer inputs.
 func TestSignAttached(t *testing.T) {
 	t.Parallel()
 	key, _ := rsa.GenerateKey(rand.Reader, 2048)

@@ -18,6 +18,8 @@ const ContentTypeJSON = "application/json"
 // Backend serves one DeclarativeManagement check-in. *ddm.Engine
 // satisfies it; tests stub it.
 type Backend interface {
+	// Handle processes the selected declarative endpoint for the complete enrollment
+	// identity and returns the protocol response.
 	Handle(ctx context.Context, id mdm.EnrollmentID, endpoint string, data []byte) (ddm.Response, error)
 }
 

@@ -154,10 +154,13 @@ func (t *tx) AffectedEnrollments(_ context.Context, identifiers, sets []string) 
 	return out, nil
 }
 
+// compareEnrollmentIDs orders enrollment identities by parent ID and then ID for
+// deterministic membership results.
 func compareEnrollmentIDs(a, b mdm.EnrollmentID) int {
 	return cmp.Or(cmp.Compare(a.ParentID, b.ParentID), cmp.Compare(a.ID, b.ID))
 }
 
+// intersects reports whether two membership collections share an element.
 func intersects(a, b map[string]struct{}) bool {
 	for k := range a {
 		if _, ok := b[k]; ok {
@@ -167,6 +170,7 @@ func intersects(a, b map[string]struct{}) bool {
 	return false
 }
 
+// hasAny reports whether membership contains any of the supplied candidates.
 func hasAny(set map[string]struct{}, keys []string) bool {
 	for _, k := range keys {
 		if _, ok := set[k]; ok {

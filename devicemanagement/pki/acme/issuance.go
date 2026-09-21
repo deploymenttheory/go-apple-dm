@@ -126,6 +126,8 @@ func (s *Server) completeReceipt(e *exchange, receipt *issued) error {
 	return s.registerReceipt(e, receipt, cert)
 }
 
+// issuanceProvenance builds certificate provenance from the ACME account, enrollment
+// binding, and requested identifier.
 func issuanceProvenance(o *Order) revocation.Provenance {
 	return revocation.Provenance{
 		Source: "acme", EnrollmentID: o.Binding.EnrollmentID, AccountID: o.AccountID,
@@ -187,6 +189,8 @@ func (s *Server) signReceipt(
 	}, nil
 }
 
+// registerReceipt runs receipt registration and order completion inside an event scope so
+// publication follows successful registration.
 func (s *Server) registerReceipt(e *exchange, r *issued, cert *x509.Certificate) error {
 	return event.Run(e.ctx(), s.cfg.Bus, func(ctx context.Context) error {
 		inside := *e
@@ -195,6 +199,8 @@ func (s *Server) registerReceipt(e *exchange, r *issued, cert *x509.Certificate)
 	})
 }
 
+// storeReceipt retains an issuance receipt so a resumed finalize request can reuse its
+// certificate.
 func (s *Server) storeReceipt(e *exchange, r *issued, cert *x509.Certificate) error {
 	provenance := issuanceProvenance(r.order)
 	ctx := revocation.WithProvenance(e.ctx(), provenance)
@@ -255,6 +261,7 @@ func (s *Server) storeReceipt(e *exchange, r *issued, cert *x509.Certificate) er
 	return nil
 }
 
+// encodeChain encodes the issued certificate chain in PEM order.
 func encodeChain(leaf *x509.Certificate, issuers []*x509.Certificate) []byte {
 	var out []byte
 	for _, c := range append([]*x509.Certificate{leaf}, issuers...) {

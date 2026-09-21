@@ -12,11 +12,13 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/simulator"
 )
 
+// md5s computes the hexadecimal MD5 digest used by the Digest authentication fixture.
 func md5s(s string) string {
 	sum := md5.Sum([]byte(s)) // #nosec G401 -- RFC 2617 Digest requires MD5
 	return hex.EncodeToString(sum[:])
 }
 
+// TestHA1 checks the Digest HA1 value against its expected vector.
 func TestHA1(t *testing.T) {
 	t.Parallel()
 	if got := simulator.HA1("alice", "mdm", "secret"); got != md5s("alice:mdm:secret") {
@@ -24,6 +26,8 @@ func TestHA1(t *testing.T) {
 	}
 }
 
+// TestDigestResponse checks Digest response fields and acceptance of challenges with or without
+// the scheme prefix.
 func TestDigestResponse(t *testing.T) {
 	t.Parallel()
 	const challenge = `Digest realm="mdm", nonce="0123abcd", qop="auth", algorithm=MD5`
@@ -44,6 +48,7 @@ func TestDigestResponse(t *testing.T) {
 	}
 }
 
+// TestDigestResponseFailures checks invalid Digest challenges and random-source failure.
 func TestDigestResponseFailures(t *testing.T) {
 	t.Parallel()
 	bad := map[string]string{

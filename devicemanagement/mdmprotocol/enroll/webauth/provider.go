@@ -70,6 +70,8 @@ func (f *Flow) fetch(req *http.Request) (int, []byte, error) {
 	return resp.StatusCode, body, nil
 }
 
+// get fetches a provider JSON document and requires HTTP 200 before returning its bounded
+// body.
 func (f *Flow) get(ctx context.Context, rawURL string) ([]byte, error) {
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, rawURL, nil)
 	if err != nil {
@@ -113,6 +115,8 @@ func (f *Flow) endpoints(ctx context.Context) (Endpoints, error) {
 	return eps, nil
 }
 
+// checkEndpoints validates the discovered provider endpoints against the flow's transport
+// policy.
 func (f *Flow) checkEndpoints(eps Endpoints) error {
 	for name, u := range map[string]string{"authorization_endpoint": eps.Authorization, "token_endpoint": eps.Token, "jwks_uri": eps.JWKS} {
 		if err := f.requireHTTPS(u); err != nil {
@@ -125,6 +129,7 @@ func (f *Flow) checkEndpoints(eps Endpoints) error {
 // ErrNotHTTPS reports a URL that is not absolute https.
 var ErrNotHTTPS = errors.New("webauth: URL must be absolute https")
 
+// requireHTTPS rejects provider URLs that fail the flow's HTTPS and endpoint policy.
 func (f *Flow) requireHTTPS(raw string) error {
 	u, err := url.Parse(raw)
 	if err != nil {
@@ -160,6 +165,8 @@ func (f *Flow) keysFor(ctx context.Context, jwksURL, kid, alg string) []verifica
 	return selectKeys(f.keys, kid, alg)
 }
 
+// refreshKeysLocked refreshes the provider signing keys while the caller holds the flow
+// lock.
 func (f *Flow) refreshKeysLocked(ctx context.Context, jwksURL string) error {
 	body, err := f.get(ctx, jwksURL)
 	if err != nil {

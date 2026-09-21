@@ -27,12 +27,15 @@ type profileSource struct {
 	calls    int
 }
 
+// Fetch records the profile request and returns the configured XML body or failure.
 func (s *profileSource) Fetch(_ context.Context, id mdm.EnrollmentID, revision string) ([]byte, configurationprofile.Info, error) {
 	s.id, s.revision = id, revision
 	s.calls++
 	return s.body, configurationprofile.Info{ContentType: "application/xml"}, s.err
 }
 
+// TestProfilePrivateHopRejectsInvalidRequests checks that profile private hop rejects invalid
+// requests.
 func TestProfilePrivateHopRejectsInvalidRequests(t *testing.T) {
 	body, err := json.Marshal(proxywire.ConfigurationProfileRequest{
 		Enrollment: mdm.EnrollmentID{ID: "device", Channel: mdm.ChannelDevice}, Revision: "revision",
@@ -77,6 +80,8 @@ func TestProfilePrivateHopRejectsInvalidRequests(t *testing.T) {
 	}
 }
 
+// TestProfilePrivateHop checks profile forwarding preserves bytes and enrollment identity across
+// the private adapter hop.
 func TestProfilePrivateHop(t *testing.T) {
 	source := &profileSource{body: bytes.Repeat([]byte("p"), 2<<20)}
 	h, err := proxyserver.Handler(proxyserver.Config{Backend: newStub(), ConfigurationProfiles: source, ReplayStore: state.NewMemory(), RecvKey: recvKey, SendKey: sendKey, AllowInsecureForTests: true, Logger: quiet})

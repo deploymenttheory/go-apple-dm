@@ -259,6 +259,8 @@ type principalView struct {
 	UpdatedAt time.Time
 }
 
+// viewOf projects a principal's roles and credential metadata without its stored token
+// digest.
 func viewOf(p adminauth.Principal) principalView {
 	return principalView{
 		Name: p.Name, Roles: p.Roles, Root: p.Root,

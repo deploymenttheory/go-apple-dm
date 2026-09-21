@@ -17,6 +17,8 @@ const (
 	ActionAssignBlueprint   = "assignBlueprint"
 )
 
+// blueprintActions declares permissions for reading, publishing and assigning Blueprint
+// resources.
 func blueprintActions() []adminauth.Action {
 	return []adminauth.Action{
 		{ID: ActionReadBlueprints, Resource: adminauth.EntityBlueprint, Help: "Read Blueprint source, publication revisions and compilation results."},
@@ -25,8 +27,12 @@ func blueprintActions() []adminauth.Action {
 	}
 }
 
+// expectedRevision removes surrounding quotes from the If-Match value used for optimistic
+// concurrency.
 func expectedRevision(r *http.Request) string { return strings.Trim(r.Header.Get("If-Match"), `"`) }
 
+// blueprintAdminRoutes declares Blueprint validation, publication, read, deletion and
+// assignment routes with transaction and notifier metadata.
 func (a *App) blueprintAdminRoutes() []adminRoute {
 	if a.Blueprints == nil {
 		return nil

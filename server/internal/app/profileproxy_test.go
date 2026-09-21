@@ -19,6 +19,8 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/server/service"
 )
 
+// TestProfileProxyAuthenticatesBeforeFetchingAndHandlesUpstreamFailures checks that profile proxy
+// authenticates before fetching and handles upstream failures.
 func TestProfileProxyAuthenticatesBeforeFetchingAndHandlesUpstreamFailures(t *testing.T) {
 	ca, err := testpki.NewCA("profile proxy")
 	if err != nil {

@@ -19,6 +19,7 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/server/configurationprofile"
 )
 
+// profileDeclaration encodes a legacy-profile declaration referencing the supplied URL.
 func profileDeclaration(t *testing.T, location string) []byte {
 	t.Helper()
 	raw, err := json.Marshal(map[string]any{"Identifier": "settings", "Type": schema.DeclarationTypeLegacyProfile, "Payload": map[string]any{"ProfileURL": location}})
@@ -28,6 +29,8 @@ func profileDeclaration(t *testing.T, location string) []byte {
 	return raw
 }
 
+// advertiseProfile uploads a profile, publishes and assigns its declaration, and builds the
+// enrollment's advertised snapshot.
 func advertiseProfile(t *testing.T, cfg configurationprofile.Config, id mdm.EnrollmentID, scope string) (configurationprofile.Info, []byte) {
 	t.Helper()
 	m := profileManager(t, cfg)
@@ -51,6 +54,8 @@ func advertiseProfile(t *testing.T, cfg configurationprofile.Config, id mdm.Enro
 	return info, data
 }
 
+// TestFetchEnforcesConfigurationProfileScope checks that fetch enforces configuration profile
+// scope.
 func TestFetchEnforcesConfigurationProfileScope(t *testing.T) {
 	for _, tc := range []struct {
 		name, scope string
@@ -89,6 +94,8 @@ func TestFetchEnforcesConfigurationProfileScope(t *testing.T) {
 	}
 }
 
+// TestFetchRejectsInvalidAdvertisedDeclarations checks that fetch rejects invalid advertised
+// declarations.
 func TestFetchRejectsInvalidAdvertisedDeclarations(t *testing.T) {
 	for _, change := range []string{"different id", "different channel", "different parent", "different revision", "external URL", "URL fragment", "malformed JSON", "missing version"} {
 		t.Run(change, func(t *testing.T) {
@@ -154,6 +161,7 @@ type failingDeliveryStore struct {
 	updateErr, snapshotErr error
 }
 
+// Update injects a DDM update failure or delegates to the store.
 func (s failingDeliveryStore) Update(ctx context.Context, fn func(ddm.Tx) error) error {
 	if s.updateErr != nil {
 		return s.updateErr
@@ -161,6 +169,7 @@ func (s failingDeliveryStore) Update(ctx context.Context, fn func(ddm.Tx) error)
 	return s.Store.Update(ctx, fn)
 }
 
+// Snapshot injects a snapshot-read failure or delegates to the store.
 func (s failingDeliveryStore) Snapshot(ctx context.Context, id mdm.EnrollmentID) (*ddm.Snapshot, error) {
 	if s.snapshotErr != nil {
 		return nil, s.snapshotErr
@@ -168,6 +177,7 @@ func (s failingDeliveryStore) Snapshot(ctx context.Context, id mdm.EnrollmentID)
 	return s.Store.Snapshot(ctx, id)
 }
 
+// TestFetchPropagatesLookupFailures checks that fetch propagates lookup failures.
 func TestFetchPropagatesLookupFailures(t *testing.T) {
 	for _, operation := range []string{"compatibility", "snapshot", "target", "profile data"} {
 		t.Run(operation, func(t *testing.T) {
@@ -210,6 +220,7 @@ func TestFetchPropagatesLookupFailures(t *testing.T) {
 	}
 }
 
+// TestExpanderOnlyBindsLocalProfileURLs checks that expander only binds local profile URLs.
 func TestExpanderOnlyBindsLocalProfileURLs(t *testing.T) {
 	expander := configurationprofile.Expander{BaseURL: "https://mdm.example/"}
 	id := mdm.EnrollmentID{ID: "device", Channel: mdm.ChannelDevice}

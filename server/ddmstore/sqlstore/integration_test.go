@@ -81,6 +81,7 @@ func runShared(t *testing.T, db *sql.DB, d sqlcommon.Dialect, cascade string) {
 	}
 }
 
+// TestContractPostgres runs the shared DDM SQL store suite against PostgreSQL.
 func TestContractPostgres(t *testing.T) {
 	dsn := os.Getenv("TEST_POSTGRES_DSN")
 	if dsn == "" {
@@ -96,6 +97,7 @@ func TestContractPostgres(t *testing.T) {
 	runShared(t, db, postgres.Dialect, " CASCADE")
 }
 
+// TestContractMySQL runs the shared DDM SQL store suite against MySQL.
 func TestContractMySQL(t *testing.T) {
 	dsn := os.Getenv("TEST_MYSQL_DSN")
 	if dsn == "" {

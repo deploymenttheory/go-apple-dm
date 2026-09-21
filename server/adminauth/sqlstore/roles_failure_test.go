@@ -11,6 +11,7 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/server/sqlstore/sqlite"
 )
 
+// TestAuthorityWritesRollbackOnStorageFailure checks authority writes rollback on storage failure.
 func TestAuthorityWritesRollbackOnStorageFailure(t *testing.T) {
 	for _, tc := range []struct{ name, damage, operation string }{
 		{"create-lock", "DROP TABLE admin_policy_version", "create"},
@@ -86,6 +87,7 @@ func TestAuthorityWritesRollbackOnStorageFailure(t *testing.T) {
 	}
 }
 
+// TestRoleOperationsRejectUnreadableAuthority checks role operations reject unreadable authority.
 func TestRoleOperationsRejectUnreadableAuthority(t *testing.T) {
 	for _, tc := range []struct{ name, damage, operation string }{
 		{"role-table", "DROP TABLE admin_roles", "put"},
@@ -130,6 +132,8 @@ func TestRoleOperationsRejectUnreadableAuthority(t *testing.T) {
 	}
 }
 
+// TestBootstrapStorageFailuresDoNotIssueCredential checks that bootstrap storage failures do not
+// issue credential.
 func TestBootstrapStorageFailuresDoNotIssueCredential(t *testing.T) {
 	for _, damage := range []string{"DROP TABLE admin_policy_version", "UPDATE admin_policy_version SET initialized = 'invalid'", "DROP TABLE admin_principals"} {
 		t.Run(damage, func(t *testing.T) {
@@ -145,6 +149,8 @@ func TestBootstrapStorageFailuresDoNotIssueCredential(t *testing.T) {
 	}
 }
 
+// TestRoleMigrationFailurePreservesLegacyMemberships checks that role migration failure preserves
+// legacy memberships.
 func TestRoleMigrationFailurePreservesLegacyMemberships(t *testing.T) {
 	for _, tc := range []struct{ name, damage string }{
 		{"invalid-role", "UPDATE admin_principals SET roles = 'invalid/name'"},

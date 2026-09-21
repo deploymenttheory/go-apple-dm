@@ -20,6 +20,8 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/testpki"
 )
 
+// issuePush issues a push certificate for the CSR's key with the supplied topic and validity
+// window.
 func issuePush(t *testing.T, ca *testpki.CA, csrPEM []byte, topic string, start, end time.Time) []byte {
 	t.Helper()
 	block, _ := pem.Decode(csrPEM)
@@ -39,6 +41,8 @@ func issuePush(t *testing.T, ca *testpki.CA, csrPEM []byte, topic string, start,
 	return pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: der})
 }
 
+// TestAnnualPushRenewalSurvivesRestartAndOriginalExpiry checks that annual push renewal survives
+// restart and original expiry.
 func TestAnnualPushRenewalSurvivesRestartAndOriginalExpiry(t *testing.T) {
 	ctx := t.Context()
 	now := time.Now().UTC()
@@ -144,6 +148,8 @@ func TestAnnualPushRenewalSurvivesRestartAndOriginalExpiry(t *testing.T) {
 	}
 }
 
+// TestConcurrentRequestsCreateOnePendingRevision checks concurrent requests create one pending
+// revision.
 func TestConcurrentRequestsCreateOnePendingRevision(t *testing.T) {
 	m := &lifecycle.Manager{Store: state.NewMemory()}
 	req := lifecycle.Request{ID: "vendor", Kind: lifecycle.Vendor, Subject: pkix.Name{CommonName: "vendor"}}
@@ -163,6 +169,7 @@ func TestConcurrentRequestsCreateOnePendingRevision(t *testing.T) {
 	}
 }
 
+// TestLabHTTPSHasSeparateCAAndValidHostnames checks lab HTTPS has separate CA and valid hostnames.
 func TestLabHTTPSHasSeparateCAAndValidHostnames(t *testing.T) {
 	ctx := t.Context()
 	m := &lifecycle.Manager{Store: state.NewMemory()}

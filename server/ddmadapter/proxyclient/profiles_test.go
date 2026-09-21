@@ -10,6 +10,7 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/server/ddmadapter/proxyclient"
 )
 
+// TestProfileFetcherRejectsInvalidInput checks that profile fetcher rejects invalid input.
 func TestProfileFetcherRejectsInvalidInput(t *testing.T) {
 	if fetch, err := proxyclient.ConfigurationProfiles(proxyclient.Config{}); !errors.Is(err, proxyclient.ErrBadURL) || fetch != nil {
 		t.Fatalf("invalid configuration: %v", err)
@@ -32,6 +33,7 @@ func TestProfileFetcherRejectsInvalidInput(t *testing.T) {
 	}
 }
 
+// TestProfileFetcherDoesNotFollowRedirects checks that profile fetcher does not follow redirects.
 func TestProfileFetcherDoesNotFollowRedirects(t *testing.T) {
 	var calls atomic.Int32
 	target := serve(t, http.HandlerFunc(func(http.ResponseWriter, *http.Request) { calls.Add(1) }))

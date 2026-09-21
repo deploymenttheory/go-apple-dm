@@ -16,6 +16,7 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/server/sqlstore/sqlcommon"
 )
 
+// TestPersistentBlueprints checks blueprint publication against persistent SQL backends.
 func TestPersistentBlueprints(t *testing.T) {
 	for _, dialect := range []sqlcommon.Dialect{postgres.Dialect, mysql.Dialect} {
 		t.Run(dialect.Name, func(t *testing.T) {

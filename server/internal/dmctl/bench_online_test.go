@@ -13,6 +13,7 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/server/internal/bench"
 )
 
+// TestBenchCommandsUseMaintainedRuntime checks bench commands use maintained runtime.
 func TestBenchCommandsUseMaintainedRuntime(t *testing.T) {
 	env := noConfig(t)
 	dir := t.TempDir()

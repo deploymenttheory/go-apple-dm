@@ -5,8 +5,8 @@
 //
 // Serve validates listener security, builds the configured application and runs
 // it until cancellation or a serving failure. It supports configured certificate
-// files and managed HTTPS identities. Plain HTTP is restricted to loopback;
-// the DDM role additionally requires an explicit test option.
+// files and managed HTTPS identities. The unified reference server uses a local
+// declaration engine. Plain HTTP is restricted to literal loopback addresses.
 //
 // ServeListener uses the same lifecycle with a caller-bound listener, retaining
 // an ephemeral port throughout application setup. It owns closing the listener,

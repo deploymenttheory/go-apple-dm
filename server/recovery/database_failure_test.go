@@ -20,6 +20,7 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/server/sqlstore/sqlite"
 )
 
+// TestTypedRowsRoundTripAndRejectCorruption checks typed rows round trip and reject corruption.
 func TestTypedRowsRoundTripAndRejectCorruption(t *testing.T) {
 	for _, value := range []any{nil, true, int64(-12), 3.25, "text", []byte{0, 255, 0}, time.Date(2026, 9, 13, 1, 2, 3, 456000, time.UTC)} {
 		encoded, err := encodeCell(value, "BLOB")
@@ -44,6 +45,7 @@ func TestTypedRowsRoundTripAndRejectCorruption(t *testing.T) {
 	}
 }
 
+// TestRecoveryRequiresCompiledValidSchema checks that recovery requires compiled valid schema.
 func TestRecoveryRequiresCompiledValidSchema(t *testing.T) {
 	for _, set := range []sqlcommon.MigrationSet{
 		{Table: "schema"},
@@ -78,6 +80,7 @@ func TestRecoveryRequiresCompiledValidSchema(t *testing.T) {
 	}
 }
 
+// TestSnapshotFilesystemAndDatabaseFailures checks snapshot filesystem and database failures.
 func TestSnapshotFilesystemAndDatabaseFailures(t *testing.T) {
 	s := sqlFixture(t, emptySQLite(t), sqlite.Dialect)
 	ctx, cancel := context.WithCancel(t.Context())
@@ -126,6 +129,8 @@ func TestSnapshotFilesystemAndDatabaseFailures(t *testing.T) {
 	}
 }
 
+// TestRestoreRejectsCorruptRowsBeforeCommit checks that restore rejects corrupt rows before
+// commit.
 func TestRestoreRejectsCorruptRowsBeforeCommit(t *testing.T) {
 	for _, corrupt := range []string{"missing-file", "malformed-json", "wrong-count", "wrong-type", "constraint", "trailing"} {
 		t.Run(corrupt, func(t *testing.T) {
@@ -168,10 +173,12 @@ type failingQueryer struct {
 	exec, failAt int
 }
 
+// QueryContext returns a synthetic query failure.
 func (f *failingQueryer) QueryContext(context.Context, string, ...any) (*sql.Rows, error) {
 	return nil, errors.New("query failed")
 }
 
+// ExecContext counts executions and fails the configured write.
 func (f *failingQueryer) ExecContext(context.Context, string, ...any) (sql.Result, error) {
 	f.exec++
 	if f.exec == f.failAt {
@@ -180,6 +187,7 @@ func (f *failingQueryer) ExecContext(context.Context, string, ...any) (sql.Resul
 	return nil, nil
 }
 
+// QueryRowContext returns queued fixture row values, or a failing query when they are exhausted.
 func (f *failingQueryer) QueryRowContext(ctx context.Context, _ string, _ ...any) *sql.Row {
 	if len(f.rows) == 0 {
 		return f.db.QueryRowContext(ctx, "SELECT missing FROM missing_table")
@@ -190,6 +198,8 @@ func (f *failingQueryer) QueryRowContext(ctx context.Context, _ string, _ ...any
 	return f.db.QueryRowContext(ctx, query, row...)
 }
 
+// TestCatalogAndSequenceFailuresRefuseRecovery checks catalog and sequence failures refuse
+// recovery.
 func TestCatalogAndSequenceFailuresRefuseRecovery(t *testing.T) {
 	db := emptySQLite(t)
 	for _, d := range []sqlcommon.Dialect{sqlite.Dialect, postgres.Dialect, mysql.Dialect} {
@@ -226,6 +236,8 @@ func TestCatalogAndSequenceFailuresRefuseRecovery(t *testing.T) {
 	}
 }
 
+// TestSnapshotRejectsBrokenCompiledAndStoredSchemas checks that snapshot rejects broken compiled
+// and stored schemas.
 func TestSnapshotRejectsBrokenCompiledAndStoredSchemas(t *testing.T) {
 	for _, fault := range []string{"missing migration files", "wrong version", "corrupt cursor", "wrong backend"} {
 		t.Run(fault, func(t *testing.T) {
@@ -251,6 +263,8 @@ func TestSnapshotRejectsBrokenCompiledAndStoredSchemas(t *testing.T) {
 	}
 }
 
+// TestRestoreRejectsAmbiguousSnapshotCatalog checks that restore rejects ambiguous snapshot
+// catalog.
 func TestRestoreRejectsAmbiguousSnapshotCatalog(t *testing.T) {
 	s := sqlFixture(t, emptySQLite(t), sqlite.Dialect)
 	dir := filepath.Join(t.TempDir(), "snapshot")
@@ -286,6 +300,8 @@ func TestRestoreRejectsAmbiguousSnapshotCatalog(t *testing.T) {
 	}
 }
 
+// TestRestoreTableRefusesUnavailableOrUnsafeDestinationSchema checks that restore table refuses
+// unavailable or unsafe destination schema.
 func TestRestoreTableRefusesUnavailableOrUnsafeDestinationSchema(t *testing.T) {
 	s := SQL{DB: emptySQLite(t), Dialect: sqlite.Dialect}
 	for _, query := range []string{`CREATE TABLE invalid_column ("bad-column" TEXT)`, `CREATE VIEW unwriteable AS SELECT 'value' AS column_name`} {
@@ -306,6 +322,8 @@ func TestRestoreTableRefusesUnavailableOrUnsafeDestinationSchema(t *testing.T) {
 	}
 }
 
+// TestRestoreRequiresReadableSchemaAndEmptyConnection checks that restore requires readable schema
+// and empty connection.
 func TestRestoreRequiresReadableSchemaAndEmptyConnection(t *testing.T) {
 	source := sqlFixture(t, emptySQLite(t), sqlite.Dialect)
 	dir := filepath.Join(t.TempDir(), "snapshot")

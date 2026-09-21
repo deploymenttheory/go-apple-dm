@@ -27,6 +27,7 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/server/statestore"
 )
 
+// emptySQLite opens an empty temporary SQLite database and registers cleanup.
 func emptySQLite(t *testing.T) *sql.DB {
 	t.Helper()
 	db, err := sql.Open(
@@ -40,6 +41,7 @@ func emptySQLite(t *testing.T) *sql.DB {
 	return db
 }
 
+// sqlFixture migrates every reference-server schema into the supplied SQL database.
 func sqlFixture(t *testing.T, db *sql.DB, d sqlcommon.Dialect) SQL {
 	t.Helper()
 	sets, err := ServerSchema(d)
@@ -54,11 +56,14 @@ func sqlFixture(t *testing.T, db *sql.DB, d sqlcommon.Dialect) SQL {
 	return SQL{DB: db, Dialect: d, Schema: sets}
 }
 
+// TestSQLiteDatabaseRecovery checks SQLite database recovery.
 func TestSQLiteDatabaseRecovery(t *testing.T) {
 	source := sqlFixture(t, emptySQLite(t), sqlite.Dialect)
 	exerciseSQLRecovery(t, source, func() *sql.DB { return emptySQLite(t) })
 }
 
+// exerciseSQLRecovery checks SQL recovery preservation, encrypted snapshots, sequence
+// monotonicity, delivery state, and rejection of invalid or occupied targets.
 func exerciseSQLRecovery(t *testing.T, source SQL, target func() *sql.DB) {
 	t.Helper()
 	ctx := t.Context()
@@ -240,6 +245,8 @@ func exerciseSQLRecovery(t *testing.T, source SQL, target func() *sql.DB) {
 	}
 }
 
+// fenceForSnapshot starts and drains two maintenance participants, rejects late registration, and
+// returns their cleanup function.
 func fenceForSnapshot(t *testing.T, s SQL) func() {
 	t.Helper()
 	control, err := maintenance.Open(t.Context(), s.DB, s.Dialect, false)
@@ -287,6 +294,8 @@ func fenceForSnapshot(t *testing.T, s SQL) func() {
 	}
 }
 
+// TestSnapshotRejectsUnregisteredAndIncompleteSchema checks that snapshot rejects unregistered and
+// incomplete schema.
 func TestSnapshotRejectsUnregisteredAndIncompleteSchema(t *testing.T) {
 	s := sqlFixture(t, emptySQLite(t), sqlite.Dialect)
 	if _, err := s.DB.ExecContext(
@@ -321,6 +330,8 @@ func TestSnapshotRejectsUnregisteredAndIncompleteSchema(t *testing.T) {
 	}
 }
 
+// TestDatabaseRejectsCorruptMetadataAndRollsBackRows checks that database rejects corrupt metadata
+// and rolls back rows.
 func TestDatabaseRejectsCorruptMetadataAndRollsBackRows(t *testing.T) {
 	s := sqlFixture(t, emptySQLite(t), sqlite.Dialect)
 	dir := filepath.Join(t.TempDir(), "database")

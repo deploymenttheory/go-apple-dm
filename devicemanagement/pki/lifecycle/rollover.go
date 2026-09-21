@@ -35,13 +35,18 @@ type Migration struct {
 	Generation   int64     `json:"generation"`
 }
 
-func rolloverKey(id, rev string) string     { return "pki/lifecycle/rollover/" + id + "/" + rev }
+// rolloverKey constructs the namespaced key for rollover state.
+func rolloverKey(id, rev string) string { return "pki/lifecycle/rollover/" + id + "/" + rev }
+
+// migrationPrefix constructs the namespaced key for migration state.
 func migrationPrefix(id, rev string) string { return "pki/lifecycle/migration/" + id + "/" + rev + "/" }
 
+// migrationKey constructs the namespaced key for migration state.
 func migrationKey(id, rev, device string) string {
 	return migrationPrefix(id, rev) + fingerprint([]byte(device))
 }
 
+// getJSON reads and decodes a workflow record from state storage.
 func getJSON(ctx context.Context, s state.Reader, key string, out any) error {
 	r, err := s.Get(ctx, key)
 	if err != nil {
@@ -50,6 +55,7 @@ func getJSON(ctx context.Context, s state.Reader, key string, out any) error {
 	return json.Unmarshal(r.Value, out)
 }
 
+// putJSON encodes a workflow record through the supplied state transaction.
 func putJSON(ctx context.Context, tx state.Tx, key string, v any) error {
 	b, err := json.Marshal(v)
 	if err != nil {
@@ -104,6 +110,8 @@ func (m *Manager) PrepareRollover(ctx context.Context, id, rev string, devices [
 	return out, err
 }
 
+// Rollover loads the issuer rollover associated with an identity and target revision. An
+// invalid identity ID or missing workflow returns an error.
 func (m *Manager) Rollover(ctx context.Context, id, rev string) (Rollover, error) {
 	if _, err := key(id); err != nil {
 		return Rollover{}, err

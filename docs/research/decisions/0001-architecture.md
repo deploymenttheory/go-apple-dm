@@ -30,7 +30,7 @@ Separate modules let consumers use protocol packages without the server's databa
 
 ## Constraints
 
-The reference server has no management UI, inventory product, or fleet policy system. Its internal split-deployment protocol is specific to this project; it does not implement NanoMDM's `-dm` header contract. Hardware compatibility requires testing on Apple devices.
+The reference server has no management UI, inventory product, or fleet policy system. Its reusable proxy-adapter protocol is specific to this project. The reference binary uses in-process DDM. Hardware compatibility requires testing on Apple devices.
 
 ## Verification
 

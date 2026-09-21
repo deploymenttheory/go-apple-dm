@@ -5638,7 +5638,33 @@ svg[data-purpose-filter] g[data-purpose-highlight] > path { stroke-width: 2.4; }
           <li>&bull; <a href="https://developer.apple.com/documentation/devicemanagement/onboarding-users-with-account-driven-enrollment" target="_blank" rel="noopener noreferrer">Onboarding users with account-driven enrollment</a></li>
           <li>&bull; <a href="https://developer.apple.com/documentation/devicemanagement/deploying-device-management-enrollment-profiles" target="_blank" rel="noopener noreferrer">Deploying device management enrollment profiles</a></li>
           <li>&bull; <a href="https://developer.apple.com/documentation/devicemanagement/mdm" target="_blank" rel="noopener noreferrer">MDM payload</a></li>
-          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/7500eb25e50a2913338339d5fced18dc7f41fdc3/devicemanagement/mdmprotocol/enroll/accountdriven/handler.go" target="_blank" rel="noopener noreferrer">Implementation</a></li>
+          <li>&bull; <a href="https://developer.apple.com/documentation/devicemanagement/implementing-the-simple-authentication-account-driven-enrollment-flow" target="_blank" rel="noopener noreferrer">Simple account authentication</a></li>
+          <li>&bull; <a href="https://developer.apple.com/documentation/devicemanagement/implementing-the-oauth2-authentication-account-driven-enrollment-flow" target="_blank" rel="noopener noreferrer">OAuth 2 account authentication</a></li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-dot artifact"></div>
+          <h3>Implementation references</h3>
+        </div>
+        <ul>
+          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/devicemanagement/mdmprotocol/enroll/discovery/discovery.go" target="_blank" rel="noopener noreferrer">discovery: Discovery</a></li>
+          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/devicemanagement/mdmprotocol/enroll/accountdriven/handler.go" target="_blank" rel="noopener noreferrer">account: Account endpoint</a></li>
+          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/devicemanagement/mdmprotocol/enroll/accountdriven/challenge.go" target="_blank" rel="noopener noreferrer">idp: Authentication</a></li>
+          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/devicemanagement/mdmprotocol/enroll/accountdriven/associations.go" target="_blank" rel="noopener noreferrer">profile: Profile / issuer</a></li>
+          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/devicemanagement/mdmprotocol/enroll/accountdriven/hook.go" target="_blank" rel="noopener noreferrer">core: MDM service</a></li>
+          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/devicemanagement/mdmprotocol/enroll/accountdriven/oauth2.go" target="_blank" rel="noopener noreferrer">OAuth token verification</a></li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-dot artifact"></div>
+          <h3>Implementation references (continued)</h3>
+        </div>
+        <ul>
+          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/server/service/checkin.go" target="_blank" rel="noopener noreferrer">Check-in persistence</a></li>
         </ul>
       </div>
     </div>

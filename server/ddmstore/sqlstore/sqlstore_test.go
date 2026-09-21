@@ -70,6 +70,7 @@ func hardError(t *testing.T, name string, err error) {
 	}
 }
 
+// TestContract runs the shared DDM store suite against SQLite.
 func TestContract(t *testing.T) {
 	t.Parallel()
 	ddmtest.RunAll(t, func(t *testing.T) ddm.Store {
@@ -78,6 +79,8 @@ func TestContract(t *testing.T) {
 	})
 }
 
+// TestOpenMigrates checks DDM store opening and migrations without modifying the MDM schema
+// version.
 func TestOpenMigrates(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
@@ -135,6 +138,8 @@ func TestOpenMigrates(t *testing.T) {
 	}
 }
 
+// TestOpenSkipMigrate checks explicit DDM migration skipping and errors until the schema is
+// installed.
 func TestOpenSkipMigrate(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
@@ -157,6 +162,8 @@ func TestOpenSkipMigrate(t *testing.T) {
 	}
 }
 
+// TestOpenUnsupportedDialect checks unsupported SQL dialect rejection across store and migration
+// APIs.
 func TestOpenUnsupportedDialect(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
@@ -185,6 +192,8 @@ func TestOpenUnsupportedDialect(t *testing.T) {
 	}
 }
 
+// TestMigrateRollbackVersion checks migration idempotence, rollback, schema versions, and
+// conflicting or damaged schemas.
 func TestMigrateRollbackVersion(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
@@ -304,6 +313,7 @@ func TestMigrationsAgreeAcrossDialects(t *testing.T) {
 	}
 }
 
+// countStatements counts SQL statements starting with the supplied prefix.
 func countStatements(stmts []string, prefix string) int {
 	n := 0
 	for _, s := range stmts {
@@ -576,6 +586,7 @@ func TestWriteFailuresSurface(t *testing.T) {
 	}
 }
 
+// TestUniqueViolationMapsToConflict checks unique violation maps to conflict.
 func TestUniqueViolationMapsToConflict(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
@@ -609,6 +620,7 @@ func TestUniqueViolationMapsToConflict(t *testing.T) {
 	}
 }
 
+// TestCanonicalBytesRoundTripExactly checks canonical bytes round trip exactly.
 func TestCanonicalBytesRoundTripExactly(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
@@ -702,6 +714,7 @@ func TestCanonicalBytesRoundTripExactly(t *testing.T) {
 	}
 }
 
+// TestBadCursor checks invalid DDM status cursors and paginated key boundaries.
 func TestBadCursor(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()

@@ -23,6 +23,7 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/testpki"
 )
 
+// appPair creates a certificate pair carrying the app push topic extension.
 func appPair(t *testing.T, ca *testpki.CA, topic string) tls.Certificate {
 	t.Helper()
 	id, err := ca.IssuePush(topic, time.Now().Add(-time.Hour))
@@ -41,6 +42,7 @@ func appPair(t *testing.T, ca *testpki.CA, topic string) tls.Certificate {
 	return tls.Certificate{Certificate: [][]byte{der}, PrivateKey: id.Key}
 }
 
+// TestCertificateHTTP2AndRotation checks certificate http2 and rotation.
 func TestCertificateHTTP2AndRotation(t *testing.T) {
 	t.Parallel()
 	ca, err := testpki.NewCA("client CA")
@@ -155,6 +157,7 @@ func TestCertificateHTTP2AndRotation(t *testing.T) {
 	}
 }
 
+// TestCloseCancelsActiveSend checks that close cancels active send.
 func TestCloseCancelsActiveSend(t *testing.T) {
 	t.Parallel()
 	ca, _ := testpki.NewCA("active")
@@ -209,6 +212,7 @@ func TestCloseCancelsActiveSend(t *testing.T) {
 	}
 }
 
+// TestAppValidationAndBackground checks app validation and background.
 func TestAppValidationAndBackground(t *testing.T) {
 	t.Parallel()
 	ca, _ := testpki.NewCA("app")

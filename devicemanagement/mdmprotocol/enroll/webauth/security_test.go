@@ -11,6 +11,7 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/state"
 )
 
+// TestCallbackRequiresOriginalBrowser checks that callback requires original browser.
 func TestCallbackRequiresOriginalBrowser(t *testing.T) {
 	h := newHarness(t, nil)
 	callback := h.callbackURL("/begin?serial=original")
@@ -36,6 +37,7 @@ func TestCallbackRequiresOriginalBrowser(t *testing.T) {
 	}
 }
 
+// TestParallelBrowserFlowsAndHEAD checks parallel browser flows and head.
 func TestParallelBrowserFlowsAndHEAD(t *testing.T) {
 	h := newHarness(t, nil)
 	a := h.callbackURL("/begin?serial=a")
@@ -64,6 +66,7 @@ func TestParallelBrowserFlowsAndHEAD(t *testing.T) {
 	}
 }
 
+// TestSharedBrowserBindingConsumption checks shared browser binding consumption.
 func TestSharedBrowserBindingConsumption(t *testing.T) {
 	ctx := context.Background()
 	backend := state.NewMemory()
@@ -87,6 +90,8 @@ func TestSharedBrowserBindingConsumption(t *testing.T) {
 	}
 }
 
+// TestSharedBrowserStateRejectsInvalidAndDuplicateKeys checks that shared browser state rejects
+// invalid and duplicate keys.
 func TestSharedBrowserStateRejectsInvalidAndDuplicateKeys(t *testing.T) {
 	ctx := t.Context()
 	empty := &webauth.SharedStore{}

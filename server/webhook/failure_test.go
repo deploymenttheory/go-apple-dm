@@ -22,6 +22,7 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/server/sqlstore/sqlcommon"
 )
 
+// TestInvalidConfigurationAndInputs checks invalid configuration and inputs.
 func TestInvalidConfigurationAndInputs(t *testing.T) {
 	s := testStore(t, Config{})
 	for _, cfg := range []Config{{PayloadRetention: -1}, {PayloadRetention: time.Hour, MetadataRetention: time.Minute}, {MaxBody: 1}, {MaxBody: 65 << 20}, {PrivateNetworks: []string{"invalid"}}, {RootCAFile: filepath.Join(t.TempDir(), "missing")}} {
@@ -104,6 +105,7 @@ func TestInvalidConfigurationAndInputs(t *testing.T) {
 	}
 }
 
+// TestCaptureErrorsRollBackEveryDestination checks capture errors roll back every destination.
 func TestCaptureErrorsRollBackEveryDestination(t *testing.T) {
 	for _, table := range []string{"webhook_messages", "event_records", "event_deliveries"} {
 		t.Run(table, func(t *testing.T) {
@@ -146,6 +148,8 @@ func TestCaptureErrorsRollBackEveryDestination(t *testing.T) {
 	}
 }
 
+// TestSubscriptionChangesRollBackCredentialsAndBacklog checks subscription changes roll back
+// credentials and backlog.
 func TestSubscriptionChangesRollBackCredentialsAndBacklog(t *testing.T) {
 	for _, table := range []string{"event_deliveries", "webhook_subscriptions"} {
 		t.Run(table, func(t *testing.T) {
@@ -183,6 +187,7 @@ func TestSubscriptionChangesRollBackCredentialsAndBacklog(t *testing.T) {
 	}
 }
 
+// TestPagedFanoutAndRetentionLoop checks paged fanout and retention loop.
 func TestPagedFanoutAndRetentionLoop(t *testing.T) {
 	s := testStore(t, Config{MaxBody: 1024})
 	// More than one configuration page must participate in the same capture.
@@ -225,6 +230,8 @@ func TestPagedFanoutAndRetentionLoop(t *testing.T) {
 	})
 }
 
+// TestCorruptEncryptedStateAndUnavailableDatabase checks corrupt encrypted state and unavailable
+// database.
 func TestCorruptEncryptedStateAndUnavailableDatabase(t *testing.T) {
 	s := testStore(t, Config{})
 	c := subscribe(t, s, PayloadPolicy{})
@@ -257,6 +264,7 @@ func TestCorruptEncryptedStateAndUnavailableDatabase(t *testing.T) {
 	}
 }
 
+// TestReplayNeverInventsMissingParts checks that replay never invents missing parts.
 func TestReplayNeverInventsMissingParts(t *testing.T) {
 	s := testStore(t, Config{})
 	subscribe(t, s, PayloadPolicy{})
@@ -289,6 +297,8 @@ func TestReplayNeverInventsMissingParts(t *testing.T) {
 	}
 }
 
+// TestRepeatedReplayPreservesAvailablePartsAndMissingReport checks that repeated replay preserves
+// available parts and missing report.
 func TestRepeatedReplayPreservesAvailablePartsAndMissingReport(t *testing.T) {
 	s := testStore(t, Config{})
 	subscribe(t, s, PayloadPolicy{FullJSON: true})
@@ -314,6 +324,8 @@ func TestRepeatedReplayPreservesAvailablePartsAndMissingReport(t *testing.T) {
 	}
 }
 
+// TestReplayPrefersCapturedJSONOverReplayPlaceholders checks replay prefers captured JSON over
+// replay placeholders.
 func TestReplayPrefersCapturedJSONOverReplayPlaceholders(t *testing.T) {
 	s := testStore(t, Config{})
 	subscribe(t, s, PayloadPolicy{RawRequest: true, RawResponse: true})
@@ -340,6 +352,7 @@ func TestReplayPrefersCapturedJSONOverReplayPlaceholders(t *testing.T) {
 	}
 }
 
+// TestRetentionFailurePreservesData checks that retention failure preserves data.
 func TestRetentionFailurePreservesData(t *testing.T) {
 	for _, spec := range []struct{ table, operation string }{{"event_deliveries", "UPDATE"}, {"webhook_messages", "UPDATE"}, {"event_deliveries", "DELETE"}, {"event_records", "DELETE"}, {"webhook_messages", "DELETE"}, {"webhook_replays", "DELETE"}} {
 		t.Run(spec.table+spec.operation, func(t *testing.T) {
@@ -366,6 +379,7 @@ func TestRetentionFailurePreservesData(t *testing.T) {
 	}
 }
 
+// TestPayloadAuthenticationAndExpiryFailures checks payload authentication and expiry failures.
 func TestPayloadAuthenticationAndExpiryFailures(t *testing.T) {
 	s := testStore(t, Config{})
 	c := subscribe(t, s, PayloadPolicy{RawRequest: true})
@@ -423,6 +437,7 @@ func TestPayloadAuthenticationAndExpiryFailures(t *testing.T) {
 	}
 }
 
+// TestPrivateTrustConfiguration checks private webhook trust configuration.
 func TestPrivateTrustConfiguration(t *testing.T) {
 	receiver := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { w.WriteHeader(204) }))
 	defer receiver.Close()

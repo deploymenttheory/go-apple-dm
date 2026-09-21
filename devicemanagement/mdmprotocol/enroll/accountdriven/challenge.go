@@ -58,6 +58,7 @@ func (c Challenge) Validate() error {
 	return fmt.Errorf("%w: method %q", ErrChallenge, c.Method)
 }
 
+// requireHTTPS requires a parseable absolute HTTPS challenge URL with a host.
 func requireHTTPS(name, raw string) error {
 	u, err := url.Parse(raw)
 	if err != nil || u.Scheme != "https" || u.Host == "" {

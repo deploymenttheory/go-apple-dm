@@ -169,6 +169,7 @@ type eventLog struct {
 	got []event.Event
 }
 
+// newEventLog creates an event bus whose subscriber records events under a mutex.
 func newEventLog() *eventLog {
 	l := &eventLog{bus: event.New()}
 	l.bus.Subscribe(event.All, func(_ context.Context, e event.Event) error {
@@ -201,6 +202,7 @@ type response struct {
 	body   []byte
 }
 
+// send sends a fixture request and captures the status, headers, and complete body.
 func (f *fixture) send(req *http.Request) *response {
 	f.t.Helper()
 	res, err := f.ts.Client().Do(req)
@@ -215,6 +217,7 @@ func (f *fixture) send(req *http.Request) *response {
 	return &response{status: res.StatusCode, header: res.Header, body: body}
 }
 
+// request builds an HTTP request using the test context, failing the test on error.
 func (f *fixture) request(method, target string, body []byte) *http.Request {
 	f.t.Helper()
 	req, err := http.NewRequestWithContext(f.t.Context(), method, target, bytes.NewReader(body))
@@ -224,11 +227,13 @@ func (f *fixture) request(method, target string, body []byte) *http.Request {
 	return req
 }
 
+// get sends a GET request through the fixture client.
 func (f *fixture) get(target string) *response {
 	f.t.Helper()
 	return f.send(f.request(http.MethodGet, target, nil))
 }
 
+// head sends a HEAD request through the fixture client.
 func (f *fixture) head(target string) *response {
 	f.t.Helper()
 	return f.send(f.request(http.MethodHead, target, nil))
@@ -299,6 +304,8 @@ func (f *fixture) register() *account {
 	return f.registerKey(newKey(f.t))
 }
 
+// registerKey registers an ACME account key and requires a successful response with an account
+// location.
 func (f *fixture) registerKey(key crypto.Signer) *account {
 	f.t.Helper()
 	res := f.newAccountRequest(key, map[string]any{"termsOfServiceAgreed": true})
@@ -363,6 +370,8 @@ func (f *fixture) begin(identifier string) *flow {
 	return f.beginAs(f.register(), identifier)
 }
 
+// beginAs creates an order for an account and captures its authorization, challenge, and
+// finalization URLs.
 func (f *fixture) beginAs(a *account, identifier string) *flow {
 	f.t.Helper()
 	res := a.post(f.url("/new-order"), orderRequest(identifier))
@@ -504,6 +513,7 @@ func orderRequest(identifier string) map[string]any {
 	}
 }
 
+// mustJSON encodes a JSON fixture, failing the test on error.
 func mustJSON(t *testing.T, v any) []byte {
 	t.Helper()
 	data, err := json.Marshal(v)
@@ -513,6 +523,7 @@ func mustJSON(t *testing.T, v any) []byte {
 	return data
 }
 
+// decode decodes the response JSON into T, failing the test on malformed JSON.
 func decode[T any](t *testing.T, r *response) T {
 	t.Helper()
 	var v T
@@ -522,6 +533,7 @@ func decode[T any](t *testing.T, r *response) T {
 	return v
 }
 
+// requireStatus requires the response to have the expected HTTP status.
 func requireStatus(t *testing.T, r *response, want int) {
 	t.Helper()
 	if r.status != want {

@@ -13,6 +13,7 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/server/internal/app"
 )
 
+// TestServeListenerUsesReservedSocket checks that serve listener uses reserved socket.
 func TestServeListenerUsesReservedSocket(t *testing.T) {
 	t.Parallel()
 	listener, err := (&net.ListenConfig{}).Listen(t.Context(), "tcp", "127.0.0.1:0")
@@ -75,6 +76,7 @@ func TestServeListenerUsesReservedSocket(t *testing.T) {
 	}
 }
 
+// TestServeListenerClosesOnStartupFailure checks serve listener closes on startup failure.
 func TestServeListenerClosesOnStartupFailure(t *testing.T) {
 	t.Parallel()
 	if err := ServeListener(t.Context(), app.Config{}, nil); !errors.Is(err, app.ErrConfig) {

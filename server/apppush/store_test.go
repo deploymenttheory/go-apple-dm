@@ -17,6 +17,8 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/server/statestore"
 )
 
+// TestCredentialContract checks sealed app push credentials, topic validation, renewal versions,
+// and reopening without stale credentials.
 func TestCredentialContract(t *testing.T) {
 	ctx := context.Background()
 	for _, backend := range []string{"inmem", "sqlite"} {
@@ -118,6 +120,7 @@ func TestCredentialContract(t *testing.T) {
 	}
 }
 
+// TestCredentialIntegrityAndPaging checks credential integrity and paging.
 func TestCredentialIntegrityAndPaging(t *testing.T) {
 	ctx := t.Context()
 	st := state.NewMemory()

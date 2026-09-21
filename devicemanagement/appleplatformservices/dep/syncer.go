@@ -309,6 +309,9 @@ func (s *Syncer) commit(ctx context.Context, current Cursor, page *DevicePage, n
 	return added, modified, deleted, nil
 }
 
+// commitPage checks the cursor fence and atomically writes a device page, fetch membership,
+// and the next cursor. The final fetch page also tombstones absent devices. Events are
+// published only after commit.
 func (s *Syncer) commitPage(ctx context.Context, current Cursor, page *DevicePage, next Cursor) (added, modified, deleted int, err error) {
 	phase := current.Phase
 	devs := Dedupe(page.Devices)
@@ -397,7 +400,8 @@ func (s *Syncer) eventType(ctx context.Context, tx Tx, d *Device) (event.Type, e
 
 // Dedupe collapses repeated serials on one page, keeping the record with
 // the latest op_date; on a tie a deleted op wins, otherwise the later
-// record on the page (Apple sorts pages chronologically).
+// record on the page. Tie-breaking is local policy; callers must not infer
+// ordering guarantees beyond Apple's documented op_date comparison.
 func Dedupe(devs []Device) []Device {
 	index := make(map[string]int, len(devs))
 	out := make([]Device, 0, len(devs))
@@ -428,6 +432,7 @@ func replaces(a, b Device) bool {
 	}
 }
 
+// opDate returns a device operation timestamp, treating an omitted timestamp as zero.
 func opDate(d Device) time.Time {
 	if d.OpDate == nil {
 		return time.Time{}
@@ -448,6 +453,8 @@ func (s *Syncer) startFetch(ctx context.Context, current Cursor) (Cursor, error)
 	return next, err
 }
 
+// checkCursor locks the account and rejects responses whose revision, generation, value, or
+// phase no longer matches the stored cursor.
 func checkCursor(ctx context.Context, tx Tx, account string, expected Cursor) error {
 	if err := tx.LockAccount(ctx, account); err != nil {
 		return err

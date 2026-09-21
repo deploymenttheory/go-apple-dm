@@ -12,6 +12,7 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/storage"
 )
 
+// exportCursor encodes an enrollment position for resumable export pagination.
 func exportCursor(parentID, id string) string { return parentID + "\x00" + id }
 
 // Export implements storage.MigrationStore (decision record 0017): device

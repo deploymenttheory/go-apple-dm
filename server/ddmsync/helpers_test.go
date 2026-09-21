@@ -24,6 +24,7 @@ import (
 
 var t0 = time.Date(2026, 9, 1, 12, 0, 0, 0, time.UTC)
 
+// declJSON encodes a declaration envelope, panicking if the fixture cannot be encoded.
 func declJSON(typ, id string, payload map[string]any) []byte {
 	b, err := json.Marshal(map[string]any{"Type": typ, "Identifier": id, "Payload": payload})
 	if err != nil {
@@ -44,6 +45,8 @@ type harness struct {
 	events []event.Event
 }
 
+// newHarness creates a DDM engine harness with an in-memory store, fake clock, and captured events
+// and logs.
 func newHarness(t *testing.T, opts ...func(*ddm.Config)) *harness {
 	t.Helper()
 	h := &harness{t: t, store: ddminmem.New(), clock: clock.NewFake(t0), bus: event.New(), logs: &bytes.Buffer{}}
@@ -68,10 +71,12 @@ func newHarness(t *testing.T, opts ...func(*ddm.Config)) *harness {
 	return h
 }
 
+// configTest builds a management test declaration with the supplied echo value.
 func configTest(id, echo string) []byte {
 	return declJSON(schemaddm.DeclarationTypeManagementTest, id, map[string]any{"Echo": echo})
 }
 
+// report encodes a status report with optional FullReport and Errors fields.
 func report(t *testing.T, full *bool, items map[string]any, errs []map[string]any) []byte {
 	t.Helper()
 	m := map[string]any{"StatusItems": items}
@@ -88,8 +93,10 @@ func report(t *testing.T, full *bool, items map[string]any, errs []map[string]an
 	return b
 }
 
+// boolp returns a pointer to the supplied boolean.
 func boolp(b bool) *bool { return &b }
 
+// declarationsItem builds a management declaration-status item with non-nil declaration arrays.
 func declarationsItem(activations, configurations []map[string]any) map[string]any {
 	if activations == nil {
 		activations = []map[string]any{}
@@ -102,6 +109,7 @@ func declarationsItem(activations, configurations []map[string]any) map[string]a
 	}}}
 }
 
+// row builds a declaration-status row with optional reasons.
 func row(identifier, token string, active bool, valid string, reasons ...map[string]any) map[string]any {
 	r := map[string]any{"identifier": identifier, "server-token": token, "active": active, "valid": valid, "reasons": []any{}}
 	if len(reasons) > 0 {
@@ -110,6 +118,7 @@ func row(identifier, token string, active bool, valid string, reasons ...map[str
 	return r
 }
 
+// Events returns a copy of captured events under the harness mutex.
 func (h *harness) Events() []event.Event {
 	h.mu.Lock()
 	defer h.mu.Unlock()

@@ -150,6 +150,8 @@ func CaptureBootstrap(
 	return b, writeJSONFile(filepath.Join(destination, "bootstrap.json"), b)
 }
 
+// validateURL validates the deployment public URL recorded in checkpoint bootstrap
+// settings.
 func (b Bootstrap) validateURL() error {
 	if b.Version != 1 || b.Setup == nil || b.SecretFiles == nil || b.Environment == nil {
 		return ErrInvalid
@@ -162,6 +164,9 @@ func (b Bootstrap) validateURL() error {
 	return nil
 }
 
+// Keyring loads the checkpoint's storage keys from its protected keys directory, retaining
+// the configured active and accepted key order. Invalid bootstrap key settings or
+// unreadable key files return errors.
 func (b Bootstrap) Keyring(ctx context.Context, directory string) (*crypt.Keyring, error) {
 	names := strings.Split(b.Environment["DM_STORAGE_KEYS"], ",")
 	for i := range names {
@@ -256,6 +261,7 @@ func (b Bootstrap) Install(directory, dsn string) (string, error) {
 	return path, writeJSONFile(path, b)
 }
 
+// sortedKeys returns map keys in deterministic lexical order.
 func sortedKeys(m map[string]string) []string {
 	keys := make([]string, 0, len(m))
 	for key := range m {

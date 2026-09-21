@@ -8,6 +8,7 @@ import (
 	"time"
 )
 
+// TestIssue checks issued certificate chains, distinct serials, and nil-key rejection.
 func TestIssue(t *testing.T) {
 	t.Parallel()
 	ca, err := NewCA("ca")
@@ -33,6 +34,7 @@ func TestIssue(t *testing.T) {
 	}
 }
 
+// TestIssuePushAndPEM checks issue push and PEM.
 func TestIssuePushAndPEM(t *testing.T) {
 	t.Parallel()
 	ca, err := NewCA("ca")

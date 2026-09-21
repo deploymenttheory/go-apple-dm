@@ -119,8 +119,10 @@ func Open(ctx context.Context, db *sql.DB, d sqlcommon.Dialect, o Options) (*Sto
 // DB exposes the pool for health checks and tests.
 func (s *Store) DB() *sql.DB { return s.db }
 
+// q rewrites query placeholders for the configured SQL dialect.
 func (s *Store) q(query string) string { return s.d.Rebind(query) }
 
+// wrap adds the store operation to an error while retaining the wrapped cause.
 func wrap(op string, err error) error { return fmt.Errorf("sqlstore: %s: %w", op, err) }
 
 const principalCols = "name, roles, root, token_id, token_at, expires_at, created_at, updated_at"
@@ -139,6 +141,8 @@ func (s *Store) CreatePrincipal(ctx context.Context, p adminauth.Principal, dige
 	return out, err
 }
 
+// createPrincipal inserts a principal and its credential digest into the current
+// transaction.
 func (s *Store) createPrincipal(ctx context.Context, p adminauth.Principal, digest string, now time.Time) (adminauth.Principal, error) {
 	if !adminauth.ValidName(p.Name) {
 		return adminauth.Principal{}, fmt.Errorf("%w: principal name %q", adminauth.ErrInvalid, p.Name)
@@ -317,6 +321,7 @@ func (s *Store) PutPolicy(ctx context.Context, p adminauth.Policy, now time.Time
 	return out, nil
 }
 
+// putPolicy stores policy source and activation state and advances the policy version.
 func (s *Store) putPolicy(ctx context.Context, tx *sql.Tx, p adminauth.Policy, now time.Time) (adminauth.Policy, error) {
 	if err := s.lock(ctx, tx); err != nil {
 		return adminauth.Policy{}, err
@@ -404,6 +409,7 @@ func (s *Store) DeletePolicy(ctx context.Context, name string) error {
 	})
 }
 
+// deletePolicy removes a policy document and advances the policy version.
 func (s *Store) deletePolicy(ctx context.Context, tx *sql.Tx, name string) error {
 	res, err := tx.ExecContext(ctx, s.q("DELETE FROM admin_policies WHERE name = ?"), name)
 	if err != nil {
@@ -439,6 +445,7 @@ func bumpVersion(ctx context.Context, tx *sql.Tx, d sqlcommon.Dialect) error {
 // scanner is the shared shape of *sql.Row and *sql.Rows.
 type scanner interface{ Scan(dest ...any) error }
 
+// scanPrincipal decodes a principal row and its credential lifecycle fields.
 func scanPrincipal(sc scanner) (adminauth.Principal, error) {
 	var (
 		p        adminauth.Principal
@@ -464,6 +471,7 @@ func scanPrincipal(sc scanner) (adminauth.Principal, error) {
 	return p, nil
 }
 
+// affected checks the affected-row count and maps a missing record to ErrNotFound.
 func affected(res sql.Result, what, name string) error {
 	n, err := res.RowsAffected()
 	if err != nil {
@@ -475,6 +483,7 @@ func affected(res sql.Result, what, name string) error {
 	return nil
 }
 
+// nullString converts an empty string to the database representation of absence.
 func nullString(s string) any {
 	if s == "" {
 		return nil
@@ -482,6 +491,7 @@ func nullString(s string) any {
 	return s
 }
 
+// nullTime converts an absent timestamp to the database representation of absence.
 func nullTime(t time.Time) any {
 	if t.IsZero() {
 		return nil
@@ -489,12 +499,14 @@ func nullTime(t time.Time) any {
 	return t.UTC()
 }
 
+// sortedRoles returns role names in deterministic order for storage.
 func sortedRoles(in []string) []string {
 	out := slices.Clone(in)
 	sort.Strings(out)
 	return slices.Compact(out)
 }
 
+// splitRoles decodes the stored role-name representation.
 func splitRoles(s string) []string {
 	if s == "" {
 		return nil

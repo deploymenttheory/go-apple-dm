@@ -9,6 +9,8 @@ import (
 	"net/url"
 )
 
+// runCertificates parses and executes the certificates subcommand, reporting argument and
+// operation failures to the CLI caller.
 func runCertificates(ctx context.Context, e *env, args []string) error {
 	if len(args) == 0 {
 		return fmt.Errorf("%w: certificates needs status, import, or revoke", ErrUsage)

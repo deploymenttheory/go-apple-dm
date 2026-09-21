@@ -32,6 +32,8 @@ type fixture struct {
 	depot  *ca.MemoryDepot
 }
 
+// newFixture creates a self-signed SCEP authority with an in-memory certificate depot and local
+// signer.
 func newFixture(t *testing.T) fixture {
 	t.Helper()
 	cert, key, err := ca.NewSelfSigned(ca.SelfSignedOptions{})
@@ -46,6 +48,7 @@ func newFixture(t *testing.T) fixture {
 	return fixture{caCert: cert, caKey: key, signer: signer, depot: depot}
 }
 
+// serve starts a TLS SCEP server and returns a client configured to trust it.
 func serve(t *testing.T, s *scep.Server) *scep.Client {
 	t.Helper()
 	srv := httptest.NewTLSServer(s.Handler())
@@ -53,6 +56,7 @@ func serve(t *testing.T, s *scep.Server) *scep.Client {
 	return scep.NewClient(srv.URL+"/scep", srv.Client())
 }
 
+// rsaKey generates a 2048-bit RSA private key, failing the test on error.
 func rsaKey(t *testing.T) *rsa.PrivateKey {
 	t.Helper()
 	k, err := rsa.GenerateKey(rand.Reader, 2048)
@@ -62,6 +66,8 @@ func rsaKey(t *testing.T) *rsa.PrivateKey {
 	return k
 }
 
+// TestClientEnrolls checks SCEP enrollment, policy application, challenge rejection, and renewal
+// with a fresh serial.
 func TestClientEnrolls(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t)
@@ -124,6 +130,7 @@ func TestClientEnrolls(t *testing.T) {
 	}
 }
 
+// TestCSRVerifierVeto checks that CSR verification and policy vetoes prevent SCEP issuance.
 func TestCSRVerifierVeto(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t)
@@ -147,6 +154,7 @@ func TestCSRVerifierVeto(t *testing.T) {
 	}
 }
 
+// TestCACertBundleAndHandlerErrors checks CA cert bundle and handler errors.
 func TestCACertBundleAndHandlerErrors(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t)
@@ -219,6 +227,7 @@ func TestCACertBundleAndHandlerErrors(t *testing.T) {
 	}
 }
 
+// b64 encodes bytes using padded standard base64.
 func b64(b []byte) string {
 	const tbl = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"
 	var sb strings.Builder
@@ -242,6 +251,8 @@ func b64(b []byte) string {
 	return sb.String()
 }
 
+// TestNewServerErrors checks rejection of unauthenticated SCEP issuance configuration, nil
+// signers, and unsupported RA keys.
 func TestNewServerErrors(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t)
@@ -260,6 +271,8 @@ func TestNewServerErrors(t *testing.T) {
 	}
 }
 
+// TestClientErrors checks SCEP client configuration, malformed responses, server errors, and
+// transport failures.
 func TestClientErrors(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
@@ -325,6 +338,7 @@ func TestClientErrors(t *testing.T) {
 	}
 }
 
+// TestClientUndecryptableCertRep checks client undecryptable cert rep.
 func TestClientUndecryptableCertRep(t *testing.T) {
 	t.Parallel()
 	// Return a CertRep for another request to exercise client decryption failure.
@@ -368,6 +382,8 @@ func TestClientUndecryptableCertRep(t *testing.T) {
 	}
 }
 
+// TestChallenges checks static, one-time, and HMAC challenges, including reuse, expiry, and
+// subject binding.
 func TestChallenges(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
@@ -449,6 +465,7 @@ func TestChallenges(t *testing.T) {
 	}
 }
 
+// TestPKIOperationSignerFailure checks PKI operation signer failure.
 func TestPKIOperationSignerFailure(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t)
@@ -461,14 +478,18 @@ func TestPKIOperationSignerFailure(t *testing.T) {
 
 type failSigner struct{ *ca.Local }
 
+// Sign returns a synthetic HSM-offline signing failure.
 func (failSigner) Sign(context.Context, *x509.CertificateRequest, ca.Policy) (*x509.Certificate, error) {
 	return nil, errors.New("hsm offline")
 }
 
+// newTestServer constructs a SCEP server with an allow-all fixture challenge verifier and supplied
+// options.
 func newTestServer(signer ca.Signer, cert *x509.Certificate, key crypto.Signer, opts ...scep.Option) (*scep.Server, error) {
 	return scep.NewServer(signer, cert, key, append([]scep.Option{scep.WithChallenge(allowTestChallenge{})}, opts...)...)
 }
 
 type allowTestChallenge struct{}
 
+// Verify accepts every challenge in this test fixture.
 func (allowTestChallenge) Verify(context.Context, string, *x509.CertificateRequest) error { return nil }

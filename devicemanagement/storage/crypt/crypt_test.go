@@ -39,6 +39,7 @@ func newRing(t *testing.T, keys Keys, p secrets.Provider) *Keyring {
 // failingProvider returns its error for every name.
 type failingProvider struct{ err error }
 
+// Get returns the configured secret-provider failure.
 func (f failingProvider) Get(context.Context, string) (secrets.Secret, error) {
 	return secrets.Secret{}, f.err
 }
@@ -49,11 +50,13 @@ type countingProvider struct {
 	calls map[string]int
 }
 
+// Get counts lookups by secret name and delegates to the wrapped provider.
 func (c *countingProvider) Get(ctx context.Context, name string) (secrets.Secret, error) {
 	c.calls[name]++
 	return c.inner.Get(ctx, name)
 }
 
+// TestSealOpenRoundTrip checks seal open round trip.
 func TestSealOpenRoundTrip(t *testing.T) {
 	k := newRing(t, Keys{Active: "v1"}, provider)
 	if k.Active() != "v1" {
@@ -109,6 +112,7 @@ func TestSealOpenRoundTrip(t *testing.T) {
 	}
 }
 
+// TestSealStrict checks strict encryption mode.
 func TestSealStrict(t *testing.T) {
 	k := newRing(t, Keys{Active: "v1", Strict: true}, provider)
 	if !k.Strict() {
@@ -116,6 +120,7 @@ func TestSealStrict(t *testing.T) {
 	}
 }
 
+// TestSealNonceFailure checks propagation of nonce-generation failure.
 func TestSealNonceFailure(t *testing.T) {
 	k := newRing(t, Keys{Active: "v1"}, provider)
 	orig := randReader
@@ -127,6 +132,8 @@ func TestSealNonceFailure(t *testing.T) {
 	}
 }
 
+// TestOpenRejectsTamper checks that tampered ciphertext yields an error without plaintext or key
+// metadata.
 func TestOpenRejectsTamper(t *testing.T) {
 	k := newRing(t, Keys{Active: "v1"}, provider)
 	aad := AAD("bootstrap_token", "device-1")
@@ -186,6 +193,7 @@ func TestOpenRejectsTamper(t *testing.T) {
 	}
 }
 
+// TestOpenRejectsWrongAAD checks that open rejects wrong aad.
 func TestOpenRejectsWrongAAD(t *testing.T) {
 	k := newRing(t, Keys{Active: "v1"}, provider)
 	sealed, err := k.Seal([]byte("secret"), AAD("unlock_token", "device-1"))
@@ -209,6 +217,7 @@ func TestOpenRejectsWrongAAD(t *testing.T) {
 	}
 }
 
+// TestOpenRejectsUnknownKey checks that open rejects unknown key.
 func TestOpenRejectsUnknownKey(t *testing.T) {
 	a := newRing(t, Keys{Active: "v1"}, provider)
 	b := newRing(t, Keys{Active: "v2"}, provider)
@@ -225,6 +234,7 @@ func TestOpenRejectsUnknownKey(t *testing.T) {
 	}
 }
 
+// TestOpenAcceptsRetiredKey checks that open accepts retired key.
 func TestOpenAcceptsRetiredKey(t *testing.T) {
 	a := newRing(t, Keys{Active: "v1"}, provider)
 	b := newRing(t, Keys{Active: "v2", Accepted: []string{"v1"}}, provider)
@@ -252,6 +262,8 @@ func TestOpenAcceptsRetiredKey(t *testing.T) {
 	}
 }
 
+// TestNewKeyringErrors checks keyring configuration errors and rejection without a partially
+// initialized ring.
 func TestNewKeyringErrors(t *testing.T) {
 	other := errors.New("backend down")
 	tests := []struct {
@@ -320,6 +332,7 @@ func TestNewKeyringErrors(t *testing.T) {
 	}
 }
 
+// TestNewKeyringAcceptsEdgeNames checks that new keyring accepts edge names.
 func TestNewKeyringAcceptsEdgeNames(t *testing.T) {
 	long := strings.Repeat("n", 255)
 	p := &countingProvider{
@@ -355,6 +368,7 @@ func TestNewKeyringAcceptsEdgeNames(t *testing.T) {
 	}
 }
 
+// TestDistinctNamesDeriveDistinctKeys checks distinct names derive distinct keys.
 func TestDistinctNamesDeriveDistinctKeys(t *testing.T) {
 	same := secrets.Static{"a": material(9, 32), "b": material(9, 32)}
 	a := newRing(t, Keys{Active: "a"}, same)
@@ -375,6 +389,7 @@ func TestDistinctNamesDeriveDistinctKeys(t *testing.T) {
 	}
 }
 
+// TestIsSealedAndKeyName checks is sealed and key name.
 func TestIsSealedAndKeyName(t *testing.T) {
 	tests := []struct {
 		name     string
@@ -421,6 +436,7 @@ func TestIsSealedAndKeyName(t *testing.T) {
 	}
 }
 
+// TestNilKeyring checks nil-keyring encryption errors and safe metadata access.
 func TestNilKeyring(t *testing.T) {
 	var k *Keyring
 	if _, err := k.Seal([]byte("x"), nil); !errors.Is(err, ErrNoKeyring) {
@@ -437,6 +453,7 @@ func TestNilKeyring(t *testing.T) {
 	}
 }
 
+// TestAAD checks associated-data encoding and separation of purpose from row identity.
 func TestAAD(t *testing.T) {
 	tests := []struct {
 		purpose, rowID string

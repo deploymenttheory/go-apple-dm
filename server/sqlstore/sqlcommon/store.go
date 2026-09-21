@@ -59,8 +59,10 @@ func (s *Store) Ping(ctx context.Context) error {
 	return nil
 }
 
+// q rewrites query placeholders for the configured SQL dialect.
 func (s *Store) q(query string) string { return s.d.Rebind(query) }
 
+// wrap adds the store operation to an error while retaining the wrapped cause.
 func wrap(op string, err error) error { return fmt.Errorf("sqlcommon: %s: %w", op, err) }
 
 // querier is *sql.DB or *sql.Tx.
@@ -70,10 +72,12 @@ type querier interface {
 	QueryRowContext(ctx context.Context, query string, args ...any) *sql.Row
 }
 
+// tx runs a storage mutation in the applicable SQL transaction.
 func (s *Store) tx(ctx context.Context, fn func(q querier) error) error {
 	return runInTx(ctx, s.db, func(tx *sql.Tx) error { return fn(tx) })
 }
 
+// validID checks the identifier before it is used to address stored state.
 func validID(id mdm.EnrollmentID) error {
 	if err := id.Validate(); err != nil {
 		return fmt.Errorf("%w: %w", storage.ErrInvalid, err)
@@ -87,8 +91,10 @@ func (s *Store) exists(ctx context.Context, q querier, id mdm.EnrollmentID) erro
 	return err
 }
 
+// nullTime converts an absent timestamp to the database representation of absence.
 func nullTime(t time.Time) sql.NullTime { return sql.NullTime{Time: t.UTC(), Valid: !t.IsZero()} }
 
+// fromNull converts an optional database timestamp to the store's time representation.
 func fromNull(t sql.NullTime) time.Time {
 	if !t.Valid {
 		return time.Time{}
@@ -96,8 +102,10 @@ func fromNull(t sql.NullTime) time.Time {
 	return t.Time.UTC()
 }
 
+// nullString converts an empty string to the database representation of absence.
 func nullString(s string) sql.NullString { return sql.NullString{String: s, Valid: s != ""} }
 
+// nullBytes converts an empty byte slice to the database representation of absence.
 func nullBytes(b []byte) []byte {
 	if len(b) == 0 {
 		return nil
@@ -151,6 +159,7 @@ const selectEnrollment = "SELECT id, channel, parent_id, enabled, topic, push_ma
 
 type scanner interface{ Scan(dest ...any) error }
 
+// scanEnrollment decodes an enrollment row and its retained identity and capability fields.
 func scanEnrollment(row scanner) (*storage.Enrollment, error) {
 	var capabilities []byte
 	var (
@@ -234,6 +243,8 @@ func (s *Store) UpsertAuthenticate(
 	})
 }
 
+// resetAuthenticate resets stored authentication state after a permitted identity
+// transition.
 func (s *Store) resetAuthenticate(
 	ctx context.Context,
 	q querier,
@@ -606,6 +617,7 @@ func (s *Store) List(
 	return out, nil
 }
 
+// pageLimit normalizes the requested page size to the store's supported bounds.
 func pageLimit(p paging.Page) int {
 	return p.Size()
 }
@@ -916,6 +928,7 @@ func (s *Store) StoreResult(
 const selectCommand = "SELECT seq, command_uuid, request_type, raw, dedupe_key, state, enqueued_at, last_sent_at, not_now_until, " +
 	"attempts, not_now_count, completed_at, result_status, result_raw, result_error_chain FROM commands"
 
+// scanCommand decodes a queued command and its delivery metadata.
 func (s *Store) scanCommand(
 	row scanner,
 	id mdm.EnrollmentID,

@@ -85,6 +85,8 @@ func Probe(ctx context.Context, cfg ProbeConfig) error {
 	return nil
 }
 
+// automaticProbe selects the local health probe that matches the configured listener and
+// TLS identity.
 func automaticProbe(cfg ProbeConfig) (string, *tls.Config, error) {
 	host, port, err := net.SplitHostPort(cfg.Listen)
 	if err != nil {
@@ -138,6 +140,8 @@ func automaticProbe(cfg ProbeConfig) (string, *tls.Config, error) {
 	return "https://" + address, config, nil
 }
 
+// probeCertificate loads the certificate material needed to verify the local HTTPS health
+// probe.
 func probeCertificate(path string) (*x509.Certificate, error) {
 	data, err := os.ReadFile(path) // #nosec G304 -- Operator TLS path; no remote input.
 	if err != nil {
@@ -161,6 +165,8 @@ func probeCertificate(path string) (*x509.Certificate, error) {
 	return nil, fmt.Errorf("%w: TLS file has no certificates", ErrProbe)
 }
 
+// probeServerName selects a DNS name or IP address covered by the listener certificate for
+// a local health probe.
 func probeServerName(cert *x509.Certificate, host string) (string, error) {
 	if cert.VerifyHostname(host) == nil {
 		return host, nil

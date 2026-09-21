@@ -17,6 +17,8 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/server/service"
 )
 
+// TestPinWarningNeverCreatesRetroactiveAssociation checks that pin warning never creates
+// retroactive association.
 func TestPinWarningNeverCreatesRetroactiveAssociation(t *testing.T) {
 	h := newHarness(t, service.Config{Pinning: service.PinWarn})
 	ctx := t.Context()
@@ -48,6 +50,8 @@ func TestPinWarningNeverCreatesRetroactiveAssociation(t *testing.T) {
 	}
 }
 
+// TestTargetLookupFailureDoesNotQueueCommands checks that target lookup failure does not queue
+// commands.
 func TestTargetLookupFailureDoesNotQueueCommands(t *testing.T) {
 	backing := inmem.New()
 	st := &storagetest.Failing{Store: backing, Fail: map[string]error{}}
@@ -90,6 +94,8 @@ type replacementFaultStore struct {
 	fail string
 }
 
+// TransitionReplacement injects a failure for the selected replacement operation or delegates to
+// the store.
 func (s *replacementFaultStore) TransitionReplacement(
 	ctx context.Context,
 	id mdm.EnrollmentID,
@@ -101,6 +107,8 @@ func (s *replacementFaultStore) TransitionReplacement(
 	return s.Store.TransitionReplacement(ctx, id, c)
 }
 
+// TestReplacementStorageFailuresDoNotAuthenticateOrDeliver checks that replacement storage
+// failures do not authenticate or deliver.
 func TestReplacementStorageFailuresDoNotAuthenticateOrDeliver(t *testing.T) {
 	h := newHarness(t, service.Config{})
 	st := &replacementFaultStore{Store: h.store}
@@ -198,6 +206,8 @@ func TestReplacementStorageFailuresDoNotAuthenticateOrDeliver(t *testing.T) {
 	}
 }
 
+// TestReplacementRequiresAtomicStorageSupport checks that replacement requires atomic storage
+// support.
 func TestReplacementRequiresAtomicStorageSupport(t *testing.T) {
 	st := struct{ storage.Store }{inmem.New()}
 	if _, err := service.New(service.Config{Store: st, EnableReplacements: true}); err == nil {

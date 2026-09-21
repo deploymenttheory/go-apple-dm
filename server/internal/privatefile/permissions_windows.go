@@ -22,6 +22,7 @@ func Protect(path string) error {
 
 var reopenFile = windows.NewLazySystemDLL("kernel32.dll").NewProc("ReOpenFile")
 
+// protectFile applies the private Windows access-control list to the owned file.
 func protectFile(file *os.File) error {
 	acl, err := privateACL()
 	if err != nil {
@@ -44,6 +45,8 @@ func protectFile(file *os.File) error {
 	return nil
 }
 
+// privateACL builds a protected Windows ACL granting full access to SYSTEM,
+// administrators, and the current process user.
 func privateACL() (*windows.ACL, error) {
 	user, err := windows.GetCurrentProcessToken().GetTokenUser()
 	if err != nil {

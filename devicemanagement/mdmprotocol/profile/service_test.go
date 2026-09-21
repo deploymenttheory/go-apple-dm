@@ -10,6 +10,7 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/testpki"
 )
 
+// TestProfileServiceWireAndSignature checks profile service wire and signature.
 func TestProfileServiceWireAndSignature(t *testing.T) {
 	p := &profile.Profile{Identifier: "service", UUID: "uuid", Service: &profile.ProfileService{URL: "https://mdm.example/ota", Challenge: "challenge", DeviceAttributes: []string{"UDID", "SERIAL"}}}
 	ca, err := testpki.NewCA("profile-signer")
@@ -41,6 +42,7 @@ func TestProfileServiceWireAndSignature(t *testing.T) {
 	}
 }
 
+// TestProfileServiceRejectsMalformedContent checks that profile service rejects malformed content.
 func TestProfileServiceRejectsMalformedContent(t *testing.T) {
 	for _, content := range []any{
 		[]any{map[string]any{"URL": "https://mdm.example"}},

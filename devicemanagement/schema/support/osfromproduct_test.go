@@ -6,6 +6,7 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/schema/support"
 )
 
+// TestOSFromProduct checks OS-family inference from Apple product identifiers.
 func TestOSFromProduct(t *testing.T) {
 	cases := map[string]support.OS{
 		"iPhone17,2": support.IOS, "iPad14,1": support.IOS, "iPod9,1": support.IOS,

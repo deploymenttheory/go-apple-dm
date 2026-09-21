@@ -8,6 +8,8 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/appleplatformservices/push/apns"
 )
 
+// TestAppInvalidAlertRejectedBeforeCredentialLookup checks app invalid alert rejected before
+// credential lookup.
 func TestAppInvalidAlertRejectedBeforeCredentialLookup(t *testing.T) {
 	t.Parallel()
 	client := apns.NewApp(nil)

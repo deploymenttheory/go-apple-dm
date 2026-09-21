@@ -12,8 +12,12 @@ import (
 
 // Queryer is a pool or the transaction shared by stores participating in Run.
 type Queryer interface {
+	// ExecContext executes a statement without returning result rows, honoring context
+	// cancellation.
 	ExecContext(context.Context, string, ...any) (sql.Result, error)
+	// QueryContext executes a query whose returned rows must be closed by the caller.
 	QueryContext(context.Context, string, ...any) (*sql.Rows, error)
+	// QueryRowContext executes a single-row query whose result or error is consumed by Scan.
 	QueryRowContext(context.Context, string, ...any) *sql.Row
 }
 
@@ -40,6 +44,7 @@ type (
 	}
 )
 
+// currentUnit finds the SQL unit of work carried by the context, if one is present.
 func currentUnit(ctx context.Context) *unit {
 	u, _ := ctx.Value(unitKey{}).(*unit)
 	return u

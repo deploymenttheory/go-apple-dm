@@ -8,6 +8,8 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/server/internal/privatefile"
 )
 
+// makeUnreadable denies the current Windows user file-read access and restores private permissions
+// during cleanup.
 func makeUnreadable(t *testing.T, path string) {
 	t.Helper()
 	user, err := windows.GetCurrentProcessToken().GetTokenUser()

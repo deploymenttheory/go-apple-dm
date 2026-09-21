@@ -59,6 +59,7 @@ func Render(w io.Writer, m Match, t support.Target) error {
 	return tw.Flush() // the caller's writer error, unchanged
 }
 
+// header writes the selected schema or field heading and its source citation.
 func header(w io.Writer, m Match) {
 	name := m.TypeName
 	if m.Key {
@@ -174,6 +175,7 @@ func tri(b *bool) string {
 	}
 }
 
+// mode renders a support mode, using a dash when no mode is specified.
 func mode(m support.Mode) string {
 	if m == "" {
 		return "-"
@@ -181,6 +183,7 @@ func mode(m support.Mode) string {
 	return string(m)
 }
 
+// version renders an OS version, using a dash for an unspecified version.
 func version(v osversion.Version) string {
 	if v.IsZero() {
 		return "-"
@@ -188,6 +191,8 @@ func version(v osversion.Version) string {
 	return v.String()
 }
 
+// describe formats the target OS, version, channel, and enabled enrollment attributes for
+// display.
 func describe(t support.Target) string {
 	parts := []string{fmt.Sprintf("%s %s", t.OS, t.Version)}
 	if t.Channel != "" {

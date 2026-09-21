@@ -9,6 +9,7 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/state"
 )
 
+// rolloverFixture creates an active issuer and a pending replacement one hour later.
 func rolloverFixture(t *testing.T) (*Manager, *faultRepository, Identity) {
 	t.Helper()
 	m, s, now := testManager(t)
@@ -20,6 +21,8 @@ func rolloverFixture(t *testing.T) (*Manager, *faultRepository, Identity) {
 	return m, s, v
 }
 
+// TestRolloverCohortPaginationConfirmationAndRetirement checks rollover cohort pagination
+// confirmation and retirement.
 func TestRolloverCohortPaginationConfirmationAndRetirement(t *testing.T) {
 	m, _, v := rolloverFixture(t)
 	ctx := t.Context()
@@ -92,6 +95,8 @@ func TestRolloverCohortPaginationConfirmationAndRetirement(t *testing.T) {
 	}
 }
 
+// TestRolloverRejectsInvalidAndStaleTransitions checks that rollover rejects invalid and stale
+// transitions.
 func TestRolloverRejectsInvalidAndStaleTransitions(t *testing.T) {
 	m, s, v := rolloverFixture(t)
 	ctx := t.Context()
@@ -158,6 +163,7 @@ func TestRolloverRejectsInvalidAndStaleTransitions(t *testing.T) {
 	requireError(t, err, ErrInvalid)
 }
 
+// TestRolloverRepositoryFailuresAreAtomic checks rollover repository failures are atomic.
 func TestRolloverRepositoryFailuresAreAtomic(t *testing.T) {
 	for _, where := range []string{"job read", "identity read", "cohort write", "job write", "activation read", "activation write", "completion list", "migration read"} {
 		t.Run(where, func(t *testing.T) {
@@ -221,6 +227,7 @@ func TestRolloverRepositoryFailuresAreAtomic(t *testing.T) {
 	}
 }
 
+// TestRolloverCorruptCohortCannotComplete checks that rollover corrupt cohort cannot complete.
 func TestRolloverCorruptCohortCannotComplete(t *testing.T) {
 	m, s, v := rolloverFixture(t)
 	ctx := t.Context()

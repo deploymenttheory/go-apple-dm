@@ -23,6 +23,7 @@ type failingStore struct {
 	fail map[string]error
 }
 
+// Put injects a token-write failure or delegates to the token store.
 func (f *failingStore) Put(ctx context.Context, h string, r accountdriven.Record) error {
 	if err := f.fail["Put"]; err != nil {
 		return err
@@ -30,6 +31,7 @@ func (f *failingStore) Put(ctx context.Context, h string, r accountdriven.Record
 	return f.TokenStore.Put(ctx, h, r)
 }
 
+// Get injects a token-read failure or delegates to the token store.
 func (f *failingStore) Get(ctx context.Context, h string) (accountdriven.Record, error) {
 	if err := f.fail["Get"]; err != nil {
 		return accountdriven.Record{}, err
@@ -37,6 +39,7 @@ func (f *failingStore) Get(ctx context.Context, h string) (accountdriven.Record,
 	return f.TokenStore.Get(ctx, h)
 }
 
+// MarkUsed injects a token-consumption failure or delegates to the token store.
 func (f *failingStore) MarkUsed(ctx context.Context, h string, at time.Time) error {
 	if err := f.fail["MarkUsed"]; err != nil {
 		return err
@@ -44,6 +47,8 @@ func (f *failingStore) MarkUsed(ctx context.Context, h string, at time.Time) err
 	return f.TokenStore.MarkUsed(ctx, h, at)
 }
 
+// TestStoreFailures checks token-storage, association, OAuth, and profile-finalization failure
+// propagation.
 func TestStoreFailures(t *testing.T) {
 	ctx := context.Background()
 	boom := errors.New("disk on fire")
@@ -155,6 +160,7 @@ func TestStoreFailures(t *testing.T) {
 	})
 }
 
+// Exchange injects a token-write failure or delegates to the store's atomic token exchange.
 func (f *failingStore) Exchange(ctx context.Context, hash string, at time.Time, validate func(accountdriven.Record) error, replacements map[string]accountdriven.Record) error {
 	if err := f.fail["Put"]; err != nil {
 		return err
@@ -171,4 +177,5 @@ type failedState struct {
 	err error
 }
 
+// Update returns the configured state-update failure.
 func (s *failedState) Update(context.Context, []string, func(state.Tx) error) error { return s.err }

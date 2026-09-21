@@ -17,6 +17,7 @@ type adeResponseBody struct {
 	closed bool
 }
 
+// Close records that the response body was closed.
 func (b *adeResponseBody) Close() error {
 	b.closed = true
 	return nil
@@ -24,10 +25,12 @@ func (b *adeResponseBody) Close() error {
 
 type adeTransport struct{ body *adeResponseBody }
 
+// RoundTrip returns a successful HTTP response containing the fixture body.
 func (r adeTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 	return &http.Response{StatusCode: http.StatusOK, Body: r.body, Header: make(http.Header), Request: req}, nil
 }
 
+// TestADEWebViewFailureClosesInitialResponse checks ADE web view failure closes initial response.
 func TestADEWebViewFailureClosesInitialResponse(t *testing.T) {
 	t.Parallel()
 	ca, err := testpki.NewCA("ADE fixture")

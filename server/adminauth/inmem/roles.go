@@ -9,6 +9,7 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/server/adminauth"
 )
 
+// validateRoles requires each assigned role to exist in the managed role catalogue.
 func (s *Store) validateRoles(names []string) error {
 	for _, name := range names {
 		if _, ok := s.roles[name]; !ok {
@@ -18,6 +19,7 @@ func (s *Store) validateRoles(names []string) error {
 	return nil
 }
 
+// validateReferences rejects policy references to unknown managed principals or roles.
 func (s *Store) validateReferences(p adminauth.Policy) error {
 	names, err := adminauth.References(p.Source, string(adminauth.EntityRole))
 	if err != nil {
@@ -38,6 +40,8 @@ func (s *Store) validateReferences(p adminauth.Policy) error {
 	return nil
 }
 
+// PutRole creates or updates a named role, preserving its creation time and advancing the
+// policy version. Role membership alone grants no operational permission.
 func (s *Store) PutRole(_ context.Context, role adminauth.Role, now time.Time) (adminauth.Role, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -53,6 +57,7 @@ func (s *Store) PutRole(_ context.Context, role adminauth.Role, now time.Time) (
 	return role, nil
 }
 
+// Role returns the named managed role, or ErrNotFound when no such role exists.
 func (s *Store) Role(_ context.Context, name string) (adminauth.Role, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
@@ -63,6 +68,7 @@ func (s *Store) Role(_ context.Context, name string) (adminauth.Role, error) {
 	return role, nil
 }
 
+// Roles returns a page of managed roles in name order using an exclusive cursor.
 func (s *Store) Roles(_ context.Context, p adminauth.Page) (adminauth.Result[adminauth.Role], error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
@@ -87,6 +93,8 @@ func (s *Store) Roles(_ context.Context, p adminauth.Page) (adminauth.Result[adm
 	return out, nil
 }
 
+// DeleteRole removes an unreferenced role. Principal membership or a policy reference
+// returns ErrConflict; an absent role returns ErrNotFound.
 func (s *Store) DeleteRole(_ context.Context, name string) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -112,12 +120,17 @@ func (s *Store) DeleteRole(_ context.Context, name string) error {
 	return nil
 }
 
+// Initialized reports whether principal initialization has permanently consumed the
+// bootstrap opportunity.
 func (s *Store) Initialized(_ context.Context) (bool, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 	return s.initialized, nil
 }
 
+// BootstrapPrincipal atomically installs the first active root credential and closes
+// bootstrap. It requires an empty, uninitialized principal store and receives only the
+// credential digest.
 func (s *Store) BootstrapPrincipal(_ context.Context, p adminauth.Principal, digest string, now time.Time) (adminauth.Principal, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -130,6 +143,7 @@ func (s *Store) BootstrapPrincipal(_ context.Context, p adminauth.Principal, dig
 	return s.createPrincipal(p, digest, now)
 }
 
+// clonePolicy copies optional policy state without sharing the Active pointer.
 func clonePolicy(p adminauth.Policy) adminauth.Policy {
 	if p.Active != nil {
 		active := *p.Active

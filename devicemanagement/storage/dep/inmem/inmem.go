@@ -76,6 +76,7 @@ type state struct {
 	assignmentStates map[string]dep.AssignmentState
 }
 
+// newState allocates the maps used by an empty in-memory store.
 func newState() *state {
 	return &state{
 		accounts:         map[string]dep.Account{},
@@ -143,6 +144,7 @@ func (s *Store) Update(_ context.Context, fn func(dep.Tx) error) error {
 	return nil
 }
 
+// view locks the store for a consistent transaction view and returns the unlock function.
 func (s *Store) view() (*tx, func()) {
 	s.mu.Lock()
 	return &tx{s: s, st: s.st}, s.mu.Unlock
@@ -210,6 +212,7 @@ func (s *Store) open(purpose, rowID string, b []byte) ([]byte, error) {
 	return pt, nil
 }
 
+// validName checks that a name is suitable for this store's record keys.
 func validName(what, name string) error {
 	if name == "" {
 		return fmt.Errorf("%w: empty %s", dep.ErrInvalid, what)
@@ -217,6 +220,7 @@ func validName(what, name string) error {
 	return nil
 }
 
+// notFound wraps the missing-record sentinel with the resource identifier.
 func notFound(what, name string) error {
 	return fmt.Errorf("%w: %s %q", dep.ErrNotFound, what, name)
 }
@@ -331,6 +335,7 @@ func (t *tx) SetAccountState(_ context.Context, name string, s dep.AccountState)
 	return nil
 }
 
+// validStage accepts only the staged and current token keypair slots.
 func validStage(stage dep.Stage) error {
 	if stage != dep.StageStaged && stage != dep.StageCurrent {
 		return fmt.Errorf("%w: keypair stage %q", dep.ErrInvalid, stage)

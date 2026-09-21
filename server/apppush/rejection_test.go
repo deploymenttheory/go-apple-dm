@@ -11,6 +11,7 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/server/apppush"
 )
 
+// TestCredentialRejectsUnstorableTopic checks that credential rejects unstorable topic.
 func TestCredentialRejectsUnstorableTopic(t *testing.T) {
 	t.Parallel()
 	ca, err := testpki.NewCA("issuer")

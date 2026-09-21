@@ -53,6 +53,7 @@ type cell struct {
 	Value string `json:"value,omitempty"`
 }
 
+// validate requires a database, compiled schema, and a supported SQL dialect.
 func (s SQL) validate() error {
 	if s.DB == nil || len(s.Schema) == 0 {
 		return ErrInvalid
@@ -63,6 +64,8 @@ func (s SQL) validate() error {
 	return nil
 }
 
+// tableNames queries the database catalogue for user-table names, rejecting names outside
+// the supported identifier syntax.
 func tableNames(ctx context.Context, q sqlcommon.Queryer, backend string) ([]string, error) {
 	query := "SELECT name FROM sqlite_master WHERE type = 'table' AND name NOT LIKE 'sqlite_%' ORDER BY name"
 	switch backend {
@@ -159,6 +162,8 @@ func (s SQL) Snapshot(ctx context.Context, destination string) error {
 	return writeJSONFile(filepath.Join(destination, "database.json"), info)
 }
 
+// checkVersions checks persisted migration versions against the schema compiled into this
+// binary.
 func (s SQL) checkVersions(ctx context.Context, q sqlcommon.Queryer, desc schemaDescription) error {
 	table, err := quoted(s.Dialect, desc.Name)
 	if err != nil {
@@ -189,6 +194,7 @@ func (s SQL) checkVersions(ctx context.Context, q sqlcommon.Queryer, desc schema
 	return nil
 }
 
+// snapshotTable serializes one table's rows with their typed cell values.
 func (s SQL) snapshotTable(
 	ctx context.Context,
 	q sqlcommon.Queryer,
@@ -252,6 +258,8 @@ func (s SQL) snapshotTable(
 	return result, wrap(f.Sync())
 }
 
+// encodeCell encodes a SQL cell without losing the distinction between null, bytes, and
+// scalar values.
 func encodeCell(value any, databaseType string) (cell, error) {
 	switch v := value.(type) {
 	case nil:
@@ -278,6 +286,7 @@ func encodeCell(value any, databaseType string) (cell, error) {
 	}
 }
 
+// decodeCell restores a typed SQL value from its checkpoint cell representation.
 func decodeCell(c cell) (any, error) {
 	switch c.Kind {
 	case "null":
@@ -372,6 +381,7 @@ func (s SQL) Restore(ctx context.Context, directory string) error {
 	return nil
 }
 
+// validateSnapshot validates the checkpoint table inventory against the compiled schema.
 func (s SQL) validateSnapshot(info databaseSnapshot) ([]sqlcommon.MigrationSet, error) {
 	if info.Version != 1 || info.Backend != s.Dialect.Name || len(info.Schemas) == 0 {
 		return nil, ErrInvalid
@@ -420,6 +430,7 @@ func (s SQL) validateSnapshot(info databaseSnapshot) ([]sqlcommon.MigrationSet, 
 	return sets, nil
 }
 
+// restoreTable inserts verified checkpoint rows into one empty target table.
 func (s SQL) restoreTable(
 	ctx context.Context,
 	tx *sql.Tx,
@@ -495,6 +506,7 @@ func (s SQL) restoreTable(
 	return nil
 }
 
+// writeJSONFile writes a checkpoint JSON file with its private-file protections.
 func writeJSONFile(name string, value any) error {
 	f, err := openLocal(name, os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0o600)
 	if err != nil {
@@ -507,6 +519,7 @@ func writeJSONFile(name string, value any) error {
 	return wrap(f.Sync())
 }
 
+// readJSONFile reads and decodes a bounded checkpoint JSON file.
 func readJSONFile(name string, value any) error {
 	f, err := openLocal(name, os.O_RDONLY, 0)
 	if err != nil {

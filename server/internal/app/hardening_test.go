@@ -19,6 +19,7 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/pki/acme"
 )
 
+// hardeningCSR creates and parses a P-256 CSR with the supplied common name.
 func hardeningCSR(t *testing.T, cn string) *x509.CertificateRequest {
 	t.Helper()
 	key, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
@@ -40,6 +41,8 @@ func hardeningCSR(t *testing.T, cn string) *x509.CertificateRequest {
 	return csr
 }
 
+// TestOutboundPrivateTrust checks explicit outbound private trust and rejects ambiguous or invalid
+// trust configuration.
 func TestOutboundPrivateTrust(t *testing.T) {
 	srv := httptest.NewTLSServer(
 		http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) { w.WriteHeader(204) }),
@@ -84,6 +87,7 @@ func TestOutboundPrivateTrust(t *testing.T) {
 	}
 }
 
+// TestKnownMacProfileContextAndAdmission checks known mac profile context and admission.
 func TestKnownMacProfileContextAndAdmission(t *testing.T) {
 	a, _ := replacementSecurityApp(t)
 	e := a.enroll

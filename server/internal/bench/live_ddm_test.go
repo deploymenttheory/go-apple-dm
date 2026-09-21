@@ -13,6 +13,7 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/plist"
 )
 
+// TestLiveDDMRequiresReportsAndCleansUp checks that live DDM requires reports and cleans up.
 func TestLiveDDMRequiresReportsAndCleansUp(t *testing.T) {
 	for _, failure := range []string{"", "unchanged values", "mismatched values", "stale declarations", "missing automatic activation", "invalid configuration", "upload", "cleanup", "inventory", "set", "assignment", "notify", "status", "values", "cleanup notify", "cleanup status"} {
 		t.Run(failure, func(t *testing.T) {
@@ -139,6 +140,8 @@ func TestLiveDDMRequiresReportsAndCleansUp(t *testing.T) {
 	}
 }
 
+// TestDDMCleanupWaitsForDeviceToRemoveDeclarations checks that DDM cleanup waits for device to
+// remove declarations.
 func TestDDMCleanupWaitsForDeviceToRemoveDeclarations(t *testing.T) {
 	reads := 0
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

@@ -9,6 +9,8 @@ import (
 	"golang.org/x/sys/windows"
 )
 
+// configureChild creates a Windows process group and makes cancellation send
+// CTRL_BREAK, falling back to terminating the child.
 func configureChild(cmd *exec.Cmd) {
 	cmd.SysProcAttr = &syscall.SysProcAttr{CreationFlags: windows.CREATE_NEW_PROCESS_GROUP}
 	cmd.Cancel = func() error {

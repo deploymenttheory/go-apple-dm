@@ -9,6 +9,8 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/server/ddmadapter/internal/proxywire"
 )
 
+// serveConfigurationProfile verifies an authenticated private request before serving the
+// enrollment's advertised profile revision.
 func (s *server) serveConfigurationProfile(w http.ResponseWriter, r *http.Request) {
 	if r.Header.Get("Content-Type") != "application/json" {
 		s.reject(w, r, http.StatusUnsupportedMediaType, proxywire.ErrContentType)

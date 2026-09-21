@@ -8,6 +8,8 @@ import (
 	"time"
 )
 
+// TestSignAttachedFailures checks attached CMS signing failures for unsupported keys and failing
+// signers.
 func TestSignAttachedFailures(t *testing.T) {
 	t.Parallel()
 	key, _ := rsa.GenerateKey(rand.Reader, 2048)

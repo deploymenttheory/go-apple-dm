@@ -12,6 +12,8 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/server/configurationprofile"
 )
 
+// TestConfigurationProfileHandlersRejectInvalidRequestsAndStoreFailures checks configuration
+// profile handlers reject invalid requests and store failures.
 func TestConfigurationProfileHandlersRejectInvalidRequestsAndStoreFailures(t *testing.T) {
 	engine, err := ddm.New(ddm.Config{Store: ddminmem.New()})
 	if err != nil {

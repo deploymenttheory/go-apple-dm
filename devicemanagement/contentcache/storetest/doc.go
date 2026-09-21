@@ -10,6 +10,6 @@
 //
 // # References
 //
-//   - Persistence implementation: devicemanagement/contentcache/store.go (relative to repository root)
-//   - State contract: devicemanagement/state (relative to repository root)
+//   - Persistence implementation: https://github.com/deploymenttheory/go-apple-dm/blob/main/devicemanagement/contentcache/store.go
+//   - State contract: https://github.com/deploymenttheory/go-apple-dm/tree/main/devicemanagement/state
 package storetest

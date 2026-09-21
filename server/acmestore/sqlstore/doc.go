@@ -20,5 +20,5 @@
 //   - Decision record 0012: https://github.com/deploymenttheory/go-apple-dm/blob/main/docs/research/decisions/0012-sql-storage-backends.md (dialects and migrations)
 //   - RFC 8555 (ACME): https://www.rfc-editor.org/rfc/rfc8555
 //   - draft-ietf-acme-device-attest: https://datatracker.ietf.org/doc/draft-acme-device-attest/
-//   - Migrations: acme/sqlstore/migrations/{sqlite,postgres,mysql}/0001_init.sql
+//   - Migrations: https://github.com/deploymenttheory/go-apple-dm/tree/main/server/acmestore/sqlstore/migrations
 package sqlstore

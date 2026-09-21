@@ -79,7 +79,7 @@
       "id": "app-key",
       "lane": "app",
       "col": 0,
-      "label": "App certificate and key",
+      "label": "App credentials",
       "sublabel": "Apple Developer provisioning",
       "type": "external",
       "width": 225,
@@ -213,11 +213,29 @@
     {
       "title": "Public documentation",
       "items": [
-        "Setting up push notifications for your device management customers — https://developer.apple.com/documentation/devicemanagement/setting-up-push-notifications-for-your-device-management-customers",
-        "Establishing a certificate-based connection to APNs — https://developer.apple.com/documentation/usernotifications/establishing-a-certificate-based-connection-to-apns",
-        "Implementation — https://github.com/deploymenttheory/go-apple-dm/blob/7500eb25e50a2913338339d5fced18dc7f41fdc3/devicemanagement/pki/pushcert"
+        "Setting up push notifications for your device management customers \u2014 https://developer.apple.com/documentation/devicemanagement/setting-up-push-notifications-for-your-device-management-customers",
+        "Establishing a certificate-based connection to APNs \u2014 https://developer.apple.com/documentation/usernotifications/establishing-a-certificate-based-connection-to-apns"
       ],
       "dot": "transport"
+    },
+    {
+      "title": "Implementation references",
+      "dot": "artifact",
+      "items": [
+        "mdm-key: Create key and CSR \u2014 https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/devicemanagement/pki/pushcert/csr.go",
+        "vendor: Vendor signs request \u2014 https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/devicemanagement/pki/pushcert/pushcert.go",
+        "mdm-import: Validate MDM import \u2014 https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/server/internal/app/adminsetup.go",
+        "mdm-store: MDM certificate store \u2014 https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/devicemanagement/storage/pushcert.go",
+        "app-import: Validate app import \u2014 https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/server/apppush/store.go",
+        "app-store: Encrypted app store \u2014 https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/server/apppush/store.go"
+      ]
+    },
+    {
+      "title": "Implementation references (continued)",
+      "dot": "artifact",
+      "items": [
+        "clients: Retire old connections \u2014 https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/devicemanagement/appleplatformservices/push/apns/lifecycle.go"
+      ]
     }
   ]
 }

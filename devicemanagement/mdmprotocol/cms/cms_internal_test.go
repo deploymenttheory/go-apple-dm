@@ -19,6 +19,7 @@ import (
 	"github.com/smallstep/pkcs7"
 )
 
+// selfSigned creates a self-signed certificate for the supplied key and validity start.
 func selfSigned(t *testing.T, key crypto.Signer, notBefore time.Time) *x509.Certificate {
 	t.Helper()
 	tmpl := &x509.Certificate{SerialNumber: big.NewInt(7), Subject: pkix.Name{CommonName: "self"}, NotBefore: notBefore, NotAfter: notBefore.Add(time.Hour), KeyUsage: x509.KeyUsageDigitalSignature}
@@ -51,6 +52,7 @@ func signWith(t *testing.T, key crypto.Signer, cert *x509.Certificate, digest, e
 	return der
 }
 
+// TestTolerantAllHashes checks tolerant CMS verification across supported digest algorithms.
 func TestTolerantAllHashes(t *testing.T) {
 	t.Parallel()
 	rsaKey, _ := rsa.GenerateKey(rand.Reader, 2048)
@@ -82,6 +84,8 @@ func TestTolerantAllHashes(t *testing.T) {
 	}
 }
 
+// TestTolerantErrorBranches checks tolerant CMS rejection of invalid attributes, algorithms,
+// signatures, and content digests.
 func TestTolerantErrorBranches(t *testing.T) {
 	t.Parallel()
 	key, _ := rsa.GenerateKey(rand.Reader, 2048)
@@ -140,6 +144,8 @@ func TestTolerantErrorBranches(t *testing.T) {
 	}
 }
 
+// TestAlgorithmTables checks digest and signature algorithm mappings and signing-time skew
+// boundaries.
 func TestAlgorithmTables(t *testing.T) {
 	t.Parallel()
 	for _, oid := range []asn1.ObjectIdentifier{pkcs7.OIDDigestAlgorithmSHA1, pkcs7.OIDDigestAlgorithmSHA256, pkcs7.OIDDigestAlgorithmSHA384, pkcs7.OIDDigestAlgorithmSHA512} {
@@ -176,11 +182,15 @@ func TestAlgorithmTables(t *testing.T) {
 // failingSigner reports an RSA public key but cannot sign.
 type failingSigner struct{ pub crypto.PublicKey }
 
+// Public returns the configured public key.
 func (f failingSigner) Public() crypto.PublicKey { return f.pub }
+
+// Sign returns a synthetic HSM signing failure.
 func (failingSigner) Sign(_ io.Reader, _ []byte, _ crypto.SignerOpts) ([]byte, error) {
 	return nil, errors.New("hsm unavailable")
 }
 
+// TestSignerFailure checks propagation of a CMS signer failure.
 func TestSignerFailure(t *testing.T) {
 	t.Parallel()
 	key, _ := rsa.GenerateKey(rand.Reader, 2048)
@@ -190,6 +200,8 @@ func TestSignerFailure(t *testing.T) {
 	}
 }
 
+// TestSignUnsupportedKey checks rejection of unsupported signing keys and default signing-time
+// behavior.
 func TestSignUnsupportedKey(t *testing.T) {
 	t.Parallel()
 	pub, priv, _ := ed25519.GenerateKey(rand.Reader)

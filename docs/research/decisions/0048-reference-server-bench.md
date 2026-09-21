@@ -52,14 +52,13 @@ are not implicitly enabled. Reports contain scenario outcomes, not credential du
 
 Native TLS certificates, enrollment issuers and storage keys must persist across
 restarts. Init preserves complete existing local identities and refuses partial
-sets. Live storage retains the former database path and accepts its storage-key
-name. Configuration changes require stopping the workspace first.
+sets. Live storage retains its configured database and storage-key names. Configuration changes require stopping the workspace first.
 
 ## Verification
 
 `make test-e2e` runs shared embedded-runtime scenarios and retained detailed
-regressions. `make test-acceptance` runs built server processes, including both
-split roles. `make test-contract` verifies the underlying persistence interfaces.
+regressions. `make test-acceptance` runs built server processes with unified
+device management. `make test-contract` verifies the underlying persistence interfaces.
 `make bench-docs-check` compares generated catalogue documentation with code.
 
 Enrollment scenarios use the same profile API for ACME and SCEP and exercise

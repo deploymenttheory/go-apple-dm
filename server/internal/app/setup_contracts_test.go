@@ -20,6 +20,7 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/state"
 )
 
+// setupRequire requires success or an error matching the supplied sentinel through errors.Is.
 func setupRequire(t *testing.T, err, want error) {
 	t.Helper()
 	if want == nil && err != nil || want != nil && !errors.Is(err, want) {
@@ -27,6 +28,8 @@ func setupRequire(t *testing.T, err, want error) {
 	}
 }
 
+// memorySetupApp creates an in-memory setup application with managed identity names and a fake
+// clock.
 func memorySetupApp(t *testing.T) (*App, *clock.Fake) {
 	t.Helper()
 	c := clock.NewFake(time.Now().UTC().Truncate(time.Second))
@@ -51,6 +54,7 @@ func memorySetupApp(t *testing.T) (*App, *clock.Fake) {
 	return a, c
 }
 
+// setupRequest builds a setup request with a fixture common name and DNS name.
 func setupRequest(id string, kind lifecycle.Kind) SetupRequest {
 	cn := id
 	if cn == "" {
@@ -66,6 +70,7 @@ func setupRequest(id string, kind lifecycle.Kind) SetupRequest {
 	}
 }
 
+// setupExecute executes a setup operation, failing the test on error.
 func setupExecute(
 	t *testing.T,
 	a *App,
@@ -79,6 +84,7 @@ func setupExecute(
 	return out
 }
 
+// setupJSON encodes and writes a JSON state fixture in a transaction.
 func setupJSON(t *testing.T, s state.Store, key string, value any) {
 	t.Helper()
 	b, err := json.Marshal(value)
@@ -107,6 +113,8 @@ func editSetupIdentity(t *testing.T, s state.Store, id string, edit func(map[str
 	setupJSON(t, s, k, value)
 }
 
+// TestSetupOperationsPreserveWorkflowAndEnforceRoles checks setup operations preserve workflow and
+// enforce roles.
 func TestSetupOperationsPreserveWorkflowAndEnforceRoles(t *testing.T) {
 	a, c := memorySetupApp(t)
 	ctx := t.Context()
@@ -239,6 +247,7 @@ func TestSetupOperationsPreserveWorkflowAndEnforceRoles(t *testing.T) {
 	setupRequire(t, err, lifecycle.ErrInvalid)
 }
 
+// TestSetupHTTPFailuresAndPublicResponses checks setup HTTP failures and public responses.
 func TestSetupHTTPFailuresAndPublicResponses(t *testing.T) {
 	a, _ := memorySetupApp(t)
 	setupExecute(t, a, lifecycle.Push, "request", setupRequest("push", lifecycle.Push))
@@ -285,13 +294,19 @@ func TestSetupHTTPFailuresAndPublicResponses(t *testing.T) {
 
 type setupRoundTrip func(*http.Request) (*http.Response, error)
 
+// RoundTrip calls the injected HTTP round-trip function.
 func (f setupRoundTrip) RoundTrip(r *http.Request) (*http.Response, error) { return f(r) }
 
 type setupBrokenBody struct{}
 
+// Read returns io.ErrUnexpectedEOF without reading bytes.
 func (setupBrokenBody) Read([]byte) (int, error) { return 0, io.ErrUnexpectedEOF }
-func (setupBrokenBody) Close() error             { return nil }
 
+// Close closes the fixture body without error.
+func (setupBrokenBody) Close() error { return nil }
+
+// TestRemoteVendorSigningBoundsRequestsAndNeverFollowsRedirects checks that remote vendor signing
+// bounds requests and never follows redirects.
 func TestRemoteVendorSigningBoundsRequestsAndNeverFollowsRedirects(t *testing.T) {
 	a, _ := memorySetupApp(t)
 	token := filepath.Join(t.TempDir(), "token")
@@ -365,6 +380,7 @@ func TestRemoteVendorSigningBoundsRequestsAndNeverFollowsRedirects(t *testing.T)
 	}
 }
 
+// TestManagedConfigurationAndTLSValidation checks managed configuration and TLS validation.
 func TestManagedConfigurationAndTLSValidation(t *testing.T) {
 	a, c := memorySetupApp(t)
 	ctx := t.Context()

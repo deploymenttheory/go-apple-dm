@@ -33,10 +33,12 @@ func enrollMac(t *testing.T, h *harness, udid string, users ...string) {
 	}
 }
 
+// userID constructs a user-channel enrollment ID with its parent device ID.
 func userID(udid, u string) mdm.EnrollmentID {
 	return mdm.EnrollmentID{Channel: mdm.ChannelUser, ID: udid + ":" + u, ParentID: udid}
 }
 
+// newCmd builds an MDM command, failing the test on invalid payloads.
 func newCmd(t *testing.T, payload commands.Command) *mdm.Command {
 	t.Helper()
 	c, err := mdm.NewCommand(payload)
@@ -46,6 +48,7 @@ func newCmd(t *testing.T, payload commands.Command) *mdm.Command {
 	return c
 }
 
+// TestEnqueue checks command channel validation and Shared iPad restrictions before enqueueing.
 func TestEnqueue(t *testing.T) {
 	ctx := context.Background()
 	t.Run("ChannelValidatedAgainstMetadata", func(t *testing.T) {
@@ -196,6 +199,7 @@ func TestEnqueue(t *testing.T) {
 	})
 }
 
+// TestSharedIPad checks Shared iPad user-channel and device-scoped command behavior.
 func TestSharedIPad(t *testing.T) {
 	ctx := context.Background()
 	h := newHarness(t, service.Config{})
@@ -227,6 +231,7 @@ func TestSharedIPad(t *testing.T) {
 	})
 }
 
+// TestCheckOut checks user-channel checkout.
 func TestCheckOut(t *testing.T) {
 	t.Run("UserChannel", func(t *testing.T) {
 		ctx := context.Background()
@@ -244,6 +249,8 @@ func TestCheckOut(t *testing.T) {
 	})
 }
 
+// TestUserAuthenticatePolicy checks user authentication acceptance, Digest policy, unenrollment,
+// and token-gated updates.
 func TestUserAuthenticatePolicy(t *testing.T) {
 	ctx := context.Background()
 	ua := func(udid, user string) *mdm.Checkin {

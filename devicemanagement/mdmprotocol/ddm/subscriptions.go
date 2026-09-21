@@ -62,6 +62,8 @@ func (e *Engine) subscriptionItems(ctx context.Context, tx Tx, id mdm.Enrollment
 	return slices.Compact(items)
 }
 
+// excluded reports whether a status-item name matches a configured subscription exclusion
+// prefix.
 func (e *Engine) excluded(name string) bool {
 	for _, p := range e.subs.Exclude {
 		if strings.HasPrefix(name, p) {
@@ -83,11 +85,15 @@ func (e *Engine) subscriptionItem(ctx context.Context, tx Tx, id mdm.EnrollmentI
 		schemaddm.DeclarationTypeManagementStatusSubscriptions, map[string]any{"StatusItems": items})
 }
 
+// subscriptionActivation builds the activation connecting generated status subscriptions to
+// their configurations.
 func (e *Engine) subscriptionActivation(ctx context.Context) (SnapshotItem, error) {
 	return e.generatedSubscriptionItem(ctx, SubscriptionActivationIdentifier,
 		schemaddm.DeclarationTypeActivationSimple, map[string]any{"StandardConfigurations": []string{SubscriptionIdentifier}})
 }
 
+// generatedSubscriptionItem builds the declaration item for an engine-generated status
+// subscription.
 func (e *Engine) generatedSubscriptionItem(ctx context.Context, identifier, typ string, payload any) (SnapshotItem, error) {
 	raw, err := json.Marshal(map[string]any{"Type": typ, "Identifier": identifier, "Payload": payload})
 	if err != nil {
@@ -103,6 +109,8 @@ func (e *Engine) generatedSubscriptionItem(ctx context.Context, identifier, typ 
 	}, nil
 }
 
+// subscriptionReference recognizes a declaration reference belonging to a generated
+// subscription.
 func subscriptionReference(ref DeclarationRef) bool {
 	return (ref.Identifier == SubscriptionIdentifier && ref.Kind == schemaddm.KindConfiguration) ||
 		(ref.Identifier == SubscriptionActivationIdentifier && ref.Kind == schemaddm.KindActivation)

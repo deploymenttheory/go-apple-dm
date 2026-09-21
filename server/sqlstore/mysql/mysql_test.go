@@ -16,6 +16,8 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/server/sqlstore/sqlcommon"
 )
 
+// TestContract runs plaintext and encrypted MDM storage suites against MySQL, including migration
+// and replacement workflows.
 func TestContract(t *testing.T) {
 	dsn := os.Getenv("TEST_MYSQL_DSN")
 	if dsn == "" {

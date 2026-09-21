@@ -17,12 +17,15 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/server/service"
 )
 
+// TestNewTokenGenerationReachesQueue checks new token generation reaches queue.
 func TestNewTokenGenerationReachesQueue(t *testing.T) {
 	for _, state := range []string{"pending", "sent", "NotNow"} {
 		t.Run(state, func(t *testing.T) { checkNewTokenGeneration(t, state) })
 	}
 }
 
+// checkNewTokenGeneration checks that a changed token generation survives push failure and becomes
+// a follow-up command after acknowledgment.
 func checkNewTokenGeneration(t *testing.T, state string) {
 	t.Helper()
 	ctx := t.Context()

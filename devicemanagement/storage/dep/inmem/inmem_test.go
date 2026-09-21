@@ -9,6 +9,7 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/storage/dep/inmem"
 )
 
+// TestContract runs the shared DEP store suite with plaintext and encrypted in-memory storage.
 func TestContract(t *testing.T) {
 	deptest.RunStoreSuite(t, func(_ *testing.T, k *crypt.Keyring) dep.Store {
 		if k != nil {

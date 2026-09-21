@@ -10,6 +10,8 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/server/eventsink"
 )
 
+// TestWebhookRedirectDoesNotForwardSignedBody checks that webhook redirect does not forward signed
+// body.
 func TestWebhookRedirectDoesNotForwardSignedBody(t *testing.T) {
 	var calls atomic.Int64
 	dest := httptest.NewTLSServer(

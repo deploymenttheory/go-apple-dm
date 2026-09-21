@@ -7,6 +7,8 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/schema/support"
 )
 
+// entry returns support metadata covering version, enrollment, supervision, and channel
+// restrictions.
 func entry() *support.Entry {
 	return &support.Entry{
 		Path: "DeviceLock.Message",
@@ -26,6 +28,8 @@ func entry() *support.Entry {
 	}
 }
 
+// TestCheck checks version, enrollment, channel, and supervision support rules with explanatory
+// rejection reasons.
 func TestCheck(t *testing.T) {
 	t.Parallel()
 	e := entry()
@@ -71,6 +75,7 @@ func TestCheck(t *testing.T) {
 	}
 }
 
+// TestRegistry checks support registry lookup, family and path listing, and OS enumeration.
 func TestRegistry(t *testing.T) {
 	t.Parallel()
 	support.Register("testfam", map[string]*support.Entry{"B": entry(), "A": entry()})
@@ -97,6 +102,7 @@ func TestRegistry(t *testing.T) {
 	}
 }
 
+// TestDeclarationContexts checks declaration support across enrollment contexts.
 func TestDeclarationContexts(t *testing.T) {
 	t.Parallel()
 	for _, tc := range []struct {

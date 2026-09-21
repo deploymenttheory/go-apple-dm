@@ -22,6 +22,8 @@ var ssoValueFloors = map[string][]string{
 	"ExtensibleSingleSignOn.PlatformSSO.UnlockPolicy":                 {"RequireTouchID", "RequireTouchIDOrWatch", "AllowOpenIDForTouchIDFallback"},
 }
 
+// hasValueFloor reports whether a field has a reviewed value-specific availability
+// boundary.
 func hasValueFloor(td *TypeDef, f *Field) bool {
 	return td.Schema != nil && td.Schema.Path == "mdm/profiles/com.apple.extensiblesso.yaml" &&
 		len(ssoValueFloors[supportPath(topName(td), f)]) > 0
@@ -60,6 +62,7 @@ func reviewedValueSupport(st *SchemaType) map[string]map[string]*support.Entry {
 	return result
 }
 
+// reviewedValues returns the reviewed values that need generated support checks.
 func (e *emitter) reviewedValues() map[string]map[string]*support.Entry {
 	all := map[string]map[string]*support.Entry{}
 	for _, st := range e.pkg.Schemas {
@@ -70,6 +73,8 @@ func (e *emitter) reviewedValues() map[string]map[string]*support.Entry {
 	return all
 }
 
+// valueSupport emits the value-specific support lookup and its reviewed availability
+// table.
 func (e *emitter) valueSupport(b *bytes.Buffer) {
 	all := e.reviewedValues()
 	if len(all) == 0 {

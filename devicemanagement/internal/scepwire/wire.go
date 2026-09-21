@@ -52,6 +52,7 @@ type envelope struct {
 	Encrypted  encryptedContent
 }
 
+// attribute constructs a SCEP signed attribute with its object identifier and value.
 func attribute(n int, value any) pkcs7.Attribute {
 	return pkcs7.Attribute{
 		Type:  asn1.ObjectIdentifier{2, 16, 840, 1, 113733, 1, 9, n},
@@ -59,6 +60,8 @@ func attribute(n int, value any) pkcs7.Attribute {
 	}
 }
 
+// sign creates CMS signed data with SHA-256 and the supplied SCEP attributes; wire
+// construction failures wrap ErrWire.
 func sign(
 	content []byte,
 	cert *x509.Certificate,

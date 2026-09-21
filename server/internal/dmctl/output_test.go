@@ -17,6 +17,7 @@ type failWriter struct{ remaining int }
 
 var errWrite = errors.New("disk full")
 
+// Write accepts the configured number of writes before returning the fixture write failure.
 func (f *failWriter) Write(p []byte) (int, error) {
 	if f.remaining <= 0 {
 		return 0, errWrite
@@ -100,8 +101,10 @@ func TestExplainWriteFailure(t *testing.T) {
 // failReader fails on the first read, so a stdin failure is reachable.
 type failReader struct{}
 
+// Read returns a synthetic broken-pipe read failure.
 func (failReader) Read([]byte) (int, error) { return 0, errors.New("pipe broken") }
 
+// TestStdinFailureSurfaces checks propagation of stdin read failures.
 func TestStdinFailureSurfaces(t *testing.T) {
 	env := jsonServer(t, `{"Name":"ops"}`)
 	var out, errBuf strings.Builder

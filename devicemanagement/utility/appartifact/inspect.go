@@ -135,6 +135,8 @@ func Inspect(ctx context.Context, filename string, opts Options) (Report, error)
 	return i.report, nil
 }
 
+// inspectFile identifies the local artifact format and invokes the corresponding bounded
+// reader.
 func (i *inspector) inspectFile(filename, location string, depth int) (string, error) {
 	if err := i.ctx.Err(); err != nil {
 		return "", err
@@ -179,6 +181,7 @@ func (i *inspector) inspectFile(filename, location string, depth int) (string, e
 	return "", ErrUnsupported
 }
 
+// isMachO recognizes supported thin and universal Mach-O magic values.
 func isMachO(head []byte) bool {
 	if len(head) < 4 {
 		return false
@@ -190,6 +193,7 @@ func isMachO(head []byte) bool {
 	return false
 }
 
+// add records a discovered application identity and its artifact-relative provenance.
 func (i *inspector) add(location string, id appidentity.Identity) error {
 	if len(i.report.Applications) >= i.opts.MaxApplications {
 		return ErrLimit
@@ -198,6 +202,8 @@ func (i *inspector) add(location string, id appidentity.Identity) error {
 	return nil
 }
 
+// walk visits artifact entries while enforcing depth, entry-count, and expanded-byte
+// limits.
 func (i *inspector) walk(files fs.FS, location string, depth int) error {
 	return fs.WalkDir(files, ".", func(name string, entry fs.DirEntry, walkErr error) error {
 		if walkErr != nil {
@@ -287,6 +293,8 @@ func (i *inspector) walk(files fs.FS, location string, depth int) error {
 	})
 }
 
+// copy copies artifact data into owned temporary storage while enforcing size and
+// cancellation limits.
 func (i *inspector) copy(w io.Writer, r io.Reader) error {
 	remaining := i.opts.MaxExpandedBytes - i.expanded
 	limit := min(i.opts.MaxBytes, remaining)
@@ -306,6 +314,7 @@ type contextReader struct {
 	reader io.Reader
 }
 
+// Read checks context cancellation before reading from the wrapped artifact stream.
 func (r contextReader) Read(p []byte) (int, error) {
 	if err := r.ctx.Err(); err != nil {
 		return 0, err
@@ -313,6 +322,7 @@ func (r contextReader) Read(p []byte) (int, error) {
 	return r.reader.Read(p)
 }
 
+// safeName rejects archive entry names that could escape their extraction root.
 func safeName(name string) (string, error) {
 	if name == "./" {
 		return ".", nil
@@ -327,6 +337,7 @@ func safeName(name string) (string, error) {
 	return name, nil
 }
 
+// writeFile creates an owned extraction file for a validated artifact entry.
 func (i *inspector) writeFile(root *os.Root, name string, r io.Reader) error {
 	clean, err := safeName(name)
 	if err != nil || clean == "." {
@@ -347,6 +358,7 @@ func (i *inspector) writeFile(root *os.Root, name string, r io.Reader) error {
 	return closeErr
 }
 
+// pkg inspects package payloads without executing installer scripts.
 func (i *inspector) pkg(filename, location string, depth int) error {
 	p, err := flatpkg.Open(filename)
 	if err != nil {
@@ -375,6 +387,8 @@ func (i *inspector) pkg(filename, location string, depth int) error {
 	return nil
 }
 
+// component inspects a package component and accumulates its discovered application
+// identities.
 func (i *inspector) component(component *flatpkg.Component, location string, depth int) error {
 	r, err := component.OpenPayload()
 	if err != nil {
@@ -430,6 +444,7 @@ func (i *inspector) component(component *flatpkg.Component, location string, dep
 	return i.walk(root.FS(), location+"!"+component.Name, depth)
 }
 
+// zip walks ZIP members while enforcing extraction and nested-container limits.
 func (i *inspector) zip(filename, location string, depth int) error {
 	z, err := zip.OpenReader(filename)
 	if err != nil {

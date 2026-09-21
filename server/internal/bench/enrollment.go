@@ -120,6 +120,7 @@ func ExportTrust(w *Workspace, destination string) error {
 	return privateFile(destination, b)
 }
 
+// publicEnrollmentGET requests the public enrollment endpoint with the scenario's client.
 func publicEnrollmentGET(ctx context.Context, e *Environment, path string) ([]byte, error) {
 	req, err := http.NewRequestWithContext(ctx, "GET", e.URL+path, nil)
 	if err != nil {
@@ -137,6 +138,7 @@ func publicEnrollmentGET(ctx context.Context, e *Environment, path string) ([]by
 	return b, wrapError(err)
 }
 
+// serviceDiscovery checks enrollment discovery through the public service endpoint.
 func serviceDiscovery(ctx context.Context, e *Environment, _ string) error {
 	b, err := publicEnrollmentGET(ctx, e, "/MDMServiceConfig")
 	if err != nil {
@@ -201,6 +203,8 @@ func ProfileWithIdentity(
 	return privateFile(destination, b)
 }
 
+// requestEnrollmentProfile requests the enrollment profile used to provision the scenario
+// device.
 func requestEnrollmentProfile(
 	ctx context.Context,
 	e *Environment,
@@ -258,6 +262,8 @@ func Replace(ctx context.Context, e *Environment, device, identity string) (map[
 	return result, nil
 }
 
+// replacementScenario builds a scenario that completes or fails identity replacement
+// and checks continued management with the resulting identity.
 func replacementScenario(
 	method string,
 	fail bool,
@@ -351,6 +357,8 @@ func replacementScenario(
 	}
 }
 
+// liveEnrollment builds a scenario that requires completed enrollment evidence, exercises
+// device management, and sends ProfileList to the installing user channel.
 func liveEnrollment(method string) func(context.Context, *Environment, string) error {
 	return func(ctx context.Context, e *Environment, device string) error {
 		if device == "" || e.InstallingUserID == "" {

@@ -5,6 +5,7 @@ import (
 	"testing"
 )
 
+// TestVersion checks checkout version discovery and explicit release stamps.
 func TestVersion(t *testing.T) {
 	if Version() == "" {
 		t.Fatal("checkout build has no version")
@@ -17,6 +18,7 @@ func TestVersion(t *testing.T) {
 	}
 }
 
+// TestModuleVersion checks module version selection from build metadata.
 func TestModuleVersion(t *testing.T) {
 	for _, tc := range []struct {
 		info *debug.BuildInfo

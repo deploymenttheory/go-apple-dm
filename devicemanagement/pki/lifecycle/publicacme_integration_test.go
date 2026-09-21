@@ -28,6 +28,8 @@ type dropACMEResponse struct {
 	dropped atomic.Bool
 }
 
+// RoundTrip discards the first successful account-creation response to simulate a lost
+// registration reply.
 func (d *dropACMEResponse) RoundTrip(r *http.Request) (*http.Response, error) {
 	response, err := d.base.RoundTrip(r)
 	if err == nil && response.StatusCode == http.StatusCreated && d.dropped.CompareAndSwap(false, true) {

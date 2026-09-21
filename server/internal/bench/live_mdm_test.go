@@ -15,6 +15,7 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/plist"
 )
 
+// TestLiveMDMRequiresDeviceEvidence checks that live MDM requires device evidence.
 func TestLiveMDMRequiresDeviceEvidence(t *testing.T) {
 	for _, name := range []string{"missing device", "missing enrollment", "incomplete enrollment", "queue unavailable", "queue refused", "push unavailable", "push rejected", "cancelled", "result unavailable", "pending then acknowledged", "malformed result", "device error", "invalid plist", "missing inventory", "timeout"} {
 		t.Run(name, func(t *testing.T) {
@@ -143,8 +144,11 @@ type cancelOnClose struct {
 	cancel context.CancelFunc
 }
 
+// Close closes the wrapped body and cancels the associated context.
 func (b cancelOnClose) Close() error { err := b.ReadCloser.Close(); b.cancel(); return err }
 
+// TestLiveMDMCancellationWhileAwaitingAcknowledgement checks live MDM cancellation while awaiting
+// acknowledgement.
 func TestLiveMDMCancellationWhileAwaitingAcknowledgement(t *testing.T) {
 	t.Parallel()
 	ctx, cancel := context.WithCancel(t.Context())

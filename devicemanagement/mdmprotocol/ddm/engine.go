@@ -16,6 +16,7 @@ import (
 // example by device attribute or by an external group. Errors fail closed:
 // serving that enrollment returns ErrResolver rather than a partial manifest.
 type Resolver interface {
+	// Resolve supplies the declaration references dynamically assigned to an enrollment.
 	Resolve(ctx context.Context, id mdm.EnrollmentID) ([]string, error)
 }
 
@@ -24,6 +25,8 @@ type Resolver interface {
 // means unchanged. The bytes returned must be a JSON object; they are
 // canonicalised and the served token is derived from them.
 type Expander interface {
+	// Expand optionally supplies enrollment-specific declaration content; (nil, nil) leaves
+	// the stored content unchanged.
 	Expand(ctx context.Context, id mdm.EnrollmentID, d *Declaration) ([]byte, error)
 }
 
@@ -142,6 +145,8 @@ func (e *Engine) Store() Store { return e.store }
 // around an engine can inherit its logging rather than invent one.
 func (e *Engine) Logger() *slog.Logger { return e.log }
 
+// publish sends a DDM event through the configured bus and logs delivery failures other
+// than a full queue.
 func (e *Engine) publish(ctx context.Context, t event.Type, id mdm.EnrollmentID, data any) {
 	if e.bus == nil {
 		return

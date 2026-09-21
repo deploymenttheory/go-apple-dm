@@ -36,8 +36,10 @@ func (s *Store) Test(ctx context.Context, id string, root bool) (string, error) 
 	return delivery, err
 }
 
-// Admin serves after the host application's ordinary Cedar authorization. Root
-// remains a separate mandatory gate for sensitive destination operations.
+// Admin serves after the host application has authorized the ordinary route.
+// The root argument carries a separate sensitive-operation authorization decision;
+// the reference server derives it from the relevant Cedar action. Admin does not
+// authenticate callers or evaluate policies.
 func (s *Store) Admin(w http.ResponseWriter, r *http.Request, root bool) {
 	w.Header().Set("Content-Type", "application/json")
 	w.Header().Set("Cache-Control", "no-store")
@@ -166,6 +168,7 @@ func (s *Store) Admin(w http.ResponseWriter, r *http.Request, root bool) {
 	_, _ = w.Write(b)
 }
 
+// apiError maps webhook sentinel errors to the administrative HTTP error contract.
 func apiError(w http.ResponseWriter, err error) {
 	status, code := http.StatusServiceUnavailable, "unavailable"
 	switch {

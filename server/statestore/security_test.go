@@ -11,6 +11,7 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/server/statestore"
 )
 
+// TestProtocolStateSealingAndRotation checks protocol state sealing and rotation.
 func TestProtocolStateSealingAndRotation(t *testing.T) {
 	ctx := t.Context()
 	db := sqliteDB(t)

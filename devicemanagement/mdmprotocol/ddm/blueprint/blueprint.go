@@ -118,17 +118,20 @@ func OwnsIdentifier(identifier string) bool {
 // OwnsSet identifies the namespace reserved for Blueprint publication.
 func OwnsSet(name string) bool { return strings.HasPrefix(name, "blueprint.") }
 
+// digest returns the deterministic content digest used for compiled identifiers.
 func digest(parts []string) string {
 	raw, _ := json.Marshal(parts)
 	h := sha256.Sum256(raw)
 	return hex.EncodeToString(h[:])
 }
 
+// identifier derives a stable declaration identifier within the blueprint namespace.
 func identifier(owner string, kind schema.Kind, key string) string {
 	// Apple limits declaration identifiers to 64 bytes. Retain 128 hash bits.
 	return "com.deploymenttheory.blueprint." + digest([]string{owner, string(kind), key})[:32]
 }
 
+// invalid wraps a blueprint validation message with ErrInvalidDeclaration.
 func invalid(message string) error {
 	return fmt.Errorf("%w: blueprint: %s", ddm.ErrInvalidDeclaration, message)
 }
@@ -256,6 +259,7 @@ func Compile(spec Spec, options Options) (*Compiled, error) {
 	return out, nil
 }
 
+// declarationKind classifies a declaration type into Apple's declaration families.
 func declarationKind(typ string) (schema.Kind, error) {
 	for _, e := range schema.ByID(typ) {
 		if e.Kind == schema.KindConfiguration || e.Kind == schema.KindAsset || e.Kind == schema.KindManagement {
@@ -265,6 +269,8 @@ func declarationKind(typ string) (schema.Kind, error) {
 	return "", invalid("unsupported declaration declaration type")
 }
 
+// append encodes and validates a declaration for the target, then appends its canonical
+// JSON to the compiled publication.
 func (c *Compiled) append(e *entry, target support.Target) error {
 	raw, err := json.Marshal(map[string]any{"Identifier": e.id, "Type": e.typ, "Payload": e.payload})
 	if err != nil {
@@ -278,6 +284,8 @@ func (c *Compiled) append(e *entry, target support.Target) error {
 	return nil
 }
 
+// profileEntries constructs a legacy-profile configuration and, when requested, its
+// authenticated data asset from a validated hosted-profile descriptor.
 func profileEntries(c Declaration, o Options) (*entry, *entry, error) {
 	d, ok := o.ConfigurationProfiles[c.ConfigurationProfile.Revision]
 	u, err := url.Parse(d.URL)
@@ -303,6 +311,7 @@ func profileEntries(c Declaration, o Options) (*entry, *entry, error) {
 	return e, a, nil
 }
 
+// rewrite replaces authoring references with compiled declaration identifiers.
 func rewrite(value any, path []string, resolve func(string) (string, error)) error {
 	if len(path) == 0 {
 		return nil
@@ -361,6 +370,7 @@ func rewrite(value any, path []string, resolve func(string) (string, error)) err
 	return nil
 }
 
+// cyclic detects cycles in the blueprint's declaration-reference graph.
 func cyclic(edges map[string][]string) bool {
 	state := map[string]int{}
 	var visit func(string) bool

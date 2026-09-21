@@ -195,6 +195,7 @@ func (e *Entry) Check(t Target) Result {
 	return r
 }
 
+// modeCheck compares observed enrollment mode with the schema's supported enrollment modes.
 func modeCheck(path, what string, m Mode, inEffect bool) string {
 	switch m {
 	case ModeRequired:

@@ -27,6 +27,7 @@ type directoryMeta struct {
 	Website string `json:"website,omitempty"`
 }
 
+// directory writes the ACME directory with this server's endpoint URLs.
 func (s *Server) directory(e *exchange) error {
 	return s.write(e, http.StatusOK, directoryBody{
 		NewNonce:   s.url(pathNewNonce),
@@ -36,6 +37,8 @@ func (s *Server) directory(e *exchange) error {
 	})
 }
 
+// newNonce finishes a nonce response whose Replay-Nonce header is already set, using HTTP
+// 200 for HEAD and 204 for GET.
 func (s *Server) newNonce(e *exchange) error {
 	// The nonce is already on the response. RFC 8555 section 7.2 wants 200
 	// for HEAD and 204 for GET.
@@ -61,6 +64,8 @@ type accountBody struct {
 	Orders  string   `json:"orders"`
 }
 
+// newAccount validates an account request and creates or resolves the account bound to its
+// JWK.
 func (s *Server) newAccount(e *exchange) error {
 	var req accountRequest
 	if err := e.decode(&req); err != nil {
@@ -113,6 +118,7 @@ func (s *Server) newAccount(e *exchange) error {
 	return s.write(e, http.StatusCreated, s.accountBody(account))
 }
 
+// accountBody renders the account representation returned to an ACME client.
 func (s *Server) accountBody(a *Account) accountBody {
 	return accountBody{
 		Status:  a.Status,
@@ -138,6 +144,7 @@ type ordersBody struct {
 	Orders []string `json:"orders"`
 }
 
+// accountOrders lists the orders belonging to the authenticated account.
 func (s *Server) accountOrders(e *exchange) error {
 	if e.r.PathValue("id") != e.account.ID {
 		return NewProblem(ProblemUnauthorized, "the account may only read its own orders")
@@ -176,6 +183,8 @@ type orderBody struct {
 	Error          *Problem     `json:"error,omitempty"`
 }
 
+// newOrder authorizes requested identifiers and persists a new order with its authorization
+// and challenge.
 func (s *Server) newOrder(e *exchange) error {
 	var req orderRequest
 	if err := e.decode(&req); err != nil {
@@ -266,6 +275,7 @@ func (s *Server) newOrder(e *exchange) error {
 	return s.write(e, http.StatusCreated, s.orderBody(order))
 }
 
+// orderBody renders the current order with URLs for its associated resources.
 func (s *Server) orderBody(o *Order) orderBody {
 	body := orderBody{
 		Status:         o.Status,
@@ -322,6 +332,7 @@ type challengeBody struct {
 	Error     *Problem `json:"error,omitempty"`
 }
 
+// authorization serves the authorization owned by the authenticated account.
 func (s *Server) authorization(e *exchange) error {
 	authz, err := s.cfg.Store.GetAuthorization(e.ctx(), e.r.PathValue("id"))
 	if errors.Is(err, ErrNotFound) {
@@ -353,6 +364,7 @@ func (s *Server) authzStatus(a *Authorization) string {
 	return a.Status
 }
 
+// challengeBody renders the current challenge and its validation state.
 func (s *Server) challengeBody(c *Challenge) challengeBody {
 	body := challengeBody{
 		Type:   c.Type,
@@ -373,6 +385,7 @@ type challengeRequest struct {
 	AttObj string `json:"attObj"`
 }
 
+// challenge processes challenge evidence and updates the related authorization and order.
 func (s *Server) challenge(e *exchange) error {
 	challenge, err := s.cfg.Store.GetChallenge(e.ctx(), e.r.PathValue("id"))
 	if errors.Is(err, ErrNotFound) {
@@ -553,6 +566,8 @@ func (s *Server) authorize(e *exchange, o *Order, a *attest.Attestation) error {
 	return nil
 }
 
+// authorizeUnattested applies the configured policy when device attestation is not
+// supplied.
 func (s *Server) authorizeUnattested(e *exchange, o *Order) error {
 	if !s.cfg.AllowUnattested {
 		if s.cfg.AuthorizeUnattested == nil {
@@ -594,6 +609,7 @@ func (s *Server) settleChallenge(
 	return p
 }
 
+// saveTriple writes the challenge, authorization, and order through one state transaction.
 func (s *Server) saveTriple(e *exchange, c *Challenge, a *Authorization, o *Order) (bool, error) {
 	changed := false
 	err := s.cfg.Store.UpdateOrder(e.ctx(), o.ID, func(tx Tx) error {
@@ -637,6 +653,8 @@ type finalizeRequest struct {
 	CSR string `json:"csr"`
 }
 
+// finalize validates the CSR and finalized order state before issuing and retaining the
+// certificate.
 func (s *Server) finalize(e *exchange) error {
 	o, err := s.loadOrder(e)
 	if err != nil {
@@ -756,6 +774,7 @@ func (s *Server) checkKey(e *exchange, o *Order, key any) error {
 	return s.authorize(e, o, a)
 }
 
+// challengeOf finds the challenge associated with the requested order authorization.
 func (s *Server) challengeOf(e *exchange, o *Order) (*Challenge, error) {
 	authz, err := s.cfg.Store.GetAuthorization(e.ctx(), o.AuthzID)
 	if err != nil {
@@ -798,6 +817,7 @@ func (s *Server) settleOrder(e *exchange, o *Order, cause error) error {
 	return p
 }
 
+// certificate serves the certificate chain for an order owned by the authenticated account.
 func (s *Server) certificate(e *exchange) error {
 	record, err := s.cfg.Store.GetCertificate(e.ctx(), e.r.PathValue("id"))
 	if errors.Is(err, ErrNotFound) {

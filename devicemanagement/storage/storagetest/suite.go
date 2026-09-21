@@ -37,15 +37,18 @@ func RunAll(t *testing.T, newStore Factory) {
 
 var t0 = time.Date(2026, 9, 1, 12, 0, 0, 0, time.UTC)
 
+// device constructs a device-channel identity for the storage contract.
 func device(n int) mdm.EnrollmentID {
 	return mdm.EnrollmentID{Channel: mdm.ChannelDevice, ID: fmt.Sprintf("DEVICE-%02d", n)}
 }
 
+// user constructs a user-channel identity bound to its parent device.
 func user(n int, u string) mdm.EnrollmentID {
 	d := device(n)
 	return mdm.EnrollmentID{Channel: mdm.ChannelUser, ID: d.ID + ":" + u, ParentID: d.ID}
 }
 
+// auth constructs authentication data used by the shared enrollment contract.
 func auth(serial string) *checkin.Authenticate {
 	s := serial
 	return &checkin.Authenticate{
@@ -57,6 +60,7 @@ func auth(serial string) *checkin.Authenticate {
 	}
 }
 
+// push constructs push-token data used by the shared enrollment contract.
 func push(n int) mdm.Push {
 	return mdm.Push{
 		Topic: "com.apple.mgmt.test",
@@ -96,6 +100,7 @@ func enroll(t *testing.T, s storage.Store, id mdm.EnrollmentID, n int) {
 	}
 }
 
+// cmd constructs a queued command for the shared storage contract.
 func cmd(t *testing.T, id string) *mdm.Command {
 	t.Helper()
 	c, err := mdm.NewCommand(&commands.ProfileList{}, mdm.WithUUID(id))
@@ -105,6 +110,7 @@ func cmd(t *testing.T, id string) *mdm.Command {
 	return c
 }
 
+// result constructs a device command result for the shared storage contract.
 func result(uuid string, status mdm.Status) *mdm.Response {
 	return &mdm.Response{
 		Enrollment:  mdm.Enrollment{UDID: "DEVICE-01"},

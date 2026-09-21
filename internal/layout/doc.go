@@ -8,8 +8,8 @@
 // their explicit exceptions.
 //
 // Keeping the graph reader separate from policy lets the tests verify package
-// placement and module direction. The lint workflow reports issues without a
-// failing issue exit code, so these boundaries are enforced through Go tests.
+// placement and module direction. Go tests enforce these dependency boundaries;
+// the separate lint workflow blocks changes that fail the authored-source baseline.
 //
 // # References
 //

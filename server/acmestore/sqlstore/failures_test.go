@@ -92,6 +92,7 @@ func TestClosedDatabaseSurfaces(t *testing.T) {
 	}
 }
 
+// TestMigrateDirect checks direct ACME migration application and reported schema version.
 func TestMigrateDirect(t *testing.T) {
 	ctx := context.Background()
 	db := openDB(t)

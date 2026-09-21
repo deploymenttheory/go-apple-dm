@@ -1,0 +1,245 @@
+{
+  "schema_version": 1,
+  "diagram_type": "dataflow",
+  "meta": {
+    "title": "Application Identity Discovery and Authoring",
+    "quality_profile": "showcase",
+    "colour_profile": "purpose-v1",
+    "legend": {
+      "mode": "hidden"
+    },
+    "locale": "en",
+    "viewBox": [
+      1240,
+      760
+    ]
+  },
+  "stages": [
+    {
+      "label": "Source"
+    },
+    {
+      "label": "Inspect or discover"
+    },
+    {
+      "label": "Choose policy inputs"
+    },
+    {
+      "label": "Validate authoring"
+    }
+  ],
+  "nodes": [
+    {
+      "id": "artifact",
+      "stage": 0,
+      "row": 0,
+      "type": "backend",
+      "label": "Distribution artifact",
+      "sublabel": "PKG, DMG, ZIP or Mach-O",
+      "width": 240,
+      "height": 76,
+      "purpose": "artifact"
+    },
+    {
+      "id": "installed",
+      "stage": 0,
+      "row": 2,
+      "type": "backend",
+      "label": "Installed application",
+      "sublabel": "macOS bundle or executable",
+      "width": 240,
+      "height": 76,
+      "purpose": "artifact"
+    },
+    {
+      "id": "catalog",
+      "stage": 0,
+      "row": 4,
+      "type": "backend",
+      "label": "Apple app catalogue",
+      "sublabel": "Public App Store or built-in IDs",
+      "width": 240,
+      "height": 76,
+      "purpose": "transport"
+    },
+    {
+      "id": "portable",
+      "stage": 1,
+      "row": 0,
+      "type": "backend",
+      "label": "Portable inspection",
+      "sublabel": "Read metadata without execution",
+      "width": 240,
+      "height": 76,
+      "purpose": "service"
+    },
+    {
+      "id": "native",
+      "stage": 1,
+      "row": 2,
+      "type": "backend",
+      "label": "Native verification",
+      "sublabel": "codesign and lipo on macOS",
+      "width": 240,
+      "height": 76,
+      "purpose": "authentication"
+    },
+    {
+      "id": "lookup",
+      "stage": 1,
+      "row": 4,
+      "type": "backend",
+      "label": "Catalogue lookup",
+      "sublabel": "Bundle ID and platform metadata",
+      "width": 240,
+      "height": 76,
+      "purpose": "service"
+    },
+    {
+      "id": "select",
+      "stage": 2,
+      "row": 2,
+      "type": "backend",
+      "label": "Select observed identity",
+      "sublabel": "Author chooses matching and policy",
+      "width": 240,
+      "height": 76,
+      "purpose": "policy"
+    },
+    {
+      "id": "target",
+      "stage": 3,
+      "row": 2,
+      "type": "backend",
+      "label": "Target validation",
+      "sublabel": "Author configuration or Blueprint",
+      "width": 240,
+      "height": 76,
+      "purpose": "policy"
+    }
+  ],
+  "flows": [
+    {
+      "id": "artifact-portable",
+      "from": "artifact",
+      "to": "portable",
+      "label": "Immutable bytes",
+      "purpose": "artifact",
+      "labelDy": -45
+    },
+    {
+      "id": "installed-native",
+      "from": "installed",
+      "to": "native",
+      "label": "Local path",
+      "purpose": "artifact"
+    },
+    {
+      "id": "catalog-lookup",
+      "from": "catalog",
+      "to": "lookup",
+      "label": "App identifiers",
+      "purpose": "transport",
+      "labelDy": -45
+    },
+    {
+      "id": "portable-select",
+      "from": "portable",
+      "to": "select",
+      "label": "Parsed identity",
+      "purpose": "artifact",
+      "toSide": "top",
+      "via": [
+        [
+          770,
+          166
+        ]
+      ]
+    },
+    {
+      "id": "native-select",
+      "from": "native",
+      "to": "select",
+      "label": "Verified observations",
+      "purpose": "authentication",
+      "labelDy": -45
+    },
+    {
+      "id": "lookup-select",
+      "from": "lookup",
+      "to": "select",
+      "label": "Catalogue metadata",
+      "purpose": "artifact",
+      "toSide": "bottom",
+      "via": [
+        [
+          770,
+          622
+        ]
+      ]
+    },
+    {
+      "id": "select-target",
+      "from": "select",
+      "to": "target",
+      "label": "Chosen constraints",
+      "purpose": "policy",
+      "labelDy": -45
+    }
+  ],
+  "cards": [
+    {
+      "title": "Different evidence",
+      "items": [
+        "Portable readers retain per-architecture signing metadata and hashes but do not verify signature integrity, trust, Gatekeeper acceptance or notarization.",
+        "Native inspection verifies observed code-signing properties with macOS tools. Inspection never chooses allow or deny policy."
+      ],
+      "dot": "authentication"
+    },
+    {
+      "title": "Artifact boundaries",
+      "items": [
+        "Artifact inspection is bounded and does not run installer scripts or mount disk images. Applications created or downloaded by scripts cannot be discovered from payload bytes.",
+        "Container-relative locations are provenance, not installed paths. Partial inspection is reported explicitly; callers select an application and architecture."
+      ],
+      "dot": "artifact"
+    },
+    {
+      "title": "From identity to device behavior",
+      "items": [
+        "Authoring consumes selected bundle IDs, signing identifiers, team identifiers, hashes or requirements as supported by the chosen payload.",
+        "Target validation checks supported schema constraints. Publication and device activation remain separate steps; a successful authoring request does not establish physical enforcement."
+      ],
+      "dot": "policy"
+    },
+    {
+      "dot": "transport",
+      "title": "Public documentation",
+      "items": [
+        "Code-signing hashes \u2014 https://developer.apple.com/documentation/technotes/tn3126-inside-code-signing-hashes",
+        "macOS code-signing requirements \u2014 https://developer.apple.com/library/archive/technotes/tn2206/_index.html"
+      ]
+    },
+    {
+      "title": "Implementation references",
+      "dot": "artifact",
+      "items": [
+        "artifact: Distribution artifact \u2014 https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/devicemanagement/utility/appartifact/inspect.go",
+        "installed: Installed application \u2014 https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/devicemanagement/utility/appidentity/identity.go",
+        "catalog: Apple app catalogue \u2014 https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/devicemanagement/utility/appleappidentity/catalog.go",
+        "portable: Portable inspection \u2014 https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/devicemanagement/utility/appidentity/portable.go",
+        "native: Native verification \u2014 https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/devicemanagement/utility/appidentity/identity.go",
+        "lookup: Public App Store lookup \u2014 https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/devicemanagement/utility/publicappstoreidentity/client.go#L124"
+      ]
+    },
+    {
+      "title": "Implementation references (continued)",
+      "dot": "artifact",
+      "items": [
+        "select: Explicit app and artifact identity selection \u2014 https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/server/internal/app/applicationauthoring_example_test.go#L110",
+        "target: Validate the selected target \u2014 https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/server/internal/app/adminblueprints.go#L51",
+        "target: Parse authoring target constraints \u2014 https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/server/internal/app/authoringtarget.go#L16"
+      ]
+    }
+  ]
+}

@@ -15,6 +15,7 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/storage/crypt"
 )
 
+// TestRetainedRawSecretsEncryptedAndRotated checks retained raw secrets encrypted and rotated.
 func TestRetainedRawSecretsEncryptedAndRotated(t *testing.T) {
 	ctx := t.Context()
 	path := filepath.Join(t.TempDir(), "raw.db")
@@ -101,6 +102,7 @@ func TestRetainedRawSecretsEncryptedAndRotated(t *testing.T) {
 	}
 }
 
+// TestAuthenticateAcrossIndependentConnections checks authenticate across independent connections.
 func TestAuthenticateAcrossIndependentConnections(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "race.db")
 	left := openWith(t, path, nil)

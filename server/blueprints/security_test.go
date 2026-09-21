@@ -18,6 +18,7 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/server/statestore"
 )
 
+// TestProfileEncryptionRotationAndRestart checks profile encryption rotation and restart.
 func TestProfileEncryptionRotationAndRestart(t *testing.T) {
 	ctx := t.Context()
 	db, err := sql.Open("sqlite", sqlite.DSN(filepath.Join(t.TempDir(), "blueprints.db"), sqlite.Options{}))

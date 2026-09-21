@@ -12,6 +12,8 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/server/internal/bench"
 )
 
+// TestReplacementOutputRetainsAttemptWhenWakeFails checks that replacement output retains attempt
+// when wake fails.
 func TestReplacementOutputRetainsAttemptWhenWakeFails(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
@@ -32,7 +34,10 @@ func TestReplacementOutputRetainsAttemptWhenWakeFails(t *testing.T) {
 
 type replacementOutputFailure struct{}
 
+// Write returns io.ErrClosedPipe to simulate an output failure.
 func (replacementOutputFailure) Write([]byte) (int, error) { return 0, io.ErrClosedPipe }
+
+// TestReplacementOutputFailureIsReported checks replacement output failure is reported.
 func TestReplacementOutputFailureIsReported(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")

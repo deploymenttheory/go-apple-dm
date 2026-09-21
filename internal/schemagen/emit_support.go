@@ -117,6 +117,8 @@ func convertOS(
 	return out, nil
 }
 
+// overlay applies explicitly supplied schema support fields over inherited metadata,
+// parsing version boundaries and preserving omitted values.
 func overlay(dst *support.OSSupport, src *OSSupport) error {
 	var err error
 	if src.Introduced != "" {
@@ -197,6 +199,8 @@ func overlay(dst *support.OSSupport, src *OSSupport) error {
 	return nil
 }
 
+// supportFile emits platform, enrollment, and availability metadata for the generated
+// types.
 func (e *emitter) supportFile() []byte {
 	b := buf()
 	b.WriteString(e.header())
@@ -254,6 +258,7 @@ func (e *emitter) supportFile() []byte {
 	return []byte(source)
 }
 
+// entryLiteral renders a support metadata entry as a Go literal.
 func entryLiteral(en *support.Entry) string {
 	var sb strings.Builder
 	fmt.Fprintf(&sb, "{Path: %q, OS: map[support.OS]*support.OSSupport{", en.Path)
@@ -268,6 +273,8 @@ func entryLiteral(en *support.Entry) string {
 	return sb.String()
 }
 
+// osConst returns a known OS constant name or a conversion expression for an
+// unrecognized OS value.
 func osConst(os support.OS) string {
 	switch os {
 	case support.IOS:
@@ -284,6 +291,7 @@ func osConst(os support.OS) string {
 	return "OS(" + strconv.Quote(string(os)) + ")"
 }
 
+// osLiteral renders an operating-system support entry as a Go literal.
 func osLiteral(s *support.OSSupport, os support.OS) string {
 	var parts []string
 	add := func(name, v string) { parts = append(parts, name+": "+v) }
@@ -341,6 +349,7 @@ func osLiteral(s *support.OSSupport, os support.OS) string {
 	return "{" + strings.Join(parts, ", ") + "}"
 }
 
+// versionLit renders an OS version as a typed Go expression.
 func versionLit(v osversion.Version, os support.OS) string {
 	major := strconv.Itoa(v.Major)
 	if os == support.MacOS {
@@ -353,6 +362,7 @@ func versionLit(v osversion.Version, os support.OS) string {
 	return fmt.Sprintf("osversion.New(%s, %d, %d)", major, v.Minor, v.Patch)
 }
 
+// stringSlice renders string values as a Go slice literal.
 func stringSlice(ss []string) string {
 	q := make([]string, len(ss))
 	for i, s := range ss {

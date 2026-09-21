@@ -176,6 +176,7 @@ func (a *ACME) validate() error {
 	return nil
 }
 
+// payload constructs the configured enrollment identity payload.
 func (a *ACME) payload() *profiles.ACMECertificate {
 	out := &profiles.ACMECertificate{
 		DirectoryURL:       a.DirectoryURL,
@@ -196,6 +197,7 @@ func (a *ACME) payload() *profiles.ACMECertificate {
 	return out
 }
 
+// PKCS12 supplies a PKCS#12 identity payload for enrollment profile composition.
 type PKCS12 struct {
 	KeyIsExtractable   *bool
 	AllowAllAppsAccess *bool
@@ -407,6 +409,7 @@ func (p Profile) Marshal() ([]byte, error) {
 	return built.Marshal()
 }
 
+// payload constructs the configured enrollment identity payload.
 func (s *SCEP) payload() *profiles.SCEP {
 	keySize, keyUsage := s.KeySize, s.KeyUsage
 	if keySize == 0 {
@@ -596,6 +599,7 @@ func Parse(data []byte, o profile.ParseOptions) (*Profile, error) {
 	return out, nil
 }
 
+// orUUID uses the supplied identifier or generates a UUID when it is absent.
 func orUUID(u string) string {
 	if u == "" {
 		return profile.NewUUID()
@@ -603,6 +607,7 @@ func orUUID(u string) string {
 	return u
 }
 
+// nonEmpty returns a pointer to a nonempty string, or nil for an empty string.
 func nonEmpty(s string) *string {
 	if s == "" {
 		return nil
@@ -610,6 +615,7 @@ func nonEmpty(s string) *string {
 	return &s
 }
 
+// deref returns the pointed-to value, or its zero value when the pointer is nil.
 func deref(s *string) string {
 	if s == nil {
 		return ""

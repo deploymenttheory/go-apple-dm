@@ -57,6 +57,8 @@ type SetupResult struct {
 	Data       []byte                `json:"data,omitempty"`
 }
 
+// setupActions declares the distinct certificate inspection, vendor signing and
+// identity-management permissions.
 func setupActions() []adminauth.Action {
 	return []adminauth.Action{
 		{
@@ -87,6 +89,8 @@ func setupActions() []adminauth.Action {
 	}
 }
 
+// setupRoutes declares certificate lifecycle and public-artifact routes when managed
+// certificate storage is configured.
 func (a *App) setupRoutes() []adminRoute {
 	if a.Certificates == nil {
 		return nil
@@ -170,6 +174,8 @@ func (a *App) setupRoutes() []adminRoute {
 	return out
 }
 
+// setupStatus returns certificate readiness and renewal issues with response caching
+// disabled.
 func (a *App) setupStatus(w http.ResponseWriter, r *http.Request) {
 	status, err := a.CertificateSetupStatus(r.Context())
 	if err != nil {
@@ -180,6 +186,8 @@ func (a *App) setupStatus(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, 200, status)
 }
 
+// setupWorkflow returns the selected managed certificate identity with response caching
+// disabled.
 func (a *App) setupWorkflow(w http.ResponseWriter, r *http.Request) {
 	item, err := a.Certificates.Get(r.Context(), r.PathValue("id"))
 	if err != nil {
@@ -190,6 +198,8 @@ func (a *App) setupWorkflow(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, 200, item)
 }
 
+// setupExport downloads a selected public certificate artifact as a non-cacheable
+// octet-stream attachment.
 func (a *App) setupExport(w http.ResponseWriter, r *http.Request) {
 	b, err := a.Certificates.Export(
 		r.Context(),
@@ -210,6 +220,8 @@ func (a *App) setupExport(w http.ResponseWriter, r *http.Request) {
 	) // #nosec G705 -- Public artifact download, served as an octet-stream attachment with nosniff.
 }
 
+// setupOperation decodes a bounded certificate operation request, executes it and returns
+// the lifecycle result.
 func (a *App) setupOperation(w http.ResponseWriter, r *http.Request, kind lifecycle.Kind) {
 	var req SetupRequest
 	b, err := io.ReadAll(io.LimitReader(r.Body, MaxAdminBody+1))
@@ -230,6 +242,8 @@ func (a *App) setupOperation(w http.ResponseWriter, r *http.Request, kind lifecy
 	writeJSON(w, 200, result)
 }
 
+// setupError maps lifecycle sentinel errors to HTTP status codes and hides unexpected
+// operational details.
 func (a *App) setupError(w http.ResponseWriter, err error) {
 	switch {
 	case errors.Is(err, lifecycle.ErrNotFound):

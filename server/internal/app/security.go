@@ -55,6 +55,8 @@ type RateLimitConfig struct {
 	MaxEntries int
 }
 
+// protocolState returns shared protocol state, opening its SQL or in-memory backend when
+// needed.
 func (a *App) protocolState(ctx context.Context) (state.Store, error) {
 	if a.protocol != nil {
 		return a.protocol, nil
@@ -84,6 +86,8 @@ type enrollmentDepot struct {
 	app          *App
 }
 
+// Put records an issued enrollment certificate and its association evidence through the
+// configured certificate depot.
 func (d *enrollmentDepot) Put(ctx context.Context, c *x509.Certificate) error {
 	ctx = context.WithValue(ctx, issuedByKey{}, d.issuer)
 	if d.app != nil {
@@ -124,6 +128,8 @@ type enrollmentChallenge struct {
 	app          *App
 }
 
+// Verify dispatches enrollment challenges to replacement or grant verification according
+// to their prefix and configured policy.
 func (c enrollmentChallenge) Verify(
 	ctx context.Context,
 	password string,
@@ -157,6 +163,8 @@ func (c enrollmentChallenge) Verify(
 	return nil
 }
 
+// wirePKI configures certificate persistence, revocation publication and issuance policy
+// for the enrollment service.
 func (a *App) wirePKI(ctx context.Context, e *enrollment, mux *http.ServeMux) error {
 	cfg := a.cfg.PKI
 	if !cfg.Enabled {
@@ -216,6 +224,8 @@ func (a *App) wirePKI(ctx context.Context, e *enrollment, mux *http.ServeMux) er
 	return nil
 }
 
+// certificateStatus returns the certificate-status check used by the MDM service when
+// revocation support is enabled.
 func (a *App) certificateStatus() func(context.Context, *x509.Certificate) error {
 	if a.revocations == nil {
 		return nil
@@ -223,6 +233,8 @@ func (a *App) certificateStatus() func(context.Context, *x509.Certificate) error
 	return a.revocations.Check
 }
 
+// issuancePolicy sets client-authentication key usage and includes CRL and OCSP
+// publication URLs when the revocation service is configured.
 func (a *App) issuancePolicy(e *enrollment) ca.Policy {
 	p := ca.Policy{ExtKeyUsage: []x509.ExtKeyUsage{x509.ExtKeyUsageClientAuth}}
 	if a.revocations != nil {
@@ -233,6 +245,8 @@ func (a *App) issuancePolicy(e *enrollment) ca.Policy {
 	return p
 }
 
+// acmeRevocations selects the enrollment issuer's revocation registry, falling back to the
+// application's registry when present.
 func (a *App) acmeRevocations(e *enrollment) acme.Revocations {
 	if e.depot != nil && e.depot.registry != nil {
 		return e.depot.registry
@@ -243,6 +257,8 @@ func (a *App) acmeRevocations(e *enrollment) acme.Revocations {
 	return a.revocations
 }
 
+// credentialSecurity rejects credentials that fail the configured certificate-status check
+// before invoking the protected handler.
 func (a *App) credentialSecurity(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		cert := httpapi.CertFromContext(r.Context())
@@ -256,6 +272,8 @@ func (a *App) credentialSecurity(next http.Handler) http.Handler {
 	})
 }
 
+// routeFamily maps recognized inbound paths to quota families and leaves health or
+// unmatched paths unclassified.
 func routeFamily(path string) string {
 	switch {
 	case path == PathHealthz:
@@ -278,6 +296,8 @@ func routeFamily(path string) string {
 	return ""
 }
 
+// withRateLimits wraps requests with configured shared global and peer quotas, preserving
+// ACME problem responses for ACME rejections.
 func (a *App) withRateLimits(ctx context.Context, next http.Handler) (http.Handler, error) {
 	cfg := a.cfg.RateLimits
 	if len(cfg.Routes) == 0 {
@@ -331,6 +351,8 @@ func (a *App) withRateLimits(ctx context.Context, next http.Handler) (http.Handl
 	), nil
 }
 
+// validateSecurity validates revocation lifetimes, rate-limit capacity and each supported
+// route family's quota settings.
 func (c Config) validateSecurity() error {
 	if c.PKI.Enabled &&
 		(!c.Enroll.Enabled() || c.PKI.CRLTTL <= 0 || c.PKI.CRLRefresh <= 0 || c.PKI.CRLRefresh >= c.PKI.CRLTTL || c.PKI.OCSPTTL <= 0) {
@@ -366,6 +388,8 @@ func serialFromPath(r *http.Request) (*big.Int, error) {
 	return s, nil
 }
 
+// pruneProtocolState prunes bounded batches of expired state every minute until
+// cancellation, logging failures for subsequent retry.
 func (a *App) pruneProtocolState(ctx context.Context) error {
 	for {
 		select {

@@ -11,6 +11,7 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/server/service"
 )
 
+// rtsResponse decodes a ReturnToService response plist, failing the test on malformed data.
 func rtsResponse(t *testing.T, body []byte) checkin.ReturnToServiceResponse {
 	t.Helper()
 	var got checkin.ReturnToServiceResponse

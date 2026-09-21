@@ -28,6 +28,8 @@ func maidConfiguration(cert *x509.Certificate, key crypto.Signer, serverUUID str
 	}}
 }
 
+// ExampleConfig_managedAppleAccount demonstrates wiring authenticated managed Apple account token
+// handling into the MDM service.
 func ExampleConfig_managedAppleAccount() {
 	// Add this capability to the fully configured enrollment MDM payload.
 	payload := profiles.MDM{ServerCapabilities: []string{"com.apple.mdm.token"}}

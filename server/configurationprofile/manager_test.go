@@ -22,6 +22,7 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/server/configurationprofile"
 )
 
+// profileConfig creates an in-memory engine and state store for configuration-profile tests.
 func profileConfig(t *testing.T) configurationprofile.Config {
 	t.Helper()
 	e, err := ddm.New(ddm.Config{Store: inmem.New()})
@@ -31,6 +32,8 @@ func profileConfig(t *testing.T) configurationprofile.Config {
 	return configurationprofile.Config{Engine: e, State: state.NewMemory(), BaseURL: "https://mdm.example"}
 }
 
+// profileManager constructs a configuration-profile manager, failing the test on invalid
+// configuration.
 func profileManager(t *testing.T, cfg configurationprofile.Config) *configurationprofile.Manager {
 	t.Helper()
 	m, err := configurationprofile.New(cfg)
@@ -40,10 +43,12 @@ func profileManager(t *testing.T, cfg configurationprofile.Config) *configuratio
 	return m
 }
 
+// testProfile builds a configuration profile with the supplied scope and setting.
 func testProfile(scope, setting string) *profile.Profile {
 	return &profile.Profile{Identifier: "com.example.settings", UUID: "6C9B0C20-0000-7000-8000-000000000001", Scope: scope, Payloads: []profile.Payload{{Identifier: "com.example.settings.payload", UUID: "6C9B0C20-0000-7000-8000-000000000002", Content: &profile.Raw{Type: "com.example.settings", Keys: map[string]any{"Value": setting}}}}}
 }
 
+// marshalProfile encodes a configuration profile, failing the test on error.
 func marshalProfile(t *testing.T, p *profile.Profile) []byte {
 	t.Helper()
 	data, err := p.Marshal()
@@ -53,6 +58,8 @@ func marshalProfile(t *testing.T, p *profile.Profile) []byte {
 	return data
 }
 
+// TestUploadPreservesFormatIdentityAndBytes checks that upload preserves format identity and
+// bytes.
 func TestUploadPreservesFormatIdentityAndBytes(t *testing.T) {
 	p := testProfile(profile.ScopeSystem, "test")
 	ca, err := testpki.NewCA("configuration profile signer")
@@ -103,6 +110,8 @@ func TestUploadPreservesFormatIdentityAndBytes(t *testing.T) {
 	}
 }
 
+// TestUploadRejectsInvalidAndUnsupportedProfiles checks that upload rejects invalid and
+// unsupported profiles.
 func TestUploadRejectsInvalidAndUnsupportedProfiles(t *testing.T) {
 	p := testProfile(profile.ScopeSystem, "test")
 	mdmProfile := testProfile(profile.ScopeSystem, "test")
@@ -150,6 +159,7 @@ func TestUploadRejectsInvalidAndUnsupportedProfiles(t *testing.T) {
 	}
 }
 
+// TestProfileRevisionValidationAndPagination checks profile revision validation and pagination.
 func TestProfileRevisionValidationAndPagination(t *testing.T) {
 	cfg := profileConfig(t)
 	for _, bad := range []configurationprofile.Config{{}, {State: cfg.State}, {Engine: cfg.Engine}} {
@@ -205,6 +215,7 @@ type failingProfileState struct {
 	getErr, putErr, listErr error
 }
 
+// Get injects a profile-read failure for matching keys or delegates to the store.
 func (s failingProfileState) Get(ctx context.Context, key string) (state.Record, error) {
 	if s.getErr != nil && strings.HasPrefix(key, s.getKey) {
 		return state.Record{}, s.getErr
@@ -212,6 +223,7 @@ func (s failingProfileState) Get(ctx context.Context, key string) (state.Record,
 	return s.Store.Get(ctx, key)
 }
 
+// List injects a profile-list failure or delegates to the store.
 func (s failingProfileState) List(ctx context.Context, prefix, after string, limit int) ([]state.Record, error) {
 	if s.listErr != nil {
 		return nil, s.listErr
@@ -219,6 +231,7 @@ func (s failingProfileState) List(ctx context.Context, prefix, after string, lim
 	return s.Store.List(ctx, prefix, after, limit)
 }
 
+// Update wraps profile transactions with configured read and write failures.
 func (s failingProfileState) Update(ctx context.Context, keys []string, fn func(state.Tx) error) error {
 	return s.Store.Update(ctx, keys, func(tx state.Tx) error { return fn(failingProfileTx{Tx: tx, faults: s}) })
 }
@@ -228,6 +241,7 @@ type failingProfileTx struct {
 	faults failingProfileState
 }
 
+// Get injects a profile-read failure for matching keys or delegates to the transaction.
 func (tx failingProfileTx) Get(ctx context.Context, key string) (state.Record, error) {
 	if tx.faults.getErr != nil && strings.HasPrefix(key, tx.faults.getKey) {
 		return state.Record{}, tx.faults.getErr
@@ -235,6 +249,7 @@ func (tx failingProfileTx) Get(ctx context.Context, key string) (state.Record, e
 	return tx.Tx.Get(ctx, key)
 }
 
+// Put injects a profile-write failure for matching keys or delegates to the transaction.
 func (tx failingProfileTx) Put(ctx context.Context, r state.Record) error {
 	if tx.faults.putErr != nil && strings.HasPrefix(r.Key, tx.faults.putKey) {
 		return tx.faults.putErr
@@ -242,6 +257,7 @@ func (tx failingProfileTx) Put(ctx context.Context, r state.Record) error {
 	return tx.Tx.Put(ctx, r)
 }
 
+// TestUploadStorageFailuresAreAtomic checks upload storage failures are atomic.
 func TestUploadStorageFailuresAreAtomic(t *testing.T) {
 	for _, operation := range []string{"read metadata", "write data", "write metadata"} {
 		t.Run(operation, func(t *testing.T) {
@@ -270,6 +286,8 @@ func TestUploadStorageFailuresAreAtomic(t *testing.T) {
 	}
 }
 
+// TestProfileReadFailures checks profile metadata and content-read failures, including corrupt
+// stored content.
 func TestProfileReadFailures(t *testing.T) {
 	for _, operation := range []string{"metadata error", "list error", "data error", "missing data", "corrupt metadata", "changed data"} {
 		t.Run(operation, func(t *testing.T) {

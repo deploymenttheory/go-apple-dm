@@ -113,6 +113,7 @@ func KindOf(pub crypto.PublicKey) (KeyKind, bool) {
 	return "", false
 }
 
+// withDefaults fills unspecified policy values while preserving explicit caller settings.
 func (p Policy) withDefaults() Policy {
 	if p.Validity == 0 {
 		p.Validity = 365 * 24 * time.Hour
@@ -143,6 +144,7 @@ type Signer interface {
 
 // Depot records issued certificates.
 type Depot interface {
+	// Put retains the issued certificate, returning an error if persistence fails.
 	Put(ctx context.Context, cert *x509.Certificate) error
 	// Get returns the certificate with the serial or ErrNotFound.
 	Get(ctx context.Context, serial *big.Int) (*x509.Certificate, error)
@@ -399,6 +401,7 @@ func ValidateCSR(csr *x509.CertificateRequest, p Policy) error {
 	return err
 }
 
+// validateCSR checks the CSR signature and requested public key against issuance policy.
 func validateCSR(csr *x509.CertificateRequest, p Policy) (x509.KeyUsage, error) {
 	if csr == nil {
 		return 0, fmt.Errorf("%w: nil", ErrCSR)

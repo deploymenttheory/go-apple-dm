@@ -85,6 +85,7 @@ func New(certs push.CertStore, opts ...Option) *Client {
 	return c
 }
 
+// defaultTransport constructs a verified HTTP transport using the topic certificate.
 func (c *Client) defaultTransport(cert tls.Certificate) *http.Client {
 	return &http.Client{
 		Timeout: c.timeout,
@@ -166,6 +167,7 @@ type apnsError struct {
 	Timestamp int64  `json:"timestamp"`
 }
 
+// pushOne sends an MDM wake-up to one target and classifies the APNs result.
 func (c *Client) pushOne(ctx context.Context, t push.Target) push.Result {
 	if !t.Push.Valid() {
 		return push.Result{
@@ -199,6 +201,7 @@ type notification struct {
 	body       []byte
 }
 
+// send performs one APNs HTTP exchange and classifies the response or transport failure.
 func (c *Client) send(ctx context.Context, n notification, mdmPush bool) push.Result {
 	if _, err := httpsurl.Parse(c.host); err != nil {
 		return push.Result{Outcome: push.OutcomeRejected, Err: fmt.Errorf("push: %w", err)}

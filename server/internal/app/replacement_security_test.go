@@ -18,6 +18,8 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/storage"
 )
 
+// replacementSecurityApp builds an in-memory enrollment application containing a device with an
+// original certificate pin.
 func replacementSecurityApp(t *testing.T) (*App, mdm.EnrollmentID) {
 	t.Helper()
 	a, err := Build(
@@ -55,6 +57,8 @@ func replacementSecurityApp(t *testing.T) (*App, mdm.EnrollmentID) {
 	return a, id
 }
 
+// TestReplacementRequiresOriginalProfileRightsAndEndpoint checks that replacement requires
+// original profile rights and endpoint.
 func TestReplacementRequiresOriginalProfileRightsAndEndpoint(t *testing.T) {
 	a, id := replacementSecurityApp(t)
 	binding := acme.Binding{UDID: id.ID, CommonName: id.ID}
@@ -144,6 +148,8 @@ func TestReplacementRequiresOriginalProfileRightsAndEndpoint(t *testing.T) {
 	}
 }
 
+// TestReplacementAdminValidatesBeforeCreatingAttempt checks that replacement admin validates
+// before creating attempt.
 func TestReplacementAdminValidatesBeforeCreatingAttempt(t *testing.T) {
 	a, id := replacementSecurityApp(t)
 	for _, input := range []struct {
@@ -172,6 +178,8 @@ func TestReplacementAdminValidatesBeforeCreatingAttempt(t *testing.T) {
 	}
 }
 
+// TestEvidenceCorruptionNeverReportsCompletedIdentity checks that evidence corruption never
+// reports completed identity.
 func TestEvidenceCorruptionNeverReportsCompletedIdentity(t *testing.T) {
 	a, id := replacementSecurityApp(t)
 	key := "issued-identity:original-pin"

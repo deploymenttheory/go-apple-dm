@@ -10,6 +10,8 @@ import (
 	"time"
 )
 
+// TestRetry checks Retry-After handling, bounded backoff, retry eligibility, transport failures,
+// and cancellation.
 func TestRetry(t *testing.T) {
 	t.Parallel()
 	t.Run("RetryAfterSeconds", func(t *testing.T) {
@@ -200,6 +202,7 @@ func TestRetry(t *testing.T) {
 	})
 }
 
+// TestErrors checks structured AXM errors, source forms, multiple errors, and non-JSON failures.
 func TestErrors(t *testing.T) {
 	t.Parallel()
 	t.Run("Decode", func(t *testing.T) {
@@ -325,6 +328,7 @@ func TestErrors(t *testing.T) {
 	})
 }
 
+// fmtWrap wraps an error with errors.Join for error-chain assertions.
 func fmtWrap(err error) error { return errors.Join(err) }
 
 // flakyTransport fails the first fail API round trips with a connection
@@ -334,6 +338,8 @@ type flakyTransport struct {
 	fail int
 }
 
+// RoundTrip injects the configured number of transport failures before delegating, while allowing
+// token requests through.
 func (f *flakyTransport) RoundTrip(r *http.Request) (*http.Response, error) {
 	if !strings.HasSuffix(r.URL.Path, "/token") && f.fail > 0 {
 		f.fail--

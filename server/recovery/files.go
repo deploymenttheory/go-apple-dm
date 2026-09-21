@@ -9,6 +9,8 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/server/internal/privatefile"
 )
 
+// openLocal opens a recovery file relative to its parent directory root through the
+// private-file helper.
 func openLocal(path string, flags int, mode os.FileMode) (*os.File, error) {
 	root, err := os.OpenRoot(filepath.Dir(path))
 	if err != nil {
@@ -22,6 +24,7 @@ func openLocal(path string, flags int, mode os.FileMode) (*os.File, error) {
 // Config and key files are bounded independently of the streamed SQL snapshot.
 const maxConfigFile = 4 << 20
 
+// readPrivate reads a regular local file within the configuration-size limit.
 func readPrivate(path string) ([]byte, error) {
 	root, err := os.OpenRoot(filepath.Dir(path))
 	if err != nil {
@@ -51,6 +54,8 @@ func readPrivate(path string) ([]byte, error) {
 	return raw, nil
 }
 
+// writePrivate writes local recovery material with the private-file protections required by
+// the caller.
 func writePrivate(path string, raw []byte) error {
 	root, err := os.OpenRoot(filepath.Dir(path))
 	if err != nil {
@@ -68,6 +73,7 @@ func writePrivate(path string, raw []byte) error {
 	return wrap(f.Sync())
 }
 
+// copyRegular copies a regular recovery file without accepting unsupported file types.
 func copyRegular(ctx context.Context, source, destination string) error {
 	if err := ctx.Err(); err != nil {
 		return wrap(err)

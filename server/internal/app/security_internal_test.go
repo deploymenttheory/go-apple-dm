@@ -23,14 +23,17 @@ var errSecurityStorage = errors.New("security storage unavailable")
 
 type unavailableDepot struct{ ca.Depot }
 
+// Put returns the injected certificate-storage failure.
 func (unavailableDepot) Put(context.Context, *x509.Certificate) error { return errSecurityStorage }
 
 type unavailableChallenge struct{}
 
+// Verify returns the injected challenge-storage failure.
 func (unavailableChallenge) Verify(context.Context, string, *x509.CertificateRequest) error {
 	return errSecurityStorage
 }
 
+// TestIssuanceAndChallengeFailuresPropagate checks issuance and challenge failures propagate.
 func TestIssuanceAndChallengeFailuresPropagate(t *testing.T) {
 	ctx := t.Context()
 	a := &accountdriven.Associations{Store: state.NewMemory()}
@@ -82,6 +85,7 @@ func TestIssuanceAndChallengeFailuresPropagate(t *testing.T) {
 	}
 }
 
+// TestProtocolStoreOutageAndUnconfiguredRoute checks protocol store outage and unconfigured route.
 func TestProtocolStoreOutageAndUnconfiguredRoute(t *testing.T) {
 	ctx := t.Context()
 	db, err := sql.Open("sqlite", ":memory:")

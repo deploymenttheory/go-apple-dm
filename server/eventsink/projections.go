@@ -65,6 +65,7 @@ func Default() *Registry {
 	return r
 }
 
+// authenticate projects enrollment authentication data into the permitted event summary.
 func authenticate(data any) map[string]any {
 	m, ok := data.(*checkin.Authenticate)
 	if !ok {
@@ -95,6 +96,7 @@ func tokenUpdate(data any) map[string]any {
 	return out
 }
 
+// command projects the command UUID and request type without disclosing its payload.
 func command(data any) map[string]any {
 	c, ok := data.(*mdm.Command)
 	if !ok {
@@ -128,6 +130,7 @@ func response(data any) map[string]any {
 	return out
 }
 
+// pushResult projects an APNs result into the permitted event summary.
 func pushResult(data any) map[string]any {
 	r, ok := data.(push.Result)
 	if !ok {
@@ -138,6 +141,7 @@ func pushResult(data any) map[string]any {
 	return out
 }
 
+// ddmChanges projects declaration-change metadata into the event summary.
 func ddmChanges(data any) map[string]any {
 	rows, ok := data.([]ddm.Change)
 	if !ok {
@@ -158,6 +162,7 @@ func ddmChanges(data any) map[string]any {
 	return out
 }
 
+// depDevice projects DEP account and device identifiers into the event summary.
 func depDevice(data any) map[string]any {
 	e, ok := data.(dep.DeviceEvent)
 	if !ok {
@@ -170,6 +175,8 @@ func depDevice(data any) map[string]any {
 	return out
 }
 
+// depAssignment projects DEP account, device, and assigned profile identifiers into the
+// event summary.
 func depAssignment(data any) map[string]any {
 	e, ok := data.(dep.AssignmentEvent)
 	if !ok {
@@ -182,6 +189,8 @@ func depAssignment(data any) map[string]any {
 	return out
 }
 
+// depTokenExpiring projects the token-expiry notification without exposing OAuth
+// credentials.
 func depTokenExpiring(data any) map[string]any {
 	e, ok := data.(dep.TokenExpiringEvent)
 	if !ok {
@@ -192,6 +201,7 @@ func depTokenExpiring(data any) map[string]any {
 	return out
 }
 
+// putNonEmpty adds a summary field only when its string value is present.
 func putNonEmpty(m map[string]any, key, val string) {
 	if val != "" {
 		m[key] = val

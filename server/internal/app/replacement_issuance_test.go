@@ -22,6 +22,8 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/server/statestore"
 )
 
+// TestReplacementProfileClaimsItsPendingAttempt checks replacement profile claims its pending
+// attempt.
 func TestReplacementProfileClaimsItsPendingAttempt(t *testing.T) {
 	for _, backend := range []string{"inmem", "sqlite"} {
 		t.Run(backend, func(t *testing.T) {
@@ -172,6 +174,7 @@ func TestReplacementProfileClaimsItsPendingAttempt(t *testing.T) {
 	}
 }
 
+// TestReplacementSubjectLookupFailsClosed checks that replacement subject lookup fails closed.
 func TestReplacementSubjectLookupFailsClosed(t *testing.T) {
 	a, id := replacementSecurityApp(t)
 	attempt := profile.NewUUID()

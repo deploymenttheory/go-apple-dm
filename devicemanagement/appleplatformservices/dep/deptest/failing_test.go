@@ -20,6 +20,8 @@ func TestFailingStorePreservesStoreContract(t *testing.T) {
 	})
 }
 
+// TestInjectedStoreFailuresRollbackTransactions checks injected store failures rollback
+// transactions.
 func TestInjectedStoreFailuresRollbackTransactions(t *testing.T) {
 	ctx, now := t.Context(), time.Now().UTC()
 	failure := errors.New("injected storage failure")

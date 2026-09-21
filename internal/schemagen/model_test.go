@@ -20,6 +20,7 @@ func schemaRoot(t *testing.T) string {
 	return root
 }
 
+// TestLoadAllYAMLNoUnknownKeys checks load all YAML no unknown keys.
 func TestLoadAllYAMLNoUnknownKeys(t *testing.T) {
 	t.Parallel()
 	tree, err := Load(schemaRoot(t))
@@ -54,6 +55,7 @@ func TestLoadAllYAMLNoUnknownKeys(t *testing.T) {
 	}
 }
 
+// TestClassify checks schema family and kind classification and unknown-family errors.
 func TestClassify(t *testing.T) {
 	t.Parallel()
 	cases := []struct {
@@ -96,6 +98,7 @@ func TestClassify(t *testing.T) {
 	}
 }
 
+// TestParseStrict checks strict schema parsing and rejection of invalid fields and shapes.
 func TestParseStrict(t *testing.T) {
 	t.Parallel()
 	good := "title: T\npayload:\n  requesttype: X\npayloadkeys:\n- key: A\n  type: <string>\n  presence: required\n"
@@ -118,6 +121,7 @@ func TestParseStrict(t *testing.T) {
 	}
 }
 
+// TestParseBreaksRecursiveAnchors checks parse breaks recursive anchors.
 func TestParseBreaksRecursiveAnchors(t *testing.T) {
 	t.Parallel()
 	// Mirrors Apple's safari.bookmarks.yaml: a folder item whose subkeys alias
@@ -198,6 +202,7 @@ payloadkeys:
 	}
 }
 
+// TestPayloadIdentifierOrder checks payload identifier precedence and empty-payload behavior.
 func TestPayloadIdentifierOrder(t *testing.T) {
 	t.Parallel()
 	p := Payload{PayloadType: "pt", DeclarationType: "dt"}
@@ -209,6 +214,7 @@ func TestPayloadIdentifierOrder(t *testing.T) {
 	}
 }
 
+// TestSupportedOSHelpers checks OS-support lookup and zero-value detection.
 func TestSupportedOSHelpers(t *testing.T) {
 	t.Parallel()
 	var s SupportedOS
@@ -224,6 +230,8 @@ func TestSupportedOSHelpers(t *testing.T) {
 	}
 }
 
+// TestLoadErrors checks schema-tree loading failures for absent roots, malformed documents,
+// unknown families, and unreadable files.
 func TestLoadErrors(t *testing.T) {
 	t.Parallel()
 	if _, err := Load(filepath.Join(t.TempDir(), "missing")); err == nil {

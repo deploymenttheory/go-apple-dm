@@ -30,6 +30,7 @@ type Dialect struct {
 	IsUniqueViolation func(error) bool
 }
 
+// uniqueViolation recognizes the backend's unique-constraint failure.
 func (d Dialect) uniqueViolation(err error) bool {
 	return err != nil && d.IsUniqueViolation != nil && d.IsUniqueViolation(err)
 }
@@ -93,11 +94,13 @@ func InsertIgnoreDuplicateKey(table string, cols, key []string) string {
 	return insertPrefix(table, cols) + " AS new ON DUPLICATE KEY UPDATE " + key[0] + " = new." + key[0]
 }
 
+// insertPrefix builds an INSERT statement with one question-mark placeholder per column.
 func insertPrefix(table string, cols []string) string {
 	return "INSERT INTO " + table + " (" + strings.Join(cols, ", ") + ") VALUES (" +
 		strings.TrimSuffix(strings.Repeat("?, ", len(cols)), ", ") + ")"
 }
 
+// assignments builds the column assignment list for an upsert statement.
 func assignments(cols, key []string, src string) string {
 	skip := map[string]bool{}
 	for _, k := range key {

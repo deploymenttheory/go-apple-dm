@@ -34,6 +34,8 @@ const (
 
 // Enqueuer queues a command for enrollments; *service.Core satisfies it.
 type Enqueuer interface {
+	// Enqueue queues the command for the supplied enrollments and reports per-target skips
+	// through the normal service queue contract.
 	Enqueue(
 		ctx context.Context,
 		ids []mdm.EnrollmentID,
@@ -44,11 +46,14 @@ type Enqueuer interface {
 
 // Pusher sends APNs wake-ups; *pushnotify.Notifier satisfies it.
 type Pusher interface {
+	// Notify sends wake-ups for the supplied enrollments and returns per-target APNs
+	// outcomes.
 	Notify(ctx context.Context, ids []mdm.EnrollmentID) (map[mdm.EnrollmentID]push.Result, error)
 }
 
 // TokenSource renders an enrollment's TokensResponse; *ddm.Engine satisfies it.
 type TokenSource interface {
+	// Tokens renders the enrollment's current declarative synchronization tokens as JSON.
 	Tokens(ctx context.Context, id mdm.EnrollmentID) ([]byte, error)
 }
 
@@ -309,6 +314,9 @@ func (n *Notifier) command(
 	return outcomeQueued, nil
 }
 
+// generationKey combines the deduplication prefix with a SHA-256 digest of
+// DeclarationsToken. Empty prefixes disable deduplication; missing or malformed tokens
+// return ddm.ErrNotifier.
 func generationKey(prefix string, tokens []byte) (string, error) {
 	if prefix == "" {
 		return "", nil
@@ -369,6 +377,7 @@ func (n *Notifier) push(
 	return pushed, failed, nil
 }
 
+// fail persists the enrollment's next retry time and failure details on its change rows.
 func (n *Notifier) fail(ctx context.Context, g *changeGroup, cause error, now time.Time) error {
 	attempt := g.tries + 1
 	next := now.Add(n.cfg.Backoff(attempt))
@@ -390,12 +399,15 @@ func (n *Notifier) fail(ctx context.Context, g *changeGroup, cause error, now ti
 	return nil
 }
 
+// complete marks the successfully handled change groups complete.
 func (n *Notifier) complete(ctx context.Context, groups []*changeGroup) error {
 	return event.Run(ctx, n.cfg.Bus, func(ctx context.Context) error {
 		return n.completeRecorded(ctx, groups)
 	})
 }
 
+// completeRecorded completes recorded change rows after their enqueue and push outcomes
+// have been handled.
 func (n *Notifier) completeRecorded(ctx context.Context, groups []*changeGroup) error {
 	if len(groups) == 0 {
 		return nil

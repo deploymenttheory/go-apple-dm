@@ -87,6 +87,7 @@ func (c *Catalog) Latest(deviceID string, includeNonPublic bool) (*Asset, bool) 
 	return &out, true
 }
 
+// supports reports whether a release supports the requested product identifier.
 func supports(a *Asset, deviceID string) bool {
 	for _, d := range a.SupportedDevices {
 		if d == deviceID {
@@ -96,6 +97,7 @@ func supports(a *Asset, deviceID string) bool {
 	return false
 }
 
+// newer orders available releases by their parsed version and publication metadata.
 func newer(a, b *Asset) bool {
 	if c := CompareVersions(a.ProductVersion, b.ProductVersion); c != 0 {
 		return c > 0
@@ -123,6 +125,7 @@ func CompareVersions(a, b string) int {
 	return 0
 }
 
+// components splits a release version into components suitable for ordered comparison.
 func components(v string) []string {
 	v, _, _ = strings.Cut(strings.TrimSpace(v), " ")
 	if v == "" {
@@ -131,6 +134,7 @@ func components(v string) []string {
 	return strings.Split(v, ".")
 }
 
+// compareComponent compares individual release-version components.
 func compareComponent(x, y string) int {
 	nx, ex := strconv.Atoi(x)
 	ny, ey := strconv.Atoi(y)
@@ -187,6 +191,8 @@ type Client struct {
 	fetched time.Time
 }
 
+// now returns the configured clock time, using the package default when no clock is
+// supplied.
 func (c *Client) now() time.Time {
 	if c.Now != nil {
 		return c.Now()
@@ -194,6 +200,7 @@ func (c *Client) now() time.Time {
 	return time.Now()
 }
 
+// ttl returns the configured catalogue cache lifetime or its default.
 func (c *Client) ttl() time.Duration {
 	if c.TTL > 0 {
 		return c.TTL
@@ -245,6 +252,7 @@ func (c *Client) Latest(ctx context.Context, deviceID string) (*Asset, error) {
 	return a, nil
 }
 
+// fetch downloads and decodes a bounded release catalogue using the caller's context.
 func (c *Client) fetch(ctx context.Context) (*Catalog, error) {
 	u := c.URL
 	if u == "" {

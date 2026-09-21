@@ -21,6 +21,8 @@ type BoundaryCase struct {
 	Deprecated bool   `json:"deprecated"`
 }
 
+// sourceSupport builds effective support tables from current schemas and optional
+// historical inputs, returning the merged tree as well.
 func sourceSupport(
 	root string,
 	histories ...string,
@@ -147,6 +149,7 @@ func BoundaryProbes(baseline, candidate string, histories ...string) ([]Boundary
 	return cases, nil
 }
 
+// boundaryTarget constructs the target used to check an availability boundary.
 func boundaryTarget(os support.OS, v osversion.Version, context string) support.Target {
 	target := support.Target{
 		OS:           os,

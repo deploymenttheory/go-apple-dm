@@ -11,6 +11,7 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/server/sqlstore/mysql"
 )
 
+// TestOpenArgumentErrors checks MySQL store rejection of empty and malformed DSNs.
 func TestOpenArgumentErrors(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
@@ -22,6 +23,7 @@ func TestOpenArgumentErrors(t *testing.T) {
 	}
 }
 
+// TestNormalizeDSN checks required MySQL DSN options and rejection of malformed DSNs.
 func TestNormalizeDSN(t *testing.T) {
 	t.Parallel()
 	n, err := mysql.NormalizeDSN("u:p@tcp(h:3306)/db")
@@ -38,6 +40,8 @@ func TestNormalizeDSN(t *testing.T) {
 	}
 }
 
+// TestIsUniqueViolation checks MySQL duplicate-key classification without misclassifying other
+// errors.
 func TestIsUniqueViolation(t *testing.T) {
 	t.Parallel()
 	dup := &gomysql.MySQLError{Number: 1062, Message: "Duplicate entry"}

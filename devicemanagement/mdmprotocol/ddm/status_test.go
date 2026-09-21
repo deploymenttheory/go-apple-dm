@@ -36,6 +36,7 @@ func report(t *testing.T, full *bool, items map[string]any, errs []map[string]an
 	return b
 }
 
+// boolp returns a pointer to the supplied boolean.
 func boolp(b bool) *bool { return &b }
 
 // row is one management.declarations entry as a device reports it.
@@ -61,6 +62,7 @@ func declarationsItem(activations, configurations []map[string]any) map[string]a
 	}}}
 }
 
+// values reads status values with the supplied path prefix and indexes their JSON by path.
 func values(t *testing.T, h *harness, id mdm.EnrollmentID, prefix string) map[string]string {
 	t.Helper()
 	res, err := h.engine.StatusValues(context.Background(), id, ddm.StatusValueQuery{PathPrefix: prefix}, paging.Page{Limit: 1000})
@@ -74,6 +76,7 @@ func values(t *testing.T, h *harness, id mdm.EnrollmentID, prefix string) map[st
 	return out
 }
 
+// declarationRows indexes declaration status rows by kind and identifier.
 func declarationRows(t *testing.T, h *harness, id mdm.EnrollmentID) map[string]ddm.DeclarationStatus {
 	t.Helper()
 	rows, err := h.engine.DeclarationStatus(context.Background(), id)
@@ -87,6 +90,8 @@ func declarationRows(t *testing.T, h *harness, id mdm.EnrollmentID) map[string]d
 	return out
 }
 
+// TestStatus checks status parsing, size and structural limits, full and partial updates, and
+// persistence.
 func TestStatus(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
@@ -423,6 +428,7 @@ func TestStatus(t *testing.T) {
 	})
 }
 
+// TestStatusQueries checks declaration, value, error, and raw-report status queries.
 func TestStatusQueries(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
@@ -491,6 +497,7 @@ func TestStatusQueries(t *testing.T) {
 	})
 }
 
+// TestClientCapabilities checks client-capability decoding and absent-report defaults.
 func TestClientCapabilities(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()

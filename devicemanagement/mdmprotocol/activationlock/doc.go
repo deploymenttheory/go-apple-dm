@@ -14,5 +14,5 @@
 // # References
 //
 //   - Apple algorithm: https://developer.apple.com/documentation/devicemanagement/creating-and-using-bypass-codes
-//   - Protocol helpers: docs/operations/protocol-helpers.md (relative to repository root)
+//   - Protocol helpers: https://github.com/deploymenttheory/go-apple-dm/blob/main/docs/operations/protocol-helpers.md
 package activationlock

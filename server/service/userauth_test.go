@@ -39,6 +39,7 @@ var (
 // counter value, so successive reads never repeat.
 type seqReader struct{ n byte }
 
+// Read fills the buffer with incrementing byte values.
 func (r *seqReader) Read(b []byte) (int, error) {
 	for i := range b {
 		b[i] = r.n
@@ -53,6 +54,8 @@ type failingUserAuth struct {
 	fail map[string]error
 }
 
+// StoreUserAuthChallenge injects a user-authentication challenge-write failure or delegates to the
+// store.
 func (f *failingUserAuth) StoreUserAuthChallenge(ctx context.Context, id mdm.EnrollmentID, challenge string, raw []byte, at time.Time) error {
 	if err := f.fail["StoreUserAuthChallenge"]; err != nil {
 		return err
@@ -60,6 +63,7 @@ func (f *failingUserAuth) StoreUserAuthChallenge(ctx context.Context, id mdm.Enr
 	return f.UserAuthStore.StoreUserAuthChallenge(ctx, id, challenge, raw, at)
 }
 
+// StoreUserAuthToken injects a user-authentication token-write failure or delegates to the store.
 func (f *failingUserAuth) StoreUserAuthToken(ctx context.Context, id mdm.EnrollmentID, token string, raw []byte, at time.Time) error {
 	if err := f.fail["StoreUserAuthToken"]; err != nil {
 		return err
@@ -67,6 +71,7 @@ func (f *failingUserAuth) StoreUserAuthToken(ctx context.Context, id mdm.Enrollm
 	return f.UserAuthStore.StoreUserAuthToken(ctx, id, token, raw, at)
 }
 
+// UserAuth injects a user-authentication state-read failure or delegates to the store.
 func (f *failingUserAuth) UserAuth(ctx context.Context, id mdm.EnrollmentID) (*storage.UserAuthState, error) {
 	if err := f.fail["UserAuth"]; err != nil {
 		return nil, err
@@ -74,6 +79,7 @@ func (f *failingUserAuth) UserAuth(ctx context.Context, id mdm.EnrollmentID) (*s
 	return f.UserAuthStore.UserAuth(ctx, id)
 }
 
+// ClearUserAuth injects a user-authentication clear failure or delegates to the store.
 func (f *failingUserAuth) ClearUserAuth(ctx context.Context, id mdm.EnrollmentID) error {
 	if err := f.fail["ClearUserAuth"]; err != nil {
 		return err
@@ -89,6 +95,7 @@ type uaFixture struct {
 	events []event.Event
 }
 
+// ha1Lookup returns the fixture user's Digest HA1 value, or an empty value for unknown users.
 func ha1Lookup(_ context.Context, username, realm string) (string, error) {
 	if username == uaUser {
 		return simulator.HA1(uaUser, realm, uaPassword), nil
@@ -96,6 +103,8 @@ func ha1Lookup(_ context.Context, username, realm string) (string, error) {
 	return "", nil
 }
 
+// newUAFixture creates a Digest user-authentication fixture with enrolled push state, a fake
+// clock, and deterministic random bytes.
 func newUAFixture(t *testing.T) *uaFixture {
 	t.Helper()
 	ctx := context.Background()
@@ -112,10 +121,12 @@ func newUAFixture(t *testing.T) *uaFixture {
 	return f
 }
 
+// uaMsg builds a UserAuthenticate message containing the supplied digest response.
 func uaMsg(digest string) *checkin.UserAuthenticate {
 	return &checkin.UserAuthenticate{MessageType: "UserAuthenticate", UDID: "D1", UserID: "U1", DigestResponse: digest}
 }
 
+// uaReq builds a user-channel request at the fixture receive time.
 func uaReq() *mdm.Request { return &mdm.Request{ID: uaUID, ReceivedAt: t0} }
 
 // challenge runs the first message and returns the DigestChallenge.
@@ -138,6 +149,8 @@ func (f *uaFixture) answer(t *testing.T, challenge, password string) (*mdm.UserA
 	return f.d.Handle(context.Background(), uaReq(), uaMsg(digest))
 }
 
+// lastEvent requires the latest event to match the expected type, user enrollment, actor, payload,
+// and clock time.
 func (f *uaFixture) lastEvent(t *testing.T, want event.Type) event.Event {
 	t.Helper()
 	if len(f.events) == 0 {
@@ -164,6 +177,7 @@ func (f *uaFixture) rejected(t *testing.T, challenge, password string) {
 	emptyToken(t, must2(f.answer(t, challenge, password)))
 }
 
+// emptyToken requires a successful response with an empty AuthToken and no DigestChallenge.
 func emptyToken(t *testing.T, o outcome) {
 	t.Helper()
 
@@ -174,6 +188,8 @@ func emptyToken(t *testing.T, o outcome) {
 	}
 }
 
+// TestDigestUserAuthFlow checks digest user auth flow, including challenge differs per call, wrong
+// digest, malformed digest, right digest.
 func TestDigestUserAuthFlow(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
@@ -438,6 +454,8 @@ func TestDigestUserAuthFlow(t *testing.T) {
 	})
 }
 
+// TestHA1Verifier checks Digest HA1 verification, case and scheme handling, unknown users, and
+// lookup failures.
 func TestHA1Verifier(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()

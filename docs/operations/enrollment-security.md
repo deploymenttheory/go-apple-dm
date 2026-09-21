@@ -171,9 +171,9 @@ A persistence or registration error returns no certificate. The persisted
 receipt lets the next authorized retry complete registration with the same DER.
 Use the same issuer and certificate policy on all replicas.
 
-ACME now uses the same separation: `acme.Config.Signer` must be pure signing,
-with no depot/registry writes or reentry into the order store. Move those writes
-to `acme.Config.Register`, which must be idempotent and safe for concurrent calls.
+ACME uses the same separation: `acme.Config.Signer` must be pure signing,
+with no depot/registry writes or reentry into the order store.
+`acme.Config.Register` owns those writes and must be idempotent and safe for concurrent calls.
 The reference server supplies both. Custom ACME stores must implement
 `UpdateOrder` with a cross-instance lock acquired before reading order state;
 use `devicemanagement/storage/acme/acmetest` to verify the contract.
@@ -189,10 +189,8 @@ attestation and deadlines are rechecked during recovery. Signing before a failed
 transaction may be repeated, but no uncommitted certificate is registered or
 returned. Do not use a signing callback that exposes the certificate itself.
 
-No SQL migration is needed: the receipt flags and CSR hash live in existing JSON
-records. Older completed certificates remain readable. Stop older writers before
-deploying this version across replicas; mixed-version writers cannot preserve
-the locking contract. Keep issuer keys and policy consistent during recovery.
+Receipt flags and the CSR hash live in persisted JSON records. Every replica must
+implement the order-locking contract and share issuer keys and policy during recovery.
 Expired incomplete orders are pruned by the normal order cleanup; pending
 receipts stay unavailable and their identifiers cannot be recycled for issuance.
 Recovery runs during order polling and finalize retries. Monitor persistent
@@ -397,7 +395,8 @@ trust. `DM_WEBHOOK_PRIVATE_NETWORKS` explicitly permits private receiver CIDRs;
 dial-time checks pin each connection to a checked resolved address. Mandatory
 Standard Webhooks signatures supplement TLS. Transport diagnostics omit receiver
 URLs and response bodies. Full decoded JSON and raw protocol export require
-root-managed subscriptions, encrypted retention and separate receiver credentials.
+explicit sensitive-export permissions, encrypted retention and separate receiver
+credentials; see [access control](access-control.md).
 
 ## Device validation
 

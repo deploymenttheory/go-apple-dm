@@ -20,8 +20,11 @@ import (
 
 var t0 = time.Date(2026, 9, 1, 12, 0, 0, 0, time.UTC)
 
+// dev constructs a device-channel enrollment ID.
 func dev(n string) mdm.EnrollmentID { return mdm.EnrollmentID{Channel: mdm.ChannelDevice, ID: n} }
 
+// enrolledStore creates an in-memory store with authenticated device enrollments and distinct push
+// credentials.
 func enrolledStore(t *testing.T, ids ...string) *inmem.Store {
 	t.Helper()
 	s := inmem.New()
@@ -37,6 +40,7 @@ func enrolledStore(t *testing.T, ids ...string) *inmem.Store {
 	return s
 }
 
+// TestNotifierPublishesInvalidToken checks that notifier publishes invalid token.
 func TestNotifierPublishesInvalidToken(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
@@ -84,6 +88,7 @@ func TestNotifierPublishesInvalidToken(t *testing.T) {
 	}
 }
 
+// TestNotifierPublishesRejectionSeparately checks that notifier publishes rejection separately.
 func TestNotifierPublishesRejectionSeparately(t *testing.T) {
 	t.Parallel()
 	store := enrolledStore(t, "A", "B")

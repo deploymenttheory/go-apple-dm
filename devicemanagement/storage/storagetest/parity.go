@@ -421,6 +421,8 @@ func RunMigrationSuite(t *testing.T, newStore Factory) {
 	})
 }
 
+// exportAll collects every export page so backend parity checks can compare complete
+// enrollment state.
 func exportAll(t *testing.T, s storage.Store, limit int) []storage.EnrollmentExport {
 	t.Helper()
 	ctx := context.Background()

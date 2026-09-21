@@ -22,6 +22,7 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/server/eventstore"
 )
 
+// TestStandardWebhooksSignatures checks Standard Webhooks signature construction and verification.
 func TestStandardWebhooksSignatures(t *testing.T) {
 	key := []byte("0123456789abcdef0123456789abcdef")
 	secret := "whsec_" + base64.StdEncoding.EncodeToString(key)
@@ -77,6 +78,7 @@ func TestStandardWebhooksSignatures(t *testing.T) {
 	}
 }
 
+// TestTransportRetriesRotationAndRestart checks transport retries rotation and restart.
 func TestTransportRetriesRotationAndRestart(t *testing.T) {
 	var mu sync.Mutex
 	status := 503
@@ -175,6 +177,7 @@ func TestTransportRetriesRotationAndRestart(t *testing.T) {
 	mu.Unlock()
 }
 
+// TestTransportPolicyAndStorageFailure checks transport policy and storage failure.
 func TestTransportPolicyAndStorageFailure(t *testing.T) {
 	receiver := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { w.WriteHeader(204) }))
 	defer receiver.Close()
@@ -216,6 +219,7 @@ func TestTransportPolicyAndStorageFailure(t *testing.T) {
 	}
 }
 
+// TestTransportRedirectTimeoutAndRetryDates checks transport redirect timeout and retry dates.
 func TestTransportRedirectTimeoutAndRetryDates(t *testing.T) {
 	var redirected atomic.Bool
 	target := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
@@ -276,6 +280,8 @@ func TestTransportRedirectTimeoutAndRetryDates(t *testing.T) {
 	}
 }
 
+// TestTransportInvalidPersistentCredentialsStopDelivery checks transport invalid persistent
+// credentials stop delivery.
 func TestTransportInvalidPersistentCredentialsStopDelivery(t *testing.T) {
 	for _, mutate := range []func(*storedSubscription){
 		func(s *storedSubscription) { s.Key = "corrupt" },
@@ -303,6 +309,8 @@ func TestTransportInvalidPersistentCredentialsStopDelivery(t *testing.T) {
 	}
 }
 
+// TestDialPolicyFailures checks guarded webhook dialing, DNS failures, and redaction of failed
+// connection addresses.
 func TestDialPolicyFailures(t *testing.T) {
 	client, err := newHTTPClient(Config{PrivateNetworks: []string{"127.0.0.0/8"}})
 	if err != nil {

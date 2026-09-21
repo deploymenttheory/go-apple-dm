@@ -35,6 +35,8 @@ func (c *Core) ImportEnrollment(ctx context.Context, rec storage.EnrollmentExpor
 	})
 }
 
+// importEnrollment imports validated enrollment state through the configured migration
+// store.
 func (c *Core) importEnrollment(ctx context.Context, rec storage.EnrollmentExport) error {
 	ctx, after, err := c.runHooks(ctx, &Call{Op: "import"})
 	if err != nil {

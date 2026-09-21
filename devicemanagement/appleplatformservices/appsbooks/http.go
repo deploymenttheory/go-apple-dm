@@ -13,6 +13,8 @@ import (
 	"time"
 )
 
+// request encodes a bounded JSON request and retries transient GET failures within the
+// configured attempt limit. Mutating requests are not automatically retried.
 func (c *Client) request(
 	ctx context.Context,
 	method string,
@@ -48,6 +50,8 @@ func (c *Client) request(
 	}
 }
 
+// attempt sends one request after token-expiry and service-rate checks, then decodes the
+// bounded response or returns the Apple service error.
 func (c *Client) attempt(
 	ctx context.Context,
 	method string,
@@ -114,6 +118,8 @@ func (c *Client) attempt(
 	return nil
 }
 
+// retryAfter interprets a Retry-After value as seconds or an HTTP date relative to the
+// supplied time.
 func retryAfter(value string, now time.Time) time.Duration {
 	if seconds, err := strconv.ParseInt(value, 10, 32); err == nil && seconds >= 0 {
 		return time.Duration(seconds) * time.Second

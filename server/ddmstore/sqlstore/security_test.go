@@ -11,6 +11,7 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/server/sqlstore/sqlite"
 )
 
+// TestDeclarationSecretsEncryptedAndRotated checks declaration secrets encrypted and rotated.
 func TestDeclarationSecretsEncryptedAndRotated(t *testing.T) {
 	ctx := t.Context()
 	db := openDB(t)

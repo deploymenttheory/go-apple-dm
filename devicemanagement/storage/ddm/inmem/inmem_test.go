@@ -13,6 +13,7 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/storage/ddm/inmem"
 )
 
+// TestContract runs the shared DDM store suite against in-memory storage.
 func TestContract(t *testing.T) {
 	t.Parallel()
 	ddmtest.RunAll(t, func(t *testing.T) ddm.Store {
@@ -63,6 +64,7 @@ func TestUpdateRollbackRestoresState(t *testing.T) {
 	}
 }
 
+// TestUpdatePanicRestoresState checks that update panic restores state.
 func TestUpdatePanicRestoresState(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()

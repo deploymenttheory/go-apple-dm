@@ -15,6 +15,8 @@ import (
 	smallscep "github.com/smallstep/scep"
 )
 
+// TestWireRejectsInvalidRecipientsAndEnvelopes checks that wire rejects invalid recipients and
+// envelopes.
 func TestWireRejectsInvalidRecipientsAndEnvelopes(t *testing.T) {
 	key, err := rsa.GenerateKey(rand.Reader, 2048)
 	if err != nil {

@@ -12,6 +12,8 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/storage/crypt"
 )
 
+// TestCorruptMetadataDoesNotExposeSecretsOrDeliverCommands checks that corrupt metadata does not
+// expose secrets or deliver commands.
 func TestCorruptMetadataDoesNotExposeSecretsOrDeliverCommands(t *testing.T) {
 	for _, failure := range []string{"unlock export", "command metadata", "push metadata", "lock failure", "empty escrow", "invalid identity"} {
 		t.Run(failure, func(t *testing.T) {

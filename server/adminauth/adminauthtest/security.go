@@ -9,6 +9,8 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/server/adminauth"
 )
 
+// runActiveRoot checks that invalid principal changes preserve credentials and concurrent
+// mutations cannot remove the last active root.
 func runActiveRoot(t *testing.T, factory NewStore) {
 	t.Helper()
 	t.Run("InvalidChangesPreserveCredentials", func(t *testing.T) {

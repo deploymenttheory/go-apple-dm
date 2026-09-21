@@ -24,6 +24,8 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/server/pushnotify"
 )
 
+// renewalFixture creates an issuer-renewal fixture with persisted identity evidence and a prepared
+// rollover.
 func renewalFixture(
 	t *testing.T,
 ) (*App, *storage.Enrollment, *managedIssuerService, lifecycle.Rollover) {
@@ -86,6 +88,7 @@ func renewalFixture(
 
 type renewalPusher struct{}
 
+// Push returns io.ErrUnexpectedEOF to simulate a push failure during renewal.
 func (renewalPusher) Push(
 	context.Context,
 	[]push.Target,
@@ -99,6 +102,8 @@ type renewalReplacementStore struct {
 	readErr, beginErr error
 }
 
+// TransitionReplacement returns configured replacement-read results or injects a transition
+// failure before delegating.
 func (s renewalReplacementStore) TransitionReplacement(
 	ctx context.Context,
 	id mdm.EnrollmentID,
@@ -117,6 +122,8 @@ func (s renewalReplacementStore) TransitionReplacement(
 	return store.TransitionReplacement(ctx, id, change)
 }
 
+// queueRenewalTrust queues an InstallProfile command and places it in the requested renewal-test
+// state.
 func queueRenewalTrust(
 	t *testing.T,
 	a *App,
@@ -162,6 +169,8 @@ func queueRenewalTrust(
 	}
 }
 
+// TestDeviceMigrationTrustAndReplacementOutcomes checks device migration trust and replacement
+// outcomes.
 func TestDeviceMigrationTrustAndReplacementOutcomes(t *testing.T) {
 	for _, mode := range []string{"missing evidence", "already migrated", "offline", "queue trust", "trust pending", "trust failed", "trust cleared", "trust acknowledged", "unsupported method", "ineligible profile", "committed", "pending", "failed", "cancelled", "expired", "other replacement", "matching replacement", "replacement read failure", "replacement begin failure"} {
 		t.Run(mode, func(t *testing.T) {
@@ -290,6 +299,7 @@ func TestDeviceMigrationTrustAndReplacementOutcomes(t *testing.T) {
 	}
 }
 
+// TestHTTPSTrustOutcomesAndDisabledDevices checks HTTPS trust outcomes and disabled devices.
 func TestHTTPSTrustOutcomesAndDisabledDevices(t *testing.T) {
 	for _, mode := range []string{"missing", "disabled", "lookup failure", "queue failure", "pending", "acknowledged", "failed", "cleared"} {
 		t.Run(mode, func(t *testing.T) {
@@ -351,6 +361,8 @@ func TestHTTPSTrustOutcomesAndDisabledDevices(t *testing.T) {
 	}
 }
 
+// TestIdentityEvidenceLegacyRegistryAndDamagedRecords checks identity evidence legacy registry and
+// damaged records.
 func TestIdentityEvidenceLegacyRegistryAndDamagedRecords(t *testing.T) {
 	a, _ := memorySetupApp(t)
 	ctx := t.Context()
@@ -402,6 +414,8 @@ func TestIdentityEvidenceLegacyRegistryAndDamagedRecords(t *testing.T) {
 	setupRequire(t, err, io.ErrUnexpectedEOF)
 }
 
+// TestDeviceRenewalPersistsProgressAndExplicitRetries checks device renewal persists progress and
+// explicit retries.
 func TestDeviceRenewalPersistsProgressAndExplicitRetries(t *testing.T) {
 	a, e, _, job := renewalFixture(t)
 	ctx := t.Context()
@@ -482,6 +496,8 @@ func TestDeviceRenewalPersistsProgressAndExplicitRetries(t *testing.T) {
 	}
 }
 
+// TestRenewalWorkersRescanLateAndDisabledEnrollments checks renewal workers rescan late and
+// disabled enrollments.
 func TestRenewalWorkersRescanLateAndDisabledEnrollments(t *testing.T) {
 	a, e, _, job := renewalFixture(t)
 	ctx := t.Context()

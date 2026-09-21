@@ -14,8 +14,10 @@ import (
 
 type brokenReader struct{}
 
+// Read returns io.ErrUnexpectedEOF without reading bytes.
 func (brokenReader) Read([]byte) (int, error) { return 0, io.ErrUnexpectedEOF }
 
+// TestManifestHashes checks manifest hash generation and encoding round trips.
 func TestManifestHashes(t *testing.T) {
 	md := manifest.Metadata{
 		BundleIdentifier: "com.example.app",

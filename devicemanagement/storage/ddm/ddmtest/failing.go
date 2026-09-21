@@ -18,6 +18,7 @@ type Failing struct {
 	Fail map[string]error
 }
 
+// fail returns the configured failure for an operation when fault injection is enabled.
 func (f *Failing) fail(method string) error {
 	if f.Fail == nil {
 		return nil

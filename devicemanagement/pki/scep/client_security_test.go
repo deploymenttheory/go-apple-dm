@@ -24,6 +24,7 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/testpki"
 )
 
+// TestClientRejectsUntrustedReply checks that client rejects untrusted reply.
 func TestClientRejectsUntrustedReply(t *testing.T) {
 	trusted, err := testpki.NewCA("trusted-enrollment-ca")
 	if err != nil {
@@ -76,6 +77,8 @@ func TestClientRejectsUntrustedReply(t *testing.T) {
 	}
 }
 
+// TestClientChecksIssuedIdentityAndTransaction checks client checks issued identity and
+// transaction.
 func TestClientChecksIssuedIdentityAndTransaction(t *testing.T) {
 	f := newFixture(t)
 	other := newFixture(t)
@@ -166,6 +169,7 @@ func TestClientChecksIssuedIdentityAndTransaction(t *testing.T) {
 	}
 }
 
+// clientTestCertificate issues a test certificate with the supplied issuer, key, and expiry.
 func clientTestCertificate(
 	t *testing.T,
 	issuer *x509.Certificate,
@@ -194,6 +198,7 @@ func clientTestCertificate(
 	return cert
 }
 
+// TestClientDiscoveryAndRedirectTrust checks client discovery and redirect trust.
 func TestClientDiscoveryAndRedirectTrust(t *testing.T) {
 	f := newFixture(t)
 	endpoint, err := newTestServer(f.signer, f.caCert, f.caKey)

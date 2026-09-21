@@ -5151,7 +5151,7 @@ svg[data-purpose-filter] g[data-purpose-highlight] > path { stroke-width: 2.4; }
 <button type="button" data-purpose-filter-button="warning" aria-pressed="false" style="--entry:var(--purpose-warning)"><span class="purpose-key-dot" aria-hidden="true"></span>Warning, deferred, or retry</button>
     </div>
     <div class="purpose-key-detail" aria-live="polite" aria-atomic="true"><div><strong id="purpose-key-selection"></strong><span id="purpose-key-counts"></span></div><p id="purpose-key-description"></p></div>
-    <script id="purpose-key-data" type="application/json">{"entries":[{"key":"service","label":"Services and processing","meaning":"Services and processing steps that perform the work shown in the diagram.","nodes":["Build application","Supervise workers","Stop background work","Close application","Drain admitted work"],"connections":["Owner resumes"]},{"key":"transport","label":"Communication and transport","meaning":"Communication between components, including endpoints, protocol exchanges, and notifications.","nodes":["Open listener","Drain HTTP requests"],"connections":[]},{"key":"storage","label":"Storage and persistence","meaning":"Records and persistence: where the system stores or retrieves information.","nodes":["Open configured stores","Acknowledge pause"],"connections":["Provide stores"]},{"key":"artifact","label":"Configuration and artifacts","meaning":"Configuration and artifacts that the system consumes or produces.","nodes":["Load configuration","Validate server role"],"connections":["Parse Config"]},{"key":"neutral","label":"Actors, structure, neutral states","meaning":"Actors, structural boundaries, and states that do not imply success, warning, or failure.","nodes":[],"connections":["Stop or runtime failure"]},{"key":"success","label":"Successful or accepted","meaning":"An explicitly successful or accepted result.","nodes":[],"connections":["Valid configuration","Application built","Listener ready","HTTP drained","Workers stopped","Writes stopped"]},{"key":"warning","label":"Warning, deferred, or retry","meaning":"A warning, deferred action, or condition that requires a retry.","nodes":["Close admission"],"connections":["Maintenance request","Admission closed"]}],"nodes":12,"connections":12}</script>
+    <script id="purpose-key-data" type="application/json">{"entries":[{"key":"service","label":"Services and processing","meaning":"Services and processing steps that perform the work shown in the diagram.","nodes":["Build application","Supervise workers","Stop background work","Close application","Drain admitted work"],"connections":["Owner resumes"]},{"key":"transport","label":"Communication and transport","meaning":"Communication between components, including endpoints, protocol exchanges, and notifications.","nodes":["Open listener","Drain HTTP requests"],"connections":[]},{"key":"storage","label":"Storage and persistence","meaning":"Records and persistence: where the system stores or retrieves information.","nodes":["Open configured stores","Acknowledge pause"],"connections":["Provide stores"]},{"key":"artifact","label":"Configuration and artifacts","meaning":"Configuration and artifacts that the system consumes or produces.","nodes":["Load configuration","Validate configuration"],"connections":["Parse Config"]},{"key":"neutral","label":"Actors, structure, neutral states","meaning":"Actors, structural boundaries, and states that do not imply success, warning, or failure.","nodes":[],"connections":["Stop or runtime failure"]},{"key":"success","label":"Successful or accepted","meaning":"An explicitly successful or accepted result.","nodes":[],"connections":["Valid configuration","Application built","Listener ready","HTTP drained","Workers stopped","Writes stopped"]},{"key":"warning","label":"Warning, deferred, or retry","meaning":"A warning, deferred action, or condition that requires a retry.","nodes":["Close admission"],"connections":["Maintenance request","Admission closed"]}],"nodes":12,"connections":12}</script>
   </section>
     <div class="diagram-container" data-detail-level="read"
          data-preset-badge-editorial-plate="ARCHIFY / PLATE 04">
@@ -5215,8 +5215,8 @@ svg[data-purpose-filter] g[data-purpose-highlight] > path { stroke-width: 2.4; }
         <path data-edge-from="pause" data-edge-to="wait" data-edge-label="Admission closed" data-edge-key="1" data-edge-id="maintenance-drain" data-purpose="warning" data-composition-points="160.5,406;160.5,422;501.5,422;501.5,406" d="M 160.5 406 L 160.5 422 L 501.5 422 L 501.5 406" class="a-default purpose-arrow purpose-warning" stroke-width="1.4" marker-end="url(#purpose-arrowhead-warning)"/>
         <path data-edge-from="workers" data-edge-to="pause" data-edge-label="Maintenance request" data-edge-key="2" data-edge-id="maintenance-request" data-purpose="warning" data-composition-points="1189.5,280;1189.5,426;160.5,426;160.5,406" d="M 1189.5 280 L 1189.5 426 L 160.5 426 L 160.5 406" class="a-default purpose-arrow purpose-warning" stroke-width="1.4" marker-end="url(#purpose-arrowhead-warning)"/>
         <path data-edge-from="paused" data-edge-to="workers" data-edge-label="Owner resumes" data-edge-key="3" data-edge-id="maintenance-resume" data-purpose="service" data-composition-points="973,372;1189.5,372;1189.5,280" d="M 973 372 L 1189.5 372 L 1189.5 280" class="a-default purpose-arrow purpose-service" stroke-width="1.4" marker-end="url(#purpose-arrowhead-service)"/>
-        <path data-edge-from="env" data-edge-to="role" data-edge-label="Parse Config" data-edge-key="4" data-edge-id="r1" data-purpose="artifact" data-composition-points="273,120;389,120" d="M 273 120 L 389 120" class="a-default purpose-arrow purpose-artifact" stroke-width="1.4" marker-end="url(#purpose-arrowhead-artifact)"/>
-        <path data-edge-from="role" data-edge-to="openstorage" data-edge-label="Valid configuration" data-edge-key="5" data-edge-id="r2" data-purpose="success" data-composition-points="614,120;748,120" d="M 614 120 L 748 120" class="a-default purpose-arrow purpose-success" stroke-width="1.4" marker-end="url(#purpose-arrowhead-success)"/>
+        <path data-edge-from="env" data-edge-to="validate" data-edge-label="Parse Config" data-edge-key="4" data-edge-id="r1" data-purpose="artifact" data-composition-points="273,120;389,120" d="M 273 120 L 389 120" class="a-default purpose-arrow purpose-artifact" stroke-width="1.4" marker-end="url(#purpose-arrowhead-artifact)"/>
+        <path data-edge-from="validate" data-edge-to="openstorage" data-edge-label="Valid configuration" data-edge-key="5" data-edge-id="r2" data-purpose="success" data-composition-points="614,120;748,120" d="M 614 120 L 748 120" class="a-default purpose-arrow purpose-success" stroke-width="1.4" marker-end="url(#purpose-arrowhead-success)"/>
         <path data-edge-from="openstorage" data-edge-to="wire" data-edge-label="Provide stores" data-edge-key="6" data-edge-id="r3" data-purpose="storage" data-composition-points="860.5,154;860.5,170;1189.5,170;1189.5,154" d="M 860.5 154 L 860.5 170 L 1189.5 170 L 1189.5 154" class="a-default purpose-arrow purpose-storage" stroke-width="1.4" marker-end="url(#purpose-arrowhead-storage)"/>
         <path data-edge-from="wire" data-edge-to="listen" data-edge-label="Application built" data-edge-key="7" data-edge-id="r4" data-purpose="success" data-composition-points="1302,120;1500,120;1500,196;860.5,196;860.5,212" d="M 1302 120 L 1500 120 L 1500 196 L 860.5 196 L 860.5 212" class="a-default purpose-arrow purpose-success" stroke-width="1.4" marker-end="url(#purpose-arrowhead-success)"/>
         <path data-edge-from="listen" data-edge-to="workers" data-edge-label="Listener ready" data-edge-key="8" data-edge-id="r5" data-purpose="success" data-composition-points="860.5,280;860.5,296;1189.5,296;1189.5,280" d="M 860.5 280 L 860.5 296 L 1189.5 296 L 1189.5 280" class="a-default purpose-arrow purpose-success" stroke-width="1.4" marker-end="url(#purpose-arrowhead-success)"/>
@@ -5236,16 +5236,16 @@ svg[data-purpose-filter] g[data-purpose-highlight] > path { stroke-width: 2.4; }
           <text data-detail="context" x="160.5" y="124" class="t-muted" font-size="11" text-anchor="middle">Environment, then CLI overrides</text>
         </g>
 
-        <g id="node-role" data-node-id="role" data-node-label="Validate server role" tabindex="0" role="button" aria-label="Focus Validate server role, mdm, ddm, or all, Configure and build" aria-pressed="false" data-node-kind="security" data-node-sublabel="mdm, ddm, or all" data-node-context="Configure and build" data-purpose="artifact">
-          <title>Validate server role · mdm, ddm, or all · Configure and build</title>
+        <g id="node-validate" data-node-id="validate" data-node-label="Validate configuration" tabindex="0" role="button" aria-label="Focus Validate configuration, Unified runtime and secrets, Configure and build" aria-pressed="false" data-node-kind="security" data-node-sublabel="Unified runtime and secrets" data-node-context="Configure and build" data-purpose="artifact">
+          <title>Validate configuration · Unified runtime and secrets · Configure and build</title>
           <rect x="389" y="86" width="225" height="68" rx="6" class="c-mask"/>
           <rect x="389" y="86" width="225" height="68" rx="6" class="c-security" stroke-width="1.5"/>
           <g aria-hidden="true" data-semantic-sigil="security" class="semantic-sigil s-security" transform="translate(395 92) scale(0.6875)">
             <path d="M8 2.2 13 4v3.5c0 3.1-1.8 5.4-5 6.5-3.2-1.1-5-3.4-5-6.5V4Z"/>
             <path d="m5.8 8 1.5 1.5 3-3"/>
           </g>
-          <text data-node-label="" data-detail-anchor="" x="501.5" y="107" class="t-primary" font-size="14" font-weight="600" text-anchor="middle">Validate server role</text>
-          <text data-detail="context" x="501.5" y="124" class="t-muted" font-size="11" text-anchor="middle">mdm, ddm, or all</text>
+          <text data-node-label="" data-detail-anchor="" x="501.5" y="107" class="t-primary" font-size="14" font-weight="600" text-anchor="middle">Validate configuration</text>
+          <text data-detail="context" x="501.5" y="124" class="t-muted" font-size="11" text-anchor="middle">Unified runtime and secrets</text>
         </g>
 
         <g id="node-openstorage" data-node-id="openstorage" data-node-label="Open configured stores" tabindex="0" role="button" aria-label="Focus Open configured stores, Memory or shared SQL pool, Configure and build" aria-pressed="false" data-node-kind="database" data-node-sublabel="Memory or shared SQL pool" data-node-context="Configure and build" data-purpose="storage">
@@ -5376,11 +5376,11 @@ svg[data-purpose-filter] g[data-purpose-highlight] > path { stroke-width: 2.4; }
           <rect x="1036.25" y="352" width="90" height="14" rx="3" class="c-mask"/>
           <text x="1081.25" y="362" class="t-muted" font-size="10" text-anchor="middle">Owner resumes</text>
         </g>
-        <g data-detail="context" data-edge-from="env" data-edge-to="role" data-edge-label="Parse Config" data-edge-key="4" data-edge-id="r1" data-purpose="artifact">
+        <g data-detail="context" data-edge-from="env" data-edge-to="validate" data-edge-label="Parse Config" data-edge-key="4" data-edge-id="r1" data-purpose="artifact">
           <rect x="289" y="100" width="84" height="14" rx="3" class="c-mask"/>
           <text x="331" y="110" class="t-muted" font-size="10" text-anchor="middle">Parse Config</text>
         </g>
-        <g data-detail="context" data-edge-from="role" data-edge-to="openstorage" data-edge-label="Valid configuration" data-edge-key="5" data-edge-id="r2" data-purpose="success">
+        <g data-detail="context" data-edge-from="validate" data-edge-to="openstorage" data-edge-label="Valid configuration" data-edge-key="5" data-edge-id="r2" data-purpose="success">
           <rect x="618" y="100" width="126" height="14" rx="3" class="c-mask"/>
           <text x="681" y="110" class="t-muted" font-size="10" text-anchor="middle">Valid configuration</text>
         </g>
@@ -5614,8 +5614,8 @@ svg[data-purpose-filter] g[data-purpose-highlight] > path { stroke-width: 2.4; }
           <h3>Shared runtime</h3>
         </div>
         <ul>
-          <li>&bull; dmserver and embedded bench scenarios share server/internal/runtime. Remote listeners require TLS; plain HTTP is limited to literal loopback. Private DDM forwarding requires HTTPS.</li>
-          <li>&bull; The application registers workers for supervision and readiness. A worker failure cancels sibling loops and reaches the runtime supervisor; a shutdown signal follows the ordered HTTP drain path.</li>
+          <li>&bull; dmserver and embedded bench scenarios share server/internal/runtime. Remote listeners require TLS; plain HTTP is limited to literal loopback.</li>
+          <li>&bull; The application registers workers for supervision and readiness. A worker failure cancels sibling loops and reaches the runtime supervisor; shutdown follows the ordered HTTP drain path.</li>
         </ul>
       </div>
 
@@ -5625,8 +5625,8 @@ svg[data-purpose-filter] g[data-purpose-highlight] > path { stroke-width: 2.4; }
           <h3>Configured services and workers</h3>
         </div>
         <ul>
-          <li>&bull; Managed setup registers certificate-renewal and device-identity-renewal workers. SQL applications register persistent event-delivery; DDM, retention and Apple inventory workers follow configured capabilities.</li>
-          <li>&bull; mdm and all expose configured enrollment and /mdm. ddm serves the internal adapter. Enrollment discovery, trust routes and app-push clients are conditional capabilities.</li>
+          <li>&bull; The unified application mounts administration, MDM and configured enrollment services. DDM uses the in-process adapter; public discovery, certificate routes and app notifications depend on configuration.</li>
+          <li>&bull; Certificate renewal, native-webhook retention, persistent event delivery, DDM changes and DEP synchronization/assignment run under runtime supervision as configured.</li>
         </ul>
       </div>
 
@@ -5654,13 +5654,42 @@ svg[data-purpose-filter] g[data-purpose-highlight] > path { stroke-width: 2.4; }
 
       <div class="card">
         <div class="card-header">
-          <div class="card-dot transport"></div>
+          <div class="card-dot artifact"></div>
           <h3>Implementation references</h3>
         </div>
         <ul>
-          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/7500eb25e50a2913338339d5fced18dc7f41fdc3/server/internal/runtime/runtime.go" target="_blank" rel="noopener noreferrer">Runtime supervision</a></li>
-          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/7500eb25e50a2913338339d5fced18dc7f41fdc3/server/internal/app/app.go" target="_blank" rel="noopener noreferrer">Worker registration</a></li>
-          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/7500eb25e50a2913338339d5fced18dc7f41fdc3/server/maintenance/participant.go" target="_blank" rel="noopener noreferrer">Maintenance participant</a></li>
+          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/server/internal/app/env.go" target="_blank" rel="noopener noreferrer">env: Load configuration</a></li>
+          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/server/internal/app/app.go" target="_blank" rel="noopener noreferrer">validate: Validate configuration</a></li>
+          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/server/internal/app/app.go" target="_blank" rel="noopener noreferrer">openstorage: Open configured stores</a></li>
+          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/server/internal/app/app.go" target="_blank" rel="noopener noreferrer">wire: Build application</a></li>
+          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/server/internal/runtime/runtime.go" target="_blank" rel="noopener noreferrer">listen: Open listener</a></li>
+          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/server/internal/runtime/runtime.go" target="_blank" rel="noopener noreferrer">workers: Supervise workers</a></li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-dot artifact"></div>
+          <h3>Implementation references (continued)</h3>
+        </div>
+        <ul>
+          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/server/internal/runtime/runtime.go" target="_blank" rel="noopener noreferrer">drain: Drain HTTP requests</a></li>
+          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/server/internal/runtime/runtime.go" target="_blank" rel="noopener noreferrer">stopworkers: Stop background work</a></li>
+          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/server/internal/app/app.go" target="_blank" rel="noopener noreferrer">close: Close application</a></li>
+          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/server/maintenance/participant.go" target="_blank" rel="noopener noreferrer">pause: Close admission</a></li>
+          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/server/maintenance/participant.go" target="_blank" rel="noopener noreferrer">wait: Drain admitted work</a></li>
+          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/server/maintenance/participant.go" target="_blank" rel="noopener noreferrer">paused: Acknowledge pause</a></li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-dot artifact"></div>
+          <h3>Implementation references (continued)</h3>
+        </div>
+        <ul>
+          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/server/internal/app/webhooks.go" target="_blank" rel="noopener noreferrer">Native webhook retention</a></li>
+          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/server/internal/app/dep.go" target="_blank" rel="noopener noreferrer">DEP worker schedules</a></li>
         </ul>
       </div>
     </div>

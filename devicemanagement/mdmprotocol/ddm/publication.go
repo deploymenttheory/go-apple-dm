@@ -27,6 +27,8 @@ type PublishResult struct {
 // publication. The lock must serialize publishers of name until transaction end,
 // including the first publication when the set does not yet exist.
 type PublicationLocker interface {
+	// LockPublication serializes publication of the named set within the current
+	// transaction.
 	LockPublication(context.Context, string) error
 }
 

@@ -26,6 +26,7 @@ var (
 	rsaKey   *rsa.PrivateKey
 )
 
+// testP256 returns the lazily generated shared P-256 test key.
 func testP256(tb testing.TB) *ecdsa.PrivateKey {
 	tb.Helper()
 	p256Once.Do(func() {
@@ -38,6 +39,7 @@ func testP256(tb testing.TB) *ecdsa.PrivateKey {
 	return p256Key
 }
 
+// testRSA returns the lazily generated shared 2048-bit RSA test key.
 func testRSA(tb testing.TB) *rsa.PrivateKey {
 	tb.Helper()
 	rsaOnce.Do(func() {
@@ -50,6 +52,7 @@ func testRSA(tb testing.TB) *rsa.PrivateKey {
 	return rsaKey
 }
 
+// mustEC generates an EC private key on the supplied curve, failing the test on error.
 func mustEC(tb testing.TB, curve elliptic.Curve) *ecdsa.PrivateKey {
 	tb.Helper()
 	k, err := ecdsa.GenerateKey(curve, rand.Reader)
@@ -123,8 +126,10 @@ type brokenSigner struct {
 	err error
 }
 
+// Public returns the configured public key.
 func (b brokenSigner) Public() crypto.PublicKey { return b.pub }
 
+// Sign returns the configured signature bytes and error.
 func (b brokenSigner) Sign(io.Reader, []byte, crypto.SignerOpts) ([]byte, error) {
 	return b.sig, b.err
 }

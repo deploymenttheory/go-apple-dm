@@ -140,6 +140,7 @@ func New(opts ...Option) *Bus {
 	return b
 }
 
+// newBus allocates subscriber state and applies the supplied bus options.
 func newBus(opts []Option) *Bus {
 	b := &Bus{subs: map[Type][]*subscription{}, done: make(chan struct{})}
 	for _, o := range opts {
@@ -209,6 +210,7 @@ func (b *Bus) Publish(ctx context.Context, e Event) error {
 	return b.deliver(ctx, e)
 }
 
+// deliver invokes the selected subscribers for one event.
 func (b *Bus) deliver(ctx context.Context, e Event) error {
 	if e.At.IsZero() {
 		e.At = time.Now()
@@ -268,6 +270,7 @@ func (b *Bus) Close(ctx context.Context) error {
 	}
 }
 
+// report reports subscriber delivery failures through the configured error handler.
 func (b *Bus) report(e Event, err error) {
 	if b.onError != nil {
 		b.onError(e, err)

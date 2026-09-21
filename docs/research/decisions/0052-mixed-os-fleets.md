@@ -7,8 +7,7 @@ Date: 2026-09-12
 ## Context
 
 A fleet can simultaneously run older releases, the current release, and the next
-release or its seed. For this transition, macOS 15, 26 and 27 are distinct fleet
-members. Their release labels are not an arithmetic sequence. Updating Apple's
+release or its seed. macOS 15, 26 and 27 are distinct fleet members. Their release labels are not an arithmetic sequence. Updating Apple's
 schema must preserve management of older devices, including properties Apple has
 deleted from newer documentation.
 
@@ -52,9 +51,7 @@ The explicit `ValidateTargets: false` option continues to bypass availability.
 parsing, comparison and named macOS major release constants. Callers use this
 package directly; `support.Target` and `support.OSSupport` declare their version
 fields as `osversion.Version`. The support package owns feature availability and
-management-context checks. The previous version alias, parsing/construction
-wrappers and error re-export are removed; consumers follow the
-[API migration](../../operations/os-versions.md#migrating-from-the-support-version-api).
+management-context checks. See [version construction and validation](../../operations/os-versions.md).
 Generated availability tables use these shared versions for introduced,
 deprecated and removed boundaries; a major release constant does not discard a
 feature's minor or patch floor.
@@ -86,7 +83,7 @@ the UUID, request type and a fixed reason code; it does not invent a device resu
 The built-in in-memory, SQLite, PostgreSQL and MySQL backends implement it.
 Custom stores without it fail safely if queued work becomes ineligible; the
 service never issues a broad clear by assuming a custom store understands a new
-filter field. No database migration is needed.
+filter field.
 
 ## Validation
 

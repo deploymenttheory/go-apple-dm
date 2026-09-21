@@ -30,6 +30,8 @@ func keypair(t *testing.T) *dep.Keypair {
 	return kp
 }
 
+// TestTokenPKI checks encrypted token exchange, corruption rejection, consumer-key binding, and
+// PKI helpers.
 func TestTokenPKI(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
@@ -433,6 +435,7 @@ func ecdsaPKCS8(t *testing.T) []byte {
 	return pem.EncodeToMemory(&pem.Block{Type: "PRIVATE KEY", Bytes: der})
 }
 
+// FuzzUnwrap checks that unwrapped fuzz inputs either produce valid DEP tokens or ErrInvalid.
 func FuzzUnwrap(f *testing.F) {
 	kp, err := dep.GenerateTokenPKI("fuzz", time.Hour, time.Now())
 	if err != nil {

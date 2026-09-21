@@ -12,6 +12,8 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/appleplatformservices/dep/deptest"
 )
 
+// TestProfile checks byte-stable profile round trips, unknown fields, local validation, and length
+// limits.
 func TestProfile(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()

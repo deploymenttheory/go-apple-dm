@@ -53,11 +53,9 @@ func (Secret) MarshalJSON() ([]byte, error) { return []byte(`"` + Redacted + `"`
 // MarshalText implements encoding.TextMarshaler with the constant.
 func (Secret) MarshalText() ([]byte, error) { return []byte(Redacted), nil }
 
-// LogValue implements slog.LogValuer indirectly through String; slog uses
-// the Stringer for values that are not primitives.
-
 // Provider resolves secrets by name.
 type Provider interface {
+	// Get returns the named secret or an error wrapping ErrNotFound when absent.
 	Get(ctx context.Context, name string) (Secret, error)
 }
 

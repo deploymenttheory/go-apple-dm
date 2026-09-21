@@ -23,6 +23,7 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/server/replycerts"
 )
 
+// rotation builds a RotateFileVaultKey command with the supplied key kind and command UUID.
 func rotation(t *testing.T, kind, uuid string) *mdm.Command {
 	t.Helper()
 	cmd, err := mdm.NewCommand(
@@ -40,6 +41,8 @@ func rotation(t *testing.T, kind, uuid string) *mdm.Command {
 	return cmd
 }
 
+// TestAutomaticCertificates checks reply-certificate reuse for retries, isolation across commands
+// and enrollments, and explicit forgetting.
 func TestAutomaticCertificates(t *testing.T) {
 	for _, kind := range []string{"personal", "institutional"} {
 		t.Run(kind, func(t *testing.T) {
@@ -151,10 +154,13 @@ type failedStore struct{ state.Store }
 
 var errUnavailable = errors.New("storage unavailable")
 
+// Update returns the injected reply-certificate state-update failure.
 func (failedStore) Update(context.Context, []string, func(state.Tx) error) error {
 	return errUnavailable
 }
 
+// TestCertificatePreparationRejectsConflictsAndStorageFailures checks that certificate preparation
+// rejects conflicts and storage failures.
 func TestCertificatePreparationRejectsConflictsAndStorageFailures(t *testing.T) {
 	ctx := t.Context()
 	id := mdm.EnrollmentID{Channel: mdm.ChannelDevice, ID: "D"}
@@ -211,6 +217,7 @@ func TestCertificatePreparationRejectsConflictsAndStorageFailures(t *testing.T) 
 	}
 }
 
+// TestEscrowProfileRetainsIdentity checks that escrow profile retains identity.
 func TestEscrowProfileRetainsIdentity(t *testing.T) {
 	ctx := t.Context()
 	manager := &replycerts.Manager{Store: state.NewMemory()}

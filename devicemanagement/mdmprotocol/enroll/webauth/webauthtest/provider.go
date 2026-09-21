@@ -188,6 +188,7 @@ func (p *Provider) Set(fn func(o *Options)) {
 	fn(&p.opts)
 }
 
+// options returns a synchronized snapshot of the fake provider settings.
 func (p *Provider) options() Options {
 	p.mu.Lock()
 	defer p.mu.Unlock()
@@ -251,6 +252,7 @@ func (p *Provider) RotateKeys() error {
 // ErrProvider is returned by the provider's helpers.
 var ErrProvider = errors.New("webauthtest")
 
+// discovery serves the fake provider's OpenID Connect discovery document.
 func (p *Provider) discovery(w http.ResponseWriter, _ *http.Request) {
 	o := p.options()
 	base := p.Server.URL
@@ -276,6 +278,7 @@ func (p *Provider) discovery(w http.ResponseWriter, _ *http.Request) {
 	})
 }
 
+// jwks serves the fake provider's public signing keys.
 func (p *Provider) jwks(w http.ResponseWriter, _ *http.Request) {
 	p.mu.Lock()
 	es, rs, esKID, rsKID := p.es, p.rs, p.esKID, p.rsKID
@@ -299,6 +302,8 @@ func (p *Provider) jwks(w http.ResponseWriter, _ *http.Request) {
 	}})
 }
 
+// authorize validates the fake authorization request and redirects with a bound code or
+// configured error.
 func (p *Provider) authorize(w http.ResponseWriter, r *http.Request) {
 	o := p.options()
 	q := r.URL.Query()
@@ -365,6 +370,7 @@ func (p *Provider) authorize(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, back.String(), http.StatusFound)
 }
 
+// token exchanges a valid fake authorization code for signed identity-token data.
 func (p *Provider) token(w http.ResponseWriter, r *http.Request) {
 	o := p.options()
 	if err := r.ParseForm(); err != nil {
@@ -495,10 +501,12 @@ func (p *Provider) SignIDToken(claims map[string]any) (string, error) {
 	return signingInput + "." + b64(sig), nil
 }
 
+// tokenError writes a fake OAuth token error response.
 func tokenError(w http.ResponseWriter, status int, code, description string) {
 	writeJSON(w, status, map[string]string{"error": code, "error_description": description})
 }
 
+// writeJSON writes a JSON response through the supplied HTTP response writer.
 func writeJSON(w http.ResponseWriter, status int, v any) {
 	body, err := json.Marshal(v)
 	if err != nil {
@@ -511,13 +519,16 @@ func writeJSON(w http.ResponseWriter, status int, v any) {
 	_, _ = w.Write(body)
 }
 
+// b64 encodes bytes with unpadded base64url encoding.
 func b64(b []byte) string { return base64.RawURLEncoding.EncodeToString(b) }
 
+// s256 returns the base64url SHA-256 challenge for a PKCE verifier.
 func s256(verifier string) string {
 	sum := sha256.Sum256([]byte(verifier))
 	return b64(sum[:])
 }
 
+// randomString creates an unpredictable token for the fake provider's flow state.
 func randomString() string {
 	b := make([]byte, 16)
 	if _, err := rand.Read(b); err != nil {

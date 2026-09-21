@@ -67,6 +67,7 @@ func New(t support.Target) *Collector { return &Collector{target: t} }
 // Target returns the collector's target.
 func (c *Collector) Target() support.Target { return c.target }
 
+// add appends a path-qualified validation issue to the collector.
 func (c *Collector) add(path, rule, msg string) {
 	c.errs = append(c.errs, &Error{Path: path, Rule: rule, Message: msg})
 }
@@ -112,6 +113,7 @@ func (c *Collector) Enum(path string, present bool, v any, allowed []any) {
 	c.add(path, RuleEnum, fmt.Sprintf("value %v is not one of %v", v, allowed))
 }
 
+// equalValue compares supported schema values without requiring identical Go numeric types.
 func equalValue(a, b any) bool {
 	af, aok := toFloat(a)
 	bf, bok := toFloat(b)
@@ -121,6 +123,7 @@ func equalValue(a, b any) bool {
 	return fmt.Sprint(a) == fmt.Sprint(b)
 }
 
+// toFloat converts a supported numeric value for schema range comparison.
 func toFloat(v any) (float64, bool) {
 	switch n := v.(type) {
 	case int:

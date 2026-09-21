@@ -53,6 +53,8 @@ func Parse(certPEM, keyPEM []byte) (Parsed, error) {
 	return p, err
 }
 
+// parsePair parses a certificate and private key pair and checks that the key matches the
+// leaf certificate.
 func parsePair(certPEM, keyPEM []byte) (Parsed, error) {
 	chain, err := decodeCertificates(certPEM)
 	if err != nil {

@@ -47,8 +47,9 @@ certificate cannot become an MDM identity. Keep accepted retired storage keys un
 credentials have been re-imported under the active key; the existing MDM-column
 rewrap operation does not rewrite this new state namespace.
 
-The admin API is powerful and must use normal deployment authorization. A break-glass
-token retains its existing unrestricted semantics. Simulated provider certificates
+App administration uses explicit Cedar actions even for root. Metadata reads use
+`readAppPushCredentials`, imports use `manageAppPushCredentials`, and sending uses
+`sendAppPush`; see [access control](../../operations/access-control.md). Simulated provider certificates
 only prove local mutual TLS and request handling; Apple-issued credentials and
 real app registrations are still required for live acceptance.
 

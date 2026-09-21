@@ -14,6 +14,7 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/server/sqlstore/sqlite"
 )
 
+// TestEventStoreRejectsInvalidOperations checks that event store rejects invalid operations.
 func TestEventStoreRejectsInvalidOperations(t *testing.T) {
 	db, s, _ := fixture(t)
 	if _, err := eventstore.Open(t.Context(), nil, sqlite.Dialect); err == nil {
@@ -77,6 +78,8 @@ func TestEventStoreRejectsInvalidOperations(t *testing.T) {
 	}
 }
 
+// TestPersistentEventReadAndWriteFailuresSurface checks persistent event read and write failures
+// surface.
 func TestPersistentEventReadAndWriteFailuresSurface(t *testing.T) {
 	db, s, p := fixture(t)
 	if err := p.Publish(t.Context(), event.Event{ID: "event", Type: event.Enrolled}); err != nil {
@@ -108,6 +111,8 @@ func TestPersistentEventReadAndWriteFailuresSurface(t *testing.T) {
 	}
 }
 
+// TestCorruptProjectionAndDeliveryRowsCannotBeDelivered checks that corrupt projection and
+// delivery rows cannot be delivered.
 func TestCorruptProjectionAndDeliveryRowsCannotBeDelivered(t *testing.T) {
 	db, s, p := fixture(t)
 	if err := p.Publish(t.Context(), event.Event{ID: "event", Type: event.Enrolled}); err != nil {
@@ -133,6 +138,8 @@ func TestCorruptProjectionAndDeliveryRowsCannotBeDelivered(t *testing.T) {
 	}
 }
 
+// TestLeaseUpdateFailureCannotAcknowledgeOrLoseAttempt checks that lease update failure cannot
+// acknowledge or lose attempt.
 func TestLeaseUpdateFailureCannotAcknowledgeOrLoseAttempt(t *testing.T) {
 	db, s, p := fixture(t)
 	p.Destinations = []string{"audit"}
@@ -164,6 +171,8 @@ func TestLeaseUpdateFailureCannotAcknowledgeOrLoseAttempt(t *testing.T) {
 	}
 }
 
+// TestFailedDenialCaptureAndSubscriberFailureAreVisible checks failed denial capture and
+// subscriber failure are visible.
 func TestFailedDenialCaptureAndSubscriberFailureAreVisible(t *testing.T) {
 	db, s, p := fixture(t)
 	reported := 0
@@ -198,6 +207,8 @@ func TestFailedDenialCaptureAndSubscriberFailureAreVisible(t *testing.T) {
 	}
 }
 
+// TestCancelledParticipatingTransactionsCannotClaimOrFinish checks that cancelled participating
+// transactions cannot claim or finish.
 func TestCancelledParticipatingTransactionsCannotClaimOrFinish(t *testing.T) {
 	_, s, _ := fixture(t)
 	for _, operation := range []func(context.Context) error{
@@ -213,6 +224,7 @@ func TestCancelledParticipatingTransactionsCannotClaimOrFinish(t *testing.T) {
 	}
 }
 
+// TestMalformedSQLProjectionColumnsFailReads checks malformed SQL projection columns fail reads.
 func TestMalformedSQLProjectionColumnsFailReads(t *testing.T) {
 	db, s, _ := fixture(t)
 	db.DB().SetMaxOpenConns(1)
@@ -230,6 +242,8 @@ func TestMalformedSQLProjectionColumnsFailReads(t *testing.T) {
 	}
 }
 
+// TestWorkerBackoffCapsAndCancellationKeepsUnknownAttempt checks that worker backoff caps and
+// cancellation keeps unknown attempt.
 func TestWorkerBackoffCapsAndCancellationKeepsUnknownAttempt(t *testing.T) {
 	db, s, p := fixture(t)
 	p.Destinations = []string{"webhook"}

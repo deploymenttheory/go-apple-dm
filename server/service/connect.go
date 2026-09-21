@@ -45,6 +45,8 @@ func (c *Core) handleConnect(
 	return cmd, err
 }
 
+// connect records a command response and selects the next eligible command for the
+// authenticated enrollment.
 func (c *Core) connect(
 	ctx context.Context,
 	r *mdm.Request,

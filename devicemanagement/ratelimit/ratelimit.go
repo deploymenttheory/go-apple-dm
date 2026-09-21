@@ -47,6 +47,7 @@ type Decision struct {
 
 // Checker is injectable into an HTTP transport or other admission boundary.
 type Checker interface {
+	// Check checks the applicable rate budget and reports whether the operation may proceed.
 	Check(context.Context, []Bucket) (Decision, error)
 }
 
@@ -58,6 +59,7 @@ type Limiter struct {
 	Namespace  string
 }
 
+// key hashes a rate-limit identity into a hexadecimal SHA-256 storage key.
 func key(s string) string { h := sha256.Sum256([]byte(s)); return hex.EncodeToString(h[:]) }
 
 // Check consumes every bucket or none. Store failures wrap ErrUnavailable. State

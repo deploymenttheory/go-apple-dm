@@ -26,20 +26,28 @@ var (
 // Reader is the read half of the store, available both directly and inside
 // a transaction.
 type Reader interface {
+	// GetAccount returns the account by ID, or ErrNotFound when absent.
 	GetAccount(ctx context.Context, id string) (*Account, error)
 	// AccountByThumbprint finds the account for a key. RFC 8555 makes a key
 	// the identity of an account, so this is how a returning client is
 	// recognised.
 	AccountByThumbprint(ctx context.Context, thumbprint string) (*Account, error)
+	// GetOrder returns the order by ID, or ErrNotFound when absent.
 	GetOrder(ctx context.Context, id string) (*Order, error)
+	// GetAuthorization returns the authorization by ID, or ErrNotFound when absent.
 	GetAuthorization(ctx context.Context, id string) (*Authorization, error)
+	// GetChallenge returns the challenge by ID, or ErrNotFound when absent.
 	GetChallenge(ctx context.Context, id string) (*Challenge, error)
+	// GetCertificate returns the certificate by ID, or ErrNotFound when absent.
 	GetCertificate(ctx context.Context, id string) (*Certificate, error)
+	// ListOrders returns a bounded page of orders belonging to the selected account.
 	ListOrders(
 		ctx context.Context,
 		accountID string,
 		page paging.Page,
 	) (paging.Result[Order], error)
+	// ListCertificates returns a bounded page of certificate records matching the supplied
+	// query.
 	ListCertificates(
 		ctx context.Context,
 		q CertificateQuery,
@@ -50,10 +58,17 @@ type Reader interface {
 // Writer is the write half, available only inside a transaction. Every put
 // replaces the whole record.
 type Writer interface {
+	// PutAccount replaces the complete account record within the current transaction.
 	PutAccount(ctx context.Context, a *Account) error
+	// PutOrder replaces the complete order record within the current transaction.
 	PutOrder(ctx context.Context, o *Order) error
+	// PutAuthorization replaces the complete authorization record within the current
+	// transaction.
 	PutAuthorization(ctx context.Context, a *Authorization) error
+	// PutChallenge replaces the complete challenge record within the current transaction.
 	PutChallenge(ctx context.Context, c *Challenge) error
+	// PutCertificate replaces the complete certificate record within the current
+	// transaction.
 	PutCertificate(ctx context.Context, c *Certificate) error
 	// ClaimIdentifier records that a client identifier has been used, and
 	// returns ErrConflict if it already was. Apple describes the

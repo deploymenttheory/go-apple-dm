@@ -52,6 +52,7 @@ func (a *ACME) ValidateTarget(target support.Target, hardware MacHardware) error
 	return nil
 }
 
+// defaultFalse supplies an explicit false value when an optional setting is absent.
 func defaultFalse(value *bool) *bool {
 	if value != nil {
 		return value
@@ -59,11 +60,14 @@ func defaultFalse(value *bool) *bool {
 	return new(false)
 }
 
+// macKeyOption checks whether a key option applies to the selected macOS version.
 func macKeyOption(target support.Target, minimum osversion.Version) bool {
 	return target.OS == support.MacOS &&
 		(target.Version.IsZero() || target.Version.Compare(minimum) >= 0)
 }
 
+// payloadForTarget builds the ACME identity payload and supplies explicit false defaults
+// for key options supported by the macOS target.
 func (a *ACME) payloadForTarget(target support.Target) *profiles.ACMECertificate {
 	out := a.payload()
 	if macKeyOption(target, osversion.New(osversion.MacOS13, 1, 0)) {
@@ -73,6 +77,8 @@ func (a *ACME) payloadForTarget(target support.Target) *profiles.ACMECertificate
 	return out
 }
 
+// payloadForTarget builds the SCEP identity payload and supplies explicit false defaults
+// for key options supported by the target.
 func (s *SCEP) payloadForTarget(target support.Target) *profiles.SCEP {
 	out := s.payload()
 	if target.OS != support.MacOS || macKeyOption(target, osversion.New(osversion.MacOS10, 13, 4)) {
@@ -84,6 +90,7 @@ func (s *SCEP) payloadForTarget(target support.Target) *profiles.SCEP {
 	return out
 }
 
+// macDefaultFalse applies the macOS-specific default for an optional boolean setting.
 func macDefaultFalse(value *bool, target support.Target, minimum osversion.Version) *bool {
 	if macKeyOption(target, minimum) {
 		return defaultFalse(value)

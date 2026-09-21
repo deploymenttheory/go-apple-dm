@@ -26,6 +26,7 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/testpki"
 )
 
+// TestBearerIdentityAndChannelRules checks bearer identity and channel rules.
 func TestBearerIdentityAndChannelRules(t *testing.T) {
 	ctx := t.Context()
 	ca, err := testpki.NewCA("account association")
@@ -151,6 +152,7 @@ func TestBearerIdentityAndChannelRules(t *testing.T) {
 	}
 }
 
+// TestAssociationClaimRaceAndChallenge checks association claim race and challenge.
 func TestAssociationClaimRaceAndChallenge(t *testing.T) {
 	ctx := t.Context()
 	st := state.NewMemory()
@@ -224,6 +226,8 @@ func TestAssociationClaimRaceAndChallenge(t *testing.T) {
 	}
 }
 
+// TestOAuthMetadataBeforeConsumeAndConcurrentRotation checks o auth metadata before consume and
+// concurrent rotation.
 func TestOAuthMetadataBeforeConsumeAndConcurrentRotation(t *testing.T) {
 	ctx := t.Context()
 	now := time.Now()
@@ -295,6 +299,7 @@ func TestOAuthMetadataBeforeConsumeAndConcurrentRotation(t *testing.T) {
 	}
 }
 
+// TestRedactionAndExternalVerifier checks redaction and external verifier.
 func TestRedactionAndExternalVerifier(t *testing.T) {
 	for _, header := range []string{"", "Basic secret", "Bearer ", "Bearer a b", "Bearer a,b", "Bearer a\tb"} {
 		if !accountdriven.Bearer(header).IsZero() {

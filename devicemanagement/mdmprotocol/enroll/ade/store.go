@@ -22,7 +22,9 @@ type Record struct {
 
 // MachineInfoStore keeps the last MachineInfo per serial. Put replaces.
 type MachineInfoStore interface {
+	// Put stores the latest verified machine information for its serial number.
 	Put(ctx context.Context, rec *Record) error
+	// Get returns stored machine information and a found flag for the serial number.
 	Get(ctx context.Context, serial string) (*Record, bool, error)
 }
 
@@ -30,6 +32,8 @@ type MachineInfoStore interface {
 // the MachineInfo can be joined to it. The dep package satisfies it; any
 // record type is accepted and handed to the ProfileHook unchanged.
 type DEPLookup interface {
+	// DeviceBySerial looks up the device's enrollment-service record and distinguishes
+	// absence from lookup failure.
 	DeviceBySerial(ctx context.Context, serial string) (record any, found bool, err error)
 }
 

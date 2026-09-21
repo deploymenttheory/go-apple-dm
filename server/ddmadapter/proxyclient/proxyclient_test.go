@@ -45,7 +45,7 @@ func dmCheckin(t *testing.T, udid, endpoint string, data []byte) (*mdm.Checkin, 
 	return ck, m
 }
 
-// capture is a fake ddm role that records the request and answers as told.
+// capture is a fake DDM proxy backend that records requests and returns configured responses.
 var (
 	sendKey = []byte("send-000000000000000000000000000")
 	recvKey = []byte("recv-000000000000000000000000000")
@@ -61,6 +61,8 @@ type capture struct {
 	raw      []byte
 }
 
+// ServeHTTP captures the proxy request and returns a configured response, signing it unless
+// disabled.
 func (c *capture) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	body, _ := io.ReadAll(r.Body)
 	c.mu.Lock()
@@ -82,12 +84,14 @@ func (c *capture) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	_, _ = w.Write(c.body)
 }
 
+// seen returns the captured request and body under the capture mutex.
 func (c *capture) seen() (*http.Request, []byte) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	return c.req, c.raw
 }
 
+// serve starts a test HTTP server and registers cleanup.
 func serve(t *testing.T, h http.Handler) *httptest.Server {
 	t.Helper()
 	srv := httptest.NewServer(h)
@@ -95,6 +99,8 @@ func serve(t *testing.T, h http.Handler) *httptest.Server {
 	return srv
 }
 
+// mustHandler constructs a proxy client handler with fixture keys and insecure test transport
+// enabled.
 func mustHandler(t *testing.T, cfg proxyclient.Config) service.DMHandler {
 	t.Helper()
 	cfg.AllowInsecureForTests = true
@@ -111,6 +117,7 @@ func mustHandler(t *testing.T, cfg proxyclient.Config) service.DMHandler {
 	return h
 }
 
+// TestHandler checks proxy-client URL validation and successful handler construction.
 func TestHandler(t *testing.T) {
 	t.Parallel()
 	t.Run("EmptyURL", func(t *testing.T) {
@@ -149,6 +156,8 @@ func TestHandler(t *testing.T) {
 	})
 }
 
+// TestForward checks raw plist forwarding, signatures, content type, and proxy authentication
+// headers.
 func TestForward(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
@@ -267,6 +276,7 @@ func TestForward(t *testing.T) {
 	})
 }
 
+// TestRelay checks upstream HTTP response and failure mapping by the proxy client.
 func TestRelay(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
@@ -325,6 +335,8 @@ func TestRelay(t *testing.T) {
 	})
 }
 
+// TestSignature checks response signature verification, including status binding and invalid
+// signatures.
 func TestSignature(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
@@ -360,7 +372,7 @@ func TestSignature(t *testing.T) {
 	t.Run("StatusIsCovered", func(t *testing.T) {
 		t.Parallel()
 		ck, m := dmCheckin(t, "D1", "tokens", nil)
-		// The signature the ddm role emits for an empty 500, replayed on a 404.
+		// Replay the backend signature for an empty 500 response on a 404 response.
 		lifted := proxywire.SignResponse(key, 500, nil)
 		srv := serve(
 			t,
@@ -418,6 +430,7 @@ func TestSignature(t *testing.T) {
 	})
 }
 
+// TestTimeout checks proxy-client timeouts and canceled requests.
 func TestTimeout(t *testing.T) {
 	t.Parallel()
 	done := make(chan struct{})
@@ -449,6 +462,7 @@ func TestTimeout(t *testing.T) {
 	}
 }
 
+// TestBodyLimit checks proxy response size limits at and above the boundary.
 func TestBodyLimit(t *testing.T) {
 	t.Parallel()
 	srv := serve(t, &capture{status: 200, body: bytes.Repeat([]byte("x"), 100)})
@@ -463,6 +477,7 @@ func TestBodyLimit(t *testing.T) {
 	}
 }
 
+// TestTransportError checks propagation of unavailable-server and truncated-response failures.
 func TestTransportError(t *testing.T) {
 	t.Parallel()
 	srv := httptest.NewServer(&capture{status: 200})
@@ -625,7 +640,7 @@ func TestRoundTripThroughProxyServer(t *testing.T) {
 	if _, err := dm("nonsense", nil); service.CodeOf(err) != service.CodeBadRequest {
 		t.Fatalf("bad endpoint: %v", err)
 	}
-	// The ddm role checks the request signature: a client with the wrong
+	// The proxy server checks the request signature: a client with the wrong
 	// key is refused and the device sees an internal error, never a 401.
 	wrong, err := proxyclient.Handler(
 		proxyclient.Config{
@@ -649,7 +664,7 @@ func TestRoundTripThroughProxyServer(t *testing.T) {
 		!errors.Is(err, proxyclient.ErrUpstream) {
 		t.Fatalf("wrong key: %v", err)
 	}
-	// And the mdm role checks the response signature.
+	// The proxy client also checks the response signature.
 	wrongRecv, err := proxyclient.Handler(
 		proxyclient.Config{
 			AllowInsecureForTests: true,
@@ -667,6 +682,7 @@ func TestRoundTripThroughProxyServer(t *testing.T) {
 	}
 }
 
+// TestHandlerRequiresTLSAndIndependentKeys checks that handler requires TLS and independent keys.
 func TestHandlerRequiresTLSAndIndependentKeys(t *testing.T) {
 	for _, u := range []string{"http://ddm.example", "http://localhost", "https://user:password@ddm.example", "https://ddm.example?secret=value", "https://ddm.example#fragment"} {
 		if _, err := proxyclient.Handler(

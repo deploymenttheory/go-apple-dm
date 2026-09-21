@@ -12,6 +12,7 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/state"
 )
 
+// TestEnvelopeBindsRequestAndRejectsReplay checks that envelope binds request and rejects replay.
 func TestEnvelopeBindsRequestAndRejectsReplay(t *testing.T) {
 	key := []byte(strings.Repeat("k", 32))
 	body := []byte("signed body")
@@ -74,6 +75,7 @@ func TestEnvelopeBindsRequestAndRejectsReplay(t *testing.T) {
 	}
 }
 
+// TestEnvelopeFreshnessAndBoundResponse checks envelope freshness and bound response.
 func TestEnvelopeFreshnessAndBoundResponse(t *testing.T) {
 	key := []byte(strings.Repeat("k", 32))
 	req := httptest.NewRequestWithContext(t.Context(),
@@ -135,6 +137,8 @@ func TestEnvelopeFreshnessAndBoundResponse(t *testing.T) {
 	}
 }
 
+// TestEnvelopeRejectsMalformedMetadataAndMissingReplayStore checks that envelope rejects malformed
+// metadata and missing replay store.
 func TestEnvelopeRejectsMalformedMetadataAndMissingReplayStore(t *testing.T) {
 	key := []byte(strings.Repeat("k", 32))
 	r := httptest.NewRequestWithContext(t.Context(), "POST", "https://ddm.example/v1/declarative-management", nil)

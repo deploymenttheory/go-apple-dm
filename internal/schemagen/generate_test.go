@@ -10,6 +10,8 @@ import (
 	"testing"
 )
 
+// TestGenerateWholeTree checks whole-tree generation, formatting, generated headers, expected
+// files, and exported-name locks.
 func TestGenerateWholeTree(t *testing.T) {
 	t.Parallel()
 	files, err := Run(schemaRoot(t), Options{Commit: "test"})
@@ -61,6 +63,8 @@ func TestGenerateWholeTree(t *testing.T) {
 	}
 }
 
+// TestWriteAndVerify checks generated-file writing and read-only verification, preserving authored
+// files and enforcing rename and removal records.
 func TestWriteAndVerify(t *testing.T) {
 	t.Parallel()
 	root := schemaRoot(t)
@@ -181,6 +185,8 @@ func TestWriteAndVerify(t *testing.T) {
 	}
 }
 
+// TestReadGeneratedFrom checks provenance decoding and rejection of missing, malformed, or
+// incomplete metadata.
 func TestReadGeneratedFrom(t *testing.T) {
 	t.Parallel()
 	p, err := ReadGeneratedFrom(
@@ -204,6 +210,7 @@ func TestReadGeneratedFrom(t *testing.T) {
 	}
 }
 
+// TestEmitHelpers checks code-generation formatting, literal, path, and family helper output.
 func TestEmitHelpers(t *testing.T) {
 	t.Parallel()
 	if got := wrap(
@@ -260,6 +267,7 @@ func TestEmitHelpers(t *testing.T) {
 	}
 }
 
+// TestGenerateFormatFailureIsReported checks generate format failure is reported.
 func TestGenerateFormatFailureIsReported(t *testing.T) {
 	t.Parallel()
 	// A type name that is not a valid identifier forces a format error.
@@ -279,6 +287,7 @@ func TestGenerateFormatFailureIsReported(t *testing.T) {
 	}
 }
 
+// TestSupportOverlayErrors checks rejection of invalid support-version overlays.
 func TestSupportOverlayErrors(t *testing.T) {
 	t.Parallel()
 	for _, src := range []*OSSupport{{Introduced: "x"}, {Deprecated: "x"}, {Removed: "x"}} {

@@ -6,11 +6,12 @@ packaged executable are different inputs.
 
 | Workflow or job | Trigger and input | Contract checked |
 |---|---|---|
+| Documentation | Documentation and implementation reference changes | `make docs-check` verifies local links, code references, current documentation contracts and diagram sources without rewriting files. |
 | Go Test: unit | Application PRs and main pushes; Linux, macOS, Windows | Both modules, races, generated conformance and published OS 27 contract evidence. Linux contributes unit coverage. |
 | Go Test: candidate module installation | Same application changes; Linux and Windows | A temporary module proxy serves candidate server sources; `GOWORK=off` resolves declared dependencies, builds and installs commands without repairing requirements. Binary metadata verifies the library version; installed commands run simulated process acceptance, including binary-policy validation and restart. |
 | Go Test: generate check | Same application changes | `make verify` checks workflow/script contracts and regenerated output, including changed, missing and stale generated files and removed locked exported names. Verification does not rewrite generated output. |
 | Go Test: storage integration | Same application changes; SQL services | Shared storage contracts on SQLite, PostgreSQL and MySQL; PostgreSQL timing is reported with its shared-runner threshold disabled. |
-| Go Test: E2E | Same application changes; SQLite and PostgreSQL | Backend-specific server/device exchanges and split DDM transport. The SQLite-only embedded acceptance catalogue runs once, in the SQLite job. |
+| Go Test: E2E | Same application changes; SQLite and PostgreSQL | Backend-specific server/device exchanges and in-process DDM delivery. The SQLite-only embedded acceptance catalogue runs once, in the SQLite job. |
 | Go Test: process acceptance | Same application changes | Shared scenarios against built `dmserver` processes, using unified device management; executable bench catalogue matches its documentation. |
 | Go Test: fuzz smoke | Same application changes | Brief execution of each fuzz target. |
 | Go Test: coverage | Successful unit, storage and E2E jobs | Merge Linux unit, SQL contract and both E2E profiles; retain the 95% package and overall gate. Process acceptance is separate evidence. |
@@ -60,7 +61,7 @@ and CI. `scripts/lint.py` selects this checkout's workspace explicitly; server
 tests can therefore exercise library APIs introduced in the same change. The
 independent candidate/published installation checks retain `GOWORK=off` and the
 server's declared library dependency. Their acceptance driver runs the installed
-executables in disposable SQLite/TLS workspaces, including separate server roles
+executables in disposable SQLite/TLS workspaces, including unified device management
 and CLI lifecycle. It does not contact Apple or enroll a physical device. Lint
 cannot replace those consumer checks.
 A compilation error stops analysis even if a tool prints "0 issues". Investigate

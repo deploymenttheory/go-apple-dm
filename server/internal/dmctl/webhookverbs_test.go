@@ -10,6 +10,7 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/server/internal/dmctl"
 )
 
+// TestWebhookCommands checks native webhook CLI operations.
 func TestWebhookCommands(t *testing.T) {
 	f := &fakeAdmin{}
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

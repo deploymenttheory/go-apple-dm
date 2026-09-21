@@ -26,8 +26,10 @@ var t0 = time.Date(2026, 9, 1, 12, 0, 0, 0, time.UTC)
 
 type fakeClock struct{ now time.Time }
 
+// Now returns the fixture's current time.
 func (c *fakeClock) Now() time.Time { return c.now }
 
+// newTokens creates an in-memory token service using the fixture clock.
 func newTokens(c *fakeClock) *accountdriven.Tokens {
 	return &accountdriven.Tokens{Store: accountdriven.NewMemStore(), Now: c.Now}
 }
@@ -46,6 +48,7 @@ func parseBody(r *http.Request) (*accountdriven.DeviceInfo, error) {
 	return &accountdriven.DeviceInfo{Language: "en", Product: "iPhone17,2", Version: "23A300", Raw: b}, nil
 }
 
+// baseProfile returns the base enrollment profile used by account-driven enrollment tests.
 func baseProfile(_ context.Context, _ accountdriven.Identity, _ *accountdriven.DeviceInfo) (*enroll.Profile, error) {
 	return &enroll.Profile{
 		Identifier: "com.example.mdm", Topic: "com.apple.mgmt.t", ServerURL: "https://mdm.example/mdm", CheckInURL: "https://mdm.example/mdm",
@@ -61,6 +64,8 @@ type fixture struct {
 	srv    *httptest.Server
 }
 
+// newFixture creates an account-driven enrollment server using Apple-as-web or OAuth
+// authentication.
 func newFixture(t *testing.T, version string, oauth bool) *fixture {
 	t.Helper()
 	ca, err := testpki.NewCA("account-driven test CA")
@@ -97,6 +102,7 @@ func newFixture(t *testing.T, version string, oauth bool) *fixture {
 
 const body = `<?xml version="1.0"?><plist version="1.0"><dict><key>LANGUAGE</key><string>en</string><key>PRODUCT</key><string>iPhone17,2</string><key>VERSION</key><string>23A300</string></dict></plist>`
 
+// post posts the enrollment fixture with an optional bearer token.
 func (f *fixture) post(t *testing.T, bearer string) testResponse {
 	t.Helper()
 	req, _ := http.NewRequestWithContext(context.Background(), http.MethodPost, f.srv.URL+"/enroll", strings.NewReader(body))
@@ -112,6 +118,8 @@ func (f *fixture) post(t *testing.T, bearer string) testResponse {
 	return testResponse{res}
 }
 
+// TestTokens checks single-use access tokens, expiry, refresh rotation, storage failures, and
+// rejection of query credentials.
 func TestTokens(t *testing.T) {
 	ctx := context.Background()
 	t.Run("AccessTokenSingleUse", func(t *testing.T) {
@@ -191,6 +199,7 @@ func TestTokens(t *testing.T) {
 	})
 }
 
+// tokenRaw posts form data to the fixture's OAuth token endpoint.
 func (f *fixture) tokenRaw(t *testing.T, form url.Values) testResponse {
 	t.Helper()
 	req, _ := http.NewRequestWithContext(context.Background(), http.MethodPost, f.srv.URL+"/oauth2/token", strings.NewReader(form.Encode()))
@@ -203,6 +212,7 @@ func (f *fixture) tokenRaw(t *testing.T, form url.Values) testResponse {
 	return testResponse{res}
 }
 
+// token exchanges token form data and decodes the successful response, failing the test otherwise.
 func (f *fixture) token(t *testing.T, form url.Values) accountdriven.TokenResponse {
 	t.Helper()
 	res := f.tokenRaw(t, form)
@@ -217,6 +227,7 @@ func (f *fixture) token(t *testing.T, form url.Values) accountdriven.TokenRespon
 	return tr
 }
 
+// TestHeader checks that authentication challenge URLs require HTTPS.
 func TestHeader(t *testing.T) {
 	t.Run("HTTPSOnly", func(t *testing.T) {
 		for _, c := range []accountdriven.Challenge{
@@ -251,6 +262,8 @@ func TestHeader(t *testing.T) {
 	})
 }
 
+// TestFirstPost checks initial account-driven request parsing and propagation of parser policy
+// responses.
 func TestFirstPost(t *testing.T) {
 	t.Run("BodyParsed", func(t *testing.T) {
 		f := newFixture(t, accountdriven.VersionBYOD, false)
@@ -292,6 +305,7 @@ func TestFirstPost(t *testing.T) {
 	})
 }
 
+// TestFlow checks Apple-as-web and OAuth account-driven authentication through profile delivery.
 func TestFlow(t *testing.T) {
 	ctx := context.Background()
 	t.Run("AppleAsWeb", func(t *testing.T) {
@@ -461,6 +475,8 @@ func TestFlow(t *testing.T) {
 	})
 }
 
+// TestProfile checks BYOD and ADDE profile constraints, identity requirements, immutable fields,
+// and URLs.
 func TestProfile(t *testing.T) {
 	base := func() *enroll.Profile {
 		return &enroll.Profile{Identifier: "com.example.mdm", Topic: "com.apple.mgmt.t", ServerURL: "https://mdm.example/mdm?x=1", CheckInURL: "https://mdm.example/checkin", SCEP: &enroll.SCEP{URL: "https://mdm.example/scep"}}
@@ -533,6 +549,7 @@ func TestProfile(t *testing.T) {
 	})
 }
 
+// TestNew checks account-driven handler configuration validation.
 func TestNew(t *testing.T) {
 	tk := newTokens(&fakeClock{now: t0})
 	ca, _ := testpki.NewCA("ca")

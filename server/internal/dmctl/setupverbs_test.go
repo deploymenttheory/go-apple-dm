@@ -12,6 +12,8 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/server/internal/privatefile"
 )
 
+// TestSetupBootstrapResumesAndExportsOnlyPublicArtifacts checks setup bootstrap resumes and
+// exports only public artifacts.
 func TestSetupBootstrapResumesAndExportsOnlyPublicArtifacts(t *testing.T) {
 	dir := t.TempDir()
 	env := noConfig(t)

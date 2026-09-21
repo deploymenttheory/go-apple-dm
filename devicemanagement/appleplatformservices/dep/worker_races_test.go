@@ -19,6 +19,7 @@ type gatedTransport struct {
 	release chan struct{}
 }
 
+// RoundTrip blocks the selected response until the gate opens or the request is canceled.
 func (g *gatedTransport) RoundTrip(r *http.Request) (*http.Response, error) {
 	resp, err := g.base.RoundTrip(r)
 	if err == nil && r.URL.Path == g.path && g.used.CompareAndSwap(false, true) {
@@ -31,6 +32,7 @@ func (g *gatedTransport) RoundTrip(r *http.Request) (*http.Response, error) {
 	return resp, err
 }
 
+// gateClient creates a client with a gated transport and registers cleanup to release the gate.
 func gateClient(t *testing.T, f *fixture, path string) (*dep.Client, <-chan struct{}, func()) {
 	t.Helper()
 	g := &gatedTransport{base: f.srv.Client().Transport, path: path, entered: make(chan struct{}), release: make(chan struct{})}
@@ -44,6 +46,7 @@ func gateClient(t *testing.T, f *fixture, path string) (*dep.Client, <-chan stru
 	return c, g.entered, release
 }
 
+// awaitRequest waits for the gated request to arrive, failing the test after five seconds.
 func awaitRequest(t *testing.T, entered <-chan struct{}) {
 	t.Helper()
 	select {
@@ -53,6 +56,7 @@ func awaitRequest(t *testing.T, entered <-chan struct{}) {
 	}
 }
 
+// TestSyncRejectsAnOlderConcurrentSnapshot checks that sync rejects an older concurrent snapshot.
 func TestSyncRejectsAnOlderConcurrentSnapshot(t *testing.T) {
 	f := newFixture(t)
 	ctx := t.Context()
@@ -87,6 +91,7 @@ func TestSyncRejectsAnOlderConcurrentSnapshot(t *testing.T) {
 	}
 }
 
+// TestAssignmentClaimFencesAnExpiredWorker checks assignment claim fences an expired worker.
 func TestAssignmentClaimFencesAnExpiredWorker(t *testing.T) {
 	f := newAssignFixture(t)
 	ctx := t.Context()
@@ -125,6 +130,8 @@ func TestAssignmentClaimFencesAnExpiredWorker(t *testing.T) {
 	}
 }
 
+// TestAssignmentReadbackDoesNotResurrectRemovedDevice checks that assignment readback does not
+// resurrect removed device.
 func TestAssignmentReadbackDoesNotResurrectRemovedDevice(t *testing.T) {
 	f := newAssignFixture(t)
 	ctx := t.Context()

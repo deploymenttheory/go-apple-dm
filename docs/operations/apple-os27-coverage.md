@@ -1,49 +1,17 @@
 # Apple OS 27 feature coverage and mixed fleets
 
-Reviewed 18 September 2026. Scope: the Go library and reference server. Generated
-API availability, server delivery eligibility and native protocol interoperability
-are separate checks. Project readiness requires correct library/server behavior
-and representative macOS 27 integration evidence. Certifying every Apple feature's
-UI or enforcement behavior is outside that acceptance target. See the
-[live validation record](../testing/macos27-live-validation.md) for results and
-limitations, and the [project acceptance criteria](../testing/macos27-handoff.md#project-acceptance-criteria)
-for the current completion plan. Earlier native behavior plans below are optional
-follow-up, not a list of project blockers. No final project sign-off is implied.
+Generated API availability, server delivery eligibility and native behavior are
+separate checks. The library and reference server evaluate each enrollment's OS,
+version, channel and observed capabilities against the pinned schema. Automated
+contracts verify generation, validation and delivery; they do not establish the
+native behavior of every Apple feature.
 
-The 18 September repository follow-up adds HTTP binary-validation regressions,
-complete declaration-payload comparisons and process acceptance against independently
-installed server binaries. The standalone server now pins the corrected library
-revision `cddf78c`; local affected checks and all thirteen OS 27 contracts pass.
-The [completion checks](../testing/macos27-live-validation.md#library-and-reference-server-completion-checks)
-describe the evidence; final candidate CI is recorded on
-[PR #65](https://github.com/deploymenttheory/go-apple-dm/pull/65).
-
-The original 40 GB macOS 27 Guestweave VM and a fresh **v1.1.0** native-provisioned
-guest both reached user-approved SCEP profile installation. Native account/SSH
-provisioning passes in the fresh guest, but APNs identity key generation still
-fails before enrollment and after reboot; no TokenUpdate arrives. Guest
-command/DDM acceptance remains blocked before feature delivery. See the
-[provisioning retry](../testing/macos27-live-validation.md#native-provisioning-retry--guestweave-v110).
-An isolated Tart 2.37.0 copy reproduces the failure with both ordinary and
-suspendable device configurations. A separate macOS 26.6.2 control on the same
-host passes device/user TokenUpdate, three timed APNs inventory commands including
-a cold boot, and LIVE-003 / LIVE-004. Its same-identity upgrade to **27.0 / 26A428**
-completed, but two new commands timed out with verified HTTPS, including after a
-cold boot and login. Native logs report failure to read the existing APNs reference
-key (`-25308`). The working 26 checkpoint is retained; no 27 recovery is claimed.
-A direct Terminal launch also misses the fresh push deadline. Late inventory
-acknowledgements confirm 27.0, supervision and Apple silicon, but do not satisfy
-timely-push acceptance. The [UTM/Tart incident review](../testing/macos27-vm-incidents.md)
-records open reports and the applicability of closed fixes. The fallback was
-restored to its working 26 checkpoint, then successfully upgraded to
-**27.2 beta / 26B5086k**, retaining identities and enrollment. Reliable APNs still
-fails on this 27.0 host: one request acknowledged after cold boot/login, but two
-subsequent independent pushes timed out with verified HTTPS and native BAA/key
-errors. The beta guest is preserved and shut down; no declarations are assigned.
-See the [beta result](../testing/macos27-live-validation.md#macos-272-beta-result).
-The complete automated matrix, thirteen required contracts and unchanged 95%
-coverage gate passed at `eb5208a`. Subsequent changes require their own validation;
-profile installation alone does not demonstrate enrollment or command delivery.
+Use the [Mac enrollment procedure](mac-enrollment-testing.md) for real-device
+readiness and the [feature fixture workflow](../../test-lab/apple-features/README.md)
+for isolated acceptance. Run `make test-schema-contracts` to require passing evidence
+for every test in the [published contract inventory](../../scripts/device-management-schema-contracts.py).
+Record new results against the tested server and CLI revisions, device OS/build
+and backend. This guide is not a record of a test run or a release sign-off.
 
 Sources: [enterprise changes](https://support.apple.com/en-us/148830),
 [update management](https://support.apple.com/en-gb/guide/deployment/depd30715cbb/web),
@@ -61,7 +29,7 @@ from stored inventory. Known commands and the contents of `InstallProfile` are
 checked at enqueue and again at dispatch. Generated command validation checks the
 command envelope and fields; `validateInstallProfileContents` inspects the embedded
 configuration profile, its payloads and availability. Signed bytes are preserved.
-The public `profile/inspect` package also powers `dmctl profiles lint`.
+The public `profile/inspect` package also powers `dmctl profile lint`.
 
 DDM resolves the target before constructing each manifest and checks previously
 advertised declarations before serving them. Unsupported configurations are
@@ -77,9 +45,8 @@ explicit `ValidateTargets: false` escape hatch. `devicemanagement/osversion`
 provides the shared version type, parsing/comparison and named macOS major
 constants. Generated support tables retain precise introduction, deprecation
 and removal versions for each platform. Target versions and support boundaries
-use `osversion.Version` directly. Consumers of the removed support version API
-must update imports and calls as described in the
-[migration guide](os-versions.md#migrating-from-the-support-version-api).
+use `osversion.Version` directly. See [OS versions and feature availability](os-versions.md) for construction and
+validation examples.
 
 Reviewed SSO enum floors are generated as value availability metadata, queryable
 through `profiles.ValueSupport(path, value)`, and enforced by typed `Validate`
@@ -113,7 +80,7 @@ checks 663 affected inherited paths against compiled metadata at all four versio
 in six enrollment contexts. It separately checks the twelve reviewed SSO enum
 floors described in prose. Source cases excluded from Mac acceptance have an
 explicit platform reason. The inventory records native test plans, not passes;
-the live report remains the evidence record. No fixture-count threshold substitutes
+native acceptance needs separately recorded device evidence. No fixture-count threshold substitutes
 for named case coverage. The third column below preserves the broader Apple
 behavior test ideas; completing that column is not required for library/reference-
 server readiness. Project integration checks focus on the exchanged payloads,
@@ -121,7 +88,7 @@ acknowledgements, declaration status, asset service and persisted reports.
 
 | Requirement | Implementation / automated evidence | Optional Apple behavior follow-up |
 |---|---|---|
-| App and binary execution policy | `AppSettings`; F `binary-controls` | Use the [signing-classified control matrix](../testing/app-settings-binary-isolation.md): deny the matching eligible target and ad-hoc controls, permit unrelated eligible signed controls, then verify removal. Allow mode and managed-app exceptions remain unverified. |
+| App and binary execution policy | `AppSettings`; F `binary-controls` | Use the [binary-control acceptance procedure](application-identities.md#binary-execution-controls): deny the matching eligible target and ad-hoc controls, permit unrelated eligible signed controls, then verify removal. Allow mode and managed-app exceptions remain unverified. |
 | App consent | App privacy declarations; F `app-privacy` | Record consolidated prompt, allowed services and revocation. |
 | Website consent | Website privacy declarations; F `website-privacy` | Use controlled HTTPS origin; verify origin scope and prompt. |
 | Accessibility Live Recognition | `AccessibilitySettings.Vision.AllowLiveRecognition`; F `accessibility` | Verify Ask about Images and Surroundings behavior on eligible hardware, then removal. |
@@ -144,7 +111,7 @@ acknowledgements, declaration status, asset service and persisted reports.
 | Accessibility permission behavior | Existing PPPC schema retained, inspector reports deprecation | User notification and ability to revoke require UI observation; do not read the TCC database. |
 | Lock-screen network controls | `LoginWindow.ForceWifiConfigurationOnLockScreen` and `ForceCaptivePortalConnectionFromLockScreen`; source and inherited-boundary contract | Verify Wi-Fi and captive-portal UI separately on a suitable test Mac. |
 | Legacy update retirement | Command/query/profile availability plus dispatch recheck; software-update and mixed-fleet contracts | Retained 26 device accepts supported legacy management; 27 uses DDM. No legacy commands dispatched to 27. |
-| Menu-bar behavior, App Attest, privacy CLI/database changes, Rosetta, SMB and shared-login fixes | OS/app behavior; no new server API implied | Optional host/app smoke checks. Rosetta may require operator installation; no reinstall action is part of this prep. |
+| Menu-bar behavior, App Attest, privacy CLI/database changes, Rosetta, SMB and shared-login fixes | OS/app behavior; no new server API implied | Optional host/app smoke checks. Rosetta may require operator installation; installation is a separate operator action. |
 
 The source inventory also explicitly retains deprecated content-cache, DNS proxy,
 DNS settings, relay, password-policy and application-access profiles. PPPC Camera,
@@ -162,9 +129,11 @@ items to be observed separately from successful command encoding.
 
 ## Software update coverage
 
-The schema and [software-update helpers](../../scripts/softwareupdates) are the
-protocol integration points. Selecting an available release and scheduling real
-installation remains an operator policy decision. Tests never install an OS.
+Protocol integration points are the [generated DDM schema](../../devicemanagement/schema/ddm),
+[ADE software-update gate](../../devicemanagement/mdmprotocol/enroll/ade/softwareupdate.go),
+and [GDMF release lookup](../../devicemanagement/appleplatformservices/gdmf).
+Selecting an available release and scheduling real installation remains an
+operator policy decision. Tests never install an OS.
 
 | Concern | Code / fixture evidence | Live proof required |
 |---|---|---|
@@ -227,7 +196,30 @@ revocation. Reports use enrollment-bound cursors and expire by store time.
 
 Memory, SQLite, PostgreSQL and MySQL use the same transactional `state.Store`
 implementation and contract suite. Existing SQL state migrations, encryption,
-backup and expiry maintenance apply; no separate cache-report migration is needed.
+backup and expiry maintenance apply.
 Memory is deliberately ephemeral. This endpoint has no bearing on delivery to
 macOS 26: the reporting declaration is withheld there while existing management
 continues.
+
+## Native acceptance limits
+
+For content-cache reporting, collect a report emitted by macOS rather than a
+synthetic HTTP request. Check authenticated enrollment association, pagination,
+restart persistence and credential rotation/revocation. If native reporting fails
+TLS authentication when an ingress requests client certificates, use a separate
+verified HTTPS reporting ingress without that request; retain MDM client-identity
+checks on its own ingress. A macOS 27.0 observation used POST, so the receiver
+accepts POST and PUT. The report's `buildVersion` describes the cache service;
+use tracked device inventory for the OS build. Restore the original activation
+state explicitly: removing `AutoActivation` alone need not deactivate the cache.
+See the [receiver](../../devicemanagement/contentcache/receiver.go) and Apple's
+[ContentCaching declaration](https://developer.apple.com/documentation/devicemanagement/contentcaching).
+
+A valid/active declaration establishes protocol acceptance. It does not establish
+a particular consent prompt, application installation, provider connection or
+software-update effect. Privacy tests must distinguish granted permissions,
+revocation, prompt wording and origin isolation. Network declarations need a
+working native endpoint and provider where required. Settings-only update checks
+must not be reported as enforced installation or recovery from an interruption.
+Binary-control signing requirements and unverified variants are described in
+[application identity authoring](application-identities.md#binary-execution-controls).

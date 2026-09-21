@@ -8,6 +8,7 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/storage"
 )
 
+// TestNotNowBackoff checks NotNow retry delays against the backoff table.
 func TestNotNowBackoff(t *testing.T) {
 	t.Parallel()
 	cases := map[int]time.Duration{-1: 30 * time.Second, 0: 30 * time.Second, 1: 30 * time.Second, 2: time.Minute, 3: 2 * time.Minute, 8: time.Hour, 20: time.Hour}
@@ -18,6 +19,7 @@ func TestNotNowBackoff(t *testing.T) {
 	}
 }
 
+// TestStateTerminal checks which command states are terminal.
 func TestStateTerminal(t *testing.T) {
 	t.Parallel()
 	for s, want := range map[storage.State]bool{storage.StatePending: false, storage.StateSent: false, storage.StateNotNow: false, storage.StateAcknowledged: true, storage.StateError: true, storage.StateCleared: true} {
@@ -27,6 +29,7 @@ func TestStateTerminal(t *testing.T) {
 	}
 }
 
+// TestDeviceInfoFromAuthenticate checks device info from authenticate.
 func TestDeviceInfoFromAuthenticate(t *testing.T) {
 	t.Parallel()
 	if d := storage.DeviceInfoFromAuthenticate(nil); d != (storage.DeviceInfo{}) {

@@ -27,6 +27,8 @@ func (c *Client) Close() error {
 	return nil
 }
 
+// closeClient retires the client transport when it is managed by this package, cancelling
+// active exchanges and closing its connections.
 func closeClient(c *http.Client) {
 	if t, ok := c.Transport.(*managedTransport); ok {
 		t.close()
@@ -48,6 +50,8 @@ type activeRequest struct {
 	conn   net.Conn
 }
 
+// newManagedTransport wraps a transport with tracking and cancellation for certificate
+// retirement.
 func newManagedTransport(base http.RoundTripper) *managedTransport {
 	if base == nil {
 		base = http.DefaultTransport
@@ -55,6 +59,8 @@ func newManagedTransport(base http.RoundTripper) *managedTransport {
 	return &managedTransport{base: base, active: map[*http.Request]*activeRequest{}}
 }
 
+// RoundTrip tracks an in-flight exchange until its response body is closed or the request
+// fails.
 func (t *managedTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 	ctx, cancel := context.WithCancel(req.Context())
 	active := &activeRequest{cancel: cancel}
@@ -100,12 +106,16 @@ func (t *managedTransport) RoundTrip(req *http.Request) (*http.Response, error) 
 	return resp, nil
 }
 
+// CloseIdleConnections closes idle connections on the wrapped transport when it supports
+// that operation.
 func (t *managedTransport) CloseIdleConnections() {
 	if c, ok := t.base.(interface{ CloseIdleConnections() }); ok {
 		c.CloseIdleConnections()
 	}
 }
 
+// close marks the transport closed, cancels active requests, and closes observed
+// connections and idle connections.
 func (t *managedTransport) close() {
 	t.mu.Lock()
 	t.closed = true
@@ -132,6 +142,7 @@ type releaseBody struct {
 	once    sync.Once
 }
 
+// Close closes the response body and releases its tracked exchange once.
 func (b *releaseBody) Close() error {
 	err := b.ReadCloser.Close()
 	b.once.Do(b.release)
