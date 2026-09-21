@@ -42,6 +42,7 @@ const (
 	tierStorage           // storage: contracts and the in-memory backend, no drivers
 	tierClient            // simulator: a device, in software
 	tierUtility           // configuration authoring: application identity discovery
+	tierInventory         // inventory: agentless source reconciliation and collection
 	tierServer            // server: persistence, service layer, transport
 	tierApp               // composition: cmd, internal/app, e2e
 )
@@ -49,7 +50,7 @@ const (
 var tierNames = map[int]string{
 	tierFoundation: "foundation", tierSchema: "schema", tierProtocol: "mdmprotocol",
 	tierPKI: "pki", tierServices: "appleplatformservices", tierStorage: "storage",
-	tierClient: "simulator", tierUtility: "utility", tierServer: "server", tierApp: "app",
+	tierClient: "simulator", tierUtility: "utility", tierInventory: "inventory", tierServer: "server", tierApp: "app",
 }
 
 // tierOf maps a package to its tier by path, which is the point of the
@@ -64,6 +65,8 @@ func tierOf(pkg string) int {
 		return tierApp
 	case strings.HasPrefix(pkg, "server/"):
 		return tierServer
+	case pkg == "inventory", strings.HasPrefix(pkg, "inventory/"):
+		return tierInventory
 	case strings.HasPrefix(pkg, "utility/"):
 		return tierUtility
 	case pkg == "simulator":
@@ -238,6 +241,7 @@ func TestLibraryTierClassification(t *testing.T) {
 		"devicemanagement/pki/acme":                       tierPKI,
 		"devicemanagement/appleplatformservices/axm":      tierServices,
 		"devicemanagement/contentcache":                   tierServices,
+		"devicemanagement/inventory":                      tierInventory,
 		"devicemanagement/storage/inmem":                  tierStorage,
 		"devicemanagement/simulator":                      tierClient,
 		"devicemanagement/utility/appidentity":            tierUtility,
@@ -263,7 +267,7 @@ func TestUtilitiesHaveNoPersistenceDependencies(t *testing.T) {
 		}
 		for _, dep := range g.Imports[pkg] {
 			tier := tierOf(dep)
-			if tier == tierStorage || tier == tierClient || tier >= tierServer {
+			if tier == tierStorage || tier == tierClient || tier == tierInventory || tier >= tierServer {
 				t.Errorf("utility %s imports forbidden dependency %s", pkg, dep)
 			}
 		}

@@ -44,12 +44,14 @@ type Subscriptions struct {
 
 // Config builds an Engine.
 type Config struct {
-	Store     Store
-	Resolvers []Resolver
-	Expander  Expander
-	Bus       event.Publisher
-	Clock     clock.Clock
-	Logger    *slog.Logger
+	// ObserveStatus projects a validated report in the enclosing event transaction.
+	ObserveStatus func(context.Context, mdm.EnrollmentID, StatusUpdate) error
+	Store         Store
+	Resolvers     []Resolver
+	Expander      Expander
+	Bus           event.Publisher
+	Clock         clock.Clock
+	Logger        *slog.Logger
 	// Target supplies the validation target for uploads; nil validates for
 	// any OS.
 	Target func(ctx context.Context) support.Target
@@ -79,6 +81,7 @@ var ErrNoStore = errors.New("ddm: store is required")
 
 // Engine serves declarative management for enrollments.
 type Engine struct {
+	observeStatus                                 func(context.Context, mdm.EnrollmentID, StatusUpdate) error
 	store                                         Store
 	resolvers                                     []Resolver
 	expander                                      Expander
@@ -99,7 +102,7 @@ func New(cfg Config) (*Engine, error) {
 		return nil, ErrNoStore
 	}
 	e := &Engine{
-		store: cfg.Store, resolvers: cfg.Resolvers, expander: cfg.Expander, bus: cfg.Bus,
+		observeStatus: cfg.ObserveStatus, store: cfg.Store, resolvers: cfg.Resolvers, expander: cfg.Expander, bus: cfg.Bus,
 		clock: cfg.Clock, log: cfg.Logger, target: cfg.Target,
 		enrollmentTarget: cfg.EnrollmentTarget,
 		maxStatus:        cfg.MaxStatusBytes, keep: cfg.KeepReports, subs: cfg.Subscriptions,

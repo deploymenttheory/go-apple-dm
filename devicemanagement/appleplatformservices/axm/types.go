@@ -181,6 +181,8 @@ const (
 
 // OrgDevice is a device registered to the organization.
 type OrgDevice struct {
+	// Raw retains the complete resource as received, including presence and future fields.
+	Raw           json.RawMessage         `json:"-"`
 	Type          string                  `json:"type"`
 	ID            string                  `json:"id"`
 	Attributes    OrgDeviceAttributes     `json:"attributes"`
@@ -249,6 +251,8 @@ const (
 
 // AppleCareCoverage is one coverage resource of a device.
 type AppleCareCoverage struct {
+	// Raw retains the complete resource as received, including presence and future fields.
+	Raw        json.RawMessage             `json:"-"`
 	Type       string                      `json:"type"`
 	ID         string                      `json:"id"`
 	Attributes AppleCareCoverageAttributes `json:"attributes"`
@@ -278,6 +282,8 @@ func (a *AppleCareCoverageAttributes) UnmarshalJSON(b []byte) error {
 
 // MDMDevice is a device enrolled in Apple's built-in device management.
 type MDMDevice struct {
+	// Raw retains the complete resource as received, including presence and future fields.
+	Raw           json.RawMessage         `json:"-"`
 	Type          string                  `json:"type"`
 	ID            string                  `json:"id"`
 	Attributes    MDMDeviceAttributes     `json:"attributes"`
@@ -315,6 +321,8 @@ const (
 
 // MDMDeviceDetail is the detailed view of an MDM-enrolled device.
 type MDMDeviceDetail struct {
+	// Raw retains the complete resource as received, including presence and future fields.
+	Raw        json.RawMessage           `json:"-"`
 	Type       string                    `json:"type"`
 	ID         string                    `json:"id"`
 	Attributes MDMDeviceDetailAttributes `json:"attributes"`
@@ -376,6 +384,8 @@ const (
 // MDMServer is a device management service in the organization. Its ID is
 // 32 upper-case hexadecimal characters.
 type MDMServer struct {
+	// Raw retains the complete resource as received, including presence and future fields.
+	Raw           json.RawMessage         `json:"-"`
 	Type          string                  `json:"type"`
 	ID            string                  `json:"id"`
 	Attributes    MDMServerAttributes     `json:"attributes"`

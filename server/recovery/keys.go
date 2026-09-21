@@ -37,6 +37,7 @@ func sealedBindings() map[string]sealedBinding {
 	for _, col := range []string{"consumer_secret", "access_token", "access_secret"} {
 		m["dep_accounts."+col] = sealedBinding{keys: []string{"name"}}
 	}
+	m["inventory_entries.payload"] = sealedBinding{keys: []string{"entry_key"}}
 	m["dep_sessions.token"] = sealedBinding{keys: []string{"account"}}
 	m["dep_keypairs.key_pem"] = sealedBinding{keys: []string{"account", "stage"}, separator: "/"}
 	m["protocol_state.value"] = sealedBinding{keys: []string{"record_key"}, composite: true}

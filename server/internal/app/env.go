@@ -11,9 +11,11 @@ import (
 
 // Environment variables read by ParseEnv.
 const (
-	EnvListen  = "DM_LISTEN"
-	EnvStorage = "DM_STORAGE"
-	EnvDSN     = "DM_DSN"
+	EnvInventoryNativeInterval = "DM_INVENTORY_NATIVE_INTERVAL"
+	EnvInventoryJobRetention   = "DM_INVENTORY_JOB_RETENTION"
+	EnvListen                  = "DM_LISTEN"
+	EnvStorage                 = "DM_STORAGE"
+	EnvDSN                     = "DM_DSN"
 	// EnvStorageKeys names the keys sealing the secret columns, active
 	// first; material comes from DM_STORAGE_KEY_<NAME> or EnvSecretsDir.
 	EnvStorageKeys       = "DM_STORAGE_KEYS" // #nosec G101 -- the variable name, not a credential
@@ -239,7 +241,7 @@ func ParseEnv(get func(string) string) (Config, error) {
 		ProfileURL: get(EnvDEPProfileURL),
 		RootCAFile: get(EnvDEPRootCAFile),
 	}
-	for key, dst := range map[string]*time.Duration{EnvDEPSyncInterval: &cfg.DEP.SyncInterval, EnvDEPAssignInterval: &cfg.DEP.AssignInterval} {
+	for key, dst := range map[string]*time.Duration{EnvDEPSyncInterval: &cfg.DEP.SyncInterval, EnvDEPAssignInterval: &cfg.DEP.AssignInterval, EnvInventoryNativeInterval: &cfg.InventoryNativeInterval, EnvInventoryJobRetention: &cfg.InventoryJobRetention} {
 		if v := get(key); v != "" {
 			d, err := time.ParseDuration(v)
 			if err != nil {

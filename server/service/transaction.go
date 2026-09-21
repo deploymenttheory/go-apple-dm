@@ -33,6 +33,12 @@ func (c *Core) Checkin(ctx context.Context, r *mdm.Request, ck *mdm.Checkin) (*C
 	err := event.Run(ctx, c.bus, func(ctx context.Context) error {
 		var err error
 		out, err = c.checkin(ctx, r, ck)
+		if err == nil && c.observeEnrollment != nil && r != nil {
+			err = c.observeEnrollment(ctx, r.ID)
+		}
+		if err == nil && c.observeCertificate != nil && r != nil && r.Certificate != nil {
+			err = c.observeCertificate(ctx, r.ID, r.Certificate, c.clock.Now())
+		}
 		return err
 	})
 	if err != nil {

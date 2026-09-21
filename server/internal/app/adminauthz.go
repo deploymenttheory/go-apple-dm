@@ -227,6 +227,9 @@ type adminRoute struct {
 	Sensitive          bool
 	// MaxResponseBytes bounds buffered responses; zero uses MaxAdminBody.
 	MaxResponseBytes int
+	// StreamResponse captures access before streaming; completion is audited afterward.
+	// Only explicit bulk exports use this to avoid buffering an entire fleet.
+	StreamResponse bool
 }
 
 // Admin authorization errors.
@@ -359,7 +362,7 @@ func (a *App) authorized(route adminRoute) http.Handler {
 			a.localAdmin(w, r, p, rt)
 			return
 		}
-		if rt.Sensitive && (r.Method == http.MethodGet || r.Method == http.MethodHead) {
+		if rt.Sensitive && !rt.StreamResponse && (r.Method == http.MethodGet || r.Method == http.MethodHead) {
 			a.sensitiveAdminRead(w, r, p, rt)
 			return
 		}

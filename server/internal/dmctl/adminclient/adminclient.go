@@ -211,9 +211,12 @@ func (c *Client) DoWithHeaders(ctx context.Context, method, path string, query u
 		return nil, fmt.Errorf("adminclient: %s %s: %w", method, u.Redacted(), err)
 	}
 	defer func(body io.Closer) { _ = body.Close() }(resp.Body)
-	raw, err := io.ReadAll(io.LimitReader(resp.Body, MaxBody))
+	raw, err := io.ReadAll(io.LimitReader(resp.Body, MaxBody+1))
 	if err != nil {
 		return nil, fmt.Errorf("adminclient: read body: %w", err)
+	}
+	if len(raw) > MaxBody {
+		return nil, fmt.Errorf("%w: response exceeds %d bytes", ErrStatus, MaxBody)
 	}
 	if c.trace != nil {
 		c.trace(fmt.Sprintf("  -> %d (%d bytes)", resp.StatusCode, len(raw)))
@@ -356,4 +359,39 @@ func (c *Client) ServerConfig(ctx context.Context) (*ServerConfig, error) {
 		return nil, fmt.Errorf("adminclient: decode config: %w", err)
 	}
 	return &out, nil
+}
+
+// Download streams an authorized GET to a caller-owned writer without truncating large exports.
+// Status failures are bounded; an incomplete inventory stream returns an error after its bytes.
+func (c *Client) Download(ctx context.Context, path string, query url.Values, dst io.Writer) error {
+	u := *c.base
+	u.Path = strings.TrimRight(u.Path, "/") + Prefix + path
+	u.RawQuery = query.Encode()
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, u.String(), nil)
+	if err != nil {
+		return err
+	}
+	req.Header.Set("Authorization", "Bearer "+c.token)
+	if c.trace != nil {
+		c.trace("GET " + u.Redacted())
+	}
+	resp, err := c.http.Do(req)
+	if err != nil {
+		return err
+	}
+	defer func() { _ = resp.Body.Close() }()
+	if resp.StatusCode >= 400 {
+		body, err := io.ReadAll(io.LimitReader(resp.Body, MaxBody))
+		if err != nil {
+			return err
+		}
+		return statusError(resp.StatusCode, body)
+	}
+	if _, err := io.Copy(dst, resp.Body); err != nil {
+		return err
+	}
+	if resp.Trailer.Get("X-Inventory-Error") != "" {
+		return fmt.Errorf("%w: incomplete inventory export", ErrStatus)
+	}
+	return nil
 }
