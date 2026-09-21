@@ -10,6 +10,7 @@ import (
 	adminsql "github.com/deploymenttheory/go-apple-dm/server/adminauth/sqlstore"
 	"github.com/deploymenttheory/go-apple-dm/server/eventstore"
 	"github.com/deploymenttheory/go-apple-dm/server/internal/app"
+	"github.com/deploymenttheory/go-apple-dm/server/internal/privatefile"
 	"github.com/deploymenttheory/go-apple-dm/server/maintenance"
 	"github.com/deploymenttheory/go-apple-dm/server/recovery"
 )
@@ -50,8 +51,7 @@ func TestRootRecoveryRequiresOwnedFenceAndCapturesAudit(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	info, err := os.Stat(output)
-	if err != nil || info.Mode().Perm() != 0o600 {
+	if err := privatefile.Check(output); err != nil {
 		t.Fatal("unprotected recovery token", err)
 	}
 	cfg, err := app.LoadSetupFile(setup, nil)

@@ -2,9 +2,13 @@ package app_test
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net/http"
+	"net/http/httptest"
+	"strings"
 	"testing"
+	"testing/synctest"
 	"time"
 
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/clock"
@@ -115,52 +119,51 @@ func TestDDMCommandTravelsTheCommandPath(t *testing.T) {
 // The admin route wrapper requests a notifier drain after successful declarative
 // writes; the engine communicates changes through persistent rows.
 func TestAdminWriteKicksTheNotifier(t *testing.T) {
-	// With a fake clock the notifier's poll never fires, so the only thing
-	// that can start another drain is a kick. Each loop iteration parks on
-	// Clock.After, so the count of pending waiters rising is the evidence
-	// that an extra iteration ran without time moving.
-	fake := clock.NewFake(t0app)
-	a := build(t, app.Config{Storage: "inmem", BootstrapToken: "t", Clock: fake})
-	srv := serve(t, a)
-
-	ctx, cancel := context.WithCancel(context.Background())
-	done := make(chan error, 1)
-	go func() { done <- a.Run(ctx) }()
-	t.Cleanup(func() { cancel(); <-done })
-
-	waitFor(t, func() bool { return fake.Pending() >= 1 })
-	before := fake.Pending()
-
 	body := `{"Type":"com.apple.configuration.management.test","Identifier":"com.example.cfg","Payload":{"Echo":"hi"}}`
-	resp := adminReq(t, srv.URL, http.MethodPut, "/admin/v1/declarations", "t", body)
-	_ = resp.Body.Close()
-	if resp.StatusCode >= 300 {
-		t.Fatalf("status = %d", resp.StatusCode)
-	}
-	waitFor(t, func() bool { return fake.Pending() > before })
+	checkAdminNotifierDrains(t, http.MethodPut, "/admin/v1/declarations", body, 1)
 }
 
 // A read must not kick, so the notifier is not woken by every dashboard poll.
 func TestAdminReadDoesNotKick(t *testing.T) {
-	fake := clock.NewFake(t0app)
-	a := build(t, app.Config{Storage: "inmem", BootstrapToken: "t", Clock: fake})
-	srv := serve(t, a)
+	checkAdminNotifierDrains(t, http.MethodGet, "/admin/v1/config", "", 0)
+}
 
-	ctx, cancel := context.WithCancel(context.Background())
-	done := make(chan error, 1)
-	go func() { done <- a.Run(ctx) }()
-	t.Cleanup(func() { cancel(); <-done })
+func checkAdminNotifierDrains(t *testing.T, method, path, body string, want int) {
+	t.Helper()
+	synctest.Test(t, func(t *testing.T) {
+		fake := clock.NewFake(t0app)
+		a := build(t, app.Config{Storage: "inmem", BootstrapToken: "t", Clock: fake})
+		ctx, cancel := context.WithCancel(t.Context())
+		done := make(chan error, 1)
+		// Only the notifier uses this clock. Other workers starting timers
+		// must not be mistaken for a notifier drain.
+		go func() { done <- a.Notifier.Run(ctx) }()
+		t.Cleanup(func() {
+			cancel()
+			if err := <-done; !errors.Is(err, context.Canceled) {
+				t.Errorf("notifier shutdown: %v", err)
+			}
+		})
+		synctest.Wait()
+		before := fake.Pending()
+		if before != 1 {
+			t.Fatalf("initial notifier poll timers = %d, want 1", before)
+		}
 
-	waitFor(t, func() bool { return fake.Pending() >= 1 })
-	before := fake.Pending()
-
-	resp := adminReq(t, srv.URL, http.MethodGet, "/admin/v1/config", "t", "")
-	_ = resp.Body.Close()
-	// Give a wrongly-placed kick time to land.
-	time.Sleep(50 * time.Millisecond)
-	if fake.Pending() != before {
-		t.Fatal("a read woke the notifier")
-	}
+		r := httptest.NewRequestWithContext(t.Context(), method, path, strings.NewReader(body))
+		r.Header.Set("Authorization", "Bearer t")
+		w := httptest.NewRecorder()
+		a.Handler.ServeHTTP(w, r)
+		if w.Code < 200 || w.Code >= 300 {
+			t.Fatalf("status = %d: %s", w.Code, w.Body.String())
+		}
+		// Wait for the notifier to park again, without advancing its poll
+		// clock. Any extra iteration must have been requested by a kick.
+		synctest.Wait()
+		if got := fake.Pending() - before; got != want {
+			t.Fatalf("%s %s triggered %d notifier drains, want %d", method, path, got, want)
+		}
+	})
 }
 
 // Suppression applies only where a caller asks for it. An operator sending
