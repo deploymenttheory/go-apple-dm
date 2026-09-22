@@ -67,6 +67,9 @@ func TestHelpDoesNotPerformOperations(t *testing.T) {
 		{"principals", "create", "operator", "-h"},
 		{"commands", "clear", "device", "test-device", "-h"},
 		{"recovery", "backup", "-h"},
+		{"devices", "--help"},
+		{"devices", "collect", "test-device", "--help"},
+		{"devices", "--file", filepath.Join(dir, "missing.json"), "collect", "test-device", "-h"},
 	} {
 		out, help, err := run(t, env, args...)
 		if err != nil || out != "" || !strings.Contains(help, "Usage of") {

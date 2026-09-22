@@ -14,6 +14,7 @@ import (
 	ddmsql "github.com/deploymenttheory/go-apple-dm/server/ddmstore/sqlstore"
 	depsql "github.com/deploymenttheory/go-apple-dm/server/depstore/sqlstore"
 	"github.com/deploymenttheory/go-apple-dm/server/eventstore"
+	"github.com/deploymenttheory/go-apple-dm/server/inventorystore"
 	"github.com/deploymenttheory/go-apple-dm/server/maintenance"
 	"github.com/deploymenttheory/go-apple-dm/server/sqlstore/sqlcommon"
 	"github.com/deploymenttheory/go-apple-dm/server/statestore"
@@ -27,7 +28,7 @@ func ServerSchema(d sqlcommon.Dialect) ([]sqlcommon.MigrationSet, error) {
 	sets := []sqlcommon.MigrationSet{{Table: sqlcommon.DefaultMigrationsTable, FS: d.Migrations}}
 	for _, get := range []func(sqlcommon.Dialect) (sqlcommon.MigrationSet, error){
 		acmesql.MigrationSet, adminsql.MigrationSet, auditsql.MigrationSet,
-		ddmsql.MigrationSet, depsql.MigrationSet, statestore.MigrationSet, eventstore.MigrationSet, webhook.MigrationSet, maintenance.MigrationSet,
+		ddmsql.MigrationSet, depsql.MigrationSet, inventorystore.MigrationSet, statestore.MigrationSet, eventstore.MigrationSet, webhook.MigrationSet, maintenance.MigrationSet,
 	} {
 		set, err := get(d)
 		if err != nil {

@@ -52,6 +52,10 @@ case "${1:-}" in
       -e MYSQL_PASSWORD=dm -p 3306:3306 mysql:8.4
     wait_for "$PG" docker exec "$PG" pg_isready -U dm
     wait_for "$MY" docker exec "$MY" mysqladmin ping -h 127.0.0.1 -uroot -pdm --silent
+    # Inventory tests create a random database instead of resetting shared tables.
+    docker exec -i "$MY" mysql --user=root --password=dm <<'SQL'
+GRANT ALL PRIVILEGES ON `inventory\_test\_%`.* TO 'dm'@'%';
+SQL
     print_env
     ;;
   down)

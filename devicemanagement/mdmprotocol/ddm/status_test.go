@@ -612,3 +612,33 @@ func TestClientCapabilities(t *testing.T) {
 		})
 	}
 }
+
+// TestStatusObserverFailure verifies projections see validated evidence and failures reach callers.
+func TestStatusObserverFailure(t *testing.T) {
+	ctx := t.Context()
+	id := ddmtest.Device(1)
+	calls := 0
+	h := newHarness(t, func(c *ddm.Config) {
+		c.ObserveStatus = func(_ context.Context, got mdm.EnrollmentID, u ddm.StatusUpdate) error {
+			calls++
+			if got != id || len(u.Raw) == 0 || len(u.Values) != 1 {
+				t.Fatal(got, u)
+			}
+			return errBoom
+		}
+	})
+	if _, err := h.engine.Status(ctx, id, []byte(`{"StatusItems":{"device":{"operating-system":{"version":"27.0"}}}}`)); !errors.Is(err, errBoom) {
+		t.Fatal(err)
+	}
+	if calls != 1 {
+		t.Fatal(calls)
+	}
+	for _, e := range h.Events() {
+		if e.Type == event.DDMStatusReceived {
+			t.Fatal("success event published after projection failure")
+		}
+	}
+	if _, err := h.engine.Status(ctx, id, []byte(`{`)); err == nil || calls != 1 {
+		t.Fatal("observer saw invalid evidence", err, calls)
+	}
+}

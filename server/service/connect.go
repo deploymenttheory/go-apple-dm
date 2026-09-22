@@ -63,6 +63,11 @@ func (c *Core) connect(
 		err := c.store.StoreResult(ctx, r.ID, resp, now)
 		switch {
 		case err == nil:
+			if c.observeResult != nil {
+				if err := c.observeResult(ctx, r.ID, resp, now); err != nil {
+					return nil, wrapCode(CodeInternal, err)
+				}
+			}
 		case errors.Is(err, storage.ErrNotFound):
 			// A result for a command this server no longer tracks (cleared,
 			// migrated, or duplicate): log and carry on so the device is not
@@ -88,6 +93,16 @@ func (c *Core) connect(
 	}
 	if err := c.store.TouchLastSeen(ctx, r.ID, now); err != nil {
 		return nil, wrapCode(codeForStorage(err), err)
+	}
+	if c.observeEnrollment != nil {
+		if err := c.observeEnrollment(ctx, r.ID); err != nil {
+			return nil, wrapCode(CodeInternal, err)
+		}
+	}
+	if c.observeCertificate != nil && r.Certificate != nil {
+		if err := c.observeCertificate(ctx, r.ID, r.Certificate, now); err != nil {
+			return nil, err
+		}
 	}
 	if cmd != nil {
 		c.publish(ctx, event.CommandSent, r.ID, "server", cmd)

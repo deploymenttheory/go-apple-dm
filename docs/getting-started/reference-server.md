@@ -469,6 +469,28 @@ not command completion. The result route returns 204 while no result exists,
 requested `OSVersion` and `BuildVersion` values. Inspect `NotNow`, errors and
 skipped targets before retrying.
 
+### 6.6 Refresh the persistent device record
+
+For the supported native inventory bundle, find the local inventory record ID and run:
+
+```sh
+dmctl devices list
+dmctl devices collect INVENTORY_RECORD_ID
+dmctl devices get INVENTORY_RECORD_ID
+```
+
+`devices collect` queues supported `DeviceInformation`, `SecurityInfo`, `ProfileList`,
+`InstalledApplicationList` and `CertificateList` commands and requests an APNs wake
+when configured. Its response, for example `{"queued":5}`, confirms submission rather
+than completed collection. The device must contact the server and acknowledge commands
+before fresh data appears. The enrollment rights chosen earlier can limit which commands
+succeed; an administrator's API permissions do not expand device-side enrollment rights.
+
+The inventory record ID is separate from the enrollment ID used in section 6.5.
+See the [collection CLI reference](../operations/agentless-inventory.md#cli-devices-collect)
+for returned fields, check-in behavior, offline handling, required permissions, result
+inspection and the distinction between native collection and ABM/ASM sync.
+
 The [Mac testing runbook](../operations/mac-enrollment-testing.md) continues
 with ACME, replacement and renewal checks. Record the actual OS/hardware/mode
 you validated. Stop the server only after you have finished managing the test

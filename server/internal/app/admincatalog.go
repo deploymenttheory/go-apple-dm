@@ -40,6 +40,10 @@ func AdminActions() []adminauth.Action {
 	add := func(id, help string, resource types.EntityType) {
 		actions = append(actions, adminauth.Action{ID: id, Help: help, Resource: resource})
 	}
+	add(ActionReadInventory, "Read agentless device inventory, reports and exports.", adminauth.EntitySystem)
+	add(ActionReadRawInventory, "Read complete Apple inventory responses, including sensitive fields.", adminauth.EntitySystem)
+	add(ActionManageInventory, "Collect inventory and manage sync jobs and schedules.", adminauth.EntitySystem)
+	add(ActionManageAxMAccounts, "Manage Apple Business or School Manager connections and keys.", adminauth.EntitySystem)
 	add(ActionManageSensitiveWebhooks, "Manage webhook destinations that receive sensitive events.", adminauth.EntitySystem)
 	add(ActionReplaySensitiveWebhooks, "Replay or retry sensitive webhook events.", adminauth.EntitySystem)
 	add(ActionListEnrollments, "List fleet enrollment metadata.", adminauth.EntitySystem)
@@ -73,7 +77,7 @@ func AdminActions() []adminauth.Action {
 	operator := []string{ActionPushEnrollment, "enqueueCommand.DeviceInformation", "enqueueCommand.SecurityInfo", "enqueueCommand.ProfileList", "enqueueCommand.InstalledApplicationList", "enqueueCommand.CertificateList"}
 	administrator := []string{ActionPutDeclaration, ActionDeleteDeclaration, ActionEditSet, ActionAssignSet, ActionNotify, ActionPublishBlueprints, ActionDeleteBlueprint, ActionAssignBlueprint, ActionUploadProfile, ActionDiscoverApplicationIdentities}
 	auditor := []string{ActionReadAudit, ActionReadRoles, ActionReadPrincipals, ActionReadPolicies}
-	sensitive := []string{ActionReadRawCommandResult, ActionDownloadProfile, ActionExportEnrollments, ActionImportEnrollments, ActionEnqueueUnknownCommand, ActionManagePushCerts, ActionManageAppPush, ActionManageVendor, ActionManageHTTPS, ActionManageIssuer, ActionManageContentCache, ActionReadBlueprints, ActionListBlueprints, ActionGetDeclaration, "manageDEPCredentials", ActionManageSensitiveWebhooks, ActionReplaySensitiveWebhooks}
+	sensitive := []string{ActionReadRawInventory, ActionManageAxMAccounts, ActionReadRawCommandResult, ActionDownloadProfile, ActionExportEnrollments, ActionImportEnrollments, ActionEnqueueUnknownCommand, ActionManagePushCerts, ActionManageAppPush, ActionManageVendor, ActionManageHTTPS, ActionManageIssuer, ActionManageContentCache, ActionReadBlueprints, ActionListBlueprints, ActionGetDeclaration, "manageDEPCredentials", ActionManageSensitiveWebhooks, ActionReplaySensitiveWebhooks}
 	for i := range actions {
 		a := &actions[i]
 		a.Group = "device-management"

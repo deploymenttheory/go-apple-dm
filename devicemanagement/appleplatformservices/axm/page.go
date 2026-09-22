@@ -12,14 +12,14 @@ import (
 
 // Page is one page of a list response.
 type Page[T any] struct {
-	Items    []T
-	Links    Links
-	Meta     Meta
-	Included []IncludedResource
+	Items    []T                `json:"Items"`
+	Links    Links              `json:"Links"`
+	Meta     Meta               `json:"Meta"`
+	Included []IncludedResource `json:"Included"`
 }
 
 // HasNext reports whether Apple provided a next link.
-func (p Page[T]) HasNext() bool { return p.Links.Next != "" }
+func (p Page[T]) HasNext() bool { return p.Links.Next != "" || p.Meta.Paging.NextCursor != "" }
 
 // document is the wire form of a paged response.
 type document[T any] struct {
@@ -86,6 +86,12 @@ func list[T any](ctx context.Context, c *Client, path string, q url.Values) (Pag
 	if err := c.do(ctx, request{method: http.MethodGet, path: path, query: q}, &doc); err != nil {
 		return Page[T]{}, err
 	}
+	if doc.Links.Self == "" {
+		u := *c.base
+		u.Path = strings.TrimRight(u.Path, "/") + path
+		u.RawQuery = q.Encode()
+		doc.Links.Self = u.String()
+	}
 	return Page[T]{Items: doc.Data, Links: doc.Links, Meta: doc.Meta, Included: doc.Included}, nil
 }
 
@@ -103,13 +109,27 @@ func get[T any](ctx context.Context, c *Client, path string, q url.Values) (*T, 
 // fields selection survives. ErrNextLink is returned when there is no next
 // link or it points off the API host.
 func NextPage[T any](ctx context.Context, c *Client, page Page[T]) (Page[T], error) {
-	next, err := c.nextURL(page.Links)
+	links := page.Links
+	if links.Next == "" && page.Meta.Paging.NextCursor != "" && links.Self != "" {
+		u, err := url.Parse(links.Self)
+		if err != nil {
+			return Page[T]{}, ErrNextLink
+		}
+		q := u.Query()
+		q.Set("cursor", page.Meta.Paging.NextCursor)
+		u.RawQuery = q.Encode()
+		links.Next = u.String()
+	}
+	next, err := c.nextURL(links)
 	if err != nil {
 		return Page[T]{}, err
 	}
 	var doc document[T]
 	if err := c.do(ctx, request{method: http.MethodGet, rawURL: next}, &doc); err != nil {
 		return Page[T]{}, err
+	}
+	if doc.Links.Self == "" {
+		doc.Links.Self = next
 	}
 	return Page[T]{Items: doc.Data, Links: doc.Links, Meta: doc.Meta, Included: doc.Included}, nil
 }
@@ -124,7 +144,7 @@ func (c *Client) nextURL(links Links) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("%w: %w", ErrNextLink, err)
 	}
-	if next.Scheme != c.base.Scheme || next.Host != c.base.Host {
+	if next.User != nil || next.Fragment != "" || next.Scheme != c.base.Scheme || next.Host != c.base.Host {
 		return "", fmt.Errorf("%w: %s is not on %s", ErrNextLink, links.Next, c.base.Host)
 	}
 	if links.Self != "" {

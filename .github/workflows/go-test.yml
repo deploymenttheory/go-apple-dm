@@ -160,6 +160,13 @@ jobs:
         with:
           go-version-file: 'go.mod'
           cache: true
+      - name: Allow isolated inventory databases in the test service
+        env:
+          MYSQL_SERVICE_ID: ${{ job.services.mysql.id }}
+        run: |
+          docker exec -i "$MYSQL_SERVICE_ID" mysql --user=root --password=dm <<'SQL'
+          GRANT ALL PRIVILEGES ON `inventory\_test\_%`.* TO 'dm'@'%';
+          SQL
       - name: Storage suites
         run: make test-storage
       - name: Storage timing gate

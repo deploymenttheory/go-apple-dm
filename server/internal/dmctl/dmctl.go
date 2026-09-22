@@ -185,6 +185,9 @@ func Verbs() []string {
 // function.
 func commands() map[string]command {
 	cmds := []command{
+		{"devices", "query agentless device records and collect native inventory", runDevices},
+		{"axm", "manage Apple Business and School Manager data sources", runAxM},
+		{"inventory", "manage inventory jobs, schedules, reports, exports and diagnostics", runInventory},
 		{"roles", "manage administrative roles", runRoles},
 		{"auth", "inspect authorization, bootstrap, and recover root credentials", runAuth},
 		{"recovery", "pause, back up, verify and restore a persistent server", runRecovery},

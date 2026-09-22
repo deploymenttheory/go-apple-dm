@@ -63,6 +63,11 @@ func (e *Engine) storeStatus(ctx context.Context, id mdm.EnrollmentID, body []by
 	if err != nil {
 		return nil, err
 	}
+	if e.observeStatus != nil {
+		if err := e.observeStatus(ctx, id, *update); err != nil {
+			return nil, err
+		}
+	}
 	e.publish(ctx, event.DDMStatusReceived, id, &out)
 	return &out, nil
 }

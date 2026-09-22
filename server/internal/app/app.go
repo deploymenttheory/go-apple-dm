@@ -21,6 +21,7 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/appleplatformservices/dep"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/appleplatformservices/push/apns"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/clock"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/inventory"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/cms"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/ddm"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/event"
@@ -132,6 +133,10 @@ type Config struct {
 	// AxM connects Apple Business Manager or Apple School Manager; its
 	// administrative routes live under the admin API.
 	AxM AxMConfig
+	// InventoryNativeInterval defaults to 24 hours between native collection attempts.
+	InventoryNativeInterval time.Duration
+	// InventoryJobRetention defaults to 30 days for completed inventory jobs.
+	InventoryJobRetention time.Duration
 	// DEP configures the device enrollment service client and worker;
 	// its admin routes live under the admin API too.
 	DEP DEPConfig
@@ -207,7 +212,8 @@ type App struct {
 	Store                 storage.Store
 	keyring               *crypt.Keyring
 	// AxM is the Business Manager client when configured.
-	AxM *axm.Client
+	AxM       *axm.Client
+	Inventory *inventory.Repository
 	// DEP is the device enrollment service when configured.
 	DEP *dep.Client
 	// Push wakes devices; nil when no push source is configured.
@@ -355,6 +361,9 @@ func Build(ctx context.Context, cfg Config) (*App, error) {
 	if err := a.openStorage(ctx); err != nil {
 		return nil, err
 	}
+	if err := a.openInventory(ctx); err != nil {
+		return nil, err
+	}
 	if err := a.openCertificates(ctx); err != nil {
 		return nil, err
 	}
@@ -386,6 +395,9 @@ func reenrollPolicy(allow bool) service.ReenrollPolicy {
 
 // validate rejects inconsistent server configuration before runtime resources are opened.
 func (c Config) validate() error {
+	if c.InventoryNativeInterval < 0 || c.InventoryJobRetention < 0 {
+		return fmt.Errorf("%w: inventory intervals must not be negative", ErrConfig)
+	}
 	if c.Sinks.WebhookURL != "" || len(c.Sinks.WebhookHMACKey) != 0 {
 		return fmt.Errorf("%w: legacy webhook settings require migration to managed subscriptions", ErrConfig)
 	}
@@ -618,6 +630,7 @@ func (a *App) wire(ctx context.Context) error {
 		Store: st, Bus: cfg.publisher(), Clock: cfg.Clock, Logger: cfg.Logger,
 		Expander:      configurationprofile.Expander{BaseURL: cfg.Enroll.PublicURL},
 		Subscriptions: ddm.Subscriptions{Enabled: cfg.Subscriptions},
+		ObserveStatus: a.observeInventoryStatus,
 		EnrollmentTarget: func(ctx context.Context, id mdm.EnrollmentID) (support.Target, error) {
 			target, err := service.EnrollmentTarget(ctx, a.Store, id)
 			if errors.Is(err, storage.ErrNotFound) {
@@ -672,7 +685,8 @@ func (a *App) wire(ctx context.Context) error {
 			return err
 		}
 		core, err := service.New(service.Config{
-			Store:              a.Store,
+			Store:         a.Store,
+			ObserveResult: a.observeInventoryResult, ObserveEnrollment: a.observeInventoryEnrollment, ObserveCertificate: a.observeInventoryCertificate,
 			EnableReplacements: a.replacementStore() != nil && a.enroll != nil,
 			Bus:                cfg.publisher(),
 			Clock:              cfg.Clock,
@@ -931,6 +945,7 @@ func (a *App) wireAdmin(ctx context.Context, mux *http.ServeMux) error {
 		a.admin = m
 	}
 	var routes []adminRoute
+	routes = append(routes, a.inventoryRoutes()...)
 	routes = append(routes, a.introspectionRoutes()...)
 	routes = append(routes, a.eventRoutes()...)
 	routes = append(routes, a.webhookRoutes()...)

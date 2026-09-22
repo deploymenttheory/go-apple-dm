@@ -23,6 +23,7 @@ func TestSnapshotSecretBindingsRejectSwappedRowsAndPurposes(t *testing.T) {
 		composite     bool
 		aadKey        string
 	}{
+		{"inventory_entries", "payload", []string{"entry_key"}, []string{"credential/source"}, false, "credential/source"},
 		{"push_certs", "key_pem", []string{"topic"}, []string{"original-topic"}, false, "original-topic"},
 		{"dep_keypairs", "key_pem", []string{"account", "stage"}, []string{"account", "pending"}, false, "account/pending"},
 		{"protocol_state", "value", []string{"record_key"}, []string{"pki/issuer"}, true, ""},
