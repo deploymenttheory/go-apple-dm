@@ -81,7 +81,7 @@ Examples:
     --where '[{"field":"id","operator":"eq","value":"DEVICE_ID"}]' \
     --columns serial_number,model,os_version,filevault_enabled,identity_certificate_expiry
 
-Guide: docs/operations/agentless-inventory.md
+Guide: docs/operations/agentless-inventory.md in GitHub.
 
 Flags (shared across inventory operations; not every flag applies to each verb):
 `
