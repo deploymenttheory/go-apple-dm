@@ -31,6 +31,12 @@ func runInventory(ctx context.Context, e *env, args []string) error {
 // runInventoryCommand gives all inventory operations the same filter and projection flags.
 func runInventoryCommand(ctx context.Context, e *env, family string, args []string) error {
 	fs := e.verbFlags(family)
+	if family == "devices" {
+		fs.Usage = func() {
+			_, _ = fmt.Fprint(e.stderr, devicesHelp)
+			fs.PrintDefaults()
+		}
+	}
 	cron := fs.String("cron", "", "five-field cron expression for schedule set")
 	every := fs.Int("every", 0, "repeat interval count for schedule set")
 	unit := fs.String("unit", "", "repeat unit: minutes, hours, days, weeks, months")
@@ -48,7 +54,7 @@ func runInventoryCommand(ctx context.Context, e *env, family string, args []stri
 	raw := fs.Bool("raw", false, "request complete Apple responses (requires readRawInventory)")
 	force := fs.Bool("force", false, "bypass successful snapshot freshness")
 	revision := fs.Int64("revision", 0, "expected account revision for delete")
-	wait := fs.Bool("wait", false, "wait for a submitted sync job to finish")
+	wait := fs.Bool("wait", false, "wait for axm accounts sync to finish; does not wait for devices collect")
 	pos, err := e.parseVerb(fs, args)
 	if err != nil {
 		return err

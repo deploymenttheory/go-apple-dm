@@ -90,6 +90,14 @@ cross-platform RAM field.
 
 ## CLI: `devices collect`
 
+The built-in CLI help includes this workflow, the command bundle, observed field
+examples, permissions and result-inspection steps:
+
+```sh
+dmctl devices --help
+dmctl devices collect --help
+```
+
 `dmctl devices collect DEVICE_ID` requests an asynchronous native inventory refresh
 for an existing device record. `DEVICE_ID` is the local inventory record ID returned
 by `devices list`, not an Apple resource ID, serial number or enrollment UDID.
