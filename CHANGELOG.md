@@ -1,5 +1,30 @@
 # Changelog
 
+## [0.8.2](https://github.com/deploymenttheory/go-apple-dm/compare/v0.8.1...v0.8.2) (2026-09-22)
+
+
+### Features
+
+* **inventory:** add agentless Apple device records ([e70178c](https://github.com/deploymenttheory/go-apple-dm/commit/e70178c6cb29c46c6337dfc3451105b4a6286996))
+* **inventory:** add agentless Apple device records ([749dbcd](https://github.com/deploymenttheory/go-apple-dm/commit/749dbcdecbf6af586b8667b3aa3fb4362dbb8af3))
+
+
+### Bug Fixes
+
+* **inventory:** preserve native evidence and omit empty values ([4b7c4ae](https://github.com/deploymenttheory/go-apple-dm/commit/4b7c4aee8558e518862d1e841fb2d7f0049c0a9c))
+* **server:** pin library revision with agentless inventory ([5467df9](https://github.com/deploymenttheory/go-apple-dm/commit/5467df921145a6e12bc30bc0f05e93ae3d2033d2))
+* **server:** ship verified inventory normalization fixes ([a8f21ee](https://github.com/deploymenttheory/go-apple-dm/commit/a8f21eeb1dc55336d714eeb142f8bfadeb70c41c))
+
+
+### Documentation
+
+* **cli:** expose native inventory guidance in verb help ([271d726](https://github.com/deploymenttheory/go-apple-dm/commit/271d726e9cb4929e3b3aed9a933b00985ff7ea7f))
+* **diagrams:** add five bench review options ([970b47e](https://github.com/deploymenttheory/go-apple-dm/commit/970b47e019ea4dd5c7694331e4225ebfc5c2a952))
+* **diagrams:** adopt system map for reference server bench ([92a720a](https://github.com/deploymenttheory/go-apple-dm/commit/92a720a1006c760c08a86c6b5f3f75f6fdac7169))
+* **diagrams:** adopt system map for reference server bench ([507bd94](https://github.com/deploymenttheory/go-apple-dm/commit/507bd94953f15081f84f008e9ff5205c3247b05f))
+* **diagrams:** adopt system map for reference server bench ([d087153](https://github.com/deploymenttheory/go-apple-dm/commit/d087153aa18a43aaedaf02d1745dd0b93c0b873e))
+* **inventory:** explain collection fields and check-in flow ([2ab189c](https://github.com/deploymenttheory/go-apple-dm/commit/2ab189cb23efcbddbc3c8c5ed148d94015d6b007))
+
 ## [0.8.1](https://github.com/deploymenttheory/go-apple-dm/compare/v0.8.0...v0.8.1) (2026-09-21)
 
 
