@@ -366,9 +366,17 @@ func rebuild(d *DeviceRecord) {
 			}
 			if name != "" {
 				if name == "imei" || name == "meid" || name == "ethernet_mac_addresses" {
-					var scalar string
-					if len(f.Value) > 0 && f.Value[0] == '"' && json.Unmarshal(f.Value, &scalar) == nil {
-						f.Value, _ = json.Marshal([]string{scalar})
+					f.Value = identifierArray(f.Value)
+					if len(f.Value) == 0 {
+						continue
+					}
+				}
+				if (name == "wifi_mac_address" || name == "bluetooth_mac_address" || name == "eid") && strings.TrimSpace(String(f.Value)) == "" {
+					continue
+				}
+				if o.Source.Kind == "enrollment" && (name == "enrolled_at" || name == "last_seen" || name == "disabled_at") {
+					if at, ok := Time(f.Value); ok && at.IsZero() {
+						continue
 					}
 				}
 				selectField(d, name, f)
@@ -415,8 +423,33 @@ func rebuild(d *DeviceRecord) {
 	}
 	if d.SerialNumber != "" {
 		raw, _ := json.Marshal(d.SerialNumber)
-		d.Fields["serial_number"] = FieldValue{Value: raw}
+		serial := d.Fields["serial_number"]
+		serial.Value = raw
+		d.Fields["serial_number"] = serial
 	}
+}
+
+// identifierArray normalizes scalar or array identifiers without inventing empty members.
+// Original source values remain available even when no usable identifiers are present.
+func identifierArray(raw json.RawMessage) json.RawMessage {
+	var values []string
+	var scalar string
+	if json.Unmarshal(raw, &scalar) == nil {
+		values = []string{scalar}
+	} else if json.Unmarshal(raw, &values) != nil {
+		return nil
+	}
+	filtered := make([]string, 0, len(values))
+	for _, value := range values {
+		if strings.TrimSpace(value) != "" {
+			filtered = append(filtered, value)
+		}
+	}
+	if len(filtered) == 0 {
+		return nil
+	}
+	result, _ := json.Marshal(filtered)
+	return result
 }
 
 // selectField prefers newer evidence, with native source priority for exact ties.
@@ -443,7 +476,7 @@ func priority(kind string) int {
 
 // ddmAlias maps the operational status items that have cross-source counterparts.
 func ddmAlias(path string) string {
-	return map[string]string{"device.identifier.serial-number": "serial_number", "device.identifier.udid": "udid", "device.model.family": "product_family", "device.model.identifier": "product_type", "device.model.marketing-name": "model", "device.operating-system.version": "os_version", "device.operating-system.build-version": "build_version", "device.operating-system.family": "os_family"}[path]
+	return map[string]string{"device.identifier.serial-number": "serial_number", "device.identifier.udid": "udid", "device.model.family": "product_family", "device.model.identifier": "product_type", "device.model.marketing-name": "model", "device.operating-system.version": "os_version", "device.operating-system.build-version": "build_version", "device.operating-system.family": "os_family", "diskmanagement.filevault.enabled": "filevault_enabled"}[path]
 }
 
 // appendUnique avoids repeating a persistent conflict on every refresh.

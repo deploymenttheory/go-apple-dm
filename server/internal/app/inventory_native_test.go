@@ -330,3 +330,53 @@ func TestInventoryStatusBackfillPagination(t *testing.T) {
 		t.Fatal("last status page omitted")
 	}
 }
+
+// TestInventoryEnrollmentDates omits unset source dates and preserves real lifecycle timestamps.
+func TestInventoryEnrollmentDates(t *testing.T) {
+	a, id := nativeInventoryApp(t)
+	ctx := t.Context()
+	now := time.Now().UTC().Truncate(time.Second)
+	for i, disabled := range []bool{false, true, false} {
+		e, err := a.Store.Get(ctx, id)
+		if err != nil {
+			t.Fatal(err)
+		}
+		e.Enabled = !disabled
+		e.EnrolledAt = time.Time{}
+		e.LastSeenAt = now.Add(time.Duration(i) * time.Minute)
+		e.DisabledAt = time.Time{}
+		if disabled {
+			e.DisabledAt = e.LastSeenAt
+		}
+		if err := a.Store.Import(ctx, storage.EnrollmentExport{Enrollment: *e}); err != nil {
+			t.Fatal(err)
+		}
+		if err := a.observeInventoryEnrollment(ctx, id); err != nil {
+			t.Fatal(err)
+		}
+		ref := inventory.EnrollmentReference("enrollment", id)
+		d, err := a.Inventory.SourceDevice(ctx, ref)
+		if err != nil {
+			t.Fatal(err)
+		}
+		var raw map[string]json.RawMessage
+		if err := json.Unmarshal(d.Sources[ref.Key()].Raw, &raw); err != nil {
+			t.Fatal(err)
+		}
+		if _, exists := raw["enrolled_at"]; exists {
+			t.Fatal("zero enrollment date retained")
+		}
+		if _, exists := raw["disabled_at"]; exists != disabled {
+			t.Fatal("raw disable date presence", disabled, raw)
+		}
+		if _, exists := d.Fields["disabled_at"]; exists != disabled {
+			t.Fatal("normalized disable date presence", disabled, d.Fields)
+		}
+		if disabled && inventory.String(d.Fields["disabled_at"].Value) != e.DisabledAt.Format(time.RFC3339) {
+			t.Fatal("actual disable timestamp changed")
+		}
+		if inventory.String(d.Fields["last_seen"].Value) != e.LastSeenAt.Format(time.RFC3339) {
+			t.Fatal("last seen timestamp changed")
+		}
+	}
+}

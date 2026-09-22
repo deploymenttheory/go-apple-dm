@@ -37,6 +37,9 @@ Wi-Fi, Bluetooth and Ethernet MAC addresses, IMEI, MEID, EID, order information,
 purchase source, organization dates, MDM migration capability/status/deadline and
 all unknown Apple attributes are retained. Scalar or array cellular/Ethernet responses
 become arrays in normalized fields; original representations remain in raw evidence.
+Empty or whitespace-only identifiers are omitted from normalized fields; empty array
+members are removed. A field with no usable identifier is absent from filters and
+exports, while its original source value remains available with raw access.
 Null, false, empty arrays and integers above 2^53 survive. `fields` discovery exposes
 source-qualified paths for new fields without a schema migration.
 
@@ -60,6 +63,10 @@ error code, expiry, absence and disconnection. Native operational observations a
 cloud purchasing facts remain separately available. Newer evidence supplies the
 normalized view; equally fresh evidence prefers DDM, then MDM. Partial DDM reports
 retain omitted items and their original timestamps; full reports replace the snapshot.
+DDM `diskmanagement.filevault.enabled` supplies the normalized `filevault_enabled`
+field, including a reported `false`. Serial normalization retains the selected
+source's provenance, and unset enrollment dates are omitted rather than represented
+as year-one timestamps.
 Account removal disconnects its sources but does not remove devices or disable enrollment.
 An absent Apple device is tombstoned only after a complete enumeration and a confirming
 individual lookup. Organization release and MDM enrollment are separate facts.

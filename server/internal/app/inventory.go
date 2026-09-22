@@ -110,7 +110,12 @@ func (a *App) observeInventoryEnrollment(ctx context.Context, id mdm.EnrollmentI
 	if at.IsZero() {
 		at = time.Now().UTC()
 	}
-	body := map[string]any{"managed": e.Enabled, "enrollment_id": id.ID, "enrollment_channel": id.Channel.String(), "enrolled_at": e.EnrolledAt, "last_seen": e.LastSeenAt, "disabled_at": e.DisabledAt}
+	body := map[string]any{"managed": e.Enabled, "enrollment_id": id.ID, "enrollment_channel": id.Channel.String()}
+	for name, value := range map[string]time.Time{"enrolled_at": e.EnrolledAt, "last_seen": e.LastSeenAt, "disabled_at": e.DisabledAt} {
+		if !value.IsZero() {
+			body[name] = value
+		}
+	}
 	raw, err := json.Marshal(body)
 	if err != nil {
 		return err
