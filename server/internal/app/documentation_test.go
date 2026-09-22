@@ -96,7 +96,7 @@ func TestDocumentationPermissions(t *testing.T) {
 	for _, route := range a.AdminRoutes() {
 		routes[route.RoutePattern()] = route.RouteAction()
 	}
-	for _, name := range []string{"blueprints.md", "reference-bench.md"} {
+	for _, name := range []string{"blueprints.md", "reference-lab.md"} {
 		t.Run(name, func(t *testing.T) {
 			// #nosec G304 -- The names above are fixed repository documentation paths.
 			data, err := os.ReadFile(filepath.Join("..", "..", "..", "docs", "operations", name))

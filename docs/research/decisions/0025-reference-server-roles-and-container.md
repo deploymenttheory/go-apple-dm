@@ -6,7 +6,7 @@ The library needs a runnable composition for local development and integration t
 
 ## Decision
 
-The shared runtime, native TLS, and process-based bench extend this decision; see [0048](0048-reference-server-bench.md). `dmserver` remains the serving executable. The bench owns fixture services and process supervision. Both the binary and image default to `127.0.0.1:8080`; plaintext listeners require literal loopback addresses. Remote and container-network listeners require native TLS through managed HTTPS identities or `DM_TLS_CERT_FILE` and `DM_TLS_KEY_FILE`. A TLS reverse proxy can use a loopback backend or verified TLS to a remote backend.
+The shared runtime, native TLS, and process-based lab extend this decision; see [0048](0048-reference-server-bench.md). `dmserver` remains the serving executable. The lab owns fixture services and process supervision. Both the binary and image default to `127.0.0.1:8080`; plaintext listeners require literal loopback addresses. Remote and container-network listeners require native TLS through managed HTTPS identities or `DM_TLS_CERT_FILE` and `DM_TLS_KEY_FILE`. A TLS reverse proxy can use a loopback backend or verified TLS to a remote backend.
 
 `app.Build` validates configuration and assembles stores, protocol services, enrollment handlers, administrative routes and workers. `server/cmd/dmserver` handles process startup. MDM and DDM run together using the in-process declaration adapter.
 

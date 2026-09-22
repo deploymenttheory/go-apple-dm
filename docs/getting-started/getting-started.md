@@ -14,7 +14,7 @@ HTTP services, persistence and certificate-based authentication.
 
 [Configuration explained](configuration.md) shows how to write and apply
 `setup.json`, how the administrative CLI's `dmctl.json` works, and why a
-`bench.json` testing workspace is separate.
+`lab.json` testing workspace is separate.
 
 ## What is in this project?
 
@@ -23,7 +23,7 @@ HTTP services, persistence and certificate-based authentication.
 - **Reference server (`dmserver`)**: a runnable composition of those components,
   with persistence, administrative APIs and background workers.
 - **Administrative CLI (`dmctl`)**: inspect and operate the server, prepare
-  certificates, inspect schema support offline, and run the testing bench.
+  certificates, inspect schema support offline, and run the testing lab.
 
 There is no fleet-management web UI or administrator username/password login.
 Administration uses tokens and, when enabled, stored principals and Cedar policies.

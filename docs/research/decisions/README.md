@@ -56,7 +56,7 @@ The [architecture guide](../../architecture.md) summarizes how the decisions fit
 | 0045 | [Return to Service](0045-return-to-service.md) |
 | 0046 | [Generated schema provenance](0046-generated-from-is-generated.md) |
 | 0047 | [Enrollment authentication and security services](0047-enrollment-authentication-and-optional-security-services.md) |
-| 0048 | [Reference server as a maintained test bench](0048-reference-server-bench.md) |
+| 0048 | [Reference server as the maintained acceptance lab](0048-reference-server-bench.md) |
 | 0049 | [Server-managed app push credentials and sending](0049-server-managed-app-push.md) |
 | 0050 | [Enrollment security boundaries](0050-enrollment-security-boundaries.md) |
 | 0051 | [Content-cache metrics as an embeddable library](0051-content-cache-metrics.md) |
@@ -67,3 +67,4 @@ The [architecture guide](../../architecture.md) summarizes how the decisions fit
 | 0056 | [Unified reference server and managed RBAC](0056-unified-server-rbac.md) |
 
 - [0057: Agentless device records](0057-agentless-device-inventory.md)
+- [0058: Single-use enrollment links](0058-enrollment-links.md)

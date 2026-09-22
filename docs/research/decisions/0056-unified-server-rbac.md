@@ -34,7 +34,7 @@ without tenancy, device-group bindings or interactive user identities.
 
 Storage contracts cover managed roles, inactive policy references and concurrent
 bootstrap. HTTP tests cover first-root persistence, explicit grants, command and
-sensitive-read denials, schema validation, policy activation and repair. The bench
+sensitive-read denials, schema validation, policy activation and repair. The lab
 and quickstart exercise stored credentials against the unified runtime.
 
 ## References

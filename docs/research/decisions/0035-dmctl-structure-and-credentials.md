@@ -6,7 +6,7 @@ Operators need scriptable administrative access and offline command construction
 
 ## Decision
 
-`dmctl bench` adds workspace and scenario operations that do not use the ordinary global server context. `dmctl apppush` administers server credentials and sends; `-ca-file` / `DMCTL_CA_FILE` extends trust for normal administration. See [0048](0048-reference-server-bench.md).
+`dmctl lab` adds workspace and scenario operations that do not use the ordinary global server context. `dmctl apppush` administers server credentials and sends; `-ca-file` / `DMCTL_CA_FILE` extends trust for normal administration. See [0048](0048-reference-server-bench.md).
 
 The entry point delegates to `internal/dmctl`; HTTP access and schema explanation have separate internal packages. Configuration stores credential references (`token_env` or `token_file`) by default. Inline token storage requires an explicit option and warning. Config files use restricted permissions and reject group/other-readable credentials.
 

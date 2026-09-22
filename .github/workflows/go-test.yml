@@ -253,7 +253,7 @@ jobs:
         with:
           go-version-file: go.mod
           cache: true
-      - run: make test-acceptance bench-docs-check
+      - run: make test-acceptance lab-docs-check
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         if: always()
         with:

@@ -225,6 +225,7 @@ func (a *App) wireEnrollment(ctx context.Context, mux *http.ServeMux) ([]service
 	if err := a.wireServiceConfig(ctx, e, mux); err != nil {
 		return nil, err
 	}
+	a.wireEnrollmentLinks(e, mux)
 	e.tokens = &accountdriven.Tokens{
 		Store: &accountdriven.StateTokenStore{Backend: st},
 		Now:   a.cfg.Clock.Now,

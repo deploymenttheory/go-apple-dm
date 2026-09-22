@@ -209,7 +209,7 @@
       "title": "Public documentation",
       "items": [
         "Go command: Test packages — https://pkg.go.dev/cmd/go#hdr-Test_packages",
-        "Testing procedures — https://github.com/deploymenttheory/go-apple-dm/blob/main/docs/testing/bench.md",
+        "Testing procedures — https://github.com/deploymenttheory/go-apple-dm/blob/main/docs/testing/lab.md",
         "CI responsibilities — https://github.com/deploymenttheory/go-apple-dm/blob/main/docs/testing/ci.md"
       ]
     },

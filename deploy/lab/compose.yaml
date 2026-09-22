@@ -1,0 +1,37 @@
+# Lab acceptance stack. dmctl lab writes LAB_* and the private env file; run it through
+# `dmctl lab up` rather than by hand. State is bind-mounted from the workspace, so
+# identities, the database and evidence stay on the host.
+name: dm-lab
+
+services:
+  dmserver:
+    build:
+      context: ../..
+      target: runtime
+    env_file:
+      - ${LAB_ENV_FILE}
+    ports:
+      - "${LAB_BIND:-127.0.0.1}:${LAB_PORT:-8443}:8443"
+    volumes:
+      - ${LAB_MDM_DIR}:/data
+    restart: unless-stopped
+
+  # Static HTTPS for device-fetched fixtures: application packages and their manifests,
+  # marker profiles and other files a module asks a device to download. It serves the
+  # workspace's fixtures directory with the same lab identity, so a device that trusts
+  # the lab CA trusts this origin too.
+  fixtures:
+    image: nginx:1.29-alpine
+    ports:
+      - "${LAB_BIND:-127.0.0.1}:${LAB_FIXTURES_PORT:-9443}:9443"
+    volumes:
+      - ${LAB_FIXTURES_DIR}:/srv:ro
+      - ${LAB_MDM_DIR}/tls.pem:/etc/nginx/tls/tls.pem:ro
+      - ${LAB_MDM_DIR}/tls.key:/etc/nginx/tls/tls.key:ro
+      - ${LAB_CONFIG_DIR}/fixtures.conf:/etc/nginx/conf.d/default.conf:ro
+    healthcheck:
+      test: ["CMD", "wget", "--no-check-certificate", "-q", "-O", "-", "https://127.0.0.1:9443/healthz"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    restart: unless-stopped

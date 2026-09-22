@@ -106,7 +106,7 @@ it does not make the device install all declarations atomically. Native/profile
 setting conflicts retain Apple's ordinary conflict-resolution behavior.
 
 The maintained live acceptance scenarios exercise this lifecycle on macOS 26
-device and user channels. See [Blueprint acceptance](../testing/bench.md#blueprint-acceptance)
+device and user channels. See [Blueprint acceptance](../testing/lab.md#blueprint-acceptance)
 for the command, native assertions and platform limits.
 
 ## Configuration profiles

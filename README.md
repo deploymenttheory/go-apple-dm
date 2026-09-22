@@ -97,7 +97,7 @@ Not planned:
    [0047](docs/research/decisions/0047-enrollment-authentication-and-optional-security-services.md),
    [0050](docs/research/decisions/0050-enrollment-security-boundaries.md)).
 7. Verifiable. Simulator scenarios, contract suites, a 95% coverage floor, recorded decisions
-   and a physical-device bench back each capability
+   and a physical-device lab back each capability
    ([0048](docs/research/decisions/0048-reference-server-bench.md)).
 8. Explicit boundaries. Trust roots, Apple credentials, enrollment policy and the user
    interface belong to the consumer.
@@ -178,10 +178,10 @@ go run ./server/cmd/dmctl explain com.apple.configuration.softwareupdate.enforce
 For embedding examples, see the package documentation and the executable scenarios in
 [server/e2e](server/e2e/) and [simulator](devicemanagement/simulator/).
 
-The [reference-server bench](test-lab/README.md) combines simulated scenarios, process acceptance, and live-device testing. It covers certificate inspection,
+The [reference-server lab](test-lab/README.md) combines simulated scenarios, process acceptance, and live-device testing. It covers certificate inspection,
 app alert/background pushes, MDM vendor CSR signing, and testing both paths on a Mac.
 Real credentials and test evidence stay in the gitignored `test-lab/local/` directory.
-Use `make bench-init`, `make bench-up`, and `make bench-run`; see the [testing guide](docs/testing/bench.md) and [API/configuration additions](docs/operations/reference-bench.md).
+Use `make lab-init`, `make lab-up`, and `make lab-run`; see the [testing guide](docs/testing/lab.md) and [API/configuration additions](docs/operations/reference-lab.md).
 
 ## Architecture
 

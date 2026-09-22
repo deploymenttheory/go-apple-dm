@@ -95,5 +95,5 @@ policy and cached DEP inventory must remain current on every replica. Follow
 
 [Decision 0050](../research/decisions/0050-enrollment-security-boundaries.md)
 defines enrollment admission and identity boundaries. Use the
-[testing guide](../testing/bench.md) for reproducible checks and the
+[testing guide](../testing/lab.md) for reproducible checks and the
 [Mac enrollment runbook](../operations/mac-enrollment-testing.md) for device acceptance.

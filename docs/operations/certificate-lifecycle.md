@@ -339,15 +339,15 @@ a FileVault rotation does not contain the newly escrowed recovery key.
 
 ## Adopt an existing lab
 
-Back up the existing database and its secret files first. For a live SQLite bench:
+Back up the existing database and its secret files first. For a live SQLite lab workspace:
 
 ```sh
-dmctl setup adopt -from-bench test-lab/local/certs/bench \
+dmctl setup adopt -from-lab test-lab/local/certs/lab \
   -dir test-lab/local/certs/managed -role customer
 dmctl setup check -setup-file test-lab/local/certs/managed/setup.json
 ```
 
-This reuses the existing database, preserves both bench encryption key IDs,
+This reuses the existing database, preserves both lab encryption key IDs,
 retains the ACME identifier HMAC derivation, admission policy, admin credential,
 push topic, and all existing certificate keys. It adopts the current lab CA under
 both existing uses (HTTPS trust and enrollment); fresh deployments generate

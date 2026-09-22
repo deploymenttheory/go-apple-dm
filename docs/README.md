@@ -3,7 +3,7 @@
 - [Getting started](getting-started/getting-started.md): choose the reference-server or custom-server path.
 - [Run the reference server](getting-started/reference-server.md): Compose startup, CLI checks, stored administration and first-device enrollment.
 - [Build your own server](getting-started/build-your-own-apple-dm-server.md): runnable Go examples, composition choices and caller responsibilities.
-- [Configuration explained](getting-started/configuration.md): server JSON, secret/path precedence, CLI contexts and bench configuration.
+- [Configuration explained](getting-started/configuration.md): server JSON, secret/path precedence, CLI contexts and lab configuration.
 - [Server release downloads](operations/server-releases.md): platform archives, signature verification and release maintenance.
 - [Architecture](architecture.md): implemented capabilities, module boundaries and limitations.
 - [OS versions and feature availability](operations/os-versions.md): shared version primitives and target-aware validation.
@@ -25,8 +25,8 @@
 - [Certificate lifecycle](operations/certificate-lifecycle.md): provisioning, renewal, issuer rollover and retained encryption identities.
 - [Backup and recovery](operations/recovery.md): maintenance fences, authenticated backups, verification and isolated restore.
 - [Threat model](security/threat-model.md): assets, trust boundaries, controls and residual risks.
-- [Reference-server bench](testing/bench.md): shared scenarios, acceptance, contracts and live execution.
-- [Bench API and configuration](operations/reference-bench.md): runtime, enrollment and app push additions.
+- [Reference-server lab](testing/lab.md): shared scenarios, acceptance, contracts and live execution.
+- [Lab API and configuration](operations/reference-lab.md): runtime, enrollment and app push additions.
 - [Test scenarios](testing/e2e-scenarios.md): executable simulator scenarios and their limits.
 - [Mac enrollment testing](operations/mac-enrollment-testing.md): physical-device prerequisites, installation and acceptance checks.
 

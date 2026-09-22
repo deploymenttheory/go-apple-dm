@@ -16,7 +16,7 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/profile"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/schema/commands"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/simulator"
-	"github.com/deploymenttheory/go-apple-dm/server/internal/bench"
+	"github.com/deploymenttheory/go-apple-dm/server/lab"
 )
 
 // Run the same HTTP contract against embedded and installed server binaries.
@@ -26,15 +26,15 @@ func TestBinaryValidationDelivery(t *testing.T) {
 		t.Run(topology, func(t *testing.T) {
 			ctx := t.Context()
 			dir := t.TempDir()
-			if err := bench.Init(dir, "simulated", "sqlite", "127.0.0.1:0"); err != nil {
+			if err := lab.Init(dir, "simulated", "sqlite", "127.0.0.1:0", lab.AdapterProcess, nil); err != nil {
 				t.Fatal(err)
 			}
-			w, err := bench.Load(dir)
+			w, err := lab.Load(dir)
 			if err != nil {
 				t.Fatal(err)
 			}
-			binary := os.Getenv("BENCH_DMSERVER")
-			e, err := bench.Start(ctx, w, binary, io.Discard)
+			binary := os.Getenv("LAB_DMSERVER")
+			e, err := lab.Start(ctx, w, binary, io.Discard)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -42,7 +42,7 @@ func TestBinaryValidationDelivery(t *testing.T) {
 			api := func(method, path string, body []byte, want int) []byte {
 				t.Helper()
 				base := e.URL
-				out, code, err := bench.HTTP(ctx, e.Client, base, e.Token, method, path, bytes.NewReader(body))
+				out, code, err := lab.HTTP(ctx, e.Client, base, e.Token, method, path, bytes.NewReader(body))
 				if code != want || (want < 400 && err != nil) {
 					t.Fatalf("%s %s: HTTP %d, want %d: %v: %s", method, path, code, want, err, out)
 				}
@@ -120,7 +120,7 @@ func TestBinaryValidationDelivery(t *testing.T) {
 			}
 			// Restart the actual runtime over the same disposable database.
 			e.Close()
-			restarted, err := bench.Start(ctx, w, binary, io.Discard)
+			restarted, err := lab.Start(ctx, w, binary, io.Discard)
 			if err != nil {
 				t.Fatal(err)
 			}

@@ -1,0 +1,85 @@
+package lab
+
+import (
+	"context"
+	"encoding/json"
+	"os"
+	"path/filepath"
+	"strings"
+	"testing"
+
+	"github.com/deploymenttheory/go-apple-dm/server/lab/target"
+)
+
+// TestCatalogueAndReports checks unique maintained scenario IDs and report handling of unsupported
+// and other non-pass outcomes.
+func TestCatalogueAndReports(t *testing.T) {
+	seen := map[string]bool{}
+	for _, s := range Catalogue() {
+		if seen[s.ID] || s.ID == "" {
+			t.Fatal("duplicate or empty ID")
+		}
+		seen[s.ID] = true
+		if s.Regression != "" && (len(s.Steps) == 0 || len(s.Modes) == 0) {
+			t.Fatalf("unmigrated scenario %s", s.ID)
+		}
+	}
+	for _, id := range []string{"E2E-015", "E2E-022"} {
+		if seen[id] {
+			t.Fatalf("reserved ID %s advertised", id)
+		}
+	}
+	if _, err := Select("typo"); err == nil {
+		t.Fatal("unknown selector accepted")
+	}
+	s := Module{ID: "missing", Modes: []string{"live"}}
+	r := Run(context.Background(), &Environment{Instance: Instance{Mode: "simulated"}}, target.Simulator{}, s, Options{Adapter: "process", Revision: "revision"})
+	if r.Status != "unsupported" {
+		t.Fatal("unsupported counted as pass")
+	}
+	dir := t.TempDir()
+	if err := WriteReports(dir, []Result{r}); err != nil {
+		t.Fatal(err)
+	}
+	// #nosec G304 -- The test controls this fixture path within its private workspace.
+	b, err := os.ReadFile(filepath.Join(dir, "junit.xml"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(string(b), "<skipped") {
+		t.Fatal("JUnit lost non-pass")
+	}
+}
+
+// TestInitPreservesIdentities checks that workspace initialization preserves existing identities
+// and doctor output redacts credentials.
+func TestInitPreservesIdentities(t *testing.T) {
+	dir := t.TempDir()
+	if err := Init(dir, "simulated", "sqlite", "127.0.0.1:0", AdapterProcess, nil); err != nil {
+		t.Fatal(err)
+	}
+	// #nosec G304 -- The test controls this fixture path within its private workspace.
+	before, err := os.ReadFile(filepath.Join(dir, "mdm", "ca.key"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := Init(dir, "live", "sqlite", "127.0.0.1:0", AdapterProcess, nil); err == nil {
+		t.Fatal("existing workspace replaced")
+	}
+	// #nosec G304 -- The test controls this fixture path within its private workspace.
+	after, err := os.ReadFile(filepath.Join(dir, "mdm", "ca.key"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if string(before) != string(after) {
+		t.Fatal("identity changed")
+	}
+	w, err := Load(dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	b, _ := json.Marshal(w.Doctor())
+	if strings.Contains(string(b), string(before)) {
+		t.Fatal("doctor leaked key")
+	}
+}

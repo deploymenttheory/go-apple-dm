@@ -203,7 +203,7 @@ validation remain deployment responsibilities. The [threat model](security/threa
 
 ## Shared reference-server runtime and scenarios
 
-The [bench decision](research/decisions/0048-reference-server-bench.md) consolidates
+The [lab decision](research/decisions/0048-reference-server-bench.md) consolidates
 local demonstration and automated execution around the ordinary server runtime.
 
 The [runtime supervisor](../server/internal/runtime/runtime.go) drains the main HTTP
@@ -221,7 +221,7 @@ challenge listener can use non-loopback plain HTTP, as required by
 
 ```mermaid
 flowchart LR
-    Make[Makefile and CI] --> CLI[dmctl bench]
+    Make[Makefile and CI] --> CLI[dmctl lab]
     CLI --> Scenarios[Shared Go scenarios]
     Tests[E2E adapter] --> Scenarios
     Scenarios --> API[Administration and device APIs]
@@ -230,7 +230,7 @@ flowchart LR
     Tests --> Runtime
     Runtime --> API
     Runtime --> Store[Configured persistent stores]
-    Runtime --> External[Apple services or bench fixtures]
+    Runtime --> External[Apple services or lab fixtures]
     Devices[Simulator or real device] --> API
     Contracts[Interface contract suites] --> Store
     Scenarios --> Evidence[JSON and JUnit evidence]
@@ -242,6 +242,6 @@ profile issuance, command results, OTA, user authentication and server-managed a
 pushes are reusable server capabilities. Contract suites and detailed component
 regressions keep their direct observation points; the shared scenarios use APIs.
 
-See [bench/server operations](operations/reference-bench.md) for configuration,
-API authorization and persistence, and [the catalogue](testing/bench-catalogue.md)
+See [lab and server operations](operations/reference-lab.md) for configuration,
+API authorization and persistence, and [the catalogue](testing/lab-catalogue.md)
 for execution modes and retained regression mappings.

@@ -12,7 +12,7 @@ packaged executable are different inputs.
 | Go Test: generate check | Same application changes | `make verify` checks workflow/script contracts and regenerated output, including changed, missing and stale generated files and removed locked exported names. Verification does not rewrite generated output. |
 | Go Test: storage integration | Same application changes; SQL services | Shared storage contracts on SQLite, PostgreSQL and MySQL; PostgreSQL timing is reported with its shared-runner threshold disabled. |
 | Go Test: E2E | Same application changes; SQLite and PostgreSQL | Backend-specific server/device exchanges and in-process DDM delivery. The SQLite-only embedded acceptance catalogue runs once, in the SQLite job. |
-| Go Test: process acceptance | Same application changes | Shared scenarios against built `dmserver` processes, using unified device management; executable bench catalogue matches its documentation. |
+| Go Test: process acceptance | Same application changes | Shared modules against built `dmserver` processes, using unified device management; executable module catalogue matches its documentation. |
 | Go Test: fuzz smoke | Same application changes | Brief execution of each fuzz target. |
 | Go Test: coverage | Successful unit, storage and E2E jobs | Merge Linux unit, SQL contract and both E2E profiles; retain the 95% package and overall gate. Process acceptance is separate evidence. |
 | Onboarding quickstart | Onboarding docs, Compose/helper scripts, Docker/build inputs and Go/module changes; manual dispatch | Offline documentation examples, JSON/local links, bootstrap failure/resume contracts and isolated Compose HTTPS/admin-handoff/restart checks. No Apple services or physical enrollment. |
@@ -83,7 +83,7 @@ A held Windows lock requires lifecycle investigation, not only a longer timeout.
 Embedded runtimes receive the original bound listener through `ServeListener`;
 startup failure releases unclaimed listeners. Process adapters bind their own
 sockets and report failures. Do not hide failed exchanges with port changes or
-scenario retries. Negative protocol tests require the expected rejection, not an
+module retries. Negative protocol tests require the expected rejection, not an
 unrelated transport error.
 
 Use escaped base64 paths for OCSP GET as specified by

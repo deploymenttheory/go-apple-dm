@@ -306,7 +306,7 @@ describes the reference implementation's maintenance fence and verification.
 7. Run the relevant flows on authorized physical devices with your actual
    OS, hardware, enrollment mode, proxy and trust configuration.
 
-Use the [reference bench](../testing/bench.md) as a working composition and the
-[scenario catalogue](../testing/bench-catalogue.md) to select cases. Simulator
+Use the [reference lab](../testing/lab.md) as a working composition and the
+[scenario catalogue](../testing/lab-catalogue.md) to select cases. Simulator
 success verifies modeled exchanges. Generated schema availability and build
 success do not establish universal physical-device compatibility.

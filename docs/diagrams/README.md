@@ -52,7 +52,7 @@ to highlight matching components and connections and see their counts and exampl
 | [apple-service-clients](https://htmlpreview.github.io/?https://raw.githubusercontent.com/deploymenttheory/go-apple-dm/main/docs/diagrams/apple-service-clients.html) · [HTML source](apple-service-clients.html) | Device-assignment, Apple Business Manager, software-catalogue, and Apps and Books clients, with their distinct authentication and completion behavior. |
 | [admin-plane](https://htmlpreview.github.io/?https://raw.githubusercontent.com/deploymenttheory/go-apple-dm/main/docs/diagrams/admin-plane.html) · [HTML source](admin-plane.html) | Unified administration authentication, bootstrap role setup, Cedar policy checks, request permissions, and CLI credential protection. |
 | [ddm-adapters](https://htmlpreview.github.io/?https://raw.githubusercontent.com/deploymenttheory/go-apple-dm/main/docs/diagrams/ddm-adapters.html) · [HTML source](ddm-adapters.html) | Reusable in-process and signed proxy adapters for host applications, including body integrity and replay protection. |
-| [reference-server-bench](https://htmlpreview.github.io/?https://raw.githubusercontent.com/deploymenttheory/go-apple-dm/main/docs/diagrams/reference-server-bench.html) · [HTML source](reference-server-bench.html) | System map centred on the shared reference server: bench control and reports, simulated and live participants, local Apple-service fixtures, and separate interface-contract results. |
+| [reference-server-bench](https://htmlpreview.github.io/?https://raw.githubusercontent.com/deploymenttheory/go-apple-dm/main/docs/diagrams/reference-server-bench.html) · [HTML source](reference-server-bench.html) | System map centred on the shared reference server: lab control and reports, simulated and live participants, local Apple-service fixtures, and separate interface-contract results. |
 
 ## Flows and lifecycles
 
@@ -75,7 +75,7 @@ to highlight matching components and connections and see their counts and exampl
 | [flow-acme-attestation](https://htmlpreview.github.io/?https://raw.githubusercontent.com/deploymenttheory/go-apple-dm/main/docs/diagrams/flow-acme-attestation.html) · [HTML source](flow-acme-attestation.html) | Replay nonce acquisition, device attestation, identifier binding, CSR key matching, and explicit certificate retrieval. |
 | [flow-scep-issuance](https://htmlpreview.github.io/?https://raw.githubusercontent.com/deploymenttheory/go-apple-dm/main/docs/diagrams/flow-scep-issuance.html) · [HTML source](flow-scep-issuance.html) | Initial SCEP issuance with mutually exclusive success and failure outcomes, plus renewal and enrollment-association notes. |
 | [flow-enrollment-profile-replacement](https://htmlpreview.github.io/?https://raw.githubusercontent.com/deploymenttheory/go-apple-dm/main/docs/diagrams/flow-enrollment-profile-replacement.html) · [HTML source](flow-enrollment-profile-replacement.html) | Prepare and deliver a controlled replacement, distinguish issuance grants from candidate certificate validity, and reconcile Authenticate, TokenUpdate and command acknowledgment evidence. |
-| [flow-app-notification-delivery](https://htmlpreview.github.io/?https://raw.githubusercontent.com/deploymenttheory/go-apple-dm/main/docs/diagrams/flow-app-notification-delivery.html) · [HTML source](flow-app-notification-delivery.html) | Explicit app topic, environment, and token inputs; APNs acceptance versus app receipt; optional bench correlation. |
+| [flow-app-notification-delivery](https://htmlpreview.github.io/?https://raw.githubusercontent.com/deploymenttheory/go-apple-dm/main/docs/diagrams/flow-app-notification-delivery.html) · [HTML source](flow-app-notification-delivery.html) | Explicit app topic, environment, and token inputs; APNs acceptance versus app receipt; optional lab correlation. |
 | [lifecycle-command](https://htmlpreview.github.io/?https://raw.githubusercontent.com/deploymenttheory/go-apple-dm/main/docs/diagrams/lifecycle-command.html) · [HTML source](lifecycle-command.html) | Pending, sent, deferred, failed, acknowledged, and cleared commands, including redelivery and NotNow polling rules. |
 | [lifecycle-enrollment](https://htmlpreview.github.io/?https://raw.githubusercontent.com/deploymenttheory/go-apple-dm/main/docs/diagrams/lifecycle-enrollment.html) · [HTML source](lifecycle-enrollment.html) | Device-channel activation, ordinary reset, checkout, and controlled replacement without disrupting the working enrollment. |
 
@@ -163,6 +163,6 @@ Apple's documentation, which each package cites in the `# References` section of
 The design decisions the diagrams reflect are recorded in
 [`docs/research/decisions/`](../research/decisions/README.md).
 
-The [shared-runtime and bench flow](../architecture.md#shared-reference-server-runtime-and-scenarios)
-connects the component views above to `dmctl bench`, process acceptance, and interface contracts.
+The [shared-runtime and lab flow](../architecture.md#shared-reference-server-runtime-and-scenarios)
+connects the component views above to `dmctl lab`, process acceptance, and interface contracts.
 Fixture controllers are outside the production administration plane.

@@ -63,7 +63,7 @@ updates after profile-signing certificate expiry require separate live evidence.
 
 Profile tests cover composition, parsing, stable UUIDs and attached signing. Enrollment tests cover identity selection, rights, capabilities and invalid payload combinations.
 
-Shared bench scenarios exercise successful and failed replacement with SCEP and
+Shared lab modules exercise successful and failed replacement with SCEP and
 attested ACME. Follow the [Mac enrollment runbook](../../operations/mac-enrollment-testing.md)
 for actual installation, replacement and rollback verification.
 

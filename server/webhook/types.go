@@ -139,7 +139,7 @@ type CatalogueEntry struct {
 }
 
 // The list is deliberately explicit: new internal events require contract review.
-var outcomes = strings.Fields(`enrollment-denied identity-rejected certificate-status-rejected private-hop-rejected enrolled reenrolled token-updated checked-out cert-rotated command-queued command-sent command-rejected command-result bootstrap-token-set push-token-invalid push-rejected ddm-changed ddm-status-received cert-reuse-denied enrollment-imported user-authenticated user-auth-failed acme-challenge-valid acme-issued certificate-revoked attestation-rejected admin-action admin-denied dep-device-added dep-device-modified dep-device-deleted dep-device-assigned dep-token-expiring`)
+var outcomes = strings.Fields(`enrollment-denied identity-rejected certificate-status-rejected private-hop-rejected enrolled reenrolled token-updated checked-out cert-rotated command-queued command-sent command-rejected command-result bootstrap-token-set push-token-invalid push-rejected ddm-changed ddm-status-received cert-reuse-denied enrollment-imported enrollment-link-redeemed user-authenticated user-auth-failed acme-challenge-valid acme-issued certificate-revoked attestation-rejected admin-action admin-denied dep-device-added dep-device-modified dep-device-deleted dep-device-assigned dep-token-expiring`)
 
 // OutcomeType maps a reviewed internal event name to the native server event vocabulary.
 // Unknown internal events return an empty string and are not captured.

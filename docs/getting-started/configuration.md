@@ -1,4 +1,4 @@
-# Configuration: server, CLI and bench
+# Configuration: server, CLI and lab
 
 [Getting started](getting-started.md) · [Reference-server walkthrough](reference-server.md)
 
@@ -8,7 +8,7 @@ There are three different JSON files. Pick the one for the program you are confi
 |---|---|---|
 | `setup.json` | `dmserver -setup-file …`, `DM_SETUP_FILE`, or local `dmctl setup … -setup-file …` | Server settings, secret references and managed certificate identities |
 | `dmctl.json` | `dmctl -config …` or `DMCTL_CONFIG` | Administrative client contexts and credential references |
-| `bench.json` | `dmctl bench … -workspace …` | A testing workspace with fixtures and supervised processes |
+| `lab.json` | `dmctl lab … -workspace …` | A testing workspace with fixtures and supervised processes |
 
 The reference server also accepts `DM_*` environment variables without a setup
 file. The Compose walkthrough uses `setup.json` so you can inspect and edit one
@@ -264,14 +264,19 @@ configuration file. There is no shell expansion. A CA path is supplied with
 `-ca-file` or `DMCTL_CA_FILE`; it is not a context JSON field. TLS verification
 cannot be disabled with `-insecure`.
 
-## 6. Keep bench configuration separate
+## 6. Keep lab configuration separate
 
-`dmctl bench init` writes `bench.json`, secrets and fixture state in the selected
-workspace. Use `dmctl bench doctor -workspace …` to check it. It is not accepted
+`dmctl lab init` writes `lab.json`, secrets and fixture state in the selected
+workspace. Use `dmctl lab doctor -workspace …` to check it. It is not accepted
 by `dmserver -setup-file` or `dmctl -config`. Do not reuse a simulated workspace
 for live devices; its trust anchors and Apple-service fixtures are test material.
 
-Follow the [bench guide](../testing/bench.md) and
-[bench configuration reference](../operations/reference-bench.md) for modes,
-topologies and evidence. `setup adopt -from-bench` is an explicit migration
-workflow for a compatible live workspace, not a rename of `bench.json`.
+The document records `Mode` (`simulated` or `live`), `Storage`, `Listen`, the
+server `Adapter` (`process` or `docker`), the device-facing `Hosts` in the HTTPS
+leaf, and the `Bind` address the container adapter publishes on. A workspace
+written before the lab replaced the bench is still read from its `bench.json`.
+
+Follow the [lab guide](../testing/lab.md) and
+[lab configuration reference](../operations/reference-lab.md) for modes,
+topologies and evidence. `setup adopt -from-lab` is an explicit migration
+workflow for a compatible live workspace, not a rename of the workspace document.
