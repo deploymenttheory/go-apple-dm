@@ -155,3 +155,33 @@ from this report.
 
 See `docs/wip/agentless-device-inventory-scope.md` and the
 [operational guide](../operations/agentless-inventory.md) for the broader contract.
+
+## Fix verification on the same VM
+
+The four defects found above were fixed in revision `4b7c4aee8558e518862d1e841fb2d7f0049c0a9c`
+and retested on the same enrolled VM with freshly rebuilt server and CLI binaries.
+Fresh native commands were collected again; the three successful command types
+remained acknowledged, and the two permission-denied command types remained denied.
+
+- Empty IMEI/MEID values are absent from normalized records and CSV cells. Original
+  empty source values remain available in raw evidence.
+- `filevault_enabled` is `false`, with the retained DDM item's original observation
+  time. The report now counts the device under FileVault `false`; this does not
+  misrepresent the retained DDM value as newly reported by the VM.
+- `serial_number` retains its `mdm.DeviceInformation` source and fresh observation time.
+- Unset `disabled_at` is absent from the normalized record and new enrollment snapshot,
+  and its CSV cell is empty.
+
+These assertions were checked against the running server's record, report and actual
+CLI CSV output. Private evidence is in `target-fixed.json`, `commands-fixed.json`,
+`reports-fixed.json`, `inventory-fixed.csv` and `fix-verification.json` under the same
+ignored lab directory. Regression tests cover identifier filtering and index cleanup,
+false-valued FileVault queries/reports, partial DDM timestamps, serial provenance,
+and enrollment disable/re-enable dates.
+
+Post-fix binary SHA-256 values:
+
+```text
+dmserver bc86eb9474e5f74fab58fe2a5335cf1cc9b980cf76c59002c6883752803c52de
+dmctl    05f17e560adf6dc0e40411fe0f92b41e22d6aa500121f2b56fec01d2568ae446
+```
