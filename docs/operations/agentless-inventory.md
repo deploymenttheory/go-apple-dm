@@ -88,6 +88,129 @@ own expiry metadata; arbitrary installed certificates are not treated as enrollm
 RAM is reported as unavailable because the covered Apple APIs do not provide a reliable
 cross-platform RAM field.
 
+## CLI: `devices collect`
+
+`dmctl devices collect DEVICE_ID` requests an asynchronous native inventory refresh
+for an existing device record. `DEVICE_ID` is the local inventory record ID returned
+by `devices list`, not an Apple resource ID, serial number or enrollment UDID.
+
+```sh
+dmctl devices list
+dmctl devices collect DEVICE_ID
+```
+
+An example successful response is:
+
+```json
+{"queued":5}
+```
+
+This is the number of commands queued, not a device response or a count of returned
+fields. The count can vary with eligible enrollments, platform support and queue
+deduplication. A cloud-only record with no local enrollment cannot supply native
+inventory and may queue zero commands. Collection requires `manageInventory`.
+
+### Relationship to a device check-in
+
+1. The server queues supported inventory commands through its ordinary MDM queue.
+2. When commands are queued and APNs is configured, the server asks APNs to wake the device.
+3. The device contacts the MDM command endpoint, retrieves commands and sends responses.
+4. Acknowledged responses update the persistent device record, query indexes and reports.
+
+This triggers the normal MDM command-polling cycle. In Apple's protocol terminology,
+it is not an enrollment check-in message such as `Authenticate` or `TokenUpdate`
+sent to `CheckInURL`. It does not require an installed inventory agent.
+
+The CLI returns after submission and the configured push attempt, without waiting for
+device responses. APNs acceptance does not prove delivery or completion. An offline
+device, or a deployment without APNs credentials, retains queued work until the device
+contacts the server. If a push attempt fails, the request can return an error even
+though commands were already queued; inspect the queue before retrying.
+
+`devices collect` bypasses the normal native collection freshness interval, which
+defaults to 24 hours, while retaining command deduplication. There is no collection
+completion wait mode: the shared `--wait` flag applies to `axm accounts sync`, not
+to `devices collect`. DDM status arrives through its separate subscription/report
+mechanism; collecting native commands does not guarantee a new DDM report.
+
+### Commands and available information
+
+| Native command | Collected information |
+| --- | --- |
+| `DeviceInformation` | Every query allowed by generated platform/version/channel metadata, covering identity, hardware, OS, storage and management/security indicators |
+| `SecurityInfo` | Supported detailed security state, including FileVault information |
+| `ProfileList` | Installed configuration profiles and returned payload metadata |
+| `InstalledApplicationList` | Installed applications and returned application metadata |
+| `CertificateList` | Installed certificates, certificate data and identity flags |
+
+Unknown platforms start with a bootstrap `DeviceInformation` query before expanded
+collection. A supported command can still fail because the installed MDM enrollment
+does not grant its required device-side access rights. Server administrative
+authorization and enrollment access rights are separate requirements.
+
+The enrolled macOS 26.6.2 VM used for live validation returned the following 33
+top-level `DeviceInformation` query-response fields. This is an observed example,
+not a fixed schema or a promise that every Mac returns every field.
+
+| Group | Observed Apple response fields |
+| --- | --- |
+| Identity | `SerialNumber`, `UDID`, `ProvisioningUDID`, `DeviceName`, `HostName`, `LocalHostName` |
+| Hardware | `Model`, `ModelName`, `ModelNumber`, `ProductName`, `IsAppleSilicon`, `HasBattery`, `BatteryLevel`, `SupportsLOMDevice`, `SupportsiOSAppInstalls` |
+| Storage | `DeviceCapacity`, `AvailableDeviceCapacity` |
+| OS | `OSVersion`, `BuildVersion`, `SupplementalBuildVersion`, `TimeZone`, `SoftwareUpdateDeviceID` |
+| Management | `IsSupervised`, `AwaitingConfiguration`, `ActiveManagedUsers`, `MDMOptions` |
+| Security/recovery | `SystemIntegrityProtectionEnabled`, `IsActivationLockEnabled`, `IsActivationLockSupported`, `PINRequiredForDeviceLock`, `PINRequiredForEraseDevice`, `EACSPreflight` |
+| Updates | `OSUpdateSettings` |
+
+Its `OSUpdateSettings` contained `AutoCheckEnabled`, `AutomaticAppInstallationEnabled`,
+`AutomaticOSInstallationEnabled`, `AutomaticSecurityUpdatesEnabled`,
+`BackgroundDownloadEnabled`, `CatalogURL`, `IsDefaultCatalog` and `PreviousScanDate`.
+The VM also returned one profile and five certificates. `SecurityInfo` and
+`InstalledApplicationList` returned error `12007` with an explicit insufficient-access-rights
+message. Wi-Fi, Bluetooth and Ethernet MAC addresses were not returned in this run;
+no real IMEI, MEID or EID was established for the virtual Mac.
+
+### Read results and verify freshness
+
+```sh
+dmctl devices get DEVICE_ID
+dmctl devices get DEVICE_ID --raw
+dmctl devices fields --raw
+dmctl commands list device ENROLLMENT_ID
+```
+
+Use the record's `enrollment_id` for `ENROLLMENT_ID` in the command-queue example;
+it is distinct from the inventory record ID. Queue inspection requires the relevant
+command-read permission. Check command status and completion time, then each inventory
+source's observation/attempt timestamps and error metadata. A successful `devices get`
+can still contain retained older evidence. Failed attempts do not erase prior successes.
+
+Ordinary record reads require `readInventory` and return reviewed normalized fields.
+`--raw` requires `readRawInventory` and exposes complete stored evidence and additional
+source-qualified fields, for example
+`mdm.DeviceInformation.QueryResponses.SystemIntegrityProtectionEnabled`.
+The authenticated enrollment identity separately supplies
+`identity_certificate_expiry`; it is not inferred from arbitrary installed certificates.
+
+To export only this record's reviewed fields, replace `DEVICE_ID` in the predicate:
+
+```sh
+dmctl inventory export --format csv \
+  --where '[{"field":"id","operator":"eq","value":"DEVICE_ID"}]' \
+  --columns serial_number,model,os_version,build_version,apple_silicon,filevault_enabled,identity_certificate_expiry
+```
+
+### Native collection versus AxM sync
+
+| CLI operation | Source and purpose |
+| --- | --- |
+| `devices collect DEVICE_ID` | Ask locally enrolled devices for supported native MDM inventory |
+| `axm accounts sync ACCOUNT_ID --wait` | Run and wait for that ABM/ASM account's Apple organization, assignment and coverage collection |
+| `inventory sync` | Queue AxM sync jobs for all enabled Apple accounts |
+
+Purchasing, warranty and AppleCare information come from AxM sync. Native collection
+does not query those Apple organization APIs or populate missing cloud purchasing data.
+
 ## Configure a source
 
 Grant the necessary explicit actions through existing Cedar policies:

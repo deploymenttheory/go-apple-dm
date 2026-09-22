@@ -20,7 +20,7 @@
 - [Protocol helpers](operations/protocol-helpers.md): JWTs, password hashes, automatic encryption certificates, recovery-key decryption, bypass codes and installation manifests.
 - [Apps and Books](operations/apps-and-books.md): location setup, device/user licensing, user association, notifications and completion checks.
 - [CI responsibilities](testing/ci.md): triggers, distinct checks, dependency retries and release gates.
-- [Agentless device inventory](operations/agentless-inventory.md): ABM/ASM sources, device records, native enrichment, scheduling and exports.
+- [Agentless device inventory](operations/agentless-inventory.md): ABM/ASM sources, device records, native enrichment, scheduling and exports; [collection CLI reference](operations/agentless-inventory.md#cli-devices-collect) covers returned fields and the check-in flow.
 - [ADE inventory and assignment](operations/dep-synchronization.md): server-token renewal, explicit identity replacement, reconciliation and storage upgrades.
 - [Certificate lifecycle](operations/certificate-lifecycle.md): provisioning, renewal, issuer rollover and retained encryption identities.
 - [Backup and recovery](operations/recovery.md): maintenance fences, authenticated backups, verification and isolated restore.
