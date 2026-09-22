@@ -5,6 +5,7 @@ import (
 	"encoding/pem"
 	"os"
 	"path/filepath"
+	"runtime"
 	"slices"
 	"strings"
 	"testing"
@@ -79,8 +80,13 @@ func TestContainerEnvironmentUsesContainerPaths(t *testing.T) {
 		t.Fatalf("env file: %q", lines)
 	}
 	info, err := os.Stat(w.path("mdm", EnvFile))
-	if err != nil || info.Mode().Perm() != 0o600 {
-		t.Fatalf("env file mode: %v %v", info.Mode(), err)
+	if err != nil {
+		t.Fatal(err)
+	}
+	// Windows does not apply POSIX permissions, so the private mode is checked where it
+	// is enforced.
+	if runtime.GOOS != "windows" && info.Mode().Perm() != 0o600 {
+		t.Fatalf("env file mode: %v", info.Mode())
 	}
 }
 
