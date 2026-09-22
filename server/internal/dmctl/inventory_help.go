@@ -37,7 +37,7 @@ Requested native commands (when supported):
   CertificateList            Installed certificates, certificate data and identity flags.
 
 DeviceInformation selects queries using platform/version/channel metadata. Returned
-fields depend on the OS, hardware and enrollment rights. An observed macOS 26.6.2 VM
+fields depend on the OS, hardware and enrollment rights. e.g a macOS 26.6.2 VM
 returned these 33 top-level fields; they are not guaranteed for every device:
   SerialNumber, UDID, ProvisioningUDID, DeviceName, HostName, LocalHostName,
   Model, ModelName, ModelNumber, ProductName, IsAppleSilicon, HasBattery,
