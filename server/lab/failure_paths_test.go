@@ -178,3 +178,35 @@ func TestStartWithTheContainerAdapterUsesThePublishedPort(t *testing.T) {
 		}
 	}
 }
+
+// TestLiveWorkspaceRejectsATopicWithoutItsIdentity checks that a configured push topic
+// without the certificate it comes from stops the workspace instead of enrolling devices
+// the server could never wake.
+func TestLiveWorkspaceRejectsATopicWithoutItsIdentity(t *testing.T) {
+	w := testWorkspace(t, "live")
+	w.Settings = map[string]string{"DM_PUSH_TOPIC": "com.apple.mgmt.External.invented"}
+	_, err := Start(t.Context(), w, "", io.Discard)
+	if err == nil {
+		t.Fatal("a topic without its push identity was accepted")
+	}
+	if !strings.Contains(err.Error(), "DM_PUSH_TOPIC") || !strings.Contains(err.Error(), "push.pem") {
+		t.Fatalf("error does not name the misconfiguration: %v", err)
+	}
+}
+
+// TestLiveWorkspaceWithoutAPushIdentityReportsIt checks that a workspace with no MDM push
+// identity still starts, for app-push testing, but says what it cannot do.
+func TestLiveWorkspaceWithoutAPushIdentityReportsIt(t *testing.T) {
+	var out strings.Builder
+	w := testWorkspace(t, "live")
+	e, err := Start(t.Context(), w, "", &out)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer e.Close()
+	for _, want := range []string{"no MDM push identity", "enrollment routes are not mounted", "pushcert"} {
+		if !strings.Contains(out.String(), want) {
+			t.Fatalf("startup output lacks %q:\n%s", want, out.String())
+		}
+	}
+}

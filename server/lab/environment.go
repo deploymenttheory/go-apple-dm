@@ -200,8 +200,24 @@ func Start(ctx context.Context, w *Workspace, binary string, out io.Writer) (*En
 	} else {
 		cert, err = os.ReadFile(w.path("mdm", "push.pem"))
 		if errors.Is(err, os.ErrNotExist) {
+			if w.Settings["DM_PUSH_TOPIC"] != "" {
+				return nil, fmt.Errorf(
+					"%w: DM_PUSH_TOPIC is configured but %s is missing; the topic comes from the"+
+						" MDM push certificate, and a topic without its identity enrolls devices"+
+						" the server can never wake",
+					errOperation, w.path("mdm", "push.pem"),
+				)
+			}
+			// The server starts without an MDM identity so app pushes can be tested on
+			// their own, but it cannot enroll a device. Say so where it cannot be missed.
 			env["DM_PUSH_SOURCE"] = "off"
 			env["DM_PUSH_TOPIC"] = ""
+			// A lost notice is not worth failing a start that is otherwise healthy.
+			_, _ = fmt.Fprintf(out, "lab: no MDM push identity at %s and %s:"+
+				" enrollment routes are not mounted and no device can be woken."+
+				" Install one with dmctl pushcerts csr, dmctl pushcerts sign and"+
+				" https://identity.apple.com/pushcert, then restart.\n",
+				w.path("mdm", "push.pem"), w.path("mdm", "push.key"))
 		} else {
 			if err != nil {
 				return nil, wrapError(err)
