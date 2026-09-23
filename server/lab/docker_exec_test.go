@@ -6,6 +6,7 @@ import (
 	"errors"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"testing"
 )
@@ -22,7 +23,7 @@ func fakeDocker(t *testing.T, exit int) string {
 	script := "#!/bin/sh\nprintf '%s\\n' \"$*\" >> \"" + log + "\"\n" +
 		"printf 'LAB_MDM_DIR=%s\\n' \"$LAB_MDM_DIR\" >> \"" + log + "\"\n" +
 		"printf 'LAB_PORT=%s\\n' \"$LAB_PORT\" >> \"" + log + "\"\n" +
-		"exit " + string(rune('0'+exit)) + "\n"
+		"exit " + strconv.Itoa(exit) + "\n"
 	if err := os.WriteFile(filepath.Join(dir, "docker"), []byte(script), 0o700); err != nil { // #nosec G306 -- test stub must be executable
 		t.Fatal(err)
 	}
@@ -55,8 +56,10 @@ func TestStartContainersWritesEnvironmentAndStartsTheStack(t *testing.T) {
 		t.Fatal("the adapter did not record a running stack")
 	}
 	recorded := calls(t, log)
-	for _, want := range []string{"compose", "--project-name dm-lab-", "up --build --detach --wait",
-		"LAB_MDM_DIR=" + w.path("mdm"), "LAB_PORT=18443"} {
+	for _, want := range []string{
+		"compose", "--project-name dm-lab-", "up --build --detach --wait",
+		"LAB_MDM_DIR=" + w.path("mdm"), "LAB_PORT=18443",
+	} {
 		if !strings.Contains(recorded, want) {
 			t.Fatalf("compose call lacks %q:\n%s", want, recorded)
 		}
