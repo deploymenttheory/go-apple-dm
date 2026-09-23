@@ -82,7 +82,7 @@ previous recovery key.
 Validate remote `SecurityInfo` retrieval separately from local-file extraction;
 the enrollment must grant that command's access right. Neither profile acceptance
 nor CMS decryption establishes that the recovered key can unlock the disk. See
-the [live acceptance checks](../testing/bench.md#apple-management-feature-checks).
+the [live acceptance checks](../testing/lab.md#apple-management-feature-checks).
 
 ### Explicit rotation command
 
@@ -145,5 +145,5 @@ InstallApplication with a hosted manifest for enterprise iOS/iPadOS apps.
 
 Independent vectors and fixtures check encoding and local interoperability.
 Live acceptance needs Apple-registered credentials, eligible enrollment and actual
-installation assets. Follow the [feature checks](../testing/bench.md#apple-management-feature-checks)
+installation assets. Follow the [feature checks](../testing/lab.md#apple-management-feature-checks)
 and record any untested operations explicitly.

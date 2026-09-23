@@ -43,10 +43,10 @@ func runSetup(ctx context.Context, e *env, args []string) error {
 		"local setup file for bootstrap access",
 	)
 	dir := fs.String("dir", "test-lab/local/certs", "bootstrap directory")
-	benchDirectory := fs.String(
-		"from-bench",
+	labDirectory := fs.String(
+		"from-lab",
 		"",
-		"adopt an existing live bench including database and identity keys",
+		"adopt an existing live lab workspace including database and identity keys",
 	)
 	adminTokenFile := fs.String(
 		"bootstrap-token-file",
@@ -111,11 +111,11 @@ func runSetup(ctx context.Context, e *env, args []string) error {
 	if len(pos) > 0 {
 		return fmt.Errorf("%w: unexpected setup arguments", ErrUsage)
 	}
-	if *benchDirectory != "" {
+	if *labDirectory != "" {
 		if group != "adopt" {
-			return fmt.Errorf("%w: -from-bench requires setup adopt", ErrUsage)
+			return fmt.Errorf("%w: -from-lab requires setup adopt", ErrUsage)
 		}
-		return runSetupBenchAdoption(ctx, e, *benchDirectory, *dir, *role)
+		return runSetupWorkspaceAdoption(ctx, e, *labDirectory, *dir, *role)
 	}
 	if group == "vendor" && operation == "sign" && *out == "" {
 		return fmt.Errorf("%w: signing requires -out", ErrUsage)

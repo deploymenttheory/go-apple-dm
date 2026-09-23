@@ -16,8 +16,8 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/pki/lifecycle"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/testpki"
 	"github.com/deploymenttheory/go-apple-dm/server/internal/app"
-	"github.com/deploymenttheory/go-apple-dm/server/internal/bench"
 	"github.com/deploymenttheory/go-apple-dm/server/internal/dmctl"
+	"github.com/deploymenttheory/go-apple-dm/server/lab"
 )
 
 // TestSetupCheckBuildsReadyManagedServer checks setup check builds ready managed server.
@@ -211,7 +211,7 @@ func TestSetupLocalValidationAndArtifactProtection(t *testing.T) {
 		{"vendor"},
 		{"status", "extra"},
 		{"status", "-bad"},
-		{"status", "-from-bench", dir},
+		{"status", "-from-lab", dir},
 		{"vendor", "sign"},
 		{"profile", "bad"},
 		{"profile", "trust"},
@@ -353,23 +353,25 @@ func TestSetupLocalValidationAndArtifactProtection(t *testing.T) {
 	}
 }
 
-// TestSetupBenchAdoptionPreservesDatabaseAndImportedIdentities checks that setup bench adoption
+// TestSetupWorkspaceAdoptionPreservesDatabaseAndImportedIdentities checks that setup lab-workspace adoption
 // preserves database and imported identities.
-func TestSetupBenchAdoptionPreservesDatabaseAndImportedIdentities(t *testing.T) {
+func TestSetupWorkspaceAdoptionPreservesDatabaseAndImportedIdentities(t *testing.T) {
 	for _, mode := range []string{"missing workspace", "simulated", "missing key", "missing database", "missing challenge", "missing certificate", "missing private key", "untrusted push", "different database", "invalid environment"} {
 		t.Run(mode, func(t *testing.T) {
 			source, destination := t.TempDir(), t.TempDir()
 			env := noConfig(t)
 			if mode != "missing workspace" {
-				benchMode := "live"
+				labMode := "live"
 				if mode == "simulated" {
-					benchMode = "simulated"
+					labMode = "simulated"
 				}
-				if err := bench.Init(
+				if err := lab.Init(
 					source,
-					benchMode,
+					labMode,
 					"sqlite",
 					"127.0.0.1:8443",
+					lab.AdapterProcess,
+					nil,
 				); err != nil {
 					t.Fatal(err)
 				}
@@ -418,7 +420,7 @@ func TestSetupBenchAdoptionPreservesDatabaseAndImportedIdentities(t *testing.T) 
 				env,
 				"setup",
 				"adopt",
-				"-from-bench",
+				"-from-lab",
 				source,
 				"-dir",
 				destination,

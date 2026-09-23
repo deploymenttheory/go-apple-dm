@@ -55,7 +55,7 @@ dynamic limits, pagination, user lifecycle, partial outcomes, notification
 authentication, retries and cancellation. The compiled example waits for successful
 licensing before constructing an installation command. See the
 [operations guide](../../operations/apps-and-books.md) for polling intervals and
-the [live checks](../../testing/bench.md#apple-management-feature-checks).
+the [live checks](../../testing/lab.md#apple-management-feature-checks).
 
 ## References
 

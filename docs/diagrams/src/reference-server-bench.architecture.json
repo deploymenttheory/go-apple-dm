@@ -333,7 +333,7 @@
     {
       "title": "Reading and protocol references",
       "items": [
-        "Bench scope and operation — https://github.com/deploymenttheory/go-apple-dm/blob/main/docs/testing/bench.md",
+        "Lab scope and operation — https://github.com/deploymenttheory/go-apple-dm/blob/main/docs/testing/lab.md",
         "Go test behavior — https://pkg.go.dev/cmd/go#hdr-Test_packages",
         "Sending MDM commands — https://developer.apple.com/documentation/devicemanagement/sending-mdm-commands-to-a-device",
         "Sending APNs requests — https://developer.apple.com/documentation/usernotifications/sending-notification-requests-to-apns"

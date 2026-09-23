@@ -1,9 +1,9 @@
 # End-to-end scenarios
 
-These are the retained detailed regressions. The [shared bench catalogue](bench-catalogue.md)
+These are the retained detailed regressions. The [shared module catalogue](lab-catalogue.md)
 links them to scenarios against the reference server's actual runtime. `make test-e2e`
 runs both; `make test-acceptance` exercises built server processes. See the
-[testing guide](bench.md) for the distinction between public workflow checks and
+[testing guide](lab.md) for the distinction between public workflow checks and
 internal timing/storage assertions.
 
 
@@ -14,7 +14,7 @@ constraints are linked from the [decisions](../research/decisions/README.md).
 
 Run `make test-e2e` (build tag `e2e`). `E2E_STORE` selects `sqlite` (default, one database per test),
 `postgres` (requires `TEST_POSTGRES_DSN`, one schema per test) or `inmem`. CI runs SQLite and
-PostgreSQL scenarios. Unified reference-server scenarios run through the shared bench.
+PostgreSQL scenarios. Unified reference-server modules run through the shared lab catalogue.
 
 Scenario identifiers remain stable. E2E-015 and E2E-022 have no corresponding named tests in the
 current tree and are not counted as implemented coverage. Readiness and declarative ACME

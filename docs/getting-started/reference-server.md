@@ -258,7 +258,7 @@ keys, before depending on this installation.
 
 You now have a persistent local server and working administration. To exercise
 simulated devices without Apple credentials, use a **separate** workspace in
-the [reference bench](../testing/bench.md). It supplies modeled Apple services
+the [reference lab](../testing/lab.md). It supplies modeled Apple services
 and device exchanges; the Compose server does not pretend to be APNs.
 
 ## 6. Enroll your first real Mac
@@ -554,11 +554,11 @@ run it again with the same setup file to resume.
 
 | Goal | Next sequence |
 |---|---|
-| DDM | Working enrollment → supported declarations and activations → set membership/assignment → notify → device status; use the [bench catalogue](../testing/bench-catalogue.md) and [status guide](../operations/status-and-profile-inspection.md) |
+| DDM | Working enrollment → supported declarations and activations → set membership/assignment → notify → device status; use the [module catalogue](../testing/lab-catalogue.md) and [status guide](../operations/status-and-profile-inspection.md) |
 | ADE | Organizational device assignment → enrollment-service token → profile configuration/sync → admission → Setup Assistant; see [DEP design](../research/decisions/0026-dep-client-sync-and-assignment.md) |
 | Account-driven enrollment | Managed account/domain discovery → OIDC registration → account admission → profile and ongoing authorization; see [enrollment operations](../operations/enrollment-security.md) |
 | Production operation | Device-facing DNS/TLS → protected persistent storage and keys → scoped admins → tested backup/restore → renewal monitoring and live-device checks |
-| Simulated regression tests | Separate bench workspace → doctor → up → selected scenarios → retained evidence; see [testing](../testing/bench.md) |
+| Simulated regression tests | Separate lab workspace → doctor → up → selected scenarios → retained evidence; see [testing](../testing/lab.md) |
 
 ## Troubleshoot the checkpoint that failed
 

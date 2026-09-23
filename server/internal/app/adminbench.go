@@ -59,13 +59,13 @@ func (a *App) getCommandResult(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// enrollmentAdminRoutes declares profile-issuance, replacement and evidence routes when
-// enrollment is configured.
+// enrollmentAdminRoutes declares profile-issuance, enrollment-link, replacement and evidence
+// routes when enrollment is configured.
 func (a *App) enrollmentAdminRoutes() []adminRoute {
 	if a.enroll == nil {
 		return nil
 	}
-	return []adminRoute{
+	return append([]adminRoute{
 		{
 			Pattern: "GET /enrollments/{channel}/{id}/enrollment-evidence",
 			Action:  ActionReadEnrollment,
@@ -96,7 +96,7 @@ func (a *App) enrollmentAdminRoutes() []adminRoute {
 			Family:  "enrollment",
 			Handler: http.HandlerFunc(a.issueEnrollmentProfile),
 		},
-	}
+	}, a.enrollmentLinkRoutes()...)
 }
 
 // issueEnrollmentProfile validates a bounded issuance request and returns an enrollment

@@ -12,25 +12,25 @@ import (
 
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/pki/lifecycle"
 	"github.com/deploymenttheory/go-apple-dm/server/internal/app"
-	"github.com/deploymenttheory/go-apple-dm/server/internal/bench"
+	"github.com/deploymenttheory/go-apple-dm/server/lab"
 )
 
-// runSetupBenchAdoption preserves the database, key IDs, admission settings and
-// identifier credentials of an existing live bench. Repeating adoption validates
+// runSetupWorkspaceAdoption preserves the database, key IDs, admission settings and
+// identifier credentials of an existing live lab workspace. Repeating adoption validates
 // the same identities; it never rotates a device pin or generates a new topic.
-func runSetupBenchAdoption(ctx context.Context, e *env, source, destination, role string) error {
-	w, err := bench.Load(source)
+func runSetupWorkspaceAdoption(ctx context.Context, e *env, source, destination, role string) error {
+	w, err := lab.Load(source)
 	if err != nil {
 		return wrapError(err)
 	}
 	if w.Mode != "live" || w.Storage != "sqlite" {
 		return fmt.Errorf(
-			"%w: bench adoption requires a live SQLite workspace",
+			"%w: lab adoption requires a live SQLite workspace",
 			ErrUsage,
 		)
 	}
 	mdmDir := filepath.Join(w.Directory, "mdm")
-	// #nosec G304 -- Fixed filename in the operator-selected local bench workspace.
+	// #nosec G304 -- Fixed filename in the operator-selected local lab workspace.
 	key, err := os.ReadFile(filepath.Join(mdmDir, "storage-key"))
 	if err != nil {
 		return wrapError(err)
@@ -53,13 +53,13 @@ func runSetupBenchAdoption(ctx context.Context, e *env, source, destination, rol
 	for _, name := range []string{app.EnvStorage, app.EnvDSN, app.EnvStorageKeys, app.EnvSecretsDir, "DM_TLS_CERT_FILE", "DM_TLS_KEY_FILE", app.EnvEnrollCACertFile, app.EnvEnrollCAKeyFile, app.EnvEnrollTLSAnchorFile, "DM_CA_FILE", app.EnvPushSource} {
 		delete(settings, name)
 	}
-	// The bench derives the ACME key independently from the exact trimmed master
+	// The lab derives the ACME key independently from the exact trimmed master
 	// string. Keep it even when the new bootstrap has its own SCEP HMAC key.
 	if len(settings[app.EnvACMEHMACKey]) == 0 {
 		hash := sha256.Sum256([]byte("bench ACME identifiers\x00" + strings.TrimSpace(string(key))))
 		settings[app.EnvACMEHMACKey] = []byte(hex.EncodeToString(hash[:]))
 	}
-	// #nosec G304 -- Fixed filename in the operator-selected local bench workspace.
+	// #nosec G304 -- Fixed filename in the operator-selected local lab workspace.
 	challenge, err := os.ReadFile(filepath.Join(mdmDir, "scep-challenge"))
 	if err != nil {
 		return wrapError(err)

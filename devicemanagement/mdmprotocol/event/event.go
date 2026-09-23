@@ -42,8 +42,10 @@ const (
 	DDMStatusReceived  Type = "ddm-status-received"
 	CertReuseDenied    Type = "cert-reuse-denied"   // Authenticate presented a certificate another enrollment pinned before
 	EnrollmentImported Type = "enrollment-imported" // record written by MigrationStore.Import
-	UserAuthenticated  Type = "user-authenticated"  // UserAuthenticate digest accepted, AuthToken issued
-	UserAuthFailed     Type = "user-auth-failed"    // UserAuthenticate digest rejected or challenge expired
+	// EnrollmentLinkRedeemed is a single-use enrollment link consumed to issue a profile.
+	EnrollmentLinkRedeemed Type = "enrollment-link-redeemed"
+	UserAuthenticated      Type = "user-authenticated" // UserAuthenticate digest accepted, AuthToken issued
+	UserAuthFailed         Type = "user-auth-failed"   // UserAuthenticate digest rejected or challenge expired
 
 	// ACME and attestation events.
 

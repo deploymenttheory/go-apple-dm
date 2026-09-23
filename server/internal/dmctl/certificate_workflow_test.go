@@ -201,9 +201,9 @@ func TestOfflineCertificateCommandFailures(t *testing.T) {
 	bad := privateFixture(t, dir, "bad", []byte("{"))
 	payload := privateFixture(t, dir, "invalid-payload.json", []byte(`{"aps":{}}`))
 	token := privateFixture(t, dir, "token", []byte("aabb"))
-	for _, args := range [][]string{{"apns"}, {"apns", "unknown"}, {"apns", "inspect", "-bad"}, {"apns", "inspect"}, {"apns", "inspect", "-cert", "absent"}, {"apns", "inspect", "-cert", bad}, {"apns", "check", "-cert", c, "-key", "absent"}, {"apns", "send", "-cert", c, "-key", k}, {"pushcerts", "csr", "-bad"}, {"pushcerts", "csr"}, {"pushcerts", "sign", "-bad"}, {"pushcerts", "sign"}, {"bench"}, {"bench", "list"}, {"bench", "status", "-workspace", "absent"}} {
+	for _, args := range [][]string{{"apns"}, {"apns", "unknown"}, {"apns", "inspect", "-bad"}, {"apns", "inspect"}, {"apns", "inspect", "-cert", "absent"}, {"apns", "inspect", "-cert", bad}, {"apns", "check", "-cert", c, "-key", "absent"}, {"apns", "send", "-cert", c, "-key", k}, {"pushcerts", "csr", "-bad"}, {"pushcerts", "csr"}, {"pushcerts", "sign", "-bad"}, {"pushcerts", "sign"}, {"lab"}, {"lab", "list"}, {"lab", "status", "-workspace", "absent"}} {
 		_, _, err := run(t, env, args...)
-		if args[0] == "bench" && len(args) > 1 && args[1] == "list" {
+		if args[0] == "lab" && len(args) > 1 && args[1] == "list" {
 			if err != nil {
 				t.Fatal(err)
 			}

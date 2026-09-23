@@ -62,6 +62,6 @@ adapter additionally requires a matching device receipt.
 
 ## References
 
-- [Bench design](0048-reference-server-bench.md)
-- [Bench/server operations](../../operations/reference-bench.md)
+- [Lab design](0048-reference-server-bench.md)
+- [Lab and server operations](../../operations/reference-lab.md)
 - [Encrypted persistence](0015-push-cert-store.md)

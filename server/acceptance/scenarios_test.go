@@ -9,14 +9,14 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
-	"time"
 
-	"github.com/deploymenttheory/go-apple-dm/server/internal/bench"
+	"github.com/deploymenttheory/go-apple-dm/server/lab"
+	"github.com/deploymenttheory/go-apple-dm/server/lab/target"
 )
 
 // The same catalogue runs against an embedded runtime or a built executable.
 func TestScenarios(t *testing.T) {
-	binary := os.Getenv("BENCH_DMSERVER")
+	binary := os.Getenv("LAB_DMSERVER")
 	adapter := "inprocess"
 	if binary != "" {
 		adapter = "process"
@@ -24,43 +24,40 @@ func TestScenarios(t *testing.T) {
 	for _, topology := range []string{"device-management"} {
 		t.Run(topology, func(t *testing.T) {
 			dir := t.TempDir()
-			if err := bench.Init(dir, "simulated", "sqlite", "127.0.0.1:0"); err != nil {
+			if err := lab.Init(dir, "simulated", "sqlite", "127.0.0.1:0", lab.AdapterProcess, nil); err != nil {
 				t.Fatal(err)
 			}
-			w, err := bench.Load(dir)
+			w, err := lab.Load(dir)
 			if err != nil {
 				t.Fatal(err)
 			}
 			ctx, cancel := context.WithCancel(context.Background())
 			defer cancel()
-			e, err := bench.Start(ctx, w, binary, io.Discard)
+			e, err := lab.Start(ctx, w, binary, io.Discard)
 			if err != nil {
 				t.Fatal(err)
 			}
 			defer e.Close()
-			var results []bench.Result
-			for _, s := range bench.Catalogue() {
-				if strings.HasPrefix(s.ID, "LIVE-") {
+			report := os.Getenv("LAB_REPORT_DIR")
+			if report == "" {
+				report = t.TempDir()
+			}
+			evidence := filepath.Join(report, adapter, topology)
+			opts := lab.Options{Adapter: adapter, Revision: os.Getenv("LAB_REVISION"), Evidence: evidence}
+			var results []lab.Result
+			for _, m := range lab.Catalogue() {
+				if strings.HasPrefix(m.ID, "LIVE-") {
 					continue
 				}
-				t.Run(s.ID, func(t *testing.T) {
-					ctx, cancel := context.WithTimeout(ctx, 2*time.Minute)
-					defer cancel()
-					r := bench.Run(ctx, e, s, adapter, os.Getenv("BENCH_REVISION"), "")
+				t.Run(m.ID, func(t *testing.T) {
+					r := lab.Run(ctx, e, target.Simulator{}, m, opts)
 					results = append(results, r)
-					if r.Status != "passed" {
+					if r.Status != lab.StatusPassed {
 						t.Errorf("%s: %s", r.Status, r.Detail)
 					}
 				})
 			}
-			report := os.Getenv("BENCH_REPORT_DIR")
-			if report == "" {
-				report = t.TempDir()
-			}
-			if err = bench.WriteReports(
-				filepath.Join(report, adapter, topology),
-				results,
-			); err != nil {
+			if err = lab.WriteReports(evidence, results); err != nil {
 				t.Fatal(err)
 			}
 		})

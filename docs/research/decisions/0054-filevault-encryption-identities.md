@@ -58,7 +58,7 @@ Manager tests cover concurrent preparation, conflicting retries, storage failure
 encrypted SQL persistence, reopening and delayed replies after expiry. CMS tests
 use independent BER/DER fixtures and check recipient selection and wrong keys.
 Follow the [workflow](../../operations/protocol-helpers.md#automatic-filevault-encryption-certificates)
-and [live acceptance checks](../../testing/bench.md#apple-management-feature-checks).
+and [live acceptance checks](../../testing/lab.md#apple-management-feature-checks).
 
 ## References
 

@@ -62,7 +62,7 @@ cover browser transfer, cookie/state replay, private-hop substitution and replay
 raw SQL ciphertext inspection/rotation, issuance admission and CSR competition,
 TLS/proxy evidence and credential redirects. Run the shared suites through
 `make test-contract` with PostgreSQL/MySQL configured and `make test-e2e`; see
-the [testing guide](../../testing/bench.md).
+the [testing guide](../../testing/lab.md).
 
 ## References
 

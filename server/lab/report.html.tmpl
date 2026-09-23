@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lab acceptance report</title>
+<style>
+:root{
+  --bg:#f6f7f9;--panel:#ffffff;--text:#1b1f24;--muted:#5b6470;--line:#e2e5ea;
+  --pass:#1a7f37;--pass-bg:#dafbe1;--fail:#cf222e;--fail-bg:#ffebe9;
+  --block:#9a6700;--block-bg:#fff8c5;--unsup:#57606a;--unsup-bg:#eaeef2;--accent:#0969da;
+  --mono:ui-monospace,SFMono-Regular,Menlo,monospace;
+}
+@media (prefers-color-scheme:dark){:root{
+  --bg:#0d1117;--panel:#161b22;--text:#e6edf3;--muted:#8d96a0;--line:#30363d;
+  --pass:#3fb950;--pass-bg:#12261e;--fail:#f85149;--fail-bg:#2d1214;
+  --block:#d29922;--block-bg:#2b2111;--unsup:#8d96a0;--unsup-bg:#21262d;--accent:#58a6ff;
+}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font:14px/1.5 -apple-system,system-ui,"Segoe UI",sans-serif}
+main{max-width:72rem;margin:0 auto;padding:1.5rem 1rem 3rem}
+h1{font-size:1.4rem;margin:0 0 .25rem}
+h2{font-size:1.1rem;margin:2rem 0 .5rem}
+h3{font-size:.8rem;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin:1.25rem 0 .4rem}
+.meta{color:var(--muted);margin:0 0 1rem}
+.meta code,td code{font-family:var(--mono);font-size:.85em}
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(8rem,1fr));gap:.6rem;margin:1rem 0}
+.tile{background:var(--panel);border:1px solid var(--line);border-radius:.5rem;padding:.6rem .8rem}
+.tile b{display:block;font-size:1.5rem;font-variant-numeric:tabular-nums}
+.tile span{color:var(--muted);font-size:.8rem}
+.tile.passed b{color:var(--pass)}.tile.failed b{color:var(--fail)}.tile.blocked b{color:var(--block)}.tile.unsupported b{color:var(--unsup)}
+.filters{display:flex;flex-wrap:wrap;gap:.4rem;margin:.5rem 0 0}
+.filters button{font:inherit;border:1px solid var(--line);background:var(--panel);color:var(--text);border-radius:999px;padding:.2rem .7rem;cursor:pointer}
+.filters button[aria-pressed=true]{border-color:var(--accent);color:var(--accent)}
+section.target{background:var(--panel);border:1px solid var(--line);border-radius:.6rem;padding:.25rem 1rem 1rem;margin-top:1rem}
+.target-meta{color:var(--muted);font-size:.85rem}
+table{width:100%;border-collapse:collapse}
+td{border-top:1px solid var(--line);padding:.45rem .4rem;vertical-align:top}
+td.id{white-space:nowrap;font-family:var(--mono);font-size:.85em;width:6.5rem}
+td.status{width:7rem}
+td.dur{white-space:nowrap;text-align:right;color:var(--muted);font-variant-numeric:tabular-nums;width:6rem}
+.pill{display:inline-block;border-radius:999px;padding:.05rem .55rem;font-size:.78rem;font-weight:600}
+.pill.passed{color:var(--pass);background:var(--pass-bg)}.pill.failed{color:var(--fail);background:var(--fail-bg)}
+.pill.blocked{color:var(--block);background:var(--block-bg)}.pill.unsupported{color:var(--unsup);background:var(--unsup-bg)}
+details{margin-top:.25rem}
+summary{cursor:pointer;color:var(--muted);font-size:.85rem}
+.detail{font-family:var(--mono);font-size:.8rem;white-space:pre-wrap;overflow-wrap:anywhere;margin:.35rem 0 0}
+ul.steps,ul.evidence{margin:.35rem 0 0;padding-left:1.1rem}
+ul.steps li,ul.evidence li{margin:.1rem 0}
+a{color:var(--accent)}
+.theme{color:var(--muted);font-size:.8rem}
+tr.hidden{display:none}
+</style>
+</head>
+<body>
+<main>
+<h1>Lab acceptance report</h1>
+<p class="meta">Generated {{.Generated}}{{range .Revisions}} · revision <code>{{.}}</code>{{end}}{{range .Adapters}} · adapter <code>{{.}}</code>{{end}}{{range .Modes}} · mode <code>{{.}}</code>{{end}}</p>
+
+<div class="tiles">
+  <div class="tile"><b>{{.Total}}</b><span>modules</span></div>
+  <div class="tile passed"><b>{{index .Counts "passed"}}</b><span>passed</span></div>
+  <div class="tile failed"><b>{{index .Counts "failed"}}</b><span>failed</span></div>
+  <div class="tile blocked"><b>{{index .Counts "blocked"}}</b><span>blocked</span></div>
+  <div class="tile unsupported"><b>{{index .Counts "unsupported"}}</b><span>unsupported</span></div>
+  <div class="tile"><b>{{duration .Duration}}</b><span>module time</span></div>
+</div>
+
+<div class="filters" role="group" aria-label="Filter by status">
+  <button type="button" data-filter="all" aria-pressed="true">All</button>
+  <button type="button" data-filter="failed" aria-pressed="false">Failed</button>
+  <button type="button" data-filter="blocked" aria-pressed="false">Blocked</button>
+  <button type="button" data-filter="unsupported" aria-pressed="false">Unsupported</button>
+  <button type="button" data-filter="passed" aria-pressed="false">Passed</button>
+</div>
+
+{{range .Targets}}{{$t := .Result.Target}}
+<section class="target">
+  <h2>{{if $t.ID}}{{$t.ID}}{{else}}target{{end}}</h2>
+  <p class="target-meta">{{if $t.Driver}}driver <code>{{$t.Driver}}</code>{{end}}{{if $t.Platform}} · {{$t.Platform}}{{end}}{{if $t.OSVersion}} {{$t.OSVersion}}{{end}}{{if $t.BuildVersion}} ({{$t.BuildVersion}}){{end}}{{if $t.Model}} · {{$t.Model}}{{end}}{{if $t.Virtual}} · virtual{{end}}{{if $t.UDID}} · UDID <code>{{$t.UDID}}</code>{{end}} · {{index .Counts "passed"}} passed, {{index .Counts "failed"}} failed, {{index .Counts "blocked"}} blocked, {{index .Counts "unsupported"}} unsupported</p>
+  {{range .Stages}}
+  <h3>{{stageName .Stage}}</h3>
+  <table>
+    {{range .Results}}
+    <tr data-status="{{.Status}}">
+      <td class="id">{{.ID}}</td>
+      <td class="status"><span class="pill {{.Status}}">{{.Status}}</span></td>
+      <td>{{.Name}} <span class="theme">· {{.Theme}}</span>
+        {{if or .Detail .Evidence (gt (len .Steps) 1)}}<details{{if eq .Status "failed"}} open{{end}}>
+          <summary>{{if .Detail}}detail{{end}}{{if gt (len .Steps) 1}} · {{len .Steps}} steps{{end}}{{if .Evidence}} · {{len .Evidence}} evidence files{{end}}</summary>
+          {{if .Detail}}<p class="detail">{{.Detail}}</p>{{end}}
+          {{if gt (len .Steps) 1}}<ul class="steps">{{range .Steps}}<li><span class="pill {{.Status}}">{{.Status}}</span> {{.Name}} <span class="theme">{{duration .Duration}}</span>{{if .Detail}}<div class="detail">{{.Detail}}</div>{{end}}</li>{{end}}</ul>{{end}}
+          {{if .Evidence}}<ul class="evidence">{{range .Evidence}}<li><a href="{{.}}">{{.}}</a></li>{{end}}</ul>{{end}}
+        </details>{{end}}
+      </td>
+      <td class="dur">{{duration .Duration}}</td>
+    </tr>
+    {{end}}
+  </table>
+  {{end}}
+</section>
+{{end}}
+</main>
+<script>
+document.querySelectorAll('.filters button').forEach(function (button) {
+  button.addEventListener('click', function () {
+    var want = button.dataset.filter;
+    document.querySelectorAll('.filters button').forEach(function (b) { b.setAttribute('aria-pressed', String(b === button)); });
+    document.querySelectorAll('tr[data-status]').forEach(function (row) {
+      row.classList.toggle('hidden', want !== 'all' && row.dataset.status !== want);
+    });
+  });
+});
+</script>
+</body>
+</html>

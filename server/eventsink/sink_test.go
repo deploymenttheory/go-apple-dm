@@ -185,7 +185,7 @@ func TestEveryEventTypeIsProjected(t *testing.T) {
 		event.Enrolled, event.Reenrolled, event.TokenUpdated, event.CheckedOut,
 		event.CertRotated, event.CommandQueued, event.CommandSent, event.CommandRejected, event.CommandResult,
 		event.BootstrapTokenSet, event.PushTokenInvalid, event.PushRejected, event.DDMChanged,
-		event.DDMStatusReceived, event.CertReuseDenied, event.EnrollmentImported,
+		event.DDMStatusReceived, event.CertReuseDenied, event.EnrollmentImported, event.EnrollmentLinkRedeemed,
 		event.UserAuthenticated, event.UserAuthFailed,
 		event.ACMEChallengeValid, event.ACMEIssued, event.AttestationRejected,
 		event.AdminAction, event.AdminDenied,

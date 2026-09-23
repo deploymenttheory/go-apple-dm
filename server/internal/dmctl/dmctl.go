@@ -192,7 +192,7 @@ func commands() map[string]command {
 		{"auth", "inspect authorization, bootstrap, and recover root credentials", runAuth},
 		{"recovery", "pause, back up, verify and restore a persistent server", runRecovery},
 		{"setup", "manage certificate setup and renewal with persistent state", runSetup},
-		{"bench", "prepare and run maintained reference-server scenarios", runBench},
+		{"lab", "prepare workspaces and run lab acceptance modules with HTML reports", runLab},
 		{"apppush", "manage server app push credentials and send notifications", runAppPush},
 		{"apns", "inspect certificates, validate identities, and send app notifications", runAPNS},
 		{"certificates", "import, inspect, and revoke device certificates", runCertificates},
@@ -215,6 +215,7 @@ func commands() map[string]command {
 		{"events", "inspect persistent event delivery and retry a destination", runEvents},
 		{"webhooks", "manage native subscriptions, delivery, credentials and replay", runWebhooks},
 		{"enrollments", "list, read, disable, and inspect enrollment status", runEnrollments},
+		{"enrollment-links", "create, list and revoke single-use enrollment links", runEnrollmentLinks},
 		{"content-cache", "issue reporting credentials and inspect content-cache reports", runContentCache},
 		{"commands", "send, read, and clear queued MDM commands", runCommands},
 		{"push", "wake a device now without queueing anything", runPush},
@@ -372,7 +373,7 @@ func usage(w io.Writer, fs *flag.FlagSet) {
 	fs.PrintDefaults()
 	_, _ = fmt.Fprintln(
 		w,
-		"\nexplain and certificate preparation work offline. bench manages its own workspace; administration reads -server and -token.",
+		"\nexplain and certificate preparation work offline. lab manages its own workspace; administration reads -server and -token.",
 	)
 }
 

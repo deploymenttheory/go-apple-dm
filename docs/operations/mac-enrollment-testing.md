@@ -11,19 +11,19 @@ operator approves that test. No test in this runbook erases the Mac.
 Use a live workspace, a fixed loopback listener and a valid MDM APNs certificate
 with its matching private key. The ordinary app-push certificate for
 `com.weaveplatform.deviceweave` cannot authenticate MDM pushes. See the existing
-[bench runbook](../../test-lab/README.md) for certificate acquisition/import.
+[lab runbook](../../test-lab/README.md) for certificate acquisition/import.
 
 Create a private admission policy file naming the Mac's hardware UUID, then set
-`Settings.DM_ENROLLMENT_POLICY_FILE` in the workspace's `bench.json` to its
+`Settings.DM_ENROLLMENT_POLICY_FILE` in the workspace's `lab.json` to its
 absolute path before starting the server. For a manual profile requested by UUID,
-use `{"devices":[{"udid":"<hardware UUID>"}]}`. The simulated bench supplies its
+use `{"devices":[{"udid":"<hardware UUID>"}]}`. The simulated lab supplies its
 own restricted fixture policy; a live workspace requires operator configuration.
 See [enrollment security](enrollment-security.md) for device/account rules.
 
 ```sh
-make bench-enrollment-preflight BENCH_IDENTITY=acme
-make bench-trust BENCH_TRUST_FILE=test-lab/local/trust.mobileconfig
-make bench-up
+make lab-preflight LAB_IDENTITY=acme
+make lab-trust LAB_TRUST_FILE=test-lab/local/trust.mobileconfig
+make lab-up
 ```
 
 Preflight reports unavailable credentials as blocked. A successful local preflight
@@ -39,16 +39,27 @@ fallback are for explicitly configured fixtures, not live acceptance.
 
 ## First enrollment
 
-Use the Mac's hardware UUID as `BENCH_DEVICE_ID` (`ioreg -rd1 -c IOPlatformExpertDevice`
+Use the Mac's hardware UUID as `LAB_DEVICE_ID` (`ioreg -rd1 -c IOPlatformExpertDevice`
 shows `IOPlatformUUID`). Obtain the installing user's GeneratedUID with
 `dscl . -read /Users/<local-account> GeneratedUID`; use that exact value as
-`BENCH_USER_ID`. In another terminal:
+`LAB_USER_ID`. In another terminal:
 
 ```sh
-make bench-run BENCH_SCENARIO=E2E-027
-make bench-profile BENCH_DEVICE_ID='<hardware UUID>' BENCH_IDENTITY=acme \
-  BENCH_PROFILE_FILE=test-lab/local/acme.mobileconfig
+make lab-run LAB_MODULES=E2E-027
+make lab-profile LAB_DEVICE_ID='<hardware UUID>' LAB_IDENTITY=acme \
+  LAB_PROFILE_FILE=test-lab/local/acme.mobileconfig
 ```
+
+Alternatively, create a single-use enrollment link and open it on the Mac itself:
+
+```sh
+test-lab/local/bin/dmctl enrollment-links create -device-id '<hardware UUID>' -identity acme -access-rights 19 -ttl 30m
+```
+
+The printed URL serves a page linking the trust profile and the enrollment profile.
+It issues one profile and then stops working; see
+[enrollment links](reference-lab.md#enrollment-links). The device must already trust
+the server's HTTPS certificate to open the page.
 
 Review and install that profile in System Settings. Its rights permit inventory,
 profile inspection and profile installation/removal (mask 19). It contains the
@@ -58,8 +69,8 @@ actual certificate issuance separately from profile generation.
 After installation, run:
 
 ```sh
-make bench-run BENCH_SCENARIO=LIVE-002 BENCH_DEVICE_ID='<hardware UUID>' \
-  BENCH_USER_ID='<installing user GeneratedUID>'
+make lab-run LAB_MODULES=LIVE-002 LAB_DEVICE_ID='<hardware UUID>' \
+  LAB_USER_ID='<installing user GeneratedUID>'
 ```
 
 This requires a pinned ACME-issued identity, Authenticate, TokenUpdate, an accepted
@@ -72,13 +83,13 @@ the required device evidence exists.
 ## Replacement
 
 ```sh
-make bench-replace BENCH_DEVICE_ID='<hardware UUID>' BENCH_IDENTITY=acme
+make lab-replace LAB_DEVICE_ID='<hardware UUID>' LAB_IDENTITY=acme
 test-lab/local/bin/dmctl api GET \
   '/enrollments/device/<hardware UUID>/replacement'
 ```
 
 The `api` command needs the normal server URL, admin credential and HTTPS trust
-configuration described in the [reference-server guide](reference-bench.md).
+configuration described in the [reference-server guide](reference-lab.md).
 The response reports the attempt ID, state, delivery, acknowledgment and certificate
 fingerprints without exposing the profile or issuance credentials. A push failure
 does not cancel the attempt: inspect it and retry the normal enrollment push route.
@@ -91,7 +102,7 @@ LIVE-002. Failed, cancelled and expired attempts preserve the old enrollment.
 For live rollback evidence, record an actual macOS-reported installation failure,
 inspect the previously installed profile/identity on the Mac and repeat the inventory
 test using the old identity. A server cancellation by itself is not proof that macOS
-attempted and rolled back an installation. The automated failed-replacement scenarios
+attempted and rolled back an installation. The automated failed-replacement modules
 use simulator behavior; they must not be reported as a real-device rollback pass.
 
 ## Repeat with SCEP
@@ -109,13 +120,13 @@ profile after a failed or expired attempt instead of reusing a consumed credenti
 
 After the device and returning user's fresh TokenUpdate arrive, disable
 `DM_ALLOW_REENROLL` again and restart the server before running LIVE-003 with both
-`BENCH_DEVICE_ID` and `BENCH_USER_ID`. The returning user must receive fresh tokens;
+`LAB_DEVICE_ID` and `LAB_USER_ID`. The returning user must receive fresh tokens;
 old queued commands and push credentials must not survive the removed enrollment.
 If installation fails, preserve the server/device evidence and generate a new ACME
 profile for recovery using the same controlled handoff.
 
-Repeat replacement with `BENCH_IDENTITY=scep`. Record separate result directories
-using `dmctl bench run -report-dir ...` so the two identity runs remain distinguishable.
+Repeat replacement with `LAB_IDENTITY=scep`. Record separate result directories
+using `dmctl lab run -report-dir ...` so the two identity runs remain distinguishable.
 
 ADE Setup Assistant activation requires a separate test involving an assigned device
 and Apple Business Manager/School Manager. Manual enrollment does not prove that
@@ -136,7 +147,7 @@ bundle at a time. Compare compatibility preview, fetched declarations and native
 status, then test the intended OS behavior separately. Unassign only the test
 set, verify status removal and restore its observable effects. Removing a
 configuration does not necessarily undo user consent or reactivate/deactivate a
-service. [Blueprint acceptance](../testing/bench.md#blueprint-acceptance) and
+service. [Blueprint acceptance](../testing/lab.md#blueprint-acceptance) and
 [application identity checks](application-identities.md#native-artifact-verification)
 provide focused procedures.
 

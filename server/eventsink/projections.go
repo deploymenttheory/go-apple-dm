@@ -28,6 +28,7 @@ func Default() *Registry {
 	r.Register(event.CheckedOut, nil)
 	r.Register(event.BootstrapTokenSet, nil)
 	r.Register(event.EnrollmentImported, nil)
+	r.Register(event.EnrollmentLinkRedeemed, passthrough("link", "device", "identity"))
 	r.Register(event.CertRotated, str("cert_hash"))
 	r.Register(event.CertReuseDenied, enrollmentIDs)
 	r.Register(event.UserAuthenticated, str("user_id"))

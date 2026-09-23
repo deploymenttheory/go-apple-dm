@@ -160,7 +160,7 @@ refs-activity:
 	@scripts/refs-activity.sh
 
 ## ci: everything CI runs, in order
-ci: lint verify docs-check verify-server-module-installation test test-storage test-storage-perf test-e2e test-acceptance bench-docs-check fuzz-smoke coverage
+ci: lint verify docs-check verify-server-module-installation test test-storage test-storage-perf test-e2e test-acceptance lab-docs-check fuzz-smoke coverage
 
 ## clean: remove coverage output
 clean:
@@ -168,84 +168,103 @@ clean:
 
 .PHONY: help tools submodule generate verify verify-server-module-installation lint test test-storage test-storage-perf test-conformance test-e2e testdb-up testdb-down docker-build fuzz-smoke fuzz coverage vuln refs refs-activity ci clean
 
-# Bench recipes delegate to dmctl; Go owns workspace and scenario behavior.
-BENCH_WORKSPACE ?= test-lab/local
-BENCH_MODE ?= simulated
-BENCH_STORAGE ?= sqlite
-BENCH_LISTEN ?= 127.0.0.1:8443
-BENCH_SCENARIO ?= all
-BENCH_DEVICE_ID ?=
-BENCH_USER_ID ?=
-BENCH_ATTACH_URL ?=
-BENCH_IDENTITY ?= acme
-BENCH_PROFILE_FILE ?= $(BENCH_WORKSPACE)/enrollment.mobileconfig
-BENCH_TRUST_FILE ?= $(BENCH_WORKSPACE)/trust.mobileconfig
-BENCH_REPORT_DIR ?= cover/acceptance
-BENCH_REVISION := $(shell git describe --always --dirty)
-BENCH_BIN_DIR := test-lab/local/bin
+# Lab recipes delegate to dmctl; Go owns workspace and module behavior.
+LAB_WORKSPACE ?= test-lab/local
+LAB_MODE ?= simulated
+LAB_STORAGE ?= sqlite
+LAB_LISTEN ?= 127.0.0.1:8443
+LAB_ADAPTER ?= process
+LAB_HOSTS ?=
+GUESTWEAVE_REPO ?= https://github.com/deploymenttheory/guestweave-cli-macos.git
+GUESTWEAVE_REF ?=
+GUESTWEAVE_DIR := test-lab/local/tools/guestweave
+LAB_MODULES ?= all
+LAB_DEVICE_ID ?=
+LAB_USER_ID ?=
+LAB_ATTACH_URL ?=
+LAB_IDENTITY ?= acme
+LAB_DESTRUCTIVE ?=
+LAB_RUN ?=
+LAB_PROFILE_FILE ?= $(LAB_WORKSPACE)/enrollment.mobileconfig
+LAB_TRUST_FILE ?= $(LAB_WORKSPACE)/trust.mobileconfig
+LAB_REPORT_DIR ?= cover/acceptance
+LAB_REVISION := $(shell git describe --always --dirty)
+LAB_BIN_DIR := test-lab/local/bin
 
-## bench-build: build dmserver and dmctl for bench and acceptance runs
-bench-build:
-	@mkdir -p "$(BENCH_BIN_DIR)"
-	$(GO) build -o "$(BENCH_BIN_DIR)/dmserver" ./server/cmd/dmserver
-	$(GO) build -o "$(BENCH_BIN_DIR)/dmctl" ./server/cmd/dmctl
+## lab-build: build dmserver and dmctl for lab and acceptance runs
+lab-build:
+	@mkdir -p "$(LAB_BIN_DIR)"
+	$(GO) build -o "$(LAB_BIN_DIR)/dmserver" ./server/cmd/dmserver
+	$(GO) build -o "$(LAB_BIN_DIR)/dmctl" ./server/cmd/dmctl
 
-## bench-init: initialize BENCH_WORKSPACE (BENCH_MODE, BENCH_STORAGE, BENCH_LISTEN)
-bench-init: bench-build
-	"$(BENCH_BIN_DIR)/dmctl" bench init -workspace "$(BENCH_WORKSPACE)" -mode "$(BENCH_MODE)" -storage "$(BENCH_STORAGE)" -listen "$(BENCH_LISTEN)"
+## lab-init: initialize LAB_WORKSPACE (LAB_MODE, LAB_STORAGE, LAB_LISTEN, LAB_ADAPTER, LAB_HOSTS)
+lab-init: lab-build
+	"$(LAB_BIN_DIR)/dmctl" lab init -workspace "$(LAB_WORKSPACE)" -mode "$(LAB_MODE)" -storage "$(LAB_STORAGE)" -listen "$(LAB_LISTEN)" -adapter "$(LAB_ADAPTER)" -hosts "$(LAB_HOSTS)"
 
-## bench-doctor: inspect workspace and live prerequisites without changing device state
-bench-doctor: bench-build
-	"$(BENCH_BIN_DIR)/dmctl" bench doctor -workspace "$(BENCH_WORKSPACE)"
+## lab-tls: reissue the workspace HTTPS leaf for LAB_HOSTS, keeping the lab CA
+lab-tls: lab-build
+	"$(LAB_BIN_DIR)/dmctl" lab tls -workspace "$(LAB_WORKSPACE)" -hosts "$(LAB_HOSTS)"
 
-## bench-up: supervise dmserver and fixtures in the foreground; use another terminal for bench-run
-bench-up: bench-build
-	"$(BENCH_BIN_DIR)/dmctl" bench up -workspace "$(BENCH_WORKSPACE)" -dmserver "$(BENCH_BIN_DIR)/dmserver"
+## lab-tools: build and verify the guestweave CLI used to drive virtual Macs
+lab-tools:
+	@scripts/guestweave.sh "$(GUESTWEAVE_DIR)" "$(GUESTWEAVE_REPO)" "$(GUESTWEAVE_REF)"
 
-## bench-down: stop the workspace supervisor and drain its server processes
-bench-down:
-	"$(BENCH_BIN_DIR)/dmctl" bench down -workspace "$(BENCH_WORKSPACE)"
+## lab-doctor: inspect workspace and live prerequisites without changing device state
+lab-doctor: lab-build
+	"$(LAB_BIN_DIR)/dmctl" lab doctor -workspace "$(LAB_WORKSPACE)"
 
-## bench-list: list stable scenario IDs, execution modes and retained regressions
-bench-list: bench-build
-	"$(BENCH_BIN_DIR)/dmctl" bench list
+## lab-up: supervise dmserver and fixtures in the foreground; use another terminal for lab-run
+lab-up: lab-build
+	"$(LAB_BIN_DIR)/dmctl" lab up -workspace "$(LAB_WORKSPACE)" -dmserver "$(LAB_BIN_DIR)/dmserver"
 
-## bench-run: run BENCH_SCENARIO against the workspace; BENCH_DEVICE_ID selects a live MDM device
-bench-run: bench-build
-	"$(BENCH_BIN_DIR)/dmctl" bench run -workspace "$(BENCH_WORKSPACE)" -scenario "$(BENCH_SCENARIO)" -device-id "$(BENCH_DEVICE_ID)" -user-id "$(BENCH_USER_ID)" -attach-url "$(BENCH_ATTACH_URL)" -revision "$(BENCH_REVISION)"
+## lab-down: stop the workspace supervisor and drain its server processes
+lab-down:
+	"$(LAB_BIN_DIR)/dmctl" lab down -workspace "$(LAB_WORKSPACE)"
 
-## bench-status: query the workspace supervisor
-bench-status:
-	"$(BENCH_BIN_DIR)/dmctl" bench status -workspace "$(BENCH_WORKSPACE)"
+## lab-list: list stable module IDs, lifecycle stages, modes and retained regressions
+lab-list: lab-build
+	"$(LAB_BIN_DIR)/dmctl" lab list
 
-.PHONY: bench-enrollment-preflight bench-trust bench-profile bench-replace
-## bench-enrollment-preflight: check enrollment credentials, HTTPS trust and identity method
-bench-enrollment-preflight: bench-build
-	"$(BENCH_BIN_DIR)/dmctl" bench enrollment-preflight -workspace "$(BENCH_WORKSPACE)" -identity "$(BENCH_IDENTITY)"
+## lab-run: run LAB_MODULES against the workspace; LAB_DEVICE_ID selects a live MDM device
+lab-run: lab-build
+	"$(LAB_BIN_DIR)/dmctl" lab run -workspace "$(LAB_WORKSPACE)" -modules "$(LAB_MODULES)" -device-id "$(LAB_DEVICE_ID)" -user-id "$(LAB_USER_ID)" -attach-url "$(LAB_ATTACH_URL)" -revision "$(LAB_REVISION)" $(if $(LAB_DESTRUCTIVE),-destructive,)
 
-## bench-trust: export the local HTTPS trust profile before enrollment
-bench-trust: bench-build
-	"$(BENCH_BIN_DIR)/dmctl" bench trust -workspace "$(BENCH_WORKSPACE)" -file "$(BENCH_TRUST_FILE)"
+## lab-report: rerender report.html from an existing run directory (LAB_RUN)
+lab-report: lab-build
+	"$(LAB_BIN_DIR)/dmctl" lab report -run "$(LAB_RUN)"
 
-## bench-profile: export an ACME or SCEP enrollment profile for BENCH_DEVICE_ID
-bench-profile: bench-build
-	"$(BENCH_BIN_DIR)/dmctl" bench profile -workspace "$(BENCH_WORKSPACE)" -device-id "$(BENCH_DEVICE_ID)" -identity "$(BENCH_IDENTITY)" -attach-url "$(BENCH_ATTACH_URL)" -file "$(BENCH_PROFILE_FILE)"
+## lab-status: query the workspace supervisor
+lab-status:
+	"$(LAB_BIN_DIR)/dmctl" lab status -workspace "$(LAB_WORKSPACE)"
 
-## bench-replace: start an authorized profile replacement and wake the enrolled device
-bench-replace: bench-build
-	"$(BENCH_BIN_DIR)/dmctl" bench replace -workspace "$(BENCH_WORKSPACE)" -device-id "$(BENCH_DEVICE_ID)" -identity "$(BENCH_IDENTITY)" -attach-url "$(BENCH_ATTACH_URL)"
+.PHONY: lab-preflight lab-trust lab-profile lab-replace lab-report lab-tls lab-tools
+## lab-preflight: check enrollment credentials, HTTPS trust and identity method
+lab-preflight: lab-build
+	"$(LAB_BIN_DIR)/dmctl" lab preflight -workspace "$(LAB_WORKSPACE)" -identity "$(LAB_IDENTITY)"
 
-## test-acceptance: shared scenarios against built dmserver processes, using unified device management
+## lab-trust: export the local HTTPS trust profile before enrollment
+lab-trust: lab-build
+	"$(LAB_BIN_DIR)/dmctl" lab trust -workspace "$(LAB_WORKSPACE)" -file "$(LAB_TRUST_FILE)"
+
+## lab-profile: export an ACME or SCEP enrollment profile for LAB_DEVICE_ID
+lab-profile: lab-build
+	"$(LAB_BIN_DIR)/dmctl" lab profile -workspace "$(LAB_WORKSPACE)" -device-id "$(LAB_DEVICE_ID)" -identity "$(LAB_IDENTITY)" -attach-url "$(LAB_ATTACH_URL)" -file "$(LAB_PROFILE_FILE)"
+
+## lab-replace: start an authorized profile replacement and wake the enrolled device
+lab-replace: lab-build
+	"$(LAB_BIN_DIR)/dmctl" lab replace -workspace "$(LAB_WORKSPACE)" -device-id "$(LAB_DEVICE_ID)" -identity "$(LAB_IDENTITY)" -attach-url "$(LAB_ATTACH_URL)"
+
+## test-acceptance: shared modules against built dmserver processes, using unified device management
 # Absolute paths survive go test's package working directory.
-test-acceptance: bench-build
-	BENCH_DMSERVER="$(abspath $(BENCH_BIN_DIR))/dmserver" BENCH_DMCTL="$(abspath $(BENCH_BIN_DIR))/dmctl" BENCH_REPORT_DIR="$(abspath $(BENCH_REPORT_DIR))" BENCH_REVISION="$(BENCH_REVISION)" $(GO) test -race -count=1 -timeout 300s -tags acceptance ./server/acceptance/...
+test-acceptance: lab-build
+	LAB_DMSERVER="$(abspath $(LAB_BIN_DIR))/dmserver" LAB_DMCTL="$(abspath $(LAB_BIN_DIR))/dmctl" LAB_REPORT_DIR="$(abspath $(LAB_REPORT_DIR))" LAB_REVISION="$(LAB_REVISION)" $(GO) test -race -count=1 -timeout 300s -tags acceptance ./server/acceptance/...
 
-## bench-docs: regenerate the catalogue from executable scenario metadata
-bench-docs: bench-build
-	"$(BENCH_BIN_DIR)/dmctl" bench list -format markdown > docs/testing/bench-catalogue.md
+## lab-docs: regenerate the catalogue from executable module metadata
+lab-docs: lab-build
+	"$(LAB_BIN_DIR)/dmctl" lab list -format markdown > docs/testing/lab-catalogue.md
 
-## bench-docs-check: verify the documented scenario catalogue matches the implementation
-bench-docs-check: bench-build
-	@tmp=$$(mktemp); "$(BENCH_BIN_DIR)/dmctl" bench list -format markdown > "$$tmp" && diff -u docs/testing/bench-catalogue.md "$$tmp"; status=$$?; rm -f "$$tmp"; exit $$status
+## lab-docs-check: verify the documented module catalogue matches the implementation
+lab-docs-check: lab-build
+	@tmp=$$(mktemp); "$(LAB_BIN_DIR)/dmctl" lab list -format markdown > "$$tmp" && diff -u docs/testing/lab-catalogue.md "$$tmp"; status=$$?; rm -f "$$tmp"; exit $$status
 
-.PHONY: test-contract test-acceptance bench-build bench-init bench-doctor bench-up bench-down bench-list bench-run bench-status bench-docs bench-docs-check
+.PHONY: test-contract test-acceptance lab-tls lab-tools lab-build lab-init lab-doctor lab-up lab-down lab-list lab-run lab-status lab-docs lab-docs-check

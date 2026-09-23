@@ -1,46 +1,64 @@
-# Reference-server bench
+# Reference-server lab
 
-The bench runs the ordinary `dmserver` executable. `dmctl bench` owns workspace
-setup, external-service fixtures, scenario selection and private evidence. The
+The lab runs the ordinary `dmserver` executable. `dmctl lab` owns workspace
+setup, external-service fixtures, module selection and private evidence. The
 native app in `host-app/` is a device-side fixture, not another provider server.
 
-Run commands from the repository root. See the [scenario catalogue](../docs/testing/bench-catalogue.md),
-[testing guide](../docs/testing/bench.md), and [design decision](../docs/research/decisions/0048-reference-server-bench.md).
+Run commands from the repository root. See the [module catalogue](../docs/testing/lab-catalogue.md),
+[testing guide](../docs/testing/lab.md), and [design decision](../docs/research/decisions/0048-reference-server-bench.md).
 
-## Simulated scenarios
-
-```sh
-make bench-init
-make bench-up
-```
-
-`bench-up` stays in the foreground and supervises its children. In a second terminal:
+## Simulated modules
 
 ```sh
-make bench-list
-make bench-status
-make bench-run BENCH_SCENARIO=E2E-006
-make bench-run BENCH_SCENARIO=all
-make bench-down
+make lab-init
+make lab-up
 ```
 
-`all` selects scenarios supported by the workspace's mode. An explicit unsupported
-scenario returns a nonzero exit status. Scenarios requiring another configuration
+`lab-up` stays in the foreground and supervises its children. In a second terminal:
+
+```sh
+make lab-list
+make lab-status
+make lab-run LAB_MODULES=E2E-006
+make lab-run LAB_MODULES=all
+make lab-down
+```
+
+`all` selects the modules supported by the workspace's mode. An explicit unsupported
+module returns a nonzero exit status. Modules requiring another configuration
 (for example ACME, user authentication, return-to-service, or enrollment admission)
 start an isolated temporary instance of the same server executable and clean it up.
 The catalogue records those configuration choices. They never reconfigure a live server.
 
 The default workspace is `test-lab/local`, SQLite, all-in-one, and simulated.
-`BENCH_WORKSPACE`, `BENCH_MODE`, `BENCH_STORAGE` and `BENCH_LISTEN`
-configure `bench-init`. Existing workspaces are read from their private `bench.json`;
+`LAB_WORKSPACE`, `LAB_MODE`, `LAB_STORAGE` and `LAB_LISTEN`
+configure `lab-init`. Existing workspaces are read from their private `lab.json`;
 init refuses to overwrite them. PostgreSQL/MySQL workspaces require a private `DSN`
 setting. Each workspace runs the unified reference server.
 
 Simulated APNs uses mutual TLS with generated provider identities. DEP, ABM, OIDC,
 and attestation fixtures are local. No Apple account or physical device is required.
-Results are written beneath `local/evidence/<run>/` as JSON and JUnit. They identify
-the scenario, mode, adapter, revision, outcome and duration. A failed, blocked, or
-explicitly unsupported scenario makes the command fail.
+Results are written beneath `local/evidence/<run>/` as `results.json`, `junit.xml`
+and a self-contained `report.html`. They identify the module, target, stage, mode,
+adapter, revision, outcome and duration. A failed, blocked, or explicitly
+unsupported module makes the command fail. `make lab-report LAB_RUN=<dir>`
+rerenders the HTML report from an existing run.
+
+## Container stack for device testing
+
+A live workspace can run the server in containers so a device on another network can reach
+it. See [the lab stack](../deploy/lab/README.md) and the
+[testing guide](../docs/testing/lab.md#server-adapters-and-the-container-stack).
+
+```sh
+make lab-init LAB_MODE=live LAB_ADAPTER=docker LAB_HOSTS=mdm.lab.test,192.168.64.1
+make lab-doctor
+make lab-up
+```
+
+`lab doctor` reports docker, the compose file, free space and the published addresses.
+`make lab-tls LAB_HOSTS=…` reissues the HTTPS leaf from the retained CA when the lab's
+address changes. `make lab-tools` builds the guestweave CLI used to drive virtual Macs.
 
 ## Live workspace and existing material
 
@@ -53,16 +71,16 @@ name; simulated storage uses a separate database. Keep the original storage key.
 For a fresh live workspace:
 
 ```sh
-make bench-init BENCH_MODE=live
-make bench-doctor
-make bench-up
+make lab-init LAB_MODE=live
+make lab-doctor
+make lab-up
 ```
 
 If a workspace already exists, stop it before changing `Mode` in its private
-`bench.json` to `live`. A live workspace starts without an MDM certificate so app
+`lab.json` to `live`. A live workspace starts without an MDM certificate so app
 pushes can be tested independently. MDM enrollment becomes available once an MDM
 push certificate is installed at `mdm/push.pem` and the server is restarted.
-Profiles and trust are installed manually; bench commands do not enroll the host.
+Profiles and trust are installed manually; lab commands do not enroll the host.
 
 ## App certificate and host app
 
@@ -110,11 +128,11 @@ environment; the app exports `app/registration.json` and matching receipt files.
 The provider key stays on the server.
 
 ```sh
-make bench-run BENCH_SCENARIO=APP-001
-make bench-run BENCH_SCENARIO=APP-002
+make lab-run LAB_MODULES=APP-001
+make lab-run LAB_MODULES=APP-002
 ```
 
-A live app scenario passes only after APNs accepts the request and a receipt matches
+A live app module passes only after APNs accepts the request and a receipt matches
 its correlation ID, topic and environment. APNs acceptance alone is not delivery.
 Renew through `apppush put`; metadata listings never return private keys.
 
@@ -134,13 +152,13 @@ go run ./server/cmd/dmctl pushcerts sign -h
 signed customer CSR envelope for Apple's Push Certificates Portal. Keep the
 customer key paired with the resulting MDM certificate. Save the issued identity
 as `mdm/push.pem` and `mdm/push.key`, validate it with `apns check -kind mdm`, then
-restart the bench. First startup imports it through the regular admin API;
+restart the lab. First startup imports it through the regular admin API;
 subsequent stored renewals remain authoritative.
 
 Request a profile from the configured server, specifying the actual device UUID:
 
 ```sh
-test-lab/local/bin/dmctl bench profile -device-id DEVICE-UUID -file test-lab/local/mdm/enrollment.mobileconfig
+test-lab/local/bin/dmctl lab profile -device-id DEVICE-UUID -file test-lab/local/mdm/enrollment.mobileconfig
 ```
 
 Review and install the profile manually. The default operator-issued profile
@@ -148,30 +166,30 @@ requests device inventory access, uses the configured SCEP/ACME issuance policy,
 and sends CheckOut when removed. After Authenticate and TokenUpdate:
 
 ```sh
-make bench-run BENCH_SCENARIO=LIVE-001 BENCH_DEVICE_ID=DEVICE-UUID
+make lab-run LAB_MODULES=LIVE-001 LAB_DEVICE_ID=DEVICE-UUID
 ```
 
-The scenario queues `DeviceInformation`, requests an APNs wake, and verifies the
+The module queues `DeviceInformation`, requests an APNs wake, and verifies the
 acknowledged response contains OSVersion and BuildVersion. A timeout retains a
 failed result; it does not claim successful delivery.
 
 ## Troubleshooting and cleanup
 
-- `bench doctor` lists missing local/live material without changing the device.
+- `lab doctor` lists missing local/live material without changing the device.
 - Inspect server startup output for invalid credentials, occupied ports or storage failures.
-- `bench status` verifies the supervisor is reachable. `bench down` requests an
+- `lab status` verifies the supervisor is reachable. `lab down` requests an
   orderly shutdown using a private control credential rather than signalling a saved PID.
 - A blocked prerequisite and a device response failure have different report statuses.
-- Stop the bench before editing its configuration. Preserve local identity files
+- Stop the lab before editing its configuration. Preserve local identity files
   and databases when restarting. Uninstall device profiles manually after testing.
-- `dmlab` and `lab.py` have been retired. Use the commands above for all lab orchestration.
+- `dmlab`, `lab.py` and the earlier `dmctl bench` command have been retired. Use the commands above for all lab orchestration.
 
 ## ACME and SCEP enrollment
 
 The [Mac enrollment runbook](../docs/operations/mac-enrollment-testing.md) covers
 preflight, local HTTPS trust, manual enrollment, authorized identity replacement
 and the separate ACME/SCEP live acceptance runs. These use the maintained server
-and bench; no separate enrollment spike executable is needed.
+and lab; no separate enrollment spike executable is needed.
 
 ## macOS 27 preparation and handoff
 

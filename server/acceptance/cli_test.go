@@ -14,9 +14,9 @@ import (
 )
 
 // Exercise the operator entry point as well as the server adapter. Keeping this
-// in acceptance makes workspace supervision part of the maintained CI bench.
-func TestBenchCLI(t *testing.T) {
-	cli, server := os.Getenv("BENCH_DMCTL"), os.Getenv("BENCH_DMSERVER")
+// in acceptance makes workspace supervision part of the maintained CI lab.
+func TestLabCLI(t *testing.T) {
+	cli, server := os.Getenv("LAB_DMCTL"), os.Getenv("LAB_DMSERVER")
 	if cli == "" || server == "" {
 		t.Skip("built CLI lifecycle is selected by make test-acceptance")
 	}
@@ -26,10 +26,10 @@ func TestBenchCLI(t *testing.T) {
 		ctx, cancel := context.WithTimeout(t.Context(), time.Minute)
 		defer cancel()
 		// #nosec G204 G702 -- Execute the explicitly configured test binary with argument separation; no shell.
-		cmd := exec.CommandContext(ctx, cli, append([]string{"bench"}, args...)...)
+		cmd := exec.CommandContext(ctx, cli, append([]string{"lab"}, args...)...)
 		out, err := cmd.CombinedOutput()
 		if err != nil {
-			t.Fatalf("bench %s: %v: %s", args[0], err, out)
+			t.Fatalf("lab %s: %v: %s", args[0], err, out)
 		}
 		return out
 	}
@@ -47,7 +47,7 @@ func TestBenchCLI(t *testing.T) {
 			cmd := exec.CommandContext(
 				ctx,
 				cli,
-				"bench",
+				"lab",
 				"up",
 				"-workspace",
 				dir,
@@ -79,18 +79,18 @@ func TestBenchCLI(t *testing.T) {
 				select {
 				case err := <-done:
 					finished = true
-					t.Fatalf("bench exited before readiness: %v: %s", err, &log)
+					t.Fatalf("lab exited before readiness: %v: %s", err, &log)
 				case <-deadline.C:
-					t.Fatal("bench did not become ready")
+					t.Fatal("lab did not become ready")
 				case <-tick.C:
 					// #nosec G204 G702 -- Execute the explicitly configured test binary with argument separation; no shell.
-					status := exec.CommandContext(ctx, cli, "bench", "status", "-workspace", dir)
+					status := exec.CommandContext(ctx, cli, "lab", "status", "-workspace", dir)
 					ready = status.Run() == nil
 				}
 			}
 			if attempt == 0 {
-				run("run", "-workspace", dir, "-scenario", "APP-003")
-				run("run", "-workspace", dir, "-scenario", "E2E-006")
+				run("run", "-workspace", dir, "-modules", "APP-003")
+				run("run", "-workspace", dir, "-modules", "E2E-006")
 				run(
 					"profile",
 					"-workspace",
@@ -106,10 +106,10 @@ func TestBenchCLI(t *testing.T) {
 			case err := <-done:
 				finished = true
 				if err != nil {
-					t.Fatalf("bench shutdown: %v: %s", err, &log)
+					t.Fatalf("lab shutdown: %v: %s", err, &log)
 				}
 			case <-time.After(20 * time.Second):
-				t.Fatal("bench shutdown did not finish")
+				t.Fatal("lab shutdown did not finish")
 			}
 		}()
 		if _, err := os.Stat(filepath.Join(dir, "running.json")); !os.IsNotExist(err) {
