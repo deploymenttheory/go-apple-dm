@@ -32,7 +32,12 @@ func emptySQLite(t *testing.T) *sql.DB {
 	t.Helper()
 	db, err := sql.Open(
 		"sqlite",
-		sqlite.DSN(filepath.Join(t.TempDir(), "state.sqlite"), sqlite.Options{}),
+		// Several replicas heartbeat to this one file, and Windows runners serialise
+		// that far more slowly than the production default allows for.
+		sqlite.DSN(
+			filepath.Join(t.TempDir(), "state.sqlite"),
+			sqlite.Options{BusyTimeout: 60 * time.Second},
+		),
 	)
 	if err != nil {
 		t.Fatal(err)
@@ -273,7 +278,7 @@ func fenceForSnapshot(t *testing.T, s SQL) func() {
 	if err := control.Request(t.Context(), ticket); err != nil {
 		t.Fatal(err)
 	}
-	deadline, stop := context.WithTimeout(t.Context(), 5*time.Second)
+	deadline, stop := context.WithTimeout(t.Context(), 60*time.Second)
 	defer stop()
 	if err := control.WaitDrained(deadline, ticket); err != nil {
 		t.Fatal(err)

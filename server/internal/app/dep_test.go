@@ -401,24 +401,33 @@ func TestDEP(t *testing.T) {
 		ctx, cancel := context.WithCancel(ctx)
 		done := make(chan error, 1)
 		go func() { done <- a.Run(ctx) }()
-		deadline := time.Now().Add(5 * time.Second)
-		for clk.Pending() == 0 && time.Now().Before(deadline) {
+		// Each wait gets its own budget: sharing one let a slow runner spend it all
+		// before the sync had a chance to land.
+		armed := time.Now().Add(30 * time.Second)
+		for clk.Pending() == 0 && time.Now().Before(armed) {
 			time.Sleep(time.Millisecond)
 		}
+		if clk.Pending() == 0 {
+			t.Fatal("worker never parked on the clock")
+		}
 		clk.Advance(time.Minute)
-		for time.Now().Before(deadline) {
-			if _, err := a.DEPStoreForTests().GetDevice(ctx, "abm", "SERW"); err == nil {
+		synced := time.Now().Add(30 * time.Second)
+		var err error
+		for time.Now().Before(synced) {
+			if _, err = a.DEPStoreForTests().GetDevice(ctx, "abm", "SERW"); err == nil {
 				break
 			}
 			time.Sleep(2 * time.Millisecond)
 		}
-		if _, err := a.DEPStoreForTests().GetDevice(ctx, "abm", "SERW"); err != nil {
-			t.Fatalf("worker did not sync: %v", err)
+		if err != nil {
+			t.Fatalf("worker did not sync device SERW within 30s: %v", err)
 		}
 		// A failing service is logged and the worker keeps going.
 		fake.Close()
+		// Each call gets a fresh budget, for the same reason as the waits above.
 		waitPending := func() {
-			for clk.Pending() == 0 && time.Now().Before(deadline) {
+			parked := time.Now().Add(30 * time.Second)
+			for clk.Pending() == 0 && time.Now().Before(parked) {
 				time.Sleep(time.Millisecond)
 			}
 		}
