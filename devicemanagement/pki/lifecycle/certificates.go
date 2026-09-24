@@ -176,7 +176,7 @@ func (m *Manager) validate(r record, material Material, at time.Time) (Material,
 		return material, nil, "", fmt.Errorf("%w: certificate outside validity interval", ErrInvalid)
 	}
 	var roots *x509.CertPool
-	if r.Kind == Vendor || r.Kind == Push {
+	if r.Kind == VendorSigning || r.Kind == MDMPush {
 		authorities, pool, err := m.Trust.apple()
 		if err != nil {
 			return material, nil, "", err
@@ -194,7 +194,7 @@ func (m *Manager) validate(r record, material Material, at time.Time) (Material,
 	}
 	var topic string
 	switch r.Kind {
-	case Vendor:
+	case VendorSigning:
 		purpose := asn1.ObjectIdentifier{1, 2, 840, 113635, 100, 4, 12}
 		found := false
 		for _, ext := range leaf.Extensions {
@@ -209,7 +209,7 @@ func (m *Manager) validate(r record, material Material, at time.Time) (Material,
 		if _, err = pushcert.SignCSR(material.CSR, material.Certificate, material.Key, roots, at); err != nil {
 			return material, nil, "", err
 		}
-	case Push:
+	case MDMPush:
 		p, err := pushcert.Parse(material.Certificate, material.Key)
 		if err != nil {
 			return material, nil, "", err
@@ -221,7 +221,7 @@ func (m *Manager) validate(r record, material Material, at time.Time) (Material,
 		if err = pushcert.Validate(pair, topic, true, at); err != nil {
 			return material, nil, "", err
 		}
-	case HTTPS:
+	case ServerHTTPS:
 		roots = m.Trust.HTTPSRoots
 		if len(r.DNSNames) == 0 {
 			return material, nil, "", fmt.Errorf("%w: HTTPS requires hostnames", ErrInvalid)
@@ -231,7 +231,7 @@ func (m *Manager) validate(r record, material Material, at time.Time) (Material,
 				return material, nil, "", fmt.Errorf("%w: HTTPS hostname", ErrInvalid)
 			}
 		}
-	case Issuer:
+	case EnrollmentCA:
 		if !leaf.IsCA || !leaf.BasicConstraintsValid || leaf.KeyUsage&x509.KeyUsageCertSign == 0 || leaf.KeyUsage&x509.KeyUsageCRLSign == 0 || len(leaf.SubjectKeyId) == 0 {
 			return material, nil, "", fmt.Errorf("%w: issuer requires CA constraints, certificate and CRL signing usage, and a subject key identifier", ErrInvalid)
 		}
@@ -248,7 +248,7 @@ func (m *Manager) validate(r record, material Material, at time.Time) (Material,
 		intermediates.AddCert(c)
 	}
 	usage := x509.ExtKeyUsageAny
-	if r.Kind == HTTPS {
+	if r.Kind == ServerHTTPS {
 		usage = x509.ExtKeyUsageServerAuth
 	}
 	if _, err = leaf.Verify(x509.VerifyOptions{Roots: roots, Intermediates: intermediates, CurrentTime: at, KeyUsages: []x509.ExtKeyUsage{usage}}); err != nil {
@@ -339,7 +339,7 @@ func (m *Manager) activate(ctx context.Context, id, rev string, locks []string, 
 
 // Adopt imports existing material without replacing its key or topic.
 func (m *Manager) Adopt(ctx context.Context, req Request, certificate, keyPEM []byte) (Identity, error) {
-	if req.Kind != Vendor && req.Kind != Push && req.Kind != HTTPS && req.Kind != Issuer {
+	if req.Kind != VendorSigning && req.Kind != MDMPush && req.Kind != ServerHTTPS && req.Kind != EnrollmentCA {
 		return Identity{}, fmt.Errorf("%w: certificate kind", ErrInvalid)
 	}
 	k, err := key(req.ID)
@@ -355,7 +355,7 @@ func (m *Manager) Adopt(ctx context.Context, req Request, certificate, keyPEM []
 		// Names is a decoded representation, not an additional requested RDN.
 		req.Subject.Names = nil
 	}
-	if req.Kind == HTTPS && len(req.DNSNames) == 0 {
+	if req.Kind == ServerHTTPS && len(req.DNSNames) == 0 {
 		req.DNSNames = append([]string(nil), pair.Leaf.DNSNames...)
 		for _, ip := range pair.Leaf.IPAddresses {
 			req.DNSNames = append(req.DNSNames, ip.String())
@@ -427,7 +427,7 @@ func (m *Manager) Sign(ctx context.Context, vendor string, csr []byte) ([]byte, 
 	if err != nil {
 		return nil, err
 	}
-	if r.Kind != Vendor {
+	if r.Kind != VendorSigning {
 		return nil, ErrInvalid
 	}
 	v, err := revision(&r, r.Active)
@@ -460,7 +460,7 @@ func (m *Manager) Sign(ctx context.Context, vendor string, csr []byte) ([]byte, 
 // AttachSignature binds a signed portal artifact to the pending customer CSR.
 func (m *Manager) AttachSignature(ctx context.Context, id, rev string, signed []byte) (Identity, error) {
 	return m.change(ctx, id, func(tx state.Tx, r *record) error {
-		if r.Kind != Push || r.Pending != rev {
+		if r.Kind != MDMPush || r.Pending != rev {
 			return ErrConflict
 		}
 		v, err := revision(r, rev)
@@ -484,7 +484,7 @@ func (m *Manager) CreateIssuer(ctx context.Context, id, rev string, validity tim
 		return Identity{}, ErrInvalid
 	}
 	return m.change(ctx, id, func(tx state.Tx, r *record) error {
-		if r.Kind != Issuer || r.Pending != rev {
+		if r.Kind != EnrollmentCA || r.Pending != rev {
 			return ErrConflict
 		}
 		v, err := revision(r, rev)

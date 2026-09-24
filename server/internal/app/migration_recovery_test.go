@@ -19,16 +19,16 @@ import (
 // TestRolloverClaimsAndTrustFailuresPreserveRetryState checks rollover claims and trust failures
 // preserve retry state.
 func TestRolloverClaimsAndTrustFailuresPreserveRetryState(t *testing.T) {
-	for _, authority := range []string{"issuer", "https-ca"} {
+	for _, authority := range []string{"enrollment-ca", "server-https-ca"} {
 		for _, mode := range []string{"claim failure", "claim conflict", "final save failure", "blocked", "backoff", "unsupported", "enqueue failure"} {
 			t.Run(authority+"/"+mode, func(t *testing.T) {
 				a, e, _, job := renewalFixture(t)
 				ctx := t.Context()
-				if authority == "https-ca" {
+				if authority == "server-https-ca" {
 					v := setupExecute(
 						t,
 						a,
-						lifecycle.Issuer,
+						lifecycle.EnrollmentCA,
 						"renew",
 						SetupRequest{Request: lifecycle.Request{ID: authority}, Force: true},
 					)
@@ -88,7 +88,7 @@ func TestRolloverClaimsAndTrustFailuresPreserveRetryState(t *testing.T) {
 						return nil
 					},
 				}
-				if authority == "issuer" {
+				if authority == "enrollment-ca" {
 					err = a.advanceRollover(ctx, job)
 				} else {
 					err = a.advanceHTTPSTrust(ctx, job)
@@ -158,10 +158,10 @@ func TestHTTPSTrustMigrationPagesAndExplicitRetry(t *testing.T) {
 // TestManagedConfigurationPropagatesCorruptIdentityRecords checks that managed configuration
 // propagates corrupt identity records.
 func TestManagedConfigurationPropagatesCorruptIdentityRecords(t *testing.T) {
-	for _, id := range []string{"push", "issuer"} {
+	for _, id := range []string{"mdm-push", "enrollment-ca"} {
 		t.Run(id, func(t *testing.T) {
 			a, _ := memorySetupApp(t)
-			setupExecute(t, a, lifecycle.Push, "request", setupRequest("push", lifecycle.Push))
+			setupExecute(t, a, lifecycle.MDMPush, "request", setupRequest("mdm-push", lifecycle.MDMPush))
 			setupJSON(t, a.protocol, "pki/lifecycle/identity/"+id, "corrupt")
 			if err := a.configureManagedIdentities(t.Context()); err == nil {
 				t.Fatal("corrupt identity accepted")
@@ -188,12 +188,12 @@ func TestManagedConfigurationPropagatesCorruptIdentityRecords(t *testing.T) {
 	editSetupIdentity(
 		t,
 		a.protocol,
-		"issuer",
+		"enrollment-ca",
 		func(r map[string]any) {
 			requireType[map[string]any](t, requireType[[]any](t, r["Revisions"])[1])["Key"] = ""
 		},
 	)
-	if _, err := a.certificatePairs(t.Context(), "issuer", false); err == nil {
+	if _, err := a.certificatePairs(t.Context(), "enrollment-ca", false); err == nil {
 		t.Fatal("issuer without key accepted")
 	}
 	if _, err := a.managedIssuer(t.Context(), "2"); err == nil {

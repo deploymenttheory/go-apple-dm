@@ -16,14 +16,20 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/state"
 )
 
-// Kind identifies the certificate workflow: vendor, push, HTTPS, or local issuer.
+// Kind identifies a managed certificate identity by what it is for. Two are issued by
+// Apple through its portals, and two are the operator's own.
 type Kind string
 
 const (
-	Vendor Kind = "vendor"
-	Push   Kind = "push"
-	HTTPS  Kind = "https"
-	Issuer Kind = "issuer"
+	// VendorSigning is Apple's MDM vendor CSR signing certificate, which signs a
+	// customer's push certificate request.
+	VendorSigning Kind = "vendor-signing"
+	// MDMPush is the customer APNs certificate whose topic lets the server wake devices.
+	MDMPush Kind = "mdm-push"
+	// ServerHTTPS is the server's own TLS identity for its public URL.
+	ServerHTTPS Kind = "server-https"
+	// EnrollmentCA is the local authority that issues device identities at enrollment.
+	EnrollmentCA Kind = "enrollment-ca"
 )
 
 var (
@@ -199,7 +205,7 @@ func (m *Manager) Begin(ctx context.Context, req Request) (Identity, error) {
 	if err != nil {
 		return Identity{}, err
 	}
-	if req.Kind != Vendor && req.Kind != Push && req.Kind != HTTPS && req.Kind != Issuer {
+	if req.Kind != VendorSigning && req.Kind != MDMPush && req.Kind != ServerHTTPS && req.Kind != EnrollmentCA {
 		return Identity{}, fmt.Errorf("%w: certificate kind", ErrInvalid)
 	}
 	if req.Subject.CommonName == "" {
@@ -370,13 +376,13 @@ func view(r record, now time.Time) Identity {
 		v.Revisions = append(v.Revisions, rev.Revision)
 		if rev.ID == r.Active {
 			lead := 60 * 24 * time.Hour
-			if r.Kind == Issuer {
+			if r.Kind == EnrollmentCA {
 				lead = 180 * 24 * time.Hour
 			}
 			if third := rev.NotAfter.Sub(rev.NotBefore) / 3; third < lead {
 				lead = third
 			}
-			if r.Kind == HTTPS && lead > 30*24*time.Hour {
+			if r.Kind == ServerHTTPS && lead > 30*24*time.Hour {
 				lead = 30 * 24 * time.Hour
 			}
 			v.RenewAt = rev.NotAfter.Add(-lead)
@@ -400,9 +406,9 @@ func view(r record, now time.Time) Identity {
 			v.NextAction = "activate revision " + rev.ID
 		default:
 			switch r.Kind {
-			case Vendor:
+			case VendorSigning:
 				v.NextAction = "upload vendor CSR at https://developer.apple.com/account/resources/certificates/list; import returned certificate"
-			case Push:
+			case MDMPush:
 				v.NextAction = "obtain vendor signature for customer CSR"
 				if len(rev.SignedRequest) > 0 {
 					v.NextAction = "upload signed request at https://identity.apple.com/pushcert/; import returned certificate"
@@ -410,9 +416,9 @@ func view(r record, now time.Time) Identity {
 						v.NextAction = "Renew the existing certificate at https://identity.apple.com/pushcert/ using the signed request; import the same-topic certificate"
 					}
 				}
-			case HTTPS:
+			case ServerHTTPS:
 				v.NextAction = "complete public ACME issuance or import the HTTPS certificate"
-			case Issuer:
+			case EnrollmentCA:
 				v.NextAction = "create or import the enrollment CA"
 			}
 		}

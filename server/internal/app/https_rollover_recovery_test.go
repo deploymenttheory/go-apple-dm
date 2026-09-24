@@ -54,45 +54,45 @@ func TestHTTPSTrustRecoveryResumesAfterEveryRepositoryFailure(t *testing.T) {
 func httpsRecoveryFixture(t *testing.T, pending string) (*App, lifecycle.Rollover) {
 	t.Helper()
 	a, _, _, _ := renewalFixture(t)
-	v := setupExecute(t, a, lifecycle.HTTPS, "lab", setupRequest("https", lifecycle.HTTPS))
-	setupExecute(t, a, lifecycle.HTTPS, "activate", SetupRequest{Revision: v.Identity.Pending})
+	v := setupExecute(t, a, lifecycle.ServerHTTPS, "lab", setupRequest("server-https", lifecycle.ServerHTTPS))
+	setupExecute(t, a, lifecycle.ServerHTTPS, "activate", SetupRequest{Revision: v.Identity.Pending})
 	c := clock.NewFake(a.cfg.Clock.Now().Add(time.Hour))
 	a.cfg.Clock = c
 	requireType[*state.Memory](t, a.protocol).Now = c.Now
 	ca := setupExecute(
 		t,
 		a,
-		lifecycle.Issuer,
+		lifecycle.EnrollmentCA,
 		"renew",
-		SetupRequest{Request: lifecycle.Request{ID: "https-ca"}, Force: true},
+		SetupRequest{Request: lifecycle.Request{ID: "server-https-ca"}, Force: true},
 	)
 	_, err := a.Certificates.CreateIssuer(
 		t.Context(),
-		"https-ca",
+		"server-https-ca",
 		ca.Identity.Pending,
 		20*365*24*time.Hour,
 	)
 	setupRequire(t, err, nil)
-	job, err := a.Certificates.PrepareRollover(t.Context(), "https-ca", "2", nil)
+	job, err := a.Certificates.PrepareRollover(t.Context(), "server-https-ca", "2", nil)
 	setupRequire(t, err, nil)
 	if pending != "" {
-		v = setupExecute(t, a, lifecycle.HTTPS, "renew", SetupRequest{Force: true})
-		issuer := "https-ca"
+		v = setupExecute(t, a, lifecycle.ServerHTTPS, "renew", SetupRequest{Force: true})
+		issuer := "server-https-ca"
 		if pending == "new" {
-			_, err = a.Certificates.ActivateRollover(t.Context(), "https-ca", "2")
+			_, err = a.Certificates.ActivateRollover(t.Context(), "server-https-ca", "2")
 			setupRequire(t, err, nil)
 		} else if pending == "foreign" {
 			other := setupExecute(
 				t,
 				a,
-				lifecycle.Issuer,
+				lifecycle.EnrollmentCA,
 				"create",
-				setupRequest("foreign", lifecycle.Issuer),
+				setupRequest("foreign", lifecycle.EnrollmentCA),
 			)
 			setupExecute(
 				t,
 				a,
-				lifecycle.Issuer,
+				lifecycle.EnrollmentCA,
 				"activate",
 				SetupRequest{
 					Request:  lifecycle.Request{ID: "foreign"},
@@ -102,7 +102,7 @@ func httpsRecoveryFixture(t *testing.T, pending string) (*App, lifecycle.Rollove
 			issuer = "foreign"
 		}
 		if pending != "empty" {
-			_, err = a.Certificates.IssueHTTPS(t.Context(), "https", v.Identity.Pending, issuer)
+			_, err = a.Certificates.IssueHTTPS(t.Context(), "server-https", v.Identity.Pending, issuer)
 			setupRequire(t, err, nil)
 		}
 	}
@@ -115,12 +115,12 @@ func TestHTTPSTrustActivationRecoversExistingPendingLeaves(t *testing.T) {
 	for _, pending := range []string{"old", "new", "empty", "foreign"} {
 		t.Run(pending, func(t *testing.T) {
 			a, job := httpsRecoveryFixture(t, pending)
-			before, err := a.Certificates.LoadMaterial(t.Context(), "https", "")
+			before, err := a.Certificates.LoadMaterial(t.Context(), "server-https", "")
 			setupRequire(t, err, nil)
 			err = a.activateHTTPSTrust(t.Context(), job)
 			if pending == "foreign" {
 				setupRequire(t, err, lifecycle.ErrConflict)
-				current, err := a.Certificates.Get(t.Context(), "https")
+				current, err := a.Certificates.Get(t.Context(), "server-https")
 				setupRequire(t, err, nil)
 				if current.Active != "1" || current.Pending != "2" {
 					t.Fatal("external pending certificate overwritten", current)
@@ -128,7 +128,7 @@ func TestHTTPSTrustActivationRecoversExistingPendingLeaves(t *testing.T) {
 				return
 			}
 			setupRequire(t, err, nil)
-			current, err := a.Certificates.Get(t.Context(), "https")
+			current, err := a.Certificates.Get(t.Context(), "server-https")
 			setupRequire(t, err, nil)
 			if current.Active == "1" || current.Pending != "" {
 				t.Fatal("TLS was not replaced", current)
@@ -140,7 +140,7 @@ func TestHTTPSTrustActivationRecoversExistingPendingLeaves(t *testing.T) {
 				t.Fatal("missing original identity")
 			}
 			setupRequire(t, a.activateHTTPSTrust(t.Context(), job), nil)
-			_, err = a.retireHTTPSTrust(t.Context(), "https-ca", "1")
+			_, err = a.retireHTTPSTrust(t.Context(), "server-https-ca", "1")
 			setupRequire(t, err, nil)
 		})
 	}
@@ -153,21 +153,21 @@ func TestHTTPSTrustRecoveryRejectsDamagedMaterial(t *testing.T) {
 		t.Run(damaged, func(t *testing.T) {
 			a, job := httpsRecoveryFixture(t, "old")
 			// Model a process restart after the CA activation transaction committed.
-			_, err := a.Certificates.ActivateRollover(t.Context(), "https-ca", "2")
+			_, err := a.Certificates.ActivateRollover(t.Context(), "server-https-ca", "2")
 			setupRequire(t, err, nil)
-			id, index := "https", 0
+			id, index := "server-https", 0
 			switch damaged {
 			case "pending leaf":
 				index = 1
 			case "new CA":
-				id, index = "https-ca", 1
+				id, index = "server-https-ca", 1
 			case "old CA":
-				id = "https-ca"
+				id = "server-https-ca"
 			case "missing active":
 				editSetupIdentity(
 					t,
 					a.protocol,
-					"https",
+					"server-https",
 					func(r map[string]any) { r["Active"] = "missing" },
 				)
 			case "missing identity":
@@ -187,7 +187,7 @@ func TestHTTPSTrustRecoveryRejectsDamagedMaterial(t *testing.T) {
 				t.Fatal("corrupt trust transition completed")
 			}
 			if damaged == "active leaf" || damaged == "old CA" {
-				if _, err := a.retireHTTPSTrust(t.Context(), "https-ca", "1"); err == nil {
+				if _, err := a.retireHTTPSTrust(t.Context(), "server-https-ca", "1"); err == nil {
 					t.Fatal("damaged authority retired")
 				}
 			}

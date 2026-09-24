@@ -51,7 +51,7 @@ func vendorFixture(t *testing.T) (*Manager, *faultRepository, Material, Material
 	intermediateCerts, err := certificates(intermediateCert)
 	requireError(t, err, nil)
 	m.Trust.Apple = append(cs, intermediateCerts...)
-	v := pending(t, m, "vendor", Vendor)
+	v := pending(t, m, "vendor-signing", VendorSigning)
 	mat, err := m.LoadMaterial(t.Context(), v.ID, v.Pending)
 	requireError(t, err, nil)
 	leaf := issueCertificate(t, intermediate, privateSigner(t, mat.Key).Public(), &x509.Certificate{
@@ -77,10 +77,10 @@ func vendorFixture(t *testing.T) (*Manager, *faultRepository, Material, Material
 func TestVendorAndCustomerCSRExchangeValidatesEveryBoundary(t *testing.T) {
 	m, _, root, vendor, leaf := vendorFixture(t)
 	ctx := t.Context()
-	push := pending(t, m, "customer", Push)
+	push := pending(t, m, "customer", MDMPush)
 	csr, err := m.Export(ctx, push.ID, "", "csr")
 	requireError(t, err, nil)
-	signed, err := m.Sign(ctx, "vendor", csr)
+	signed, err := m.Sign(ctx, "vendor-signing", csr)
 	requireError(t, err, nil)
 	attached, err := m.AttachSignature(ctx, push.ID, push.Pending, signed)
 	requireError(t, err, nil)
@@ -99,7 +99,7 @@ func TestVendorAndCustomerCSRExchangeValidatesEveryBoundary(t *testing.T) {
 	for range 2 {
 		adopted, err := m.Adopt(
 			ctx,
-			Request{ID: "adopted-vendor", Kind: Vendor},
+			Request{ID: "adopted-vendor", Kind: VendorSigning},
 			cs[0].Raw,
 			vendor.Key,
 		)
@@ -114,39 +114,39 @@ func TestVendorAndCustomerCSRExchangeValidatesEveryBoundary(t *testing.T) {
 	requireError(t, err, ErrInvalid)
 	_, err = m.Sign(ctx, "missing", csr)
 	requireError(t, err, ErrNotFound)
-	pending(t, m, "unsigned-vendor", Vendor)
+	pending(t, m, "unsigned-vendor", VendorSigning)
 	_, err = m.Sign(ctx, "unsigned-vendor", csr)
 	requireError(t, err, ErrNotFound)
-	if _, err = m.Sign(ctx, "vendor", []byte("invalid CSR")); err == nil {
+	if _, err = m.Sign(ctx, "vendor-signing", []byte("invalid CSR")); err == nil {
 		t.Fatal("invalid customer CSR signed")
 	}
 	_, err = m.AttachSignature(ctx, "authority", "1", signed)
 	requireError(t, err, ErrConflict)
-	_, err = m.Adopt(ctx, Request{ID: "adopted-vendor", Kind: Issuer}, root.Certificate, root.Key)
+	_, err = m.Adopt(ctx, Request{ID: "adopted-vendor", Kind: EnrollmentCA}, root.Certificate, root.Key)
 	requireError(t, err, ErrConflict)
-	_, err = m.Adopt(ctx, Request{ID: "adopted-vendor", Kind: Vendor}, root.Certificate, root.Key)
+	_, err = m.Adopt(ctx, Request{ID: "adopted-vendor", Kind: VendorSigning}, root.Certificate, root.Key)
 	requireError(t, err, ErrConflict)
-	_, err = m.Adopt(ctx, Request{ID: "unsigned-vendor", Kind: Vendor}, leaf, vendor.Key)
+	_, err = m.Adopt(ctx, Request{ID: "unsigned-vendor", Kind: VendorSigning}, leaf, vendor.Key)
 	requireError(t, err, ErrConflict)
-	for _, req := range []Request{{ID: "../vendor", Kind: Vendor}, {ID: "vendor", Kind: "bad"}} {
+	for _, req := range []Request{{ID: "../vendor", Kind: VendorSigning}, {ID: "vendor-signing", Kind: "bad"}} {
 		_, err = m.Adopt(ctx, req, leaf, vendor.Key)
 		requireError(t, err, ErrInvalid)
 	}
-	_, err = m.Adopt(ctx, Request{ID: "bad-pair", Kind: Vendor}, []byte("invalid"), vendor.Key)
+	_, err = m.Adopt(ctx, Request{ID: "bad-pair", Kind: VendorSigning}, []byte("invalid"), vendor.Key)
 	requireError(t, err, ErrInvalid)
-	_, err = m.Adopt(ctx, Request{ID: "wrong-key", Kind: Vendor}, leaf, root.Key)
+	_, err = m.Adopt(ctx, Request{ID: "wrong-key", Kind: VendorSigning}, leaf, root.Key)
 	requireError(t, err, ErrInvalid)
-	_, err = m.Import(ctx, "vendor", "1", leaf)
+	_, err = m.Import(ctx, "vendor-signing", "1", leaf)
 	requireError(t, err, nil)
-	_, err = m.Import(ctx, "vendor", "1", root.Certificate)
+	_, err = m.Import(ctx, "vendor-signing", "1", root.Certificate)
 	requireError(t, err, ErrConflict)
-	_, err = m.Import(ctx, "vendor", "missing", leaf)
+	_, err = m.Import(ctx, "vendor-signing", "missing", leaf)
 	requireError(t, err, ErrNotFound)
-	_, err = m.Activate(ctx, "vendor", "1")
+	_, err = m.Activate(ctx, "vendor-signing", "1")
 	requireError(t, err, nil)
-	_, err = m.Cancel(ctx, "vendor", "1")
+	_, err = m.Cancel(ctx, "vendor-signing", "1")
 	requireError(t, err, ErrConflict)
-	cert, err := m.Export(ctx, "vendor", "", "certificate")
+	cert, err := m.Export(ctx, "vendor-signing", "", "certificate")
 	requireError(t, err, nil)
 	if !bytes.Equal(cert, vendor.Certificate) {
 		t.Fatal("active certificate export changed")
@@ -164,10 +164,10 @@ type portalEnvelope struct {
 func TestReturnedVendorEnvelopeRejectsSubstitutionAndInvalidSignatures(t *testing.T) {
 	m, _, root, _, _ := vendorFixture(t)
 	ctx := t.Context()
-	v := pending(t, m, "customer", Push)
+	v := pending(t, m, "customer", MDMPush)
 	csr, err := m.Export(ctx, v.ID, "", "csr")
 	requireError(t, err, nil)
-	signed, err := m.Sign(ctx, "vendor", csr)
+	signed, err := m.Sign(ctx, "vendor-signing", csr)
 	requireError(t, err, nil)
 	xml, err := base64.StdEncoding.DecodeString(string(signed))
 	requireError(t, err, nil)
@@ -261,7 +261,7 @@ func TestImportRejectsUntrustedExpiredWrongHostAndWrongPurpose(t *testing.T) {
 	m.Trust.Apple = rootCerts
 	m.Trust.HTTPSRoots = x509.NewCertPool()
 	m.Trust.HTTPSRoots.AddCert(rootCerts[0])
-	for _, kind := range []Kind{HTTPS, Vendor, Push, Issuer} {
+	for _, kind := range []Kind{ServerHTTPS, VendorSigning, MDMPush, EnrollmentCA} {
 		id := string(kind)
 		v := pending(t, m, id, kind)
 		material, err := m.LoadMaterial(t.Context(), id, v.Pending)
@@ -278,7 +278,7 @@ func TestImportRejectsUntrustedExpiredWrongHostAndWrongPurpose(t *testing.T) {
 			t.Fatalf("%s accepted invalid purpose or hosts", kind)
 		}
 	}
-	v, err := m.Get(t.Context(), "https")
+	v, err := m.Get(t.Context(), "server-https")
 	requireError(t, err, nil)
 	material, err := m.LoadMaterial(t.Context(), v.ID, v.Pending)
 	requireError(t, err, nil)
@@ -361,7 +361,7 @@ func TestIssuerAndHTTPSCreationRetriesAndCorruptMaterial(t *testing.T) {
 	requireError(t, err, nil)
 	m.Trust.HTTPSRoots = x509.NewCertPool()
 	m.Trust.HTTPSRoots.AddCert(cs[0])
-	v := pending(t, m, "https", HTTPS)
+	v := pending(t, m, "server-https", ServerHTTPS)
 	_, err = m.CreateIssuer(ctx, "root", "1", -time.Hour)
 	requireError(t, err, ErrInvalid)
 	_, err = m.CreateIssuer(ctx, v.ID, v.Pending, time.Hour)
@@ -387,7 +387,7 @@ func TestIssuerAndHTTPSCreationRetriesAndCorruptMaterial(t *testing.T) {
 	requireError(t, err, nil)
 	adopted, err := m.Adopt(
 		ctx,
-		Request{ID: "adopted-https", Kind: HTTPS},
+		Request{ID: "adopted-https", Kind: ServerHTTPS},
 		first.Certificate,
 		first.Key,
 	)
@@ -395,7 +395,7 @@ func TestIssuerAndHTTPSCreationRetriesAndCorruptMaterial(t *testing.T) {
 	if len(adopted.DNSNames) != 2 {
 		t.Fatal("adoption lost SANs")
 	}
-	_, err = m.Begin(ctx, requestFor("root", Issuer))
+	_, err = m.Begin(ctx, requestFor("root", EnrollmentCA))
 	requireError(t, err, nil)
 	_, err = m.CreateIssuer(ctx, "root", "2", time.Hour)
 	requireError(t, err, ErrInvalid)

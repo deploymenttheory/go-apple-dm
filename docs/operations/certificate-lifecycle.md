@@ -47,16 +47,32 @@ DSN in `DM_DSN` (or name another environment variable with `-dsn-env`). Explicit
 with static TLS, enrollment CA, or file-based push identities; remove those old
 settings after adoption.
 
-## HTTPS and the enrollment issuer
+## The four managed identities
+
+Each identity is named for what it is. The name is the command group, the identity's default
+ID and the admin route segment, so one word is enough to say which certificate is meant.
+
+| Name | Issued by | Purpose |
+|---|---|---|
+| `vendor-signing` | Apple Developer | Signs a customer's push certificate request |
+| `mdm-push` | Apple Push Certificates Portal | Carries the APNs topic that wakes devices |
+| `server-https` | The operator, or a public ACME CA | The server's own TLS identity |
+| `enrollment-ca` | The operator | Issues device identities at enrollment |
+
+A deployment's `role` is a separate setting: `vendor` and `customer` say which half of the
+signing exchange it performs. See
+[decision 0059](../research/decisions/0059-managed-certificate-lifecycle.md).
+
+## The server HTTPS identity and the enrollment CA
 
 A local lab can create its HTTPS identity and a separate HTTPS trust CA:
 
 ```sh
-dmctl setup https lab -cn 'Local MDM HTTPS' -hosts localhost,127.0.0.1,::1
-dmctl setup https activate -revision 1
+dmctl setup server-https lab -cn 'Local MDM HTTPS' -hosts localhost,127.0.0.1,::1
+dmctl setup server-https activate -revision 1
 dmctl setup profile trust -out test-lab/local/certs/profiles/managed-https-trust.mobileconfig
-dmctl setup issuer create -cn 'MDM enrollment CA'
-dmctl setup issuer activate -revision 1
+dmctl setup enrollment-ca create -cn 'MDM enrollment CA'
+dmctl setup enrollment-ca activate -revision 1
 ```
 
 New lab CAs default to ten years. The HTTPS leaf uses a distinct private key and
@@ -69,7 +85,7 @@ supply `-http01-listen :80` at initialization). Configure public DNS and route p
 80 to the challenge listener. Then run:
 
 ```sh
-dmctl setup https acme -cn mdm.example.com -hosts mdm.example.com \
+dmctl setup server-https acme -cn mdm.example.com -hosts mdm.example.com \
   -contact mdm-operations@example.com -accept-terms -http01-listen :80
 ```
 
@@ -86,23 +102,23 @@ Alternatively, create the HTTPS CSR, submit it to your chosen CA, and import the
 returned chain:
 
 ```sh
-dmctl setup https request -cn mdm.example.com -hosts mdm.example.com
-dmctl setup workflow export -id https -artifact csr -out https.csr.pem
-dmctl setup https import -revision 1 -cert https-chain.pem
-dmctl setup https activate -revision 1
+dmctl setup server-https request -cn mdm.example.com -hosts mdm.example.com
+dmctl setup workflow export -id server-https -artifact csr -out https.csr.pem
+dmctl setup server-https import -revision 1 -cert https-chain.pem
+dmctl setup server-https activate -revision 1
 ```
 
 HTTPS imports must match the pending key, requested hostnames, validity period,
 and trusted chain. An existing HTTPS identity can instead be adopted with
-`setup adopt -kind https -id https -cert chain.pem -key key.pem`.
+`setup adopt -kind server-https -id server-https -cert chain.pem -key key.pem`.
 
-## Apple vendor signing identity
+## The vendor-signing identity
 
 Run these commands on the vendor deployment, or in the combined lab:
 
 ```sh
-dmctl setup vendor request -cn 'Example MDM Vendor' -organization 'Example Ltd'
-dmctl setup workflow export -id vendor -artifact csr -out vendor.certSigningRequest
+dmctl setup vendor-signing request -cn 'Example MDM Vendor' -organization 'Example Ltd'
+dmctl setup workflow export -id vendor-signing -artifact csr -out vendor.certSigningRequest
 ```
 
 **Operator step:** In the [Apple Developer certificate portal](https://developer.apple.com/account/resources/certificates/list),
@@ -111,8 +127,8 @@ the certificate. This requires the applicable Apple developer account access.
 Follow Apple's [vendor certificate instructions](https://developer.apple.com/help/account/certificates/mdm-vendor-csr-signing-certificate/).
 
 ```sh
-dmctl setup vendor import -revision 1 -cert vendor.cer
-dmctl setup vendor activate -revision 1
+dmctl setup vendor-signing import -revision 1 -cert vendor.cer
+dmctl setup vendor-signing activate -revision 1
 ```
 
 The importer accepts DER or PEM and completes Apple's issuer chain from the
@@ -121,14 +137,14 @@ ordered chain, and trust anchor. The legacy Apple root's SHA-1 self-signature is
 not revalidated as an issued certificate; signatures of issued chain members
 still undergo normal verification.
 
-## Customer push identity
+## The MDM push identity
 
 Run on the customer deployment or combined lab:
 
 ```sh
-dmctl setup push request -cn 'Example MDM Customer' -organization 'Example Ltd' \
+dmctl setup mdm-push request -cn 'Example MDM Customer' -organization 'Example Ltd' \
   -account mdm-owner@example.com
-dmctl setup push sign -revision 1
+dmctl setup mdm-push sign -revision 1
 ```
 
 In a combined deployment, signing uses the active local vendor identity. A
@@ -141,20 +157,20 @@ For an offline exchange between separate deployments:
 
 ```sh
 # Customer deployment
-dmctl setup workflow export -id push -artifact csr -out customer.csr.pem
+dmctl setup workflow export -id mdm-push -artifact csr -out customer.csr.pem
 
 # Vendor deployment, using its own setup file
-dmctl setup vendor sign -csr customer.csr.pem -out customer.signed.csr
+dmctl setup vendor-signing sign -csr customer.csr.pem -out customer.signed.csr
 
 # Customer deployment
-dmctl setup push sign -revision 1 -signed-request customer.signed.csr
+dmctl setup mdm-push sign -revision 1 -signed-request customer.signed.csr
 ```
 
 The customer verifies the returned signature, vendor chain, and exact CSR before
 saving the portal artifact.
 
 ```sh
-dmctl setup workflow export -id push -artifact signed-request -out customer.signed.csr
+dmctl setup workflow export -id mdm-push -artifact signed-request -out customer.signed.csr
 ```
 
 **Operator step:** Upload the signed request to the [Apple Push Certificates Portal](https://identity.apple.com/pushcert/)
@@ -167,8 +183,8 @@ The vendor signature is produced by
 signing key, never the customer's private key.
 
 ```sh
-dmctl setup push import -revision 1 -cert downloaded-mdm-push.pem
-dmctl setup push activate -revision 1
+dmctl setup mdm-push import -revision 1 -cert downloaded-mdm-push.pem
+dmctl setup mdm-push activate -revision 1
 dmctl setup check
 dmserver --setup-file "$DM_SETUP_FILE"
 ```
@@ -203,9 +219,9 @@ enrollment. Install the profile on the device using the normal enrollment flow.
 ```sh
 dmctl setup status
 dmctl setup check
-dmctl setup workflow show -id push
-dmctl setup workflow history -id push
-dmctl setup push renew
+dmctl setup workflow show -id mdm-push
+dmctl setup workflow history -id mdm-push
+dmctl setup mdm-push renew
 ```
 
 `check` exits unsuccessfully if required certificates are missing or expired. A
@@ -258,11 +274,11 @@ Locally managed enrollment roots prepare a successor before expiry. External
 issuers require a returned certificate from their CA. To prepare manually:
 
 ```sh
-dmctl setup issuer renew -force
+dmctl setup enrollment-ca renew -force
 # For a locally managed root; for an external issuer, export its CSR and import the chain.
-dmctl setup issuer create -revision 2
-dmctl setup issuer rollover -revision 2
-dmctl setup issuer status -revision 2
+dmctl setup enrollment-ca create -revision 2
+dmctl setup enrollment-ca rollover -revision 2
+dmctl setup enrollment-ca status -revision 2
 ```
 
 Rollover installs issuer-specific SCEP and device ACME routes, trusts both CAs,
@@ -273,12 +289,12 @@ Unsupported profile installation, missing original profile metadata, failed
 commands, or unknown issuer evidence produce an explicit blocker.
 
 ```sh
-dmctl setup issuer retry -revision 2 -device-id DEVICE-UUID
-dmctl setup issuer device-status -device-id DEVICE-UUID
+dmctl setup enrollment-ca retry -revision 2 -device-id DEVICE-UUID
+dmctl setup enrollment-ca device-status -device-id DEVICE-UUID
 # Retry ordinary device identity renewal without a rollover revision:
-dmctl setup issuer retry -device-id DEVICE-UUID
+dmctl setup enrollment-ca retry -device-id DEVICE-UUID
 # After the cohort is complete and no enabled device depends on revision 1:
-dmctl setup issuer retire -revision 1
+dmctl setup enrollment-ca retire -revision 1
 ```
 
 Retirement closes the old issuing routes and removes the issuer from the server's
@@ -296,7 +312,7 @@ devices. It keeps the old HTTPS certificate until that cohort confirms trust,
 then activates the new CA and HTTPS leaf. New enrollment profiles include pending
 HTTPS trust. An exported profile alone is not confirmation. Inspect or control
 this workflow with `issuer status`, `issuer rollover`, `issuer retry`, and `issuer
-retire` using `-id https-ca`. Public HTTPS with a system-trusted CA avoids this lab
+retire` using `-id server-https-ca`. Public HTTPS with a system-trusted CA avoids this lab
 trust distribution step.
 
 Administrative clients also need the pending lab HTTPS CA before leaf activation.

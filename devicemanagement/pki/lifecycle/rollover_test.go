@@ -18,7 +18,7 @@ func TestRolloverRetainsOfflineDevicesAndRejectsStaleWorkers(t *testing.T) {
 	store := state.NewMemory()
 	store.Now = func() time.Time { return now }
 	m := &lifecycle.Manager{Store: store}
-	req := lifecycle.Request{ID: "issuer", Kind: lifecycle.Issuer, Subject: pkix.Name{CommonName: "Enrollment CA"}}
+	req := lifecycle.Request{ID: "issuer", Kind: lifecycle.EnrollmentCA, Subject: pkix.Name{CommonName: "Enrollment CA"}}
 	item, err := m.Begin(ctx, req)
 	if err != nil {
 		t.Fatal(err)

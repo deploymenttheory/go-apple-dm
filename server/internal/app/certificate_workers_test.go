@@ -25,36 +25,36 @@ import (
 func TestCertificateWorkerRenewsOnlyManagedLeavesAndPersistsNotices(t *testing.T) {
 	a, clock := memorySetupApp(t)
 	ctx := t.Context()
-	v := setupExecute(t, a, lifecycle.HTTPS, "lab", setupRequest("https", lifecycle.HTTPS))
-	setupExecute(t, a, lifecycle.HTTPS, "activate", SetupRequest{Revision: v.Identity.Pending})
+	v := setupExecute(t, a, lifecycle.ServerHTTPS, "lab", setupRequest("server-https", lifecycle.ServerHTTPS))
+	setupExecute(t, a, lifecycle.ServerHTTPS, "activate", SetupRequest{Revision: v.Identity.Pending})
 	clock.Advance(340 * 24 * time.Hour)
 	setupRequire(t, a.certificateRenewalPass(ctx), nil)
-	current, err := a.Certificates.Get(ctx, "https")
+	current, err := a.Certificates.Get(ctx, "server-https")
 	setupRequire(t, err, nil)
 	if current.Active != "2" || current.Pending != "" {
 		t.Fatal("scheduled HTTPS renewal did not activate", current)
 	}
 	setupRequire(t, a.certificateRenewalPass(ctx), nil)
-	v = setupExecute(t, a, lifecycle.Push, "request", setupRequest("push", lifecycle.Push))
+	v = setupExecute(t, a, lifecycle.MDMPush, "request", setupRequest("mdm-push", lifecycle.MDMPush))
 	if err := a.advanceCertificate(ctx, *v.Identity); err == nil {
 		t.Fatal("missing vendor not reported")
 	}
 	a.cfg.Setup.Role = "customer"
 	setupRequire(t, a.advanceCertificate(ctx, *v.Identity), nil)
 	a.cfg.Setup.Role = "combined"
-	editSetupIdentity(t, a.protocol, "push", func(r map[string]any) {
+	editSetupIdentity(t, a.protocol, "mdm-push", func(r map[string]any) {
 		requireType[map[string]any](t, requireType[[]any](t, r["Revisions"])[0])["SignedRequest"] = base64.StdEncoding.EncodeToString(
 			[]byte("already signed"),
 		)
 	})
 	setupRequire(t, a.advanceCertificate(ctx, *v.Identity), nil)
-	v = setupExecute(t, a, lifecycle.HTTPS, "request", setupRequest("imported", lifecycle.HTTPS))
+	v = setupExecute(t, a, lifecycle.ServerHTTPS, "request", setupRequest("imported", lifecycle.ServerHTTPS))
 	setupRequire(t, a.advanceCertificate(ctx, *v.Identity), nil)
 	setupRequire(
 		t,
 		a.advanceCertificate(
 			ctx,
-			lifecycle.Identity{Request: lifecycle.Request{Kind: lifecycle.Vendor}},
+			lifecycle.Identity{Request: lifecycle.Request{Kind: lifecycle.VendorSigning}},
 		),
 		nil,
 	)
@@ -62,7 +62,7 @@ func TestCertificateWorkerRenewsOnlyManagedLeavesAndPersistsNotices(t *testing.T
 		t,
 		a.advanceCertificate(
 			ctx,
-			lifecycle.Identity{Request: lifecycle.Request{Kind: lifecycle.Issuer}},
+			lifecycle.Identity{Request: lifecycle.Request{Kind: lifecycle.EnrollmentCA}},
 		),
 		nil,
 	)
@@ -70,13 +70,13 @@ func TestCertificateWorkerRenewsOnlyManagedLeavesAndPersistsNotices(t *testing.T
 		http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) { w.WriteHeader(403) }),
 	)
 	defer ca.Close()
-	req := setupRequest("public", lifecycle.HTTPS)
+	req := setupRequest("public", lifecycle.ServerHTTPS)
 	req.PublicACME = &lifecycle.PublicACMEOptions{
 		Directory:   ca.URL,
 		Contact:     "operator@example.com",
 		AcceptTerms: true,
 	}
-	v = setupExecute(t, a, lifecycle.HTTPS, "acme", req)
+	v = setupExecute(t, a, lifecycle.ServerHTTPS, "acme", req)
 	if err := a.advanceCertificate(ctx, *v.Identity); err == nil {
 		t.Fatal("CA rejection ignored")
 	}
@@ -88,20 +88,20 @@ func TestCertificateWorkerRejectsBrokenAndForeignMaterial(t *testing.T) {
 	for _, mode := range []string{"leaf PEM", "leaf DER", "CA PEM", "CA DER", "different CA", "missing CA", "missing material", "ACME read failure", "CA read failure", "issuance conflict"} {
 		t.Run(mode, func(t *testing.T) {
 			a, clock := memorySetupApp(t)
-			v := setupExecute(t, a, lifecycle.HTTPS, "lab", setupRequest("https", lifecycle.HTTPS))
+			v := setupExecute(t, a, lifecycle.ServerHTTPS, "lab", setupRequest("server-https", lifecycle.ServerHTTPS))
 			setupExecute(
 				t,
 				a,
-				lifecycle.HTTPS,
+				lifecycle.ServerHTTPS,
 				"activate",
 				SetupRequest{Revision: v.Identity.Pending},
 			)
 			clock.Advance(time.Hour)
-			v = setupExecute(t, a, lifecycle.HTTPS, "renew", SetupRequest{Force: true})
+			v = setupExecute(t, a, lifecycle.ServerHTTPS, "renew", SetupRequest{Force: true})
 			if mode == "leaf PEM" || mode == "leaf DER" || mode == "CA PEM" || mode == "CA DER" {
-				id := "https"
+				id := "server-https"
 				if mode == "CA PEM" || mode == "CA DER" {
-					id = "https-ca"
+					id = "server-https-ca"
 				}
 				bad := []byte("broken")
 				if mode == "leaf DER" || mode == "CA DER" {
@@ -118,14 +118,14 @@ func TestCertificateWorkerRejectsBrokenAndForeignMaterial(t *testing.T) {
 				other := setupExecute(
 					t,
 					a,
-					lifecycle.Issuer,
+					lifecycle.EnrollmentCA,
 					"create",
-					setupRequest("other", lifecycle.Issuer),
+					setupRequest("other", lifecycle.EnrollmentCA),
 				)
 				setupExecute(
 					t,
 					a,
-					lifecycle.Issuer,
+					lifecycle.EnrollmentCA,
 					"activate",
 					SetupRequest{
 						Request:  lifecycle.Request{ID: "other"},
@@ -278,12 +278,12 @@ func TestManagedOTAAndRevocationRoutesRequireCurrentTrust(t *testing.T) {
 // TestIssuerRenewalWorkerPreparesSuccessorAndRestartsPreparedRollover checks issuer renewal worker
 // prepares successor and restarts prepared rollover.
 func TestIssuerRenewalWorkerPreparesSuccessorAndRestartsPreparedRollover(t *testing.T) {
-	for _, id := range []string{"issuer", "https-ca"} {
+	for _, id := range []string{"enrollment-ca", "server-https-ca"} {
 		t.Run(id, func(t *testing.T) {
 			a, _, _, job := renewalFixture(t)
 			// A completed previous transition allows the next worker pass to inspect
 			// the active root; the HTTPS authority has no previous transition.
-			if id == "issuer" {
+			if id == "enrollment-ca" {
 				v, err := a.Certificates.Get(t.Context(), id)
 				setupRequire(t, err, nil)
 				v.Pending = "missing"
@@ -291,7 +291,7 @@ func TestIssuerRenewalWorkerPreparesSuccessorAndRestartsPreparedRollover(t *test
 					t.Fatal("missing successor ignored")
 				}
 				job.Phase = "prepared"
-				setupJSON(t, a.protocol, "pki/lifecycle/rollover/issuer/2", job)
+				setupJSON(t, a.protocol, "pki/lifecycle/rollover/enrollment-ca/2", job)
 				if err = a.identityRenewalPass(t.Context()); err == nil {
 					t.Fatal("stale prepared job ignored")
 				}
@@ -302,7 +302,7 @@ func TestIssuerRenewalWorkerPreparesSuccessorAndRestartsPreparedRollover(t *test
 				v := setupExecute(
 					t,
 					a,
-					lifecycle.Issuer,
+					lifecycle.EnrollmentCA,
 					"renew",
 					SetupRequest{Request: lifecycle.Request{ID: id}, Force: true},
 				)
@@ -322,14 +322,14 @@ func TestIssuerRenewalWorkerPreparesSuccessorAndRestartsPreparedRollover(t *test
 func TestIdleIdentityWorkerHandlesEvidenceAndStorageFailures(t *testing.T) {
 	a, e, _, job := renewalFixture(t)
 	job.Phase = "complete"
-	setupJSON(t, a.protocol, "pki/lifecycle/rollover/issuer/2", job)
+	setupJSON(t, a.protocol, "pki/lifecycle/rollover/enrollment-ca/2", job)
 	setupRequire(t, a.identityRenewalPass(t.Context()), nil)
 	setupJSON(
 		t,
 		a.protocol,
 		"issued-identity:"+e.CertHash,
 		identityEvidence{
-			Issuer:   "issuer",
+			Issuer:   "enrollment-ca",
 			Method:   "scep",
 			NotAfter: a.cfg.Clock.Now().Add(365 * 24 * time.Hour),
 		},

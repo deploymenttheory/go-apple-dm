@@ -85,7 +85,7 @@ func (m *Manager) ConfigurePublicACME(ctx context.Context, id string, o PublicAC
 	if err != nil {
 		return err
 	}
-	if r.Kind != HTTPS {
+	if r.Kind != ServerHTTPS {
 		return ErrInvalid
 	}
 	if o.Directory == "" {
@@ -149,7 +149,7 @@ func (m *Manager) RunPublicACME(ctx context.Context, id string, httpClient *http
 	if err != nil {
 		return Identity{}, err
 	}
-	if r.Kind != HTTPS {
+	if r.Kind != ServerHTTPS {
 		return Identity{}, ErrInvalid
 	}
 	if r.Pending == "" {

@@ -97,12 +97,12 @@ func (a *App) setupRoutes() []adminRoute {
 	}
 	out := []adminRoute{
 		{
-			Pattern: "POST /setup/vendor/sign",
+			Pattern: "POST /setup/vendor-signing/sign",
 			Action:  ActionSignVendorCSR,
 			Family:  "setup",
 			Handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				r.SetPathValue("operation", "sign")
-				a.setupOperation(w, r, lifecycle.Vendor)
+				a.setupOperation(w, r, lifecycle.VendorSigning)
 			}),
 		},
 		{
@@ -158,15 +158,20 @@ func (a *App) setupRoutes() []adminRoute {
 			Handler: http.HandlerFunc(a.setupExport),
 		},
 	}
-	for kind, action := range map[string]string{"vendor": ActionManageVendor, "push": ActionManagePushCerts, "https": ActionManageHTTPS, "issuer": ActionManageIssuer} {
+	for kind, action := range map[lifecycle.Kind]string{
+		lifecycle.VendorSigning: ActionManageVendor,
+		lifecycle.MDMPush:       ActionManagePushCerts,
+		lifecycle.ServerHTTPS:   ActionManageHTTPS,
+		lifecycle.EnrollmentCA:  ActionManageIssuer,
+	} {
 		out = append(
 			out,
 			adminRoute{
-				Pattern: "POST /setup/" + kind + "/{operation}",
+				Pattern: "POST /setup/" + string(kind) + "/{operation}",
 				Action:  action,
 				Family:  "setup",
 				Handler: http.HandlerFunc(
-					func(w http.ResponseWriter, r *http.Request) { a.setupOperation(w, r, lifecycle.Kind(kind)) },
+					func(w http.ResponseWriter, r *http.Request) { a.setupOperation(w, r, kind) },
 				),
 			},
 		)
@@ -269,8 +274,8 @@ func (a *App) ExecuteSetup(
 	if a.Certificates == nil {
 		return SetupResult{}, ErrConfig
 	}
-	if kind != lifecycle.Vendor && kind != lifecycle.Push && kind != lifecycle.HTTPS &&
-		kind != lifecycle.Issuer {
+	if kind != lifecycle.VendorSigning && kind != lifecycle.MDMPush && kind != lifecycle.ServerHTTPS &&
+		kind != lifecycle.EnrollmentCA {
 		return SetupResult{}, lifecycle.ErrInvalid
 	}
 	if len(req.Key) > 0 && operation != "adopt" {
@@ -299,8 +304,8 @@ func (a *App) ExecuteSetup(
 		}
 	}
 	config := a.cfg.Setup
-	if (kind == lifecycle.Vendor && config.Role == "customer") ||
-		((kind == lifecycle.Push || kind == lifecycle.Issuer) && config.Role == "vendor") {
+	if (kind == lifecycle.VendorSigning && config.Role == "customer") ||
+		((kind == lifecycle.MDMPush || kind == lifecycle.EnrollmentCA) && config.Role == "vendor") {
 		return SetupResult{}, fmt.Errorf(
 			"%w: operation unavailable for deployment role",
 			lifecycle.ErrInvalid,
@@ -308,13 +313,13 @@ func (a *App) ExecuteSetup(
 	}
 	if req.ID == "" {
 		switch kind {
-		case lifecycle.Vendor:
+		case lifecycle.VendorSigning:
 			req.ID = config.VendorID
-		case lifecycle.Push:
+		case lifecycle.MDMPush:
 			req.ID = config.PushID
-		case lifecycle.HTTPS:
+		case lifecycle.ServerHTTPS:
 			req.ID = config.HTTPSID
-		case lifecycle.Issuer:
+		case lifecycle.EnrollmentCA:
 			req.ID = config.IssuerID
 		}
 	}
@@ -333,12 +338,12 @@ func (a *App) ExecuteSetup(
 	var item lifecycle.Identity
 	switch operation {
 	case "retry":
-		if kind != lifecycle.Issuer {
+		if kind != lifecycle.EnrollmentCA {
 			return SetupResult{}, lifecycle.ErrInvalid
 		}
 		return SetupResult{}, a.retryMigration(ctx, req.ID, req.Revision, req.Device)
 	case "device-status":
-		if kind != lifecycle.Issuer || req.Device == "" {
+		if kind != lifecycle.EnrollmentCA || req.Device == "" {
 			return SetupResult{}, lifecycle.ErrInvalid
 		}
 		migration, e := a.deviceRenewalStatus(ctx, req.Device)
@@ -347,7 +352,7 @@ func (a *App) ExecuteSetup(
 		if err != nil {
 			return SetupResult{}, wrapError(err)
 		}
-		if kind == lifecycle.Issuer {
+		if kind == lifecycle.EnrollmentCA {
 			rev := req.Revision
 			if rev == "" {
 				rev = existing.Pending
@@ -377,7 +382,7 @@ func (a *App) ExecuteSetup(
 		}
 		return SetupResult{Identity: &existing}, nil
 	case "rollover":
-		if kind != lifecycle.Issuer {
+		if kind != lifecycle.EnrollmentCA {
 			return SetupResult{}, lifecycle.ErrInvalid
 		}
 		var job lifecycle.Rollover
@@ -389,7 +394,7 @@ func (a *App) ExecuteSetup(
 		}
 		return SetupResult{Rollover: &job}, wrapError(e)
 	case "retire":
-		if kind != lifecycle.Issuer {
+		if kind != lifecycle.EnrollmentCA {
 			return SetupResult{}, lifecycle.ErrInvalid
 		}
 		if req.ID == config.HTTPSCAID {
@@ -411,7 +416,7 @@ func (a *App) ExecuteSetup(
 		}
 		item, err = manager.Import(ctx, req.ID, req.Revision, req.Certificate)
 	case "activate":
-		if kind == lifecycle.Issuer && existing.Active != "" && existing.Active != req.Revision {
+		if kind == lifecycle.EnrollmentCA && existing.Active != "" && existing.Active != req.Revision {
 			return SetupResult{}, fmt.Errorf(
 				"%w: use issuer rollover for an existing enrollment authority",
 				lifecycle.ErrConflict,
@@ -421,7 +426,7 @@ func (a *App) ExecuteSetup(
 	case "cancel":
 		item, err = manager.Cancel(ctx, req.ID, req.Revision)
 	case "acme":
-		if kind != lifecycle.HTTPS || req.PublicACME == nil {
+		if kind != lifecycle.ServerHTTPS || req.PublicACME == nil {
 			return SetupResult{}, lifecycle.ErrInvalid
 		}
 		item, err = manager.Begin(ctx, req.Request)
@@ -432,7 +437,7 @@ func (a *App) ExecuteSetup(
 		if existing.Active != "" && existing.Pending == "" {
 			return SetupResult{Identity: &existing}, nil
 		}
-		if kind != lifecycle.HTTPS {
+		if kind != lifecycle.ServerHTTPS {
 			return SetupResult{}, lifecycle.ErrInvalid
 		}
 		caID := config.HTTPSCAID
@@ -445,7 +450,7 @@ func (a *App) ExecuteSetup(
 				ctx,
 				lifecycle.Request{
 					ID:      caID,
-					Kind:    lifecycle.Issuer,
+					Kind:    lifecycle.EnrollmentCA,
 					Subject: pkix.Name{CommonName: "go-apple-dm lab HTTPS CA"},
 				},
 			)
@@ -475,7 +480,7 @@ func (a *App) ExecuteSetup(
 		if existing.Active != "" && existing.Pending == "" {
 			return SetupResult{Identity: &existing}, nil
 		}
-		if kind != lifecycle.Issuer {
+		if kind != lifecycle.EnrollmentCA {
 			return SetupResult{}, lifecycle.ErrInvalid
 		}
 		item, err = manager.Begin(ctx, req.Request)
@@ -488,11 +493,11 @@ func (a *App) ExecuteSetup(
 			)
 		}
 	case "sign":
-		if kind == lifecycle.Vendor {
+		if kind == lifecycle.VendorSigning {
 			data, err := manager.Sign(ctx, req.ID, req.CSR)
 			return SetupResult{Data: data}, wrapError(err)
 		}
-		if kind != lifecycle.Push {
+		if kind != lifecycle.MDMPush {
 			return SetupResult{}, lifecycle.ErrInvalid
 		}
 		if req.Revision == "" {
@@ -557,7 +562,8 @@ func (a *App) remoteVendorSignature(
 	if err != nil {
 		return nil, wrapError(err)
 	}
-	u.Path = strings.TrimRight(u.Path, "/") + "/admin/v1/setup/vendor/sign"
+	u.Path = strings.TrimRight(u.Path, "/") + "/admin/v1/setup/" +
+		string(lifecycle.VendorSigning) + "/sign"
 	request, err := http.NewRequestWithContext(
 		ctx,
 		http.MethodPost,

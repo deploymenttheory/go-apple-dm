@@ -145,7 +145,7 @@ func TestPebbleHTTP01Recovery(t *testing.T) {
 	if !manager.Trust.HTTPSRoots.AppendCertsFromPEM(signingRoot) {
 		t.Fatal("issued-certificate test root")
 	}
-	req := Request{ID: "https", Kind: HTTPS, Subject: pkix.Name{CommonName: "localhost"}, DNSNames: []string{"localhost"}}
+	req := Request{ID: "server-https", Kind: ServerHTTPS, Subject: pkix.Name{CommonName: "localhost"}, DNSNames: []string{"localhost"}}
 	item, err := manager.Begin(ctx, req)
 	if err != nil {
 		t.Fatal(err)

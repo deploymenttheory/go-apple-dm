@@ -20,7 +20,7 @@ func (m *Manager) IssueHTTPS(ctx context.Context, id, rev, issuerID string) (Ide
 	if err != nil {
 		return Identity{}, err
 	}
-	if r.Kind != HTTPS || r.Pending != rev {
+	if r.Kind != ServerHTTPS || r.Pending != rev {
 		return Identity{}, ErrConflict
 	}
 	v, err := revision(&r, rev)

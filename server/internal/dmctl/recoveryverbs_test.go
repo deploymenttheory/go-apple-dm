@@ -33,8 +33,8 @@ func TestRecoveryCommandsPreserveEnrollmentAndIssuer(t *testing.T) {
 	source := filepath.Join(dir, "source")
 	call("setup", "init", "-dir", source, "-role", "combined")
 	setup := filepath.Join(source, "setup.json")
-	call("setup", "issuer", "create", "-setup-file", setup, "-cn", "Recovery issuer")
-	call("setup", "issuer", "activate", "-setup-file", setup, "-revision", "1")
+	call("setup", "enrollment-ca", "create", "-setup-file", setup, "-cn", "Recovery issuer")
+	call("setup", "enrollment-ca", "activate", "-setup-file", setup, "-revision", "1")
 	cfg, err := app.LoadSetupFile(setup, nil)
 	if err != nil {
 		t.Fatal(err)
@@ -48,7 +48,7 @@ func TestRecoveryCommandsPreserveEnrollmentAndIssuer(t *testing.T) {
 	if err := a.Store.Import(t.Context(), storage.EnrollmentExport{Enrollment: storage.Enrollment{ID: id, Enabled: true, CertHash: "original-certificate", CertHashAt: at, TokenUpdatedAt: at, Push: mdm.Push{Topic: "original-push-topic", Token: []byte("original-token"), Magic: "original-magic"}}}); err != nil {
 		t.Fatal(err)
 	}
-	material, err := a.Certificates.LoadMaterial(t.Context(), "issuer", "1")
+	material, err := a.Certificates.LoadMaterial(t.Context(), "enrollment-ca", "1")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -120,7 +120,7 @@ func TestRecoveryCommandsPreserveEnrollmentAndIssuer(t *testing.T) {
 	if err != nil || got.CertHash != "original-certificate" || got.Push.Topic != "original-push-topic" || string(got.Push.Token) != "original-token" || !got.TokenUpdatedAt.Equal(at) {
 		t.Fatal("enrollment changed", got, err)
 	}
-	newMaterial, err := target.Certificates.LoadMaterial(t.Context(), "issuer", "1")
+	newMaterial, err := target.Certificates.LoadMaterial(t.Context(), "enrollment-ca", "1")
 	if err != nil || !bytes.Equal(material.Key, newMaterial.Key) || !bytes.Equal(material.Certificate, newMaterial.Certificate) {
 		t.Fatal("issuer identity changed", err)
 	}

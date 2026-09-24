@@ -50,15 +50,15 @@ func managedRolloverApp(t *testing.T) (*App, mdm.EnrollmentID) {
 func TestManagedIssuerRolloverKeepsOfflineDeviceAndRetiresLegacyRoute(t *testing.T) {
 	ctx := t.Context()
 	a, id := managedRolloverApp(t)
-	a.cfg.Setup = &SetupConfig{Role: "combined", IssuerID: "issuer"}
+	a.cfg.Setup = &SetupConfig{Role: "combined", IssuerID: "enrollment-ca"}
 	a.Certificates = &lifecycle.Manager{Store: a.protocol}
 	key, err := x509.MarshalPKCS8PrivateKey(a.enroll.caKey)
 	if err != nil {
 		t.Fatal(err)
 	}
 	req := lifecycle.Request{
-		ID:      "issuer",
-		Kind:    lifecycle.Issuer,
+		ID:      "enrollment-ca",
+		Kind:    lifecycle.EnrollmentCA,
 		Subject: pkix.Name{CommonName: "managed enrollment CA"},
 	}
 	if _, err = a.Certificates.Adopt(
@@ -298,18 +298,18 @@ func TestSetupAPIAuthRolesAndPublicHistory(t *testing.T) {
 	body := `{"subject":{"CommonName":"test vendor"}}`
 	if response := request(
 		"POST",
-		"/admin/v1/setup/vendor/request",
+		"/admin/v1/setup/vendor-signing/request",
 		body,
 		cfg.BootstrapToken,
 	); response.Code != 400 {
 		t.Fatal(response.Code, response.Body.String())
 	}
 	body = `{"subject":{"CommonName":"customer"}}`
-	response := request("POST", "/admin/v1/setup/push/request", body, cfg.BootstrapToken)
+	response := request("POST", "/admin/v1/setup/mdm-push/request", body, cfg.BootstrapToken)
 	if response.Code != 200 {
 		t.Fatal(response.Code, response.Body.String())
 	}
-	response = request("GET", "/admin/v1/setup/workflow/push/history", "", cfg.BootstrapToken)
+	response = request("GET", "/admin/v1/setup/workflow/mdm-push/history", "", cfg.BootstrapToken)
 	if response.Code != 200 || !strings.Contains(response.Body.String(), "fixture-root") {
 		t.Fatal(response.Code, response.Body.String())
 	}
@@ -317,7 +317,7 @@ func TestSetupAPIAuthRolesAndPublicHistory(t *testing.T) {
 		strings.Contains(response.Body.String(), "SignedRequest") {
 		t.Fatal("history leaked material")
 	}
-	response = request("GET", "/admin/v1/setup/workflow/push/export?artifact=csr", "", cfg.BootstrapToken)
+	response = request("GET", "/admin/v1/setup/workflow/mdm-push/export?artifact=csr", "", cfg.BootstrapToken)
 	if response.Code != http.StatusOK || !strings.Contains(response.Body.String(), "BEGIN CERTIFICATE REQUEST") {
 		t.Fatal("public CSR export failed", response.Code, response.Body.String())
 	}
@@ -333,7 +333,7 @@ func TestSetupAPIAuthRolesAndPublicHistory(t *testing.T) {
 	}
 	response = request(
 		"GET",
-		"/admin/v1/setup/workflow/push/export?artifact=key",
+		"/admin/v1/setup/workflow/mdm-push/export?artifact=key",
 		"",
 		cfg.BootstrapToken,
 	)
@@ -410,9 +410,9 @@ func TestHTTPSCARolloverWaitsForTrustBeforeChangingTLS(t *testing.T) {
 	a, id := managedRolloverApp(t)
 	a.cfg.Setup = &SetupConfig{
 		Role:      "combined",
-		IssuerID:  "issuer",
-		HTTPSCAID: "https-ca",
-		HTTPSID:   "https",
+		IssuerID:  "enrollment-ca",
+		HTTPSCAID: "server-https-ca",
+		HTTPSID:   "server-https",
 	}
 	a.Certificates = &lifecycle.Manager{Store: a.protocol}
 	key, err := x509.MarshalPKCS8PrivateKey(a.enroll.caKey)
@@ -421,10 +421,10 @@ func TestHTTPSCARolloverWaitsForTrustBeforeChangingTLS(t *testing.T) {
 	}
 	cert := pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: a.enroll.caCert.Raw})
 	private := pem.EncodeToMemory(&pem.Block{Type: "PRIVATE KEY", Bytes: key})
-	for _, name := range []string{"issuer", "https-ca"} {
+	for _, name := range []string{"enrollment-ca", "server-https-ca"} {
 		if _, err := a.Certificates.Adopt(
 			ctx,
-			lifecycle.Request{ID: name, Kind: lifecycle.Issuer},
+			lifecycle.Request{ID: name, Kind: lifecycle.EnrollmentCA},
 			cert,
 			private,
 		); err != nil {
@@ -432,18 +432,18 @@ func TestHTTPSCARolloverWaitsForTrustBeforeChangingTLS(t *testing.T) {
 		}
 	}
 	request := lifecycle.Request{
-		ID:       "https",
-		Kind:     lifecycle.HTTPS,
+		ID:       "server-https",
+		Kind:     lifecycle.ServerHTTPS,
 		Subject:  pkix.Name{CommonName: "mdm.example"},
 		DNSNames: []string{"mdm.example"},
 	}
-	first, err := a.ExecuteSetup(ctx, lifecycle.HTTPS, "lab", SetupRequest{Request: request})
+	first, err := a.ExecuteSetup(ctx, lifecycle.ServerHTTPS, "lab", SetupRequest{Request: request})
 	if err != nil {
 		t.Fatal(err)
 	}
 	if _, err = a.ExecuteSetup(
 		ctx,
-		lifecycle.HTTPS,
+		lifecycle.ServerHTTPS,
 		"activate",
 		SetupRequest{Request: request, Revision: first.Identity.Pending},
 	); err != nil {
@@ -453,7 +453,7 @@ func TestHTTPSCARolloverWaitsForTrustBeforeChangingTLS(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	ca, err := a.Certificates.Get(ctx, "https-ca")
+	ca, err := a.Certificates.Get(ctx, "server-https-ca")
 	if err != nil {
 		t.Fatal(err)
 	}

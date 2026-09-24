@@ -22,15 +22,24 @@ import (
 func runSetup(ctx context.Context, e *env, args []string) error {
 	if len(args) == 0 {
 		return fmt.Errorf(
-			"%w: setup needs init, status, check, vendor, push, https, issuer, workflow or profile",
+			"%w: setup needs init, status, check, vendor-signing, mdm-push, server-https,"+
+				" enrollment-ca, workflow or profile",
 			ErrUsage,
 		)
 	}
 	group, operation := args[0], ""
 	rest := args[1:]
-	if group == "vendor" || group == "push" || group == "https" || group == "issuer" ||
-		group == "workflow" ||
-		group == "profile" {
+	switch {
+	case isCertificateKind(group), group == "workflow", group == "profile",
+		group == "init", group == "status", group == "check", group == "adopt":
+	default:
+		return fmt.Errorf(
+			"%w: unknown setup group %q: use vendor-signing, mdm-push, server-https,"+
+				" enrollment-ca, workflow, profile, init, status, check or adopt",
+			ErrUsage, group,
+		)
+	}
+	if isCertificateKind(group) || group == "workflow" || group == "profile" {
 		if len(rest) == 0 {
 			return fmt.Errorf("%w: setup %s needs an operation", ErrUsage, group)
 		}
@@ -90,7 +99,11 @@ func runSetup(ctx context.Context, e *env, args []string) error {
 	contact := fs.String("contact", "", "public ACME account contact email")
 	acceptTerms := fs.Bool("accept-terms", false, "accept the public ACME CA terms")
 	http01Listen := fs.String("http01-listen", "", "local HTTP-01 challenge listen address")
-	kindFlag := fs.String("kind", "", "certificate kind for setup adopt")
+	kindFlag := fs.String(
+		"kind",
+		"",
+		"certificate kind for setup adopt: vendor-signing, mdm-push, server-https or enrollment-ca",
+	)
 	validity := fs.Int("validity-days", 0, "issuer validity (default ten years)")
 	device := fs.String("device-id", "", "hardware UUID or device identifier")
 	serial := fs.String("serial", "", "hardware serial number")
@@ -117,7 +130,7 @@ func runSetup(ctx context.Context, e *env, args []string) error {
 		}
 		return runSetupWorkspaceAdoption(ctx, e, *labDirectory, *dir, *role)
 	}
-	if group == "vendor" && operation == "sign" && *out == "" {
+	if lifecycle.Kind(group) == lifecycle.VendorSigning && operation == "sign" && *out == "" {
 		return fmt.Errorf("%w: signing requires -out", ErrUsage)
 	}
 	if group == "init" {
@@ -493,4 +506,14 @@ func writeSetupArtifact(path string, data []byte) error {
 		return wrapError(err)
 	}
 	return wrapError(closeErr)
+}
+
+// isCertificateKind reports whether the verb group names a managed certificate identity.
+func isCertificateKind(group string) bool {
+	switch lifecycle.Kind(group) {
+	case lifecycle.VendorSigning, lifecycle.MDMPush, lifecycle.ServerHTTPS, lifecycle.EnrollmentCA:
+		return true
+	default:
+		return false
+	}
 }

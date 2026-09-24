@@ -42,11 +42,11 @@ func memorySetupApp(t *testing.T) (*App, *clock.Fake) {
 			Logger: slog.New(slog.NewTextHandler(io.Discard, nil)),
 			Setup: &SetupConfig{
 				Role:      "combined",
-				VendorID:  "vendor",
-				PushID:    "push",
-				IssuerID:  "issuer",
-				HTTPSID:   "https",
-				HTTPSCAID: "https-ca",
+				VendorID:  "vendor-signing",
+				PushID:    "mdm-push",
+				IssuerID:  "enrollment-ca",
+				HTTPSID:   "server-https",
+				HTTPSCAID: "server-https-ca",
 			},
 		},
 	}
@@ -118,77 +118,77 @@ func editSetupIdentity(t *testing.T, s state.Store, id string, edit func(map[str
 func TestSetupOperationsPreserveWorkflowAndEnforceRoles(t *testing.T) {
 	a, c := memorySetupApp(t)
 	ctx := t.Context()
-	_, err := (&App{}).ExecuteSetup(ctx, lifecycle.Push, "request", SetupRequest{})
+	_, err := (&App{}).ExecuteSetup(ctx, lifecycle.MDMPush, "request", SetupRequest{})
 	setupRequire(t, err, ErrConfig)
-	for _, kind := range []lifecycle.Kind{"unknown", lifecycle.Push, lifecycle.HTTPS, lifecycle.Issuer, lifecycle.Vendor} {
+	for _, kind := range []lifecycle.Kind{"unknown", lifecycle.MDMPush, lifecycle.ServerHTTPS, lifecycle.EnrollmentCA, lifecycle.VendorSigning} {
 		_, err = a.ExecuteSetup(ctx, kind, "request", SetupRequest{Key: []byte("private")})
 		setupRequire(t, err, lifecycle.ErrInvalid)
 	}
 	for _, role := range []string{"vendor", "customer"} {
 		a.cfg.Setup.Role = role
-		kind := lifecycle.Vendor
+		kind := lifecycle.VendorSigning
 		if role == "vendor" {
-			kind = lifecycle.Issuer
+			kind = lifecycle.EnrollmentCA
 		}
 		_, err = a.ExecuteSetup(ctx, kind, "request", setupRequest("forbidden", kind))
 		setupRequire(t, err, lifecycle.ErrInvalid)
 	}
 	a.cfg.Setup.Role = "combined"
-	issuerReq := setupRequest("", lifecycle.Issuer)
+	issuerReq := setupRequest("", lifecycle.EnrollmentCA)
 	issuerReq.Subject.CommonName = "enrollment authority"
-	issuer := setupExecute(t, a, lifecycle.Issuer, "create", issuerReq)
+	issuer := setupExecute(t, a, lifecycle.EnrollmentCA, "create", issuerReq)
 	setupExecute(
 		t,
 		a,
-		lifecycle.Issuer,
+		lifecycle.EnrollmentCA,
 		"activate",
 		SetupRequest{Revision: issuer.Identity.Pending},
 	)
 	for _, operation := range []string{"status", "request", "create", "renew"} {
-		result := setupExecute(t, a, lifecycle.Issuer, operation, SetupRequest{})
+		result := setupExecute(t, a, lifecycle.EnrollmentCA, operation, SetupRequest{})
 		if result.Identity.Active != "1" || result.Identity.Pending != "" {
 			t.Fatal("retry unexpectedly rotated issuer", result)
 		}
 	}
 	c.Advance(time.Hour)
-	result := setupExecute(t, a, lifecycle.Issuer, "renew", SetupRequest{Force: true})
+	result := setupExecute(t, a, lifecycle.EnrollmentCA, "renew", SetupRequest{Force: true})
 	if result.Identity.Pending != "2" {
 		t.Fatal("forced renewal not prepared")
 	}
-	setupExecute(t, a, lifecycle.Issuer, "create", SetupRequest{})
-	_, err = a.ExecuteSetup(ctx, lifecycle.Issuer, "activate", SetupRequest{Revision: "2"})
+	setupExecute(t, a, lifecycle.EnrollmentCA, "create", SetupRequest{})
+	_, err = a.ExecuteSetup(ctx, lifecycle.EnrollmentCA, "activate", SetupRequest{Revision: "2"})
 	setupRequire(t, err, lifecycle.ErrConflict)
-	setupExecute(t, a, lifecycle.Issuer, "status", SetupRequest{})
-	setupExecute(t, a, lifecycle.Issuer, "cancel", SetupRequest{Revision: "2"})
+	setupExecute(t, a, lifecycle.EnrollmentCA, "status", SetupRequest{})
+	setupExecute(t, a, lifecycle.EnrollmentCA, "cancel", SetupRequest{Revision: "2"})
 	for _, operation := range []string{"retry", "device-status", "rollover", "retire", "acme", "lab", "create", "sign", "unsupported"} {
-		_, err = a.ExecuteSetup(ctx, lifecycle.Push, operation, SetupRequest{})
+		_, err = a.ExecuteSetup(ctx, lifecycle.MDMPush, operation, SetupRequest{})
 		setupRequire(t, err, lifecycle.ErrInvalid)
 	}
-	_, err = a.ExecuteSetup(ctx, lifecycle.HTTPS, "sign", SetupRequest{})
+	_, err = a.ExecuteSetup(ctx, lifecycle.ServerHTTPS, "sign", SetupRequest{})
 	setupRequire(t, err, lifecycle.ErrInvalid)
-	_, err = a.ExecuteSetup(ctx, lifecycle.HTTPS, "import", SetupRequest{})
+	_, err = a.ExecuteSetup(ctx, lifecycle.ServerHTTPS, "import", SetupRequest{})
 	setupRequire(t, err, lifecycle.ErrInvalid)
-	_, err = a.ExecuteSetup(ctx, lifecycle.Push, "status", SetupRequest{})
+	_, err = a.ExecuteSetup(ctx, lifecycle.MDMPush, "status", SetupRequest{})
 	setupRequire(t, err, lifecycle.ErrNotFound)
-	_, err = a.ExecuteSetup(ctx, lifecycle.Push, "request", setupRequest("issuer", lifecycle.Push))
+	_, err = a.ExecuteSetup(ctx, lifecycle.MDMPush, "request", setupRequest("enrollment-ca", lifecycle.MDMPush))
 	setupRequire(t, err, lifecycle.ErrConflict)
-	httpsReq := setupRequest("", lifecycle.HTTPS)
+	httpsReq := setupRequest("", lifecycle.ServerHTTPS)
 	httpsReq.Subject.CommonName = "mdm.example"
-	https := setupExecute(t, a, lifecycle.HTTPS, "lab", httpsReq)
-	setupExecute(t, a, lifecycle.HTTPS, "activate", SetupRequest{Revision: https.Identity.Pending})
-	setupExecute(t, a, lifecycle.HTTPS, "lab", SetupRequest{})
-	setupExecute(t, a, lifecycle.HTTPS, "status", SetupRequest{})
+	https := setupExecute(t, a, lifecycle.ServerHTTPS, "lab", httpsReq)
+	setupExecute(t, a, lifecycle.ServerHTTPS, "activate", SetupRequest{Revision: https.Identity.Pending})
+	setupExecute(t, a, lifecycle.ServerHTTPS, "lab", SetupRequest{})
+	setupExecute(t, a, lifecycle.ServerHTTPS, "status", SetupRequest{})
 	trust, err := a.SetupTrustProfile(ctx)
 	setupRequire(t, err, nil)
 	if !bytes.Contains(trust, []byte("com.apple.security.root")) {
 		t.Fatal("missing trust payload")
 	}
-	mat, err := a.Certificates.LoadMaterial(ctx, "https", "")
+	mat, err := a.Certificates.LoadMaterial(ctx, "server-https", "")
 	setupRequire(t, err, nil)
 	setupExecute(
 		t,
 		a,
-		lifecycle.HTTPS,
+		lifecycle.ServerHTTPS,
 		"adopt",
 		SetupRequest{
 			Request:     lifecycle.Request{ID: "adopted"},
@@ -198,19 +198,19 @@ func TestSetupOperationsPreserveWorkflowAndEnforceRoles(t *testing.T) {
 	)
 	_, err = a.ExecuteSetup(
 		ctx,
-		lifecycle.HTTPS,
+		lifecycle.ServerHTTPS,
 		"import",
 		SetupRequest{Revision: "1", Certificate: mat.Certificate},
 	)
 	setupRequire(t, err, nil)
 	_, err = a.TLSCertificate(nil)
 	setupRequire(t, err, nil)
-	acmeReq := setupRequest("public", lifecycle.HTTPS)
+	acmeReq := setupRequest("public", lifecycle.ServerHTTPS)
 	acmeReq.PublicACME = &lifecycle.PublicACMEOptions{
 		Contact:     "operator@example.com",
 		AcceptTerms: true,
 	}
-	setupExecute(t, a, lifecycle.HTTPS, "acme", acmeReq)
+	setupExecute(t, a, lifecycle.ServerHTTPS, "acme", acmeReq)
 	a.cfg.Setup.HTTPSID = "public"
 	status, err := a.CertificateSetupStatus(ctx)
 	setupRequire(t, err, nil)
@@ -221,26 +221,26 @@ func TestSetupOperationsPreserveWorkflowAndEnforceRoles(t *testing.T) {
 	a.cfg.Setup.HTTPSCAID = ""
 	_, err = a.ExecuteSetup(
 		ctx,
-		lifecycle.HTTPS,
+		lifecycle.ServerHTTPS,
 		"lab",
-		setupRequest("missing-ca", lifecycle.HTTPS),
+		setupRequest("missing-ca", lifecycle.ServerHTTPS),
 	)
 	setupRequire(t, err, lifecycle.ErrInvalid)
 	_, err = a.SetupTrustProfile(ctx)
 	setupRequire(t, err, lifecycle.ErrNotFound)
-	setupExecute(t, a, lifecycle.Push, "request", setupRequest("", lifecycle.Push))
-	_, err = a.ExecuteSetup(ctx, lifecycle.Push, "sign", SetupRequest{Revision: "missing"})
+	setupExecute(t, a, lifecycle.MDMPush, "request", setupRequest("", lifecycle.MDMPush))
+	_, err = a.ExecuteSetup(ctx, lifecycle.MDMPush, "sign", SetupRequest{Revision: "missing"})
 	setupRequire(t, err, lifecycle.ErrNotFound)
-	_, err = a.ExecuteSetup(ctx, lifecycle.Push, "sign", SetupRequest{Revision: "1"})
+	_, err = a.ExecuteSetup(ctx, lifecycle.MDMPush, "sign", SetupRequest{Revision: "1"})
 	setupRequire(t, err, lifecycle.ErrNotFound)
-	_, err = a.ExecuteSetup(ctx, lifecycle.Vendor, "sign", SetupRequest{CSR: []byte("csr")})
+	_, err = a.ExecuteSetup(ctx, lifecycle.VendorSigning, "sign", SetupRequest{CSR: []byte("csr")})
 	setupRequire(t, err, lifecycle.ErrNotFound)
 	a.cfg.Setup.Role = "customer"
-	_, err = a.ExecuteSetup(ctx, lifecycle.Push, "sign", SetupRequest{Revision: "1"})
+	_, err = a.ExecuteSetup(ctx, lifecycle.MDMPush, "sign", SetupRequest{Revision: "1"})
 	setupRequire(t, err, lifecycle.ErrInvalid)
 	_, err = a.ExecuteSetup(
 		ctx,
-		lifecycle.Push,
+		lifecycle.MDMPush,
 		"sign",
 		SetupRequest{Revision: "1", SignedRequest: []byte("invalid")},
 	)
@@ -250,7 +250,7 @@ func TestSetupOperationsPreserveWorkflowAndEnforceRoles(t *testing.T) {
 // TestSetupHTTPFailuresAndPublicResponses checks setup HTTP failures and public responses.
 func TestSetupHTTPFailuresAndPublicResponses(t *testing.T) {
 	a, _ := memorySetupApp(t)
-	setupExecute(t, a, lifecycle.Push, "request", setupRequest("push", lifecycle.Push))
+	setupExecute(t, a, lifecycle.MDMPush, "request", setupRequest("mdm-push", lifecycle.MDMPush))
 	mux := http.NewServeMux()
 	for _, route := range a.setupRoutes() {
 		mux.Handle(route.Pattern, route.Handler)
@@ -259,15 +259,15 @@ func TestSetupHTTPFailuresAndPublicResponses(t *testing.T) {
 		method, path, body string
 		code               int
 	}{
-		{"GET", "/setup/workflow/push", "", 200},
+		{"GET", "/setup/workflow/mdm-push", "", 200},
 		{"GET", "/setup/workflow/missing", "", 404},
 		{"GET", "/setup/workflow/missing/export?artifact=csr", "", 404},
-		{"GET", "/setup/workflow/push/history", "", 200},
+		{"GET", "/setup/workflow/mdm-push/history", "", 200},
 		{"GET", "/setup/trust", "", 404},
-		{"POST", "/setup/push/request", "invalid", 400},
-		{"POST", "/setup/push/activate", `{"revision":"1"}`, 409},
-		{"POST", "/setup/vendor/sign", `{"csr":"Y3Ny"}`, 404},
-		{"POST", "/setup/push/request", strings.Repeat("x", MaxAdminBody+1), 413},
+		{"POST", "/setup/mdm-push/request", "invalid", 400},
+		{"POST", "/setup/mdm-push/activate", `{"revision":"1"}`, 409},
+		{"POST", "/setup/vendor-signing/sign", `{"csr":"Y3Ny"}`, 404},
+		{"POST", "/setup/mdm-push/request", strings.Repeat("x", MaxAdminBody+1), 413},
 	} {
 		w := httptest.NewRecorder()
 		mux.ServeHTTP(w, httptest.NewRequestWithContext(t.Context(), tc.method, tc.path, strings.NewReader(tc.body)))
@@ -275,7 +275,7 @@ func TestSetupHTTPFailuresAndPublicResponses(t *testing.T) {
 			t.Fatal(tc.method, tc.path, w.Code, w.Body.String())
 		}
 	}
-	setupExecute(t, a, lifecycle.HTTPS, "lab", setupRequest("https", lifecycle.HTTPS))
+	setupExecute(t, a, lifecycle.ServerHTTPS, "lab", setupRequest("server-https", lifecycle.ServerHTTPS))
 	w := httptest.NewRecorder()
 	mux.ServeHTTP(w, httptest.NewRequestWithContext(t.Context(), "GET", "/setup/trust", nil))
 	if w.Code != 200 || w.Header().Get("Content-Type") != "application/x-apple-aspen-config" {
@@ -283,7 +283,7 @@ func TestSetupHTTPFailuresAndPublicResponses(t *testing.T) {
 	}
 	backing := a.Certificates.Store
 	a.Certificates.Store = unavailableAppState{Store: backing, failure: io.ErrUnexpectedEOF}
-	for _, path := range []string{"/setup", "/setup/workflow/push/history"} {
+	for _, path := range []string{"/setup", "/setup/workflow/mdm-push/history"} {
 		w := httptest.NewRecorder()
 		mux.ServeHTTP(w, httptest.NewRequestWithContext(t.Context(), "GET", path, nil))
 		if w.Code != 500 || strings.Contains(w.Body.String(), "unexpected EOF") {
@@ -315,17 +315,17 @@ func TestRemoteVendorSigningBoundsRequestsAndNeverFollowsRedirects(t *testing.T)
 	ctx := t.Context()
 	for _, address := range []string{"%", "http://vendor.example", "https:///missing", "https://user:password@vendor.example", "https://vendor.example?q=1", "https://vendor.example/#fragment"} {
 		a.cfg.Setup.VendorURL = address
-		_, err := a.remoteVendorSignature(ctx, "vendor", []byte("csr"))
+		_, err := a.remoteVendorSignature(ctx, "vendor-signing", []byte("csr"))
 		setupRequire(t, err, lifecycle.ErrInvalid)
 	}
 	a.cfg.Setup.VendorURL = "https://vendor.example/prefix/"
 	a.cfg.Setup.VendorTokenFile = token + "missing"
-	if _, err := a.remoteVendorSignature(ctx, "vendor", nil); err == nil {
+	if _, err := a.remoteVendorSignature(ctx, "vendor-signing", nil); err == nil {
 		t.Fatal("missing token accepted")
 	}
 	a.cfg.Setup.VendorTokenFile = token
 	setupRequire(t, os.WriteFile(token, nil, 0o600), nil)
-	_, err := a.remoteVendorSignature(ctx, "vendor", nil)
+	_, err := a.remoteVendorSignature(ctx, "vendor-signing", nil)
 	setupRequire(t, err, lifecycle.ErrInvalid)
 	setupRequire(t, os.WriteFile(token, []byte("credential"), 0o600), nil)
 	previous := http.DefaultTransport
@@ -334,7 +334,7 @@ func TestRemoteVendorSigningBoundsRequestsAndNeverFollowsRedirects(t *testing.T)
 		t.Run(mode, func(t *testing.T) {
 			http.DefaultTransport = setupRoundTrip(func(r *http.Request) (*http.Response, error) {
 				if r.URL.Host != "vendor.example" ||
-					r.URL.Path != "/prefix/admin/v1/setup/vendor/sign" ||
+					r.URL.Path != "/prefix/admin/v1/setup/vendor-signing/sign" ||
 					r.Header.Get("Authorization") != "Bearer credential" {
 					t.Fatal("credential redirected or wrong request", r.URL)
 				}
@@ -367,7 +367,7 @@ func TestRemoteVendorSigningBoundsRequestsAndNeverFollowsRedirects(t *testing.T)
 				}
 				return &http.Response{StatusCode: status, Header: h, Body: reader, Request: r}, nil
 			})
-			data, err := a.remoteVendorSignature(ctx, "vendor", []byte("csr"))
+			data, err := a.remoteVendorSignature(ctx, "vendor-signing", []byte("csr"))
 			if mode == "success" {
 				setupRequire(t, err, nil)
 				if string(data) != "signed" {
@@ -397,22 +397,22 @@ func TestManagedConfigurationAndTLSValidation(t *testing.T) {
 		}
 		setupRequire(t, a.openCertificates(ctx), ErrConfig)
 	}
-	a.cfg.Setup.Role, a.cfg.Setup.PushID = "customer", "push"
+	a.cfg.Setup.Role, a.cfg.Setup.PushID = "customer", "mdm-push"
 	a.cfg.TLSCertFile = "legacy.pem"
 	setupRequire(t, a.configureManagedIdentities(ctx), ErrConfig)
 	a.cfg.TLSCertFile = ""
 	setupRequire(t, a.configureManagedIdentities(ctx), nil)
-	setupExecute(t, a, lifecycle.Push, "request", setupRequest("push", lifecycle.Push))
+	setupExecute(t, a, lifecycle.MDMPush, "request", setupRequest("mdm-push", lifecycle.MDMPush))
 	setupRequire(t, a.configureManagedIdentities(ctx), nil)
-	setupExecute(t, a, lifecycle.Issuer, "create", setupRequest("issuer", lifecycle.Issuer))
+	setupExecute(t, a, lifecycle.EnrollmentCA, "create", setupRequest("enrollment-ca", lifecycle.EnrollmentCA))
 	setupRequire(t, a.configureManagedIdentities(ctx), nil)
-	setupExecute(t, a, lifecycle.Issuer, "activate", SetupRequest{Revision: "1"})
+	setupExecute(t, a, lifecycle.EnrollmentCA, "activate", SetupRequest{Revision: "1"})
 	// The push identity's public projection models an adopted same-topic APNs
 	// identity; no signing material is needed to configure runtime references.
 	editSetupIdentity(
 		t,
 		a.protocol,
-		"push",
+		"mdm-push",
 		func(v map[string]any) { v["Active"], v["Pending"], v["Topic"] = "1", "", "com.apple.mgmt.test" },
 	)
 	a.cfg.Enroll.Topic = "different"
@@ -427,8 +427,8 @@ func TestManagedConfigurationAndTLSValidation(t *testing.T) {
 	if a.cfg.Enroll.Topic != "" {
 		t.Fatal("vendor server enabled enrollment")
 	}
-	https := setupExecute(t, a, lifecycle.HTTPS, "lab", setupRequest("https", lifecycle.HTTPS))
-	setupExecute(t, a, lifecycle.HTTPS, "activate", SetupRequest{Revision: https.Identity.Pending})
+	https := setupExecute(t, a, lifecycle.ServerHTTPS, "lab", setupRequest("server-https", lifecycle.ServerHTTPS))
+	setupExecute(t, a, lifecycle.ServerHTTPS, "activate", SetupRequest{Revision: https.Identity.Pending})
 	_, err = a.LoadTLSCertificate(ctx)
 	setupRequire(t, err, nil)
 	c.Advance(366 * 24 * time.Hour)
@@ -437,7 +437,7 @@ func TestManagedConfigurationAndTLSValidation(t *testing.T) {
 	editSetupIdentity(
 		t,
 		a.protocol,
-		"https",
+		"server-https",
 		func(v map[string]any) {
 			requireType[map[string]any](t, requireType[[]any](t, v["Revisions"])[0])["Key"] = "Y29ycnVwdA=="
 		},
@@ -450,10 +450,10 @@ func TestManagedConfigurationAndTLSValidation(t *testing.T) {
 		readErr:   io.ErrUnexpectedEOF,
 		txReadErr: io.ErrUnexpectedEOF,
 	}
-	_, err = a.ExecuteSetup(ctx, lifecycle.HTTPS, "status", SetupRequest{})
+	_, err = a.ExecuteSetup(ctx, lifecycle.ServerHTTPS, "status", SetupRequest{})
 	setupRequire(t, err, io.ErrUnexpectedEOF)
 	a.cfg.Setup.HTTPSCAID = ""
-	_, err = a.ExecuteSetup(ctx, lifecycle.HTTPS, "status", SetupRequest{})
+	_, err = a.ExecuteSetup(ctx, lifecycle.ServerHTTPS, "status", SetupRequest{})
 	setupRequire(t, err, io.ErrUnexpectedEOF)
 	_, err = a.CertificateSetupStatus(ctx)
 	setupRequire(t, err, io.ErrUnexpectedEOF)

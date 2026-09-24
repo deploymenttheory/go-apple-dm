@@ -123,7 +123,7 @@ func testManager(t *testing.T) (*Manager, *faultRepository, *time.Time) {
 // requestFor builds an identity request, adding fixture DNS names for HTTPS identities.
 func requestFor(id string, kind Kind) Request {
 	r := Request{ID: id, Kind: kind, Subject: pkix.Name{CommonName: id}}
-	if kind == HTTPS {
+	if kind == ServerHTTPS {
 		r.DNSNames = []string{"mdm.example", "127.0.0.1"}
 	}
 	return r
@@ -140,7 +140,7 @@ func pending(t *testing.T, m *Manager, id string, kind Kind) Identity {
 // rootIdentity creates and activates a root issuer and returns its certificate and key material.
 func rootIdentity(t *testing.T, m *Manager, id string) Material {
 	t.Helper()
-	v := pending(t, m, id, Issuer)
+	v := pending(t, m, id, EnrollmentCA)
 	_, err := m.CreateIssuer(t.Context(), id, v.Pending, 0)
 	requireError(t, err, nil)
 	_, err = m.Activate(t.Context(), id, v.Pending)
@@ -217,11 +217,11 @@ func issueCertificate(
 func TestRequestValidationCancellationAndPublicHistory(t *testing.T) {
 	m, _, _ := testManager(t)
 	ctx := WithAudit(t.Context(), "operator", "request")
-	for _, req := range []Request{{ID: "../key", Kind: Push}, {ID: "key", Kind: "unknown"}, {ID: "key", Kind: Push}} {
+	for _, req := range []Request{{ID: "../key", Kind: MDMPush}, {ID: "key", Kind: "unknown"}, {ID: "key", Kind: MDMPush}} {
 		_, err := m.Begin(ctx, req)
 		requireError(t, err, ErrInvalid)
 	}
-	req := requestFor("customer", Push)
+	req := requestFor("customer", MDMPush)
 	v, err := m.Begin(ctx, req)
 	requireError(t, err, nil)
 	csr, err := m.Export(ctx, req.ID, "", "csr")
@@ -283,7 +283,7 @@ func TestRequestValidationCancellationAndPublicHistory(t *testing.T) {
 func TestReadAndWriteFailuresPreservePendingMaterial(t *testing.T) {
 	m, s, _ := testManager(t)
 	ctx := t.Context()
-	v := pending(t, m, "issuer", Issuer)
+	v := pending(t, m, "enrollment-ca", EnrollmentCA)
 	before, err := m.LoadMaterial(ctx, v.ID, v.Pending)
 	requireError(t, err, nil)
 	for _, target := range []string{prefix, "pki/lifecycle/history/"} {
@@ -320,7 +320,7 @@ func TestReadAndWriteFailuresPreservePendingMaterial(t *testing.T) {
 	requireError(t, err, errRepository)
 	_, err = m.Cancel(ctx, v.ID, v.Pending)
 	requireError(t, err, errRepository)
-	_, err = m.Begin(ctx, requestFor("other", Issuer))
+	_, err = m.Begin(ctx, requestFor("other", EnrollmentCA))
 	requireError(t, err, errRepository)
 	s.txGet = nil
 	s.list = func(string) error { return errRepository }
@@ -343,9 +343,9 @@ func TestReadAndWriteFailuresPreservePendingMaterial(t *testing.T) {
 	// must reject a different request rather than overwrite its key.
 	s.beforeUpdate = func() {
 		s.beforeUpdate = nil
-		putRecord(t, s.Store, prefix+"racing", record{Request: requestFor("racing", Vendor)})
+		putRecord(t, s.Store, prefix+"racing", record{Request: requestFor("racing", VendorSigning)})
 	}
-	_, err = m.Begin(ctx, requestFor("racing", Issuer))
+	_, err = m.Begin(ctx, requestFor("racing", EnrollmentCA))
 	requireError(t, err, ErrConflict)
 }
 
@@ -354,7 +354,7 @@ func TestListPaginationAndCorruptStoredJSON(t *testing.T) {
 	m, s, _ := testManager(t)
 	for i := range 101 {
 		id := fmt.Sprintf("identity-%03d", i)
-		putRecord(t, s.Store, prefix+id, record{Request: requestFor(id, Issuer)})
+		putRecord(t, s.Store, prefix+id, record{Request: requestFor(id, EnrollmentCA)})
 	}
 	items, err := m.List(t.Context())
 	requireError(t, err, nil)
@@ -392,23 +392,23 @@ func TestListPaginationAndCorruptStoredJSON(t *testing.T) {
 func TestNoticesOncePerThresholdAndAtomicFailures(t *testing.T) {
 	m, s, now := testManager(t)
 	ctx := t.Context()
-	rootIdentity(t, m, "issuer")
-	_, created, err := m.RecordNotice(ctx, "issuer")
+	rootIdentity(t, m, "enrollment-ca")
+	_, created, err := m.RecordNotice(ctx, "enrollment-ca")
 	requireError(t, err, nil)
 	if created {
 		t.Fatal("premature notice")
 	}
-	identity, err := m.Get(ctx, "issuer")
+	identity, err := m.Get(ctx, "enrollment-ca")
 	requireError(t, err, nil)
 	end := identity.Revisions[0].NotAfter
 	for _, days := range []int{180, 30, 14, 7, 1, 0} {
 		*now = end.Add(-time.Duration(days) * 24 * time.Hour)
-		notice, created, err := m.RecordNotice(ctx, "issuer")
+		notice, created, err := m.RecordNotice(ctx, "enrollment-ca")
 		requireError(t, err, nil)
 		if !created || notice.Revision != "1" || notice.Severity == "" {
 			t.Fatal(notice, created)
 		}
-		_, created, err = m.RecordNotice(ctx, "issuer")
+		_, created, err = m.RecordNotice(ctx, "enrollment-ca")
 		requireError(t, err, nil)
 		if created {
 			t.Fatal("duplicate notice")
@@ -421,7 +421,7 @@ func TestNoticesOncePerThresholdAndAtomicFailures(t *testing.T) {
 		}
 		return nil
 	}
-	_, created, err = m.RecordNotice(ctx, "issuer")
+	_, created, err = m.RecordNotice(ctx, "enrollment-ca")
 	requireError(t, err, errRepository)
 	if created {
 		t.Fatal("failed notice reported created")
@@ -433,7 +433,7 @@ func TestNoticesOncePerThresholdAndAtomicFailures(t *testing.T) {
 		s.Store,
 		prefix+"other",
 		record{
-			Request: requestFor("other", Push),
+			Request: requestFor("other", MDMPush),
 			Active:  "1",
 			Revisions: []storedRevision{
 				{
@@ -462,14 +462,14 @@ func TestNoticesOncePerThresholdAndAtomicFailures(t *testing.T) {
 // Check the key type used by the fixture as well as the public/private binding.
 func TestGeneratedRequestRejectsUnencodableSubject(t *testing.T) {
 	m, _, _ := testManager(t)
-	req := requestFor("invalid-subject", HTTPS)
+	req := requestFor("invalid-subject", ServerHTTPS)
 	req.Subject.ExtraNames = []pkix.AttributeTypeAndValue{
 		{Type: []int{2, 5, 4, 3}, Value: make(chan int)},
 	}
 	if _, err := m.Begin(t.Context(), req); err == nil {
 		t.Fatal("unencodable CSR subject accepted")
 	}
-	v := pending(t, m, "key-check", Push)
+	v := pending(t, m, "key-check", MDMPush)
 	mat, err := m.LoadMaterial(t.Context(), v.ID, v.Pending)
 	requireError(t, err, nil)
 	if _, ok := privateSigner(t, mat.Key).(*rsa.PrivateKey); !ok {

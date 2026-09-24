@@ -46,12 +46,12 @@ func managedRuntimeConfig(t *testing.T) (app.Config, *x509.CertPool) {
 			DNSNames: []string{"localhost", "127.0.0.1"},
 		},
 	}
-	result, err := a.ExecuteSetup(t.Context(), lifecycle.HTTPS, "lab", request)
+	result, err := a.ExecuteSetup(t.Context(), lifecycle.ServerHTTPS, "lab", request)
 	if err != nil {
 		t.Fatal(err)
 	}
 	request.Revision = result.Identity.Pending
-	if _, err := a.ExecuteSetup(t.Context(), lifecycle.HTTPS, "activate", request); err != nil {
+	if _, err := a.ExecuteSetup(t.Context(), lifecycle.ServerHTTPS, "activate", request); err != nil {
 		t.Fatal(err)
 	}
 	material, err := a.Certificates.LoadMaterial(t.Context(), cfg.Setup.HTTPSCAID, "")

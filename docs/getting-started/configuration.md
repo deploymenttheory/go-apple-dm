@@ -88,11 +88,12 @@ The server always runs unified device management. The certificate workflow has i
 |---|---|---|
 | `setup.role` | `customer`, `vendor`, `combined` | Whether it manages customer identities, signs customer push requests, or does both |
 
-The `https`, `issuer`, `push` and `vendor` IDs name persistent certificate
-workflows in the database. They are not file paths. `httpsCaId` names the local
-HTTPS CA. `setup.http01Listen` enables the public ACME challenge listener;
-`setup.vendorUrl` and `setup.vendorTokenFile` configure a remote vendor signing
-service. See [certificate setup](../operations/certificate-lifecycle.md).
+The `httpsId`, `issuerId`, `pushId` and `vendorId` settings name persistent certificate
+workflows in the database, not file paths. They default to the identity they hold:
+`server-https`, `enrollment-ca`, `mdm-push` and `vendor-signing`. `httpsCaId` names the
+local HTTPS CA and defaults to `server-https-ca`. `setup.http01Listen` enables the
+public ACME challenge listener; `setup.vendorUrl` and `setup.vendorTokenFile`
+configure a remote vendor signing service. See [certificate setup](../operations/certificate-lifecycle.md).
 
 ### Precedence and paths
 

@@ -43,7 +43,7 @@ func acmeFixture(t *testing.T) (*Manager, *faultRepository, *acmeAuthority) {
 	requireError(t, err, nil)
 	m.Trust.HTTPSRoots = x509.NewCertPool()
 	m.Trust.HTTPSRoots.AddCert(cs[0])
-	req := requestFor("web", HTTPS)
+	req := requestFor("web", ServerHTTPS)
 	req.DNSNames = []string{"mdm.example"}
 	_, err = m.Begin(t.Context(), req)
 	requireError(t, err, nil)
@@ -411,7 +411,7 @@ func TestPublicACMEConfigurationAndChallengeIsolation(t *testing.T) {
 	requireError(t, m.ConfigurePublicACME(ctx, "ca", valid), ErrInvalid)
 	requireError(t, m.ConfigurePublicACME(ctx, "missing", valid), ErrNotFound)
 	for i, host := range []string{"*.example", "127.0.0.1", "mdm.example", "local.example"} {
-		req := requestFor(fmt.Sprintf("host-%d", i), HTTPS)
+		req := requestFor(fmt.Sprintf("host-%d", i), ServerHTTPS)
 		req.DNSNames = []string{host}
 		_, err := m.Begin(ctx, req)
 		requireError(t, err, nil)
