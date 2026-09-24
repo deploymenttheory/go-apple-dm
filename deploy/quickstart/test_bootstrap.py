@@ -39,25 +39,25 @@ class BootstrapTests(unittest.TestCase):
 
     def test_resume_reuses_pending_issuer_key(self):
         self.bootstrap.cli("setup", "init", "-dir", str(self.directory), setup=False)
-        identity = self.bootstrap.cli("setup", "issuer", "create", "-cn", "Local MDM enrollment CA")["identity"]
+        identity = self.bootstrap.cli("setup", "enrollment-ca", "create", "-cn", "Local MDM enrollment CA")["identity"]
         pending = identity["pending"]
         before = self.snapshot()[1]
         self.bootstrap.initialize()
         identities, secrets = self.snapshot()
-        self.assertEqual(pending, identities["issuer"]["active"])
-        self.assertEqual(1, len(identities["issuer"]["revisions"]))
+        self.assertEqual(pending, identities["enrollment-ca"]["active"])
+        self.assertEqual(1, len(identities["enrollment-ca"]["revisions"]))
         self.assertEqual(before, secrets)
 
     def test_resume_reuses_pending_https_certificate(self):
         self.bootstrap.cli("setup", "init", "-dir", str(self.directory), setup=False)
-        identity = self.bootstrap.cli("setup", "https", "lab", "-cn", "Local MDM HTTPS",
+        identity = self.bootstrap.cli("setup", "server-https", "lab", "-cn", "Local MDM HTTPS",
                                       "-hosts", "localhost,127.0.0.1,dmserver")["identity"]
         before = self.snapshot()[1]
         self.bootstrap.initialize()
         identities, secrets = self.snapshot()
-        self.assertEqual(identity["pending"], identities["https"]["active"])
+        self.assertEqual(identity["pending"], identities["server-https"]["active"])
         self.assertEqual(identity["revisions"][0]["fingerprint"],
-                         identities["https"]["revisions"][0]["fingerprint"])
+                         identities["server-https"]["revisions"][0]["fingerprint"])
         self.assertEqual(before, secrets)
 
     def test_missing_key_or_config_is_not_recreated(self):
