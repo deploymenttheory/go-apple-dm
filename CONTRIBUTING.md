@@ -28,6 +28,13 @@ validates configuration, and compiles tests before analysis. Integration, E2E,
 acceptance and OS 27 schema test tags are included without running those tests or
 contacting their services. Reports are written beneath `cover/lint/`.
 
+The server is additionally built with the workspace disabled, against the library
+version its `go.mod` declares. The workspace resolves the library from this
+checkout, so server code calling a library function or type that the declared
+version does not yet contain builds locally and fails only in the publication
+checks. When this build reports something undefined, update `server/go.mod` to a
+library version that contains it; a pseudo-version serves until the next library tag.
+
 The blocking rules cover correctness, security, error handling, HTTP/SQL resource
 ownership, serialization tags, logging, compiler directives and test helpers.
 Staticcheck runs its `SA*` checks. `gofumpt` and `goimports` provide formatting;

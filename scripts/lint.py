@@ -2,8 +2,10 @@
 """Check both workspace modules without rewriting source, or explicitly format them.
 
 Tests with supported feature/build tags are compiled before analysis. External
-services are not required. Standalone published-module compatibility is checked
-separately by verify-server-module-installation.py.
+services are not required. The server is also built without the workspace, so a
+call into the library that its declared version does not yet contain fails here
+rather than only in the publication checks; verify-server-module-installation.py still
+covers installation and standalone runtime.
 """
 
 import argparse
@@ -56,6 +58,15 @@ def main():
                                 *[str(p.relative_to(cwd)) for p in files[start:start + 40]]],
                                cwd=cwd, env=env, check=True)
             continue
+        if module == "server":
+            # The workspace resolves the library from this checkout, which hides
+            # server code calling something the declared version does not contain.
+            # Building without it is what the publication checks do, cheaply.
+            print(f"[{module}] Build against the declared library version, without the workspace", flush=True)
+            standalone = dict(env)
+            standalone["GOWORK"] = "off"
+            subprocess.run([args.go, "build", "-mod=readonly", "./..."],
+                           cwd=cwd, env=standalone, check=True)
         print(f"[{module}] Compile packages and tests (no test execution)", flush=True)
         subprocess.run([args.go, "test", "-mod=readonly", "-run=^$", "-vet=off", "-tags=" + TAGS, "./..."],
                        cwd=cwd, env=env, check=True)
