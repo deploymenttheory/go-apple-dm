@@ -83,3 +83,32 @@ func TestEnrollmentLinkCommandsReportServerErrors(t *testing.T) {
 		t.Fatal("missing server accepted")
 	}
 }
+
+// TestEnrollmentLinksExplainAnUnmountedFamily checks that a server without enrollment
+// routes says why, rather than only that the route was not found.
+func TestEnrollmentLinksExplainAnUnmountedFamily(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if strings.HasSuffix(r.URL.Path, "/config") {
+			// The families a server without a push identity reports.
+			_, _ = w.Write([]byte(`{"Service":"device-management","Families":["mdm","ddm"],"Policy":true}`))
+			return
+		}
+		http.NotFound(w, r)
+	}))
+	defer srv.Close()
+	env := noConfig(t)
+	env["DMCTL_SERVER"], env["DMCTL_TOKEN"] = srv.URL, "test-token"
+	for _, args := range [][]string{
+		{"create", "-device-id", "UDID"}, {"list"}, {"revoke", "-id", "abc"},
+	} {
+		_, _, err := run(t, env, append([]string{"enrollment-links"}, args...)...)
+		if err == nil {
+			t.Fatal(args, "missing enrollment routes accepted")
+		}
+		for _, want := range []string{"mounts no enrollment routes", "MDM push certificate", "setup status"} {
+			if !strings.Contains(err.Error(), want) {
+				t.Fatalf("%v: message lacks %q: %v", args, want, err)
+			}
+		}
+	}
+}

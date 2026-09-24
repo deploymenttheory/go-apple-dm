@@ -299,7 +299,7 @@ func runSetup(ctx context.Context, e *env, args []string) error {
 			if local != nil {
 				entries, next, err := local.Certificates.History(ctx, *id, *cursor, *pageSize)
 				if err != nil {
-					return wrapError(err)
+					return wrapError(local.ExplainIdentity(*id, err))
 				}
 				return wrapError(
 					json.NewEncoder(e.stdout).
@@ -326,7 +326,7 @@ func runSetup(ctx context.Context, e *env, args []string) error {
 			if local != nil {
 				item, err := local.Certificates.Get(ctx, *id)
 				if err != nil {
-					return wrapError(err)
+					return wrapError(local.ExplainIdentity(*id, err))
 				}
 				return wrapError(json.NewEncoder(e.stdout).Encode(item))
 			}
@@ -346,7 +346,9 @@ func runSetup(ctx context.Context, e *env, args []string) error {
 			}
 			var data []byte
 			if local != nil {
-				data, err = local.Certificates.Export(ctx, *id, *rev, *artifact)
+				if data, err = local.Certificates.Export(ctx, *id, *rev, *artifact); err != nil {
+					err = local.ExplainIdentity(*id, err)
+				}
 			} else {
 				c, e2 := e.client()
 				if e2 != nil {
@@ -372,7 +374,9 @@ func runSetup(ctx context.Context, e *env, args []string) error {
 		if operation == "cancel" {
 			var item lifecycle.Identity
 			if local != nil {
-				item, err = local.Certificates.Get(ctx, *id)
+				if item, err = local.Certificates.Get(ctx, *id); err != nil {
+					err = local.ExplainIdentity(*id, err)
+				}
 			} else {
 				c, e2 := e.client()
 				if e2 != nil {
@@ -435,6 +439,7 @@ func runSetup(ctx context.Context, e *env, args []string) error {
 	var result app.SetupResult
 	if local != nil {
 		result, err = local.ExecuteSetup(ctx, lifecycle.Kind(group), operation, req)
+		err = local.ExplainSetupOperation(lifecycle.Kind(group), operation, req.ID, err)
 		if err == nil && operation == "acme" {
 			address := *http01Listen
 			if address == "" {
