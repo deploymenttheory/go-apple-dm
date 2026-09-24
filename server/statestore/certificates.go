@@ -12,7 +12,7 @@ import (
 // PublishCertificate participates in the state transaction, so the runtime APNs
 // identity and workflow activation are visible at the same commit.
 func PublishCertificate(ctx context.Context, tx state.Tx, identity lifecycle.Identity, material lifecycle.Material) error {
-	if identity.Kind != lifecycle.Push {
+	if identity.Kind != lifecycle.MDMPush {
 		return nil
 	}
 	t, ok := tx.(*transaction)

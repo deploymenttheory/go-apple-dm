@@ -38,9 +38,9 @@ func TestSetupLabResumesAfterEachRepositoryFailure(t *testing.T) {
 			}}
 			_, err := a.ExecuteSetup(
 				t.Context(),
-				lifecycle.HTTPS,
+				lifecycle.ServerHTTPS,
 				"lab",
-				setupRequest("https", lifecycle.HTTPS),
+				setupRequest("server-https", lifecycle.ServerHTTPS),
 			)
 			if hit {
 				setupRequire(t, err, io.ErrUnexpectedEOF)
@@ -51,9 +51,9 @@ func TestSetupLabResumesAfterEachRepositoryFailure(t *testing.T) {
 			resumed := setupExecute(
 				t,
 				a,
-				lifecycle.HTTPS,
+				lifecycle.ServerHTTPS,
 				"lab",
-				setupRequest("https", lifecycle.HTTPS),
+				setupRequest("server-https", lifecycle.ServerHTTPS),
 			)
 			if resumed.Identity.Pending != "1" || len(resumed.Identity.Revisions) != 1 ||
 				resumed.Identity.Revisions[0].Phase != "ready" {
@@ -71,30 +71,30 @@ func TestSetupLabResumesAfterEachRepositoryFailure(t *testing.T) {
 func TestSetupRolloverOperationsAndManagedCertificateSource(t *testing.T) {
 	a, _, _, _ := renewalFixture(t)
 	ctx := t.Context()
-	setupExecute(t, a, lifecycle.Issuer, "rollover", SetupRequest{Revision: "2"})
-	_, err := a.ExecuteSetup(ctx, lifecycle.Issuer, "retire", SetupRequest{Revision: "1"})
+	setupExecute(t, a, lifecycle.EnrollmentCA, "rollover", SetupRequest{Revision: "2"})
+	_, err := a.ExecuteSetup(ctx, lifecycle.EnrollmentCA, "retire", SetupRequest{Revision: "1"})
 	setupRequire(t, err, lifecycle.ErrConflict)
 	v := setupExecute(
 		t,
 		a,
-		lifecycle.Issuer,
+		lifecycle.EnrollmentCA,
 		"renew",
-		SetupRequest{Request: lifecycle.Request{ID: "https-ca"}, Force: true},
+		SetupRequest{Request: lifecycle.Request{ID: "server-https-ca"}, Force: true},
 	)
-	_, err = a.Certificates.CreateIssuer(ctx, "https-ca", v.Identity.Pending, 20*365*24*time.Hour)
+	_, err = a.Certificates.CreateIssuer(ctx, "server-https-ca", v.Identity.Pending, 20*365*24*time.Hour)
 	setupRequire(t, err, nil)
 	setupExecute(
 		t,
 		a,
-		lifecycle.Issuer,
+		lifecycle.EnrollmentCA,
 		"rollover",
-		SetupRequest{Request: lifecycle.Request{ID: "https-ca"}, Revision: "2"},
+		SetupRequest{Request: lifecycle.Request{ID: "server-https-ca"}, Revision: "2"},
 	)
 	_, err = a.ExecuteSetup(
 		ctx,
-		lifecycle.Issuer,
+		lifecycle.EnrollmentCA,
 		"retire",
-		SetupRequest{Request: lifecycle.Request{ID: "https-ca"}, Revision: "1"},
+		SetupRequest{Request: lifecycle.Request{ID: "server-https-ca"}, Revision: "1"},
 	)
 	setupRequire(t, err, lifecycle.ErrNotFound)
 	called := false
@@ -120,7 +120,7 @@ func TestSetupRolloverOperationsAndManagedCertificateSource(t *testing.T) {
 	}
 	setupRequire(t, a.enroll.loadCA(ctx, a), io.ErrUnexpectedEOF)
 	a.Certificates.Store = a.protocol
-	editSetupIdentity(t, a.protocol, "issuer", func(r map[string]any) {
+	editSetupIdentity(t, a.protocol, "enrollment-ca", func(r map[string]any) {
 		requireType[map[string]any](t, requireType[[]any](t, r["Revisions"])[0])["Key"] = base64.StdEncoding.EncodeToString(
 			[]byte("corrupt"),
 		)
@@ -137,7 +137,7 @@ func TestCertificateNoticeAndIssuerFailuresRemainRetryable(t *testing.T) {
 		t.Run(phase, func(t *testing.T) {
 			a, _, _, job := renewalFixture(t)
 			if phase == "issuer PEM" || phase == "issuer DER" || phase == "issuer missing" {
-				v, err := a.Certificates.Get(t.Context(), "issuer")
+				v, err := a.Certificates.Get(t.Context(), "enrollment-ca")
 				setupRequire(t, err, nil)
 				v.Pending = "next"
 				if phase == "issuer missing" {
@@ -147,7 +147,7 @@ func TestCertificateNoticeAndIssuerFailuresRemainRetryable(t *testing.T) {
 					if phase == "issuer DER" {
 						bad = pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: bad})
 					}
-					editSetupIdentity(t, a.protocol, "issuer", func(r map[string]any) {
+					editSetupIdentity(t, a.protocol, "enrollment-ca", func(r map[string]any) {
 						requireType[map[string]any](t, requireType[[]any](t, r["Revisions"])[1])["Certificate"] = base64.StdEncoding.EncodeToString(
 							bad,
 						)
@@ -159,8 +159,8 @@ func TestCertificateNoticeAndIssuerFailuresRemainRetryable(t *testing.T) {
 				return
 			}
 			if phase == "rollover read" || phase == "rollover progress" {
-				job.IssuerID, job.Phase = "https-ca", "prepared"
-				key := "pki/lifecycle/rollover/https-ca/1"
+				job.IssuerID, job.Phase = "server-https-ca", "prepared"
+				key := "pki/lifecycle/rollover/server-https-ca/1"
 				if phase == "rollover read" {
 					setupJSON(t, a.protocol, key, "invalid job")
 				} else {
@@ -178,7 +178,7 @@ func TestCertificateNoticeAndIssuerFailuresRemainRetryable(t *testing.T) {
 			c := clock.NewFake(a.cfg.Clock.Now().Add(10*365*24*time.Hour - time.Hour))
 			a.cfg.Clock, requireType[*state.Memory](t, a.protocol).Now = c, c.Now
 			if phase == "notice" {
-				item, err := a.Certificates.Get(t.Context(), "https-ca")
+				item, err := a.Certificates.Get(t.Context(), "server-https-ca")
 				setupRequire(t, err, nil)
 				_, err = a.Certificates.Begin(t.Context(), item.Request)
 				setupRequire(t, err, nil)
@@ -188,11 +188,11 @@ func TestCertificateNoticeAndIssuerFailuresRemainRetryable(t *testing.T) {
 				Store: backing,
 				fail: func(op, key string) error {
 					if phase == "new request" && op == "write" &&
-						key == "pki/lifecycle/identity/https-ca" {
+						key == "pki/lifecycle/identity/server-https-ca" {
 						return io.ErrUnexpectedEOF
 					}
 					if phase == "notice" && op == "write" &&
-						key != "pki/lifecycle/identity/https-ca" {
+						key != "pki/lifecycle/identity/server-https-ca" {
 						return io.ErrUnexpectedEOF
 					}
 					return nil
@@ -255,7 +255,7 @@ func TestMigrationPersistsDisabledBlockedAndRetryStates(t *testing.T) {
 				return
 			}
 			setupRequire(t, err, nil)
-			rows, _, err := a.Certificates.Migrations(ctx, "issuer", job.To, "", 100)
+			rows, _, err := a.Certificates.Migrations(ctx, "enrollment-ca", job.To, "", 100)
 			setupRequire(t, err, nil)
 			if mode == "disabled" && rows[0].Phase != "disabled" {
 				t.Fatal("disabled device retained as pending", rows)

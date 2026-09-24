@@ -214,7 +214,7 @@ func TestManagedCertificateCaptureIsAtomic(t *testing.T) {
 		t.Fatal(err)
 	}
 	manager := &lifecycle.Manager{Store: s.ObserveCertificates(repository)}
-	request := lifecycle.Request{ID: "managed-issuer", Kind: lifecycle.Issuer, Subject: pkix.Name{CommonName: "Example issuer"}}
+	request := lifecycle.Request{ID: "managed-issuer", Kind: lifecycle.EnrollmentCA, Subject: pkix.Name{CommonName: "Example issuer"}}
 	identity, err := manager.Begin(t.Context(), request)
 	if err != nil {
 		t.Fatal(err)

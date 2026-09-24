@@ -484,6 +484,15 @@ func (e *env) explainNotFound(
 			return err
 		}
 	}
+	if family == "enrollment" {
+		return fmt.Errorf(
+			"%w (this server serves %s and mounts no enrollment routes: enrollment needs an"+
+				" MDM push certificate for its topic, so install one with dmctl setup mdm-push"+
+				" and check dmctl setup status)",
+			err,
+			cfg.Service,
+		)
+	}
 	return fmt.Errorf(
 		"%w (this server serves %s, which does not serve %s)",
 		err,

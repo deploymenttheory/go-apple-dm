@@ -273,7 +273,7 @@ For a different device/host, first provision a stable device-facing DNS name,
 HTTPS trust and ingress. `localhost` refers to that device, not to your server.
 Change `DM_PUBLIC_URL`, issue a matching HTTPS identity and expose the intended
 listener through your deployment. The quickstart only publishes loopback.
-Follow [HTTPS provisioning](../operations/certificate-lifecycle.md#https-and-the-enrollment-issuer)
+Follow [HTTPS provisioning](../operations/certificate-lifecycle.md#the-server-https-identity-and-the-enrollment-ca)
 and [identity transport](../operations/enrollment-security.md#identity-transport-and-storage).
 Retain `dmserver` in the HTTPS SANs if the CLI container will keep using that
 hostname, or configure its server/CA for the replacement endpoint.
@@ -309,23 +309,23 @@ The customer needs a vendor-signed CSR and access to the Apple Push Certificates
 Portal. Your MDM vendor must have the applicable
 [Apple signing identity](https://developer.apple.com/help/account/certificates/mdm-vendor-csr-signing-certificate/). If you
 operate that vendor yourself, follow the separate
-[vendor setup](../operations/certificate-lifecycle.md#apple-vendor-signing-identity).
+[vendor setup](../operations/certificate-lifecycle.md#the-vendor-signing-identity).
 The quickstart's `customer` role does not supply an Apple vendor certificate.
 
 Create the customer's push request using the Apple account that will own
 renewals:
 
 ```sh
-dmctl setup push request -cn 'My MDM lab' -organization 'My organization' \
+dmctl setup mdm-push request -cn 'My MDM lab' -organization 'My organization' \
   -account REPLACE_WITH_APPLE_ACCOUNT
-dmctl setup workflow export -id push -artifact csr -out /data/customer.csr.pem
+dmctl setup workflow export -id mdm-push -artifact csr -out /data/customer.csr.pem
 dc cp dmserver:/data/customer.csr.pem "$GS_DIR/customer.csr.pem"
 ```
 
 The request response includes `identity.pending`. For this first request it
 is `"1"`; use the actual pending revision if you are resuming a workflow.
 Send **only the public CSR** to your vendor. Have the vendor return the signed
-request as described in the [offline signing exchange](../operations/certificate-lifecycle.md#customer-push-identity).
+request as described in the [offline signing exchange](../operations/certificate-lifecycle.md#the-mdm-push-identity).
 The private customer key remains encrypted in your database.
 
 Use this helper to put input files into the volume as its non-root owner. It
@@ -337,7 +337,7 @@ putfile() {
     'umask 077; set -C; cat > "/data/$1"' sh "$1"
 }
 putfile customer.signed.csr < "$GS_DIR/customer.signed.csr"
-dmctl setup push sign -revision 1 -signed-request /data/customer.signed.csr
+dmctl setup mdm-push sign -revision 1 -signed-request /data/customer.signed.csr
 ```
 
 Upload that signed request to the
@@ -346,8 +346,8 @@ save the downloaded MDM push certificate as `$GS_DIR/push.pem`:
 
 ```sh
 putfile push.pem < "$GS_DIR/push.pem"
-dmctl setup push import -revision 1 -cert /data/push.pem
-dmctl setup push activate -revision 1
+dmctl setup mdm-push import -revision 1 -cert /data/push.pem
+dmctl setup mdm-push activate -revision 1
 ```
 
 Keep the owning Apple account and certificate renewal record. Renew the
@@ -523,11 +523,11 @@ Use a fresh directory and terminal without unrelated `DM_*` overrides:
 ./bin/dmctl setup init -dir test-lab/local/native -role customer \
   -public-url https://localhost:8443 -listen 127.0.0.1:8443
 export DM_SETUP_FILE="$PWD/test-lab/local/native/setup.json"
-./bin/dmctl setup https lab -cn 'Local MDM HTTPS' -hosts localhost,127.0.0.1
-./bin/dmctl setup https activate -revision 1
-./bin/dmctl setup issuer create -cn 'Local MDM enrollment CA'
-./bin/dmctl setup issuer activate -revision 1
-./bin/dmctl setup workflow export -id https-ca -artifact certificate \
+./bin/dmctl setup server-https lab -cn 'Local MDM HTTPS' -hosts localhost,127.0.0.1
+./bin/dmctl setup server-https activate -revision 1
+./bin/dmctl setup enrollment-ca create -cn 'Local MDM enrollment CA'
+./bin/dmctl setup enrollment-ca activate -revision 1
+./bin/dmctl setup workflow export -id server-https-ca -artifact certificate \
   -out test-lab/local/native/https-ca.pem
 ./bin/dmserver -setup-file "$DM_SETUP_FILE"
 ```

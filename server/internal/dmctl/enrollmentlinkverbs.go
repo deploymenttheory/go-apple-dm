@@ -53,7 +53,7 @@ func runEnrollmentLinks(ctx context.Context, e *env, args []string) error {
 		}
 		resp, err := c.Do(ctx, http.MethodPost, "/enrollment-links", nil, body)
 		if err != nil {
-			return err
+			return e.explainNotFound(ctx, c, "enrollment", err)
 		}
 		return e.emit(resp, func(w *tabwriter.Writer) {
 			item := jsontext.Value(resp.Body)
@@ -61,21 +61,21 @@ func runEnrollmentLinks(ctx context.Context, e *env, args []string) error {
 				field(item, "URL"), field(item, "ID"), field(item, "ExpiresAt"))
 		})
 	case "list":
-		return e.list(ctx, c, "/enrollment-links", url.Values{},
+		return e.explainNotFound(ctx, c, "enrollment", e.list(ctx, c, "/enrollment-links", url.Values{},
 			[]string{"ID", "STATE", "DEVICE", "IDENTITY", "EXPIRES", "REDEEMED"},
 			func(item jsontext.Value) []string {
 				return []string{
 					field(item, "ID"), field(item, "State"), field(item, "DeviceID"),
 					field(item, "Identity"), field(item, "ExpiresAt"), field(item, "RedeemedAt"),
 				}
-			})
+			}))
 	case "revoke":
 		if *id == "" {
 			return fmt.Errorf("%w: revoke requires -id", ErrUsage)
 		}
 		resp, err := c.Do(ctx, http.MethodDelete, "/enrollment-links/"+url.PathEscape(*id), nil, nil)
 		if err != nil {
-			return err
+			return e.explainNotFound(ctx, c, "enrollment", err)
 		}
 		return e.emit(resp, func(w *tabwriter.Writer) {
 			item := jsontext.Value(resp.Body)

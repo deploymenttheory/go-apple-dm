@@ -195,7 +195,7 @@ func (a *App) activateHTTPSTrust(ctx context.Context, job lifecycle.Rollover) er
 		}
 		if _, err := a.ExecuteSetup(
 			ctx,
-			lifecycle.HTTPS,
+			lifecycle.ServerHTTPS,
 			"activate",
 			SetupRequest{Request: https.Request, Revision: pending.Pending},
 		); err != nil {

@@ -34,7 +34,7 @@ def main():
     def identities():
         status = json.loads(cli("setup", "status").stdout)
         assert not status["ready"] and not status["enrollmentEnabled"]
-        assert status["issues"] == ["push requires a valid active certificate"]
+        assert status["issues"] == ["mdm-push requires a valid active certificate"]
         return {item["id"]: (item["active"], [(r["id"], r["fingerprint"]) for r in item["revisions"]])
                 for item in status["identities"]}
 

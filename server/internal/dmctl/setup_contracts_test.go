@@ -26,10 +26,10 @@ func TestSetupCheckBuildsReadyManagedServer(t *testing.T) {
 	path := filepath.Join(dir, "setup.json")
 	for _, args := range [][]string{
 		{"init", "-dir", dir, "-role", "customer"},
-		{"https", "lab", "-setup-file", path, "-cn", "localhost", "-hosts", "localhost"},
-		{"https", "activate", "-setup-file", path, "-revision", "1"},
-		{"issuer", "create", "-setup-file", path, "-cn", "issuer"},
-		{"issuer", "activate", "-setup-file", path, "-revision", "1"},
+		{"server-https", "lab", "-setup-file", path, "-cn", "localhost", "-hosts", "localhost"},
+		{"server-https", "activate", "-setup-file", path, "-revision", "1"},
+		{"enrollment-ca", "create", "-setup-file", path, "-cn", "issuer"},
+		{"enrollment-ca", "activate", "-setup-file", path, "-revision", "1"},
 	} {
 		if _, _, err := run(t, env, append([]string{"setup"}, args...)...); err != nil {
 			t.Fatal(args, err)
@@ -58,7 +58,7 @@ func TestSetupCheckBuildsReadyManagedServer(t *testing.T) {
 	a.Certificates.Trust.Apple = []*x509.Certificate{ca.Cert}
 	_, err = a.Certificates.Adopt(
 		t.Context(),
-		lifecycle.Request{ID: "push", Kind: lifecycle.Push},
+		lifecycle.Request{ID: "mdm-push", Kind: lifecycle.MDMPush},
 		cert,
 		key,
 	)
@@ -145,7 +145,7 @@ func TestSetupRemoteCommandsAndFailures(t *testing.T) {
 						_, _ = w.Write([]byte("public artifact"))
 					case r.Method == "GET":
 						_ = json.NewEncoder(w).
-							Encode(lifecycle.Identity{Request: lifecycle.Request{ID: "push", Kind: lifecycle.Push}, Pending: "1"})
+							Encode(lifecycle.Identity{Request: lifecycle.Request{ID: "mdm-push", Kind: lifecycle.MDMPush}, Pending: "1"})
 					default:
 						var req app.SetupRequest
 						if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -174,23 +174,23 @@ func TestSetupRemoteCommandsAndFailures(t *testing.T) {
 			for _, args := range [][]string{
 				{"status"},
 				{"check"},
-				{"workflow", "show", "-id", "push"},
-				{"workflow", "history", "-id", "push", "-cursor", "cursor"},
-				{"workflow", "cancel", "-id", "push", "-revision", "1"},
-				{"workflow", "export", "-id", "push", "-out", filepath.Join(t.TempDir(), "csr")},
+				{"workflow", "show", "-id", "mdm-push"},
+				{"workflow", "history", "-id", "mdm-push", "-cursor", "cursor"},
+				{"workflow", "cancel", "-id", "mdm-push", "-revision", "1"},
+				{"workflow", "export", "-id", "mdm-push", "-out", filepath.Join(t.TempDir(), "csr")},
 				{"profile", "trust", "-out", filepath.Join(t.TempDir(), "trust")},
 				{"profile", "export", "-out", filepath.Join(t.TempDir(), "enrollment"), "-device-id", "device"},
-				{"https", "acme", "-cn", "mdm.example", "-hosts", "mdm.example", "-accept-terms", "-contact", "operator@example.com"},
-				{"vendor", "sign", "-out", filepath.Join(t.TempDir(), "signed")},
-				{"push", "sign"},
+				{"server-https", "acme", "-cn", "mdm.example", "-hosts", "mdm.example", "-accept-terms", "-contact", "operator@example.com"},
+				{"vendor-signing", "sign", "-out", filepath.Join(t.TempDir(), "signed")},
+				{"mdm-push", "sign"},
 			} {
 				_, _, err := run(t, env, append([]string{"setup"}, args...)...)
 				wantError := mode == "unavailable" || mode == "invalid client" ||
-					args[0] == "push" ||
+					args[0] == "mdm-push" ||
 					(mode == "incomplete" && args[0] == "check")
 				if mode == "invalid response" {
-					wantError = args[0] == "check" || args[0] == "https" || args[0] == "vendor" ||
-						args[0] == "push" ||
+					wantError = args[0] == "check" || args[0] == "server-https" ||
+						args[0] == "vendor-signing" || args[0] == "mdm-push" ||
 						(args[0] == "workflow" && args[1] == "cancel")
 				}
 				if (err != nil) != wantError {
@@ -212,15 +212,15 @@ func TestSetupLocalValidationAndArtifactProtection(t *testing.T) {
 		{"status", "extra"},
 		{"status", "-bad"},
 		{"status", "-from-lab", dir},
-		{"vendor", "sign"},
+		{"vendor-signing", "sign"},
 		{"profile", "bad"},
 		{"profile", "trust"},
 		{"workflow", "show"},
-		{"workflow", "export", "-id", "push"},
-		{"workflow", "bad", "-id", "push"},
+		{"workflow", "export", "-id", "mdm-push"},
+		{"workflow", "bad", "-id", "mdm-push"},
 		{"init", "-dir", dir, "-storage", "inmem"},
 		{"status", "-setup-file", path},
-		{"push", "import", "-cert", filepath.Join(dir, "missing")},
+		{"mdm-push", "import", "-cert", filepath.Join(dir, "missing")},
 	} {
 		if _, _, err := run(t, env, append([]string{"setup"}, args...)...); err == nil {
 			t.Fatal("invalid command accepted", args)
@@ -236,20 +236,20 @@ func TestSetupLocalValidationAndArtifactProtection(t *testing.T) {
 	if err := call("check"); !errors.Is(err, dmctl.ErrPartial) {
 		t.Fatal("incomplete setup passed", err)
 	}
-	if err := call("push", "request", "-cn", "customer"); err != nil {
+	if err := call("mdm-push", "request", "-cn", "customer"); err != nil {
 		t.Fatal(err)
 	}
-	for _, args := range [][]string{{"workflow", "show", "-id", "push"}, {"workflow", "history", "-id", "push"}, {"workflow", "cancel", "-id", "push", "-revision", "1"}} {
+	for _, args := range [][]string{{"workflow", "show", "-id", "mdm-push"}, {"workflow", "history", "-id", "mdm-push"}, {"workflow", "cancel", "-id", "mdm-push", "-revision", "1"}} {
 		if err := call(args...); err != nil {
 			t.Fatal(args, err)
 		}
 	}
-	for _, args := range [][]string{{"workflow", "show", "-id", "missing"}, {"workflow", "history", "-id", "push", "-page-size", "0"}, {"workflow", "cancel", "-id", "missing"}, {"profile", "export", "-out", filepath.Join(dir, "profile")}, {"profile", "trust", "-out", filepath.Join(dir, "trust")}} {
+	for _, args := range [][]string{{"workflow", "show", "-id", "missing"}, {"workflow", "history", "-id", "mdm-push", "-page-size", "0"}, {"workflow", "cancel", "-id", "missing"}, {"profile", "export", "-out", filepath.Join(dir, "profile")}, {"profile", "trust", "-out", filepath.Join(dir, "trust")}} {
 		if err := call(args...); err == nil {
 			t.Fatal("invalid local command accepted", args)
 		}
 	}
-	if err := call("https", "lab", "-cn", "localhost", "-hosts", "localhost"); err != nil {
+	if err := call("server-https", "lab", "-cn", "localhost", "-hosts", "localhost"); err != nil {
 		t.Fatal(err)
 	}
 	if err := call("profile", "trust", "-out", filepath.Join(dir, "trust")); err != nil {
@@ -276,7 +276,7 @@ func TestSetupLocalValidationAndArtifactProtection(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	material, err := a.Certificates.LoadMaterial(t.Context(), "https-ca", "")
+	material, err := a.Certificates.LoadMaterial(t.Context(), "server-https-ca", "")
 	_ = a.Close()
 	if err != nil {
 		t.Fatal(err)
@@ -289,7 +289,7 @@ func TestSetupLocalValidationAndArtifactProtection(t *testing.T) {
 	if err := call(
 		"adopt",
 		"-kind",
-		"issuer",
+		"enrollment-ca",
 		"-id",
 		"adopted",
 		"-cert",
@@ -300,7 +300,7 @@ func TestSetupLocalValidationAndArtifactProtection(t *testing.T) {
 		t.Fatal(err)
 	}
 	if err := call(
-		"push",
+		"mdm-push",
 		"sign",
 		"-revision",
 		"1",
@@ -318,7 +318,7 @@ func TestSetupLocalValidationAndArtifactProtection(t *testing.T) {
 	)
 	defer ca.Close()
 	if err := call(
-		"https",
+		"server-https",
 		"acme",
 		"-id",
 		"public",
@@ -337,7 +337,7 @@ func TestSetupLocalValidationAndArtifactProtection(t *testing.T) {
 		t.Fatal("CA rejection ignored")
 	}
 	if err := call(
-		"https",
+		"server-https",
 		"acme",
 		"-id",
 		"public",
@@ -440,7 +440,7 @@ func TestSetupWorkspaceAdoptionPreservesDatabaseAndImportedIdentities(t *testing
 					t.Fatal(err)
 				}
 				defer func(cleanup func() error) { _ = cleanup() }(a.Close)
-				for _, name := range []string{"issuer", "https-ca", "https"} {
+				for _, name := range []string{"enrollment-ca", "server-https-ca", "server-https"} {
 					v, err := a.Certificates.Get(t.Context(), name)
 					if err != nil || v.Active != "1" {
 						t.Fatal("verified identities lost after push failure", name, err)

@@ -86,7 +86,7 @@ func (m *Manager) PrepareRollover(ctx context.Context, id, rev string, devices [
 		if err != nil {
 			return err
 		}
-		if r.Kind != Issuer || r.Active == "" || r.Pending != rev || v.Phase != "ready" {
+		if r.Kind != EnrollmentCA || r.Active == "" || r.Pending != rev || v.Phase != "ready" {
 			return ErrConflict
 		}
 		// Finish and retire the previous authority before starting another
@@ -285,7 +285,7 @@ func (m *Manager) CompleteRollover(ctx context.Context, id, rev string) error {
 // RetireIssuer retains signing material for certificate status publication.
 func (m *Manager) RetireIssuer(ctx context.Context, id, rev string) (Identity, error) {
 	return m.change(ctx, id, func(tx state.Tx, r *record) error {
-		if r.Kind != Issuer || r.Active == rev || r.Pending == rev {
+		if r.Kind != EnrollmentCA || r.Active == rev || r.Pending == rev {
 			return ErrConflict
 		}
 		var job Rollover

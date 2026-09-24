@@ -13,9 +13,9 @@ import (
 func rolloverFixture(t *testing.T) (*Manager, *faultRepository, Identity) {
 	t.Helper()
 	m, s, now := testManager(t)
-	rootIdentity(t, m, "issuer")
+	rootIdentity(t, m, "enrollment-ca")
 	*now = now.Add(time.Hour)
-	v := pending(t, m, "issuer", Issuer)
+	v := pending(t, m, "enrollment-ca", EnrollmentCA)
 	v, err := m.CreateIssuer(t.Context(), v.ID, v.Pending, 0)
 	requireError(t, err, nil)
 	return m, s, v

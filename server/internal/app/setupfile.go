@@ -11,6 +11,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/pki/lifecycle"
 	"github.com/deploymenttheory/go-apple-dm/server/internal/privatefile"
 )
 
@@ -168,11 +169,11 @@ func InitSetupFile(o SetupInitOptions) (string, error) {
 		Version: 1,
 		Setup: SetupConfig{
 			Role:      role,
-			VendorID:  "vendor",
-			PushID:    "push",
-			HTTPSID:   "https",
-			IssuerID:  "issuer",
-			HTTPSCAID: "https-ca",
+			VendorID:  string(lifecycle.VendorSigning),
+			PushID:    string(lifecycle.MDMPush),
+			HTTPSID:   string(lifecycle.ServerHTTPS),
+			IssuerID:  string(lifecycle.EnrollmentCA),
+			HTTPSCAID: string(lifecycle.ServerHTTPS) + "-ca",
 		},
 		Environment: map[string]string{
 			EnvStorage:           storage,

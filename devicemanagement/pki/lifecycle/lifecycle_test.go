@@ -64,7 +64,7 @@ func TestAnnualPushRenewalSurvivesRestartAndOriginalExpiry(t *testing.T) {
 		t.Fatal(err)
 	}
 	m := &lifecycle.Manager{Store: store, Trust: lifecycle.Trust{Apple: []*x509.Certificate{ca.Cert}}}
-	req := lifecycle.Request{ID: "customer", Kind: lifecycle.Push, Subject: pkix.Name{CommonName: "customer"}}
+	req := lifecycle.Request{ID: "customer", Kind: lifecycle.MDMPush, Subject: pkix.Name{CommonName: "customer"}}
 	first, err := m.Begin(ctx, req)
 	if err != nil {
 		t.Fatal(err)
@@ -152,7 +152,7 @@ func TestAnnualPushRenewalSurvivesRestartAndOriginalExpiry(t *testing.T) {
 // revision.
 func TestConcurrentRequestsCreateOnePendingRevision(t *testing.T) {
 	m := &lifecycle.Manager{Store: state.NewMemory()}
-	req := lifecycle.Request{ID: "vendor", Kind: lifecycle.Vendor, Subject: pkix.Name{CommonName: "vendor"}}
+	req := lifecycle.Request{ID: "vendor", Kind: lifecycle.VendorSigning, Subject: pkix.Name{CommonName: "vendor"}}
 	var wg sync.WaitGroup
 	for range 8 {
 		wg.Go(func() {
@@ -173,7 +173,7 @@ func TestConcurrentRequestsCreateOnePendingRevision(t *testing.T) {
 func TestLabHTTPSHasSeparateCAAndValidHostnames(t *testing.T) {
 	ctx := t.Context()
 	m := &lifecycle.Manager{Store: state.NewMemory()}
-	caReq := lifecycle.Request{ID: "lab-ca", Kind: lifecycle.Issuer, Subject: pkix.Name{CommonName: "lab HTTPS CA"}}
+	caReq := lifecycle.Request{ID: "lab-ca", Kind: lifecycle.EnrollmentCA, Subject: pkix.Name{CommonName: "lab HTTPS CA"}}
 	item, err := m.Begin(ctx, caReq)
 	if err != nil {
 		t.Fatal(err)
@@ -184,7 +184,7 @@ func TestLabHTTPSHasSeparateCAAndValidHostnames(t *testing.T) {
 	if _, err = m.Activate(ctx, caReq.ID, item.Pending); err != nil {
 		t.Fatal(err)
 	}
-	req := lifecycle.Request{ID: "https", Kind: lifecycle.HTTPS, Subject: pkix.Name{CommonName: "lab"}, DNSNames: []string{"localhost", "127.0.0.1"}}
+	req := lifecycle.Request{ID: "https", Kind: lifecycle.ServerHTTPS, Subject: pkix.Name{CommonName: "lab"}, DNSNames: []string{"localhost", "127.0.0.1"}}
 	item, err = m.Begin(ctx, req)
 	if err != nil {
 		t.Fatal(err)

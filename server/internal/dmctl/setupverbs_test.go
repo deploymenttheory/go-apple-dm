@@ -38,14 +38,14 @@ func TestSetupBootstrapResumesAndExportsOnlyPublicArtifacts(t *testing.T) {
 	if err != nil || !bytes.Equal(keyBefore, keyAfter) {
 		t.Fatal("bootstrap replaced storage key", err)
 	}
-	call("https", "lab", "-setup-file", setup, "-cn", "local lab", "-hosts", "localhost,127.0.0.1")
-	call("https", "activate", "-setup-file", setup, "-revision", "1")
-	call("issuer", "create", "-setup-file", setup, "-cn", "enrollment CA")
-	call("issuer", "activate", "-setup-file", setup, "-revision", "1")
-	call("issuer", "renew", "-setup-file", setup, "-force")
-	call("issuer", "renew", "-setup-file", setup, "-force")
-	call("vendor", "request", "-setup-file", setup, "-cn", "MDM Vendor")
-	call("vendor", "request", "-setup-file", setup, "-cn", "MDM Vendor")
+	call("server-https", "lab", "-setup-file", setup, "-cn", "local lab", "-hosts", "localhost,127.0.0.1")
+	call("server-https", "activate", "-setup-file", setup, "-revision", "1")
+	call("enrollment-ca", "create", "-setup-file", setup, "-cn", "enrollment CA")
+	call("enrollment-ca", "activate", "-setup-file", setup, "-revision", "1")
+	call("enrollment-ca", "renew", "-setup-file", setup, "-force")
+	call("enrollment-ca", "renew", "-setup-file", setup, "-force")
+	call("vendor-signing", "request", "-setup-file", setup, "-cn", "MDM Vendor")
+	call("vendor-signing", "request", "-setup-file", setup, "-cn", "MDM Vendor")
 	csr := filepath.Join(dir, "vendor.certSigningRequest")
 	call(
 		"workflow",
@@ -53,7 +53,7 @@ func TestSetupBootstrapResumesAndExportsOnlyPublicArtifacts(t *testing.T) {
 		"-setup-file",
 		setup,
 		"-id",
-		"vendor",
+		"vendor-signing",
 		"-artifact",
 		"csr",
 		"-out",
@@ -68,7 +68,7 @@ func TestSetupBootstrapResumesAndExportsOnlyPublicArtifacts(t *testing.T) {
 		"-setup-file",
 		setup,
 		"-id",
-		"vendor",
+		"vendor-signing",
 		"-artifact",
 		"key",
 		"-out",

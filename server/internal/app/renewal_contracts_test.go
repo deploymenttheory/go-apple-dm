@@ -34,19 +34,19 @@ func renewalFixture(
 	a.Push = &pushnotify.Notifier{Store: a.Store, Pusher: renewalPusher{}, Clock: a.cfg.Clock}
 	a.cfg.Setup = &SetupConfig{
 		Role:      "combined",
-		IssuerID:  "issuer",
-		HTTPSCAID: "https-ca",
-		HTTPSID:   "https",
-		PushID:    "push",
-		VendorID:  "vendor",
+		IssuerID:  "enrollment-ca",
+		HTTPSCAID: "server-https-ca",
+		HTTPSID:   "server-https",
+		PushID:    "mdm-push",
+		VendorID:  "vendor-signing",
 	}
 	a.Certificates = &lifecycle.Manager{Store: a.protocol}
 	key, err := x509.MarshalPKCS8PrivateKey(a.enroll.caKey)
 	setupRequire(t, err, nil)
-	for _, name := range []string{"issuer", "https-ca"} {
+	for _, name := range []string{"enrollment-ca", "server-https-ca"} {
 		_, err = a.Certificates.Adopt(
 			t.Context(),
-			lifecycle.Request{ID: name, Kind: lifecycle.Issuer},
+			lifecycle.Request{ID: name, Kind: lifecycle.EnrollmentCA},
 			pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: a.enroll.caCert.Raw}),
 			pem.EncodeToMemory(&pem.Block{Type: "PRIVATE KEY", Bytes: key}),
 		)
@@ -71,15 +71,15 @@ func renewalFixture(
 			NotAfter: a.cfg.Clock.Now().Add(10 * 24 * time.Hour),
 		},
 	)
-	v := setupExecute(t, a, lifecycle.Issuer, "renew", SetupRequest{Force: true})
+	v := setupExecute(t, a, lifecycle.EnrollmentCA, "renew", SetupRequest{Force: true})
 	_, err = a.Certificates.CreateIssuer(
 		t.Context(),
-		"issuer",
+		"enrollment-ca",
 		v.Identity.Pending,
 		20*365*24*time.Hour,
 	)
 	setupRequire(t, err, nil)
-	job, err := a.startIssuerRollover(t.Context(), "issuer", v.Identity.Pending)
+	job, err := a.startIssuerRollover(t.Context(), "enrollment-ca", v.Identity.Pending)
 	setupRequire(t, err, nil)
 	target, err := a.managedIssuer(t.Context(), job.To)
 	setupRequire(t, err, nil)
@@ -216,7 +216,7 @@ func TestDeviceMigrationTrustAndReplacementOutcomes(t *testing.T) {
 						t,
 						a,
 						e,
-						stableUUID("issuer-trust/issuer/2/"+e.ID.ID+"/0"),
+						stableUUID("issuer-trust/enrollment-ca/2/"+e.ID.ID+"/0"),
 						status,
 					)
 				}
@@ -304,9 +304,9 @@ func TestHTTPSTrustOutcomesAndDisabledDevices(t *testing.T) {
 	for _, mode := range []string{"missing", "disabled", "lookup failure", "queue failure", "pending", "acknowledged", "failed", "cleared"} {
 		t.Run(mode, func(t *testing.T) {
 			a, e, _, _ := renewalFixture(t)
-			job := lifecycle.Rollover{IssuerID: "https-ca", To: "2"}
+			job := lifecycle.Rollover{IssuerID: "server-https-ca", To: "2"}
 			m := lifecycle.Migration{Device: e.ID.ID}
-			pairs, err := a.certificatePairs(t.Context(), "https-ca", false)
+			pairs, err := a.certificatePairs(t.Context(), "server-https-ca", false)
 			setupRequire(t, err, nil)
 			want := "trust-pending"
 			switch mode {
@@ -344,7 +344,7 @@ func TestHTTPSTrustOutcomesAndDisabledDevices(t *testing.T) {
 					t,
 					a,
 					e,
-					stableUUID("https-trust/https-ca/2/"+e.ID.ID+"/0"),
+					stableUUID("https-trust/server-https-ca/2/"+e.ID.ID+"/0"),
 					status,
 				)
 			}
@@ -427,30 +427,30 @@ func TestDeviceRenewalPersistsProgressAndExplicitRetries(t *testing.T) {
 		t.Fatal(status)
 	}
 	setupRequire(t, a.renewOneIdentity(ctx, *e), lifecycle.ErrConflict)
-	setupRequire(t, a.retryMigration(ctx, "issuer", "", e.ID.ID), nil)
+	setupRequire(t, a.retryMigration(ctx, "enrollment-ca", "", e.ID.ID), nil)
 	status, err = a.deviceRenewalStatus(ctx, e.ID.ID)
 	setupRequire(t, err, nil)
 	if status.Retry != 1 || status.Phase != "queued" || !status.NextAttempt.IsZero() {
 		t.Fatal(status)
 	}
-	result := setupExecute(t, a, lifecycle.Issuer, "device-status", SetupRequest{Device: e.ID.ID})
+	result := setupExecute(t, a, lifecycle.EnrollmentCA, "device-status", SetupRequest{Device: e.ID.ID})
 	if len(result.Migrations) != 1 {
 		t.Fatal(result)
 	}
-	setupExecute(t, a, lifecycle.Issuer, "retry", SetupRequest{Device: e.ID.ID})
+	setupExecute(t, a, lifecycle.EnrollmentCA, "retry", SetupRequest{Device: e.ID.ID})
 	setupRequire(t, a.reconcileDeviceRenewals(ctx), nil)
-	for _, args := range [][3]string{{"wrong", "", e.ID.ID}, {"issuer", "", ""}, {"issuer", "", "missing"}, {"issuer", "2", "missing"}} {
+	for _, args := range [][3]string{{"wrong", "", e.ID.ID}, {"enrollment-ca", "", ""}, {"enrollment-ca", "", "missing"}, {"enrollment-ca", "2", "missing"}} {
 		if err := a.retryMigration(ctx, args[0], args[1], args[2]); err == nil {
 			t.Fatal("invalid retry accepted", args)
 		}
 	}
-	setupRequire(t, a.retryMigration(ctx, "issuer", job.To, e.ID.ID), nil)
-	rows, _, err := a.Certificates.Migrations(ctx, "issuer", job.To, "", 100)
+	setupRequire(t, a.retryMigration(ctx, "enrollment-ca", job.To, e.ID.ID), nil)
+	rows, _, err := a.Certificates.Migrations(ctx, "enrollment-ca", job.To, "", 100)
 	setupRequire(t, err, nil)
 	rows[0].Phase = "confirmed"
-	setupRequire(t, a.Certificates.SaveMigration(ctx, "issuer", job.To, rows[0]), nil)
-	setupRequire(t, a.retryMigration(ctx, "issuer", job.To, e.ID.ID), lifecycle.ErrConflict)
-	result = setupExecute(t, a, lifecycle.Issuer, "status", SetupRequest{})
+	setupRequire(t, a.Certificates.SaveMigration(ctx, "enrollment-ca", job.To, rows[0]), nil)
+	setupRequire(t, a.retryMigration(ctx, "enrollment-ca", job.To, e.ID.ID), lifecycle.ErrConflict)
+	result = setupExecute(t, a, lifecycle.EnrollmentCA, "status", SetupRequest{})
 	if result.Rollover == nil || len(result.Migrations) != 1 {
 		t.Fatal(result)
 	}
@@ -466,7 +466,7 @@ func TestDeviceRenewalPersistsProgressAndExplicitRetries(t *testing.T) {
 			},
 		)
 		if phase == "confirmed" || phase == "disabled" {
-			setupRequire(t, a.retryMigration(ctx, "issuer", "", e.ID.ID), lifecycle.ErrConflict)
+			setupRequire(t, a.retryMigration(ctx, "enrollment-ca", "", e.ID.ID), lifecycle.ErrConflict)
 		}
 		setupRequire(t, a.reconcileDeviceRenewals(ctx), nil)
 	}
@@ -489,7 +489,7 @@ func TestDeviceRenewalPersistsProgressAndExplicitRetries(t *testing.T) {
 		),
 		nil,
 	)
-	for _, operation := range []func() error{func() error { return a.renewOneIdentity(ctx, *e) }, func() error { return a.retryMigration(ctx, "issuer", "", e.ID.ID) }, func() error { return a.reconcileDeviceRenewals(ctx) }} {
+	for _, operation := range []func() error{func() error { return a.renewOneIdentity(ctx, *e) }, func() error { return a.retryMigration(ctx, "enrollment-ca", "", e.ID.ID) }, func() error { return a.reconcileDeviceRenewals(ctx) }} {
 		if err := operation(); err == nil {
 			t.Fatal("corrupt renewal state accepted")
 		}
@@ -521,7 +521,7 @@ func TestRenewalWorkersRescanLateAndDisabledEnrollments(t *testing.T) {
 	if len(devices) != 101 {
 		t.Fatal("incomplete enrollment scan")
 	}
-	rows, next, err := a.Certificates.Migrations(ctx, "issuer", "2", "", 100)
+	rows, next, err := a.Certificates.Migrations(ctx, "enrollment-ca", "2", "", 100)
 	setupRequire(t, err, nil)
 	if len(rows) != 100 || next == "" {
 		t.Fatal("late devices dropped")

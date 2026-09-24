@@ -36,7 +36,7 @@ func TestSQLiteCertificateActivationAndWorkflowAreAtomic(t *testing.T) {
 // TestCertificatePublicationRequiresEncryptedSQLTransaction checks that certificate publication
 // requires encrypted SQL transaction.
 func TestCertificatePublicationRequiresEncryptedSQLTransaction(t *testing.T) {
-	if err := statestore.PublishCertificate(t.Context(), nil, lifecycle.Identity{Kind: lifecycle.Push}, lifecycle.Material{}); err == nil {
+	if err := statestore.PublishCertificate(t.Context(), nil, lifecycle.Identity{Kind: lifecycle.MDMPush}, lifecycle.Material{}); err == nil {
 		t.Fatal("published without a SQL transaction")
 	}
 	st, err := statestore.Open(t.Context(), sqliteDB(t), sqlite.Dialect, nil)
@@ -44,7 +44,7 @@ func TestCertificatePublicationRequiresEncryptedSQLTransaction(t *testing.T) {
 		t.Fatal(err)
 	}
 	err = st.Update(t.Context(), []string{"certificate"}, func(tx state.Tx) error {
-		return statestore.PublishCertificate(t.Context(), tx, lifecycle.Identity{Kind: lifecycle.Push}, lifecycle.Material{})
+		return statestore.PublishCertificate(t.Context(), tx, lifecycle.Identity{Kind: lifecycle.MDMPush}, lifecycle.Material{})
 	})
 	if err == nil {
 		t.Fatal("published private key without encryption")
@@ -81,7 +81,7 @@ func exerciseCertificateActivation(t *testing.T, db *sql.DB, dialect sqlcommon.D
 	if err != nil {
 		t.Fatal(err)
 	}
-	req := lifecycle.Request{ID: id, Kind: lifecycle.Push, Subject: pkix.Name{CommonName: "customer"}}
+	req := lifecycle.Request{ID: id, Kind: lifecycle.MDMPush, Subject: pkix.Name{CommonName: "customer"}}
 	m := &lifecycle.Manager{Store: st, Trust: lifecycle.Trust{Apple: []*x509.Certificate{ca.Cert}}, Publish: statestore.PublishCertificate}
 	if _, err = m.Adopt(ctx, req, cert, key); err != nil {
 		t.Fatal(err)

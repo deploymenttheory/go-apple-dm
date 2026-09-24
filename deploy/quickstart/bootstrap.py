@@ -64,8 +64,8 @@ class Bootstrap:
         identities = {item["id"]: item for item in (status.get("identities") or [])}
         setup = document["setup"]
         for group, field, operation, options in (
-            ("https", "httpsId", "lab", ["-cn", "Local MDM HTTPS", "-hosts", "localhost,127.0.0.1,dmserver"]),
-            ("issuer", "issuerId", "create", ["-cn", "Local MDM enrollment CA"]),
+            ("server-https", "httpsId", "lab", ["-cn", "Local MDM HTTPS", "-hosts", "localhost,127.0.0.1,dmserver"]),
+            ("enrollment-ca", "issuerId", "create", ["-cn", "Local MDM enrollment CA"]),
         ):
             identity = identities.get(setup[field], {})
             if complete.exists():

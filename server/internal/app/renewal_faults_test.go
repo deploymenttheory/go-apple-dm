@@ -92,14 +92,14 @@ func (tx setupFaultTx) List(
 // TestManagedServicesPropagateEveryCertificateReadFailure checks managed services propagate every
 // certificate read failure.
 func TestManagedServicesPropagateEveryCertificateReadFailure(t *testing.T) {
-	for _, name := range []string{"pairs", "issuer", "registry", "profile trust", "service config", "status", "retire HTTPS"} {
+	for _, name := range []string{"pairs", "enrollment-ca", "registry", "profile trust", "service config", "status", "retire HTTPS"} {
 		t.Run(name, func(t *testing.T) {
 			a, _, _, _ := renewalFixture(t)
-			v := setupExecute(t, a, lifecycle.HTTPS, "lab", setupRequest("https", lifecycle.HTTPS))
+			v := setupExecute(t, a, lifecycle.ServerHTTPS, "lab", setupRequest("server-https", lifecycle.ServerHTTPS))
 			setupExecute(
 				t,
 				a,
-				lifecycle.HTTPS,
+				lifecycle.ServerHTTPS,
 				"activate",
 				SetupRequest{Revision: v.Identity.Pending},
 			)
@@ -118,9 +118,9 @@ func TestManagedServicesPropagateEveryCertificateReadFailure(t *testing.T) {
 				a.issuerServices = nil
 				switch name {
 				case "pairs":
-					_, err := a.certificatePairs(t.Context(), "issuer", false)
+					_, err := a.certificatePairs(t.Context(), "enrollment-ca", false)
 					return err
-				case "issuer":
+				case "enrollment-ca":
 					_, err := a.managedIssuer(t.Context(), "2")
 					return err
 				case "registry":
@@ -134,13 +134,13 @@ func TestManagedServicesPropagateEveryCertificateReadFailure(t *testing.T) {
 				case "status":
 					_, err := a.ExecuteSetup(
 						t.Context(),
-						lifecycle.Issuer,
+						lifecycle.EnrollmentCA,
 						"status",
 						SetupRequest{},
 					)
 					return err
 				default:
-					_, err := a.retireHTTPSTrust(t.Context(), "https-ca", "1")
+					_, err := a.retireHTTPSTrust(t.Context(), "server-https-ca", "1")
 					return err
 				}
 			}
@@ -165,11 +165,13 @@ func TestMigrationOperationsPropagateEnrollmentAndRepositoryFailures(t *testing.
 		Fail:  map[string]error{"List": io.ErrUnexpectedEOF},
 	}
 	for _, op := range []func() error{
-		func() error { _, err := a.startIssuerRollover(ctx, "issuer", "2"); return err },
-		func() error { _, err := a.startHTTPSTrustRollover(ctx, "https-ca", "2"); return err },
+		func() error { _, err := a.startIssuerRollover(ctx, "enrollment-ca", "2"); return err },
+		func() error { _, err := a.startHTTPSTrustRollover(ctx, "server-https-ca", "2"); return err },
 		func() error { return a.advanceRollover(ctx, job) },
-		func() error { return a.advanceHTTPSTrust(ctx, lifecycle.Rollover{IssuerID: "https-ca", To: "2"}) },
-		func() error { _, err := a.retireManagedIssuer(ctx, "issuer", "1"); return err },
+		func() error {
+			return a.advanceHTTPSTrust(ctx, lifecycle.Rollover{IssuerID: "server-https-ca", To: "2"})
+		},
+		func() error { _, err := a.retireManagedIssuer(ctx, "enrollment-ca", "1"); return err },
 	} {
 		setupRequire(t, op(), io.ErrUnexpectedEOF)
 	}
@@ -194,10 +196,12 @@ func TestMigrationOperationsPropagateEnrollmentAndRepositoryFailures(t *testing.
 			a.protocol, a.Certificates.Store = fault, fault
 			for _, op := range []func() error{
 				func() error { return a.renewOneIdentity(ctx, *e) },
-				func() error { return a.retryMigration(ctx, "issuer", "", e.ID.ID) },
-				func() error { return a.retryMigration(ctx, "issuer", "2", e.ID.ID) },
+				func() error { return a.retryMigration(ctx, "enrollment-ca", "", e.ID.ID) },
+				func() error { return a.retryMigration(ctx, "enrollment-ca", "2", e.ID.ID) },
 				func() error { return a.advanceRollover(ctx, job) },
-				func() error { return a.advanceHTTPSTrust(ctx, lifecycle.Rollover{IssuerID: "https-ca", To: "2"}) },
+				func() error {
+					return a.advanceHTTPSTrust(ctx, lifecycle.Rollover{IssuerID: "server-https-ca", To: "2"})
+				},
 				func() error { return a.reconcileDeviceRenewals(ctx) },
 				func() error { return a.identityRenewalPass(ctx) },
 				func() error { return a.certificateRenewalPass(ctx) },

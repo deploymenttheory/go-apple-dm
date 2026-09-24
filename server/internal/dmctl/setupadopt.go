@@ -104,10 +104,10 @@ func runSetupWorkspaceAdoption(ctx context.Context, e *env, source, destination,
 		kind      lifecycle.Kind
 		cert, key string
 	}{
-		{cfg.Setup.HTTPSCAID, lifecycle.Issuer, "ca.pem", "ca.key"},
-		{cfg.Setup.IssuerID, lifecycle.Issuer, "ca.pem", "ca.key"},
-		{cfg.Setup.HTTPSID, lifecycle.HTTPS, "tls.pem", "tls.key"},
-		{cfg.Setup.PushID, lifecycle.Push, "push.pem", "push.key"},
+		{cfg.Setup.HTTPSCAID, lifecycle.EnrollmentCA, "ca.pem", "ca.key"},
+		{cfg.Setup.IssuerID, lifecycle.EnrollmentCA, "ca.pem", "ca.key"},
+		{cfg.Setup.HTTPSID, lifecycle.ServerHTTPS, "tls.pem", "tls.key"},
+		{cfg.Setup.PushID, lifecycle.MDMPush, "push.pem", "push.key"},
 	} {
 		// #nosec G304 -- Constant certificate names above, under the local operator-selected workspace.
 		cert, err := os.ReadFile(filepath.Join(mdmDir, identity.cert))

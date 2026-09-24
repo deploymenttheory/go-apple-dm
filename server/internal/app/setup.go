@@ -301,7 +301,7 @@ func (a *App) certificateRenewalPass(ctx context.Context) error {
 // rollover steps while leaving workflows requiring operator input pending.
 func (a *App) advanceCertificate(ctx context.Context, item lifecycle.Identity) error {
 	switch item.Kind {
-	case lifecycle.Push:
+	case lifecycle.MDMPush:
 		if a.cfg.Setup.Role != "combined" && a.cfg.Setup.VendorURL == "" {
 			return nil
 		}
@@ -315,12 +315,12 @@ func (a *App) advanceCertificate(ctx context.Context, item lifecycle.Identity) e
 		}
 		_, err := a.ExecuteSetup(
 			ctx,
-			lifecycle.Push,
+			lifecycle.MDMPush,
 			"sign",
 			SetupRequest{Request: item.Request, Revision: item.Pending},
 		)
 		return wrapError(err)
-	case lifecycle.HTTPS:
+	case lifecycle.ServerHTTPS:
 		if _, err := a.Certificates.PublicACMEStatus(ctx, item.ID); err == nil {
 			_, err = a.Certificates.RunPublicACME(ctx, item.ID, nil)
 			return wrapError(err)
@@ -369,12 +369,12 @@ func (a *App) advanceCertificate(ctx context.Context, item lifecycle.Identity) e
 		}
 		_, err = a.ExecuteSetup(
 			ctx,
-			lifecycle.HTTPS,
+			lifecycle.ServerHTTPS,
 			"activate",
 			SetupRequest{Request: item.Request, Revision: item.Pending},
 		)
 		return wrapError(err)
-	case lifecycle.Issuer:
+	case lifecycle.EnrollmentCA:
 		if (item.ID != a.cfg.Setup.IssuerID && item.ID != a.cfg.Setup.HTTPSCAID) ||
 			item.Active == "" ||
 			a.enroll == nil {

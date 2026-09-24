@@ -16,7 +16,7 @@ func ExampleManager_Begin() {
 	// persistent state adapter and retain its external encryption keys.
 	manager := &lifecycle.Manager{Store: state.NewMemory()}
 	ctx := lifecycle.WithAudit(context.Background(), "setup-operator", "push/request")
-	request := lifecycle.Request{ID: "customer", Kind: lifecycle.Push, Subject: pkix.Name{CommonName: "Example customer"}}
+	request := lifecycle.Request{ID: "customer", Kind: lifecycle.MDMPush, Subject: pkix.Name{CommonName: "Example customer"}}
 	first, err := manager.Begin(ctx, request)
 	if err != nil {
 		panic(err)

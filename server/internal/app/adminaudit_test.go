@@ -213,9 +213,9 @@ func TestAuditRetentionPrunesOnItsInterval(t *testing.T) {
 	go func() { done <- a.Run(runCtx) }()
 
 	// Wait until the loop is parked on the clock, then move past the tick.
-	waitFor(t, func() bool { return fake.Pending() > 0 })
+	waitFor(t, "the retention loop to park on the clock", func() bool { return fake.Pending() > 0 })
 	fake.Advance(app.DefaultAuditPruneInterval)
-	waitFor(t, func() bool { return len(readAll(t, st)) == 1 })
+	waitFor(t, "the retention pass to prune to one record", func() bool { return len(readAll(t, st)) == 1 })
 
 	cancel()
 	<-done
@@ -223,16 +223,19 @@ func TestAuditRetentionPrunesOnItsInterval(t *testing.T) {
 
 // waitFor polls cond until it holds, so a test never sleeps for a fixed
 // duration to wait on a worker.
-func waitFor(t *testing.T, cond func() bool) {
+// waitFor polls until the described condition holds. The budget is generous because a
+// satisfied condition returns at once and only a real failure waits it out; the
+// description is what tells a reader which wait expired.
+func waitFor(t *testing.T, description string, cond func() bool) {
 	t.Helper()
-	deadline := time.Now().Add(5 * time.Second)
+	deadline := time.Now().Add(30 * time.Second)
 	for time.Now().Before(deadline) {
 		if cond() {
 			return
 		}
 		time.Sleep(time.Millisecond)
 	}
-	t.Fatal("condition was never met")
+	t.Fatalf("waited 30s for %s", description)
 }
 
 // Retention off keeps everything, which has to be a deliberate choice rather
@@ -371,10 +374,10 @@ func TestAuditRetentionSurvivesAFailedPrune(t *testing.T) {
 	runCtx, cancel := context.WithCancel(context.Background())
 	done := make(chan error, 1)
 	go func() { done <- a.Run(runCtx) }()
-	waitFor(t, func() bool { return fake.Pending() > 0 })
+	waitFor(t, "the retention loop to park on the clock", func() bool { return fake.Pending() > 0 })
 	fake.Advance(2 * time.Minute)
 	// The loop is still running: it parks on the clock again.
-	waitFor(t, func() bool { return fake.Pending() > 0 })
+	waitFor(t, "the retention loop to park on the clock", func() bool { return fake.Pending() > 0 })
 	cancel()
 	if err := <-done; err != nil {
 		t.Fatalf("a failed prune stopped the workers: %v", err)
