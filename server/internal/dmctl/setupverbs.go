@@ -163,10 +163,10 @@ func runSetup(ctx context.Context, e *env, args []string) error {
 			return wrapError(err)
 		}
 		defer func(cleanup func() error) { _ = cleanup() }(a.Close) // Close owns a bounded drain after cancellation.
-		return wrapError(
-			json.NewEncoder(e.stdout).
-				Encode(map[string]string{"setupFile": path, "nextAction": "create or import HTTPS and enrollment identities; request the Apple certificates"}),
-		)
+		// This command has just generated key material whose file names are
+		// identifiers rather than descriptions, so it reports what each secret
+		// protects and which of them must be preserved elsewhere.
+		return e.emitSetupInit(path)
 	}
 
 	if group == "adopt" {

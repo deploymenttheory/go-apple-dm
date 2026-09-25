@@ -23,7 +23,10 @@ class Bootstrap:
         # Compose's bootstrap owns its configuration; ambient CLI contexts and
         # server overrides must not redirect local identity operations.
         env = {k: v for k, v in os.environ.items() if not k.startswith(("DM_", "DMCTL_"))}
-        command = [self.binary, *args]
+        # Every result here is parsed, so ask for the machine rendering rather than
+        # relying on a verb's default. dmctl's default is the human one, which for
+        # setup init is a table describing the key material it generated.
+        command = [self.binary, *args, "-output", "json"]
         if setup:
             command += ["-setup-file", str(self.path)]
         result = subprocess.run(command, env=env, capture_output=True, text=True, check=False)

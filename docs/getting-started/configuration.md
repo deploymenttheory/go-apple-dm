@@ -127,11 +127,37 @@ the [environment parser](../../server/internal/app/env.go).
 
 ### Storage keys and secret files
 
-`DM_STORAGE_KEYS` is a comma-separated list of key **names**, active first.
-With `DM_SECRETS_DIR=/data/secrets`, key `storage` is read from
-`/data/secrets/storage`. This directory is a storage-key provider; it does not
-automatically load every file as a `DM_*` setting. Without the directory
-provider, material comes from `DM_STORAGE_KEY_<NAME>`.
+`setup init` generates three secrets. Their file names are short because two of
+them are also identifiers, so the names describe neither what the secret is nor
+whether it has to be kept. `setup init` prints this inventory when it runs; it is
+repeated here because losing the wrong one is unrecoverable.
+
+| File | Referenced by | What it is | If lost |
+|---|---|---|---|
+| `storage` | `DM_STORAGE_KEYS`, by name | Encrypts the sealed columns in the database | **Unrecoverable.** Every sealed certificate and credential becomes unreadable |
+| `admin` | `DM_BOOTSTRAP_TOKEN` | One-time credential that creates the first administrator | Generate another and update the reference |
+| `issuance` | `DM_SCEP_HMAC_KEY` | SCEP enrollment challenge key | Rotating it invalidates profiles carrying the old challenge |
+
+A fourth file, `acme`, holds `DM_ACME_HMAC_KEY` and appears only when
+`-acme-key-file` imports one.
+
+Copy the storage key into a secrets manager before the deployment holds anything
+that cannot be recreated. It is the only one of the three that no later command
+can reissue.
+
+`admin` and `issuance` are reached **by path** through `secretFiles`, so they can
+be renamed or moved as long as the setup file points at them. The storage key is
+different: `DM_STORAGE_KEYS` is a comma-separated list of key **names**, active
+first, and with `DM_SECRETS_DIR=/data/secrets` the key `storage` is read from
+`/data/secrets/storage`. The file name *is* the key name. That name is also
+recorded inside every value sealed with it and selects the key that opens it, so
+renaming the file means renaming the key, and a key name stays meaningful for as
+long as data sealed under it exists. `-storage-key-name` chooses it at
+initialization; `admin`, `issuance`, `acme` and `database-dsn` are reserved.
+
+The secrets directory is a storage-key provider; it does not automatically load
+every file as a `DM_*` setting. Without the directory provider, material comes
+from `DM_STORAGE_KEY_<NAME>`.
 
 The generated random hexadecimal text is consumed as bytes, then derived with
 HKDF; do not decode it when copying or restoring it. Retain both the name and
