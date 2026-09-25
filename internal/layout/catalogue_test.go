@@ -161,7 +161,9 @@ func TestErrorResponsesTableMatchesCatalogue(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	doc := string(raw)
+	// A Windows checkout may carry CRLF; the comparison is on the text, not the
+	// line ending, and a rewrite keeps LF.
+	doc := strings.ReplaceAll(string(raw), "\r\n", "\n")
 	start := strings.Index(doc, catalogueStart)
 	end := strings.Index(doc, catalogueEnd)
 	if start < 0 || end < 0 || end < start {
