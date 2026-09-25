@@ -1,0 +1,220 @@
+name: Publish docker image
+
+# Container images for the reference server, published to GHCR.
+#
+# Two kinds of tag, deliberately distinct:
+#   latest / latest-quickstart  moving, rebuilt on every merge into main
+#   X.Y.Z / X.Y / server-vX.Y.Z immutable, built from a server release tag
+#
+# `latest` therefore tracks main, not the newest release. Pin a version tag for
+# anything reproducible. Decision record 0060 explains the split.
+
+on:
+  push:
+    branches: [main]
+    # Nothing outside these inputs changes the image.
+    paths:
+      - Dockerfile
+      - go.mod
+      - go.sum
+      - go.work
+      - devicemanagement/**
+      - server/**
+      - deploy/quickstart/bootstrap.py
+      - .github/workflows/publish-image.yml
+  # Called after Release Please has created the server release and version tag.
+  workflow_call:
+    inputs:
+      tag:
+        description: Existing server release tag (server/vX.Y.Z)
+        required: true
+        type: string
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Existing server release tag (server/vX.Y.Z), or empty to publish latest from main
+        required: false
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: publish-image-${{ inputs.tag || github.ref }}
+  cancel-in-progress: false
+
+env:
+  IMAGE: ghcr.io/deploymenttheory/go-apple-dm
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    permissions:
+      contents: read
+      packages: write
+      # Keyless cosign signing and build provenance.
+      id-token: write
+      attestations: write
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@e14015d583714f6e62063499dc959a02595150a1 # v2.21.1
+        with:
+          egress-policy: audit
+
+      # A release build must be reproducible from the tag, so the tag is validated
+      # before it reaches checkout.
+      - name: Resolve what to build
+        id: plan
+        env:
+          RELEASE_TAG: ${{ inputs.tag }}
+        shell: bash
+        run: |
+          if [[ -n "$RELEASE_TAG" ]]; then
+            if [[ ! "$RELEASE_TAG" =~ ^server/v[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$ ]]; then
+              echo '::error::Expected a server/vX.Y.Z release tag'
+              exit 1
+            fi
+            version="${RELEASE_TAG#server/v}"
+            {
+              echo "ref=refs/tags/$RELEASE_TAG"
+              echo "version=$version"
+              echo "release=true"
+            } >> "$GITHUB_OUTPUT"
+          else
+            {
+              echo "ref=${{ github.sha }}"
+              echo "version="
+              echo "release=false"
+            } >> "$GITHUB_OUTPUT"
+          fi
+
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ steps.plan.outputs.ref }}
+          persist-credentials: false
+
+      # Confirm the release exists before publishing an image that claims to be it.
+      - name: Check existing release
+        if: steps.plan.outputs.release == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ inputs.tag }}
+        run: gh release view "$RELEASE_TAG"
+
+      - uses: docker/setup-buildx-action@e468171a9de216ec08956ac3ada2f0791b6bd435 # v3.11.1
+
+      - uses: docker/login-action@74a5d142397b4f367a81961eba4e8cd7edddf772 # v3.4.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # One tag set per published target. The runtime image is the unsuffixed
+      # name; the quickstart helper shares the package under a -quickstart suffix.
+      - name: Tags for the runtime image
+        id: runtime-meta
+        uses: docker/metadata-action@c1e51972afc2121e065aed6d45c65596fe445f3f # v5.8.0
+        with:
+          images: ${{ env.IMAGE }}
+          flavor: latest=false
+          tags: |
+            type=raw,value=latest,enable=${{ steps.plan.outputs.release == 'false' }}
+            type=raw,value=${{ steps.plan.outputs.version }},enable=${{ steps.plan.outputs.release }}
+            type=semver,pattern={{major}}.{{minor}},value=${{ steps.plan.outputs.version }},enable=${{ steps.plan.outputs.release }}
+            type=raw,value=server-v${{ steps.plan.outputs.version }},enable=${{ steps.plan.outputs.release }}
+          labels: |
+            org.opencontainers.image.title=go-apple-dm reference server
+            org.opencontainers.image.description=Reference MDM and declarative device management server (dmserver, dmctl)
+
+      - name: Tags for the quickstart image
+        id: quickstart-meta
+        uses: docker/metadata-action@c1e51972afc2121e065aed6d45c65596fe445f3f # v5.8.0
+        with:
+          images: ${{ env.IMAGE }}
+          flavor: latest=false
+          tags: |
+            type=raw,value=latest-quickstart,enable=${{ steps.plan.outputs.release == 'false' }}
+            type=raw,value=${{ steps.plan.outputs.version }}-quickstart,enable=${{ steps.plan.outputs.release }}
+            type=raw,value=server-v${{ steps.plan.outputs.version }}-quickstart,enable=${{ steps.plan.outputs.release }}
+          labels: |
+            org.opencontainers.image.title=go-apple-dm quickstart bootstrap
+            org.opencontainers.image.description=One-shot helper that generates setup.json and its secrets
+
+      - name: Build and push the runtime image
+        id: runtime
+        uses: docker/build-push-action@263435318d21b8e681c14492fe198d362a7d2c83 # v6.18.0
+        with:
+          context: .
+          target: runtime
+          platforms: linux/amd64,linux/arm64
+          push: true
+          provenance: mode=max
+          sbom: true
+          build-args: |
+            VERSION=${{ steps.plan.outputs.version }}
+          tags: ${{ steps.runtime-meta.outputs.tags }}
+          labels: ${{ steps.runtime-meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Build and push the quickstart image
+        id: quickstart
+        uses: docker/build-push-action@263435318d21b8e681c14492fe198d362a7d2c83 # v6.18.0
+        with:
+          context: .
+          target: quickstart
+          platforms: linux/amd64,linux/arm64
+          push: true
+          provenance: mode=max
+          sbom: true
+          build-args: |
+            VERSION=${{ steps.plan.outputs.version }}
+          tags: ${{ steps.quickstart-meta.outputs.tags }}
+          labels: ${{ steps.quickstart-meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - uses: sigstore/cosign-installer@6f9f17788090df1f26f669e9d70d6ae9567deba6 # v4.1.2
+
+      # Signatures and attestations are tied to the digest, not the tag, so a
+      # moving `latest` cannot carry them to different content later.
+      - name: Sign the published digests
+        env:
+          RUNTIME_DIGEST: ${{ steps.runtime.outputs.digest }}
+          QUICKSTART_DIGEST: ${{ steps.quickstart.outputs.digest }}
+        run: |
+          cosign sign --yes "${IMAGE}@${RUNTIME_DIGEST}"
+          cosign sign --yes "${IMAGE}@${QUICKSTART_DIGEST}"
+
+      - name: Attest the runtime image
+        uses: actions/attest-build-provenance@977bb373ede98d70efdf65b84cb5f73e068dcc2a # v3.0.0
+        with:
+          subject-name: ${{ env.IMAGE }}
+          subject-digest: ${{ steps.runtime.outputs.digest }}
+          push-to-registry: true
+
+      - name: Attest the quickstart image
+        uses: actions/attest-build-provenance@977bb373ede98d70efdf65b84cb5f73e068dcc2a # v3.0.0
+        with:
+          subject-name: ${{ env.IMAGE }}
+          subject-digest: ${{ steps.quickstart.outputs.digest }}
+          push-to-registry: true
+
+      # A published image that cannot run is worse than none, so the runtime tag
+      # is pulled back and executed before the job reports success. A release image
+      # must also report the release it claims, because an image stamped "(devel)"
+      # gives an operator no way to tell what they are running.
+      - name: Verify the published runtime image
+        env:
+          RUNTIME_DIGEST: ${{ steps.runtime.outputs.digest }}
+          EXPECTED_VERSION: ${{ steps.plan.outputs.version }}
+        run: |
+          set -euo pipefail
+          server=$(docker run --rm "${IMAGE}@${RUNTIME_DIGEST}" --version)
+          cli=$(docker run --rm --entrypoint /dmctl "${IMAGE}@${RUNTIME_DIGEST}" version)
+          echo "dmserver=$server dmctl=$cli"
+          if [[ -n "$EXPECTED_VERSION" ]]; then
+            test "$server" = "$EXPECTED_VERSION"
+            test "$cli" = "$EXPECTED_VERSION"
+          fi
