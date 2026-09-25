@@ -168,6 +168,13 @@ func (w UnitOfWork) Run(ctx context.Context, fn func(context.Context) error) (er
 	}
 	tx, err := w.DB.BeginTx(ctx, opts)
 	if err != nil {
+		// A context cancelled while BEGIN is already in flight is reported by the
+		// driver in its own terms, SQLITE_INTERRUPT for SQLite, rather than as
+		// ctx.Err(). Without this an orderly shutdown is indistinguishable from a
+		// coordination failure. Preserve the driver error, as Commit below does.
+		if ctx.Err() != nil {
+			err = errors.Join(err, ctx.Err())
+		}
 		return fmt.Errorf("%w: begin: %w", ErrTransaction, err)
 	}
 	u := &unit{db: w.DB, tx: tx}
