@@ -1,6 +1,21 @@
 # Reference server image: built from this repository by CI and by
-# scripts/testdb.sh ddm-up. See decision record 0025 for the role split.
-FROM golang:1.27 AS build
+# scripts/testdb.sh ddm-up. See decision record 0025 for the role split and 0060
+# for the published images.
+#
+# The build stage runs on the builder's own architecture and cross-compiles to the
+# requested one. Every dependency is pure Go, including the SQLite driver, so
+# CGO_ENABLED=0 cross-compiles without a toolchain per architecture and a
+# multi-architecture build costs one compile per target instead of an emulated
+# build per target. TARGETOS and TARGETARCH are empty under the classic builder,
+# which leaves the Go defaults and produces a native binary.
+FROM --platform=$BUILDPLATFORM golang:1.27 AS build
+ARG TARGETOS
+ARG TARGETARCH
+# The release version reported by `dmserver --version` and `dmctl version`. Left empty
+# both binaries report "(devel)", which is correct for a development build and wrong for
+# a published release, so the publish workflow passes the release version here. Keep the
+# symbol in step with .goreleaser.yaml, which stamps the same one for the binaries.
+ARG VERSION=""
 WORKDIR /src
 # The reference server is its own module and depends on the library module in
 # this same repository, so both go.mod files and the workspace come first.
@@ -8,8 +23,14 @@ COPY go.mod go.sum go.work ./
 COPY server/go.mod server/go.sum ./server/
 RUN go mod download all
 COPY . .
-RUN CGO_ENABLED=0 go build -trimpath -ldflags="-s -w" -o /out/dmserver ./server/cmd/dmserver
-RUN CGO_ENABLED=0 go build -trimpath -ldflags="-s -w" -o /out/dmctl ./server/cmd/dmctl
+RUN CGO_ENABLED=0 GOOS=${TARGETOS} GOARCH=${TARGETARCH} \
+    go build -trimpath \
+    -ldflags="-s -w -X github.com/deploymenttheory/go-apple-dm/server/internal/buildinfo.releaseVersion=${VERSION}" \
+    -o /out/dmserver ./server/cmd/dmserver
+RUN CGO_ENABLED=0 GOOS=${TARGETOS} GOARCH=${TARGETARCH} \
+    go build -trimpath \
+    -ldflags="-s -w -X github.com/deploymenttheory/go-apple-dm/server/internal/buildinfo.releaseVersion=${VERSION}" \
+    -o /out/dmctl ./server/cmd/dmctl
 # The runtime image has no shell, so the data directory is prepared here and
 # copied in with the runtime user's ownership.
 RUN mkdir -p /out/data

@@ -1,0 +1,69 @@
+# Reference server from published images. Nothing here builds from source, so this
+# file works on its own in a directory with no checkout:
+#
+#   curl -fsSLO https://raw.githubusercontent.com/deploymenttheory/go-apple-dm/main/deploy/compose.yaml
+#   docker compose run --rm -T bootstrap config > setup.json   # inspect first
+#   docker compose up -d
+#
+# The sibling deploy/quickstart/compose.yaml builds the same two targets from a local
+# checkout instead; use that one when changing server code. Decision record 0060
+# describes the published tags.
+#
+# Override either image to pin a release:
+#   DM_SERVER_IMAGE=ghcr.io/deploymenttheory/go-apple-dm:0.10.3
+#   DM_QUICKSTART_IMAGE=ghcr.io/deploymenttheory/go-apple-dm:0.10.3-quickstart
+#
+# `latest` moves with main, so the default pull policy refetches it. Pinned tags are
+# immutable and can use DM_PULL_POLICY=missing.
+
+name: apple-dm
+
+services:
+  # One shot: generates setup.json, its secret files and the storage key into the
+  # shared volume, then exits. Running it again preserves what already exists.
+  bootstrap:
+    image: ${DM_QUICKSTART_IMAGE:-ghcr.io/deploymenttheory/go-apple-dm:latest-quickstart}
+    pull_policy: ${DM_PULL_POLICY:-always}
+    volumes:
+      - state:/data
+    restart: "no"
+
+  dmserver:
+    image: ${DM_SERVER_IMAGE:-ghcr.io/deploymenttheory/go-apple-dm:latest}
+    pull_policy: ${DM_PULL_POLICY:-always}
+    # Clear the generic image's environment defaults: setup.json owns these.
+    environment:
+      DM_SETUP_FILE: /data/setup.json
+      DM_LISTEN: ""
+      DM_STORAGE: ""
+      DM_DSN: ""
+    ports:
+      - "${DM_PORT:-127.0.0.1:8443}:8443"
+    volumes:
+      - state:/data
+    depends_on:
+      bootstrap:
+        condition: service_completed_successfully
+    restart: unless-stopped
+
+  # Administration against the running server. Enabled by a profile so it does not
+  # start with `up`: `docker compose run --rm dmctl setup status`.
+  dmctl:
+    image: ${DM_SERVER_IMAGE:-ghcr.io/deploymenttheory/go-apple-dm:latest}
+    pull_policy: ${DM_PULL_POLICY:-always}
+    entrypoint: ["/dmctl"]
+    environment:
+      DMCTL_SERVER: https://dmserver:8443
+      DMCTL_TOKEN: "@/data/operator-root-token"
+      DMCTL_CA_FILE: /data/https-ca.pem
+      DM_LISTEN: ""
+      DM_STORAGE: ""
+      DM_DSN: ""
+    volumes:
+      - state:/data
+    profiles: [tools]
+
+volumes:
+  # Identities, the database and the storage key live here. Removing this volume
+  # discards every certificate the server issued.
+  state:
