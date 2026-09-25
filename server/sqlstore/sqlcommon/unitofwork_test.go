@@ -3,8 +3,10 @@ package sqlcommon_test
 import (
 	"context"
 	"database/sql"
+	"database/sql/driver"
 	"errors"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/state"
@@ -249,6 +251,62 @@ func TestUnitOfWorkRecognizesCancellationAfterAutomaticRollback(t *testing.T) {
 				t.Fatal("cancelled work survived rollback", count, err)
 			}
 		})
+	}
+}
+
+// interruptOnBeginConn fails BEGIN the way a driver does when the statement is interrupted
+// mid-flight, having first cancelled the caller's context. Real drivers report that
+// cancellation in their own terms rather than as ctx.Err(), and the window is a race that
+// cannot be hit reliably against a real database, so it is reproduced here exactly.
+type interruptOnBeginConn struct{ cancel context.CancelFunc }
+
+// Open returns the connection itself, so one stub serves as driver and connection.
+func (c *interruptOnBeginConn) Open(string) (driver.Conn, error) { return c, nil }
+
+// Prepare is never reached: the transaction fails before any statement is prepared.
+func (c *interruptOnBeginConn) Prepare(string) (driver.Stmt, error) {
+	return nil, errors.New("sqlcommon_test: unexpected Prepare")
+}
+
+// Close satisfies driver.Conn.
+func (c *interruptOnBeginConn) Close() error { return nil }
+
+// Begin satisfies the legacy driver.Conn contract; database/sql prefers BeginTx.
+func (c *interruptOnBeginConn) Begin() (driver.Tx, error) {
+	return nil, errors.New("sqlcommon_test: unexpected Begin")
+}
+
+// BeginTx cancels the caller's context and then reports SQLite's interrupt error, which is
+// the ordering an orderly shutdown produces.
+func (c *interruptOnBeginConn) BeginTx(context.Context, driver.TxOptions) (driver.Tx, error) {
+	c.cancel()
+	return nil, errors.New("interrupted (9)")
+}
+
+// TestUnitOfWorkRecognizesCancellationDuringBegin checks that a context cancelled while BEGIN
+// is in flight stays identifiable as a cancellation, so an orderly shutdown is not reported as
+// a transaction coordination failure. The driver error is kept as well, because it says what
+// the database actually reported.
+func TestUnitOfWorkRecognizesCancellationDuringBegin(t *testing.T) {
+	ctx, cancel := context.WithCancel(t.Context())
+	defer cancel()
+	sql.Register("sqlcommon_test_interrupt_on_begin", &interruptOnBeginConn{cancel: cancel})
+	db, err := sql.Open("sqlcommon_test_interrupt_on_begin", "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = db.Close() })
+	ran := false
+	err = (sqlcommon.UnitOfWork{DB: db, Dialect: sqlite.Dialect}).
+		Run(ctx, func(context.Context) error { ran = true; return nil })
+	if ran {
+		t.Fatal("callback ran despite a failed begin")
+	}
+	if !errors.Is(err, sqlcommon.ErrTransaction) || !errors.Is(err, context.Canceled) {
+		t.Fatal("cancellation during begin was not identifiable", err)
+	}
+	if !strings.Contains(err.Error(), "interrupted (9)") {
+		t.Fatal("driver error was discarded", err)
 	}
 }
 
