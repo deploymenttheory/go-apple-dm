@@ -16,11 +16,11 @@ import (
 var (
 	// ErrInvalidJSON reports malformed input: a syntax error, trailing data
 	// after the value, invalid UTF-8, or a duplicate object member name.
-	ErrInvalidJSON = errors.New("canonjson: invalid JSON")
+	ErrInvalidJSON = errors.New("invalid JSON")
 	// ErrDepth reports nesting deeper than MaxDepth.
-	ErrDepth = errors.New("canonjson: nesting too deep")
+	ErrDepth = errors.New("nesting too deep")
 	// ErrNumber reports a number outside the finite IEEE 754 double range.
-	ErrNumber = errors.New("canonjson: number not representable")
+	ErrNumber = errors.New("number not representable")
 )
 
 // MaxDepth bounds the nesting of arrays and objects. A value nested inside
@@ -58,7 +58,7 @@ func Append(dst, src []byte) ([]byte, error) {
 func Marshal(v any) ([]byte, error) {
 	b, err := json.Marshal(v)
 	if err != nil {
-		return nil, fmt.Errorf("canonjson: marshal: %w", err)
+		return nil, fmt.Errorf("marshal: %w", err)
 	}
 	return Canonicalize(b)
 }

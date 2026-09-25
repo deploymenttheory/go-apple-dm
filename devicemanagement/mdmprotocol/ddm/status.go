@@ -11,6 +11,8 @@ import (
 	"sort"
 	"time"
 
+	"go.opentelemetry.io/otel/metric"
+
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/internal/canonjson"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/event"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/mdm"
@@ -100,6 +102,9 @@ func (e *Engine) parseStatus(ctx context.Context, id mdm.EnrollmentID, body []by
 	}
 	u.Values, u.Declarations, u.HasDeclarations = w.values, w.declarations(), w.hasDeclarations
 	for _, se := range report.Errors {
+		for _, reason := range se.Reasons {
+			e.reasons.Add(ctx, 1, metric.WithAttributes(reasonCodes.Attr(reason.Code)))
+		}
 		reasons, err := canonjson.Marshal(se.Reasons)
 		if err != nil {
 			return nil, fmt.Errorf("%w: %w", ErrStatusMalformed, err)

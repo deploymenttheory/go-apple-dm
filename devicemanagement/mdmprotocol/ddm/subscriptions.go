@@ -8,6 +8,7 @@ import (
 	"slices"
 	"strings"
 
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/fault"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/mdm"
 	schemaddm "github.com/deploymenttheory/go-apple-dm/devicemanagement/schema/ddm"
 )
@@ -44,7 +45,7 @@ func (e *Engine) subscriptionItems(ctx context.Context, tx Tx, id mdm.Enrollment
 	caps, err := e.clientCapabilities(ctx, tx, id)
 	if err != nil {
 		if !errors.Is(err, ErrNotFound) {
-			e.log.WarnContext(ctx, "ddm: client capabilities unreadable, using the baseline", "enrollment", id.ID, "error", err)
+			e.log.WarnContext(ctx, "client capabilities unreadable, using the baseline", fault.EnrollmentID(string(id.ID)), fault.Attr(err))
 		}
 		return slices.Clone(e.subs.Baseline)
 	}
@@ -97,7 +98,7 @@ func (e *Engine) subscriptionActivation(ctx context.Context) (SnapshotItem, erro
 func (e *Engine) generatedSubscriptionItem(ctx context.Context, identifier, typ string, payload any) (SnapshotItem, error) {
 	raw, err := json.Marshal(map[string]any{"Type": typ, "Identifier": identifier, "Payload": payload})
 	if err != nil {
-		return SnapshotItem{}, fmt.Errorf("ddm: subscriptions: %w", err)
+		return SnapshotItem{}, fmt.Errorf("subscriptions: %w", err)
 	}
 	d, err := ParseDeclaration(raw, e.target(ctx))
 	if err != nil {

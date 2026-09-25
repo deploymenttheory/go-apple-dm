@@ -93,12 +93,12 @@ func (c *Client) accountWith(ctx context.Context, session string, protocol int) 
 	req.Header.Set(HeaderProtocolVersion, strconv.Itoa(protocol))
 	resp, err := c.cfg.HTTPClient.Do(req)
 	if err != nil {
-		return nil, fmt.Errorf("dep: GET /account: %w", err)
+		return nil, fmt.Errorf("GET /account: %w", err)
 	}
 	defer func(body io.Closer) { _ = body.Close() }(resp.Body)
 	body, err := io.ReadAll(io.LimitReader(resp.Body, maxResponseBytes))
 	if err != nil {
-		return nil, fmt.Errorf("dep: read /account: %w", err)
+		return nil, fmt.Errorf("read /account: %w", err)
 	}
 	if resp.StatusCode != http.StatusOK {
 		return nil, newError(resp.StatusCode, body, resp.Header.Get("Retry-After"), c.cfg.Clock.Now())
@@ -169,7 +169,7 @@ func sameCredentials(a, b Tokens) bool {
 // checkConsumerKey retains the explicit opt-in required to replace a consumer key.
 func checkConsumerKey(a *Account, t Tokens, force bool) error {
 	if a != nil && a.ConsumerKey != "" && a.ConsumerKey != t.ConsumerKey && !force {
-		return errors.Join(ErrConflict, ErrConsumerKeyMismatch)
+		return ErrConsumerKeyMismatch
 	}
 	return nil
 }

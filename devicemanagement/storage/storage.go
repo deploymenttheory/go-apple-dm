@@ -2,9 +2,9 @@ package storage
 
 import (
 	"context"
-	"errors"
 	"time"
 
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/fault"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/mdm"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/paging"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/schema/checkin"
@@ -12,10 +12,10 @@ import (
 
 // Errors shared by every backend.
 var (
-	ErrNotFound = errors.New("storage: not found")
-	ErrDisabled = errors.New("storage: enrollment disabled")
-	ErrConflict = errors.New("storage: conflict")
-	ErrInvalid  = errors.New("storage: invalid argument")
+	ErrNotFound = fault.EnrollmentNotFound
+	ErrDisabled = fault.EnrollmentDisabled
+	ErrConflict = fault.EnrollmentConflict
+	ErrInvalid  = fault.EnrollmentInvalid
 )
 
 // DeviceInfo is the subset of Authenticate worth indexing.

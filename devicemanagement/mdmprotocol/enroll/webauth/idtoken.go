@@ -8,11 +8,12 @@ import (
 	"crypto/sha256"
 	"encoding/base64"
 	json "encoding/json/v2"
-	"errors"
 	"fmt"
 	"math/big"
 	"strings"
 	"time"
+
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/fault"
 )
 
 // Claims is what the id_token said about the person, typed for the
@@ -29,7 +30,7 @@ type Claims struct {
 }
 
 // ErrIDToken is wrapped by every id_token verification failure.
-var ErrIDToken = errors.New("webauth: id_token")
+var ErrIDToken = fault.NewDevice("", fault.PermissionDenied, "the id_token was not accepted")
 
 // Signing algorithms accepted.
 const (
@@ -65,7 +66,7 @@ type verificationKey struct {
 }
 
 // ErrJWK is wrapped by JWKS parsing failures.
-var ErrJWK = errors.New("webauth: jwks")
+var ErrJWK = fault.NewOperator(fault.Upstream, "the identity provider's JWKS could not be used")
 
 // parseJWKS keeps the keys this package can use and skips the rest.
 func parseJWKS(body []byte) ([]verificationKey, error) {

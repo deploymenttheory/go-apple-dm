@@ -21,13 +21,14 @@ import (
 	"time"
 
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/clock"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/fault"
 )
 
 // Errors returned by this package.
 var (
-	ErrCSR      = errors.New("ca: invalid certificate signing request")
-	ErrPolicy   = errors.New("ca: request violates policy")
-	ErrNotFound = errors.New("ca: certificate not found")
+	ErrCSR      = fault.PKICSRInvalid
+	ErrPolicy   = fault.PKIPolicyViolation
+	ErrNotFound = fault.PKICertificateNotFound
 )
 
 // Policy constrains what Sign issues. Zero values take the defaults.
@@ -178,18 +179,18 @@ func WithRandom(r io.Reader) Option { return func(l *Local) { l.random = r } }
 // NewLocal creates a signer from a CA certificate and its key.
 func NewLocal(cert *x509.Certificate, key crypto.Signer, opts ...Option) (*Local, error) {
 	if cert == nil || key == nil {
-		return nil, errors.New("ca: certificate and key are required")
+		return nil, errors.New("certificate and key are required")
 	}
 	if !cert.IsCA || !cert.BasicConstraintsValid || cert.KeyUsage&x509.KeyUsageCertSign == 0 {
-		return nil, errors.New("ca: certificate is not a CA")
+		return nil, errors.New("certificate is not a CA")
 	}
 	certKey, err := x509.MarshalPKIXPublicKey(cert.PublicKey)
 	if err != nil {
-		return nil, fmt.Errorf("ca: public key: %w", err)
+		return nil, fmt.Errorf("public key: %w", err)
 	}
 	signerKey, err := x509.MarshalPKIXPublicKey(key.Public())
 	if err != nil || !bytes.Equal(certKey, signerKey) {
-		return nil, errors.New("ca: private key does not match certificate")
+		return nil, errors.New("private key does not match certificate")
 	}
 	l := &Local{cert: cert, key: key, clock: clock.Real{}, random: rand.Reader}
 	for _, o := range opts {
@@ -277,15 +278,15 @@ func (l *Local) Sign(ctx context.Context, csr *x509.CertificateRequest, p Policy
 	}
 	der, err := x509.CreateCertificate(rand.Reader, tmpl, l.cert, csr.PublicKey, l.key)
 	if err != nil {
-		return nil, fmt.Errorf("ca: sign: %w", err)
+		return nil, fmt.Errorf("sign: %w", err)
 	}
 	cert, err := x509.ParseCertificate(der)
 	if err != nil {
-		return nil, fmt.Errorf("ca: parse issued certificate: %w", err)
+		return nil, fmt.Errorf("parse issued certificate: %w", err)
 	}
 	if l.depot != nil {
 		if err := l.depot.Put(ctx, cert); err != nil {
-			return nil, fmt.Errorf("ca: depot: %w", err)
+			return nil, fmt.Errorf("depot: %w", err)
 		}
 	}
 	return cert, nil
@@ -300,7 +301,7 @@ func SerialFrom(r io.Reader) (*big.Int, error) {
 	limit := new(big.Int).Lsh(big.NewInt(1), 127)
 	n, err := rand.Int(r, limit)
 	if err != nil {
-		return nil, fmt.Errorf("ca: serial: %w", err)
+		return nil, fmt.Errorf("serial: %w", err)
 	}
 	return n.Add(n, big.NewInt(1)), nil
 }
@@ -317,7 +318,7 @@ func NewMemoryDepot() *MemoryDepot { return &MemoryDepot{certs: map[string]*x509
 // Put implements Depot.
 func (d *MemoryDepot) Put(_ context.Context, cert *x509.Certificate) error {
 	if cert == nil {
-		return errors.New("ca: nil certificate")
+		return errors.New("nil certificate")
 	}
 	d.mu.Lock()
 	defer d.mu.Unlock()
@@ -371,7 +372,7 @@ func NewSelfSigned(o SelfSignedOptions) (*x509.Certificate, *rsa.PrivateKey, err
 	}
 	key, err := rsa.GenerateKey(o.Random, o.RSABits)
 	if err != nil {
-		return nil, nil, fmt.Errorf("ca: generate key: %w", err)
+		return nil, nil, fmt.Errorf("generate key: %w", err)
 	}
 	serial, err := SerialFrom(o.Random)
 	if err != nil {
@@ -386,11 +387,11 @@ func NewSelfSigned(o SelfSignedOptions) (*x509.Certificate, *rsa.PrivateKey, err
 	}
 	der, err := x509.CreateCertificate(rand.Reader, tmpl, tmpl, &key.PublicKey, key)
 	if err != nil {
-		return nil, nil, fmt.Errorf("ca: create certificate: %w", err)
+		return nil, nil, fmt.Errorf("create certificate: %w", err)
 	}
 	cert, err := x509.ParseCertificate(der)
 	if err != nil {
-		return nil, nil, fmt.Errorf("ca: parse certificate: %w", err)
+		return nil, nil, fmt.Errorf("parse certificate: %w", err)
 	}
 	return cert, key, nil
 }

@@ -18,8 +18,10 @@ import (
 
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/appleplatformservices/push"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/clock"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/fault"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/mdm"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/pki/pushcert"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/telemetry"
 	"github.com/deploymenttheory/go-apple-dm/internal/httpsurl"
 )
 
@@ -38,6 +40,7 @@ type Client struct {
 	roots   *x509.CertPool
 	// transport builds the HTTP client for a topic; tests override it.
 	transport func(cert tls.Certificate) *http.Client
+	telemetry telemetry.Config
 
 	mu      sync.Mutex
 	clients map[string]*topicClient
@@ -63,6 +66,10 @@ func WithTimeout(d time.Duration) Option { return func(c *Client) { c.timeout = 
 
 // WithRootCAs overrides server trust anchors. Nil uses the system trust store.
 func WithRootCAs(roots *x509.CertPool) Option { return func(c *Client) { c.roots = roots } }
+
+// WithTelemetry measures every APNs request through the library's round tripper:
+// bounded method, host, status and error type, never the device token in the path.
+func WithTelemetry(cfg telemetry.Config) Option { return func(c *Client) { c.telemetry = cfg } }
 
 // WithTransport replaces how per-topic HTTP clients are built (tests).
 func WithTransport(f func(cert tls.Certificate) *http.Client) Option {
@@ -112,7 +119,7 @@ func (c *Client) clientFor(ctx context.Context, topic string, mdmPush bool) (*ht
 	}
 	leaf, err := x509.ParseCertificate(cert.Certificate[0])
 	if err != nil {
-		return nil, fmt.Errorf("push: parse push certificate: %w", err)
+		return nil, fmt.Errorf("parse push certificate: %w", err)
 	}
 	now := c.clock.Now()
 	if !now.Before(leaf.NotAfter) {
@@ -140,7 +147,7 @@ func (c *Client) clientFor(ctx context.Context, topic string, mdmPush bool) (*ht
 	}
 	httpClient := *c.transport(cert)
 	httpClient.CheckRedirect = func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }
-	httpClient.Transport = newManagedTransport(httpClient.Transport)
+	httpClient.Transport = telemetry.RoundTripper(newManagedTransport(httpClient.Transport), c.telemetry, telemetry.WithScope("apns"))
 	tc := &topicClient{client: &httpClient, leaf: leaf}
 	c.clients[topic] = tc
 	return tc.client, nil
@@ -154,7 +161,7 @@ func (c *Client) Push(
 	out := make(map[mdm.EnrollmentID]push.Result, len(targets))
 	for _, t := range targets {
 		if err := ctx.Err(); err != nil {
-			return out, fmt.Errorf("push: %w", err)
+			return out, fmt.Errorf("%w", err)
 		}
 		out[t.ID] = c.pushOne(ctx, t)
 	}
@@ -172,12 +179,12 @@ func (c *Client) pushOne(ctx context.Context, t push.Target) push.Result {
 	if !t.Push.Valid() {
 		return push.Result{
 			Outcome: push.OutcomeSkipped,
-			Err:     fmt.Errorf("%w: incomplete push info", push.ErrInvalidToken),
+			Err:     push.ErrPushInfoIncomplete,
 		}
 	}
 	body, err := json.Marshal(map[string]string{"mdm": t.Push.Magic})
 	if err != nil {
-		return push.Result{Err: fmt.Errorf("push: %w", err)}
+		return push.Result{Err: fmt.Errorf("%w", err)}
 	}
 	return c.send(
 		ctx,
@@ -204,7 +211,7 @@ type notification struct {
 // send performs one APNs HTTP exchange and classifies the response or transport failure.
 func (c *Client) send(ctx context.Context, n notification, mdmPush bool) push.Result {
 	if _, err := httpsurl.Parse(c.host); err != nil {
-		return push.Result{Outcome: push.OutcomeRejected, Err: fmt.Errorf("push: %w", err)}
+		return push.Result{Outcome: push.OutcomeRejected, Err: fmt.Errorf("%w", err)}
 	}
 	client, err := c.clientFor(ctx, n.topic, mdmPush)
 	if err != nil {
@@ -213,7 +220,7 @@ func (c *Client) send(ctx context.Context, n notification, mdmPush bool) push.Re
 	endpoint := c.host + "/3/device/" + hex.EncodeToString(n.token)
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, endpoint, bytes.NewReader(n.body))
 	if err != nil {
-		return push.Result{Outcome: push.OutcomeRejected, Err: fmt.Errorf("push: %w", err)}
+		return push.Result{Outcome: push.OutcomeRejected, Err: fmt.Errorf("%w", err)}
 	}
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("apns-topic", n.topic)
@@ -250,7 +257,11 @@ func (c *Client) send(ctx context.Context, n notification, mdmPush bool) push.Re
 		r.Err = fmt.Errorf("%w: %d %s", push.ErrRejected, resp.StatusCode, ae.Reason)
 	case push.OutcomeRateLimited:
 		r.RetryAfter = retryAfter(resp.Header.Get("Retry-After"))
-		r.Err = fmt.Errorf("%w: %d %s", push.ErrRateLimited, resp.StatusCode, ae.Reason)
+		sentinel := push.ErrUnavailable
+		if resp.StatusCode == http.StatusTooManyRequests {
+			sentinel = push.ErrRateLimited
+		}
+		r.Err = fault.Wrap(fmt.Errorf("%w: %d %s", sentinel, resp.StatusCode, ae.Reason), fault.WithRetryAfter(r.RetryAfter))
 	case push.OutcomeUnavailable, push.OutcomeSent, push.OutcomeSkipped:
 		r.Err = fmt.Errorf("%w: %d %s", push.ErrUpstream, resp.StatusCode, ae.Reason)
 	}

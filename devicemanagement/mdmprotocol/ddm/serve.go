@@ -76,7 +76,7 @@ func RenderTokens(token string, at time.Time) ([]byte, error) {
 		"Timestamp":         at.UTC().Format(TimestampLayout),
 	}})
 	if err != nil {
-		return nil, fmt.Errorf("ddm: render tokens: %w", err)
+		return nil, fmt.Errorf("render tokens: %w", err)
 	}
 	return out, nil
 }
@@ -107,7 +107,7 @@ func RenderDeclarationItems(snap *Snapshot) ([]byte, error) {
 	}
 	out, err := canonjson.Marshal(map[string]any{"Declarations": decls, "DeclarationsToken": snap.DeclarationsToken})
 	if err != nil {
-		return nil, fmt.Errorf("ddm: render declaration items: %w", err)
+		return nil, fmt.Errorf("render declaration items: %w", err)
 	}
 	return out, nil
 }

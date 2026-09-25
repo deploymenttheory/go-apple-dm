@@ -7,12 +7,12 @@ import (
 	"crypto/sha256"
 	"encoding/base64"
 	json "encoding/json/v2"
-	"errors"
 	"fmt"
 	"strings"
 	"time"
 
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/clock"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/fault"
 )
 
 // MinIdentifierKey is the shortest HMAC key accepted for minting client
@@ -20,7 +20,7 @@ import (
 const MinIdentifierKey = 16
 
 // ErrIdentifierKey is a key too short to mint identifiers with.
-var ErrIdentifierKey = errors.New("acme: identifier key must be at least 16 bytes")
+var ErrIdentifierKey = fault.NewOperator(fault.Internal, "the identifier key must be at least 16 bytes")
 
 // Identifiers turns the client identifier an order asks for into what the
 // server knows about the device it was issued to.
@@ -96,13 +96,13 @@ type sealed struct {
 func (h *HMACIdentifiers) Issue(b Binding) (string, error) {
 	unique := make([]byte, 12)
 	if _, err := rand.Read(unique); err != nil {
-		return "", fmt.Errorf("acme: seal identifier: %w", err)
+		return "", fmt.Errorf("seal identifier: %w", err)
 	}
 	payload, err := json.Marshal(sealed{
 		Binding: b, Expires: h.clock.Now().Add(h.ttl).Unix(), Unique: unique,
 	})
 	if err != nil {
-		return "", fmt.Errorf("acme: seal identifier: %w", err)
+		return "", fmt.Errorf("seal identifier: %w", err)
 	}
 	enc := base64.RawURLEncoding.EncodeToString(payload)
 	return enc + "." + base64.RawURLEncoding.EncodeToString(h.mac(payload)), nil

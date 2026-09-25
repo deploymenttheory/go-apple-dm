@@ -10,13 +10,22 @@ import (
 	"math"
 	"time"
 
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/fault"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/state"
 )
 
+// Conditions are the operator's: a quota is configuration, the store is a dependency
+// and capacity is a bound the deployment chose. None is published to a caller, who
+// meets a rate limit as a decision, not as an error.
 var (
-	ErrInvalid     = errors.New("ratelimit: invalid quota")
-	ErrUnavailable = errors.New("ratelimit: store unavailable")
-	ErrCapacity    = errors.New("ratelimit: state capacity reached")
+	// ErrInvalid is a quota or bucket the limiter cannot apply.
+	ErrInvalid = fault.NewOperator(fault.Internal, "the rate limit quota is not valid")
+	// ErrUnavailable is a state store failure; every store error wraps it.
+	ErrUnavailable = fault.NewOperator(fault.Unavailable, "the rate limit store is unavailable")
+	// ErrCapacity is the bounded state being full; it is raised under ErrUnavailable.
+	ErrCapacity = fault.NewOperator(fault.ResourceExhausted, "the rate limit state is at capacity")
+	// ErrCorrupt is stored rate limit state this package cannot read.
+	ErrCorrupt = fault.NewOperator(fault.Internal, "the rate limit state is corrupt")
 )
 
 // Bucket permits one request per Interval, accumulating at most Burst requests.
@@ -104,11 +113,11 @@ func (l *Limiter) Check(ctx context.Context, buckets []Bucket) (Decision, error)
 				return err
 			} else {
 				if len(r.Value) != 8 {
-					return errors.New("ratelimit: corrupt state")
+					return fmt.Errorf("%w: value length %d", ErrCorrupt, len(r.Value))
 				}
 				stored := binary.BigEndian.Uint64(r.Value)
 				if stored > math.MaxInt64 {
-					return errors.New("ratelimit: corrupt timestamp")
+					return fmt.Errorf("%w: timestamp out of range", ErrCorrupt)
 				}
 				tat = time.UnixMicro(int64(stored))
 			}

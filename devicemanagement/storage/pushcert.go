@@ -1,10 +1,10 @@
 package storage
 
 import (
-	"errors"
 	"fmt"
 	"time"
 
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/fault"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/pki/pushcert"
 )
 
@@ -59,4 +59,4 @@ func ValidatePushCert(topic string, certPEM, keyPEM []byte, at time.Time) (PushC
 
 // ErrUserChannelRequired is wrapped in ErrInvalid by UserAuthStore methods
 // called with a device channel.
-var ErrUserChannelRequired = errors.New("storage: user channel required")
+var ErrUserChannelRequired = fault.EnrollmentUserChannelRequired

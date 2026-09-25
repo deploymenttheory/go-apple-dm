@@ -3,12 +3,12 @@ package webauth
 import (
 	"context"
 	"crypto/subtle"
-	"errors"
 	"fmt"
 	"sync"
 	"time"
 
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/clock"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/fault"
 )
 
 // Bound is what the caller ties to the state: the device that opened the
@@ -45,11 +45,11 @@ type StateStore interface {
 
 // Store errors.
 var (
-	ErrBrowserBinding = errors.New("webauth: browser binding mismatch")
-	ErrStateNotFound  = errors.New("webauth: state not found")
-	ErrStateExists    = errors.New("webauth: state already stored")
-	ErrStoreFull      = errors.New("webauth: state store full")
-	ErrStateKey       = errors.New("webauth: empty state key")
+	ErrBrowserBinding = fault.NewDevice("", fault.PermissionDenied, "the browser binding does not match")
+	ErrStateNotFound  = fault.NewDevice("", fault.PermissionDenied, "the authentication state is not known")
+	ErrStateExists    = fault.NewOperator(fault.Conflict, "the authentication state is already stored")
+	ErrStoreFull      = fault.NewOperator(fault.ResourceExhausted, "the authentication state store is full")
+	ErrStateKey       = fault.NewOperator(fault.Internal, "the authentication state key is empty")
 )
 
 // MemoryStore keeps states in memory with a periodic sweep of expired

@@ -272,7 +272,7 @@ func (c *Client) token(ctx context.Context, invalid string) (string, error) {
 				renew = ttl / 2
 			}
 			c.tok = cachedToken{value: tr.AccessToken, expires: now.Add(ttl), renewAt: now.Add(renew)}
-			c.log.DebugContext(ctx, "axm: token exchanged", "scope", tr.Scope, "expires_in", tr.ExpiresIn)
+			c.log.DebugContext(ctx, "token exchanged", "scope", tr.Scope, "expires_in", tr.ExpiresIn)
 		}
 		c.exchErr = err
 		close(c.inflight)

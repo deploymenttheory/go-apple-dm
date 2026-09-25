@@ -2,12 +2,13 @@ package event
 
 import (
 	"context"
-	"errors"
+
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/fault"
 )
 
 // ErrCapture indicates required recording failed; the associated local mutation
 // must roll back and the caller may retry once recording is available.
-var ErrCapture = errors.New("event: required capture failed")
+var ErrCapture = fault.NewOperator(fault.Unavailable, "a required event capture failed")
 
 // Publisher accepts a typed occurrence. Persistent publishers must return a
 // capture error before the associated operation reports success.

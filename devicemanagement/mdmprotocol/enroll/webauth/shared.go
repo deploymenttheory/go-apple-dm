@@ -32,7 +32,7 @@ func (s *SharedStore) Put(ctx context.Context, key string, st State) error {
 		}
 		body, err := json.Marshal(st)
 		if err != nil {
-			return fmt.Errorf("webauth: encode state: %w", err)
+			return fmt.Errorf("encode state: %w", err)
 		}
 		return tx.Put(ctx, state.Record{Key: k, Value: body, ExpiresAt: st.ExpiresAt})
 	})
@@ -54,7 +54,7 @@ func (s *SharedStore) Take(ctx context.Context, key, browserHash string) (State,
 			return err
 		}
 		if err := json.Unmarshal(r.Value, &st); err != nil {
-			return fmt.Errorf("webauth: decode state: %w", err)
+			return fmt.Errorf("decode state: %w", err)
 		}
 		if subtle.ConstantTimeCompare([]byte(st.BrowserHash), []byte(browserHash)) != 1 {
 			return ErrBrowserBinding

@@ -155,7 +155,7 @@ func TestInvalidQueries(t *testing.T) {
 	for _, c := range []Client{
 		{MaxBytes: -1}, {MaxBytes: math.MaxInt64}, {Timeout: -1}, {BaseURL: ":bad"}, {BaseURL: "ftp://example.test"}, {BaseURL: "https:///"}, {BaseURL: "https://user@example.test"}, {BaseURL: "https://example.test/?a=1"}, {BaseURL: "https://example.test/#fragment"},
 	} {
-		if _, err := c.Lookup(t.Context(), 123, testStore); !errors.Is(err, ErrInvalid) {
+		if _, err := c.Lookup(t.Context(), 123, testStore); !errors.Is(err, ErrConfig) {
 			t.Fatalf("invalid client: %v", err)
 		}
 	}

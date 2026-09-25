@@ -14,9 +14,9 @@ import (
 
 // Errors returned by this package.
 var (
-	ErrInvalid     = errors.New("pushcert: invalid certificate or key")
-	ErrNoTopic     = errors.New("pushcert: no APNs topic in certificate subject")
-	ErrKeyMismatch = errors.New("pushcert: private key does not match certificate")
+	ErrInvalid     = errors.New("invalid certificate or key")
+	ErrNoTopic     = errors.New("no APNs topic in certificate subject")
+	ErrKeyMismatch = errors.New("private key does not match certificate")
 )
 
 // TopicPrefix is the prefix every MDM push topic starts with.

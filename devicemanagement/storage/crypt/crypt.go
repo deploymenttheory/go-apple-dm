@@ -8,10 +8,10 @@ import (
 	"crypto/hkdf"
 	"crypto/rand"
 	"crypto/sha256"
-	"errors"
 	"fmt"
 	"io"
 
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/fault"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/secrets"
 )
 
@@ -19,19 +19,19 @@ import (
 // errors.Is because the returned values may carry extra context.
 var (
 	// ErrNoKeyring is returned when Seal or Open is called on a nil Keyring.
-	ErrNoKeyring = errors.New("crypt: no keyring configured")
+	ErrNoKeyring = fault.NewOperator(fault.Unavailable, "no keyring is configured")
 	// ErrUnknownKey is returned when a header names a key the ring does not hold.
-	ErrUnknownKey = errors.New("crypt: ciphertext uses an unknown key")
+	ErrUnknownKey = fault.NewOperator(fault.Unavailable, "the ciphertext uses a key the keyring does not hold")
 	// ErrTampered is returned when authentication fails, including a wrong AAD.
-	ErrTampered = errors.New("crypt: authentication failed")
+	ErrTampered = fault.NewOperator(fault.Internal, "the ciphertext failed authentication")
 	// ErrUnsealed is returned by strict callers that meet a value without the header.
-	ErrUnsealed = errors.New("crypt: value is not sealed")
+	ErrUnsealed = fault.NewOperator(fault.Internal, "the value is not sealed")
 	// ErrWeakKey is returned when a provider supplies fewer than 16 bytes of key material.
-	ErrWeakKey = errors.New("crypt: key material shorter than 16 bytes")
+	ErrWeakKey = fault.NewOperator(fault.Internal, "the key material is shorter than 16 bytes")
 	// ErrBadFormat is returned for input that is not a well formed sealed value.
-	ErrBadFormat = errors.New("crypt: malformed ciphertext")
+	ErrBadFormat = fault.NewOperator(fault.Internal, "the ciphertext is malformed")
 	// ErrNoActive is returned when Keys.Active is empty.
-	ErrNoActive = errors.New("crypt: no active key name")
+	ErrNoActive = fault.NewOperator(fault.Unavailable, "no active key name is configured")
 )
 
 const (
@@ -126,7 +126,7 @@ func load(ctx context.Context, p secrets.Provider, name string) (cipher.AEAD, er
 	}
 	s, err := p.Get(ctx, name)
 	if err != nil {
-		return nil, fmt.Errorf("crypt: key %q: %w", name, err)
+		return nil, fmt.Errorf("key %q: %w", name, err)
 	}
 	material := s.Bytes()
 	if len(material) < minMaterial {
@@ -134,15 +134,15 @@ func load(ctx context.Context, p secrets.Provider, name string) (cipher.AEAD, er
 	}
 	key, err := hkdf.Key(sha256.New, material, []byte(name), hkdfInfo, keyLen)
 	if err != nil {
-		return nil, fmt.Errorf("crypt: key %q: derive: %w", name, err)
+		return nil, fmt.Errorf("key %q: derive: %w", name, err)
 	}
 	block, err := aes.NewCipher(key)
 	if err != nil {
-		return nil, fmt.Errorf("crypt: key %q: cipher: %w", name, err)
+		return nil, fmt.Errorf("key %q: cipher: %w", name, err)
 	}
 	aead, err := cipher.NewGCM(block)
 	if err != nil {
-		return nil, fmt.Errorf("crypt: key %q: gcm: %w", name, err)
+		return nil, fmt.Errorf("key %q: gcm: %w", name, err)
 	}
 	return aead, nil
 }
@@ -192,7 +192,7 @@ func (k *Keyring) Seal(plaintext, aad []byte) ([]byte, error) {
 	nonceStart := len(out)
 	out = out[:nonceStart+nonceLen]
 	if _, err := io.ReadFull(randReader, out[nonceStart:]); err != nil {
-		return nil, fmt.Errorf("crypt: nonce: %w", err)
+		return nil, fmt.Errorf("nonce: %w", err)
 	}
 	return aead.Seal(out, out[nonceStart:], plaintext, aad), nil
 }

@@ -14,6 +14,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/fault"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/mdm"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/paging"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/state"
@@ -23,7 +24,7 @@ import (
 const DefaultRetention = 30 * 24 * time.Hour
 
 // ErrCredential does not disclose whether an enrollment or credential exists.
-var ErrCredential = errors.New("contentcache: invalid ingestion credential")
+var ErrCredential = fault.NewDevice("", fault.Unauthenticated, "the ingestion credential is not valid")
 
 // StoredReport binds untrusted report data to its authenticated enrollment.
 type StoredReport struct {

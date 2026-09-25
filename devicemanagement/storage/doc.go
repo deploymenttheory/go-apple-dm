@@ -12,6 +12,15 @@
 // values. Account-driven associations and revocation use separate state
 // interfaces and are not included in enrollment export/import.
 //
+// # Errors
+//
+// ErrNotFound, ErrDisabled, ErrConflict, ErrInvalid and ErrUserChannelRequired
+// are the catalogued conditions DM-ENROLLMENT-NOT-FOUND, DM-ENROLLMENT-DISABLED,
+// DM-ENROLLMENT-CONFLICT, DM-ENROLLMENT-INVALID and
+// DM-ENROLLMENT-USER-CHANNEL-REQUIRED. The administration API publishes them;
+// the device transport projects them onto the device conditions in
+// devicemanagement/fault, so a device never learns which store answered.
+//
 // # References
 //
 //   - Decision record 0005: https://github.com/deploymenttheory/go-apple-dm/blob/main/docs/research/decisions/0005-storage-interfaces.md

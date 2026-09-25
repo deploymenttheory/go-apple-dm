@@ -16,6 +16,12 @@
 // or other properties satisfy admission policy; a trusted chain alone does not
 // establish organizational ownership.
 //
+// # Errors
+//
+// A malformed attestation object or extension is a device condition of kind
+// InvalidArgument; a missing attestation, an unverifiable chain, a freshness or
+// key mismatch is PermissionDenied. ErrOptions is the operator's.
+//
 // # References
 //
 //   - Decision record 0032: https://github.com/deploymenttheory/go-apple-dm/blob/main/docs/research/decisions/0032-managed-device-attestation.md

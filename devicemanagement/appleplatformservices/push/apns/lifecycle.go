@@ -2,17 +2,18 @@ package apns
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"io"
 	"net"
 	"net/http"
 	"net/http/httptrace"
 	"sync"
+
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/fault"
 )
 
 // ErrClosed means the client has been shut down. Create a new client to resume.
-var ErrClosed = errors.New("apns: client closed")
+var ErrClosed = fault.NewOperator(fault.Unavailable, "the APNs client is closed")
 
 // Close stops new sends, cancels active requests and retires every connection
 // pool. It is idempotent. A replaced certificate's pool is closed the same way.
@@ -100,7 +101,7 @@ func (t *managedTransport) RoundTrip(req *http.Request) (*http.Response, error) 
 	resp, err := t.base.RoundTrip(r)
 	if err != nil {
 		release()
-		return nil, fmt.Errorf("apns: transport: %w", err)
+		return nil, fmt.Errorf("transport: %w", err)
 	}
 	resp.Body = &releaseBody{ReadCloser: resp.Body, release: release}
 	return resp, nil
@@ -147,7 +148,7 @@ func (b *releaseBody) Close() error {
 	err := b.ReadCloser.Close()
 	b.once.Do(b.release)
 	if err != nil {
-		return fmt.Errorf("apns: close response: %w", err)
+		return fmt.Errorf("close response: %w", err)
 	}
 	return nil
 }

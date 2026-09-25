@@ -32,6 +32,12 @@
 // can exist before enrollment; native collection requires MDM enrollment and
 // device connectivity, without an installed agent.
 //
+// # Errors
+//
+// ErrNotFound, ErrInvalid, ErrConflict and ErrStopped are catalogued client
+// conditions under DM-INVENTORY-*. ErrLease is an operator condition of kind
+// Conflict.
+//
 // # References
 //
 //   - Decision record 0057: https://github.com/deploymenttheory/go-apple-dm/blob/main/docs/research/decisions/0057-agentless-device-inventory.md

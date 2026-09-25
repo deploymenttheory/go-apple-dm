@@ -240,12 +240,12 @@ func TestUnknownExpiryAndInvalidInputs(t *testing.T) {
 		t.Fatal(err)
 	}
 	f.clock.Advance(20 * 365 * 24 * time.Hour)
-	if _, err := f.reg.CRL(ctx, f.id); !errors.Is(err, revocation.ErrExpired) {
+	if _, err := f.reg.CRL(ctx, f.id); !errors.Is(err, revocation.ErrIssuerExpired) {
 		t.Fatal(err)
 	}
 	f.reg.Now = f.clock.Now
 	request, _ := ocsp.CreateRequest(f.leaf, f.issuer.Certificate, nil)
-	if _, err := f.reg.OCSP(ctx, f.id, request); !errors.Is(err, revocation.ErrExpired) {
+	if _, err := f.reg.OCSP(ctx, f.id, request); !errors.Is(err, revocation.ErrIssuerExpired) {
 		t.Fatal(err)
 	}
 }

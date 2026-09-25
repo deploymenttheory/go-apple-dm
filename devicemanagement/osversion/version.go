@@ -1,10 +1,11 @@
 package osversion
 
 import (
-	"errors"
 	"fmt"
 	"strconv"
 	"strings"
+
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/fault"
 )
 
 // Version is a dotted OS version. The zero Version means "unspecified".
@@ -12,8 +13,9 @@ type Version struct {
 	Major, Minor, Patch int
 }
 
-// ErrVersion is returned by Parse for malformed input.
-var ErrVersion = errors.New("osversion: malformed version")
+// ErrVersion is returned by Parse for malformed input. The version usually arrives
+// from an API caller, so the condition is catalogued for them.
+var ErrVersion = fault.OSVersionMalformed
 
 // Parse parses "26", "26.4", or "10.15.4".
 func Parse(s string) (Version, error) {

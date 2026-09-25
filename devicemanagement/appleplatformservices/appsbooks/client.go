@@ -124,7 +124,7 @@ func (c *Client) lock(ctx context.Context) error {
 	case c.gate <- struct{}{}:
 		return nil
 	case <-ctx.Done():
-		return fmt.Errorf("appsbooks: waiting: %w", ctx.Err())
+		return fmt.Errorf("waiting: %w", ctx.Err())
 	}
 }
 
@@ -218,7 +218,7 @@ func (c *Client) wait(ctx context.Context, d time.Duration) error {
 	}
 	select {
 	case <-ctx.Done():
-		return fmt.Errorf("appsbooks: waiting: %w", ctx.Err())
+		return fmt.Errorf("waiting: %w", ctx.Err())
 	case <-c.clock.After(d):
 		return nil
 	}

@@ -2,14 +2,15 @@ package ade
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"sync"
 	"time"
+
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/fault"
 )
 
 // ErrStore is returned for store failures.
-var ErrStore = errors.New("ade: store")
+var ErrStore = fault.NewOperator(fault.Unavailable, "the automated device enrollment store failed")
 
 // Record is what the handler persists per serial: the MachineInfo as
 // parsed, the DEP record it was joined to, and when it arrived.

@@ -4,15 +4,15 @@ import (
 	"crypto/pbkdf2"
 	"crypto/rand"
 	"crypto/sha512"
-	"errors"
 	"fmt"
 
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/fault"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/plist"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/schema/other"
 )
 
 // ErrPasswordHash indicates invalid derivation parameters.
-var ErrPasswordHash = errors.New("ade: invalid password hash parameters")
+var ErrPasswordHash = fault.NewOperator(fault.Internal, "the password hash parameters are not valid")
 
 // PasswordHash creates plist data for AccountConfiguration.PasswordHash or
 // SetAutoAdminPassword.PasswordHash. Iterations must be positive and selected
@@ -44,7 +44,7 @@ func passwordHash(password, salt []byte, iterations int) ([]byte, error) {
 		}},
 	)
 	if err != nil {
-		return nil, fmt.Errorf("ade: encode password hash: %w", err)
+		return nil, fmt.Errorf("encode password hash: %w", err)
 	}
 	return data, nil
 }

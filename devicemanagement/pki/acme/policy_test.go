@@ -334,11 +334,11 @@ func TestProblem(t *testing.T) {
 	})
 
 	t.Run("Error", func(t *testing.T) {
-		if got := acme.NewProblem(acme.ProblemBadCSR, "").Error(); got != "acme: badCSR" {
-			t.Errorf("Error = %q, want %q", got, "acme: badCSR")
+		if got := acme.NewProblem(acme.ProblemBadCSR, "").Error(); got != "badCSR" {
+			t.Errorf("Error = %q, want %q", got, "badCSR")
 		}
 		got := acme.NewProblem(acme.ProblemBadCSR, "key %d is wrong", 2).Error()
-		if want := "acme: badCSR: key 2 is wrong"; got != want {
+		if want := "badCSR: key 2 is wrong"; got != want {
 			t.Errorf("Error = %q, want %q", got, want)
 		}
 	})

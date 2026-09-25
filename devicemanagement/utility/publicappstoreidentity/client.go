@@ -3,7 +3,6 @@ package publicappstoreidentity
 import (
 	"context"
 	json "encoding/json/v2"
-	"errors"
 	"fmt"
 	"io"
 	"math"
@@ -12,6 +11,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/fault"
 )
 
 const (
@@ -23,12 +24,14 @@ const (
 
 // Operation errors support errors.Is. StatusError also exposes HTTP details.
 var (
-	ErrInvalid  = errors.New("publicappstoreidentity: invalid query or client configuration")
-	ErrRequest  = errors.New("publicappstoreidentity: request failed")
-	ErrStatus   = errors.New("publicappstoreidentity: unexpected HTTP status")
-	ErrDecode   = errors.New("publicappstoreidentity: malformed response")
-	ErrTooLarge = errors.New("publicappstoreidentity: response too large")
-	ErrNotFound = errors.New("publicappstoreidentity: listing not found")
+	ErrInvalid  = fault.AppStoreQueryInvalid
+	ErrRequest  = fault.NewOperator(fault.Upstream, "the App Store request failed")
+	ErrStatus   = fault.NewOperator(fault.Upstream, "the App Store answered an unexpected status")
+	ErrDecode   = fault.NewOperator(fault.Upstream, "the App Store response is malformed")
+	ErrTooLarge = fault.NewOperator(fault.Upstream, "the App Store response is too large")
+	ErrNotFound = fault.AppStoreListingNotFound
+	// ErrConfig is a client built with a bound, timeout or base URL it cannot use.
+	ErrConfig = fault.NewOperator(fault.Internal, "the App Store client configuration is not valid")
 )
 
 // Entity selects one of the documented software search entities.
@@ -164,11 +167,11 @@ func (c *Client) request(ctx context.Context, endpoint string, store Store, q ur
 		timeout = DefaultTimeout
 	}
 	if maxBytes < 1 || maxBytes == math.MaxInt64 || timeout < 0 {
-		return nil, ErrInvalid
+		return nil, ErrConfig
 	}
 	u, err := url.Parse(base)
 	if err != nil || (u.Scheme != "https" && u.Scheme != "http") || u.Host == "" || u.User != nil || u.RawQuery != "" || u.Fragment != "" {
-		return nil, fmt.Errorf("%w: invalid base URL", ErrInvalid)
+		return nil, fmt.Errorf("%w: invalid base URL", ErrConfig)
 	}
 	u.Path = strings.TrimRight(u.Path, "/") + "/" + endpoint
 	q.Set("country", store.Country)

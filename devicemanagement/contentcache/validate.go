@@ -1,14 +1,15 @@
 package contentcache
 
 import (
-	"errors"
 	"fmt"
 	"time"
 	"uuid"
+
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/fault"
 )
 
 // ErrInvalidReport identifies malformed or schema-invalid metrics.
-var ErrInvalidReport = errors.New("contentcache: invalid report")
+var ErrInvalidReport = fault.NewDevice("", fault.InvalidArgument, "the content cache report is not valid")
 
 // Validate checks required properties and the formats and enums Apple declares.
 // It adds no undocumented counter ranges or version restrictions.

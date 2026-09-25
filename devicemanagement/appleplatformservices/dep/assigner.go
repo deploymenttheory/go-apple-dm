@@ -9,9 +9,14 @@ import (
 	"slices"
 	"time"
 
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/metric"
+
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/clock"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/fault"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/event"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/paging"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/telemetry"
 )
 
 // Defaults for AssignerConfig.
@@ -31,12 +36,14 @@ const (
 // AssignerConfig configures NewAssigner. Client, Store, and Account are
 // required.
 type AssignerConfig struct {
-	Client  *Client
-	Store   Store
-	Account string
-	Clock   clock.Clock
-	Bus     event.Publisher
-	Logger  *slog.Logger
+	// Telemetry supplies the meter run outcomes are counted with.
+	Telemetry telemetry.Config
+	Client    *Client
+	Store     Store
+	Account   string
+	Clock     clock.Clock
+	Bus       event.Publisher
+	Logger    *slog.Logger
 	// Filter keeps a device eligible when it returns true; nil keeps all.
 	Filter func(Device) bool
 	// BatchSize bounds serials per AssignProfile call. Default 1000, the
@@ -71,6 +78,7 @@ type AssignerConfig struct {
 type Assigner struct {
 	cfg  AssignerConfig
 	kick chan struct{}
+	runs metric.Int64Counter
 }
 
 // AssignResult counts what one run did.
@@ -97,6 +105,7 @@ func NewAssigner(cfg AssignerConfig) (*Assigner, error) {
 	if cfg.Logger == nil {
 		cfg.Logger = slog.Default()
 	}
+	cfg.Logger = cfg.Logger.With("component", "dep")
 	if cfg.BatchSize <= 0 {
 		cfg.BatchSize = DefaultAssignBatch
 	}
@@ -112,7 +121,12 @@ func NewAssigner(cfg AssignerConfig) (*Assigner, error) {
 	cfg.NotAccessibleBackoff = cfg.NotAccessibleBackoff.withDefaults(DefaultNotAccessible, DefaultAssignMax)
 	cfg.FailedBackoff = cfg.FailedBackoff.withDefaults(DefaultFailedBase, DefaultAssignMax)
 	cfg.AccountBackoff = cfg.AccountBackoff.withDefaults(DefaultAccountBackoff, DefaultAccountBackMax)
-	return &Assigner{cfg: cfg, kick: make(chan struct{}, 1)}, nil
+	runs, err := cfg.Telemetry.Meter("dep").Int64Counter(MetricSyncRuns,
+		metric.WithDescription("Device enrollment worker runs, by operation and outcome."))
+	if err != nil {
+		return nil, fmt.Errorf("%w: %w", ErrConfig, err)
+	}
+	return &Assigner{cfg: cfg, kick: make(chan struct{}, 1), runs: runs}, nil
 }
 
 // Kick wakes Run so the next run happens now. It never blocks; suitable
@@ -130,19 +144,26 @@ func (a *Assigner) Run(ctx context.Context) error {
 	for {
 		wait := a.cfg.Interval
 		res, err := a.RunOnce(ctx)
+		outcome := "succeeded"
 		switch {
 		case err != nil && ctx.Err() != nil:
+			outcome = ""
 		case errors.Is(err, ErrBackoff):
+			outcome = "backoff"
 			if d := res.NotBefore.Sub(a.cfg.Clock.Now()); d < wait {
 				wait = d
 			}
 		case err != nil:
-			a.cfg.Logger.WarnContext(ctx, "dep: assign failed", "account", a.cfg.Account, "error", err)
+			outcome = "failed"
+			a.cfg.Logger.WarnContext(ctx, "assign failed", "account", a.cfg.Account, fault.Attr(err))
 			if !res.NotBefore.IsZero() {
 				if d := res.NotBefore.Sub(a.cfg.Clock.Now()); d < wait {
 					wait = d
 				}
 			}
+		}
+		if outcome != "" {
+			a.runs.Add(ctx, 1, metric.WithAttributes(attribute.String(AttrOperation, "assign"), attribute.String(AttrOutcome, outcome)))
 		}
 		select {
 		case <-ctx.Done():
@@ -357,7 +378,7 @@ func (a *Assigner) recordBatch(ctx context.Context, run *assignmentRun, profileU
 			break
 		}
 		if err := a.cfg.Bus.Publish(ctx, ev); err != nil {
-			a.cfg.Logger.WarnContext(ctx, "dep: publish", "type", string(ev.Type), "error", err)
+			a.cfg.Logger.WarnContext(ctx, "publish", "type", string(ev.Type), fault.Attr(err))
 		}
 	}
 	return nil

@@ -3,13 +3,13 @@ package enroll
 import (
 	"context"
 	"crypto/x509"
-	"errors"
 	"fmt"
 	"io"
 	"log/slog"
 	"net/http"
 	"time"
 
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/fault"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/cms"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/plist"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/profile"
@@ -32,7 +32,7 @@ const PayloadTypeProfileService = profile.PayloadTypeProfileService
 const ContentTypeProfile = "application/x-apple-aspen-config"
 
 // ErrOTA is returned by the OTA service.
-var ErrOTA = errors.New("enroll: ota")
+var ErrOTA = fault.NewOperator(fault.Internal, "the OTA enrollment request could not be served")
 
 // Device attribute names a Profile Service profile may request.
 const (
@@ -231,9 +231,8 @@ func (s *OTAService) Handler() http.Handler {
 		if err != nil {
 			logger.WarnContext(
 				r.Context(),
-				"ota: request rejected",
-				"error",
-				err,
+				"request rejected",
+				fault.Attr(err),
 				"remote",
 				r.RemoteAddr,
 			)
@@ -244,9 +243,8 @@ func (s *OTAService) Handler() http.Handler {
 			if err := s.Authorize(r.Context(), req); err != nil {
 				logger.WarnContext(
 					r.Context(),
-					"ota: request not authorized",
-					"error",
-					err,
+					"request not authorized",
+					fault.Attr(err),
 					"udid",
 					req.Attributes.UDID,
 					"phase",
@@ -264,9 +262,8 @@ func (s *OTAService) Handler() http.Handler {
 		if err != nil {
 			logger.ErrorContext(
 				r.Context(),
-				"ota: profile",
-				"error",
-				err,
+				"enrollment profile failed",
+				fault.Attr(err),
 				"udid",
 				req.Attributes.UDID,
 				"phase",

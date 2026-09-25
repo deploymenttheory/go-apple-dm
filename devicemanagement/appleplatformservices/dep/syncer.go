@@ -9,9 +9,14 @@ import (
 	"net/http"
 	"time"
 
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/metric"
+
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/clock"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/fault"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/event"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/paging"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/telemetry"
 )
 
 // Defaults for SyncerConfig.
@@ -27,17 +32,19 @@ const (
 
 // ErrSync wraps syncer failures that are neither service errors nor
 // sentinels: store failures during a page commit.
-var ErrSync = errors.New("dep: sync")
+var ErrSync = fault.NewOperator(fault.Internal, "the device enrollment sync failed")
 
 // SyncerConfig configures NewSyncer. Client, Store, and Account are
 // required.
 type SyncerConfig struct {
-	Client  *Client
-	Store   Store
-	Account string
-	Clock   clock.Clock
-	Bus     event.Publisher
-	Logger  *slog.Logger
+	// Telemetry supplies the meter run outcomes are counted with.
+	Telemetry telemetry.Config
+	Client    *Client
+	Store     Store
+	Account   string
+	Clock     clock.Clock
+	Bus       event.Publisher
+	Logger    *slog.Logger
 	// Interval is how often Run syncs without a SyncNow. Default 30m.
 	Interval time.Duration
 	// Limit is the page size; 0 takes it from the account detail, falling
@@ -63,7 +70,17 @@ type SyncerConfig struct {
 type Syncer struct {
 	cfg  SyncerConfig
 	kick chan struct{}
+	runs metric.Int64Counter
 }
+
+// MetricSyncRuns counts device enrollment worker runs by operation and outcome.
+const MetricSyncRuns = "apple_dm.dep.sync.runs"
+
+// Attribute keys on MetricSyncRuns.
+const (
+	AttrOperation = "dep.operation"
+	AttrOutcome   = "dep.outcome"
+)
 
 // SyncResult counts what one run did.
 type SyncResult struct {
@@ -89,6 +106,7 @@ func NewSyncer(cfg SyncerConfig) (*Syncer, error) {
 	if cfg.Logger == nil {
 		cfg.Logger = slog.Default()
 	}
+	cfg.Logger = cfg.Logger.With("component", "dep")
 	if cfg.Interval <= 0 {
 		cfg.Interval = DefaultSyncInterval
 	}
@@ -99,7 +117,12 @@ func NewSyncer(cfg SyncerConfig) (*Syncer, error) {
 		cfg.MaxAttempts = DefaultSyncMaxAttempts
 	}
 	cfg.Backoff = cfg.Backoff.withDefaults(DefaultSyncBackoffBase, DefaultSyncBackoffMax)
-	return &Syncer{cfg: cfg, kick: make(chan struct{}, 1)}, nil
+	runs, err := cfg.Telemetry.Meter("dep").Int64Counter(MetricSyncRuns,
+		metric.WithDescription("Device enrollment worker runs, by operation and outcome."))
+	if err != nil {
+		return nil, fmt.Errorf("%w: %w", ErrConfig, err)
+	}
+	return &Syncer{cfg: cfg, kick: make(chan struct{}, 1), runs: runs}, nil
 }
 
 // SyncNow wakes Run so the next run happens now. It never blocks.
@@ -119,8 +142,12 @@ func (s *Syncer) Run(ctx context.Context) error {
 		if _, err := s.RunOnce(ctx); err != nil && ctx.Err() == nil {
 			failures++
 			wait = s.cfg.Backoff.Delay(failures)
-			s.cfg.Logger.WarnContext(ctx, "dep: sync failed", "account", s.cfg.Account, "attempt", failures, "retry_in", wait, "error", err)
+			s.runs.Add(ctx, 1, metric.WithAttributes(attribute.String(AttrOperation, "sync"), attribute.String(AttrOutcome, "failed")))
+			s.cfg.Logger.WarnContext(ctx, "sync failed", "account", s.cfg.Account, "attempt", failures, "retry_in", wait, fault.Attr(err))
 		} else {
+			if ctx.Err() == nil {
+				s.runs.Add(ctx, 1, metric.WithAttributes(attribute.String(AttrOperation, "sync"), attribute.String(AttrOutcome, "succeeded")))
+			}
 			failures = 0
 		}
 		select {
@@ -159,7 +186,7 @@ func (s *Syncer) RunOnce(ctx context.Context) (SyncResult, error) {
 	}
 	ctx = withAccountFence(ctx, acct)
 	if age := s.cfg.Clock.Now().Sub(cur.UpdatedAt); !cur.IsZero() && age > s.cfg.MaxCursorAge {
-		s.cfg.Logger.InfoContext(ctx, "dep: cursor stale, fetching", "account", s.cfg.Account, "age", age)
+		s.cfg.Logger.InfoContext(ctx, "cursor stale, fetching", "account", s.cfg.Account, "age", age)
 		cur, err = s.startFetch(ctx, cur)
 		if err != nil {
 			return res, err
@@ -201,7 +228,7 @@ func (s *Syncer) RunOnce(ctx context.Context) (SyncResult, error) {
 					return res, err
 				}
 				restarted, res.Restarted = true, true
-				s.cfg.Logger.InfoContext(ctx, "dep: cursor rejected, fetching", "account", s.cfg.Account, "error", err)
+				s.cfg.Logger.InfoContext(ctx, "cursor rejected, fetching", "account", s.cfg.Account, fault.Attr(err))
 				cur, err = s.startFetch(ctx, cur)
 				if err != nil {
 					return res, err
@@ -263,7 +290,7 @@ func (s *Syncer) call(ctx context.Context, acct *Account, cur Cursor) (*DevicePa
 		if ra := retryAfter(err); ra > delay {
 			delay = ra
 		}
-		s.cfg.Logger.WarnContext(ctx, "dep: transient error, retrying", "account", s.cfg.Account, "attempt", attempt, "retry_in", delay, "error", err)
+		s.cfg.Logger.WarnContext(ctx, "transient error, retrying", "account", s.cfg.Account, "attempt", attempt, "retry_in", delay, fault.Attr(err))
 		select {
 		case <-ctx.Done():
 			return nil, ctx.Err()
@@ -381,7 +408,7 @@ func (s *Syncer) commitPage(ctx context.Context, current Cursor, page *DevicePag
 			continue
 		}
 		if err := s.cfg.Bus.Publish(ctx, ev); err != nil {
-			s.cfg.Logger.WarnContext(ctx, "dep: publish", "type", string(ev.Type), "error", err)
+			s.cfg.Logger.WarnContext(ctx, "publish", "type", string(ev.Type), fault.Attr(err))
 		}
 	}
 	return added, modified, deleted, nil

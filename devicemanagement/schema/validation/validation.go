@@ -1,13 +1,13 @@
 package validation
 
 import (
-	"errors"
 	"fmt"
 	"math"
 	"regexp"
 	"strings"
 	"time"
 
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/fault"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/schema/support"
 )
 
@@ -49,7 +49,7 @@ func (es Errors) Error() string {
 }
 
 // ErrValidation is the sentinel every Errors value unwraps to.
-var ErrValidation = errors.New("schema validation failed")
+var ErrValidation = fault.SchemaInvalid
 
 // Unwrap lets errors.Is(err, ErrValidation) succeed.
 func (es Errors) Unwrap() error { return ErrValidation }

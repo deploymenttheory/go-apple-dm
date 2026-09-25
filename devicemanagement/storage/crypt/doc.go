@@ -13,6 +13,12 @@
 // automatically. SQL backends define which values are sealed and how Rewrap
 // walks them; raw check-in records and exports can still contain sensitive data.
 //
+// # Errors
+//
+// Every sentinel is an operator condition: a missing keyring or key is
+// Unavailable, tampered or malformed ciphertext is Internal, and weak key
+// material, an unsealed value or a missing active key is InvalidArgument.
+//
 // # References
 //
 //   - Decision record 0011: https://github.com/deploymenttheory/go-apple-dm/blob/main/docs/research/decisions/0011-secrets-provider.md

@@ -20,14 +20,14 @@ const (
 
 // Decoding and encoding errors.
 var (
-	ErrTooLarge    = errors.New("cbor: input too large")
-	ErrSyntax      = errors.New("cbor: malformed input")
-	ErrUnsupported = errors.New("cbor: item outside the supported subset")
-	ErrTrailing    = errors.New("cbor: trailing data")
-	ErrType        = errors.New("cbor: cannot decode into target")
-	ErrDuplicate   = errors.New("cbor: duplicate map key")
-	ErrDepth       = errors.New("cbor: nesting too deep")
-	ErrTarget      = errors.New("cbor: target must be a non-nil pointer")
+	ErrTooLarge    = errors.New("input too large")
+	ErrSyntax      = errors.New("malformed input")
+	ErrUnsupported = errors.New("item outside the supported subset")
+	ErrTrailing    = errors.New("trailing data")
+	ErrType        = errors.New("cannot decode into target")
+	ErrDuplicate   = errors.New("duplicate map key")
+	ErrDepth       = errors.New("nesting too deep")
+	ErrTarget      = errors.New("target must be a non-nil pointer")
 )
 
 // RawMessage is an encoded item kept verbatim. Decoding into one copies the

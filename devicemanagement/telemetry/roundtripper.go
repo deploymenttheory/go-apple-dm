@@ -12,6 +12,8 @@ import (
 	"go.opentelemetry.io/otel/codes"
 	"go.opentelemetry.io/otel/metric"
 	"go.opentelemetry.io/otel/trace"
+
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/fault"
 )
 
 // Attribute keys used by the HTTP instrumentation. The small fixed set is
@@ -22,6 +24,10 @@ const (
 	AttrServerAddress          = "server.address"
 	AttrServerPort             = "server.port"
 	AttrErrorType              = "error.type"
+	// AttrErrorAudience is who must act on a failure: operator, client or device. It
+	// is not a semantic convention; it is this library's, so a dashboard can separate
+	// the deployment's failures from its callers'.
+	AttrErrorAudience = "error.audience"
 )
 
 // MetricHTTPClientDuration is the stable OpenTelemetry instrument for an
@@ -190,10 +196,15 @@ func defaultPort(scheme string) string {
 	return ""
 }
 
-// errorType names the failure in the closed way error.type requires: a type
-// name or a well-known cause, never an error message. A message can carry a
-// hostname, a URL, or a device token, and would be unbounded besides.
+// errorType names an outbound failure in the closed way error.type requires: the
+// catalogue's value for a failure that was classified, else the transport shape, never
+// an error message. A message can carry a hostname, a URL, or a device token, and
+// would be unbounded besides. The transport shapes keep the names this metric has
+// always published.
 func errorType(err error) string {
+	if fault.IsClassified(err) {
+		return fault.ErrorType(err)
+	}
 	var netErr net.Error
 	switch {
 	case errors.Is(err, context.Canceled):

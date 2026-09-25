@@ -14,6 +14,15 @@
 // account-driven association are separate controls; importing a certificate here
 // creates neither. Certificate hold and remove-from-CRL are unsupported.
 //
+// # Errors
+//
+// ErrRevoked, ErrExpired, ErrUnknown and ErrInvalid are the catalogued client
+// conditions DM-PKI-CERTIFICATE-REVOKED, DM-PKI-CERTIFICATE-EXPIRED,
+// DM-PKI-ISSUER-UNKNOWN and DM-PKI-REVOCATION-INVALID: the administration
+// API raises them for a revocation request, so a repeated revocation is a
+// Conflict and a bad reason or certificate is the caller's. A device presenting
+// such a certificate meets them as a bare status.
+//
 // # References
 //
 //   - https://github.com/deploymenttheory/go-apple-dm/blob/main/docs/research/decisions/0047-enrollment-authentication-and-optional-security-services.md

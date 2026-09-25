@@ -13,6 +13,13 @@
 // server/service applies lifecycle and admission policy, storage defines
 // persistence contracts, and server/httpapi provides transport handling.
 //
+// # Errors
+//
+// ErrInvalidCommand is the catalogued client condition DM-MDM-COMMAND-INVALID.
+// The remaining sentinels describe a message a device sent and are device
+// conditions of kind InvalidArgument: a transport answers them with a bare 400.
+// ParseError wraps the cause of a decode failure.
+//
 // # References
 //
 //   - Decision record 0002: https://github.com/deploymenttheory/go-apple-dm/blob/main/docs/research/decisions/0002-plist-library.md

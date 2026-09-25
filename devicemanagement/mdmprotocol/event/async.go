@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"sync"
 	"time"
+
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/fault"
 )
 
 // Default asynchronous dispatch limits bound events, not payload byte sizes.
@@ -16,10 +18,10 @@ const (
 )
 
 // ErrQueueFull means the event was not accepted. No automatic replay occurs.
-var ErrQueueFull = errors.New("event: queue full")
+var ErrQueueFull = fault.NewOperator(fault.ResourceExhausted, "the event queue is full")
 
 // ErrAsyncConfig identifies invalid asynchronous dispatch limits.
-var ErrAsyncConfig = errors.New("event: invalid async configuration")
+var ErrAsyncConfig = fault.NewOperator(fault.Internal, "the asynchronous bus configuration is not valid")
 
 // AsyncConfig bounds active deliveries, pending events and time since acceptance.
 // Zero fields select defaults; negative fields are invalid.

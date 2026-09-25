@@ -21,6 +21,13 @@
 // accommodates the documented discrepancy; physical-device interoperability
 // still requires verification. No dmserver route is installed by this package.
 //
+// # Errors
+//
+// ErrCredential and ErrInvalidReport are device conditions, because the content
+// cache posting a report is a peer this server does not manage: a bad credential
+// is PermissionDenied and a bad report InvalidArgument. ErrConfig is the
+// operator's.
+//
 // # References
 //
 //   - Apple metrics schema: https://github.com/apple/device-management/blob/b0180185a5e4077070710033341b71d0cbe1a18a/openapi/content-cache/metrics_report.json

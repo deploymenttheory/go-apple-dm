@@ -17,6 +17,15 @@
 // API and token endpoint overrides require absolute HTTPS URLs with no user
 // information or fragment. Custom transports own TLS verification policy.
 //
+// # Errors
+//
+// ErrArgument, ErrLimit and ErrActivityRule are catalogued client conditions
+// under DM-AXM-*. Configuration, key, transport, decode and store failures are
+// the operator's. Error, the API's own non-2xx answer, classifies itself through
+// Kind by status and exposes Retry-After through RetryDelay; AuthError is
+// Upstream, because a rejected credential is the deployment's to fix. The Is*
+// helpers remain for callers that read the API's statuses directly.
+//
 // # References
 //
 //   - Decision record 0030: https://github.com/deploymenttheory/go-apple-dm/blob/main/docs/research/decisions/0030-apple-business-manager-api-client.md

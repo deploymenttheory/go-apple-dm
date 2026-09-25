@@ -3,11 +3,11 @@ package enroll
 import (
 	"crypto/x509"
 	"crypto/x509/pkix"
-	"errors"
 	"fmt"
 	"slices"
 	"strings"
 
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/fault"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/profile"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/osversion"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/schema/profiles"
@@ -17,7 +17,7 @@ import (
 
 // ErrProfile is returned for an enrollment profile that cannot be built or
 // read.
-var ErrProfile = errors.New("enroll: profile")
+var ErrProfile = fault.NewOperator(fault.Internal, "the enrollment profile cannot be built")
 
 // AccessRights is the MDM payload AccessRights bit mask.
 type AccessRights int64

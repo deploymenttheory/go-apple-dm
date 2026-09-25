@@ -273,7 +273,7 @@ func (m *Manager) RunPublicACME(ctx context.Context, id string, httpClient *http
 		if err = persist(); err != nil {
 			return Identity{}, err
 		}
-		return Identity{}, fmt.Errorf("lifecycle: ACME order invalid; a new order will be attempted after backoff")
+		return Identity{}, fmt.Errorf("ACME order invalid; a new order will be attempted after backoff")
 	}
 	for _, authURL := range order.AuthzURLs {
 		auth, err := client.GetAuthorization(ctx, authURL)
@@ -291,7 +291,7 @@ func (m *Manager) RunPublicACME(ctx context.Context, id string, httpClient *http
 			}
 		}
 		if challenge == nil {
-			return Identity{}, fmt.Errorf("lifecycle: CA did not offer HTTP-01")
+			return Identity{}, fmt.Errorf("CA did not offer HTTP-01")
 		}
 		response, err := client.HTTP01ChallengeResponse(challenge.Token)
 		if err != nil {

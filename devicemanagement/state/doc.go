@@ -9,6 +9,13 @@
 // own serialization, namespaces, key selection and record lifetimes. In-memory
 // state is lost on restart.
 //
+// # Errors
+//
+// ErrNotFound is the catalogued condition DM-RECORD-NOT-FOUND, shared by every
+// store that keeps records by key. ErrInvalid is an operator condition for a
+// key, limit or transaction the store cannot accept. Both classify through
+// devicemanagement/fault.
+//
 // # References
 //
 //   - https://github.com/deploymenttheory/go-apple-dm/blob/main/docs/research/decisions/0047-enrollment-authentication-and-optional-security-services.md

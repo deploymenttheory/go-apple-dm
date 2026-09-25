@@ -297,7 +297,7 @@ var unmarshalTime = json.UnmarshalFromFunc(func(dec *jsontext.Decoder, t *time.T
 	}
 	var s string
 	if err := json.Unmarshal(v, &s); err != nil {
-		return fmt.Errorf("timestamp: %w", err)
+		return fmt.Errorf("%w", err)
 	}
 	if s == "" {
 		*t = time.Time{}

@@ -8,17 +8,18 @@ import (
 	"crypto/x509"
 	"encoding/base64"
 	json "encoding/json/v2"
-	"errors"
 	"fmt"
 	"time"
 	"uuid"
+
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/fault"
 )
 
 // MAIDService is the GetToken service for Managed Apple Accounts.
 const MAIDService = "com.apple.maid"
 
 // ErrMAIDToken indicates invalid credentials, claims or a signing failure.
-var ErrMAIDToken = errors.New("enroll: cannot issue Managed Apple Account token")
+var ErrMAIDToken = fault.NewOperator(fault.Internal, "the Managed Apple Account token could not be issued")
 
 // MAIDToken signs Apple's GetToken JWT with the certificate registered for the
 // ADE server and its matching RSA key (including external crypto.Signers).

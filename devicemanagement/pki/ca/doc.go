@@ -13,6 +13,11 @@
 // deployments supply stable CA material and an appropriate depot. Optional
 // status enforcement and publication live in pki/revocation.
 //
+// # Errors
+//
+// ErrCSR and ErrPolicy are the catalogued client conditions DM-PKI-CSR-INVALID
+// and DM-PKI-POLICY-VIOLATION; ErrNotFound is DM-PKI-CERTIFICATE-NOT-FOUND.
+//
 // # References
 //
 //   - Decision record 0008: https://github.com/deploymenttheory/go-apple-dm/blob/main/docs/research/decisions/0008-scep-and-ca.md

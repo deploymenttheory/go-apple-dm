@@ -2,7 +2,6 @@ package gdmf
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -12,6 +11,8 @@ import (
 	"time"
 
 	json "encoding/json/v2"
+
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/fault"
 )
 
 // DefaultURL is Apple's software lookup service.
@@ -26,12 +27,30 @@ const (
 
 // Errors returned by this package.
 var (
-	ErrRequest  = errors.New("gdmf: request failed")
-	ErrStatus   = errors.New("gdmf: unexpected status")
-	ErrDecode   = errors.New("gdmf: malformed catalog")
-	ErrTooLarge = errors.New("gdmf: catalog too large")
-	ErrNotFound = errors.New("gdmf: no asset for device")
+	ErrRequest  = fault.NewOperator(fault.Upstream, "the software update catalog request failed")
+	ErrStatus   = fault.NewOperator(fault.Upstream, "the software update catalog answered an unexpected status")
+	ErrDecode   = fault.NewOperator(fault.Upstream, "the software update catalog is malformed")
+	ErrTooLarge = fault.NewOperator(fault.Upstream, "the software update catalog is too large")
+	ErrNotFound = fault.NewOperator(fault.NotFound, "the software update catalog has no asset for the device")
 )
+
+// StatusError is an unexpected status from the software update catalog service. It
+// matches ErrStatus and classifies by the rule every client of an Apple service shares.
+type StatusError struct{ Status int }
+
+// Error implements error.
+func (e *StatusError) Error() string {
+	return fmt.Sprintf("the software update catalog answered HTTP %d", e.Status)
+}
+
+// Unwrap makes errors.Is(err, ErrStatus) true.
+func (e *StatusError) Unwrap() error { return ErrStatus }
+
+// Kind classifies the status.
+func (e *StatusError) Kind() *fault.Kind { return fault.KindForUpstreamStatus(e.Status) }
+
+// Is matches the error's kind, so errors.Is(err, fault.ResourceExhausted) holds for a 429.
+func (e *StatusError) Is(target error) bool { return target == e.Kind() }
 
 // Asset is one operating system release in the catalog.
 //
@@ -276,7 +295,7 @@ func (c *Client) fetch(ctx context.Context) (*Catalog, error) {
 	}
 	defer func(body io.Closer) { _ = body.Close() }(resp.Body)
 	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("%w: %d", ErrStatus, resp.StatusCode)
+		return nil, &StatusError{Status: resp.StatusCode}
 	}
 	limit := c.MaxBytes
 	if limit <= 0 {

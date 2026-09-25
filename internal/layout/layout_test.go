@@ -198,16 +198,27 @@ func TestPushcertImportsOnlyTheStandardLibrary(t *testing.T) {
 	}
 }
 
+// TestFaultImportsOnlyTheStandardLibrary keeps the error catalogue at the bottom of
+// the module: every package raises its conditions, so the catalogue can depend on none
+// of them, and a consumer embedding the library pays for nothing but errors and slog.
+func TestFaultImportsOnlyTheStandardLibrary(t *testing.T) {
+	t.Parallel()
+	g := load(t)
+	if got := g.Imports["devicemanagement/fault"]; len(got) > 0 {
+		t.Errorf("devicemanagement/fault must import nothing in this module; it imports %s", strings.Join(got, ", "))
+	}
+}
+
 // TestEventDependsOnlyOnTheProtocolCore keeps the bus in a low tier. The
 // projections that know every domain live in server/eventsink for this
 // reason.
 func TestEventDependsOnlyOnTheProtocolCore(t *testing.T) {
 	t.Parallel()
 	g := load(t)
-	want := []string{"devicemanagement/mdmprotocol/mdm"}
+	want := []string{"devicemanagement/fault", "devicemanagement/mdmprotocol/mdm"}
 	if got := g.Imports["devicemanagement/mdmprotocol/event"]; fmt.Sprint(got) != fmt.Sprint(want) {
 		t.Errorf(
-			"event must depend only on mdm, so every domain can publish to it; it imports %v",
+			"event must depend only on mdm and the fault catalogue, so every domain can publish to it; it imports %v",
 			got,
 		)
 	}

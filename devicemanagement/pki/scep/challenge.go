@@ -16,6 +16,7 @@ import (
 	"time"
 
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/clock"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/fault"
 )
 
 // Challenge verifies the challenge password a device presents in its CSR.
@@ -26,7 +27,7 @@ type Challenge interface {
 }
 
 // ErrChallenge is returned for a wrong, missing, expired, or reused challenge.
-var ErrChallenge = errors.New("scep: challenge rejected")
+var ErrChallenge = fault.NewDevice("", fault.PermissionDenied, "the SCEP challenge was rejected")
 
 // StaticChallenge accepts one shared secret. Adequate only when the
 // enrollment profile is delivered over an authenticated channel.
@@ -123,7 +124,7 @@ type HMACChallenge struct {
 // NewHMACChallenge creates the issuer. The key must be at least 16 bytes.
 func NewHMACChallenge(key []byte, ttl time.Duration, c clock.Clock) (*HMACChallenge, error) {
 	if len(key) < 16 {
-		return nil, errors.New("scep: HMAC challenge key must be at least 16 bytes")
+		return nil, errors.New("HMAC challenge key must be at least 16 bytes")
 	}
 	if c == nil {
 		c = clock.Real{}

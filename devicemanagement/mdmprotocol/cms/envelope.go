@@ -8,12 +8,14 @@ import (
 	"fmt"
 
 	"github.com/smallstep/pkcs7"
+
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/fault"
 )
 
 // Envelope errors do not include ciphertext, key material or plaintext.
 var (
-	ErrRecipient = errors.New("cms: invalid recipient certificate or key")
-	ErrDecrypt   = errors.New("cms: envelope decryption failed")
+	ErrRecipient = fault.NewOperator(fault.Internal, "the recipient certificate or key is not valid")
+	ErrDecrypt   = fault.NewOperator(fault.Internal, "the envelope could not be decrypted")
 )
 
 // DecryptEnvelope decrypts CMS EnvelopedData (BER or DER), including FileVault's

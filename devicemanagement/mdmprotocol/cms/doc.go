@@ -18,6 +18,15 @@
 // reply key for delayed FileVault results. Certificate expiry does not prevent
 // decrypting an older envelope; decryption alone does not prove its sender.
 //
+// # Errors
+//
+// Every sentinel is a device condition or an operator condition classified
+// through devicemanagement/fault. A malformed header, structure or unsupported
+// algorithm is InvalidArgument; a signature, chain, signing-time or signer-count
+// failure is PermissionDenied, because the device presented an identity the
+// server does not accept. Signing, recipient and decryption failures are the
+// operator's.
+//
 // # References
 //
 //   - Decision record 0006: https://github.com/deploymenttheory/go-apple-dm/blob/main/docs/research/decisions/0006-mdm-signature-verification.md

@@ -13,6 +13,12 @@
 // Successful structural validation does not prove a payload will install on a
 // physical device.
 //
+// # Errors
+//
+// ErrValidation is the catalogued client condition DM-SCHEMA-VALIDATION; every
+// Errors value unwraps to it, so a transport answers 400 with the path-qualified
+// findings as detail.
+//
 // # References
 //
 //   - Decision record 0003: https://github.com/deploymenttheory/go-apple-dm/blob/main/docs/research/decisions/0003-schema-generator.md

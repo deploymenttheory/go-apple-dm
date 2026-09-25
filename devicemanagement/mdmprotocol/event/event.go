@@ -6,6 +6,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/fault"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/mdm"
 )
 
@@ -152,7 +153,7 @@ func newBus(opts []Option) *Bus {
 }
 
 // ErrClosed is returned by Publish after Close.
-var ErrClosed = errors.New("event: bus closed")
+var ErrClosed = fault.NewOperator(fault.Unavailable, "the event bus is closed")
 
 // Subscribe registers h for events of type t (or All). The returned
 // function removes the subscription.

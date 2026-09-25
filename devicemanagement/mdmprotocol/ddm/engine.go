@@ -3,13 +3,18 @@ package ddm
 import (
 	"context"
 	"errors"
-	"io"
+	"fmt"
 	"log/slog"
 
+	"go.opentelemetry.io/otel/metric"
+
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/clock"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/fault"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/event"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/mdm"
+	schemaddm "github.com/deploymenttheory/go-apple-dm/devicemanagement/schema/ddm"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/schema/support"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/telemetry"
 )
 
 // Resolver adds declarations to an enrollment's manifest dynamically, for
@@ -52,6 +57,9 @@ type Config struct {
 	Bus           event.Publisher
 	Clock         clock.Clock
 	Logger        *slog.Logger
+	// Telemetry supplies the meter the engine counts status reasons with. The zero
+	// value counts nothing.
+	Telemetry telemetry.Config
 	// Target supplies the validation target for uploads; nil validates for
 	// any OS.
 	Target func(ctx context.Context) support.Target
@@ -77,7 +85,7 @@ const (
 )
 
 // ErrNoStore is returned by New when Config.Store is nil.
-var ErrNoStore = errors.New("ddm: store is required")
+var ErrNoStore = fault.NewOperator(fault.Internal, "a declaration store is required")
 
 // Engine serves declarative management for enrollments.
 type Engine struct {
@@ -94,7 +102,18 @@ type Engine struct {
 	maxStatusDepth, maxStatusPath, maxStatusItems int
 	keep                                          int
 	subs                                          Subscriptions
+	reasons                                       metric.Int64Counter
 }
+
+// MetricStatusReasons counts the reasons devices report in status Errors, by the
+// reason Code Apple defines.
+const MetricStatusReasons = "apple_dm.ddm.status.reasons"
+
+// AttrReasonCode is the metric attribute carrying a status reason's Code.
+const AttrReasonCode = "ddm.reason_code"
+
+// reasonCodes bounds the reason attribute to the codes Apple's schema defines.
+var reasonCodes = telemetry.NewVocabulary(AttrReasonCode, schemaddm.ReasonCodes())
 
 // New validates cfg and returns an Engine.
 func New(cfg Config) (*Engine, error) {
@@ -111,8 +130,15 @@ func New(cfg Config) (*Engine, error) {
 		e.clock = clock.Real{}
 	}
 	if e.log == nil {
-		e.log = slog.New(slog.NewTextHandler(io.Discard, nil))
+		e.log = slog.New(slog.DiscardHandler)
 	}
+	e.log = e.log.With(fault.Component("ddm"))
+	reasons, err := cfg.Telemetry.Meter("ddm").Int64Counter(MetricStatusReasons,
+		metric.WithDescription("Status report error reasons received from devices, by reason code."))
+	if err != nil {
+		return nil, fmt.Errorf("create the status reasons counter: %w", err)
+	}
+	e.reasons = reasons
 	if e.target == nil {
 		e.target = func(context.Context) support.Target { return support.Target{} }
 	}
@@ -159,7 +185,7 @@ func (e *Engine) publish(ctx context.Context, t event.Type, id mdm.EnrollmentID,
 		event.Event{Type: t, At: e.clock.Now(), Enrollment: id, Actor: "ddm", Data: data},
 	); err != nil &&
 		!errors.Is(err, event.ErrQueueFull) {
-		e.log.WarnContext(ctx, "ddm: publish", "type", string(t), "error", err)
+		e.log.WarnContext(ctx, "publish", "type", string(t), fault.Attr(err))
 	}
 }
 

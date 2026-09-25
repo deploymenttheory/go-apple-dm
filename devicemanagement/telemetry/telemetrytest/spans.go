@@ -93,7 +93,10 @@ func (t *recordingTracer) Start(ctx context.Context, name string, opts ...trace.
 	t.rec.mu.Lock()
 	t.rec.got = append(t.rec.got, s)
 	t.rec.mu.Unlock()
-	return ctx, &recordingSpan{Span: inner, rec: t.rec, out: s}
+	rs := &recordingSpan{Span: inner, rec: t.rec, out: s}
+	// The recording span is what the context carries, so code that finds the active
+	// span through trace.SpanFromContext records against it as well.
+	return trace.ContextWithSpan(ctx, rs), rs
 }
 
 type recordingSpan struct {
@@ -111,6 +114,14 @@ func (s *recordingSpan) SetAttributes(attrs ...attribute.KeyValue) {
 	sort.Strings(s.out.Attrs)
 	s.rec.mu.Unlock()
 	s.Span.SetAttributes(attrs...)
+}
+
+// SetName records a rename, which a transport does once it knows the route.
+func (s *recordingSpan) SetName(name string) {
+	s.rec.mu.Lock()
+	s.out.Name = name
+	s.rec.mu.Unlock()
+	s.Span.SetName(name)
 }
 
 // SetStatus records the span status code and description for assertions.

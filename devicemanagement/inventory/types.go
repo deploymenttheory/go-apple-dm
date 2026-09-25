@@ -5,18 +5,19 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
-	"errors"
 	"strings"
 	"time"
+
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/fault"
 )
 
 // Domain errors are shared by persistence implementations and callers.
 var (
-	ErrNotFound = errors.New("inventory: not found")
-	ErrInvalid  = errors.New("inventory: invalid argument")
-	ErrConflict = errors.New("inventory: conflicting identity or revision")
-	ErrStopped  = errors.New("inventory: job stopped")
-	ErrLease    = errors.New("inventory: worker lease lost")
+	ErrNotFound = fault.InventoryNotFound
+	ErrInvalid  = fault.InventoryInvalid
+	ErrConflict = fault.InventoryConflict
+	ErrStopped  = fault.InventoryJobStopped
+	ErrLease    = fault.NewOperator(fault.Conflict, "the worker lease was lost")
 )
 
 // SourceReference identifies a resource within an independently authenticated source.

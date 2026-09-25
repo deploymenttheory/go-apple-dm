@@ -182,7 +182,7 @@ func Pages[T any](ctx context.Context, c *Client, first Page[T]) iter.Seq2[Page[
 				yield(Page[T]{}, fmt.Errorf("%w: %w", ErrTransport, err))
 				return
 			}
-			c.log.DebugContext(ctx, "axm: following links.next", "page", n+1, "total", page.Meta.Paging.Total)
+			c.log.DebugContext(ctx, "following links.next", "page", n+1, "total", page.Meta.Paging.Total)
 			next, err := NextPage(ctx, c, page)
 			if err != nil {
 				yield(Page[T]{}, err)

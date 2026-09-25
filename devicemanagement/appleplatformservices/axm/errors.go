@@ -9,43 +9,45 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/fault"
 )
 
 // Sentinel errors.
 var (
 	// ErrConfig is returned by New for an unusable Config.
-	ErrConfig = errors.New("axm: invalid config")
+	ErrConfig = fault.NewOperator(fault.Internal, "the Apple School and Business Manager API configuration is not valid")
 	// ErrKey is returned when a private key cannot be read.
-	ErrKey = errors.New("axm: invalid private key")
+	ErrKey = fault.NewOperator(fault.Internal, "the private key is not valid")
 	// ErrKeyType is returned for a key that is not an ECDSA P-256 key.
-	ErrKeyType = errors.New("axm: private key must be ECDSA P-256")
+	ErrKeyType = fault.NewOperator(fault.Internal, "the private key must be ECDSA P-256")
 	// ErrDecode wraps a response body that does not decode.
-	ErrDecode = errors.New("axm: cannot decode response")
+	ErrDecode = fault.NewOperator(fault.Upstream, "the Apple School and Business Manager API response could not be decoded")
 	// ErrTransport wraps a request that produced no HTTP response.
-	ErrTransport = errors.New("axm: transport failure")
+	ErrTransport = fault.NewOperator(fault.Upstream, "the Apple School and Business Manager API transport failed")
 	// ErrLimit is returned for a limit outside 1 to MaxLimit.
-	ErrLimit = errors.New("axm: limit must be between 1 and 1000")
+	ErrLimit = fault.AXMLimitInvalid
 	// ErrPageCap is returned by the iterators when the page cap stops them
 	// before links.next runs out.
-	ErrPageCap = errors.New("axm: page cap reached")
+	ErrPageCap = fault.NewOperator(fault.ResourceExhausted, "the page cap was reached")
 	// ErrNextLink is returned when links.next cannot be followed.
-	ErrNextLink = errors.New("axm: unusable links.next")
+	ErrNextLink = fault.NewOperator(fault.Upstream, "the links.next value is unusable")
 	// ErrArgument is returned for a missing or malformed argument.
-	ErrArgument = errors.New("axm: invalid argument")
+	ErrArgument = fault.AXMInvalid
 	// ErrActivityRule is returned when an activity request breaks one of
 	// Apple's documented rules before it is sent.
-	ErrActivityRule = errors.New("axm: activity rule violated")
+	ErrActivityRule = fault.AXMActivityInvalid
 	// ErrWaitTimeout is returned by the polling helpers when the timeout
 	// elapses first.
-	ErrWaitTimeout = errors.New("axm: wait timed out")
+	ErrWaitTimeout = fault.NewOperator(fault.DeadlineExceeded, "waiting for the activity timed out")
 	// ErrForeignHost is returned by FetchActivityLog for a URL that is not
 	// on the API host.
-	ErrForeignHost = errors.New("axm: download URL is not on the API host")
+	ErrForeignHost = fault.NewOperator(fault.Upstream, "the download URL is not on the API host")
 	// ErrNoEventData is returned by AuditEventAttributes.Data when the
 	// event carries no event data.
-	ErrNoEventData = errors.New("axm: audit event has no event data")
+	ErrNoEventData = fault.NewOperator(fault.Upstream, "the audit event has no event data")
 	// ErrStore is returned by the credential store.
-	ErrStore = errors.New("axm: credential store")
+	ErrStore = fault.NewOperator(fault.Unavailable, "the credential store failed")
 )
 
 // ErrorSource says where in the request an error originated: Pointer is
@@ -135,7 +137,7 @@ type Error struct {
 // Error implements error.
 func (e *Error) Error() string {
 	var b strings.Builder
-	fmt.Fprintf(&b, "axm: %s %s: %d", e.Method, e.URL, e.Status)
+	fmt.Fprintf(&b, "%s %s answered %d", e.Method, e.URL, e.Status)
 	for _, item := range e.Errors {
 		b.WriteString(": ")
 		b.WriteString(item.Code)
@@ -166,6 +168,19 @@ func (e *Error) Error() string {
 	return b.String()
 }
 
+// Kind classifies the answer for a caller that does not read the API's statuses. A
+// 400 is the caller's argument, a 404 an addressed thing that does not exist, a 409 a
+// conflict, a 429 a rate limit and a timeout a deadline; anything else, including a
+// rejected credential, is Upstream, because Apple produced it and this server's caller
+// cannot correct it.
+func (e *Error) Kind() *fault.Kind { return fault.KindForUpstreamStatus(e.Status) }
+
+// Is matches the error's kind, so errors.Is(err, fault.NotFound) holds for a 404.
+func (e *Error) Is(target error) bool { return target == e.Kind() }
+
+// RetryDelay returns the Retry-After Apple sent, for fault.RetryAfterOf.
+func (e *Error) RetryDelay() time.Duration { return e.RetryAfter }
+
 // Code returns the code of the first error, or "".
 func (e *Error) Code() string {
 	if len(e.Errors) == 0 {
@@ -193,7 +208,7 @@ type AuthError struct {
 // Error implements error.
 func (e *AuthError) Error() string {
 	var b strings.Builder
-	b.WriteString("axm: authentication failed")
+	b.WriteString("the Apple School and Business Manager API rejected the credential")
 	if e.Status != 0 {
 		fmt.Fprintf(&b, ": status %d", e.Status)
 	}
@@ -215,6 +230,14 @@ func (e *AuthError) Error() string {
 
 // Unwrap returns Err.
 func (e *AuthError) Unwrap() error { return e.Err }
+
+// Kind classifies a rejected credential as Unavailable: the deployment's credential is
+// wrong, which this server's caller cannot correct and a retry will not fix until an
+// operator acts.
+func (e *AuthError) Kind() *fault.Kind { return fault.Unavailable }
+
+// Is matches the error's kind.
+func (e *AuthError) Is(target error) bool { return target == e.Kind() }
 
 // IsNotFound reports whether err is a 404 from the API.
 func IsNotFound(err error) bool { return hasStatus(err, http.StatusNotFound) }

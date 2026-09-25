@@ -20,7 +20,10 @@ type accountBinding struct {
 type assignmentCooldown struct{ delay time.Duration }
 
 // Error identifies the retained retry instruction without including response content.
-func (*assignmentCooldown) Error() string { return "dep: stale assignment response requires cooldown" }
+func (*assignmentCooldown) Error() string { return "stale assignment response requires cooldown" }
+
+// RetryDelay returns the cooldown Apple asked for, for fault.RetryAfterOf.
+func (c *assignmentCooldown) RetryDelay() time.Duration { return c.delay }
 
 // staleResponse preserves throttling instructions while rejecting obsolete business data.
 // The worker must independently verify account identity and lease ownership before saving them.

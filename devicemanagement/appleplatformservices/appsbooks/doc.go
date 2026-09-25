@@ -18,6 +18,15 @@
 // cannot be assigned to devices or reclaimed. Check the returned asset's
 // DeviceAssignable and Revocable flags as well as Apple's per-task failures.
 //
+// # Errors
+//
+// ErrInput and ErrLimit are the catalogued client conditions
+// DM-APPSBOOKS-INVALID and DM-APPSBOOKS-LIMIT. Configuration, token,
+// ownership, location and protocol failures are the operator's. APIError
+// classifies itself through Kind by status and exposes Retry-After through
+// RetryDelay; TransportError is Upstream and still unwraps to the cause for
+// context checks.
+//
 // # References
 //
 //   - Design decision: https://github.com/deploymenttheory/go-apple-dm/blob/main/docs/research/decisions/0053-apps-and-books-licensing.md

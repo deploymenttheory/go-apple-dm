@@ -74,7 +74,7 @@ func DecodeNotification(r *http.Request, token, expectedUID string) (Notificatio
 	}
 	data, err := io.ReadAll(io.LimitReader(r.Body, maxBody+1))
 	if err != nil {
-		return out, fmt.Errorf("appsbooks: read notification: %w", err)
+		return out, fmt.Errorf("read notification: %w", err)
 	}
 	if len(data) > maxBody || json.Unmarshal(data, &out) != nil || out.ID == "" || out.Type == "" ||
 		len(out.Payload) == 0 {

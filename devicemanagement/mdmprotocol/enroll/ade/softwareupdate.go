@@ -2,7 +2,6 @@ package ade
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"log/slog"
 	"net/http"
@@ -11,13 +10,14 @@ import (
 	json "encoding/json/v2"
 
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/appleplatformservices/gdmf"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/fault"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/plist"
 	schemaerrors "github.com/deploymenttheory/go-apple-dm/devicemanagement/schema/errors"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/schema/support"
 )
 
 // ErrGate is returned when a gate decision cannot be produced.
-var ErrGate = errors.New("ade: software update gate")
+var ErrGate = fault.NewOperator(fault.Internal, "the software update gate could not decide")
 
 // Response content types for the 403 bodies.
 const (
@@ -136,12 +136,12 @@ func Gate(ctx context.Context, p *Parsed, policy Policy, lookup gdmf.Lookup, log
 	}
 	if target.OSVersion == "" {
 		if lookup == nil {
-			logger.WarnContext(ctx, "ade: policy asked for the latest OS but no lookup is configured; proceeding", "serial", p.SERIAL)
+			logger.WarnContext(ctx, "policy asked for the latest OS but no lookup is configured; proceeding", "serial", p.SERIAL)
 			return &Decision{Action: Proceed, Reason: "no lookup for latest"}, nil
 		}
 		asset, err := lookup.Latest(ctx, deviceID(p))
 		if err != nil {
-			logger.WarnContext(ctx, "ade: software lookup failed; proceeding", "serial", p.SERIAL, "device", deviceID(p), "error", err)
+			logger.WarnContext(ctx, "software lookup failed; proceeding", "serial", p.SERIAL, "device", deviceID(p), fault.Attr(err))
 			return &Decision{Action: Proceed, Reason: "lookup failed: " + err.Error()}, nil
 		}
 		target.OSVersion, target.BuildVersion = asset.ProductVersion, asset.Build
@@ -195,6 +195,19 @@ func pssoDecision(details *schemaerrors.CodePlatformSSORequiredDetails) (*Decisi
 		return nil, fmt.Errorf("%w: psso.required body: %w", ErrGate, err)
 	}
 	return &Decision{Action: PSSORequired, PSSO: body, Reason: "platform sso required"}, nil
+}
+
+// Condition returns the catalogued device condition the decision answers with, whose
+// code is the Apple error document's code, or nil for a decision to proceed. A
+// transport logs and counts the same condition the device receives.
+func (d *Decision) Condition() *fault.Entry {
+	switch d.Action {
+	case SoftwareUpdateRequired:
+		return fault.DeviceSoftwareUpdateRequired
+	case PSSORequired:
+		return fault.DevicePlatformSSORequired
+	}
+	return nil
 }
 
 // Write sends the decision's 403 body as JSON or plist by the request's

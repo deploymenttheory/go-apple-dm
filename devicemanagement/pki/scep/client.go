@@ -8,7 +8,6 @@ import (
 	"crypto/rsa"
 	"crypto/x509"
 	"crypto/x509/pkix"
-	"errors"
 	"fmt"
 	"io"
 	"math/big"
@@ -21,14 +20,15 @@ import (
 	smallscep "github.com/smallstep/scep"
 	"github.com/smallstep/scep/x509util"
 
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/fault"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/internal/scepwire"
 )
 
 // Client errors.
 var (
-	ErrClient = errors.New("scep: client")
+	ErrClient = fault.NewOperator(fault.Upstream, "the SCEP client exchange failed")
 	// ErrRejected is returned when the CA answers with a FAILURE CertRep.
-	ErrRejected = errors.New("scep: enrollment rejected by CA")
+	ErrRejected = fault.NewOperator(fault.Upstream, "the certificate authority rejected the enrollment")
 )
 
 // Client enrolls against a SCEP server the way a device does: GetCACert,

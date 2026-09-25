@@ -16,6 +16,15 @@
 // verification and profile composition are injected. Legacy query credentials
 // are rejected, and association reservation/confirmation spans separate stores.
 //
+// # Errors
+//
+// ErrTokenNotFound, ErrTokenExpired and ErrTokenUsed are the catalogued client
+// conditions DM-ENROLLMENT-LINK-NOT-FOUND, DM-ENROLLMENT-TOKEN-EXPIRED and
+// DM-ENROLLMENT-LINK-USED, shared with the administrator who issues links.
+// Reauthentication unwraps to the device condition that asks the transport for a
+// WWW-Authenticate challenge; the other sentinels are device conditions or, for
+// ErrConfig, the operator's.
+//
 // # References
 //
 //   - Decision record 0047: https://github.com/deploymenttheory/go-apple-dm/blob/main/docs/research/decisions/0047-enrollment-authentication-and-optional-security-services.md

@@ -322,7 +322,7 @@ func TestErrors(t *testing.T) {
 		if msg := ae.Error(); !strings.Contains(msg, "400") || !strings.Contains(msg, "invalid_client (bad)") || !strings.Contains(msg, "plain") {
 			t.Fatalf("message %q", msg)
 		}
-		if (&AuthError{}).Error() != "axm: authentication failed" {
+		if (&AuthError{}).Error() != "the Apple School and Business Manager API rejected the credential" {
 			t.Fatal((&AuthError{}).Error())
 		}
 	})

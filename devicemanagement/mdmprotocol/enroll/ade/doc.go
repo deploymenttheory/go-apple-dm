@@ -19,6 +19,14 @@
 // PBKDF2-HMAC-SHA512, random salt and caller-selected iterations. The derived
 // length follows Apple's example; deployments select their iteration policy.
 //
+// # Errors
+//
+// MachineInfo failures are device conditions: a missing, oversized, malformed or
+// rule-breaking body is InvalidArgument, an unverified signature or untrusted
+// signer is PermissionDenied. ErrRejected is the device condition a ProfileHook
+// raises to refuse enrollment. ErrStore, ErrGate and ErrPasswordHash are the
+// operator's.
+//
 // # References
 //
 //   - Decision record 0027: https://github.com/deploymenttheory/go-apple-dm/blob/main/docs/research/decisions/0027-ade-enrollment-machineinfo-and-web-view-auth.md

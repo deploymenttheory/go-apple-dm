@@ -15,6 +15,13 @@
 // deployments need shared state or session affinity for the browser handoff.
 // SAML, userinfo and refresh-token flows are outside this relying party's scope.
 //
+// # Errors
+//
+// A denied, expired, unbound or malformed authentication is a device condition
+// (PermissionDenied or InvalidArgument) answered with a bare status. Provider,
+// JWKS, configuration and state-store failures are operator conditions;
+// ErrProvider and ErrJWK are of kind Upstream.
+//
 // # References
 //
 //   - Decision record 0027: https://github.com/deploymenttheory/go-apple-dm/blob/main/docs/research/decisions/0027-ade-enrollment-machineinfo-and-web-view-auth.md

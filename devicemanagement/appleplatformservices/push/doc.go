@@ -14,6 +14,14 @@
 // lives in pki/pushcert. StaticCertStore supports fixed credentials, and
 // pushtest provides scripted implementations.
 //
+// # Errors
+//
+// Every sentinel is an operator condition classified through
+// devicemanagement/fault: a missing or expired certificate is Unavailable, a
+// token APNs will never accept again is Gone, a rejection or failure is
+// Upstream, throttling is ResourceExhausted and a coalesced push is Conflict.
+// Result.Outcome remains the bounded classification a metric counts.
+//
 // # References
 //
 //   - Decision record 0044: https://github.com/deploymenttheory/go-apple-dm/blob/main/docs/research/decisions/0044-repository-layout.md

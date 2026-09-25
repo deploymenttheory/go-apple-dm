@@ -40,6 +40,15 @@
 // Endpoint overrides require absolute HTTPS URLs with no user information
 // or fragment. Test fixtures supply verified HTTPS clients.
 //
+// # Errors
+//
+// ErrInvalid, ErrNotFound, ErrConflict, ErrBodyTooLarge and ErrProfileInvalid
+// are catalogued client conditions under DM-DEP-*. Token, terms, seed and cursor
+// failures are the operator's. Error, the service's own non-2xx answer,
+// classifies itself through Kind (ResourceExhausted, DeadlineExceeded or
+// Upstream) and exposes Apple's Retry-After through RetryDelay, so a boundary
+// needs neither its type nor its status.
+//
 // # References
 //
 //   - Operations: https://github.com/deploymenttheory/go-apple-dm/blob/main/docs/operations/dep-synchronization.md

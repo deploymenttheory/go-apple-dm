@@ -21,7 +21,7 @@ import (
 )
 
 // ErrWire indicates an unsupported or malformed CMS message.
-var ErrWire = errors.New("scep: invalid CMS message")
+var ErrWire = errors.New("invalid CMS message")
 
 type contentInfo struct {
 	Type    asn1.ObjectIdentifier

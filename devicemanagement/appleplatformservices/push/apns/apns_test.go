@@ -15,6 +15,7 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/appleplatformservices/push/apns"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/appleplatformservices/push/pushtest"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/clock"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/fault"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/mdm"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/testpki"
 )
@@ -102,7 +103,8 @@ func TestStatusMapping(t *testing.T) {
 		t.Errorf("bad: %+v", r)
 	}
 	if r := res[targets[3].ID]; r.Outcome != push.OutcomeRateLimited || r.TokenInvalid() ||
-		!errors.Is(r.Err, push.ErrRateLimited) || r.RetryAfter != 7*time.Second {
+		!errors.Is(r.Err, push.ErrRateLimited) || r.RetryAfter != 7*time.Second ||
+		fault.RetryAfterOf(r.Err) != 7*time.Second {
 		t.Errorf("busy: %+v", r)
 	}
 	if r := res[targets[4].ID]; r.Outcome != push.OutcomeUnavailable || r.TokenInvalid() ||
@@ -111,7 +113,7 @@ func TestStatusMapping(t *testing.T) {
 	}
 	// An enrollment with no usable push info never reaches APNs at all.
 	if r := res[targets[5].ID]; r.Outcome != push.OutcomeSkipped ||
-		!errors.Is(r.Err, push.ErrInvalidToken) {
+		!errors.Is(r.Err, push.ErrPushInfoIncomplete) || errors.Is(r.Err, push.ErrInvalidToken) {
 		t.Errorf("empty push info: %+v", r)
 	}
 	reqs := srv.Requests()
@@ -125,7 +127,8 @@ func TestStatusMapping(t *testing.T) {
 	// their own retry floor.
 	srv.ScriptToken(busy, pushtest.Script{Status: 503})
 	res, _ = c.Push(ctx, []push.Target{target("busy", busy)})
-	if r := res[targets[3].ID]; r.Outcome != push.OutcomeRateLimited || r.RetryAfter != 0 {
+	if r := res[targets[3].ID]; r.Outcome != push.OutcomeRateLimited || r.RetryAfter != 0 ||
+		!errors.Is(r.Err, push.ErrUnavailable) || errors.Is(r.Err, push.ErrRateLimited) || fault.RetryAfterOf(r.Err) != 0 {
 		t.Errorf("503 without Retry-After: %+v", r)
 	}
 	// Cancelled context stops the batch.

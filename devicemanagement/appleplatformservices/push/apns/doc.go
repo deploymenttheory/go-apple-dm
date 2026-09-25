@@ -19,6 +19,12 @@
 // Host overrides require absolute HTTPS URLs with no user information or
 // fragment, checked before loading push credentials.
 //
+// # Errors
+//
+// ErrClosed and ErrRequest are operator conditions of kind Unavailable and
+// InvalidArgument. APNs reasons are carried verbatim in Result.Reason and never
+// mapped onto this vocabulary.
+//
 // # References
 //
 //   - Decision record 0007: https://github.com/deploymenttheory/go-apple-dm/blob/main/docs/research/decisions/0007-apns-push.md

@@ -29,5 +29,5 @@ func ExampleParse() {
 	// Output:
 	// @property(shard) <= 75 AND @status(device.identifier.serial-number) BEGINSWITH 'ZYXW'
 	// true <nil>
-	// predicate: unsupported construct at offset 0: SELF is not supported
+	// the predicate uses a construct this server does not support at offset 0: SELF is not supported
 }

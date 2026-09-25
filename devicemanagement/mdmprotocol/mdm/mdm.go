@@ -2,10 +2,10 @@ package mdm
 
 import (
 	"crypto/x509"
-	"errors"
 	"fmt"
 	"time"
 
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/fault"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/secrets"
 )
 
@@ -75,12 +75,12 @@ type EnrollmentID struct {
 
 // Errors returned when resolving identities.
 var (
-	ErrNoEnrollmentID     = errors.New("mdm: message carries neither UDID nor EnrollmentID")
-	ErrInvalidEnrollment  = errors.New("mdm: invalid enrollment identity")
-	ErrSharedIPadNoUser   = errors.New("mdm: shared iPad user channel without UserShortName")
-	ErrUnknownMessageType = errors.New("mdm: unknown check-in MessageType")
-	ErrInvalidCommand     = errors.New("mdm: invalid command")
-	ErrInvalidResponse    = errors.New("mdm: invalid command response")
+	ErrNoEnrollmentID     = fault.NewDevice("", fault.InvalidArgument, "the message carries neither UDID nor EnrollmentID")
+	ErrInvalidEnrollment  = fault.NewDevice("", fault.InvalidArgument, "the enrollment identity is not valid")
+	ErrSharedIPadNoUser   = fault.NewDevice("", fault.InvalidArgument, "the Shared iPad user channel message has no UserShortName")
+	ErrUnknownMessageType = fault.NewDevice("", fault.InvalidArgument, "the check-in MessageType is not known")
+	ErrInvalidCommand     = fault.MDMCommandInvalid
+	ErrInvalidResponse    = fault.NewDevice("", fault.InvalidArgument, "the command response is not valid")
 )
 
 // String returns the id.
@@ -181,7 +181,7 @@ type ParseError struct {
 }
 
 // Error implements error.
-func (e *ParseError) Error() string { return "mdm: parse: " + e.Err.Error() }
+func (e *ParseError) Error() string { return "parse: " + e.Err.Error() }
 
 // Unwrap implements errors.Unwrap.
 func (e *ParseError) Unwrap() error { return e.Err }

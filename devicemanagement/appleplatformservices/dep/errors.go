@@ -7,49 +7,51 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/fault"
+
 	json "encoding/json/v2"
 )
 
 // Errors shared by the client, the token lifecycle, the syncer, the
 // assigner, and every store backend.
 var (
-	ErrInvalid  = errors.New("dep: invalid argument")
-	ErrNotFound = errors.New("dep: not found")
-	ErrConflict = errors.New("dep: conflict")
+	ErrInvalid  = fault.ADEInvalid
+	ErrNotFound = fault.ADENotFound
+	ErrConflict = fault.ADEConflict
 	// ErrNoTokens is returned when an account has no OAuth 1.0a tokens yet.
-	ErrNoTokens = errors.New("dep: account has no tokens")
+	ErrNoTokens = fault.NewOperator(fault.Unavailable, "the device enrollment account has no tokens")
 	// ErrTokenExpired is returned before any HTTP call when the account's
 	// access_token_expiry has passed.
-	ErrTokenExpired = errors.New("dep: access token expired")
+	ErrTokenExpired = fault.NewOperator(fault.Unavailable, "the device enrollment access token has expired")
 	// ErrTokenInvalid is returned when /session answers 401: the OAuth
 	// tokens were rejected. The account state records TokenInvalid.
-	ErrTokenInvalid = errors.New("dep: tokens rejected by /session")
+	ErrTokenInvalid = fault.NewOperator(fault.Unavailable, "Apple rejected the device enrollment tokens")
 	// ErrTermsNotSigned is returned when /session answers 403
 	// T_C_NOT_SIGNED: an administrator must accept the updated terms in
 	// Apple Business Manager or Apple School Manager. The account state
 	// records TermsExpired.
-	ErrTermsNotSigned = errors.New("dep: terms and conditions not signed")
+	ErrTermsNotSigned = fault.NewOperator(fault.Unavailable, "the Apple terms and conditions are not signed")
 	// ErrSeedForITOff is returned by BetaEnrollmentTokens when the
 	// organisation has AppleSeed for IT turned off
 	// (403 APPLE_SEED_FOR_IT_TURNED_OFF).
-	ErrSeedForITOff = errors.New("dep: AppleSeed for IT is turned off")
+	ErrSeedForITOff = fault.NewOperator(fault.Unavailable, "AppleSeed for IT is turned off for this account")
 	// ErrSameCursor is returned when a fetch or sync page repeats the
 	// cursor it was requested with while claiming more_to_follow; looping on
 	// it would never terminate.
-	ErrSameCursor = errors.New("dep: server repeated the cursor with more_to_follow")
+	ErrSameCursor = fault.NewOperator(fault.Upstream, "the device enrollment service repeated the cursor with more_to_follow")
 	// ErrConsumerKeyMismatch is returned by ImportToken when the new token's
 	// consumer_key differs from the stored one and Force is not set.
-	ErrConsumerKeyMismatch = errors.New("dep: consumer key differs from the stored token")
+	ErrConsumerKeyMismatch = fault.ADEConsumerKeyMismatch
 	// ErrBodyTooLarge is returned when a request body without GetBody
 	// exceeds the replay buffer bound.
-	ErrBodyTooLarge = errors.New("dep: request body exceeds replay buffer")
+	ErrBodyTooLarge = fault.NewOperator(fault.Internal, "the request body exceeds the replay buffer")
 	// ErrProfileInvalid wraps every local profile validation failure.
-	ErrProfileInvalid = errors.New("dep: profile invalid")
+	ErrProfileInvalid = fault.ADEProfileInvalid
 	// ErrConfig reports a missing required dependency.
-	ErrConfig = errors.New("dep: configuration")
+	ErrConfig = fault.NewOperator(fault.Internal, "the Automated Device Enrollment configuration is incomplete")
 	// ErrBackoff is returned by RunOnce when the account is backing off after
 	// HTTP 429 and no call was made.
-	ErrBackoff = errors.New("dep: account backing off")
+	ErrBackoff = fault.NewOperator(fault.Unavailable, "the device enrollment account is backing off")
 )
 
 // Error codes Apple's DEP service returns in response bodies, cited from the
@@ -115,10 +117,24 @@ type Error struct {
 // Error implements error.
 func (e *Error) Error() string {
 	if e.Code != "" {
-		return fmt.Sprintf("dep: HTTP %d %s", e.Status, e.Code)
+		return fmt.Sprintf("the device enrollment service answered HTTP %d %s", e.Status, e.Code)
 	}
-	return fmt.Sprintf("dep: HTTP %d", e.Status)
+	return fmt.Sprintf("the device enrollment service answered HTTP %d", e.Status)
 }
+
+// Kind classifies the answer for a caller that does not read DEP status codes, by the
+// rule every client of an Apple service shares (see fault.AXMInvalid): the caller's
+// request for a 400, 404 or 409, a rate limit for a 429, a deadline for a timeout, the
+// deployment's credential for a 401 or 403, and Upstream for anything else.
+func (e *Error) Kind() *fault.Kind {
+	return fault.KindForUpstreamStatus(e.Status)
+}
+
+// Is matches the error's kind, so errors.Is(err, fault.Upstream) holds.
+func (e *Error) Is(target error) bool { return target == e.Kind() }
+
+// RetryDelay returns the Retry-After Apple sent, for fault.RetryAfterOf.
+func (e *Error) RetryDelay() time.Duration { return e.RetryAfter }
 
 // newError builds an Error from a response body and Retry-After header.
 func newError(status int, body []byte, retryAfter string, now time.Time) *Error {
@@ -214,7 +230,8 @@ type ProfileError struct {
 }
 
 // Error implements error.
-func (e *ProfileError) Error() string { return "dep: profile " + e.Code + ": " + e.Detail }
+func (e *ProfileError) Error() string { return "profile " + e.Code + ": " + e.Detail }
 
-// Is makes errors.Is(err, ErrProfileInvalid) true.
-func (e *ProfileError) Is(target error) bool { return target == ErrProfileInvalid }
+// Unwrap makes errors.Is(err, ErrProfileInvalid) true and lets the catalogued
+// condition classify the failure.
+func (e *ProfileError) Unwrap() error { return ErrProfileInvalid }

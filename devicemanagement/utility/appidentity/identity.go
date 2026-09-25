@@ -15,14 +15,16 @@ import (
 	"time"
 
 	"howett.net/plist"
+
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/fault"
 )
 
 // Inspection errors distinguish host support, invalid input, and tool failures.
 var (
-	ErrUnsupported = errors.New("appidentity: native inspection requires macOS")
-	ErrInput       = errors.New("appidentity: invalid bundle or Mach-O executable")
-	ErrInspect     = errors.New("appidentity: inspection failed")
-	ErrTooLarge    = errors.New("appidentity: metadata exceeds size limit")
+	ErrUnsupported = fault.NewOperator(fault.Unimplemented, "native inspection requires macOS")
+	ErrInput       = fault.AppIdentityInvalid
+	ErrInspect     = fault.NewOperator(fault.Internal, "application inspection failed")
+	ErrTooLarge    = fault.AppIdentityTooLarge
 )
 
 // Status describes signature integrity, independently of signing category.

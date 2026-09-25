@@ -69,11 +69,11 @@ type hardwareModuleName struct {
 // assigner is absent the certificate issuer is the assigner.
 func PermanentIdentifier(value string) (OtherName, error) {
 	if value == "" {
-		return OtherName{}, errors.New("ca: permanent identifier value is empty")
+		return OtherName{}, errors.New("permanent identifier value is empty")
 	}
 	der, err := asn1.Marshal(permanentIdentifier{IdentifierValue: value})
 	if err != nil {
-		return OtherName{}, fmt.Errorf("ca: encode permanent identifier: %w", err)
+		return OtherName{}, fmt.Errorf("encode permanent identifier: %w", err)
 	}
 	return OtherName{ID: OIDPermanentIdentifier, Value: der}, nil
 }
@@ -83,14 +83,14 @@ func PermanentIdentifier(value string) (OtherName, error) {
 // members are required.
 func HardwareModuleName(hwType asn1.ObjectIdentifier, serial []byte) (OtherName, error) {
 	if len(hwType) == 0 {
-		return OtherName{}, errors.New("ca: hardware module type is empty")
+		return OtherName{}, errors.New("hardware module type is empty")
 	}
 	if len(serial) == 0 {
-		return OtherName{}, errors.New("ca: hardware module serial number is empty")
+		return OtherName{}, errors.New("hardware module serial number is empty")
 	}
 	der, err := asn1.Marshal(hardwareModuleName{Type: hwType, Serial: serial})
 	if err != nil {
-		return OtherName{}, fmt.Errorf("ca: encode hardware module name: %w", err)
+		return OtherName{}, fmt.Errorf("encode hardware module name: %w", err)
 	}
 	return OtherName{ID: OIDHardwareModuleName, Value: der}, nil
 }
@@ -99,11 +99,11 @@ func HardwareModuleName(hwType asn1.ObjectIdentifier, serial []byte) (OtherName,
 // ntPrincipalName, a UTF8String under 1.3.6.1.4.1.311.20.2.3.
 func NTPrincipalName(name string) (OtherName, error) {
 	if name == "" {
-		return OtherName{}, errors.New("ca: NT principal name is empty")
+		return OtherName{}, errors.New("NT principal name is empty")
 	}
 	der, err := asn1.MarshalWithParams(name, "utf8")
 	if err != nil {
-		return OtherName{}, fmt.Errorf("ca: encode NT principal name: %w", err)
+		return OtherName{}, fmt.Errorf("encode NT principal name: %w", err)
 	}
 	return OtherName{ID: OIDNTPrincipalName, Value: der}, nil
 }
@@ -166,7 +166,7 @@ func SANExtension(names SANs, subjectEmpty bool) (pkix.Extension, bool, error) {
 	}
 	for _, uri := range names.URIs {
 		if uri == nil {
-			return pkix.Extension{}, false, errors.New("ca: nil URI in subject alternative names")
+			return pkix.Extension{}, false, errors.New("nil URI in subject alternative names")
 		}
 		der, err := generalNameString(idURI, "URI", uri.String())
 		if err != nil {
@@ -205,14 +205,14 @@ func tlv(identifier byte, body []byte) []byte {
 // type-id OBJECT IDENTIFIER, value [0] EXPLICIT ANY }.
 func (o OtherName) der() ([]byte, error) {
 	if len(o.ID) == 0 {
-		return nil, errors.New("ca: otherName has no type identifier")
+		return nil, errors.New("otherName has no type identifier")
 	}
 	if len(o.Value) == 0 {
-		return nil, errors.New("ca: otherName has no value")
+		return nil, errors.New("otherName has no value")
 	}
 	id, err := asn1.Marshal(o.ID)
 	if err != nil {
-		return nil, fmt.Errorf("ca: encode otherName type %v: %w", o.ID, err)
+		return nil, fmt.Errorf("encode otherName type %v: %w", o.ID, err)
 	}
 	// The value is already DER, so it only needs the explicit [0] wrapper
 	// that RFC 5280 puts around it.
@@ -225,7 +225,7 @@ func (o OtherName) der() ([]byte, error) {
 func generalNameString(identifier byte, kind, value string) ([]byte, error) {
 	for _, r := range value {
 		if r > 127 {
-			return nil, fmt.Errorf("ca: %s %q is not an IA5 string", kind, value)
+			return nil, fmt.Errorf("%s %q is not an IA5 string", kind, value)
 		}
 	}
 	return tlv(identifier, []byte(value)), nil
@@ -239,7 +239,7 @@ func generalNameIP(ip net.IP) ([]byte, error) {
 		octets = v4
 	}
 	if len(octets) != net.IPv4len && len(octets) != net.IPv6len {
-		return nil, fmt.Errorf("ca: IP address %v is neither four nor sixteen octets", []byte(ip))
+		return nil, fmt.Errorf("IP address %v is neither four nor sixteen octets", []byte(ip))
 	}
 	return tlv(idIPAddress, octets), nil
 }
@@ -248,7 +248,7 @@ func generalNameIP(ip net.IP) ([]byte, error) {
 // subjectAltName extension.
 func ParseOtherNames(cert *x509.Certificate) ([]OtherName, error) {
 	if cert == nil {
-		return nil, errors.New("ca: nil certificate")
+		return nil, errors.New("nil certificate")
 	}
 	for _, ext := range cert.Extensions {
 		if ext.Id.Equal(oidSubjectAltName) {
@@ -265,13 +265,13 @@ func parseSANOtherNames(der []byte) ([]OtherName, error) {
 	var seq asn1.RawValue
 	rest, err := asn1.Unmarshal(der, &seq)
 	if err != nil {
-		return nil, fmt.Errorf("ca: parse subject alternative names: %w", err)
+		return nil, fmt.Errorf("parse subject alternative names: %w", err)
 	}
 	if len(rest) != 0 {
-		return nil, errors.New("ca: trailing data after subject alternative names")
+		return nil, errors.New("trailing data after subject alternative names")
 	}
 	if seq.Class != asn1.ClassUniversal || seq.Tag != asn1.TagSequence || !seq.IsCompound {
-		return nil, errors.New("ca: subject alternative names are not a sequence")
+		return nil, errors.New("subject alternative names are not a sequence")
 	}
 	var names []OtherName
 	body := seq.Bytes
@@ -279,7 +279,7 @@ func parseSANOtherNames(der []byte) ([]OtherName, error) {
 		var name asn1.RawValue
 		body, err = asn1.Unmarshal(body, &name)
 		if err != nil {
-			return nil, fmt.Errorf("ca: parse general name: %w", err)
+			return nil, fmt.Errorf("parse general name: %w", err)
 		}
 		if name.Class != asn1.ClassContextSpecific || name.Tag != tagZero || !name.IsCompound {
 			continue
@@ -299,18 +299,18 @@ func parseOtherName(der []byte) (OtherName, error) {
 	var id asn1.ObjectIdentifier
 	rest, err := asn1.Unmarshal(der, &id)
 	if err != nil {
-		return OtherName{}, fmt.Errorf("ca: parse otherName type: %w", err)
+		return OtherName{}, fmt.Errorf("parse otherName type: %w", err)
 	}
 	var wrapper asn1.RawValue
 	trailing, err := asn1.Unmarshal(rest, &wrapper)
 	if err != nil {
-		return OtherName{}, fmt.Errorf("ca: parse otherName value: %w", err)
+		return OtherName{}, fmt.Errorf("parse otherName value: %w", err)
 	}
 	if len(trailing) != 0 {
-		return OtherName{}, errors.New("ca: trailing data after otherName value")
+		return OtherName{}, errors.New("trailing data after otherName value")
 	}
 	if wrapper.Class != asn1.ClassContextSpecific || wrapper.Tag != tagZero || !wrapper.IsCompound {
-		return OtherName{}, errors.New("ca: otherName value is not tagged [0] EXPLICIT")
+		return OtherName{}, errors.New("otherName value is not tagged [0] EXPLICIT")
 	}
 	return OtherName{ID: id, Value: wrapper.Bytes}, nil
 }
@@ -329,10 +329,10 @@ func ParsePermanentIdentifier(cert *x509.Certificate) (string, bool, error) {
 		var value permanentIdentifier
 		rest, err := asn1.Unmarshal(name.Value, &value)
 		if err != nil {
-			return "", false, fmt.Errorf("ca: parse permanent identifier: %w", err)
+			return "", false, fmt.Errorf("parse permanent identifier: %w", err)
 		}
 		if len(rest) != 0 {
-			return "", false, errors.New("ca: trailing data after permanent identifier")
+			return "", false, errors.New("trailing data after permanent identifier")
 		}
 		return value.IdentifierValue, true, nil
 	}

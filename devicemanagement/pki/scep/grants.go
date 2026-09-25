@@ -79,12 +79,12 @@ func (g Grants) Issue(ctx context.Context, grant Grant) (string, error) {
 		}
 		raw, err := json.Marshal(grant)
 		if err != nil {
-			return fmt.Errorf("scep: encode grant: %w", err)
+			return fmt.Errorf("encode grant: %w", err)
 		}
 		return tx.Put(ctx, state.Record{Key: k, Value: raw, ExpiresAt: grant.ExpiresAt})
 	})
 	if err != nil {
-		return "", fmt.Errorf("scep: persist grant: %w", err)
+		return "", fmt.Errorf("persist grant: %w", err)
 	}
 	return password, nil
 }
@@ -108,11 +108,11 @@ func (g Grants) Verify(ctx context.Context, password string, csr *x509.Certifica
 		return ErrChallenge
 	}
 	if err != nil {
-		return fmt.Errorf("scep: read grant: %w", err)
+		return fmt.Errorf("read grant: %w", err)
 	}
 	var authorized Grant
 	if err := json.Unmarshal(r.Value, &authorized); err != nil {
-		return fmt.Errorf("scep: decode grant: %w", err)
+		return fmt.Errorf("decode grant: %w", err)
 	}
 	if err := g.Authorize(ctx, authorized, csr); err != nil {
 		return err
@@ -148,7 +148,7 @@ func (g Grants) Verify(ctx context.Context, password string, csr *x509.Certifica
 		return tx.Put(ctx, r)
 	})
 	if err != nil {
-		return fmt.Errorf("scep: reserve grant: %w", err)
+		return fmt.Errorf("reserve grant: %w", err)
 	}
 	return nil
 }
@@ -216,10 +216,10 @@ func (i CertificateIssuer) Issue(
 		return tx.Put(ctx, state.Record{Key: k, Value: cert.Raw, ExpiresAt: cert.NotAfter})
 	})
 	if err != nil {
-		return nil, fmt.Errorf("scep: persist certificate: %w", err)
+		return nil, fmt.Errorf("persist certificate: %w", err)
 	}
 	if err := i.Register(ctx, cert); err != nil {
-		return nil, fmt.Errorf("scep: register certificate: %w", err)
+		return nil, fmt.Errorf("register certificate: %w", err)
 	}
 	return cert, nil
 }

@@ -55,6 +55,13 @@
 // BEGINSWITH and ENDSWITH require strings on both sides. TRUEPREDICATE and
 // FALSEPREDICATE are constants.
 //
+// # Errors
+//
+// ErrSyntax, ErrUnsupported and ErrType are the catalogued client conditions
+// DM-PREDICATE-SYNTAX, DM-PREDICATE-UNSUPPORTED and DM-PREDICATE-TYPE, because a
+// predicate is authored by an administrator who can correct it. SyntaxError
+// carries the offset.
+//
 // # References
 //
 //   - Decision record 0020: https://github.com/deploymenttheory/go-apple-dm/blob/main/docs/research/decisions/0020-ddm-engine-membership-and-storage.md

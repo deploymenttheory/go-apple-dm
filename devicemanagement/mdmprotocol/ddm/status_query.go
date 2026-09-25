@@ -6,6 +6,7 @@ import (
 	json "encoding/json/v2"
 	"fmt"
 
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/fault"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/mdm"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/paging"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/schema/status"
@@ -73,7 +74,7 @@ func (e *Engine) decodeCapabilities(ctx context.Context, id mdm.EnrollmentID, ra
 	var caps status.ManagementClientCapabilitiesCapabilities
 	var members map[string]jsontext.Value
 	if err := json.Unmarshal(raw, &members); err != nil {
-		e.log.WarnContext(ctx, "ddm: malformed "+StatusItemClientCapabilities+", treating it as empty", "enrollment", id.ID, "error", err)
+		e.log.WarnContext(ctx, "malformed "+StatusItemClientCapabilities+", treating it as empty", "enrollment", id.ID, fault.Attr(err))
 		return &caps
 	}
 	decode := func(key string, dst any, reset func()) {
@@ -83,7 +84,7 @@ func (e *Engine) decodeCapabilities(ctx context.Context, id mdm.EnrollmentID, ra
 		}
 		if err := json.Unmarshal(v, dst); err != nil {
 			reset()
-			e.log.WarnContext(ctx, "ddm: malformed "+StatusItemClientCapabilities+" member, ignoring it", "enrollment", id.ID, "member", key, "error", err)
+			e.log.WarnContext(ctx, "malformed "+StatusItemClientCapabilities+" member, ignoring it", "enrollment", id.ID, "member", key, fault.Attr(err))
 		}
 	}
 	decode("supported-versions", &caps.SupportedVersions, func() { caps.SupportedVersions = nil })

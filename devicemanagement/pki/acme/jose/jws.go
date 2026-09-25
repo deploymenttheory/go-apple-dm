@@ -9,10 +9,11 @@ import (
 	"encoding/base64"
 	"encoding/json/jsontext"
 	json "encoding/json/v2"
-	"errors"
 	"fmt"
 	"math/big"
 	"slices"
+
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/fault"
 )
 
 // Signature algorithms this package accepts. RFC 8555 section 6.2 requires a
@@ -49,11 +50,11 @@ const MaxBody = 256 << 10 // 256 KiB
 // ErrSignature and ErrKey are "malformed" or "unauthorized" depending on
 // what the caller was doing.
 var (
-	ErrParse     = errors.New("jose: malformed JWS")
-	ErrAlgorithm = errors.New("jose: unsupported algorithm")
-	ErrSignature = errors.New("jose: signature does not verify")
-	ErrKey       = errors.New("jose: unsupported or malformed key")
-	ErrHeader    = errors.New("jose: invalid protected header")
+	ErrParse     = fault.NewDevice("", fault.InvalidArgument, "the JWS is malformed")
+	ErrAlgorithm = fault.NewDevice("", fault.InvalidArgument, "the JWS algorithm is not supported")
+	ErrSignature = fault.NewDevice("", fault.PermissionDenied, "the JWS signature does not verify")
+	ErrKey       = fault.NewDevice("", fault.InvalidArgument, "the JWS key is unsupported or malformed")
+	ErrHeader    = fault.NewDevice("", fault.InvalidArgument, "the JWS protected header is not valid")
 )
 
 // Header is the protected header of an ACME request. Everything a handler

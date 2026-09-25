@@ -185,7 +185,7 @@ func (s *Store) seal(purpose, rowID string, b []byte) ([]byte, error) {
 	}
 	out, err := s.keyring.Seal(b, crypt.AAD(purpose, rowID))
 	if err != nil {
-		return nil, fmt.Errorf("inmem: seal %s: %w", purpose, err)
+		return nil, fmt.Errorf("seal %s: %w", purpose, err)
 	}
 	return out, nil
 }
@@ -207,7 +207,7 @@ func (s *Store) open(purpose, rowID string, b []byte) ([]byte, error) {
 	}
 	pt, _, err := s.keyring.Open(b, crypt.AAD(purpose, rowID))
 	if err != nil {
-		return nil, fmt.Errorf("inmem: open %s: %w", purpose, err)
+		return nil, fmt.Errorf("open %s: %w", purpose, err)
 	}
 	return pt, nil
 }

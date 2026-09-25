@@ -16,6 +16,7 @@ import (
 	"time"
 
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/clock"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/fault"
 )
 
 // State lifetime bounds.
@@ -105,16 +106,16 @@ type Config struct {
 
 // Errors the flow reports.
 var (
-	ErrConfig = errors.New("webauth: config")
+	ErrConfig = fault.NewOperator(fault.Internal, "the web authentication configuration is not valid")
 	// ErrDenied is what an Authorizer wraps to refuse enrollment.
-	ErrDenied = errors.New("webauth: denied")
+	ErrDenied = fault.NewDevice("", fault.PermissionDenied, "enrollment was denied")
 	// ErrCallback is wrapped by callback request failures (bad or missing
 	// parameters, unknown or expired state).
-	ErrCallback = errors.New("webauth: callback")
+	ErrCallback = fault.NewDevice("", fault.InvalidArgument, "the authentication callback is not acceptable")
 	// ErrAccessDenied is wrapped when the provider reported access_denied.
-	ErrAccessDenied = errors.New("webauth: access denied by the provider")
+	ErrAccessDenied = fault.NewDevice("", fault.PermissionDenied, "the identity provider denied access")
 	// ErrStateExpired is reported for a state past its TTL.
-	ErrStateExpired = errors.New("webauth: state expired")
+	ErrStateExpired = fault.NewDevice("", fault.PermissionDenied, "the authentication state has expired")
 )
 
 // Flow is the relying party.
@@ -181,6 +182,7 @@ func New(cfg Config) (*Flow, error) {
 	if f.log == nil {
 		f.log = slog.Default()
 	}
+	f.log = f.log.With("component", "webauth")
 	if f.onError == nil {
 		f.onError = defaultErrorWriter
 	}
@@ -245,7 +247,7 @@ func (f *Flow) fail(w http.ResponseWriter, r *http.Request, status int, err erro
 	if status >= http.StatusInternalServerError {
 		level = slog.LevelError
 	}
-	f.log.Log(r.Context(), level, "webauth: request failed", "status", status, "error", err, "remote", r.RemoteAddr)
+	f.log.Log(r.Context(), level, "request failed", "status", status, fault.Attr(err), "remote", r.RemoteAddr)
 	f.onError(w, r, status, err)
 }
 
@@ -390,7 +392,7 @@ func (f *Flow) callback(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
-	f.log.InfoContext(ctx, "webauth: authenticated", "subject", claims.Subject, "serial", st.Bound.Serial, "udid", st.Bound.UDID)
+	f.log.InfoContext(ctx, "authenticated", "subject", claims.Subject, "serial", st.Bound.Serial, "udid", st.Bound.UDID)
 	f.cfg.Complete(ctx, st.Bound, claims, decision, w, r)
 }
 

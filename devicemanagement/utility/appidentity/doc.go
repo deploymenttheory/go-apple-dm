@@ -27,6 +27,12 @@
 // identifier. Callers choose the matching identifiers and constraints for their
 // existing payload types; inspection does not choose allow or deny policy.
 //
+// # Errors
+//
+// ErrInput and ErrTooLarge are the catalogued client conditions
+// DM-APPIDENTITY-INVALID and DM-APPIDENTITY-TOO-LARGE. ErrUnsupported and
+// ErrInspect are the operator's.
+//
 // # References
 //
 //   - Utility guide: https://github.com/deploymenttheory/go-apple-dm/blob/main/devicemanagement/utility/README.md

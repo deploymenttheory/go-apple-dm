@@ -28,6 +28,13 @@
 // share the store, issuer and policy. Authorization and registration callbacks
 // are mandatory; a certificate subject alone never establishes admission.
 //
+// # Errors
+//
+// ErrCSR, ErrOperation and ErrChallenge are device conditions answered through
+// SCEP's own failure responses. ErrRA and ErrIssue are the operator's; ErrClient
+// and ErrRejected classify as Upstream, because they describe a certificate
+// authority this server called.
+//
 // # References
 //
 //   - Decision record 0008: https://github.com/deploymenttheory/go-apple-dm/blob/main/docs/research/decisions/0008-scep-and-ca.md

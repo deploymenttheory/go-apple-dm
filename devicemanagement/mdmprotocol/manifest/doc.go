@@ -11,6 +11,10 @@
 // helper neither downloads assets nor inspects archives, hosts manifests or
 // installs software. It emits no MD5 hashes or removed manifest fields.
 //
+// # Errors
+//
+// ErrInput is the catalogued client condition DM-MANIFEST-INPUT-INVALID.
+//
 // # References
 //
 //   - Apple manifest fields: https://developer.apple.com/documentation/devicemanagement/manifesturl/itemsitem/assetsitem

@@ -19,13 +19,14 @@ import (
 
 	"github.com/deploymenttheory/go-macos-pkg/pkg/flatpkg"
 
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/fault"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/utility/appidentity"
 )
 
 var (
-	ErrInvalid     = errors.New("appartifact: invalid artifact")
-	ErrUnsupported = errors.New("appartifact: unsupported artifact")
-	ErrLimit       = errors.New("appartifact: inspection limit exceeded")
+	ErrInvalid     = fault.AppArtifactInvalid
+	ErrUnsupported = fault.AppArtifactUnsupported
+	ErrLimit       = fault.AppArtifactTooLarge
 )
 
 const DefaultMaxBytes int64 = 512 << 20

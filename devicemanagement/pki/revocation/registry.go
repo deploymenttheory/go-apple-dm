@@ -11,15 +11,22 @@ import (
 	"math/big"
 	"time"
 
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/fault"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/cms"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/state"
 )
 
 var (
-	ErrUnknown = errors.New("revocation: unknown certificate or issuer")
-	ErrRevoked = errors.New("revocation: certificate revoked")
-	ErrExpired = errors.New("revocation: certificate outside validity")
-	ErrInvalid = errors.New("revocation: invalid certificate, reason or configuration")
+	ErrUnknown = fault.PKIIssuerUnknown
+	ErrRevoked = fault.PKICertificateRevoked
+	ErrExpired = fault.PKICertificateExpired
+	ErrInvalid = fault.PKIRevocationInvalid
+	// ErrConfig is a registry built without a store or with an issuer that cannot
+	// sign: the deployment's to fix.
+	ErrConfig = fault.NewOperator(fault.Internal, "the revocation registry configuration is not valid")
+	// ErrIssuerExpired is an issuing certificate outside its validity period, which
+	// stops CRL and OCSP publication until an operator renews it.
+	ErrIssuerExpired = fault.NewOperator(fault.Unavailable, "the issuing certificate is outside its validity period")
 )
 
 // Status distinguishes a registered issuance from revocation and an unknown serial.
@@ -88,12 +95,12 @@ type Registry struct {
 // New validates issuer signing authority and publication lifetimes.
 func New(store state.Store, issuers ...Issuer) (*Registry, error) {
 	if store == nil || len(issuers) == 0 {
-		return nil, ErrInvalid
+		return nil, ErrConfig
 	}
 	r := &Registry{Store: store, issuers: map[string]Issuer{}}
 	for _, i := range issuers {
 		if i.Certificate == nil || i.Signer == nil || !i.Certificate.IsCA || i.Certificate.KeyUsage&x509.KeyUsageCRLSign == 0 || len(i.Certificate.SubjectKeyId) == 0 || i.CRLTTL <= 0 || i.CRLRefresh <= 0 || i.CRLRefresh >= i.CRLTTL || i.OCSPTTL <= 0 {
-			return nil, ErrInvalid
+			return nil, ErrConfig
 		}
 		a, err := x509.MarshalPKIXPublicKey(i.Signer.Public())
 		if err != nil {
@@ -104,11 +111,11 @@ func New(store state.Store, issuers ...Issuer) (*Registry, error) {
 			return nil, err
 		}
 		if !bytes.Equal(a, b) {
-			return nil, ErrInvalid
+			return nil, ErrConfig
 		}
 		id := cms.Fingerprint(i.Certificate)
 		if _, ok := r.issuers[id]; ok {
-			return nil, ErrInvalid
+			return nil, ErrConfig
 		}
 		r.issuers[id] = i
 	}

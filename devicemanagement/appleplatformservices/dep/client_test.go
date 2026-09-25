@@ -12,6 +12,7 @@ import (
 
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/appleplatformservices/dep"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/appleplatformservices/dep/deptest"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/fault"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/storage/dep/inmem"
 )
 
@@ -277,14 +278,14 @@ func TestError(t *testing.T) {
 				len(derr.Body) == 0 {
 				t.Fatalf("quoted=%v: %v", quoted, err)
 			}
-			if derr.Error() != "dep: HTTP 400 INVALID_CURSOR" {
+			if derr.Error() != "the device enrollment service answered HTTP 400 INVALID_CURSOR" {
 				t.Fatalf("Error() = %q", derr.Error())
 			}
 			f.srv.Script(dep.PathAccount, deptest.Scripted{Status: 429, RetryAfter: "7"})
 			_, err = f.client.Account(ctx, acct)
 			if !errors.As(err, &derr) || derr.Status != 429 || derr.RetryAfter != 7*time.Second ||
 				derr.Code != "" ||
-				derr.Error() != "dep: HTTP 429" {
+				derr.Error() != "the device enrollment service answered HTTP 429" {
 				t.Fatalf("429: %+v %v", derr, err)
 			}
 			f.srv.Script(
@@ -407,7 +408,7 @@ func TestTransport(t *testing.T) {
 			f.client.URL(dep.PathDeviceDetails, nil),
 			io.NopCloser(iotest{}),
 		)
-		if err := f.client.Do(ctx, acct, req, nil); !errors.Is(err, dep.ErrInvalid) {
+		if err := f.client.Do(ctx, acct, req, nil); !errors.Is(err, fault.Internal) || errors.Is(err, dep.ErrInvalid) {
 			t.Fatalf("unreadable body: %v", err)
 		}
 		req, _ = http.NewRequestWithContext(

@@ -12,13 +12,14 @@ import (
 	"time"
 
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/appleplatformservices/gdmf"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/fault"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/enroll"
 	schemaerrors "github.com/deploymenttheory/go-apple-dm/devicemanagement/schema/errors"
 )
 
 // ErrRejected may be returned by a ProfileHook to refuse enrollment with
 // 403 rather than 500.
-var ErrRejected = errors.New("ade: enrollment rejected")
+var ErrRejected = fault.NewDevice("", fault.PermissionDenied, "the enrollment was rejected")
 
 // ContentTypeProfile is the response content type for the profile.
 const ContentTypeProfile = enroll.ContentTypeProfile
@@ -123,6 +124,7 @@ func New(cfg Config) *Handler {
 	if h.logger == nil {
 		h.logger = slog.Default()
 	}
+	h.logger = h.logger.With("component", "ade")
 	if h.cfg.Parse.Logger == nil {
 		h.cfg.Parse.Logger = h.logger
 	}
@@ -168,13 +170,14 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if decision.Action != Proceed {
 		h.logger.InfoContext(
 			r.Context(),
-			"ade: enrollment gated",
+			"enrollment gated",
 			"serial",
 			p.SERIAL,
 			"action",
 			decision.Action.String(),
 			"reason",
 			decision.Reason,
+			fault.Attr(fault.New(decision.Condition())),
 		)
 		if err := decision.Write(w, r); err != nil {
 			h.fail(w, r, err)
@@ -248,11 +251,10 @@ func (h *Handler) Finish(w http.ResponseWriter, r *http.Request, p *Parsed, id I
 		if errors.Is(err, ErrRejected) {
 			h.logger.InfoContext(
 				r.Context(),
-				"ade: profile hook rejected enrollment",
+				"profile hook rejected enrollment",
 				"serial",
 				p.SERIAL,
-				"error",
-				err,
+				fault.Attr(err),
 			)
 			http.Error(w, http.StatusText(http.StatusForbidden), http.StatusForbidden)
 			return
@@ -274,7 +276,7 @@ func (h *Handler) Finish(w http.ResponseWriter, r *http.Request, p *Parsed, id I
 			return
 		}
 		if signer.Cert == nil || signer.Key == nil {
-			h.fail(w, r, fmt.Errorf("ade: signing identity unavailable"))
+			h.fail(w, r, fmt.Errorf("signing identity unavailable"))
 			return
 		}
 	}
@@ -289,7 +291,7 @@ func (h *Handler) Finish(w http.ResponseWriter, r *http.Request, p *Parsed, id I
 	}
 	h.logger.InfoContext(
 		r.Context(),
-		"ade: profile served",
+		"profile served",
 		"serial",
 		p.SERIAL,
 		"udid",
@@ -324,9 +326,8 @@ func (h *Handler) reject(w http.ResponseWriter, r *http.Request, err error) {
 		if h.cfg.UnrecognizedDevice {
 			h.logger.InfoContext(
 				r.Context(),
-				"ade: unknown signer, answering unrecognized device",
-				"error",
-				err,
+				"unknown signer, answering unrecognized device",
+				fault.Attr(err),
 				"remote",
 				r.RemoteAddr,
 			)
@@ -342,11 +343,10 @@ func (h *Handler) reject(w http.ResponseWriter, r *http.Request, err error) {
 	}
 	h.logger.InfoContext(
 		r.Context(),
-		"ade: request rejected",
+		"request rejected",
 		"status",
 		status,
-		"error",
-		err,
+		fault.Attr(err),
 		"remote",
 		r.RemoteAddr,
 	)
@@ -355,6 +355,6 @@ func (h *Handler) reject(w http.ResponseWriter, r *http.Request, err error) {
 
 // fail logs the enrollment failure and writes a generic HTTP 500 response.
 func (h *Handler) fail(w http.ResponseWriter, r *http.Request, err error) {
-	h.logger.ErrorContext(r.Context(), "ade: request failed", "error", err, "remote", r.RemoteAddr)
+	h.logger.ErrorContext(r.Context(), "request failed", fault.Attr(err), "remote", r.RemoteAddr)
 	http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 }

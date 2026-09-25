@@ -295,7 +295,7 @@ func TestPushValidAndParseError(t *testing.T) {
 		t.Error("Push.Valid")
 	}
 	pe := &mdm.ParseError{Err: errors.New("x"), Content: []byte("c")}
-	if pe.Error() != "mdm: parse: x" || !errors.Is(pe, pe.Err) {
+	if pe.Error() != "parse: x" || !errors.Is(pe, pe.Err) {
 		t.Error("ParseError")
 	}
 }

@@ -57,7 +57,7 @@ func (r *Registry) CRL(ctx context.Context, issuer string) ([]byte, error) {
 		}
 		now := tx.Now()
 		if now.Before(i.Certificate.NotBefore) || !now.Before(i.Certificate.NotAfter) {
-			return ErrExpired
+			return ErrIssuerExpired
 		}
 		if len(p.DER) > 0 && !p.Dirty && now.Before(p.RefreshAt) {
 			der = p.DER
@@ -129,7 +129,7 @@ func (r *Registry) OCSP(ctx context.Context, issuer string, request []byte) ([]b
 	}
 	now := r.now()
 	if now.Before(i.Certificate.NotBefore) || !now.Before(i.Certificate.NotAfter) {
-		return nil, ErrExpired
+		return nil, ErrIssuerExpired
 	}
 	next := now.Add(i.OCSPTTL)
 	if i.Certificate.NotAfter.Before(next) {

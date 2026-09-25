@@ -4,6 +4,8 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/fault"
 )
 
 // ProblemPrefix is the URN namespace RFC 8555 section 6.7 gives ACME
@@ -74,16 +76,40 @@ type Subproblem struct {
 // Error implements error.
 func (p *Problem) Error() string {
 	if p.Detail == "" {
-		return "acme: " + p.Type
+		return p.Type
 	}
-	return "acme: " + p.Type + ": " + p.Detail
+	return p.Type + ": " + p.Detail
+}
+
+// Kind classifies the problem by the status it is answered with, so a rejected ACME
+// request is a request failure to telemetry rather than an internal one.
+func (p *Problem) Kind() *fault.Kind {
+	switch p.Status {
+	case http.StatusBadRequest:
+		return fault.InvalidArgument
+	case http.StatusUnauthorized:
+		return fault.Unauthenticated
+	case http.StatusForbidden:
+		return fault.PermissionDenied
+	case http.StatusNotFound:
+		return fault.NotFound
+	case http.StatusConflict:
+		return fault.Conflict
+	case http.StatusTooManyRequests:
+		return fault.ResourceExhausted
+	}
+	return fault.Internal
 }
 
 // Unwrap exposes the cause to errors.Is and errors.As, and to the log.
 func (p *Problem) Unwrap() error { return p.wrapped }
 
-// Is lets a caller test for a problem type with errors.Is.
+// Is lets a caller test for a problem type with errors.Is, and for the kind the
+// problem's status classifies as.
 func (p *Problem) Is(target error) bool {
+	if k, ok := target.(*fault.Kind); ok {
+		return k == p.Kind()
+	}
 	other, ok := target.(*Problem)
 	return ok && other.Type == p.Type && other.Detail == ""
 }

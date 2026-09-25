@@ -14,6 +14,12 @@
 // authentication. The caller owns routing policy, and the accountdriven package
 // serves the selected enrollment endpoint.
 //
+// # Errors
+//
+// ErrReject is the catalogued device condition for Apple's
+// com.apple.well-known.failed error document; Rejection carries the document.
+// ErrRouter and ErrNotHTTPS are operator conditions.
+//
 // # References
 //
 //   - Decision record 0028: https://github.com/deploymenttheory/go-apple-dm/blob/main/docs/research/decisions/0028-account-driven-enrollment-and-service-discovery.md

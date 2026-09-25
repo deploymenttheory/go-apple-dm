@@ -8,6 +8,8 @@ import (
 	"io"
 
 	mplist "github.com/micromdm/plist"
+
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/fault"
 )
 
 // Format is the detected plist serialisation.
@@ -41,9 +43,9 @@ const (
 
 // Errors returned by the decoders.
 var (
-	ErrTooLarge      = errors.New("plist: input exceeds size limit")
-	ErrTooDeep       = errors.New("plist: nesting exceeds depth limit")
-	ErrUnknownFormat = errors.New("plist: input is neither XML nor binary plist")
+	ErrTooLarge      = fault.PlistTooLarge
+	ErrTooDeep       = fault.PlistTooDeep
+	ErrUnknownFormat = fault.PlistUnknownFormat
 )
 
 // Marshaler and Unmarshaler are re-exported so callers do not import the
@@ -71,7 +73,7 @@ func DetectFormat(data []byte) Format {
 func Marshal(v any) ([]byte, error) {
 	out, err := mplist.Marshal(v)
 	if err != nil {
-		return nil, fmt.Errorf("plist: marshal: %w", err)
+		return nil, fmt.Errorf("marshal: %w", err)
 	}
 	return out, nil
 }
@@ -80,7 +82,7 @@ func Marshal(v any) ([]byte, error) {
 func MarshalIndent(v any, indent string) ([]byte, error) {
 	out, err := mplist.MarshalIndent(v, indent)
 	if err != nil {
-		return nil, fmt.Errorf("plist: marshal: %w", err)
+		return nil, fmt.Errorf("marshal: %w", err)
 	}
 	return out, nil
 }
@@ -129,7 +131,7 @@ func (d Decoder) Unmarshal(data []byte, v any) error {
 		return ErrUnknownFormat
 	}
 	if err := mplist.Unmarshal(data, v); err != nil {
-		return fmt.Errorf("plist: unmarshal: %w", err)
+		return fmt.Errorf("unmarshal: %w", err)
 	}
 	return nil
 }

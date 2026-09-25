@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/fault"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/cms"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/mdm"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/secrets"
@@ -51,7 +52,7 @@ type Association struct {
 // Associations persists immutable account/profile and certificate associations.
 type Associations struct{ Store state.Store }
 
-var ErrAssociation = errors.New("accountdriven: enrollment association mismatch")
+var ErrAssociation = fault.NewDevice("", fault.PermissionDenied, "the enrollment association does not match")
 
 // associationKey constructs the namespaced key for association state.
 func associationKey(ref string) string { return "account/enrollment/" + ref }

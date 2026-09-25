@@ -12,6 +12,12 @@
 // needing shared caching can implement Lookup. A catalog lookup does not
 // establish whether a particular device has installed an update.
 //
+// # Errors
+//
+// Every sentinel is an operator condition: the catalog is a dependency of the
+// deployment, so a request, status, decode or size failure is Upstream and a
+// device without an asset is NotFound.
+//
 // # References
 //
 //   - Decision record 0027: https://github.com/deploymenttheory/go-apple-dm/blob/main/docs/research/decisions/0027-ade-enrollment-machineinfo-and-web-view-auth.md

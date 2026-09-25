@@ -3,24 +3,28 @@ package push
 import (
 	"context"
 	"crypto/tls"
-	"errors"
 	"fmt"
 	"maps"
 	"sync"
 	"time"
 
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/clock"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/fault"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/mdm"
 )
 
 // Errors returned by this package.
 var (
-	ErrNoCertificate = errors.New("push: no push certificate for topic")
-	ErrCertExpired   = errors.New("push: push certificate expired")
-	ErrInvalidToken  = errors.New("push: device token invalid")
-	ErrRejected      = errors.New("push: APNs rejected the request")
-	ErrRateLimited   = errors.New("push: rate limited")
-	ErrUpstream      = errors.New("push: APNs error")
+	ErrNoCertificate = fault.NewOperator(fault.Unavailable, "there is no push certificate for the topic")
+	ErrCertExpired   = fault.NewOperator(fault.Unavailable, "the push certificate has expired")
+	ErrInvalidToken  = fault.NewOperator(fault.Gone, "the device token is no longer valid")
+	ErrRejected      = fault.NewOperator(fault.Upstream, "APNs rejected the request")
+	ErrRateLimited   = fault.NewOperator(fault.ResourceExhausted, "APNs is rate limiting this server")
+	ErrUpstream      = fault.NewOperator(fault.Upstream, "APNs failed")
+	ErrUnavailable   = fault.NewOperator(fault.Unavailable, "APNs is unavailable")
+	// ErrPushInfoIncomplete is an enrollment without the token, magic and topic a push
+	// needs; nothing was sent.
+	ErrPushInfoIncomplete = fault.NewOperator(fault.Internal, "the enrollment's push information is incomplete")
 )
 
 // Outcome classifies what happened to one push. It is a closed set, so a
@@ -143,7 +147,7 @@ func Coalesce(next Pusher, window time.Duration, c clock.Clock) *Coalescer {
 }
 
 // ErrCoalesced marks a push that was skipped because one was sent recently.
-var ErrCoalesced = errors.New("push: coalesced with a recent push")
+var ErrCoalesced = fault.NewOperator(fault.Conflict, "the push was coalesced with a recent push")
 
 // Push implements Pusher.
 func (c *Coalescer) Push(ctx context.Context, targets []Target) (map[mdm.EnrollmentID]Result, error) {

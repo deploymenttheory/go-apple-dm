@@ -13,6 +13,14 @@
 // serializes capacity accounting within its limiter namespace. Do not include
 // raw credentials in bucket keys.
 //
+// # Errors
+//
+// ErrInvalid, ErrUnavailable and ErrCapacity are operator conditions classified
+// through devicemanagement/fault as InvalidArgument, Unavailable and
+// ResourceExhausted. A store failure wraps ErrUnavailable; a full state store
+// wraps both ErrUnavailable and ErrCapacity, with ErrUnavailable deciding the
+// classification. A quota that is merely exhausted is a Decision, not an error.
+//
 // # References
 //
 //   - https://github.com/deploymenttheory/go-apple-dm/blob/main/docs/research/decisions/0047-enrollment-authentication-and-optional-security-services.md

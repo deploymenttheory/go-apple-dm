@@ -21,7 +21,7 @@ import (
 func GenerateCSR(subject pkix.Name) (keyPEM, csrPEM []byte, err error) {
 	key, err := rsa.GenerateKey(rand.Reader, 2048)
 	if err != nil {
-		return nil, nil, fmt.Errorf("pushcert: generate key: %w", err)
+		return nil, nil, fmt.Errorf("generate key: %w", err)
 	}
 	der, err := x509.CreateCertificateRequest(
 		rand.Reader,
@@ -29,11 +29,11 @@ func GenerateCSR(subject pkix.Name) (keyPEM, csrPEM []byte, err error) {
 		key,
 	)
 	if err != nil {
-		return nil, nil, fmt.Errorf("pushcert: create CSR: %w", err)
+		return nil, nil, fmt.Errorf("create CSR: %w", err)
 	}
 	keyDER, err := x509.MarshalPKCS8PrivateKey(key)
 	if err != nil {
-		return nil, nil, fmt.Errorf("pushcert: encode key: %w", err)
+		return nil, nil, fmt.Errorf("encode key: %w", err)
 	}
 	return pem.EncodeToMemory(
 			&pem.Block{Type: "PRIVATE KEY", Bytes: keyDER},
@@ -80,7 +80,7 @@ func SignCSR(
 	digest := sha256.Sum256(csr.Raw)
 	sig, err := rsa.SignPKCS1v15(rand.Reader, key, crypto.SHA256, digest[:])
 	if err != nil {
-		return nil, fmt.Errorf("pushcert: sign CSR: %w", err)
+		return nil, fmt.Errorf("sign CSR: %w", err)
 	}
 	canonical, err := PEM(chainPEM)
 	if err != nil {
@@ -93,7 +93,7 @@ func SignCSR(
 	}{base64.StdEncoding.EncodeToString(csr.Raw), string(canonical), base64.StdEncoding.EncodeToString(sig)}
 	xml, err := plist.Marshal(envelope, plist.XMLFormat)
 	if err != nil {
-		return nil, fmt.Errorf("pushcert: encode envelope: %w", err)
+		return nil, fmt.Errorf("encode envelope: %w", err)
 	}
 	return []byte(base64.StdEncoding.EncodeToString(xml)), nil
 }

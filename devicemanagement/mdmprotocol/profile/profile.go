@@ -9,6 +9,7 @@ import (
 	"strings"
 	"uuid"
 
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/fault"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/cms"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/plist"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/schema/profiles"
@@ -17,8 +18,8 @@ import (
 
 // Errors returned by this package.
 var (
-	ErrInvalid = errors.New("profile: invalid")
-	ErrParse   = errors.New("profile: parse")
+	ErrInvalid = fault.ProfileInvalid
+	ErrParse   = fault.ProfileMalformed
 )
 
 // PayloadTypeConfiguration is the top-level type of configuration profiles.
@@ -233,7 +234,7 @@ func (p *Profile) Sign(cert *x509.Certificate, key crypto.Signer) ([]byte, error
 	}
 	signed, err := cms.SignAttached(data, cert, key)
 	if err != nil {
-		return nil, fmt.Errorf("profile: sign: %w", err)
+		return nil, fmt.Errorf("sign: %w", err)
 	}
 	return signed, nil
 }
@@ -351,7 +352,7 @@ func Parse(data []byte, o ParseOptions) (*Parsed, error) {
 func parsePayload(keys map[string]any, resolve Resolver) (Payload, error) {
 	typ := str(keys, "PayloadType")
 	if typ == "" {
-		return Payload{}, errors.New("missing PayloadType")
+		return Payload{}, fmt.Errorf("%w: missing PayloadType", ErrParse)
 	}
 	pl := Payload{
 		Identifier:   str(keys, "PayloadIdentifier"),

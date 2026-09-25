@@ -13,6 +13,7 @@ import (
 
 	"github.com/smallstep/pkcs7"
 
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/fault"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/cms"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/plist"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/osversion"
@@ -40,12 +41,12 @@ const (
 // malformed blob is 400, an unverified signature 401, an unknown signer
 // 403 or 401, and nothing else about decoding is ever 500.
 var (
-	ErrNoMachineInfo = errors.New("ade: no MachineInfo in request")
-	ErrTooLarge      = errors.New("ade: MachineInfo too large")
-	ErrMalformed     = errors.New("ade: malformed MachineInfo")
-	ErrUnverified    = errors.New("ade: MachineInfo signature not verified")
-	ErrUnknownSigner = errors.New("ade: MachineInfo signer not trusted")
-	ErrPresence      = errors.New("ade: MachineInfo presence rules")
+	ErrNoMachineInfo = fault.NewDevice("", fault.InvalidArgument, "the request carries no MachineInfo")
+	ErrTooLarge      = fault.NewDevice("", fault.InvalidArgument, "the MachineInfo is too large")
+	ErrMalformed     = fault.NewDevice("", fault.InvalidArgument, "the MachineInfo is malformed")
+	ErrUnverified    = fault.NewDevice("", fault.PermissionDenied, "the MachineInfo signature was not verified")
+	ErrUnknownSigner = fault.NewDevice("", fault.PermissionDenied, "the MachineInfo signer is not trusted")
+	ErrPresence      = fault.NewDevice("", fault.InvalidArgument, "the MachineInfo breaks the presence rules")
 )
 
 // Origin says which request form carried the blob.
@@ -148,7 +149,7 @@ func ParseMachineInfo(r *http.Request, o ParseOptions) (*Parsed, error) {
 		if !o.Audit || errors.Is(verr, ErrMalformed) {
 			return nil, verr
 		}
-		o.logger().WarnContext(r.Context(), "ade: MachineInfo not verified, audit mode", "error", verr, "origin", string(origin), "remote", r.RemoteAddr)
+		o.logger().WarnContext(r.Context(), "MachineInfo not verified, audit mode", fault.Attr(verr), "origin", string(origin), "remote", r.RemoteAddr)
 		if content, err = unverifiedContent(der); err != nil {
 			return nil, err
 		}

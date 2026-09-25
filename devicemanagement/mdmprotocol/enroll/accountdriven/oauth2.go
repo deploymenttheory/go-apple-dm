@@ -10,6 +10,8 @@ import (
 	"net/url"
 	"strings"
 	"time"
+
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/fault"
 )
 
 // OAuth2 serves the apple-oauth2 authorization-code flow for a public client.
@@ -31,8 +33,8 @@ type OAuth2 struct {
 
 // OAuth2 errors.
 var (
-	ErrOAuth2Request = errors.New("accountdriven: invalid oauth2 request")
-	ErrOAuth2Grant   = errors.New("accountdriven: invalid grant")
+	ErrOAuth2Request = fault.NewDevice("", fault.InvalidArgument, "the OAuth 2.0 request is not valid")
+	ErrOAuth2Grant   = fault.NewDevice("", fault.InvalidArgument, "the OAuth 2.0 grant is not valid")
 )
 
 // Challenge implements Authenticator.

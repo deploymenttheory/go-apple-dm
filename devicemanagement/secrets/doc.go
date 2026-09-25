@@ -12,6 +12,13 @@
 // protect values after explicit extraction or encrypt memory. storage/crypt
 // provides sealing for selected persisted values.
 //
+// # Errors
+//
+// ErrNotFound and ErrName are operator conditions: a deployment referenced a
+// secret it does not define, or defined one under a name a provider cannot map.
+// Both classify through devicemanagement/fault (NotFound and InvalidArgument)
+// and are never published to a caller.
+//
 // # References
 //
 //   - Decision record 0011: https://github.com/deploymenttheory/go-apple-dm/blob/main/docs/research/decisions/0011-secrets-provider.md

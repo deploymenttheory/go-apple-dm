@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/fault"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/internal/cbor"
 )
 
@@ -27,25 +28,25 @@ const MaxChain = 10
 var (
 	// ErrFormat is a malformed attestation object, or one whose statement
 	// format is not Apple's.
-	ErrFormat = errors.New("attest: malformed attestation object")
+	ErrFormat = fault.NewDevice("", fault.InvalidArgument, "the attestation object is malformed")
 	// ErrNoAttestation is a well-formed statement that carries no chain.
 	// Apple sends this when the profile did not ask for an attestation or
 	// the hardware cannot produce one, so it is a legitimate answer and the
 	// caller's policy decides what it means.
-	ErrNoAttestation = errors.New("attest: statement carries no attestation")
+	ErrNoAttestation = fault.NewDevice("", fault.PermissionDenied, "the statement carries no attestation")
 	// ErrChain is a chain that does not verify to the trust anchors.
-	ErrChain = errors.New("attest: certificate chain does not verify")
+	ErrChain = fault.NewDevice("", fault.PermissionDenied, "the attestation certificate chain does not verify")
 	// ErrFreshness is a missing or wrong freshness code, which means the
 	// attestation was not produced for this challenge.
-	ErrFreshness = errors.New("attest: freshness code does not match")
+	ErrFreshness = fault.NewDevice("", fault.PermissionDenied, "the freshness code does not match")
 	// ErrKeyMismatch is an attestation for a different key than the one
 	// being certified.
-	ErrKeyMismatch = errors.New("attest: attested key is not the requested key")
+	ErrKeyMismatch = fault.NewDevice("", fault.PermissionDenied, "the attested key is not the requested key")
 	// ErrExtension is an extension whose contents do not match the encoding
 	// Apple documents for it.
-	ErrExtension = errors.New("attest: malformed certificate extension")
+	ErrExtension = fault.NewDevice("", fault.InvalidArgument, "the attestation certificate extension is malformed")
 	// ErrOptions is a caller mistake rather than a bad attestation.
-	ErrOptions = errors.New("attest: invalid verify options")
+	ErrOptions = fault.NewOperator(fault.Internal, "the attestation verify options are not valid")
 )
 
 // Apple's object identifiers on the attestation leaf, from the

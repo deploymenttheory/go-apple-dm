@@ -1,18 +1,25 @@
 package ddm
 
-import "errors"
+import (
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/fault"
+)
 
 // Errors shared by the engine and every store backend.
+//
+// The conditions a caller reacts to point at the catalogue, so each one also matches
+// its kind and carries a stable code wherever it surfaces. Comparison against these
+// variables is unchanged. The remaining errors describe a failure inside a supplied
+// component and have no classification of their own.
 var (
-	ErrNotFound           = errors.New("ddm: not found")
-	ErrConflict           = errors.New("ddm: conflict")
-	ErrInvalid            = errors.New("ddm: invalid argument")
-	ErrUnknownType        = errors.New("ddm: unknown declaration type")
-	ErrInvalidDeclaration = errors.New("ddm: declaration failed validation")
-	ErrBadEndpoint        = errors.New("ddm: malformed endpoint")
-	ErrStatusTooLarge     = errors.New("ddm: status report exceeds limit")
-	ErrStatusMalformed    = errors.New("ddm: malformed status report")
-	ErrResolver           = errors.New("ddm: membership resolver failed")
-	ErrExpander           = errors.New("ddm: expander failed")
-	ErrNotifier           = errors.New("ddm: notifier")
+	ErrNotFound           = fault.DDMNotFound
+	ErrConflict           = fault.DDMConflict
+	ErrInvalid            = fault.DDMInvalid
+	ErrUnknownType        = fault.DDMUnknownType
+	ErrInvalidDeclaration = fault.DDMDeclarationInvalid
+	ErrBadEndpoint        = fault.DeviceDDMEndpointMalformed
+	ErrStatusTooLarge     = fault.DeviceDDMStatusTooLarge
+	ErrStatusMalformed    = fault.DeviceDDMStatusMalformed
+	ErrResolver           = fault.NewOperator(fault.Internal, "the membership resolver failed")
+	ErrExpander           = fault.NewOperator(fault.Internal, "the expander failed")
+	ErrNotifier           = fault.NewOperator(fault.Unavailable, "the notifier failed")
 )

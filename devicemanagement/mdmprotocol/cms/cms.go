@@ -15,19 +15,21 @@ import (
 	"time"
 
 	"github.com/smallstep/pkcs7"
+
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/fault"
 )
 
 // Errors returned by this package.
 var (
-	ErrHeader          = errors.New("cms: malformed Mdm-Signature header")
-	ErrParse           = errors.New("cms: malformed CMS structure")
-	ErrNoSigner        = errors.New("cms: no signer")
-	ErrMultipleSigners = errors.New("cms: more than one signer")
-	ErrSignature       = errors.New("cms: signature verification failed")
-	ErrSigningTime     = errors.New("cms: signing time outside certificate validity")
-	ErrChain           = errors.New("cms: certificate chain verification failed")
-	ErrAlgorithm       = errors.New("cms: unsupported algorithm")
-	ErrSign            = errors.New("cms: signing failed")
+	ErrHeader          = fault.NewDevice("", fault.InvalidArgument, "the Mdm-Signature header is malformed")
+	ErrParse           = fault.NewDevice("", fault.InvalidArgument, "the CMS structure is malformed")
+	ErrNoSigner        = fault.NewDevice("", fault.PermissionDenied, "the CMS message has no signer")
+	ErrMultipleSigners = fault.NewDevice("", fault.PermissionDenied, "the CMS message has more than one signer")
+	ErrSignature       = fault.NewDevice("", fault.PermissionDenied, "the signature could not be verified")
+	ErrSigningTime     = fault.NewDevice("", fault.PermissionDenied, "the signing time is outside the certificate's validity")
+	ErrChain           = fault.NewDevice("", fault.PermissionDenied, "the certificate chain could not be verified")
+	ErrAlgorithm       = fault.NewDevice("", fault.InvalidArgument, "the algorithm is not supported")
+	ErrSign            = fault.NewOperator(fault.Internal, "signing failed")
 )
 
 // HeaderName is the HTTP header Apple devices use.

@@ -204,7 +204,7 @@ func sortedKeys(v url.Values) []string {
 func randomNonce() (string, error) {
 	var b [16]byte
 	if _, err := rand.Read(b[:]); err != nil {
-		return "", fmt.Errorf("dep: nonce: %w", err)
+		return "", fmt.Errorf("nonce: %w", err)
 	}
 	return hex.EncodeToString(b[:]), nil
 }

@@ -3,18 +3,19 @@ package webauth
 import (
 	"context"
 	json "encoding/json/v2"
-	"errors"
 	"fmt"
 	"io"
 	"net/http"
 	"net/url"
 	"strings"
 	"time"
+
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/fault"
 )
 
 // ErrProvider is wrapped by failures talking to the identity provider:
 // discovery, JWKS, and the token endpoint.
-var ErrProvider = errors.New("webauth: provider")
+var ErrProvider = fault.NewOperator(fault.Upstream, "the identity provider failed")
 
 // Endpoints are the provider URLs. Set them to skip discovery.
 type Endpoints struct {
@@ -127,7 +128,7 @@ func (f *Flow) checkEndpoints(eps Endpoints) error {
 }
 
 // ErrNotHTTPS reports a URL that is not absolute https.
-var ErrNotHTTPS = errors.New("webauth: URL must be absolute https")
+var ErrNotHTTPS = fault.NewOperator(fault.Internal, "the URL must be absolute and use https")
 
 // requireHTTPS rejects provider URLs that fail the flow's HTTPS and endpoint policy.
 func (f *Flow) requireHTTPS(raw string) error {
@@ -148,7 +149,7 @@ func (f *Flow) keysFor(ctx context.Context, jwksURL, kid, alg string) []verifica
 	defer f.mu.Unlock()
 	if f.keys == nil || f.clock.Now().Sub(f.keysFetched) >= jwksMaxAge {
 		if err := f.refreshKeysLocked(ctx, jwksURL); err != nil {
-			f.log.WarnContext(ctx, "webauth: jwks fetch failed", "error", err)
+			f.log.WarnContext(ctx, "jwks fetch failed", fault.Attr(err))
 			return nil
 		}
 	}
@@ -159,7 +160,7 @@ func (f *Flow) keysFor(ctx context.Context, jwksURL, kid, alg string) []verifica
 		return nil
 	}
 	if err := f.refreshKeysLocked(ctx, jwksURL); err != nil {
-		f.log.WarnContext(ctx, "webauth: jwks refresh failed", "error", err)
+		f.log.WarnContext(ctx, "jwks refresh failed", fault.Attr(err))
 		return nil
 	}
 	return selectKeys(f.keys, kid, alg)

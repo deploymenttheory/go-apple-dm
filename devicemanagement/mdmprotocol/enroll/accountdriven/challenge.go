@@ -1,10 +1,11 @@
 package accountdriven
 
 import (
-	"errors"
 	"fmt"
 	"net/url"
 	"strings"
+
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/fault"
 )
 
 // Methods in the WWW-Authenticate challenge.
@@ -20,7 +21,7 @@ const (
 )
 
 // ErrChallenge reports an invalid challenge parameter.
-var ErrChallenge = errors.New("accountdriven: invalid challenge")
+var ErrChallenge = fault.NewDevice("", fault.InvalidArgument, "the challenge is not valid")
 
 // Challenge is the Bearer challenge Apple documents for each flow.
 type Challenge struct {

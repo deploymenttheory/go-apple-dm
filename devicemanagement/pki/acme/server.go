@@ -15,6 +15,7 @@ import (
 	"time"
 
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/clock"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/fault"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/event"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/pki/acme/jose"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/pki/ca"
@@ -45,7 +46,7 @@ const (
 )
 
 // ErrConfig is a server built with missing or contradictory settings.
-var ErrConfig = errors.New("acme: invalid configuration")
+var ErrConfig = fault.NewOperator(fault.Internal, "the ACME server configuration is not valid")
 
 // Config builds a Server.
 type Config struct {
@@ -142,6 +143,7 @@ func New(cfg Config) (*Server, error) {
 	if cfg.Logger == nil {
 		cfg.Logger = slog.Default()
 	}
+	cfg.Logger = cfg.Logger.With("component", "acme")
 	if cfg.NonceTTL <= 0 {
 		cfg.NonceTTL = DefaultNonceTTL
 	}
@@ -382,7 +384,7 @@ func (s *Server) addNonce(e *exchange) {
 	if err != nil {
 		// A client that gets no nonce will fetch one; failing the request
 		// for it would be worse than carrying on.
-		s.cfg.Logger.WarnContext(e.ctx(), "acme: mint nonce", "error", err)
+		s.cfg.Logger.WarnContext(e.ctx(), "mint nonce", fault.Attr(err))
 		return
 	}
 	e.w.Header().Set("Replay-Nonce", value)
@@ -393,11 +395,11 @@ func (s *Server) addNonce(e *exchange) {
 func (s *Server) mintNonce(ctx context.Context) (string, error) {
 	buf := make([]byte, 16)
 	if _, err := rand.Read(buf); err != nil {
-		return "", fmt.Errorf("acme: nonce: %w", err)
+		return "", fmt.Errorf("nonce: %w", err)
 	}
 	value := base64.RawURLEncoding.EncodeToString(buf)
 	if err := s.cfg.Store.PutNonce(ctx, Nonce{Value: value, IssuedAt: s.cfg.Clock.Now()}); err != nil {
-		return "", fmt.Errorf("acme: store nonce: %w", err)
+		return "", fmt.Errorf("store nonce: %w", err)
 	}
 	return value, nil
 }
@@ -429,8 +431,8 @@ func (s *Server) fail(e *exchange, err error) {
 		level = slog.LevelError
 	}
 	s.cfg.Logger.Log(
-		e.ctx(), level, "acme: request failed",
-		"path", e.r.URL.Path, "problem", p.Type, "detail", p.Detail, "error", p.Unwrap(),
+		e.ctx(), level, "request failed",
+		"path", e.r.URL.Path, "problem", p.Type, "detail", p.Detail, fault.Attr(p.Unwrap()),
 	)
 	wire := *p
 	wire.Type = p.URN()
@@ -452,7 +454,7 @@ func (s *Server) publish(ctx context.Context, t event.Type, data any) {
 	}
 	ev := event.Event{Type: t, At: s.cfg.Clock.Now(), Actor: "acme", Data: data}
 	if err := s.cfg.Bus.Publish(ctx, ev); err != nil {
-		s.cfg.Logger.WarnContext(ctx, "acme: publish", "event", t, "error", err)
+		s.cfg.Logger.WarnContext(ctx, "publish", "event", t, fault.Attr(err))
 	}
 }
 
@@ -461,7 +463,7 @@ func (s *Server) publish(ctx context.Context, t event.Type, data any) {
 func newID() (string, error) {
 	buf := make([]byte, 16)
 	if _, err := rand.Read(buf); err != nil {
-		return "", fmt.Errorf("acme: identifier: %w", err)
+		return "", fmt.Errorf("identifier: %w", err)
 	}
 	return base64.RawURLEncoding.EncodeToString(buf), nil
 }
@@ -472,7 +474,7 @@ func newID() (string, error) {
 func newToken() (string, error) {
 	buf := make([]byte, 32)
 	if _, err := rand.Read(buf); err != nil {
-		return "", fmt.Errorf("acme: token: %w", err)
+		return "", fmt.Errorf("token: %w", err)
 	}
 	return base64.RawURLEncoding.EncodeToString(buf), nil
 }

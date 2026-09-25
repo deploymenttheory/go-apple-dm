@@ -225,7 +225,7 @@ func walk[T any](
 		}
 		for _, item := range items {
 			if err := visit(item); err != nil {
-				return "", fmt.Errorf("appsbooks: visit: %w", err)
+				return "", fmt.Errorf("visit: %w", err)
 			}
 		}
 		if p.NextPageIndex == nil {

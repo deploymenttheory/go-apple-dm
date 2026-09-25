@@ -35,6 +35,12 @@
 // configured. Direct subscribers must apply their own disclosure policy. The DDM
 // notifier consumes persistent change rows rather than relying on bus delivery.
 //
+// # Errors
+//
+// ErrCapture, ErrClosed, ErrQueueFull and ErrAsyncConfig are operator conditions
+// classified through devicemanagement/fault, so a transport that meets a capture
+// failure answers Unavailable without naming this package.
+//
 // # References
 //
 //   - Decision record 0001: https://github.com/deploymenttheory/go-apple-dm/blob/main/docs/research/decisions/0001-architecture.md

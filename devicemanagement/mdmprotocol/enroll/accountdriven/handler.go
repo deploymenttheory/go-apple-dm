@@ -11,6 +11,7 @@ import (
 	"net/url"
 	"strings"
 
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/fault"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/enroll"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/secrets"
 )
@@ -32,11 +33,9 @@ const (
 
 // Handler errors.
 var (
-	ErrConfig              = errors.New("accountdriven: invalid configuration")
-	ErrManagedAppleAccount = errors.New("accountdriven: identity has no Managed Apple Account")
-	ErrMode                = errors.New(
-		"accountdriven: enrollment mode does not match the discovery version",
-	)
+	ErrConfig              = fault.NewOperator(fault.Internal, "the account-driven enrollment configuration is not valid")
+	ErrManagedAppleAccount = fault.NewDevice("", fault.PermissionDenied, "the identity has no Managed Apple Account")
+	ErrMode                = fault.NewDevice("", fault.InvalidArgument, "the enrollment mode does not match the discovery version")
 )
 
 // DeviceInfo is the verified first-POST body: Apple documents LANGUAGE,
@@ -63,7 +62,29 @@ type HTTPError struct {
 }
 
 // Error returns the diagnostic message for this error.
-func (e *HTTPError) Error() string { return fmt.Sprintf("accountdriven: http %d: %v", e.Status, e.Err) }
+func (e *HTTPError) Error() string { return fmt.Sprintf("http %d: %v", e.Status, e.Err) }
+
+// Is matches the error's kind.
+func (e *HTTPError) Is(target error) bool { return target == e.Kind() }
+
+// Kind classifies the answer by its status when the cause carries no classification
+// of its own.
+func (e *HTTPError) Kind() *fault.Kind {
+	if fault.IsClassified(e.Err) {
+		return fault.KindOf(e.Err)
+	}
+	switch e.Status {
+	case http.StatusBadRequest:
+		return fault.InvalidArgument
+	case http.StatusUnauthorized:
+		return fault.Unauthenticated
+	case http.StatusForbidden:
+		return fault.PermissionDenied
+	case http.StatusNotFound:
+		return fault.NotFound
+	}
+	return fault.Internal
+}
 
 // Unwrap exposes the wrapped cause for errors.Is and errors.As.
 func (e *HTTPError) Unwrap() error { return e.Err }
@@ -127,6 +148,7 @@ func New(cfg Config) (*Handler, error) {
 	if cfg.Logger == nil {
 		cfg.Logger = slog.Default()
 	}
+	cfg.Logger = cfg.Logger.With("component", "accountdriven")
 	return &Handler{cfg: cfg}, nil
 }
 
@@ -168,7 +190,7 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			h.fail(w, r, err, http.StatusInternalServerError)
 			return
 		}
-		h.cfg.Logger.InfoContext(r.Context(), "accountdriven: bearer rejected", "error", err)
+		h.cfg.Logger.InfoContext(r.Context(), "bearer rejected", fault.Attr(err))
 		h.challenge(w, r, info)
 		return
 	}
@@ -299,9 +321,9 @@ func (h *Handler) fail(w http.ResponseWriter, r *http.Request, err error, status
 		return
 	}
 	if status >= http.StatusInternalServerError {
-		h.cfg.Logger.ErrorContext(r.Context(), "accountdriven: enrollment failed", "error", err)
+		h.cfg.Logger.ErrorContext(r.Context(), "enrollment failed", fault.Attr(err))
 	} else {
-		h.cfg.Logger.InfoContext(r.Context(), "accountdriven: request rejected", "error", err)
+		h.cfg.Logger.InfoContext(r.Context(), "request rejected", fault.Attr(err))
 	}
 	http.Error(w, http.StatusText(status), status)
 }

@@ -7,7 +7,6 @@ import (
 	"crypto/rsa"
 	"crypto/x509"
 	"encoding/base64"
-	"errors"
 	"fmt"
 	"io"
 	"log/slog"
@@ -17,16 +16,17 @@ import (
 	"github.com/smallstep/pkcs7"
 	smallscep "github.com/smallstep/scep"
 
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/fault"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/internal/scepwire"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/pki/ca"
 )
 
 // Errors returned by this package.
 var (
-	ErrCSR       = errors.New("scep: CSR rejected")
-	ErrOperation = errors.New("scep: unsupported operation")
-	ErrRA        = errors.New("scep: registration authority misconfigured")
-	ErrIssue     = errors.New("scep: issuance failed")
+	ErrCSR       = fault.NewDevice("", fault.InvalidArgument, "the CSR was rejected")
+	ErrOperation = fault.NewDevice("", fault.InvalidArgument, "the SCEP operation is not supported")
+	ErrRA        = fault.NewOperator(fault.Internal, "the registration authority is misconfigured")
+	ErrIssue     = fault.NewOperator(fault.Internal, "certificate issuance failed")
 )
 
 // Content types on the wire.
@@ -109,7 +109,7 @@ func NewServer(signer ca.Signer, raCert *x509.Certificate, raKey crypto.Signer, 
 	if _, ok := raKey.Public().(*rsa.PublicKey); !ok {
 		return nil, fmt.Errorf("%w: RA key must be RSA (devices encrypt the envelope to it)", ErrRA)
 	}
-	s := &Server{signer: signer, raCert: raCert, raKey: raKey, log: slog.Default()}
+	s := &Server{signer: signer, raCert: raCert, raKey: raKey, log: slog.Default().With("component", "scep")}
 	for _, o := range opts {
 		o(s)
 	}
@@ -131,7 +131,7 @@ func (s *Server) CACert() ([]byte, string, error) {
 	certs := append([]*x509.Certificate{s.raCert}, s.extraCerts...)
 	der, err := smallscep.DegenerateCertificates(certs)
 	if err != nil {
-		return nil, "", fmt.Errorf("scep: %w", err)
+		return nil, "", fmt.Errorf("%w", err)
 	}
 	return der, ContentTypeCARACert, nil
 }
@@ -205,7 +205,7 @@ func (s *Server) PKIOperation(ctx context.Context, body []byte) ([]byte, error) 
 	}
 	rep, err := scepwire.Reply(msg, s.raCert, s.raKey, p7.GetOnlySigner(), cert, "")
 	if err != nil {
-		return nil, fmt.Errorf("scep: build CertRep: %w", err)
+		return nil, fmt.Errorf("build CertRep: %w", err)
 	}
 	return rep, nil
 }
@@ -237,7 +237,7 @@ func (s *Server) isRenewal(msg *smallscep.PKIMessage, signer *x509.Certificate, 
 func (s *Server) fail(msg *smallscep.PKIMessage, info smallscep.FailInfo, cause error) ([]byte, error) {
 	rep, err := scepwire.Reply(msg, s.raCert, s.raKey, nil, nil, info)
 	if err != nil {
-		return nil, fmt.Errorf("scep: build failure CertRep: %w", err)
+		return nil, fmt.Errorf("build failure CertRep: %w", err)
 	}
 	return rep, cause
 }
@@ -276,7 +276,7 @@ func (s *Server) servePKIOperation(w http.ResponseWriter, r *http.Request) {
 	}
 	rep, opErr := s.PKIOperation(r.Context(), body)
 	if opErr != nil {
-		s.log.WarnContext(r.Context(), "scep: request rejected", "error", opErr, "remote", r.RemoteAddr)
+		s.log.WarnContext(r.Context(), "request rejected", fault.Attr(opErr), "remote", r.RemoteAddr)
 	}
 	if rep == nil {
 		http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
@@ -296,7 +296,7 @@ func readMessage(r *http.Request) ([]byte, error) {
 	if r.Method == http.MethodPost {
 		b, err := io.ReadAll(io.LimitReader(r.Body, maxMessage+1))
 		if err != nil {
-			return nil, fmt.Errorf("scep: read body: %w", err)
+			return nil, fmt.Errorf("read body: %w", err)
 		}
 		if len(b) > maxMessage {
 			return nil, fmt.Errorf("%w: body exceeds %d bytes", ErrOperation, maxMessage)

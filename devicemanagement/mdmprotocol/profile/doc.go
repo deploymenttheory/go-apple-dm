@@ -11,6 +11,11 @@
 // mdmprotocol/enroll. Preserving identifiers across updates is the caller's
 // responsibility.
 //
+// # Errors
+//
+// ErrInvalid and ErrParse are the catalogued client conditions
+// DM-PROFILE-INVALID and DM-PROFILE-MALFORMED.
+//
 // # References
 //
 //   - Decision record 0009: https://github.com/deploymenttheory/go-apple-dm/blob/main/docs/research/decisions/0009-enrollment-profiles.md

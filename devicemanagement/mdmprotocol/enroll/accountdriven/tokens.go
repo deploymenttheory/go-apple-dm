@@ -6,19 +6,19 @@ import (
 	"crypto/sha256"
 	"encoding/base64"
 	"encoding/hex"
-	"errors"
 	"fmt"
 	"time"
 
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/fault"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/secrets"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/state"
 )
 
 // Token errors.
 var (
-	ErrTokenNotFound = errors.New("accountdriven: token not found")
-	ErrTokenExpired  = errors.New("accountdriven: token expired")
-	ErrTokenUsed     = errors.New("accountdriven: token already used")
+	ErrTokenNotFound = fault.EnrollmentTokenNotFound
+	ErrTokenExpired  = fault.EnrollmentTokenExpired
+	ErrTokenUsed     = fault.EnrollmentTokenUsed
 )
 
 // Defaults for token lifetimes.
@@ -97,7 +97,7 @@ func Hash(token string) string {
 func NewToken() (string, error) {
 	var b [32]byte
 	if _, err := rand.Read(b[:]); err != nil {
-		return "", fmt.Errorf("accountdriven: random: %w", err)
+		return "", fmt.Errorf("random: %w", err)
 	}
 	return base64.RawURLEncoding.EncodeToString(b[:]), nil
 }
@@ -150,7 +150,7 @@ func (t *Tokens) Issue(ctx context.Context, k Kind, id Identity, meta map[string
 	now := t.now()
 	rec := Record{Kind: k, Identity: id, IssuedAt: now, ExpiresAt: now.Add(t.ttl(k)), Meta: meta}
 	if err := t.Store.Put(ctx, Hash(tok), rec); err != nil {
-		return "", fmt.Errorf("accountdriven: store token: %w", err)
+		return "", fmt.Errorf("store token: %w", err)
 	}
 	return tok, nil
 }

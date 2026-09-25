@@ -11,6 +11,11 @@
 // The hash cannot recover the code. This package performs no network or storage
 // operations and its errors omit the supplied code.
 //
+// # Errors
+//
+// ErrCode is the catalogued client condition
+// DM-ACTIVATIONLOCK-BYPASS-CODE-INVALID.
+//
 // # References
 //
 //   - Apple algorithm: https://developer.apple.com/documentation/devicemanagement/creating-and-using-bypass-codes

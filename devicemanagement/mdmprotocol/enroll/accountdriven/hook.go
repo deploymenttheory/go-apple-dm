@@ -7,20 +7,25 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/fault"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/dmhook"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/mdm"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/state"
 )
 
 // ErrEnrollmentToken indicates that account enrollment authorization failed.
-var ErrEnrollmentToken = errors.New("accountdriven: enrollment authorization required")
+var ErrEnrollmentToken = fault.NewDevice("", fault.PermissionDenied, "account enrollment authorization is required")
 
 // Reauthentication asks the transport to restart account authentication. Only
 // recognized, certificate-associated account enrollments may produce this result.
 type Reauthentication struct{ Challenge Challenge }
 
 // Error returns the diagnostic message for this error.
-func (e *Reauthentication) Error() string { return "accountdriven: reauthentication required" }
+func (e *Reauthentication) Error() string { return fault.DeviceReauthenticationRequired.Error() }
+
+// Unwrap classifies the result as the catalogued device condition, so a transport that
+// does not recognise the type still answers with the right status.
+func (e *Reauthentication) Unwrap() error { return fault.DeviceReauthenticationRequired }
 
 // CheckinHook authenticates account-driven check-in, command and DDM requests.
 // It selects flows by issuer-registered certificate associations, not channel alone.

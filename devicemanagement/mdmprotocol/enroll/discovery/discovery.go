@@ -12,6 +12,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/fault"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/plist"
 	schemaerrors "github.com/deploymenttheory/go-apple-dm/devicemanagement/schema/errors"
 )
@@ -102,10 +103,10 @@ type Router func(ctx context.Context, req Request) ([]Server, error)
 
 // ErrReject marks a rejection: errors.Is(err, ErrReject) holds for every
 // *Rejection.
-var ErrReject = errors.New("discovery: rejected")
+var ErrReject = fault.DeviceWellKnownFailed
 
 // ErrRouter is wrapped by errors the Handler logs about a Router result.
-var ErrRouter = errors.New("discovery: router")
+var ErrRouter = fault.NewOperator(fault.Internal, "the discovery router returned an unusable result")
 
 // Rejection answers a request with 403 and Apple's well-known.failed body.
 type Rejection struct {
@@ -163,7 +164,7 @@ func Handler(cfg Config) http.Handler {
 			return
 		}
 		if cfg.Router == nil {
-			logger.ErrorContext(r.Context(), "discovery: no router configured", "remote", r.RemoteAddr)
+			logger.ErrorContext(r.Context(), "no router configured", "remote", r.RemoteAddr)
 			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 			return
 		}
@@ -174,22 +175,22 @@ func Handler(cfg Config) http.Handler {
 		if err != nil {
 			var rej *Rejection
 			if errors.As(err, &rej) {
-				logger.InfoContext(r.Context(), "discovery: rejected", "model_family", string(family), "user", req.UserIdentifier, "description", rej.Description, "remote", r.RemoteAddr)
+				logger.InfoContext(r.Context(), "rejected", "model_family", string(family), "user", req.UserIdentifier, "description", rej.Description, "remote", r.RemoteAddr)
 				writeRejection(w, r, logger, rej)
 				return
 			}
-			logger.ErrorContext(r.Context(), "discovery: router failed", "error", err, "model_family", string(family), "known_family", known, "remote", r.RemoteAddr)
+			logger.ErrorContext(r.Context(), "router failed", fault.Attr(err), "model_family", string(family), "known_family", known, "remote", r.RemoteAddr)
 			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 			return
 		}
 		if err := validateServers(servers); err != nil {
-			logger.ErrorContext(r.Context(), "discovery: router returned an unservable answer", "error", err, "model_family", string(family), "remote", r.RemoteAddr)
+			logger.ErrorContext(r.Context(), "router returned an unservable answer", fault.Attr(err), "model_family", string(family), "remote", r.RemoteAddr)
 			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 			return
 		}
 		body, err := json.Marshal(wellKnown{Servers: servers})
 		if err != nil {
-			logger.ErrorContext(r.Context(), "discovery: encode", "error", err)
+			logger.ErrorContext(r.Context(), "encode", fault.Attr(err))
 			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 			return
 		}
@@ -215,7 +216,7 @@ func validateServers(servers []Server) error {
 }
 
 // ErrNotHTTPS reports a URL that is not absolute https.
-var ErrNotHTTPS = errors.New("discovery: URL must be absolute https")
+var ErrNotHTTPS = fault.NewOperator(fault.Internal, "the URL must be absolute and use https")
 
 // requireHTTPS requires a parseable absolute HTTPS discovery URL with a host.
 func requireHTTPS(raw string) error {
@@ -262,7 +263,7 @@ func writeRejection(w http.ResponseWriter, r *http.Request, logger *slog.Logger,
 		code = schemaerrors.ErrorCodeWellKnownFailed
 	}
 	if code != schemaerrors.ErrorCodeWellKnownFailed {
-		logger.ErrorContext(r.Context(), "discovery: rejection code not allowed by the schema", "code", code)
+		logger.ErrorContext(r.Context(), "rejection code not allowed by the schema", "code", code)
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return
 	}
@@ -286,7 +287,7 @@ func writeRejection(w http.ResponseWriter, r *http.Request, logger *slog.Logger,
 		body, err = json.Marshal(failed)
 	}
 	if err != nil {
-		logger.ErrorContext(r.Context(), "discovery: encode rejection", "error", err)
+		logger.ErrorContext(r.Context(), "encode rejection", fault.Attr(err))
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return
 	}

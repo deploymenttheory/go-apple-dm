@@ -1,19 +1,20 @@
 package predicate
 
 import (
-	"errors"
 	"fmt"
 	"strconv"
 	"strings"
+
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/fault"
 )
 
 // Sentinel errors. Errors returned by Parse and Validate wrap ErrSyntax or
 // ErrUnsupported and are always of type *SyntaxError. Errors returned by
 // Eval wrap ErrType when operand types are incompatible.
 var (
-	ErrSyntax      = errors.New("predicate: syntax error")
-	ErrUnsupported = errors.New("predicate: unsupported construct")
-	ErrType        = errors.New("predicate: type mismatch")
+	ErrSyntax      = fault.PredicateMalformed
+	ErrUnsupported = fault.PredicateUnsupported
+	ErrType        = fault.PredicateTypeMismatch
 )
 
 // SyntaxError describes why a predicate failed to parse.

@@ -3,15 +3,15 @@ package apns
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"math"
 
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/appleplatformservices/push"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/fault"
 )
 
 // ErrRequest indicates an app request rejected locally, before contacting APNs.
-var ErrRequest = errors.New("apns: invalid app notification")
+var ErrRequest = fault.APNSRequestInvalid
 
 // AppRequest sends an ordinary alert or background notification. Token is raw
 // APNs token bytes, Payload is a JSON object containing aps. Zero Priority uses

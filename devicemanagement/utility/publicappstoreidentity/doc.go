@@ -16,6 +16,13 @@
 // their existing payload types. The client does not query private Apps and
 // Books inventory or undocumented external-version endpoints.
 //
+// # Errors
+//
+// ErrInvalid and ErrNotFound are the catalogued client conditions
+// DM-APPSTORE-QUERY-INVALID and DM-APPSTORE-LISTING-NOT-FOUND. Request, status,
+// decode and size failures are operator conditions of kind Upstream; StatusError
+// unwraps to ErrStatus and carries the status.
+//
 // # References
 //
 //   - Utility guide: https://github.com/deploymenttheory/go-apple-dm/blob/main/devicemanagement/utility/README.md

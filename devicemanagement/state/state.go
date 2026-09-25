@@ -2,16 +2,17 @@ package state
 
 import (
 	"context"
-	"errors"
 	"slices"
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/fault"
 )
 
 var (
-	ErrNotFound = errors.New("state: record not found")
-	ErrInvalid  = errors.New("state: invalid key or transaction")
+	ErrNotFound = fault.RecordNotFound
+	ErrInvalid  = fault.NewOperator(fault.Internal, "the key or transaction is not valid")
 )
 
 // Record is opaque state. A zero ExpiresAt means retain until explicitly deleted.

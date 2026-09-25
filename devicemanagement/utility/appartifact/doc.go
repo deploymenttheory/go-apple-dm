@@ -19,6 +19,11 @@
 // configurable bounds. Temporary payloads are removed when inspection returns.
 // Callers own access control and should limit concurrent inspection requests.
 //
+// # Errors
+//
+// ErrInvalid, ErrUnsupported and ErrLimit are the catalogued client conditions
+// DM-APPARTIFACT-INVALID, DM-APPARTIFACT-UNSUPPORTED and DM-APPARTIFACT-LIMIT.
+//
 // # References
 //
 //   - Application identity guide: https://github.com/deploymenttheory/go-apple-dm/blob/main/devicemanagement/utility/README.md

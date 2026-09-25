@@ -2,9 +2,9 @@ package acme
 
 import (
 	"context"
-	"errors"
 	"time"
 
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/fault"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/paging"
 )
 
@@ -12,15 +12,15 @@ import (
 // problem documents.
 var (
 	// ErrNotFound is a record that does not exist.
-	ErrNotFound = errors.New("acme: not found")
+	ErrNotFound = fault.ACMENotFound
 	// ErrConflict is a write that lost a race for a unique value: a second
 	// account for one key, or a second order for one client identifier.
 	// The server relies on the backend to detect this rather than reading
 	// first and writing after, because a read-then-write cannot be correct
 	// under concurrency.
-	ErrConflict = errors.New("acme: conflict")
+	ErrConflict = fault.NewOperator(fault.Conflict, "the ACME record lost a race for a unique value")
 	// ErrInvalid is a record a backend will not store.
-	ErrInvalid = errors.New("acme: invalid record")
+	ErrInvalid = fault.NewOperator(fault.Internal, "the ACME record is not one the store will hold")
 )
 
 // Reader is the read half of the store, available both directly and inside

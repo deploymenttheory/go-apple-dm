@@ -16,6 +16,7 @@ import (
 	"time"
 
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/clock"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/fault"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/secrets"
 	"github.com/deploymenttheory/go-apple-dm/internal/httpsurl"
 )
@@ -187,6 +188,7 @@ func New(ctx context.Context, cfg Config) (*Client, error) {
 	if cfg.Logger == nil {
 		cfg.Logger = slog.New(slog.DiscardHandler)
 	}
+	cfg.Logger = cfg.Logger.With(fault.Component("axm"))
 	if cfg.UserAgent == "" {
 		cfg.UserAgent = DefaultUserAgent
 	}
@@ -343,7 +345,7 @@ func (c *Client) roundTrip(ctx context.Context, r request) (*http.Response, erro
 				c.invalidate(tok)
 				c.log.DebugContext(
 					ctx,
-					"axm: 401, replaying with a fresh token",
+					"401, replaying with a fresh token",
 					"method",
 					r.method,
 					"url",
@@ -436,7 +438,7 @@ func (c *Client) backoff(attempt int) time.Duration {
 
 // wait sleeps d on the clock, honouring the context.
 func (c *Client) wait(ctx context.Context, d time.Duration, reason string, cause error) error {
-	c.log.DebugContext(ctx, "axm: retrying", "reason", reason, "after", d, "error", cause)
+	c.log.DebugContext(ctx, "retrying", "reason", reason, "after", d, fault.Attr(cause))
 	select {
 	case <-c.clock.After(d):
 		return nil

@@ -23,6 +23,7 @@
 - [Agentless device inventory](operations/agentless-inventory.md): ABM/ASM sources, device records, native enrichment, scheduling and exports; [collection CLI reference](operations/agentless-inventory.md#cli-devices-collect) covers returned fields and the check-in flow.
 - [ADE inventory and assignment](operations/dep-synchronization.md): server-token renewal, explicit identity replacement, reconciliation and storage upgrades.
 - [Certificate lifecycle](operations/certificate-lifecycle.md): provisioning, renewal, issuer rollover and retained encryption identities.
+- [Error responses and published codes](operations/error-responses.md): the three audiences, RFC 9457 problem documents, kinds and statuses, what a device receives.
 - [Backup and recovery](operations/recovery.md): maintenance fences, authenticated backups, verification and isolated restore.
 - [Threat model](security/threat-model.md): assets, trust boundaries, controls and residual risks.
 - [Reference-server lab](testing/lab.md): shared scenarios, acceptance, contracts and live execution.

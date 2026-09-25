@@ -42,11 +42,11 @@ func GenerateTokenPKI(cn string, validity time.Duration, now time.Time) (*Keypai
 	}
 	key, err := rsa.GenerateKey(rand.Reader, TokenKeyBits)
 	if err != nil {
-		return nil, fmt.Errorf("dep: generate key: %w", err)
+		return nil, fmt.Errorf("generate key: %w", err)
 	}
 	serial, err := rand.Int(rand.Reader, new(big.Int).Lsh(big.NewInt(1), 127))
 	if err != nil {
-		return nil, fmt.Errorf("dep: serial: %w", err)
+		return nil, fmt.Errorf("serial: %w", err)
 	}
 	tmpl := &x509.Certificate{
 		SerialNumber:          serial,
@@ -58,7 +58,7 @@ func GenerateTokenPKI(cn string, validity time.Duration, now time.Time) (*Keypai
 	}
 	der, err := x509.CreateCertificate(rand.Reader, tmpl, tmpl, &key.PublicKey, key)
 	if err != nil {
-		return nil, fmt.Errorf("dep: create certificate: %w", err)
+		return nil, fmt.Errorf("create certificate: %w", err)
 	}
 	return &Keypair{
 		CertPEM:   pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: der}),
@@ -214,7 +214,7 @@ func Wrap(tokenJSON []byte, cert *x509.Certificate) ([]byte, error) {
 	inner.WriteString("\n" + endMessage + "\n")
 	enveloped, err := pkcs7.Encrypt(inner.Bytes(), []*x509.Certificate{cert})
 	if err != nil {
-		return nil, fmt.Errorf("dep: encrypt token: %w", err)
+		return nil, fmt.Errorf("encrypt token: %w", err)
 	}
 	var out bytes.Buffer
 	out.WriteString("Content-Type: application/pkcs7-mime; name=\"smime.p7m\"; smime-type=enveloped-data\r\n")

@@ -33,6 +33,14 @@
 // rechecking authorization without signing again. Replicas must share persistent
 // state, issuer material and policy; memory storage cannot recover after restart.
 //
+// # Errors
+//
+// ErrNotFound, ErrConflict and ErrInvalid are the catalogued client conditions
+// DM-ACME-NOT-FOUND, DM-ACME-CONFLICT and DM-ACME-INVALID, met by the
+// administration routes that manage ACME targets. A device speaking ACME never
+// sees them: the server answers it with the RFC 8555 problem documents in
+// problem.go. ErrConfig and ErrIdentifierKey are the operator's.
+//
 // # References
 //
 //   - Decision record 0031: https://github.com/deploymenttheory/go-apple-dm/blob/main/docs/research/decisions/0031-acme-server-and-state-store.md

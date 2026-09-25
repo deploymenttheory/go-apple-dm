@@ -11,6 +11,13 @@
 // endpoint belong to the ACME layer. The package uses the standard library and
 // does not implement JWE or general WebAuthn authentication.
 //
+// # Errors
+//
+// Every sentinel is a device condition classified through
+// devicemanagement/fault: a malformed JWS, header or key and an unsupported
+// algorithm are InvalidArgument; a signature that does not verify is
+// PermissionDenied. The ACME server maps them onto its problem documents.
+//
 // # References
 //
 //   - Decision record 0031: https://github.com/deploymenttheory/go-apple-dm/blob/main/docs/research/decisions/0031-acme-server-and-state-store.md

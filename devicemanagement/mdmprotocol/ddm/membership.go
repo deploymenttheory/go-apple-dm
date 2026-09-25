@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"slices"
 
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/fault"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/internal/canonjson"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/mdm"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/schema/support"
@@ -36,7 +37,7 @@ func (e *Engine) manifestFor(ctx context.Context, tx Tx, id mdm.EnrollmentID, ta
 			}
 			d, err := tx.GetDeclaration(ctx, identifier)
 			if errors.Is(err, ErrNotFound) {
-				e.log.WarnContext(ctx, "ddm: resolver named an unknown declaration", "enrollment", id.ID, "identifier", identifier)
+				e.log.WarnContext(ctx, "resolver named an unknown declaration", fault.EnrollmentID(string(id.ID)), fault.DeclarationIdentifier(identifier))
 				continue
 			}
 			if err != nil {

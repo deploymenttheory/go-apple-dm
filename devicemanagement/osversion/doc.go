@@ -13,6 +13,12 @@
 // Target and OSSupport fields use Version directly. Callers use Parse, MustParse,
 // New and ErrVersion from this package for all version operations.
 //
+// # Errors
+//
+// ErrVersion is the catalogued client condition DM-OSVERSION-MALFORMED
+// (devicemanagement/fault, InvalidArgument), because the version being parsed is
+// usually one an API caller supplied and can correct.
+//
 // # References
 //
 //   - Availability metadata: https://github.com/deploymenttheory/go-apple-dm/tree/main/devicemanagement/schema/support

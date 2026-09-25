@@ -13,6 +13,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/fault"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/state"
 )
 
@@ -33,8 +34,8 @@ const (
 )
 
 var (
-	ErrInvalid  = errors.New("lifecycle: invalid input")
-	ErrConflict = errors.New("lifecycle: conflicting transition")
+	ErrInvalid  = fault.PKIInvalid
+	ErrConflict = fault.PKIConflict
 	ErrNotFound = state.ErrNotFound
 )
 
@@ -133,7 +134,7 @@ func read(ctx context.Context, s state.Reader, id string) (record, error) {
 	}
 	var out record
 	if err = json.Unmarshal(r.Value, &out); err != nil {
-		return record{}, fmt.Errorf("lifecycle: decode identity: %w", err)
+		return record{}, fmt.Errorf("decode identity: %w", err)
 	}
 	return out, nil
 }

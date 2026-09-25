@@ -12,6 +12,12 @@
 // codec wrapper keeps format and resource-limit choices consistent across
 // protocol callers.
 //
+// # Errors
+//
+// ErrTooLarge, ErrTooDeep and ErrUnknownFormat are the catalogued client
+// conditions DM-PLIST-TOO-LARGE, DM-PLIST-TOO-DEEP and DM-PLIST-UNKNOWN-FORMAT;
+// a device meets them as a bare 400.
+//
 // # References
 //
 //   - Decision record 0002: https://github.com/deploymenttheory/go-apple-dm/blob/main/docs/research/decisions/0002-plist-library.md

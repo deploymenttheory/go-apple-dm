@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/clock"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/fault"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/event"
 	"github.com/deploymenttheory/go-apple-dm/internal/httpsurl"
 )
@@ -113,6 +114,7 @@ func NewClient(cfg ClientConfig) (*Client, error) {
 	if cfg.Logger == nil {
 		cfg.Logger = slog.Default()
 	}
+	cfg.Logger = cfg.Logger.With("component", "dep")
 	if cfg.ExpiryWarning <= 0 {
 		cfg.ExpiryWarning = DefaultExpiryWarning
 	}
@@ -217,7 +219,7 @@ func (c *Client) Do(ctx context.Context, account string, req *http.Request, out 
 				// A definitive success clears TermsExpired and TokenInvalid;
 				// a store failure is reported, not swallowed.
 				if err := c.accountUpdate(ctx, acct, func(tx Tx, _ *Account) error { return tx.SetAccountState(ctx, acct.Name, AccountState{}) }); err != nil {
-					return c.staleResponse(fmt.Errorf("dep: clear account state: %w", err), status, header, body, out)
+					return c.staleResponse(fmt.Errorf("clear account state: %w", err), status, header, body, out)
 				}
 				acct.State = AccountState{}
 			}
@@ -230,7 +232,7 @@ func (c *Client) Do(ctx context.Context, account string, req *http.Request, out 
 		if attempt == 0 && needsReauth(derr) {
 			c.cfg.Logger.DebugContext(
 				ctx,
-				"dep: session rejected, re-authenticating",
+				"session rejected, re-authenticating",
 				"account",
 				acct.Name,
 				"status",
@@ -280,12 +282,12 @@ func (c *Client) send(
 	}
 	resp, err := c.cfg.HTTPClient.Do(r)
 	if err != nil {
-		return 0, nil, nil, fmt.Errorf("dep: %s %s: %w", r.Method, r.URL.Path, err)
+		return 0, nil, nil, fmt.Errorf("%s %s: %w", r.Method, r.URL.Path, err)
 	}
 	defer func(body io.Closer) { _ = body.Close() }(resp.Body)
 	data, err := io.ReadAll(io.LimitReader(resp.Body, maxResponseBytes))
 	if err != nil {
-		return 0, nil, nil, fmt.Errorf("dep: read %s %s: %w", r.Method, r.URL.Path, err)
+		return 0, nil, nil, fmt.Errorf("read %s %s: %w", r.Method, r.URL.Path, err)
 	}
 	return resp.StatusCode, resp.Header, data, nil
 }
@@ -303,7 +305,7 @@ func replayable(req *http.Request, maxBytes int64) (func() (io.ReadCloser, error
 	defer func(body io.Closer) { _ = body.Close() }(req.Body)
 	buf, err := io.ReadAll(io.LimitReader(req.Body, maxBytes+1))
 	if err != nil {
-		return nil, 0, fmt.Errorf("%w: read body: %w", ErrInvalid, err)
+		return nil, 0, fault.Wrap(err, fault.WithKind(fault.Internal), fault.WithOperation("read the request body"))
 	}
 	if int64(len(buf)) > maxBytes {
 		return nil, 0, fmt.Errorf("%w: %d bytes over %d", ErrBodyTooLarge, len(buf), maxBytes)
@@ -366,11 +368,10 @@ func (c *Client) checkExpiry(ctx context.Context, name string, expiry *time.Time
 	if err := c.cfg.Bus.Publish(ctx, ev); err != nil {
 		c.cfg.Logger.WarnContext(
 			ctx,
-			"dep: publish",
+			"publish",
 			"type",
 			string(EventTokenExpiring),
-			"error",
-			err,
+			fault.Attr(err),
 		)
 	}
 	return nil
@@ -520,12 +521,12 @@ func (c *Client) session(ctx context.Context, t Tokens, protocol int) (string, e
 	req.Header.Set(HeaderProtocolVersion, strconv.Itoa(protocol))
 	resp, err := c.cfg.HTTPClient.Do(req)
 	if err != nil {
-		return "", fmt.Errorf("dep: GET /session: %w", err)
+		return "", fmt.Errorf("GET /session: %w", err)
 	}
 	defer func(body io.Closer) { _ = body.Close() }(resp.Body)
 	body, err := io.ReadAll(io.LimitReader(resp.Body, maxResponseBytes))
 	if err != nil {
-		return "", fmt.Errorf("dep: read /session: %w", err)
+		return "", fmt.Errorf("read /session: %w", err)
 	}
 	if resp.StatusCode != http.StatusOK {
 		derr := newError(resp.StatusCode, body, resp.Header.Get("Retry-After"), c.cfg.Clock.Now())

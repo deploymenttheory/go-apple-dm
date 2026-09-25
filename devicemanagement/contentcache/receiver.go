@@ -7,13 +7,15 @@ import (
 	"io"
 	"mime"
 	"net/http"
+
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/fault"
 )
 
 // DefaultMaxBodyBytes bounds a report to one MiB unless configured otherwise.
 const DefaultMaxBodyBytes int64 = 1 << 20
 
 // ErrConfig identifies an incomplete receiver configuration.
-var ErrConfig = errors.New("contentcache: invalid receiver configuration")
+var ErrConfig = fault.NewOperator(fault.Internal, "the content cache receiver configuration is not valid")
 
 // Config supplies deployment policy. Both callbacks must be safe for concurrent
 // requests. TLS, routing and middleware belong to the embedding application.

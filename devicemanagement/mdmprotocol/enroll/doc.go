@@ -19,6 +19,13 @@
 // a fresh JWT identifier and verifies the returned RS256 signature. Applications
 // own credential registration and the authenticated GetToken handler.
 //
+// # Errors
+//
+// ErrProfile, ErrOTA and ErrMAIDToken are operator conditions: an enrollment
+// profile that cannot be built, an OTA exchange that cannot be served, a Managed
+// Apple Account token that cannot be issued. Sub-packages declare the device
+// conditions their handlers answer.
+//
 // # References
 //
 //   - Managed Apple Account GetToken: https://developer.apple.com/documentation/devicemanagement/get-token

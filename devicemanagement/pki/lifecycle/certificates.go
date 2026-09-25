@@ -20,6 +20,7 @@ import (
 
 	"howett.net/plist"
 
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/fault"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/pki/pushcert"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/state"
 )
@@ -212,14 +213,14 @@ func (m *Manager) validate(r record, material Material, at time.Time) (Material,
 	case MDMPush:
 		p, err := pushcert.Parse(material.Certificate, material.Key)
 		if err != nil {
-			return material, nil, "", err
+			return material, nil, "", classifyPushCert(err)
 		}
 		topic = p.Topic
 		if r.Topic != "" && topic != r.Topic {
 			return material, nil, "", fmt.Errorf("%w: renewal must retain topic %s", ErrConflict, r.Topic)
 		}
 		if err = pushcert.Validate(pair, topic, true, at); err != nil {
-			return material, nil, "", err
+			return material, nil, "", classifyPushCert(err)
 		}
 	case ServerHTTPS:
 		roots = m.Trust.HTTPSRoots
@@ -603,4 +604,18 @@ func (m *Manager) verifySigned(signed, csrPEM []byte, at time.Time) error {
 		return fmt.Errorf("%w: vendor signature", ErrInvalid)
 	}
 	return nil
+}
+
+// classifyPushCert points a pushcert failure at its catalogued condition. The pushcert
+// package depends on nothing in this module, so the boundary that accepts an upload
+// classifies for it.
+func classifyPushCert(err error) error {
+	entry := fault.PushCertInvalid
+	switch {
+	case errors.Is(err, pushcert.ErrNoTopic):
+		entry = fault.PushCertTopicMissing
+	case errors.Is(err, pushcert.ErrKeyMismatch):
+		entry = fault.PushCertKeyMismatch
+	}
+	return fault.Wrap(err, fault.WithEntry(entry))
 }

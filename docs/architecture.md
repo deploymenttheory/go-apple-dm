@@ -18,7 +18,7 @@ including the explicit dependency from the ADE software update gate to the GDMF 
 
 | Area | Paths | Responsibility |
 |---|---|---|
-| Foundation | `devicemanagement/osversion`, `devicemanagement/paging`, `devicemanagement/clock`, `devicemanagement/secrets`, `devicemanagement/telemetry`, `devicemanagement/state`, `devicemanagement/ratelimit`, `devicemanagement/testpki` | Shared OS versions, interfaces, bounded state and test utilities |
+| Foundation | `devicemanagement/fault`, `devicemanagement/osversion`, `devicemanagement/paging`, `devicemanagement/clock`, `devicemanagement/secrets`, `devicemanagement/telemetry`, `devicemanagement/state`, `devicemanagement/ratelimit`, `devicemanagement/testpki` | The error catalogue and classification, shared OS versions, interfaces, bounded state, the telemetry seam and test utilities |
 | Schema | `devicemanagement/schema`, `internal/schemagen`, `cmd/schemagen` | Deterministic generation and schema-derived validation/support metadata |
 | Protocol | `devicemanagement/mdmprotocol` | Plist/CMS, MDM messages, enrollment profiles and handlers, DDM engine, predicates, hooks and events |
 | PKI | `devicemanagement/pki` | CA abstraction, SCEP, ACME, attestation, push certificate parsing and optional revocation |

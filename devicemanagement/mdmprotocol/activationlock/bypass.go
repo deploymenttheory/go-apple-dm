@@ -5,14 +5,15 @@ import (
 	"crypto/rand"
 	"crypto/sha256"
 	"encoding/hex"
-	"errors"
 	"strings"
+
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/fault"
 )
 
 const alphabet = "0123456789ACDEFGHJKLMNPQRTUVWXYZ"
 
 // ErrCode means the input is not a canonical Apple server bypass code.
-var ErrCode = errors.New("activationlock: invalid server bypass code")
+var ErrCode = fault.ActivationLockBypassCodeInvalid
 
 // Generate returns a fresh server code and its uppercase hexadecimal hash.
 // Retain the code before enabling Activation Lock with the hash. The hash

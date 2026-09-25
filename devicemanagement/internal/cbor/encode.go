@@ -59,7 +59,7 @@ func (e *encoder) value(rv reflect.Value, depth int) error {
 	if rv.Type() == rawMessageType {
 		raw := rv.Bytes()
 		if err := Wellformed(raw); err != nil {
-			return fmt.Errorf("cbor: raw message: %w", err)
+			return fmt.Errorf("raw message: %w", err)
 		}
 		e.buf = append(e.buf, raw...)
 		return nil

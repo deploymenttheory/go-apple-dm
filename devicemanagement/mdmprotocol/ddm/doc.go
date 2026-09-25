@@ -15,6 +15,13 @@
 // server/ddmsync, which also supplies lifecycle cleanup hooks. The engine does
 // not dispatch commands or pushes directly.
 //
+// # Errors
+//
+// Conditions an API caller reacts to are catalogued in devicemanagement/fault
+// under DM-DDM-* and pointed at by this package's sentinels, so errors.Is
+// against ddm.ErrNotFound and fault.NotFound both hold. ErrResolver,
+// ErrExpander, ErrNotifier and ErrNoStore are operator conditions.
+//
 // # References
 //
 //   - Decision record 0019: https://github.com/deploymenttheory/go-apple-dm/blob/main/docs/research/decisions/0019-canonical-json-and-ddm-tokens.md

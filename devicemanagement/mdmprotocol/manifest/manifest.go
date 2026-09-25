@@ -8,11 +8,12 @@ import (
 	"io"
 	"net/url"
 
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/fault"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/schema/other"
 )
 
 // ErrInput indicates invalid metadata, URL, chunk size or empty asset data.
-var ErrInput = errors.New("manifest: invalid input")
+var ErrInput = fault.ManifestInvalid
 
 // Metadata describes a macOS package or an enterprise iOS/iPadOS app. For apps,
 // BundleVersion is CFBundleVersion, not CFBundleShortVersionString.
@@ -69,7 +70,7 @@ func Build(
 		}
 	}
 	if err != nil {
-		return nil, 0, fmt.Errorf("manifest: read asset: %w", err)
+		return nil, 0, fmt.Errorf("read asset: %w", err)
 	}
 	if size == 0 {
 		return nil, 0, ErrInput
