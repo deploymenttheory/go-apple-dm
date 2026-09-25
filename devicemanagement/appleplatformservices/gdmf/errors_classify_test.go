@@ -17,11 +17,11 @@ func TestErrorsClassify(t *testing.T) {
 		audience fault.Audience
 		code     fault.Code
 	}{
-		"Request":  {gdmf.ErrRequest, fault.Upstream, fault.Operator, ""},
-		"Status":   {gdmf.ErrStatus, fault.Upstream, fault.Operator, ""},
-		"Decode":   {gdmf.ErrDecode, fault.Upstream, fault.Operator, ""},
-		"TooLarge": {gdmf.ErrTooLarge, fault.Upstream, fault.Operator, ""},
-		"NotFound": {gdmf.ErrNotFound, fault.NotFound, fault.Operator, ""},
+		"Request":   {gdmf.ErrRequest, fault.Upstream, fault.Operator, ""},
+		"Status":    {gdmf.ErrStatus, fault.Upstream, fault.Operator, ""},
+		"Decode":    {gdmf.ErrDecode, fault.Upstream, fault.Operator, ""},
+		"TooLarge":  {gdmf.ErrTooLarge, fault.Upstream, fault.Operator, ""},
+		"NotFound":  {gdmf.ErrNotFound, fault.NotFound, fault.Operator, ""},
 		"Status429": {&gdmf.StatusError{Status: 429}, fault.ResourceExhausted, fault.Operator, ""},
 		"Status500": {&gdmf.StatusError{Status: 500}, fault.Upstream, fault.Operator, ""},
 		"Status403": {&gdmf.StatusError{Status: 403}, fault.Unavailable, fault.Operator, ""},
