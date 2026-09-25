@@ -1,5 +1,27 @@
 # Changelog
 
+## [0.10.3](https://github.com/deploymenttheory/go-apple-dm/compare/server/v0.10.2...server/v0.10.3) (2026-09-25)
+
+
+### Features
+
+* lab acceptance harness ([4b33998](https://github.com/deploymenttheory/go-apple-dm/commit/4b339982ee83008de32bc218d5bc81528be1e59c))
+* **lab:** replace the bench with a public acceptance lab ([b6417cf](https://github.com/deploymenttheory/go-apple-dm/commit/b6417cf8160d6e7ae162154871383452e3082438))
+
+
+### Bug Fixes
+
+* **lab:** range-check the filesystem block size ([0894ec4](https://github.com/deploymenttheory/go-apple-dm/commit/0894ec4030790f4399620f239da8c0f19036ed69))
+* **lab:** report a missing push identity instead of enrolling unreachable devices ([b275d24](https://github.com/deploymenttheory/go-apple-dm/commit/b275d24dd926667f3b7beac59aba003bd1c77775))
+* **lab:** report a missing push identity instead of enrolling unreachable devices ([8a85ef5](https://github.com/deploymenttheory/go-apple-dm/commit/8a85ef5e43bdb89a4cf6b2c5e5eee4c2b7d2af09))
+* **server:** pin library revision with the enrollment-link event ([7a4431a](https://github.com/deploymenttheory/go-apple-dm/commit/7a4431aad10745bfcfc821d7edbebff53e82a469))
+* **sqlstore:** keep a cancellation identifiable when BEGIN is interrupted ([#262](https://github.com/deploymenttheory/go-apple-dm/issues/262)) ([ff811ca](https://github.com/deploymenttheory/go-apple-dm/commit/ff811cad7da4cc75ddf5ca8763acee803488b0c2))
+
+
+### Refactoring
+
+* **pki:** name managed certificate identities for what they are ([#259](https://github.com/deploymenttheory/go-apple-dm/issues/259)) ([ad80884](https://github.com/deploymenttheory/go-apple-dm/commit/ad80884cd36496bdbe67204ae845be977b8b30e1))
+
 ## [0.10.2](https://github.com/deploymenttheory/go-apple-dm/compare/server/v0.10.1...server/v0.10.2) (2026-09-22)
 
 
