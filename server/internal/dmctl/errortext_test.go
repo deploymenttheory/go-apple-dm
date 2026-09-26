@@ -76,9 +76,14 @@ func TestSetupFailuresReadAsOneSentence(t *testing.T) {
 			if strings.Count(got, "127.0.0.1")+strings.Count(got, absent) > 1 {
 				t.Fatalf("an operand is printed twice: %s", got)
 			}
-			// One sentence: colons appear only inside a quoted operand, never as the joints
-			// of a chain of layers.
-			if strings.Count(strings.ReplaceAll(got, origin, ""), ":") > 0 {
+			// One sentence: colons appear only inside an operand (a URL's scheme, a Windows
+			// drive letter), never as the joints of a chain of layers. Every operand is
+			// removed in both its raw and its quoted spelling before counting.
+			bare := got
+			for _, operand := range []string{origin, setup, absent, fmt.Sprintf("%q", setup), fmt.Sprintf("%q", absent)} {
+				bare = strings.ReplaceAll(bare, operand, "")
+			}
+			if strings.Contains(bare, ":") {
 				t.Fatalf("a chain of layers survived: %s", got)
 			}
 		})
