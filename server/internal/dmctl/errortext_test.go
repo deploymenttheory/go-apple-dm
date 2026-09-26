@@ -21,7 +21,7 @@ func TestSetupFailuresReadAsOneSentence(t *testing.T) {
 	dir := t.TempDir()
 	// A port that was just listening and is now closed refuses a connection at once on
 	// every platform; a well-known low port may be silently dropped by a packet filter.
-	closed, err := net.Listen("tcp", "127.0.0.1:0")
+	closed, err := (&net.ListenConfig{}).Listen(t.Context(), "tcp", "127.0.0.1:0")
 	if err != nil {
 		t.Fatal(err)
 	}
