@@ -28,7 +28,7 @@ func (c Config) publisher() event.Publisher {
 func (a *App) wirePersistentSinks(ctx context.Context) error {
 	s, err := eventstore.Open(ctx, a.db, a.dialect)
 	if err != nil {
-		return fmt.Errorf("app: event store: %w", err)
+		return fmt.Errorf("event store: %w", err)
 	}
 	reg := eventsink.Default()
 	senders := map[string]eventstore.Sender{}
@@ -79,7 +79,7 @@ func (a *App) wirePersistentSinks(ctx context.Context) error {
 		Registry:     reg,
 		Destinations: destinations,
 		Subscribers:  a.cfg.publisher(),
-		Report:       func(err error) { a.cfg.Logger.Error("app: event recording or notification failed", "error", err) },
+		Report:       func(err error) { a.cfg.Logger.Error("event recording or notification failed", "error", err) },
 	}
 	a.eventStore, a.eventPublisher = s, p
 	if err := a.openWebhooks(ctx, s); err != nil {

@@ -143,7 +143,7 @@ func trustProfile(certs []*x509.Certificate) ([]byte, error) {
 	}
 	b, err := p.Marshal()
 	if err != nil {
-		return nil, fmt.Errorf("app: trust profile: %w", err)
+		return nil, fmt.Errorf("trust profile: %w", err)
 	}
 	return b, nil
 }
@@ -211,7 +211,7 @@ func (e *enrollment) stabilizeProfile(
 		return tx.Put(ctx, state.Record{Key: k, Value: data})
 	})
 	if err != nil {
-		return fmt.Errorf("app: enrollment profile metadata: %w", err)
+		return fmt.Errorf("enrollment profile metadata: %w", err)
 	}
 	return nil
 }

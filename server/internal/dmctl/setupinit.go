@@ -181,7 +181,7 @@ func (e *env) emitSetupInit(path string) error {
 	tw := tabwriter.NewWriter(e.stdout, 0, 8, 2, ' ', 0)
 	renderSetupInit(tw, result)
 	if err := tw.Flush(); err != nil {
-		return fmt.Errorf("dmctl: write: %w", err)
+		return fmt.Errorf("write: %w", err)
 	}
 	return nil
 }

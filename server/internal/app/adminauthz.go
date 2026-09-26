@@ -235,7 +235,7 @@ type adminRoute struct {
 // Admin authorization errors.
 var (
 	// ErrForbidden is a caller authenticated but not permitted.
-	ErrForbidden = errors.New("app: forbidden")
+	ErrForbidden = errors.New("forbidden")
 )
 
 // mustAdminRegistry builds the action registry from the action table. The
@@ -244,7 +244,7 @@ var (
 func mustAdminRegistry() *adminauth.Registry {
 	reg, err := adminauth.NewRegistry(AdminActions()...)
 	if err != nil {
-		panic("app: admin action registry: " + err.Error())
+		panic("admin action registry: " + err.Error())
 	}
 	return reg
 }
@@ -375,7 +375,7 @@ func (a *App) authorized(route adminRoute) http.Handler {
 		rt.Handler.ServeHTTP(rec, r)
 		setAdminOutcome(r, rec.status)
 		if err := a.auditAction(r, p, rt); err != nil {
-			a.cfg.Logger.ErrorContext(r.Context(), "app: record administrative outcome", "error", err)
+			a.cfg.Logger.ErrorContext(r.Context(), "record administrative outcome", "error", err)
 		}
 		a.kickNotifier(rt, r, rec.status)
 	})
@@ -404,7 +404,7 @@ func (w *statusRecorder) Write(b []byte) (int, error) {
 	}
 	n, err := w.ResponseWriter.Write(b)
 	if err != nil {
-		return n, fmt.Errorf("app: write response: %w", err)
+		return n, fmt.Errorf("write response: %w", err)
 	}
 	return n, nil
 }
@@ -437,7 +437,7 @@ func (a *App) principal(r *http.Request) (adminauth.Principal, error) {
 		p, err := a.admin.Authenticate(r.Context(), adminauth.Token(tok))
 		if err != nil {
 			return adminauth.Principal{}, fmt.Errorf(
-				"app: authenticate administrator: %w",
+				"authenticate administrator: %w",
 				err,
 			)
 		}
@@ -472,7 +472,7 @@ func (a *App) checkPolicy(r *http.Request, p adminauth.Principal, rt adminRoute)
 	req.Decision = d
 	if err != nil {
 		req.Decision.Errors = []string{err.Error()}
-		return fmt.Errorf("app: authorize administrator: %w", err)
+		return fmt.Errorf("authorize administrator: %w", err)
 	}
 	if !d.Allowed {
 		return fmt.Errorf("%w: %s on %s", adminauth.ErrDenied, p.Name, rt.Action)
@@ -498,7 +498,7 @@ func (a *App) auditDenied(r *http.Request, p adminauth.Principal, rt adminRoute,
 	if err := a.publishAdmin(r, event.AdminDenied, p, rt, cause); err != nil {
 		a.cfg.Logger.ErrorContext(
 			r.Context(),
-			"app: admin denial could not be recorded",
+			"admin denial could not be recorded",
 			"error",
 			err,
 		)
@@ -549,7 +549,7 @@ func (a *App) publishAdmin(
 		Data:       data,
 	})
 	if err != nil && !errors.Is(err, event.ErrQueueFull) {
-		a.cfg.Logger.WarnContext(r.Context(), "app: publish admin event", "type", t, "error", err)
+		a.cfg.Logger.WarnContext(r.Context(), "publish admin event", "type", t, "error", err)
 	}
 	return wrapError(err)
 }
@@ -569,14 +569,14 @@ func (a *App) resolveAdminEnrollment(r *http.Request, family string) (mdm.Enroll
 		return e.ID, nil
 	}
 	if !errors.Is(err, storage.ErrNotFound) || family != "ddm" {
-		return mdm.EnrollmentID{}, fmt.Errorf("app: resolve MDM identity: %w", err)
+		return mdm.EnrollmentID{}, fmt.Errorf("resolve MDM identity: %w", err)
 	}
 	id, err := a.Engine.EnrollmentIdentity(r.Context(), r.PathValue("id"))
 	if err == nil {
 		return id, nil
 	}
 	if !errors.Is(err, ddm.ErrNotFound) {
-		return mdm.EnrollmentID{}, fmt.Errorf("app: resolve DDM identity: %w", err)
+		return mdm.EnrollmentID{}, fmt.Errorf("resolve DDM identity: %w", err)
 	}
 	// Declaration preassignments are supported before the MDM row exists.
 	// The first authorized assignment establishes an immutable DDM identity.

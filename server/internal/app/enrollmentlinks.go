@@ -44,7 +44,7 @@ const (
 	EnrollmentLinkExpired  = "expired"
 )
 
-var errEnrollmentLinkUnavailable = errors.New("app: enrollment link unavailable")
+var errEnrollmentLinkUnavailable = errors.New("enrollment link unavailable")
 
 // EnrollmentLinkRequest creates a single-use link that issues one enrollment profile. The
 // profile fields have the meanings of EnrollmentProfileRequest. TTL is a Go duration
@@ -169,7 +169,7 @@ func (a *App) createEnrollmentLink(w http.ResponseWriter, r *http.Request) {
 		link.ExpiresAt = now.Add(ttl)
 		value, err := json.Marshal(link)
 		if err != nil {
-			return fmt.Errorf("app: encode enrollment link: %w", err)
+			return fmt.Errorf("encode enrollment link: %w", err)
 		}
 		return tx.Put(r.Context(), state.Record{
 			Key: key, Value: value, ExpiresAt: link.ExpiresAt.Add(enrollmentLinkRetention),
@@ -219,7 +219,7 @@ func newEnrollmentLink(req EnrollmentLinkRequest) (EnrollmentLink, time.Duration
 func enrollmentLinkToken() (string, error) {
 	var b [32]byte
 	if _, err := rand.Read(b[:]); err != nil {
-		return "", fmt.Errorf("app: enrollment link token: %w", err)
+		return "", fmt.Errorf("enrollment link token: %w", err)
 	}
 	return base64.RawURLEncoding.EncodeToString(b[:]), nil
 }
@@ -279,7 +279,7 @@ func (a *App) revokeEnrollmentLink(w http.ResponseWriter, r *http.Request) {
 			return err
 		}
 		if err := json.Unmarshal(record.Value, &link); err != nil {
-			return fmt.Errorf("app: decode enrollment link: %w", err)
+			return fmt.Errorf("decode enrollment link: %w", err)
 		}
 		if !link.RedeemedAt.IsZero() {
 			return errEnrollmentLinkRedeemed
@@ -289,7 +289,7 @@ func (a *App) revokeEnrollmentLink(w http.ResponseWriter, r *http.Request) {
 		}
 		value, err := json.Marshal(link)
 		if err != nil {
-			return fmt.Errorf("app: encode enrollment link: %w", err)
+			return fmt.Errorf("encode enrollment link: %w", err)
 		}
 		record.Value = value
 		return tx.Put(r.Context(), record)
@@ -343,7 +343,7 @@ func (a *App) activeEnrollmentLink(ctx context.Context, token string) (Enrollmen
 	}
 	var link EnrollmentLink
 	if err := json.Unmarshal(record.Value, &link); err != nil {
-		return EnrollmentLink{}, fmt.Errorf("app: decode enrollment link: %w", err)
+		return EnrollmentLink{}, fmt.Errorf("decode enrollment link: %w", err)
 	}
 	if link.state(a.cfg.Clock.Now()) != EnrollmentLinkActive {
 		return EnrollmentLink{}, errEnrollmentLinkUnavailable
@@ -364,7 +364,7 @@ func (a *App) redeemEnrollmentLink(w http.ResponseWriter, r *http.Request) {
 			return err
 		}
 		if err := json.Unmarshal(record.Value, &link); err != nil {
-			return fmt.Errorf("app: decode enrollment link: %w", err)
+			return fmt.Errorf("decode enrollment link: %w", err)
 		}
 		if link.state(tx.Now()) != EnrollmentLinkActive {
 			return errEnrollmentLinkUnavailable
@@ -372,7 +372,7 @@ func (a *App) redeemEnrollmentLink(w http.ResponseWriter, r *http.Request) {
 		link.RedeemedAt = tx.Now()
 		value, err := json.Marshal(link)
 		if err != nil {
-			return fmt.Errorf("app: encode enrollment link: %w", err)
+			return fmt.Errorf("encode enrollment link: %w", err)
 		}
 		record.Value = value
 		return tx.Put(r.Context(), record)
@@ -390,12 +390,12 @@ func (a *App) redeemEnrollmentLink(w http.ResponseWriter, r *http.Request) {
 				"link": link.ID, "device": link.DeviceID, "identity": link.Identity,
 			},
 		}); err != nil {
-			a.cfg.Logger.ErrorContext(r.Context(), "app: enrollment link redemption not recorded", "error", err)
+			a.cfg.Logger.ErrorContext(r.Context(), "enrollment link redemption not recorded", "error", err)
 		}
 	}
 	b, err := a.ExportEnrollmentProfile(r.Context(), link.profileRequest())
 	if err != nil {
-		a.cfg.Logger.WarnContext(r.Context(), "app: enrollment link issuance failed", "link", link.ID, "error", err)
+		a.cfg.Logger.WarnContext(r.Context(), "enrollment link issuance failed", "link", link.ID, "error", err)
 		enrollmentLinkHeaders(w)
 		http.Error(w, "enrollment profile unavailable", http.StatusInternalServerError)
 		return
@@ -410,7 +410,7 @@ func (a *App) redeemEnrollmentLink(w http.ResponseWriter, r *http.Request) {
 // revoked links, and logs storage failures without exposing them.
 func (a *App) enrollmentLinkUnavailable(w http.ResponseWriter, r *http.Request, err error) {
 	if !errors.Is(err, errEnrollmentLinkUnavailable) && !errors.Is(err, state.ErrNotFound) {
-		a.cfg.Logger.ErrorContext(r.Context(), "app: enrollment link lookup failed", "error", err)
+		a.cfg.Logger.ErrorContext(r.Context(), "enrollment link lookup failed", "error", err)
 	}
 	enrollmentLinkHeaders(w)
 	http.Error(w, "enrollment link unavailable", http.StatusNotFound)

@@ -59,13 +59,13 @@ func (s *acmeService) recordCredentialGrant(
 	}
 	value, err := json.Marshal(grant)
 	if err != nil {
-		return fmt.Errorf("app: credential grant: %w", err)
+		return fmt.Errorf("credential grant: %w", err)
 	}
 	key := credentialGrantKey(identifier)
 	if err := s.app.protocol.Update(ctx, []string{key}, func(tx state.Tx) error {
 		return tx.Put(ctx, state.Record{Key: key, Value: value, ExpiresAt: expires})
 	}); err != nil {
-		return fmt.Errorf("app: record credential grant: %w", err)
+		return fmt.Errorf("record credential grant: %w", err)
 	}
 	return nil
 }
@@ -86,11 +86,11 @@ func (s *acmeService) authorizeCredential(
 		return acme.ErrUnauthorized
 	}
 	if err != nil {
-		return fmt.Errorf("app: credential authorization: %w", err)
+		return fmt.Errorf("credential authorization: %w", err)
 	}
 	var grant credentialGrant
 	if err := json.Unmarshal(record.Value, &grant); err != nil {
-		return fmt.Errorf("app: decode credential grant: %w", err)
+		return fmt.Errorf("decode credential grant: %w", err)
 	}
 	if (grant.RequireAttestation && d.Attestation == nil) ||
 		grant.Enrollment.ID != d.Binding.EnrollmentID ||
@@ -99,14 +99,14 @@ func (s *acmeService) authorizeCredential(
 	}
 	cert, err := x509.ParseCertificate(grant.Certificate)
 	if err != nil {
-		return fmt.Errorf("app: credential identity: %w", err)
+		return fmt.Errorf("credential identity: %w", err)
 	}
 	enrollment, err := s.app.Store.Get(ctx, grant.Enrollment)
 	if errors.Is(err, storage.ErrNotFound) {
 		return acme.ErrUnauthorized
 	}
 	if err != nil {
-		return fmt.Errorf("app: credential enrollment: %w", err)
+		return fmt.Errorf("credential enrollment: %w", err)
 	}
 	if !enrollment.Enabled || !enrollment.DisabledAt.IsZero() ||
 		enrollment.CertHash != cms.Fingerprint(cert) ||
@@ -123,7 +123,7 @@ func (s *acmeService) authorizeCredential(
 				errors.Is(err, revocation.ErrUnknown) {
 				return acme.ErrUnauthorized
 			}
-			return fmt.Errorf("app: credential revocation check: %w", err)
+			return fmt.Errorf("credential revocation check: %w", err)
 		}
 	}
 	return nil

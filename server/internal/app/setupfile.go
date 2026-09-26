@@ -49,7 +49,7 @@ func LoadSetupFile(path string, getenv func(string) string) (Config, error) {
 		// #nosec G304 -- Secret reference from trusted local setup configuration.
 		b, err := os.ReadFile(file)
 		if err != nil {
-			return Config{}, fmt.Errorf("app: read secret reference %s: %w", name, err)
+			return Config{}, fmt.Errorf("read secret reference %s: %w", name, err)
 		}
 		secrets[name] = strings.TrimSpace(string(b))
 	}
@@ -111,7 +111,7 @@ func InitSetupFile(o SetupInitOptions) (string, error) {
 		return "", wrapError(err)
 	}
 	if role != "customer" && role != "vendor" && role != "combined" {
-		return "", fmt.Errorf("%w: setup role", ErrConfig)
+		return "", fmt.Errorf("%w: setup role %q must be customer, vendor or combined", ErrConfig, role)
 	}
 	if storage != "sqlite" && storage != "postgres" && storage != "mysql" {
 		return "", fmt.Errorf("%w: persistent storage required", ErrConfig)

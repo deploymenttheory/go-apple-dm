@@ -2,15 +2,11 @@ package app
 
 import (
 	"errors"
-	"fmt"
 )
 
 var errOperation = errors.New("app operation failed")
 
-// wrapError preserves nil success and wraps failures with the application package prefix.
-func wrapError(err error) error {
-	if err == nil {
-		return nil
-	}
-	return fmt.Errorf("app: %w", err)
-}
+// wrapError returns the error unchanged. It once prefixed the package name, which
+// stacked into chains such as "dmctl: app: app:" that narrated the call path
+// instead of the problem; the binary that renders an error names itself, once.
+func wrapError(err error) error { return err }

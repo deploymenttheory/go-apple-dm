@@ -40,7 +40,7 @@ func runSetupWorkspaceAdoption(ctx context.Context, e *env, source, destination,
 		dsn = filepath.Join(mdmDir, "mdm.sqlite")
 	}
 	if _, err := os.Stat(dsn); err != nil {
-		return fmt.Errorf("dmctl: existing enrollment database: %w", err)
+		return fmt.Errorf("existing enrollment database: %w", err)
 	}
 	settings := map[string][]byte{
 		"DM_AUDIT_STORE":   []byte("true"),

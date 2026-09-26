@@ -65,7 +65,7 @@ func runAPNS(ctx context.Context, e *env, args []string) error {
 	}
 	info, err := pushcert.Inspect([]byte(data))
 	if err != nil {
-		return fmt.Errorf("dmctl: inspect: %w", err)
+		return fmt.Errorf("inspect: %w", err)
 	}
 	if *topic == "" {
 		*topic = info.Topic
@@ -88,10 +88,10 @@ func runAPNS(ctx context.Context, e *env, args []string) error {
 		}
 		pair, err = parse([]byte(data), []byte(key))
 		if err != nil {
-			return fmt.Errorf("dmctl: credentials: %w", err)
+			return fmt.Errorf("credentials: %w", err)
 		}
 		if err := pushcert.Validate(pair.TLS, *topic, *kind == "mdm", time.Now()); err != nil {
-			return fmt.Errorf("dmctl: credentials: %w", err)
+			return fmt.Errorf("credentials: %w", err)
 		}
 	}
 	if sub == "send" {
@@ -116,7 +116,7 @@ func runAPNS(ctx context.Context, e *env, args []string) error {
 	if *certOut != "" {
 		canonical, err := pushcert.PEM([]byte(data))
 		if err != nil {
-			return fmt.Errorf("dmctl: normalize: %w", err)
+			return fmt.Errorf("normalize: %w", err)
 		}
 		if err := writeNewPrivateFile(*certOut, canonical); err != nil {
 			return err
@@ -186,7 +186,7 @@ func (e *env) sendApp(
 		return err
 	}
 	if r.Err != nil {
-		return fmt.Errorf("dmctl: APNs send: %w", r.Err)
+		return fmt.Errorf("APNs send: %w", r.Err)
 	}
 	return nil
 }
@@ -222,7 +222,7 @@ func readAppToken(data, topic, environment string) ([]byte, error) {
 // localJSON encodes a local command result as JSON on standard output.
 func (e *env) localJSON(value any) error {
 	if err := json.NewEncoder(e.stdout).Encode(value); err != nil {
-		return fmt.Errorf("dmctl: write JSON: %w", err)
+		return fmt.Errorf("write JSON: %w", err)
 	}
 	return nil
 }
@@ -235,7 +235,7 @@ func writeNewPrivateFile(name string, data []byte) error {
 		0o600,
 	) // #nosec G304 -- explicit operator output path
 	if err != nil {
-		return fmt.Errorf("dmctl: create %s: %w", name, err)
+		return fmt.Errorf("create %s: %w", name, err)
 	}
 	_, writeErr := f.Write(data)
 	if writeErr == nil {
@@ -243,10 +243,10 @@ func writeNewPrivateFile(name string, data []byte) error {
 	}
 	closeErr := f.Close()
 	if writeErr != nil {
-		return fmt.Errorf("dmctl: write %s: %w", name, writeErr)
+		return fmt.Errorf("write %s: %w", name, writeErr)
 	}
 	if closeErr != nil {
-		return fmt.Errorf("dmctl: close %s: %w", name, closeErr)
+		return fmt.Errorf("close %s: %w", name, closeErr)
 	}
 	return nil
 }
@@ -271,7 +271,7 @@ func runPushCSR(e *env, args []string) error {
 	}
 	key, csr, err := pushcert.GenerateCSR(pkix.Name{CommonName: *cn, Organization: []string{*org}})
 	if err != nil {
-		return fmt.Errorf("dmctl: generate CSR: %w", err)
+		return fmt.Errorf("generate CSR: %w", err)
 	}
 	if err := writeNewPrivateFile(*keyOut, key); err != nil {
 		return err
@@ -315,7 +315,7 @@ func runSignCSR(e *env, args []string) error {
 	}
 	envelope, err := pushcert.SignCSR(data[0], data[1], data[2], pool, time.Now())
 	if err != nil {
-		return fmt.Errorf("dmctl: sign CSR: %w", err)
+		return fmt.Errorf("sign CSR: %w", err)
 	}
 	if err := writeNewPrivateFile(*out, envelope); err != nil {
 		return err
@@ -345,23 +345,23 @@ func (e *env) pushCertificateUpload(file, certFile, keyFile, topic string) (stri
 	}
 	pair, err := pushcert.Parse([]byte(data), []byte(key))
 	if err != nil {
-		return "", fmt.Errorf("dmctl: push certificate: %w", err)
+		return "", fmt.Errorf("push certificate: %w", err)
 	}
 	if topic == "" {
 		topic = pair.Topic
 	}
 	if err := pushcert.Validate(pair.TLS, topic, true, time.Now()); err != nil {
-		return "", fmt.Errorf("dmctl: push certificate: %w", err)
+		return "", fmt.Errorf("push certificate: %w", err)
 	}
 	canonical, err := pushcert.PEM([]byte(data))
 	if err != nil {
-		return "", fmt.Errorf("dmctl: normalize: %w", err)
+		return "", fmt.Errorf("normalize: %w", err)
 	}
 	body, err := json.Marshal(
 		map[string]string{"Topic": topic, "CertPEM": string(canonical), "KeyPEM": key},
 	)
 	if err != nil {
-		return "", fmt.Errorf("dmctl: upload JSON: %w", err)
+		return "", fmt.Errorf("upload JSON: %w", err)
 	}
 	return string(body), nil
 }

@@ -18,9 +18,9 @@ const MaxAdminBody = 1 << 20
 
 // Admin API errors.
 var (
-	ErrBodyTooLarge = errors.New("app: body too large")
-	ErrUnauthorized = errors.New("app: unauthorized")
-	ErrBadChannel   = errors.New("app: channel must be device or user")
+	ErrBodyTooLarge = errors.New("body too large")
+	ErrUnauthorized = errors.New("unauthorized")
+	ErrBadChannel   = errors.New("channel must be device or user")
 )
 
 // ddmAdminRoutes are the declarative-management admin routes, each declaring
@@ -195,7 +195,7 @@ func (a *App) ddmAdminRoutes() []adminRoute {
 			// The effective static list: direct assignments and set members.
 			decls, err := e.Store().StaticDeclarations(ctx, id)
 			if err != nil {
-				return nil, fmt.Errorf("app: declarations: %w", err)
+				return nil, fmt.Errorf("declarations: %w", err)
 			}
 			ids := make([]string, 0, len(decls))
 			for _, d := range decls {
@@ -225,11 +225,11 @@ func (a *App) ddmAdminRoutes() []adminRoute {
 		func(ctx context.Context, id mdm.EnrollmentID) (any, error) {
 			body, err := e.Tokens(ctx, id)
 			if err != nil {
-				return nil, fmt.Errorf("app: tokens: %w", err)
+				return nil, fmt.Errorf("tokens: %w", err)
 			}
 			var v any
 			if err := json.Unmarshal(body, &v); err != nil {
-				return nil, fmt.Errorf("app: tokens: %w", err)
+				return nil, fmt.Errorf("tokens: %w", err)
 			}
 			return v, nil
 		},
@@ -261,7 +261,7 @@ func enrollmentFromPath(r *http.Request) (mdm.EnrollmentID, error) {
 	id.Channel = channel
 	id.ParentID = r.URL.Query().Get("parent")
 	if err := id.Validate(); err != nil {
-		return mdm.EnrollmentID{}, fmt.Errorf("app: enrollment: %w", err)
+		return mdm.EnrollmentID{}, fmt.Errorf("enrollment: %w", err)
 	}
 	return id, nil
 }

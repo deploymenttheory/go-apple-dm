@@ -43,7 +43,7 @@ type DEPConfig struct {
 
 // DEP errors.
 var (
-	ErrBadDEPRequest = errors.New("app: invalid DEP request")
+	ErrBadDEPRequest = errors.New("invalid DEP request")
 )
 
 // depService holds the client, store, and per-account loops.
@@ -65,7 +65,7 @@ func (a *App) newDEP(ctx context.Context) (*depService, error) {
 	default:
 		s, err := depsql.Open(ctx, a.db, a.dialect, depsql.Options{Keyring: a.keyring})
 		if err != nil {
-			return nil, fmt.Errorf("app: DEP store: %w", err)
+			return nil, fmt.Errorf("DEP store: %w", err)
 		}
 		st = s
 	}
@@ -84,7 +84,7 @@ func (a *App) newDEP(ctx context.Context) (*depService, error) {
 		},
 	)
 	if err != nil {
-		return nil, fmt.Errorf("app: DEP client: %w", err)
+		return nil, fmt.Errorf("DEP client: %w", err)
 	}
 	return &depService{app: a, store: st, client: client}, nil
 }
@@ -103,7 +103,7 @@ func (d *depService) syncer(account string) (*dep.Syncer, error) {
 		},
 	)
 	if err != nil {
-		return nil, fmt.Errorf("app: DEP syncer: %w", err)
+		return nil, fmt.Errorf("DEP syncer: %w", err)
 	}
 	return s, nil
 }
@@ -124,7 +124,7 @@ func (d *depService) assigner(account string) (*dep.Assigner, error) {
 		},
 	)
 	if err != nil {
-		return nil, fmt.Errorf("app: DEP assigner: %w", err)
+		return nil, fmt.Errorf("DEP assigner: %w", err)
 	}
 	return a, nil
 }
@@ -140,7 +140,7 @@ func (d *depService) runOnce(
 	}
 	sres, err := s.RunOnce(ctx)
 	if err != nil {
-		return sres, dep.AssignResult{}, fmt.Errorf("app: DEP sync %s: %w", account, err)
+		return sres, dep.AssignResult{}, fmt.Errorf("DEP sync %s: %w", account, err)
 	}
 	a, err := d.assigner(account)
 	if err != nil {
@@ -148,7 +148,7 @@ func (d *depService) runOnce(
 	}
 	ares, err := a.RunOnce(ctx)
 	if err != nil {
-		return sres, ares, fmt.Errorf("app: DEP assign %s: %w", account, err)
+		return sres, ares, fmt.Errorf("DEP assign %s: %w", account, err)
 	}
 	return sres, ares, nil
 }
@@ -180,7 +180,7 @@ func (d *depService) runScheduled(ctx context.Context, interval time.Duration, a
 		case <-d.app.cfg.Clock.After(interval):
 		}
 		if err := d.runAccounts(ctx, assign); err != nil && ctx.Err() == nil {
-			d.app.cfg.Logger.WarnContext(ctx, "app: DEP worker", "assignment", assign, "error", err)
+			d.app.cfg.Logger.WarnContext(ctx, "DEP worker", "assignment", assign, "error", err)
 		}
 	}
 }
@@ -215,7 +215,7 @@ func (d *depService) runAccounts(ctx context.Context, assign bool) error {
 				}
 			}
 			if err != nil && !errors.Is(err, dep.ErrBackoff) && ctx.Err() == nil {
-				d.app.cfg.Logger.WarnContext(ctx, "app: DEP account worker", "account", acct.Name, "assignment", assign, "error", err)
+				d.app.cfg.Logger.WarnContext(ctx, "DEP account worker", "account", acct.Name, "assignment", assign, "error", err)
 			}
 		}
 		if res.NextCursor == "" {
@@ -403,17 +403,17 @@ func (d *depService) routes() []adminRoute {
 				}
 				acct, err := tx.GetAccount(ctx, name)
 				if err != nil {
-					return fmt.Errorf("app: DEP account: %w", err)
+					return fmt.Errorf("DEP account: %w", err)
 				}
 				if !sameDEPAccount(baseline, acct) {
 					return fmt.Errorf("%w: DEP account changed during profile definition", dep.ErrConflict)
 				}
 				if err := tx.PutProfile(ctx, name, &p); err != nil {
-					return fmt.Errorf("app: DEP profile: %w", err)
+					return fmt.Errorf("DEP profile: %w", err)
 				}
 				acct.ProfileUUID = resp.ProfileUUID
 				if err := tx.PutAccount(ctx, acct); err != nil {
-					return fmt.Errorf("app: DEP account: %w", err)
+					return fmt.Errorf("DEP account: %w", err)
 				}
 				return nil
 			})

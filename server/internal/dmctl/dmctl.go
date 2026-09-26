@@ -120,7 +120,7 @@ func Run(
 	if e.opts.insecure {
 		_, _ = fmt.Fprintln(
 			stderr,
-			"dmctl: -insecure is no longer supported; use -ca-file to configure trust",
+			"-insecure is no longer supported; use -ca-file to configure trust",
 		)
 		return fmt.Errorf("%w: -insecure is no longer supported", ErrUsage)
 	}
@@ -417,7 +417,7 @@ func readTokenSpec(spec string, getenv func(string) string) (string, error) {
 	case strings.HasPrefix(spec, "@"):
 		raw, err := os.ReadFile(spec[1:])
 		if err != nil {
-			return "", fmt.Errorf("dmctl: read token file: %w", err)
+			return "", fmt.Errorf("read token file: %w", err)
 		}
 		return strings.TrimSpace(string(raw)), nil
 	case strings.HasPrefix(spec, "env:"):

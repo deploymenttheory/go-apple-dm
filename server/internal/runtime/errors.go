@@ -1,11 +1,6 @@
 package runtime
 
-import "fmt"
-
-// wrapError adds the runtime package context to nonnil errors.
-func wrapError(err error) error {
-	if err == nil {
-		return nil
-	}
-	return fmt.Errorf("runtime: %w", err)
-}
+// wrapError returns the error unchanged. It once prefixed the package name, which
+// stacked into chains such as "dmctl: app: app:" that narrated the call path
+// instead of the problem; the binary that renders an error names itself, once.
+func wrapError(err error) error { return err }

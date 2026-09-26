@@ -561,7 +561,7 @@ func (a *App) remoteVendorSignature(
 	}
 	token, err := os.ReadFile(cfg.VendorTokenFile)
 	if err != nil {
-		return nil, fmt.Errorf("app: read vendor credential: %w", err)
+		return nil, fmt.Errorf("read vendor credential: %w", err)
 	}
 	if len(bytes.TrimSpace(token)) == 0 {
 		return nil, fmt.Errorf("%w: empty vendor credential", lifecycle.ErrInvalid)
@@ -589,7 +589,7 @@ func (a *App) remoteVendorSignature(
 	}
 	response, err := client.Do(request)
 	if err != nil {
-		return nil, fmt.Errorf("app: vendor signing request: %w", err)
+		return nil, fmt.Errorf("vendor signing request: %w", err)
 	}
 	defer func(body io.Closer) { _ = body.Close() }(response.Body)
 	if response.StatusCode != http.StatusOK {

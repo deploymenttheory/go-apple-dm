@@ -129,7 +129,7 @@ func (a *App) issueEnrollmentProfile(w http.ResponseWriter, r *http.Request) {
 	_, _ = w.Write(b)
 }
 
-var errProfileExport = errors.New("app: enrollment profile export failed")
+var errProfileExport = errors.New("enrollment profile export failed")
 
 // EnrollmentProfileRequest selects the device and enrollment identity method.
 //

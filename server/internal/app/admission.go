@@ -68,7 +68,7 @@ type AccountAdmissionRule struct {
 	Groups              []string `json:"groups"`
 }
 
-var errDEPAdmissionUnavailable = errors.New("app: DEP admission store unavailable")
+var errDEPAdmissionUnavailable = errors.New("DEP admission store unavailable")
 
 // matches requires matching issuer and configured identity selectors, verified email when
 // requested, and any configured group membership.
@@ -102,12 +102,12 @@ func (a *App) enrollmentAdmission(e *enrollment) (EnrollmentAdmission, error) {
 	if e.cfg.AdmissionFile != "" {
 		b, err := os.ReadFile(e.cfg.AdmissionFile)
 		if err != nil {
-			return nil, fmt.Errorf("app: read admission policy: %w", err)
+			return nil, fmt.Errorf("read admission policy: %w", err)
 		}
 		decoder := json.NewDecoder(bytes.NewReader(b))
 		decoder.DisallowUnknownFields()
 		if err := decoder.Decode(&policy); err != nil {
-			return nil, fmt.Errorf("app: decode admission policy: %w", err)
+			return nil, fmt.Errorf("decode admission policy: %w", err)
 		}
 		if decoder.Decode(new(any)) != io.EOF {
 			return nil, fmt.Errorf("%w: admission policy must be one JSON document", ErrConfig)
@@ -149,14 +149,14 @@ func (a *App) enrollmentAdmission(e *enrollment) (EnrollmentAdmission, error) {
 					continue
 				}
 				if err != nil {
-					return AdmissionGrant{}, fmt.Errorf("app: DEP admission account: %w", err)
+					return AdmissionGrant{}, fmt.Errorf("DEP admission account: %w", err)
 				}
 				d, err := a.dep.store.GetDevice(ctx, name, r.Serial)
 				if errors.Is(err, dep.ErrNotFound) {
 					continue
 				}
 				if err != nil {
-					return AdmissionGrant{}, fmt.Errorf("app: enrollment admission: %w", err)
+					return AdmissionGrant{}, fmt.Errorf("enrollment admission: %w", err)
 				}
 				if admittedDEPDevice(d, account) {
 					return grant, nil
@@ -217,7 +217,7 @@ func (e *enrollment) admit(
 		var err error
 		assoc, err = e.tokens.AssociationStore().Get(ctx, ref)
 		if err != nil {
-			return AdmissionGrant{}, fmt.Errorf("app: enrollment admission: %w", err)
+			return AdmissionGrant{}, fmt.Errorf("enrollment admission: %w", err)
 		}
 		account = true
 	}
@@ -229,7 +229,7 @@ func (e *enrollment) admit(
 	}
 	g, err := e.admission(ctx, r)
 	if err != nil {
-		return AdmissionGrant{}, fmt.Errorf("app: enrollment admission: %w", err)
+		return AdmissionGrant{}, fmt.Errorf("enrollment admission: %w", err)
 	}
 	if account && (g.Account == "" || g.Account != assoc.Identity.ManagedAppleAccount) {
 		return AdmissionGrant{}, webauth.ErrDenied

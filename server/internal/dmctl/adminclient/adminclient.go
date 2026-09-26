@@ -10,6 +10,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"net"
 	"net/http"
 	"net/netip"
 	"net/url"
@@ -21,16 +22,18 @@ import (
 // Errors callers distinguish.
 var (
 	// ErrUnauthorized is a 401: no credential, or one the server does not know.
-	ErrUnauthorized = errors.New("adminclient: unauthorized")
+	ErrUnauthorized = errors.New("unauthorized")
 	// ErrForbidden is a 403: authenticated, but no policy permits it.
-	ErrForbidden = errors.New("adminclient: forbidden")
+	ErrForbidden = errors.New("forbidden")
 	// ErrNotFound is a 404, which on this API may also mean the route is not
 	// served by the role the process is running.
-	ErrNotFound = errors.New("adminclient: not found")
+	ErrNotFound = errors.New("not found")
 	// ErrStatus is any other unsuccessful status.
-	ErrStatus = errors.New("adminclient: request failed")
+	ErrStatus = errors.New("request failed")
+	// ErrUnreachable is a server that could not be reached at all.
+	ErrUnreachable = errors.New("cannot reach")
 	// ErrConfig is a malformed server URL or missing credential.
-	ErrConfig = errors.New("adminclient: bad configuration")
+	ErrConfig = errors.New("bad configuration")
 )
 
 // DefaultTimeout bounds one request.
@@ -181,7 +184,7 @@ func (c *Client) DoWithHeaders(ctx context.Context, method, path string, query u
 		default:
 			raw, err := json.Marshal(body)
 			if err != nil {
-				return nil, fmt.Errorf("adminclient: encode body: %w", err)
+				return nil, fmt.Errorf("encode body: %w", err)
 			}
 			rdr = bytes.NewReader(raw)
 		}
@@ -189,7 +192,7 @@ func (c *Client) DoWithHeaders(ctx context.Context, method, path string, query u
 
 	req, err := http.NewRequestWithContext(ctx, method, u.String(), rdr)
 	if err != nil {
-		return nil, fmt.Errorf("adminclient: request: %w", err)
+		return nil, fmt.Errorf("request: %w", err)
 	}
 	if c.token != "" {
 		req.Header.Set("Authorization", "Bearer "+c.token)
@@ -208,12 +211,12 @@ func (c *Client) DoWithHeaders(ctx context.Context, method, path string, query u
 	}
 	resp, err := c.http.Do(req)
 	if err != nil {
-		return nil, fmt.Errorf("adminclient: %s %s: %w", method, u.Redacted(), err)
+		return nil, unreachable(&u, err)
 	}
 	defer func(body io.Closer) { _ = body.Close() }(resp.Body)
 	raw, err := io.ReadAll(io.LimitReader(resp.Body, MaxBody+1))
 	if err != nil {
-		return nil, fmt.Errorf("adminclient: read body: %w", err)
+		return nil, fmt.Errorf("read body: %w", err)
 	}
 	if len(raw) > MaxBody {
 		return nil, fmt.Errorf("%w: response exceeds %d bytes", ErrStatus, MaxBody)
@@ -286,7 +289,7 @@ func (c *Client) Each(
 		}
 		var p page
 		if err := json.Unmarshal(resp.Body, &p); err != nil {
-			return fmt.Errorf("adminclient: decode page: %w", err)
+			return fmt.Errorf("decode page: %w", err)
 		}
 		for _, item := range p.Items {
 			if err := fn(item); err != nil {
@@ -317,7 +320,7 @@ func (c *Client) Page(
 	}
 	var p page
 	if err := json.Unmarshal(resp.Body, &p); err != nil {
-		return nil, "", fmt.Errorf("adminclient: decode page: %w", err)
+		return nil, "", fmt.Errorf("decode page: %w", err)
 	}
 	return p.Items, p.NextCursor, nil
 }
@@ -356,7 +359,7 @@ func (c *Client) ServerConfig(ctx context.Context) (*ServerConfig, error) {
 	}
 	var out ServerConfig
 	if err := json.Unmarshal(resp.Body, &out); err != nil {
-		return nil, fmt.Errorf("adminclient: decode config: %w", err)
+		return nil, fmt.Errorf("decode config: %w", err)
 	}
 	return &out, nil
 }
@@ -395,3 +398,42 @@ func (c *Client) Download(ctx context.Context, path string, query url.Values, ds
 	}
 	return nil
 }
+
+// unreachable renders a transport failure for a person: the origin that could not be
+// reached and the reason, once. Go's url.Error repeats the method and URL and its
+// net.OpError repeats the dial, so the text is built from the syscall or the last
+// error with something new to say, while the original chain stays reachable for
+// errors.Is: a cancelled context is still a cancelled context.
+func unreachable(u *url.URL, err error) error {
+	reason := err
+	var ue *url.Error
+	if errors.As(err, &ue) && ue.Err != nil {
+		reason = ue.Err
+	}
+	var oe *net.OpError
+	if errors.As(reason, &oe) && oe.Err != nil {
+		reason = oe.Err
+	}
+	var se *os.SyscallError
+	if errors.As(reason, &se) && se.Err != nil {
+		reason = se.Err
+	}
+	return &transportError{text: fmt.Sprintf("cannot reach %s://%s (%v)", u.Scheme, u.Host, reason), err: err}
+}
+
+// transportError is a request that never reached the server. It renders one sentence
+// and unwraps to the transport's own error, so a caller can still test for a cancelled
+// context or a timeout.
+type transportError struct {
+	text string
+	err  error
+}
+
+// Error returns the rendered sentence.
+func (e *transportError) Error() string { return e.text }
+
+// Unwrap exposes the transport's error.
+func (e *transportError) Unwrap() error { return e.err }
+
+// Is matches ErrUnreachable.
+func (e *transportError) Is(target error) bool { return target == ErrUnreachable }

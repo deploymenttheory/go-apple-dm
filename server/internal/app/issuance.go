@@ -44,16 +44,16 @@ func (e *enrollment) issueSCEPGrant(
 ) (string, error) {
 	binding, err := json.Marshal(b)
 	if err != nil {
-		return "", fmt.Errorf("app: encode SCEP binding: %w", err)
+		return "", fmt.Errorf("encode SCEP binding: %w", err)
 	}
 	admission, err := json.Marshal(g)
 	if err != nil {
-		return "", fmt.Errorf("app: encode SCEP admission: %w", err)
+		return "", fmt.Errorf("encode SCEP admission: %w", err)
 	}
 	password, err := e.scepGrants().
 		Issue(ctx, scep.Grant{Binding: binding, Admission: admission, ExpiresAt: g.ExpiresAt})
 	if err != nil {
-		return "", fmt.Errorf("app: SCEP grant: %w", err)
+		return "", fmt.Errorf("SCEP grant: %w", err)
 	}
 	return password, nil
 }
@@ -67,7 +67,7 @@ func (e *enrollment) scepGrants() scep.Grants {
 		Authorize: func(ctx context.Context, grant scep.Grant, csr *x509.CertificateRequest) error {
 			var binding acme.Binding
 			if err := json.Unmarshal(grant.Binding, &binding); err != nil {
-				return fmt.Errorf("app: decode SCEP binding: %w", err)
+				return fmt.Errorf("decode SCEP binding: %w", err)
 			}
 			if binding.CommonName != csr.Subject.CommonName {
 				return scep.ErrChallenge
@@ -86,7 +86,7 @@ func (e *enrollment) verifySCEPGrant(
 	csr *x509.CertificateRequest,
 ) error {
 	if err := e.scepGrants().Verify(ctx, password, csr); err != nil {
-		return fmt.Errorf("app: SCEP grant: %w", err)
+		return fmt.Errorf("SCEP grant: %w", err)
 	}
 	return nil
 }
@@ -108,11 +108,11 @@ func (e *enrollment) issueSCEP(
 		}
 		r, err := e.state.Get(ctx, "issued-identity:"+cms.Fingerprint(old))
 		if err != nil {
-			return nil, fmt.Errorf("app: issue certificate: %w", err)
+			return nil, fmt.Errorf("issue certificate: %w", err)
 		}
 		var evidence identityEvidence
 		if err = json.Unmarshal(r.Value, &evidence); err != nil {
-			return nil, fmt.Errorf("app: issue certificate: %w", err)
+			return nil, fmt.Errorf("issue certificate: %w", err)
 		}
 		binding := acme.Binding{
 			CommonName: csr.Subject.CommonName,
@@ -120,12 +120,12 @@ func (e *enrollment) issueSCEP(
 			Serial:     evidence.Serial,
 		}
 		if _, err = e.admit(ctx, binding); err != nil {
-			return nil, fmt.Errorf("app: issue certificate: %w", err)
+			return nil, fmt.Errorf("issue certificate: %w", err)
 		}
 		ctx = context.WithValue(ctx, issuanceBindingKey{}, binding)
 		cert, err := e.local.Sign(ctx, csr, p)
 		if err != nil {
-			return nil, fmt.Errorf("app: renew identity: %w", err)
+			return nil, fmt.Errorf("renew identity: %w", err)
 		}
 		return cert, nil
 	}
@@ -138,7 +138,7 @@ func (e *enrollment) issueSCEP(
 		}
 		device, err := e.app.Store.Get(ctx, id)
 		if err != nil {
-			return nil, fmt.Errorf("app: replacement admission: %w", err)
+			return nil, fmt.Errorf("replacement admission: %w", err)
 		}
 		binding = acme.Binding{
 			CommonName: csr.Subject.CommonName,
@@ -150,11 +150,11 @@ func (e *enrollment) issueSCEP(
 	default:
 		r, err := e.state.Get(ctx, scepGrantKey(password))
 		if err != nil {
-			return nil, fmt.Errorf("app: issuance grant: %w", err)
+			return nil, fmt.Errorf("issuance grant: %w", err)
 		}
 		var g scepGrant
 		if err := json.Unmarshal(r.Value, &g); err != nil {
-			return nil, fmt.Errorf("app: issue certificate: %w", err)
+			return nil, fmt.Errorf("issue certificate: %w", err)
 		}
 		if !e.now().Before(g.ExpiresAt) || g.CSRHash != issuanceHash(csr.Raw) ||
 			g.Binding.CommonName != csr.Subject.CommonName {
@@ -167,7 +167,7 @@ func (e *enrollment) issueSCEP(
 	}
 	pure, err := ca.NewLocal(e.caCert, e.caKey, ca.WithClock(e.app.cfg.Clock))
 	if err != nil {
-		return nil, fmt.Errorf("app: issue certificate: %w", err)
+		return nil, fmt.Errorf("issue certificate: %w", err)
 	}
 	ctx = context.WithValue(ctx, issuanceBindingKey{}, binding)
 	issuer := scep.CertificateIssuer{
@@ -186,7 +186,7 @@ func (e *enrollment) issueSCEP(
 	}
 	cert, err := issuer.Issue(ctx, password, csr, p)
 	if err != nil {
-		return nil, fmt.Errorf("app: issue SCEP: %w", err)
+		return nil, fmt.Errorf("issue SCEP: %w", err)
 	}
 	return cert, nil
 }
@@ -206,11 +206,11 @@ func (h issuanceAdmission) Before(ctx context.Context, c *service.Call) (context
 	}
 	r, err := h.app.protocol.Get(ctx, "issued-identity:"+cms.Fingerprint(cert))
 	if err != nil {
-		return ctx, fmt.Errorf("app: issuance admission: %w", err)
+		return ctx, fmt.Errorf("issuance admission: %w", err)
 	}
 	var evidence identityEvidence
 	if err := json.Unmarshal(r.Value, &evidence); err != nil {
-		return ctx, fmt.Errorf("app: issuance admission: %w", err)
+		return ctx, fmt.Errorf("issuance admission: %w", err)
 	}
 	if evidence.EnrollmentID != "" && evidence.EnrollmentID != c.Request.ID.ID {
 		return ctx, scep.ErrChallenge

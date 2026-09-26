@@ -14,10 +14,10 @@ import (
 const Redacted = "[redacted]"
 
 // ErrNotFound is returned when a provider has no value for a name.
-var ErrNotFound = errors.New("secrets: not found")
+var ErrNotFound = errors.New("secret not found")
 
 // ErrName is returned for names a provider cannot map safely.
-var ErrName = errors.New("secrets: invalid name")
+var ErrName = errors.New("invalid secret name")
 
 // maxSize bounds a secret read from a file.
 const maxSize = 1 << 20
@@ -107,7 +107,7 @@ type Dir struct{ root *os.Root }
 func NewDir(path string) (*Dir, error) {
 	root, err := os.OpenRoot(path)
 	if err != nil {
-		return nil, fmt.Errorf("secrets: open %s: %w", path, err)
+		return nil, err
 	}
 	return &Dir{root: root}, nil
 }
@@ -115,7 +115,7 @@ func NewDir(path string) (*Dir, error) {
 // Close releases the directory handle.
 func (d *Dir) Close() error {
 	if err := d.root.Close(); err != nil {
-		return fmt.Errorf("secrets: close: %w", err)
+		return fmt.Errorf("close: %w", err)
 	}
 	return nil
 }
@@ -130,15 +130,15 @@ func (d *Dir) Get(_ context.Context, name string) (Secret, error) {
 		if errors.Is(err, os.ErrNotExist) {
 			return Secret{}, fmt.Errorf("%w: %s", ErrNotFound, name)
 		}
-		return Secret{}, fmt.Errorf("secrets: open %s: %w", name, err)
+		return Secret{}, err
 	}
 	defer func(cleanup func() error) { _ = cleanup() }(f.Close)
 	b, err := io.ReadAll(io.LimitReader(f, maxSize+1))
 	if err != nil {
-		return Secret{}, fmt.Errorf("secrets: read %s: %w", name, err)
+		return Secret{}, fmt.Errorf("read %s: %w", name, err)
 	}
 	if len(b) > maxSize {
-		return Secret{}, fmt.Errorf("secrets: %s exceeds %d bytes", name, maxSize)
+		return Secret{}, fmt.Errorf("%s exceeds %d bytes", name, maxSize)
 	}
 	return New([]byte(strings.TrimRight(string(b), "\r\n"))), nil
 }
