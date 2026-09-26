@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.8.4](https://github.com/deploymenttheory/go-apple-dm/compare/v0.8.3...v0.8.4) (2026-09-26)
+
+
+### Features
+
+* **dmctl:** report what setup init generated and what must be kept ([#263](https://github.com/deploymenttheory/go-apple-dm/issues/263)) ([009d764](https://github.com/deploymenttheory/go-apple-dm/commit/009d764e3cfbd10f4a792dd8a3b020a8c4f668dc))
+
+
+### Bug Fixes
+
+* **dmctl:** make setup and startup failures read as one sentence ([#266](https://github.com/deploymenttheory/go-apple-dm/issues/266)) ([68e365e](https://github.com/deploymenttheory/go-apple-dm/commit/68e365e4581ee6f97e73c4a5464f7b14c6b2f52f))
+
 ## [0.8.3](https://github.com/deploymenttheory/go-apple-dm/compare/v0.8.2...v0.8.3) (2026-09-25)
 
 
