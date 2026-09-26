@@ -6,10 +6,12 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"io/fs"
 	"log/slog"
 	"net/http"
 	"net/netip"
 	"os"
+	"strings"
 	"sync"
 	"time"
 
@@ -430,10 +432,7 @@ func (c Config) validate() error {
 		)
 	}
 	if c.Storage != "inmem" && len(c.StorageKeys) == 0 {
-		return fmt.Errorf(
-			"%w: %s storage seals unlock tokens, bootstrap tokens and push keys, so it needs %s",
-			ErrConfig, c.Storage, EnvStorageKeys,
-		)
+		return configf(nil, "%s storage needs %s, because it seals unlock tokens, bootstrap tokens and push keys", c.Storage, EnvStorageKeys)
 	}
 	if err := c.Enroll.validate(); err != nil {
 		return err
@@ -527,8 +526,11 @@ func (a *App) openKeyring(ctx context.Context) error {
 	case provider != nil:
 	case a.cfg.SecretsDir != "":
 		d, err := secrets.NewDir(a.cfg.SecretsDir)
+		if errors.Is(err, fs.ErrNotExist) {
+			return configf(err, "the secrets directory %s does not exist", a.cfg.SecretsDir)
+		}
 		if err != nil {
-			return fmt.Errorf("secrets directory: %w", err)
+			return configf(err, "the secrets directory %s cannot be opened (%s)", a.cfg.SecretsDir, reason(err))
 		}
 		a.closers = append(a.closers, d.Close)
 		provider = d
@@ -543,8 +545,14 @@ func (a *App) openKeyring(ctx context.Context) error {
 		},
 		Provider: provider,
 	})
-	if err != nil {
-		return fmt.Errorf("storage keyring: %w", err)
+	var missing *crypt.MissingKeyError
+	switch {
+	case errors.As(err, &missing) && a.cfg.SecretsDir != "":
+		return configf(err, "storage key %q is not in the secrets directory %s", missing.Name, a.cfg.SecretsDir)
+	case errors.As(err, &missing):
+		return configf(err, "storage key %q is not set; provide it as DM_STORAGE_KEY_%s or as a file in DM_SECRETS_DIR", missing.Name, strings.ToUpper(missing.Name))
+	case err != nil:
+		return configf(err, "the storage keyring cannot be built (%s)", reason(err))
 	}
 	a.keyring = k
 	return nil

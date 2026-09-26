@@ -1,6 +1,7 @@
 package app_test
 
 import (
+	"errors"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -19,17 +20,15 @@ func TestStartupFailuresReadAsOneSentence(t *testing.T) {
 	}{
 		"SecretsDirectoryMissing": {
 			app.Config{Storage: "sqlite", DSN: filepath.Join(dir, "a.db"), StorageKeys: []string{"storage"}, SecretsDir: filepath.Join(dir, "nonexistent")},
-			// The operating system's wording for a missing directory follows; only
-			// the operation and the path, once, are pinned.
-			"secrets directory: open " + filepath.Join(dir, "nonexistent") + ": ",
+			"the secrets directory " + filepath.Join(dir, "nonexistent") + " does not exist",
 		},
 		"StorageKeyNotProvided": {
 			app.Config{Storage: "sqlite", DSN: filepath.Join(dir, "b.db"), StorageKeys: []string{"k"}, SecretsDir: dir},
-			`storage keyring: secret not found: key "k" is not in the secrets provider`,
+			`storage key "k" is not in the secrets directory ` + dir,
 		},
 		"StorageWithoutKeys": {
 			app.Config{Storage: "sqlite", DSN: filepath.Join(dir, "c.db")},
-			"invalid configuration: sqlite storage seals unlock tokens, bootstrap tokens and push keys, so it needs DM_STORAGE_KEYS",
+			"sqlite storage needs DM_STORAGE_KEYS, because it seals unlock tokens, bootstrap tokens and push keys",
 		},
 	}
 	for name, tc := range cases {
@@ -40,14 +39,14 @@ func TestStartupFailuresReadAsOneSentence(t *testing.T) {
 				t.Fatal("built")
 			}
 			got := err.Error()
-			if strings.HasSuffix(tc.want, ": ") {
-				if !strings.HasPrefix(got, tc.want) || strings.Count(got, tc.cfg.SecretsDir) != 1 {
-					t.Fatalf("\n got: %s\nwant prefix: %s", got, tc.want)
-				}
-				return
-			}
 			if got != tc.want {
 				t.Fatalf("\n got: %s\nwant: %s", got, tc.want)
+			}
+			if !errors.Is(err, app.ErrConfig) {
+				t.Fatal("a configuration failure lost ErrConfig")
+			}
+			if strings.Contains(strings.ReplaceAll(got, dir, ""), ":") {
+				t.Fatalf("a chain of layers survived: %s", got)
 			}
 		})
 	}

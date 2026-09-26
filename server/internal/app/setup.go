@@ -66,7 +66,7 @@ func (a *App) openCertificates(ctx context.Context) error {
 	}
 	if a.cfg.Setup.Role != "vendor" && a.cfg.Setup.Role != "customer" &&
 		a.cfg.Setup.Role != "combined" {
-		return fmt.Errorf("%w: setup role must be vendor, customer or combined", ErrConfig)
+		return configf(nil, "setup role %q is not valid; use customer, vendor or combined", a.cfg.Setup.Role)
 	}
 	if a.cfg.Storage == "sqlite" &&
 		(strings.Contains(a.cfg.DSN, ":memory:") || strings.Contains(a.cfg.DSN, "mode=memory")) {

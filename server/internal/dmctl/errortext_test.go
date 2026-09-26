@@ -44,15 +44,15 @@ func TestSetupFailuresReadAsOneSentence(t *testing.T) {
 		},
 		"UnknownRole": {
 			args: []string{"setup", "init", "-dir", filepath.Join(dir, "d"), "-role", "banana"},
-			want: `invalid configuration: setup role "banana" must be customer, vendor or combined`,
+			want: `setup role "banana" is not valid; use customer, vendor or combined`,
 		},
 		"FileAsPositionalArgument": {
 			args: []string{"setup", "adopt", setup},
-			want: fmt.Sprintf("usage: setup adopt takes flags only, not %q; the setup document is passed as -setup-file <path>", setup),
+			want: fmt.Sprintf("setup adopt takes flags only, not %q; pass the setup document as -setup-file <path>", setup),
 		},
 		"MissingSecretFile": {
 			args: []string{"setup", "adopt", "-setup-file", setup},
-			want: "read secret reference DM_BOOTSTRAP_TOKEN: open " + absent + ": ", prefix: true, is: fs.ErrNotExist,
+			want: "the secret file " + absent + " for DM_BOOTSTRAP_TOKEN does not exist", is: fs.ErrNotExist,
 		},
 	}
 	for name, tc := range cases {
@@ -73,8 +73,13 @@ func TestSetupFailuresReadAsOneSentence(t *testing.T) {
 					t.Fatalf("%q survived in: %s", noise, got)
 				}
 			}
-			if tc.prefix && strings.Count(got, "127.0.0.1")+strings.Count(got, absent) > 1 {
+			if strings.Count(got, "127.0.0.1")+strings.Count(got, absent) > 1 {
 				t.Fatalf("an operand is printed twice: %s", got)
+			}
+			// One sentence: colons appear only inside a quoted operand, never as the joints
+			// of a chain of layers.
+			if strings.Count(strings.ReplaceAll(got, origin, ""), ":") > 0 {
+				t.Fatalf("a chain of layers survived: %s", got)
 			}
 		})
 	}

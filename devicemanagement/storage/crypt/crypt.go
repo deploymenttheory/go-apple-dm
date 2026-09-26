@@ -11,6 +11,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"strconv"
 
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/secrets"
 )
@@ -127,7 +128,7 @@ func load(ctx context.Context, p secrets.Provider, name string) (cipher.AEAD, er
 	s, err := p.Get(ctx, name)
 	if err != nil {
 		if errors.Is(err, secrets.ErrNotFound) {
-			return nil, fmt.Errorf("%w: key %q is not in the secrets provider", secrets.ErrNotFound, name)
+			return nil, &MissingKeyError{Name: name}
 		}
 		return nil, fmt.Errorf("load key %q: %w", name, err)
 	}
@@ -265,3 +266,15 @@ func AAD(purpose, rowID string) []byte {
 	out = append(out, 0)
 	return append(out, rowID...)
 }
+
+// MissingKeyError is a configured key the secrets provider does not hold. It names the
+// key so a caller can say where the key was expected; it matches secrets.ErrNotFound.
+type MissingKeyError struct{ Name string }
+
+// Error implements error.
+func (e *MissingKeyError) Error() string {
+	return "key " + strconv.Quote(e.Name) + " is not in the secrets provider"
+}
+
+// Is matches secrets.ErrNotFound.
+func (e *MissingKeyError) Is(target error) bool { return target == secrets.ErrNotFound }
