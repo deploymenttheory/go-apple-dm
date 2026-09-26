@@ -537,6 +537,14 @@ func (a *App) openKeyring(ctx context.Context) error {
 	default:
 		provider = secrets.Env{Prefix: "DM_STORAGE_KEY_"}
 	}
+	for _, name := range a.cfg.StorageKeys {
+		if _, err := provider.Get(ctx, name); errors.Is(err, secrets.ErrNotFound) {
+			if a.cfg.SecretsDir != "" {
+				return configf(err, "storage key %q is not in the secrets directory %s", name, a.cfg.SecretsDir)
+			}
+			return configf(err, "storage key %q is not set; provide it as DM_STORAGE_KEY_%s or as a file in DM_SECRETS_DIR", name, strings.ToUpper(name))
+		}
+	}
 	k, err := crypt.NewKeyring(ctx, crypt.Options{
 		Keys: crypt.Keys{
 			Active:   a.cfg.StorageKeys[0],
@@ -545,13 +553,7 @@ func (a *App) openKeyring(ctx context.Context) error {
 		},
 		Provider: provider,
 	})
-	var missing *crypt.MissingKeyError
-	switch {
-	case errors.As(err, &missing) && a.cfg.SecretsDir != "":
-		return configf(err, "storage key %q is not in the secrets directory %s", missing.Name, a.cfg.SecretsDir)
-	case errors.As(err, &missing):
-		return configf(err, "storage key %q is not set; provide it as DM_STORAGE_KEY_%s or as a file in DM_SECRETS_DIR", missing.Name, strings.ToUpper(missing.Name))
-	case err != nil:
+	if err != nil {
 		return configf(err, "the storage keyring cannot be built (%s)", reason(err))
 	}
 	a.keyring = k
