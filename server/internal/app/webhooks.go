@@ -88,7 +88,7 @@ func (a *App) openWebhooks(ctx context.Context, store *eventstore.Store) error {
 	}
 	s, err := webhook.Open(ctx, a.db, a.dialect, a.keyring, store, cfg)
 	if err != nil {
-		return fmt.Errorf("app: managed webhooks require SQL and storage encryption: %w", err)
+		return fmt.Errorf("managed webhooks require SQL and storage encryption: %w", err)
 	}
 	a.webhooks = s
 	if a.Certificates != nil {

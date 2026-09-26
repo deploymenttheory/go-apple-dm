@@ -13,10 +13,10 @@ import (
 )
 
 // ErrEmptyCredential identifies an empty environment-backed credential.
-var ErrEmptyCredential = errors.New("dmctl: credential environment variable is empty")
+var ErrEmptyCredential = errors.New("credential environment variable is empty")
 
 // ErrConfigPermissions is a config file other users can read.
-var ErrConfigPermissions = errors.New("dmctl: config file is readable by other users")
+var ErrConfigPermissions = errors.New("config file is readable by other users")
 
 // Config is the on-disk configuration.
 //
@@ -57,7 +57,7 @@ func (c Context) token(getenv func(string) string) (string, error) {
 	case c.TokenFile != "":
 		raw, err := os.ReadFile(c.TokenFile)
 		if err != nil {
-			return "", fmt.Errorf("dmctl: read token file: %w", err)
+			return "", fmt.Errorf("read token file: %w", err)
 		}
 		return strings.TrimSpace(string(raw)), nil
 	default:
@@ -97,7 +97,7 @@ func (e *env) loadConfig() (*Context, error) {
 		return nil, nil
 	}
 	if err != nil {
-		return nil, fmt.Errorf("dmctl: config: %w", err)
+		return nil, fmt.Errorf("config: %w", err)
 	}
 	// A credential-adjacent file that other users can read is refused rather
 	// than used, because reading it is what makes the leak matter.
@@ -106,11 +106,11 @@ func (e *env) loadConfig() (*Context, error) {
 	}
 	raw, err := os.ReadFile(path) // #nosec G304 -- an operator's own config path
 	if err != nil {
-		return nil, fmt.Errorf("dmctl: config: %w", err)
+		return nil, fmt.Errorf("config: %w", err)
 	}
 	var cfg Config
 	if err := json.Unmarshal(raw, &cfg); err != nil {
-		return nil, fmt.Errorf("dmctl: config %s: %w", path, err)
+		return nil, fmt.Errorf("config %s: %w", path, err)
 	}
 	name := e.opts.context
 	if name == "" {

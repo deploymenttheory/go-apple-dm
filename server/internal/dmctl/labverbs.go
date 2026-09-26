@@ -214,7 +214,7 @@ func labRun(ctx context.Context, e *env, w *lab.Workspace, instance *lab.Environ
 	if err = lab.WriteReports(output, results); err != nil {
 		return wrapError(err)
 	}
-	_, _ = fmt.Fprintln(e.stderr, "lab: report", filepath.Join(output, lab.HTMLFile))
+	_, _ = fmt.Fprintln(e.stderr, "report", filepath.Join(output, lab.HTMLFile))
 	if failed || len(results) < len(selected) {
 		return errLabSelection
 	}
@@ -222,7 +222,7 @@ func labRun(ctx context.Context, e *env, w *lab.Workspace, instance *lab.Environ
 }
 
 var errLabSelection = errors.New(
-	"lab: selection contains failed, blocked, or unsupported modules; inspect evidence",
+	"selection contains failed, blocked, or unsupported modules; inspect evidence",
 )
 
 // labList prints the module catalogue and its execution requirements.

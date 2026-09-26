@@ -101,7 +101,7 @@ func (a *App) storageStatus(w http.ResponseWriter, r *http.Request, err error) {
 	case errors.Is(err, storage.ErrDisabled):
 		writeError(w, http.StatusGone, err)
 	default:
-		a.cfg.Logger.WarnContext(r.Context(), "app: admin mdm", "path", r.URL.Path, "error", err)
+		a.cfg.Logger.WarnContext(r.Context(), "admin mdm", "path", r.URL.Path, "error", err)
 		writeError(
 			w,
 			http.StatusInternalServerError,
@@ -322,7 +322,7 @@ func (a *App) putPushCert(w http.ResponseWriter, r *http.Request) {
 	}
 	var in struct{ Topic, CertPEM, KeyPEM string }
 	if err := json.Unmarshal(body, &in); err != nil {
-		writeError(w, http.StatusBadRequest, fmt.Errorf("app: push certificate: %w", err))
+		writeError(w, http.StatusBadRequest, fmt.Errorf("push certificate: %w", err))
 		return
 	}
 	if in.CertPEM == "" || in.KeyPEM == "" {
@@ -378,7 +378,7 @@ func (a *App) importEnrollment(w http.ResponseWriter, r *http.Request) {
 	}
 	var rec storage.EnrollmentExport
 	if err := json.Unmarshal(body, &rec); err != nil {
-		writeError(w, http.StatusBadRequest, fmt.Errorf("app: enrollment record: %w", err))
+		writeError(w, http.StatusBadRequest, fmt.Errorf("enrollment record: %w", err))
 		return
 	}
 	if err := a.Core.ImportEnrollment(r.Context(), rec); err != nil {

@@ -19,7 +19,7 @@ import (
 // DefaultAuditRetention is how long records are kept when a retention is
 // configured without a window. Long enough to investigate an incident
 // reported weeks late, short enough that the table is not a liability.
-var errAuditUnavailable = errors.New("app: audit unavailable")
+var errAuditUnavailable = errors.New("audit unavailable")
 
 const DefaultAuditRetention = 90 * 24 * time.Hour
 
@@ -40,7 +40,7 @@ func (a *App) auditStore(ctx context.Context) (audit.Store, error) {
 	default:
 		s, err := auditsql.Open(ctx, a.db, a.dialect, auditsql.Options{})
 		if err != nil {
-			return nil, fmt.Errorf("app: audit store: %w", err)
+			return nil, fmt.Errorf("audit store: %w", err)
 		}
 		return s, nil
 	}
@@ -61,7 +61,7 @@ func auditSink(store audit.Store, reg *eventsink.Registry) event.Handler {
 			Fields:     rec.Fields,
 		})
 		if err != nil {
-			return fmt.Errorf("app: audit append: %w", err)
+			return fmt.Errorf("audit append: %w", err)
 		}
 		return nil
 	}
@@ -89,11 +89,11 @@ func (a *App) runAuditRetention(ctx context.Context) error {
 		before := a.cfg.Clock.Now().Add(-a.cfg.Sinks.Retention)
 		n, err := a.audit.Prune(ctx, before)
 		if err != nil {
-			a.cfg.Logger.WarnContext(ctx, "app: audit retention", "error", err)
+			a.cfg.Logger.WarnContext(ctx, "audit retention", "error", err)
 			continue
 		}
 		if n > 0 {
-			a.cfg.Logger.InfoContext(ctx, "app: audit retention", "pruned", n, "before", before)
+			a.cfg.Logger.InfoContext(ctx, "audit retention", "pruned", n, "before", before)
 		}
 	}
 }
@@ -178,7 +178,7 @@ func (a *App) writeAuditError(w http.ResponseWriter, r *http.Request, err error)
 	case errors.Is(err, audit.ErrInvalid):
 		writeError(w, http.StatusBadRequest, err)
 	default:
-		a.cfg.Logger.WarnContext(r.Context(), "app: audit", "error", err)
+		a.cfg.Logger.WarnContext(r.Context(), "audit", "error", err)
 		writeError(w, http.StatusInternalServerError, errAuditUnavailable)
 	}
 }

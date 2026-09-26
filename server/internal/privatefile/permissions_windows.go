@@ -34,13 +34,13 @@ func protectFile(file *os.File) error {
 	handle, _, callErr := reopenFile.Call(file.Fd(), windows.READ_CONTROL|windows.WRITE_DAC,
 		windows.FILE_SHARE_READ|windows.FILE_SHARE_WRITE|windows.FILE_SHARE_DELETE, 0)
 	if windows.Handle(handle) == windows.InvalidHandle {
-		return fmt.Errorf("private file: reopen for access control: %w", callErr)
+		return fmt.Errorf("reopen for access control: %w", callErr)
 	}
 	defer func() { _ = windows.CloseHandle(windows.Handle(handle)) }()
 	if err := windows.SetSecurityInfo(windows.Handle(handle), windows.SE_FILE_OBJECT,
 		windows.DACL_SECURITY_INFORMATION|windows.PROTECTED_DACL_SECURITY_INFORMATION,
 		nil, nil, acl, nil); err != nil {
-		return fmt.Errorf("private file: set access control: %w", err)
+		return fmt.Errorf("set access control: %w", err)
 	}
 	return nil
 }

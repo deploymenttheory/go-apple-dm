@@ -42,7 +42,7 @@ func runProfile(_ context.Context, e *env, args []string) error {
 	if *rootsFile != "" {
 		pem, readErr := os.ReadFile(*rootsFile)
 		if readErr != nil {
-			return fmt.Errorf("dmctl: read trust roots: %w", readErr)
+			return fmt.Errorf("read trust roots: %w", readErr)
 		}
 		o.Roots = x509.NewCertPool()
 		if !o.Roots.AppendCertsFromPEM(pem) {
@@ -53,14 +53,14 @@ func runProfile(_ context.Context, e *env, args []string) error {
 	if *file != "-" {
 		f, openErr := os.Open(*file)
 		if openErr != nil {
-			return fmt.Errorf("dmctl: open profile: %w", openErr)
+			return fmt.Errorf("open profile: %w", openErr)
 		}
 		defer func(cleanup func() error) { _ = cleanup() }(f.Close)
 		reader = f
 	}
 	data, err := io.ReadAll(io.LimitReader(reader, plist.DefaultMaxBytes+1))
 	if err != nil {
-		return fmt.Errorf("dmctl: read profile: %w", err)
+		return fmt.Errorf("read profile: %w", err)
 	}
 	report := profilelint.Inspect(data, o)
 	if err := emitLint(e, *file, report); err != nil {
@@ -83,11 +83,11 @@ func runProfile(_ context.Context, e *env, args []string) error {
 func emitLint(e *env, file string, report profilelint.Report) error {
 	if e.opts.output == outputJSON || e.opts.output == outputNDJSON {
 		if err := json.MarshalWrite(e.stdout, report); err != nil {
-			return fmt.Errorf("dmctl: write lint report: %w", err)
+			return fmt.Errorf("write lint report: %w", err)
 		}
 		_, err := fmt.Fprintln(e.stdout)
 		if err != nil {
-			return fmt.Errorf("dmctl: write lint report: %w", err)
+			return fmt.Errorf("write lint report: %w", err)
 		}
 		return nil
 	}
@@ -98,7 +98,7 @@ func emitLint(e *env, file string, report profilelint.Report) error {
 		report.Signature,
 		report.Trust,
 	); err != nil {
-		return fmt.Errorf("dmctl: write lint report: %w", err)
+		return fmt.Errorf("write lint report: %w", err)
 	}
 	for _, issue := range report.Issues {
 		if _, err := fmt.Fprintf(
@@ -109,7 +109,7 @@ func emitLint(e *env, file string, report profilelint.Report) error {
 			issue.Message,
 			issue.Rule,
 		); err != nil {
-			return fmt.Errorf("dmctl: write lint report: %w", err)
+			return fmt.Errorf("write lint report: %w", err)
 		}
 	}
 	return nil

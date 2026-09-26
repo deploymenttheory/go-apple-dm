@@ -126,7 +126,7 @@ func runArtifactInspection(ctx context.Context, e *env, args []string) error {
 	if *file != "-" {
 		f, err := os.Open(*file) // #nosec G304 -- explicit operator-selected artifact, streamed without execution.
 		if err != nil {
-			return fmt.Errorf("dmctl: open artifact: %w", err)
+			return fmt.Errorf("open artifact: %w", err)
 		}
 		defer func() { _ = f.Close() }()
 		reader = f

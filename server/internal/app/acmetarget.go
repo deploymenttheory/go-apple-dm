@@ -49,7 +49,7 @@ func (e *enrollment) profileForDevice(
 		var err error
 		hardware, err = e.acme.resolveMac(ctx, b, hardware)
 		if err != nil {
-			return nil, fmt.Errorf("app: Mac capabilities: %w", err)
+			return nil, fmt.Errorf("Mac capabilities: %w", err)
 		}
 	}
 	return e.profileWithIdentity(ctx, b, identity, acmeTarget{target: target, hardware: hardware})
@@ -69,7 +69,7 @@ func (t acmeTarget) apply(payload *enroll.ACME) error {
 		}
 	}
 	if err := payload.ValidateTarget(t.target, t.hardware); err != nil {
-		return fmt.Errorf("app: ACME target: %w", err)
+		return fmt.Errorf("ACME target: %w", err)
 	}
 	return nil
 }

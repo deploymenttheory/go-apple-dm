@@ -52,7 +52,7 @@ const (
 )
 
 // ErrBadACMERequest is a malformed admin request.
-var ErrBadACMERequest = errors.New("app: invalid ACME request")
+var ErrBadACMERequest = errors.New("invalid ACME request")
 
 // ACMEConfig configures the ACME server and the identities it issues.
 type ACMEConfig struct {
@@ -108,7 +108,7 @@ func (a *App) newACME(ctx context.Context, e *enrollment) (*acmeService, error) 
 		} else {
 			s, err := acmesql.Open(ctx, a.db, a.dialect, acmesql.Options{})
 			if err != nil {
-				return nil, fmt.Errorf("app: ACME store: %w", err)
+				return nil, fmt.Errorf("ACME store: %w", err)
 			}
 			store = s
 		}
@@ -123,7 +123,7 @@ func (a *App) newACME(ctx context.Context, e *enrollment) (*acmeService, error) 
 	}
 	identifiers, err := acme.NewHMACIdentifiers(key, ttl, a.cfg.Clock)
 	if err != nil {
-		return nil, fmt.Errorf("app: ACME identifiers: %w", err)
+		return nil, fmt.Errorf("ACME identifiers: %w", err)
 	}
 	anchors := cfg.Anchors
 	if len(anchors) == 0 && cfg.AnchorFile != "" {
@@ -139,7 +139,7 @@ func (a *App) newACME(ctx context.Context, e *enrollment) (*acmeService, error) 
 	}
 	pure, err := ca.NewLocal(e.caCert, e.caKey, ca.WithClock(a.cfg.Clock))
 	if err != nil {
-		return nil, fmt.Errorf("app: ACME signer: %w", err)
+		return nil, fmt.Errorf("ACME signer: %w", err)
 	}
 	server, err := acme.New(acme.Config{
 		BaseURL:     e.base,
@@ -187,7 +187,7 @@ func (a *App) newACME(ctx context.Context, e *enrollment) (*acmeService, error) 
 		OrderTTL: cfg.OrderTTL,
 	})
 	if err != nil {
-		return nil, fmt.Errorf("app: ACME server: %w", err)
+		return nil, fmt.Errorf("ACME server: %w", err)
 	}
 	svc.server = server
 	return svc, nil
@@ -208,10 +208,10 @@ func (a *App) acmeIdentifierKey() ([]byte, error) {
 	// one has to verify an identifier the first minted, so it is loud.
 	key := make([]byte, 32)
 	if _, err := rand.Read(key); err != nil {
-		return nil, fmt.Errorf("app: ACME identifier key: %w", err)
+		return nil, fmt.Errorf("ACME identifier key: %w", err)
 	}
 	a.cfg.Logger.Warn(
-		"app: no ACME identifier key configured, generating one",
+		"no ACME identifier key configured, generating one",
 		"variable", EnvACMEHMACKey,
 		"consequence", "profiles issued by this process cannot be used against another",
 	)
@@ -254,7 +254,7 @@ func (s *acmeService) depLookup(ctx context.Context, serial string) (bool, error
 	for {
 		res, err := s.app.dep.store.ListAccounts(ctx, page)
 		if err != nil {
-			return false, fmt.Errorf("app: DEP accounts: %w", err)
+			return false, fmt.Errorf("DEP accounts: %w", err)
 		}
 		for _, account := range res.Items {
 			d, err := s.app.dep.store.GetDevice(ctx, account.Name, serial)
@@ -262,7 +262,7 @@ func (s *acmeService) depLookup(ctx context.Context, serial string) (bool, error
 				continue
 			}
 			if err != nil {
-				return false, fmt.Errorf("app: DEP device ownership: %w", err)
+				return false, fmt.Errorf("DEP device ownership: %w", err)
 			}
 			if admittedDEPDevice(d, &account) {
 				return true, nil
@@ -336,7 +336,7 @@ func (s *acmeService) acmePayload(
 	b.RequireAttestation = payload.Attest
 	identifier, err := s.identifiers.Issue(b)
 	if err != nil {
-		return nil, fmt.Errorf("app: ACME identifier: %w", err)
+		return nil, fmt.Errorf("ACME identifier: %w", err)
 	}
 	payload.ClientIdentifier = identifier
 	return payload, nil
@@ -556,7 +556,7 @@ func (a *App) ACMEStoreForTests() acme.Store { return a.acme.store }
 func (a *App) ACMEIdentifierForTests(b acme.Binding) (string, error) {
 	id, err := a.acme.identifiers.Issue(b)
 	if err != nil {
-		return "", fmt.Errorf("app: ACME identifier: %w", err)
+		return "", fmt.Errorf("ACME identifier: %w", err)
 	}
 	return id, nil
 }

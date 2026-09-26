@@ -1,7 +1,6 @@
 package privatefile
 
 import (
-	"fmt"
 	"os"
 )
 
@@ -39,10 +38,6 @@ func prepare(file *os.File, err error) (*os.File, error) {
 	return file, nil
 }
 
-// wrap classifies an underlying failure while preserving nil success.
-func wrap(err error) error {
-	if err == nil {
-		return nil
-	}
-	return fmt.Errorf("private file: %w", err)
-}
+// wrap returns the error unchanged; a *fs.PathError already names the operation and
+// the file, and a package label in front of it only lengthens the line.
+func wrap(err error) error { return err }

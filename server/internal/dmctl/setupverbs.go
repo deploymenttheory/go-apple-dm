@@ -122,7 +122,7 @@ func runSetup(ctx context.Context, e *env, args []string) error {
 		return wrapError(err)
 	}
 	if len(pos) > 0 {
-		return fmt.Errorf("%w: unexpected setup arguments", ErrUsage)
+		return usagef("setup %s takes flags only, not %q; pass the setup document as -setup-file <path>", group, pos[0])
 	}
 	if *labDirectory != "" {
 		if group != "adopt" {

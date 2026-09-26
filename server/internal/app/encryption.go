@@ -27,7 +27,7 @@ func (a *App) openReplyCertificates(ctx context.Context) error {
 	}
 	st, err := statestore.Open(ctx, a.db, a.dialect, a.keyring)
 	if err != nil {
-		return fmt.Errorf("app: encryption certificate storage: %w", err)
+		return fmt.Errorf("encryption certificate storage: %w", err)
 	}
 	a.ReplyCertificates = &replycerts.Manager{Store: st}
 	return nil
@@ -51,7 +51,7 @@ func (a *App) prepareCommandEncryption(
 	}
 	prepared, err := a.ReplyCertificates.Prepare(ctx, id, cmd)
 	if err != nil {
-		return nil, fmt.Errorf("app: prepare encryption certificate: %w", err)
+		return nil, fmt.Errorf("prepare encryption certificate: %w", err)
 	}
 	return prepared, nil
 }

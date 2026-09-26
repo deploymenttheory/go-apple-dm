@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"strings"
@@ -48,8 +49,11 @@ func LoadSetupFile(path string, getenv func(string) string) (Config, error) {
 		}
 		// #nosec G304 -- Secret reference from trusted local setup configuration.
 		b, err := os.ReadFile(file)
+		if errors.Is(err, fs.ErrNotExist) {
+			return Config{}, configf(err, "the secret file %s for %s does not exist", file, name)
+		}
 		if err != nil {
-			return Config{}, fmt.Errorf("app: read secret reference %s: %w", name, err)
+			return Config{}, configf(err, "the secret file %s for %s cannot be read (%s)", file, name, reason(err))
 		}
 		secrets[name] = strings.TrimSpace(string(b))
 	}
@@ -111,7 +115,7 @@ func InitSetupFile(o SetupInitOptions) (string, error) {
 		return "", wrapError(err)
 	}
 	if role != "customer" && role != "vendor" && role != "combined" {
-		return "", fmt.Errorf("%w: setup role", ErrConfig)
+		return "", configf(nil, "setup role %q is not valid; use customer, vendor or combined", role)
 	}
 	if storage != "sqlite" && storage != "postgres" && storage != "mysql" {
 		return "", fmt.Errorf("%w: persistent storage required", ErrConfig)

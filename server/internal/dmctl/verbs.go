@@ -52,7 +52,7 @@ func runExplain(_ context.Context, e *env, args []string) error {
 	matches, err := explain.Resolve(rest[0], *family)
 	if err != nil {
 		if suggestions := explain.Suggest(rest[0], *family, 10); len(suggestions) > 0 {
-			_, _ = fmt.Fprintf(e.stderr, "dmctl: %v\ndid you mean:\n", err)
+			_, _ = fmt.Fprintf(e.stderr, "%v\ndid you mean:\n", err)
 			for _, s := range suggestions {
 				_, _ = fmt.Fprintf(e.stderr, "  %s\n", s)
 			}
@@ -67,7 +67,7 @@ func runExplain(_ context.Context, e *env, args []string) error {
 			_, _ = fmt.Fprintln(e.stdout)
 		}
 		if err := explain.Render(e.stdout, m, tgt); err != nil {
-			return fmt.Errorf("dmctl: explain: %w", err)
+			return fmt.Errorf("explain: %w", err)
 		}
 	}
 	return nil
@@ -113,7 +113,7 @@ func runStatus(ctx context.Context, e *env, args []string) error {
 	}
 	resp, err := c.Do(ctx, http.MethodGet, "/config", nil, nil)
 	if err != nil {
-		return fmt.Errorf("dmctl: request: %w", err)
+		return err
 	}
 	return e.emit(resp, func(w *tabwriter.Writer) {
 		var cfg struct {
@@ -181,7 +181,7 @@ func runRoutes(ctx context.Context, e *env, args []string) error {
 	}
 	resp, err := c.Do(ctx, http.MethodGet, "/routes", nil, nil)
 	if err != nil {
-		return fmt.Errorf("dmctl: request: %w", err)
+		return err
 	}
 	return e.emit(resp, func(w *tabwriter.Writer) {
 		var body struct {
@@ -270,7 +270,7 @@ func runPrincipals(ctx context.Context, e *env, args []string) error {
 		_ = rest2
 		resp, err := c.Do(ctx, http.MethodGet, "/principals/"+url.PathEscape(name), nil, nil)
 		if err != nil {
-			return fmt.Errorf("dmctl: request: %w", err)
+			return err
 		}
 		return e.emit(resp, nil)
 	case "create":
@@ -288,7 +288,7 @@ func runPrincipals(ctx context.Context, e *env, args []string) error {
 			nil,
 		)
 		if err != nil {
-			return fmt.Errorf("dmctl: request: %w", err)
+			return err
 		}
 		return e.emitToken(resp)
 	case "revoke":
@@ -298,7 +298,7 @@ func runPrincipals(ctx context.Context, e *env, args []string) error {
 		}
 		_, err = c.Do(ctx, http.MethodPost, "/principals/"+url.PathEscape(name)+"/revoke", nil, nil)
 		if err != nil {
-			return fmt.Errorf("dmctl: revoke: %w", err)
+			return fmt.Errorf("revoke: %w", err)
 		}
 		return nil
 	case "delete":
@@ -308,7 +308,7 @@ func runPrincipals(ctx context.Context, e *env, args []string) error {
 		}
 		_, err = c.Do(ctx, http.MethodDelete, "/principals/"+url.PathEscape(name), nil, nil)
 		if err != nil {
-			return fmt.Errorf("dmctl: delete principals: %w", err)
+			return fmt.Errorf("delete principals: %w", err)
 		}
 		return nil
 	case "set-roles":
@@ -337,7 +337,7 @@ func (e *env) createPrincipal(ctx context.Context, c clientDoer, args []string) 
 	}
 	resp, err := c.Do(ctx, http.MethodPost, "/principals", nil, body)
 	if err != nil {
-		return fmt.Errorf("dmctl: request: %w", err)
+		return err
 	}
 	return e.emitToken(resp)
 }
@@ -360,7 +360,7 @@ func (e *env) setRoles(ctx context.Context, c clientDoer, args []string) error {
 	}
 	resp, err := c.Do(ctx, http.MethodPatch, "/principals/"+url.PathEscape(rest[0]), nil, body)
 	if err != nil {
-		return fmt.Errorf("dmctl: request: %w", err)
+		return err
 	}
 	return e.emit(resp, nil)
 }
@@ -381,7 +381,7 @@ func (e *env) emitToken(resp *adminResponse) error {
 	_, _ = fmt.Fprintln(e.stdout, body.Token)
 	_, _ = fmt.Fprintf(
 		e.stderr,
-		"dmctl: token for %q; it is not stored and cannot be shown again\n",
+		"token for %q; it is not stored and cannot be shown again\n",
 		body.Principal.Name,
 	)
 	return nil
@@ -426,7 +426,7 @@ func runPolicies(ctx context.Context, e *env, args []string) error {
 		}
 		resp, err := c.Do(ctx, http.MethodGet, "/policies/"+url.PathEscape(name), nil, nil)
 		if err != nil {
-			return fmt.Errorf("dmctl: request: %w", err)
+			return err
 		}
 		if e.opts.output == outputHuman {
 			var doc struct{ Source string }
@@ -460,7 +460,7 @@ func runPolicies(ctx context.Context, e *env, args []string) error {
 		}
 		_, err = c.Do(ctx, http.MethodDelete, "/policies/"+url.PathEscape(name), nil, nil)
 		if err != nil {
-			return fmt.Errorf("dmctl: delete policies: %w", err)
+			return fmt.Errorf("delete policies: %w", err)
 		}
 		return nil
 	default:
@@ -491,7 +491,7 @@ func (e *env) writePolicy(ctx context.Context, c clientDoer, args []string, vali
 	}
 	resp, err := c.Do(ctx, method, path, nil, map[string]any{"Name": rest[0], "Source": src, "Description": *desc})
 	if err != nil {
-		return fmt.Errorf("dmctl: put policy: %w", err)
+		return fmt.Errorf("put policy: %w", err)
 	}
 	return e.emit(resp, nil)
 }
@@ -502,19 +502,19 @@ func (e *env) readSource(file string) (string, error) {
 	case "":
 		raw, err := io.ReadAll(e.stdin)
 		if err != nil {
-			return "", fmt.Errorf("dmctl: read stdin: %w", err)
+			return "", fmt.Errorf("read stdin: %w", err)
 		}
 		return string(raw), nil
 	case "-":
 		raw, err := io.ReadAll(e.stdin)
 		if err != nil {
-			return "", fmt.Errorf("dmctl: read stdin: %w", err)
+			return "", fmt.Errorf("read stdin: %w", err)
 		}
 		return string(raw), nil
 	default:
 		raw, err := os.ReadFile(file) // #nosec G304 -- an operator's own file
 		if err != nil {
-			return "", fmt.Errorf("dmctl: read %s: %w", file, err)
+			return "", fmt.Errorf("read %s: %w", file, err)
 		}
 		return string(raw), nil
 	}
@@ -563,7 +563,7 @@ func runDeclarations(ctx context.Context, e *env, args []string) error {
 		}
 		_, err = c.Do(ctx, http.MethodDelete, "/declarations/"+url.PathEscape(name), nil, nil)
 		if err != nil {
-			return fmt.Errorf("dmctl: delete declarations: %w", err)
+			return fmt.Errorf("delete declarations: %w", err)
 		}
 		return nil
 	default:

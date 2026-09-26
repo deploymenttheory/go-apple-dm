@@ -10,7 +10,7 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/server/adminauth"
 )
 
-var errAdminResponse = errors.New("app: local administrative operation failed")
+var errAdminResponse = errors.New("local administrative operation failed")
 
 // localAdmin buffers a bounded response until the local mutation and audit capture commit.
 // Failed handler responses roll back local writes; capture failures return 503.

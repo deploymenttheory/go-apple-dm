@@ -66,14 +66,14 @@ func (a *App) recordIssuedIdentity(ctx context.Context, c *x509.Certificate) err
 		},
 	)
 	if err != nil {
-		return fmt.Errorf("app: identity evidence: %w", err)
+		return fmt.Errorf("identity evidence: %w", err)
 	}
 	k := "issued-identity:" + cms.Fingerprint(c)
 	err = a.protocol.Update(ctx, []string{k}, func(tx state.Tx) error {
 		return tx.Put(ctx, state.Record{Key: k, Value: b, ExpiresAt: c.NotAfter})
 	})
 	if err != nil {
-		return fmt.Errorf("app: record identity evidence: %w", err)
+		return fmt.Errorf("record identity evidence: %w", err)
 	}
 	return nil
 }
@@ -252,7 +252,7 @@ func (a *App) resolveReplacementSubject(
 	}
 	r, err := a.protocol.Get(ctx, "replacement-subject:"+ref)
 	if err != nil {
-		return mdm.EnrollmentID{}, "", fmt.Errorf("app: replacement subject binding: %w", err)
+		return mdm.EnrollmentID{}, "", fmt.Errorf("replacement subject binding: %w", err)
 	}
 	id := mdm.EnrollmentID{Channel: mdm.ChannelDevice, ID: string(r.Value)}
 	if err := id.Validate(); err != nil {
@@ -444,7 +444,7 @@ func (a *App) prepareReplacement(
 	}
 	var metadata profileMetadata
 	if err := json.Unmarshal(rec.Value, &metadata); err != nil {
-		return nil, fmt.Errorf("app: read profile metadata: %w", err)
+		return nil, fmt.Errorf("read profile metadata: %w", err)
 	}
 	if len(metadata.Template) == 0 {
 		return nil, fmt.Errorf(
@@ -454,7 +454,7 @@ func (a *App) prepareReplacement(
 	}
 	p, err := enroll.Parse(metadata.Template, profile.ParseOptions{})
 	if err != nil {
-		return nil, fmt.Errorf("app: original profile: %w", err)
+		return nil, fmt.Errorf("original profile: %w", err)
 	}
 	if p.AccessRights&enroll.RightInstallProfiles == 0 {
 		return nil, fmt.Errorf(
@@ -481,7 +481,7 @@ func (a *App) prepareReplacement(
 	}
 	secret := make([]byte, 32)
 	if _, err := rand.Read(secret); err != nil {
-		return nil, fmt.Errorf("app: replacement authorization: %w", err)
+		return nil, fmt.Errorf("replacement authorization: %w", err)
 	}
 	password := base64.RawURLEncoding.EncodeToString(secret)
 	if p.SCEP != nil {
@@ -489,15 +489,15 @@ func (a *App) prepareReplacement(
 	}
 	raw, err := p.Marshal()
 	if err != nil {
-		return nil, fmt.Errorf("app: replacement profile: %w", err)
+		return nil, fmt.Errorf("replacement profile: %w", err)
 	}
 	cmd, err := mdm.NewCommand(&commands.InstallProfile{Payload: raw}, mdm.WithUUID(attempt))
 	if err != nil {
-		return nil, fmt.Errorf("app: replacement command: %w", err)
+		return nil, fmt.Errorf("replacement command: %w", err)
 	}
 	cmd.Payload = nil
 	if err := a.bindReplacementSubject(ctx, id, attempt); err != nil {
-		return nil, fmt.Errorf("app: bind replacement subject: %w", err)
+		return nil, fmt.Errorf("bind replacement subject: %w", err)
 	}
 	return &storage.Replacement{
 		ID:         attempt,
@@ -533,7 +533,7 @@ func (e *enrollment) recordProfile(
 	}
 	raw, err := copy.Marshal()
 	if err != nil {
-		return fmt.Errorf("app: profile template: %w", err)
+		return fmt.Errorf("profile template: %w", err)
 	}
 	k := profileMetadataKey(binding, p.Identifier)
 	err = e.state.Update(ctx, []string{k}, func(tx state.Tx) error {
@@ -553,7 +553,7 @@ func (e *enrollment) recordProfile(
 		return tx.Put(ctx, r)
 	})
 	if err != nil {
-		return fmt.Errorf("app: record profile: %w", err)
+		return fmt.Errorf("record profile: %w", err)
 	}
 	return nil
 }

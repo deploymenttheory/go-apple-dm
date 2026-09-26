@@ -55,7 +55,7 @@ func eventReporter(log *slog.Logger, clk clock.Clock) func(event.Event, error) {
 	var rejected uint64
 	return func(e event.Event, err error) {
 		if !errors.Is(err, event.ErrQueueFull) {
-			log.Warn("app: event sink failed", "event", string(e.Type), "error", err)
+			log.Warn("event sink failed", "event", string(e.Type), "error", err)
 			return
 		}
 		mu.Lock()
@@ -68,7 +68,7 @@ func eventReporter(log *slog.Logger, clk clock.Clock) func(event.Event, error) {
 		next = now.Add(10 * time.Second)
 		total := rejected
 		mu.Unlock()
-		log.Warn("app: event queue full; audit/webhook notifications rejected", "rejected", total)
+		log.Warn("event queue full; audit/webhook notifications rejected", "rejected", total)
 	}
 }
 

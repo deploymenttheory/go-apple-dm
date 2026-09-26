@@ -6,10 +6,12 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"io/fs"
 	"log/slog"
 	"net/http"
 	"net/netip"
 	"os"
+	"strings"
 	"sync"
 	"time"
 
@@ -188,7 +190,7 @@ func (s SinkConfig) Enabled() bool {
 }
 
 // ErrConfig reports an invalid configuration.
-var ErrConfig = errors.New("app: invalid configuration")
+var ErrConfig = errors.New("invalid configuration")
 
 // App is a built process.
 type App struct {
@@ -430,10 +432,7 @@ func (c Config) validate() error {
 		)
 	}
 	if c.Storage != "inmem" && len(c.StorageKeys) == 0 {
-		return fmt.Errorf(
-			"%w: %s storage seals unlock tokens, bootstrap tokens and push keys, so it needs %s",
-			ErrConfig, c.Storage, EnvStorageKeys,
-		)
+		return configf(nil, "%s storage needs %s, because it seals unlock tokens, bootstrap tokens and push keys", c.Storage, EnvStorageKeys)
 	}
 	if err := c.Enroll.validate(); err != nil {
 		return err
@@ -527,13 +526,24 @@ func (a *App) openKeyring(ctx context.Context) error {
 	case provider != nil:
 	case a.cfg.SecretsDir != "":
 		d, err := secrets.NewDir(a.cfg.SecretsDir)
+		if errors.Is(err, fs.ErrNotExist) {
+			return configf(err, "the secrets directory %s does not exist", a.cfg.SecretsDir)
+		}
 		if err != nil {
-			return fmt.Errorf("app: secrets directory: %w", err)
+			return configf(err, "the secrets directory %s cannot be opened (%s)", a.cfg.SecretsDir, reason(err))
 		}
 		a.closers = append(a.closers, d.Close)
 		provider = d
 	default:
 		provider = secrets.Env{Prefix: "DM_STORAGE_KEY_"}
+	}
+	for _, name := range a.cfg.StorageKeys {
+		if _, err := provider.Get(ctx, name); errors.Is(err, secrets.ErrNotFound) {
+			if a.cfg.SecretsDir != "" {
+				return configf(err, "storage key %q is not in the secrets directory %s", name, a.cfg.SecretsDir)
+			}
+			return configf(err, "storage key %q is not set; provide it as DM_STORAGE_KEY_%s or as a file in DM_SECRETS_DIR", name, strings.ToUpper(name))
+		}
 	}
 	k, err := crypt.NewKeyring(ctx, crypt.Options{
 		Keys: crypt.Keys{
@@ -544,7 +554,7 @@ func (a *App) openKeyring(ctx context.Context) error {
 		Provider: provider,
 	})
 	if err != nil {
-		return fmt.Errorf("app: storage keyring: %w", err)
+		return configf(err, "the storage keyring cannot be built (%s)", reason(err))
 	}
 	a.keyring = k
 	return nil
@@ -567,7 +577,7 @@ func (a *App) openStorage(ctx context.Context) error {
 	case "sqlite":
 		s, err := sqlite.Open(ctx, a.cfg.DSN, sqlite.Options{Keyring: a.keyring, SkipMigrate: true})
 		if err != nil {
-			return fmt.Errorf("app: sqlite: %w", err)
+			return fmt.Errorf("sqlite: %w", err)
 		}
 		a.Store, db, dialect = s, s.DB(), sqlite.Dialect
 		a.closers = append(a.closers, s.Close)
@@ -578,14 +588,14 @@ func (a *App) openStorage(ctx context.Context) error {
 			postgres.Options{Keyring: a.keyring, SkipMigrate: true},
 		)
 		if err != nil {
-			return fmt.Errorf("app: postgres: %w", err)
+			return fmt.Errorf("postgres: %w", err)
 		}
 		a.Store, db, dialect = s, s.DB(), postgres.Dialect
 		a.closers = append(a.closers, s.Close)
 	default:
 		s, err := mysql.Open(ctx, a.cfg.DSN, mysql.Options{Keyring: a.keyring, SkipMigrate: true})
 		if err != nil {
-			return fmt.Errorf("app: mysql: %w", err)
+			return fmt.Errorf("mysql: %w", err)
 		}
 		a.Store, db, dialect = s, s.DB(), mysql.Dialect
 		a.closers = append(a.closers, s.Close)
@@ -614,7 +624,7 @@ func (a *App) ddmStore(ctx context.Context) (ddm.Store, error) {
 	}
 	st, err := sqlstore.Open(ctx, a.db, a.dialect, sqlstore.Options{Keyring: a.keyring})
 	if err != nil {
-		return nil, fmt.Errorf("app: ddm store: %w", err)
+		return nil, fmt.Errorf("ddm store: %w", err)
 	}
 	return st, nil
 }
@@ -640,7 +650,7 @@ func (a *App) wire(ctx context.Context) error {
 		},
 	})
 	if err != nil {
-		return fmt.Errorf("app: engine: %w", err)
+		return fmt.Errorf("engine: %w", err)
 	}
 	a.Engine = engine
 	if err := a.wireConfigurationProfiles(ctx); err != nil {
@@ -702,7 +712,7 @@ func (a *App) wire(ctx context.Context) error {
 			Reenroll:              reenrollPolicy(cfg.AllowReenroll),
 		})
 		if err != nil {
-			return fmt.Errorf("app: core: %w", err)
+			return fmt.Errorf("core: %w", err)
 		}
 		a.Core = core
 		a.wireConfigurationProfileDownloads(mux, nil)
@@ -736,7 +746,7 @@ func (a *App) wire(ctx context.Context) error {
 		},
 	)
 	if err != nil {
-		return fmt.Errorf("app: notifier: %w", err)
+		return fmt.Errorf("notifier: %w", err)
 	}
 	a.addWorker("ddm-notifier", a.Notifier.Run)
 	a.addWorker("audit-retention", a.runAuditRetention)
@@ -799,7 +809,7 @@ func (a *App) runWorkers(ctx context.Context) error {
 			defer wg.Done()
 			defer a.setRunning(w.name, false)
 			if err := w.run(ctx); err != nil && !errors.Is(err, context.Canceled) {
-				errc <- fmt.Errorf("app: worker %s: %w", w.name, err)
+				errc <- fmt.Errorf("worker %s: %w", w.name, err)
 				cancel()
 			}
 		}()
@@ -817,7 +827,7 @@ func (a *App) Close() error {
 		ctx, cancel := context.WithTimeout(context.Background(), busDrainTimeout)
 		defer cancel()
 		if err := a.cfg.Bus.Close(ctx); err != nil {
-			errs = append(errs, fmt.Errorf("app: drain events: %w", err))
+			errs = append(errs, fmt.Errorf("drain events: %w", err))
 		}
 	}
 	if a.maintenance != nil {
@@ -840,7 +850,7 @@ func (a *App) Close() error {
 func (a *App) healthz(w http.ResponseWriter, r *http.Request) {
 	if a.db != nil {
 		if err := a.db.PingContext(r.Context()); err != nil {
-			a.cfg.Logger.WarnContext(r.Context(), "app: healthz", "error", err)
+			a.cfg.Logger.WarnContext(r.Context(), "healthz", "error", err)
 			http.Error(w, "storage unavailable", http.StatusServiceUnavailable)
 			return
 		}
@@ -888,7 +898,7 @@ func (a *App) adminStore(ctx context.Context) (adminauth.Store, error) {
 	default:
 		s, err := adminsql.Open(ctx, a.db, a.dialect, adminsql.Options{})
 		if err != nil {
-			return nil, fmt.Errorf("app: admin store: %w", err)
+			return nil, fmt.Errorf("admin store: %w", err)
 		}
 		return s, nil
 	}
@@ -940,7 +950,7 @@ func (a *App) wireAdmin(ctx context.Context, mux *http.ServeMux) error {
 	if store != nil {
 		m, err := adminauth.New(store, mustAdminRegistry(), adminauth.WithClock(cfg.Clock))
 		if err != nil {
-			return fmt.Errorf("app: admin authorization: %w", err)
+			return fmt.Errorf("admin authorization: %w", err)
 		}
 		a.admin = m
 	}

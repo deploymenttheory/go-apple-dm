@@ -72,7 +72,7 @@ func (a *App) newAxM(ctx context.Context) (*axm.Client, error) {
 		Logger:        a.cfg.Logger,
 	})
 	if err != nil {
-		return nil, fmt.Errorf("app: AxM: %w", err)
+		return nil, fmt.Errorf("AxM: %w", err)
 	}
 	return client, nil
 }
@@ -189,7 +189,7 @@ var (
 )
 
 // ErrBadAxMRequest reports an invalid assignment body.
-var ErrBadAxMRequest = errors.New("app: invalid Business Manager request")
+var ErrBadAxMRequest = errors.New("invalid Business Manager request")
 
 // listOptions reads the cursor and optional numeric page limit for an Apple Business
 // Manager request.

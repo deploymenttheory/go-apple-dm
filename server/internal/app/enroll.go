@@ -242,7 +242,7 @@ func (a *App) wireEnrollment(ctx context.Context, mux *http.ServeMux) ([]service
 	}
 	e.local, err = ca.NewLocal(e.caCert, e.caKey, ca.WithDepot(e.depot), ca.WithClock(a.cfg.Clock))
 	if err != nil {
-		return nil, fmt.Errorf("app: enrollment CA: %w", err)
+		return nil, fmt.Errorf("enrollment CA: %w", err)
 	}
 	if len(cfg.SCEPHMACKey) > 0 {
 		if e.challenge, err = scep.NewHMACChallenge(
@@ -250,7 +250,7 @@ func (a *App) wireEnrollment(ctx context.Context, mux *http.ServeMux) ([]service
 			time.Hour,
 			a.cfg.Clock,
 		); err != nil {
-			return nil, fmt.Errorf("app: SCEP challenge: %w", err)
+			return nil, fmt.Errorf("SCEP challenge: %w", err)
 		}
 	} else {
 		e.challenge = scep.StaticChallenge(cfg.SCEPChallenge)
@@ -272,7 +272,7 @@ func (a *App) wireEnrollment(ctx context.Context, mux *http.ServeMux) ([]service
 		scep.WithLogger(a.cfg.Logger),
 	)
 	if err != nil {
-		return nil, fmt.Errorf("app: SCEP: %w", err)
+		return nil, fmt.Errorf("SCEP: %w", err)
 	}
 	mux.Handle(PathSCEP, a.legacyIssuance(scepServer.Handler()))
 	if a.Certificates != nil {
@@ -366,7 +366,7 @@ func (a *App) wireEnrollment(ctx context.Context, mux *http.ServeMux) ([]service
 					Extra:  map[string]string{"flow": "ade"},
 				},
 			); err != nil {
-				a.cfg.Logger.Error("app: ADE web view", "error", err)
+				a.cfg.Logger.Error("ADE web view", "error", err)
 				http.Error(
 					w,
 					http.StatusText(http.StatusInternalServerError),
@@ -412,7 +412,7 @@ func (a *App) wireEnrollment(ctx context.Context, mux *http.ServeMux) ([]service
 						IssueSCEPChallenge(ctx, association.Reference, time.Hour)
 				}
 				if err != nil {
-					return nil, fmt.Errorf("app: issue profile SCEP challenge: %w", err)
+					return nil, fmt.Errorf("issue profile SCEP challenge: %w", err)
 				}
 				return p, nil
 			},
@@ -422,7 +422,7 @@ func (a *App) wireEnrollment(ctx context.Context, mux *http.ServeMux) ([]service
 			Logger:          a.cfg.Logger,
 		})
 		if err != nil {
-			return nil, fmt.Errorf("app: account-driven %s: %w", version, err)
+			return nil, fmt.Errorf("account-driven %s: %w", version, err)
 		}
 		mux.Handle(PathEnroll+version, h)
 	}
@@ -603,14 +603,14 @@ func (e *enrollment) parseDeviceInfo(anchors []*x509.Certificate) accountdriven.
 	return func(r *http.Request) (*accountdriven.DeviceInfo, error) {
 		raw, err := io.ReadAll(io.LimitReader(r.Body, accountdriven.MaxBody))
 		if err != nil {
-			return nil, fmt.Errorf("app: read body: %w", err)
+			return nil, fmt.Errorf("read body: %w", err)
 		}
 		content, _, err := ade.Verify(
 			raw,
 			ade.ParseOptions{Anchors: anchors, Audit: e.cfg.ADEAudit},
 		)
 		if err != nil {
-			return nil, fmt.Errorf("app: device info: %w", err)
+			return nil, fmt.Errorf("device info: %w", err)
 		}
 		var body struct {
 			Language  string `plist:"LANGUAGE"`
@@ -619,7 +619,7 @@ func (e *enrollment) parseDeviceInfo(anchors []*x509.Certificate) accountdriven.
 			OSVersion string `plist:"OS_VERSION"`
 		}
 		if err := plist.Unmarshal(content, &body); err != nil {
-			return nil, fmt.Errorf("app: device info plist: %w", err)
+			return nil, fmt.Errorf("device info plist: %w", err)
 		}
 		return &accountdriven.DeviceInfo{
 			Language:  body.Language,
@@ -660,10 +660,10 @@ func (e *enrollment) loadCA(ctx context.Context, a *App) error {
 			},
 		)
 		if err != nil {
-			return fmt.Errorf("app: self-signed CA: %w", err)
+			return fmt.Errorf("self-signed CA: %w", err)
 		}
 		a.cfg.Logger.Warn(
-			"app: generated a self-signed enrollment CA; identities will not survive a restart",
+			"generated a self-signed enrollment CA; identities will not survive a restart",
 			"subject",
 			cert.Subject.CommonName,
 		)
@@ -827,7 +827,7 @@ func (a *App) wireOIDC(e *enrollment, mux *http.ServeMux) error {
 			Complete: e.complete,
 		})
 		if err != nil {
-			return fmt.Errorf("app: OIDC: %w", err)
+			return fmt.Errorf("OIDC: %w", err)
 		}
 		mux.Handle(PathOIDCCallback, e.flow.Callback())
 		mux.HandleFunc("GET "+PathAuthenticate, func(w http.ResponseWriter, r *http.Request) {
@@ -870,7 +870,7 @@ func (a *App) wireOIDC(e *enrollment, mux *http.ServeMux) error {
 			}
 		})
 	} else {
-		a.cfg.Logger.Warn("app: no OIDC issuer configured; only the token-based ADE lane can enrol")
+		a.cfg.Logger.Warn("no OIDC issuer configured; only the token-based ADE lane can enrol")
 	}
 	return nil
 }

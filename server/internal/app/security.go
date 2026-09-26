@@ -68,7 +68,7 @@ func (a *App) protocolState(ctx context.Context) (state.Store, error) {
 	} else {
 		s, err := statestore.Open(ctx, a.db, a.dialect, a.keyring)
 		if err != nil {
-			return nil, fmt.Errorf("app: open protocol state: %w", err)
+			return nil, fmt.Errorf("open protocol state: %w", err)
 		}
 		a.protocol = s
 	}
@@ -110,14 +110,14 @@ func (d *enrollmentDepot) Put(ctx context.Context, c *x509.Certificate) error {
 			p.EnrollmentReference = ref
 		}
 		if err := d.registry.Register(ctx, d.issuer, c, p); err != nil {
-			return fmt.Errorf("app: register issuance: %w", err)
+			return fmt.Errorf("register issuance: %w", err)
 		}
 	}
 	if err := d.associations.RegisterCertificate(ctx, c); err != nil {
-		return fmt.Errorf("app: register account certificate: %w", err)
+		return fmt.Errorf("register account certificate: %w", err)
 	}
 	if err := d.Depot.Put(ctx, c); err != nil {
-		return fmt.Errorf("app: persist certificate: %w", err)
+		return fmt.Errorf("persist certificate: %w", err)
 	}
 	return nil
 }
@@ -150,7 +150,7 @@ func (c enrollmentChallenge) Verify(
 			}
 		}
 		if err := c.associations.VerifySCEPChallenge(ctx, password, csr); err != nil {
-			return fmt.Errorf("app: account SCEP challenge: %w", err)
+			return fmt.Errorf("account SCEP challenge: %w", err)
 		}
 		return nil
 	}
@@ -158,7 +158,7 @@ func (c enrollmentChallenge) Verify(
 		return c.app.enroll.verifySCEPGrant(ctx, password, csr)
 	}
 	if err := c.base.Verify(ctx, password, csr); err != nil {
-		return fmt.Errorf("app: SCEP challenge: %w", err)
+		return fmt.Errorf("SCEP challenge: %w", err)
 	}
 	return nil
 }
@@ -186,7 +186,7 @@ func (a *App) wirePKI(ctx context.Context, e *enrollment, mux *http.ServeMux) er
 		}
 		keyPEM, err := os.ReadFile(files.Key)
 		if err != nil {
-			return fmt.Errorf("app: read retired issuer key: %w", err)
+			return fmt.Errorf("read retired issuer key: %w", err)
 		}
 		key, err := parseSignerPEM(keyPEM)
 		if err != nil {
@@ -205,7 +205,7 @@ func (a *App) wirePKI(ctx context.Context, e *enrollment, mux *http.ServeMux) er
 	}
 	reg, err := revocation.New(a.protocol, issuers...)
 	if err != nil {
-		return fmt.Errorf("app: configure revocation registry: %w", err)
+		return fmt.Errorf("configure revocation registry: %w", err)
 	}
 	reg.Now = a.cfg.Clock.Now
 	a.revocations = reg

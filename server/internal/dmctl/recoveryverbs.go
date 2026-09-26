@@ -166,7 +166,7 @@ func (e *env) recoveryControl(ctx context.Context, op string, f recoveryFlags) e
 		defer cancel()
 		if err := control.WaitDrained(wait, ticket); err != nil {
 			return fmt.Errorf(
-				"dmctl: fence remains paused; inspect recovery status and use this ticket to resume: %w",
+				"fence remains paused; inspect recovery status and use this ticket to resume: %w",
 				err,
 			)
 		}
