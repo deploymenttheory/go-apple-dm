@@ -29,6 +29,11 @@ func TestSetupFailuresReadAsOneSentence(t *testing.T) {
 	_ = closed.Close()
 	setup := filepath.Join(dir, "setup.json")
 	absent := filepath.Join(dir, "absent")
+	// A setup document whose secret reference is a directory, which cannot be read.
+	unreadable := filepath.Join(dir, "unreadable.json")
+	if err := os.WriteFile(unreadable, []byte(`{"version":1,"environment":{"DM_STORAGE":"sqlite","DM_STORAGE_KEYS":"storage"},"secretFiles":{"DM_BOOTSTRAP_TOKEN":`+fmt.Sprintf("%q", dir)+`},"setup":{"role":"customer"}}`), 0o600); err != nil {
+		t.Fatal(err)
+	}
 	if err := os.WriteFile(setup, []byte(`{"version":1,"environment":{"DM_STORAGE":"sqlite","DM_STORAGE_KEYS":"storage"},"secretFiles":{"DM_BOOTSTRAP_TOKEN":`+fmt.Sprintf("%q", absent)+`},"setup":{"role":"customer"}}`), 0o600); err != nil {
 		t.Fatal(err)
 	}
@@ -49,6 +54,10 @@ func TestSetupFailuresReadAsOneSentence(t *testing.T) {
 		"FileAsPositionalArgument": {
 			args: []string{"setup", "adopt", setup},
 			want: fmt.Sprintf("setup adopt takes flags only, not %q; pass the setup document as -setup-file <path>", setup),
+		},
+		"UnreadableSecretFile": {
+			args: []string{"setup", "adopt", "-setup-file", unreadable},
+			want: "the secret file " + dir + " for DM_BOOTSTRAP_TOKEN cannot be read (", prefix: true,
 		},
 		"MissingSecretFile": {
 			args: []string{"setup", "adopt", "-setup-file", setup},
@@ -80,8 +89,11 @@ func TestSetupFailuresReadAsOneSentence(t *testing.T) {
 			// drive letter), never as the joints of a chain of layers. Every operand is
 			// removed in both its raw and its quoted spelling before counting.
 			bare := got
-			for _, operand := range []string{origin, setup, absent, fmt.Sprintf("%q", setup), fmt.Sprintf("%q", absent)} {
+			for _, operand := range []string{origin, setup, absent, unreadable, dir, fmt.Sprintf("%q", setup), fmt.Sprintf("%q", absent)} {
 				bare = strings.ReplaceAll(bare, operand, "")
+			}
+			if i := strings.Index(bare, "("); i >= 0 {
+				bare = bare[:i]
 			}
 			if strings.Contains(bare, ":") {
 				t.Fatalf("a chain of layers survived: %s", got)

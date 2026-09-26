@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"io/fs"
-	"os"
 )
 
 var errOperation = errors.New("app operation failed")
@@ -36,17 +35,13 @@ func (e *configError) Unwrap() error { return e.cause }
 // Is matches ErrConfig.
 func (e *configError) Is(target error) bool { return target == ErrConfig }
 
-// reason returns the operating system's own words for a file or network failure,
-// without the operation and path Go's wrappers repeat: "no such file or directory",
-// "permission denied".
+// reason returns the operating system's own words for a file failure, without the
+// operation and path Go's PathError repeats: "no such file or directory", "permission
+// denied". Any other error is rendered as it is.
 func reason(err error) string {
 	var pe *fs.PathError
 	if errors.As(err, &pe) && pe.Err != nil {
-		err = pe.Err
-	}
-	var se *os.SyscallError
-	if errors.As(err, &se) && se.Err != nil {
-		err = se.Err
+		return pe.Err.Error()
 	}
 	return err.Error()
 }
