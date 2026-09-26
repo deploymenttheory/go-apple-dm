@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"io/fs"
+	"net"
 	"os"
 	"path/filepath"
 	"strings"
@@ -18,6 +19,14 @@ import (
 // or a refused connection differs by platform, so those cases pin everything up to it.
 func TestSetupFailuresReadAsOneSentence(t *testing.T) {
 	dir := t.TempDir()
+	// A port that was just listening and is now closed refuses a connection at once on
+	// every platform; a well-known low port may be silently dropped by a packet filter.
+	closed, err := net.Listen("tcp", "127.0.0.1:0")
+	if err != nil {
+		t.Fatal(err)
+	}
+	origin := "http://" + closed.Addr().String()
+	_ = closed.Close()
 	setup := filepath.Join(dir, "setup.json")
 	absent := filepath.Join(dir, "absent")
 	if err := os.WriteFile(setup, []byte(`{"version":1,"environment":{"DM_STORAGE":"sqlite","DM_STORAGE_KEYS":"storage"},"secretFiles":{"DM_BOOTSTRAP_TOKEN":`+fmt.Sprintf("%q", absent)+`},"setup":{"role":"customer"}}`), 0o600); err != nil {
@@ -30,8 +39,8 @@ func TestSetupFailuresReadAsOneSentence(t *testing.T) {
 		is     error
 	}{
 		"ServerUnreachable": {
-			args: []string{"-server", "http://127.0.0.1:1", "setup", "status"},
-			want: "cannot reach http://127.0.0.1:1 (", prefix: true,
+			args: []string{"-server", origin, "setup", "status"},
+			want: "cannot reach " + origin + " (", prefix: true,
 		},
 		"UnknownRole": {
 			args: []string{"setup", "init", "-dir", filepath.Join(dir, "d"), "-role", "banana"},
