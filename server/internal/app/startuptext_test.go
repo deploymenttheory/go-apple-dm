@@ -2,6 +2,7 @@ package app_test
 
 import (
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/deploymenttheory/go-apple-dm/server/internal/app"
@@ -18,7 +19,9 @@ func TestStartupFailuresReadAsOneSentence(t *testing.T) {
 	}{
 		"SecretsDirectoryMissing": {
 			app.Config{Storage: "sqlite", DSN: filepath.Join(dir, "a.db"), StorageKeys: []string{"storage"}, SecretsDir: filepath.Join(dir, "nonexistent")},
-			"secrets directory: open " + filepath.Join(dir, "nonexistent") + ": no such file or directory",
+			// The operating system's wording for a missing directory follows; only
+			// the operation and the path, once, are pinned.
+			"secrets directory: open " + filepath.Join(dir, "nonexistent") + ": ",
 		},
 		"StorageKeyNotProvided": {
 			app.Config{Storage: "sqlite", DSN: filepath.Join(dir, "b.db"), StorageKeys: []string{"k"}, SecretsDir: dir},
@@ -36,7 +39,14 @@ func TestStartupFailuresReadAsOneSentence(t *testing.T) {
 			if err == nil {
 				t.Fatal("built")
 			}
-			if got := err.Error(); got != tc.want {
+			got := err.Error()
+			if strings.HasSuffix(tc.want, ": ") {
+				if !strings.HasPrefix(got, tc.want) || strings.Count(got, tc.cfg.SecretsDir) != 1 {
+					t.Fatalf("\n got: %s\nwant prefix: %s", got, tc.want)
+				}
+				return
+			}
+			if got != tc.want {
 				t.Fatalf("\n got: %s\nwant: %s", got, tc.want)
 			}
 		})
