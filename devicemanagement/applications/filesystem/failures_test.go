@@ -43,10 +43,22 @@ func (f *faultFile) Close() error {
 }
 
 // faultStat models a descriptor whose metadata becomes unavailable.
-type faultStat struct{ storedFile }
+type faultStat struct {
+	storedFile
+	closeCalls int
+	closeErr   error
+}
 
 // Stat returns a failure that must close the opened descriptor.
-func (f faultStat) Stat() (os.FileInfo, error) { return nil, errDisk }
+func (f *faultStat) Stat() (os.FileInfo, error) { return nil, errDisk }
+
+// Close records the result of releasing the real descriptor, without depending on
+// platform-specific errors from calling Stat on an already-closed file.
+func (f *faultStat) Close() error {
+	f.closeCalls++
+	f.closeErr = f.storedFile.Close()
+	return f.closeErr
+}
 
 // shortSource reports a stale length, as a concurrently truncated source might.
 type shortSource struct{ *bytes.Reader }
@@ -140,16 +152,23 @@ func TestStatFailureClosesDescriptor(t *testing.T) {
 		t.Fatal(err)
 	}
 	open := s.open
-	var opened storedFile
+	var opened *faultStat
 	s.open = func(name string) (storedFile, error) {
 		f, e := open(name)
-		opened = f
-		return faultStat{storedFile: f}, e
+		if e != nil {
+			return nil, e
+		}
+		t.Cleanup(func() { _ = f.Close() })
+		opened = &faultStat{storedFile: f}
+		return opened, nil
 	}
 	if _, err = s.Open(t.Context(), "package.pkg", 0, -1); !errors.Is(err, errDisk) {
 		t.Fatal(err)
 	}
-	if _, err = opened.Stat(); !errors.Is(err, os.ErrClosed) {
-		t.Fatal("descriptor leaked", err)
+	if opened == nil {
+		t.Fatal("descriptor was not opened")
+	}
+	if opened.closeCalls != 1 || opened.closeErr != nil {
+		t.Fatalf("descriptor close calls = %d, error = %v", opened.closeCalls, opened.closeErr)
 	}
 }

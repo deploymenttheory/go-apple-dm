@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"path/filepath"
 	"strings"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -191,10 +192,27 @@ func TestAuditRouteAbsentWithoutATrail(t *testing.T) {
 	}
 }
 
+// auditRetentionClock observes registration of the audit interval independently
+// of timers registered by other server workers, such as protocol-state pruning.
+type auditRetentionClock struct {
+	*clock.Fake
+	interval   time.Duration
+	registered atomic.Int64
+}
+
+// After records an audit timer only after it is ready to receive a clock advance.
+func (c *auditRetentionClock) After(d time.Duration) <-chan time.Time {
+	ch := c.Fake.After(d)
+	if d == c.interval {
+		c.registered.Add(1)
+	}
+	return ch
+}
+
 // Retention is the only way a record leaves the trail, so the worker is
 // driven by the injected clock and asserted rather than left to a timer.
 func TestAuditRetentionPrunesOnItsInterval(t *testing.T) {
-	fake := clock.NewFake(audittest.T0)
+	fake := &auditRetentionClock{Fake: clock.NewFake(audittest.T0), interval: app.DefaultAuditPruneInterval}
 	a, st := auditApp(t, app.Config{
 		Clock: fake,
 		Sinks: app.SinkConfig{Retention: 24 * time.Hour},
@@ -211,14 +229,18 @@ func TestAuditRetentionPrunesOnItsInterval(t *testing.T) {
 	runCtx, cancel := context.WithCancel(ctx)
 	done := make(chan error, 1)
 	go func() { done <- a.Run(runCtx) }()
+	t.Cleanup(func() {
+		cancel()
+		if err := <-done; err != nil {
+			t.Errorf("audit workers stopped with error: %v", err)
+		}
+	})
 
-	// Wait until the loop is parked on the clock, then move past the tick.
-	waitFor(t, "the retention loop to park on the clock", func() bool { return fake.Pending() > 0 })
+	// An unrelated timer must not let the test advance before audit registration.
+	_ = fake.After(time.Minute)
+	waitFor(t, "the audit retention timer to register", func() bool { return fake.registered.Load() == 1 })
 	fake.Advance(app.DefaultAuditPruneInterval)
 	waitFor(t, "the retention pass to prune to one record", func() bool { return len(readAll(t, st)) == 1 })
-
-	cancel()
-	<-done
 }
 
 // waitFor polls cond until it holds, so a test never sleeps for a fixed
@@ -365,21 +387,25 @@ func TestAuditRouteMapsStoreErrors(t *testing.T) {
 // A prune that fails is logged and retried rather than stopping the loop: a
 // broken retention pass must not take the server's workers down with it.
 func TestAuditRetentionSurvivesAFailedPrune(t *testing.T) {
-	fake := clock.NewFake(audittest.T0)
+	// Use a distinct interval from the protocol-state worker's one-minute timer.
+	const interval = 7 * time.Minute
+	fake := &auditRetentionClock{Fake: clock.NewFake(audittest.T0), interval: interval}
 	failing := &audittest.Failing{Store: auditinmem.New(), Fail: "Prune"}
 	a := build(t, app.Config{
 		Storage: "inmem", BootstrapToken: "t", Clock: fake,
-		Sinks: app.SinkConfig{AuditStore: failing, Retention: time.Hour, PruneInterval: time.Minute},
+		Sinks: app.SinkConfig{AuditStore: failing, Retention: time.Hour, PruneInterval: interval},
 	})
 	runCtx, cancel := context.WithCancel(context.Background())
 	done := make(chan error, 1)
 	go func() { done <- a.Run(runCtx) }()
-	waitFor(t, "the retention loop to park on the clock", func() bool { return fake.Pending() > 0 })
-	fake.Advance(2 * time.Minute)
-	// The loop is still running: it parks on the clock again.
-	waitFor(t, "the retention loop to park on the clock", func() bool { return fake.Pending() > 0 })
-	cancel()
-	if err := <-done; err != nil {
-		t.Fatalf("a failed prune stopped the workers: %v", err)
-	}
+	t.Cleanup(func() {
+		cancel()
+		if err := <-done; err != nil {
+			t.Errorf("a failed prune stopped the workers: %v", err)
+		}
+	})
+	waitFor(t, "the audit retention timer to register", func() bool { return fake.registered.Load() == 1 })
+	fake.Advance(interval)
+	// A second registration proves that the failed prune returned to its loop.
+	waitFor(t, "audit retention to retry after a failed prune", func() bool { return fake.registered.Load() == 2 })
 }
