@@ -2,6 +2,7 @@ package app
 
 import (
 	"errors"
+	"fmt"
 	"io"
 	"log/slog"
 	"net/http"
@@ -19,11 +20,12 @@ import (
 func TestApplicationPackageConfigFile(t *testing.T) {
 	root := t.TempDir()
 	file := filepath.Join(root, "packages.json")
+	absoluteCA := filepath.Join(root, "absolute", "https.pem")
 	for _, tc := range []struct {
 		name, body string
 		valid      bool
 	}{
-		{"valid", `{"publicURL":"https://mdm.example","scratchDir":"scratch","importDir":"imports","signerCAFile":"signer.pem","httpsCAFile":"/absolute/https.pem","backends":{"local":{"kind":"filesystem","directory":"blobs"}}}`, true},
+		{"valid", fmt.Sprintf(`{"publicURL":"https://mdm.example","scratchDir":"scratch","importDir":"imports","signerCAFile":"signer.pem","httpsCAFile":%q,"backends":{"local":{"kind":"filesystem","directory":"blobs"}}}`, absoluteCA), true},
 		{"unknown", `{"unknown":true}`, false},
 		{"trailing", `{} {}`, false},
 		{"invalid", `{`, false},
@@ -37,7 +39,7 @@ func TestApplicationPackageConfigFile(t *testing.T) {
 			if (err == nil) != tc.valid {
 				t.Fatal(err)
 			}
-			if tc.valid && (cfg.ScratchDir != filepath.Join(root, "scratch") || cfg.ImportDir != filepath.Join(root, "imports") || cfg.SignerCAFile != filepath.Join(root, "signer.pem") || cfg.HTTPSCAFile != "/absolute/https.pem" || cfg.Backends["local"].Directory != filepath.Join(root, "blobs")) {
+			if tc.valid && (cfg.ScratchDir != filepath.Join(root, "scratch") || cfg.ImportDir != filepath.Join(root, "imports") || cfg.SignerCAFile != filepath.Join(root, "signer.pem") || cfg.HTTPSCAFile != absoluteCA || cfg.Backends["local"].Directory != filepath.Join(root, "blobs")) {
 				t.Fatal("incorrect relative paths", cfg)
 			}
 		})
