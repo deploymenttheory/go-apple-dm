@@ -67,7 +67,7 @@ func tierOf(pkg string) int {
 		return tierServer
 	case pkg == "inventory", strings.HasPrefix(pkg, "inventory/"):
 		return tierInventory
-	case strings.HasPrefix(pkg, "utility/"):
+	case strings.HasPrefix(pkg, "utility/"), pkg == "applications", strings.HasPrefix(pkg, "applications/"):
 		return tierUtility
 	case pkg == "simulator":
 		return tierClient
@@ -233,6 +233,11 @@ func TestLibraryPackageLocations(t *testing.T) {
 func TestLibraryTierClassification(t *testing.T) {
 	t.Parallel()
 	for pkg, want := range map[string]int{
+		"devicemanagement/applications":                   tierUtility,
+		"devicemanagement/applications/aws":               tierUtility,
+		"devicemanagement/applications/azure":             tierUtility,
+		"devicemanagement/applications/gcp":               tierUtility,
+		"devicemanagement/applications/filesystem":        tierUtility,
 		"devicemanagement/osversion":                      tierFoundation,
 		"devicemanagement/clock":                          tierFoundation,
 		"devicemanagement/internal/cbor":                  tierFoundation,
