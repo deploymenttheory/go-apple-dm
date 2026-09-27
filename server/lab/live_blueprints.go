@@ -15,6 +15,10 @@ import (
 	"strings"
 	"time"
 
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/osversion"
+	schemaddm "github.com/deploymenttheory/go-apple-dm/devicemanagement/schema/ddm"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/schema/support"
+
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/ddm"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/ddm/blueprint"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/mdm"
@@ -34,8 +38,12 @@ func liveBlueprints(user bool) func(context.Context, *Environment, string) error
 		if err != nil {
 			return err
 		}
-		if !strings.HasPrefix(inventory["OSVersion"], "26.") {
-			return fmt.Errorf("%w: this scenario requires macOS 26", ErrBlocked)
+		version, parseErr := osversion.Parse(inventory["OSVersion"])
+		if parseErr != nil {
+			return parseErr
+		}
+		if err := (&schemaddm.LegacyProfile{ProfileURL: "https://lab.invalid/profile"}).Validate(support.Target{OS: support.MacOS, Version: version, Supervised: true, Channel: support.ChannelDevice}); err != nil {
+			return fmt.Errorf("%w: target cannot deliver a legacy profile declaration: %v", ErrBlocked, err)
 		}
 		path, query, scope := "/enrollments/device/"+url.PathEscape(device), "", profile.ScopeSystem
 		if user {
@@ -71,13 +79,14 @@ func liveBlueprints(user bool) func(context.Context, *Environment, string) error
 				err = fmt.Errorf("%s: %w", test.phase, err)
 			}
 			test.phase = "cleanup"
-			cleanup, cancel := context.WithTimeout(context.WithoutCancel(ctx), 45*time.Second)
+			// Allow the notifier to retry a coalesced wake before requiring native removal.
+			cleanup, cancel := context.WithTimeout(context.WithoutCancel(ctx), 2*time.Minute)
 			defer cancel()
 			err = errors.Join(err, test.cleanup(cleanup))
 		}()
 		p := &profile.Profile{
 			Identifier: "com.deploymenttheory.acceptance." + id,
-			UUID:       profile.NewUUID(), Scope: scope, DisplayName: "Blueprint acceptance v1",
+			UUID:       profile.NewUUID(), Scope: scope, DisplayName: "DDM Managed Preferences Test v1",
 			Payloads: []profile.Payload{{
 				Identifier: "com.deploymenttheory.acceptance." + id + ".preferences",
 				UUID:       profile.NewUUID(),
@@ -130,7 +139,7 @@ func liveBlueprints(user bool) func(context.Context, *Environment, string) error
 		}
 		test.phase = "profile replacement"
 		oldToken := test.status[test.record.Compiled.Identifiers["preferences"]].ServerToken
-		p.DisplayName = "Blueprint acceptance v2"
+		p.DisplayName = "DDM Managed Preferences Test v2"
 		p.Payloads[0].Content = &profile.Raw{Type: "com.apple.ManagedClient.preferences", Keys: map[string]any{"PayloadContent": map[string]any{p.Identifier: map[string]any{
 			"Forced": []any{map[string]any{"mcx_preference_settings": map[string]any{"AcceptanceMarker": "v2"}}},
 		}}}}
@@ -183,7 +192,7 @@ func liveBlueprints(user bool) func(context.Context, *Environment, string) error
 		if err := test.cleanup(ctx); err != nil {
 			return err
 		}
-		if !user {
+		if !user && version.Major < 27 {
 			return test.profileAssetReference(ctx, spec)
 		}
 		return nil
@@ -322,40 +331,53 @@ func liveBlueprintStatus(row ddm.DeclarationStatus, active bool, since time.Time
 		(row.Valid == "valid" || (!active && row.Valid == "unknown")) && (!fresh || !row.LastSeen.Before(since))
 }
 
-// checkProfile checks ProfileList for the expected profile identity, display name and
-// DDM source, or for its absence.
+// checkProfile waits for native profile state to converge after declaration status.
+// Every observation uses a fresh acknowledged command and retains its evidence.
 func (t *liveBlueprintTest) checkProfile(ctx context.Context, display string) error {
-	cmd, err := mdm.NewCommand(&commands.ProfileList{})
-	if err != nil {
-		return wrapError(err)
-	}
-	raw, err := liveCommand(ctx, t.e, t.path, cmd)
-	if err != nil {
-		return err
-	}
-	var response struct {
-		ProfileList []struct{ PayloadIdentifier, PayloadUUID, PayloadDisplayName, Source string }
-	}
-	if err := plist.Unmarshal(raw, &response); err != nil {
-		return wrapError(err)
-	}
-	if err := t.evidence("profile-list", response); err != nil {
-		return err
-	}
-	found := 0
-	for _, p := range response.ProfileList {
-		if p.PayloadIdentifier != t.profileID {
-			continue
+	ctx, cancel := context.WithTimeout(ctx, 2*time.Minute)
+	defer cancel()
+	attempt := 0
+	return waitLive(ctx, func() (bool, error) {
+		cmd, err := mdm.NewCommand(&commands.ProfileList{})
+		if err != nil {
+			return false, wrapError(err)
 		}
-		found++
-		if display == "" || p.PayloadUUID != t.profileUUID || p.PayloadDisplayName != display || p.Source != "Declarative Device Management" {
-			return fmt.Errorf("%w: ProfileList does not match the expected DDM configuration profile", errOperation)
+		raw, err := Command(ctx, t.e, t.path, cmd, t.dir)
+		if err != nil {
+			return false, err
 		}
-	}
-	if (display != "" && found != 1) || (display == "" && found != 0) {
-		return fmt.Errorf("%w: ProfileList contains %d matching profiles", errOperation, found)
-	}
-	return nil
+		var response struct {
+			ProfileList []struct{ PayloadIdentifier, PayloadUUID, PayloadDisplayName, Source string }
+		}
+		if err := plist.Unmarshal(raw, &response); err != nil {
+			return false, wrapError(err)
+		}
+		attempt++
+		if err := t.evidence(fmt.Sprintf("profile-list-attempt-%d", attempt), response); err != nil {
+			return false, err
+		}
+		if err := t.evidence("profile-list", response); err != nil {
+			return false, err
+		}
+		found, matches := 0, false
+		for _, p := range response.ProfileList {
+			if p.PayloadIdentifier != t.profileID {
+				continue
+			}
+			found++
+			if p.PayloadUUID != t.profileUUID || p.Source != "Declarative Device Management" {
+				return false, fmt.Errorf("%w: ProfileList does not match the expected DDM configuration profile", errOperation)
+			}
+			matches = p.PayloadDisplayName == display
+		}
+		if found > 1 {
+			return false, fmt.Errorf("%w: ProfileList contains %d matching profiles", errOperation, found)
+		}
+		if display == "" {
+			return found == 0, nil
+		}
+		return found == 1 && matches, nil
+	})
 }
 
 // waitRemoved waits for the scenario declarations to disappear from status, then
@@ -395,7 +417,7 @@ func (t *liveBlueprintTest) cleanup(ctx context.Context) error {
 	return nil
 }
 
-// macOS 26 must never receive LegacyProfile.ProfileAssetReference. A fresh,
+// macOS before 27 must never receive LegacyProfile.ProfileAssetReference. A fresh,
 // compatible activation in the same publication proves a native sync happened;
 // absence of a status row alone would also pass for a device that never checked in.
 func (t *liveBlueprintTest) profileAssetReference(ctx context.Context, spec blueprint.Spec) error {
@@ -420,7 +442,7 @@ func (t *liveBlueprintTest) profileAssetReference(ctx context.Context, spec blue
 		}
 	}
 	if !compatibility.Enforced || !withheld {
-		return fmt.Errorf("%w: ProfileAssetReference was not withheld for macOS 26", errOperation)
+		return fmt.Errorf("%w: ProfileAssetReference was not withheld for macOS before 27", errOperation)
 	}
 	if err := t.evidence("compatibility", compatibility); err != nil {
 		return err
@@ -430,7 +452,7 @@ func (t *liveBlueprintTest) profileAssetReference(ctx context.Context, spec blue
 			return false, err
 		}
 		if _, present := t.status[profileID]; present {
-			return false, fmt.Errorf("%w: macOS 26 received ProfileAssetReference", errOperation)
+			return false, fmt.Errorf("%w: macOS before 27 received ProfileAssetReference", errOperation)
 		}
 		return liveBlueprintStatus(t.status[t.record.Compiled.Identifiers["subscription"]], true, started, true) &&
 			liveBlueprintStatus(t.status[t.record.Compiled.Activations["always"]], true, started, true), nil

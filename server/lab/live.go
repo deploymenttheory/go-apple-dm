@@ -269,6 +269,29 @@ func liveCommand(
 	path string,
 	cmd *mdm.Command,
 ) ([]byte, error) {
+	return Command(ctx, e, path, cmd, "")
+}
+
+// Command queues a fresh command, requires APNs acceptance, and waits for the
+// exact enrollment's acknowledgment. Evidence includes request, push and reply.
+// Wake acceptance and acknowledgment each wait up to 45 seconds, bounded by context.
+func Command(ctx context.Context, e *Environment, path string, cmd *mdm.Command, evidence string) ([]byte, error) {
+	if e == nil || e.Client == nil || cmd == nil || cmd.UUID == "" || strings.ContainsAny(cmd.UUID, "/\\") {
+		return nil, fmt.Errorf("%w: command requires an environment and a nonempty path-safe UUID", errOperation)
+	}
+
+	save := func(name string, data []byte) error {
+		if evidence == "" {
+			return nil
+		}
+		if err := os.MkdirAll(evidence, 0o700); err != nil {
+			return err
+		}
+		return os.WriteFile(filepath.Join(evidence, cmd.UUID+"-"+name), data, 0o600)
+	}
+	if err := save("request.plist", cmd.Raw); err != nil {
+		return nil, err
+	}
 	var queued struct{ Queued int }
 	if err := e.api(ctx, "POST", path+"/commands", cmd.Raw, &queued); err != nil {
 		return nil, wrapError(err)
@@ -276,12 +299,48 @@ func liveCommand(
 	if queued.Queued != 1 {
 		return nil, fmt.Errorf("%w: %s was not queued", errOperation, cmd.RequestType)
 	}
-	var push struct{ Sent bool }
-	if err := e.api(ctx, "POST", path+"/push", nil, &push); err != nil {
-		return nil, wrapError(err)
+	var push struct {
+		Sent    bool   `json:"Sent"`
+		Outcome string `json:"Outcome,omitempty"`
+		Status  int    `json:"Status,omitempty"`
+		Reason  string `json:"Reason,omitempty"`
 	}
-	if !push.Sent {
-		return nil, fmt.Errorf("%w: APNs did not accept the wake", errOperation)
+	wakeCtx, cancelWake := context.WithTimeout(ctx, 45*time.Second)
+	defer cancelWake()
+	var attempts []json.RawMessage
+	for {
+		push.Sent, push.Outcome, push.Status, push.Reason = false, "", 0, ""
+		if err := e.api(wakeCtx, "POST", path+"/push", nil, &push); err != nil {
+			return nil, wrapError(err)
+		}
+		data, err := json.Marshal(push)
+		if err != nil {
+			return nil, err
+		}
+		if err = save("push.json", data); err != nil {
+			return nil, err
+		}
+		attempts = append(attempts, json.RawMessage(data))
+		history, err := json.Marshal(attempts)
+		if err != nil {
+			return nil, err
+		}
+		if err = save("push-attempts.json", history); err != nil {
+			return nil, err
+		}
+		if push.Sent {
+			break
+		}
+		// A recent wake can be coalesced by the server. Require an actual
+		// accepted wake after that window; a skipped push never passes.
+		if push.Outcome != "skipped" {
+			return nil, fmt.Errorf("%w: APNs did not accept the wake (outcome=%s status=%d reason=%s)", errOperation, push.Outcome, push.Status, push.Reason)
+		}
+		select {
+		case <-wakeCtx.Done():
+			return nil, fmt.Errorf("%w: APNs wake remained skipped: %w", errOperation, wakeCtx.Err())
+		case <-time.After(time.Second):
+		}
 	}
 	deadline := time.NewTimer(45 * time.Second)
 	defer deadline.Stop()
@@ -324,10 +383,16 @@ func liveCommand(
 			if err = json.Unmarshal(b, &res); err != nil {
 				return nil, wrapError(err)
 			}
+			if err := save("result.json", b); err != nil {
+				return nil, err
+			}
 			if res.Status == "Error" {
 				return nil, fmt.Errorf("%w: device returned Error", errOperation)
 			}
 			if res.Status == "Acknowledged" {
+				if err := save("response.plist", res.Response); err != nil {
+					return nil, err
+				}
 				return res.Response, nil
 			}
 		}

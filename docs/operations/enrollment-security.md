@@ -138,6 +138,13 @@ binding and attestation. Initial software-key ACME profiles are refused unless
 `DM_ACME_ALLOW_UNATTESTED` explicitly permits that enrollment policy; SCEP remains
 available. There is no optional Apple-conformance mode.
 
+For software-key clients that omit `attObj` or send an empty value, configure
+`AllowUnattested` or `AuthorizeUnattested` explicitly. The ACME server applies that
+policy at challenge validation and rechecks authorization at finalization. Missing
+evidence remains rejected by default; `Binding.RequireAttestation` still rejects
+unattested responses even when an unattested policy is configured. Malformed
+nonempty evidence never falls back to unattested issuance.
+
 A declarative credential code is bound to the currently enrolled certificate,
 expires after five minutes (or certificate expiry, whichever comes first), and
 is claimed by one ACME order. The server rechecks the grant, enrollment,
