@@ -147,8 +147,9 @@ func New(cfg Config) (*Client, error) {
 // Response is one admin API answer. Body is the server's bytes, unmodified,
 // so canonical JSON and key order survive to whatever consumes them.
 type Response struct {
-	Status int
-	Body   []byte
+	Headers http.Header
+	Status  int
+	Body    []byte
 }
 
 // Do issues one request. path is relative to the admin prefix, for example
@@ -224,7 +225,7 @@ func (c *Client) DoWithHeaders(ctx context.Context, method, path string, query u
 	if c.trace != nil {
 		c.trace(fmt.Sprintf("  -> %d (%d bytes)", resp.StatusCode, len(raw)))
 	}
-	out := &Response{Status: resp.StatusCode, Body: raw}
+	out := &Response{Status: resp.StatusCode, Body: raw, Headers: resp.Header.Clone()}
 	if resp.StatusCode >= 400 {
 		return out, statusError(resp.StatusCode, raw)
 	}

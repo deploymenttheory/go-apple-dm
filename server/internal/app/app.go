@@ -22,6 +22,8 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/appleplatformservices/axm"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/appleplatformservices/dep"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/appleplatformservices/push/apns"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/applications"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/applications/filesystem"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/clock"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/inventory"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/cms"
@@ -38,6 +40,7 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/server/adminauth"
 	admininmem "github.com/deploymenttheory/go-apple-dm/server/adminauth/inmem"
 	adminsql "github.com/deploymenttheory/go-apple-dm/server/adminauth/sqlstore"
+	"github.com/deploymenttheory/go-apple-dm/server/applicationpackages"
 	"github.com/deploymenttheory/go-apple-dm/server/apppush"
 	"github.com/deploymenttheory/go-apple-dm/server/audit"
 	"github.com/deploymenttheory/go-apple-dm/server/blueprints"
@@ -70,6 +73,7 @@ const (
 // Config is the process configuration; see ParseEnv for the DM_*
 // variables and cmd/dmserver for the flags.
 type Config struct {
+	ApplicationPackages   ApplicationPackageConfig
 	Webhooks              webhook.Config
 	ApplicationIdentities ApplicationIdentityConfig
 	persistentEvents      event.Publisher
@@ -210,6 +214,10 @@ type App struct {
 	Engine                *ddm.Engine
 	Blueprints            *blueprints.Manager
 	ConfigurationProfiles *configurationprofile.Manager
+	ApplicationPackages   *applications.Manager
+	packageHost           *applicationpackages.Host
+	packageImports        *filesystem.Store
+	packageHTTPS          applications.HTTPSSource
 	Notifier              *ddmsync.Notifier
 	Store                 storage.Store
 	keyring               *crypt.Keyring
@@ -653,6 +661,9 @@ func (a *App) wire(ctx context.Context) error {
 		return fmt.Errorf("engine: %w", err)
 	}
 	a.Engine = engine
+	if err := a.wireApplicationPackages(ctx); err != nil {
+		return err
+	}
 	if err := a.wireConfigurationProfiles(ctx); err != nil {
 		return err
 	}
@@ -716,6 +727,7 @@ func (a *App) wire(ctx context.Context) error {
 		}
 		a.Core = core
 		a.wireConfigurationProfileDownloads(mux, nil)
+		a.wireApplicationPackageDownloads(mux)
 		api := httpapi.Handler(
 			httpapi.Config{Checkin: core, Connect: core, Logger: cfg.Logger, Now: cfg.Clock.Now},
 		)
@@ -760,6 +772,7 @@ func (a *App) wire(ctx context.Context) error {
 		if a.webhooks != nil {
 			a.Handler = a.webhooks.Observe(a.Handler, mux)
 		}
+		a.Handler = redactPackageURL(a.Handler)
 		if a.maintenance != nil {
 			// Admission includes observation's deferred persistence. Rejected
 			// requests must not create new writes after a pause is acknowledged.
@@ -964,6 +977,7 @@ func (a *App) wireAdmin(ctx context.Context, mux *http.ServeMux) error {
 	routes = append(routes, a.blueprintAdminRoutes()...)
 	routes = append(routes, a.applicationIdentityRoutes()...)
 	routes = append(routes, a.configurationProfileAdminRoutes()...)
+	routes = append(routes, a.applicationPackageAdminRoutes()...)
 	routes = append(routes, a.mdmAdminRoutes()...)
 	routes = append(routes, a.contentCacheRoutes()...)
 	extras, err := a.operatorRoutes(ctx)
