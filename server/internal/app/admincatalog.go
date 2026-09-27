@@ -95,7 +95,7 @@ func AdminActions() []adminauth.Action {
 			a.Context["requestType"] = adminauth.ContextAttribute{Type: "String", Required: true}
 			a.Sensitive = !slices.Contains(operator, a.ID)
 		}
-		a.Sensitive = a.Sensitive || slices.Contains(sensitive, a.ID)
+		a.Sensitive = a.Sensitive || slices.Contains(sensitive, a.ID) || strings.Contains(a.ID, "ApplicationPackage")
 		a.RootOnly = a.ID == ActionManageRoles || a.ID == ActionManagePrincipals || a.ID == ActionManagePolicies
 		if a.RootOnly {
 			a.Group = "authorization"

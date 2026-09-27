@@ -55,6 +55,7 @@ func baseAdminActions() []adminauth.Action {
 		{ID: ActionReplayWebhooks, Help: "Retry and replay retained webhook occurrences. Sensitive captures and destinations require a separate grant.", Resource: adminauth.EntitySystem},
 	}...)
 	actions = append(actions, applicationIdentityActions()...)
+	actions = append(actions, applicationPackageActions()...)
 	return append(append(actions, contentCacheActions()...), []adminauth.Action{
 		{
 			ID:       ActionReplaceEnrollment,
@@ -387,6 +388,9 @@ type statusRecorder struct {
 	http.ResponseWriter
 	status int
 }
+
+// Unwrap lets response controllers reach connection deadlines through auditing.
+func (w *statusRecorder) Unwrap() http.ResponseWriter { return w.ResponseWriter }
 
 // WriteHeader records the first response status for auditing and forwards the call to the
 // underlying writer.

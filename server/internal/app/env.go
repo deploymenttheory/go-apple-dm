@@ -150,6 +150,7 @@ func ParseEnv(get func(string) string) (Config, error) {
 		Subscriptions: true,
 	}
 
+	cfg.ApplicationPackages.File = get("DM_APPLICATION_PACKAGES_CONFIG")
 	cfg.ContentCache.PublicURL = get("DM_CONTENT_CACHE_URL")
 	if v := get("DM_CONTENT_CACHE_RETENTION"); v != "" {
 		d, err := time.ParseDuration(v)

@@ -210,6 +210,7 @@ func commands() map[string]command {
 		{"declarations", "manage declarations", runDeclarations},
 		{"blueprints", "validate, publish and assign Blueprints", runBlueprints},
 		{"app-identities", "discover public App Store and Apple app identities, or inspect an artifact", runAppIdentities},
+		{"application-packages", "manage verified packages and native MDM/DDM delivery", runApplicationPackages},
 		{"configuration-profiles", "upload, list and download configuration profiles", runConfigurationProfiles},
 		{"audit", "read the audit trail", runAudit},
 		{"events", "inspect persistent event delivery and retry a destination", runEvents},

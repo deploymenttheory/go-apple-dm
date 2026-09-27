@@ -13,6 +13,7 @@
 - [Access control](operations/access-control.md): bootstrap, principals, managed roles, typed policies and root recovery.
 - [Blueprints](operations/blueprints.md): local declaration composition, publication, assignment and hosted configuration profiles.
 - [Application package library](../devicemanagement/applications/README.md): metadata, verified installer content, manifests and filesystem/AWS/Azure/GCP storage.
+- [Application packages](operations/application-packages.md): verified installer storage, metadata and native MDM/DDM delivery.
 - [Application identities](operations/application-identities.md): artifact inspection, app discovery, authoring and native verification.
 - [Schema monitor](schema-monitor.md): upcoming vendor-schema generation checks and diagnosis.
 - [Native webhooks](operations/webhooks.md): managed subscriptions, tested JSON examples, sensitive payloads and replay.

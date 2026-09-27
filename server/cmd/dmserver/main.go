@@ -116,6 +116,7 @@ func run(ctx context.Context, args []string, getenv func(string) string, out *os
 		cfg.Subscriptions,
 		"synthesise status subscriptions ("+app.EnvSubscriptions+")",
 	)
+	fs.StringVar(&cfg.ApplicationPackages.File, "application-packages-config", cfg.ApplicationPackages.File, "package storage, sources and verification JSON (DM_APPLICATION_PACKAGES_CONFIG)")
 	fs.StringVar(&cfg.ContentCache.PublicURL, "content-cache-url", cfg.ContentCache.PublicURL, "HTTPS origin enabling cache metrics ingestion (DM_CONTENT_CACHE_URL)")
 	fs.DurationVar(&cfg.ContentCache.Retention, "content-cache-retention", cfg.ContentCache.Retention, "cache report retention; default 720h (DM_CONTENT_CACHE_RETENTION)")
 	fs.StringVar(
