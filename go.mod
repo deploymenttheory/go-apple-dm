@@ -10,7 +10,7 @@ retract (
 
 require (
 	github.com/deploymenttheory/go-apfs-v2 v0.3.1
-	github.com/deploymenttheory/go-macos-pkg v0.6.0
+	github.com/deploymenttheory/go-macos-pkg v0.7.1
 	github.com/micromdm/plist v0.3.0
 	github.com/smallstep/pkcs7 v0.2.3
 	github.com/smallstep/scep v0.0.0-20260331191114-261f960a40d1
@@ -27,6 +27,7 @@ require (
 	github.com/go-compressions/lzfse v0.3.0 // indirect
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/kr/pretty v0.3.1 // indirect
+	github.com/mikelolasagasti/xz v1.0.1 // indirect
 	github.com/pierrec/lz4/v4 v4.1.30 // indirect
 	github.com/rogpeppe/go-internal v1.16.0 // indirect
 	github.com/ulikunitz/xz v0.5.16 // indirect
