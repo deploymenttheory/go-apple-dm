@@ -120,12 +120,12 @@ removes its assignment and declarations and
 waits for the device's status to reflect removal. Obtain operator approval before
 running this live declaration test.
 
-LIVE-005 and LIVE-006 exercise Blueprint publication on a macOS 26 device and its
+LIVE-005 and LIVE-006 exercise Blueprint publication on a supported macOS device and its
 MDM-enabled user channel. They require fresh native declaration status and
 APNs-triggered `ProfileList` responses for conditional activation, replacement of
 an uploaded configuration profile, clearing and republishing while preserving the
 assignment, unassignment, reassignment and deletion. LIVE-005 also checks that
-`LegacyProfile.ProfileAssetReference` is withheld on macOS 26 while a compatible
+`LegacyProfile.ProfileAssetReference` is withheld on macOS before 27 while a compatible
 configuration in the same Blueprint reaches the device. Run these only against a
 designated test Mac or VM. See [Blueprint acceptance](#blueprint-acceptance)
 for the command, exact assertions and platform limits.
@@ -248,7 +248,7 @@ recovery; device-side rollback and ADE activation need their own live evidence.
 ## Blueprint acceptance
 
 The [live Blueprint modules](../../server/lab/live_blueprints.go)
-exercise macOS 26 device (LIVE-005) and installing-user (LIVE-006) channels. They
+exercise supported macOS device (LIVE-005) and installing-user (LIVE-006) channels. They
 use native DDM reports, real APNs wakes and acknowledged `ProfileList` commands;
 they are unsupported in simulated mode. LIVE-006 requires the installing user to
 be logged in and MDM-enabled. The current runner's OS restriction is part of its
@@ -273,7 +273,14 @@ for LIVE-006.
 | Clear and republish | Publishing an identifier-only source removes the temporary declarations from native status and removes the profile from `ProfileList`. Republishing the complete source installs it again without assigning the Blueprint again. |
 | Unassign and reassign | Unassignment removes the declarations and installed profile. Reassignment restores them, with fresh native status. |
 | Delete while assigned | Deleting the Blueprint removes its declarations from native status and its profile from a fresh `ProfileList`. |
-| macOS 27 field on macOS 26 | LIVE-005 publishes `ProfileAssetReference`. Compatibility reports the configuration as withheld for `unsupported-target`; a compatible subscription and activation in the same publication receive fresh device status, while the profile configuration is absent and the profile remains uninstalled. |
+| macOS 27 field on an earlier macOS release | LIVE-005 publishes `ProfileAssetReference`. Compatibility reports the configuration as withheld for `unsupported-target`; a compatible subscription and activation in the same publication receive fresh device status, while the profile configuration is absent and the profile remains uninstalled. |
+
+Native `ProfileList` can lag declaration status during installation, replacement
+and removal. The checks poll fresh acknowledged commands for up to two minutes,
+bounded by the module deadline, and retain every command and profile observation.
+A wrong profile UUID, delivery source or duplicate identifier fails immediately;
+a profile that never reaches the expected state fails at the deadline. Cleanup
+also allows two minutes for the notifier to retry a coalesced push.
 
 The inactive profile configuration may report validity `unknown` before its
 activation becomes true. Active declarations must report `valid`. Changed
@@ -323,3 +330,24 @@ These checks prove profile installation/removal through `ProfileURL`; reading th
 managed preference in an application is a separate behavior check. Native signed
 profiles, OS 27 asset-reference delivery and other SQL backends need their own
 acceptance evidence. No past run establishes a pass for a new source revision.
+
+## Attach a private device harness to managed setup
+
+A private harness can call `lab.Connect` with a `lab.Connection` containing the
+existing HTTPS origin, exported CA path, managed administrator token path and an
+evidence directory. Attachment verifies `/auth/me`; it does not initialize SQL,
+create certificate identities or start a supervisor. `Environment.Close` releases
+the attachment's HTTP transport without stopping the server. Redirects are refused.
+
+`lab.SelectFrom` selects IDs or themes from an extended module catalogue.
+`lab.Command` queues a fresh command, requires accepted APNs delivery and polls the
+exact enrollment-scoped command result. Its optional evidence directory receives
+the command plist, push outcome, all push attempts, result JSON and acknowledged
+response. A coalesced (`skipped`) push is retried for up to 45 seconds, bounded by
+the caller context; it does not satisfy the accepted-wake requirement. Other push
+failures return immediately. Missing acknowledgment remains an error; it never
+establishes device acceptance.
+
+Blueprint live checks validate legacy-profile support against the target OS version.
+The negative `ProfileAssetReference` test runs only before macOS 27; the common
+publication, native status, revision and removal checks also apply to macOS 27.

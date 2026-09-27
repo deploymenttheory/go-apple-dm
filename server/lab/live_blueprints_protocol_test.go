@@ -26,7 +26,7 @@ import (
 // These fixtures test the acceptance runner's failure detection and cleanup.
 // Their synthetic status and command responses are not device acceptance evidence.
 func TestLiveBlueprintProtocolEvidenceAndCleanup(t *testing.T) {
-	for _, failure := range []string{"", "user", "inventory", "wrong OS", "user unavailable", "upload", "upload identity", "publish", "missing compilation", "notify", "assignment", "status", "stale status", "invalid status", "changed identical publication", "wrong source", "wrong UUID", "missing profile", "duplicate profile", "unchanged token", "compatibility disabled", "compatibility missing", "incompatible delivered", "delete"} {
+	for _, failure := range []string{"", "user", "inventory", "wrong OS", "user unavailable", "upload", "upload identity", "publish", "missing compilation", "notify", "assignment", "status", "stale status", "invalid status", "changed identical publication", "wrong source", "wrong UUID", "delayed profile", "duplicate profile", "unchanged token", "compatibility disabled", "compatibility missing", "incompatible delivered", "delete"} {
 		t.Run(failure, func(t *testing.T) {
 			t.Parallel()
 			ctx, cancel := context.WithTimeout(t.Context(), 30*time.Second)
@@ -39,7 +39,7 @@ func TestLiveBlueprintProtocolEvidenceAndCleanup(t *testing.T) {
 				Workspace: &Workspace{Directory: t.TempDir()}, InstallingUserID: "user",
 			}
 			err := liveBlueprints(failure == "user" || failure == "user unavailable")(ctx, e, "mac")
-			if (failure == "" || failure == "user") != (err == nil) {
+			if (failure == "" || failure == "user" || failure == "delayed profile") != (err == nil) {
 				t.Fatalf("failure %q: %v", failure, err)
 			}
 			f.mu.Lock()
@@ -266,7 +266,7 @@ func (f *blueprintProtocolFixture) serve(w http.ResponseWriter, r *http.Request)
 		if f.command == "DeviceInformation" {
 			version := "26.6.2"
 			if f.fail("wrong OS") {
-				version = "27.0"
+				version = "12.0"
 			}
 			response = map[string]any{"QueryResponses": map[string]string{"OSVersion": version, "BuildVersion": "25G83"}}
 		} else {
@@ -280,7 +280,7 @@ func (f *blueprintProtocolFixture) serve(w http.ResponseWriter, r *http.Request)
 				if f.fail("wrong UUID") {
 					item["PayloadUUID"] = "different"
 				}
-				if !f.fail("missing profile") {
+				if !f.fail("delayed profile") {
 					profiles = append(profiles, item)
 				}
 				if f.fail("duplicate profile") {

@@ -451,11 +451,20 @@ func (s *Server) challenge(e *exchange) error {
 // attestationFrom reads the attestation object out of the challenge
 // response.
 func (s *Server) attestationFrom(e *exchange) ([]byte, error) {
-	var req challengeRequest
+	var req *challengeRequest
 	if err := e.decode(&req); err != nil {
 		return nil, err
 	}
+	if req == nil {
+		return nil, NewProblem(ProblemMalformed, "the challenge response must be an object")
+	}
 	if req.AttObj == "" {
+		// Software-key Apple clients may omit attObj entirely. Only a
+		// configured unattested policy permits this representation; validate
+		// still enforces the identifier binding and deployment authorization.
+		if s.cfg.AllowUnattested || s.cfg.AuthorizeUnattested != nil {
+			return nil, nil
+		}
 		return nil, NewProblem(
 			ProblemMalformed,
 			"the challenge response carries no attestation object",
@@ -476,7 +485,7 @@ func (s *Server) attestationFrom(e *exchange) ([]byte, error) {
 func (s *Server) validate(e *exchange, c *Challenge, o *Order, raw []byte) error {
 	a, err := attest.ParseObject(raw)
 	switch {
-	case errors.Is(err, attest.ErrNoAttestation):
+	case len(raw) == 0 || errors.Is(err, attest.ErrNoAttestation):
 		// The device produced no attestation. Apple does this when the
 		// profile did not ask for one or the hardware cannot. Whether that
 		// is acceptable is a deployment's decision, not a protocol one.

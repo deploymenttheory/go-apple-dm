@@ -24,7 +24,8 @@ func liveDDM(ctx context.Context, e *Environment, device string) (err error) {
 	prefix := "com.go-apple-dm.lab." + randomID()
 	configuration, activation, set := prefix+".c", prefix+".a", prefix+".set"
 	defer func() {
-		cleanup, cancel := context.WithTimeout(context.WithoutCancel(ctx), 30*time.Second)
+		// Allow the notifier to retry a coalesced wake before requiring native removal.
+		cleanup, cancel := context.WithTimeout(context.WithoutCancel(ctx), 2*time.Minute)
 		defer cancel()
 		err = errors.Join(err, cleanupLiveDDM(cleanup, e, path, set, configuration, activation))
 	}()
