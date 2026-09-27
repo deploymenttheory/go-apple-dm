@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.8.4](https://github.com/deploymenttheory/go-apple-dm/compare/v0.8.3...v0.8.4) (2026-09-27)
+
+
+### Features
+
+* **applications:** add verified packages and cloud storage adapters ([#276](https://github.com/deploymenttheory/go-apple-dm/issues/276)) ([d249603](https://github.com/deploymenttheory/go-apple-dm/commit/d249603185afbcb2e61072de7d36c42542355557))
+* **dmctl:** report what setup init generated and what must be kept ([#263](https://github.com/deploymenttheory/go-apple-dm/issues/263)) ([009d764](https://github.com/deploymenttheory/go-apple-dm/commit/009d764e3cfbd10f4a792dd8a3b020a8c4f668dc))
+
+
+### Bug Fixes
+
+* **dmctl:** make setup and startup failures read as one sentence ([#266](https://github.com/deploymenttheory/go-apple-dm/issues/266)) ([68e365e](https://github.com/deploymenttheory/go-apple-dm/commit/68e365e4581ee6f97e73c4a5464f7b14c6b2f52f))
+* **lab:** support native macOS ACME enrollment and command checks ([#275](https://github.com/deploymenttheory/go-apple-dm/issues/275)) ([c898933](https://github.com/deploymenttheory/go-apple-dm/commit/c898933ad81fce1a8d01a42126aad838684af7d0))
+
 ## [0.8.3](https://github.com/deploymenttheory/go-apple-dm/compare/v0.8.2...v0.8.3) (2026-09-25)
 
 
