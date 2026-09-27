@@ -18,7 +18,7 @@ require (
 	filippo.io/edwards25519 v1.2.0 // indirect
 	filippo.io/hpke v0.4.0 // indirect
 	github.com/deploymenttheory/go-apfs-v2 v0.3.1 // indirect
-	github.com/deploymenttheory/go-macos-pkg v0.6.0 // indirect
+	github.com/deploymenttheory/go-macos-pkg v0.7.1 // indirect
 	github.com/dustin/go-humanize v1.0.1 // indirect
 	github.com/go-compressions/lzfse v0.3.0 // indirect
 	github.com/google/uuid v1.6.0 // indirect
@@ -27,6 +27,7 @@ require (
 	github.com/jackc/puddle/v2 v2.2.2 // indirect
 	github.com/mattn/go-isatty v0.0.24 // indirect
 	github.com/micromdm/plist v0.3.0 // indirect
+	github.com/mikelolasagasti/xz v1.0.1 // indirect
 	github.com/ncruces/go-strftime v1.0.0 // indirect
 	github.com/pierrec/lz4/v4 v4.1.30 // indirect
 	github.com/remyoudompheng/bigfft v0.0.0-20230129092748-24d4a6f8daec // indirect
