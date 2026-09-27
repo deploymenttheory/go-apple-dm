@@ -9,7 +9,7 @@ retract (
 )
 
 require (
-	github.com/deploymenttheory/go-apfs-v2 v0.3.1
+	github.com/deploymenttheory/go-apfs-v2 v0.9.0
 	github.com/deploymenttheory/go-macos-pkg v0.7.1
 	github.com/micromdm/plist v0.3.0
 	github.com/smallstep/pkcs7 v0.2.3

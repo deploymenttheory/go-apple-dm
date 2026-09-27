@@ -1,8 +1,8 @@
 github.com/cespare/xxhash/v2 v2.3.0 h1:UL815xU9SqsFlibzuggzjXhog7bL6oX9BbNZnL2UFvs=
 github.com/cespare/xxhash/v2 v2.3.0/go.mod h1:VGX0DQ3Q6kWi7AoAeZDth3/j3BFtOZR5XLFGgcrjCOs=
 github.com/creack/pty v1.1.9/go.mod h1:oKZEueFk5CKHvIhNR5MUki03XCEU+Q6VDXinZuGJ33E=
-github.com/deploymenttheory/go-apfs-v2 v0.3.1 h1:+wF+nmNXxMn6d+ihyQNSm58tPglNUtI02Mj0YBeXOY8=
-github.com/deploymenttheory/go-apfs-v2 v0.3.1/go.mod h1:8F+giXscCXK717Q0dV8RSXL+eWhXSOn3eQ1EarZl1LA=
+github.com/deploymenttheory/go-apfs-v2 v0.9.0 h1:PZdIaT2h7nm6a85unZuRFYTqJTuWDXsI7zATPaVJwH0=
+github.com/deploymenttheory/go-apfs-v2 v0.9.0/go.mod h1:8F+giXscCXK717Q0dV8RSXL+eWhXSOn3eQ1EarZl1LA=
 github.com/deploymenttheory/go-macos-pkg v0.7.1 h1:1F7BUsMEZ8Kgbnk2HVCU+qVxcuPS5tayo/saIgNyIyg=
 github.com/deploymenttheory/go-macos-pkg v0.7.1/go.mod h1:NSDY/D4VN5dLcbr9wsR6MhXOovdXlmer5bF18T6WTe4=
 github.com/go-compressions/lzfse v0.3.0 h1:slxIjY9HeG2llJSoXTwTnQ+u/iKMbr2WHUwaNAl/2yI=
