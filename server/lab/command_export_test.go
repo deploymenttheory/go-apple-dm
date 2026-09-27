@@ -2,6 +2,7 @@ package lab
 
 import (
 	"encoding/json"
+	"errors"
 	"io"
 	"net/http"
 	"os"
@@ -54,5 +55,63 @@ func TestCommandRetainsEnrollmentScopedEvidence(t *testing.T) {
 	cmd.UUID = "../outside"
 	if _, err = Command(t.Context(), e, "/x", cmd, dir); err == nil {
 		t.Fatal("path UUID accepted")
+	}
+}
+
+// TestCommandEvidenceFailureStopsAcceptance proves missing evidence cannot pass,
+// including when the device has already acknowledged the command.
+func TestCommandEvidenceFailureStopsAcceptance(t *testing.T) {
+	for _, tc := range []struct {
+		name  string
+		calls int
+	}{
+		{"directory", 0},
+		{"request.plist", 0},
+		{"push.json", 2},
+		{"push-attempts.json", 2},
+		{"result.json", 3},
+		{"response.plist", 3},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+			cmd, err := mdm.NewCommand(&commands.ProfileList{})
+			if err != nil {
+				t.Fatal(err)
+			}
+			dir := t.TempDir()
+			if tc.name == "directory" {
+				dir = filepath.Join(dir, "file-instead-of-directory")
+				if err := os.WriteFile(dir, []byte("occupied"), 0o600); err != nil {
+					t.Fatal(err)
+				}
+			} else {
+				if err := os.Mkdir(filepath.Join(dir, cmd.UUID+"-"+tc.name), 0o700); err != nil {
+					t.Fatal(err)
+				}
+			}
+			calls := 0
+			e := &Environment{Instance: Instance{URL: "https://lab.invalid"}, Client: &http.Client{Transport: transportFunc(func(r *http.Request) (*http.Response, error) {
+				calls++
+				body := `{"Queued":1}`
+				switch {
+				case strings.HasSuffix(r.URL.Path, "/push"):
+					body = `{"Sent":true,"Outcome":"sent","Status":200}`
+				case strings.HasSuffix(r.URL.Path, "/result"):
+					body = `{"Status":"Acknowledged","Response":"bmF0aXZlLXJlc3BvbnNl"}`
+				case strings.HasSuffix(r.URL.Path, "/commands"):
+				default:
+					t.Fatalf("unexpected request: %s", r.URL.Path)
+				}
+				return &http.Response{StatusCode: 200, Header: http.Header{}, Body: io.NopCloser(strings.NewReader(body))}, nil
+			})}}
+			response, err := Command(t.Context(), e, "/enrollments/device/mac", cmd, dir)
+			var pathError *os.PathError
+			if !errors.As(err, &pathError) || response != nil {
+				t.Fatalf("unrecorded evidence passed: response=%q err=%v", response, err)
+			}
+			if calls != tc.calls {
+				t.Fatalf("continued after evidence failure: calls=%d want=%d", calls, tc.calls)
+			}
+		})
 	}
 }
