@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.8.5](https://github.com/deploymenttheory/go-apple-dm/compare/v0.8.4...v0.8.5) (2026-09-27)
+
+
+### Features
+
+* **server:** manage verified application packages and native delivery ([#277](https://github.com/deploymenttheory/go-apple-dm/issues/277)) ([caafb1d](https://github.com/deploymenttheory/go-apple-dm/commit/caafb1d144a1fddd1f85af13968b8c829fdc16bc))
+
 ## [0.8.4](https://github.com/deploymenttheory/go-apple-dm/compare/v0.8.3...v0.8.4) (2026-09-27)
 
 
