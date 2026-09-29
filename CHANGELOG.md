@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.8.6](https://github.com/deploymenttheory/go-apple-dm/compare/v0.8.5...v0.8.6) (2026-09-29)
+
+
+### Bug Fixes
+
+* **applications:** emit chunk digests for native DDM package delivery ([#279](https://github.com/deploymenttheory/go-apple-dm/issues/279)) ([374afe7](https://github.com/deploymenttheory/go-apple-dm/commit/374afe71310177d92af0dfcab00de331ba93f5d5))
+
 ## [0.8.5](https://github.com/deploymenttheory/go-apple-dm/compare/v0.8.4...v0.8.5) (2026-09-27)
 
 
