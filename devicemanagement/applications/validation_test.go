@@ -308,7 +308,7 @@ func TestManifestValidation(t *testing.T) {
 			t.Fatal("invalid manifest accepted")
 		}
 	}
-	for _, replacement := range []struct{ from, to string }{{"software-package", "unknown-package"}, {"https://example.test/package", "http://example.test/package"}, {c.Metadata.BundleID, "com.example.wrong"}, {"<key>sha256</key>", "<key>sha256s</key>"}} {
+	for _, replacement := range []struct{ from, to string }{{"software-package", "unknown-package"}, {"https://example.test/package", "http://example.test/package"}, {c.Metadata.BundleID, "com.example.wrong"}, {"<key>sha256s</key>", "<key>sha256</key>"}} {
 		b := bytes.ReplaceAll(manifest, []byte(replacement.from), []byte(replacement.to))
 		if err = applications.ValidateManifest(b, c); err == nil {
 			t.Fatal("accepted", replacement)
