@@ -184,6 +184,13 @@ clears the assigned manifest. Delivery generates a manifest for the selected
 revision and its scoped download URL; an assigned external manifest is validated
 catalogue metadata, not an override for the protected delivery URL.
 
+Use `sha256-size` and `sha256s` for native package delivery. Generated manifests
+describe one chunk spanning the verified file, using its byte count and SHA-256.
+This supplies the block size and hash array required by the macOS 26 DDM downloader.
+Assigned manifests may use a whole-file `sha256` or this single-chunk form; every
+supplied digest must match the selected content revision. Multiple-chunk manifests
+are rejected because stored whole-file digests cannot verify their individual chunks.
+
 Exports return one page and print the next cursor to stderr. Continue with
 `-cursor NEXT_CURSOR`. For bulk deletion, supply `delete-multiple -file delete.json`:
 

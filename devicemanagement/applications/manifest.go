@@ -35,8 +35,9 @@ func validateHTTPS(raw string) error {
 
 // BuildManifest generates the native installation manifest from verified content.
 // downloadURL must resolve to exactly this revision. Device URL authorization and
-// lifetime belong to the hosting server. SHA-256 and legacy MD5 describe identical
-// bytes; neither is substituted for package signer trust verification.
+// lifetime belong to the hosting server. One SHA-256 chunk covers the complete
+// verified file: macOS declarative package delivery requires a hash array and
+// block size. Legacy MD5 describes the same bytes. Neither replaces signer trust.
 func BuildManifest(c Content, downloadURL string) ([]byte, error) {
 	if err := validateHTTPS(downloadURL); err != nil {
 		return nil, err
@@ -51,16 +52,17 @@ func BuildManifest(c Content, downloadURL string) ([]byte, error) {
 		return nil, invalidField("application identity")
 	}
 	manifest := other.ManifestURL{Items: []other.ManifestURLItems{{
-		Assets:   []other.ManifestURLItemsAssets{{Kind: "software-package", Url: downloadURL, Sha256: &c.SHA256, Md5: &c.MD5}},
+		Assets:   []other.ManifestURLItemsAssets{{Kind: "software-package", Url: downloadURL, Sha256Size: &c.Size, Sha256s: []string{c.SHA256}, Md5: &c.MD5}},
 		Metadata: other.ManifestURLItemsMetadata{BundleIdentifier: c.Metadata.BundleID, BundleVersion: &c.Metadata.Version, Kind: "software", Title: c.Metadata.PackageName},
 	}}}
 	return plist.Marshal(manifest, plist.XMLFormat)
 }
 
 // ValidateManifest accepts one package asset, checks its HTTPS URL and requires
-// a whole-file SHA-256 matching the content revision. Identity must also match.
-// Chunk hashes, additional assets and unknown keys are rejected rather than
-// retained without verification. Optional MD5 is checked when supplied.
+// a SHA-256 matching the content revision, either as a whole-file digest or one
+// chunk covering the entire file. Identity must also match. Multiple chunks,
+// additional assets and unknown keys are rejected rather than left unverified.
+// Optional MD5 and every supplied SHA-256 representation are checked.
 func ValidateManifest(data []byte, c Content) error {
 	if len(data) == 0 {
 		return invalidField("manifest")
@@ -89,7 +91,7 @@ func ValidateManifest(data []byte, c Content) error {
 		return invalidField("manifest assets")
 	}
 	asset, ok := assets[0].(map[string]any)
-	if !ok || !onlyKeys(asset, "kind", "url", "sha256", "md5") {
+	if !ok || !onlyKeys(asset, "kind", "url", "sha256", "sha256-size", "sha256s", "md5") {
 		return invalidField("manifest asset")
 	}
 	if asset["kind"] != "software-package" {
@@ -102,11 +104,10 @@ func ValidateManifest(data []byte, c Content) error {
 	if err := validateHTTPS(rawURL); err != nil {
 		return err
 	}
-	sha, ok := asset["sha256"].(string)
-	if !ok || sha == "" {
-		return invalidField("manifest sha256")
+	if err := validateManifestSHA256(asset, c); err != nil {
+		return err
 	}
-	expected := Digests{SHA256: sha}
+	expected := Digests{}
 	if v, exists := asset["md5"]; exists {
 		expected.MD5, ok = v.(string)
 		if !ok || expected.MD5 == "" {
@@ -130,6 +131,43 @@ func ValidateManifest(data []byte, c Content) error {
 		}
 	}
 	return nil
+}
+
+// validateManifestSHA256 verifies each supplied representation against immutable
+// content. Multi-chunk hashes cannot be inferred from the stored whole-file hash.
+func validateManifestSHA256(asset map[string]any, c Content) error {
+	whole, hasWhole := asset["sha256"]
+	if hasWhole {
+		sha, ok := whole.(string)
+		if !ok || sha == "" {
+			return invalidField("manifest sha256")
+		}
+		if err := (Digests{SHA256: sha}).Match(c.Digests); err != nil {
+			return err
+		}
+	}
+	size, hasSize := asset["sha256-size"]
+	hashes, hasHashes := asset["sha256s"]
+	if !hasSize && !hasHashes {
+		if !hasWhole {
+			return invalidField("manifest sha256")
+		}
+		return nil
+	}
+	// The plist decoder represents nonnegative integers as uint64.
+	blockSize, ok := size.(uint64)
+	if !ok || c.Size <= 0 || blockSize != uint64(c.Size) {
+		return invalidField("manifest sha256-size")
+	}
+	chunks, ok := hashes.([]any)
+	if !ok || len(chunks) != 1 {
+		return invalidField("manifest sha256s")
+	}
+	sha, ok := chunks[0].(string)
+	if !ok || sha == "" {
+		return invalidField("manifest sha256s")
+	}
+	return (Digests{SHA256: sha}).Match(c.Digests)
 }
 
 // onlyKeys rejects manifest properties outside the explicitly validated schema.

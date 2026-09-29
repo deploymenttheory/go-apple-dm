@@ -5,8 +5,10 @@ import (
 	"context"
 	"crypto/rand"
 	"crypto/rsa"
+	"crypto/sha256"
 	"crypto/x509"
 	"crypto/x509/pkix"
+	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"io"
@@ -20,6 +22,7 @@ import (
 
 	"github.com/deploymenttheory/go-macos-pkg/pkg/flatpkg"
 	"github.com/deploymenttheory/go-macos-pkg/pkg/pkgsign"
+	"howett.net/plist"
 
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/applications"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/applications/filesystem"
@@ -168,6 +171,27 @@ func TestMDMAndDDMPlansShareVerifiedContent(t *testing.T) {
 			}
 			if err = applications.ValidateManifest(manifest, *record.Content); err != nil {
 				t.Fatal(err)
+			}
+
+			var wire struct {
+				Items []struct {
+					Assets []struct {
+						Hashes []string `plist:"sha256s"`
+						Size   uint64   `plist:"sha256-size"`
+						Whole  string   `plist:"sha256"`
+					} `plist:"assets"`
+				} `plist:"items"`
+			}
+			if _, err = plist.Unmarshal(manifest, &wire); err != nil {
+				t.Fatal(err)
+			}
+			digest := sha256.Sum256(payload)
+			if len(wire.Items) != 1 || len(wire.Items[0].Assets) != 1 {
+				t.Fatal("invalid native manifest shape")
+			}
+			asset := wire.Items[0].Assets[0]
+			if len(asset.Hashes) != 1 || asset.Hashes[0] != hex.EncodeToString(digest[:]) || asset.Size != uint64(len(payload)) || asset.Whole != "" {
+				t.Fatalf("native downloader requires hashes and block size for verified bytes: %+v", asset)
 			}
 			content, _, err := host.Content(t.Context(), token)
 			if err != nil || content.SHA256 != record.Content.SHA256 {
