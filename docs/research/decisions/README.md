@@ -69,3 +69,5 @@ The [architecture guide](../../architecture.md) summarizes how the decisions fit
 - [0057: Agentless device records](0057-agentless-device-inventory.md)
 - [0058: Single-use enrollment links](0058-enrollment-links.md)
 - [0059: Managed certificate lifecycle](0059-managed-certificate-lifecycle.md)
+- [0061: Verified application packages and storage adapters](0061-verified-application-packages.md)
+- [0062: Reference-server package delivery](0062-reference-server-package-delivery.md)

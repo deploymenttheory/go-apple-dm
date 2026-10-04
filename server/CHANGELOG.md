@@ -1,5 +1,33 @@
 # Changelog
 
+## [0.10.6](https://github.com/deploymenttheory/go-apple-dm/compare/server/v0.10.5...server/v0.10.6) (2026-09-29)
+
+
+### Bug Fixes
+
+* **applications:** emit chunk digests for native DDM package delivery ([#279](https://github.com/deploymenttheory/go-apple-dm/issues/279)) ([374afe7](https://github.com/deploymenttheory/go-apple-dm/commit/374afe71310177d92af0dfcab00de331ba93f5d5))
+
+## [0.10.5](https://github.com/deploymenttheory/go-apple-dm/compare/server/v0.10.4...server/v0.10.5) (2026-09-27)
+
+
+### Features
+
+* **server:** manage verified application packages and native delivery ([#277](https://github.com/deploymenttheory/go-apple-dm/issues/277)) ([caafb1d](https://github.com/deploymenttheory/go-apple-dm/commit/caafb1d144a1fddd1f85af13968b8c829fdc16bc))
+
+## [0.10.4](https://github.com/deploymenttheory/go-apple-dm/compare/server/v0.10.3...server/v0.10.4) (2026-09-27)
+
+
+### Features
+
+* **applications:** add verified packages and cloud storage adapters ([#276](https://github.com/deploymenttheory/go-apple-dm/issues/276)) ([d249603](https://github.com/deploymenttheory/go-apple-dm/commit/d249603185afbcb2e61072de7d36c42542355557))
+* **dmctl:** report what setup init generated and what must be kept ([#263](https://github.com/deploymenttheory/go-apple-dm/issues/263)) ([009d764](https://github.com/deploymenttheory/go-apple-dm/commit/009d764e3cfbd10f4a792dd8a3b020a8c4f668dc))
+
+
+### Bug Fixes
+
+* **dmctl:** make setup and startup failures read as one sentence ([#266](https://github.com/deploymenttheory/go-apple-dm/issues/266)) ([68e365e](https://github.com/deploymenttheory/go-apple-dm/commit/68e365e4581ee6f97e73c4a5464f7b14c6b2f52f))
+* **lab:** support native macOS ACME enrollment and command checks ([#275](https://github.com/deploymenttheory/go-apple-dm/issues/275)) ([c898933](https://github.com/deploymenttheory/go-apple-dm/commit/c898933ad81fce1a8d01a42126aad838684af7d0))
+
 ## [0.10.3](https://github.com/deploymenttheory/go-apple-dm/compare/server/v0.10.2...server/v0.10.3) (2026-09-25)
 
 

@@ -23,6 +23,11 @@ material this repository must not carry: Apple credentials, virtual-machine imag
 per-release interface tables and run evidence. A separate private lab registers its own
 modules and drivers against these types and reuses this runner, result model and report,
 so one catalogue shape and one evidence format serve both.
+`lab.Connect` attaches this private consumer to an existing managed deployment
+using its exported trust and managed administrator credential. It verifies the
+principal without creating another workspace or certificate store. `lab.SelectFrom`
+selects an extended catalogue, and `lab.Command` exposes the tracked command and
+APNs acknowledgment primitive with optional run-scoped evidence.
 
 Two dimensions vary independently.
 

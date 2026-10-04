@@ -400,3 +400,9 @@ func SelectMode(mode, selector string) ([]Module, error) {
 	}
 	return out, nil
 }
+
+// SelectFrom resolves IDs and themes against an extended catalogue without changing
+// the shared registry. all retains the caller's catalogue order.
+func SelectFrom(modules []Module, selector string) ([]Module, error) {
+	return selectFrom(modules, selector)
+}

@@ -274,16 +274,16 @@ func Catalogue() []Module {
 		},
 		{
 			ID:    "LIVE-005",
-			Name:  "macOS 26 device Blueprint activation, profile replacement and removal",
+			Name:  "macOS device Blueprint activation, profile replacement and removal",
 			Theme: "blueprints", Modes: []string{"live"},
-			Prerequisites: []string{"enrolled macOS 26 test device", "MDM push identity", "automatic status subscriptions enabled"},
+			Prerequisites: []string{"enrolled macOS supporting legacy profile declarations", "MDM push identity", "automatic status subscriptions enabled"},
 			Steps:         scenario(liveBlueprints(false)),
 		},
 		{
 			ID:    "LIVE-006",
-			Name:  "macOS 26 user Blueprint activation, profile replacement and removal",
+			Name:  "macOS user Blueprint activation, profile replacement and removal",
 			Theme: "blueprints", Modes: []string{"live"},
-			Prerequisites: []string{"enrolled macOS 26 test device", "logged-in MDM-enabled user and -user-id", "MDM push identity", "automatic status subscriptions enabled"},
+			Prerequisites: []string{"enrolled macOS supporting legacy profile declarations", "logged-in MDM-enabled user and -user-id", "MDM push identity", "automatic status subscriptions enabled"},
 			Steps:         scenario(liveBlueprints(true)),
 		},
 		{
