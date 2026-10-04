@@ -17,7 +17,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/s3 v1.113.4
 	github.com/aws/smithy-go v1.28.1
 	github.com/deploymenttheory/go-apfs-v2 v0.9.0
-	github.com/deploymenttheory/go-macos-pkg v0.7.1
+	github.com/deploymenttheory/go-macos-pkg v0.7.2
 	github.com/micromdm/plist v0.3.0
 	github.com/smallstep/pkcs7 v0.2.3
 	github.com/smallstep/scep v0.0.0-20260331191114-261f960a40d1
