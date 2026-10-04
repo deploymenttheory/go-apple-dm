@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"os"
 	"strconv"
+	"strings"
 	"testing"
 	"time"
 )
@@ -16,6 +17,7 @@ func TestMain(m *testing.M) {
 	case "1":
 		runLabChild()
 	case "exit":
+		_, _ = io.WriteString(os.Stderr, "fixture startup failed\n")
 		os.Exit(3)
 	case "wait":
 		for {
@@ -23,6 +25,21 @@ func TestMain(m *testing.M) {
 		}
 	}
 	os.Exit(m.Run())
+}
+
+// TestIsolatedStartupFailureIncludesOutput retains the child diagnostic after the
+// temporary workspace and process have been cleaned up.
+func TestIsolatedStartupFailureIncludesOutput(t *testing.T) {
+	t.Parallel()
+	executable, err := os.Executable()
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, _, err = isolated(t.Context(), &Environment{Instance: Instance{Binary: executable}},
+		map[string]string{"LAB_CHILD": "exit"})
+	if err == nil || !strings.Contains(err.Error(), "fixture startup failed") {
+		t.Fatalf("missing child startup diagnostic: %v", err)
+	}
 }
 
 // runLabChild becomes ready, accepts seeding, then exits at the parent's request.
