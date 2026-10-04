@@ -1,10 +1,10 @@
 package lab
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
-	"io"
 	"io/fs"
 	"os"
 	"path/filepath"
@@ -283,10 +283,14 @@ func isolated(ctx context.Context, e *Environment, settings map[string]string) (
 		return nil, nil, err
 	}
 	w.Settings = settings
-	nested, err := Start(ctx, w, e.Binary, io.Discard)
+	var output bytes.Buffer
+	nested, err := Start(ctx, w, e.Binary, &output)
 	if err != nil {
 		cleanup()
-		return nil, nil, err
+		if output.Len() == 0 {
+			return nil, nil, err
+		}
+		return nil, nil, fmt.Errorf("%w: server output: %s", err, output.String())
 	}
 	return nested, func() { nested.Close(); cleanup() }, nil
 }

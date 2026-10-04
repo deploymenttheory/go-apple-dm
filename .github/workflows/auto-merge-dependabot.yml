@@ -29,9 +29,21 @@ jobs:
         with:
           github-token: "${{ secrets.GITHUB_TOKEN }}"
 
+      - name: Check repository auto-merge setting
+        id: repository
+        run: |
+          enabled=$(gh api "repos/$GITHUB_REPOSITORY" --jq '.allow_auto_merge')
+          echo "enabled=$enabled" >> "$GITHUB_OUTPUT"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Report disabled auto-merge
+        if: ${{ steps.repository.outputs.enabled != 'true' }}
+        run: echo 'Auto-merge is disabled for this repository; leave this PR for manual merging.' >> "$GITHUB_STEP_SUMMARY"
+
       - name: Enable auto-merge for Dependabot PRs
         # Only if version bump is not a major version change
-        if: ${{steps.metadata.outputs.update-type != 'version-update:semver-major'}}
+        if: ${{ steps.repository.outputs.enabled == 'true' && steps.metadata.outputs.update-type != 'version-update:semver-major' }}
         run: gh pr merge --auto --merge "$PR_URL"
         env:
           PR_URL: ${{github.event.pull_request.html_url}}

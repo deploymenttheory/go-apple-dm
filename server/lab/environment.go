@@ -72,8 +72,8 @@ type Environment struct {
 // randomID generates an independent identifier for lab resources.
 func randomID() string { var b [16]byte; _, _ = rand.Read(b[:]); return hex.EncodeToString(b[:]) }
 
-// address retains the bound socket for embedded runtimes. Child processes still
-// bind their own listeners; a fixed workspace address avoids port discovery there.
+// address can retain the bound socket while fixtures are initialized. Embedded
+// runtimes serve it directly; child processes release it immediately before launch.
 func address(ctx context.Context, listen string, retain bool) (string, net.Listener, error) {
 	host, port, err := net.SplitHostPort(listen)
 	if err != nil {
@@ -126,7 +126,7 @@ func Start(ctx context.Context, w *Workspace, binary string, out io.Writer) (*En
 			e.Close()
 		}
 	}()
-	addr, listener, err := address(ctx, w.Listen, binary == "" && w.Adapter != AdapterDocker)
+	addr, listener, err := address(ctx, w.Listen, w.Adapter != AdapterDocker)
 	if err != nil {
 		return nil, wrapError(err)
 	}
@@ -303,6 +303,14 @@ func (e *Environment) launch(
 	cmd.Stderr = out
 	configureChild(cmd)
 	cmd.WaitDelay = 12 * time.Second
+	// Keep fixture listeners from claiming the server's port during setup.
+	// Child processes bind their own socket, so release the reservation only
+	// after all fixtures and the child command have been configured.
+	if listener != nil {
+		if err := listener.Close(); err != nil {
+			return wrapError(err)
+		}
+	}
 	if err := cmd.Start(); err != nil {
 		return wrapError(err)
 	}
