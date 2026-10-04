@@ -1,6 +1,6 @@
 module github.com/deploymenttheory/go-apple-dm
 
-go 1.27.0
+go 1.27.1
 
 // These releases are withdrawn. Use the pre-1.0 API; it is not yet stable.
 retract (
@@ -16,7 +16,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/credentials v1.20.6
 	github.com/aws/aws-sdk-go-v2/service/s3 v1.114.0
 	github.com/aws/smithy-go v1.28.1
-	github.com/deploymenttheory/go-apfs-v2 v0.9.0
+	github.com/deploymenttheory/go-apfs-v2 v0.14.0
 	github.com/deploymenttheory/go-macos-pkg v0.7.2
 	github.com/micromdm/plist v0.3.0
 	github.com/smallstep/pkcs7 v0.2.3
@@ -54,6 +54,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/internal/s3shared v1.20.4 // indirect
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
 	github.com/cncf/xds/go v0.0.0-20260202195803-dba9d589def2 // indirect
+	github.com/ebitengine/purego v0.11.1 // indirect
 	github.com/envoyproxy/go-control-plane/envoy v1.37.0 // indirect
 	github.com/envoyproxy/protoc-gen-validate v1.3.3 // indirect
 	github.com/felixge/httpsnoop v1.0.4 // indirect
