@@ -105,8 +105,8 @@ github.com/deploymenttheory/go-apfs-v2 v0.9.0 h1:PZdIaT2h7nm6a85unZuRFYTqJTuWDXs
 github.com/deploymenttheory/go-apfs-v2 v0.9.0/go.mod h1:8F+giXscCXK717Q0dV8RSXL+eWhXSOn3eQ1EarZl1LA=
 github.com/deploymenttheory/go-apple-dm v0.8.4-0.20260927214815-d249603185af h1:eGbTIWezu523SPT4mPAmQYsWDFJHf4gYhPHBAVyCIC8=
 github.com/deploymenttheory/go-apple-dm v0.8.4-0.20260927214815-d249603185af/go.mod h1:9bBjewyMqeC8XozJhWONWYdFTxfxyWHpl7k22Nyc9TE=
-github.com/deploymenttheory/go-macos-pkg v0.7.1 h1:1F7BUsMEZ8Kgbnk2HVCU+qVxcuPS5tayo/saIgNyIyg=
-github.com/deploymenttheory/go-macos-pkg v0.7.1/go.mod h1:NSDY/D4VN5dLcbr9wsR6MhXOovdXlmer5bF18T6WTe4=
+github.com/deploymenttheory/go-macos-pkg v0.7.2 h1:c7Ru3BHtvYou9T7ckAvjFXgNXd9Lkl3WfFK+sLqBW9U=
+github.com/deploymenttheory/go-macos-pkg v0.7.2/go.mod h1:NSDY/D4VN5dLcbr9wsR6MhXOovdXlmer5bF18T6WTe4=
 github.com/dustin/go-humanize v1.0.1 h1:GzkhY7T5VNhEkwH0PVJgjz+fX1rhBrR7pRT3mDkpeCY=
 github.com/dustin/go-humanize v1.0.1/go.mod h1:Mu1zIs6XwVuF/gI1OepvI0qD18qycQx+mFykh5fBlto=
 github.com/envoyproxy/go-control-plane v0.14.0 h1:hbG2kr4RuFj222B6+7T83thSPqLjwBIfQawTkC++2HA=

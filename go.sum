@@ -76,8 +76,8 @@ github.com/cncf/xds/go v0.0.0-20260202195803-dba9d589def2 h1:aBangftG7EVZoUb69Os
 github.com/cncf/xds/go v0.0.0-20260202195803-dba9d589def2/go.mod h1:qwXFYgsP6T7XnJtbKlf1HP8AjxZZyzxMmc+Lq5GjlU4=
 github.com/deploymenttheory/go-apfs-v2 v0.9.0 h1:PZdIaT2h7nm6a85unZuRFYTqJTuWDXsI7zATPaVJwH0=
 github.com/deploymenttheory/go-apfs-v2 v0.9.0/go.mod h1:8F+giXscCXK717Q0dV8RSXL+eWhXSOn3eQ1EarZl1LA=
-github.com/deploymenttheory/go-macos-pkg v0.7.1 h1:1F7BUsMEZ8Kgbnk2HVCU+qVxcuPS5tayo/saIgNyIyg=
-github.com/deploymenttheory/go-macos-pkg v0.7.1/go.mod h1:NSDY/D4VN5dLcbr9wsR6MhXOovdXlmer5bF18T6WTe4=
+github.com/deploymenttheory/go-macos-pkg v0.7.2 h1:c7Ru3BHtvYou9T7ckAvjFXgNXd9Lkl3WfFK+sLqBW9U=
+github.com/deploymenttheory/go-macos-pkg v0.7.2/go.mod h1:NSDY/D4VN5dLcbr9wsR6MhXOovdXlmer5bF18T6WTe4=
 github.com/envoyproxy/go-control-plane v0.14.0 h1:hbG2kr4RuFj222B6+7T83thSPqLjwBIfQawTkC++2HA=
 github.com/envoyproxy/go-control-plane v0.14.0/go.mod h1:NcS5X47pLl/hfqxU70yPwL9ZMkUlwlKxtAohpi2wBEU=
 github.com/envoyproxy/go-control-plane/envoy v1.37.0 h1:u3riX6BoYRfF4Dr7dwSOroNfdSbEPe9Yyl09/B6wBrQ=
