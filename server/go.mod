@@ -11,12 +11,13 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/s3 v1.113.4
 	github.com/cedar-policy/cedar-go v1.8.0
 	github.com/deploymenttheory/go-apple-dm v0.8.4-0.20260927214815-d249603185af
-	github.com/deploymenttheory/go-macos-pkg v0.7.1
+	github.com/deploymenttheory/go-macos-pkg v0.7.2
 	github.com/go-sql-driver/mysql v1.10.1
 	github.com/jackc/pgx/v5 v5.11.0
 	github.com/smallstep/pkcs7 v0.2.3
 	golang.org/x/crypto v0.57.0
 	golang.org/x/sys v0.48.0
+	howett.net/plist v1.0.1
 	modernc.org/sqlite v1.59.0
 )
 
@@ -110,7 +111,6 @@ require (
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20260630182238-925bb5da69e7 // indirect
 	google.golang.org/grpc v1.83.2 // indirect
 	google.golang.org/protobuf v1.36.11 // indirect
-	howett.net/plist v1.0.1 // indirect
 	modernc.org/libc v1.75.7 // indirect
 	modernc.org/mathutil v1.7.1 // indirect
 	modernc.org/memory v1.12.1 // indirect
