@@ -76,7 +76,7 @@ jobs:
           --output "${RUNNER_TEMP}/schema-capture/capture.json"
       - name: Retain discovery even when upstream access fails
         if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: device-management-client-schema-discovery
           path: |
@@ -121,7 +121,7 @@ jobs:
           --key "$SCHEMA_BRANCH_KEY" --output "${RUNNER_TEMP}/schema-assessments"
       - name: Retain findings and every completed check
         if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: device-management-client-schema-assessment-${{ matrix.key }}
           path: ${{ runner.temp }}/schema-assessments/
@@ -176,7 +176,7 @@ jobs:
           fi
       - name: Retain publication summary
         if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: device-management-client-schema-summary
           path: |
