@@ -9,6 +9,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/source"
+
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/inventory"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/ddm"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/mdm"
@@ -35,7 +37,7 @@ func TestInventoryAPIAndNativeEnrichment(t *testing.T) {
 			defer func() { _ = a.Close() }()
 			root := bootstrapRBAC(t, a)
 			raw := json.RawMessage(`{"id":"opaque","attributes":{"serialNumber":"SER","deviceModel":"Mac","futureSecret":"hidden","imei":["one","two"]}}`)
-			o, e := inventory.ResourceObservation(inventory.SourceReference{Kind: "axm.device", AccountID: "apple", ResourceID: "opaque"}, raw, time.Now().UTC(), time.Hour)
+			o, e := inventory.ResourceObservation(source.Reference{Kind: "axm.device", AccountID: "apple", ResourceID: "opaque"}, raw, time.Now().UTC(), time.Hour)
 			if e != nil {
 				t.Fatal(e)
 			}

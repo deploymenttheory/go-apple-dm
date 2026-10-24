@@ -10,6 +10,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/source"
+
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/inventory"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/secrets"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/storage/crypt"
@@ -45,7 +47,7 @@ func checkStore(t *testing.T, db *sql.DB, dialect sqlcommon.Dialect) {
 		t.Fatal(e)
 	}
 	raw := json.RawMessage(`{"id":"opaque","attributes":{"serialNumber":"SERIAL-SECRET","imei":["one","two"],"future":null}}`)
-	o, e := inventory.ResourceObservation(inventory.SourceReference{Kind: "axm.device", AccountID: "account", ResourceID: "opaque"}, raw, time.Now().UTC(), time.Hour)
+	o, e := inventory.ResourceObservation(source.Reference{Kind: "axm.device", AccountID: "account", ResourceID: "opaque"}, raw, time.Now().UTC(), time.Hour)
 	if e != nil {
 		t.Fatal(e)
 	}
@@ -75,7 +77,7 @@ func checkStore(t *testing.T, db *sql.DB, dialect sqlcommon.Dialect) {
 	boom := errors.New("outer protocol rollback")
 	unit := sqlcommon.UnitOfWork{DB: db, Dialect: dialect}
 	e = unit.Run(ctx, func(ctx context.Context) error {
-		if _, e := r.Observe(ctx, "OTHER", inventory.Observation{Source: inventory.SourceReference{Kind: "mdm.DeviceInformation", ResourceID: "new"}, Raw: json.RawMessage(`{"attributes":{"serialNumber":"OTHER"}}`), ObservedAt: time.Now().UTC()}); e != nil {
+		if _, e := r.Observe(ctx, "OTHER", inventory.Observation{Source: source.Reference{Kind: "mdm.DeviceInformation", ResourceID: "new"}, Raw: json.RawMessage(`{"attributes":{"serialNumber":"OTHER"}}`), ObservedAt: time.Now().UTC()}); e != nil {
 			return e
 		}
 		return boom
