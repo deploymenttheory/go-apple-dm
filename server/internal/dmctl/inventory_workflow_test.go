@@ -37,7 +37,7 @@ func TestInventoryCLIWorkflow(t *testing.T) {
 	}
 	keyPEM := pem.EncodeToMemory(&pem.Block{Type: "PRIVATE KEY", Bytes: der})
 	apple.RegisterKey("BUSINESSAPI.workflow", "key", &key.PublicKey)
-	apple.AddOrgDeviceResource("opaque", "SERIAL", map[string]any{ "deviceModel": "Mac", "imei": []string{"123"}, "futurePrivate": "private-value"})
+	apple.AddOrgDeviceResource("opaque", "SERIAL", map[string]any{"deviceModel": "Mac", "imei": []string{"123"}, "futurePrivate": "private-value"})
 	serverID := apple.AddMDMServer("server", nil)
 	apple.Assign("opaque", serverID)
 	apple.AddAppleCareCoverage("opaque", "plan", map[string]any{"agreementNumber": "AGREEMENT", "endDateTime": "2030-01-01T00:00:00Z"})
