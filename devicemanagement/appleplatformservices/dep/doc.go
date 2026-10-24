@@ -27,6 +27,12 @@
 // does not erase a known binding. These persistence and reconciliation rules
 // are project policy around Apple's APIs.
 //
+// Profile.ValidateForTarget checks caller-supplied OS/version and capability
+// facts before submission. It reuses generated skip-key metadata and reports
+// unsupported settings separately from unchecked, deprecated and ignored ones.
+// Missing dimensions are never inferred; the method changes no profile or
+// assignment. Validate and the Apple client retain structural validation only.
+//
 // Custom stores must hold Tx.LockAccount until transaction completion even when
 // the account is absent and ErrNotFound is returned, including delete/recreate
 // transitions. The SQL implementation uses schema 3's stable account-name locks.

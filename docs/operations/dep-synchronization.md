@@ -4,6 +4,59 @@ The `dep` service maintains Apple server credentials, device inventory and enrol
 
 The [workflow diagram](../diagrams/flow-dep-sync-assign.html) shows token setup and recurring reconciliation. The [design decision](../research/decisions/0026-dep-client-sync-and-assignment.md) describes the storage guarantees.
 
+## Check a caller-supplied ADE profile
+
+The library's `Profile.ValidateForTarget` runs structural validation, then returns
+field-specific `Unsupported`, `Unchecked`, `Deprecated` and `Ignored` results.
+Structural errors carry `ProfileError.Field`; unsupported target settings are in
+the report. Call this before defining or assigning a profile. The Apple client
+still performs structural validation only because it has no target facts.
+
+```go
+report, err := profile.ValidateForTarget(dep.ProfileTarget{
+    Target: support.Target{OS: support.MacOS, Version: osversion.New(26, 0, 0)},
+    ProtocolVersion: 2,
+})
+```
+
+Handle `err`, inspect `report.Unsupported`, and explicitly decide whether the
+remaining unchecked dimensions are acceptable. An empty unsupported list alone
+is not a complete support claim. The method does not change profile content,
+choose profiles, infer missing values, or make Apple requests. Checks apply to
+supplied fields, including explicit false booleans; unknown `Extra` fields remain
+intact and are unchecked. Wire fields and indexed `skip_setup_items` identify
+results; `*` identifies a missing or unsupported target dimension.
+
+Use schema OS names, with `support.IOS` for both iOS and iPadOS. Missing or
+unrecognized OS values and missing/invalid versions remain visibly unchecked.
+`ProfileTarget` reuses `support.Target` OS/version metadata; its other enrollment
+flags are unused because ADE profile values describe the resulting enrollment.
+For `is_multi_user=true`, explicitly supply `IsIPad` and `SharedIPadCapable` facts.
+The delivered enrollment profile's `com.apple.mdm.per-user-connections` capability
+remains unchecked by this API. Unknown protocol versions remain unchecked for
+fields requiring protocol version 2.
+
+Skip-key availability, deprecation and removal come from generated
+`schema/other` support metadata. Conditional `always-skippable=false` panes retain
+an unchecked Setup Assistant context result. This validates the schema's platform
+contract; it does not prove that a pane exists on a particular device model.
+
+Apple's [Profile contract](https://developer.apple.com/documentation/devicemanagement/profile)
+limits `auto_advance_setup`, `language` and `region` to tvOS and macOS 11 or later,
+and the backup/return-to-service flags to iOS/iPadOS and visionOS 26 or later.
+It also documents protocol floors, Shared iPad requirements, and the iOS 11/13
+supervision, pairing and mandatory-enrollment behavior reported by this API.
+Unavailable settings are reported even when Apple would ignore them; ignored
+and deprecated iOS settings are reported separately. The validator checks
+availability rather than predicting backup behavior: Apple's additional profile
+removal behavior from 26.4 is not a different availability boundary.
+Apple's [web-view authentication guide](https://developer.apple.com/documentation/devicemanagement/authenticating-through-web-views)
+specifies iOS/iPadOS 13 and macOS 10.15 introduction boundaries and includes tvOS
+and visionOS; unspecified tvOS/visionOS web-view and tvOS auto-advance release
+floors remain unchecked. These checks do not validate remote web content,
+organization eligibility, language-code registries or hardware enrollment.
+
+
 ## Token setup and renewal
 
 Apple's [authentication procedure](https://developer.apple.com/documentation/devicemanagement/authenticating-for-automated-device-enrollment) uses a public certificate uploaded to its management portal and an encrypted server token downloaded from it. Retain the matching private key in server storage. The token contains OAuth 1.0a credentials used to obtain an `X-ADM-Auth-Session` session.

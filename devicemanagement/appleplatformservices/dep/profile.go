@@ -1,6 +1,7 @@
 package dep
 
 import (
+	"fmt"
 	"net/url"
 	"reflect"
 	"slices"
@@ -57,7 +58,7 @@ func SkipKeys() []string {
 // SKIP_SETUP_ITEM_INVALID for a skip_setup_items entry outside SkipKeys.
 func (p *Profile) Validate() error {
 	if p == nil {
-		return &ProfileError{Code: CodeConfigNameRequired, Detail: "nil profile"}
+		return &ProfileError{Field: "profile_name", Code: CodeConfigNameRequired, Detail: "nil profile"}
 	}
 	if err := checkLen(CodeConfigNameInvalid, "profile_name", p.ProfileName, MaxProfileNameLen); err != nil {
 		return err
@@ -84,11 +85,11 @@ func (p *Profile) Validate() error {
 		}
 	}
 	if p.IsMDMRemovable != nil && !*p.IsMDMRemovable && (p.IsSupervised == nil || !*p.IsSupervised) {
-		return &ProfileError{Code: CodeFlagsInvalid, Detail: "is_mdm_removable=false requires is_supervised=true"}
+		return &ProfileError{Field: "is_mdm_removable", Code: CodeFlagsInvalid, Detail: "is_mdm_removable=false requires is_supervised=true"}
 	}
-	for _, k := range p.SkipSetupItems {
+	for i, k := range p.SkipSetupItems {
 		if _, ok := skipKeys[k]; !ok {
-			return &ProfileError{Code: CodeSkipKeyInvalid, Detail: "unknown skip_setup_items entry " + k}
+			return &ProfileError{Field: fmt.Sprintf("skip_setup_items[%d]", i), Code: CodeSkipKeyInvalid, Detail: "unknown skip_setup_items entry " + k}
 		}
 	}
 	return nil
@@ -97,16 +98,16 @@ func (p *Profile) Validate() error {
 // validateURL checks the profile's service URLs before submission to Apple.
 func (p *Profile) validateURL() error {
 	if p.URL == "" {
-		return &ProfileError{Code: CodeConfigURLInvalid, Detail: "url is empty"}
+		return &ProfileError{Field: "url", Code: CodeConfigURLInvalid, Detail: "url is empty"}
 	}
 	u, err := url.Parse(p.URL)
 	if err != nil || u.Scheme == "" || u.Host == "" {
-		return &ProfileError{Code: CodeConfigURLInvalid, Detail: "url is not absolute"}
+		return &ProfileError{Field: "url", Code: CodeConfigURLInvalid, Detail: "url is not absolute"}
 	}
 	// Apple counts the URL as sent (already URL-encoded); u.String()
 	// percent-encodes only what an absolute URL may not carry.
 	if len(u.String()) > MaxProfileURLLen {
-		return &ProfileError{Code: CodeConfigURLInvalid, Detail: "url exceeds 2000 URL-encoded characters"}
+		return &ProfileError{Field: "url", Code: CodeConfigURLInvalid, Detail: "url exceeds 2000 URL-encoded characters"}
 	}
 	return nil
 }
@@ -114,10 +115,10 @@ func (p *Profile) validateURL() error {
 // checkLen rejects a field value beyond the service's supported length.
 func checkLen(code, field, value string, limit int) error {
 	if value == "" {
-		return &ProfileError{Code: code, Detail: field + " is empty"}
+		return &ProfileError{Field: field, Code: code, Detail: field + " is empty"}
 	}
 	if utf8.RuneCountInString(value) > limit {
-		return &ProfileError{Code: code, Detail: field + " exceeds the maximum length"}
+		return &ProfileError{Field: field, Code: code, Detail: field + " exceeds the maximum length"}
 	}
 	return nil
 }

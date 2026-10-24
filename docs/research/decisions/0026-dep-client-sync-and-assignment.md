@@ -19,6 +19,22 @@ Token validation runs outside the write transaction. The commit locks the accoun
 Account retry deadlines and failure counts live in the store, so replacement workers respect earlier throttling. Cooldown writes require the same Apple identity and an unexpired owned lease, but tolerate same-identity credential renewal or a changed desired profile. A stale per-device `THROTTLED` response becomes a conservative account cooldown without saving its obsolete assignment outcomes. Identity reset or lease loss prevents those writes. Bounded network requests run outside transactions.
 
 The reference server schedules sync and assignment independently; zero disables the corresponding background operation. API profiles retain unknown fields and validate documented combinations and setup keys.
+`Profile.ValidateForTarget` adds an explicit pre-assignment check without changing
+profile content or assignment behavior. It reuses `support.Target` OS/version and
+generated `other.SkipKeys` metadata; ADE-only field restrictions follow Apple's
+[Profile contract](https://developer.apple.com/documentation/devicemanagement/profile)
+and [web-view authentication guide](https://developer.apple.com/documentation/devicemanagement/authenticating-through-web-views).
+The result identifies unsupported fields, unchecked dimensions, deprecations and
+ignored iOS flags. Structural failures expose `ProfileError.Field`.
+
+Unknown OS/version/protocol values, unknown profile fields and conditional setup
+panes remain unchecked. iPadOS shares the schema's iOS OS identifier; Shared iPad
+checks require explicit device-family and minimum-hardware capability facts.
+The delivered MDM profile's per-user-connections capability is outside this API
+and remains unchecked. Apple documents no tvOS introduction floor for the
+locale/auto-advance fields or tvOS/visionOS web views, so those release dimensions
+remain unchecked. The API chooses no fleet policy, profile defaults or target
+inference. Callers decide whether incomplete checks are acceptable.
 
 The SQL schema persists cursor revision/generation fields, device fetch markers and assignment state. Schema 3 adds `dep_account_locks` for SQLite, PostgreSQL and MySQL. Its stable per-name row serializes account creation, account/keypair mutations and reset even while the account is absent; account deletion does not delete that lock row. This avoids relying on a lock on a nonexistent account row.
 
@@ -42,7 +58,11 @@ API types are maintained from Apple's documentation because this service's JSON 
 
 ## Verification
 
-Client, PKI, syncer and assigner tests use the independent fake service for signature verification, session rotation, pagination, injected errors and per-serial outcomes. Store contracts cover resumable and empty snapshots, persisted backoff, concurrent account locking and rollback across memory, SQLite, PostgreSQL and MySQL. Worker race tests cover stale sync responses, expired claims, readback after removal, desired-profile changes, concurrent renewal/import, staged-key replacement and explicit identity reset. Shared memory/SQL account-fence contracts exercise stale success, authentication and throttle responses; SQL contracts cover absent-name creation locks and keypair staging. End-to-end tests cover assignment and ADE enrollment.
+Client, PKI, syncer and assigner tests use the independent fake service for signature verification, session rotation, pagination, injected errors and per-serial outcomes. Store contracts cover resumable and empty snapshots, persisted backoff, concurrent account locking and rollback across memory, SQLite, PostgreSQL and MySQL. Worker race tests cover stale sync responses, expired claims, readback after removal, desired-profile changes, concurrent renewal/import, staged-key replacement and explicit identity reset. Shared memory/SQL account-fence contracts exercise stale success, authentication and throttle responses; SQL contracts cover absent-name creation locks and keypair staging. End-to-end tests cover assignment and ADE enrollment. Target-aware profile tests
+exercise all generated skip keys against every schema platform at introduction,
+deprecation and removal boundaries, ADE field release floors, explicit false
+values, iOS/iPadOS distinctions, missing facts and unchanged caller content.
+These are automated protocol checks, not live Apple or physical-device evidence.
 
 ## References
 
