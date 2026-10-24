@@ -1,6 +1,7 @@
 package app
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"net/http"
@@ -13,14 +14,15 @@ import (
 // TestAxMStatus checks AXM error-to-HTTP status mapping.
 func TestAxMStatus(t *testing.T) {
 	cases := map[error]int{
-		&axm.Error{Status: http.StatusNotFound}:        http.StatusNotFound,
-		&axm.Error{Status: http.StatusConflict}:        http.StatusConflict,
-		&axm.Error{Status: http.StatusTooManyRequests}: http.StatusTooManyRequests,
-		fmt.Errorf("x: %w", axm.ErrArgument):           http.StatusBadRequest,
-		fmt.Errorf("x: %w", axm.ErrActivityRule):       http.StatusBadRequest,
-		fmt.Errorf("x: %w", axm.ErrLimit):              http.StatusBadRequest,
-		fmt.Errorf("x: %w", axm.ErrWaitTimeout):        http.StatusGatewayTimeout,
-		errors.New("transport"):                        http.StatusBadGateway,
+		&axm.Error{Status: http.StatusNotFound}:                          http.StatusNotFound,
+		&axm.Error{Status: http.StatusConflict}:                          http.StatusConflict,
+		&axm.Error{Status: http.StatusTooManyRequests}:                   http.StatusTooManyRequests,
+		fmt.Errorf("x: %w", axm.ErrArgument):                             http.StatusBadRequest,
+		fmt.Errorf("x: %w", axm.ErrActivityRule):                         http.StatusBadRequest,
+		fmt.Errorf("x: %w", axm.ErrLimit):                                http.StatusBadRequest,
+		fmt.Errorf("x: %w", axm.ErrWaitTimeout):                          http.StatusGatewayTimeout,
+		fmt.Errorf("%w: %w", axm.ErrTransport, context.DeadlineExceeded): http.StatusGatewayTimeout,
+		errors.New("transport"):                                          http.StatusBadGateway,
 	}
 	for err, want := range cases {
 		if got := axmStatus(err); got != want {

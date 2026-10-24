@@ -218,7 +218,7 @@ func axmStatus(err error) int {
 		errors.Is(err, axm.ErrActivityRule),
 		errors.Is(err, axm.ErrLimit):
 		return http.StatusBadRequest
-	case errors.Is(err, axm.ErrWaitTimeout):
+	case errors.Is(err, axm.ErrWaitTimeout), errors.Is(err, context.DeadlineExceeded):
 		return http.StatusGatewayTimeout
 	default:
 		return http.StatusBadGateway
