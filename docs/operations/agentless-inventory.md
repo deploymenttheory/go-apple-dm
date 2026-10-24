@@ -1,9 +1,10 @@
 # Agentless device inventory
 
-The `devicemanagement/inventory` package reconciles Apple Business Manager (ABM),
-Apple School Manager (ASM), native MDM command responses and declarative status into
-persistent device records. A record can exist before enrollment. No installed agent,
-script execution, Jamf connection or Jamf write-back is involved.
+The `devicemanagement/inventory` package retains Apple Business Manager (ABM),
+Apple School Manager (ASM), native MDM and declarative status as independent source
+records. Each record addresses one source kind, account and opaque source identity.
+Successful original history and failed refresh outcomes remain separate. Collection
+and correlation require no inventory repository or installed agent.
 
 The reference server keeps named Apple connections in **one shared fleet and one
 database**. They are data sources, not tenants. Existing enrollment URLs and fleet
@@ -33,22 +34,17 @@ relationships. Resource IDs are opaque; they are never substituted with serials.
 Apple built-in MDM endpoints do not return inventory for devices enrolled only in
 this reference server, and are not requested for ASM connections.
 
-Wi-Fi, Bluetooth and Ethernet MAC addresses, IMEI, MEID, EID, order information,
-purchase source, organization dates, MDM migration capability/status/deadline and
-all unknown Apple attributes are retained. Scalar or array cellular/Ethernet responses
-become arrays in normalized fields; original representations remain in raw evidence.
-Empty or whitespace-only identifiers are omitted from normalized fields; empty array
-members are removed. A field with no usable identifier is absent from filters and
-exports, while its original source value remains available with raw access.
-Null, false, empty arrays and integers above 2^53 survive. `fields` discovery exposes
-source-qualified paths for new fields without a schema migration.
+All source JSON is retained, including unknown attributes, relationships, null,
+false, zero, empty arrays and integer lexemes above 2^53. Original JSON bytes survive
+persistence without compaction or string escaping changing the source representation.
+Source field discovery exposes `data.<original path>` selectors within each selected resource. Scalar
+and array representations remain unchanged; no presentation aliases or inferred unit
+conversions are stored.
 
-Coverage retains all plans and their original attributes. An active subscription can
-have no end date or agreement number. A successful empty collection means `none`;
-permission failures, 404s, timeouts and unknown statuses never become “no coverage”.
-Failed refreshes keep the last successful values and mark attempt metadata separately.
-`coverage_expiry` is the earliest finite expiry among currently active plans, evaluated
-at the query's `as_of` time.
+Coverage retains every plan and its original attributes. Successful empty coverage
+is the original `[]`; permission failures, 404s and timeouts are separate outcomes.
+Failed refreshes never replace an earlier successful result. Coverage summaries and
+field equivalence are caller-owned interpretations of the independent evidence.
 
 ## Standalone source collection
 
@@ -94,8 +90,9 @@ a consistent snapshot. `MaxPages` bounds traversal across restarts, and repeated
 URLs are rejected. Call `Step` instead of `Collect` when the host schedules one request
 at a time. Completed checkpoints perform no further requests.
 
-Inventory device enumeration uses this collector and commits observations with each
-job checkpoint. Existing page checkpoints retain their continuation when resumed.
+Inventory device enumeration uses this collector and commits observations, complete
+list documents and safe outcomes with each job checkpoint. Compatible checkpoints
+resume; migration restarts incompatible checkpoints with a fresh generation.
 Detail and assignment streams remain singular requests. Inventory stages coverage
 pages in memory and publishes coverage only after complete traversal, so a failed page
 retains the last successful coverage evidence and retries the resource on the next job.
@@ -133,29 +130,33 @@ See the [executable example](../../devicemanagement/correlation/example_test.go)
 The host owns authentication, outcomes, retained report history and persistence.
 Failed attempts must remain separate from successful reports. The correlation and
 resolution APIs require no inventory repository and make no fleet-policy decision.
-The current reference inventory records and projection described below remain
-independent of this opt-in API; they do not yet use its native-first resolution.
+Inventory's explicit `Repository.Link` composes this correlator using retained
+original history and authenticated enrollment provenance. It retains two source
+identities without combining records. Optional resolution stays caller-owned.
 
 ## Records and native collection
 
-Source identity is matched first, followed by an unambiguous normalized serial.
-Conflicting serials remain inspectable. Duplicate resource identities reporting one
-serial within an Apple account prevent automatic matching. If a provisional enrollment
-learns its serial later, its observations join the existing cloud record; the previous
-local device link remains an alias.
+Each `ResourceRecord` retains its original source reference and latest successful
+snapshot. Successful observations, original migrated envelopes, list documents and
+failed outcomes have independent history. A source update never joins records by
+serial, creates a provisional alias or ranks source fields. Physical relationships
+are explicit checked serial links. Every newly retained original, including a delayed
+report that leaves the latest snapshot unchanged, invalidates affected links. Exact
+acknowledged replays preserve checked links. Absence and disconnection invalidate links;
+affected relationships require a new explicit correlation.
 
-Each source records its successful snapshot, observation time, latest attempt,
-error code, expiry, absence and disconnection. Native operational observations and
-cloud purchasing facts remain separately available. Newer evidence supplies the
-normalized view; equally fresh evidence prefers DDM, then MDM. Partial DDM reports
-retain omitted items and their original timestamps; full reports replace the snapshot.
-DDM `diskmanagement.filevault.enabled` supplies the normalized `filevault_enabled`
-field, including a reported `false`. Serial normalization retains the selected
-source's provenance, and unset enrollment dates are omitted rather than represented
-as year-one timestamps.
-Account removal disconnects its sources but does not remove devices or disable enrollment.
-An absent Apple device is tombstoned only after a complete enumeration and a confirming
-individual lookup. Organization release and MDM enrollment are separate facts.
+Native history retains partial reports and their reported per-item times. Omission
+leaves prior successful observations available to an explicit resolver; storage does
+not fabricate a replacement full report. Unknown authentication or enrollment-method
+provenance remains incomplete. Current reference adapters preserve their available
+native evidence without inventing that provenance or automatically linking hardware.
+User Enrollment cannot establish a serial-based hardware relationship.
+
+Account removal disconnects its sources without disabling enrollment or deleting
+original evidence. An absent Apple resource is marked only after complete enumeration
+and a confirming individual lookup. Organization membership, physical correlation
+and protocol enrollment are separate facts. Serialless protocol enrollment remains
+usable independently.
 
 The supervised native worker discovers new enrollments within its one-minute sweep,
 backfills existing acknowledged results and effective DDM status, and requests:
@@ -166,13 +167,12 @@ backfills existing acknowledged results and effective DDM status, and requests:
 - DDM status through the existing capability-aware subscription mechanism, enabled by default
   by `DM_SUBSCRIPTIONS`. Setting it to false remains supported.
 
-Only acknowledged responses for stored commands can update inventory. User-channel data
-does not overwrite physical-device fields. Native requests use the ordinary command queue,
+Only acknowledged responses for stored commands can update inventory. User-channel identities
+remain independent of physical hardware relationships. Native requests use the ordinary command queue,
 validation, deduplication and APNs notifier. Without APNs credentials, requests remain queued
 until the device contacts the server. Authenticated enrollment certificates supply their
 own expiry metadata; arbitrary installed certificates are not treated as enrollment identity.
-RAM is reported as unavailable because the covered Apple APIs do not provide a reliable
-cross-platform RAM field.
+No cross-platform RAM field or implicit field equivalence is introduced.
 
 ## CLI: `devices collect`
 
@@ -185,11 +185,11 @@ dmctl devices collect --help
 ```
 
 `dmctl devices collect DEVICE_ID` requests an asynchronous native inventory refresh
-for an existing device record. `DEVICE_ID` is the local inventory record ID returned
-by `devices list`, not an Apple resource ID, serial number or enrollment UDID.
+for an existing `enrollment` source record. `DEVICE_ID` is that source record's local
+ID from `devices list --source enrollment`, not an Apple resource ID, serial or UDID.
 
 ```sh
-dmctl devices list
+dmctl devices list --source enrollment
 dmctl devices collect DEVICE_ID
 ```
 
@@ -201,15 +201,15 @@ An example successful response is:
 
 This is the number of commands queued, not a device response or a count of returned
 fields. The count can vary with eligible enrollments, platform support and queue
-deduplication. A cloud-only record with no local enrollment cannot supply native
-inventory and may queue zero commands. Collection requires `manageInventory`.
+deduplication. An Apple source record cannot supply a native
+enrollment and queues zero commands. Collection requires `manageInventory`.
 
 ### Relationship to a device check-in
 
 1. The server queues supported inventory commands through its ordinary MDM queue.
 2. When commands are queued and APNs is configured, the server asks APNs to wake the device.
 3. The device contacts the MDM command endpoint, retrieves commands and sends responses.
-4. Acknowledged responses update the persistent device record, query indexes and reports.
+4. Acknowledged responses append independent successful native source evidence.
 
 This triggers the normal MDM command-polling cycle. In Apple's protocol terminology,
 it is not an enrollment check-in message such as `Authenticate` or `TokenUpdate`
@@ -273,25 +273,27 @@ dmctl devices fields --raw
 dmctl commands list device ENROLLMENT_ID
 ```
 
-Use the record's `enrollment_id` for `ENROLLMENT_ID` in the command-queue example;
+Use the `enrollment` source snapshot's `enrollment_id` for `ENROLLMENT_ID` in the command-queue example;
 it is distinct from the inventory record ID. Queue inspection requires the relevant
-command-read permission. Check command status and completion time, then each inventory
-source's observation/attempt timestamps and error metadata. A successful `devices get`
-can still contain retained older evidence. Failed attempts do not erase prior successes.
+command-read permission. Check command status, completion time and each source's
+observation time. Programmatic `Repository.Attempts` and `Repository.Outcomes` expose
+separate failed refresh history; job metadata reports failure counts. A successful
+`devices get` can still contain retained older evidence. Failed attempts do not erase
+prior successes.
 
-Ordinary record reads require `readInventory` and return reviewed normalized fields.
-`--raw` requires `readRawInventory` and exposes complete stored evidence and additional
-source-qualified fields, for example
-`mdm.DeviceInformation.QueryResponses.SystemIntegrityProtectionEnabled`.
+Ordinary record reads require `readInventory` and return resource metadata.
+`--raw` requires `readRawInventory` and exposes complete source evidence and original
+field paths, for example `data.QueryResponses.SystemIntegrityProtectionEnabled` within an
+`mdm.DeviceInformation` source record.
 The authenticated enrollment identity separately supplies
 `identity_certificate_expiry`; it is not inferred from arbitrary installed certificates.
 
-To export only this record's reviewed fields, replace `DEVICE_ID` in the predicate:
+To export only this record's metadata, replace `DEVICE_ID` in the predicate:
 
 ```sh
 dmctl inventory export --format csv \
-  --where '[{"field":"id","operator":"eq","value":"DEVICE_ID"}]' \
-  --columns serial_number,model,os_version,build_version,apple_silicon,filevault_enabled,identity_certificate_expiry
+  --where '[{"field":"meta.id","operator":"eq","value":"DEVICE_ID"}]' \
+  --columns meta.id,meta.source,meta.account_id,meta.resource_id,meta.observed_at,meta.incomplete
 ```
 
 ### Native collection versus AxM sync
@@ -312,7 +314,7 @@ Grant the necessary explicit actions through existing Cedar policies:
 | Action | Capability |
 | --- | --- |
 | `readInventory` | Records, public field discovery, account metadata, jobs, reports, exports and diagnostics |
-| `readRawInventory` | Complete source payloads and unreviewed source-qualified fields |
+| `readRawInventory` | Complete source payloads and original source fields |
 | `manageInventory` | Sync, native collection, job controls, schedules and presets |
 | `manageAxMAccounts` | Connection creation, credentials, updates, verification and deletion |
 
@@ -388,15 +390,15 @@ dmctl inventory schedules set ACCOUNT_ID --cron '0 2 * * *' --disabled
 dmctl inventory schedules list
 
 dmctl devices list --focus apple --account ACCOUNT_ID
-dmctl devices list --where '[{"field":"imei","operator":"contains","value":"123456789"}]'
-dmctl devices list --where '[{"field":"migration_capable","operator":"eq","value":false}]'
+dmctl devices list --raw --source axm.device --where '[{"field":"data.attributes.imei","operator":"contains","value":"123456789"}]'
+dmctl devices list --raw --source axm.device --where '[{"field":"data.attributes.isMdmMigrationCapable","operator":"eq","value":false}]'
 dmctl devices get DEVICE_ID
 dmctl devices get DEVICE_ID --raw
 dmctl devices fields --raw
 dmctl devices collect DEVICE_ID
 
 dmctl inventory reports --focus combined
-dmctl inventory export --format csv --columns serial_number,model,imei,ethernet_mac_addresses
+dmctl inventory export --format csv --columns meta.id,meta.source,meta.account_id,meta.resource_id
 dmctl inventory export --format ndjson --raw
 dmctl inventory diagnostics
 ```
@@ -407,17 +409,28 @@ supply an explicit `anchor`. Raw cron uses five numeric fields, lists, ranges an
 Time zones are IANA names. Missed runs coalesce instead of replaying every missed tick.
 Schedules run in the server; a CLI process need not remain open.
 
-Lists, reports and exports share `account`, `source`, `focus`, `search`, `where`, `cursor`
-and `as_of`. Conditions are ANDed and support `eq`, array `contains`, `exists`, `lt`,
-`lte`, `gt`, `gte`. Account and Apple/managed focus select source-specific projections.
-Search examines public fields. Exact equality and array membership use persisted indexes;
-other predicates scan bounded pages. `as_of` fixes time-dependent coverage calculations,
-not a historical database snapshot.
+Lists, reports and exports share `account`, `source`, `focus`, `search`, `where`,
+`cursor` and `as_of`. Conditions are ANDed and support `eq`, array `contains`,
+`exists`, `lt`, `lte`, `gt`, `gte`. Account and Apple/managed focus select independent
+source records. Search examines source identities and kind. Predicates scan bounded
+pages over original field paths or metadata. Numeric comparisons retain exact integer
+precision. `as_of` records the query time and is not a historical database snapshot.
 
-Reports include model/product families, purchasing source, coverage, assignment,
-migration, source overlap, enrollment, FileVault, check-in freshness, Apple Silicon,
-expiry windows and year added. OS major-version currency is relative to the newest
-reported major in each OS family within the source scope, never a hardcoded release.
+Selectors are explicitly namespaced. `meta.id` is the repository's resource identity;
+`meta.resource_id` is the opaque source address; `data.id` is the original source field
+named `id`. Metadata and source members never shadow one another or imply equivalent
+meaning. Original field paths escape literal dots as `\.` and backslashes as `\\`.
+Use, for example, `data.meta.id` for an original nested `meta.id` member and
+`data.meta\.id` for an original literal key named `meta.id`. Unqualified names are
+invalid. `devices fields --raw` discovers available selectors; metadata-only discovery
+excludes `data.*`. Original-data filters and exports require raw authority.
+
+```sh
+dmctl inventory export --raw --format csv --columns meta.id,data.id
+```
+
+Reports count independent resources by source kind and completeness. They do not
+project physical fleet overlap, infer field equivalence or apply source ranking.
 
 Bulk exports stream to the CLI without its normal buffered-response size limit.
 Raw exports capture an authorized access audit event before the first byte and record
@@ -431,7 +444,7 @@ ordered columns and filters with `dmctl inventory presets save NAME --file prese
 list them with `dmctl inventory presets`. Presets contain `name`, `format`, `columns` and
 `query`. The preexisting enrollment export/import format is unchanged.
 
-Diagnostics emit deliberately limited NDJSON summaries with consistent `<device N>`
+Diagnostics emit deliberately limited NDJSON summaries with consistent `<resource N>`
 labels within the bundle. They do not copy serials, raw logs, hosts, payloads, keys or
 credentials into the output.
 
@@ -440,7 +453,7 @@ credentials into the output.
 In-memory applications use `inventory.NewMemory`. The reference server's SQLite,
 PostgreSQL and MySQL implementations use the existing database and storage keyring.
 `inventory_entries.payload` is authenticated against its document key. Source snapshots,
-indexes and progress share transactions; SQL native projections also join protocol/event
+original history, outcomes and progress share transactions; SQL observers also join protocol/event
 transactions. In-memory stores have independent transaction boundaries.
 
 The inventory migration set and encrypted-column binding are registered with server
@@ -458,8 +471,22 @@ as test DSNs.
 Programmatic configuration exposes `Config.InventoryNativeInterval` and
 `Config.InventoryJobRetention`. A library application composes `inventory.Repository`
 with its chosen `Backend`, and runs `inventory.Syncer` with an optional `ClientFactory`.
-All normalized values retain source provenance; complete original AxM resources are
-also available through the AxM resource types' `Raw` field.
+Call `Repository.Migrate` before starting workers or observers. Migration extracts
+only retained original source evidence and preserves unknown source-envelope metadata.
+It never reconstructs source facts or serials from normalized aliases. Missing originals,
+invalid organization-device resources and missing authenticated enrollment provenance
+stay incomplete and refreshable. Accounts, credentials, schedules, enrollment, queues
+and audit state are preserved. Old worker owners are fenced, incompatible cursors restart
+under a new generation, and the previous outbound lease deadline prevents overlapping
+Apple requests. Migration and its model-fence activation commit together; interruption
+rolls back and retry is safe.
+
+SQL schema installation preinstalls an inactive retired-key write fence. MySQL installs
+missing DDL under an inventory-specific advisory lock, retaining an active fence across
+interruption or concurrent opens. Its migration role needs trigger creation authority
+under the server's binary logging policy; the application role does not need `SUPER`.
+The disposable `testdb` and CI services configure that test-only policy explicitly.
+Complete original resources also remain available through AxM resource types' `Raw` field.
 
 The implementation was informed by [AxMJamfSync at the reviewed commit](https://github.com/karthikeyan-mac/AxMJamfSync/tree/9a7af2b54f7d891cfbf1d5ed326cd429fe72cf32),
 [Apple organization-device attributes](https://developer.apple.com/documentation/applebusinessapi/orgdevice/attributes-data.dictionary),

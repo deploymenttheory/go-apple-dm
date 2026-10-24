@@ -1,161 +1,106 @@
 package inventory
 
 import (
-	"bytes"
-	"encoding/csv"
 	"encoding/json"
-	"strings"
+	"errors"
 	"testing"
 	"time"
 
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/correlation"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/source"
-
-	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/ddm"
-	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/mdm"
 )
 
-// TestIdentifierNormalization preserves source evidence while omitting unusable identifiers from queries and exports.
+// TestIdentifierNormalization verifies that serial matching never normalizes source values.
 func TestIdentifierNormalization(t *testing.T) {
-	for _, tc := range []struct{ name, value, want string }{
-		{"scalar", `"valid"`, `["valid"]`},
-		{"mixed", `["", "one", " ", null, "two"]`, `["one","two"]`},
-		{"empty", `""`, ""},
-		{"whitespace", `"  "`, ""},
-		{"empty_array", `[]`, ""},
-		{"empty_members", `["", null, " "]`, ""},
-		{"null", `null`, ""},
-		{"invalid_type", `123`, ""},
-	} {
-		t.Run(tc.name, func(t *testing.T) {
-			r := repository(t)
-			now := time.Now().UTC()
-			raw := `{"attributes":{"imei":` + tc.value + `,"meid":` + tc.value + `,"ethernetMacAddress":` + tc.value + `}}`
-			d := observe(t, r, "SER", "axm.device", "account", "device", raw, now)
-			for _, field := range []string{"imei", "meid", "ethernet_mac_addresses"} {
-				if got := string(d.Fields[field].Value); got != tc.want {
-					t.Fatalf("%s = %s, want %s", field, got, tc.want)
-				}
-				page, err := r.Devices(t.Context(), DeviceQuery{Conditions: []Condition{{Field: field, Operator: "exists"}}})
-				if err != nil || (len(page.Items) == 1) != (tc.want != "") {
-					t.Fatalf("%s existence: %+v %v", field, page, err)
-				}
-			}
-			ref := source.Reference{Kind: "axm.device", AccountID: "account", ResourceID: "device"}
-			if string(d.Sources[ref.Key()].Raw) != raw {
-				t.Fatal("modified original Apple evidence")
-			}
-			if string(d.Fields["axm.device.attributes.imei"].Value) != tc.value {
-				t.Fatal("lost raw identifier field")
-			}
-			var buf bytes.Buffer
-			if err := r.Export(t.Context(), &buf, DeviceQuery{}, "csv", []string{"id", "imei"}, false); err != nil {
-				t.Fatal(err)
-			}
-			rows, err := csv.NewReader(&buf).ReadAll()
-			if err != nil || len(rows) != 2 || rows[1][0] != d.ID || rows[1][1] != tc.want {
-				t.Fatalf("CSV: %v %v", rows, err)
-			}
-			observe(t, r, "SER", "axm.device", "account", "device", `{"attributes":{"imei":""}}`, now.Add(time.Minute))
-			page, err := r.Devices(t.Context(), DeviceQuery{Conditions: []Condition{{Field: "imei", Operator: "contains", Value: json.RawMessage(`"valid"`)}}})
-			if err != nil || len(page.Items) != 0 {
-				t.Fatal("stale identifier index", page, err)
-			}
-		})
-	}
-	for _, value := range []string{`""`, `" "`, `null`, `"address"`} {
-		r := repository(t)
-		d := observe(t, r, "SER", "axm.device", "a", "d", `{"attributes":{"wifiMacAddress":`+value+`,"bluetoothMacAddress":`+value+`,"eid":`+value+`}}`, time.Now())
-		for _, field := range []string{"wifi_mac_address", "bluetooth_mac_address", "eid"} {
-			_, present := d.Fields[field]
-			if present != (value == `"address"`) {
-				t.Fatalf("%s: unexpected presence for %s", field, value)
-			}
-		}
-	}
-}
-
-// TestDDMNormalizedEvidence retains per-item serial and FileVault provenance across partial reports.
-func TestDDMNormalizedEvidence(t *testing.T) {
 	r := repository(t)
-	ctx := t.Context()
-	now := time.Now().UTC()
-	id := mdm.EnrollmentID{Channel: mdm.ChannelDevice, ID: "mac"}
-	cloud := observe(t, r, "SERIAL", "axm.device", "account", "device", `{"attributes":{"serialNumber":"serial"}}`, now)
-	serial := cloud.Fields["serial_number"]
-	if String(serial.Value) != "SERIAL" || serial.Source.Kind != "axm.device" || !serial.ObservedAt.Equal(now) {
-		t.Fatal("cloud serial provenance lost", serial)
-	}
-	ref := EnrollmentReference("ddm.status", id)
-	status := ddm.StatusUpdate{ReceivedAt: now.Add(time.Minute), Raw: []byte(`{}`)}
-	status.Values = append(status.Values, ddm.StatusValue{Path: "diskmanagement.filevault.enabled", Value: json.RawMessage(`false`), LastSeen: now}, ddm.StatusValue{Path: "device.identifier.serial-number", Value: json.RawMessage(`"serial"`), LastSeen: now})
-	if err := r.ObserveStatus(ctx, "SERIAL", id, status); err != nil {
-		t.Fatal(err)
-	}
-	d, err := r.Device(ctx, cloud.ID)
+	at := time.Now().UTC()
+	apple := observe(t, r, "WRONG", "axm.device", "account", "opaque", `{"id":"opaque","type":"orgDevices","attributes":{"serialNumber":" ser ","imei":["",null,"original"],"counter":9007199254740993}}`, at)
+	nativeRef := source.Reference{Kind: "mdm.DeviceInformation", ResourceID: "device:enrollment"}
+	o, err := ResourceObservation(nativeRef, json.RawMessage(`{"QueryResponses":{"SerialNumber":"SER","Flag":false}}`), at, time.Hour)
 	if err != nil {
 		t.Fatal(err)
 	}
-	for name, want := range map[string]string{"serial_number": `"SERIAL"`, "filevault_enabled": `false`} {
-		f := d.Fields[name]
-		if string(f.Value) != want || f.Source != ref || !f.ObservedAt.Equal(now) {
-			t.Fatalf("%s: %+v", name, f)
-		}
-	}
-	page, err := r.Devices(ctx, DeviceQuery{Conditions: []Condition{{Field: "filevault_enabled", Operator: "eq", Value: json.RawMessage(`false`)}}})
-	if err != nil || len(page.Items) != 1 {
-		t.Fatal("FileVault index", page, err)
-	}
-	report, err := r.Report(ctx, DeviceQuery{})
-	if err != nil || report.Facets["filevault_enabled"]["false"] != 1 {
-		t.Fatal("FileVault report", report, err)
-	}
-	var buf bytes.Buffer
-	if err := r.Export(ctx, &buf, DeviceQuery{}, "csv", []string{"serial_number", "filevault_enabled"}, false); err != nil {
+	o.Native = &NativeIdentity{Serial: "SER", Method: correlation.ProfileBasedDeviceEnrollment, Authenticated: true}
+	native, err := r.Observe(t.Context(), "", o)
+	if err != nil {
 		t.Fatal(err)
 	}
-	if !strings.Contains(buf.String(), "SERIAL,false") {
-		t.Fatal(buf.String())
+	if native.ID == apple.ID {
+		t.Fatal("sources merged before explicit link")
 	}
-	observe(t, r, "SERIAL", "mdm.SecurityInfo", "", "device:mac", `{"SecurityInfo":{"FDE_Enabled":true}}`, now.Add(2*time.Minute))
-	status.ReceivedAt = now.Add(3 * time.Minute)
-	status.Values = nil
-	if err := r.ObserveStatus(ctx, "SERIAL", id, status); err != nil {
+	link, err := r.Link(t.Context(), apple.Source, native.Source, at)
+	if err != nil || link.Serial != "SER" {
+		t.Fatal(link, err)
+	}
+	if string(apple.Snapshot.Fields["attributes.serialNumber"]) != `" ser "` || string(apple.Snapshot.Fields["attributes.imei"]) != `["",null,"original"]` {
+		t.Fatal("source normalized")
+	}
+	links, err := r.Links(t.Context(), native.Source)
+	if err != nil || len(links) != 1 {
+		t.Fatal(links, err)
+	}
+	// A fresh report requires an explicit new correlation; storage never silently
+	// transfers a checked link when an opaque source changes its serial evidence.
+	o.ObservedAt = at.Add(time.Hour)
+	o.Native.Serial = "DIFFERENT"
+	if _, err := r.Observe(t.Context(), "", o); err != nil {
 		t.Fatal(err)
 	}
-	d, err = r.Device(ctx, cloud.ID)
-	if err != nil || string(d.Fields["filevault_enabled"].Value) != "true" || d.Fields["filevault_enabled"].Source.Kind != "mdm.SecurityInfo" || !d.Fields["serial_number"].ObservedAt.Equal(now) {
-		t.Fatal("partial DDM report refreshed unchanged evidence", d.Fields, err)
+	links, err = r.Links(t.Context(), apple.Source)
+	if err != nil || len(links) != 0 {
+		t.Fatal(links, err)
 	}
-	observe(t, r, "SERIAL", "mdm.DeviceInformation", "", "device:mac", `{"QueryResponses":{"SerialNumber":"serial"}}`, now.Add(4*time.Minute))
-	d, err = r.Device(ctx, cloud.ID)
-	if err != nil || d.Fields["serial_number"].Source.Kind != "mdm.DeviceInformation" || !d.Fields["serial_number"].ObservedAt.Equal(now.Add(4*time.Minute)) {
-		t.Fatal("fresh native serial lost provenance", d.Fields, err)
+	if _, err := r.Link(t.Context(), apple.Source, native.Source, at); !errors.Is(err, ErrConflict) {
+		t.Fatal("serial history conflict accepted", err)
 	}
 }
 
-// TestLegacyZeroEnrollmentDates excludes old zero-date sentinels while retaining raw evidence and real dates.
+// TestDDMNormalizedEvidence verifies retained partial originals without aliases or conversion.
+func TestDDMNormalizedEvidence(t *testing.T) {
+	r := repository(t)
+	at := time.Now().UTC()
+	ref := source.Reference{Kind: "ddm.status", ResourceID: "device:enrollment"}
+	raw := json.RawMessage(`{"device.model.marketing-name":"Mac","diskmanagement.filevault.enabled":false,"future":null}`)
+	d := observe(t, r, "S", ref.Kind, "", ref.ResourceID, string(raw), at)
+	if _, ok := d.Snapshot.Fields["model"]; ok {
+		t.Fatal("implicit alias")
+	}
+	if _, ok := d.Snapshot.Fields["filevault_enabled"]; ok {
+		t.Fatal("implicit equivalence")
+	}
+	if len(d.Snapshot.Raw) != len(raw) || string(d.Snapshot.Raw) != string(raw) {
+		t.Fatal("original changed")
+	}
+	// A user-enrollment report remains inspectable but cannot enrich physical hardware.
+	apple := observe(t, r, "S", "axm.device", "a", "apple", `{"id":"apple","type":"orgDevices","attributes":{"serialNumber":"S"}}`, at)
+	for _, method := range []correlation.Method{correlation.UserEnrollment, ""} {
+		o := d.Snapshot
+		o.Native = &NativeIdentity{Serial: "S", Method: method, Authenticated: true}
+		o.ObservedAt = o.ObservedAt.Add(time.Minute)
+		if _, err := r.Observe(t.Context(), "", o); err != nil {
+			t.Fatal(err)
+		}
+		if _, err := r.Link(t.Context(), apple.Source, ref, at); err == nil {
+			t.Fatal("ineligible method correlated", err)
+		}
+	}
+}
+
+// TestLegacyZeroEnrollmentDates verifies that source omission remains distinct from zero.
 func TestLegacyZeroEnrollmentDates(t *testing.T) {
 	r := repository(t)
-	now := time.Now().UTC()
-	raw := `{"managed":true,"enrolled_at":"0001-01-01T00:00:00Z","last_seen":"0001-01-01T00:00:00Z","disabled_at":"0001-01-01T00:00:00Z"}`
-	d := observe(t, r, "SER", "enrollment", "", "device:mac", raw, now)
-	for _, name := range []string{"enrolled_at", "last_seen", "disabled_at"} {
-		if _, ok := d.Fields[name]; ok {
-			t.Fatal("zero date exposed", name)
-		}
-		if _, ok := d.Fields["enrollment."+name]; !ok {
-			t.Fatal("original field removed", name)
-		}
+	at := time.Now().UTC()
+	d := observe(t, r, "", "enrollment", "", "device:serialless", `{"managed":false,"enrolled_at":"0001-01-01T00:00:00Z","values":[],"zero":0}`, at)
+	if string(d.Snapshot.Fields["managed"]) != "false" || string(d.Snapshot.Fields["zero"]) != "0" || string(d.Snapshot.Fields["values"]) != "[]" {
+		t.Fatal("valid values lost")
 	}
-	var buf bytes.Buffer
-	if err := r.Export(t.Context(), &buf, DeviceQuery{}, "csv", []string{"disabled_at"}, false); err != nil {
-		t.Fatal(err)
+	if _, ok := d.Snapshot.Fields["disabled_at"]; ok {
+		t.Fatal("omitted value fabricated")
 	}
-	if strings.Contains(buf.String(), "0001") {
-		t.Fatal("zero date exported")
+	if string(d.Snapshot.Fields["enrolled_at"]) != `"0001-01-01T00:00:00Z"` {
+		t.Fatal("original zero discarded")
 	}
-	d = observe(t, r, "SER", "enrollment", "", "device:mac", `{"managed":false,"disabled_at":"2026-09-22T03:00:00Z"}`, now.Add(time.Minute))
-	if String(d.Fields["disabled_at"].Value) != "2026-09-22T03:00:00Z" {
-		t.Fatal("actual disable date lost")
+	if _, err := r.SourceResource(t.Context(), d.Source); err != nil {
+		t.Fatal("serialless enrollment unavailable", err)
 	}
 }

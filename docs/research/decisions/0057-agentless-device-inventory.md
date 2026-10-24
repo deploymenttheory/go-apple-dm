@@ -1,115 +1,132 @@
-# 0057: Agentless device records in a shared fleet
+# 0057: Independent device source evidence and explicit serial relationships
 
 ## Context
 
-Organization-owned devices must be discoverable before enrollment. Native MDM and DDM
-can subsequently enrich them without an installed agent. Several ABM/ASM organizations
-can supply one managed fleet, while their credentials and resource identities remain
-independent. AxMJamfSync demonstrates the organization, assignment and coverage APIs;
-its Jamf reconciliation layer is outside this project's scope.
+Organization devices can be discovered before enrollment. Native MDM and DDM can
+subsequently supply authenticated device evidence without an installed agent. Apple
+accounts, opaque resource IDs and enrollment/channel identities have independent
+addressing and provenance roles. A mandatory normalized fleet record loses these
+boundaries and can imply relationships or field equivalence that the sources do not
+establish.
 
 ## Decision
 
-Provide collection, explicit correlation and optional resolution as independently usable
-library operations. A universal inventory repository is not required by Apple clients,
-collection or correlation. `devicemanagement/source.Reference` supplies account-scoped
-opaque provenance without changing its stored JSON or hashed key encoding.
+Collection, correlation and optional resolution are independently usable library
+operations. Apple clients, collectors and `devicemanagement/correlation` require no
+inventory repository. `devicemanagement/source.Reference` supplies opaque account-scoped
+provenance. Library packages never import the reference server.
 
-Retain an explicit inventory orchestration tier below server adapters and above Apple
-clients and protocol types; the layout tests enforce that dependency direction.
-Add `devicemanagement/inventory` with a transactional backend contract, source snapshots,
-stable device records, query indexes, sync jobs, leases, schedules, reports and exports.
-Compose it in the reference server with the existing SQL pool, keyring, native protocol
-handlers and supervised workers. Keep one fleet, one enrollment service and existing
-fleet-wide RBAC. Named Apple accounts are data sources, not authorization tenants.
+`devicemanagement/inventory` persists one `ResourceRecord` per source reference.
+Original successful observation history, complete list documents, request outcomes,
+account credentials, jobs and schedules have separate document namespaces. Raw JSON
+retains unknown members, relationships, null, false, zero, empty arrays, numeric
+lexemes and its original byte representation. Failed attempts never replace successful
+evidence. Explicit `data.<original path>` and `meta.<column>` selectors keep source
+members distinct from metadata, including original `data.id` versus repository
+`meta.id`; unqualified selectors are invalid. No aliases, unit conversions,
+source-ranking projection or automatic record merges are persisted.
 
-Provide source collection independently through
-`devicemanagement/appleplatformservices/axm/collection`. Each caller-selected devices,
-detail, assignment or coverage stream commits complete raw resources, request outcomes
-and a versioned checkpoint through a caller-owned sink. The stream binds account,
-generation, operation and opaque Apple resource ID. Library collection has no dependency
-on inventory records; applications can keep their own evidence model and persistence.
-Inventory synchronization composes the same collector with its existing leases and
-transactional backend. Device pages commit with the inventory job checkpoint. Coverage
-pages stage in caller-owned memory and replace successful inventory evidence only after
-full traversal; interruption retries that resource rather than publishing partial coverage.
+`Repository.Link` explicitly invokes the standalone correlator. The Apple input must
+be an actual collected organization-device resource. Serial is the sole physical
+cross-source key. Native reports require matching authenticated serials and recorded
+ADE, account-driven Device Enrollment or profile-based Device Enrollment provenance.
+User Enrollment, unknown methods, unauthenticated evidence and missing serials cannot
+establish a hardware link. Opaque Apple IDs address APIs; enrollment, channel and user
+IDs retain their protocol roles and establish neither serial identity nor authentication.
 
-Failed collection attempts retain their classification separately from successful evidence.
-Only the final successful list page emits an enumeration-completion marker. Incomplete
-traversal cannot establish absence, and completion does not imply a consistent Apple-side
-snapshot. Sinks fence stale checkpoints and atomically commit evidence, outcome and
-continuation. After an uncertain commit result, callers reload authoritative state before
-resuming; collector instances hold no durable state. New generations begin with an empty
-checkpoint. Existing inventory page checkpoints resume through the collector without
-changing their retained device evidence.
+Checked links retain both original source references without combining their records.
+Each newly retained source original, including a delayed report that does not replace
+the latest snapshot, invalidates affected links and requires explicit fresh correlation.
+Exact acknowledged replays add no evidence and retain checked links. Absence or
+disconnection also invalidates links. Historical reports remain available, including unchecked
+legacy reports. A valid authenticated refresh can establish a link without discarding
+those originals; conflicting authenticated serials for the same source remain rejected.
 
-`devicemanagement/correlation` correlates an actual collected organization-device
-resource with successful native report history using only matching authenticated
-serials. ADE, account-driven Device Enrollment and profile-based Device Enrollment
-are eligible; User Enrollment is excluded. Opaque Apple resource IDs and enrollment,
-channel and user identities retain their protocol and provenance roles; they are
-neither alternate physical-device keys nor authentication. Missing serials do not
-match, and mismatches remain conflicts. Multiple enrollments can match one resource.
+Optional `correlation.Resolve` accepts only caller-declared equivalent fields and units.
+Latest successful native evidence wins before Apple regardless of Apple's refresh time.
+Omission retains earlier native evidence; false, zero, empty arrays and null remain
+values. Originals, candidates and disagreements retain provenance. Purchasing and
+coverage facts can remain Apple-only. Inventory introduces no fleet eligibility,
+assignment policy or automatic field-resolution operation.
 
-Optional resolution requires caller-declared source-qualified equivalent fields,
-including agreement on meaning and units. No aliases or conversions are inferred.
-Latest successful native field evidence wins before Apple regardless of Apple's
-refresh time. Omission retains earlier native evidence; false, zero, empty arrays
-and null remain values. Originals, all candidates and disagreements retain their
-source and observation time. The host owns retention and persistence. The existing
-reference inventory projection remains separate and does not yet compose this API;
-its stored record normalization is described in the operations guide.
+The synchronizer composes `axm/collection`. Each enumeration page commits resources,
+complete source documents, safe outcomes and its checkpoint atomically after checking
+the existing owner lease and account revision. Apple requests occur outside transactions.
+Coverage pages retain source documents independently and publish successful coverage
+resources only after full traversal. Failure cannot establish absence or replace an
+older successful coverage result. Completed pagination does not imply an Apple-side
+consistent snapshot. Native observers retain acknowledged command and validated status
+history within the existing SQL protocol/event transaction.
 
-Preserve every AxM resource as raw JSON alongside structured fields, including unknown
-members, nulls, false and arrays. Keep all coverage plans. Separate successful evidence
-from refresh failures and coverage absence from lookup errors. Source identities are
-opaque and account-scoped. Existing inventory records retain their provisional
-enrollment aliases and stored observations independently of explicit correlation.
+## Persistence and migration
 
-Commit each enumeration page with its checkpoint. Serialize outbound syncs with a
-renewable database lease and revision-fenced commits. Keep native enrollment, organization
-membership and MDM assignment as separate facts. Account deletion disconnects observations
-and cancels work without unenrolling or deleting devices.
+`Repository.Migrate` runs before workers and observers. One backend transaction extracts
+original source envelopes, including unknown observation metadata and per-field times,
+into opaque retained envelope history. Reconstructed source facts come solely from
+actual retained raw JSON. Aggregate normalized fields, serial indexes and aliases are
+never used to fabricate source data, authenticated serials or enrollment methods.
+Missing originals and missing native authentication/method provenance stay incomplete
+and refreshable. Serialless enrollment remains a usable independent protocol identity.
 
-Native observers run after tracked result persistence or validated status application,
-inside the existing SQL event transaction. User-channel reports do not overwrite physical
-inventory. Default views contain reviewed fields; complete payloads require the explicit
-`readRawInventory` action. Credentials never appear in account read responses.
+Migration removes obsolete aggregate/index namespaces, changes the existing lease owner
+that old workers already check, restarts incompatible nonterminal cursors/checkpoints,
+and activates a persistent old-write fence in the same transaction. The old outbound
+lease deadline remains in place so replacement workers wait for possible in-flight
+Apple requests. Accounts, credentials, schedules, completed job history and unrelated
+enrollment, queue and audit state survive. Interruption rolls back completely; rerunning
+a completed migration is harmless.
+
+SQLite and PostgreSQL install initially inactive trigger fences transactionally.
+MySQL installs only missing column/trigger DDL under an inventory-specific advisory
+lock; partial DDL installation can be retried without resetting an active fence.
+Activation remains transactional. MySQL triggers use a current locking read of the
+existing inventory lock row, preventing transactions begun before migration from
+recreating aggregate keys after it. Trigger creation requires a migration role permitted
+by the deployment's binary logging policy. Disposable test services explicitly configure
+that policy; the application role does not receive `SUPER`.
+
+The SQL backend reuses the existing pool, local transaction coordination and AES-GCM
+keyring with document-key/column associated data. Raw payloads, envelope history and
+checkpoints remain sealed. In-memory embeddings retain their own transaction boundary
+and provide neither cross-store rollback nor restart durability.
 
 ## Consequences
 
-The reference server gains agentless device discovery before enrollment and native
-operational inventory afterward. Source and field timestamps make stale or contradictory
-data visible. Full raw evidence and forward-compatible fields avoid discarding newly
-introduced Apple attributes. Dynamic fields use shared typed predicates and hash indexes
-for equality/membership instead of a migration for every new Apple key.
+Independent source identities remain inspectable before and after enrollment. Explicit
+serial relationships cannot silently move evidence between Apple accounts or enrollments.
+Original history lets callers apply native-first resolution without persistence guessing
+field equivalence. Missing historical originals remain visible as recovery needs.
 
-Raw payloads and keys require the existing encrypted persistent-server configuration.
-One shared fleet does not isolate administrators by organization. In-memory embeddings do
-not offer cross-store rollback or restart durability. Native collection still requires
-MDM enrollment and device connectivity, whereas AxM organization records do not.
-
-See [agentless inventory operations](../../operations/agentless-inventory.md) for API calls,
-CLI commands, freshness, scheduling, permissions and validation limits.
+The reference server supervises collection and exposes resource metadata under
+`readInventory`; original source data requires `readRawInventory`. Credentials never
+appear in account read responses. Named Apple accounts are sources in one fleet, not
+authorization tenants. Current native adapters retain their available evidence without
+inventing missing enrollment-method provenance. Native collection requires enrollment
+and connectivity. Automated tests do not establish populated live Apple workflows or
+physical-device outcomes.
 
 ## Verification
 
-The external-package collection tests use a caller-owned sink without inventory imports
-and independent TLS/OAuth wire fixtures. They exercise original resource and document
-JSON (unknown fields, relationships, nulls, false, zero, empty arrays and integers above
-2^53), pagination and coverage pagination, checkpoint serialization and a new collector
-instance, failed and ambiguous commits, cancellation, authentication/permission failures,
-malformed documents, cyclic continuations and page caps. Inventory tests verify both
-current and retained page-checkpoint resumption and incomplete-coverage preservation.
+Memory contracts exercise independent identities, explicit eligible links, User
+Enrollment exclusion, serial conflicts, raw byte/number fidelity, unknown metadata,
+partial report history, lifecycle invalidation, failed outcomes and transactional
+fault injection at every persistence boundary. Migration tests cover false normalized
+aliases, missing originals, preserved operational state, old worker responses,
+serialless enrollment, interruption/retry and legacy-to-authenticated-refresh linking.
 
-Standalone external-package correlation tests exercise every eligible enrollment
-method, User Enrollment exclusion, unauthenticated/missing/conflicting serials, multiple
-enrollments, original resource JSON, precise numbers, partial native report history,
-native-first precedence, subsequent native updates, explicit units, invalid evidence
-and mappings, returned-value isolation and concurrent reads.
+SQLite, PostgreSQL and MySQL contracts exercise encrypted migration, protocol/event
+rollback, old transactions, retired native writes, repeated migration, key rotation
+and original history. MySQL contracts cover partial DDL installation, active-fence
+retry and concurrent opens. Independent external-package collection and correlation
+contracts retain their caller-owned sink and authentication boundaries.
 
 ## References
 
 - [Apple Business API](https://developer.apple.com/documentation/applebusinessapi)
 - [Collection contract](../../../devicemanagement/appleplatformservices/axm/collection/doc.go)
 - [Correlation contract](../../../devicemanagement/correlation/doc.go)
+- [Inventory contract](../../../devicemanagement/inventory/doc.go)
+- [Atomic storage](0005-storage-interfaces.md)
+- [Secrets at rest](0013-secrets-at-rest.md)
+- [MySQL trigger creation](https://dev.mysql.com/doc/refman/8.0/en/create-trigger.html)
+- [Agentless inventory operations](../../operations/agentless-inventory.md)

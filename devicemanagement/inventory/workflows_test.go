@@ -197,7 +197,7 @@ func TestTypedQueryPredicates(t *testing.T) {
 			t.Fatal(tc, got)
 		}
 	}
-	for _, q := range []DeviceQuery{{Limit: -1}, {Limit: 1001}, {Focus: "bad"}, {Conditions: make([]Condition, 65)}, {Conditions: []Condition{{Field: ""}}}, {Conditions: []Condition{{Field: strings.Repeat("a", 1025)}}}, {Conditions: []Condition{{"id", "exists", json.RawMessage(`1`)}}}, {Conditions: []Condition{{"id", "eq", json.RawMessage(`{`)}}}, {Conditions: []Condition{{"id", "unknown", nil}}}} {
+	for _, q := range []ResourceQuery{{Limit: -1}, {Limit: 1001}, {Focus: "bad"}, {Conditions: make([]Condition, 65)}, {Conditions: []Condition{{Field: ""}}}, {Conditions: []Condition{{Field: strings.Repeat("a", 1025)}}}, {Conditions: []Condition{{"meta.id", "exists", json.RawMessage(`1`)}}}, {Conditions: []Condition{{"meta.id", "eq", json.RawMessage(`{`)}}}, {Conditions: []Condition{{"meta.id", "unknown", nil}}}} {
 		if !errors.Is(q.Validate(), ErrInvalid) {
 			t.Fatal(q)
 		}
@@ -218,87 +218,56 @@ func TestTypedQueryPredicates(t *testing.T) {
 // TestReportsExportsAndDiscovery checks that every presentation uses the same source and query scope.
 func TestReportsExportsAndDiscovery(t *testing.T) {
 	r := repository(t)
-	ctx := t.Context()
-	now := time.Date(2026, 9, 21, 12, 0, 0, 0, time.UTC)
+	now := time.Now()
 	for i := range 6 {
-		serial := fmt.Sprintf("SER%d", i)
-		deadline := now.Add(time.Duration([]int{-1, 10, 40, 70, 100, 1}[i]) * 24 * time.Hour).Format(time.RFC3339)
-		last := now.Add(-time.Duration([]int{0, 3, 15, 40, 0, 0}[i]) * 24 * time.Hour).Format(time.RFC3339)
-		raw := fmt.Sprintf(`{"attributes":{"serialNumber":%q,"productFamily":"Mac","osVersion":%q,"mdmMigrationStatus":"IN_PROGRESS","mdmMigrationDeadlineDateTime":%q,"addedToOrgDateTime":"2024-01-01T00:00:00Z","futureSecret":"secret"}}`, serial, fmt.Sprintf("%d.1", 27-i), deadline)
-		if i != 5 {
-			observe(t, r, serial, "axm.device", "a", serial, raw, now)
-		}
-		if i != 4 {
-			observe(t, r, serial, "enrollment", "", serial, fmt.Sprintf(`{"managed":true,"last_seen":%q,"os_family":"macOS","identity_certificate_expiry":%q}`, last, deadline), now)
-		}
-		if i < 3 {
-			observe(t, r, serial, "axm.coverage", "a", serial, fmt.Sprintf(`[{"id":"plan","attributes":{"status":"ACTIVE","endDateTime":%q,"agreementNumber":"agreement","private":"hidden"}}]`, deadline), now)
-		}
+		observe(t, r, "S", "axm.device", "a", fmt.Sprint(i), `{"attributes":{"futureSecret":"hidden","empty":[],"flag":false}}`, now)
 	}
-	report, err := r.Report(ctx, DeviceQuery{AsOf: now})
-	if err != nil || report.Devices != 6 || report.Facets["overlap"]["apple_and_managed"] != 4 || report.Facets["checkin"]["within_7_days"] != 1 || report.Facets["migration_deadline"]["31_60_days"] != 1 {
+	report, err := r.Report(t.Context(), ResourceQuery{})
+	if err != nil || report.Resources != 6 || report.Facets["sources"]["axm.device"] != 6 {
 		t.Fatal(report, err)
 	}
-	if report.Facets["os_currency.macOS"]["current"] != 1 || report.Facets["os_currency.macOS"]["n-1"] != 1 || report.Facets["os_currency.macOS"]["n-2"] != 1 || report.Facets["os_currency.macOS"]["older"] != 1 {
-		t.Fatal(report)
-	}
-	report, err = r.Report(ctx, DeviceQuery{Focus: "apple", Search: "SER1", AsOf: now})
-	if err != nil || report.Devices != 1 || report.Facets["os_currency.Mac"]["n-1"] != 1 {
-		t.Fatal(report, err)
-	}
-	fields, err := r.Fields(ctx, DeviceQuery{}, false)
-	if err != nil || slices.Contains(fields, "axm.device.attributes.futureSecret") {
-		t.Fatal(fields, err)
-	}
-	fields, err = r.Fields(ctx, DeviceQuery{}, true)
-	if err != nil || !slices.Contains(fields, "axm.device.attributes.futureSecret") {
-		t.Fatal(fields, err)
-	}
-	for _, format := range []string{"json", "ndjson", "csv"} {
-		var b bytes.Buffer
-		if err := r.Export(ctx, &b, DeviceQuery{}, format, nil, false); err != nil {
-			t.Fatal(err)
+	for _, raw := range []bool{false, true} {
+		fields, err := r.Fields(t.Context(), ResourceQuery{}, raw)
+		if err != nil || slices.Contains(fields, "data.attributes.futureSecret") != raw {
+			t.Fatal(fields, err)
 		}
-		if strings.Contains(b.String(), "hidden") || strings.Contains(b.String(), "secret") {
-			t.Fatal("private evidence exposed", b.String())
-		}
-		if format == "json" {
-			var devices []DeviceRecord
-			if err := json.Unmarshal(b.Bytes(), &devices); err != nil || len(devices) != 6 {
-				t.Fatal(err, len(devices))
+		for _, format := range []string{"json", "ndjson", "csv"} {
+			var b bytes.Buffer
+			if err := r.Export(t.Context(), &b, ResourceQuery{}, format, nil, raw); err != nil {
+				t.Fatal(err)
 			}
-		}
-		if format == "csv" {
-			rows, err := csv.NewReader(&b).ReadAll()
-			if err != nil || len(rows) != 7 {
-				t.Fatal(rows, err)
+			if format != "csv" && strings.Contains(b.String(), "hidden") != raw {
+				t.Fatal("raw authority", raw, b.String())
+			}
+			if format == "json" {
+				var resources []ResourceRecord
+				if err := json.Unmarshal(b.Bytes(), &resources); err != nil || len(resources) != 6 {
+					t.Fatal(err, len(resources))
+				}
+			}
+			if format == "csv" {
+				rows, err := csv.NewReader(&b).ReadAll()
+				if err != nil || len(rows) != 7 {
+					t.Fatal(rows, err)
+				}
 			}
 		}
 	}
-	for _, raw := range []bool{true, false} {
-		var b bytes.Buffer
-		if err := r.Export(ctx, &b, DeviceQuery{}, "json", nil, raw); err != nil {
-			t.Fatal(err)
-		}
-		if strings.Contains(b.String(), "hidden") != raw {
-			t.Fatal("raw projection", raw)
-		}
-	}
-	p, err := r.SavePreset(ctx, ExportPreset{Name: "Network", Format: "csv", Columns: []string{"imei", "id"}})
+	preset, err := r.SavePreset(t.Context(), ExportPreset{Name: "Evidence", Format: "csv", Columns: []string{"meta.source", "meta.id"}})
 	if err != nil {
 		t.Fatal(err)
 	}
-	ps, err := r.Presets(ctx)
-	if err != nil || len(ps) != 1 || !reflect.DeepEqual(ps[0], p) {
-		t.Fatal(ps, err)
+	presets, err := r.Presets(t.Context())
+	if err != nil || len(presets) != 1 || !reflect.DeepEqual(preset, presets[0]) {
+		t.Fatal(presets, err)
 	}
-	if _, err := r.SavePreset(ctx, ExportPreset{Name: "bad", Format: "yaml"}); !errors.Is(err, ErrInvalid) {
+	if _, err := r.SavePreset(t.Context(), ExportPreset{Name: "bad", Format: "yaml"}); !errors.Is(err, ErrInvalid) {
 		t.Fatal(err)
 	}
-	if err := r.Export(ctx, io.Discard, DeviceQuery{}, "bad", nil, false); !errors.Is(err, ErrInvalid) {
+	if err := r.Export(t.Context(), io.Discard, ResourceQuery{}, "bad", nil, false); !errors.Is(err, ErrInvalid) {
 		t.Fatal(err)
 	}
-	if err := r.Export(ctx, io.Discard, DeviceQuery{}, "csv", []string{"unknown.private"}, false); !errors.Is(err, ErrInvalid) {
+	if err := r.Export(t.Context(), io.Discard, ResourceQuery{}, "csv", []string{"data.attributes.futureSecret"}, false); !errors.Is(err, ErrInvalid) {
 		t.Fatal(err)
 	}
 }
@@ -323,7 +292,7 @@ func TestExportWriteFailures(t *testing.T) {
 	observe(t, r, "B", "axm.device", "a", "b", `{}`, at)
 	for _, format := range []string{"json", "ndjson", "csv"} {
 		for n := 0; n < 6; n++ {
-			err := r.Export(t.Context(), &writeFailure{n}, DeviceQuery{}, format, nil, false)
+			err := r.Export(t.Context(), &writeFailure{n}, ResourceQuery{}, format, nil, false)
 			if err != nil && !errors.Is(err, io.ErrClosedPipe) {
 				t.Fatal(err)
 			}
@@ -333,11 +302,14 @@ func TestExportWriteFailures(t *testing.T) {
 		}
 	}
 	var b bytes.Buffer
-	if err := r.Export(t.Context(), &b, DeviceQuery{}, "csv", []string{"device_name", "id"}, false); err != nil || !strings.Contains(b.String(), "'=formula") {
+	if err := r.Export(t.Context(), &b, ResourceQuery{}, "csv", []string{"data.attributes.deviceName", "meta.id"}, true); err != nil || !strings.Contains(b.String(), "'=formula") {
 		t.Fatal(b.String(), err)
 	}
-	long := strings.Repeat("x", 5000)
-	if err := r.Export(t.Context(), &writeFailure{}, DeviceQuery{}, "csv", []string{long}, true); !errors.Is(err, io.ErrClosedPipe) {
+	columns := make([]string, 1000)
+	for i := range columns {
+		columns[i] = "meta.id"
+	}
+	if err := r.Export(t.Context(), &writeFailure{}, ResourceQuery{}, "csv", columns, true); !errors.Is(err, io.ErrClosedPipe) {
 		t.Fatal(err)
 	}
 }
@@ -408,96 +380,53 @@ func TestMemoryIsolationAndCancellation(t *testing.T) {
 	}
 }
 
-// TestRecordEvidenceLifecycle verifies tied timestamps, freshness, aliases and source removal.
+// TestRecordEvidenceLifecycle verifies successful history, failed outcomes and source lifecycle.
 func TestRecordEvidenceLifecycle(t *testing.T) {
 	r := repository(t)
-	ctx := t.Context()
 	now := time.Now().UTC()
-	for _, kind := range []string{"axm.device", "enrollment", "mdm.identity", "mdm.SecurityInfo", "ddm.status"} {
-		raw := `{"attributes":{"osVersion":"26.0"}}`
-		switch kind {
-		case "enrollment":
-			raw = `{"os_version":"26.1","managed":true}`
-		case "mdm.identity":
-			raw = `{"OSVersion":"26.2"}`
-		case "mdm.SecurityInfo":
-			raw = `{"SecurityInfo":{"FDE_Enabled":true}}`
-		case "ddm.status":
-			raw = `{"device.operating-system.version":"27.0"}`
-		}
-		o, err := ResourceObservation(source.Reference{Kind: kind, ResourceID: "device"}, json.RawMessage(raw), now, time.Hour)
-		if err != nil {
-			t.Fatal(err)
-		}
-		if kind == "ddm.status" {
-			o.Fields = map[string]json.RawMessage{"device.operating-system.version": json.RawMessage(`"27.0"`)}
-		}
-		if _, err := r.Observe(ctx, "SERIAL", o); err != nil {
-			t.Fatal(err)
-		}
-	}
-	ref := source.Reference{Kind: "ddm.status", ResourceID: "device"}
-	d, err := r.SourceDevice(ctx, ref)
-	if err != nil || String(d.Fields["os_version"].Value) != "27.0" {
-		t.Fatal(d, err)
-	}
-	if string(d.Fields["filevault_enabled"].Value) != "true" {
-		t.Fatal("security projection missing")
-	}
-	if err := r.ChangeSource(ctx, ref, true, false); err != nil {
+	ref := source.Reference{Kind: "mdm.DeviceInformation", ResourceID: "device"}
+	first := observe(t, r, "S", ref.Kind, ref.AccountID, ref.ResourceID, `{"QueryResponses":{"OSVersion":"27.0","Flag":false}}`, now)
+	observe(t, r, "S", ref.Kind, ref.AccountID, ref.ResourceID, `{"QueryResponses":{"Model":"Mac"}}`, now.Add(time.Hour))
+	observe(t, r, "S", ref.Kind, ref.AccountID, ref.ResourceID, `{"QueryResponses":{"Old":true}}`, now.Add(-time.Hour))
+	if err := r.Attempt(t.Context(), ref, now.Add(2*time.Hour), "failed"); err != nil {
 		t.Fatal(err)
 	}
-	d, err = r.Device(ctx, d.ID)
-	if err != nil || String(d.Fields["os_version"].Value) != "26.2" {
-		t.Fatal(d, err)
+	current, err := r.Resource(t.Context(), first.ID)
+	if err != nil || string(current.Snapshot.Fields["QueryResponses.Model"]) != `"Mac"` {
+		t.Fatal(current, err)
 	}
-	for _, q := range []DeviceQuery{{Focus: "managed"}, {Conditions: []Condition{{"os_version", "exists", nil}}}, {Conditions: []Condition{{"missing", "exists", json.RawMessage(`false`)}}}} {
-		page, err := r.Devices(ctx, q)
+	history, err := r.History(t.Context(), ref)
+	if err != nil || len(history) != 3 {
+		t.Fatal(history, err)
+	}
+	attempts, err := r.Attempts(t.Context(), ref)
+	if err != nil || len(attempts) != 1 {
+		t.Fatal(attempts, err)
+	}
+	if err := r.ChangeSource(t.Context(), ref, true, true); err != nil {
+		t.Fatal(err)
+	}
+	current, err = r.Resource(t.Context(), first.ID)
+	if err != nil || !current.Snapshot.Absent || !current.Snapshot.Disconnected {
+		t.Fatal(current, err)
+	}
+	for _, q := range []ResourceQuery{{Focus: "managed"}, {Conditions: []Condition{{"data.QueryResponses.Model", "exists", nil}}}, {Conditions: []Condition{{"data.missing", "exists", json.RawMessage(`false`)}}}} {
+		page, err := r.Resources(t.Context(), q)
 		if err != nil || len(page.Items) != 1 {
 			t.Fatal(q, page, err)
 		}
 	}
-	for _, q := range []DeviceQuery{{Conditions: []Condition{{"os_version", "exists", json.RawMessage(`false`)}}}, {Conditions: []Condition{{"missing", "eq", json.RawMessage(`1`)}}}, {Focus: "invalid"}} {
-		page, err := r.Devices(ctx, q)
-		if q.Focus == "invalid" {
-			if !errors.Is(err, ErrInvalid) {
-				t.Fatal(err)
-			}
-		} else if err != nil || len(page.Items) != 0 {
-			t.Fatal(q, page, err)
-		}
-	}
-	raw, ok := d.Value("id", now)
-	if !ok || String(raw) != d.ID {
-		t.Fatal(string(raw), ok)
-	}
-	if PublicField("unknown") {
-		t.Fatal("unreviewed projection exposed")
-	}
 	if _, err := ResourceObservation(ref, json.RawMessage(`{`), now, time.Hour); !errors.Is(err, ErrInvalid) {
 		t.Fatal(err)
 	}
-	if _, err := r.Observe(ctx, "", Observation{}); !errors.Is(err, ErrInvalid) {
+	if _, err := r.Observe(t.Context(), "", Observation{}); !errors.Is(err, ErrInvalid) {
 		t.Fatal(err)
 	}
-	if err := r.Attempt(ctx, source.Reference{Kind: "mdm.DeviceInformation", ResourceID: "missing"}, now, "failed"); err != nil {
+	if _, err := r.Resource(t.Context(), "missing"); !errors.Is(err, ErrNotFound) {
 		t.Fatal(err)
 	}
-	if _, err := r.Device(ctx, "missing"); !errors.Is(err, ErrNotFound) {
-		t.Fatal(err)
-	}
-	// Repeated conflicting serials must not append duplicate conflict messages.
-	observe(t, r, "WRONG", "axm.device", "", "device", `{}`, now.Add(time.Hour))
-	conflict := observe(t, r, "WRONG", "axm.device", "", "device", `{}`, now.Add(2*time.Hour))
-	if len(conflict.Conflicts) != 1 {
-		t.Fatal(conflict.Conflicts)
-	}
-	for _, raw := range []string{`[{"attributes":{"status":"FUTURE"}}]`, `[{"attributes":{"status":"ACTIVE","startDateTime":"2099-01-01T00:00:00Z"}}]`} {
-		coverage := observe(t, r, "COVERAGE", "axm.coverage", "a", raw, raw, now)
-		state := coverage.CoverageAt(now).State
-		if state != "unknown" && state != "inactive" {
-			t.Fatal(state)
-		}
+	if PublicField("unknown") {
+		t.Fatal("unreviewed field exposed")
 	}
 }
 
@@ -506,13 +435,13 @@ func TestDeviceStreamingCrossesPages(t *testing.T) {
 	r := repository(t)
 	ctx := t.Context()
 	for i := range 260 {
-		d := DeviceRecord{ID: fmt.Sprintf("%03d", i)}
-		if err := r.Backend.Update(ctx, func(tx Tx) error { return put(ctx, tx, "device/"+d.ID, d) }); err != nil {
+		d := ResourceRecord{ID: fmt.Sprintf("%03d", i)}
+		if err := r.Backend.Update(ctx, func(tx Tx) error { return put(ctx, tx, "resource/"+d.ID, d) }); err != nil {
 			t.Fatal(err)
 		}
 	}
 	count := 0
-	if err := r.EachDevice(ctx, DeviceQuery{}, func(d DeviceRecord) error {
+	if err := r.EachResource(ctx, ResourceQuery{}, func(d ResourceRecord) error {
 		if d.ID != fmt.Sprintf("%03d", count) {
 			t.Fatal(d.ID, count)
 		}

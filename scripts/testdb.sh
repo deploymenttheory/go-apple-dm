@@ -55,6 +55,7 @@ case "${1:-}" in
     # Inventory tests create a random database instead of resetting shared tables.
     docker exec -i "$MY" mysql --user=root --password=dm <<'SQL'
 GRANT ALL PRIVILEGES ON `inventory\_test\_%`.* TO 'dm'@'%';
+SET GLOBAL log_bin_trust_function_creators = 1;
 SQL
     print_env
     ;;

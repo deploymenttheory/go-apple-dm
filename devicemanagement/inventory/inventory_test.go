@@ -10,6 +10,7 @@ import (
 	"encoding/json"
 	"encoding/pem"
 	"errors"
+	"fmt"
 	"strings"
 	"testing"
 	"time"
@@ -33,7 +34,7 @@ func repository(t *testing.T) *Repository {
 }
 
 // observe records a fixture snapshot and fails immediately on invalid evidence.
-func observe(t *testing.T, r *Repository, serial, kind, account, id, raw string, at time.Time) DeviceRecord {
+func observe(t *testing.T, r *Repository, serial, kind, account, id, raw string, at time.Time) ResourceRecord {
 	t.Helper()
 	o, e := ResourceObservation(source.Reference{Kind: kind, AccountID: account, ResourceID: id}, json.RawMessage(raw), at, 24*time.Hour)
 	if e != nil {
@@ -46,65 +47,43 @@ func observe(t *testing.T, r *Repository, serial, kind, account, id, raw string,
 	return d
 }
 
-// TestLosslessReconciliationAndQueries checks lossless Apple data, query indexes, provenance and redacted views.
+// TestLosslessReconciliationAndQueries checks independent source fidelity, original-path predicates and redaction.
 func TestLosslessReconciliationAndQueries(t *testing.T) {
 	r := repository(t)
 	at := time.Now().UTC()
-	raw := `{"id":"opaque/apple/id","attributes":{"serialNumber":"SER123","ethernetMacAddress":["a","b"],"imei":["i1","i2"],"eid":"e","isMdmMigrationCapable":false,"future":{"nil":null,"number":9007199254740993}}}`
-	d := observe(t, r, " ser123 ", "axm.device", "a", "opaque/apple/id", raw, at)
-	if string(d.Fields["migration_capable"].Value) != "false" || string(d.Fields["axm.device.attributes.future.nil"].Value) != "null" {
-		t.Fatalf("fields lost: %+v", d.Fields)
+	raw := `{"id":"opaque/apple/id","attributes":{"serialNumber":"SER123","nil":null,"false":false,"zero":0,"empty":[],"number":9007199254740993},"relationships":{"owner":{"data":null}}}`
+	d := observe(t, r, "SER123", "axm.device", "a", "opaque/apple/id", raw, at)
+	if string(d.Snapshot.Raw) != raw || string(d.Snapshot.Fields["attributes.number"]) != "9007199254740993" {
+		t.Fatal("original lost", d)
 	}
-	if string(d.Sources[(source.Reference{Kind: "axm.device", AccountID: "a", ResourceID: "opaque/apple/id"}).Key()].Raw) != raw {
-		t.Fatal("raw changed")
+	native := observe(t, r, "SER123", "mdm.DeviceInformation", "", "device:enrollment1", `{"QueryResponses":{"OSVersion":"27.0"}}`, at)
+	if native.ID == d.ID {
+		t.Fatal("sources merged")
 	}
-	native := observe(t, r, "SER123", "mdm.DeviceInformation", "", "device:enrollment1", `{"QueryResponses":{"OSVersion":"27.0","DeviceName":"Mac"}}`, at.Add(time.Minute))
-	if native.ID != d.ID {
-		t.Fatal("native enrollment duplicated AxM device")
-	}
-	page, e := r.Devices(t.Context(), DeviceQuery{Conditions: []Condition{{"ethernet_mac_addresses", "contains", json.RawMessage(`"b"`)}}})
-	if e != nil || len(page.Items) != 1 {
-		t.Fatalf("array index: %+v %v", page, e)
-	}
-	page, e = r.Devices(t.Context(), DeviceQuery{Conditions: []Condition{{"migration_capable", "eq", json.RawMessage(`false`)}}})
-	if e != nil || len(page.Items) != 1 {
-		t.Fatalf("false index: %+v %v", page, e)
-	}
-	apple, e := r.Devices(t.Context(), DeviceQuery{Focus: "apple"})
-	if e != nil {
-		t.Fatal(e)
-	}
-	if _, ok := apple.Items[0].Fields["os_version"]; ok {
-		t.Fatal("Apple projection inherited native OS")
-	}
-	// Opaque resource identity stays authoritative when serial changes unexpectedly.
-	conflict := observe(t, r, "DIFFERENT", "axm.device", "a", "opaque/apple/id", `{"attributes":{"serialNumber":"DIFFERENT"}}`, at.Add(time.Hour))
-	if conflict.ID != d.ID || conflict.SerialNumber != "SER123" || len(conflict.Conflicts) == 0 {
-		t.Fatalf("unsafe identity replacement %+v", conflict)
-	}
-	public := PublicRecord(native)
-	if _, ok := public.Fields["axm.device.attributes.future.nil"]; ok {
-		t.Fatal("unreviewed field leaked")
-	}
-	for _, o := range public.Sources {
-		if len(o.Raw) > 0 || len(o.Fields) > 0 {
-			t.Fatal("raw leaked")
+	for _, tc := range []struct{ path, value string }{{"attributes.false", "false"}, {"attributes.nil", "null"}, {"attributes.zero", "0"}, {"attributes.empty", "[]"}} {
+		page, err := r.Resources(t.Context(), ResourceQuery{Conditions: []Condition{{"data." + tc.path, "eq", json.RawMessage(tc.value)}}})
+		if err != nil || len(page.Items) != 1 {
+			t.Fatal(tc, page, err)
 		}
 	}
-	var output bytes.Buffer
-	if e := r.Export(t.Context(), &output, DeviceQuery{}, "csv", []string{"imei", "serial_number"}, false); e != nil {
-		t.Fatal(e)
+	public := PublicRecord(d)
+	if len(public.Snapshot.Raw) != 0 || len(public.Snapshot.Fields) != 0 || public.Snapshot.Native != nil {
+		t.Fatal("original leaked")
 	}
-	if !strings.HasPrefix(output.String(), "imei,serial_number\n") {
-		t.Fatal(output.String())
+	var output bytes.Buffer
+	if err := r.Export(t.Context(), &output, ResourceQuery{}, "json", nil, false); err != nil {
+		t.Fatal(err)
+	}
+	if strings.Contains(output.String(), "9007199254740993") {
+		t.Fatal("raw leak")
 	}
 	output.Reset()
-	if e := r.Diagnostics(t.Context(), &output); e != nil {
-		t.Fatal(e)
+	if err := r.Diagnostics(t.Context(), &output); err != nil {
+		t.Fatal(err)
 	}
-	for _, secret := range []string{"SER123", "opaque/apple/id", "enrollment1"} {
-		if strings.Contains(output.String(), secret) {
-			t.Fatal("diagnostic identifier leaked")
+	for _, private := range []string{"SER123", "opaque/apple/id", "enrollment1"} {
+		if strings.Contains(output.String(), private) {
+			t.Fatal("diagnostic leak")
 		}
 	}
 }
@@ -113,42 +92,40 @@ func TestLosslessReconciliationAndQueries(t *testing.T) {
 func TestCoverageAndPartialDDM(t *testing.T) {
 	r := repository(t)
 	at := time.Now().UTC()
-	d := observe(t, r, "S", "axm.device", "a", "opaque", `{"attributes":{"serialNumber":"S"}}`, at)
-	if d.CoverageAt(at).State != "unknown" {
-		t.Fatal("unfetched coverage became none")
-	}
-	d = observe(t, r, "S", "axm.coverage", "a", "opaque", `[]`, at)
-	if d.CoverageAt(at).State != "none" {
-		t.Fatal("empty success not represented")
-	}
-	d = observe(t, r, "S", "axm.coverage", "a", "opaque", `[{"id":"limited","attributes":{"status":"INACTIVE"}},{"id":"subscription","attributes":{"status":"ACTIVE","endDateTime":null,"agreementNumber":null,"isCanceled":false}}]`, at.Add(time.Second))
-	if d.CoverageAt(at).State != "active" || d.CoverageAt(at).NextExpiry != nil || len(d.Coverage) != 2 {
-		t.Fatal("open ended coverage lost")
+	coverage := observe(t, r, "S", "axm.coverage", "a", "opaque", `[{"id":"subscription","attributes":{"endDateTime":null,"isCanceled":false,"unknown":9007199254740993}}]`, at)
+	if !strings.Contains(string(coverage.Snapshot.Raw), `"endDateTime":null`) {
+		t.Fatal("plan changed")
 	}
 	id := mdm.EnrollmentID{Channel: mdm.ChannelDevice, ID: "enrolled"}
-	report := func(full bool, at time.Time, values ...ddm.StatusValue) {
-		t.Helper()
-		e := r.ObserveStatus(t.Context(), "S", id, ddm.StatusUpdate{Raw: []byte(`{"StatusItems":{}}`), ReceivedAt: at, FullReport: full, Values: values})
-		if e != nil {
-			t.Fatal(e)
+	for i, values := range [][]ddm.StatusValue{{{Path: "device.operating-system.version", Value: []byte(`"26.0"`)}, {Path: "unknown.boolean", Value: []byte(`false`)}}, {{Path: "device.model.family", Value: []byte(`"Mac"`)}}} {
+		raw := []byte(fmt.Sprintf(`{"report":%d}`, i))
+		if err := r.ObserveStatus(t.Context(), "S", id, ddm.StatusUpdate{Raw: raw, ReceivedAt: at.Add(time.Duration(i) * time.Hour), FullReport: i == 0, Values: values}); err != nil {
+			t.Fatal(err)
 		}
 	}
-	report(true, at, ddm.StatusValue{Path: "device.operating-system.version", Value: []byte(`"26.0"`)}, ddm.StatusValue{Path: "unknown.boolean", Value: []byte(`false`)})
-	report(false, at.Add(time.Hour), ddm.StatusValue{Path: "device.model.family", Value: []byte(`"Mac"`)})
-	d, e := r.Device(t.Context(), d.ID)
-	if e != nil {
-		t.Fatal(e)
+	ref := EnrollmentReference("ddm.status", id)
+	history, err := r.History(t.Context(), ref)
+	if err != nil || len(history) != 2 {
+		t.Fatal(history, err)
 	}
-	if !d.Fields["os_version"].ObservedAt.Equal(at) {
-		t.Fatal("partial report made old value fresh")
+	seen := false
+	for _, o := range history {
+		if string(o.Fields["device.operating-system.version"]) == `"26.0"` {
+			seen = true
+			if !o.FieldTimes["device.operating-system.version"].Equal(at) {
+				t.Fatal("field age lost")
+			}
+		}
 	}
-	report(true, at.Add(2*time.Hour), ddm.StatusValue{Path: "device.model.family", Value: []byte(`"Mac"`)})
-	d, e = r.Device(t.Context(), d.ID)
-	if e != nil {
-		t.Fatal(e)
+	if !seen {
+		t.Fatal("omitted device fact lost from history")
 	}
-	if _, ok := d.Fields["os_version"]; ok {
-		t.Fatal("full report retained omitted item")
+	current, err := r.SourceResource(t.Context(), ref)
+	if err != nil || string(current.Snapshot.Raw) != `{"report":1}` {
+		t.Fatal(current, err)
+	}
+	if len(current.Snapshot.Fields) != 1 {
+		t.Fatal("original partial report fabricated fields")
 	}
 }
 
@@ -172,9 +149,9 @@ func TestAtomicBackendAndPagination(t *testing.T) {
 		observe(t, r, string(rune('A'+i)), "axm.device", "a", string(rune('a'+i)), `{"attributes":{}}`, time.Now())
 	}
 	seen := map[string]bool{}
-	q := DeviceQuery{Limit: 2}
+	q := ResourceQuery{Limit: 2}
 	for {
-		p, e := r.Devices(t.Context(), q)
+		p, e := r.Resources(t.Context(), q)
 		if e != nil {
 			t.Fatal(e)
 		}
@@ -223,70 +200,72 @@ func syncFixture(t *testing.T) (*Repository, *Syncer, *axmtest.Server, Account) 
 // TestSyncNeverEnrolledAndLease checks agentless discovery, built-in Apple MDM enrichment and worker fencing.
 func TestSyncNeverEnrolledAndLease(t *testing.T) {
 	r, s, server, a := syncFixture(t)
-	server.AddOrgDevice("opaque", map[string]any{"serialNumber": "SER1", "ethernetMacAddress": []string{"mac1", "mac2"}, "future": false})
+	server.AddOrgDevice("opaque", map[string]any{"serialNumber": "SER1", "future": false})
 	server.AddAppleCareCoverage("opaque", "plan", map[string]any{"endDateTime": nil})
-	server.AddMDMServer("Apple", map[string]any{"serverType": "APPLE_MDM"})
-	server.AddMDMDevice("builtin", map[string]any{"serialNumber": "SER1"}, map[string]any{"serialNumber": "SER1", "futureDetail": true})
-	j, e := r.Enqueue(t.Context(), a.ID, false, time.Now().UTC())
-	if e != nil {
-		t.Fatal(e)
+	assignedServer := server.AddMDMServer("Apple", map[string]any{"serverType": "APPLE_MDM"})
+	server.Assign("opaque", assignedServer)
+	server.AddMDMDevice("builtin", map[string]any{"serialNumber": "SER1"}, map[string]any{"futureDetail": true})
+	j, err := r.Enqueue(t.Context(), a.ID, false, time.Now())
+	if err != nil {
+		t.Fatal(err)
 	}
-	second, e := r.Enqueue(t.Context(), a.ID, false, time.Now().UTC())
-	if e != nil || j.ID != second.ID {
-		t.Fatal("enqueue did not coalesce")
+	second, err := r.Enqueue(t.Context(), a.ID, false, time.Now())
+	if err != nil || second.ID != j.ID {
+		t.Fatal(second, err)
 	}
-	run, e := s.RunOne(t.Context())
-	if e != nil || run.State != "success" {
-		t.Fatalf("sync %+v: %v", run, e)
+	run, err := s.RunOne(t.Context())
+	if err != nil || run.State != "success" {
+		t.Fatal(run, err)
 	}
-	page, e := r.Devices(t.Context(), DeviceQuery{})
-	if e != nil || len(page.Items) != 1 {
-		t.Fatalf("records %+v: %v", page, e)
+	page, err := r.Resources(t.Context(), ResourceQuery{})
+	if err != nil || len(page.Items) != 6 {
+		t.Fatal(page, err)
 	}
-	d := page.Items[0]
-	if d.SerialNumber != "SER1" || d.CoverageAt(time.Now()).State != "active" {
-		t.Fatalf("bad record %+v", d)
+	detail, err := r.SourceResource(t.Context(), source.Reference{Kind: "axm.mdm.detail", AccountID: a.ID, ResourceID: "builtin"})
+	if err != nil || string(detail.Snapshot.Fields["attributes.futureDetail"]) != "true" {
+		t.Fatal(detail, err)
 	}
-	if string(d.Fields["axm.mdm.detail.attributes.futureDetail"].Value) != "true" {
-		t.Fatal("built-in details missing")
+	native := observe(t, r, "SER1", "mdm.DeviceInformation", "", "device:native", `{"QueryResponses":{"OSVersion":"28.0"}}`, time.Now())
+	if native.ID == detail.ID {
+		t.Fatal("native auto merged")
 	}
-	native := observe(t, r, "SER1", "mdm.DeviceInformation", "", "device:native", `{"QueryResponses":{"OSVersion":"28.0"}}`, time.Now().Add(time.Hour))
-	if native.ID != d.ID {
-		t.Fatal("native enrichment created duplicate")
+	j, err = r.Enqueue(t.Context(), a.ID, false, time.Now())
+	if err != nil {
+		t.Fatal(err)
 	}
-	j, e = r.Enqueue(t.Context(), a.ID, false, time.Now().UTC())
-	if e != nil {
-		t.Fatal(e)
+	claimed, err := r.claim(t.Context(), "worker", time.Now())
+	if err != nil {
+		t.Fatal(err)
 	}
-	claimed, e := r.claim(t.Context(), "worker", time.Now().UTC())
-	if e != nil {
-		t.Fatal(e)
+	if _, err := r.claim(t.Context(), "other", time.Now()); !errors.Is(err, ErrLease) {
+		t.Fatal(err)
 	}
-	if _, e = r.claim(t.Context(), "other", time.Now().UTC()); !errors.Is(e, ErrLease) {
-		t.Fatal("concurrent worker admitted", e)
+	if err := r.Control(t.Context(), j.ID, "pause", time.Now()); err != nil {
+		t.Fatal(err)
 	}
-	if e := r.Control(t.Context(), j.ID, "pause", time.Now().UTC()); e != nil {
-		t.Fatal(e)
+	if err := r.commitJob(t.Context(), &claimed, nil); !errors.Is(err, ErrStopped) {
+		t.Fatal(err)
 	}
-	if e := r.commitJob(t.Context(), &claimed, nil); !errors.Is(e, ErrStopped) {
-		t.Fatal("paused worker committed", e)
+	if err := r.release(t.Context(), claimed); err != nil {
+		t.Fatal(err)
 	}
-	if e := r.release(t.Context(), claimed); e != nil {
-		t.Fatal(e)
+	if err := r.Control(t.Context(), j.ID, "resume", time.Now()); err != nil {
+		t.Fatal(err)
 	}
-	if e := r.Control(t.Context(), j.ID, "resume", time.Now().UTC()); e != nil {
-		t.Fatal(e)
+	run, err = s.RunOne(t.Context())
+	if err != nil || run.State != "success" {
+		t.Fatal(run, err)
 	}
-	run, e = s.RunOne(t.Context())
-	if e != nil || run.State != "success" {
-		t.Fatalf("resume %+v %v", run, e)
+	if err := r.DeleteAccount(t.Context(), a.ID, a.Revision, time.Now()); err != nil {
+		t.Fatal(err)
 	}
-	if e := r.DeleteAccount(t.Context(), a.ID, a.Revision, time.Now()); e != nil {
-		t.Fatal(e)
+	current, err := r.Resource(t.Context(), native.ID)
+	if err != nil || string(current.Snapshot.Raw) != string(native.Snapshot.Raw) {
+		t.Fatal("native damaged", err)
 	}
-	d, e = r.Device(t.Context(), d.ID)
-	if e != nil || String(d.Fields["os_version"].Value) != "28.0" {
-		t.Fatal("account deletion damaged native device", e)
+	detail, err = r.Resource(t.Context(), detail.ID)
+	if err != nil || !detail.Snapshot.Disconnected {
+		t.Fatal(detail, err)
 	}
 }
 
@@ -309,41 +288,40 @@ func TestSchedules(t *testing.T) {
 func TestAmbiguousSerialsDoNotAutoMerge(t *testing.T) {
 	r := repository(t)
 	at := time.Now()
-	first := observe(t, r, "S", "axm.device", "a", "one", `{"attributes":{"serialNumber":"S"}}`, at)
-	second := observe(t, r, "S", "axm.device", "a", "two", `{"attributes":{"serialNumber":"S"}}`, at)
-	if first.ID == second.ID || len(second.Conflicts) == 0 {
-		t.Fatal("ambiguous Apple resources merged")
-	}
+	one := observe(t, r, "S", "axm.device", "a", "one", `{"attributes":{"serialNumber":"S"}}`, at)
+	two := observe(t, r, "S", "axm.device", "a", "two", `{"attributes":{"serialNumber":"S"}}`, at)
 	native := observe(t, r, "S", "mdm.DeviceInformation", "", "device:three", `{"QueryResponses":{"SerialNumber":"S"}}`, at)
-	if native.ID == first.ID || native.ID == second.ID || len(native.Conflicts) == 0 {
-		t.Fatal("ambiguous enrollment auto-matched")
+	if one.ID == two.ID || one.ID == native.ID || two.ID == native.ID {
+		t.Fatal("automatic source merge")
+	}
+	for _, ref := range []source.Reference{one.Source, two.Source, native.Source} {
+		links, err := r.Links(t.Context(), ref)
+		if err != nil || len(links) != 0 {
+			t.Fatal("implicit link", links, err)
+		}
 	}
 }
 
-// TestEnrollmentLearnsSerialAfterCloudDiscovery checks provisional-record reconciliation and stable aliases.
+// TestEnrollmentLearnsSerialAfterCloudDiscovery keeps serialless enrollment and later native evidence independently addressed.
 func TestEnrollmentLearnsSerialAfterCloudDiscovery(t *testing.T) {
 	r := repository(t)
 	at := time.Now()
-	provisional := observe(t, r, "", "enrollment", "", "device:enrolled", `{"managed":true}`, at)
-	cloud := observe(t, r, "SER", "axm.device", "a", "opaque", `{"attributes":{"serialNumber":"SER"}}`, at.Add(time.Minute))
-	enriched := observe(t, r, "SER", "mdm.DeviceInformation", "", "device:enrolled", `{"QueryResponses":{"SerialNumber":"SER","OSVersion":"27.0"}}`, at.Add(2*time.Minute))
-	if enriched.ID != cloud.ID {
-		t.Fatal("did not enrich cloud record")
+	enrollment := observe(t, r, "", "enrollment", "", "device:enrolled", `{"managed":true}`, at)
+	apple := observe(t, r, "SER", "axm.device", "a", "opaque", `{"attributes":{"serialNumber":"SER"}}`, at)
+	native := observe(t, r, "SER", "mdm.DeviceInformation", "", "device:enrolled", `{"QueryResponses":{"SerialNumber":"SER"}}`, at.Add(time.Minute))
+	if enrollment.ID == apple.ID || native.ID == apple.ID || enrollment.ID == native.ID {
+		t.Fatal("sources combined")
 	}
-	if string(enriched.Fields["managed"].Value) != "true" {
-		t.Fatal("lost provisional enrollment")
+	old, err := r.Resource(t.Context(), enrollment.ID)
+	if err != nil || old.ID != enrollment.ID {
+		t.Fatal("serialless identity changed", err)
 	}
-	alias, e := r.Device(t.Context(), provisional.ID)
-	if e != nil || alias.ID != cloud.ID {
-		t.Fatal("old device link stopped resolving", e)
+	page, err := r.Resources(t.Context(), ResourceQuery{})
+	if err != nil || len(page.Items) != 3 {
+		t.Fatal(page, err)
 	}
-	page, e := r.Devices(t.Context(), DeviceQuery{})
-	if e != nil || len(page.Items) != 1 {
-		t.Fatal("merge left duplicate", e)
-	}
-	mapped, e := r.SourceDevice(t.Context(), source.Reference{Kind: "enrollment", ResourceID: "device:enrolled"})
-	if e != nil || mapped.ID != cloud.ID {
-		t.Fatal("source link not updated", e)
+	if _, err := r.Link(t.Context(), apple.Source, native.Source, at); err == nil {
+		t.Fatal("missing authenticated method invented")
 	}
 }
 
@@ -374,8 +352,8 @@ func TestExactNumericQueries(t *testing.T) {
 	for _, tc := range []struct {
 		field, value string
 		want         int
-	}{{"axm.device.attributes.counter", "9007199254740992", 0}, {"axm.device.attributes.counter", "9007199254740993", 1}, {"axm.device.attributes.decimal", "1", 1}} {
-		page, e := r.Devices(t.Context(), DeviceQuery{Conditions: []Condition{{Field: tc.field, Operator: "eq", Value: json.RawMessage(tc.value)}}})
+	}{{"attributes.counter", "9007199254740992", 0}, {"attributes.counter", "9007199254740993", 1}, {"attributes.decimal", "1", 1}} {
+		page, e := r.Resources(t.Context(), ResourceQuery{Conditions: []Condition{{Field: "data." + tc.field, Operator: "eq", Value: json.RawMessage(tc.value)}}})
 		if e != nil || len(page.Items) != tc.want {
 			t.Fatal(tc, page, e)
 		}
@@ -386,6 +364,8 @@ func TestExactNumericQueries(t *testing.T) {
 func TestCancelAllRetainsCompletedWork(t *testing.T) {
 	repo, worker, server, account := syncFixture(t)
 	server.AddOrgDevice("one", nil)
+	assignedServer := server.AddMDMServer("server", nil)
+	server.Assign("one", assignedServer)
 	_, err := repo.Enqueue(t.Context(), account.ID, false, time.Now())
 	if err != nil {
 		t.Fatal(err)

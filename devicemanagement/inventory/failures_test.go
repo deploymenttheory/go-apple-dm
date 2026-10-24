@@ -162,7 +162,7 @@ func TestRepositoryFailureAtomicity(t *testing.T) {
 			_, e := r.Observe(ctx, "SERIAL", o)
 			return e
 		}},
-		{"source lookup", true, func(r *Repository) error { _, e := r.SourceDevice(ctx, observation.Source); return e }},
+		{"source lookup", true, func(r *Repository) error { _, e := r.SourceResource(ctx, observation.Source); return e }},
 		{"attempt", true, func(r *Repository) error { return r.Attempt(ctx, observation.Source, now, "failed") }},
 		{"attempt native", true, func(r *Repository) error {
 			return r.Attempt(ctx, source.Reference{Kind: "mdm.SecurityInfo", ResourceID: "enrolled"}, now, "failed")
@@ -190,13 +190,13 @@ func TestRepositoryFailureAtomicity(t *testing.T) {
 			return e
 		}},
 		{"presets", true, func(r *Repository) error { _, e := r.Presets(ctx); return e }},
-		{"records", true, func(r *Repository) error { _, e := r.Devices(ctx, DeviceQuery{}); return e }},
+		{"records", true, func(r *Repository) error { _, e := r.Resources(ctx, ResourceQuery{}); return e }},
 		{"indexed records", true, func(r *Repository) error {
-			_, e := r.Devices(ctx, DeviceQuery{Conditions: []Condition{{"model", "eq", json.RawMessage(`"Mac"`)}}})
+			_, e := r.Resources(ctx, ResourceQuery{Conditions: []Condition{{"data.model", "eq", json.RawMessage(`"Mac"`)}}})
 			return e
 		}},
-		{"fields", true, func(r *Repository) error { _, e := r.Fields(ctx, DeviceQuery{}, false); return e }},
-		{"report", true, func(r *Repository) error { _, e := r.Report(ctx, DeviceQuery{}); return e }},
+		{"fields", true, func(r *Repository) error { _, e := r.Fields(ctx, ResourceQuery{}, false); return e }},
+		{"report", true, func(r *Repository) error { _, e := r.Report(ctx, ResourceQuery{}); return e }},
 	}
 	seed := testMemory(t, r)
 	for _, tc := range cases {
@@ -236,11 +236,7 @@ func TestCorruptDocumentsFailClosed(t *testing.T) {
 		{"job/a", func(r *Repository) error { _, e := r.PruneJobs(ctx, now, time.Hour); return e }},
 		{"schedule/a", func(r *Repository) error { return r.Tick(ctx, now) }},
 		{"preset/a", func(r *Repository) error { _, e := r.Presets(ctx); return e }},
-		{"device/a", func(r *Repository) error { _, e := r.Devices(ctx, DeviceQuery{}); return e }},
-		{indexPrefix("model", json.RawMessage(`"Mac"`)) + "a", func(r *Repository) error {
-			_, e := r.Devices(ctx, DeviceQuery{Conditions: []Condition{{"model", "eq", json.RawMessage(`"Mac"`)}}})
-			return e
-		}},
+		{"resource/a", func(r *Repository) error { _, e := r.Resources(ctx, ResourceQuery{}); return e }},
 	} {
 		t.Run(tc.key, func(t *testing.T) {
 			r := repository(t)
@@ -251,11 +247,18 @@ func TestCorruptDocumentsFailClosed(t *testing.T) {
 		})
 	}
 	r := repository(t)
-	for i := range 17 {
-		testMemory(t, r).data[fmt.Sprintf("alias/%d", i)] = json.RawMessage(fmt.Sprintf(`"%d"`, i+1))
+	ref := source.Reference{Kind: "mdm.DeviceInformation", ResourceID: "device"}
+	testMemory(t, r).data["history/"+ref.Key()+"/bad"] = json.RawMessage(`42`)
+	if _, err := r.History(ctx, ref); err == nil {
+		t.Fatal("corrupt history accepted")
 	}
-	if _, e := r.Device(ctx, "0"); !errors.Is(e, ErrConflict) {
-		t.Fatal(e)
+	testMemory(t, r).data["attempt/"+ref.Key()+"/bad"] = json.RawMessage(`42`)
+	if _, err := r.Attempts(ctx, ref); err == nil {
+		t.Fatal("corrupt attempt accepted")
+	}
+	testMemory(t, r).data["link/bad"] = json.RawMessage(`42`)
+	if _, err := r.Links(ctx, ref); err == nil {
+		t.Fatal("corrupt link accepted")
 	}
 }
 

@@ -11,6 +11,7 @@ import (
 // Job persists progress independently of a worker process. Counters count committed work.
 type Job struct {
 	ID               string          `json:"id"`
+	Generation       string          `json:"generation"`
 	AccountID        string          `json:"account_id,omitempty"`
 	Revision         int64           `json:"revision"`
 	Kind             string          `json:"kind"`
@@ -64,7 +65,7 @@ func (r *Repository) Enqueue(ctx context.Context, account string, force bool, no
 		if out.ID != "" {
 			return nil
 		}
-		out = Job{ID: ID(), AccountID: account, Revision: a.Revision, Kind: "axm", State: "queued", Stage: "devices", CreatedAt: now, UpdatedAt: now, Force: force}
+		out = Job{ID: ID(), Generation: ID(), AccountID: account, Revision: a.Revision, Kind: "axm", State: "queued", Stage: "devices", CreatedAt: now, UpdatedAt: now, Force: force}
 		return put(ctx, tx, "job/"+out.ID, out)
 	})
 	return out, err
@@ -230,7 +231,7 @@ func (r *Repository) release(ctx context.Context, j Job) error {
 }
 
 // DeleteAccount disconnects observations and fences jobs before removing credentials.
-// Historical device records survive. Native enrollment is never modified.
+// Historical source evidence survives. Native enrollment is never modified.
 func (r *Repository) DeleteAccount(ctx context.Context, id string, revision int64, now time.Time) error {
 	return r.Backend.Update(ctx, func(tx Tx) error {
 		a, e := get[Account](ctx, tx, "account/"+id)
@@ -254,22 +255,17 @@ func (r *Repository) DeleteAccount(ctx context.Context, id string, revision int6
 		}); e != nil {
 			return e
 		}
-		if e := walk(ctx, tx, "device/", func(entry Entry) error {
-			var d DeviceRecord
+		if e := walk(ctx, tx, "resource/", func(entry Entry) error {
+			var d ResourceRecord
 			if e := json.Unmarshal(entry.Value, &d); e != nil {
 				return e
 			}
-			changed := false
-			for k, o := range d.Sources {
-				if o.Source.AccountID == id && strings.HasPrefix(o.Source.Kind, "axm.") {
-					o.Disconnected = true
-					d.Sources[k] = o
-					changed = true
+			if d.Source.AccountID == id && strings.HasPrefix(d.Source.Kind, "axm.") {
+				d.Snapshot.Disconnected = true
+				if err := putResource(ctx, tx, d); err != nil {
+					return err
 				}
-			}
-			if changed {
-				rebuild(&d)
-				return r.saveRecord(ctx, tx, d)
+				return invalidateLinks(ctx, tx, d.Source)
 			}
 			return nil
 		}); e != nil {

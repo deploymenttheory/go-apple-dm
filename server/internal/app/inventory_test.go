@@ -100,22 +100,21 @@ func TestInventoryAPIAndNativeEnrichment(t *testing.T) {
 			if _, e := a.Engine.Status(t.Context(), id, []byte(`{"StatusItems":{"device":{"model":{"family":"Mac"}}}}`)); e != nil {
 				t.Fatal(e)
 			}
-			page, e := a.Inventory.Devices(t.Context(), inventory.DeviceQuery{})
-			if e != nil || len(page.Items) != 1 || page.Items[0].ID != cloud.ID {
-				t.Fatal("native data duplicated device", e)
+			page, e := a.Inventory.Resources(t.Context(), inventory.ResourceQuery{})
+			if e != nil || len(page.Items) != 5 {
+				t.Fatal("independent sources missing", page, e)
 			}
-			if inventory.String(page.Items[0].Fields["os_version"].Value) != "27.0" {
-				t.Fatal("native OS missing")
+			native, e := a.Inventory.SourceResource(t.Context(), inventory.EnrollmentReference("mdm.DeviceInformation", id))
+			if e != nil || native.ID == cloud.ID || inventory.String(native.Snapshot.Fields["QueryResponses.OSVersion"]) != "27.0" || string(native.Snapshot.Fields["QueryResponses.UnknownFuture"]) != "false" {
+				t.Fatal("native original missing or merged", native, e)
 			}
-			if string(page.Items[0].Fields["mdm.DeviceInformation.QueryResponses.UnknownFuture"].Value) != "false" {
-				t.Fatal("native unknown field lost")
-			}
-			before := page.Items[0].UpdatedAt
+			before := cloud.UpdatedAt
+
 			response.CommandUUID = "unknown"
 			if e := a.observeInventoryResult(t.Context(), id, response, time.Now().Add(time.Hour)); e != nil {
 				t.Fatal(e)
 			}
-			after, e := a.Inventory.Device(t.Context(), cloud.ID)
+			after, e := a.Inventory.Resource(t.Context(), cloud.ID)
 			if e != nil || !after.UpdatedAt.Equal(before) {
 				t.Fatal("unknown command changed inventory", e)
 			}

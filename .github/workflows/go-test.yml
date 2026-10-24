@@ -166,6 +166,7 @@ jobs:
         run: |
           docker exec -i "$MYSQL_SERVICE_ID" mysql --user=root --password=dm <<'SQL'
           GRANT ALL PRIVILEGES ON `inventory\_test\_%`.* TO 'dm'@'%';
+          SET GLOBAL log_bin_trust_function_creators = 1;
           SQL
       - name: Storage suites
         run: make test-storage
@@ -294,7 +295,7 @@ jobs:
           for d in cover-dl/cover-*; do
             name="${d##*/cover-}"; mkdir -p "cover/$name"; cp -r "$d"/. "cover/$name"/ 2>/dev/null || true
           done
-          ls -R cover | head -50
+          find cover -print | awk 'NR <= 50'
       - name: Enforce minimum
         run: make coverage
       - name: Upload report

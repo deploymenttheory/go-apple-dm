@@ -51,7 +51,7 @@ func TestInventoryNativeCollection(t *testing.T) {
 	if n, err := a.collectNative(ctx, id, false); err != nil || n != 0 {
 		t.Fatal("fresh commands repeated", n, err)
 	}
-	record, err := a.Inventory.SourceDevice(ctx, inventory.EnrollmentReference("enrollment", id))
+	record, err := a.Inventory.SourceResource(ctx, inventory.EnrollmentReference("enrollment", id))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -97,8 +97,8 @@ func TestInventoryNativeCollection(t *testing.T) {
 	if err := a.refreshNativeInventory(ctx); err != nil {
 		t.Fatal(err)
 	}
-	d, err := a.Inventory.Device(ctx, record.ID)
-	if err != nil || inventory.String(d.Fields["os_version"].Value) != "27.2" {
+	d, err := a.Inventory.SourceResource(ctx, inventory.EnrollmentReference("ddm.status", id))
+	if err != nil || inventory.String(d.Snapshot.Fields["device.operating-system.version"]) != "27.2" {
 		t.Fatal(d, err)
 	}
 	if err := a.refreshNativeInventory(ctx); err != nil {
@@ -243,21 +243,16 @@ func TestInventoryNativeBootstrapAndPagination(t *testing.T) {
 		}
 	}
 	// A malformed stored enrollment snapshot must not trigger a command for another identity.
-	d, err := a.Inventory.SourceDevice(ctx, inventory.EnrollmentReference("enrollment", id))
+	d, err := a.Inventory.SourceResource(ctx, inventory.EnrollmentReference("enrollment", id))
 	if err != nil {
 		t.Fatal(err)
 	}
-	for k, o := range d.Sources {
-		if o.Source.Kind == "enrollment" {
-			o.Raw = json.RawMessage(`[]`)
-			d.Sources[k] = o
-		}
-	}
+	d.Snapshot.Raw = json.RawMessage(`[]`)
 	b, err := json.Marshal(d)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := a.Inventory.Backend.Update(ctx, func(tx inventory.Tx) error { return tx.Put(ctx, "device/"+d.ID, b) }); err != nil {
+	if err := a.Inventory.Backend.Update(ctx, func(tx inventory.Tx) error { return tx.Put(ctx, "resource/"+d.ID, b) }); err != nil {
 		t.Fatal(err)
 	}
 	w := httptest.NewRecorder()
@@ -322,11 +317,11 @@ func TestInventoryStatusBackfillPagination(t *testing.T) {
 	if err := a.backfillInventoryStatus(ctx, *e); err != nil {
 		t.Fatal(err)
 	}
-	d, err := a.Inventory.SourceDevice(ctx, inventory.EnrollmentReference("ddm.status", id))
+	d, err := a.Inventory.SourceResource(ctx, inventory.EnrollmentReference("ddm.status", id))
 	if err != nil {
 		t.Fatal(err)
 	}
-	if string(d.Fields["ddm.status.future.item250"].Value) != "false" {
+	if string(d.Snapshot.Fields["future.item250"]) != "false" {
 		t.Fatal("last status page omitted")
 	}
 }
@@ -355,12 +350,12 @@ func TestInventoryEnrollmentDates(t *testing.T) {
 			t.Fatal(err)
 		}
 		ref := inventory.EnrollmentReference("enrollment", id)
-		d, err := a.Inventory.SourceDevice(ctx, ref)
+		d, err := a.Inventory.SourceResource(ctx, ref)
 		if err != nil {
 			t.Fatal(err)
 		}
 		var raw map[string]json.RawMessage
-		if err := json.Unmarshal(d.Sources[ref.Key()].Raw, &raw); err != nil {
+		if err := json.Unmarshal(d.Snapshot.Raw, &raw); err != nil {
 			t.Fatal(err)
 		}
 		if _, exists := raw["enrolled_at"]; exists {
@@ -369,13 +364,13 @@ func TestInventoryEnrollmentDates(t *testing.T) {
 		if _, exists := raw["disabled_at"]; exists != disabled {
 			t.Fatal("raw disable date presence", disabled, raw)
 		}
-		if _, exists := d.Fields["disabled_at"]; exists != disabled {
-			t.Fatal("normalized disable date presence", disabled, d.Fields)
+		if _, exists := d.Snapshot.Fields["disabled_at"]; exists != disabled {
+			t.Fatal("normalized disable date presence", disabled, d.Snapshot.Fields)
 		}
-		if disabled && inventory.String(d.Fields["disabled_at"].Value) != e.DisabledAt.Format(time.RFC3339) {
+		if disabled && inventory.String(d.Snapshot.Fields["disabled_at"]) != e.DisabledAt.Format(time.RFC3339) {
 			t.Fatal("actual disable timestamp changed")
 		}
-		if inventory.String(d.Fields["last_seen"].Value) != e.LastSeenAt.Format(time.RFC3339) {
+		if inventory.String(d.Snapshot.Fields["last_seen"]) != e.LastSeenAt.Format(time.RFC3339) {
 			t.Fatal("last seen timestamp changed")
 		}
 	}
