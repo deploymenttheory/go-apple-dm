@@ -1,6 +1,6 @@
 module github.com/deploymenttheory/go-apple-dm
 
-go 1.27.1
+go 1.27.3
 
 // These releases are withdrawn. Use the pre-1.0 API; it is not yet stable.
 retract (
@@ -85,7 +85,7 @@ require (
 	go.opentelemetry.io/otel/sdk v1.46.0 // indirect
 	go.opentelemetry.io/otel/sdk/metric v1.46.0 // indirect
 	golang.org/x/exp v0.0.0-20260813180055-c1d0aacb2297 // indirect
-	golang.org/x/net v0.59.0 // indirect
+	golang.org/x/net v0.60.0 // indirect
 	golang.org/x/oauth2 v0.37.0 // indirect
 	golang.org/x/sync v0.23.0 // indirect
 	golang.org/x/sys v0.49.0 // indirect
