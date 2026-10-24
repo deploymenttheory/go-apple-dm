@@ -206,9 +206,10 @@ func statusIs(err error, status int) bool {
 	return errors.As(err, &e) && e.Status == status
 }
 
-// ProfileError is one local validation failure with the code Apple would
-// return for the same input.
+// ProfileError is one local validation failure. Code uses Apple service codes
+// where documented; Field identifies the wire field or indexed setup item.
 type ProfileError struct {
+	Field  string
 	Code   string
 	Detail string
 }

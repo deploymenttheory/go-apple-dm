@@ -61,6 +61,12 @@ use a separate credential-free request to the documented Apple storage origin.
 [ADR 0030](research/decisions/0030-apple-business-manager-api-client.md) describes origin,
 CSV verification and per-device outcome contracts.
 
+ADE profile authoring can call `dep.Profile.ValidateForTarget` before submission.
+The library combines generated skip-key support with documented ADE field
+restrictions and reports unsupported fields and unchecked dimensions. Target
+facts stay caller-owned; this check changes no assignment or profile content.
+See [ADE profile validation](operations/dep-synchronization.md#check-a-caller-supplied-ade-profile).
+
 ## Generated protocol types
 
 The pinned `third_party/apple-device-management/current` submodule supplies Apple's current release YAML definitions.

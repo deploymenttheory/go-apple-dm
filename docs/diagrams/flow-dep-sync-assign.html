@@ -5568,6 +5568,18 @@ svg[data-purpose-filter] g[data-purpose-highlight] > path { stroke-width: 2.4; }
 
       <div class="card">
         <div class="card-header">
+          <div class="card-dot service"></div>
+          <h3>Caller-supplied profile checks</h3>
+        </div>
+        <ul>
+          <li>&bull; Before submission, Profile.ValidateForTarget checks explicit OS/version and capability facts against generated skip-key availability and documented ADE field restrictions. It never changes profile content or chooses a profile.</li>
+          <li>&bull; Unsupported fields, unchecked dimensions, deprecations and ignored iOS flags remain separate. Missing facts and conditional Setup Assistant panes remain unchecked; callers decide whether the evidence is sufficient.</li>
+          <li>&bull; The Apple client and reference-server assignment retain structural validation only. Target-aware validation is an explicit library operation because those paths do not have complete target capabilities.</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
           <div class="card-dot warning"></div>
           <h3>Retry and concurrency</h3>
         </div>
@@ -5617,6 +5629,7 @@ svg[data-purpose-filter] g[data-purpose-highlight] > path { stroke-width: 2.4; }
           <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/c1a9487d510ddbad038e8a171861a4f96ebfd5dd/devicemanagement/appleplatformservices/dep/assigner.go" target="_blank" rel="noopener noreferrer">assign: Reconcile assignments</a></li>
           <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/c1a9487d510ddbad038e8a171861a4f96ebfd5dd/devicemanagement/appleplatformservices/dep/assignmentstate.go" target="_blank" rel="noopener noreferrer">backoff: Lease, target and cooldown checks</a></li>
           <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/c1a9487d510ddbad038e8a171861a4f96ebfd5dd/devicemanagement/appleplatformservices/dep/accountfence.go" target="_blank" rel="noopener noreferrer">Account and credential checks</a></li>
+          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/8b90e14028aa7b486b2f639da9410f553ec67f2b/devicemanagement/appleplatformservices/dep/profile_support.go" target="_blank" rel="noopener noreferrer">Target-aware profile validation</a></li>
         </ul>
       </div>
 
