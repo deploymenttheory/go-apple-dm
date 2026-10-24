@@ -46,7 +46,7 @@ func TestFixtureStartupFailurePreservesIdentityAndCanRecover(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			w := testWorkspace(t, "simulated")
 			snapshot := identitySnapshot(t, w)
-			reservation, err := net.Listen("tcp", "127.0.0.1:0")
+			reservation, err := (&net.ListenConfig{}).Listen(t.Context(), "tcp", "127.0.0.1:0")
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -76,7 +76,7 @@ func TestFixtureStartupFailurePreservesIdentityAndCanRecover(t *testing.T) {
 				t.Fatalf("failure did not identify the blocked artifact: %v", err)
 			}
 			assertIdentityPreserved(t, w, snapshot)
-			released, err := net.Listen("tcp", w.Listen)
+			released, err := (&net.ListenConfig{}).Listen(t.Context(), "tcp", w.Listen)
 			if err != nil {
 				t.Fatalf("failed startup retained its listener: %v", err)
 			}

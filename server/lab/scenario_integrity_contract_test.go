@@ -213,6 +213,7 @@ func queueIntegrityCommand(ctx context.Context, e *Environment, transport http.R
 	if parent != "" {
 		path += "?parent=" + url.QueryEscape(parent)
 	}
+	// #nosec G704 -- The URL is the test-owned loopback environment; channel IDs come from its simulator.
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, path, bytes.NewReader(command.Raw))
 	if err != nil {
 		return err
@@ -224,7 +225,7 @@ func queueIntegrityCommand(ctx context.Context, e *Environment, transport http.R
 	}
 	defer func() { _ = response.Body.Close() }()
 	if response.StatusCode != 200 {
-		return &http.ProtocolError{ErrorString: "fixture command could not be queued"}
+		return errors.New("fixture command could not be queued")
 	}
 	_, err = io.Copy(io.Discard, response.Body)
 	return err
