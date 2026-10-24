@@ -82,7 +82,7 @@ jobs:
         uses: ./.github/actions/windows-tests
       - name: Upload unit coverage
         if: matrix.os == 'ubuntu-latest'
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: cover-unit
           path: cover/unit
@@ -177,7 +177,7 @@ jobs:
           STORAGE_TIMING: "off"
         run: make test-storage-perf
       - name: Upload storage coverage
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: cover-storage
           path: cover/storage
@@ -226,7 +226,7 @@ jobs:
       - name: E2E scenarios
         run: make test-e2e
       - name: Upload e2e coverage
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: cover-e2e-${{ matrix.store }}
           path: cover/e2e-${{ matrix.store }}
@@ -254,7 +254,7 @@ jobs:
           go-version-file: go.mod
           cache: true
       - run: make test-acceptance lab-docs-check
-      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
         if: always()
         with:
           name: acceptance-evidence
@@ -299,7 +299,7 @@ jobs:
         run: make coverage
       - name: Upload report
         if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: coverage-report
           path: |
