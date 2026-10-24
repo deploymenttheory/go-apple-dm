@@ -474,3 +474,34 @@ func TestAdmissionEventsExcludeCredentialsAndSurviveSinkFailure(t *testing.T) {
 		t.Fatal("security event exposed identity data", events)
 	}
 }
+
+// TestDEPAdmissionUsesSerialChoice checks the shared explicit/default/none
+// resolution against observed assignment state, independent of family or OS.
+func TestDEPAdmissionUsesSerialChoice(t *testing.T) {
+	a := &dep.Account{ProfileUUID: "default", ProfileTargets: map[string]string{"SERIAL": "explicit"}}
+	d := &dep.StoredDevice{Device: dep.Device{SerialNumber: "SERIAL", ProfileUUID: "explicit", ProfileStatus: dep.ProfileStatusAssigned}}
+	if !admittedDEPDevice(d, a) {
+		t.Fatal("explicit choice denied")
+	}
+	d.ProfileUUID = "default"
+	if admittedDEPDevice(d, a) {
+		t.Fatal("default overrode explicit choice")
+	}
+	delete(a.ProfileTargets, "SERIAL")
+	if !admittedDEPDevice(d, a) {
+		t.Fatal("default fallback denied")
+	}
+	a.ProfileUUID = ""
+	if admittedDEPDevice(d, a) {
+		t.Fatal("admitted without desired profile")
+	}
+	a.ProfileTargets = map[string]string{"SERIAL": "explicit"}
+	d.ProfileUUID = "explicit"
+	if !admittedDEPDevice(d, a) {
+		t.Fatal("serial choice required account default")
+	}
+	d.Deleted = true
+	if admittedDEPDevice(d, a) {
+		t.Fatal("tombstone admitted")
+	}
+}

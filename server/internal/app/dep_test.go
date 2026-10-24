@@ -108,7 +108,7 @@ func TestDEP(t *testing.T) {
 				t,
 				srv,
 				"PUT",
-				"/admin/v1/dep/accounts/abm/profile",
+				"/admin/v1/dep/accounts/abm/profile?default=true",
 				"t",
 				[]byte(`{"profile_name":"Corp","org_magic":"m","is_supervised":true}`),
 			),
@@ -166,7 +166,7 @@ func TestDEP(t *testing.T) {
 			t,
 			srv,
 			"PUT",
-			"/admin/v1/dep/accounts/abm/profile",
+			"/admin/v1/dep/accounts/abm/profile?default=true",
 			"t",
 			[]byte(`{`),
 		); res.StatusCode != http.StatusBadRequest {
@@ -176,7 +176,7 @@ func TestDEP(t *testing.T) {
 			t,
 			srv,
 			"PUT",
-			"/admin/v1/dep/accounts/abm/profile",
+			"/admin/v1/dep/accounts/abm/profile?default=true",
 			"t",
 			[]byte(`{"profile_name":"","is_mdm_removable":false,"is_supervised":false}`),
 		); res.StatusCode != http.StatusBadRequest {
@@ -292,8 +292,8 @@ func TestDEP(t *testing.T) {
 			{"PUT", "/admin/v1/dep/accounts/abm/keypair", "PutKeypair", nil},
 			{"GET", "/admin/v1/dep/accounts/abm/devices", "ListDevices", nil},
 			{"GET", "/admin/v1/dep/accounts", "ListAccounts", nil},
-			{"PUT", "/admin/v1/dep/accounts/abm/profile", "PutProfile", profile},
-			{"PUT", "/admin/v1/dep/accounts/abm/profile", "PutAccount", profile},
+			{"PUT", "/admin/v1/dep/accounts/abm/profile?default=true", "PutProfile", profile},
+			{"PUT", "/admin/v1/dep/accounts/abm/profile?default=true", "PutAccount", profile},
 		} {
 			failing.SetFail(map[string]error{c.fails: boom})
 			if res := do(
@@ -510,7 +510,7 @@ func TestDEP(t *testing.T) {
 			t,
 			srv,
 			"PUT",
-			"/admin/v1/dep/accounts/abm/profile",
+			"/admin/v1/dep/accounts/abm/profile?default=true",
 			"t",
 			[]byte(`{"org_magic":"m","is_supervised":true}`),
 		); res.StatusCode == http.StatusInternalServerError {

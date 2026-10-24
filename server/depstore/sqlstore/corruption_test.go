@@ -51,6 +51,7 @@ func TestCorruptRowsSurface(t *testing.T) {
 		read func(s *sqlstore.Store) error
 	}{
 		{"account timestamp", "UPDATE dep_accounts SET created_at = 'garbage'", func(s *sqlstore.Store) error { _, err := s.GetAccount(ctx, "a"); return err }},
+		{"account targets", "UPDATE dep_profile_choices SET targets = X'00'", func(s *sqlstore.Store) error { _, err := s.GetAccount(ctx, "a"); return err }},
 		{"account limits", "UPDATE dep_accounts SET limits = X'00'", func(s *sqlstore.Store) error { _, err := s.GetAccount(ctx, "a"); return err }},
 		{"account list", "UPDATE dep_accounts SET updated_at = 'garbage'", func(s *sqlstore.Store) error { _, err := s.ListAccounts(ctx, paging.Page{}); return err }},
 		{"device record", "UPDATE dep_devices SET record = X'00'", func(s *sqlstore.Store) error { _, err := s.GetDevice(ctx, "a", "S"); return err }},

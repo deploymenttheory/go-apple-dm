@@ -262,7 +262,7 @@ func (a *App) securityEvent(ctx context.Context, kind event.Type) {
 // admittedDEPDevice requires a retained device assigned or pushed to the account's
 // configured enrollment profile.
 func admittedDEPDevice(d *dep.StoredDevice, account *dep.Account) bool {
-	return d != nil && account != nil && !d.Deleted && account.ProfileUUID != "" &&
-		d.ProfileUUID == account.ProfileUUID &&
+	return d != nil && account != nil && !d.Deleted && account.DesiredProfile(d.SerialNumber) != "" &&
+		d.ProfileUUID == account.DesiredProfile(d.SerialNumber) &&
 		(d.ProfileStatus == dep.ProfileStatusAssigned || d.ProfileStatus == dep.ProfileStatusPushed)
 }

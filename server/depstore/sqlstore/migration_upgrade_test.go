@@ -51,7 +51,7 @@ func checkSyncStateUpgrade(t *testing.T, db *sql.DB, dialect sqlcommon.Dialect) 
 		t.Fatal(err)
 	}
 	applied, err := depsql.Migrate(ctx, db, dialect)
-	if err != nil || len(applied) != 2 || applied[0] != 2 || applied[1] != 3 {
+	if err != nil || len(applied) != 3 || applied[0] != 2 || applied[1] != 3 || applied[2] != 4 {
 		t.Fatalf("upgrade: %v %v", applied, err)
 	}
 	account, err := st.GetAccount(ctx, "upgrade")
@@ -69,5 +69,82 @@ func checkSyncStateUpgrade(t *testing.T, db *sql.DB, dialect sqlcommon.Dialect) 
 	state, err := st.AssignmentState(ctx, "upgrade")
 	if err != nil || state != (dep.AssignmentState{}) {
 		t.Fatalf("new scheduling state: %+v %v", state, err)
+	}
+}
+
+// TestProfileChoicesMigrationReplay models MySQL retaining DDL when migration
+// bookkeeping fails. Replaying installation must retain choices and state.
+func TestProfileChoicesMigrationReplay(t *testing.T) {
+	db := openDB(t)
+	if _, err := depsql.Open(t.Context(), db, sqlite.Dialect, depsql.Options{}); err != nil {
+		t.Fatal(err)
+	}
+	checkProfileChoicesReplay(t, db, sqlite.Dialect)
+}
+
+func checkProfileChoicesReplay(t *testing.T, db *sql.DB, dialect sqlcommon.Dialect) {
+	t.Helper()
+	ctx := t.Context()
+	store, err := depsql.Open(ctx, db, dialect, depsql.Options{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	a := &dep.Account{Name: "replay", ProfileUUID: "default", ConsumerKey: "consumer", ConsumerSecret: "preserved", CreatedAt: time.Now().UTC(), UpdatedAt: time.Now().UTC()}
+	if err := store.PutAccount(ctx, a); err != nil {
+		t.Fatal(err)
+	}
+	if err := store.PutProfile(ctx, a.Name, &dep.Profile{ProfileUUID: "explicit", ProfileName: "explicit"}); err != nil {
+		t.Fatal(err)
+	}
+	a.ProfileTargets = map[string]string{"SERIAL": "explicit"}
+	if err := store.PutAccount(ctx, a); err != nil {
+		t.Fatal(err)
+	}
+	before, err := store.GetAccount(ctx, a.Name)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := store.PutAssignment(ctx, &dep.Assignment{Account: a.Name, SerialNumber: "SERIAL", Status: dep.AssignmentPending, ProfileUUID: "explicit"}); err != nil {
+		t.Fatal(err)
+	}
+	state := dep.AssignmentState{NotBefore: time.Now().UTC().Truncate(time.Second), Failures: 3}
+	if err := store.PutAssignmentState(ctx, a.Name, state); err != nil {
+		t.Fatal(err)
+	}
+	if err := store.PutKeypair(ctx, a.Name, dep.StageStaged, &dep.Keypair{CertPEM: []byte("certificate"), KeyPEM: []byte("private"), CreatedAt: a.CreatedAt}); err != nil {
+		t.Fatal(err)
+	}
+	if err := store.SetCursor(ctx, a.Name, dep.Cursor{Value: "cursor", Phase: dep.PhaseSync, Revision: 5, UpdatedAt: a.CreatedAt}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := db.ExecContext(ctx, "DELETE FROM dep_schema_migrations WHERE version = 4"); err != nil {
+		t.Fatal(err)
+	}
+	applied, err := depsql.Migrate(ctx, db, dialect)
+	if err != nil || len(applied) != 1 || applied[0] != 4 {
+		t.Fatalf("replay: %v %v", applied, err)
+	}
+	after, err := store.GetAccount(ctx, a.Name)
+	if err != nil || after.ProfileRevision != before.ProfileRevision || after.DesiredProfile("SERIAL") != "explicit" || after.ProfileUUID != "default" || after.ConsumerSecret != "preserved" {
+		t.Fatalf("replay changed account: %v", err)
+	}
+	assignment, err := store.GetAssignment(ctx, a.Name, "SERIAL")
+	if err != nil || assignment.Status != dep.AssignmentPending {
+		t.Fatal("replay lost uncertainty", err)
+	}
+	current, err := store.AssignmentState(ctx, a.Name)
+	if err != nil || current != state {
+		t.Fatal("replay lost worker state", err)
+	}
+	key, err := store.Keypair(ctx, a.Name, dep.StageStaged)
+	if err != nil || string(key.KeyPEM) != "private" {
+		t.Fatal("replay lost staged key", err)
+	}
+	cursor, err := store.Cursor(ctx, a.Name)
+	if err != nil || cursor.Value != "cursor" || cursor.Revision != 5 {
+		t.Fatal("replay lost checkpoint", err)
+	}
+	if err := store.DeleteAccount(ctx, a.Name); err != nil {
+		t.Fatal(err)
 	}
 }

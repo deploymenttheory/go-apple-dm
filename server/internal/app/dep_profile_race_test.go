@@ -55,7 +55,7 @@ func (r profileResponseTransport) RoundTrip(req *http.Request) (*http.Response, 
 
 // TestDEPProfileCommitRejectsReplacedAccount covers the gap after remote response validation.
 func TestDEPProfileCommitRejectsReplacedAccount(t *testing.T) {
-	for _, change := range []string{"credentials", "identity"} {
+	for _, change := range []string{"credentials", "identity", "default", "default ABA"} {
 		t.Run(change, func(t *testing.T) {
 			clk := clock.NewFake(time.Date(2026, 9, 1, 12, 0, 0, 0, time.UTC))
 			fake := deptest.NewServer(deptest.Options{Clock: clk})
@@ -73,7 +73,7 @@ func TestDEPProfileCommitRejectsReplacedAccount(t *testing.T) {
 			t.Cleanup(release)
 			done := make(chan int, 1)
 			go func() {
-				req, err := http.NewRequestWithContext(t.Context(), http.MethodPut, srv.URL+"/admin/v1/dep/accounts/account/profile", strings.NewReader(`{"profile_name":"test","org_magic":"test"}`))
+				req, err := http.NewRequestWithContext(t.Context(), http.MethodPut, srv.URL+"/admin/v1/dep/accounts/account/profile?default=true", strings.NewReader(`{"profile_name":"test","org_magic":"test"}`))
 				if err != nil {
 					done <- 0
 					return
@@ -97,10 +97,19 @@ func TestDEPProfileCommitRejectsReplacedAccount(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			if change == "identity" {
+			switch change {
+			case "identity":
 				acct.ServerUUID = "replacement"
-			} else {
+			case "credentials":
 				acct.AccessToken = "renewed-token"
+			case "default":
+				acct.ProfileUUID = "new-default"
+			case "default ABA":
+				acct.ProfileUUID = "temporary-default"
+				if err := st.Store.PutAccount(t.Context(), acct); err != nil {
+					t.Fatal(err)
+				}
+				acct.ProfileUUID = ""
 			}
 			if err := st.Store.PutAccount(t.Context(), acct); err != nil {
 				t.Fatal(err)
@@ -114,7 +123,11 @@ func TestDEPProfileCommitRejectsReplacedAccount(t *testing.T) {
 				t.Fatalf("obsolete profile persisted: %+v %v", profiles, err)
 			}
 			acct, _ = st.Store.GetAccount(t.Context(), "account")
-			if acct.ProfileUUID != "" {
+			expected := ""
+			if change == "default" {
+				expected = "new-default"
+			}
+			if acct.ProfileUUID != expected {
 				t.Fatal("obsolete profile selected")
 			}
 		})

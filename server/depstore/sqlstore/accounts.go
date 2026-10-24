@@ -3,6 +3,7 @@ package sqlstore
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
 	"time"
 
@@ -17,7 +18,7 @@ var accountCols = []string{
 }
 
 const selectAccount = "SELECT name, consumer_key, consumer_secret, access_token, access_secret, access_token_expiry, protocol_version, " +
-	"org_name, org_id, server_name, server_uuid, admin_id, limits, profile_uuid, terms_expired, token_invalid, created_at, updated_at FROM dep_accounts"
+	"org_name, org_id, server_name, server_uuid, admin_id, limits, profile_uuid, terms_expired, token_invalid, created_at, updated_at, (SELECT targets FROM dep_profile_choices WHERE account = dep_accounts.name), COALESCE((SELECT revision FROM dep_profile_choices WHERE account = dep_accounts.name), 0) FROM dep_accounts"
 
 // PutAccount implements dep.AccountStore.
 func (t *txStore) PutAccount(ctx context.Context, a *dep.Account) error {
@@ -48,11 +49,27 @@ func (t *txStore) PutAccount(ctx context.Context, a *dep.Account) error {
 	if err := t.lockAccountName(ctx, a.Name); err != nil {
 		return err
 	}
+	previous, err := t.GetAccount(ctx, a.Name)
+	if err != nil && !errors.Is(err, dep.ErrNotFound) {
+		return err
+	}
+	revision, err := dep.ProfileTargetRevision(previous, a)
+	if err != nil {
+		return err
+	}
+	for _, uuid := range a.ProfileTargets {
+		if _, err := t.GetProfile(ctx, a.Name, uuid); err != nil {
+			return err
+		}
+	}
 	_, err = t.exec(ctx, "put account", t.upsert("dep_accounts", accountCols, accountCols[:1], []string{"created_at"}),
 		a.Name, a.ConsumerKey, cs, at, as, nullTime(a.AccessTokenExpiry), a.ProtocolVersion,
 		a.OrgName, a.OrgID, a.ServerName, a.ServerUUID, a.AdminID, limits, a.ProfileUUID, a.State.TermsExpired, a.State.TokenInvalid,
 		utc(a.CreatedAt), utc(a.UpdatedAt))
-	return err
+	if err != nil {
+		return err
+	}
+	return t.putProfileChoices(ctx, a, revision)
 }
 
 type scanner interface{ Scan(dest ...any) error }
@@ -60,11 +77,11 @@ type scanner interface{ Scan(dest ...any) error }
 // scanAccount decodes account metadata and opens its sealed OAuth credentials.
 func (t *txStore) scanAccount(row scanner) (*dep.Account, error) {
 	var a dep.Account
-	var cs, at, as, limits []byte
+	var cs, at, as, limits, targets []byte
 	var expiry sql.NullTime
 	if err := row.Scan(&a.Name, &a.ConsumerKey, &cs, &at, &as, &expiry, &a.ProtocolVersion,
 		&a.OrgName, &a.OrgID, &a.ServerName, &a.ServerUUID, &a.AdminID, &limits, &a.ProfileUUID, &a.State.TermsExpired, &a.State.TokenInvalid,
-		&a.CreatedAt, &a.UpdatedAt); err != nil {
+		&a.CreatedAt, &a.UpdatedAt, &targets, &a.ProfileRevision); err != nil {
 		return nil, wrap("scan account", err)
 	}
 	for _, f := range []struct {
@@ -82,6 +99,11 @@ func (t *txStore) scanAccount(row scanner) (*dep.Account, error) {
 	a.CreatedAt, a.UpdatedAt = a.CreatedAt.UTC(), a.UpdatedAt.UTC()
 	if len(limits) > 0 {
 		if err := dep.Unmarshal(limits, &a.Limits); err != nil {
+			return nil, err
+		}
+	}
+	if len(targets) > 0 {
+		if err := dep.Unmarshal(targets, &a.ProfileTargets); err != nil {
 			return nil, err
 		}
 	}
@@ -109,7 +131,7 @@ func (t *txStore) GetAccount(ctx context.Context, name string) (*dep.Account, er
 
 // accountTables lists account data removed by DeleteAccount. Persistent name
 // locks are retained so deletion cannot split competing writers across locks.
-var accountTables = []string{"dep_sessions", "dep_cursors", "dep_keypairs", "dep_devices", "dep_profiles", "dep_assignments", "dep_assignment_state"}
+var accountTables = []string{"dep_sessions", "dep_cursors", "dep_keypairs", "dep_devices", "dep_profiles", "dep_assignments", "dep_assignment_state", "dep_profile_choices"}
 
 // DeleteAccount implements dep.AccountStore.
 func (t *txStore) DeleteAccount(ctx context.Context, name string) error {
@@ -378,4 +400,20 @@ func (s *Store) Cursor(ctx context.Context, name string) (dep.Cursor, error) {
 // SetCursor implements dep.CursorStore.
 func (s *Store) SetCursor(ctx context.Context, name string, c dep.Cursor) error {
 	return s.write(ctx, func(t *txStore) error { return t.SetCursor(ctx, name, c) })
+}
+
+// putProfileChoices stores serial intent with the account's monotonic fence. The
+// caller holds the account-name lock and commits this with the account write.
+func (t *txStore) putProfileChoices(ctx context.Context, a *dep.Account, revision int64) error {
+	var raw []byte
+	var err error
+	if a.ProfileTargets != nil {
+		raw, err = dep.Marshal(a.ProfileTargets)
+		if err != nil {
+			return err
+		}
+	}
+	columns := []string{"account", "targets", "revision"}
+	_, err = t.exec(ctx, "put profile choices", t.upsert("dep_profile_choices", columns, columns[:1], nil), a.Name, raw, revision)
+	return err
 }
