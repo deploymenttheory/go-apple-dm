@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"reflect"
 	"strconv"
 	"testing"
 	"time"
@@ -252,5 +253,166 @@ func TestIncompleteAssignmentRequiresReadback(t *testing.T) {
 				})
 			}
 		}
+	}
+}
+
+// TestPendingReadbackStoreFailures keeps a remotely accepted batch uncertain
+// until its observations and outcomes can commit together. A failure on the
+// second serial must roll back the first serial and its success event too.
+func TestPendingReadbackStoreFailures(t *testing.T) {
+	for _, fault := range []struct {
+		name   string
+		method string
+		after  int
+	}{
+		{"list", "ListAssignments", 1},
+		{"renew", "LockAccount", 2},
+		{"commit_fence", "LockAccount", 3},
+		{"second_device_read", "GetDevice", 2},
+		{"second_device_write", "PutDevices", 2},
+		{"second_outcome_read", "GetAssignment", 2},
+		{"second_outcome_write", "PutAssignment", 2},
+	} {
+		t.Run(fault.name, func(t *testing.T) {
+			f := newAssignFixture(t)
+			f.srv.AddDevices(device("A"), device("B"))
+			f.sync(t)
+			target := defineChoice(t, f, "explicit batch")
+			f.putAccount(func(a *dep.Account) { a.ProfileTargets = map[string]string{"A": target, "B": target} })
+			beforeAccount := f.account()
+			transport := &lostAssignmentResponse{base: f.srv.Client().Transport}
+			client, err := dep.NewClient(dep.ClientConfig{Store: f.store, Clock: f.clk, BaseURL: f.srv.URL(), HTTPClient: &http.Client{Transport: transport}})
+			if err != nil {
+				t.Fatal(err)
+			}
+			initial := newAssigner(t, f, func(c *dep.AssignerConfig) { c.Client = client })
+			if _, err := initial.RunOnce(t.Context()); err == nil {
+				t.Fatal("expected lost response after accepted batch")
+			}
+			beforeAssignments := []*dep.Assignment{assignment(t, f.store, "A"), assignment(t, f.store, "B")}
+			beforeDevices := make([]*dep.StoredDevice, 0, 2)
+			for _, serial := range []string{"A", "B"} {
+				observed, err := f.store.GetDevice(t.Context(), acct, serial)
+				if err != nil {
+					t.Fatal(err)
+				}
+				beforeDevices = append(beforeDevices, observed)
+				if remote, ok := f.srv.Device(serial); !ok || remote.ProfileUUID != target {
+					t.Fatal("remote mutation was not accepted")
+				}
+			}
+			down := errors.New("reconciliation storage unavailable")
+			failing := &deptest.Failing{Store: f.store, Fail: map[string]error{fault.method: down}, After: map[string]int{fault.method: fault.after}}
+			worker := newAssigner(t, f, func(c *dep.AssignerConfig) { c.Store = failing })
+			if _, err := worker.RunOnce(t.Context()); !errors.Is(err, down) {
+				t.Fatalf("missing storage error: %v", err)
+			}
+			for i, serial := range []string{"A", "B"} {
+				observed, err := f.store.GetDevice(t.Context(), acct, serial)
+				if err != nil || !reflect.DeepEqual(observed, beforeDevices[i]) {
+					t.Fatal("failed reconciliation committed an observation", err)
+				}
+				if got := assignment(t, f.store, serial); got.Status != dep.AssignmentPending || !reflect.DeepEqual(got, beforeAssignments[i]) {
+					t.Fatal("failed reconciliation changed pending outcome")
+				}
+			}
+			if !reflect.DeepEqual(beforeAccount, f.account()) || len(f.eventsOf(dep.EventDeviceAssigned)) != 0 {
+				t.Fatal("failed reconciliation changed desired state or emitted success")
+			}
+			failing.SetFail(nil)
+			if fault.method == "LockAccount" {
+				// A failed ownership check also prevents lease release. Recovery
+				// must respect that durable lease before inspecting the batch.
+				if _, err := worker.RunOnce(t.Context()); !errors.Is(err, dep.ErrBackoff) {
+					t.Fatalf("failed lock bypassed lease: %v", err)
+				}
+				f.clock.Advance(3 * time.Minute)
+			}
+			if _, err := worker.RunOnce(t.Context()); err != nil {
+				t.Fatal("safe retry failed", err)
+			}
+			for _, serial := range []string{"A", "B"} {
+				got := assignment(t, f.store, serial)
+				observed, err := f.store.GetDevice(t.Context(), acct, serial)
+				if err != nil || got.Status != dep.StatusSuccess || got.ProfileUUID != target || observed.ProfileUUID != target {
+					t.Fatal("retry did not retain accepted target", err)
+				}
+			}
+			if n := f.srv.Count(http.MethodPost, dep.PathProfileDevs); n != 1 {
+				t.Fatalf("duplicated accepted mutation: %d", n)
+			}
+			if len(f.eventsOf(dep.EventDeviceAssigned)) != 2 || !reflect.DeepEqual(beforeAccount, f.account()) {
+				t.Fatal("retry changed desired state or lost success events")
+			}
+		})
+	}
+}
+
+// TestPendingReadbackPagination settles every page of accepted pending requests
+// without treating the shrinking pending result set as a reason to skip a serial.
+func TestPendingReadbackPagination(t *testing.T) {
+	f := newAssignFixture(t)
+	f.srv.AddDevices(device("A"), device("B"), device("C"))
+	f.sync(t)
+	transport := &lostAssignmentResponse{base: f.srv.Client().Transport}
+	client, err := dep.NewClient(dep.ClientConfig{Store: f.store, Clock: f.clk, BaseURL: f.srv.URL(), HTTPClient: &http.Client{Transport: transport}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	initial := newAssigner(t, f, func(c *dep.AssignerConfig) { c.Client = client })
+	if _, err := initial.RunOnce(t.Context()); err == nil {
+		t.Fatal("expected lost response")
+	}
+	worker := newAssigner(t, f, func(c *dep.AssignerConfig) { c.PageSize = 1; c.BatchSize = 1 })
+	if _, err := worker.RunOnce(t.Context()); err != nil {
+		t.Fatal(err)
+	}
+	for _, serial := range []string{"A", "B", "C"} {
+		if got := assignment(t, f.store, serial); got.Status != dep.StatusSuccess {
+			t.Fatalf("pending page skipped: %s", serial)
+		}
+	}
+	if f.srv.Count(http.MethodPost, dep.PathProfileDevs) != 1 || f.srv.Count(http.MethodPost, dep.PathDeviceDetails) != 3 || len(f.eventsOf(dep.EventDeviceAssigned)) != 3 {
+		t.Fatal("pagination duplicated a mutation or skipped readback/events")
+	}
+}
+
+// TestPendingPersistenceFailurePreventsMutation verifies the uncertainty record
+// is durable for the entire batch before Apple can receive an assignment.
+func TestPendingPersistenceFailurePreventsMutation(t *testing.T) {
+	for _, fault := range []struct {
+		method string
+		after  int
+	}{
+		{"LockAccount", 3},   // claim, renew, then pending transaction
+		{"GetAssignment", 4}, // two candidates, then the second pending serial
+	} {
+		t.Run(fault.method, func(t *testing.T) {
+			f := newAssignFixture(t)
+			f.srv.AddDevices(device("A"), device("B"))
+			f.sync(t)
+			beforeAccount := f.account()
+			down := errors.New("pending persistence unavailable")
+			failing := &deptest.Failing{Store: f.store, Fail: map[string]error{fault.method: down}, After: map[string]int{fault.method: fault.after}}
+			worker := newAssigner(t, f, func(c *dep.AssignerConfig) { c.Store = failing })
+			if _, err := worker.RunOnce(t.Context()); !errors.Is(err, down) {
+				t.Fatalf("missing persistence error: %v", err)
+			}
+			for _, serial := range []string{"A", "B"} {
+				if _, err := f.store.GetAssignment(t.Context(), acct, serial); !errors.Is(err, dep.ErrNotFound) {
+					t.Fatal("partial pending batch committed", err)
+				}
+			}
+			if f.srv.Count(http.MethodPost, dep.PathProfileDevs) != 0 || len(f.eventsOf(dep.EventDeviceAssigned)) != 0 || !reflect.DeepEqual(beforeAccount, f.account()) {
+				t.Fatal("failed persistence allowed a mutation, success event or desired-state change")
+			}
+			failing.SetFail(nil)
+			// The injected lock failure also blocks release of the claimed lease.
+			f.clock.Advance(3 * time.Minute)
+			result, err := worker.RunOnce(t.Context())
+			if err != nil || result.Assigned != 2 || f.srv.Count(http.MethodPost, dep.PathProfileDevs) != 1 {
+				t.Fatalf("retry after persistence recovery: %+v %v", result, err)
+			}
+		})
 	}
 }
