@@ -63,7 +63,7 @@ func TestActivityDownloadOrigins(t *testing.T) {
 		t.Fatal(err)
 	}
 	storageURL, _ := url.Parse("https://store.blobstore.apple.com")
-	jar.SetCookies(storageURL, []*http.Cookie{{Name: "api-secret", Value: "secret"}})
+	jar.SetCookies(storageURL, []*http.Cookie{{Name: "api-secret", Value: "secret", Secure: true, HttpOnly: true, SameSite: http.SameSiteStrictMode}})
 	c := stubClient(t, api, func(cfg *Config) {
 		cfg.Logger = slog.New(slog.NewTextHandler(&logs, &slog.HandlerOptions{Level: slog.LevelDebug}))
 		cfg.HTTPClient = &http.Client{Jar: jar, Transport: activityTransport(func(r *http.Request) (*http.Response, error) {
