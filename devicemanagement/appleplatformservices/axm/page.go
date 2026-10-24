@@ -2,6 +2,7 @@ package axm
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"iter"
 	"net/http"
@@ -12,6 +13,8 @@ import (
 
 // Page is one page of a list response.
 type Page[T any] struct {
+	// Raw retains the complete list document, including unknown envelope and included-resource fields.
+	Raw      json.RawMessage    `json:"-"`
 	Items    []T                `json:"Items"`
 	Links    Links              `json:"Links"`
 	Meta     Meta               `json:"Meta"`
@@ -23,10 +26,23 @@ func (p Page[T]) HasNext() bool { return p.Links.Next != "" || p.Meta.Paging.Nex
 
 // document is the wire form of a paged response.
 type document[T any] struct {
+	Raw      json.RawMessage    `json:"-"`
 	Data     []T                `json:"data"`
 	Links    Links              `json:"links"`
 	Meta     Meta               `json:"meta"`
 	Included []IncludedResource `json:"included"`
+}
+
+// UnmarshalJSON preserves the complete source document alongside typed pagination.
+func (d *document[T]) UnmarshalJSON(b []byte) error {
+	type plain document[T]
+	var value plain
+	if err := json.Unmarshal(b, &value); err != nil {
+		return err
+	}
+	*d = document[T](value)
+	d.Raw = append(json.RawMessage(nil), b...)
+	return nil
 }
 
 // single is the wire form of a one-resource response.
@@ -92,7 +108,7 @@ func list[T any](ctx context.Context, c *Client, path string, q url.Values) (Pag
 		u.RawQuery = q.Encode()
 		doc.Links.Self = u.String()
 	}
-	return Page[T]{Items: doc.Data, Links: doc.Links, Meta: doc.Meta, Included: doc.Included}, nil
+	return Page[T]{Raw: doc.Raw, Items: doc.Data, Links: doc.Links, Meta: doc.Meta, Included: doc.Included}, nil
 }
 
 // get performs a GET returning one resource.
@@ -131,7 +147,7 @@ func NextPage[T any](ctx context.Context, c *Client, page Page[T]) (Page[T], err
 	if doc.Links.Self == "" {
 		doc.Links.Self = next
 	}
-	return Page[T]{Items: doc.Data, Links: doc.Links, Meta: doc.Meta, Included: doc.Included}, nil
+	return Page[T]{Raw: doc.Raw, Items: doc.Data, Links: doc.Links, Meta: doc.Meta, Included: doc.Included}, nil
 }
 
 // nextURL resolves links.next against the base URL, merges the self

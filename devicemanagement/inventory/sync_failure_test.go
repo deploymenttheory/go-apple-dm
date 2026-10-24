@@ -2,6 +2,7 @@ package inventory
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -11,6 +12,7 @@ import (
 	"time"
 
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/appleplatformservices/axm"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/appleplatformservices/axm/collection"
 )
 
 type transportFunc func(*http.Request) (*http.Response, error)
@@ -20,61 +22,78 @@ func (f transportFunc) RoundTrip(r *http.Request) (*http.Response, error) { retu
 
 // TestSyncCheckpointSurvivesInterruption proves that resume starts after the last committed page.
 func TestSyncCheckpointSurvivesInterruption(t *testing.T) {
-	repo, s, server, a := syncFixture(t)
-	for _, id := range []string{"one", "two", "three"} {
-		server.AddOrgDevice(id, nil)
-	}
-	ctx, cancel := context.WithCancel(t.Context())
-	defer cancel()
-	calls := 0
-	interrupted := false
-	base := server.Client().Transport
-	s.Client = func(ctx context.Context, a Account, key []byte) (*axm.Client, error) {
-		client := server.Client()
-		client.Transport = transportFunc(func(req *http.Request) (*http.Response, error) {
-			copy := req.Clone(req.Context())
-			u := *copy.URL
-			copy.URL = &u
-			if u.Path == "/v1/orgDevices" {
-				q := u.Query()
-				q.Set("limit", "1")
-				u.RawQuery = q.Encode()
-				calls++
-				if calls == 2 && !interrupted {
-					interrupted = true
-					cancel()
-					return nil, context.Canceled
+	for _, legacy := range []bool{false, true} {
+		t.Run(fmt.Sprint("legacy=", legacy), func(t *testing.T) {
+			repo, s, server, a := syncFixture(t)
+			for _, id := range []string{"one", "two", "three"} {
+				server.AddOrgDevice(id, nil)
+			}
+			ctx, cancel := context.WithCancel(t.Context())
+			defer cancel()
+			calls := 0
+			interrupted := false
+			base := server.Client().Transport
+			s.Client = func(ctx context.Context, a Account, key []byte) (*axm.Client, error) {
+				client := server.Client()
+				client.Transport = transportFunc(func(req *http.Request) (*http.Response, error) {
+					copy := req.Clone(req.Context())
+					u := *copy.URL
+					copy.URL = &u
+					if u.Path == "/v1/orgDevices" {
+						q := u.Query()
+						q.Set("limit", "1")
+						u.RawQuery = q.Encode()
+						calls++
+						if calls == 2 && !interrupted {
+							interrupted = true
+							cancel()
+							return nil, context.Canceled
+						}
+					}
+					return base.RoundTrip(copy)
+				})
+				return axm.New(ctx, axm.Config{ClientID: a.ClientID, KeyID: a.KeyID, PrivateKeyPEM: key, BaseURL: a.BaseURL, TokenURL: a.TokenURL, HTTPClient: client})
+			}
+			job, e := repo.Enqueue(ctx, a.ID, false, time.Now())
+			if e != nil {
+				t.Fatal(e)
+			}
+			if _, e = s.RunOne(ctx); e == nil {
+				t.Fatal("interruption was hidden")
+			}
+			saved, e := repo.Job(t.Context(), job.ID)
+			if e != nil {
+				t.Fatal(e)
+			}
+			if saved.Devices != 1 || len(saved.Checkpoint) == 0 || saved.State != "running" {
+				t.Fatalf("checkpoint %+v", saved)
+			}
+			page, e := repo.Devices(t.Context(), DeviceQuery{})
+			if e != nil || len(page.Items) != 1 {
+				t.Fatal("checkpoint advanced ahead of data", e)
+			}
+			if legacy {
+				var checkpoint collection.Checkpoint
+				if err := json.Unmarshal(saved.Checkpoint, &checkpoint); err != nil {
+					t.Fatal(err)
+				}
+				saved.Checkpoint, e = json.Marshal(axm.Page[axm.OrgDevice]{Links: checkpoint.Links, Meta: checkpoint.Meta})
+				if e != nil {
+					t.Fatal(e)
+				}
+				if e := repo.Backend.Update(t.Context(), func(tx Tx) error { return put(t.Context(), tx, "job/"+saved.ID, saved) }); e != nil {
+					t.Fatal(e)
 				}
 			}
-			return base.RoundTrip(copy)
+			resumed, e := s.RunOne(t.Context())
+			if e != nil || resumed.State != "success" || resumed.Devices != 3 {
+				t.Fatalf("resume %+v %v", resumed, e)
+			}
+			page, e = repo.Devices(t.Context(), DeviceQuery{})
+			if e != nil || len(page.Items) != 3 {
+				t.Fatal("resume skipped devices", e)
+			}
 		})
-		return axm.New(ctx, axm.Config{ClientID: a.ClientID, KeyID: a.KeyID, PrivateKeyPEM: key, BaseURL: a.BaseURL, TokenURL: a.TokenURL, HTTPClient: client})
-	}
-	job, e := repo.Enqueue(ctx, a.ID, false, time.Now())
-	if e != nil {
-		t.Fatal(e)
-	}
-	if _, e = s.RunOne(ctx); e == nil {
-		t.Fatal("interruption was hidden")
-	}
-	saved, e := repo.Job(t.Context(), job.ID)
-	if e != nil {
-		t.Fatal(e)
-	}
-	if saved.Devices != 1 || len(saved.Checkpoint) == 0 || saved.State != "running" {
-		t.Fatalf("checkpoint %+v", saved)
-	}
-	page, e := repo.Devices(t.Context(), DeviceQuery{})
-	if e != nil || len(page.Items) != 1 {
-		t.Fatal("checkpoint advanced ahead of data", e)
-	}
-	resumed, e := s.RunOne(t.Context())
-	if e != nil || resumed.State != "success" || resumed.Devices != 3 {
-		t.Fatalf("resume %+v %v", resumed, e)
-	}
-	page, e = repo.Devices(t.Context(), DeviceQuery{})
-	if e != nil || len(page.Items) != 3 {
-		t.Fatal("resume skipped devices", e)
 	}
 }
 

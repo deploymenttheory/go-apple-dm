@@ -50,6 +50,56 @@ Failed refreshes keep the last successful values and mark attempt metadata separ
 `coverage_expiry` is the earliest finite expiry among currently active plans, evaluated
 at the query's `as_of` time.
 
+## Standalone source collection
+
+Use `devicemanagement/appleplatformservices/axm/collection` when the application needs
+Apple evidence without adopting inventory records. Configure the existing `axm.Client`
+with the account's credentials and HTTP trust, then construct a `collection.Collector`.
+A `collection.Request` selects `Devices`, `Detail`, `Assignment` or `Coverage`, a
+caller-owned account ID and generation, and the returned opaque resource ID when
+applicable. Follow-up detail, assignment and coverage streams are explicit caller
+choices; the collector introduces no enrichment or assignment policy.
+
+```go
+collector := collection.Collector{Client: appleClient, MaxPages: 100000}
+request := collection.Request{Stream: collection.Stream{
+    AccountID: accountID, Generation: generation, Operation: collection.Devices,
+}, Limit: 1000}
+checkpoint, err := collector.Collect(ctx, request, savedCheckpoint, sink)
+```
+
+The sink implements `Commit(context.Context, collection.Batch) error`. In one local
+transaction it compares `Before` against persisted state, writes `Resources`,
+`Document`, `Outcome` and `After`, and commits. Each resource retains exact source JSON;
+the list document additionally retains included resources and document extensions.
+Failed outcomes carry safe classifications and HTTP status separately from successful
+evidence. Preserve old successful evidence when recording an unsuccessful attempt.
+Do not persist or log the in-memory `Outcome.Err` without reviewing sensitive content.
+
+A new generation starts with an empty `collection.Checkpoint`. Resume an existing
+stream using its committed checkpoint, including after constructing a new collector.
+A failed commit does not advance the returned checkpoint. If a commit may have succeeded
+before returning an error, reload authoritative state before retrying. Sinks must fence
+stale writers and make already committed replays harmless. The caller owns concurrency,
+leases, account/client matching, credentials, transactions and scheduling. Apple calls
+occur before the sink transaction. Checkpoints contain source URLs and resource context;
+protect them as operational data and never reuse them across accounts or generations.
+
+`EnumerationComplete` occurs only on the successful final page of a devices or coverage
+stream. An empty successful enumeration differs from permission failures, 404s,
+authentication failures and transport errors. A successful `null` assignment means
+unassigned; the collector returns 404 as a failed outcome for the caller to interpret.
+Partial enumeration does not prove absence. Completed Apple pagination does not promise
+a consistent snapshot. `MaxPages` bounds traversal across restarts, and repeated page
+URLs are rejected. Call `Step` instead of `Collect` when the host schedules one request
+at a time. Completed checkpoints perform no further requests.
+
+Inventory device enumeration uses this collector and commits observations with each
+job checkpoint. Existing page checkpoints retain their continuation when resumed.
+Detail and assignment streams remain singular requests. Inventory stages coverage
+pages in memory and publishes coverage only after complete traversal, so a failed page
+retains the last successful coverage evidence and retries the resource on the next job.
+
 ## Records and native collection
 
 Source identity is matched first, followed by an unambiguous normalized serial.
