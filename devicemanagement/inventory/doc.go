@@ -7,7 +7,9 @@
 // retain complete JSON, byte representation and provenance. History, safe failed
 // outcomes and lifecycle metadata remain separate. No observation merges records,
 // creates a provisional alias, resolves field equivalence or persists a ranked
-// normalized device projection. Missing serials do not prevent source retention.
+// normalized device projection. Query/export selectors use data.<original path>
+// and meta.<column>, keeping source id and repository id distinct. Unqualified
+// names are invalid. Missing serials do not prevent source retention.
 //
 // Link explicitly invokes the independently reusable correlation package. Only an
 // actual organization-device resource and matching authenticated native serials

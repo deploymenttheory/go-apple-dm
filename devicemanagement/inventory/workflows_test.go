@@ -197,7 +197,7 @@ func TestTypedQueryPredicates(t *testing.T) {
 			t.Fatal(tc, got)
 		}
 	}
-	for _, q := range []ResourceQuery{{Limit: -1}, {Limit: 1001}, {Focus: "bad"}, {Conditions: make([]Condition, 65)}, {Conditions: []Condition{{Field: ""}}}, {Conditions: []Condition{{Field: strings.Repeat("a", 1025)}}}, {Conditions: []Condition{{"id", "exists", json.RawMessage(`1`)}}}, {Conditions: []Condition{{"id", "eq", json.RawMessage(`{`)}}}, {Conditions: []Condition{{"id", "unknown", nil}}}} {
+	for _, q := range []ResourceQuery{{Limit: -1}, {Limit: 1001}, {Focus: "bad"}, {Conditions: make([]Condition, 65)}, {Conditions: []Condition{{Field: ""}}}, {Conditions: []Condition{{Field: strings.Repeat("a", 1025)}}}, {Conditions: []Condition{{"meta.id", "exists", json.RawMessage(`1`)}}}, {Conditions: []Condition{{"meta.id", "eq", json.RawMessage(`{`)}}}, {Conditions: []Condition{{"meta.id", "unknown", nil}}}} {
 		if !errors.Is(q.Validate(), ErrInvalid) {
 			t.Fatal(q)
 		}
@@ -228,7 +228,7 @@ func TestReportsExportsAndDiscovery(t *testing.T) {
 	}
 	for _, raw := range []bool{false, true} {
 		fields, err := r.Fields(t.Context(), ResourceQuery{}, raw)
-		if err != nil || slices.Contains(fields, "attributes.futureSecret") != raw {
+		if err != nil || slices.Contains(fields, "data.attributes.futureSecret") != raw {
 			t.Fatal(fields, err)
 		}
 		for _, format := range []string{"json", "ndjson", "csv"} {
@@ -253,7 +253,7 @@ func TestReportsExportsAndDiscovery(t *testing.T) {
 			}
 		}
 	}
-	preset, err := r.SavePreset(t.Context(), ExportPreset{Name: "Evidence", Format: "csv", Columns: []string{"source", "id"}})
+	preset, err := r.SavePreset(t.Context(), ExportPreset{Name: "Evidence", Format: "csv", Columns: []string{"meta.source", "meta.id"}})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -267,7 +267,7 @@ func TestReportsExportsAndDiscovery(t *testing.T) {
 	if err := r.Export(t.Context(), io.Discard, ResourceQuery{}, "bad", nil, false); !errors.Is(err, ErrInvalid) {
 		t.Fatal(err)
 	}
-	if err := r.Export(t.Context(), io.Discard, ResourceQuery{}, "csv", []string{"attributes.futureSecret"}, false); !errors.Is(err, ErrInvalid) {
+	if err := r.Export(t.Context(), io.Discard, ResourceQuery{}, "csv", []string{"data.attributes.futureSecret"}, false); !errors.Is(err, ErrInvalid) {
 		t.Fatal(err)
 	}
 }
@@ -302,11 +302,14 @@ func TestExportWriteFailures(t *testing.T) {
 		}
 	}
 	var b bytes.Buffer
-	if err := r.Export(t.Context(), &b, ResourceQuery{}, "csv", []string{"attributes.deviceName", "id"}, true); err != nil || !strings.Contains(b.String(), "'=formula") {
+	if err := r.Export(t.Context(), &b, ResourceQuery{}, "csv", []string{"data.attributes.deviceName", "meta.id"}, true); err != nil || !strings.Contains(b.String(), "'=formula") {
 		t.Fatal(b.String(), err)
 	}
-	long := strings.Repeat("x", 5000)
-	if err := r.Export(t.Context(), &writeFailure{}, ResourceQuery{}, "csv", []string{long}, true); !errors.Is(err, io.ErrClosedPipe) {
+	columns := make([]string, 1000)
+	for i := range columns {
+		columns[i] = "meta.id"
+	}
+	if err := r.Export(t.Context(), &writeFailure{}, ResourceQuery{}, "csv", columns, true); !errors.Is(err, io.ErrClosedPipe) {
 		t.Fatal(err)
 	}
 }
@@ -407,7 +410,7 @@ func TestRecordEvidenceLifecycle(t *testing.T) {
 	if err != nil || !current.Snapshot.Absent || !current.Snapshot.Disconnected {
 		t.Fatal(current, err)
 	}
-	for _, q := range []ResourceQuery{{Focus: "managed"}, {Conditions: []Condition{{"QueryResponses.Model", "exists", nil}}}, {Conditions: []Condition{{"missing", "exists", json.RawMessage(`false`)}}}} {
+	for _, q := range []ResourceQuery{{Focus: "managed"}, {Conditions: []Condition{{"data.QueryResponses.Model", "exists", nil}}}, {Conditions: []Condition{{"data.missing", "exists", json.RawMessage(`false`)}}}} {
 		page, err := r.Resources(t.Context(), q)
 		if err != nil || len(page.Items) != 1 {
 			t.Fatal(q, page, err)

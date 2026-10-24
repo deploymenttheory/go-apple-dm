@@ -74,7 +74,8 @@ type SerialLink struct {
 	LinkedAt time.Time        `json:"linked_at"`
 }
 
-// Condition compares an original source path or resource metadata. Conditions are ANDed.
+// Condition compares a data.<original path> or meta.<column> selector. Conditions
+// are ANDed; unqualified paths are invalid.
 // Supported operators are eq, contains (array membership), exists, lt, lte, gt, gte.
 type Condition struct {
 	Field    string          `json:"field"`

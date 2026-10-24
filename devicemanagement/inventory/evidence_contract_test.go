@@ -138,6 +138,15 @@ func TestEvidenceFailureAtomicity(t *testing.T) {
 			_, err := r.Observe(ctx, "S", o)
 			return err
 		}},
+		{"delayed conflicting original", func(r *Repository) error {
+			o := native.Snapshot
+			o.ObservedAt = at.Add(-time.Hour)
+			identity := *o.Native
+			identity.Serial = "DIFFERENT"
+			o.Native = &identity
+			_, err := r.Observe(ctx, "", o)
+			return err
+		}},
 	}
 	for _, op := range operations {
 		t.Run(op.name, func(t *testing.T) {
@@ -194,14 +203,14 @@ func TestMalformedEvidenceAndQueries(t *testing.T) {
 	if _, err := r.Link(ctx, malformed.Source, native.Source, now); !errors.Is(err, ErrInvalid) {
 		t.Fatal(err)
 	}
-	for _, q := range []ResourceQuery{{Source: "absent"}, {AccountID: "absent"}, {Focus: "apple", Source: "mdm.DeviceInformation"}, {Focus: "managed", Source: "axm.device"}, {Search: "absent"}, {Conditions: []Condition{{"missing", "eq", json.RawMessage(`1`)}}}, {Conditions: []Condition{{"id", "exists", json.RawMessage(`false`)}}}} {
+	for _, q := range []ResourceQuery{{Source: "absent"}, {AccountID: "absent"}, {Focus: "apple", Source: "mdm.DeviceInformation"}, {Focus: "managed", Source: "axm.device"}, {Search: "absent"}, {Conditions: []Condition{{"data.missing", "eq", json.RawMessage(`1`)}}}, {Conditions: []Condition{{"meta.id", "exists", json.RawMessage(`false`)}}}} {
 		page, err := r.Resources(ctx, q)
 		if err != nil || len(page.Items) != 0 {
 			t.Fatal(q, page, err)
 		}
 	}
 	for _, path := range DefaultColumns {
-		if raw, ok := native.Value(path, now); !ok || !json.Valid(raw) {
+		if raw, ok := native.Value(path); !ok || !json.Valid(raw) {
 			t.Fatal("metadata column", path, string(raw), ok)
 		}
 	}
@@ -292,5 +301,41 @@ func TestUncheckedNativeProvenance(t *testing.T) {
 		if err != nil || !record.Incomplete {
 			t.Fatal("provenance inferred", record, err)
 		}
+	}
+}
+
+// TestDelayedConflictInvalidatesCheckedLink retains a delayed original without
+// replacing the newest snapshot, while preventing a contradictory active link.
+func TestDelayedConflictInvalidatesCheckedLink(t *testing.T) {
+	r, apple, native := linkedFixture(t)
+	if _, err := r.Observe(t.Context(), "", native.Snapshot); err != nil {
+		t.Fatal(err)
+	}
+	links, err := r.Links(t.Context(), apple.Source)
+	if err != nil || len(links) != 1 {
+		t.Fatal("acknowledged replay invalidated checked evidence", links, err)
+	}
+	delayed, err := ResourceObservation(native.Source, json.RawMessage(`{"QueryResponses":{"SerialNumber":"DIFFERENT"}}`), native.Snapshot.ObservedAt.Add(-time.Hour), time.Hour)
+	if err != nil {
+		t.Fatal(err)
+	}
+	delayed.Native = &NativeIdentity{Serial: "DIFFERENT", Method: correlation.AutomatedDeviceEnrollment, Authenticated: true}
+	if _, err := r.Observe(t.Context(), "", delayed); err != nil {
+		t.Fatal(err)
+	}
+	latest, err := r.SourceResource(t.Context(), native.Source)
+	if err != nil || string(latest.Snapshot.Raw) != string(native.Snapshot.Raw) || !latest.Snapshot.ObservedAt.Equal(native.Snapshot.ObservedAt) {
+		t.Fatal("delayed original replaced latest snapshot", latest, err)
+	}
+	links, err = r.Links(t.Context(), apple.Source)
+	if err != nil || len(links) != 0 {
+		t.Fatal("delayed serial conflict left a checked link", links, err)
+	}
+	history, err := r.History(t.Context(), native.Source)
+	if err != nil || len(history) != 2 {
+		t.Fatal("delayed evidence lost", history, err)
+	}
+	if _, err := r.Link(t.Context(), apple.Source, native.Source, time.Now()); !errors.Is(err, ErrConflict) {
+		t.Fatal("conflicting retained history linked", err)
 	}
 }

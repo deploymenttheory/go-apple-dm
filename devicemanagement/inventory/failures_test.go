@@ -192,7 +192,7 @@ func TestRepositoryFailureAtomicity(t *testing.T) {
 		{"presets", true, func(r *Repository) error { _, e := r.Presets(ctx); return e }},
 		{"records", true, func(r *Repository) error { _, e := r.Resources(ctx, ResourceQuery{}); return e }},
 		{"indexed records", true, func(r *Repository) error {
-			_, e := r.Resources(ctx, ResourceQuery{Conditions: []Condition{{"model", "eq", json.RawMessage(`"Mac"`)}}})
+			_, e := r.Resources(ctx, ResourceQuery{Conditions: []Condition{{"data.model", "eq", json.RawMessage(`"Mac"`)}}})
 			return e
 		}},
 		{"fields", true, func(r *Repository) error { _, e := r.Fields(ctx, ResourceQuery{}, false); return e }},

@@ -21,7 +21,9 @@ Original successful observation history, complete list documents, request outcom
 account credentials, jobs and schedules have separate document namespaces. Raw JSON
 retains unknown members, relationships, null, false, zero, empty arrays, numeric
 lexemes and its original byte representation. Failed attempts never replace successful
-evidence. Field paths identify original source members; no aliases, unit conversions,
+evidence. Explicit `data.<original path>` and `meta.<column>` selectors keep source
+members distinct from metadata, including original `data.id` versus repository
+`meta.id`; unqualified selectors are invalid. No aliases, unit conversions,
 source-ranking projection or automatic record merges are persisted.
 
 `Repository.Link` explicitly invokes the standalone correlator. The Apple input must
@@ -33,8 +35,10 @@ establish a hardware link. Opaque Apple IDs address APIs; enrollment, channel an
 IDs retain their protocol roles and establish neither serial identity nor authentication.
 
 Checked links retain both original source references without combining their records.
-New source evidence, absence or disconnection invalidates affected links and requires
-explicit fresh correlation. Historical reports remain available, including unchecked
+Each newly retained source original, including a delayed report that does not replace
+the latest snapshot, invalidates affected links and requires explicit fresh correlation.
+Exact acknowledged replays add no evidence and retain checked links. Absence or
+disconnection also invalidates links. Historical reports remain available, including unchecked
 legacy reports. A valid authenticated refresh can establish a link without discarding
 those originals; conflicting authenticated serials for the same source remain rejected.
 

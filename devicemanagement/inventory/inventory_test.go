@@ -61,7 +61,7 @@ func TestLosslessReconciliationAndQueries(t *testing.T) {
 		t.Fatal("sources merged")
 	}
 	for _, tc := range []struct{ path, value string }{{"attributes.false", "false"}, {"attributes.nil", "null"}, {"attributes.zero", "0"}, {"attributes.empty", "[]"}} {
-		page, err := r.Resources(t.Context(), ResourceQuery{Conditions: []Condition{{tc.path, "eq", json.RawMessage(tc.value)}}})
+		page, err := r.Resources(t.Context(), ResourceQuery{Conditions: []Condition{{"data." + tc.path, "eq", json.RawMessage(tc.value)}}})
 		if err != nil || len(page.Items) != 1 {
 			t.Fatal(tc, page, err)
 		}
@@ -353,7 +353,7 @@ func TestExactNumericQueries(t *testing.T) {
 		field, value string
 		want         int
 	}{{"attributes.counter", "9007199254740992", 0}, {"attributes.counter", "9007199254740993", 1}, {"attributes.decimal", "1", 1}} {
-		page, e := r.Resources(t.Context(), ResourceQuery{Conditions: []Condition{{Field: tc.field, Operator: "eq", Value: json.RawMessage(tc.value)}}})
+		page, e := r.Resources(t.Context(), ResourceQuery{Conditions: []Condition{{Field: "data." + tc.field, Operator: "eq", Value: json.RawMessage(tc.value)}}})
 		if e != nil || len(page.Items) != tc.want {
 			t.Fatal(tc, page, e)
 		}

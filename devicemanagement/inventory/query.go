@@ -21,7 +21,7 @@ func (q ResourceQuery) Validate() error {
 		return ErrInvalid
 	}
 	for _, c := range q.Conditions {
-		if c.Field == "" || len(c.Field) > 1024 {
+		if !validSelector(c.Field) {
 			return ErrInvalid
 		}
 		switch c.Operator {
@@ -65,7 +65,7 @@ func (r *Repository) Resources(ctx context.Context, q ResourceQuery) (ResourcePa
 			if err := json.Unmarshal(entry.Value, &d); err != nil {
 				return out, err
 			}
-			if !Matches(d, q, out.AsOf) {
+			if !Matches(d, q) {
 				continue
 			}
 			if len(out.Items) == limit {
@@ -104,7 +104,7 @@ func (r *Repository) EachResource(ctx context.Context, q ResourceQuery, fn func(
 }
 
 // Matches applies the same original-source predicates to lists and exports.
-func Matches(d ResourceRecord, q ResourceQuery, now time.Time) bool {
+func Matches(d ResourceRecord, q ResourceQuery) bool {
 	apple := strings.HasPrefix(d.Source.Kind, "axm.")
 	if (q.AccountID != "" && d.Source.AccountID != q.AccountID) || (q.Source != "" && d.Source.Kind != q.Source) || (q.Focus == "apple" && !apple) || (q.Focus == "managed" && apple) {
 		return false
@@ -116,7 +116,7 @@ func Matches(d ResourceRecord, q ResourceQuery, now time.Time) bool {
 		}
 	}
 	for _, c := range q.Conditions {
-		value, ok := d.Value(c.Field, now)
+		value, ok := d.Value(c.Field)
 		if c.Operator == "exists" {
 			if ok != (string(c.Value) != "false") {
 				return false
@@ -130,29 +130,39 @@ func Matches(d ResourceRecord, q ResourceQuery, now time.Time) bool {
 	return true
 }
 
-// Value reads a source field by its original path or a resource metadata column.
-// No source aliases, equivalence or field resolution are inferred.
-func (d ResourceRecord) Value(path string, _ time.Time) (json.RawMessage, bool) {
+// Value reads an unambiguous metadata or original-data selector. meta.id is
+// the repository identity; data.id is the original source field named id. Data
+// paths use Flatten's dot/backslash escaping and never imply semantic aliases.
+func (d ResourceRecord) Value(selector string) (json.RawMessage, bool) {
 	var value any
-	switch path {
-	case "id":
+	switch selector {
+	case "meta.id":
 		value = d.ID
-	case "source":
+	case "meta.source":
 		value = d.Source.Kind
-	case "account_id":
+	case "meta.account_id":
 		value = d.Source.AccountID
-	case "resource_id":
+	case "meta.resource_id":
 		value = d.Source.ResourceID
-	case "observed_at":
+	case "meta.observed_at":
 		value = d.Snapshot.ObservedAt
-	case "incomplete":
+	case "meta.incomplete":
 		value = d.Incomplete
 	default:
-		v, ok := d.Snapshot.Fields[path]
-		return v, ok
+		path, ok := strings.CutPrefix(selector, "data.")
+		if !ok || path == "" {
+			return nil, false
+		}
+		raw, ok := d.Snapshot.Fields[path]
+		return raw, ok
 	}
 	raw, _ := json.Marshal(value)
 	return raw, true
+}
+
+// validSelector keeps metadata and original source members in distinct namespaces.
+func validSelector(selector string) bool {
+	return len(selector) <= 1024 && (PublicField(selector) || strings.HasPrefix(selector, "data.") && len(selector) > len("data."))
 }
 
 // compare performs typed JSON comparisons rather than stringifying numbers.

@@ -12,7 +12,7 @@ import (
 )
 
 // DefaultColumns expose source metadata without disclosing original payloads.
-var DefaultColumns = []string{"id", "source", "account_id", "resource_id", "observed_at", "incomplete"}
+var DefaultColumns = []string{"meta.id", "meta.source", "meta.account_id", "meta.resource_id", "meta.observed_at", "meta.incomplete"}
 
 // PublicRecord removes all unreviewed source values and original payloads.
 func PublicRecord(d ResourceRecord) ResourceRecord {
@@ -25,12 +25,12 @@ func PublicRecord(d ResourceRecord) ResourceRecord {
 
 // PublicField identifies metadata columns available without raw-data authority.
 func PublicField(name string) bool {
-	for _, field := range DefaultColumns {
-		if field == name {
-			return true
-		}
+	switch name {
+	case "meta.id", "meta.source", "meta.account_id", "meta.resource_id", "meta.observed_at", "meta.incomplete":
+		return true
+	default:
+		return false
 	}
-	return false
 }
 
 // Fields discovers every currently populated field, including future Apple attributes.
@@ -38,8 +38,8 @@ func (r *Repository) Fields(ctx context.Context, q ResourceQuery, raw bool) ([]s
 	set := map[string]bool{}
 	e := r.EachResource(ctx, q, func(d ResourceRecord) error {
 		for name := range d.Snapshot.Fields {
-			if raw || PublicField(name) {
-				set[name] = true
+			if raw {
+				set["data."+name] = true
 			}
 		}
 		return nil
@@ -95,7 +95,7 @@ func (r *Repository) Export(ctx context.Context, w io.Writer, q ResourceQuery, f
 		columns = DefaultColumns
 	}
 	for _, c := range columns {
-		if !raw && !PublicField(c) {
+		if !validSelector(c) || !raw && !PublicField(c) {
 			return ErrInvalid
 		}
 	}
@@ -122,11 +122,11 @@ func (r *Repository) Export(ctx context.Context, w io.Writer, q ResourceQuery, f
 		if csvw != nil {
 			row := make([]string, len(columns))
 			for i, c := range columns {
-				if c == "id" {
+				if c == "meta.id" {
 					row[i] = d.ID
 					continue
 				}
-				v, _ := d.Value(c, q.AsOf)
+				v, _ := d.Value(c)
 				var s string
 				if json.Unmarshal(v, &s) == nil {
 					row[i] = s
@@ -173,6 +173,11 @@ type ExportPreset struct {
 func (r *Repository) SavePreset(ctx context.Context, p ExportPreset) (ExportPreset, error) {
 	if p.Name == "" || p.Query.Validate() != nil || (p.ID != "" && !validID(p.ID)) || (p.Format != "csv" && p.Format != "json" && p.Format != "ndjson") {
 		return p, ErrInvalid
+	}
+	for _, column := range p.Columns {
+		if !validSelector(column) {
+			return p, ErrInvalid
+		}
 	}
 	if p.ID == "" {
 		p.ID = ID()

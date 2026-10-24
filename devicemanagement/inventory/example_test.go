@@ -49,5 +49,10 @@ func ExampleRepository_Link() {
 		panic(err)
 	}
 	fmt.Println(a.ID != n.ID, link.Serial)
-	// Output: true SER100
+	localID, _ := a.Value("meta.id")
+	originalID, _ := a.Value("data.id")
+	fmt.Println(inventory.String(localID) == a.ID, inventory.String(originalID))
+	// Output:
+	// true SER100
+	// true opaque
 }

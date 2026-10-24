@@ -37,7 +37,7 @@ this reference server, and are not requested for ASM connections.
 All source JSON is retained, including unknown attributes, relationships, null,
 false, zero, empty arrays and integer lexemes above 2^53. Original JSON bytes survive
 persistence without compaction or string escaping changing the source representation.
-Source field discovery exposes original paths within each selected resource. Scalar
+Source field discovery exposes `data.<original path>` selectors within each selected resource. Scalar
 and array representations remain unchanged; no presentation aliases or inferred unit
 conversions are stored.
 
@@ -140,8 +140,10 @@ Each `ResourceRecord` retains its original source reference and latest successfu
 snapshot. Successful observations, original migrated envelopes, list documents and
 failed outcomes have independent history. A source update never joins records by
 serial, creates a provisional alias or ranks source fields. Physical relationships
-are explicit checked serial links. Changed source evidence, absence or disconnection
-invalidates affected links and requires a new explicit correlation.
+are explicit checked serial links. Every newly retained original, including a delayed
+report that leaves the latest snapshot unchanged, invalidates affected links. Exact
+acknowledged replays preserve checked links. Absence and disconnection invalidate links;
+affected relationships require a new explicit correlation.
 
 Native history retains partial reports and their reported per-item times. Omission
 leaves prior successful observations available to an explicit resolver; storage does
@@ -281,7 +283,7 @@ prior successes.
 
 Ordinary record reads require `readInventory` and return resource metadata.
 `--raw` requires `readRawInventory` and exposes complete source evidence and original
-field paths, for example `QueryResponses.SystemIntegrityProtectionEnabled` within an
+field paths, for example `data.QueryResponses.SystemIntegrityProtectionEnabled` within an
 `mdm.DeviceInformation` source record.
 The authenticated enrollment identity separately supplies
 `identity_certificate_expiry`; it is not inferred from arbitrary installed certificates.
@@ -290,8 +292,8 @@ To export only this record's metadata, replace `DEVICE_ID` in the predicate:
 
 ```sh
 dmctl inventory export --format csv \
-  --where '[{"field":"id","operator":"eq","value":"DEVICE_ID"}]' \
-  --columns id,source,account_id,resource_id,observed_at,incomplete
+  --where '[{"field":"meta.id","operator":"eq","value":"DEVICE_ID"}]' \
+  --columns meta.id,meta.source,meta.account_id,meta.resource_id,meta.observed_at,meta.incomplete
 ```
 
 ### Native collection versus AxM sync
@@ -388,15 +390,15 @@ dmctl inventory schedules set ACCOUNT_ID --cron '0 2 * * *' --disabled
 dmctl inventory schedules list
 
 dmctl devices list --focus apple --account ACCOUNT_ID
-dmctl devices list --raw --source axm.device --where '[{"field":"attributes.imei","operator":"contains","value":"123456789"}]'
-dmctl devices list --raw --source axm.device --where '[{"field":"attributes.isMdmMigrationCapable","operator":"eq","value":false}]'
+dmctl devices list --raw --source axm.device --where '[{"field":"data.attributes.imei","operator":"contains","value":"123456789"}]'
+dmctl devices list --raw --source axm.device --where '[{"field":"data.attributes.isMdmMigrationCapable","operator":"eq","value":false}]'
 dmctl devices get DEVICE_ID
 dmctl devices get DEVICE_ID --raw
 dmctl devices fields --raw
 dmctl devices collect DEVICE_ID
 
 dmctl inventory reports --focus combined
-dmctl inventory export --format csv --columns id,source,account_id,resource_id
+dmctl inventory export --format csv --columns meta.id,meta.source,meta.account_id,meta.resource_id
 dmctl inventory export --format ndjson --raw
 dmctl inventory diagnostics
 ```
@@ -413,6 +415,19 @@ Lists, reports and exports share `account`, `source`, `focus`, `search`, `where`
 source records. Search examines source identities and kind. Predicates scan bounded
 pages over original field paths or metadata. Numeric comparisons retain exact integer
 precision. `as_of` records the query time and is not a historical database snapshot.
+
+Selectors are explicitly namespaced. `meta.id` is the repository's resource identity;
+`meta.resource_id` is the opaque source address; `data.id` is the original source field
+named `id`. Metadata and source members never shadow one another or imply equivalent
+meaning. Original field paths escape literal dots as `\.` and backslashes as `\\`.
+Use, for example, `data.meta.id` for an original nested `meta.id` member and
+`data.meta\.id` for an original literal key named `meta.id`. Unqualified names are
+invalid. `devices fields --raw` discovers available selectors; metadata-only discovery
+excludes `data.*`. Original-data filters and exports require raw authority.
+
+```sh
+dmctl inventory export --raw --format csv --columns meta.id,data.id
+```
 
 Reports count independent resources by source kind and completeness. They do not
 project physical fleet overlap, infer field equivalence or apply source ranking.

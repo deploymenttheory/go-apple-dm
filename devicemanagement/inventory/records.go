@@ -80,9 +80,21 @@ func (r *Repository) ObserveTx(ctx context.Context, tx Tx, serial string, o Obse
 		return record, err
 	}
 	historyKey := "history/" + record.ID + "/" + digest(string(raw))
-	if err := tx.Put(ctx, historyKey, raw); err != nil {
-		return record, err
+	_, historyErr := tx.Get(ctx, historyKey)
+	if historyErr != nil && !errors.Is(historyErr, ErrNotFound) {
+		return record, historyErr
 	}
+	if errors.Is(historyErr, ErrNotFound) {
+		if err := tx.Put(ctx, historyKey, raw); err != nil {
+			return record, err
+		}
+		// A delayed original can contradict the checked relationship even though it
+		// must not replace the latest successful snapshot. Replays add no evidence.
+		if err := invalidateLinks(ctx, tx, o.Source); err != nil {
+			return record, err
+		}
+	}
+
 	if record.Snapshot.ObservedAt.After(o.ObservedAt) {
 		return record, nil
 	}
@@ -93,9 +105,6 @@ func (r *Repository) ObserveTx(ctx context.Context, tx Tx, serial string, o Obse
 		record.Incomplete = record.Incomplete || !knownNativeProvenance(o.Native)
 	}
 	if err := putResource(ctx, tx, record); err != nil {
-		return record, err
-	}
-	if err := invalidateLinks(ctx, tx, o.Source); err != nil {
 		return record, err
 	}
 
