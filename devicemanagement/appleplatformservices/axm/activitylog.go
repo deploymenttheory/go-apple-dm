@@ -19,7 +19,8 @@ const DefaultActivityLogMaxBytes int64 = 32 << 20
 // store.blobstore.apple.com on port 443. API-origin requests use API credentials
 // and replay once with a refreshed token after an API 401;
 // presigned storage requests never use bearer tokens or a cookie jar. Redirects
-// are rejected. Errors omit the URL and response body because either may contain
+// are rejected. Transport, rate-limit and server failures use Config.Retry.
+// Errors omit the URL and response body because either may contain
 // signed credentials. The caller closes the returned reader. Reading it preserves
 // every CSV field, including per-device errors and unknown columns.
 //
@@ -71,12 +72,15 @@ func (c *Client) FetchActivityLog(ctx context.Context, downloadURL string) (io.R
 	return io.NopCloser(bytes.NewReader(body)), nil
 }
 
-// activityLogResponse isolates cookies and performs one API-only token replay.
+// activityLogResponse isolates cookies and applies Config.Retry to safe GET
+// exchanges. One API-only token replay is separate from the shared retry budget.
 // It owns unsuccessful response bodies; the caller owns a returned response.
+// Retry causes omit remote URLs, bodies and transport errors before logging.
 func (c *Client) activityLogResponse(ctx context.Context, req *http.Request, authenticated bool) (*http.Response, error) {
 	downloadClient := *c.http
 	downloadClient.Jar = nil
-	for replay := 0; ; replay++ {
+	attempt, replayed := 0, false
+	for {
 		var tok string
 		if authenticated {
 			var tokenErr error
@@ -91,15 +95,44 @@ func (c *Client) activityLogResponse(ctx context.Context, req *http.Request, aut
 			if ctx.Err() != nil {
 				return nil, fmt.Errorf("%w: %w", ErrTransport, ctx.Err())
 			}
-			return nil, fmt.Errorf("%w: activity download exchange", ErrTransport)
+			safeErr := fmt.Errorf("%w: activity download exchange", ErrTransport)
+			if attempt >= c.cfg.Retry.Max {
+				return nil, safeErr
+			}
+			attempt++
+			if err := c.wait(ctx, c.backoff(attempt), "activity download transport", safeErr); err != nil {
+				return nil, err
+			}
+			continue
 		}
-		if resp.StatusCode != http.StatusUnauthorized || !authenticated {
+		if resp.StatusCode >= http.StatusOK && resp.StatusCode < http.StatusMultipleChoices {
 			return resp, nil
 		}
 		_ = resp.Body.Close()
-		c.invalidate(tok)
-		if replay > 0 {
-			return nil, &AuthError{Status: http.StatusUnauthorized, Err: &Error{Status: http.StatusUnauthorized, Method: http.MethodGet, URL: "activity download"}}
+		safeErr := &Error{Status: resp.StatusCode, Method: http.MethodGet, URL: "activity download"}
+		switch {
+		case resp.StatusCode == http.StatusUnauthorized && authenticated:
+			if replayed {
+				return nil, &AuthError{Status: http.StatusUnauthorized, Err: safeErr}
+			}
+			replayed = true
+			c.invalidate(tok)
+			continue
+		case resp.StatusCode == http.StatusTooManyRequests || resp.StatusCode >= http.StatusInternalServerError:
+			safeErr.RetryAfter = parseRetryAfter(resp.Header.Get("Retry-After"), c.clock.Now())
+			if attempt >= c.cfg.Retry.Max {
+				return nil, safeErr
+			}
+			attempt++
+			delay := c.backoff(attempt)
+			if safeErr.RetryAfter > 0 {
+				delay = safeErr.RetryAfter
+			}
+			if err := c.wait(ctx, delay, "activity download status", safeErr); err != nil {
+				return nil, err
+			}
+		default:
+			return nil, safeErr
 		}
 	}
 }

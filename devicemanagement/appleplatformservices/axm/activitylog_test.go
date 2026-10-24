@@ -12,6 +12,7 @@ import (
 	"net/url"
 	"strings"
 	"testing"
+	"time"
 )
 
 type activityTransport func(*http.Request) (*http.Response, error)
@@ -269,5 +270,144 @@ func TestActivityDownloadAPIReplay(t *testing.T) {
 	})
 	if body, err := c.FetchActivityLog(t.Context(), "https://store.blobstore.apple.com/log?Signature=secret"); body != nil || !hasStatus(err, http.StatusUnauthorized) || strings.Contains(err.Error(), "secret") {
 		t.Fatalf("storage auth: %v %v", body, err)
+	}
+}
+
+// activityRetryClock blocks scheduled retry waits until cancellation in tests.
+type activityRetryClock struct {
+	instantClock
+	cancel context.CancelFunc
+}
+
+// After cancels the request at its retry wait and never signals a timer.
+func (c *activityRetryClock) After(d time.Duration) <-chan time.Time {
+	c.cancel()
+	return make(chan time.Time)
+}
+
+// TestActivityDownloadRetry checks the shared bounded retry budget for transport,
+// rate-limit and server failures without leaking signed URLs into logs or errors.
+func TestActivityDownloadRetry(t *testing.T) {
+	t.Parallel()
+	for _, tc := range []struct {
+		name        string
+		statuses    []int
+		max         int
+		wantSuccess bool
+		wantStatus  int
+	}{
+		{"mixed retries", []int{0, http.StatusTooManyRequests, http.StatusServiceUnavailable, http.StatusOK}, 3, true, 0},
+		{"status exhaustion", []int{http.StatusServiceUnavailable, http.StatusServiceUnavailable}, 1, false, http.StatusServiceUnavailable},
+		{"rate limit exhaustion", []int{http.StatusTooManyRequests, http.StatusTooManyRequests}, 1, false, http.StatusTooManyRequests},
+		{"transport exhaustion", []int{0, 0}, 1, false, 0},
+		{"retry disabled", []int{http.StatusServiceUnavailable}, 0, false, http.StatusServiceUnavailable},
+		{"no retry forbidden", []int{http.StatusForbidden}, 3, false, http.StatusForbidden},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			f := newFixture(t)
+			var logs strings.Builder
+			requests, closed := 0, 0
+			c := f.client(t, func(cfg *Config) {
+				cfg.Retry = Retry{Max: tc.max, Base: time.Second, Cap: 4 * time.Second}
+				cfg.Logger = slog.New(slog.NewTextHandler(&logs, &slog.HandlerOptions{Level: slog.LevelDebug}))
+				cfg.HTTPClient = &http.Client{Transport: activityTransport(func(r *http.Request) (*http.Response, error) {
+					if r.URL.Host != "store.blobstore.apple.com" || r.Header.Get("Authorization") != "" || r.Header.Get("Cookie") != "" {
+						t.Error("retry contacted API or sent credentials")
+					}
+					if requests >= len(tc.statuses) {
+						t.Fatal("retry budget exceeded")
+					}
+					status := tc.statuses[requests]
+					requests++
+					if status == 0 {
+						return nil, errors.New("secret signed transport error")
+					}
+					header := make(http.Header)
+					if status == http.StatusTooManyRequests {
+						header.Set("Retry-After", "7")
+					}
+					body := "secret signed error body"
+					if status == http.StatusOK {
+						body = "Serial,Outcome\nS,Success\n"
+					}
+					return &http.Response{StatusCode: status, Header: header, Body: &activityRetryBody{Reader: strings.NewReader(body), closed: &closed}, Request: r}, nil
+				})}
+			})
+			body, err := c.FetchActivityLog(t.Context(), "https://store.blobstore.apple.com/log?Signature=secret")
+			if tc.wantSuccess {
+				if err != nil {
+					t.Fatal(err)
+				}
+				if err := body.Close(); err != nil {
+					t.Fatal(err)
+				}
+			} else {
+				if body != nil || err == nil {
+					t.Fatalf("unexpected success: %v %v", body, err)
+				}
+				if tc.wantStatus != 0 && !hasStatus(err, tc.wantStatus) {
+					t.Fatal(err)
+				}
+				if tc.wantStatus == 0 && !errors.Is(err, ErrTransport) {
+					t.Fatal(err)
+				}
+				if strings.Contains(err.Error(), "secret") {
+					t.Fatal("signed credential exposed")
+				}
+			}
+			if requests != len(tc.statuses) {
+				t.Fatalf("requests=%d want %d", requests, len(tc.statuses))
+			}
+			expectedClosed := 0
+			for _, status := range tc.statuses {
+				if status != 0 {
+					expectedClosed++
+				}
+			}
+			if closed != expectedClosed {
+				t.Fatalf("response body leak: closed=%d want=%d", closed, expectedClosed)
+			}
+			if strings.Contains(logs.String(), "secret") {
+				t.Fatalf("signed credentials logged: %s", logs.String())
+			}
+			delays := f.clock.recorded()
+			if tc.name == "mixed retries" {
+				if len(delays) != 3 || delays[0] < time.Second/2 || delays[0] >= time.Second*3/2 || delays[1] != 7*time.Second || delays[2] < 2*time.Second || delays[2] >= 6*time.Second {
+					t.Fatalf("backoff and Retry-After not honored: %v", delays)
+				}
+			}
+		})
+	}
+}
+
+// activityRetryBody tracks ownership of independent retry response bodies.
+type activityRetryBody struct {
+	io.Reader
+	closed *int
+}
+
+// Close records release of a response body.
+func (r *activityRetryBody) Close() error { *r.closed++; return nil }
+
+// TestActivityDownloadRetryCancellation stops an otherwise pending storage retry.
+func TestActivityDownloadRetryCancellation(t *testing.T) {
+	t.Parallel()
+	f := newFixture(t)
+	ctx, cancel := context.WithCancel(t.Context())
+	defer cancel()
+	calls := 0
+	retryClock := &activityRetryClock{cancel: cancel}
+	c := f.client(t, func(cfg *Config) {
+		cfg.Clock = retryClock
+		cfg.HTTPClient = &http.Client{Transport: activityTransport(func(r *http.Request) (*http.Response, error) {
+			calls++
+			return &http.Response{StatusCode: http.StatusTooManyRequests, Header: http.Header{"Retry-After": []string{"60"}}, Body: io.NopCloser(strings.NewReader("secret")), Request: r}, nil
+		})}
+	})
+	if body, err := c.FetchActivityLog(ctx, "https://store.blobstore.apple.com/log?Signature=secret"); body != nil || !errors.Is(err, context.Canceled) || strings.Contains(err.Error(), "secret") {
+		t.Fatalf("cancel: %v %v", body, err)
+	}
+	if calls != 1 {
+		t.Fatalf("retry continued after cancellation: %d", calls)
 	}
 }
