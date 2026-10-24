@@ -93,7 +93,12 @@ choice, override removal, map isolation, rollback, account isolation, ABA fences
 selected-definition writes and deletion. Reconciliation tests cover mixed UUID
 batches, renewal, Apple throttle retention, uncertain mutation readback and stale
 serial/default responses. SQL upgrade tests exercise retained state and replay
-when the choices table exists without its migration record. End-to-end tests
+when the choices table exists without its migration record. Recovery roundtrips on
+SQLite, PostgreSQL and MySQL retain explicit/default choices and revisions with
+sealed credentials/keypairs, observed inventory, pending assignments, sessions,
+cursors and retry schedules. Compiled table recognition accepts the exact
+`CREATE TABLE IF NOT EXISTS` clause without relaxing identifier or checkpoint
+inventory checks. End-to-end tests
 cover mixed-profile assignment and ADE admission/enrollment. Target-aware profile tests
 exercise all generated skip keys against every schema platform at introduction,
 deprecation and removal boundaries, ADE field release floors, explicit false
