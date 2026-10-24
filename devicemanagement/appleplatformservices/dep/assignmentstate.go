@@ -64,7 +64,7 @@ func (r *assignmentRun) lock(ctx context.Context, tx Tx) (AssignmentState, error
 	if binding(acct) != binding(r.account) {
 		return state, fmt.Errorf("%w: assignment credentials changed", ErrConflict)
 	}
-	if acct.ProfileUUID != r.account.ProfileUUID {
+	if acct.ProfileUUID != r.account.ProfileUUID || acct.ProfileRevision != r.account.ProfileRevision {
 		return state, fmt.Errorf("%w: desired assignment profile changed", ErrConflict)
 	}
 	return state, nil

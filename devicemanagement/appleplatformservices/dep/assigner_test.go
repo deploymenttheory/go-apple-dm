@@ -300,8 +300,8 @@ func TestAssigner(t *testing.T) {
 		if !errors.As(err, &derr) || derr.Status != 429 || !res.NotBefore.Equal(t0.Add(90*time.Second)) {
 			t.Fatalf("%+v %v", res, err)
 		}
-		if _, err := f.store.GetAssignment(ctx, acct, "A"); !errors.Is(err, dep.ErrNotFound) {
-			t.Fatal("a 429 recorded a per-serial outcome")
+		if got, err := f.store.GetAssignment(ctx, acct, "A"); err != nil || got.Status != dep.AssignmentPending {
+			t.Fatal("429 did not retain pre-request uncertainty")
 		}
 		f.srv.ResetRequests()
 		res, err = a.RunOnce(ctx)
@@ -425,7 +425,7 @@ func TestAssigner(t *testing.T) {
 		a.Kick()
 		a.Kick() // never blocks
 		waitFor(t, "429 seen", func() bool { return len(f.srv.Requests()) > before && f.clock.Pending() > pending })
-		if _, err := f.store.GetAssignment(context.Background(), acct, "B"); !errors.Is(err, dep.ErrNotFound) {
+		if got, err := f.store.GetAssignment(context.Background(), acct, "B"); err != nil || got.Status != dep.AssignmentPending {
 			t.Fatal("assigned through a 429")
 		}
 		f.clock.Advance(31 * time.Second)

@@ -241,6 +241,7 @@ func (c *Client) commitTokens(ctx context.Context, v *validatedTokens, force boo
 				return err
 			}
 			acct.ProfileUUID, acct.ServerUUID, acct.OrgID = "", "", ""
+			acct.ProfileTargets = nil
 		}
 		acct.SetTokens(v.tokens)
 		acct.OrgName, acct.ServerName, acct.AdminID = v.detail.OrgName, v.detail.ServerName, v.detail.AdminID

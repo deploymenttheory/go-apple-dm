@@ -247,7 +247,21 @@ func (t *tx) PutAccount(_ context.Context, a *dep.Account) error {
 		}
 		secrets[f.key] = sealed
 	}
+	var previous *dep.Account
+	if prev, ok := t.st.accounts[a.Name]; ok {
+		previous = &prev
+	}
+	revision, err := dep.ProfileTargetRevision(previous, a)
+	if err != nil {
+		return err
+	}
+	for _, uuid := range a.ProfileTargets {
+		if _, ok := t.st.profiles[deviceKey{a.Name, uuid}]; !ok {
+			return notFound("profile", uuid)
+		}
+	}
 	stored := *a.Clone()
+	stored.ProfileRevision = revision
 	stored.ConsumerSecret, stored.AccessToken, stored.AccessSecret = "", "", ""
 	stored.CreatedAt, stored.UpdatedAt = a.CreatedAt.UTC(), a.UpdatedAt.UTC()
 	if prev, ok := t.st.accounts[a.Name]; ok {
@@ -525,6 +539,10 @@ func (t *tx) PutProfile(_ context.Context, account string, p *dep.Profile) error
 	if p == nil || p.ProfileUUID == "" {
 		return fmt.Errorf("%w: profile needs a profile_uuid", dep.ErrInvalid)
 	}
+	if a, ok := t.st.accounts[account]; ok && a.UsesProfile(p.ProfileUUID) {
+		a.ProfileRevision++
+		t.st.accounts[account] = a
+	}
 	t.st.profiles[deviceKey{account, p.ProfileUUID}] = p.Clone()
 	return nil
 }
@@ -555,6 +573,9 @@ func (t *tx) DeleteProfile(_ context.Context, account, uuid string) error {
 	}
 	if _, ok := t.st.profiles[deviceKey{account, uuid}]; !ok {
 		return notFound("profile", uuid)
+	}
+	if a, ok := t.st.accounts[account]; ok && a.UsesProfile(uuid) {
+		return fmt.Errorf("%w: profile is a desired target", dep.ErrConflict)
 	}
 	delete(t.st.profiles, deviceKey{account, uuid})
 	return nil

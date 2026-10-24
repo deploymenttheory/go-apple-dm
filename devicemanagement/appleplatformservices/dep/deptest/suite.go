@@ -94,6 +94,8 @@ func RunStoreSuite(t *testing.T, newStore Factory) {
 	t.Run("Cursor", func(t *testing.T) { runCursor(t, newStore) })
 	t.Run("DevicesRoundTripAllKeys", func(t *testing.T) { runDevices(t, newStore) })
 	t.Run("DeletedTombstones", func(t *testing.T) { runTombstones(t, newStore) })
+	t.Run("ProfileTargetThrottle", func(t *testing.T) { runTargetThrottle(t, newStore) })
+	t.Run("ProfileTargets", func(t *testing.T) { runProfileTargets(t, newStore) })
 	t.Run("Profiles", func(t *testing.T) { runProfiles(t, newStore) })
 	t.Run("Assignments", func(t *testing.T) { runAssignments(t, newStore) })
 	t.Run("Update", func(t *testing.T) { runUpdate(t, newStore) })

@@ -247,9 +247,9 @@ func TestAssignmentOutcomeAndReadbackFailureRecovery(t *testing.T) {
 			ctx := t.Context()
 			f.srv.AddDevices(device("A"))
 			f.sync(t)
-			method, after := "GetAssignment", 2
+			method, after := "GetAssignment", 3
 			if readback {
-				method, after = "LockAccount", 4
+				method, after = "LockAccount", 5
 			}
 			fault := errors.New("assignment persistence unavailable")
 			store := &deptest.Failing{Store: f.store, Fail: map[string]error{method: fault}, After: map[string]int{method: after}}
@@ -268,7 +268,7 @@ func TestAssignmentOutcomeAndReadbackFailureRecovery(t *testing.T) {
 					t.Fatal("committed assignment did not publish its event")
 				}
 			} else {
-				if _, err := f.store.GetAssignment(ctx, acct, "A"); !errors.Is(err, dep.ErrNotFound) {
+				if got, err := f.store.GetAssignment(ctx, acct, "A"); err != nil || got.Status != dep.AssignmentPending {
 					t.Fatalf("failed outcome escaped rollback: %v", err)
 				}
 				if len(f.eventsOf(dep.EventDeviceAssigned)) != 0 {
@@ -284,8 +284,8 @@ func TestAssignmentOutcomeAndReadbackFailureRecovery(t *testing.T) {
 			if readback && (res.Candidates != 0 || f.srv.Count(http.MethodPost, dep.PathProfileDevs) != 1) {
 				t.Fatalf("readback recovery repeated committed assignment: %+v", res)
 			}
-			if !readback && res.Assigned != 1 {
-				t.Fatalf("failed outcome was not retried: %+v", res)
+			if !readback && (res.Assigned != 0 || f.srv.Count(http.MethodPost, dep.PathProfileDevs) != 1) {
+				t.Fatalf("uncertain mutation was resubmitted: %+v", res)
 			}
 			if len(f.eventsOf(dep.EventDeviceAssigned)) != 1 {
 				t.Fatal("recovery did not publish exactly one committed outcome")
@@ -369,7 +369,7 @@ func TestAssignmentCooldownFailureRecovery(t *testing.T) {
 			if err == nil || (tc.failStore && !errors.Is(err, fault)) || (tc.stale != "" && !errors.Is(err, dep.ErrConflict)) {
 				t.Fatalf("cooldown error: %v", err)
 			}
-			if _, err := f.store.GetAssignment(ctx, acct, "A"); !errors.Is(err, dep.ErrNotFound) {
+			if got, err := f.store.GetAssignment(ctx, acct, "A"); err != nil || got.Status != dep.AssignmentPending {
 				t.Fatalf("obsolete or failed batch recorded an outcome: %v", err)
 			}
 			if len(f.eventsOf(dep.EventDeviceAssigned)) != 0 {

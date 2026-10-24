@@ -7,6 +7,7 @@ import (
 	"log/slog"
 	"net/http"
 	"slices"
+	"sort"
 	"time"
 
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/clock"
@@ -63,11 +64,9 @@ type AssignerConfig struct {
 	UsePUT bool
 }
 
-// Assigner keeps every eligible device of one account on the account's
-// current profile. Work is computed from state, not from op_type: a
-// device whose profile_uuid differs from the account's profile or whose
-// profile_status is empty or removed is assigned, after every synced
-// page and after a full re-fetch alike (decision record 0026).
+// Assigner reconciles each eligible serial with its explicit choice or account
+// default. Empty resolution performs no assignment. Work derives from observed
+// profile state and recorded outcomes, independent of inventory op_type.
 type Assigner struct {
 	cfg  AssignerConfig
 	kick chan struct{}
@@ -171,10 +170,10 @@ func (a *Assigner) RunOnce(ctx context.Context) (res AssignResult, runErr error)
 	}()
 	acct := run.account
 	ctx = withAccountFence(ctx, acct)
-	if acct.ProfileUUID == "" {
-		return res, nil
+	if err := a.reconcilePending(ctx, run); err != nil {
+		return res, err
 	}
-	serials, err := a.candidates(ctx, acct.ProfileUUID, a.cfg.Clock.Now(), &res)
+	groups, err := a.candidates(ctx, acct, a.cfg.Clock.Now(), &res)
 	if err != nil {
 		return res, err
 	}
@@ -182,43 +181,53 @@ func (a *Assigner) RunOnce(ctx context.Context) (res AssignResult, runErr error)
 	if a.cfg.UsePUT {
 		opts = append(opts, WithAssignPUT())
 	}
-	for batch := range slices.Chunk(serials, a.cfg.BatchSize) {
-		if err := run.renew(ctx); err != nil {
-			return res, err
-		}
-		request, cancel := context.WithTimeout(ctx, assignmentRequestTimeout)
-		resp, err := a.cfg.Client.AssignProfile(request, a.cfg.Account, acct.ProfileUUID, batch, opts...)
-		cancel()
-		if err != nil {
-			var cooldown *assignmentCooldown
-			if errors.As(err, &cooldown) {
-				delay := cooldown.delay
-				if delay <= 0 {
-					delay = a.cfg.ThrottleDelay
-				}
-				deadline, storeErr := run.preserveThrottle(ctx, delay)
-				res.NotBefore = deadline
-				return res, errors.Join(err, storeErr)
+	profiles := make([]string, 0, len(groups))
+	for uuid := range groups {
+		profiles = append(profiles, uuid)
+	}
+	sort.Strings(profiles)
+	for _, profileUUID := range profiles {
+		for batch := range slices.Chunk(groups[profileUUID], a.cfg.BatchSize) {
+			if err := run.renew(ctx); err != nil {
+				return res, err
 			}
-			if statusIs(err, http.StatusTooManyRequests) {
-				deadline, storeErr := run.throttle(ctx, retryAfter(err))
-				res.NotBefore = deadline
-				if storeErr != nil {
+			if err := a.markPending(ctx, run, profileUUID, batch); err != nil {
+				return res, err
+			}
+			request, cancel := context.WithTimeout(ctx, assignmentRequestTimeout)
+			resp, err := a.cfg.Client.AssignProfile(request, a.cfg.Account, profileUUID, batch, opts...)
+			cancel()
+			if err != nil {
+				var cooldown *assignmentCooldown
+				if errors.As(err, &cooldown) {
+					delay := cooldown.delay
+					if delay <= 0 {
+						delay = a.cfg.ThrottleDelay
+					}
+					deadline, storeErr := run.preserveThrottle(ctx, delay)
+					res.NotBefore = deadline
 					return res, errors.Join(err, storeErr)
 				}
+				if statusIs(err, http.StatusTooManyRequests) {
+					deadline, storeErr := run.throttle(ctx, retryAfter(err))
+					res.NotBefore = deadline
+					if storeErr != nil {
+						return res, errors.Join(err, storeErr)
+					}
+				}
+				return res, err
 			}
-			return res, err
-		}
-		if err := a.record(ctx, run, acct.ProfileUUID, batch, resp, &res); err != nil {
-			return res, err
+			if err := a.record(ctx, run, profileUUID, batch, resp, &res); err != nil {
+				return res, err
+			}
 		}
 	}
 	return res, nil
 }
 
 // candidates scans the account's live devices for the ones to assign.
-func (a *Assigner) candidates(ctx context.Context, profileUUID string, now time.Time, res *AssignResult) ([]string, error) {
-	var serials []string
+func (a *Assigner) candidates(ctx context.Context, account *Account, now time.Time, res *AssignResult) (map[string][]string, error) {
+	groups := map[string][]string{}
 	page := paging.Page{Limit: a.cfg.PageSize}
 	for {
 		r, err := a.cfg.Store.ListDevices(ctx, a.cfg.Account, DeviceQuery{}, page)
@@ -226,6 +235,10 @@ func (a *Assigner) candidates(ctx context.Context, profileUUID string, now time.
 			return nil, err
 		}
 		for _, sd := range r.Items {
+			profileUUID := account.DesiredProfile(sd.SerialNumber)
+			if profileUUID == "" {
+				continue
+			}
 			if !NeedsAssignment(sd.Device, profileUUID) || (a.cfg.Filter != nil && !a.cfg.Filter(sd.Device)) {
 				continue
 			}
@@ -243,10 +256,10 @@ func (a *Assigner) candidates(ctx context.Context, profileUUID string, now time.
 				res.Deferred++
 				continue
 			}
-			serials = append(serials, sd.SerialNumber)
+			groups[profileUUID] = append(groups[profileUUID], sd.SerialNumber)
 		}
 		if r.NextCursor == "" {
-			return serials, nil
+			return groups, nil
 		}
 		page.Cursor = r.NextCursor
 	}
@@ -278,7 +291,7 @@ func (a *Assigner) state(ctx context.Context, sd *StoredDevice, profileUUID stri
 	if err != nil {
 		return assignDue, err
 	}
-	if !asg.NextAttemptAt.IsZero() && now.Before(asg.NextAttemptAt) {
+	if (asg.Status == StatusThrottled || asg.ProfileUUID == profileUUID) && !asg.NextAttemptAt.IsZero() && now.Before(asg.NextAttemptAt) {
 		return assignDeferred, nil
 	}
 	if asg.Status == StatusSuccess && asg.ProfileUUID == profileUUID && !sd.UpdatedAt.After(asg.AttemptedAt) {
@@ -425,6 +438,9 @@ func (a *Assigner) readBack(ctx context.Context, run *assignmentRun, serials []s
 			d, ok := details[serial]
 			if !ok || d.ResponseStatus == StatusNotAccessible {
 				continue
+			}
+			if d.SerialNumber != serial {
+				return fmt.Errorf("%w: assignment readback serial mismatch", ErrConflict)
 			}
 			existing, err := tx.GetDevice(ctx, a.cfg.Account, serial)
 			if err != nil && !errors.Is(err, ErrNotFound) {

@@ -43,12 +43,17 @@ type Account struct {
 	AdminID    string
 	// Limits maps endpoint URI to its page limit from the account detail.
 	Limits map[string]Limit
-	// ProfileUUID is the profile the assigner keeps every device on; empty
-	// disables assignment.
+	// ProfileUUID is the account default. Empty leaves devices without an explicit
+	// serial target unmanaged by the assigner.
 	ProfileUUID string
-	State       AccountState
-	CreatedAt   time.Time
-	UpdatedAt   time.Time
+	// ProfileTargets holds explicit desired profile UUIDs keyed by physical serial.
+	// Removing an entry resumes the default; it never clears Apple's profile.
+	ProfileTargets map[string]string
+	// ProfileRevision is maintained by stores and fences changes to desired profiles.
+	ProfileRevision int64
+	State           AccountState
+	CreatedAt       time.Time
+	UpdatedAt       time.Time
 }
 
 // Tokens returns the OAuth credentials.
@@ -90,6 +95,7 @@ func (a *Account) Limit(uri string, fallback int) int {
 func (a *Account) Clone() *Account {
 	out := *a
 	out.Limits = maps.Clone(a.Limits)
+	out.ProfileTargets = maps.Clone(a.ProfileTargets)
 	if a.AccessTokenExpiry != nil {
 		t := *a.AccessTokenExpiry
 		out.AccessTokenExpiry = &t
@@ -155,7 +161,8 @@ type Assignment struct {
 	Account      string
 	SerialNumber string
 	ProfileUUID  string
-	// Status is SUCCESS, FAILED, NOT_ACCESSIBLE, or THROTTLED.
+	// Status is SUCCESS, FAILED, NOT_ACCESSIBLE, THROTTLED, or AssignmentPending.
+	// Pending records uncertainty before the remote mutation, not an outcome.
 	Status    string
 	Attempts  int
 	LastError string
@@ -197,7 +204,10 @@ func (k *Keypair) Clone() *Keypair {
 // keypairs.
 type AccountStore interface {
 	// PutAccount upserts by Name. CreatedAt is kept on update; UpdatedAt is
-	// taken from the value given.
+	// taken from the value given. Stores advance ProfileRevision whenever the
+	// default or serial targets change, ignoring the supplied revision. Empty
+	// serials or target UUIDs are invalid. Call within Update after LockAccount
+	// when editing desired state to avoid losing concurrent edits.
 	PutAccount(ctx context.Context, a *Account) error
 	// GetAccount returns ErrNotFound for an unknown name.
 	GetAccount(ctx context.Context, name string) (*Account, error)
@@ -271,11 +281,13 @@ type AssignmentStateStore interface {
 
 // ProfileStore keeps the profiles defined through an account.
 type ProfileStore interface {
-	// PutProfile upserts by ProfileUUID, which must be set.
+	// PutProfile upserts by ProfileUUID, which must be set. A write to a
+	// selected definition advances the account ProfileRevision under its name lock.
 	PutProfile(ctx context.Context, account string, p *Profile) error
 	// GetProfile returns the stored profile or ErrNotFound when absent.
 	GetProfile(ctx context.Context, account, uuid string) (*Profile, error)
 	// DeleteProfile removes the stored profile or returns ErrNotFound when absent.
+	// ErrConflict prevents deleting a default or explicit desired target.
 	DeleteProfile(ctx context.Context, account, uuid string) error
 	// ListProfiles pages by UUID.
 	ListProfiles(ctx context.Context, account string, p paging.Page) (paging.Result[Profile], error)
