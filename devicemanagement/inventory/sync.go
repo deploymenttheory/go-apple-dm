@@ -547,4 +547,5 @@ func (s *Syncer) collectResources(ctx context.Context, c *axm.Client, account Ac
 // as an Apple refresh outcome, including a joined API 404 plus failed sink commit.
 type collectionCommitError struct{ error }
 
+// Unwrap preserves errors.Is/As for the underlying local persistence failure.
 func (e collectionCommitError) Unwrap() error { return e.error }

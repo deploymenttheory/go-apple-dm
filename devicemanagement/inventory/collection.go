@@ -18,6 +18,7 @@ type CollectionDocument struct {
 	EnumerationComplete bool              `json:"enumeration_complete"`
 }
 
+// collectionPrefix bounds the account/generation/operation stream namespace.
 func collectionPrefix(stream collection.Stream) string {
 	raw, _ := json.Marshal(stream)
 	return digest(string(raw)) + "/"

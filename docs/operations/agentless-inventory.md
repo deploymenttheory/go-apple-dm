@@ -273,9 +273,11 @@ dmctl commands list device ENROLLMENT_ID
 
 Use the `enrollment` source snapshot's `enrollment_id` for `ENROLLMENT_ID` in the command-queue example;
 it is distinct from the inventory record ID. Queue inspection requires the relevant
-command-read permission. Check command status and completion time, then each inventory
-source's observation times and independent failed outcomes. A successful `devices get`
-can still contain retained older evidence. Failed attempts do not erase prior successes.
+command-read permission. Check command status, completion time and each source's
+observation time. Programmatic `Repository.Attempts` and `Repository.Outcomes` expose
+separate failed refresh history; job metadata reports failure counts. A successful
+`devices get` can still contain retained older evidence. Failed attempts do not erase
+prior successes.
 
 Ordinary record reads require `readInventory` and return resource metadata.
 `--raw` requires `readRawInventory` and exposes complete source evidence and original

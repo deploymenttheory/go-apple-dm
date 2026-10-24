@@ -121,6 +121,7 @@ func (r *Repository) Attempt(ctx context.Context, ref source.Reference, at time.
 	return r.Backend.Update(ctx, func(tx Tx) error { return attemptTx(ctx, tx, ref, at, code) })
 }
 
+// attemptTx stages a classified failed outcome inside the evidence transaction.
 func attemptTx(ctx context.Context, tx Tx, ref source.Reference, at time.Time, code string) error {
 	if ref.Kind == "" || ref.ResourceID == "" || at.IsZero() || code == "" {
 		return ErrInvalid
@@ -301,6 +302,8 @@ func putResource(ctx context.Context, tx Tx, record ResourceRecord) error {
 	}{record, append([]byte(nil), record.Snapshot.Raw...)})
 }
 
+// completeOriginal distinguishes a retained resource from missing original data.
+// A successful null assignment is a value; null is not an organization device.
 func completeOriginal(ref source.Reference, raw json.RawMessage) bool {
 	if !json.Valid(raw) {
 		return false
@@ -326,6 +329,8 @@ func completeOriginal(ref source.Reference, raw json.RawMessage) bool {
 	return json.Unmarshal(raw, &resource) == nil && resource.ID == ref.ResourceID && resource.Type == "orgDevices" && resource.Attributes != nil
 }
 
+// knownNativeProvenance requires an authenticated, explicitly recorded enrollment
+// method. Link eligibility remains a separate correlator decision.
 func knownNativeProvenance(identity *NativeIdentity) bool {
 	if identity == nil || !identity.Authenticated {
 		return false
