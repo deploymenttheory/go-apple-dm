@@ -1,10 +1,14 @@
 package dep_test
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
+	"io"
 	"net/http"
+	"strconv"
 	"testing"
+	"time"
 
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/appleplatformservices/dep"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/appleplatformservices/dep/deptest"
@@ -107,6 +111,144 @@ func TestAssignmentReadbackRejectsWrongSerial(t *testing.T) {
 					t.Fatal("mismatched observation committed", err)
 				}
 			})
+		}
+	}
+}
+
+// incompleteAssignmentResponse lets Apple accept the batch, then hides or
+// replaces one serial's outcome while retaining the other terminal results.
+type incompleteAssignmentResponse struct {
+	base   http.RoundTripper
+	status string
+	used   bool
+}
+
+func (p *incompleteAssignmentResponse) RoundTrip(r *http.Request) (*http.Response, error) {
+	response, err := p.base.RoundTrip(r)
+	if err != nil || r.URL.Path != dep.PathProfileDevs || p.used {
+		return response, err
+	}
+	p.used = true
+	raw, err := io.ReadAll(response.Body)
+	closeErr := response.Body.Close()
+	if err != nil || closeErr != nil {
+		return nil, errors.Join(err, closeErr)
+	}
+	var assignment dep.AssignResponse
+	if err := dep.Unmarshal(raw, &assignment); err != nil {
+		return nil, err
+	}
+	if p.status == "" {
+		delete(assignment.Devices, "A")
+	} else {
+		assignment.Devices["A"] = p.status
+	}
+	raw, err = dep.Marshal(assignment)
+	if err != nil {
+		return nil, err
+	}
+	response.Body = io.NopCloser(bytes.NewReader(raw))
+	response.ContentLength = int64(len(raw))
+	response.Header.Set("Content-Length", strconv.Itoa(len(raw)))
+	return response, nil
+}
+
+// TestIncompleteAssignmentRequiresReadback uses a real accepted mutation with
+// an incomplete success response. Neither elapsed retry time nor a target edit
+// may bypass missing/inaccessible readback, including with ReadBack disabled.
+func TestIncompleteAssignmentRequiresReadback(t *testing.T) {
+	for _, status := range []string{"", "WEIRD_STATUS"} {
+		for _, changeTarget := range []bool{false, true} {
+			for _, readback := range []struct {
+				name   string
+				status int
+				body   string
+			}{
+				{"missing", http.StatusOK, `{"devices":{}}`},
+				{"inaccessible", http.StatusOK, `{"devices":{"A":{"response_status":"NOT_ACCESSIBLE"}}}`},
+				{"unavailable", http.StatusServiceUnavailable, ``},
+			} {
+				t.Run(fmt.Sprintf("status_%q_target_change_%t_%s", status, changeTarget, readback.name), func(t *testing.T) {
+					f := newAssignFixture(t)
+					f.srv.AddDevices(device("A"), device("B"))
+					f.sync(t)
+					transport := &incompleteAssignmentResponse{base: f.srv.Client().Transport, status: status}
+					client, err := dep.NewClient(dep.ClientConfig{Store: f.store, Clock: f.clk, BaseURL: f.srv.URL(), HTTPClient: &http.Client{Transport: transport}})
+					if err != nil {
+						t.Fatal(err)
+					}
+					worker := newAssigner(t, f, func(c *dep.AssignerConfig) { c.Client = client })
+					result, err := worker.RunOnce(t.Context())
+					if err != nil || result.Pending != 1 || result.Assigned != 1 || result.Failed != 0 {
+						t.Fatalf("partial outcome: %+v %v", result, err)
+					}
+					pending := assignment(t, f.store, "A")
+					if pending.Status != dep.AssignmentPending || pending.Attempts != 0 || !pending.NextAttemptAt.IsZero() {
+						t.Fatalf("lost uncertainty: %+v", pending)
+					}
+					if status != "" && pending.LastError != status {
+						t.Fatal("unknown status diagnostic lost")
+					}
+					if confirmed := assignment(t, f.store, "B"); confirmed.Status != dep.StatusSuccess {
+						t.Fatal("known success not committed")
+					}
+					expected := f.profile
+					if changeTarget {
+						expected = defineChoice(t, f, "new target")
+						account := f.account()
+						account.ProfileTargets = map[string]string{"A": expected}
+						if err := f.store.PutAccount(t.Context(), account); err != nil {
+							t.Fatal(err)
+						}
+					}
+					// Advancing beyond all failure backoffs must still require readback.
+					f.clock.Advance(48 * time.Hour)
+					f.srv.Script(dep.PathDeviceDetails, deptest.Scripted{Status: readback.status, Body: readback.body})
+					if _, err := worker.RunOnce(t.Context()); err == nil {
+						t.Fatal("uncertain assignment ignored unavailable readback")
+					}
+					if pending := assignment(t, f.store, "A"); pending.Status != dep.AssignmentPending {
+						t.Fatal("failed readback cleared uncertainty")
+					}
+					if n := f.srv.Count(http.MethodPost, dep.PathProfileDevs); n != 1 {
+						t.Fatalf("mutation repeated before readback: %d", n)
+					}
+					result, err = worker.RunOnce(t.Context())
+					expectedAssignments := 0
+					expectedMutations := 1
+					if changeTarget {
+						expectedAssignments = 1
+						expectedMutations = 2
+					}
+					if err != nil || result.Assigned != expectedAssignments {
+						t.Fatalf("recovery: %+v %v", result, err)
+					}
+					if n := f.srv.Count(http.MethodPost, dep.PathProfileDevs); n != expectedMutations {
+						t.Fatalf("duplicated accepted mutation: %d", n)
+					}
+					if remote, _ := f.srv.Device("A"); remote.ProfileUUID != expected {
+						t.Fatal("recovery lost current target")
+					}
+					if got := assignment(t, f.store, "A"); got.Status != dep.StatusSuccess || got.ProfileUUID != expected {
+						t.Fatalf("recovery outcome: %+v", got)
+					}
+					mutations, inspections := 0, 0
+					for _, request := range f.srv.Requests() {
+						if request.Path == dep.PathDeviceDetails {
+							inspections++
+						}
+						if request.Path == dep.PathProfileDevs {
+							mutations++
+							if mutations > 1 && inspections < 2 {
+								t.Fatal("changed-target mutation preceded successful readback")
+							}
+						}
+					}
+					if events := f.eventsOf(dep.EventDeviceAssigned); len(events) != 2 {
+						t.Fatalf("unexpected success events: %d", len(events))
+					}
+				})
+			}
 		}
 	}
 }

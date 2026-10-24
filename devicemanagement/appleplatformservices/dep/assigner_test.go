@@ -222,13 +222,13 @@ func TestAssigner(t *testing.T) {
 		if fa = assignment(t, f.store, "F"); fa.Status != dep.StatusSuccess || fa.Attempts != 0 || fa.LastError != "" {
 			t.Fatalf("F success %+v", fa)
 		}
-		// An unknown outcome value counts as FAILED and is kept as the error.
+		// An unknown outcome retains uncertainty and the diagnostic value.
 		f.srv.Script(dep.PathProfileDevs, deptest.Scripted{Status: 200, Body: `{"profile_uuid":"` + f.profile + `","devices":{"N":"WEIRD_STATUS"}}`})
 		f.clock.Advance(24 * time.Hour)
 		if _, err := a.RunOnce(ctx); err != nil {
 			t.Fatal(err)
 		}
-		if na = assignment(t, f.store, "N"); na.Status != dep.StatusFailed || na.LastError != "WEIRD_STATUS" {
+		if na = assignment(t, f.store, "N"); na.Status != dep.AssignmentPending || na.LastError != "WEIRD_STATUS" || !na.NextAttemptAt.IsZero() {
 			t.Fatalf("N weird %+v", na)
 		}
 	})
@@ -271,7 +271,7 @@ func TestAssigner(t *testing.T) {
 		}
 	})
 
-	t.Run("MissingSerialIsFailed", func(t *testing.T) {
+	t.Run("MissingSerialRemainsPending", func(t *testing.T) {
 		t.Parallel()
 		f := newAssignFixture(t)
 		f.srv.AddDevices(device("M"), device("P"))
@@ -279,12 +279,36 @@ func TestAssigner(t *testing.T) {
 		f.srv.Script(dep.PathProfileDevs, deptest.Scripted{Status: 200, Body: `{"profile_uuid":"` + f.profile + `","devices":{"P":"SUCCESS"}}`})
 		a := newAssigner(t, f)
 		res, err := a.RunOnce(ctx)
-		if err != nil || res.Failed != 1 || res.Assigned != 1 {
+		if err != nil || res.Pending != 1 || res.Failed != 0 || res.Assigned != 1 {
 			t.Fatalf("%+v %v", res, err)
 		}
 		asg := assignment(t, f.store, "M")
-		if asg.Status != dep.StatusFailed || !strings.Contains(asg.LastError, "missing") || !asg.NextAttemptAt.Equal(t0.Add(10*time.Minute)) {
+		if asg.Status != dep.AssignmentPending || !strings.Contains(asg.LastError, "missing") || !asg.NextAttemptAt.IsZero() || asg.Attempts != 0 {
 			t.Fatalf("M %+v", asg)
+		}
+		// The scripted response did not mutate M. Readback establishes that a
+		// new mutation is needed before the omitted serial can be retried.
+		res, err = a.RunOnce(ctx)
+		if err != nil || res.Assigned != 1 {
+			t.Fatalf("reconciled retry: %+v %v", res, err)
+		}
+		mutations, inspected := 0, false
+		for _, request := range f.srv.Requests() {
+			if request.Path == dep.PathDeviceDetails {
+				inspected = true
+			}
+			if request.Path == dep.PathProfileDevs {
+				mutations++
+				if mutations == 2 && !inspected {
+					t.Fatal("omitted outcome retried before readback")
+				}
+			}
+		}
+		if mutations != 2 || !inspected {
+			t.Fatalf("missing reconciliation: mutations=%d inspected=%t", mutations, inspected)
+		}
+		if got := assignment(t, f.store, "M"); got.Status != dep.StatusSuccess {
+			t.Fatal("reconciled assignment not committed")
 		}
 	})
 

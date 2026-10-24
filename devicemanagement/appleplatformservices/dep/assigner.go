@@ -79,6 +79,8 @@ type AssignResult struct {
 	Failed        int
 	NotAccessible int
 	Throttled     int
+	// Pending counts missing or unrecognized outcomes requiring readback.
+	Pending int
 	// Deferred counts candidates whose next attempt is in the future.
 	Deferred int
 	// NotBefore is set when the account is backing off.
@@ -402,16 +404,23 @@ func (a *Assigner) outcome(asg *Assignment, status, profileUUID string, retryAft
 		asg.Attempts++
 		asg.NextAttemptAt = now.Add(a.cfg.NotAccessibleBackoff.Delay(asg.Attempts))
 		res.NotAccessible++
-	default:
+	case StatusFailed:
 		asg.Status = StatusFailed
 		asg.Attempts++
 		asg.NextAttemptAt = now.Add(a.cfg.FailedBackoff.Delay(asg.Attempts))
+		asg.LastError = status
+		res.Failed++
+	default:
+		// An omitted or unknown outcome does not prove whether Apple mutated
+		// this serial. Preserve the pre-request uncertainty until readback.
+		asg.Status = AssignmentPending
+		asg.NextAttemptAt = time.Time{}
 		if status == "" {
 			asg.LastError = assignmentMissingError
 		} else {
 			asg.LastError = status
 		}
-		res.Failed++
+		res.Pending++
 	}
 }
 
