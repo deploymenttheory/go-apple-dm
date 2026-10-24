@@ -8,6 +8,8 @@ import (
 	"reflect"
 	"testing"
 	"time"
+
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/source"
 )
 
 var errStorageFailure = errors.New("inventory test storage failure")
@@ -131,7 +133,7 @@ func TestRepositoryFailureAtomicity(t *testing.T) {
 	}); e != nil {
 		t.Fatal(e)
 	}
-	observation := Observation{Source: SourceReference{"axm.device", a.ID, "apple"}, Raw: json.RawMessage(`{"attributes":{"deviceModel":"New"}}`), ObservedAt: now.Add(time.Hour)}
+	observation := Observation{Source: source.Reference{Kind: "axm.device", AccountID: a.ID, ResourceID: "apple"}, Raw: json.RawMessage(`{"attributes":{"deviceModel":"New"}}`), ObservedAt: now.Add(time.Hour)}
 	cases := []struct {
 		name   string
 		atomic bool
@@ -156,14 +158,14 @@ func TestRepositoryFailureAtomicity(t *testing.T) {
 		{"observe mismatch", true, func(r *Repository) error { _, e := r.Observe(ctx, "WRONG", observation); return e }},
 		{"merge provisional", true, func(r *Repository) error {
 			o := observation
-			o.Source = SourceReference{Kind: "mdm.DeviceInformation", ResourceID: "enrolled"}
+			o.Source = source.Reference{Kind: "mdm.DeviceInformation", ResourceID: "enrolled"}
 			_, e := r.Observe(ctx, "SERIAL", o)
 			return e
 		}},
 		{"source lookup", true, func(r *Repository) error { _, e := r.SourceDevice(ctx, observation.Source); return e }},
 		{"attempt", true, func(r *Repository) error { return r.Attempt(ctx, observation.Source, now, "failed") }},
 		{"attempt native", true, func(r *Repository) error {
-			return r.Attempt(ctx, SourceReference{Kind: "mdm.SecurityInfo", ResourceID: "enrolled"}, now, "failed")
+			return r.Attempt(ctx, source.Reference{Kind: "mdm.SecurityInfo", ResourceID: "enrolled"}, now, "failed")
 		}},
 		{"lifecycle", true, func(r *Repository) error { return r.ChangeSource(ctx, observation.Source, true, false) }},
 		{"enqueue coalesced", true, func(r *Repository) error { _, e := r.Enqueue(ctx, a.ID, false, now); return e }},

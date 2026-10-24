@@ -10,7 +10,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/config v1.33.6
 	github.com/aws/aws-sdk-go-v2/service/s3 v1.114.1
 	github.com/cedar-policy/cedar-go v1.8.0
-	github.com/deploymenttheory/go-apple-dm v0.8.4-0.20260927214815-d249603185af
+	github.com/deploymenttheory/go-apple-dm v0.8.7-0.20261024185950-57e67022f98e
 	github.com/deploymenttheory/go-macos-pkg v0.7.2
 	github.com/go-sql-driver/mysql v1.10.1
 	github.com/jackc/pgx/v5 v5.11.0

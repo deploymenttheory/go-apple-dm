@@ -13,6 +13,8 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/source"
 )
 
 // TestAccountLifecycle verifies revision fencing, verification and secret separation.
@@ -423,7 +425,7 @@ func TestRecordEvidenceLifecycle(t *testing.T) {
 		case "ddm.status":
 			raw = `{"device.operating-system.version":"27.0"}`
 		}
-		o, err := ResourceObservation(SourceReference{Kind: kind, ResourceID: "device"}, json.RawMessage(raw), now, time.Hour)
+		o, err := ResourceObservation(source.Reference{Kind: kind, ResourceID: "device"}, json.RawMessage(raw), now, time.Hour)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -434,7 +436,7 @@ func TestRecordEvidenceLifecycle(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
-	ref := SourceReference{Kind: "ddm.status", ResourceID: "device"}
+	ref := source.Reference{Kind: "ddm.status", ResourceID: "device"}
 	d, err := r.SourceDevice(ctx, ref)
 	if err != nil || String(d.Fields["os_version"].Value) != "27.0" {
 		t.Fatal(d, err)
@@ -478,7 +480,7 @@ func TestRecordEvidenceLifecycle(t *testing.T) {
 	if _, err := r.Observe(ctx, "", Observation{}); !errors.Is(err, ErrInvalid) {
 		t.Fatal(err)
 	}
-	if err := r.Attempt(ctx, SourceReference{Kind: "mdm.DeviceInformation", ResourceID: "missing"}, now, "failed"); err != nil {
+	if err := r.Attempt(ctx, source.Reference{Kind: "mdm.DeviceInformation", ResourceID: "missing"}, now, "failed"); err != nil {
 		t.Fatal(err)
 	}
 	if _, err := r.Device(ctx, "missing"); !errors.Is(err, ErrNotFound) {

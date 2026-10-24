@@ -6,13 +6,15 @@ import (
 	"errors"
 	"time"
 
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/source"
+
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/ddm"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/mdm"
 )
 
 // EnrollmentReference prevents device and user channel identities from colliding.
-func EnrollmentReference(kind string, id mdm.EnrollmentID) SourceReference {
-	return SourceReference{Kind: kind, ResourceID: id.Channel.String() + ":" + id.ID}
+func EnrollmentReference(kind string, id mdm.EnrollmentID) source.Reference {
+	return source.Reference{Kind: kind, ResourceID: id.Channel.String() + ":" + id.ID}
 }
 
 // ObserveStatus retains the full incoming report and the effective per-item snapshot.
