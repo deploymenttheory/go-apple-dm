@@ -270,7 +270,7 @@ func runAccountFences(t *testing.T, factory Factory) {
 			if err := <-done; !errors.Is(err, dep.ErrConflict) {
 				t.Fatalf("obsolete worker committed: %v", err)
 			}
-			if _, err := f.store.GetAssignment(t.Context(), f.name, "A"); !errors.Is(err, dep.ErrNotFound) {
+			if got, err := f.store.GetAssignment(t.Context(), f.name, "A"); !errors.Is(err, dep.ErrNotFound) && (err != nil || got.Status != dep.AssignmentPending) {
 				t.Fatalf("obsolete assignment: %v", err)
 			}
 			if _, err := f.store.GetDevice(t.Context(), f.name, "NEW"); !errors.Is(err, dep.ErrNotFound) {
@@ -357,7 +357,7 @@ func runAccountFences(t *testing.T, factory Factory) {
 				t.Fatalf("old target sent %d batches", n)
 			}
 			if mode != "readback" {
-				if _, err := f.store.GetAssignment(t.Context(), f.name, "A"); !errors.Is(err, dep.ErrNotFound) {
+				if got, err := f.store.GetAssignment(t.Context(), f.name, "A"); !errors.Is(err, dep.ErrNotFound) && (err != nil || got.Status != dep.AssignmentPending) {
 					t.Fatalf("stale outcome saved: %v", err)
 				}
 			} else {

@@ -14,6 +14,8 @@ Activity downloads allow the configured API origin and Apple's documented HTTPS 
 
 `FetchActivityLog` preserves raw CSV and does not assert device success. `VerifyActivityLog` accepts explicit observed serial/outcome header names and a success value because the activity endpoint does not specify a stable CSV column schema. It checks the complete expected serial set, rejects duplicate/unexpected/missing device outcomes and retains every column and failure detail. Activity terminal state, log completeness and per-device success remain separate facts.
 
+The reference server returns HTTP 202 for a waited assignment that reaches terminal activity state. Its wait deadline returns HTTP 504 whether it expires during an activity HTTP request or between polls. A deadline ends local observation without cancelling or repeating an accepted Apple activity; the activity remains independently queryable. Other transport failures return HTTP 502.
+
 ## Rationale
 
 Explicit pagination and retry policy give callers control over work and side effects. Separate activity completion and assignment convergence reflect asynchronous service behavior.
@@ -24,7 +26,7 @@ Types are maintained from API documentation rather than the pinned device-manage
 
 ## Verification
 
-The fake service verifies assertions and token scopes and exercises typed endpoints, paging, consistency delays and injected faults. Client tests cover key formats, claims, refresh races, replay, retry, errors and activity rules. Independent API and storage-host tests verify opaque IDs distinct from serials, no storage credentials, signed-query preservation, origin/redirect rejection, expiration, size limits and truncated/malformed/partial CSV. End-to-end tests exercise assignment with distinct opaque IDs.
+The fake service verifies assertions and token scopes and exercises typed endpoints, paging, consistency delays and injected faults. Client tests cover key formats, claims, refresh races, replay, retry, errors and activity rules. Independent API and storage-host tests verify opaque IDs distinct from serials, no storage credentials, signed-query preservation, origin/redirect rejection, expiration, size limits and truncated/malformed/partial CSV. End-to-end tests exercise assignment with distinct opaque IDs. Reference-server tests expire wait deadlines inside activity HTTP requests and between polls, then verify the accepted activity remains queryable without a second mutation.
 
 ## References
 

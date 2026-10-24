@@ -10,13 +10,18 @@ import (
 	"encoding/pem"
 	"errors"
 	"net/http"
+	"net/http/httptest"
 	"os"
 	"path/filepath"
+	"strings"
+	"sync"
+	"sync/atomic"
 	"testing"
 	"time"
 
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/appleplatformservices/axm"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/appleplatformservices/axm/axmtest"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/clock"
 	"github.com/deploymenttheory/go-apple-dm/server/internal/app"
 )
 
@@ -32,6 +37,125 @@ func axmKey(t *testing.T) (*ecdsa.PrivateKey, []byte) {
 		t.Fatal(err)
 	}
 	return key, pem.EncodeToMemory(&pem.Block{Type: "EC PRIVATE KEY", Bytes: der})
+}
+
+// axmActivityDeadlineTransport observes accepted activities and optionally holds
+// their first read until the admin wait deadline expires.
+type axmActivityDeadlineTransport struct {
+	base        http.RoundTripper
+	blockRead   bool
+	reads       atomic.Int32
+	mutations   atomic.Int32
+	activityIDs chan string
+	expire      func()
+}
+
+// RoundTrip preserves token and mutation requests while observing the activity
+// read through the outbound client's actual transport path.
+func (tr *axmActivityDeadlineTransport) RoundTrip(r *http.Request) (*http.Response, error) {
+	if r.Method == http.MethodPost && r.URL.Path == "/v1/orgDeviceActivities" {
+		tr.mutations.Add(1)
+	}
+	if r.Method == http.MethodGet && strings.HasPrefix(r.URL.Path, "/v1/orgDeviceActivities/") && tr.reads.Add(1) == 1 {
+		tr.activityIDs <- strings.TrimPrefix(r.URL.Path, "/v1/orgDeviceActivities/")
+		if tr.blockRead {
+			tr.expire()
+			<-r.Context().Done()
+			return nil, r.Context().Err()
+		}
+	}
+	return tr.base.RoundTrip(r)
+}
+
+// axmWaitDeadlineContext signals an incoming request deadline at a chosen
+// observation boundary so scheduling cannot expire it before the test's seam.
+type axmWaitDeadlineContext struct {
+	context.Context
+	expired chan struct{}
+	once    sync.Once
+}
+
+// Done is closed when the controlled request deadline expires.
+func (ctx *axmWaitDeadlineContext) Done() <-chan struct{} { return ctx.expired }
+
+// Err reports the simulated request deadline without changing caller values.
+func (ctx *axmWaitDeadlineContext) Err() error {
+	select {
+	case <-ctx.expired:
+		return context.DeadlineExceeded
+	default:
+		return nil
+	}
+}
+
+// expire delivers the request deadline exactly once.
+func (ctx *axmWaitDeadlineContext) expire() { ctx.once.Do(func() { close(ctx.expired) }) }
+
+// axmWaitDeadlineClock expires the request when activity polling parks, keeping
+// the test independent of a wall-clock timeout or an HTTP round-trip duration.
+type axmWaitDeadlineClock struct {
+	clock.Real
+	expire func()
+	waits  atomic.Int32
+}
+
+// After observes the actual polling sleep and leaves its timer pending while
+// the request deadline wakes the client's context-cancellation branch.
+func (c *axmWaitDeadlineClock) After(time.Duration) <-chan time.Time {
+	c.waits.Add(1)
+	c.expire()
+	return nil
+}
+
+// TestAxMWaitDeadline verifies that waited assignments report the same timeout
+// whether their deadline expires inside an HTTP request or between polls.
+func TestAxMWaitDeadline(t *testing.T) {
+	for _, blockRead := range []bool{true, false} {
+		name := "poll_sleep"
+		if blockRead {
+			name = "activity_read"
+		}
+		t.Run(name, func(t *testing.T) {
+			key, keyPEM := axmKey(t)
+			fake := axmtest.NewServer()
+			t.Cleanup(fake.Close)
+			fake.RegisterKey("BUSINESSAPI.abc", "kid-1", &key.PublicKey)
+			server := fake.AddMDMServer("go-apple-dm", nil)
+			fake.AddOrgDevice("DEADLINE", nil)
+			fake.SetConsistencyLag(time.Hour)
+			deadline := &axmWaitDeadlineContext{Context: t.Context(), expired: make(chan struct{})}
+			clk := &axmWaitDeadlineClock{expire: deadline.expire}
+			client := fake.Client()
+			transport := &axmActivityDeadlineTransport{base: client.Transport, blockRead: blockRead, activityIDs: make(chan string, 1), expire: deadline.expire}
+			client.Transport = transport
+			a := build(t, app.Config{Storage: "inmem", BootstrapToken: "t", Clock: clk, AxM: app.AxMConfig{ClientID: "BUSINESSAPI.abc", KeyID: "kid-1", KeyPEM: keyPEM, BaseURL: fake.URL, TokenURL: fake.TokenURL, HTTPClient: client}})
+			req := httptest.NewRequestWithContext(deadline, "POST", "/admin/v1/axm/assign", bytes.NewReader([]byte(`{"server":"`+server+`","serials":["DEADLINE"],"wait":true}`)))
+			req.Header.Set("Authorization", "Bearer t")
+			res := httptest.NewRecorder()
+			a.Handler.ServeHTTP(res, req)
+			if transport.reads.Load() != 1 {
+				t.Fatalf("activity reads = %d, want 1", transport.reads.Load())
+			}
+			wantWaits := int32(1)
+			if blockRead {
+				wantWaits = 0
+			}
+			if clk.waits.Load() != wantWaits || !errors.Is(deadline.Err(), context.DeadlineExceeded) {
+				t.Fatal("deadline did not reach the intended observation boundary")
+			}
+			if res.Code != http.StatusGatewayTimeout {
+				t.Fatalf("waited assignment deadline = %d, want %d", res.Code, http.StatusGatewayTimeout)
+			}
+			id := <-transport.activityIDs
+			activity, err := a.AxM.GetOrgDeviceActivity(t.Context(), id, axm.GetOptions{})
+			if err != nil || activity.ID != id || activity.Attributes.Status != axm.ActivityInProgress {
+				t.Fatal("accepted activity did not remain queryable after timeout", activity, err)
+			}
+			if transport.mutations.Load() != 1 {
+				t.Fatal("wait timeout repeated an accepted mutation")
+			}
+		})
+	}
 }
 
 // TestAxM checks AXM environment configuration and admin assignment requests.
@@ -80,6 +204,8 @@ func TestAxM(t *testing.T) {
 		}
 	})
 	t.Run("AdminAssign", func(t *testing.T) {
+		oldInterval, oldTimeout := app.AxMWaitInterval, app.AxMWaitTimeout
+		t.Cleanup(func() { app.AxMWaitInterval, app.AxMWaitTimeout = oldInterval, oldTimeout })
 		key, keyPEM := axmKey(t)
 		fake := axmtest.NewServer()
 		t.Cleanup(fake.Close)

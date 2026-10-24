@@ -79,6 +79,11 @@ ADE profile authoring can call `dep.Profile.ValidateForTarget` before submission
 The library combines generated skip-key support with documented ADE field
 restrictions and reports unsupported fields and unchecked dimensions. Target
 facts stay caller-owned; this check changes no assignment or profile content.
+Accounts retain multiple definitions and explicit account/serial choices.
+Assignment and admission share `Account.DesiredProfile`: explicit choice, configured
+default, then no action. Store-owned revisions fence changed targets, and uncertain
+mutations require device-details readback before resubmission. SQL schema 4 stores
+choices separately while retaining existing defaults and operational state.
 See [ADE profile validation](operations/dep-synchronization.md#check-a-caller-supplied-ade-profile).
 
 ## Generated protocol types

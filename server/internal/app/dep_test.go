@@ -10,6 +10,7 @@ import (
 	"io"
 	"net/http"
 	"strings"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -20,6 +21,22 @@ import (
 	depinmem "github.com/deploymenttheory/go-apple-dm/devicemanagement/storage/dep/inmem"
 	"github.com/deploymenttheory/go-apple-dm/server/internal/app"
 )
+
+// depWorkerTransport observes failed network attempts while preserving the
+// actual HTTP transport and syncer's retry and cancellation behavior.
+type depWorkerTransport struct {
+	base     http.RoundTripper
+	failures atomic.Int64
+}
+
+// RoundTrip records transport failures after the underlying request returns.
+func (tr *depWorkerTransport) RoundTrip(r *http.Request) (*http.Response, error) {
+	response, err := tr.base.RoundTrip(r)
+	if err != nil {
+		tr.failures.Add(1)
+	}
+	return response, err
+}
 
 // TestDEP checks DEP admin operations, status, worker execution, environment configuration, and
 // persistent storage.
@@ -108,7 +125,7 @@ func TestDEP(t *testing.T) {
 				t,
 				srv,
 				"PUT",
-				"/admin/v1/dep/accounts/abm/profile",
+				"/admin/v1/dep/accounts/abm/profile?default=true",
 				"t",
 				[]byte(`{"profile_name":"Corp","org_magic":"m","is_supervised":true}`),
 			),
@@ -166,7 +183,7 @@ func TestDEP(t *testing.T) {
 			t,
 			srv,
 			"PUT",
-			"/admin/v1/dep/accounts/abm/profile",
+			"/admin/v1/dep/accounts/abm/profile?default=true",
 			"t",
 			[]byte(`{`),
 		); res.StatusCode != http.StatusBadRequest {
@@ -176,7 +193,7 @@ func TestDEP(t *testing.T) {
 			t,
 			srv,
 			"PUT",
-			"/admin/v1/dep/accounts/abm/profile",
+			"/admin/v1/dep/accounts/abm/profile?default=true",
 			"t",
 			[]byte(`{"profile_name":"","is_mdm_removable":false,"is_supervised":false}`),
 		); res.StatusCode != http.StatusBadRequest {
@@ -292,8 +309,8 @@ func TestDEP(t *testing.T) {
 			{"PUT", "/admin/v1/dep/accounts/abm/keypair", "PutKeypair", nil},
 			{"GET", "/admin/v1/dep/accounts/abm/devices", "ListDevices", nil},
 			{"GET", "/admin/v1/dep/accounts", "ListAccounts", nil},
-			{"PUT", "/admin/v1/dep/accounts/abm/profile", "PutProfile", profile},
-			{"PUT", "/admin/v1/dep/accounts/abm/profile", "PutAccount", profile},
+			{"PUT", "/admin/v1/dep/accounts/abm/profile?default=true", "PutProfile", profile},
+			{"PUT", "/admin/v1/dep/accounts/abm/profile?default=true", "PutAccount", profile},
 		} {
 			failing.SetFail(map[string]error{c.fails: boom})
 			if res := do(
@@ -370,17 +387,20 @@ func TestDEP(t *testing.T) {
 		}
 	})
 	t.Run("Worker", func(t *testing.T) {
-		clk := clock.NewFake(time.Date(2026, 9, 1, 12, 0, 0, 0, time.UTC))
+		clk := &workerIntervalClock{Fake: clock.NewFake(time.Date(2026, 9, 1, 12, 0, 0, 0, time.UTC)), interval: 2 * time.Minute}
 		fake := deptest.NewServer(deptest.Options{Clock: clk})
 		t.Cleanup(fake.Close)
+		client := fake.Client()
+		transport := &depWorkerTransport{base: client.Transport}
+		client.Transport = transport
 		a := build(t, app.Config{
 			Storage:        "inmem",
 			BootstrapToken: "t",
 			Clock:          clk,
 			DEP: app.DEPConfig{
 				BaseURL:      fake.URL(),
-				HTTPClient:   fake.Client(),
-				SyncInterval: time.Minute,
+				HTTPClient:   client,
+				SyncInterval: clk.interval,
 				ProfileURL:   "https://mdm.example/enroll/ade",
 			},
 		})
@@ -400,44 +420,41 @@ func TestDEP(t *testing.T) {
 		}
 		ctx, cancel := context.WithCancel(ctx)
 		done := make(chan error, 1)
+		// An unrelated timer must not let the test advance before DEP registers.
+		_ = clk.After(time.Minute)
 		go func() { done <- a.Run(ctx) }()
-		// Each wait gets its own budget: sharing one let a slow runner spend it all
-		// before the sync had a chance to land.
-		armed := time.Now().Add(30 * time.Second)
-		for clk.Pending() == 0 && time.Now().Before(armed) {
-			time.Sleep(time.Millisecond)
-		}
-		if clk.Pending() == 0 {
-			t.Fatal("worker never parked on the clock")
-		}
-		clk.Advance(time.Minute)
-		synced := time.Now().Add(30 * time.Second)
-		var err error
-		for time.Now().Before(synced) {
-			if _, err = a.DEPStoreForTests().GetDevice(ctx, "abm", "SERW"); err == nil {
-				break
+		t.Cleanup(func() {
+			cancel()
+			if err := <-done; err != nil {
+				t.Errorf("Run = %v", err)
 			}
-			time.Sleep(2 * time.Millisecond)
+		})
+		waitTimer := func(n int64) {
+			t.Helper()
+			waitFor(t, "DEP sync timer registration", func() bool { return clk.registered.Load() == n })
 		}
-		if err != nil {
-			t.Fatalf("worker did not sync device SERW within 30s: %v", err)
+		waitTimer(1)
+		clk.Advance(clk.interval)
+		waitFor(t, "DEP worker to sync SERW", func() bool {
+			_, err := a.DEPStoreForTests().GetDevice(ctx, "abm", "SERW")
+			return err == nil
+		})
+		// Wait for the whole successful sync pass before introducing a fault;
+		// observing its first device does not prove pagination has finished.
+		waitTimer(2)
+		// A non-retryable upstream error finishes a failed pass and rearms
+		// the actual schedule rather than waiting on syncer's retry timers.
+		beforeFailure := fake.Count(http.MethodPost, dep.PathSyncDevices)
+		fake.Script(dep.PathSyncDevices, deptest.Scripted{Status: http.StatusBadRequest})
+		clk.Advance(clk.interval)
+		waitTimer(3)
+		if n := fake.Count(http.MethodPost, dep.PathSyncDevices) - beforeFailure; n != 1 {
+			t.Fatalf("failed scheduled sync calls = %d, want 1", n)
 		}
-		// A failing service is logged and the worker keeps going.
+		// Cancellation also stops the actual network-failure/retry path.
 		fake.Close()
-		// Each call gets a fresh budget, for the same reason as the waits above.
-		waitPending := func() {
-			parked := time.Now().Add(30 * time.Second)
-			for clk.Pending() == 0 && time.Now().Before(parked) {
-				time.Sleep(time.Millisecond)
-			}
-		}
-		waitPending()
-		clk.Advance(time.Minute)
-		waitPending()
-		cancel()
-		if err := <-done; err != nil {
-			t.Fatalf("Run = %v", err)
-		}
+		clk.Advance(clk.interval)
+		waitFor(t, "DEP network failure before cancellation", func() bool { return transport.failures.Load() > 0 })
 	})
 	t.Run("Env", func(t *testing.T) {
 		env := func(m map[string]string) func(string) string {
@@ -510,7 +527,7 @@ func TestDEP(t *testing.T) {
 			t,
 			srv,
 			"PUT",
-			"/admin/v1/dep/accounts/abm/profile",
+			"/admin/v1/dep/accounts/abm/profile?default=true",
 			"t",
 			[]byte(`{"org_magic":"m","is_supervised":true}`),
 		); res.StatusCode == http.StatusInternalServerError {

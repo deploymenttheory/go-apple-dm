@@ -66,6 +66,9 @@ func describe(set sqlcommon.MigrationSet) (schemaDescription, error) {
 			words := strings.Fields(statement)
 			if len(words) >= 3 && words[0] == "CREATE" && words[1] == "TABLE" {
 				name := words[2]
+				if len(words) >= 6 && words[2] == "IF" && words[3] == "NOT" && words[4] == "EXISTS" {
+					name = words[5]
+				}
 				if !identifier.MatchString(name) {
 					return out, ErrInvalid
 				}

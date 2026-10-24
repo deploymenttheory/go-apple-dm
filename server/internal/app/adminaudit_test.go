@@ -192,16 +192,16 @@ func TestAuditRouteAbsentWithoutATrail(t *testing.T) {
 	}
 }
 
-// auditRetentionClock observes registration of the audit interval independently
+// workerIntervalClock observes registration of one worker interval independently
 // of timers registered by other server workers, such as protocol-state pruning.
-type auditRetentionClock struct {
+type workerIntervalClock struct {
 	*clock.Fake
 	interval   time.Duration
 	registered atomic.Int64
 }
 
-// After records an audit timer only after it is ready to receive a clock advance.
-func (c *auditRetentionClock) After(d time.Duration) <-chan time.Time {
+// After records a matching timer only after it can receive a clock advance.
+func (c *workerIntervalClock) After(d time.Duration) <-chan time.Time {
 	ch := c.Fake.After(d)
 	if d == c.interval {
 		c.registered.Add(1)
@@ -212,7 +212,7 @@ func (c *auditRetentionClock) After(d time.Duration) <-chan time.Time {
 // Retention is the only way a record leaves the trail, so the worker is
 // driven by the injected clock and asserted rather than left to a timer.
 func TestAuditRetentionPrunesOnItsInterval(t *testing.T) {
-	fake := &auditRetentionClock{Fake: clock.NewFake(audittest.T0), interval: app.DefaultAuditPruneInterval}
+	fake := &workerIntervalClock{Fake: clock.NewFake(audittest.T0), interval: app.DefaultAuditPruneInterval}
 	a, st := auditApp(t, app.Config{
 		Clock: fake,
 		Sinks: app.SinkConfig{Retention: 24 * time.Hour},
@@ -389,7 +389,7 @@ func TestAuditRouteMapsStoreErrors(t *testing.T) {
 func TestAuditRetentionSurvivesAFailedPrune(t *testing.T) {
 	// Use a distinct interval from the protocol-state worker's one-minute timer.
 	const interval = 7 * time.Minute
-	fake := &auditRetentionClock{Fake: clock.NewFake(audittest.T0), interval: interval}
+	fake := &workerIntervalClock{Fake: clock.NewFake(audittest.T0), interval: interval}
 	failing := &audittest.Failing{Store: auditinmem.New(), Fail: "Prune"}
 	a := build(t, app.Config{
 		Storage: "inmem", BootstrapToken: "t", Clock: fake,

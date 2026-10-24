@@ -25,6 +25,13 @@ External secret providers must export their original named keys to the configure
 key directory before backup. Unknown application tables cause backup to fail;
 embedding applications register their compiled migration sets through `recovery.SQL`.
 
+ADE recovery retains account defaults, explicit serial profile choices and their
+revision together with profile definitions, inventory, sealed OAuth credentials,
+token keypairs, sessions, pending assignment markers, sync cursors and retry
+schedules. A restored worker retains uncertainty and reads Apple's device details
+before resubmitting a pending mutation. The compiled schema catalogue includes the
+replayable DEP choices-table migration; unregistered tables remain rejected.
+
 Generate a recovery identity once:
 
 ```sh

@@ -3,6 +3,7 @@ package sqlstore
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
 	"strings"
 	"time"
@@ -114,6 +115,18 @@ func (t *txStore) PutProfile(ctx context.Context, account string, p *dep.Profile
 	if p == nil || p.ProfileUUID == "" {
 		return fmt.Errorf("%w: profile needs a profile_uuid", dep.ErrInvalid)
 	}
+	if err := t.lockAccountName(ctx, account); err != nil {
+		return err
+	}
+	a, err := t.GetAccount(ctx, account)
+	if err != nil && !errors.Is(err, dep.ErrNotFound) {
+		return err
+	}
+	if a != nil && a.UsesProfile(p.ProfileUUID) {
+		if err := t.putProfileChoices(ctx, a, a.ProfileRevision+1); err != nil {
+			return err
+		}
+	}
 	raw, err := dep.Marshal(p)
 	if err != nil {
 		return err
@@ -153,6 +166,17 @@ func (t *txStore) DeleteProfile(ctx context.Context, account, uuid string) error
 	if err := validName("profile uuid", uuid); err != nil {
 		return err
 	}
+	if err := t.lockAccountName(ctx, account); err != nil {
+		return err
+	}
+	a, err := t.GetAccount(ctx, account)
+	if err != nil && !errors.Is(err, dep.ErrNotFound) {
+		return err
+	}
+	if a != nil && a.UsesProfile(uuid) {
+		return fmt.Errorf("%w: profile is a desired target", dep.ErrConflict)
+	}
+
 	res, err := t.exec(ctx, "delete profile", "DELETE FROM dep_profiles WHERE account = ? AND profile_uuid = ?", account, uuid)
 	if err != nil {
 		return err

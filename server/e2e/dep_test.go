@@ -49,6 +49,14 @@ func TestE2E_DEPAssign(t *testing.T) {
 			if err != nil {
 				return nil, false, err
 			}
+			accountState, err := store.GetAccount(ctx, account)
+			if err != nil {
+				return nil, false, err
+			}
+			desired := accountState.DesiredProfile(serial)
+			if d.Deleted || desired == "" || d.ProfileUUID != desired || (d.ProfileStatus != dep.ProfileStatusAssigned && d.ProfileStatus != dep.ProfileStatusPushed) {
+				return nil, false, nil
+			}
 			joined = append(joined, serial)
 			return d, true, nil
 		})
@@ -148,6 +156,16 @@ func TestE2E_DEPAssign(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	alternate := profile.Clone()
+	alternate.ProfileUUID, alternate.ProfileName = "", "Explicit serial choice"
+	chosen, err := client.DefineProfile(ctx, account, &alternate)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := store.PutProfile(ctx, account, &alternate); err != nil {
+		t.Fatal(err)
+	}
+	acct.ProfileTargets = map[string]string{"C02DEP0001": chosen.ProfileUUID}
 	acct.ProfileUUID = resp.ProfileUUID
 	if err := store.PutAccount(ctx, acct); err != nil {
 		t.Fatal(err)
@@ -171,7 +189,7 @@ func TestE2E_DEPAssign(t *testing.T) {
 	for _, serial := range []string{"C02DEP0001", "C02DEP0002", "C02DEP0003"} {
 		if d, ok := fake.Device(
 			serial,
-		); !ok || d.ProfileUUID != resp.ProfileUUID ||
+		); !ok || d.ProfileUUID != acct.DesiredProfile(serial) ||
 			d.ProfileStatus != dep.ProfileStatusAssigned {
 			t.Fatalf("%s at the service = %+v", serial, d)
 		}

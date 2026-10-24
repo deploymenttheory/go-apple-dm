@@ -232,7 +232,8 @@
       "title": "Alternative entry paths",
       "items": [
         "The direct POST returns an enrollment profile after admission. GET enters web authentication only when WebAuth is configured.",
-        "The identity provider redirects the device’s browser back; the server verifies the authentication result before issuing the profile."
+        "The identity provider redirects the device’s browser back; the server verifies the authentication result before issuing the profile.",
+        "The reference server applies its configured enrollment policy before profile issuance. A policy denial returns HTTP 403; unavailable backend state remains HTTP 500."
       ]
     },
     {
@@ -267,8 +268,9 @@
         "ade: ADE endpoint — https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/devicemanagement/mdmprotocol/enroll/ade/handler.go",
         "gdmf: Software data — https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/devicemanagement/appleplatformservices/gdmf/gdmf.go",
         "idp: Identity provider — https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/devicemanagement/mdmprotocol/enroll/webauth/webauth.go",
-        "profile: Profile / issuer — https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/server/internal/app/enroll.go",
-        "core: MDM service — https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/server/service/checkin.go"
+        "profile: Profile / issuer — https://github.com/deploymenttheory/go-apple-dm/blob/63404e698ca323e84c8699e94ae83f89cdb28543/server/internal/app/enroll.go",
+        "core: MDM service — https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/server/service/checkin.go",
+        "Production DEP admission requests — https://github.com/deploymenttheory/go-apple-dm/blob/63404e698ca323e84c8699e94ae83f89cdb28543/server/internal/app/dep_admission_e2e_test.go"
       ]
     }
   ]

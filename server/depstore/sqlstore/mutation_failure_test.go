@@ -45,6 +45,14 @@ func TestAccountMutationFailuresRollback(t *testing.T) {
 		{"generation batch", "BEFORE UPDATE OF fetch_generation ON dep_devices WHEN NEW.serial_number = 'T'", func(ctx context.Context, s *sqlstore.Store) error {
 			return s.MarkFetched(ctx, "a", "new", []string{"S", "T"})
 		}},
+		{"profile choices", "BEFORE INSERT ON dep_profile_choices", func(ctx context.Context, s *sqlstore.Store) error {
+			account, err := s.GetAccount(ctx, "a")
+			if err != nil {
+				return err
+			}
+			account.ProfileTargets = map[string]string{"S": "p"}
+			return s.PutAccount(ctx, account)
+		}},
 		{"profile deletion", "BEFORE DELETE ON dep_profiles", func(ctx context.Context, s *sqlstore.Store) error { return s.DeleteProfile(ctx, "a", "p") }},
 		{"profile definition", "BEFORE INSERT ON dep_profiles", func(ctx context.Context, s *sqlstore.Store) error {
 			return s.PutProfile(ctx, "a", &dep.Profile{ProfileUUID: "p", ProfileName: "changed", URL: "https://example.com/new"})

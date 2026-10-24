@@ -5268,15 +5268,15 @@ svg[data-purpose-filter] g[data-purpose-highlight] > path { stroke-width: 2.4; }
           <text data-detail="context" x="998.5" y="250" class="t-muted" font-size="10.9" text-anchor="middle">Fetch, then follow change cursors</text>
         </g>
 
-        <g id="node-assign" data-node-id="assign" data-node-label="Reconcile assignments" tabindex="0" role="button" aria-label="Focus Reconcile assignments, Fence outcomes by current target, Reference server" aria-pressed="false" data-node-kind="backend" data-node-sublabel="Fence outcomes by current target" data-node-context="Reference server" data-purpose="service">
-          <title>Reconcile assignments · Fence outcomes by current target · Reference server</title>
+        <g id="node-assign" data-node-id="assign" data-node-label="Reconcile assignments" tabindex="0" role="button" aria-label="Focus Reconcile assignments, Resolve serial choice, then default, Reference server" aria-pressed="false" data-node-kind="backend" data-node-sublabel="Resolve serial choice, then default" data-node-context="Reference server" data-purpose="service">
+          <title>Reconcile assignments · Resolve serial choice, then default · Reference server</title>
           <rect x="1221" y="212" width="225" height="68" rx="6" class="c-mask"/>
           <rect x="1221" y="212" width="225" height="68" rx="6" class="c-backend" stroke-width="1.5"/>
           <g aria-hidden="true" data-semantic-sigil="backend" class="semantic-sigil s-backend" transform="translate(1227 218) scale(0.6875)">
             <path d="M6 3 3 8l3 5M10 3l3 5-3 5"/>
           </g>
           <text data-node-label="" data-detail-anchor="" x="1333.5" y="233" class="t-primary" font-size="14" font-weight="600" text-anchor="middle">Reconcile assignments</text>
-          <text data-detail="context" x="1333.5" y="250" class="t-muted" font-size="11" text-anchor="middle">Fence outcomes by current target</text>
+          <text data-detail="context" x="1333.5" y="250" class="t-muted" font-size="10.3" text-anchor="middle">Resolve serial choice, then default</text>
         </g>
 
         <g id="node-depapi" data-node-id="depapi" data-node-label="Device inventory API" tabindex="0" role="button" aria-label="Focus Device inventory API, Fetch and incremental sync, Apple device-assignment services" aria-pressed="false" data-node-kind="external" data-node-sublabel="Fetch and incremental sync" data-node-context="Apple device-assignment services" data-purpose="neutral">
@@ -5562,7 +5562,8 @@ svg[data-purpose-filter] g[data-purpose-highlight] > path { stroke-width: 2.4; }
         </div>
         <ul>
           <li>&bull; Inventory starts with a full fetch, then follows incremental cursors. Invalid or expired cursors restart a fetch. Only successful completion of the current generation reconciles missing devices.</li>
-          <li>&bull; Sync and assignment have independent schedules. Assignment saves outcomes and readback only while account identity, credentials, lease and desired profile still match. Defining a profile also rechecks the account after Apple responds.</li>
+          <li>&bull; Sync and assignment have independent schedules. Assignment and admission resolve an explicit account/serial choice, the account default, then no action. Profiles coexist without selecting a default.</li>
+          <li>&bull; Serial is the physical-device selection key; UUID remains Apple’s profile identifier. Batches group serials by resolved UUID. Removing a choice resumes the default and never clears Apple’s profile implicitly.</li>
         </ul>
       </div>
 
@@ -5586,7 +5587,8 @@ svg[data-purpose-filter] g[data-purpose-highlight] > path { stroke-width: 2.4; }
         <ul>
           <li>&bull; HTTP 429 and per-device THROTTLED results defer assignments. A still-owned lease preserves cooldowns across same-identity credential renewal or a changed desired profile, even when its business result is stale.</li>
           <li>&bull; An identity reset or lost lease rejects old cooldown writes. Account and cursor checks reject stale inventory pages; each accepted page commits atomically with its cursor.</li>
-          <li>&bull; A local conflict stops further batches; it cannot undo work already accepted by Apple. Later runs reconcile the resulting Apple state.</li>
+          <li>&bull; A local conflict stops further batches. A store-owned revision fences serial/default edits, including changes away and back, and selected-definition writes. Credential, identity and lease checks also guard outcomes and readback.</li>
+          <li>&bull; Each mutation first commits PENDING uncertainty. Missing or unrecognized assignment outcomes retain it. A replacement run reads Apple’s device details before resubmission; inaccessible readback blocks retries. Confirmed success is retained without a duplicate assignment.</li>
         </ul>
       </div>
 
@@ -5596,9 +5598,10 @@ svg[data-purpose-filter] g[data-purpose-highlight] > path { stroke-width: 2.4; }
           <h3>Explicit identity replacement</h3>
         </div>
         <ul>
-          <li>&bull; Force resets state only for an actual identity change with a validated server UUID. The transaction clears old inventory, profile definitions, target, sessions and retry state, and starts a fresh fetch generation.</li>
-          <li>&bull; The account name, protocol version, creation time and token keypairs survive. Same-identity renewals preserve inventory and target; omitted identity metadata does not erase an established binding.</li>
+          <li>&bull; Force resets state only for an actual identity change with a validated server UUID. The transaction clears old inventory, profile definitions, default and serial choices, sessions and retry state, and starts a fresh fetch generation.</li>
+          <li>&bull; The account name, protocol version, creation time and token keypairs survive. Same-identity renewals preserve inventory and all desired choices; omitted identity metadata does not erase an established binding.</li>
           <li>&bull; SQL schema 3 locks a stable account-name row, including absent names and delete/recreate transitions. Custom stores must provide the same transaction-long LockAccount contract.</li>
+          <li>&bull; SQL schema 4 adds a replayable profile-choices table; account defaults remain in their existing column. Migration replay preserves selected profiles, credentials, keys, worker uncertainty and checkpoints.</li>
         </ul>
       </div>
 
@@ -5623,13 +5626,15 @@ svg[data-purpose-filter] g[data-purpose-highlight] > path { stroke-width: 2.4; }
           <h3>Implementation references</h3>
         </div>
         <ul>
-          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/c1a9487d510ddbad038e8a171861a4f96ebfd5dd/devicemanagement/appleplatformservices/dep/tokenpki.go#L36" target="_blank" rel="noopener noreferrer">keypair: GenerateTokenPKI</a></li>
-          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/c1a9487d510ddbad038e8a171861a4f96ebfd5dd/devicemanagement/appleplatformservices/dep/token.go#L190" target="_blank" rel="noopener noreferrer">importtoken: Validate and commit tokens</a></li>
-          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/c1a9487d510ddbad038e8a171861a4f96ebfd5dd/devicemanagement/appleplatformservices/dep/syncer.go" target="_blank" rel="noopener noreferrer">sync: Synchronize inventory</a></li>
-          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/c1a9487d510ddbad038e8a171861a4f96ebfd5dd/devicemanagement/appleplatformservices/dep/assigner.go" target="_blank" rel="noopener noreferrer">assign: Reconcile assignments</a></li>
-          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/c1a9487d510ddbad038e8a171861a4f96ebfd5dd/devicemanagement/appleplatformservices/dep/assignmentstate.go" target="_blank" rel="noopener noreferrer">backoff: Lease, target and cooldown checks</a></li>
-          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/c1a9487d510ddbad038e8a171861a4f96ebfd5dd/devicemanagement/appleplatformservices/dep/accountfence.go" target="_blank" rel="noopener noreferrer">Account and credential checks</a></li>
-          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/8b90e14028aa7b486b2f639da9410f553ec67f2b/devicemanagement/appleplatformservices/dep/profile_support.go" target="_blank" rel="noopener noreferrer">Target-aware profile validation</a></li>
+          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/fda215781165d9ed6f81e4c8f884fee8785e0612/devicemanagement/appleplatformservices/dep/tokenpki.go" target="_blank" rel="noopener noreferrer">keypair: GenerateTokenPKI</a></li>
+          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/fda215781165d9ed6f81e4c8f884fee8785e0612/devicemanagement/appleplatformservices/dep/token.go" target="_blank" rel="noopener noreferrer">importtoken: Validate and commit tokens</a></li>
+          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/fda215781165d9ed6f81e4c8f884fee8785e0612/devicemanagement/appleplatformservices/dep/syncer.go" target="_blank" rel="noopener noreferrer">sync: Synchronize inventory</a></li>
+          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/fda215781165d9ed6f81e4c8f884fee8785e0612/devicemanagement/appleplatformservices/dep/assigner.go" target="_blank" rel="noopener noreferrer">assign: Reconcile assignments</a></li>
+          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/fda215781165d9ed6f81e4c8f884fee8785e0612/devicemanagement/appleplatformservices/dep/assignmentstate.go" target="_blank" rel="noopener noreferrer">backoff: Lease, target and cooldown checks</a></li>
+          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/fda215781165d9ed6f81e4c8f884fee8785e0612/devicemanagement/appleplatformservices/dep/accountfence.go" target="_blank" rel="noopener noreferrer">Account and credential checks</a></li>
+          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/fda215781165d9ed6f81e4c8f884fee8785e0612/devicemanagement/appleplatformservices/dep/profile_support.go" target="_blank" rel="noopener noreferrer">Target-aware profile validation</a></li>
+          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/fda215781165d9ed6f81e4c8f884fee8785e0612/devicemanagement/appleplatformservices/dep/profiletargets.go" target="_blank" rel="noopener noreferrer">Serial choice resolution</a></li>
+          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/fda215781165d9ed6f81e4c8f884fee8785e0612/devicemanagement/appleplatformservices/dep/assignmentpending.go" target="_blank" rel="noopener noreferrer">Uncertain assignment readback</a></li>
         </ul>
       </div>
 
@@ -5639,10 +5644,12 @@ svg[data-purpose-filter] g[data-purpose-highlight] > path { stroke-width: 2.4; }
           <h3>Implementation references (continued)</h3>
         </div>
         <ul>
-          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/c1a9487d510ddbad038e8a171861a4f96ebfd5dd/server/internal/app/dep.go" target="_blank" rel="noopener noreferrer">Profile definition and independent schedules</a></li>
-          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/c1a9487d510ddbad038e8a171861a4f96ebfd5dd/devicemanagement/appleplatformservices/dep/store.go#L305" target="_blank" rel="noopener noreferrer">Custom-store locking contract</a></li>
-          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/c1a9487d510ddbad038e8a171861a4f96ebfd5dd/server/depstore/sqlstore/syncstate.go" target="_blank" rel="noopener noreferrer">SQL account-name lock implementation</a></li>
-          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/c1a9487d510ddbad038e8a171861a4f96ebfd5dd/server/depstore/sqlstore/migrations/postgres/0003_account_locks.sql" target="_blank" rel="noopener noreferrer">SQL schema 3 migration</a></li>
+          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/d5413e03e48acff9897da50aedebee0f27c12871/server/internal/app/dep.go" target="_blank" rel="noopener noreferrer">Profile definition and independent schedules</a></li>
+          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/fda215781165d9ed6f81e4c8f884fee8785e0612/devicemanagement/appleplatformservices/dep/store.go" target="_blank" rel="noopener noreferrer">Custom-store locking contract</a></li>
+          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/d5413e03e48acff9897da50aedebee0f27c12871/server/depstore/sqlstore/syncstate.go" target="_blank" rel="noopener noreferrer">SQL account-name lock implementation</a></li>
+          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/d5413e03e48acff9897da50aedebee0f27c12871/server/depstore/sqlstore/migrations/postgres/0003_account_locks.sql" target="_blank" rel="noopener noreferrer">SQL schema 3 migration</a></li>
+          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/d5413e03e48acff9897da50aedebee0f27c12871/server/depstore/sqlstore/accounts.go" target="_blank" rel="noopener noreferrer">Serial choices storage</a></li>
+          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/d5413e03e48acff9897da50aedebee0f27c12871/server/depstore/sqlstore/migrations/postgres/0004_profile_targets.sql" target="_blank" rel="noopener noreferrer">SQL schema 4 migration</a></li>
         </ul>
       </div>
     </div>

@@ -16,14 +16,24 @@
 // and desired profile before saving outcomes or readback. A still-owned lease
 // can preserve Apple's cooldown after a same-identity credential or target
 // change; it cannot write retry state after identity replacement or lease loss.
-// Local rejection cannot undo a request already accepted by Apple.
+// Local rejection cannot undo a request already accepted by Apple. Each mutation
+// first persists AssignmentPending; subsequent runs reconcile uncertain requests
+// through device details before resubmission. Unavailable readback blocks retries.
+//
+// Accounts retain multiple profile definitions and explicit ProfileTargets keyed
+// only by physical serial. Account.DesiredProfile resolves an explicit choice,
+// the ProfileUUID account default, then empty/no action. Removing an override
+// resumes the default and never implicitly clears Apple's profile. A store-owned
+// ProfileRevision fences serial/default edits (including ABA) and writes to a
+// selected definition. Assignments group batches by resolved Apple profile UUID.
+// No device-family or OS policy is inferred.
 //
 // StoreTokens and ordinary ImportToken calls reject established Apple identity
 // or consumer-key changes. ImportOptions.Force permits replacement; an actual
 // identity change requires a validated server UUID and atomically clears old
 // inventory, profiles, sessions and worker state. The local account name,
 // protocol version, creation time and token keypairs survive. Same-identity
-// renewals retain inventory and the desired profile. Omitted identity metadata
+// renewals retain inventory, the default and all explicit serial choices. Omitted identity metadata
 // does not erase a known binding. These persistence and reconciliation rules
 // are project policy around Apple's APIs.
 //

@@ -9,8 +9,10 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strings"
 	"sync"
 	"time"
+	"unicode"
 
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/appleplatformservices/dep"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/paging"
@@ -246,7 +248,22 @@ func (d *depService) profileURL() string {
 func (d *depService) routes() []adminRoute {
 	var routes []adminRoute
 	// #nosec G101 -- Values are permission identifiers, never credentials.
-	actions := map[string]string{"GET /dep/accounts": ActionListDEP, "GET /dep/accounts/{name}/devices": ActionReadDEP, "PUT /dep/accounts/{name}/keypair": "manageDEPCredentials", "PUT /dep/accounts/{name}/token": "manageDEPCredentials", "PUT /dep/accounts/{name}/tokens": "manageDEPCredentials", "PUT /dep/accounts/{name}/profile": "manageDEPProfiles", "POST /dep/accounts/{name}/sync": "syncDEPDevices"}
+	actions := map[string]string{
+		"GET /dep/accounts":                            ActionListDEP,
+		"GET /dep/accounts/{name}/devices":             ActionReadDEP,
+		"PUT /dep/accounts/{name}/keypair":             "manageDEPCredentials",
+		"PUT /dep/accounts/{name}/token":               "manageDEPCredentials",
+		"PUT /dep/accounts/{name}/tokens":              "manageDEPCredentials",
+		"PUT /dep/accounts/{name}/profile":             "manageDEPProfiles",
+		"POST /dep/accounts/{name}/sync":               "syncDEPDevices",
+		"GET /dep/accounts/{name}/profiles":            ActionReadDEP,
+		"GET /dep/accounts/{name}/targets":             ActionReadDEP,
+		"PUT /dep/accounts/{name}/default-profile":     "manageDEPProfiles",
+		"DELETE /dep/accounts/{name}/default-profile":  "manageDEPProfiles",
+		"PUT /dep/accounts/{name}/targets/{serial}":    "manageDEPProfiles",
+		"DELETE /dep/accounts/{name}/targets/{serial}": "manageDEPProfiles",
+	}
+
 	add := func(pattern string, handler http.HandlerFunc) {
 		routes = append(routes, adminRoute{Pattern: pattern, Action: actions[pattern], Family: "dep", Handler: handler})
 	}
@@ -370,6 +387,11 @@ func (d *depService) routes() []adminRoute {
 		"PUT /dep/accounts/{name}/profile",
 		func(w http.ResponseWriter, r *http.Request) {
 			name := r.PathValue("name")
+			chooseDefault := r.URL.Query().Get("default") == "true"
+			if value := r.URL.Query().Get("default"); value != "" && value != "true" && value != "false" {
+				writeError(w, http.StatusBadRequest, ErrBadDEPRequest)
+				return
+			}
 			body, err := io.ReadAll(io.LimitReader(r.Body, MaxAdminBody+1))
 			if err != nil || len(body) > MaxAdminBody {
 				writeError(w, http.StatusRequestEntityTooLarge, ErrBodyTooLarge)
@@ -405,15 +427,17 @@ func (d *depService) routes() []adminRoute {
 				if err != nil {
 					return fmt.Errorf("DEP account: %w", err)
 				}
-				if !sameDEPAccount(baseline, acct) {
+				if !sameDEPAccount(baseline, acct) || (chooseDefault && acct.ProfileRevision != baseline.ProfileRevision) {
 					return fmt.Errorf("%w: DEP account changed during profile definition", dep.ErrConflict)
 				}
 				if err := tx.PutProfile(ctx, name, &p); err != nil {
 					return fmt.Errorf("DEP profile: %w", err)
 				}
-				acct.ProfileUUID = resp.ProfileUUID
-				if err := tx.PutAccount(ctx, acct); err != nil {
-					return fmt.Errorf("DEP account: %w", err)
+				if chooseDefault {
+					acct.ProfileUUID = resp.ProfileUUID
+					if err := tx.PutAccount(ctx, acct); err != nil {
+						return fmt.Errorf("DEP account: %w", err)
+					}
 				}
 				return nil
 			})
@@ -424,6 +448,30 @@ func (d *depService) routes() []adminRoute {
 			writeJSON(w, http.StatusOK, resp)
 		},
 	)
+	add("GET /dep/accounts/{name}/profiles", func(w http.ResponseWriter, r *http.Request) {
+		profiles, err := d.store.ListProfiles(r.Context(), r.PathValue("name"), paging.Page{Cursor: r.URL.Query().Get("cursor")})
+		if err != nil {
+			writeError(w, depStatus(err), err)
+			return
+		}
+		writeJSON(w, http.StatusOK, profiles)
+	})
+	add("GET /dep/accounts/{name}/targets", func(w http.ResponseWriter, r *http.Request) {
+		account, err := d.store.GetAccount(r.Context(), r.PathValue("name"))
+		if err != nil {
+			writeError(w, depStatus(err), err)
+			return
+		}
+		writeJSON(w, http.StatusOK, struct {
+			Default  string
+			Serials  map[string]string
+			Revision int64
+		}{account.ProfileUUID, account.ProfileTargets, account.ProfileRevision})
+	})
+	for _, pattern := range []string{"PUT /dep/accounts/{name}/default-profile", "DELETE /dep/accounts/{name}/default-profile", "PUT /dep/accounts/{name}/targets/{serial}", "DELETE /dep/accounts/{name}/targets/{serial}"} {
+		add(pattern, d.setProfileTarget)
+	}
+
 	add("POST /dep/accounts/{name}/sync", func(w http.ResponseWriter, r *http.Request) {
 		sres, ares, err := d.runOnce(r.Context(), r.PathValue("name"))
 		if err != nil {
@@ -485,3 +533,59 @@ func (a *App) DEPStoreForTests() dep.Store { return a.dep.store }
 
 // DEPStatusForTests exposes the error mapping to tests of the wiring.
 func DEPStatusForTests(err error) int { return depStatus(err) }
+
+// setProfileTarget changes only local desired state under the account lock.
+// Deletion resumes default resolution and makes no remote clear/disown request.
+func (d *depService) setProfileTarget(w http.ResponseWriter, r *http.Request) {
+	var input struct {
+		ProfileUUID string `json:"profile_uuid"`
+	}
+	if r.Method == http.MethodPut {
+		body, err := io.ReadAll(io.LimitReader(r.Body, MaxAdminBody+1))
+		if err != nil || len(body) > MaxAdminBody {
+			writeError(w, http.StatusRequestEntityTooLarge, ErrBodyTooLarge)
+			return
+		}
+		if err := json.Unmarshal(body, &input); err != nil || input.ProfileUUID == "" {
+			writeError(w, http.StatusBadRequest, ErrBadDEPRequest)
+			return
+		}
+	}
+	ctx, name, serial := r.Context(), r.PathValue("name"), r.PathValue("serial")
+	if serial != strings.TrimSpace(serial) || strings.ContainsFunc(serial, unicode.IsControl) {
+		writeError(w, http.StatusBadRequest, ErrBadDEPRequest)
+		return
+	}
+	err := d.store.Update(ctx, func(tx dep.Tx) error {
+		if err := tx.LockAccount(ctx, name); err != nil {
+			return err
+		}
+		account, err := tx.GetAccount(ctx, name)
+		if err != nil {
+			return err
+		}
+		if input.ProfileUUID != "" {
+			if _, err := tx.GetProfile(ctx, name, input.ProfileUUID); err != nil {
+				return err
+			}
+		}
+		if serial == "" {
+			account.ProfileUUID = input.ProfileUUID
+		} else {
+			if account.ProfileTargets == nil {
+				account.ProfileTargets = map[string]string{}
+			}
+			if r.Method == http.MethodDelete {
+				delete(account.ProfileTargets, serial)
+			} else {
+				account.ProfileTargets[serial] = input.ProfileUUID
+			}
+		}
+		return tx.PutAccount(ctx, account)
+	})
+	if err != nil {
+		writeError(w, depStatus(err), err)
+		return
+	}
+	w.WriteHeader(http.StatusNoContent)
+}

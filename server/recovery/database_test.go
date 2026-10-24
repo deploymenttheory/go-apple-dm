@@ -9,6 +9,7 @@ import (
 	"errors"
 	"os"
 	"path/filepath"
+	"reflect"
 	"testing"
 	"time"
 
@@ -85,6 +86,7 @@ func exerciseSQLRecovery(t *testing.T, source SQL, target func() *sql.DB) {
 	store := sqlcommon.New(source.DB, source.Dialect, sqlcommon.WithKeyring(keys))
 	id := mdm.EnrollmentID{Channel: mdm.ChannelDevice, ID: "recovery-device"}
 	now := time.Date(2026, 9, 13, 12, 30, 1, 123456000, time.UTC)
+	adeState := seedDEPRecovery(t, source, keys, now)
 	record := storage.EnrollmentExport{
 		Enrollment: storage.Enrollment{
 			ID:             id,
@@ -183,6 +185,9 @@ func exerciseSQLRecovery(t *testing.T, source SQL, target func() *sql.DB) {
 	destination := SQL{DB: target(), Dialect: source.Dialect, Schema: source.Schema}
 	if err := destination.Restore(ctx, directory); err != nil {
 		t.Fatal(err)
+	}
+	if !reflect.DeepEqual(readDEPRecovery(t, destination, keys), adeState) {
+		t.Fatal("ADE choices, credentials, keys or resumable assignment state changed during recovery")
 	}
 	restored := sqlcommon.New(destination.DB, destination.Dialect, sqlcommon.WithKeyring(keys))
 	got, err := restored.Get(ctx, id)
