@@ -51,9 +51,9 @@ func inventoryBody(r *http.Request, out any) error {
 }
 
 // inventoryQuery parses the common list, report and export filter contract.
-func inventoryQuery(r *http.Request) (inventory.DeviceQuery, error) {
+func inventoryQuery(r *http.Request) (inventory.ResourceQuery, error) {
 	v := r.URL.Query()
-	q := inventory.DeviceQuery{AccountID: v.Get("account"), Source: v.Get("source"), Focus: v.Get("focus"), Search: v.Get("search"), Cursor: v.Get("cursor")}
+	q := inventory.ResourceQuery{AccountID: v.Get("account"), Source: v.Get("source"), Focus: v.Get("focus"), Search: v.Get("search"), Cursor: v.Get("cursor")}
 	var err error
 	if v.Get("limit") != "" {
 		q.Limit, err = strconv.Atoi(v.Get("limit"))
@@ -76,7 +76,7 @@ func inventoryQuery(r *http.Request) (inventory.DeviceQuery, error) {
 }
 
 // publicInventoryQuery rejects filters on fields requiring raw-inventory authority.
-func publicInventoryQuery(q inventory.DeviceQuery) error {
+func publicInventoryQuery(q inventory.ResourceQuery) error {
 	for _, c := range q.Conditions {
 		if !inventory.PublicField(c.Field) {
 			return inventory.ErrInvalid
@@ -253,7 +253,7 @@ func (a *App) inventoryRoutes() []adminRoute {
 					return nil, e
 				}
 			}
-			page, e := a.Inventory.Devices(r.Context(), q)
+			page, e := a.Inventory.Resources(r.Context(), q)
 			if !raw {
 				for i := range page.Items {
 					page.Items[i] = inventory.PublicRecord(page.Items[i])
@@ -274,7 +274,7 @@ func (a *App) inventoryRoutes() []adminRoute {
 			return a.Inventory.Fields(r.Context(), q, raw)
 		})
 		add("GET "+prefix+"/{id}", permission, func(_ http.ResponseWriter, r *http.Request) (any, error) {
-			d, e := a.Inventory.Device(r.Context(), r.PathValue("id"))
+			d, e := a.Inventory.Resource(r.Context(), r.PathValue("id"))
 			if !raw {
 				d = inventory.PublicRecord(d)
 			}
@@ -282,12 +282,13 @@ func (a *App) inventoryRoutes() []adminRoute {
 		})
 	}
 	add("POST /devices/{id}/collect", ActionManageInventory, func(_ http.ResponseWriter, r *http.Request) (any, error) {
-		d, e := a.Inventory.Device(r.Context(), r.PathValue("id"))
+		d, e := a.Inventory.Resource(r.Context(), r.PathValue("id"))
 		if e != nil {
 			return nil, e
 		}
 		count := 0
-		for _, o := range d.Sources {
+		o := d.Snapshot
+		{
 			if o.Source.Kind == "enrollment" && !o.Disconnected {
 				var fields struct {
 					ID      string `json:"enrollment_id"`

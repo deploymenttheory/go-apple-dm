@@ -37,6 +37,9 @@ func TestPersistenceFailures(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	if err := inventorystore.Migrate(ctx, nil, sqlite.Dialect); !errors.Is(err, inventory.ErrInvalid) {
+		t.Fatal(err)
+	}
 	if _, err := inventorystore.Open(ctx, nil, sqlite.Dialect, nil); !errors.Is(err, inventory.ErrInvalid) {
 		t.Fatal(err)
 	}
@@ -111,6 +114,9 @@ func TestPersistenceFailures(t *testing.T) {
 	}
 	if err := plain.Update(ctx, func(inventory.Tx) error { t.Fatal("unlocked transaction executed"); return nil }); err == nil {
 		t.Fatal("missing lock accepted")
+	}
+	if _, err := inventorystore.Open(ctx, db, sqlite.Dialect, nil); err == nil {
+		t.Fatal("missing model guard accepted")
 	}
 	if err := db.Close(); err != nil {
 		t.Fatal(err)

@@ -54,7 +54,7 @@ func sqlFixture(t *testing.T, db *sql.DB, d sqlcommon.Dialect) SQL {
 		t.Fatal(err)
 	}
 	for _, set := range sets {
-		if _, err := sqlcommon.MigrateSet(t.Context(), db, d, set); err != nil {
+		if err := migrateSchemaSet(t.Context(), db, d, set); err != nil {
 			t.Fatal(err)
 		}
 	}

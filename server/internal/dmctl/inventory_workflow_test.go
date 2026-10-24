@@ -15,7 +15,6 @@ import (
 	"strconv"
 	"strings"
 	"testing"
-	"time"
 
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/appleplatformservices/axm"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/appleplatformservices/axm/axmtest"
@@ -38,7 +37,9 @@ func TestInventoryCLIWorkflow(t *testing.T) {
 	}
 	keyPEM := pem.EncodeToMemory(&pem.Block{Type: "PRIVATE KEY", Bytes: der})
 	apple.RegisterKey("BUSINESSAPI.workflow", "key", &key.PublicKey)
-	apple.AddOrgDevice("opaque", map[string]any{"serialNumber": "SERIAL", "deviceModel": "Mac", "imei": []string{"123"}, "futurePrivate": "private-value"})
+	apple.AddOrgDeviceResource("opaque", "SERIAL", map[string]any{ "deviceModel": "Mac", "imei": []string{"123"}, "futurePrivate": "private-value"})
+	serverID := apple.AddMDMServer("server", nil)
+	apple.Assign("opaque", serverID)
 	apple.AddAppleCareCoverage("opaque", "plan", map[string]any{"agreementNumber": "AGREEMENT", "endDateTime": "2030-01-01T00:00:00Z"})
 	cfg := app.Config{Storage: "sqlite", DSN: filepath.Join(t.TempDir(), "inventory.db"), BootstrapToken: "operator", StorageKeys: []string{"test"}, Secrets: secrets.Static{"test": []byte("0123456789abcdef0123456789abcdef")}, Logger: slog.New(slog.NewTextHandler(io.Discard, nil)), AxM: app.AxMConfig{HTTPClient: apple.Client()}}
 	a, err := app.Build(t.Context(), cfg)
@@ -135,15 +136,15 @@ func TestInventoryCLIWorkflow(t *testing.T) {
 		}
 	}()
 	call("axm", "accounts", "sync", account.ID, "--wait")
-	var page inventory.DevicePage
-	if err := json.Unmarshal([]byte(call("devices", "list", "--account", account.ID, "--focus", "apple", "--where", `[{"field":"imei","operator":"contains","value":"123"}]`)), &page); err != nil || len(page.Items) != 1 {
+	var page inventory.ResourcePage
+	if err := json.Unmarshal([]byte(call("devices", "list", "--account", account.ID, "--focus", "apple", "--source", "axm.device", "--raw", "--where", `[{"field":"data.attributes.imei","operator":"contains","value":"123"}]`)), &page); err != nil || len(page.Items) != 1 {
 		t.Fatal(page, err)
 	}
 	device := page.Items[0]
-	if device.SerialNumber != "SERIAL" || len(device.Coverage) != 1 {
+	if inventory.String(device.Snapshot.Fields["attributes.serialNumber"]) != "SERIAL" {
 		t.Fatal(device)
 	}
-	for _, args := range [][]string{{"devices", "get", device.ID}, {"devices", "fields"}, {"devices", "fields", "--raw"}, {"devices", "collect", device.ID}, {"inventory", "reports", "--focus", "apple"}, {"inventory", "export", "--format", "csv", "--columns", "serial_number,imei"}, {"devices", "list", "--all"}, {"devices", "list", "--all", "--raw", "--output", "ndjson"}} {
+	for _, args := range [][]string{{"devices", "get", device.ID}, {"devices", "fields"}, {"devices", "fields", "--raw"}, {"devices", "collect", device.ID}, {"inventory", "reports", "--focus", "apple"}, {"inventory", "export", "--format", "csv", "--columns", "meta.resource_id,meta.source"}, {"devices", "list", "--all"}, {"devices", "list", "--all", "--raw", "--output", "ndjson"}} {
 		call(args...)
 	}
 	if out := call("devices", "get", device.ID, "--raw"); !strings.Contains(out, "private-value") {
@@ -155,19 +156,17 @@ func TestInventoryCLIWorkflow(t *testing.T) {
 	if out := call("inventory", "diagnostics"); strings.Contains(out, "SERIAL") || strings.Contains(out, "private-value") {
 		t.Fatal("diagnostics leaked identity", out)
 	}
-	if _, _, err := runWithStdin(t, env, `{"name":"Warranty","format":"csv","columns":["serial_number","coverage_state"]}`, "inventory", "presets", "save", "warranty", "--file", "-"); err != nil {
+	if _, _, err := runWithStdin(t, env, `{"name":"Warranty","format":"csv","columns":["meta.resource_id","meta.source"]}`, "inventory", "presets", "save", "warranty", "--file", "-"); err != nil {
 		t.Fatal(err)
 	}
 	call("inventory", "presets")
 	call("axm", "accounts", "delete", account.ID, "--revision", strconv.FormatInt(account.Revision, 10))
-	persisted, err := a.Inventory.Device(t.Context(), device.ID)
+	persisted, err := a.Inventory.Resource(t.Context(), device.ID)
 	if err != nil || persisted.ID != device.ID {
 		t.Fatal(persisted, err)
 	}
-	for _, o := range persisted.Sources {
-		if !o.Disconnected {
-			t.Fatal("deleted source still connected")
-		}
+	if !persisted.Snapshot.Disconnected {
+		t.Fatal("deleted source still connected")
 	}
 	// Reopening the same encrypted database must retain the record and its raw evidence.
 	reopened, err := app.Build(t.Context(), cfg)
@@ -175,11 +174,11 @@ func TestInventoryCLIWorkflow(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer func() { _ = reopened.Close() }()
-	persisted, err = reopened.Inventory.Device(t.Context(), device.ID)
-	if err != nil || persisted.SerialNumber != "SERIAL" {
+	persisted, err = reopened.Inventory.Resource(t.Context(), device.ID)
+	if err != nil || inventory.String(persisted.Snapshot.Fields["attributes.serialNumber"]) != "SERIAL" {
 		t.Fatal(persisted, err)
 	}
-	if persisted.CoverageAt(time.Now()).State != "unknown" {
+	if !persisted.Snapshot.Disconnected {
 		t.Fatal("disconnected coverage projected as current")
 	}
 }

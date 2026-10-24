@@ -339,7 +339,7 @@ func (s SQL) Restore(ctx context.Context, directory string) error {
 		return ErrOccupied
 	}
 	for _, set := range sets {
-		if _, err := sqlcommon.MigrateSet(ctx, s.DB, s.Dialect, set); err != nil {
+		if err := migrateSchemaSet(ctx, s.DB, s.Dialect, set); err != nil {
 			return wrap(err)
 		}
 	}

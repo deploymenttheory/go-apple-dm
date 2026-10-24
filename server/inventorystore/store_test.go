@@ -42,9 +42,13 @@ func checkStore(t *testing.T, db *sql.DB, dialect sqlcommon.Dialect) {
 	if e != nil {
 		t.Fatal(e)
 	}
+	checkFenceInstallationRetries(t, db, dialect)
 	repo, e := inventory.New(store)
 	if e != nil {
 		t.Fatal(e)
+	}
+	if err := repo.Migrate(ctx, time.Now().UTC()); err != nil {
+		t.Fatal(err)
 	}
 	raw := json.RawMessage(`{"id":"opaque","attributes":{"serialNumber":"SERIAL-SECRET","imei":["one","two"],"future":null}}`)
 	o, e := inventory.ResourceObservation(source.Reference{Kind: "axm.device", AccountID: "account", ResourceID: "opaque"}, raw, time.Now().UTC(), time.Hour)
@@ -56,7 +60,7 @@ func checkStore(t *testing.T, db *sql.DB, dialect sqlcommon.Dialect) {
 		t.Fatal(e)
 	}
 	var payload []byte
-	if e := db.QueryRowContext(ctx, dialect.Rebind("SELECT payload FROM inventory_entries WHERE entry_key = ?"), "device/"+device.ID).Scan(&payload); e != nil {
+	if e := db.QueryRowContext(ctx, dialect.Rebind("SELECT payload FROM inventory_entries WHERE entry_key = ?"), "resource/"+device.ID).Scan(&payload); e != nil {
 		t.Fatal(e)
 	}
 	if !crypt.IsSealed(payload) || bytes.Contains(payload, []byte("SERIAL-SECRET")) {
@@ -70,7 +74,7 @@ func checkStore(t *testing.T, db *sql.DB, dialect sqlcommon.Dialect) {
 	if e != nil {
 		t.Fatal(e)
 	}
-	page, e := r.Devices(ctx, inventory.DeviceQuery{Conditions: []inventory.Condition{{Field: "imei", Operator: "contains", Value: json.RawMessage(`"two"`)}}})
+	page, e := r.Resources(ctx, inventory.ResourceQuery{Conditions: []inventory.Condition{{Field: "data.attributes.imei", Operator: "contains", Value: json.RawMessage(`"two"`)}}})
 	if e != nil || len(page.Items) != 1 || page.Items[0].ID != device.ID {
 		t.Fatalf("restart/query %+v %v", page, e)
 	}
@@ -85,7 +89,7 @@ func checkStore(t *testing.T, db *sql.DB, dialect sqlcommon.Dialect) {
 	if !errors.Is(e, boom) {
 		t.Fatal(e)
 	}
-	page, e = r.Devices(ctx, inventory.DeviceQuery{})
+	page, e = r.Resources(ctx, inventory.ResourceQuery{})
 	if e != nil || len(page.Items) != 1 {
 		t.Fatal("projection survived protocol rollback", e, len(page.Items))
 	}
@@ -94,7 +98,7 @@ func checkStore(t *testing.T, db *sql.DB, dialect sqlcommon.Dialect) {
 		t.Fatal(e)
 	}
 	version, e := sqlcommon.VersionOf(ctx, db, dialect, set.Table)
-	if e != nil || version != 1 {
+	if e != nil || version != 2 {
 		t.Fatal(version, e)
 	}
 	if _, e := sqlcommon.RollbackSet(ctx, db, dialect, set, 0); e != nil {
@@ -103,4 +107,5 @@ func checkStore(t *testing.T, db *sql.DB, dialect sqlcommon.Dialect) {
 	if _, e := inventorystore.Open(ctx, db, dialect, keys); e != nil {
 		t.Fatal(e)
 	}
+	checkMigrationContract(t, db, dialect)
 }

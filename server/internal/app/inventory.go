@@ -37,6 +37,9 @@ func (a *App) openInventory(ctx context.Context) error {
 	if e != nil {
 		return e
 	}
+	if e := r.Migrate(ctx, time.Now().UTC()); e != nil {
+		return e
+	}
 	a.Inventory = r
 	if c := a.cfg.AxM; c.Enabled() {
 		if _, e := r.Account(ctx, "default"); errors.Is(e, inventory.ErrNotFound) {
@@ -86,12 +89,12 @@ func (a *App) initialInventorySync(ctx context.Context, account inventory.Accoun
 	return nil
 }
 
-// deviceChannel identifies channels allowed to enrich a physical device record.
+// deviceChannel identifies channels that can supply independent native evidence.
 func deviceChannel(id mdm.EnrollmentID) bool {
 	return id.Channel == mdm.ChannelDevice || id.Channel == mdm.ChannelUserEnrollmentDevice
 }
 
-// observeInventoryEnrollment projects public enrollment facts while excluding push and escrow credentials.
+// observeInventoryEnrollment retains public enrollment evidence while excluding push and escrow credentials.
 func (a *App) observeInventoryEnrollment(ctx context.Context, id mdm.EnrollmentID) error {
 	if !deviceChannel(id) {
 		return nil
@@ -207,7 +210,7 @@ func (a *App) projectInventoryCommand(ctx context.Context, id mdm.EnrollmentID, 
 // mustInventoryJSON encodes an already JSON-compatible decoded response.
 func mustInventoryJSON(v any) json.RawMessage { raw, _ := json.Marshal(v); return raw }
 
-// observeInventoryStatus projects validated device-channel DDM status into the shared record.
+// observeInventoryStatus retains validated device-channel DDM source evidence.
 func (a *App) observeInventoryStatus(ctx context.Context, id mdm.EnrollmentID, u ddm.StatusUpdate) error {
 	if !deviceChannel(id) {
 		return nil
@@ -383,7 +386,7 @@ func (a *App) observeInventoryCertificate(ctx context.Context, id mdm.Enrollment
 // backfillInventoryStatus projects existing effective DDM values on upgrades, preserving per-item age.
 func (a *App) backfillInventoryStatus(ctx context.Context, enrollment storage.Enrollment) error {
 	ref := inventory.EnrollmentReference("ddm.status", enrollment.ID)
-	if _, e := a.Inventory.SourceDevice(ctx, ref); e == nil {
+	if _, e := a.Inventory.SourceResource(ctx, ref); e == nil {
 		return nil
 	} else if !errors.Is(e, inventory.ErrNotFound) {
 		return e
