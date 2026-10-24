@@ -125,8 +125,12 @@ func TestRetry(t *testing.T) {
 		id := f.srv.AddMDMServer("m", nil)
 		f.srv.AddOrgDevice("S1", nil)
 		c := f.client(t, nil)
+		req, reqErr := NewActivityRequest(ActivityAssignDevices, id, []string{"S1"}, time.Time{}, time.Now())
+		if reqErr != nil {
+			t.Fatal(reqErr)
+		}
 		f.srv.ServerError(1)
-		if _, err := c.AssignDevices(context.Background(), id, []string{"S1"}); !hasStatus(err, http.StatusServiceUnavailable) {
+		if _, err := c.CreateOrgDeviceActivity(context.Background(), req); !hasStatus(err, http.StatusServiceUnavailable) {
 			t.Fatalf("POST must not retry: %v", err)
 		}
 		if n := len(apiRequests(f.srv)); n != 1 {
@@ -134,12 +138,11 @@ func TestRetry(t *testing.T) {
 		}
 		f.srv.RateLimit(1, "1")
 		f.srv.Reset()
-		if _, err := c.AssignDevices(context.Background(), id, []string{"S1"}); !IsRateLimited(err) {
+		if _, err := c.CreateOrgDeviceActivity(context.Background(), req); !IsRateLimited(err) {
 			t.Fatalf("POST must not retry a 429 either: %v", err)
 		}
 		f.srv.ServerError(1)
 		f.srv.Reset()
-		req, _ := NewActivityRequest(ActivityAssignDevices, id, []string{"S1"}, time.Time{}, time.Now())
 		if _, err := c.CreateOrgDeviceActivity(context.Background(), req, WithIdempotent()); err != nil {
 			t.Fatalf("WithIdempotent must retry: %v", err)
 		}

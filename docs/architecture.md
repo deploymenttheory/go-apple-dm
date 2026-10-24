@@ -54,6 +54,13 @@ accepts explicit existing payload fields and performs no identity lookup. See
 [application identity authoring](operations/application-identities.md).
 
 
+Apple Business and School clients address resources by Apple's returned opaque IDs.
+Serial-based activity helpers explicitly resolve the full organization list before mutation;
+missing or ambiguous serials and incomplete enumeration fail closed. Activity storage downloads
+use a separate credential-free request to the documented Apple storage origin.
+[ADR 0030](research/decisions/0030-apple-business-manager-api-client.md) describes origin,
+CSV verification and per-device outcome contracts.
+
 ## Generated protocol types
 
 The pinned `third_party/apple-device-management/current` submodule supplies Apple's current release YAML definitions.

@@ -8,7 +8,11 @@ The Apple School Manager and Apple Business Manager APIs use ES256 client assert
 
 `axm.Client` provides typed resource and relationship methods, explicit single-page results and opt-in iteration. Authentication accepts P-256 keys, creates time-bounded assertions and coordinates cached token refresh. An API 401 triggers one replay; retries for rate limits and transient failures are bounded, with POST retry requiring an explicit safe option.
 
-Activity helpers validate required fields and migration deadlines, poll terminal activity state, download activity logs and wait for assigned-server convergence. Errors retain Apple's structured entries and expose typed classification helpers.
+Activity helpers validate required fields and migration deadlines, poll terminal activity state, download activity logs and wait for assigned-server convergence. `ResolveOrgDevicesBySerial` performs an exact, complete paginated lookup before serial-based assignment helpers submit returned opaque organization-device IDs. Missing, ambiguous or unaddressable resources and incomplete enumeration stop the operation before mutation. `NewActivityRequest` and resource endpoints accept opaque IDs, independently of any inventory model. Errors retain Apple's structured entries and expose typed classification helpers.
+
+Activity downloads allow the configured API origin and Apple's documented HTTPS `store.blobstore.apple.com` origin on port 443. API-origin downloads authenticate and replay once with a refreshed token after a 401; a second 401 is a sanitized authentication error. Presigned storage requests carry neither API bearer nor cookies. Redirects are rejected, including redirects to another allowed origin: callers obtain a fresh URL from the activity resource. Downloads apply the configured bounded GET retry policy to transport, rate-limit and server failures, honoring Retry-After and cancellation while logging only sanitized causes. Downloads buffer bounded CSV and reject truncated transport, malformed records and missing outcomes. Download errors omit URLs and response bodies to protect signed query credentials.
+
+`FetchActivityLog` preserves raw CSV and does not assert device success. `VerifyActivityLog` accepts explicit observed serial/outcome header names and a success value because the activity endpoint does not specify a stable CSV column schema. It checks the complete expected serial set, rejects duplicate/unexpected/missing device outcomes and retains every column and failure detail. Activity terminal state, log completeness and per-device success remain separate facts.
 
 ## Rationale
 
@@ -20,7 +24,7 @@ Types are maintained from API documentation rather than the pinned device-manage
 
 ## Verification
 
-The fake service verifies assertions and token scopes and exercises typed endpoints, paging, consistency delays and injected faults. Client tests cover key formats, claims, refresh races, replay, retry, errors and activity rules; end-to-end tests exercise assignment.
+The fake service verifies assertions and token scopes and exercises typed endpoints, paging, consistency delays and injected faults. Client tests cover key formats, claims, refresh races, replay, retry, errors and activity rules. Independent API and storage-host tests verify opaque IDs distinct from serials, no storage credentials, signed-query preservation, origin/redirect rejection, expiration, size limits and truncated/malformed/partial CSV. End-to-end tests exercise assignment with distinct opaque IDs.
 
 ## References
 
@@ -34,6 +38,7 @@ The fake service verifies assertions and token scopes and exercises typed endpoi
 - <https://developer.apple.com/documentation/appleschoolmanagerapi>
 - <https://developer.apple.com/documentation/applebusinessapi/create-an-orgdeviceactivity>
 - <https://developer.apple.com/documentation/applebusinessapi/get-orgdeviceactivity-information>
+- <https://developer.apple.com/documentation/applebusinessapi/get-orgdevice-information>
 - <https://developer.apple.com/documentation/applebusinessapi/orgdeviceactivitytype>
 - <https://developer.apple.com/documentation/applebusinessapi/errorresponse>
 - <https://developer.apple.com/documentation/applebusinessapi/paginginformation>

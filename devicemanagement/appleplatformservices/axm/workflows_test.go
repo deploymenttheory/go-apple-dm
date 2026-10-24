@@ -207,7 +207,7 @@ func TestActivities(t *testing.T) {
 			t.Fatalf("unknown server: %v", err)
 		}
 		id := f.srv.AddMDMServer("m", nil)
-		if _, err := c.AssignDevices(context.Background(), id, []string{"NOPE"}); !IsConflict(err) {
+		if _, err := c.AssignDevices(context.Background(), id, []string{"NOPE"}); !errors.Is(err, ErrDeviceSerial) {
 			t.Fatalf("unknown serial: %v", err)
 		}
 	})

@@ -127,13 +127,17 @@ func (s *Server) advanceLocked() int {
 func (s *Server) applyLocked(a *activity, now time.Time) {
 	a.status, a.subStatus, a.completed = StatusCompleted, SubStatusCompletedWithSuccess, now
 	visible := now.Add(s.lag)
-	for _, serial := range a.serials {
+	for _, id := range a.serials {
+		dev, ok := s.store.devices.get(id)
+		serial := id
+		if ok {
+			serial, _ = dev.attrs["serialNumber"].(string)
+		}
 		if reason, failed := s.outcomes[serial]; failed {
 			a.rows = append(a.rows, []string{serial, a.typ, "FAILED", reason})
 			a.subStatus = SubStatusCompletedWithError
 			continue
 		}
-		dev, ok := s.store.devices.get(serial)
 		if !ok {
 			a.rows = append(a.rows, []string{serial, a.typ, "FAILED", "device is not in the organization"})
 			a.subStatus = SubStatusCompletedWithError
@@ -168,7 +172,7 @@ func (s *Server) applyOne(a *activity, dev *resource, visible, now time.Time) st
 			"eventDateTime": now, "type": "DEVICE_ASSIGNED_TO_SERVER", "category": "DEVICE_MANAGEMENT",
 			"actorType": "API_USER", "actorId": "api", "subjectType": "DEVICE", "subjectId": dev.id,
 			"eventDataPropertyKey":            "eventDataDeviceAssignedToServer",
-			"eventDataDeviceAssignedToServer": map[string]any{"serialNumber": dev.id, "targetServerName": serverName},
+			"eventDataDeviceAssignedToServer": map[string]any{"serialNumber": dev.attrs["serialNumber"], "targetServerName": serverName},
 		})
 	case ActivityUnassign:
 		s.store.assignments[dev.id] = assignment{
@@ -178,7 +182,7 @@ func (s *Server) applyOne(a *activity, dev *resource, visible, now time.Time) st
 			"eventDateTime": now, "type": "DEVICE_UNASSIGNED_FROM_SERVER", "category": "DEVICE_MANAGEMENT",
 			"actorType": "API_USER", "actorId": "api", "subjectType": "DEVICE", "subjectId": dev.id,
 			"eventDataPropertyKey":                "eventDataDeviceUnassignedFromServer",
-			"eventDataDeviceUnassignedFromServer": map[string]any{"serialNumber": dev.id},
+			"eventDataDeviceUnassignedFromServer": map[string]any{"serialNumber": dev.attrs["serialNumber"]},
 		})
 	case ActivityRelease:
 		delete(s.store.assignments, dev.id)
@@ -187,7 +191,7 @@ func (s *Server) applyOne(a *activity, dev *resource, visible, now time.Time) st
 			"eventDateTime": now, "type": "DEVICE_REMOVED_FROM_ORG", "category": "DEVICE_INVENTORY",
 			"actorType": "API_USER", "actorId": "api", "subjectType": "DEVICE", "subjectId": dev.id,
 			"eventDataPropertyKey":          "eventDataDeviceRemovedFromOrg",
-			"eventDataDeviceRemovedFromOrg": map[string]any{"serialNumber": dev.id, "releaseEntityType": "API"},
+			"eventDataDeviceRemovedFromOrg": map[string]any{"serialNumber": dev.attrs["serialNumber"], "releaseEntityType": "API"},
 		})
 	case ActivityUpdateDeadline:
 		if _, migrating := dev.attrs["mdmMigrationStatus"]; !migrating {
@@ -293,7 +297,7 @@ func (s *Server) handleCreateActivity(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		if _, ok := s.store.devices.get(d.ID); !ok {
-			s.conflict(w, "ENTITY_ERROR.RELATIONSHIP.INVALID", "invalid device serial number "+d.ID, "/data/relationships/devices/data/id")
+			s.conflict(w, "ENTITY_ERROR.RELATIONSHIP.INVALID", "invalid organization-device resource ID "+d.ID, "/data/relationships/devices/data/id")
 			return
 		}
 		a.serials = append(a.serials, d.ID)

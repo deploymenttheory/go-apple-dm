@@ -3,9 +3,6 @@ package axm
 import (
 	"context"
 	"fmt"
-	"io"
-	"net/http"
-	"net/url"
 	"time"
 )
 
@@ -25,18 +22,19 @@ const (
 )
 
 // NewActivityRequest builds the JSON:API body for an activity with
-// Apple's rules checked: at least one serial; a server for ASSIGN_DEVICES
+// Apple's rules checked: at least one opaque organization-device ID; a server
+// for ASSIGN_DEVICES
 // and ASSIGN_DEVICES_WITH_MDM_MIGRATION_DEADLINE, none for the other
 // types; a deadline within MaxMigrationDeadline of now for the two
 // deadline activities and none for the others.
-func NewActivityRequest(typ OrgDeviceActivityType, serverID string, serials []string, deadline, now time.Time) (OrgDeviceActivityCreateRequest, error) {
+func NewActivityRequest(typ OrgDeviceActivityType, serverID string, deviceIDs []string, deadline, now time.Time) (OrgDeviceActivityCreateRequest, error) {
 	var req OrgDeviceActivityCreateRequest
-	if len(serials) == 0 {
-		return req, fmt.Errorf("%w: at least one serial number is required", ErrActivityRule)
+	if len(deviceIDs) == 0 {
+		return req, fmt.Errorf("%w: at least one device resource ID is required", ErrActivityRule)
 	}
-	for _, s := range serials {
+	for _, s := range deviceIDs {
 		if s == "" {
-			return req, fmt.Errorf("%w: empty serial number", ErrActivityRule)
+			return req, fmt.Errorf("%w: empty device resource ID", ErrActivityRule)
 		}
 	}
 	needsServer, needsDeadline := false, false
@@ -73,8 +71,8 @@ func NewActivityRequest(typ OrgDeviceActivityType, serverID string, serials []st
 	if needsServer {
 		req.Data.Relationships.MDMServer = &SingleLinkage{Data: Linkage{Type: TypeMDMServers, ID: serverID}}
 	}
-	req.Data.Relationships.Devices.Data = make([]Linkage, len(serials))
-	for i, s := range serials {
+	req.Data.Relationships.Devices.Data = make([]Linkage, len(deviceIDs))
+	for i, s := range deviceIDs {
 		req.Data.Relationships.Devices.Data[i] = Linkage{Type: TypeOrgDevices, ID: s}
 	}
 	return req, nil
@@ -86,10 +84,18 @@ func (c *Client) activity(ctx context.Context, typ OrgDeviceActivityType, server
 	if err != nil {
 		return nil, err
 	}
+	devices, err := c.ResolveOrgDevicesBySerial(ctx, serials)
+	if err != nil {
+		return nil, err
+	}
+	for i, device := range devices {
+		req.Data.Relationships.Devices.Data[i].ID = device.ID
+	}
 	return c.CreateOrgDeviceActivity(ctx, req)
 }
 
-// AssignDevices assigns serials to the device management service serverID.
+// AssignDevices resolves serials with ResolveOrgDevicesBySerial, then assigns
+// their returned opaque IDs to the device management service serverID.
 func (c *Client) AssignDevices(ctx context.Context, serverID string, serials []string) (*OrgDeviceActivity, error) {
 	return c.activity(ctx, ActivityAssignDevices, serverID, serials, time.Time{})
 }
@@ -194,31 +200,19 @@ func (c *Client) sleep(ctx context.Context, d time.Duration) error {
 	}
 }
 
-// FetchActivityLog streams the CSV at a completed activity's downloadUrl.
-// The URL must be on the API host; the bearer token is sent with it. The
-// caller closes the reader.
-func (c *Client) FetchActivityLog(ctx context.Context, downloadURL string) (io.ReadCloser, error) {
-	u, err := url.Parse(downloadURL)
-	if err != nil {
-		return nil, fmt.Errorf("%w: download URL: %w", ErrArgument, err)
-	}
-	if u.Scheme != c.base.Scheme || u.Host != c.base.Host {
-		return nil, fmt.Errorf("%w: %s", ErrForeignHost, downloadURL)
-	}
-	resp, err := c.roundTrip(ctx, request{method: http.MethodGet, rawURL: u.String(), accept: "text/csv, application/json"})
-	if err != nil {
-		return nil, err
-	}
-	return resp.Body, nil
-}
-
 // WaitForAssignedServer polls a device's assignedServer linkage until it
 // names serverID (or, for an empty serverID, until it is empty), then
-// returns nil. While Apple catches up the linkage may carry an empty id or
+// returns nil. Serial resolution completes once before polling, and requests
+// address the returned resource ID. While Apple catches up the linkage may carry
+// an empty id or
 // answer 404; both are tolerated until timeout, which yields
 // ErrWaitTimeout.
 func (c *Client) WaitForAssignedServer(ctx context.Context, serial, serverID string, timeout time.Duration) error {
 	if err := requireID("serial number", serial); err != nil {
+		return err
+	}
+	devices, err := c.ResolveOrgDevicesBySerial(ctx, []string{serial})
+	if err != nil {
 		return err
 	}
 	if timeout <= 0 {
@@ -226,7 +220,7 @@ func (c *Client) WaitForAssignedServer(ctx context.Context, serial, serverID str
 	}
 	deadline := c.clock.Now().Add(timeout)
 	for {
-		link, err := c.GetAssignedServerLinkage(ctx, serial)
+		link, err := c.GetAssignedServerLinkage(ctx, devices[0].ID)
 		switch {
 		case err != nil && !IsNotFound(err):
 			return err

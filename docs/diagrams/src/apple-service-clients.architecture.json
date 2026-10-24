@@ -35,7 +35,7 @@
     ],
     "repository": {
       "url": "https://github.com/deploymenttheory/go-apple-dm",
-      "revision": "52274392b2729fce9b4ae1a0936605ba329df91a"
+      "revision": "557c464864be88a7a2e60afa4cc6c6139e03e094"
     },
     "colour_profile": "purpose-v1",
     "legend": {
@@ -121,7 +121,7 @@
       "id": "axmclient",
       "type": "backend",
       "label": "axm.Client",
-      "sublabel": "OAuth and source evidence",
+      "sublabel": "OAuth, evidence and activities",
       "pos": [
         345.0,
         260.0
@@ -138,6 +138,10 @@
         {
           "path": "devicemanagement/appleplatformservices/axm/collection/collection.go",
           "label": "atomic source streams"
+        },
+        {
+          "path": "devicemanagement/appleplatformservices/axm/activitylog.go",
+          "label": "activity downloads and outcome verification"
         }
       ],
       "purpose": "transport"
@@ -404,7 +408,11 @@
         "The dep client uses OAuth 1.0a to obtain a session token, then sends X-ADM-Auth-Session on device-assignment requests.",
         "axm exchanges an ES256-signed client assertion for an OAuth access token, then uses that token as Bearer authentication on API calls.",
         "Software catalogue lookup uses public HTTPS requests; it does not use the device-assignment or business API credentials.",
-        "Apps and Books sends the original location sToken as a bearer credential and checks the returned library UID and MDM identity."
+        "Apps and Books sends the original location sToken as a bearer credential and checks the returned library UID and MDM identity.",
+        "AxM serial-based helpers explicitly resolve the full organization list to returned opaque resource IDs before mutation. Ambiguous or missing serials and incomplete enumeration fail closed.",
+        "Activity CSV downloads allow the API origin and HTTPS store.blobstore.apple.com on port 443. Downloads use bounded GET retries, Retry-After, backoff and cancellation with sanitized retry logs. API downloads replay once after a 401. Storage gets no API bearer or cookies and never refreshes OAuth; redirects are rejected. Intended serial-set completeness and per-device success are checked separately with an explicit observed CSV schema.",
+        "Apple activity information \u2014 https://developer.apple.com/documentation/applebusinessapi/get-orgdeviceactivity-information",
+        "Explicit serial-to-resource resolution \u2014 https://github.com/deploymenttheory/go-apple-dm/blob/557c464864be88a7a2e60afa4cc6c6139e03e094/devicemanagement/appleplatformservices/axm/serials.go"
       ]
     },
     {
@@ -414,7 +422,7 @@
         "The collection package emits raw organization-device, detail, assignment and coverage resources without importing inventory. Raw list documents retain included resources and unknown envelope fields.",
         "The host selects streams and owns account credentials, scheduling, leases and an atomic evidence/outcome/checkpoint sink. Inventory synchronization composes the same collector.",
         "A new collector resumes committed versioned checkpoints. Failures retain successful evidence; only an exhausted successful list stream emits completion. Completion does not promise an Apple-side snapshot.",
-        "Collector persistence and resumption \u2014 https://github.com/deploymenttheory/go-apple-dm/blob/52274392b2729fce9b4ae1a0936605ba329df91a/devicemanagement/appleplatformservices/axm/collection/collection.go"
+        "Collector persistence and resumption \u2014 https://github.com/deploymenttheory/go-apple-dm/blob/557c464864be88a7a2e60afa4cc6c6139e03e094/devicemanagement/appleplatformservices/axm/collection/collection.go"
       ]
     },
     {
@@ -433,7 +441,7 @@
         "Ordinary token imports reject established Apple identity or consumer-key changes. Force permits an atomic identity reset only with a validated server UUID; same-identity renewals preserve inventory and local settings.",
         "Old responses cannot restore reset inventory or sessions. A still-owned lease may retain HTTP 429 or device THROTTLED cooldowns across a same-identity token or desired-profile change; identity reset discards the old server\u2019s cooldowns.",
         "Local checks cannot undo requests already accepted by Apple. Later reconciliation reads current Apple state.",
-        "Token validation and atomic reset \u2014 https://github.com/deploymenttheory/go-apple-dm/blob/52274392b2729fce9b4ae1a0936605ba329df91a/devicemanagement/appleplatformservices/dep/token.go"
+        "Token validation and atomic reset \u2014 https://github.com/deploymenttheory/go-apple-dm/blob/557c464864be88a7a2e60afa4cc6c6139e03e094/devicemanagement/appleplatformservices/dep/token.go"
       ]
     },
     {

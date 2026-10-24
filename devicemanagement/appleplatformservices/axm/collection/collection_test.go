@@ -331,7 +331,15 @@ func TestPartialFailureRetainsCheckpointAndEvidence(t *testing.T) {
 // TestCancellationAndTransport retains context errors and records transport failure separately from empty enumeration.
 func TestCancellationAndTransport(t *testing.T) {
 	entered := make(chan struct{})
-	c := fixture(t, func(_ http.ResponseWriter, r *http.Request) { close(entered); <-r.Context().Done() })
+	release := make(chan struct{})
+	defer close(release)
+	c := fixture(t, func(_ http.ResponseWriter, r *http.Request) {
+		close(entered)
+		<-r.Context().Done()
+		// Keep the request in flight until the caller observes cancellation.
+		// Returning here can race with net/http sending an implicit empty 200.
+		<-release
+	})
 	ctx, cancel := context.WithCancel(context.Background())
 	go func() { <-entered; cancel() }()
 	sink := &memorySink{}

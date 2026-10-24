@@ -5,10 +5,10 @@ import (
 	"context"
 	"io"
 	"net/http"
-	"net/http/httptest"
 	"os"
 	"strings"
 	"testing"
+	"testing/synctest"
 	"time"
 
 	"github.com/deploymenttheory/go-apple-dm/server/lab/target"
@@ -117,29 +117,30 @@ func TestScenarioRejectsIncorrectDeviceBehavior(t *testing.T) {
 // TestLabFailsWhenReadinessNeverArrives checks that the lab fails when readiness never arrives.
 func TestLabFailsWhenReadinessNeverArrives(t *testing.T) {
 	t.Parallel()
-	srv := httptest.NewServer(
-		http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { w.WriteHeader(503) }),
-	)
-	defer srv.Close()
-	e := &Environment{
-		Client:   srv.Client(),
-		errs:     make(chan error),
-		Instance: Instance{URL: srv.URL},
-	}
-	if err := e.ready(
-		t.Context(),
-		srv.URL,
-	); err == nil ||
-		!strings.Contains(err.Error(), "timed out") {
-		t.Fatalf("readiness deadline: %v", err)
-	}
-	destination := t.TempDir() + "/profile.mobileconfig"
-	if err := Profile(t.Context(), e, "test", destination); err == nil {
-		t.Fatal("failed profile request accepted")
-	}
-	if _, err := os.Stat(destination); !os.IsNotExist(err) {
-		t.Fatal("failed request wrote profile")
-	}
+	synctest.Test(t, func(t *testing.T) {
+		probes := 0
+		client := synchronousHTTPClient(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			if r.URL.Path == "/readyz" {
+				probes++
+			}
+			w.WriteHeader(http.StatusServiceUnavailable)
+		}))
+		e := &Environment{Client: client, errs: make(chan error), Instance: Instance{URL: "https://lab.invalid"}}
+		started := time.Now()
+		if err := e.ready(t.Context(), e.URL); err == nil || !strings.Contains(err.Error(), "timed out") {
+			t.Fatalf("readiness deadline: %v", err)
+		}
+		if elapsed := time.Since(started); elapsed != 20*time.Second || probes == 0 {
+			t.Fatalf("readiness did not exercise its internal deadline: elapsed=%s probes=%d", elapsed, probes)
+		}
+		destination := t.TempDir() + "/profile.mobileconfig"
+		if err := Profile(t.Context(), e, "test", destination); err == nil {
+			t.Fatal("failed profile request accepted")
+		}
+		if _, err := os.Stat(destination); !os.IsNotExist(err) {
+			t.Fatal("failed request wrote profile")
+		}
+	})
 }
 
 // TestLabRejectsMissingModuleScratchDirectory checks that the lab rejects a missing module

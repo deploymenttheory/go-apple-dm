@@ -27,7 +27,7 @@ func (c *Client) ListOrgDevices(ctx context.Context, o ListOptions) (Page[OrgDev
 	return list[OrgDevice](ctx, c, "/v1/orgDevices", q)
 }
 
-// GetOrgDevice returns one device by serial number (GET /v1/orgDevices/{id}).
+// GetOrgDevice returns one device by its opaque Apple resource ID (GET /v1/orgDevices/{id}).
 func (c *Client) GetOrgDevice(ctx context.Context, id string, o GetOptions) (*OrgDevice, error) {
 	if err := requireID("device id", id); err != nil {
 		return nil, err
@@ -121,7 +121,7 @@ func (c *Client) DeleteMDMServer(ctx context.Context, id string) error {
 	return c.do(ctx, request{method: http.MethodDelete, path: "/v1/mdmServers/" + url.PathEscape(id)}, nil)
 }
 
-// ListMDMServerDevices lists the serial numbers assigned to a device
+// ListMDMServerDevices lists the organization-device resource IDs assigned to a device
 // management service (GET /v1/mdmServers/{id}/relationships/devices).
 func (c *Client) ListMDMServerDevices(ctx context.Context, id string, o ListOptions) (Page[Linkage], error) {
 	if err := requireID("server id", id); err != nil {
