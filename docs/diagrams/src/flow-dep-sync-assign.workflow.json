@@ -13,7 +13,7 @@
           "portal",
           "importtoken"
         ],
-        "note": "Upload the server’s public certificate to the Apple portal, then import the encrypted server token."
+        "note": "Upload the server\u2019s public certificate to the Apple portal, then import the encrypted server token."
       },
       {
         "id": "steady",
@@ -219,6 +219,15 @@
       ]
     },
     {
+      "dot": "service",
+      "title": "Caller-supplied profile checks",
+      "items": [
+        "Before submission, Profile.ValidateForTarget checks explicit OS/version and capability facts against generated skip-key availability and documented ADE field restrictions. It never changes profile content or chooses a profile.",
+        "Unsupported fields, unchecked dimensions, deprecations and ignored iOS flags remain separate. Missing facts and conditional Setup Assistant panes remain unchecked; callers decide whether the evidence is sufficient.",
+        "The Apple client and reference-server assignment retain structural validation only. Target-aware validation is an explicit library operation because those paths do not have complete target capabilities."
+      ]
+    },
+    {
       "dot": "warning",
       "title": "Retry and concurrency",
       "items": [
@@ -240,34 +249,35 @@
       "dot": "transport",
       "title": "Public documentation",
       "items": [
-        "Device assignment — https://developer.apple.com/documentation/devicemanagement/device-assignment",
-        "Server token authentication — https://developer.apple.com/documentation/devicemanagement/authenticating-for-automated-device-enrollment",
-        "Fetch devices — https://developer.apple.com/documentation/devicemanagement/fetch-devices",
-        "Sync devices — https://developer.apple.com/documentation/devicemanagement/sync-devices",
-        "Assign a profile and throttling — https://developer.apple.com/documentation/devicemanagement/assign-profile",
-        "Apple account metadata — https://developer.apple.com/documentation/devicemanagement/accountdetail"
+        "Device assignment \u2014 https://developer.apple.com/documentation/devicemanagement/device-assignment",
+        "Server token authentication \u2014 https://developer.apple.com/documentation/devicemanagement/authenticating-for-automated-device-enrollment",
+        "Fetch devices \u2014 https://developer.apple.com/documentation/devicemanagement/fetch-devices",
+        "Sync devices \u2014 https://developer.apple.com/documentation/devicemanagement/sync-devices",
+        "Assign a profile and throttling \u2014 https://developer.apple.com/documentation/devicemanagement/assign-profile",
+        "Apple account metadata \u2014 https://developer.apple.com/documentation/devicemanagement/accountdetail"
       ]
     },
     {
       "title": "Implementation references",
       "dot": "artifact",
       "items": [
-        "keypair: GenerateTokenPKI — https://github.com/deploymenttheory/go-apple-dm/blob/c1a9487d510ddbad038e8a171861a4f96ebfd5dd/devicemanagement/appleplatformservices/dep/tokenpki.go#L36",
-        "importtoken: Validate and commit tokens — https://github.com/deploymenttheory/go-apple-dm/blob/c1a9487d510ddbad038e8a171861a4f96ebfd5dd/devicemanagement/appleplatformservices/dep/token.go#L190",
-        "sync: Synchronize inventory — https://github.com/deploymenttheory/go-apple-dm/blob/c1a9487d510ddbad038e8a171861a4f96ebfd5dd/devicemanagement/appleplatformservices/dep/syncer.go",
-        "assign: Reconcile assignments — https://github.com/deploymenttheory/go-apple-dm/blob/c1a9487d510ddbad038e8a171861a4f96ebfd5dd/devicemanagement/appleplatformservices/dep/assigner.go",
-        "backoff: Lease, target and cooldown checks — https://github.com/deploymenttheory/go-apple-dm/blob/c1a9487d510ddbad038e8a171861a4f96ebfd5dd/devicemanagement/appleplatformservices/dep/assignmentstate.go",
-        "Account and credential checks — https://github.com/deploymenttheory/go-apple-dm/blob/c1a9487d510ddbad038e8a171861a4f96ebfd5dd/devicemanagement/appleplatformservices/dep/accountfence.go"
+        "keypair: GenerateTokenPKI \u2014 https://github.com/deploymenttheory/go-apple-dm/blob/c1a9487d510ddbad038e8a171861a4f96ebfd5dd/devicemanagement/appleplatformservices/dep/tokenpki.go#L36",
+        "importtoken: Validate and commit tokens \u2014 https://github.com/deploymenttheory/go-apple-dm/blob/c1a9487d510ddbad038e8a171861a4f96ebfd5dd/devicemanagement/appleplatformservices/dep/token.go#L190",
+        "sync: Synchronize inventory \u2014 https://github.com/deploymenttheory/go-apple-dm/blob/c1a9487d510ddbad038e8a171861a4f96ebfd5dd/devicemanagement/appleplatformservices/dep/syncer.go",
+        "assign: Reconcile assignments \u2014 https://github.com/deploymenttheory/go-apple-dm/blob/c1a9487d510ddbad038e8a171861a4f96ebfd5dd/devicemanagement/appleplatformservices/dep/assigner.go",
+        "backoff: Lease, target and cooldown checks \u2014 https://github.com/deploymenttheory/go-apple-dm/blob/c1a9487d510ddbad038e8a171861a4f96ebfd5dd/devicemanagement/appleplatformservices/dep/assignmentstate.go",
+        "Account and credential checks \u2014 https://github.com/deploymenttheory/go-apple-dm/blob/c1a9487d510ddbad038e8a171861a4f96ebfd5dd/devicemanagement/appleplatformservices/dep/accountfence.go",
+        "Target-aware profile validation \u2014 https://github.com/deploymenttheory/go-apple-dm/blob/8b90e14028aa7b486b2f639da9410f553ec67f2b/devicemanagement/appleplatformservices/dep/profile_support.go"
       ]
     },
     {
       "title": "Implementation references (continued)",
       "dot": "artifact",
       "items": [
-        "Profile definition and independent schedules — https://github.com/deploymenttheory/go-apple-dm/blob/c1a9487d510ddbad038e8a171861a4f96ebfd5dd/server/internal/app/dep.go",
-        "Custom-store locking contract — https://github.com/deploymenttheory/go-apple-dm/blob/c1a9487d510ddbad038e8a171861a4f96ebfd5dd/devicemanagement/appleplatformservices/dep/store.go#L305",
-        "SQL account-name lock implementation — https://github.com/deploymenttheory/go-apple-dm/blob/c1a9487d510ddbad038e8a171861a4f96ebfd5dd/server/depstore/sqlstore/syncstate.go",
-        "SQL schema 3 migration — https://github.com/deploymenttheory/go-apple-dm/blob/c1a9487d510ddbad038e8a171861a4f96ebfd5dd/server/depstore/sqlstore/migrations/postgres/0003_account_locks.sql"
+        "Profile definition and independent schedules \u2014 https://github.com/deploymenttheory/go-apple-dm/blob/c1a9487d510ddbad038e8a171861a4f96ebfd5dd/server/internal/app/dep.go",
+        "Custom-store locking contract \u2014 https://github.com/deploymenttheory/go-apple-dm/blob/c1a9487d510ddbad038e8a171861a4f96ebfd5dd/devicemanagement/appleplatformservices/dep/store.go#L305",
+        "SQL account-name lock implementation \u2014 https://github.com/deploymenttheory/go-apple-dm/blob/c1a9487d510ddbad038e8a171861a4f96ebfd5dd/server/depstore/sqlstore/syncstate.go",
+        "SQL schema 3 migration \u2014 https://github.com/deploymenttheory/go-apple-dm/blob/c1a9487d510ddbad038e8a171861a4f96ebfd5dd/server/depstore/sqlstore/migrations/postgres/0003_account_locks.sql"
       ]
     }
   ]
