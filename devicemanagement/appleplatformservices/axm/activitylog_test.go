@@ -202,3 +202,72 @@ func ExampleVerifyActivityLog() {
 	fmt.Println(log.Complete, log.Succeeded, log.Rows[1]["Reason"], err)
 	// Output: true false locked <nil>
 }
+
+// TestActivityDownloadAPIReplay uses independent API responses to expire a cached
+// token and verifies that storage authentication failures never trigger OAuth.
+func TestActivityDownloadAPIReplay(t *testing.T) {
+	t.Parallel()
+	for _, alwaysUnauthorized := range []bool{false, true} {
+		name := "expired cached token"
+		if alwaysUnauthorized {
+			name = "bounded second unauthorized"
+		}
+		t.Run(name, func(t *testing.T) {
+			tokenCalls, downloadCalls := 0, 0
+			srv := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				switch r.URL.Path {
+				case "/auth/oauth2/token":
+					tokenCalls++
+					_, _ = fmt.Fprintf(w, `{"access_token":"token-%d","token_type":"Bearer","expires_in":3600,"scope":"business.api"}`, tokenCalls)
+				case "/v1/orgDevices":
+					_, _ = w.Write([]byte(`{"data":[]}`))
+				case "/log":
+					downloadCalls++
+					if alwaysUnauthorized || r.Header.Get("Authorization") == "Bearer token-1" {
+						w.WriteHeader(http.StatusUnauthorized)
+						_, _ = w.Write([]byte("signed secret in error body"))
+						return
+					}
+					if r.Header.Get("Authorization") != "Bearer token-2" {
+						t.Error("refreshed bearer missing")
+					}
+					_, _ = w.Write([]byte("serial,status\nSERIAL,SUCCESS\n"))
+				}
+			}))
+			t.Cleanup(srv.Close)
+			c := stubClient(t, srv, nil)
+			if _, err := c.ListOrgDevices(t.Context(), ListOptions{}); err != nil {
+				t.Fatal(err)
+			}
+			body, err := c.FetchActivityLog(t.Context(), srv.URL+"/log?Signature=secret")
+			if alwaysUnauthorized {
+				var authErr *AuthError
+				if body != nil || !errors.As(err, &authErr) || !IsUnauthorized(err) || strings.Contains(err.Error(), "secret") {
+					t.Fatalf("unsafe auth result: %v %v", body, err)
+				}
+			} else {
+				if err != nil {
+					t.Fatal(err)
+				}
+				if err := body.Close(); err != nil {
+					t.Fatal(err)
+				}
+			}
+			if tokenCalls != 2 || downloadCalls != 2 {
+				t.Fatalf("unbounded or missing replay: tokens=%d downloads=%d", tokenCalls, downloadCalls)
+			}
+		})
+	}
+	srv := stub(t, func(http.ResponseWriter, *http.Request) { t.Error("storage 401 attempted API access") })
+	c := stubClient(t, srv, func(cfg *Config) {
+		cfg.HTTPClient = &http.Client{Transport: activityTransport(func(r *http.Request) (*http.Response, error) {
+			if r.Header.Get("Authorization") != "" {
+				t.Error("storage received bearer")
+			}
+			return &http.Response{StatusCode: http.StatusUnauthorized, Body: io.NopCloser(strings.NewReader("secret")), Header: make(http.Header), Request: r}, nil
+		})}
+	})
+	if body, err := c.FetchActivityLog(t.Context(), "https://store.blobstore.apple.com/log?Signature=secret"); body != nil || !hasStatus(err, http.StatusUnauthorized) || strings.Contains(err.Error(), "secret") {
+		t.Fatalf("storage auth: %v %v", body, err)
+	}
+}

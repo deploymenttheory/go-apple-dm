@@ -16,7 +16,8 @@ const DefaultActivityLogMaxBytes int64 = 32 << 20
 
 // FetchActivityLog downloads and validates a complete activity CSV. It accepts
 // the configured API origin and Apple's documented HTTPS storage origin,
-// store.blobstore.apple.com on port 443. API-origin requests use API credentials;
+// store.blobstore.apple.com on port 443. API-origin requests use API credentials
+// and replay once with a refreshed token after an API 401;
 // presigned storage requests never use bearer tokens or a cookie jar. Redirects
 // are rejected. Errors omit the URL and response body because either may contain
 // signed credentials. The caller closes the returned reader. Reading it preserves
@@ -42,22 +43,9 @@ func (c *Client) FetchActivityLog(ctx context.Context, downloadURL string) (io.R
 	}
 	req.Header.Set("Accept", "text/csv, application/octet-stream")
 	req.Header.Set("User-Agent", c.cfg.UserAgent)
-	if apiOrigin && !storageOrigin {
-		tok, tokenErr := c.token(ctx, "")
-		if tokenErr != nil {
-			return nil, tokenErr
-		}
-		req.Header.Set("Authorization", "Bearer "+tok)
-	}
-	// Isolate cookies and redirects even when the configured API client has a jar.
-	downloadClient := *c.http
-	downloadClient.Jar = nil
-	resp, err := downloadClient.Do(req)
+	resp, err := c.activityLogResponse(ctx, req, apiOrigin && !storageOrigin)
 	if err != nil {
-		if ctx.Err() != nil {
-			return nil, fmt.Errorf("%w: %w", ErrTransport, ctx.Err())
-		}
-		return nil, fmt.Errorf("%w: activity download exchange", ErrTransport)
+		return nil, err
 	}
 	defer func() { _ = resp.Body.Close() }()
 	if resp.StatusCode != http.StatusOK {
@@ -81,6 +69,39 @@ func (c *Client) FetchActivityLog(ctx context.Context, downloadURL string) (io.R
 		return nil, err
 	}
 	return io.NopCloser(bytes.NewReader(body)), nil
+}
+
+// activityLogResponse isolates cookies and performs one API-only token replay.
+// It owns unsuccessful response bodies; the caller owns a returned response.
+func (c *Client) activityLogResponse(ctx context.Context, req *http.Request, authenticated bool) (*http.Response, error) {
+	downloadClient := *c.http
+	downloadClient.Jar = nil
+	for replay := 0; ; replay++ {
+		var tok string
+		if authenticated {
+			var tokenErr error
+			tok, tokenErr = c.token(ctx, "")
+			if tokenErr != nil {
+				return nil, tokenErr
+			}
+			req.Header.Set("Authorization", "Bearer "+tok)
+		}
+		resp, err := downloadClient.Do(req)
+		if err != nil {
+			if ctx.Err() != nil {
+				return nil, fmt.Errorf("%w: %w", ErrTransport, ctx.Err())
+			}
+			return nil, fmt.Errorf("%w: activity download exchange", ErrTransport)
+		}
+		if resp.StatusCode != http.StatusUnauthorized || !authenticated {
+			return resp, nil
+		}
+		_ = resp.Body.Close()
+		c.invalidate(tok)
+		if replay > 0 {
+			return nil, &AuthError{Status: http.StatusUnauthorized, Err: &Error{Status: http.StatusUnauthorized, Method: http.MethodGet, URL: "activity download"}}
+		}
+	}
 }
 
 // validateActivityCSV checks header uniqueness and complete, consistent CSV records.
