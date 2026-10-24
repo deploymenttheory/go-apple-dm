@@ -65,7 +65,7 @@ func tierOf(pkg string) int {
 		return tierApp
 	case strings.HasPrefix(pkg, "server/"):
 		return tierServer
-	case pkg == "inventory", strings.HasPrefix(pkg, "inventory/"):
+	case pkg == "inventory", strings.HasPrefix(pkg, "inventory/"), pkg == "correlation":
 		return tierInventory
 	case strings.HasPrefix(pkg, "utility/"), pkg == "applications", strings.HasPrefix(pkg, "applications/"):
 		return tierUtility

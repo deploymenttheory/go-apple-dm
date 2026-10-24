@@ -8,6 +8,8 @@ import (
 	"sort"
 	"strings"
 	"time"
+
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/source"
 )
 
 // Repository reconciles observations and exposes persistent device records.
@@ -27,7 +29,7 @@ func (r *Repository) Device(ctx context.Context, id string) (DeviceRecord, error
 }
 
 // SourceDevice resolves a previously observed external identity.
-func (r *Repository) SourceDevice(ctx context.Context, ref SourceReference) (DeviceRecord, error) {
+func (r *Repository) SourceDevice(ctx context.Context, ref source.Reference) (DeviceRecord, error) {
 	id, err := get[string](ctx, r.Backend, "source/"+ref.Key())
 	if err != nil {
 		return DeviceRecord{}, err
@@ -54,7 +56,7 @@ func (r *Repository) ObserveTx(ctx context.Context, tx Tx, serial string, o Obse
 		return DeviceRecord{}, err
 	}
 	if id == "" && (strings.HasPrefix(o.Source.Kind, "mdm.") || strings.HasPrefix(o.Source.Kind, "ddm.")) {
-		anchor := SourceReference{Kind: "enrollment", ResourceID: o.Source.ResourceID}
+		anchor := source.Reference{Kind: "enrollment", ResourceID: o.Source.ResourceID}
 		id, err = get[string](ctx, tx, "source/"+anchor.Key())
 		if err != nil && !errors.Is(err, ErrNotFound) {
 			return DeviceRecord{}, err
@@ -195,11 +197,11 @@ func (r *Repository) ObserveTx(ctx context.Context, tx Tx, serial string, o Obse
 }
 
 // Attempt records failure metadata without replacing successful evidence.
-func (r *Repository) Attempt(ctx context.Context, ref SourceReference, at time.Time, code string) error {
+func (r *Repository) Attempt(ctx context.Context, ref source.Reference, at time.Time, code string) error {
 	return r.Backend.Update(ctx, func(tx Tx) error {
 		id, err := get[string](ctx, tx, "source/"+ref.Key())
 		if errors.Is(err, ErrNotFound) && strings.HasPrefix(ref.Kind, "mdm.") {
-			anchor := SourceReference{Kind: "enrollment", ResourceID: ref.ResourceID}
+			anchor := source.Reference{Kind: "enrollment", ResourceID: ref.ResourceID}
 			id, err = get[string](ctx, tx, "source/"+anchor.Key())
 		}
 		if errors.Is(err, ErrNotFound) {
@@ -546,7 +548,7 @@ func (d DeviceRecord) CoverageAt(now time.Time) CoverageSummary {
 }
 
 // ChangeSource updates lifecycle metadata without fabricating a new observation.
-func (r *Repository) ChangeSource(ctx context.Context, ref SourceReference, absent, disconnected bool) error {
+func (r *Repository) ChangeSource(ctx context.Context, ref source.Reference, absent, disconnected bool) error {
 	return r.Backend.Update(ctx, func(tx Tx) error {
 		id, e := get[string](ctx, tx, "source/"+ref.Key())
 		if e != nil {
@@ -566,7 +568,7 @@ func (r *Repository) ChangeSource(ctx context.Context, ref SourceReference, abse
 }
 
 // ResourceObservation constructs a lossless snapshot from a JSON resource.
-func ResourceObservation(ref SourceReference, raw json.RawMessage, at time.Time, ttl time.Duration) (Observation, error) {
+func ResourceObservation(ref source.Reference, raw json.RawMessage, at time.Time, ttl time.Duration) (Observation, error) {
 	if !json.Valid(raw) {
 		return Observation{}, fmt.Errorf("%w: source JSON", ErrInvalid)
 	}

@@ -8,6 +8,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/source"
+
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/appleplatformservices/axm"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/appleplatformservices/axm/collection"
 )
@@ -176,7 +178,7 @@ func (s *Syncer) sync(ctx context.Context, c *axm.Client, a Account, j *Job) err
 							if err := json.Unmarshal(resource.Raw, &device); err != nil {
 								return err
 							}
-							observation, err := ResourceObservation(SourceReference{"axm.device", a.ID, resource.ID}, resource.Raw, now, a.DeviceTTL)
+							observation, err := ResourceObservation(source.Reference{Kind: "axm.device", AccountID: a.ID, ResourceID: resource.ID}, resource.Raw, now, a.DeviceTTL)
 							if err != nil {
 								return err
 							}
@@ -246,7 +248,7 @@ func (s *Syncer) enrich(ctx context.Context, c *axm.Client, a Account, j *Job, d
 	id := listed.Source.ResourceID
 	now := time.Now().UTC()
 	save := func(kind string, raw json.RawMessage, ttl time.Duration) error {
-		o, e := ResourceObservation(SourceReference{kind, a.ID, id}, raw, time.Now().UTC(), ttl)
+		o, e := ResourceObservation(source.Reference{Kind: kind, AccountID: a.ID, ResourceID: id}, raw, time.Now().UTC(), ttl)
 		if e != nil {
 			return e
 		}
@@ -264,7 +266,7 @@ func (s *Syncer) enrich(ctx context.Context, c *axm.Client, a Account, j *Job, d
 			if e != nil {
 				return e
 			}
-			ref := SourceReference{kind, a.ID, id}
+			ref := source.Reference{Kind: kind, AccountID: a.ID, ResourceID: id}
 			o := current.Sources[ref.Key()]
 			o.Source = ref
 			o.AttemptedAt = time.Now().UTC()
@@ -277,7 +279,7 @@ func (s *Syncer) enrich(ctx context.Context, c *axm.Client, a Account, j *Job, d
 		})
 	}
 	fresh := func(kind string, ttl time.Duration) bool {
-		o, ok := d.Sources[(SourceReference{kind, a.ID, id}).Key()]
+		o, ok := d.Sources[(source.Reference{Kind: kind, AccountID: a.ID, ResourceID: id}).Key()]
 		return ok && !o.Absent && !o.Disconnected && o.Error == "" && now.Before(o.ObservedAt.Add(ttl)) && !j.Force
 	}
 	if !fresh("axm.detail", a.DeviceTTL) || listed.Generation != j.ID {
@@ -352,7 +354,7 @@ func (s *Syncer) enrich(ctx context.Context, c *axm.Client, a Account, j *Job, d
 			}
 		}
 	}
-	old, seen := d.Sources[(SourceReference{"axm.coverage", a.ID, id}).Key()]
+	old, seen := d.Sources[(source.Reference{Kind: "axm.coverage", AccountID: a.ID, ResourceID: id}).Key()]
 	if !fresh("axm.coverage", a.CoverageTTL) && !(a.NeverRefetchCoverage && seen && !old.ObservedAt.IsZero() && !j.Force) {
 		if a.CoverageBudget > 0 && j.CoverageAttempts >= a.CoverageBudget {
 			j.Failed++
@@ -473,7 +475,7 @@ func (s *Syncer) appleMDM(ctx context.Context, c *axm.Client, a Account, j *Job)
 		commitPage := func(tx Tx) error { return put(ctx, tx, pageKey, true) }
 		for _, device := range page.Items {
 			if err := r.commitJob(ctx, j, func(tx Tx) error {
-				o, e := ResourceObservation(SourceReference{"axm.mdm", a.ID, device.ID}, device.Raw, time.Now().UTC(), a.DeviceTTL)
+				o, e := ResourceObservation(source.Reference{Kind: "axm.mdm", AccountID: a.ID, ResourceID: device.ID}, device.Raw, time.Now().UTC(), a.DeviceTTL)
 				if e != nil {
 					return e
 				}
@@ -490,7 +492,7 @@ func (s *Syncer) appleMDM(ctx context.Context, c *axm.Client, a Account, j *Job)
 				continue
 			}
 			if err := r.commitJob(ctx, j, func(tx Tx) error {
-				o, e := ResourceObservation(SourceReference{"axm.mdm.detail", a.ID, device.ID}, detail.Raw, time.Now().UTC(), a.DeviceTTL)
+				o, e := ResourceObservation(source.Reference{Kind: "axm.mdm.detail", AccountID: a.ID, ResourceID: device.ID}, detail.Raw, time.Now().UTC(), a.DeviceTTL)
 				if e != nil {
 					return e
 				}

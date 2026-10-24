@@ -100,6 +100,42 @@ Detail and assignment streams remain singular requests. Inventory stages coverag
 pages in memory and publishes coverage only after complete traversal, so a failed page
 retains the last successful coverage evidence and retries the resource on the next job.
 
+## Standalone serial correlation and resolution
+
+Use [`correlation.Correlate`](../../devicemanagement/correlation/correlation.go) with
+one actual `collection.Resource` of type `orgDevices`, its account and observation
+time, and successful native report history. The Apple serial comes from the actual
+resource's `attributes.serialNumber`; the host supplies the serial and enrollment
+method bound to its authenticated native protocol exchange. Serial is the sole
+physical cross-source key. Opaque resource IDs and enrollment/channel IDs scope
+provenance and addressing; they establish neither hardware identity nor authentication.
+No serial is inferred from those IDs.
+
+ADE, account-driven Device Enrollment and profile-based Device Enrollment can match.
+User Enrollment, unknown methods and unauthenticated reports are excluded. Missing
+serials remain unmatched; a serial mismatch is a retained identity conflict. Different
+nonempty authenticated serials for the same source reject all its reports. Multiple
+independent enrollments can match one resource. Correlation returns copies of originals,
+matched reports and rejected reports with reasons; it does not merge stored records.
+
+Optionally call `Correlation.Resolve` with explicit source-qualified field mappings.
+Each mapping declares equivalent meaning and units; keep, for example, gigabytes and
+bytes separate unless the host explicitly converts them before mapping and retains
+its conversion evidence. There are no built-in field aliases or unit conversions.
+The latest successful native value wins over Apple even if Apple refreshed later.
+Field omission retains earlier report evidence. False, zero, empty arrays and null
+are values; an unreported mapped field has no selected value. Purchasing and coverage
+facts can remain Apple-only inputs. Ties follow mapping order, then report order.
+All candidates, source fields, report times and disagreements remain inspectable,
+including historical native values. Numeric lexemes retain their precision.
+
+See the [executable example](../../devicemanagement/correlation/example_test.go).
+The host owns authentication, outcomes, retained report history and persistence.
+Failed attempts must remain separate from successful reports. The correlation and
+resolution APIs require no inventory repository and make no fleet-policy decision.
+The current reference inventory records and projection described below remain
+independent of this opt-in API; they do not yet use its native-first resolution.
+
 ## Records and native collection
 
 Source identity is matched first, followed by an unambiguous normalized serial.

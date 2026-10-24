@@ -8,6 +8,8 @@ import (
 	"errors"
 	"strings"
 	"time"
+
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/source"
 )
 
 // Domain errors are shared by persistence implementations and callers.
@@ -19,21 +21,9 @@ var (
 	ErrLease    = errors.New("inventory: worker lease lost")
 )
 
-// SourceReference identifies a resource within an independently authenticated source.
-type SourceReference struct {
-	Kind       string `json:"kind"`
-	AccountID  string `json:"account_id,omitempty"`
-	ResourceID string `json:"resource_id"`
-}
-
-// Key is a bounded, collision-resistant storage key, not an Apple identifier.
-func (r SourceReference) Key() string {
-	return digest(r.Kind + "\x00" + r.AccountID + "\x00" + r.ResourceID)
-}
-
 // Observation is the latest successful source snapshot, with separate attempt metadata.
 type Observation struct {
-	Source       SourceReference            `json:"source"`
+	Source       source.Reference           `json:"source"`
 	ObservedAt   time.Time                  `json:"observed_at"`
 	AttemptedAt  time.Time                  `json:"attempted_at"`
 	ExpiresAt    time.Time                  `json:"expires_at,omitempty"`
@@ -48,9 +38,9 @@ type Observation struct {
 
 // FieldValue records both the selected value and the evidence used to choose it.
 type FieldValue struct {
-	Value      json.RawMessage `json:"value"`
-	Source     SourceReference `json:"source"`
-	ObservedAt time.Time       `json:"observed_at"`
+	Value      json.RawMessage  `json:"value"`
+	Source     source.Reference `json:"source"`
+	ObservedAt time.Time        `json:"observed_at"`
 }
 
 // CoveragePlan preserves every plan, including subscriptions with no expiry.

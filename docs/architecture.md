@@ -43,6 +43,17 @@ host. The inventory synchronizer composes this collector; neither the Apple clie
 collector imports inventory. See [source collection](operations/agentless-inventory.md#standalone-source-collection)
 for continuation and completion contracts.
 
+`devicemanagement/source.Reference` supplies account-scoped opaque provenance with the
+same stored JSON and key encoding used by inventory. Independent
+`devicemanagement/correlation` accepts a collected organization-device resource and
+caller-authenticated successful native reports. Explicit serial matching admits ADE,
+account-driven Device Enrollment and profile-based Device Enrollment; User Enrollment
+is excluded. Its optional resolver uses only caller-declared equivalent fields and
+units, prefers the latest native evidence before Apple regardless of refresh time,
+and retains original values and disagreements. Neither package needs an inventory
+repository. The reference inventory projection remains a separate composition; it
+does not yet call this resolver. See [explicit correlation](operations/agentless-inventory.md#standalone-serial-correlation-and-resolution).
+
 The [content-cache receiver](research/decisions/0051-content-cache-metrics.md) is
 an embeddable library at the service-client tier. It installs no reference-server
 route. Its reviewed OS 27 OpenAPI fixture is checked against the pinned Apple source.

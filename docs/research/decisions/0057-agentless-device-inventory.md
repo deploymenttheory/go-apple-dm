@@ -10,7 +10,12 @@ its Jamf reconciliation layer is outside this project's scope.
 
 ## Decision
 
-Add an explicit inventory orchestration tier below server adapters and above Apple
+Provide collection, explicit correlation and optional resolution as independently usable
+library operations. A universal inventory repository is not required by Apple clients,
+collection or correlation. `devicemanagement/source.Reference` supplies account-scoped
+opaque provenance without changing its stored JSON or hashed key encoding.
+
+Retain an explicit inventory orchestration tier below server adapters and above Apple
 clients and protocol types; the layout tests enforce that dependency direction.
 Add `devicemanagement/inventory` with a transactional backend contract, source snapshots,
 stable device records, query indexes, sync jobs, leases, schedules, reports and exports.
@@ -38,11 +43,28 @@ resuming; collector instances hold no durable state. New generations begin with 
 checkpoint. Existing inventory page checkpoints resume through the collector without
 changing their retained device evidence.
 
+`devicemanagement/correlation` correlates an actual collected organization-device
+resource with successful native report history using only matching authenticated
+serials. ADE, account-driven Device Enrollment and profile-based Device Enrollment
+are eligible; User Enrollment is excluded. Opaque Apple resource IDs and enrollment,
+channel and user identities retain their protocol and provenance roles; they are
+neither alternate physical-device keys nor authentication. Missing serials do not
+match, and mismatches remain conflicts. Multiple enrollments can match one resource.
+
+Optional resolution requires caller-declared source-qualified equivalent fields,
+including agreement on meaning and units. No aliases or conversions are inferred.
+Latest successful native field evidence wins before Apple regardless of Apple's
+refresh time. Omission retains earlier native evidence; false, zero, empty arrays
+and null remain values. Originals, all candidates and disagreements retain their
+source and observation time. The host owns retention and persistence. The existing
+reference inventory projection remains separate and does not yet compose this API;
+its stored record normalization is described in the operations guide.
+
 Preserve every AxM resource as raw JSON alongside structured fields, including unknown
 members, nulls, false and arrays. Keep all coverage plans. Separate successful evidence
 from refresh failures and coverage absence from lookup errors. Source identities are
-opaque and account-scoped. Match serials only when unambiguous; retain conflicts and
-resolve provisional enrollment records through stable aliases when their serial arrives.
+opaque and account-scoped. Existing inventory records retain their provisional
+enrollment aliases and stored observations independently of explicit correlation.
 
 Commit each enumeration page with its checkpoint. Serialize outbound syncs with a
 renewable database lease and revision-fenced commits. Keep native enrollment, organization
@@ -80,7 +102,14 @@ instance, failed and ambiguous commits, cancellation, authentication/permission 
 malformed documents, cyclic continuations and page caps. Inventory tests verify both
 current and retained page-checkpoint resumption and incomplete-coverage preservation.
 
+Standalone external-package correlation tests exercise every eligible enrollment
+method, User Enrollment exclusion, unauthenticated/missing/conflicting serials, multiple
+enrollments, original resource JSON, precise numbers, partial native report history,
+native-first precedence, subsequent native updates, explicit units, invalid evidence
+and mappings, returned-value isolation and concurrent reads.
+
 ## References
 
 - [Apple Business API](https://developer.apple.com/documentation/applebusinessapi)
 - [Collection contract](../../../devicemanagement/appleplatformservices/axm/collection/doc.go)
+- [Correlation contract](../../../devicemanagement/correlation/doc.go)

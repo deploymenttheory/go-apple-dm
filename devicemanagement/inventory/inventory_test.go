@@ -14,6 +14,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/source"
+
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/appleplatformservices/axm"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/appleplatformservices/axm/axmtest"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/ddm"
@@ -33,7 +35,7 @@ func repository(t *testing.T) *Repository {
 // observe records a fixture snapshot and fails immediately on invalid evidence.
 func observe(t *testing.T, r *Repository, serial, kind, account, id, raw string, at time.Time) DeviceRecord {
 	t.Helper()
-	o, e := ResourceObservation(SourceReference{kind, account, id}, json.RawMessage(raw), at, 24*time.Hour)
+	o, e := ResourceObservation(source.Reference{Kind: kind, AccountID: account, ResourceID: id}, json.RawMessage(raw), at, 24*time.Hour)
 	if e != nil {
 		t.Fatal(e)
 	}
@@ -53,7 +55,7 @@ func TestLosslessReconciliationAndQueries(t *testing.T) {
 	if string(d.Fields["migration_capable"].Value) != "false" || string(d.Fields["axm.device.attributes.future.nil"].Value) != "null" {
 		t.Fatalf("fields lost: %+v", d.Fields)
 	}
-	if string(d.Sources[(SourceReference{"axm.device", "a", "opaque/apple/id"}).Key()].Raw) != raw {
+	if string(d.Sources[(source.Reference{Kind: "axm.device", AccountID: "a", ResourceID: "opaque/apple/id"}).Key()].Raw) != raw {
 		t.Fatal("raw changed")
 	}
 	native := observe(t, r, "SER123", "mdm.DeviceInformation", "", "device:enrollment1", `{"QueryResponses":{"OSVersion":"27.0","DeviceName":"Mac"}}`, at.Add(time.Minute))
@@ -339,7 +341,7 @@ func TestEnrollmentLearnsSerialAfterCloudDiscovery(t *testing.T) {
 	if e != nil || len(page.Items) != 1 {
 		t.Fatal("merge left duplicate", e)
 	}
-	mapped, e := r.SourceDevice(t.Context(), SourceReference{Kind: "enrollment", ResourceID: "device:enrolled"})
+	mapped, e := r.SourceDevice(t.Context(), source.Reference{Kind: "enrollment", ResourceID: "device:enrolled"})
 	if e != nil || mapped.ID != cloud.ID {
 		t.Fatal("source link not updated", e)
 	}

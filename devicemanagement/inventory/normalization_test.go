@@ -8,6 +8,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/source"
+
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/ddm"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/mdm"
 )
@@ -38,7 +40,7 @@ func TestIdentifierNormalization(t *testing.T) {
 					t.Fatalf("%s existence: %+v %v", field, page, err)
 				}
 			}
-			ref := SourceReference{Kind: "axm.device", AccountID: "account", ResourceID: "device"}
+			ref := source.Reference{Kind: "axm.device", AccountID: "account", ResourceID: "device"}
 			if string(d.Sources[ref.Key()].Raw) != raw {
 				t.Fatal("modified original Apple evidence")
 			}
