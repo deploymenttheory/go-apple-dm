@@ -35,7 +35,7 @@
     ],
     "repository": {
       "url": "https://github.com/deploymenttheory/go-apple-dm",
-      "revision": "557c464864be88a7a2e60afa4cc6c6139e03e094"
+      "revision": "840163310d08110feab368693b8a58c5f69c510f"
     },
     "colour_profile": "purpose-v1",
     "legend": {
@@ -427,6 +427,20 @@
         "Optional resolution requires caller-declared equivalent meanings and units. Latest successful native field evidence wins before Apple regardless of Apple refresh time; omissions retain prior native reports, and originals and disagreements remain inspectable. Neither operation requires an inventory repository.",
         "Standalone serial correlation and optional resolution \u2014 https://github.com/deploymenttheory/go-apple-dm/blob/57e67022f98e9df9b75863020fc466b7c8af596f/devicemanagement/correlation/correlation.go",
         "Native-first equivalent-field resolution \u2014 https://github.com/deploymenttheory/go-apple-dm/blob/57e67022f98e9df9b75863020fc466b7c8af596f/devicemanagement/correlation/resolve.go"
+      ]
+    },
+    {
+      "dot": "storage",
+      "title": "Independent source evidence",
+      "items": [
+        "Inventory retains one record per source kind, account and opaque identity. Successful original history, complete list documents and safe failed outcomes remain separate; original JSON bytes and numeric lexemes survive persistence. Selectors use data.<original path> and meta.<column>; original data.id and repository meta.id never shadow one another.",
+        "Explicit serial links retain both source identities without merging records or ranking fields. Newly retained originals, including delayed reports, invalidate affected links; exact replays retain checked links. Absence or disconnection requires a fresh correlation. Optional resolution stays caller-owned.",
+        "Migration retains opaque original source envelopes, derives reconstructed facts only from actual raw JSON, and leaves missing originals or authenticated enrollment provenance incomplete and refreshable. Normalized aliases cannot fabricate source values.",
+        "Old worker owners are fenced through the existing lease guard. Incompatible checkpoints restart under a new generation while the previous outbound lease deadline prevents overlapping Apple requests. Evidence and checkpoint writes remain atomic.",
+        "Independent source persistence \u2014 https://github.com/deploymenttheory/go-apple-dm/blob/840163310d08110feab368693b8a58c5f69c510f/devicemanagement/inventory/records.go",
+        "Original source and worker migration \u2014 https://github.com/deploymenttheory/go-apple-dm/blob/840163310d08110feab368693b8a58c5f69c510f/devicemanagement/inventory/migration.go",
+        "Complete list document retention \u2014 https://github.com/deploymenttheory/go-apple-dm/blob/840163310d08110feab368693b8a58c5f69c510f/devicemanagement/inventory/collection.go",
+        "SQL migration and restore preserve an active retired-writer fence; MySQL installs only missing guard DDL and uses current locking reads. \u2014 https://github.com/deploymenttheory/go-apple-dm/blob/840163310d08110feab368693b8a58c5f69c510f/server/inventorystore/fence.go"
       ]
     },
     {

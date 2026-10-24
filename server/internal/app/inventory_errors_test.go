@@ -64,7 +64,7 @@ func TestInventoryHTTPValidation(t *testing.T) {
 	}
 	a := &App{Inventory: r}
 	mux := inventoryTestMux(a)
-	private := url.QueryEscape(`[{"field":"axm.private","operator":"eq","value":1}]`)
+	private := url.QueryEscape(`[{"field":"data.private","operator":"eq","value":1}]`)
 	cases := []struct {
 		method, path, body string
 		want               int
@@ -88,7 +88,7 @@ func TestInventoryHTTPValidation(t *testing.T) {
 		{"POST", "/devices/missing/collect", "", 404},
 		{"GET", "/devices/missing", "", 404},
 		{"GET", "/inventory/exports?format=bad", "", 400},
-		{"GET", "/inventory/exports?columns=axm.private", "", 400},
+		{"GET", "/inventory/exports?columns=data.private", "", 400},
 	}
 	for _, path := range []string{"/devices", "/devices/fields", "/inventory/raw/devices", "/inventory/raw/devices/fields", "/inventory/reports", "/inventory/exports", "/inventory/raw/exports"} {
 		for _, query := range []string{"limit=bad", "as_of=bad", "where=%7B", "focus=bad"} {

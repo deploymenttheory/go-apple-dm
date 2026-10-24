@@ -1,7 +1,9 @@
 package recovery
 
 import (
+	"context"
 	"crypto/sha256"
+	"database/sql"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
@@ -89,4 +91,15 @@ func quoted(d sqlcommon.Dialect, name string) (string, error) {
 		return "`" + name + "`", nil
 	}
 	return `"` + name + `"`, nil
+}
+
+// migrateSchemaSet preserves inventory's local, resumable MySQL fence installer
+// when recovery creates a fresh target. Other domains keep their ordinary schema
+// migration behavior; no generic migration policy or transaction rule changes.
+func migrateSchemaSet(ctx context.Context, db *sql.DB, d sqlcommon.Dialect, set sqlcommon.MigrationSet) error {
+	if set.Table == "inventory_schema_migrations" {
+		return inventorystore.Migrate(ctx, db, d)
+	}
+	_, err := sqlcommon.MigrateSet(ctx, db, d, set)
+	return err
 }

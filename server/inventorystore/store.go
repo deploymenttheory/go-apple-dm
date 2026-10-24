@@ -20,13 +20,17 @@ var migrations embed.FS
 func MigrationSet(d sqlcommon.Dialect) (sqlcommon.MigrationSet, error) {
 	switch d.Name {
 	case "sqlite", "postgres", "mysql":
-		return sqlcommon.MigrationSet{Table: "inventory_schema_migrations", FS: sqlcommon.MustSub(migrations, "migrations/"+d.Name)}, nil
+		files := sqlcommon.MustSub(migrations, "migrations/"+d.Name)
+		if d.Name == "mysql" {
+			files = fenceMigrationFS{files}
+		}
+		return sqlcommon.MigrationSet{Table: "inventory_schema_migrations", FS: files}, nil
 	default:
 		return sqlcommon.MigrationSet{}, fmt.Errorf("inventory: unsupported dialect %q", d.Name)
 	}
 }
 
-// Store serializes reconciliation and seals document payloads with the server keyring.
+// Store serializes evidence updates and seals document payloads with the server keyring.
 type Store struct {
 	db   *sql.DB
 	d    sqlcommon.Dialect
@@ -38,14 +42,37 @@ func Open(ctx context.Context, db *sql.DB, d sqlcommon.Dialect, keys *crypt.Keyr
 	if db == nil {
 		return nil, inventory.ErrInvalid
 	}
+	if err := Migrate(ctx, db, d); err != nil {
+		return nil, err
+	}
+
+	return &Store{db: db, d: d, keys: keys}, nil
+}
+
+// Migrate installs the inventory SQL schema and its initially inactive write
+// fence. Recovery uses the same entry point before restoring encrypted documents.
+// The caller separately runs inventory.Repository.Migrate before starting workers.
+func Migrate(ctx context.Context, db *sql.DB, d sqlcommon.Dialect) error {
+	if db == nil {
+		return inventory.ErrInvalid
+	}
 	set, err := MigrationSet(d)
 	if err != nil {
-		return nil, err
+		return err
 	}
-	if _, err = sqlcommon.MigrateSet(ctx, db, d, set); err != nil {
-		return nil, err
+	if _, err := sqlcommon.MigrateSet(ctx, db, d, set); err != nil {
+		return err
 	}
-	return &Store{db: db, d: d, keys: keys}, nil
+	if d.Name == "mysql" {
+		if err := installMySQLFence(ctx, db); err != nil {
+			return err
+		}
+	}
+	// Restores can recreate a default-zero guard column beside an already
+	// committed model marker. Repair that invariant before any worker can start;
+	// a first evidence migration still activates both markers atomically.
+	_, err = sqlcommon.Query(ctx, db).ExecContext(ctx, d.Rebind("UPDATE inventory_lock SET evidence_model = 1 WHERE id = 1 AND evidence_model = 0 AND EXISTS (SELECT 1 FROM inventory_entries WHERE entry_key = ?)"), inventory.EvidenceModelKey)
+	return err
 }
 
 // decode authenticates the payload against its document key and column purpose.
@@ -137,6 +164,11 @@ func (t *transaction) Put(_ context.Context, key string, b json.RawMessage) erro
 	if t.keys != nil {
 		b, err = t.keys.Seal(b, crypt.AAD("inventory_entries.payload", key))
 		if err != nil {
+			return err
+		}
+	}
+	if key == inventory.EvidenceModelKey {
+		if _, err := sqlcommon.Query(t.ctx, t.db).ExecContext(t.ctx, "UPDATE inventory_lock SET evidence_model = 1 WHERE id = 1"); err != nil {
 			return err
 		}
 	}

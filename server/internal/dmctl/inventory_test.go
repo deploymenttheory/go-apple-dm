@@ -12,7 +12,7 @@ func TestInventoryCommands(t *testing.T) {
 	for _, tc := range []struct {
 		args                []string
 		method, path, query string
-	}{{[]string{"devices", "list", "--where", `[{"field":"imei","operator":"contains","value":"one"}]`}, "GET", "/admin/v1/devices", "where"}, {[]string{"devices", "get", "opaque", "--raw"}, "GET", "/admin/v1/inventory/raw/devices/opaque", ""}, {[]string{"inventory", "export", "--format", "csv", "--columns", "imei,serial_number"}, "GET", "/admin/v1/inventory/exports", "columns"}, {[]string{"axm", "accounts", "sync", "source", "--force"}, "POST", "/admin/v1/axm/accounts/source/sync", "force"}, {[]string{"inventory", "jobs", "pause", "job"}, "POST", "/admin/v1/inventory/jobs/job/pause", ""}} {
+	}{{[]string{"devices", "list", "--where", `[{"field":"data.attributes.imei","operator":"contains","value":"one"}]`}, "GET", "/admin/v1/devices", "where"}, {[]string{"devices", "get", "opaque", "--raw"}, "GET", "/admin/v1/inventory/raw/devices/opaque", ""}, {[]string{"inventory", "export", "--format", "csv", "--columns", "meta.resource_id,meta.id"}, "GET", "/admin/v1/inventory/exports", "columns"}, {[]string{"axm", "accounts", "sync", "source", "--force"}, "POST", "/admin/v1/axm/accounts/source/sync", "force"}, {[]string{"inventory", "jobs", "pause", "job"}, "POST", "/admin/v1/inventory/jobs/job/pause", ""}} {
 		t.Run(strings.Join(tc.args[:2], "-"), func(t *testing.T) {
 			called := false
 			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

@@ -13,6 +13,7 @@ import (
 
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/appleplatformservices/axm"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/appleplatformservices/axm/collection"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/source"
 )
 
 type transportFunc func(*http.Request) (*http.Response, error)
@@ -25,8 +26,10 @@ func TestSyncCheckpointSurvivesInterruption(t *testing.T) {
 	for _, legacy := range []bool{false, true} {
 		t.Run(fmt.Sprint("legacy=", legacy), func(t *testing.T) {
 			repo, s, server, a := syncFixture(t)
+			assignedServer := server.AddMDMServer("server", nil)
 			for _, id := range []string{"one", "two", "three"} {
 				server.AddOrgDevice(id, nil)
+				server.Assign(id, assignedServer)
 			}
 			ctx, cancel := context.WithCancel(t.Context())
 			defer cancel()
@@ -68,7 +71,7 @@ func TestSyncCheckpointSurvivesInterruption(t *testing.T) {
 			if saved.Devices != 1 || len(saved.Checkpoint) == 0 || saved.State != "running" {
 				t.Fatalf("checkpoint %+v", saved)
 			}
-			page, e := repo.Devices(t.Context(), DeviceQuery{})
+			page, e := repo.Resources(t.Context(), ResourceQuery{Source: "axm.device"})
 			if e != nil || len(page.Items) != 1 {
 				t.Fatal("checkpoint advanced ahead of data", e)
 			}
@@ -84,12 +87,16 @@ func TestSyncCheckpointSurvivesInterruption(t *testing.T) {
 				if e := repo.Backend.Update(t.Context(), func(tx Tx) error { return put(t.Context(), tx, "job/"+saved.ID, saved) }); e != nil {
 					t.Fatal(e)
 				}
+				if err := repo.Migrate(t.Context(), time.Now().UTC()); err != nil {
+					t.Fatal(err)
+				}
 			}
+
 			resumed, e := s.RunOne(t.Context())
 			if e != nil || resumed.State != "success" || resumed.Devices != 3 {
 				t.Fatalf("resume %+v %v", resumed, e)
 			}
-			page, e = repo.Devices(t.Context(), DeviceQuery{})
+			page, e = repo.Resources(t.Context(), ResourceQuery{Source: "axm.device"})
 			if e != nil || len(page.Items) != 3 {
 				t.Fatal("resume skipped devices", e)
 			}
@@ -101,6 +108,8 @@ func TestSyncCheckpointSurvivesInterruption(t *testing.T) {
 func TestCoverageFailureNeverMeansNoCoverage(t *testing.T) {
 	repo, s, server, a := syncFixture(t)
 	server.AddOrgDevice("serial", nil)
+	assignedServer := server.AddMDMServer("server", nil)
+	server.Assign("serial", assignedServer)
 	fail := true
 	base := server.Client().Transport
 	s.Client = func(ctx context.Context, a Account, key []byte) (*axm.Client, error) {
@@ -121,13 +130,19 @@ func TestCoverageFailureNeverMeansNoCoverage(t *testing.T) {
 	if e != nil || job.State != "partial" {
 		t.Fatalf("result %+v %v", job, e)
 	}
-	page, e := repo.Devices(t.Context(), DeviceQuery{})
-	if e != nil {
-		t.Fatal(e)
+	page, e := repo.Resources(t.Context(), ResourceQuery{Source: "axm.device"})
+	if e != nil || len(page.Items) != 1 {
+		t.Fatal(page, e)
 	}
-	if page.Items[0].CoverageAt(time.Now()).State != "unknown" {
-		t.Fatal("404 converted into no coverage")
+	ref := source.Reference{Kind: "axm.coverage", AccountID: a.ID, ResourceID: "serial"}
+	if _, err := repo.SourceResource(t.Context(), ref); !errors.Is(err, ErrNotFound) {
+		t.Fatal("failed coverage fabricated evidence", err)
 	}
+	attempts, err := repo.Attempts(t.Context(), ref)
+	if err != nil || len(attempts) != 1 {
+		t.Fatal(attempts, err)
+	}
+
 	fail = false
 	_, e = repo.Enqueue(t.Context(), a.ID, false, time.Now())
 	if e != nil {
@@ -137,13 +152,15 @@ func TestCoverageFailureNeverMeansNoCoverage(t *testing.T) {
 	if e != nil || job.State != "success" {
 		t.Fatal(e, job)
 	}
-	page, e = repo.Devices(t.Context(), DeviceQuery{})
+	page, e = repo.Resources(t.Context(), ResourceQuery{Source: "axm.device"})
 	if e != nil {
 		t.Fatal(e)
 	}
-	if page.Items[0].CoverageAt(time.Now()).State != "none" {
-		t.Fatal("empty success not recorded")
+	coverage, err := repo.SourceResource(t.Context(), ref)
+	if err != nil || string(coverage.Snapshot.Raw) != "[]" {
+		t.Fatal("empty successful original missing", coverage, err)
 	}
+
 	// Changing credentials/config fences an already claimed worker's next commit.
 	_, e = repo.Enqueue(t.Context(), a.ID, true, time.Now())
 	if e != nil {
@@ -167,7 +184,8 @@ func TestSyncPersistenceFailures(t *testing.T) {
 	r, s, server, a := syncFixture(t)
 	ctx := t.Context()
 	server.AddOrgDevice("one", map[string]any{"serialNumber": "SER"})
-	server.AddMDMServer("apple", map[string]any{"serverType": "APPLE_MDM"})
+	assignedServer := server.AddMDMServer("apple", map[string]any{"serverType": "APPLE_MDM"})
+	server.Assign("one", assignedServer)
 	server.AddMDMDevice("native", map[string]any{"serialNumber": "SER"}, map[string]any{"osVersion": "27.0"})
 	if _, err := r.Enqueue(ctx, a.ID, false, time.Now()); err != nil {
 		t.Fatal(err)
@@ -311,14 +329,12 @@ func TestSyncMissingMembershipRequiresConfirmation(t *testing.T) {
 	if err != nil || job.State != "success" {
 		t.Fatal(job, err)
 	}
-	d, err := r.Device(t.Context(), old.ID)
+	d, err := r.Resource(t.Context(), old.ID)
 	if err != nil {
 		t.Fatal(err)
 	}
-	for _, o := range d.Sources {
-		if !o.Absent {
-			t.Fatal("confirmed absence not recorded")
-		}
+	if !d.Snapshot.Absent {
+		t.Fatal("confirmed absence not recorded")
 	}
 }
 
@@ -364,11 +380,121 @@ func TestAppleMDMPagination(t *testing.T) {
 				if err != nil || job.State != "success" {
 					t.Fatal(job, err)
 				}
-				page, err := r.Devices(t.Context(), DeviceQuery{})
+				page, err := r.Resources(t.Context(), ResourceQuery{Source: "axm.mdm"})
 				if err != nil || len(page.Items) != 3 {
 					t.Fatal(page, err)
 				}
 			}
 		})
+	}
+}
+
+// TestAssignmentOutcomesPreserveOriginalEvidence distinguishes a real successful
+// null from 404, retaining the original server resource through later failures.
+func TestAssignmentOutcomesPreserveOriginalEvidence(t *testing.T) {
+	r, s, server, a := syncFixture(t)
+	server.AddOrgDevice("one", map[string]any{"serialNumber": "S"})
+	run := func() Job {
+		t.Helper()
+		if _, err := r.Enqueue(t.Context(), a.ID, true, time.Now()); err != nil {
+			t.Fatal(err)
+		}
+		job, err := s.RunOne(t.Context())
+		if err != nil {
+			t.Fatal(err)
+		}
+		return job
+	}
+	ref := source.Reference{Kind: "axm.assignment", AccountID: a.ID, ResourceID: "one"}
+	first := run()
+	if first.State != "partial" {
+		t.Fatal("404 became successful absence", first)
+	}
+	if _, err := r.SourceResource(t.Context(), ref); !errors.Is(err, ErrNotFound) {
+		t.Fatal("404 fabricated source", err)
+	}
+	base := server.Client().Transport
+	server.Client().Transport = transportFunc(func(req *http.Request) (*http.Response, error) {
+		if strings.HasSuffix(req.URL.Path, "/assignedServer") {
+			return &http.Response{StatusCode: 200, Header: http.Header{}, Body: io.NopCloser(strings.NewReader(`{"data":null}`)), Request: req}, nil
+		}
+		return base.RoundTrip(req)
+	})
+	successfulNull := run()
+	if successfulNull.State != "success" {
+		t.Fatal(successfulNull)
+	}
+	record, err := r.SourceResource(t.Context(), ref)
+	if err != nil || record.Incomplete || string(record.Snapshot.Raw) != "null" {
+		t.Fatal("real null not preserved", record, err)
+	}
+	server.Client().Transport = base
+	if job := run(); job.State != "partial" {
+		t.Fatal(job)
+	}
+	record, err = r.SourceResource(t.Context(), ref)
+	if err != nil || string(record.Snapshot.Raw) != "null" {
+		t.Fatal("failed refresh erased successful null", record, err)
+	}
+	assignedServer := server.AddMDMServer("server", map[string]any{"serverType": "THIRD_PARTY", "unknown": nil, "flag": false})
+	server.Assign("one", assignedServer)
+	if job := run(); job.State != "success" {
+		t.Fatal(job)
+	}
+	original, err := r.SourceResource(t.Context(), ref)
+	if err != nil || original.Incomplete || String(original.Snapshot.Fields["id"]) != assignedServer || string(original.Snapshot.Fields["attributes.flag"]) != "false" {
+		t.Fatal(original, err)
+	}
+	server.Assign("one", "")
+	if job := run(); job.State != "partial" {
+		t.Fatal(job)
+	}
+	record, err = r.SourceResource(t.Context(), ref)
+	if err != nil || string(record.Snapshot.Raw) != string(original.Snapshot.Raw) {
+		t.Fatal("404 erased server original", record, err)
+	}
+	if _, exists := record.Snapshot.Fields["mdm_assigned"]; exists {
+		t.Fatal("synthesized assignment projection")
+	}
+	history, err := r.History(t.Context(), ref)
+	if err != nil || len(history) != 2 {
+		t.Fatal(history, err)
+	}
+}
+
+// TestFailedRequestSinkErrorsPropagate covers every local commit boundary while
+// Apple returns 404. Storage failures must not become ordinary refresh outcomes.
+func TestFailedRequestSinkErrorsPropagate(t *testing.T) {
+	r, s, server, a := syncFixture(t)
+	server.AddOrgDevice("one", nil)
+	if _, err := r.Enqueue(t.Context(), a.ID, false, time.Now()); err != nil {
+		t.Fatal(err)
+	}
+	job, err := r.claim(t.Context(), "owner", time.Now())
+	if err != nil {
+		t.Fatal(err)
+	}
+	key, err := r.PrivateKey(t.Context(), a.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	client, err := s.Client(t.Context(), a, key)
+	if err != nil {
+		t.Fatal(err)
+	}
+	seed := testMemory(t, r)
+	baseline := &faultBackend{Memory: cloneMemory(seed)}
+	trial := &Syncer{Repository: &Repository{Backend: baseline}}
+	current := job
+	if _, err := trial.collectResources(t.Context(), client, a, &current, collection.Assignment, "one"); !axm.IsNotFound(err) {
+		t.Fatal(err)
+	}
+	for n := 1; n <= baseline.calls; n++ {
+		backend := &faultBackend{Memory: cloneMemory(seed), failAt: n}
+		trial.Repository = &Repository{Backend: backend}
+		current = job
+		if _, err := trial.collectResources(t.Context(), client, a, &current, collection.Assignment, "one"); !errors.Is(err, errStorageFailure) {
+			t.Fatal(n, "sink failure hidden", err)
+		}
 	}
 }

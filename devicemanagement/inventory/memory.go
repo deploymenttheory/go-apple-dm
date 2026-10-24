@@ -117,6 +117,11 @@ func (t *memoryTx) Put(ctx context.Context, k string, v json.RawMessage) error {
 	if !ValidEntry(k, v) {
 		return ErrInvalid
 	}
+	if RetiredKey(k) {
+		if _, err := t.Get(ctx, EvidenceModelKey); err == nil {
+			return ErrConflict
+		}
+	}
 	t.writes[k] = append(json.RawMessage(nil), v...)
 	return nil
 }

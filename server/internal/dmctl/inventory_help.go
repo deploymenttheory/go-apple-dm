@@ -9,14 +9,15 @@ Usage of devices:
   dmctl devices fields [--raw]
   dmctl devices collect DEVICE_ID
 
-DEVICE_ID is the local inventory record ID from devices list, not a serial number,
-Apple resource ID or enrollment UDID. Cloud-only records can exist before enrollment.
+DEVICE_ID is an independent source record ID from devices list, not a serial,
+Apple resource ID or enrollment UDID. Native collection uses an enrollment source
+record; use devices list --source enrollment to find one.
 
 Collect: request an asynchronous native inventory refresh
-  1. Queue supported inventory commands for the record's local enrollments.
+  1. Queue supported inventory commands for the enrollment source's local identity.
   2. Request an APNs wake when commands are queued and APNs is configured.
   3. The device contacts the MDM command endpoint and returns command responses.
-  4. Acknowledged responses update the record, query indexes and reports.
+  4. Acknowledged responses append independent successful source evidence.
 
 An example response is {"queued":5}. It counts queued commands, not returned fields
 or completed commands. The count varies with support, enrollments and deduplication.
@@ -63,14 +64,14 @@ Read results:
   dmctl devices get DEVICE_ID --raw
   dmctl commands list device ENROLLMENT_ID
 
-Use the record's enrollment_id for command-queue inspection. Check command completion
-and each source's observation/attempt times and errors: record reads can include older
+Use the enrollment source snapshot's enrollment_id for command-queue inspection.
+Check command completion and source observation times: record reads can include older
 evidence, and failed refreshes retain previous successful values.
 
 Permissions:
   manageInventory   Queue collection.
-  readInventory     Read reviewed normalized fields.
-  readRawInventory  Read complete evidence and source-qualified fields with --raw.
+  readInventory     Read independent source metadata.
+  readRawInventory  Read complete evidence and original source fields with --raw.
 Command-queue reads need their own command-read permission. Device-side enrollment
 access rights are separate: error 12007 can mean insufficient rights for a command.
 
@@ -78,8 +79,8 @@ Examples:
   dmctl devices collect DEVICE_ID
   dmctl devices get DEVICE_ID --raw
   dmctl inventory export --format csv \
-    --where '[{"field":"id","operator":"eq","value":"DEVICE_ID"}]' \
-    --columns serial_number,model,os_version,filevault_enabled,identity_certificate_expiry
+    --where '[{"field":"meta.id","operator":"eq","value":"DEVICE_ID"}]' \
+    --columns meta.id,meta.source,meta.account_id,meta.resource_id,meta.observed_at,meta.incomplete
 
 Guide: docs/operations/agentless-inventory.md in GitHub.
 

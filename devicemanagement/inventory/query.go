@@ -13,7 +13,7 @@ import (
 )
 
 // Validate rejects unsupported filters before storage is read.
-func (q DeviceQuery) Validate() error {
+func (q ResourceQuery) Validate() error {
 	if q.Limit < 0 || q.Limit > 1000 || len(q.Conditions) > 64 {
 		return ErrInvalid
 	}
@@ -21,7 +21,7 @@ func (q DeviceQuery) Validate() error {
 		return ErrInvalid
 	}
 	for _, c := range q.Conditions {
-		if c.Field == "" || len(c.Field) > 1024 {
+		if !validSelector(c.Field) {
 			return ErrInvalid
 		}
 		switch c.Operator {
@@ -40,9 +40,9 @@ func (q DeviceQuery) Validate() error {
 	return nil
 }
 
-// Devices evaluates a bounded query, using a materialized exact-value index when available.
-func (r *Repository) Devices(ctx context.Context, q DeviceQuery) (DevicePage, error) {
-	out := DevicePage{Items: []DeviceRecord{}, AsOf: q.AsOf}
+// Resources evaluates a bounded query over independent source records.
+func (r *Repository) Resources(ctx context.Context, q ResourceQuery) (ResourcePage, error) {
+	out := ResourcePage{Items: []ResourceRecord{}, AsOf: q.AsOf}
 	if out.AsOf.IsZero() {
 		out.AsOf = time.Now().UTC()
 	}
@@ -53,38 +53,19 @@ func (r *Repository) Devices(ctx context.Context, q DeviceQuery) (DevicePage, er
 	if limit == 0 {
 		limit = 100
 	}
-	prefix := "device/"
-	indexed := false
-	for _, c := range q.Conditions {
-		if (c.Operator == "eq" || c.Operator == "contains") && c.Field != "id" && q.AccountID == "" && (q.Focus == "" || q.Focus == "combined") && c.Field != "coverage_state" && c.Field != "coverage_expiry" {
-			prefix = indexPrefix(c.Field, c.Value)
-			indexed = true
-			break
-		}
-	}
-	after := prefix + q.Cursor
+	after := "resource/" + q.Cursor
 	for {
-		entries, err := r.Backend.Scan(ctx, prefix, after, 128)
+		entries, err := r.Backend.Scan(ctx, "resource/", after, 128)
 		if err != nil {
 			return out, err
 		}
 		for _, entry := range entries {
 			after = entry.Key
-			var d DeviceRecord
-			if indexed {
-				var id string
-				if err := json.Unmarshal(entry.Value, &id); err != nil {
-					return out, err
-				}
-				d, err = r.Device(ctx, id)
-			} else {
-				err = json.Unmarshal(entry.Value, &d)
-			}
-			if err != nil {
+			var d ResourceRecord
+			if err := json.Unmarshal(entry.Value, &d); err != nil {
 				return out, err
 			}
-			d = focusRecord(d, q)
-			if !Matches(d, q, out.AsOf) {
+			if !Matches(d, q) {
 				continue
 			}
 			if len(out.Items) == limit {
@@ -99,14 +80,14 @@ func (r *Repository) Devices(ctx context.Context, q DeviceQuery) (DevicePage, er
 	}
 }
 
-// EachDevice streams all matching records without changing the caller's page options.
-func (r *Repository) EachDevice(ctx context.Context, q DeviceQuery, fn func(DeviceRecord) error) error {
+// EachResource streams all matching records without changing the caller's page options.
+func (r *Repository) EachResource(ctx context.Context, q ResourceQuery, fn func(ResourceRecord) error) error {
 	q.Limit = 250
 	if q.AsOf.IsZero() {
 		q.AsOf = time.Now().UTC()
 	}
 	for {
-		p, e := r.Devices(ctx, q)
+		p, e := r.Resources(ctx, q)
 		if e != nil {
 			return e
 		}
@@ -122,39 +103,22 @@ func (r *Repository) EachDevice(ctx context.Context, q DeviceQuery, fn func(Devi
 	}
 }
 
-// Matches applies the same predicates used by reports and exports.
-func Matches(d DeviceRecord, q DeviceQuery, now time.Time) bool {
-	apple, managed, account, source := false, false, q.AccountID == "", q.Source == ""
-	for _, o := range d.Sources {
-		if o.Absent || o.Disconnected {
-			continue
-		}
-		apple = apple || strings.HasPrefix(o.Source.Kind, "axm.")
-		managed = managed || o.Source.Kind == "enrollment"
-		account = account || o.Source.AccountID == q.AccountID
-		source = source || o.Source.Kind == q.Source
-	}
-	if !account || !source || (q.Focus == "apple" && !apple) || (q.Focus == "managed" && !managed) {
+// Matches applies the same original-source predicates to lists and exports.
+func Matches(d ResourceRecord, q ResourceQuery) bool {
+	apple := strings.HasPrefix(d.Source.Kind, "axm.")
+	if (q.AccountID != "" && d.Source.AccountID != q.AccountID) || (q.Source != "" && d.Source.Kind != q.Source) || (q.Focus == "apple" && !apple) || (q.Focus == "managed" && apple) {
 		return false
 	}
 	if q.Search != "" {
 		needle := strings.ToLower(q.Search)
-		found := strings.Contains(strings.ToLower(d.SerialNumber), needle) || strings.Contains(strings.ToLower(d.ID), needle)
-		for name, f := range d.Fields {
-			if !PublicField(name) {
-				continue
-			}
-			found = found || strings.Contains(strings.ToLower(string(f.Value)), needle)
-		}
-		if !found {
+		if !strings.Contains(strings.ToLower(d.ID+" "+d.Source.Kind+" "+d.Source.ResourceID), needle) {
 			return false
 		}
 	}
 	for _, c := range q.Conditions {
-		value, ok := d.Value(c.Field, now)
+		value, ok := d.Value(c.Field)
 		if c.Operator == "exists" {
-			want := string(c.Value) != "false"
-			if ok != want {
+			if ok != (string(c.Value) != "false") {
 				return false
 			}
 			continue
@@ -166,26 +130,39 @@ func Matches(d DeviceRecord, q DeviceQuery, now time.Time) bool {
 	return true
 }
 
-// Value resolves a projected field or a time-dependent coverage summary.
-func (d DeviceRecord) Value(path string, now time.Time) (json.RawMessage, bool) {
-	if path == "id" {
-		v, _ := json.Marshal(d.ID)
-		return v, true
-	}
-	if path == "coverage_state" {
-		v, _ := json.Marshal(d.CoverageAt(now).State)
-		return v, true
-	}
-	if path == "coverage_expiry" {
-		v := d.CoverageAt(now).NextExpiry
-		if v == nil {
+// Value reads an unambiguous metadata or original-data selector. meta.id is
+// the repository identity; data.id is the original source field named id. Data
+// paths use Flatten's dot/backslash escaping and never imply semantic aliases.
+func (d ResourceRecord) Value(selector string) (json.RawMessage, bool) {
+	var value any
+	switch selector {
+	case "meta.id":
+		value = d.ID
+	case "meta.source":
+		value = d.Source.Kind
+	case "meta.account_id":
+		value = d.Source.AccountID
+	case "meta.resource_id":
+		value = d.Source.ResourceID
+	case "meta.observed_at":
+		value = d.Snapshot.ObservedAt
+	case "meta.incomplete":
+		value = d.Incomplete
+	default:
+		path, ok := strings.CutPrefix(selector, "data.")
+		if !ok || path == "" {
 			return nil, false
 		}
-		b, _ := json.Marshal(v)
-		return b, true
+		raw, ok := d.Snapshot.Fields[path]
+		return raw, ok
 	}
-	f, ok := d.Fields[path]
-	return f.Value, ok
+	raw, _ := json.Marshal(value)
+	return raw, true
+}
+
+// validSelector keeps metadata and original source members in distinct namespaces.
+func validSelector(selector string) bool {
+	return len(selector) <= 1024 && (PublicField(selector) || strings.HasPrefix(selector, "data.") && len(selector) > len("data."))
 }
 
 // compare performs typed JSON comparisons rather than stringifying numbers.
@@ -253,31 +230,7 @@ func compare(raw json.RawMessage, c Condition) bool {
 	return false
 }
 
-// focusRecord derives a source-scoped projection rather than showing native values on Apple reports.
-func focusRecord(d DeviceRecord, q DeviceQuery) DeviceRecord {
-	if q.AccountID == "" && (q.Focus == "" || q.Focus == "combined") {
-		return d
-	}
-	sources := map[string]Observation{}
-	for k, o := range d.Sources {
-		if q.AccountID != "" && o.Source.AccountID != q.AccountID {
-			continue
-		}
-		apple := strings.HasPrefix(o.Source.Kind, "axm.")
-		if q.Focus == "apple" && !apple {
-			continue
-		}
-		if q.Focus == "managed" && apple {
-			continue
-		}
-		sources[k] = o
-	}
-	d.Sources = sources
-	rebuild(&d)
-	return d
-}
-
-// decodeJSON keeps integers above 2^53 exact in filters and indexes.
+// decodeJSON keeps integers above 2^53 exact in filters.
 func decodeJSON(raw []byte, out any) error {
 	d := json.NewDecoder(bytes.NewReader(raw))
 	d.UseNumber()
@@ -333,7 +286,7 @@ func canonicalNode(v any) any {
 	}
 }
 
-// canonicalJSON encodes an exact, type-tagged value for equality indexes.
+// canonicalJSON encodes an exact, type-tagged value for exact equality.
 func canonicalJSON(raw []byte) ([]byte, error) {
 	var value any
 	if e := decodeJSON(raw, &value); e != nil {

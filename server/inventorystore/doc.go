@@ -6,7 +6,19 @@
 // Store implements inventory.Backend over SQLite, PostgreSQL and MySQL. Open
 // applies versioned migrations to a caller-owned connection pool. Document keys
 // provide ordered range scans; the inventory repository owns record structure,
-// source reconciliation, query indexes and job state.
+// independent source evidence, original history, explicit links and job state.
+//
+// Open installs an initially inactive retired-namespace write fence. SQLite and
+// PostgreSQL install it transactionally through schema migrations. MySQL inspects
+// metadata under a connection-scoped advisory lock and installs only missing DDL,
+// preserving an existing active fence across interrupted or concurrent opens.
+// Its migration role needs trigger creation authority under the server's binary
+// logging policy; the runtime application role does not require SUPER.
+//
+// Repository.Migrate activates the fence inside the same transaction that extracts
+// original evidence, removes obsolete aggregates and changes worker lease owners.
+// Old native observers cannot recreate aggregate keys. MySQL triggers use a current
+// locking read so transactions begun before activation cannot bypass the fence.
 //
 // Updates acquire the inventory lock within a SQL unit of work. An existing
 // transaction in the context is reused, allowing native inventory observations

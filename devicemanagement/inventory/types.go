@@ -9,6 +9,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/correlation"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/source"
 )
 
@@ -21,55 +22,60 @@ var (
 	ErrLease    = errors.New("inventory: worker lease lost")
 )
 
-// Observation is the latest successful source snapshot, with separate attempt metadata.
+// Observation retains one successful original and its observation provenance.
 type Observation struct {
 	Source       source.Reference           `json:"source"`
 	ObservedAt   time.Time                  `json:"observed_at"`
-	AttemptedAt  time.Time                  `json:"attempted_at"`
 	ExpiresAt    time.Time                  `json:"expires_at,omitempty"`
-	Error        string                     `json:"error,omitempty"`
 	Absent       bool                       `json:"absent,omitempty"`
 	Disconnected bool                       `json:"disconnected,omitempty"`
 	Generation   string                     `json:"generation,omitempty"`
 	FieldTimes   map[string]time.Time       `json:"field_times,omitempty"`
 	Fields       map[string]json.RawMessage `json:"fields"`
-	Raw          json.RawMessage            `json:"raw,omitempty"`
+	Native       *NativeIdentity            `json:"native,omitempty"`
+
+	Raw json.RawMessage `json:"raw,omitempty"`
 }
 
-// FieldValue records both the selected value and the evidence used to choose it.
-type FieldValue struct {
-	Value      json.RawMessage  `json:"value"`
+// NativeIdentity records the host's authenticated enrollment provenance. Unknown
+// methods and unauthenticated reports can be retained but cannot create links.
+type NativeIdentity struct {
+	Serial        string             `json:"serial,omitempty"`
+	Method        correlation.Method `json:"method,omitempty"`
+	Authenticated bool               `json:"authenticated"`
+}
+
+// ResourceRecord retains one source identity independently of all other sources.
+// Snapshot is the latest successful observation. Original successful history and
+// failed attempts are stored separately; neither a refresh failure nor a different
+// source can overwrite that evidence. Incomplete originals require refresh.
+type ResourceRecord struct {
+	ID         string           `json:"id"`
 	Source     source.Reference `json:"source"`
-	ObservedAt time.Time        `json:"observed_at"`
+	CreatedAt  time.Time        `json:"created_at"`
+	UpdatedAt  time.Time        `json:"updated_at"`
+	Snapshot   Observation      `json:"snapshot"`
+	Incomplete bool             `json:"incomplete,omitempty"`
 }
 
-// CoveragePlan preserves every plan, including subscriptions with no expiry.
-type CoveragePlan struct {
-	ID         string                     `json:"id"`
-	AccountID  string                     `json:"account_id"`
-	Attributes map[string]json.RawMessage `json:"attributes"`
+// Attempt is an independent unsuccessful refresh outcome.
+type Attempt struct {
+	Source source.Reference `json:"source"`
+	At     time.Time        `json:"at"`
+	Code   string           `json:"code"`
 }
 
-// CoverageSummary is derived at read time; plans and source freshness remain authoritative.
-type CoverageSummary struct {
-	State      string     `json:"state"`
-	NextExpiry *time.Time `json:"next_expiry,omitempty"`
-	Stale      bool       `json:"stale"`
+// SerialLink is an explicit, checked relationship between independent evidence.
+// It never changes source identity or combines stored records.
+type SerialLink struct {
+	Apple    source.Reference `json:"apple"`
+	Native   source.Reference `json:"native"`
+	Serial   string           `json:"serial"`
+	LinkedAt time.Time        `json:"linked_at"`
 }
 
-// DeviceRecord is independent of any enrollment or Apple account membership.
-type DeviceRecord struct {
-	ID           string                 `json:"id"`
-	SerialNumber string                 `json:"serial_number,omitempty"`
-	CreatedAt    time.Time              `json:"created_at"`
-	UpdatedAt    time.Time              `json:"updated_at"`
-	Fields       map[string]FieldValue  `json:"fields"`
-	Sources      map[string]Observation `json:"sources"`
-	Coverage     []CoveragePlan         `json:"coverage"`
-	Conflicts    []string               `json:"conflicts,omitempty"`
-}
-
-// Condition compares a source-qualified or normalized field. Conditions are ANDed.
+// Condition compares a data.<original path> or meta.<column> selector. Conditions
+// are ANDed; unqualified paths are invalid.
 // Supported operators are eq, contains (array membership), exists, lt, lte, gt, gte.
 type Condition struct {
 	Field    string          `json:"field"`
@@ -77,9 +83,9 @@ type Condition struct {
 	Value    json.RawMessage `json:"value,omitempty"`
 }
 
-// DeviceQuery is shared by lists, reports, and exports. Source is an observation
-// kind; Focus is combined, apple, or managed. Cursor is an opaque device ID boundary.
-type DeviceQuery struct {
+// ResourceQuery is shared by lists, reports, and exports. Source is an observation
+// kind; Focus is combined, apple, or managed. Cursor is an opaque resource ID boundary.
+type ResourceQuery struct {
 	AccountID  string      `json:"account_id,omitempty"`
 	Source     string      `json:"source,omitempty"`
 	Focus      string      `json:"focus,omitempty"`
@@ -90,11 +96,11 @@ type DeviceQuery struct {
 	AsOf       time.Time   `json:"as_of,omitempty"`
 }
 
-// DevicePage is a bounded result and continuation for the same query.
-type DevicePage struct {
-	Items      []DeviceRecord `json:"items"`
-	NextCursor string         `json:"next_cursor,omitempty"`
-	AsOf       time.Time      `json:"as_of"`
+// ResourcePage is a bounded result and continuation for the same query.
+type ResourcePage struct {
+	Items      []ResourceRecord `json:"items"`
+	NextCursor string           `json:"next_cursor,omitempty"`
+	AsOf       time.Time        `json:"as_of"`
 }
 
 // ID generates an opaque local identity.
@@ -105,3 +111,45 @@ func digest(s string) string { h := sha256.Sum256([]byte(s)); return hex.EncodeT
 
 // CanonicalSerial normalizes a serial for matching, without changing original source data.
 func CanonicalSerial(s string) string { return strings.ToUpper(strings.TrimSpace(s)) }
+
+// UnmarshalJSON restores byte-exact original source JSON after document decoding.
+// Records predating byte retention still retain their available raw JSON.
+func (o *Observation) UnmarshalJSON(raw []byte) error {
+	type plain Observation
+	var value struct {
+		plain
+		OriginalJSON []byte `json:"original_json"`
+	}
+	if err := json.Unmarshal(raw, &value); err != nil {
+		return err
+	}
+	if len(value.OriginalJSON) > 0 {
+		if !json.Valid(value.OriginalJSON) {
+			return ErrInvalid
+		}
+		value.Raw = append(json.RawMessage(nil), value.OriginalJSON...)
+	}
+	*o = Observation(value.plain)
+	return nil
+}
+
+// UnmarshalJSON restores original source bytes from the internal document
+// encoding. Duplicate byte bookkeeping is never part of exported API values.
+func (d *ResourceRecord) UnmarshalJSON(raw []byte) error {
+	type plain ResourceRecord
+	var value struct {
+		plain
+		OriginalJSON []byte `json:"original_json"`
+	}
+	if err := json.Unmarshal(raw, &value); err != nil {
+		return err
+	}
+	if len(value.OriginalJSON) > 0 {
+		if !json.Valid(value.OriginalJSON) {
+			return ErrInvalid
+		}
+		value.Snapshot.Raw = append(json.RawMessage(nil), value.OriginalJSON...)
+	}
+	*d = ResourceRecord(value.plain)
+	return nil
+}

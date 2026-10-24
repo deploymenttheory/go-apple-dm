@@ -51,8 +51,11 @@ account-driven Device Enrollment and profile-based Device Enrollment; User Enrol
 is excluded. Its optional resolver uses only caller-declared equivalent fields and
 units, prefers the latest native evidence before Apple regardless of refresh time,
 and retains original values and disagreements. Neither package needs an inventory
-repository. The reference inventory projection remains a separate composition; it
-does not yet call this resolver. See [explicit correlation](operations/agentless-inventory.md#standalone-serial-correlation-and-resolution).
+repository. Inventory persists one record per source identity, successful original history and
+separate outcomes. Its explicit `Link` operation invokes the standalone correlator;
+optional resolution remains caller-owned. Stored native evidence without authenticated
+enrollment-method provenance stays incomplete and cannot establish a hardware link.
+The reference adapters retain protocol evidence independently of this relationship. See [explicit correlation](operations/agentless-inventory.md#standalone-serial-correlation-and-resolution).
 
 The [content-cache receiver](research/decisions/0051-content-cache-metrics.md) is
 an embeddable library at the service-client tier. It installs no reference-server
