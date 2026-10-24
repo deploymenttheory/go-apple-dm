@@ -8,11 +8,11 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"net/http/httptest"
 	"reflect"
 	"strings"
 	"sync"
 	"testing"
+	"testing/synctest"
 	"time"
 
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/ddm"
@@ -25,28 +25,29 @@ import (
 
 // These fixtures test the acceptance runner's failure detection and cleanup.
 // Their synthetic status and command responses are not device acceptance evidence.
+// Synchronous fixture HTTP keeps the production polling timers inside virtual time.
 func TestLiveBlueprintProtocolEvidenceAndCleanup(t *testing.T) {
 	for _, failure := range []string{"", "user", "inventory", "wrong OS", "user unavailable", "upload", "upload identity", "publish", "missing compilation", "notify", "assignment", "status", "stale status", "invalid status", "changed identical publication", "wrong source", "wrong UUID", "delayed profile", "duplicate profile", "unchanged token", "compatibility disabled", "compatibility missing", "incompatible delivered", "delete"} {
 		t.Run(failure, func(t *testing.T) {
 			t.Parallel()
-			ctx, cancel := context.WithTimeout(t.Context(), 30*time.Second)
-			defer cancel()
-			f := &blueprintProtocolFixture{t: t, fault: failure, cancel: cancel, uploads: map[string]*profile.Profile{}}
-			server := httptest.NewServer(http.HandlerFunc(f.serve))
-			defer server.Close()
-			e := &Environment{
-				Instance: Instance{URL: server.URL, Mode: "live"}, Client: server.Client(),
-				Workspace: &Workspace{Directory: t.TempDir()}, InstallingUserID: "user",
-			}
-			err := liveBlueprints(failure == "user" || failure == "user unavailable")(ctx, e, "mac")
-			if (failure == "" || failure == "user" || failure == "delayed profile") != (err == nil) {
-				t.Fatalf("failure %q: %v", failure, err)
-			}
-			f.mu.Lock()
-			defer f.mu.Unlock()
-			if f.assigned || f.record.Revision != "" {
-				t.Fatal("temporary assignment or Blueprint survived cleanup")
-			}
+			synctest.Test(t, func(t *testing.T) {
+				ctx, cancel := context.WithTimeout(t.Context(), 30*time.Second)
+				defer cancel()
+				f := &blueprintProtocolFixture{t: t, fault: failure, cancel: cancel, uploads: map[string]*profile.Profile{}}
+				e := &Environment{
+					Instance: Instance{URL: "https://lab.invalid", Mode: "live"}, Client: synchronousHTTPClient(http.HandlerFunc(f.serve)),
+					Workspace: &Workspace{Directory: t.TempDir()}, InstallingUserID: "user",
+				}
+				err := liveBlueprints(failure == "user" || failure == "user unavailable")(ctx, e, "mac")
+				if (failure == "" || failure == "user" || failure == "delayed profile") != (err == nil) {
+					t.Fatalf("failure %q: %v", failure, err)
+				}
+				f.mu.Lock()
+				defer f.mu.Unlock()
+				if f.assigned || f.record.Revision != "" {
+					t.Fatal("temporary assignment or Blueprint survived cleanup")
+				}
+			})
 		})
 	}
 }
@@ -344,21 +345,21 @@ func TestLiveBlueprintRequestFailures(t *testing.T) {
 	for _, tc := range cases {
 		t.Run(fmt.Sprintf("%s_%s_%s_%d", tc.method, tc.prefix, tc.suffix, tc.occurrence), func(t *testing.T) {
 			t.Parallel()
-			f := &blueprintProtocolFixture{t: t, uploads: map[string]*profile.Profile{}, faultMethod: tc.method, faultPrefix: tc.prefix, faultSuffix: tc.suffix, faultOccurrence: tc.occurrence}
-			server := httptest.NewServer(http.HandlerFunc(f.serve))
-			defer server.Close()
-			e := &Environment{Instance: Instance{URL: server.URL, Mode: "live"}, Client: server.Client(), Workspace: &Workspace{Directory: t.TempDir()}}
-			ctx, cancel := context.WithTimeout(t.Context(), 30*time.Second)
-			defer cancel()
-			err := liveBlueprints(false)(ctx, e, "mac")
-			f.mu.Lock()
-			defer f.mu.Unlock()
-			if err == nil || !f.used {
-				t.Fatalf("request failure was not detected: %v, injected=%v", err, f.used)
-			}
-			if f.assigned || f.record.Revision != "" {
-				t.Fatal("request failure prevented cleanup")
-			}
+			synctest.Test(t, func(t *testing.T) {
+				f := &blueprintProtocolFixture{t: t, uploads: map[string]*profile.Profile{}, faultMethod: tc.method, faultPrefix: tc.prefix, faultSuffix: tc.suffix, faultOccurrence: tc.occurrence}
+				e := &Environment{Instance: Instance{URL: "https://lab.invalid", Mode: "live"}, Client: synchronousHTTPClient(http.HandlerFunc(f.serve)), Workspace: &Workspace{Directory: t.TempDir()}}
+				ctx, cancel := context.WithTimeout(t.Context(), 30*time.Second)
+				defer cancel()
+				err := liveBlueprints(false)(ctx, e, "mac")
+				f.mu.Lock()
+				defer f.mu.Unlock()
+				if err == nil || !f.used {
+					t.Fatalf("request failure was not detected: %v, injected=%v", err, f.used)
+				}
+				if f.assigned || f.record.Revision != "" {
+					t.Fatal("request failure prevented cleanup")
+				}
+			})
 		})
 	}
 }

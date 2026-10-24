@@ -11,6 +11,7 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"testing/synctest"
 	"time"
 
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/ddm"
@@ -192,31 +193,36 @@ func TestBlueprintCannotPassWhenAcceptedEvidenceCannotBeStored(t *testing.T) {
 // TestBlueprintCompatibilityRejectionStillCleansItsPublication checks a status
 // outage after compatibility evaluation cannot pass and does not strand assignments.
 func TestBlueprintCompatibilityRejectionStillCleansItsPublication(t *testing.T) {
-	fixture := &blueprintProtocolFixture{t: t, uploads: map[string]*profile.Profile{}}
-	injected := false
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	synctest.Test(t, func(t *testing.T) {
+		fixture := &blueprintProtocolFixture{t: t, uploads: map[string]*profile.Profile{}}
+		injected := false
+		handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			fixture.mu.Lock()
+			fail := !injected && strings.HasSuffix(r.URL.Path, "/status") && fixture.assetReference()
+			if fail {
+				injected = true
+			}
+			fixture.mu.Unlock()
+			if fail {
+				w.WriteHeader(http.StatusServiceUnavailable)
+				return
+			}
+			fixture.serve(w, r)
+		})
+		e := &Environment{Instance: Instance{URL: "https://lab.invalid", Mode: "live"}, Client: synchronousHTTPClient(handler), Workspace: &Workspace{Directory: t.TempDir()}}
+		started := time.Now()
+		if err := liveBlueprints(false)(t.Context(), e, "mac"); err == nil || !strings.Contains(err.Error(), "macOS 27 compatibility") {
+			t.Fatal("compatibility status outage passed", err)
+		}
+		if elapsed := time.Since(started); elapsed != 10*time.Second {
+			t.Fatalf("compatibility failure polling took %s, want 10s", elapsed)
+		}
 		fixture.mu.Lock()
-		fail := !injected && strings.HasSuffix(r.URL.Path, "/status") && fixture.assetReference()
-		if fail {
-			injected = true
+		defer fixture.mu.Unlock()
+		if !injected || fixture.assigned || fixture.record.Revision != "" {
+			t.Fatal("compatibility failure was not exercised or cleanup was lost")
 		}
-		fixture.mu.Unlock()
-		if fail {
-			w.WriteHeader(http.StatusServiceUnavailable)
-			return
-		}
-		fixture.serve(w, r)
-	}))
-	defer server.Close()
-	e := &Environment{Instance: Instance{URL: server.URL, Mode: "live"}, Client: server.Client(), Workspace: &Workspace{Directory: t.TempDir()}}
-	if err := liveBlueprints(false)(t.Context(), e, "mac"); err == nil || !strings.Contains(err.Error(), "macOS 27 compatibility") {
-		t.Fatal("compatibility status outage passed", err)
-	}
-	fixture.mu.Lock()
-	defer fixture.mu.Unlock()
-	if !injected || fixture.assigned || fixture.record.Revision != "" {
-		t.Fatal("compatibility failure was not exercised or cleanup was lost")
-	}
+	})
 }
 
 // TestFixtureTrustRejectsUnsupportedTransport avoids silently running an OIDC
