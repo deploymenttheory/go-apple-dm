@@ -83,6 +83,9 @@ type Config struct {
 	RefreshMargin time.Duration
 	// Retry defaults to DefaultRetry.
 	Retry Retry
+	// ActivityLogMaxBytes bounds a complete activity download; zero uses
+	// DefaultActivityLogMaxBytes.
+	ActivityLogMaxBytes int64
 	// PageCap defaults to DefaultPageCap.
 	PageCap int
 	// Logger receives debug lines; nil discards them.
@@ -181,6 +184,12 @@ func New(ctx context.Context, cfg Config) (*Client, error) {
 	if cfg.Retry.Cap < cfg.Retry.Base {
 		cfg.Retry.Cap = cfg.Retry.Base
 	}
+	if cfg.ActivityLogMaxBytes < 0 || cfg.ActivityLogMaxBytes == 1<<63-1 {
+		return nil, fmt.Errorf("%w: ActivityLogMaxBytes must allow a positive bounded read", ErrConfig)
+	}
+	if cfg.ActivityLogMaxBytes == 0 {
+		cfg.ActivityLogMaxBytes = DefaultActivityLogMaxBytes
+	}
 	if cfg.PageCap <= 0 {
 		cfg.PageCap = DefaultPageCap
 	}
@@ -249,7 +258,7 @@ func WithIdempotent() RequestOption {
 type request struct {
 	method string
 	// path is joined to the base URL; rawURL, when set, is used as is
-	// (links.next, download URLs).
+	// (links.next). Activity downloads use an isolated exchange.
 	path   string
 	rawURL string
 	query  url.Values
@@ -265,7 +274,12 @@ func (c *Client) url(r request) (string, error) {
 		return r.rawURL, nil
 	}
 	u := *c.base
-	u.Path += r.path
+	u.RawPath = u.EscapedPath() + r.path
+	decodedPath, err := url.PathUnescape(u.RawPath)
+	if err != nil {
+		return "", fmt.Errorf("%w: invalid request path", ErrArgument)
+	}
+	u.Path = decodedPath
 	if len(r.query) > 0 {
 		u.RawQuery = r.query.Encode()
 	}

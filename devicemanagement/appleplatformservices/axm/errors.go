@@ -38,9 +38,12 @@ var (
 	// ErrWaitTimeout is returned by the polling helpers when the timeout
 	// elapses first.
 	ErrWaitTimeout = errors.New("axm: wait timed out")
-	// ErrForeignHost is returned by FetchActivityLog for a URL that is not
-	// on the API host.
-	ErrForeignHost = errors.New("axm: download URL is not on the API host")
+	// ErrForeignHost identifies an activity download origin outside the allowlist.
+	ErrForeignHost = errors.New("axm: untrusted activity download origin")
+	// ErrActivityLog identifies an incomplete, oversized or malformed activity log.
+	ErrActivityLog = errors.New("axm: invalid activity log")
+	// ErrDeviceSerial identifies a serial that cannot be uniquely resolved.
+	ErrDeviceSerial = errors.New("axm: device serial cannot be uniquely resolved")
 	// ErrNoEventData is returned by AuditEventAttributes.Data when the
 	// event carries no event data.
 	ErrNoEventData = errors.New("axm: audit event has no event data")

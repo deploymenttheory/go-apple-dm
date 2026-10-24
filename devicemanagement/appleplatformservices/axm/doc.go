@@ -7,12 +7,23 @@
 // refresh, retries an API 401 once and applies bounded backoff to retryable
 // failures. Lists return a single page; opt-in iterators follow links.next with
 // a page cap. Activity helpers validate request rules and wait for completion
-// and assignment convergence.
+// and assignment convergence. Serial-based helpers first enumerate and resolve
+// actual organization resources with ResolveOrgDevicesBySerial; endpoint paths
+// and NewActivityRequest use returned opaque resource IDs. No inventory model
+// is required.
 //
 // Types are maintained from Apple's documentation. The package does not persist
 // credentials; server/axmcreds supplies sealed persistence for the reference
 // server. The axmtest package provides an independent fake for modeled endpoints
 // and failures.
+//
+// Activity logs accept the configured API origin or the documented HTTPS
+// store.blobstore.apple.com origin. Presigned storage requests have no API bearer
+// or cookies, reject redirects, and buffer bounded CSV with sanitized errors.
+// FetchActivityLog validates transport and CSV structure, not device success.
+// VerifyActivityLog checks a caller-supplied column schema against the intended
+// serial set, retaining per-device failures and unknown columns. A completed
+// activity, a complete log and successful outcomes are separate facts.
 //
 // API and token endpoint overrides require absolute HTTPS URLs with no user
 // information or fragment. Custom transports own TLS verification policy.

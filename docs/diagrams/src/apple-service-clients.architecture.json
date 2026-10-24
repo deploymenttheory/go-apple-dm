@@ -121,7 +121,7 @@
       "id": "axmclient",
       "type": "backend",
       "label": "axm.Client",
-      "sublabel": "OAuth and source evidence",
+      "sublabel": "OAuth, opaque IDs and signed logs",
       "pos": [
         345.0,
         260.0
@@ -136,8 +136,12 @@
           "label": "ES256 assertion"
         },
         {
-          "path": "devicemanagement/appleplatformservices/axm/collection/collection.go",
-          "label": "atomic source streams"
+          "path": "devicemanagement/appleplatformservices/axm/activitylog.go",
+          "label": "activity downloads and outcome verification"
+        },
+        {
+          "path": "devicemanagement/appleplatformservices/axm/serials.go",
+          "label": "complete serial-to-resource resolution"
         }
       ],
       "purpose": "transport"
@@ -404,7 +408,10 @@
         "The dep client uses OAuth 1.0a to obtain a session token, then sends X-ADM-Auth-Session on device-assignment requests.",
         "axm exchanges an ES256-signed client assertion for an OAuth access token, then uses that token as Bearer authentication on API calls.",
         "Software catalogue lookup uses public HTTPS requests; it does not use the device-assignment or business API credentials.",
-        "Apps and Books sends the original location sToken as a bearer credential and checks the returned library UID and MDM identity."
+        "Apps and Books sends the original location sToken as a bearer credential and checks the returned library UID and MDM identity.",
+        "AxM serial-based helpers explicitly resolve the full organization list to returned opaque resource IDs before mutation. Ambiguous or missing serials and incomplete enumeration fail closed.",
+        "Activity CSV downloads allow the API origin and HTTPS store.blobstore.apple.com on port 443. Downloads use bounded GET retries, Retry-After, backoff and cancellation with sanitized retry logs. API downloads replay once after a 401. Storage gets no API bearer or cookies and never refreshes OAuth; redirects are rejected. Intended serial-set completeness and per-device success are checked separately with an explicit observed CSV schema.",
+        "Apple activity information \u2014 https://developer.apple.com/documentation/applebusinessapi/get-orgdeviceactivity-information"
       ]
     },
     {

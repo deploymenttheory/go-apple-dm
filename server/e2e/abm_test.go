@@ -32,7 +32,7 @@ func TestE2E_ABMAssignDevices(t *testing.T) {
 	server := fake.AddMDMServer("go-apple-dm", nil)
 	serials := []string{"C02E2E0001", "C02E2E0002", "C02E2E0003"}
 	for _, s := range serials {
-		fake.AddOrgDevice(s, nil)
+		fake.AddOrgDeviceResource("opaque-"+s, s, nil)
 	}
 	fake.SetConsistencyLag(50 * time.Millisecond)
 	fake.AutoAdvance(10 * time.Millisecond)
@@ -52,7 +52,10 @@ func TestE2E_ABMAssignDevices(t *testing.T) {
 			t.Fatal(err)
 		}
 		for _, d := range page.Items {
-			seen = append(seen, d.ID)
+			if d.ID == d.Attributes.SerialNumber {
+				t.Fatal("fixture ID must differ from serial")
+			}
+			seen = append(seen, d.Attributes.SerialNumber)
 		}
 	}
 	slices.Sort(seen)
@@ -114,10 +117,10 @@ func TestE2E_ABMAssignDevices(t *testing.T) {
 		t.Fatal(err)
 	}
 	deadline := time.Now().Add(5 * time.Second)
-	for fake.AssignedServer(serials[0]) != "" && time.Now().Before(deadline) {
+	for fake.AssignedServer("opaque-"+serials[0]) != "" && time.Now().Before(deadline) {
 		time.Sleep(10 * time.Millisecond)
 	}
-	if fake.AssignedServer(serials[0]) != "" {
+	if fake.AssignedServer("opaque-"+serials[0]) != "" {
 		t.Fatal("device still assigned after unassign")
 	}
 

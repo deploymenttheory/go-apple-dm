@@ -22,10 +22,16 @@ func (s *Server) AddMDMServer(name string, attrs map[string]any) string {
 // AddOrgDevice adds a device by serial number; attrs overrides the
 // defaults (a Mac, UNASSIGNED, added now).
 func (s *Server) AddOrgDevice(serial string, attrs map[string]any) {
+	s.AddOrgDeviceResource(serial, serial, attrs)
+}
+
+// AddOrgDeviceResource seeds an organization device with independent opaque ID
+// and physical serial. Resource-addressed fake helpers use id for this device.
+func (s *Server) AddOrgDeviceResource(id, serial string, attrs map[string]any) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	now := s.now().UTC()
-	s.store.devices.put(&resource{typ: typeOrgDevices, id: serial, attrs: merge(map[string]any{
+	s.store.devices.put(&resource{typ: typeOrgDevices, id: id, attrs: merge(map[string]any{
 		"serialNumber": serial, "addedToOrgDateTime": now, "updatedDateTime": now, "deviceModel": "MacBook Pro",
 		"productFamily": "Mac", "productType": "Mac16,1", "deviceCapacity": "512GB", "partNumber": "MW2U3LL/A",
 		"orderNumber": "ORDER-" + serial, "color": "SPACE BLACK", "status": "UNASSIGNED",
