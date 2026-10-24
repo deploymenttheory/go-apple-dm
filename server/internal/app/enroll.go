@@ -339,7 +339,7 @@ func (a *App) wireEnrollment(ctx context.Context, mux *http.ServeMux) ([]service
 			if email, _ := id.Claims["email"].(string); email != "" {
 				cn = email + "/" + p.SERIAL
 			}
-			return e.profileForDevice(
+			profile, err := e.profileForDevice(
 				ctx,
 				deviceBinding(p.UDID, p.SERIAL, p.PRODUCT, cn),
 				e.cfg.Identity,
@@ -347,6 +347,10 @@ func (a *App) wireEnrollment(ctx context.Context, mux *http.ServeMux) ([]service
 				p.OSVERSION,
 				enroll.MacHardwareUnknown,
 			)
+			if errors.Is(err, webauth.ErrDenied) {
+				return nil, errors.Join(ade.ErrRejected, err)
+			}
+			return profile, err
 		},
 		WebAuth: ade.WebAuthFunc(func(w http.ResponseWriter, r *http.Request, b ade.Bound) {
 			if e.flow == nil {
