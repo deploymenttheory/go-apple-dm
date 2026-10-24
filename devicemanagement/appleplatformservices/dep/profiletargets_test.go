@@ -215,6 +215,7 @@ func TestSerialTargetEditRetainsAppleThrottle(t *testing.T) {
 	}
 }
 
+// ExampleAccount_DesiredProfile shows explicit choice, default fallback and no action.
 func ExampleAccount_DesiredProfile() {
 	a := &dep.Account{ProfileUUID: "default-uuid", ProfileTargets: map[string]string{"SERIAL-A": "selected-uuid"}}
 	fmt.Println(a.DesiredProfile("SERIAL-A"))

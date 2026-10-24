@@ -102,7 +102,7 @@
       "col": 4,
       "type": "backend",
       "label": "Reconcile assignments",
-      "sublabel": "Fence outcomes by current target",
+      "sublabel": "Resolve serial choice, then default",
       "width": 225,
       "height": 68,
       "purpose": "service"
@@ -215,7 +215,8 @@
       "title": "Recurring reconciliation",
       "items": [
         "Inventory starts with a full fetch, then follows incremental cursors. Invalid or expired cursors restart a fetch. Only successful completion of the current generation reconciles missing devices.",
-        "Sync and assignment have independent schedules. Assignment saves outcomes and readback only while account identity, credentials, lease and desired profile still match. Defining a profile also rechecks the account after Apple responds."
+        "Sync and assignment have independent schedules. Assignment and admission resolve an explicit account/serial choice, the account default, then no action. Profiles coexist without selecting a default.",
+        "Serial is the physical-device selection key; UUID remains Apple\u2019s profile identifier. Batches group serials by resolved UUID. Removing a choice resumes the default and never clears Apple\u2019s profile implicitly."
       ]
     },
     {
@@ -233,16 +234,18 @@
       "items": [
         "HTTP 429 and per-device THROTTLED results defer assignments. A still-owned lease preserves cooldowns across same-identity credential renewal or a changed desired profile, even when its business result is stale.",
         "An identity reset or lost lease rejects old cooldown writes. Account and cursor checks reject stale inventory pages; each accepted page commits atomically with its cursor.",
-        "A local conflict stops further batches; it cannot undo work already accepted by Apple. Later runs reconcile the resulting Apple state."
+        "A local conflict stops further batches. A store-owned revision fences serial/default edits, including changes away and back, and selected-definition writes. Credential, identity and lease checks also guard outcomes and readback.",
+        "Each mutation first commits PENDING uncertainty. Missing or unrecognized assignment outcomes retain it. A replacement run reads Apple\u2019s device details before resubmission; inaccessible readback blocks retries. Confirmed success is retained without a duplicate assignment."
       ]
     },
     {
       "dot": "storage",
       "title": "Explicit identity replacement",
       "items": [
-        "Force resets state only for an actual identity change with a validated server UUID. The transaction clears old inventory, profile definitions, target, sessions and retry state, and starts a fresh fetch generation.",
-        "The account name, protocol version, creation time and token keypairs survive. Same-identity renewals preserve inventory and target; omitted identity metadata does not erase an established binding.",
-        "SQL schema 3 locks a stable account-name row, including absent names and delete/recreate transitions. Custom stores must provide the same transaction-long LockAccount contract."
+        "Force resets state only for an actual identity change with a validated server UUID. The transaction clears old inventory, profile definitions, default and serial choices, sessions and retry state, and starts a fresh fetch generation.",
+        "The account name, protocol version, creation time and token keypairs survive. Same-identity renewals preserve inventory and all desired choices; omitted identity metadata does not erase an established binding.",
+        "SQL schema 3 locks a stable account-name row, including absent names and delete/recreate transitions. Custom stores must provide the same transaction-long LockAccount contract.",
+        "SQL schema 4 adds a replayable profile-choices table; account defaults remain in their existing column. Migration replay preserves selected profiles, credentials, keys, worker uncertainty and checkpoints."
       ]
     },
     {
@@ -261,23 +264,27 @@
       "title": "Implementation references",
       "dot": "artifact",
       "items": [
-        "keypair: GenerateTokenPKI \u2014 https://github.com/deploymenttheory/go-apple-dm/blob/c1a9487d510ddbad038e8a171861a4f96ebfd5dd/devicemanagement/appleplatformservices/dep/tokenpki.go#L36",
-        "importtoken: Validate and commit tokens \u2014 https://github.com/deploymenttheory/go-apple-dm/blob/c1a9487d510ddbad038e8a171861a4f96ebfd5dd/devicemanagement/appleplatformservices/dep/token.go#L190",
-        "sync: Synchronize inventory \u2014 https://github.com/deploymenttheory/go-apple-dm/blob/c1a9487d510ddbad038e8a171861a4f96ebfd5dd/devicemanagement/appleplatformservices/dep/syncer.go",
-        "assign: Reconcile assignments \u2014 https://github.com/deploymenttheory/go-apple-dm/blob/c1a9487d510ddbad038e8a171861a4f96ebfd5dd/devicemanagement/appleplatformservices/dep/assigner.go",
-        "backoff: Lease, target and cooldown checks \u2014 https://github.com/deploymenttheory/go-apple-dm/blob/c1a9487d510ddbad038e8a171861a4f96ebfd5dd/devicemanagement/appleplatformservices/dep/assignmentstate.go",
-        "Account and credential checks \u2014 https://github.com/deploymenttheory/go-apple-dm/blob/c1a9487d510ddbad038e8a171861a4f96ebfd5dd/devicemanagement/appleplatformservices/dep/accountfence.go",
-        "Target-aware profile validation \u2014 https://github.com/deploymenttheory/go-apple-dm/blob/8b90e14028aa7b486b2f639da9410f553ec67f2b/devicemanagement/appleplatformservices/dep/profile_support.go"
+        "keypair: GenerateTokenPKI \u2014 https://github.com/deploymenttheory/go-apple-dm/blob/fda215781165d9ed6f81e4c8f884fee8785e0612/devicemanagement/appleplatformservices/dep/tokenpki.go",
+        "importtoken: Validate and commit tokens \u2014 https://github.com/deploymenttheory/go-apple-dm/blob/fda215781165d9ed6f81e4c8f884fee8785e0612/devicemanagement/appleplatformservices/dep/token.go",
+        "sync: Synchronize inventory \u2014 https://github.com/deploymenttheory/go-apple-dm/blob/fda215781165d9ed6f81e4c8f884fee8785e0612/devicemanagement/appleplatformservices/dep/syncer.go",
+        "assign: Reconcile assignments \u2014 https://github.com/deploymenttheory/go-apple-dm/blob/fda215781165d9ed6f81e4c8f884fee8785e0612/devicemanagement/appleplatformservices/dep/assigner.go",
+        "backoff: Lease, target and cooldown checks \u2014 https://github.com/deploymenttheory/go-apple-dm/blob/fda215781165d9ed6f81e4c8f884fee8785e0612/devicemanagement/appleplatformservices/dep/assignmentstate.go",
+        "Account and credential checks \u2014 https://github.com/deploymenttheory/go-apple-dm/blob/fda215781165d9ed6f81e4c8f884fee8785e0612/devicemanagement/appleplatformservices/dep/accountfence.go",
+        "Target-aware profile validation \u2014 https://github.com/deploymenttheory/go-apple-dm/blob/fda215781165d9ed6f81e4c8f884fee8785e0612/devicemanagement/appleplatformservices/dep/profile_support.go",
+        "Serial choice resolution \u2014 https://github.com/deploymenttheory/go-apple-dm/blob/fda215781165d9ed6f81e4c8f884fee8785e0612/devicemanagement/appleplatformservices/dep/profiletargets.go",
+        "Uncertain assignment readback \u2014 https://github.com/deploymenttheory/go-apple-dm/blob/fda215781165d9ed6f81e4c8f884fee8785e0612/devicemanagement/appleplatformservices/dep/assignmentpending.go"
       ]
     },
     {
       "title": "Implementation references (continued)",
       "dot": "artifact",
       "items": [
-        "Profile definition and independent schedules \u2014 https://github.com/deploymenttheory/go-apple-dm/blob/c1a9487d510ddbad038e8a171861a4f96ebfd5dd/server/internal/app/dep.go",
-        "Custom-store locking contract \u2014 https://github.com/deploymenttheory/go-apple-dm/blob/c1a9487d510ddbad038e8a171861a4f96ebfd5dd/devicemanagement/appleplatformservices/dep/store.go#L305",
-        "SQL account-name lock implementation \u2014 https://github.com/deploymenttheory/go-apple-dm/blob/c1a9487d510ddbad038e8a171861a4f96ebfd5dd/server/depstore/sqlstore/syncstate.go",
-        "SQL schema 3 migration \u2014 https://github.com/deploymenttheory/go-apple-dm/blob/c1a9487d510ddbad038e8a171861a4f96ebfd5dd/server/depstore/sqlstore/migrations/postgres/0003_account_locks.sql"
+        "Profile definition and independent schedules \u2014 https://github.com/deploymenttheory/go-apple-dm/blob/d5413e03e48acff9897da50aedebee0f27c12871/server/internal/app/dep.go",
+        "Custom-store locking contract \u2014 https://github.com/deploymenttheory/go-apple-dm/blob/fda215781165d9ed6f81e4c8f884fee8785e0612/devicemanagement/appleplatformservices/dep/store.go",
+        "SQL account-name lock implementation \u2014 https://github.com/deploymenttheory/go-apple-dm/blob/d5413e03e48acff9897da50aedebee0f27c12871/server/depstore/sqlstore/syncstate.go",
+        "SQL schema 3 migration \u2014 https://github.com/deploymenttheory/go-apple-dm/blob/d5413e03e48acff9897da50aedebee0f27c12871/server/depstore/sqlstore/migrations/postgres/0003_account_locks.sql",
+        "Serial choices storage \u2014 https://github.com/deploymenttheory/go-apple-dm/blob/d5413e03e48acff9897da50aedebee0f27c12871/server/depstore/sqlstore/accounts.go",
+        "SQL schema 4 migration \u2014 https://github.com/deploymenttheory/go-apple-dm/blob/d5413e03e48acff9897da50aedebee0f27c12871/server/depstore/sqlstore/migrations/postgres/0004_profile_targets.sql"
       ]
     }
   ]

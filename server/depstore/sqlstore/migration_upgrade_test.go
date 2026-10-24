@@ -82,6 +82,7 @@ func TestProfileChoicesMigrationReplay(t *testing.T) {
 	checkProfileChoicesReplay(t, db, sqlite.Dialect)
 }
 
+// checkProfileChoicesReplay verifies replay preserves desired choices and operational state.
 func checkProfileChoicesReplay(t *testing.T, db *sql.DB, dialect sqlcommon.Dialect) {
 	t.Helper()
 	ctx := t.Context()

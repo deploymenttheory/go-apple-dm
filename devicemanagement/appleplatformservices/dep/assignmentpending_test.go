@@ -21,6 +21,7 @@ type lostAssignmentResponse struct {
 	lost bool
 }
 
+// RoundTrip loses one response after the remote mutation has completed.
 func (l *lostAssignmentResponse) RoundTrip(r *http.Request) (*http.Response, error) {
 	response, err := l.base.RoundTrip(r)
 	if err == nil && r.URL.Path == dep.PathProfileDevs && !l.lost {
@@ -123,6 +124,7 @@ type incompleteAssignmentResponse struct {
 	used   bool
 }
 
+// RoundTrip replaces one accepted serial outcome while retaining the rest of the response.
 func (p *incompleteAssignmentResponse) RoundTrip(r *http.Request) (*http.Response, error) {
 	response, err := p.base.RoundTrip(r)
 	if err != nil || r.URL.Path != dep.PathProfileDevs || p.used {
