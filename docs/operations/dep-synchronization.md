@@ -124,6 +124,8 @@ action. An override works without a default. Deleting an override falls through
 to the default; if no default exists the device retains Apple's observed profile
 and is ineligible for profile-based admission. Removing desired state never calls
 Apple's clear-profile or disown endpoints. Selected definitions cannot be deleted.
+The production ADE profile endpoint returns HTTP 403 for an enrollment-policy
+denial; unavailable DEP state returns HTTP 500 and does not issue a profile.
 
 ## Background work and conflicts
 
