@@ -1,36 +1,39 @@
-// Package inventory maintains agentless device records from Apple Business
-// Manager, Apple School Manager and native MDM and DDM observations.
+// Package inventory retains independent Apple and native protocol source evidence.
 //
 // # Design
 //
-// The repository reconciles source observations into stable device records.
-// Source identities are account-scoped; serial numbers join records only when
-// the match is unambiguous. Conflicts remain inspectable, and aliases preserve
-// references when provisional enrollment records join existing cloud records.
-// Named Apple accounts supply one shared fleet rather than authorization tenants.
+// Each ResourceRecord addresses one source.Reference: kind, account and opaque
+// source resource identity. Successful original observations and list documents
+// retain complete JSON, byte representation and provenance. History, safe failed
+// outcomes and lifecycle metadata remain separate. No observation merges records,
+// creates a provisional alias, resolves field equivalence or persists a ranked
+// normalized device projection. Missing serials do not prevent source retention.
 //
-// Observations retain original payloads, source-qualified fields and provenance.
-// Normalized fields provide a queryable projection without discarding unknown
-// Apple attributes. Successful evidence and refresh failures have separate
-// timestamps. Coverage retains every plan; a failed lookup does not imply absent
-// coverage. Native observers accept caller-authenticated MDM results and DDM
-// status, preserving per-item timestamps across partial status reports.
+// Link explicitly invokes the independently reusable correlation package. Only an
+// actual organization-device resource and matching authenticated native serials
+// with eligible Device Enrollment provenance can establish a hardware relationship.
+// User Enrollment and unchecked provenance cannot establish that relationship.
+// Links retain both identities and require fresh explicit correlation after source
+// evidence or lifecycle changes. Optional field resolution stays caller-owned.
 //
-// The syncer collects organization devices, device details, MDM assignments and
-// AppleCare coverage through the AxM client. Apple built-in MDM inventory is
-// collected when available. Enumeration pages commit with their checkpoints;
-// renewable leases serialize syncs and account revisions fence stale work.
-// Jobs support pause, resume and cancellation, with cron and interval schedules.
-// Queries, reports and streaming exports share the record and field model.
+// Migrate atomically extracts legacy original source envelopes, reconstructs facts
+// solely from retained raw JSON and removes aggregate records and derived indexes.
+// Missing originals or authenticated enrollment provenance remain incomplete and
+// refreshable. It fences existing worker owners and restarts incompatible cursors
+// while preserving account credentials, schedules and completed job history.
+// Applications must call Migrate before starting workers or native observers.
 //
-// Backend defines atomic document updates. The in-memory implementation supports
-// embedding and tests; server/inventorystore supplies encrypted SQL persistence
-// and joins native observations to the existing protocol transaction. HTTP
-// routing, authorization, command dispatch and worker supervision belong to the
-// reference server. Callers must authorize access to complete source payloads
-// separately from the reviewed fields exposed by PublicRecord. Cloud records
-// can exist before enrollment; native collection requires MDM enrollment and
-// device connectivity, without an installed agent.
+// The syncer composes the standalone AxM collector. Successful resources, complete
+// source documents, safe outcomes and enumeration checkpoints share fenced backend
+// transactions. Coverage publishes only after complete traversal; a failed refresh
+// never replaces successful source evidence. Account revisions and renewable leases
+// serialize work. Native observers retain successful report history so omitted
+// fields remain available to an explicit resolver with their original times.
+//
+// Backend supplies atomic document updates. Memory is suitable for embedding and
+// tests. The reference SQL backend reuses the application transaction and row-bound
+// storage keyring, including native protocol/event rollback. Default inspection
+// exposes resource metadata; original source values require separate raw authority.
 //
 // # References
 //

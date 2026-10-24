@@ -129,22 +129,11 @@ func bounded[T any](ctx context.Context, fn func(context.Context) (T, error)) (T
 func (s *Syncer) sync(ctx context.Context, c *axm.Client, a Account, j *Job) error {
 	r := s.Repository
 	if j.Stage == "devices" {
-		req := collection.Request{Stream: collection.Stream{AccountID: a.ID, Generation: j.ID, Operation: collection.Devices}, Limit: 1000}
+		req := collection.Request{Stream: collection.Stream{AccountID: a.ID, Generation: j.Generation, Operation: collection.Devices}, Limit: 1000}
 		var checkpoint collection.Checkpoint
 		if len(j.Checkpoint) > 0 {
 			if err := json.Unmarshal(j.Checkpoint, &checkpoint); err != nil {
 				return err
-			}
-			if checkpoint.Version == 0 {
-				// Retain continuation of jobs created with the earlier page checkpoint.
-				var prior axm.Page[axm.OrgDevice]
-				if err := json.Unmarshal(j.Checkpoint, &prior); err != nil {
-					return err
-				}
-				if !prior.HasNext() || prior.Links.Self == "" {
-					return axm.ErrNextLink
-				}
-				checkpoint = collection.Checkpoint{Version: collection.Version, Stream: req.Stream, Pages: 1, Links: prior.Links, Meta: prior.Meta, Seen: []string{prior.Links.Self}}
 			}
 		}
 		collector := collection.Collector{Client: c, MaxPages: 100000}
@@ -155,7 +144,7 @@ func (s *Syncer) sync(ctx context.Context, c *axm.Client, a Account, j *Job) err
 			next, err := bounded(ctx, func(ctx context.Context) (collection.Checkpoint, error) {
 				return collector.Step(ctx, req, checkpoint, collection.SinkFunc(func(ctx context.Context, batch collection.Batch) error {
 					if !batch.Outcome.Success {
-						return r.commitJob(ctx, j, nil)
+						return r.commitJob(ctx, j, func(tx Tx) error { return retainBatch(ctx, tx, batch) })
 					}
 					previous := *j
 					j.Devices += len(batch.Resources)
@@ -173,6 +162,9 @@ func (s *Syncer) sync(ctx context.Context, c *axm.Client, a Account, j *Job) err
 					}
 					now := time.Now().UTC()
 					err := r.commitJob(ctx, j, func(tx Tx) error {
+						if err := retainBatch(ctx, tx, batch); err != nil {
+							return err
+						}
 						for _, resource := range batch.Resources {
 							var device axm.OrgDevice
 							if err := json.Unmarshal(resource.Raw, &device); err != nil {
@@ -182,7 +174,7 @@ func (s *Syncer) sync(ctx context.Context, c *axm.Client, a Account, j *Job) err
 							if err != nil {
 								return err
 							}
-							observation.Generation = j.ID
+							observation.Generation = j.Generation
 							if _, err = r.ObserveTx(ctx, tx, device.Attributes.SerialNumber, observation); err != nil {
 								return err
 							}
@@ -207,16 +199,13 @@ func (s *Syncer) sync(ctx context.Context, c *axm.Client, a Account, j *Job) err
 
 	if j.Stage == "enrich" {
 		for {
-			page, err := r.Devices(ctx, DeviceQuery{AccountID: a.ID, Cursor: j.Cursor, Limit: 50})
+			page, err := r.Resources(ctx, ResourceQuery{AccountID: a.ID, Source: "axm.device", Cursor: j.Cursor, Limit: 50})
 			if err != nil {
 				return err
 			}
 			for _, d := range page.Items {
-				for _, o := range d.Sources {
-					if o.Source.Kind != "axm.device" || o.Source.AccountID != a.ID || o.Disconnected {
-						continue
-					}
-					if err := s.enrich(ctx, c, a, j, d, o); err != nil {
+				if d.Source.Kind == "axm.device" && !d.Snapshot.Disconnected {
+					if err := s.enrich(ctx, c, a, j, d, d.Snapshot); err != nil {
 						return err
 					}
 				}
@@ -243,7 +232,7 @@ func (s *Syncer) sync(ctx context.Context, c *axm.Client, a Account, j *Job) err
 }
 
 // enrich refreshes device detail, assignment and all coverage plans independently.
-func (s *Syncer) enrich(ctx context.Context, c *axm.Client, a Account, j *Job, d DeviceRecord, listed Observation) error {
+func (s *Syncer) enrich(ctx context.Context, c *axm.Client, a Account, j *Job, d ResourceRecord, listed Observation) error {
 	r := s.Repository
 	id := listed.Source.ResourceID
 	now := time.Now().UTC()
@@ -252,59 +241,77 @@ func (s *Syncer) enrich(ctx context.Context, c *axm.Client, a Account, j *Job, d
 		if e != nil {
 			return e
 		}
-		o.Generation = j.ID
-		return r.commitJob(ctx, j, func(tx Tx) error { _, e := r.ObserveTx(ctx, tx, d.SerialNumber, o); return e })
+		o.Generation = j.Generation
+		return r.commitJob(ctx, j, func(tx Tx) error { _, e := r.ObserveTx(ctx, tx, "", o); return e })
 	}
 	failed := func(kind string, err error) error {
+		var local collectionCommitError
+		if errors.As(err, &local) {
+			return local.error
+		}
 		if axm.IsUnauthorized(err) {
 			return err
 		}
 		j.Failed++
 		// Error text deliberately excludes response bodies, serials, and endpoint hosts.
 		return r.commitJob(ctx, j, func(tx Tx) error {
-			current, e := get[DeviceRecord](ctx, tx, "device/"+d.ID)
-			if e != nil {
-				return e
-			}
-			ref := source.Reference{Kind: kind, AccountID: a.ID, ResourceID: id}
-			o := current.Sources[ref.Key()]
-			o.Source = ref
-			o.AttemptedAt = time.Now().UTC()
-			o.Error = errorCode(err)
-			current.Sources[ref.Key()] = o
-			if e := put(ctx, tx, "source/"+ref.Key(), current.ID); e != nil {
-				return e
-			}
-			return r.saveRecord(ctx, tx, current)
+			return attemptTx(ctx, tx, source.Reference{Kind: kind, AccountID: a.ID, ResourceID: id}, time.Now().UTC(), errorCode(err))
 		})
 	}
-	fresh := func(kind string, ttl time.Duration) bool {
-		o, ok := d.Sources[(source.Reference{Kind: kind, AccountID: a.ID, ResourceID: id}).Key()]
-		return ok && !o.Absent && !o.Disconnected && o.Error == "" && now.Before(o.ObservedAt.Add(ttl)) && !j.Force
+	fresh := func(kind string, ttl time.Duration) (bool, error) {
+		ref := source.Reference{Kind: kind, AccountID: a.ID, ResourceID: id}
+		resource, err := r.SourceResource(ctx, ref)
+		if errors.Is(err, ErrNotFound) {
+			return false, nil
+		}
+		if err != nil {
+			return false, err
+		}
+		o := resource.Snapshot
+		if resource.Incomplete || o.Absent || o.Disconnected || !now.Before(o.ObservedAt.Add(ttl)) || j.Force {
+			return false, nil
+		}
+		attempts, err := r.Attempts(ctx, ref)
+		if err != nil {
+			return false, err
+		}
+		for _, attempt := range attempts {
+			if !attempt.At.Before(o.ObservedAt) {
+				return false, nil
+			}
+		}
+		return true, nil
 	}
-	if !fresh("axm.detail", a.DeviceTTL) || listed.Generation != j.ID {
+	detailFresh, err := fresh("axm.detail", a.DeviceTTL)
+	if err != nil {
+		return err
+	}
+
+	if !detailFresh || listed.Generation != j.Generation {
 		if err := r.commitJob(ctx, j, nil); err != nil {
 			return err
 		}
 		resources, err := bounded(ctx, func(ctx context.Context) ([]collection.Resource, error) {
-			return collectResources(ctx, c, a.ID, j.ID, collection.Detail, id)
+			return s.collectResources(ctx, c, a, j, collection.Detail, id)
 		})
 		if err != nil {
-			if axm.IsNotFound(err) && listed.Generation != j.ID {
+			if axm.IsNotFound(err) && listed.Generation != j.Generation {
 				// Only after a complete enumeration plus a confirming detail lookup.
 				return r.commitJob(ctx, j, func(tx Tx) error {
-					current, e := get[DeviceRecord](ctx, tx, "device/"+d.ID)
-					if e != nil {
-						return e
-					}
-					for k, o := range current.Sources {
-						if o.Source.AccountID == a.ID && o.Source.ResourceID == id {
-							o.Absent = true
-							current.Sources[k] = o
+					return walk(ctx, tx, "resource/", func(entry Entry) error {
+						var current ResourceRecord
+						if err := json.Unmarshal(entry.Value, &current); err != nil {
+							return err
 						}
-					}
-					rebuild(&current)
-					return r.saveRecord(ctx, tx, current)
+						if current.Source.AccountID == a.ID && current.Source.ResourceID == id {
+							current.Snapshot.Absent = true
+							if err := putResource(ctx, tx, current); err != nil {
+								return err
+							}
+							return invalidateLinks(ctx, tx, current.Source)
+						}
+						return nil
+					})
 				})
 			}
 			if e := failed("axm.detail", err); e != nil {
@@ -316,46 +323,40 @@ func (s *Syncer) enrich(ctx context.Context, c *axm.Client, a Account, j *Job, d
 			}
 		}
 	}
-	if !fresh("axm.assignment", a.DeviceTTL) {
+	assignmentFresh, err := fresh("axm.assignment", a.DeviceTTL)
+	if err != nil {
+		return err
+	}
+	if !assignmentFresh {
 		if err := r.commitJob(ctx, j, nil); err != nil {
 			return err
 		}
-		server, err := bounded(ctx, func(ctx context.Context) (*axm.MDMServer, error) {
-			resources, err := collectResources(ctx, c, a.ID, j.ID, collection.Assignment, id)
-			if axm.IsNotFound(err) && listed.Generation == j.ID {
-				return nil, nil
-			}
+		raw, err := bounded(ctx, func(ctx context.Context) (json.RawMessage, error) {
+			resources, err := s.collectResources(ctx, c, a, j, collection.Assignment, id)
 			if err != nil {
 				return nil, err
 			}
-			var server axm.MDMServer
-			if err := json.Unmarshal(resources[0].Raw, &server); err != nil {
-				return nil, err
-			}
-			return &server, nil
+			return resources[0].Raw, nil
 		})
 		if err != nil {
-			if e := failed("axm.assignment", err); e != nil {
-				return e
+			if err := failed("axm.assignment", err); err != nil {
+				return err
 			}
-		} else {
-			assignment := map[string]any{"mdm_assigned": server != nil && server.ID != ""}
-			if server != nil && server.ID != "" {
-				assignment["mdm_server_id"] = server.ID
-				assignment["mdm_server"] = server
-				assignment["mdm_server_raw"] = server.Raw
-			}
-			raw, e := json.Marshal(assignment)
-			if e != nil {
-				return e
-			}
-			if e := save("axm.assignment", raw, a.DeviceTTL); e != nil {
-				return e
-			}
+		} else if err := save("axm.assignment", raw, a.DeviceTTL); err != nil {
+			return err
 		}
+
 	}
-	old, seen := d.Sources[(source.Reference{Kind: "axm.coverage", AccountID: a.ID, ResourceID: id}).Key()]
-	if !fresh("axm.coverage", a.CoverageTTL) && !(a.NeverRefetchCoverage && seen && !old.ObservedAt.IsZero() && !j.Force) {
+	old, err := r.SourceResource(ctx, source.Reference{Kind: "axm.coverage", AccountID: a.ID, ResourceID: id})
+	seen := err == nil
+	if err != nil && !errors.Is(err, ErrNotFound) {
+		return err
+	}
+	coverageFresh, err := fresh("axm.coverage", a.CoverageTTL)
+	if err != nil {
+		return err
+	}
+	if !coverageFresh && !(a.NeverRefetchCoverage && seen && !old.Incomplete && !old.Snapshot.ObservedAt.IsZero() && !j.Force) {
 		if a.CoverageBudget > 0 && j.CoverageAttempts >= a.CoverageBudget {
 			j.Failed++
 			j.Error = "coverage_budget_exhausted"
@@ -369,7 +370,7 @@ func (s *Syncer) enrich(ctx context.Context, c *axm.Client, a Account, j *Job, d
 			return err
 		}
 		plans, err := bounded(ctx, func(ctx context.Context) ([]json.RawMessage, error) {
-			resources, err := collectResources(ctx, c, a.ID, j.ID, collection.Coverage, id)
+			resources, err := s.collectResources(ctx, c, a, j, collection.Coverage, id)
 			if err != nil {
 				return nil, err
 			}
@@ -466,7 +467,7 @@ func (s *Syncer) appleMDM(ctx context.Context, c *axm.Client, a Account, j *Job)
 			j.Error = errorCode(err)
 			return r.commitJob(ctx, j, nil)
 		}
-		pageKey := "jobpage/" + j.ID + "/" + digest("apple_mdm|"+page.Links.Self)
+		pageKey := "jobpage/" + j.ID + "/" + digest(j.Generation+"|apple_mdm|"+page.Links.Self)
 		if _, err := r.Backend.Get(ctx, pageKey); err == nil {
 			return axm.ErrNextLink
 		} else if !errors.Is(err, ErrNotFound) {
@@ -523,16 +524,27 @@ func (s *Syncer) appleMDM(ctx context.Context, c *axm.Client, a Account, j *Job)
 // collectResources stages a complete stream in caller-owned memory. Inventory's
 // surrounding evidence transaction publishes it only after full traversal; a
 // failed coverage page cannot replace previously successful coverage evidence.
-func collectResources(ctx context.Context, c *axm.Client, account, generation string, operation collection.Operation, id string) ([]collection.Resource, error) {
+func (s *Syncer) collectResources(ctx context.Context, c *axm.Client, account Account, j *Job, operation collection.Operation, id string) ([]collection.Resource, error) {
 	var resources []collection.Resource
-	_, err := (collection.Collector{Client: c, MaxPages: 100000}).Collect(ctx, collection.Request{Stream: collection.Stream{AccountID: account, Generation: generation, Operation: operation, ResourceID: id}, Limit: 1000}, collection.Checkpoint{}, collection.SinkFunc(func(_ context.Context, batch collection.Batch) error {
+	var sinkErr error
+	_, err := (collection.Collector{Client: c, MaxPages: 100000}).Collect(ctx, collection.Request{Stream: collection.Stream{AccountID: account.ID, Generation: j.Generation, Operation: operation, ResourceID: id}, Limit: 1000}, collection.Checkpoint{}, collection.SinkFunc(func(ctx context.Context, batch collection.Batch) error {
 		if batch.Outcome.Success {
 			resources = append(resources, batch.Resources...)
 		}
-		return nil
+		sinkErr = s.Repository.commitJob(ctx, j, func(tx Tx) error { return retainBatch(ctx, tx, batch) })
+		return sinkErr
 	}))
+	if sinkErr != nil {
+		return nil, collectionCommitError{sinkErr}
+	}
 	if err != nil {
 		return nil, err
 	}
 	return resources, nil
 }
+
+// collectionCommitError prevents a local persistence failure from being handled
+// as an Apple refresh outcome, including a joined API 404 plus failed sink commit.
+type collectionCommitError struct{ error }
+
+func (e collectionCommitError) Unwrap() error { return e.error }
