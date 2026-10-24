@@ -138,6 +138,7 @@ func TestEvidenceFailureAtomicity(t *testing.T) {
 			_, err := r.Observe(ctx, "S", o)
 			return err
 		}},
+		{"acknowledged replay", func(r *Repository) error { _, err := r.Observe(ctx, "", native.Snapshot); return err }},
 		{"delayed conflicting original", func(r *Repository) error {
 			o := native.Snapshot
 			o.ObservedAt = at.Add(-time.Hour)
@@ -337,5 +338,66 @@ func TestDelayedConflictInvalidatesCheckedLink(t *testing.T) {
 	}
 	if _, err := r.Link(t.Context(), apple.Source, native.Source, time.Now()); !errors.Is(err, ErrConflict) {
 		t.Fatal("conflicting retained history linked", err)
+	}
+}
+
+// TestSameTimeHistoricalReplayKeepsCurrentSnapshot exercises A then B at the
+// same timestamp, a checked B link, and an exact replay of the older A original.
+func TestSameTimeHistoricalReplayKeepsCurrentSnapshot(t *testing.T) {
+	r := repository(t)
+	at := time.Now().UTC()
+	a := observe(t, r, "", "axm.device", "a", "apple", `{"id":"apple","type":"orgDevices","attributes":{"serialNumber":"A"}}`, at)
+	b := observe(t, r, "", "axm.device", "a", "apple", `{"id":"apple","type":"orgDevices","attributes":{"serialNumber":"B"}}`, at)
+	native, err := ResourceObservation(source.Reference{Kind: "mdm.DeviceInformation", ResourceID: "device:native"}, json.RawMessage(`{"QueryResponses":{"SerialNumber":"B"}}`), at, time.Hour)
+	if err != nil {
+		t.Fatal(err)
+	}
+	native.Native = &NativeIdentity{Serial: "B", Method: correlation.AutomatedDeviceEnrollment, Authenticated: true}
+	if _, err := r.Observe(t.Context(), "", native); err != nil {
+		t.Fatal(err)
+	}
+	checked, err := r.Link(t.Context(), b.Source, native.Source, at)
+	if err != nil {
+		t.Fatal(err)
+	}
+	replayed, err := r.Observe(t.Context(), "", a.Snapshot)
+	if err != nil || string(replayed.Snapshot.Raw) != string(b.Snapshot.Raw) {
+		t.Fatal("historical replay replaced equal-time winner", replayed, err)
+	}
+	links, err := r.Links(t.Context(), b.Source)
+	if err != nil || len(links) != 1 || links[0] != checked {
+		t.Fatal("historical replay changed checked B link", links, err)
+	}
+	current, err := r.SourceResource(t.Context(), b.Source)
+	if err != nil || string(current.Snapshot.Raw) != string(b.Snapshot.Raw) {
+		t.Fatal("checked link and current source diverged", current, err)
+	}
+	if err := r.ChangeSource(t.Context(), b.Source, true, true); err != nil {
+		t.Fatal(err)
+	}
+	replayed, err = r.Observe(t.Context(), "", a.Snapshot)
+	if err != nil || !replayed.Snapshot.Absent || !replayed.Snapshot.Disconnected {
+		t.Fatal("acknowledged replay changed lifecycle", replayed, err)
+	}
+}
+
+// TestHistoricalReplayMissingCurrentRecord fails closed rather than fabricating
+// current state from an acknowledged historical document after inconsistent loss.
+func TestHistoricalReplayMissingCurrentRecord(t *testing.T) {
+	r, apple, _ := linkedFixture(t)
+	if err := r.Backend.Update(t.Context(), func(tx Tx) error { return tx.Delete(t.Context(), "resource/"+apple.ID) }); err != nil {
+		t.Fatal(err)
+	}
+	if record, err := r.Observe(t.Context(), "", apple.Snapshot); !errors.Is(err, ErrConflict) || record.ID != "" {
+		t.Fatal("missing current record fabricated a replay success", record, err)
+	}
+	if _, err := r.SourceResource(t.Context(), apple.Source); !errors.Is(err, ErrNotFound) {
+		t.Fatal("inconsistent replay wrote a current record", err)
+	}
+	if err := r.Backend.Update(t.Context(), func(tx Tx) error { return tx.Put(t.Context(), "resource/"+apple.ID, json.RawMessage(`{}`)) }); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := r.Observe(t.Context(), "", apple.Snapshot); !errors.Is(err, ErrConflict) {
+		t.Fatal("corrupt current identity accepted", err)
 	}
 }

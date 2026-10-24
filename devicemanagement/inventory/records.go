@@ -44,6 +44,8 @@ func (r *Repository) Observe(ctx context.Context, serial string, o Observation) 
 }
 
 // ObserveTx allows evidence and a worker checkpoint to share one transaction.
+// An exact acknowledged replay leaves current snapshot and lifecycle unchanged.
+// Acknowledged history without a consistent current record returns ErrConflict.
 func (r *Repository) ObserveTx(ctx context.Context, tx Tx, serial string, o Observation) (ResourceRecord, error) {
 	if o.Source.Kind == "" || o.Source.ResourceID == "" || o.ObservedAt.IsZero() || !json.Valid(o.Raw) {
 		return ResourceRecord{}, ErrInvalid
@@ -67,7 +69,11 @@ func (r *Repository) ObserveTx(ctx context.Context, tx Tx, serial string, o Obse
 	if err != nil && !errors.Is(err, ErrNotFound) {
 		return record, err
 	}
-	if record.ID == "" {
+	recordExists := err == nil
+	if recordExists && (record.ID != o.Source.Key() || record.Source != o.Source) {
+		return ResourceRecord{}, ErrConflict
+	}
+	if !recordExists {
 		record = ResourceRecord{ID: o.Source.Key(), Source: o.Source, CreatedAt: o.ObservedAt}
 	}
 	// The content digest makes retrying an acknowledged page idempotent while
@@ -84,15 +90,22 @@ func (r *Repository) ObserveTx(ctx context.Context, tx Tx, serial string, o Obse
 	if historyErr != nil && !errors.Is(historyErr, ErrNotFound) {
 		return record, historyErr
 	}
-	if errors.Is(historyErr, ErrNotFound) {
-		if err := tx.Put(ctx, historyKey, raw); err != nil {
-			return record, err
+	if historyErr == nil {
+		// An acknowledged replay changes neither snapshot nor lifecycle, even when
+		// another original won the same timestamp later. Missing current state is
+		// inconsistent; it cannot be reconstructed from this one historical input.
+		if !recordExists {
+			return ResourceRecord{}, ErrConflict
 		}
-		// A delayed original can contradict the checked relationship even though it
-		// must not replace the latest successful snapshot. Replays add no evidence.
-		if err := invalidateLinks(ctx, tx, o.Source); err != nil {
-			return record, err
-		}
+		return record, nil
+	}
+	if err := tx.Put(ctx, historyKey, raw); err != nil {
+		return record, err
+	}
+	// A delayed original can contradict a checked relationship without replacing
+	// the latest successful snapshot. Every newly retained original invalidates it.
+	if err := invalidateLinks(ctx, tx, o.Source); err != nil {
+		return record, err
 	}
 
 	if record.Snapshot.ObservedAt.After(o.ObservedAt) {
