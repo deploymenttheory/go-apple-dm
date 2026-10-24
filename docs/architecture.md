@@ -35,6 +35,14 @@ including the explicit dependency from the ADE software update gate to the GDMF 
 The table groups responsibilities; the exact enforced tiers and test-only exceptions are in
 [internal/layout/layout_test.go](../internal/layout/layout_test.go).
 
+Apple organization-device collection is independently reusable through
+`devicemanagement/appleplatformservices/axm/collection`. It emits complete source JSON,
+separate request outcomes and versioned stream checkpoints into a caller-owned atomic
+sink. Account connection selection, leases, transactions and scheduling stay with the
+host. The inventory synchronizer composes this collector; neither the Apple client nor
+collector imports inventory. See [source collection](operations/agentless-inventory.md#standalone-source-collection)
+for continuation and completion contracts.
+
 The [content-cache receiver](research/decisions/0051-content-cache-metrics.md) is
 an embeddable library at the service-client tier. It installs no reference-server
 route. Its reviewed OS 27 OpenAPI fixture is checked against the pinned Apple source.

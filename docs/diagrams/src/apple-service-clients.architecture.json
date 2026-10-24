@@ -35,7 +35,7 @@
     ],
     "repository": {
       "url": "https://github.com/deploymenttheory/go-apple-dm",
-      "revision": "c1a9487d510ddbad038e8a171861a4f96ebfd5dd"
+      "revision": "52274392b2729fce9b4ae1a0936605ba329df91a"
     },
     "colour_profile": "purpose-v1",
     "legend": {
@@ -121,7 +121,7 @@
       "id": "axmclient",
       "type": "backend",
       "label": "axm.Client",
-      "sublabel": "OAuth and paged API calls",
+      "sublabel": "OAuth and source evidence",
       "pos": [
         345.0,
         260.0
@@ -134,6 +134,10 @@
         {
           "path": "devicemanagement/appleplatformservices/axm/auth.go",
           "label": "ES256 assertion"
+        },
+        {
+          "path": "devicemanagement/appleplatformservices/axm/collection/collection.go",
+          "label": "atomic source streams"
         }
       ],
       "purpose": "transport"
@@ -405,6 +409,16 @@
     },
     {
       "dot": "service",
+      "title": "Independent Apple source collection",
+      "items": [
+        "The collection package emits raw organization-device, detail, assignment and coverage resources without importing inventory. Raw list documents retain included resources and unknown envelope fields.",
+        "The host selects streams and owns account credentials, scheduling, leases and an atomic evidence/outcome/checkpoint sink. Inventory synchronization composes the same collector.",
+        "A new collector resumes committed versioned checkpoints. Failures retain successful evidence; only an exhausted successful list stream emits completion. Completion does not promise an Apple-side snapshot.",
+        "Collector persistence and resumption \u2014 https://github.com/deploymenttheory/go-apple-dm/blob/52274392b2729fce9b4ae1a0936605ba329df91a/devicemanagement/appleplatformservices/axm/collection/collection.go"
+      ]
+    },
+    {
+      "dot": "service",
       "title": "Inventory and assignments",
       "items": [
         "Inventory pages and cursors commit atomically after account, credential and cursor checks. Only the final page of the current full-fetch generation reconciles missing devices; interrupted or superseded fetches cannot delete unseen inventory.",
@@ -417,28 +431,28 @@
       "title": "DEP renewal, reset and cooldowns",
       "items": [
         "Ordinary token imports reject established Apple identity or consumer-key changes. Force permits an atomic identity reset only with a validated server UUID; same-identity renewals preserve inventory and local settings.",
-        "Old responses cannot restore reset inventory or sessions. A still-owned lease may retain HTTP 429 or device THROTTLED cooldowns across a same-identity token or desired-profile change; identity reset discards the old server’s cooldowns.",
+        "Old responses cannot restore reset inventory or sessions. A still-owned lease may retain HTTP 429 or device THROTTLED cooldowns across a same-identity token or desired-profile change; identity reset discards the old server\u2019s cooldowns.",
         "Local checks cannot undo requests already accepted by Apple. Later reconciliation reads current Apple state.",
-        "Token validation and atomic reset — https://github.com/deploymenttheory/go-apple-dm/blob/c1a9487d510ddbad038e8a171861a4f96ebfd5dd/devicemanagement/appleplatformservices/dep/token.go"
+        "Token validation and atomic reset \u2014 https://github.com/deploymenttheory/go-apple-dm/blob/52274392b2729fce9b4ae1a0936605ba329df91a/devicemanagement/appleplatformservices/dep/token.go"
       ]
     },
     {
       "dot": "policy",
       "title": "Software updates",
       "items": [
-        "The enrollment handler applies its configured update policy. Software lookup supplies available versions; it does not itself send the device’s HTTP rejection."
+        "The enrollment handler applies its configured update policy. Software lookup supplies available versions; it does not itself send the device\u2019s HTTP rejection."
       ]
     },
     {
       "dot": "transport",
       "title": "Public documentation",
       "items": [
-        "Device assignment — https://developer.apple.com/documentation/devicemanagement/device-assignment",
-        "Implementing OAuth for the Apple School Manager and Apple Business APIs — https://developer.apple.com/documentation/apple-school-and-business-manager-api/implementing-oauth-for-the-apple-school-manager-and-apple-business-api",
-        "ErrorCodeSoftwareUpdateRequired — https://developer.apple.com/documentation/devicemanagement/errorcodesoftwareupdaterequired",
-        "Apps and Books — https://developer.apple.com/documentation/devicemanagement/getting-started-with-the-management-api",
-        "ADE session authentication — https://developer.apple.com/documentation/devicemanagement/authenticating-for-automated-device-enrollment",
-        "Assignment throttling — https://developer.apple.com/documentation/devicemanagement/assign-profile"
+        "Device assignment \u2014 https://developer.apple.com/documentation/devicemanagement/device-assignment",
+        "Implementing OAuth for the Apple School Manager and Apple Business APIs \u2014 https://developer.apple.com/documentation/apple-school-and-business-manager-api/implementing-oauth-for-the-apple-school-manager-and-apple-business-api",
+        "ErrorCodeSoftwareUpdateRequired \u2014 https://developer.apple.com/documentation/devicemanagement/errorcodesoftwareupdaterequired",
+        "Apps and Books \u2014 https://developer.apple.com/documentation/devicemanagement/getting-started-with-the-management-api",
+        "ADE session authentication \u2014 https://developer.apple.com/documentation/devicemanagement/authenticating-for-automated-device-enrollment",
+        "Assignment throttling \u2014 https://developer.apple.com/documentation/devicemanagement/assign-profile"
       ]
     }
   ]
