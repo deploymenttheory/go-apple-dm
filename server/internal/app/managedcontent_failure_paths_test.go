@@ -176,10 +176,14 @@ type contentFailureInspector struct {
 	inspect func(managedcontent.Dispatch) (managedcontent.Observation, error)
 }
 
+// Inspect supplies the configured delivery extension's read-only observation or
+// failure, without invoking the SDK worker or mutating native delivery state.
 func (v contentFailureInspector) Inspect(_ context.Context, d managedcontent.Dispatch) (managedcontent.Observation, error) {
 	return v.inspect(d)
 }
 
+// Submit refuses unexpected dispatch so an inspection regression cannot silently
+// turn this deliberately failing read-only fixture into an installation provider.
 func (v contentFailureInspector) Submit(context.Context, managedcontent.Dispatch) (managedcontent.Observation, error) {
 	return managedcontent.Observation{}, errors.New("fixture-provider-secret unexpected submit")
 }
