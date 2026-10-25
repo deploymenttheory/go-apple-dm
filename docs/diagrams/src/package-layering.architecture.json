@@ -35,7 +35,7 @@
     ],
     "repository": {
       "url": "https://github.com/deploymenttheory/go-apple-dm",
-      "revision": "2b8157efa2c6cbfff459bc44f66736a5d2e7c753"
+      "revision": "bb39d3a24680dffbdd4863361c9be1718615d704"
     },
     "colour_profile": "purpose-v1",
     "legend": {
@@ -227,7 +227,7 @@
       "id": "foundationtier",
       "type": "backend",
       "label": "Shared utilities",
-      "sublabel": "Clock, paging, and secrets",
+      "sublabel": "Paging, secrets, app workflows",
       "pos": [
         1130.0,
         270.0
@@ -240,6 +240,10 @@
         {
           "path": "devicemanagement/paging/paging.go",
           "label": "paging"
+        },
+        {
+          "path": "devicemanagement/applications/managedcontent/types.go",
+          "label": "Independent content adapters"
         }
       ],
       "purpose": "service"
@@ -391,8 +395,20 @@
       "dot": "transport",
       "title": "Public documentation",
       "items": [
-        "Go Modules Reference — https://go.dev/ref/mod",
-        "Apple device-management schema repository — https://github.com/apple/device-management"
+        "Go Modules Reference \u2014 https://go.dev/ref/mod",
+        "Apple device-management schema repository \u2014 https://github.com/apple/device-management"
+      ]
+    },
+    {
+      "dot": "service",
+      "title": "Reusable managed-content composition",
+      "items": [
+        "applications/managedcontent is a library utility with explicit Licensing, Resolver and Delivery adapters plus the atomic foundation state.Store contract. The existing appsbooks.Workflow satisfies Licensing directly. Consumers can adopt it without a universal inventory model or any reference-server package.",
+        "Queued starts permit atomic caller audit capture; Step owns Apple and native-delivery effects. Authenticated target selection and native support metadata gate installation, while stable payload identities and ownership fences preserve restart/readback recovery.",
+        "Backend-independent production code and tests never import the reference server. Shared memory and sealed-SQL contracts live in storage/storagetest as existing test scaffolding; concrete MDM/DDM queue composition remains caller-owned.",
+        "Public adapter contracts \u2014 https://github.com/deploymenttheory/go-apple-dm/blob/bb39d3a24680dffbdd4863361c9be1718615d704/devicemanagement/applications/managedcontent/types.go",
+        "Durable composition \u2014 https://github.com/deploymenttheory/go-apple-dm/blob/bb39d3a24680dffbdd4863361c9be1718615d704/devicemanagement/applications/managedcontent/workflow.go",
+        "Shared backend contract \u2014 https://github.com/deploymenttheory/go-apple-dm/blob/bb39d3a24680dffbdd4863361c9be1718615d704/devicemanagement/storage/storagetest/managedcontent.go"
       ]
     }
   ]

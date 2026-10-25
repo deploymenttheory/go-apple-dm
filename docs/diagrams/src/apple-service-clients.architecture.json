@@ -6,7 +6,7 @@
     "quality_profile": "showcase",
     "viewBox": [
       1200,
-      690
+      830
     ],
     "views": [
       {
@@ -31,11 +31,22 @@
           "appsbooksclient"
         ],
         "note": "dep uses OAuth 1.0a; axm uses OAuth access tokens; Apps and Books uses a location sToken; software lookup is public."
+      },
+      {
+        "id": "content",
+        "label": "Licensed content delivery",
+        "focus": [
+          "appsbookssvc",
+          "appsbooksclient",
+          "contentdelivery",
+          "appsbooksstate"
+        ],
+        "note": "Explicit caller intent, fresh assignment proof, authenticated target and native delivery adapters."
       }
     ],
     "repository": {
       "url": "https://github.com/deploymenttheory/go-apple-dm",
-      "revision": "12aaa32385107bcfe1627b5cb3caf20b7082da5d"
+      "revision": "bb39d3a24680dffbdd4863361c9be1718615d704"
     },
     "colour_profile": "purpose-v1",
     "legend": {
@@ -298,8 +309,8 @@
           "label": "Fenced explicit licensing jobs"
         },
         {
-          "path": "devicemanagement/appleplatformservices/appsbooks/job_notifications.go",
-          "label": "Authenticated durable callback processing"
+          "path": "devicemanagement/appleplatformservices/appsbooks/assignment.go",
+          "label": "Fresh owned per-target proof"
         }
       ]
     },
@@ -307,10 +318,10 @@
       "id": "appsbooksstate",
       "type": "database",
       "label": "state.Store",
-      "sublabel": "Location, jobs and callbacks",
+      "sublabel": "Licensing and delivery evidence",
       "pos": [
         945,
-        560
+        710
       ],
       "size": [
         220,
@@ -325,6 +336,35 @@
         {
           "path": "server/statestore/sqlstore.go",
           "label": "Sealed SQL adapter"
+        }
+      ]
+    },
+    {
+      "id": "contentdelivery",
+      "type": "backend",
+      "label": "managedcontent.Workflow",
+      "sublabel": "Explicit assign / install intent",
+      "pos": [
+        645,
+        560
+      ],
+      "size": [
+        240,
+        70
+      ],
+      "purpose": "service",
+      "sources": [
+        {
+          "path": "devicemanagement/applications/managedcontent/workflow.go",
+          "label": "Queued composition and recovery"
+        },
+        {
+          "path": "devicemanagement/applications/managedcontent/types.go",
+          "label": "Target and delivery adapters"
+        },
+        {
+          "path": "devicemanagement/applications/managedcontent/successor.go",
+          "label": "Fenced same-method handoff"
         }
       ]
     }
@@ -437,7 +477,27 @@
       "from": "appsbooksclient",
       "to": "appsbooksstate",
       "label": "Atomic location + job state",
-      "purpose": "storage"
+      "purpose": "storage",
+      "fromSide": "bottom"
+    },
+    {
+      "id": "content-license",
+      "from": "contentdelivery",
+      "to": "appsbooksclient",
+      "label": "Confirm target assignment",
+      "purpose": "service",
+      "labelAt": [
+        605,
+        546
+      ]
+    },
+    {
+      "id": "content-state",
+      "from": "contentdelivery",
+      "to": "appsbooksstate",
+      "label": "Intent + stable dispatch",
+      "purpose": "storage",
+      "toSide": "top"
     }
   ],
   "cards": [
@@ -492,7 +552,7 @@
       "items": [
         "Inventory pages and cursors commit atomically after account, credential and cursor checks. Only the final page of the current full-fetch generation reconciles missing devices; interrupted or superseded fetches cannot delete unseen inventory.",
         "Sync and assignment run independently. Assignment outcomes and readback recheck lease ownership, Apple account identity, OAuth credentials and the desired profile before saving; a conflict stops that run.",
-        "Apps and Books returns asynchronous event IDs. Optional Workflow persists explicit jobs and target evidence, authenticates and commits callbacks before acknowledgment, and polls aggregate completion before installation.",
+        "Apps and Books returns asynchronous event IDs. Optional Workflow persists explicit jobs and target evidence, authenticates and commits callbacks before acknowledgment, and polls aggregate completion. Installation additionally requires fresh applicable per-target assignment evidence.",
         "Apps and Books preserves finite/sentinel and unlimited asset arrays plus original JSON. Optional counts distinguish missing from zero; totalCount 2147483647 means unlimited. Bounded traversal retains the location filter; stock does not establish licensing, dispatch or installation."
       ]
     },
@@ -547,6 +607,19 @@
         "AxM authentication implementation \u2014 https://github.com/deploymenttheory/go-apple-dm/blob/c5689b02bccba330c082d7bc78fd8320cc922517/devicemanagement/appleplatformservices/axm/auth.go",
         "Source collection implementation \u2014 https://github.com/deploymenttheory/go-apple-dm/blob/1fc9f965bb0876a5907efa06f1943e8babd51379/devicemanagement/appleplatformservices/axm/collection/collection.go",
         "Activity-log implementation \u2014 https://github.com/deploymenttheory/go-apple-dm/blob/c5689b02bccba330c082d7bc78fd8320cc922517/devicemanagement/appleplatformservices/axm/activitylog.go"
+      ]
+    },
+    {
+      "dot": "service",
+      "title": "Explicit licensed content delivery",
+      "items": [
+        "managedcontent composes appsbooks.Workflow, state.Store and independent target/delivery adapters. The caller selects content, a particular authenticated enrollment and MDM or declarative app delivery; no universal inventory or automatic app policy is required.",
+        "Device assignment requires an authenticated serial match. User licensing retains Apple clientUserId and native user scope; privacy User Enrollment does not require hardware disclosure. Native capabilities and generated command/declaration metadata gate the selected method.",
+        "Queued Assign, Install and AssignAndInstall persist intent atomically with required caller capture. Step owns remote effects. Existing licenses need no historical job, but installation always requires a fresh owned, complete per-target association. Licensing, command acknowledgment, declaration publication, terminal device processing and current installed version remain separate.",
+        "Stable native identities, exact payload digests, leases and ownership fencing protect restart/readback recovery. Unknown outcomes never authorize blind replay. Explicit same-method successors require fresh terminal predecessor evidence; DDM keeps its owned declaration identities.",
+        "Composition \u2014 https://github.com/deploymenttheory/go-apple-dm/blob/bb39d3a24680dffbdd4863361c9be1718615d704/devicemanagement/applications/managedcontent/workflow.go",
+        "Native delivery and target contracts \u2014 https://github.com/deploymenttheory/go-apple-dm/blob/bb39d3a24680dffbdd4863361c9be1718615d704/devicemanagement/applications/managedcontent/types.go",
+        "Current assignment proof \u2014 https://github.com/deploymenttheory/go-apple-dm/blob/bb39d3a24680dffbdd4863361c9be1718615d704/devicemanagement/appleplatformservices/appsbooks/assignment.go"
       ]
     }
   ]
