@@ -15,7 +15,7 @@
     ],
     "repository": {
       "url": "https://github.com/deploymenttheory/go-apple-dm",
-      "revision": "c58adecfb8f2fa5835973e9ce965538bd216ee0d"
+      "revision": "cd88737d7e29cfc0ec59b2f6b4c7205864c90dbf"
     }
   },
   "components": [
@@ -61,7 +61,8 @@
           "path": "server/lab/catalog.go"
         },
         {
-          "path": "server/lab/live_ade_hardware.go"
+          "path": "server/lab/live_appsbooks.go",
+          "label": "Apps and Books acceptance"
         }
       ]
     },
@@ -414,6 +415,21 @@
         "Native observation and explicit status queries — https://github.com/deploymenttheory/go-apple-dm/blob/c58adecfb8f2fa5835973e9ce965538bd216ee0d/server/internal/app/managedcontent_inspection.go",
         "Durable wake delivery — https://github.com/deploymenttheory/go-apple-dm/blob/c58adecfb8f2fa5835973e9ce965538bd216ee0d/server/internal/app/managedcontent_wake.go",
         "A newer authenticated ManagedButUninstalled report clears an older installed/version claim while preserving historical processing and original source evidence. A later installed-app query can establish reinstallation."
+      ]
+    },
+    {
+      "title": "Apps and Books acceptance paths",
+      "dot": "neutral",
+      "items": [
+        "LIVE-013 reads dedicated-token service/client configuration and complete assets, users and assignments against the matching reference location. It never registers tokens, claims ownership or configures callbacks.",
+        "LIVE-014 requires explicit free-app, licensing and quiescent-location attestations plus fresh revocable-app capabilities. Direct SDK completion and reference job completion, authenticated per-target callback and independent assignment readback remain separate proofs.",
+        "Before the first licensing POST, a private immutable original-state intent and exclusive pending fence bind the exact evidence directory. Unknown, partial or contradictory outcomes retain that fence; reruns cannot bypass it or guess an inverse. Bounded cleanup removes only a license absent originally, confirms restoration and preserves preexisting assignments.",
+        "LIVE-015 inspects an externally prepared operation through privileged native observations and signed identity/OS/build queries. Exact owned app, bundle and version facts are required before and after queries; the module neither installs nor removes apps and makes no restoration claim.",
+        "Generated feature support governs each platform, OS and channel. macOS User Enrollment uses fresh owned DDM app.managed.list/version proof without InstalledApplicationList or hardware serial. macOS, iOS, iPadOS, visionOS and tvOS retain separate results; unsupported or missing prerequisites stay unexercised or blocked. Fixture and API success do not establish live device installation.",
+        "Location reads — https://github.com/deploymenttheory/go-apple-dm/blob/cd88737d7e29cfc0ec59b2f6b4c7205864c90dbf/server/lab/live_appsbooks.go",
+        "Licensing and cleanup fence — https://github.com/deploymenttheory/go-apple-dm/blob/cd88737d7e29cfc0ec59b2f6b4c7205864c90dbf/server/lab/live_appsbooks_licensing.go",
+        "Native installation inspection — https://github.com/deploymenttheory/go-apple-dm/blob/cd88737d7e29cfc0ec59b2f6b4c7205864c90dbf/server/lab/live_appsbooks_installation.go",
+        "Private acceptance prerequisites — https://github.com/deploymenttheory/go-apple-dm/blob/cd88737d7e29cfc0ec59b2f6b4c7205864c90dbf/docs/operations/apps-and-books-acceptance.md"
       ]
     },
     {

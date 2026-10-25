@@ -248,6 +248,20 @@
         "Native ADE acceptance \u2014 https://github.com/deploymenttheory/go-apple-dm/blob/2f001b847a91f78704ee6b69c9e71ba05420e9bd/server/lab/live_ade_hardware.go"
       ],
       "dot": "neutral"
+    },
+    {
+      "title": "Apps and Books evidence boundaries",
+      "dot": "neutral",
+      "items": [
+        "LIVE-013 supplies read-only dedicated-location configuration and complete native API collections. LIVE-014 independently proves direct SDK and reference-server licensing, authenticated callbacks, exact target assignment readback and original-state cleanup. LIVE-015 independently inspects current native installation and expected version.",
+        "Licensing changes require an explicitly attested free, revocable app and one designated target in a quiescent location. An immutable private original snapshot and exclusive pending fence survive uncertain submissions, partial completion, failed callbacks/readback and incomplete cleanup. Preserve preexisting licenses; never infer an inverse from unknown work.",
+        "Installation evidence requires the selected authenticated native principal, fresh supported identity/OS/build observations and exact owned app/bundle/version facts. Feature support is evaluated per platform, OS and channel; enrollment or licensing alone cannot establish installation.",
+        "On macOS User Enrollment, forbidden InstalledApplicationList queries remain unexercised. Current owned DDM app.managed.list and the exact actual version before and after identity queries provide the privacy-preserving path; user licensing requires no hardware serial.",
+        "Each physical report records macOS, iOS, iPadOS, visionOS and tvOS separately. Missing live credentials, permissions, callbacks, designated content or devices remain unmet prerequisites. Simulated TLS/runtime/SQL and signed-simulator results do not prove live Apple or physical-device acceptance.",
+        "Apps and Books runbook \u2014 https://github.com/deploymenttheory/go-apple-dm/blob/cd88737d7e29cfc0ec59b2f6b4c7205864c90dbf/docs/operations/apps-and-books-acceptance.md",
+        "Licensing orchestration \u2014 https://github.com/deploymenttheory/go-apple-dm/blob/cd88737d7e29cfc0ec59b2f6b4c7205864c90dbf/server/lab/live_appsbooks_licensing.go",
+        "Native evidence gate \u2014 https://github.com/deploymenttheory/go-apple-dm/blob/cd88737d7e29cfc0ec59b2f6b4c7205864c90dbf/server/lab/live_appsbooks_installation.go"
+      ]
     }
   ]
 }
