@@ -15,6 +15,7 @@ import (
 
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/appleplatformservices/axm"
 	"github.com/deploymenttheory/go-apple-dm/server/axmassignment"
+	"github.com/deploymenttheory/go-apple-dm/server/lab/target"
 )
 
 // abmFailureSession supplies isolated HTTP boundaries for negative-only evidence guards.
@@ -151,7 +152,7 @@ func TestABMEnumerationRejectsIncompleteDiscovery(t *testing.T) {
 					p.Meta.Paging.NextCursor = "next"
 				case "bad next":
 					p.Items = nil
-					p.Links.Next = "http://%zz"
+					p.Links.Next = "http://PRIVATE-PAGINATION-MARKER-%zz"
 				case "no cursor":
 					p.Items = nil
 					p.Links.Next = "https://apple.example/no-cursor"
@@ -166,6 +167,15 @@ func TestABMEnumerationRejectsIncompleteDiscovery(t *testing.T) {
 			_, err := abmDevice(t.Context(), s, abmAcceptance{Account: "a", Serial: "S"})
 			if err == nil {
 				t.Fatal("incomplete enumeration passed")
+			}
+			if kind == "bad next" {
+				result := Run(t.Context(), s.Env, target.Attached{}, Module{ID: "privacy", Modes: []string{"live"}, Steps: []Step{{Name: "discovery", Run: func(ctx context.Context, run *Session) error {
+					_, err := abmDevice(ctx, run, abmAcceptance{Account: "a", Serial: "S"})
+					return err
+				}}}}, Options{})
+				if result.Status != StatusFailed || strings.Contains(result.Detail, "PRIVATE-PAGINATION-MARKER") {
+					t.Fatalf("public result leaked pagination: %+v", result)
+				}
 			}
 			if kind == "empty" && !errors.Is(err, ErrBlocked) {
 				t.Fatal("empty discovery not unexercised")

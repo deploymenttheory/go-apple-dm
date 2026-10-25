@@ -205,8 +205,10 @@ Create `abm/acceptance.json` inside the private workspace with mode `0600`:
 
 The file contains explicit resource designations, never credentials. `LIVE-007`
 enumerates organization devices with one item per page, checks designated detail,
-enumerates populated coverage, waits for a terminal durable synchronization job and
-compares retained originals with raw exports for device, detail and coverage.
+enumerates populated coverage and checks its exact resource-ID set against retained
+coverage, waits for a terminal durable synchronization job and
+compares that generation’s retained originals with raw exports for device, detail
+and coverage; older successful history cannot satisfy the current assertion.
 Raw JSON and NDJSON exports include base64 `original_json` alongside the readable
 snapshot; decode that field for byte-exact source JSON, including whitespace,
 unknown members, null, false and large integer tokens. Ordinary safe exports omit it.
@@ -242,7 +244,9 @@ dmctl lab run -workspace "$PRIVATE_LAB" -modules LIVE-009 \
   -report-dir "$PRIVATE_ASSIGNMENT_EVIDENCE" -revision "$REVIEWED_COMMIT"
 ```
 
-The runner retains source originals, exports, exact-generation source assertions,
+Each assignment invocation creates an exclusive request-ID evidence directory, so
+reusing a report directory preserves prior original-assignment and unresolved
+cleanup manifests. The runner retains source originals, exports, exact-generation source assertions,
 synchronization outcome, correlation, original assignment,
 request IDs, workflows, CSV and cleanup outcome in private evidence directories.
 Restoration has an independent two-minute cleanup context after run cancellation.

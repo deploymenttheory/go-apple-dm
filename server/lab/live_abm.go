@@ -111,6 +111,7 @@ func abmBase(c abmAcceptance) string { return "/axm/accounts/" + url.PathEscape(
 func abmDevice(ctx context.Context, s *Session, c abmAcceptance) (axm.OrgDevice, error) {
 	var found axm.OrgDevice
 	seen := map[string]bool{}
+	cursors := map[string]bool{}
 	cursor := ""
 	for {
 		var p axm.Page[axm.OrgDevice]
@@ -132,24 +133,13 @@ func abmDevice(ctx context.Context, s *Session, c abmAcceptance) (axm.OrgDevice,
 				found = d
 			}
 		}
-		next := p.Meta.Paging.NextCursor
-		if next == "" && p.Links.Next != "" {
-			u, err := url.Parse(p.Links.Next)
-			if err != nil {
-				return found, err
-			}
-			next = u.Query().Get("cursor")
+		next, err := abmNext(p.Links, p.Meta, cursors)
+		if err != nil {
+			return found, err
 		}
 		if next == "" {
-			if p.HasNext() {
-				return found, fmt.Errorf("%w: unusable ABM continuation", errOperation)
-			}
 			break
 		}
-		if seen["cursor:"+next] {
-			return found, fmt.Errorf("%w: repeated ABM cursor", errOperation)
-		}
-		seen["cursor:"+next] = true
 		cursor = next
 	}
 	if found.ID == "" {
@@ -163,6 +153,29 @@ func abmDevice(ctx context.Context, s *Session, c abmAcceptance) (axm.OrgDevice,
 		return found, fmt.Errorf("%w: ABM detail identity differs", errOperation)
 	}
 	return detail, nil
+}
+
+// abmNext validates complete pagination without exposing remote URLs or cursors.
+func abmNext(links axm.Links, meta axm.Meta, seen map[string]bool) (string, error) {
+	next := meta.Paging.NextCursor
+	if next == "" && links.Next != "" {
+		u, err := url.Parse(links.Next)
+		if err != nil {
+			return "", fmt.Errorf("%w: malformed ABM continuation", errOperation)
+		}
+		next = u.Query().Get("cursor")
+	}
+	if next == "" {
+		if links.Next != "" {
+			return "", fmt.Errorf("%w: unusable ABM continuation", errOperation)
+		}
+		return "", nil
+	}
+	if seen["cursor:"+next] {
+		return "", fmt.Errorf("%w: repeated ABM continuation", errOperation)
+	}
+	seen["cursor:"+next] = true
+	return next, nil
 }
 
 // abmPause bounds polling by the scenario context.
@@ -186,7 +199,7 @@ func liveABMCollection(ctx context.Context, s *Session) error {
 		return err
 	}
 	// Coverage is separately paginated; an empty coverage collection cannot pass.
-	count := 0
+	coverageIDs := map[string]bool{}
 	cursor := ""
 	seen := map[string]bool{}
 	for {
@@ -197,28 +210,22 @@ func liveABMCollection(ctx context.Context, s *Session) error {
 		if len(p.Items) > 1 {
 			return fmt.Errorf("%w: coverage page bound ignored", errOperation)
 		}
-		count += len(p.Items)
-		next := p.Meta.Paging.NextCursor
-		if next == "" && p.Links.Next != "" {
-			u, e := url.Parse(p.Links.Next)
-			if e != nil {
-				return e
+		for _, plan := range p.Items {
+			if plan.ID == "" || coverageIDs[plan.ID] {
+				return fmt.Errorf("%w: incomplete coverage enumeration", errOperation)
 			}
-			next = u.Query().Get("cursor")
+			coverageIDs[plan.ID] = true
+		}
+		next, err := abmNext(p.Links, p.Meta, seen)
+		if err != nil {
+			return err
 		}
 		if next == "" {
-			if p.HasNext() {
-				return fmt.Errorf("%w: unusable coverage continuation", errOperation)
-			}
 			break
 		}
-		if seen[next] {
-			return fmt.Errorf("%w: repeated coverage cursor", errOperation)
-		}
-		seen[next] = true
 		cursor = next
 	}
-	if count == 0 {
+	if len(coverageIDs) == 0 {
 		return fmt.Errorf("%w: populated coverage unexercised", ErrBlocked)
 	}
 	var job inventory.Job
@@ -262,7 +269,8 @@ func liveABMCollection(ctx context.Context, s *Session) error {
 			return fmt.Errorf("%w: required source was not collected by this synchronization", errOperation)
 		}
 		var evidence struct {
-			Originals [][]byte `json:"original_json"`
+			Originals [][]byte                `json:"original_json"`
+			History   []inventory.Observation `json:"history"`
 		}
 		b, e := abmRequest(ctx, s, "GET", "/inventory/raw/devices/"+url.PathEscape(record.ID)+"/evidence", nil, &evidence)
 		if e != nil {
@@ -285,8 +293,8 @@ func liveABMCollection(ctx context.Context, s *Session) error {
 		matched := false
 		for _, r := range exported {
 			if r.ID == record.ID {
-				for _, raw := range evidence.Originals {
-					if len(raw) > 0 && bytes.Equal(raw, r.Original) {
+				for i, raw := range evidence.Originals {
+					if i < len(evidence.History) && evidence.History[i].Generation == job.Generation && len(raw) > 0 && bytes.Equal(raw, r.Original) {
 						matched = true
 					}
 				}
@@ -294,6 +302,22 @@ func liveABMCollection(ctx context.Context, s *Session) error {
 		}
 		if !matched {
 			return fmt.Errorf("%w: byte-exact source export missing", errOperation)
+		}
+		if record.Source.Kind == "axm.coverage" {
+			var plans []struct {
+				ID   string `json:"id"`
+				Type string `json:"type"`
+			}
+			if json.Unmarshal(record.Snapshot.Raw, &plans) != nil || len(plans) != len(coverageIDs) {
+				return fmt.Errorf("%w: collected coverage differs from preflight", errOperation)
+			}
+			checked := map[string]bool{}
+			for _, plan := range plans {
+				if !coverageIDs[plan.ID] || checked[plan.ID] || plan.Type != axm.TypeAppleCareCoverage {
+					return fmt.Errorf("%w: collected coverage differs from preflight", errOperation)
+				}
+				checked[plan.ID] = true
+			}
 		}
 		retained[record.Source.Kind] = true
 	}
@@ -434,6 +458,19 @@ func liveABMAssignment(ctx context.Context, s *Session) (result error) {
 	if !c.Mutate || c.Service == "" {
 		return fmt.Errorf("%w: explicit designated assignment opt-in required", ErrBlocked)
 	}
+	id := inventory.ID()
+	if s.Evidence == "" {
+		return fmt.Errorf("%w: private evidence directory required", ErrBlocked)
+	}
+	if err = os.MkdirAll(s.Evidence, 0o700); err != nil {
+		return err
+	}
+	scoped := *s
+	scoped.Evidence = filepath.Join(s.Evidence, "assignment-"+id)
+	if err = os.Mkdir(scoped.Evidence, 0o700); err != nil {
+		return err
+	}
+	s = &scoped
 	d, err := abmDevice(ctx, s, c)
 	if err != nil {
 		return err
@@ -456,7 +493,6 @@ func liveABMAssignment(ctx context.Context, s *Session) (result error) {
 	if original == c.Service {
 		operation, want = "unassignments", ""
 	}
-	id := inventory.ID()
 	before, _ := json.Marshal(map[string]string{"account": c.Account, "serial": c.Serial, "org_device_id": d.ID, "original_service": original, "request_id": id})
 	if err = abmSave(s, "original-assignment.json", before); err != nil {
 		return err

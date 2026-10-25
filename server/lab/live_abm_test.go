@@ -46,7 +46,6 @@ func TestABMLiveWorkflowsThroughRuntime(t *testing.T) {
 	t.Cleanup(e.Close)
 	e.ABM.AddOrgDeviceResource("opaque-designated", benchSerial, map[string]any{"futureNull": nil, "futureFalse": false, "futureLarge": json.Number("9007199254740993"), "futureNested": map[string]any{"items": []any{nil, false}}})
 	e.ABM.AddAppleCareCoverage("opaque-designated", "coverage-designated", map[string]any{"agreementNumber": "PRIVATE", "future": false})
-	e.ABM.AddAppleCareCoverage("opaque-designated", "coverage-second", map[string]any{"agreementNumber": "PRIVATE-SECOND", "future": nil})
 	var services struct{ Items []struct{ ID string } }
 	if err = e.api(t.Context(), "GET", "/axm/accounts/default/services", nil, &services); err != nil {
 		t.Fatal(err)
@@ -70,6 +69,68 @@ func TestABMLiveWorkflowsThroughRuntime(t *testing.T) {
 		var jobs any
 		_ = e.api(ctx, "GET", "/axm/accounts/default/jobs", nil, &jobs)
 		t.Logf("fixture jobs: %+v", jobs)
+		t.Fatal(err)
+	}
+	// Old coverage [A] must not satisfy a current-generation export for [A,B].
+	oldExport, err := os.ReadFile(filepath.Join(s.Evidence, "axm.coverage-export.json"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	var oldRows []struct {
+		Original []byte                `json:"original_json"`
+		Snapshot inventory.Observation `json:"snapshot"`
+	}
+	if err = json.Unmarshal(oldExport, &oldRows); err != nil || len(oldRows) != 1 {
+		t.Fatal("old coverage fixture", err)
+	}
+	e.ABM.AddAppleCareCoverage("opaque-designated", "coverage-second", map[string]any{"agreementNumber": "PRIVATE-SECOND", "future": nil})
+	originalTransport := e.Client.Transport
+	injectedOld, currentMetadata := false, false
+	e.Client.Transport = transportFunc(func(r *http.Request) (*http.Response, error) {
+		response, requestErr := originalTransport.RoundTrip(r)
+		if requestErr != nil || !strings.HasSuffix(r.URL.Path, "/exports") || r.URL.Query().Get("source") != "axm.coverage" {
+			return response, requestErr
+		}
+		raw, requestErr := io.ReadAll(response.Body)
+		if closeErr := response.Body.Close(); requestErr == nil {
+			requestErr = closeErr
+		}
+		if requestErr != nil {
+			return nil, requestErr
+		}
+		var rows []map[string]json.RawMessage
+		if requestErr = json.Unmarshal(raw, &rows); requestErr != nil {
+			return nil, requestErr
+		}
+		for _, row := range rows {
+			var snapshot inventory.Observation
+			if requestErr = json.Unmarshal(row["snapshot"], &snapshot); requestErr != nil {
+				return nil, requestErr
+			}
+			var current []json.RawMessage
+			if requestErr = json.Unmarshal(snapshot.Raw, &current); requestErr != nil {
+				return nil, requestErr
+			}
+			currentMetadata = snapshot.Generation != oldRows[0].Snapshot.Generation && len(current) == 2
+			row["original_json"], requestErr = json.Marshal(oldRows[0].Original)
+			if requestErr != nil {
+				return nil, requestErr
+			}
+			injectedOld = true
+		}
+		raw, requestErr = json.Marshal(rows)
+		if requestErr != nil {
+			return nil, requestErr
+		}
+		response.Body = io.NopCloser(bytes.NewReader(raw))
+		return response, nil
+	})
+	err = liveABMCollection(ctx, s)
+	e.Client.Transport = originalTransport
+	if err == nil || !injectedOld || !currentMetadata || !strings.Contains(err.Error(), "byte-exact source export missing") {
+		t.Fatalf("stale history export passed or wrong boundary: %v injected=%v current=%v", err, injectedOld, currentMetadata)
+	}
+	if err = liveABMCollection(ctx, s); err != nil {
 		t.Fatal(err)
 	}
 	// Exact unknown/null/false/large-integer evidence must survive the real export.
@@ -208,9 +269,15 @@ func TestABMLiveWorkflowsThroughRuntime(t *testing.T) {
 	if e.ABM.AssignedServer("opaque-designated") != "" {
 		t.Fatal("failed assertion left changed assignment")
 	}
-	cleanup, err := os.ReadFile(filepath.Join(s.Evidence, "cleanup.json"))
-	if err != nil || !bytes.Contains(cleanup, []byte("restored")) {
-		t.Fatal("cleanup evidence missing", err)
+	scopes, err := filepath.Glob(filepath.Join(s.Evidence, "assignment-*", "cleanup.json"))
+	if err != nil || len(scopes) != 3 {
+		t.Fatal("independent assignment evidence scopes missing", err, len(scopes))
+	}
+	for _, path := range scopes {
+		cleanup, readErr := os.ReadFile(path)
+		if readErr != nil || !bytes.Contains(cleanup, []byte("restored")) {
+			t.Fatal("cleanup evidence missing", readErr)
+		}
 	}
 	abmRuntimeFailures(t, s, c)
 	var binding axmassignment.Binding
