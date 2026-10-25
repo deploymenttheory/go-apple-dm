@@ -245,7 +245,7 @@ func abmRuntimeFailures(t *testing.T, s *Session, c abmAcceptance) {
 					t.Fatal("cleanup failure not inspectable", readErr)
 				}
 				originalPath := filepath.Join(filepath.Dir(manifests[0]), "original-assignment.json")
-				original, readErr := os.ReadFile(originalPath)
+				original, readErr := os.ReadFile(originalPath) // #nosec G304 -- The path is derived from an assignment scope beneath this test's t.TempDir evidence directory.
 				if readErr != nil {
 					t.Fatal(readErr)
 				}
@@ -257,7 +257,7 @@ func abmRuntimeFailures(t *testing.T, s *Session, c abmAcceptance) {
 				if readErr != nil || !bytes.Equal(before, after) {
 					t.Fatal("prior unresolved cleanup overwritten", readErr)
 				}
-				after, readErr = os.ReadFile(originalPath)
+				after, readErr = os.ReadFile(originalPath) // #nosec G304 -- The path is derived from an assignment scope beneath this test's t.TempDir evidence directory.
 				if readErr != nil || !bytes.Equal(original, after) {
 					t.Fatal("prior original assignment overwritten", readErr)
 				}

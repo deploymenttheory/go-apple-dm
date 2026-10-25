@@ -274,7 +274,7 @@ func TestABMLiveWorkflowsThroughRuntime(t *testing.T) {
 		t.Fatal("independent assignment evidence scopes missing", err, len(scopes))
 	}
 	for _, path := range scopes {
-		cleanup, readErr := os.ReadFile(path)
+		cleanup, readErr := os.ReadFile(path) // #nosec G304 -- The glob is confined to this test's private t.TempDir evidence directory.
 		if readErr != nil || !bytes.Contains(cleanup, []byte("restored")) {
 			t.Fatal("cleanup evidence missing", readErr)
 		}
