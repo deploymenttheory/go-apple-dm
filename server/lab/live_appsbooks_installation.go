@@ -133,10 +133,7 @@ func appsNativeQuery(ctx context.Context, s *Session, path string, payload comma
 // appsCurrentObservation reads existing authenticated native facts through the
 // configured reference inspector. It never advances an SDK operation or queues.
 func appsCurrentObservation(ctx context.Context, s *Session, base, id, name string) (managedcontent.Observation, error) {
-	var current struct {
-		OperationID string                     `json:"operationId"`
-		Observation managedcontent.Observation `json:"observation"`
-	}
+	var current app.ManagedContentNativeObservation
 	if err := appsRequest(ctx, s, "GET", base+"/native-observation", nil, &current); err != nil {
 		return managedcontent.Observation{}, err
 	}

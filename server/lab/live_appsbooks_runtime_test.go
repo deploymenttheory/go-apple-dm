@@ -299,6 +299,18 @@ func TestAppsBooksPreparedJobHasNoAutomaticSubmission(t *testing.T) {
 
 // TestAppsBooksNativeInstallationThroughReferenceRuntime proves installation through signed native exchanges and real SQL composition.
 func TestAppsBooksNativeInstallationThroughReferenceRuntime(t *testing.T) {
+	appsNativeInstallationRuntime(t, managedcontent.MDM)
+}
+
+// TestAppsBooksDeclarativeInstallationThroughReferenceRuntime proves current owned
+// declarative app status independently of publication and historical processing.
+func TestAppsBooksDeclarativeInstallationThroughReferenceRuntime(t *testing.T) {
+	appsNativeInstallationRuntime(t, managedcontent.DDM)
+}
+
+// appsNativeInstallationRuntime exercises the real worker, authenticated native
+// reports and read-only acceptance with an APNs-driven protocol simulator.
+func appsNativeInstallationRuntime(t *testing.T, method managedcontent.Method) {
 	s, f, c := appsRuntime(t)
 	capture := appsNativeStackCapture(t, s)
 	c.User, c.Serial = "", benchSerial
@@ -380,9 +392,17 @@ func TestAppsBooksNativeInstallationThroughReferenceRuntime(t *testing.T) {
 	if _, err = Command(ctx, s.Env, pathOf(d), query, ""); err != nil {
 		t.Fatal(err)
 	}
+	if method == managedcontent.DDM {
+		if _, err = d.SyncDDM(ctx); err != nil {
+			t.Fatal(err)
+		}
+		if err = d.PostDDMStatus(ctx, true); err != nil {
+			t.Fatal(err)
+		}
+	}
 	id := "native-" + randomID()
 	base := "/managed-content/operations/" + id
-	plan := managedcontent.Plan{LocationID: c.Location, Content: managedcontent.Content{Asset: c.Asset, Kind: "App"}, Target: managedcontent.Selection{Enrollment: mdm.EnrollmentID{Channel: mdm.ChannelDevice, ID: d.UDID}, Serial: c.Serial}, Method: managedcontent.MDM, MaxPages: c.MaxPages}
+	plan := managedcontent.Plan{LocationID: c.Location, Content: managedcontent.Content{Asset: c.Asset, Kind: "App"}, Target: managedcontent.Selection{Enrollment: mdm.EnrollmentID{Channel: mdm.ChannelDevice, ID: d.UDID}, Serial: c.Serial}, Method: method, MaxPages: c.MaxPages}
 	var op managedcontent.Operation
 	if err = s.Env.api(ctx, "PUT", base, map[string]any{"mode": managedcontent.InstallOnly, "plan": plan}, &op); err != nil {
 		t.Fatal(err)
@@ -398,12 +418,47 @@ func TestAppsBooksNativeInstallationThroughReferenceRuntime(t *testing.T) {
 		capture("initial-worker-dispatch-error")
 		t.Fatal(err)
 	}
+	var declaration string
+	report := func(declaration string, removed bool) {
+		t.Helper()
+		row := map[string]any{"identifier": "com.example.selected", "declaration-identifier": declaration, "state": "managed", "version": "2.4"}
+		if removed {
+			row = map[string]any{"identifier": "com.example.selected", "_removed": true}
+		}
+		body, err := json.Marshal(map[string]any{"StatusItems": map[string]any{"app": map[string]any{"managed": map[string]any{"list": []any{row}}}}})
+		if err != nil {
+			t.Fatal(err)
+		}
+		if _, err = d.DeclarativeManagement(ctx, "status", body); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if method == managedcontent.DDM {
+		if _, err = d.SyncDDM(ctx); err != nil {
+			t.Fatal(err)
+		}
+		if err = d.PostDDMStatus(ctx, true); err != nil {
+			t.Fatal(err)
+		}
+		var current managedcontent.Evidence
+		if err = s.Env.api(ctx, "GET", base+"/evidence", nil, &current); err != nil {
+			t.Fatal(err)
+		}
+		if current.Dispatch == nil || len(current.Dispatch.Declarations) == 0 {
+			t.Fatal("worker did not publish actual declarations")
+		}
+		declaration = current.Dispatch.Declarations[0].Identifier
+		installed.Store(true)
+	}
 	list, err := mdm.NewCommand(&commands.InstalledApplicationList{Identifiers: []string{"com.example.selected"}})
 	if err != nil {
 		t.Fatal(err)
 	}
 	if _, err = Command(ctx, s.Env, pathOf(d), list, ""); err != nil {
 		t.Fatal(err)
+	}
+	if method == managedcontent.DDM {
+		report(declaration, false)
 	}
 	if err = s.Env.api(ctx, "POST", base+"/step", worker, &op); err != nil {
 		t.Fatal(err)
@@ -414,29 +469,8 @@ func TestAppsBooksNativeInstallationThroughReferenceRuntime(t *testing.T) {
 	s.Info = target.Info{Kind: target.KindDevice, UDID: d.UDID, Serial: c.Serial}
 	installation := appsInstallation{Operation: id, BundleID: "com.example.selected", Version: "2.4", Platform: "macOS", Identity: "scep", MaxAgeSeconds: 60}
 	adeTestJSON(t, s.Env.Workspace.path("appsbooks", "installation.json"), installation)
-	transport := s.Env.Client.Transport
-	s.Env.Client.Transport = transportFunc(func(r *http.Request) (*http.Response, error) {
-		response, err := transport.RoundTrip(r)
-		if err != nil {
-			t.Logf("native fixture reference transport failed: %s, %T", r.Method, err)
-		} else if response.StatusCode >= 400 {
-			parts := strings.Split(r.URL.Path, "/")
-			t.Logf("native fixture reference status: %s %s %d", r.Method, parts[len(parts)-1], response.StatusCode)
-		}
-		return response, err
-	})
 	if err = liveAppsBooksInstallation(ctx, s); err != nil {
 		capture("native-proof-error")
-		paths, _ := filepath.Glob(filepath.Join(s.Evidence, "appsbooks-installation-*", "*-request.plist"))
-		for _, path := range paths {
-			b, readErr := os.ReadFile(path)
-			if readErr == nil {
-				command, decodeErr := mdm.DecodeCommand(b)
-				if decodeErr == nil {
-					t.Log("native query reached", command.RequestType)
-				}
-			}
-		}
 		t.Fatal(err)
 	}
 	if f.postCount() != 0 {
@@ -448,12 +482,29 @@ func TestAppsBooksNativeInstallationThroughReferenceRuntime(t *testing.T) {
 			installCommands++
 		}
 	}
-	if installCommands != 1 {
-		t.Fatal("inspection repeated installation")
+	expectedInstalls := 1
+	if method == managedcontent.DDM {
+		expectedInstalls = 0
+	}
+	if installCommands != expectedInstalls {
+		t.Fatal("inspection repeated installation or DDM used an MDM install")
 	}
 	rows := adeTestEvidence(t, s, "appsbooks-installation-*/assertions.json")
 	if len(rows) != 1 || !bytes.Contains(rows[0], []byte(`"macOS":"simulated"`)) || !bytes.Contains(rows[0], []byte(`"iOS":"unexercised"`)) {
 		t.Fatal("simulator evidence claimed physical or other-platform acceptance")
+	}
+	if method == managedcontent.DDM {
+		// Keep the physical app present: only the current management owner changes.
+		report("foreign-declaration", false)
+		if err = liveAppsBooksInstallation(ctx, s); !errors.Is(err, ErrBlocked) {
+			t.Fatal("late foreign ownership borrowed historical acceptance", err)
+		}
+		report(declaration, false)
+		report(declaration, true)
+		if err = liveAppsBooksInstallation(ctx, s); !errors.Is(err, ErrBlocked) {
+			t.Fatal("late native removal borrowed historical acceptance", err)
+		}
+		return
 	}
 	installed.Store(false)
 	removed, err := mdm.NewCommand(&commands.InstalledApplicationList{Identifiers: []string{"com.example.selected"}})
