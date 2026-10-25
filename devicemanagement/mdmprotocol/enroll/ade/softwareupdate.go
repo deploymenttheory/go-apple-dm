@@ -12,6 +12,7 @@ import (
 
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/appleplatformservices/gdmf"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/plist"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/osversion"
 	schemaerrors "github.com/deploymenttheory/go-apple-dm/devicemanagement/schema/errors"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/schema/support"
 )
@@ -44,8 +45,8 @@ type BetaProgram struct {
 // Policy decides the minimum OS for a device. It is given the whole
 // MachineInfo (PRODUCT, SOFTWARE_UPDATE_DEVICE_ID, OS_VERSION,
 // MANDATORY_SOFTWARE_UPDATE_REQUIRED, ...) and answers whether an update
-// is required and to what. It is only consulted when the device says
-// MDM_CAN_REQUEST_SOFTWARE_UPDATE.
+// is required and to what. Required targets that the device cannot execute fail
+// explicitly instead of bypassing the supplied requirement.
 type Policy interface {
 	// MinimumOS returns an OS target and whether that requirement applies. Gate
 	// compares the device version with the target before requiring an update.
@@ -103,11 +104,11 @@ type Decision struct {
 }
 
 // Gate runs the software update and Platform SSO checks for one device.
-// It proceeds when the device cannot take an update request, when the
-// policy is nil or not required, when the device already meets the
-// target, or when a "latest" target cannot be resolved because lookup is
-// nil or fails (logged). Bodies are validated against the schema before
-// they are returned.
+// A nil or nonrequired policy is inactive. A required policy first requires a
+// supported platform; supported devices that already meet the target proceed
+// even without update capability. Older supported devices must be able to execute
+// the update response. The generic "latest" policy proceeds when lookup is nil or
+// fails (logged). Bodies are validated against the schema before returning.
 func Gate(ctx context.Context, p *Parsed, policy Policy, lookup gdmf.Lookup, logger *slog.Logger) (*Decision, error) {
 	if logger == nil {
 		logger = slog.Default()
@@ -124,15 +125,27 @@ func Gate(ctx context.Context, p *Parsed, policy Policy, lookup gdmf.Lookup, log
 			return pssoDecision(details)
 		}
 	}
-	if !flag(p.MDMCANREQUESTSOFTWAREUPDATE) {
-		return &Decision{Action: Proceed, Reason: "device cannot take a software update request"}, nil
-	}
 	target, required, err := policy.MinimumOS(ctx, p)
 	if err != nil {
 		return nil, fmt.Errorf("%w: policy: %w", ErrGate, err)
 	}
 	if !required {
 		return &Decision{Action: Proceed, Reason: "policy does not require an update"}, nil
+	}
+	minimum := 0
+	switch p.Platform {
+	case PlatformIPhone, PlatformIPad, PlatformIPod:
+		minimum = 17
+	case PlatformMac:
+		minimum = 14
+	case PlatformRealityDevice:
+		minimum = 26
+	}
+	// Apple's enrollment minimum-version gate is unavailable on tvOS/watchOS
+	// and unknown platforms. A version comparison cannot establish support.
+	// https://support.apple.com/guide/deployment/depd30715cbb/web
+	if minimum == 0 {
+		return nil, fmt.Errorf("%w: enrollment software update unsupported on this platform", ErrGate)
 	}
 	if target.OSVersion == "" {
 		if lookup == nil {
@@ -146,8 +159,19 @@ func Gate(ctx context.Context, p *Parsed, policy Policy, lookup gdmf.Lookup, log
 		}
 		target.OSVersion, target.BuildVersion = asset.ProductVersion, asset.Build
 	}
-	if p.OSVERSION != "" && gdmf.CompareVersions(p.OSVERSION, target.OSVersion) >= 0 {
+	current, currentErr := osversion.Parse(p.OSVERSION)
+	desired, desiredErr := osversion.Parse(target.OSVersion)
+	if currentErr != nil || current.IsZero() || desiredErr != nil || desired.IsZero() {
+		return nil, fmt.Errorf("%w: required update has unknown or invalid OS version", ErrGate)
+	}
+	if current.Compare(desired) >= 0 {
 		return &Decision{Action: Proceed, Reason: "device at or above " + target.OSVersion}, nil
+	}
+	if current.Major < minimum {
+		return nil, fmt.Errorf("%w: enrollment software update unsupported on this target", ErrGate)
+	}
+	if !flag(p.MDMCANREQUESTSOFTWAREUPDATE) {
+		return nil, fmt.Errorf("%w: required update unavailable on this device", ErrGate)
 	}
 	return updateDecision(target)
 }

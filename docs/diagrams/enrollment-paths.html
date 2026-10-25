@@ -5625,7 +5625,7 @@ svg[data-purpose-filter] g[data-purpose-highlight] > path { stroke-width: 2.4; }
         <ul>
           <li>&bull; Automated Device Enrollment, account-driven enrollment, and profile-based enrollment describe how enrollment begins. SCEP and ACME describe how the device obtains its identity.</li>
           <li>&bull; Account-driven discovery selects User Enrollment (mdm-byod) or Device Enrollment (mdm-adde). The reference server’s OTA delivery supports SCEP only and separates identity bootstrap from MDM profile delivery.</li>
-          <li>&bull; ADE software-update gating and browser authentication are optional library hooks. The reference composition serves its configured ADE profile directly. OTA requires a bootstrap-signed POST for the identity profile, then an identity-signed POST for the MDM profile.</li>
+          <li>&bull; The reference ADE composition executes supplied literal minimum versions and seals original browser evidence with one-use shared state. Another replica can complete authentication. OTA requires bootstrap-signed identity delivery, then identity-signed MDM profile delivery.</li>
         </ul>
       </div>
 
@@ -5670,8 +5670,8 @@ svg[data-purpose-filter] g[data-purpose-highlight] > path { stroke-width: 2.4; }
           <h3>Implementation references</h3>
         </div>
         <ul>
-          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/e3db0449b366f96ebb0d6e27a02a1d65d382e1a5/devicemanagement/mdmprotocol/enroll/ade/handler.go#L142" target="_blank" rel="noopener noreferrer">updategate: Verify and admit device</a></li>
-          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/e3db0449b366f96ebb0d6e27a02a1d65d382e1a5/devicemanagement/mdmprotocol/enroll/ade/handler.go#L142" target="_blank" rel="noopener noreferrer">adeprofile: ADE authentication</a></li>
+          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/bf6c0203bd6a329c1351d2a79b9a63ab39480d98/devicemanagement/mdmprotocol/enroll/ade/softwareupdate.go" target="_blank" rel="noopener noreferrer">updategate: caller-owned minimum gate</a></li>
+          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/1c933d3a76566dbf429e2eaf8f8cd560c229f15d/server/internal/app/ade_state.go" target="_blank" rel="noopener noreferrer">adeprofile: shared ADE browser evidence</a></li>
           <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/e3db0449b366f96ebb0d6e27a02a1d65d382e1a5/devicemanagement/mdmprotocol/enroll/discovery/discovery.go#L159" target="_blank" rel="noopener noreferrer">discovery: Discover service</a></li>
           <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/e3db0449b366f96ebb0d6e27a02a1d65d382e1a5/devicemanagement/mdmprotocol/enroll/accountdriven/handler.go#L145" target="_blank" rel="noopener noreferrer">adprofile: Authenticate account</a></li>
           <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/e3db0449b366f96ebb0d6e27a02a1d65d382e1a5/server/internal/app/adminbench.go#L149" target="_blank" rel="noopener noreferrer">manual: Choose delivery; administrative export</a></li>

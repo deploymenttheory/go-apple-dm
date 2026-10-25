@@ -161,7 +161,11 @@ re-enrollment by default; authorized profile replacement follows its own policy 
 
 Profile-based enrollment supports SCEP, ACME or supplied PKCS#12 identities and OTA profile
 delivery. Automated Device Enrollment parses signed `MachineInfo`, supports an OS update gate
-and OIDC web authentication, and exposes admission hooks. Organizational ownership checks are
+and OIDC web authentication, and exposes admission hooks. The reference composition
+executes literal configured minimum versions for iOS, iPadOS, macOS and visionOS;
+unknown or incapable required targets fail explicitly. No tvOS gate or dynamic
+latest-version policy is configured. [ADE security operations](operations/enrollment-security.md#automated-device-enrollment)
+documents Apple's support limits and the shared-state contract. Organizational ownership checks are
 caller policy; the reference server does not require a live device enrollment service lookup.
 
 Account-driven Device Enrollment and account-driven User Enrollment use service discovery,
@@ -257,7 +261,12 @@ the root library remains independent of webhook delivery.
 
 Replicas must share the relevant database, issuer keys and configuration. Completed account
 credentials, certificate associations and OIDC browser handoffs persist in shared SQL protocol
-state in the reference composition. Trust roots,
+state in the reference composition. Pending ADE browser state contains the original
+signed MachineInfo and validated signer; one atomic record binds its original serial,
+UDID, browser cookie, expiration and consumption. Callback completion uses that
+immutable snapshot across replicas and restarts, rather than a latest-per-serial
+lookup. The existing keyring seals SQL records and retention workers prune expiry.
+Trust roots,
 public HTTPS, Apple credentials, network admission, backup protection and physical-device
 validation remain deployment responsibilities. The [threat model](security/threat-model.md) and
 [configuration guide](../README.md#reference-server) describe these boundaries.

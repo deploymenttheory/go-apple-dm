@@ -17,6 +17,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -33,6 +34,8 @@ import (
 // enrollFixture is an app with the enrollment routes on, served over TLS
 // at a public URL known before Build.
 type enrollFixture struct {
+	cfg       app.Config
+	handler   atomic.Pointer[app.App]
 	app       *app.App
 	srv       *httptest.Server
 	publicURL string
@@ -110,8 +113,10 @@ func newEnrollFixture(t *testing.T, method string, mutate func(*app.Config)) *en
 	if mutate != nil {
 		mutate(&cfg)
 	}
+	f.cfg = cfg
 	f.app = build(t, cfg)
-	f.srv = httptest.NewUnstartedServer(f.app.Handler)
+	f.handler.Store(f.app)
+	f.srv = httptest.NewUnstartedServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { f.handler.Load().Handler.ServeHTTP(w, r) }))
 	f.srv.Listener = l
 	f.srv.StartTLS()
 	t.Cleanup(f.srv.Close)
