@@ -5223,15 +5223,15 @@ svg[data-purpose-filter] g[data-purpose-highlight] > path { stroke-width: 2.4; }
           <text data-detail="context" x="150" y="165" class="t-muted" font-size="11" text-anchor="middle">Available before enrollment</text>
         </g>
 
-        <g id="node-native" data-node-id="native" data-node-label="Native device report" tabindex="0" role="button" aria-label="Focus Native device report, Recorded issuance method, 01 / Collect independently" aria-pressed="false" data-node-kind="backend" data-node-sublabel="Recorded issuance method" data-node-context="01 / Collect independently" data-purpose="authentication">
-          <title>Native device report · Recorded issuance method · 01 / Collect independently</title>
+        <g id="node-native" data-node-id="native" data-node-label="Native device report" tabindex="0" role="button" aria-label="Focus Native device report, Fresh receipt provenance, 01 / Collect independently" aria-pressed="false" data-node-kind="backend" data-node-sublabel="Fresh receipt provenance" data-node-context="01 / Collect independently" data-purpose="authentication">
+          <title>Native device report · Fresh receipt provenance · 01 / Collect independently</title>
           <rect x="30" y="356" width="240" height="82" rx="6" class="c-mask"/>
           <rect x="30" y="356" width="240" height="82" rx="6" class="c-backend" stroke-width="1.5"/>
           <g aria-hidden="true" data-semantic-sigil="backend" class="semantic-sigil s-backend" transform="translate(36 362) scale(0.6875)">
             <path d="M6 3 3 8l3 5M10 3l3 5-3 5"/>
           </g>
           <text data-node-label="" data-detail-anchor="" x="150" y="377" class="t-primary" font-size="14" font-weight="600" text-anchor="middle">Native device report</text>
-          <text data-detail="context" x="150" y="393" class="t-muted" font-size="11" text-anchor="middle">Recorded issuance method</text>
+          <text data-detail="context" x="150" y="393" class="t-muted" font-size="11" text-anchor="middle">Fresh receipt provenance</text>
         </g>
 
         <g id="node-cloudEvidence" data-node-id="cloudEvidence" data-node-label="Apple source evidence" tabindex="0" role="button" aria-label="Focus Apple source evidence, Opaque account and resource ID, 02 / Retain originals" aria-pressed="false" data-node-kind="database" data-node-sublabel="Opaque account and resource ID" data-node-context="02 / Retain originals" data-purpose="storage">
@@ -5518,6 +5518,7 @@ svg[data-purpose-filter] g[data-purpose-highlight] > path { stroke-width: 2.4; }
         </div>
         <ul>
           <li>&bull; Omission retains earlier native values. False, zero, null and empty arrays remain values; all candidates keep provenance.</li>
+          <li>&bull; Backfill preserves captured provenance. Fresh authenticated receipts can qualify unchanged values.</li>
         </ul>
       </div>
 
@@ -5527,11 +5528,11 @@ svg[data-purpose-filter] g[data-purpose-highlight] > path { stroke-width: 2.4; }
           <h3>Implementation</h3>
         </div>
         <ul>
-          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/655506b55b0afa74e78a6a8df2514cec4c8fbc33/server/internal/app/inventory.go" target="_blank" rel="noopener noreferrer">native: Native device report</a></li>
-          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/655506b55b0afa74e78a6a8df2514cec4c8fbc33/devicemanagement/inventory/records.go" target="_blank" rel="noopener noreferrer">cloudEvidence: Apple source evidence</a></li>
-          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/655506b55b0afa74e78a6a8df2514cec4c8fbc33/server/internal/app/inventory.go" target="_blank" rel="noopener noreferrer">nativeEvidence: Native source evidence</a></li>
-          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/655506b55b0afa74e78a6a8df2514cec4c8fbc33/devicemanagement/inventory/records.go" target="_blank" rel="noopener noreferrer">correlate: Correlate serials</a></li>
-          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/655506b55b0afa74e78a6a8df2514cec4c8fbc33/server/internal/app/inventory_inspection.go" target="_blank" rel="noopener noreferrer">resolve: Resolve declared paths</a></li>
+          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/5245e583e39458e314e83ab53d20dddd4f61c8a9/server/internal/app/inventory.go" target="_blank" rel="noopener noreferrer">native: Native device report</a></li>
+          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/5245e583e39458e314e83ab53d20dddd4f61c8a9/devicemanagement/inventory/records.go" target="_blank" rel="noopener noreferrer">cloudEvidence: Apple source evidence</a></li>
+          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/5245e583e39458e314e83ab53d20dddd4f61c8a9/server/internal/app/inventory.go" target="_blank" rel="noopener noreferrer">nativeEvidence: Native source evidence</a></li>
+          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/5245e583e39458e314e83ab53d20dddd4f61c8a9/devicemanagement/inventory/records.go" target="_blank" rel="noopener noreferrer">correlate: Correlate serials</a></li>
+          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/5245e583e39458e314e83ab53d20dddd4f61c8a9/server/internal/app/inventory_inspection.go" target="_blank" rel="noopener noreferrer">resolve: Resolve declared paths</a></li>
         </ul>
       </div>
     </div>

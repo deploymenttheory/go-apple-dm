@@ -147,14 +147,22 @@ affected relationships require a new explicit correlation.
 
 Native history retains partial reports and their reported per-item times. Omission
 leaves prior successful observations available to an explicit resolver; storage does
-not fabricate a replacement full report. Unknown authentication or enrollment-method
-provenance remains incomplete. The reference server records the profile issuance flow and carries it into issued
-certificate evidence. Pinned certificate lookup supplies the recorded ADE, account-driven
-Device Enrollment, profile-based Device Enrollment or User Enrollment method to native
-observations. The method is never inferred from a channel or account name. Historical
-identities without that evidence remain incomplete; no lookup fabricates a method.
-Native evidence is never automatically linked to hardware.
-User Enrollment cannot establish a serial-based hardware relationship.
+not fabricate a replacement full report. The reference server records the profile
+issuance flow and carries it into issued certificate evidence. Only fresh authenticated
+check-ins, acknowledged command receipts and validated status receipts attach the
+pinned certificate's recorded ADE, account-driven Device Enrollment, profile-based
+Device Enrollment or User Enrollment provenance. A channel or account name supplies
+no enrollment method.
+
+Background sweeps retain historical enrollment, acknowledged-command and effective
+status evidence without consulting the current certificate for report authentication.
+Exact originals and receipt times already retained are reused atomically on
+backfill, preserving their captured fields, per-item times, provenance and checked links. Missing historical authentication or method evidence stays incomplete even after
+new certificate issuance. A genuinely fresh authenticated receipt can establish its
+own provenance with unchanged reported values, including an identical injected receipt
+time; fresh receipts retain the library's normal observation/history semantics.
+Native evidence is never automatically linked to hardware. User Enrollment cannot
+establish a serial-based hardware relationship.
 
 Account removal disconnects its sources without disabling enrollment or deleting
 original evidence. An absent Apple resource is marked only after complete enumeration
@@ -486,6 +494,9 @@ precision. `as_of` records the query time and is not a historical database snaps
 HTTP `next_cursor` binds continuation to the original account, source, focus, search
 and conditions. Preserve those predicates; changing only page size is permitted.
 Malformed, old bare record/UUID cursors and continuations from another query return 400.
+Malformed query pairs, including unescaped semicolons and invalid percent escapes,
+also return 400 before any filters execute. CLI values are encoded as literal values;
+a semicolon within an encoded account ID never removes the account scope.
 Unknown parameters such as retired `serial`, `uuid` and normalized fleet filters also
 return 400; use the serial inspection path and explicit source selectors.
 

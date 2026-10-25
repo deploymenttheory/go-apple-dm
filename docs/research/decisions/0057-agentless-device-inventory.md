@@ -102,12 +102,17 @@ The reference server supervises collection and exposes resource metadata under
 appear in account read responses. Named Apple accounts are sources in one fleet, not
 authorization tenants. The server records the actual ADE, account-driven or profile-based issuance flow,
 including User Enrollment, and carries it into issued certificate evidence. Native
-adapters require the enrollment's pinned issued certificate before attaching that
-method and authenticated serial. Historical missing provenance stays incomplete.
+adapters attach the enrollment's pinned issued certificate method and serial only to
+fresh authenticated check-ins, command receipts and validated status receipts. Historical
+backfills never obtain report authentication from the current certificate. They atomically
+reuse already-retained originals and receipt times, preserving captured fields and per-item
+times without downgrading or duplicating provenance; missing historical provenance stays incomplete after new issuance.
+Fresh authenticated receipts retain normal library history semantics even when original
+values and injected receipt times are unchanged.
 Serial inspection and evidence routes preserve source boundaries. Correlation is an
 explicit managed mutation; resolution is an explicit raw-authorized read over checked
 links and caller-declared equivalent paths. Arbitrary mappings, complete history and
-original bytes require `readRawInventory`. Metadata queries reject retired filters and
+original bytes require `readRawInventory`. Metadata queries reject malformed raw query pairs, retired filters and
 predicate-mismatched cursors; raw saved predicates never leak through ordinary presets. Native collection requires enrollment
 and connectivity. Automated tests do not establish populated live Apple workflows or
 physical-device outcomes.

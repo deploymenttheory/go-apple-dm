@@ -57,11 +57,15 @@ optional resolution remains caller-owned. Stored native evidence without authent
 enrollment-method provenance stays incomplete and cannot establish a hardware link.
 The reference adapters retain protocol evidence independently of this relationship.
 The server records actual profile-issuance methods with issued certificate evidence and
-attaches that provenance to native observations only through the enrollment's pinned
-certificate. Serial inspection exposes separate resources before enrollment and checked
+attaches that provenance only on fresh native receipts through the enrollment's pinned
+certificate. Background replay preserves captured report provenance and leaves missing
+historical authentication or method evidence unchecked. Backfill atomically reuses exact
+retained originals; fresh authenticated receipts retain normal history semantics even
+when reported values and injected receipt times are unchanged. Serial inspection exposes separate resources before enrollment and checked
 links afterward. HTTP/CLI correlation and raw native-first resolution are explicit
 operations; arbitrary mappings and complete evidence require `readRawInventory`.
-Public source queries expose metadata only, reject retired filters and bind continuation
+Public source queries expose metadata only, reject malformed query pairs and retired
+filters, and bind continuation
 tokens to their predicates. See the [inspection flow](diagrams/inventory-inspection.html). See [explicit correlation](operations/agentless-inventory.md#standalone-serial-correlation-and-resolution).
 
 The [content-cache receiver](research/decisions/0051-content-cache-metrics.md) is

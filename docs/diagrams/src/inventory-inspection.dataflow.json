@@ -44,7 +44,7 @@
       "id": "native",
       "type": "backend",
       "label": "Native device report",
-      "sublabel": "Recorded issuance method",
+      "sublabel": "Fresh receipt provenance",
       "stage": 0,
       "row": 2,
       "width": 240,
@@ -149,18 +149,19 @@
       "dot": "storage",
       "title": "Evidence survives resolution",
       "items": [
-        "Omission retains earlier native values. False, zero, null and empty arrays remain values; all candidates keep provenance."
+        "Omission retains earlier native values. False, zero, null and empty arrays remain values; all candidates keep provenance.",
+        "Backfill preserves captured provenance. Fresh authenticated receipts can qualify unchanged values."
       ]
     },
     {
       "dot": "service",
       "title": "Implementation",
       "items": [
-        "native: Native device report \u2014 https://github.com/deploymenttheory/go-apple-dm/blob/655506b55b0afa74e78a6a8df2514cec4c8fbc33/server/internal/app/inventory.go",
-        "cloudEvidence: Apple source evidence \u2014 https://github.com/deploymenttheory/go-apple-dm/blob/655506b55b0afa74e78a6a8df2514cec4c8fbc33/devicemanagement/inventory/records.go",
-        "nativeEvidence: Native source evidence \u2014 https://github.com/deploymenttheory/go-apple-dm/blob/655506b55b0afa74e78a6a8df2514cec4c8fbc33/server/internal/app/inventory.go",
-        "correlate: Correlate serials \u2014 https://github.com/deploymenttheory/go-apple-dm/blob/655506b55b0afa74e78a6a8df2514cec4c8fbc33/devicemanagement/inventory/records.go",
-        "resolve: Resolve declared paths \u2014 https://github.com/deploymenttheory/go-apple-dm/blob/655506b55b0afa74e78a6a8df2514cec4c8fbc33/server/internal/app/inventory_inspection.go"
+        "native: Native device report \u2014 https://github.com/deploymenttheory/go-apple-dm/blob/5245e583e39458e314e83ab53d20dddd4f61c8a9/server/internal/app/inventory.go",
+        "cloudEvidence: Apple source evidence \u2014 https://github.com/deploymenttheory/go-apple-dm/blob/5245e583e39458e314e83ab53d20dddd4f61c8a9/devicemanagement/inventory/records.go",
+        "nativeEvidence: Native source evidence \u2014 https://github.com/deploymenttheory/go-apple-dm/blob/5245e583e39458e314e83ab53d20dddd4f61c8a9/server/internal/app/inventory.go",
+        "correlate: Correlate serials \u2014 https://github.com/deploymenttheory/go-apple-dm/blob/5245e583e39458e314e83ab53d20dddd4f61c8a9/devicemanagement/inventory/records.go",
+        "resolve: Resolve declared paths \u2014 https://github.com/deploymenttheory/go-apple-dm/blob/5245e583e39458e314e83ab53d20dddd4f61c8a9/server/internal/app/inventory_inspection.go"
       ]
     }
   ]
