@@ -8,7 +8,14 @@
 // chain through explicit per-handler options. Handlers retain parsed data by
 // serial, optionally enrich it through DEP lookup, apply software-update policy
 // and call ProfileHook for admission and profile selection. WebAuth connects the
-// browser flow to Resume and Finish.
+// browser flow to Finish. Bound.Parsed exposes the exact validated evidence for
+// immutable storage with the caller's authentication session. Resume loads the
+// latest per-serial record and is not a session binding.
+//
+// A required update fails explicitly when the device cannot execute the response
+// or its OS version is unknown. Fulfilled and unconfigured requirements proceed.
+// Responses support iOS/iPadOS 17+, macOS 14+, and visionOS 26+; tvOS and watchOS
+// have no supported enrollment update response. Policies remain caller-owned.
 //
 // The default device-chain verification ignores validity windows; audit mode
 // permits unverified input. MachineInfo is not Managed Device Attestation or
@@ -28,6 +35,7 @@
 //   - Password hash fields: https://developer.apple.com/documentation/devicemanagement/passwordhash/salted-sha512-pbkdf2-data.dictionary
 //   - Apple: https://developer.apple.com/documentation/devicemanagement/machineinfo
 //   - Apple: https://developer.apple.com/documentation/devicemanagement/authenticating-through-web-views
+//   - Apple update capabilities: https://support.apple.com/guide/deployment/depd30715cbb/web
 //   - Apple: https://developer.apple.com/documentation/devicemanagement/errorcodesoftwareupdaterequired
 //   - Apple: https://developer.apple.com/documentation/devicemanagement/profile
 //   - Apple: https://developer.apple.com/library/archive/documentation/NetworkingInternet/Conceptual/iPhoneOTAConfiguration/Introduction/Introduction.html (the Apple iPhone Device CA)

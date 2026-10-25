@@ -47,6 +47,9 @@ type ProfileHook func(ctx context.Context, p *Parsed, id Identity) (*enroll.Prof
 // Bound is what the web view authenticator binds its state to, so the
 // callback can be matched to the device that started it.
 type Bound struct {
+	// Parsed is the exact validated MachineInfo that initiated this handoff.
+	// Callers retaining it must bind it to their authentication state and lifetime.
+	Parsed    *Parsed
 	Serial    string
 	UDID      string
 	Product   string
@@ -185,7 +188,7 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		h.cfg.WebAuth.Begin(
 			w,
 			r,
-			Bound{Serial: p.SERIAL, UDID: p.UDID, Product: p.PRODUCT, OSVersion: p.OSVERSION},
+			Bound{Parsed: p, Serial: p.SERIAL, UDID: p.UDID, Product: p.PRODUCT, OSVersion: p.OSVERSION},
 		)
 		return
 	}

@@ -63,7 +63,7 @@ func TestSoftwareUpdate(t *testing.T) {
 		if err != nil || d.Action != ade.Proceed {
 			t.Fatalf("%+v %v", d, err)
 		}
-		// The device cannot take an update request: the policy is never asked.
+		// A supplied requirement cannot be bypassed by an incapable device.
 		p := parsedInfo("s")
 		p.MDMCANREQUESTSOFTWAREUPDATE = nil
 		asked := false
@@ -72,11 +72,11 @@ func TestSoftwareUpdate(t *testing.T) {
 			return ade.Target{OSVersion: "99"}, true, nil
 		})
 		d, err = ade.Gate(ctx, p, policy, nil, quiet)
-		if err != nil || d.Action != ade.Proceed || asked {
+		if !errors.Is(err, ade.ErrGate) || d != nil || !asked {
 			t.Fatalf("%+v %v asked=%v", d, err, asked)
 		}
 		p.MDMCANREQUESTSOFTWAREUPDATE = new(false)
-		if d, _ := ade.Gate(ctx, p, policy, nil, quiet); d.Action != ade.Proceed || asked {
+		if d, err := ade.Gate(ctx, p, policy, nil, quiet); d != nil || !errors.Is(err, ade.ErrGate) {
 			t.Fatal("false flag")
 		}
 		// Policy says no.
@@ -101,6 +101,38 @@ func TestSoftwareUpdate(t *testing.T) {
 		}
 		if ade.Action(9).String() != "Action(9)" || ade.Proceed.String() != "proceed" || ade.PSSORequired.String() != "psso-required" || ade.SoftwareUpdateRequired.String() != "software-update-required" {
 			t.Fatal("String")
+		}
+	})
+	t.Run("FulfilledWithoutCapability", func(t *testing.T) {
+		p := parsedInfo("s")
+		p.MDMCANREQUESTSOFTWAREUPDATE = nil
+		if d, err := ade.Gate(ctx, p, requireVersion("17.0"), nil, quiet); err != nil || d.Action != ade.Proceed {
+			t.Fatalf("%+v %v", d, err)
+		}
+	})
+	t.Run("SupportedTargets", func(t *testing.T) {
+		for _, tc := range []struct{ product, version string }{{"iPhone15,2", "17.0"}, {"iPad13,1", "17.0"}, {"Mac14,7", "14.0"}, {"RealityDevice14,1", "26.0"}} {
+			p := parsedInfo("s")
+			p.PRODUCT = tc.product
+			p.Platform = ade.PlatformFromProduct(tc.product)
+			p.OSVERSION = tc.version
+			if d, err := ade.Gate(ctx, p, requireVersion("27.0"), nil, quiet); err != nil || d.Action != ade.SoftwareUpdateRequired {
+				t.Fatalf("%+v: %+v %v", tc, d, err)
+			}
+		}
+	})
+	t.Run("UnsupportedTargets", func(t *testing.T) {
+		for _, tc := range []struct{ product, version string }{
+			{"iPhone15,2", "16.6"}, {"iPad13,1", "16.6"}, {"Mac14,7", "13.6"},
+			{"RealityDevice14,1", "2.0"}, {"AppleTV14,1", "26.0"}, {"Watch7,1", "26.0"}, {"future1,1", "26.0"}, {"Mac14,7", ""},
+		} {
+			p := parsedInfo("s")
+			p.PRODUCT = tc.product
+			p.OSVERSION = tc.version
+			p.Platform = ade.PlatformFromProduct(tc.product)
+			if d, err := ade.Gate(ctx, p, requireVersion("99"), nil, quiet); d != nil || !errors.Is(err, ade.ErrGate) {
+				t.Fatalf("%+v: %+v %v", tc, d, err)
+			}
 		}
 	})
 	t.Run("RequiredJSON", func(t *testing.T) {
@@ -240,6 +272,7 @@ func TestSoftwareUpdate(t *testing.T) {
 		}
 		policy := pssoPolicy{Policy: requireVersion("18.0"), details: details, required: true}
 		mac := parsedInfo("s")
+		mac.Platform = ade.PlatformMac
 		mac.PRODUCT, mac.OSVERSION, mac.MDMCANREQUESTPSSOCONFIG = "Mac16,1", "26.0", new(true)
 		d, err := ade.Gate(ctx, mac, policy, nil, quiet)
 		if err != nil || d.Action != ade.PSSORequired || d.PSSO.Code != schemaerrors.ErrorCodeCodePlatformSSORequired || d.PSSO.Details.AuthURL != details.AuthURL {
