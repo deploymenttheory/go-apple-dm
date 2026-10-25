@@ -33,7 +33,10 @@ acknowledges durable local intent, not Apple acceptance. Reusing a request ID wi
 the same account, operation, binding and serial order returns the existing intent;
 a different request conflicts. IDs are globally unique within the server.
 Outstanding operations with overlapping account/serial targets conflict, including
-uncertain submissions. Each request is bounded to 1,000 unique, nonempty serials.
+uncertain submissions. A submitted operation keeps that protection after fencing,
+credential rotation, service replacement or account deletion/recreation; loss of
+local authority does not resolve an external mutation. A fenced request which
+never reached the durable submitting marker permits a new explicit request. Each request is bounded to 1,000 unique, nonempty serials.
 
 The worker verifies the service, resolves the complete organization serial set and
 persists Apple's opaque organization-device IDs before mutation. These IDs address
@@ -71,10 +74,16 @@ submission failed. Uncertain work remains blocked for operator investigation;
 there is no retry/clear endpoint that could silently duplicate it.
 
 Account edits and key rotation require explicitly configuring the binding again
-against the current account revision. Deletion and recreation cannot inherit an
+against the current account revision. Every configuration creates a fresh binding
+generation, including an identical replacement. Restoring earlier service values
+cannot revive old leases or workflow authority. Deletion and recreation cannot inherit an
 old worker's authority, even when the numeric revision is reused. Per-workflow
-leases fence replicas and expired workers. Each attempt has a 90-second context
+leases fence replicas and expired workers. Each remote attempt has a 90-second context
 inside a two-minute lease; pending evidence is polled on a five-second schedule.
+Attempt expiry leaves the worker and application lifetime intact. Local outcome
+bookkeeping uses the worker context, still subject to the current lease and binding;
+an expired lease rejects that write and the next owner resumes conservatively.
+Application shutdown still cancels both remote calls and local bookkeeping.
 Remote requests may finish after fencing or cancellation, but cannot commit stale
 local outcomes. Apple calls never run inside local SQL transactions.
 

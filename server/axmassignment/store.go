@@ -17,6 +17,7 @@ import (
 
 // Binding authorizes assignment only to this MDM service using the current account revision.
 type Binding struct {
+	Generation  string                 `json:"generation"`
 	AccountID   string                 `json:"account_id"`
 	Revision    int64                  `json:"account_revision"`
 	Fingerprint string                 `json:"fingerprint"`
@@ -130,7 +131,7 @@ func (c *Controller) Configure(ctx context.Context, account string, revision int
 		if a.Revision != revision {
 			return inventory.ErrConflict
 		}
-		out = Binding{a.ID, a.Revision, fingerprint(a, key), service, columns}
+		out = Binding{Generation: inventory.ID(), AccountID: a.ID, Revision: a.Revision, Fingerprint: fingerprint(a, key), ServiceID: service, Columns: columns}
 		return write(ctx, tx, "assignment-binding/"+a.ID, out)
 	})
 	return out, err
@@ -204,7 +205,8 @@ func (c *Controller) request(ctx context.Context, account, id string, serials []
 				if e = json.Unmarshal(row.Value, &w); e != nil {
 					return e
 				}
-				if w.Binding.AccountID == account && w.State != "complete" && w.State != "fenced" {
+				// Fencing revokes local authority; it does not resolve a possibly accepted remote mutation.
+				if w.Binding.AccountID == account && w.State != "complete" && (w.State != "fenced" || w.SubmissionStartedAt != nil) {
 					for _, target := range w.Targets {
 						if seen[target.Serial] {
 							return inventory.ErrConflict

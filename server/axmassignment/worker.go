@@ -124,24 +124,27 @@ func (c *Controller) Step(ctx context.Context, id string) error {
 	if w.State == "fenced" {
 		return nil
 	}
-	ctx, cancel := context.WithTimeout(ctx, 90*time.Second)
+	workerCtx := ctx
+	ctx, cancel := context.WithTimeout(workerCtx, 90*time.Second)
 	defer cancel()
+	// Remote attempt expiry must not cancel local bookkeeping or the supervisor.
+	// The worker context still honors shutdown; lease and binding checks still fence every commit.
 	// Revision is checked again at every commit, including immediately before POST.
-	a, err := c.Repository.Account(ctx, w.Binding.AccountID)
+	a, err := c.Repository.Account(workerCtx, w.Binding.AccountID)
 	if err != nil {
 		return err
 	}
-	key, err := c.Repository.PrivateKey(ctx, a.ID)
+	key, err := c.Repository.PrivateKey(workerCtx, a.ID)
 	if err != nil {
 		return err
 	}
 	client, err := c.Client(ctx, a, key)
 	if err != nil {
-		return c.fail(ctx, &w, owner, "client_unavailable")
+		return c.fail(workerCtx, &w, owner, "client_unavailable")
 	}
 	if w.State == "queued" {
 		if _, err = client.GetMDMServer(ctx, w.Binding.ServiceID, axm.GetOptions{}); err != nil {
-			return c.fail(ctx, &w, owner, "service_lookup_failed")
+			return c.fail(workerCtx, &w, owner, "service_lookup_failed")
 		}
 		serials := make([]string, len(w.Targets))
 		for i, t := range w.Targets {
@@ -149,7 +152,7 @@ func (c *Controller) Step(ctx context.Context, id string) error {
 		}
 		devices, e := client.ResolveOrgDevicesBySerial(ctx, serials)
 		if e != nil {
-			return c.fail(ctx, &w, owner, "device_lookup_failed")
+			return c.fail(workerCtx, &w, owner, "device_lookup_failed")
 		}
 		ids := make([]string, len(devices))
 		for i, d := range devices {
@@ -165,10 +168,10 @@ func (c *Controller) Step(ctx context.Context, id string) error {
 			for _, id := range ids {
 				link, e := client.GetAssignedServerLinkage(ctx, id)
 				if e != nil {
-					return c.fail(ctx, &w, owner, "assignment_read_failed")
+					return c.fail(workerCtx, &w, owner, "assignment_read_failed")
 				}
 				if link.ID != w.Binding.ServiceID {
-					return c.fail(ctx, &w, owner, "outside_configured_service")
+					return c.fail(workerCtx, &w, owner, "outside_configured_service")
 				}
 			}
 		}
@@ -180,20 +183,20 @@ func (c *Controller) Step(ctx context.Context, id string) error {
 		w.SubmissionStartedAt = &started
 		w.State = "submitting"
 		w.Error = ""
-		if err = c.commit(ctx, &w, owner, nil, false); err != nil {
+		if err = c.commit(workerCtx, &w, owner, nil, false); err != nil {
 			return err
 		}
 		act, e := client.CreateOrgDeviceActivity(ctx, req)
 		if e != nil || act == nil || act.ID == "" {
 			w.State = "uncertain"
-			return c.fail(ctx, &w, owner, "submission_uncertain")
+			return c.fail(workerCtx, &w, owner, "submission_uncertain")
 		}
 		now := time.Now().UTC()
 		w.ActivityID = act.ID
 		w.AcceptedAt = &now
 		w.State = "accepted"
 		// Persist the accepted ID before another Apple request. A failed commit leaves submitting.
-		if err = c.commit(ctx, &w, owner, nil, false); err != nil {
+		if err = c.commit(workerCtx, &w, owner, nil, false); err != nil {
 			return err
 		}
 	}
@@ -201,25 +204,25 @@ func (c *Controller) Step(ctx context.Context, id string) error {
 	if w.ActivityID != "" {
 		act, e := client.GetOrgDeviceActivity(ctx, w.ActivityID, axm.GetOptions{})
 		if e != nil {
-			return c.fail(ctx, &w, owner, "activity_read_failed")
+			return c.fail(workerCtx, &w, owner, "activity_read_failed")
 		}
 		if act.Terminal() {
 			w.TerminalStatus = act.Attributes.Status
 			w.TerminalSubStatus = act.Attributes.SubStatus
 			w.State = "terminal"
 			// Commit terminal evidence before attempting a log download.
-			if err = c.commit(ctx, &w, owner, nil, false); err != nil {
+			if err = c.commit(workerCtx, &w, owner, nil, false); err != nil {
 				return err
 			}
 			if !w.LogComplete && act.Attributes.DownloadURL != "" {
 				body, e := client.FetchActivityLog(ctx, act.Attributes.DownloadURL)
 				if e != nil {
-					return c.fail(ctx, &w, owner, "log_download_failed")
+					return c.fail(workerCtx, &w, owner, "log_download_failed")
 				}
 				raw, e := io.ReadAll(body)
 				closeErr := body.Close()
 				if e != nil || closeErr != nil {
-					return c.fail(ctx, &w, owner, "log_read_failed")
+					return c.fail(workerCtx, &w, owner, "log_read_failed")
 				}
 				serials := make([]string, len(w.Targets))
 				for i, t := range w.Targets {
@@ -241,7 +244,7 @@ func (c *Controller) Step(ctx context.Context, id string) error {
 				} else {
 					w.Error = ""
 				}
-				if err = c.commit(ctx, &w, owner, evidence, false); err != nil {
+				if err = c.commit(workerCtx, &w, owner, evidence, false); err != nil {
 					return err
 				}
 			}
@@ -251,17 +254,17 @@ func (c *Controller) Step(ctx context.Context, id string) error {
 	for i := range w.Targets {
 		device, e := client.GetOrgDevice(ctx, w.Targets[i].DeviceID, axm.GetOptions{})
 		if e != nil {
-			return c.fail(ctx, &w, owner, "device_read_failed")
+			return c.fail(workerCtx, &w, owner, "device_read_failed")
 		}
 		if device.ID != w.Targets[i].DeviceID || device.Attributes.SerialNumber != w.Targets[i].Serial {
-			return c.fail(ctx, &w, owner, "device_identity_changed")
+			return c.fail(workerCtx, &w, owner, "device_identity_changed")
 		}
 		if err = c.observe(&w, *device, a.DeviceTTL); err != nil {
 			return err
 		}
 		link, e := client.GetAssignedServerLinkage(ctx, device.ID)
 		if e != nil {
-			return c.fail(ctx, &w, owner, "assignment_read_failed")
+			return c.fail(workerCtx, &w, owner, "assignment_read_failed")
 		}
 		now := time.Now().UTC()
 		w.Targets[i].ObservedAt = &now
@@ -284,7 +287,7 @@ func (c *Controller) Step(ctx context.Context, id string) error {
 		}
 	}
 	w.NextAttempt = time.Now().UTC().Add(5 * time.Second)
-	return c.commit(ctx, &w, owner, nil, true)
+	return c.commit(workerCtx, &w, owner, nil, true)
 }
 
 // fail preserves successful evidence and schedules a read-only retry for uncertain submissions.

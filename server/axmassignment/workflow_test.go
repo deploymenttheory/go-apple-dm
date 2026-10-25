@@ -515,6 +515,39 @@ func checkAssignmentSQL(t *testing.T, db *sql.DB, dialect sqlcommon.Dialect) {
 	if w.State != "fenced" || h.tr.posts.Load() != 2 {
 		t.Fatal(w)
 	}
+	// A fresh SQL-backed controller must not confuse revoked authority with resolved submission.
+	current, e := h.c.Repository.Account(t.Context(), h.account.ID)
+	if e != nil {
+		t.Fatal(e)
+	}
+	if _, e = h.c.Configure(t.Context(), current.ID, current.Revision, h.service, w.Binding.Columns); e != nil {
+		t.Fatal(e)
+	}
+	if _, e = h.c.Request(t.Context(), current.ID, "replacement", []string{"SER1"}, time.Now()); !errors.Is(e, inventory.ErrConflict) {
+		t.Fatal("fenced submission lost its SQL overlap lock", e)
+	}
+	h.fake.AddOrgDeviceResource("opaque-third", "SER3", nil)
+	fresh, e := h.c.Request(t.Context(), current.ID, "aba", []string{"SER3"}, time.Now())
+	if e != nil {
+		t.Fatal(e)
+	}
+	owned, owner, e := h.c.claim(t.Context(), fresh.ID, time.Now())
+	if e != nil {
+		t.Fatal(e)
+	}
+	if _, e = h.c.Configure(t.Context(), current.ID, current.Revision, "other-service", owned.Binding.Columns); e != nil {
+		t.Fatal(e)
+	}
+	restored, e := h.c.Configure(t.Context(), current.ID, current.Revision, h.service, owned.Binding.Columns)
+	if e != nil {
+		t.Fatal(e)
+	}
+	if restored.Generation == owned.Binding.Generation {
+		t.Fatal("binding generation reused")
+	}
+	if e = h.c.commit(t.Context(), &owned, owner, nil, true); !errors.Is(e, inventory.ErrStopped) {
+		t.Fatal("SQL binding ABA revived stale owner", e)
+	}
 }
 
 // TestOpaqueAddressingAndLogCompleteness rejects ambiguous discovery and retains unknown outcomes.
