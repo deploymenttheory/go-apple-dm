@@ -122,7 +122,16 @@ func (a *App) runManagedContent(ctx context.Context) error {
 							a.cfg.Logger.DebugContext(ctx, "content license polling deferred", "operation", op.ID)
 						}
 					}
-					if op.Phase != managedcontent.Queued && op.Phase != managedcontent.WaitingLicense && op.Phase != managedcontent.Prepared {
+					if op.Phase == managedcontent.Dispatched {
+						if op.Observation != nil && op.Observation.Terminal {
+							continue
+						}
+						current, inspectErr := a.inspectContent(ctx, op.ID)
+						if inspectErr != nil || !contentFactsChanged(op.Observation, current.Observation) {
+							continue
+						}
+					}
+					if op.Phase != managedcontent.Dispatched && op.Phase != managedcontent.Queued && op.Phase != managedcontent.WaitingLicense && op.Phase != managedcontent.Prepared {
 						continue
 					}
 					executionCtx, identityErr := a.contentExecutionContext(ctx, op.ID)
@@ -223,4 +232,11 @@ func (s contentState) Update(ctx context.Context, keys []string, fn func(state.T
 			return s.a.cfg.publisher().Publish(ctx, event.Event{Type: "managed-content-state", At: tx.Now(), Actor: actor, Data: map[string]any{"Objects": slices.Clone(keys)}})
 		})
 	})
+}
+
+// contentFactsChanged avoids lease/state writes when a native read contains no
+// newly observed installation facts. Native fact timestamps are never refreshed
+// merely because the worker or a management heartbeat ran again.
+func contentFactsChanged(old *managedcontent.DeliveryStatus, current managedcontent.Observation) bool {
+	return old == nil || old.Terminal != current.Terminal || old.CommandAcknowledged != current.CommandAcknowledged || old.DeclarationPublished != current.DeclarationPublished || old.Installed != current.Installed || old.AppVersion != current.AppVersion || !old.ObservedAt.Equal(current.ObservedAt)
 }

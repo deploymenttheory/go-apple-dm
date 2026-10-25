@@ -64,11 +64,21 @@ func (a *App) guardContentCommand(ctx context.Context, id mdm.EnrollmentID, cmd 
 	if owned {
 		return managedcontent.ErrConflict
 	}
-	payload, ok := cmd.Payload.(*commands.InstallApplication)
-	if !ok || payload.ITunesStoreID == nil {
+	asset := ""
+	switch payload := cmd.Payload.(type) {
+	case *commands.InstallApplication:
+		if payload.ITunesStoreID != nil {
+			asset = fmt.Sprint(*payload.ITunesStoreID)
+		}
+	case *commands.InstallMedia:
+		if payload.ITunesStoreID != nil {
+			asset = fmt.Sprint(*payload.ITunesStoreID)
+		}
+	}
+	if asset == "" {
 		return nil
 	}
-	owned, err = a.nativeContentOwned(ctx, contentAssetKey(id, fmt.Sprint(*payload.ITunesStoreID)))
+	owned, err = a.nativeContentOwned(ctx, contentAssetKey(id, asset))
 	if err != nil {
 		return err
 	}

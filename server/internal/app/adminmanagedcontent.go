@@ -244,6 +244,16 @@ func (a *App) managedContentRoutes() []adminRoute {
 	add("GET "+ops, ActionReadManagedContent, false, func(r *http.Request) (any, error) {
 		return a.ManagedContent.Load(r.Context(), r.PathValue("operation"))
 	})
+	add("GET "+ops+"/native-observation", ActionReadManagedContentEvidence, false, func(r *http.Request) (any, error) { return a.inspectContent(r.Context(), r.PathValue("operation")) })
+	add("POST "+ops+"/status-refresh", ActionManageManagedContent, true, func(r *http.Request) (any, error) {
+		var in struct {
+			RequestID string `json:"requestId"`
+		}
+		if err := decodeContentBody(r, &in); err != nil {
+			return nil, err
+		}
+		return a.refreshContentStatus(r.Context(), r.PathValue("operation"), in.RequestID)
+	})
 	add("GET "+ops+"/evidence", ActionReadManagedContentEvidence, false, func(r *http.Request) (any, error) {
 		_, e, err := a.ManagedContent.LoadEvidence(r.Context(), r.PathValue("operation"))
 		return e, err

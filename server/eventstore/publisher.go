@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"reflect"
+	"slices"
 	"sync"
 	"time"
 
@@ -26,10 +27,13 @@ type Publisher struct {
 	Store             *Store
 	Registry          *eventsink.Registry
 	Destinations      []string
-	Subscribers       event.Publisher
-	Report            func(error)
-	mu                sync.Mutex
-	health            CaptureHealth
+	// SelectDestinations adds scoped destinations using only the already reviewed
+	// safe projection. It must perform no network I/O or state mutation.
+	SelectDestinations func(eventsink.Record) []string
+	Subscribers        event.Publisher
+	Report             func(error)
+	mu                 sync.Mutex
+	health             CaptureHealth
 }
 
 // CaptureHealth exposes recording failure without disclosing event contents.
@@ -114,7 +118,11 @@ func (p *Publisher) Publish(ctx context.Context, e event.Event) error {
 // capture appends the projected event and its destination work to durable outbox state.
 func (p *Publisher) capture(ctx context.Context, e event.Event, rec eventsink.Record) error {
 	err := p.Store.Run(ctx, func(ctx context.Context) error {
-		if err := p.Store.Capture(ctx, rec, p.Destinations); err != nil {
+		destinations := p.Destinations
+		if p.SelectDestinations != nil {
+			destinations = append(slices.Clone(destinations), p.SelectDestinations(rec)...)
+		}
+		if err := p.Store.Capture(ctx, rec, destinations); err != nil {
 			return err
 		}
 		if p.CaptureAdditional != nil {

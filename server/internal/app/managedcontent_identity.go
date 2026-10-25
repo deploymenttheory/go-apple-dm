@@ -9,6 +9,7 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/applications/managedcontent"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/mdm"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/state"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/storage"
 )
 
 type contentIdentityKey struct{}
@@ -116,4 +117,23 @@ func (a *App) contentExecutionContext(ctx context.Context, id string) (context.C
 		return ctx, managedcontent.ErrProtocol
 	}
 	return context.WithValue(ctx, contentIdentityKey{}, admission.Identity), nil
+}
+
+// lockContentEnrollment protects the admitted principal generation with the same
+// native row locks used by authentication/reset. Parent precedes user, matching
+// the native store's ordering. The caller owns the shared local transaction.
+func (a *App) lockContentEnrollment(ctx context.Context, id mdm.EnrollmentID) error {
+	locker, ok := a.Store.(interface {
+		GetForUpdate(context.Context, mdm.EnrollmentID) (*storage.Enrollment, error)
+	})
+	if !ok {
+		return managedcontent.ErrProtocol
+	}
+	if id.Channel.IsUser() {
+		if _, err := locker.GetForUpdate(ctx, id.Device()); err != nil {
+			return err
+		}
+	}
+	_, err := locker.GetForUpdate(ctx, id)
+	return err
 }
