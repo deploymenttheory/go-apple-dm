@@ -18,13 +18,7 @@ import (
 // liveDDM requires fresh declaration status for a unique subscription. Status
 // values are incremental, so retained OS/build values must match fresh inventory.
 func liveDDM(ctx context.Context, e *Environment, device string) (err error) {
-	return liveDDMEvidence(ctx, e, device, "")
-}
-
-// liveDDMEvidence additionally retains native command and declaration/status
-// observations in a caller-owned private directory before cleanup removes them.
-func liveDDMEvidence(ctx context.Context, e *Environment, device, evidence string) error {
-	return liveDDMWithPhases(ctx, e, device, evidence, &liveDDMPhases{})
+	return liveDDMWithPhases(ctx, e, device, "", &liveDDMPhases{})
 }
 
 type liveDDMPhases struct {
