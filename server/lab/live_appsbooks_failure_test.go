@@ -24,11 +24,32 @@ import (
 
 // TestAppsBooksIncompletePagesAndPrerequisitesNeverMutate rejects incomplete collection and missing licensing prerequisites before writes.
 func TestAppsBooksIncompletePagesAndPrerequisitesNeverMutate(t *testing.T) {
-	for _, name := range []string{"missing version", "version drift", "skipped page", "page bound", "unowned location", "no callback", "Book", "not revocable", "missing asset", "stock unknown", "inactive user", "foreign assignment", "revised location"} {
+	for _, name := range []string{"missing version", "version drift", "skipped page", "page bound", "unowned location", "no callback", "Book", "not revocable", "missing asset", "stock unknown", "inactive user", "foreign assignment", "revised location", "selected user foreign", "selected user missing", "selected user unreadable", "user collection unreadable", "asset collection unreadable", "selected asset unreadable"} {
 		t.Run(name, func(t *testing.T) {
 			s, f := appsFixtureSession(t)
 			f.rewrite = func(r *http.Request, m map[string]any) {
 				switch name {
+				case "selected user foreign", "selected user missing", "selected user unreadable", "user collection unreadable":
+					if r.URL.Path == "/users" {
+						selected := r.URL.Query().Get("clientUserId") != ""
+						if name == "user collection unreadable" && !selected {
+							m["users"] = "invalid"
+						}
+						if selected {
+							switch name {
+							case "selected user foreign":
+								m["users"] = []any{map[string]any{"clientUserId": "foreign", "status": "Associated"}}
+							case "selected user missing":
+								m["users"] = []any{}
+							case "selected user unreadable":
+								m["users"] = "invalid"
+							}
+						}
+					}
+				case "asset collection unreadable", "selected asset unreadable":
+					if r.URL.Path == "/assets" && (name == "selected asset unreadable") == (r.URL.Query().Get("adamId") != "") {
+						m["assets"] = "invalid"
+					}
 				case "missing version":
 					if r.URL.Path == "/assets" {
 						delete(m, "versionId")
@@ -248,6 +269,10 @@ func TestAppsBooksMissingPhysicalPrerequisitesRemainUnexercised(t *testing.T) {
 	s, _ := appsFixtureSession(t)
 	if err := liveAppsBooksInstallation(t.Context(), s); !errors.Is(err, ErrBlocked) {
 		t.Fatal(err)
+	}
+	adeTestJSON(t, s.Env.Workspace.path("appsbooks", "installation.json"), appsInstallation{Operation: "prepared", BundleID: "bundle", Version: "1", Platform: "unsupported", Identity: "scep", MaxAgeSeconds: 60})
+	if err := liveAppsBooksInstallation(t.Context(), s); !errors.Is(err, ErrBlocked) {
+		t.Fatal("unsupported operator platform claimed installation", err)
 	}
 	adeTestJSON(t, s.Env.Workspace.path("appsbooks", "installation.json"), appsInstallation{Operation: "prepared", BundleID: "bundle", Version: "1", Platform: "macOS", Identity: "scep", MaxAgeSeconds: 60})
 	if err := liveAppsBooksInstallation(t.Context(), s); !errors.Is(err, ErrBlocked) {

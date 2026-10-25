@@ -183,7 +183,17 @@ fresh OS/build, and requires positive current installed/managed app state with
 the exact expected bundle and version. Generated feature support governs each
 platform, OS and channel. ACK and declaration publication alone are insufficient.
 DDM uses current managed-app status joined to its declaration identity; installed
-queries do not set the MDM-only managed-app filter. tvOS app delivery uses MDM;
+queries do not set the MDM-only managed-app filter. Current native enrollment
+metadata selects generated-supported identity query keys; the ensuing signed
+protocol replies still supply the required fresh OS/build/platform facts. On
+macOS User Enrollment, `InstalledApplicationList` is forbidden. That query is
+reported as `unexercised_unsupported_for_native_target`; DDM acceptance instead
+requires current authenticated, exactly owned `app.managed.list` installation
+and the exact actual app version both before and after the identity queries.
+The report names `current_owned_app_managed_list` as its verification method.
+Missing version, stale status, a foreign declaration or removal cannot satisfy
+this path. MDM without a supported native version observation remains
+unexercised. User licensing and this privacy path require no hardware serial. tvOS app delivery uses MDM;
 this does not exclude its other supported DDM status features.
 
 The privileged `native-observation` GET reads current authenticated native facts

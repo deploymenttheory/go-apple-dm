@@ -214,9 +214,33 @@ func liveAppsBooksInstallation(ctx context.Context, session *Session) (result er
 	if identity.ID != device || identity.Identity != c.Identity || identity.Certificate == "" || !identity.Enabled || identity.AuthenticatedAt.IsZero() || identity.TokenUpdatedAt.IsZero() || !time.Now().Before(identity.NotAfter) {
 		return fmt.Errorf("%w: authenticated current native identity required", ErrBlocked)
 	}
-	queries := []string{"OSVersion", "BuildVersion", "ProductName", "IsSupervised"}
+	// Read current native metadata to select query keys, then independently
+	// verify OS/build through authenticated protocol replies below.
+	var queryTarget struct {
+		OSVersion   string `json:"OSVersion"`
+		ProductName string `json:"ProductName"`
+	}
+	if err = appsRequest(ctx, s, "GET", devicePath, nil, &queryTarget); err != nil {
+		return err
+	}
+	hintOS, ok := adePlatform(adeProductPlatform(queryTarget.ProductName))
+	hintVersion, hintErr := osversion.Parse(queryTarget.OSVersion)
+	if !ok || hintErr != nil {
+		return fmt.Errorf("%w: current native query capabilities unavailable", ErrBlocked)
+	}
+	hint := support.Target{OS: hintOS, Version: hintVersion, Channel: support.ChannelDevice, UserEnrollment: deviceID.Channel == mdm.ChannelUserEnrollmentDevice, DEP: identity.EnrollmentMethod == "automated-device-enrollment"}
+	queries := []string{"OSVersion", "BuildVersion", "ProductName"}
 	if a.config.Serial != "" {
 		queries = append(queries, "SerialNumber")
+	}
+	for _, key := range queries {
+		entry := commands.Support("DeviceInformation.Queries.QueriesItem." + key)
+		if entry == nil || !entry.Check(hint).Supported {
+			return fmt.Errorf("%w: required native identity query unsupported", ErrBlocked)
+		}
+	}
+	if entry := commands.Support("DeviceInformation.Queries.QueriesItem.IsSupervised"); entry != nil && entry.Check(hint).Supported {
+		queries = append(queries, "IsSupervised")
 	}
 	b, err := appsNativeQuery(ctx, s, path, &commands.DeviceInformation{Queries: queries})
 	if err != nil {
@@ -256,20 +280,30 @@ func liveAppsBooksInstallation(ctx context.Context, session *Session) (result er
 	if entry := commands.Support("InstalledApplicationList.Items"); entry != nil && entry.Check(currentTarget).Supported {
 		list.Items = []string{"Identifier", "Version", "Installing"}
 	}
-	if list.Validate(currentTarget) != nil {
-		return fmt.Errorf("%w: native installed-app query unsupported", ErrBlocked)
-	}
-	b, err = appsNativeQuery(ctx, s, path, list)
-	if err != nil {
-		return err
-	}
-	var installed commands.InstalledApplicationListResponse
-	if plist.Unmarshal(b, &installed) != nil || len(installed.InstalledApplicationList) != 1 {
-		return fmt.Errorf("%w: current app installation unobserved", ErrBlocked)
-	}
-	app := installed.InstalledApplicationList[0]
-	if app.Identifier == nil || *app.Identifier != c.BundleID || app.Version == nil || *app.Version != c.Version || app.Installing == nil || *app.Installing {
-		return fmt.Errorf("%w: actual installed app and version required", ErrBlocked)
+	observedVersion := ""
+	independentInstalled := list.Validate(currentTarget) == nil
+	if independentInstalled {
+		b, err = appsNativeQuery(ctx, s, path, list)
+		if err != nil {
+			return err
+		}
+		var installed commands.InstalledApplicationListResponse
+		if plist.Unmarshal(b, &installed) != nil || len(installed.InstalledApplicationList) != 1 {
+			return fmt.Errorf("%w: current app installation unobserved", ErrBlocked)
+		}
+		app := installed.InstalledApplicationList[0]
+		if app.Identifier == nil || *app.Identifier != c.BundleID || app.Version == nil || *app.Version != c.Version || app.Installing == nil || *app.Installing {
+			return fmt.Errorf("%w: actual installed app and version required", ErrBlocked)
+		}
+		observedVersion = *app.Version
+		checks["verification_method"] = "InstalledApplicationList"
+	} else {
+		checks["installed_application_list"] = "unexercised_unsupported_for_native_target"
+		if op.Plan.Method != managedcontent.DDM || current.AppVersion != c.Version {
+			return fmt.Errorf("%w: supported current native app/version proof required", ErrBlocked)
+		}
+		observedVersion = current.AppVersion
+		checks["verification_method"] = "current_owned_app_managed_list"
 	}
 	if op.Plan.Method == managedcontent.MDM {
 		managed := &commands.ManagedApplicationList{Identifiers: []string{c.BundleID}}
@@ -305,6 +339,9 @@ func liveAppsBooksInstallation(ctx context.Context, session *Session) (result er
 	if err = appsInstallationSource(latest, evidence, c, time.Now()); err != nil {
 		return err
 	}
+	if !independentInstalled && final.AppVersion != c.Version {
+		return fmt.Errorf("%w: current owned native app version changed or missing", ErrBlocked)
+	}
 	if err = appsSave(s, "operation.json", op); err != nil {
 		return err
 	}
@@ -315,6 +352,6 @@ func liveAppsBooksInstallation(ctx context.Context, session *Session) (result er
 	if s.Env.Mode == "simulated" || s.Info.Virtual {
 		platforms[c.Platform] = "simulated"
 	}
-	checks["app_version"], checks["os_version"], checks["build_version"] = *app.Version, native.QueryResponses.OSVersion, native.QueryResponses.BuildVersion
+	checks["app_version"], checks["os_version"], checks["build_version"] = observedVersion, native.QueryResponses.OSVersion, native.QueryResponses.BuildVersion
 	return nil
 }

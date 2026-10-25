@@ -42,7 +42,7 @@ func appsRuntime(t *testing.T) (*Session, *appsFixture, appsAcceptance) {
 }
 
 // appsRuntimeWith installs a fixture transport before any runtime worker starts.
-func appsRuntimeWith(t *testing.T, prepare func(*appsFixture)) (*Session, *appsFixture, appsAcceptance) {
+func appsRuntimeWith(t *testing.T, prepare func(*appsFixture), settings ...map[string]string) (*Session, *appsFixture, appsAcceptance) {
 	t.Helper()
 	f := appsSDKFixture(t)
 	if prepare != nil {
@@ -58,6 +58,12 @@ func appsRuntimeWith(t *testing.T, prepare func(*appsFixture)) (*Session, *appsF
 	w, err := Load(dir)
 	if err != nil {
 		t.Fatal(err)
+	}
+	if len(settings) > 1 {
+		t.Fatal("fixture accepts one explicit runtime settings map")
+	}
+	if len(settings) == 1 {
+		w.Settings = settings[0]
 	}
 	e, err := start(t.Context(), w, "", io.Discard, &f.config)
 	if err != nil {
@@ -719,12 +725,16 @@ func TestAppsBooksLicensingThroughReferenceSQLRuntime(t *testing.T) {
 			f.mu.Unlock()
 			appsInstallDueFixture(t, s, f, c)
 			ctx := appsLongContext(t)
+			f.mu.Lock()
+			f.requests = nil
+			f.mu.Unlock()
 			if err := liveAppsBooksCollection(ctx, s); err != nil {
 				t.Fatal(err)
 			}
 			if f.postCount() != 0 {
 				t.Fatal("real read-only composition mutated Apple licensing")
 			}
+			appsAssertReadOnlyRequests(t, f)
 			if err := liveAppsBooksLicensing(ctx, s); err != nil {
 				t.Fatal(err)
 			}
@@ -940,7 +950,12 @@ func TestAppsBooksNativeInspectionFailures(t *testing.T) {
 // appsBlockEvidence simulates unavailable private storage in the one unfinished
 // acceptance scope, preserving every completed invocation's evidence.
 func appsBlockEvidence(s *Session, name string) error {
-	paths, err := filepath.Glob(filepath.Join(s.Evidence, "appsbooks-installation-*"))
+	return appsBlockScopeEvidence(s, "installation", name)
+}
+
+// appsBlockScopeEvidence fails storage in exactly the active private phase.
+func appsBlockScopeEvidence(s *Session, phase, name string) error {
+	paths, err := filepath.Glob(filepath.Join(s.Evidence, "appsbooks-"+phase+"-*"))
 	if err != nil {
 		return err
 	}
@@ -960,13 +975,23 @@ func appsBlockEvidence(s *Session, name string) error {
 // actual installed app and original licensing remain untouched.
 func appsNativeEndpointFailures(t *testing.T, ctx context.Context, s *Session, base string) {
 	t.Helper()
-	for _, name := range []string{"operation read denied", "dispatch evidence denied", "native observation denied", "foreign observation identity", "initial identity denied", "disabled identity", "device query denied", "installed query denied", "managed query denied", "identity readback denied", "identity continuity changed", "operation readback denied", "native readback denied", "native readback removed", "private SDK evidence unavailable", "private native observation unavailable", "private operation evidence unavailable", "private native source unavailable"} {
+	for _, name := range []string{"selected serial mismatch", "different selected native device", "query metadata denied", "query metadata missing", "required query unsupported", "operation read denied", "dispatch evidence denied", "native observation denied", "foreign observation identity", "initial identity denied", "disabled identity", "device query denied", "installed query denied", "managed query denied", "identity readback denied", "identity continuity changed", "operation readback denied", "native readback denied", "native readback removed", "private SDK evidence unavailable", "private native observation unavailable", "private operation evidence unavailable", "private native source unavailable"} {
 		t.Run(name, func(t *testing.T) {
 			transport := s.Env.Client.Transport
 			var operations, observations, identities atomic.Int32
 			var hit atomic.Bool
+			originalInfo := s.Info
+			if name == "selected serial mismatch" {
+				s.Info.Serial = "FOREIGN-PHYSICAL-SERIAL"
+				hit.Store(true)
+			}
+			if name == "different selected native device" {
+				s.Info.UDID = "FOREIGN-NATIVE-ENROLLMENT"
+				hit.Store(true)
+			}
 			s.Env.Client.Transport = transportFunc(func(r *http.Request) (*http.Response, error) {
 				path := strings.TrimPrefix(r.URL.Path, "/admin/v1")
+				metadata := strings.HasPrefix(path, "/enrollments/") && strings.Count(path, "/") == 3
 				operation, observation, identity := int32(0), int32(0), int32(0)
 				if path == base {
 					operation = operations.Add(1)
@@ -977,7 +1002,7 @@ func appsNativeEndpointFailures(t *testing.T, ctx context.Context, s *Session, b
 				if strings.HasSuffix(path, "/enrollment-evidence") {
 					identity = identities.Add(1)
 				}
-				denied := (name == "operation read denied" && operation == 1) || (name == "dispatch evidence denied" && path == base+"/evidence") ||
+				denied := (name == "query metadata denied" && metadata) || (name == "operation read denied" && operation == 1) || (name == "dispatch evidence denied" && path == base+"/evidence") ||
 					(name == "native observation denied" && observation == 1) || (name == "initial identity denied" && identity == 1) ||
 					(name == "identity readback denied" && identity == 2) || (name == "operation readback denied" && operation == 2) || (name == "native readback denied" && observation == 2)
 				if r.Method == "POST" && strings.HasSuffix(path, "/commands") && r.GetBody != nil {
@@ -1024,24 +1049,38 @@ func appsNativeEndpointFailures(t *testing.T, ctx context.Context, s *Session, b
 						t.Error(err)
 					}
 				}
-				rewrite := name == "foreign observation identity" && observation == 1 || name == "disabled identity" && identity == 1 || name == "identity continuity changed" && identity == 2 || name == "native readback removed" && observation == 2
+				rewrite := metadata && (name == "query metadata missing" || name == "required query unsupported") || name == "foreign observation identity" && observation == 1 || name == "disabled identity" && identity == 1 || name == "identity continuity changed" && identity == 2 || name == "native readback removed" && observation == 2
 				if rewrite {
 					raw, readErr := io.ReadAll(response.Body)
 					closeErr := response.Body.Close()
 					if err := errors.Join(readErr, closeErr); err != nil {
 						return nil, err
 					}
-					if identity > 0 {
-						var identity adeEnrollmentEvidence
-						if err := json.Unmarshal(raw, &identity); err != nil {
+					if metadata {
+						var fields map[string]json.RawMessage
+						if err := json.Unmarshal(raw, &fields); err != nil {
 							return nil, err
 						}
-						if name == "disabled identity" {
-							identity.Enabled = false
+						if name == "query metadata missing" {
+							fields["ProductName"] = json.RawMessage(`""`)
 						} else {
-							identity.Certificate = "foreign-certificate"
+							fields["OSVersion"] = json.RawMessage(`"1.0"`)
 						}
-						raw, err = json.Marshal(identity)
+						raw, err = json.Marshal(fields)
+					} else if identity > 0 {
+						var fields map[string]json.RawMessage
+						if err := json.Unmarshal(raw, &fields); err != nil {
+							return nil, err
+						}
+						key, value := "Certificate", json.RawMessage(`"foreign-certificate"`)
+						if name == "disabled identity" {
+							key, value = "Enabled", json.RawMessage(`false`)
+						}
+						if _, ok := fields[key]; !ok {
+							return nil, fmt.Errorf("native identity fixture field missing")
+						}
+						fields[key] = value
+						raw, err = json.Marshal(fields)
 					} else {
 						var current app.ManagedContentNativeObservation
 						if err := json.Unmarshal(raw, &current); err != nil {
@@ -1064,6 +1103,7 @@ func appsNativeEndpointFailures(t *testing.T, ctx context.Context, s *Session, b
 				return response, nil
 			})
 			err := liveAppsBooksInstallation(ctx, s)
+			s.Info = originalInfo
 			s.Env.Client.Transport = transport
 			if err == nil || !hit.Load() {
 				t.Fatal("named native inspection failure was not rejected", err)

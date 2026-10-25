@@ -119,7 +119,10 @@ func appsFixtureSession(t *testing.T) (*Session, *appsFixture) {
 			w.WriteHeader(500)
 			return
 		}
-		_ = json.NewEncoder(w).Encode(f.location)
+		f.mu.Lock()
+		location := f.location
+		f.mu.Unlock()
+		_ = json.NewEncoder(w).Encode(location)
 	}))
 	t.Cleanup(admin.Close)
 	dir := t.TempDir()
@@ -290,6 +293,7 @@ func TestAppsBooksReadOnlyCollectionAndPrivateEvidence(t *testing.T) {
 	if f.postCount() != 0 {
 		t.Fatal("read-only collection changed licensing")
 	}
+	appsAssertReadOnlyRequests(t, f)
 	if len(adeTestEvidence(t, s, "appsbooks-api-*/assignments-page-*.json")) != 1 {
 		t.Fatal("missing assignment source")
 	}
@@ -452,4 +456,28 @@ func appsFixtureAsset(t *testing.T, m map[string]any) ([]any, map[string]any) {
 		t.Fatal("expected a native asset object")
 	}
 	return rows, asset
+}
+
+// appsAssertReadOnlyRequests classifies actions by Apple's endpoint contract;
+// read endpoints can use POST, while client configuration changes cannot.
+func appsAssertReadOnlyRequests(t *testing.T, f *appsFixture) {
+	t.Helper()
+	f.mu.Lock()
+	requests := append([]string(nil), f.requests...)
+	f.mu.Unlock()
+	for _, request := range requests {
+		method, path, ok := strings.Cut(request, " ")
+		if !ok {
+			t.Fatal("malformed fixture request record")
+		}
+		switch path {
+		case "/service/config", "/assets", "/users", "/assignments":
+		case "/config":
+			if method != "GET" {
+				t.Fatal("read-only phase changed Apple client configuration")
+			}
+		default:
+			t.Fatal("read-only phase used an Apple mutation action", path)
+		}
+	}
 }
