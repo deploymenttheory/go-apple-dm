@@ -256,6 +256,7 @@ func TestADEOverlappingBrowserEvidence(t *testing.T) {
 			f := newEnrollFixture(t, "", func(c *app.Config) {
 				c.Storage = "sqlite"
 				c.DSN = filepath.Join(t.TempDir(), "overlap.sqlite")
+				c.BootstrapToken = "replica-inventory-operator"
 				c.StorageKeys = []string{"overlap"}
 				c.Secrets = secrets.Static{"overlap": bytes.Repeat([]byte{7}, 32)}
 			})
@@ -265,6 +266,7 @@ func TestADEOverlappingBrowserEvidence(t *testing.T) {
 			if bytes.Equal(a.Identity.Cert.Raw, b.Identity.Cert.Raw) {
 				t.Fatal("test needs distinct signing evidence")
 			}
+			cloud := seedADEReplicaInventory(t, f, a.SerialNumber)
 			callbackA := startPendingADEBrowser(t, f, a)
 			callbackB := startPendingADEBrowser(t, f, b)
 			// B has now replaced A in the latest-per-serial namespace. Removing or
@@ -317,6 +319,7 @@ func TestADEOverlappingBrowserEvidence(t *testing.T) {
 				if err != nil || !enrolled.Enabled {
 					t.Fatal(d.UDID, err)
 				}
+				verifyADEReplicaInventory(t, f, destination, d, cloud)
 			}
 		})
 	}
