@@ -127,6 +127,16 @@ uncertain submissions. Authenticated notifications commit deduplication and job
 observations before acknowledgment; partial batches never establish success.
 Aggregate event polling checks request type and counts. Expired pending licensing
 credentials have explicit read-only validated recovery without mutation replay.
+Optional `applications/managedcontent.Workflow` composes licensing with explicit
+MDM or declarative app delivery through caller-owned authenticated target and
+delivery adapters. Queued intent, native/physical scope ownership, stable dispatch
+identities and private evidence persist in the existing atomic state store. Fresh
+native asset and per-target assignment reads gate installation. Existing licenses
+can be used without inventing a historical job. Unknown submissions require fenced
+readback reconciliation; ordinary reads separate raw source/device evidence from
+safe status. Licensing, command acknowledgment, declaration publication and actual
+installation/version reports remain independent. No inventory model, automatic
+application policy or server import is required.
 See [Apps and Books licensing](operations/apps-and-books.md).
 
 ADE profile authoring can call `dep.Profile.ValidateForTarget` before submission.
