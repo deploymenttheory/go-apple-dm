@@ -24,10 +24,20 @@ func abmRuntimeFailures(t *testing.T, s *Session, c abmAcceptance) {
 	e := s.Env
 	base := e.Client.Transport
 	e.ABM.Assign("opaque-designated", c.Service)
-	for _, kind := range []string{"device read", "coverage read", "coverage bound", "coverage next", "coverage no cursor", "coverage empty", "sync enqueue", "missing job", "failed job", "job read", "resource read", "missing resource", "evidence read", "evidence write", "export read", "export write", "export mismatch"} {
+	for _, kind := range []string{"device read", "coverage read", "coverage bound", "coverage next", "coverage no cursor", "coverage empty", "sync enqueue", "missing job", "failed job", "job read", "resource read", "missing resource", "evidence read", "evidence write", "export read", "export write", "export mismatch", "stale generation", "sync evidence write", "assertion evidence write"} {
 		t.Run(kind, func(t *testing.T) {
 			testSession := *s
 			testSession.Evidence = t.TempDir()
+			if kind == "sync evidence write" {
+				if err := os.Mkdir(filepath.Join(testSession.Evidence, "synchronization.json"), 0o700); err != nil {
+					t.Fatal(err)
+				}
+			}
+			if kind == "assertion evidence write" {
+				if err := os.Mkdir(filepath.Join(testSession.Evidence, "source-assertions.json"), 0o700); err != nil {
+					t.Fatal(err)
+				}
+			}
 			if kind == "evidence write" {
 				if err := os.Mkdir(filepath.Join(testSession.Evidence, "axm.device-evidence.json"), 0o700); err != nil {
 					t.Fatal(err)
@@ -55,7 +65,7 @@ func abmRuntimeFailures(t *testing.T, s *Session, c abmAcceptance) {
 					mutate = strings.HasSuffix(path, "/sync")
 				case "failed job", "job read":
 					mutate = strings.Contains(path, "/jobs/")
-				case "resource read", "missing resource":
+				case "resource read", "missing resource", "stale generation":
 					mutate = path == "/admin/v1/inventory/raw/devices"
 				case "evidence read":
 					mutate = strings.HasSuffix(path, "/evidence")
@@ -102,6 +112,14 @@ func abmRuntimeFailures(t *testing.T, s *Session, c abmAcceptance) {
 						job.State = "failed"
 						raw, err = json.Marshal(job)
 					}
+				case "stale generation":
+					var page inventory.ResourcePage
+					if err = json.Unmarshal(raw, &page); err == nil {
+						for i := range page.Items {
+							page.Items[i].Snapshot.Generation = "prior-attempt"
+						}
+						raw, err = json.Marshal(page)
+					}
 				case "missing resource":
 					var page inventory.ResourcePage
 					if err = json.Unmarshal(raw, &page); err == nil {
@@ -132,7 +150,7 @@ func abmRuntimeFailures(t *testing.T, s *Session, c abmAcceptance) {
 			if err == nil {
 				t.Fatal("boundary failure passed")
 			}
-			if !injected && kind != "evidence write" && kind != "export write" {
+			if !injected && kind != "evidence write" && kind != "export write" && kind != "sync evidence write" && kind != "assertion evidence write" {
 				t.Fatal("failure boundary not exercised", err)
 			}
 			if kind == "coverage empty" && !errors.Is(err, ErrBlocked) {
@@ -140,7 +158,7 @@ func abmRuntimeFailures(t *testing.T, s *Session, c abmAcceptance) {
 			}
 		})
 	}
-	for _, kind := range []string{"opt in", "binding missing", "binding differs", "original read", "foreign original", "original evidence"} {
+	for _, kind := range []string{"opt in", "binding missing", "binding differs", "original read", "foreign original", "original evidence", "device unavailable", "submission denied"} {
 		t.Run(kind, func(t *testing.T) {
 			testSession := *s
 			testSession.Evidence = t.TempDir()
@@ -160,9 +178,15 @@ func abmRuntimeFailures(t *testing.T, s *Session, c abmAcceptance) {
 			}
 			abmTestConfig(t, &testSession, selection)
 			e.Client.Transport = transportFunc(func(r *http.Request) (*http.Response, error) {
+				if kind == "submission denied" && r.Method == "POST" {
+					return &http.Response{StatusCode: 403, Header: http.Header{}, Body: io.NopCloser(strings.NewReader("denied")), Request: r}, nil
+				}
 				response, err := base.RoundTrip(r)
 				if err != nil {
 					return response, err
+				}
+				if kind == "device unavailable" && strings.HasSuffix(r.URL.Path, "/devices") {
+					response.StatusCode = 403
 				}
 				if kind == "binding missing" && strings.HasSuffix(r.URL.Path, "/assignment-service") {
 					response.StatusCode = 404
@@ -175,6 +199,12 @@ func abmRuntimeFailures(t *testing.T, s *Session, c abmAcceptance) {
 			defer func() { e.Client.Transport = base; abmTestConfig(t, s, c) }()
 			if err := liveABMAssignment(t.Context(), &testSession); err == nil {
 				t.Fatal("missing assignment prerequisite passed")
+			}
+			if kind == "submission denied" {
+				raw, err := os.ReadFile(filepath.Join(testSession.Evidence, "cleanup.json"))
+				if err != nil || !bytes.Contains(raw, []byte("pending_manual_reconciliation")) {
+					t.Fatal("cleanup failure not inspectable", err)
+				}
 			}
 		})
 	}

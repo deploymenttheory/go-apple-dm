@@ -179,9 +179,13 @@ func TestABMAssignmentRejectsInsufficientEvidence(t *testing.T) {
 	now := time.Now()
 	c := abmAcceptance{Account: "a", Serial: "S", Service: "mdm"}
 	d := axm.OrgDevice{ID: "opaque"}
-	for _, kind := range []string{"accepted only", "uncertain", "fenced", "unknown state", "missing acceptance", "target mismatch", "log failed", "readback differs", "log unavailable", "evidence write"} {
+	for _, kind := range []string{"accepted only", "uncertain", "fenced", "unknown state", "missing acceptance", "target mismatch", "log failed", "readback differs", "log unavailable", "evidence write", "workflow unavailable", "CSV write", "readback unavailable"} {
 		t.Run(kind, func(t *testing.T) {
 			s := abmFailureSession(t, func(w http.ResponseWriter, r *http.Request) {
+				if kind == "workflow unavailable" {
+					w.WriteHeader(403)
+					return
+				}
 				if strings.HasSuffix(r.URL.Path, "/log") {
 					if kind == "log unavailable" {
 						w.WriteHeader(403)
@@ -195,6 +199,10 @@ func TestABMAssignmentRejectsInsufficientEvidence(t *testing.T) {
 					return
 				}
 				if strings.HasSuffix(r.URL.Path, "/assigned-service") {
+					if kind == "readback unavailable" {
+						w.WriteHeader(403)
+						return
+					}
 					_, _ = io.WriteString(w, `{"id":"wrong"}`)
 					return
 				}
@@ -217,6 +225,11 @@ func TestABMAssignmentRejectsInsufficientEvidence(t *testing.T) {
 			})
 			if kind == "evidence write" {
 				s.Evidence = ""
+			}
+			if kind == "CSV write" {
+				if err := os.Mkdir(filepath.Join(s.Evidence, "request-activity.csv"), 0o700); err != nil {
+					t.Fatal(err)
+				}
 			}
 			ctx, cancel := context.WithTimeout(t.Context(), 20*time.Millisecond)
 			defer cancel()

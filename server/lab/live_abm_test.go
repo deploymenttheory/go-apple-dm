@@ -46,6 +46,7 @@ func TestABMLiveWorkflowsThroughRuntime(t *testing.T) {
 	t.Cleanup(e.Close)
 	e.ABM.AddOrgDeviceResource("opaque-designated", benchSerial, map[string]any{"futureNull": nil, "futureFalse": false, "futureLarge": json.Number("9007199254740993"), "futureNested": map[string]any{"items": []any{nil, false}}})
 	e.ABM.AddAppleCareCoverage("opaque-designated", "coverage-designated", map[string]any{"agreementNumber": "PRIVATE", "future": false})
+	e.ABM.AddAppleCareCoverage("opaque-designated", "coverage-second", map[string]any{"agreementNumber": "PRIVATE-SECOND", "future": nil})
 	var services struct{ Items []struct{ ID string } }
 	if err = e.api(t.Context(), "GET", "/axm/accounts/default/services", nil, &services); err != nil {
 		t.Fatal(err)

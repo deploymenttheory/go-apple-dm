@@ -242,7 +242,8 @@ dmctl lab run -workspace "$PRIVATE_LAB" -modules LIVE-009 \
   -report-dir "$PRIVATE_ASSIGNMENT_EVIDENCE" -revision "$REVIEWED_COMMIT"
 ```
 
-The runner retains source originals, exports, correlation, original assignment,
+The runner retains source originals, exports, exact-generation source assertions,
+synchronization outcome, correlation, original assignment,
 request IDs, workflows, CSV and cleanup outcome in private evidence directories.
 Restoration has an independent two-minute cleanup context after run cancellation.
 An unresolved or fenced submission prevents inverse mutation and records
