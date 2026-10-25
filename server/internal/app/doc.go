@@ -12,6 +12,11 @@
 // supervises workers, and Close drains event delivery and releases owned
 // resources.
 //
+// Optional Apps and Books/content composition uses sealed SQL SDK state,
+// explicit grants, durable callbacks and native target/delivery adapters. Pure
+// native inspection is separate from explicit status queries and durable APNs
+// wake delivery; licensing, queue acceptance and installation remain distinct.
+//
 // Enrollment, push, principal/policy storage, audit, certificate revocation and
 // quotas are configured here. Both this composition and service.Core deny
 // changed-certificate re-enrollment by default. TLS termination, CA/secret storage,

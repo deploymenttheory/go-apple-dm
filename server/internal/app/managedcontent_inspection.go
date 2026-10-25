@@ -17,8 +17,8 @@ import (
 )
 
 // ManagedContentNativeObservation binds a fresh read of retained native facts to
-// the actual immutable operation. Raw is privileged source evidence, not a
-// client-supplied observation or a request to perform another installation.
+// the actual immutable operation. Observation.Raw is privileged source evidence,
+// not a client-supplied observation or a request to perform another installation.
 type ManagedContentNativeObservation struct {
 	OperationID string                     `json:"operationId"`
 	Observation managedcontent.Observation `json:"observation"`
