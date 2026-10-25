@@ -55,12 +55,11 @@ func inventoryBody(r *http.Request, out any) error {
 
 // inventoryQuery parses the common list, report and export filter contract.
 func inventoryQuery(r *http.Request) (inventory.ResourceQuery, error) {
-	if err := validateInventoryParameters(r, "account", "source", "focus", "search", "cursor", "limit", "where", "as_of", "format", "columns"); err != nil {
+	v, err := validateInventoryParameters(r, "account", "source", "focus", "search", "cursor", "limit", "where", "as_of", "format", "columns")
+	if err != nil {
 		return inventory.ResourceQuery{}, err
 	}
-	v := r.URL.Query()
 	q := inventory.ResourceQuery{AccountID: v.Get("account"), Source: v.Get("source"), Focus: v.Get("focus"), Search: v.Get("search"), Cursor: v.Get("cursor")}
-	var err error
 	if v.Get("limit") != "" {
 		q.Limit, err = strconv.Atoi(v.Get("limit"))
 		if err != nil {

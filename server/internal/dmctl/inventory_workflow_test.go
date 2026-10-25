@@ -140,6 +140,15 @@ func TestInventoryCLIWorkflow(t *testing.T) {
 	if err := json.Unmarshal([]byte(call("devices", "list", "--account", account.ID, "--focus", "apple", "--source", "axm.device", "--raw", "--where", `[{"field":"data.attributes.imei","operator":"contains","value":"123"}]`)), &page); err != nil || len(page.Items) != 1 {
 		t.Fatal(page, err)
 	}
+	// CLI values are encoded as literals, including semicolons and percent signs.
+	// They must never become malformed query pairs that broaden the account scope.
+	for _, accountFilter := range []string{account.ID + ";foreign", account.ID + "%zz"} {
+		var scoped inventory.ResourcePage
+		output := call("devices", "list", "--account", accountFilter)
+		if err := json.Unmarshal([]byte(output), &scoped); err != nil || len(scoped.Items) != 0 {
+			t.Fatal("CLI account filter broadened", output, err)
+		}
+	}
 	device := page.Items[0]
 	if inventory.String(device.Snapshot.Fields["attributes.serialNumber"]) != "SERIAL" {
 		t.Fatal(device)

@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http"
+	"net/url"
 	"time"
 
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/appleplatformservices/axm/collection"
@@ -226,18 +227,23 @@ func (a *App) resolveInventorySnapshot(ctx context.Context, id string, mappings 
 }
 
 // validateInventoryParameters fails closed for retired normalized filters and
-// unknown options; ignoring them could silently broaden a fleet query.
-func validateInventoryParameters(r *http.Request, allowed ...string) error {
+// unknown options. Parsed values are returned only when every raw pair is valid;
+// dropping malformed pairs could silently broaden a fleet query.
+func validateInventoryParameters(r *http.Request, allowed ...string) (url.Values, error) {
+	values, err := url.ParseQuery(r.URL.RawQuery)
+	if err != nil {
+		return nil, inventory.ErrInvalid
+	}
 	set := map[string]bool{}
 	for _, key := range allowed {
 		set[key] = true
 	}
-	for key, values := range r.URL.Query() {
-		if !set[key] || len(values) != 1 {
-			return inventory.ErrInvalid
+	for key, entries := range values {
+		if !set[key] || len(entries) != 1 {
+			return nil, inventory.ErrInvalid
 		}
 	}
-	return nil
+	return values, nil
 }
 
 // inventoryInspectionRoutes keeps raw evidence under separate explicit authority.
@@ -252,13 +258,13 @@ func (a *App) inventoryInspectionRoutes(add func(string, string, func(http.Respo
 			serialPrefix = "/inventory/raw/serials"
 		}
 		add("GET "+serialPrefix+"/{serial}", action, func(_ http.ResponseWriter, r *http.Request) (any, error) {
-			if err := validateInventoryParameters(r); err != nil {
+			if _, err := validateInventoryParameters(r); err != nil {
 				return nil, err
 			}
 			return a.inspectSerial(r.Context(), r.PathValue("serial"), raw)
 		})
 		add("GET "+prefix+"/{id}/evidence", action, func(_ http.ResponseWriter, r *http.Request) (any, error) {
-			if err := validateInventoryParameters(r); err != nil {
+			if _, err := validateInventoryParameters(r); err != nil {
 				return nil, err
 			}
 			d, err := a.Inventory.Resource(r.Context(), r.PathValue("id"))

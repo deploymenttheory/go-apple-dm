@@ -1,6 +1,7 @@
 package app
 
 import (
+	"bytes"
 	"context"
 	"crypto/x509"
 	"encoding/json"
@@ -96,6 +97,12 @@ func deviceChannel(id mdm.EnrollmentID) bool {
 
 // observeInventoryEnrollment retains public enrollment evidence while excluding push and escrow credentials.
 func (a *App) observeInventoryEnrollment(ctx context.Context, id mdm.EnrollmentID) error {
+	return a.projectInventoryEnrollment(ctx, id, true)
+}
+
+// projectInventoryEnrollment records authenticated receipt provenance only for a
+// fresh check-in; a worker's persisted enrollment backfill remains unchecked.
+func (a *App) projectInventoryEnrollment(ctx context.Context, id mdm.EnrollmentID, fresh bool) error {
 	if !deviceChannel(id) {
 		return nil
 	}
@@ -127,11 +134,13 @@ func (a *App) observeInventoryEnrollment(ctx context.Context, id mdm.EnrollmentI
 	if err != nil {
 		return err
 	}
-	o.Native, err = a.inventoryIdentity(ctx, e)
-	if err != nil {
-		return err
+	if fresh {
+		o.Native, err = a.inventoryIdentity(ctx, e)
+		if err != nil {
+			return err
+		}
 	}
-	if _, err = a.Inventory.Observe(ctx, e.Device.SerialNumber, o); err != nil {
+	if err = a.retainInventoryObservation(ctx, o, fresh); err != nil {
 		return err
 	}
 	raw, err = json.Marshal(e.Device)
@@ -145,12 +154,13 @@ func (a *App) observeInventoryEnrollment(ctx context.Context, id mdm.EnrollmentI
 	if o.ObservedAt.IsZero() {
 		o.ObservedAt = at
 	}
-	o.Native, err = a.inventoryIdentity(ctx, e)
-	if err != nil {
-		return err
+	if fresh {
+		o.Native, err = a.inventoryIdentity(ctx, e)
+		if err != nil {
+			return err
+		}
 	}
-	_, err = a.Inventory.Observe(ctx, e.Device.SerialNumber, o)
-	return err
+	return a.retainInventoryObservation(ctx, o, fresh)
 }
 
 // observeInventoryResult resolves the stored command type before projecting an acknowledged response.
@@ -185,6 +195,12 @@ func (a *App) observeInventoryResult(ctx context.Context, id mdm.EnrollmentID, r
 
 // projectInventoryCommand retains full inventory plists and queryable response fields.
 func (a *App) projectInventoryCommand(ctx context.Context, id mdm.EnrollmentID, kind string, raw []byte, at time.Time) error {
+	return a.retainInventoryCommand(ctx, id, kind, raw, at, true)
+}
+
+// retainInventoryCommand preserves original report-level provenance. Only a fresh
+// acknowledged receipt may attach the current pinned certificate's identity.
+func (a *App) retainInventoryCommand(ctx context.Context, id mdm.EnrollmentID, kind string, raw []byte, at time.Time, fresh bool) error {
 	switch kind {
 	case "DeviceInformation", "SecurityInfo", "ProfileList", "InstalledApplicationList", "CertificateList":
 	default:
@@ -211,9 +227,11 @@ func (a *App) projectInventoryCommand(ctx context.Context, id mdm.EnrollmentID, 
 	if value := inventory.String(o.Fields["QueryResponses.SerialNumber"]); value != "" {
 		serial = value
 	}
-	o.Native, err = a.inventoryIdentity(ctx, e)
-	if err != nil {
-		return err
+	if fresh {
+		o.Native, err = a.inventoryIdentity(ctx, e)
+		if err != nil {
+			return err
+		}
 	}
 	if o.Native != nil && inventory.CanonicalSerial(serial) != inventory.CanonicalSerial(o.Native.Serial) {
 		// Keep the acknowledged contradictory original, but it cannot establish
@@ -221,8 +239,7 @@ func (a *App) projectInventoryCommand(ctx context.Context, id mdm.EnrollmentID, 
 		o.Native.Serial = serial
 		o.Native.Authenticated = false
 	}
-	_, err = a.Inventory.Observe(ctx, serial, o)
-	return err
+	return a.retainInventoryObservation(ctx, o, fresh)
 }
 
 // mustInventoryJSON encodes an already JSON-compatible decoded response.
@@ -343,7 +360,7 @@ func (a *App) refreshNativeInventory(ctx context.Context) error {
 			if !deviceChannel(enrollment.ID) {
 				continue
 			}
-			if e := a.observeInventoryEnrollment(ctx, enrollment.ID); e != nil {
+			if e := a.projectInventoryEnrollment(ctx, enrollment.ID, false); e != nil {
 				return e
 			}
 			if err := a.backfillInventoryStatus(ctx, enrollment); err != nil {
@@ -358,7 +375,7 @@ func (a *App) refreshNativeInventory(ctx context.Context) error {
 				if len(results.Items) > 0 {
 					q := results.Items[0]
 					if q.Result != nil {
-						if e := a.projectInventoryCommand(ctx, enrollment.ID, kind, q.Result.Raw, q.CompletedAt); e != nil {
+						if e := a.retainInventoryCommand(ctx, enrollment.ID, kind, q.Result.Raw, q.CompletedAt, false); e != nil {
 							return e
 						}
 					}
@@ -439,7 +456,7 @@ func (a *App) backfillInventoryStatus(ctx context.Context, enrollment storage.En
 	if e != nil {
 		return e
 	}
-	return a.retainInventoryStatus(ctx, &enrollment, ddm.StatusUpdate{FullReport: true, Values: values, ReceivedAt: at, Raw: raw})
+	return a.Inventory.ObserveStatus(ctx, "", enrollment.ID, ddm.StatusUpdate{FullReport: true, Values: values, ReceivedAt: at, Raw: raw})
 }
 
 // retainInventoryStatus attaches authenticated issuance provenance while retaining per-item times.
@@ -458,6 +475,29 @@ func (a *App) retainInventoryStatus(ctx context.Context, e *storage.Enrollment, 
 		}
 		times[v.Path] = at
 	}
-	_, err = a.Inventory.Observe(ctx, e.Device.SerialNumber, inventory.Observation{Source: inventory.EnrollmentReference("ddm.status", e.ID), ObservedAt: u.ReceivedAt, ExpiresAt: u.ReceivedAt.Add(24 * time.Hour), Fields: fields, FieldTimes: times, Raw: append(json.RawMessage(nil), u.Raw...), Native: identity})
-	return err
+	return a.retainInventoryObservation(ctx, inventory.Observation{Source: inventory.EnrollmentReference("ddm.status", e.ID), ObservedAt: u.ReceivedAt, ExpiresAt: u.ReceivedAt.Add(24 * time.Hour), Fields: fields, FieldTimes: times, Raw: append(json.RawMessage(nil), u.Raw...), Native: identity}, true)
+}
+
+// retainInventoryObservation retains fresh receipt provenance using the library's
+// original history semantics. Backfill atomically reuses existing originals and
+// cannot qualify legacy evidence or downgrade an authenticated observation.
+func (a *App) retainInventoryObservation(ctx context.Context, o inventory.Observation, fresh bool) error {
+	if fresh {
+		_, err := a.Inventory.Observe(ctx, "", o)
+		return err
+	}
+	return a.Inventory.Backend.Update(ctx, func(tx inventory.Tx) error {
+		view := &inventory.Repository{Backend: inventorySnapshot{Backend: a.Inventory.Backend, Reader: tx}}
+		history, err := view.History(ctx, o.Source)
+		if err != nil {
+			return err
+		}
+		for _, previous := range history {
+			if previous.ObservedAt.Equal(o.ObservedAt) && bytes.Equal(previous.Raw, o.Raw) {
+				return nil
+			}
+		}
+		_, err = a.Inventory.ObserveTx(ctx, tx, "", o)
+		return err
+	})
 }

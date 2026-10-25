@@ -51,6 +51,9 @@ func TestInventorySerialHTTP(t *testing.T) {
 		return d
 	}
 	cloud := observe("axm.device", "opaque", `{ "id":"opaque", "type":"orgDevices", "attributes":{"serialNumber":"SER","deviceModel":"Apple Model","future":9007199254740993},"relationships":{"x":{"data":null}}}`, nil, now)
+	if w := rbacRequest(a, "GET", "/devices?account=apple;foreign", root, ""); w.Code != 403 {
+		t.Fatal("query parsing bypassed authorization", w.Code)
+	}
 	if w := rbacRequest(a, "GET", "/inventory/serials/SER", root, ""); w.Code != 403 {
 		t.Fatal(w.Code)
 	}
@@ -187,7 +190,7 @@ func TestInventoryQueryContinuations(t *testing.T) {
 	if cursor != "" {
 		t.Fatal("unexpected continuation")
 	}
-	for _, path := range []string{"/devices?serial=SER", "/devices?uuid=old", "/devices?managed=true", "/devices?source=axm.device&source=mdm.identity", "/devices?cursor=old-uuid", "/devices?cursor=e30", "/devices?where=" + url.QueryEscape(`[{"field":"serial","operator":"eq","value":"SER"}]`), "/devices?where=" + url.QueryEscape(`[{"field":"data.attributes.serialNumber","operator":"eq","value":"SER"}]`), "/inventory/serials/SER?source=axm.device"} {
+	for _, path := range []string{"/devices?account=a;b", "/devices?account=a&where=%zz", "/devices?account=%ff%", "/inventory/exports?account=a;b", "/inventory/reports?where=%zz", "/inventory/raw/devices?account=a;b", "/inventory/serials/SER?where=%zz", "/devices?serial=SER", "/devices?uuid=old", "/devices?managed=true", "/devices?source=axm.device&source=mdm.identity", "/devices?cursor=old-uuid", "/devices?cursor=e30", "/devices?where=" + url.QueryEscape(`[{"field":"serial","operator":"eq","value":"SER"}]`), "/devices?where=" + url.QueryEscape(`[{"field":"data.attributes.serialNumber","operator":"eq","value":"SER"}]`), "/inventory/serials/SER?source=axm.device"} {
 		get(path, 400)
 	}
 	get("/devices/old-uuid", 404)
