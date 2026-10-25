@@ -25,6 +25,21 @@ Separate processes must coordinate their aggregate traffic. Page walkers preserv
 the first page's version only after all pages and callbacks succeed. Incremental
 queries apply to assignments and users, not assets.
 
+`AssetsQuery.Unlimited` retains three query states. Apple returns a separate typed
+`unlimitedAssets` array when true, excludes unlimited assets when false, and uses
+`totalCount: 2147483647` in `assets` when omitted. `AssetRecord.Stock` interprets
+that exact sentinel as unlimited inventory. Optional numeric pointers retain
+unreported counts without inventing zero availability. `UnlimitedAssetRecord`
+omits available, total and retired counts. Both record types and `AssetsPage`
+retain complete original JSON in `Raw`, including unknown fields and explicit
+nulls. Typed edits do not modify that original evidence.
+
+`WalkAssets` visits both arrays through `AssetInventory`, preserving their source
+representation. It retains all filters, starts at page zero, follows empty pages,
+and bounds traversal with a positive page cap and caller context. No checkpoint
+is returned on request, pagination, cancellation or callback failure. Unlimited
+inventory does not establish completed licensing, dispatch or installation.
+
 Accepted mutations return event IDs. Completion requires COMPLETE status, matching
 positive requested/completed counts and no failures. One successful notification
 batch does not settle a larger event. Optional bounded GET retries cover 429/5xx
@@ -51,7 +66,8 @@ service acceptance.
 ## Verification
 
 The package's controlled HTTP tests cover token/location isolation, ownership,
-dynamic limits, pagination, user lifecycle, partial outcomes, notification
+dynamic limits, finite/missing/unlimited asset stock, sentinel and unknown-field
+fidelity, bounded/cancelled pagination, user lifecycle, partial outcomes, notification
 authentication, retries and cancellation. The compiled example waits for successful
 licensing before constructing an installation command. See the
 [operations guide](../../operations/apps-and-books.md) for polling intervals and
@@ -62,6 +78,7 @@ the [live checks](../../testing/lab.md#apple-management-feature-checks).
 - [Client and tests](../../../devicemanagement/appleplatformservices/appsbooks)
 - [Authentication and ownership](https://developer.apple.com/documentation/devicemanagement/getting-started-with-the-management-api)
 - [Assets and assignment restrictions](https://developer.apple.com/documentation/devicemanagement/managing-assets)
+- [Unlimited asset schema](https://developer.apple.com/documentation/devicemanagement/unlimitedresponseasset)
 - [Users and association](https://developer.apple.com/documentation/devicemanagement/managing-users)
 - [Pagination](https://developer.apple.com/documentation/devicemanagement/using-paginated-endpoints)
 - [Dynamic service configuration](https://developer.apple.com/documentation/devicemanagement/service-config)

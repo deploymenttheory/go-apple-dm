@@ -33,6 +33,35 @@ only after every page and callback succeeds. Preserve that version for the next
 incremental assignments/users query. Assets do not accept `sinceVersionId`.
 An empty page may still have a next page; changes to `totalPages` are not an end signal.
 
+`AssetsQuery.Unlimited` is a `*bool`: `new(true)` asks Apple to include its
+separate `unlimitedAssets` array, `new(false)` excludes unlimited assets, and nil
+omits the filter. With omission Apple represents unlimited free assets in
+`assets` using `totalCount: 2147483647`. This is a sentinel, not finite stock.
+See Apple's [asset retrieval semantics](https://developer.apple.com/documentation/devicemanagement/managing-assets)
+and [unlimited record schema](https://developer.apple.com/documentation/devicemanagement/unlimitedresponseasset).
+
+`AssetsPage.Assets` contains `AssetRecord` values and `UnlimitedAssets` contains
+typed `UnlimitedAssetRecord` values. Numeric pointers distinguish missing counts
+from reported zero; unlimited records have no available, total or retired count.
+Use `AssetRecord.Stock()` or walker `AssetInventory.Stock()` to distinguish
+`StockUnknown`, `StockFinite` (including zero), and `StockUnlimited`. Consult
+`LicenseStock.Available` only for `StockFinite`. Never subtract assigned counts
+from the sentinel to calculate finite availability.
+
+`WalkAssets` visits `assets` then `unlimitedAssets` on each page. Exactly one of
+`AssetInventory.Record` or `Unlimited` is populated. A sentinel-bearing `Record`
+still reports `StockUnlimited`. All filters persist across pages, starting at
+page zero; context cancellation and callback errors stop traversal without a
+checkpoint. Choose a positive maximum page count and a context deadline.
+The [compiled traversal example](../../devicemanagement/appleplatformservices/appsbooks/example_test.go)
+shows the stock distinction. Keep each observation with its location identity.
+
+Each page and record exposes complete original JSON in `Raw`; retain it for
+source export, unknown fields, explicit nulls and exact large integers. Marshalling
+the typed value is a projection and does not reproduce unknown fields. Typed
+field edits leave `Raw` unchanged. Availability, including unlimited inventory,
+establishes no licensing, dispatch or installation outcome.
+
 For a device app, check the purchased `AssetRecord` with
 `CheckAssignment(true, false)` and associate its `adamId`/`pricingParam` with serial
 numbers. For user apps or books, create or look up a user, then associate with
