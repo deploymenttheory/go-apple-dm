@@ -103,8 +103,16 @@ appear in account read responses. Named Apple accounts are sources in one fleet,
 authorization tenants. The server records the actual ADE, account-driven or profile-based issuance flow,
 including User Enrollment, and carries it into issued certificate evidence. Native
 adapters attach the enrollment's pinned issued certificate method and serial only to
-fresh authenticated check-ins, command receipts and validated status receipts. Historical
-backfills never obtain report authentication from the current certificate. They atomically
+fresh Authenticate, command and validated status receipts. A server-owned Authenticate
+observer receives the successful original within the protocol/event transaction, separately
+from lifecycle-state projection. Identity facts come only from that receipt's supplied
+fields and original plist, never merged persistent device state. Idle polls, other
+connections and omitted Authenticate fields cannot rebadge historical hardware facts.
+Native serial context requires an actual Authenticate or DeviceInformation serial field,
+or a retained authenticated report of that serial in the same enrollment. Certificate
+method provenance and an unchecked stored serial never qualify serial-omitting command
+or DDM facts. A later actual serial receipt cannot retrospectively qualify old reports.
+Historical backfills never obtain report authentication from the current certificate. They atomically
 reuse already-retained originals and receipt times, preserving captured fields and per-item
 times without downgrading or duplicating provenance; missing historical provenance stays incomplete after new issuance.
 Fresh authenticated receipts retain normal library history semantics even when original

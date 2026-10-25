@@ -151,8 +151,21 @@ not fabricate a replacement full report. The reference server records the profil
 issuance flow and carries it into issued certificate evidence. Only fresh authenticated
 check-ins, acknowledged command receipts and validated status receipts attach the
 pinned certificate's recorded ADE, account-driven Device Enrollment, profile-based
-Device Enrollment or User Enrollment provenance. A channel or account name supplies
-no enrollment method.
+Device Enrollment or User Enrollment provenance. The service supplies the original
+successful Authenticate receipt separately from its connection-state observer.
+`mdm.identity` retains that receipt's exact plist and only its reported fields,
+including unknown members. Neither an Idle poll nor a command connection authenticates
+older stored device fields. A same-certificate Authenticate may leave operational
+`DeviceInfo` unchanged; inventory still records only the current receipt, at its receipt
+time. Omitted older unverified fields remain unchecked; previously qualified native
+fields remain in history for explicit resolution. A native serial comes from an actual
+Authenticate `SerialNumber` or DeviceInformation `QueryResponses.SerialNumber` receipt,
+or a previously retained authenticated report of that serial for the same enrollment.
+A serial-omitting command or DDM receipt cannot borrow an unchecked `DeviceInfo` serial
+merely because a newer certificate's method is known. Such originals stay outside
+hardware correlation; a later serial receipt never retroactively qualifies them.
+Subsequent fresh receipts may use the genuine retained binding. Stored device state,
+channels and account names supply neither a serial proof nor an enrollment method.
 
 Background sweeps retain historical enrollment, acknowledged-command and effective
 status evidence without consulting the current certificate for report authentication.
@@ -215,6 +228,8 @@ The Apple record must contain an actual `orgDevices` resource. The native record
 carry authenticated eligible method and serial provenance. User Enrollment is excluded,
 even when serials match. A new original, absence or disconnection invalidates the link;
 repeat explicit correlation after a refresh. Correlation changes no source originals.
+Use a native Authenticate (`mdm.identity`), command or DDM receipt record for the native
+side. The separate `enrollment` lifecycle metadata is not a hardware report.
 
 Resolve only current checked links with `POST /inventory/raw/devices/{apple_id}/resolve`.
 This is a read operation requiring `readRawInventory`. Supply `mappings`, whose named

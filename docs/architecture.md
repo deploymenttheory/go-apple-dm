@@ -58,7 +58,12 @@ enrollment-method provenance stays incomplete and cannot establish a hardware li
 The reference adapters retain protocol evidence independently of this relationship.
 The server records actual profile-issuance methods with issued certificate evidence and
 attaches that provenance only on fresh native receipts through the enrollment's pinned
-certificate. Background replay preserves captured report provenance and leaves missing
+certificate. The service provides an explicit original Authenticate receipt observer,
+separate from connection-state projection. Identity inventory retains only fields supplied
+by that receipt; Idle polls and omitted fields cannot qualify older merged device facts.
+Serial-omitting native receipts require a previously captured authenticated serial binding,
+not an unchecked stored device serial or a newly known certificate method.
+Background replay preserves captured report provenance and leaves missing
 historical authentication or method evidence unchecked. Backfill atomically reuses exact
 retained originals; fresh authenticated receipts retain normal history semantics even
 when reported values and injected receipt times are unchanged. Serial inspection exposes separate resources before enrollment and checked
