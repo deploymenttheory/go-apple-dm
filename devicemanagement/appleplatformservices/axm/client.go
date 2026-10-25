@@ -294,6 +294,12 @@ func (c *Client) do(ctx context.Context, r request, out any) error {
 	}
 	defer func() { _ = resp.Body.Close() }()
 	body, err := io.ReadAll(io.LimitReader(resp.Body, maxBody))
+	// A response can finish concurrently with cancellation and return EOF
+	// rather than a transport error. Preserve the request's cancellation before
+	// interpreting an incomplete or empty body as malformed JSON.
+	if ctx.Err() != nil {
+		return fmt.Errorf("%w: reading body: %w", ErrTransport, ctx.Err())
+	}
 	if err != nil {
 		return fmt.Errorf("%w: reading body: %w", ErrTransport, err)
 	}
