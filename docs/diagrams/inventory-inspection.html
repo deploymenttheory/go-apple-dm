@@ -5508,6 +5508,7 @@ svg[data-purpose-filter] g[data-purpose-highlight] > path { stroke-width: 2.4; }
         </div>
         <ul>
           <li>&bull; readInventory exposes metadata and checked links. readRawInventory permits originals, history and arbitrary source mappings.</li>
+          <li>&bull; Raw JSON and NDJSON exports carry exact original_json bytes. ABM acceptance matches the current synchronization generation and complete coverage membership; prior history cannot satisfy those assertions.</li>
         </ul>
       </div>
 
@@ -5528,11 +5529,13 @@ svg[data-purpose-filter] g[data-purpose-highlight] > path { stroke-width: 2.4; }
           <h3>Implementation</h3>
         </div>
         <ul>
-          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/0ded54bb9a232821b15be8d7cf9f0a88b845575e/server/internal/app/inventory.go" target="_blank" rel="noopener noreferrer">native: Native device report</a></li>
-          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/0ded54bb9a232821b15be8d7cf9f0a88b845575e/devicemanagement/inventory/records.go" target="_blank" rel="noopener noreferrer">cloudEvidence: Apple source evidence</a></li>
-          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/0ded54bb9a232821b15be8d7cf9f0a88b845575e/server/internal/app/inventory.go" target="_blank" rel="noopener noreferrer">nativeEvidence: Native source evidence</a></li>
-          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/0ded54bb9a232821b15be8d7cf9f0a88b845575e/devicemanagement/inventory/records.go" target="_blank" rel="noopener noreferrer">correlate: Correlate serials</a></li>
-          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/0ded54bb9a232821b15be8d7cf9f0a88b845575e/server/internal/app/inventory_inspection.go" target="_blank" rel="noopener noreferrer">resolve: Resolve declared paths</a></li>
+          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/da9ffc5ff613d47d0153f82ce8c7ab59b8f73d01/server/internal/app/inventory.go" target="_blank" rel="noopener noreferrer">native: Native device report</a></li>
+          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/da9ffc5ff613d47d0153f82ce8c7ab59b8f73d01/devicemanagement/inventory/records.go" target="_blank" rel="noopener noreferrer">cloudEvidence: Apple source evidence</a></li>
+          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/da9ffc5ff613d47d0153f82ce8c7ab59b8f73d01/server/internal/app/inventory.go" target="_blank" rel="noopener noreferrer">nativeEvidence: Native source evidence</a></li>
+          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/da9ffc5ff613d47d0153f82ce8c7ab59b8f73d01/devicemanagement/inventory/records.go" target="_blank" rel="noopener noreferrer">correlate: Correlate serials</a></li>
+          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/da9ffc5ff613d47d0153f82ce8c7ab59b8f73d01/server/internal/app/inventory_inspection.go" target="_blank" rel="noopener noreferrer">resolve: Resolve declared paths</a></li>
+          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/da9ffc5ff613d47d0153f82ce8c7ab59b8f73d01/devicemanagement/inventory/views.go" target="_blank" rel="noopener noreferrer">Raw source export</a></li>
+          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/da9ffc5ff613d47d0153f82ce8c7ab59b8f73d01/server/lab/live_abm.go" target="_blank" rel="noopener noreferrer">ABM acceptance</a></li>
         </ul>
       </div>
     </div>

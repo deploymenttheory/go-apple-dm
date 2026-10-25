@@ -2,7 +2,7 @@
   "schema_version": 1,
   "diagram_type": "architecture",
   "meta": {
-    "title": "Reference-server Bench System Map",
+    "title": "Reference-server Lab System Map",
     "quality_profile": "showcase",
     "colour_profile": "purpose-v1",
     "locale": "en",
@@ -15,7 +15,7 @@
     ],
     "repository": {
       "url": "https://github.com/deploymenttheory/go-apple-dm",
-      "revision": "69d3e810d136377ec2e7b21e1da64563e3feb351"
+      "revision": "da9ffc5ff613d47d0153f82ce8c7ab59b8f73d01"
     }
   },
   "components": [
@@ -35,7 +35,7 @@
       ],
       "sources": [
         {
-          "path": "server/internal/bench/workspace.go"
+          "path": "server/lab/workspace.go"
         }
       ]
     },
@@ -43,7 +43,7 @@
       "id": "bench-harness",
       "type": "backend",
       "purpose": "service",
-      "label": "Bench harness",
+      "label": "Lab harness",
       "sublabel": "CLI · catalogue · supervisor",
       "pos": [
         620,
@@ -55,13 +55,13 @@
       ],
       "sources": [
         {
-          "path": "server/internal/dmctl/benchverbs.go"
+          "path": "server/internal/dmctl/labverbs.go"
         },
         {
-          "path": "server/internal/bench/catalog.go"
+          "path": "server/lab/catalog.go"
         },
         {
-          "path": "server/internal/bench/environment.go"
+          "path": "server/lab/live_abm.go"
         }
       ]
     },
@@ -70,7 +70,7 @@
       "type": "database",
       "purpose": "artifact",
       "label": "Scenario reports",
-      "sublabel": "Private JSON + JUnit",
+      "sublabel": "Private JSON · JUnit · HTML",
       "pos": [
         1170,
         70
@@ -81,7 +81,7 @@
       ],
       "sources": [
         {
-          "path": "server/internal/bench/catalog.go"
+          "path": "server/lab/report.go"
         }
       ]
     },
@@ -159,7 +159,7 @@
       ],
       "sources": [
         {
-          "path": "server/internal/bench/environment.go"
+          "path": "server/lab/environment.go"
         }
       ]
     },
@@ -202,12 +202,27 @@
           "path": "devicemanagement/storage/storagetest/suite.go"
         }
       ]
+    },
+    {
+      "id": "live-apple",
+      "type": "external",
+      "purpose": "neutral",
+      "label": "Live Apple services",
+      "sublabel": "Named account · explicit assignment",
+      "pos": [
+        70,
+        710
+      ],
+      "size": [
+        300,
+        100
+      ]
     }
   ],
   "boundaries": [
     {
       "kind": "region",
-      "label": "Bench operation and scenario reporting",
+      "label": "Lab operation and scenario reporting",
       "wraps": [
         "workspace-input",
         "bench-harness",
@@ -253,6 +268,14 @@
       "wraps": [
         "direct-contracts",
         "contract-artifact"
+      ],
+      "pad": 28
+    },
+    {
+      "kind": "region",
+      "label": "Live account services",
+      "wraps": [
+        "live-apple"
       ],
       "pad": 28
     }
@@ -310,6 +333,13 @@
       "to": "contract-artifact",
       "label": "Go test assertions",
       "purpose": "artifact"
+    },
+    {
+      "id": "live-apple-http",
+      "from": "shared-system",
+      "to": "live-apple",
+      "label": "Live Apple APIs",
+      "purpose": "transport"
     }
   ],
   "cards": [
@@ -317,7 +347,7 @@
       "title": "Read from the centre",
       "items": [
         "The reference server is the system under test. Surrounding boxes identify who controls it, which actors exchange protocols with it, and where evidence goes.",
-        "The bench harness groups the CLI, scenario runner and supervisor. The server groups the shared runtime and application; these are logical roles, not extra processes.",
+        "The lab harness groups the CLI, scenario runner and supervisor. The server groups the shared runtime and application; these are logical roles, not extra processes.",
         "Owned runtimes can run embedded or as a built process. The supervisor waits for readiness and stops the runtime before closing fixtures; attaching to an existing HTTPS server skips runtime ownership."
       ],
       "dot": "neutral"
@@ -326,14 +356,17 @@
       "title": "Two different environments",
       "items": [
         "Simulated runs combine a synthetic device with local Apple-service fixtures. Live runs use real credentials and the appropriate real services.",
-        "Contract suites exercise interfaces directly and write their own Go test output. Their results do not flow into bench JSON/JUnit reports."
+        "Contract suites exercise interfaces directly and write their own Go test output. Their results do not flow into lab JSON/JUnit reports.",
+        "ABM checks retain current-generation originals and exact exports, verify coverage membership and explicitly correlate authenticated serials. Empty sources remain unexercised; partial synchronization remains blocked.",
+        "Designated assignment requires per-device CSV and linkage readback, then restores the original service. Each request keeps separate private recovery evidence; fixture passes do not prove live Apple compatibility."
       ],
       "dot": "neutral"
     },
     {
       "title": "Reading and protocol references",
       "items": [
-        "Lab scope and operation — https://github.com/deploymenttheory/go-apple-dm/blob/main/docs/testing/lab.md",
+        "Lab scope and operation — https://github.com/deploymenttheory/go-apple-dm/blob/da9ffc5ff613d47d0153f82ce8c7ab59b8f73d01/docs/testing/lab.md",
+        "ABM acceptance — https://github.com/deploymenttheory/go-apple-dm/blob/da9ffc5ff613d47d0153f82ce8c7ab59b8f73d01/docs/operations/abm-assignments.md",
         "Go test behavior — https://pkg.go.dev/cmd/go#hdr-Test_packages",
         "Sending MDM commands — https://developer.apple.com/documentation/devicemanagement/sending-mdm-commands-to-a-device",
         "Sending APNs requests — https://developer.apple.com/documentation/usernotifications/sending-notification-requests-to-apns"
