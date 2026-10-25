@@ -125,7 +125,11 @@ func TestLiveDDMRequiresReportsAndCleansUp(t *testing.T) {
 			}))
 			defer srv.Close()
 			e := &Environment{Instance: Instance{Mode: "live", URL: srv.URL}, Client: srv.Client()}
-			err = liveDDM(ctx, e, "test-mac")
+			phases := liveDDMPhases{}
+			err = liveDDMWithPhases(ctx, e, "test-mac", t.TempDir(), &phases)
+			if strings.HasPrefix(failure, "cleanup") && (phases.Exchange != "passed" || phases.Cleanup != "unresolved") {
+				t.Fatal("cleanup failure erased native proof", phases)
+			}
 			if (failure == "" || failure == "unchanged values") != (err == nil) {
 				t.Fatalf("live result: %v", err)
 			}

@@ -17,7 +17,7 @@ import (
 
 // TestLiveMDMRequiresDeviceEvidence checks that live MDM requires device evidence.
 func TestLiveMDMRequiresDeviceEvidence(t *testing.T) {
-	for _, name := range []string{"missing device", "missing enrollment", "incomplete enrollment", "queue unavailable", "queue refused", "push unavailable", "push rejected", "cancelled", "result unavailable", "pending then acknowledged", "malformed result", "device error", "invalid plist", "missing inventory", "timeout"} {
+	for _, name := range []string{"missing device", "missing enrollment", "incomplete enrollment", "queue unavailable", "queue refused", "push unavailable", "push rejected", "cancelled", "result unavailable", "pending then acknowledged", "boolean inventory", "malformed result", "device error", "invalid plist", "missing inventory", "timeout"} {
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
 			var polls atomic.Int32
@@ -47,14 +47,11 @@ func TestLiveMDMRequiresDeviceEvidence(t *testing.T) {
 								_, _ = w.Write([]byte(`{"Status":"NotNow"}`))
 								return
 							}
-							answer, err := plist.Marshal(
-								map[string]any{
-									"QueryResponses": map[string]any{
-										"OSVersion":    "26.0",
-										"BuildVersion": "25A123",
-									},
-								},
-							)
+							queries := map[string]any{"OSVersion": "26.0", "BuildVersion": "25A123"}
+							if name == "boolean inventory" {
+								queries["IsSupervised"] = true
+							}
+							answer, err := plist.Marshal(map[string]any{"QueryResponses": queries})
 							if err != nil {
 								t.Error(err)
 								return
@@ -122,7 +119,7 @@ func TestLiveMDMRequiresDeviceEvidence(t *testing.T) {
 				device = ""
 			}
 			err := liveMDM(ctx, e, device)
-			if name == "pending then acknowledged" {
+			if name == "pending then acknowledged" || name == "boolean inventory" {
 				if err != nil {
 					t.Fatal(err)
 				}
