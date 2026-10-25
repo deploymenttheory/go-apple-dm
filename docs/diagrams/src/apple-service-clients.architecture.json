@@ -35,7 +35,7 @@
     ],
     "repository": {
       "url": "https://github.com/deploymenttheory/go-apple-dm",
-      "revision": "840163310d08110feab368693b8a58c5f69c510f"
+      "revision": "c493d10921d0b6e220f4f65a7116f8092d8225fb"
     },
     "colour_profile": "purpose-v1",
     "legend": {
@@ -120,8 +120,8 @@
     {
       "id": "axmclient",
       "type": "backend",
-      "label": "axm.Client",
-      "sublabel": "OAuth, evidence and activities",
+      "label": "AxM client and workflows",
+      "sublabel": "Named intent, logs and readback",
       "pos": [
         345.0,
         260.0
@@ -132,16 +132,16 @@
       ],
       "sources": [
         {
-          "path": "devicemanagement/appleplatformservices/axm/auth.go",
-          "label": "ES256 assertion"
+          "path": "devicemanagement/appleplatformservices/axm/workflows.go",
+          "label": "Apple activities"
         },
         {
-          "path": "devicemanagement/appleplatformservices/axm/collection/collection.go",
-          "label": "atomic source streams"
+          "path": "server/axmassignment/worker.go",
+          "label": "durable assignment worker"
         },
         {
-          "path": "devicemanagement/appleplatformservices/axm/activitylog.go",
-          "label": "activity downloads and outcome verification"
+          "path": "server/axmassignment/store.go",
+          "label": "account and credential fencing"
         }
       ],
       "purpose": "transport"
@@ -419,6 +419,7 @@
       "dot": "service",
       "title": "Independent collection and correlation",
       "items": [
+        "Explicit account-scoped assignment intent persists targets, acceptance, terminal CSV outcomes and separate linkage convergence. Account, credential and service binding fences stale workers; uncertain submissions reconcile read-only without another POST.",
         "The collection package emits raw organization-device, detail, assignment and coverage resources without importing inventory. Raw list documents retain included resources and unknown envelope fields.",
         "The host selects streams and owns account credentials, scheduling, leases and an atomic evidence/outcome/checkpoint sink. Inventory synchronization composes the same collector.",
         "A new collector resumes committed versioned checkpoints. Failures retain successful evidence; only an exhausted successful list stream emits completion. Completion does not promise an Apple-side snapshot.",

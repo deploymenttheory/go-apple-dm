@@ -10,6 +10,7 @@ import (
 	"encoding/json"
 	"encoding/pem"
 	"errors"
+	"io"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -24,7 +25,6 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/inventory"
 	"github.com/deploymenttheory/go-apple-dm/server/axmassignment"
 	"github.com/deploymenttheory/go-apple-dm/server/internal/app"
-	"io"
 )
 
 // axmKey generates a P-256 private key and its SEC 1 PEM encoding.
