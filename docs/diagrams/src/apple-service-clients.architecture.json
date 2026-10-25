@@ -46,7 +46,7 @@
     ],
     "repository": {
       "url": "https://github.com/deploymenttheory/go-apple-dm",
-      "revision": "8f46ed245c22f7bce8bdabcfb21eabffc4871fe1"
+      "revision": "c58adecfb8f2fa5835973e9ce965538bd216ee0d"
     },
     "colour_profile": "purpose-v1",
     "legend": {
@@ -626,9 +626,10 @@
         "Current assignment proof — https://github.com/deploymenttheory/go-apple-dm/blob/bb39d3a24680dffbdd4863361c9be1718615d704/devicemanagement/appleplatformservices/appsbooks/assignment.go",
         "The reference server exposes explicit location, licensing-job and content operations through dedicated API/CLI grants. Sealed SQL state, required event capture and supervised workers compose the SDK without an ABM inventory prerequisite.",
         "Native dispatch reserves its declaration or command identity atomically with audit and ownership. MDM wakes use the durable outbox after commit. Privileged native-observation reads fresh retained facts without stepping the workflow; explicit status-refresh queues owned verification queries.",
-        "Reference-server composition — https://github.com/deploymenttheory/go-apple-dm/blob/8f46ed245c22f7bce8bdabcfb21eabffc4871fe1/server/internal/app/managedcontent.go",
-        "Atomic native adapters — https://github.com/deploymenttheory/go-apple-dm/blob/8f46ed245c22f7bce8bdabcfb21eabffc4871fe1/server/internal/app/managedcontent_adapters.go",
-        "Read-only native inspection and explicit queries — https://github.com/deploymenttheory/go-apple-dm/blob/8f46ed245c22f7bce8bdabcfb21eabffc4871fe1/server/internal/app/managedcontent_inspection.go"
+        "Reference-server composition — https://github.com/deploymenttheory/go-apple-dm/blob/c58adecfb8f2fa5835973e9ce965538bd216ee0d/server/internal/app/managedcontent.go",
+        "Atomic native adapters — https://github.com/deploymenttheory/go-apple-dm/blob/c58adecfb8f2fa5835973e9ce965538bd216ee0d/server/internal/app/managedcontent_adapters.go",
+        "Read-only native inspection and explicit queries — https://github.com/deploymenttheory/go-apple-dm/blob/c58adecfb8f2fa5835973e9ce965538bd216ee0d/server/internal/app/managedcontent_inspection.go",
+        "A newer authenticated ManagedButUninstalled report clears an older installed/version claim while preserving historical processing and original source evidence. A later installed-app query can establish reinstallation."
       ]
     }
   ]

@@ -15,7 +15,7 @@
     ],
     "repository": {
       "url": "https://github.com/deploymenttheory/go-apple-dm",
-      "revision": "8f46ed245c22f7bce8bdabcfb21eabffc4871fe1"
+      "revision": "c58adecfb8f2fa5835973e9ce965538bd216ee0d"
     }
   },
   "components": [
@@ -410,9 +410,10 @@
         "The shared server exposes Apps and Books locations, explicit licensing jobs, authenticated callbacks and managed-content operations. API and CLI use dedicated grants; routine principals receive none implicitly. Ordinary reads omit location and callback credentials.",
         "Required capture joins native queue/publication, ownership and sealed state writes. Callback receipts commit before acknowledgment. External Apple requests and APNs delivery run outside those local transactions; unknown outcomes require explicit reconciliation.",
         "Licensing, native dispatch, processing and current installation remain separate observations. Fresh privileged native reads preserve source timestamps. Explicit status-refresh queues owned native queries; neither a command acknowledgment nor APNs acceptance establishes installation.",
-        "Runtime composition — https://github.com/deploymenttheory/go-apple-dm/blob/8f46ed245c22f7bce8bdabcfb21eabffc4871fe1/server/internal/app/managedcontent.go",
-        "Native observation and explicit status queries — https://github.com/deploymenttheory/go-apple-dm/blob/8f46ed245c22f7bce8bdabcfb21eabffc4871fe1/server/internal/app/managedcontent_inspection.go",
-        "Durable wake delivery — https://github.com/deploymenttheory/go-apple-dm/blob/8f46ed245c22f7bce8bdabcfb21eabffc4871fe1/server/internal/app/managedcontent_wake.go"
+        "Runtime composition — https://github.com/deploymenttheory/go-apple-dm/blob/c58adecfb8f2fa5835973e9ce965538bd216ee0d/server/internal/app/managedcontent.go",
+        "Native observation and explicit status queries — https://github.com/deploymenttheory/go-apple-dm/blob/c58adecfb8f2fa5835973e9ce965538bd216ee0d/server/internal/app/managedcontent_inspection.go",
+        "Durable wake delivery — https://github.com/deploymenttheory/go-apple-dm/blob/c58adecfb8f2fa5835973e9ce965538bd216ee0d/server/internal/app/managedcontent_wake.go",
+        "A newer authenticated ManagedButUninstalled report clears an older installed/version claim while preserving historical processing and original source evidence. A later installed-app query can establish reinstallation."
       ]
     },
     {
