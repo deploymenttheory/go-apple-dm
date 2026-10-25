@@ -2,7 +2,8 @@
 
 [`appsbooks`](../../devicemanagement/appleplatformservices/appsbooks/doc.go) implements
 Apple's version 2 licensing API for device/user apps and user books. The caller
-owns persistence, notification hosting and installation. Catalog metadata and
+can use optional atomic location persistence; notification hosting and installation
+remain caller-owned. Catalog metadata and
 subscriptions are outside this client.
 
 ## Location setup
@@ -24,6 +25,63 @@ on the next call. The client bounds requests by current asset, target and user
 limits and spaces HTTP requests by the location's rate limit. Separate processes
 must coordinate their aggregate rate. Discovered credentialed endpoints must stay
 on the configured HTTPS origin; redirects are not followed.
+
+## Atomic location workflows
+
+`NewWorkflow` composes the existing client with caller-owned `state.Store`; it
+introduces no inventory dependency. Supply one stable `Config.MDMID`, shared
+transport/clock options and empty `SToken`/`UID`. Share the workflow within a
+process; processes still coordinate Apple's aggregate per-location request rate.
+The server's sealed `statestore` implements this existing atomic contract. Protect
+its keyring and backups; memory state is suitable for tests and loses all state
+on restart. See the [compiled workflow example](../../devicemanagement/appleplatformservices/appsbooks/example_test.go).
+
+`Register(ctx, id, revision, sToken)` explicitly creates a caller-named location
+with revision zero or replaces its token at the current revision. It probes
+`ClientConfig` through a GET before committing anything. Apple's response `uId`
+is the immutable library identity; the decoded sToken's `token` is credential
+material, not that library UID. A replacement must match the persisted UID and
+MDM identity. Another MDM's `mdmInfo.id`, a wrong UID, expiry or a revision race
+rejects the replacement and retains the prior token and evidence. The store binds
+one UID to one local location, preventing aliases from sharing credentials.
+Ownership is never acquired by registration or reads. These checks follow
+Apple's [authentication and ownership contract](https://developer.apple.com/documentation/devicemanagement/getting-started-with-the-management-api).
+
+Safe metadata, separate sToken credentials and sensitive source evidence occupy
+distinct records. `Load` returns safe `Location` metadata, including revision,
+credential revision, token expiration and last observed `OwnerID` (empty means
+unclaimed). `LoadEvidence` explicitly returns privileged source data: raw client
+configuration may contain notification credentials, and user pages contain
+personal data. Apply separate authorization to this operation and source exports;
+ordinary location inspection must use `Load`. Byte-slice page/configuration fields
+preserve exact original JSON through persistence, including unknown fields,
+null, false and large integers.
+
+`Configure` is the explicit ownership/configuration write. It checks remote
+identity and validates the request, then atomically reserves a pending revision
+before sending the POST. Other configuration, refresh and token replacement
+operations reject pending state. A failed or crashed call leaves this reservation
+durable. After the original call/process has stopped, `Probe` performs a GET and
+publishes the observed configuration, clearing pending state without replaying
+any write. It also rejects foreign ownership. Operators must stop old processes
+before recovery and coordinate transfers: Apple offers no ownership CAS, and a
+local revision cannot fence a remote POST already in flight.
+
+`Refresh` reads all assets without filters and assignments/users incrementally
+from the last successful checkpoints. It retains the full asset page set and an
+ordered journal of complete assignment/user batches; callers derive their own
+views without guessed deletion semantics. The positive page cap applies to each
+traversal. Empty pages and changing versions are valid; only `nextPageIndex`
+controls continuation. As required by Apple's [pagination contract](https://developer.apple.com/documentation/devicemanagement/using-paginated-endpoints),
+only the first page's version becomes the next incremental checkpoint. All three
+source results and checkpoints commit together after complete traversal. Failure,
+cancellation or changed local revision preserves previous successful evidence.
+Every committed operation advances the revision, including replacement with a
+previously used token, so old work cannot publish after a token ABA sequence.
+
+The source journal grows with successful refreshes; applications choose refresh
+schedules, access controls and retention for their deployment. No background
+jobs, licensing mutations, installation or policy decisions are added by Workflow.
 
 ## Licensing and user lifecycle
 

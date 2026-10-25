@@ -1,7 +1,8 @@
 // Package appsbooks implements Apple's Apps and Books version 2 licensing API
 // for device/user apps and user books. It owns HTTP encoding, location identity,
 // dynamic request limits, pagination, user lifecycle and notification decoding.
-// The caller owns persistence, notification hosting, installation, reconciliation
+// Optional Workflow composes caller-owned atomic persistence. The caller owns
+// notification hosting, installation, reconciliation
 // schedules and human acceptance of user invitations. No catalog metadata,
 // subscriptions or automatic installation/uncertain mutation retry is included.
 //
@@ -16,6 +17,15 @@
 // typed finite/sentinel and unlimited arrays plus original JSON. WalkAssets visits
 // both representations with a page cap; use Stock to distinguish missing counts,
 // finite availability and unlimited inventory. Availability is not licensing.
+//
+// NewWorkflow accepts a caller-owned state.Store and stable MDM ID. Register
+// validates each location token through a read-only probe, preserving Apple's UID
+// across renewal. Tokens, safe metadata and sensitive raw evidence occupy separate
+// records. Load returns safe metadata; LoadEvidence requires privileged access.
+// Configure reserves durable pending state before an explicit ownership write;
+// Probe reconciles after the original operation has stopped. Refresh publishes
+// full assets and incremental assignment/user source pages and checkpoints only
+// after all traversals succeed. Revisions fence old work after any local change.
 //
 // Associate/CreateUsers return asynchronous Event IDs. Use authenticated
 // notifications plus EventStatus to establish completion. Registered users need

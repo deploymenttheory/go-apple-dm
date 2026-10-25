@@ -88,7 +88,8 @@ type AssetsPage struct {
 type AssignmentsPage struct {
 	ResponseMeta
 	Pagination
-	Assignments []Assignment `json:"assignments"`
+	Assignments []Assignment   `json:"assignments"`
+	Raw         jsontext.Value `json:"-"`
 }
 
 // UsersPage is a full or incremental user page. Retired and recreated users may
@@ -96,7 +97,8 @@ type AssignmentsPage struct {
 type UsersPage struct {
 	ResponseMeta
 	Pagination
-	Users []User `json:"users"`
+	Users []User         `json:"users"`
+	Raw   jsontext.Value `json:"-"`
 }
 
 // ManageAssetsRequest assigns or unassigns the assets to every listed target.
@@ -152,6 +154,7 @@ type ServiceConfiguration struct {
 
 // ClientConfiguration includes notification credentials. Do not log this value.
 type ClientConfiguration struct {
+	Raw jsontext.Value `json:"-"`
 	ResponseMeta
 	CountryISO2ACode            string   `json:"countryISO2ACode"`
 	DefaultPlatform             string   `json:"defaultPlatform"`
