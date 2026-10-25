@@ -127,6 +127,10 @@ func (a *App) observeInventoryEnrollment(ctx context.Context, id mdm.EnrollmentI
 	if err != nil {
 		return err
 	}
+	o.Native, err = a.inventoryIdentity(ctx, e)
+	if err != nil {
+		return err
+	}
 	if _, err = a.Inventory.Observe(ctx, e.Device.SerialNumber, o); err != nil {
 		return err
 	}
@@ -140,6 +144,10 @@ func (a *App) observeInventoryEnrollment(ctx context.Context, id mdm.EnrollmentI
 	}
 	if o.ObservedAt.IsZero() {
 		o.ObservedAt = at
+	}
+	o.Native, err = a.inventoryIdentity(ctx, e)
+	if err != nil {
+		return err
 	}
 	_, err = a.Inventory.Observe(ctx, e.Device.SerialNumber, o)
 	return err
@@ -203,6 +211,16 @@ func (a *App) projectInventoryCommand(ctx context.Context, id mdm.EnrollmentID, 
 	if value := inventory.String(o.Fields["QueryResponses.SerialNumber"]); value != "" {
 		serial = value
 	}
+	o.Native, err = a.inventoryIdentity(ctx, e)
+	if err != nil {
+		return err
+	}
+	if o.Native != nil && inventory.CanonicalSerial(serial) != inventory.CanonicalSerial(o.Native.Serial) {
+		// Keep the acknowledged contradictory original, but it cannot establish
+		// authenticated physical identity for the serial it asserts.
+		o.Native.Serial = serial
+		o.Native.Authenticated = false
+	}
 	_, err = a.Inventory.Observe(ctx, serial, o)
 	return err
 }
@@ -222,7 +240,7 @@ func (a *App) observeInventoryStatus(ctx context.Context, id mdm.EnrollmentID, u
 	if err != nil {
 		return err
 	}
-	return a.Inventory.ObserveStatus(ctx, e.Device.SerialNumber, id, u)
+	return a.retainInventoryStatus(ctx, e, u)
 }
 
 // collectNative queues eligible inventory commands and sends their ordinary APNs wake.
@@ -379,6 +397,10 @@ func (a *App) observeInventoryCertificate(ctx context.Context, id mdm.Enrollment
 	if e != nil {
 		return e
 	}
+	o.Native, e = a.inventoryIdentity(ctx, enrollment)
+	if e != nil {
+		return e
+	}
 	_, e = a.Inventory.Observe(ctx, enrollment.Device.SerialNumber, o)
 	return e
 }
@@ -417,5 +439,25 @@ func (a *App) backfillInventoryStatus(ctx context.Context, enrollment storage.En
 	if e != nil {
 		return e
 	}
-	return a.Inventory.ObserveStatus(ctx, enrollment.Device.SerialNumber, enrollment.ID, ddm.StatusUpdate{FullReport: true, Values: values, ReceivedAt: at, Raw: raw})
+	return a.retainInventoryStatus(ctx, &enrollment, ddm.StatusUpdate{FullReport: true, Values: values, ReceivedAt: at, Raw: raw})
+}
+
+// retainInventoryStatus attaches authenticated issuance provenance while retaining per-item times.
+func (a *App) retainInventoryStatus(ctx context.Context, e *storage.Enrollment, u ddm.StatusUpdate) error {
+	identity, err := a.inventoryIdentity(ctx, e)
+	if err != nil {
+		return err
+	}
+	fields := map[string]json.RawMessage{}
+	times := map[string]time.Time{}
+	for _, v := range u.Values {
+		fields[v.Path] = append(json.RawMessage(nil), v.Value...)
+		at := v.LastSeen
+		if at.IsZero() {
+			at = u.ReceivedAt
+		}
+		times[v.Path] = at
+	}
+	_, err = a.Inventory.Observe(ctx, e.Device.SerialNumber, inventory.Observation{Source: inventory.EnrollmentReference("ddm.status", e.ID), ObservedAt: u.ReceivedAt, ExpiresAt: u.ReceivedAt.Add(24 * time.Hour), Fields: fields, FieldTimes: times, Raw: append(json.RawMessage(nil), u.Raw...), Native: identity})
+	return err
 }

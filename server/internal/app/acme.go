@@ -414,6 +414,18 @@ func (s *acmeService) credentialHandler() http.Handler {
 				return
 			}
 		}
+		identity, err := s.app.inventoryIdentity(r.Context(), enrollment)
+		if err != nil {
+			writeError(w, http.StatusInternalServerError, err)
+			return
+		}
+		if identity != nil {
+			methodCtx := context.WithValue(r.Context(), inventoryMethodKey{}, identity.Method)
+			if err := s.app.enroll.retainInventoryMethod(methodCtx, binding, AdmissionGrant{ExpiresAt: s.app.cfg.Clock.Now().Add(time.Hour)}); err != nil {
+				writeError(w, http.StatusInternalServerError, err)
+				return
+			}
+		}
 		payload, err := s.acmePayload(
 			binding,
 			s.server.DirectoryURL(),

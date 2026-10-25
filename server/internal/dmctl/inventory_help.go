@@ -5,12 +5,23 @@ const devicesHelp = `Device inventory
 
 Usage of devices:
   dmctl devices list [--focus combined|apple|managed] [--where JSON]
-  dmctl devices get DEVICE_ID [--raw]
+  dmctl devices get RESOURCE_ID [--raw]
+  dmctl devices inspect SERIAL [--raw]
+  dmctl devices evidence RESOURCE_ID [--raw]
+  dmctl devices resolve APPLE_RESOURCE_RECORD_ID --raw --file mappings.json
+  dmctl inventory correlate --file correlation.json
   dmctl devices fields [--raw]
   dmctl devices collect DEVICE_ID
 
-DEVICE_ID is an independent source record ID from devices list, not a serial,
-Apple resource ID or enrollment UDID. Native collection uses an enrollment source
+RESOURCE_ID is an independent source record ID from devices list, not a serial,
+Apple resource ID or enrollment UDID. Serial inspection finds independent sources without implicitly correlating or resolving.
+correlation.json contains {"apple":"APPLE_RECORD_ID","native":"NATIVE_RECORD_ID"}.
+Resolution uses caller-declared equivalent paths and requires checked links plus
+readRawInventory; complete history, originals, attempts and legacy envelopes also
+require this grant. Refreshing source evidence invalidates links until correlation
+is explicitly requested again. User Enrollment cannot establish a hardware link.
+
+Native collection uses an enrollment source
 record; use devices list --source enrollment to find one.
 
 Collect: request an asynchronous native inventory refresh

@@ -144,7 +144,7 @@ func TestInventoryCLIWorkflow(t *testing.T) {
 	if inventory.String(device.Snapshot.Fields["attributes.serialNumber"]) != "SERIAL" {
 		t.Fatal(device)
 	}
-	for _, args := range [][]string{{"devices", "get", device.ID}, {"devices", "fields"}, {"devices", "fields", "--raw"}, {"devices", "collect", device.ID}, {"inventory", "reports", "--focus", "apple"}, {"inventory", "export", "--format", "csv", "--columns", "meta.resource_id,meta.source"}, {"devices", "list", "--all"}, {"devices", "list", "--all", "--raw", "--output", "ndjson"}} {
+	for _, args := range [][]string{{"devices", "get", device.ID}, {"devices", "fields"}, {"devices", "fields", "--raw"}, {"devices", "inspect", "SERIAL"}, {"devices", "evidence", device.ID, "--raw"}, {"inventory", "reports", "--focus", "apple"}, {"inventory", "export", "--format", "csv", "--columns", "meta.resource_id,meta.source"}, {"devices", "list", "--all"}, {"devices", "list", "--all", "--raw", "--output", "ndjson"}} {
 		call(args...)
 	}
 	if out := call("devices", "get", device.ID, "--raw"); !strings.Contains(out, "private-value") {

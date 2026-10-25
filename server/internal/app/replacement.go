@@ -16,6 +16,7 @@ import (
 	"time"
 	"uuid"
 
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/correlation"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/cms"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/enroll"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/mdm"
@@ -31,12 +32,13 @@ import (
 const replacementSubjectPrefix = "dm-replace:"
 
 type identityEvidence struct {
-	Issuer       string    `json:"issuer,omitempty"`
-	EnrollmentID string    `json:"enrollmentId,omitempty"`
-	UDID         string    `json:"udid,omitempty"`
-	Serial       string    `json:"serial,omitempty"`
-	Method       string    `json:"method"`
-	NotAfter     time.Time `json:"notAfter"`
+	EnrollmentMethod correlation.Method `json:"enrollmentMethod,omitempty"`
+	Issuer           string             `json:"issuer,omitempty"`
+	EnrollmentID     string             `json:"enrollmentId,omitempty"`
+	UDID             string             `json:"udid,omitempty"`
+	Serial           string             `json:"serial,omitempty"`
+	Method           string             `json:"method"`
+	NotAfter         time.Time          `json:"notAfter"`
 }
 
 // recordIssuedIdentity persists issuance method, issuer and device binding by certificate
@@ -55,21 +57,50 @@ func (a *App) recordIssuedIdentity(ctx context.Context, c *x509.Certificate) err
 	if binding.Serial == "" {
 		binding.Serial = provenance.Serial
 	}
-	b, err := json.Marshal(
-		identityEvidence{
-			Issuer:       issuerFromContext(ctx),
-			Method:       method,
-			EnrollmentID: provenance.EnrollmentID,
-			NotAfter:     c.NotAfter,
-			UDID:         udid,
-			Serial:       binding.Serial,
-		},
-	)
+	enrollmentMethod, _ := ctx.Value(inventoryMethodKey{}).(correlation.Method)
+	if record, err := a.protocol.Get(ctx, inventoryProfileMethodKey(c.Subject.CommonName, binding.Serial, udid)); err == nil {
+		var recorded inventoryProfileMethod
+		if err := json.Unmarshal(record.Value, &recorded); err != nil {
+			return err
+		}
+		if recorded.Binding.EnrollmentUDID() == udid && recorded.Binding.Serial == binding.Serial {
+			enrollmentMethod = recorded.Method
+		}
+	} else if !errors.Is(err, state.ErrNotFound) {
+		return err
+	}
+	evidence := identityEvidence{
+		EnrollmentMethod: enrollmentMethod,
+		Issuer:           issuerFromContext(ctx),
+		Method:           method,
+		EnrollmentID:     provenance.EnrollmentID,
+		NotAfter:         c.NotAfter,
+		UDID:             udid,
+		Serial:           binding.Serial,
+	}
+	b, err := json.Marshal(evidence)
 	if err != nil {
 		return fmt.Errorf("identity evidence: %w", err)
 	}
 	k := "issued-identity:" + cms.Fingerprint(c)
 	err = a.protocol.Update(ctx, []string{k}, func(tx state.Tx) error {
+		previous, err := tx.Get(ctx, k)
+		if err != nil && !errors.Is(err, state.ErrNotFound) {
+			return err
+		}
+		if err == nil {
+			var retained identityEvidence
+			if err := json.Unmarshal(previous.Value, &retained); err != nil {
+				return err
+			}
+			// Certificate retries cannot adopt another flow's later issuance
+			// metadata, including when the old certificate lacked provenance.
+			evidence.EnrollmentMethod = retained.EnrollmentMethod
+			b, err = json.Marshal(evidence)
+			if err != nil {
+				return err
+			}
+		}
 		return tx.Put(ctx, state.Record{Key: k, Value: b, ExpiresAt: c.NotAfter})
 	})
 	if err != nil {
@@ -426,6 +457,15 @@ func (a *App) prepareReplacement(
 	if e.Capabilities.AppleSilicon == storage.CapabilityTrue {
 		hardware = enroll.MacAppleSilicon
 	}
+	identity, err := a.inventoryIdentity(ctx, e)
+	if err != nil {
+		return nil, err
+	}
+	previousMethod := correlation.Method("")
+	if identity != nil {
+		previousMethod = identity.Method
+	}
+	ctx = context.WithValue(ctx, inventoryMethodKey{}, previousMethod)
 	fresh, err := a.enroll.profileForDevice(
 		ctx,
 		b,

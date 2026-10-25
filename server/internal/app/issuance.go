@@ -123,6 +123,7 @@ func (e *enrollment) issueSCEP(
 			return nil, fmt.Errorf("issue certificate: %w", err)
 		}
 		ctx = context.WithValue(ctx, issuanceBindingKey{}, binding)
+		ctx = context.WithValue(ctx, inventoryMethodKey{}, evidence.EnrollmentMethod)
 		cert, err := e.local.Sign(ctx, csr, p)
 		if err != nil {
 			return nil, fmt.Errorf("renew identity: %w", err)
