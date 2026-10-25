@@ -284,8 +284,8 @@ func TestPagesAndDynamicLimits(t *testing.T) {
 		t.Context(),
 		appsbooks.AssetsQuery{},
 		2,
-		func(a appsbooks.AssetRecord) error {
-			if a.ProductType != "Book" {
+		func(a appsbooks.AssetInventory) error {
+			if a.Record.ProductType != "Book" {
 				t.Fatal(a)
 			}
 			return nil
