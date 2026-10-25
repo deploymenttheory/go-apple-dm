@@ -134,7 +134,7 @@ func (a *App) runManagedContent(ctx context.Context) error {
 						a.cfg.Logger.DebugContext(ctx, "managed content awaits operator or service", "operation", op.ID)
 					}
 				}
-				if next == "" {
+				if len(operations) == 0 || next == "" || next == after {
 					break
 				}
 				after = next

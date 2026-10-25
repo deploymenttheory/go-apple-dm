@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/ddm"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/event"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/mdm"
 	"net/http"
 	"time"
@@ -48,6 +49,8 @@ func managedContentActions() []adminauth.Action {
 func contentError(w http.ResponseWriter, err error) {
 	status := http.StatusServiceUnavailable
 	switch {
+	case errors.Is(err, event.ErrCapture):
+		status = http.StatusServiceUnavailable
 	case errors.Is(err, state.ErrNotFound), errors.Is(err, storage.ErrNotFound), errors.Is(err, ddm.ErrNotFound):
 		status = http.StatusNotFound
 	case errors.Is(err, appsbooks.ErrNotificationAuth):
@@ -95,6 +98,9 @@ func (a *App) managedContentRoutes() []adminRoute {
 	})
 	add("GET /managed-content/operations", ActionReadManagedContent, false, func(r *http.Request) (any, error) {
 		items, next, err := a.ManagedContent.Operations(r.Context(), r.URL.Query().Get("cursor"), 100)
+		if len(items) == 0 {
+			next = ""
+		}
 		return struct {
 			Items      []managedcontent.Operation
 			NextCursor string
@@ -175,6 +181,9 @@ func (a *App) managedContentRoutes() []adminRoute {
 	})
 	add("GET "+base+"/jobs", ActionReadAppsBooks, false, func(r *http.Request) (any, error) {
 		items, next, err := a.AppsBooks.Jobs(r.Context(), r.PathValue("location"), r.URL.Query().Get("cursor"), 100)
+		if len(items) == 0 {
+			next = ""
+		}
 		safe := make([]any, 0, len(items))
 		for _, item := range items {
 			safe = append(safe, safeJob(item))

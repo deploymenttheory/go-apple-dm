@@ -17,7 +17,6 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/mdm"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/paging"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/schema/commands"
-	"github.com/deploymenttheory/go-apple-dm/devicemanagement/schema/status"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/state"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/storage"
 	"github.com/deploymenttheory/go-apple-dm/server/service"
@@ -132,7 +131,7 @@ func (v contentDelivery) Submit(ctx context.Context, d managedcontent.Dispatch) 
 		}
 		key := deliveryKey(d.ID)
 		assetKey := contentAssetKey(d.Enrollment, d.Content.Asset.AdamID)
-		locks := []string{key, assetKey}
+		locks := []string{key, assetKey, contentServerKey("ownership", "native")}
 		for _, doc := range d.Declarations {
 			locks = append(locks, contentDeclarationKey(doc.Identifier))
 		}
@@ -297,59 +296,9 @@ func (v contentDelivery) inspectNative(ctx context.Context, d managedcontent.Dis
 				return out, managedcontent.ErrConflict
 			}
 		}
-		out.DeclarationPublished = true
-		statuses, err := v.a.Engine.DeclarationStatus(ctx, d.Enrollment)
-		if err != nil {
-			return out, err
-		}
-		var tokenSeen time.Time
-		for _, s := range statuses {
-			if s.Identifier == d.Declarations[0].Identifier && s.ServerToken == d.Declarations[0].ServerToken && !s.LastSeen.Before(created) {
-				tokenSeen = s.LastSeen
-			}
-		}
-		if tokenSeen.IsZero() {
-			return out, nil
-		}
-		values, err := v.a.Engine.StatusValues(ctx, d.Enrollment, ddm.StatusValueQuery{PathPrefix: "app.managed.list"}, paging.Page{Limit: 1000})
-		if err != nil {
-			return out, err
-		}
-		historical, bundle, err := v.declarativeContentHistory(ctx, d, created)
-		if err != nil {
-			return out, err
-		}
-		out.Terminal = historical
-		for _, value := range values.Items {
-			if value.Path != "app.managed.list" || value.LastSeen.Before(tokenSeen) {
-				continue
-			}
-			var apps status.AppManagedList
-			if json.Unmarshal(value.Value, &apps) != nil {
-				return out, managedcontent.ErrProtocol
-			}
-			out.ObservedAt = value.LastSeen
-			out.Raw = value.Value
-			for _, app := range apps.Value {
-				if (app.DeclarationIdentifier == nil || *app.DeclarationIdentifier != d.Declarations[0].Identifier) && (bundle == "" || app.Identifier != bundle) {
-					continue
-				}
-				out.ObservedAt = value.LastSeen
-				out.Raw = value.Value
-				if app.State != nil {
-					out.Terminal = out.Terminal || *app.State == "managed" || *app.State == "failed" || *app.State == "managed-but-uninstalled"
-					out.Installed = *app.State == "managed"
-				}
-				if app.Removed != nil && *app.Removed {
-					out.Installed = false
-				}
-				if out.Installed && app.Version != nil {
-					out.AppVersion = *app.Version
-				}
-			}
-		}
-		return out, nil
+		return v.declarativeContentObservation(ctx, d, created)
 	}
+
 	rows, err := v.nativeCommands(ctx, d.Enrollment)
 	if err != nil {
 		return out, err
@@ -460,52 +409,6 @@ func currentNativeApplication(out managedcontent.Observation, bundle string, row
 	}
 	out.Raw = raw
 	return out, nil
-}
-
-// declarativeContentHistory retains terminal processing independently of later
-// removals, using authenticated native reports from this dispatch generation.
-func (v contentDelivery) declarativeContentHistory(ctx context.Context, d managedcontent.Dispatch, created time.Time) (bool, string, error) {
-	after := ""
-	terminal := false
-	bundle := ""
-	for {
-		page, err := v.a.Engine.StatusReports(ctx, d.Enrollment, paging.Page{Limit: 100, Cursor: after})
-		if err != nil {
-			return false, "", err
-		}
-		for _, record := range page.Items {
-			if record.ReceivedAt.Before(created) {
-				continue
-			}
-			var report struct {
-				StatusItems struct {
-					App struct {
-						Managed struct {
-							List []status.AppManagedListApp `json:"list"`
-						} `json:"managed"`
-					} `json:"app"`
-				} `json:"StatusItems"`
-			}
-			if json.Unmarshal(record.Raw, &report) != nil {
-				return false, "", managedcontent.ErrProtocol
-			}
-			for _, app := range report.StatusItems.App.Managed.List {
-				if app.DeclarationIdentifier == nil || *app.DeclarationIdentifier != d.Declarations[0].Identifier {
-					continue
-				}
-				if bundle == "" {
-					bundle = app.Identifier
-				}
-				if app.State != nil && (*app.State == "managed" || *app.State == "failed" || *app.State == "managed-but-uninstalled") {
-					terminal = true
-				}
-			}
-		}
-		if page.NextCursor == "" {
-			return terminal, bundle, nil
-		}
-		after = page.NextCursor
-	}
 }
 
 // rejectNativeContentConflict refuses to adopt an existing foreign native

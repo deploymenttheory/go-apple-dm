@@ -51,6 +51,12 @@ func (a *App) nativeContentOwned(ctx context.Context, key string) (bool, error) 
 // guardContentCommand prevents generic command administration from adopting an
 // owned immutable identity or silently introducing a second management path.
 func (a *App) guardContentCommand(ctx context.Context, id mdm.EnrollmentID, cmd *mdm.Command) error {
+	if a.AppsBooks == nil {
+		return nil
+	}
+	if err := a.lockNativeContent(ctx); err != nil {
+		return err
+	}
 	owned, err := a.nativeContentOwned(ctx, deliveryKey(cmd.UUID))
 	if err != nil {
 		return err
@@ -75,6 +81,9 @@ func (a *App) guardContentCommand(ctx context.Context, id mdm.EnrollmentID, cmd 
 // guardContentDeclaration prevents direct edits of workflow-owned declarations
 // and app publications that conflict with an existing native installation owner.
 func (a *App) guardContentDeclaration(ctx context.Context, id string, raw []byte) error {
+	if a.AppsBooks == nil {
+		return nil
+	}
 	owned, err := a.nativeContentOwned(ctx, contentDeclarationKey(id))
 	if err != nil {
 		return err
@@ -146,8 +155,14 @@ func (a *App) guardContentSetAssignment(ctx context.Context, id mdm.EnrollmentID
 // across generic DDM administrative routes. SDK adapters bypass these HTTP guards
 // only through their atomic immutable ownership boundary.
 func (a *App) guardContentDDMRoute(r *http.Request, pattern string) error {
+	if a.AppsBooks == nil {
+		return nil
+	}
 	if r.Method == http.MethodGet {
 		return nil
+	}
+	if err := a.lockNativeContent(r.Context()); err != nil {
+		return err
 	}
 	if strings.HasPrefix(r.PathValue("set"), "managedcontent:") {
 		return managedcontent.ErrConflict
@@ -200,4 +215,14 @@ func (a *App) guardContentDDMRoute(r *http.Request, pattern string) error {
 		return a.guardContentSetAssignment(r.Context(), id, r.PathValue("set"))
 	}
 	return nil
+}
+
+// lockNativeContent serializes participating generic administration with native
+// content dispatch for the lifetime of their existing shared SQL transaction.
+// No remote calls run inside this ownership boundary.
+func (a *App) lockNativeContent(ctx context.Context) error {
+	if a.protocol == nil {
+		return nil
+	}
+	return a.protocol.Update(ctx, []string{contentServerKey("ownership", "native")}, func(state.Tx) error { return nil })
 }

@@ -35,6 +35,7 @@ type contentFixture struct {
 	config             AppsBooksConfig
 	posts              atomic.Int32
 	assets             atomic.Bool
+	assetReads         atomic.Int32
 	assignments        atomic.Bool
 	fail               atomic.Bool
 	owner              atomic.Value
@@ -109,6 +110,9 @@ func contentFixtureService(t *testing.T) *contentFixture {
 		if r.URL.Path == "/config" {
 			_, _ = fmt.Fprintf(w, `{%s,"locationName":"London","notificationAuthToken":%q}`, meta, f.notificationSecret.Load().(string))
 			return
+		}
+		if r.URL.Path == "/assets" {
+			f.assetReads.Add(1)
 		}
 		if r.URL.Path == "/assets" && f.assets.Load() {
 			_, _ = fmt.Fprintf(w, `{%s,"currentPageIndex":0,"totalPages":1,"versionId":"assets-v1","assets":[{"adamId":"1","pricingParam":"STDQ","productType":"App","deviceAssignable":true,"revocable":true,"supportedPlatforms":["iOS","macOS"],"totalCount":100,"availableCount":100}]}`, meta)
@@ -347,7 +351,7 @@ func TestContentNativeUserBinding(t *testing.T) {
 // seedContentEnrollment seeds an authenticated native fixture without Apple inventory enrichment.
 func seedContentEnrollment(t *testing.T, a *App, id mdm.EnrollmentID, cert, serial string) {
 	t.Helper()
-	if err := a.Store.Import(t.Context(), storage.EnrollmentExport{Enrollment: storage.Enrollment{ID: id, Enabled: true, CertHash: cert, EnrolledAt: time.Now(), Device: storage.DeviceInfo{SerialNumber: serial, ProductName: "iPhone18,1", OSVersion: "27.0"}, Capabilities: storage.Capabilities{Supervised: storage.CapabilityTrue}}}); err != nil {
+	if err := a.Store.Import(t.Context(), storage.EnrollmentExport{Enrollment: storage.Enrollment{ID: id, Enabled: true, CertHash: cert, EnrolledAt: time.Now(), TokenUpdatedAt: time.Now(), LastSeenAt: time.Now(), CertHashAt: time.Now(), Device: storage.DeviceInfo{SerialNumber: serial, ProductName: "iPhone18,1", OSVersion: "27.0"}, Capabilities: storage.Capabilities{Supervised: storage.CapabilityTrue}}}); err != nil {
 		t.Fatal(err)
 	}
 }
@@ -392,6 +396,15 @@ func TestManagedContentWorkerLifecycle(t *testing.T) {
 			cancel()
 			<-done
 			t.Fatal("persisted intent not resumed")
+		case <-poll.C:
+		}
+	}
+	for f.assetReads.Load() < 2 {
+		select {
+		case <-deadline.C:
+			cancel()
+			<-done
+			t.Fatal("worker did not finish a populated page and resume its next iteration")
 		case <-poll.C:
 		}
 	}
@@ -533,7 +546,7 @@ func TestManagedContentAdmissionRejectsRebinding(t *testing.T) {
 	}
 	bind("other-user")
 	w = contentRequest(t, a, token, "POST", "/managed-content/operations/pinned/step", contentWorkerInput{Worker: "operator", LeaseSeconds: 60})
-	if w.Code < 400 || f.posts.Load() != 0 {
+	if w.Code != 503 || f.posts.Load() != 0 {
 		t.Fatal("revoked binding submitted remote licensing", w.Code, f.posts.Load())
 	}
 	if err := a.Store.AssociateCert(t.Context(), id, "replacement-pin", time.Now()); err != nil {
@@ -541,11 +554,11 @@ func TestManagedContentAdmissionRejectsRebinding(t *testing.T) {
 	}
 	bind("chosen-user")
 	w = contentRequest(t, a, token, "POST", "/managed-content/operations/pinned/step", contentWorkerInput{Worker: "operator", LeaseSeconds: 60})
-	if w.Code < 400 || f.posts.Load() != 0 {
+	if w.Code != 503 || f.posts.Load() != 0 {
 		t.Fatal("certificate rotation redirected intent", w.Code, f.posts.Load())
 	}
 	op, err := a.ManagedContent.Load(t.Context(), "pinned")
-	if err != nil || op.License != nil || op.Dispatch != nil {
+	if err != nil || op.Blocked != "target" || op.License != nil || op.Dispatch != nil {
 		t.Fatal("rebound intent gained effects", op, err)
 	}
 }
