@@ -150,18 +150,18 @@
       "title": "Evidence survives resolution",
       "items": [
         "Omission retains earlier native values. False, zero, null and empty arrays remain values; all candidates keep provenance.",
-        "Idle never authenticates stored hardware. Serial omission needs an authenticated serial binding. Backfill preserves provenance."
+        "Idle cannot qualify stored hardware. Pending replacement waits for active pin. Serial omission needs a genuine binding; backfill preserves provenance."
       ]
     },
     {
       "dot": "service",
       "title": "Implementation",
       "items": [
-        "native: Native device report \u2014 https://github.com/deploymenttheory/go-apple-dm/blob/4086762d7afad573c0259e5b67d4e21b77d99c90/server/internal/app/inventory.go",
-        "cloudEvidence: Apple source evidence \u2014 https://github.com/deploymenttheory/go-apple-dm/blob/4086762d7afad573c0259e5b67d4e21b77d99c90/devicemanagement/inventory/records.go",
-        "nativeEvidence: Native source evidence \u2014 https://github.com/deploymenttheory/go-apple-dm/blob/4086762d7afad573c0259e5b67d4e21b77d99c90/server/internal/app/inventory.go",
-        "correlate: Correlate serials \u2014 https://github.com/deploymenttheory/go-apple-dm/blob/4086762d7afad573c0259e5b67d4e21b77d99c90/devicemanagement/inventory/records.go",
-        "resolve: Resolve declared paths \u2014 https://github.com/deploymenttheory/go-apple-dm/blob/4086762d7afad573c0259e5b67d4e21b77d99c90/server/internal/app/inventory_inspection.go"
+        "native: Native device report \u2014 https://github.com/deploymenttheory/go-apple-dm/blob/0ded54bb9a232821b15be8d7cf9f0a88b845575e/server/internal/app/inventory.go",
+        "cloudEvidence: Apple source evidence \u2014 https://github.com/deploymenttheory/go-apple-dm/blob/0ded54bb9a232821b15be8d7cf9f0a88b845575e/devicemanagement/inventory/records.go",
+        "nativeEvidence: Native source evidence \u2014 https://github.com/deploymenttheory/go-apple-dm/blob/0ded54bb9a232821b15be8d7cf9f0a88b845575e/server/internal/app/inventory.go",
+        "correlate: Correlate serials \u2014 https://github.com/deploymenttheory/go-apple-dm/blob/0ded54bb9a232821b15be8d7cf9f0a88b845575e/devicemanagement/inventory/records.go",
+        "resolve: Resolve declared paths \u2014 https://github.com/deploymenttheory/go-apple-dm/blob/0ded54bb9a232821b15be8d7cf9f0a88b845575e/server/internal/app/inventory_inspection.go"
       ]
     }
   ]

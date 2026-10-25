@@ -61,6 +61,9 @@ attaches that provenance only on fresh native receipts through the enrollment's 
 certificate. The service provides an explicit original Authenticate receipt observer,
 separate from connection-state projection. Identity inventory retains only fields supplied
 by that receipt; Idle polls and omitted fields cannot qualify older merged device facts.
+Accepted replacement-candidate Authenticate receipts remain in the controlled handshake
+until TokenUpdate and acknowledgement commit the new pin; only a fresh receipt under
+the active pin can qualify identity facts.
 Serial-omitting native receipts require a previously captured authenticated serial binding,
 not an unchecked stored device serial or a newly known certificate method.
 Background replay preserves captured report provenance and leaves missing

@@ -106,7 +106,10 @@ adapters attach the enrollment's pinned issued certificate method and serial onl
 fresh Authenticate, command and validated status receipts. A server-owned Authenticate
 observer receives the successful original within the protocol/event transaction, separately
 from lifecycle-state projection. Identity facts come only from that receipt's supplied
-fields and original plist, never merged persistent device state. Idle polls, other
+fields and original plist, never merged persistent device state. Accepted pending
+replacement receipts remain in the replacement handshake and do not project candidate
+hardware or certificate facts before the active pin commits. A fresh receipt under
+the committed pin may qualify those facts. Idle polls, other
 connections and omitted Authenticate fields cannot rebadge historical hardware facts.
 Native serial context requires an actual Authenticate or DeviceInformation serial field,
 or a retained authenticated report of that serial in the same enrollment. Certificate

@@ -5518,7 +5518,7 @@ svg[data-purpose-filter] g[data-purpose-highlight] > path { stroke-width: 2.4; }
         </div>
         <ul>
           <li>&bull; Omission retains earlier native values. False, zero, null and empty arrays remain values; all candidates keep provenance.</li>
-          <li>&bull; Idle never authenticates stored hardware. Serial omission needs an authenticated serial binding. Backfill preserves provenance.</li>
+          <li>&bull; Idle cannot qualify stored hardware. Pending replacement waits for active pin. Serial omission needs a genuine binding; backfill preserves provenance.</li>
         </ul>
       </div>
 
@@ -5528,11 +5528,11 @@ svg[data-purpose-filter] g[data-purpose-highlight] > path { stroke-width: 2.4; }
           <h3>Implementation</h3>
         </div>
         <ul>
-          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/4086762d7afad573c0259e5b67d4e21b77d99c90/server/internal/app/inventory.go" target="_blank" rel="noopener noreferrer">native: Native device report</a></li>
-          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/4086762d7afad573c0259e5b67d4e21b77d99c90/devicemanagement/inventory/records.go" target="_blank" rel="noopener noreferrer">cloudEvidence: Apple source evidence</a></li>
-          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/4086762d7afad573c0259e5b67d4e21b77d99c90/server/internal/app/inventory.go" target="_blank" rel="noopener noreferrer">nativeEvidence: Native source evidence</a></li>
-          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/4086762d7afad573c0259e5b67d4e21b77d99c90/devicemanagement/inventory/records.go" target="_blank" rel="noopener noreferrer">correlate: Correlate serials</a></li>
-          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/4086762d7afad573c0259e5b67d4e21b77d99c90/server/internal/app/inventory_inspection.go" target="_blank" rel="noopener noreferrer">resolve: Resolve declared paths</a></li>
+          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/0ded54bb9a232821b15be8d7cf9f0a88b845575e/server/internal/app/inventory.go" target="_blank" rel="noopener noreferrer">native: Native device report</a></li>
+          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/0ded54bb9a232821b15be8d7cf9f0a88b845575e/devicemanagement/inventory/records.go" target="_blank" rel="noopener noreferrer">cloudEvidence: Apple source evidence</a></li>
+          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/0ded54bb9a232821b15be8d7cf9f0a88b845575e/server/internal/app/inventory.go" target="_blank" rel="noopener noreferrer">nativeEvidence: Native source evidence</a></li>
+          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/0ded54bb9a232821b15be8d7cf9f0a88b845575e/devicemanagement/inventory/records.go" target="_blank" rel="noopener noreferrer">correlate: Correlate serials</a></li>
+          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/0ded54bb9a232821b15be8d7cf9f0a88b845575e/server/internal/app/inventory_inspection.go" target="_blank" rel="noopener noreferrer">resolve: Resolve declared paths</a></li>
         </ul>
       </div>
     </div>

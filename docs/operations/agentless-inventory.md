@@ -154,7 +154,11 @@ pinned certificate's recorded ADE, account-driven Device Enrollment, profile-bas
 Device Enrollment or User Enrollment provenance. The service supplies the original
 successful Authenticate receipt separately from its connection-state observer.
 `mdm.identity` retains that receipt's exact plist and only its reported fields,
-including unknown members. Neither an Idle poll nor a command connection authenticates
+including unknown members. An accepted replacement-candidate Authenticate is retained
+by the controlled replacement handshake while the old pin remains active; it projects
+no candidate identity or certificate inventory. TokenUpdate and command acknowledgement
+commit the new pin before fresh receipts can qualify candidate hardware facts.
+Neither an Idle poll nor a command connection authenticates
 older stored device fields. A same-certificate Authenticate may leave operational
 `DeviceInfo` unchanged; inventory still records only the current receipt, at its receipt
 time. Omitted older unverified fields remain unchecked; previously qualified native
