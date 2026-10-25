@@ -214,14 +214,14 @@ func failure(err error) string {
 	if errors.As(err, &api) {
 		return fmt.Sprintf("apple_http_%d", api.Status)
 	}
-	if axm.IsUnauthorized(err) {
-		return "authentication"
-	}
 	if errors.Is(err, context.Canceled) {
 		return "canceled"
 	}
 	if errors.Is(err, context.DeadlineExceeded) {
 		return "timeout"
+	}
+	if axm.IsUnauthorized(err) {
+		return "authentication"
 	}
 	if errors.Is(err, axm.ErrNextLink) {
 		return "pagination"
