@@ -75,6 +75,8 @@ func TestScenariosRejectInterruptedExchanges(t *testing.T) {
 			continue
 		}
 		t.Run(s.ID, func(t *testing.T) {
+			// Each scenario owns its workspace and runtime; only faults within one scenario share state.
+			t.Parallel()
 			if s.ID == "E2E-021" {
 				checkABMInterruptedExchanges(t, s)
 				return
