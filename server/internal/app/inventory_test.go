@@ -100,6 +100,15 @@ func TestInventoryAPIAndNativeEnrichment(t *testing.T) {
 			if _, e := a.Engine.Status(t.Context(), id, []byte(`{"StatusItems":{"device":{"model":{"family":"Mac"}}}}`)); e != nil {
 				t.Fatal(e)
 			}
+			// Imported enrollment state has no Authenticate receipt. The worker
+			// may retain its legacy identity only as unchecked source evidence.
+			if e := a.refreshNativeInventory(t.Context()); e != nil {
+				t.Fatal(e)
+			}
+			legacyIdentity, e := a.Inventory.SourceResource(t.Context(), inventory.EnrollmentReference("mdm.identity", id))
+			if e != nil || !legacyIdentity.Incomplete || legacyIdentity.Snapshot.Native != nil {
+				t.Fatal("legacy state acquired receipt provenance", legacyIdentity, e)
+			}
 			page, e := a.Inventory.Resources(t.Context(), inventory.ResourceQuery{})
 			if e != nil || len(page.Items) != 5 {
 				t.Fatal("independent sources missing", page, e)

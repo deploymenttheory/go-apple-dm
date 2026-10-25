@@ -1,6 +1,7 @@
 package service_test
 
 import (
+	"bytes"
 	"context"
 	"crypto/x509"
 	"errors"
@@ -88,5 +89,65 @@ func TestInventoryObserverRollback(t *testing.T) {
 				}
 			}
 		})
+	}
+}
+
+// TestAuthenticateInventoryReceiptBoundary verifies the original receipt callback
+// runs only for Authenticate and participates in protocol/event rollback.
+func TestAuthenticateInventoryReceiptBoundary(t *testing.T) {
+	ctx := t.Context()
+	store, err := sqlite.Open(ctx, filepath.Join(t.TempDir(), "authenticate-observer.db"), sqlite.Options{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = store.Close() })
+	outbox, err := eventstore.Open(ctx, store.DB(), sqlite.Dialect)
+	if err != nil {
+		t.Fatal(err)
+	}
+	fail := false
+	calls := 0
+	var received []byte
+	boom := errors.New("Authenticate evidence unavailable")
+	core, err := service.New(service.Config{
+		Store: store, Bus: &eventstore.Publisher{Store: outbox}, Pinning: service.PinOff,
+		ObserveAuthenticate: func(_ context.Context, request *mdm.Request, receipt *mdm.Checkin, at time.Time) error {
+			id := request.ID
+			calls++
+			if receipt.Type != "Authenticate" || id != receipt.ID || at.IsZero() {
+				t.Error("incorrect receipt context", id, receipt, at)
+			}
+			received = append([]byte(nil), receipt.Raw...)
+			if fail {
+				return boom
+			}
+			return nil
+		},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	receipt := authenticate(t, "device")
+	if _, err := core.Checkin(ctx, &mdm.Request{}, receipt); err != nil {
+		t.Fatal(err)
+	}
+	if calls != 1 || !bytes.Equal(received, receipt.Raw) {
+		t.Fatal("original Authenticate not observed", calls)
+	}
+	if _, err := core.Checkin(ctx, &mdm.Request{}, tokenUpdate(t, "device", nil)); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := core.Connect(ctx, &mdm.Request{}, response("device", "", mdm.StatusIdle)); err != nil {
+		t.Fatal(err)
+	}
+	if calls != 1 {
+		t.Fatal("connection or TokenUpdate became an Authenticate receipt", calls)
+	}
+	fail = true
+	if _, err := core.Checkin(ctx, &mdm.Request{}, authenticate(t, "new-device")); !errors.Is(err, boom) {
+		t.Fatal(err)
+	}
+	if _, err := store.Get(ctx, mdm.EnrollmentID{Channel: mdm.ChannelDevice, ID: "new-device"}); !errors.Is(err, storage.ErrNotFound) {
+		t.Fatal("Authenticate committed after evidence capture failed", err)
 	}
 }

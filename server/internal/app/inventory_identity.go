@@ -5,10 +5,12 @@ import (
 	"encoding/json"
 	"errors"
 	"strings"
+	"time"
 
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/correlation"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/inventory"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/enroll/accountdriven"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/mdm"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/pki/acme"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/state"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/storage"
@@ -75,7 +77,22 @@ func inventoryProfileMethodKey(commonName, serial, udid string) string {
 // inventoryIdentity requires a pinned issued certificate and its recorded flow.
 // Missing historical provenance remains incomplete until an authenticated refresh
 // using a newly issued identity; source identifiers never authenticate a device.
+// Serial here is the certificate issuance binding for consistency checks, never
+// an assertion that stored DeviceInfo is an authenticated native serial report.
 func (a *App) inventoryIdentity(ctx context.Context, e *storage.Enrollment) (*inventory.NativeIdentity, error) {
+	identity, err := a.inventoryCertificateIdentity(ctx, e)
+	if err != nil || identity == nil {
+		return identity, err
+	}
+	if identity.Serial != "" && e.Device.SerialNumber != "" && inventory.CanonicalSerial(identity.Serial) != inventory.CanonicalSerial(e.Device.SerialNumber) {
+		return nil, inventory.ErrConflict
+	}
+	return identity, nil
+}
+
+// inventoryCertificateIdentity loads issued method and certificate binding only.
+// Reported native serial qualification is independent of merged device indexes.
+func (a *App) inventoryCertificateIdentity(ctx context.Context, e *storage.Enrollment) (*inventory.NativeIdentity, error) {
 	if e.CertHash == "" {
 		return nil, nil
 	}
@@ -93,11 +110,73 @@ func (a *App) inventoryIdentity(ctx context.Context, e *storage.Enrollment) (*in
 	if evidence.EnrollmentMethod == "" {
 		return nil, nil
 	}
-	if evidence.Serial != "" && inventory.CanonicalSerial(evidence.Serial) != inventory.CanonicalSerial(e.Device.SerialNumber) {
-		return nil, inventory.ErrConflict
-	}
 	if evidence.UDID != "" && evidence.UDID != e.ID.ID || evidence.EnrollmentID != "" && evidence.EnrollmentID != e.ID.ID {
 		return nil, inventory.ErrConflict
 	}
-	return &inventory.NativeIdentity{Serial: e.Device.SerialNumber, Method: evidence.EnrollmentMethod, Authenticated: true}, nil
+	return &inventory.NativeIdentity{Serial: evidence.Serial, Method: evidence.EnrollmentMethod, Authenticated: true}, nil
+}
+
+// inventoryReportIdentity uses only a serial supplied by this receipt or a retained
+// authenticated serial report for this enrollment. Certificate method provenance
+// and merged DeviceInfo alone never establish a reported hardware serial.
+func (a *App) inventoryReportIdentity(ctx context.Context, e *storage.Enrollment, reported string, present bool) (*inventory.NativeIdentity, error) {
+	identity, err := a.inventoryCertificateIdentity(ctx, e)
+	if err != nil || identity == nil {
+		return identity, err
+	}
+	certificateSerial := identity.Serial
+	identity.Serial = reported
+	if !present {
+		identity.Serial, err = a.retainedInventorySerial(ctx, e.ID)
+		if err != nil {
+			return nil, err
+		}
+	}
+	if certificateSerial != "" && identity.Serial != "" && inventory.CanonicalSerial(certificateSerial) != inventory.CanonicalSerial(identity.Serial) {
+		identity.Authenticated = false
+	}
+	return identity, nil
+}
+
+// retainedInventorySerial follows authenticated enrollment addressing only to
+// previously captured actual serial fields. Missing, unchecked and conflicting
+// originals never supply a binding for a later serial-omitting receipt.
+func (a *App) retainedInventorySerial(ctx context.Context, id mdm.EnrollmentID) (string, error) {
+	serial := ""
+	var latest time.Time
+	for _, selector := range []struct{ kind, path string }{{"mdm.identity", "SerialNumber"}, {"mdm.DeviceInformation", "QueryResponses.SerialNumber"}} {
+		kind, path := selector.kind, selector.path
+		ref := inventory.EnrollmentReference(kind, id)
+		record, err := a.Inventory.SourceResource(ctx, ref)
+		if errors.Is(err, inventory.ErrNotFound) {
+			continue
+		}
+		if err != nil {
+			return "", err
+		}
+		if record.Incomplete || record.Snapshot.Absent || record.Snapshot.Disconnected {
+			continue
+		}
+		history, err := a.Inventory.History(ctx, ref)
+		if err != nil {
+			return "", err
+		}
+		for _, original := range history {
+			if original.Native == nil || !original.Native.Authenticated || original.Native.Serial == "" {
+				continue
+			}
+			value := inventory.String(original.Fields[path])
+			if value == "" || inventory.CanonicalSerial(value) != inventory.CanonicalSerial(original.Native.Serial) {
+				continue
+			}
+			if serial != "" && inventory.CanonicalSerial(serial) != inventory.CanonicalSerial(value) {
+				return "", nil
+			}
+			if serial == "" || original.ObservedAt.After(latest) {
+				serial = value
+				latest = original.ObservedAt
+			}
+		}
+	}
+	return serial, nil
 }

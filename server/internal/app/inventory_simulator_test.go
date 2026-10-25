@@ -86,13 +86,13 @@ func TestInventorySimulatorComposition(t *testing.T) {
 			enrollmentRef := inventory.EnrollmentReference("enrollment", mdm.EnrollmentID{Channel: channel, ID: udid})
 			// User Enrollment uses Apple's enrollment ID, which is unrelated to the UDID.
 			if tc.user {
-				page, err := f.app.Inventory.Resources(ctx, inventory.ResourceQuery{Source: "enrollment"})
+				page, err := f.app.Inventory.Resources(ctx, inventory.ResourceQuery{Source: "mdm.identity"})
 				if err != nil {
 					t.Fatal(err)
 				}
 				for _, record := range page.Items {
 					if record.Snapshot.Native != nil && record.Snapshot.Native.Method == "user-enrollment" {
-						enrollmentRef = record.Source
+						enrollmentRef.ResourceID = record.Source.ResourceID
 					}
 				}
 			}
@@ -100,11 +100,14 @@ func TestInventorySimulatorComposition(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			if enrollment.Snapshot.Native == nil || !enrollment.Snapshot.Native.Authenticated {
-				t.Fatal("issuance/check-in provenance missing", enrollment)
+			identityRef := enrollmentRef
+			identityRef.Kind = "mdm.identity"
+			identityRecord, err := f.app.Inventory.SourceResource(ctx, identityRef)
+			if err != nil || identityRecord.Snapshot.Native == nil || !identityRecord.Snapshot.Native.Authenticated {
+				t.Fatal("Authenticate receipt provenance missing", identityRecord, err)
 			}
-			if tc.user && enrollment.Snapshot.Native.Method != "user-enrollment" {
-				t.Fatal("user provenance", enrollment)
+			if tc.user && identityRecord.Snapshot.Native.Method != "user-enrollment" {
+				t.Fatal("user provenance", identityRecord)
 			}
 			request("POST", "/devices/"+enrollment.ID+"/collect", "", 200)
 			d.Responder = func(cmd *mdm.Command) simulator.Reply {

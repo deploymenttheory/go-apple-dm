@@ -13,6 +13,7 @@ import (
 
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/appleplatformservices/axm"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/inventory"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/cms"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/ddm"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/mdm"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/plist"
@@ -97,12 +98,12 @@ func deviceChannel(id mdm.EnrollmentID) bool {
 
 // observeInventoryEnrollment retains public enrollment evidence while excluding push and escrow credentials.
 func (a *App) observeInventoryEnrollment(ctx context.Context, id mdm.EnrollmentID) error {
-	return a.projectInventoryEnrollment(ctx, id, true)
+	return a.projectInventoryEnrollment(ctx, id, false)
 }
 
-// projectInventoryEnrollment records authenticated receipt provenance only for a
-// fresh check-in; a worker's persisted enrollment backfill remains unchecked.
-func (a *App) projectInventoryEnrollment(ctx context.Context, id mdm.EnrollmentID, fresh bool) error {
+// projectInventoryEnrollment projects lifecycle state without authenticating stored
+// hardware facts. Workers may retain a missing legacy identity as unchecked evidence.
+func (a *App) projectInventoryEnrollment(ctx context.Context, id mdm.EnrollmentID, backfillIdentity bool) error {
 	if !deviceChannel(id) {
 		return nil
 	}
@@ -134,13 +135,16 @@ func (a *App) projectInventoryEnrollment(ctx context.Context, id mdm.EnrollmentI
 	if err != nil {
 		return err
 	}
-	if fresh {
-		o.Native, err = a.inventoryIdentity(ctx, e)
-		if err != nil {
-			return err
-		}
+	if err = a.retainInventoryObservation(ctx, o, false); err != nil {
+		return err
 	}
-	if err = a.retainInventoryObservation(ctx, o, fresh); err != nil {
+	if !backfillIdentity {
+		return nil
+	}
+	ref := inventory.EnrollmentReference("mdm.identity", id)
+	if _, err := a.Inventory.SourceResource(ctx, ref); err == nil {
+		return nil
+	} else if !errors.Is(err, inventory.ErrNotFound) {
 		return err
 	}
 	raw, err = json.Marshal(e.Device)
@@ -154,13 +158,45 @@ func (a *App) projectInventoryEnrollment(ctx context.Context, id mdm.EnrollmentI
 	if o.ObservedAt.IsZero() {
 		o.ObservedAt = at
 	}
-	if fresh {
-		o.Native, err = a.inventoryIdentity(ctx, e)
-		if err != nil {
-			return err
-		}
+	return a.retainInventoryObservation(ctx, o, false)
+}
+
+// observeInventoryAuthenticate retains only fields supplied by the successful
+// current Authenticate receipt. Stored merged device fields never enter its facts.
+func (a *App) observeInventoryAuthenticate(ctx context.Context, request *mdm.Request, receipt *mdm.Checkin, at time.Time) error {
+	if request == nil {
+		return inventory.ErrInvalid
 	}
-	return a.retainInventoryObservation(ctx, o, fresh)
+	id := request.ID
+	if !deviceChannel(id) {
+		return nil
+	}
+	e, err := a.Store.Get(ctx, id)
+	if err != nil {
+		return err
+	}
+	if request.Certificate == nil || e.CertHash != cms.Fingerprint(request.Certificate) {
+		return inventory.ErrConflict
+	}
+	var body map[string]any
+	if receipt == nil || plist.Unmarshal(receipt.Raw, &body) != nil || body["MessageType"] != "Authenticate" {
+		return inventory.ErrInvalid
+	}
+	data, err := json.Marshal(map[string]any{"response": body, "plist": receipt.Raw})
+	if err != nil {
+		return err
+	}
+	o, err := inventory.ResourceObservation(inventory.EnrollmentReference("mdm.identity", id), data, at, 24*time.Hour)
+	if err != nil {
+		return err
+	}
+	o.Fields = inventory.Flatten(mustInventoryJSON(body))
+	_, present := o.Fields["SerialNumber"]
+	o.Native, err = a.inventoryReportIdentity(ctx, e, inventory.String(o.Fields["SerialNumber"]), present)
+	if err != nil {
+		return err
+	}
+	return a.retainInventoryObservation(ctx, o, true)
 }
 
 // observeInventoryResult resolves the stored command type before projecting an acknowledged response.
@@ -223,21 +259,12 @@ func (a *App) retainInventoryCommand(ctx context.Context, id mdm.EnrollmentID, k
 		return err
 	}
 	o.Fields = inventory.Flatten(mustInventoryJSON(body))
-	serial := e.Device.SerialNumber
-	if value := inventory.String(o.Fields["QueryResponses.SerialNumber"]); value != "" {
-		serial = value
-	}
 	if fresh {
-		o.Native, err = a.inventoryIdentity(ctx, e)
+		_, present := o.Fields["QueryResponses.SerialNumber"]
+		o.Native, err = a.inventoryReportIdentity(ctx, e, inventory.String(o.Fields["QueryResponses.SerialNumber"]), present)
 		if err != nil {
 			return err
 		}
-	}
-	if o.Native != nil && inventory.CanonicalSerial(serial) != inventory.CanonicalSerial(o.Native.Serial) {
-		// Keep the acknowledged contradictory original, but it cannot establish
-		// authenticated physical identity for the serial it asserts.
-		o.Native.Serial = serial
-		o.Native.Authenticated = false
 	}
 	return a.retainInventoryObservation(ctx, o, fresh)
 }
@@ -360,7 +387,7 @@ func (a *App) refreshNativeInventory(ctx context.Context) error {
 			if !deviceChannel(enrollment.ID) {
 				continue
 			}
-			if e := a.projectInventoryEnrollment(ctx, enrollment.ID, false); e != nil {
+			if e := a.projectInventoryEnrollment(ctx, enrollment.ID, true); e != nil {
 				return e
 			}
 			if err := a.backfillInventoryStatus(ctx, enrollment); err != nil {
@@ -414,7 +441,7 @@ func (a *App) observeInventoryCertificate(ctx context.Context, id mdm.Enrollment
 	if e != nil {
 		return e
 	}
-	o.Native, e = a.inventoryIdentity(ctx, enrollment)
+	o.Native, e = a.inventoryReportIdentity(ctx, enrollment, "", false)
 	if e != nil {
 		return e
 	}
@@ -461,7 +488,7 @@ func (a *App) backfillInventoryStatus(ctx context.Context, enrollment storage.En
 
 // retainInventoryStatus attaches authenticated issuance provenance while retaining per-item times.
 func (a *App) retainInventoryStatus(ctx context.Context, e *storage.Enrollment, u ddm.StatusUpdate) error {
-	identity, err := a.inventoryIdentity(ctx, e)
+	identity, err := a.inventoryReportIdentity(ctx, e, "", false)
 	if err != nil {
 		return err
 	}

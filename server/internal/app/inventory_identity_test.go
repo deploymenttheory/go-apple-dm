@@ -32,15 +32,16 @@ func TestInventoryAuthenticatedIdentity(t *testing.T) {
 	if err != nil || identity != nil {
 		t.Fatal(identity, err)
 	}
-	e.CertHash = "issued"
+	cert := &x509.Certificate{Raw: []byte("issued")}
+	e.CertHash = cms.Fingerprint(cert)
 	identity, err = a.inventoryIdentity(t.Context(), e)
 	if err != nil || identity != nil {
 		t.Fatal(identity, err)
 	}
 	save := func(value []byte) {
 		t.Helper()
-		if err := a.protocol.Update(t.Context(), []string{"issued-identity:issued"}, func(tx state.Tx) error {
-			return tx.Put(t.Context(), state.Record{Key: "issued-identity:issued", Value: value})
+		if err := a.protocol.Update(t.Context(), []string{"issued-identity:" + e.CertHash}, func(tx state.Tx) error {
+			return tx.Put(t.Context(), state.Record{Key: "issued-identity:" + e.CertHash, Value: value})
 		}); err != nil {
 			t.Fatal(err)
 		}
@@ -81,7 +82,11 @@ func TestInventoryAuthenticatedIdentity(t *testing.T) {
 	if err := a.Store.Import(t.Context(), storage.EnrollmentExport{Enrollment: *e}); err != nil {
 		t.Fatal(err)
 	}
-	if err := a.observeInventoryEnrollment(t.Context(), id); !errors.Is(err, errInventoryStorage) {
+	authenticateRaw, err := plist.Marshal(map[string]any{"MessageType": "Authenticate", "UDID": id.ID, "SerialNumber": "SER"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := a.observeInventoryAuthenticate(t.Context(), &mdm.Request{ID: id, Certificate: cert}, &mdm.Checkin{Raw: authenticateRaw}, time.Now().UTC()); !errors.Is(err, errInventoryStorage) {
 		t.Fatal(err)
 	}
 	a.protocol = base

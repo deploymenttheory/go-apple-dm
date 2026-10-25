@@ -174,8 +174,12 @@ type Config struct {
 	Store storage.Store
 	// ObserveResult runs only after a tracked result is stored, within the event transaction.
 	ObserveResult func(context.Context, mdm.EnrollmentID, *mdm.Response, time.Time) error
-	// ObserveEnrollment projects successful check-ins without exposing protocol credentials.
+	// ObserveEnrollment projects current enrollment state after check-ins and connections.
+	// It carries no claim that stored device facts were supplied by that request.
 	ObserveEnrollment func(context.Context, mdm.EnrollmentID) error
+	// ObserveAuthenticate receives the successful original Authenticate receipt within
+	// the event transaction. Other check-ins and command/Idle connections never call it.
+	ObserveAuthenticate func(context.Context, *mdm.Request, *mdm.Checkin, time.Time) error
 	// ObserveCertificate records public certificate metadata after device authentication.
 	ObserveCertificate func(context.Context, mdm.EnrollmentID, *x509.Certificate, time.Time) error
 	// EnableReplacements enables authorized profile updates on stores implementing
@@ -239,25 +243,26 @@ func DenyReenroll(
 
 // Core is the service implementation.
 type Core struct {
-	observeResult      func(context.Context, mdm.EnrollmentID, *mdm.Response, time.Time) error
-	observeEnrollment  func(context.Context, mdm.EnrollmentID) error
-	observeCertificate func(context.Context, mdm.EnrollmentID, *x509.Certificate, time.Time) error
-	store              storage.Store
-	replacements       storage.ReplacementStore
-	bus                event.Publisher
-	clock              clock.Clock
-	hooks              []Hook
-	log                *slog.Logger
-	pinning            PinMode
-	reenroll           ReenrollPolicy
-	reuse              CertReusePolicy
-	dm                 DMHandler
-	getToken           GetTokenHandler
-	userAuth           UserAuthenticateHandler
-	returnToService    ReturnToServiceHandler
-	requireUserAuth    bool
-	validateTargets    bool
-	certificateStatus  func(context.Context, *x509.Certificate) error
+	observeResult       func(context.Context, mdm.EnrollmentID, *mdm.Response, time.Time) error
+	observeEnrollment   func(context.Context, mdm.EnrollmentID) error
+	observeAuthenticate func(context.Context, *mdm.Request, *mdm.Checkin, time.Time) error
+	observeCertificate  func(context.Context, mdm.EnrollmentID, *x509.Certificate, time.Time) error
+	store               storage.Store
+	replacements        storage.ReplacementStore
+	bus                 event.Publisher
+	clock               clock.Clock
+	hooks               []Hook
+	log                 *slog.Logger
+	pinning             PinMode
+	reenroll            ReenrollPolicy
+	reuse               CertReusePolicy
+	dm                  DMHandler
+	getToken            GetTokenHandler
+	userAuth            UserAuthenticateHandler
+	returnToService     ReturnToServiceHandler
+	requireUserAuth     bool
+	validateTargets     bool
+	certificateStatus   func(context.Context, *x509.Certificate) error
 }
 
 // New validates the configuration and builds a Core.
@@ -274,7 +279,7 @@ func New(cfg Config) (*Core, error) {
 	}
 	c := &Core{
 		replacements:  replacements,
-		observeResult: cfg.ObserveResult, observeEnrollment: cfg.ObserveEnrollment, observeCertificate: cfg.ObserveCertificate,
+		observeResult: cfg.ObserveResult, observeEnrollment: cfg.ObserveEnrollment, observeAuthenticate: cfg.ObserveAuthenticate, observeCertificate: cfg.ObserveCertificate,
 		store:             cfg.Store,
 		bus:               cfg.Bus,
 		clock:             cfg.Clock,
