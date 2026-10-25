@@ -601,3 +601,6 @@ The implementation was informed by [AxMJamfSync at the reviewed commit](https://
 and [Apple built-in MDM inventory](https://developer.apple.com/documentation/applebusinessapi/get-apple-mdm-enrolled-devices).
 Tests use local simulated Apple services; they do not establish production-account
 permissions or guarantee which optional fields a particular Apple organization will return.
+
+Explicit assignment mutations use the separate [ABM assignment workflow](abm-assignments.md).
+Organization synchronization remains read-only, including its assignment evidence stage.

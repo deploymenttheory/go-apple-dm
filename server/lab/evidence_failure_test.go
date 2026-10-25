@@ -27,7 +27,7 @@ func TestScenariosRejectIncompleteEvidence(t *testing.T) {
 		{"E2E-011", "GET", "/devices", `{"Items":[]}`, 1},
 		{"E2E-021", "GET", "/axm/servers", `{"Items":[]}`, 1},
 		{"E2E-021", "GET", "/axm/devices", `{"Items":[]}`, 1},
-		{"E2E-021", "POST", "/axm/assign", `{}`, 1},
+		{"E2E-021", "POST", "/axm/accounts/default/assignments", `{}`, 1},
 		{"E2E-024", "GET", "/routes", `{"Routes":[]}`, 1},
 		{"E2E-024", "GET", "/routes", `{"Routes":[{"Pattern":"GET /routes"}]}`, 1},
 		{"APP-001", "POST", "/apppush/send", `{"Accepted":false}`, 1},

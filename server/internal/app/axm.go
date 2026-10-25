@@ -2,13 +2,10 @@ package app
 
 import (
 	"context"
-	json "encoding/json/v2"
 	"errors"
 	"fmt"
-	"io"
 	"net/http"
 	"os"
-	"time"
 
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/appleplatformservices/axm"
 )
@@ -77,20 +74,15 @@ func (a *App) newAxM(ctx context.Context) (*axm.Client, error) {
 	return client, nil
 }
 
-// MaxAxMSerials bounds one assignment request.
-const MaxAxMSerials = 1000
-
 // axmHandler is the admin API for Business Manager (mounted under the
 // admin prefix as /axm/...):
 //
 //	GET  /axm/servers                        list device management servers
 //	GET  /axm/devices?cursor=&limit=          list organisation devices
-//	POST /axm/assign   {"server":"..","serials":[..],"wait":true}
-//	POST /axm/unassign {"serials":[..],"wait":true}
 //	GET  /axm/activities/{id}
 func (a *App) axmRoutes(client *axm.Client) []adminRoute {
 	var routes []adminRoute
-	actions := map[string]string{"GET /axm/servers": ActionReadBusinessMgr, "GET /axm/devices": ActionReadBusinessMgr, "GET /axm/activities/{id}": ActionReadBusinessMgr, "POST /axm/assign": ActionAssignBusinessMgr, "POST /axm/unassign": ActionUnassignBusinessMgr}
+	actions := map[string]string{"GET /axm/servers": ActionReadBusinessMgr, "GET /axm/devices": ActionReadBusinessMgr, "GET /axm/activities/{id}": ActionReadBusinessMgr}
 	add := func(pattern string, handler http.HandlerFunc) {
 		routes = append(routes, adminRoute{Pattern: pattern, Action: actions[pattern], Family: "axm", Handler: handler})
 	}
@@ -118,78 +110,8 @@ func (a *App) axmRoutes(client *axm.Client) []adminRoute {
 		}
 		writeJSON(w, http.StatusOK, act)
 	})
-	type assignRequest struct {
-		Server  string   `json:"server"`
-		Serials []string `json:"serials"`
-		Wait    bool     `json:"wait"`
-	}
-	activity := func(w http.ResponseWriter, r *http.Request, run func(ctx context.Context, req assignRequest) (*axm.OrgDeviceActivity, error)) {
-		var req assignRequest
-		body, err := io.ReadAll(io.LimitReader(r.Body, MaxAdminBody+1))
-		if err != nil || len(body) > MaxAdminBody {
-			writeError(w, http.StatusRequestEntityTooLarge, ErrBodyTooLarge)
-			return
-		}
-		if err := json.Unmarshal(
-			body,
-			&req,
-		); err != nil || len(req.Serials) == 0 ||
-			len(req.Serials) > MaxAxMSerials {
-			writeError(
-				w,
-				http.StatusBadRequest,
-				fmt.Errorf("%w: body needs 1 to %d serials", ErrBadAxMRequest, MaxAxMSerials),
-			)
-			return
-		}
-		act, err := run(r.Context(), req)
-		if err != nil {
-			writeError(w, axmStatus(err), err)
-			return
-		}
-		if req.Wait {
-			ctx, cancel := context.WithTimeout(r.Context(), AxMWaitTimeout)
-			defer cancel()
-			if act, err = client.WaitForActivity(
-				ctx,
-				act.ID,
-				axm.WaitOptions{Interval: AxMWaitInterval, Timeout: AxMWaitTimeout},
-			); err != nil {
-				writeError(w, axmStatus(err), err)
-				return
-			}
-		}
-		writeJSON(w, http.StatusAccepted, act)
-	}
-	add("POST /axm/assign", func(w http.ResponseWriter, r *http.Request) {
-		activity(
-			w,
-			r,
-			func(ctx context.Context, req assignRequest) (*axm.OrgDeviceActivity, error) {
-				return client.AssignDevices(ctx, req.Server, req.Serials)
-			},
-		)
-	})
-	add("POST /axm/unassign", func(w http.ResponseWriter, r *http.Request) {
-		activity(
-			w,
-			r,
-			func(ctx context.Context, req assignRequest) (*axm.OrgDeviceActivity, error) {
-				return client.UnassignDevices(ctx, req.Serials)
-			},
-		)
-	})
 	return routes
 }
-
-// Waits used by the admin API when the caller asks to wait.
-var (
-	AxMWaitInterval = 2 * time.Second
-	AxMWaitTimeout  = 5 * time.Minute
-)
-
-// ErrBadAxMRequest reports an invalid assignment body.
-var ErrBadAxMRequest = errors.New("invalid Business Manager request")
 
 // listOptions reads the cursor and optional numeric page limit for an Apple Business
 // Manager request.
