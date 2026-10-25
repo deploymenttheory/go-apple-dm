@@ -116,11 +116,29 @@ func TestClearBatches(t *testing.T) {
 		t.Fatal(err)
 	}
 	n := sqlcommon.ClearBatchSize*2 + 7
-	for i := range n {
-		cmd := &mdm.Command{UUID: fmt.Sprintf("U%05d", i), RequestType: "ProfileList", Raw: []byte("<plist/>")}
-		if _, err := s.Enqueue(ctx, []mdm.EnrollmentID{id}, cmd, storage.EnqueueOptions{Now: t0.Add(time.Duration(i) * time.Second)}); err != nil {
+	// Commit the large queue fixture together before exercising Clear.
+	tx, err := s.DB().BeginTx(ctx, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer func() { _ = tx.Rollback() }()
+	const seedBatch = 500
+	for start := 0; start < n; start += seedBatch {
+		rows := min(seedBatch, n-start)
+		// #nosec G202 -- SQL joins a fixed INSERT and repeated placeholders; every fixture value is bound.
+		stmt := "INSERT INTO commands (enrollment_id, command_uuid, request_type, raw, seal_id, dedupe_key, state, enqueued_at, attempts, not_now_count) VALUES " +
+			strings.TrimSuffix(strings.Repeat("(?, ?, ?, ?, ?, ?, ?, ?, 0, 0), ", rows), ", ")
+		args := make([]any, 0, rows*8)
+		for i := start; i < start+rows; i++ {
+			uuid := fmt.Sprintf("U%05d", i)
+			args = append(args, id.ID, uuid, "ProfileList", []byte("<plist/>"), fmt.Sprintf("%d:%s%s", len(id.ID), id.ID, uuid), "", storage.StatePending, t0.Add(time.Duration(i)*time.Second))
+		}
+		if _, err := tx.ExecContext(ctx, stmt, args...); err != nil {
 			t.Fatal(err)
 		}
+	}
+	if err := tx.Commit(); err != nil {
+		t.Fatal(err)
 	}
 	// Only the first half by time.
 	half := t0.Add(time.Duration(n/2) * time.Second)
