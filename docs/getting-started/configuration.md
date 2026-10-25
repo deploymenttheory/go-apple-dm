@@ -125,6 +125,37 @@ Unknown setup fields and unrecognized `DM_*` names are not a reliable typo
 check: the loader can ignore them. Match the spelling in the tables below or
 the [environment parser](../../server/internal/app/env.go).
 
+### ADE minimum OS settings
+
+The enrollment endpoint executes literal requirements supplied by the operator:
+
+| Environment setting | Signed device family | Empty value |
+|---|---|---|
+| `DM_ADE_MINIMUM_IOS` | iPhone / iPod | Inactive |
+| `DM_ADE_MINIMUM_IPADOS` | iPad | Inactive |
+| `DM_ADE_MINIMUM_MACOS` | Mac | Inactive |
+| `DM_ADE_MINIMUM_VISIONOS` | Apple Vision Pro | Inactive |
+
+For example, add explicitly chosen versions to the existing `environment` object:
+
+```json
+{
+  "DM_ADE_MINIMUM_IOS": "26.4",
+  "DM_ADE_MINIMUM_IPADOS": "26.4",
+  "DM_ADE_MINIMUM_MACOS": "26.4",
+  "DM_ADE_MINIMUM_VISIONOS": "26.4"
+}
+```
+
+These example values are supplied requirements, not a release recommendation.
+`latest`, version expressions, signed numbers and whitespace are rejected. A
+configured requirement fails explicitly when device evidence or enforcement is
+unavailable. tvOS and watchOS minimum settings are unsupported and rejected.
+Apple's enrollment update response requires iOS/iPadOS 17+, macOS 14+ or
+visionOS 26+ and the device's advertised update capability. See
+[ADE security operations](../operations/enrollment-security.md#automated-device-enrollment)
+for response behavior, shared pending state and primary Apple capability sources.
+
 ### Storage keys and secret files
 
 `setup init` generates three secrets. Their file names are short because two of

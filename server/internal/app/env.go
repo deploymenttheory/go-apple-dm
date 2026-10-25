@@ -57,6 +57,10 @@ const (
 	EnvOIDCClientSecret    = "DM_OIDC_CLIENT_SECRET" // #nosec G101 -- the variable name, not a credential
 	EnvADEAnchorFile       = "DM_ADE_ANCHOR_FILE"
 	EnvADEAudit            = "DM_ADE_AUDIT"
+	EnvADEMinimumIOS       = "DM_ADE_MINIMUM_IOS"
+	EnvADEMinimumIPadOS    = "DM_ADE_MINIMUM_IPADOS"
+	EnvADEMinimumMacOS     = "DM_ADE_MINIMUM_MACOS"
+	EnvADEMinimumVisionOS  = "DM_ADE_MINIMUM_VISIONOS"
 	EnvRequireUserAuth     = "DM_REQUIRE_USER_AUTH"
 	EnvReturnToService     = "DM_RETURN_TO_SERVICE"
 	// Apple Business Manager (AxMConfig).
@@ -116,6 +120,11 @@ func keyNames(v string) []string {
 // ParseEnv loads and validates server configuration through get, applies defaults and
 // rejects retired runtime and static-administration settings.
 func ParseEnv(get func(string) string) (Config, error) {
+	for _, key := range []string{"DM_ADE_MINIMUM_TVOS", "DM_ADE_MINIMUM_WATCHOS"} {
+		if get(key) != "" {
+			return Config{}, fmt.Errorf("%w: %s is unsupported by Apple's ADE minimum-version gate", ErrConfig, key)
+		}
+	}
 	for _, key := range []string{"DM_ROLE", "DM_DDM_URL", "DM_DDM_ROOT_CA_FILE", "DM_DDM_SEND_KEY", "DM_DDM_RECV_KEY", "DM_ADMIN_TOKEN", "DM_ADMIN_STORE"} {
 		if get(key) != "" {
 			return Config{}, fmt.Errorf("%w: %s has been removed; use the unified server and one-time DM_BOOTSTRAP_TOKEN", ErrConfig, key)
@@ -220,6 +229,7 @@ func ParseEnv(get func(string) string) (Config, error) {
 		Organization:        get(EnvOrganization),
 		AccountDrivenMethod: get(EnvAccountDrivenMethod),
 		ADEAnchorFile:       get(EnvADEAnchorFile),
+		ADEMinimumOS:        ADEMinimumOS{IOS: get(EnvADEMinimumIOS), IPadOS: get(EnvADEMinimumIPadOS), MacOS: get(EnvADEMinimumMacOS), VisionOS: get(EnvADEMinimumVisionOS)},
 		OIDC: OIDCConfig{
 			RootCAFile:   get("DM_OIDC_ROOT_CA_FILE"),
 			Issuer:       get(EnvOIDCIssuer),

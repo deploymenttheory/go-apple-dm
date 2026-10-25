@@ -6,6 +6,7 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"crypto/x509/pkix"
+	"encoding/json"
 	"encoding/pem"
 	"errors"
 	"fmt"
@@ -89,6 +90,8 @@ type EnrollConfig struct {
 	// uses Apple's. ADEAudit logs verification failures and continues.
 	ADEAnchorFile string
 	ADEAudit      bool
+	// ADEMinimumOS contains literal minimum versions by supported operating system.
+	ADEMinimumOS ADEMinimumOS
 	// RequireUserAuth gates user channels on UserAuthenticate (0029).
 	RequireUserAuth bool
 	// ReturnToService allows a supervised Automated Device Enrollment device
@@ -143,6 +146,9 @@ func (e EnrollConfig) validate() error {
 	case "", accountdriven.MethodAppleAsWeb, accountdriven.MethodAppleOAuth2:
 	default:
 		return fmt.Errorf("%w: account-driven method %q", ErrConfig, e.AccountDrivenMethod)
+	}
+	if err := e.ADEMinimumOS.validate(); err != nil {
+		return err
 	}
 	for family, version := range e.Discovery {
 		if _, known := discovery.ParseModelFamily(string(family)); !known {
@@ -327,6 +333,8 @@ func (a *App) wireEnrollment(ctx context.Context, mux *http.ServeMux) ([]service
 		}
 	}
 	e.ade = ade.New(ade.Config{
+		Store:          adeStateStore{backend: st},
+		SoftwareUpdate: cfg.ADEMinimumOS,
 		Parse: ade.ParseOptions{
 			Anchors: anchors,
 			Audit:   cfg.ADEAudit,
@@ -361,13 +369,23 @@ func (a *App) wireEnrollment(ctx context.Context, mux *http.ServeMux) ([]service
 				)
 				return
 			}
+			evidence, err := evidenceFor(b.Parsed, e.now())
+			if err != nil {
+				http.Error(w, "missing ADE evidence", http.StatusBadRequest)
+				return
+			}
+			encoded, err := json.Marshal(evidence)
+			if err != nil {
+				http.Error(w, "invalid ADE evidence", http.StatusInternalServerError)
+				return
+			}
 			if err := e.flow.Begin(
 				w,
 				r,
 				webauth.Bound{
 					Serial: b.Serial,
 					UDID:   b.UDID,
-					Extra:  map[string]string{"flow": "ade"},
+					Extra:  map[string]string{"flow": "ade", "machineinfo": string(encoded)},
 				},
 			); err != nil {
 				a.cfg.Logger.Error("ADE web view", "error", err)
@@ -464,7 +482,19 @@ func (e *enrollment) complete(
 	}
 	switch bound.Extra["flow"] {
 	case "ade":
-		p, id, err := e.ade.Resume(ctx, bound.Serial)
+		var evidence adeEvidence
+		err := json.Unmarshal([]byte(bound.Extra["machineinfo"]), &evidence)
+		var p *ade.Parsed
+		if err == nil && (bound.Serial == "" || bound.UDID == "") {
+			err = ade.ErrUnverified
+		}
+		if err == nil {
+			p, err = evidence.parsed(ctx, bound.Serial, bound.UDID, e.now())
+		}
+		var id ade.Identity
+		if err == nil {
+			id = ade.Identity{Serial: p.SERIAL, UDID: p.UDID, Platform: p.Platform, Verified: p.Verified}
+		}
 		if err != nil {
 			http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
 			return
@@ -802,7 +832,7 @@ func (a *App) wireOIDC(e *enrollment, mux *http.ServeMux) error {
 			ClientID:     cfg.OIDC.ClientID,
 			ClientSecret: cfg.OIDC.ClientSecret,
 			RedirectURL:  e.base + PathOIDCCallback,
-			StateStore:   &webauth.SharedStore{Backend: e.state},
+			StateStore:   adeBrowserStore{shared: webauth.SharedStore{Backend: e.state}},
 			HTTPClient:   cfg.OIDC.HTTPClient,
 			Clock:        a.cfg.Clock,
 			Logger:       a.cfg.Logger,

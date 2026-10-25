@@ -20,7 +20,11 @@ Independent certificate and bearer checks prevent a valid credential from author
 
 macOS device channels omit ongoing bearer tokens; other supported account-driven channels verify them. Infrastructure errors do not trigger reauthentication. Query credentials are rejected. Registry import does not create account associations.
 
-Association reservation/confirmation spans separate stores and is not a distributed transaction; failed writes permit retry with the reserved identifier. The reference OIDC browser handoff shares encrypted SQL state and requires its initiating browser cookie. Replicas require shared state, issuer keys and configuration. Revocation defaults to CRL TTL 24h, refresh 1h and OCSP TTL 15m; quotas require configuration; quota capacity accounting serializes writers in its namespace. CheckOut does not revoke a certificate automatically.
+Association reservation/confirmation spans separate stores and is not a distributed transaction; failed writes permit retry with the reserved identifier. The reference OIDC browser handoff shares encrypted SQL state and requires its initiating browser cookie.
+For ADE, this same record retains the originally verified MachineInfo CMS, signer
+and serial/UDID binding. Its expiration and atomic consumption are those of the
+browser grant, so another replica can complete without process-local evidence.
+Missing or invalid retained signing evidence cannot issue a profile. Replicas require shared state, issuer keys and configuration. Revocation defaults to CRL TTL 24h, refresh 1h and OCSP TTL 15m; quotas require configuration; quota capacity accounting serializes writers in its namespace. CheckOut does not revoke a certificate automatically.
 
 ## Verification
 

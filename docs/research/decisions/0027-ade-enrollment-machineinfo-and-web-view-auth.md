@@ -55,11 +55,24 @@ Separating cryptographic verification, device enrichment, admission and profile 
 
 ## Constraints
 
-Signed `MachineInfo` is not Managed Device Attestation or proof of organizational ownership. Audit mode permits unverified input. A GDMF lookup failure is logged and enrollment proceeds. The reference composition retains MachineInfo in memory but stores browser handoff state in its shared protocol store. Replicas need the same state backend, issuer configuration and admission policy. SAML is not implemented.
+Signed `MachineInfo` is not Managed Device Attestation or proof of organizational ownership. Audit mode permits unverified input. A GDMF lookup failure is logged and enrollment proceeds. The reference composition stores MachineInfo in its existing shared protocol store.
+An ADE browser handoff retains the original CMS and validated signer certificate
+inside its browser grant, with the same expiration and atomic one-use consumption.
+SQL records are sealed by the existing storage keyring. Callback completion checks
+the retained signature, serial and UDID; it does not reload a later request's
+per-serial record. Missing, corrupt, expired, unverified or mismatched browser
+evidence fails closed. The reference minimum-version settings are literal targets;
+no dynamic latest-version policy or tvOS gate is composed. Replicas need the same state backend, issuer configuration and admission policy. SAML is not implemented.
 
 ## Verification
 
-ADE/CMS tests cover carriers, size limits, attributes, chains, presence rules and error responses. OIDC tests cover state replay, expiry, nonce/audience/signature checks and redirects. Simulator and end-to-end scenarios exercise profiles, software-update responses and web authentication.
+ADE/CMS tests cover carriers, size limits, attributes, chains, presence rules and error responses.
+Memory, SQLite, PostgreSQL and MySQL contracts cover shared evidence, expiry,
+corruption, serial/UDID mismatches, replay and rollback. Production route tests
+complete browser authentication on a second build and after closing the initiating
+build, then perform SCEP issuance and MDM check-in. The same callback composition
+rejects invalid evidence without issuance. Literal requirements cover supported
+responses, current and disabled devices, unknown products and unavailable updates. OIDC tests cover state replay, expiry, nonce/audience/signature checks and redirects. Simulator and end-to-end scenarios exercise profiles, software-update responses and web authentication.
 
 Service-configuration tests cover public and private HTTPS, trust separation,
 invalid certificates and URLs, and agreement between anchors and the trust
