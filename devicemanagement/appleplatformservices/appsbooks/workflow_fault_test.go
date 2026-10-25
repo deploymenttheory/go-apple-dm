@@ -297,3 +297,14 @@ type workflowRecoveryTransport func(*http.Request) (*http.Response, error)
 func (r workflowRecoveryTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 	return r(req)
 }
+
+// TestLicensingRawDecoding rejects malformed typed fields rather than fabricating
+// event/status/callback evidence. The public decode methods retain raw bytes only
+// after a successful decode.
+func TestLicensingRawDecoding(t *testing.T) {
+	for _, out := range []interface{ UnmarshalJSON([]byte) error }{&appsbooks.Event{}, &appsbooks.Status{}, &appsbooks.Notification{}} {
+		if err := out.UnmarshalJSON([]byte(`{"uId":1}`)); err == nil {
+			t.Fatal("invalid field type accepted")
+		}
+	}
+}

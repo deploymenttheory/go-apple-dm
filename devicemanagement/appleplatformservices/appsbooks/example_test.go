@@ -3,6 +3,7 @@ package appsbooks_test
 import (
 	"context"
 	"errors"
+	"net/http"
 	"os"
 	"strconv"
 	"time"
@@ -171,4 +172,57 @@ func ExampleWorkflow_RecoverConfiguration() {
 	if err != nil {
 		return
 	} // Pending state and prior evidence remain available.
+}
+
+// ExampleWorkflow_CreateJob persists explicit licensing intent independently of
+// command dispatch and installation. Real applications reuse durable sealed state
+// and schedule polling at the returned NextPollAt time.
+func ExampleWorkflow_CreateJob() {
+	ctx := context.Background()
+	workflow, err := appsbooks.NewWorkflow(state.NewMemory(), appsbooks.Config{MDMID: "persisted-mdm-identity"})
+	if err != nil {
+		panic(err)
+	}
+	location, err := workflow.Load(ctx, "london")
+	if err != nil {
+		return
+	}
+	job, err := workflow.CreateJob(ctx, location.ID, location.Revision, "explicit-licensing-request", appsbooks.JobRequest{
+		Operation: appsbooks.JobAssociate, MaxPages: 100,
+		Assets: &appsbooks.ManageAssetsRequest{Assets: []appsbooks.Asset{{AdamID: "408709785", PricingParam: "STDQ"}}, SerialNumbers: []string{"authenticated-device-serial"}},
+	})
+	if err != nil {
+		return
+	}
+	job, err = workflow.SubmitJob(ctx, location.ID, job.ID, "worker-identity", time.Minute)
+	if err != nil {
+		return
+	} // Inspect persisted state; stop old workers before reconciliation.
+	_ = job.NextPollAt // Persisted fallback schedule, at least five minutes after acceptance.
+	// Later, call PollJob when due and inspect State. Dispatch/install only after
+	// JobSucceeded; target observations and physical installation remain separate.
+}
+
+// ExampleWorkflow_ReceiveNotification authenticates and commits callbacks before
+// HTTP acknowledgment. Start this receiver before Configure, whose synchronous
+// TEST_NOTIFICATION is authenticated with the same dedicated receiver token.
+func ExampleWorkflow_ReceiveNotification() {
+	workflow, err := appsbooks.NewWorkflow(state.NewMemory(), appsbooks.Config{MDMID: "persisted-mdm-identity"})
+	if err != nil {
+		panic(err)
+	}
+	mux := http.NewServeMux()
+	mux.HandleFunc("POST /appsbooks/london", func(w http.ResponseWriter, r *http.Request) {
+		_, err := workflow.ReceiveNotification(r.Context(), "london", os.Getenv("APPSBOOKS_RECEIVER_TOKEN"), r)
+		if err != nil {
+			code := http.StatusServiceUnavailable
+			if errors.Is(err, appsbooks.ErrNotificationAuth) {
+				code = http.StatusUnauthorized
+			}
+			http.Error(w, http.StatusText(code), code)
+			return
+		}
+		w.WriteHeader(http.StatusNoContent) // Durable receipt and changes committed.
+	})
+	_ = mux // Serve with the application's authenticated HTTPS listener and durable store.
 }
