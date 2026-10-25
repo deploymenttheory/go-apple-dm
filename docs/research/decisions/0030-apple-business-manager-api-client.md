@@ -62,7 +62,10 @@ authority in addition to business-manager read authority. Named reads capture
 access before credential opening and remote calls when capture is configured;
 network I/O does not hold the local audit transaction. Connection diagnostics
 return reviewed categories independently from inventory presence and the latest
-current-revision synchronization outcome. CLI verbs preserve the account through
+current-revision synchronization outcome. Diagnostic job selection also requires
+a job enqueue time at or after the current account’s server-stamped creation time;
+recreating an ID and revision cannot borrow old successful synchronization.
+Successful job history remains retained and inspectable. CLI verbs preserve the account through
 assignment intent, retained operation/log inspection and synchronization jobs.
 See [named inspection](../../operations/abm-assignments.md#named-connection-inspection).
 

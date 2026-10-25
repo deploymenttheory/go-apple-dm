@@ -249,8 +249,9 @@ func (a *App) accountDiagnostics(r *http.Request) (any, error) {
 	if len(devices.Items) == 0 {
 		out.Inventory = "empty"
 	}
-	// Current revision only: a completed sync using revoked/rotated credentials
-	// cannot establish synchronization for the selected connection revision.
+	// The server stamps account creation and job enqueue times. A retained job
+	// predating this incarnation cannot establish its synchronization, even when
+	// deletion and recreation reuse the account ID and revision.
 	account, err := a.Inventory.Account(r.Context(), id)
 	if err != nil {
 		return nil, err
@@ -263,7 +264,7 @@ func (a *App) accountDiagnostics(r *http.Request) (any, error) {
 			return nil, err
 		}
 		for _, job := range jobs {
-			if job.AccountID == id && job.Revision == account.Revision && (latest.ID == "" || job.CreatedAt.After(latest.CreatedAt)) {
+			if job.AccountID == id && job.Revision == account.Revision && !job.CreatedAt.Before(account.CreatedAt) && (latest.ID == "" || job.CreatedAt.After(latest.CreatedAt)) {
 				latest = job
 			}
 		}

@@ -146,7 +146,10 @@ Diagnostics returns independent fields: `connection` is `connected`,
 `authentication_failed`, `permission_denied`, `resource_not_found`, `rate_limited`, or
 `connection_failed`; `inventory` is `present`, `empty`, or `unknown`.
 `synchronization` is `complete` only after the latest job for the current account
-revision succeeds; it is otherwise `incomplete`. Connectivity and a successful
+revision, enqueued at or after this incarnation’s server-stamped creation time,
+succeeds; it is otherwise `incomplete`. Retained successful jobs from a deleted
+connection remain inspectable but cannot establish the recreated connection’s
+synchronization, even when its ID and revision are reused. Connectivity and a successful
 empty live page do not establish complete retained synchronization. OAuth error
 descriptions, upstream bodies, bearer tokens and request URLs are never included.
 Disabled accounts return HTTP 409; missing accounts return HTTP 404. Other live
