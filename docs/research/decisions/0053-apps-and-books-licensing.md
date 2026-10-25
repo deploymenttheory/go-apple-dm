@@ -75,6 +75,29 @@ also locks its immutable claim key. Monotonic revisions fence all older local
 work, including token ABA and cross-process races. No Apple call runs inside a
 local transaction. Records have no TTL; applications own retention and schedules.
 
+Workflow persists explicit licensing/user job intent, its location revision,
+accepted event ID, worker fence, authoritative lease and per-target notification
+observations. Per-location reservations serialize submissions and polling with
+location writers. Expired submission leases never make a POST eligible again.
+ReconcileJob requires a stopped original worker and an operator note; observed
+event binding and abandonment are explicit decisions. Uncertain work continues
+blocking submissions. RecoverLicensingToken validates a replacement through GET
+and atomically renews credentials/fences workers while retaining uncertainty and
+all evidence. Accepted jobs release reservations and permit ordinary token renewal.
+Preflight uses fresh native asset capabilities and active users, preserving source
+configuration/pages without an inventory dependency. Books reject device assignment
+and explicit reclamation; revocation applies only to revocable assets.
+
+ReceiveNotification authenticates receiver credentials and UID, then commits raw
+receipts, deduplication and matching job changes before callers may acknowledge.
+TEST_NOTIFICATION works while configuration is pending. Unknown-event receipts
+apply when their event is explicitly bound; unknown notification types remain raw.
+Callbacks verify event type and requested targets; distinct callback IDs never
+duplicate target outcomes. Late failures downgrade success and cannot be erased
+by older success. PollJob alone establishes aggregate completion after matching
+operation/task-count checks; per-target evidence retains its separate availability.
+Requests, raw event/status responses and notifications require privileged access.
+
 Accepted mutations return event IDs. Completion requires COMPLETE status, matching
 positive requested/completed counts and no failures. One successful notification
 batch does not settle a larger event. Optional bounded GET retries cover 429/5xx
@@ -90,9 +113,11 @@ from racing unfinished licensing.
 
 ## Constraints
 
-Callers persist event IDs, tasks and notification deduplication records. They can
-use Workflow for location credentials, source snapshots and incremental versions. They host the authenticated HTTPS receiver, process TEST_NOTIFICATION,
-persist notifications before 2xx, and schedule EventStatus fallback and reconciliation.
+Callers can use Workflow for durable location and job state or persist these
+contracts themselves around Client. They host the authenticated HTTPS receiver,
+acknowledge only after ReceiveNotification succeeds and schedule polling/reconciliation.
+Workflow waits five minutes for fallback polling and spaces subsequent queries by
+at least 30 seconds. No scheduler or automatic POST replay runs in the background.
 Registered users must associate an Apple Account. Books require user assignment
 and cannot be reclaimed or reassigned. Installation, catalog metadata and
 subscriptions are outside this client. Fixture tests do not establish live Apple
@@ -103,7 +128,10 @@ service acceptance.
 The shared memory/sealed-SQL workflow contract covers location isolation, immutable
 identity, token renewal/expiry, restart, pending configuration, token ABA and
 concurrent revision fencing, pagination failure and preservation of successful
-evidence. Atomic-store fault injection verifies rollback at persistence boundaries.
+evidence. Atomic-store fault injection verifies rollback at persistence boundaries, including
+notification receipts and outcome deduplication. Shared job contracts cover partial
+counts, restart, stale worker leases, uncertain responses, orphan/test callbacks,
+replays, late failures, books, retired users and expired-token recovery.
 The package's controlled HTTP tests cover token/location isolation, ownership,
 dynamic limits, finite/missing/unlimited asset stock, sentinel and unknown-field
 fidelity, bounded/cancelled pagination, user lifecycle, partial outcomes, notification

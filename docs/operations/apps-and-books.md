@@ -2,7 +2,7 @@
 
 [`appsbooks`](../../devicemanagement/appleplatformservices/appsbooks/doc.go) implements
 Apple's version 2 licensing API for device/user apps and user books. The caller
-can use optional atomic location persistence; notification hosting and installation
+can use optional atomic location and licensing-job persistence; notification hosting and installation
 remain caller-owned. Catalog metadata and
 subscriptions are outside this client.
 
@@ -91,8 +91,8 @@ Every committed operation advances the revision, including replacement with a
 previously used token, so old work cannot publish after a token ABA sequence.
 
 The source journal grows with successful refreshes; applications choose refresh
-schedules, access controls and retention for their deployment. No background
-jobs, licensing mutations, installation or policy decisions are added by Workflow.
+schedules, access controls and retention for their deployment. Applications schedule explicit job submission and polling. Workflow starts no background
+garoutines and makes no fleet policy or installation decisions.
 
 ## Storage verification
 
@@ -166,33 +166,107 @@ Books require user assignment and cannot be reclaimed or reassigned. Consult
 revocable assets from specified targets. `CreateUsers`, `UpdateUsers` and
 `RetireUsers` implement the documented user lifecycle.
 
+## Durable licensing jobs
+
+`Workflow.CreateJob` persists one explicit `JobRequest` and caller-chosen job ID at
+an expected location revision. It performs no Apple request. Reusing the ID is
+idempotent for an identical request and revision; changing the request is rejected.
+Supported operations are association, disassociation, revocation of revocable
+assets, user creation, user updates and user retirement. Supply a positive
+`MaxPages` for bounded preflight reads. `LoadJob` and cursor-based `Jobs` return
+private intent, outcomes, worker state and source evidence; authorize these
+separately from safe location metadata. No record has an automatic TTL.
+
+`SubmitJob` reserves a durable worker fence and location lease before HTTP. It
+reads fresh location ownership, asset restrictions and active user records before
+issuing the explicit POST once. Books require user targets and reject explicit
+disassociation; `Revoke` only removes Apple's revocable assets. Retired historical
+rows do not hide a recreated active user. Missing/retired active targets fail
+preflight. Caller-provided `clientUserId` is never derived from a device serial.
+The job retains raw preflight configuration and complete asset/user pages,
+accepted-event JSON, aggregate status JSON and callback evidence, including
+unknown fields and exact numbers. These can contain personal data and receiver
+credentials; protect them like other privileged source evidence.
+
+A queued job whose captured location revision changes cannot submit. While a
+submission or polling lease is reserved, location writers and other jobs cannot
+start conflicting work. A successfully accepted event releases the reservation,
+allowing validated token renewal and other explicit jobs. HTTP runs outside all
+state transactions. Leases use the store's authoritative clock; select a duration
+long enough for bounded HTTP work (maximum one hour). Expiry fences publication
+and requires explicit recovery; it never makes a submitted POST eligible again.
+
+A crash after POST but before saving its response leaves `submitting` state; a
+failed call leaves `uncertain` state. Inspect these through `LoadJob` after restart.
+Stop the original call/process before invoking `ReconcileJob`. Supply an observed
+event ID to bind it to the original request, or keep the job uncertain while
+investigating assignments/users through read-only endpoints and retained callbacks.
+Apple exposes event status by ID, not an API for discovering an unknown submission
+by a local job ID. Event binding is therefore an explicit operator assertion and
+subsequent responses must match the requested event type and counts.
+An uncertain job continues blocking other submissions at the location.
+Abandonment requires a nonempty operator note and acknowledges unresolved remote
+state; it neither undoes Apple work nor resets the job to queued. Investigate
+remote state before creating a new explicit request. Local fences cannot cancel
+an already-started remote request, and Apple provides no ownership CAS.
+
+If expiry blocks an uncertain/crashed submission, stop the original worker and
+call `RecoverLicensingToken` with the location revision, job ID and replacement
+sToken. A GET validates the same UID and MDM ownership. One transaction renews
+credentials and fences the old worker while preserving request, event and target
+evidence. Failed recovery retains everything. The job remains reconciliation-only;
+no POST is replayed. Accepted jobs permit ordinary `Register` renewal; an expired
+polling lease is released through explicit `ReconcileJob` after stopping its worker.
+See the [compiled examples](../../devicemanagement/appleplatformservices/appsbooks/example_test.go).
+
 ## Completion, notifications and retries
 
-Persist each mutation's returned `EventID` with the location and requested tasks.
-An accepted event is not completed licensing. `Status.Successful` requires COMPLETE,
-matching positive requested/completed counts and no failures. Inspect partial
-failure numbers and `errorInfo`; unknown fields inside errorInfo remain available.
-The [compiled example](../../devicemanagement/appleplatformservices/appsbooks/example_test.go)
-constructs an installation command only after licensing success.
+An accepted event is separate from completed licensing, dispatch and installation.
+`PollJob` starts its fallback at least five minutes after acceptance and spaces
+subsequent polls by at least 30 seconds. Applications own scheduling and deadlines.
+PENDING remains inspectable; after ten minutes investigate and explicitly decide
+what to do. Workflow never automatically resubmits. This applies Apple's
+[notification and polling guidance](https://developer.apple.com/documentation/devicemanagement/subscribing-to-notifications)
+with a conservative project policy for uncertain remote mutations.
 
-Host an HTTPS notification endpoint and use `DecodeNotification` with a dedicated
-shared token and expected UID. Handle `TEST_NOTIFICATION` before submitting its
-configuration: Apple rejects configuration when the test cannot be delivered.
-Select the typed payload using `Notification.Type`; unknown types remain raw.
-Persist changes and deduplication records for `(UID, Notification.ID)` before
-returning 2xx.
-One SUCCESS batch does not prove completion of a larger event.
+Whole-job success requires COMPLETE, the matching event type, matching positive
+requested/completed counts, the job's expected task count and no observed failures.
+Revoke-all has no known task count before Apple evaluates existing assignments;
+it still requires positive matching aggregate counts. Partial/mismatched COMPLETE
+is a failed job. `Status.Successful` alone does not correlate a status to job intent.
+Notification batches record unique per-target observations but never establish
+whole-event completion. Unreported targets remain unknown even when Apple's
+aggregate completion succeeds. Source status and available target evidence remain
+separate. Late failure evidence can downgrade success; older success cannot erase
+failure. This prevents duplicate/out-of-order batches from duplicating outcomes.
 
-If notifications do not establish completion within five minutes, query EventStatus.
-Poll PENDING no more frequently than every 30 seconds. If it remains pending after
-ten minutes, reconcile and explicitly decide whether to resubmit. No background
-scheduler or automatic mutation replay is hidden inside the client.
+Host an HTTPS receiver and call `ReceiveNotification` with a dedicated per-location
+receiver token. It authenticates bearer credentials and the persisted UID before
+processing. A nil return means the receipt, deduplication and matching job changes
+committed atomically; **return HTTP 2xx only then**. On error return non-2xx so Apple
+can retry. The method does not close the request body. `(UID, notificationId)` is
+scoped to the location; reuse with different bytes is rejected. Matching event/type
+and target checks prevent unrelated callbacks from changing a job.
 
-`ReadRetries` optionally enables bounded GET retries for HTTP 429/5xx, honoring
-Retry-After as a minimum wait. POST is attempted once. Transport failures can mean
-an unknown mutation outcome. Errors expose Apple numbers and retry timing while
-ordinary error strings omit private response text; treat detailed error fields as
-sensitive. Pass context deadlines to bound waits and network calls.
+Handle `TEST_NOTIFICATION` through this same method while `Configure` is in flight;
+Apple rejects configuration if its test delivery fails. Supply the receiver token
+through the host's protected configuration independently of the sToken. Unknown
+notification types, asset-count deltas and user-association callbacks are retained
+without inferred inventory projections. `LoadNotification` exposes privileged
+original evidence. Unknown-event callbacks remain retained and apply atomically
+when the event ID is later bound, including after restart. Applications choose
+retention and can inspect unsolicited receipts through their caller-owned state.
+Apple deliveries are best effort, may repeat and split requests into batches of
+at most 100 tasks. Always pair them with EventStatus polling, as required by
+Apple's [notification contract](https://developer.apple.com/documentation/devicemanagement/subscribing-to-notifications).
+
+The low-level `Client` remains usable without Workflow. Persist returned event IDs
+and deduplication yourself when composing it directly. `ReadRetries` optionally
+retries bounded GET failures for HTTP 429/5xx and honors Retry-After. POST is always
+attempted once. Transport failures can leave unknown remote outcomes. Error strings
+omit credentials and detailed private Apple failure messages; treat raw evidence
+and errorInfo as sensitive. Fixture checks do not establish live Apple acceptance;
+real-location and hardware validation remain required separately.
 
 ## Sources
 

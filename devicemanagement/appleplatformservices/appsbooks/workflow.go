@@ -217,7 +217,7 @@ func (w *Workflow) session(ctx context.Context, id string, revision uint64, allo
 // Register never claims an unclaimed location or overwrites foreign ownership.
 // Pending configuration requires Probe or explicit RecoverConfiguration first.
 func (w *Workflow) Register(ctx context.Context, id string, revision uint64, token string) (Location, error) {
-	return w.register(ctx, id, revision, token, false)
+	return w.register(ctx, id, revision, token, false, "")
 }
 
 // RecoverConfiguration reconciles a pending configuration using a replacement
@@ -233,12 +233,12 @@ func (w *Workflow) RecoverConfiguration(ctx context.Context, id string, revision
 	if revision == 0 {
 		return Location{}, ErrInput
 	}
-	return w.register(ctx, id, revision, token, true)
+	return w.register(ctx, id, revision, token, true, "")
 }
 
 // register shares validated token persistence between ordinary registration and
 // explicit recovery, keeping pending-state permission specific to the operation.
-func (w *Workflow) register(ctx context.Context, id string, revision uint64, token string, recoverPending bool) (Location, error) {
+func (w *Workflow) register(ctx context.Context, id string, revision uint64, token string, recoverPending bool, recoverJob string) (Location, error) {
 	if id == "" || revision == math.MaxUint64 {
 		return Location{}, ErrInput
 	}
@@ -276,6 +276,13 @@ func (w *Workflow) register(ctx context.Context, id string, revision uint64, tok
 		if errors.Is(err, state.ErrNotFound) && revision == 0 {
 			current = Location{ID: id, UID: observed.UID, MDMID: w.config.MDMID}
 		} else if err != nil {
+			return err
+		}
+		if recoverJob != "" {
+			if err := w.recoverLicensingWorker(ctx, tx, id, recoverJob); err != nil {
+				return err
+			}
+		} else if err := licensingBarrier(ctx, tx, id); err != nil {
 			return err
 		}
 		if current.Revision != revision {
@@ -338,6 +345,9 @@ func (w *Workflow) commit(ctx context.Context, l Location, fn func(state.Tx, *Lo
 	err := w.store.Update(ctx, []string{locationKey(l.ID, "metadata")}, func(tx state.Tx) error {
 		current, err := w.readLocation(ctx, tx, l.ID)
 		if err != nil {
+			return err
+		}
+		if err := licensingBarrier(ctx, tx, l.ID); err != nil {
 			return err
 		}
 		if current.Revision != l.Revision || current.Revision == math.MaxUint64 {

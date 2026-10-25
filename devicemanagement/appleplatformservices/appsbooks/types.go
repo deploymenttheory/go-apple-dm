@@ -124,12 +124,14 @@ type ManageUsersRequest struct {
 
 // Event acknowledges acceptance only, not successful licensing.
 type Event struct {
+	Raw jsontext.Value `json:"-"`
 	ResponseMeta
 	EventID string `json:"eventId"`
 }
 
 // Status describes the aggregate asynchronous result, including partial failures.
 type Status struct {
+	Raw jsontext.Value `json:"-"`
 	ResponseMeta
 	EventStatus  string    `json:"eventStatus"`
 	EventType    string    `json:"eventType"`

@@ -14,6 +14,7 @@ import (
 // Notification preserves the original payload and deduplication identity.
 // Persist (UID, ID) with the applied change before acknowledging with HTTP 2xx.
 type Notification struct {
+	Raw     jsontext.Value `json:"-"`
 	ID      string         `json:"notificationId"`
 	Type    string         `json:"notificationType"`
 	UID     string         `json:"uId"`
